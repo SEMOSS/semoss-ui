@@ -1,141 +1,162 @@
-import {
-	DatabaseIcon,
-	FolderTreeIcon,
-	NetworkIcon,
-	SettingsIcon,
-	Table2Icon,
-} from "lucide-react";
-import { useEffect } from "react";
-import { type FlexLayout, getFileIconComponent } from "@semoss/shared";
+import { useEffect, useState } from "react";
+import type { StoreApi } from "zustand";
 import { makeEngineRoomMcp } from "@/api/rooms";
 import {
-	WORKBENCH_COMPONENTS,
-	Workbench,
-	WorkbenchCommandMenuButton,
-} from "@/components/workbench";
-import { useDatabaseWorkbench, useEngine, useWorkbench } from "@/hooks";
-import { useWorkbenchAssistantConfig } from "@/hooks/use-workbench-assistant-config";
-import type { WorkbenchPanelConfig } from "@/stores/workbench";
-import { WORKBENCH_ASSISTANT_PANEL } from "../../assistant";
+	useEngine,
+	useWorkbench,
+	useWorkbenchCommands,
+	useWorkbenchStoreApi,
+} from "@/hooks";
+import type {
+	WorkbenchLayout,
+	WorkbenchPanelConfigAny,
+} from "@/stores/workbench";
 import {
-	EngineFileEditorPanel,
-	EngineFileExplorerPanel,
-	EngineMcpEditorPanel,
-	EngineSettingsPanel,
-	EngineSettingsToggle,
-} from "..";
-import { DatabaseColumnsPanel } from "./database-columns-panel";
+	createDatabaseWorkbenchStore,
+	type DatabaseWorkbenchState,
+} from "@/stores/workbench/database";
+import { WORKBENCH_ASSISTANT_PANEL } from "../../assistant";
+import { Workbench } from "../../core";
+import { WorkbenchCommandMenuButton } from "../../core/workbench-command-menu-button";
+import {
+	WORKBENCH_COMPONENTS,
+	WORKBENCH_PANEL_RECORDS,
+} from "../../workbench.constants";
+import { ENGINE_FILE_EDITOR_PANEL } from "../engine-file-editor-panel";
+import { ENGINE_FILE_EXPLORER_PANEL } from "../engine-file-explorer-panel";
+import { ENGINE_MCP_EDITOR_PANEL } from "../engine-mcp-editor-panel";
+import { createEngineSettingsPanel } from "../engine-settings-panel";
+import { EngineSettingsToggle } from "../engine-settings-toggle";
+import { DATABASE_COLUMNS_PANEL } from "./database-columns-panel";
 import { DatabaseNewQueryButton } from "./database-new-query-button";
-import { DatabaseQueryPanel } from "./database-query-panel";
-import { DatabaseQueryResultsPanel } from "./database-query-results-panel";
+import { DATABASE_QUERY_PANEL } from "./database-query-panel";
+import { DATABASE_RESULTS_PANEL } from "./database-query-results-panel";
 
-/** FlexLayout tabset that hosts both file editors and query editors */
-const MAIN_TABSET = "MAIN_TABSET";
+/** The seeded query panel every database workbench starts with. */
+const INITIAL_QUERY_PANEL_ID = "database-query-1";
 
-const DATABASE_WORKBENCH_LAYOUT: FlexLayout.IJsonModel = {
-	global: {
-		tabSetEnableDeleteWhenEmpty: true,
-		tabEnableRename: false,
+/**
+ * The default arrangement: columns + files on the left, an empty bottom
+ * border kept as the docking target for query results, and the assistant on
+ * the right.
+ */
+const DATABASE_WORKBENCH_LAYOUT: WorkbenchLayout = {
+	version: 1,
+	tree: {
+		type: "tabset",
+		id: "main",
+		size: 1,
+		panelIds: [INITIAL_QUERY_PANEL_ID],
+		activeId: INITIAL_QUERY_PANEL_ID,
+		enableDeleteWhenEmpty: false,
 	},
-	borders: [
-		{
-			type: "border",
-			location: "left",
-			size: 300,
-			selected: 0,
-			children: [
-				{
-					type: "tab",
-					id: WORKBENCH_COMPONENTS.DATABASE_COLUMNS,
-					name: "Columns",
-					component: WORKBENCH_COMPONENTS.DATABASE_COLUMNS,
-					helpText: "Database Structure",
-					enableClose: false,
-				},
-				{
-					type: "tab",
-					id: WORKBENCH_COMPONENTS.FILE_EXPLORER,
-					name: "Files",
-					component: WORKBENCH_COMPONENTS.FILE_EXPLORER,
-					config: {},
-					helpText: "File Explorer",
-					enableClose: false,
-				},
+	panels: {
+		[INITIAL_QUERY_PANEL_ID]: {
+			id: INITIAL_QUERY_PANEL_ID,
+			type: WORKBENCH_COMPONENTS.DATABASE_QUERY,
+			name: "Query",
+			canClose: false,
+			config: { initialQuery: "", queryNumber: 1 },
+		},
+		[WORKBENCH_PANEL_RECORDS.DATABASE_COLUMNS.id]:
+			WORKBENCH_PANEL_RECORDS.DATABASE_COLUMNS,
+		[WORKBENCH_PANEL_RECORDS.ENGINE_FILE_EXPLORER.id]:
+			WORKBENCH_PANEL_RECORDS.ENGINE_FILE_EXPLORER,
+		[WORKBENCH_PANEL_RECORDS.ASSISTANT.id]:
+			WORKBENCH_PANEL_RECORDS.ASSISTANT,
+	},
+	borders: {
+		left: {
+			panelIds: [
+				WORKBENCH_COMPONENTS.DATABASE_COLUMNS,
+				WORKBENCH_COMPONENTS.FILE_EXPLORER,
 			],
-		},
-		{
-			type: "border",
-			location: "bottom",
+			activeId: WORKBENCH_COMPONENTS.DATABASE_COLUMNS,
 			size: 300,
-			selected: -1,
-			children: [],
 		},
-		{
-			type: "border",
-			location: "right",
+		bottom: { panelIds: [], activeId: null, size: 300 },
+		right: {
+			panelIds: [WORKBENCH_COMPONENTS.ASSISTANT],
+			activeId: null,
 			size: 400,
-			minSize: 320,
-			selected: -1,
-			children: [
-				{
-					type: "tab",
-					id: WORKBENCH_COMPONENTS.ASSISTANT,
-					name: "Assistant",
-					component: WORKBENCH_COMPONENTS.ASSISTANT,
-					helpText: "Assistant",
-					enableClose: false,
-					enableRenderOnDemand: false,
-				},
-			],
 		},
-	],
-	layout: {
-		type: "row",
-		weight: 100,
-		children: [
-			{
-				type: "tabset",
-				id: MAIN_TABSET,
-				weight: 100,
-				enableDeleteWhenEmpty: false,
-				children: [
-					{
-						type: "tab",
-						id: WORKBENCH_COMPONENTS.DATABASE_QUERY,
-						name: "Query",
-						component: WORKBENCH_COMPONENTS.DATABASE_QUERY,
-						enableClose: false,
-						enableRename: true,
-					},
-				],
-			},
-		],
 	},
+};
+
+/** Blueprints, keyed by type. Module-scope so identities never churn. */
+const DATABASE_WORKBENCH_COMPONENTS: Record<string, WorkbenchPanelConfigAny> = {
+	[WORKBENCH_COMPONENTS.FILE_EXPLORER]: ENGINE_FILE_EXPLORER_PANEL,
+	[WORKBENCH_COMPONENTS.FILE_EDITOR]: ENGINE_FILE_EDITOR_PANEL,
+	[WORKBENCH_COMPONENTS.MCP_EDITOR]: ENGINE_MCP_EDITOR_PANEL,
+	[WORKBENCH_COMPONENTS.DATABASE_COLUMNS]: DATABASE_COLUMNS_PANEL,
+	[WORKBENCH_COMPONENTS.DATABASE_QUERY]: DATABASE_QUERY_PANEL,
+	[WORKBENCH_COMPONENTS.DATABASE_RESULTS]: DATABASE_RESULTS_PANEL,
+	[WORKBENCH_COMPONENTS.ENGINE_SETTINGS]: createEngineSettingsPanel([
+		{
+			name: "Overview",
+			component: "overview",
+			restrict: ["READ_ONLY", "EDIT", "OWNER", "DISCOVERABLE"],
+		},
+		{
+			name: "Usage",
+			component: "usage",
+			restrict: ["READ_ONLY", "EDIT", "OWNER"],
+		},
+		{
+			name: "MCP",
+			component: "mcp-usage",
+			restrict: ["READ_ONLY", "EDIT", "OWNER"],
+		},
+		{
+			name: "Activity Log",
+			component: "activity",
+			restrict: ["READ_ONLY", "EDIT", "OWNER"],
+		},
+		{
+			name: "Metadata",
+			component: "metadata",
+			restrict: ["READ_ONLY", "EDIT", "OWNER"],
+		},
+		{
+			name: "Access Control",
+			component: "access-control",
+			restrict: ["EDIT", "OWNER"],
+		},
+		{
+			name: "SMSS",
+			component: "smss",
+			restrict: ["OWNER"],
+		},
+	]),
+	[WORKBENCH_COMPONENTS.ASSISTANT]: WORKBENCH_ASSISTANT_PANEL,
 };
 
 /**
  * Database workbench that combines the file editor with an inline SQL/SPARQL
  * query experience. The query language is derived from the database category
- * (RDF -> SPARQL, otherwise SQL). Rendered inside an InsightProvider so the
- * category/structure pixels and query execution share a single insight.
+ * (RDF -> SPARQL, otherwise SQL). Structure, results, and query execution
+ * live in a dedicated store attached to the workbench store, so the
+ * columns/query/results panels can share them. Rendered inside an
+ * InsightProvider so the category/structure pixels and query execution share
+ * a single insight.
  */
 export const DatabaseWorkbench: React.FC = () => {
-	const registerCommand = useWorkbench((state) => state.registerCommand);
+	const storeApi = useWorkbenchStoreApi();
 	const { engine } = useEngine();
 
-	// Structure, results, and query execution are lifted into the workbench's
-	// `database` slice so they can be shared across the columns/query/results panels.
-	const initialize = useDatabaseWorkbench((state) => state.initialize);
-	const addQueryPanel = useDatabaseWorkbench((state) => state.addQueryPanel);
+	// created once per mount and attached before the panels first render
+	const [databaseStore] = useState<StoreApi<DatabaseWorkbenchState>>(() => {
+		const store = createDatabaseWorkbenchStore({ workbench: storeApi });
+		storeApi.getState().layout.actions.attachDomainStore(store);
+		return store;
+	});
 
 	// initialize the workbench
 	useEffect(() => {
-		initialize(engine.engine_id);
-	}, [engine.engine_id, initialize]);
+		void databaseStore.getState().initialize(engine.engine_id);
+	}, [engine.engine_id, databaseStore]);
 
-	const configureAssistant = useWorkbenchAssistantConfig(
-		(state) => state.configure,
-	);
+	const configureAssistant = useWorkbench((s) => s.assistant.configure);
 
 	// Keep the assistant prompt and room tools in sync with the active engine.
 	useEffect(() => {
@@ -151,179 +172,65 @@ export const DatabaseWorkbench: React.FC = () => {
 		engine.engine_name,
 	]);
 
-	const components: Record<string, WorkbenchPanelConfig> = {
-		[WORKBENCH_COMPONENTS.FILE_EXPLORER]: {
-			tab: () => <FolderTreeIcon className="size-4" />,
-			view: (node: FlexLayout.TabNode, layout: FlexLayout.Layout) => {
-				return <EngineFileExplorerPanel layout={layout} node={node} />;
-			},
-		},
-		[WORKBENCH_COMPONENTS.FILE_EDITOR]: {
-			tab: (node: FlexLayout.TabNode) => {
-				const Icon = getFileIconComponent(node.getName());
-				return <Icon className="size-4" />;
-			},
-			view: (node: FlexLayout.TabNode) => {
-				return <EngineFileEditorPanel node={node} />;
-			},
-		},
-		[WORKBENCH_COMPONENTS.MCP_EDITOR]: {
-			tab: (node: FlexLayout.TabNode) => {
-				const Icon = getFileIconComponent(node.getName());
-				return <Icon className="size-4" />;
-			},
-			view: (node: FlexLayout.TabNode) => {
-				return <EngineMcpEditorPanel node={node} />;
-			},
-		},
-		[WORKBENCH_COMPONENTS.DATABASE_COLUMNS]: {
-			tab: () => <NetworkIcon className="size-4" />,
-			view: () => {
-				return (
-					<div className="h-full w-full overflow-hidden">
-						<DatabaseColumnsPanel />
-					</div>
+	useWorkbenchCommands([
+		{
+			id: "workbench.file-explorer.open",
+			category: "View",
+			label: "Open File Explorer",
+			handler: (get) => {
+				get().layout.actions.selectPanel(
+					WORKBENCH_COMPONENTS.FILE_EXPLORER,
 				);
 			},
 		},
-		[WORKBENCH_COMPONENTS.DATABASE_QUERY]: {
-			tab: () => <DatabaseIcon className="size-4" />,
-			view: (node: FlexLayout.TabNode) => {
-				return (
-					<div className="h-full w-full overflow-hidden">
-						<DatabaseQueryPanel node={node} />
-					</div>
+		{
+			id: "workbench.settings.open",
+			category: "View",
+			label: "Open Settings",
+			handler: (get) => {
+				get().layout.actions.selectPanel(
+					WORKBENCH_COMPONENTS.ENGINE_SETTINGS,
 				);
 			},
 		},
-		[WORKBENCH_COMPONENTS.DATABASE_RESULTS]: {
-			tab: () => <Table2Icon className="size-4" />,
-			view: (node: FlexLayout.TabNode) => {
-				return (
-					<div className="h-full w-full overflow-hidden">
-						<DatabaseQueryResultsPanel node={node} />
-					</div>
+		{
+			id: "workbench.database-columns.open",
+			category: "View",
+			label: "Open Columns",
+			handler: (get) => {
+				get().layout.actions.selectPanel(
+					WORKBENCH_COMPONENTS.DATABASE_COLUMNS,
 				);
 			},
 		},
-		[WORKBENCH_COMPONENTS.ENGINE_SETTINGS]: {
-			tab: () => <SettingsIcon className="size-4" />,
-			view: () => (
-				<EngineSettingsPanel
-					tabs={[
-						{
-							name: "Overview",
-							component: "overview",
-							restrict: [
-								"READ_ONLY",
-								"EDIT",
-								"OWNER",
-								"DISCOVERABLE",
-							],
-						},
-						{
-							name: "Usage",
-							component: "usage",
-							restrict: ["READ_ONLY", "EDIT", "OWNER"],
-						},
-						{
-							name: "MCP",
-							component: "mcp-usage",
-							restrict: ["READ_ONLY", "EDIT", "OWNER"],
-						},
-						{
-							name: "Activity Log",
-							component: "activity",
-							restrict: ["READ_ONLY", "EDIT", "OWNER"],
-						},
-						{
-							name: "Metadata",
-							component: "metadata",
-							restrict: ["READ_ONLY", "EDIT", "OWNER"],
-						},
-						{
-							name: "Access Control",
-							component: "access-control",
-							restrict: ["EDIT", "OWNER"],
-						},
-						{
-							name: "SMSS",
-							component: "smss",
-							restrict: ["OWNER"],
-						},
-					]}
-				/>
-			),
+		{
+			id: "workbench.database-query.open",
+			category: "Database",
+			label: "New Query",
+			handler: () => {
+				databaseStore.getState().addQueryPanel("");
+			},
 		},
-		[WORKBENCH_COMPONENTS.ASSISTANT]: WORKBENCH_ASSISTANT_PANEL,
-	};
-
-	useEffect(() => {
-		return registerCommand([
-			{
-				id: "workbench.file-explorer.open",
-				label: "Open File Explorer",
-				icon: <FolderTreeIcon />,
-				handler: (get) => {
-					get().openPanel(WORKBENCH_COMPONENTS.FILE_EXPLORER, {
-						type: "tab",
-						name: "Files",
-						component: WORKBENCH_COMPONENTS.FILE_EXPLORER,
-						helpText: "File Explorer",
-						enableClose: false,
-					});
-				},
-			},
-			{
-				id: "workbench.settings.open",
-				label: "Open Settings",
-				icon: <SettingsIcon />,
-				handler: (get) => {
-					get().openPanel(WORKBENCH_COMPONENTS.ENGINE_SETTINGS, {
-						type: "tab",
-						name: "Settings",
-						component: WORKBENCH_COMPONENTS.ENGINE_SETTINGS,
-						helpText: "Settings",
-						enableClose: false,
-					});
-				},
-			},
-			{
-				id: "workbench.database-columns.open",
-				label: "Open Columns",
-				icon: <NetworkIcon />,
-				handler: (get) => {
-					get().openPanel(WORKBENCH_COMPONENTS.DATABASE_COLUMNS, {
-						type: "tab",
-						name: "Columns",
-						component: WORKBENCH_COMPONENTS.DATABASE_COLUMNS,
-						helpText: "Database Columns",
-						enableClose: false,
-					});
-				},
-			},
-			{
-				id: "workbench.database-query.open",
-				label: "New Query",
-				icon: <DatabaseIcon />,
-				handler: () => {
-					addQueryPanel("");
-				},
-			},
-		]);
-	}, [registerCommand, addQueryPanel]);
+	]);
 
 	return (
 		<Workbench
 			layout={DATABASE_WORKBENCH_LAYOUT}
-			components={components}
-			actions={
-				<>
-					<DatabaseNewQueryButton />
-					<WorkbenchCommandMenuButton />
-					<EngineSettingsToggle />
-				</>
+			components={DATABASE_WORKBENCH_COMPONENTS}
+			onPanelClose={(pid, record) =>
+				databaseStore.getState().handlePanelClosed(pid, record)
 			}
+			borderSlots={{
+				left: {
+					after: (
+						<>
+							<DatabaseNewQueryButton />
+							<WorkbenchCommandMenuButton />
+							<EngineSettingsToggle />
+						</>
+					),
+				},
+			}}
 		/>
 	);
 };

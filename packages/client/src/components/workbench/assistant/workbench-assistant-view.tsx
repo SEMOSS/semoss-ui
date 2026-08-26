@@ -31,13 +31,18 @@ export const WorkbenchAssistantView = () => {
 };
 
 /**
- * Shared `components` map entry every workbench uses for the ASSISTANT border tab:
- * the message icon shown on the border tab and the assistant view rendered when
- * the tab is active.
+ * Shared blueprint every workbench registers for the ASSISTANT panel. Mounts
+ * eagerly so the assistant initializes (and can surface notifications) while
+ * its border is still collapsed.
  *
  * @name WORKBENCH_ASSISTANT_PANEL
  */
 export const WORKBENCH_ASSISTANT_PANEL: WorkbenchPanelConfig = {
-	tab: () => <MessageSquareIcon className="size-4" />,
-	view: () => <WorkbenchAssistantView />,
+	name: "Assistant",
+	helpText: "Assistant",
+	icon: ({ className }) => <MessageSquareIcon className={className} />,
+	canClose: false,
+	canRename: false,
+	mount: "eager",
+	content: () => <WorkbenchAssistantView />,
 };

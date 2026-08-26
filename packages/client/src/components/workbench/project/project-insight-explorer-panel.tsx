@@ -1,12 +1,16 @@
+import { FlaskConicalIcon } from "lucide-react";
 import { InsightProvider } from "@semoss/sdk/react";
 import { FileExplorer } from "@semoss/shared";
 import { Spinner } from "@semoss/ui/next";
+import { useWorkbench } from "@/hooks";
+import type { WorkbenchPanelConfig } from "@/stores/workbench";
+import { WORKBENCH_COMPONENTS } from "../workbench.constants";
 
 export interface ProjectInsightExplorerPanelProps {
 	/**
 	 * insightId of the active terminal tab, or `null` before one is ready.
-	 * Supplied by the owning workbench from `ProjectTerminalPanel`'s
-	 * `onActiveInsightChange`.
+	 * Published by `ProjectTerminalPanel` on the terminal panel's scratch
+	 * value.
 	 */
 	insightId: string | null;
 }
@@ -34,4 +38,30 @@ export const ProjectInsightExplorerPanel: React.FC<
 			<FileExplorer mode={{ type: "INSIGHT" }} onItemSelect={() => {}} />
 		</InsightProvider>
 	);
+};
+
+const ProjectInsightExplorerPanelContent: React.FC = () => {
+	// the terminal panel publishes its active insightId on its scratch value
+	const insightId = useWorkbench(
+		(state) =>
+			(state.layout.values[WORKBENCH_COMPONENTS.PROJECT_TERMINAL] as
+				| string
+				| null
+				| undefined) ?? null,
+	);
+	return <ProjectInsightExplorerPanel insightId={insightId} />;
+};
+
+/**
+ * Blueprint for the insight file explorer. keepAlive: the tree's expansion
+ * state survives tab switches.
+ */
+export const PROJECT_INSIGHT_EXPLORER_PANEL: WorkbenchPanelConfig = {
+	name: "Insight",
+	helpText: "Insight File Explorer",
+	icon: ({ className }) => <FlaskConicalIcon className={className} />,
+	canClose: false,
+	canRename: false,
+	mount: "keepAlive",
+	content: ProjectInsightExplorerPanelContent,
 };

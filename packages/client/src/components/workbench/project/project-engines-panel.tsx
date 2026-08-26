@@ -1,4 +1,5 @@
 import {
+	BlocksIcon,
 	BrainIcon,
 	CheckIcon,
 	DatabaseIcon,
@@ -30,6 +31,7 @@ import {
 	toast,
 } from "@semoss/ui/next";
 import { useProject, useRootStore } from "@/hooks";
+import type { WorkbenchPanelConfig } from "@/stores/workbench";
 import { isProjectType } from "@/utility/catalog";
 
 /** Display metadata for one engine category card. */
@@ -561,4 +563,18 @@ export const ProjectEnginesPanel = () => {
 			) : null}
 		</div>
 	);
+};
+
+/**
+ * Blueprint for the "Available engines" panel. keepAlive: search text and
+ * dialog state survive tab switches.
+ */
+export const PROJECT_ENGINES_PANEL: WorkbenchPanelConfig = {
+	name: "Engines",
+	helpText: "Available engines",
+	icon: ({ className }) => <BlocksIcon className={className} />,
+	canClose: false,
+	canRename: false,
+	mount: "keepAlive",
+	content: ProjectEnginesPanel,
 };

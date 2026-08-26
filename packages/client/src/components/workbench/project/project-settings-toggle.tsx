@@ -1,5 +1,5 @@
 import { SettingsIcon } from "lucide-react";
-import { FlexLayout } from "@semoss/shared";
+import type { ComponentProps } from "react";
 import {
 	Button,
 	cn,
@@ -7,23 +7,54 @@ import {
 	TooltipContent,
 	TooltipTrigger,
 } from "@semoss/ui/next";
+import { ProjectDetailTabs } from "@/components/project";
 import { useWorkbench } from "@/hooks";
-import {
-	WORKBENCH_COMPONENTS,
-	WORKBENCH_PANEL_TABS,
-} from "../workbench.constants";
+import type { WorkbenchPanelConfig } from "@/stores/workbench";
+import { WORKBENCH_STYLES } from "../core/workbench.chrome";
+import { WORKBENCH_COMPONENTS } from "../workbench.constants";
 
 /**
- * Toggles the shared project settings tab within a workbench layout — opening,
- * selecting, or closing it — and highlights while it is the active tab.
+ * Builds the settings blueprint for one project domain. Each domain calls
+ * this at module scope with its static tab list, so the blueprint identity
+ * stays stable and the panel never remounts from map churn.
+ *
+ * @name createProjectSettingsPanel
+ * @param tabs - Settings tabs the domain exposes.
+ * @return The blueprint registered under PROJECT_SETTINGS.
+ */
+export const createProjectSettingsPanel = (
+	tabs: ComponentProps<typeof ProjectDetailTabs>["tabs"],
+): WorkbenchPanelConfig => ({
+	name: "Settings",
+	helpText: "Settings",
+	icon: ({ className }) => <SettingsIcon className={className} />,
+	canClose: true,
+	canRename: false,
+	mount: "keepAlive",
+	content: function ProjectSettingsContent() {
+		return <ProjectDetailTabs tabs={tabs} />;
+	},
+});
+
+/**
+ * Toggles the shared project settings panel within a workbench — opening,
+ * selecting, or closing it — and highlights while it is the shown tab.
  */
 export const ProjectSettingsToggle: React.FC = () => {
-	const closePanel = useWorkbench((state) => state.closePanel);
-	const openPanel = useWorkbench((state) => state.openPanel);
-	const model = useWorkbench((state) => state.model);
-	const activePanel = useWorkbench((state) => state.activePanel);
-	const settingsId = WORKBENCH_COMPONENTS.PROJECT_SETTINGS;
-	const settingsNode = model.getNodeById(settingsId);
+	const actions = useWorkbench((state) => state.layout.actions);
+	const settingsType = WORKBENCH_COMPONENTS.PROJECT_SETTINGS;
+
+	const existingId = useWorkbench(
+		(state) =>
+			Object.values(state.layout.panels).find(
+				(record) => record.type === settingsType,
+			)?.id,
+	);
+	const isShowing = useWorkbench((state) =>
+		existingId
+			? (state.layout.panelSlots[existingId]?.active ?? false)
+			: false,
+	);
 
 	return (
 		<Tooltip>
@@ -34,41 +65,21 @@ export const ProjectSettingsToggle: React.FC = () => {
 					aria-label="Settings"
 					data-testid="workbench-project-settings-toggle"
 					onClick={() => {
-						if (settingsNode instanceof FlexLayout.TabNode) {
-							const parent = settingsNode.getParent();
-
-							if (parent instanceof FlexLayout.TabSetNode) {
-								if (
-									parent.getSelectedNode()?.getId() ===
-									settingsId
-								) {
-									closePanel(settingsId);
-									return;
-								}
-
-								openPanel(
-									settingsId,
-									WORKBENCH_PANEL_TABS.PROJECT_SETTINGS,
-								);
-								return;
-							}
-
-							closePanel(settingsId);
+						if (existingId && isShowing) {
+							actions.closePanel(existingId);
+							return;
 						}
 
-						openPanel(
-							settingsId,
-							WORKBENCH_PANEL_TABS.PROJECT_SETTINGS,
-						);
+						actions.selectPanel(settingsType);
 					}}
 					className={cn(
-						"border",
-						activePanel === settingsId
-							? "border-input text-primary shadow-xs dark:bg-input/30"
-							: "border-transparent text-muted-foreground",
+						WORKBENCH_STYLES.chromeButton,
+						isShowing
+							? WORKBENCH_STYLES.chromeButtonActive
+							: WORKBENCH_STYLES.chromeButtonInactive,
 					)}
 				>
-					<SettingsIcon />
+					<SettingsIcon className={WORKBENCH_STYLES.chromeIcon} />
 				</Button>
 			</TooltipTrigger>
 			<TooltipContent side="right">Settings</TooltipContent>

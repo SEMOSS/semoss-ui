@@ -1,36 +1,123 @@
-import {
-	BotIcon,
-	FlaskConicalIcon,
-	FolderTreeIcon,
-	SettingsIcon,
-	SquareTerminalIcon,
-} from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
-import { type FlexLayout, getFileIconComponent } from "@semoss/shared";
-import { ProjectDetailTabs } from "@/components/project";
+import { useEffect } from "react";
+import { useProject, useWorkbench, useWorkbenchCommands } from "@/hooks";
+import type {
+	WorkbenchLayout,
+	WorkbenchPanelConfigAny,
+} from "@/stores/workbench";
+import { WORKBENCH_ASSISTANT_PANEL } from "../../assistant";
+import { Workbench } from "../../core";
+import { WorkbenchCommandMenuButton } from "../../core/workbench-command-menu-button";
 import {
 	WORKBENCH_COMPONENTS,
-	WORKBENCH_PANEL_TABS,
-	Workbench,
-	WorkbenchCommandMenuButton,
-} from "@/components/workbench";
-import { useProject, useWorkbench } from "@/hooks";
-import { useWorkbenchAssistantConfig } from "@/hooks/use-workbench-assistant-config";
-import type { WorkbenchPanelConfig } from "@/stores/workbench";
-import { WORKBENCH_ASSISTANT_PANEL } from "../../assistant";
+	WORKBENCH_PANEL_RECORDS,
+} from "../../workbench.constants";
+import { PROJECT_ENGINES_PANEL } from "../project-engines-panel";
+import { PROJECT_FILE_EDITOR_PANEL } from "../project-file-editor-panel";
+import { PROJECT_FILE_EXPLORER_PANEL } from "../project-file-explorer-panel";
+import { PROJECT_INSIGHT_EXPLORER_PANEL } from "../project-insight-explorer-panel";
+import { PROJECT_MCP_EDITOR_PANEL } from "../project-mcp-editor-panel";
+import { ProjectPublishButton } from "../project-publish-button";
 import {
-	ProjectFileEditorPanel,
-	ProjectFileExplorerPanel,
-	ProjectInsightExplorerPanel,
-	ProjectMcpEditorPanel,
-	ProjectPublishButton,
+	createProjectSettingsPanel,
 	ProjectSettingsToggle,
-	ProjectTerminalPanel,
-} from "..";
-import { AgentEditorPanel } from "./agent-editor-panel";
+} from "../project-settings-toggle";
+import { PROJECT_TERMINAL_PANEL } from "../project-terminal-panel";
+import { PROJECT_AGENT_EDITOR_PANEL } from "./agent-editor-panel";
 
-/** FlexLayout tabset that hosts the agent editor and any opened files. */
-const MAIN_TABSET = "MAIN_TABSET";
+/**
+ * The default arrangement: the agent editor front and centre, files and the
+ * insight explorer on a collapsed left rail so they don't take space away
+ * from the editor on first load.
+ */
+const AGENT_WORKBENCH_LAYOUT: WorkbenchLayout = {
+	version: 1,
+	tree: {
+		type: "tabset",
+		id: "main",
+		size: 1,
+		panelIds: [WORKBENCH_COMPONENTS.PROJECT_AGENT_EDITOR],
+		activeId: WORKBENCH_COMPONENTS.PROJECT_AGENT_EDITOR,
+		enableDeleteWhenEmpty: false,
+	},
+	panels: {
+		[WORKBENCH_PANEL_RECORDS.PROJECT_AGENT_EDITOR.id]:
+			WORKBENCH_PANEL_RECORDS.PROJECT_AGENT_EDITOR,
+		[WORKBENCH_PANEL_RECORDS.PROJECT_FILE_EXPLORER.id]:
+			WORKBENCH_PANEL_RECORDS.PROJECT_FILE_EXPLORER,
+		[WORKBENCH_PANEL_RECORDS.PROJECT_INSIGHT_EXPLORER.id]:
+			WORKBENCH_PANEL_RECORDS.PROJECT_INSIGHT_EXPLORER,
+		[WORKBENCH_PANEL_RECORDS.PROJECT_TERMINAL.id]:
+			WORKBENCH_PANEL_RECORDS.PROJECT_TERMINAL,
+		[WORKBENCH_PANEL_RECORDS.ASSISTANT.id]:
+			WORKBENCH_PANEL_RECORDS.ASSISTANT,
+	},
+	borders: {
+		left: {
+			panelIds: [
+				WORKBENCH_COMPONENTS.PROJECT_FILE_EXPLORER,
+				WORKBENCH_COMPONENTS.PROJECT_INSIGHT_EXPLORER,
+			],
+			activeId: null,
+			size: 400,
+		},
+		bottom: {
+			panelIds: [WORKBENCH_COMPONENTS.PROJECT_TERMINAL],
+			activeId: null,
+			size: 300,
+		},
+		right: {
+			panelIds: [WORKBENCH_COMPONENTS.ASSISTANT],
+			activeId: null,
+			size: 400,
+		},
+	},
+};
+
+/** Blueprints, keyed by type. Module-scope so identities never churn. */
+const AGENT_WORKBENCH_COMPONENTS: Record<string, WorkbenchPanelConfigAny> = {
+	[WORKBENCH_COMPONENTS.PROJECT_AGENT_EDITOR]: PROJECT_AGENT_EDITOR_PANEL,
+	[WORKBENCH_COMPONENTS.PROJECT_FILE_EXPLORER]: PROJECT_FILE_EXPLORER_PANEL,
+	[WORKBENCH_COMPONENTS.PROJECT_INSIGHT_EXPLORER]:
+		PROJECT_INSIGHT_EXPLORER_PANEL,
+	[WORKBENCH_COMPONENTS.PROJECT_FILE_EDITOR]: PROJECT_FILE_EDITOR_PANEL,
+	[WORKBENCH_COMPONENTS.PROJECT_MCP_EDITOR]: PROJECT_MCP_EDITOR_PANEL,
+	[WORKBENCH_COMPONENTS.PROJECT_ENGINES]: PROJECT_ENGINES_PANEL,
+	[WORKBENCH_COMPONENTS.PROJECT_TERMINAL]: PROJECT_TERMINAL_PANEL,
+	[WORKBENCH_COMPONENTS.PROJECT_SETTINGS]: createProjectSettingsPanel([
+		{ name: "Overview", component: "project-overview" },
+		{
+			name: "MCP",
+			component: "mcp-usage",
+			restrict: ["OWNER", "EDIT", "READ_ONLY"],
+		},
+		{
+			name: "Commits",
+			component: "commits",
+			restrict: ["OWNER", "EDIT"],
+		},
+		{
+			name: "GitHub",
+			component: "github",
+			restrict: ["OWNER"],
+		},
+		{
+			name: "Agent Activity",
+			component: "agent-activity",
+			restrict: ["OWNER", "EDIT", "READ_ONLY"],
+		},
+		{
+			name: "Access Control",
+			component: "access-control",
+			restrict: ["OWNER", "EDIT"],
+		},
+		{
+			name: "SMSS",
+			component: "smss",
+			restrict: ["OWNER"],
+		},
+	]),
+	[WORKBENCH_COMPONENTS.ASSISTANT]: WORKBENCH_ASSISTANT_PANEL,
+};
 
 /**
  * Agent workbench — the editable surface for a WORKSPACE project. Opens the
@@ -39,79 +126,9 @@ const MAIN_TABSET = "MAIN_TABSET";
  * shared assistant panel.
  */
 export const AgentWorkbench: React.FC = () => {
-	const registerCommand = useWorkbench((state) => state.registerCommand);
 	const { project } = useProject();
 
-	// insightId of the active terminal tab, published by the terminal panel so
-	// the Insight file explorer browses the same insight commands run in
-	const [terminalInsightId, setTerminalInsightId] = useState<string | null>(
-		null,
-	);
-
-	const layout = useMemo<FlexLayout.IJsonModel>(() => {
-		return {
-			global: {
-				tabSetEnableDeleteWhenEmpty: true,
-				tabEnableRename: false,
-			},
-			borders: [
-				{
-					type: "border",
-					location: "left",
-					size: 400,
-					// Keep file management available from the edge tab without
-					// taking space away from the agent editor on first load.
-					selected: -1,
-					children: [
-						WORKBENCH_PANEL_TABS.PROJECT_FILE_EXPLORER,
-						WORKBENCH_PANEL_TABS.PROJECT_INSIGHT_EXPLORER,
-					],
-				},
-				{
-					type: "border",
-					location: "bottom",
-					size: 300,
-					selected: -1,
-					children: [WORKBENCH_PANEL_TABS.PROJECT_TERMINAL],
-				},
-				{
-					type: "border",
-					location: "right",
-					size: 400,
-					minSize: 320,
-					selected: -1,
-					children: [
-						{
-							type: "tab",
-							id: WORKBENCH_COMPONENTS.ASSISTANT,
-							name: "Assistant",
-							component: WORKBENCH_COMPONENTS.ASSISTANT,
-							helpText: "Assistant",
-							enableClose: false,
-							enableRenderOnDemand: false,
-						},
-					],
-				},
-			],
-			layout: {
-				type: "row",
-				weight: 100,
-				children: [
-					{
-						type: "tabset",
-						id: MAIN_TABSET,
-						weight: 100,
-						enableDeleteWhenEmpty: false,
-						children: [WORKBENCH_PANEL_TABS.PROJECT_AGENT_EDITOR],
-					},
-				],
-			},
-		};
-	}, []);
-
-	const configureAssistant = useWorkbenchAssistantConfig(
-		(state) => state.configure,
-	);
+	const configureAssistant = useWorkbench((s) => s.assistant.configure);
 
 	// keep the assistant's system prompt/tools in sync with the active skill
 	useEffect(() => {
@@ -135,170 +152,74 @@ export const AgentWorkbench: React.FC = () => {
 		project.project_name,
 	]);
 
-	const components: Record<string, WorkbenchPanelConfig> = {
-		[WORKBENCH_COMPONENTS.PROJECT_AGENT_EDITOR]: {
-			tab: () => <BotIcon className="size-4" />,
-			view: () => <AgentEditorPanel />,
-		},
-		[WORKBENCH_COMPONENTS.PROJECT_FILE_EXPLORER]: {
-			tab: () => <FolderTreeIcon className="size-4" />,
-			view: (node: FlexLayout.TabNode, layout: FlexLayout.Layout) => {
-				return <ProjectFileExplorerPanel layout={layout} node={node} />;
-			},
-		},
-		[WORKBENCH_COMPONENTS.PROJECT_INSIGHT_EXPLORER]: {
-			tab: () => <FlaskConicalIcon className="size-4" />,
-			view: () => (
-				<ProjectInsightExplorerPanel insightId={terminalInsightId} />
-			),
-		},
-		[WORKBENCH_COMPONENTS.PROJECT_FILE_EDITOR]: {
-			tab: (node: FlexLayout.TabNode) => {
-				const Icon = getFileIconComponent(node.getName());
-				return <Icon className="size-4" />;
-			},
-			view: (node: FlexLayout.TabNode) => {
-				return <ProjectFileEditorPanel node={node} />;
-			},
-		},
-		[WORKBENCH_COMPONENTS.PROJECT_MCP_EDITOR]: {
-			tab: (node: FlexLayout.TabNode) => {
-				const Icon = getFileIconComponent(node.getName());
-				return <Icon className="size-4" />;
-			},
-			view: (node: FlexLayout.TabNode) => {
-				return <ProjectMcpEditorPanel node={node} />;
-			},
-		},
-		[WORKBENCH_COMPONENTS.PROJECT_TERMINAL]: {
-			tab: () => <SquareTerminalIcon className="size-4" />,
-			view: () => {
-				return (
-					<div className="h-full w-full overflow-hidden">
-						<ProjectTerminalPanel
-							onActiveInsightChange={setTerminalInsightId}
-						/>
-					</div>
+	useWorkbenchCommands([
+		{
+			id: "workbench.project-file-explorer.open",
+			category: "View",
+			label: "Open File Explorer",
+			handler: (get) => {
+				get().layout.actions.selectPanel(
+					WORKBENCH_COMPONENTS.PROJECT_FILE_EXPLORER,
 				);
 			},
 		},
-		[WORKBENCH_COMPONENTS.PROJECT_SETTINGS]: {
-			tab: () => <SettingsIcon className="size-4" />,
-			view: () => (
-				<ProjectDetailTabs
-					tabs={[
-						{ name: "Overview", component: "project-overview" },
-						{
-							name: "MCP",
-							component: "mcp-usage",
-							restrict: ["OWNER", "EDIT", "READ_ONLY"],
-						},
-						{
-							name: "Commits",
-							component: "commits",
-							restrict: ["OWNER", "EDIT"],
-						},
-						{
-							name: "GitHub",
-							component: "github",
-							restrict: ["OWNER"],
-						},
-						{
-							name: "Agent Activity",
-							component: "agent-activity",
-							restrict: ["OWNER", "EDIT", "READ_ONLY"],
-						},
-						{
-							name: "Access Control",
-							component: "access-control",
-							restrict: ["OWNER", "EDIT"],
-						},
-						{
-							name: "SMSS",
-							component: "smss",
-							restrict: ["OWNER"],
-						},
-					]}
-				/>
-			),
+		{
+			id: "workbench.project-insight-explorer.open",
+			category: "View",
+			label: "Open Insight File Explorer",
+			handler: (get) => {
+				get().layout.actions.selectPanel(
+					WORKBENCH_COMPONENTS.PROJECT_INSIGHT_EXPLORER,
+				);
+			},
 		},
-		[WORKBENCH_COMPONENTS.ASSISTANT]: WORKBENCH_ASSISTANT_PANEL,
-	};
-
-	useEffect(() => {
-		return registerCommand([
-			{
-				id: "workbench.project-file-explorer.open",
-				label: "Open File Explorer",
-				icon: <FolderTreeIcon />,
-				handler: (get) => {
-					get().openPanel(
-						WORKBENCH_COMPONENTS.PROJECT_FILE_EXPLORER,
-						WORKBENCH_PANEL_TABS.PROJECT_FILE_EXPLORER,
-						{ type: "BORDER", location: "left" },
-					);
-				},
+		{
+			id: "workbench.project-agent-editor.open",
+			category: "View",
+			label: "Open Agent Editor",
+			handler: (get) => {
+				get().layout.actions.selectPanel(
+					WORKBENCH_COMPONENTS.PROJECT_AGENT_EDITOR,
+				);
 			},
-			{
-				id: "workbench.project-insight-explorer.open",
-				label: "Open Insight File Explorer",
-				icon: <FlaskConicalIcon />,
-				handler: (get) => {
-					get().openPanel(
-						WORKBENCH_COMPONENTS.PROJECT_INSIGHT_EXPLORER,
-						WORKBENCH_PANEL_TABS.PROJECT_INSIGHT_EXPLORER,
-						{ type: "BORDER", location: "left" },
-					);
-				},
+		},
+		{
+			id: "workbench.project-terminal.open",
+			category: "View",
+			label: "Open Terminal",
+			handler: (get) => {
+				get().layout.actions.selectPanel(
+					WORKBENCH_COMPONENTS.PROJECT_TERMINAL,
+				);
 			},
-			{
-				id: "workbench.project-agent-editor.open",
-				label: "Open Agent Editor",
-				icon: <BotIcon />,
-				handler: (get) => {
-					get().openPanel(
-						WORKBENCH_COMPONENTS.PROJECT_AGENT_EDITOR,
-						WORKBENCH_PANEL_TABS.PROJECT_AGENT_EDITOR,
-					);
-				},
+		},
+		{
+			id: "workbench.project-settings.open",
+			category: "View",
+			label: "Open Settings",
+			handler: (get) => {
+				get().layout.actions.selectPanel(
+					WORKBENCH_COMPONENTS.PROJECT_SETTINGS,
+				);
 			},
-			{
-				id: "workbench.project-terminal.open",
-				label: "Open Terminal",
-				icon: <SquareTerminalIcon />,
-				handler: (get) => {
-					get().openPanel(
-						WORKBENCH_COMPONENTS.PROJECT_TERMINAL,
-						WORKBENCH_PANEL_TABS.PROJECT_TERMINAL,
-						{ type: "BORDER", location: "bottom" },
-					);
-				},
-			},
-			{
-				id: "workbench.project-settings.open",
-				label: "Open Settings",
-				icon: <SettingsIcon />,
-				handler: (get) => {
-					get().openPanel(
-						WORKBENCH_COMPONENTS.PROJECT_SETTINGS,
-						WORKBENCH_PANEL_TABS.PROJECT_SETTINGS,
-					);
-				},
-			},
-		]);
-	}, [registerCommand]);
+		},
+	]);
 
 	return (
 		<Workbench
-			layout={layout}
-			components={components}
-			actions={
-				<>
-					<WorkbenchCommandMenuButton />
-					<ProjectPublishButton />
-					<ProjectSettingsToggle />
-				</>
-			}
+			layout={AGENT_WORKBENCH_LAYOUT}
+			components={AGENT_WORKBENCH_COMPONENTS}
+			borderSlots={{
+				left: {
+					after: (
+						<>
+							<WorkbenchCommandMenuButton />
+							<ProjectPublishButton />
+							<ProjectSettingsToggle />
+						</>
+					),
+				},
+			}}
 		/>
 	);
 };

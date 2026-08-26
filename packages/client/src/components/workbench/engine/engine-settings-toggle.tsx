@@ -1,5 +1,4 @@
 import { SettingsIcon } from "lucide-react";
-import { FlexLayout } from "@semoss/shared";
 import {
 	Button,
 	cn,
@@ -8,22 +7,28 @@ import {
 	TooltipTrigger,
 } from "@semoss/ui/next";
 import { useWorkbench } from "@/hooks";
-import {
-	WORKBENCH_COMPONENTS,
-	WORKBENCH_PANEL_TABS,
-} from "../workbench.constants";
+import { WORKBENCH_STYLES } from "../core/workbench.chrome";
+import { WORKBENCH_COMPONENTS } from "../workbench.constants";
 
 /**
- * Toggles the shared engine settings tab within a workbench layout — opening,
- * selecting, or closing it — and highlights while it is the active tab.
+ * Toggles the shared engine settings panel within a workbench — opening,
+ * selecting, or closing it — and highlights while it is the shown tab.
  */
 export const EngineSettingsToggle: React.FC = () => {
-	const closePanel = useWorkbench((state) => state.closePanel);
-	const openPanel = useWorkbench((state) => state.openPanel);
-	const model = useWorkbench((state) => state.model);
-	const activePanel = useWorkbench((state) => state.activePanel);
-	const settingsId = WORKBENCH_COMPONENTS.ENGINE_SETTINGS;
-	const settingsNode = model.getNodeById(settingsId);
+	const actions = useWorkbench((state) => state.layout.actions);
+	const settingsType = WORKBENCH_COMPONENTS.ENGINE_SETTINGS;
+
+	const existingId = useWorkbench(
+		(state) =>
+			Object.values(state.layout.panels).find(
+				(record) => record.type === settingsType,
+			)?.id,
+	);
+	const isShowing = useWorkbench((state) =>
+		existingId
+			? (state.layout.panelSlots[existingId]?.active ?? false)
+			: false,
+	);
 
 	return (
 		<Tooltip>
@@ -34,41 +39,21 @@ export const EngineSettingsToggle: React.FC = () => {
 					aria-label="Settings"
 					data-testid="workbench-settings-toggle"
 					onClick={() => {
-						if (settingsNode instanceof FlexLayout.TabNode) {
-							const parent = settingsNode.getParent();
-
-							if (parent instanceof FlexLayout.TabSetNode) {
-								if (
-									parent.getSelectedNode()?.getId() ===
-									settingsId
-								) {
-									closePanel(settingsId);
-									return;
-								}
-
-								openPanel(
-									settingsId,
-									WORKBENCH_PANEL_TABS.ENGINE_SETTINGS,
-								);
-								return;
-							}
-
-							closePanel(settingsId);
+						if (existingId && isShowing) {
+							actions.closePanel(existingId);
+							return;
 						}
 
-						openPanel(
-							settingsId,
-							WORKBENCH_PANEL_TABS.ENGINE_SETTINGS,
-						);
+						actions.selectPanel(settingsType);
 					}}
 					className={cn(
-						"border",
-						activePanel === settingsId
-							? "border-input text-primary shadow-xs dark:bg-input/30"
-							: "border-transparent text-muted-foreground",
+						WORKBENCH_STYLES.chromeButton,
+						isShowing
+							? WORKBENCH_STYLES.chromeButtonActive
+							: WORKBENCH_STYLES.chromeButtonInactive,
 					)}
 				>
-					<SettingsIcon />
+					<SettingsIcon className={WORKBENCH_STYLES.chromeIcon} />
 				</Button>
 			</TooltipTrigger>
 			<TooltipContent side="right">Settings</TooltipContent>

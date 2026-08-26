@@ -7,78 +7,58 @@ import {
 } from "./assistant";
 import {
 	createWorkbenchCommandSlice,
+	createWorkbenchControlsSlice,
 	createWorkbenchLayoutSlice,
 	createWorkbenchLoadingSlice,
 	type WorkbenchCommandSliceState,
+	type WorkbenchControlsSliceState,
 	type WorkbenchLayoutSliceState,
 	type WorkbenchLoadingSliceState,
 } from "./slices";
-import type { WorkbenchSlice } from "./workbench.types";
-
-/** State and actions exposed by a scoped workbench store. */
-export interface WorkbenchState
-	extends WorkbenchLayoutSliceState,
-		WorkbenchLoadingSliceState,
-		WorkbenchCommandSliceState,
-		WorkbenchAssistantSliceState,
-		WorkbenchAssistantNotificationSliceState {}
 
 /**
- * Creates an isolated vanilla Zustand store for one workbench ID, optionally merging in one
- * namespaced domain slice (e.g. `{ database: DatabaseWorkbenchSliceState }`) contributed by the
- * engine-specific workbench that owns this instance.
+ * State and actions exposed by a scoped workbench store, one namespace per
+ * domain. Each namespace carries its own fields and its own `actions` object,
+ * created once per store — so selecting one never causes a re-render:
+ * `const actions = useWorkbench((s) => s.layout.actions)`.
+ */
+export interface WorkbenchState {
+	layout: WorkbenchLayoutSliceState;
+	loading: WorkbenchLoadingSliceState;
+	command: WorkbenchCommandSliceState;
+	control: WorkbenchControlsSliceState;
+	assistant: WorkbenchAssistantSliceState;
+	notifications: WorkbenchAssistantNotificationSliceState;
+}
+
+/**
+ * Creates an isolated vanilla Zustand store for one workbench ID. Domain
+ * state (e.g. the database workbench) lives in its own store, attached at
+ * runtime via `layout.actions.attachDomainStore` — it is no longer merged in
+ * here.
  *
  * @name createWorkbenchStore
  * @param id - Unique workbench ID used to isolate the cache.
- * @param createDomainSlice - Optional namespaced domain slice merged into the same store.
- * @return Scoped workbench store composed from layout, loading, command, assistant,
- * assistant-notification, and optional extra slices.
+ * @return Scoped workbench store composed from the layout, loading, command,
+ * control, assistant, and assistant-notification slices.
  */
-export const createWorkbenchStore = <
-	// Record<never, never> is `{}`; Record<string, never> would add an index
-	// signature that collapses Partial<WorkbenchState & TExtra> to never.
-	TExtra extends object = Record<never, never>,
->(
-	id: string,
-	createDomainSlice?: WorkbenchSlice<TExtra, WorkbenchState & TExtra>,
-): StoreApi<WorkbenchState & TExtra> => {
-	const store = createStore<WorkbenchState & TExtra>()((...args) => ({
-		// Base slices only ever read/write WorkbenchState fields, so widening their FullState
-		// param here to WorkbenchState & TExtra is safe even though they aren't generic.
-		...(
-			createWorkbenchLayoutSlice(id) as WorkbenchSlice<
-				WorkbenchLayoutSliceState,
-				WorkbenchState & TExtra
-			>
-		)(...args),
-		...(
-			createWorkbenchLoadingSlice() as WorkbenchSlice<
-				WorkbenchLoadingSliceState,
-				WorkbenchState & TExtra
-			>
-		)(...args),
-		...(
-			createWorkbenchCommandSlice() as WorkbenchSlice<
-				WorkbenchCommandSliceState,
-				WorkbenchState & TExtra
-			>
-		)(...args),
-		...(
-			createWorkbenchAssistantSlice(id) as WorkbenchSlice<
-				WorkbenchAssistantSliceState,
-				WorkbenchState & TExtra
-			>
-		)(...args),
-		// Subscribes to this store, so it is composed after the assistant slice it
-		// watches.
-		...(
-			createWorkbenchAssistantNotificationSlice() as WorkbenchSlice<
-				WorkbenchAssistantNotificationSliceState,
-				WorkbenchState & TExtra
-			>
-		)(...args),
-		...(createDomainSlice ? createDomainSlice(...args) : ({} as TExtra)),
-	}));
+export const createWorkbenchStore = (id: string): StoreApi<WorkbenchState> => {
+	return createStore<WorkbenchState>()((set, get, api) => {
+		// Every slice takes the root set/get, returns its own state flat, and
+		// is mounted under its namespace here.
+		const layout = createWorkbenchLayoutSlice(id)(set, get, api);
+		const loading = createWorkbenchLoadingSlice()(set, get, api);
+		const command = createWorkbenchCommandSlice()(set, get, api);
+		const control = createWorkbenchControlsSlice()(set, get, api);
+		const assistant = createWorkbenchAssistantSlice(id)(set, get, api);
+		// Subscribes to this store, so it is composed after the assistant
+		// slice it watches.
+		const notifications = createWorkbenchAssistantNotificationSlice()(
+			set,
+			get,
+			api,
+		);
 
-	return store;
+		return { layout, loading, command, control, assistant, notifications };
+	});
 };

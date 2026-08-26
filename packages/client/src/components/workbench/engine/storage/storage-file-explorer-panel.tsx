@@ -1,3 +1,4 @@
+import { CloudIcon } from "lucide-react";
 import { useCallback, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import { runPixel, useInsight } from "@semoss/sdk/react";
@@ -6,29 +7,35 @@ import {
 	FileExplorerItem,
 	type FileExplorerMovedItem,
 	type FileItem,
-	FlexLayout,
 	getFileEditorPathScope,
 	notifyFileEditorPathMoved,
 } from "@semoss/shared";
 import { toast } from "@semoss/ui/next";
 import { useEngine, useWorkbench } from "@/hooks";
+import type {
+	WorkbenchPanelConfig,
+	WorkbenchPanelRecord,
+} from "@/stores/workbench";
 import { WORKBENCH_COMPONENTS } from "../../workbench.constants";
+import type { EngineFileEditorConfig } from "../engine-file-editor-panel";
 
-interface StorageFileExplorerPanelProps {
-	/** FlexLayout tab node backing the storage explorer. */
-	node: FlexLayout.TabNode;
-}
+/** Same heterogeneous-record caveat as the engine explorer. */
+type StorageFilePanelConfig = Partial<EngineFileEditorConfig>;
 
-export const StorageFileExplorerPanel: React.FC<
-	StorageFileExplorerPanelProps
-> = ({ node }) => {
+/** The file a panel is open for, if it is a file-backed panel at all. */
+const filePathOf = (record: WorkbenchPanelRecord): string | undefined =>
+	(record.config as StorageFilePanelConfig | undefined)?.path;
+
+/** Panels a path move or delete can affect. */
+const hasFilePath = (record: WorkbenchPanelRecord): boolean =>
+	Boolean(filePathOf(record));
+
+export const StorageFileExplorerPanel: React.FC = () => {
 	const { engine, permission } = useEngine();
 	const readOnly = !(permission === "OWNER" || permission === "EDIT");
 	const insight = useInsight();
 	const [searchParams, setSearchParams] = useSearchParams();
-	const openPanel = useWorkbench((state) => state.openPanel);
-	const closePanel = useWorkbench((state) => state.closePanel);
-	const updatePanel = useWorkbench((state) => state.updatePanel);
+	const layoutActions = useWorkbench((s) => s.layout.actions);
 
 	const getMovedPath = (path: string, movedItem: FileExplorerMovedItem) => {
 		const oldPathWithSlash = movedItem.oldPath.endsWith("/")
@@ -52,19 +59,12 @@ export const StorageFileExplorerPanel: React.FC<
 		return null;
 	};
 
-	const updateTabPath = (tabNode: FlexLayout.TabNode, newPath: string) => {
-		const config = tabNode.getConfig() as
-			| {
-					fileMode?: "ENGINE" | "INSIGHT";
-					insightId?: string;
-					name?: string;
-					path?: string;
-			  }
-			| undefined;
+	const updatePanelPath = (record: WorkbenchPanelRecord, newPath: string) => {
+		const config = (record.config ?? {}) as StorageFilePanelConfig;
 		const newName = newPath.split("/").filter(Boolean).pop() ?? newPath;
-		const oldPath = config?.path;
+		const oldPath = config.path;
 		const scope =
-			config?.fileMode === "INSIGHT"
+			config.fileMode === "INSIGHT"
 				? getFileEditorPathScope(
 						{
 							type: "INSIGHT",
@@ -76,13 +76,11 @@ export const StorageFileExplorerPanel: React.FC<
 						type: "ENGINE",
 						engine: engine.engine_id,
 					});
-		const tabName = tabNode.getName();
-		const displayName = tabName.endsWith("*") ? `${newName}*` : newName;
+		const displayName = record.name.endsWith("*") ? `${newName}*` : newName;
 
-		updatePanel(tabNode.getId(), {
+		layoutActions.updatePanel(record.id, {
 			name: displayName,
 			config: {
-				...config,
 				name: newName,
 				path: newPath,
 			},
@@ -94,20 +92,12 @@ export const StorageFileExplorerPanel: React.FC<
 	};
 
 	const migrateMovedTabs = (movedItems: FileExplorerMovedItem[]) => {
-		const model = node.getModel();
 		let migrated = false;
 
-		model.visitNodes((currentNode) => {
-			if (!(currentNode instanceof FlexLayout.TabNode)) {
-				return;
-			}
-
-			const config = currentNode.getConfig() as
-				| { path?: string }
-				| undefined;
-			const path = config?.path;
+		for (const record of layoutActions.findPanels(hasFilePath)) {
+			const path = filePathOf(record);
 			if (!path) {
-				return;
+				continue;
 			}
 
 			const movedPath = movedItems.reduce<string | null>(
@@ -119,83 +109,62 @@ export const StorageFileExplorerPanel: React.FC<
 			);
 
 			if (movedPath && movedPath !== path) {
-				updateTabPath(currentNode, movedPath);
+				updatePanelPath(record, movedPath);
 				migrated = true;
 			}
-		});
+		}
 
 		return migrated;
 	};
 
 	/**
-	 * Remove tabs that are open for a file that has been deleted. If it's a directory, remove all tabs that are open for files within that directory
-	 * @param deletedPath the path of the deleted file or directory
-	 * @param isDirectory whether the deleted path is a directory
+	 * Close panels that are open for a file that has been deleted. If it's a
+	 * directory, close every panel open for a file within that directory.
+	 *
+	 * @param deletedPath - The path of the deleted file or directory.
+	 * @param isDirectory - Whether the deleted path is a directory.
 	 */
 	const removeDeletedTabs = useCallback(
 		(deletedPath: string, isDirectory: boolean) => {
-			const model = node.getModel();
 			const directoryPath = deletedPath.endsWith("/")
 				? deletedPath
 				: `${deletedPath}/`;
 
-			model.visitNodes((currentNode) => {
-				if (!(currentNode instanceof FlexLayout.TabNode)) {
-					return;
-				}
-
-				const config = currentNode.getConfig() as
-					| { path?: string }
-					| undefined;
-				const tabPath = config?.path;
-				if (!tabPath) {
-					return;
-				}
-
-				if (
-					tabPath === deletedPath ||
-					(isDirectory && tabPath.startsWith(directoryPath))
-				) {
-					closePanel(currentNode.getId());
-				}
+			// the file itself, or anything under the deleted directory
+			const doomed = layoutActions.findPanels((record) => {
+				const recordPath = filePathOf(record);
+				return (
+					recordPath === deletedPath ||
+					Boolean(
+						isDirectory && recordPath?.startsWith(directoryPath),
+					)
+				);
 			});
-		},
-		[node, closePanel],
-	);
 
-	/**
-	 * Add a node to the layout
-	 * @param nodeId
-	 * @param options
-	 * @returns
-	 */
-
-	const addNode = useCallback(
-		(nodeId: string, options: FlexLayout.IJsonTabNode) => {
-			openPanel(nodeId, options);
+			for (const record of doomed) {
+				layoutActions.closePanel(record.id);
+			}
 		},
-		[openPanel],
+		[layoutActions],
 	);
 
 	useEffect(() => {
 		const mcpParam = searchParams.get("mcp");
 		if (mcpParam === "Generate") {
 			const mcpFilePath = "/mcp/pixel_mcp.json";
-			addNode(`${WORKBENCH_COMPONENTS.MCP_EDITOR}--${mcpFilePath}`, {
-				type: "tab",
-				name: `Toolbox Editor - pixel_mcp.json`,
-				component: WORKBENCH_COMPONENTS.MCP_EDITOR,
-				config: {
+			layoutActions.selectPanel(
+				WORKBENCH_COMPONENTS.MCP_EDITOR,
+				{
 					name: "pixel_mcp.json",
 					path: mcpFilePath,
 				},
-				enableClose: true,
-			});
+				{ name: "Toolbox Editor - pixel_mcp.json" },
+			);
 			toast.success("MCP generated");
 			searchParams.delete("mcp");
 			setSearchParams(searchParams);
 		}
-	}, [searchParams, addNode, setSearchParams]);
+	}, [searchParams, layoutActions, setSearchParams]);
 
 	return (
 		<FileExplorer
@@ -222,20 +191,15 @@ export const StorageFileExplorerPanel: React.FC<
 							throw new Error(response.errors[0]);
 						}
 
-						addNode(
-							`STORAGE_FILE--${response.insightId}--${insightFilePath}`,
+						layoutActions.selectPanel(
+							WORKBENCH_COMPONENTS.FILE_EDITOR,
 							{
-								type: "tab",
 								name: item.name,
-								component: WORKBENCH_COMPONENTS.FILE_EDITOR,
-								config: {
-									name: item.name,
-									path: insightFilePath,
-									fileMode: "INSIGHT",
-									insightId: response.insightId,
-								},
-								enableClose: true,
+								path: insightFilePath,
+								fileMode: "INSIGHT",
+								insightId: response.insightId,
 							},
+							{ name: item.name },
 						);
 					})
 					.catch((e) => {
@@ -287,18 +251,13 @@ export const StorageFileExplorerPanel: React.FC<
 							const newName =
 								newPath.split("/").filter(Boolean).pop() ??
 								newPath;
-							addNode(
-								`${WORKBENCH_COMPONENTS.FILE_EDITOR}--${newPath}`,
+							layoutActions.selectPanel(
+								WORKBENCH_COMPONENTS.FILE_EDITOR,
 								{
-									type: "tab",
 									name: newName,
-									component: WORKBENCH_COMPONENTS.FILE_EDITOR,
-									config: {
-										name: newName,
-										path: newPath,
-									},
-									enableClose: true,
+									path: newPath,
 								},
+								{ name: newName },
 							);
 						}}
 						{...otherProps}
@@ -309,4 +268,18 @@ export const StorageFileExplorerPanel: React.FC<
 			}}
 		/>
 	);
+};
+
+/**
+ * Blueprint for the storage-bucket explorer. keepAlive: the expanded tree
+ * and current directory survive tab switches.
+ */
+export const STORAGE_FILE_EXPLORER_PANEL: WorkbenchPanelConfig = {
+	name: "Storage",
+	helpText: "Storage Explorer",
+	icon: ({ className }) => <CloudIcon className={className} />,
+	canClose: false,
+	canRename: false,
+	mount: "keepAlive",
+	content: StorageFileExplorerPanel,
 };

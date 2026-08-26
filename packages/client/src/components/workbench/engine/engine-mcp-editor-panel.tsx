@@ -1,8 +1,12 @@
 import { useState } from "react";
 import { useInsight, usePixel } from "@semoss/sdk/react";
-import type { FlexLayout } from "@semoss/shared";
+import { getFileIconComponent } from "@semoss/shared";
 import { Muted, Spinner, toast } from "@semoss/ui/next";
 import { useEngine } from "@/hooks";
+import type {
+	WorkbenchComponent,
+	WorkbenchPanelConfig,
+} from "@/stores/workbench";
 import {
 	type LoadedMCPFile,
 	type MCPJsonData,
@@ -11,21 +15,18 @@ import {
 	toFileText,
 } from "../../shared";
 
-interface EngineMcpEditorPanelProps {
-	/** Node */
-	node: FlexLayout.TabNode;
+/** The config an MCP-editor instance is opened with. */
+export interface EngineMcpEditorConfig {
+	name: string;
+	path: string;
 }
 
-export const EngineMcpEditorPanel: React.FC<EngineMcpEditorPanelProps> = ({
-	node,
-}) => {
+export const EngineMcpEditorPanel: WorkbenchComponent<
+	EngineMcpEditorConfig
+> = ({ config }) => {
 	const { engine, permission } = useEngine();
 	const readOnly = !(permission === "OWNER" || permission === "EDIT");
 	const insight = useInsight();
-	const config: {
-		name: string;
-		path: string;
-	} = node.getConfig();
 
 	const [loaded, setLoaded] = useState<LoadedMCPFile | null>(null);
 	const [isLoading, setIsLoading] = useState(false);
@@ -117,3 +118,20 @@ export const EngineMcpEditorPanel: React.FC<EngineMcpEditorPanelProps> = ({
 		</div>
 	);
 };
+
+/**
+ * Blueprint for engine MCP-editor instances. Instances dedupe on their file
+ * path; keepAlive preserves in-editor edits across tab switches.
+ */
+export const ENGINE_MCP_EDITOR_PANEL: WorkbenchPanelConfig<EngineMcpEditorConfig> =
+	{
+		name: "Toolbox Editor",
+		canRename: false,
+		mount: "keepAlive",
+		matches: (a, b) => a.path === b.path,
+		icon: ({ config, className }) => {
+			const Icon = getFileIconComponent(config.name);
+			return <Icon className={className} />;
+		},
+		content: EngineMcpEditorPanel,
+	};
