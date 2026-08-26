@@ -1,4 +1,4 @@
-import { Check, Lock, X } from "lucide-react";
+import { Check, MoreVertical } from "lucide-react";
 import { type FC, type ReactNode, useState } from "react";
 import {
 	Button,
@@ -20,6 +20,9 @@ import {
 import { useWorkbench } from "@/hooks";
 import { WORKBENCH_SIDES, type WorkbenchPanelRecord } from "@/stores/workbench";
 import { WORKBENCH_STYLES } from "./workbench.chrome";
+import type { WorkbenchBorderSlot } from "./workbench.types";
+import { resolveBorderSlot } from "./workbench-border";
+import { WorkbenchResetButton } from "./workbench-reset-button";
 
 const sideLabel = (side: string): string =>
 	side.length ? side[0].toUpperCase() + side.slice(1) : side;
@@ -143,15 +146,49 @@ const WorkbenchPanelSheetSingle: FC<{ record: WorkbenchPanelRecord }> = ({
 	);
 };
 
-/** Every open panel by stack, plus closed ones that can be reopened. */
-const WorkbenchPanelSheetAll: FC = () => {
+/**
+ * Every open panel by stack, plus closed ones that can be reopened. On mobile
+ * this doubles as the workbench menu: the rail's action buttons lead, and
+ * tapping a row shows that panel.
+ */
+const WorkbenchPanelSheetAll: FC<{ actionsSlot?: WorkbenchBorderSlot }> = ({
+	actionsSlot,
+}) => {
 	const actions = useWorkbench((s) => s.layout.actions);
 	const stacks = useWorkbench((s) => s.layout.stacks);
 	const closed = useWorkbench((s) => s.layout.closed);
 	const panels = useWorkbench((s) => s.layout.panels);
+	const readOnly = useWorkbench((s) => s.layout.readOnly);
+	const isMobileLayout = useWorkbench((s) => s.layout.isMobileLayout);
+	const mobileActivePanelId = useWorkbench(
+		(s) => s.layout.mobileActivePanelId,
+	);
+
+	// The mobile layout draws no rails, so the left rail's `after` slot and
+	// the reset control surface here instead; desktop keeps them on the rail.
+	const slotContent = isMobileLayout
+		? resolveBorderSlot(actionsSlot, {
+				side: "left",
+				vertical: false,
+				open: false,
+				panelIds: [],
+			})
+		: null;
+	const showActions = isMobileLayout && (slotContent || !readOnly);
 
 	return (
 		<div className="flex flex-col gap-5 p-4">
+			{showActions ? (
+				<div>
+					<Muted className="text-xs uppercase tracking-widest">
+						Actions
+					</Muted>
+					<div className="mt-2 flex items-center justify-center gap-2 [&_button]:size-10 [&_svg]:size-4">
+						{slotContent}
+						{readOnly ? null : <WorkbenchResetButton />}
+					</div>
+				</div>
+			) : null}
 			<div>
 				<Muted className="text-xs uppercase tracking-widest">
 					Open
@@ -163,39 +200,38 @@ const WorkbenchPanelSheetAll: FC = () => {
 								key={pid}
 								className="flex h-12 items-center gap-2"
 							>
-								<span className="flex-1 truncate text-sm">
-									{panels[pid]?.name}
-								</span>
-								<Muted className="text-xs">{stack.label}</Muted>
-								{actions.canClose(pid) ? (
-									<Button
-										variant="ghost"
-										size="icon-sm"
-										className="text-muted-foreground"
-										onClick={() => actions.closePanel(pid)}
-										aria-label={`Close ${panels[pid]?.name ?? pid}`}
-									>
-										<X
-											className={
-												WORKBENCH_STYLES.chromeIcon
-											}
-										/>
-									</Button>
-								) : (
-									<span
-										aria-hidden
-										className={cn(
-											"flex items-center justify-center text-muted-foreground/60",
-											WORKBENCH_STYLES.chromeButton,
-										)}
-									>
-										<Lock
-											className={
-												WORKBENCH_STYLES.chromeIcon
-											}
-										/>
+								<button
+									type="button"
+									className={cn(
+										"flex h-full min-w-0 flex-1 items-center gap-2 text-left text-sm",
+										pid === mobileActivePanelId
+											? "font-medium text-foreground"
+											: "text-foreground/80",
+									)}
+									onClick={() => {
+										actions.activatePanel(
+											{ kind: stack.kind, id: stack.id },
+											pid,
+										);
+										actions.closeSheet();
+									}}
+								>
+									<span className="min-w-0 truncate">
+										{panels[pid]?.name}
 									</span>
-								)}
+								</button>
+								<Muted className="text-xs">{stack.label}</Muted>
+								<Button
+									variant="ghost"
+									size="icon-sm"
+									className="text-muted-foreground"
+									onClick={() => actions.openSheet(pid)}
+									aria-label={`Options for ${panels[pid]?.name ?? pid}`}
+								>
+									<MoreVertical
+										className={WORKBENCH_STYLES.chromeIcon}
+									/>
+								</Button>
 							</li>
 						)),
 					)}
@@ -232,11 +268,22 @@ const WorkbenchPanelSheetAll: FC = () => {
 	);
 };
 
+export interface WorkbenchPanelSheetProps {
+	/**
+	 * The left rail's `after` slot. The mobile drawer's "all" view surfaces it
+	 * as an actions row, since the mobile layout draws no rails.
+	 */
+	actionsSlot?: WorkbenchBorderSlot;
+}
+
 /**
  * The panel manager: a right sheet on desktop, a bottom drawer on mobile.
- * Shows either one panel's controls or the full open/closed listing.
+ * Shows either one panel's controls or the full open/closed listing — on
+ * mobile the latter leads with the workbench actions.
  */
-export const WorkbenchPanelSheet: FC = () => {
+export const WorkbenchPanelSheet: FC<WorkbenchPanelSheetProps> = ({
+	actionsSlot,
+}) => {
 	const actions = useWorkbench((s) => s.layout.actions);
 	const sheet = useWorkbench((s) => s.layout.sheet);
 	const isMobileLayout = useWorkbench((s) => s.layout.isMobileLayout);
@@ -254,11 +301,13 @@ export const WorkbenchPanelSheet: FC = () => {
 	const title = single ? single.name : "Panels";
 	const description = single
 		? "Rename, move, or close this panel."
-		: "Every panel in this workbench.";
+		: isMobileLayout
+			? "Actions and every panel in this workbench."
+			: "Every panel in this workbench.";
 	const body: ReactNode = single ? (
 		<WorkbenchPanelSheetSingle key={single.id} record={single} />
 	) : (
-		<WorkbenchPanelSheetAll />
+		<WorkbenchPanelSheetAll actionsSlot={actionsSlot} />
 	);
 
 	const onOpenChange = (open: boolean) => {
@@ -270,12 +319,17 @@ export const WorkbenchPanelSheet: FC = () => {
 	if (isMobileLayout) {
 		return (
 			<Drawer open onOpenChange={onOpenChange}>
-				<DrawerContent data-testid="workbench-panel-sheet">
+				<DrawerContent
+					data-testid="workbench-panel-sheet"
+					className="pb-[env(safe-area-inset-bottom)]"
+				>
 					<DrawerHeader>
 						<DrawerTitle>{title}</DrawerTitle>
 						<DrawerDescription>{description}</DrawerDescription>
 					</DrawerHeader>
-					<ScrollArea className="max-h-[60vh]">{body}</ScrollArea>
+					<ScrollArea className="max-h-[60vh] min-h-0">
+						{body}
+					</ScrollArea>
 				</DrawerContent>
 			</Drawer>
 		);

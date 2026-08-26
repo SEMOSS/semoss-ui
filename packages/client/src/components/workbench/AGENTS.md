@@ -169,10 +169,10 @@ through the shell's `onPanelClose(pid, record)` prop.
 
 | File/folder | Role |
 |---|---|
-| `core/` | The dock core: shell (`workbench.tsx`), stage/tabset/tab/strip/border, panel layer + hosts (never-unmount bodies), drag layer + drop geometry, resizers, context menu, panel sheet, mobile shell, events bridge, command palette + menu button, mobile actions + reset button |
+| `core/` | The dock core: shell (`workbench.tsx`), stage/tabset/tab/strip/border, panel layer + hosts (never-unmount bodies), drag layer + drop geometry, resizers, context menu, panel sheet/drawer, mobile shell, events bridge, command palette + menu button, reset button |
 | `workbench.constants.ts` | Re-exports `WORKBENCH_COMPONENTS`; defines `WORKBENCH_PANEL_RECORDS` (shared instance records) |
 | `core/workbench-command-palette.tsx` | Cmd/Ctrl+Shift+P or F1 palette: registered commands + layout-derived entries (built only while open), icon-less `Category: Label` rows in a deterministic alphabetical order |
-| `core/workbench-mobile-actions.tsx` / `core/workbench-reset-button.tsx` | On desktop the reset control rides at the end of the left rail, appended to `borderSlots.left.after`; the mobile layout has no rails, so it floats that same content bottom-left. Reset restores the default layout (hidden when `readOnly`) |
+| `core/workbench-panel-sheet.tsx` / `core/workbench-reset-button.tsx` | On desktop the reset control rides at the end of the left rail, appended to `borderSlots.left.after`, and the panel sheet is a right-side panel manager. The mobile layout has no rails: the pager bar's ☰ opens the sheet as a bottom drawer that leads with that same slot content + reset as an actions row, followed by every open panel as a tappable row. Reset restores the default layout (hidden when `readOnly`) |
 | `engine/`, `engine/<domain>/` | Engine-scoped panels + one `<Domain>Workbench` per engine type |
 | `project/`, `project/<domain>/` | Project-scoped (`APP` mode) equivalents; sibling of `engine/`, **not** inside it |
 | `stores/workbench/workbench.types.ts` | Every workbench type: the dock domain (`WorkbenchLayout`, `WorkbenchPanelConfig`, `WorkbenchPanelProps`, `WorkbenchComponent`, …) plus `WorkbenchCommand` and `WorkbenchSlice`. One file — don't start a second |

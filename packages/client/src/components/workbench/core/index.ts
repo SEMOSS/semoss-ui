@@ -9,7 +9,6 @@ export * from "./workbench-context-menu";
 export * from "./workbench-drag-layer";
 export * from "./workbench-drop.ops";
 export * from "./workbench-mobile";
-export * from "./workbench-mobile-actions";
 export * from "./workbench-panel-body";
 export * from "./workbench-panel-error-boundary";
 export * from "./workbench-panel-header";

@@ -42,6 +42,12 @@ export const WORKBENCH_STYLES = {
 	/** The glyph in a `chromeButtonSm`. */
 	chromeIconSm: "size-3",
 
+	/** A mobile tab: touch target with a floor for short labels. */
+	mobileTab: "h-8 min-w-16",
+
+	/** The glyph in a mobile-scale control (pager chevrons, drawer trigger). */
+	mobileIcon: "size-4",
+
 	/**
 	 * The `border-radius` shorthand a slot hands its panel body, naming only
 	 * the corners where the slot actually meets its card's rounded edge.

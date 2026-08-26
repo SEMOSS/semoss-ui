@@ -1,19 +1,20 @@
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, Menu } from "lucide-react";
 import {
 	type FC,
-	Fragment,
 	type PointerEvent,
 	useCallback,
+	useEffect,
 	useRef,
 } from "react";
-import { Button, cn, Separator } from "@semoss/ui/next";
+import { Button, cn } from "@semoss/ui/next";
 import { useWorkbench } from "@/hooks";
 import { WORKBENCH_STYLES } from "./workbench.chrome";
 import { WorkbenchTab } from "./workbench-tab";
 
 /**
  * The mobile shell: every stack's tabs in one scrollable strip, a single
- * body slot, swipe navigation, and a pager footer.
+ * body slot, swipe navigation, and a pager footer with the panel drawer
+ * trigger.
  */
 export const WorkbenchMobile: FC = () => {
 	const actions = useWorkbench((s) => s.layout.actions);
@@ -36,6 +37,17 @@ export const WorkbenchMobile: FC = () => {
 		? openPanelIds.indexOf(mobileActivePanelId)
 		: -1;
 
+	// keep the active tab in view when swipe or the pager changes it
+	const stripRef = useRef<HTMLDivElement | null>(null);
+	useEffect(() => {
+		if (!mobileActivePanelId) {
+			return;
+		}
+		stripRef.current
+			?.querySelector<HTMLElement>(`[data-tab="${mobileActivePanelId}"]`)
+			?.scrollIntoView?.({ block: "nearest", inline: "nearest" });
+	}, [mobileActivePanelId]);
+
 	const onSwipeEnd = (e: PointerEvent<HTMLDivElement>) => {
 		const start = swipe.current;
 		swipe.current = null;
@@ -55,26 +67,23 @@ export const WorkbenchMobile: FC = () => {
 	return (
 		<div className="flex h-full min-h-0 flex-col p-2">
 			<div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-lg border border-border bg-card">
-				<div className="flex flex-none items-stretch gap-1 overflow-x-auto bg-card px-1.5 pt-1.5 pb-1">
-					{stacks.map((stack, index) => (
-						<Fragment key={stack.key}>
-							{index > 0 && (
-								<Separator
-									orientation="vertical"
-									className="my-1.5 h-auto flex-none self-stretch"
-								/>
-							)}
-							{stack.panelIds.map((pid) => (
-								<WorkbenchTab
-									key={pid}
-									pid={pid}
-									stack={stack}
-									active={mobileActivePanelId === pid}
-									compact
-								/>
-							))}
-						</Fragment>
-					))}
+				<div
+					ref={stripRef}
+					role="tablist"
+					data-tabstrip
+					className="flex flex-none items-center gap-1 overflow-x-auto border-border border-b bg-card px-1.5 py-1.5"
+				>
+					{stacks.flatMap((stack) =>
+						stack.panelIds.map((pid) => (
+							<WorkbenchTab
+								key={pid}
+								pid={pid}
+								stack={stack}
+								active={mobileActivePanelId === pid}
+								compact
+							/>
+						)),
+					)}
 				</div>
 				<div
 					ref={bodyRef}
@@ -109,11 +118,23 @@ export const WorkbenchMobile: FC = () => {
 					data-testid="workbench-mobile-prev"
 					aria-label="Previous panel"
 				>
-					<ChevronLeft className={WORKBENCH_STYLES.chromeIcon} />
+					<ChevronLeft className={WORKBENCH_STYLES.mobileIcon} />
 				</Button>
-				<span className="text-muted-foreground text-xs">
-					{activeIndex + 1} / {openPanelIds.length} · swipe to move
-				</span>
+				<div className="flex items-center gap-1">
+					<span className="text-muted-foreground text-xs">
+						{activeIndex + 1} / {openPanelIds.length}
+					</span>
+					<Button
+						variant="ghost"
+						size="icon"
+						className="text-muted-foreground"
+						onClick={() => actions.openSheet("all")}
+						data-testid="workbench-mobile-menu"
+						aria-label="Panels and actions"
+					>
+						<Menu className={WORKBENCH_STYLES.mobileIcon} />
+					</Button>
+				</div>
 				<Button
 					variant="ghost"
 					size="icon"
@@ -134,7 +155,7 @@ export const WorkbenchMobile: FC = () => {
 					data-testid="workbench-mobile-next"
 					aria-label="Next panel"
 				>
-					<ChevronRight className={WORKBENCH_STYLES.chromeIcon} />
+					<ChevronRight className={WORKBENCH_STYLES.mobileIcon} />
 				</Button>
 			</div>
 		</div>
