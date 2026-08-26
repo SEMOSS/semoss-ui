@@ -38,7 +38,7 @@ export function TriggerNode({ data, id }: NodeProps) {
 			</div>
 
 			{/* Label below diamond */}
-			<p className="mt-2 max-w-[120px] text-center font-medium text-foreground text-xs leading-tight">
+			<p className="mt-3 mb-3 max-w-[120px] text-center font-medium text-foreground text-xs leading-tight">
 				{d.label || "Start"}
 			</p>
 			{d.description && (
