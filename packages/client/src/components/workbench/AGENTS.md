@@ -23,8 +23,10 @@ measured slots, so moving a tab never unmounts its body.
 **BLOCKS is the last project type still on the legacy `components/workspace/` shell**
 (`WorkspaceManager` + MobX `WorkspaceStore`). Until it migrates, don't delete
 `components/workspace/`, `stores/workspace/`, or `components/app-workspace/` — the latter also
-backs the standalone `/app/:appId/files` route. `admin-query-workspace.tsx` also keeps its own
-FlexLayout usage and imports `WORKBENCH_COMPONENTS` ids — those ids are a frozen contract.
+backs the standalone `/app/:appId/files` route. The settings admin query page mounts
+`AdminQueryWorkbench` (`engine/database/admin-query-workbench.tsx`) — the database workbench
+panels over a synthetic `EngineContext`, initialized in `ADMIN_SQL` mode so structure and
+queries run the admin-permission pixels.
 
 ## One context, one hook, one namespace per domain
 
@@ -218,5 +220,7 @@ through the shell's `onPanelClose(pid, record)` prop.
 - **The database close cascade** (`onPanelClose` → `handlePanelClosed`): closing a query panel
   closes its paired results panel and prunes store state. Re-read before changing panel
   close/select behavior.
-- `database-script-templates.ts` and `database-upload-file.tsx` are deep-imported by
-  `components/settings/admin/database/*` — their paths and named exports are frozen.
+- **`DatabaseWorkbenchMode` is three-valued** (`SQL | SPARQL | ADMIN_SQL`): `ADMIN_SQL` is
+  always SQL-language but runs the admin-permission pixels and has no category fetch or CSV
+  export. Gate query-language behavior on `mode !== "SPARQL"`, never `mode === "SQL"`, or the
+  admin query page silently loses it.

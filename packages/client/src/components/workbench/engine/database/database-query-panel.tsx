@@ -130,7 +130,7 @@ export const DatabaseQueryPanel: WorkbenchComponent<DatabaseQueryConfig> = ({
 		});
 
 		const baseSuggestions =
-			mode === "SQL"
+			mode !== "SPARQL"
 				? [
 						...SQL_KEYWORDS.map((keyword) => ({
 							label: keyword,
@@ -265,7 +265,7 @@ export const DatabaseQueryPanel: WorkbenchComponent<DatabaseQueryConfig> = ({
 						language={mode === "SPARQL" ? "sparql" : "sql"}
 						theme={editorTheme}
 						options={{
-							fixedOverflowWidgets: mode === "SQL",
+							fixedOverflowWidgets: mode !== "SPARQL",
 							scrollbar: {
 								horizontal: "hidden",
 								horizontalScrollbarSize: 0,

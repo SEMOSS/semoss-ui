@@ -5,8 +5,14 @@ import { WORKBENCH_COMPONENTS } from "../workbench.constants";
 import type { WorkbenchState } from "../workbench.store";
 import type { WorkbenchPanelRecord } from "../workbench.types";
 
-/** Query language handled by the database workbench. */
-export type DatabaseWorkbenchMode = "SQL" | "SPARQL";
+/**
+ * Query mode handled by the database workbench. SQL/SPARQL are derived from
+ * the engine's category; ADMIN_SQL is pinned by the admin query page and runs
+ * the admin-permission pixels against a system database — its queries are
+ * always SQL, so anything branching on the language should treat every
+ * non-SPARQL mode as SQL.
+ */
+export type DatabaseWorkbenchMode = "SQL" | "SPARQL" | "ADMIN_SQL";
 
 /** One table (SQL) or graph/concept (SPARQL) and its columns from GetDatabaseTableStructure. */
 export interface DatabaseTableStructure {
@@ -62,8 +68,16 @@ export interface DatabaseWorkbenchState {
 	/** Engine currently loaded by this workbench instance. */
 	engineId: string;
 
-	/** Resets the store for an engine and loads its category and structure. */
-	initialize: (engineId: string) => Promise<void>;
+	/**
+	 * Resets the store for an engine and loads its structure. Without a mode
+	 * the query language is derived from the engine's category; passing
+	 * ADMIN_SQL pins the mode and skips the category fetch (system databases
+	 * reject the engine category pixel).
+	 */
+	initialize: (
+		engineId: string,
+		mode?: DatabaseWorkbenchMode,
+	) => Promise<void>;
 
 	mode: DatabaseWorkbenchMode;
 
@@ -140,6 +154,46 @@ const parseDatabaseStructure = (rows: unknown): DatabaseTableStructure[] => {
 };
 
 /**
+ * Transforms AdminGetSystemDatabaseSchema rows { table, column, dataType }
+ * into a list of tables with their columns.
+ */
+const parseAdminSchemaRows = (rows: unknown): DatabaseTableStructure[] => {
+	if (!Array.isArray(rows)) {
+		return [];
+	}
+
+	const tableMap = new Map<string, ColumnInterface[]>();
+
+	for (const row of rows) {
+		if (!row || typeof row !== "object") {
+			continue;
+		}
+
+		const typedRow = row as {
+			table?: string;
+			column?: string;
+			dataType?: string;
+		};
+		const tableName = String(typedRow.table ?? "").trim();
+		const columnName = String(typedRow.column ?? "").trim();
+		const columnType = String(typedRow.dataType ?? "").trim() || "UNKNOWN";
+
+		if (!tableName || !columnName) {
+			continue;
+		}
+
+		const columns = tableMap.get(tableName) ?? [];
+		columns.push({ column: columnName, type: columnType });
+		tableMap.set(tableName, columns);
+	}
+
+	return Array.from(tableMap.entries()).map(([table, columns]) => ({
+		table,
+		columns,
+	}));
+};
+
+/**
  * The database store a `DatabaseWorkbench` attached, for paths that can't use
  * `useDatabaseWorkbench` — a blueprint's `commands` / `menuItems` factory runs
  * outside React. This cast and the hook's are the only two points where the
@@ -178,10 +232,10 @@ export const createDatabaseWorkbenchStore = (
 ): StoreApi<DatabaseWorkbenchState> => {
 	return createStore<DatabaseWorkbenchState>()((set, get) => ({
 		engineId: "",
-		initialize: async (engineId) => {
+		initialize: async (engineId, mode = "SQL") => {
 			set((state) => ({
 				engineId,
-				mode: "SQL",
+				mode,
 				structure: {
 					...state.structure,
 					status: "IDLE",
@@ -198,10 +252,14 @@ export const createDatabaseWorkbenchStore = (
 				runningPanels: {},
 			}));
 
-			await Promise.all([
-				get().category.refresh(),
-				get().structure.refresh(),
-			]);
+			// ADMIN_SQL is pinned, so the category (whose only job is
+			// deriving SQL vs SPARQL) is irrelevant — and system databases
+			// reject the engine category pixel anyway
+			await Promise.all(
+				mode === "ADMIN_SQL"
+					? [get().structure.refresh()]
+					: [get().category.refresh(), get().structure.refresh()],
+			);
 		},
 		mode: "SQL",
 
@@ -223,9 +281,13 @@ export const createDatabaseWorkbenchStore = (
 					},
 				}));
 
+				const isAdmin = get().mode === "ADMIN_SQL";
+
 				try {
 					const response = await runPixel(
-						`META|GetDatabaseTableStructure(database=["${engineId}"]);`,
+						isAdmin
+							? `AdminGetSystemDatabaseSchema(database=["${engineId}"]);`
+							: `META|GetDatabaseTableStructure(database=["${engineId}"]);`,
 					);
 
 					if (response.errors.length > 0) {
@@ -243,9 +305,11 @@ export const createDatabaseWorkbenchStore = (
 						return;
 					}
 
-					const data = parseDatabaseStructure(
-						response.pixelReturn[0]?.output,
-					);
+					const data = isAdmin
+						? parseAdminSchemaRows(response.pixelReturn[0]?.output)
+						: parseDatabaseStructure(
+								response.pixelReturn[0]?.output,
+							);
 					if (get().engineId !== engineId) {
 						return;
 					}
@@ -416,10 +480,14 @@ export const createDatabaseWorkbenchStore = (
 
 			try {
 				const mode = get().mode;
-				const pixel =
-					mode === "SPARQL"
-						? `SparqlQuery(database=["${engineId}"], query=["<encode>${q}</encode>"], raw=[${raw}], commit=[true]);`
-						: `SqlQuery(database=["${engineId}"], query=["<encode>${q}</encode>"], commit=[true]);`;
+				let pixel: string;
+				if (mode === "ADMIN_SQL") {
+					pixel = `AdminSqlQuery(database=["${engineId}"], query=["<encode>${q}</encode>"], commit=[true]);`;
+				} else if (mode === "SPARQL") {
+					pixel = `SparqlQuery(database=["${engineId}"], query=["<encode>${q}</encode>"], raw=[${raw}], commit=[true]);`;
+				} else {
+					pixel = `SqlQuery(database=["${engineId}"], query=["<encode>${q}</encode>"], commit=[true]);`;
+				}
 
 				const response = await runPixel(pixel);
 				if (get().engineId !== engineId) {

@@ -1,5 +1,5 @@
-/** Query language handled by the workspace */
-export type DatabaseType = "SQL" | "SPARQL";
+/** Query mode handled by the workbench; ADMIN_SQL templates as SQL */
+export type DatabaseType = "SQL" | "SPARQL" | "ADMIN_SQL";
 
 export type DatabaseTableAction = {
 	/** Label of the action */

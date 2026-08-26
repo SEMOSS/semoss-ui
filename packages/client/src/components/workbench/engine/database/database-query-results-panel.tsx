@@ -47,12 +47,16 @@ export const DatabaseQueryResultsPanel: WorkbenchComponent<
 		(state) => state.runningPanels[sourcePanel] ?? false,
 	);
 
+	// ADMIN_SQL has no export — `AdminSqlQuery | ToCsv` is unverified backend
+	// behavior, and the legacy admin tool never offered it
+	const canExport = mode !== "ADMIN_SQL";
+
 	const [isExporting, setIsExporting] = useState(false);
 	/**
 	 * Handle export to CSV click
 	 */
 	const handleExportToCsvClick = async () => {
-		if (result?.type !== "TABLE") {
+		if (result?.type !== "TABLE" || !canExport) {
 			return;
 		}
 
@@ -161,7 +165,7 @@ export const DatabaseQueryResultsPanel: WorkbenchComponent<
 				className="flex w-full items-center"
 				data-testid="query-results-footer"
 			>
-				{result && result.type === "TABLE" && (
+				{result && result.type === "TABLE" && canExport && (
 					<Tooltip>
 						<TooltipTrigger asChild>
 							<Button

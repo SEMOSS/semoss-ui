@@ -359,7 +359,7 @@ export const DatabaseColumnsPanel: React.FC = () => {
 													<ContextMenuContent
 														data-testid={`database-columns--table-menu-${table.table}`}
 													>
-														{mode === "SQL" &&
+														{mode !== "SPARQL" &&
 															!readOnly && (
 																<>
 																	<ContextMenuItem
