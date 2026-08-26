@@ -12,7 +12,7 @@ import type { ReactNode } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useTranslation } from "@semoss/i18n";
-import { InsightProvider, usePixel } from "@semoss/sdk/react";
+import { InsightProvider, runPixel, usePixel } from "@semoss/sdk/react";
 import {
 	Button,
 	cn,
@@ -140,6 +140,47 @@ export const NewRoomPage = observer(() => {
 	}, [root.theme.banner]);
 
 	const [isLoading, setIsLoading] = useState(false);
+
+	/** Engine IDs whose monthly token quota is at or over the limit */
+	const [quotaExhaustedIds, setQuotaExhaustedIds] = useState<string[]>([]);
+	// On mount, check each model's monthly quota and grey out exhausted ones.
+	useEffect(() => {
+		let cancelled = false;
+		async function checkQuotas() {
+			try {
+				const { pixelReturn } = await runPixel<
+					[{ app_id: string; engine_id: string }[]]
+				>(
+					`META | MyEngines(metaKeys=[], metaFilters=[{"tag":"text-generation"}], engineTypes=["MODEL"]);`,
+				);
+				const engines = pixelReturn[0].output ?? [];
+				if (cancelled) return;
+
+				const exhausted: string[] = [];
+				await Promise.allSettled(
+					engines.map(async (engine) => {
+						const engineId = engine.app_id || engine.engine_id;
+						if (!engineId) return;
+						const { errors } = await runPixel(
+							`GetUserModelUsageRestrictions(engine=["${engineId}"]);`,
+						);
+						if (errors.length > 0) {
+							exhausted.push(engineId);
+						}
+					}),
+				);
+
+				if (!cancelled) setQuotaExhaustedIds(exhausted);
+			} catch {
+				// ignore
+			}
+		}
+		checkQuotas();
+		return () => {
+			cancelled = true;
+		};
+	}, []);
+
 	const [isConfigurationOpen, setIsConfgurationOpen] = useState(false);
 	const [preCreatedRoom, setPreCreatedRoom] = useState<RoomStore | null>(
 		null,
@@ -536,6 +577,7 @@ export const NewRoomPage = observer(() => {
 									isLoading={isLoading}
 									initialValue={initialPrompt}
 									model={chat.models.selected}
+									disabledModelIds={quotaExhaustedIds}
 									room={tempRoomStore}
 									setModel={(m) => {
 										chat.setSelectedModel(m);

@@ -15,6 +15,10 @@ import {
 	PopoverContent,
 	PopoverTrigger,
 	Spinner,
+	Tooltip,
+	TooltipContent,
+	TooltipProvider,
+	TooltipTrigger,
 	useDebouncedValue,
 	useInfiniteScroll,
 } from "@semoss/ui/next";
@@ -55,6 +59,11 @@ interface EngineSelectProps {
 
 	/** Show the engine subtype icon next to each option. Defaults to true. */
 	showEngineIcon?: boolean;
+
+	/**
+	 * Engine IDs that should be greyed out and unselectable (e.g. monthly token quota exceeded).
+	 */
+	disabledEngineIds?: string[];
 }
 
 // ============================================================================
@@ -82,6 +91,7 @@ export const EngineSelect = ({
 	popoverContentProps = {},
 	showEngineId,
 	showEngineIcon = true,
+	disabledEngineIds = [],
 }: EngineSelectProps) => {
 	// ========================================================================
 	// State & Hooks
@@ -236,19 +246,26 @@ export const EngineSelect = ({
 								const displayName =
 									engine.engine_display_name ||
 									engine.engine_name;
-								const engineId = engine.engine_id;
+								const engineId =
+									engine.app_id || engine.engine_id;
 
-								return (
+								const isExhausted =
+									disabledEngineIds.includes(engineId);
+
+								const item = (
 									<CommandItem
 										key={engineId}
 										value={engineId}
 										onSelect={() => {
+											if (isExhausted) return;
 											onChange(engine);
 											setOpen(false);
 										}}
 										className={cn(
 											value === engineId &&
 												"bg-primary/10 data-[selected=true]:bg-primary/15",
+											isExhausted &&
+												"cursor-not-allowed opacity-50 aria-selected:bg-transparent",
 										)}
 									>
 										{showEngineIcon && (
@@ -293,6 +310,36 @@ export const EngineSelect = ({
 											/>
 										)}
 									</CommandItem>
+								);
+
+								if (!isExhausted) return item;
+
+								return (
+									<TooltipProvider key={engineId}>
+										<Tooltip>
+											<TooltipTrigger asChild>
+												<div
+													onClickCapture={(e) =>
+														e.stopPropagation()
+													}
+													onPointerDownCapture={(e) =>
+														e.stopPropagation()
+													}
+													className="cursor-not-allowed"
+												>
+													<div className="pointer-events-none">
+														{item}
+													</div>
+												</div>
+											</TooltipTrigger>
+											<TooltipContent
+												side="left"
+												className="max-w-48 text-xs"
+											>
+												Token limit reached
+											</TooltipContent>
+										</Tooltip>
+									</TooltipProvider>
 								);
 							})}
 							{/* Loading spinner shown at bottom while fetching next page */}
