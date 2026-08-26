@@ -3,6 +3,8 @@ import AWS_POLLY from "@/assets/img/AWS_POLLY.png";
 import AWS_TEXTRACT from "@/assets/img/AWS_TEXTRACT.png";
 import AWS_TRANSCRIBE from "@/assets/img/AWS_TRANSCRIBE.png";
 import AZURE_SPEECH_TO_TEXT from "@/assets/img/AZURE_SPEECH_TO_TEXT.png";
+import BING_SEARCH from "@/assets/img/BING_SEARCH.svg";
+import BRAVE_SEARCH from "@/assets/img/BRAVE_SEARCH.svg";
 import GOOGLE_OCR from "@/assets/img/GOOGLE_OCR.png";
 import GOOGLE_SPEECH_TO_TEXT from "@/assets/img/GOOGLE_SPEECH_TO_TEXT.png";
 import PYTHON from "@/assets/img/PYTHON.svg";
@@ -423,6 +425,475 @@ export const FUNCTION_CONNECTIONS = {
 					type: "text",
 					disabled: false,
 					required: true,
+					category: "Settings",
+				},
+			],
+		},
+		{
+			name: "Brave Web Search",
+			disable: false,
+			icon: BRAVE_SEARCH,
+			description:
+				"Search the public web and get back ranked results as title, url, and snippet. Gives a model web search it does not have on its own.",
+			link: "https://api-dashboard.search.brave.com/app/documentation/web-search/get-started",
+			fields: [
+				{
+					key: "FUNCTION_TYPE",
+					label: "Function Type",
+					value: "BRAVE_SEARCH",
+					type: "text",
+					disabled: true,
+					required: true,
+					category: "General",
+				},
+				{
+					key: "NAME",
+					label: "Catalog Name",
+					value: "",
+					type: "text",
+					disabled: false,
+					required: true,
+					rules: {
+						pattern: {
+							value: /^[\w\-\s]+$/,
+							message:
+								"Catalog names can only contain alphanumeric characters and dashes.",
+						},
+						custom: {
+							value: 'CheckEngineName ( "[VALUE]") ;',
+							message:
+								"This Catalog name has already been used, please try another.",
+						},
+					},
+					category: "General",
+				},
+				{
+					key: "API_KEY",
+					label: "Subscription Token",
+					value: "",
+					type: "password",
+					disabled: false,
+					required: true,
+					helperText:
+						"The token for the Brave Search API plan, sent as the X-Subscription-Token header.",
+					category: "Credentials",
+				},
+				{
+					key: "ENDPOINT",
+					label: "Search Endpoint",
+					value: "https://api.search.brave.com/res/v1/web/search",
+					type: "text",
+					disabled: false,
+					required: false,
+					helperText:
+						"Change this only when routing through a proxy that mirrors the Brave web search route.",
+					category: "Credentials",
+				},
+				{
+					key: "COUNT",
+					label: "Default Result Count",
+					value: "5",
+					type: "number",
+					disabled: false,
+					required: false,
+					helperText:
+						"Results returned when the caller does not ask for a specific number. A single search is capped at 20.",
+					category: "Settings",
+				},
+				{
+					key: "COUNTRY",
+					label: "Country",
+					value: "",
+					type: "text",
+					disabled: false,
+					required: false,
+					helperText:
+						"Two letter country code to search from, ie US. Leave blank for no country preference.",
+					category: "Settings",
+				},
+				{
+					key: "SEARCH_LANGUAGE",
+					label: "Search Language",
+					value: "",
+					type: "text",
+					disabled: false,
+					required: false,
+					helperText:
+						"Two letter language code the results should be written in, ie en. Leave blank for any language.",
+					category: "Settings",
+				},
+				{
+					key: "UI_LANGUAGE",
+					label: "Response Metadata Language",
+					value: "",
+					type: "text",
+					disabled: false,
+					required: false,
+					helperText:
+						"Language for labels in the response itself, ie en-US. Rarely needs setting.",
+					category: "Settings",
+				},
+				{
+					key: "SAFE_SEARCH",
+					label: "Safe Search",
+					value: "moderate",
+					type: "select",
+					options: [
+						{
+							display: "off",
+							value: "off",
+						},
+						{
+							display: "moderate",
+							value: "moderate",
+						},
+						{
+							display: "strict",
+							value: "strict",
+						},
+					],
+					disabled: false,
+					required: false,
+					helperText:
+						"How aggressively adult content is filtered out of the results.",
+					category: "Settings",
+				},
+				{
+					key: "FRESHNESS",
+					label: "Default Freshness",
+					value: "",
+					type: "text",
+					disabled: false,
+					required: false,
+					helperText:
+						"Restricts every search to recent results. Use pd for the last day, pw week, pm month, py year, or a YYYY-MM-DDtoYYYY-MM-DD range. Leave blank for no restriction.",
+					category: "Settings",
+				},
+				{
+					key: "EXTRA_SNIPPETS",
+					label: "Extra Snippets",
+					value: "false",
+					type: "select",
+					options: [
+						{
+							display: "false",
+							value: "false",
+						},
+						{
+							display: "true",
+							value: "true",
+						},
+					],
+					disabled: false,
+					required: false,
+					helperText:
+						"Return up to five additional excerpts per result. More grounding per source, at the cost of more tokens. Requires a plan that includes it.",
+					category: "Settings",
+				},
+				{
+					key: "SNIPPET_LENGTH",
+					label: "Snippet Character Limit",
+					value: "",
+					type: "number",
+					disabled: false,
+					required: false,
+					helperText:
+						"Trims each result snippet to this many characters so a wide search cannot fill up a model's context. Leave blank to return the full snippet.",
+					category: "Settings",
+				},
+				{
+					key: "FUNCTION_NAME",
+					label: "Function Name (metadata)",
+					value: "",
+					type: "text",
+					disabled: false,
+					required: true,
+					helperText:
+						"Becomes the MCP tool name, so name it for what it does, ie web_search.",
+					category: "Settings",
+				},
+				{
+					key: "FUNCTION_DESCRIPTION",
+					label: "Function Description (metadata)",
+					value: "",
+					type: "text",
+					disabled: false,
+					required: false,
+					helperText:
+						"Leave blank to use the built in description of what a web search returns.",
+					category: "Settings",
+				},
+				{
+					key: "FUNCTION_PARAMETERS",
+					label: "Function Parameters (metadata)",
+					value: [],
+					type: "parameter-list",
+					disabled: false,
+					required: false,
+					helperText:
+						"Leave empty to use the built in search parameters: query, limit, page, country, freshness, and safeSearch.",
+					category: "Settings",
+				},
+				{
+					key: "FUNCTION_REQUIRED_PARAMETERS",
+					label: "Function Required Parameters (metadata)",
+					value: [],
+					type: "string-list",
+					disabled: false,
+					required: false,
+					helperText:
+						"List the names of parameters above that must be provided when calling this function.",
+					category: "Settings",
+				},
+			],
+		},
+		{
+			name: "Bing Web Search (Foundry)",
+			disable: false,
+			icon: BING_SEARCH,
+			description:
+				"Ground answers in the public web through the Foundry web_search tool. Returns a written answer with citations rather than a result list.",
+			link: "https://learn.microsoft.com/en-us/azure/foundry-classic/agents/how-to/tools-classic/bing-grounding?view=azure-python-preview&tabs=python&pivots=overview",
+			notice: "This calls a model deployment that reads the web for you, so a search costs a model call plus a grounding tool call and returns prose with citations. For raw title/url/snippet results, use Brave Web Search instead.",
+			fields: [
+				{
+					key: "FUNCTION_TYPE",
+					label: "Function Type",
+					value: "BING_SEARCH",
+					type: "text",
+					disabled: true,
+					required: true,
+					category: "General",
+				},
+				{
+					key: "NAME",
+					label: "Catalog Name",
+					value: "",
+					type: "text",
+					disabled: false,
+					required: true,
+					rules: {
+						pattern: {
+							value: /^[\w\-\s]+$/,
+							message:
+								"Catalog names can only contain alphanumeric characters and dashes.",
+						},
+						custom: {
+							value: 'CheckEngineName ( "[VALUE]") ;',
+							message:
+								"This Catalog name has already been used, please try another.",
+						},
+					},
+					category: "General",
+				},
+				{
+					key: "ENDPOINT",
+					label: "Resource Endpoint",
+					value: "",
+					type: "text",
+					disabled: false,
+					required: true,
+					helperText:
+						"The Azure OpenAI resource, ie https://YOUR-RESOURCE.openai.azure.com. The /openai/v1/responses path is added if you leave it off. See learn.microsoft.com/azure/foundry/openai/how-to/web-search",
+					category: "Credentials",
+				},
+				{
+					key: "MODEL",
+					label: "Model Deployment Name",
+					value: "",
+					type: "text",
+					disabled: false,
+					required: true,
+					helperText:
+						"The deployment that performs the search, ie gpt-5.5. Must be GPT-4 or later.",
+					category: "Credentials",
+				},
+				{
+					key: "AUTH_TYPE",
+					label: "Authentication Type",
+					value: "api_key",
+					type: "select",
+					options: [
+						{
+							display: "API Key",
+							value: "api_key",
+						},
+						{
+							display: "Microsoft Entra ID",
+							value: "entra",
+						},
+					],
+					disabled: false,
+					required: true,
+					helperText:
+						"API key sends the value below on the api-key header. Entra ID sends it as a bearer token.",
+					category: "Credentials",
+				},
+				{
+					key: "API_KEY",
+					label: "API Key or Entra Token",
+					value: "",
+					type: "password",
+					disabled: false,
+					required: true,
+					helperText:
+						"For Entra ID the token scope must be https://ai.azure.com/.default",
+					category: "Credentials",
+				},
+				{
+					key: "ALLOWED_DOMAINS",
+					label: "Allowed Domains",
+					value: "",
+					type: "text",
+					disabled: false,
+					required: false,
+					helperText:
+						"Comma separated list, up to 100, ie who.int,cdc.gov. Subdomains are included. Leave blank to search the whole web.",
+					category: "Settings",
+				},
+				{
+					key: "BLOCKED_DOMAINS",
+					label: "Blocked Domains",
+					value: "",
+					type: "text",
+					disabled: false,
+					required: false,
+					helperText:
+						"Comma separated list of domains to exclude from results.",
+					category: "Settings",
+				},
+				{
+					key: "SEARCH_CONTEXT_SIZE",
+					label: "Search Context Size",
+					value: "medium",
+					type: "select",
+					options: [
+						{
+							display: "low",
+							value: "low",
+						},
+						{
+							display: "medium",
+							value: "medium",
+						},
+						{
+							display: "high",
+							value: "high",
+						},
+					],
+					disabled: false,
+					required: false,
+					helperText:
+						"How much web content the model reads before answering. Higher is more thorough and more expensive.",
+					category: "Settings",
+				},
+				{
+					key: "REASONING_EFFORT",
+					label: "Reasoning Effort",
+					value: "",
+					type: "text",
+					disabled: false,
+					required: false,
+					helperText:
+						"Only for reasoning model deployments, ie low, medium, high. Higher lets the model search repeatedly and take longer. Leave blank for a plain lookup.",
+					category: "Settings",
+				},
+				{
+					key: "COUNTRY",
+					label: "Country",
+					value: "",
+					type: "text",
+					disabled: false,
+					required: false,
+					helperText:
+						"Two letter country code to search from, ie US. Leave blank for no country preference.",
+					category: "Settings",
+				},
+				{
+					key: "REGION",
+					label: "Region",
+					value: "",
+					type: "text",
+					disabled: false,
+					required: false,
+					helperText:
+						"Region or state name, ie Illinois. Only used alongside a country.",
+					category: "Settings",
+				},
+				{
+					key: "CITY",
+					label: "City",
+					value: "",
+					type: "text",
+					disabled: false,
+					required: false,
+					helperText: "City name, ie Chicago.",
+					category: "Settings",
+				},
+				{
+					key: "TIMEZONE",
+					label: "Time Zone",
+					value: "",
+					type: "text",
+					disabled: false,
+					required: false,
+					helperText:
+						"IANA time zone identifier, ie America/Chicago. Helps the model resolve words like today.",
+					category: "Settings",
+				},
+				{
+					key: "INSTRUCTION",
+					label: "Search Instruction",
+					value: "",
+					type: "text",
+					disabled: false,
+					required: false,
+					helperText:
+						"Prepended to every query to push the model to actually search rather than answer from memory. Leave blank to use the built in instruction.",
+					category: "Settings",
+				},
+				{
+					key: "FUNCTION_NAME",
+					label: "Function Name (metadata)",
+					value: "",
+					type: "text",
+					disabled: false,
+					required: true,
+					helperText:
+						"Becomes the MCP tool name, so name it for what it does, ie web_research.",
+					category: "Settings",
+				},
+				{
+					key: "FUNCTION_DESCRIPTION",
+					label: "Function Description (metadata)",
+					value: "",
+					type: "text",
+					disabled: false,
+					required: false,
+					helperText:
+						"Leave blank to use the built in description of what a grounded search returns.",
+					category: "Settings",
+				},
+				{
+					key: "FUNCTION_PARAMETERS",
+					label: "Function Parameters (metadata)",
+					value: [],
+					type: "parameter-list",
+					disabled: false,
+					required: false,
+					helperText:
+						"Leave empty to use the built in search parameters: query and country.",
+					category: "Settings",
+				},
+				{
+					key: "FUNCTION_REQUIRED_PARAMETERS",
+					label: "Function Required Parameters (metadata)",
+					value: [],
+					type: "string-list",
+					disabled: false,
+					required: false,
+					helperText:
+						"List the names of parameters above that must be provided when calling this function.",
 					category: "Settings",
 				},
 			],
