@@ -135,8 +135,8 @@ export const WorkbenchAssistantComposer = () => {
 	const activeRunId = useWorkbench((state) => state.assistant.activeRunId);
 	const submit = useWorkbench((state) => state.assistant.submit);
 	const stop = useWorkbench((state) => state.assistant.stop);
-
-	const [draft, setDraft] = useState("");
+	const draft = useWorkbench((state) => state.assistant.draft);
+	const setDraft = useWorkbench((state) => state.assistant.setDraft);
 	const [files, setFiles] = useState<PendingFile[]>([]);
 	const [isDraggingFiles, setIsDraggingFiles] = useState(false);
 	const [isStopping, setIsStopping] = useState(false);
