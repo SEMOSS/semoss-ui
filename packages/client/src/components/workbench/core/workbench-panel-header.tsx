@@ -6,7 +6,7 @@ import type {
 	WorkbenchPanelId,
 } from "@/stores/workbench";
 import { useWorkbenchPanel } from "./use-workbench-panel";
-import { CHROME_ICON } from "./workbench.chrome";
+import { WORKBENCH_STYLES } from "./workbench.chrome";
 
 /** The panel's glyph, at whatever size the caller has room for. */
 export const WorkbenchPanelIcon: FC<{
@@ -61,7 +61,7 @@ export const WorkbenchPanelHeaderContent: FC<{
 			<WorkbenchPanelIcon
 				pid={pid}
 				location={location}
-				className={CHROME_ICON}
+				className={WORKBENCH_STYLES.chromeIcon}
 			/>
 			<span className="min-w-0 truncate whitespace-nowrap">{name}</span>
 		</>

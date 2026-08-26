@@ -7,7 +7,7 @@ import {
 	TooltipTrigger,
 } from "@semoss/ui/next";
 import { useDatabaseWorkbench } from "@/hooks";
-import { CHROME_BUTTON, CHROME_ICON } from "../../core/workbench.chrome";
+import { WORKBENCH_STYLES } from "../../core/workbench.chrome";
 
 /** Opens a blank query editor in the database workbench. */
 export const DatabaseNewQueryButton: React.FC = () => {
@@ -24,10 +24,10 @@ export const DatabaseNewQueryButton: React.FC = () => {
 					onClick={() => addQueryPanel("")}
 					className={cn(
 						"border border-transparent text-muted-foreground",
-						CHROME_BUTTON,
+						WORKBENCH_STYLES.chromeButton,
 					)}
 				>
-					<DatabaseIcon className={CHROME_ICON} />
+					<DatabaseIcon className={WORKBENCH_STYLES.chromeIcon} />
 				</Button>
 			</TooltipTrigger>
 			<TooltipContent side="right">New query</TooltipContent>

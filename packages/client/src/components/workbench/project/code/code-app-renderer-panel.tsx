@@ -13,7 +13,7 @@ import type {
 	WorkbenchComponent,
 	WorkbenchPanelConfig,
 } from "@/stores/workbench";
-import { CHROME_BUTTON, CHROME_ICON } from "../../core/workbench.chrome";
+import { WORKBENCH_STYLES } from "../../core/workbench.chrome";
 
 /** The config an app-preview instance is opened with. */
 export interface CodeAppRendererConfig {
@@ -35,13 +35,13 @@ const CodeAppRendererPanelContent: WorkbenchComponent<
 					size="icon-sm"
 					className={cn(
 						"flex-none text-muted-foreground",
-						CHROME_BUTTON,
+						WORKBENCH_STYLES.chromeButton,
 					)}
 					onClick={() => setCounter((count) => count + 1)}
 					aria-label="Refresh app"
 					data-testid="workbench-app-renderer-refresh"
 				>
-					<RefreshCw className={CHROME_ICON} />
+					<RefreshCw className={WORKBENCH_STYLES.chromeIcon} />
 				</Button>
 			</TooltipTrigger>
 			<TooltipContent>Refresh</TooltipContent>

@@ -11,7 +11,7 @@ import {
 	toast,
 } from "@semoss/ui/next";
 import { useProject, useWorkbenchCommands } from "@/hooks";
-import { CHROME_BUTTON, CHROME_ICON } from "../core/workbench.chrome";
+import { WORKBENCH_STYLES } from "../core/workbench.chrome";
 
 /**
  * Compiles and publishes the project, and registers the matching command so the
@@ -70,7 +70,7 @@ export const ProjectPublishButton: React.FC = () => {
 					data-testid="workbench-project-publish-button"
 					className={cn(
 						"border border-transparent text-muted-foreground",
-						CHROME_BUTTON,
+						WORKBENCH_STYLES.chromeButton,
 					)}
 					disabled={isPublishing}
 					onClick={() => {
@@ -78,9 +78,11 @@ export const ProjectPublishButton: React.FC = () => {
 					}}
 				>
 					{isPublishing ? (
-						<Spinner className={CHROME_ICON} />
+						<Spinner className={WORKBENCH_STYLES.chromeIcon} />
 					) : (
-						<CloudUploadIcon className={CHROME_ICON} />
+						<CloudUploadIcon
+							className={WORKBENCH_STYLES.chromeIcon}
+						/>
 					)}
 				</Button>
 			</TooltipTrigger>

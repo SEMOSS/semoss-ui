@@ -10,7 +10,7 @@ import {
 import { ProjectDetailTabs } from "@/components/project";
 import { useWorkbench } from "@/hooks";
 import type { WorkbenchPanelConfig } from "@/stores/workbench";
-import { CHROME_BUTTON, CHROME_ICON } from "../core/workbench.chrome";
+import { WORKBENCH_STYLES } from "../core/workbench.chrome";
 import { WORKBENCH_COMPONENTS } from "../workbench.constants";
 
 /**
@@ -73,14 +73,13 @@ export const ProjectSettingsToggle: React.FC = () => {
 						actions.selectPanel(settingsType);
 					}}
 					className={cn(
-						"border",
-						CHROME_BUTTON,
+						WORKBENCH_STYLES.chromeButton,
 						isShowing
-							? "border-input text-primary shadow-xs dark:bg-input/30"
-							: "border-transparent text-muted-foreground",
+							? WORKBENCH_STYLES.chromeButtonActive
+							: WORKBENCH_STYLES.chromeButtonInactive,
 					)}
 				>
-					<SettingsIcon className={CHROME_ICON} />
+					<SettingsIcon className={WORKBENCH_STYLES.chromeIcon} />
 				</Button>
 			</TooltipTrigger>
 			<TooltipContent side="right">Settings</TooltipContent>

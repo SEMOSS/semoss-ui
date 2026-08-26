@@ -15,12 +15,7 @@ import type {
 	WorkbenchSide,
 	WorkbenchStack,
 } from "@/stores/workbench";
-import {
-	CHROME_BUTTON,
-	CHROME_BUTTON_SM,
-	CHROME_ICON,
-	CHROME_ICON_SM,
-} from "./workbench.chrome";
+import { WORKBENCH_STYLES } from "./workbench.chrome";
 import { WorkbenchPanelHeaderContent } from "./workbench-panel-header";
 
 export interface WorkbenchTabProps {
@@ -239,8 +234,11 @@ export const WorkbenchTab: FC<WorkbenchTabProps> = memo(
 					compact ? "h-10" : "h-7",
 					isDragging && "opacity-40",
 					active
-						? "bg-accent font-medium text-foreground"
-						: "cursor-pointer text-muted-foreground hover:bg-accent/50 hover:text-foreground",
+						? WORKBENCH_STYLES.chromeButtonActive
+						: cn(
+								"cursor-pointer",
+								WORKBENCH_STYLES.chromeButtonInactive,
+							),
 				)}
 			>
 				{isEditing ? (
@@ -263,11 +261,13 @@ export const WorkbenchTab: FC<WorkbenchTabProps> = memo(
 								onClick={() => actions.openSheet(pid)}
 								className={cn(
 									"ml-1 flex items-center justify-center text-muted-foreground",
-									CHROME_BUTTON,
+									WORKBENCH_STYLES.chromeButton,
 								)}
 								aria-label={`Options for ${record.name}`}
 							>
-								<MoreVertical className={CHROME_ICON} />
+								<MoreVertical
+									className={WORKBENCH_STYLES.chromeIcon}
+								/>
 							</button>
 						</TooltipTrigger>
 						<TooltipContent>Options</TooltipContent>
@@ -286,11 +286,13 @@ export const WorkbenchTab: FC<WorkbenchTabProps> = memo(
 								data-testid={`workbench-tab-pin-${pid}`}
 								className={cn(
 									"ml-1 flex items-center justify-center rounded text-muted-foreground hover:bg-accent hover:text-foreground",
-									CHROME_BUTTON_SM,
+									WORKBENCH_STYLES.chromeButtonSm,
 								)}
 								aria-label={`Unpin ${record.name}`}
 							>
-								<Pin className={CHROME_ICON_SM} />
+								<Pin
+									className={WORKBENCH_STYLES.chromeIconSm}
+								/>
 							</button>
 						</TooltipTrigger>
 						<TooltipContent>Unpin</TooltipContent>
@@ -306,9 +308,9 @@ export const WorkbenchTab: FC<WorkbenchTabProps> = memo(
 								className={cn(
 									"ml-1 flex items-center justify-center rounded text-muted-foreground hover:bg-accent hover:text-foreground",
 									compact
-										? CHROME_BUTTON
+										? WORKBENCH_STYLES.chromeButton
 										: cn(
-												CHROME_BUTTON_SM,
+												WORKBENCH_STYLES.chromeButtonSm,
 												"opacity-60 group-hover:opacity-100",
 											),
 								)}
@@ -316,7 +318,9 @@ export const WorkbenchTab: FC<WorkbenchTabProps> = memo(
 							>
 								<X
 									className={
-										compact ? CHROME_ICON : CHROME_ICON_SM
+										compact
+											? WORKBENCH_STYLES.chromeIcon
+											: WORKBENCH_STYLES.chromeIconSm
 									}
 								/>
 							</button>

@@ -8,7 +8,7 @@ import {
 	TooltipTrigger,
 } from "@semoss/ui/next";
 import { useWorkbench } from "@/hooks";
-import { CHROME_BUTTON, CHROME_ICON } from "./workbench.chrome";
+import { WORKBENCH_STYLES } from "./workbench.chrome";
 
 /**
  * Resets the workbench layout back to its default arrangement, overwriting
@@ -30,10 +30,10 @@ export const WorkbenchResetButton: FC = () => {
 					onClick={resetLayout}
 					className={cn(
 						"border border-transparent text-muted-foreground",
-						CHROME_BUTTON,
+						WORKBENCH_STYLES.chromeButton,
 					)}
 				>
-					<RotateCcw className={CHROME_ICON} />
+					<RotateCcw className={WORKBENCH_STYLES.chromeIcon} />
 				</Button>
 			</TooltipTrigger>
 			<TooltipContent side="right">Reset workbench</TooltipContent>

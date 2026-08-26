@@ -7,7 +7,7 @@ import {
 	TooltipTrigger,
 } from "@semoss/ui/next";
 import { useWorkbench } from "@/hooks";
-import { CHROME_BUTTON, CHROME_ICON } from "./workbench.chrome";
+import { WORKBENCH_STYLES } from "./workbench.chrome";
 
 /** Open the command palette for the nearest workbench from the global navbar. */
 export const WorkbenchCommandMenuButton = () => {
@@ -25,10 +25,10 @@ export const WorkbenchCommandMenuButton = () => {
 					onClick={() => setCommandOpen(true)}
 					className={cn(
 						"border border-transparent text-muted-foreground",
-						CHROME_BUTTON,
+						WORKBENCH_STYLES.chromeButton,
 					)}
 				>
-					<CommandIcon className={CHROME_ICON} />
+					<CommandIcon className={WORKBENCH_STYLES.chromeIcon} />
 				</Button>
 			</TooltipTrigger>
 			<TooltipContent side="right">Commands</TooltipContent>

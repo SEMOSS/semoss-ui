@@ -9,7 +9,7 @@ import {
 	DropdownMenuTrigger,
 } from "@semoss/ui/next";
 import type { WorkbenchPanelId } from "@/stores/workbench";
-import { CHROME_BUTTON, CHROME_ICON } from "./workbench.chrome";
+import { WORKBENCH_STYLES } from "./workbench.chrome";
 
 export interface WorkbenchTabStripProps {
 	panelIds: WorkbenchPanelId[];
@@ -72,12 +72,14 @@ export const WorkbenchTabStrip: FC<WorkbenchTabStripProps> = ({
 							size="icon-sm"
 							className={cn(
 								"flex-none text-muted-foreground",
-								CHROME_BUTTON,
+								WORKBENCH_STYLES.chromeButton,
 							)}
 							title={`${panelIds.length} tabs`}
 							aria-label="All tabs"
 						>
-							<ChevronDown className={CHROME_ICON} />
+							<ChevronDown
+								className={WORKBENCH_STYLES.chromeIcon}
+							/>
 						</Button>
 					</DropdownMenuTrigger>
 					<DropdownMenuContent align="end" className="w-52">

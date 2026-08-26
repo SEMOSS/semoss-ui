@@ -2,7 +2,7 @@ import { type FC, type ReactNode, useCallback } from "react";
 import { cn, Separator } from "@semoss/ui/next";
 import { useWorkbench } from "@/hooks";
 import type { WorkbenchSide } from "@/stores/workbench";
-import { RAIL_PADDING, RAIL_THICKNESS, slotRadius } from "./workbench.chrome";
+import { WORKBENCH_STYLES } from "./workbench.chrome";
 import type {
 	WorkbenchBorderSlot,
 	WorkbenchBorderSlotCtx,
@@ -26,7 +26,10 @@ const BODY_ROUND: Record<WorkbenchSide, string> = {
  * fills the card, so its body takes the same pair — the card cannot clip a body
  * that is drawn in the overlay.
  */
-const BODY_CORNERS: Record<WorkbenchSide, Parameters<typeof slotRadius>[0]> = {
+const BODY_CORNERS: Record<
+	WorkbenchSide,
+	Parameters<typeof WORKBENCH_STYLES.slotRadius>[0]
+> = {
 	left: { tr: true, br: true },
 	right: { tl: true, bl: true },
 	top: { br: true, bl: true },
@@ -110,10 +113,10 @@ export const WorkbenchBorder: FC<WorkbenchBorderProps> = ({ side, slots }) => {
 			data-rail={side}
 			className={cn(
 				"flex flex-none items-center gap-1 border border-border bg-card",
-				RAIL_PADDING,
+				WORKBENCH_STYLES.railPadding,
 				vertical
-					? cn(RAIL_THICKNESS.vertical, "flex-col")
-					: cn(RAIL_THICKNESS.horizontal, "flex-row"),
+					? cn(WORKBENCH_STYLES.railThickness.vertical, "flex-col")
+					: cn(WORKBENCH_STYLES.railThickness.horizontal, "flex-row"),
 				openPid ? RAIL_ROUND[side] : "rounded-lg",
 			)}
 		>
@@ -172,7 +175,7 @@ export const WorkbenchBorder: FC<WorkbenchBorderProps> = ({ side, slots }) => {
 			    toggle, rename, close, and context menu */}
 			<div
 				ref={bodyRef}
-				data-radius={slotRadius(BODY_CORNERS[side])}
+				data-radius={WORKBENCH_STYLES.slotRadius(BODY_CORNERS[side])}
 				className="relative min-h-0 flex-1"
 			/>
 		</div>

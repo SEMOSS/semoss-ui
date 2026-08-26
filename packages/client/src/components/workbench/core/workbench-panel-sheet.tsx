@@ -19,7 +19,7 @@ import {
 } from "@semoss/ui/next";
 import { useWorkbench } from "@/hooks";
 import { WORKBENCH_SIDES, type WorkbenchPanelRecord } from "@/stores/workbench";
-import { CHROME_BUTTON, CHROME_ICON } from "./workbench.chrome";
+import { WORKBENCH_STYLES } from "./workbench.chrome";
 
 const sideLabel = (side: string): string =>
 	side.length ? side[0].toUpperCase() + side.slice(1) : side;
@@ -66,7 +66,7 @@ const WorkbenchPanelSheetSingle: FC<{ record: WorkbenchPanelRecord }> = ({
 							onClick={saveRename}
 							aria-label="Save name"
 						>
-							<Check className={CHROME_ICON} />
+							<Check className={WORKBENCH_STYLES.chromeIcon} />
 						</Button>
 					</div>
 				</div>
@@ -175,17 +175,25 @@ const WorkbenchPanelSheetAll: FC = () => {
 										onClick={() => actions.closePanel(pid)}
 										aria-label={`Close ${panels[pid]?.name ?? pid}`}
 									>
-										<X className={CHROME_ICON} />
+										<X
+											className={
+												WORKBENCH_STYLES.chromeIcon
+											}
+										/>
 									</Button>
 								) : (
 									<span
 										aria-hidden
 										className={cn(
 											"flex items-center justify-center text-muted-foreground/60",
-											CHROME_BUTTON,
+											WORKBENCH_STYLES.chromeButton,
 										)}
 									>
-										<Lock className={CHROME_ICON} />
+										<Lock
+											className={
+												WORKBENCH_STYLES.chromeIcon
+											}
+										/>
 									</span>
 								)}
 							</li>

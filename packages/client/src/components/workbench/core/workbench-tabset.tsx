@@ -22,7 +22,7 @@ import {
 	type WorkbenchPanelRecord,
 	type WorkbenchTabset as WorkbenchTabsetNode,
 } from "@/stores/workbench";
-import { CHROME_BUTTON, CHROME_ICON, slotRadius } from "./workbench.chrome";
+import { WORKBENCH_STYLES } from "./workbench.chrome";
 import { WorkbenchPanelControls } from "./workbench-panel-header";
 import { WorkbenchResizer } from "./workbench-resizer";
 import { WorkbenchTab } from "./workbench-tab";
@@ -181,7 +181,7 @@ export const WorkbenchTabset: FC<WorkbenchTabsetProps> = ({ node }) => {
 											size="icon-sm"
 											className={cn(
 												"flex-none text-muted-foreground",
-												CHROME_BUTTON,
+												WORKBENCH_STYLES.chromeButton,
 											)}
 											onClick={() =>
 												actions.toggleMaximize(node.id)
@@ -191,11 +191,15 @@ export const WorkbenchTabset: FC<WorkbenchTabsetProps> = ({ node }) => {
 										>
 											{maximized ? (
 												<Minimize2
-													className={CHROME_ICON}
+													className={
+														WORKBENCH_STYLES.chromeIcon
+													}
 												/>
 											) : (
 												<Maximize2
-													className={CHROME_ICON}
+													className={
+														WORKBENCH_STYLES.chromeIcon
+													}
 												/>
 											)}
 										</Button>
@@ -218,7 +222,7 @@ export const WorkbenchTabset: FC<WorkbenchTabsetProps> = ({ node }) => {
 						<div
 							ref={bodyRef}
 							data-body={node.id}
-							data-radius={slotRadius({
+							data-radius={WORKBENCH_STYLES.slotRadius({
 								tl: capped,
 								tr: capped && !row,
 								bl: row,
@@ -232,7 +236,7 @@ export const WorkbenchTabset: FC<WorkbenchTabsetProps> = ({ node }) => {
 						<WorkbenchResizer kind="tab-split" tabset={node} />
 						<div
 							ref={splitBodyRef}
-							data-radius={slotRadius({
+							data-radius={WORKBENCH_STYLES.slotRadius({
 								tr: capped && row,
 								br: true,
 								bl: !row,
@@ -248,7 +252,7 @@ export const WorkbenchTabset: FC<WorkbenchTabsetProps> = ({ node }) => {
 					<div
 						ref={bodyRef}
 						data-body={node.id}
-						data-radius={slotRadius({
+						data-radius={WORKBENCH_STYLES.slotRadius({
 							tl: capped,
 							tr: capped,
 							br: true,

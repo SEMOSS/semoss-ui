@@ -8,7 +8,7 @@ import {
 } from "react";
 import { Button, cn, Separator } from "@semoss/ui/next";
 import { useWorkbench } from "@/hooks";
-import { CHROME_ICON, RAIL_THICKNESS, slotRadius } from "./workbench.chrome";
+import { WORKBENCH_STYLES } from "./workbench.chrome";
 import { WorkbenchTab } from "./workbench-tab";
 
 /**
@@ -78,7 +78,10 @@ export const WorkbenchMobile: FC = () => {
 				</div>
 				<div
 					ref={bodyRef}
-					data-radius={slotRadius({ br: true, bl: true })}
+					data-radius={WORKBENCH_STYLES.slotRadius({
+						br: true,
+						bl: true,
+					})}
 					onPointerDown={(e) => {
 						swipe.current = { x: e.clientX, y: e.clientY };
 					}}
@@ -89,7 +92,7 @@ export const WorkbenchMobile: FC = () => {
 			<div
 				className={cn(
 					"flex flex-none items-center justify-between px-2",
-					RAIL_THICKNESS.horizontal,
+					WORKBENCH_STYLES.railThickness.horizontal,
 				)}
 			>
 				<Button
@@ -106,7 +109,7 @@ export const WorkbenchMobile: FC = () => {
 					data-testid="workbench-mobile-prev"
 					aria-label="Previous panel"
 				>
-					<ChevronLeft className={CHROME_ICON} />
+					<ChevronLeft className={WORKBENCH_STYLES.chromeIcon} />
 				</Button>
 				<span className="text-muted-foreground text-xs">
 					{activeIndex + 1} / {openPanelIds.length} · swipe to move
@@ -131,7 +134,7 @@ export const WorkbenchMobile: FC = () => {
 					data-testid="workbench-mobile-next"
 					aria-label="Next panel"
 				>
-					<ChevronRight className={CHROME_ICON} />
+					<ChevronRight className={WORKBENCH_STYLES.chromeIcon} />
 				</Button>
 			</div>
 		</div>
