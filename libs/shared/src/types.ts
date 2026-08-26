@@ -117,6 +117,8 @@ export interface ThemeMap {
 		images: {
 			app: string;
 			logo: string;
+			appDark?: string;
+			logoDark?: string;
 			login: string;
 			landing: string;
 			tabIcon: string;
@@ -164,6 +166,7 @@ export interface ThemeMap {
 			headerItems: {
 				name: string;
 				icon: string;
+				iconDark?: string;
 				path: string;
 				url: string;
 				embed: boolean;
@@ -172,6 +175,7 @@ export interface ThemeMap {
 			footerItems: {
 				name: string;
 				icon: string;
+				iconDark?: string;
 				path: string;
 				url: string;
 				embed: boolean;
@@ -337,10 +341,6 @@ export interface ThemeMap {
 			enableKnowledgeMCP?: boolean;
 			/** Whether to show the embedding model selector in the new knowledge form. Defaults to true. */
 			allowEmbeddingOptions?: boolean;
-			/** Whether to show the Knowledge library picker in the chat input menu. Defaults to true. */
-			showKnowledgeMenu?: boolean;
-			/** Whether to show the Toolbox picker in the chat input menu. Defaults to true. */
-			showToolboxMenu?: boolean;
 			/** Whether to show the Activity Log (audit logs) option in the room menu. Defaults to true. */
 			showActivityLog?: boolean;
 			/** Whether to show external links to the SEMOSS platform. Defaults to true. */
