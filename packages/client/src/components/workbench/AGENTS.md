@@ -78,7 +78,7 @@ helper the way the layout slice does. Reaching across namespaces is just another
 
 **Typing a panel.** `WorkbenchPanelConfig<P, V>` is generic: `P` is the shape of the `config`
 its instances are opened with, `V` its scratch value. Annotate the blueprint once and every
-renderer's props follow — `content`, `icon`, `header`, `controls`, `matches`, `commands`, and
+renderer's props follow — `content`, `icon`, `header`, `matches`, `commands`, and
 `menuItems` all get a typed `config` with no casts:
 
 ```tsx
@@ -95,7 +95,7 @@ export const MY_PANEL: WorkbenchPanelConfig<MyPanelConfig> = {
 
 Panel renderers receive `WorkbenchPanelProps` **flat** — `id`, `type`, `name`, `config`,
 `value`, `isVisible`, `rename`, `close`, `moveTo`, `setConfig`, `setValue`,
-`select`. Chrome slots (`icon`/`header`/`controls`) get the same object plus `location` and
+`select`. Chrome slots (`icon`/`header`) get the same object plus `location` and
 `status`. Wrapping another panel is a spread: `<Other {...props} config={{ ...props.config,
 readOnly: true }} />`. `useWorkbenchPanel(pid, location?)` (`core/use-workbench-panel.ts`) is
 the one hook that builds these; `workbenchPanelProps(layout, pid)`
@@ -131,6 +131,16 @@ use-workbench-commands.ts`) from the component that owns them — a domain workb
 The array may be an inline literal: the hook re-registers only when ids/labels/descriptions
 change and executed handlers always run the latest closures, so there are no effect
 dependencies to manage. Unregistration happens on unmount.
+
+**Controls**: a panel contributes at most one chrome control with
+`useWorkbenchControl(id, content)` (`hooks/use-workbench-control.tsx`) from inside its body —
+there is no blueprint slot for this, precisely so `content` can close over the panel's own refs
+and state. `content` receives `WorkbenchChromeProps` and owns its label, disabled state, and
+click handling; the core only places it — beside the maximize button in a dock's tab strip, on
+the rail of an open border — and only for the **active** tab of each stack. An inline `content`
+is fine (the hook registers one stable wrapper, so identity churn never remounts it), and a
+keepAlive panel's registration simply waits, hidden, until its tab is front again. See
+`project/project-file-explorer-panel.tsx` (the refresh control) as the exemplar.
 
 - `selectPanel(type, config?, opts?)` reveals an existing instance matching `config` (blueprint
   `matches`, shallow-equal default), restores a closed match, or spawns a new one. Commands

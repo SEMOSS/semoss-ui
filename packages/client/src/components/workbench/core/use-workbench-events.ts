@@ -4,7 +4,7 @@ import type { WorkbenchProps } from "./workbench.types";
 
 type WorkbenchEventProps = Pick<
 	WorkbenchProps,
-	"onLayoutChange" | "onPanelOpen" | "onPanelClose" | "onSelectionChange"
+	"onPanelOpen" | "onPanelClose" | "onSelectionChange"
 >;
 
 /**
@@ -54,20 +54,6 @@ export const useWorkbenchEvents = (props: WorkbenchEventProps): void => {
 				state.layout.selectedPanelId !== prev.layout.selectedPanelId
 			) {
 				h.onSelectionChange(state.layout.selectedPanelId);
-			}
-
-			if (
-				h.onLayoutChange &&
-				state.layout.hydrated &&
-				(state.layout.tree !== prev.layout.tree ||
-					state.layout.borders !== prev.layout.borders ||
-					state.layout.panels !== prev.layout.panels ||
-					state.layout.selectedPanelId !==
-						prev.layout.selectedPanelId ||
-					state.layout.maximizedTabsetId !==
-						prev.layout.maximizedTabsetId)
-			) {
-				h.onLayoutChange(state.layout.actions.snapshot());
 			}
 
 			prev = state;

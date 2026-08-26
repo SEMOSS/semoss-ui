@@ -80,7 +80,6 @@ export const Workbench: FC<WorkbenchProps> = ({
 	layout,
 	borderSlots,
 	readOnly = false,
-	onLayoutChange,
 	onPanelOpen,
 	onPanelClose,
 	onSelectionChange,
@@ -116,7 +115,6 @@ export const Workbench: FC<WorkbenchProps> = ({
 	}, [borderSlots, readOnly]);
 
 	useWorkbenchEvents({
-		onLayoutChange,
 		onPanelOpen,
 		onPanelClose,
 		onSelectionChange,

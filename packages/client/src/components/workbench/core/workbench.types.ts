@@ -8,7 +8,6 @@ import type {
 	WorkbenchPanelType,
 	WorkbenchRect,
 	WorkbenchSide,
-	WorkbenchSnapshot,
 } from "@/stores/workbench";
 
 /** What a border slot is told about the border it decorates. */
@@ -76,9 +75,6 @@ export interface WorkbenchProps {
 	 * layout under their own id.
 	 */
 	readOnly?: boolean;
-
-	/** Fired after any persisted arrangement change. */
-	onLayoutChange?: (snapshot: WorkbenchSnapshot) => void;
 
 	/** Fired when a panel becomes docked somewhere. */
 	onPanelOpen?: (pid: WorkbenchPanelId) => void;

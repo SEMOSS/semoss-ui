@@ -68,18 +68,31 @@ export const WorkbenchPanelHeaderContent: FC<{
 	);
 };
 
-/** Header controls a blueprint contributes, if any. */
+/**
+ * The active panel's registered chrome control, if any. Panels contribute one
+ * via `useWorkbenchControl`; each stack draws only its front tab's control.
+ */
 export const WorkbenchPanelControls: FC<{
 	pid: WorkbenchPanelId | null | undefined;
-}> = ({ pid }) => {
+	location: WorkbenchHeaderLocation;
+}> = ({ pid, location }) => {
 	const safePid = pid ?? "";
-	const chrome = useWorkbenchPanel(safePid, "tab");
-	const Controls = useWorkbench((s) => {
-		const type = safePid ? s.layout.panels[safePid]?.type : undefined;
-		return type ? s.layout.components[type]?.controls : undefined;
-	});
-	if (!pid || !Controls) {
+	const chrome = useWorkbenchPanel(safePid, location);
+	const control = useWorkbench((s) =>
+		safePid ? s.control.controls[safePid] : undefined,
+	);
+	if (!pid || !control) {
 		return null;
 	}
-	return <Controls {...chrome} />;
+	const Content = control.content;
+	return (
+		// swallow pointerdown so a control click cannot start a tab drag or
+		// toggle a rail shut out from under it
+		<div
+			onPointerDown={(e) => e.stopPropagation()}
+			className="flex flex-none items-center gap-1"
+		>
+			<Content {...chrome} />
+		</div>
+	);
 };

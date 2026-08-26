@@ -1,56 +1,19 @@
 import { PanelsTopLeftIcon, RefreshCw } from "lucide-react";
 import { useState } from "react";
-import { Button } from "@semoss/ui/next";
+import {
+	Button,
+	cn,
+	Tooltip,
+	TooltipContent,
+	TooltipTrigger,
+} from "@semoss/ui/next";
 import { CodeRenderer } from "@/components/project";
-import { useProject } from "@/hooks";
+import { useProject, useWorkbenchControl } from "@/hooks";
 import type {
 	WorkbenchComponent,
 	WorkbenchPanelConfig,
 } from "@/stores/workbench";
-
-interface CodeAppRendererPanelProps {
-	/**
-	 * Bumped when an agent run (or a manual rebuild) publishes the frontend, so
-	 * the iframe remounts on the freshly published assets.
-	 */
-	previewVersion: number;
-}
-
-/**
- * Live preview of the published CODE app, rendered in an iframe. The refresh
- * button remounts the iframe by bumping a key — the embedded app has no
- * reload hook of its own.
- */
-export const CodeAppRendererPanel: React.FC<CodeAppRendererPanelProps> = ({
-	previewVersion,
-}) => {
-	const { project } = useProject();
-	const [counter, setCounter] = useState(0);
-
-	return (
-		<div className="flex h-full w-full flex-col overflow-hidden bg-background text-foreground">
-			<div className="flex w-full flex-row items-center border-border border-b bg-card px-1 py-1">
-				<Button
-					variant="ghost"
-					size="icon-sm"
-					title="Refresh"
-					aria-label="Refresh app"
-					data-testid="workbench-app-renderer-refresh"
-					onClick={() => setCounter((count) => count + 1)}
-				>
-					<RefreshCw className="h-[1em] w-[1em]" />
-				</Button>
-			</div>
-			{/* min-h-0 so the iframe fills the remaining height instead of collapsing */}
-			<div className="min-h-0 w-full flex-1 overflow-hidden">
-				<CodeRenderer
-					appId={project.project_id}
-					key={`${counter}-${previewVersion}`}
-				/>
-			</div>
-		</div>
-	);
-};
+import { CHROME_BUTTON, CHROME_ICON } from "../../core/workbench.chrome";
 
 /** The config an app-preview instance is opened with. */
 export interface CodeAppRendererConfig {
@@ -60,9 +23,40 @@ export interface CodeAppRendererConfig {
 
 const CodeAppRendererPanelContent: WorkbenchComponent<
 	CodeAppRendererConfig
-> = ({ config }) => (
-	<CodeAppRendererPanel previewVersion={config.previewVersion ?? 0} />
-);
+> = ({ id, config }) => {
+	const { project } = useProject();
+	const [counter, setCounter] = useState(0);
+
+	useWorkbenchControl(id, () => (
+		<Tooltip>
+			<TooltipTrigger asChild>
+				<Button
+					variant="ghost"
+					size="icon-sm"
+					className={cn(
+						"flex-none text-muted-foreground",
+						CHROME_BUTTON,
+					)}
+					onClick={() => setCounter((count) => count + 1)}
+					aria-label="Refresh app"
+					data-testid="workbench-app-renderer-refresh"
+				>
+					<RefreshCw className={CHROME_ICON} />
+				</Button>
+			</TooltipTrigger>
+			<TooltipContent>Refresh</TooltipContent>
+		</Tooltip>
+	));
+
+	return (
+		<div className="h-full w-full overflow-hidden bg-background text-foreground">
+			<CodeRenderer
+				appId={project.project_id}
+				key={`${counter}-${config.previewVersion}`}
+			/>
+		</div>
+	);
+};
 
 /**
  * Blueprint for the app preview. keepAlive: the iframe survives tab switches;

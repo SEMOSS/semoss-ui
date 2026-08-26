@@ -1,4 +1,5 @@
 export * from "./workbench-command.slice";
+export * from "./workbench-controls.slice";
 export * from "./workbench-layout.commands";
 export * from "./workbench-layout.menu";
 export * from "./workbench-layout.slice";

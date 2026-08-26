@@ -174,18 +174,6 @@ export interface WorkbenchLayoutActions {
 		},
 	) => void;
 
-	/**
-	 * Replace the whole arrangement. Instances whose component is unknown are
-	 * kept as placeholders unless `onUnknownType` is "drop".
-	 */
-	hydrate: (
-		snapshot: WorkbenchSnapshot,
-		opts?: { onUnknownType?: "drop" | "placeholder" },
-	) => void;
-
-	/** Serialize the current arrangement. Excludes scratch values. */
-	snapshot: () => WorkbenchSnapshot;
-
 	/** Back to the default layout; overwrites the cache immediately. */
 	resetLayout: () => void;
 
@@ -507,7 +495,6 @@ export const createWorkbenchLayoutSlice = (
 		const buildSnapshot = (): WorkbenchSnapshot => {
 			const state = get().layout;
 			return {
-				v: 1,
 				tree: state.tree,
 				borders: state.borders,
 				panels: state.panels,
@@ -666,35 +653,16 @@ export const createWorkbenchLayoutSlice = (
 			return (last ?? holding ?? all[0])?.id;
 		};
 
-		const applySnapshot = (
-			snapshot: WorkbenchSnapshot,
-			opts: { onUnknownType?: "drop" | "placeholder" } = {},
-		): void => {
-			let tree = snapshot.tree;
-			let panels = snapshot.panels;
-			let borders = withAllBorders(snapshot.borders);
-
-			if (opts.onUnknownType === "drop") {
-				const known = (type: WorkbenchPanelType): boolean =>
-					Boolean(get().layout.components[type]);
-				for (const record of Object.values(snapshot.panels)) {
-					if (known(record.type)) {
-						continue;
-					}
-					tree = removePanel(tree, record.id) ?? emptyTabset();
-					borders = stripFromBorders(borders, record.id);
-				}
-				panels = Object.fromEntries(
-					Object.entries(panels).filter(([, record]) =>
-						known(record.type),
-					),
-				);
-			}
-
+		/**
+		 * Replace the whole arrangement. A panel whose component is not
+		 * registered stays as a placeholder — the body renders "no component
+		 * registered" rather than the instance being dropped.
+		 */
+		const applySnapshot = (snapshot: WorkbenchSnapshot): void => {
 			commit(() => ({
-				tree,
-				panels,
-				borders,
+				tree: snapshot.tree,
+				panels: snapshot.panels,
+				borders: withAllBorders(snapshot.borders),
 				closed: snapshot.closed ?? [],
 				selectedPanelId: snapshot.selectedPanelId,
 				maximizedTabsetId: snapshot.maximizedTabsetId,
@@ -888,23 +856,17 @@ export const createWorkbenchLayoutSlice = (
 						console.error(e);
 					}
 
-					applySnapshot(cached ?? { v: 1, ...deepCopy(layout) }, {});
+					applySnapshot(cached ?? deepCopy(layout));
 					set((root) => ({
 						layout: { ...root.layout, hydrated: true },
 					}));
 					persistNow();
 				},
-				hydrate: (snapshot, opts = {}) => {
-					applySnapshot(snapshot, {
-						onUnknownType: opts.onUnknownType,
-					});
-				},
-				snapshot: buildSnapshot,
 				resetLayout: () => {
 					if (get().layout.readOnly || !defaultLayout) {
 						return;
 					}
-					applySnapshot({ v: 1, ...deepCopy(defaultLayout) });
+					applySnapshot(deepCopy(defaultLayout));
 				},
 				persistNow: persistNow,
 

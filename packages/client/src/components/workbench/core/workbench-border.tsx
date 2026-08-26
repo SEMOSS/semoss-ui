@@ -7,6 +7,7 @@ import type {
 	WorkbenchBorderSlot,
 	WorkbenchBorderSlotCtx,
 } from "./workbench.types";
+import { WorkbenchPanelControls } from "./workbench-panel-header";
 import { WorkbenchResizer } from "./workbench-resizer";
 import { WorkbenchTab } from "./workbench-tab";
 
@@ -143,6 +144,12 @@ export const WorkbenchBorder: FC<WorkbenchBorderProps> = ({ side, slots }) => {
 					/>
 				))}
 			</div>
+			{/* the open panel's own control rides the rail: borders have no
+			    header row, so this is its chrome slot */}
+			<WorkbenchPanelControls
+				pid={border.activeId}
+				location={vertical ? "rail-vertical" : "rail"}
+			/>
 			{after && (
 				<>
 					{slotDivider}

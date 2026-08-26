@@ -598,7 +598,7 @@ const isValidNode = (value: unknown): value is WorkbenchLayoutNode => {
  * @return The snapshot, or null when the payload is unusable.
  */
 export function parseWorkbenchSnapshot(raw: unknown): WorkbenchSnapshot | null {
-	if (!isRecordObject(raw) || raw.v !== 1) {
+	if (!isRecordObject(raw)) {
 		return null;
 	}
 	if (!isValidNode(raw.tree) || !isRecordObject(raw.panels)) {

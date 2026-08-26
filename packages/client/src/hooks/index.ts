@@ -5,6 +5,7 @@ import { useProject } from "./use-project";
 import { useTabBarScroll } from "./use-tab-bar-scroll";
 import { useWorkbench } from "./use-workbench";
 import { useWorkbenchCommands } from "./use-workbench-commands";
+import { useWorkbenchControl } from "./use-workbench-control";
 import { useWorkbenchStoreApi } from "./use-workbench-store-api";
 import { useDesigner } from "./useDesigner";
 import { useEngine } from "./useEngine";
@@ -37,6 +38,7 @@ export {
 	useThemeLogo,
 	useWorkbench,
 	useWorkbenchCommands,
+	useWorkbenchControl,
 	useWorkbenchStoreApi,
 	useWorkspace,
 	useProject,

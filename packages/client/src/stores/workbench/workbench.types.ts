@@ -192,10 +192,21 @@ export type WorkbenchChromeProps<
 	status: WorkbenchPanelStatus;
 };
 
-/** A panel's header or controls renderer. */
+/** A panel's header renderer. */
 export type WorkbenchChrome<P = WorkbenchPanelParams, V = unknown> = (
 	props: WorkbenchChromeProps<P, V>,
 ) => ReactNode;
+
+/**
+ * A panel-contributed chrome control, drawn beside the active tab of the
+ * panel's stack (the tab strip in a dock, the rail on a border). Registered
+ * at runtime with `useWorkbenchControl` — one per panel — rather than on the
+ * blueprint, so the renderer can close over the panel's own state. `content`
+ * owns its label, disabled state, and click handling; the core only places it.
+ */
+export interface WorkbenchControl<P = WorkbenchPanelParams, V = unknown> {
+	content: ComponentType<WorkbenchChromeProps<P, V>>;
+}
 
 /** A palette command contributed by a panel instance. */
 export interface WorkbenchPanelCommand {
@@ -223,7 +234,7 @@ export interface WorkbenchPanelMenuItem {
  * `P` is the shape of the `config` its instances are opened with, `V` its
  * scratch value type. Annotating them here is what types every renderer's
  * props: `WorkbenchPanelConfig<MyPanelConfig>` gives `content`, `icon`,
- * `header`, `controls`, and `matches` a typed `config` with no casts.
+ * `header`, and `matches` a typed `config` with no casts.
  *
  * Note the two senses of "config": this type is the panel's *definition*,
  * while `WorkbenchPanelProps.config` is one instance's parameters.
@@ -265,8 +276,6 @@ export interface WorkbenchPanelConfig<P = WorkbenchPanelParams, V = unknown> {
 	icon?: ComponentType<WorkbenchChromeProps<P, V> & { className: string }>;
 	/** The tab and border-header label. Omit for icon + instance name. */
 	header?: ComponentType<WorkbenchChromeProps<P, V>>;
-	/** Controls drawn next to the active tab / border header. */
-	controls?: ComponentType<WorkbenchChromeProps<P, V>>;
 	/**
 	 * The body. Wrap it in React.lazy to code-split it — the shell renders it
 	 * inside Suspense and shows a skeleton while it resolves. (These slots take
@@ -338,11 +347,12 @@ export interface WorkbenchLayout {
 }
 
 /**
- * A serialised arrangement. `v` guards the serialisation shape; the layout's
- * own `version` is in the cache key rather than the payload.
+ * A persisted arrangement: a layout as it is cached, plus the instances that
+ * are closed but still reopenable. Internal to the store — the shape is
+ * guarded structurally by `parseWorkbenchSnapshot`, and which shape a cache
+ * entry belongs to is settled by the layout `version` in its key.
  */
 export type WorkbenchSnapshot = Omit<WorkbenchLayout, "version"> & {
-	v: 1;
 	closed?: WorkbenchPanelId[];
 };
 
