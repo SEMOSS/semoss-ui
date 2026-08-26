@@ -2,7 +2,6 @@ import { Outlet } from "react-router-dom";
 import { ProjectAccessControl, ProjectCatalog } from "@/components/project";
 import {
 	AppCommitsPage,
-	AppFilesPage,
 	AppGithubPage,
 	AppGithubSelectRepoPage,
 	AppMcpUsagePage,
@@ -110,11 +109,6 @@ export const PROJECT_ROUTES: {
 										restrict: ["OWNER", "EDIT"],
 									},
 									{
-										name: "Files",
-										path: "files",
-										restrict: ["OWNER", "EDIT"],
-									},
-									{
 										name: "SMSS",
 										path: "smss",
 										restrict: ["OWNER"],
@@ -154,10 +148,6 @@ export const PROJECT_ROUTES: {
 							{
 								path: "access-control",
 								element: <ProjectAccessControl />,
-							},
-							{
-								path: "files",
-								element: <AppFilesPage />,
 							},
 							{
 								path: "smss",
