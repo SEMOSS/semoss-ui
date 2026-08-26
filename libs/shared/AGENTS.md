@@ -59,6 +59,20 @@ router):
 - `echarts` / `echarts-for-react` — charts
 - `@iconify/react`, `lucide-react` — icons
 
+## Design-System Notes
+
+Follow the root [Design System & Styling](../../AGENTS.md#design-system--styling) rules and
+[DESIGN.md](../../DESIGN.md).
+
+- Shared domain components still compose `@semoss/ui/next`; this package is not a second
+   component library or token source.
+- Promote a composite here only when more than one application needs the same domain contract.
+   Application-specific composition stays in its owning package.
+- `src/styles/globals.css` supplies Tailwind source discovery only. Do not add design tokens
+   there; token ownership remains in `@semoss/ui`.
+- `flex-layout/flexlayout.css` is a third-party style bridge. Map its variables to semantic UI
+   tokens and use the reason-bearing external-constraint carve-out for unavoidable literals.
+
 ## Agent Guardrails
 
 ### Do Not Modify
