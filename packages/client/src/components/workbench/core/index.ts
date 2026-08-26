@@ -10,6 +10,7 @@ export * from "./workbench-drag-layer";
 export * from "./workbench-drop.ops";
 export * from "./workbench-mobile";
 export * from "./workbench-panel-body";
+export * from "./workbench-panel-error";
 export * from "./workbench-panel-error-boundary";
 export * from "./workbench-panel-header";
 export * from "./workbench-panel-host";

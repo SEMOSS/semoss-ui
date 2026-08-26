@@ -5,6 +5,7 @@ import type {
 	WorkbenchPanelProps,
 	WorkbenchPanelRecord,
 } from "@/stores/workbench";
+import { WorkbenchPanelError } from "./workbench-panel-error";
 import { WorkbenchPanelErrorBoundary } from "./workbench-panel-error-boundary";
 
 /**
@@ -57,10 +58,13 @@ export const WorkbenchPanelBody: FC<WorkbenchPanelBodyProps> = ({
 
 	const Content = component?.content;
 	if (!Content) {
+		// A misconfiguration, not an empty state — surfaced like a thrown body
+		// so the two failure modes read the same.
 		return (
-			<div className="flex h-full items-center justify-center p-6 text-center text-muted-foreground text-sm">
-				No component registered for “{record.type}”.
-			</div>
+			<WorkbenchPanelError
+				message={`No component registered for “${record.type}”.`}
+				testId="workbench-panel-unregistered-message"
+			/>
 		);
 	}
 

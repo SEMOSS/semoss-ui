@@ -1,4 +1,5 @@
 import { Component, type ReactNode } from "react";
+import { WorkbenchPanelError } from "./workbench-panel-error";
 
 interface WorkbenchPanelErrorBoundaryProps {
 	/** Reported once when the panel body throws. */
@@ -20,7 +21,8 @@ export class WorkbenchPanelErrorBoundary extends Component<
 	static getDerivedStateFromError(
 		err: unknown,
 	): WorkbenchPanelErrorBoundaryState {
-		return { message: err instanceof Error ? err.message : String(err) };
+		const message = err instanceof Error ? err.message : String(err);
+		return { message: message.trim() || "Unknown Error" };
 	}
 
 	componentDidCatch() {
@@ -32,12 +34,10 @@ export class WorkbenchPanelErrorBoundary extends Component<
 			return this.props.children;
 		}
 		return (
-			<div className="p-4 text-destructive text-sm">
-				<div className="text-destructive/70 text-xs uppercase tracking-widest">
-					Panel failed
-				</div>
-				<p className="mt-1">{this.state.message}</p>
-			</div>
+			<WorkbenchPanelError
+				message={this.state.message}
+				testId="workbench-panel-error-message"
+			/>
 		);
 	}
 }
