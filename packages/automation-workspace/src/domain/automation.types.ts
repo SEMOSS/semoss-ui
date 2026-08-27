@@ -207,8 +207,9 @@ export interface AutomationNodeTrace {
  * How a run was initiated.
  * - MANUAL: triggered by a user clicking Run in the editor.
  * - PLAYGROUND: triggered by the AI playground sidebar via the MCP TriggerAutomation tool.
+ * - SCHEDULED: triggered by a scheduler job configured for the automation.
  */
-export type AutomationTriggerType = "MANUAL" | "PLAYGROUND";
+export type AutomationTriggerType = "MANUAL" | "PLAYGROUND" | "SCHEDULED";
 
 export interface AutomationRunSummary {
 	RUN_ID: string;

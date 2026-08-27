@@ -1,4 +1,4 @@
-import { Loader2, Play, RefreshCw, X } from "lucide-react";
+import { CalendarClock, Loader2, Play, RefreshCw, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Button, toast } from "@semoss/ui/next";
 import { getAutomationRun, listAutomationRuns } from "../../../api";
@@ -205,6 +205,15 @@ export function HistoryTab({ appId, refreshToken }: HistoryTabProps) {
 										className="flex w-full items-center gap-3 px-3 py-3 text-left hover:bg-muted/40"
 									>
 										<StatusBadge status={run.STATUS} />
+										{run.TRIGGER_TYPE === "SCHEDULED" && (
+											<span className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-1 font-medium text-[11px] text-muted-foreground">
+												<CalendarClock
+													className="h-3 w-3"
+													aria-hidden
+												/>
+												Scheduled
+											</span>
+										)}
 										<div className="min-w-0 flex-1 space-y-0.5">
 											<p className="truncate font-medium text-xs">
 												{formatTimestamp(
