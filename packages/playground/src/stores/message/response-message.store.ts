@@ -569,16 +569,22 @@ paramValues=[${JSON.stringify(
 	}
 
 	/**
-	 * Whether this response only has tool calls — allowing TOOL_RESULT too,
-	 * since server tools (e.g. web_search) land their call and result in
-	 * the same response message.
+	 * Whether this response should fold up into the one before it instead
+	 * of rendering as its own block — see room-content.tsx. True once it
+	 * has tool calls and nothing else worth showing on its own. An empty
+	 * THINKING part doesn't count against it: every streaming message is
+	 * seeded with one as a placeholder, so a currently-streaming tool round
+	 * still qualifies rather than only folding once it settles.
 	 */
-	get isToolOnly() {
+	get shouldFoldUp() {
 		return (
 			this.hasTools &&
-			this.parts.every(
+			!this.parts.some(
 				(part) =>
-					part.type === "TOOL_CALL" || part.type === "TOOL_RESULT",
+					(part.type === "TEXT" && part.text.length > 0) ||
+					(part.type === "THINKING" && part.thinking.length > 0) ||
+					part.type === "MEDIA" ||
+					part.type === "SUBAGENT",
 			)
 		);
 	}

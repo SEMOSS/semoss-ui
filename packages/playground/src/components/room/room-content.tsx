@@ -438,7 +438,7 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 				continue;
 			}
 
-			if (m.type === "OUTPUT" && m.isToolOnly && anchor) {
+			if (m.type === "OUTPUT" && m.shouldFoldUp && anchor) {
 				anchor.subsequentTools.push(m);
 				continue;
 			}
