@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
 	buildReasoningConfigPayload,
+	formatPrice,
+	formatPricingProviderLabel,
 	getDefaultEffortWarning,
 	getEffortOptions,
 	getMandatoryReasoningWarning,
@@ -12,6 +14,7 @@ import {
 	type ModelSettingsValues,
 	normalizeCatalogModalities,
 	normalizeCatalogTokenLimit,
+	normalizePricing,
 	pickNearestEffort,
 	sortEfforts,
 	toModelSettingsValues,
@@ -325,5 +328,123 @@ describe("buildReasoningConfigPayload", () => {
 
 	it("invents nothing for a model without a stored config", () => {
 		expect(buildReasoningConfigPayload(null, values)).toBeNull();
+	});
+});
+
+describe("normalizePricing", () => {
+	it("keeps valid entries in payload order", () => {
+		const result = normalizePricing([
+			{ servingProvider: "anthropic", input: 3, output: 15 },
+			{ servingProvider: "amazon-bedrock", input: 3 },
+		]);
+
+		expect(result).toHaveLength(2);
+		expect(result[0].servingProvider).toBe("anthropic");
+		expect(result[1].servingProvider).toBe("amazon-bedrock");
+	});
+
+	it("coerces numeric string rates", () => {
+		const result = normalizePricing([
+			{ servingProvider: "openai", input: "1.75" },
+		]);
+
+		expect(result[0].input).toBe(1.75);
+	});
+
+	it("never treats a null rate as zero", () => {
+		const result = normalizePricing([
+			{ servingProvider: "openai", input: null, output: 15 },
+		]);
+
+		expect(result).toHaveLength(1);
+		expect(result[0].input).toBeUndefined();
+		expect(result[0].output).toBe(15);
+	});
+
+	it("keeps a zero rate", () => {
+		const result = normalizePricing([
+			{ servingProvider: "openai", input: 0 },
+		]);
+
+		expect(result).toHaveLength(1);
+		expect(result[0].input).toBe(0);
+	});
+
+	it("drops entries without a provider", () => {
+		expect(
+			normalizePricing([
+				{ servingProvider: "  ", input: 3 },
+				{ input: 3 },
+			]),
+		).toEqual([]);
+	});
+
+	it("drops entries without a usable rate", () => {
+		expect(
+			normalizePricing([
+				{ servingProvider: "openai" },
+				{
+					servingProvider: "openai",
+					input: "abc",
+					output: Number.NaN,
+				},
+				{ servingProvider: "openai", input: -1 },
+			]),
+		).toEqual([]);
+	});
+
+	it("returns nothing for non-array payloads", () => {
+		expect(normalizePricing(undefined)).toEqual([]);
+		expect(normalizePricing(null)).toEqual([]);
+		expect(normalizePricing({ openai: { "gpt-5.2": {} } })).toEqual([]);
+		expect(normalizePricing("openai")).toEqual([]);
+	});
+
+	it("strips rate extras like tiers", () => {
+		const result = normalizePricing([
+			{ servingProvider: "google", input: 2, tiers: [{ input: 4 }] },
+		]);
+
+		expect(result).toHaveLength(1);
+		expect(result[0]).not.toHaveProperty("tiers");
+	});
+});
+
+describe("formatPrice", () => {
+	it("keeps whole-dollar rates reading as currency", () => {
+		expect(formatPrice(14)).toBe("$14.00");
+		expect(formatPrice(1.75)).toBe("$1.75");
+	});
+
+	it("keeps sub-cent rates meaningful", () => {
+		expect(formatPrice(0.175)).toBe("$0.175");
+		expect(formatPrice(0.058)).toBe("$0.058");
+		expect(formatPrice(0.0001)).toBe("$0.0001");
+	});
+
+	it("groups large rates", () => {
+		expect(formatPrice(1234.5)).toBe("$1,234.50");
+	});
+});
+
+describe("formatPricingProviderLabel", () => {
+	it("maps catalog keys onto the curated labels", () => {
+		expect(formatPricingProviderLabel("openai")).toBe("OpenAI");
+		expect(formatPricingProviderLabel("anthropic")).toBe("Anthropic");
+		expect(formatPricingProviderLabel("google")).toBe("Google");
+		expect(formatPricingProviderLabel("google-vertex")).toBe(
+			"Google Vertex AI",
+		);
+	});
+
+	it("title cases unknown keys", () => {
+		expect(formatPricingProviderLabel("amazon-bedrock")).toBe(
+			"Amazon Bedrock",
+		);
+		expect(formatPricingProviderLabel("azure")).toBe("Azure");
+	});
+
+	it("normalizes whitespace and case before the lookup", () => {
+		expect(formatPricingProviderLabel(" OPENAI ")).toBe("OpenAI");
 	});
 });

@@ -197,7 +197,7 @@ export const MainLayout = observer(() => {
 							/>
 							<div
 								data-testid="main-layout"
-								className="flex h-screen w-full flex-col overflow-hidden bg-background"
+								className="flex h-dvh w-full flex-col overflow-hidden bg-background"
 								style={{
 									...(!isDark && {
 										background:

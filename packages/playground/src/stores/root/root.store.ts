@@ -54,6 +54,8 @@ export class RootStore {
 			images: {
 				app: "",
 				logo: "",
+				appDark: "",
+				logoDark: "",
 				login: "",
 				landing: "",
 				tabIcon: "",
@@ -98,11 +100,10 @@ export class RootStore {
 				hideToolsInIframe: false,
 				enableKnowledgeMCP: true,
 				allowEmbeddingOptions: true,
-				showKnowledgeMenu: true,
-				showToolboxMenu: true,
 				showActivityLog: true,
 				showPlatformLinks: true,
 				enableFeedbackText: true,
+				enableTemperature: false,
 			},
 		},
 	};
@@ -235,12 +236,6 @@ export class RootStore {
 							legacy.allowEmbeddingOptions as boolean,
 					}
 				: {}),
-			...(legacy.showKnowledgeMenu !== undefined
-				? { showKnowledgeMenu: legacy.showKnowledgeMenu as boolean }
-				: {}),
-			...(legacy.showToolboxMenu !== undefined
-				? { showToolboxMenu: legacy.showToolboxMenu as boolean }
-				: {}),
 			...(legacy.showPlatformLinks !== undefined
 				? { showPlatformLinks: legacy.showPlatformLinks as boolean }
 				: {}),
@@ -302,6 +297,9 @@ export class RootStore {
 			toolAutoExecutionLimit:
 				theme?.toolAutoExecutionLimit ||
 				this._store.theme.toolAutoExecutionLimit,
+			defaultCompactionStrategy:
+				theme?.defaultCompactionStrategy ??
+				this._store.theme.defaultCompactionStrategy,
 			allowedFileTypes:
 				theme?.allowedFileTypes ||
 				this._store.theme.allowedFileTypes ||

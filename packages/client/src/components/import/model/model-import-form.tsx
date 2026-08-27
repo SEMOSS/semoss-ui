@@ -33,13 +33,22 @@ import {
 	EngineBuiltinToolsField,
 	type ModelBuiltinTools,
 } from "@/components/engine/engine-builtin-tools-field";
-import type { BuiltinToolSelection } from "@/components/engine/engine-metadata-display";
+import type {
+	BuiltinToolSelection,
+	ReasoningConfig,
+} from "@/components/engine/engine-metadata-display";
 import { useRootStore, useStepper } from "@/hooks";
 import { useNavigate } from "@/hooks/useNavigate";
 import { formatToDataTestId } from "@/utility";
 import type { CatalogMatchState } from "./model-catalog-match";
 import { ModelCatalogMatch } from "./model-catalog-match";
 import type { CategoryTexts, FieldDefinition } from "./model-import.constants";
+import { ModelReasoningConfigField } from "./model-reasoning-config-field";
+import {
+	RouterConfigField,
+	routerConfigToJson,
+	validateRouterConfig,
+} from "./router-config-field";
 
 interface ModelImportFormProps {
 	/**
@@ -127,7 +136,8 @@ const getDefaultFieldValue = (field: FieldDefinition) =>
 		? false
 		: field.type === "multiselect"
 			? []
-			: field.type === "builtin-tools"
+			: field.type === "builtin-tools" ||
+					field.type === "reasoning-config"
 				? null
 				: "");
 
@@ -167,6 +177,7 @@ export const ModelImportForm = (props: ModelImportFormProps) => {
 		setError,
 		clearErrors,
 		setFocus,
+		setValue,
 		trigger,
 		formState: { isValid },
 	} = useForm({
@@ -209,11 +220,17 @@ export const ModelImportForm = (props: ModelImportFormProps) => {
 
 	// The provider pair drives which built-in tools the catalog can offer.
 	// Both selects are user-editable, so the live form values are what count.
-	const [watchedServingProvider, watchedModelProvider, watchedModelId] =
-		useWatch({
-			control,
-			name: ["SERVING_PROVIDER", "MODEL_PROVIDER", "MODEL"],
-		});
+	// REASONING rides along because the reasoning editor owns that switch even
+	// though the value belongs to its own hidden field.
+	const [
+		watchedServingProvider,
+		watchedModelProvider,
+		watchedModelId,
+		watchedReasoning,
+	] = useWatch({
+		control,
+		name: ["SERVING_PROVIDER", "MODEL_PROVIDER", "MODEL", "REASONING"],
+	});
 
 	// Let a typed model id settle before asking the catalog about it.
 	const [settledModelId, setSettledModelId] = useState("");
@@ -286,6 +303,44 @@ export const ModelImportForm = (props: ModelImportFormProps) => {
 
 	const onSubmit = async (data: Record<string, unknown>) => {
 		const { FILE, ...newFormData } = data;
+
+		// The backend writes the router config onto a single SMSS line, so it must
+		// be valid JSON and cannot contain raw newlines - validate and minify here.
+		// The router-config editor holds a structured object; a plain string is
+		// still accepted for safety.
+		if (typeof newFormData.ROUTER_CONFIG_JSON === "string") {
+			try {
+				newFormData.ROUTER_CONFIG_JSON = JSON.stringify(
+					JSON.parse(newFormData.ROUTER_CONFIG_JSON),
+				);
+			} catch {
+				toast.error("Routing Configuration must be valid JSON.");
+				return;
+			}
+		} else if (
+			newFormData.ROUTER_CONFIG_JSON !== undefined &&
+			newFormData.ROUTER_CONFIG_JSON !== null
+		) {
+			const validation = validateRouterConfig(
+				newFormData.ROUTER_CONFIG_JSON,
+			);
+			if (validation !== true) {
+				toast.error(validation);
+				return;
+			}
+			newFormData.ROUTER_CONFIG_JSON = routerConfigToJson(
+				newFormData.ROUTER_CONFIG_JSON,
+			);
+		}
+
+		if (
+			newFormData.REASONING_CONFIG &&
+			typeof newFormData.REASONING_CONFIG === "object"
+		) {
+			newFormData.REASONING_CONFIG = JSON.stringify(
+				newFormData.REASONING_CONFIG,
+			);
+		}
 
 		setIsLoading(true);
 		let pixel = `CreateModelEngine(model=["${
@@ -514,6 +569,12 @@ export const ModelImportForm = (props: ModelImportFormProps) => {
 								validate: (value: unknown) =>
 									hasSelectedMultiselectValue(value) ||
 									`Select at least one ${f.label.toLowerCase()}.`,
+							}
+						: {}),
+					...(f.type === "router-config"
+						? {
+								validate: (value: unknown) =>
+									validateRouterConfig(value),
 							}
 						: {}),
 				}}
@@ -968,6 +1029,64 @@ export const ModelImportForm = (props: ModelImportFormProps) => {
 										</FieldDescription>
 									)}
 								</Field>
+							);
+						}
+						case "router-config":
+							return (
+								<Field data-testid={fieldWrapperTestId}>
+									<FieldLabel htmlFor={f.key}>
+										{f.label}
+										{f.required && (
+											<span className="text-destructive">
+												*
+											</span>
+										)}
+									</FieldLabel>
+									<RouterConfigField
+										value={field.value}
+										onChange={(next) =>
+											field.onChange(next)
+										}
+										disabled={f.disabled}
+										testId={fieldInputTestId}
+									/>
+									{(error || f.helperText) && (
+										<FieldDescription
+											data-testid={fieldErrorTestId}
+										>
+											{getHelperText(error, f)}
+										</FieldDescription>
+									)}
+								</Field>
+							);
+						case "reasoning-config": {
+							const asConfig = (raw: unknown) =>
+								raw &&
+								typeof raw === "object" &&
+								!Array.isArray(raw)
+									? (raw as ReasoningConfig)
+									: null;
+							return (
+								<div data-testid={fieldWrapperTestId}>
+									<ModelReasoningConfigField
+										catalogConfig={asConfig(f.default)}
+										value={asConfig(field.value)}
+										onChange={(next) =>
+											field.onChange(next)
+										}
+										reasoning={watchedReasoning === true}
+										// The switch belongs to this editor but
+										// the value is REASONING's own column.
+										onReasoningChange={(checked) =>
+											setValue("REASONING", checked, {
+												shouldDirty: true,
+											})
+										}
+										helperText={f.helperText}
+										helperTextTestId={fieldErrorTestId}
+										testId={fieldInputTestId}
+									/>
+								</div>
 							);
 						}
 						case "select":

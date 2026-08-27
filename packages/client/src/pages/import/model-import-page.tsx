@@ -28,7 +28,10 @@ import {
 	toast,
 } from "@semoss/ui/next";
 import { uploadFile } from "@/api";
-import { CATALOG_MODALITIES } from "@/components/engine/engine-metadata-display";
+import {
+	CATALOG_MODALITIES,
+	toReasoningConfig,
+} from "@/components/engine/engine-metadata-display";
 import type {
 	CatalogMatchState,
 	CatalogMatchSuggestion,
@@ -40,12 +43,18 @@ import type {
 	ImportableModels,
 	ModelFieldOverride,
 	ModelVersionDefinition,
+	ModelVersionsByProvider,
 } from "@/components/import/model/model-import.constants";
 import {
 	IMPORTABLE_MODELS,
 	MODEL_VERSIONS,
 	UNKNOWN_MODEL_BRAND,
 } from "@/components/import/model/model-import.constants";
+import {
+	fetchCatalogModels,
+	mergeCatalogModels,
+} from "@/components/import/model/model-import-catalog";
+import { hasConfigurableReasoning } from "@/components/import/model/model-reasoning-config-field";
 import {
 	ModelEngineIcon,
 	ModelTileCard,
@@ -74,6 +83,7 @@ const MODEL_PROVIDER_SUBTYPE_BY_NAME: Record<string, string> = {
 	"Self Hosted": "HUGGINGFACE",
 	Perplexity: "PERPLEXITY",
 	Embedded: "BRAIN",
+	"Model Router": "MODEL_ROUTER",
 };
 
 /**
@@ -627,16 +637,35 @@ export const buildModelMetadataFields = (
 		);
 	}
 
-	if (
-		staticMetadata?.reasoning_config &&
-		typeof staticMetadata.reasoning_config === "object" &&
-		!Array.isArray(staticMetadata.reasoning_config) &&
-		Object.keys(staticMetadata.reasoning_config).length > 0
-	) {
+	const reasoningConfig = toReasoningConfig(staticMetadata?.reasoning_config);
+
+	if (hasConfigurableReasoning(reasoningConfig)) {
+		if (typeof staticMetadata?.reasoning !== "boolean") {
+			addHiddenMetadataField("REASONING", "Reasoning Support", true);
+		}
+
+		const builtinToolsIndex = metadataFields.findIndex(
+			(field) => field.key === "BUILTIN_TOOLS",
+		);
+		metadataFields.splice(
+			builtinToolsIndex === -1
+				? metadataFields.length
+				: builtinToolsIndex,
+			0,
+			{
+				key: "REASONING_CONFIG",
+				label: "Reasoning",
+				type: "reasoning-config",
+				required: false,
+				category: "Settings",
+				default: reasoningConfig,
+			},
+		);
+	} else if (reasoningConfig !== null) {
 		addHiddenMetadataField(
 			"REASONING_CONFIG",
 			"Reasoning Configuration",
-			JSON.stringify(staticMetadata.reasoning_config),
+			JSON.stringify(reasoningConfig),
 		);
 	}
 
@@ -699,6 +728,10 @@ export const ModelImportPage: React.FC = () => {
 	const [importableModelsCategory, setimportableModelsCategory] =
 		useState<CategoryTexts | null>(null);
 	const [selectedProvider, setSelectedProvider] = useState("");
+	// hardcoded cards enriched with meta/model.json catalog models once the
+	// ListStaticModelCatalog pixel resolves; stays hardcoded-only on failure
+	const [modelVersions, setModelVersions] =
+		useState<ModelVersionsByProvider>(MODEL_VERSIONS);
 	const [providerFilter, setProviderFilter] =
 		useState<string>(ALL_PROVIDERS_FILTER);
 	const [selectedModel, setSelectedModel] = useState<string | null>(null);
@@ -725,6 +758,7 @@ export const ModelImportPage: React.FC = () => {
 	/**
 	 * Any initialization logic for the model import flow - fetch importable models
 	 */
+	// biome-ignore lint/correctness/useExhaustiveDependencies: run-once init; monolithStore is a stable root store
 	useEffect(() => {
 		const fetch = async () => {
 			setImportableModels(IMPORTABLE_MODELS as ImportableModels);
@@ -741,6 +775,19 @@ export const ModelImportPage: React.FC = () => {
 		};
 
 		fetch();
+
+		// enrich the hardcoded cards with whatever the server's catalog knows;
+		// on any failure the hardcoded cards simply stay as they are
+		let cancelled = false;
+		fetchCatalogModels((pixel) => monolithStore.runQuery(pixel)).then(
+			(catalog) => {
+				if (cancelled || !catalog) return;
+				setModelVersions(mergeCatalogModels(MODEL_VERSIONS, catalog));
+			},
+		);
+		return () => {
+			cancelled = true;
+		};
 	}, []);
 
 	useEffect(() => {
@@ -786,7 +833,7 @@ export const ModelImportPage: React.FC = () => {
 		const normalizedSearch = search.trim().toLowerCase();
 
 		return sortedProviders.map((provider) => {
-			const models = (MODEL_VERSIONS[provider.name] || []).filter(
+			const models = (modelVersions[provider.name] || []).filter(
 				(model) => {
 					if (!normalizedSearch) return true;
 
@@ -807,7 +854,7 @@ export const ModelImportPage: React.FC = () => {
 				models,
 			};
 		});
-	}, [sortedProviders, search]);
+	}, [sortedProviders, search, modelVersions]);
 
 	const visibleProviderSections = useMemo(() => {
 		if (providerFilter === ALL_PROVIDERS_FILTER) {
@@ -822,13 +869,13 @@ export const ModelImportPage: React.FC = () => {
 	const selectedModelMetadata = useMemo(() => {
 		if (!selectedProvider || selectedModel === null) return null;
 
-		const providerModels = MODEL_VERSIONS[selectedProvider] || [];
+		const providerModels = modelVersions[selectedProvider] || [];
 		return (
 			providerModels.find(
 				(m) => m.name === selectedModel || m.display === selectedModel,
 			) || null
 		);
-	}, [selectedProvider, selectedModel]);
+	}, [selectedProvider, selectedModel, modelVersions]);
 
 	// only an "other-" card leaves the Model ID to the user, and only then is there
 	// anything to match against the catalog
@@ -1289,15 +1336,17 @@ export const ModelImportPage: React.FC = () => {
 							};
 						}
 
-						mergeModelMetadataFields(
-							fields,
-							advanced,
-							buildModelMetadataFields(
-								selectedProvider,
-								selectedModelMetadata,
-								selectedStaticMetadata,
-							),
-						);
+						if (!selectedModelMetadata?.skipCatalogMetadata) {
+							mergeModelMetadataFields(
+								fields,
+								advanced,
+								buildModelMetadataFields(
+									selectedProvider,
+									selectedModelMetadata,
+									selectedStaticMetadata,
+								),
+							);
+						}
 
 						// Only a hand-picked entry is saved. An ID that resolved on
 						// its own can be resolved again from the ID, so storing it
