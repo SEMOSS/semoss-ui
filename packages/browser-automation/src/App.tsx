@@ -39,7 +39,6 @@ import {
 	enrichEnvelopeForRoomSave,
 	getRecordingStartUrl,
 } from "./domain/recording";
-import { SCROLL_SCREEN_PERCENT } from "./domain/scroll";
 import {
 	appendCapturedContext,
 	buildContextReturnPlan,
@@ -52,7 +51,10 @@ import {
 	getToolStringParameter,
 	isPlayRecordingTool,
 } from "./domain/tool-context";
+import { useAutomation } from "./hooks/useAutomation";
+import { useBrowserDebug } from "./hooks/useBrowserDebug";
 import { useBrowserSocket } from "./hooks/useBrowserSocket";
+import { useDownloads } from "./hooks/useDownloads";
 import { usePlaybackController } from "./hooks/usePlaybackController";
 import { useRemoteBrowserSession } from "./hooks/useRemoteBrowserSession";
 import {
@@ -66,14 +68,10 @@ import {
 	sendMcpResponseToPlayground,
 	subscribeToMcpToolContext,
 } from "./semoss/client";
-import { runPixel } from "./semoss/pixel";
 import type {
-	BrowserDebugEvent,
-	BrowserDownload,
 	BrowserScrollMetrics,
 	BrowserTabInfo,
 	ClientToServerEvent,
-	DownloadError,
 	GeneratedRecordingMetadata,
 	LoadedRecordingStep,
 	McpToolContext,
@@ -86,7 +84,6 @@ import type {
 
 /** Seconds a finished replay stays on screen before the session is closed. */
 const PLAYBACK_CLOSE_SECONDS = 10;
-const MAX_DEBUG_EVENTS = 1_000;
 
 type ResolvedPlaywrightRecording = {
 	source: "project" | "room";
@@ -103,15 +100,6 @@ type ResolvePlaywrightRecordingResponse = {
 	candidates: ResolvedPlaywrightRecording[];
 	searchedProjectRecordings: number;
 	searchedRoomRecordings: number;
-};
-
-type AutomationHistoryEntry = {
-	iteration: number;
-	type: "click" | "fill" | "select" | "scroll";
-	label: string;
-	value?: string;
-	pageUrl: string;
-	reason: string;
 };
 
 type PendingTextSelection = {
@@ -229,38 +217,6 @@ export default function App() {
 		number | null
 	>(null);
 	const [playbackStepsRun, setPlaybackStepsRun] = useState(0);
-	const [downloads, setDownloads] = useState<BrowserDownload[]>([]);
-	const [downloadErrors, setDownloadErrors] = useState<DownloadError[]>([]);
-	const [downloadsOpen, setDownloadsOpen] = useState(false);
-	const [debugEvents, setDebugEvents] = useState<BrowserDebugEvent[]>([]);
-	const [debugDroppedCount, setDebugDroppedCount] = useState(0);
-	const [debugOpen, setDebugOpen] = useState(false);
-	const [debugPaused, setDebugPaused] = useState(false);
-	const debugSessionIdRef = useRef<string | undefined>(undefined);
-
-	// ── Automation mode ──────────────────────────────────────────────────────
-	const [automationMode, setAutomationMode] = useState(false);
-	const [automationModelId, setAutomationModelId] = useState("");
-	const [automationSubMode, setAutomationSubMode] = useState<
-		"click" | "fill-page" | "run-goal"
-	>("click");
-	const [isAutomationGenerating, setIsAutomationGenerating] = useState(false);
-	const [isGoalAutomationRunning, setIsGoalAutomationRunning] =
-		useState(false);
-	const [automationGoal, setAutomationGoal] = useState("");
-	const [isAutomationGoalGenerating, setIsAutomationGoalGenerating] =
-		useState(false);
-	const [automationGoalGenerationError, setAutomationGoalGenerationError] =
-		useState("");
-	const [automationMaxIterations, setAutomationMaxIterations] = useState(10);
-	const [automationProgress, setAutomationProgress] = useState<{
-		iteration: number;
-		maxIterations: number;
-	} | null>(null);
-	const [automationClickPos, setAutomationClickPos] = useState<{
-		localX: number;
-		localY: number;
-	} | null>(null);
 
 	const autoStartedRef = useRef(false);
 	const autoRecordingStartedRef = useRef(false);
@@ -284,12 +240,6 @@ export default function App() {
 	const mcpPlaybackResponseSentRef = useRef(false);
 	const textSelectionRequestRef = useRef(0);
 	const activeToolExecutionRef = useRef("");
-	const automationRunTokenRef = useRef(0);
-	const automationGoalExecutionRef = useRef("");
-	const downloadsRef = useRef<BrowserDownload[]>([]);
-	const downloadErrorsRef = useRef<DownloadError[]>([]);
-	const pendingDownloadIdsRef = useRef<Set<string>>(new Set());
-	const downloadSaveInFlightRef = useRef<Promise<void> | null>(null);
 
 	useEffect(() => {
 		if (!snackError) return;
@@ -367,8 +317,7 @@ export default function App() {
 	const mcpPlaybackProjectId =
 		getToolStringParameter(toolContext, "project_id") ||
 		getToolStringParameter(toolContext, "projectId") ||
-		// Generated MCP calls may omit schema defaults from their parameter
-		// payload. The tool envelope still carries the owning project in _meta.
+		// Generated MCP calls may omit schema defaults; _meta still carries the project.
 		toolContext?.projectId ||
 		"";
 	const effectiveInsightId = getSemossInsightId() || insightId;
@@ -430,236 +379,38 @@ export default function App() {
 		});
 	}, []);
 
-	const mergeDownloads = useCallback((incoming: BrowserDownload[]) => {
-		if (!incoming.length) return;
-		const byId = new Map(
-			downloadsRef.current.map((download) => [
-				download.downloadId,
-				download,
-			]),
-		);
-		incoming.forEach((download) => {
-			if (download?.downloadId) byId.set(download.downloadId, download);
-		});
-		const next = Array.from(byId.values()).sort(
-			(left, right) => left.order - right.order,
-		);
-		downloadsRef.current = next;
-		setDownloads(next);
-	}, []);
+	const {
+		downloads,
+		downloadErrors,
+		downloadsOpen,
+		setDownloadsOpen,
+		applyDownloadSaveResponse,
+		flushDownloads,
+		downloadMcpPayload,
+		resetDownloads,
+		handleDownload,
+	} = useDownloads({
+		insightId: effectiveInsightId,
+		insightIdRef: effectiveInsightIdRef,
+		listDownloads,
+		saveDownloadsToInsight,
+	});
 
-	const applyDownloadSaveResponse = useCallback(
-		(response: {
-			downloads?: BrowserDownload[];
-			downloadErrors?: DownloadError[];
-		}) => {
-			mergeDownloads(response.downloads ?? []);
-			const errors = response.downloadErrors ?? [];
-			downloadErrorsRef.current = errors;
-			setDownloadErrors(errors);
-			if (errors.length) {
-				const byId = new Map(
-					downloadsRef.current.map((download) => [
-						download.downloadId,
-						download,
-					]),
-				);
-				errors.forEach((error) => {
-					if (!error.downloadId) return;
-					const current = byId.get(error.downloadId);
-					if (current) {
-						byId.set(error.downloadId, {
-							...current,
-							status: "save-failed",
-							error: error.error,
-						});
-					}
-				});
-				const next = Array.from(byId.values()).sort(
-					(left, right) => left.order - right.order,
-				);
-				downloadsRef.current = next;
-				setDownloads(next);
-			}
-		},
-		[mergeDownloads],
-	);
-
-	const queueDownloadSave = useCallback(
-		(downloadIds: string[] = []): Promise<void> => {
-			downloadIds.forEach((id) => {
-				pendingDownloadIdsRef.current.add(id);
-			});
-			if (downloadSaveInFlightRef.current) {
-				return downloadSaveInFlightRef.current;
-			}
-			const work = (async () => {
-				while (pendingDownloadIdsRef.current.size > 0) {
-					const targetInsightId = effectiveInsightIdRef.current;
-					if (!targetInsightId) return;
-					const ids = Array.from(pendingDownloadIdsRef.current);
-					pendingDownloadIdsRef.current.clear();
-					const response = await saveDownloadsToInsight(
-						targetInsightId,
-						ids,
-					);
-					if (!response) {
-						const errors = ids.map((downloadId) => ({
-							downloadId,
-							error: "Could not save browser download to the current insight",
-						}));
-						downloadErrorsRef.current = errors;
-						setDownloadErrors(errors);
-						return;
-					}
-					applyDownloadSaveResponse(response);
-				}
-			})();
-			let tracked: Promise<void>;
-			tracked = work.finally(() => {
-				if (downloadSaveInFlightRef.current === tracked) {
-					downloadSaveInFlightRef.current = null;
-				}
-			});
-			downloadSaveInFlightRef.current = tracked;
-			return tracked;
-		},
-		[applyDownloadSaveResponse, saveDownloadsToInsight],
-	);
-
-	const flushDownloads = useCallback(
-		async (waitForExpectedDownload = false) => {
-			const deadline =
-				Date.now() + (waitForExpectedDownload ? 15_000 : 1_500);
-			let listed = await listDownloads();
-			while (true) {
-				mergeDownloads(listed);
-				const readyIds = listed
-					.filter(
-						(download) =>
-							download.status === "ready" ||
-							download.status === "save-failed",
-					)
-					.map((download) => download.downloadId);
-				if (readyIds.length) {
-					await queueDownloadSave(readyIds);
-					listed = await listDownloads();
-					mergeDownloads(listed);
-				}
-
-				const hasDownloading = listed.some(
-					(download) => download.status === "downloading",
-				);
-				const hasUnpersistedReady = listed.some(
-					(download) =>
-						download.status === "ready" ||
-						download.status === "save-failed",
-				);
-				const hasObservedDownload = listed.length > 0;
-				if (
-					!hasDownloading &&
-					!hasUnpersistedReady &&
-					(!waitForExpectedDownload || hasObservedDownload)
-				) {
-					break;
-				}
-				if (Date.now() >= deadline) break;
-				await new Promise((resolve) => window.setTimeout(resolve, 250));
-				listed = await listDownloads();
-			}
-			mergeDownloads(listed);
-		},
-		[listDownloads, mergeDownloads, queueDownloadSave],
-	);
-
-	const downloadMcpPayload = useCallback(() => {
-		const saved = downloadsRef.current.filter(
-			(download) => download.status === "saved" && !!download.insightPath,
-		);
-		const errors = [...downloadErrorsRef.current];
-		const errorDownloadIds = new Set(
-			errors
-				.filter((error) => !!error.downloadId)
-				.map((error) => error.downloadId as string),
-		);
-		downloadsRef.current
-			.filter(
-				(download) =>
-					(download.status === "failed" ||
-						download.status === "save-failed") &&
-					!!download.error,
-			)
-			.forEach((download) => {
-				if (!errorDownloadIds.has(download.downloadId)) {
-					errors.push({
-						downloadId: download.downloadId,
-						runId: download.runId,
-						fileName: download.fileName,
-						status: download.status,
-						error: download.error || "Browser download failed",
-					});
-					errorDownloadIds.add(download.downloadId);
-				}
-			});
-		const runId = saved[0]?.runId || downloadsRef.current[0]?.runId || "";
-		return {
-			downloadSummary: saved.length
-				? `Downloaded ${saved.length} file${saved.length === 1 ? "" : "s"} and saved them to the current insight under /browser-downloads/${runId}/`
-				: "No browser downloads were saved to the current insight",
-			downloadCount: saved.length,
-			downloads: saved,
-			downloadErrors: errors,
-		};
-	}, []);
-
-	const resetDownloads = useCallback(() => {
-		downloadsRef.current = [];
-		downloadErrorsRef.current = [];
-		pendingDownloadIdsRef.current.clear();
-		setDownloads([]);
-		setDownloadErrors([]);
-		setDownloadsOpen(false);
-	}, []);
-
-	const handleDownload = useCallback(
-		(download: BrowserDownload) => {
-			mergeDownloads([download]);
-			if (download.status === "ready") {
-				void queueDownloadSave([download.downloadId]);
-			}
-		},
-		[mergeDownloads, queueDownloadSave],
-	);
-
-	const handleDebugEvents = useCallback(
-		(incoming: BrowserDebugEvent[], droppedCount: number) => {
-			if (incoming.length > 0) {
-				setDebugEvents((current) =>
-					[...current, ...incoming].slice(-MAX_DEBUG_EVENTS),
-				);
-			}
-			if (droppedCount > 0) {
-				setDebugDroppedCount((current) => current + droppedCount);
-			}
-		},
-		[],
-	);
-
-	useEffect(() => {
-		if (debugSessionIdRef.current === session?.sessionId) return;
-		debugSessionIdRef.current = session?.sessionId;
-		setBrowserCursor("default");
-		setDebugEvents([]);
-		setDebugDroppedCount(0);
-		setDebugOpen(false);
-		setDebugPaused(false);
-	}, [session?.sessionId]);
-
-	useEffect(() => {
-		if (effectiveInsightId) {
-			void queueDownloadSave();
-		}
-	}, [effectiveInsightId, queueDownloadSave]);
+	const {
+		debugEvents,
+		debugDroppedCount,
+		debugOpen,
+		debugPaused,
+		handleDebugEvents,
+		bindSetDebugEnabled,
+		handleToggleDebug,
+		handleToggleDebugPause,
+		handleClearDebug,
+	} = useBrowserDebug({
+		sessionId: session?.sessionId,
+		onError: setSnackError,
+		onSessionChange: useCallback(() => setBrowserCursor("default"), []),
+	});
 
 	const {
 		connectionState,
@@ -682,51 +433,57 @@ export default function App() {
 		onDownload: handleDownload,
 		onDebugEvents: handleDebugEvents,
 	});
+	bindSetDebugEnabled(setDebugEnabled);
 
-	const handleToggleDebug = useCallback(async () => {
-		const nextOpen = !debugOpen;
-		setDebugOpen(nextOpen);
-		setDebugPaused(false);
-		try {
-			await setDebugEnabled(nextOpen);
-		} catch (error) {
-			setDebugOpen(!nextOpen);
-			setSnackError(
-				error instanceof Error
-					? error.message
-					: "Could not update browser debug mode",
-			);
-		}
-	}, [debugOpen, setDebugEnabled]);
+	const toolExecutionKey = toolContext
+		? [
+				toolContext.roomId,
+				toolContext.message,
+				toolContext.id,
+				toolContext.originalName,
+				JSON.stringify(
+					toolContext.executedParameters ?? toolContext.parameters,
+				),
+			].join("\u001f")
+		: "";
+	const remoteWidth = session?.viewport.width ?? 1365;
+	const remoteHeight = session?.viewport.height ?? 768;
+	const {
+		automationMode,
+		setAutomationMode,
+		automationModelId,
+		setAutomationModelId,
+		automationSubMode,
+		setAutomationSubMode,
+		isAutomationGenerating,
+		isGoalAutomationRunning,
+		automationGoal,
+		setAutomationGoal,
+		isAutomationGoalGenerating,
+		automationGoalGenerationError,
+		setAutomationGoalGenerationError,
+		automationMaxIterations,
+		setAutomationMaxIterations,
+		automationProgress,
+		automationClickPos,
+		resetAutomationGoal,
+		generateAutomationGoal,
+		handleFieldAutomationTarget,
+		fillVisibleFieldsFromContext,
+		cancelGoalAutomation,
+		runGoalAutomation,
+	} = useAutomation({
+		sessionId: session?.sessionId,
+		toolContext,
+		insightId: effectiveInsightId,
+		toolExecutionKey,
+		isPlaygroundMode,
+		isMcpPlaybackMode,
+		remoteWidth,
+		remoteHeight,
+		sendReplayEvent,
+	});
 
-	const handleToggleDebugPause = useCallback(async () => {
-		const nextPaused = !debugPaused;
-		setDebugPaused(nextPaused);
-		try {
-			await setDebugEnabled(!nextPaused);
-		} catch (error) {
-			setDebugPaused(!nextPaused);
-			setSnackError(
-				error instanceof Error
-					? error.message
-					: "Could not update browser debug capture",
-			);
-		}
-	}, [debugPaused, setDebugEnabled]);
-
-	const handleClearDebug = useCallback(async () => {
-		setDebugEvents([]);
-		setDebugDroppedCount(0);
-		try {
-			await setDebugEnabled(!debugPaused, true);
-		} catch (error) {
-			setSnackError(
-				error instanceof Error
-					? error.message
-					: "Could not clear browser debug events",
-			);
-		}
-	}, [debugPaused, setDebugEnabled]);
 	const storeSelectedTextContext = useCallback(
 		(context: SelectedTextContext): SelectedTextContext => {
 			selectedContextSequenceRef.current += 1;
@@ -898,42 +655,16 @@ export default function App() {
 			applyDownloadSaveResponse({ downloads, downloadErrors: errors }),
 	});
 
-	// The playback resolution effect below is guarded to run once per tool
-	// execution. Reading the project list through refs keeps it out of that
-	// effect's dependencies: the list loads asynchronously, and re-triggering the
-	// effect runs a cleanup that cancels the in-flight recording fetch which the
-	// run-once guard then refuses to retry, leaving playback stuck at idle.
+	// Read through refs so the run-once resolution effect keeps its in-flight fetch.
 	const playbackProjectsRef = useRef(playback.projects);
 	playbackProjectsRef.current = playback.projects;
 	const playbackProjectRef = useRef(playback.project);
 	playbackProjectRef.current = playback.project;
 
-	// Same reasoning as the refs above, for the tool context itself. Two paths set
-	// it with equal content but different object identity: the postMessage
-	// subscription and the initSemoss() resolution. Depending on the object would
-	// invalidate the run-once resolution effect mid-flight and cancel the in-flight
-	// recording fetch. The effect keys off the content-based toolExecutionKey and
-	// reads the value through this ref instead.
 	const toolContextRef = useRef(toolContext);
 	toolContextRef.current = toolContext;
 
-	// Also read through a ref, for the same reason. Binding the insight to the room
-	// swaps in a new insight id, so depending on the value would invalidate the
-	// resolution effect at the exact moment its fetch is in flight. The effect
-	// triggers on readiness instead, which only transitions once.
 	const isInsightReady = !!effectiveInsightId;
-
-	const toolExecutionKey = toolContext
-		? [
-				toolContext.roomId,
-				toolContext.message,
-				toolContext.id,
-				toolContext.originalName,
-				JSON.stringify(
-					toolContext.executedParameters ?? toolContext.parameters,
-				),
-			].join("\u001f")
-		: "";
 
 	useEffect(() => {
 		if (
@@ -960,12 +691,11 @@ export default function App() {
 		resetCapturedContexts();
 		resetDownloads();
 		setRecordedSteps([]);
-		setAutomationGoal("");
-		setAutomationGoalGenerationError("");
-		automationGoalExecutionRef.current = "";
+		resetAutomationGoal();
 		playback.resetExecution();
 	}, [
 		playback.resetExecution,
+		resetAutomationGoal,
 		resetCapturedContexts,
 		resetDownloads,
 		toolExecutionKey,
@@ -1010,8 +740,7 @@ export default function App() {
 				...event,
 				expectedTabId: activeBrowserTabIdRef.current,
 			} as ClientToServerEvent;
-			// Pointer movement stays fire-and-forget so cursor motion does not
-			// continuously trigger the toolbar activity indicator.
+			// Fire-and-forget so cursor motion does not trigger the activity indicator.
 			if (event.type === "mouse-move") {
 				sendEvent(tabScopedEvent);
 				return;
@@ -1130,9 +859,7 @@ export default function App() {
 			!isMcpPlaybackMode ||
 			autoPlaybackProjectSelectedRef.current ||
 			playback.projects.length === 0 ||
-			// selectProject() resets source to "project". Once a room recording has
-			// been resolved, letting the project list arrive afterwards would flip
-			// source away from "room" and silently break the room replay branch.
+			// Keeping source as "room" once resolved; selectProject() would flip it.
 			playback.source === "room"
 		) {
 			return;
@@ -1159,9 +886,7 @@ export default function App() {
 	]);
 
 	useEffect(() => {
-		// Deliberately not gated on playback.projects. A room recording is fetched
-		// straight out of the room's asset folder, so waiting on the MCP project
-		// list would strand playback whenever no project happens to be tagged MCP.
+		// Not gated on playback.projects: room recordings need no MCP project.
 		if (
 			!isMcpPlaybackMode ||
 			autoPlaybackRecordingSelectedRef.current ||
@@ -1199,8 +924,7 @@ export default function App() {
 					await listPlaywrightRoomRecordings(),
 				);
 			} catch {
-				// Matching can still proceed. The selected room file is inserted
-				// into the controls even if the optional catalog listing fails.
+				// The selected room file is inserted even if the catalog listing fails.
 			}
 
 			const directProject =
@@ -1216,10 +940,7 @@ export default function App() {
 				.filter(Boolean)
 				.pop();
 
-			// A project-backed MCP tool must resolve against its project first. The
-			// room path is only valid for room-saved recordings; probing it for a
-			// project file can raise a misleading missing-/playwright asset error
-			// before the project resolver gets a chance to find the recording.
+			// Project-backed tools resolve against the project; the room path would 404.
 			if (exactFileName && !mcpPlaybackProjectId) {
 				const directRoomPath = `/playwright/${exactFileName}`;
 				for (let attempt = 0; attempt < 2; attempt += 1) {
@@ -1311,8 +1032,7 @@ export default function App() {
 				playbackProjectsRef.current[0] ||
 				null;
 
-			// Room recordings do not need one; only the project-sourced branch below
-			// dereferences it.
+			// Only the project-sourced branch below dereferences it.
 			if (!selectedProject && selected.source !== "room") {
 				setSnackError(
 					"No Playwright project is available for playback",
@@ -1400,9 +1120,7 @@ export default function App() {
 		mcpStartUrl,
 		playback.configureResolvedRecording,
 		playback.configureRoomRecordings,
-		// playback.project / playback.projects are deliberately omitted and read
-		// through refs instead. See the refs above: their async arrival would
-		// cancel this run-once effect's in-flight fetch.
+		// playback.project / playback.projects read through refs; see the refs above.
 		toolExecutionKey,
 	]);
 
@@ -1462,8 +1180,7 @@ export default function App() {
 				if (textSelectionRequestRef.current !== request) return;
 				setPendingTextSelection(null);
 				const message = error instanceof Error ? error.message : "";
-				// Ordinary drags (sliders, maps, canvases) are not text selections.
-				// Keep those interactions quiet; surface only transport/server failures.
+				// Ordinary drags (sliders, maps) are not text selections; stay quiet.
 				if (!message.includes("No visible DOM text")) {
 					setSnackError(
 						message || "Failed to inspect selected website text",
@@ -1682,9 +1399,6 @@ export default function App() {
 		sendEvent,
 	]);
 
-	// Held in a ref so the countdown effect below depends only on the tick value.
-	// Depending on the callback identity would restart the timer on unrelated
-	// re-renders and the countdown would never reach zero.
 	const closeBrowserSessionRef = useRef(closeBrowserSession);
 	closeBrowserSessionRef.current = closeBrowserSession;
 
@@ -1701,8 +1415,7 @@ export default function App() {
 			if (!pending || mcpPlaybackResponseSentRef.current) return;
 
 			const completion = (async () => {
-				// Downloads may finish or be triggered while the completed page is kept
-				// open. Persist and snapshot them before closing resets local state.
+				// Snapshot downloads before closing resets local state.
 				await flushDownloads();
 				const contextPayload = buildContextResponsePayload();
 				const downloadPayload = downloadMcpPayload();
@@ -2011,8 +1724,7 @@ export default function App() {
 					"No SEMOSS insight is available for room file save",
 				);
 			}
-			// Let any download callback triggered by the final recorded click mark
-			// that click before the envelope is serialized.
+			// Lets a download from the final recorded click mark it before serializing.
 			await flushDownloads();
 			const envelope = await getRecordingEnvelope();
 			if (!envelope) {
@@ -2037,11 +1749,7 @@ export default function App() {
 					"Failed to save recording to the Playground room",
 				);
 			}
-			// Regenerate mcp/pixel_mcp.json from all room recordings. This is
-			// part of a successful save, not a best-effort step. No separate
-			// registration is needed: the backend picks up a room's
-			// mcp/pixel_mcp.json automatically, so writing the file is enough
-			// for the LLM to see the new tools on the next message.
+			// Required, not best-effort: writing it is what exposes the new tools.
 			await saveRoomMcpEntry(
 				insightId,
 				saved.fileName,
@@ -2103,9 +1811,7 @@ export default function App() {
 
 			let roomPath = "";
 			let roomBoundInsightId = effectiveInsightId;
-			// App-only saves clear the server recording buffer immediately. Drain
-			// native downloads first so a delayed download callback can still mark the
-			// producing click before the JSON is written.
+			// Drain downloads first so a late callback can still mark its producing click.
 			if (!saveToPlayground) {
 				await flushDownloads();
 			}
@@ -2136,9 +1842,7 @@ export default function App() {
 				playback.selectSavedRecording(saveProject, appSaved.fileName);
 				appFileName = appSaved.fileName;
 			}
-			// Recording can begin before a room insight is bound. Once the recording
-			// save has established the target insight, drain any staged downloads
-			// before closing the browser session (which removes staged files).
+			// Closing the session removes staged files, so drain against the bound insight.
 			effectiveInsightIdRef.current =
 				roomBoundInsightId || effectiveInsightIdRef.current;
 			await flushDownloads();
@@ -2368,9 +2072,7 @@ export default function App() {
 			autoPlaybackLoadStartedRef.current ||
 			connectionState !== "connected" ||
 			!session ||
-			// Room recordings come straight from the room folder, so requiring a
-			// project here would strand playback whenever the MCP project list has
-			// not resolved yet (or when no project is tagged MCP at all).
+			// Room recordings come from the room folder, so a project is not required.
 			(playback.source !== "room" && !playback.project) ||
 			!playback.selectedRecording ||
 			playback.isLoadingRecording
@@ -2428,9 +2130,7 @@ export default function App() {
 				}
 				await flushDownloads(result.completed && expectsDownload);
 
-				// Completed replay remains pending while the final page is available for
-				// inspection. The response is built only when the user returns or the
-				// countdown expires, so later context and downloads are included.
+				// Held pending so later context and downloads reach the response.
 				if (result.completed) {
 					pendingMcpPlaybackCompletionRef.current = {
 						recordingFile: selectedRecording,
@@ -2498,556 +2198,11 @@ export default function App() {
 		toolContext,
 	]);
 
-	const remoteWidth = session?.viewport.width ?? 1365;
-	const remoteHeight = session?.viewport.height ?? 768;
 	const isBrowserLoading =
 		isCreating || pendingNavigationCount > 0 || isRemoteNavigating;
 	const replayMenuOpen =
 		playback.controlsOpen || playback.loadedRecordingOpen;
 
-	const generateAutomationGoal = useCallback(
-		async (replaceExisting: boolean) => {
-			const roomId = toolContext?.roomId ?? "";
-			if (!roomId || !automationModelId || !effectiveInsightId) return;
-
-			setIsAutomationGoalGenerating(true);
-			setAutomationGoalGenerationError("");
-			try {
-				const response = await runPixel<Record<string, unknown>>(
-					`GeneratePlaywrightAutomationGoal(engine=${JSON.stringify(automationModelId)}, roomId=${JSON.stringify(roomId)}, limit=20);`,
-					effectiveInsightId,
-				);
-				const output = response.pixelReturn?.[0]?.output;
-				if (!isRecord(output) || output.success !== true) {
-					throw new Error(
-						isRecord(output) && typeof output.error === "string"
-							? output.error
-							: "Could not generate an automation goal.",
-					);
-				}
-				const generatedGoal =
-					typeof output.goal === "string" ? output.goal.trim() : "";
-				if (!generatedGoal) {
-					throw new Error(
-						"The model returned an empty automation goal.",
-					);
-				}
-				setAutomationGoal((current) =>
-					replaceExisting || !current.trim()
-						? generatedGoal
-						: current,
-				);
-				if (!automationModelId && typeof output.engineId === "string") {
-					setAutomationModelId(output.engineId);
-				}
-			} catch (error) {
-				setAutomationGoalGenerationError(
-					error instanceof Error
-						? error.message
-						: "Could not generate an automation goal.",
-				);
-			} finally {
-				setIsAutomationGoalGenerating(false);
-			}
-		},
-		[automationModelId, effectiveInsightId, toolContext?.roomId],
-	);
-
-	useEffect(() => {
-		if (
-			!isPlaygroundMode ||
-			isMcpPlaybackMode ||
-			!toolExecutionKey ||
-			!automationModelId ||
-			automationGoalExecutionRef.current === toolExecutionKey
-		) {
-			return;
-		}
-		automationGoalExecutionRef.current = toolExecutionKey;
-		void generateAutomationGoal(false);
-	}, [
-		automationModelId,
-		generateAutomationGoal,
-		isMcpPlaybackMode,
-		isPlaygroundMode,
-		toolExecutionKey,
-	]);
-
-	const executeGeneratedFields = useCallback(
-		async (output: Record<string, unknown>): Promise<number> => {
-			const fields = Array.isArray(output.fields)
-				? (output.fields as Array<Record<string, unknown>>)
-				: [];
-			const expectedUrl =
-				typeof output.pageUrl === "string" ? output.pageUrl : undefined;
-			const expectedTabId =
-				typeof output.tabId === "string" ? output.tabId : undefined;
-			let completed = 0;
-
-			for (const field of fields) {
-				const value =
-					typeof field.value === "string" ? field.value : "";
-				const strategy =
-					typeof field.selectorStrategy === "string"
-						? field.selectorStrategy
-						: "css";
-				const selectorValue =
-					typeof field.selectorValue === "string"
-						? field.selectorValue
-						: "";
-				if (!value || !selectorValue) continue;
-
-				await sendReplayEvent({
-					type: "fill-element",
-					requestId: crypto.randomUUID(),
-					text: value,
-					selector: {
-						strategy,
-						value: selectorValue,
-						frameSelector:
-							typeof field.frameSelector === "string"
-								? field.frameSelector
-								: null,
-					},
-					label:
-						typeof field.label === "string"
-							? field.label
-							: undefined,
-					tag: typeof field.tag === "string" ? field.tag : undefined,
-					isPassword: field.isPassword === true,
-					storeValue: field.storeValue === true,
-					expectedUrl,
-					expectedTabId,
-				});
-				completed += 1;
-			}
-			return completed;
-		},
-		[sendReplayEvent],
-	);
-
-	const generateAndFillSelectedField = useCallback(
-		async (remoteX: number, remoteY: number) => {
-			if (!session?.sessionId) {
-				toast("No active browser session.");
-				return;
-			}
-			setIsAutomationGenerating(true);
-			try {
-				const roomId = toolContext?.roomId ?? "";
-				if (!roomId) {
-					toast(
-						"No room context available — open this tool from a Playground room.",
-					);
-					return;
-				}
-
-				// Single-field mode: passes x/y so the reactor identifies the clicked field,
-				// but still sees ALL form fields for cross-field reasoning accuracy.
-				const response = await runPixel<Record<string, unknown>>(
-					`GeneratePlaywrightFieldActions(engine=${JSON.stringify(automationModelId)}, roomId=${JSON.stringify(roomId)}, sessionId=${JSON.stringify(session.sessionId)}, limit=20, x=${remoteX}, y=${remoteY});`,
-					effectiveInsightId,
-				);
-
-				const output = response.pixelReturn?.[0]?.output as
-					| Record<string, unknown>
-					| undefined;
-				if (!output?.success) {
-					toast(
-						typeof output?.error === "string"
-							? output.error
-							: "Automation generation failed.",
-					);
-					return;
-				}
-
-				const fields = Array.isArray(output?.fields)
-					? output.fields
-					: [];
-
-				if (fields.length === 0) {
-					toast(
-						typeof output?.message === "string"
-							? output.message
-							: "No editable field or context-supported value was found at that position.",
-					);
-					return;
-				}
-
-				const completed = await executeGeneratedFields(output);
-				if (completed === 0) {
-					toast("No generated field action could be executed.");
-					return;
-				}
-				if (!automationModelId && typeof output.engineId === "string") {
-					setAutomationModelId(output.engineId);
-				}
-				toast("Filled the selected field from Playground context.");
-				setAutomationMode(false);
-			} catch (error) {
-				toast(
-					error instanceof Error
-						? error.message
-						: "Automation generation failed.",
-				);
-			} finally {
-				setIsAutomationGenerating(false);
-				setAutomationClickPos(null);
-			}
-		},
-		[
-			automationModelId,
-			effectiveInsightId,
-			executeGeneratedFields,
-			session?.sessionId,
-			toolContext?.roomId,
-		],
-	);
-
-	const handleFieldAutomationTarget = useCallback(
-		async (
-			localX: number,
-			localY: number,
-			remoteX: number,
-			remoteY: number,
-			button: "left" | "right" | "middle",
-		) => {
-			setAutomationClickPos({ localX, localY });
-			try {
-				await sendReplayEvent({
-					type: "mouse-click",
-					requestId: crypto.randomUUID(),
-					x: remoteX,
-					y: remoteY,
-					button,
-				});
-				await generateAndFillSelectedField(remoteX, remoteY);
-			} catch (error) {
-				toast(
-					error instanceof Error
-						? error.message
-						: "Could not click the selected browser position.",
-				);
-				setAutomationClickPos(null);
-			}
-		},
-		[generateAndFillSelectedField, sendReplayEvent],
-	);
-
-	const fillVisibleFieldsFromContext = useCallback(async () => {
-		if (!session?.sessionId) {
-			toast("No active browser session.");
-			return;
-		}
-		const roomId = toolContext?.roomId ?? "";
-		if (!roomId) {
-			toast(
-				"No room context available — open this tool from a Playground room.",
-			);
-			return;
-		}
-		setIsAutomationGenerating(true);
-		setAutomationMode(false);
-		try {
-			// All-fields mode: no x/y, reactor fills all visible fields.
-			const response = await runPixel<Record<string, unknown>>(
-				`GeneratePlaywrightFieldActions(engine=${JSON.stringify(automationModelId)}, roomId=${JSON.stringify(roomId)}, sessionId=${JSON.stringify(session.sessionId)}, limit=20);`,
-				effectiveInsightId,
-			);
-
-			const output = response.pixelReturn?.[0]?.output as
-				| Record<string, unknown>
-				| undefined;
-			if (!output?.success) {
-				toast(
-					typeof output?.error === "string"
-						? output.error
-						: "Page fill failed.",
-				);
-				return;
-			}
-
-			const fields = Array.isArray(output?.fields) ? output.fields : [];
-
-			if (fields.length === 0) {
-				toast(
-					typeof output?.message === "string"
-						? output.message
-						: "No editable fields could be filled from the available context.",
-				);
-				return;
-			}
-
-			const completed = await executeGeneratedFields(output);
-			if (completed === 0) {
-				toast("No generated field action could be executed.");
-				return;
-			}
-			if (!automationModelId && typeof output.engineId === "string") {
-				setAutomationModelId(output.engineId);
-			}
-			toast(
-				`Filled ${completed} field${completed !== 1 ? "s" : ""} from Playground context.`,
-			);
-		} catch (error) {
-			toast(error instanceof Error ? error.message : "Page fill failed.");
-		} finally {
-			setIsAutomationGenerating(false);
-		}
-	}, [
-		automationModelId,
-		effectiveInsightId,
-		executeGeneratedFields,
-		session?.sessionId,
-		toolContext?.roomId,
-	]);
-
-	const executePlannedAutomationAction = useCallback(
-		async (
-			output: Record<string, unknown>,
-			iteration: number,
-		): Promise<AutomationHistoryEntry> => {
-			if (!isRecord(output.action)) {
-				throw new Error("Automation planner did not return an action.");
-			}
-			const action = output.action;
-			const rawType = action.type;
-			const type =
-				typeof rawType === "string" ? rawType.trim().toLowerCase() : "";
-			if (
-				type !== "click" &&
-				type !== "fill" &&
-				type !== "select" &&
-				type !== "scroll"
-			) {
-				throw new Error(
-					`Automation planner returned an unsupported action type: ${JSON.stringify(rawType)}.`,
-				);
-			}
-			const label = typeof action.label === "string" ? action.label : "";
-			const expectedUrl =
-				typeof output.pageUrl === "string" ? output.pageUrl : undefined;
-			const expectedTabId =
-				typeof output.tabId === "string" ? output.tabId : undefined;
-			const reason =
-				typeof output.reason === "string" ? output.reason : "";
-
-			if (type === "scroll") {
-				const deltaY =
-					typeof action.deltaY === "number" ? action.deltaY : 0;
-				if (!deltaY) {
-					throw new Error(
-						"Automation planner returned an empty scroll amount.",
-					);
-				}
-				await sendReplayEvent({
-					type: "wheel",
-					requestId: crypto.randomUUID(),
-					x: remoteWidth / 2,
-					y: remoteHeight / 2,
-					deltaX: 0,
-					deltaY,
-					expectedUrl,
-					expectedTabId,
-				});
-				return {
-					iteration,
-					type,
-					label,
-					value: `${deltaY < 0 ? "up" : "down"} ${typeof action.screenPercent === "number" ? action.screenPercent : SCROLL_SCREEN_PERCENT}%`,
-					pageUrl: expectedUrl || "",
-					reason,
-				};
-			}
-			if (!isRecord(action.selector)) {
-				throw new Error("Automation action has no validated selector.");
-			}
-			const strategy =
-				typeof action.selector.strategy === "string"
-					? action.selector.strategy
-					: "css";
-			const selectorValue =
-				typeof action.selector.value === "string"
-					? action.selector.value
-					: "";
-			if (!selectorValue) {
-				throw new Error("Automation action has an empty selector.");
-			}
-			const selector = {
-				strategy,
-				value: selectorValue,
-				frameSelector:
-					typeof action.selector.frameSelector === "string"
-						? action.selector.frameSelector
-						: null,
-			};
-			const tag = typeof action.tag === "string" ? action.tag : undefined;
-			const isPassword = action.isPassword === true;
-			const storeValue = action.storeValue === true;
-
-			if (type === "click") {
-				const coords = isRecord(action.coords) ? action.coords : {};
-				await sendReplayEvent({
-					type: "mouse-click",
-					requestId: crypto.randomUUID(),
-					x: typeof coords.x === "number" ? coords.x : 0,
-					y: typeof coords.y === "number" ? coords.y : 0,
-					button: "left",
-					selector,
-					label,
-					tag,
-					waitAfterMs: 500,
-					expectedUrl,
-					expectedTabId,
-				});
-				return {
-					iteration,
-					type,
-					label,
-					pageUrl: expectedUrl || "",
-					reason,
-				};
-			}
-
-			const value = typeof action.value === "string" ? action.value : "";
-			if (!value)
-				throw new Error("Automation planner returned an empty value.");
-			await sendReplayEvent({
-				type: "fill-element",
-				requestId: crypto.randomUUID(),
-				text: value,
-				selector,
-				label,
-				tag: type === "select" ? "select" : tag,
-				isPassword,
-				storeValue,
-				expectedUrl,
-				expectedTabId,
-			});
-			return {
-				iteration,
-				type,
-				label,
-				value: isPassword ? "[REDACTED]" : value,
-				pageUrl: expectedUrl || "",
-				reason,
-			};
-		},
-		[remoteHeight, remoteWidth, sendReplayEvent],
-	);
-
-	const cancelGoalAutomation = useCallback(() => {
-		automationRunTokenRef.current += 1;
-		setIsGoalAutomationRunning(false);
-		setAutomationProgress(null);
-		toast("Goal automation stopped.");
-	}, []);
-
-	const runGoalAutomation = useCallback(async () => {
-		if (!session?.sessionId) {
-			toast("No active browser session.");
-			return;
-		}
-		const roomId = toolContext?.roomId ?? "";
-		if (!roomId) {
-			toast(
-				"No room context available — open this tool from a Playground room.",
-			);
-			return;
-		}
-
-		const runToken = automationRunTokenRef.current + 1;
-		automationRunTokenRef.current = runToken;
-		setAutomationMode(false);
-		setIsGoalAutomationRunning(true);
-		const history: AutomationHistoryEntry[] = [];
-		const resolvedGoal = automationGoal.trim();
-		let reachedGoal = false;
-		if (!resolvedGoal) {
-			setIsGoalAutomationRunning(false);
-			toast("Review or enter an automation goal before running.");
-			return;
-		}
-
-		try {
-			for (
-				let iteration = 1;
-				iteration <= automationMaxIterations;
-				iteration += 1
-			) {
-				if (automationRunTokenRef.current !== runToken) return;
-				setAutomationProgress({
-					iteration,
-					maxIterations: automationMaxIterations,
-				});
-
-				const response = await runPixel<Record<string, unknown>>(
-					`PlanNextPlaywrightAction(engine=${JSON.stringify(automationModelId)}, roomId=${JSON.stringify(roomId)}, sessionId=${JSON.stringify(session.sessionId)}, goal=${JSON.stringify(resolvedGoal)}, history=${JSON.stringify(JSON.stringify(history))}, iteration=${iteration}, maxIterations=${automationMaxIterations}, limit=20);`,
-					effectiveInsightId,
-				);
-				if (automationRunTokenRef.current !== runToken) return;
-
-				const output = response.pixelReturn?.[0]?.output;
-				if (!isRecord(output) || output.success !== true) {
-					throw new Error(
-						isRecord(output) && typeof output.error === "string"
-							? output.error
-							: "Browser automation planning failed.",
-					);
-				}
-				if (!automationModelId && typeof output.engineId === "string") {
-					setAutomationModelId(output.engineId);
-				}
-				const reason =
-					typeof output.reason === "string" ? output.reason : "";
-				if (output.goalReached === true) {
-					reachedGoal = true;
-					toast(reason || "Browser automation reached the goal.");
-					return;
-				}
-				if (!isRecord(output.action)) {
-					toast(
-						reason || "Browser automation has no safe next action.",
-					);
-					return;
-				}
-
-				const completed = await executePlannedAutomationAction(
-					output,
-					iteration,
-				);
-				if (automationRunTokenRef.current !== runToken) return;
-				history.push(completed);
-			}
-
-			if (!reachedGoal) {
-				toast(
-					`Browser automation stopped after ${automationMaxIterations} iterations without confirming the goal.`,
-				);
-			}
-		} catch (error) {
-			if (automationRunTokenRef.current === runToken) {
-				toast(
-					error instanceof Error
-						? error.message
-						: "Browser automation failed.",
-				);
-			}
-		} finally {
-			if (automationRunTokenRef.current === runToken) {
-				setIsGoalAutomationRunning(false);
-				setAutomationProgress(null);
-			}
-		}
-	}, [
-		automationGoal,
-		automationMaxIterations,
-		automationModelId,
-		effectiveInsightId,
-		executePlannedAutomationAction,
-		session?.sessionId,
-		toolContext?.roomId,
-	]);
 	const pendingSelectionContext = pendingTextSelection?.context ?? null;
 
 	return (

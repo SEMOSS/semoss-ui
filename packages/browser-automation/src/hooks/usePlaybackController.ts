@@ -207,8 +207,7 @@ export function usePlaybackController({
 					rows.push({ tabId, step, index });
 				});
 		});
-		// Recorder step IDs are session-global. Sort across tab buckets so a
-		// workflow that switches tabs replays in its original chronology.
+		// Step IDs are session-global, so sort across tab buckets to keep chronology.
 		return rows.sort((left, right) => {
 			const leftId =
 				typeof left.step.id === "number"
@@ -752,8 +751,7 @@ export function usePlaybackController({
 				String(step.type || "")
 					.trim()
 					.toUpperCase() === "CONTEXT";
-			// Room recordings replay through replayRoomStep below, which never
-			// touches project, so only project-sourced recordings require one.
+			// Room recordings replay through replayRoomStep, which never touches project.
 			if (
 				!insightId ||
 				(source !== "room" && !project) ||
@@ -876,8 +874,7 @@ export function usePlaybackController({
 				return true;
 			}
 
-			// Unreachable given the guard above, which only waives the project
-			// requirement for the room source handled by the branch we just left.
+			// Unreachable: the guard above only waives project for the room source.
 			if (!project) {
 				setRunningStepId(null);
 				onError("Cannot run this step");

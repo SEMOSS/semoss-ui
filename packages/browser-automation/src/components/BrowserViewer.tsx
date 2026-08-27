@@ -221,10 +221,7 @@ export const BrowserViewer: React.FC<BrowserViewerProps> = ({
 		[remoteHeight, remoteWidth],
 	);
 
-	// Drag detection: only send mouse-click for clean clicks; send
-	// mouse-down/mouse-up only for real drags. Without this, mousedown+mouseup
-	// fires an implicit browser click AND the explicit mouse-click event fires
-	// another one — causing every click to register twice on the remote page.
+	// Without drag detection, mousedown+mouseup registers every click twice.
 	const dragDownPosRef = useRef<{ x: number; y: number } | null>(null);
 	const isDraggingRef = useRef(false);
 	const suppressNextClickRef = useRef(false);
@@ -273,9 +270,7 @@ export const BrowserViewer: React.FC<BrowserViewerProps> = ({
 	);
 	const handleClick = useCallback(
 		(event: React.MouseEvent) => {
-			// A browser click event is emitted after mouseup even when the gesture
-			// was a drag. Ignore it completely: notifying onUserInput here would
-			// immediately dismiss the selected-text popup created by mouseup.
+			// Fired after mouseup even for drags; onUserInput here would dismiss the popup.
 			if (suppressNextClickRef.current) {
 				suppressNextClickRef.current = false;
 				return;

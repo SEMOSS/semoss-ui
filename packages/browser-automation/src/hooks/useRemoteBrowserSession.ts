@@ -314,8 +314,7 @@ export function useRemoteBrowserSession(): UseRemoteBrowserSessionReturn {
 			setIsLoadingProjects(true);
 			setError(null);
 			try {
-				// Recordings can live in any app the user can edit. WORKSPACE and
-				// SKILL projects are deliberately excluded.
+				// Any app the user can edit; WORKSPACE and SKILL are deliberately excluded.
 				const pixel = `META | MyProjects(projectType=["CODE", "BLOCKS"], filterWord=[""]);`;
 				const res = await runPixel(pixel, insightId);
 				const output = res.pixelReturn?.[0]?.output;
