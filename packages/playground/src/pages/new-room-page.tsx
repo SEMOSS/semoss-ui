@@ -401,7 +401,6 @@ export const NewRoomPage = observer(() => {
 			createRoom("Hello", [], { visible: false });
 		}
 		// biome-ignore lint/correctness/useExhaustiveDependencies: autoGreetedRef guards re-fires
-	}, [mode, getWorkspace.status, getWorkspace.data, tempRoomStore]);
 	}, [
 		selectedWorkspaceId,
 		getWorkspace.status,
