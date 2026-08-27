@@ -217,44 +217,55 @@ export const CatalogGridItem = ({
 
 								<div className="flex items-center gap-1">
 									{actions}
-									{menuItems.length > 0 && (
-										<DropdownMenu>
-											<DropdownMenuTrigger asChild>
-												<Button
-													variant="ghost"
-													size="icon-sm"
-													onClick={(event) => {
-														event.preventDefault();
-														event.stopPropagation();
-													}}
-												>
-													<MoreVertical className="size-4" />
-												</Button>
-											</DropdownMenuTrigger>
-											<DropdownMenuContent align="end">
-												{menuItems.map((item) => {
-													return (
-														<DropdownMenuItem
-															key={item.label}
-															className={
-																item.className
-															}
-															onClick={(
-																event,
-															) => {
-																event.preventDefault();
-																event.stopPropagation();
-																item.onClick();
-															}}
-														>
-															{item.icon}
-															{item.label}
-														</DropdownMenuItem>
-													);
-												})}
-											</DropdownMenuContent>
-										</DropdownMenu>
-									)}
+									<div className="flex size-8 shrink-0 items-center justify-center">
+										{menuItems.length > 0 ? (
+											<DropdownMenu>
+												<DropdownMenuTrigger asChild>
+													<Button
+														variant="ghost"
+														size="icon-sm"
+														onClick={(event) => {
+															event.preventDefault();
+															event.stopPropagation();
+														}}
+													>
+														<MoreVertical className="size-4" />
+													</Button>
+												</DropdownMenuTrigger>
+												<DropdownMenuContent align="end">
+													{menuItems.map((item) => {
+														return (
+															<DropdownMenuItem
+																key={item.label}
+																className={
+																	item.className
+																}
+																onClick={(
+																	event,
+																) => {
+																	event.preventDefault();
+																	event.stopPropagation();
+																	item.onClick();
+																}}
+															>
+																{item.icon}
+																{item.label}
+															</DropdownMenuItem>
+														);
+													})}
+												</DropdownMenuContent>
+											</DropdownMenu>
+										) : (
+											<Button
+												variant="ghost"
+												size="icon-sm"
+												disabled
+												aria-label="No additional actions available"
+											>
+												<MoreVertical className="size-4 text-muted-foreground" />
+											</Button>
+										)}
+									</div>
 								</div>
 							</div>
 						</Card>
@@ -384,44 +395,55 @@ export const CatalogGridItem = ({
 
 					<div className="flex items-center gap-1">
 						{actions}
-						{menuItems.length > 0 && (
-							<DropdownMenu
-								open={menuOpen}
-								onOpenChange={setMenuOpen}
-							>
-								<DropdownMenuTrigger asChild>
-									<Button
-										variant="ghost"
-										size="icon-sm"
-										onClick={(event) => {
-											event.preventDefault();
-											event.stopPropagation();
-										}}
-									>
-										<MoreVertical className="size-4" />
-									</Button>
-								</DropdownMenuTrigger>
-								<DropdownMenuContent align="end">
-									{menuItems.map((item) => {
-										return (
-											<DropdownMenuItem
-												key={item.label}
-												className={item.className}
-												onClick={(event) => {
-													event.preventDefault();
-													event.stopPropagation();
-													setMenuOpen(false);
-													item.onClick();
-												}}
-											>
-												{item.icon}
-												{item.label}
-											</DropdownMenuItem>
-										);
-									})}
-								</DropdownMenuContent>
-							</DropdownMenu>
-						)}
+						<div className="flex size-8 shrink-0 items-center justify-center">
+							{menuItems.length > 0 ? (
+								<DropdownMenu
+									open={menuOpen}
+									onOpenChange={setMenuOpen}
+								>
+									<DropdownMenuTrigger asChild>
+										<Button
+											variant="ghost"
+											size="icon-sm"
+											onClick={(event) => {
+												event.preventDefault();
+												event.stopPropagation();
+											}}
+										>
+											<MoreVertical className="size-4" />
+										</Button>
+									</DropdownMenuTrigger>
+									<DropdownMenuContent align="end">
+										{menuItems.map((item) => {
+											return (
+												<DropdownMenuItem
+													key={item.label}
+													className={item.className}
+													onClick={(event) => {
+														event.preventDefault();
+														event.stopPropagation();
+														setMenuOpen(false);
+														item.onClick();
+													}}
+												>
+													{item.icon}
+													{item.label}
+												</DropdownMenuItem>
+											);
+										})}
+									</DropdownMenuContent>
+								</DropdownMenu>
+							) : (
+								<Button
+									variant="ghost"
+									size="icon-sm"
+									disabled
+									aria-label="No additional actions available"
+								>
+									<MoreVertical className="size-4 text-muted-foreground" />
+								</Button>
+							)}
+						</div>
 					</div>
 				</div>
 			</Card>

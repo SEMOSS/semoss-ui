@@ -25,7 +25,11 @@ import { CatalogFilterBox } from "@/components/catalog/catalog-filter-box";
 import { Help } from "@/components/help";
 import { DeleteEntityDialog } from "@/components/shared/delete-entity-dialog";
 import { useRootStore } from "@/hooks";
-import { getProjectLabel, isOwnerPermission } from "@/utility/catalog";
+import {
+	canCloneProject,
+	getProjectLabel,
+	isOwnerPermission,
+} from "@/utility/catalog";
 import { NavbarHeader, NavbarLeft } from "../shared";
 import { ProjectGridItem } from "./project-grid-item";
 
@@ -518,7 +522,9 @@ export const ProjectCatalog = observer(
 													showFavorite={true}
 													showGlobal={true}
 													showInfo={true}
-													showClone={true}
+													showClone={canCloneProject(
+														project,
+													)}
 													showDelete={isOwnerPermission(
 														project.user_permission,
 													)}
@@ -563,7 +569,7 @@ export const ProjectCatalog = observer(
 											showFavorite={true}
 											showGlobal={true}
 											showInfo={true}
-											showClone={true}
+											showClone={canCloneProject(project)}
 											showDelete={isOwnerPermission(
 												project.user_permission,
 											)}
@@ -620,9 +626,7 @@ export const ProjectCatalog = observer(
 												project.user_permission,
 											)}
 											showInfo={false}
-											showClone={isOwnerPermission(
-												project.user_permission,
-											)}
+											showClone={canCloneProject(project)}
 											showDelete={isOwnerPermission(
 												project.user_permission,
 											)}

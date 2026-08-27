@@ -87,3 +87,30 @@ export const isOwnerPermission = (
 ): boolean => {
 	return permission === 1 || permission === "OWNER";
 };
+
+/**
+ * Utility to check if the user has editor or owner permission.
+ * @param permission
+ * @returns true if the user can edit the resource, false otherwise
+ */
+export const isEditorPermission = (permission?: number): boolean => {
+	return permission === 1 || permission === 2;
+};
+
+/**
+ * Agents and skills can be cloned by anyone who can view them. Regular
+ * projects require editor or owner permission because cloning copies the
+ * project's contents into a new project.
+ */
+export const canCloneProject = (
+	project: Pick<Project, "project_type" | "user_permission">,
+): boolean => {
+	if (
+		project.project_type === "WORKSPACE" ||
+		project.project_type === "SKILL"
+	) {
+		return true;
+	}
+
+	return isEditorPermission(project.user_permission);
+};
