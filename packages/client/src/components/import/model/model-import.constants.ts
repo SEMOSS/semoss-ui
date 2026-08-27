@@ -1,5 +1,7 @@
 // Removed unused import (was: import { link } from "fs");
 // biome-ignore-all lint/suspicious/noTemplateCurlyInString: TODO
+import type { ReasoningConfig } from "@/components/engine/engine-metadata-display";
+
 type FieldType =
 	| "text"
 	| "hidden"
@@ -10,7 +12,10 @@ type FieldType =
 	| "boolean"
 	| "multiselect"
 	| "textarea"
-	| "file-upload";
+	| "file-upload"
+	| "builtin-tools"
+	| "router-config"
+	| "reasoning-config";
 
 type categoryType = "General" | "Credentials" | "Settings";
 
@@ -42,7 +47,17 @@ export interface FieldDefinition {
 	warningOptions?: string[];
 	optionLabels?: Record<string, string>;
 	disabled?: boolean;
-	default?: string | string[] | number | boolean;
+	/**
+	 * A "reasoning-config" field carries the model catalog's reasoning config
+	 * here, which is both the starting value and the list of efforts on offer.
+	 */
+	default?:
+		| string
+		| string[]
+		| number
+		| boolean
+		| RouterConfigFormValue
+		| ReasoningConfig;
 	rules?: FieldRules;
 	helperText?: string;
 }
@@ -84,14 +99,14 @@ export interface AppendedModelField {
 	insertAfterKey?: string;
 }
 
-interface ModelFormConfig {
+export interface ModelFormConfig {
 	fieldOverrides?: ModelFieldOverride[];
 	appendFields?: AppendedModelField[];
 	advancedFieldOverrides?: ModelFieldOverride[];
 	appendAdvancedFields?: AppendedModelField[];
 }
 
-interface ModelVersionDefinition {
+export interface ModelVersionDefinition {
 	name: string;
 	display: string;
 	icon: string;
@@ -102,6 +117,13 @@ interface ModelVersionDefinition {
 	disable?: boolean;
 	audio?: boolean;
 	image?: boolean;
+	/**
+	 * Meta-engines (e.g. the Model Router) only point at engines that already
+	 * exist, so the catalog metadata questions (model/serving provider,
+	 * capability, modalities, built-in tools) do not apply and are not added
+	 * to the import form.
+	 */
+	skipCatalogMetadata?: boolean;
 	formConfig?: ModelFormConfig;
 }
 
@@ -223,6 +245,67 @@ const OTHER_MODEL_FORM_CONFIG_BY_PROVIDER: Record<string, ModelFormConfig> = {
 	},
 };
 
+// Structured editor value for the Model Router's routing configuration. The
+// router-config field holds this object in form state; on submit it is
+// serialized to the minified JSON the backend writes to router.json. The `id`
+// fields only exist for stable React list keys and are never serialized.
+export interface RouterRouteFormValue {
+	id: string;
+	name: string;
+	engine_id: string;
+	/** Comma-separated in the editor; split into an array on serialize. */
+	keywords: string;
+	/** Percent of traffic in weighted mode; the editor requires the routes to total 100. */
+	weight: number;
+	/** What the LLM classifier reads; required in llm mode. */
+	description: string;
+}
+
+export interface RouterEngineRefFormValue {
+	id: string;
+	engine_id: string;
+}
+
+export interface RouterConfigFormValue {
+	mode: "keyword" | "llm" | "weighted";
+	sticky: boolean;
+	default_route: string;
+	classifier_engine: string;
+	embeddings_engine: string;
+	fallbacks: RouterEngineRefFormValue[];
+	routes: RouterRouteFormValue[];
+}
+
+let routerFieldIdSeed = 0;
+const nextRouterFieldId = () => {
+	routerFieldIdSeed += 1;
+	return `router-field-${routerFieldIdSeed}`;
+};
+
+export const createRouterRoute = (): RouterRouteFormValue => ({
+	id: nextRouterFieldId(),
+	name: "",
+	engine_id: "",
+	keywords: "",
+	weight: 0,
+	description: "",
+});
+
+export const createRouterEngineRef = (): RouterEngineRefFormValue => ({
+	id: nextRouterFieldId(),
+	engine_id: "",
+});
+
+export const createDefaultRouterConfigValue = (): RouterConfigFormValue => ({
+	mode: "keyword",
+	sticky: true,
+	default_route: "",
+	classifier_engine: "",
+	embeddings_engine: "",
+	fallbacks: [],
+	routes: [createRouterRoute()],
+});
+
 export const IMPORTABLE_MODELS = {
 	categoryTexts: {
 		Anthropic: {
@@ -288,6 +371,14 @@ export const IMPORTABLE_MODELS = {
 				"Set your model, token limits, and init configuration for OpenAI-compatible Perplexity API usage.",
 			Credentials:
 				"Enter your Perplexity API key and verify the fixed endpoint for secure access to Perplexity models.",
+		},
+		"Model Router": {
+			General:
+				"Create a single catalog entry that routes each request to one of your existing model engines.",
+			Settings:
+				"Choose how requests are routed - keyword, LLM classifier, or weighted - and pick which engines serve, classify, and back up each route. Saved as router.json in the engine's assets folder.",
+			Credentials:
+				"No credentials needed - the router delegates to model engines that are already configured.",
 		},
 	},
 
@@ -2222,6 +2313,79 @@ export const IMPORTABLE_MODELS = {
 				},
 			],
 		},
+		{
+			name: "Model Router",
+			types: [
+				{
+					model_types: ["llm"],
+					fields: [
+						{
+							key: "NAME",
+							label: "Catalog Name",
+							type: "text",
+							required: true,
+							category: "General",
+						},
+						{
+							key: "DESCRIPTION",
+							label: "Description",
+							type: "textarea",
+							required: false,
+							category: "General",
+							helperText:
+								"Optional catalog description shown to users browsing this model.",
+						},
+						{
+							key: "MODEL_TYPE",
+							label: "Model Type",
+							type: "hidden",
+							disabled: true,
+							required: true,
+							default: "MODEL_ROUTER",
+							category: "General",
+						},
+						{
+							key: "MODEL",
+							label: "Model Name",
+							type: "hidden",
+							disabled: true,
+							required: true,
+							default: "model-router",
+							category: "General",
+						},
+						{
+							key: "ROUTER_CONFIG_JSON",
+							label: "Routing",
+							type: "router-config",
+							required: true,
+							default: createDefaultRouterConfigValue(),
+							helperText:
+								"Saved as router.json in the engine's assets folder.",
+							category: "Settings",
+						},
+						{
+							key: "KEEP_INPUT_OUTPUT",
+							label: "Record Questions and Responses",
+							type: "select",
+							options: ["true", "false"],
+							required: true,
+							default: "true",
+							category: "Settings",
+						},
+						{
+							key: "KEEP_CONVERSATION_HISTORY",
+							label: "Keep Conversation History",
+							type: "select",
+							options: ["true", "false"],
+							required: true,
+							default: "true",
+							category: "Settings",
+						},
+					],
+					advanced: [],
+				},
+			],
+		},
 	],
 };
 
@@ -2323,11 +2487,12 @@ const AZURE_ANTHROPIC_INIT_MODEL_ENGINE =
 const GOOGLE_ANTHROPIC_INIT_MODEL_ENGINE =
 	"import genai_client;${VAR_NAME} = genai_client.AnthropicClient(model_name = '${MODEL}', provider = '${PROVIDER}', region='${GCP_REGION}', project='${PROJECT}', service_account_credentials = ${SERVICE_ACCOUNT_CREDENTIALS}, context_window = ${CONTEXT_WINDOW}, max_tokens = ${MAX_TOKENS})";
 
-const AWS_BEDROCK_ANTHROPIC_FORM_CONFIG = buildAnthropicProviderFormConfig({
-	initModelEngine: AWS_BEDROCK_ANTHROPIC_INIT_MODEL_ENGINE,
-	provider: "bedrock",
-	providerFieldType: "text",
-});
+export const AWS_BEDROCK_ANTHROPIC_FORM_CONFIG =
+	buildAnthropicProviderFormConfig({
+		initModelEngine: AWS_BEDROCK_ANTHROPIC_INIT_MODEL_ENGINE,
+		provider: "bedrock",
+		providerFieldType: "text",
+	});
 
 const AZURE_ANTHROPIC_FORM_CONFIG = buildAnthropicProviderFormConfig({
 	initModelEngine: AZURE_ANTHROPIC_INIT_MODEL_ENGINE,
@@ -2339,13 +2504,13 @@ const AZURE_ANTHROPIC_FORM_CONFIG = buildAnthropicProviderFormConfig({
 	useCustomModelInput: true,
 });
 
-const GOOGLE_ANTHROPIC_FORM_CONFIG = buildAnthropicProviderFormConfig({
+export const GOOGLE_ANTHROPIC_FORM_CONFIG = buildAnthropicProviderFormConfig({
 	initModelEngine: GOOGLE_ANTHROPIC_INIT_MODEL_ENGINE,
 	provider: "google",
 	providerFieldType: "text",
 });
 
-const withModelTokenLimits = (
+export const withModelTokenLimits = (
 	baseFormConfig: ModelFormConfig | undefined,
 	maxTokens: number,
 	contextWindow: number,
@@ -2373,51 +2538,19 @@ const withModelTokenLimits = (
 	};
 };
 export const MODEL_VERSIONS: ModelVersionsByProvider = {
+	"Model Router": [
+		{
+			name: "model-router",
+			display: "Model Router",
+			icon: "/src/assets/img/model_routing.svg",
+			modelBrand: "SEMOSS",
+			embedding: false,
+			skipCatalogMetadata: true,
+			description:
+				"Route requests across your existing model engines by keyword, LLM classification, or weighted round-robin - with failover and sticky conversations.",
+		},
+	],
 	Anthropic: [
-		{
-			name: "claude-haiku-4-5-20251001",
-			display: "Claude Haiku 4.5",
-			icon: "/src/assets/img/CLAUDE_AI.svg",
-			modelBrand: "CLAUDE",
-			embedding: false,
-			link: "https://docs.anthropic.com/en/docs/models-overview",
-			description:
-				"Fast Claude model with near-frontier intelligence for low-latency generation and lightweight assistant workflows.",
-			formConfig: withModelTokenLimits(undefined, 64000, 200000),
-		},
-		{
-			name: "claude-sonnet-4-6",
-			display: "Claude Sonnet 4.6",
-			icon: "/src/assets/img/CLAUDE_AI.svg",
-			modelBrand: "CLAUDE",
-			embedding: false,
-			link: "https://docs.anthropic.com/en/docs/models-overview",
-			description:
-				"Balanced Claude model combining speed and intelligence for general enterprise workloads.",
-			formConfig: withModelTokenLimits(undefined, 64000, 1000000),
-		},
-		{
-			name: "claude-opus-4-6",
-			display: "Claude Opus 4.6",
-			icon: "/src/assets/img/CLAUDE_AI.svg",
-			modelBrand: "CLAUDE",
-			embedding: false,
-			link: "https://docs.anthropic.com/en/docs/models-overview",
-			description:
-				"Most intelligent Claude model for complex reasoning, coding, and advanced agentic workflows.",
-			formConfig: withModelTokenLimits(undefined, 128000, 1000000),
-		},
-		{
-			name: "claude-opus-4-7",
-			display: "Claude Opus 4.7",
-			icon: "/src/assets/img/CLAUDE_AI.svg",
-			modelBrand: "CLAUDE",
-			embedding: false,
-			link: "https://docs.anthropic.com/en/docs/models-overview",
-			description:
-				"Frontier Claude Opus model with advanced software engineering, superior vision, and long-running agentic capabilities.",
-			formConfig: withModelTokenLimits(undefined, 128000, 1000000),
-		},
 		{
 			name: "other-anthropic-model",
 			display: "Other Anthropic Model",
@@ -2531,16 +2664,6 @@ export const MODEL_VERSIONS: ModelVersionsByProvider = {
 				"Amazon Nova multimodal embedding model for text, image, audio, and video representation use cases.",
 		},
 		{
-			name: "amazon.nova-2-lite-v1:0",
-			display: "Amazon Nova 2 Lite",
-			icon: "/src/assets/img/BEDROCK.svg",
-			embedding: false,
-			link: "https://docs.aws.amazon.com/bedrock/latest/userguide/model-ids.html",
-			description:
-				"Amazon Nova 2 Lite model for efficient multimodal generation and general-purpose assistant workloads.",
-			formConfig: withModelTokenLimits(undefined, 65000, 1000000),
-		},
-		{
 			name: "amazon.nova-2-sonic-v1:0",
 			display: "Amazon Nova 2 Sonic",
 			icon: "/src/assets/img/BEDROCK.svg",
@@ -2562,26 +2685,6 @@ export const MODEL_VERSIONS: ModelVersionsByProvider = {
 				"Amazon Nova Canvas image generation model for text-to-image and visual content creation tasks.",
 		},
 		{
-			name: "amazon.nova-lite-v1:0",
-			display: "Amazon Nova Lite",
-			icon: "/src/assets/img/BEDROCK.svg",
-			embedding: false,
-			link: "https://docs.aws.amazon.com/bedrock/latest/userguide/model-ids.html",
-			description:
-				"Amazon Nova Lite model for low-latency multimodal generation and cost-sensitive workloads.",
-			formConfig: withModelTokenLimits(undefined, 10000, 300000),
-		},
-		{
-			name: "amazon.nova-micro-v1:0",
-			display: "Amazon Nova Micro",
-			icon: "/src/assets/img/BEDROCK.svg",
-			embedding: false,
-			link: "https://docs.aws.amazon.com/bedrock/latest/userguide/model-ids.html",
-			description:
-				"Amazon Nova Micro model optimized for fast text generation and lightweight production tasks.",
-			formConfig: withModelTokenLimits(undefined, 10000, 128000),
-		},
-		{
 			name: "amazon.nova-premier-v1:0",
 			display: "Amazon Nova Premier",
 			icon: "/src/assets/img/BEDROCK.svg",
@@ -2590,16 +2693,6 @@ export const MODEL_VERSIONS: ModelVersionsByProvider = {
 			description:
 				"Amazon Nova Premier model for high-capability multimodal reasoning and enterprise workflows.",
 			formConfig: withModelTokenLimits(undefined, 10000, 1000000),
-		},
-		{
-			name: "amazon.nova-pro-v1:0",
-			display: "Amazon Nova Pro",
-			icon: "/src/assets/img/BEDROCK.svg",
-			embedding: false,
-			link: "https://docs.aws.amazon.com/bedrock/latest/userguide/model-ids.html",
-			description:
-				"Amazon Nova Pro model balancing quality, speed, and multimodal support for production assistants.",
-			formConfig: withModelTokenLimits(undefined, 10000, 300000),
 		},
 		{
 			name: "amazon.nova-reel-v1:0",
@@ -2933,87 +3026,6 @@ export const MODEL_VERSIONS: ModelVersionsByProvider = {
 			),
 		},
 		{
-			name: "gemini-3.1-pro-preview",
-			display: "Gemini 3.1 Pro Preview",
-			icon: "/src/assets/img/GEMINI_COLOR.svg",
-			embedding: false,
-			link: "https://cloud.google.com/vertex-ai/generative-ai/docs/models/gemini/3-1-pro",
-			description:
-				"Advanced intelligence model for complex problem-solving and agentic capabilities.",
-			formConfig: withModelTokenLimits(undefined, 65536, 1048576),
-		},
-		{
-			name: "gemini-3-flash-preview",
-			display: "Gemini 3 Flash Preview",
-			icon: "/src/assets/img/GEMINI_COLOR.svg",
-			embedding: false,
-			link: "https://cloud.google.com/vertex-ai/generative-ai/docs/models/gemini/3-flash",
-			description:
-				"High-performance model with pro-level intelligence at lower latency and cost.",
-			formConfig: withModelTokenLimits(undefined, 65536, 1048576),
-		},
-		{
-			name: "gemini-3.1-flash-lite",
-			display: "Gemini 3.1 Flash Lite",
-			icon: "/src/assets/img/GEMINI_COLOR.svg",
-			embedding: false,
-			link: "https://cloud.google.com/vertex-ai/generative-ai/docs/models/gemini/3-1-flash-lite",
-			description:
-				"Optimized preview model for high-volume, cost-sensitive tasks.",
-			formConfig: withModelTokenLimits(undefined, 65536, 1048576),
-		},
-		{
-			name: "gemini-3-pro-image",
-			display: "Gemini 3 Pro Image",
-			icon: "/src/assets/img/GEMINI_COLOR.svg",
-			embedding: false,
-			link: "https://cloud.google.com/vertex-ai/generative-ai/docs/models/gemini/3-pro-image",
-			image: true,
-			description:
-				"High-fidelity image generation model with reasoning capabilities.",
-			formConfig: withModelTokenLimits(undefined, 32768, 65536),
-		},
-		{
-			name: "gemini-3.1-flash-image",
-			display: "Gemini 3.1 Flash Image",
-			icon: "/src/assets/img/GEMINI_COLOR.svg",
-			embedding: false,
-			link: "https://cloud.google.com/vertex-ai/generative-ai/docs/models/gemini/3-1-flash-image",
-			image: true,
-			description:
-				"High-efficiency visual creation model for fast image generation workflows.",
-			formConfig: withModelTokenLimits(undefined, 32768, 131072),
-		},
-		{
-			name: "gemini-2.5-pro",
-			display: "Gemini 2.5 Pro",
-			icon: "/src/assets/img/GEMINI_COLOR.svg",
-			embedding: false,
-			link: "https://cloud.google.com/vertex-ai/generative-ai/docs/models/gemini/2-5-pro",
-			description:
-				"High-capability model for complex reasoning and coding with a large context window.",
-			formConfig: withModelTokenLimits(undefined, 65536, 1048576),
-		},
-		{
-			name: "gemini-2.5-flash",
-			display: "Gemini 2.5 Flash",
-			icon: "/src/assets/img/GEMINI_COLOR.svg",
-			embedding: false,
-			link: "https://cloud.google.com/vertex-ai/generative-ai/docs/models/gemini/2-5-flash",
-			description:
-				"Fast and capable model balancing intelligence and speed.",
-			formConfig: withModelTokenLimits(undefined, 65536, 1048576),
-		},
-		{
-			name: "gemini-2.5-flash-lite",
-			display: "Gemini 2.5 Flash Lite",
-			icon: "/src/assets/img/GEMINI_COLOR.svg",
-			embedding: false,
-			link: "https://cloud.google.com/vertex-ai/generative-ai/docs/models/gemini/2-5-flash-lite",
-			description: "Optimized Gemini model for high-throughput tasks.",
-			formConfig: withModelTokenLimits(undefined, 65536, 1048576),
-		},
-		{
 			name: "gemini-2.0-flash-001",
 			display: "Gemini 2.0 Flash 001",
 			icon: "/src/assets/img/GEMINI_COLOR.svg",
@@ -3022,17 +3034,6 @@ export const MODEL_VERSIONS: ModelVersionsByProvider = {
 			description:
 				"Multimodal general-purpose model for broad production use.",
 			formConfig: withModelTokenLimits(undefined, 8192, 1048576),
-		},
-		{
-			name: "gemini-2.5-flash-image",
-			display: "Gemini 2.5 Flash Image",
-			icon: "/src/assets/img/GEMINI_COLOR.svg",
-			embedding: false,
-			link: "https://cloud.google.com/vertex-ai/generative-ai/docs/models/gemini/2-5-flash-image",
-			image: true,
-			description:
-				"Production-ready image model for fast, high-quality asset generation.",
-			formConfig: withModelTokenLimits(undefined, 32768, 65536),
 		},
 		{
 			name: "gemini-embedding-2",
@@ -3163,86 +3164,6 @@ export const MODEL_VERSIONS: ModelVersionsByProvider = {
 			description:
 				"Cost-efficient GPT Image model for lower-cost image generation and editing use cases.",
 			link: "https://platform.openai.com/docs/models",
-		},
-		{
-			name: "gpt-4.1",
-			display: "GPT-4.1",
-			icon: "/src/assets/img/OPEN_AI.svg",
-			description: "Smartest non-reasoning model.",
-			link: "https://platform.openai.com/docs/models/gpt-4.1",
-		},
-		{
-			name: "gpt-5",
-			display: "GPT-5",
-			icon: "/src/assets/img/OPEN_AI.svg",
-			description:
-				"Previous intelligent reasoning model for coding and agentic tasks with configurable reasoning effort.",
-			link: "https://platform.openai.com/docs/models/gpt-5",
-		},
-		{
-			name: "gpt-5-mini",
-			display: "GPT-5 Mini",
-			icon: "/src/assets/img/OPEN_AI.svg",
-			description:
-				"A faster, cost-efficient GPT-5 variant optimized for well-defined tasks and precise prompts.",
-			link: "https://platform.openai.com/docs/models/gpt-5-mini",
-		},
-		{
-			name: "gpt-5-nano",
-			display: "GPT-5 nano",
-			icon: "/src/assets/img/OPEN_AI.svg",
-			description:
-				"Fastest, most cost-efficient GPT-5 variant ideal for high-volume summarization and classification.",
-			link: "https://platform.openai.com/docs/models/gpt-5-nano",
-		},
-		{
-			name: "gpt-5.1",
-			display: "GPT-5.1",
-			icon: "/src/assets/img/OPEN_AI.svg",
-			description:
-				"The best model for coding and agentic tasks with configurable reasoning effort.",
-			link: "https://platform.openai.com/docs/models/gpt-5.1",
-		},
-		{
-			name: "gpt-5.4",
-			display: "GPT-5.4",
-			icon: "/src/assets/img/OPEN_AI.svg",
-			description:
-				"Best intelligence at scale for agentic, coding, and professional workflows.",
-			link: "https://platform.openai.com/docs/models/gpt-5.4",
-		},
-		{
-			name: "gpt-5.4-mini",
-			display: "GPT-5.4 Mini",
-			icon: "/src/assets/img/OPEN_AI.svg",
-			description:
-				"Strong mini model for coding, computer use, and subagent workflows.",
-			link: "https://platform.openai.com/docs/models/gpt-5.4-mini",
-		},
-		{
-			name: "gpt-5.4-nano",
-			display: "GPT-5.4 Nano",
-			icon: "/src/assets/img/OPEN_AI.svg",
-			description:
-				"Cheapest GPT-5.4-class model for simple high-volume tasks.",
-			link: "https://platform.openai.com/docs/models/gpt-5.4-nano",
-		},
-		{
-			name: "gpt-5.4-pro",
-			display: "GPT-5.4 Pro",
-			icon: "/src/assets/img/OPEN_AI.svg",
-			description:
-				"Version of GPT-5.4 tuned for smarter and more precise responses.",
-			link: "https://platform.openai.com/docs/models/gpt-5.4-pro",
-		},
-		{
-			name: "gpt-5.5",
-			display: "GPT-5.5",
-			icon: "/src/assets/img/OPEN_AI.svg",
-			description:
-				"Next-generation GPT-5 reasoning model with a 1.05M context window and advanced reasoning token support.",
-			link: "https://developers.openai.com/api/docs/models/gpt-5.5",
-			formConfig: withModelTokenLimits(undefined, 128000, 1050000),
 		},
 		{
 			name: "gpt-audio",
@@ -3522,50 +3443,6 @@ export const MODEL_VERSIONS: ModelVersionsByProvider = {
 		},
 	],
 	Perplexity: [
-		{
-			name: "sonar",
-			display: "Sonar",
-			icon: "/src/assets/img/PERPLEXITY.svg",
-			modelBrand: "PERPLEXITY",
-			embedding: false,
-			link: "https://docs.perplexity.ai/models/model-cards",
-			description:
-				"Perplexity's core Sonar model for fast, grounded conversational responses with web-aware context.",
-			formConfig: withModelTokenLimits(undefined, 128000, 128000),
-		},
-		{
-			name: "sonar-pro",
-			display: "Sonar Pro",
-			icon: "/src/assets/img/PERPLEXITY.svg",
-			modelBrand: "PERPLEXITY",
-			embedding: false,
-			link: "https://docs.perplexity.ai/models/model-cards",
-			description:
-				"Higher-capability Sonar variant tuned for stronger instruction-following and more complex chat workloads.",
-			formConfig: withModelTokenLimits(undefined, 128000, 200000),
-		},
-		{
-			name: "sonar-reasoning-pro",
-			display: "Sonar Reasoning Pro",
-			icon: "/src/assets/img/PERPLEXITY.svg",
-			modelBrand: "PERPLEXITY",
-			embedding: false,
-			link: "https://docs.perplexity.ai/models/model-cards",
-			description:
-				"Reasoning-optimized Sonar model for multi-step problem solving and analytical question answering.",
-			formConfig: withModelTokenLimits(undefined, 128000, 128000),
-		},
-		{
-			name: "sonar-deep-research",
-			display: "Sonar Deep Research",
-			icon: "/src/assets/img/PERPLEXITY.svg",
-			modelBrand: "PERPLEXITY",
-			embedding: false,
-			link: "https://docs.perplexity.ai/models/model-cards",
-			description:
-				"Research-focused Sonar model designed for deeper synthesis across multiple sources and longer analyses.",
-			formConfig: withModelTokenLimits(undefined, 128000, 128000),
-		},
 		{
 			name: "other-perplexity-model",
 			display: "Other Perplexity Model",
