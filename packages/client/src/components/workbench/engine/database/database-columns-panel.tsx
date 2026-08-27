@@ -3,7 +3,6 @@ import {
 	ChevronDown,
 	ChevronsUpDown,
 	NetworkIcon,
-	RefreshCw,
 	SearchIcon,
 	Table,
 	X,
@@ -45,7 +44,7 @@ import type {
 	WorkbenchPanelConfig,
 } from "@/stores/workbench";
 import { getDatabaseWorkbenchStore } from "@/stores/workbench/database";
-import { WORKBENCH_STYLES } from "../../core/workbench.chrome";
+import { DatabaseColumnsRefreshControl } from "./database-columns-refresh-control";
 import {
 	type DatabaseColumnAction,
 	type DatabaseTableAction,
@@ -80,36 +79,7 @@ export const DatabaseColumnsPanel: WorkbenchComponent = ({ id }) => {
 		(state) => state.addQueryPanel,
 	);
 
-	// Refresh acts on the whole structure this panel shows, not on anything
-	// inside it, so it belongs to the panel's chrome rather than the body's
-	// search row. An inline renderer keeps it closed over `isLoading`, which
-	// is what lets the glyph spin while the fetch is in flight.
-	useWorkbenchControl(id, () => (
-		<Tooltip>
-			<TooltipTrigger asChild>
-				<Button
-					variant="ghost"
-					size="icon-sm"
-					onClick={() => refreshStructure()}
-					disabled={isLoading}
-					aria-label="Refresh database structure"
-					data-testid="database-columns--refresh-btn"
-					className={cn(
-						"flex-none text-muted-foreground",
-						WORKBENCH_STYLES.chromeButton,
-					)}
-				>
-					<RefreshCw
-						className={cn(
-							WORKBENCH_STYLES.chromeIcon,
-							isLoading && "animate-spin",
-						)}
-					/>
-				</Button>
-			</TooltipTrigger>
-			<TooltipContent>Refresh database structure</TooltipContent>
-		</Tooltip>
-	));
+	useWorkbenchControl(id, DatabaseColumnsRefreshControl);
 
 	const readOnly = !(permission === "OWNER" || permission === "EDIT");
 	const [searchTerm, setSearchTerm] = useState("");

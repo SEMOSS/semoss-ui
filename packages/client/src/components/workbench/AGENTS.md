@@ -1,7 +1,7 @@
 # AGENTS.md - Workbench
 
 Covers the workbench feature: `components/workbench/` (this folder), its paired state in
-`stores/workbench/`, `contexts/workbench.context.tsx`, and `hooks/use-workbench*.ts`.
+`stores/workbench/`, `contexts/workbench.context.tsx`, and `hooks/use-workbench*`.
 
 > **Inherits from:** [../../../AGENTS.md](../../../AGENTS.md) (client) and
 > [../../../../../AGENTS.md](../../../../../AGENTS.md) (root).
@@ -31,8 +31,8 @@ queries run the admin-permission pixels.
 ## One context, one hook, one namespace per domain
 
 Everything reaches the per-mount store through `useWorkbench(selector)`. State is grouped by
-domain — `layout`, `loading`, `command`, `assistant`, `notifications` — and each namespace
-carries its own fields and its own `actions`:
+domain — `layout`, `loading`, `command`, `control`, `assistant`, `notifications` — and each
+namespace carries its own fields and its own `actions`:
 
 ```ts
 const actions = useWorkbench((s) => s.layout.actions); // stable object — never re-renders
@@ -124,9 +124,9 @@ mounts before first show (the assistant uses it to initialize while its border i
 One file: module-scope `LAYOUT: WorkbenchLayout` + `COMPONENTS` map + a
 `useWorkbenchCommands([...])` call + `<Workbench layout components borderSlots />`. Toolbar
 controls (command menu, publish, settings toggle) go in `borderSlots.left.after` — there is no
-separate `actions` prop. The page wraps
-it in `<WorkbenchProvider id={<unique-instance-id>}>` — `id` just needs to be unique per
-instance. Follow `engine/function/function-workbench.tsx` as the exemplar.
+separate `actions` prop. The page wraps it in `<WorkbenchProvider id={<unique-instance-id>}>`;
+`id` just needs to be unique per instance. Follow `engine/function/function-workbench.tsx` as
+the exemplar.
 
 **Commands**: register palette commands with `useWorkbenchCommands([...])` (`hooks/
 use-workbench-commands.ts`) from the component that owns them — a domain workbench or a panel.
@@ -141,16 +141,49 @@ alphabetically. Don't bake the prefix into `label`.
 
 **Controls**: a panel contributes at most one chrome control with
 `useWorkbenchControl(id, content)` (`hooks/use-workbench-control.tsx`) from inside its body —
-there is no blueprint slot for this, precisely so `content` can close over the panel's own refs
-and state. `content` receives `WorkbenchChromeProps` and owns its label, disabled state, and
+there is no blueprint slot for this, precisely so `content` can reach the panel's own refs and
+state. `content` receives `WorkbenchChromeProps` and owns its label, disabled state, and
 click handling; the core only places it — in the **header row of the panel's stack**, and only
 for that stack's **active** tab. A dock's header row is its tab strip (the control lands beside
 the maximize button); a border has no strip, so the shell draws one over the open body and the
 control sits there. The rail carries navigation only — it is one `chromeButton` wide, which
-fits a glyph and nothing else. An inline `content` is fine (the hook registers one stable
-wrapper, so identity churn never remounts it), and a keepAlive panel's registration simply
-waits, hidden, until its tab is front again. See `project/code/code-app-renderer-panel.tsx`
-(the refresh control) as the exemplar.
+fits a glyph and nothing else. There are no effect dependencies to manage: the hook keeps
+`content` in a ref it refreshes every render and registers one stable wrapper, so registration
+churns only when a control appears or disappears, and a keepAlive panel's registration simply
+waits, hidden, until its tab is front again.
+
+**A control does not re-render with its panel — read this twice.** It draws inside
+`WorkbenchPanelControls` (`core/workbench-panel-header.tsx`), a separate subtree subscribed only
+to `s.control.controls[pid]` and to `useWorkbenchPanel(pid, location)`. Refreshing the ref
+schedules nothing, so a fresh closure sits unread until the *chrome* re-renders for its own
+reasons — a control closed over a panel's `useState` silently never updates.
+
+So **a control is its own component in its own file** (the repo's one-component-per-file rule),
+named `<panel>-<action>-control.tsx` beside the panel, subscribing to whatever live state it
+draws. Live domain state comes from the domain hook (the chrome sits under the same
+`WorkbenchProvider`); the panel's own state has to travel through the store, which is what the
+never-persisted scratch `value` is for — the panel gets `value`, the control gets `setValue`:
+
+```tsx
+// database-columns-refresh-control.tsx — live state off the domain store
+export const DatabaseColumnsRefreshControl: FC<WorkbenchChromeProps> = () => {
+	const isLoading = useDatabaseWorkbench((s) => s.structure.status === "LOADING");
+	…
+};
+
+// code-app-renderer-refresh-control.tsx — the panel's own state, via `value`
+export const CodeAppRendererRefreshControl: FC<
+	WorkbenchChromeProps<WorkbenchPanelParams, number>
+> = ({ setValue }) => <Button onClick={() => setValue((count = 0) => count + 1)}>…</Button>;
+```
+
+`useWorkbenchControl` infers `P`/`V` from the component's annotation, so a typed control needs
+no cast (the registry erases them behind `WorkbenchControlAny`, same as `WorkbenchPanelConfigAny`).
+The three live controls — `engine/database/database-columns-refresh-control.tsx`,
+`engine/database/database-new-query-control.tsx`, `project/code/code-app-renderer-refresh-control.tsx`
+— are the exemplars. An inline arrow is a second cost on top of the staleness: it takes a new
+identity every render, so whenever the chrome *does* re-render, React sees a new element type at
+the wrapper's child and remounts the control, resetting an open popover or focus inside it.
 
 A blueprint that draws its own heading sets `enableBorderHeader: false` to suppress the shell's
 row (`assistant/workbench-assistant-view.tsx` is the one case). That opts out of the control
@@ -170,10 +203,11 @@ the mobile shell renders no controls at all; it has no rails and no per-panel he
 Domain state gets a **dedicated store**, not a slice: `stores/workbench/database/
 database-workbench.store.ts` exports `createDatabaseWorkbenchStore(deps)`. The domain
 workbench creates it once, attaches it via `actions.attachDomainStore(store)`, and a flat hook
-(`hooks/use-database-workbench.ts`) reads it back with one documented cast. No provider
-component, no generics. Layout coupling is explicit: paired panels carry `config.sourcePanel`,
-titles derive reactively (custom `header` reading the workbench store), and cleanup runs
-through the shell's `onPanelClose(pid, record)` prop.
+(`hooks/use-database-workbench.ts`) reads it back through `getDatabaseWorkbenchStore` — the one
+place the untyped attachment is narrowed, shared with the non-React `commands`/`menuItems`
+callers. No provider component, no generics. Layout coupling is explicit: paired panels carry
+`config.sourcePanel`, titles derive reactively (custom `header` reading the workbench store),
+and cleanup runs through the shell's `onPanelClose(pid, record)` prop.
 
 ## File map
 
@@ -190,6 +224,7 @@ through the shell's `onPanelClose(pid, record)` prop.
 | `stores/workbench/slices/workbench-layout.slice.ts` | The dock state + `actions` (registry, slots, persistence, ephemeral UI) |
 | `stores/workbench/slices/workbench-layout.tree.ts` | Pure, DOM-free tree ops |
 | `stores/workbench/slices/workbench-layout.commands.ts` | Layout-derived palette entries |
+| `stores/workbench/slices/workbench-controls.slice.ts` | Panel-contributed chrome controls, keyed by panel id; each control is its own `*-control.tsx` file beside its panel |
 | `stores/workbench/database/` | The database domain store (the dedicated-store template) |
 | `contexts/workbench.context.tsx` | `WorkbenchProvider` — one store per mount |
 

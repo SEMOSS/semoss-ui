@@ -205,13 +205,23 @@ export type WorkbenchChrome<P = WorkbenchPanelParams, V = unknown> = (
  * A panel-contributed chrome control, drawn in the header row of the panel's
  * stack — the tab strip in a dock, the header over the body in a border.
  * Registered at runtime with `useWorkbenchControl` — one per panel — rather
- * than on the blueprint, so the renderer can close over the panel's own state.
- * `content` owns its label, disabled state, and click handling; the core only
- * places it.
+ * than on the blueprint, so a panel can register it conditionally and drop it
+ * on unmount. `content` owns its label, disabled state, and click handling;
+ * the core only places it. It renders in the chrome's subtree, not the
+ * panel's, so it subscribes to whatever live state it draws.
  */
 export interface WorkbenchControl<P = WorkbenchPanelParams, V = unknown> {
 	content: ComponentType<WorkbenchChromeProps<P, V>>;
 }
+
+/**
+ * A control with its generics erased — what the controls map holds. Same
+ * existential erasure as `WorkbenchPanelConfigAny`: the registry is
+ * heterogeneous and the chrome only ever has a `WorkbenchPanelParams` bag at
+ * runtime, so each control recovers its parameters from its own annotation.
+ */
+// biome-ignore lint/suspicious/noExplicitAny: existential erasure, see above
+export type WorkbenchControlAny = WorkbenchControl<any, any>;
 
 /** A palette command contributed by a panel instance. */
 export interface WorkbenchPanelCommand {

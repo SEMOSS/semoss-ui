@@ -1,4 +1,4 @@
-import { DatabaseIcon, PlusIcon } from "lucide-react";
+import { DatabaseIcon } from "lucide-react";
 import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 import {
 	MonacoEditor,
@@ -8,21 +8,13 @@ import {
 	SPARQL_THEME_DARK,
 	SPARQL_THEME_LIGHT,
 } from "@semoss/shared";
-import {
-	Button,
-	cn,
-	Spinner,
-	Tooltip,
-	TooltipContent,
-	TooltipTrigger,
-	useTheme,
-} from "@semoss/ui/next";
+import { Button, Spinner, useTheme } from "@semoss/ui/next";
 import { useDatabaseWorkbench, useWorkbenchControl } from "@/hooks";
 import type {
 	WorkbenchComponent,
 	WorkbenchPanelConfig,
 } from "@/stores/workbench";
-import { WORKBENCH_STYLES } from "../../core/workbench.chrome";
+import { DatabaseNewQueryControl } from "./database-new-query-control";
 
 const SQL_KEYWORDS = [
 	"SELECT",
@@ -75,7 +67,6 @@ export const DatabaseQueryPanel: WorkbenchComponent<DatabaseQueryConfig> = ({
 }) => {
 	const mode = useDatabaseWorkbench((state) => state.mode);
 	const structure = useDatabaseWorkbench((state) => state.structure.data);
-	const addQueryPanel = useDatabaseWorkbench((state) => state.addQueryPanel);
 	const onQuery = useDatabaseWorkbench((state) => state.onQuery);
 	const isRunning = useDatabaseWorkbench(
 		(state) => state.runningPanels[id] ?? false,
@@ -87,29 +78,7 @@ export const DatabaseQueryPanel: WorkbenchComponent<DatabaseQueryConfig> = ({
 		[onQuery],
 	);
 
-	// New Query is the query surface's own action, so it rides this panel's
-	// header rather than the workbench toolbar — it appears beside whichever
-	// query tab is front, which is also the one it opens a sibling of
-	useWorkbenchControl(id, () => (
-		<Tooltip>
-			<TooltipTrigger asChild>
-				<Button
-					variant="ghost"
-					size="icon-sm"
-					aria-label="New query"
-					data-testid="workbench-new-query-button"
-					onClick={() => addQueryPanel("")}
-					className={cn(
-						"flex-none text-muted-foreground",
-						WORKBENCH_STYLES.chromeButton,
-					)}
-				>
-					<PlusIcon className={WORKBENCH_STYLES.chromeIcon} />
-				</Button>
-			</TooltipTrigger>
-			<TooltipContent>New query</TooltipContent>
-		</Tooltip>
-	));
+	useWorkbenchControl(id, DatabaseNewQueryControl);
 
 	const { resolvedTheme } = useTheme();
 	const panelId = id;
