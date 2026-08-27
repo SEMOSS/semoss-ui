@@ -133,11 +133,15 @@ export interface WorkbenchPanelRecord {
 export type WorkbenchPanelStatus = "pending" | "loading" | "ready" | "error";
 
 /**
- * Where a panel's tab is being drawn: a dock strip, a top/bottom border rail,
- * or a left/right one — where the tab is turned on its side, and a glyph has
- * to turn with it.
+ * Where a panel's chrome is being drawn: a dock strip, the header row over an
+ * open border body, a top/bottom border rail, or a left/right one — where the
+ * tab is turned on its side, and a glyph has to turn with it.
  */
-export type WorkbenchHeaderLocation = "tab" | "rail" | "rail-vertical";
+export type WorkbenchHeaderLocation =
+	| "tab"
+	| "header"
+	| "rail"
+	| "rail-vertical";
 
 /**
  * The per-instance methods half of a panel's props. `P` is the panel's config
@@ -198,11 +202,12 @@ export type WorkbenchChrome<P = WorkbenchPanelParams, V = unknown> = (
 ) => ReactNode;
 
 /**
- * A panel-contributed chrome control, drawn beside the active tab of the
- * panel's stack (the tab strip in a dock, the rail on a border). Registered
- * at runtime with `useWorkbenchControl` — one per panel — rather than on the
- * blueprint, so the renderer can close over the panel's own state. `content`
- * owns its label, disabled state, and click handling; the core only places it.
+ * A panel-contributed chrome control, drawn in the header row of the panel's
+ * stack — the tab strip in a dock, the header over the body in a border.
+ * Registered at runtime with `useWorkbenchControl` — one per panel — rather
+ * than on the blueprint, so the renderer can close over the panel's own state.
+ * `content` owns its label, disabled state, and click handling; the core only
+ * places it.
  */
 export interface WorkbenchControl<P = WorkbenchPanelParams, V = unknown> {
 	content: ComponentType<WorkbenchChromeProps<P, V>>;
@@ -254,6 +259,18 @@ export interface WorkbenchPanelConfig<P = WorkbenchPanelParams, V = unknown> {
 	canMaximize?: boolean;
 	/** Whether the user may rename instances of this type. Defaults to true. */
 	canRename?: boolean;
+	/**
+	 * Whether the shell draws a header row — glyph, name, and this panel's
+	 * registered control — over the body when an instance opens in a border.
+	 * Defaults to true. A border has no tab strip, so this row is where a
+	 * border panel's control lives; the rail carries navigation only.
+	 *
+	 * Set false only for a panel that draws its own heading, and note what it
+	 * gives up: the shell then has nowhere to put a control, so an opted-out
+	 * panel owns its whole chrome and should draw its actions in that heading
+	 * rather than registering one with `useWorkbenchControl`.
+	 */
+	enableBorderHeader?: boolean;
 	/** Tooltip shown on the tab and border rail icon. */
 	helpText?: string;
 	/**

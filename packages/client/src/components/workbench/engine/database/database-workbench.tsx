@@ -28,7 +28,6 @@ import { ENGINE_MCP_EDITOR_PANEL } from "../engine-mcp-editor-panel";
 import { createEngineSettingsPanel } from "../engine-settings-panel";
 import { EngineSettingsToggle } from "../engine-settings-toggle";
 import { DATABASE_COLUMNS_PANEL } from "./database-columns-panel";
-import { DatabaseNewQueryButton } from "./database-new-query-button";
 import { DATABASE_QUERY_PANEL } from "./database-query-panel";
 import { DATABASE_RESULTS_PANEL } from "./database-query-results-panel";
 
@@ -224,7 +223,6 @@ export const DatabaseWorkbench: React.FC = () => {
 				left: {
 					after: (
 						<>
-							<DatabaseNewQueryButton />
 							<WorkbenchCommandMenuButton />
 							<EngineSettingsToggle />
 						</>

@@ -26,6 +26,7 @@ import {
 	InputGroup,
 	InputGroupAddon,
 	InputGroupInput,
+	Muted,
 	ScrollArea,
 	Spinner,
 	toast,
@@ -523,17 +524,9 @@ export const ProjectEnginesPanel = () => {
 			<ScrollArea className="min-h-0 flex-1">
 				<div className="flex flex-col gap-3 p-4">
 					<div>
-						<p className="font-medium text-muted-foreground text-xs uppercase tracking-widest">
-							Engines
-						</p>
-						<h2 className="mt-1 font-semibold text-lg">
-							Available engines
-						</h2>
-						<p className="mt-1 text-muted-foreground text-sm">
-							Pre-select the engines you want the agent to
-							incorporate. Mention them in your prompt so the
-							agent uses them.
-						</p>
+						<Muted className="text-sm">
+							Select engines you want the agent to utilize
+						</Muted>
 					</div>
 
 					{categories.map((category) => (

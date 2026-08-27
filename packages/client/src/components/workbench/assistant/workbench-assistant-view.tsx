@@ -43,6 +43,9 @@ export const WORKBENCH_ASSISTANT_PANEL: WorkbenchPanelConfig = {
 	icon: ({ className }) => <MessageSquareIcon className={className} />,
 	canClose: false,
 	canRename: false,
+	// the panel draws its own heading — room title, history, settings, and new
+	// conversation — so the shell's border header would stack on top of it
+	enableBorderHeader: false,
 	mount: "eager",
 	content: () => <WorkbenchAssistantView />,
 };

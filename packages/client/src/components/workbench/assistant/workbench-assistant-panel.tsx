@@ -18,6 +18,7 @@ import {
 	toast,
 } from "@semoss/ui/next";
 import { useWorkbench } from "@/hooks/use-workbench";
+import { WORKBENCH_STYLES } from "../core/workbench.chrome";
 import { WorkbenchAssistantComposer } from "./workbench-assistant-composer";
 import { WorkbenchAssistantConversations } from "./workbench-assistant-conversations";
 import { WorkbenchAssistantSettings } from "./workbench-assistant-settings";
@@ -69,7 +70,15 @@ export const WorkbenchAssistantPanel = () => {
 			className="flex h-full min-h-0 w-full flex-col bg-background"
 			data-testid="workbench-assistant-panel"
 		>
-			<header className="flex h-11 shrink-0 items-center gap-2 border-border border-b px-3">
+			{/* this panel opts out of the shell's border header
+			    (`enableBorderHeader: false`) and draws its own — same height,
+			    so it lines up with the headers on the other borders */}
+			<header
+				className={cn(
+					"flex shrink-0 items-center gap-2 border-border border-b px-3",
+					WORKBENCH_STYLES.borderHeader,
+				)}
+			>
 				{view !== "assistant" ? (
 					<>
 						<Tooltip>

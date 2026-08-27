@@ -25,7 +25,6 @@ import {
 	WORKBENCH_PANEL_RECORDS,
 } from "../../workbench.constants";
 import { DATABASE_COLUMNS_PANEL } from "./database-columns-panel";
-import { DatabaseNewQueryButton } from "./database-new-query-button";
 import { DATABASE_QUERY_PANEL } from "./database-query-panel";
 import { DATABASE_RESULTS_PANEL } from "./database-query-results-panel";
 
@@ -146,7 +145,6 @@ export const AdminQueryWorkbench: React.FC = () => {
 						left: {
 							after: (
 								<>
-									<DatabaseNewQueryButton />
 									<WorkbenchCommandMenuButton />
 									<Tooltip>
 										<TooltipTrigger asChild>
