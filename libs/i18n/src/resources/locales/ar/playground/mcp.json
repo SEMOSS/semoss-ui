@@ -28,7 +28,9 @@
 	"tools": {
 		"enterValues": "أدخل القيم المفصولة بفواصل",
 		"selectField": "اختر {{field}}",
-		"enterField": "أدخل {{field}}"
+		"enterField": "أدخل {{field}}",
+		"collapseField": "طي الحقل",
+		"expandField": "توسيع الحقل"
 	},
 	"messages": {
 		"selectKnowledgeSource": "الرجاء اختيار مخزن معرفة",

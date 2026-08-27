@@ -1,7 +1,12 @@
+import { ChevronDown } from "lucide-react";
+import type { ReactNode } from "react";
+import { useState } from "react";
 import { useTranslation } from "@semoss/i18n";
 import {
 	Badge,
+	Button,
 	Checkbox,
+	cn,
 	Input,
 	Label,
 	Select,
@@ -12,6 +17,58 @@ import {
 	Textarea,
 } from "@semoss/ui/next";
 import { JSONEditor } from "./json-editor";
+
+/**
+ * Wraps a field that can render a lot of content (a multiline string, an
+ * array, or an object) with a collapse toggle, so a card with several long
+ * fields can be scanned/scrolled without paging through all of them.
+ */
+const CollapsibleField = ({
+	fieldName,
+	required,
+	badge,
+	children,
+}: {
+	fieldName: string;
+	required?: boolean;
+	badge: string;
+	children: ReactNode;
+}) => {
+	const { t } = useTranslation("mcp");
+	const [collapsed, setCollapsed] = useState(false);
+
+	return (
+		<div className="space-y-1">
+			<div className="mb-2 flex items-center gap-2">
+				<Button
+					type="button"
+					variant="ghost"
+					size="icon"
+					className="h-6 w-6 shrink-0 text-muted-foreground"
+					onClick={() => setCollapsed((prev) => !prev)}
+					aria-label={t(
+						collapsed ? "tools.expandField" : "tools.collapseField",
+					)}
+				>
+					<ChevronDown
+						className={cn(
+							"size-4 transition-transform",
+							collapsed && "-rotate-90",
+						)}
+					/>
+				</Button>
+				<Label htmlFor={fieldName} className="font-semibold">
+					{fieldName}
+					{required && <span className="text-destructive"> *</span>}
+				</Label>
+				<Badge variant="outline" className="text-xs">
+					{badge}
+				</Badge>
+			</div>
+			{!collapsed && children}
+		</div>
+	);
+};
 
 export interface ToolFieldProps<T = unknown> {
 	/** The name of the field */
@@ -69,7 +126,7 @@ export const ToolField = ({
 	const displayName = fieldName;
 
 	switch (fieldSchema.type) {
-		case "string":
+		case "string": {
 			if (fieldSchema.enum) {
 				return (
 					<div key={fieldName} className="space-y-1">
@@ -115,33 +172,35 @@ export const ToolField = ({
 					</div>
 				);
 			}
-			if (fieldSchema.maxLength && fieldSchema.maxLength > 100) {
+
+			const stringValue = typeof value === "string" ? value : "";
+			const lineCount = stringValue.split("\n").length;
+			const useTextarea =
+				lineCount > 1 ||
+				stringValue.length > 100 ||
+				(fieldSchema.maxLength !== undefined &&
+					fieldSchema.maxLength > 100);
+
+			if (useTextarea) {
+				const rows = disabled
+					? Math.min(12, Math.max(3, lineCount))
+					: 4;
 				return (
-					<div key={fieldName} className="space-y-1">
-						<div className="mb-2 flex items-center gap-2">
-							<Label
-								htmlFor={fieldName}
-								className="font-semibold"
-							>
-								{displayName}
-								{required && (
-									// Default: render text input for strings
-									<span className="text-destructive"> *</span>
-								)}
-							</Label>
-							<Badge variant="outline" className="text-xs">
-								{fieldSchema.type}
-							</Badge>
-						</div>
+					<CollapsibleField
+						key={fieldName}
+						fieldName={displayName}
+						required={required}
+						badge={fieldSchema.type ?? "string"}
+					>
 						<Textarea
 							id={fieldName}
-							value={value as string}
+							value={stringValue}
 							onChange={(e) => onChange(e.target.value)}
 							placeholder={t("tools.enterField", {
 								field: displayName,
 							})}
-							rows={4}
-							className="w-full"
+							rows={rows}
+							className="w-full resize-none font-mono text-sm"
 							readOnly={disabled}
 						/>
 						{fieldSchema.description && (
@@ -149,9 +208,10 @@ export const ToolField = ({
 								{fieldSchema.description}
 							</p>
 						)}
-					</div>
+					</CollapsibleField>
 				);
 			}
+
 			return (
 				<div key={fieldName} className="space-y-1">
 					<div className="mb-2 flex items-center gap-2">
@@ -167,7 +227,7 @@ export const ToolField = ({
 					</div>
 					<Input
 						id={fieldName}
-						value={value as string}
+						value={stringValue}
 						onChange={(e) => onChange(e.target.value)}
 						placeholder={t("tools.enterField", {
 							field: displayName,
@@ -182,6 +242,7 @@ export const ToolField = ({
 					)}
 				</div>
 			);
+		}
 
 		// Numeric fields (number or integer)
 		case "number":
@@ -224,41 +285,16 @@ export const ToolField = ({
 
 		case "boolean":
 			return (
-				<div key={fieldName} className="flex items-center space-x-2">
-					<Checkbox
-						id={fieldName}
-						checked={(value as boolean) || false}
-						onCheckedChange={(checked) => onChange(checked)}
-						disabled={disabled}
-					/>
-					<div className="space-y-1">
-						<div className="flex items-center gap-2">
-							<Label
-								htmlFor={fieldName}
-								className="font-semibold"
-							>
-								{displayName}
-								{required && (
-									<span className="text-destructive"> *</span>
-								)}
-							</Label>
-							<Badge variant="outline" className="text-xs">
-								{fieldSchema.type}
-							</Badge>
-						</div>
-						{fieldSchema.description && (
-							<p className="text-muted-foreground text-sm">
-								{fieldSchema.description}
-							</p>
-						)}
-					</div>
-				</div>
-			);
-
-		case "array":
-			return (
 				<div key={fieldName} className="space-y-1">
 					<div className="mb-2 flex items-center gap-2">
+						<div className="flex size-6 shrink-0 items-center justify-center">
+							<Checkbox
+								id={fieldName}
+								checked={(value as boolean) || false}
+								onCheckedChange={(checked) => onChange(checked)}
+								disabled={disabled}
+							/>
+						</div>
 						<Label htmlFor={fieldName} className="font-semibold">
 							{displayName}
 							{required && (
@@ -269,6 +305,22 @@ export const ToolField = ({
 							{fieldSchema.type}
 						</Badge>
 					</div>
+					{fieldSchema.description && (
+						<p className="text-muted-foreground text-sm">
+							{fieldSchema.description}
+						</p>
+					)}
+				</div>
+			);
+
+		case "array":
+			return (
+				<CollapsibleField
+					key={fieldName}
+					fieldName={displayName}
+					required={required}
+					badge={fieldSchema.type ?? "array"}
+				>
 					<Textarea
 						id={fieldName}
 						value={
@@ -297,7 +349,7 @@ export const ToolField = ({
 							{fieldSchema.description}
 						</p>
 					)}
-				</div>
+				</CollapsibleField>
 			);
 
 		case "object": {
@@ -307,18 +359,12 @@ export const ToolField = ({
 					? (value as Record<string, unknown>)
 					: {};
 			return (
-				<div key={fieldName} className="space-y-2">
-					<div className="mb-2 flex items-center gap-2">
-						<Label htmlFor={fieldName} className="font-semibold">
-							{displayName}
-							{required && (
-								<span className="text-destructive"> *</span>
-							)}
-						</Label>
-						<Badge variant="outline" className="text-xs">
-							object
-						</Badge>
-					</div>
+				<CollapsibleField
+					key={fieldName}
+					fieldName={displayName}
+					required={required}
+					badge="object"
+				>
 					<JSONEditor
 						value={obj}
 						onChange={onChange}
@@ -329,7 +375,7 @@ export const ToolField = ({
 							{fieldSchema.description}
 						</p>
 					)}
-				</div>
+				</CollapsibleField>
 			);
 		}
 
