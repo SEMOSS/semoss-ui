@@ -1,3 +1,4 @@
+import { AppActivityPage } from "./app-activity-page";
 import { AppCommitsPage } from "./app-commits-page";
 import { AppFilesPage } from "./app-files-page";
 import { AppGithubPage } from "./app-github-page";
@@ -14,6 +15,7 @@ import { ViewAppPage } from "./view-app-page";
 export {
 	ViewAppPage,
 	NewPromptBuilderAppPage,
+	AppActivityPage,
 	AppGithubSelectRepoPage,
 	AppCommitsPage,
 	AppFilesPage,

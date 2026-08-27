@@ -5,6 +5,7 @@ import {
 	ProjectEdit,
 } from "@/components/project";
 import {
+	AppActivityPage,
 	AppCommitsPage,
 	AppFilesPage,
 	AppGithubPage,
@@ -110,6 +111,11 @@ export const PROJECT_ROUTES: {
 										restrict: ["OWNER", "EDIT"],
 									},
 									{
+										name: "Activity Log",
+										path: "activity",
+										restrict: ["OWNER"],
+									},
+									{
 										name: "Files",
 										path: "files",
 										restrict: ["OWNER", "EDIT"],
@@ -154,6 +160,10 @@ export const PROJECT_ROUTES: {
 							{
 								path: "access-control",
 								element: <ProjectAccessControl />,
+							},
+							{
+								path: "activity",
+								element: <AppActivityPage />,
 							},
 							{
 								path: "files",
@@ -318,6 +328,11 @@ export const PROJECT_ROUTES: {
 										restrict: ["OWNER", "EDIT"],
 									},
 									{
+										name: "Activity Log",
+										path: "activity",
+										restrict: ["OWNER"],
+									},
+									{
 										name: "SMSS",
 										path: "smss",
 										restrict: ["OWNER"],
@@ -345,6 +360,10 @@ export const PROJECT_ROUTES: {
 							{
 								path: "access-control",
 								element: <ProjectAccessControl />,
+							},
+							{
+								path: "activity",
+								element: <AppActivityPage />,
 							},
 							{
 								path: "smss",
@@ -407,6 +426,11 @@ export const PROJECT_ROUTES: {
 										restrict: ["OWNER", "EDIT"],
 									},
 									{
+										name: "Activity Log",
+										path: "activity",
+										restrict: ["OWNER"],
+									},
+									{
 										name: "SMSS",
 										path: "smss",
 										restrict: ["OWNER"],
@@ -438,6 +462,10 @@ export const PROJECT_ROUTES: {
 							{
 								path: "access-control",
 								element: <ProjectAccessControl />,
+							},
+							{
+								path: "activity",
+								element: <AppActivityPage />,
 							},
 							{
 								path: "smss",
