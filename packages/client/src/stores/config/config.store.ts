@@ -1,5 +1,4 @@
 import { makeAutoObservable, runInAction } from "mobx";
-import type { Role } from "@semoss/sdk";
 import { Env, logout, runPixel } from "@semoss/sdk/react";
 import type { Project } from "@semoss/shared";
 import { registerUser } from "@/api";
@@ -127,16 +126,6 @@ interface ConfigStoreInterface {
 		adminOnlyProjectDelete: boolean;
 		adminOnlyProjectSetDiscoverable: boolean;
 		adminOnlyProjectSetPublic: boolean;
-		adminOnlyWorkspaceAdd: boolean;
-		adminOnlyWorkspaceAddAccess: boolean;
-		adminOnlyWorkspaceDelete: boolean;
-		adminOnlyWorkspaceSetDiscoverable: boolean;
-		adminOnlyWorkspaceSetPublic: boolean;
-		adminOnlySkillAdd: boolean;
-		adminOnlySkillAddAccess: boolean;
-		adminOnlySkillDelete: boolean;
-		adminOnlySkillSetDiscoverable: boolean;
-		adminOnlySkillSetPublic: boolean;
 		adminOnlyStorageAdd: boolean;
 		adminOnlyStorageAddAccess: boolean;
 		adminOnlyStorageDelete: false;
@@ -215,16 +204,6 @@ export class ConfigStore {
 			adminOnlyProjectDelete: false,
 			adminOnlyProjectSetDiscoverable: false,
 			adminOnlyProjectSetPublic: false,
-			adminOnlyWorkspaceAdd: false,
-			adminOnlyWorkspaceAddAccess: false,
-			adminOnlyWorkspaceDelete: false,
-			adminOnlyWorkspaceSetDiscoverable: false,
-			adminOnlyWorkspaceSetPublic: false,
-			adminOnlySkillAdd: false,
-			adminOnlySkillAddAccess: false,
-			adminOnlySkillDelete: false,
-			adminOnlySkillSetDiscoverable: false,
-			adminOnlySkillSetPublic: false,
 			adminOnlyStorageAdd: false,
 			adminOnlyStorageAddAccess: false,
 			adminOnlyStorageDelete: false,
@@ -359,8 +338,6 @@ export class ConfigStore {
 
 		const moduleMap = {
 			PROJECT: "Project",
-			WORKSPACE: "Workspace",
-			SKILL: "Skill",
 			DATABASE: "Db",
 			FUNCTION: "Function",
 			MODEL: "Model",
@@ -809,37 +786,40 @@ export class ConfigStore {
 	 * Load an app into a new workspace
 	 *
 	 * @param project - project metadata from the caller's context
-	 * @param role - the caller's resolved permission for this project
-	 * @param insightId - insight to bind the workspace to, or "new" to have one
-	 * created
+	 * @param insightId - insight to bind the workspace to
 	 */
-	async createWorkspace(
+	/**
+	 * Bind an insight to a project and return its id. Read-only surfaces use
+	 * this instead of `createWorkspace` — they only need the insight, not a
+	 * whole `WorkspaceStore`.
+	 *
+	 * @param project - project metadata from the caller's context
+	 * @param insightId - insight to bind, or "new" to create one
+	 * @return insightId the project context was set on
+	 */
+	async createProjectInsight(
 		project: Project,
-		role: Role,
 		insightId: string = "new",
-	) {
-		// Automation reactors authorize their explicit project argument and run in the
-		// system-app iframe, so they must not depend on the legacy global app context.
-		let resolvedInsightId = insightId;
-		if (project.project_type !== "AUTOMATION") {
-			// set the backend context for this insight
-			const response = await runPixel(
-				`SetContext("${project.project_id}")`,
-				insightId,
-			);
+	): Promise<string> {
+		const response = await runPixel(
+			`SetContext("${project.project_id}")`,
+			insightId,
+		);
 
-			// the workspace is built around the insight the backend answered
-			// with. Asking for "new" means the id only exists in that
-			// response, and anything the workspace hands to the backend
-			// later (downloads, asset reads) has to name the real insight
-			resolvedInsightId = response.insightId;
-		}
+		return response.insightId;
+	}
+
+	async createWorkspace(project: Project, insightId: string = "new") {
+		// set the backend context for this insight
+		const response = await runPixel(
+			`SetContext("${project.project_id}")`,
+			insightId,
+		);
 
 		// create the newly loaded workspace
 		return new WorkspaceStore(this._root, {
-			insightId: resolvedInsightId,
-			role,
-			metadata: project,
+			insightId: response.insightId,
+			projectId: project.project_id,
 		});
 	}
 

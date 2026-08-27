@@ -16,6 +16,11 @@ import {
 	WorkspaceContext,
 	type WorkspaceContextType,
 } from "./WorkspaceContext";
+import {
+	WorkbenchProvider,
+	type WorkbenchProviderProps,
+	WorkbenchStoreContext,
+} from "./workbench.context";
 
 export type {
 	ProjectContextType,
@@ -26,6 +31,7 @@ export type {
 	SettingsContextType,
 	StepperContextType,
 	PageContextType,
+	WorkbenchProviderProps,
 	WorkspaceContextType,
 };
 
@@ -38,5 +44,7 @@ export {
 	SettingsContext,
 	StepperContext,
 	PageContext,
+	WorkbenchProvider,
+	WorkbenchStoreContext,
 	WorkspaceContext,
 };

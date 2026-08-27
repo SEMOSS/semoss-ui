@@ -74,20 +74,8 @@ interface FileCodeEditorProps {
 	 */
 	onChange?: (content: string, isModified: boolean) => void;
 
-	/** Working copy to show instead of what was read from the file.
-	 *
-	 *  Pass this when the parent keeps the edits, so switching to another view
-	 *  and back does not throw them away. The parent then owns resetting it,
-	 *  which is what Refresh does. */
-	value?: string;
-
 	/** Optional content rendered at the start of the toolbar row */
 	leadingToolbar?: React.ReactNode;
-
-	/** Optional content rendered immediately after the Refresh button, for
-	 *  actions that belong with it rather than with the file actions on the
-	 *  right. */
-	toolbarStart?: React.ReactNode;
 
 	/**
 	 * Optional handler invoked when the user runs the file via Ctrl/Cmd+Enter
@@ -114,9 +102,7 @@ export const FileCodeEditor = forwardRef<
 			mode,
 			path,
 			onChange = () => null,
-			value,
 			leadingToolbar,
-			toolbarStart,
 			onRun,
 			hideToolbar = false,
 			readOnly = false,
@@ -160,44 +146,6 @@ export const FileCodeEditor = forwardRef<
 		}
 
 		const getFile = usePixel<string>(getFilePixel, {}, targetInsightId);
-
-		// Bumped on every reload so the effect below runs again even when the file
-		// comes back unchanged. Without it a Refresh over identical bytes would
-		// leave a stale working copy in place.
-		const [reloadNonce, setReloadNonce] = useState(0);
-		const reloadFile = useCallback(() => {
-			setReloadNonce((nonce) => nonce + 1);
-			getFile.refresh();
-		}, [getFile.refresh]);
-		// the editor action is registered once on mount, so it reads the current
-		// reload through a ref rather than closing over a stale one
-		const reloadFileRef = useRef(reloadFile);
-		reloadFileRef.current = reloadFile;
-
-		// Whether this instance has already reported a loaded file. Remounting
-		// resets it, which is the point: a remount has to be told apart from a
-		// reload.
-		const hasReportedLoadRef = useRef(false);
-
-		// Once a load or a refresh lands, the buffer matches the file again. Say so,
-		// otherwise a tab marked dirty keeps its marker after Refresh has already
-		// thrown the edits away.
-		//
-		// The exception is the first load of an instance that was handed a working
-		// copy. That happens when a parent swaps this editor out for another view
-		// and back, and the copy it is holding is newer than the file.
-		// biome-ignore lint/correctness/useExhaustiveDependencies: onChange is often inline, depending on it would loop
-		useEffect(() => {
-			if (getFile.status !== "SUCCESS") {
-				return;
-			}
-			const isFirstLoad = !hasReportedLoadRef.current;
-			hasReportedLoadRef.current = true;
-			if (isFirstLoad && value !== undefined) {
-				return;
-			}
-			onChange(getFile.data ?? "", false);
-		}, [getFile.status, getFile.data, reloadNonce]);
 
 		// get the language
 		const ext = path.split(".").pop()?.toLowerCase() || "";
@@ -330,7 +278,7 @@ export const FileCodeEditor = forwardRef<
 				label: "Refresh",
 				keybindings: [monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyR],
 				run: async () => {
-					reloadFileRef.current();
+					getFile.refresh();
 				},
 			});
 
@@ -544,7 +492,7 @@ export const FileCodeEditor = forwardRef<
 
 		useImperativeHandle(actionsRef, () => ({
 			save: saveFile,
-			refresh: () => reloadFile(),
+			refresh: () => getFile.refresh(),
 			download: downloadFile,
 		}));
 
@@ -553,27 +501,23 @@ export const FileCodeEditor = forwardRef<
 				{/* Toolbar */}
 				{!hideToolbar && (
 					<div className="flex w-full shrink-0 items-center justify-between gap-1.5 border-border border-b px-2 py-1">
-						{/* grouped so justify-between keeps two sides, not three */}
-						<div className="flex items-center gap-1.5">
-							<Tooltip>
-								<TooltipTrigger asChild>
-									<Button
-										variant="ghost"
-										size="sm"
-										disabled={
-											isLoading ||
-											getFile.status !== "SUCCESS"
-										}
-										onClick={() => reloadFile()}
-										aria-label="Refresh"
-									>
-										<RefreshCwIcon className="size-3" />
-									</Button>
-								</TooltipTrigger>
-								<TooltipContent>Refresh</TooltipContent>
-							</Tooltip>
-							{toolbarStart}
-						</div>
+						<Tooltip>
+							<TooltipTrigger asChild>
+								<Button
+									variant="ghost"
+									size="sm"
+									disabled={
+										isLoading ||
+										getFile.status !== "SUCCESS"
+									}
+									onClick={() => getFile.refresh()}
+									aria-label="Refresh"
+								>
+									<RefreshCwIcon className="size-3" />
+								</Button>
+							</TooltipTrigger>
+							<TooltipContent>Refresh</TooltipContent>
+						</Tooltip>
 						<div className="flex items-center gap-1">
 							{leadingToolbar}
 							{language === "json" && jsonErrors.length > 0 && (
@@ -665,10 +609,7 @@ export const FileCodeEditor = forwardRef<
 							width={"100%"}
 							height={"100%"}
 							value={
-								value ??
-								(getFile.status === "SUCCESS"
-									? getFile.data
-									: "")
+								getFile.status === "SUCCESS" ? getFile.data : ""
 							}
 							language={language}
 							options={{
@@ -677,9 +618,8 @@ export const FileCodeEditor = forwardRef<
 								accessibilitySupport: "off",
 								padding: { top: 12 },
 								scrollBeyondLastLine: false,
-								// relayout when the container resizes or is shown
-								// again, so an editor kept mounted behind another
-								// view comes back correctly sized
+								// the editor is sized by its container, which
+								// moves whenever a dock is split or resized
 								automaticLayout: true,
 							}}
 							onChange={(value) => {

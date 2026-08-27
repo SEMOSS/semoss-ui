@@ -1,10 +1,8 @@
 import { makeAutoObservable } from "mobx";
-import type { Role } from "@semoss/sdk";
-import type { Project } from "@semoss/shared";
 import { FlexLayout } from "@semoss/shared";
 import type { RootStore, WorkspaceOptions } from "@/stores";
 
-export interface WorkspaceStoreInterface {
+interface WorkspaceStoreInterface {
 	/**
 	 * ID of Workspace Insight
 	 */
@@ -16,14 +14,9 @@ export interface WorkspaceStoreInterface {
 	isLoading: boolean;
 
 	/**
-	 * User's role relative to the app
+	 * ID of the loaded project
 	 */
-	role: Role;
-
-	/**
-	 * Metadata associated with the loaded app
-	 */
-	metadata: Project;
+	projectId: string;
 
 	/**
 	 * Optional Model Engine to use
@@ -34,14 +27,6 @@ export interface WorkspaceStoreInterface {
 	 * Model associated with the layout
 	 **/
 	model: FlexLayout.Model | null;
-
-	/**
-	 * insightId of the active terminal tab. Each terminal tab owns its own
-	 * insight; the "Insight" file explorer binds to this so INSIGHT-scoped
-	 * browsing/upload targets the same insight the user runs commands in.
-	 * `null` until a terminal tab's insight is ready.
-	 */
-	activeTerminalInsightId: string | null;
 }
 
 export interface WorkspaceConfigInterface {
@@ -51,14 +36,9 @@ export interface WorkspaceConfigInterface {
 	insightId: string;
 
 	/**
-	 * User's role relative to the app
+	 * ID of the loaded project
 	 */
-	role: Role;
-
-	/**
-	 * Metadata associated with the loaded app
-	 */
-	metadata: Project;
+	projectId: string;
 }
 
 /**
@@ -70,15 +50,9 @@ export class WorkspaceStore {
 	private _store: WorkspaceStoreInterface = {
 		insightId: "",
 		isLoading: false,
-		role: "READ_ONLY",
+		projectId: "",
 		agentModelEngine: "",
-		metadata: {
-			project_id: "",
-			project_name: "",
-			project_type: "CODE",
-		},
 		model: null,
-		activeTerminalInsightId: null,
 	};
 
 	constructor(root: RootStore, config: WorkspaceConfigInterface) {
@@ -87,14 +61,7 @@ export class WorkspaceStore {
 
 		this._store.insightId = config.insightId;
 
-		// update the data
-		if (config.role) {
-			this._store.role = config.role;
-		}
-
-		if (config.role) {
-			this._store.metadata = config.metadata;
-		}
+		this._store.projectId = config.projectId;
 
 		// make it observable
 		makeAutoObservable(this);
@@ -103,10 +70,6 @@ export class WorkspaceStore {
 	/**
 	 * Getters
 	 */
-	get appId() {
-		return this._store.metadata.project_id;
-	}
-
 	/**
 	 * Get the ID of the workspace insight
 	 */
@@ -136,36 +99,10 @@ export class WorkspaceStore {
 	}
 
 	/**
-	 * Get the user's role in relation to the app
-	 */
-	get role() {
-		return this._store.role;
-	}
-	get type() {
-		return this._store.metadata.project_type;
-	}
-
-	/**
-	 * Get metadata associated with the app
-	 */
-	get metadata() {
-		return this._store.metadata;
-	}
-
-	/**
-	 * insightId of the active terminal tab (or null before one is ready). The
-	 * Insight file explorer binds to this so its listing/upload stay in sync
-	 * with the terminal the user is running commands in.
-	 */
-	get activeTerminalInsightId() {
-		return this._store.activeTerminalInsightId;
-	}
-
-	/**
 	 * The key for the local storage cache
 	 */
 	get cacheKey() {
-		return `smss-workspace--${this._store.metadata.project_id}-v7`;
+		return `smss-workspace--${this._store.projectId}-v7`;
 	}
 
 	/**
@@ -192,8 +129,6 @@ export class WorkspaceStore {
 	 * Load from the cache
 	 */
 	loadFromCache = (): boolean => {
-		// TODO::Version Check
-
 		let isLoaded = false;
 		try {
 			const item = localStorage.getItem(this.cacheKey);
@@ -219,7 +154,6 @@ export class WorkspaceStore {
 			}
 
 			const options: WorkspaceOptions = {
-				version: "",
 				layout: this._store.model.toJson(),
 			};
 
@@ -256,14 +190,5 @@ export class WorkspaceStore {
 	 */
 	setAgentModelEngine = (id: string) => {
 		this._store.agentModelEngine = id;
-	};
-
-	/**
-	 * Record the insightId of the active terminal tab so the Insight file
-	 * explorer can bind to it. Called by the terminal panel as tabs are
-	 * focused/opened/closed.
-	 */
-	setActiveTerminalInsightId = (insightId: string | null) => {
-		this._store.activeTerminalInsightId = insightId;
 	};
 }
