@@ -85,7 +85,10 @@ export const CreateAgentPage = () => {
 			// as empty and would otherwise wipe them.
 			const hasExecutionSettings =
 				data.modelId ||
+				!data.useDefaultAgentTools ||
 				data.maxTurns ||
+				data.maxReflections ||
+				data.maxSeconds ||
 				data.maxSubagentDepth ||
 				data.maxSubagentsPerRun ||
 				data.maxSpawnsPerTurn ||

@@ -2,6 +2,9 @@
 
 This document provides context for AI coding assistants working with the SEMOSS monorepo.
 
+> **Design rules:** [DESIGN.md](./DESIGN.md) is the repo-wide design rulebook — `@semoss/ui`
+> is the single source of truth for tokens and components. Read it before writing any UI.
+
 ## Overview
 
 SEMOSS is a React-based analytics platform built as a pnpm monorepo with Turborepo orchestration.
@@ -37,7 +40,9 @@ semoss/
 │   ├── playground/                 # @semoss/playground - Chat
 │   ├── terminal/                   # @semoss/terminal - Embedded terminal app
 │   ├── auditlog/                   # @semoss/auditlog-package - Audit log dashboard
-harness
+│   ├── browser-automation/         # @semoss/browser-automation - Browser automation harness
+│   ├── chrome-extension/           # Chrome extension for browser automation
+│   ├── vscode-extension/           # semoss-vscode - VSCode extension
 │   └── cli/                        # @semoss/cli - CLI tooling
 ├── pnpm-workspace.yaml
 ├── turbo.json
@@ -117,6 +122,10 @@ These rules apply to **all** packages. They are adopted incrementally — see
   (it holds most shared components, utilities, and types), then the other libs.
 - Comment non-obvious code. Add TSDoc (`/** ... */`) to all functions and document component
   props on their type/interface.
+- Do not use files, components, hooks, or APIs marked `@deprecated` in their TSDoc. Use the
+  replacement named in the deprecation notice instead — e.g. `@semoss/ui/next` components over
+  the legacy `@semoss/ui` exports, and `@semoss/sdk` primitives over the deprecated client
+  `monolithStore`. Migrate any deprecated usage you touch.
 
 ### TypeScript
 
@@ -137,18 +146,32 @@ These rules apply to **all** packages. They are adopted incrementally — see
   members (`export * from "./file";`). A symbol is not importable from the package until it is
   re-exported up the barrel chain (folder `index.ts` → package `src/index.ts`).
 
-### Styling
+### Design System & Styling
 
-- Style with **Tailwind CSS** utility classes.
-- Use the theme variables defined in `globals.css`
-  ([libs/ui/src/styles/globals.css](libs/ui/src/styles/globals.css),
-  [libs/shared/src/styles/globals.css](libs/shared/src/styles/globals.css)). Do not hardcode
-  colors or invent new design tokens.
-- Reuse `@semoss/ui` components (prefer `@semoss/ui/next`) and existing patterns instead of
-  building new styles. Prefer them over generic layout wrappers like `Box`.
-- Merge class names with `cn()` ([libs/ui/src/lib/utils.ts](libs/ui/src/lib/utils.ts)).
-- No inline styles (`style={{ ... }}`). Do not import Material UI or Emotion directly in new code.
-- Follow an 8px-based spacing scale via Tailwind spacing tokens.
+**`@semoss/ui` (`libs/ui`) is the single source of truth for design.** Full rules, decision
+trees, and carve-outs: **[DESIGN.md](./DESIGN.md)**. Token/component catalog:
+[libs/ui/AGENTS.md](./libs/ui/AGENTS.md).
+
+- For every user-facing UI task, follow the required workflow and choose a surface archetype
+  from `DESIGN.md` before styling individual elements.
+- Style with **Tailwind CSS** utility classes using the **semantic tokens** defined in
+  [libs/ui/src/styles/globals.css](libs/ui/src/styles/globals.css) — `bg-primary`,
+  `text-muted-foreground`, `border-border`, etc. Status colors are exactly `destructive`,
+  `success`, and `warning`.
+- Import components, hooks, and `cn()` from **`@semoss/ui/next`** only; compose new UI from
+  those primitives instead of raw elements. Use the Typography components (`H1`–`H4`, `P`,
+  `Small`, `Muted`, …) for text; overlays via `Dialog`/`Sheet`/`Popover`/`Tooltip`.
+- **Never**: hex classes (`bg-[#f0f0f0]`), raw palette classes (`text-green-600` — use
+  `text-success`), pixel font sizes (`text-[11px]`), arbitrary z-index (`z-[1300]`), opacity
+  on raw colors (`text-black/50` — use `text-muted-foreground`), inline style colors/fonts,
+  MUI/Emotion imports, or `libs/ui/src/next/theme.ts` (dead code).
+- Tint with token + slash opacity (`bg-primary/10`, `ring-ring/50`); merge class names with
+  `cn()` from `@semoss/ui/next`.
+- Spacing/sizing on the Tailwind scale (8px rhythm, `size-4` for icons); arbitrary values
+  only for a commented external constraint.
+- **Boy-scout rule**: design lint checks each staged frontend file in full. Migrate that file's
+  violations or apply an enumerated, reason-bearing carve-out from `DESIGN.md`; do not
+  drive-by rewrite unrelated files.
 
 ### Data & API Calls
 
@@ -163,8 +186,10 @@ These rules apply to **all** packages. They are adopted incrementally — see
 
 ### Accessibility
 
-- Give interactive elements an accessible name (`aria-label`) and the correct `role`. Native
-  elements (`<button>`, `<a>`) already carry a role — do not override it.
+- Give every interactive element an accessible name. Visible text or a programmatic label is
+  preferred; use `aria-label` only when no visible label exists, such as an icon-only button.
+- Prefer native semantics. Elements such as `<button>` and `<a>` already carry a role — do not
+  override it with a redundant `role`.
 - Mark purely decorative elements `aria-hidden`.
 - `role` doubles as a stable test selector (see [Testing](#testing)) — prefer it over adding a
   separate hook where a semantic role already fits.
@@ -248,10 +273,26 @@ Standard `src/` layout (use only the folders a package needs):
 - **`biome.json`** - Changes affect all packages
 - **Root `package.json`** - Engine constraints affect all developers
 
+### Mandatory Audit Before Handoff
+
+Before marking work complete, always perform and report a quick audit for touched files:
+- **Standards audit**: confirm naming, exports, Tailwind/style rules, TypeScript safety,
+  API-call patterns, and accessibility requirements from this guide.
+- **Design audit**: run `pnpm lint:design -- <touched-files>`. It audits each supplied
+  frontend file in full. Every diagnostic must be migrated or covered by an enumerated,
+  reason-bearing [DESIGN.md](./DESIGN.md) carve-out.
+- **Deprecation audit**: confirm no new usage of `@deprecated` files/components/hooks/APIs
+  was introduced; migrate touched deprecated usage when in scope.
+- **Risk audit**: call out possible regressions, edge cases, and missing tests.
+- **Validation audit**: run relevant checks/tests for the scope and summarize outcomes.
+
+Do not skip this audit, even for small changes.
+
 ### Testing Changes
 
 Always run after making changes:
 ```bash
+pnpm lint:design   # Verify staged frontend files against DESIGN.md
 pnpm check          # Verify linting
 pnpm build          # Verify builds pass
 pnpm test           # Verify tests pass
@@ -271,4 +312,5 @@ pnpm test           # Verify tests pass
 - [packages/playground/AGENTS.md](./packages/playground/AGENTS.md) - Playground (chat) app specifics
 - [packages/terminal/AGENTS.md](./packages/terminal/AGENTS.md) - Embedded terminal app specifics
 - [packages/auditlog/AGENTS.md](./packages/auditlog/AGENTS.md) - Audit log dashboard app specifics
+- [packages/browser-automation/AGENTS.md](./packages/browser-automation/AGENTS.md) - Browser automation harness specifics
 - [packages/cli/AGENTS.md](./packages/cli/AGENTS.md) - CLI tooling specifics

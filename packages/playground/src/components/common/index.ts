@@ -1,6 +1,5 @@
 export * from "./app-logo";
 export * from "./date-display";
-export * from "./file-drag-overlay";
 export * from "./file-preview-grid";
 export * from "./global-dialog";
 export * from "./global-footer";

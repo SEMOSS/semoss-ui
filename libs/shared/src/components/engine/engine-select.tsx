@@ -187,12 +187,12 @@ export const EngineSelect = ({
 		<Popover open={open && !disabled} onOpenChange={setOpen}>
 			<PopoverTrigger asChild>
 				<Button
-					variant="ghost"
+					variant="outline"
 					role="combobox"
 					aria-expanded={open}
 					disabled={disabled}
 					className={cn(
-						"ms-auto max-w-64 justify-start overflow-hidden hover:bg-accent",
+						"w-full min-w-0 justify-start overflow-hidden border-input bg-transparent px-3 py-2",
 						className,
 					)}
 				>

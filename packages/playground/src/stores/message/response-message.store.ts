@@ -253,9 +253,14 @@ export class ResponseMessageStore extends AbstractMessageStore {
 roomId=["${room.roomId}"],
 command=["<encode>${text}</encode>"],
 ${context ? `context=["<encode>${context}</encode>"],` : `context=[],`}
-${media.length ? `image=${JSON.stringify(media)},` : "image=[],"}
+${media.length ? `media=${JSON.stringify(media)},` : "media=[],"}
 ${this.id ? `parentMessageId=["${this.id}"],` : ""}
-paramValues=[{}]`;
+paramValues=[${JSON.stringify(
+				room.theme.featureFlags?.enableTemperature &&
+					room.options.temperature !== undefined
+					? { temperature: room.options.temperature }
+					: {},
+			)}]`;
 
 			// wait for the pixel to run with streaming
 			await room.runRoomPixelStreaming<
@@ -599,7 +604,9 @@ paramValues=[{}]`;
 		for (const part of this.parts) {
 			if (part.type === "TOOL_CALL") {
 				const tool = this.room.getTool(part.toolCall.id);
-				if (tool.json._meta.SMSS_MCP_EXECUTION === MCP_EXECUTION_AUTO) {
+				if (
+					tool.json._meta?.SMSS_MCP_EXECUTION === MCP_EXECUTION_AUTO
+				) {
 					if (tool.status === "INITIAL") {
 						toolsToRun.push(tool);
 					} else if (tool.status === "LOADING") {
@@ -626,7 +633,7 @@ paramValues=[{}]`;
 		if (
 			!tool ||
 			tool.status !== "INITIAL" ||
-			tool.json._meta.SMSS_MCP_EXECUTION !== MCP_EXECUTION_AUTO
+			tool.json._meta?.SMSS_MCP_EXECUTION !== MCP_EXECUTION_AUTO
 		) {
 			// skip
 			return;
