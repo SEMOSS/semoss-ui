@@ -636,13 +636,5 @@ export function parseWorkbenchSnapshot(raw: unknown): WorkbenchSnapshot | null {
 		}
 	}
 
-	if (
-		raw.closed !== undefined &&
-		(!Array.isArray(raw.closed) ||
-			!raw.closed.every((pid) => typeof pid === "string"))
-	) {
-		return null;
-	}
-
 	return raw as unknown as WorkbenchSnapshot;
 }

@@ -23,10 +23,6 @@ import type {
 import { WORKBENCH_SIDES } from "../workbench.types";
 import { buildWorkbenchLayoutCommands } from "./workbench-layout.commands";
 import {
-	buildWorkbenchMenuEntries,
-	type WorkbenchMenuEntry,
-} from "./workbench-layout.menu";
-import {
 	createNodeId,
 	emptyTabset,
 	findTabset,
@@ -60,7 +56,7 @@ export interface WorkbenchLayoutSliceFields {
 	/** Mirrors the shell's mobile breakpoint so visibility derives here. */
 	isMobileLayout: boolean;
 
-	/** Every panel instance, including closed-but-reopenable ones. */
+	/** Every open panel instance. Closing one deletes its record. */
 	panels: Record<WorkbenchPanelId, WorkbenchPanelRecord>;
 
 	/** The dock layout tree. */
@@ -68,9 +64,6 @@ export interface WorkbenchLayoutSliceFields {
 
 	/** The four border edges. */
 	borders: WorkbenchBorders;
-
-	/** Closed-but-reopenable panel ids, oldest first. */
-	closed: WorkbenchPanelId[];
 
 	/** The panel the user last interacted with. */
 	selectedPanelId: WorkbenchPanelId | undefined;
@@ -103,12 +96,6 @@ export interface WorkbenchLayoutSliceFields {
 
 	/** The panel whose name is being edited inline, if any. Ephemeral. */
 	editingPanelId: WorkbenchPanelId | undefined;
-
-	/** Open context menu: its panel and viewport coordinates. Ephemeral. */
-	menu: { pid: WorkbenchPanelId; x: number; y: number } | null;
-
-	/** Open panel sheet target: one panel or the full manager. Ephemeral. */
-	sheet: WorkbenchPanelId | "all" | null;
 
 	/** Measured slot geometry, relative to the workbench root. Ephemeral. */
 	slotRects: Record<string, WorkbenchSlotRect>;
@@ -185,6 +172,12 @@ export interface WorkbenchLayoutActions {
 	 * shallow-equal default), restoring a closed match or spawning a new
 	 * instance when none exists.
 	 *
+	 * `matches` does **not** imply uniqueness — `spawnPanel` bypasses it — so
+	 * several matches can coexist. They are preferred in order of how little
+	 * they disturb the layout: one already on screen, then one open but hidden
+	 * (revealing it is a tab switch), then a closed record (which has to be
+	 * re-docked, and reads to the user as a new panel appearing).
+	 *
 	 * @return The revealed or created panel id.
 	 */
 	selectPanel: (
@@ -204,10 +197,10 @@ export interface WorkbenchLayoutActions {
 		opts?: WorkbenchPanelOptions,
 	) => WorkbenchPanelId;
 
-	/** Reopen a closed instance into the main dock. */
-	reopenPanel: (pid: WorkbenchPanelId) => void;
-
-	/** Close a panel, honouring its canClose flag. It stays reopenable. */
+	/**
+	 * Close a panel, honouring its canClose flag. The instance is **deleted** —
+	 * there is no reopen history, so `panels` always means "what is open".
+	 */
 	closePanel: (pid: WorkbenchPanelId) => void;
 
 	/**
@@ -281,18 +274,6 @@ export interface WorkbenchLayoutActions {
 	/** Set the panel whose name is being edited inline. */
 	setEditingPanel: (pid: WorkbenchPanelId | undefined) => void;
 
-	/** Open the shared context menu for a panel at viewport coordinates. */
-	openMenu: (pid: WorkbenchPanelId, x: number, y: number) => void;
-
-	/** Close the shared context menu. */
-	closeMenu: () => void;
-
-	/** Open the panel sheet for one panel or the full manager. */
-	openSheet: (target: WorkbenchPanelId | "all") => void;
-
-	/** Close the panel sheet. */
-	closeSheet: () => void;
-
 	/** Mark the panel currently being dragged, if any. */
 	setDragging: (pid: WorkbenchPanelId | undefined) => void;
 
@@ -307,6 +288,12 @@ export interface WorkbenchLayoutActions {
 
 	/** Whether the user may rename a panel. */
 	canRename: (pid: WorkbenchPanelId | null | undefined) => boolean;
+
+	/**
+	 * Whether a tab offers the in-place "Split Tab" viewports. Opt-in, unlike
+	 * the other flags: instance override → blueprint → false.
+	 */
+	canSplitTab: (pid: WorkbenchPanelId | null | undefined) => boolean;
 
 	/** One panel's record, or undefined when no such instance exists. */
 	getPanel: (
@@ -324,9 +311,6 @@ export interface WorkbenchLayoutActions {
 
 	/** The layout-derived palette entries. Call when the palette opens. */
 	buildLayoutCommands: () => WorkbenchCommand[];
-
-	/** The context-menu rows for one panel, in render order. */
-	buildMenuEntries: (pid: WorkbenchPanelId) => WorkbenchMenuEntry[];
 }
 
 /** The layout slice: fields plus its `actions` contribution. */
@@ -498,7 +482,6 @@ export const createWorkbenchLayoutSlice = (
 				tree: state.tree,
 				borders: state.borders,
 				panels: state.panels,
-				closed: state.closed,
 				selectedPanelId: state.selectedPanelId,
 				maximizedTabsetId: state.maximizedTabsetId,
 			};
@@ -659,12 +642,32 @@ export const createWorkbenchLayoutSlice = (
 		 * registered" rather than the instance being dropped.
 		 */
 		const applySnapshot = (snapshot: WorkbenchSnapshot): void => {
+			const borders = withAllBorders(snapshot.borders);
+			const openIds = new Set<WorkbenchPanelId>([
+				...flatten(snapshot.tree).flatMap((tabset) => tabset.panelIds),
+				...WORKBENCH_SIDES.flatMap((side) => borders[side].panelIds),
+			]);
+
+			// `panels` holds exactly the open instances. A cache written while
+			// closed panels were still tracked carries records that sit in no
+			// tabset and no border, and those would otherwise linger forever —
+			// invisible, but still matching a `selectPanel` lookup.
+			const panels = Object.fromEntries(
+				Object.entries(snapshot.panels).filter(([pid]) =>
+					openIds.has(pid),
+				),
+			);
+			const selectedPanelId =
+				snapshot.selectedPanelId &&
+				openIds.has(snapshot.selectedPanelId)
+					? snapshot.selectedPanelId
+					: undefined;
+
 			commit(() => ({
 				tree: snapshot.tree,
-				panels: snapshot.panels,
-				borders: withAllBorders(snapshot.borders),
-				closed: snapshot.closed ?? [],
-				selectedPanelId: snapshot.selectedPanelId,
+				panels: panels,
+				borders: borders,
+				selectedPanelId: selectedPanelId,
 				maximizedTabsetId: snapshot.maximizedTabsetId,
 			}));
 		};
@@ -685,7 +688,6 @@ export const createWorkbenchLayoutSlice = (
 			panels: {},
 			tree: emptyTabset(),
 			borders: withAllBorders(),
-			closed: [],
 			selectedPanelId: undefined,
 			lastTabsetId: undefined,
 			maximizedTabsetId: undefined,
@@ -694,8 +696,6 @@ export const createWorkbenchLayoutSlice = (
 			componentStatuses: {},
 			draggingPanelId: undefined,
 			editingPanelId: undefined,
-			menu: null,
-			sheet: null,
 			slotRects: {},
 			domainStore: undefined,
 			...initialDerived,
@@ -874,11 +874,19 @@ export const createWorkbenchLayoutSlice = (
 					const state = get().layout;
 					const same =
 						state.components[type]?.matches ?? shallowEqual;
-					const existing = Object.values(state.panels).find(
+					const candidates = Object.values(state.panels).filter(
 						(record) =>
 							record.type === type &&
 							same(record.config ?? {}, config),
 					);
+					// `matches` does not guarantee uniqueness — `spawnPanel`
+					// bypasses it, so dragging a file out of the explorer
+					// leaves several views of it. Prefer one already on screen;
+					// revealing any other is a tab switch either way.
+					const existing =
+						candidates.find((record) =>
+							state.visiblePanelIds.includes(record.id),
+						) ?? candidates[0];
 
 					if (!existing) {
 						return get().layout.actions.spawnPanel(type, {
@@ -931,11 +939,12 @@ export const createWorkbenchLayoutSlice = (
 						return existing.id;
 					}
 
-					// it was closed — put it back in the main area
+					// Belt and braces: a record in `panels` but in no stack
+					// should be impossible now that closing deletes it, but
+					// dock it rather than hand back an id nothing can show.
 					commit((s) => {
 						const host = mainTabsetId(s);
 						return {
-							closed: s.closed.filter((x) => x !== existing.id),
 							tree: host
 								? joinTabset(s.tree, host, existing.id)
 								: s.tree,
@@ -1005,36 +1014,34 @@ export const createWorkbenchLayoutSlice = (
 					});
 					return pid;
 				},
-				reopenPanel: (pid) => {
-					const state = get().layout;
-					if (!state.panels[pid] || !state.closed.includes(pid)) {
-						return;
-					}
-					commit((s) => {
-						const host = mainTabsetId(s);
-						return {
-							closed: s.closed.filter((x) => x !== pid),
-							tree: host ? joinTabset(s.tree, host, pid) : s.tree,
-							selectedPanelId: pid,
-							mobileActivePanelId: pid,
-						};
-					});
-				},
 				closePanel: (pid) => {
 					if (!flagOf(pid, "canClose")) {
 						return;
 					}
-					commit((s) => ({
-						tree: removePanel(s.tree, pid) ?? emptyTabset(),
-						borders: stripFromBorders(s.borders, pid),
-						closed: s.closed.includes(pid)
-							? s.closed
-							: [...s.closed, pid],
-						selectedPanelId:
-							s.selectedPanelId === pid
-								? undefined
-								: s.selectedPanelId,
-					}));
+					commit((s) => {
+						// the instance is gone, so its record and its scratch
+						// value go with it — ids are minted and never reused,
+						// so anything left keyed by this one is dead weight
+						const panels = { ...s.panels };
+						delete panels[pid];
+						const values = { ...s.values };
+						delete values[pid];
+
+						return {
+							tree: removePanel(s.tree, pid) ?? emptyTabset(),
+							borders: stripFromBorders(s.borders, pid),
+							panels: panels,
+							values: values,
+							selectedPanelId:
+								s.selectedPanelId === pid
+									? undefined
+									: s.selectedPanelId,
+							editingPanelId:
+								s.editingPanelId === pid
+									? undefined
+									: s.editingPanelId,
+						};
+					});
 				},
 				renamePanel: (pid, name) => {
 					const clean = name.trim();
@@ -1399,30 +1406,6 @@ export const createWorkbenchLayoutSlice = (
 						layout: { ...root.layout, editingPanelId: pid },
 					}));
 				},
-				openMenu: (pid, x, y) => {
-					set((root) => ({
-						layout: { ...root.layout, menu: { pid, x, y } },
-					}));
-				},
-				closeMenu: () => {
-					if (get().layout.menu === null) {
-						return;
-					}
-					set((root) => ({ layout: { ...root.layout, menu: null } }));
-				},
-				openSheet: (target) => {
-					set((root) => ({
-						layout: { ...root.layout, sheet: target },
-					}));
-				},
-				closeSheet: () => {
-					if (get().layout.sheet === null) {
-						return;
-					}
-					set((root) => ({
-						layout: { ...root.layout, sheet: null },
-					}));
-				},
 				setDragging: (pid) => {
 					if (get().layout.draggingPanelId === pid) {
 						return;
@@ -1436,12 +1419,27 @@ export const createWorkbenchLayoutSlice = (
 				canDrag: (pid) => flagOf(pid, "canDrag"),
 				canMaximize: (pid) => flagOf(pid, "canMaximize"),
 				canRename: (pid) => flagOf(pid, "canRename"),
+				canSplitTab: (pid) => {
+					if (!pid) {
+						return false;
+					}
+					const state = get().layout;
+					const record = state.panels[pid];
+					if (!record) {
+						return false;
+					}
+					// opt-in, so not a flagOf flag — those default to true
+					return (
+						record.canSplitTab ??
+						state.components[record.type]?.canSplitTab ??
+						false
+					);
+				},
 
 				getPanel: (pid) => (pid ? get().layout.panels[pid] : undefined),
 				findPanels: (predicate) =>
 					Object.values(get().layout.panels).filter(predicate),
 				buildLayoutCommands: () => buildWorkbenchLayoutCommands(get),
-				buildMenuEntries: (pid) => buildWorkbenchMenuEntries(get, pid),
 			},
 		};
 	};

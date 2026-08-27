@@ -1,5 +1,4 @@
 import { AppCommitsPage } from "./app-commits-page";
-import { AppFilesPage } from "./app-files-page";
 import { AppGithubPage } from "./app-github-page";
 import { AppGithubSelectRepoPage } from "./app-github-select-repo-page";
 import {
@@ -16,7 +15,6 @@ export {
 	NewPromptBuilderAppPage,
 	AppGithubSelectRepoPage,
 	AppCommitsPage,
-	AppFilesPage,
 	AppGithubPage,
 	AppMcpUsagePage,
 	AppSettingsPage,

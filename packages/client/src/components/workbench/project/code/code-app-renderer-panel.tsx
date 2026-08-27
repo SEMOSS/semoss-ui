@@ -1,58 +1,30 @@
-import { PanelsTopLeftIcon, RefreshCw } from "lucide-react";
-import { useState } from "react";
-import {
-	Button,
-	cn,
-	Tooltip,
-	TooltipContent,
-	TooltipTrigger,
-} from "@semoss/ui/next";
+import { PanelsTopLeftIcon } from "lucide-react";
 import { CodeRenderer } from "@/components/project";
 import { useProject, useWorkbenchControl } from "@/hooks";
 import type {
 	WorkbenchComponent,
 	WorkbenchPanelConfig,
 } from "@/stores/workbench";
-import { WORKBENCH_STYLES } from "../../core/workbench.chrome";
+import { CodeAppRendererRefreshControl } from "./code-app-renderer-refresh-control";
 
 /** The config an app-preview instance is opened with. */
-export interface CodeAppRendererConfig {
-	/** Bumped by a publish to force the iframe to remount. */
-	previewVersion?: number;
-}
+export type CodeAppRendererConfig = Record<string, never>;
 
+// `value` is the manual-refresh counter the chrome control bumps — the panel
+// cannot share a setter with a control, which draws in the chrome's subtree
 const CodeAppRendererPanelContent: WorkbenchComponent<
-	CodeAppRendererConfig
-> = ({ id, config }) => {
+	CodeAppRendererConfig,
+	number
+> = ({ id, value }) => {
 	const { project } = useProject();
-	const [counter, setCounter] = useState(0);
 
-	useWorkbenchControl(id, () => (
-		<Tooltip>
-			<TooltipTrigger asChild>
-				<Button
-					variant="ghost"
-					size="icon-sm"
-					className={cn(
-						"flex-none text-muted-foreground",
-						WORKBENCH_STYLES.chromeButton,
-					)}
-					onClick={() => setCounter((count) => count + 1)}
-					aria-label="Refresh app"
-					data-testid="workbench-app-renderer-refresh"
-				>
-					<RefreshCw className={WORKBENCH_STYLES.chromeIcon} />
-				</Button>
-			</TooltipTrigger>
-			<TooltipContent>Refresh</TooltipContent>
-		</Tooltip>
-	));
+	useWorkbenchControl(id, CodeAppRendererRefreshControl);
 
 	return (
 		<div className="h-full w-full overflow-hidden bg-background text-foreground">
 			<CodeRenderer
 				appId={project.project_id}
-				key={`${counter}-${config.previewVersion}`}
+				key={`project.project_id--${value ?? 0}`}
 			/>
 		</div>
 	);
@@ -62,13 +34,15 @@ const CodeAppRendererPanelContent: WorkbenchComponent<
  * Blueprint for the app preview. keepAlive: the iframe survives tab switches;
  * publishes remount it by bumping `config.previewVersion` on the record.
  */
-export const PROJECT_APP_RENDERER_PANEL: WorkbenchPanelConfig<CodeAppRendererConfig> =
-	{
-		name: "App",
-		helpText: "App Preview",
-		icon: ({ className }) => <PanelsTopLeftIcon className={className} />,
-		canClose: false,
-		canRename: false,
-		mount: "keepAlive",
-		content: CodeAppRendererPanelContent,
-	};
+export const PROJECT_APP_RENDERER_PANEL: WorkbenchPanelConfig<
+	CodeAppRendererConfig,
+	number
+> = {
+	name: "App",
+	helpText: "App Preview",
+	icon: ({ className }) => <PanelsTopLeftIcon className={className} />,
+	canClose: false,
+	canRename: false,
+	mount: "keepAlive",
+	content: CodeAppRendererPanelContent,
+};

@@ -1,66 +1,30 @@
-import { type FC, useMemo } from "react";
-import {
-	DropdownMenu,
-	DropdownMenuContent,
-	DropdownMenuItem,
-	DropdownMenuSeparator,
-	DropdownMenuTrigger,
-} from "@semoss/ui/next";
-import { useWorkbench } from "@/hooks";
+import { type FC, type ReactNode, useState } from "react";
+import { ContextMenu, ContextMenuTrigger } from "@semoss/ui/next";
+import type { WorkbenchPanelId } from "@/stores/workbench";
+import { WorkbenchPanelMenuContent } from "./workbench-context-menu-content";
 
 /**
- * The shared context menu: one controlled DropdownMenu anchored to an
- * invisible trigger at the pointer coordinates stored by `openMenu`. Serves
- * every trigger surface (tabs, rail icons, border headers).
+ * One panel's right-click menu. Wraps the trigger surface (a tab or a border
+ * header) — Radix owns the contextmenu event (and long-press on touch), so
+ * there is no store-held menu state. The body only mounts once the menu has
+ * been opened, keeping the store reads off the render path of every idle tab;
+ * after that Radix itself portals the content only while open.
  */
-export const WorkbenchContextMenu: FC = () => {
-	const menu = useWorkbench((s) => s.layout.menu);
-	const actions = useWorkbench((s) => s.layout.actions);
-
-	const entries = useMemo(
-		() => (menu ? actions.buildMenuEntries(menu.pid) : []),
-		[menu, actions],
-	);
-
-	if (!menu || !entries.length) {
-		return null;
-	}
-
+export const WorkbenchPanelContextMenu: FC<{
+	pid: WorkbenchPanelId;
+	children: ReactNode;
+}> = ({ pid, children }) => {
+	const [everOpened, setEverOpened] = useState(false);
 	return (
-		<DropdownMenu
-			open
+		<ContextMenu
 			onOpenChange={(open) => {
-				if (!open) {
-					actions.closeMenu();
+				if (open) {
+					setEverOpened(true);
 				}
 			}}
 		>
-			<DropdownMenuTrigger asChild>
-				<span
-					aria-hidden
-					style={{ left: menu.x, top: menu.y }}
-					className="fixed size-px"
-				/>
-			</DropdownMenuTrigger>
-			<DropdownMenuContent
-				align="start"
-				className="w-52"
-				data-testid="workbench-context-menu"
-				onCloseAutoFocus={(e) => e.preventDefault()}
-			>
-				{entries.map((entry) =>
-					entry.separator ? (
-						<DropdownMenuSeparator key={entry.key} />
-					) : (
-						<DropdownMenuItem
-							key={entry.key}
-							onSelect={() => entry.run()}
-						>
-							{entry.label}
-						</DropdownMenuItem>
-					),
-				)}
-			</DropdownMenuContent>
-		</DropdownMenu>
+			<ContextMenuTrigger asChild>{children}</ContextMenuTrigger>
+			{everOpened ? <WorkbenchPanelMenuContent pid={pid} /> : null}
+		</ContextMenu>
 	);
 };

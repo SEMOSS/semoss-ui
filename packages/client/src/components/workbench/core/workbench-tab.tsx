@@ -1,4 +1,4 @@
-import { MoreVertical, Pin, X } from "lucide-react";
+import { Pin, X } from "lucide-react";
 import {
 	type FC,
 	type KeyboardEvent,
@@ -16,6 +16,7 @@ import type {
 	WorkbenchStack,
 } from "@/stores/workbench";
 import { WORKBENCH_STYLES } from "./workbench.chrome";
+import { WorkbenchPanelContextMenu } from "./workbench-context-menu";
 import { WorkbenchPanelHeaderContent } from "./workbench-panel-header";
 
 export interface WorkbenchTabProps {
@@ -28,7 +29,7 @@ export interface WorkbenchTabProps {
 	 * left/right border; the blueprint's own header sees this too.
 	 */
 	location?: WorkbenchHeaderLocation;
-	/** Taller touch targets and an options button, for the mobile strip. */
+	/** Taller touch targets and no trailing controls, for the mobile strip. */
 	compact?: boolean;
 }
 
@@ -104,6 +105,7 @@ export const WorkbenchTab: FC<WorkbenchTabProps> = memo(
 			(s) => s.layout.draggingPanelId === pid,
 		);
 		const readOnly = useWorkbench((s) => s.layout.readOnly);
+		const isMobileLayout = useWorkbench((s) => s.layout.isMobileLayout);
 		const closable = useWorkbench((s) => s.layout.actions.canClose(pid));
 		const renamable = useWorkbench((s) => s.layout.actions.canRename(pid));
 
@@ -135,9 +137,11 @@ export const WorkbenchTab: FC<WorkbenchTabProps> = memo(
 
 		const userCanRename = renamable && !readOnly;
 		// on a rail the tab is the open/collapse control, which is what makes
-		// clicking the showing panel put it away again
+		// clicking the showing panel put it away again. There is no rail on
+		// mobile — there, a border tab activates like any other (toggling
+		// would only flip border state the mobile body never reads)
 		const select = () =>
-			stack.kind === "border"
+			stack.kind === "border" && !isMobileLayout
 				? actions.toggleBorderPanel(stack.id as WorkbenchSide, pid)
 				: actions.activatePanel(stack, pid);
 
@@ -181,154 +185,138 @@ export const WorkbenchTab: FC<WorkbenchTabProps> = memo(
 				actions.closePanel(pid);
 			} else if (e.key === "F2" && userCanRename) {
 				actions.setEditingPanel(pid);
-			} else if (e.shiftKey && e.key === "F10") {
-				e.preventDefault();
-				const rect = (
-					e.currentTarget as HTMLElement
-				).getBoundingClientRect();
-				actions.openMenu(pid, rect.left, rect.bottom);
 			}
 		};
 
 		const tab = (
-			<div
-				id={`tab-${pid}`}
-				data-tab={pid}
-				data-testid={`workbench-tab-${pid}`}
-				role="tab"
-				aria-selected={active}
-				tabIndex={active ? 0 : -1}
-				title={record.helpText || record.name}
-				onPointerDown={(e) => {
-					// primary button only: on a rail `select` toggles the
-					// panel, so a right-click would collapse it out from
-					// under the context menu it is opening
-					if (e.button !== 0 || isEditing) {
-						return;
-					}
-					// the second press of a double-click is the start of a
-					// rename and must not select again — on a rail that would
-					// toggle the panel straight back. pointerdown carries no
-					// click count of its own (`detail` is 0), so time it
-					const quick = e.timeStamp - lastPress.current < 500;
-					lastPress.current = e.timeStamp;
-					if (!quick) {
-						select();
-					}
-				}}
-				onContextMenu={(e) => {
-					e.preventDefault();
-					// no select: the menu is bound to this pid already, and on
-					// a rail selecting would toggle the panel shut
-					actions.openMenu(pid, e.clientX, e.clientY);
-				}}
-				onKeyDown={onKeyDown}
-				onDoubleClick={() => {
-					if (userCanRename && !compact) {
-						actions.setEditingPanel(pid);
-					}
-				}}
-				className={cn(
-					"group relative flex flex-none touch-none select-none items-center gap-1.5 rounded-md text-xs",
-					"max-w-40 px-2.5",
-					compact ? "h-10" : "h-7",
-					isDragging && "opacity-40",
-					active
-						? WORKBENCH_STYLES.chromeButtonActive
-						: cn(
-								"cursor-pointer",
-								WORKBENCH_STYLES.chromeButtonInactive,
-							),
-				)}
-			>
-				{isEditing ? (
-					<WorkbenchTabRenameInput pid={pid} />
-				) : (
-					<WorkbenchPanelHeaderContent
-						pid={pid}
-						location={location}
-					/>
-				)}
-				{/* the controls belong to the selected tab. An unselected one is
-				    its icon and its name, and measures to just that — a hidden
-				    button still reserves its width, which on a rail is length */}
-				{!active ? null : compact ? (
-					<Tooltip>
-						<TooltipTrigger asChild>
-							<button
-								type="button"
-								onPointerDown={(e) => e.stopPropagation()}
-								onClick={() => actions.openSheet(pid)}
-								className={cn(
-									"ml-1 flex items-center justify-center text-muted-foreground",
-									WORKBENCH_STYLES.chromeButton,
-								)}
-								aria-label={`Options for ${record.name}`}
-							>
-								<MoreVertical
-									className={WORKBENCH_STYLES.chromeIcon}
-								/>
-							</button>
-						</TooltipTrigger>
-						<TooltipContent>Options</TooltipContent>
-					</Tooltip>
-				) : record.pinned ? (
-					<Tooltip>
-						<TooltipTrigger asChild>
-							<button
-								type="button"
-								onPointerDown={(e) => e.stopPropagation()}
-								onClick={() => {
-									if (!readOnly) {
-										actions.setPinned(pid, false);
-									}
-								}}
-								data-testid={`workbench-tab-pin-${pid}`}
-								className={cn(
-									"ml-1 flex items-center justify-center rounded text-muted-foreground hover:bg-accent hover:text-foreground",
-									WORKBENCH_STYLES.chromeButtonSm,
-								)}
-								aria-label={`Unpin ${record.name}`}
-							>
-								<Pin
-									className={WORKBENCH_STYLES.chromeIconSm}
-								/>
-							</button>
-						</TooltipTrigger>
-						<TooltipContent>Unpin</TooltipContent>
-					</Tooltip>
-				) : !closable ? null : (
-					<Tooltip>
-						<TooltipTrigger asChild>
-							<button
-								type="button"
-								onPointerDown={(e) => e.stopPropagation()}
-								onClick={() => actions.closePanel(pid)}
-								data-testid={`workbench-tab-close-${pid}`}
-								className={cn(
-									"ml-1 flex items-center justify-center rounded text-muted-foreground hover:bg-accent hover:text-foreground",
-									compact
-										? WORKBENCH_STYLES.chromeButton
-										: cn(
-												WORKBENCH_STYLES.chromeButtonSm,
-												"opacity-60 group-hover:opacity-100",
-											),
-								)}
-								aria-label={`Close ${record.name}`}
-							>
-								<X
-									className={
-										compact
-											? WORKBENCH_STYLES.chromeIcon
-											: WORKBENCH_STYLES.chromeIconSm
-									}
-								/>
-							</button>
-						</TooltipTrigger>
-						<TooltipContent>Close</TooltipContent>
-					</Tooltip>
-				)}
-			</div>
+			<WorkbenchPanelContextMenu pid={pid}>
+				<div
+					id={`tab-${pid}`}
+					data-tab={pid}
+					data-testid={`workbench-tab-${pid}`}
+					role="tab"
+					aria-selected={active}
+					tabIndex={active ? 0 : -1}
+					title={record.helpText || record.name}
+					onPointerDown={(e) => {
+						// a compact tab selects on click instead: pointerdown is
+						// also how a finger starts scrolling the strip, and the
+						// browser suppresses the click after a pan
+						if (compact) {
+							return;
+						}
+						// primary button only: on a rail `select` toggles the
+						// panel, so a right-click would collapse it out from
+						// under the context menu it is opening
+						if (e.button !== 0 || isEditing) {
+							return;
+						}
+						// the second press of a double-click is the start of a
+						// rename and must not select again — on a rail that would
+						// toggle the panel straight back. pointerdown carries no
+						// click count of its own (`detail` is 0), so time it
+						const quick = e.timeStamp - lastPress.current < 500;
+						lastPress.current = e.timeStamp;
+						if (!quick) {
+							select();
+						}
+					}}
+					onClick={() => {
+						if (compact && !isEditing) {
+							select();
+						}
+					}}
+					onKeyDown={onKeyDown}
+					onDoubleClick={() => {
+						if (userCanRename && !compact) {
+							actions.setEditingPanel(pid);
+						}
+					}}
+					className={cn(
+						"group relative flex flex-none select-none items-center gap-1.5 rounded-md text-xs",
+						"max-w-40 px-2.5",
+						// touch-none exists for the desktop drag layer; on mobile
+						// it would stop a finger from scrolling the strip
+						compact
+							? cn("touch-pan-x", WORKBENCH_STYLES.mobileTab)
+							: "h-7 touch-none",
+						isDragging && "opacity-40",
+						active
+							? WORKBENCH_STYLES.chromeButtonActive
+							: cn(
+									"cursor-pointer",
+									WORKBENCH_STYLES.chromeButtonInactive,
+								),
+					)}
+				>
+					{isEditing ? (
+						<WorkbenchTabRenameInput pid={pid} />
+					) : (
+						<WorkbenchPanelHeaderContent
+							pid={pid}
+							location={location}
+						/>
+					)}
+					{/* the controls belong to the selected desktop tab. An
+				    unselected one is its icon and its name, and measures to
+				    just that — a hidden button still reserves its width, which
+				    on a rail is length. A compact tab carries none at all, so
+				    every mobile tab keeps one constant width; panel options
+				    live in the drawer and the long-press menu instead */}
+					{!active || compact ? null : record.pinned ? (
+						<Tooltip>
+							<TooltipTrigger asChild>
+								<button
+									type="button"
+									onPointerDown={(e) => e.stopPropagation()}
+									onClick={() => {
+										if (!readOnly) {
+											actions.setPinned(pid, false);
+										}
+									}}
+									data-testid={`workbench-tab-pin-${pid}`}
+									className={cn(
+										"ml-1 flex items-center justify-center rounded text-muted-foreground hover:bg-accent hover:text-foreground",
+										WORKBENCH_STYLES.chromeButtonSm,
+									)}
+									aria-label={`Unpin ${record.name}`}
+								>
+									<Pin
+										className={
+											WORKBENCH_STYLES.chromeIconSm
+										}
+									/>
+								</button>
+							</TooltipTrigger>
+							<TooltipContent>Unpin</TooltipContent>
+						</Tooltip>
+					) : !closable ? null : (
+						<Tooltip>
+							<TooltipTrigger asChild>
+								<button
+									type="button"
+									onPointerDown={(e) => e.stopPropagation()}
+									onClick={() => actions.closePanel(pid)}
+									data-testid={`workbench-tab-close-${pid}`}
+									className={cn(
+										"ml-1 flex items-center justify-center rounded text-muted-foreground hover:bg-accent hover:text-foreground",
+										WORKBENCH_STYLES.chromeButtonSm,
+										"opacity-60 group-hover:opacity-100",
+									)}
+									aria-label={`Close ${record.name}`}
+								>
+									<X
+										className={
+											WORKBENCH_STYLES.chromeIconSm
+										}
+									/>
+								</button>
+							</TooltipTrigger>
+							<TooltipContent>Close</TooltipContent>
+						</Tooltip>
+					)}
+				</div>
+			</WorkbenchPanelContextMenu>
 		);
 
 		if (!vertical) {

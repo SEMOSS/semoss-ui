@@ -2,6 +2,7 @@ import { type ComponentType, useEffect, useRef, useState } from "react";
 import type {
 	WorkbenchChromeProps,
 	WorkbenchPanelId,
+	WorkbenchPanelParams,
 } from "@/stores/workbench";
 import { useWorkbench } from "./use-workbench";
 
@@ -11,19 +12,30 @@ import { useWorkbench } from "./use-workbench";
  * active tab of the panel's stack — one control per panel, visible only while
  * the panel is the front tab.
  *
- * `content` may be an inline component: it renders with the panel's own chrome
- * props and its latest closures (so it can reach the panel's refs and state),
- * while the chrome keeps rendering one stable wrapper — an inline definition
- * getting a new identity every render never remounts the control.
+ * `content` draws in the chrome's subtree, not the panel's, so it does NOT
+ * re-render when the panel does. The hook holds the latest renderer in a ref —
+ * a stale closure never draws, and the registered wrapper keeps one identity
+ * so registration never churns — but refreshing a ref schedules nothing, and
+ * the chrome only reads it when it re-renders for its own reasons.
+ *
+ * So pass a stable component from its own file, subscribing to whatever live
+ * state it shows (domain hooks work: the chrome is under the same provider),
+ * and reaching the panel's own state through the `value`/`config` it is handed.
+ * An inline arrow is only correct when the control's output is constant — it
+ * also takes a new identity every render, which remounts the control on the
+ * chrome's next render, resetting an open popover or focus inside it.
+ *
+ * `P`/`V` are inferred from `content`'s annotation, so a control typed
+ * `FC<WorkbenchChromeProps<MyConfig, MyValue>>` reads them without a cast.
  *
  * @name useWorkbenchControl
  * @param pid - The panel instance the control belongs to.
  * @param content - The control renderer; it owns its own label, disabled
  * state, and click handling. Pass null to register nothing.
  */
-export const useWorkbenchControl = (
+export const useWorkbenchControl = <P = WorkbenchPanelParams, V = unknown>(
 	pid: WorkbenchPanelId,
-	content: ComponentType<WorkbenchChromeProps> | null,
+	content: ComponentType<WorkbenchChromeProps<P, V>> | null,
 ): void => {
 	const registerControl = useWorkbench(
 		(state) => state.control.actions.registerControl,
@@ -35,8 +47,10 @@ export const useWorkbenchControl = (
 
 	// one wrapper per hook instance — the registered identity never changes
 	const [Stable] = useState(
-		(): ComponentType<WorkbenchChromeProps> =>
-			function WorkbenchControlContent(props: WorkbenchChromeProps) {
+		(): ComponentType<WorkbenchChromeProps<P, V>> =>
+			function WorkbenchControlContent(
+				props: WorkbenchChromeProps<P, V>,
+			) {
 				const Latest = contentRef.current;
 				return Latest ? <Latest {...props} /> : null;
 			},

@@ -9,11 +9,12 @@ import {
 	SPARQL_THEME_LIGHT,
 } from "@semoss/shared";
 import { Button, Spinner, useTheme } from "@semoss/ui/next";
-import { useDatabaseWorkbench } from "@/hooks";
+import { useDatabaseWorkbench, useWorkbenchControl } from "@/hooks";
 import type {
 	WorkbenchComponent,
 	WorkbenchPanelConfig,
 } from "@/stores/workbench";
+import { DatabaseNewQueryControl } from "./database-new-query-control";
 
 const SQL_KEYWORDS = [
 	"SELECT",
@@ -77,6 +78,8 @@ export const DatabaseQueryPanel: WorkbenchComponent<DatabaseQueryConfig> = ({
 		[onQuery],
 	);
 
+	useWorkbenchControl(id, DatabaseNewQueryControl);
+
 	const { resolvedTheme } = useTheme();
 	const panelId = id;
 	const initialQuery = config.initialQuery ?? "";
@@ -130,7 +133,7 @@ export const DatabaseQueryPanel: WorkbenchComponent<DatabaseQueryConfig> = ({
 		});
 
 		const baseSuggestions =
-			mode === "SQL"
+			mode !== "SPARQL"
 				? [
 						...SQL_KEYWORDS.map((keyword) => ({
 							label: keyword,
@@ -265,7 +268,7 @@ export const DatabaseQueryPanel: WorkbenchComponent<DatabaseQueryConfig> = ({
 						language={mode === "SPARQL" ? "sparql" : "sql"}
 						theme={editorTheme}
 						options={{
-							fixedOverflowWidgets: mode === "SQL",
+							fixedOverflowWidgets: mode !== "SPARQL",
 							scrollbar: {
 								horizontal: "hidden",
 								horizontalScrollbarSize: 0,

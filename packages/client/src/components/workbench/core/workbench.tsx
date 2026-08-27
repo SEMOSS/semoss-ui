@@ -5,12 +5,9 @@ import { useWorkbenchEvents } from "./use-workbench-events";
 import type { WorkbenchBorderSlotCtx, WorkbenchProps } from "./workbench.types";
 import { resolveBorderSlot, WorkbenchBorder } from "./workbench-border";
 import { WorkbenchCommandPalette } from "./workbench-command-palette";
-import { WorkbenchContextMenu } from "./workbench-context-menu";
 import { WorkbenchDragLayer } from "./workbench-drag-layer";
 import { WorkbenchMobile } from "./workbench-mobile";
-import { WorkbenchMobileActions } from "./workbench-mobile-actions";
 import { WorkbenchPanelLayer } from "./workbench-panel-layer";
-import { WorkbenchPanelSheet } from "./workbench-panel-sheet";
 import { WorkbenchResetButton } from "./workbench-reset-button";
 import { WorkbenchStage } from "./workbench-stage";
 
@@ -199,7 +196,7 @@ export const Workbench: FC<WorkbenchProps> = ({
 						<Spinner />
 					</div>
 				) : isMobileLayout ? (
-					<WorkbenchMobile />
+					<WorkbenchMobile actionsSlot={borderSlots?.left?.after} />
 				) : (
 					<div className="relative flex h-full w-full flex-row gap-2 p-2">
 						<WorkbenchBorder side="left" slots={leftSlots} />
@@ -234,14 +231,8 @@ export const Workbench: FC<WorkbenchProps> = ({
 
 				<WorkbenchPanelLayer />
 				<WorkbenchDragLayer rootRef={rootRef} stageRef={stageRef} />
-				<WorkbenchMobileActions
-					slot={borderSlots?.left?.after}
-					readOnly={readOnly}
-				/>
 				<WorkbenchSlotMeasure />
 			</div>
-			<WorkbenchContextMenu />
-			<WorkbenchPanelSheet />
 		</>
 	);
 };

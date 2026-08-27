@@ -1,4 +1,5 @@
-import { DatabaseIcon } from "lucide-react";
+import { PlusIcon } from "lucide-react";
+import type { FC } from "react";
 import {
 	Button,
 	cn,
@@ -7,10 +8,16 @@ import {
 	TooltipTrigger,
 } from "@semoss/ui/next";
 import { useDatabaseWorkbench } from "@/hooks";
+import type { WorkbenchChromeProps } from "@/stores/workbench";
 import { WORKBENCH_STYLES } from "../../core/workbench.chrome";
 
-/** Opens a blank query editor in the database workbench. */
-export const DatabaseNewQueryButton: React.FC = () => {
+/**
+ * The query panel's chrome control. New Query is the query surface's own
+ * action, so it rides the panel header rather than the workbench toolbar — it
+ * appears beside whichever query tab is front, which is also the one it opens
+ * a sibling of.
+ */
+export const DatabaseNewQueryControl: FC<WorkbenchChromeProps> = () => {
 	const addQueryPanel = useDatabaseWorkbench((state) => state.addQueryPanel);
 
 	return (
@@ -23,14 +30,14 @@ export const DatabaseNewQueryButton: React.FC = () => {
 					data-testid="workbench-new-query-button"
 					onClick={() => addQueryPanel("")}
 					className={cn(
-						"border border-transparent text-muted-foreground",
+						"flex-none text-muted-foreground",
 						WORKBENCH_STYLES.chromeButton,
 					)}
 				>
-					<DatabaseIcon className={WORKBENCH_STYLES.chromeIcon} />
+					<PlusIcon className={WORKBENCH_STYLES.chromeIcon} />
 				</Button>
 			</TooltipTrigger>
-			<TooltipContent side="right">New query</TooltipContent>
+			<TooltipContent>New query</TooltipContent>
 		</Tooltip>
 	);
 };

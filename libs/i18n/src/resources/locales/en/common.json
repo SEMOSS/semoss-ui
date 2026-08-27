@@ -147,7 +147,8 @@
 			"delete": "Delete",
 			"newFile": "New file",
 			"newFolder": "New folder",
-			"ariaLabel": "File actions"
+			"ariaLabel": "File actions",
+			"unzip": "Unzip"
 		},
 		"overlay": {
 			"title": "Create File or Directory",
@@ -156,12 +157,14 @@
 				"action": "Action",
 				"fileName": "File Name",
 				"directoryName": "Directory Name",
-				"uploadFileZip": "Upload File/Zip"
+				"uploadFileZip": "Upload File/Zip",
+				"location": "Location"
 			},
 			"placeholders": {
 				"selectAction": "Select action",
 				"fileName": "Enter File Name",
-				"directoryName": "Enter Directory Name"
+				"directoryName": "Enter Directory Name",
+				"location": "Enter a destination folder"
 			},
 			"actions": {
 				"upload": "Upload Files",
@@ -182,7 +185,8 @@
 			"buttons": {
 				"cancel": "Cancel",
 				"upload": "Upload",
-				"create": "Create"
+				"create": "Create",
+				"back": "Back"
 			},
 			"toasts": {
 				"selectAtLeastOne": "Please select at least one file to upload",
@@ -194,8 +198,22 @@
 				"fileCreated": "Successfully created file",
 				"directoryCreated": "Successfully created directory",
 				"anError": "An error occurred"
+			},
+			"actionDescriptions": {
+				"upload": "Upload files or a zip from your computer",
+				"newFile": "Create an empty file",
+				"newDirectory": "Create an empty folder"
 			}
-		}
+		},
+		"itemCount_one": "1 item",
+		"itemCount_other": "{{count}} items",
+		"movingItems_one": "Moving 1 item",
+		"movingItems_other": "Moving {{count}} items",
+		"moveHere": "Move here",
+		"emptyFolder": "Empty folder",
+		"uploadDropHint": "Release to upload files to {{path}}",
+		"dragPreviewMoveItem": "Move {{name}}",
+		"dragPreviewMoveItems": "Move {{count}} items"
 	},
 	"cellOutput": {
 		"panels": {

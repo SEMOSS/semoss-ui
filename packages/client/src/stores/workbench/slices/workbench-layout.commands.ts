@@ -4,7 +4,7 @@ import { WORKBENCH_SIDES } from "../workbench.types";
 import { workbenchPanelProps } from "../workbench-panel-props";
 
 /**
- * Build the layout-derived palette entries — go-to, reopen, close, border
+ * Build the layout-derived palette entries — go-to, close, border
  * toggles, maximize/reset, and panel-contributed commands —
  * from the live store. Call when the palette opens; the result is merged
  * with the registered command list (registered ids win on collision).
@@ -39,20 +39,6 @@ export function buildWorkbenchLayoutCommands(
 					),
 			});
 		}
-	}
-
-	// reopen closed panels
-	for (const pid of state.layout.closed) {
-		const record = state.layout.panels[pid];
-		if (!record) {
-			continue;
-		}
-		list.push({
-			id: `workbench.layout.reopen.${pid}`,
-			category: "View",
-			label: `Reopen ${record.name}`,
-			handler: () => actions.reopenPanel(pid),
-		});
 	}
 
 	// close open panels that allow it

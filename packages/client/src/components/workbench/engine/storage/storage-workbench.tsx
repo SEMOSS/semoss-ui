@@ -1,10 +1,8 @@
-import { CloudIcon } from "lucide-react";
 import { useEffect } from "react";
 import { makeEngineRoomMcp } from "@/api/rooms";
 import { useEngine, useWorkbench, useWorkbenchCommands } from "@/hooks";
 import type {
 	WorkbenchLayout,
-	WorkbenchPanelConfig,
 	WorkbenchPanelConfigAny,
 } from "@/stores/workbench";
 import { WORKBENCH_ASSISTANT_PANEL } from "../../assistant";
@@ -19,18 +17,7 @@ import { ENGINE_FILE_EXPLORER_PANEL } from "../engine-file-explorer-panel";
 import { ENGINE_MCP_EDITOR_PANEL } from "../engine-mcp-editor-panel";
 import { createEngineSettingsPanel } from "../engine-settings-panel";
 import { EngineSettingsToggle } from "../engine-settings-toggle";
-
-/**
- * The STORAGE_EXPLORER slot renders the shared engine file explorer under a
- * cloud icon — preserved from the previous layout, which mapped both left
- * tabs to the same explorer.
- */
-const STORAGE_EXPLORER_PANEL_AS_FILES: WorkbenchPanelConfig = {
-	...ENGINE_FILE_EXPLORER_PANEL,
-	name: "Storage",
-	helpText: "Storage Explorer",
-	icon: ({ className }) => <CloudIcon className={className} />,
-};
+import { STORAGE_FILE_EXPLORER_PANEL } from "./storage-file-explorer-panel";
 
 /** The default arrangement: storage + files on the left, assistant right. */
 const STORAGE_WORKBENCH_LAYOUT: WorkbenchLayout = {
@@ -70,7 +57,7 @@ const STORAGE_WORKBENCH_LAYOUT: WorkbenchLayout = {
 
 /** Blueprints, keyed by type. Module-scope so identities never churn. */
 const STORAGE_WORKBENCH_COMPONENTS: Record<string, WorkbenchPanelConfigAny> = {
-	[WORKBENCH_COMPONENTS.STORAGE_EXPLORER]: STORAGE_EXPLORER_PANEL_AS_FILES,
+	[WORKBENCH_COMPONENTS.STORAGE_EXPLORER]: STORAGE_FILE_EXPLORER_PANEL,
 	[WORKBENCH_COMPONENTS.FILE_EXPLORER]: ENGINE_FILE_EXPLORER_PANEL,
 	[WORKBENCH_COMPONENTS.FILE_EDITOR]: ENGINE_FILE_EDITOR_PANEL,
 	[WORKBENCH_COMPONENTS.MCP_EDITOR]: ENGINE_MCP_EDITOR_PANEL,

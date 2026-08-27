@@ -185,6 +185,8 @@ export interface WorkbenchAssistantSliceState {
 	activeRunId: string | null;
 	/** True while submit() is uploading files and starting the run. */
 	isSending: boolean;
+	/** Unsent composer draft, preserved while the composer is unmounted. */
+	draft: string;
 	/** Transient notices rendered inline on the timeline. */
 	notices: WorkbenchAssistantNotice[];
 	/** Aggregated token usage for the room, when loaded. */
@@ -292,6 +294,11 @@ export interface WorkbenchAssistantSliceState {
 	setEffort: (effort: WorkbenchAssistantEffort | null) => void;
 	/** Set extended thinking for new runs (null = model default). */
 	setThinking: (thinking: boolean | null) => void;
+	/**
+	 * Set the unsent composer draft. Accepts a React-style updater so the
+	 * composer can merge into edits made while an async submit was in flight.
+	 */
+	setDraft: (draft: string | ((current: string) => string)) => void;
 	/**
 	 * Cancel the active run (StopAgentRun). The run's stream observes the
 	 * CANCELLED status and reconciles; failures surface as error notices.
@@ -694,6 +701,7 @@ export const createWorkbenchAssistantSlice = (
 			roomRunIds: [],
 			activeRunId: null,
 			isSending: false,
+			draft: "",
 			notices: [],
 			usage: null,
 			isLoadingUsage: false,
@@ -1297,6 +1305,16 @@ export const createWorkbenchAssistantSlice = (
 				setAssistant({ permissionMode }),
 			setEffort: (effort) => setAssistant({ effort }),
 			setThinking: (thinking) => setAssistant({ thinking }),
+			setDraft: (draft) =>
+				set((state) => ({
+					assistant: {
+						...state.assistant,
+						draft:
+							typeof draft === "function"
+								? draft(state.assistant.draft)
+								: draft,
+					},
+				})),
 
 			stop: async () => {
 				const { insightId, activeRunId } = get().assistant;

@@ -55,7 +55,9 @@ export const ProjectFileEditorPanel: WorkbenchComponent<
 /**
  * Blueprint for project file-editor instances. Instances dedupe on their file
  * path, so a renamed file re-selects its open editor instead of opening a
- * duplicate. keepAlive: unsaved buffers survive tab switches.
+ * duplicate. That is `selectPanel`'s behaviour only — dragging a file out of
+ * the explorer deliberately spawns a second view of it. keepAlive: unsaved
+ * buffers survive tab switches.
  */
 export const PROJECT_FILE_EDITOR_PANEL: WorkbenchPanelConfig<ProjectFileEditorConfig> =
 	{

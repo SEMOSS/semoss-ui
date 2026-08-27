@@ -23,6 +23,13 @@ export const WORKBENCH_STYLES = {
 	/** Padding inside a rail. Leaves exactly `chromeButton` of content. */
 	railPadding: "p-1",
 
+	/**
+	 * The header row the shell draws over an open border body — a border has
+	 * no tab strip, so this is where its label and control sit. A
+	 * `chromeButton` plus the same padding a rail gives one.
+	 */
+	borderHeader: "h-9",
+
 	/** Square hit target for chrome: rail icons, tab-strip and header controls. */
 	chromeButton: "size-7",
 
@@ -41,6 +48,12 @@ export const WORKBENCH_STYLES = {
 
 	/** The glyph in a `chromeButtonSm`. */
 	chromeIconSm: "size-3",
+
+	/** A mobile tab: touch target with a floor for short labels. */
+	mobileTab: "h-8 min-w-16",
+
+	/** The glyph in a mobile-scale control (pager chevrons, drawer trigger). */
+	mobileIcon: "size-4",
 
 	/**
 	 * The `border-radius` shorthand a slot hands its panel body, naming only

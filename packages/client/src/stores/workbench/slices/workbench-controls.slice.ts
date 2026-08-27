@@ -1,5 +1,6 @@
 import type {
 	WorkbenchControl,
+	WorkbenchControlAny,
 	WorkbenchPanelId,
 	WorkbenchSlice,
 } from "../workbench.types";
@@ -11,7 +12,7 @@ export interface WorkbenchControlsSliceFields {
 	 * in each stack, so a registration for a hidden keepAlive panel simply
 	 * waits until its tab is front again.
 	 */
-	controls: Record<WorkbenchPanelId, WorkbenchControl>;
+	controls: Record<WorkbenchPanelId, WorkbenchControlAny>;
 }
 
 /** Control actions exposed under the store's `actions` namespace. */
@@ -23,9 +24,9 @@ export interface WorkbenchControlsActions {
 	 * @param control - The control to draw beside the panel's active tab.
 	 * @return Cleanup that unregisters this panel's control.
 	 */
-	registerControl: (
+	registerControl: <P, V>(
 		pid: WorkbenchPanelId,
-		control: WorkbenchControl,
+		control: WorkbenchControl<P, V>,
 	) => () => void;
 	/**
 	 * Remove a panel's chrome control.

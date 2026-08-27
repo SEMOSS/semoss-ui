@@ -1,23 +1,14 @@
-import {
-	type FC,
-	type RefObject,
-	useCallback,
-	useEffect,
-	useRef,
-	useState,
-} from "react";
+import { type FC, type RefObject, useEffect, useRef, useState } from "react";
 import { cn } from "@semoss/ui/next";
 import { useWorkbench, useWorkbenchStoreApi } from "@/hooks";
-import { findTabset, type WorkbenchSide } from "@/stores/workbench";
+import { useWorkbenchHitTest } from "./use-workbench-hit-test";
 import type { WorkbenchDragState, WorkbenchDropInfo } from "./workbench.types";
+import { ghostRect } from "./workbench-drop.ops";
 import {
-	edgeBandRect,
-	ghostRect,
-	resolveHuggingSide,
-	resolveInsertionIndex,
-	resolveOutsideSide,
-	splitZone,
-} from "./workbench-drop.ops";
+	isSpawnDrag,
+	ownsItsDrops,
+	readSpawnDragSpec,
+} from "./workbench-spawn-drag";
 
 export interface WorkbenchDragLayerProps {
 	/** The workbench root, drag initiation is delegated from it. */
@@ -27,19 +18,17 @@ export interface WorkbenchDragLayerProps {
 }
 
 /**
- * Owns the whole drag interaction: pointer delegation from `[data-tab]`
- * elements, geometric drop resolution, the drop ghost, and the drag label.
- * High-frequency pointer state stays local — the store only learns which
- * panel is dragging and receives the final `movePanel` on drop.
+ * Owns both drag interactions the shell supports.
  *
- * Drop resolution is geometric and ordered, and always yields exactly one
- * target:
- *   1. a rail icon       → reorder inside that border
- *   2. a tab strip       → insert at a position in that dock
- *   3. a border region   → dock into that border
- *   4. outside the stage → the border side crossed furthest into
- *   5. hugging an empty edge → create that border
- *   6. a dock body       → split it, or join it in the middle
+ * **Moving a tab** is a pointer-event drag delegated from `[data-tab]`
+ * elements inside the root; high-frequency pointer state stays local and the
+ * store only learns which panel is dragging and receives the final
+ * `movePanel` on drop.
+ *
+ * **Dropping something from outside** — a file dragged out of the explorer
+ * tree — is a native HTML5 drag carrying `WORKBENCH_SPAWN_DRAG_TYPE`. It
+ * resolves through the same `useWorkbenchHitTest` geometry and draws the same
+ * ghost, so both gestures target splits, tab strips, and borders identically.
  */
 export const WorkbenchDragLayer: FC<WorkbenchDragLayerProps> = ({
 	rootRef,
@@ -56,189 +45,14 @@ export const WorkbenchDragLayer: FC<WorkbenchDragLayerProps> = ({
 	const dropRef = useRef<WorkbenchDropInfo | null>(null);
 	dropRef.current = drop;
 
-	const hitTest = useCallback(
-		(x: number, y: number): WorkbenchDropInfo | null => {
-			const state = storeApi.getState();
-			const elements: Element[] =
-				typeof document.elementsFromPoint === "function"
-					? document.elementsFromPoint(x, y)
-					: [];
+	// an external drag has no panel of its own, so it tracks its resolved drop
+	// separately and renders only the ghost — the drag source already supplied
+	// a native drag image
+	const [spawnDrop, setSpawnDrop] = useState<WorkbenchDropInfo | null>(null);
+	const spawnDropRef = useRef<WorkbenchDropInfo | null>(null);
+	spawnDropRef.current = spawnDrop;
 
-			const pick = (selector: string): Element | null => {
-				for (const el of elements) {
-					const hit = el.closest(selector);
-					if (hit) {
-						return hit;
-					}
-				}
-				return null;
-			};
-
-			// 1. the rail picks an insertion slot, so border icons can reorder
-			const rail = pick("[data-rail]");
-			if (rail) {
-				const side = rail.getAttribute("data-rail") as WorkbenchSide;
-				const vertical = side === "left" || side === "right";
-				const railRect = rail.getBoundingClientRect();
-				const rects = Array.from(
-					rail.querySelectorAll("[data-tab]"),
-				).map((el) => el.getBoundingClientRect());
-				const index = resolveInsertionIndex(rects, x, y, vertical);
-				const last = rects[rects.length - 1];
-				const at =
-					index < rects.length
-						? vertical
-							? rects[index].top
-							: rects[index].left
-						: last
-							? vertical
-								? last.bottom
-								: last.right
-							: vertical
-								? railRect.top + 4
-								: railRect.left + 4;
-				return {
-					target: { kind: "border", side, index },
-					rect: vertical
-						? {
-								left: railRect.left + 6,
-								top: at - 1.5,
-								width: railRect.width - 12,
-								height: 3,
-							}
-						: {
-								left: at - 1.5,
-								top: railRect.top + 6,
-								width: 3,
-								height: railRect.height - 12,
-							},
-					zone: "strip",
-				};
-			}
-
-			// 2. a tab strip always inserts — it is the most precise target
-			//    there is, and it must never be shadowed by an edge zone
-			const strip = pick("[data-tabstrip]");
-			if (strip) {
-				const stripId = strip.getAttribute("data-tabstrip") ?? "";
-				if (
-					findTabset(state.layout.tree, stripId)?.enableDrop === false
-				) {
-					return null;
-				}
-				const stripRect = strip.getBoundingClientRect();
-				const rects = Array.from(
-					strip.querySelectorAll("[data-tab]"),
-				).map((el) => el.getBoundingClientRect());
-				const index = resolveInsertionIndex(rects, x, y, false);
-				const caret =
-					index < rects.length
-						? rects[index].left
-						: rects.length
-							? rects[rects.length - 1].right
-							: stripRect.left + 6;
-				return {
-					target: { kind: "join", tabsetId: stripId, index },
-					rect: {
-						left: caret - 1.5,
-						top: stripRect.top + 4,
-						width: 3,
-						height: stripRect.height - 8,
-					},
-					zone: "strip",
-				};
-			}
-
-			const stage = stageRef.current?.getBoundingClientRect();
-
-			// 3. anywhere in a border — its rail or its open panel
-			const borderEl = pick("[data-border]");
-			if (borderEl) {
-				const side = borderEl.getAttribute(
-					"data-border",
-				) as WorkbenchSide;
-				const rect = borderEl.getBoundingClientRect();
-				return {
-					target: { kind: "border", side },
-					rect: {
-						left: rect.left,
-						top: rect.top,
-						width: rect.width,
-						height: rect.height,
-					},
-					zone: "center",
-				};
-			}
-
-			if (stage) {
-				// 4. past the edge of the stage: whichever side is crossed
-				//    furthest, so a corner resolves to one answer
-				const outside = resolveOutsideSide(stage, x, y);
-				if (outside) {
-					return {
-						target: { kind: "border", side: outside },
-						rect: edgeBandRect(outside, stage),
-						zone: "center",
-					};
-				}
-
-				// 5. hugging an edge that has no border yet — the only case
-				//    where a drop zone reaches into the stage
-				const hugging = resolveHuggingSide(
-					stage,
-					x,
-					y,
-					(side) => state.layout.borders[side].panelIds.length === 0,
-				);
-				if (hugging) {
-					return {
-						target: { kind: "border", side: hugging },
-						rect: edgeBandRect(hugging, stage),
-						zone: "center",
-					};
-				}
-			}
-
-			// 6. a dock body. Zones are measured against the body, not the
-			//    whole card, so the tab strip stays visible and untouched.
-			const body = pick("[data-body]");
-			if (!body) {
-				return null;
-			}
-			const tabsetId = body.getAttribute("data-body") ?? "";
-			if (findTabset(state.layout.tree, tabsetId)?.enableDrop === false) {
-				return null;
-			}
-			const bounds = body.getBoundingClientRect();
-			const rect = {
-				left: bounds.left,
-				top: bounds.top,
-				width: bounds.width,
-				height: bounds.height,
-			};
-			const distances: [WorkbenchSide, number][] = [
-				["left", x - bounds.left],
-				["right", bounds.right - x],
-				["top", y - bounds.top],
-				["bottom", bounds.bottom - y],
-			];
-			distances.sort((a, b) => a[1] - b[1]);
-			const [dir, dist] = distances[0];
-			if (dist < splitZone(rect)) {
-				return {
-					target: { kind: "split", tabsetId, dir },
-					rect,
-					zone: dir,
-				};
-			}
-			return {
-				target: { kind: "join", tabsetId },
-				rect,
-				zone: "center",
-			};
-		},
-		[storeApi, stageRef],
-	);
+	const hitTest = useWorkbenchHitTest(stageRef);
 
 	// drag initiation is delegated: any [data-tab] inside the root can start
 	// one, so tabs and rail icons never wire their own drag handlers
@@ -330,15 +144,185 @@ export const WorkbenchDragLayer: FC<WorkbenchDragLayerProps> = ({
 		return () => root.removeEventListener("pointerdown", onPointerDown);
 	}, [rootRef, storeApi, hitTest]);
 
-	if (!drag) {
+	// native drags from outside the dock: same geometry, same ghost
+	useEffect(() => {
+		const root = rootRef.current;
+		if (!root) {
+			return;
+		}
+
+		let frame = 0;
+		let lastX = 0;
+		let lastY = 0;
+
+		/** Drop the external drag's preview and any queued frame. */
+		const clear = () => {
+			if (frame) {
+				cancelAnimationFrame(frame);
+				frame = 0;
+			}
+			setSpawnDrop(null);
+		};
+
+		/** Resolve the drop for the latest pointer position, once per frame. */
+		const process = () => {
+			frame = 0;
+			setSpawnDrop(hitTest(lastX, lastY));
+		};
+
+		/**
+		 * Track a spawn drag across the shell and preview where it would land.
+		 *
+		 * @param e - The dragover event.
+		 */
+		const onDragOver = (e: DragEvent) => {
+			if (!isSpawnDrag(e.dataTransfer)) {
+				return;
+			}
+
+			const state = storeApi.getState();
+			if (state.layout.isMobileLayout) {
+				return;
+			}
+
+			// while the pointer is inside a region that handles its own drops
+			// the drag belongs to that region — that is how a row-to-row file
+			// move stays a move, and how the explorer's upload dropzone keeps
+			// working
+			if (ownsItsDrops(e.target)) {
+				clear();
+				return;
+			}
+
+			e.preventDefault();
+			if (e.dataTransfer) {
+				// a copy, not a move: the file stays where it is and we open a
+				// view of it. This has to be one of the operations the source's
+				// `effectAllowed` names — otherwise the browser resolves the
+				// drag to "none", still draws our preview, and then silently
+				// refuses to fire `drop`.
+				e.dataTransfer.dropEffect = "copy";
+			}
+
+			lastX = e.clientX;
+			lastY = e.clientY;
+			if (!frame) {
+				frame = requestAnimationFrame(process);
+			}
+		};
+
+		/**
+		 * Register the shell as a drop target. Chrome is satisfied by
+		 * `dragover` alone; Firefox wants `dragenter` prevented too.
+		 *
+		 * @param e - The dragenter event.
+		 */
+		const onDragEnter = (e: DragEvent) => {
+			if (!isSpawnDrag(e.dataTransfer)) {
+				return;
+			}
+			if (ownsItsDrops(e.target)) {
+				return;
+			}
+			e.preventDefault();
+		};
+
+		/**
+		 * Open a new panel for the dragged spec at the resolved drop target.
+		 *
+		 * Always spawns, never reveals: dragging a file that is already open is
+		 * a request for a second view of it, so the instance already on screen
+		 * stays exactly where it is. (Clicking the file in the explorer is the
+		 * gesture that reveals the existing one.)
+		 *
+		 * @param e - The drop event.
+		 */
+		const onDrop = (e: DragEvent) => {
+			if (!isSpawnDrag(e.dataTransfer) || !e.dataTransfer) {
+				return;
+			}
+
+			// The same guard `dragenter`/`dragover` use, and it matters most
+			// here: a row dropped on a folder *inside* the tree bubbles up to
+			// this listener too, and without the guard we would spawn a stray
+			// panel and — because we stop propagation — swallow the move before
+			// the explorer's own handler ever saw it.
+			if (ownsItsDrops(e.target)) {
+				clear();
+				return;
+			}
+
+			const spec = readSpawnDragSpec(e.dataTransfer);
+			// resolve from the drop's own coordinates rather than the previewed
+			// state: it is the authoritative position, and it does not care
+			// whether a `dragleave` happened to clear the preview first
+			const target =
+				hitTest(e.clientX, e.clientY)?.target ??
+				spawnDropRef.current?.target;
+			clear();
+
+			if (!spec || !target) {
+				return;
+			}
+
+			e.preventDefault();
+			e.stopPropagation();
+
+			const actions = storeApi.getState().layout.actions;
+			// spawn where the shell would put it, then move: `spawnPanel` only
+			// honours `border` and `join` targets itself, so routing every drop
+			// through `movePanel` is what makes `split` and `root` work too
+			const pid = actions.spawnPanel(spec.type, {
+				name: spec.name,
+				config: spec.config,
+			});
+			actions.movePanel(pid, target);
+		};
+
+		/**
+		 * Clear the preview once the drag genuinely leaves the shell.
+		 *
+		 * @param e - The dragleave event.
+		 */
+		const onDragLeave = (e: DragEvent) => {
+			if (!isSpawnDrag(e.dataTransfer)) {
+				return;
+			}
+			// a dragleave fires for every child crossing; only the one that
+			// actually exits the root should tear the preview down
+			if (e.relatedTarget && root.contains(e.relatedTarget as Node)) {
+				return;
+			}
+			clear();
+		};
+
+		root.addEventListener("dragenter", onDragEnter);
+		root.addEventListener("dragover", onDragOver);
+		root.addEventListener("drop", onDrop);
+		root.addEventListener("dragleave", onDragLeave);
+		window.addEventListener("dragend", clear);
+		return () => {
+			root.removeEventListener("dragenter", onDragEnter);
+			root.removeEventListener("dragover", onDragOver);
+			root.removeEventListener("drop", onDrop);
+			root.removeEventListener("dragleave", onDragLeave);
+			window.removeEventListener("dragend", clear);
+			if (frame) {
+				cancelAnimationFrame(frame);
+			}
+		};
+	}, [rootRef, storeApi, hitTest]);
+
+	const activeDrop = drag ? drop : spawnDrop;
+	if (!activeDrop && !drag) {
 		return null;
 	}
 
-	const preview = drop ? ghostRect(drop) : null;
+	const preview = activeDrop ? ghostRect(activeDrop) : null;
 
 	return (
 		<>
-			{preview && drop && (
+			{preview && activeDrop && (
 				<div
 					aria-hidden
 					style={{
@@ -349,7 +333,7 @@ export const WorkbenchDragLayer: FC<WorkbenchDragLayerProps> = ({
 					}}
 					className={cn(
 						"pointer-events-none fixed z-40",
-						drop.zone === "strip"
+						activeDrop.zone === "strip"
 							? // an insertion caret: solid, thin, nothing dimmed
 								"rounded-full bg-primary"
 							: // a region: outlined and lightly filled, so the
@@ -358,13 +342,15 @@ export const WorkbenchDragLayer: FC<WorkbenchDragLayerProps> = ({
 					)}
 				/>
 			)}
-			<div
-				aria-hidden
-				style={{ left: drag.x + 10, top: drag.y + 10 }}
-				className="pointer-events-none fixed z-50 rounded border border-border bg-card px-2 py-1 text-foreground text-xs shadow-lg"
-			>
-				{dragName}
-			</div>
+			{drag && (
+				<div
+					aria-hidden
+					style={{ left: drag.x + 10, top: drag.y + 10 }}
+					className="pointer-events-none fixed z-50 rounded border border-border bg-card px-2 py-1 text-foreground text-xs shadow-lg"
+				>
+					{dragName}
+				</div>
+			)}
 		</>
 	);
 };

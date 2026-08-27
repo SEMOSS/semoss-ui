@@ -117,6 +117,8 @@ export interface WorkbenchPanelRecord {
 	canMaximize?: boolean;
 	/** Whether the user may rename this tab (programmatic renames always work). */
 	canRename?: boolean;
+	/** Whether this tab offers the in-place "Split Tab" menu. Defaults to false. */
+	canSplitTab?: boolean;
 	/** Tooltip shown on the tab and border rail icon. */
 	helpText?: string;
 	/**
@@ -133,11 +135,15 @@ export interface WorkbenchPanelRecord {
 export type WorkbenchPanelStatus = "pending" | "loading" | "ready" | "error";
 
 /**
- * Where a panel's tab is being drawn: a dock strip, a top/bottom border rail,
- * or a left/right one — where the tab is turned on its side, and a glyph has
- * to turn with it.
+ * Where a panel's chrome is being drawn: a dock strip, the header row over an
+ * open border body, a top/bottom border rail, or a left/right one — where the
+ * tab is turned on its side, and a glyph has to turn with it.
  */
-export type WorkbenchHeaderLocation = "tab" | "rail" | "rail-vertical";
+export type WorkbenchHeaderLocation =
+	| "tab"
+	| "header"
+	| "rail"
+	| "rail-vertical";
 
 /**
  * The per-instance methods half of a panel's props. `P` is the panel's config
@@ -198,15 +204,26 @@ export type WorkbenchChrome<P = WorkbenchPanelParams, V = unknown> = (
 ) => ReactNode;
 
 /**
- * A panel-contributed chrome control, drawn beside the active tab of the
- * panel's stack (the tab strip in a dock, the rail on a border). Registered
- * at runtime with `useWorkbenchControl` — one per panel — rather than on the
- * blueprint, so the renderer can close over the panel's own state. `content`
- * owns its label, disabled state, and click handling; the core only places it.
+ * A panel-contributed chrome control, drawn in the header row of the panel's
+ * stack — the tab strip in a dock, the header over the body in a border.
+ * Registered at runtime with `useWorkbenchControl` — one per panel — rather
+ * than on the blueprint, so a panel can register it conditionally and drop it
+ * on unmount. `content` owns its label, disabled state, and click handling;
+ * the core only places it. It renders in the chrome's subtree, not the
+ * panel's, so it subscribes to whatever live state it draws.
  */
 export interface WorkbenchControl<P = WorkbenchPanelParams, V = unknown> {
 	content: ComponentType<WorkbenchChromeProps<P, V>>;
 }
+
+/**
+ * A control with its generics erased — what the controls map holds. Same
+ * existential erasure as `WorkbenchPanelConfigAny`: the registry is
+ * heterogeneous and the chrome only ever has a `WorkbenchPanelParams` bag at
+ * runtime, so each control recovers its parameters from its own annotation.
+ */
+// biome-ignore lint/suspicious/noExplicitAny: existential erasure, see above
+export type WorkbenchControlAny = WorkbenchControl<any, any>;
 
 /** A palette command contributed by a panel instance. */
 export interface WorkbenchPanelCommand {
@@ -254,6 +271,23 @@ export interface WorkbenchPanelConfig<P = WorkbenchPanelParams, V = unknown> {
 	canMaximize?: boolean;
 	/** Whether the user may rename instances of this type. Defaults to true. */
 	canRename?: boolean;
+	/**
+	 * Whether tabs of this type offer the in-place "Split Tab" viewports in
+	 * their context menu. Unlike the other flags, defaults to false.
+	 */
+	canSplitTab?: boolean;
+	/**
+	 * Whether the shell draws a header row — glyph, name, and this panel's
+	 * registered control — over the body when an instance opens in a border.
+	 * Defaults to true. A border has no tab strip, so this row is where a
+	 * border panel's control lives; the rail carries navigation only.
+	 *
+	 * Set false only for a panel that draws its own heading, and note what it
+	 * gives up: the shell then has nowhere to put a control, so an opted-out
+	 * panel owns its whole chrome and should draw its actions in that heading
+	 * rather than registering one with `useWorkbenchControl`.
+	 */
+	enableBorderHeader?: boolean;
 	/** Tooltip shown on the tab and border rail icon. */
 	helpText?: string;
 	/**
@@ -349,14 +383,15 @@ export interface WorkbenchLayout {
 }
 
 /**
- * A persisted arrangement: a layout as it is cached, plus the instances that
- * are closed but still reopenable. Internal to the store — the shape is
- * guarded structurally by `parseWorkbenchSnapshot`, and which shape a cache
- * entry belongs to is settled by the layout `version` in its key.
+ * A persisted arrangement: a layout as it is cached. Internal to the store —
+ * the shape is guarded structurally by `parseWorkbenchSnapshot`, and which
+ * shape a cache entry belongs to is settled by the layout `version` in its key.
+ *
+ * Closing a panel deletes it, so there is nothing here beyond what is open.
+ * A cache written before that was true may still carry a `closed` array and
+ * records for panels in no stack; both are dropped on load.
  */
-export type WorkbenchSnapshot = Omit<WorkbenchLayout, "version"> & {
-	closed?: WorkbenchPanelId[];
-};
+export type WorkbenchSnapshot = Omit<WorkbenchLayout, "version">;
 
 /** Options accepted when spawning or selecting a panel instance. */
 export type WorkbenchPanelOptions = Partial<

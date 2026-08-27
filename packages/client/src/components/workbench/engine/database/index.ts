@@ -1,3 +1,4 @@
+export { AdminQueryWorkbench } from "./admin-query-workbench";
 export {
 	DATABASE_COLUMNS_PANEL,
 	DatabaseColumnsPanel,

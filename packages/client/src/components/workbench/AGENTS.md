@@ -1,7 +1,7 @@
 # AGENTS.md - Workbench
 
 Covers the workbench feature: `components/workbench/` (this folder), its paired state in
-`stores/workbench/`, `contexts/workbench.context.tsx`, and `hooks/use-workbench*.ts`.
+`stores/workbench/`, `contexts/workbench.context.tsx`, and `hooks/use-workbench*`.
 
 > **Inherits from:** [../../../AGENTS.md](../../../AGENTS.md) (client) and
 > [../../../../../AGENTS.md](../../../../../AGENTS.md) (root).
@@ -23,14 +23,16 @@ measured slots, so moving a tab never unmounts its body.
 **BLOCKS is the last project type still on the legacy `components/workspace/` shell**
 (`WorkspaceManager` + MobX `WorkspaceStore`). Until it migrates, don't delete
 `components/workspace/`, `stores/workspace/`, or `components/app-workspace/` — the latter also
-backs the standalone `/app/:appId/files` route. `admin-query-workspace.tsx` also keeps its own
-FlexLayout usage and imports `WORKBENCH_COMPONENTS` ids — those ids are a frozen contract.
+backs the standalone `/app/:appId/files` route. The settings admin query page mounts
+`AdminQueryWorkbench` (`engine/database/admin-query-workbench.tsx`) — the database workbench
+panels over a synthetic `EngineContext`, initialized in `ADMIN_SQL` mode so structure and
+queries run the admin-permission pixels.
 
 ## One context, one hook, one namespace per domain
 
 Everything reaches the per-mount store through `useWorkbench(selector)`. State is grouped by
-domain — `layout`, `loading`, `command`, `assistant`, `notifications` — and each namespace
-carries its own fields and its own `actions`:
+domain — `layout`, `loading`, `command`, `control`, `assistant`, `notifications` — and each
+namespace carries its own fields and its own `actions`:
 
 ```ts
 const actions = useWorkbench((s) => s.layout.actions); // stable object — never re-renders
@@ -122,9 +124,9 @@ mounts before first show (the assistant uses it to initialize while its border i
 One file: module-scope `LAYOUT: WorkbenchLayout` + `COMPONENTS` map + a
 `useWorkbenchCommands([...])` call + `<Workbench layout components borderSlots />`. Toolbar
 controls (command menu, publish, settings toggle) go in `borderSlots.left.after` — there is no
-separate `actions` prop. The page wraps
-it in `<WorkbenchProvider id={<unique-instance-id>}>` — `id` just needs to be unique per
-instance. Follow `engine/function/function-workbench.tsx` as the exemplar.
+separate `actions` prop. The page wraps it in `<WorkbenchProvider id={<unique-instance-id>}>`;
+`id` just needs to be unique per instance. Follow `engine/function/function-workbench.tsx` as
+the exemplar.
 
 **Commands**: register palette commands with `useWorkbenchCommands([...])` (`hooks/
 use-workbench-commands.ts`) from the component that owns them — a domain workbench or a panel.
@@ -133,46 +135,131 @@ ids/categories/labels/descriptions change and executed handlers always run the l
 so there are no effect dependencies to manage. Unregistration happens on unmount.
 
 Commands carry no icons. Every command sets a `category` from the small fixed set — `View`
-(open/close/reopen panels, borders, maximize, reset), `Go to` (panel navigation), `Editor`,
+(open/close panels, borders, maximize, reset), `Go to` (panel navigation), `Editor`,
 `Project`, `Database` — and the palette displays it as `Category: Label` (Title Case), sorted
 alphabetically. Don't bake the prefix into `label`.
 
 **Controls**: a panel contributes at most one chrome control with
 `useWorkbenchControl(id, content)` (`hooks/use-workbench-control.tsx`) from inside its body —
-there is no blueprint slot for this, precisely so `content` can close over the panel's own refs
-and state. `content` receives `WorkbenchChromeProps` and owns its label, disabled state, and
-click handling; the core only places it — beside the maximize button in a dock's tab strip, on
-the rail of an open border — and only for the **active** tab of each stack. An inline `content`
-is fine (the hook registers one stable wrapper, so identity churn never remounts it), and a
-keepAlive panel's registration simply waits, hidden, until its tab is front again. See
-`project/project-file-explorer-panel.tsx` (the refresh control) as the exemplar.
+there is no blueprint slot for this, precisely so `content` can reach the panel's own refs and
+state. `content` receives `WorkbenchChromeProps` and owns its label, disabled state, and
+click handling; the core only places it — in the **header row of the panel's stack**, and only
+for that stack's **active** tab. A dock's header row is its tab strip (the control lands beside
+the maximize button); a border has no strip, so the shell draws one over the open body and the
+control sits there. The rail carries navigation only — it is one `chromeButton` wide, which
+fits a glyph and nothing else. There are no effect dependencies to manage: the hook keeps
+`content` in a ref it refreshes every render and registers one stable wrapper, so registration
+churns only when a control appears or disappears, and a keepAlive panel's registration simply
+waits, hidden, until its tab is front again.
+
+**A control does not re-render with its panel — read this twice.** It draws inside
+`WorkbenchPanelControls` (`core/workbench-panel-header.tsx`), a separate subtree subscribed only
+to `s.control.controls[pid]` and to `useWorkbenchPanel(pid, location)`. Refreshing the ref
+schedules nothing, so a fresh closure sits unread until the *chrome* re-renders for its own
+reasons — a control closed over a panel's `useState` silently never updates.
+
+So **a control is its own component in its own file** (the repo's one-component-per-file rule),
+named `<panel>-<action>-control.tsx` beside the panel, subscribing to whatever live state it
+draws. Live domain state comes from the domain hook (the chrome sits under the same
+`WorkbenchProvider`); the panel's own state has to travel through the store, which is what the
+never-persisted scratch `value` is for — the panel gets `value`, the control gets `setValue`:
+
+```tsx
+// database-columns-refresh-control.tsx — live state off the domain store
+export const DatabaseColumnsRefreshControl: FC<WorkbenchChromeProps> = () => {
+	const isLoading = useDatabaseWorkbench((s) => s.structure.status === "LOADING");
+	…
+};
+
+// code-app-renderer-refresh-control.tsx — the panel's own state, via `value`
+export const CodeAppRendererRefreshControl: FC<
+	WorkbenchChromeProps<WorkbenchPanelParams, number>
+> = ({ setValue }) => <Button onClick={() => setValue((count = 0) => count + 1)}>…</Button>;
+```
+
+`useWorkbenchControl` infers `P`/`V` from the component's annotation, so a typed control needs
+no cast (the registry erases them behind `WorkbenchControlAny`, same as `WorkbenchPanelConfigAny`).
+The three live controls — `engine/database/database-columns-refresh-control.tsx`,
+`engine/database/database-new-query-control.tsx`, `project/code/code-app-renderer-refresh-control.tsx`
+— are the exemplars. An inline arrow is a second cost on top of the staleness: it takes a new
+identity every render, so whenever the chrome *does* re-render, React sees a new element type at
+the wrapper's child and remounts the control, resetting an open popover or focus inside it.
+
+A blueprint that draws its own heading sets `enableBorderHeader: false` to suppress the shell's
+row (`assistant/workbench-assistant-view.tsx` is the one case). That opts out of the control
+slot too — such a panel owns its whole chrome and draws its actions in its own heading. Note
+the mobile shell renders no controls at all; it has no rails and no per-panel header row.
+
+**Publishing a whole api on `value`.** The four file-explorer panels show the pattern for a
+control that needs to *drive* its panel rather than just show a flag: `useFileExplorer` returns
+an identity-stable api object, so the panel publishes it once —
+`useEffect(() => setValue(explorer), [explorer])` — and `file-explorer-control.tsx` reads
+`value` and calls `value.commands.*`. Two constraints come with it:
+
+- **`setValue` is not identity-stable.** `useWorkbenchPanel` rebuilds a panel's methods whenever
+  its `value` changes, so listing `setValue` in that effect's dependencies loops forever. Omit
+  it (with a `biome-ignore` naming the reason) and depend only on the stable payload.
+- **The control still does not re-render with its panel.** It sees live *behaviour*, not live
+  *state*, so it must draw only fixed content. That is why `FileExplorerRefreshAction` has no
+  loading spinner: a status-driven glyph in the chrome would freeze mid-animation.
 
 - `selectPanel(type, config?, opts?)` reveals an existing instance matching `config` (blueprint
-  `matches`, shallow-equal default), restores a closed match, or spawns a new one. Commands
-  should use it — never target tabset ids (the empty-tabset fallback regenerates them).
+  `matches`, shallow-equal default) or spawns a new one. `matches` does **not** imply
+  uniqueness — `spawnPanel` bypasses it — so when several instances match, the one already on
+  screen wins. Commands should use it — never target tabset ids (the empty-tabset fallback
+  regenerates them).
+- **`closePanel` deletes the instance.** There is no reopen history: the record and its scratch
+  `value` are dropped, so `layout.panels` always means exactly "what is open". Anything that
+  looks a panel up by config depends on that — a lingering record for a closed panel would keep
+  matching forever and get revealed instead of a live one. A cache written before this was true
+  is pruned on load (`applySnapshot`).
 - `spawnPanel(type, opts?)` always creates a new instance; `opts.target` supports
   `{ kind: "border", side }` and `{ kind: "join", tabsetId }`.
 - File-style panels dedupe via blueprint `matches` on `config.path` — ids are minted, never
   encode data in them.
+
+**Dropping something in from outside the dock.** `core/workbench-spawn-drag.ts` owns a small
+protocol: a native HTML5 drag that carries `WORKBENCH_SPAWN_DRAG_TYPE` (write it with
+`writeSpawnDragSpec`) asks the shell to open a panel where it lands. `WorkbenchDragLayer` picks
+these up alongside its pointer-event tab drags, resolves them through the same
+`useWorkbenchHitTest` geometry, and commits with `spawnPanel` followed by `movePanel`.
+
+Both halves are deliberate. **`spawnPanel`, not `selectPanel`**: a drag is a request for a
+*new* view, so dragging a file that is already open leaves the open instance exactly where it
+is and adds a second one — blueprint `matches` dedupe still applies to `selectPanel`, which is
+what clicking the file in the explorer uses. **Then `movePanel`**, because `spawnPanel` honours
+only `border` and `join` targets itself, so routing every drop through the move is what makes
+`split` and `root` work.
+
+Two more constraints worth knowing before touching this:
+
+- **The payload is additive.** The same drag still carries the explorer's own move payload, so
+  a row-to-row file move inside the tree is unaffected. Only `dataTransfer.types` is readable
+  during `dragover`, which is why the intent lives in the key and the spec is read on `drop`.
+- **`dropEffect` must be one of the operations the source's `effectAllowed` names.** The
+  explorer's rows allow `copyMove`; the dock asks for `copy` (the file stays put) and a folder
+  row asks for `move`. Ask for something outside `effectAllowed` and the browser resolves the
+  drag to "none" — it still paints the drop preview and then silently never fires `drop`.
 
 ## Domain state (database is the template)
 
 Domain state gets a **dedicated store**, not a slice: `stores/workbench/database/
 database-workbench.store.ts` exports `createDatabaseWorkbenchStore(deps)`. The domain
 workbench creates it once, attaches it via `actions.attachDomainStore(store)`, and a flat hook
-(`hooks/use-database-workbench.ts`) reads it back with one documented cast. No provider
-component, no generics. Layout coupling is explicit: paired panels carry `config.sourcePanel`,
-titles derive reactively (custom `header` reading the workbench store), and cleanup runs
-through the shell's `onPanelClose(pid, record)` prop.
+(`hooks/use-database-workbench.ts`) reads it back through `getDatabaseWorkbenchStore` — the one
+place the untyped attachment is narrowed, shared with the non-React `commands`/`menuItems`
+callers. No provider component, no generics. Layout coupling is explicit: paired panels carry
+`config.sourcePanel`, titles derive reactively (custom `header` reading the workbench store),
+and cleanup runs through the shell's `onPanelClose(pid, record)` prop.
 
 ## File map
 
 | File/folder | Role |
 |---|---|
-| `core/` | The dock core: shell (`workbench.tsx`), stage/tabset/tab/strip/border, panel layer + hosts (never-unmount bodies), drag layer + drop geometry, resizers, context menu, panel sheet, mobile shell, events bridge, command palette + menu button, mobile actions + reset button |
+| `core/` | The dock core: shell (`workbench.tsx`), stage/tabset/tab/strip/border, panel layer + hosts (never-unmount bodies), drag layer + drop geometry, resizers, context menu, mobile shell + its drawer, events bridge, command palette + menu button, reset button |
 | `workbench.constants.ts` | Re-exports `WORKBENCH_COMPONENTS`; defines `WORKBENCH_PANEL_RECORDS` (shared instance records) |
 | `core/workbench-command-palette.tsx` | Cmd/Ctrl+Shift+P or F1 palette: registered commands + layout-derived entries (built only while open), icon-less `Category: Label` rows in a deterministic alphabetical order |
-| `core/workbench-mobile-actions.tsx` / `core/workbench-reset-button.tsx` | On desktop the reset control rides at the end of the left rail, appended to `borderSlots.left.after`; the mobile layout has no rails, so it floats that same content bottom-left. Reset restores the default layout (hidden when `readOnly`) |
+| `core/workbench-mobile-drawer.tsx` / `core/workbench-reset-button.tsx` | On desktop the reset control rides at the end of the left rail, appended to `borderSlots.left.after`. The mobile layout has no rails, so `WorkbenchMobile` passes that slot to its **drawer** instead: the pager bar's ☰ opens a bottom drawer leading with that slot content + reset as an actions row, then every open panel as one full-width row that switches to it. Reset restores the default layout (hidden when `readOnly`) |
 | `engine/`, `engine/<domain>/` | Engine-scoped panels + one `<Domain>Workbench` per engine type |
 | `project/`, `project/<domain>/` | Project-scoped (`APP` mode) equivalents; sibling of `engine/`, **not** inside it |
 | `stores/workbench/workbench.types.ts` | Every workbench type: the dock domain (`WorkbenchLayout`, `WorkbenchPanelConfig`, `WorkbenchPanelProps`, `WorkbenchComponent`, …) plus `WorkbenchCommand` and `WorkbenchSlice`. One file — don't start a second |
@@ -180,11 +267,20 @@ through the shell's `onPanelClose(pid, record)` prop.
 | `stores/workbench/slices/workbench-layout.slice.ts` | The dock state + `actions` (registry, slots, persistence, ephemeral UI) |
 | `stores/workbench/slices/workbench-layout.tree.ts` | Pure, DOM-free tree ops |
 | `stores/workbench/slices/workbench-layout.commands.ts` | Layout-derived palette entries |
+| `stores/workbench/slices/workbench-controls.slice.ts` | Panel-contributed chrome controls, keyed by panel id; each control is its own `*-control.tsx` file beside its panel |
+| `core/use-workbench-hit-test.ts` | The ordered geometric drop resolution, shared by the pointer-event tab drag and native spawn drags |
+| `core/workbench-spawn-drag.ts` | The `dataTransfer` protocol for "dropping me should open a panel" |
+| `file-explorer-control.tsx` | The refresh + new-file chrome control shared by every file-explorer panel (project, engine, storage, insight) |
 | `stores/workbench/database/` | The database domain store (the dedicated-store template) |
 | `contexts/workbench.context.tsx` | `WorkbenchProvider` — one store per mount |
 
 ## Rules
 
+- **The mobile drawer is mobile-only, and its state is local.** `WorkbenchMobile` owns one
+  `useState` boolean and renders `WorkbenchMobileDrawer` itself; the shell does not. Nothing
+  outside that view can open it, so it has no representation in the layout store — don't add
+  one back. It does one thing: pick a panel. Rename, move, and close are desktop affordances
+  (tab context menu, drag, tab close button); mobile deliberately has no per-panel menu.
 - **Keep the core domain-agnostic** — `core/`, the layout slice/tree/commands,
   `workbench.context.tsx`, and `use-workbench.ts` must not import engine/project-specific
   things. Domain dependencies belong in `engine/`/`project/`.
@@ -196,7 +292,7 @@ through the shell's `onPanelClose(pid, record)` prop.
 - **Panels that belong to every project type go in `project/`**, not in a `project/<domain>/`
   folder. A component that owns a command should register it itself via
   `useWorkbenchCommands` (see `project-publish-button.tsx`).
-- **`canRename` gates user affordances only** (double-click, F2, menu, sheet). Programmatic
+- **`canRename` gates user affordances only** (double-click, F2, context menu). Programmatic
   `renamePanel`/`rename` always works — the file editors' dirty `*` marker depends on it.
 - **Layout is cached per `id` and per layout version** as a
   `WorkbenchSnapshot`. A cached layout shadows the default forever, so **bump that
@@ -218,5 +314,7 @@ through the shell's `onPanelClose(pid, record)` prop.
 - **The database close cascade** (`onPanelClose` → `handlePanelClosed`): closing a query panel
   closes its paired results panel and prunes store state. Re-read before changing panel
   close/select behavior.
-- `database-script-templates.ts` and `database-upload-file.tsx` are deep-imported by
-  `components/settings/admin/database/*` — their paths and named exports are frozen.
+- **`DatabaseWorkbenchMode` is three-valued** (`SQL | SPARQL | ADMIN_SQL`): `ADMIN_SQL` is
+  always SQL-language but runs the admin-permission pixels and has no category fetch or CSV
+  export. Gate query-language behavior on `mode !== "SPARQL"`, never `mode === "SQL"`, or the
+  admin query page silently loses it.

@@ -569,6 +569,16 @@ export const WorkbenchAssistantTurn = ({
 
 	const status = run.status.toUpperCase();
 	const failed = ["FAILED", "CANCELLED"].includes(status);
+	const working =
+		!isTerminalAgentRunStatus(run.status) && status !== "INPUT_REQUIRED";
+	// The RunHeader's "Working" label scrolls out of view on long runs while
+	// the timeline stays pinned to the bottom, so repeat the indicator after
+	// the newest activity. Held back until activity exists so it doesn't
+	// double up with the header right after submit.
+	const hasActivity =
+		run.messages.length > 0 ||
+		run.tools.length > 0 ||
+		run.childRunIds.length > 0;
 	const submittedAt = formatTime(run.dateCreated);
 
 	return (
@@ -588,6 +598,17 @@ export const WorkbenchAssistantTurn = ({
 			<RunHeader run={run} />
 
 			<FeedItems run={run} />
+
+			{working && hasActivity ? (
+				<div className="flex items-center gap-3">
+					<span className="flex size-6 shrink-0 items-center justify-center">
+						<Spinner className="size-3.5 text-muted-foreground" />
+					</span>
+					<span className="text-muted-foreground text-sm">
+						Working…
+					</span>
+				</div>
+			) : null}
 
 			{failed && run.errorMessage ? (
 				<Alert variant="destructive" className="w-auto">

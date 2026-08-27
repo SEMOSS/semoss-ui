@@ -1,164 +1,95 @@
 /** biome-ignore-all lint/a11y/useKeyWithClickEvents: custom context menu keyboard handling is managed below */
-import {
-	ClipboardPasteIcon,
-	CopyIcon,
-	DownloadIcon,
-	FileArchiveIcon,
-	FilePlus2Icon,
-	FolderPlusIcon,
-	MoreHorizontalIcon,
-	PencilIcon,
-	ScissorsIcon,
-	Trash2Icon,
-} from "lucide-react";
 import type React from "react";
 import { useEffect, useRef } from "react";
 import { useTranslation } from "@semoss/i18n";
-import type { FileItem } from "./file.types";
+import { cn } from "@semoss/ui/next";
+import type {
+	FileExplorerApi,
+	FileExplorerContextMenuState,
+} from "./file-explorer.types";
 import { getFileExplorerTestIdSegment } from "./file-explorer.utils";
-import type { NewFileAction } from "./new-file-overlay";
 
-interface ClipboardState {
-	items: FileItem[];
-	action: "copy" | "cut";
-}
-
-interface ContextMenuState {
-	x: number;
-	y: number;
-	item: FileItem | null;
-	targetPath: string;
-	secondaryActions?: FileExplorerSecondaryAction[];
-}
-
-type FileExplorerSecondaryAction = {
-	name: string;
-	action: (item: FileItem) => Promise<void>;
-};
-
-interface FileExplorerContextMenuProps {
-	state: ContextMenuState;
-	clipboard: ClipboardState | null;
-	selectedItems?: FileItem[];
-	canMutateFiles: boolean;
-	onClose: () => void;
-	onCopy: (item: FileItem) => void;
-	onCopyItems: (items: FileItem[]) => void;
-	onCut: (item: FileItem) => void;
-	onCopyPath: (item: FileItem) => void;
-	onCutItems: (items: FileItem[]) => void;
-	onPaste: (targetDirectory: string) => Promise<void>;
-	onRename: (item: FileItem) => void;
-	onDelete: (item: FileItem) => Promise<void>;
-	onDeleteItems: (items: FileItem[]) => Promise<void>;
-	onDownload: (item: FileItem) => Promise<void>;
-	onDownloadItems: (items: FileItem[]) => Promise<void>;
-	onNew: (targetPath: string, initialAction?: NewFileAction) => void;
+export interface FileExplorerContextMenuProps {
+	explorer: FileExplorerApi;
+	/** The open menu — where it is and what it is over. */
+	state: FileExplorerContextMenuState;
 }
 
 interface MenuEntry {
 	key: string;
 	label: string;
-	icon: React.ReactNode;
 	disabled?: boolean;
 	destructive?: boolean;
 	dividerBefore?: boolean;
 	action: () => void | Promise<void>;
 }
 
+/** Approximate menu box, used only to flip it away from a viewport edge. */
+const MENU_WIDTH = 192;
+const MENU_ENTRY_HEIGHT = 32;
+const MENU_PADDING = 12;
+
+/**
+ * The explorer's right-click menu.
+ *
+ * Hand-rolled rather than a Radix `ContextMenu` because it is opened
+ * imperatively from a pointer position the explorer already tracks, over rows
+ * that also handle drag and bulk selection. Every entry runs an
+ * `explorer.commands.*` call; consumer-supplied `secondaryActions` are appended
+ * after the built-ins.
+ *
+ * Entries are label-only, matching the workbench's own menus and command
+ * palette — a consumer-supplied action has no icon to offer anyway, so guessing
+ * one from its name only made the built-ins and the extensions look different.
+ */
 export const FileExplorerContextMenu: React.FC<
 	FileExplorerContextMenuProps
-> = ({
-	state,
-	clipboard,
-	selectedItems = [],
-	canMutateFiles,
-	onClose,
-	onCopy,
-	onCopyItems,
-	onCut,
-	onCopyPath,
-	onCutItems,
-	onPaste,
-	onRename,
-	onDelete,
-	onDeleteItems,
-	onDownload,
-	onDownloadItems,
-	onNew,
-}) => {
+> = ({ explorer, state }) => {
 	const { t } = useTranslation("common");
 	const menuRef = useRef<HTMLDivElement>(null);
 	const focusedIndexRef = useRef<number>(-1);
 
+	const { commands, capabilities, tree } = explorer;
 	const { item, targetPath, x, y } = state;
+	const onClose = tree.closeContextMenu;
 	const isOnItem = item !== null;
+	const canMutate = capabilities.mutate;
+
+	// right-clicking a row inside the selection acts on the whole selection
 	const bulkItems =
 		item &&
-		selectedItems.some((selectedItem) => selectedItem.path === item.path)
-			? selectedItems
+		tree.selectedItems.some((selected) => selected.path === item.path)
+			? tree.selectedItems
 			: [];
 	const isBulkAction = bulkItems.length > 1;
+	const targetItems = isBulkAction ? bulkItems : item ? [item] : [];
 	const secondaryActions = state.secondaryActions || [];
-	const getSecondaryAction = (name: string) =>
-		secondaryActions.find(
-			(action) => action.name.toLowerCase() === name.toLowerCase(),
-		);
-	const getSecondaryIcon = (name: string) => {
-		const normalizedName = name.toLowerCase();
-		if (normalizedName.includes("unzip")) {
-			return <FileArchiveIcon className="size-4 shrink-0" />;
-		}
-		if (normalizedName.includes("download")) {
-			return <DownloadIcon className="size-4 shrink-0" />;
-		}
-		if (normalizedName.includes("delete")) {
-			return <Trash2Icon className="size-4 shrink-0" />;
-		}
-		if (normalizedName.includes("copy")) {
-			return <CopyIcon className="size-4 shrink-0" />;
-		}
-		return <MoreHorizontalIcon className="size-4 shrink-0" />;
-	};
-	const duplicateSecondaryActions = new Set([
-		"copy path",
-		"download",
-		"delete",
-	]);
 
 	// ── Build menu entries ──────────────────────────────────────────────────
 
 	const entries: MenuEntry[] = [];
 
-	if (isOnItem && canMutateFiles) {
+	// copying a path is a read operation — every scope gets it, including
+	// storage buckets and read-only explorers
+	if (isOnItem) {
 		entries.push({
 			key: "copy-path",
 			label: t("fileExplorer.contextMenu.copyPath"),
-			icon: <CopyIcon className="size-4 shrink-0" />,
 			disabled: isBulkAction,
 			action: async () => {
 				if (!item) return;
-				const secondaryCopyPath = getSecondaryAction("Copy Path");
-				if (secondaryCopyPath) {
-					await secondaryCopyPath.action(item);
-				} else {
-					onCopyPath(item);
-				}
+				await commands.copyPath(item);
 				onClose();
 			},
 		});
+	}
 
+	if (isOnItem && canMutate) {
 		entries.push({
 			key: "copy",
 			label: t("fileExplorer.contextMenu.copy"),
-			icon: <CopyIcon className="size-4 shrink-0" />,
 			action: () => {
-				if (isBulkAction) {
-					onCopyItems(bulkItems);
-				} else {
-					if (!item) return;
-					onCopy(item);
-				}
+				commands.copy(targetItems);
 				onClose();
 			},
 		});
@@ -166,136 +97,115 @@ export const FileExplorerContextMenu: React.FC<
 		entries.push({
 			key: "cut",
 			label: t("fileExplorer.contextMenu.cut"),
-			icon: <ScissorsIcon className="size-4 shrink-0" />,
 			action: () => {
-				if (isBulkAction) {
-					onCutItems(bulkItems);
-				} else {
-					if (!item) return;
-					onCut(item);
-				}
+				commands.cut(targetItems);
 				onClose();
 			},
 		});
 	}
 
-	if (canMutateFiles) {
+	if (canMutate) {
 		entries.push({
 			key: "paste",
 			label: t("fileExplorer.contextMenu.pasteHere"),
-			icon: <ClipboardPasteIcon className="size-4 shrink-0" />,
-			disabled: clipboard === null || isBulkAction,
+			disabled: tree.clipboard === null || isBulkAction,
 			dividerBefore: isOnItem,
 			action: async () => {
-				if (!clipboard) return;
+				if (!tree.clipboard) return;
 				onClose();
-				await onPaste(targetPath);
+				await commands.paste(targetPath);
 			},
 		});
 	}
 
-	if (isOnItem && canMutateFiles) {
+	if (isOnItem && canMutate) {
 		entries.push({
 			key: "rename",
 			label: t("fileExplorer.contextMenu.rename"),
-			icon: <PencilIcon className="size-4 shrink-0" />,
 			disabled: isBulkAction,
 			dividerBefore: true,
 			action: () => {
 				if (!item) return;
 				onClose();
-				onRename(item);
+				commands.rename(item);
 			},
 		});
 	}
 
-	if (isOnItem) {
+	if (isOnItem && capabilities.download) {
 		entries.push({
 			key: "download",
 			label: t("fileExplorer.contextMenu.download"),
-			icon: <DownloadIcon className="size-4 shrink-0" />,
 			action: async () => {
 				onClose();
-				if (isBulkAction) {
-					await onDownloadItems(bulkItems);
-				} else {
-					if (!item) return;
-					const secondaryDownload = getSecondaryAction("Download");
-					if (secondaryDownload && item.type !== "directory") {
-						await secondaryDownload.action(item);
-					} else {
-						await onDownload(item);
-					}
-				}
+				await commands.download(targetItems);
+			},
+		});
+	}
+
+	const isZip =
+		item &&
+		item.type !== "directory" &&
+		item.path.toLowerCase().endsWith(".zip");
+
+	if (isZip && canMutate && !isBulkAction) {
+		entries.push({
+			key: "unzip",
+			label: t("fileExplorer.contextMenu.unzip"),
+			action: async () => {
+				if (!item) return;
+				onClose();
+				await commands.unzip(item);
 			},
 		});
 	}
 
 	if (isOnItem && !isBulkAction) {
-		secondaryActions
-			.filter(
-				(action) =>
-					!duplicateSecondaryActions.has(action.name.toLowerCase()),
-			)
-			.forEach((secondaryAction) => {
-				entries.push({
-					key: `secondary-${secondaryAction.name}`,
-					label: secondaryAction.name,
-					icon: getSecondaryIcon(secondaryAction.name),
-					action: async () => {
-						if (!item) return;
-						onClose();
-						await secondaryAction.action(item);
-					},
-				});
+		secondaryActions.forEach((secondaryAction) => {
+			entries.push({
+				key: `secondary-${secondaryAction.name}`,
+				label: secondaryAction.name,
+				action: async () => {
+					if (!item) return;
+					onClose();
+					await secondaryAction.action(item);
+				},
 			});
+		});
 	}
 
-	if (isOnItem && canMutateFiles) {
+	if (isOnItem && canMutate) {
 		entries.push({
 			key: "delete",
 			label: t("fileExplorer.contextMenu.delete"),
-			icon: <Trash2Icon className="size-4 shrink-0" />,
 			destructive: true,
 			dividerBefore: true,
 			action: async () => {
 				onClose();
-				if (isBulkAction) {
-					await onDeleteItems(bulkItems);
-				} else {
-					if (!item) return;
-					const secondaryDelete = getSecondaryAction("Delete");
-					if (secondaryDelete) {
-						await secondaryDelete.action(item);
-					} else {
-						await onDelete(item);
-					}
-				}
+				await commands.remove(targetItems);
 			},
 		});
 	}
 
-	if (canMutateFiles) {
+	if (canMutate) {
 		entries.push({
 			key: "new-file",
 			label: t("fileExplorer.contextMenu.newFile"),
-			icon: <FilePlus2Icon className="size-4 shrink-0" />,
 			disabled: isBulkAction,
 			dividerBefore: true,
 			action: () => {
 				onClose();
-				onNew(targetPath, "add_file");
+				commands.openNewFile(targetPath, "add_file");
 			},
 		});
 
 		entries.push({
 			key: "new-folder",
 			label: t("fileExplorer.contextMenu.newFolder"),
-			icon: <FolderPlusIcon className="size-4 shrink-0" />,
 			disabled: isBulkAction,
 			action: () => {
 				onClose();
-				onNew(targetPath, "add_directory");
+				commands.openNewFile(targetPath, "add_directory");
 			},
 		});
 	}
@@ -354,13 +264,12 @@ export const FileExplorerContextMenu: React.FC<
 
 	// ── Position: flip menu if it would overflow the viewport ──────────────
 
-	const MENU_W = 192;
-	const MENU_H_APPROX = entries.length * 32 + 12;
+	const menuHeight = entries.length * MENU_ENTRY_HEIGHT + MENU_PADDING;
 	const vw = typeof window !== "undefined" ? window.innerWidth : 9999;
 	const vh = typeof window !== "undefined" ? window.innerHeight : 9999;
 
-	const left = x + MENU_W > vw ? Math.max(0, x - MENU_W) : x;
-	const top = y + MENU_H_APPROX > vh ? Math.max(0, y - MENU_H_APPROX) : y;
+	const left = x + MENU_WIDTH > vw ? Math.max(0, x - MENU_WIDTH) : x;
+	const top = y + menuHeight > vh ? Math.max(0, y - menuHeight) : y;
 
 	if (entries.length === 0) return null;
 
@@ -370,6 +279,7 @@ export const FileExplorerContextMenu: React.FC<
 			ref={menuRef}
 			role="menu"
 			aria-label={t("fileExplorer.contextMenu.ariaLabel")}
+			// a pointer position, so it cannot be a utility class
 			style={{ left, top }}
 			className="fixed z-[9999] min-w-48 overflow-hidden rounded-md border border-border bg-popover py-1 shadow-lg"
 			onClick={(e) => e.stopPropagation()}
@@ -388,26 +298,21 @@ export const FileExplorerContextMenu: React.FC<
 						type="button"
 						role="menuitem"
 						disabled={entry.disabled}
-						className={[
-							"flex w-full items-center gap-2 px-3 py-1.5 text-start text-sm transition-colors",
+						className={cn(
+							"flex w-full items-center px-3 py-1.5 text-start text-sm transition-colors",
 							"focus:bg-accent focus:outline-none",
 							entry.disabled
 								? "cursor-not-allowed text-muted-foreground/50"
 								: entry.destructive
 									? "cursor-pointer text-destructive hover:bg-destructive/10 focus:bg-destructive/10 focus:text-destructive"
 									: "cursor-pointer text-popover-foreground hover:bg-accent hover:text-accent-foreground",
-						]
-							.filter(Boolean)
-							.join(" ")}
+						)}
 						onClick={(e) => {
 							e.stopPropagation();
 							if (entry.disabled) return;
 							entry.action();
 						}}
 					>
-						<span className="flex size-4 shrink-0 items-center justify-center">
-							{entry.icon}
-						</span>
 						{entry.label}
 					</button>
 				</div>
