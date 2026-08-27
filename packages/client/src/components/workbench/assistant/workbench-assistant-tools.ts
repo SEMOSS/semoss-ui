@@ -1,4 +1,7 @@
-import { parseUserInputRequest as sdkParseUserInputRequest } from "@semoss/sdk";
+import {
+	isRequestUserInputAction,
+	parseUserInputRequest as sdkParseUserInputRequest,
+} from "@semoss/sdk";
 import type {
 	BuildPendingAction,
 	BuildTool,
@@ -105,6 +108,37 @@ export const displayToolName = (
  */
 export const isToolActive = (tool: BuildTool): boolean =>
 	["QUEUED", "RUNNING"].includes(tool.status.toUpperCase());
+
+/**
+ * Determine whether a RequestUserInput tool is represented by a durable
+ * pending action. The action row is the source of truth while a run is paused;
+ * durable message reconstruction may still label the corresponding tool call
+ * as QUEUED after a page refresh.
+ *
+ * @name isPendingUserInputTool
+ * @param tool - Tool invocation that may duplicate a structured input card.
+ * @param pendingActions - Durable actions currently awaiting user input.
+ * @return True when the tool should be hidden in favor of its input card.
+ */
+export const isPendingUserInputTool = (
+	tool: BuildTool,
+	pendingActions: BuildPendingAction[],
+): boolean => {
+	if (
+		!isRequestUserInputAction({
+			toolName: tool.name,
+			toolMeta: tool.metadata,
+		})
+	) {
+		return false;
+	}
+
+	return pendingActions.some(
+		(action) =>
+			isRequestUserInputAction(action) &&
+			(action.toolCallId === tool.id || action.toolCallId == null),
+	);
+};
 
 /**
  * Determine whether a tool ended unsuccessfully.

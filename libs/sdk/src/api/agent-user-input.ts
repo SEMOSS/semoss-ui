@@ -24,8 +24,6 @@ export interface UserInputQuestion {
 	options?: UserInputOption[];
 	/** Whether a free-form "other" answer is allowed; defaults to true. */
 	allowOther?: boolean;
-	/** Whether an answer is required; defaults to true. */
-	required?: boolean;
 }
 
 /** The full structured request rendered as a form. */
@@ -163,7 +161,6 @@ export const normalizeUserInputQuestion = (
 		options: options.length > 0 ? options : undefined,
 		allowOther:
 			typeof value.allowOther === "boolean" ? value.allowOther : true,
-		required: typeof value.required === "boolean" ? value.required : true,
 	};
 };
 

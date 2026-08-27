@@ -40,8 +40,6 @@ export interface AgentUserInputQuestion {
 	options?: AgentUserInputOption[];
 	/** Whether a free-form "other" answer is allowed; defaults to true. */
 	allowOther?: boolean;
-	/** Whether an answer is required; defaults to true. */
-	required?: boolean;
 }
 
 /** The full structured request rendered as a form. */
@@ -80,10 +78,10 @@ export interface AgentUserInputCardProps {
 /**
  * Platform-shared structured RequestUserInput form: text, confirm,
  * single-select, and multi-select questions with optional "Other" answers
- * and a per-question skip. Validates required questions before calling
- * `onSubmit` with every answer. Any surface running an agent-harness tool
- * call (workbench chat, playground, etc.) can mount this directly once it
- * has parsed the tool call's arguments into an `AgentUserInputRequest`.
+ * and a per-question skip. Requires every question to be answered or explicitly
+ * skipped before calling `onSubmit`. Any surface running an agent-harness tool
+ * call (workbench chat, playground, etc.) can mount this directly once it has
+ * parsed the tool call's arguments into an `AgentUserInputRequest`.
  */
 export const AgentUserInputCard = ({
 	request,
@@ -115,13 +113,12 @@ export const AgentUserInputCard = ({
 		if (submitting || disabled) return;
 
 		const normalized: Record<string, AgentUserInputAnswer> = {};
-		const missingQuestions: string[] = [];
+		const unansweredQuestions: string[] = [];
 		for (const question of request.questions) {
 			if (skippedQuestions[question.id]) {
 				normalized[question.id] = SKIPPED_USER_INPUT_TEXT;
 				continue;
 			}
-			const required = question.required !== false;
 			const otherKey = `__other__:${question.id}`;
 			let answer = answers[question.id];
 			if (question.type === "single_select" && answer === otherKey) {
@@ -140,8 +137,8 @@ export const AgentUserInputCard = ({
 				answer === undefined ||
 				(typeof answer === "string" && !answer.trim()) ||
 				(Array.isArray(answer) && answer.length === 0);
-			if (required && missing) {
-				missingQuestions.push(question.question);
+			if (missing) {
+				unansweredQuestions.push(question.question);
 				continue;
 			}
 			if (!missing && answer !== undefined) {
@@ -149,9 +146,9 @@ export const AgentUserInputCard = ({
 			}
 		}
 
-		if (missingQuestions.length > 0) {
+		if (unansweredQuestions.length > 0) {
 			toast.error(
-				`Please answer: ${missingQuestions.map((question) => `"${question}"`).join(", ")}`,
+				`Please answer or skip: ${unansweredQuestions.map((question) => `"${question}"`).join(", ")}`,
 			);
 			return;
 		}
@@ -186,7 +183,6 @@ export const AgentUserInputCard = ({
 						? question.options
 						: [];
 					const allowOther = question.allowOther !== false;
-					const required = question.required !== false;
 					const otherKey = `__other__:${question.id}`;
 					const current = answers[question.id];
 					const selected = Array.isArray(current) ? current : [];
@@ -197,11 +193,6 @@ export const AgentUserInputCard = ({
 							<div className="flex items-start justify-between gap-3">
 								<Label className="text-xs leading-5">
 									{question.question}
-									{required ? (
-										<span className="ml-0.5 text-destructive">
-											*
-										</span>
-									) : null}
 								</Label>
 								<Button
 									type="button"

@@ -41,6 +41,7 @@ import { WorkbenchAssistantMarkdown } from "./workbench-assistant-markdown";
 import { WorkbenchAssistantPendingActions } from "./workbench-assistant-pending-actions";
 import { WorkbenchAssistantSubagent } from "./workbench-assistant-subagent";
 import { WorkbenchAssistantToolPhase } from "./workbench-assistant-tool-phase";
+import { isPendingUserInputTool } from "./workbench-assistant-tools";
 import { WorkbenchAssistantUserInputCard } from "./workbench-assistant-user-input-card";
 
 /** A single run event (message, tool call, or child run) before grouping. */
@@ -202,18 +203,10 @@ const FeedItems = ({ run, nested = false }: FeedItemsProps) => {
 			});
 		});
 		run.tools.forEach((tool, order) => {
-			// While a RequestUserInput call is still paused on the user, the
-			// dedicated question card below already represents it - skip it
-			// here so it isn't also shown as a raw tool-phase block. Once
-			// answered (status leaves INPUT_REQUIRED) it flows through
-			// normally, preserving a historical record of what was asked.
-			if (
-				tool.status === "INPUT_REQUIRED" &&
-				isRequestUserInputAction({
-					toolName: tool.name,
-					toolMeta: tool.metadata,
-				})
-			) {
+			// The pending action is authoritative while paused. After a page
+			// refresh, durable message reconstruction can label this tool as
+			// QUEUED even though its structured input card is already visible.
+			if (isPendingUserInputTool(tool, run.pendingActions)) {
 				return;
 			}
 			items.push({
@@ -236,7 +229,7 @@ const FeedItems = ({ run, nested = false }: FeedItemsProps) => {
 				parseTime(a.timestamp) - parseTime(b.timestamp) ||
 				a.order - b.order,
 		);
-	}, [run.childRunIds, run.messages, run.tools, runs]);
+	}, [run.childRunIds, run.messages, run.pendingActions, run.tools, runs]);
 
 	const feedActivities = useMemo<FeedActivity[]>(() => {
 		const feed: FeedActivity[] = [];
