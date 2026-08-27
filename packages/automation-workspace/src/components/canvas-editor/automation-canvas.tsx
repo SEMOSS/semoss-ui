@@ -16,6 +16,7 @@ import {
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import {
+	CalendarClock,
 	CheckCircle,
 	Hand,
 	HelpCircle,
@@ -79,6 +80,7 @@ import { AddNodeMenu } from "./add-node-menu";
 import { AutomationDockLayout } from "./automation-dock-layout";
 import { AutomationNode as AutomationNodeCard } from "./nodes/automation-node";
 import { TriggerNode } from "./nodes/trigger-node";
+import { ScheduleDialog } from "./schedule-dialog";
 import { UndoBanner } from "./undo-banner";
 
 // ---- React Flow custom node registry (must be outside component) ----
@@ -414,6 +416,7 @@ export function AutomationCanvas({
 		null,
 	);
 	const [showHelp, setShowHelp] = useState(false);
+	const [showScheduleDialog, setShowScheduleDialog] = useState(false);
 	const hasRunnableSteps = steps.some(
 		(step) => step.workflowType !== "trigger.start",
 	);
@@ -490,7 +493,6 @@ export function AutomationCanvas({
 		);
 	}, [appId]);
 
-	useEffect(() => {}, [editingStepId]);
 	const loadedRef = useRef(false);
 	const skipDraftPersistenceRef = useRef(true);
 	const skipNextDraftPersistenceRef = useRef(false);
@@ -1103,6 +1105,11 @@ export function AutomationCanvas({
 			setSaving(false);
 		}
 	}, [appId, description, graphEdges, readOnly, steps, triggerBindings]);
+
+	const prepareSchedule = useCallback(
+		async (): Promise<boolean> => !isDirty || save(),
+		[isDirty, save],
+	);
 
 	// Cmd+S / Ctrl+S
 	useEffect(() => {
@@ -1775,6 +1782,22 @@ export function AutomationCanvas({
 												</Button>
 											</div>
 										)}
+										{!readOnly && !mcpContext && (
+											<Button
+												size="sm"
+												variant="outline"
+												className="bg-background shadow-sm"
+												onClick={() =>
+													setShowScheduleDialog(true)
+												}
+											>
+												<CalendarClock
+													className="mr-1.5 h-3.5 w-3.5"
+													aria-hidden
+												/>
+												Schedule
+											</Button>
+										)}
 										<Button
 											data-tour="run"
 											size="sm"
@@ -1908,6 +1931,13 @@ export function AutomationCanvas({
 					<AddNodeMenu onSelect={addStep} />
 				</DialogContent>
 			</Dialog>
+
+			<ScheduleDialog
+				projectId={appId}
+				open={showScheduleDialog}
+				onOpenChange={setShowScheduleDialog}
+				onPrepareSchedule={prepareSchedule}
+			/>
 
 			{/* ---- Help modal ---- */}
 			<HelpModal open={showHelp} onClose={() => setShowHelp(false)} />

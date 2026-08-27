@@ -1,3 +1,4 @@
+import { usePixel } from "@semoss/sdk/react";
 import type { Engine } from "@semoss/shared";
 import { EngineSelect } from "@semoss/shared";
 import { Field, FieldLabel } from "@semoss/ui/next";
@@ -25,6 +26,20 @@ export function EnginePickerField({
 	onChange,
 	required = false,
 }: EnginePickerFieldProps) {
+	// Workflow JSON persists the stable engine ID, not a display label that can
+	// become stale. Resolve the label from the current user's accessible catalog
+	// when reopening an existing node.
+	const { data: selectedEngines } = usePixel<Engine[]>(
+		value && !name
+			? `META | MyEngines(engine=${JSON.stringify([value])}, engineTypes=${JSON.stringify(engineTypes)});`
+			: "",
+		{ data: [] },
+	);
+	const resolvedName = selectedEngines[0]
+		? selectedEngines[0].engine_display_name ||
+			selectedEngines[0].engine_name
+		: "";
+
 	return (
 		<Field>
 			<FieldLabel>
@@ -36,7 +51,7 @@ export function EnginePickerField({
 				)}
 			</FieldLabel>
 			<EngineSelect
-				name={name}
+				name={name || resolvedName || value}
 				value={value}
 				engineTypes={engineTypes}
 				onChange={onChange}
