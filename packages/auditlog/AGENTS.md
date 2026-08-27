@@ -57,6 +57,14 @@ An application, so it uses the `src/` layout from the root AGENTS.md including `
 > `MainLayout.tsx`) alongside newer kebab files (`root-layout.tsx`). Migrate to the dot
 > role-suffix (`authenticated.layout.tsx`, `login.page.tsx`) as you touch them.
 
+## Design-System Notes
+
+Follow the root [Design System & Styling](../../AGENTS.md#design-system--styling) rules and
+[DESIGN.md](../../DESIGN.md). Treat this as a dense operational dashboard: preserve the list
+and dashboard composition, keep filters and table actions compact, and deliberately choose
+table overflow or column prioritization for narrow screens. Existing files are not blanket
+design exemplars and must pass the touched-file design audit.
+
 ## Agent Guardrails
 
 ### Be Cautious With
