@@ -8,17 +8,14 @@ import type {
 import { CodeAppRendererRefreshControl } from "./code-app-renderer-refresh-control";
 
 /** The config an app-preview instance is opened with. */
-export interface CodeAppRendererConfig {
-	/** Bumped by a publish to force the iframe to remount. */
-	previewVersion?: number;
-}
+export type CodeAppRendererConfig = Record<string, never>;
 
 // `value` is the manual-refresh counter the chrome control bumps — the panel
 // cannot share a setter with a control, which draws in the chrome's subtree
 const CodeAppRendererPanelContent: WorkbenchComponent<
 	CodeAppRendererConfig,
 	number
-> = ({ id, config, value }) => {
+> = ({ id, value }) => {
 	const { project } = useProject();
 
 	useWorkbenchControl(id, CodeAppRendererRefreshControl);
@@ -27,7 +24,7 @@ const CodeAppRendererPanelContent: WorkbenchComponent<
 		<div className="h-full w-full overflow-hidden bg-background text-foreground">
 			<CodeRenderer
 				appId={project.project_id}
-				key={`${value ?? 0}-${config.previewVersion}`}
+				key={`project.project_id--${value ?? 0}`}
 			/>
 		</div>
 	);

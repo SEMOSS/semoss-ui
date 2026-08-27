@@ -182,29 +182,28 @@ export const CodeWorkbench: React.FC = () => {
 	const { project } = useProject();
 	const insight = useInsight();
 
-	// Bumps the preview panel's config.previewVersion so its iframe remounts
-	// on the freshly published assets.
-	const bumpPreviewVersion = useCallback(() => {
-		// read at call time — this also runs from a deferred timeout
-		const record = layoutActions.getPanel(
+	/**
+	 * Refresh the code renderer
+	 */
+	const refreshCodeRenderer = useCallback(() => {
+		layoutActions.setPanelValue(
 			WORKBENCH_COMPONENTS.PROJECT_APP_RENDERER,
+			(count = 0) => count + 1,
 		);
-		const current = Number(record?.config?.previewVersion ?? 0);
-		layoutActions.updatePanel(WORKBENCH_COMPONENTS.PROJECT_APP_RENDERER, {
-			config: { previewVersion: current + 1 },
-		});
 	}, [layoutActions]);
 
 	const handleRunCompleted = useCallback(
 		(run: BuildRun, runs: Record<string, BuildRun>) => {
-			if (!runTreePublished(run, runs)) return;
+			if (!runTreePublished(run, runs)) {
+				return;
+			}
 			// Give the publish a beat to finish moving assets before the
 			// preview remounts.
 			window.setTimeout(() => {
-				bumpPreviewVersion();
+				refreshCodeRenderer();
 			}, 500);
 		},
-		[bumpPreviewVersion],
+		[refreshCodeRenderer],
 	);
 
 	// Manual "rebuild the app" from the assistant header — the same full compile +
@@ -214,9 +213,9 @@ export const CodeWorkbench: React.FC = () => {
 		await insight.actions.run(
 			`BuildAndPublishApp(project='${project.project_id}');`,
 		);
-		bumpPreviewVersion();
+		refreshCodeRenderer();
 		toast.success("App rebuilt and published.");
-	}, [insight.actions, project.project_id, bumpPreviewVersion]);
+	}, [insight.actions, project.project_id, refreshCodeRenderer]);
 
 	const configureAssistant = useWorkbench((s) => s.assistant.configure);
 
