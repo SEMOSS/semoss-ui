@@ -185,6 +185,12 @@ export interface WorkbenchLayoutActions {
 	 * shallow-equal default), restoring a closed match or spawning a new
 	 * instance when none exists.
 	 *
+	 * `matches` does **not** imply uniqueness — `spawnPanel` bypasses it — so
+	 * several matches can coexist. They are preferred in order of how little
+	 * they disturb the layout: one already on screen, then one open but hidden
+	 * (revealing it is a tab switch), then a closed record (which has to be
+	 * re-docked, and reads to the user as a new panel appearing).
+	 *
 	 * @return The revealed or created panel id.
 	 */
 	selectPanel: (
@@ -874,11 +880,26 @@ export const createWorkbenchLayoutSlice = (
 					const state = get().layout;
 					const same =
 						state.components[type]?.matches ?? shallowEqual;
-					const existing = Object.values(state.panels).find(
+					const candidates = Object.values(state.panels).filter(
 						(record) =>
 							record.type === type &&
 							same(record.config ?? {}, config),
 					);
+					// `matches` does not guarantee uniqueness — `spawnPanel`
+					// bypasses it, so dragging a file out of the explorer
+					// leaves several views of it. Pick the least disruptive
+					// match, and note that a *closed* record is still a
+					// candidate (`closePanel` keeps it in `panels`): taking it
+					// re-docks the panel in the main area, which is why it has
+					// to lose to anything still open.
+					const existing =
+						candidates.find((record) =>
+							state.visiblePanelIds.includes(record.id),
+						) ??
+						candidates.find(
+							(record) => !state.closed.includes(record.id),
+						) ??
+						candidates[0];
 
 					if (!existing) {
 						return get().layout.actions.spawnPanel(type, {

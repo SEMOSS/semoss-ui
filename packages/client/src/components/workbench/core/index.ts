@@ -1,4 +1,5 @@
 export * from "./use-workbench-events";
+export * from "./use-workbench-hit-test";
 export * from "./use-workbench-panel";
 export * from "./workbench";
 export * from "./workbench.types";
@@ -18,6 +19,7 @@ export * from "./workbench-panel-layer";
 export * from "./workbench-panel-sheet";
 export * from "./workbench-reset-button";
 export * from "./workbench-resizer";
+export * from "./workbench-spawn-drag";
 export * from "./workbench-stage";
 export * from "./workbench-tab";
 export * from "./workbench-tab-strip";

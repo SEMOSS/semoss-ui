@@ -13,6 +13,7 @@ export {
 	PROJECT_FILE_EXPLORER_PANEL,
 	ProjectFileExplorerPanel,
 } from "./project-file-explorer-panel";
+export { ProjectInsightExplorer } from "./project-insight-explorer";
 export {
 	PROJECT_INSIGHT_EXPLORER_PANEL,
 	ProjectInsightExplorerPanel,

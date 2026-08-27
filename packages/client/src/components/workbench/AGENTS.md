@@ -190,6 +190,19 @@ row (`assistant/workbench-assistant-view.tsx` is the one case). That opts out of
 slot too — such a panel owns its whole chrome and draws its actions in its own heading. Note
 the mobile shell renders no controls at all; it has no rails and no per-panel header row.
 
+**Publishing a whole api on `value`.** The four file-explorer panels show the pattern for a
+control that needs to *drive* its panel rather than just show a flag: `useFileExplorer` returns
+an identity-stable api object, so the panel publishes it once —
+`useEffect(() => setValue(explorer), [explorer])` — and `file-explorer-control.tsx` reads
+`value` and calls `value.commands.*`. Two constraints come with it:
+
+- **`setValue` is not identity-stable.** `useWorkbenchPanel` rebuilds a panel's methods whenever
+  its `value` changes, so listing `setValue` in that effect's dependencies loops forever. Omit
+  it (with a `biome-ignore` naming the reason) and depend only on the stable payload.
+- **The control still does not re-render with its panel.** It sees live *behaviour*, not live
+  *state*, so it must draw only fixed content. That is why `FileExplorerRefreshAction` has no
+  loading spinner: a status-driven glyph in the chrome would freeze mid-animation.
+
 - `selectPanel(type, config?, opts?)` reveals an existing instance matching `config` (blueprint
   `matches`, shallow-equal default), restores a closed match, or spawns a new one. Commands
   should use it — never target tabset ids (the empty-tabset fallback regenerates them).
@@ -197,6 +210,29 @@ the mobile shell renders no controls at all; it has no rails and no per-panel he
   `{ kind: "border", side }` and `{ kind: "join", tabsetId }`.
 - File-style panels dedupe via blueprint `matches` on `config.path` — ids are minted, never
   encode data in them.
+
+**Dropping something in from outside the dock.** `core/workbench-spawn-drag.ts` owns a small
+protocol: a native HTML5 drag that carries `WORKBENCH_SPAWN_DRAG_TYPE` (write it with
+`writeSpawnDragSpec`) asks the shell to open a panel where it lands. `WorkbenchDragLayer` picks
+these up alongside its pointer-event tab drags, resolves them through the same
+`useWorkbenchHitTest` geometry, and commits with `spawnPanel` followed by `movePanel`.
+
+Both halves are deliberate. **`spawnPanel`, not `selectPanel`**: a drag is a request for a
+*new* view, so dragging a file that is already open leaves the open instance exactly where it
+is and adds a second one — blueprint `matches` dedupe still applies to `selectPanel`, which is
+what clicking the file in the explorer uses. **Then `movePanel`**, because `spawnPanel` honours
+only `border` and `join` targets itself, so routing every drop through the move is what makes
+`split` and `root` work.
+
+Two more constraints worth knowing before touching this:
+
+- **The payload is additive.** The same drag still carries the explorer's own move payload, so
+  a row-to-row file move inside the tree is unaffected. Only `dataTransfer.types` is readable
+  during `dragover`, which is why the intent lives in the key and the spec is read on `drop`.
+- **`dropEffect` must be one of the operations the source's `effectAllowed` names.** The
+  explorer's rows allow `copyMove`; the dock asks for `copy` (the file stays put) and a folder
+  row asks for `move`. Ask for something outside `effectAllowed` and the browser resolves the
+  drag to "none" — it still paints the drop preview and then silently never fires `drop`.
 
 ## Domain state (database is the template)
 
@@ -225,6 +261,9 @@ and cleanup runs through the shell's `onPanelClose(pid, record)` prop.
 | `stores/workbench/slices/workbench-layout.tree.ts` | Pure, DOM-free tree ops |
 | `stores/workbench/slices/workbench-layout.commands.ts` | Layout-derived palette entries |
 | `stores/workbench/slices/workbench-controls.slice.ts` | Panel-contributed chrome controls, keyed by panel id; each control is its own `*-control.tsx` file beside its panel |
+| `core/use-workbench-hit-test.ts` | The ordered geometric drop resolution, shared by the pointer-event tab drag and native spawn drags |
+| `core/workbench-spawn-drag.ts` | The `dataTransfer` protocol for "dropping me should open a panel" |
+| `file-explorer-control.tsx` | The refresh + new-file chrome control shared by every file-explorer panel (project, engine, storage, insight) |
 | `stores/workbench/database/` | The database domain store (the dedicated-store template) |
 | `contexts/workbench.context.tsx` | `WorkbenchProvider` — one store per mount |
 

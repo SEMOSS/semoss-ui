@@ -1,10 +1,8 @@
 import { observer } from "mobx-react-lite";
-import { lazy, Suspense, useRef, useState } from "react";
+import { lazy, Suspense } from "react";
 import { InsightProvider } from "@semoss/sdk/react";
-import type { FileItem } from "@semoss/shared";
-import { FileExplorer } from "@semoss/shared";
 import { Spinner } from "@semoss/ui/next";
-import { SkillFileViewer } from "@/components/skill";
+import { SkillPublicFiles } from "@/components/skill";
 import { NotebookViewWorkbench } from "@/components/workbench";
 import { WorkbenchProvider } from "@/contexts";
 import { useProject } from "@/hooks";
@@ -17,8 +15,6 @@ const CodeRenderer = lazy(() =>
 		default: m.CodeRenderer,
 	})),
 );
-
-const PUBLIC_ROOT_PATH = "/public";
 
 interface ProjectViewProps {
 	/** Insight the read-only project view runs its pixels against */
@@ -34,38 +30,11 @@ interface ProjectViewProps {
 export const ProjectView = observer(({ insightId }: ProjectViewProps) => {
 	const { project, type } = useProject();
 
-	// SKILL selection state — hooks stay unconditional even though only SKILL uses them
-	const [selectedPath, setSelectedPath] = useState<string | null>(null);
-	const hasAutoSelectedRef = useRef(false);
-
 	const loadingFallback = (
 		<div className="absolute inset-0 z-1501 flex items-center justify-center bg-background/50">
 			<Spinner className="size-4" />
 		</div>
 	);
-
-	/**
-	 * Auto-select SKILL.md the first time the /public root finishes loading
-	 */
-	const handleSkillItemsChange = (payload: {
-		path: string;
-		items: FileItem[];
-	}) => {
-		if (hasAutoSelectedRef.current) {
-			return;
-		}
-		if (payload.path !== PUBLIC_ROOT_PATH) {
-			return;
-		}
-
-		const skillMd = payload.items.find(
-			(item) => item.type !== "directory" && item.name === "SKILL.md",
-		);
-		if (skillMd) {
-			hasAutoSelectedRef.current = true;
-			setSelectedPath(skillMd.path);
-		}
-	};
 
 	switch (type) {
 		case "CODE":
@@ -94,24 +63,9 @@ export const ProjectView = observer(({ insightId }: ProjectViewProps) => {
 						options={{ insightId }}
 						destroyOnUnmount={false}
 					>
-						<div className="mb-6 max-h-[35vh] overflow-auto rounded-md border border-border">
-							<FileExplorer
-								mode={{
-									type: "APP",
-									app: project.project_id,
-								}}
-								initialPath={PUBLIC_ROOT_PATH}
-								readOnly
-								onItemSelect={(item) =>
-									setSelectedPath(item.path)
-								}
-								onVisibleItemsChange={handleSkillItemsChange}
-							/>
-						</div>
-						<SkillFileViewer
+						<SkillPublicFiles
 							projectId={project.project_id}
 							insightId={insightId}
-							path={selectedPath}
 						/>
 					</InsightProvider>
 				</div>

@@ -2,7 +2,6 @@ import { RefreshCw } from "lucide-react";
 import type { FC } from "react";
 import {
 	Button,
-	cn,
 	Tooltip,
 	TooltipContent,
 	TooltipTrigger,
@@ -29,10 +28,7 @@ export const CodeAppRendererRefreshControl: FC<
 			<Button
 				variant="ghost"
 				size="icon-sm"
-				className={cn(
-					"flex-none text-muted-foreground",
-					WORKBENCH_STYLES.chromeButton,
-				)}
+				className={`flex-none text-muted-foreground ${WORKBENCH_STYLES.chromeButton}`}
 				onClick={() => setValue((count = 0) => count + 1)}
 				aria-label="Refresh app"
 				data-testid="workbench-app-renderer-refresh"

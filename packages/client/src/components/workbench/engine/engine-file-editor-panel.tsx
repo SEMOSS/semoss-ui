@@ -63,7 +63,9 @@ export const EngineFileEditorPanel: WorkbenchComponent<
 /**
  * Blueprint for engine file-editor instances. Instances dedupe on their file
  * path (plus mode), so a renamed file re-selects its open editor instead of
- * opening a duplicate. keepAlive: unsaved buffers survive tab switches.
+ * opening a duplicate. That is `selectPanel`'s behaviour only — dragging a file
+ * out of the explorer deliberately spawns a second view of it. keepAlive:
+ * unsaved buffers survive tab switches.
  */
 export const ENGINE_FILE_EDITOR_PANEL: WorkbenchPanelConfig<EngineFileEditorConfig> =
 	{
