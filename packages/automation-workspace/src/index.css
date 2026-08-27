@@ -14,3 +14,53 @@ html, body, #root {
 button, input {
   font: inherit;
 }
+
+@keyframes automation-border-rotate {
+  from {
+    transform: translate(-50%, -50%) rotate(0deg);
+  }
+
+  to {
+    transform: translate(-50%, -50%) rotate(360deg);
+  }
+}
+
+.automation-node-running,
+.automation-trigger-running {
+  overflow: hidden;
+}
+
+.automation-node-running::before,
+.automation-trigger-running::before {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 500px;
+  height: 500px;
+  z-index: 0;
+  background: linear-gradient(
+    90deg,
+    transparent 0% 25%,
+    rgb(125 211 252 / 0.98) 38%,
+    rgb(37 99 235 / 1) 50%,
+    rgb(125 211 252 / 0.98) 62%,
+    transparent 75% 100%
+  );
+  filter: drop-shadow(0 0 4px rgb(37 99 235 / 0.9));
+  animation: automation-border-rotate 2.4s linear infinite;
+  content: "";
+  pointer-events: none;
+}
+
+.automation-trigger-running::before {
+  width: 180px;
+  height: 180px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .automation-node-running::before,
+  .automation-trigger-running::before {
+    animation: none;
+  }
+}
+

@@ -26,7 +26,10 @@ import {
 	Play,
 	RefreshCw,
 	Save,
+	Scan,
 	X,
+	ZoomIn,
+	ZoomOut,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
@@ -142,7 +145,8 @@ const edgeTypes = {
 // ---- Layout constants ----
 const NODE_WIDTH = 280;
 const DEFAULT_NODE_HEIGHT = 120;
-const NODE_ARROW_GAP = 40;
+const NODE_COLUMN_GAP = 100;
+const NODE_LANE_GAP = 40;
 
 // ---- Types ----
 interface AutomationCanvasProps {
@@ -505,7 +509,6 @@ export function AutomationCanvas({
 	const canvasContainerRef = useRef<HTMLDivElement>(null);
 	const reactFlowInstanceRef = useRef<ReactFlowInstance | null>(null);
 	const [canvasInitialized, setCanvasInitialized] = useState(false);
-	const centerXRef = useRef(0);
 	const initialViewFittedRef = useRef(false);
 	const loadedGraphStructureRef = useRef<{
 		appId: string;
@@ -630,19 +633,70 @@ export function AutomationCanvas({
 			nodes: AutomationNode[],
 			edges: AutomationEdge[],
 		): AutomationNode[] => {
-			const containerWidth =
-				canvasContainerRef.current?.clientWidth ?? 900;
-			const centerX = Math.max(
-				0,
-				Math.floor((containerWidth - NODE_WIDTH) / 2),
-			);
-			centerXRef.current = centerX;
+			const stepIds = new Set(nodes.map((node) => node.id));
+			const incoming = new Map<string, string[]>();
+			for (const node of nodes) {
+				incoming.set(node.id, []);
+			}
+			for (const edge of edges) {
+				if (!stepIds.has(edge.source) || !stepIds.has(edge.target))
+					continue;
+				if (edge.kind !== "control") continue;
+				incoming.get(edge.target)?.push(edge.source);
+			}
+
+			const depth = new Map<string, number>();
+			const ordered = getControlOrderedSteps(nodes, edges);
+			for (const node of ordered) {
+				const parents = incoming.get(node.id) ?? [];
+				depth.set(
+					node.id,
+					parents.length === 0
+						? 0
+						: Math.max(
+								...parents.map(
+									(parent) => depth.get(parent) ?? 0,
+								),
+							) + 1,
+				);
+			}
+
+			const columns = new Map<number, AutomationNode[]>();
+			for (const node of ordered) {
+				const column = depth.get(node.id) ?? 0;
+				columns.set(column, [...(columns.get(column) ?? []), node]);
+			}
 
 			const positions = new Map<string, { x: number; y: number }>();
-			let y = 0;
-			for (const node of getControlOrderedSteps(nodes, edges)) {
-				positions.set(node.id, { x: centerX, y });
-				y += getNodeHeight(node.id) + NODE_ARROW_GAP;
+			const canvasHeight =
+				canvasContainerRef.current?.clientHeight ?? 600;
+			const laneHeights: number[] = [];
+			for (const columnNodes of columns.values()) {
+				columnNodes.forEach((node, lane) => {
+					laneHeights[lane] = Math.max(
+						laneHeights[lane] ?? 0,
+						getNodeHeight(node.id),
+					);
+				});
+			}
+			const totalHeight =
+				laneHeights.reduce((total, height) => total + height, 0) +
+				NODE_LANE_GAP * Math.max(0, laneHeights.length - 1);
+			const firstLaneY = Math.max(0, (canvasHeight - totalHeight) / 2);
+			for (const [column, columnNodes] of columns) {
+				let y = firstLaneY;
+				for (const node of columnNodes) {
+					const lane = columnNodes.indexOf(node);
+					const nodeHeight = getNodeHeight(node.id);
+					positions.set(node.id, {
+						x: column * (NODE_WIDTH + NODE_COLUMN_GAP),
+						y:
+							y +
+							((laneHeights[lane] ?? nodeHeight) - nodeHeight) /
+								2,
+					});
+					y += (laneHeights[lane] ?? nodeHeight) + NODE_LANE_GAP;
+				}
 			}
 			return nodes.map((node) => ({
 				...node,
@@ -843,6 +897,14 @@ export function AutomationCanvas({
 		[appId, readOnly],
 	);
 
+	const fitWorkflow = useCallback(() => {
+		reactFlowInstanceRef.current?.fitView({
+			padding: 0.2,
+			duration: 250,
+			maxZoom: 1,
+		});
+	}, []);
+
 	const addStep = useCallback(
 		(type: AutomationWorkflowNodeType) => {
 			if (readOnly) return;
@@ -852,12 +914,11 @@ export function AutomationCanvas({
 			const newStep = createCanvasWorkflowNode(type, steps.length);
 			const id = newStep.id;
 			newStep.position = {
-				x: previousStep?.position.x ?? centerXRef.current,
-				y: previousStep
-					? previousStep.position.y +
-						getNodeHeight(previousStep.id) +
-						NODE_ARROW_GAP
-					: 0,
+				x:
+					(previousStep?.position.x ?? 0) +
+					NODE_WIDTH +
+					NODE_COLUMN_GAP,
+				y: previousStep?.position.y ?? 0,
 			};
 			setSteps((previous) => [...previous, newStep]);
 			if (previousStep) {
@@ -876,8 +937,11 @@ export function AutomationCanvas({
 			setShowAddMenu(false);
 			setAddAfterStepId(null);
 			setEditingStepId(id);
+			window.requestAnimationFrame(() => {
+				window.requestAnimationFrame(fitWorkflow);
+			});
 		},
-		[addAfterStepId, getNodeHeight, readOnly, steps],
+		[addAfterStepId, fitWorkflow, readOnly, steps],
 	);
 
 	const updateStep = useCallback((updated: AutomationNode) => {
@@ -1444,14 +1508,6 @@ export function AutomationCanvas({
 	useEffect(() => {
 		if (!steps.length) return;
 
-		// Compute center x from container width so nodes appear horizontally centered
-		const containerWidth = canvasContainerRef.current?.clientWidth ?? 900;
-		const centerX = Math.max(
-			0,
-			Math.floor((containerWidth - NODE_WIDTH) / 2),
-		);
-		centerXRef.current = centerX;
-
 		const newNodes: Node[] = [];
 		const newEdges: Edge[] = [];
 
@@ -1474,6 +1530,9 @@ export function AutomationCanvas({
 					data: {
 						label: description.trim() || "Start",
 						devMode,
+						runStatus:
+							stepStatuses[step.id] ??
+							(running ? "running" : undefined),
 						isLast:
 							!readOnly &&
 							!graphEdges.some((edge) => edge.source === step.id),
@@ -1579,7 +1638,7 @@ export function AutomationCanvas({
 
 		let frame = 0;
 		let attempts = 0;
-		const fitStartNode = () => {
+		const fitWorkflow = () => {
 			const nodeElement = canvasContainerRef.current?.querySelector(
 				`.react-flow__node[data-id="${initialNode.id}"]`,
 			);
@@ -1596,14 +1655,14 @@ export function AutomationCanvas({
 			}
 			if (!nodeElement) return;
 			reactFlowInstanceRef.current?.fitView({
-				nodes: [{ id: initialNode.id }],
-				padding: 0.8,
+				padding: 0.2,
 				duration: 250,
+				maxZoom: 1.2,
 			});
 			initialViewFittedRef.current = true;
 		};
 
-		frame = requestAnimationFrame(fitStartNode);
+		frame = requestAnimationFrame(fitWorkflow);
 		return () => cancelAnimationFrame(frame);
 	}, [canvasInitialized, rfNodes]);
 
@@ -1820,6 +1879,77 @@ export function AutomationCanvas({
 											Run
 										</Button>
 									</div>
+
+									{!readOnly && (
+										<div className="absolute right-4 bottom-4 z-10 flex items-center overflow-hidden rounded-lg border bg-background shadow-sm">
+											<Tooltip>
+												<TooltipTrigger asChild>
+													<button
+														type="button"
+														aria-label="Zoom out"
+														onClick={() => {
+															void reactFlowInstanceRef.current?.zoomOut(
+																{
+																	duration: 150,
+																},
+															);
+														}}
+														className="flex size-8 items-center justify-center border-r text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+													>
+														<ZoomOut
+															className="size-4"
+															aria-hidden
+														/>
+													</button>
+												</TooltipTrigger>
+												<TooltipContent side="top">
+													Zoom out
+												</TooltipContent>
+											</Tooltip>
+											<Tooltip>
+												<TooltipTrigger asChild>
+													<button
+														type="button"
+														aria-label="Zoom in"
+														onClick={() => {
+															void reactFlowInstanceRef.current?.zoomIn(
+																{
+																	duration: 150,
+																},
+															);
+														}}
+														className="flex size-8 items-center justify-center border-r text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+													>
+														<ZoomIn
+															className="size-4"
+															aria-hidden
+														/>
+													</button>
+												</TooltipTrigger>
+												<TooltipContent side="top">
+													Zoom in
+												</TooltipContent>
+											</Tooltip>
+											<Tooltip>
+												<TooltipTrigger asChild>
+													<button
+														type="button"
+														aria-label="Zoom to fit workflow"
+														onClick={fitWorkflow}
+														className="flex size-8 items-center justify-center text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+													>
+														<Scan
+															className="size-4"
+															aria-hidden
+														/>
+													</button>
+												</TooltipTrigger>
+												<TooltipContent side="top">
+													Zoom to fit workflow
+												</TooltipContent>
+											</Tooltip>
+										</div>
+									)}
 
 									{!readOnly && (
 										<div className="absolute bottom-4 left-4 z-10 flex items-center overflow-hidden rounded-lg border bg-background shadow-sm">

@@ -41,6 +41,8 @@ export interface CellOutputBlockProps {
 
 	/** Marks the row as an error: red panel, red border, red text. */
 	error?: boolean;
+	/** Optional parent-owned popout for the result panel. */
+	onOutputPopout?: () => void;
 }
 
 /**
@@ -63,6 +65,7 @@ export const CellOutputBlock = ({
 	logs = [],
 	pending = false,
 	error = false,
+	onOutputPopout,
 }: CellOutputBlockProps) => {
 	// `common` is preloaded by every app's I18nBuilder (it's in each app's
 	// initial `ns`), so this works from libs/shared without coupling.
@@ -257,7 +260,11 @@ export const CellOutputBlock = ({
 								label={t("cellOutput.copy.output")}
 							/>
 							<PopoutButton
-								onClick={() => setPopoutSection("result")}
+								onClick={() =>
+									onOutputPopout
+										? onOutputPopout()
+										: setPopoutSection("result")
+								}
 							/>
 						</>
 					}
@@ -723,7 +730,7 @@ const ExpandAllToggle = ({
 // PopoutModal — viewport-sized modal that re-renders panel content bigger
 // ---------------------------------------------------------------------------
 
-const PopoutModal = ({
+export const PopoutModal = ({
 	title,
 	meta,
 	actions,

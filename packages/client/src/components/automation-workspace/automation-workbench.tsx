@@ -2,11 +2,14 @@ import {
 	ActivityIcon,
 	BracesIcon,
 	ChevronRightIcon,
+	CopyIcon,
 	FileCode2Icon,
 	FolderTreeIcon,
 	HistoryIcon,
 	MessageSquareIcon,
+	Minus as MinusIcon,
 	PanelRightIcon,
+	Plus as PlusIcon,
 	Share2,
 } from "lucide-react";
 import { observer } from "mobx-react-lite";
@@ -20,7 +23,12 @@ import {
 	useState,
 } from "react";
 import { Link } from "react-router-dom";
-import { type MCPConfig, MonacoEditor } from "@semoss/shared";
+import {
+	JsonViewer,
+	type MCPConfig,
+	MonacoEditor,
+	PopoutModal,
+} from "@semoss/shared";
 import {
 	Breadcrumb,
 	BreadcrumbItem,
@@ -41,7 +49,7 @@ import {
 } from "@semoss/ui/next";
 import { ProjectDetailTabs } from "@/components/project";
 import { ShareOverlay } from "@/components/ui";
-import { WorkbenchAssistantPanel } from "@/components/workbench/assistant";
+import { WorkbenchAssistantView } from "@/components/workbench/assistant";
 import { Workbench } from "@/components/workbench/core";
 import { PROJECT_FILE_EDITOR_PANEL } from "@/components/workbench/project/project-file-editor-panel";
 import { PROJECT_FILE_EXPLORER_PANEL } from "@/components/workbench/project/project-file-explorer-panel";
@@ -189,6 +197,136 @@ const AutomationSettingsPanel: WorkbenchComponent = () => (
 	<ProjectDetailTabs tabs={SETTINGS_TABS} />
 );
 
+const AutomationOutputModal = ({
+	output,
+	onClose,
+}: {
+	output: string | null;
+	onClose: () => void;
+}) =>
+	output === null ? null : (
+		<AutomationOutputModalContent output={output} onClose={onClose} />
+	);
+
+const AutomationOutputModalContent = ({
+	output,
+	onClose,
+}: {
+	output: string | null;
+	onClose: () => void;
+}) => {
+	const [raw, setRaw] = useState(false);
+	const [expandVersion, setExpandVersion] = useState(0);
+	const [expandAll, setExpandAll] = useState<boolean | undefined>(undefined);
+	const value = output ?? "";
+	const parsed = useMemo(() => {
+		try {
+			return JSON.parse(value);
+		} catch {
+			return null;
+		}
+	}, [value]);
+	const formatted = parsed === null ? value : JSON.stringify(parsed, null, 2);
+	const isObjectOutput = parsed !== null && typeof parsed === "object";
+
+	return (
+		<PopoutModal
+			title="Result"
+			meta={`${formatted.split("\n").length} lines`}
+			actions={
+				<div className="inline-flex items-center gap-1">
+					<div className="inline-flex overflow-hidden rounded border border-current/30 font-medium text-[10px]">
+						<button
+							type="button"
+							className={`px-1.5 py-0 ${!raw ? "bg-current/15" : "hover:bg-current/10"}`}
+							onClick={() => setRaw(false)}
+						>
+							FORMATTED
+						</button>
+						<button
+							type="button"
+							className={`border-current/30 border-l px-1.5 py-0 ${raw ? "bg-current/15" : "hover:bg-current/10"}`}
+							onClick={() => setRaw(true)}
+						>
+							RAW
+						</button>
+					</div>
+					{!raw && isObjectOutput && (
+						<div className="inline-flex overflow-hidden rounded border border-current/30">
+							<Tooltip>
+								<TooltipTrigger asChild>
+									<button
+										type="button"
+										className="flex items-center px-1 py-0.5"
+										onClick={() => {
+											setExpandAll(true);
+											setExpandVersion(
+												(version) => version + 1,
+											);
+										}}
+										aria-label="Expand all"
+									>
+										<PlusIcon className="size-3" />
+									</button>
+								</TooltipTrigger>
+								<TooltipContent>Expand all</TooltipContent>
+							</Tooltip>
+							<Tooltip>
+								<TooltipTrigger asChild>
+									<button
+										type="button"
+										className="flex items-center border-current/30 border-l px-1 py-0.5"
+										onClick={() => {
+											setExpandAll(false);
+											setExpandVersion(
+												(version) => version + 1,
+											);
+										}}
+										aria-label="Collapse all"
+									>
+										<MinusIcon className="size-3" />
+									</button>
+								</TooltipTrigger>
+								<TooltipContent>Collapse all</TooltipContent>
+							</Tooltip>
+						</div>
+					)}
+					<Tooltip>
+						<TooltipTrigger asChild>
+							<button
+								type="button"
+								className="rounded p-0.5 text-muted-foreground hover:bg-muted hover:text-foreground"
+								onClick={() =>
+									void navigator.clipboard.writeText(
+										raw ? value : formatted,
+									)
+								}
+								aria-label="Copy output"
+							>
+								<CopyIcon className="size-3.5" />
+							</button>
+						</TooltipTrigger>
+						<TooltipContent>Copy output</TooltipContent>
+					</Tooltip>
+				</div>
+			}
+			onClose={onClose}
+		>
+			{!raw && isObjectOutput ? (
+				<JsonViewer
+					value={parsed}
+					forceVersion={expandVersion}
+					forceOpen={expandAll}
+				/>
+			) : (
+				<pre className="whitespace-pre-wrap break-all font-mono text-foreground text-sm">
+					{raw ? value : formatted}
+				</pre>
+			)}
+		</PopoutModal>
+	);
+};
+
 export const AutomationWorkbench = observer(
 	({
 		appId,
@@ -204,6 +342,7 @@ export const AutomationWorkbench = observer(
 		const traceRef = useRef<HTMLIFrameElement>(null);
 		const historyRef = useRef<HTMLIFrameElement>(null);
 		const [traceSnapshot, setTraceSnapshot] = useState<unknown>(null);
+		const [outputModal, setOutputModal] = useState<string | null>(null);
 		const [inspectorSnapshot, setInspectorSnapshot] =
 			useState<unknown>(null);
 		const [pythonEditor, setPythonEditor] = useState<{
@@ -254,6 +393,7 @@ export const AutomationWorkbench = observer(
 					projectId?: unknown;
 					nodeId?: unknown;
 					source?: unknown;
+					output?: unknown;
 				};
 				if (
 					event.source === editorRef.current?.contentWindow &&
@@ -291,6 +431,25 @@ export const AutomationWorkbench = observer(
 					message.type === "SEMOSS_AUTOMATION_TRACE_READY"
 				) {
 					traceRef.current?.contentWindow?.postMessage(
+						{
+							type: "SEMOSS_AUTOMATION_TRACE",
+							snapshot: traceSnapshot,
+						},
+						automationOrigin,
+					);
+				}
+				if (
+					event.source === traceRef.current?.contentWindow &&
+					message.type === "SEMOSS_AUTOMATION_OPEN_OUTPUT" &&
+					typeof message.output === "string"
+				) {
+					setOutputModal(message.output);
+				}
+				if (
+					event.source === historyRef.current?.contentWindow &&
+					message.type === "SEMOSS_AUTOMATION_TRACE_READY"
+				) {
+					historyRef.current?.contentWindow?.postMessage(
 						{
 							type: "SEMOSS_AUTOMATION_TRACE",
 							snapshot: traceSnapshot,
@@ -352,6 +511,13 @@ export const AutomationWorkbench = observer(
 			);
 		}, [automationOrigin, traceSnapshot]);
 
+		useEffect(() => {
+			historyRef.current?.contentWindow?.postMessage(
+				{ type: "SEMOSS_AUTOMATION_TRACE", snapshot: traceSnapshot },
+				automationOrigin,
+			);
+		}, [automationOrigin, traceSnapshot]);
+
 		const sendPythonSource = useCallback(
 			(source: string, nodeId: string) => {
 				inspectorRef.current?.contentWindow?.postMessage(
@@ -380,6 +546,12 @@ export const AutomationWorkbench = observer(
 						],
 			[appId, readOnly],
 		);
+		const notifyAutomationChanged = useCallback(() => {
+			editorRef.current?.contentWindow?.postMessage(
+				{ type: "SEMOSS_AUTOMATION_REFRESH", projectId: appId },
+				automationOrigin,
+			);
+		}, [appId, automationOrigin]);
 		const components = useMemo<Record<string, WorkbenchPanelConfigAny>>(
 			() => ({
 				[EDITOR]: {
@@ -483,10 +655,11 @@ export const AutomationWorkbench = observer(
 					canClose: false,
 					canRename: false,
 					enableBorderHeader: false,
+					mount: "eager",
 					icon: ({ className }) => (
 						<MessageSquareIcon className={className} />
 					),
-					content: WorkbenchAssistantPanel,
+					content: WorkbenchAssistantView,
 				},
 			}),
 			[appId, readOnly],
@@ -500,8 +673,15 @@ export const AutomationWorkbench = observer(
 				systemPrompt: `You create and modify the ${projectName} automation. Use the Automation Project Tools to make changes. Never invent an app, reactor, agent, or engine ID. Keep appId separate from pixel and ask the user when a required concrete value is unavailable.`,
 				mcp: automationMcp,
 				runParams: { project: appId },
+				onRunCompleted: notifyAutomationChanged,
 			});
-		}, [appId, automationMcp, configureAssistant, projectName]);
+		}, [
+			appId,
+			automationMcp,
+			configureAssistant,
+			notifyAutomationChanged,
+			projectName,
+		]);
 
 		return (
 			<>
@@ -624,6 +804,10 @@ export const AutomationWorkbench = observer(
 						</DialogFooter>
 					</DialogContent>
 				</Dialog>
+				<AutomationOutputModal
+					output={outputModal}
+					onClose={() => setOutputModal(null)}
+				/>
 				<Workbench
 					layout={AUTOMATION_LAYOUT}
 					components={components}

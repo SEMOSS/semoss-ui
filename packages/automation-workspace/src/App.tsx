@@ -136,9 +136,6 @@ export default function App() {
 
 	const [traceSnapshot, setTraceSnapshot] =
 		useState<AutomationTraceSnapshot | null>(null);
-	const [expandedTraceNodes, setExpandedTraceNodes] = useState<Set<string>>(
-		new Set(),
-	);
 	const [inspectorSnapshot, setInspectorSnapshot] =
 		useState<AutomationInspectorSnapshot | null>(null);
 	const [historyRefreshToken, setHistoryRefreshToken] = useState(0);
@@ -407,21 +404,7 @@ export default function App() {
 					</div>
 				);
 			}
-			return (
-				<TraceTab
-					{...snapshot}
-					expandedNodes={expandedTraceNodes}
-					onDismiss={() => undefined}
-					onToggleNode={(nodeId) =>
-						setExpandedTraceNodes((nodes) => {
-							const next = new Set(nodes);
-							if (next.has(nodeId)) next.delete(nodeId);
-							else next.add(nodeId);
-							return next;
-						})
-					}
-				/>
-			);
+			return <TraceTab {...snapshot} onDismiss={() => undefined} />;
 		}
 		return (
 			<AutomationCanvas

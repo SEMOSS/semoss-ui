@@ -11,6 +11,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@semoss/i18n": "workspace:*",
     "@semoss/sdk": "workspace:*",
     "@semoss/shared": "workspace:*",
     "@semoss/ui": "workspace:*",
