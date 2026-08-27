@@ -135,7 +135,7 @@ ids/categories/labels/descriptions change and executed handlers always run the l
 so there are no effect dependencies to manage. Unregistration happens on unmount.
 
 Commands carry no icons. Every command sets a `category` from the small fixed set — `View`
-(open/close/reopen panels, borders, maximize, reset), `Go to` (panel navigation), `Editor`,
+(open/close panels, borders, maximize, reset), `Go to` (panel navigation), `Editor`,
 `Project`, `Database` — and the palette displays it as `Category: Label` (Title Case), sorted
 alphabetically. Don't bake the prefix into `label`.
 
@@ -204,8 +204,15 @@ an identity-stable api object, so the panel publishes it once —
   loading spinner: a status-driven glyph in the chrome would freeze mid-animation.
 
 - `selectPanel(type, config?, opts?)` reveals an existing instance matching `config` (blueprint
-  `matches`, shallow-equal default), restores a closed match, or spawns a new one. Commands
-  should use it — never target tabset ids (the empty-tabset fallback regenerates them).
+  `matches`, shallow-equal default) or spawns a new one. `matches` does **not** imply
+  uniqueness — `spawnPanel` bypasses it — so when several instances match, the one already on
+  screen wins. Commands should use it — never target tabset ids (the empty-tabset fallback
+  regenerates them).
+- **`closePanel` deletes the instance.** There is no reopen history: the record and its scratch
+  `value` are dropped, so `layout.panels` always means exactly "what is open". Anything that
+  looks a panel up by config depends on that — a lingering record for a closed panel would keep
+  matching forever and get revealed instead of a live one. A cache written before this was true
+  is pruned on load (`applySnapshot`).
 - `spawnPanel(type, opts?)` always creates a new instance; `opts.target` supports
   `{ kind: "border", side }` and `{ kind: "join", tabsetId }`.
 - File-style panels dedupe via blueprint `matches` on `config.path` — ids are minted, never

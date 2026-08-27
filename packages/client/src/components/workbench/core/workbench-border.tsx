@@ -7,6 +7,7 @@ import type {
 	WorkbenchBorderSlot,
 	WorkbenchBorderSlotCtx,
 } from "./workbench.types";
+import { WorkbenchPanelContextMenu } from "./workbench-context-menu";
 import {
 	WorkbenchPanelControls,
 	WorkbenchPanelHeaderContent,
@@ -199,21 +200,26 @@ export const WorkbenchBorder: FC<WorkbenchBorderProps> = ({ side, slots }) => {
 			    body they belong to. The rail tab still carries the toggle,
 			    rename, close, and context menu. */}
 			{headed && (
-				<div
-					data-border-header={side}
-					className={cn(
-						"flex min-w-0 flex-none items-center gap-1 border-border border-b bg-card px-2",
-						WORKBENCH_STYLES.borderHeader,
-					)}
-				>
-					<div className="flex min-w-0 flex-1 items-center gap-1.5 text-muted-foreground text-xs">
-						<WorkbenchPanelHeaderContent
+				<WorkbenchPanelContextMenu pid={openPid}>
+					<div
+						data-border-header={side}
+						className={cn(
+							"flex min-w-0 flex-none items-center gap-1 border-border border-b bg-card px-2",
+							WORKBENCH_STYLES.borderHeader,
+						)}
+					>
+						<div className="flex min-w-0 flex-1 items-center gap-1.5 text-muted-foreground text-xs">
+							<WorkbenchPanelHeaderContent
+								pid={openPid}
+								location="header"
+							/>
+						</div>
+						<WorkbenchPanelControls
 							pid={openPid}
 							location="header"
 						/>
 					</div>
-					<WorkbenchPanelControls pid={openPid} location="header" />
-				</div>
+				</WorkbenchPanelContextMenu>
 			)}
 			<div
 				ref={bodyRef}

@@ -100,6 +100,7 @@ export const STORAGE_FILE_EXPLORER_PANEL: WorkbenchPanelConfig<
 	icon: ({ className }) => <CloudIcon className={className} />,
 	canClose: false,
 	canRename: false,
+	canSplitTab: true,
 	mount: "keepAlive",
 	content: StorageFileExplorerPanel,
 };

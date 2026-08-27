@@ -43,7 +43,7 @@ export const WorkbenchCommandPalette: FC = () => {
 
 	const [search, setSearch] = useState("");
 
-	// layout-derived entries (go-to, reopen, borders, maximize, reset, …) are
+	// layout-derived entries (go-to, close, borders, maximize, reset, …) are
 	// built only when the palette opens, never while the store churns
 	const layoutCommands = useMemo(
 		() => (isCommandOpen ? layoutActions.buildLayoutCommands() : []),

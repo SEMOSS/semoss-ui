@@ -117,6 +117,8 @@ export interface WorkbenchPanelRecord {
 	canMaximize?: boolean;
 	/** Whether the user may rename this tab (programmatic renames always work). */
 	canRename?: boolean;
+	/** Whether this tab offers the in-place "Split Tab" menu. Defaults to false. */
+	canSplitTab?: boolean;
 	/** Tooltip shown on the tab and border rail icon. */
 	helpText?: string;
 	/**
@@ -270,6 +272,11 @@ export interface WorkbenchPanelConfig<P = WorkbenchPanelParams, V = unknown> {
 	/** Whether the user may rename instances of this type. Defaults to true. */
 	canRename?: boolean;
 	/**
+	 * Whether tabs of this type offer the in-place "Split Tab" viewports in
+	 * their context menu. Unlike the other flags, defaults to false.
+	 */
+	canSplitTab?: boolean;
+	/**
 	 * Whether the shell draws a header row — glyph, name, and this panel's
 	 * registered control — over the body when an instance opens in a border.
 	 * Defaults to true. A border has no tab strip, so this row is where a
@@ -376,14 +383,15 @@ export interface WorkbenchLayout {
 }
 
 /**
- * A persisted arrangement: a layout as it is cached, plus the instances that
- * are closed but still reopenable. Internal to the store — the shape is
- * guarded structurally by `parseWorkbenchSnapshot`, and which shape a cache
- * entry belongs to is settled by the layout `version` in its key.
+ * A persisted arrangement: a layout as it is cached. Internal to the store —
+ * the shape is guarded structurally by `parseWorkbenchSnapshot`, and which
+ * shape a cache entry belongs to is settled by the layout `version` in its key.
+ *
+ * Closing a panel deletes it, so there is nothing here beyond what is open.
+ * A cache written before that was true may still carry a `closed` array and
+ * records for panels in no stack; both are dropped on load.
  */
-export type WorkbenchSnapshot = Omit<WorkbenchLayout, "version"> & {
-	closed?: WorkbenchPanelId[];
-};
+export type WorkbenchSnapshot = Omit<WorkbenchLayout, "version">;
 
 /** Options accepted when spawning or selecting a panel instance. */
 export type WorkbenchPanelOptions = Partial<

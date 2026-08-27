@@ -224,6 +224,7 @@ export const ENGINE_FILE_EXPLORER_PANEL: WorkbenchPanelConfig<
 	icon: ({ className }) => <FolderTreeIcon className={className} />,
 	canClose: false,
 	canRename: false,
+	canSplitTab: true,
 	mount: "keepAlive",
 	content: EngineFileExplorerPanel,
 };

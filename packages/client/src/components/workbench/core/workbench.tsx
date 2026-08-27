@@ -5,7 +5,6 @@ import { useWorkbenchEvents } from "./use-workbench-events";
 import type { WorkbenchBorderSlotCtx, WorkbenchProps } from "./workbench.types";
 import { resolveBorderSlot, WorkbenchBorder } from "./workbench-border";
 import { WorkbenchCommandPalette } from "./workbench-command-palette";
-import { WorkbenchContextMenu } from "./workbench-context-menu";
 import { WorkbenchDragLayer } from "./workbench-drag-layer";
 import { WorkbenchMobile } from "./workbench-mobile";
 import { WorkbenchPanelLayer } from "./workbench-panel-layer";
@@ -235,7 +234,6 @@ export const Workbench: FC<WorkbenchProps> = ({
 				<WorkbenchDragLayer rootRef={rootRef} stageRef={stageRef} />
 				<WorkbenchSlotMeasure />
 			</div>
-			<WorkbenchContextMenu />
 			<WorkbenchPanelSheet actionsSlot={borderSlots?.left?.after} />
 		</>
 	);

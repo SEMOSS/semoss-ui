@@ -147,7 +147,7 @@ const WorkbenchPanelSheetSingle: FC<{ record: WorkbenchPanelRecord }> = ({
 };
 
 /**
- * Every open panel by stack, plus closed ones that can be reopened. On mobile
+ * Every open panel, grouped by stack. On mobile
  * this doubles as the workbench menu: the rail's action buttons lead, and
  * tapping a row shows that panel.
  */
@@ -156,7 +156,6 @@ const WorkbenchPanelSheetAll: FC<{ actionsSlot?: WorkbenchBorderSlot }> = ({
 }) => {
 	const actions = useWorkbench((s) => s.layout.actions);
 	const stacks = useWorkbench((s) => s.layout.stacks);
-	const closed = useWorkbench((s) => s.layout.closed);
 	const panels = useWorkbench((s) => s.layout.panels);
 	const readOnly = useWorkbench((s) => s.layout.readOnly);
 	const isMobileLayout = useWorkbench((s) => s.layout.isMobileLayout);
@@ -237,33 +236,6 @@ const WorkbenchPanelSheetAll: FC<{ actionsSlot?: WorkbenchBorderSlot }> = ({
 					)}
 				</ul>
 			</div>
-
-			{closed.length > 0 && (
-				<div>
-					<Muted className="text-xs uppercase tracking-widest">
-						Closed
-					</Muted>
-					<ul className="mt-2 divide-y divide-border">
-						{closed.map((pid) => (
-							<li
-								key={pid}
-								className="flex h-12 items-center gap-2"
-							>
-								<span className="flex-1 truncate text-muted-foreground text-sm">
-									{panels[pid]?.name}
-								</span>
-								<Button
-									variant="outline"
-									size="sm"
-									onClick={() => actions.reopenPanel(pid)}
-								>
-									Open
-								</Button>
-							</li>
-						))}
-					</ul>
-				</div>
-			)}
 		</div>
 	);
 };
@@ -278,7 +250,7 @@ export interface WorkbenchPanelSheetProps {
 
 /**
  * The panel manager: a right sheet on desktop, a bottom drawer on mobile.
- * Shows either one panel's controls or the full open/closed listing — on
+ * Shows either one panel's controls or the full listing of open panels — on
  * mobile the latter leads with the workbench actions.
  */
 export const WorkbenchPanelSheet: FC<WorkbenchPanelSheetProps> = ({
