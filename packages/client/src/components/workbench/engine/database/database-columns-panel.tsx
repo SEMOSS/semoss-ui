@@ -8,7 +8,6 @@ import {
 	Table,
 	X,
 } from "lucide-react";
-import type React from "react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { TableInterface } from "@semoss/sdk";
 import { DataTypeIcon } from "@semoss/shared";
@@ -40,9 +39,13 @@ import {
 	TooltipContent,
 	TooltipTrigger,
 } from "@semoss/ui/next";
-import { useDatabaseWorkbench, useEngine } from "@/hooks";
-import type { WorkbenchPanelConfig } from "@/stores/workbench";
+import { useDatabaseWorkbench, useEngine, useWorkbenchControl } from "@/hooks";
+import type {
+	WorkbenchComponent,
+	WorkbenchPanelConfig,
+} from "@/stores/workbench";
 import { getDatabaseWorkbenchStore } from "@/stores/workbench/database";
+import { WORKBENCH_STYLES } from "../../core/workbench.chrome";
 import {
 	type DatabaseColumnAction,
 	type DatabaseTableAction,
@@ -58,7 +61,7 @@ function getActionKey(action: { label: string }): string {
 		.replace(/^-+|-+$/g, "");
 }
 
-export const DatabaseColumnsPanel: React.FC = () => {
+export const DatabaseColumnsPanel: WorkbenchComponent = ({ id }) => {
 	const { permission } = useEngine();
 	const mode = useDatabaseWorkbench((state) => state.mode);
 	const structure = useDatabaseWorkbench((state) => state.structure.data);
@@ -76,6 +79,37 @@ export const DatabaseColumnsPanel: React.FC = () => {
 	const onCreateQueryPanel = useDatabaseWorkbench(
 		(state) => state.addQueryPanel,
 	);
+
+	// Refresh acts on the whole structure this panel shows, not on anything
+	// inside it, so it belongs to the panel's chrome rather than the body's
+	// search row. An inline renderer keeps it closed over `isLoading`, which
+	// is what lets the glyph spin while the fetch is in flight.
+	useWorkbenchControl(id, () => (
+		<Tooltip>
+			<TooltipTrigger asChild>
+				<Button
+					variant="ghost"
+					size="icon-sm"
+					onClick={() => refreshStructure()}
+					disabled={isLoading}
+					aria-label="Refresh database structure"
+					data-testid="database-columns--refresh-btn"
+					className={cn(
+						"flex-none text-muted-foreground",
+						WORKBENCH_STYLES.chromeButton,
+					)}
+				>
+					<RefreshCw
+						className={cn(
+							WORKBENCH_STYLES.chromeIcon,
+							isLoading && "animate-spin",
+						)}
+					/>
+				</Button>
+			</TooltipTrigger>
+			<TooltipContent>Refresh database structure</TooltipContent>
+		</Tooltip>
+	));
 
 	const readOnly = !(permission === "OWNER" || permission === "EDIT");
 	const [searchTerm, setSearchTerm] = useState("");
@@ -250,27 +284,6 @@ export const DatabaseColumnsPanel: React.FC = () => {
 							</TooltipTrigger>
 							<TooltipContent>
 								{allExpanded ? "Collapse all" : "Expand all"}
-							</TooltipContent>
-						</Tooltip>
-						<Tooltip>
-							<TooltipTrigger asChild>
-								<Button
-									variant="ghost"
-									size="icon-sm"
-									onClick={() => refreshStructure()}
-									disabled={isLoading}
-									data-testid="database-columns--refresh-btn"
-								>
-									<RefreshCw
-										className={cn(
-											"size-3",
-											isLoading && "animate-spin",
-										)}
-									/>
-								</Button>
-							</TooltipTrigger>
-							<TooltipContent>
-								Refresh database structure
 							</TooltipContent>
 						</Tooltip>
 					</div>
