@@ -9,6 +9,11 @@ const BlocksWorkspace = lazy(() =>
 		default: m.BlocksWorkspace,
 	})),
 );
+const AutomationWorkspace = lazy(() =>
+	import("@/components/automation-workspace").then((m) => ({
+		default: m.AutomationWorkbenchPage,
+	})),
+);
 
 import { useProject, useRootStore } from "@/hooks";
 import type { WorkspaceStore } from "@/stores";
@@ -94,9 +99,9 @@ export const Workspace: React.FC = () => {
 			}}
 		>
 			<Suspense fallback={<WorkspaceLoadingState />}>
-				{/* Only BLOCKS remains on this shell — CODE, NOTEBOOK, SKILL and
-				    AGENT render on the workbench. */}
+				{/* CODE, NOTEBOOK, SKILL, and AGENT render on the new workbench. */}
 				{type === "BLOCKS" && <BlocksWorkspace />}
+				{type === "AUTOMATION" && <AutomationWorkspace />}
 			</Suspense>
 		</WorkspaceContext.Provider>
 	);

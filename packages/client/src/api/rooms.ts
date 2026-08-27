@@ -123,6 +123,48 @@ export interface WorkbenchRoomOptions {
 	modelId: string;
 }
 
+/** Generic persisted room options accepted by the assistant workbench. */
+export type RoomOptionsMap = WorkbenchRoomOptions & Record<string, unknown>;
+
+/** Conversation summary shown by the assistant's room switcher. */
+export interface ConversationRoom {
+	roomId: string;
+	roomName: string;
+	dateCreated: string;
+	pinned: boolean;
+}
+
+/** Durable room message shape consumed by assistant run reconciliation. */
+export interface PlaygroundMessage {
+	type?: string;
+	io?: "INPUT" | "OUTPUT" | string;
+	messageId?: string;
+	transactionId?: string;
+	parentMessageId?: string;
+	visible?: boolean;
+	tokens?: number;
+	cacheReadTokens?: number;
+	cacheCreationTokens?: number;
+	thinkingTokens?: number;
+	dateCreated?: string;
+	ornaments?: { modelName?: string; agentRunId?: string };
+	parts?: Array<Record<string, unknown> & { type: string }>;
+}
+
+/** Result row returned by room message compaction. */
+export interface CompactRoomResult {
+	type: string;
+	success: boolean;
+	error?: string;
+}
+
+interface RawConversationRoom {
+	ROOM_ID?: string;
+	ROOM_NAME?: string;
+	DATE_CREATED?: string;
+	PINNED?: boolean;
+}
+
 /** Values needed to send a prompt to AskRoom. */
 export interface AskWorkbenchRoomParams {
 	insightId: string;
@@ -236,6 +278,61 @@ export const getDefaultWorkbenchChatModel = async (
 	);
 };
 
+/** Resolve a visible text-generation model by its engine id. */
+export const resolveWorkbenchAssistantModel = async (
+	insightId: string,
+	modelId: string,
+): Promise<Engine | null> => {
+	if (!modelId) return null;
+
+	const response = await runPixel<[Engine[]]>(
+		`META | MyEngines(metaKeys=[], metaFilters=[{"tag":"text-generation"}], engineTypes=["MODEL"], filterWord=${JSON.stringify(modelId)});`,
+		insightId,
+	);
+	assertPixelSuccess(response.errors);
+
+	return (
+		response.pixelReturn[0]?.output.find(
+			(engine) => engine.engine_id === modelId,
+		) ?? null
+	);
+};
+
+/** Return the first visible text-generation model. */
+export const getFirstWorkbenchAssistantModel = async (
+	insightId: string,
+): Promise<Engine | null> => {
+	const response = await runPixel<[Engine[]]>(
+		'META | MyEngines(metaKeys=[], metaFilters=[{"tag":"text-generation"}], engineTypes=["MODEL"]);',
+		insightId,
+	);
+	assertPixelSuccess(response.errors);
+	return response.pixelReturn[0]?.output[0] ?? null;
+};
+
+/** Resolve the configured assistant model, falling back to the first model. */
+export const getDefaultWorkbenchAssistantModel = async (
+	insightId: string,
+): Promise<Engine | null> => {
+	const userResponse = await runPixel<[Record<string, UserInfoProvider>]>(
+		"META | GetUserInfo();",
+		insightId,
+	);
+	assertPixelSuccess(userResponse.errors);
+
+	const provider = Object.values(
+		userResponse.pixelReturn[0]?.output ?? {},
+	)[0];
+	const modelId = getProfileMetadataValue(
+		provider?.meta?.["text-generation-model"],
+	);
+
+	return (
+		(await resolveWorkbenchAssistantModel(insightId, modelId)) ??
+		(await getFirstWorkbenchAssistantModel(insightId))
+	);
+};
+
 /** Create and bind a mount-scoped room to the workbench insight. */
 export const createWorkbenchRoom = async (
 	insightId: string,
@@ -272,6 +369,137 @@ export const updateWorkbenchRoomOptions = async (
 	};
 	const response = await runPixel<[boolean]>(
 		`UpdateRoomOptions(roomId=${JSON.stringify(roomId)}, roomOptions=[${JSON.stringify(persistedOptions)}]);`,
+		insightId,
+	);
+	assertPixelSuccess(response.errors);
+};
+
+/** Persist a generic room options map for the migrated assistant workbench. */
+export const updateRoomOptions = async (
+	insightId: string,
+	roomId: string,
+	options: RoomOptionsMap,
+): Promise<void> => {
+	const response = await runPixel<[boolean]>(
+		`UpdateRoomOptions(roomId=${JSON.stringify(roomId)}, roomOptions=[${JSON.stringify(options)}]);`,
+		insightId,
+	);
+	assertPixelSuccess(response.errors);
+};
+
+/** Rename a persisted workbench conversation room. */
+export const renameRoom = async (
+	insightId: string,
+	roomId: string,
+	name: string,
+): Promise<void> => {
+	const response = await runPixel<[boolean]>(
+		`META | RenameRoom(roomId=[${JSON.stringify(roomId)}], name=[${JSON.stringify(`<encode>${name}</encode>`)}]);`,
+		insightId,
+	);
+	assertPixelSuccess(response.errors);
+};
+
+/** List the user's persisted assistant conversation rooms. */
+export const getUserConversationRooms = async (
+	insightId: string,
+	search: string,
+): Promise<ConversationRoom[]> => {
+	const response = await runPixel<[RawConversationRoom[]]>(
+		`GetUserConversationRooms(roomOptionsSearch=${JSON.stringify(search)}, sort=["DESC"]);`,
+		insightId,
+	);
+	assertPixelSuccess(response.errors);
+
+	return (response.pixelReturn[0]?.output ?? [])
+		.filter((room) => Boolean(room.ROOM_ID))
+		.map((room) => ({
+			roomId: room.ROOM_ID ?? "",
+			roomName: room.ROOM_NAME ?? "Untitled session",
+			dateCreated: room.DATE_CREATED ?? "",
+			pinned: room.PINNED ?? false,
+		}));
+};
+
+/** Bind a conversation room to an insight context. */
+export const setRoomForInsight = async (
+	insightId: string,
+	roomId: string,
+): Promise<void> => {
+	const response = await runPixel<[boolean]>(
+		`SetRoomForInsight(roomId=${JSON.stringify(roomId)});`,
+		insightId,
+	);
+	assertPixelSuccess(response.errors);
+};
+
+const normalizeRoomOptions = (value: unknown): RoomOptionsMap | null => {
+	if (typeof value === "string") {
+		try {
+			return normalizeRoomOptions(JSON.parse(value));
+		} catch {
+			return null;
+		}
+	}
+	if (Array.isArray(value)) return normalizeRoomOptions(value[0]);
+	if (!value || typeof value !== "object") return null;
+
+	const record = value as Record<string, unknown>;
+	if ("roomOptions" in record) {
+		return normalizeRoomOptions(record.roomOptions);
+	}
+	if ("OPTIONS" in record) return normalizeRoomOptions(record.OPTIONS);
+	return record as RoomOptionsMap;
+};
+
+/** Read and normalize persisted options for a workbench conversation room. */
+export const getRoomOptions = async (
+	insightId: string,
+	roomId: string,
+): Promise<RoomOptionsMap | null> => {
+	const response = await runPixel<[unknown]>(
+		`GetRoomOptions(roomId=${JSON.stringify(roomId)});`,
+		insightId,
+	);
+	assertPixelSuccess(response.errors);
+	return normalizeRoomOptions(response.pixelReturn[0]?.output);
+};
+
+/** Load durable messages for a room, oldest first. */
+export const getPlaygroundMessages = async (
+	insightId: string,
+	roomId: string,
+): Promise<PlaygroundMessage[]> => {
+	const response = await runPixel<[PlaygroundMessage[]]>(
+		`GetPlaygroundMessages(roomId=${JSON.stringify(roomId)});`,
+		insightId,
+	);
+	assertPixelSuccess(response.errors);
+	return response.pixelReturn[0]?.output ?? [];
+};
+
+/** Compact a conversation branch and return the backend step results. */
+export const compactRoomMessages = async (
+	insightId: string,
+	roomId: string,
+	parentMessageId: string,
+): Promise<CompactRoomResult[]> => {
+	const response = await runPixel<[CompactRoomResult[]]>(
+		`CompactRoomMessages(roomId=${JSON.stringify(roomId)}, parentMessageId=${JSON.stringify(parentMessageId)});`,
+		insightId,
+	);
+	assertPixelSuccess(response.errors);
+	const results = response.pixelReturn[0]?.output;
+	return Array.isArray(results) ? results : [];
+};
+
+/** Generate the room tool profile for an engine. */
+export const makeEngineRoomMcp = async (
+	insightId: string,
+	engineId: string,
+): Promise<void> => {
+	const response = await runPixel<[boolean]>(
+		`MakeDefaultRoomToolsForEngine(engine=[${JSON.stringify(engineId)}]);`,
 		insightId,
 	);
 	assertPixelSuccess(response.errors);

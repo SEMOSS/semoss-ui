@@ -1,1 +1,1 @@
-export { AutomationWorkspace } from "./automation-workspace";
+export { AutomationWorkbenchPage } from "./automation-workbench";

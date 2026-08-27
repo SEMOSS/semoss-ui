@@ -77,6 +77,11 @@ export class WorkspaceStore {
 		return this._store.insightId;
 	}
 
+	/** ID of the project bound to this legacy workspace surface. */
+	get appId() {
+		return this._store.projectId;
+	}
+
 	/**
 	 * Get the agentModelEngine
 	 */

@@ -747,13 +747,29 @@ export function AutomationCanvas({
 			steps.length === 0
 		)
 			return;
-		initialLayoutAppliedRef.current = true;
-		initialViewFittedRef.current = false;
-		skipDraftPersistenceRef.current = true;
-		setSteps((previous) => {
-			skipNextDraftPersistenceRef.current = true;
-			return layoutNodes(previous, graphEdges);
-		});
+
+		let frame = 0;
+		let attempts = 0;
+		const applyInitialLayout = () => {
+			const width = canvasContainerRef.current?.clientWidth ?? 0;
+			if (width === 0 && attempts < 20) {
+				attempts += 1;
+				frame = requestAnimationFrame(applyInitialLayout);
+				return;
+			}
+			if (width === 0) return;
+
+			initialLayoutAppliedRef.current = true;
+			initialViewFittedRef.current = false;
+			skipDraftPersistenceRef.current = true;
+			setSteps((previous) => {
+				skipNextDraftPersistenceRef.current = true;
+				return layoutNodes(previous, graphEdges);
+			});
+		};
+
+		frame = requestAnimationFrame(applyInitialLayout);
+		return () => cancelAnimationFrame(frame);
 	}, [
 		canvasInitialized,
 		graphEdges,

@@ -618,8 +618,7 @@ export const FileCodeEditor = forwardRef<
 								accessibilitySupport: "off",
 								padding: { top: 12 },
 								scrollBeyondLastLine: false,
-								// the editor is sized by its container, which
-								// moves whenever a dock is split or resized
+								// Relayout when the container resizes or is shown again.
 								automaticLayout: true,
 							}}
 							onChange={(value) => {
