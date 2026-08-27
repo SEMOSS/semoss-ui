@@ -5,18 +5,33 @@ import {
 	useCallback,
 	useEffect,
 	useRef,
+	useState,
 } from "react";
 import { Button, cn } from "@semoss/ui/next";
 import { useWorkbench } from "@/hooks";
 import { WORKBENCH_STYLES } from "./workbench.chrome";
+import type { WorkbenchBorderSlot } from "./workbench.types";
+import { WorkbenchMobileDrawer } from "./workbench-mobile-drawer";
 import { WorkbenchTab } from "./workbench-tab";
+
+export interface WorkbenchMobileProps {
+	/**
+	 * The left rail's `after` slot. The mobile shell draws no rails, so it
+	 * hands this to the drawer, which is the only place it can surface.
+	 */
+	actionsSlot?: WorkbenchBorderSlot;
+}
 
 /**
  * The mobile shell: every stack's tabs in one scrollable strip, a single
- * body slot, swipe navigation, and a pager footer with the panel drawer
- * trigger.
+ * body slot, swipe navigation, and a pager footer whose menu button opens the
+ * drawer.
+ *
+ * The drawer's open state is local — nothing outside this view can open it, so
+ * it has no business in the layout store.
  */
-export const WorkbenchMobile: FC = () => {
+export const WorkbenchMobile: FC<WorkbenchMobileProps> = ({ actionsSlot }) => {
+	const [isDrawerOpen, setIsDrawerOpen] = useState(false);
 	const actions = useWorkbench((s) => s.layout.actions);
 	const stacks = useWorkbench((s) => s.layout.stacks);
 	const openPanelIds = useWorkbench((s) => s.layout.openPanelIds);
@@ -128,7 +143,7 @@ export const WorkbenchMobile: FC = () => {
 						variant="ghost"
 						size="icon"
 						className="text-muted-foreground"
-						onClick={() => actions.openSheet("all")}
+						onClick={() => setIsDrawerOpen(true)}
 						data-testid="workbench-mobile-menu"
 						aria-label="Panels and actions"
 					>
@@ -158,6 +173,12 @@ export const WorkbenchMobile: FC = () => {
 					<ChevronRight className={WORKBENCH_STYLES.mobileIcon} />
 				</Button>
 			</div>
+
+			<WorkbenchMobileDrawer
+				open={isDrawerOpen}
+				onOpenChange={setIsDrawerOpen}
+				actionsSlot={actionsSlot}
+			/>
 		</div>
 	);
 };

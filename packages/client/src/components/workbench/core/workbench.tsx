@@ -8,7 +8,6 @@ import { WorkbenchCommandPalette } from "./workbench-command-palette";
 import { WorkbenchDragLayer } from "./workbench-drag-layer";
 import { WorkbenchMobile } from "./workbench-mobile";
 import { WorkbenchPanelLayer } from "./workbench-panel-layer";
-import { WorkbenchPanelSheet } from "./workbench-panel-sheet";
 import { WorkbenchResetButton } from "./workbench-reset-button";
 import { WorkbenchStage } from "./workbench-stage";
 
@@ -197,7 +196,7 @@ export const Workbench: FC<WorkbenchProps> = ({
 						<Spinner />
 					</div>
 				) : isMobileLayout ? (
-					<WorkbenchMobile />
+					<WorkbenchMobile actionsSlot={borderSlots?.left?.after} />
 				) : (
 					<div className="relative flex h-full w-full flex-row gap-2 p-2">
 						<WorkbenchBorder side="left" slots={leftSlots} />
@@ -234,7 +233,6 @@ export const Workbench: FC<WorkbenchProps> = ({
 				<WorkbenchDragLayer rootRef={rootRef} stageRef={stageRef} />
 				<WorkbenchSlotMeasure />
 			</div>
-			<WorkbenchPanelSheet actionsSlot={borderSlots?.left?.after} />
 		</>
 	);
 };

@@ -256,10 +256,10 @@ and cleanup runs through the shell's `onPanelClose(pid, record)` prop.
 
 | File/folder | Role |
 |---|---|
-| `core/` | The dock core: shell (`workbench.tsx`), stage/tabset/tab/strip/border, panel layer + hosts (never-unmount bodies), drag layer + drop geometry, resizers, context menu, panel sheet/drawer, mobile shell, events bridge, command palette + menu button, reset button |
+| `core/` | The dock core: shell (`workbench.tsx`), stage/tabset/tab/strip/border, panel layer + hosts (never-unmount bodies), drag layer + drop geometry, resizers, context menu, mobile shell + its drawer, events bridge, command palette + menu button, reset button |
 | `workbench.constants.ts` | Re-exports `WORKBENCH_COMPONENTS`; defines `WORKBENCH_PANEL_RECORDS` (shared instance records) |
 | `core/workbench-command-palette.tsx` | Cmd/Ctrl+Shift+P or F1 palette: registered commands + layout-derived entries (built only while open), icon-less `Category: Label` rows in a deterministic alphabetical order |
-| `core/workbench-panel-sheet.tsx` / `core/workbench-reset-button.tsx` | On desktop the reset control rides at the end of the left rail, appended to `borderSlots.left.after`, and the panel sheet is a right-side panel manager. The mobile layout has no rails: the pager bar's ☰ opens the sheet as a bottom drawer that leads with that same slot content + reset as an actions row, followed by every open panel as a tappable row. Reset restores the default layout (hidden when `readOnly`) |
+| `core/workbench-mobile-drawer.tsx` / `core/workbench-reset-button.tsx` | On desktop the reset control rides at the end of the left rail, appended to `borderSlots.left.after`. The mobile layout has no rails, so `WorkbenchMobile` passes that slot to its **drawer** instead: the pager bar's ☰ opens a bottom drawer leading with that slot content + reset as an actions row, then every open panel as one full-width row that switches to it. Reset restores the default layout (hidden when `readOnly`) |
 | `engine/`, `engine/<domain>/` | Engine-scoped panels + one `<Domain>Workbench` per engine type |
 | `project/`, `project/<domain>/` | Project-scoped (`APP` mode) equivalents; sibling of `engine/`, **not** inside it |
 | `stores/workbench/workbench.types.ts` | Every workbench type: the dock domain (`WorkbenchLayout`, `WorkbenchPanelConfig`, `WorkbenchPanelProps`, `WorkbenchComponent`, …) plus `WorkbenchCommand` and `WorkbenchSlice`. One file — don't start a second |
@@ -276,6 +276,11 @@ and cleanup runs through the shell's `onPanelClose(pid, record)` prop.
 
 ## Rules
 
+- **The mobile drawer is mobile-only, and its state is local.** `WorkbenchMobile` owns one
+  `useState` boolean and renders `WorkbenchMobileDrawer` itself; the shell does not. Nothing
+  outside that view can open it, so it has no representation in the layout store — don't add
+  one back. It does one thing: pick a panel. Rename, move, and close are desktop affordances
+  (tab context menu, drag, tab close button); mobile deliberately has no per-panel menu.
 - **Keep the core domain-agnostic** — `core/`, the layout slice/tree/commands,
   `workbench.context.tsx`, and `use-workbench.ts` must not import engine/project-specific
   things. Domain dependencies belong in `engine/`/`project/`.
@@ -287,7 +292,7 @@ and cleanup runs through the shell's `onPanelClose(pid, record)` prop.
 - **Panels that belong to every project type go in `project/`**, not in a `project/<domain>/`
   folder. A component that owns a command should register it itself via
   `useWorkbenchCommands` (see `project-publish-button.tsx`).
-- **`canRename` gates user affordances only** (double-click, F2, menu, sheet). Programmatic
+- **`canRename` gates user affordances only** (double-click, F2, context menu). Programmatic
   `renamePanel`/`rename` always works — the file editors' dirty `*` marker depends on it.
 - **Layout is cached per `id` and per layout version** as a
   `WorkbenchSnapshot`. A cached layout shadows the default forever, so **bump that

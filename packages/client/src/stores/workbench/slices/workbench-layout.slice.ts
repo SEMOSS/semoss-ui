@@ -97,9 +97,6 @@ export interface WorkbenchLayoutSliceFields {
 	/** The panel whose name is being edited inline, if any. Ephemeral. */
 	editingPanelId: WorkbenchPanelId | undefined;
 
-	/** Open panel sheet target: one panel or the full manager. Ephemeral. */
-	sheet: WorkbenchPanelId | "all" | null;
-
 	/** Measured slot geometry, relative to the workbench root. Ephemeral. */
 	slotRects: Record<string, WorkbenchSlotRect>;
 
@@ -276,12 +273,6 @@ export interface WorkbenchLayoutActions {
 
 	/** Set the panel whose name is being edited inline. */
 	setEditingPanel: (pid: WorkbenchPanelId | undefined) => void;
-
-	/** Open the panel sheet for one panel or the full manager. */
-	openSheet: (target: WorkbenchPanelId | "all") => void;
-
-	/** Close the panel sheet. */
-	closeSheet: () => void;
 
 	/** Mark the panel currently being dragged, if any. */
 	setDragging: (pid: WorkbenchPanelId | undefined) => void;
@@ -705,7 +696,6 @@ export const createWorkbenchLayoutSlice = (
 			componentStatuses: {},
 			draggingPanelId: undefined,
 			editingPanelId: undefined,
-			sheet: null,
 			slotRects: {},
 			domainStore: undefined,
 			...initialDerived,
@@ -1414,19 +1404,6 @@ export const createWorkbenchLayoutSlice = (
 				setEditingPanel: (pid) => {
 					set((root) => ({
 						layout: { ...root.layout, editingPanelId: pid },
-					}));
-				},
-				openSheet: (target) => {
-					set((root) => ({
-						layout: { ...root.layout, sheet: target },
-					}));
-				},
-				closeSheet: () => {
-					if (get().layout.sheet === null) {
-						return;
-					}
-					set((root) => ({
-						layout: { ...root.layout, sheet: null },
 					}));
 				},
 				setDragging: (pid) => {
