@@ -379,6 +379,7 @@ const watchAgentRun = (
 	inputMessage: InputMessageStore | null,
 ): Promise<void> =>
 	new Promise<void>((resolve, reject) => {
+		const room = responseMessage.room;
 		let subscription: AgentRunSubscription | null = null;
 
 		const settleTerminal = (snapshot: AgentRunSnapshot) => {
@@ -411,6 +412,9 @@ const watchAgentRun = (
 			},
 			onSnapshot: (snapshot) => {
 				runInAction(() => {
+					if (snapshot.roomName) {
+						room.setMetadata({ name: snapshot.roomName });
+					}
 					syncPendingActions(
 						responseMessage,
 						snapshot.pendingActions,
@@ -424,6 +428,9 @@ const watchAgentRun = (
 					}
 					if (snapshot.finalOutputMessageId) {
 						responseMessage.id = snapshot.finalOutputMessageId;
+					}
+					if (snapshot.roomName) {
+						room.setMetadata({ name: snapshot.roomName });
 					}
 
 					// if nothing streamed as visible text, fall back to finalText
