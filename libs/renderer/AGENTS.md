@@ -57,6 +57,19 @@ router):
 - `echarts-wordcloud` — word-cloud charts (ECharts extension)
 - `dayjs`, `lucide-react`
 
+## Design-System Notes
+
+Follow the root [Design System & Styling](../../AGENTS.md#design-system--styling) rules and
+[DESIGN.md](../../DESIGN.md), with one carve-out:
+
+- **`src/components/block-defaults/**/*Block.tsx` may render user-configured visual data**:
+  their colors, fonts, and sizes are runtime values supplied by app builders. Mark each
+  runtime inline-style site with the reason-bearing `inline-visual-style` suppression defined
+  in `DESIGN.md`; the folder is not broadly exempt from component or composition rules.
+- Everything else — the renderer's own chrome (toolbars, menus, editors, settings panels) —
+  follows the design rules fully: semantic tokens, `@semoss/ui/next` components, no raw
+  palette classes.
+
 ## Agent Guardrails
 
 ### Do Not Modify
