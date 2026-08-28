@@ -148,21 +148,13 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 		// Tracks which original message each part came from, so tool
 		// grouping can tell folded-in messages apart without breaking the
 		// visual run they render in — see chunkHasUnfinishedTools below.
-		const { allParts, partOwners } = (() => {
-			const parts: ResponseMessageStore["parts"] = [];
-			const owners: ResponseMessageStore[] = [];
-			for (const part of message.parts) {
-				parts.push(part);
-				owners.push(message);
-			}
-			for (const sub of subsequentTools) {
-				for (const part of sub.parts) {
-					parts.push(part);
-					owners.push(sub);
-				}
-			}
-			return { allParts: parts, partOwners: owners };
-		})();
+		const partsWithOwners = [
+			...message.parts.map((part) => ({ part, owner: message })),
+			...subsequentTools.flatMap((sub) =>
+				sub.parts.map((part) => ({ part, owner: sub })),
+			),
+		];
+		const allParts = partsWithOwners.map(({ part }) => part);
 
 		const isThinking =
 			message.isThinking || subsequentTools.some((m) => m.isThinking);
@@ -404,25 +396,24 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 				let chunkTools: ToolStore[] = [];
 				let chunkUnfinished = false;
 				const flushChunk = () => {
-					for (const chunkTool of chunkTools) {
+					chunkTools.forEach((chunkTool) => {
 						chunkHasUnfinishedTools.set(
 							chunkTool.id,
 							chunkUnfinished,
 						);
-					}
+					});
 					chunkOwner = null;
 					chunkTools = [];
 					chunkUnfinished = false;
 				};
 
-				for (let idx = 0; idx < allParts.length; idx++) {
-					const p = allParts[idx];
+				partsWithOwners.forEach(({ part: p, owner }, idx) => {
 					if (p.type !== "TOOL_CALL") {
 						if (isToolRunBreak(p)) {
 							run = null;
 							flushChunk();
 						}
-						continue;
+						return;
 					}
 					// Opened on the run's first TOOL_CALL part regardless of
 					// completion, so the group always sits at the top of that run's
@@ -438,7 +429,7 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 						toolRuns.push(run);
 					}
 					const tool = room.getTool(p.toolCall.id);
-					if (!tool) continue;
+					if (!tool) return;
 					numTools++;
 					run.tools.push(tool);
 					// Mirrors ResponseMessageStore.hasUnfinishedTools, narrowed to
@@ -456,7 +447,6 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 						hasAskTools = true;
 					}
 
-					const owner = partOwners[idx];
 					if (owner !== chunkOwner) {
 						flushChunk();
 						chunkOwner = owner;
@@ -468,7 +458,7 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 					) {
 						chunkUnfinished = true;
 					}
-				}
+				});
 				flushChunk();
 
 				return {
@@ -483,15 +473,15 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 		// every tool in it is skipped where its own part comes up.
 		const groupedToolIds = new Set<string>();
 		const runsByPartIdx = new Map<number, ToolRun>();
-		for (const run of toolRuns) {
+		toolRuns.forEach((run) => {
 			run.grouped = run.tools.filter((tool) =>
 				getShouldGroupTool(tool, chunkHasUnfinishedTools),
 			);
-			for (const tool of run.grouped) {
+			run.grouped.forEach((tool) => {
 				groupedToolIds.add(tool.id);
-			}
+			});
 			runsByPartIdx.set(run.partIdx, run);
-		}
+		});
 
 		const hasText = message.parts.some((part) => part.type === "TEXT");
 

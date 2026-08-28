@@ -412,15 +412,15 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 
 	// Folds a run of tool-only responses up into the response preceding them.
 	const roomHistoryEntries = (() => {
-		const entries: {
+		type Entry = {
 			message: InputMessageStore | ResponseMessageStore;
 			subsequentTools: ResponseMessageStore[];
-		}[] = [];
-		let anchor: (typeof entries)[number] | null = null;
+		};
+		let anchor: Entry | null = null;
 
-		for (const m of room.history) {
+		return room.history.reduce<Entry[]>((entries, m) => {
 			if (!m.visible) {
-				continue;
+				return entries;
 			}
 
 			// A settled empty response is only meaningful as a direct reply
@@ -435,20 +435,19 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 				!m.isThinking &&
 				m.findAncestor((a) => a.visible)?.type === "OUTPUT"
 			) {
-				continue;
+				return entries;
 			}
 
 			if (m.type === "OUTPUT" && m.shouldFoldUp && anchor) {
 				anchor.subsequentTools.push(m);
-				continue;
+				return entries;
 			}
 
-			const entry = { message: m, subsequentTools: [] };
-			entries.push(entry);
+			const entry: Entry = { message: m, subsequentTools: [] };
 			anchor = m.type === "OUTPUT" ? entry : null;
-		}
-
-		return entries;
+			entries.push(entry);
+			return entries;
+		}, []);
 	})();
 
 	return (

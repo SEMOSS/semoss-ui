@@ -4,7 +4,7 @@ import { useEffect } from "react";
 import { useTranslation } from "@semoss/i18n";
 import { Button, cn, Spinner, useIsMobile } from "@semoss/ui/next";
 import { useLoadingMessage } from "@/hooks";
-import type { ResponseMessageStore, ToolStore } from "@/stores";
+import type { ToolStore } from "@/stores";
 import { isAskExecutionMode } from "@/utility/mcp-utils";
 import { RoomInlineTool } from "../room";
 import { ResponseMessageToolMenu } from "./response-message-tool-menu";
@@ -153,8 +153,12 @@ export const ResponseMessageTool: React.FC<ResponseMessageToolProps> = observer(
 			return null;
 		}
 
-		// Set once the call resolves (guaranteed by tool.isResolved above).
-		const message = tool.message as ResponseMessageStore;
+		// Set once the call resolves, which is guaranteed by tool.isResolved
+		// above — this only returns null defensively.
+		const message = tool.message;
+		if (!message) {
+			return null;
+		}
 
 		const handleCancel = (e: React.MouseEvent) => {
 			e.stopPropagation();
