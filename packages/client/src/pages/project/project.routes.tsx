@@ -1,12 +1,7 @@
 import { Outlet } from "react-router-dom";
-import {
-	ProjectAccessControl,
-	ProjectCatalog,
-	ProjectEdit,
-} from "@/components/project";
+import { ProjectAccessControl, ProjectCatalog } from "@/components/project";
 import {
 	AppCommitsPage,
-	AppFilesPage,
 	AppGithubPage,
 	AppGithubSelectRepoPage,
 	AppMcpUsagePage,
@@ -17,14 +12,18 @@ import {
 } from "../app";
 import { AgentActivityPage } from "./agent/agent-activity-page";
 import { CreateAgentPage } from "./agent/create-agent-page";
+import { EditAgentPage } from "./agent/edit-agent-page";
 import { CreateAppPage } from "./app/create-app-page";
+import { EditAppPage } from "./app/edit-app-page";
 import { CreateNotebookPage } from "./notebook/create-notebook-page";
+import { EditNotebookPage } from "./notebook/edit-notebook-page";
 import { ViewNotebookPage } from "./notebook/view-notebook-page";
 import { ProjectDependenciesPage } from "./project-dependencies-page";
 import { ProjectLayout } from "./project-layout";
 import { ProjectOverviewPage } from "./project-overview-page";
 import { ProjectTabsLayout } from "./project-tabs-layout";
 import { CreateSkillPage } from "./skill/create-skill-page";
+import { EditSkillPage } from "./skill/edit-skill-page";
 import { ViewSkillPage } from "./skill/view-skill-page";
 
 export const PROJECT_ROUTES: {
@@ -59,7 +58,7 @@ export const PROJECT_ROUTES: {
 				children: [
 					{
 						path: "edit",
-						element: <ProjectEdit />,
+						element: <EditAppPage />,
 					},
 					{
 						path: "view",
@@ -110,11 +109,6 @@ export const PROJECT_ROUTES: {
 										restrict: ["OWNER", "EDIT"],
 									},
 									{
-										name: "Files",
-										path: "files",
-										restrict: ["OWNER", "EDIT"],
-									},
-									{
 										name: "SMSS",
 										path: "smss",
 										restrict: ["OWNER"],
@@ -156,10 +150,6 @@ export const PROJECT_ROUTES: {
 								element: <ProjectAccessControl />,
 							},
 							{
-								path: "files",
-								element: <AppFilesPage />,
-							},
-							{
 								path: "smss",
 								element: <AppSmssPage />,
 							},
@@ -187,7 +177,7 @@ export const PROJECT_ROUTES: {
 				children: [
 					{
 						path: "edit",
-						element: <ProjectEdit />,
+						element: <EditSkillPage />,
 					},
 					{
 						path: "view",
@@ -290,7 +280,7 @@ export const PROJECT_ROUTES: {
 				children: [
 					{
 						path: "edit",
-						element: <ProjectEdit />,
+						element: <EditNotebookPage />,
 					},
 					{
 						path: "view",
@@ -374,7 +364,7 @@ export const PROJECT_ROUTES: {
 				children: [
 					{
 						path: "edit",
-						element: <ProjectEdit />,
+						element: <EditAgentPage />,
 					},
 					{
 						path: "*",
