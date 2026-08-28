@@ -2,6 +2,7 @@ export const MODEL_KEY = "SMSS-SELECTED-MODEL-V3";
 
 export const MCP_EXECUTION_AUTO = "auto";
 export const MCP_EXECUTION_ASK = "ask";
+export const MCP_EXECUTION_YESNO = "yesno";
 /**
  * Executed by the backend agent harness, not client-dispatched — so neither
  * ever equals MCP_EXECUTION_AUTO, which the FE's own continueToolExecution

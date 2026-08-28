@@ -1,5 +1,9 @@
 import { createMcpPlatformUrl, createPromptPlatformUrl } from "@semoss/shared";
-import { MCP_EXECUTION_AGENT_ASK, MCP_EXECUTION_ASK } from "@/constants";
+import {
+	MCP_EXECUTION_AGENT_ASK,
+	MCP_EXECUTION_ASK,
+	MCP_EXECUTION_YESNO,
+} from "@/constants";
 
 export { isKnowledgeMcp, splitMcpByType } from "@semoss/shared";
 
@@ -7,10 +11,13 @@ export { isKnowledgeMcp, splitMcpByType } from "@semoss/shared";
  * Whether a tool's execution mode means "needs an interactive decision",
  * covering both the legacy ask flow and an agent-run tool awaiting approval
  * (which carries agent-ask instead of ask, since agent-run tools are never
- * client-dispatched — see MCP_EXECUTION_AGENT_ASK).
+ * client-dispatched — see MCP_EXECUTION_AGENT_ASK). yesno is treated exactly
+ * like ask for now.
  */
 export const isAskExecutionMode = (execution: string | undefined): boolean =>
-	execution === MCP_EXECUTION_ASK || execution === MCP_EXECUTION_AGENT_ASK;
+	execution === MCP_EXECUTION_ASK ||
+	execution === MCP_EXECUTION_YESNO ||
+	execution === MCP_EXECUTION_AGENT_ASK;
 
 /**
  * Reserved id the backend puts on SMSS_ENGINE_ID for room scoped tools. There is

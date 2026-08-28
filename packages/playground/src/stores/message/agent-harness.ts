@@ -17,6 +17,7 @@ import {
 	MCP_EXECUTION_AGENT_ASK,
 	MCP_EXECUTION_AGENT_AUTO,
 	MCP_EXECUTION_ASK,
+	MCP_EXECUTION_YESNO,
 	STREAMING_PLACEHOLDER_ID,
 } from "@/constants";
 import type {
@@ -65,10 +66,12 @@ const mapToolStatus = (
  * resolve it via RunMCPTool instead of decideAgentRunAction). Tagging with an
  * agent- prefix avoids both while still preserving which one it originally
  * was, so ask/auto-mode rendering (grouping, tool UI, custom UI resolution)
- * stays keyed on execution mode alone — see isAskExecutionMode.
+ * stays keyed on execution mode alone — see isAskExecutionMode. yesno is
+ * treated exactly like ask for now.
  */
 const toAgentExecutionMode = (originalExecution: unknown): string =>
-	originalExecution === MCP_EXECUTION_ASK
+	originalExecution === MCP_EXECUTION_ASK ||
+	originalExecution === MCP_EXECUTION_YESNO
 		? MCP_EXECUTION_AGENT_ASK
 		: MCP_EXECUTION_AGENT_AUTO;
 

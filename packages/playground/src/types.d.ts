@@ -209,6 +209,7 @@ export interface PixelMessageToolCallPart {
 				| "auto"
 				| "ask"
 				| "disabled"
+				| "yesno"
 				| "agent-ask"
 				| "agent-auto";
 			// The tool's declared name, before the backend rewrote it into the
