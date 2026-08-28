@@ -442,9 +442,6 @@ function canvasNodeFromWorkflow(
 		workflowType: node.type,
 		workflowConfig,
 		workflowCodeMode: node.codeMode,
-		...(typeof workflowConfig.branchCondition === "string"
-			? { branchCondition: workflowConfig.branchCondition }
-			: {}),
 	};
 }
 
@@ -535,9 +532,6 @@ export function canvasDocumentToWorkflow({
 			step.workflowConfig ?? structuredClone(definition.defaultConfig),
 		);
 		const { pythonSource: _pythonSource, ...persistedConfig } = config;
-		if (step.branchCondition) {
-			persistedConfig.branchCondition = step.branchCondition;
-		}
 		return {
 			id: step.id,
 			type,
