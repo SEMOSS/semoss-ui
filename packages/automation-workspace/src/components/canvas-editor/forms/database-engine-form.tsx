@@ -5,11 +5,10 @@ import {
 	Loader2,
 	Search,
 } from "lucide-react";
-import { useEffect, useId, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { runPixel } from "@semoss/sdk";
 import { Input } from "@semoss/ui/next";
 import type { DatabaseEngineConfig } from "../../../domain/automation.types";
-import { getPlaygroundParamDescription } from "../../../domain/automation-utils";
 import { EnginePickerField } from "./engine-picker-field";
 import { BoundInput } from "./pill-input";
 
@@ -25,10 +24,6 @@ export interface DatabaseEngineFormProps {
 	upstreamVars: string[];
 	/** Called with the updated config on every field change */
 	onChange: (c: DatabaseEngineConfig) => void;
-	/** Fields in this node's config currently marked as playground-fillable */
-	playgroundFillable: string[];
-	/** Called when the set of playground-fillable fields changes */
-	onPlaygroundFieldsChange: (fields: string[]) => void;
 	/** When false (business mode), schema browser and advanced fields are hidden */
 	devMode?: boolean;
 }
@@ -37,11 +32,8 @@ export function DatabaseEngineForm({
 	config,
 	upstreamVars,
 	onChange,
-	playgroundFillable,
-	onPlaygroundFieldsChange,
 	devMode = false,
 }: DatabaseEngineFormProps) {
-	const pgFillId = useId();
 	const [structure, setStructure] = useState<TableStructure[]>([]);
 	const [schemaLoading, setSchemaLoading] = useState(false);
 	const [schemaError, setSchemaError] = useState(false);
@@ -138,44 +130,6 @@ export function DatabaseEngineForm({
 				mono
 				minRows={6}
 			/>
-
-			{devMode && (
-				<>
-					<div className="flex items-center gap-2">
-						<input
-							type="checkbox"
-							id={pgFillId}
-							checked={playgroundFillable.includes("expression")}
-							onChange={(e) => {
-								const next = e.target.checked
-									? [...playgroundFillable, "expression"]
-									: playgroundFillable.filter(
-											(f) => f !== "expression",
-										);
-								onPlaygroundFieldsChange(next);
-							}}
-							className="h-3.5 w-3.5 cursor-pointer accent-primary"
-						/>
-						<label
-							htmlFor={pgFillId}
-							className="cursor-pointer text-muted-foreground text-xs"
-							title={getPlaygroundParamDescription(
-								"database-engine",
-								"expression",
-							)}
-						>
-							Let Playground fill this field
-						</label>
-					</div>
-					{playgroundFillable.includes("expression") &&
-						config.expression && (
-							<p className="text-amber-600 text-xs dark:text-amber-400">
-								Current value will be overwritten if Playground
-								provides input
-							</p>
-						)}
-				</>
-			)}
 
 			{devMode && config.engineId && (
 				<div className="flex flex-col gap-2">

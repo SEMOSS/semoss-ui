@@ -1,5 +1,5 @@
 import { ChevronDown, Code2, ExternalLink, Trash2 } from "lucide-react";
-import { Suspense, useState } from "react";
+import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { MonacoEditor } from "@semoss/shared";
 import {
 	Button,
@@ -34,6 +34,11 @@ export interface NodeEditDrawerProps {
 	devMode?: boolean;
 	onUpdate: (step: AutomationNode) => void;
 	onDelete: () => void;
+}
+
+interface PendingPythonUpdate {
+	source: string;
+	step: AutomationNode;
 }
 
 function supportsBusinessForm(step: AutomationNode): boolean {
@@ -80,23 +85,61 @@ export function NodeEditDrawer({
 	const pythonSource =
 		persistedPythonSource ||
 		(isCustomSource ? "" : getGeneratedPythonPreview(step));
+	const [pythonDraft, setPythonDraft] = useState(pythonSource);
+	const pythonUpdateTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
+		null,
+	);
+	const pendingPythonUpdateRef = useRef<PendingPythonUpdate | null>(null);
+	const activePythonStepIdRef = useRef(step.id);
+	const onUpdateRef = useRef(onUpdate);
 	const { resolvedTheme } = useTheme();
 	const [showPythonVariablePicker, setShowPythonVariablePicker] =
 		useState(false);
 	const Icon = meta.icon;
-	const insertPythonVariable = (variable: string) => {
-		const separator =
-			pythonSource.length === 0 || pythonSource.endsWith("\n")
-				? ""
-				: "\n";
-		onUpdate({
-			...step,
+	useEffect(() => {
+		onUpdateRef.current = onUpdate;
+	}, [onUpdate]);
+	const flushPythonUpdate = useCallback(() => {
+		if (pythonUpdateTimeoutRef.current) {
+			clearTimeout(pythonUpdateTimeoutRef.current);
+			pythonUpdateTimeoutRef.current = null;
+		}
+		const pendingUpdate = pendingPythonUpdateRef.current;
+		if (!pendingUpdate) return;
+		pendingPythonUpdateRef.current = null;
+		onUpdateRef.current({
+			...pendingUpdate.step,
 			workflowCodeMode: "custom",
 			workflowConfig: {
-				...step.workflowConfig,
-				pythonSource: `${pythonSource}${separator}\${${variable}}`,
+				...pendingUpdate.step.workflowConfig,
+				pythonSource: pendingUpdate.source,
 			},
 		});
+	}, []);
+	useEffect(() => {
+		if (activePythonStepIdRef.current !== step.id) {
+			flushPythonUpdate();
+			activePythonStepIdRef.current = step.id;
+			setPythonDraft(pythonSource);
+			return;
+		}
+		if (!pendingPythonUpdateRef.current) {
+			setPythonDraft(pythonSource);
+		}
+	}, [flushPythonUpdate, pythonSource, step.id]);
+	useEffect(() => () => flushPythonUpdate(), [flushPythonUpdate]);
+	const updatePythonSource = (source: string) => {
+		setPythonDraft(source);
+		pendingPythonUpdateRef.current = { source, step };
+		if (pythonUpdateTimeoutRef.current) {
+			clearTimeout(pythonUpdateTimeoutRef.current);
+		}
+		pythonUpdateTimeoutRef.current = setTimeout(flushPythonUpdate, 300);
+	};
+	const insertPythonVariable = (variable: string) => {
+		const separator =
+			pythonDraft.length === 0 || pythonDraft.endsWith("\n") ? "" : "\n";
+		updatePythonSource(`${pythonDraft}${separator}\${${variable}}`);
 	};
 	const pythonVariablePicker = (
 		<div className="relative">
@@ -133,6 +176,7 @@ export function NodeEditDrawer({
 		</div>
 	);
 	const openPythonModal = () => {
+		flushPythonUpdate();
 		const parentOrigin = new URLSearchParams(window.location.search).get(
 			"parentOrigin",
 		);
@@ -142,7 +186,7 @@ export function NodeEditDrawer({
 				type: "SEMOSS_AUTOMATION_OPEN_PYTHON_EDITOR",
 				projectId: appId,
 				nodeId: step.id,
-				source: pythonSource,
+				source: pythonDraft,
 			},
 			parentOrigin,
 		);
@@ -216,23 +260,30 @@ export function NodeEditDrawer({
 						/>
 					</Field>
 
-					<Field>
-						<FieldLabel className="text-xs">
-							Notes (optional)
-						</FieldLabel>
-						<Textarea
-							className="resize-none text-xs"
-							rows={2}
-							value={step.notes ?? ""}
-							onChange={(event) =>
-								onUpdate({
-									...step,
-									notes: event.target.value || undefined,
-								})
-							}
-							placeholder="Notes about this step…"
-						/>
-					</Field>
+					{typeof step.branchCondition === "string" && (
+						<Field>
+							<FieldLabel className="text-xs">
+								Branch condition
+							</FieldLabel>
+							<Textarea
+								className="resize-none font-mono text-xs"
+								rows={2}
+								value={step.branchCondition}
+								onChange={(event) =>
+									onUpdate({
+										...step,
+										branchCondition: event.target.value,
+									})
+								}
+								placeholder='e.g. ${model_chat_1} == "yes"'
+							/>
+							<p className="mt-1 text-[10px] text-muted-foreground">
+								Condition expression. When true the{" "}
+								<strong>Then</strong> path runs, otherwise{" "}
+								<strong>Else</strong>.
+							</p>
+						</Field>
+					)}
 
 					<div className="space-y-3 border-t pt-4">
 						<div className="flex items-center justify-between gap-3">
@@ -322,15 +373,6 @@ export function NodeEditDrawer({
 									step={step}
 									upstreamVars={upstreamVars}
 									onUpdate={onUpdate}
-									playgroundFillable={
-										step.playgroundFillable ?? []
-									}
-									onPlaygroundFieldsChange={(fields) =>
-										onUpdate({
-											...step,
-											playgroundFillable: fields,
-										})
-									}
 									devMode={devMode}
 									appId={appId}
 								/>
@@ -373,7 +415,7 @@ export function NodeEditDrawer({
 									<Suspense
 										fallback={
 											<pre className="h-full overflow-auto p-3 font-mono text-xs">
-												{pythonSource}
+												{pythonDraft}
 											</pre>
 										}
 									>
@@ -386,17 +428,9 @@ export function NodeEditDrawer({
 													? "vs-dark"
 													: "vs"
 											}
-											value={pythonSource}
+											value={pythonDraft}
 											onChange={(value) =>
-												onUpdate({
-													...step,
-													workflowCodeMode: "custom",
-													workflowConfig: {
-														...step.workflowConfig,
-														pythonSource:
-															value ?? "",
-													},
-												})
+												updatePythonSource(value ?? "")
 											}
 											options={{
 												automaticLayout: true,

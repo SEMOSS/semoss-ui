@@ -23,8 +23,6 @@ interface StepFormProps {
 	step: AutomationNode;
 	upstreamVars: string[];
 	onUpdate: (step: AutomationNode) => void;
-	playgroundFillable: string[];
-	onPlaygroundFieldsChange: (fields: string[]) => void;
 	devMode?: boolean;
 	appId?: string;
 }
@@ -33,8 +31,6 @@ export function StepForm({
 	step,
 	upstreamVars,
 	onUpdate,
-	playgroundFillable,
-	onPlaygroundFieldsChange,
 	devMode = false,
 	appId = "",
 }: StepFormProps) {
@@ -59,8 +55,6 @@ export function StepForm({
 					config={step.config as DatabaseEngineConfig}
 					upstreamVars={upstreamVars}
 					onChange={update}
-					playgroundFillable={playgroundFillable}
-					onPlaygroundFieldsChange={onPlaygroundFieldsChange}
 					devMode={devMode}
 				/>
 			);
@@ -70,8 +64,6 @@ export function StepForm({
 					config={step.config as ModelEngineConfig}
 					upstreamVars={upstreamVars}
 					onChange={update}
-					playgroundFillable={playgroundFillable}
-					onPlaygroundFieldsChange={onPlaygroundFieldsChange}
 					devMode={devMode}
 				/>
 			);
@@ -81,8 +73,6 @@ export function StepForm({
 					config={step.config as VectorEngineConfig}
 					upstreamVars={upstreamVars}
 					onChange={update}
-					playgroundFillable={playgroundFillable}
-					onPlaygroundFieldsChange={onPlaygroundFieldsChange}
 					devMode={devMode}
 				/>
 			);
@@ -100,8 +90,6 @@ export function StepForm({
 					config={step.config as FunctionEngineConfig}
 					upstreamVars={upstreamVars}
 					onChange={update}
-					playgroundFillable={playgroundFillable}
-					onPlaygroundFieldsChange={onPlaygroundFieldsChange}
 				/>
 			);
 		case "app":
