@@ -1471,7 +1471,7 @@ const CreditRatesCard = ({
 		const convert = (v: string) => {
 			if (v === "") return v;
 			const n = Number(v);
-			return isNaN(n)
+			return Number.isNaN(n)
 				? v
 				: String(parseFloat((n * factor).toPrecision(10)));
 		};
