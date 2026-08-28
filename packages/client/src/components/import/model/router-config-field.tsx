@@ -93,9 +93,7 @@ const normalizeEngineRef = (ref: unknown): RouterEngineRefFormValue => {
 };
 
 /** Coerce whatever the form state holds into a well-formed editor value. */
-export const normalizeRouterConfigValue = (
-	value: unknown,
-): RouterConfigFormValue => {
+const normalizeRouterConfigValue = (value: unknown): RouterConfigFormValue => {
 	if (!value || typeof value !== "object" || Array.isArray(value)) {
 		return createDefaultRouterConfigValue();
 	}
@@ -148,7 +146,7 @@ export const validateRouterConfig = (raw: unknown): true | string => {
 };
 
 /** Total of the positive route weights - the backend ignores weights <= 0. */
-export const sumRouteWeights = (routes: RouterRouteFormValue[]): number =>
+const sumRouteWeights = (routes: RouterRouteFormValue[]): number =>
 	routes.reduce((total, route) => total + Math.max(0, route.weight), 0);
 
 /** Parse stored router.json content (string or object) into an editor value. */

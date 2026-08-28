@@ -4,9 +4,9 @@
  * guardrail proxy via GetModelGuardrailConfig / UpdateModelGuardrailConfig.
  */
 
-export const GUARDRAIL_INPUT_REACTOR =
+const GUARDRAIL_INPUT_REACTOR =
 	"prerna.reactor.interceptor.GenericGuardrailInputReactor";
-export const GUARDRAIL_INPUT_OUTPUT_REACTOR =
+const GUARDRAIL_INPUT_OUTPUT_REACTOR =
 	"prerna.reactor.interceptor.GenericGuardrailInputOutputReactor";
 
 export const DEFAULT_MASK_TARGET_PARAM = "prompt";
@@ -35,7 +35,7 @@ export const GUARDRAIL_REACTOR_OPTIONS: Record<
 	],
 };
 
-export interface GuardrailEngineDetails {
+interface GuardrailEngineDetails {
 	name: string | null;
 	exists: boolean;
 	type: string | null;
@@ -151,10 +151,9 @@ export const createGuardrailPipeline = (
 	output: [],
 });
 
-export const createDefaultGuardrailConfigValue =
-	(): GuardrailConfigFormValue => ({
-		pipelines: [],
-	});
+const createDefaultGuardrailConfigValue = (): GuardrailConfigFormValue => ({
+	pipelines: [],
+});
 
 const splitArgs = (args: string): string[] =>
 	args
