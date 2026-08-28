@@ -66,44 +66,56 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 
 	const refreshQuotaExhaustedIds = useCallback(async () => {
 		try {
-			const { pixelReturn } = await runPixel<
+			// Step 1: fetch all text-generation engines (1 request).
+			const { pixelReturn: engineReturn } = await runPixel<
 				[{ app_id: string; engine_id: string }[]]
 			>(
 				`META | MyEngines(metaKeys=[], metaFilters=[{"tag":"text-generation"}], engineTypes=["MODEL"]);`,
 			);
-			const engines = pixelReturn[0].output ?? [];
-			const exhausted: string[] = [];
-			await Promise.allSettled(
-				engines.map(async (engine) => {
-					const engineId = engine.app_id || engine.engine_id;
-					if (!engineId) return;
-					const { errors } = await runPixel(
-						`GetUserModelUsageRestrictions(engine=["${engineId}"]);`,
-					);
-					if (errors.length > 0) {
-						exhausted.push(engineId);
-					}
-				}),
+			const engineIds = (engineReturn[0].output ?? [])
+				.map((engine) => engine.app_id || engine.engine_id)
+				.filter(Boolean);
+
+			if (engineIds.length === 0) {
+				setQuotaExhaustedIds([]);
+				return;
+			}
+
+			// Step 2: chain all restriction checks into one pixel string so they
+			// are sent as a single HTTP request. Each operation maps to its own
+			// entry in pixelReturn.
+			const restrictionPixel = engineIds
+				.map((id) => `GetUserModelUsageRestrictions(engine=["${id}"]);`)
+				.join(" ");
+
+			const { pixelReturn: restrictionReturn } =
+				await runPixel(restrictionPixel);
+
+			// operationType is string[] — use .includes() to check for errors.
+			const exhausted = engineIds.filter((_, i) =>
+				restrictionReturn[i]?.operationType.includes("ERROR"),
 			);
+
 			setQuotaExhaustedIds(exhausted);
 		} catch {
 			// ignore — dropdown just won't show greys
 		}
 	}, []);
 
-	// Check quotas on mount so the model dropdown is accurate from the start
-	// biome-ignore lint/correctness/useExhaustiveDependencies: run once on mount
+	// Check quotas on mount so the model dropdown is accurate from the start.
+	// refreshQuotaExhaustedIds is stable (useCallback with no deps), so adding
+	// it as a dependency here does not cause extra calls.
 	useEffect(() => {
 		refreshQuotaExhaustedIds();
-	}, []);
+	}, [refreshQuotaExhaustedIds]);
 
-	// Re-check quotas after each message completes (history grows)
-	// biome-ignore lint/correctness/useExhaustiveDependencies: room.history.length is the trigger
+	// Re-check quotas after each message completes (history grows).
+	// refreshQuotaExhaustedIds is stable, so it is safe to include as a dep.
 	useEffect(() => {
 		if (room.history.length > 0 && !room.isLoading) {
 			refreshQuotaExhaustedIds();
 		}
-	}, [room.history.length, room.isLoading]);
+	}, [room.history.length, room.isLoading, refreshQuotaExhaustedIds]);
 
 	/**
 	 * Functions
