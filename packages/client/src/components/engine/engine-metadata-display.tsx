@@ -1,16 +1,10 @@
 import dayjs from "dayjs";
-import { CheckIcon, Pencil, TriangleAlert, XIcon } from "lucide-react";
+import { CheckIcon, TriangleAlert, XIcon } from "lucide-react";
 import { Fragment, useMemo, useState } from "react";
-import { runPixel } from "@semoss/sdk/react";
 import {
 	Badge,
 	Button,
-	Card,
-	CardContent,
-	CardHeader,
-	CardTitle,
 	cn,
-	Input,
 	Progress,
 	Separator,
 	Table,
@@ -19,11 +13,7 @@ import {
 	TableHead,
 	TableHeader,
 	TableRow,
-	ToggleGroup,
-	ToggleGroupItem,
-	toast,
 } from "@semoss/ui/next";
-import { useEngine } from "@/hooks";
 import {
 	getOptionLabels,
 	MODEL_PROVIDER_OPTIONS,
@@ -844,6 +834,11 @@ export interface ModelSettingsValues {
 	 * authoritative for display.
 	 */
 	builtinToolsConfig: Record<string, BuiltinToolSelection> | null;
+	/** Empty string means the nullable column has no value stored. */
+	inputTokenCredit: string;
+	outputTokenCredit: string;
+	cacheReadMultiplier: string;
+	cacheWriteMultiplier: string;
 }
 
 /**
@@ -895,6 +890,22 @@ export const toModelSettingsValues = (
 				: "",
 		builtinTools: Object.keys(metadata?.builtinTools ?? {}),
 		builtinToolsConfig: metadata?.builtinTools ?? null,
+		inputTokenCredit:
+			metadata?.inputTokenCredit != null
+				? String(metadata.inputTokenCredit)
+				: "",
+		outputTokenCredit:
+			metadata?.outputTokenCredit != null
+				? String(metadata.outputTokenCredit)
+				: "",
+		cacheReadMultiplier:
+			metadata?.cacheReadMultiplier != null
+				? String(metadata.cacheReadMultiplier)
+				: "",
+		cacheWriteMultiplier:
+			metadata?.cacheWriteMultiplier != null
+				? String(metadata.cacheWriteMultiplier)
+				: "",
 	};
 };
 
@@ -1168,6 +1179,46 @@ export const ModelMetadataFields = ({
 		<SettingsEntry label="Max output tokens">
 			<TokenValue value={values.maxOutputTokens} />
 		</SettingsEntry>
+
+		<SettingsEntry label="Credits / input token">
+			{values.inputTokenCredit !== "" ? (
+				<span className="font-mono text-sm">
+					{values.inputTokenCredit}
+				</span>
+			) : (
+				<EmptyValue />
+			)}
+		</SettingsEntry>
+
+		<SettingsEntry label="Credits / output token">
+			{values.outputTokenCredit !== "" ? (
+				<span className="font-mono text-sm">
+					{values.outputTokenCredit}
+				</span>
+			) : (
+				<EmptyValue />
+			)}
+		</SettingsEntry>
+
+		<SettingsEntry label="Cache read multiplier">
+			{values.cacheReadMultiplier !== "" ? (
+				<span className="font-mono text-sm">
+					×{values.cacheReadMultiplier}
+				</span>
+			) : (
+				<EmptyValue />
+			)}
+		</SettingsEntry>
+
+		<SettingsEntry label="Cache write multiplier">
+			{values.cacheWriteMultiplier !== "" ? (
+				<span className="font-mono text-sm">
+					×{values.cacheWriteMultiplier}
+				</span>
+			) : (
+				<EmptyValue />
+			)}
+		</SettingsEntry>
 	</>
 );
 
@@ -1181,32 +1232,6 @@ interface OverviewStatItem {
 	/** The muted line under the value, e.g. "tokens" or a year. */
 	unit: string;
 }
-
-/**
- * The full-width strip of headline figures under the description: token
- * limits, dates, and the preferred provider's rates. Divider lines only
- * appear at xl, where the strip is guaranteed a single row.
- */
-const OverviewCard = ({
-	title,
-	className,
-	headerAction,
-	children,
-}: React.PropsWithChildren<{
-	title: string;
-	className?: string;
-	headerAction?: React.ReactNode;
-}>) => (
-	<Card className={cn("min-w-72 flex-1 gap-4 py-5", className)}>
-		<CardHeader className="px-5">
-			<div className="flex items-center justify-between gap-2">
-				<CardTitle>{title}</CardTitle>
-				{headerAction}
-			</div>
-		</CardHeader>
-		<CardContent className="px-5">{children}</CardContent>
-	</Card>
-);
 
 const OverviewStatStrip = ({ stats }: { stats: OverviewStatItem[] }) => (
 	<div className="grid grid-cols-2 gap-x-8 gap-y-6 border-y py-5 sm:grid-cols-3 xl:flex xl:gap-0 xl:divide-x">
@@ -1426,320 +1451,6 @@ const BenchmarksSection = ({
 	);
 };
 
-const CREDIT_RATES_CARD_CLASS = "flex-none max-w-sm";
-
-const CreditRatesCard = ({
-	inputTokenCredit,
-	outputTokenCredit,
-	cacheReadMultiplier,
-	cacheWriteMultiplier,
-}: {
-	inputTokenCredit: number | null | undefined;
-	outputTokenCredit: number | null | undefined;
-	cacheReadMultiplier: number | null | undefined;
-	cacheWriteMultiplier: number | null | undefined;
-}) => {
-	const { engine, permission, refresh } = useEngine();
-	const [isEditing, setIsEditing] = useState(false);
-	const [isSaving, setIsSaving] = useState(false);
-	const [perMillion, setPerMillion] = useState(false);
-	const [form, setForm] = useState({
-		inputTokenCredit:
-			inputTokenCredit != null ? String(inputTokenCredit) : "",
-		outputTokenCredit:
-			outputTokenCredit != null ? String(outputTokenCredit) : "",
-		cacheReadMultiplier:
-			cacheReadMultiplier != null ? String(cacheReadMultiplier) : "",
-		cacheWriteMultiplier:
-			cacheWriteMultiplier != null ? String(cacheWriteMultiplier) : "",
-	});
-
-	const isEditor = permission === "OWNER" || permission === "EDIT";
-
-	const scaleToDisplay = (storedPerToken: number) =>
-		parseFloat((storedPerToken * 1_000_000).toPrecision(10));
-
-	const displayVal = (v: number | null | undefined): string => {
-		if (v == null) return "—";
-		const n = perMillion ? scaleToDisplay(v) : v;
-		return String(n);
-	};
-
-	const handleUnitToggle = (newPerMillion: boolean) => {
-		if (newPerMillion === perMillion) return;
-		const factor = newPerMillion ? 1_000_000 : 1 / 1_000_000;
-		const convert = (v: string) => {
-			if (v === "") return v;
-			const n = Number(v);
-			return Number.isNaN(n)
-				? v
-				: String(parseFloat((n * factor).toPrecision(10)));
-		};
-		setForm((f) => ({
-			...f,
-			inputTokenCredit: convert(f.inputTokenCredit),
-			outputTokenCredit: convert(f.outputTokenCredit),
-		}));
-		setPerMillion(newPerMillion);
-	};
-
-	const handleSave = async () => {
-		setIsSaving(true);
-		try {
-			const parseStored = (v: string) => {
-				if (v.trim() === "") return null;
-				const n = Number(v);
-				if (Number.isNaN(n)) return null;
-				return perMillion ? n / 1_000_000 : n;
-			};
-			const vals = {
-				inputTokenCredit: parseStored(form.inputTokenCredit),
-				outputTokenCredit: parseStored(form.outputTokenCredit),
-				cacheReadMultiplier:
-					form.cacheReadMultiplier.trim() !== ""
-						? Number(form.cacheReadMultiplier)
-						: null,
-				cacheWriteMultiplier:
-					form.cacheWriteMultiplier.trim() !== ""
-						? Number(form.cacheWriteMultiplier)
-						: null,
-			};
-			const mapStr = Object.entries(vals)
-				.map(([k, v]) => `"${k}": ${v ?? "null"}`)
-				.join(", ");
-			await runPixel(
-				`UpdateModelMetadata(engine=["${engine.engine_id}"], map=[{${mapStr}}])`,
-			);
-			setIsEditing(false);
-			refresh();
-			toast.success("Credit rates updated");
-		} catch {
-			toast.error("Failed to save credit rates");
-		} finally {
-			setIsSaving(false);
-		}
-	};
-
-	const handleCancel = () => {
-		setForm({
-			inputTokenCredit:
-				inputTokenCredit != null ? String(inputTokenCredit) : "",
-			outputTokenCredit:
-				outputTokenCredit != null ? String(outputTokenCredit) : "",
-			cacheReadMultiplier:
-				cacheReadMultiplier != null ? String(cacheReadMultiplier) : "",
-			cacheWriteMultiplier:
-				cacheWriteMultiplier != null
-					? String(cacheWriteMultiplier)
-					: "",
-		});
-		setPerMillion(false);
-		setIsEditing(false);
-	};
-
-	const inputLabel = perMillion
-		? "Credits per million input tokens"
-		: "Credits per input token";
-	const outputLabel = perMillion
-		? "Credits per million output tokens"
-		: "Credits per output token";
-
-	const unitToggle = (
-		<ToggleGroup
-			type="single"
-			variant="outline"
-			value={perMillion ? "million" : "token"}
-			onValueChange={(v) => v && handleUnitToggle(v === "million")}
-			className="h-7 text-xs"
-		>
-			<ToggleGroupItem value="token" className="h-7 px-2 text-xs">
-				Per Token
-			</ToggleGroupItem>
-			<ToggleGroupItem value="million" className="h-7 px-2 text-xs">
-				Per 1M Tokens
-			</ToggleGroupItem>
-		</ToggleGroup>
-	);
-
-	const rateRows = (
-		<div className="flex flex-col gap-3">
-			<p className="text-muted-foreground text-xs">
-				Credits are a normalized usage unit across models. Each token
-				consumed is multiplied by the rates below to compute credit
-				spend.
-			</p>
-			{unitToggle}
-			<div className="text-sm">
-				<span className="text-muted-foreground">{inputLabel}: </span>
-				<span className="font-mono tabular-nums">
-					{displayVal(inputTokenCredit)}
-				</span>
-			</div>
-			<div className="text-sm">
-				<span className="text-muted-foreground">{outputLabel}: </span>
-				<span className="font-mono tabular-nums">
-					{displayVal(outputTokenCredit)}
-				</span>
-			</div>
-			{(cacheReadMultiplier != null || isEditor) && (
-				<div className="text-sm">
-					<span className="text-muted-foreground">
-						Cache read multiplier:{" "}
-					</span>
-					<span className="font-mono tabular-nums">
-						{cacheReadMultiplier != null
-							? `×${cacheReadMultiplier}`
-							: "—"}
-					</span>
-				</div>
-			)}
-			{(cacheWriteMultiplier != null || isEditor) && (
-				<div className="text-sm">
-					<span className="text-muted-foreground">
-						Cache write multiplier:{" "}
-					</span>
-					<span className="font-mono tabular-nums">
-						{cacheWriteMultiplier != null
-							? `×${cacheWriteMultiplier}`
-							: "—"}
-					</span>
-				</div>
-			)}
-		</div>
-	);
-
-	if (!isEditor) {
-		if (inputTokenCredit == null && outputTokenCredit == null) return null;
-		return (
-			<OverviewCard
-				title="Credit rates"
-				className={CREDIT_RATES_CARD_CLASS}
-			>
-				{rateRows}
-			</OverviewCard>
-		);
-	}
-
-	return (
-		<OverviewCard
-			title="Credit rates"
-			className={CREDIT_RATES_CARD_CLASS}
-			headerAction={
-				!isEditing && (
-					<Button
-						variant="ghost"
-						size="icon-sm"
-						onClick={() => setIsEditing(true)}
-					>
-						<Pencil className="h-3.5 w-3.5" />
-					</Button>
-				)
-			}
-		>
-			{isEditing ? (
-				<div className="flex flex-col gap-3">
-					{unitToggle}
-					<div className="grid grid-cols-[1fr_auto] items-center gap-2">
-						<span className="text-muted-foreground text-sm">
-							{inputLabel}
-						</span>
-						<Input
-							type="number"
-							step="any"
-							min="0"
-							className="h-7 w-28 font-mono text-sm"
-							value={form.inputTokenCredit}
-							onChange={(e) =>
-								setForm((f) => ({
-									...f,
-									inputTokenCredit: e.target.value,
-								}))
-							}
-							placeholder="e.g. 2"
-						/>
-					</div>
-					<div className="grid grid-cols-[1fr_auto] items-center gap-2">
-						<span className="text-muted-foreground text-sm">
-							{outputLabel}
-						</span>
-						<Input
-							type="number"
-							step="any"
-							min="0"
-							className="h-7 w-28 font-mono text-sm"
-							value={form.outputTokenCredit}
-							onChange={(e) =>
-								setForm((f) => ({
-									...f,
-									outputTokenCredit: e.target.value,
-								}))
-							}
-							placeholder="e.g. 8"
-						/>
-					</div>
-					<div className="grid grid-cols-[1fr_auto] items-center gap-2">
-						<span className="text-muted-foreground text-sm">
-							Cache read multiplier
-						</span>
-						<Input
-							type="number"
-							step="any"
-							min="0"
-							className="h-7 w-28 font-mono text-sm"
-							value={form.cacheReadMultiplier}
-							onChange={(e) =>
-								setForm((f) => ({
-									...f,
-									cacheReadMultiplier: e.target.value,
-								}))
-							}
-							placeholder="e.g. 0.1"
-						/>
-					</div>
-					<div className="grid grid-cols-[1fr_auto] items-center gap-2">
-						<span className="text-muted-foreground text-sm">
-							Cache write multiplier
-						</span>
-						<Input
-							type="number"
-							step="any"
-							min="0"
-							className="h-7 w-28 font-mono text-sm"
-							value={form.cacheWriteMultiplier}
-							onChange={(e) =>
-								setForm((f) => ({
-									...f,
-									cacheWriteMultiplier: e.target.value,
-								}))
-							}
-							placeholder="e.g. 1.25"
-						/>
-					</div>
-					<div className="flex justify-end gap-2 pt-1">
-						<Button
-							variant="ghost"
-							size="sm"
-							onClick={handleCancel}
-							disabled={isSaving}
-						>
-							Cancel
-						</Button>
-						<Button
-							size="sm"
-							onClick={handleSave}
-							disabled={isSaving}
-						>
-							Save
-						</Button>
-					</div>
-				</div>
-			) : (
-				rateRows
-			)}
-		</OverviewCard>
-	);
-};
-
 /**
  * Published per-provider rates, preferred serving provider first. The cache
  * columns only render when at least one provider reports that rate, keeping
@@ -1929,17 +1640,7 @@ export const ModelOverviewSections = ({
 	}
 
 	if (stats.length === 0 && sections.length === 0) {
-		// Still render for editors who need to configure credit rates
-		return (
-			<div className="flex flex-col gap-4">
-				<CreditRatesCard
-					inputTokenCredit={metadata?.inputTokenCredit}
-					outputTokenCredit={metadata?.outputTokenCredit}
-					cacheReadMultiplier={metadata?.cacheReadMultiplier}
-					cacheWriteMultiplier={metadata?.cacheWriteMultiplier}
-				/>
-			</div>
-		);
+		return null;
 	}
 
 	return (
@@ -1953,12 +1654,6 @@ export const ModelOverviewSections = ({
 					{section}
 				</Fragment>
 			))}
-			<CreditRatesCard
-				inputTokenCredit={metadata?.inputTokenCredit}
-				outputTokenCredit={metadata?.outputTokenCredit}
-				cacheReadMultiplier={metadata?.cacheReadMultiplier}
-				cacheWriteMultiplier={metadata?.cacheWriteMultiplier}
-			/>
 		</div>
 	);
 };

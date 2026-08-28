@@ -170,6 +170,12 @@ const parseOptionalPositiveInteger = (label: string, value: string) => {
 	return parsed;
 };
 
+const parseOptionalFloat = (value: string): number | null => {
+	if (value.trim() === "") return null;
+	const n = Number(value);
+	return Number.isNaN(n) ? null : n;
+};
+
 /**
  * Select for one of the nullable provider columns. Both are free to be unset,
  * so "Not set" is always offered alongside the curated list.
@@ -541,6 +547,14 @@ export const EngineModelSettings = ({
 				...(isBuiltinToolsDirty()
 					? { BUILTIN_TOOLS: form.builtinToolsConfig ?? {} }
 					: {}),
+				inputTokenCredit: parseOptionalFloat(form.inputTokenCredit),
+				outputTokenCredit: parseOptionalFloat(form.outputTokenCredit),
+				cacheReadMultiplier: parseOptionalFloat(
+					form.cacheReadMultiplier,
+				),
+				cacheWriteMultiplier: parseOptionalFloat(
+					form.cacheWriteMultiplier,
+				),
 			};
 
 			const response = await configStore.runPixel(
@@ -1236,6 +1250,110 @@ export const EngineModelSettings = ({
 										message={maxOutputTokensWarning}
 										testId="engine-model-settings--max-output-tokens-warning"
 									/>
+								</Field>
+
+								<Field>
+									<FieldLabel
+										htmlFor={`${engineId}-input-token-credit`}
+									>
+										Credits / input token
+									</FieldLabel>
+									<Input
+										id={`${engineId}-input-token-credit`}
+										type="number"
+										step="any"
+										min="0"
+										placeholder="e.g. 1"
+										value={form.inputTokenCredit}
+										onChange={(event) =>
+											updateForm(
+												"inputTokenCredit",
+												event.target.value,
+											)
+										}
+									/>
+									<FieldDescription>
+										Credits charged per input token
+										consumed.
+									</FieldDescription>
+								</Field>
+
+								<Field>
+									<FieldLabel
+										htmlFor={`${engineId}-output-token-credit`}
+									>
+										Credits / output token
+									</FieldLabel>
+									<Input
+										id={`${engineId}-output-token-credit`}
+										type="number"
+										step="any"
+										min="0"
+										placeholder="e.g. 5"
+										value={form.outputTokenCredit}
+										onChange={(event) =>
+											updateForm(
+												"outputTokenCredit",
+												event.target.value,
+											)
+										}
+									/>
+									<FieldDescription>
+										Credits charged per output token
+										generated.
+									</FieldDescription>
+								</Field>
+
+								<Field>
+									<FieldLabel
+										htmlFor={`${engineId}-cache-read-multiplier`}
+									>
+										Cache read multiplier
+									</FieldLabel>
+									<Input
+										id={`${engineId}-cache-read-multiplier`}
+										type="number"
+										step="any"
+										min="0"
+										placeholder="e.g. 0.1"
+										value={form.cacheReadMultiplier}
+										onChange={(event) =>
+											updateForm(
+												"cacheReadMultiplier",
+												event.target.value,
+											)
+										}
+									/>
+									<FieldDescription>
+										Multiplier applied to cache-read token
+										credits (input rate × multiplier).
+									</FieldDescription>
+								</Field>
+
+								<Field>
+									<FieldLabel
+										htmlFor={`${engineId}-cache-write-multiplier`}
+									>
+										Cache write multiplier
+									</FieldLabel>
+									<Input
+										id={`${engineId}-cache-write-multiplier`}
+										type="number"
+										step="any"
+										min="0"
+										placeholder="e.g. 1.25"
+										value={form.cacheWriteMultiplier}
+										onChange={(event) =>
+											updateForm(
+												"cacheWriteMultiplier",
+												event.target.value,
+											)
+										}
+									/>
+									<FieldDescription>
+										Multiplier applied to cache-write token
+										credits (input rate × multiplier).
+									</FieldDescription>
 								</Field>
 							</div>
 
