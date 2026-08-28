@@ -4,29 +4,32 @@ import { useTranslation } from "@semoss/i18n";
 import { useInsight, usePixel } from "@semoss/sdk/react";
 import {
 	Button,
-	cn,
 	Muted,
 	Tooltip,
 	TooltipContent,
 	TooltipTrigger,
 	TreeViewItem,
+	toast,
 	useTreeView,
 } from "@semoss/ui/next";
-import type { FileItem } from "./file.types";
-import type {
-	FileExplorerApi,
-	FileExplorerItemActions,
-	FileExplorerPrimaryAction,
-	FileExplorerSecondaryAction,
-} from "./file-explorer.types";
+import type { FileItem, FileMode } from "./file.types";
 import {
 	canMoveItemToDirectory,
+	FILE_EXPLORER_DRAG_DATA_TYPE,
 	getFileExplorerTestIdSegment,
 	getFileIconComponent,
+	getFileOperationErrorMessage,
 	getItemTargetDirectory,
 	isPointerOutsideElement,
+	mapStorageEntriesToFileItems,
 	parseExplorerDragItems,
 } from "./file-explorer.utils";
+
+const ACTIONS_COL_WIDTH = 36;
+type FileExplorerSecondaryAction = {
+	name: string;
+	action: (item: FileItem) => Promise<void>;
+};
 
 /**
  * Worst-case string widths at text-11px (~7px/char + 16px column padding px-2):
@@ -40,12 +43,6 @@ import {
  * `locale` is `i18n.language` and feeds `Intl.DateTimeFormat` for the
  * numeric/month-name pieces so date numerals also match (e.g. ٢٥/١٢/٢٦ in
  * Arabic).
- *
- * @param raw - The item's `lastModified`, if it has one.
- * @param width - The date column's current width in px.
- * @param t - The active translator.
- * @param locale - `i18n.language`, for `Intl` formatting.
- * @return The formatted date, or null when there is nothing to format.
  */
 const formatMacDate = (
 	raw: string | undefined,
@@ -131,141 +128,333 @@ const formatMacDate = (
 	return t("fileExplorer.dateFormat.dateAt", { date: d, time });
 };
 
-export interface FileExplorerItemProps
-	extends React.HTMLAttributes<HTMLLIElement> {
-	/** The explorer this row belongs to. */
-	explorer: FileExplorerApi;
-	/** The row's item. */
+interface FileExplorerItemProps extends React.HTMLAttributes<HTMLLIElement> {
+	/** Mode of file editor */
+	mode: FileMode;
+
+	/** Item */
 	item: FileItem;
+
 	/**
-	 * Resolve the row actions for an item. Called for this row and passed down
-	 * to its descendants, so a consumer supplies it once.
+	 * Refresh callback to refresh the items
 	 */
-	itemActions?: (item: FileItem) => FileExplorerItemActions;
+	refresh: () => void;
+
+	/** Primary actions */
+	actions?: ({
+		name: string;
+		icon: React.ReactNode;
+		tooltip: React.ReactNode;
+		action: (item: FileItem) => Promise<void>;
+	} | null)[];
+
+	/** Secondary Actions */
+	secondaryActions?: (FileExplorerSecondaryAction | null)[];
+	/** Override for the file item component */
+	ItemComponent?: typeof FileExplorerItem;
+
+	/** Width of the date column in px — drives adaptive date formatting */
+	dateColWidth?: number;
+
+	/**
+	 * Called after a successful rename with the old and new paths
+	 */
+	onAfterRename?: (oldPath: string, newPath: string) => void;
+	/** Whether this item is the active right-click context target */
+	isContextActive?: boolean;
+	/** Whether this item is currently part of a bulk selection */
+	isBulkSelected?: boolean;
+	/** Callback to open the context menu for this item */
+	onContextMenuOpen?: (
+		e: React.MouseEvent,
+		item: FileItem,
+		targetPath: string,
+		secondaryActions?: FileExplorerSecondaryAction[],
+	) => void;
+	/** Propagated down to children: checks if a given path is the context target */
+	isItemContextActive?: (path: string) => boolean;
+	/** Propagated down to children: checks if a given path is bulk-selected */
+	isItemBulkSelected?: (path: string) => boolean;
+	/** Track visible rendered items so keyboard bulk select can include expanded rows */
+	onItemRegister?: (item: FileItem, isVisible: boolean) => void;
+	/** Register expanded directory refresh callbacks for targeted parent updates */
+	onDirectoryRefreshRegister?: (
+		directoryPath: string,
+		refresh: () => void,
+		isRegistered: boolean,
+	) => void;
+	/** Toggle this item in the bulk selection */
+	onBulkSelectionToggle?: (item: FileItem) => void;
+	/** Resolve the items that should be moved when this row starts a drag */
+	getDragItems?: (item: FileItem) => FileItem[];
+	/** Move dragged items into a target directory */
+	onMoveItems?: (
+		items: FileItem[],
+		targetDirectory: string,
+	) => Promise<unknown>;
+	/** Items currently being dragged inside this explorer */
+	activeDragItems?: FileItem[];
+	/** The one folder row currently selected as the active drop target */
+	activeDropTargetPath?: string | null;
+	/** Notify the explorer when an internal drag starts, ends, or targets a row */
+	onExplorerDragStateChange?: (itemCount: number, items?: FileItem[]) => void;
+	/** Notify the explorer which folder row is the active drop target */
+	onExplorerDropTargetChange?: (path: string | null) => void;
 }
 
-/**
- * One row of the explorer tree, and — for a directory — its expanded children.
- *
- * Everything shared with the rest of the explorer (selection, context menu,
- * rename mode, drag state, the date column width) comes off `explorer`, so this
- * component takes no plumbing props and a consumer only supplies `itemActions`.
- */
 export const FileExplorerItem: React.FC<FileExplorerItemProps> = ({
-	explorer,
+	mode,
 	item,
-	itemActions,
+	refresh,
+	actions = [],
+	secondaryActions = [],
+	ItemComponent = FileExplorerItem,
+	dateColWidth = 130,
+	onAfterRename,
+	isContextActive = false,
+	isBulkSelected = false,
+	onContextMenuOpen,
+	isItemContextActive,
+	isItemBulkSelected,
+	onItemRegister,
+	onDirectoryRefreshRegister,
+	onBulkSelectionToggle,
+	getDragItems,
+	onMoveItems,
+	activeDragItems = [],
+	activeDropTargetPath = null,
+	onExplorerDragStateChange,
+	onExplorerDropTargetChange,
+	draggable,
+	onDragStart,
+	onDragOver,
+	onDragLeave,
+	onDrop,
+	onDragEnd,
 	...otherProps
 }) => {
 	const treeView = useTreeView<FileItem>();
 	const insight = useInsight();
 	const { t, i18n } = useTranslation("common");
-	const { adapter, capabilities, commands, dnd, tree } = explorer;
-
 	const isDirectory = item.type === "directory";
 	const isExpanded = treeView.expanded.includes(item.path);
 	const itemTestId = `file-explorer-item-${getFileExplorerTestIdSegment(item.path)}`;
 
-	// consumers build these arrays conditionally, so nulls are expected
-	const resolvedActions = itemActions?.(item);
-	const actions = (resolvedActions?.actions ?? []).filter(
-		(action): action is FileExplorerPrimaryAction => action !== null,
-	);
-	const secondaryActions = (resolvedActions?.secondaryActions ?? []).filter(
-		(action): action is FileExplorerSecondaryAction => action !== null,
-	);
-
-	const isRenaming = tree.renamingPath === item.path;
-	const [renameValue, setRenameValue] = useState(item.name);
+	const [isRenaming, setIsRenaming] = useState(false);
 	const [isDraggingSource, setIsDraggingSource] = useState(false);
+	const [draggedItemCount, setDraggedItemCount] = useState(0);
+	const [renameValue, setRenameValue] = useState("");
 	const inputRef = useRef<HTMLInputElement>(null);
+	const canRename = mode.type !== "STORAGE";
+	const visibleSecondaryActions = useMemo(() => {
+		const visible = secondaryActions.filter(
+			(action): action is FileExplorerSecondaryAction => action !== null,
+		);
+
+		// Built-in Unzip for every mode that supports it. Consumers can still
+		// inject their own "Unzip" via the secondaryActions prop to override
+		// (e.g. to attach side effects like closing related tabs).
+		const isZip =
+			item.type !== "directory" &&
+			item.path.toLowerCase().endsWith(".zip");
+		const hasUnzip = visible.some(
+			(action) => action.name.toLowerCase() === "unzip",
+		);
+		if (isZip && !hasUnzip) {
+			let unzipPixel: string | null = null;
+			if (mode.type === "APP") {
+				unzipPixel = `UnzipAppAssetFile(project=["${mode.app}"], filePath=["${item.path}"])`;
+			} else if (mode.type === "ENGINE") {
+				unzipPixel = `UnzipEngineAssetFile(engine=["${mode.engine}"], filePath=["${item.path}"])`;
+			} else if (mode.type === "INSIGHT") {
+				unzipPixel = `UnzipInsightAssetFile(filePath=["${item.path}"])`;
+			} else if (mode.type === "USER") {
+				unzipPixel = `UnzipUserAssetFile(filePath=["${item.path}"])`;
+			}
+			if (unzipPixel) {
+				const pixel = unzipPixel;
+				visible.push({
+					name: "Unzip",
+					action: async () => {
+						try {
+							await insight.actions.run(pixel);
+							refresh();
+						} catch (e) {
+							toast.error(
+								getFileOperationErrorMessage(
+									t("fileExplorer.toasts.unzipFailed"),
+									e,
+								),
+							);
+						}
+					},
+				});
+			}
+		}
+		return visible;
+	}, [secondaryActions, item.type, item.path, mode, insight, refresh]);
 
 	useEffect(() => {
 		if (!isRenaming) return;
-		setRenameValue(item.name);
 		requestAnimationFrame(() => {
 			inputRef.current?.focus();
 		});
-	}, [isRenaming, item.name]);
+	}, [isRenaming]);
 
 	useEffect(() => {
-		tree.registerItem(item, true);
-		return () => tree.registerItem(item, false);
-	}, [item, tree.registerItem]);
+		onItemRegister?.(item, true);
+		return () => onItemRegister?.(item, false);
+	}, [item, onItemRegister]);
+
+	// Listen for the rename CustomEvent dispatched by the context menu
+	useEffect(() => {
+		const handleRenameEvent = (event: Event) => {
+			const customEvent = event as CustomEvent<{ path: string }>;
+			if (customEvent.detail?.path === item.path) {
+				setRenameValue(item.name);
+				setIsRenaming(true);
+			}
+		};
+
+		window.addEventListener("file-explorer:rename", handleRenameEvent);
+		return () => {
+			window.removeEventListener(
+				"file-explorer:rename",
+				handleRenameEvent,
+			);
+		};
+	}, [item.path, item.name]);
+
+	const handleRename = async () => {
+		const newName = renameValue.trim();
+		if (!newName || newName === item.name) {
+			setIsRenaming(false);
+			return;
+		}
+		try {
+			const dir = item.path.substring(0, item.path.lastIndexOf("/") + 1);
+			const newPath = `${dir}${newName}`;
+			let pixel = "";
+			if (mode.type === "APP") {
+				pixel = `RenameAppAsset(project=["${mode.app}"], filePath=["${item.path}"], newValue=["${newPath}"]);`;
+			} else if (mode.type === "ENGINE") {
+				pixel = `RenameEngineAsset(engine=["${mode.engine}"], filePath=["${item.path}"], newValue=["${newPath}"]);`;
+			} else if (mode.type === "INSIGHT") {
+				pixel = `RenameInsightAsset(filePath=["${item.path}"], newValue=["${newPath}"]);`;
+			} else if (mode.type === "USER") {
+				pixel = `RenameUserAsset(filePath=["${item.path}"], newValue=["${newPath}"]);`;
+			}
+			if (pixel) {
+				await insight.actions.run(pixel);
+				onAfterRename?.(item.path, newPath);
+				refresh();
+				toast.success(t("fileExplorer.toasts.renameSuccess"));
+			}
+		} catch (e) {
+			toast.error(
+				getFileOperationErrorMessage(
+					t("fileExplorer.toasts.renameFailed"),
+					e,
+				),
+			);
+			console.error(e);
+		} finally {
+			setIsRenaming(false);
+		}
+	};
 
 	// Only fetch children if expanded and is a directory
-	const getChildrenPixel =
-		isDirectory && isExpanded ? adapter.browse(item.path) : "";
+	let getChildrenPixel = "";
+	if (isDirectory && isExpanded) {
+		if (mode.type === "APP") {
+			getChildrenPixel = `BrowseAppAssets(filePath=["${item.path}"], project=["${mode.app}"]);`;
+		} else if (mode.type === "ENGINE") {
+			getChildrenPixel = `BrowseEngineAssets(filePath=["${item.path}"], engine=["${mode.engine}"]);`;
+		} else if (mode.type === "STORAGE") {
+			getChildrenPixel = `ListStoragePathDetails(storage=["${mode.storage}"], storagePath=["${item.path}"]);`;
+		} else if (mode.type === "INSIGHT") {
+			getChildrenPixel = `BrowseInsightAssets(filePath=["${item.path}"]);`;
+		} else if (mode.type === "USER") {
+			getChildrenPixel = `BrowseUserAssets(filePath=["${item.path}"]);`;
+		}
+	}
 
 	const getChildren = usePixel<unknown[]>(
 		getChildrenPixel,
-		{ data: [] },
+		{
+			data: [],
+		},
 		insight.insightId,
 	);
 
-	const children = useMemo(
-		() => adapter.mapEntries(getChildren.data),
-		[adapter, getChildren.data],
-	);
+	const children = useMemo(() => {
+		if (mode.type === "STORAGE") {
+			return mapStorageEntriesToFileItems(getChildren.data);
+		}
+
+		return getChildren.data as FileItem[];
+	}, [mode.type, getChildren.data]);
 
 	useEffect(() => {
 		if (!isDirectory) return;
 
-		tree.registerDirectoryRefresh(item.path, getChildren.refresh, true);
+		onDirectoryRefreshRegister?.(item.path, getChildren.refresh, true);
 		return () => {
-			tree.registerDirectoryRefresh(
-				item.path,
-				getChildren.refresh,
-				false,
-			);
+			onDirectoryRefreshRegister?.(item.path, getChildren.refresh, false);
 		};
 	}, [
 		getChildren.refresh,
 		isDirectory,
 		item.path,
-		tree.registerDirectoryRefresh,
+		onDirectoryRefreshRegister,
 	]);
 
 	const macDate = formatMacDate(
 		item.lastModified,
-		tree.dateColWidth,
+		dateColWidth,
 		t,
 		i18n.language,
 	);
 
 	const FileIcon = isDirectory ? null : getFileIconComponent(item.name);
 
-	const isContextActive = tree.isContextActive(item.path);
-	const isBulkSelected = tree.isBulkSelected(item.path);
-	const isActiveDropTarget = dnd.activeDropTargetPath === item.path;
+	// Resolve context-active state: propagated checker takes priority over direct prop
+	const effectiveIsContextActive = isItemContextActive
+		? isItemContextActive(item.path)
+		: isContextActive;
+	const effectiveIsBulkSelected = isItemBulkSelected
+		? isItemBulkSelected(item.path)
+		: isBulkSelected;
+	const isFileMoveEnabled = Boolean(getDragItems && onMoveItems);
+	const isActiveDropTarget = activeDropTargetPath === item.path;
 
-	/**
-	 * The items a drag is carrying.
-	 *
-	 * @param dataTransfer - The in-flight drag's data transfer.
-	 * @return The dragged items, or `[]` for a drag from another explorer.
-	 */
-	const currentDragItems = (dataTransfer: DataTransfer) =>
-		dnd.activeDragItems.length > 0
-			? dnd.activeDragItems
-			: parseExplorerDragItems(dataTransfer, explorer.instanceId);
-
-	/**
-	 * Whether this row is a legal destination for what is being dragged. Only
-	 * directories take drops, and never from inside themselves.
-	 *
-	 * @param draggedItems - The items in flight.
-	 * @return True when at least one of them may land here.
-	 */
 	const canDropDraggedItems = (draggedItems: FileItem[]) => {
-		if (!dnd.enabled || !isDirectory || draggedItems.length === 0) {
-			return false;
-		}
+		if (!isDirectory || draggedItems.length === 0) return false;
 
 		const targetDirectory = getItemTargetDirectory(item);
 		return draggedItems.some((draggedItem) =>
 			canMoveItemToDirectory(draggedItem, targetDirectory),
 		);
+	};
+
+	const getCurrentDragItems = (dataTransfer: DataTransfer) =>
+		activeDragItems.length > 0
+			? activeDragItems
+			: parseExplorerDragItems(dataTransfer);
+
+	const setDragPreview = (
+		dataTransfer: DataTransfer,
+		dragItems: FileItem[],
+	) => {
+		const preview = document.createElement("div");
+		const count = dragItems.length;
+		preview.textContent =
+			count > 1 ? `Move ${count} items` : `Move ${dragItems[0]?.name}`;
+		preview.className =
+			"fixed -top-96 start-0 rounded-md border border-primary/30 bg-background px-2 py-1 text-xs font-medium text-foreground shadow-md";
+		document.body.appendChild(preview);
+		dataTransfer.setDragImage(preview, 12, 12);
+		window.setTimeout(() => preview.remove(), 0);
 	};
 
 	return (
@@ -277,26 +466,49 @@ export const FileExplorerItem: React.FC<FileExplorerItemProps> = ({
 			leadingIcon={
 				FileIcon ? <FileIcon className="size-4 shrink-0" /> : undefined
 			}
-			draggable={dnd.canDrag}
+			draggable={isFileMoveEnabled ? true : draggable}
 			onDragStart={(e) => {
+				if (!isFileMoveEnabled) {
+					onDragStart?.(e);
+					return;
+				}
+
 				e.stopPropagation();
-				const dragItems = dnd.getDragItems(item);
+				const dragItems = getDragItems?.(item) ?? [item];
 				setIsDraggingSource(true);
-				dnd.setDragState(dragItems.length, dragItems);
-				dnd.onItemDragStart(e, dragItems);
+				setDraggedItemCount(dragItems.length);
+				onExplorerDragStateChange?.(dragItems.length, dragItems);
+				e.dataTransfer.effectAllowed = "move";
+				e.dataTransfer.setData(
+					FILE_EXPLORER_DRAG_DATA_TYPE,
+					JSON.stringify(dragItems),
+				);
+				e.dataTransfer.setData(
+					"text/plain",
+					dragItems.map((dragItem) => dragItem.path).join("\n"),
+				);
+				setDragPreview(e.dataTransfer, dragItems);
 			}}
 			onDragOver={(e) => {
-				const draggedItems = currentDragItems(e.dataTransfer);
+				if (!isFileMoveEnabled) {
+					onDragOver?.(e);
+					return;
+				}
+
+				const draggedItems = getCurrentDragItems(e.dataTransfer);
 				if (!canDropDraggedItems(draggedItems)) return;
 
 				e.preventDefault();
 				e.stopPropagation();
 				e.dataTransfer.dropEffect = "move";
-				dnd.setActiveDropTargetPath(item.path);
-				dnd.setDragState(0, draggedItems);
+				onExplorerDropTargetChange?.(item.path);
+				onExplorerDragStateChange?.(0, draggedItems);
 			}}
 			onDragLeave={(e) => {
-				if (!dnd.enabled) return;
+				if (!isFileMoveEnabled) {
+					onDragLeave?.(e);
+					return;
+				}
 
 				e.stopPropagation();
 				if (
@@ -309,28 +521,39 @@ export const FileExplorerItem: React.FC<FileExplorerItemProps> = ({
 					return;
 				}
 				if (isActiveDropTarget) {
-					dnd.setActiveDropTargetPath(null);
+					onExplorerDropTargetChange?.(null);
 				}
-				dnd.setDragState(
-					dnd.activeDragItems.length,
-					dnd.activeDragItems,
+				onExplorerDragStateChange?.(
+					activeDragItems.length,
+					activeDragItems,
 				);
 			}}
 			onDrop={(e) => {
-				const draggedItems = currentDragItems(e.dataTransfer);
+				if (!isFileMoveEnabled) {
+					onDrop?.(e);
+					return;
+				}
+
+				const draggedItems = getCurrentDragItems(e.dataTransfer);
 				if (!canDropDraggedItems(draggedItems)) return;
 
 				e.preventDefault();
 				e.stopPropagation();
-				dnd.setActiveDropTargetPath(null);
-				dnd.setDragState(0, []);
-				commands.move(draggedItems, getItemTargetDirectory(item));
+				onExplorerDropTargetChange?.(null);
+				onExplorerDragStateChange?.(0, []);
+				onMoveItems?.(draggedItems, getItemTargetDirectory(item));
 			}}
 			onDragEnd={(e) => {
+				if (!isFileMoveEnabled) {
+					onDragEnd?.(e);
+					return;
+				}
+
 				e.stopPropagation();
-				dnd.setActiveDropTargetPath(null);
+				onExplorerDropTargetChange?.(null);
 				setIsDraggingSource(false);
-				dnd.setDragState(0, []);
+				setDraggedItemCount(0);
+				onExplorerDragStateChange?.(0, []);
 			}}
 			onClickCapture={(e) => {
 				if (!(e.ctrlKey || e.metaKey)) return;
@@ -339,20 +562,23 @@ export const FileExplorerItem: React.FC<FileExplorerItemProps> = ({
 				if (nearestTreeItem !== e.currentTarget) return;
 				e.preventDefault();
 				e.stopPropagation();
-				tree.toggleBulkSelection(item);
+				onBulkSelectionToggle?.(item);
 			}}
-			onContextMenu={(e) =>
-				tree.openContextMenu(
+			onContextMenu={(e) => {
+				if (!onContextMenuOpen) return;
+				e.preventDefault();
+				e.stopPropagation();
+				onContextMenuOpen(
 					e,
 					item,
 					getItemTargetDirectory(item),
-					secondaryActions,
-				)
-			}
+					visibleSecondaryActions,
+				);
+			}}
 			label={
 				<div
 					data-testid={`${itemTestId}-row`}
-					className={cn(
+					className={[
 						// `rtl:flex-row-reverse` mirrors the header's column
 						// order in RTL. The header (in file-explorer.tsx)
 						// flips correctly via writing-direction inheritance,
@@ -361,16 +587,24 @@ export const FileExplorerItem: React.FC<FileExplorerItemProps> = ({
 						// direction context. Explicit reverse keeps Name and
 						// Date aligned with the header in both directions.
 						"group flex min-h-7 min-w-full flex-row items-center rounded-md pe-2 transition-colors rtl:flex-row-reverse",
-						isContextActive &&
-							"bg-accent text-accent-foreground ring-1 ring-primary/30 ring-inset",
-						isBulkSelected &&
-							"bg-primary/10 text-accent-foreground ring-1 ring-primary/40 ring-inset",
-						isActiveDropTarget &&
-							"bg-primary/15 ring-1 ring-primary ring-inset",
-						// matches a dragged workbench tab; no ring, so the drop
-						// target stays the only ringed row on screen
-						isDraggingSource && "opacity-40",
-					)}
+						effectiveIsContextActive
+							? "bg-accent text-accent-foreground ring-1 ring-primary/30 ring-inset"
+							: "",
+						effectiveIsBulkSelected
+							? "bg-primary/10 text-accent-foreground ring-1 ring-primary/40 ring-inset"
+							: "",
+						isActiveDropTarget
+							? "bg-primary/15 ring-1 ring-primary/50 ring-inset"
+							: "",
+						isDraggingSource
+							? "opacity-60 ring-1 ring-primary/30 ring-inset"
+							: "",
+						isFileMoveEnabled
+							? "cursor-grab active:cursor-grabbing"
+							: "",
+					]
+						.filter(Boolean)
+						.join(" ")}
 					title={
 						item.lastModified
 							? `${t("fileExplorer.pathLabel", {
@@ -397,16 +631,14 @@ export const FileExplorerItem: React.FC<FileExplorerItemProps> = ({
 										dot > 0 ? dot : e.target.value.length,
 									);
 								}}
-								onBlur={() =>
-									commands.renameTo(item, renameValue)
-								}
+								onBlur={handleRename}
 								onKeyDown={(e) => {
 									if (e.key === "Enter") {
 										e.preventDefault();
-										commands.renameTo(item, renameValue);
+										handleRename();
 									} else if (e.key === "Escape") {
 										e.preventDefault();
-										tree.cancelRename();
+										setIsRenaming(false);
 									}
 									e.stopPropagation();
 								}}
@@ -418,49 +650,75 @@ export const FileExplorerItem: React.FC<FileExplorerItemProps> = ({
 								type="button"
 								className="min-w-0 truncate bg-transparent p-0 text-start text-sm"
 								onDoubleClick={(e) => {
-									if (!capabilities.mutate || isDirectory) {
-										return;
-									}
+									if (!canRename || isDirectory) return;
 									e.stopPropagation();
-									commands.rename(item);
+									setRenameValue(item.name);
+									setIsRenaming(true);
 								}}
 							>
 								{item.name}
 							</button>
+						)}
+						<div className="flex-1" />
+						{isDraggingSource && (
+							<span
+								data-testid={`${itemTestId}-drag-source-indicator`}
+								className="shrink-0 rounded border border-primary/30 bg-primary/10 px-1.5 py-0.5 text-[10px] text-primary"
+							>
+								Moving{" "}
+								{draggedItemCount > 1
+									? `${draggedItemCount} items`
+									: "1 item"}
+							</span>
+						)}
+						{isActiveDropTarget && (
+							<span
+								data-testid={`${itemTestId}-drop-target-indicator`}
+								className="shrink-0 rounded border border-primary/40 bg-primary/10 px-1.5 py-0.5 text-[10px] text-primary"
+							>
+								Move here
+							</span>
 						)}
 					</div>
 
 					{/* Column 2: Date */}
 					<div
 						data-testid={`${itemTestId}-date`}
-						className="w-[var(--date-col-width,170px)] shrink-0 overflow-hidden truncate px-2 text-end text-[11px] text-muted-foreground"
+						className="shrink-0 overflow-hidden truncate px-2 text-end text-[11px] text-muted-foreground"
+						style={{ width: "var(--date-col-width, 170px)" }}
 					>
 						{macDate ?? ""}
 					</div>
 
 					{/* Column 3: Actions */}
-					{actions.length > 0 && (
-						<div className="flex w-9 shrink-0 items-center justify-end">
-							{actions.map((action) => (
-								<Tooltip key={action.name}>
-									<TooltipTrigger asChild>
-										<Button
-											data-testid={`${itemTestId}-action-${getFileExplorerTestIdSegment(action.name)}`}
-											variant="ghost"
-											size="icon-sm"
-											onClick={(e) => {
-												e.stopPropagation();
-												action.action(item);
-											}}
-										>
-											{action.icon}
-										</Button>
-									</TooltipTrigger>
-									<TooltipContent>
-										{action.tooltip}
-									</TooltipContent>
-								</Tooltip>
-							))}
+					{actions.some(Boolean) && (
+						<div
+							className="flex shrink-0 items-center justify-end"
+							style={{ width: ACTIONS_COL_WIDTH }}
+						>
+							{actions.map((a) => {
+								if (!a) return null;
+								return (
+									<Tooltip key={a.name}>
+										<TooltipTrigger asChild>
+											<Button
+												data-testid={`${itemTestId}-action-${getFileExplorerTestIdSegment(a.name)}`}
+												variant="ghost"
+												size="icon-sm"
+												onClick={(e) => {
+													e.stopPropagation();
+													a.action(item);
+												}}
+											>
+												{a.icon}
+											</Button>
+										</TooltipTrigger>
+										<TooltipContent>
+											{a.tooltip}
+										</TooltipContent>
+									</Tooltip>
+								);
+							})}
 						</div>
 					)}
 				</div>
@@ -471,12 +729,34 @@ export const FileExplorerItem: React.FC<FileExplorerItemProps> = ({
 				<>
 					{getChildren.status === "SUCCESS" &&
 						children.map((child) => (
-							<FileExplorerItem
+							<ItemComponent
 								key={child.path}
 								data-testid={`file-explorer-item-${getFileExplorerTestIdSegment(child.path)}`}
-								explorer={explorer}
+								mode={mode}
 								item={child}
-								itemActions={itemActions}
+								refresh={getChildren.refresh}
+								actions={actions}
+								secondaryActions={secondaryActions}
+								dateColWidth={dateColWidth}
+								onAfterRename={onAfterRename}
+								isItemBulkSelected={isItemBulkSelected}
+								isItemContextActive={isItemContextActive}
+								onItemRegister={onItemRegister}
+								onDirectoryRefreshRegister={
+									onDirectoryRefreshRegister
+								}
+								onBulkSelectionToggle={onBulkSelectionToggle}
+								onContextMenuOpen={onContextMenuOpen}
+								getDragItems={getDragItems}
+								onMoveItems={onMoveItems}
+								activeDragItems={activeDragItems}
+								activeDropTargetPath={activeDropTargetPath}
+								onExplorerDragStateChange={
+									onExplorerDragStateChange
+								}
+								onExplorerDropTargetChange={
+									onExplorerDropTargetChange
+								}
 							/>
 						))}
 					{getChildren.status === "SUCCESS" &&
@@ -485,7 +765,7 @@ export const FileExplorerItem: React.FC<FileExplorerItemProps> = ({
 								data-testid={`${itemTestId}-empty-folder`}
 								className="flex items-center justify-center py-2 text-xs"
 							>
-								{t("fileExplorer.emptyFolder")}
+								Empty folder
 							</Muted>
 						)}
 					{/* Placeholder to ensure chevron is always shown for directories */}

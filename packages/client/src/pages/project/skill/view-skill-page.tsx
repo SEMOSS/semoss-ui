@@ -2,9 +2,11 @@
 
 import { ChevronRightIcon, InfoIcon, PencilIcon } from "lucide-react";
 import { observer } from "mobx-react-lite";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { InsightProvider } from "@semoss/sdk/react";
+import type { FileItem } from "@semoss/shared";
+import { FileExplorer } from "@semoss/shared";
 import {
 	Breadcrumb,
 	BreadcrumbItem,
@@ -20,29 +22,35 @@ import {
 	toast,
 } from "@semoss/ui/next";
 import { NavbarHeader, NavbarLeft, NavbarRight } from "@/components/shared";
-import { SkillPublicFiles } from "@/components/skill";
+import { SkillFileViewer } from "@/components/skill";
 import { usePage, useProject, useRootStore } from "@/hooks";
+import type { WorkspaceStore } from "@/stores";
+
+const PUBLIC_ROOT_PATH = "/public";
 
 export const ViewSkillPage = observer(() => {
 	const { configStore } = useRootStore();
 	const navigate = useNavigate();
 	const { project, catalog, permission } = useProject();
 
-	const [insightId, setInsightId] = useState<string | null>(null);
+	const [workspace, setWorkspace] = useState<WorkspaceStore | null>(null);
+	const [selectedPath, setSelectedPath] = useState<string | null>(null);
+	const hasAutoSelectedRef = useRef(false);
 
 	usePage({
 		showNavbarLogo: false,
 	});
 
 	useEffect(() => {
-		// clear out the old insight; SkillPublicFiles is keyed on the project,
-		// so its own selection resets with it
-		setInsightId(null);
+		// clear out the old workspace/selection
+		setWorkspace(null);
+		setSelectedPath(null);
+		hasAutoSelectedRef.current = false;
 
 		configStore
-			.createProjectInsight(project)
-			.then((loadedInsightId) => {
-				setInsightId(loadedInsightId);
+			.createWorkspace(project, permission)
+			.then((loadedWorkspace) => {
+				setWorkspace(loadedWorkspace);
 			})
 			.catch((e) => {
 				toast.error(e.message);
@@ -50,7 +58,30 @@ export const ViewSkillPage = observer(() => {
 			});
 	}, [project.project_id]);
 
-	if (!insightId || !project.project_id) {
+	/**
+	 * Auto-select SKILL.md the first time the /public root finishes loading
+	 */
+	const handleVisibleItemsChange = (payload: {
+		path: string;
+		items: FileItem[];
+	}) => {
+		if (hasAutoSelectedRef.current) {
+			return;
+		}
+		if (payload.path !== PUBLIC_ROOT_PATH) {
+			return;
+		}
+
+		const skillMd = payload.items.find(
+			(item) => item.type !== "directory" && item.name === "SKILL.md",
+		);
+		if (skillMd) {
+			hasAutoSelectedRef.current = true;
+			setSelectedPath(skillMd.path);
+		}
+	};
+
+	if (!workspace || !project.project_id) {
 		return (
 			<div className="absolute inset-0 flex flex-1 items-center justify-center">
 				<Spinner />
@@ -120,13 +151,25 @@ export const ViewSkillPage = observer(() => {
 			</NavbarRight>
 			<div className="w-full pb-2">
 				<InsightProvider
-					options={{ insightId: insightId }}
+					options={{ insightId: workspace.insightId }}
 					destroyOnUnmount={false}
 				>
-					<SkillPublicFiles
-						key={project.project_id}
+					<div className="mb-6 max-h-[35vh] overflow-auto rounded-md border border-border">
+						<FileExplorer
+							mode={{
+								type: "APP",
+								app: project.project_id,
+							}}
+							initialPath={PUBLIC_ROOT_PATH}
+							readOnly
+							onItemSelect={(item) => setSelectedPath(item.path)}
+							onVisibleItemsChange={handleVisibleItemsChange}
+						/>
+					</div>
+					<SkillFileViewer
 						projectId={project.project_id}
-						insightId={insightId}
+						insightId={workspace.insightId}
+						path={selectedPath}
 					/>
 				</InsightProvider>
 			</div>

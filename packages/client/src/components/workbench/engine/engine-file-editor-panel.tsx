@@ -1,84 +1,74 @@
-import { FileEditor, getFileIconComponent } from "@semoss/shared";
+import { observer } from "mobx-react-lite";
+import { FileEditor, FlexLayout } from "@semoss/shared";
 import { MetadataHelpDialog } from "@/components/shared";
 import { MCP } from "@/constants";
 import { useEngine } from "@/hooks";
-import type {
-	WorkbenchComponent,
-	WorkbenchPanelConfig,
-} from "@/stores/workbench";
 
-/** The config an engine file-editor instance is opened with. */
-export interface EngineFileEditorConfig {
-	name: string;
-	path: string;
-	fileMode?: "ENGINE" | "INSIGHT";
-	insightId?: string;
+interface EngineFileEditorPanelProps {
+	/** Node */
+	node: FlexLayout.TabNode;
 }
 
-export const EngineFileEditorPanel: WorkbenchComponent<
-	EngineFileEditorConfig
-> = ({ config, rename }) => {
-	const { engine, permission } = useEngine();
+export const EngineFileEditorPanel: React.FC<EngineFileEditorPanelProps> =
+	observer(({ node }) => {
+		const { engine, permission } = useEngine();
+		const readOnly = !(permission === "OWNER" || permission === "EDIT");
 
-	const readOnly = !(permission === "OWNER" || permission === "EDIT");
+		const config: {
+			name: string;
+			path: string;
+			fileMode?: "ENGINE" | "INSIGHT";
+			insightId?: string;
+		} = node.getConfig();
 
-	const isDriverFile = MCP.DRIVER_PATHS.some((f) => config.path.endsWith(f));
+		const isDriverFile = MCP.DRIVER_PATHS.some((f) =>
+			config.path.endsWith(f),
+		);
 
-	if (config.fileMode === "INSIGHT" && config.insightId) {
+		if (config.fileMode === "INSIGHT" && config.insightId) {
+			return (
+				<FileEditor
+					mode={{
+						type: "INSIGHT",
+						insightId: config.insightId,
+					}}
+					path={config.path}
+					readOnly={readOnly}
+					onChange={(_content, isModified) => {
+						const updated = isModified
+							? `${config.name}*`
+							: config.name;
+
+						// rename the tab
+						node.getModel().doAction(
+							FlexLayout.Actions.renameTab(node.getId(), updated),
+						);
+					}}
+				/>
+			);
+		}
+
 		return (
 			<FileEditor
 				mode={{
-					type: "INSIGHT",
-					insightId: config.insightId,
+					type: "ENGINE",
+					engine: engine.engine_id,
 				}}
 				path={config.path}
 				readOnly={readOnly}
+				leadingToolbar={
+					isDriverFile ? <MetadataHelpDialog compact /> : undefined
+				}
 				onChange={(_content, isModified) => {
-					// the dirty marker is a programmatic rename; canRename
-					// only gates user-facing rename affordances
-					rename(isModified ? `${config.name}*` : config.name);
+					const updated = isModified
+						? `${config.name}*`
+						: config.name;
+
+					// rename the tab
+					node.getModel().doAction(
+						FlexLayout.Actions.renameTab(node.getId(), updated),
+					);
 				}}
 			/>
 		);
-	}
-
-	return (
-		<FileEditor
-			mode={{
-				type: "ENGINE",
-				engine: engine.engine_id,
-			}}
-			path={config.path}
-			readOnly={readOnly}
-			leadingToolbar={
-				isDriverFile ? <MetadataHelpDialog compact /> : undefined
-			}
-			onChange={(_content, isModified) => {
-				rename(isModified ? `${config.name}*` : config.name);
-			}}
-		/>
-	);
-};
-
-/**
- * Blueprint for engine file-editor instances. Instances dedupe on their file
- * path (plus mode), so a renamed file re-selects its open editor instead of
- * opening a duplicate. That is `selectPanel`'s behaviour only — dragging a file
- * out of the explorer deliberately spawns a second view of it. keepAlive:
- * unsaved buffers survive tab switches.
- */
-export const ENGINE_FILE_EDITOR_PANEL: WorkbenchPanelConfig<EngineFileEditorConfig> =
-	{
-		name: "Editor",
-		canRename: false,
-		mount: "keepAlive",
-		matches: (a, b) =>
-			a.path === b.path &&
-			a.fileMode === b.fileMode &&
-			a.insightId === b.insightId,
-		icon: ({ name, className }) => {
-			const Icon = getFileIconComponent(name ?? "");
-			return <Icon className={className} />;
-		},
-		content: EngineFileEditorPanel,
-	};
+	});

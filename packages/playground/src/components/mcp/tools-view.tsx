@@ -1,11 +1,9 @@
 import { toJS } from "mobx";
 import { observer } from "mobx-react-lite";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { isRequestUserInputAction, parseUserInputRequest } from "@semoss/sdk";
 import { Env, type MCPToolRequest, usePixel } from "@semoss/sdk/react";
-import { AgentUserInputCard, Skeleton, toast } from "@semoss/ui/next";
+import { Skeleton } from "@semoss/ui/next";
 import type { RoomStore } from "@/stores";
-import { decideAgentToolAction } from "@/stores/message/agent-harness";
 import { isAskExecutionMode } from "@/utility/mcp-utils";
 import { ToolsDefaultView } from "./tools-default-view";
 import { ToolsServerView } from "./tools-server-view";
@@ -285,54 +283,14 @@ export const ToolsView = observer(
 						onLoad={() => handleOnLoad()}
 					/>
 				)}
-				{!url &&
-					!isLoading &&
-					liveTool &&
-					(isRequestUserInputAction({
-						toolName: liveTool.json.name,
-						toolMeta: liveTool.json._meta,
-					}) ? (
-						(() => {
-							const request = parseUserInputRequest({
-								toolArgs: liveTool.json.arguments,
-							});
-							return request ? (
-								<div className="p-3">
-									<AgentUserInputCard
-										request={request}
-										disabled={!liveTool.pendingAction}
-										onSubmit={async (answers) => {
-											try {
-												await decideAgentToolAction(
-													liveTool,
-													"respond",
-													answers,
-												);
-											} catch (error) {
-												toast.error(
-													error instanceof Error
-														? error.message
-														: "Unable to submit these answers.",
-												);
-											}
-										}}
-									/>
-								</div>
-							) : (
-								<div className="p-3 text-destructive text-sm">
-									The assistant sent an invalid input request
-									and it cannot be displayed.
-								</div>
-							);
-						})()
-					) : (
-						<ToolsDefaultView
-							room={room}
-							app={app}
-							message={message}
-							tool={liveTool}
-						/>
-					))}
+				{!url && !isLoading && liveTool && (
+					<ToolsDefaultView
+						room={room}
+						app={app}
+						message={message}
+						tool={liveTool}
+					/>
+				)}
 			</div>
 		);
 	},

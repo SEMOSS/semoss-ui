@@ -1,4 +1,4 @@
-import { SearchIcon } from "lucide-react";
+import { Search, SearchIcon } from "lucide-react";
 import React, { Suspense, useEffect, useState } from "react";
 import {
 	Badge,
@@ -14,9 +14,6 @@ import {
 	DialogDescription,
 	DialogHeader,
 	DialogTitle,
-	Tooltip,
-	TooltipContent,
-	TooltipTrigger,
 	useDebouncedValue,
 } from "@semoss/ui/next";
 import { PlatformSearchApp } from "./platform-search-app";
@@ -42,7 +39,12 @@ const CATEGORIES = [
 	{ name: "Vector", type: "VECTOR" },
 ] as const satisfies ReadonlyArray<{ name: string; type: SearchCategoryType }>;
 
-export const PlatformSearch = () => {
+interface PromptSearchProps {
+	/** Css to pass to the toggle */
+	className?: string;
+}
+
+export const PlatformSearch = ({ className }: PromptSearchProps) => {
 	const [search, setSearch] = useState("");
 	const [open, setOpen] = useState(false);
 
@@ -89,20 +91,27 @@ export const PlatformSearch = () => {
 
 	return (
 		<>
-			<Tooltip>
-				<TooltipTrigger asChild>
-					<Button
-						variant="ghost"
-						size="icon"
-						aria-label="Search"
-						className="text-muted-foreground"
-						onClick={() => setOpen(true)}
-					>
-						<SearchIcon />
-					</Button>
-				</TooltipTrigger>
-				<TooltipContent side="bottom">Search</TooltipContent>
-			</Tooltip>
+			<Button
+				variant="ghost"
+				size={className ? "default" : "icon"}
+				aria-label="Search"
+				className={cn(
+					className
+						? "h-10 w-full justify-start overflow-hidden rounded-lg border-2 border-border bg-background/95 text-muted-foreground shadow-sm hover:text-foreground"
+						: "h-9 w-9 text-muted-foreground hover:bg-accent hover:text-foreground",
+					className,
+				)}
+				onClick={() => setOpen(true)}
+			>
+				{className ? (
+					<>
+						<SearchIcon className="size-4 shrink-0 opacity-50" />
+						Search
+					</>
+				) : (
+					<Search className="h-[18px] w-[18px]" />
+				)}
+			</Button>
 			<Dialog open={open} onOpenChange={setOpen}>
 				<DialogContent
 					className="overflow-hidden p-0 sm:max-w-2xl [&>[data-slot=dialog-close]]:z-20 [&>[data-slot=dialog-close]]:rounded-md [&>[data-slot=dialog-close]]:bg-background/95 [&>[data-slot=dialog-close]]:p-1"

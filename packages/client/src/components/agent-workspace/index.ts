@@ -1,1 +1,1 @@
-export { AgentEditor } from "./agent-editor";
+export { AgentWorkspace } from "./agent-workspace";

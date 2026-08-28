@@ -1,23 +1,14 @@
 import { CloudUploadIcon, HammerIcon, PencilIcon } from "lucide-react";
 import { observer } from "mobx-react-lite";
-import { useMemo, useState } from "react";
-import { useInsight } from "@semoss/sdk/react";
+import { useState } from "react";
+import { download, useInsight } from "@semoss/sdk/react";
 import {
 	FileExplorer,
-	FileExplorerHeader,
-	type FileExplorerItemActions,
+	FileExplorerItem,
 	type FileExplorerMovedItem,
-	FileExplorerNewAction,
-	FileExplorerRefreshAction,
-	type FileItem,
-	type FileMode,
 	FlexLayout,
 	getFileEditorPathScope,
-	getParentPath,
-	NewFileOverlay,
 	notifyFileEditorPathMoved,
-	resolveMovedPath,
-	useFileExplorer,
 } from "@semoss/shared";
 import {
 	Button,
@@ -29,13 +20,6 @@ import {
 } from "@semoss/ui/next";
 import { MCP } from "@/constants";
 import { readMCPFile, toFileText } from "../shared";
-
-/** The config shape the file-backed FlexLayout tabs carry. */
-interface FileTabConfig {
-	name?: string;
-	path?: string;
-	data?: { name?: string; path?: string };
-}
 
 interface AppFileExplorerProps {
 	/** Node */
@@ -54,57 +38,55 @@ interface AppFileExplorerProps {
 	readOnly?: boolean;
 }
 
-/**
- * The file a tab is open for. Some editors keep it at the top of their config,
- * others nest it under `data`.
- *
- * @param config - The tab's config, if it has one.
- * @return The path, or undefined for a tab that is not file-backed.
- */
-const getTabPath = (config: FileTabConfig | undefined) =>
-	config?.path || config?.data?.path;
-
-/**
- * An in-place rename, as opposed to a move to another directory.
- *
- * @param moved - One entry from an `onItemsMoved` batch.
- * @return True when the item stayed in its directory.
- */
-const isRename = (moved: FileExplorerMovedItem) =>
-	getParentPath(moved.oldPath) === getParentPath(moved.newPath);
-
-/**
- * The app editor's file explorer, for the legacy FlexLayout workspace shell.
- *
- * Functionally the twin of `ProjectFileExplorerPanel`, but the tabs it keeps in
- * sync are FlexLayout nodes rather than workbench panels, so the sync helpers
- * are local — only the path arithmetic (`resolveMovedPath`) is shared.
- */
 export const AppFileExplorer: React.FC<AppFileExplorerProps> = observer(
 	({ layout, node, app, initialPath, readOnly = false }) => {
 		const insight = useInsight();
 
 		const [isPublishing, setIsPublishing] = useState(false);
 
-		const mode = useMemo<FileMode>(
-			() => ({ type: "APP", app: app }),
-			[app],
-		);
+		const getTabPath = (
+			config: { path?: string; data?: { path?: string } } | undefined,
+		) => config?.path || config?.data?.path;
 
-		/**
-		 * Repoint one tab at a new path, keeping its unsaved-work `*` marker.
-		 *
-		 * @param tabNode - The tab to repoint.
-		 * @param newPath - Where its file moved to.
-		 */
+		const getMovedPath = (
+			path: string,
+			movedItem: FileExplorerMovedItem,
+		) => {
+			const oldPathWithSlash = movedItem.oldPath.endsWith("/")
+				? movedItem.oldPath
+				: `${movedItem.oldPath}/`;
+			const newPathWithSlash = movedItem.newPath.endsWith("/")
+				? movedItem.newPath
+				: `${movedItem.newPath}/`;
+
+			if (path === movedItem.oldPath) {
+				return movedItem.newPath;
+			}
+
+			if (
+				movedItem.item.type === "directory" &&
+				path.startsWith(oldPathWithSlash)
+			) {
+				return `${newPathWithSlash}${path.slice(oldPathWithSlash.length)}`;
+			}
+
+			return null;
+		};
+
 		const updateTabPath = (
 			tabNode: FlexLayout.TabNode,
 			newPath: string,
 		) => {
-			const config = tabNode.getConfig() as FileTabConfig | undefined;
+			const config = tabNode.getConfig() as
+				| {
+						name?: string;
+						path?: string;
+						data?: { name?: string; path?: string };
+				  }
+				| undefined;
 			const newName = newPath.split("/").filter(Boolean).pop() ?? newPath;
 			const oldPath = getTabPath(config);
-			const scope = getFileEditorPathScope(mode);
+			const scope = getFileEditorPathScope({ type: "APP", app });
 			const tabName = tabNode.getName();
 			const displayName = tabName.endsWith("*") ? `${newName}*` : newName;
 
@@ -137,12 +119,6 @@ export const AppFileExplorer: React.FC<AppFileExplorerProps> = observer(
 			}
 		};
 
-		/**
-		 * Repoint every open tab affected by a batch of moves.
-		 *
-		 * @param movedItems - The moves that happened.
-		 * @return True if at least one tab moved with them.
-		 */
 		const migrateMovedTabs = (movedItems: FileExplorerMovedItem[]) => {
 			const model = node.getModel();
 			let migrated = false;
@@ -152,20 +128,25 @@ export const AppFileExplorer: React.FC<AppFileExplorerProps> = observer(
 					return;
 				}
 
-				const path = getTabPath(
-					currentNode.getConfig() as FileTabConfig | undefined,
-				);
+				const config = currentNode.getConfig() as
+					| { path?: string; data?: { path?: string } }
+					| undefined;
+				const path = getTabPath(config);
 				if (!path) {
 					return;
 				}
 
-				const movedPath = movedItems.reduce(
-					(currentPath, movedItem) =>
-						resolveMovedPath(currentPath, movedItem) ?? currentPath,
+				const movedPath = movedItems.reduce<string | null>(
+					(currentPath, movedItem) => {
+						if (!currentPath) return currentPath;
+						return (
+							getMovedPath(currentPath, movedItem) ?? currentPath
+						);
+					},
 					path,
 				);
 
-				if (movedPath !== path) {
+				if (movedPath && movedPath !== path) {
 					updateTabPath(currentNode, movedPath);
 					migrated = true;
 				}
@@ -175,13 +156,19 @@ export const AppFileExplorer: React.FC<AppFileExplorerProps> = observer(
 		};
 
 		/**
-		 * Close every tab open for a deleted file, or — for a deleted
-		 * directory — for anything that was inside it.
-		 *
-		 * @param items - The items that were deleted.
+		 * Remove tabs that are open for a file that has been deleted. If it's a directory, remove all tabs that are open for files within that directory
+		 * @param deletedPath the path of the deleted file or directory
+		 * @param isDirectory whether the deleted path is a directory
 		 */
-		const removeDeletedTabs = (items: FileItem[]) => {
+		const removeDeletedTabs = (
+			deletedPath: string,
+			isDirectory: boolean,
+		) => {
 			const model = node.getModel();
+			const deletedPathWithSlash =
+				isDirectory && !deletedPath.endsWith("/")
+					? `${deletedPath}/`
+					: deletedPath;
 			const tabsToRemove: string[] = [];
 
 			model.visitNodes((currentNode) => {
@@ -189,25 +176,19 @@ export const AppFileExplorer: React.FC<AppFileExplorerProps> = observer(
 					return;
 				}
 
-				const path = getTabPath(
-					currentNode.getConfig() as FileTabConfig | undefined,
-				);
+				const config = currentNode.getConfig() as
+					| { path?: string; data?: { path?: string } }
+					| undefined;
+				const path = getTabPath(config);
 				if (!path) {
 					return;
 				}
-
-				const isDoomed = items.some((item) => {
-					const directoryPath = item.path.endsWith("/")
-						? item.path
-						: `${item.path}/`;
-					return (
-						path === item.path ||
-						(item.type === "directory" &&
-							path.startsWith(directoryPath))
-					);
-				});
-
-				if (isDoomed) {
+				if (
+					isDirectory
+						? path === deletedPath ||
+							path.startsWith(deletedPathWithSlash)
+						: path === deletedPath
+				) {
 					tabsToRemove.push(currentNode.getId());
 				}
 			});
@@ -233,9 +214,10 @@ export const AppFileExplorer: React.FC<AppFileExplorerProps> = observer(
 
 			// select the node if there
 			let selectedNode = model.getNodeById(nodeId);
-			const targetPath = getTabPath(
-				options.config as FileTabConfig | undefined,
-			);
+			const targetConfig = options.config as
+				| { path?: string; data?: { path?: string } }
+				| undefined;
+			const targetPath = getTabPath(targetConfig);
 			if (!selectedNode && targetPath) {
 				model.visitNodes((currentNode) => {
 					if (
@@ -246,7 +228,7 @@ export const AppFileExplorer: React.FC<AppFileExplorerProps> = observer(
 					}
 
 					const config = currentNode.getConfig() as
-						| FileTabConfig
+						| { path?: string; data?: { path?: string } }
 						| undefined;
 					if (
 						currentNode.getComponent() === options.component &&
@@ -284,33 +266,6 @@ export const AppFileExplorer: React.FC<AppFileExplorerProps> = observer(
 				),
 			);
 		};
-
-		/**
-		 * The FlexLayout tab spec for one app file. Shared by opening a file
-		 * and by dragging one into the layout.
-		 *
-		 * @param item - The file the tab is for.
-		 * @return The tab spec.
-		 */
-		const fileTab = (item: FileItem) => ({
-			type: "tab",
-			name: item.name,
-			component: "app-file-editor",
-			config: {
-				name: item.name,
-				path: item.path,
-			},
-			enableClose: true,
-			enableRename: true,
-		});
-
-		/**
-		 * Reveal a file's editor tab, opening it if it is not already there.
-		 *
-		 * @param item - The file to open.
-		 */
-		const openFile = (item: FileItem) =>
-			addNode(`ENGINE_FILE--${item.path}`, fileTab(item));
 
 		/**
 		 * Re-read an MCP file so the editor's refresh action can pick up edits
@@ -376,163 +331,241 @@ export const AppFileExplorer: React.FC<AppFileExplorerProps> = observer(
 			});
 		};
 
-		const explorer = useFileExplorer({
-			mode: mode,
-			readOnly: readOnly,
-			initialPath: initialPath,
-			onItemSelect: openFile,
-			onItemsMoved: (movedItems) => {
-				const migrated = migrateMovedTabs(movedItems);
-
-				// renaming a file that had no tab open reveals it
-				if (
-					!migrated &&
-					movedItems.length === 1 &&
-					isRename(movedItems[0])
-				) {
-					const newPath = movedItems[0].newPath;
-					openFile({
-						name:
-							newPath.split("/").filter(Boolean).pop() ?? newPath,
-						path: newPath,
-					});
-				}
-			},
-			onItemsDeleted: removeDeletedTabs,
-			onItemDragStart: (e, items) => {
-				// one file at a time: a directory and a multi-item drag have no
-				// single tab to become
-				if (
-					!layout ||
-					items.length !== 1 ||
-					items[0].type === "directory"
-				) {
-					return;
-				}
-
-				layout.addTabWithDragAndDrop(
-					e as unknown as DragEvent,
-					fileTab(items[0]),
-				);
-			},
-		});
-
-		/**
-		 * The MCP glyph buttons for one row. Not memoized: it closes over the
-		 * FlexLayout model helpers above, which read live layout state, and the
-		 * explorer calls it fresh for every row it renders anyway.
-		 *
-		 * @param item - The row being rendered.
-		 * @return Its primary actions, if it has any.
-		 */
-		const itemActions = (item: FileItem): FileExplorerItemActions => {
-			if (readOnly || item.type === "directory") {
-				return {};
-			}
-
-			const actions = [];
-
-			if (MCP.DRIVER_PATHS.some((f) => item.path === f)) {
-				actions.push({
-					name: "Create",
-					icon: <HammerIcon />,
-					tooltip: "Create Toolbox",
-					action: async () => {
-						try {
-							await insight.actions.run(
-								`MakePythonMCP(project=["${app}"]);`,
-							);
-
-							explorer.commands.refresh();
-
-							// add it
-							await addMCPEditorTab("/mcp/py_mcp.json");
-						} catch (e) {
-							toast.error(
-								e instanceof Error ? e.message : `${e}`,
-							);
-							console.error(e);
-						}
-					},
-				});
-			}
-
-			if (MCP.JSON_PATHS.some((f) => item.path.startsWith(f))) {
-				actions.push({
-					name: "Edit",
-					icon: <PencilIcon />,
-					tooltip: "Edit Toolbox",
-					action: async (target: FileItem) => {
-						addMCPEditorTab(target.path);
-					},
-				});
-			}
-
-			return { actions: actions };
-		};
-
 		return (
 			<FileExplorer
-				explorer={explorer}
-				header={
-					<FileExplorerHeader
-						explorer={explorer}
-						actions={
-							<>
-								<FileExplorerRefreshAction
-									explorer={explorer}
-								/>
-								<FileExplorerNewAction explorer={explorer} />
-								{readOnly ? null : (
-									<Tooltip>
-										<TooltipTrigger asChild>
-											<Button
-												variant="ghost"
-												size="icon-sm"
-												aria-label="Compile and publish the app"
-												onClick={async () => {
-													try {
-														setIsPublishing(true);
+				mode={{
+					type: "APP",
+					app: app,
+				}}
+				initialPath={initialPath}
+				readOnly={readOnly}
+				headerActions={
+					readOnly ? undefined : (
+						<Tooltip>
+							<TooltipTrigger asChild>
+								<Button
+									variant="ghost"
+									size="icon-sm"
+									onClick={async () => {
+										try {
+											setIsPublishing(true);
 
-														// Seperate calls so we reload successfully compiled classes before publishing
-														await insight.actions.run(
-															`ReloadInsightClasses(project='${app}', release=false);`,
-														);
+											// Seperate calls so we reload successfully compiled classes before publishing
+											await insight.actions.run(
+												`ReloadInsightClasses(project='${app}', release=false);`,
+											);
 
-														await insight.actions.run(
-															`PublishProject(project='${app}', release=true);`,
-														);
+											await insight.actions.run(
+												`PublishProject(project='${app}', release=true);`,
+											);
 
-														toast.success(
-															"Successfully compiled and published",
-														);
-													} catch (e) {
-														toast.error(
-															`Error: ${e}`,
-														);
-													} finally {
-														setIsPublishing(false);
-													}
-												}}
-											>
-												{isPublishing ? (
-													<Spinner className="size-3" />
-												) : (
-													<CloudUploadIcon className="size-3" />
-												)}
-											</Button>
-										</TooltipTrigger>
-										<TooltipContent>
-											Compile and publish the app
-										</TooltipContent>
-									</Tooltip>
-								)}
-							</>
-						}
-					/>
+											toast.success(
+												"Successfully compiled and published",
+											);
+										} catch (e) {
+											toast.error(`Error: ${e}`);
+										} finally {
+											setIsPublishing(false);
+										}
+									}}
+								>
+									{isPublishing ? (
+										<Spinner className="size-3" />
+									) : (
+										<CloudUploadIcon className="size-3" />
+									)}
+								</Button>
+							</TooltipTrigger>
+							<TooltipContent>
+								Compile and publish the app
+							</TooltipContent>
+						</Tooltip>
+					)
 				}
-				newFileOverlay={NewFileOverlay}
-				itemActions={itemActions}
+				onItemSelect={(item) => {
+					// don't open directories
+					if (item.type === "directory") {
+						return;
+					}
+
+					// this will select if there or open if not
+					addNode(`ENGINE_FILE--${item.path}`, {
+						type: "tab",
+						name: item.name,
+						component: "app-file-editor",
+						config: {
+							name: item.name,
+							path: item.path,
+						},
+						enableClose: true,
+						enableRename: true,
+					});
+				}}
+				onItemsMoved={migrateMovedTabs}
+				onItemsDeleted={(items) => {
+					items.forEach((item) => {
+						removeDeletedTabs(item.path, item.type === "directory");
+					});
+				}}
+				ItemComponent={({ item, refresh, ...otherProps }) => {
+					const isDriverFile =
+						item.type !== "directory" &&
+						MCP.DRIVER_PATHS.some((f) => item.path === f);
+					return (
+						<FileExplorerItem
+							draggable={!readOnly && item.type !== "directory"}
+							item={item}
+							refresh={refresh}
+							onDragStart={(e) => {
+								// cannot drag directories
+								if (item.type === "directory") {
+									return;
+								}
+
+								// add to layout
+								layout.addTabWithDragAndDrop(
+									e as unknown as DragEvent,
+									{
+										type: "tab",
+										name: item.name,
+										component: "app-file-editor",
+										config: {
+											name: item.name,
+											path: item.path,
+										},
+										enableClose: true,
+										enableRename: true,
+									},
+								);
+							}}
+							onAfterRename={(oldPath, newPath) => {
+								const migrated = migrateMovedTabs([
+									{
+										item,
+										oldPath,
+										newPath,
+									},
+								]);
+								if (migrated) {
+									return;
+								}
+
+								const newName =
+									newPath.split("/").filter(Boolean).pop() ??
+									newPath;
+								addNode(`ENGINE_FILE--${newPath}`, {
+									type: "tab",
+									name: newName,
+									component: "app-file-editor",
+									config: { name: newName, path: newPath },
+									enableClose: true,
+									enableRename: true,
+								});
+							}}
+							{...otherProps}
+							actions={[
+								!readOnly && isDriverFile
+									? {
+											name: "Create",
+											icon: <HammerIcon />,
+											tooltip: "Create Toolbox",
+											action: async () => {
+												try {
+													await insight.actions.run(
+														`MakePythonMCP(project=["${app}"]);`,
+													);
+
+													// refresh the explorer
+													refresh();
+
+													// add it
+													await addMCPEditorTab(
+														"/mcp/py_mcp.json",
+													);
+												} catch (e) {
+													toast.error(e.message);
+													console.error(e);
+												}
+											},
+										}
+									: null,
+								!readOnly &&
+								MCP.JSON_PATHS.some((f) =>
+									item.path.startsWith(f),
+								) &&
+								item.type !== "directory"
+									? {
+											name: "Edit",
+											icon: <PencilIcon />,
+											tooltip: "Edit Toolbox",
+											action: async (item) => {
+												addMCPEditorTab(item.path);
+											},
+										}
+									: null,
+							]}
+							secondaryActions={[
+								{
+									name: "Copy Path",
+									action: async (item) => {
+										try {
+											await navigator.clipboard.writeText(
+												item.path,
+											);
+										} catch (_e) {
+											throw new Error(
+												"Failed to copy to clipboard",
+											);
+										}
+									},
+								},
+								item.type !== "directory"
+									? {
+											name: "Download",
+											action: async (item) => {
+												// save it
+												const { pixelReturn } =
+													await insight.actions.run<
+														[string]
+													>(
+														`DownloadAppAsset(project=["${app}"], filePath=["${item.path}"]);`,
+													);
+
+												// get the file key
+												const fileKey =
+													pixelReturn[0].output;
+
+												// download the file
+												await download(
+													insight.insightId,
+													fileKey,
+												);
+
+												refresh();
+											},
+										}
+									: null,
+								readOnly
+									? null
+									: {
+											name: "Delete",
+											action: async (item) => {
+												await insight.actions.run(
+													`DeleteAppAssets(project=["${app}"], filePath=["${item.path}"]);`,
+												);
+
+												removeDeletedTabs(
+													item.path,
+													item.type === "directory",
+												);
+
+												refresh();
+											},
+										},
+							]}
+						/>
+					);
+				}}
 			/>
 		);
 	},

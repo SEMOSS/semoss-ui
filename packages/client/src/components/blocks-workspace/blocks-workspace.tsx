@@ -15,13 +15,14 @@ import { FlexLayout } from "@semoss/shared";
 import { Spinner, toast } from "@semoss/ui/next";
 import { AppFileEditor } from "@/components/app-workspace/app-file-editor";
 import { AppFileExplorer } from "@/components/app-workspace/app-file-explorer";
-import { ProjectDetailTabs, ProjectNavbar } from "@/components/project";
-import { useProject, useWorkspace } from "@/hooks";
+import { ProjectDetailTabs } from "@/components/project";
+import { useWorkspace } from "@/hooks";
 import { DesignerStore, type WorkspaceOptions } from "@/stores";
-import { WorkspaceManager } from "../../components/workspace";
+import { WorkspaceManager, WorkspaceNavbar } from "../../components/workspace";
 import { WorkspaceTerminal } from "../../components/workspace/panels";
 import { DesignerContext } from "../../contexts";
 import { MCPJsonEditor } from "../shared";
+import { GraphPanel } from "../workspace/panels/graph-panel";
 import { BlocksWorkspaceDev } from "./BlocksWorkspaceDev";
 import { BlocksWorkspaceActions } from "./blocks-workspace-actions";
 import { DEFAULT_MENU } from "./menus/default-menu";
@@ -40,6 +41,8 @@ const DEFAULT_BORDER_SIZE = 300;
 const BLOCK_SETTINGS_MIN_WIDTH = 450;
 
 const DEFAULT_OPTIONS: WorkspaceOptions = {
+	version: "",
+
 	layout: {
 		global: { tabEnableClose: false, tabEnableRename: false },
 		borders: [
@@ -184,7 +187,6 @@ const ACTIVE = "page-1";
  */
 export const BlocksWorkspace: React.FC = observer(() => {
 	const { workspace } = useWorkspace();
-	const { project } = useProject();
 	const insight = useInsight();
 	const [state, setState] = useState<StateStore>();
 
@@ -220,7 +222,7 @@ export const BlocksWorkspace: React.FC = observer(() => {
 
 		// load the app
 		runPixel<[SerializedState]>(
-			`GetAppBlocksJson ( project=["${project.project_id}"]);`,
+			`GetAppBlocksJson ( project=["${workspace.appId}"]);`,
 			workspace.insightId ? workspace.insightId : "new",
 		)
 			.then(async ({ pixelReturn, errors, insightId }) => {
@@ -343,11 +345,11 @@ export const BlocksWorkspace: React.FC = observer(() => {
 				<AppFileExplorer
 					node={node}
 					layout={layout}
-					app={project.project_id}
+					app={workspace.appId}
 				/>
 			);
 		} else if (component === "app-file-editor") {
-			return <AppFileEditor node={node} app={project.project_id} />;
+			return <AppFileEditor node={node} app={workspace.appId} />;
 		} else if (component === "mcpJsonEditor") {
 			return <MCPJsonEditor dataMap={config.data} />;
 		} else if (component === "notebook-explorer") {
@@ -357,7 +359,9 @@ export const BlocksWorkspace: React.FC = observer(() => {
 		} else if (component === "notebook-viewer") {
 			return <NotebookViewerPanel id={config.id} />;
 		} else if (component === "terminal") {
-			return <WorkspaceTerminal appId={project.project_id} />;
+			return <WorkspaceTerminal appId={workspace.appId} />;
+		} else if (component === "graph") {
+			return <GraphPanel />;
 		} else if (component === "settings-panel") {
 			return (
 				<ProjectDetailTabs
@@ -417,7 +421,7 @@ export const BlocksWorkspace: React.FC = observer(() => {
 			!(tabNode instanceof FlexLayout.TabNode) ||
 			tabNode.getComponent() !== "app-file-editor"
 		)
-			return action;
+			return undefined;
 		const cfg = tabNode.getConfig() as { path?: string };
 		if (!cfg?.path) return action;
 		const path = cfg.path;
@@ -426,7 +430,7 @@ export const BlocksWorkspace: React.FC = observer(() => {
 		(async () => {
 			try {
 				await insight.actions.run(
-					`RenameAppAsset(project=["${project.project_id}"], filePath=["${path}"], newValue=["${newPath}"]);`,
+					`RenameAppAsset(project=["${workspace.appId}"], filePath=["${path}"], newValue=["${newPath}"]);`,
 				);
 				const tabsetId =
 					tabNode.getParent()?.getId() ??
@@ -465,7 +469,7 @@ export const BlocksWorkspace: React.FC = observer(() => {
 					designer: designer,
 				}}
 			>
-				<ProjectNavbar actions={<BlocksWorkspaceActions />} />
+				<WorkspaceNavbar actions={<BlocksWorkspaceActions />} />
 				<WorkspaceManager
 					options={DEFAULT_OPTIONS}
 					factory={FACTORY}

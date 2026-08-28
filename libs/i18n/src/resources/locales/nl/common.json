@@ -130,6 +130,7 @@
 		"searchAllAria": "Alles doorzoeken",
 		"searchCurrentAria": "Alleen huidige map doorzoeken",
 		"searchCurrentTitle": "Alleen zoeken in {{path}}",
+		"moveDropHint": "Sleep om {{label}} naar {{path}} te verplaatsen",
 		"contextMenu": {
 			"copyPath": "Pad kopiëren",
 			"copy": "Kopiëren",

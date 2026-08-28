@@ -1,4 +1,5 @@
 import { makeAutoObservable, runInAction } from "mobx";
+import type { Role } from "@semoss/sdk";
 import { Env, logout, runPixel } from "@semoss/sdk/react";
 import type { Project } from "@semoss/shared";
 import { registerUser } from "@/api";
@@ -808,40 +809,29 @@ export class ConfigStore {
 	 * Load an app into a new workspace
 	 *
 	 * @param project - project metadata from the caller's context
-	 * @param insightId - insight to bind the workspace to
+	 * @param role - the caller's resolved permission for this project
+	 * @param insightId - insight to bind the workspace to, or "new" to have one
+	 * created
 	 */
-	/**
-	 * Bind an insight to a project and return its id. Read-only surfaces use
-	 * this instead of `createWorkspace` — they only need the insight, not a
-	 * whole `WorkspaceStore`.
-	 *
-	 * @param project - project metadata from the caller's context
-	 * @param insightId - insight to bind, or "new" to create one
-	 * @return insightId the project context was set on
-	 */
-	async createProjectInsight(
+	async createWorkspace(
 		project: Project,
+		role: Role,
 		insightId: string = "new",
-	): Promise<string> {
-		const response = await runPixel(
-			`SetContext("${project.project_id}")`,
-			insightId,
-		);
-
-		return response.insightId;
-	}
-
-	async createWorkspace(project: Project, insightId: string = "new") {
+	) {
 		// set the backend context for this insight
 		const response = await runPixel(
 			`SetContext("${project.project_id}")`,
 			insightId,
 		);
 
-		// create the newly loaded workspace
+		// the workspace is built around the insight the backend answered with.
+		// Asking for "new" means the id only exists in that response, and
+		// anything the workspace hands to the backend later (downloads, asset
+		// reads) has to name the real insight
 		return new WorkspaceStore(this._root, {
 			insightId: response.insightId,
-			projectId: project.project_id,
+			role,
+			metadata: project,
 		});
 	}
 
