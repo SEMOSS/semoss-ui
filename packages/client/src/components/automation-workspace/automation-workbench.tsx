@@ -5,7 +5,6 @@ import {
 	CopyIcon,
 	FileCode2Icon,
 	FolderTreeIcon,
-	HistoryIcon,
 	MessageSquareIcon,
 	Minus as MinusIcon,
 	PanelRightIcon,
@@ -74,7 +73,6 @@ const AUTOMATION_WORKSPACE_CACHE_KEY = "20260827-2";
 const EDITOR = "automation-editor";
 const INSPECTOR = "automation-inspector";
 const TRACE = "automation-trace";
-const HISTORY = "automation-history";
 const FILES = WORKBENCH_COMPONENTS.PROJECT_FILE_EXPLORER;
 const FILE_EDITOR = WORKBENCH_COMPONENTS.PROJECT_FILE_EDITOR;
 const MCP_EDITOR = WORKBENCH_COMPONENTS.PROJECT_MCP_EDITOR;
@@ -128,12 +126,6 @@ const AUTOMATION_LAYOUT: WorkbenchLayout = {
 			name: "Run details",
 			canClose: false,
 		},
-		[HISTORY]: {
-			id: HISTORY,
-			type: HISTORY,
-			name: "History",
-			canClose: false,
-		},
 		[SETTINGS]: {
 			id: SETTINGS,
 			type: SETTINGS,
@@ -157,7 +149,7 @@ const AUTOMATION_LAYOUT: WorkbenchLayout = {
 		left: { panelIds: [FILES], activeId: null, size: 320 },
 		bottom: { panelIds: [TRACE], activeId: null, size: 300 },
 		right: {
-			panelIds: [INSPECTOR, WORKBENCH_COMPONENTS.ASSISTANT, HISTORY],
+			panelIds: [INSPECTOR, WORKBENCH_COMPONENTS.ASSISTANT],
 			activeId: INSPECTOR,
 			size: 400,
 		},
@@ -434,7 +426,6 @@ export const AutomationWorkbench = observer(
 		const editorRef = useRef<HTMLIFrameElement>(null);
 		const inspectorRef = useRef<HTMLIFrameElement>(null);
 		const traceRef = useRef<HTMLIFrameElement>(null);
-		const historyRef = useRef<HTMLIFrameElement>(null);
 		const [traceSnapshot, setTraceSnapshot] = useState<unknown>(null);
 		const [outputModal, setOutputModal] = useState<string | null>(null);
 		const [inspectorSnapshot, setInspectorSnapshot] =
@@ -460,12 +451,7 @@ export const AutomationWorkbench = observer(
 
 		useEffect(() => {
 			const message = { type: "SEMOSS_THEME_SYNC", theme: resolvedTheme };
-			for (const frame of [
-				editorRef,
-				inspectorRef,
-				traceRef,
-				historyRef,
-			]) {
+			for (const frame of [editorRef, inspectorRef, traceRef]) {
 				frame.current?.contentWindow?.postMessage(
 					message,
 					automationOrigin,
@@ -515,7 +501,7 @@ export const AutomationWorkbench = observer(
 					event.source === editorRef.current?.contentWindow &&
 					message.type === "SEMOSS_AUTOMATION_HISTORY_REFRESH"
 				) {
-					historyRef.current?.contentWindow?.postMessage(
+					traceRef.current?.contentWindow?.postMessage(
 						message,
 						automationOrigin,
 					);
@@ -538,18 +524,6 @@ export const AutomationWorkbench = observer(
 					typeof message.output === "string"
 				) {
 					setOutputModal(message.output);
-				}
-				if (
-					event.source === historyRef.current?.contentWindow &&
-					message.type === "SEMOSS_AUTOMATION_TRACE_READY"
-				) {
-					historyRef.current?.contentWindow?.postMessage(
-						{
-							type: "SEMOSS_AUTOMATION_TRACE",
-							snapshot: traceSnapshot,
-						},
-						automationOrigin,
-					);
 				}
 				if (
 					event.source === inspectorRef.current?.contentWindow &&
@@ -600,13 +574,6 @@ export const AutomationWorkbench = observer(
 
 		useEffect(() => {
 			traceRef.current?.contentWindow?.postMessage(
-				{ type: "SEMOSS_AUTOMATION_TRACE", snapshot: traceSnapshot },
-				automationOrigin,
-			);
-		}, [automationOrigin, traceSnapshot]);
-
-		useEffect(() => {
-			historyRef.current?.contentWindow?.postMessage(
 				{ type: "SEMOSS_AUTOMATION_TRACE", snapshot: traceSnapshot },
 				automationOrigin,
 			);
@@ -718,24 +685,6 @@ export const AutomationWorkbench = observer(
 							mode="trace"
 							title="Automation run details"
 							srcRef={traceRef}
-						/>
-					),
-				},
-				[HISTORY]: {
-					name: "History",
-					canClose: false,
-					canRename: false,
-					enableBorderHeader: false,
-					icon: ({ className }) => (
-						<HistoryIcon className={className} />
-					),
-					mount: "keepAlive",
-					content: () => (
-						<AutomationFrame
-							appId={appId}
-							mode="history"
-							title="Automation history"
-							srcRef={historyRef}
 						/>
 					),
 				},

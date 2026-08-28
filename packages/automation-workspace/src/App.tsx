@@ -2,12 +2,12 @@ import { Loader2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useTheme } from "@semoss/ui/next";
 import { AutomationCanvas } from "./components/canvas-editor/automation-canvas";
-import { HistoryTab } from "./components/canvas-editor/tabs/history-tab";
 import { InspectorTab } from "./components/canvas-editor/tabs/inspector-tab";
 import {
-	type AutomationTraceSnapshot,
-	TraceTab,
-} from "./components/canvas-editor/tabs/trace-tab";
+	RunsTab,
+	type RunsTabSnapshot,
+} from "./components/canvas-editor/tabs/runs-tab";
+import type { AutomationTraceSnapshot } from "./components/canvas-editor/tabs/trace-tab";
 import type { AutomationToolContext } from "./domain/automation.types";
 import type {
 	AutomationInspectorAction,
@@ -141,7 +141,7 @@ export default function App() {
 	const [historyRefreshToken, setHistoryRefreshToken] = useState(0);
 
 	useEffect(() => {
-		if (!historyMode) return;
+		if (!historyMode && !traceMode) return;
 		const handleHistoryRefresh = (event: MessageEvent<unknown>) => {
 			if (
 				event.source !== window.parent ||
@@ -159,7 +159,7 @@ export default function App() {
 		window.addEventListener("message", handleHistoryRefresh);
 		return () =>
 			window.removeEventListener("message", handleHistoryRefresh);
-	}, [historyMode, parentOrigin]);
+	}, [historyMode, traceMode, parentOrigin]);
 
 	useEffect(() => {
 		if (!inspectorMode) return;
@@ -318,9 +318,22 @@ export default function App() {
 	}
 
 	if (ready) {
-		if (historyMode) {
+		if (historyMode || traceMode) {
+			const snapshot: RunsTabSnapshot = traceSnapshot ?? {
+				running: false,
+				latestRunStatus: null,
+				aiRunSummary: null,
+				generatingAiSummary: false,
+				steps: [],
+				results: [],
+			};
 			return (
-				<HistoryTab appId={appId} refreshToken={historyRefreshToken} />
+				<RunsTab
+					appId={appId}
+					refreshToken={historyRefreshToken}
+					{...snapshot}
+					onDismiss={() => undefined}
+				/>
 			);
 		}
 		if (inspectorMode) {
@@ -394,17 +407,6 @@ export default function App() {
 					}}
 				/>
 			);
-		}
-		if (traceMode) {
-			const snapshot = traceSnapshot;
-			if (!snapshot) {
-				return (
-					<div className="flex h-full items-center justify-center px-6 text-center text-muted-foreground text-sm">
-						Run the automation to view its trace.
-					</div>
-				);
-			}
-			return <TraceTab {...snapshot} onDismiss={() => undefined} />;
 		}
 		return (
 			<AutomationCanvas

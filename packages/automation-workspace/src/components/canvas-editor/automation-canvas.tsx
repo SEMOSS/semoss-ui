@@ -18,6 +18,7 @@ import "@xyflow/react/dist/style.css";
 import {
 	CalendarClock,
 	CheckCircle,
+	Code2,
 	Hand,
 	HelpCircle,
 	Loader2,
@@ -28,6 +29,7 @@ import {
 	RefreshCw,
 	Save,
 	Scan,
+	Workflow,
 	X,
 	ZoomIn,
 	ZoomOut,
@@ -45,7 +47,6 @@ import {
 	DialogContent,
 	DialogHeader,
 	DialogTitle,
-	Switch,
 	Tooltip,
 	TooltipContent,
 	TooltipTrigger,
@@ -381,7 +382,7 @@ export function AutomationCanvas({
 	const { resolvedTheme } = useTheme();
 	const isDark = resolvedTheme === "dark";
 	const edgeColor = isDark ? "#475569" : "#94a3b8";
-	const dotColor = isDark ? "#334155" : "#cbd5e1";
+	const dotColor = isDark ? "#334155" : "#94a3b8";
 
 	const [saving, setSaving] = useState(false);
 	const [description, setDescription] = useState("");
@@ -2079,18 +2080,38 @@ export function AutomationCanvas({
 													Zoom to fit workflow
 												</TooltipContent>
 											</Tooltip>
+											<Tooltip>
+												<TooltipTrigger asChild>
+													<button
+														type="button"
+														aria-label="Help"
+														onClick={() =>
+															setShowHelp(true)
+														}
+														className="flex size-8 items-center justify-center border-l text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+													>
+														<HelpCircle
+															className="size-4"
+															aria-hidden
+														/>
+													</button>
+												</TooltipTrigger>
+												<TooltipContent side="top">
+													Help
+												</TooltipContent>
+											</Tooltip>
 										</div>
 									)}
 
 									{!readOnly && (
-										<div className="absolute bottom-4 left-4 z-10 flex items-center overflow-hidden rounded-lg border bg-background shadow-sm">
+										<div className="absolute bottom-4 left-4 z-10 flex items-center gap-1 rounded-lg border bg-background p-1 shadow-sm">
 											<Tooltip>
 												<TooltipTrigger asChild>
 													<button
 														type="button"
 														aria-label="Clean up node layout"
 														onClick={cleanUpLayout}
-														className="flex items-center justify-center border-r p-2 text-muted-foreground transition-colors hover:bg-muted"
+														className="flex items-center justify-center rounded p-1.5 text-muted-foreground transition-colors hover:bg-muted"
 													>
 														<RefreshCw className="h-4 w-4" />
 													</button>
@@ -2099,79 +2120,95 @@ export function AutomationCanvas({
 													Clean up layout
 												</TooltipContent>
 											</Tooltip>
-											<Tooltip>
-												<TooltipTrigger asChild>
-													<button
-														type="button"
-														aria-label="Interact mode"
-														onClick={() =>
-															setCanvasMode(
-																"interact",
-															)
-														}
-														className={`flex items-center justify-center p-2 transition-colors ${canvasMode === "interact" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"}`}
-													>
-														<MousePointer2 className="h-4 w-4" />
-													</button>
-												</TooltipTrigger>
-												<TooltipContent side="top">
-													Interact mode — click nodes
-													to edit (V)
-												</TooltipContent>
-											</Tooltip>
-											<Tooltip>
-												<TooltipTrigger asChild>
-													<button
-														type="button"
-														aria-label="Pan mode"
-														onClick={() =>
-															setCanvasMode("pan")
-														}
-														className={`flex items-center justify-center p-2 transition-colors ${canvasMode === "pan" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"}`}
-													>
-														<Hand className="h-4 w-4" />
-													</button>
-												</TooltipTrigger>
-												<TooltipContent side="top">
-													Pan mode — drag to move
-													canvas (H)
-												</TooltipContent>
-											</Tooltip>
-											<Tooltip>
-												<TooltipTrigger asChild>
-													<div className="flex cursor-pointer items-center gap-1.5 border-l px-2 py-2 text-muted-foreground text-xs transition-colors hover:bg-muted hover:text-foreground">
-														<Switch
-															checked={devMode}
-															onCheckedChange={
-																handleDevModeChange
+
+											<div className="flex items-center gap-0.5 rounded-md bg-muted/60 p-0.5">
+												<Tooltip>
+													<TooltipTrigger asChild>
+														<button
+															type="button"
+															aria-label="Interact mode"
+															onClick={() =>
+																setCanvasMode(
+																	"interact",
+																)
 															}
-														/>
-														Dev
-													</div>
-												</TooltipTrigger>
-												<TooltipContent side="top">
-													Show Python source editors
-													on executable nodes
-												</TooltipContent>
-											</Tooltip>
-											<Tooltip>
-												<TooltipTrigger asChild>
-													<button
-														type="button"
-														aria-label="Open automation help"
-														onClick={() =>
-															setShowHelp(true)
-														}
-														className="flex items-center gap-1.5 border-l px-2 py-2 text-muted-foreground text-xs transition-colors hover:bg-muted hover:text-foreground"
-													>
-														<HelpCircle className="h-4 w-4" />
-														Help
-													</button>
-												</TooltipTrigger>
-												<TooltipContent side="top">
-													Automation help
-												</TooltipContent>
-											</Tooltip>
+															className={`flex items-center justify-center rounded p-1.5 transition-colors ${canvasMode === "interact" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+														>
+															<MousePointer2 className="h-4 w-4" />
+														</button>
+													</TooltipTrigger>
+													<TooltipContent side="top">
+														Interact mode (V)
+													</TooltipContent>
+												</Tooltip>
+												<Tooltip>
+													<TooltipTrigger asChild>
+														<button
+															type="button"
+															aria-label="Pan mode"
+															onClick={() =>
+																setCanvasMode(
+																	"pan",
+																)
+															}
+															className={`flex items-center justify-center rounded p-1.5 transition-colors ${canvasMode === "pan" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+														>
+															<Hand className="h-4 w-4" />
+														</button>
+													</TooltipTrigger>
+													<TooltipContent side="top">
+														Pan mode (H)
+													</TooltipContent>
+												</Tooltip>
+											</div>
+
+											<div className="flex items-center gap-0.5 rounded-md bg-muted/60 p-0.5">
+												<Tooltip>
+													<TooltipTrigger asChild>
+														<button
+															type="button"
+															aria-pressed={
+																!devMode
+															}
+															aria-label="Design mode"
+															onClick={() =>
+																handleDevModeChange(
+																	false,
+																)
+															}
+															className={`flex items-center justify-center rounded p-1.5 transition-colors ${!devMode ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+														>
+															<Workflow className="h-4 w-4" />
+														</button>
+													</TooltipTrigger>
+													<TooltipContent side="top">
+														Design mode
+													</TooltipContent>
+												</Tooltip>
+												<Tooltip>
+													<TooltipTrigger asChild>
+														<button
+															type="button"
+															aria-pressed={
+																devMode
+															}
+															aria-label="Dev mode"
+															onClick={() =>
+																handleDevModeChange(
+																	true,
+																)
+															}
+															className={`flex items-center justify-center rounded p-1.5 transition-colors ${devMode ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+														>
+															<Code2 className="h-4 w-4" />
+														</button>
+													</TooltipTrigger>
+													<TooltipContent side="top">
+														Dev mode — Python source
+														editors
+													</TooltipContent>
+												</Tooltip>
+											</div>
 										</div>
 									)}
 								</div>
