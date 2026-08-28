@@ -111,7 +111,8 @@
 			"saveSuccess": "Successfully saved file",
 			"saveFailed": "Error saving file",
 			"downloadFileSuccess": "Successfully downloaded file",
-			"downloadFileFailed": "Error downloading file"
+			"downloadFileFailed": "Error downloading file",
+			"syncFailed": "Failed to sync storage to local"
 		},
 		"dateFormat": {
 			"justNow": "Just now",

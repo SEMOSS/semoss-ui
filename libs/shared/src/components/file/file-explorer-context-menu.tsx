@@ -174,7 +174,7 @@ export const FileExplorerContextMenu: React.FC<
 		});
 	}
 
-	if (isOnItem && canMutate) {
+	if (isOnItem && capabilities.delete) {
 		entries.push({
 			key: "delete",
 			label: t("fileExplorer.contextMenu.delete"),

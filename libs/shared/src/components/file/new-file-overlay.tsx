@@ -502,6 +502,8 @@ export const NewFileOverlay: React.FC<FileExplorerNewFileOverlayProps> = ({
 													{data.files.map((file) => {
 														const fileKey = `${file.name}-${file.size}`;
 														const fileIsZip =
+															adapter.capabilities
+																.mutate &&
 															isZipFile(file);
 														const shouldUnzip =
 															fileIsZip &&

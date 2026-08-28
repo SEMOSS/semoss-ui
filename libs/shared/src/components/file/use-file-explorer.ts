@@ -90,6 +90,7 @@ export const useFileExplorer = (
 			download: adapter.capabilities.download,
 			mutate: adapter.capabilities.mutate && !readOnly,
 			upload: adapter.capabilities.upload && !readOnly,
+			delete: adapter.capabilities.delete && !readOnly,
 		}),
 		[adapter, readOnly],
 	);
@@ -747,7 +748,7 @@ export const useFileExplorer = (
 	 * @param removingItems - The items to delete; duplicates are collapsed.
 	 */
 	const remove = async (removingItems: FileItem[]) => {
-		if (!canMutate) {
+		if (!capabilities.delete) {
 			return;
 		}
 

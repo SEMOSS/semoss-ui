@@ -114,7 +114,6 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
 			}}
 			onKeyDown={handleKeyDown}
 			onContextMenu={(e) => {
-				if (!capabilities.mutate) return;
 				tree.openContextMenu(e, null, ensureDirectoryPath(path));
 			}}
 		>
@@ -278,16 +277,17 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
 				</div>
 			)}
 
-			{NewFileOverlayComponent && capabilities.mutate && (
-				<NewFileOverlayComponent
-					key={newFile.instance}
-					mode={explorer.mode}
-					path={newFile.path}
-					open={newFile.isOpen}
-					action={newFile.action}
-					onClose={newFile.close}
-				/>
-			)}
+			{NewFileOverlayComponent &&
+				(capabilities.mutate || capabilities.upload) && (
+					<NewFileOverlayComponent
+						key={newFile.instance}
+						mode={explorer.mode}
+						path={newFile.path}
+						open={newFile.isOpen}
+						action={newFile.action}
+						onClose={newFile.close}
+					/>
+				)}
 
 			{tree.contextMenu && (
 				<FileExplorerContextMenu
