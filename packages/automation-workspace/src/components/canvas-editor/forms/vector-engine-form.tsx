@@ -1,7 +1,5 @@
-import { useId } from "react";
 import { Field, FieldLabel, Input } from "@semoss/ui/next";
 import type { VectorEngineConfig } from "../../../domain/automation.types";
-import { getPlaygroundParamDescription } from "../../../domain/automation-utils";
 import { EnginePickerField } from "./engine-picker-field";
 import { BoundInput } from "./pill-input";
 
@@ -12,10 +10,6 @@ export interface VectorEngineFormProps {
 	upstreamVars: string[];
 	/** Called with the updated config on every field change */
 	onChange: (c: VectorEngineConfig) => void;
-	/** Fields in this node's config currently marked as playground-fillable */
-	playgroundFillable: string[];
-	/** Called when the set of playground-fillable fields changes */
-	onPlaygroundFieldsChange: (fields: string[]) => void;
 	/** When false (business mode), advanced JSON fields like Filters are hidden */
 	devMode?: boolean;
 }
@@ -24,11 +18,8 @@ export function VectorEngineForm({
 	config,
 	upstreamVars,
 	onChange,
-	playgroundFillable,
-	onPlaygroundFieldsChange,
 	devMode = false,
 }: VectorEngineFormProps) {
-	const pgFillId = useId();
 	return (
 		<div className="flex flex-col gap-4">
 			<EnginePickerField
@@ -55,39 +46,6 @@ export function VectorEngineForm({
 						onChange={(v) => onChange({ ...config, command: v })}
 						upstreamVars={upstreamVars}
 					/>
-					<div className="flex items-center gap-2">
-						<input
-							type="checkbox"
-							id={pgFillId}
-							checked={playgroundFillable.includes("command")}
-							onChange={(e) => {
-								const next = e.target.checked
-									? [...playgroundFillable, "command"]
-									: playgroundFillable.filter(
-											(f) => f !== "command",
-										);
-								onPlaygroundFieldsChange(next);
-							}}
-							className="h-3.5 w-3.5 cursor-pointer accent-primary"
-						/>
-						<label
-							htmlFor={pgFillId}
-							className="cursor-pointer text-muted-foreground text-xs"
-							title={getPlaygroundParamDescription(
-								"vector-engine",
-								"command",
-							)}
-						>
-							Let Playground fill this field
-						</label>
-					</div>
-					{playgroundFillable.includes("command") &&
-						config.command && (
-							<p className="text-amber-600 text-xs dark:text-amber-400">
-								Current value will be overwritten if Playground
-								provides input
-							</p>
-						)}
 					<Field>
 						<FieldLabel>Max Results</FieldLabel>
 						<Input

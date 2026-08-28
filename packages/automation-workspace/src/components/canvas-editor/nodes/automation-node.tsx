@@ -1,4 +1,4 @@
-import { Handle, type NodeProps, Position, useEdges } from "@xyflow/react";
+import { Handle, type NodeProps, Position } from "@xyflow/react";
 import { Loader2, Pencil, Plus, Trash2 } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@semoss/ui/next";
 import type {
@@ -30,8 +30,6 @@ export type AutomationNodeData = {
 	onEdit?: () => void;
 	onDelete?: () => void;
 	onAdd?: () => void;
-	onAddThen?: () => void;
-	onAddElse?: () => void;
 };
 
 const STATUS_BORDER: Record<string, string> = {
@@ -45,8 +43,6 @@ const STATUS_BORDER: Record<string, string> = {
 export function AutomationNode({ data }: NodeProps) {
 	const d = data as AutomationNodeData;
 	const { step, runStatus, runDuration, isIncomplete, locked } = d;
-	const isBranch = typeof step.branchCondition === "string";
-	const edges = useEdges();
 
 	const meta = getDisplayMeta(step.type);
 	const workflowDefinition = step.workflowType
@@ -198,15 +194,7 @@ export function AutomationNode({ data }: NodeProps) {
 				isConnectable={!locked}
 				className="!h-2 !w-2 !border-2 !border-background !bg-muted-foreground/40"
 			/>
-			{isBranch ? (
-				<BranchHandles
-					stepId={step.id}
-					locked={locked}
-					edges={edges}
-					onAddThen={d.onAddThen}
-					onAddElse={d.onAddElse}
-				/>
-			) : !locked ? (
+			{!locked ? (
 				<>
 					<Handle
 						id={`out-${step.id}`}
@@ -237,124 +225,5 @@ export function AutomationNode({ data }: NodeProps) {
 				/>
 			)}
 		</div>
-	);
-}
-
-function BranchHandles({
-	stepId,
-	locked,
-	edges,
-	onAddThen,
-	onAddElse,
-}: {
-	stepId: string;
-	locked?: boolean;
-	edges: { source: string; sourceHandle?: string | null }[];
-	onAddThen?: () => void;
-	onAddElse?: () => void;
-}) {
-	const thenConnected = edges.some(
-		(e) => e.source === stepId && e.sourceHandle === `then-${stepId}`,
-	);
-	const elseConnected = edges.some(
-		(e) => e.source === stepId && e.sourceHandle === `else-${stepId}`,
-	);
-
-	return (
-		<>
-			{/* Then handle */}
-			{!locked && !thenConnected ? (
-				<>
-					<Handle
-						id={`then-${stepId}`}
-						type="source"
-						position={Position.Right}
-						isConnectable
-						onClick={(event) => {
-							event.stopPropagation();
-							onAddThen?.();
-						}}
-						style={{ top: "33%" }}
-						aria-label="Add node to Then branch"
-						className="!h-7 !w-7 !border !border-emerald-500/40 !bg-background hover:!border-emerald-500 shadow-sm transition-colors"
-					/>
-					<span
-						className="pointer-events-none absolute z-10 flex h-7 w-7 items-center justify-center text-emerald-600"
-						style={{
-							top: "33%",
-							right: 0,
-							transform: "translateX(50%) translateY(-50%)",
-						}}
-					>
-						<Plus className="h-4 w-4" />
-					</span>
-				</>
-			) : (
-				<Handle
-					id={`then-${stepId}`}
-					type="source"
-					position={Position.Right}
-					isConnectable={!locked}
-					style={{ top: "33%" }}
-					className="!h-2 !w-2 !border-2 !border-background !bg-emerald-500"
-				/>
-			)}
-			<span
-				className="pointer-events-none absolute right-0 font-medium text-[9px] text-emerald-600"
-				style={{
-					top: "33%",
-					transform: `translateX(calc(100% + ${!locked && !thenConnected ? 20 : 6}px)) translateY(-50%)`,
-				}}
-			>
-				Then
-			</span>
-
-			{/* Else handle */}
-			{!locked && !elseConnected ? (
-				<>
-					<Handle
-						id={`else-${stepId}`}
-						type="source"
-						position={Position.Right}
-						isConnectable
-						onClick={(event) => {
-							event.stopPropagation();
-							onAddElse?.();
-						}}
-						style={{ top: "67%" }}
-						aria-label="Add node to Else branch"
-						className="!h-7 !w-7 !border !border-red-400/40 !bg-background hover:!border-red-400 shadow-sm transition-colors"
-					/>
-					<span
-						className="pointer-events-none absolute z-10 flex h-7 w-7 items-center justify-center text-red-500"
-						style={{
-							top: "67%",
-							right: 0,
-							transform: "translateX(50%) translateY(-50%)",
-						}}
-					>
-						<Plus className="h-4 w-4" />
-					</span>
-				</>
-			) : (
-				<Handle
-					id={`else-${stepId}`}
-					type="source"
-					position={Position.Right}
-					isConnectable={!locked}
-					style={{ top: "67%" }}
-					className="!h-2 !w-2 !border-2 !border-background !bg-red-400"
-				/>
-			)}
-			<span
-				className="pointer-events-none absolute right-0 font-medium text-[9px] text-red-500"
-				style={{
-					top: "67%",
-					transform: `translateX(calc(100% + ${!locked && !elseConnected ? 20 : 6}px)) translateY(-50%)`,
-				}}
-			>
-				Else
-			</span>
-		</>
 	);
 }

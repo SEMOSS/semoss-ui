@@ -442,9 +442,6 @@ function canvasNodeFromWorkflow(
 		workflowType: node.type,
 		workflowConfig,
 		workflowCodeMode: node.codeMode,
-		...(typeof workflowConfig.branchCondition === "string"
-			? { branchCondition: workflowConfig.branchCondition }
-			: {}),
 	};
 }
 
@@ -534,14 +531,7 @@ export function canvasDocumentToWorkflow({
 			step.config,
 			step.workflowConfig ?? structuredClone(definition.defaultConfig),
 		);
-		const {
-			pythonSource: _pythonSource,
-			branchCondition: _branchCondition,
-			...persistedConfig
-		} = config;
-		if (typeof step.branchCondition === "string") {
-			persistedConfig.branchCondition = step.branchCondition;
-		}
+		const { pythonSource: _pythonSource, ...persistedConfig } = config;
 		return {
 			id: step.id,
 			type,
@@ -632,12 +622,6 @@ export function validateCanvasWorkflowNode(node: AutomationNode): string[] {
 		} catch {
 			errors.push("JSON arguments must be valid JSON");
 		}
-	}
-	if (
-		typeof node.branchCondition === "string" &&
-		node.branchCondition.trim() === ""
-	) {
-		errors.push("Branch condition is required");
 	}
 	return errors;
 }
