@@ -45,7 +45,6 @@ const ADMIN_QUERY_LAYOUT: WorkbenchLayout = {
 		size: 1,
 		panelIds: [INITIAL_QUERY_PANEL_ID],
 		activeId: INITIAL_QUERY_PANEL_ID,
-		enableDeleteWhenEmpty: false,
 	},
 	panels: {
 		[INITIAL_QUERY_PANEL_ID]: {

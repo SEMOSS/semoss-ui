@@ -28,7 +28,6 @@ const MODEL_WORKBENCH_LAYOUT: WorkbenchLayout = {
 		size: 1,
 		panelIds: [],
 		activeId: null,
-		enableDeleteWhenEmpty: false,
 	},
 	panels: {
 		[WORKBENCH_PANEL_RECORDS.ENGINE_FILE_EXPLORER.id]:

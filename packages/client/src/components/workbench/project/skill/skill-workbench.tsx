@@ -38,7 +38,6 @@ const SKILL_WORKBENCH_LAYOUT: WorkbenchLayout = {
 		size: 1,
 		panelIds: [SKILL_EDITOR_ID],
 		activeId: SKILL_EDITOR_ID,
-		enableDeleteWhenEmpty: false,
 	},
 	panels: {
 		[SKILL_EDITOR_ID]: {

@@ -35,7 +35,6 @@ const VECTOR_WORKBENCH_LAYOUT: WorkbenchLayout = {
 			WORKBENCH_COMPONENTS.VECTOR_DOCUMENTS,
 		],
 		activeId: WORKBENCH_COMPONENTS.ASSISTANT,
-		enableDeleteWhenEmpty: false,
 	},
 	panels: {
 		[WORKBENCH_COMPONENTS.ASSISTANT]: {
