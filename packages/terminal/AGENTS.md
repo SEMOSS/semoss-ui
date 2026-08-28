@@ -52,6 +52,19 @@ AGENTS.md:
 - `flexlayout-react` — dockable terminal panels
 - `@semoss/ui`, `@semoss/shared`, `@semoss/sdk`, `@semoss/i18n`
 
+## Design-System Notes
+
+Follow the root [Design System & Styling](../../AGENTS.md#design-system--styling) rules and
+[DESIGN.md](../../DESIGN.md). This package has the lowest `@semoss/ui` adoption in the repo —
+all new UI must come from `@semoss/ui/next` (including its Typography components).
+
+- **`src/components/tooltip.tsx` is a deprecated local fork** of the lib `Tooltip` — never
+  extend it; replace usages with `Tooltip` from `@semoss/ui/next` when touched.
+- **`save-modal.tsx` / `upload-modal.tsx`** hand-roll `fixed inset-0` overlays and hand-copy
+  `Button` class strings — migrate to `Dialog` + `Button` when touched.
+- No `text-[Npx]` font sizes (this package has 14) — use the Tailwind scale or Typography
+  components.
+
 ## Agent Guardrails
 
 ### Be Cautious With
