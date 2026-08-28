@@ -15,9 +15,10 @@ export interface EngineFileEditorConfig {
 	insightId?: string;
 }
 
-export const EngineFileEditorPanel: WorkbenchComponent<
-	EngineFileEditorConfig
-> = ({ config, rename }) => {
+const EngineFileEditorPanel: WorkbenchComponent<EngineFileEditorConfig> = ({
+	config,
+	rename,
+}) => {
 	const { engine, permission } = useEngine();
 
 	const readOnly = !(permission === "OWNER" || permission === "EDIT");

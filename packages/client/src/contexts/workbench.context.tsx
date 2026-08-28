@@ -7,7 +7,7 @@ export const WorkbenchStoreContext = createContext<
 	StoreApi<WorkbenchState> | undefined
 >(undefined);
 
-export interface WorkbenchProviderProps {
+interface WorkbenchProviderProps {
 	/** Unique identity used to isolate workbench state. */
 	id: string;
 

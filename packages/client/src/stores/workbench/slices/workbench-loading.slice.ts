@@ -1,13 +1,13 @@
 import type { WorkbenchSlice } from "../workbench.types";
 
 /** Full-screen loading state owned by each workbench instance. */
-export interface WorkbenchLoadingSliceFields {
+interface WorkbenchLoadingSliceFields {
 	/** Whether the workbench loading screen is visible. */
 	isLoading: boolean;
 }
 
 /** Loading actions exposed under the store's `actions` namespace. */
-export interface WorkbenchLoadingActions {
+interface WorkbenchLoadingActions {
 	/**
 	 * Set the loading state of the workbench.
 	 *

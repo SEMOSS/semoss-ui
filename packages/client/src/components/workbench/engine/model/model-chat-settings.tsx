@@ -21,7 +21,7 @@ import type { WorkbenchPanelConfig } from "@/stores/workbench";
  * @name ModelChatSettings
  * @return The settings panel body.
  */
-export const ModelChatSettings = () => {
+const ModelChatSettings = () => {
 	const config = useModelChat((state) => state.config);
 	const setConfig = useModelChat((state) => state.setConfig);
 	const builtinTools = useModelChat((state) => state.builtinTools);

@@ -21,14 +21,9 @@ import {
 	SERVING_PROVIDER_OPTIONS,
 } from "@/model-metadata.constants";
 
-// The built-in tool catalog shapes are pixel wire types and live in the data
-// layer; re-exported here so the engine components keep importing them from
-// the place they render them.
-export type {
-	BuiltinToolDefinition,
-	BuiltinToolParam,
-	BuiltinToolSelection,
-} from "@/api/engines";
+// `@/stores/workbench/model` imports this through the `@/components/engine`
+// barrel rather than `@/api/engines` directly.
+export type { BuiltinToolSelection };
 
 /** Shape returned by the GetModelMetadata pixel. */
 export type ModelMetadata = {
@@ -549,33 +544,14 @@ export const normalizeStringArray = (value: unknown): string[] => {
 };
 
 /**
- * Format a catalog date ("2026-04-23") for display. Parsed in local time on
- * purpose: these are calendar dates, not instants, so a UTC->local conversion
- * would shift them a day backwards for western timezones.
- *
- * @returns Formatted date, or "" when the value is missing or unparseable.
- */
-export const formatMetadataDate = (value: unknown): string => {
-	if (typeof value !== "string") {
-		return "";
-	}
-
-	const trimmed = value.trim();
-	if (trimmed === "" || !dayjs(trimmed).isValid()) {
-		return "";
-	}
-
-	return dayjs(trimmed).format("MMM D, YYYY");
-};
-
-/**
  * Split a catalog date into the headline day ("Feb 19") and its year, for the
- * overview stat strip. Same local-time parsing rationale as
- * {@link formatMetadataDate}.
+ * overview stat strip. Parsed in local time on purpose: these are calendar
+ * dates, not instants, so a UTC->local conversion would shift them a day
+ * backwards for western timezones.
  *
  * @returns The parts, or null when the value is missing or unparseable.
  */
-export const formatMetadataDateParts = (
+const formatMetadataDateParts = (
 	value: unknown,
 ): { day: string; year: string } | null => {
 	if (typeof value !== "string") {
@@ -604,7 +580,7 @@ const CAPABILITY_FLAGS = [
  * Collect the trait flags the provider actually reported. A missing flag means
  * "unknown" and is dropped entirely rather than rendered as a false.
  */
-export const getCapabilityFlags = (metadata: ModelMetadata | undefined) =>
+const getCapabilityFlags = (metadata: ModelMetadata | undefined) =>
 	CAPABILITY_FLAGS.filter(
 		(flag) => typeof metadata?.[flag.key] === "boolean",
 	).map((flag) => ({
@@ -617,7 +593,7 @@ export const getCapabilityFlags = (metadata: ModelMetadata | undefined) =>
  * Coerce the loosely-typed benchmark payload into usable entries, discarding
  * anything without a name and a numeric score.
  */
-export const normalizeBenchmarks = (value: unknown): ModelBenchmark[] => {
+const normalizeBenchmarks = (value: unknown): ModelBenchmark[] => {
 	if (!Array.isArray(value)) {
 		return [];
 	}
@@ -724,7 +700,7 @@ export const normalizePricing = (value: unknown): ModelPricing[] => {
  * Order benchmarks so vendor-reported headline numbers (no third-party
  * harness) come first, keeping the payload order within each group.
  */
-export const rankBenchmarks = (benchmarks: ModelBenchmark[]) => [
+const rankBenchmarks = (benchmarks: ModelBenchmark[]) => [
 	...benchmarks.filter((benchmark) => !benchmark.harness),
 	...benchmarks.filter((benchmark) => benchmark.harness),
 ];
@@ -733,7 +709,7 @@ export const rankBenchmarks = (benchmarks: ModelBenchmark[]) => [
  * Pick the collapsed-state preview: the first `limit` benchmarks with distinct
  * names, so the summary shows variety instead of one benchmark's variants.
  */
-export const selectPreviewBenchmarks = (
+const selectPreviewBenchmarks = (
 	benchmarks: ModelBenchmark[],
 	limit: number,
 ) => {
@@ -758,7 +734,7 @@ export const selectPreviewBenchmarks = (
 };
 
 /** Qualifiers rendered under a benchmark name, e.g. "accuracy - with tools". */
-export const formatBenchmarkDetail = (benchmark: ModelBenchmark) =>
+const formatBenchmarkDetail = (benchmark: ModelBenchmark) =>
 	[
 		benchmark.metric,
 		benchmark.variant,
@@ -945,7 +921,7 @@ export const SettingsEntry = ({
  * a low-alpha fill plus a readable text colour picked per theme, since the
  * mid-tone hues fail contrast against the dark card background.
  */
-export const BADGE_TONES = {
+const BADGE_TONES = {
 	blue: "border-blue-500/40 bg-blue-500/10 text-blue-700 dark:border-blue-400/40 dark:bg-blue-400/10 dark:text-blue-300",
 	violet: "border-violet-500/40 bg-violet-500/10 text-violet-700 dark:border-violet-400/40 dark:bg-violet-400/10 dark:text-violet-300",
 	teal: "border-teal-500/40 bg-teal-500/10 text-teal-700 dark:border-teal-400/40 dark:bg-teal-400/10 dark:text-teal-300",

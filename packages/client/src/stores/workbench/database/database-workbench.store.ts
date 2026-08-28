@@ -12,16 +12,16 @@ import type { WorkbenchPanelRecord } from "../workbench.types";
  * always SQL, so anything branching on the language should treat every
  * non-SPARQL mode as SQL.
  */
-export type DatabaseWorkbenchMode = "SQL" | "SPARQL" | "ADMIN_SQL";
+type DatabaseWorkbenchMode = "SQL" | "SPARQL" | "ADMIN_SQL";
 
 /** One table (SQL) or graph/concept (SPARQL) and its columns from GetDatabaseTableStructure. */
-export interface DatabaseTableStructure {
+interface DatabaseTableStructure {
 	table: string;
 	columns: ColumnInterface[];
 }
 
 /** Result rendered by one paired results panel, keyed by its source query panel id. */
-export type DatabaseQueryResult =
+type DatabaseQueryResult =
 	| {
 			type: "TABLE";
 			query: string;

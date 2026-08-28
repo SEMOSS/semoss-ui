@@ -118,7 +118,7 @@ export function flatten(
  * @param node - Node to normalize.
  * @return An equivalent node without redundant containers.
  */
-export function normalize(node: WorkbenchLayoutNode): WorkbenchLayoutNode {
+function normalize(node: WorkbenchLayoutNode): WorkbenchLayoutNode {
 	if (isTabset(node)) {
 		return node;
 	}
@@ -146,7 +146,7 @@ export function normalize(node: WorkbenchLayoutNode): WorkbenchLayoutNode {
  * @param node - Tree to normalize.
  * @return An equivalent tree without redundant containers.
  */
-export function normalizeDeep(node: WorkbenchLayoutNode): WorkbenchLayoutNode {
+function normalizeDeep(node: WorkbenchLayoutNode): WorkbenchLayoutNode {
 	if (isTabset(node)) {
 		return node;
 	}
@@ -267,7 +267,7 @@ export function joinTabset(
  * @param dir - Which side of the split the panel lands on.
  * @return The updated tree.
  */
-export function splitTabset(
+function splitTabset(
 	node: WorkbenchLayoutNode,
 	tabsetId: string,
 	pid: WorkbenchPanelId,
@@ -307,7 +307,7 @@ export function splitTabset(
  * @param dir - Edge to dock against.
  * @return The updated tree.
  */
-export function dockToRoot(
+function dockToRoot(
 	node: WorkbenchLayoutNode,
 	pid: WorkbenchPanelId,
 	dir: WorkbenchSide,

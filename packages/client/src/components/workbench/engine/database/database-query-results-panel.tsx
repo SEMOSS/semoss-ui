@@ -31,7 +31,7 @@ export interface DatabaseQueryResultsConfig {
 	sourcePanel: string;
 }
 
-export const DatabaseQueryResultsPanel: WorkbenchComponent<
+const DatabaseQueryResultsPanel: WorkbenchComponent<
 	DatabaseQueryResultsConfig
 > = ({ config }) => {
 	const { engine } = useEngine();

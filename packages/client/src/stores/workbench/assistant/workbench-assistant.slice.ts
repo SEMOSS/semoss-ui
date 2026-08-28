@@ -93,7 +93,7 @@ const effortParamValue = (effort: WorkbenchAssistantEffort): string =>
 	effort === "max" ? "xhigh" : effort;
 
 /** Configuration each workbench injects for its ASSISTANT panel. */
-export interface WorkbenchAssistantConfig {
+interface WorkbenchAssistantConfig {
 	/** System prompt sent to the assistant. */
 	systemPrompt?: string;
 	/** Prepare the bound room's tools before an agent run starts. */

@@ -48,7 +48,7 @@ const isRename = (moved: FileExplorerMovedItem) =>
  * header — the panel publishes the explorer on its scratch `value` and
  * `FileExplorerControl` draws them there.
  */
-export const EngineFileExplorerPanel: WorkbenchComponent<
+const EngineFileExplorerPanel: WorkbenchComponent<
 	Record<string, unknown>,
 	FileExplorerApi
 > = ({ id, setValue }) => {

@@ -37,7 +37,7 @@ let permissionRequest: Promise<NotificationPermission> | null = null;
  * @name isPageActive
  * @return Whether the page is both visible and focused.
  */
-export const isPageActive = (): boolean => {
+const isPageActive = (): boolean => {
 	if (typeof document === "undefined") return false;
 	return document.visibilityState === "visible" && document.hasFocus();
 };
@@ -50,7 +50,7 @@ export const isPageActive = (): boolean => {
  * @name isBrowserNotificationSupported
  * @return Whether `window.Notification` is a usable constructor.
  */
-export const isBrowserNotificationSupported = (): boolean =>
+const isBrowserNotificationSupported = (): boolean =>
 	typeof window !== "undefined" && typeof window.Notification === "function";
 
 /**
@@ -80,24 +80,6 @@ const readEnabled = (): boolean => {
 		console.warn("Unable to read the notification preference:", error);
 	}
 	return enabled;
-};
-
-/**
- * Switch notifications on or off and persist the choice. There is no UI for
- * this yet, so it is currently only reachable programmatically — it is what
- * makes the preference check inside `notifyIfPageInactive` meaningful, and the
- * hook a settings toggle would call.
- *
- * @name setBrowserNotificationsEnabled
- * @param isEnabled - Whether notifications should fire.
- */
-export const setBrowserNotificationsEnabled = (isEnabled: boolean): void => {
-	enabled = isEnabled;
-	try {
-		localStorage.setItem(STORAGE_KEY, JSON.stringify({ state: isEnabled }));
-	} catch (error) {
-		console.warn("Unable to persist the notification preference:", error);
-	}
 };
 
 /**

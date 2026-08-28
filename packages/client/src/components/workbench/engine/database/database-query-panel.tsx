@@ -61,7 +61,7 @@ export interface DatabaseQueryConfig {
  * owns its own query text and (for SPARQL) raw toggle, seeded from its
  * config, so multiple panels can coexist without sharing editor state.
  */
-export const DatabaseQueryPanel: WorkbenchComponent<DatabaseQueryConfig> = ({
+const DatabaseQueryPanel: WorkbenchComponent<DatabaseQueryConfig> = ({
 	id,
 	config,
 }) => {

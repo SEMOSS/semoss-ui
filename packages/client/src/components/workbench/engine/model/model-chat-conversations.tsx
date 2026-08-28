@@ -80,7 +80,7 @@ export interface ModelChatHistoryApi {
  * @name ModelChatConversations
  * @return The conversation history panel body.
  */
-export const ModelChatConversations: WorkbenchComponent<
+const ModelChatConversations: WorkbenchComponent<
 	Record<string, unknown>,
 	ModelChatHistoryApi
 > = ({ id, setValue }) => {

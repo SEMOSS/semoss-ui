@@ -466,7 +466,7 @@ const EngineCategoryCard = ({
  * @name ProjectEnginesPanel
  * @return The available-engines panel.
  */
-export const ProjectEnginesPanel = () => {
+const ProjectEnginesPanel = () => {
 	const { project, dependencies, permission, refresh } = useProject();
 	const { configStore } = useRootStore();
 	const [manageCategory, setManageCategory] = useState<string | null>(null);

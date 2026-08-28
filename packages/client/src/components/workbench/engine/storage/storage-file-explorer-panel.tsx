@@ -31,7 +31,7 @@ import { WORKBENCH_COMPONENTS } from "../../workbench.constants";
  * against that insight rather than the bucket. Refresh additionally syncs the
  * current directory down into the paired engine's local file tree.
  */
-export const StorageFileExplorerPanel: WorkbenchComponent<
+const StorageFileExplorerPanel: WorkbenchComponent<
 	Record<string, unknown>,
 	FileExplorerApi
 > = ({ id, setValue }) => {

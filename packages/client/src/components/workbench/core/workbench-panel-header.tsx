@@ -9,7 +9,7 @@ import { useWorkbenchPanel } from "./use-workbench-panel";
 import { WORKBENCH_STYLES } from "./workbench.chrome";
 
 /** The panel's glyph, at whatever size the caller has room for. */
-export const WorkbenchPanelIcon: FC<{
+const WorkbenchPanelIcon: FC<{
 	pid: WorkbenchPanelId;
 	location: WorkbenchHeaderLocation;
 	className: string;

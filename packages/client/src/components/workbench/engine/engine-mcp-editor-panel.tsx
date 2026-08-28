@@ -21,9 +21,9 @@ export interface EngineMcpEditorConfig {
 	path: string;
 }
 
-export const EngineMcpEditorPanel: WorkbenchComponent<
-	EngineMcpEditorConfig
-> = ({ config }) => {
+const EngineMcpEditorPanel: WorkbenchComponent<EngineMcpEditorConfig> = ({
+	config,
+}) => {
 	const { engine, permission } = useEngine();
 	const readOnly = !(permission === "OWNER" || permission === "EDIT");
 	const insight = useInsight();

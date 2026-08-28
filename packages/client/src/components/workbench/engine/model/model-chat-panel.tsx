@@ -21,7 +21,7 @@ import { ModelChatNewConversationControl } from "./model-chat-new-conversation-c
  * @name ModelChatPanel
  * @return The chat panel.
  */
-export const ModelChatPanel: WorkbenchComponent = ({ id }) => {
+const ModelChatPanel: WorkbenchComponent = ({ id }) => {
 	const roomName = useModelChat((state) => state.roomName);
 	const initError = useModelChat((state) => state.initError);
 

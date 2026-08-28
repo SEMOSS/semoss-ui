@@ -8,7 +8,7 @@ import type { WorkbenchPanelConfig } from "@/stores/workbench";
  * FileTable (upload, embed, list, delete). Rendered inside the workbench's
  * InsightProvider so its pixel calls share a single insight.
  */
-export const VectorDocumentsPanel: React.FC = () => {
+const VectorDocumentsPanel: React.FC = () => {
 	const { engine, permission } = useEngine();
 	const readOnly = !(permission === "OWNER" || permission === "EDIT");
 

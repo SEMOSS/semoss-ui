@@ -78,7 +78,7 @@ const describePendingActions = (run: BuildRun): string => {
  * @param room - Display name of the room the run belongs to.
  * @return Title and body for the notification, or null to stay silent.
  */
-export const describeTransition = (
+const describeTransition = (
 	run: BuildRun,
 	previousStatus: string,
 	room: string,

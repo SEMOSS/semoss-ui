@@ -35,10 +35,10 @@ import {
 } from "./model-chat-format";
 
 /** Most files that can ride along on a single turn. */
-export const MAX_ATTACHMENTS = 5;
+const MAX_ATTACHMENTS = 5;
 
 /** Largest single attachment, in bytes. */
-export const MAX_ATTACHMENT_BYTES = 10 * 1024 * 1024;
+const MAX_ATTACHMENT_BYTES = 10 * 1024 * 1024;
 
 /** Note appended for the model when the user stops a turn mid-stream. */
 const TURN_CANCELLATION_NOTE =

@@ -16,7 +16,7 @@ import type {
  * protected mode), which is why the *intent* lives in the key and the payload
  * is read only on `drop`.
  */
-export const WORKBENCH_SPAWN_DRAG_TYPE = "application/x-semoss-workbench-panel";
+const WORKBENCH_SPAWN_DRAG_TYPE = "application/x-semoss-workbench-panel";
 
 /** What a spawn drag asks the shell to open. */
 export interface WorkbenchSpawnDragSpec {
