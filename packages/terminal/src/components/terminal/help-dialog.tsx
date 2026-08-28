@@ -1,26 +1,18 @@
-import { Check, Copy } from "lucide-react";
-import {
-	Children,
-	isValidElement,
-	type ReactNode,
-	useEffect,
-	useState,
-} from "react";
+import { useEffect, useState } from "react";
 import { useTranslation } from "@semoss/i18n";
 import { useInsight } from "@semoss/sdk/react";
 import {
-	CodeContainer,
 	Dialog,
 	DialogContent,
 	DialogHeader,
 	DialogTitle,
 	Markdown,
+	MarkdownDocumentTitle,
 	Spinner,
 	Tabs,
 	TabsContent,
 	TabsList,
 	TabsTrigger,
-	toast,
 } from "@semoss/ui/next";
 import { runPixel } from "../../utility/pixel";
 
@@ -35,6 +27,44 @@ type EngineType = (typeof ENGINE_TYPES)[number];
 
 type UsageEntry = { code?: string; label?: string; type?: string };
 type UsageMap = Record<string, UsageEntry>;
+
+/**
+ * Short tab titles per usage channel. The backend `label` is a full sentence
+ * ("How to use in JavaScript/TypeScript with the @semoss/sdk"), too long for a
+ * tab trigger, so it stays as the panel heading and these drive the trigger.
+ */
+const CHANNEL_TITLES: Record<string, string> = {
+	introduction: "Overview",
+	pixel: "Pixel",
+	javascript: "JavaScript",
+	python: "Python",
+	java: "Java",
+	langchain: "LangChain",
+	openai: "OpenAI",
+	anthropic: "Anthropic",
+	ollama: "Ollama",
+};
+
+/** Backend marker for a channel whose documentation has not been written yet. */
+const PENDING_CODE = "documentation pending";
+
+/** Title-case an unrecognized channel so new backend integrations still read well. */
+const getChannelTitle = (key: string, entry: UsageEntry) => {
+	const type = entry.type || key;
+	const known = CHANNEL_TITLES[type.toLowerCase()];
+	if (known) {
+		return known;
+	}
+
+	return type.charAt(0).toUpperCase() + type.slice(1).toLowerCase();
+};
+
+/**
+ * True for a placeholder channel. Engine types the backend has not documented
+ * yet come back with every channel set to this marker rather than being omitted.
+ */
+const isPendingEntry = (entry: UsageEntry) =>
+	(entry.code ?? "").trim().toLowerCase() === PENDING_CODE;
 
 interface FetchedUsage {
 	/** Parsed `{label, code}` entries, if the backend returned the expected shape. */
@@ -182,55 +212,74 @@ const UsagePane = ({
 	if (!fetched) return null;
 	const usage = fetched.usage;
 	const entries = usage ? Object.entries(usage) : [];
-	const hasRenderableEntries = entries.some(([, v]) => v?.code);
+	const renderable = entries.filter(([, v]) => v?.code);
+	// placeholder channels get their own message rather than an empty tab
+	const documented = renderable.filter(([, v]) => !isPendingEntry(v));
+	const hasPendingDocs =
+		documented.length < renderable.length &&
+		documented.every(
+			([key, v]) => (v.type || key).toLowerCase() === "introduction",
+		);
 
-	if (hasRenderableEntries) {
+	if (documented.length > 0) {
 		return (
-			<div className="flex flex-col gap-4 py-4">
-				{entries.map(([key, entry], idx) => {
-					if (!entry?.code) return null;
-					return (
-						<div key={key} className="flex flex-col gap-2">
-							{idx > 0 && (
-								<div className="border-border border-t" />
-							)}
-							{entry.label && (
-								<h3 className="font-semibold text-foreground text-sm">
-									{entry.label}
-								</h3>
-							)}
-							<Markdown
-								components={{
-									pre: ({ children }) => (
-										<CodeBlockWithCopy>
-											{children}
-										</CodeBlockWithCopy>
-									),
-									p: ({ children }) => (
-										<p className="mt-0 text-foreground text-sm leading-relaxed">
-											{children}
-										</p>
-									),
-								}}
-							>
-								{entry.code}
-							</Markdown>
-						</div>
-					);
-				})}
-			</div>
+			<Tabs
+				key={type}
+				defaultValue={documented[0][0]}
+				className="gap-3 py-4"
+			>
+				{hasPendingDocs && (
+					<p className="text-muted-foreground text-sm">
+						{t("help.pendingMessage", { type })}
+					</p>
+				)}
+
+				<TabsList className="h-auto flex-wrap justify-start">
+					{documented.map(([key, entry]) => (
+						<TabsTrigger key={key} value={key}>
+							{getChannelTitle(key, entry)}
+						</TabsTrigger>
+					))}
+				</TabsList>
+
+				{documented.map(([key, entry]) => (
+					<TabsContent
+						key={key}
+						value={key}
+						className="flex flex-col gap-2"
+					>
+						{entry.label && (
+							<MarkdownDocumentTitle>
+								{entry.label}
+							</MarkdownDocumentTitle>
+						)}
+						<Markdown
+							className="w-full text-sm leading-relaxed"
+							variant="document"
+						>
+							{entry.code}
+						</Markdown>
+					</TabsContent>
+				))}
+			</Tabs>
 		);
 	}
 
-	// No structured entries — either the backend returned an unexpected
-	// shape, or there genuinely is no documented usage for this engine
-	// type. Surface the raw payload so the user can copy whatever's there
-	// instead of staring at an empty pane.
-	const hasRaw = fetched.raw !== undefined && fetched.raw !== null;
+	// Nothing renderable: either every channel is still a placeholder, or the
+	// backend returned an unexpected shape. Say which, then surface the raw
+	// payload so the user can copy whatever's there instead of staring at an
+	// empty pane.
+	const isDocumentationPending = renderable.length > 0;
+	const hasRaw =
+		!isDocumentationPending &&
+		fetched.raw !== undefined &&
+		fetched.raw !== null;
 	return (
 		<div className="flex flex-col gap-3 py-4">
 			<p className="text-muted-foreground text-sm">
-				{t("help.emptyMessage", { type })}
+				{isDocumentationPending
+					? t("help.pendingMessage", { type })
+					: t("help.emptyMessage", { type })}
 			</p>
 			{hasRaw && (
 				<div className="overflow-hidden rounded-md border border-border">
@@ -296,86 +345,4 @@ const safeStringify = (value: unknown): string => {
 	} catch {
 		return String(value);
 	}
-};
-
-/**
- * Wraps a fenced code block with a language label + Copy button. Mirrors
- * the one in `packages/client/src/pages/engine/engine-usage-page.tsx` so the
- * cheat sheet renders identically in the client and the terminal.
- */
-const CodeBlockWithCopy = ({ children }: { children: ReactNode }) => {
-	const { t } = useTranslation("dialog");
-	const [copied, setCopied] = useState(false);
-
-	const extractCodeDetails = (node: ReactNode) => {
-		let language: string | undefined;
-		let code = "";
-		const walk = (child: ReactNode) => {
-			if (typeof child === "string" || typeof child === "number") {
-				code += String(child);
-				return;
-			}
-			if (!isValidElement(child)) return;
-			const props = child.props as {
-				language?: string;
-				code?: string;
-				children?: ReactNode;
-			};
-			if (!language && typeof props.language === "string") {
-				language = props.language;
-			}
-			if (typeof props.code === "string") {
-				code += props.code;
-				return;
-			}
-			if (props.children) Children.forEach(props.children, walk);
-		};
-		Children.forEach(node, walk);
-		return { language, code };
-	};
-
-	const { language, code } = extractCodeDetails(children);
-
-	const handleCopy = async (e: React.MouseEvent) => {
-		e.stopPropagation();
-		try {
-			await navigator.clipboard.writeText(code);
-			setCopied(true);
-			setTimeout(() => setCopied(false), 2000);
-		} catch {
-			toast.error(t("help.copyFailed"));
-		}
-	};
-
-	return (
-		<div className="my-2 overflow-hidden rounded-md border border-border">
-			<div className="flex items-center justify-between border-border border-b bg-muted px-3 py-1.5">
-				{language && (
-					<span className="font-mono text-muted-foreground text-xs">
-						{language}
-					</span>
-				)}
-				<button
-					type="button"
-					onClick={handleCopy}
-					className="ml-auto flex items-center gap-1 rounded px-2 py-0.5 text-muted-foreground text-xs transition-colors hover:bg-background hover:text-foreground"
-				>
-					{copied ? (
-						<>
-							<Check className="size-3" /> {t("help.copied")}
-						</>
-					) : (
-						<>
-							<Copy className="size-3" /> {t("help.copy")}
-						</>
-					)}
-				</button>
-			</div>
-			<div className="overflow-x-auto bg-muted/30">
-				<CodeContainer className="min-w-max whitespace-pre rounded-none bg-transparent p-4">
-					{children}
-				</CodeContainer>
-			</div>
-		</div>
-	);
 };

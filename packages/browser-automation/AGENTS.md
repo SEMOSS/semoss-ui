@@ -50,6 +50,19 @@ pnpm --filter @semoss/browser-automation lint
 | `src/App.tsx`, `src/main.tsx`, `src/index.css` | App entry files |
 | `mcp/` | MCP configuration (`pixel_mcp.json`) |
 
+## Design-System Notes
+
+Follow the root [Design System & Styling](../../AGENTS.md#design-system--styling) rules and
+[DESIGN.md](../../DESIGN.md).
+
+- **The local `@theme` block in `src/index.css` is deprecated** (`--color-canvas`,
+  `--color-surface`, `--color-ink`, `--color-accent`, `--color-danger`, …). It is a rival,
+  dark-only palette on top of `@semoss/ui/globals.css`. Do **not** add tokens to it or diverge
+  its values further; new UI uses the standard semantic classes (`bg-background`, `bg-card`,
+  `text-destructive`, …). When touching a file that uses the local classes
+  (`bg-surface-raised`, `border-line`, `text-danger`), migrate those usages to `@semoss/ui`
+  semantic classes. Full migration off the block is planned future work.
+
 ## Agent Guardrails
 
 ### Be Cautious With

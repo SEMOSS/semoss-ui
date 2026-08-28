@@ -1,3 +1,5 @@
+import type { AgentRunStatusValue } from "@semoss/sdk";
+
 export interface Engine {
 	engine_id: string;
 	engine_name: string;
@@ -53,6 +55,15 @@ export interface Workspace {
 	mcp: MCPConfig[];
 	skills: SkillConfig[];
 	prompts: string[];
+
+	/** Agent settings saved on the workspace by the agent editor. */
+	config_json?: {
+		/**
+		 * The agent's default model. Absent or empty means the agent has no
+		 * opinion and the room's own model is used.
+		 */
+		model_id?: string;
+	};
 }
 
 /**
@@ -99,10 +110,13 @@ export interface AbstractPixelMessage {
 		| PixelMessageMediaPart
 		| PixelMessageToolCallPart
 		| PixelMessageToolResultPart
+		| PixelMessageSubagentPart
 	)[];
 	tokens: number;
 	ornaments: {
 		modelName?: string;
+		/** Set on messages tagged as part of an agent run — see agent-harness.ts. */
+		agentRunId?: string;
 	};
 	pruneToolsAbove: boolean;
 }
@@ -125,9 +139,12 @@ export interface ResponsePixelMessage extends AbstractPixelMessage {
 		| PixelMessageMediaPart
 		| PixelMessageToolCallPart
 		| PixelMessageToolResultPart
+		| PixelMessageSubagentPart
 	)[];
 	ornaments: {
 		modelName?: string;
+		/** Set on messages tagged as part of an agent run — see agent-harness.ts. */
+		agentRunId?: string;
 	};
 	feedback?: {
 		rating: boolean;
@@ -178,13 +195,22 @@ export interface PixelMessageToolCallPart {
 		// (e.g. web_search). Server tools lack the MCP `_meta`
 		// block and their TOOL_RESULT lands in the same response message.
 		server_tool?: boolean;
-		_meta: {
+		// Optional in practice, not just in MCP: platform-synthesized tools (e.g.
+		// SpawnSubAgent/CheckSubAgentStatus/WaitForSubAgent) don't get the usual
+		// MCP-project metadata enrichment, so their persisted TOOL_CALL omits it
+		// entirely. Always optional-chain reads of this field.
+		_meta?: {
 			SMSS_ENGINE_NAME: string;
 			SMSS_ENGINE_ID: string;
 			SMSS_ENGINE_TYPE: string;
 			SMSS_PROJECT_NAME: string;
 			SMSS_PROJECT_ID: string;
-			SMSS_MCP_EXECUTION: "auto" | "ask" | "disabled";
+			SMSS_MCP_EXECUTION:
+				| "auto"
+				| "ask"
+				| "disabled"
+				| "agent-ask"
+				| "agent-auto";
 			// The tool's declared name, before the backend rewrote it into the
 			// LLM-facing name. On length-limited providers that rewrite is not
 			// reversible (short engine-id prefix plus truncation), so this is the
@@ -196,6 +222,13 @@ export interface PixelMessageToolCallPart {
 				resourceURI?: string;
 				autoOpen?: boolean;
 			};
+			// Set only on platform-synthesized subagent tools (spawn/named/check/
+			// wait) — see SubAgentToolSynthesizer.
+			SMSS_TOOL_KIND?:
+				| "semoss_subagent_spawn"
+				| "semoss_subagent_named"
+				| "semoss_subagent_check"
+				| "semoss_subagent_wait";
 		};
 	};
 }
@@ -208,6 +241,24 @@ export interface PixelMessageToolResultPart {
 		output: string;
 		toolParameterValues: Record<string, unknown>;
 		toolStatus: "success" | "error" | "cancelled" | "paused";
+	};
+}
+
+/**
+ * A subagent spawned by an agent-run turn — see agent-harness.ts. WIP: status
+ * only, no alias/result/error rendering yet.
+ */
+export interface PixelMessageSubagentPart {
+	type: "SUBAGENT";
+	subagent: {
+		id: string;
+		status: AgentRunStatusValue;
+		/** Named-subagent alias, when spawned via a named tool. Live only — never persisted, so absent after a reload. */
+		alias?: string;
+		/** Set once status is COMPLETED. */
+		resultPreview?: string;
+		/** Set once status is FAILED. */
+		error?: string;
 	};
 }
 

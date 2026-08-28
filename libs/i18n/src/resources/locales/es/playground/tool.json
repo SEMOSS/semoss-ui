@@ -3,9 +3,11 @@
 		"failed": "Fallido",
 		"cancelled": "Cancelado",
 		"completed": "Completado",
-		"ready": "Listo",
-		"autoExecute": "Ejecutando automáticamente",
-		"queued": "En cola para ejecutarse automáticamente"
+		"queued": "En cola para ejecutarse automáticamente",
+		"loadingTool": "Cargando herramienta…",
+		"waitingForArguments": "Esperando argumentos…",
+		"running": "En ejecución",
+		"waitingForInput": "Esperando entrada"
 	},
 	"actions": {
 		"cancel": "Cancelar",
@@ -14,6 +16,11 @@
 		"openInSidebar": "Abrir en barra lateral",
 		"closeInSidebar": "Cerrar barra lateral",
 		"openInline": "Abrir en línea"
+	},
+	"tabs": {
+		"output": "Salida",
+		"inputs": "Entradas",
+		"description": "Descripción"
 	},
 	"group": {
 		"labelClosed": "{{toolName}} + {{count}} más",
@@ -31,17 +38,23 @@
 		"schemaLoadFailedDescription": "No se pudo recuperar la configuración de la herramienta. Por favor, inténtelo de nuevo más tarde.",
 		"schemaLoading": "Cargando esquema de la herramienta...",
 		"noParameters": "No se requieren parámetros",
-		"showParameters": "Mostrar parámetros ({{count}})",
-		"hideParameters": "Ocultar parámetros ({{count}})",
 		"showOptionalFields": "Mostrar campos opcionales ({{count}})",
 		"hideOptionalFields": "Ocultar campos opcionales ({{count}})",
 		"execute": "Ejecutar herramienta",
-		"executing": "Ejecutando..."
+		"executing": "Ejecutando...",
+		"noOutput": "Aún no hay salida.",
+		"noDescription": "No se proporcionó ninguna descripción.",
+		"outputDialogTitle": "{{title}} — Salida"
 	},
 	"playwright": {
 		"details": "Detalles del script de Playwright",
 		"projectId": "ID del proyecto",
 		"recordedFile": "Archivo grabado"
+	},
+	"subagent": {
+		"title": "Subagente",
+		"notFound": "Subagente no encontrado",
+		"noResult": "Aún no hay respuesta"
 	},
 	"extension": {
 		"required": "Extensión de navegador requerida",

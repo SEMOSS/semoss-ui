@@ -1,5 +1,11 @@
-import { ArrowLeft, ChevronRight, Clock, MessageSquare } from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import {
+	ArrowLeft,
+	ChevronRight,
+	Clock,
+	MessageSquare,
+	RefreshCw,
+} from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Badge, Button, Skeleton, toast } from "@semoss/ui/next";
 import { useProject, useRootStore } from "@/hooks";
 import { formatDateToRelative } from "@/utility/date";
@@ -13,7 +19,7 @@ import type {
 	SubagentRun,
 	SubagentRunNode,
 } from "./agent-activity-types";
-import { toMs } from "./agent-activity-types";
+import { isActiveStatus, toMs } from "./agent-activity-types";
 import { AgentRunGraph } from "./agent-run-graph";
 import type { ClaudeCodeTranscriptEvent } from "./claude-code-transcript";
 import { mergeClaudeCodeTranscript } from "./claude-code-transcript";
@@ -99,6 +105,7 @@ export const AgentActivityPage = () => {
 		[],
 	);
 	const [loadingRunDetails, setLoadingRunDetails] = useState(false);
+	const [refreshing, setRefreshing] = useState(false);
 
 	const [engineInfo, setEngineInfo] = useState<Record<string, EngineInfo>>(
 		{},
@@ -108,28 +115,41 @@ export const AgentActivityPage = () => {
 		new Map<string, Promise<EngineInfo | null>>(),
 	);
 
-	useEffect(() => {
+	/**
+	 * Pull the activity log. Returns the fresh map rather than only writing it
+	 * to state so a refresh can reload the open room from what it just fetched
+	 * - a run that started after the page loaded isn't in the copy in state.
+	 */
+	const fetchActivity = useCallback(async () => {
 		const agentId = project.project_id;
 		if (!agentId) {
+			return {} as AgentActivityLogResponse;
+		}
+		const response = await monolithStore.runQuery<
+			[AgentActivityLogResponse]
+		>(
+			`GetAgentActivityLog(agentId=["${agentId}"], limit=[20], sortByRoom=[true]);`,
+		);
+		const { operationType, output } = response.pixelReturn[0];
+		if (operationType.indexOf("ERROR") > -1) {
+			throw new Error(String(output));
+		}
+		return output ?? {};
+	}, [project.project_id, monolithStore]);
+
+	useEffect(() => {
+		if (!project.project_id) {
 			return;
 		}
 
 		let cancelled = false;
 
-		const fetchActivity = async () => {
+		const loadActivity = async () => {
 			setLoading(true);
 			try {
-				const response = await monolithStore.runQuery<
-					[AgentActivityLogResponse]
-				>(
-					`GetAgentActivityLog(agentId=["${agentId}"], limit=[20], sortByRoom=[true]);`,
-				);
-				const { operationType, output } = response.pixelReturn[0];
-				if (operationType.indexOf("ERROR") > -1) {
-					throw new Error(String(output));
-				}
+				const output = await fetchActivity();
 				if (!cancelled) {
-					setActivity(output ?? {});
+					setActivity(output);
 				}
 			} catch (error) {
 				if (!cancelled) {
@@ -144,12 +164,12 @@ export const AgentActivityPage = () => {
 			}
 		};
 
-		fetchActivity();
+		loadActivity();
 
 		return () => {
 			cancelled = true;
 		};
-	}, [project.project_id, monolithStore]);
+	}, [project.project_id, fetchActivity]);
 
 	const rooms = useMemo(() => {
 		return Object.entries(activity)
@@ -321,8 +341,16 @@ export const AgentActivityPage = () => {
 		);
 	};
 
-	const handleRoomClick = async (room: RoomSummary) => {
-		const allRuns = activity[room.roomId] ?? [];
+	/**
+	 * Load a room's graph data - each root run's transcript plus its sub-agent
+	 * tree - and hand it to the graph. `activityLog` is a parameter rather than
+	 * a read off state so a refresh works from the log it just fetched.
+	 */
+	const loadRoomRuns = async (
+		room: RoomSummary,
+		activityLog: AgentActivityLogResponse,
+	) => {
+		const allRuns = activityLog[room.roomId] ?? [];
 		// Runs with a parent in this room render nested under it via
 		// GetSubagentRuns, so only root the ones whose parent is elsewhere.
 		const roomRunIds = new Set(allRuns.map((run) => run.runId));
@@ -330,48 +358,101 @@ export const AgentActivityPage = () => {
 			(run) => !run.parentRunId || !roomRunIds.has(run.parentRunId),
 		);
 
+		const visited = new Set(runs.map((run) => run.runId));
+		const transcriptCache = new Map<
+			string,
+			Promise<ClaudeCodeTranscriptEvent[]>
+		>();
+		// Sub-agent rooms host a single run, but this room's JSONL spans
+		// every run listed here - those need time-window filtering.
+		const multiRunRoomId = allRuns.length > 1 ? room.roomId : null;
+		const runDetails = await Promise.all(
+			runs.map(async (run) => {
+				const [detail, subagents] = await Promise.all([
+					fetchRunDetail(run.runId).then((fetched) =>
+						enrichWithClaudeCodeTranscript(
+							fetched,
+							transcriptCache,
+							multiRunRoomId,
+						),
+					),
+					fetchSubagentRunTree(
+						run.runId,
+						visited,
+						transcriptCache,
+						multiRunRoomId,
+					),
+				]);
+				return { ...detail, subagents };
+			}),
+		);
+		setSelectedRoomRuns(runDetails);
+		// Resolve model display names in the background - the graph
+		// falls back to raw engine ids until these land.
+		void resolveEngineInfo(collectModelIds(runDetails));
+		return runDetails;
+	};
+
+	const handleRoomClick = async (room: RoomSummary) => {
 		setSelectedRoom(room);
 		setSelectedRoomRuns([]);
 		setLoadingRunDetails(true);
 
 		try {
-			const visited = new Set(runs.map((run) => run.runId));
-			const transcriptCache = new Map<
-				string,
-				Promise<ClaudeCodeTranscriptEvent[]>
-			>();
-			// Sub-agent rooms host a single run, but this room's JSONL spans
-			// every run listed here - those need time-window filtering.
-			const multiRunRoomId = allRuns.length > 1 ? room.roomId : null;
-			const runDetails = await Promise.all(
-				runs.map(async (run) => {
-					const [detail, subagents] = await Promise.all([
-						fetchRunDetail(run.runId).then((fetched) =>
-							enrichWithClaudeCodeTranscript(
-								fetched,
-								transcriptCache,
-								multiRunRoomId,
-							),
-						),
-						fetchSubagentRunTree(
-							run.runId,
-							visited,
-							transcriptCache,
-							multiRunRoomId,
-						),
-					]);
-					return { ...detail, subagents };
-				}),
-			);
-			setSelectedRoomRuns(runDetails);
-			// Resolve model display names in the background - the graph
-			// falls back to raw engine ids until these land.
-			void resolveEngineInfo(collectModelIds(runDetails));
+			await loadRoomRuns(room, activity);
 		} catch (error) {
 			console.error("Error fetching agent run:", error);
 			toast.error(`Error fetching agent run: ${error}`);
 		} finally {
 			setLoadingRunDetails(false);
+		}
+	};
+
+	/**
+	 * Re-pull the open room: the activity log first (so a run that started
+	 * since the page loaded shows up), then every run in it. The graph stays
+	 * mounted while this happens - only the button spins - so refreshing
+	 * mid-inspection keeps the selected node and the current pan/zoom.
+	 *
+	 * Reports what came back rather than refreshing silently. A run still in
+	 * progress has nothing new to show: the semoss harness only writes its room
+	 * messages at a tool-approval pause or at the end of the run, so a mid-run
+	 * refresh legitimately returns the same graph and would otherwise look like
+	 * a button that does nothing.
+	 */
+	const handleRefresh = async () => {
+		if (!selectedRoom || refreshing || loadingRunDetails) {
+			return;
+		}
+
+		setRefreshing(true);
+		try {
+			const freshActivity = await fetchActivity();
+			setActivity(freshActivity);
+			// The log is capped, so a busy agent can push this room off it.
+			// Fall back to the runs already held rather than blanking the graph.
+			const activityLog = freshActivity[selectedRoom.roomId]
+				? freshActivity
+				: {
+						...freshActivity,
+						[selectedRoom.roomId]:
+							activity[selectedRoom.roomId] ?? [],
+					};
+			const runDetails = await loadRoomRuns(selectedRoom, activityLog);
+			const label = `${runDetails.length} ${runDetails.length === 1 ? "run" : "runs"}`;
+			const inProgress = runDetails.filter((run) =>
+				isActiveStatus(run.status),
+			).length;
+			toast.success(
+				inProgress > 0
+					? `Refreshed - ${label}, ${inProgress} still in progress`
+					: `Refreshed - ${label}`,
+			);
+		} catch (error) {
+			console.error("Error refreshing agent activity:", error);
+			toast.error(`Error refreshing agent activity: ${error}`);
+		} finally {
+			setRefreshing(false);
 		}
 	};
 
@@ -393,15 +474,9 @@ export const AgentActivityPage = () => {
 		);
 	}
 
-	if (rooms.length === 0) {
-		return (
-			<div className="flex h-full min-h-[200px] flex-col items-center justify-center gap-2 text-center text-muted-foreground">
-				<MessageSquare className="size-8 opacity-50" />
-				<p className="text-sm">No activity yet for this agent.</p>
-			</div>
-		);
-	}
-
+	// Checked before the empty state: a refresh that comes back with nothing
+	// (or with this room aged off the capped log) must not eject you from the
+	// room you are looking at.
 	if (selectedRoom) {
 		return (
 			<div className="flex flex-col gap-4">
@@ -414,7 +489,7 @@ export const AgentActivityPage = () => {
 					>
 						<ArrowLeft className="size-4" />
 					</Button>
-					<div>
+					<div className="min-w-0 flex-1">
 						<h6
 							className={
 								selectedRoom.roomName
@@ -430,6 +505,21 @@ export const AgentActivityPage = () => {
 							calls in this room.
 						</p>
 					</div>
+					<Button
+						variant="outline"
+						size="sm"
+						className="shrink-0"
+						title="Pull the latest runs for this room"
+						disabled={refreshing || loadingRunDetails}
+						onClick={handleRefresh}
+					>
+						<RefreshCw
+							className={
+								refreshing ? "size-4 animate-spin" : "size-4"
+							}
+						/>
+						Refresh
+					</Button>
 				</div>
 
 				{loadingRunDetails ? (
@@ -447,6 +537,15 @@ export const AgentActivityPage = () => {
 						No run data available.
 					</p>
 				)}
+			</div>
+		);
+	}
+
+	if (rooms.length === 0) {
+		return (
+			<div className="flex h-full min-h-[200px] flex-col items-center justify-center gap-2 text-center text-muted-foreground">
+				<MessageSquare className="size-8 opacity-50" />
+				<p className="text-sm">No activity yet for this agent.</p>
 			</div>
 		);
 	}

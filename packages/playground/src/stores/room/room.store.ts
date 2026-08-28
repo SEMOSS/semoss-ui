@@ -15,11 +15,16 @@ import {
 	ResponseMessageStore,
 	ToolStore,
 } from "@/stores";
+import {
+	reconnectAgentRun,
+	reconstructAllSubagents,
+} from "@/stores/message/agent-harness";
 import type {
 	Engine,
 	InputPixelMessage,
 	MCPConfig,
 	PixelMessage,
+	PixelMessageSubagentPart,
 	PixelMessageToolCallPart,
 	PixelMessageToolResultPart,
 	Prompt,
@@ -124,6 +129,11 @@ interface RoomStoreInterface {
 		 * AskPlayground. Persisted so the mode survives a reload.
 		 */
 		harnessType?: string;
+
+		/*
+		 * Temperature of the model (0–1). Only used when enableTemperature is true.
+		 */
+		temperature?: number;
 	};
 
 	/**
@@ -177,6 +187,7 @@ export class RoomStore {
 			predefinedPrompts: [],
 			instructions: "",
 			mcp: [],
+			temperature: undefined,
 		},
 		sidebar: {
 			isOpen: false,
@@ -605,6 +616,46 @@ export class RoomStore {
 			// options
 			const newOptions = { ...optionsOutput.OPTIONS };
 
+			runInAction(() => {
+				// Restore agent-harness mode from the persisted options so a
+				// reloaded agent room keeps sending messages via RunAgent. Only
+				// promote to "agent" here — never demote — so that a freshly
+				// created room whose mode was set via setMode() before its
+				// options have been persisted (createRoom runs initialize()
+				// before updateRoomOptions) keeps its explicitly-set mode.
+				if (newOptions.harnessType) {
+					this.setMode("agent");
+				}
+
+				// store it
+				this._store.root = root;
+			});
+
+			// Fired here, before the workspace/model round trips below, since
+			// neither depends on them — waiting on those was delaying subagent
+			// boxes and live status for no reason.
+			if (this.mode === "agent") {
+				void reconstructAllSubagents(this);
+			}
+			if (this.tail.type === "OUTPUT") {
+				if (this.mode === "agent") {
+					// An agent-run turn is driven entirely server-side and
+					// only ever gets a live subscribeRunAgent connection from
+					// runAgentMessage's own submit — reconnect here so a
+					// reload doesn't leave it (and any paused tool decision)
+					// unwatched. See reconnectAgentRun.
+					reconnectAgentRun(this.tail);
+				} else {
+					this.tail.continueToolExecution();
+				}
+			}
+
+			// The agent's default model, read below off the workspace this room
+			// was started from. It only stands in for a room that has never
+			// named a model of its own - a room the user has already chatted in
+			// keeps the model those messages ran on.
+			let agentDefaultModelId = "";
+
 			if (!newOptions.workspace?.workspace_id) {
 				delete newOptions.workspace;
 			} else {
@@ -622,6 +673,9 @@ export class RoomStore {
 				if (workspaceOutput?.name && newOptions.workspace) {
 					newOptions.workspace.name = workspaceOutput.name;
 				}
+
+				agentDefaultModelId =
+					workspaceOutput?.config_json?.model_id ?? "";
 
 				// Merge workspace MCPs into the mcp array with fromWorkspace flag
 				if (
@@ -659,15 +713,20 @@ export class RoomStore {
 				}
 			}
 
-			// set the model based on the history
-			if (activeModelId) {
+			// set the model based on the history, or on the agent's default when
+			// the room has never named one
+			const modelIdToLoad = activeModelId || agentDefaultModelId;
+			if (modelIdToLoad) {
 				const { pixelReturn } = await this.runRoomPixel<[Engine[]]>(
-					`META | MyEngines(metaKeys=[], metaFilters=[{"tag":"text-generation"}], engineTypes=['MODEL'], filterWord=${JSON.stringify(activeModelId)})`,
+					`META | MyEngines(metaKeys=[], metaFilters=[{"tag":"text-generation"}], engineTypes=['MODEL'], filterWord=${JSON.stringify(modelIdToLoad)})`,
 				);
 
-				runInAction(() => {
-					this.setModel(pixelReturn[0].output[0]);
-				});
+				const model = pixelReturn[0].output[0];
+				if (model) {
+					runInAction(() => {
+						this.setModel(model);
+					});
+				}
 			}
 
 			runInAction(() => {
@@ -679,25 +738,7 @@ export class RoomStore {
 				if (optionsOutput.ROOM_NAME) {
 					this.setMetadata({ name: optionsOutput.ROOM_NAME });
 				}
-
-				// Restore agent-harness mode from the persisted options so a
-				// reloaded agent room keeps sending messages via RunAgent. Only
-				// promote to "agent" here — never demote — so that a freshly
-				// created room whose mode was set via setMode() before its
-				// options have been persisted (createRoom runs initialize()
-				// before updateRoomOptions) keeps its explicitly-set mode.
-				if (newOptions.harnessType) {
-					this.setMode("agent");
-				}
-
-				// store it
-				this._store.root = root;
 			});
-
-			// If the last message is a response and it has tool executions, start them (happens for new rooms and page reloads)
-			if (this.tail.type === "OUTPUT") {
-				this.tail.continueToolExecution();
-			}
 		} catch (e) {
 			console.error(e);
 			runInAction(() => {
@@ -833,6 +874,29 @@ export class RoomStore {
 
 		//get the tool based on the id
 		return this._store.tools[toolId] || null;
+	};
+
+	/**
+	 * Find a spawned subagent's part by id, wherever it falls in the room's
+	 * history. Looked up live (not snapshotted) so a panel showing it stays in
+	 * sync with status/result updates while open.
+	 */
+	getSubagentPart = (
+		subagentId: string,
+	): PixelMessageSubagentPart["subagent"] | undefined => {
+		for (const message of this.history) {
+			if (!(message instanceof ResponseMessageStore)) {
+				continue;
+			}
+			const part = message.parts.find(
+				(p): p is PixelMessageSubagentPart =>
+					p.type === "SUBAGENT" && p.subagent.id === subagentId,
+			);
+			if (part) {
+				return part.subagent;
+			}
+		}
+		return undefined;
 	};
 
 	/**
@@ -1013,10 +1077,12 @@ export class RoomStore {
 	 * Helpers
 	 */
 	/**
-	 * Set the isLoading boolean
+	 * Set the isLoading boolean. Public so callers that don't go through
+	 * streamJob.run() — e.g. the agent-run poll subscription — can still
+	 * participate in the room's loading state.
 	 * @param isLoading - is it loading
 	 */
-	private setIsLoading = (isLoading: boolean): void => {
+	setIsLoading = (isLoading: boolean): void => {
 		this._store.isLoading = isLoading;
 	};
 
@@ -1024,8 +1090,16 @@ export class RoomStore {
 	 * Ask a message to the room
 	 * @param prompt - user message
 	 * @param files - files
+	 * @param askOptions.visible - whether the user's bubble renders (default
+	 *   true); pass false for a silent kickoff turn — the reply still shows.
 	 */
-	askMessage = async (prompt: string, files: File[] = []): Promise<void> => {
+	askMessage = async (
+		prompt: string,
+		files: File[] = [],
+		askOptions: { visible?: boolean } = {},
+	): Promise<void> => {
+		const { visible = true } = askOptions;
+
 		if (!this.model) {
 			throw new Error("Model is required");
 		}
@@ -1042,7 +1116,7 @@ export class RoomStore {
 			io: "INPUT",
 			type: "INPUT_TEXT",
 			messageId: "ASK_PLACEHOLDER_ID",
-			visible: true,
+			visible,
 			platform_generated: true,
 			modelId: this.model?.engine_id,
 			modelType: this.model?.engine_type,
@@ -1379,7 +1453,7 @@ export class RoomStore {
 	/**
 	 * Compact the messages in the room
 	 */
-	compactMessages = async () => {
+	compactMessages = async (strategy?: "TOOL_PRUNE" | "SUMMARY" | "AUTO") => {
 		// Compact into the last real response in the chain.
 		const curResponse = this.latestResponseMessage;
 
@@ -1410,10 +1484,14 @@ export class RoomStore {
 		};
 
 		try {
+			const compactionTypesParam =
+				strategy && strategy !== "AUTO"
+					? `, compactionTypes=${JSON.stringify([strategy])}`
+					: "";
 			const response = await this.runRoomPixel<
 				(SummaryResponse | ToolPruneResponse)[][]
 			>(
-				`CompactRoomMessages(roomId=${JSON.stringify(this.roomId)}, parentMessageId=${JSON.stringify(curResponse.id)});`,
+				`CompactRoomMessages(roomId=${JSON.stringify(this.roomId)}, parentMessageId=${JSON.stringify(curResponse.id)}${compactionTypesParam});`,
 				true,
 			);
 
