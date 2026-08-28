@@ -252,7 +252,7 @@ export function NodeEditDrawer({
 								placeholder='e.g. ${model_chat_1} == "yes"'
 							/>
 							<p className="mt-1 text-[10px] text-muted-foreground">
-								Python expression. When True the{" "}
+								Condition expression. When true the{" "}
 								<strong>Then</strong> path runs, otherwise{" "}
 								<strong>Else</strong>.
 							</p>
