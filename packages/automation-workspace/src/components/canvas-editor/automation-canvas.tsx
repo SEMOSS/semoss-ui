@@ -98,6 +98,7 @@ const nodeTypes = {
 interface DeletableEdgeData {
 	onDelete: (edgeId: string) => void;
 	readOnly?: boolean;
+	hovered?: boolean;
 }
 
 function DeletableEdge({
@@ -127,9 +128,10 @@ function DeletableEdge({
 			<EdgeLabelRenderer>
 				<button
 					type="button"
-					className={`nodrag nopan pointer-events-auto absolute size-5 items-center justify-center rounded-full border bg-background text-muted-foreground shadow-sm hover:border-destructive/50 hover:text-destructive ${data?.readOnly ? "hidden" : "flex"}`}
+					className={`nodrag nopan pointer-events-auto absolute size-5 items-center justify-center rounded-full border bg-background text-muted-foreground shadow-sm transition-opacity hover:border-destructive/50 hover:text-destructive ${data?.readOnly ? "hidden" : "flex"}`}
 					style={{
 						transform: `translate(-50%, -50%) translate(${labelX}px, ${labelY}px)`,
+						opacity: data?.hovered ? 1 : 0,
 					}}
 					onClick={() => data?.onDelete(id)}
 					aria-label="Remove connection"
@@ -408,6 +410,7 @@ export function AutomationCanvas({
 	const [showAddMenu, setShowAddMenu] = useState(false);
 	const [addAfterStepId, setAddAfterStepId] = useState<string | null>(null);
 	const [addAfterHandle, setAddAfterHandle] = useState<string | null>(null);
+	const [hoveredEdgeId, setHoveredEdgeId] = useState<string | null>(null);
 
 	// Drawer state — which step is being edited
 	const [editingStepId, setEditingStepId] = useState<string | null>(null);
@@ -1778,7 +1781,11 @@ export function AutomationCanvas({
 						color: strokeColor,
 					},
 					style: { stroke: strokeColor, strokeWidth: 1.5 },
-					data: { onDelete: deleteEdge, readOnly },
+					data: {
+						onDelete: deleteEdge,
+						readOnly,
+						hovered: edge.id === hoveredEdgeId,
+					},
 				});
 			}
 		});
@@ -1801,6 +1808,7 @@ export function AutomationCanvas({
 		deleteEdge,
 		edgeColor,
 		handleNodeAdd,
+		hoveredEdgeId,
 		layoutNodes,
 		setRfNodes,
 		setRfEdges,
@@ -1977,6 +1985,12 @@ export function AutomationCanvas({
 											setShowAddMenu(false);
 										}}
 										onConnect={onConnect}
+										onEdgeMouseEnter={(_e, edge) =>
+											setHoveredEdgeId(edge.id)
+										}
+										onEdgeMouseLeave={() =>
+											setHoveredEdgeId(null)
+										}
 									>
 										<Background
 											variant={BackgroundVariant.Dots}
