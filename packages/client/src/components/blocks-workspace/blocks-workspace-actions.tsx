@@ -23,7 +23,7 @@ export const BlocksWorkspaceActions = observer(() => {
 
 	const { monolithStore } = useRootStore();
 	const { workspace } = useWorkspace();
-	const { permission, project } = useProject();
+	const { permission } = useProject();
 
 	const [shareOpen, setShareOpen] = useState(false);
 	const [shareDiffs, setShareDiffs] = useState(false);
@@ -115,7 +115,7 @@ export const BlocksWorkspaceActions = observer(() => {
 			// save the json
 			const { errors } = await monolithStore.runQuery<[true]>(
 				`SaveAppBlocksJson(project=["${
-					project.project_id
+					workspace.appId
 				}"], json=["<encode>${JSON.stringify(json)}</encode>"]);`,
 			);
 
@@ -149,7 +149,7 @@ export const BlocksWorkspaceActions = observer(() => {
 			if (permission === "OWNER" || permission === "EDIT") {
 				const { pixelReturn, errors } = await monolithStore.runQuery<
 					[true]
-				>(`GetAppBlocksJson ( project=['${project.project_id}']);`);
+				>(`GetAppBlocksJson ( project=['${workspace.appId}']);`);
 
 				if (errors.length > 0) {
 					throw new Error(errors.join(""));
@@ -260,7 +260,7 @@ export const BlocksWorkspaceActions = observer(() => {
 			>
 				<DialogContent className="max-w-lg p-0">
 					<ShareOverlay
-						appId={project.project_id}
+						appId={workspace.appId}
 						diffs={shareDiffs}
 						onClose={() => setShareOpen(false)}
 					/>

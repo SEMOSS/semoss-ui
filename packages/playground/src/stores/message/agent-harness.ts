@@ -351,7 +351,7 @@ const syncPendingActions = (
  */
 export const decideAgentToolAction = async (
 	tool: ToolStore,
-	decision: "reject" | "submit" | "respond",
+	decision: "reject" | "submit",
 	paramValues?: Record<string, unknown>,
 ): Promise<void> => {
 	const pendingAction = tool.pendingAction;

@@ -1,14 +1,14 @@
 import { observer } from "mobx-react-lite";
 import { useEffect, useState } from "react";
-import type { Project } from "@semoss/shared";
 import { Spinner, toast } from "@semoss/ui/next";
 import { ProjectView } from "@/components/project";
 import { PlatformMessages } from "@/components/shared";
 import { useProject, useRootStore } from "@/hooks";
 import { useNavigate } from "@/hooks/useNavigate";
+import type { WorkspaceStore } from "@/stores";
 
 /** Project types the share page can render a read-only view for. */
-const SHAREABLE_TYPES = new Set<Project["project_type"]>([
+const SHAREABLE_TYPES = new Set<WorkspaceStore["type"]>([
 	"CODE",
 	"BLOCKS",
 	"SKILL",
@@ -20,25 +20,25 @@ const SHAREABLE_TYPES = new Set<Project["project_type"]>([
  */
 export const SharePage = observer(() => {
 	const { configStore } = useRootStore();
-	const { project } = useProject();
+	const { project, permission } = useProject();
 
 	const navigate = useNavigate();
 
-	const [insightId, setInsightId] = useState<string | null>(null);
+	const [workspace, setWorkspace] = useState<WorkspaceStore | null>(null);
 
 	// biome-ignore lint/correctness/useExhaustiveDependencies: intentional — reruns on project change only
 	useEffect(() => {
-		setInsightId(null);
+		setWorkspace(null);
 
 		configStore
-			.createProjectInsight(project)
-			.then((loadedInsightId) => {
+			.createWorkspace(project, permission)
+			.then((loadedWorkspace) => {
 				if (!SHAREABLE_TYPES.has(project.project_type)) {
 					toast.error("This project type cannot be shared.");
 					navigate("/");
 					return;
 				}
-				setInsightId(loadedInsightId);
+				setWorkspace(loadedWorkspace);
 			})
 			.catch((e) => {
 				toast.error(e.message);
@@ -47,7 +47,7 @@ export const SharePage = observer(() => {
 	}, [project.project_id]);
 
 	// hide the screen while it loads
-	if (!insightId) {
+	if (!workspace) {
 		return (
 			<div className="flex h-screen w-screen items-center justify-center">
 				<Spinner />
@@ -57,7 +57,7 @@ export const SharePage = observer(() => {
 
 	return (
 		<div className="relative flex h-screen w-screen overflow-hidden">
-			<ProjectView insightId={insightId} />
+			<ProjectView workspace={workspace} />
 			<PlatformMessages />
 		</div>
 	);

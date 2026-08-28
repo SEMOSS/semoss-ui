@@ -28,7 +28,7 @@ import {
 	AgentSubagentsField,
 	buildEditWorkspacePixel,
 } from "@/components/agent-workspace/agent-form";
-import { useProject, useRootStore } from "@/hooks";
+import { useRootStore, useWorkspace } from "@/hooks";
 import { mcpToPlatformUrl, promptToPlatformUrl } from "@/utility";
 
 type GetWorkspaceResponse = {
@@ -64,7 +64,7 @@ type GetWorkspaceResponse = {
 };
 
 export const AgentEditor = () => {
-	const { project } = useProject();
+	const { workspace } = useWorkspace();
 	const { monolithStore } = useRootStore();
 	const [isLoading, setIsLoading] = useState(false);
 	const [isFetching, setIsFetching] = useState(true);
@@ -83,7 +83,7 @@ export const AgentEditor = () => {
 				setIsFetching(true);
 				const { errors, pixelReturn } = await monolithStore.runQuery<
 					[GetWorkspaceResponse]
-				>(`GetWorkspace(workspaceId=["${project.project_id}"]);`);
+				>(`GetWorkspace(workspaceId=["${workspace.appId}"]);`);
 				if (errors.length > 0) throw new Error(errors.join(", "));
 				const data = pixelReturn[0].output;
 				const allMcps = data.mcp ?? [];
@@ -128,14 +128,14 @@ export const AgentEditor = () => {
 				setIsFetching(false);
 			}
 		};
-		if (project.project_id) load();
-	}, [project.project_id, monolithStore, reset]);
+		if (workspace.appId) load();
+	}, [workspace.appId, monolithStore, reset]);
 
 	const onSave = handleSubmit(async (data) => {
 		try {
 			setIsLoading(true);
 			const { errors } = await monolithStore.runQuery(
-				buildEditWorkspacePixel(project.project_id, data),
+				buildEditWorkspacePixel(workspace.appId, data),
 			);
 			if (errors.length > 0) throw new Error(errors.join(", "));
 			toast.success("Agent saved");
@@ -236,7 +236,7 @@ export const AgentEditor = () => {
 										className="h-112"
 										enableKnowledgeMCP={true}
 										getPlatformUrl={mcpToPlatformUrl}
-										workspaceId={project.project_id}
+										workspaceId={workspace.appId}
 									/>
 								)}
 							/>
@@ -259,7 +259,7 @@ export const AgentEditor = () => {
 										className="h-112"
 										enableKnowledgeMCP={true}
 										getPlatformUrl={mcpToPlatformUrl}
-										workspaceId={project.project_id}
+										workspaceId={workspace.appId}
 									/>
 								)}
 							/>
@@ -312,7 +312,7 @@ export const AgentEditor = () => {
 						>
 							<AgentSubagentsField
 								control={control}
-								excludeWorkspaceId={project.project_id}
+								excludeWorkspaceId={workspace.appId}
 							/>
 						</AgentFormSection>
 

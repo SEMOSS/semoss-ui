@@ -17,8 +17,8 @@ import {
 	TabsList,
 	TabsTrigger,
 } from "@semoss/ui/next";
+import { NavbarLeft } from "@/components/shared/NavbarLeft";
 import { NavbarHeader } from "@/components/shared/navbar-header";
-import { NavbarLeft } from "@/components/shared/navbar-left";
 import { useRootStore } from "@/hooks";
 import { useNavigate } from "@/hooks/useNavigate";
 import { PromptLibraryCards } from "../../components/prompt/library/prompt-library-cards";

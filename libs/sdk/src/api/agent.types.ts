@@ -258,12 +258,4 @@ export interface AgentRunSubscription {
 	 * A no-op once polling has stopped.
 	 */
 	pokeNow: () => void;
-	/**
-	 * Settles when polling ends — terminal status, stop(), signal abort, or the
-	 * consecutive-failure cap — with the last snapshot observed, or null when
-	 * polling never received one. Never rejects. Note this resolves when the
-	 * POLL LOOP ends, not when the run does: an aborted subscription's run may
-	 * still be executing on the backend.
-	 */
-	done: Promise<AgentRunSnapshot | null>;
 }

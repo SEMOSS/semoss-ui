@@ -130,6 +130,7 @@
 		"searchAllAria": "सभी में खोजें",
 		"searchCurrentAria": "केवल वर्तमान निर्देशिका में खोजें",
 		"searchCurrentTitle": "केवल {{path}} में खोजें",
+		"moveDropHint": "{{label}} को {{path}} में ले जाने के लिए छोड़ें",
 		"contextMenu": {
 			"copyPath": "पथ कॉपी करें",
 			"copy": "कॉपी करें",

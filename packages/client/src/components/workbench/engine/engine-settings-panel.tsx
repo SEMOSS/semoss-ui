@@ -1,4 +1,3 @@
-import { SettingsIcon } from "lucide-react";
 import { useMemo, useState } from "react";
 import type { Role } from "@semoss/sdk";
 import { Tabs, TabsList, TabsTrigger } from "@semoss/ui/next";
@@ -10,9 +9,8 @@ import { EngineOverviewPage } from "@/pages/engine/engine-overview-page";
 import { EngineSettingsPage } from "@/pages/engine/engine-settings-page";
 import { EngineSmssPage } from "@/pages/engine/engine-smss-page";
 import { EngineUsagePage } from "@/pages/engine/engine-usage-page";
-import type { WorkbenchPanelConfig } from "@/stores/workbench";
 
-export interface EngineSettingsPanelProps {
+interface EngineSettingsPanelProps {
 	/** Settings tabs to display; differs by engine type */
 	tabs: {
 		/** Label shown on the tab trigger */
@@ -107,26 +105,3 @@ export const EngineSettingsPanel: React.FC<EngineSettingsPanelProps> = ({
 		</div>
 	);
 };
-
-/**
- * Builds the settings blueprint for one engine domain. Each domain calls
- * this at module scope with its static tab list, so the blueprint identity
- * stays stable and the panel never remounts from map churn.
- *
- * @name createEngineSettingsPanel
- * @param tabs - Settings tabs the domain exposes.
- * @return The blueprint registered under ENGINE_SETTINGS.
- */
-export const createEngineSettingsPanel = (
-	tabs: EngineSettingsPanelProps["tabs"],
-): WorkbenchPanelConfig => ({
-	name: "Settings",
-	helpText: "Settings",
-	icon: ({ className }) => <SettingsIcon className={className} />,
-	canClose: true,
-	canRename: false,
-	mount: "keepAlive",
-	content: function EngineSettingsContent() {
-		return <EngineSettingsPanel tabs={tabs} />;
-	},
-});

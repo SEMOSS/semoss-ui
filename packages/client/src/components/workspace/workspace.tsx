@@ -9,6 +9,26 @@ const BlocksWorkspace = lazy(() =>
 		default: m.BlocksWorkspace,
 	})),
 );
+const CodeWorkspace = lazy(() =>
+	import("@/components/code-workspace").then((m) => ({
+		default: m.CodeWorkspace,
+	})),
+);
+const SkillWorkspace = lazy(() =>
+	import("@/components/skill").then((m) => ({
+		default: m.SkillWorkspace,
+	})),
+);
+const AgentWorkspace = lazy(() =>
+	import("@/components/agent-workspace").then((m) => ({
+		default: m.AgentWorkspace,
+	})),
+);
+const NotebookWorkspace = lazy(() =>
+	import("@/components/notebook-workspace").then((m) => ({
+		default: m.NotebookWorkspace,
+	})),
+);
 
 import { useProject, useRootStore } from "@/hooks";
 import type { WorkspaceStore } from "@/stores";
@@ -24,7 +44,7 @@ const WorkspaceLoadingState = () => {
 export const Workspace: React.FC = () => {
 	const insight = useInsight();
 	const { configStore } = useRootStore();
-	const { project, type } = useProject();
+	const { project, permission, type } = useProject();
 
 	const navigate = useNavigate();
 
@@ -40,7 +60,7 @@ export const Workspace: React.FC = () => {
 		}
 
 		configStore
-			.createWorkspace(project, insight.insightId)
+			.createWorkspace(project, permission, insight.insightId)
 			.then((loadedWorkspace) => {
 				setWorkspace(loadedWorkspace);
 			})
@@ -94,9 +114,11 @@ export const Workspace: React.FC = () => {
 			}}
 		>
 			<Suspense fallback={<WorkspaceLoadingState />}>
-				{/* Only BLOCKS remains on this shell — CODE, NOTEBOOK, SKILL and
-				    AGENT render on the workbench. */}
+				{type === "CODE" && <CodeWorkspace />}
 				{type === "BLOCKS" && <BlocksWorkspace />}
+				{type === "SKILL" && <SkillWorkspace />}
+				{type === "WORKSPACE" && <AgentWorkspace />}
+				{type === "NOTEBOOK" && <NotebookWorkspace />}
 			</Suspense>
 		</WorkspaceContext.Provider>
 	);

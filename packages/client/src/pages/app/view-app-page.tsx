@@ -34,12 +34,13 @@ const Renderer = lazy(() =>
 	import("@semoss/renderer").then((m) => ({ default: m.Renderer })),
 );
 const CodeRenderer = lazy(() =>
-	import("@/components/project").then((m) => ({
+	import("@/components/code-workspace").then((m) => ({
 		default: m.CodeRenderer,
 	})),
 );
 
 import { usePage, useProject, useRootStore } from "@/hooks";
+import type { WorkspaceStore } from "@/stores";
 import { NavbarHeader, NavbarLeft, NavbarRight } from "../../components/shared";
 
 const AppViewLoadingState = () => {
@@ -57,7 +58,7 @@ export const ViewAppPage = observer(() => {
 
 	const navigate = useNavigate();
 
-	const [insightId, setInsightId] = useState<string | undefined>(undefined);
+	const [workspace, setWorkspace] = useState<WorkspaceStore>(undefined);
 	const [isShareOpen, setIsShareOpen] = useState<boolean>(false);
 	const [bookmarked, setBookmarked] = useState<boolean>(false);
 
@@ -82,12 +83,12 @@ export const ViewAppPage = observer(() => {
 
 	useEffect(() => {
 		// clear out the old app
-		setInsightId(undefined);
+		setWorkspace(undefined);
 
 		configStore
-			.createProjectInsight(project)
-			.then((loadedInsightId) => {
-				setInsightId(loadedInsightId);
+			.createWorkspace(project, permission)
+			.then((loadedWorkspace) => {
+				setWorkspace(loadedWorkspace);
 				setBookmarked(Boolean(project.project_favorite));
 			})
 			.catch((e) => {
@@ -97,7 +98,7 @@ export const ViewAppPage = observer(() => {
 	}, [project.project_id]);
 
 	// hide the screen while it loads
-	if (!insightId) {
+	if (!workspace) {
 		return <AppViewLoadingState />;
 	}
 
@@ -194,7 +195,7 @@ export const ViewAppPage = observer(() => {
 					{type === "BLOCKS" ? (
 						<Renderer
 							appId={project.project_id}
-							insightId={insightId}
+							insightId={workspace.insightId}
 						/>
 					) : null}
 					{type === "CODE" ? (

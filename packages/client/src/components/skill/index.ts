@@ -1,2 +1,2 @@
 export { SkillFileViewer } from "./skill-file-viewer";
-export { SkillPublicFiles } from "./skill-public-files";
+export { SkillWorkspace } from "./skill-workspace";
