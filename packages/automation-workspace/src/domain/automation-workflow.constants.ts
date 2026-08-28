@@ -309,8 +309,8 @@ export const AUTOMATION_WORKFLOW_NODE_REGISTRY: readonly AutomationNodeDefinitio
 		},
 		{
 			type: "control.if",
-			label: "Branch",
-			description: "Evaluate a condition and follow the matching path.",
+			label: "Decision",
+			description: "Evaluate a condition and route to the matching path.",
 			category: "control",
 			defaultConfig: { condition: "" },
 			configSchema: {

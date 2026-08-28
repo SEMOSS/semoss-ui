@@ -9,7 +9,12 @@ import {
 } from "lucide-react";
 import { type ReactNode, useEffect, useState } from "react";
 import { useTranslation } from "@semoss/i18n";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@semoss/ui/next";
+import {
+	Markdown,
+	Tooltip,
+	TooltipContent,
+	TooltipTrigger,
+} from "@semoss/ui/next";
 import { countInlineImages, hasInlineImage } from "../../utility/image";
 import { InlineImageSegments } from "./inline-image";
 import { JsonViewer } from "./json-viewer";
@@ -106,6 +111,13 @@ export const CellOutputBlock = ({
 		typeof outputValue === "object" &&
 		!error &&
 		!rawOutput;
+
+	const isTableOutput = isObjectOutput && isTabularArray(outputValue);
+
+	const isMarkdownOutput =
+		!isObjectOutput && !error && !rawOutput && looksLikeMarkdown(output);
+
+	const markdownText = isMarkdownOutput ? normalizeForMarkdown(output) : "";
 
 	// Python executions return rendered figures as inline base64 images. In
 	// FORMATTED mode we show the picture; RAW mode falls through to the plain
@@ -269,12 +281,20 @@ export const CellOutputBlock = ({
 						</>
 					}
 				>
-					{isObjectOutput ? (
+					{isTableOutput ? (
+						<DataTable
+							rows={outputValue as Record<string, unknown>[]}
+						/>
+					) : isObjectOutput ? (
 						<JsonViewer
 							value={outputValue}
 							forceVersion={expandRev}
 							forceOpen={expandAllTo}
 						/>
+					) : isMarkdownOutput ? (
+						<div className="prose prose-sm dark:prose-invert max-w-none">
+							<Markdown>{markdownText}</Markdown>
+						</div>
 					) : showOutputImages ? (
 						<InlineImageSegments
 							text={output}
@@ -392,12 +412,20 @@ export const CellOutputBlock = ({
 					}
 					onClose={() => setPopoutSection(null)}
 				>
-					{isObjectOutput ? (
+					{isTableOutput ? (
+						<DataTable
+							rows={outputValue as Record<string, unknown>[]}
+						/>
+					) : isObjectOutput ? (
 						<JsonViewer
 							value={outputValue}
 							forceVersion={expandRev}
 							forceOpen={expandAllTo}
 						/>
+					) : isMarkdownOutput ? (
+						<div className="prose prose-sm dark:prose-invert max-w-none">
+							<Markdown>{markdownText}</Markdown>
+						</div>
 					) : showOutputImages ? (
 						<InlineImageSegments
 							text={output}
@@ -880,3 +908,90 @@ const tryParseStructured = (raw: string): unknown | null => {
 // Re-export so consumers can compose their own renderers if they want just
 // the JSON tree.
 export { JsonViewer } from "./json-viewer";
+
+/** Heuristic: returns true if the text contains markdown syntax worth rendering. */
+const MARKDOWN_PATTERNS = [
+	/^#{1,6}\s/m, // headings
+	/\|.+\|.+\|/m, // tables
+	/^[-*+]\s/m, // unordered lists
+	/^\d+\.\s/m, // ordered lists
+	/```[\s\S]*?```/, // fenced code blocks
+	/\*\*.+?\*\*/, // bold
+	/\[.+?\]\(.+?\)/, // links
+];
+
+function looksLikeMarkdown(text: string): boolean {
+	if (!text || text.length < 4) return false;
+	return MARKDOWN_PATTERNS.some((pattern) => pattern.test(text));
+}
+
+/** Convert literal \\n sequences to real newlines and strip surrounding quotes. */
+function normalizeForMarkdown(text: string): string {
+	let s = text;
+	// Strip wrapping JSON string quotes
+	if (s.startsWith('"') && s.endsWith('"')) {
+		try {
+			const parsed = JSON.parse(s);
+			if (typeof parsed === "string") s = parsed;
+		} catch {
+			s = s.slice(1, -1);
+		}
+	}
+	// Convert literal \n to real newlines
+	if (s.includes("\\n")) {
+		s = s.replace(/\\n/g, "\n");
+	}
+	return s;
+}
+
+/** True if the value is a non-empty array of flat objects with consistent keys. */
+function isTabularArray(value: unknown): boolean {
+	if (!Array.isArray(value) || value.length === 0) return false;
+	if (typeof value[0] !== "object" || value[0] === null) return false;
+	const keys = Object.keys(value[0]);
+	if (keys.length === 0) return false;
+	return value.every(
+		(item) =>
+			typeof item === "object" && item !== null && !Array.isArray(item),
+	);
+}
+
+/** Renders an array of objects as a simple table. */
+function DataTable({ rows }: { rows: Record<string, unknown>[] }) {
+	const columns = Object.keys(rows[0]);
+	return (
+		<div className="overflow-auto">
+			<table className="w-full border-collapse text-xs">
+				<thead>
+					<tr className="border-b bg-muted/50">
+						{columns.map((col) => (
+							<th
+								key={col}
+								className="whitespace-nowrap px-2 py-1.5 text-left font-semibold text-muted-foreground"
+							>
+								{col}
+							</th>
+						))}
+					</tr>
+				</thead>
+				<tbody>
+					{rows.map((row, i) => (
+						<tr
+							key={`row-${i}-${String(row[columns[0]] ?? i)}`}
+							className="border-b last:border-0 hover:bg-muted/30"
+						>
+							{columns.map((col) => (
+								<td
+									key={col}
+									className="whitespace-nowrap px-2 py-1 text-foreground"
+								>
+									{String(row[col] ?? "")}
+								</td>
+							))}
+						</tr>
+					))}
+				</tbody>
+			</table>
+		</div>
+	);
+}

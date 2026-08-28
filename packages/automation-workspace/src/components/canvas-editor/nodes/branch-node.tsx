@@ -93,11 +93,11 @@ export function BranchNode({ data }: NodeProps) {
 							<Tooltip>
 								<TooltipTrigger asChild>
 									<p className="truncate font-semibold text-sm leading-snug">
-										{step.label || "Branch"}
+										{step.label || "Decision"}
 									</p>
 								</TooltipTrigger>
 								<TooltipContent side="top">
-									{step.label || "Branch"}
+									{step.label || "Decision"}
 								</TooltipContent>
 							</Tooltip>
 							<p className="mt-0.5 truncate text-[11px] text-muted-foreground">

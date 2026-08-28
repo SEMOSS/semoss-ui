@@ -128,8 +128,8 @@ export const TYPE_DISPLAY_META: Record<
 	app: STEP_TYPES[5],
 	wait: STEP_TYPES[6],
 	branch: {
-		label: "Branch",
-		description: "Evaluate a condition and follow the matching path",
+		label: "Decision",
+		description: "Evaluate a condition and route to the matching path",
 		icon: GitBranch,
 		color: "text-orange-600",
 	},

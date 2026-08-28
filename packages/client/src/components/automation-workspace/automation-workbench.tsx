@@ -42,6 +42,7 @@ import {
 	DialogFooter,
 	DialogHeader,
 	DialogTitle,
+	Markdown,
 	Tooltip,
 	TooltipContent,
 	TooltipTrigger,
@@ -228,6 +229,9 @@ const AutomationOutputModalContent = ({
 	}, [value]);
 	const formatted = parsed === null ? value : JSON.stringify(parsed, null, 2);
 	const isObjectOutput = parsed !== null && typeof parsed === "object";
+	const isTable = isObjectOutput && isTabularArray(parsed);
+	const isMarkdown = !isObjectOutput && !raw && looksLikeMarkdown(value);
+	const markdownText = isMarkdown ? normalizeForMarkdown(value) : "";
 
 	return (
 		<PopoutModal
@@ -312,12 +316,18 @@ const AutomationOutputModalContent = ({
 			}
 			onClose={onClose}
 		>
-			{!raw && isObjectOutput ? (
+			{!raw && isTable ? (
+				<DataTable rows={parsed as Record<string, unknown>[]} />
+			) : !raw && isObjectOutput ? (
 				<JsonViewer
 					value={parsed}
 					forceVersion={expandVersion}
 					forceOpen={expandAll}
 				/>
+			) : !raw && isMarkdown ? (
+				<div className="prose prose-sm dark:prose-invert max-w-none">
+					<Markdown>{markdownText}</Markdown>
+				</div>
 			) : (
 				<pre className="whitespace-pre-wrap break-all font-mono text-foreground text-sm">
 					{raw ? value : formatted}
@@ -326,6 +336,90 @@ const AutomationOutputModalContent = ({
 		</PopoutModal>
 	);
 };
+
+const MARKDOWN_PATTERNS = [
+	/^#{1,6}\s/m,
+	/\|.+\|.+\|/m,
+	/^[-*+]\s/m,
+	/^\d+\.\s/m,
+	/```[\s\S]*?```/,
+	/\*\*.+?\*\*/,
+	/\[.+?\]\(.+?\)/,
+];
+
+function looksLikeMarkdown(text: string): boolean {
+	if (!text || text.length < 4) return false;
+	return MARKDOWN_PATTERNS.some((p) => p.test(text));
+}
+
+function normalizeForMarkdown(text: string): string {
+	let s = text;
+	if (s.startsWith('"') && s.endsWith('"')) {
+		try {
+			const parsed = JSON.parse(s);
+			if (typeof parsed === "string") s = parsed;
+		} catch {
+			s = s.slice(1, -1);
+		}
+	}
+	if (s.includes("\\n")) {
+		s = s.replace(/\\n/g, "\n");
+	}
+	return s;
+}
+
+function isTabularArray(value: unknown): boolean {
+	if (!Array.isArray(value) || value.length === 0) return false;
+	if (typeof value[0] !== "object" || value[0] === null) return false;
+	return (
+		Object.keys(value[0]).length > 0 &&
+		value.every(
+			(item) =>
+				typeof item === "object" &&
+				item !== null &&
+				!Array.isArray(item),
+		)
+	);
+}
+
+function DataTable({ rows }: { rows: Record<string, unknown>[] }) {
+	const columns = Object.keys(rows[0]);
+	return (
+		<div className="overflow-auto">
+			<table className="w-full border-collapse text-xs">
+				<thead>
+					<tr className="border-b bg-muted/50">
+						{columns.map((col) => (
+							<th
+								key={col}
+								className="whitespace-nowrap px-2 py-1.5 text-left font-semibold text-muted-foreground"
+							>
+								{col}
+							</th>
+						))}
+					</tr>
+				</thead>
+				<tbody>
+					{rows.map((row, i) => (
+						<tr
+							key={`row-${i}-${String(row[columns[0]] ?? i)}`}
+							className="border-b last:border-0 hover:bg-muted/30"
+						>
+							{columns.map((col) => (
+								<td
+									key={col}
+									className="whitespace-nowrap px-2 py-1 text-foreground"
+								>
+									{String(row[col] ?? "")}
+								</td>
+							))}
+						</tr>
+					))}
+				</tbody>
+			</table>
+		</div>
+	);
+}
 
 export const AutomationWorkbench = observer(
 	({
