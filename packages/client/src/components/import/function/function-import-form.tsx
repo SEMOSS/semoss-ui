@@ -39,6 +39,37 @@ import { useNavigate } from "@/hooks/useNavigate";
 import { EngineFormHeader } from "../shared/engine-form-header";
 import { computeVisibility } from "../shared/import-form.utils";
 
+const generatePythonStarter = (formData) => {
+	const requiredParameters = Array.isArray(
+		formData.FUNCTION_REQUIRED_PARAMETERS,
+	)
+		? formData.FUNCTION_REQUIRED_PARAMETERS
+		: [];
+	const parameters = Array.isArray(formData.FUNCTION_PARAMETERS)
+		? formData.FUNCTION_PARAMETERS
+		: [];
+	const descriptions = new Map(
+		parameters.map((parameter) => [
+			parameter.parameterName,
+			parameter.parameterDescription || "",
+		]),
+	);
+	const signature = requiredParameters
+		.map((parameter) => `    ${parameter}: str,`)
+		.join("\n");
+	const args = requiredParameters
+		.map(
+			(parameter) =>
+				`        ${parameter} (str): ${descriptions.get(parameter) || ""}`,
+		)
+		.join("\n");
+	const body = requiredParameters
+		.map((parameter) => `    print("${parameter} - ", ${parameter})`)
+		.join("\n");
+
+	return `def ${formData.FUNCTION_NAME}(\n${signature}\n):\n    """\n    Args:\n${args}\n    """${body ? `\n${body}` : ""}\n`;
+};
+
 export const FunctionForm = ({
 	title,
 	description,
@@ -104,6 +135,11 @@ export const FunctionForm = ({
 
 	const onFormSubmit = async (formData) => {
 		const { FILE, ...newFormData } = formData;
+		const files = Array.isArray(FILE)
+			? FILE
+			: FILE instanceof File
+				? [FILE]
+				: [];
 
 		// Structured list fields are kept as arrays in form state for the UI,
 		// but the backend reads them as JSON strings via Gson on the SMSS prop.
@@ -118,17 +154,43 @@ export const FunctionForm = ({
 		});
 
 		setLoading(true);
-		let pixel = `CreateRestFunctionEngine(function=["${
-			formData.NAME
-		}"],functionDetails=[${JSON.stringify(newFormData)}]);`;
-		if (FILE !== "") {
+		let pixel: string;
+		if (newFormData.FUNCTION_TYPE === "LOCAL_PYTHON") {
+			if (files.length > 0) {
+				newFormData.PYTHON_FILE_NAME = files[0].name;
+			}
+
+			try {
+				const content =
+					files.length > 0
+						? await files[0].text()
+						: generatePythonStarter(formData);
+				pixel = `CreatePythonFunctionEngine(function=["${
+					formData.NAME
+				}"],functionDetails=[${JSON.stringify(newFormData)}],content=[${JSON.stringify(content)}]);`;
+			} catch {
+				toast.error("Unable to read the selected Python file.");
+				setLoading(false);
+				return;
+			}
+		} else {
+			pixel = `CreateRestFunctionEngine(function=["${
+				formData.NAME
+			}"],functionDetails=[${JSON.stringify(newFormData)}]);`;
+		}
+
+		if (newFormData.FUNCTION_TYPE !== "LOCAL_PYTHON" && files.length > 0) {
 			try {
 				const uploadedFiles = await uploadFile(
-					[FILE],
+					files,
 					configStore.store.insightID,
 				);
 
-				if (!uploadedFiles || !Array.isArray(uploadedFiles)) {
+				if (
+					!uploadedFiles ||
+					!Array.isArray(uploadedFiles) ||
+					!uploadedFiles[0]?.fileLocation
+				) {
 					toast.error("Upload failed or returned invalid response.");
 					setLoading(false);
 					return;
