@@ -233,6 +233,13 @@ export interface AutomationRunSummary {
 	DEFINITION_HASH?: string;
 }
 
+/** Immutable definition metadata captured when an automation run starts. */
+export interface AutomationExecutedDefinition {
+	version?: number;
+	hash?: string;
+	snapshot?: string;
+}
+
 export interface AutomationNodeResult {
 	NODE_ID: string;
 	NODE_LABEL: string;

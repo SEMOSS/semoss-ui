@@ -2,6 +2,7 @@ import { GitBranch, Loader2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { CellOutputBlock } from "@semoss/shared";
 import type {
+	AutomationExecutedDefinition,
 	AutomationNode,
 	AutomationNodeResult,
 	RunStatus,
@@ -9,6 +10,7 @@ import type {
 import { getDisplayMeta } from "../../../domain/automation-display";
 import { formatDurationMs } from "../../../domain/automation-utils";
 import { getWorkflowNodeDisplay } from "../../../domain/automation-workflow-display";
+import { ExecutedDefinitionDetail } from "../../form-editor/executed-definition-detail";
 import { ErrorDetail, TraceDetail } from "../../form-editor/node-result-list";
 import { StatusBadge } from "../../status-badge";
 import { RunBanner } from "../run-banner";
@@ -21,6 +23,7 @@ export interface AutomationTraceSnapshot {
 	generatingAiSummary: boolean;
 	steps: AutomationNode[];
 	results: AutomationNodeResult[];
+	executedDefinition: AutomationExecutedDefinition | null;
 }
 
 interface TraceTabProps extends AutomationTraceSnapshot {
@@ -34,6 +37,7 @@ export function TraceTab({
 	generatingAiSummary,
 	steps,
 	results,
+	executedDefinition,
 	onDismiss,
 }: TraceTabProps) {
 	const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
@@ -218,6 +222,13 @@ export function TraceTab({
 										}
 									}}
 								/>
+								{selectedStep?.workflowType ===
+									"trigger.start" &&
+									executedDefinition && (
+										<ExecutedDefinitionDetail
+											definition={executedDefinition}
+										/>
+									)}
 								{selectedResult.trace && (
 									<TraceDetail
 										trace={selectedResult.trace}

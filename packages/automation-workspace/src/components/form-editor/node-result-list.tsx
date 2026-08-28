@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import { useMemo, useState } from "react";
 import type {
+	AutomationExecutedDefinition,
 	AutomationNode,
 	AutomationNodeResult,
 	AutomationNodeTrace,
@@ -14,6 +15,7 @@ import type {
 import { getDisplayMeta } from "../../domain/automation-display";
 import { formatDurationMs } from "../../domain/automation-utils";
 import { StatusBadge } from "../status-badge";
+import { ExecutedDefinitionDetail } from "./executed-definition-detail";
 import { OutputPreview } from "./output-preview";
 
 export interface NodeResultListProps {
@@ -25,6 +27,8 @@ export interface NodeResultListProps {
 	expandedNodes: Set<string>;
 	/** Called with a node id when its output preview is expanded/collapsed */
 	onToggleNode: (nodeId: string) => void;
+	/** Definition captured for this run, shown on its start node. */
+	executedDefinition?: AutomationExecutedDefinition;
 }
 
 export function ErrorDetail({ message }: { message: string }) {
@@ -164,6 +168,7 @@ export function NodeResultList({
 	results,
 	expandedNodes,
 	onToggleNode,
+	executedDefinition,
 }: NodeResultListProps) {
 	const stepMap = useMemo(
 		() => new Map(steps.map((step) => [step.id, step])),
@@ -228,6 +233,12 @@ export function NodeResultList({
 											nodeType={step?.type}
 										/>
 									)}
+									{step?.workflowType === "trigger.start" &&
+										executedDefinition && (
+											<ExecutedDefinitionDetail
+												definition={executedDefinition}
+											/>
+										)}
 									{result.trace && (
 										<TraceDetail
 											trace={result.trace}

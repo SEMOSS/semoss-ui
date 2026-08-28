@@ -3,6 +3,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Button, toast } from "@semoss/ui/next";
 import { getAutomationRun, listAutomationRuns } from "../../../api";
 import type {
+	AutomationExecutedDefinition,
 	AutomationNode,
 	AutomationRunDetail,
 	AutomationRunSummary,
@@ -35,6 +36,16 @@ function getExecutedSteps(run: AutomationRunDetail | null): AutomationNode[] {
 	}
 }
 
+function getExecutedDefinition(
+	run: AutomationRunDetail,
+): AutomationExecutedDefinition {
+	return {
+		version: run.DEFINITION_VERSION,
+		hash: run.DEFINITION_HASH,
+		snapshot: run.DEFINITION_SNAPSHOT,
+	};
+}
+
 /** Persisted automation run list and per-node detail panel. */
 export function HistoryTab({ appId, refreshToken }: HistoryTabProps) {
 	const [runs, setRuns] = useState<AutomationRunSummary[]>([]);
@@ -49,7 +60,6 @@ export function HistoryTab({ appId, refreshToken }: HistoryTabProps) {
 	);
 	const [detailLoading, setDetailLoading] = useState(false);
 	const [expandedNodes, setExpandedNodes] = useState<Set<string>>(new Set());
-	const [showDefinition, setShowDefinition] = useState(false);
 	const requestRef = useRef(0);
 	const detailRequestRef = useRef(0);
 	const previousRefreshTokenRef = useRef(refreshToken);
@@ -99,13 +109,11 @@ export function HistoryTab({ appId, refreshToken }: HistoryTabProps) {
 				setExpandedRun(null);
 				setDetailLoading(false);
 				setExpandedNodes(new Set());
-				setShowDefinition(false);
 				return;
 			}
 			setExpandedRunId(runId);
 			setExpandedRun(null);
 			setExpandedNodes(new Set());
-			setShowDefinition(false);
 			const cached = details[runId];
 			if (cached) {
 				setExpandedRun(cached);
@@ -249,51 +257,6 @@ export function HistoryTab({ appId, refreshToken }: HistoryTabProps) {
 												</div>
 											) : expandedRun ? (
 												<div className="space-y-4">
-													{expandedRun.DEFINITION_HASH && (
-														<div className="rounded-lg border bg-background px-3 py-2 text-[11px]">
-															<div className="flex items-center justify-between gap-3">
-																<span className="text-muted-foreground">
-																	Executed
-																	definition
-																	{expandedRun.DEFINITION_VERSION !=
-																	null
-																		? ` v${expandedRun.DEFINITION_VERSION}`
-																		: ""}
-																</span>
-																<Button
-																	size="sm"
-																	variant="ghost"
-																	className="h-7 px-2 text-[11px]"
-																	onClick={() =>
-																		setShowDefinition(
-																			(
-																				current,
-																			) =>
-																				!current,
-																		)
-																	}
-																>
-																	{showDefinition
-																		? "Hide definition"
-																		: "View definition"}
-																</Button>
-															</div>
-															<p className="mt-1 break-all font-mono text-muted-foreground">
-																SHA-256:{" "}
-																{
-																	expandedRun.DEFINITION_HASH
-																}
-															</p>
-															{showDefinition &&
-																expandedRun.DEFINITION_SNAPSHOT && (
-																	<pre className="mt-2 max-h-80 overflow-auto rounded-md bg-muted p-3 text-[10px] leading-relaxed">
-																		{
-																			expandedRun.DEFINITION_SNAPSHOT
-																		}
-																	</pre>
-																)}
-														</div>
-													)}
 													<NodeResultList
 														steps={executedSteps}
 														results={
@@ -306,6 +269,9 @@ export function HistoryTab({ appId, refreshToken }: HistoryTabProps) {
 														onToggleNode={
 															toggleNode
 														}
+														executedDefinition={getExecutedDefinition(
+															expandedRun,
+														)}
 													/>
 												</div>
 											) : null}

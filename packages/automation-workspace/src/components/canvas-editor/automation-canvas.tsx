@@ -55,6 +55,7 @@ import {
 } from "@semoss/ui/next";
 import type {
 	AutomationEdge,
+	AutomationExecutedDefinition,
 	AutomationNode,
 	AutomationNodeResult,
 	AutomationRunDetail,
@@ -173,6 +174,9 @@ interface AutomationNodeStreamData {
 	OUTPUT_PREVIEW?: string | null;
 	ERROR_MESSAGE?: string | null;
 	trace?: AutomationNodeResult["trace"];
+	DEFINITION_VERSION?: number;
+	DEFINITION_HASH?: string;
+	DEFINITION_SNAPSHOT?: string;
 }
 
 interface CanvasWorkflowDraft {
@@ -429,6 +433,8 @@ export function AutomationCanvas({
 	const [latestRunResults, setLatestRunResults] = useState<
 		AutomationNodeResult[]
 	>([]);
+	const [latestRunDefinition, setLatestRunDefinition] =
+		useState<AutomationExecutedDefinition | null>(null);
 	const [aiRunSummary, setAiRunSummary] = useState<string | null>(null);
 	const [generatingAiSummary, setGeneratingAiSummary] = useState(false);
 	const [isDirty, setIsDirty] = useState(false);
@@ -461,6 +467,7 @@ export function AutomationCanvas({
 					generatingAiSummary,
 					steps,
 					results: latestRunResults,
+					executedDefinition: latestRunDefinition,
 				},
 			},
 			parentOrigin,
@@ -469,6 +476,7 @@ export function AutomationCanvas({
 		aiRunSummary,
 		generatingAiSummary,
 		latestRunResults,
+		latestRunDefinition,
 		latestRunStatus,
 		running,
 		steps,
@@ -1256,10 +1264,7 @@ export function AutomationCanvas({
 	}, [readOnly, save]);
 
 	const applyRunData = useCallback(
-		(runData: {
-			STATUS: RunStatus;
-			nodeResults?: AutomationNodeResult[];
-		}) => {
+		(runData: TriggerAutomationOutput) => {
 			const nodeResults = runData.nodeResults ?? [];
 			const resultByNodeId = new Map(
 				nodeResults.map((result) => [result.NODE_ID, result]),
@@ -1289,6 +1294,11 @@ export function AutomationCanvas({
 			setStepDurations(durations);
 			setLatestRunStatus(runData.STATUS);
 			setLatestRunResults(nodeResults);
+			setLatestRunDefinition({
+				version: runData.DEFINITION_VERSION,
+				hash: runData.DEFINITION_HASH,
+				snapshot: runData.DEFINITION_SNAPSHOT,
+			});
 		},
 		[steps],
 	);
@@ -1353,6 +1363,14 @@ export function AutomationCanvas({
 		[],
 	);
 
+	const applyRunStarted = useCallback((data: AutomationNodeStreamData) => {
+		setLatestRunDefinition({
+			version: data.DEFINITION_VERSION,
+			hash: data.DEFINITION_HASH,
+			snapshot: data.DEFINITION_SNAPSHOT,
+		});
+	}, []);
+
 	const run = useCallback(async () => {
 		if (readOnly && mcpMode !== "trigger") {
 			toast.error("You have read-only access to this automation.");
@@ -1381,6 +1399,7 @@ export function AutomationCanvas({
 		setStepDurations({});
 		setLatestRunStatus("RUNNING");
 		setLatestRunResults([]);
+		setLatestRunDefinition(null);
 		try {
 			const { jobId } = await runPixelAsync(
 				`TriggerAutomation(project=${JSON.stringify([appId])});`,
@@ -1395,10 +1414,12 @@ export function AutomationCanvas({
 						stream_type?: string;
 						data?: AutomationNodeStreamData;
 					};
-					if (
-						event.stream_type === "automation" &&
-						event.data?.kind === "node-status"
-					) {
+					if (event.stream_type !== "automation" || !event.data) {
+						continue;
+					}
+					if (event.data.kind === "run-start") {
+						applyRunStarted(event.data);
+					} else if (event.data.kind === "node-status") {
 						applyNodeProgress(event.data);
 					}
 				}
@@ -1511,6 +1532,7 @@ export function AutomationCanvas({
 		appId,
 		applyNodeProgress,
 		applyRunData,
+		applyRunStarted,
 		mcpContext,
 		mcpMode,
 		notifyHistoryChanged,
