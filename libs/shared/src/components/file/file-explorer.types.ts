@@ -92,7 +92,8 @@ export interface FileExplorerCommands {
 	/** Move items into a directory. Resolves false if the move failed. */
 	move(items: FileItem[], targetDirectory: string): Promise<boolean>;
 	upload(files: File[], path?: string): Promise<void>;
-	copyPath(item: FileItem): Promise<void>;
+	/** Copy a path to the clipboard — a row's, or the header's current directory. */
+	copyPath(path: string): Promise<void>;
 	unzip(item: FileItem): Promise<void>;
 	expand(path: string): void;
 	collapse(path: string): void;
@@ -114,9 +115,13 @@ export interface FileExplorerHeaderState {
 	/** `"all"` searches the whole tree, `"current"` only under `path`. */
 	searchType: string;
 	setSearchType(value: string): void;
-	isSearchActive: boolean;
-	setIsSearchActive(value: boolean): void;
-	/** Whether the search field should be expanded. */
+	/** Whether the search toggle has been switched on. */
+	isSearchOpen: boolean;
+	setIsSearchOpen(value: boolean): void;
+	/**
+	 * Whether the search row should render. Stays true while a query is live so
+	 * a filter — and the scope it was run with — can never be hidden.
+	 */
 	showSearch: boolean;
 }
 

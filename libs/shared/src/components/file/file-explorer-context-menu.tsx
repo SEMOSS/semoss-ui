@@ -70,19 +70,19 @@ export const FileExplorerContextMenu: React.FC<
 	const entries: MenuEntry[] = [];
 
 	// copying a path is a read operation — every scope gets it, including
-	// storage buckets and read-only explorers
-	if (isOnItem) {
-		entries.push({
-			key: "copy-path",
-			label: t("fileExplorer.contextMenu.copyPath"),
-			disabled: isBulkAction,
-			action: async () => {
-				if (!item) return;
-				await commands.copyPath(item);
-				onClose();
-			},
-		});
-	}
+	// storage buckets and read-only explorers. Over empty space there is no
+	// `item`, so it falls back to `targetPath` — the directory the menu was
+	// opened over, already resolved by the caller (`file-explorer.tsx`'s
+	// `onContextMenu` passes `ensureDirectoryPath(path)` for that case).
+	entries.push({
+		key: "copy-path",
+		label: t("fileExplorer.contextMenu.copyPath"),
+		disabled: isBulkAction,
+		action: async () => {
+			await commands.copyPath(item ? item.path : targetPath);
+			onClose();
+		},
+	});
 
 	if (isOnItem && canMutate) {
 		entries.push({

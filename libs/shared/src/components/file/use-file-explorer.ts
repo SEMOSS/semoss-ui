@@ -99,7 +99,7 @@ export const useFileExplorer = (
 		initialPath ? initialPath.replace(/\/$/, "") || "/" : "/",
 	);
 	const [search, setSearchValue] = useState("");
-	const [isSearchActive, setIsSearchActive] = useState(false);
+	const [isSearchOpen, setIsSearchOpen] = useState(false);
 	const [searchType, setSearchType] = useState<string>("all");
 	const debouncedSearch = useDebouncedValue(search);
 
@@ -184,6 +184,33 @@ export const useFileExplorer = (
 			item.name.toLowerCase().includes(needle),
 		);
 	}, [adapter, capabilities.search, debouncedSearch, getFiles.data]);
+
+	/**
+	 * The last settled listing for the current directory.
+	 *
+	 * `usePixel` resets its data to the initial value the moment a new Pixel
+	 * starts, so every search keystroke and every refresh would otherwise empty
+	 * the tree mid-flight and pop it back. Holding the previous result keeps the
+	 * list stable — but only while the directory is unchanged, so navigating
+	 * still clears rather than briefly showing the folder you just left.
+	 */
+	const settledItemsRef = useRef<{ path: string; items: FileItem[] }>({
+		path: path,
+		items: [],
+	});
+
+	const visibleItems =
+		getFiles.status === "LOADING" && settledItemsRef.current.path === path
+			? settledItemsRef.current.items
+			: items;
+
+	useEffect(() => {
+		if (getFiles.status === "LOADING") {
+			return;
+		}
+
+		settledItemsRef.current = { path: path, items: items };
+	}, [getFiles.status, items, path]);
 
 	// ── Selection / context state ───────────────────────────────────────────
 
@@ -373,7 +400,7 @@ export const useFileExplorer = (
 	};
 
 	/**
-	 * Descend into a directory, keeping only its own subtree expanded.
+	 * Descend into a directory, keeping only its descendants expanded.
 	 * Non-directories are ignored.
 	 *
 	 * @param item - The row that was activated.
@@ -383,15 +410,19 @@ export const useFileExplorer = (
 			return;
 		}
 
-		// keep only the entered directory and its descendants expanded
+		// keep only the entered directory's descendants expanded — its own
+		// path stops being a rendered node, so holding on to it would leave the
+		// folder stuck open when navigation returns to the parent
 		const pathPrefix = ensureDirectoryPath(item.path);
 		setExpandedPaths((previous) =>
 			previous.filter(
 				(candidate) =>
-					candidate === item.path || candidate.startsWith(pathPrefix),
+					candidate !== item.path &&
+					candidate !== pathPrefix &&
+					candidate.startsWith(pathPrefix),
 			),
 		);
-		setPath(item.path);
+		setPath(normalizeAssetPath(item.path));
 		setSearchValue("");
 	};
 
@@ -846,18 +877,20 @@ export const useFileExplorer = (
 	};
 
 	/**
-	 * Copy an item's path to the clipboard, falling back to a hidden textarea
-	 * where the async clipboard API is unavailable.
+	 * Copy a path to the clipboard, falling back to a hidden textarea where the
+	 * async clipboard API is unavailable. Takes a bare path rather than a
+	 * `FileItem` so the header can copy the current directory's path too, not
+	 * just a row's.
 	 *
-	 * @param item - The item whose path to copy.
+	 * @param path - The path to copy.
 	 */
-	const copyPath = async (item: FileItem) => {
+	const copyPath = async (path: string) => {
 		try {
 			if (navigator.clipboard?.writeText) {
-				await navigator.clipboard.writeText(item.path);
+				await navigator.clipboard.writeText(path);
 			} else {
 				const textArea = document.createElement("textarea");
-				textArea.value = item.path;
+				textArea.value = path;
 				textArea.style.position = "fixed";
 				textArea.style.opacity = "0";
 				document.body.appendChild(textArea);
@@ -1045,14 +1078,10 @@ export const useFileExplorer = (
 		const preview = document.createElement("div");
 		preview.textContent =
 			dragItems.length > 1
-				? t("fileExplorer.dragPreviewMoveItems", {
-						count: dragItems.length,
-					})
-				: t("fileExplorer.dragPreviewMoveItem", {
-						name: dragItems[0]?.name ?? "",
-					});
+				? t("fileExplorer.itemCount", { count: dragItems.length })
+				: (dragItems[0]?.name ?? "");
 		preview.className =
-			"fixed -top-96 start-0 rounded-md border border-primary/30 bg-background px-2 py-1 text-xs font-medium text-foreground shadow-md";
+			"fixed -top-96 start-0 rounded border border-border bg-card px-2 py-1 text-xs text-foreground shadow-lg";
 		document.body.appendChild(preview);
 		dataTransfer.setDragImage(preview, 12, 12);
 		window.setTimeout(() => preview.remove(), 0);
@@ -1226,7 +1255,7 @@ export const useFileExplorer = (
 			liveRef.current.move(movingItems, targetDirectory),
 		upload: (files, targetPath) =>
 			liveRef.current.upload(files, targetPath),
-		copyPath: (item) => liveRef.current.copyPath(item),
+		copyPath: (path) => liveRef.current.copyPath(path),
 		unzip: (item) => liveRef.current.unzip(item),
 		expand: (targetPath) => liveRef.current.expand(targetPath),
 		collapse: (targetPath) => liveRef.current.collapse(targetPath),
@@ -1252,14 +1281,14 @@ export const useFileExplorer = (
 			setSearch: setSearch,
 			searchType: searchType,
 			setSearchType: setSearchType,
-			isSearchActive: isSearchActive,
-			setIsSearchActive: setIsSearchActive,
-			showSearch:
-				capabilities.search &&
-				(isSearchActive || Boolean(debouncedSearch)),
+			isSearchOpen: isSearchOpen,
+			setIsSearchOpen: setIsSearchOpen,
+			// `search`, not `debouncedSearch`: closing after a clear should be
+			// immediate rather than trailing the 300ms debounce
+			showSearch: isSearchOpen || Boolean(search),
 		},
 		tree: {
-			items: items,
+			items: visibleItems,
 			status: getFiles.status as FileExplorerStatus,
 			error: getFiles.error,
 			isUploading: isUploading,

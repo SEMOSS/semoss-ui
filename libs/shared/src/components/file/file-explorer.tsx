@@ -4,6 +4,7 @@ import type { CSSProperties, KeyboardEvent as ReactKeyboardEvent } from "react";
 import { useTranslation } from "@semoss/i18n";
 import {
 	Button,
+	cn,
 	Muted,
 	ScrollArea,
 	ScrollBar,
@@ -70,7 +71,18 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
 }) => {
 	const { t } = useTranslation("common");
 	const { capabilities, commands, dnd, newFile, tree } = explorer;
-	const { path } = explorer.header;
+	const { path, search } = explorer.header;
+
+	// a search's debounce reloads `tree.items` on every keystroke; a full-page
+	// spinner would otherwise blank the list between them, so it only takes
+	// over while there is nothing retained yet to show underneath it
+	const showFullSpinner =
+		tree.isUploading ||
+		(tree.status === "LOADING" && tree.items.length === 0);
+	const showTree =
+		!showFullSpinner &&
+		!tree.isUploading &&
+		(tree.status === "SUCCESS" || tree.status === "LOADING");
 
 	const handleKeyDown = (e: ReactKeyboardEvent<HTMLDivElement>) => {
 		if (e.key !== "Escape") return;
@@ -110,20 +122,15 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
 
 			<Separator className="mt-1" />
 
-			<div className="relative flex min-h-0 flex-1 flex-col">
-				{dnd.moveDropCount > 0 && (
-					<div
-						data-testid="file-explorer-root-drop-indicator"
-						className="pointer-events-none absolute end-3 bottom-3 z-10 rounded-md border border-primary/30 bg-background/95 px-3 py-2 text-foreground text-xs shadow-md"
-					>
-						{t("fileExplorer.moveDropHint", {
-							label: t("fileExplorer.itemCount", {
-								count: dnd.moveDropCount,
-							}),
-							path: path,
-						})}
-					</div>
+			<div
+				className={cn(
+					"relative flex min-h-0 flex-1 flex-col",
+					// a row-level dragover zeroes `moveDropCount`, so this and a
+					// ringed drop-target row are never lit at the same time
+					dnd.moveDropCount > 0 &&
+						"rounded-md ring-2 ring-primary ring-inset",
 				)}
+			>
 				<div className="flex select-none items-center border-b px-2 text-[11px] text-muted-foreground">
 					<div className="flex min-w-[80px] flex-1 items-center gap-1 overflow-hidden">
 						<span className="overflow-hidden truncate font-medium">
@@ -195,7 +202,7 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
 				</div>
 
 				<ScrollArea className="[&>div>div]:block! h-full min-h-0 w-full flex-1">
-					{(tree.status === "LOADING" || tree.isUploading) && (
+					{showFullSpinner && (
 						<div className="flex items-center justify-center py-16">
 							<Spinner />
 						</div>
@@ -210,7 +217,7 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
 						</div>
 					)}
 
-					{tree.status === "SUCCESS" && !tree.isUploading && (
+					{showTree && (
 						<TreeView<FileItem>
 							data-testid="file-explorer-tree"
 							className="w-full"
@@ -219,12 +226,17 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
 								tree.setExpandedPaths(paths)
 							}
 							onKeyDown={(e) => {
-								if (
-									(e.ctrlKey || e.metaKey) &&
-									e.key.toLowerCase() === "a"
-								) {
+								if (!(e.ctrlKey || e.metaKey)) return;
+
+								if (e.key.toLowerCase() === "a") {
 									e.preventDefault();
 									commands.selectAllVisible();
+									return;
+								}
+
+								if (e.key.toLowerCase() === "f") {
+									e.preventDefault();
+									explorer.header.setIsSearchOpen(true);
 								}
 							}}
 							onItemSelect={tree.selectItem}
@@ -240,6 +252,16 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
 								/>
 							))}
 						</TreeView>
+					)}
+
+					{showTree && tree.items.length === 0 && (
+						<div className="flex items-center justify-center py-8">
+							<Muted>
+								{search
+									? t("fileExplorer.noResults")
+									: t("fileExplorer.emptyFolder")}
+							</Muted>
+						</div>
 					)}
 					<ScrollBar orientation="horizontal" />
 				</ScrollArea>
