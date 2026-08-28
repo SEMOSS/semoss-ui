@@ -1489,7 +1489,7 @@ const CreditRatesCard = ({
 			const parseStored = (v: string) => {
 				if (v.trim() === "") return null;
 				const n = Number(v);
-				if (isNaN(n)) return null;
+				if (Number.isNaN(n)) return null;
 				return perMillion ? n / 1_000_000 : n;
 			};
 			const vals = {
