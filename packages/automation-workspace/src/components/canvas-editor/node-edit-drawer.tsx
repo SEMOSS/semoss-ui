@@ -234,6 +234,31 @@ export function NodeEditDrawer({
 						/>
 					</Field>
 
+					{typeof step.branchCondition === "string" && (
+						<Field>
+							<FieldLabel className="text-xs">
+								Branch condition
+							</FieldLabel>
+							<Textarea
+								className="resize-none font-mono text-xs"
+								rows={2}
+								value={step.branchCondition}
+								onChange={(event) =>
+									onUpdate({
+										...step,
+										branchCondition: event.target.value,
+									})
+								}
+								placeholder='e.g. ${model_chat_1} == "yes"'
+							/>
+							<p className="mt-1 text-[10px] text-muted-foreground">
+								Python expression. When True the{" "}
+								<strong>Then</strong> path runs, otherwise{" "}
+								<strong>Else</strong>.
+							</p>
+						</Field>
+					)}
+
 					<div className="space-y-3 border-t pt-4">
 						<div className="flex items-center justify-between gap-3">
 							<div>

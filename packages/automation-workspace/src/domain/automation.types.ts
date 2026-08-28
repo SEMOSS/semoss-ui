@@ -156,6 +156,8 @@ export interface AutomationNode {
 	playgroundFillable?: string[];
 	/** Optional per-step notes for documentation purposes. */
 	notes?: string;
+	/** When set, this node branches: the Then path runs when the condition is truthy, otherwise Else. */
+	branchCondition?: string;
 }
 
 export interface AutomationEdge {

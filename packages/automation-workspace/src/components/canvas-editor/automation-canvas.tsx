@@ -634,11 +634,56 @@ export function AutomationCanvas({
 		[readOnly, steps],
 	);
 
-	const deleteEdge = useCallback((edgeId: string) => {
-		setGraphEdges((previous) =>
-			previous.filter((edge) => edge.id !== edgeId),
-		);
-	}, []);
+	const deleteEdge = useCallback(
+		(edgeId: string) => {
+			const removed = graphEdges.find((e) => e.id === edgeId);
+			const remaining = graphEdges.filter((e) => e.id !== edgeId);
+			setGraphEdges(remaining);
+
+			// Revert hybrid branch when ≤1 branch edges remain
+			if (removed) {
+				const sourceId = removed.source;
+				const sourceStep = steps.find((s) => s.id === sourceId);
+				if (
+					sourceStep &&
+					typeof sourceStep.branchCondition === "string"
+				) {
+					const branchEdges = remaining.filter(
+						(e) =>
+							e.source === sourceId &&
+							(e.sourceHandle?.startsWith("then-") ||
+								e.sourceHandle?.startsWith("else-")),
+					);
+					if (branchEdges.length <= 1) {
+						// Remap surviving edge back to out-
+						if (branchEdges.length === 1) {
+							setGraphEdges((prev) =>
+								prev.map((e) =>
+									e.id === branchEdges[0].id
+										? {
+												...e,
+												sourceHandle: `out-${sourceId}`,
+											}
+										: e,
+								),
+							);
+						}
+						setSteps((prev) =>
+							prev.map((s) =>
+								s.id === sourceId
+									? {
+											...s,
+											branchCondition: undefined,
+										}
+									: s,
+							),
+						);
+					}
+				}
+			}
+		},
+		[graphEdges, steps],
+	);
 
 	const layoutNodes = useCallback(
 		(
@@ -928,25 +973,21 @@ export function AutomationCanvas({
 			if (previousStep) {
 				const targetX =
 					previousStep.position.x + NODE_WIDTH + NODE_COLUMN_GAP;
-				// Find siblings already connected from this node (+ handle)
-				const sourceHandle = addAfterHandle ?? `out-${previousStep.id}`;
-				const siblingIds = graphEdges
-					.filter(
-						(e) =>
-							e.source === previousStep.id &&
-							e.sourceHandle === sourceHandle,
-					)
+				// const sourceHandle = addAfterHandle ?? `out-${previousStep.id}`;
+				// All nodes already connected from this parent (any handle)
+				const allChildIds = graphEdges
+					.filter((e) => e.source === previousStep.id)
 					.map((e) => e.target);
-				const siblingNodes = steps.filter((s) =>
-					siblingIds.includes(s.id),
+				const allChildNodes = steps.filter((s) =>
+					allChildIds.includes(s.id),
 				);
 				let targetY = previousStep.position.y;
-				if (siblingNodes.length > 0) {
+				if (allChildNodes.length > 0) {
 					const maxY = Math.max(
-						...siblingNodes.map((s) => s.position.y),
+						...allChildNodes.map((s) => s.position.y),
 					);
 					const bottomHeight = getNodeHeight(
-						siblingNodes.find((s) => s.position.y === maxY)?.id ??
+						allChildNodes.find((s) => s.position.y === maxY)?.id ??
 							"",
 					);
 					targetY = maxY + bottomHeight + NODE_LANE_GAP;
@@ -998,6 +1039,42 @@ export function AutomationCanvas({
 			readOnly,
 			steps,
 		],
+	);
+
+	/** Click "+" on a node: if it already has an outgoing edge, enable branching. */
+	const handleNodeAdd = useCallback(
+		(step: AutomationNode) => {
+			const hasOutgoing = graphEdges.some((e) => e.source === step.id);
+			if (hasOutgoing && typeof step.branchCondition !== "string") {
+				// Upgrade to branch: remap existing out- edges to then-
+				setGraphEdges((prev) =>
+					prev.map((e) =>
+						e.source === step.id &&
+						e.sourceHandle === `out-${step.id}`
+							? {
+									...e,
+									sourceHandle: `then-${step.id}`,
+								}
+							: e,
+					),
+				);
+				setSteps((prev) =>
+					prev.map((s) =>
+						s.id === step.id ? { ...s, branchCondition: "" } : s,
+					),
+				);
+				setEditingStepId(null);
+				setAddAfterStepId(step.id);
+				setAddAfterHandle(`else-${step.id}`);
+				setShowAddMenu(true);
+			} else {
+				setEditingStepId(null);
+				setAddAfterStepId(step.id);
+				setAddAfterHandle(null);
+				setShowAddMenu(true);
+			}
+		},
+		[graphEdges],
 	);
 
 	const updateStep = useCallback((updated: AutomationNode) => {
@@ -1662,9 +1739,18 @@ export function AutomationCanvas({
 						},
 						onDelete: () => deleteStep(step.id),
 						onAdd: () => {
+							handleNodeAdd(step);
+						},
+						onAddThen: () => {
 							setEditingStepId(null);
 							setAddAfterStepId(step.id);
-							setAddAfterHandle(null);
+							setAddAfterHandle(`then-${step.id}`);
+							setShowAddMenu(true);
+						},
+						onAddElse: () => {
+							setEditingStepId(null);
+							setAddAfterStepId(step.id);
+							setAddAfterHandle(`else-${step.id}`);
 							setShowAddMenu(true);
 						},
 					},
@@ -1714,6 +1800,7 @@ export function AutomationCanvas({
 		deleteStep,
 		deleteEdge,
 		edgeColor,
+		handleNodeAdd,
 		layoutNodes,
 		setRfNodes,
 		setRfEdges,
