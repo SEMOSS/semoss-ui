@@ -69,6 +69,12 @@ const AUTOMATION_WORKSPACE_URL =
 		? "http://localhost:5177/"
 		: "../../automation-workspace/dist/";
 const AUTOMATION_WORKSPACE_CACHE_KEY = "20260827-2";
+const AUTOMATION_MUTATION_TOOLS = new Set([
+	"AddAutomationStep",
+	"UpdateAutomationStep",
+	"UpdateAutomationCustomStep",
+	"RemoveAutomationStep",
+]);
 
 const EDITOR = "automation-editor";
 const INSPECTOR = "automation-inspector";
@@ -613,6 +619,14 @@ export const AutomationWorkbench = observer(
 				automationOrigin,
 			);
 		}, [appId, automationOrigin]);
+		const handleAutomationToolCompleted = useCallback(
+			(tool: { name: string }) => {
+				if (AUTOMATION_MUTATION_TOOLS.has(tool.name)) {
+					notifyAutomationChanged();
+				}
+			},
+			[notifyAutomationChanged],
+		);
 		const components = useMemo<Record<string, WorkbenchPanelConfigAny>>(
 			() => ({
 				[EDITOR]: {
@@ -716,12 +730,14 @@ export const AutomationWorkbench = observer(
 				systemPrompt: `You create and modify the ${projectName} automation. Use the Automation Project Tools to make changes. Never invent an app, reactor, agent, or engine ID. Keep appId separate from pixel and ask the user when a required concrete value is unavailable.`,
 				mcp: automationMcp,
 				runParams: { project: appId },
+				onToolCompleted: handleAutomationToolCompleted,
 				onRunCompleted: notifyAutomationChanged,
 			});
 		}, [
 			appId,
 			automationMcp,
 			configureAssistant,
+			handleAutomationToolCompleted,
 			notifyAutomationChanged,
 			projectName,
 		]);
