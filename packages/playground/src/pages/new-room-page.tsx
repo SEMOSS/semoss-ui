@@ -186,6 +186,7 @@ export const NewRoomPage = observer(() => {
 		null,
 	);
 	const submittedRef = useRef(false);
+  const autoGreetedRef = useRef(false);
 	const [mode, setMode] = useState<"chat" | "agent">("chat");
 
 	// tempRoomStore is only created once (createRoom below builds the real,
@@ -252,8 +253,13 @@ export const NewRoomPage = observer(() => {
 	 *
 	 * @param prompt The prompt to ask
 	 * @param files The files to upload
+	 * @param askOptions Options for the kickoff message (e.g. visible: false)
 	 */
-	const createRoom = async (prompt: string, files: File[]) => {
+	const createRoom = async (
+		prompt: string,
+		files: File[],
+		askOptions?: { visible?: boolean },
+	) => {
 		// ignore if loading
 		if (isLoading) {
 			return;
@@ -298,7 +304,11 @@ export const NewRoomPage = observer(() => {
 				// Fire-and-forget so we navigate without waiting on the response.
 				(async () => {
 					try {
-						await preCreatedRoom.askMessage(prompt, files);
+						await preCreatedRoom.askMessage(
+							prompt,
+							files,
+							askOptions,
+						);
 						runInAction(() => {
 							chat.keys.roomCounter++;
 						});
@@ -316,6 +326,7 @@ export const NewRoomPage = observer(() => {
 					files,
 					options,
 					getWorkspace.data?.workspace_id,
+					askOptions,
 				);
 				submittedRef.current = true;
 				navigate(`/room/${room.roomId}`);
@@ -421,6 +432,16 @@ export const NewRoomPage = observer(() => {
 				name: getWorkspace.data.name,
 			},
 		});
+
+		// Kick off the workspace's greeting once, silently — only the reply shows.
+		if (
+			root.theme.featureFlags?.enableAutoGreeting &&
+			!autoGreetedRef.current
+		) {
+			autoGreetedRef.current = true;
+			createRoom("Hello", [], { visible: false });
+		}
+		// biome-ignore lint/correctness/useExhaustiveDependencies: autoGreetedRef guards re-fires
 	}, [
 		selectedWorkspaceId,
 		getWorkspace.status,

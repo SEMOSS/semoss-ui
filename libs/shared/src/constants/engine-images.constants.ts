@@ -73,6 +73,8 @@ export const ENGINE_IMAGES: Record<string, EngineImageEntry[]> = {
 			icon: "REST-API.svg",
 		},
 		{ name: "AZUREOCR", icon: "REST-API.svg" },
+		{ name: "BING_SEARCH", icon: "BING_SEARCH.svg" },
+		{ name: "BRAVE_SEARCH", icon: "BRAVE_SEARCH.svg" },
 		{ name: "GOOGLE_OCR", icon: "GOOGLE_OCR.png" },
 		{ name: "GOOGLE_OCR_CUSTOM_EMBEDDINGS", icon: "GOOGLE_OCR.png" },
 		{ name: "GOOGLE_SPEECH_TO_TEXT", icon: "GOOGLE_SPEECH_TO_TEXT.png" },
