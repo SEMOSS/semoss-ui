@@ -349,39 +349,12 @@ export class RootStore {
 		}
 
 		const darkBase = this._store.theme.variables.darkModeBaseColor;
-		const styleId = "semoss-dark-mode-override";
-		let styleEl = document.getElementById(
-			styleId,
-		) as HTMLStyleElement | null;
 		if (darkBase) {
-			// Parse the grey value from an rgba() string, falling back to 10 (the default).
 			const match = darkBase.match(/rgba?\s*\(\s*(\d+)/);
 			const base = match ? Number.parseInt(match[1], 10) : 10;
-			const g = (offset: number) => {
-				const v = Math.min(255, base + offset);
-				return `rgba(${v}, ${v}, ${v}, 1)`;
-			};
-			if (!styleEl) {
-				styleEl = document.createElement("style");
-				styleEl.id = styleId;
-				document.head.appendChild(styleEl);
-			}
-			styleEl.textContent = [
-				".dark {",
-				`  --background: ${g(0)};`,
-				`  --ring-offset: ${g(0)};`,
-				`  --card: ${g(13)};`,
-				`  --sidebar: ${g(13)};`,
-				`  --secondary-background: ${g(28)};`,
-				`  --secondary: ${g(28)};`,
-				`  --popover: ${g(28)};`,
-				`  --muted: ${g(28)};`,
-				`  --sidebar-accent: ${g(28)};`,
-				`  --accent: ${g(54)};`,
-				"}",
-			].join("\n");
-		} else if (styleEl) {
-			styleEl.remove();
+			root.style.setProperty("--dark-base", String(base));
+		} else {
+			root.style.removeProperty("--dark-base");
 		}
 	};
 }
