@@ -9,6 +9,7 @@ import type {
 import { getDisplayMeta } from "../../../domain/automation-display";
 import { formatDurationMs } from "../../../domain/automation-utils";
 import { getWorkflowNodeDisplay } from "../../../domain/automation-workflow-display";
+import { ErrorDetail, TraceDetail } from "../../form-editor/node-result-list";
 import { StatusBadge } from "../../status-badge";
 import { RunBanner } from "../run-banner";
 
@@ -48,6 +49,9 @@ export function TraceTab({
 		runningResult ??
 		results[results.length - 1] ??
 		null;
+	const selectedStep = selectedResult
+		? stepMap.get(selectedResult.NODE_ID)
+		: undefined;
 	useEffect(() => {
 		const runningNodeId = runningResult?.NODE_ID ?? null;
 		if (
@@ -182,31 +186,45 @@ export function TraceTab({
 								</span>
 							</div>
 						) : (
-							<CellOutputBlock
-								output={
-									selectedResult.OUTPUT_PREVIEW ??
-									"No output was produced."
-								}
-								onOutputPopout={() => {
-									const parentOrigin = new URLSearchParams(
-										window.location.search,
-									).get("parentOrigin");
-									if (
-										parentOrigin &&
-										window.parent !== window
-									) {
-										window.parent.postMessage(
-											{
-												type: "SEMOSS_AUTOMATION_OPEN_OUTPUT",
-												output:
-													selectedResult.OUTPUT_PREVIEW ??
-													"No output was produced.",
-											},
-											parentOrigin,
-										);
+							<div className="space-y-3">
+								{selectedResult.ERROR_MESSAGE && (
+									<ErrorDetail
+										message={selectedResult.ERROR_MESSAGE}
+									/>
+								)}
+								<CellOutputBlock
+									output={
+										selectedResult.OUTPUT_PREVIEW ??
+										"No output was produced."
 									}
-								}}
-							/>
+									onOutputPopout={() => {
+										const parentOrigin =
+											new URLSearchParams(
+												window.location.search,
+											).get("parentOrigin");
+										if (
+											parentOrigin &&
+											window.parent !== window
+										) {
+											window.parent.postMessage(
+												{
+													type: "SEMOSS_AUTOMATION_OPEN_OUTPUT",
+													output:
+														selectedResult.OUTPUT_PREVIEW ??
+														"No output was produced.",
+												},
+												parentOrigin,
+											);
+										}
+									}}
+								/>
+								{selectedResult.trace && (
+									<TraceDetail
+										trace={selectedResult.trace}
+										step={selectedStep}
+									/>
+								)}
+							</div>
 						)
 					) : (
 						<div className="flex h-full items-center justify-center text-muted-foreground text-xs">

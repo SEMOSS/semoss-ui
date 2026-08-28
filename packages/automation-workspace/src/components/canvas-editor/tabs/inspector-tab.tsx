@@ -1,5 +1,6 @@
 import type {
 	AutomationNode,
+	AutomationNodeTrace,
 	StepRunStatus,
 } from "../../../domain/automation.types";
 import { NodeEditDrawer } from "../node-edit-drawer";
@@ -15,6 +16,7 @@ interface InspectorTabProps {
 	stepRunStatus?: StepRunStatus;
 	stepRunError?: string;
 	stepRunOutput?: string | null;
+	stepRunTrace?: AutomationNodeTrace;
 	onDescriptionChange: (value: string) => void;
 	onClose: () => void;
 	onUpdate: (step: AutomationNode) => void;
@@ -30,6 +32,7 @@ export function InspectorTab({
 	stepRunStatus,
 	stepRunError,
 	stepRunOutput,
+	stepRunTrace,
 	onDescriptionChange,
 	onClose,
 	onUpdate,
@@ -56,6 +59,7 @@ export function InspectorTab({
 				runStatus={stepRunStatus}
 				runError={stepRunError}
 				runOutput={stepRunOutput}
+				runTrace={stepRunTrace}
 				devMode={devMode}
 				onUpdate={onUpdate}
 				onDelete={() => onDelete(editingStep.id)}

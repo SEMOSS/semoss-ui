@@ -1,4 +1,8 @@
-import type { AutomationNode, StepRunStatus } from "./automation.types";
+import type {
+	AutomationNode,
+	AutomationNodeTrace,
+	StepRunStatus,
+} from "./automation.types";
 
 export interface AutomationInspectorSnapshot {
 	description: string;
@@ -8,6 +12,7 @@ export interface AutomationInspectorSnapshot {
 	stepRunStatus?: StepRunStatus;
 	stepRunError?: string;
 	stepRunOutput?: string | null;
+	stepRunTrace?: AutomationNodeTrace;
 }
 
 export type AutomationInspectorAction =

@@ -379,6 +379,7 @@ export default function App() {
 					stepRunStatus={snapshot?.stepRunStatus}
 					stepRunError={snapshot?.stepRunError}
 					stepRunOutput={snapshot?.stepRunOutput}
+					stepRunTrace={snapshot?.stepRunTrace}
 					onDescriptionChange={(description) => {
 						setInspectorSnapshot((current) =>
 							current ? { ...current, description } : current,

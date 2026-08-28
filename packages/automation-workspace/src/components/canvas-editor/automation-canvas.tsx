@@ -172,6 +172,7 @@ interface AutomationNodeStreamData {
 	DURATION_MS?: number;
 	OUTPUT_PREVIEW?: string | null;
 	ERROR_MESSAGE?: string | null;
+	trace?: AutomationNodeResult["trace"];
 }
 
 interface CanvasWorkflowDraft {
@@ -1097,6 +1098,11 @@ export function AutomationCanvas({
 			stepRunOutput: editingStep
 				? (stepOutputPreviews[editingStep.id] ?? null)
 				: null,
+			stepRunTrace: editingStep
+				? latestRunResults.find(
+						(result) => result.NODE_ID === editingStep.id,
+					)?.trace
+				: undefined,
 		};
 		window.parent.postMessage(
 			{ type: "SEMOSS_AUTOMATION_INSPECTOR", snapshot },
@@ -1109,6 +1115,7 @@ export function AutomationCanvas({
 		stepErrors,
 		stepOutputPreviews,
 		stepStatuses,
+		latestRunResults,
 		upstreamVarsFor,
 	]);
 
@@ -1334,6 +1341,7 @@ export function AutomationCanvas({
 						progress.ERROR_MESSAGE ??
 						existing?.ERROR_MESSAGE ??
 						null,
+					trace: progress.trace ?? existing?.trace,
 				};
 				return existing
 					? previous.map((result) =>

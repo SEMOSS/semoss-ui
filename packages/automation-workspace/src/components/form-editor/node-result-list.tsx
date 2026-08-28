@@ -27,7 +27,7 @@ export interface NodeResultListProps {
 	onToggleNode: (nodeId: string) => void;
 }
 
-function ErrorDetail({ message }: { message: string }) {
+export function ErrorDetail({ message }: { message: string }) {
 	const [expanded, setExpanded] = useState(false);
 	return (
 		<div className="rounded-md border border-destructive/30 bg-destructive/5 px-3 py-2 text-[11px] text-destructive">
@@ -69,7 +69,7 @@ function systemAppUrl(app: "client" | "playground", route: string): string {
 	return url.toString();
 }
 
-function TraceDetail({
+export function TraceDetail({
 	trace,
 	step,
 }: {

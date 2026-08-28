@@ -14,6 +14,7 @@ import {
 } from "@semoss/ui/next";
 import type {
 	AutomationNode,
+	AutomationNodeTrace,
 	StepRunStatus,
 } from "../../domain/automation.types";
 import { getDisplayMeta } from "../../domain/automation-display";
@@ -21,6 +22,7 @@ import {
 	getGeneratedPythonPreview,
 	getWorkflowNodeDefinition,
 } from "../../domain/automation-workflow-adapter";
+import { TraceDetail } from "../form-editor/node-result-list";
 import { OutputPreview } from "../form-editor/output-preview";
 import { StepForm } from "./step-form";
 
@@ -31,6 +33,7 @@ export interface NodeEditDrawerProps {
 	runStatus?: StepRunStatus;
 	runError?: string;
 	runOutput?: string | null;
+	runTrace?: AutomationNodeTrace;
 	devMode?: boolean;
 	onUpdate: (step: AutomationNode) => void;
 	onDelete: () => void;
@@ -64,6 +67,7 @@ export function NodeEditDrawer({
 	runStatus,
 	runError,
 	runOutput,
+	runTrace,
 	devMode = false,
 	onUpdate,
 	onDelete,
@@ -244,6 +248,7 @@ export function NodeEditDrawer({
 							</pre>
 						</div>
 					)}
+					{runTrace && <TraceDetail trace={runTrace} step={step} />}
 
 					<Field>
 						<FieldLabel className="text-xs">Label</FieldLabel>
