@@ -4,6 +4,7 @@ import {
 	Database,
 	FolderOpen,
 	FunctionSquare,
+	GitBranch,
 	type LucideIcon,
 	Network,
 	SlidersHorizontal,
@@ -47,6 +48,9 @@ export function getWorkflowNodeDisplay(
 	}
 	if (type === "control.wait") {
 		return { icon: SlidersHorizontal, color: "text-sky-600" };
+	}
+	if (type === "control.if") {
+		return { icon: GitBranch, color: "text-orange-600" };
 	}
 	return { icon: Braces, color: "text-primary" };
 }

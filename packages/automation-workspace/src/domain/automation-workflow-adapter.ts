@@ -130,6 +130,14 @@ def run(scope):
     return {"waitedSeconds": seconds}
 `;
 	}
+	if (type === "control.if") {
+		return `CONDITION = ${pythonLiteral(config.condition)}
+
+def run(scope):
+    result = bool(eval(resolve(CONDITION, scope)))
+    return {"branch": "then" if result else "else", "value": result}
+`;
+	}
 	return `def run(scope):
     return {}
 `;
@@ -145,6 +153,7 @@ function canvasTypeForWorkflow(
 	if (type.startsWith("vector.")) return "vector-engine";
 	if (type === "function.execute") return "function-engine";
 	if (type === "control.wait") return "wait";
+	if (type === "control.if") return "branch";
 	return "app";
 }
 
@@ -247,6 +256,9 @@ function defaultCanvasConfig(
 	if (type === "control.wait") {
 		return { seconds: String(numberValue(config.durationSeconds, 5)) };
 	}
+	if (type === "control.if") {
+		return { condition: stringValue(config.condition) };
+	}
 	return {
 		pixel: stringValue(config.pixel) || stringValue(config.code),
 		appId: stringValue(config.appId),
@@ -282,6 +294,8 @@ function canvasTypeToWorkflow(
 			return "function.execute";
 		case "wait":
 			return "control.wait";
+		case "branch":
+			return "control.if";
 		case "app":
 			return "app.pixel";
 	}
@@ -366,6 +380,10 @@ function mergeCanvasConfig(
 			const duration = Number(seconds);
 			if (Number.isFinite(duration)) next.durationSeconds = duration;
 		}
+	}
+	if (type === "control.if") {
+		const condition = getConfigValue(config, "condition");
+		if (typeof condition === "string") next.condition = condition;
 	}
 	return next;
 }
@@ -461,7 +479,11 @@ export function canvasDocumentFromWorkflow(
 			sourceHandle:
 				edge.sourcePort === "out" || edge.sourcePort === "next"
 					? `out-${edge.source}`
-					: edge.sourcePort,
+					: edge.sourcePort === "then"
+						? `then-${edge.source}`
+						: edge.sourcePort === "else"
+							? `else-${edge.source}`
+							: edge.sourcePort,
 			targetHandle:
 				edge.targetPort === "in"
 					? `in-${edge.target}`
@@ -544,7 +566,11 @@ export function canvasDocumentToWorkflow({
 						source: edge.source,
 						sourcePort: edge.sourceHandle?.startsWith("out-")
 							? "out"
-							: (edge.sourceHandle ?? "out"),
+							: edge.sourceHandle?.startsWith("then-")
+								? "then"
+								: edge.sourceHandle?.startsWith("else-")
+									? "else"
+									: (edge.sourceHandle ?? "out"),
 						target: edge.target,
 						targetPort: edge.targetHandle?.startsWith("in-")
 							? "in"

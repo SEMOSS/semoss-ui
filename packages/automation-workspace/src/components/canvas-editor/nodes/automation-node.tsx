@@ -27,7 +27,6 @@ export type AutomationNodeData = {
 	runOutput?: string | null;
 	isIncomplete?: boolean;
 	locked?: boolean;
-	isLast?: boolean;
 	onEdit?: () => void;
 	onDelete?: () => void;
 	onAdd?: () => void;
@@ -195,7 +194,7 @@ export function AutomationNode({ data }: NodeProps) {
 				isConnectable={!locked}
 				className="!h-2 !w-2 !border-2 !border-background !bg-muted-foreground/40"
 			/>
-			{d.isLast && !locked ? (
+			{!locked ? (
 				<>
 					<Handle
 						id={`out-${step.id}`}
@@ -221,7 +220,7 @@ export function AutomationNode({ data }: NodeProps) {
 					id={`out-${step.id}`}
 					type="source"
 					position={Position.Right}
-					isConnectable={!locked}
+					isConnectable={false}
 					className="!h-2 !w-2 !border-2 !border-background !bg-muted-foreground/40"
 				/>
 			)}

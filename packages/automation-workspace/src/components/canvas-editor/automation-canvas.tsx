@@ -24,6 +24,7 @@ import {
 	Lock,
 	MousePointer2,
 	Play,
+	Plus,
 	RefreshCw,
 	Save,
 	Scan,
@@ -82,6 +83,7 @@ import { OnboardingTour } from "../form-editor/onboarding-tour";
 import { AddNodeMenu } from "./add-node-menu";
 import { AutomationDockLayout } from "./automation-dock-layout";
 import { AutomationNode as AutomationNodeCard } from "./nodes/automation-node";
+import { BranchNode } from "./nodes/branch-node";
 import { TriggerNode } from "./nodes/trigger-node";
 import { ScheduleDialog } from "./schedule-dialog";
 import { UndoBanner } from "./undo-banner";
@@ -90,6 +92,7 @@ import { UndoBanner } from "./undo-banner";
 const nodeTypes = {
 	trigger: TriggerNode,
 	automation: AutomationNodeCard,
+	branch: BranchNode,
 } as const;
 
 interface DeletableEdgeData {
@@ -333,16 +336,22 @@ function upstreamVariablesFor(
 				)
 				.filter((name): name is string => name !== null)
 		: [];
-	const incoming = new Map<string, string>();
+	const incoming = new Map<string, string[]>();
 
 	for (const edge of edges) {
-		if (edge.kind === "control") incoming.set(edge.target, edge.source);
+		if (edge.kind === "control") {
+			const parents = incoming.get(edge.target) ?? [];
+			parents.push(edge.source);
+			incoming.set(edge.target, parents);
+		}
 	}
 
 	const outputVars: string[] = [];
 	const visited = new Set<string>();
-	let currentId = incoming.get(targetId);
-	while (currentId && !visited.has(currentId)) {
+	const queue = [...(incoming.get(targetId) ?? [])];
+	while (queue.length > 0) {
+		const currentId = queue.shift();
+		if (!currentId || visited.has(currentId)) continue;
 		visited.add(currentId);
 		const step = byId.get(currentId);
 		if (
@@ -352,7 +361,9 @@ function upstreamVariablesFor(
 		) {
 			outputVars.unshift(step.outputVar);
 		}
-		currentId = incoming.get(currentId);
+		for (const parent of incoming.get(currentId) ?? []) {
+			queue.push(parent);
+		}
 	}
 
 	return [...triggerGlobals, ...outputVars];
@@ -396,6 +407,7 @@ export function AutomationCanvas({
 	const [workflowRefreshToken, setWorkflowRefreshToken] = useState(0);
 	const [showAddMenu, setShowAddMenu] = useState(false);
 	const [addAfterStepId, setAddAfterStepId] = useState<string | null>(null);
+	const [addAfterHandle, setAddAfterHandle] = useState<string | null>(null);
 
 	// Drawer state — which step is being edited
 	const [editingStepId, setEditingStepId] = useState<string | null>(null);
@@ -908,27 +920,62 @@ export function AutomationCanvas({
 	const addStep = useCallback(
 		(type: AutomationWorkflowNodeType) => {
 			if (readOnly) return;
-			const previousStep =
-				steps.find((step) => step.id === addAfterStepId) ??
-				steps[steps.length - 1];
+			const previousStep = addAfterStepId
+				? steps.find((step) => step.id === addAfterStepId)
+				: undefined;
 			const newStep = createCanvasWorkflowNode(type, steps.length);
 			const id = newStep.id;
-			newStep.position = {
-				x:
-					(previousStep?.position.x ?? 0) +
-					NODE_WIDTH +
-					NODE_COLUMN_GAP,
-				y: previousStep?.position.y ?? 0,
-			};
+			if (previousStep) {
+				const targetX =
+					previousStep.position.x + NODE_WIDTH + NODE_COLUMN_GAP;
+				// Find siblings already connected from this node (+ handle)
+				const sourceHandle = addAfterHandle ?? `out-${previousStep.id}`;
+				const siblingIds = graphEdges
+					.filter(
+						(e) =>
+							e.source === previousStep.id &&
+							e.sourceHandle === sourceHandle,
+					)
+					.map((e) => e.target);
+				const siblingNodes = steps.filter((s) =>
+					siblingIds.includes(s.id),
+				);
+				let targetY = previousStep.position.y;
+				if (siblingNodes.length > 0) {
+					const maxY = Math.max(
+						...siblingNodes.map((s) => s.position.y),
+					);
+					const bottomHeight = getNodeHeight(
+						siblingNodes.find((s) => s.position.y === maxY)?.id ??
+							"",
+					);
+					targetY = maxY + bottomHeight + NODE_LANE_GAP;
+				}
+				newStep.position = { x: targetX, y: targetY };
+			} else {
+				const viewport = reactFlowInstanceRef.current?.getViewport();
+				const container = canvasContainerRef.current;
+				const cx = container?.clientWidth
+					? container.clientWidth / 2
+					: 400;
+				const cy = container?.clientHeight
+					? container.clientHeight / 2
+					: 300;
+				newStep.position = {
+					x: (cx - (viewport?.x ?? 0)) / (viewport?.zoom ?? 1),
+					y: (cy - (viewport?.y ?? 0)) / (viewport?.zoom ?? 1),
+				};
+			}
 			setSteps((previous) => [...previous, newStep]);
 			if (previousStep) {
+				const sourceHandle = addAfterHandle ?? `out-${previousStep.id}`;
 				setGraphEdges((previous) => [
 					...previous,
 					{
 						id: `e-${previousStep.id}-${id}`,
 						source: previousStep.id,
 						target: id,
-						sourceHandle: `out-${previousStep.id}`,
+						sourceHandle,
 						targetHandle: `in-${id}`,
 						kind: "control",
 					},
@@ -936,12 +983,21 @@ export function AutomationCanvas({
 			}
 			setShowAddMenu(false);
 			setAddAfterStepId(null);
+			setAddAfterHandle(null);
 			setEditingStepId(id);
 			window.requestAnimationFrame(() => {
 				window.requestAnimationFrame(fitWorkflow);
 			});
 		},
-		[addAfterStepId, fitWorkflow, readOnly, steps],
+		[
+			addAfterStepId,
+			addAfterHandle,
+			fitWorkflow,
+			getNodeHeight,
+			graphEdges,
+			readOnly,
+			steps,
+		],
 	);
 
 	const updateStep = useCallback((updated: AutomationNode) => {
@@ -1533,9 +1589,6 @@ export function AutomationCanvas({
 						runStatus:
 							stepStatuses[step.id] ??
 							(running ? "running" : undefined),
-						isLast:
-							!readOnly &&
-							!graphEdges.some((edge) => edge.source === step.id),
 						onEdit: readOnly
 							? undefined
 							: () => {
@@ -1545,10 +1598,46 @@ export function AutomationCanvas({
 						onAdd: () => {
 							setEditingStepId(null);
 							setAddAfterStepId(step.id);
+							setAddAfterHandle(null);
 							setShowAddMenu(true);
 						},
 					},
 					draggable: true,
+					style: { width: NODE_WIDTH },
+				});
+			} else if (step.type === "branch") {
+				newNodes.push({
+					id: step.id,
+					type: "branch",
+					position: step.position,
+					data: {
+						step,
+						index: stepDisplayOrder.get(step.id) ?? 0,
+						runStatus: stepStatuses[step.id],
+						runError: stepErrors[step.id],
+						runDuration: stepDurations[step.id],
+						isIncomplete:
+							validateCanvasWorkflowNode(step).length > 0 &&
+							!stepStatuses[step.id],
+						locked: running || readOnly,
+						onEdit: () => {
+							setShowAddMenu(false);
+							setEditingStepId(step.id);
+						},
+						onDelete: () => deleteStep(step.id),
+						onAddThen: () => {
+							setEditingStepId(null);
+							setAddAfterStepId(step.id);
+							setAddAfterHandle(`then-${step.id}`);
+							setShowAddMenu(true);
+						},
+						onAddElse: () => {
+							setEditingStepId(null);
+							setAddAfterStepId(step.id);
+							setAddAfterHandle(`else-${step.id}`);
+							setShowAddMenu(true);
+						},
+					},
 					style: { width: NODE_WIDTH },
 				});
 			} else {
@@ -1567,9 +1656,6 @@ export function AutomationCanvas({
 							validateCanvasWorkflowNode(step).length > 0 &&
 							!stepStatuses[step.id],
 						locked: running || readOnly,
-						isLast: !graphEdges.some(
-							(edge) => edge.source === step.id,
-						),
 						onEdit: () => {
 							setShowAddMenu(false);
 							setEditingStepId(step.id);
@@ -1578,6 +1664,7 @@ export function AutomationCanvas({
 						onAdd: () => {
 							setEditingStepId(null);
 							setAddAfterStepId(step.id);
+							setAddAfterHandle(null);
 							setShowAddMenu(true);
 						},
 					},
@@ -1588,6 +1675,13 @@ export function AutomationCanvas({
 			for (const edge of graphEdges.filter(
 				(item) => item.source === step.id,
 			)) {
+				const isThenEdge = edge.sourceHandle?.startsWith("then-");
+				const isElseEdge = edge.sourceHandle?.startsWith("else-");
+				const strokeColor = isThenEdge
+					? "#10b981"
+					: isElseEdge
+						? "#f87171"
+						: edgeColor;
 				newEdges.push({
 					...edge,
 					type: "deletable",
@@ -1595,9 +1689,9 @@ export function AutomationCanvas({
 						type: MarkerType.ArrowClosed,
 						width: 12,
 						height: 12,
-						color: edgeColor,
+						color: strokeColor,
 					},
-					style: { stroke: edgeColor, strokeWidth: 1.5 },
+					style: { stroke: strokeColor, strokeWidth: 1.5 },
 					data: { onDelete: deleteEdge, readOnly },
 				});
 			}
@@ -1879,6 +1973,29 @@ export function AutomationCanvas({
 											Run
 										</Button>
 									</div>
+
+									{!readOnly && (
+										<Tooltip>
+											<TooltipTrigger asChild>
+												<button
+													type="button"
+													aria-label="Add a disconnected node"
+													onClick={() => {
+														setEditingStepId(null);
+														setAddAfterStepId(null);
+														setAddAfterHandle(null);
+														setShowAddMenu(true);
+													}}
+													className="absolute top-16 right-4 z-30 flex h-10 w-10 items-center justify-center rounded-full border bg-background shadow-md transition-colors hover:bg-muted"
+												>
+													<Plus className="h-5 w-5 text-muted-foreground" />
+												</button>
+											</TooltipTrigger>
+											<TooltipContent side="left">
+												Add node
+											</TooltipContent>
+										</Tooltip>
+									)}
 
 									{!readOnly && (
 										<div className="absolute right-4 bottom-4 z-10 flex items-center overflow-hidden rounded-lg border bg-background shadow-sm">

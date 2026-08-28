@@ -1,4 +1,4 @@
-import { Loader2 } from "lucide-react";
+import { GitBranch, Loader2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { CellOutputBlock } from "@semoss/shared";
 import type {
@@ -8,6 +8,7 @@ import type {
 } from "../../../domain/automation.types";
 import { getDisplayMeta } from "../../../domain/automation-display";
 import { formatDurationMs } from "../../../domain/automation-utils";
+import { getWorkflowNodeDisplay } from "../../../domain/automation-workflow-display";
 import { StatusBadge } from "../../status-badge";
 import { RunBanner } from "../run-banner";
 
@@ -38,7 +39,10 @@ export function TraceTab({
 	const previousRunningNodeIdRef = useRef<string | null>(null);
 
 	const stepMap = new Map(steps.map((step) => [step.id, step]));
-	const runningResult = results.find((result) => result.STATUS === "RUNNING");
+	const runningResults = results.filter(
+		(result) => result.STATUS === "RUNNING",
+	);
+	const runningResult = runningResults[0] ?? null;
 	const selectedResult =
 		results.find((result) => result.NODE_ID === selectedNodeId) ??
 		runningResult ??
@@ -76,7 +80,9 @@ export function TraceTab({
 				{running && (
 					<span className="flex items-center gap-1.5 text-[11px] text-primary">
 						<span className="h-1.5 w-1.5 animate-pulse rounded-full bg-primary" />
-						Running
+						{runningResults.length > 1
+							? `${runningResults.length} running`
+							: "Running"}
 					</span>
 				)}
 			</div>
@@ -104,7 +110,18 @@ export function TraceTab({
 								const meta = getDisplayMeta(
 									step?.type ?? "app",
 								);
-								const Icon = meta.icon;
+								const workflowDisplay = step?.workflowType
+									? getWorkflowNodeDisplay(step.workflowType)
+									: null;
+								const Icon =
+									step?.type === "branch"
+										? GitBranch
+										: (workflowDisplay?.icon ?? meta.icon);
+								const iconColor =
+									step?.type === "branch"
+										? "text-orange-600"
+										: (workflowDisplay?.color ??
+											meta.color);
 								const active =
 									selectedResult?.NODE_ID === result.NODE_ID;
 								const displayStatus =
@@ -123,7 +140,7 @@ export function TraceTab({
 										className={`flex w-full items-center gap-2 rounded-md px-2 py-2 text-left ${active ? "bg-accent text-accent-foreground" : "hover:bg-muted"}`}
 									>
 										<span
-											className={`flex size-6 shrink-0 items-center justify-center rounded bg-muted ${meta.color}`}
+											className={`flex size-6 shrink-0 items-center justify-center rounded bg-muted ${iconColor}`}
 										>
 											<Icon className="size-3.5" />
 										</span>

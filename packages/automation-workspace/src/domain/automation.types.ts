@@ -15,6 +15,7 @@ export type AutomationNodeType =
 	| "model-engine"
 	| "function-engine"
 	| "app"
+	| "branch"
 	| "wait";
 
 // ─── shared form types ────────────────────────────────────────────────────────
@@ -113,6 +114,10 @@ export interface WaitConfig {
 	seconds: string;
 }
 
+export interface BranchConfig {
+	condition: string;
+}
+
 export type NodeConfig =
 	| TriggerConfig
 	| DatabaseEngineConfig
@@ -122,6 +127,7 @@ export type NodeConfig =
 	| FunctionEngineConfig
 	| AppConfig
 	| AgentRunConfig
+	| BranchConfig
 	| WaitConfig;
 
 // ─── graph primitives ─────────────────────────────────────────────────────────

@@ -308,6 +308,36 @@ export const AUTOMATION_WORKFLOW_NODE_REGISTRY: readonly AutomationNodeDefinitio
 			defaultCodeMode: "generated",
 		},
 		{
+			type: "control.if",
+			label: "Branch",
+			description: "Evaluate a condition and follow the matching path.",
+			category: "control",
+			defaultConfig: { condition: "" },
+			configSchema: {
+				condition: {
+					type: "textarea",
+					label: "Condition (Python expression)",
+					required: true,
+				},
+			},
+			inputs: [controlIn],
+			outputs: [
+				{
+					id: "then",
+					label: "Then",
+					kind: "control",
+					direction: "output",
+				},
+				{
+					id: "else",
+					label: "Else",
+					kind: "control",
+					direction: "output",
+				},
+			],
+			defaultCodeMode: "generated",
+		},
+		{
 			type: "developer.python",
 			label: "Python",
 			description: "Run custom Python for advanced transformations.",

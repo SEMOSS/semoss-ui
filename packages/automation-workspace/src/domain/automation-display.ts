@@ -4,6 +4,7 @@ import {
 	Clock,
 	Cpu,
 	Database,
+	GitBranch,
 	LayoutGrid,
 	type LucideIcon,
 	Play,
@@ -126,6 +127,12 @@ export const TYPE_DISPLAY_META: Record<
 	"function-engine": STEP_TYPES[4],
 	app: STEP_TYPES[5],
 	wait: STEP_TYPES[6],
+	branch: {
+		label: "Branch",
+		description: "Evaluate a condition and follow the matching path",
+		icon: GitBranch,
+		color: "text-orange-600",
+	},
 };
 
 /**

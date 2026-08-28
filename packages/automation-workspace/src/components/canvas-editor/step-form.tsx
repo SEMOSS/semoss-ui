@@ -2,6 +2,7 @@ import type {
 	AgentRunConfig,
 	AppConfig,
 	AutomationNode,
+	BranchConfig,
 	DatabaseEngineConfig,
 	FunctionEngineConfig,
 	ModelEngineConfig,
@@ -128,6 +129,26 @@ export function StepForm({
 					<p className="text-muted-foreground text-xs">
 						Maximum 3600 seconds (1 hour). You can reference an
 						earlier step's output — see Help for details.
+					</p>
+				</div>
+			);
+		}
+		case "branch": {
+			const c = step.config as BranchConfig;
+			return (
+				<div className="flex flex-col gap-4">
+					<PillInput
+						label="Condition"
+						required
+						value={c.condition}
+						placeholder='${database_query_1} == "active"'
+						onChange={(v) => update({ ...c, condition: v })}
+						upstreamVars={upstreamVars}
+					/>
+					<p className="text-muted-foreground text-xs">
+						A Python expression that evaluates to True or False.
+						When True the <strong>Then</strong> path runs, otherwise
+						the <strong>Else</strong> path runs.
 					</p>
 				</div>
 			);

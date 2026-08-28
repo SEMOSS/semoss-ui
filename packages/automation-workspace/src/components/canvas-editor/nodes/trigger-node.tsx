@@ -6,7 +6,6 @@ export type TriggerNodeData = {
 	description?: string;
 	devMode?: boolean;
 	runStatus?: "running" | "success" | "error";
-	isLast?: boolean;
 	onEdit?: () => void;
 	onAdd?: () => void;
 };
@@ -42,36 +41,24 @@ export function TriggerNode({ data, id }: NodeProps) {
 				{trigger.label || "Start"}
 			</p>
 
-			{trigger.isLast ? (
-				<>
-					<Handle
-						id={`out-${id}`}
-						type="source"
-						position={Position.Right}
-						isConnectable
-						onClick={(event) => {
-							event.stopPropagation();
-							trigger.onAdd?.();
-						}}
-						aria-label="Add node or drag to connect"
-						className="!right-[calc(50%_-_58px)] !h-7 !w-7 !border !border-emerald-500/40 !bg-background hover:!border-emerald-500 shadow-sm transition-colors"
-					/>
-					<span
-						data-tour="add-step"
-						className="-translate-y-1/2 pointer-events-none absolute top-1/2 right-[calc(50%_-_58px)] z-10 flex h-7 w-7 translate-x-1/2 items-center justify-center text-emerald-600"
-					>
-						<Plus className="h-4 w-4" />
-					</span>
-				</>
-			) : (
-				<Handle
-					id={`out-${id}`}
-					type="source"
-					position={Position.Right}
-					isConnectable
-					className="!right-[calc(50%_-_58px)] !h-2 !w-2 !border-2 !border-background !bg-emerald-500/60"
-				/>
-			)}
+			<Handle
+				id={`out-${id}`}
+				type="source"
+				position={Position.Right}
+				isConnectable
+				onClick={(event) => {
+					event.stopPropagation();
+					trigger.onAdd?.();
+				}}
+				aria-label="Add node or drag to connect"
+				className="!right-[calc(50%_-_58px)] !h-7 !w-7 !border !border-emerald-500/40 !bg-background hover:!border-emerald-500 shadow-sm transition-colors"
+			/>
+			<span
+				data-tour="add-step"
+				className="-translate-y-1/2 pointer-events-none absolute top-1/2 right-[calc(50%_-_58px)] z-10 flex h-7 w-7 translate-x-1/2 items-center justify-center text-emerald-600"
+			>
+				<Plus className="h-4 w-4" />
+			</span>
 		</div>
 	);
 }

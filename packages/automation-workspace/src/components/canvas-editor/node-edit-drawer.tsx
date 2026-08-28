@@ -47,7 +47,8 @@ function supportsBusinessForm(step: AutomationNode): boolean {
 				type === "function.execute" ||
 				type === "agent.run" ||
 				type === "app.pixel" ||
-				type === "control.wait"),
+				type === "control.wait" ||
+				type === "control.if"),
 	);
 }
 

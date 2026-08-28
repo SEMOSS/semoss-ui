@@ -19,6 +19,7 @@ export type AutomationWorkflowNodeType =
 	| "agent.run"
 	| "app.pixel"
 	| "control.wait"
+	| "control.if"
 	| "developer.python";
 
 export type AutomationPortKind = "control" | "data";
