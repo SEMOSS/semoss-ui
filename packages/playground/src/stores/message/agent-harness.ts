@@ -28,6 +28,7 @@ import type { RoomStore } from "../room/room.store";
 import type { ToolStore } from "../tool/tool.store";
 import { InputMessageStore } from "./input-message.store";
 import { ResponseMessageStore } from "./response-message.store";
+import { popEmptyThinkingPlaceholder } from "./utility";
 
 /**
  * Agent harness type sent to the backend RunAgent reactor.
@@ -217,6 +218,7 @@ const applyAgentRunItem = (
 			});
 		} else if (item.kind === "tool") {
 			const part = buildToolCallPart(item);
+			popEmptyThinkingPlaceholder(responseMessage.parts);
 			responseMessage.parts.push(part);
 			room.syncTool(item.id, responseMessage, part);
 			// syncMessage's TOOL_CALL branch never sets status, so seed it here —
@@ -228,6 +230,7 @@ const applyAgentRunItem = (
 				tool.status = status;
 			}
 		} else if (item.kind === "subagent") {
+			popEmptyThinkingPlaceholder(responseMessage.parts);
 			responseMessage.parts.push({
 				type: "SUBAGENT",
 				subagent: {
@@ -322,6 +325,7 @@ const syncPendingActions = (
 			return;
 		}
 		const part = buildPendingToolCallPart(action);
+		popEmptyThinkingPlaceholder(responseMessage.parts);
 		responseMessage.parts.push(part);
 		room.syncTool(toolCallId as string, responseMessage, part);
 	});

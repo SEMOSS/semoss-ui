@@ -19,7 +19,11 @@ import { runAgentMessage } from "./agent-harness";
 import { InputMessageStore } from "./input-message.store";
 import { ToolSaveController } from "./tool-save-controller";
 import { applyToolStreamChunk } from "./tool-stream";
-import { type CancelCommitOutput, spliceHiddenMessages } from "./utility";
+import {
+	type CancelCommitOutput,
+	popEmptyThinkingPlaceholder,
+	spliceHiddenMessages,
+} from "./utility";
 
 /**
  * Response Message Store
@@ -391,10 +395,7 @@ paramValues=[${JSON.stringify(
 				lastPart.text += part.text;
 				lastPart.uiText += part.uiText;
 			} else {
-				// delete any existing empty thinking part, as we have new text coming in
-				if (lastPart?.type === "THINKING" && !lastPart.thinking) {
-					this.parts.pop();
-				}
+				popEmptyThinkingPlaceholder(this.parts);
 				this.parts.push(part);
 			}
 		} else if (part.type === "THINKING") {

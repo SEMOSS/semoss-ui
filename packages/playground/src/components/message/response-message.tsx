@@ -157,17 +157,6 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 			}
 			for (const sub of subsequentTools) {
 				for (const part of sub.parts) {
-					// A folded-in message's empty placeholder THINKING part
-					// (seeded on every streaming message) is only there to
-					// let it fold while streaming — rendering it here would
-					// show a "Thinking" card that reads as the anchor's,
-					// when it's really the next message warming up.
-					if (
-						part.type === "THINKING" &&
-						part.thinking.length === 0
-					) {
-						continue;
-					}
 					parts.push(part);
 					owners.push(sub);
 				}
