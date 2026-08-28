@@ -175,6 +175,7 @@ const EMPTY_PLAYGROUND: ThemeMap["playground"] = {
 		showPlatformLinks: true,
 		enableDarkMode: true,
 		hideToolsInIframe: false,
+    enableAutoGreeting: false,
 	},
 };
 
@@ -275,6 +276,11 @@ const FEATURE_FLAGS: {
 		description:
 			"When the app is embedded in an iframe, hides the New Chat nav item, the tools (+) menu, and slash commands in the room input.",
 	},
+  { 
+    key: "enableAutoGreeting", 
+    label: "Enable Auto Greeting",
+    description: "Shows an opening message upon opening a new chat in Playground"
+  },
 ];
 
 const IMAGE_FIELDS: {

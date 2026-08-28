@@ -562,6 +562,13 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 								</div>
 							);
 						} else if (p.type === "THINKING") {
+							if (
+								!p.thinking &&
+								inputMessage &&
+								!inputMessage.visible
+							) {
+								return null;
+							}
 							return (
 								<ResponseMessageThinking
 									key={key}

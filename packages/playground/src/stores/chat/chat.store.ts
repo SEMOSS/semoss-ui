@@ -298,6 +298,7 @@ export class ChatStore {
 		files: File[],
 		options: RoomStore["options"],
 		workspaceId?: string,
+		askOptions?: { visible?: boolean },
 	): Promise<RoomStore> => {
 		// create the room in a new insight
 		const { errors, pixelReturn, insightId } = await runPixel<
@@ -361,7 +362,7 @@ export class ChatStore {
 		// waiting on the response
 		(async () => {
 			try {
-				await room.askMessage(prompt, files);
+				await room.askMessage(prompt, files, askOptions);
 				runInAction(() => {
 					// increment the roomCounter to force re-render of the nav
 					this._store.keys.roomCounter++;
