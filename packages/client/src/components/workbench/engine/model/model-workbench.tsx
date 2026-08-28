@@ -1,11 +1,13 @@
-import { useEffect } from "react";
-import { makeEngineRoomMcp } from "@/api/rooms";
-import { useEngine, useWorkbench, useWorkbenchCommands } from "@/hooks";
+import { useEffect, useState } from "react";
+import type { StoreApi } from "zustand";
+import { useInsight } from "@semoss/sdk/react";
+import { useEngine, useWorkbenchCommands, useWorkbenchStoreApi } from "@/hooks";
 import type {
 	WorkbenchLayout,
 	WorkbenchPanelConfigAny,
 } from "@/stores/workbench";
-import { WORKBENCH_ASSISTANT_PANEL } from "../../assistant";
+import type { ModelChatStoreInterface } from "@/stores/workbench/model";
+import { createModelChatStore } from "@/stores/workbench/model";
 import { Workbench } from "../../core";
 import { WorkbenchCommandMenuButton } from "../../core/workbench-command-menu-button";
 import {
@@ -17,23 +19,38 @@ import { ENGINE_FILE_EXPLORER_PANEL } from "../engine-file-explorer-panel";
 import { ENGINE_MCP_EDITOR_PANEL } from "../engine-mcp-editor-panel";
 import { createEngineSettingsPanel } from "../engine-settings-panel";
 import { EngineSettingsToggle } from "../engine-settings-toggle";
+import { MODEL_CHAT_HISTORY_PANEL } from "./model-chat-conversations";
 import { MODEL_CHAT_PANEL } from "./model-chat-panel";
+import { MODEL_CHAT_SETTINGS_PANEL } from "./model-chat-settings";
 
-/** The default arrangement: files on the left (collapsed), assistant right. */
+/**
+ * The default arrangement: the chat fills the main tabset, files on the left
+ * (collapsed), model settings and conversation history on the right
+ * (collapsed). Both borders start closed so the chat opens full width; their
+ * rails carry the toggles.
+ *
+ * Version 2 dropped the assistant border, version 3 added the settings/history
+ * border — a cached layout shadows the default forever, so the bump is what
+ * retires the previous arrangement.
+ */
 const MODEL_WORKBENCH_LAYOUT: WorkbenchLayout = {
-	version: 1,
+	version: 3,
 	tree: {
 		type: "tabset",
 		id: "main",
 		size: 1,
-		panelIds: [],
-		activeId: null,
+		panelIds: [WORKBENCH_COMPONENTS.MODEL_CHAT],
+		activeId: WORKBENCH_COMPONENTS.MODEL_CHAT,
 	},
 	panels: {
+		[WORKBENCH_PANEL_RECORDS.MODEL_CHAT.id]:
+			WORKBENCH_PANEL_RECORDS.MODEL_CHAT,
 		[WORKBENCH_PANEL_RECORDS.ENGINE_FILE_EXPLORER.id]:
 			WORKBENCH_PANEL_RECORDS.ENGINE_FILE_EXPLORER,
-		[WORKBENCH_PANEL_RECORDS.ASSISTANT.id]:
-			WORKBENCH_PANEL_RECORDS.ASSISTANT,
+		[WORKBENCH_PANEL_RECORDS.MODEL_CHAT_SETTINGS.id]:
+			WORKBENCH_PANEL_RECORDS.MODEL_CHAT_SETTINGS,
+		[WORKBENCH_PANEL_RECORDS.MODEL_CHAT_HISTORY.id]:
+			WORKBENCH_PANEL_RECORDS.MODEL_CHAT_HISTORY,
 	},
 	borders: {
 		left: {
@@ -42,9 +59,12 @@ const MODEL_WORKBENCH_LAYOUT: WorkbenchLayout = {
 			size: 300,
 		},
 		right: {
-			panelIds: [WORKBENCH_COMPONENTS.ASSISTANT],
+			panelIds: [
+				WORKBENCH_COMPONENTS.MODEL_CHAT_SETTINGS,
+				WORKBENCH_COMPONENTS.MODEL_CHAT_HISTORY,
+			],
 			activeId: null,
-			size: 400,
+			size: 360,
 		},
 	},
 };
@@ -55,6 +75,8 @@ const MODEL_WORKBENCH_COMPONENTS: Record<string, WorkbenchPanelConfigAny> = {
 	[WORKBENCH_COMPONENTS.FILE_EDITOR]: ENGINE_FILE_EDITOR_PANEL,
 	[WORKBENCH_COMPONENTS.MCP_EDITOR]: ENGINE_MCP_EDITOR_PANEL,
 	[WORKBENCH_COMPONENTS.MODEL_CHAT]: MODEL_CHAT_PANEL,
+	[WORKBENCH_COMPONENTS.MODEL_CHAT_SETTINGS]: MODEL_CHAT_SETTINGS_PANEL,
+	[WORKBENCH_COMPONENTS.MODEL_CHAT_HISTORY]: MODEL_CHAT_HISTORY_PANEL,
 	[WORKBENCH_COMPONENTS.ENGINE_SETTINGS]: createEngineSettingsPanel([
 		{
 			name: "Overview",
@@ -87,32 +109,38 @@ const MODEL_WORKBENCH_COMPONENTS: Record<string, WorkbenchPanelConfigAny> = {
 			restrict: ["OWNER"],
 		},
 	]),
-	[WORKBENCH_COMPONENTS.ASSISTANT]: WORKBENCH_ASSISTANT_PANEL,
 };
 
 /**
- * Model workbench that combines a chat panel with the shared file explorer,
- * editor, and MCP editor. Rendered inside an InsightProvider by the page so
- * the chat and file operations share a single insight.
+ * Model workbench: a persistent chat with the model engine, alongside the
+ * shared file explorer, editor, and MCP editor. Rendered inside an
+ * InsightProvider by the page so the chat room and file operations share a
+ * single insight.
  */
 export const ModelWorkbench: React.FC = () => {
+	const storeApi = useWorkbenchStoreApi();
 	const { engine } = useEngine();
+	const insight = useInsight();
 
-	const configureAssistant = useWorkbench((s) => s.assistant.configure);
+	// created once per mount and attached before the panels first render
+	const [chatStore] = useState<StoreApi<ModelChatStoreInterface>>(() => {
+		const store = createModelChatStore();
+		storeApi.getState().layout.actions.attachDomainStore(store);
+		return store;
+	});
 
-	// Keep the assistant prompt and room tools in sync with the active engine.
+	// The room can only be created once the insight exists; re-runs bind a new
+	// room when the insight or the target engine changes.
 	useEffect(() => {
-		configureAssistant({
-			systemPrompt: `You are the assistant for the ${engine.engine_display_name || engine.engine_name} workbench (${engine.engine_id}). Your role is to help the user inspect, test, and configure this model. Use only the tools provided in this room. Never claim that an operation succeeded unless its tool result confirms success. Keep answers concise and grounded in the active engine.`,
-			prepareRoom: (insightId) =>
-				makeEngineRoomMcp(insightId, engine.engine_id),
-		});
-	}, [
-		configureAssistant,
-		engine.engine_display_name,
-		engine.engine_id,
-		engine.engine_name,
-	]);
+		if (!insight.isReady || !insight.insightId) {
+			return;
+		}
+
+		void chatStore
+			.getState()
+			.initialize(insight.insightId, engine.engine_id);
+		return () => chatStore.getState().dispose();
+	}, [chatStore, engine.engine_id, insight.isReady, insight.insightId]);
 
 	useWorkbenchCommands([
 		{
@@ -143,6 +171,37 @@ export const ModelWorkbench: React.FC = () => {
 				get().layout.actions.selectPanel(
 					WORKBENCH_COMPONENTS.MODEL_CHAT,
 				);
+			},
+		},
+		{
+			id: "workbench.model-chat-settings.open",
+			category: "View",
+			label: "Open Model Settings",
+			handler: (get) => {
+				get().layout.actions.selectPanel(
+					WORKBENCH_COMPONENTS.MODEL_CHAT_SETTINGS,
+				);
+			},
+		},
+		{
+			id: "workbench.model-chat-history.open",
+			category: "View",
+			label: "Open Conversation History",
+			handler: (get) => {
+				get().layout.actions.selectPanel(
+					WORKBENCH_COMPONENTS.MODEL_CHAT_HISTORY,
+				);
+			},
+		},
+		{
+			id: "workbench.model-chat.new-conversation",
+			category: "View",
+			label: "New Model Conversation",
+			handler: (get) => {
+				get().layout.actions.selectPanel(
+					WORKBENCH_COMPONENTS.MODEL_CHAT,
+				);
+				void chatStore.getState().newRoom();
 			},
 		},
 	]);

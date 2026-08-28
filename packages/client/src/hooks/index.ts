@@ -1,5 +1,6 @@
 import { useAPI } from "./use-api";
 import { useDatabaseWorkbench } from "./use-database-workbench";
+import { useModelChat } from "./use-model-chat";
 import { usePixel } from "./use-pixel";
 import { useProject } from "./use-project";
 import { useTabBarScroll } from "./use-tab-bar-scroll";
@@ -29,6 +30,7 @@ export {
 	useDesigner,
 	useEngine,
 	useMetamodel,
+	useModelChat,
 	usePage,
 	usePixel,
 	useRootStore,
