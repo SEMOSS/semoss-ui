@@ -43,6 +43,7 @@ import {
 	toast,
 } from "@semoss/ui/next";
 import {
+	BackspacePlugin,
 	EnterPlugin,
 	FocusPlugin,
 	MCPOverlay,
@@ -303,7 +304,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 				onClick: onExitAgentHarness,
 				title: onExitAgentHarness ? t("modes.exitAgent") : undefined,
 			},
-			agentChipWorkspace && {
+			agentChipWorkspace !== null && {
 				key: "agent",
 				icon: Bot,
 				label:
@@ -362,7 +363,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 		};
 
 		// File handling
-		const { files, addFiles, removeFile, clearFiles, setShouldStayOpen } =
+		const { files, addFiles, removeFile, clearFiles, openFilePicker } =
 			useFileDrag();
 
 		// Speech-to-text
@@ -543,7 +544,6 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 					root.append(paragraphNode);
 				});
 				clearFiles();
-				setShouldStayOpen(false);
 
 				// Submit to parent handler
 				const result = Boolean(await onPrompt(userInput, userFiles));
@@ -601,7 +601,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 				<SlashCommandProvider
 					onOpenMcpOverlay={handleOpenMcpOverlay}
 					onCompact={onCompact ?? noop}
-					onAttachDocument={() => setShouldStayOpen(true)}
+					onAttachDocument={openFilePicker}
 					onOpenSettings={onOpenSettings ?? noop}
 					onSwitchToAgentHarness={handleSwitchToAgentHarness}
 					excludeCommandIds={excludeCommandIds}
@@ -625,6 +625,11 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 							{files.length > 0 && (
 								// Need pb-1 for scroll bar
 								<div className="bg-card p-4 pb-1">
+									{root.theme.fileDragDisclaimer && (
+										<p className="-mt-1 pb-2 text-muted-foreground text-xs">
+											{root.theme.fileDragDisclaimer}
+										</p>
+									)}
 									<FilePreviewGrid
 										files={files}
 										onRemoveFile={removeFile}
@@ -674,13 +679,56 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 													// representation alongside text in the clipboard. If text
 													// content is present, filter out those images so the text
 													// is pasted normally instead of attaching a screenshot.
+													//
+													// Exception: Microsoft Teams copies images with a
+													// text/html entry that is just an <img> wrapper with no
+													// real text content. In that case we should keep the
+													// image files and let them be attached.
+													const hasPlainText =
+														e.clipboardData
+															.getData(
+																"text/plain",
+															)
+															.trim().length > 0;
+
+													// text/html is only "real text" if it contains
+													// meaningful content beyond just an <img> tag
+													// (Teams wraps copied images in bare <img> html).
+													// Parsed with DOMParser into an inert, disconnected
+													// document (no browsing context) so any <img> tags
+													// never load and their attribute handlers never run.
+													const htmlHasMeaningfulText =
+														(() => {
+															const html =
+																e.clipboardData.getData(
+																	"text/html",
+																);
+															if (!html)
+																return false;
+															const parsed =
+																new DOMParser().parseFromString(
+																	html,
+																	"text/html",
+																);
+															parsed.body
+																.querySelectorAll(
+																	"img",
+																)
+																.forEach(
+																	(img) => {
+																		img.remove();
+																	},
+																);
+															return (
+																(parsed.body.textContent?.trim()
+																	.length ??
+																	0) > 0
+															);
+														})();
+
 													const hasText =
-														e.clipboardData.types.includes(
-															"text/plain",
-														) ||
-														e.clipboardData.types.includes(
-															"text/html",
-														);
+														hasPlainText ||
+														htmlHasMeaningfulText;
 
 													const updated = hasText
 														? clipboardFiles.filter(
@@ -893,7 +941,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 											{root.theme.featureFlags
 												?.enableModelSelect && (
 												<EngineSelect
-													className="h-8 gap-0.5 px-2 py-1 text-xs [&>svg]:hidden"
+													className="h-8 w-auto gap-0.5 border-none bg-transparent px-2 py-1 text-xs shadow-none hover:bg-accent dark:hover:bg-accent/50 [&>svg]:hidden"
 													name={
 														model?.engine_display_name ||
 														model?.app_name ||
@@ -916,8 +964,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 											)}
 										</div>
 										<RoomContextUsageIndicator
-											// -ms-1 to make spacing between engine select and context usage look more like spacing between it and mic
-											// this is because engine select is ghost
+											// -ms-1 to make spacing look more consistent due to ghost icons
 											className="-ms-1"
 											room={room}
 											onCompact={onCompact}
@@ -978,16 +1025,23 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 
 										{root.theme.featureFlags
 											?.enablePromptOptimizer && (
-											<PromptOptimizer
-												input={inputText}
-												setInput={setInputFromOptimizer}
-												disabled={hasOutstandingTools}
-												modelId={
-													model?.engine_id ||
-													undefined
-												}
-												room={room}
-											/>
+											// -ms-2 to make spacing look more consistent due to ghost icons
+											<div className="-ms-2">
+												<PromptOptimizer
+													input={inputText}
+													setInput={
+														setInputFromOptimizer
+													}
+													disabled={
+														hasOutstandingTools
+													}
+													modelId={
+														model?.engine_id ||
+														undefined
+													}
+													room={room}
+												/>
+											</div>
 										)}
 									</div>
 								</div>
@@ -1073,6 +1127,16 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 						<FocusPlugin />
 						<EditorRefPlugin editorRef={editorRef} />
 						<EnterPlugin onEnter={() => promptModel()} />
+						<BackspacePlugin
+							onBackspace={(event) => {
+								if (!isEmpty || files.length === 0) {
+									return false;
+								}
+								event.preventDefault();
+								removeFile(files.length - 1);
+								return true;
+							}}
+						/>
 						<AutoScrollOnPastePlugin
 							scrollContainerRef={scrollViewportRef}
 						/>

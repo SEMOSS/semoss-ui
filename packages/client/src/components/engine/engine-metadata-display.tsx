@@ -34,6 +34,8 @@ export type {
 export type ModelMetadata = {
 	engineId?: string;
 	modelId?: string | null;
+	/** meta/model.json entry the engine was matched to by hand, if any. */
+	catalogModelKey?: string | null;
 	/** Organization that created the model, e.g. ANTHROPIC. */
 	modelProvider?: string | null;
 	/** Platform serving the model, e.g. AWS_BEDROCK. */
@@ -895,7 +897,9 @@ export const SettingsWarning = ({
 	/** "danger" is for a documented hard requirement, not a hunch. */
 	tone?: "advisory" | "danger";
 }) => {
-	if (message === "") {
+	// null slips past the string type under lenient null checks, and an icon
+	// with no words next to it warns about nothing
+	if (!message) {
 		return null;
 	}
 

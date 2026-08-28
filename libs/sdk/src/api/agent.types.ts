@@ -86,6 +86,8 @@ export type AgentRunItem =
 			kind: "tool";
 			/** The tool's name, as called by the model. */
 			name: string;
+			/** Human-readable display name, if the backend already resolved one. Falls back to `metadata.SMSS_ORIGINAL_TOOL_NAME` or `name`. */
+			title?: string;
 			/** The arguments the model called it with. */
 			arguments: Record<string, unknown>;
 			/** The tool definition's `_meta`, if it has one. */

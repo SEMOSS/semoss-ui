@@ -126,6 +126,16 @@ interface ConfigStoreInterface {
 		adminOnlyProjectDelete: boolean;
 		adminOnlyProjectSetDiscoverable: boolean;
 		adminOnlyProjectSetPublic: boolean;
+		adminOnlyWorkspaceAdd: boolean;
+		adminOnlyWorkspaceAddAccess: boolean;
+		adminOnlyWorkspaceDelete: boolean;
+		adminOnlyWorkspaceSetDiscoverable: boolean;
+		adminOnlyWorkspaceSetPublic: boolean;
+		adminOnlySkillAdd: boolean;
+		adminOnlySkillAddAccess: boolean;
+		adminOnlySkillDelete: boolean;
+		adminOnlySkillSetDiscoverable: boolean;
+		adminOnlySkillSetPublic: boolean;
 		adminOnlyStorageAdd: boolean;
 		adminOnlyStorageAddAccess: boolean;
 		adminOnlyStorageDelete: false;
@@ -204,6 +214,16 @@ export class ConfigStore {
 			adminOnlyProjectDelete: false,
 			adminOnlyProjectSetDiscoverable: false,
 			adminOnlyProjectSetPublic: false,
+			adminOnlyWorkspaceAdd: false,
+			adminOnlyWorkspaceAddAccess: false,
+			adminOnlyWorkspaceDelete: false,
+			adminOnlyWorkspaceSetDiscoverable: false,
+			adminOnlyWorkspaceSetPublic: false,
+			adminOnlySkillAdd: false,
+			adminOnlySkillAddAccess: false,
+			adminOnlySkillDelete: false,
+			adminOnlySkillSetDiscoverable: false,
+			adminOnlySkillSetPublic: false,
 			adminOnlyStorageAdd: false,
 			adminOnlyStorageAddAccess: false,
 			adminOnlyStorageDelete: false,
@@ -338,6 +358,8 @@ export class ConfigStore {
 
 		const moduleMap = {
 			PROJECT: "Project",
+			WORKSPACE: "Workspace",
+			SKILL: "Skill",
 			DATABASE: "Db",
 			FUNCTION: "Function",
 			MODEL: "Model",
