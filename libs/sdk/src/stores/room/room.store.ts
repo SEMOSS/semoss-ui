@@ -1,3 +1,18 @@
+import { runAgent } from "../../api/agent";
+import type { AgentRunSnapshot } from "../../api/agent.types";
+import { subscribeRunAgent } from "../../api/agent-subscription";
+import {
+	getPixelAsyncResult,
+	getPixelJobStreaming,
+	type PixelJobStreamingStatus,
+} from "../../api/base";
+import {
+	askRoom,
+	createRoomRecord,
+	getRoomMessages,
+	setRoomForInsight,
+	updateRoomOptions,
+} from "../../api/chat";
 import type {
 	RoomAskAgentOptions,
 	RoomAskAgentResult,
@@ -6,22 +21,7 @@ import type {
 	RoomMessage,
 	RoomOptions,
 	RoomStreamChunk,
-} from "../types";
-import { runAgent } from "./agent";
-import type { AgentRunSnapshot } from "./agent.types";
-import { subscribeRunAgent } from "./agent-subscription";
-import {
-	getPixelAsyncResult,
-	getPixelJobStreaming,
-	type PixelJobStreamingStatus,
-} from "./base";
-import {
-	askRoom,
-	createRoomRecord,
-	getRoomMessages,
-	setRoomForInsight,
-	updateRoomOptions,
-} from "./chat";
+} from "../../types";
 
 // Statuses that signal the streaming job has finished (success or failure).
 const TERMINAL_STATUSES: PixelJobStreamingStatus[] = [
@@ -66,7 +66,7 @@ interface AskSettledOutput {
  *
  * @see sdk-chat skill for the full Room guide and chat-vs-agent comparison.
  */
-export class Room {
+export class RoomStore {
 	readonly roomId: string;
 	readonly insightId: string;
 	private _options: RoomOptions;
@@ -320,16 +320,16 @@ export class Room {
 
 	/**
 	 * Create a new Room, bind it to the active insight, and return it ready to use.
-	 * Prefer this over `new Room(...)` — it handles insight binding automatically.
+	 * Prefer this over `new RoomStore(...)` — it handles insight binding automatically.
 	 *
 	 * @param insightId - The active SEMOSS insight ID.
 	 * @param workspaceId - Optional workspace to associate with the room.
-	 * @returns A fully initialized Room instance.
+	 * @returns A fully initialized RoomStore instance.
 	 */
 	static async create(
 		insightId: string,
 		workspaceId?: string,
-	): Promise<Room> {
+	): Promise<RoomStore> {
 		const roomRecord = await createRoomRecord(insightId, workspaceId);
 		await setRoomForInsight(insightId, roomRecord.roomId);
 
@@ -340,17 +340,17 @@ export class Room {
 			modelId: "",
 		};
 
-		return new Room(roomRecord.roomId, insightId, defaultOptions);
+		return new RoomStore(roomRecord.roomId, insightId, defaultOptions);
 	}
 }
 
 /**
- * Convenience wrapper around {@link Room.create}. Creates a new Room and binds
+ * Convenience wrapper around {@link RoomStore.create}. Creates a new room and binds
  * it to the active insight.
  *
  * @param insightId - The active SEMOSS insight ID.
  * @param workspaceId - Optional workspace to associate with the room.
- * @returns A fully initialized Room instance.
+ * @returns A fully initialized RoomStore instance.
  *
  * @example
  * ```ts
@@ -362,4 +362,4 @@ export class Room {
 export const createRoom = (
 	insightId: string,
 	workspaceId?: string,
-): Promise<Room> => Room.create(insightId, workspaceId);
+): Promise<RoomStore> => RoomStore.create(insightId, workspaceId);

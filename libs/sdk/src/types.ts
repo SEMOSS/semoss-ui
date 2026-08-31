@@ -214,7 +214,7 @@ export interface AddRoomToolExecutionParams {
 // -------------------------------------------------------------------------------------------------
 
 /**
- * A single streaming chunk emitted by {@link Room.ask} or {@link Room.askAgent}
+ * A single streaming chunk emitted by {@link RoomStore.ask} or {@link RoomStore.askAgent}
  * as the model responds.
  */
 export interface RoomStreamChunk {
@@ -229,7 +229,7 @@ export interface RoomStreamChunk {
 }
 
 /**
- * Options for {@link Room.ask}
+ * Options for {@link RoomStore.ask}
  */
 export interface RoomAskOptions {
 	/** Called for each streaming chunk as it arrives. */
@@ -237,7 +237,7 @@ export interface RoomAskOptions {
 	/**
 	 * Parent response message ID to continue an existing thread.
 	 * Defaults to `"ROOT_PLACEHOLDER_ID"` (start a new thread) if omitted
-	 * and no prior message has been sent on this Room instance.
+	 * and no prior message has been sent on this RoomStore instance.
 	 */
 	parentMessageId?: string;
 	/** Base64-encoded image strings to attach to the message. */
@@ -250,7 +250,7 @@ export interface RoomAskOptions {
 }
 
 /**
- * Options for {@link Room.askAgent}
+ * Options for {@link RoomStore.askAgent}
  */
 export interface RoomAskAgentOptions {
 	/** Called for each streaming chunk as it arrives. */
@@ -259,7 +259,7 @@ export interface RoomAskAgentOptions {
 	 * Called when the run pauses on one or more tool calls awaiting a human
 	 * decision (status `"INPUT_REQUIRED"`). Resolve each one with
 	 * `decideAgentRunAction` or `submitAgentToolDecision` (imported from
-	 * `@semoss/sdk`, using `pendingAction.runId` — not this Room's `roomId`)
+	 * `@semoss/sdk`, using `pendingAction.runId` — not this RoomStore's `roomId`)
 	 * to let the run resume.
 	 *
 	 * If omitted, `askAgent` rejects as soon as the run pauses, since there
@@ -269,7 +269,7 @@ export interface RoomAskAgentOptions {
 }
 
 /**
- * Settled result returned by {@link Room.ask}
+ * Settled result returned by {@link RoomStore.ask}
  */
 export interface RoomAskResult {
 	/** Server-assigned ID of the persisted user input message */
@@ -281,7 +281,7 @@ export interface RoomAskResult {
 }
 
 /**
- * Settled result returned by {@link Room.askAgent}
+ * Settled result returned by {@link RoomStore.askAgent}
  */
 export interface RoomAskAgentResult {
 	/** Server-assigned ID of the persisted user input message */
