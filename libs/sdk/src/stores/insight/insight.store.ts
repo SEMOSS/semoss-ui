@@ -1,6 +1,7 @@
 import {
 	confirmOTP,
 	download,
+	getRoomForInsight,
 	getRoomOptions,
 	getSystemConfig,
 	login,
@@ -811,10 +812,10 @@ LoadPyFromFile(alias="${alias}", filePath="temp.py");
 
 		/**
 		 * Get the room bound to this insightId, wrapped as a `RoomStore`. Cached
-		 * per insight — repeated calls return the same instance. If a tool
-		 * execution context already bound a room (`Env.TOOL.roomId`), wraps that
-		 * one; otherwise creates one via {@link createRoom} and binds it to this
-		 * insightId first.
+		 * per insight — repeated calls return the same instance. Resolution order:
+		 * a tool execution context's room (`Env.TOOL.roomId`), then whatever room
+		 * {@link getRoomForInsight} reports is already bound to this insightId,
+		 * then finally a brand-new room created and bound via {@link createRoom}.
 		 *
 		 * @returns The bound `RoomStore`, or `null` if `disableRoom` was set on this insight.
 		 */
@@ -827,15 +828,36 @@ LoadPyFromFile(alias="${alias}", filePath="temp.py");
 				return this._room;
 			}
 
-			const roomId = Env.TOOL?.roomId;
-			if (!roomId) {
-				this._room = await createRoom(this._store.insightId);
+			const toolRoomId = Env.TOOL?.roomId;
+			if (toolRoomId) {
+				await setRoomForInsight(this._store.insightId, toolRoomId);
+				const options = await getRoomOptions(
+					this._store.insightId,
+					toolRoomId,
+				);
+				this._room = new RoomStore(
+					toolRoomId,
+					this._store.insightId,
+					options,
+				);
 				return this._room;
 			}
 
-			await setRoomForInsight(this._store.insightId, roomId);
-			const options = await getRoomOptions(this._store.insightId, roomId);
-			this._room = new RoomStore(roomId, this._store.insightId, options);
+			const existingRoom = await getRoomForInsight(this._store.insightId);
+			if (existingRoom) {
+				const options = await getRoomOptions(
+					this._store.insightId,
+					existingRoom.roomId,
+				);
+				this._room = new RoomStore(
+					existingRoom.roomId,
+					this._store.insightId,
+					options,
+				);
+				return this._room;
+			}
+
+			this._room = await createRoom(this._store.insightId);
 			return this._room;
 		},
 

@@ -119,6 +119,28 @@ export const setRoomForInsight = async (
 };
 
 /**
+ * Retrieves the room currently bound to the given insight, if any.
+ *
+ * @param insightId - The active SEMOSS insight ID.
+ * @returns The bound room, or `null` if the insight has no bound room.
+ */
+export const getRoomForInsight = async (
+	insightId: string,
+): Promise<RoomRecord | null> => {
+	const pixel = `GetRoomForInsight();`;
+	const { errors, pixelReturn } = await runPixel<[RoomRecord | null]>(
+		pixel,
+		insightId,
+	);
+
+	if (errors.length > 0) {
+		throw new Error(errors.join(", "));
+	}
+
+	return pixelReturn[0]?.output ?? null;
+};
+
+/**
  * Updates the configuration options for a room.
  *
  * @param insightId - The active SEMOSS insight ID.
