@@ -70,6 +70,12 @@ const AUTOMATION_WORKSPACE_URL =
 		? "http://localhost:5177/"
 		: "../../automation-workspace/dist/";
 const AUTOMATION_WORKSPACE_CACHE_KEY = "20260827-2";
+const AUTOMATION_MUTATION_TOOLS = new Set([
+	"AddAutomationStep",
+	"UpdateAutomationStep",
+	"UpdateAutomationCustomStep",
+	"RemoveAutomationStep",
+]);
 const EDITOR = "automation-editor";
 const INSPECTOR = "automation-inspector";
 const TRACE = "automation-trace";
@@ -613,6 +619,14 @@ export const AutomationWorkbench = observer(
 				automationOrigin,
 			);
 		}, [appId, automationOrigin]);
+		const handleAutomationToolCompleted = useCallback(
+			(tool: { name: string }) => {
+				if (AUTOMATION_MUTATION_TOOLS.has(tool.name)) {
+					notifyAutomationChanged();
+				}
+			},
+			[notifyAutomationChanged],
+		);
 		const components = useMemo<Record<string, WorkbenchPanelConfigAny>>(
 			() => ({
 				[EDITOR]: {
@@ -719,12 +733,14 @@ export const AutomationWorkbench = observer(
 				systemPrompt: `You are the assistant for the ${projectName} automation. Help users understand, build, and troubleshoot this automation. ${accessInstructions} Explain that each step result is available to later steps as \${variableName}; configuration values are available as \${config.SETTING_NAME}; and fields marked for Playground input can be supplied at run time, overriding their default value. Use the automation's current project configuration and available tools as the source of truth. Never invent an app, reactor, agent, engine, or output variable ID. Keep appId separate from pixel, ask the user when a required concrete value is unavailable, and never claim a change or run succeeded unless a tool result confirms it.`,
 				mcp: automationMcp,
 				runParams: { project: appId },
+				onToolCompleted: handleAutomationToolCompleted,
 				onRunCompleted: notifyAutomationChanged,
 			});
 		}, [
 			appId,
 			automationMcp,
 			configureAssistant,
+			handleAutomationToolCompleted,
 			notifyAutomationChanged,
 			projectName,
 			readOnly,
