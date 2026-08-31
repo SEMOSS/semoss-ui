@@ -322,7 +322,6 @@ export default function App() {
 	const textSelectionRequestRef = useRef(0);
 	const activeToolExecutionRef = useRef("");
 	const automationRunTokenRef = useRef(0);
-	const automationGoalExecutionRef = useRef("");
 
 	useEffect(() => {
 		if (!snackError) return;
@@ -674,7 +673,6 @@ export default function App() {
 		setAutomationGoal("");
 		setAutomationGoalGenerationError("");
 		setAutomationHistory([]);
-		automationGoalExecutionRef.current = "";
 		playback.resetExecution();
 	}, [playback.resetExecution, toolExecutionKey]);
 
@@ -1958,73 +1956,44 @@ export default function App() {
 	const replayMenuOpen =
 		playback.controlsOpen || playback.loadedRecordingOpen;
 
-	const generateAutomationGoal = useCallback(
-		async (replaceExisting: boolean) => {
-			const roomId = toolContext?.roomId ?? "";
-			if (!roomId || !automationModelId || !effectiveInsightId) return;
+	const generateAutomationGoal = useCallback(async () => {
+		const roomId = toolContext?.roomId ?? "";
+		if (!roomId || !automationModelId || !effectiveInsightId) return;
 
-			setIsAutomationGoalGenerating(true);
-			setAutomationGoalGenerationError("");
-			try {
-				const response = await runPixel<Record<string, unknown>>(
-					`GeneratePlaywrightAutomationGoal(engine=${JSON.stringify(automationModelId)}, roomId=${JSON.stringify(roomId)}, limit=20);`,
-					effectiveInsightId,
-				);
-				const output = response.pixelReturn?.[0]?.output;
-				if (!isRecord(output) || output.success !== true) {
-					throw new Error(
-						isRecord(output) && typeof output.error === "string"
-							? output.error
-							: "Could not generate an automation goal.",
-					);
-				}
-				const generatedGoal =
-					typeof output.goal === "string" ? output.goal.trim() : "";
-				if (!generatedGoal) {
-					throw new Error(
-						"The model returned an empty automation goal.",
-					);
-				}
-				setAutomationGoal((current) =>
-					replaceExisting || !current.trim()
-						? generatedGoal
-						: current,
-				);
-				if (!automationModelId && typeof output.engineId === "string") {
-					setAutomationModelId(output.engineId);
-				}
-			} catch (error) {
-				setAutomationGoalGenerationError(
-					error instanceof Error
-						? error.message
+		setIsAutomationGoalGenerating(true);
+		setAutomationGoalGenerationError("");
+		try {
+			const response = await runPixel<Record<string, unknown>>(
+				`GeneratePlaywrightAutomationGoal(engine=${JSON.stringify(automationModelId)}, roomId=${JSON.stringify(roomId)}, limit=20);`,
+				effectiveInsightId,
+			);
+			const output = response.pixelReturn?.[0]?.output;
+			if (!isRecord(output) || output.success !== true) {
+				throw new Error(
+					isRecord(output) && typeof output.error === "string"
+						? output.error
 						: "Could not generate an automation goal.",
 				);
-			} finally {
-				setIsAutomationGoalGenerating(false);
 			}
-		},
-		[automationModelId, effectiveInsightId, toolContext?.roomId],
-	);
-
-	useEffect(() => {
-		if (
-			!isPlaygroundMode ||
-			isMcpPlaybackMode ||
-			!toolExecutionKey ||
-			!automationModelId ||
-			automationGoalExecutionRef.current === toolExecutionKey
-		) {
-			return;
+			const generatedGoal =
+				typeof output.goal === "string" ? output.goal.trim() : "";
+			if (!generatedGoal) {
+				throw new Error("The model returned an empty automation goal.");
+			}
+			setAutomationGoal(generatedGoal);
+			if (!automationModelId && typeof output.engineId === "string") {
+				setAutomationModelId(output.engineId);
+			}
+		} catch (error) {
+			setAutomationGoalGenerationError(
+				error instanceof Error
+					? error.message
+					: "Could not generate an automation goal.",
+			);
+		} finally {
+			setIsAutomationGoalGenerating(false);
 		}
-		automationGoalExecutionRef.current = toolExecutionKey;
-		void generateAutomationGoal(false);
-	}, [
-		automationModelId,
-		generateAutomationGoal,
-		isMcpPlaybackMode,
-		isPlaygroundMode,
-		toolExecutionKey,
-	]);
+	}, [automationModelId, effectiveInsightId, toolContext?.roomId]);
 
 	const executeGeneratedFields = useCallback(
 		async (output: Record<string, unknown>): Promise<number> => {
@@ -2651,9 +2620,7 @@ export default function App() {
 								setAutomationGoal(goal);
 								setAutomationGoalGenerationError("");
 							}}
-							onRegenerateGoal={() =>
-								void generateAutomationGoal(true)
-							}
+							onGenerateGoal={() => void generateAutomationGoal()}
 							onMaxIterationsChange={setAutomationMaxIterations}
 							onRefreshWebMcpTools={() =>
 								void refreshWebMcpTools()

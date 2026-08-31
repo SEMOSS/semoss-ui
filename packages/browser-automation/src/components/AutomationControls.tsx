@@ -1,4 +1,4 @@
-import { ChevronDown, RefreshCw, Square, Wand2, Wrench } from "lucide-react";
+import { ChevronDown, Sparkles, Square, Wand2, Wrench } from "lucide-react";
 import type React from "react";
 import { useEffect, useId, useState } from "react";
 import {
@@ -48,7 +48,7 @@ interface AutomationControlsProps {
 	onModelChange: (modelId: string) => void;
 	onSubModeChange: (mode: "click" | "fill-page" | "run-goal") => void;
 	onGoalChange: (goal: string) => void;
-	onRegenerateGoal: () => void;
+	onGenerateGoal: () => void;
 	onMaxIterationsChange: (maxIterations: number) => void;
 	onRefreshWebMcpTools: () => void;
 }
@@ -70,7 +70,7 @@ export const AutomationControls: React.FC<AutomationControlsProps> = ({
 	onModelChange,
 	onSubModeChange,
 	onGoalChange,
-	onRegenerateGoal,
+	onGenerateGoal,
 	onMaxIterationsChange,
 	onRefreshWebMcpTools,
 }) => {
@@ -268,38 +268,41 @@ export const AutomationControls: React.FC<AutomationControlsProps> = ({
 								placeholder={
 									isGoalGenerating
 										? "Summarizing recent Playground messages…"
-										: "Describe the browser goal"
+										: "Describe the browser goal, or generate one from the chat"
 								}
 								disabled={isGoalRunning}
 								rows={3}
 								className="min-h-20 resize-y"
 							/>
-							<div className="flex items-start justify-between gap-2">
-								<Small
-									className={`text-xs ${
-										goalGenerationError
-											? "text-destructive"
-											: "text-muted-foreground"
-									}`}
-								>
-									{goalGenerationError ||
-										"Generated from up to 20 recent messages. Review or edit it before running."}
-								</Small>
-								<Button
-									type="button"
-									size="icon-sm"
-									variant="ghost"
-									onClick={onRegenerateGoal}
-									disabled={isGoalGenerating || isGoalRunning}
-									aria-label="Regenerate goal from recent messages"
-								>
-									{isGoalGenerating ? (
-										<Spinner className="h-3.5 w-3.5" />
-									) : (
-										<RefreshCw className="h-3.5 w-3.5" />
-									)}
-								</Button>
-							</div>
+							<Button
+								type="button"
+								size="sm"
+								variant="outline"
+								className="self-start"
+								onClick={onGenerateGoal}
+								disabled={isGoalGenerating || isGoalRunning}
+							>
+								{isGoalGenerating ? (
+									<Spinner className="h-3.5 w-3.5" />
+								) : (
+									<Sparkles className="h-3.5 w-3.5" />
+								)}
+								{isGoalGenerating
+									? "Generating…"
+									: goal.trim()
+										? "Regenerate from chat"
+										: "Generate from chat"}
+							</Button>
+							<Small
+								className={`text-xs ${
+									goalGenerationError
+										? "text-destructive"
+										: "text-muted-foreground"
+								}`}
+							>
+								{goalGenerationError ||
+									"Generating summarizes up to 20 recent messages. Review or edit the goal before running."}
+							</Small>
 							<label
 								className="font-medium text-sm"
 								htmlFor={maxIterationsId}
