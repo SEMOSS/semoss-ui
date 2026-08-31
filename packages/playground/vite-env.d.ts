@@ -8,7 +8,6 @@ interface ImportMetaEnv {
 	readonly VITE_DEFAUlT_MODEL_NAME: string;
 }
 
-// biome-ignore lint/correctness/noUnusedVariables: this is actually used
 interface ImportMeta {
 	readonly env: ImportMetaEnv;
 }
