@@ -12,22 +12,17 @@ import {
 	ToggleGroup,
 	ToggleGroupItem,
 } from "@semoss/ui/next";
-import { CatalogTagInput } from "@/components/catalog";
 import type {
 	BuiltinToolDefinition,
 	BuiltinToolParam,
 	BuiltinToolSelection,
-} from "./engine-metadata-display";
+} from "@/api/engines";
+import { CatalogTagInput } from "@/components/catalog";
 
-/** Shape returned by the GetModelBuiltinTools pixel. */
-export interface ModelBuiltinTools {
-	engineId?: string;
-	modelId?: string;
-	modelProvider?: string;
-	servingProvider?: string;
-	tools?: Record<string, BuiltinToolDefinition>;
-	selected?: Record<string, BuiltinToolSelection>;
-}
+// GetModelBuiltinTools' response shape is a pixel wire type and lives in the
+// data layer; re-exported here so consumers keep importing it alongside the
+// field that renders it.
+export type { ModelBuiltinTools } from "@/api/engines";
 
 /**
  * The selection written when a tool is switched on: the catalog definition

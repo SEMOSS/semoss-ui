@@ -86,6 +86,8 @@ export type AgentRunItem =
 			kind: "tool";
 			/** The tool's name, as called by the model. */
 			name: string;
+			/** Human-readable display name, if the backend already resolved one. Falls back to `metadata.SMSS_ORIGINAL_TOOL_NAME` or `name`. */
+			title?: string;
 			/** The arguments the model called it with. */
 			arguments: Record<string, unknown>;
 			/** The tool definition's `_meta`, if it has one. */
@@ -256,4 +258,12 @@ export interface AgentRunSubscription {
 	 * A no-op once polling has stopped.
 	 */
 	pokeNow: () => void;
+	/**
+	 * Settles when polling ends — terminal status, stop(), signal abort, or the
+	 * consecutive-failure cap — with the last snapshot observed, or null when
+	 * polling never received one. Never rejects. Note this resolves when the
+	 * POLL LOOP ends, not when the run does: an aborted subscription's run may
+	 * still be executing on the backend.
+	 */
+	done: Promise<AgentRunSnapshot | null>;
 }

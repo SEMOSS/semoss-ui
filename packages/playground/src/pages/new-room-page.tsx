@@ -8,12 +8,14 @@ import {
 } from "lucide-react";
 import { runInAction } from "mobx";
 import { observer } from "mobx-react-lite";
+import type { ReactNode } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useTranslation } from "@semoss/i18n";
 import { InsightProvider, usePixel } from "@semoss/sdk/react";
 import {
 	Button,
+	cn,
 	DropdownMenuItem,
 	DropdownMenuSeparator,
 	ResizableHandle,
@@ -29,7 +31,6 @@ import {
 import landingImage from "@/assets/img/landing.png";
 import landingDarkImage from "@/assets/img/landing-darkmode.png";
 import {
-	FileDragOverlay,
 	RoomInput,
 	RoomInputMenuFileExplorer,
 	RoomInputMenuMCP,
@@ -38,10 +39,38 @@ import {
 	RoomSidebar,
 } from "@/components";
 import { RoomOptionsForm } from "@/components/room/room-options-form";
-import { FileDragProvider } from "@/contexts";
+import { FileDragProvider, useFileDrag } from "@/contexts";
 import { useChat, useGlobalBreadcrumbs, useRoot } from "@/hooks";
 import { RoomStore } from "@/stores";
 import type { MCPConfig, Prompt, Workspace } from "@/types";
+
+/**
+ * Highlights its border while a file is being dragged over it. Must render
+ * inside a FileDragProvider.
+ */
+const DropHighlight = ({
+	className,
+	children,
+}: {
+	className?: string;
+	children: ReactNode;
+}) => {
+	const { isDragging } = useFileDrag();
+
+	return (
+		<div
+			className={cn(
+				className,
+				// Sits above the absolutely positioned background image, which
+				// would otherwise paint over this border regardless of DOM order.
+				"relative border-2 border-transparent transition-all duration-200 ease-in-out",
+				isDragging && "border-primary",
+			)}
+		>
+			{children}
+		</div>
+	);
+};
 
 /**
  * The page to create a new room
@@ -116,6 +145,7 @@ export const NewRoomPage = observer(() => {
 		null,
 	);
 	const submittedRef = useRef(false);
+	const autoGreetedRef = useRef(false);
 	const [mode, setMode] = useState<"chat" | "agent">("chat");
 
 	// tempRoomStore is only created once (createRoom below builds the real,
@@ -171,6 +201,9 @@ export const NewRoomPage = observer(() => {
 			mcp: [...(root.theme.defaultTools || [])],
 			workspace: undefined,
 			predefinedPrompts: [],
+			temperature: root.theme.featureFlags?.enableTemperature
+				? (root.theme.defaultRoomSettings?.temperature ?? 0)
+				: undefined,
 		});
 	}, [tempRoomStore, root.theme]);
 
@@ -179,8 +212,13 @@ export const NewRoomPage = observer(() => {
 	 *
 	 * @param prompt The prompt to ask
 	 * @param files The files to upload
+	 * @param askOptions Options for the kickoff message (e.g. visible: false)
 	 */
-	const createRoom = async (prompt: string, files: File[]) => {
+	const createRoom = async (
+		prompt: string,
+		files: File[],
+		askOptions?: { visible?: boolean },
+	) => {
 		// ignore if loading
 		if (isLoading) {
 			return;
@@ -225,7 +263,11 @@ export const NewRoomPage = observer(() => {
 				// Fire-and-forget so we navigate without waiting on the response.
 				(async () => {
 					try {
-						await preCreatedRoom.askMessage(prompt, files);
+						await preCreatedRoom.askMessage(
+							prompt,
+							files,
+							askOptions,
+						);
 						runInAction(() => {
 							chat.keys.roomCounter++;
 						});
@@ -243,6 +285,7 @@ export const NewRoomPage = observer(() => {
 					files,
 					options,
 					getWorkspace.data?.workspace_id,
+					askOptions,
 				);
 				submittedRef.current = true;
 				navigate(`/room/${room.roomId}`);
@@ -348,6 +391,16 @@ export const NewRoomPage = observer(() => {
 				name: getWorkspace.data.name,
 			},
 		});
+
+		// Kick off the workspace's greeting once, silently — only the reply shows.
+		if (
+			root.theme.featureFlags?.enableAutoGreeting &&
+			!autoGreetedRef.current
+		) {
+			autoGreetedRef.current = true;
+			createRoom("Hello", [], { visible: false });
+		}
+		// biome-ignore lint/correctness/useExhaustiveDependencies: autoGreetedRef guards re-fires
 	}, [
 		selectedWorkspaceId,
 		getWorkspace.status,
@@ -460,13 +513,12 @@ export const NewRoomPage = observer(() => {
 			<ResizablePanelGroup direction="horizontal" className="flex-1">
 				<ResizablePanel className="relative">
 					<FileDragProvider>
-						<FileDragOverlay />
 						<img
 							src={landingSrc}
 							alt="Background"
 							className="absolute inset-0 h-full w-full select-none object-cover"
 						/>
-						<div className="flex h-full flex-col items-center justify-center overflow-auto p-2">
+						<DropHighlight className="flex h-full flex-col items-center justify-center overflow-auto p-2">
 							<div className="z-10 mx-auto flex w-full max-w-2xl flex-col gap-6">
 								{root.theme.landing ? (
 									<div
@@ -735,7 +787,7 @@ export const NewRoomPage = observer(() => {
 									</div>
 								) : null}
 							</div>
-						</div>
+						</DropHighlight>
 					</FileDragProvider>
 				</ResizablePanel>
 				{isConfigurationOpen && (

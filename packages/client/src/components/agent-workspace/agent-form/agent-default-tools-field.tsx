@@ -10,6 +10,9 @@ import {
 	Field,
 	FieldDescription,
 	FieldLabel,
+	InlineCode,
+	Muted,
+	Small,
 	Switch,
 } from "@semoss/ui/next";
 import type { AgentFormValues } from "./types";
@@ -159,19 +162,25 @@ export const AgentDefaultToolsField = ({
 														}
 													/>
 													<div className="min-w-0 flex-1">
-														<span className="font-medium text-sm">
+														<Small>
 															{tool.title ??
 																tool.name}
-															<code className="ml-2 font-normal text-muted-foreground text-xs">
-																{tool.name}
-															</code>
-														</span>
+															{tool.title &&
+																tool.title !==
+																	tool.name && (
+																	<InlineCode className="ml-2 py-0 text-xs">
+																		{
+																			tool.name
+																		}
+																	</InlineCode>
+																)}
+														</Small>
 														{tool.description && (
-															<p className="text-muted-foreground text-xs leading-5">
+															<Muted className="block font-normal text-xs leading-5">
 																{
 																	tool.description
 																}
-															</p>
+															</Muted>
 														)}
 													</div>
 												</label>

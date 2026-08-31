@@ -64,14 +64,10 @@
 	"images": {
 		"logoAlt": "logo"
 	},
-	"fileDrag": {
-		"title": "Drop files here to attach to message",
-		"modalTitle": "Add Documents",
-		"browse": "Browse",
-		"done": "Done"
-	},
 	"fileExplorer": {
 		"search": "Search",
+		"searchToggle": "Search files",
+		"clearSearch": "Clear search",
 		"name": "Name",
 		"dateModified": "Date Modified",
 		"pathLabel": "Path: {{path}}",
@@ -115,7 +111,8 @@
 			"saveSuccess": "Successfully saved file",
 			"saveFailed": "Error saving file",
 			"downloadFileSuccess": "Successfully downloaded file",
-			"downloadFileFailed": "Error downloading file"
+			"downloadFileFailed": "Error downloading file",
+			"syncFailed": "Failed to sync storage to local"
 		},
 		"dateFormat": {
 			"justNow": "Just now",
@@ -136,7 +133,6 @@
 		"searchAllAria": "Search all",
 		"searchCurrentAria": "Search only current directory",
 		"searchCurrentTitle": "Search only in {{path}}",
-		"moveDropHint": "Drop to move {{label}} into {{path}}",
 		"contextMenu": {
 			"copyPath": "Copy path",
 			"copy": "Copy",
@@ -147,7 +143,8 @@
 			"delete": "Delete",
 			"newFile": "New file",
 			"newFolder": "New folder",
-			"ariaLabel": "File actions"
+			"ariaLabel": "File actions",
+			"unzip": "Unzip"
 		},
 		"overlay": {
 			"title": "Create File or Directory",
@@ -156,12 +153,14 @@
 				"action": "Action",
 				"fileName": "File Name",
 				"directoryName": "Directory Name",
-				"uploadFileZip": "Upload File/Zip"
+				"uploadFileZip": "Upload File/Zip",
+				"location": "Path"
 			},
 			"placeholders": {
 				"selectAction": "Select action",
 				"fileName": "Enter File Name",
-				"directoryName": "Enter Directory Name"
+				"directoryName": "Enter Directory Name",
+				"location": "Enter a path"
 			},
 			"actions": {
 				"upload": "Upload Files",
@@ -182,7 +181,8 @@
 			"buttons": {
 				"cancel": "Cancel",
 				"upload": "Upload",
-				"create": "Create"
+				"create": "Create",
+				"back": "Back"
 			},
 			"toasts": {
 				"selectAtLeastOne": "Please select at least one file to upload",
@@ -194,8 +194,18 @@
 				"fileCreated": "Successfully created file",
 				"directoryCreated": "Successfully created directory",
 				"anError": "An error occurred"
+			},
+			"actionDescriptions": {
+				"upload": "Upload files or a zip from your computer",
+				"newFile": "Create an empty file",
+				"newDirectory": "Create an empty folder"
 			}
-		}
+		},
+		"itemCount_one": "1 item",
+		"itemCount_other": "{{count}} items",
+		"emptyFolder": "Empty folder",
+		"noResults": "No results found",
+		"uploadDropHint": "Release to upload files to {{path}}"
 	},
 	"cellOutput": {
 		"panels": {

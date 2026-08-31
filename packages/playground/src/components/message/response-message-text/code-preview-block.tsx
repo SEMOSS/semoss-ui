@@ -38,9 +38,11 @@ import {
 	CODE_LANG_LABELS,
 	formatExecuteOutput,
 	MAX_EXECUTE_LOG_CHARS,
+	RESPONSE_BLOCK_MAX_HEIGHT,
 } from "./constants";
 import { SaveCodeNotebookDialog } from "./save-code-notebook-dialog";
 import { SaveFileDialog } from "./save-file-dialog";
+import { useStickToBottom } from "./use-stick-to-bottom";
 
 interface CodePreviewBlockProps {
 	/** The code block's source text. */
@@ -70,6 +72,8 @@ export const CodePreviewBlock = ({
 	const [isAddToNotebookOpen, setIsAddToNotebookOpen] = useState(false);
 	const [isSaveCodeDialogOpen, setIsSaveCodeDialogOpen] = useState(false);
 	const [isCollapsed, setIsCollapsed] = useState(false);
+	// the block is height capped, so it follows its own newest line
+	const codeScroll = useStickToBottom(code);
 	const [isExecuting, setIsExecuting] = useState(false);
 	const [executeResult, setExecuteResult] = useState<
 		| React.ComponentProps<typeof SaveCodeNotebookDialog>["result"]
@@ -165,7 +169,7 @@ export const CodePreviewBlock = ({
 
 	return (
 		<>
-			<div className="relative overflow-hidden rounded-md border border-border bg-background">
+			<div className="relative overflow-clip rounded-md border border-border bg-background">
 				<BlockHeader
 					label={langLabel}
 					isCollapsed={isCollapsed}
@@ -246,6 +250,57 @@ export const CodePreviewBlock = ({
 							<TooltipContent side="bottom">Save</TooltipContent>
 						</Tooltip>
 					)}
+					<Button
+						className="-my-1 h-6 px-2 text-muted-foreground text-xs hover:text-foreground"
+						variant="ghost"
+						size="sm"
+						disabled={!room || !code || isSavingToRoom}
+						onClick={() => void saveInRoom()}
+					>
+						{isSavingToRoom ? "Saving..." : "Save In Room"}
+					</Button>
+					<Button
+						className="-my-1 h-6 px-2 text-muted-foreground text-xs hover:text-foreground"
+						variant="ghost"
+						size="sm"
+						disabled={!code}
+						onClick={() => setIsFullViewOpen(true)}
+					>
+						Full View
+					</Button>
+				</BlockHeader>
+				{!isCollapsed && (
+					<div className="p-3">
+						<div className="-mb-7 sticky top-2 z-10 float-right ml-2">
+							<Tooltip>
+								<TooltipTrigger asChild>
+									<Button
+										className="h-6 gap-1 px-2 text-muted-foreground text-xs hover:text-foreground"
+										variant="ghost"
+										size="sm"
+										disabled={!code}
+										onClick={() =>
+											void copyToClipboard(
+												code,
+												() =>
+													toast.success(
+														t(
+															"notifications.copySuccess",
+														),
+													),
+												(msg) => toast.error(msg),
+											)
+										}
+									>
+										<CopyIcon className="size-3.5" />
+										Copy
+									</Button>
+								</TooltipTrigger>
+								<TooltipContent side="bottom">
+									Copy
+								</TooltipContent>
+							</Tooltip>
+						</div>
 					<Tooltip>
 						<TooltipTrigger asChild>
 							<Button
@@ -285,7 +340,15 @@ export const CodePreviewBlock = ({
 					</Tooltip>
 				</BlockHeader>
 				{!isCollapsed && (
-					<div className="p-3">
+					// capped to the height an html preview uses, so a long block
+					// scrolls inside the message instead of pushing the rest of the
+					// conversation off screen
+					<div
+						ref={codeScroll.ref}
+						onScroll={codeScroll.onScroll}
+						className="overflow-auto p-3"
+						style={{ maxHeight: RESPONSE_BLOCK_MAX_HEIGHT }}
+					>
 						<Code code={code} language={language ?? "txt"} />
 					</div>
 				)}

@@ -79,35 +79,49 @@ const toAgentExecutionMode = (originalExecution: unknown): string =>
  * `item.metadata` is the tool's real `_meta` block (SMSS_ORIGINAL_TOOL_NAME,
  * SMSS_ENGINE_ID, etc.), passed through as-is by the backend — not wrapped in
  * another `_meta`.
+ *
+ * `item.name` is the raw, engine-id-prefixed LLM-facing name (e.g.
+ * `a<uuid>_toolname`) — never display it directly. Prefer `item.title`
+ * (resolved server-side) or `metadata.SMSS_ORIGINAL_TOOL_NAME` for anything
+ * user-facing; ToolStore.displayName falls back to `name` only as a last
+ * resort.
  */
 const buildToolCallPart = (item: {
 	id: string;
 	name: string;
+	title?: string;
 	arguments: Record<string, unknown>;
 	metadata?: Record<string, unknown>;
-}): PixelMessageToolCallPart => ({
-	type: "TOOL_CALL",
-	toolCall: {
-		id: item.id,
-		type: "function",
-		name: item.name,
-		arguments: item.arguments,
-		_tool_found: true,
-		original_name: item.name,
-		description: "",
-		_meta: {
-			SMSS_ENGINE_NAME: "",
-			SMSS_ENGINE_ID: "",
-			SMSS_ENGINE_TYPE: "",
-			SMSS_PROJECT_NAME: "",
-			SMSS_PROJECT_ID: "",
-			...item.metadata,
-			SMSS_MCP_EXECUTION: toAgentExecutionMode(
-				item.metadata?.SMSS_MCP_EXECUTION,
-			),
-		},
-	} as PixelMessageToolCallPart["toolCall"],
-});
+}): PixelMessageToolCallPart => {
+	const displayName =
+		item.title ||
+		(item.metadata?.SMSS_ORIGINAL_TOOL_NAME as string | undefined) ||
+		item.name;
+	return {
+		type: "TOOL_CALL",
+		toolCall: {
+			id: item.id,
+			type: "function",
+			name: item.name,
+			title: displayName,
+			arguments: item.arguments,
+			_tool_found: true,
+			original_name: displayName,
+			description: "",
+			_meta: {
+				SMSS_ENGINE_NAME: "",
+				SMSS_ENGINE_ID: "",
+				SMSS_ENGINE_TYPE: "",
+				SMSS_PROJECT_NAME: "",
+				SMSS_PROJECT_ID: "",
+				...item.metadata,
+				SMSS_MCP_EXECUTION: toAgentExecutionMode(
+					item.metadata?.SMSS_MCP_EXECUTION,
+				),
+			},
+		} as PixelMessageToolCallPart["toolCall"],
+	};
+};
 
 /**
  * The backend never emits a stream item for a tool call awaiting an ask
@@ -118,27 +132,34 @@ const buildToolCallPart = (item: {
  */
 const buildPendingToolCallPart = (
 	action: PendingAgentAction,
-): PixelMessageToolCallPart => ({
-	type: "TOOL_CALL",
-	toolCall: {
-		id: action.toolCallId as string,
-		type: "function",
-		name: action.toolName ?? "",
-		arguments: action.toolArgs ?? {},
-		_tool_found: true,
-		original_name: action.toolName ?? "",
-		description: "",
-		_meta: {
-			SMSS_ENGINE_NAME: "",
-			SMSS_ENGINE_ID: "",
-			SMSS_ENGINE_TYPE: "",
-			SMSS_PROJECT_NAME: "",
-			SMSS_PROJECT_ID: "",
-			...action.toolMeta,
-			SMSS_MCP_EXECUTION: MCP_EXECUTION_AGENT_ASK,
-		},
-	} as PixelMessageToolCallPart["toolCall"],
-});
+): PixelMessageToolCallPart => {
+	const displayName =
+		(action.toolMeta?.SMSS_ORIGINAL_TOOL_NAME as string | undefined) ||
+		action.toolName ||
+		"";
+	return {
+		type: "TOOL_CALL",
+		toolCall: {
+			id: action.toolCallId as string,
+			type: "function",
+			name: action.toolName ?? "",
+			title: displayName,
+			arguments: action.toolArgs ?? {},
+			_tool_found: true,
+			original_name: displayName,
+			description: "",
+			_meta: {
+				SMSS_ENGINE_NAME: "",
+				SMSS_ENGINE_ID: "",
+				SMSS_ENGINE_TYPE: "",
+				SMSS_PROJECT_NAME: "",
+				SMSS_PROJECT_ID: "",
+				...action.toolMeta,
+				SMSS_MCP_EXECUTION: MCP_EXECUTION_AGENT_ASK,
+			},
+		} as PixelMessageToolCallPart["toolCall"],
+	};
+};
 
 /**
  * Find an already-pushed SUBAGENT part by its item id, for item.updated/
@@ -330,7 +351,7 @@ const syncPendingActions = (
  */
 export const decideAgentToolAction = async (
 	tool: ToolStore,
-	decision: "reject" | "submit",
+	decision: "reject" | "submit" | "respond",
 	paramValues?: Record<string, unknown>,
 ): Promise<void> => {
 	const pendingAction = tool.pendingAction;
