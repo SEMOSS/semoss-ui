@@ -1050,7 +1050,7 @@ export const FUNCTION_CONNECTIONS = {
 			icon: PYTHON,
 			description:
 				"Run a custom Python function stored within the engine. Useful for executing local Python logic as a callable function.",
-			notice: "After creating this engine, upload your Python file and any supporting files from the engine Edit page.",
+			notice: "Upload an existing Python implementation, or leave the file empty to generate a starter function from the metadata below.",
 			fields: [
 				{
 					key: "FUNCTION_TYPE",
@@ -1090,7 +1090,20 @@ export const FUNCTION_CONNECTIONS = {
 					disabled: false,
 					required: true,
 					helperText:
-						"Enter only the file name (e.g., my_function.py). Upload the file itself from the engine Edit page after the engine is created.",
+						"Name for a generated starter file. When uploading a file, its name is used automatically.",
+					category: "Settings",
+				},
+				{
+					key: "FILE",
+					label: "Python File",
+					value: null,
+					type: "file-upload",
+					disabled: false,
+					secondary: true,
+					required: false,
+					options: {
+						extensions: [".py"],
+					},
 					category: "Settings",
 				},
 				{
