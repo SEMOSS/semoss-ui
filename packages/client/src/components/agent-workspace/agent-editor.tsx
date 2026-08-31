@@ -20,6 +20,7 @@ import {
 } from "@semoss/ui/next";
 import {
 	AGENT_FORM_DEFAULT_VALUES,
+	AgentDefaultToolsField,
 	AgentExecutionLimitsFields,
 	AgentFormSection,
 	type AgentFormValues,
@@ -27,6 +28,7 @@ import {
 	AgentModelField,
 	AgentSubagentsField,
 	buildEditWorkspacePixel,
+	getWorkspaceSaveWarning,
 } from "@/components/agent-workspace/agent-form";
 import { useRootStore, useWorkspace } from "@/hooks";
 import { mcpToPlatformUrl, promptToPlatformUrl } from "@/utility";
@@ -39,9 +41,19 @@ type GetWorkspaceResponse = {
 	skills: SkillConfig[];
 	prompts: { id: string; name: string; type: string }[];
 	known_hook_kinds?: string[];
+	default_tools?: {
+		name: string;
+		title?: string;
+		description?: string;
+	}[];
 	config_json?: {
 		model_id?: string;
 		use_default_agent_tools?: boolean;
+		tool_policy?: {
+			default_tools?: {
+				disabled?: string[];
+			};
+		};
 		budgets?: {
 			max_turns?: number;
 			max_reflections?: number;
@@ -69,6 +81,9 @@ export const AgentEditor = () => {
 	const [isLoading, setIsLoading] = useState(false);
 	const [isFetching, setIsFetching] = useState(true);
 	const [knownHookKinds, setKnownHookKinds] = useState<string[]>([]);
+	const [defaultTools, setDefaultTools] = useState<
+		NonNullable<GetWorkspaceResponse["default_tools"]>
+	>([]);
 
 	const descId = useId();
 	const instructionsId = useId();
@@ -88,6 +103,7 @@ export const AgentEditor = () => {
 				const data = pixelReturn[0].output;
 				const allMcps = data.mcp ?? [];
 				setKnownHookKinds(data.known_hook_kinds ?? []);
+				setDefaultTools(data.default_tools ?? []);
 				reset({
 					name: data.name ?? "",
 					description: data.description ?? "",
@@ -95,6 +111,9 @@ export const AgentEditor = () => {
 					modelId: data.config_json?.model_id ?? "",
 					useDefaultAgentTools:
 						data.config_json?.use_default_agent_tools ?? true,
+					disabledDefaultTools:
+						data.config_json?.tool_policy?.default_tools
+							?.disabled ?? [],
 					maxTurns:
 						data.config_json?.budgets?.max_turns?.toString() ?? "",
 					maxReflections:
@@ -134,11 +153,16 @@ export const AgentEditor = () => {
 	const onSave = handleSubmit(async (data) => {
 		try {
 			setIsLoading(true);
-			const { errors } = await monolithStore.runQuery(
-				buildEditWorkspacePixel(workspace.appId, data),
-			);
+			const { errors, pixelReturn } = await monolithStore.runQuery<
+				[unknown]
+			>(buildEditWorkspacePixel(workspace.appId, data));
 			if (errors.length > 0) throw new Error(errors.join(", "));
-			toast.success("Agent saved");
+			const warning = getWorkspaceSaveWarning(pixelReturn[0]?.output);
+			if (warning) {
+				toast.warning(warning);
+			} else {
+				toast.success("Agent saved");
+			}
 		} catch (e) {
 			console.error(e);
 			toast.error((e as Error).message || "Failed to save agent");
@@ -217,6 +241,18 @@ export const AgentEditor = () => {
 								)}
 							/>
 							<AgentModelField control={control} />
+						</AgentFormSection>
+
+						<Separator />
+
+						<AgentFormSection
+							title="Built-in tools"
+							description="Control the deployment default tools available to this agent."
+						>
+							<AgentDefaultToolsField
+								control={control}
+								tools={defaultTools}
+							/>
 						</AgentFormSection>
 
 						<Separator />
@@ -322,7 +358,10 @@ export const AgentEditor = () => {
 							title="Execution limits"
 							description="Runtime caps for the agent's tool loop and subagent delegation. Leave a field blank to fall back to its default."
 						>
-							<AgentExecutionLimitsFields control={control} />
+							<AgentExecutionLimitsFields
+								control={control}
+								showDefaultToolsToggle={false}
+							/>
 						</AgentFormSection>
 
 						<Separator />
