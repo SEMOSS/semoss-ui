@@ -323,6 +323,7 @@ export const NewRoomPage = observer(() => {
 	}, [workspaceIdSearchParams]);
 
 	// Handle workspace data loading from RoomWorkspace component selection
+	// biome-ignore lint/correctness/useExhaustiveDependencies: autoGreetedRef guards re-fires
 	useEffect(() => {
 		if (!selectedWorkspaceId) {
 			// clearing the agent clears the guard below, so picking the same
@@ -403,7 +404,6 @@ export const NewRoomPage = observer(() => {
 			autoGreetedRef.current = true;
 			createRoom("Hello", [], { visible: false });
 		}
-		// biome-ignore lint/correctness/useExhaustiveDependencies: autoGreetedRef guards re-fires
 	}, [
 		selectedWorkspaceId,
 		getWorkspace.status,

@@ -4,7 +4,6 @@
 
 import { ChevronDown, ChevronUp, Info, X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Controller, useForm } from "react-hook-form";
 import {
 	Alert,
 	AlertDescription,
@@ -15,12 +14,15 @@ import {
 	CollapsibleTrigger,
 	Field,
 	FieldDescription,
+	FieldError,
 	FieldLabel,
+	Form,
+	FormField,
+	FormFileDropzone,
 	H4,
 	Input,
 	Label,
 	Muted,
-	P,
 	RadioGroup,
 	RadioGroupItem,
 	Select,
@@ -32,12 +34,73 @@ import {
 	Spinner,
 	Textarea,
 	toast,
+	useForm,
+	z,
+	zodResolver,
 } from "@semoss/ui/next";
 import { uploadFile } from "@/api";
 import { useRootStore } from "@/hooks";
 import { useNavigate } from "@/hooks/useNavigate";
 import { EngineFormHeader } from "../shared/engine-form-header";
 import { computeVisibility } from "../shared/import-form.utils";
+
+// Builds a per-field zod schema from the dynamic field config driving this form.
+type FunctionFormFieldConfig = {
+	key: string;
+	type: string;
+	label?: string;
+	required?: boolean;
+	rules?: { pattern?: { value: RegExp; message?: string } };
+};
+
+const buildFieldSchema = (field: FunctionFormFieldConfig) => {
+	switch (field.type) {
+		case "checkbox":
+			return z.boolean().optional();
+		case "parameter-list":
+			return z.array(
+				z.object({
+					parameterName: z.string().optional(),
+					parameterType: z.string().optional(),
+					parameterDescription: z.string().optional(),
+				}),
+			);
+		case "string-list":
+			return z.array(z.string());
+		case "file-upload": {
+			const file = z.instanceof(File, {
+				message: `${field.label ?? "A file"} is required`,
+			});
+			return field.required ? file : file.optional().nullable();
+		}
+		default: {
+			let stringSchema = z.string();
+			if (field.rules?.pattern) {
+				stringSchema = stringSchema.regex(
+					field.rules.pattern.value,
+					field.rules.pattern.message ?? "Invalid value",
+				);
+			}
+			return field.required
+				? stringSchema.min(
+						1,
+						`${field.label ?? "This field"} is required`,
+					)
+				: stringSchema.optional();
+		}
+	}
+};
+
+const buildFunctionFormSchema = (allFields: FunctionFormFieldConfig[]) =>
+	z.object(
+		allFields.reduce<Record<string, ReturnType<typeof buildFieldSchema>>>(
+			(acc, field) => {
+				acc[field.key] = buildFieldSchema(field);
+				return acc;
+			},
+			{},
+		),
+	);
 
 export const FunctionForm = ({
 	title,
@@ -63,23 +126,27 @@ export const FunctionForm = ({
 	const debounceTimeoutsRef = useRef<
 		Record<string, ReturnType<typeof setTimeout>>
 	>({});
-	const fileInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
 
-	const {
-		control,
-		handleSubmit,
-		watch,
-		setValue,
-		setFocus,
-		formState,
-		setError,
-		clearErrors,
-	} = useForm({
+	const allFormFields = useMemo(
+		() => [...fields, ...(advanced ?? [])],
+		[fields, advanced],
+	);
+	const functionFormSchema = useMemo(
+		() => buildFunctionFormSchema(allFormFields),
+		[allFormFields],
+	);
+
+	const form = useForm({
+		resolver: zodResolver(functionFormSchema),
 		mode: "onChange",
 		reValidateMode: "onChange",
-		defaultValues: [...fields].reduce((acc, f) => {
+		defaultValues: allFormFields.reduce((acc, f) => {
 			if (f.type === "parameter-list" || f.type === "string-list") {
 				acc[f.key] = Array.isArray(f.value) ? f.value : [];
+			} else if (f.type === "file-upload") {
+				acc[f.key] = f.value instanceof File ? f.value : null;
+			} else if (f.type === "checkbox") {
+				acc[f.key] = typeof f.value === "boolean" ? f.value : false;
 			} else {
 				acc[f.key] = f.value || "";
 			}
@@ -93,7 +160,6 @@ export const FunctionForm = ({
 	const defaultFields = resolvedFields;
 	const advancedFields = advanced;
 	const categoryDescriptions = categoryDescription;
-	const [loading, setLoading] = useState(false);
 
 	//  Group fields by category
 	const grouped = defaultFields.reduce((acc, f) => {
@@ -102,7 +168,9 @@ export const FunctionForm = ({
 		return acc;
 	}, {});
 
-	const onFormSubmit = async (formData) => {
+	// The field shape is fully dynamic (driven by the `fields`/`advanced` props),
+	// so the zod-inferred type can't narrow per key; treat values loosely here.
+	const handleSubmit = async (formData) => {
 		const { FILE, ...newFormData } = formData;
 
 		// Structured list fields are kept as arrays in form state for the UI,
@@ -117,11 +185,10 @@ export const FunctionForm = ({
 			}
 		});
 
-		setLoading(true);
 		let pixel = `CreateRestFunctionEngine(function=["${
 			formData.NAME
 		}"],functionDetails=[${JSON.stringify(newFormData)}]);`;
-		if (FILE !== "") {
+		if (FILE) {
 			try {
 				const uploadedFiles = await uploadFile(
 					[FILE],
@@ -130,7 +197,6 @@ export const FunctionForm = ({
 
 				if (!uploadedFiles || !Array.isArray(uploadedFiles)) {
 					toast.error("Upload failed or returned invalid response.");
-					setLoading(false);
 					return;
 				}
 				pixel = pixel.replace(
@@ -139,31 +205,26 @@ export const FunctionForm = ({
 				);
 			} catch {
 				toast.error("Upload failed or returned invalid response.");
-				setLoading(false);
 				return;
 			}
 		}
-		monolithStore.runQuery(pixel).then(async (response) => {
-			const pixelOutput = response.pixelReturn[0].output,
-				operationType = response.pixelReturn[0].operationType;
 
-			if (operationType.indexOf("ERROR") > -1) {
-				toast.error(pixelOutput as string);
-				setLoading(false);
-				return;
-			}
-			toast.success("Successfully added function database to catalog");
+		const response = await monolithStore.runQuery(pixel);
+		const pixelOutput = response.pixelReturn[0].output;
+		const operationType = response.pixelReturn[0].operationType;
 
-			{
-				// engine_id is the current key; database_id is the legacy fallback
-				const o = pixelOutput as {
-					engine_id?: string;
-					database_id?: string;
-				};
-				navigate(`/function/${o.engine_id || o.database_id}`);
-			}
-			setLoading(false);
-		});
+		if (operationType.indexOf("ERROR") > -1) {
+			toast.error(pixelOutput as string);
+			return;
+		}
+		toast.success("Successfully added function database to catalog");
+
+		// engine_id is the current key; database_id is the legacy fallback
+		const o = pixelOutput as {
+			engine_id?: string;
+			database_id?: string;
+		};
+		navigate(`/function/${o.engine_id || o.database_id}`);
 	};
 
 	useEffect(() => {
@@ -171,8 +232,8 @@ export const FunctionForm = ({
 			let pixel = f.pixel;
 			let optionsPixel = f.optionRule?.pixel;
 
-			fieldsToWatch.forEach((name: keyof typeof watch) => {
-				const val = watch(name);
+			fieldsToWatch.forEach((name: string) => {
+				const val = form.watch(name);
 				if (watchedFieldRef.current[name] !== null && val) {
 					pixel = pixel?.replaceAll(`<${name}>`, val);
 					optionsPixel = optionsPixel?.replaceAll(`<${name}>`, val);
@@ -221,7 +282,7 @@ export const FunctionForm = ({
 		}
 
 		if (type === "value") {
-			setValue(key, output);
+			form.setValue(key, output);
 			return;
 		}
 
@@ -259,7 +320,7 @@ export const FunctionForm = ({
 		}
 
 		if ((output as { exists: boolean }).exists) {
-			setFocus(field.key);
+			form.setFocus(field.key);
 			setIsValidDatabaseName(true);
 			return false;
 		}
@@ -268,853 +329,664 @@ export const FunctionForm = ({
 		return true;
 	};
 
-	// Helper functions for file upload
-	const onFileUpload = (
-		files: File | File[],
-		fieldOnChange: (value: File[]) => void,
-		currentValue: File | File[],
-	) => {
-		const fileArray = Array.isArray(files) ? files : [files];
-
-		// Get current files from field value
-		const currentFiles = Array.isArray(currentValue)
-			? currentValue
-			: currentValue
-				? [currentValue]
-				: [];
-		const existingFileNames = currentFiles.map((f: File) => f.name);
-		const newFiles = fileArray.filter(
-			(f) => !existingFileNames.includes(f.name),
-		);
-		const combined = [...currentFiles, ...newFiles];
-
-		// Update form value with validation
-		fieldOnChange(combined);
-	};
-
-	const removeFile = (
-		index: number,
-		fieldOnChange: (value: File[]) => void,
-		currentValue: File | File[],
-	) => {
-		const currentFiles = Array.isArray(currentValue)
-			? currentValue
-			: currentValue
-				? [currentValue]
-				: [];
-		const updated = currentFiles.filter((_, i) => i !== index);
-
-		// Update form value with validation
-		fieldOnChange(updated);
-	};
-
-	const handleFileChange = (
-		e: React.ChangeEvent<HTMLInputElement>,
-		fieldOnChange: (value: File[]) => void,
-		currentValue: File | File[],
-	) => {
-		const files = e.target.files;
-		if (files && files?.length > 0) {
-			const fileArray = Array.from(files);
-			onFileUpload(fileArray, fieldOnChange, currentValue);
+	const renderControllerField = (val) => {
+		if (val.type === "file-upload") {
+			return (
+				<FormFileDropzone
+					key={val.key}
+					name={val.key}
+					label={
+						<>
+							{val.label}
+							{val.required && (
+								<span className="text-destructive"> *</span>
+							)}
+						</>
+					}
+					description={
+						val.options?.extensions
+							? `Supports ${val.options.extensions.join(", ")} files`
+							: "Drop your file here or click to browse"
+					}
+					extensions={val.options?.extensions}
+					disabled={val.disabled}
+					className={computeVisibility(val, {}) ? "" : "hidden"}
+					data-testid={`function-form-input-${val.key}`}
+				/>
+			);
 		}
-		// Reset input value to allow re-selecting the same file
-		e.target.value = "";
-	};
 
-	const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
-		e.preventDefault();
-		e.stopPropagation();
-	};
-
-	const handleDrop = (
-		e: React.DragEvent<HTMLDivElement>,
-		fieldOnChange: (value: File[]) => void,
-		currentValue: File | File[],
-	) => {
-		e.preventDefault();
-		e.stopPropagation();
-		const files = e.dataTransfer.files;
-		if (files && files?.length > 0) {
-			const fileArray = Array.from(files);
-			onFileUpload(fileArray, fieldOnChange, currentValue);
-		}
-	};
-
-	const renderControllerField = (val) => (
-		<Controller
-			key={val.key}
-			name={val.key}
-			control={control}
-			rules={{
-				required: val?.required,
-				pattern: val.rules?.pattern,
-			}}
-			render={({ field, fieldState: { error } }) => {
-				switch (val.type) {
-					case "text":
-						return (
-							<Field
-								className={
-									computeVisibility(val, {}) ? "" : "hidden"
-								}
-							>
-								<FieldLabel htmlFor={val.key}>
-									{val.label}
-									{val?.required && (
-										<span className="text-destructive">
-											*
-										</span>
-									)}
-								</FieldLabel>
-								<Input
-									{...field}
-									id={val.key}
-									disabled={val.disabled}
-									data-testid={`function-form-input-${val.key}`}
-									onChange={(e) => {
-										field.onChange(e);
-										if (val.rules?.custom) {
-											if (
-												debounceTimeoutsRef.current[
-													val.key
-												]
-											) {
-												clearTimeout(
+		return (
+			<FormField
+				key={val.key}
+				name={val.key}
+				control={form.control}
+				render={({ field, fieldState: { error } }) => {
+					switch (val.type) {
+						case "text":
+							return (
+								<Field
+									className={
+										computeVisibility(val, {})
+											? ""
+											: "hidden"
+									}
+								>
+									<FieldLabel htmlFor={val.key}>
+										{val.label}
+										{val?.required && (
+											<span className="text-destructive">
+												*
+											</span>
+										)}
+									</FieldLabel>
+									<Input
+										{...field}
+										id={val.key}
+										disabled={val.disabled}
+										data-testid={`function-form-input-${val.key}`}
+										onChange={(e) => {
+											field.onChange(e);
+											if (val.rules?.custom) {
+												if (
 													debounceTimeoutsRef.current[
 														val.key
-													],
-												);
-											}
-											debounceTimeoutsRef.current[
-												val.key
-											] = setTimeout(async () => {
-												const value = e.target.value;
-												if (
-													!val.rules.pattern.value.test(
-														value,
-													)
+													]
 												) {
-													return;
-												}
-												const isValid =
-													await validateFormField(
-														val,
-														value,
+													clearTimeout(
+														debounceTimeoutsRef
+															.current[val.key],
 													);
-												if (!isValid) {
-													setError(val.key, {
-														message:
-															val.rules?.custom
-																?.message ||
-															"Database name already exists.",
-													});
-												} else {
-													clearErrors(val.key);
 												}
-											}, 300);
-										}
-									}}
-								/>
-								{error ? (
-									<FieldDescription className="text-destructive">
-										{error.message ||
-											(val.rules?.pattern?.message ??
-												val.helperText)}
-									</FieldDescription>
-								) : (
-									val.helperText && (
-										<FieldDescription>
-											{val.helperText}
-										</FieldDescription>
-									)
-								)}
-							</Field>
-						);
-
-					case "password":
-						return (
-							<Field>
-								<FieldLabel htmlFor={val.key}>
-									{val.label}
-									{val?.required && (
-										<span className="text-destructive">
-											*
-										</span>
+												debounceTimeoutsRef.current[
+													val.key
+												] = setTimeout(async () => {
+													const value =
+														e.target.value;
+													if (
+														!val.rules.pattern.value.test(
+															value,
+														)
+													) {
+														return;
+													}
+													const isValid =
+														await validateFormField(
+															val,
+															value,
+														);
+													if (!isValid) {
+														form.setError(val.key, {
+															message:
+																val.rules
+																	?.custom
+																	?.message ||
+																"Database name already exists.",
+														});
+													} else {
+														form.clearErrors(
+															val.key,
+														);
+													}
+												}, 300);
+											}
+										}}
+									/>
+									{error ? (
+										<FieldError>{error.message}</FieldError>
+									) : (
+										val.helperText && (
+											<FieldDescription>
+												{val.helperText}
+											</FieldDescription>
+										)
 									)}
-								</FieldLabel>
-								<Input
-									{...field}
-									id={val.key}
-									type="password"
-									disabled={val.disabled}
-									data-testid={`function-form-input-${val.key}`}
-									autoComplete="new-password"
-								/>
-								{error ? (
-									<FieldDescription className="text-destructive">
-										{error.message ||
-											(val.rules?.pattern?.message ??
-												val.helperText)}
-									</FieldDescription>
-								) : (
-									val.helperText && (
-										<FieldDescription>
-											{val.helperText}
-										</FieldDescription>
-									)
-								)}
-							</Field>
-						);
+								</Field>
+							);
 
-					case "number":
-						return (
-							<Field
-								className={
-									computeVisibility(val, {}) ? "" : "hidden"
-								}
-							>
-								<FieldLabel htmlFor={val.key}>
-									{val.label}
-									{val?.required && (
-										<span className="text-destructive">
-											*
-										</span>
-									)}
-								</FieldLabel>
-								<Input
-									{...field}
-									id={val.key}
-									type="number"
-									disabled={val.disabled}
-									data-testid={`function-form-input-${val.key}`}
-								/>
-								{error ? (
-									<FieldDescription className="text-destructive">
-										{error.message ||
-											(val.rules?.pattern?.message ??
-												val.helperText)}
-									</FieldDescription>
-								) : (
-									val.helperText && (
-										<FieldDescription>
-											{val.helperText}
-										</FieldDescription>
-									)
-								)}
-							</Field>
-						);
-
-					case "select":
-						return (
-							<Field
-								className={
-									computeVisibility(val, {}) ? "" : "hidden"
-								}
-							>
-								<FieldLabel htmlFor={val.key}>
-									{val.label}
-									{val?.required && (
-										<span className="text-destructive">
-											*
-										</span>
-									)}
-								</FieldLabel>
-								<Select
-									value={field.value || ""}
-									onValueChange={(value) => {
-										field.onChange(value);
-									}}
-									disabled={val.disabled}
-								>
-									<SelectTrigger
+						case "password":
+							return (
+								<Field>
+									<FieldLabel htmlFor={val.key}>
+										{val.label}
+										{val?.required && (
+											<span className="text-destructive">
+												*
+											</span>
+										)}
+									</FieldLabel>
+									<Input
+										{...field}
 										id={val.key}
-										className="w-full"
+										type="password"
+										disabled={val.disabled}
+										data-testid={`function-form-input-${val.key}`}
+										autoComplete="new-password"
+									/>
+									{error ? (
+										<FieldError>{error.message}</FieldError>
+									) : (
+										val.helperText && (
+											<FieldDescription>
+												{val.helperText}
+											</FieldDescription>
+										)
+									)}
+								</Field>
+							);
+
+						case "number":
+							return (
+								<Field
+									className={
+										computeVisibility(val, {})
+											? ""
+											: "hidden"
+									}
+								>
+									<FieldLabel htmlFor={val.key}>
+										{val.label}
+										{val?.required && (
+											<span className="text-destructive">
+												*
+											</span>
+										)}
+									</FieldLabel>
+									<Input
+										{...field}
+										id={val.key}
+										type="number"
+										disabled={val.disabled}
+										data-testid={`function-form-input-${val.key}`}
+									/>
+									{error ? (
+										<FieldError>{error.message}</FieldError>
+									) : (
+										val.helperText && (
+											<FieldDescription>
+												{val.helperText}
+											</FieldDescription>
+										)
+									)}
+								</Field>
+							);
+
+						case "select":
+							return (
+								<Field
+									className={
+										computeVisibility(val, {})
+											? ""
+											: "hidden"
+									}
+								>
+									<FieldLabel htmlFor={val.key}>
+										{val.label}
+										{val?.required && (
+											<span className="text-destructive">
+												*
+											</span>
+										)}
+									</FieldLabel>
+									<Select
+										value={field.value || ""}
+										onValueChange={(value) => {
+											field.onChange(value);
+										}}
+										disabled={val.disabled}
+									>
+										<SelectTrigger
+											id={val.key}
+											className="w-full"
+											data-testid={`function-form-input-${val.key}`}
+										>
+											<SelectValue
+												placeholder={`Select ${val.label}`}
+											/>
+										</SelectTrigger>
+										<SelectContent>
+											{(Array.isArray(val?.options)
+												? val &&
+													Array.isArray(val.options)
+													? val.options
+													: []
+												: []
+											).map((opt) => (
+												<SelectItem
+													key={opt.value}
+													value={opt.value}
+													data-testid={`function-form-option-${val.key}-${opt.value}`}
+												>
+													{opt.display}
+												</SelectItem>
+											))}
+										</SelectContent>
+									</Select>
+									{error ? (
+										<FieldError>{error.message}</FieldError>
+									) : (
+										val.helperText && (
+											<FieldDescription>
+												{val.helperText}
+											</FieldDescription>
+										)
+									)}
+								</Field>
+							);
+
+						case "radio":
+							return (
+								<Field
+									className={
+										computeVisibility(val, {})
+											? ""
+											: "hidden"
+									}
+								>
+									<FieldLabel>
+										{val.label}
+										{val?.required && (
+											<span className="text-destructive">
+												*
+											</span>
+										)}
+									</FieldLabel>
+									<RadioGroup
+										value={field.value || ""}
+										onValueChange={(value) =>
+											field.onChange(value)
+										}
+										className="flex flex-wrap gap-4"
 										data-testid={`function-form-input-${val.key}`}
 									>
-										<SelectValue
-											placeholder={`Select ${val.label}`}
-										/>
-									</SelectTrigger>
-									<SelectContent>
-										{(Array.isArray(val?.options)
-											? val && Array.isArray(val.options)
-												? val.options
-												: []
-											: []
-										).map((opt) => (
-											<SelectItem
+										{val.options.options.map((opt) => (
+											<div
 												key={opt.value}
-												value={opt.value}
-												data-testid={`function-form-option-${val.key}-${opt.value}`}
+												className="flex items-center gap-2"
 											>
-												{opt.display}
-											</SelectItem>
+												<RadioGroupItem
+													value={opt.value}
+													id={`${val.key}-${opt.value}`}
+													data-testid={`function-form-radio-${val.key}-${opt.value}`}
+												/>
+												<Label
+													htmlFor={`${val.key}-${opt.value}`}
+													className="cursor-pointer"
+												>
+													{opt.display}
+												</Label>
+											</div>
 										))}
-									</SelectContent>
-								</Select>
-								{error ? (
-									<FieldDescription className="text-destructive">
-										{error.message ||
-											(val.rules?.pattern?.message ??
-												val.helperText)}
-									</FieldDescription>
-								) : (
-									val.helperText && (
-										<FieldDescription>
-											{val.helperText}
-										</FieldDescription>
-									)
-								)}
-							</Field>
-						);
-
-					case "radio":
-						return (
-							<Field
-								className={
-									computeVisibility(val, {}) ? "" : "hidden"
-								}
-							>
-								<FieldLabel>
-									{val.label}
-									{val?.required && (
-										<span className="text-destructive">
-											*
-										</span>
+									</RadioGroup>
+									{error && (
+										<FieldError>{error.message}</FieldError>
 									)}
-								</FieldLabel>
-								<RadioGroup
-									value={field.value || ""}
-									onValueChange={(value) =>
-										field.onChange(value)
-									}
-									className="flex flex-wrap gap-4"
-									data-testid={`function-form-input-${val.key}`}
-								>
-									{val.options.options.map((opt) => (
-										<div
-											key={opt.value}
-											className="flex items-center gap-2"
-										>
-											<RadioGroupItem
-												value={opt.value}
-												id={`${val.key}-${opt.value}`}
-												data-testid={`function-form-radio-${val.key}-${opt.value}`}
-											/>
-											<Label
-												htmlFor={`${val.key}-${opt.value}`}
-												className="cursor-pointer"
-											>
-												{opt.display}
-											</Label>
-										</div>
-									))}
-								</RadioGroup>
-								{error && (
-									<FieldDescription className="text-destructive">
-										{error.message ||
-											(val.rules?.pattern?.message ??
-												val.helperText)}
-									</FieldDescription>
-								)}
-							</Field>
-						);
+								</Field>
+							);
 
-					case "file-upload":
-						return (
-							<div
-								className="flex flex-col gap-2"
-								data-testid={`function-form-field-${val.key}`}
-							>
-								<P>
-									{val.label}
-									{val.required && (
-										<span className="text-destructive">
-											{" "}
-											*
-										</span>
-									)}
-								</P>
+						case "checkbox":
+							return (
 								<div
-									className="flex min-h-[200px] cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-input border-dashed bg-secondary p-6 transition-colors hover:border-primary hover:bg-accent"
-									onClick={() =>
-										fileInputRefs.current[val.key]?.click()
-									}
-									onDragOver={handleDragOver}
-									onDrop={(e) =>
-										handleDrop(
-											e,
-											field.onChange,
-											field.value,
-										)
+									className={
+										computeVisibility(val, {})
+											? "flex items-center gap-2"
+											: "hidden"
 									}
 								>
-									<input
-										ref={(el) => {
-											fileInputRefs.current[val.key] = el;
-										}}
-										type="file"
-										accept={
-											val.options?.extensions?.join(
-												",",
-											) || "*"
+									<Checkbox
+										id={val.key}
+										checked={
+											field.value ? field.value : false
 										}
-										multiple={false}
-										className="hidden"
-										onChange={(e) =>
-											handleFileChange(
-												e,
-												field.onChange,
-												field.value,
-											)
+										onCheckedChange={(value) =>
+											field.onChange(value)
 										}
 										disabled={val.disabled}
 										data-testid={`function-form-input-${val.key}`}
 									/>
-									<div className="text-center">
-										<P className="font-medium text-foreground">
-											Drop your file here or click to
-											browse
-										</P>
-										<P className="text-muted-foreground text-sm">
-											{val.options?.extensions
-												? `Supports ${val.options.extensions.join(", ")} files`
-												: "All file types supported"}
-										</P>
-									</div>
+									<Label
+										htmlFor={val.key}
+										className="cursor-pointer"
+									>
+										{val.label}
+										{val?.required && (
+											<span className="text-destructive">
+												*
+											</span>
+										)}
+									</Label>
+									{error && (
+										<FieldError>{error.message}</FieldError>
+									)}
 								</div>
-
-								{/* File List */}
-								{field.value &&
-									Array.isArray(field.value) &&
-									field.value.length > 0 && (
-										<div className="mt-2 flex flex-col gap-2">
-											<P className="font-medium text-foreground text-sm">
-												{field.value.length} file(s)
-												selected:
-											</P>
-											<div className="flex max-h-[200px] flex-col gap-1 overflow-auto rounded-md border border-border bg-muted/30 p-2">
-												{field.value.map(
-													(file, index) => (
-														<div
-															key={`${file.name}-${index}`}
-															className="flex items-center justify-between gap-2 rounded-md bg-background px-3 py-2 transition-colors hover:bg-accent"
-															data-testid={`uploaded-file-item-${index}`}
-														>
-															<div className="flex min-w-0 flex-1 items-center gap-2">
-																<div className="min-w-0 flex-1">
-																	<P className="truncate text-foreground text-sm">
-																		{
-																			file.name
-																		}
-																	</P>
-																	<P className="text-muted-foreground text-xs">
-																		{(
-																			file.size /
-																			1024
-																		).toFixed(
-																			2,
-																		)}{" "}
-																		KB
-																	</P>
-																</div>
-															</div>
-															<Button
-																type="button"
-																variant="ghost"
-																size="icon"
-																onClick={(
-																	e,
-																) => {
-																	e.stopPropagation();
-																	removeFile(
-																		index,
-																		field.onChange,
-																		field.value,
-																	);
-																}}
-																className="size-8 shrink-0 hover:bg-destructive/10 hover:text-destructive"
-																data-testid={`remove-file-btn-${index}`}
-															>
-																<X className="size-4" />
-															</Button>
-														</div>
-													),
-												)}
-											</div>
-										</div>
-									)}
-
-								{error && (
-									<P
-										className="text-destructive text-sm"
-										data-testid={`function-form-error-${val.key}`}
-									>
-										{error.message ||
-											(val.rules?.pattern?.message ??
-												val.helperText)}
-									</P>
-								)}
-							</div>
-						);
-					case "checkbox":
-						return (
-							<div
-								className={
-									computeVisibility(val, {})
-										? "flex items-center gap-2"
-										: "hidden"
-								}
-							>
-								<Checkbox
-									id={val.key}
-									checked={field.value ? field.value : false}
-									onCheckedChange={(value) =>
-										field.onChange(value)
-									}
-									disabled={val.disabled}
-									data-testid={`function-form-input-${val.key}`}
-								/>
-								<Label
-									htmlFor={val.key}
-									className="cursor-pointer"
-								>
-									{val.label}
-									{val?.required && (
-										<span className="text-destructive">
-											*
-										</span>
-									)}
-								</Label>
-								{error && (
-									<P
-										className="text-destructive text-sm"
-										data-testid={`function-form-error-${val.key}`}
-									>
-										{error.message}
-									</P>
-								)}
-							</div>
-						);
-					case "tags":
-						return (
-							<Field
-								className={
-									computeVisibility(val, {}) ? "" : "hidden"
-								}
-							>
-								<FieldLabel htmlFor={val.key}>
-									{val.label}
-									{val?.required && (
-										<span className="text-destructive">
-											*
-										</span>
-									)}
-								</FieldLabel>
-								<Textarea
-									{...field}
-									id={val.key}
-									placeholder='Press "Enter" to add tag'
-									disabled={val.disabled}
-									value={
-										Array.isArray(field.value)
-											? field.value.join(", ")
-											: field.value || ""
-									}
-									onChange={(e) => {
-										const tags = e.target.value
-											.split(",")
-											.map((tag) => tag.trim())
-											.filter((tag) => tag !== "");
-										field.onChange(tags);
-									}}
-									data-testid={`function-form-input-${val.key}`}
-								/>
-								{error ? (
-									<FieldDescription className="text-destructive">
-										{error.message ||
-											(val.rules?.pattern?.message ??
-												val.helperText)}
-									</FieldDescription>
-								) : (
-									val.helperText && (
-										<FieldDescription>
-											{val.helperText}
-										</FieldDescription>
-									)
-								)}
-							</Field>
-						);
-
-					case "parameter-list": {
-						const rows: Array<{
-							parameterName?: string;
-							parameterType?: string;
-							parameterDescription?: string;
-						}> = Array.isArray(field.value) ? field.value : [];
-						const updateRow = (
-							idx: number,
-							patch: Record<string, string>,
-						) => {
-							const next = rows.map((r, i) =>
-								i === idx ? { ...r, ...patch } : r,
 							);
-							field.onChange(next);
-						};
-						return (
-							<Field
-								className={
-									computeVisibility(val, {}) ? "" : "hidden"
-								}
-							>
-								<FieldLabel>
-									{val.label}
-									{val?.required && (
-										<span className="text-destructive">
-											*
-										</span>
-									)}
-								</FieldLabel>
-								<div
-									className="flex flex-col gap-2"
-									data-testid={`function-form-input-${val.key}`}
+						case "tags":
+							return (
+								<Field
+									className={
+										computeVisibility(val, {})
+											? ""
+											: "hidden"
+									}
 								>
-									{rows.length === 0 && (
-										<Muted className="text-sm">
-											No parameters defined.
-										</Muted>
-									)}
-									{rows.map((row, idx) => (
-										<div
-											// biome-ignore lint/suspicious/noArrayIndexKey: row order is stable
-											key={idx}
-											className="flex flex-col gap-2 rounded-md border border-input p-2 sm:flex-row sm:items-start"
-										>
-											<Input
-												className="flex-1"
-												placeholder="Name"
-												value={row.parameterName ?? ""}
-												disabled={val.disabled}
-												onChange={(e) =>
-													updateRow(idx, {
-														parameterName:
-															e.target.value,
-													})
-												}
-												data-testid={`function-form-input-${val.key}-name-${idx}`}
-											/>
-											<Select
-												value={
-													row.parameterType ||
-													"string"
-												}
-												onValueChange={(v) =>
-													updateRow(idx, {
-														parameterType: v,
-													})
-												}
-												disabled={val.disabled}
-											>
-												<SelectTrigger
-													className="w-full sm:w-32"
-													data-testid={`function-form-input-${val.key}-type-${idx}`}
-												>
-													<SelectValue placeholder="Type" />
-												</SelectTrigger>
-												<SelectContent>
-													{[
-														"string",
-														"number",
-														"integer",
-														"boolean",
-														"object",
-														"array",
-													].map((t) => (
-														<SelectItem
-															key={t}
-															value={t}
-														>
-															{t}
-														</SelectItem>
-													))}
-												</SelectContent>
-											</Select>
-											<Input
-												className="flex-1"
-												placeholder="Description"
-												value={
-													row.parameterDescription ??
-													""
-												}
-												disabled={val.disabled}
-												onChange={(e) =>
-													updateRow(idx, {
-														parameterDescription:
-															e.target.value,
-													})
-												}
-												data-testid={`function-form-input-${val.key}-desc-${idx}`}
-											/>
-											<Button
-												type="button"
-												variant="ghost"
-												size="icon"
-												disabled={val.disabled}
-												onClick={() =>
-													field.onChange(
-														rows.filter(
-															(_, i) => i !== idx,
-														),
-													)
-												}
-												data-testid={`function-form-remove-${val.key}-${idx}`}
-											>
-												<X className="size-4" />
-											</Button>
-										</div>
-									))}
-									<Button
-										type="button"
-										variant="outline"
-										size="sm"
-										className="self-start"
+									<FieldLabel htmlFor={val.key}>
+										{val.label}
+										{val?.required && (
+											<span className="text-destructive">
+												*
+											</span>
+										)}
+									</FieldLabel>
+									<Textarea
+										{...field}
+										id={val.key}
+										placeholder='Press "Enter" to add tag'
 										disabled={val.disabled}
-										onClick={() =>
-											field.onChange([
-												...rows,
-												{
-													parameterName: "",
-													parameterType: "string",
-													parameterDescription: "",
-												},
-											])
+										value={
+											Array.isArray(field.value)
+												? field.value.join(", ")
+												: field.value || ""
 										}
-										data-testid={`function-form-add-${val.key}`}
-									>
-										+ Add parameter
-									</Button>
-								</div>
-								{error ? (
-									<FieldDescription className="text-destructive">
-										{error.message ?? val.helperText}
-									</FieldDescription>
-								) : (
-									val.helperText && (
-										<FieldDescription>
-											{val.helperText}
-										</FieldDescription>
-									)
-								)}
-							</Field>
-						);
-					}
-					case "string-list": {
-						const items: string[] = Array.isArray(field.value)
-							? field.value
-							: [];
-						return (
-							<Field
-								className={
-									computeVisibility(val, {}) ? "" : "hidden"
-								}
-							>
-								<FieldLabel>
-									{val.label}
-									{val?.required && (
-										<span className="text-destructive">
-											*
-										</span>
+										onChange={(e) => {
+											const tags = e.target.value
+												.split(",")
+												.map((tag) => tag.trim())
+												.filter((tag) => tag !== "");
+											field.onChange(tags);
+										}}
+										data-testid={`function-form-input-${val.key}`}
+									/>
+									{error ? (
+										<FieldError>{error.message}</FieldError>
+									) : (
+										val.helperText && (
+											<FieldDescription>
+												{val.helperText}
+											</FieldDescription>
+										)
 									)}
-								</FieldLabel>
-								<div
-									className="flex flex-col gap-2"
-									data-testid={`function-form-input-${val.key}`}
-								>
-									{items.length === 0 && (
-										<Muted className="text-sm">
-											No values defined.
-										</Muted>
-									)}
-									{items.map((item, idx) => (
-										<div
-											// biome-ignore lint/suspicious/noArrayIndexKey: row order is stable
-											key={idx}
-											className="flex items-start gap-2"
-										>
-											<Input
-												className="flex-1"
-												placeholder={
-													val.placeholder ??
-													"Parameter name"
-												}
-												value={item ?? ""}
-												disabled={val.disabled}
-												onChange={(e) => {
-													const next = items.map(
-														(s, i) =>
-															i === idx
-																? e.target.value
-																: s,
-													);
-													field.onChange(next);
-												}}
-												data-testid={`function-form-input-${val.key}-${idx}`}
-											/>
-											<Button
-												type="button"
-												variant="ghost"
-												size="icon"
-												disabled={val.disabled}
-												onClick={() =>
-													field.onChange(
-														items.filter(
-															(_, i) => i !== idx,
-														),
-													)
-												}
-												data-testid={`function-form-remove-${val.key}-${idx}`}
-											>
-												<X className="size-4" />
-											</Button>
-										</div>
-									))}
-									<Button
-										type="button"
-										variant="outline"
-										size="sm"
-										className="self-start"
-										disabled={val.disabled}
-										onClick={() =>
-											field.onChange([...items, ""])
-										}
-										data-testid={`function-form-add-${val.key}`}
-									>
-										+ Add
-									</Button>
-								</div>
-								{error ? (
-									<FieldDescription className="text-destructive">
-										{error.message ?? val.helperText}
-									</FieldDescription>
-								) : (
-									val.helperText && (
-										<FieldDescription>
-											{val.helperText}
-										</FieldDescription>
-									)
-								)}
-							</Field>
-						);
-					}
-					default:
-						return null;
-				}
-			}}
-		/>
-	);
+								</Field>
+							);
 
-	if (loading) {
+						case "parameter-list": {
+							const rows: Array<{
+								parameterName?: string;
+								parameterType?: string;
+								parameterDescription?: string;
+							}> = Array.isArray(field.value) ? field.value : [];
+							const updateRow = (
+								idx: number,
+								patch: Record<string, string>,
+							) => {
+								const next = rows.map((r, i) =>
+									i === idx ? { ...r, ...patch } : r,
+								);
+								field.onChange(next);
+							};
+							return (
+								<Field
+									className={
+										computeVisibility(val, {})
+											? ""
+											: "hidden"
+									}
+								>
+									<FieldLabel>
+										{val.label}
+										{val?.required && (
+											<span className="text-destructive">
+												*
+											</span>
+										)}
+									</FieldLabel>
+									<div
+										className="flex flex-col gap-2"
+										data-testid={`function-form-input-${val.key}`}
+									>
+										{rows.length === 0 && (
+											<Muted className="text-sm">
+												No parameters defined.
+											</Muted>
+										)}
+										{rows.map((row, idx) => (
+											<div
+												// biome-ignore lint/suspicious/noArrayIndexKey: row order is stable
+												key={idx}
+												className="flex flex-col gap-2 rounded-md border border-input p-2 sm:flex-row sm:items-start"
+											>
+												<Input
+													className="flex-1"
+													placeholder="Name"
+													value={
+														row.parameterName ?? ""
+													}
+													disabled={val.disabled}
+													onChange={(e) =>
+														updateRow(idx, {
+															parameterName:
+																e.target.value,
+														})
+													}
+													data-testid={`function-form-input-${val.key}-name-${idx}`}
+												/>
+												<Select
+													value={
+														row.parameterType ||
+														"string"
+													}
+													onValueChange={(v) =>
+														updateRow(idx, {
+															parameterType: v,
+														})
+													}
+													disabled={val.disabled}
+												>
+													<SelectTrigger
+														className="w-full sm:w-32"
+														data-testid={`function-form-input-${val.key}-type-${idx}`}
+													>
+														<SelectValue placeholder="Type" />
+													</SelectTrigger>
+													<SelectContent>
+														{[
+															"string",
+															"number",
+															"integer",
+															"boolean",
+															"object",
+															"array",
+														].map((t) => (
+															<SelectItem
+																key={t}
+																value={t}
+															>
+																{t}
+															</SelectItem>
+														))}
+													</SelectContent>
+												</Select>
+												<Input
+													className="flex-1"
+													placeholder="Description"
+													value={
+														row.parameterDescription ??
+														""
+													}
+													disabled={val.disabled}
+													onChange={(e) =>
+														updateRow(idx, {
+															parameterDescription:
+																e.target.value,
+														})
+													}
+													data-testid={`function-form-input-${val.key}-desc-${idx}`}
+												/>
+												<Button
+													type="button"
+													variant="ghost"
+													size="icon"
+													disabled={val.disabled}
+													onClick={() =>
+														field.onChange(
+															rows.filter(
+																(_, i) =>
+																	i !== idx,
+															),
+														)
+													}
+													data-testid={`function-form-remove-${val.key}-${idx}`}
+												>
+													<X className="size-4" />
+												</Button>
+											</div>
+										))}
+										<Button
+											type="button"
+											variant="outline"
+											size="sm"
+											className="self-start"
+											disabled={val.disabled}
+											onClick={() =>
+												field.onChange([
+													...rows,
+													{
+														parameterName: "",
+														parameterType: "string",
+														parameterDescription:
+															"",
+													},
+												])
+											}
+											data-testid={`function-form-add-${val.key}`}
+										>
+											+ Add parameter
+										</Button>
+									</div>
+									{error ? (
+										<FieldError>
+											{error.message ?? val.helperText}
+										</FieldError>
+									) : (
+										val.helperText && (
+											<FieldDescription>
+												{val.helperText}
+											</FieldDescription>
+										)
+									)}
+								</Field>
+							);
+						}
+						case "string-list": {
+							const items: string[] = Array.isArray(field.value)
+								? field.value
+								: [];
+							return (
+								<Field
+									className={
+										computeVisibility(val, {})
+											? ""
+											: "hidden"
+									}
+								>
+									<FieldLabel>
+										{val.label}
+										{val?.required && (
+											<span className="text-destructive">
+												*
+											</span>
+										)}
+									</FieldLabel>
+									<div
+										className="flex flex-col gap-2"
+										data-testid={`function-form-input-${val.key}`}
+									>
+										{items.length === 0 && (
+											<Muted className="text-sm">
+												No values defined.
+											</Muted>
+										)}
+										{items.map((item, idx) => (
+											<div
+												// biome-ignore lint/suspicious/noArrayIndexKey: row order is stable
+												key={idx}
+												className="flex items-start gap-2"
+											>
+												<Input
+													className="flex-1"
+													placeholder={
+														val.placeholder ??
+														"Parameter name"
+													}
+													value={item ?? ""}
+													disabled={val.disabled}
+													onChange={(e) => {
+														const next = items.map(
+															(s, i) =>
+																i === idx
+																	? e.target
+																			.value
+																	: s,
+														);
+														field.onChange(next);
+													}}
+													data-testid={`function-form-input-${val.key}-${idx}`}
+												/>
+												<Button
+													type="button"
+													variant="ghost"
+													size="icon"
+													disabled={val.disabled}
+													onClick={() =>
+														field.onChange(
+															items.filter(
+																(_, i) =>
+																	i !== idx,
+															),
+														)
+													}
+													data-testid={`function-form-remove-${val.key}-${idx}`}
+												>
+													<X className="size-4" />
+												</Button>
+											</div>
+										))}
+										<Button
+											type="button"
+											variant="outline"
+											size="sm"
+											className="self-start"
+											disabled={val.disabled}
+											onClick={() =>
+												field.onChange([...items, ""])
+											}
+											data-testid={`function-form-add-${val.key}`}
+										>
+											+ Add
+										</Button>
+									</div>
+									{error ? (
+										<FieldError>
+											{error.message ?? val.helperText}
+										</FieldError>
+									) : (
+										val.helperText && (
+											<FieldDescription>
+												{val.helperText}
+											</FieldDescription>
+										)
+									)}
+								</Field>
+							);
+						}
+						default:
+							return null;
+					}
+				}}
+			/>
+		);
+	};
+
+	if (form.formState.isSubmitting) {
 		return (
 			<div className="flex h-full items-center justify-center">
 				<Spinner />
@@ -1123,7 +995,7 @@ export const FunctionForm = ({
 	}
 
 	return (
-		<form onSubmit={handleSubmit(onFormSubmit)} data-testid="function-form">
+		<Form form={form} onSubmit={handleSubmit} data-testid="function-form">
 			<EngineFormHeader
 				testIdPrefix="function"
 				icon={icon}
@@ -1228,13 +1100,15 @@ export const FunctionForm = ({
 						type="submit"
 						variant="default"
 						data-testid="function-form-submit"
-						disabled={!formState.isValid || isValidDatabaseName}
+						disabled={
+							!form.formState.isValid || isValidDatabaseName
+						}
 						className="w-full min-w-32 capitalize sm:w-auto"
 					>
 						Connect
 					</Button>
 				</div>
 			</div>
-		</form>
+		</Form>
 	);
 };
