@@ -1,4 +1,4 @@
-import { ChevronDown, RefreshCw, Square, Wand2 } from "lucide-react";
+import { ChevronDown, RefreshCw, Square, Wand2, Wrench } from "lucide-react";
 import type React from "react";
 import { useEffect, useId, useState } from "react";
 import {
@@ -11,6 +11,7 @@ import {
 	SelectItem,
 	SelectTrigger,
 	SelectValue,
+	Small,
 	Spinner,
 	Textarea,
 	Tooltip,
@@ -18,6 +19,11 @@ import {
 	TooltipTrigger,
 } from "@semoss/ui/next";
 import { runPixel } from "../semoss/pixel";
+import type {
+	AutomationHistoryEntry,
+	WebMcpDiscovery,
+} from "../types/automation.types";
+import { WebMcpToolsPanel } from "./web-mcp-tools-panel";
 
 interface ModelOption {
 	id: string;
@@ -35,12 +41,15 @@ interface AutomationControlsProps {
 	isGoalGenerating: boolean;
 	goalGenerationError?: string;
 	progressLabel?: string;
+	webMcpDiscovery: WebMcpDiscovery;
+	automationHistory: AutomationHistoryEntry[];
 	onToggle: () => void;
 	onModelChange: (modelId: string) => void;
 	onSubModeChange: (mode: "click" | "fill-page" | "run-goal") => void;
 	onGoalChange: (goal: string) => void;
 	onRegenerateGoal: () => void;
 	onMaxIterationsChange: (maxIterations: number) => void;
+	onRefreshWebMcpTools: () => void;
 }
 
 export const AutomationControls: React.FC<AutomationControlsProps> = ({
@@ -54,12 +63,15 @@ export const AutomationControls: React.FC<AutomationControlsProps> = ({
 	isGoalGenerating,
 	goalGenerationError,
 	progressLabel,
+	webMcpDiscovery,
+	automationHistory,
 	onToggle,
 	onModelChange,
 	onSubModeChange,
 	onGoalChange,
 	onRegenerateGoal,
 	onMaxIterationsChange,
+	onRefreshWebMcpTools,
 }) => {
 	const [models, setModels] = useState<ModelOption[]>([]);
 	const [isLoadingModels, setIsLoadingModels] = useState(false);
@@ -116,7 +128,7 @@ export const AutomationControls: React.FC<AutomationControlsProps> = ({
 						variant={isActive ? "default" : "outline"}
 						className={
 							isActive
-								? "rounded-r-none bg-accent text-canvas hover:bg-accent/90"
+								? "rounded-r-none bg-primary text-primary-foreground hover:bg-primary/90"
 								: "rounded-r-none"
 						}
 						disabled={
@@ -150,22 +162,35 @@ export const AutomationControls: React.FC<AutomationControlsProps> = ({
 			</Tooltip>
 
 			<Popover open={popoverOpen} onOpenChange={setPopoverOpen}>
-				<PopoverTrigger asChild>
-					<Button
-						size="icon-sm"
-						variant={isActive ? "default" : "outline"}
-						className={
-							isActive
-								? "-ml-px rounded-l-none bg-accent hover:bg-accent/90"
-								: "-ml-px rounded-l-none"
-						}
-						aria-label="Configure automation model"
-					>
-						<ChevronDown className="h-3 w-3" />
-					</Button>
-				</PopoverTrigger>
-				<PopoverContent className="w-64 p-3" align="end">
-					<p className="mb-2 font-medium text-sm">Automation mode</p>
+				<Tooltip>
+					<TooltipTrigger asChild>
+						<PopoverTrigger asChild>
+							<Button
+								size="sm"
+								variant={isActive ? "default" : "outline"}
+								className={
+									isActive
+										? "-ml-px rounded-l-none bg-primary hover:bg-primary/90"
+										: "-ml-px rounded-l-none"
+								}
+								aria-label={`Configure automation; ${webMcpDiscovery.tools.length} WebMCP tools available`}
+							>
+								<Wrench aria-hidden />
+								{webMcpDiscovery.tools.length}
+								<ChevronDown aria-hidden />
+							</Button>
+						</PopoverTrigger>
+					</TooltipTrigger>
+					<TooltipContent>
+						{webMcpDiscovery.tools.length} WebMCP tool
+						{webMcpDiscovery.tools.length === 1 ? "" : "s"}{" "}
+						available
+					</TooltipContent>
+				</Tooltip>
+				<PopoverContent className="w-80 p-3" align="end">
+					<Small className="mb-2 block font-medium">
+						Automation mode
+					</Small>
 					<div className="mb-3 flex flex-col gap-1">
 						{[
 							{
@@ -187,28 +212,29 @@ export const AutomationControls: React.FC<AutomationControlsProps> = ({
 							<button
 								key={value}
 								type="button"
-								className={`flex items-start gap-2 rounded p-2 text-left transition-colors ${
+								className={`flex items-start gap-2 rounded-md p-2 text-left transition-colors ${
 									subMode === value
-										? "bg-accent/10"
-										: "hover:bg-surface-hover"
+										? "bg-primary/10"
+										: "hover:bg-muted"
 								}`}
 								onClick={() => onSubModeChange(value)}
 							>
 								<span
 									className={`mt-0.5 h-3.5 w-3.5 shrink-0 rounded-full border-2 ${
 										subMode === value
-											? "border-accent bg-accent"
-											: "border-ink-muted"
+											? "border-primary bg-primary"
+											: "border-muted-foreground"
 									}`}
+									aria-hidden
 								/>
-								<span>
-									<span className="block font-medium text-xs">
+								<div>
+									<Small className="block font-medium">
 										{label}
-									</span>
-									<span className="block text-ink-muted text-xs">
+									</Small>
+									<Small className="block text-muted-foreground">
 										{desc}
-									</span>
-								</span>
+									</Small>
+								</div>
 							</button>
 						))}
 					</div>
@@ -236,16 +262,16 @@ export const AutomationControls: React.FC<AutomationControlsProps> = ({
 								className="min-h-20 resize-y"
 							/>
 							<div className="flex items-start justify-between gap-2">
-								<p
+								<Small
 									className={`text-xs ${
 										goalGenerationError
 											? "text-destructive"
-											: "text-ink-muted"
+											: "text-muted-foreground"
 									}`}
 								>
 									{goalGenerationError ||
 										"Generated from up to 20 recent messages. Review or edit it before running."}
-								</p>
+								</Small>
 								<Button
 									type="button"
 									size="icon-sm"
@@ -293,16 +319,16 @@ export const AutomationControls: React.FC<AutomationControlsProps> = ({
 							</Select>
 						</div>
 					)}
-					<p className="mb-2 font-medium text-sm">Model</p>
+					<Small className="mb-2 block font-medium">Model</Small>
 					{isLoadingModels ? (
-						<div className="flex items-center gap-2 text-ink-muted text-sm">
+						<div className="flex items-center gap-2 text-muted-foreground text-sm">
 							<Spinner className="h-4 w-4" />
 							Loading models…
 						</div>
 					) : models.length === 0 ? (
-						<p className="text-ink-muted text-xs">
+						<Small className="text-muted-foreground">
 							No text-generation models found.
-						</p>
+						</Small>
 					) : (
 						<Select value={modelId} onValueChange={onModelChange}>
 							<SelectTrigger className="w-full">
@@ -317,6 +343,11 @@ export const AutomationControls: React.FC<AutomationControlsProps> = ({
 							</SelectContent>
 						</Select>
 					)}
+					<WebMcpToolsPanel
+						discovery={webMcpDiscovery}
+						history={automationHistory}
+						onRefresh={onRefreshWebMcpTools}
+					/>
 				</PopoverContent>
 			</Popover>
 		</div>

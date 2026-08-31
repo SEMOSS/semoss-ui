@@ -65,6 +65,11 @@ import {
 } from "./semoss/client";
 import { runPixel } from "./semoss/pixel";
 import type {
+	AutomationHistoryEntry,
+	WebMcpDiscovery,
+	WebMcpTool,
+} from "./types/automation.types";
+import type {
 	BrowserScrollMetrics,
 	BrowserTabInfo,
 	ClientToServerEvent,
@@ -98,15 +103,6 @@ type ResolvePlaywrightRecordingResponse = {
 	searchedRoomRecordings: number;
 };
 
-type AutomationHistoryEntry = {
-	iteration: number;
-	type: "click" | "fill" | "select" | "scroll";
-	label: string;
-	value?: string;
-	pageUrl: string;
-	reason: string;
-};
-
 type PendingTextSelection = {
 	context: SelectedTextContext | null;
 	clientX: number;
@@ -116,6 +112,40 @@ type PendingTextSelection = {
 function isRecord(value: unknown): value is Record<string, unknown> {
 	return typeof value === "object" && value !== null && !Array.isArray(value);
 }
+
+function webMcpToolsFrom(value: unknown): WebMcpTool[] {
+	if (!Array.isArray(value)) return [];
+	return value.flatMap((item) => {
+		if (
+			!isRecord(item) ||
+			typeof item.name !== "string" ||
+			!item.name.trim()
+		) {
+			return [];
+		}
+		return [
+			{
+				name: item.name,
+				title: typeof item.title === "string" ? item.title : "",
+				description:
+					typeof item.description === "string"
+						? item.description
+						: "",
+				origin: typeof item.origin === "string" ? item.origin : "",
+				inputSchema: isRecord(item.inputSchema) ? item.inputSchema : {},
+				annotations: isRecord(item.annotations) ? item.annotations : {},
+			},
+		];
+	});
+}
+
+const INITIAL_WEB_MCP_DISCOVERY: WebMcpDiscovery = {
+	supported: false,
+	tools: [],
+	message: "",
+	isLoading: false,
+	error: "",
+};
 
 export default function App() {
 	const { insightId } = useInsight();
@@ -219,6 +249,12 @@ export default function App() {
 		iteration: number;
 		maxIterations: number;
 	} | null>(null);
+	const [automationHistory, setAutomationHistory] = useState<
+		AutomationHistoryEntry[]
+	>([]);
+	const [webMcpDiscovery, setWebMcpDiscovery] = useState<WebMcpDiscovery>(
+		INITIAL_WEB_MCP_DISCOVERY,
+	);
 	const [automationClickPos, setAutomationClickPos] = useState<{
 		localX: number;
 		localY: number;
@@ -268,6 +304,77 @@ export default function App() {
 		getToolStringParameter(toolContext, "project_id") ||
 		getToolStringParameter(toolContext, "projectId");
 	const effectiveInsightId = getSemossInsightId() || insightId;
+
+	const refreshWebMcpTools = useCallback(
+		async (showLoading = true) => {
+			if (!isPlaygroundMode || !session?.sessionId) {
+				setWebMcpDiscovery(INITIAL_WEB_MCP_DISCOVERY);
+				return;
+			}
+			if (showLoading) {
+				setWebMcpDiscovery((current) => ({
+					...current,
+					isLoading: true,
+					error: "",
+				}));
+			}
+			try {
+				const response = await runPixel<Record<string, unknown>>(
+					`GetPlaywrightWebMcpTools(sessionId=${JSON.stringify(session.sessionId)});`,
+					effectiveInsightId,
+				);
+				const output = response.pixelReturn?.[0]?.output;
+				if (!isRecord(output) || output.success !== true) {
+					throw new Error(
+						isRecord(output) && typeof output.error === "string"
+							? output.error
+							: "Could not inspect this page for WebMCP tools.",
+					);
+				}
+				setWebMcpDiscovery({
+					supported: output.supported === true,
+					tools: webMcpToolsFrom(output.tools),
+					message:
+						typeof output.message === "string"
+							? output.message
+							: "",
+					isLoading: false,
+					error: "",
+				});
+			} catch (error) {
+				setWebMcpDiscovery((current) => ({
+					...current,
+					isLoading: false,
+					error:
+						error instanceof Error
+							? error.message
+							: "Could not inspect this page for WebMCP tools.",
+				}));
+			}
+		},
+		[effectiveInsightId, isPlaygroundMode, session?.sessionId],
+	);
+
+	useEffect(() => {
+		if (!isPlaygroundMode || !session?.sessionId) {
+			setWebMcpDiscovery(INITIAL_WEB_MCP_DISCOVERY);
+			return;
+		}
+		// The active tab and URL deliberately trigger a fresh page capability scan.
+		if (!activeBrowserTabId && !currentUrl) return;
+		void refreshWebMcpTools();
+		const delayedRefresh = window.setTimeout(
+			() => void refreshWebMcpTools(false),
+			1_500,
+		);
+		return () => window.clearTimeout(delayedRefresh);
+	}, [
+		activeBrowserTabId,
+		currentUrl,
+		isPlaygroundMode,
+		refreshWebMcpTools,
+		session?.sessionId,
+	]);
 
 	// Frame callback - stable reference so it doesn't re-trigger the socket effect
 	const handleFrame = useCallback(
@@ -516,6 +623,7 @@ export default function App() {
 		setRecordedSteps([]);
 		setAutomationGoal("");
 		setAutomationGoalGenerationError("");
+		setAutomationHistory([]);
 		automationGoalExecutionRef.current = "";
 		playback.resetExecution();
 	}, [playback.resetExecution, toolExecutionKey]);
@@ -2110,6 +2218,7 @@ export default function App() {
 			const type =
 				typeof rawType === "string" ? rawType.trim().toLowerCase() : "";
 			if (
+				type !== "webmcp" &&
 				type !== "click" &&
 				type !== "fill" &&
 				type !== "select" &&
@@ -2126,6 +2235,52 @@ export default function App() {
 				typeof output.tabId === "string" ? output.tabId : undefined;
 			const reason =
 				typeof output.reason === "string" ? output.reason : "";
+
+			if (type === "webmcp") {
+				const toolName =
+					typeof action.toolName === "string" ? action.toolName : "";
+				if (!toolName) {
+					throw new Error(
+						"Automation planner returned an empty WebMCP tool name.",
+					);
+				}
+				const toolOrigin =
+					typeof action.toolOrigin === "string"
+						? action.toolOrigin
+						: "";
+				const toolArguments = isRecord(action.arguments)
+					? action.arguments
+					: {};
+				const response = await runPixel<Record<string, unknown>>(
+					`ExecutePlaywrightWebMcpTool(sessionId=${JSON.stringify(session?.sessionId || "")}, toolName=${JSON.stringify(toolName)}, toolOrigin=${JSON.stringify(toolOrigin)}, toolArguments=${JSON.stringify(JSON.stringify(toolArguments))}, expectedUrl=${JSON.stringify(expectedUrl || "")}, expectedTabId=${JSON.stringify(expectedTabId || "")});`,
+					effectiveInsightId,
+				);
+				const execution = response.pixelReturn?.[0]?.output;
+				const succeeded =
+					isRecord(execution) && execution.success === true;
+				const error =
+					isRecord(execution) && typeof execution.error === "string"
+						? execution.error
+						: succeeded
+							? ""
+							: "The WebMCP tool did not complete.";
+				if (!succeeded) {
+					toast(
+						`WebMCP tool ${toolName} failed. Automation will try browser controls next.`,
+					);
+				}
+				void refreshWebMcpTools(false);
+				return {
+					iteration,
+					type,
+					label: label || toolName,
+					toolName,
+					pageUrl: expectedUrl || "",
+					reason,
+					status: succeeded ? "success" : "failed",
+					error: error || undefined,
+				};
+			}
 
 			if (type === "scroll") {
 				const deltaY =
@@ -2152,6 +2307,7 @@ export default function App() {
 					value: `${deltaY < 0 ? "up" : "down"} ${typeof action.screenPercent === "number" ? action.screenPercent : SCROLL_SCREEN_PERCENT}%`,
 					pageUrl: expectedUrl || "",
 					reason,
+					status: "success",
 				};
 			}
 			if (!isRecord(action.selector)) {
@@ -2201,6 +2357,7 @@ export default function App() {
 					label,
 					pageUrl: expectedUrl || "",
 					reason,
+					status: "success",
 				};
 			}
 
@@ -2226,9 +2383,17 @@ export default function App() {
 				value: isPassword ? "[REDACTED]" : value,
 				pageUrl: expectedUrl || "",
 				reason,
+				status: "success",
 			};
 		},
-		[remoteHeight, remoteWidth, sendReplayEvent],
+		[
+			effectiveInsightId,
+			refreshWebMcpTools,
+			remoteHeight,
+			remoteWidth,
+			sendReplayEvent,
+			session?.sessionId,
+		],
 	);
 
 	const cancelGoalAutomation = useCallback(() => {
@@ -2256,6 +2421,7 @@ export default function App() {
 		setAutomationMode(false);
 		setIsGoalAutomationRunning(true);
 		const history: AutomationHistoryEntry[] = [];
+		setAutomationHistory([]);
 		const resolvedGoal = automationGoal.trim();
 		let reachedGoal = false;
 		if (!resolvedGoal) {
@@ -2293,6 +2459,16 @@ export default function App() {
 				if (!automationModelId && typeof output.engineId === "string") {
 					setAutomationModelId(output.engineId);
 				}
+				setWebMcpDiscovery({
+					supported: output.webMcpSupported === true,
+					tools: webMcpToolsFrom(output.webMcpTools),
+					message:
+						typeof output.webMcpMessage === "string"
+							? output.webMcpMessage
+							: "",
+					isLoading: false,
+					error: "",
+				});
 				const reason =
 					typeof output.reason === "string" ? output.reason : "";
 				if (output.goalReached === true) {
@@ -2313,6 +2489,7 @@ export default function App() {
 				);
 				if (automationRunTokenRef.current !== runToken) return;
 				history.push(completed);
+				setAutomationHistory([...history]);
 			}
 
 			if (!reachedGoal) {
@@ -2388,6 +2565,8 @@ export default function App() {
 									? `Step ${automationProgress.iteration}/${automationProgress.maxIterations}`
 									: undefined
 							}
+							webMcpDiscovery={webMcpDiscovery}
+							automationHistory={automationHistory}
 							onToggle={() => {
 								if (isGoalAutomationRunning) {
 									cancelGoalAutomation();
@@ -2409,6 +2588,9 @@ export default function App() {
 								void generateAutomationGoal(true)
 							}
 							onMaxIterationsChange={setAutomationMaxIterations}
+							onRefreshWebMcpTools={() =>
+								void refreshWebMcpTools()
+							}
 						/>
 					)}
 					{selectedTextContexts.length > 0 && (
