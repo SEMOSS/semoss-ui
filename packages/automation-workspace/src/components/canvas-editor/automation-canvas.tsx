@@ -66,6 +66,7 @@ import type {
 	AutomationInspectorAction,
 	AutomationInspectorSnapshot,
 } from "../../domain/automation-inspector";
+import { normalizeAutomationErrorMessage } from "../../domain/automation-utils";
 import type {
 	AutomationWorkflowDocument,
 	AutomationWorkflowNodeType,
@@ -94,6 +95,24 @@ const nodeTypes = {
 	automation: AutomationNodeCard,
 	branch: BranchNode,
 } as const;
+
+/** How long a step's "recently changed by the Assistant" highlight stays visible. */
+const CHANGE_HIGHLIGHT_DURATION_MS = 2500;
+
+/**
+ * Transient highlight state applied after an Assistant tool call changes the automation.
+ * `all: true` is the best-effort fallback when the completed tool didn't report which step(s)
+ * it touched — every card pulses briefly instead of guessing at a specific one.
+ */
+type ChangeHighlight = { all: true } | { all: false; stepIds: Set<string> };
+
+function isStepHighlighted(
+	highlight: ChangeHighlight | null,
+	stepId: string,
+): boolean {
+	if (!highlight) return false;
+	return highlight.all || highlight.stepIds.has(stepId);
+}
 
 interface DeletableEdgeData extends Record<string, unknown> {
 	onDelete: (edgeId: string) => void;
@@ -411,6 +430,21 @@ export function AutomationCanvas({
 		() => createInitialCanvasWorkflowDocument().triggerBindings,
 	);
 	const [workflowRefreshToken, setWorkflowRefreshToken] = useState(0);
+	// Transient highlight applied to node cards right after an Assistant tool changes the
+	// automation — cleared automatically a few seconds later (or replaced by the next change).
+	const [changeHighlight, setChangeHighlight] =
+		useState<ChangeHighlight | null>(null);
+	const changeHighlightTimeoutRef = useRef<ReturnType<
+		typeof setTimeout
+	> | null>(null);
+	useEffect(
+		() => () => {
+			if (changeHighlightTimeoutRef.current) {
+				clearTimeout(changeHighlightTimeoutRef.current);
+			}
+		},
+		[],
+	);
 	const [showAddMenu, setShowAddMenu] = useState(false);
 	const [addAfterStepId, setAddAfterStepId] = useState<string | null>(null);
 	const [addAfterHandle, setAddAfterHandle] = useState<string | null>(null);
@@ -553,6 +587,8 @@ export function AutomationCanvas({
 			const message = event.data as {
 				type?: unknown;
 				projectId?: unknown;
+				toolName?: unknown;
+				changedStepIds?: unknown;
 			};
 			if (
 				message.type !== "SEMOSS_AUTOMATION_REFRESH" ||
@@ -570,6 +606,26 @@ export function AutomationCanvas({
 			localStorage.removeItem(`automation-draft-${appId}`);
 			setEditingStepId(null);
 			setWorkflowRefreshToken((value) => value + 1);
+
+			if (typeof message.toolName === "string") {
+				const changedStepIds = Array.isArray(message.changedStepIds)
+					? message.changedStepIds.filter(
+							(id): id is string => typeof id === "string",
+						)
+					: [];
+				if (changeHighlightTimeoutRef.current) {
+					clearTimeout(changeHighlightTimeoutRef.current);
+				}
+				setChangeHighlight(
+					changedStepIds.length > 0
+						? { all: false, stepIds: new Set(changedStepIds) }
+						: { all: true },
+				);
+				changeHighlightTimeoutRef.current = setTimeout(() => {
+					setChangeHighlight(null);
+					changeHighlightTimeoutRef.current = null;
+				}, CHANGE_HIGHLIGHT_DURATION_MS);
+			}
 		};
 		window.addEventListener("message", handleMessage);
 		return () => window.removeEventListener("message", handleMessage);
@@ -796,7 +852,7 @@ export function AutomationCanvas({
 			.catch((error: Error) => {
 				if (!cancelled) {
 					toast.error(
-						error.message ||
+						normalizeAutomationErrorMessage(error.message) ||
 							"Unable to load this Python automation.",
 					);
 					const initial = createInitialCanvasWorkflowDocument();
@@ -1094,6 +1150,7 @@ export function AutomationCanvas({
 		const snapshot: AutomationInspectorSnapshot = {
 			description,
 			devMode,
+			readOnly,
 			editingStep,
 			upstreamVars: editingStep ? upstreamVarsFor(editingStep.id) : [],
 			stepRunStatus: editingStep
@@ -1116,6 +1173,7 @@ export function AutomationCanvas({
 	}, [
 		description,
 		devMode,
+		readOnly,
 		editingStep,
 		stepErrors,
 		stepOutputPreviews,
@@ -1234,7 +1292,11 @@ export function AutomationCanvas({
 			return true;
 		} catch (error) {
 			toast.error(
-				`Save failed: ${error instanceof Error ? error.message : "Unknown error"}`,
+				`Save failed: ${
+					error instanceof Error
+						? normalizeAutomationErrorMessage(error.message)
+						: "Unknown error"
+				}`,
 			);
 			return false;
 		} finally {
@@ -1280,8 +1342,11 @@ export function AutomationCanvas({
 							: result.STATUS === "SUCCESS"
 								? "success"
 								: "idle";
-				if (result.ERROR_MESSAGE)
-					errors[step.id] = result.ERROR_MESSAGE;
+				if (result.ERROR_MESSAGE) {
+					errors[step.id] = normalizeAutomationErrorMessage(
+						result.ERROR_MESSAGE,
+					);
+				}
 				if (typeof result.DURATION_MS === "number") {
 					durations[step.id] = result.DURATION_MS;
 				}
@@ -1320,7 +1385,7 @@ export function AutomationCanvas({
 			if (errorMessage) {
 				setStepErrors((previous) => ({
 					...previous,
-					[nodeId]: errorMessage,
+					[nodeId]: normalizeAutomationErrorMessage(errorMessage),
 				}));
 			}
 			const durationMs = progress.DURATION_MS;
@@ -1454,7 +1519,13 @@ export function AutomationCanvas({
 					finalDetail.RESULT_SUMMARY ?? "Automation completed",
 				);
 			} else {
-				toast.error(finalDetail.ERROR_MESSAGE ?? "Automation failed");
+				toast.error(
+					finalDetail.ERROR_MESSAGE
+						? normalizeAutomationErrorMessage(
+								finalDetail.ERROR_MESSAGE,
+							)
+						: "Automation failed",
+				);
 			}
 			if (mcpMode === "trigger" && mcpContext) {
 				const succeeded = finalDetail.STATUS === "SUCCESS";
@@ -1467,7 +1538,7 @@ export function AutomationCanvas({
 						const extra = r.OUTPUT_PREVIEW
 							? ` → ${r.OUTPUT_PREVIEW}`
 							: r.ERROR_MESSAGE
-								? ` → Error: ${r.ERROR_MESSAGE}`
+								? ` → Error: ${normalizeAutomationErrorMessage(r.ERROR_MESSAGE)}`
 								: "";
 						return `• ${r.NODE_LABEL}: ${r.STATUS}${dur}${extra}`;
 					},
@@ -1476,7 +1547,11 @@ export function AutomationCanvas({
 					finalDetail.RESULT_SUMMARY ??
 					(succeeded
 						? "Automation completed successfully."
-						: (finalDetail.ERROR_MESSAGE ?? "Automation failed."));
+						: finalDetail.ERROR_MESSAGE
+							? normalizeAutomationErrorMessage(
+									finalDetail.ERROR_MESSAGE,
+								)
+							: "Automation failed.");
 				const mcpResponse =
 					nodeResultLines.length > 0
 						? `${baseSummary}\n\nStep results:\n${nodeResultLines.join("\n")}`
@@ -1500,7 +1575,9 @@ export function AutomationCanvas({
 			}
 		} catch (error) {
 			const message =
-				error instanceof Error ? error.message : "Automation failed";
+				error instanceof Error
+					? normalizeAutomationErrorMessage(error.message)
+					: "Automation failed";
 			setLatestRunStatus("FAILED");
 			setAiRunSummary(null);
 			toast.error(message);
@@ -1651,6 +1728,10 @@ export function AutomationCanvas({
 							validateCanvasWorkflowNode(step).length > 0 &&
 							!stepStatuses[step.id],
 						locked: running || readOnly,
+						highlighted: isStepHighlighted(
+							changeHighlight,
+							step.id,
+						),
 						onEdit: () => {
 							setShowAddMenu(false);
 							setEditingStepId(step.id);
@@ -1687,6 +1768,10 @@ export function AutomationCanvas({
 							validateCanvasWorkflowNode(step).length > 0 &&
 							!stepStatuses[step.id],
 						locked: running || readOnly,
+						highlighted: isStepHighlighted(
+							changeHighlight,
+							step.id,
+						),
 						onEdit: () => {
 							setShowAddMenu(false);
 							setEditingStepId(step.id);
@@ -1746,6 +1831,7 @@ export function AutomationCanvas({
 		readOnly,
 		graphEdges,
 		stepDisplayOrder,
+		changeHighlight,
 		deleteStep,
 		deleteEdge,
 		edgeColor,

@@ -17,6 +17,8 @@ export type BranchNodeData = {
 	runDuration?: number;
 	isIncomplete?: boolean;
 	locked?: boolean;
+	/** True for a few seconds right after an Assistant tool call changes this step. */
+	highlighted?: boolean;
 	onEdit?: () => void;
 	onDelete?: () => void;
 	onAddThen?: () => void;
@@ -33,7 +35,8 @@ const STATUS_BORDER: Record<string, string> = {
 
 export function BranchNode({ data }: NodeProps) {
 	const d = data as BranchNodeData;
-	const { step, runStatus, runDuration, isIncomplete, locked } = d;
+	const { step, runStatus, runDuration, isIncomplete, locked, highlighted } =
+		d;
 	const config = step.config as BranchConfig;
 	const edges = useEdges();
 	const thenConnected = edges.some(
@@ -47,10 +50,13 @@ export function BranchNode({ data }: NodeProps) {
 		STATUS_BORDER.idle;
 	const runningClass =
 		runStatus === "running" ? "automation-node-running" : "";
+	const highlightClass = highlighted
+		? "animate-pulse ring-2 ring-primary ring-offset-2 ring-offset-background"
+		: "";
 
 	return (
 		<div
-			className={`group relative w-[280px] rounded-2xl border-2 shadow-sm ${borderClass} ${runningClass} ${locked ? "opacity-75" : ""}`}
+			className={`group relative w-[280px] rounded-2xl border-2 shadow-sm ${borderClass} ${runningClass} ${highlightClass} ${locked ? "opacity-75" : ""}`}
 		>
 			<div className="relative z-[1] m-0.5 rounded-[14px] bg-card">
 				{/* Hover actions */}

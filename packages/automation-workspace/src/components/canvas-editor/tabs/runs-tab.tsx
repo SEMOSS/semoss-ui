@@ -17,13 +17,17 @@ import type {
 	AutomationRunSummary,
 	RunStatus,
 } from "../../../domain/automation.types";
+import { buildAssistantHandoffPrompt } from "../../../domain/automation-assistant-handoff";
 import {
 	formatRelativeTime,
 	formatRunDuration,
 	formatTimestamp,
 	getDisplayMeta,
 } from "../../../domain/automation-display";
-import { formatDurationMs } from "../../../domain/automation-utils";
+import {
+	formatDurationMs,
+	normalizeAutomationErrorMessage,
+} from "../../../domain/automation-utils";
 import type { AutomationWorkflowDocument } from "../../../domain/automation-workflow.types";
 import { canvasDocumentFromWorkflow } from "../../../domain/automation-workflow-adapter";
 import { getWorkflowNodeDisplay } from "../../../domain/automation-workflow-display";
@@ -106,7 +110,7 @@ export function RunsTab({
 			if (requestId === requestRef.current) {
 				toast.error(
 					error instanceof Error
-						? error.message
+						? normalizeAutomationErrorMessage(error.message)
 						: "Unable to load run history.",
 				);
 			}
@@ -142,7 +146,7 @@ export function RunsTab({
 			} catch (error) {
 				toast.error(
 					error instanceof Error
-						? error.message
+						? normalizeAutomationErrorMessage(error.message)
 						: "Unable to load run details.",
 				);
 				setView("history");
@@ -173,6 +177,24 @@ export function RunsTab({
 		}
 	}, []);
 
+	const handleAskAssistant = useCallback(() => {
+		if (!latestRunStatus) return;
+		const parentOrigin = new URLSearchParams(window.location.search).get(
+			"parentOrigin",
+		);
+		if (!parentOrigin || window.parent === window) return;
+		const prompt = buildAssistantHandoffPrompt({
+			status: latestRunStatus,
+			runSummary: aiRunSummary,
+			steps,
+			results,
+		});
+		window.parent.postMessage(
+			{ type: "SEMOSS_AUTOMATION_ASK_ASSISTANT", prompt },
+			parentOrigin,
+		);
+	}, [aiRunSummary, latestRunStatus, results, steps]);
+
 	if (view === "live" || (view === "history" && running)) {
 		return (
 			<LiveRunView
@@ -184,6 +206,7 @@ export function RunsTab({
 				results={results}
 				executedDefinition={executedDefinition}
 				onOutputPopout={handleOutputPopout}
+				onAskAssistant={handleAskAssistant}
 				onDismiss={onDismiss}
 				onBack={goBack}
 			/>
@@ -323,10 +346,12 @@ function LiveRunView({
 	results,
 	executedDefinition,
 	onOutputPopout,
+	onAskAssistant,
 	onDismiss,
 	onBack,
 }: AutomationTraceSnapshot & {
 	onOutputPopout: (output: string) => void;
+	onAskAssistant: () => void;
 	onDismiss: () => void;
 	onBack: () => void;
 }) {
@@ -377,6 +402,7 @@ function LiveRunView({
 						aiSummary={aiRunSummary}
 						generatingAiSummary={generatingAiSummary}
 						onDismiss={onDismiss}
+						onAskAssistant={onAskAssistant}
 					/>
 				</div>
 			)}

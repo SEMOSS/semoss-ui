@@ -20,6 +20,16 @@ export function formatDurationMs(
 	return `${Math.floor(ms / 60000)}m ${Math.floor((ms % 60000) / 1000)}s`;
 }
 
+/** Removes markup from server-generated HTML error documents without changing plain-text errors. */
+export function normalizeAutomationErrorMessage(value: string): string {
+	const isHtmlDocument = /<(?:!doctype\s+html|html)(?:\s|>)/i.test(value);
+	if (!isHtmlDocument) return value;
+	return value
+		.replace(/<[^>]*>/g, " ")
+		.replace(/\s+/g, " ")
+		.trim();
+}
+
 // ─── per-node-type descriptor map ────────────────────────────────────────────
 
 type NodeDescriptor = {

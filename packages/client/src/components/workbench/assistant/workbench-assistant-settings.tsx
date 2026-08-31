@@ -1,7 +1,9 @@
-import { ChevronDownIcon } from "lucide-react";
+import { ChevronDownIcon, TriangleAlertIcon } from "lucide-react";
 import { useEffect, useId, useState } from "react";
 import { EngineSelect } from "@semoss/shared";
 import {
+	Alert,
+	AlertDescription,
 	Button,
 	Collapsible,
 	CollapsibleContent,
@@ -39,7 +41,7 @@ const PERMISSION_MODE_OPTIONS: {
 	{ value: "default", label: "Ask before edits" },
 	{ value: "acceptEdits", label: "Accept edits" },
 	{ value: "plan", label: "Plan first" },
-	{ value: "bypassPermissions", label: "Bypass permissions" },
+	{ value: "bypassPermissions", label: "Do not ask for approval" },
 ];
 
 /** Reasoning-effort levels, with display labels. */
@@ -147,7 +149,7 @@ export const WorkbenchAssistantSettings = () => {
 						}}
 					>
 						{isCompacting ? <Spinner className="size-3.5" /> : null}
-						Compact
+						Summarize conversation
 					</Button>
 				</Field>
 
@@ -175,7 +177,7 @@ export const WorkbenchAssistantSettings = () => {
 						<div className="flex flex-col gap-4 pt-4">
 							<Field>
 								<FieldLabel htmlFor={maxTurnsId}>
-									Max turns
+									Maximum steps per request
 								</FieldLabel>
 								<Input
 									id={maxTurnsId}
@@ -211,7 +213,7 @@ export const WorkbenchAssistantSettings = () => {
 									</SelectTrigger>
 									<SelectContent>
 										<SelectItem value={INHERIT}>
-											Harness default
+											Use workspace default
 										</SelectItem>
 										{PERMISSION_MODE_OPTIONS.map(
 											(option) => (
@@ -230,6 +232,17 @@ export const WorkbenchAssistantSettings = () => {
 									pause for approval, auto-accept edits, plan
 									before acting, or skip the gates entirely.
 								</FieldDescription>
+								{permissionMode === "bypassPermissions" && (
+									<Alert className="border-warning/40 bg-warning/10 text-warning">
+										<TriangleAlertIcon className="size-4" />
+										<AlertDescription className="text-warning/90">
+											The assistant can make changes
+											without asking first. Only use this
+											if you trust every action it might
+											take.
+										</AlertDescription>
+									</Alert>
+								)}
 							</Field>
 
 							<Field>

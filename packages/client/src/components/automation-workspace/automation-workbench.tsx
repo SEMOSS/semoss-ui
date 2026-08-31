@@ -76,6 +76,43 @@ const AUTOMATION_MUTATION_TOOLS = new Set([
 	"UpdateAutomationCustomStep",
 	"RemoveAutomationStep",
 ]);
+/** Defensive cap on a trace-iframe-supplied Assistant draft; the prompt itself is already
+ * bounded when built, this only guards against an unexpectedly large same-origin message. */
+const MAX_ASSISTANT_DRAFT_LENGTH = 8000;
+/** Keys that may hold a single changed step/node id in a completed tool's arguments. */
+const SINGLE_STEP_ID_KEYS = ["stepId", "nodeId", "step_id", "node_id", "id"];
+/** Keys that may hold a list of changed step/node ids in a completed tool's arguments. */
+const STEP_ID_LIST_KEYS = ["stepIds", "nodeIds", "step_ids", "node_ids", "ids"];
+
+/**
+ * Best-effort extraction of the step/node id(s) a completed Assistant tool call changed, read
+ * from the tool's arguments. The actual tool argument schema isn't guaranteed, so this only
+ * trusts a handful of common key names and never assumes an id is present.
+ */
+function extractChangedStepIds(
+	toolArguments: Record<string, unknown> | undefined,
+): string[] {
+	if (!toolArguments) return [];
+	const ids = new Set<string>();
+	for (const key of SINGLE_STEP_ID_KEYS) {
+		const value = toolArguments[key];
+		if (typeof value === "string" && value.length > 0) {
+			ids.add(value);
+		}
+	}
+	for (const key of STEP_ID_LIST_KEYS) {
+		const value = toolArguments[key];
+		if (Array.isArray(value)) {
+			for (const item of value) {
+				if (typeof item === "string" && item.length > 0) {
+					ids.add(item);
+				}
+			}
+		}
+	}
+	return Array.from(ids);
+}
+
 const EDITOR = "automation-editor";
 const INSPECTOR = "automation-inspector";
 const TRACE = "automation-trace";
@@ -156,7 +193,7 @@ const AUTOMATION_LAYOUT: WorkbenchLayout = {
 		bottom: { panelIds: [TRACE], activeId: null, size: 300 },
 		right: {
 			panelIds: [INSPECTOR, WORKBENCH_COMPONENTS.ASSISTANT],
-			activeId: INSPECTOR,
+			activeId: WORKBENCH_COMPONENTS.ASSISTANT,
 			size: 400,
 		},
 	},
@@ -428,6 +465,9 @@ export const AutomationWorkbench = observer(
 		onShare,
 	}: AutomationWorkbenchProps) => {
 		const layoutActions = useWorkbench((state) => state.layout.actions);
+		const setAssistantDraft = useWorkbench(
+			(state) => state.assistant.setDraft,
+		);
 		const { resolvedTheme } = useTheme();
 		const editorRef = useRef<HTMLIFrameElement>(null);
 		const inspectorRef = useRef<HTMLIFrameElement>(null);
@@ -480,6 +520,7 @@ export const AutomationWorkbench = observer(
 					nodeId?: unknown;
 					source?: unknown;
 					output?: unknown;
+					prompt?: unknown;
 				};
 				if (
 					event.source === editorRef.current?.contentWindow &&
@@ -532,6 +573,16 @@ export const AutomationWorkbench = observer(
 					setOutputModal(message.output);
 				}
 				if (
+					event.source === traceRef.current?.contentWindow &&
+					message.type === "SEMOSS_AUTOMATION_ASK_ASSISTANT" &&
+					typeof message.prompt === "string"
+				) {
+					setAssistantDraft(
+						message.prompt.slice(0, MAX_ASSISTANT_DRAFT_LENGTH),
+					);
+					selectPanel(WORKBENCH_COMPONENTS.ASSISTANT);
+				}
+				if (
 					event.source === inspectorRef.current?.contentWindow &&
 					message.type === "SEMOSS_AUTOMATION_INSPECTOR_READY"
 				) {
@@ -566,7 +617,13 @@ export const AutomationWorkbench = observer(
 			};
 			window.addEventListener("message", handleMessage);
 			return () => window.removeEventListener("message", handleMessage);
-		}, [automationOrigin, inspectorSnapshot, selectPanel, traceSnapshot]);
+		}, [
+			automationOrigin,
+			inspectorSnapshot,
+			selectPanel,
+			setAssistantDraft,
+			traceSnapshot,
+		]);
 
 		useEffect(() => {
 			inspectorRef.current?.contentWindow?.postMessage(
@@ -613,16 +670,31 @@ export const AutomationWorkbench = observer(
 						],
 			[appId, readOnly],
 		);
-		const notifyAutomationChanged = useCallback(() => {
-			editorRef.current?.contentWindow?.postMessage(
-				{ type: "SEMOSS_AUTOMATION_REFRESH", projectId: appId },
-				automationOrigin,
-			);
-		}, [appId, automationOrigin]);
+		const notifyAutomationChanged = useCallback(
+			(change?: { toolName: string; changedStepIds: string[] }) => {
+				editorRef.current?.contentWindow?.postMessage(
+					{
+						type: "SEMOSS_AUTOMATION_REFRESH",
+						projectId: appId,
+						...(change
+							? {
+									toolName: change.toolName,
+									changedStepIds: change.changedStepIds,
+								}
+							: {}),
+					},
+					automationOrigin,
+				);
+			},
+			[appId, automationOrigin],
+		);
 		const handleAutomationToolCompleted = useCallback(
-			(tool: { name: string }) => {
+			(tool: { name: string; arguments?: Record<string, unknown> }) => {
 				if (AUTOMATION_MUTATION_TOOLS.has(tool.name)) {
-					notifyAutomationChanged();
+					notifyAutomationChanged({
+						toolName: tool.name,
+						changedStepIds: extractChangedStepIds(tool.arguments),
+					});
 				}
 			},
 			[notifyAutomationChanged],
@@ -734,7 +806,7 @@ export const AutomationWorkbench = observer(
 				mcp: automationMcp,
 				runParams: { project: appId },
 				onToolCompleted: handleAutomationToolCompleted,
-				onRunCompleted: notifyAutomationChanged,
+				onRunCompleted: () => notifyAutomationChanged(),
 			});
 		}, [
 			appId,

@@ -27,6 +27,7 @@ import {
 	removeAutomationSchedule,
 	resumeAutomationSchedule,
 } from "../../api";
+import { normalizeAutomationErrorMessage } from "../../domain/automation-utils";
 
 interface ScheduleDialogProps {
 	projectId: string;
@@ -45,7 +46,9 @@ function getBrowserTimeZone(): string {
 }
 
 function getErrorMessage(error: unknown, fallback: string): string {
-	return error instanceof Error ? error.message : fallback;
+	return error instanceof Error
+		? normalizeAutomationErrorMessage(error.message)
+		: fallback;
 }
 
 /** Project-scoped scheduler controls for an Automation editor. */

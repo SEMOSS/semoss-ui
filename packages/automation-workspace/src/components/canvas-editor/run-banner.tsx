@@ -1,4 +1,4 @@
-import { Loader2 } from "lucide-react";
+import { Loader2, MessageSquare } from "lucide-react";
 import type React from "react";
 import type { RunStatus } from "../../domain/automation.types";
 
@@ -8,6 +8,8 @@ interface RunBannerProps {
 	generatingAiSummary: boolean;
 	onDismiss: () => void;
 	containerRef?: React.Ref<HTMLDivElement>;
+	/** Shown as an "Ask Assistant to help" action, only on the failed-run banner. */
+	onAskAssistant?: () => void;
 }
 
 export function RunBanner({
@@ -16,6 +18,7 @@ export function RunBanner({
 	generatingAiSummary,
 	onDismiss,
 	containerRef,
+	onAskAssistant,
 }: RunBannerProps) {
 	const isSuccess = status === "SUCCESS";
 
@@ -28,9 +31,9 @@ export function RunBanner({
 	return (
 		<div
 			ref={containerRef}
-			className={`flex items-start justify-between rounded-lg border px-3 py-2 text-xs ${
+			className={`flex items-start justify-between gap-3 rounded-lg border px-3 py-2 text-xs ${
 				isSuccess
-					? "border-emerald-300/50 bg-emerald-50 dark:bg-emerald-900/20"
+					? "border-success/40 bg-success/10"
 					: "border-destructive/30 bg-destructive/5"
 			}`}
 		>
@@ -39,12 +42,22 @@ export function RunBanner({
 					<Loader2 className="mt-0.5 h-3.5 w-3.5 shrink-0 animate-spin text-muted-foreground" />
 				)}
 				<span
-					className={`font-medium ${isSuccess ? "text-emerald-700 dark:text-emerald-400" : "text-destructive"}`}
+					className={`font-medium ${isSuccess ? "text-success" : "text-destructive"}`}
 				>
 					{summaryText}
 				</span>
 			</div>
 			<div className="ml-3 flex shrink-0 items-center gap-3">
+				{!isSuccess && onAskAssistant && (
+					<button
+						type="button"
+						onClick={onAskAssistant}
+						className="flex items-center gap-1 rounded-md border border-destructive/30 bg-background px-2 py-1 font-medium text-destructive transition-colors hover:bg-destructive/10"
+					>
+						<MessageSquare className="h-3 w-3" aria-hidden />
+						Ask Assistant to help
+					</button>
+				)}
 				<button
 					type="button"
 					onClick={onDismiss}

@@ -27,6 +27,8 @@ export type AutomationNodeData = {
 	runOutput?: string | null;
 	isIncomplete?: boolean;
 	locked?: boolean;
+	/** True for a few seconds right after an Assistant tool call changes this step. */
+	highlighted?: boolean;
 	onEdit?: () => void;
 	onDelete?: () => void;
 	onAdd?: () => void;
@@ -42,7 +44,8 @@ const STATUS_BORDER: Record<string, string> = {
 
 export function AutomationNode({ data }: NodeProps) {
 	const d = data as AutomationNodeData;
-	const { step, runStatus, runDuration, isIncomplete, locked } = d;
+	const { step, runStatus, runDuration, isIncomplete, locked, highlighted } =
+		d;
 
 	const meta = getDisplayMeta(step.type);
 	const workflowDefinition = step.workflowType
@@ -59,6 +62,9 @@ export function AutomationNode({ data }: NodeProps) {
 		STATUS_BORDER.idle;
 	const runningClass =
 		runStatus === "running" ? "automation-node-running" : "";
+	const highlightClass = highlighted
+		? "animate-pulse ring-2 ring-primary ring-offset-2 ring-offset-background"
+		: "";
 	const pixelPreview = step.workflowType ? "" : buildPixelPreview(step);
 	const varRefs = extractVarRefs(pixelPreview);
 
@@ -72,7 +78,7 @@ export function AutomationNode({ data }: NodeProps) {
 
 	return (
 		<div
-			className={`group relative w-[280px] rounded-2xl border-2 shadow-sm ${borderClass} ${runningClass} ${locked ? "opacity-75" : ""}`}
+			className={`group relative w-[280px] rounded-2xl border-2 shadow-sm ${borderClass} ${runningClass} ${highlightClass} ${locked ? "opacity-75" : ""}`}
 		>
 			<div className="relative z-[1] m-0.5 rounded-[14px] bg-card">
 				{/* Hover actions */}

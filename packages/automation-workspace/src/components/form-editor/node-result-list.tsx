@@ -13,7 +13,10 @@ import type {
 	AutomationNodeTrace,
 } from "../../domain/automation.types";
 import { getDisplayMeta } from "../../domain/automation-display";
-import { formatDurationMs } from "../../domain/automation-utils";
+import {
+	formatDurationMs,
+	normalizeAutomationErrorMessage,
+} from "../../domain/automation-utils";
 import { StatusBadge } from "../status-badge";
 import { ExecutedDefinitionDetail } from "./executed-definition-detail";
 import { OutputPreview } from "./output-preview";
@@ -33,6 +36,7 @@ export interface NodeResultListProps {
 
 export function ErrorDetail({ message }: { message: string }) {
 	const [expanded, setExpanded] = useState(false);
+	const displayMessage = normalizeAutomationErrorMessage(message);
 	return (
 		<div className="rounded-md border border-destructive/30 bg-destructive/5 px-3 py-2 text-[11px] text-destructive">
 			<div className="flex items-center justify-between gap-2">
@@ -52,7 +56,7 @@ export function ErrorDetail({ message }: { message: string }) {
 			</div>
 			{expanded && (
 				<pre className="mt-2 whitespace-pre-wrap break-all font-mono text-[10px] opacity-80">
-					{message}
+					{displayMessage}
 				</pre>
 			)}
 		</div>
