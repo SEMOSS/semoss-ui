@@ -21,6 +21,8 @@
 		"saveInRoom": "ルームに保存",
 		"savingToRoom": "保存中...",
 		"fullView": "全画面表示",
+		"raw": "ソース",
+		"diagram": "図",
 		"feedbackPlaceholder": "コメントを追加（任意）",
 		"feedbackCancel": "キャンセル",
 		"feedbackSubmit": "送信",
