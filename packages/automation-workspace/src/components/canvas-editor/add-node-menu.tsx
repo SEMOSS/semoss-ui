@@ -78,7 +78,7 @@ export function AddNodeMenu({ onSelect }: AddNodeMenuProps) {
 				<div>
 					<p className="font-medium text-sm">Add a workflow node</p>
 					<p className="text-[11px] text-muted-foreground">
-						Choose a typed node for this Python automation.
+						Choose a step for this automation.
 					</p>
 				</div>
 				<div className="relative mt-4">

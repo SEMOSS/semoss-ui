@@ -12,6 +12,7 @@ import type {
 } from "../../domain/automation.types";
 import { AgentRunForm } from "./forms/agent-run-form";
 import { AppEngineForm } from "./forms/app-engine-form";
+import { BranchConditionBuilder } from "./forms/branch-condition-builder";
 import { DatabaseEngineForm } from "./forms/database-engine-form";
 import { FunctionEngineForm } from "./forms/function-engine-form";
 import { ModelEngineForm } from "./forms/model-engine-form";
@@ -25,6 +26,8 @@ interface StepFormProps {
 	onUpdate: (step: AutomationNode) => void;
 	devMode?: boolean;
 	appId?: string;
+	/** When true, every field renders as non-editable and mutating actions are disabled */
+	readOnly?: boolean;
 }
 
 export function StepForm({
@@ -33,15 +36,19 @@ export function StepForm({
 	onUpdate,
 	devMode = false,
 	appId = "",
+	readOnly = false,
 }: StepFormProps) {
-	const update = (config: AutomationNode["config"]) =>
+	const update = (config: AutomationNode["config"]) => {
+		if (readOnly) return;
 		onUpdate({ ...step, config });
+	};
 	if (step.workflowType === "agent.run") {
 		return (
 			<AgentRunForm
 				config={step.config as AgentRunConfig}
 				upstreamVars={upstreamVars}
 				onChange={update}
+				readOnly={readOnly}
 			/>
 		);
 	}
@@ -56,6 +63,7 @@ export function StepForm({
 					upstreamVars={upstreamVars}
 					onChange={update}
 					devMode={devMode}
+					readOnly={readOnly}
 				/>
 			);
 		case "model-engine":
@@ -65,6 +73,7 @@ export function StepForm({
 					upstreamVars={upstreamVars}
 					onChange={update}
 					devMode={devMode}
+					readOnly={readOnly}
 				/>
 			);
 		case "vector-engine":
@@ -74,6 +83,7 @@ export function StepForm({
 					upstreamVars={upstreamVars}
 					onChange={update}
 					devMode={devMode}
+					readOnly={readOnly}
 				/>
 			);
 		case "storage-engine":
@@ -82,6 +92,7 @@ export function StepForm({
 					config={step.config as StorageEngineConfig}
 					upstreamVars={upstreamVars}
 					onChange={update}
+					readOnly={readOnly}
 				/>
 			);
 		case "function-engine":
@@ -90,6 +101,7 @@ export function StepForm({
 					config={step.config as FunctionEngineConfig}
 					upstreamVars={upstreamVars}
 					onChange={update}
+					readOnly={readOnly}
 				/>
 			);
 		case "app":
@@ -100,6 +112,7 @@ export function StepForm({
 					onChange={update}
 					currentAppId={appId}
 					devMode={devMode}
+					readOnly={readOnly}
 				/>
 			);
 		case "wait": {
@@ -113,10 +126,12 @@ export function StepForm({
 						placeholder="30"
 						onChange={(v) => update({ ...c, seconds: v })}
 						upstreamVars={upstreamVars}
+						readOnly={readOnly}
 					/>
 					<p className="text-muted-foreground text-xs">
 						Maximum 3600 seconds (1 hour). You can reference an
-						earlier step's output — see Help for details.
+						earlier step's output using{" "}
+						<span className="font-mono">${"{variableName}"}</span>.
 					</p>
 				</div>
 			);
@@ -124,21 +139,13 @@ export function StepForm({
 		case "branch": {
 			const c = step.config as BranchConfig;
 			return (
-				<div className="flex flex-col gap-4">
-					<PillInput
-						label="Condition"
-						required
-						value={c.condition}
-						placeholder='${database_query_1} == "active"'
-						onChange={(v) => update({ ...c, condition: v })}
-						upstreamVars={upstreamVars}
-					/>
-					<p className="text-muted-foreground text-xs">
-						A Python expression that evaluates to True or False.
-						When True the <strong>Then</strong> path runs, otherwise
-						the <strong>Else</strong> path runs.
-					</p>
-				</div>
+				<BranchConditionBuilder
+					condition={c.condition}
+					onChange={(condition) => update({ ...c, condition })}
+					upstreamVars={upstreamVars}
+					devMode={devMode}
+					readOnly={readOnly}
+				/>
 			);
 		}
 		default:

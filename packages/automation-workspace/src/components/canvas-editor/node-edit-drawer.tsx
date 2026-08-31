@@ -1,4 +1,4 @@
-import { ChevronDown, Code2, ExternalLink, Trash2 } from "lucide-react";
+import { ChevronDown, Code2, ExternalLink, Lock, Trash2 } from "lucide-react";
 import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { MonacoEditor } from "@semoss/shared";
 import {
@@ -6,7 +6,6 @@ import {
 	Field,
 	FieldLabel,
 	Input,
-	Textarea,
 	Tooltip,
 	TooltipContent,
 	TooltipTrigger,
@@ -37,6 +36,9 @@ export interface NodeEditDrawerProps {
 	devMode?: boolean;
 	onUpdate: (step: AutomationNode) => void;
 	onDelete: () => void;
+	/** When true, renders the node's configuration as view-only: mutating fields, the
+	 * delete action, and raw Python editing (inline and the popout modal) are all disabled. */
+	readOnly?: boolean;
 }
 
 interface PendingPythonUpdate {
@@ -71,6 +73,7 @@ export function NodeEditDrawer({
 	devMode = false,
 	onUpdate,
 	onDelete,
+	readOnly = false,
 }: NodeEditDrawerProps) {
 	const [outputExpanded, setOutputExpanded] = useState(false);
 	const [editorMode, setEditorMode] = useState<"form" | "python">("form");
@@ -133,6 +136,7 @@ export function NodeEditDrawer({
 	}, [flushPythonUpdate, pythonSource, step.id]);
 	useEffect(() => () => flushPythonUpdate(), [flushPythonUpdate]);
 	const updatePythonSource = (source: string) => {
+		if (readOnly) return;
 		setPythonDraft(source);
 		pendingPythonUpdateRef.current = { source, step };
 		if (pythonUpdateTimeoutRef.current) {
@@ -180,6 +184,7 @@ export function NodeEditDrawer({
 		</div>
 	);
 	const openPythonModal = () => {
+		if (readOnly) return;
 		flushPythonUpdate();
 		const parentOrigin = new URLSearchParams(window.location.search).get(
 			"parentOrigin",
@@ -208,16 +213,24 @@ export function NodeEditDrawer({
 					<span className="font-semibold text-sm">
 						{workflowDefinition?.label ?? meta.label}
 					</span>
+					{readOnly && (
+						<span className="flex items-center gap-1 rounded-md border bg-background px-1.5 py-0.5 text-[10px] text-muted-foreground">
+							<Lock className="size-3" />
+							View only
+						</span>
+					)}
 				</div>
-				<Button
-					size="sm"
-					variant="ghost"
-					className="h-8 w-8 p-0 text-destructive/70 hover:text-destructive"
-					onClick={onDelete}
-					aria-label="Delete step"
-				>
-					<Trash2 className="h-3.5 w-3.5" />
-				</Button>
+				{!readOnly && (
+					<Button
+						size="sm"
+						variant="ghost"
+						className="h-8 w-8 p-0 text-destructive/70 hover:text-destructive"
+						onClick={onDelete}
+						aria-label="Delete step"
+					>
+						<Trash2 className="h-3.5 w-3.5" />
+					</Button>
+				)}
 			</div>
 
 			<div className="flex-1 overflow-y-auto px-4 py-4">
@@ -255,40 +268,17 @@ export function NodeEditDrawer({
 						<Input
 							className="h-9 text-sm"
 							value={step.label}
-							onChange={(event) =>
+							onChange={(event) => {
+								if (readOnly) return;
 								onUpdate({
 									...step,
 									label: event.target.value,
-								})
-							}
+								});
+							}}
 							placeholder="Step label"
+							readOnly={readOnly}
 						/>
 					</Field>
-
-					{typeof step.branchCondition === "string" && (
-						<Field>
-							<FieldLabel className="text-xs">
-								Branch condition
-							</FieldLabel>
-							<Textarea
-								className="resize-none font-mono text-xs"
-								rows={2}
-								value={step.branchCondition}
-								onChange={(event) =>
-									onUpdate({
-										...step,
-										branchCondition: event.target.value,
-									})
-								}
-								placeholder='e.g. ${model_chat_1} == "yes"'
-							/>
-							<p className="mt-1 text-[10px] text-muted-foreground">
-								Condition expression. When true the{" "}
-								<strong>Then</strong> path runs, otherwise{" "}
-								<strong>Else</strong>.
-							</p>
-						</Field>
-					)}
 
 					<div className="space-y-3 border-t pt-4">
 						<div className="flex items-center justify-between gap-3">
@@ -306,7 +296,7 @@ export function NodeEditDrawer({
 											: "Use the form or inspect the generated Python."}
 								</p>
 							</div>
-							{!isDeveloperPython && (
+							{!isDeveloperPython && devMode && (
 								<div className="flex rounded-md border bg-muted/40 p-0.5">
 									<button
 										type="button"
@@ -340,7 +330,9 @@ export function NodeEditDrawer({
 										node&apos;s custom source controls its
 										behavior.
 									</p>
-									{canRevertToGenerated ? (
+									{devMode &&
+									canRevertToGenerated &&
+									!readOnly ? (
 										<Button
 											size="sm"
 											variant="outline"
@@ -360,7 +352,7 @@ export function NodeEditDrawer({
 										>
 											Revert to generated default
 										</Button>
-									) : (
+									) : devMode ? (
 										<Button
 											size="sm"
 											variant="outline"
@@ -371,6 +363,11 @@ export function NodeEditDrawer({
 										>
 											View Python source
 										</Button>
+									) : (
+										<p className="mt-1 text-[11px] text-muted-foreground leading-relaxed">
+											Switch to Dev mode to view or edit
+											the custom Python source.
+										</p>
 									)}
 								</div>
 							) : supportsBusinessForm(step) ? (
@@ -380,6 +377,7 @@ export function NodeEditDrawer({
 									onUpdate={onUpdate}
 									devMode={devMode}
 									appId={appId}
+									readOnly={readOnly}
 								/>
 							) : (
 								<p className="rounded-lg border border-dashed px-3 py-2 text-[11px] text-muted-foreground">
@@ -387,7 +385,8 @@ export function NodeEditDrawer({
 								</p>
 							))}
 
-						{(isDeveloperPython || editorMode === "python") && (
+						{(isDeveloperPython ||
+							(devMode && editorMode === "python")) && (
 							<Field>
 								<div>
 									<div className="flex items-center justify-between">
@@ -395,25 +394,30 @@ export function NodeEditDrawer({
 											<Code2 className="h-3.5 w-3.5 text-primary" />
 											Python source
 										</FieldLabel>
-										{upstreamVars.length > 0 &&
+										{!readOnly &&
+											upstreamVars.length > 0 &&
 											pythonVariablePicker}
-										<Tooltip>
-											<TooltipTrigger asChild>
-												<Button
-													type="button"
-													size="icon-sm"
-													variant="ghost"
-													className="size-6"
-													onClick={openPythonModal}
-													aria-label="Open bigger Python editor"
-												>
-													<ExternalLink className="size-3.5" />
-												</Button>
-											</TooltipTrigger>
-											<TooltipContent>
-												Open Editor
-											</TooltipContent>
-										</Tooltip>
+										{!readOnly && (
+											<Tooltip>
+												<TooltipTrigger asChild>
+													<Button
+														type="button"
+														size="icon-sm"
+														variant="ghost"
+														className="size-6"
+														onClick={
+															openPythonModal
+														}
+														aria-label="Open bigger Python editor"
+													>
+														<ExternalLink className="size-3.5" />
+													</Button>
+												</TooltipTrigger>
+												<TooltipContent>
+													Open Editor
+												</TooltipContent>
+											</Tooltip>
+										)}
 									</div>
 								</div>
 								<div className="h-[300px] overflow-hidden rounded-lg border bg-muted/30">
@@ -445,6 +449,7 @@ export function NodeEditDrawer({
 												folding: true,
 												scrollBeyondLastLine: false,
 												wordWrap: "on",
+												readOnly,
 												padding: {
 													top: 12,
 													bottom: 12,
@@ -454,9 +459,11 @@ export function NodeEditDrawer({
 									</Suspense>
 								</div>
 								<p className="text-muted-foreground text-xs">
-									{isCustomSource
-										? "This custom source is saved with the node."
-										: "Editing generated source creates a custom node."}
+									{readOnly
+										? "View only."
+										: isCustomSource
+											? "This custom source is saved with the node."
+											: "Editing generated source creates a custom node."}
 								</p>
 							</Field>
 						)}

@@ -144,8 +144,6 @@ export interface AutomationNode {
 	workflowType?: AutomationWorkflowNodeType;
 	workflowConfig?: AutomationWorkflowNodeConfig;
 	workflowCodeMode?: AutomationNodeCodeMode;
-	/** When set, this node branches: the Then path runs when the condition is truthy, otherwise Else. */
-	branchCondition?: string;
 }
 
 export interface AutomationEdge {

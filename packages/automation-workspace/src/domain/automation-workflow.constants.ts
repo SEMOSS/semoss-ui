@@ -278,12 +278,12 @@ export const AUTOMATION_WORKFLOW_NODE_REGISTRY: readonly AutomationNodeDefinitio
 		},
 		{
 			type: "app.pixel",
-			label: "Run app Pixel",
-			description: "Run a Pixel command in an application.",
+			label: "Run an app action",
+			description: "Run an action in another app.",
 			category: "app",
 			defaultConfig: { appId: "", pixel: "" },
 			configSchema: {
-				pixel: { type: "code", label: "Pixel command", required: true },
+				pixel: { type: "code", label: "App command", required: true },
 			},
 			inputs: [controlIn],
 			outputs: [controlOut, textOut],
@@ -316,7 +316,7 @@ export const AUTOMATION_WORKFLOW_NODE_REGISTRY: readonly AutomationNodeDefinitio
 			configSchema: {
 				condition: {
 					type: "textarea",
-					label: "Condition (Python expression)",
+					label: "Condition",
 					required: true,
 				},
 			},
