@@ -169,7 +169,7 @@ export const CodePreviewBlock = ({
 
 	return (
 		<>
-			<div className="relative overflow-hidden rounded-md border border-border bg-background">
+			<div className="relative overflow-clip rounded-md border border-border bg-background">
 				<BlockHeader
 					label={langLabel}
 					isCollapsed={isCollapsed}
@@ -250,6 +250,57 @@ export const CodePreviewBlock = ({
 							<TooltipContent side="bottom">Save</TooltipContent>
 						</Tooltip>
 					)}
+					<Button
+						className="-my-1 h-6 px-2 text-muted-foreground text-xs hover:text-foreground"
+						variant="ghost"
+						size="sm"
+						disabled={!room || !code || isSavingToRoom}
+						onClick={() => void saveInRoom()}
+					>
+						{isSavingToRoom ? "Saving..." : "Save In Room"}
+					</Button>
+					<Button
+						className="-my-1 h-6 px-2 text-muted-foreground text-xs hover:text-foreground"
+						variant="ghost"
+						size="sm"
+						disabled={!code}
+						onClick={() => setIsFullViewOpen(true)}
+					>
+						Full View
+					</Button>
+				</BlockHeader>
+				{!isCollapsed && (
+					<div className="p-3">
+						<div className="-mb-7 sticky top-2 z-10 float-right ml-2">
+							<Tooltip>
+								<TooltipTrigger asChild>
+									<Button
+										className="h-6 gap-1 px-2 text-muted-foreground text-xs hover:text-foreground"
+										variant="ghost"
+										size="sm"
+										disabled={!code}
+										onClick={() =>
+											void copyToClipboard(
+												code,
+												() =>
+													toast.success(
+														t(
+															"notifications.copySuccess",
+														),
+													),
+												(msg) => toast.error(msg),
+											)
+										}
+									>
+										<CopyIcon className="size-3.5" />
+										Copy
+									</Button>
+								</TooltipTrigger>
+								<TooltipContent side="bottom">
+									Copy
+								</TooltipContent>
+							</Tooltip>
+						</div>
 					<Tooltip>
 						<TooltipTrigger asChild>
 							<Button
