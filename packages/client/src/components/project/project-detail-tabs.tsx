@@ -5,7 +5,6 @@ import { ProjectAccessControl, ProjectOverview } from "@/components/project";
 import { useProject } from "@/hooks";
 import { AppActivityPage } from "@/pages/app/app-activity-page";
 import { AppCommitsPage } from "@/pages/app/app-commits-page";
-import { AppFilesPage } from "@/pages/app/app-files-page";
 import { AppGithubPage } from "@/pages/app/app-github-page";
 import { AppMcpUsagePage } from "@/pages/app/app-mcp-usage-page";
 import { AppSettingsPage } from "@/pages/app/app-settings-page";
@@ -27,7 +26,6 @@ interface ProjectDetailTabsProps {
 			| "github"
 			| "settings"
 			| "access-control"
-			| "files"
 			| "smss";
 		restrict?: Role[];
 	}[];
@@ -110,7 +108,6 @@ export const ProjectDetailTabs = ({ tabs }: ProjectDetailTabsProps) => {
 				{activeTab?.component === "access-control" && (
 					<ProjectAccessControl />
 				)}
-				{activeTab?.component === "files" && <AppFilesPage />}
 				{activeTab?.component === "smss" && <AppSmssPage />}
 			</div>
 		</div>
