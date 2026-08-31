@@ -27,6 +27,8 @@
 		"labelOpen": "Uitgevoerde tools ({{count}})",
 		"labelStreaming_one": "{{count}} tool laden…",
 		"labelStreaming_other": "{{count}} tools laden…",
+		"labelPartial_one": "{{count}} tool voltooid, {{loadingCount}} aan het laden…",
+		"labelPartial_other": "{{count}} tools voltooid, {{loadingCount}} aan het laden…",
 		"summaryCompleted": "{{count}} voltooid",
 		"summaryError": "{{count}} mislukt",
 		"summaryCancelled": "{{count}} geannuleerd"

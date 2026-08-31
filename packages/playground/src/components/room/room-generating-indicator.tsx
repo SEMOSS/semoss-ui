@@ -15,7 +15,7 @@ export const RoomGeneratingIndicator = ({
 	return (
 		<div
 			className={cn(
-				"ms-2 flex h-10 items-center gap-2 text-muted-foreground text-sm",
+				"ms-2.5 flex h-10 items-center gap-2 text-muted-foreground text-sm",
 				!active && "invisible",
 			)}
 		>

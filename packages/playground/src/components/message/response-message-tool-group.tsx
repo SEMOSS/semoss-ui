@@ -68,6 +68,12 @@ export const ResponseMessageToolGroup: React.FC<ResponseMessageToolGroupProps> =
 		// resolve to the SUCCESS check) — force the spinner instead.
 		const icon = isResolving ? <Spinner /> : groupStatusConfig[status].icon;
 
+		// Once every call has resolved, some tools can still be running
+		// (LOADING) or queued/awaiting a decision (INITIAL) while others have
+		// already settled — a distinct state from "all done".
+		const settledCount = counts.SUCCESS + counts.ERROR + counts.CANCELLED;
+		const inProgressCount = counts.LOADING + counts.INITIAL;
+
 		const summaryParts = [
 			counts.SUCCESS > 0 &&
 				counts.SUCCESS < tools.length &&
@@ -100,10 +106,15 @@ export const ResponseMessageToolGroup: React.FC<ResponseMessageToolGroupProps> =
 								? t("group.labelStreaming", {
 										count: tools.length,
 									})
-								: t("group.labelClosed", {
-										toolName: tools[0].displayName,
-										count: tools.length - 1,
-									})}
+								: inProgressCount > 0
+									? t("group.labelPartial", {
+											count: settledCount,
+											loadingCount: inProgressCount,
+										})
+									: t("group.labelClosed", {
+											toolName: tools[0].displayName,
+											count: tools.length - 1,
+										})}
 					</span>
 					<ChevronDownIcon
 						className={cn(

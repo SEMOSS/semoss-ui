@@ -27,6 +27,8 @@
 		"labelOpen": "Outils exécutés ({{count}})",
 		"labelStreaming_one": "Chargement de {{count}} outil…",
 		"labelStreaming_other": "Chargement de {{count}} outils…",
+		"labelPartial_one": "{{count}} outil terminé, {{loadingCount}} en chargement…",
+		"labelPartial_other": "{{count}} outils terminés, {{loadingCount}} en chargement…",
 		"summaryCompleted": "{{count}} terminé",
 		"summaryError": "{{count}} échoué",
 		"summaryCancelled": "{{count}} annulé"

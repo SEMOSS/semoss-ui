@@ -27,6 +27,8 @@
 		"labelOpen": "Executed Tools ({{count}})",
 		"labelStreaming_one": "Loading {{count}} tool…",
 		"labelStreaming_other": "Loading {{count}} tools…",
+		"labelPartial_one": "{{count}} tool completed, {{loadingCount}} loading…",
+		"labelPartial_other": "{{count}} tools completed, {{loadingCount}} loading…",
 		"summaryCompleted": "{{count}} completed",
 		"summaryError": "{{count}} failed",
 		"summaryCancelled": "{{count}} cancelled"

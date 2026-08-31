@@ -27,6 +27,8 @@
 		"labelOpen": "निष्पादित टूल ({{count}})",
 		"labelStreaming_one": "{{count}} टूल लोड हो रहा है…",
 		"labelStreaming_other": "{{count}} टूल लोड हो रहे हैं…",
+		"labelPartial_one": "{{count}} टूल पूर्ण, {{loadingCount}} लोड हो रहा है…",
+		"labelPartial_other": "{{count}} टूल पूर्ण, {{loadingCount}} लोड हो रहे हैं…",
 		"summaryCompleted": "{{count}} पूर्ण",
 		"summaryError": "{{count}} विफल",
 		"summaryCancelled": "{{count}} रद्द"
