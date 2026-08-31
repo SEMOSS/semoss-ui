@@ -76,11 +76,16 @@ export class RoomStore {
 	 */
 	private _lastResponseMessageId: string = "ROOT_PLACEHOLDER_ID";
 
-	private constructor(
-		roomId: string,
-		insightId: string,
-		options: RoomOptions,
-	) {
+	/**
+	 * Wrap an already-existing room (e.g. one an insight is already bound to)
+	 * with no new `CreateRoom` pixel call. Prefer {@link createRoom} /
+	 * {@link RoomStore.create} when you need to create a brand-new room record.
+	 *
+	 * @param roomId - ID of the existing room.
+	 * @param insightId - The active SEMOSS insight ID.
+	 * @param options - The room's current configuration (fetch with {@link getRoomOptions} if unknown).
+	 */
+	constructor(roomId: string, insightId: string, options: RoomOptions) {
 		this.roomId = roomId;
 		this.insightId = insightId;
 		this._options = options;
@@ -319,8 +324,9 @@ export class RoomStore {
 	// ---------------------------------------------------------------------------
 
 	/**
-	 * Create a new Room, bind it to the active insight, and return it ready to use.
-	 * Prefer this over `new RoomStore(...)` — it handles insight binding automatically.
+	 * Create a brand-new room record, bind it to the active insight, and return
+	 * it ready to use. Prefer this (or the `new RoomStore(...)` constructor for
+	 * an already-existing room) over calling `createRoomRecord` yourself.
 	 *
 	 * @param insightId - The active SEMOSS insight ID.
 	 * @param workspaceId - Optional workspace to associate with the room.

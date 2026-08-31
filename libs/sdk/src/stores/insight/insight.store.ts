@@ -1,6 +1,7 @@
 import {
 	confirmOTP,
 	download,
+	getRoomOptions,
 	getSystemConfig,
 	login,
 	loginLDAP,
@@ -9,6 +10,7 @@ import {
 	oauth,
 	runPixel,
 	runPixelAsync,
+	setRoomForInsight,
 	upload,
 	uploadApp,
 	uploadEngine,
@@ -18,6 +20,7 @@ import {
 import { Env } from "../../env";
 import type { MCPToolResponse, Script } from "../../types";
 import { UnauthorizedError } from "../../utility";
+import { createRoom, RoomStore } from "../room";
 
 /**
  * Module-level cache for the system config. It is static for a page session, so
@@ -125,6 +128,9 @@ export class InsightStore {
 			disableRoom: false,
 		},
 	};
+
+	/** Room bound to the current insightId, lazily created/cached by getRoom(). */
+	private _room: RoomStore | null = null;
 
 	/** Getters */
 	/**
@@ -260,6 +266,7 @@ export class InsightStore {
 		this._store.isInitialized = false;
 		this._store.isAuthorized = false;
 		this._store.isReady = false;
+		this._room = null;
 
 		const merged: NonNullable<typeof options> = {
 			app: options?.app || "",
@@ -485,10 +492,7 @@ LoadPyFromFile(alias="${alias}", filePath="temp.py");
 		if (!pixel && isExistingInsight) {
 			// still bind the insight to the room when running in tool/embed mode
 			if (Env?.TOOL?.roomId && !this._store.options.disableRoom) {
-				await runPixel<[boolean]>(
-					`SetRoomForInsight(roomId=${JSON.stringify(Env.TOOL.roomId)});`,
-					this._store.insightId,
-				);
+				await this.actions.getRoom();
 			}
 
 			// already initialized — mark ready
@@ -517,10 +521,7 @@ LoadPyFromFile(alias="${alias}", filePath="temp.py");
 
 		// point the insight space toward the room
 		if (Env?.TOOL?.roomId && !this._store.options.disableRoom) {
-			await runPixel<[boolean]>(
-				`SetRoomForInsight(roomId=${JSON.stringify(Env.TOOL.roomId)});`,
-				insightId,
-			);
+			await this.actions.getRoom();
 		}
 
 		// set as ready
@@ -547,6 +548,7 @@ LoadPyFromFile(alias="${alias}", filePath="temp.py");
 
 		// set the insight ID
 		this._store.insightId = "";
+		this._room = null;
 	};
 
 	/**
@@ -714,6 +716,7 @@ LoadPyFromFile(alias="${alias}", filePath="temp.py");
 				// reset insight state so re-login creates a fresh insight
 				this._store.insightId = "";
 				this._store.isReady = false;
+				this._room = null;
 
 				// success
 				return true;
@@ -804,6 +807,36 @@ LoadPyFromFile(alias="${alias}", filePath="temp.py");
 			return {
 				output: pixelReturn[0].output,
 			};
+		},
+
+		/**
+		 * Get the room bound to this insightId, wrapped as a `RoomStore`. Cached
+		 * per insight — repeated calls return the same instance. If a tool
+		 * execution context already bound a room (`Env.TOOL.roomId`), wraps that
+		 * one; otherwise creates one via {@link createRoom} and binds it to this
+		 * insightId first.
+		 *
+		 * @returns The bound `RoomStore`, or `null` if `disableRoom` was set on this insight.
+		 */
+		getRoom: async (): Promise<RoomStore | null> => {
+			if (this._store.options.disableRoom) {
+				return null;
+			}
+
+			if (this._room) {
+				return this._room;
+			}
+
+			const roomId = Env.TOOL?.roomId;
+			if (!roomId) {
+				this._room = await createRoom(this._store.insightId);
+				return this._room;
+			}
+
+			await setRoomForInsight(this._store.insightId, roomId);
+			const options = await getRoomOptions(this._store.insightId, roomId);
+			this._room = new RoomStore(roomId, this._store.insightId, options);
+			return this._room;
 		},
 
 		/**
