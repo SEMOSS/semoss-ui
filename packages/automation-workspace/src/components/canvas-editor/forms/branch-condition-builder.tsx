@@ -32,7 +32,7 @@ export interface BranchConditionBuilderProps {
 
 /**
  * Business/Design-mode "Value 1 + Operator + Value 2" builder for a branch step's condition,
- * backed by the same persisted Python condition string used everywhere else. Falls back to a
+ * backed by the same persisted condition expression used everywhere else. Falls back to a
  * read-only view of the raw expression (with a warning) when the condition can't be losslessly
  * represented by the simple builder, so it's never silently rewritten. Dev mode always shows the
  * raw, freely editable expression instead.
@@ -57,8 +57,8 @@ export function BranchConditionBuilder({
 					readOnly={readOnly}
 				/>
 				<p className="text-muted-foreground text-xs">
-					A Python expression that evaluates to True or False. When
-					True the <strong>Then</strong> path runs, otherwise the{" "}
+					A condition expression that evaluates to true or false. When
+					true the <strong>Then</strong> path runs, otherwise the{" "}
 					<strong>Else</strong> path runs.
 				</p>
 			</div>

@@ -83,6 +83,10 @@ export function NodeEditDrawer({
 		: undefined;
 	const isCustomSource = step.workflowCodeMode === "custom";
 	const isDeveloperPython = step.workflowType === "developer.python";
+	const isDecisionBranch = step.workflowType === "control.if";
+	const showPythonEditor =
+		isDeveloperPython ||
+		(!isDecisionBranch && devMode && editorMode === "python");
 	const canRevertToGenerated =
 		isCustomSource && workflowDefinition?.defaultCodeMode === "generated";
 	const persistedPythonSource =
@@ -174,7 +178,7 @@ export function NodeEditDrawer({
 							className="flex w-full items-center gap-1.5 px-3 py-1.5 text-left font-mono text-xs hover:bg-accent hover:text-accent-foreground"
 						>
 							<span className="text-[10px] text-muted-foreground">
-								{"${}"}
+								{`\${}`}
 							</span>
 							{variable}
 						</button>
@@ -284,43 +288,53 @@ export function NodeEditDrawer({
 						<div className="flex items-center justify-between gap-3">
 							<div>
 								<p className="font-medium text-sm">
-									{isDeveloperPython
+									{showPythonEditor
 										? "Python source"
 										: "Configuration"}
 								</p>
 								<p className="text-[11px] text-muted-foreground">
-									{isDeveloperPython
-										? "This node runs its custom Python source."
-										: isCustomSource
-											? "This node uses custom Python."
-											: "Use the form or inspect the generated Python."}
+									{isDecisionBranch
+										? "This decision uses generated code and keeps its Then and Else paths."
+										: isDeveloperPython
+											? "This node runs its custom Python source."
+											: isCustomSource
+												? "This node uses custom Python."
+												: "Use the form or inspect the generated Python."}
 								</p>
 							</div>
-							{!isDeveloperPython && devMode && (
-								<div className="flex rounded-md border bg-muted/40 p-0.5">
-									<button
-										type="button"
-										aria-pressed={editorMode === "form"}
-										onClick={() => setEditorMode("form")}
-										className={`rounded px-2.5 py-1 font-medium text-[11px] transition-colors ${editorMode === "form" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
-									>
-										Form
-									</button>
-									<button
-										type="button"
-										aria-pressed={editorMode === "python"}
-										onClick={() => setEditorMode("python")}
-										className={`rounded px-2.5 py-1 font-medium text-[11px] transition-colors ${editorMode === "python" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
-									>
-										Python
-									</button>
-								</div>
-							)}
+							{!isDeveloperPython &&
+								!isDecisionBranch &&
+								devMode && (
+									<div className="flex rounded-md border bg-muted/40 p-0.5">
+										<button
+											type="button"
+											aria-pressed={editorMode === "form"}
+											onClick={() =>
+												setEditorMode("form")
+											}
+											className={`rounded px-2.5 py-1 font-medium text-[11px] transition-colors ${editorMode === "form" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+										>
+											Form
+										</button>
+										<button
+											type="button"
+											aria-pressed={
+												editorMode === "python"
+											}
+											onClick={() =>
+												setEditorMode("python")
+											}
+											className={`rounded px-2.5 py-1 font-medium text-[11px] transition-colors ${editorMode === "python" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+										>
+											Python
+										</button>
+									</div>
+								)}
 						</div>
 
 						{!isDeveloperPython &&
 							editorMode === "form" &&
-							(isCustomSource ? (
+							(isCustomSource && !isDecisionBranch ? (
 								<div className="rounded-lg border border-amber-500/30 bg-amber-500/5 p-3">
 									<p className="font-medium text-xs">
 										Custom Python is active
@@ -385,8 +399,7 @@ export function NodeEditDrawer({
 								</p>
 							))}
 
-						{(isDeveloperPython ||
-							(devMode && editorMode === "python")) && (
+						{showPythonEditor && (
 							<Field>
 								<div>
 									<div className="flex items-center justify-between">
@@ -461,9 +474,11 @@ export function NodeEditDrawer({
 								<p className="text-muted-foreground text-xs">
 									{readOnly
 										? "View only."
-										: isCustomSource
-											? "This custom source is saved with the node."
-											: "Editing generated source creates a custom node."}
+										: isDecisionBranch
+											? "Decision branches use generated code."
+											: isCustomSource
+												? "This custom source is saved with the node."
+												: "Editing generated source creates a custom node."}
 								</p>
 							</Field>
 						)}

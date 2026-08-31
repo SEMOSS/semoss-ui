@@ -1,11 +1,9 @@
 /**
  * Parses and generates the simple "Value 1 + Operator + Value 2" business-mode representation
- * of a branch/`control.if` step's persisted Python condition string (`BranchConfig.condition`).
+ * of a branch/`control.if` step's persisted condition expression (`BranchConfig.condition`).
  *
- * The persisted condition is a raw Python boolean expression where `${varName}` tokens are
- * textually substituted with the runtime value before `eval()` (see
- * `automation-workflow-adapter.ts`'s `control.if` template). This module only recognizes a
- * narrow, well-defined subset of that expression syntax — a single comparison between two
+ * The persisted condition is evaluated by the backend's Java condition evaluator. This module
+ * only recognizes a narrow, well-defined subset of that expression syntax — a single comparison between two
  * operands, each either a `${varName}` reference, a quoted string literal, or a number. Any
  * condition outside that subset (multiple comparisons, boolean combinators, unsupported
  * operators, etc.) fails to parse so the caller can fall back to the raw Python editor instead
@@ -15,11 +13,10 @@
 export type BranchConditionOperator =
 	| "equals"
 	| "notEquals"
-	| "contains"
-	| "startsWith"
-	| "endsWith"
 	| "greaterThan"
-	| "lessThan";
+	| "greaterThanOrEqual"
+	| "lessThan"
+	| "lessThanOrEqual";
 
 export interface BranchConditionOperatorOption {
 	value: BranchConditionOperator;
@@ -30,11 +27,10 @@ export interface BranchConditionOperatorOption {
 export const BRANCH_CONDITION_OPERATORS: BranchConditionOperatorOption[] = [
 	{ value: "equals", label: "equals" },
 	{ value: "notEquals", label: "does not equal" },
-	{ value: "contains", label: "contains" },
-	{ value: "startsWith", label: "starts with" },
-	{ value: "endsWith", label: "ends with" },
 	{ value: "greaterThan", label: "is greater than" },
+	{ value: "greaterThanOrEqual", label: "is greater than or equal to" },
 	{ value: "lessThan", label: "is less than" },
+	{ value: "lessThanOrEqual", label: "is less than or equal to" },
 ];
 
 export interface ParsedBranchCondition {
@@ -51,10 +47,9 @@ const OPERAND = `(?:${VAR_TOKEN}|${STRING_TOKEN}|${NUMBER_TOKEN})`;
 
 const OPERATOR_PATTERNS: Array<{
 	operator: BranchConditionOperator;
-	// Capture group order in `pattern` — [1] and [2] map to the resulting value1/value2 in
-	// this order (reversed for "contains", since Python phrases it as `needle in haystack`).
+	// Capture group order in `pattern` — [1] and [2] map to the resulting value1/value2.
 	pattern: RegExp;
-	valueOrder: [1, 2] | [2, 1];
+	valueOrder: [1, 2];
 }> = [
 	{
 		operator: "equals",
@@ -67,33 +62,23 @@ const OPERATOR_PATTERNS: Array<{
 		valueOrder: [1, 2],
 	},
 	{
-		operator: "startsWith",
-		pattern: new RegExp(
-			`^str\\((${OPERAND})\\)\\.startswith\\((${OPERAND})\\)$`,
-		),
-		valueOrder: [1, 2],
-	},
-	{
-		operator: "endsWith",
-		pattern: new RegExp(
-			`^str\\((${OPERAND})\\)\\.endswith\\((${OPERAND})\\)$`,
-		),
-		valueOrder: [1, 2],
-	},
-	{
-		operator: "contains",
-		// `VALUE2 in VALUE1` — value1 is the haystack, value2 is the needle.
-		pattern: new RegExp(`^(${OPERAND})\\s+in\\s+(${OPERAND})$`),
-		valueOrder: [2, 1],
-	},
-	{
 		operator: "greaterThan",
 		pattern: new RegExp(`^(${OPERAND})\\s*>\\s*(${OPERAND})$`),
 		valueOrder: [1, 2],
 	},
 	{
+		operator: "greaterThanOrEqual",
+		pattern: new RegExp(`^(${OPERAND})\\s*>=\\s*(${OPERAND})$`),
+		valueOrder: [1, 2],
+	},
+	{
 		operator: "lessThan",
 		pattern: new RegExp(`^(${OPERAND})\\s*<\\s*(${OPERAND})$`),
+		valueOrder: [1, 2],
+	},
+	{
+		operator: "lessThanOrEqual",
+		pattern: new RegExp(`^(${OPERAND})\\s*<=\\s*(${OPERAND})$`),
 		valueOrder: [1, 2],
 	},
 ];
@@ -120,7 +105,7 @@ function operandToDisplayValue(token: string): string {
 	return token;
 }
 
-/** Converts a builder input's plain text into the Python operand token that will be persisted. */
+/** Converts a builder input's plain text into the condition operand token that will be persisted. */
 export function displayValueToOperand(text: string): string {
 	const trimmed = text.trim();
 	if (new RegExp(`^${VAR_TOKEN}$`).test(trimmed)) return trimmed;
@@ -157,7 +142,7 @@ export function parseBranchCondition(
 	return null;
 }
 
-/** Builds the persisted Python condition string from the simple builder's current values. */
+/** Builds the persisted condition expression from the simple builder's current values. */
 export function generateBranchCondition(parsed: ParsedBranchCondition): string {
 	const value1 = displayValueToOperand(parsed.value1);
 	const value2 = displayValueToOperand(parsed.value2);
@@ -166,16 +151,14 @@ export function generateBranchCondition(parsed: ParsedBranchCondition): string {
 			return `${value1} == ${value2}`;
 		case "notEquals":
 			return `${value1} != ${value2}`;
-		case "contains":
-			return `${value2} in ${value1}`;
-		case "startsWith":
-			return `str(${value1}).startswith(${value2})`;
-		case "endsWith":
-			return `str(${value1}).endswith(${value2})`;
 		case "greaterThan":
 			return `${value1} > ${value2}`;
+		case "greaterThanOrEqual":
+			return `${value1} >= ${value2}`;
 		case "lessThan":
 			return `${value1} < ${value2}`;
+		case "lessThanOrEqual":
+			return `${value1} <= ${value2}`;
 		default: {
 			const exhaustiveCheck: never = parsed.operator;
 			throw new Error(

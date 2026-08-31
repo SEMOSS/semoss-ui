@@ -502,6 +502,7 @@ export function getCanvasNodeSources(
 			const type = step.workflowType ?? canvasTypeToWorkflow(step.type);
 			if (
 				type === "trigger.start" ||
+				type === "control.if" ||
 				step.workflowCodeMode !== "custom"
 			) {
 				return [];
@@ -539,7 +540,10 @@ export function canvasDocumentToWorkflow({
 			...(type === "trigger.start" ? {} : { outputVar: step.outputVar }),
 			position: step.position,
 			config: persistedConfig,
-			codeMode: step.workflowCodeMode ?? definition.defaultCodeMode,
+			codeMode:
+				type === "control.if"
+					? "generated"
+					: (step.workflowCodeMode ?? definition.defaultCodeMode),
 		};
 	});
 	const nodeIds = new Set(nodes.map((node) => node.id));
