@@ -79,7 +79,11 @@ import { filterRowMatrix } from "@/lib/vizFilter";
 import { contentSizeStyles, hasContentSize } from "@/lib/vizSize";
 import { applyVizSort } from "@/lib/vizSort";
 import { buildFlexModel } from "@/utils/dashboardLayout";
-import { runDatabaseQuery } from "../api";
+import {
+	loadMoreFromTask,
+	runDatabaseQuery,
+	runDatabaseQueryPaged,
+} from "../api";
 import { usePortalStore } from "../store";
 import type {
 	DashboardQuery,
@@ -251,6 +255,17 @@ interface VizState {
 	running: boolean;
 }
 
+type BatchTableState = {
+	headers: string[];
+	rows: Record<string, unknown>[];
+	taskId: string | null;
+	pageSize: number;
+	hasMore: boolean;
+	loading: boolean;
+	loadingMore: boolean;
+	error: string | null;
+};
+
 /** Inline "Export CSV" hover button with optional PHI/PII gate. */
 function InlineExportButton({
 	onExport,
@@ -328,6 +343,18 @@ function ViewModeInner() {
 	const [queryStates, setQueryStates] = useState<Record<string, VizState>>(
 		{},
 	);
+
+	// Batch-loading table state, keyed the same way as queryStates.
+	const [batchTableStates, setBatchTableStates] = useState<
+		Record<string, BatchTableState>
+	>({});
+	// csvexport: track which query keys are awaiting an on-click fetch, and a per-key
+	// download counter that bumps to signal the button to auto-download on completion.
+	const pendingExportKeysRef = useRef<Set<string>>(new Set());
+	const [exportDownloadKeys, setExportDownloadKeys] = useState<
+		Record<string, number>
+	>({});
+
 	// SQL-sourced dropdown options, keyed by parameter id.
 	const [paramOptions, setParamOptions] = useState<Record<string, string[]>>(
 		{},
@@ -512,6 +539,8 @@ function ViewModeInner() {
 		}> = [];
 		const seenAuto = new Set<string>();
 		allVizs.forEach((viz) => {
+			// csvexport runs its query on button click — never auto-fetch on app load.
+			if (viz.visualizationType === "csvexport") return;
 			const key = qKeyOf(viz);
 			if (seenAuto.has(key)) return;
 			const src = resolveQuery(viz, queries);
@@ -532,6 +561,24 @@ function ViewModeInner() {
 		});
 
 		autoRunItems.forEach(({ key, src }) => {
+			// Check if any viz sharing this query key is a batch table.
+			const isBatch = allVizs.some(
+				(v) => qKeyOf(v) === key && isVizBatchTable(v),
+			);
+			if (isBatch) {
+				// Batch tables need a queryState entry too (for paramValues).
+				setQueryStates((prev) => ({
+					...prev,
+					[key]: { ...prev[key], running: true, error: null },
+				}));
+				void loadBatchTable(src, key).then(() => {
+					setQueryStates((prev) => ({
+						...prev,
+						[key]: { ...prev[key], running: false },
+					}));
+				});
+				return;
+			}
 			setQueryStates((prev) => ({
 				...prev,
 				[key]: { ...prev[key], running: true, error: null },
@@ -573,6 +620,96 @@ function ViewModeInner() {
 				},
 			},
 		}));
+	};
+
+	const isVizBatchTable = (v: Visualization) =>
+		v.visualizationType === "table" &&
+		// eslint-disable-next-line @typescript-eslint/no-explicit-any
+		!!(v.config as any)?.styling?.table?.batchLoading;
+
+	const loadBatchTable = async (src: QuerySource, key: string) => {
+		const state = queryStates[key];
+		if (!state) return;
+		setBatchTableStates((prev) => ({
+			...prev,
+			[key]: {
+				headers: [],
+				rows: [],
+				taskId: null,
+				pageSize: 0,
+				hasMore: false,
+				loading: true,
+				loadingMore: false,
+				error: null,
+			},
+		}));
+		try {
+			const resolvedValues = { ...state.paramValues };
+			src.parameters?.forEach((p) => {
+				if (p.useCurrentDate)
+					resolvedValues[p.name] = resolveParamDefault(p);
+			});
+			const q = substituteParams(
+				src.query,
+				resolvedValues,
+				src.parameters,
+				paramOptions,
+				sheetParamOptions,
+			);
+			const page = await runDatabaseQueryPaged(src.databaseId, q);
+			setBatchTableStates((prev) => ({
+				...prev,
+				[key]: {
+					headers: page.headers,
+					rows: page.rows,
+					taskId: page.taskId,
+					pageSize: page.pageSize,
+					hasMore: page.hasMore,
+					loading: false,
+					loadingMore: false,
+					error: null,
+				},
+			}));
+		} catch (e: unknown) {
+			setBatchTableStates((prev) => ({
+				...prev,
+				[key]: {
+					...prev[key],
+					loading: false,
+					error: String((e as Error)?.message ?? e),
+				},
+			}));
+		}
+	};
+
+	const loadMoreBatch = async (key: string) => {
+		const st = batchTableStates[key];
+		if (!st || !st.taskId || !st.hasMore || st.loadingMore) return;
+		setBatchTableStates((prev) => ({
+			...prev,
+			[key]: { ...prev[key], loadingMore: true },
+		}));
+		try {
+			const page = await loadMoreFromTask(st.taskId);
+			setBatchTableStates((prev) => ({
+				...prev,
+				[key]: {
+					...prev[key],
+					rows: [...prev[key].rows, ...page.rows],
+					hasMore: page.hasMore,
+					loadingMore: false,
+				},
+			}));
+		} catch (e: unknown) {
+			setBatchTableStates((prev) => ({
+				...prev,
+				[key]: {
+					...prev[key],
+					loadingMore: false,
+					error: String((e as Error)?.message ?? e),
+				},
+			}));
+		}
 	};
 
 	const runQuery = async (src: QuerySource, key: string) => {
@@ -651,6 +788,8 @@ function ViewModeInner() {
 		const seen = new Set<string>();
 		for (const sheet of configSheets.filter((s) => !s.isParamSheet)) {
 			for (const viz of sheet.visualizations) {
+				// csvexport runs its query on button click, not on Run All.
+				if (viz.visualizationType === "csvexport") continue;
 				const qKey = qKeyOf(viz);
 				if (seen.has(qKey)) continue;
 				const src = resolveQuery(viz, queries);
@@ -659,13 +798,40 @@ function ViewModeInner() {
 				if (hasQParams || (boundQ?.loadAfterParams ?? false)) {
 					seen.add(qKey);
 					keys.add(qKey);
-					void runQuery(src, qKey);
+					const isBatch = sheet.visualizations.some(
+						(v) => qKeyOf(v) === qKey && isVizBatchTable(v),
+					);
+					if (isBatch) {
+						void loadBatchTable(src, qKey);
+					} else {
+						void runQuery(src, qKey);
+					}
 				}
 			}
 		}
 		runAllQueryKeysRef.current = keys;
 		if (keys.size > 0) setRunAllInProgress(true);
 	};
+
+	// When a csvexport on-click fetch completes, bump its downloadKey so the button auto-downloads.
+	useEffect(() => {
+		const pending = pendingExportKeysRef.current;
+		if (!pending.size) return;
+		const toDownload: string[] = [];
+		pending.forEach((key) => {
+			const s = queryStates[key];
+			if (s && !s.running && s.result) toDownload.push(key);
+		});
+		if (!toDownload.length) return;
+		toDownload.forEach((k) => pending.delete(k));
+		setExportDownloadKeys((prev) => {
+			const next = { ...prev };
+			toDownload.forEach((k) => {
+				next[k] = (next[k] ?? 0) + 1;
+			});
+			return next;
+		});
+	}, [queryStates]);
 
 	// When all tracked queries finish, clear the running flag and navigate to first non-param sheet.
 	useEffect(() => {
@@ -837,6 +1003,7 @@ function ViewModeInner() {
                         Parameterized / loadAfter charts run via the Parameters sheet.
                         The Filter widget has no query of its own, so it gets no button. */}
 						{viz.visualizationType !== "filter" &&
+							viz.visualizationType !== "csvexport" &&
 							!hasParams &&
 							!isLoadAfter && (
 								<button
@@ -849,9 +1016,74 @@ function ViewModeInner() {
 							)}
 					</div>
 					<div className="min-h-0 flex-1 overflow-auto p-1.5">
-						{/* The Filter widget holds no data of its own — it derives options from
-                        its targets' loaded rows, so it renders without needing a result. */}
-						{viz.visualizationType === "filter" ? (
+						{/* csvexport: always show the button regardless of query state.
+                        Data is fetched lazily when the user clicks — the button's
+                        downloadKey prop triggers the auto-download on completion. */}
+						{viz.visualizationType === "csvexport" ? (
+							<>
+								{state.running && (
+									<div className="flex h-full flex-col items-center justify-center text-gray-500 text-sm">
+										<style>{`@keyframes query-wave{0%,100%{transform:scaleY(.2)}50%{transform:scaleY(1)}}`}</style>
+										<div
+											className="flex items-center gap-[3px]"
+											style={{ height: "2.25rem" }}
+										>
+											{[0, 1, 2, 3, 4].map((i) => (
+												<div
+													key={i}
+													className="w-1.5 rounded-full"
+													style={{
+														height: "100%",
+														backgroundColor:
+															"#32b4f5",
+														transformOrigin:
+															"center",
+														animation:
+															"query-wave 1s ease-in-out infinite",
+														animationDelay: `${i * 0.15}s`,
+													}}
+												/>
+											))}
+										</div>
+										<p className="text-slate-400 text-sm">
+											Loading data
+										</p>
+									</div>
+								)}
+								{!state.running && (
+									<CsvExportButton
+										rows={
+											state.result
+												? (toChartData(
+														state.result,
+													) as Record<string, any>[])
+												: []
+										}
+										title={viz.title || "export"}
+										config={viz.config as any}
+										phi={viz.phi}
+										onExportClick={
+											!state.result
+												? () => {
+														pendingExportKeysRef.current.add(
+															qKey,
+														);
+														void runQuery(
+															src,
+															qKey,
+														);
+													}
+												: undefined
+										}
+										downloadKey={
+											exportDownloadKeys[qKey] ?? 0
+										}
+									/>
+								)}
+							</>
+						) : /* The Filter widget holds no data of its own — it derives options from
+                        its targets' loaded rows, so it renders without needing a result. */
+						viz.visualizationType === "filter" ? (
 							<VizContent
 								viz={viz}
 								result={
@@ -901,6 +1133,20 @@ function ViewModeInner() {
 										result={state.result}
 									/>
 								)}
+								{/* Batch table pane — renders when the viz is a batch table */}
+								{!state.running &&
+									!state.result &&
+									isVizBatchTable(viz) &&
+									batchTableStates[qKey] && (
+										<BatchTablePane
+											vizKey={qKey}
+											viz={viz}
+											batchState={batchTableStates[qKey]}
+											onLoadMore={() =>
+												void loadMoreBatch(qKey)
+											}
+										/>
+									)}
 								{!state.running &&
 									!state.result &&
 									!state.error &&
@@ -1132,6 +1378,58 @@ function filterResult(
 		}),
 	);
 	return { ...result, values };
+}
+
+/**
+/**
+ * Renders a batch-loaded table with a "Load more" button.
+ */
+function BatchTablePane({
+	viz,
+	batchState,
+	onLoadMore,
+}: {
+	vizKey: string;
+	viz: Visualization;
+	batchState: BatchTableState;
+	onLoadMore: () => void;
+}) {
+	if (batchState.loading) {
+		return (
+			<div className="flex h-full items-center justify-center text-gray-500 text-sm">
+				Loading data…
+			</div>
+		);
+	}
+	if (batchState.error) {
+		return (
+			<div className="m-3 rounded border border-red-200 bg-red-50 p-3 text-red-700 text-sm">
+				{batchState.error}
+			</div>
+		);
+	}
+	const result: QueryResult = {
+		headers: batchState.headers,
+		values: batchState.rows.map((r) => batchState.headers.map((h) => r[h])),
+	};
+	return (
+		<div className="flex h-full flex-col">
+			<div className="min-h-0 flex-1 overflow-auto">
+				<VizContent viz={viz} result={result} />
+			</div>
+			{batchState.hasMore && (
+				<div className="flex-shrink-0 border-gray-200 border-t px-3 py-2 text-center">
+					<button
+						onClick={onLoadMore}
+						disabled={batchState.loadingMore}
+						className="rounded bg-blue-600 px-4 py-1.5 font-medium text-white text-xs shadow-sm transition-colors hover:bg-blue-700 disabled:opacity-50"
+					>
+						{batchState.loadingMore ? "Loading…" : "Load more ↓"}
+					</button>
+				</div>
+			)}
+		</div>
+	);
 }
 
 /**

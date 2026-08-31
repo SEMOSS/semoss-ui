@@ -490,7 +490,7 @@ function specToDashboard(
 		// Filter widget: no query of its own; wire its targets to the new viz ids.
 		if (type === "filter") {
 			const rawTargets = Array.isArray(v.config?.filterTargets)
-				? v.config!.filterTargets
+				? v.config?.filterTargets
 				: [];
 			const filterTargets = rawTargets
 				.map((t: string) => vizIdMap.get(t))

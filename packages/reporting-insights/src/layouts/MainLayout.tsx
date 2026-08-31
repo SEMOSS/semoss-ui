@@ -1,7 +1,7 @@
 import { AlertCircle, Loader2 } from "lucide-react";
 import { useState } from "react";
 import { Outlet } from "react-router-dom";
-import { isEmbedded } from "@/lib/embed";
+import { useEmbedMode } from "@/lib/embedMode";
 import { useWorkspace } from "@/workspace/WorkspaceProvider";
 import { AppHeader, type HeaderSlot, HeaderSlotContext } from "./AppHeader";
 
@@ -17,7 +17,7 @@ export function MainLayout() {
 	const [slot, setSlot] = useState<HeaderSlot>({});
 	// In the playground tool preview (iframe) the app is a read-only embed — drop the
 	// header chrome so only the dashboard shows.
-	const embedded = isEmbedded();
+	const embedded = useEmbedMode();
 
 	return (
 		<HeaderSlotContext.Provider value={setSlot}>

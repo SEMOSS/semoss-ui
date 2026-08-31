@@ -405,7 +405,7 @@ export function QueryBuilderModal({
 		const map = new Map<string, SelectedCol[]>();
 		for (const c of selected) {
 			if (!map.has(c.table)) map.set(c.table, []);
-			map.get(c.table)!.push(c);
+			map.get(c.table)?.push(c);
 		}
 		return Array.from(map.entries());
 	}, [selected]);

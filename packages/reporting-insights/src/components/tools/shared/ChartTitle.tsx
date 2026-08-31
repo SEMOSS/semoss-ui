@@ -72,7 +72,10 @@ export function ChartTitle({
 					max="48"
 					value={currentValue.fontSize}
 					onChange={(e) =>
-						updateField("fontSize", parseInt(e.target.value) || 18)
+						updateField(
+							"fontSize",
+							parseInt(e.target.value, 10) || 18,
+						)
 					}
 					className="w-full rounded border border-stone-200 px-3 py-2 text-sm focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
 				/>

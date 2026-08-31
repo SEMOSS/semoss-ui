@@ -205,7 +205,7 @@ export function buildHostMcp(
 	appBaseUrl: string,
 	nowIso: string = new Date().toISOString(),
 ): McpArtifacts {
-	const base = appBaseUrl.replace(/#.*$/, "").replace(/\/+$/, "") + "/";
+	const base = `${appBaseUrl.replace(/#.*$/, "").replace(/\/+$/, "")}/`;
 	const mk = (
 		name: string,
 		title: string,

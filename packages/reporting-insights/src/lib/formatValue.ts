@@ -20,7 +20,7 @@ export function formatValue(
 	} else if (rule.type === "int" || rule.type === "double") {
 		const num =
 			typeof value === "number" ? value : parseFloat(String(value));
-		if (!isNaN(num)) {
+		if (!Number.isNaN(num)) {
 			formatted = rule.useDefaultFormat
 				? applyDefaultNumericFormat(num, rule.defaultFormat ?? "comma")
 				: applyManualNumericFormat(num, rule);
@@ -107,7 +107,7 @@ function withThousands(numStr: string, delimiter: string): string {
 function applyDateFormat(value: unknown, format: string): string {
 	if (!value) return "";
 	const date = value instanceof Date ? value : new Date(String(value));
-	if (isNaN(date.getTime())) return String(value);
+	if (Number.isNaN(date.getTime())) return String(value);
 
 	const Y = date.getFullYear();
 	const M = date.getMonth() + 1;

@@ -115,6 +115,10 @@ function App() {
 										element={<DashboardPage />}
 									/>
 									<Route
+										path="dashboard/:id/view"
+										element={<DashboardPage />}
+									/>
+									<Route
 										path="dashboard/:id/edit"
 										element={<DashboardEditorRoute />}
 									/>

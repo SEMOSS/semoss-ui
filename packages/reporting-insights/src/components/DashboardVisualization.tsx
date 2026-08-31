@@ -353,6 +353,9 @@ export function DashboardVisualization({
 	);
 	const [rawData, setRawData] = useState<any[]>(() => preloadedData ?? []);
 	const [showPhiModal, setShowPhiModal] = useState(false);
+	// csvexport: data is fetched on demand (button click) rather than on app load.
+	const [pendingExport, setPendingExport] = useState(false);
+	const [exportDownloadKey, setExportDownloadKey] = useState(0);
 	// Cross-frame filters targeting this visualization (re-renders only when its
 	// own applicable filters change). Applied client-side to the loaded rows.
 	const appliedFilters = useAppliedFilters(visualization.id);
@@ -606,6 +609,14 @@ export function DashboardVisualization({
 			setWaiting(true);
 			return;
 		}
+		// csvexport never auto-fetches — the query runs only when the user clicks the button.
+		// Clear stale data when runKey bumps (new param run) so the next click fetches fresh results.
+		if (visualization.visualizationType === "csvexport") {
+			setWaiting(false);
+			setLoading(false);
+			if (runKey > 0) setRawData([]);
+			return;
+		}
 
 		setWaiting(false);
 		// runKey is folded into the shared-cache version, so a re-run (bumped runKey)
@@ -847,6 +858,19 @@ export function DashboardVisualization({
 		} finally {
 			setLoadingMore(false);
 		}
+	};
+
+	// When a csvexport click triggers a fetch, bump exportDownloadKey once data arrives
+	// so the button auto-triggers its download (respecting the PHI gate internally).
+	useEffect(() => {
+		if (!pendingExport || !facetData.length) return;
+		setExportDownloadKey((k) => k + 1);
+		setPendingExport(false);
+	}, [pendingExport, facetData]);
+
+	const handleExportClick = () => {
+		setPendingExport(true);
+		void loadData(0);
 	};
 
 	// Axis derivation
@@ -1102,8 +1126,31 @@ export function DashboardVisualization({
 					</div>
 				</div>
 			);
-		// Button / control widgets render even with empty data.
+		// csvexport: data is fetched on button click, not on app load.
 		if (visualization.visualizationType === "csvexport") {
+			// Parameterized with no param sheet: show a hint while the user fills in params.
+			if (waiting) {
+				const paramNames = (src.parameters ?? [])
+					.map((p) => p.name)
+					.join(", ");
+				return (
+					<div className="flex h-full flex-col items-center justify-center gap-2 px-6 text-center">
+						<div className="grid h-10 w-10 place-items-center rounded-full bg-indigo-50 text-indigo-400">
+							<SlidersHorizontal className="h-5 w-5" />
+						</div>
+						<p className="font-semibold text-slate-600 text-sm">
+							Parameters required
+						</p>
+						<p className="max-w-xs text-slate-400 text-xs">
+							{paramNames
+								? `Set values for: ${paramNames}. `
+								: ""}
+							Click the export button to download after setting
+							parameters.
+						</p>
+					</div>
+				);
+			}
 			return (
 				<CsvExportButton
 					rows={facetData}
@@ -1111,6 +1158,10 @@ export function DashboardVisualization({
 					label={visualization.config?.csvExportLabel}
 					config={visualization.config}
 					phi={visualization.phi}
+					onExportClick={
+						facetData.length === 0 ? handleExportClick : undefined
+					}
+					downloadKey={exportDownloadKey}
 				/>
 			);
 		}

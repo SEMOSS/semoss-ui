@@ -61,7 +61,9 @@ function aggregate(values: any[], aggType: string): number | null {
 	if (aggType === "count") return values.length;
 	if (aggType === "countUnique") return new Set(values).size;
 
-	const numVals = values.map((v) => Number(v)).filter((v) => !isNaN(v));
+	const numVals = values
+		.map((v) => Number(v))
+		.filter((v) => !Number.isNaN(v));
 	if (!numVals.length) return null;
 
 	switch (aggType) {
@@ -194,7 +196,7 @@ export function pivotTransform(
 
 		valueFields.forEach((vf) => {
 			if (!valMap.has(vf)) valMap.set(vf, []);
-			valMap.get(vf)!.push(row[vf]);
+			valMap.get(vf)?.push(row[vf]);
 		});
 	});
 

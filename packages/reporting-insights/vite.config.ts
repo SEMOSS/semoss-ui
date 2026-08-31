@@ -1,6 +1,6 @@
 import react from "@vitejs/plugin-react";
-import path from "path";
 import { defineConfig, loadEnv } from "vite";
+import path from "node:path";
 
 // https://vite.dev/config/
 export default defineConfig(({ mode }) => {
@@ -36,9 +36,16 @@ export default defineConfig(({ mode }) => {
 			"import.meta.env.ENDPOINT": JSON.stringify(env.ENDPOINT || ""),
 			"import.meta.env.ACCESS_KEY": JSON.stringify(env.ACCESS_KEY || ""),
 			"import.meta.env.SECRET_KEY": JSON.stringify(env.SECRET_KEY || ""),
+			// Portal iframe target — prod uses ENDPOINT (main app served at that origin);
+			// dev auto-points at the Vite server so ENDPOINT can stay on the SEMOSS proxy.
+			"import.meta.env.MAIN_APP_URL": JSON.stringify(
+				mode === "production"
+					? env.ENDPOINT || ""
+					: `http://${env.VITE_HOST || "localhost"}:${env.VITE_PORT || "5178"}/`,
+			),
 		},
 		server: {
-			port: parseInt(env.VITE_PORT || "5178"),
+			port: parseInt(env.VITE_PORT || "5178", 10),
 			host: env.VITE_HOST || "localhost",
 			proxy: {
 				[MODULE]: {

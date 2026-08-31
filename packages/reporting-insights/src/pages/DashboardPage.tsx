@@ -34,6 +34,7 @@ import { ShareDialog } from "@/components/ShareDialog";
 import { Button, buttonClasses, ConfirmDialog } from "@/components/ui";
 import { useToast } from "@/components/ui/Toast";
 import { DashboardFilterProvider } from "@/lib/dashboardFilters";
+import { useEmbedMode } from "@/lib/embedMode";
 import { EventParamProvider, useEventParamStore } from "@/lib/eventParamStore";
 import { fullTimestamp, timeAgo } from "@/lib/format";
 import { publishedPortalUrl } from "@/lib/portalUrl";
@@ -180,6 +181,7 @@ const SheetCanvas = memo(function SheetCanvas({
 export function DashboardPage() {
 	const { id } = useParams<{ id: string }>();
 	const navigate = useNavigate();
+	const embed = useEmbedMode();
 	const {
 		getDashboard,
 		loadDashboard,
@@ -208,14 +210,18 @@ export function DashboardPage() {
 			: (dashboard?.permission ?? ""),
 	).toUpperCase();
 	// permRaw may be a role name ("OWNER") or a numeric string ("1").
+	// When the API omits permission entirely, permRaw is "" — treat as OWNER
+	// since only the creator's own dashboards appear in this view.
 	const permNum = Number(permRaw);
-	const perm = Number.isNaN(permNum)
-		? permRaw in GROUP_PERM_NUM
-			? permRaw
-			: undefined
-		: Object.keys(GROUP_PERM_NUM).find(
-				(key) => GROUP_PERM_NUM[key] === permNum,
-			);
+	const perm = !permRaw
+		? "OWNER"
+		: Number.isNaN(permNum)
+			? permRaw in GROUP_PERM_NUM
+				? permRaw
+				: undefined
+			: Object.keys(GROUP_PERM_NUM).find(
+					(key) => GROUP_PERM_NUM[key] === permNum,
+				);
 	const canEdit = perm === "OWNER" || perm === "EDIT" || perm === "EDITOR";
 	const isOwner = perm === "OWNER";
 	const canManage = canEdit;
@@ -236,8 +242,11 @@ export function DashboardPage() {
 	};
 
 	useEffect(() => {
-		if (id && isReadOnly) window.location.replace(publishedPortalUrl(id));
-	}, [id, isReadOnly]);
+		// When embedded (portal iframe), never redirect to publishedPortalUrl
+		// the portal shell iframes us; bouncing back would loop the iframe on itself.
+		if (id && isReadOnly && !embed)
+			window.location.replace(publishedPortalUrl(id));
+	}, [id, isReadOnly, embed]);
 
 	const [activeSheetId, setActiveSheetId] = useState<string>("");
 	const [paramValues, setParamValues] = useState<
@@ -253,8 +262,9 @@ export function DashboardPage() {
 
 	// Load the definition + initialise sheet/param state once it arrives.
 	// Skip for read-only users — they're redirected to the deployed portal.
+	// (In embed mode read-only users DO render the dashboard: no redirect.)
 	useEffect(() => {
-		if (!id || isReadOnly) return;
+		if (!id || (isReadOnly && !embed)) return;
 		let cancelled = false;
 		setDef(null);
 		setLoadError(null);
@@ -324,11 +334,15 @@ export function DashboardPage() {
 				setParamValues(initial);
 			})
 			.catch(() => {
-				// We couldn't load the working copy in-app — this is almost always a
-				// read-only/no-edit-access user (GetAppAssets needs edit). Send them to
-				// the deployed portal, which serves its own static dashboard.json.
-				if (!cancelled && id)
-					window.location.replace(publishedPortalUrl(id));
+				if (cancelled || !id) return;
+				// In embed mode (portal iframe / view route), showing an error keeps
+				// us inside the frame. Bouncing to publishedPortalUrl would open the
+				// portal shell again and iframe us back (infinite loop).
+				if (embed) {
+					setLoadError("Couldn't load this dashboard's data.");
+					return;
+				}
+				window.location.replace(publishedPortalUrl(id));
 			});
 		return () => {
 			cancelled = true;
@@ -551,7 +565,7 @@ export function DashboardPage() {
 		[allQueries, sheets],
 	);
 
-	if (isReadOnly) {
+	if (isReadOnly && !embed) {
 		return (
 			<div className="flex h-full w-full flex-col items-center justify-center gap-3 text-stone-500">
 				<Loader2 className="h-6 w-6 animate-spin text-indigo-500" />
@@ -597,107 +611,125 @@ export function DashboardPage() {
 			<DashboardFilterProvider>
 				<EventParamProvider>
 					<EventFocusWatcher onFocus={handleEventFocus} />
-					<div className="flex h-full flex-col gap-3 bg-stone-100 p-3">
-						{/* ── Toolbar — single slim row ── */}
-						<div className="flex h-14 flex-shrink-0 items-center gap-3 rounded-xl border border-stone-200 bg-white px-4 shadow-soft">
-							<Link
-								to="/dashboards"
-								title="Back to dashboards"
-								className="-ml-1 flex-shrink-0 rounded-md p-1.5 text-stone-500 transition-colors hover:bg-stone-100 hover:text-stone-800"
-							>
-								<ArrowLeft className="h-4 w-4" />
-							</Link>
-							<div className="min-w-0">
-								<h1 className="truncate font-bold text-[15px] text-stone-900 leading-tight tracking-tight">
-									{dashboard.name}
-								</h1>
-								<div className="flex items-center gap-1.5 text-[11px] text-stone-400 leading-tight">
-									<span>
-										{sheets.length} sheet
-										{sheets.length !== 1 ? "s" : ""}
-									</span>
-									<span className="text-stone-300">·</span>
-									<span>
-										{totalVizCount} chart
-										{totalVizCount !== 1 ? "s" : ""}
-									</span>
-									<span className="text-stone-300">·</span>
-									<span
-										title={fullTimestamp(
-											dashboard.updatedAt,
-										)}
-									>
-										updated {timeAgo(dashboard.updatedAt)}
-									</span>
+					<div
+						className={
+							embed
+								? "flex h-full flex-col gap-0 bg-stone-100 p-0"
+								: "flex h-full flex-col gap-3 bg-stone-100 p-3"
+						}
+					>
+						{/* Toolbar: main-app only. Portal iframes / view are hidden
+						    so all create/edit/delete lives in the base app. */}
+						{!embed && !isReadOnly && (
+							<div className="flex h-14 flex-shrink-0 items-center gap-3 rounded-xl border border-stone-200 bg-white px-4 shadow-soft">
+								<Link
+									to="/dashboards"
+									title="Back to dashboards"
+									className="-ml-1 flex-shrink-0 rounded-md p-1.5 text-stone-500 transition-colors hover:bg-stone-100 hover:text-stone-800"
+								>
+									<ArrowLeft className="h-4 w-4" />
+								</Link>
+								<div className="min-w-0">
+									<h1 className="truncate font-bold text-[15px] text-stone-900 leading-tight tracking-tight">
+										{dashboard.name}
+									</h1>
+									<div className="flex items-center gap-1.5 text-[11px] text-stone-400 leading-tight">
+										<span>
+											{sheets.length} sheet
+											{sheets.length !== 1 ? "s" : ""}
+										</span>
+										<span className="text-stone-300">
+											·
+										</span>
+										<span>
+											{totalVizCount} chart
+											{totalVizCount !== 1 ? "s" : ""}
+										</span>
+										<span className="text-stone-300">
+											·
+										</span>
+										<span
+											title={fullTimestamp(
+												dashboard.updatedAt,
+											)}
+										>
+											updated{" "}
+											{timeAgo(dashboard.updatedAt)}
+										</span>
+									</div>
+								</div>
+
+								<div className="flex-1" />
+
+								<div className="flex flex-shrink-0 items-center gap-1.5">
+									{canManage && (
+										<Button
+											variant="secondary"
+											size="sm"
+											onClick={() => setShowShare(true)}
+											title="Manage access & folders"
+										>
+											<Share2 className="h-3.5 w-3.5" />{" "}
+											Share
+										</Button>
+									)}
+									{canEdit && (
+										<Button
+											variant="secondary"
+											size="sm"
+											onClick={() => setShowSaveAs(true)}
+											title="Save a copy of this dashboard with a new name and settings"
+										>
+											<CopyPlus className="h-3.5 w-3.5" />{" "}
+											Save As
+										</Button>
+									)}
+									{isOwner && (
+										<Button
+											variant="secondary"
+											size="sm"
+											onClick={handleRedeploy}
+											disabled={redeploying}
+											title="Rebuild & re-upload this dashboard's portal — use after the app's portal has been updated"
+										>
+											{redeploying ? (
+												<Loader2 className="h-3.5 w-3.5 animate-spin" />
+											) : (
+												<UploadCloud className="h-3.5 w-3.5" />
+											)}
+											{redeploying
+												? "Redeploying…"
+												: "Redeploy"}
+										</Button>
+									)}
+									{canEdit && (
+										<Link
+											to={`/dashboard/${dashboard.id}/edit`}
+											className={buttonClasses(
+												"primary",
+												"sm",
+											)}
+										>
+											<Edit className="h-3.5 w-3.5" />{" "}
+											Edit
+										</Link>
+									)}
+									{isOwner && (
+										<Button
+											variant="ghost"
+											size="sm"
+											onClick={() =>
+												setConfirmDelete(true)
+											}
+											className="text-stone-400 hover:bg-red-50 hover:text-red-500"
+											title="Delete dashboard"
+										>
+											<Trash2 className="h-3.5 w-3.5" />
+										</Button>
+									)}
 								</div>
 							</div>
-
-							<div className="flex-1" />
-
-							<div className="flex flex-shrink-0 items-center gap-1.5">
-								{canManage && (
-									<Button
-										variant="secondary"
-										size="sm"
-										onClick={() => setShowShare(true)}
-										title="Manage access & folders"
-									>
-										<Share2 className="h-3.5 w-3.5" /> Share
-									</Button>
-								)}
-								{canEdit && (
-									<Button
-										variant="secondary"
-										size="sm"
-										onClick={() => setShowSaveAs(true)}
-										title="Save a copy of this dashboard with a new name and settings"
-									>
-										<CopyPlus className="h-3.5 w-3.5" />{" "}
-										Save As
-									</Button>
-								)}
-								{isOwner && (
-									<Button
-										variant="secondary"
-										size="sm"
-										onClick={handleRedeploy}
-										disabled={redeploying}
-										title="Rebuild & re-upload this dashboard's portal — use after the app's portal has been updated"
-									>
-										{redeploying ? (
-											<Loader2 className="h-3.5 w-3.5 animate-spin" />
-										) : (
-											<UploadCloud className="h-3.5 w-3.5" />
-										)}
-										{redeploying
-											? "Redeploying…"
-											: "Redeploy"}
-									</Button>
-								)}
-								{canEdit && (
-									<Link
-										to={`/dashboard/${dashboard.id}/edit`}
-										className={buttonClasses(
-											"primary",
-											"sm",
-										)}
-									>
-										<Edit className="h-3.5 w-3.5" /> Edit
-									</Link>
-								)}
-								{isOwner && (
-									<Button
-										variant="ghost"
-										size="sm"
-										onClick={() => setConfirmDelete(true)}
-										className="text-stone-400 hover:bg-red-50 hover:text-red-500"
-										title="Delete dashboard"
-									>
-										<Trash2 className="h-3.5 w-3.5" />
-									</Button>
-								)}
-							</div>
-						</div>
+						)}
 
 						{/* ── flexlayout-react canvas ── */}
 						<div className="relative min-h-0 flex-1">

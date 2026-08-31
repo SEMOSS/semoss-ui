@@ -2,6 +2,9 @@ import JSZip from "jszip";
 import type { Dashboard } from "@/types/dashboard";
 // Pre-built React portal app (portal/dist/index.html inlined by inline-build.mjs)
 import portalAppHtml from "../../portal/dist/index.html?raw";
+// Thin iframe shell that points published portals back at this app so feature work
+// lives in one codebase.
+import iframePortalTemplate from "../../portal-iframe/template.html?raw";
 
 /**
  * The current portal app bundle (the built `portal/dist/index.html`, baked in at
@@ -10,6 +13,45 @@ import portalAppHtml from "../../portal/dist/index.html?raw";
  * code without recreating the project.
  */
 export const PORTAL_INDEX_HTML: string = portalAppHtml;
+
+/**
+ * When true, new publishes + redeploys use the thin iframe shell (which points
+ * back at this app). Flip to false to fall back to the legacy self-contained
+ * portal bundle in {@link PORTAL_INDEX_HTML}.
+ */
+export const USE_IFRAME_PORTAL = true;
+
+/**
+ * URL of this app that portals iframe back to. Baked from `VITE_MAIN_APP_URL`
+ * at build time; empty => the portal shell defaults to `window.location.origin`
+ * at runtime (main app served at the same origin as the portal).
+ */
+export function getMainAppUrl(): string {
+	return String((import.meta as any).env?.MAIN_APP_URL || "");
+}
+
+/**
+ * Thin portal HTML: plain `<iframe>` shell that loads
+ * `{APP_URL}/#/dashboard/<projectId>/view?embed=1`. New features added to the
+ * main app show up in every portal on next iframe load -- no rezip / redeploy.
+ */
+export function generateIframePortalHtml(
+	projectId: string,
+	appUrl = getMainAppUrl(),
+): string {
+	return iframePortalTemplate
+		.replace(/__APP_URL__/g, escapeHtmlAttr(appUrl))
+		.replace(/__PROJECT_ID__/g, escapeHtmlAttr(projectId));
+}
+
+/** Minimal HTML-attribute escaping for the two values interpolated into the shell. */
+function escapeHtmlAttr(v: string): string {
+	return v
+		.replace(/&/g, "&amp;")
+		.replace(/"/g, "&quot;")
+		.replace(/</g, "&lt;")
+		.replace(/>/g, "&gt;");
+}
 
 /**
  * Generates a self-contained vanilla JS portal page for a published dashboard.
@@ -2068,7 +2110,7 @@ export function sanitizeProjectName(name: string): string {
 
 	// Ensure it starts with a letter
 	const startsWithLetter = /^[a-zA-Z]/.test(clean);
-	return startsWithLetter ? clean : "Dashboard " + clean;
+	return startsWithLetter ? clean : `Dashboard ${clean}`;
 }
 
 /**
@@ -2095,7 +2137,7 @@ export function generateSmssContent(
 		`RDBMS_INSIGHTS=project/@PROJECT@/insights_database`,
 		`RDBMS_INSIGHTS_TYPE=H2_DB`,
 	];
-	return lines.join("\n") + "\n";
+	return `${lines.join("\n")}\n`;
 }
 
 /**
@@ -2125,7 +2167,7 @@ export async function buildPortalZip(
 
 	zip.file(`${folderName}.smss`, generateSmssContent(projectName, projectId));
 
-	const portalsFolder = zip.folder("assets")!.folder("portals")!;
+	const portalsFolder = zip.folder("assets")?.folder("portals")!;
 	portalsFolder.file("index.html", portalAppHtml);
 
 	// Build a portal-compatible config that always has flat visualizations + layout
@@ -2138,6 +2180,58 @@ export async function buildPortalZip(
 		: (dashboard.sheets?.[0]?.layout ?? []);
 
 	// Use the first sheet's flexLayout as the top-level flexLayout for the portal
+	const flexLayout = dashboard.sheets?.[0]?.flexLayout;
+
+	portalsFolder.file(
+		"dashboard.json",
+		JSON.stringify(
+			{
+				...dashboard,
+				projectId,
+				visualizations: allVizs,
+				layout: allLayout,
+				flexLayout,
+			},
+			null,
+			2,
+		),
+	);
+
+	return zip.generateAsync({ type: "blob", compression: "DEFLATE" });
+}
+
+/**
+ * Builds the zip blob for the thin iframe portal shell. Same layout as
+ * {@link buildPortalZip} (SEMOSS `UploadProjectApp` needs the `.smss` at the zip
+ * root and portal assets under `assets/portals/`) but the `index.html` is the
+ * ~30-line iframe shell instead of the fat pre-built React app.
+ *
+ * `dashboard.json` is still written alongside so a portal can be temporarily
+ * reverted to the fat renderer without repackaging.
+ */
+export async function buildIframePortalZip(
+	dashboard: Dashboard,
+	projectName: string,
+	projectId: string,
+	appUrl = getMainAppUrl(),
+): Promise<Blob> {
+	const folderName = `${projectName}__${projectId}`;
+	const zip = new JSZip();
+
+	zip.file(`${folderName}.smss`, generateSmssContent(projectName, projectId));
+
+	const portalsFolder = zip.folder("assets")?.folder("portals")!;
+	portalsFolder.file(
+		"index.html",
+		generateIframePortalHtml(projectId, appUrl),
+	);
+
+	const allVizs = dashboard.visualizations?.length
+		? dashboard.visualizations
+		: (dashboard.sheets ?? []).flatMap((s) => s.visualizations);
+	const allLayout = dashboard.layout?.length
+		? dashboard.layout
+		: (dashboard.sheets?.[0]?.layout ?? []);
 	const flexLayout = dashboard.sheets?.[0]?.flexLayout;
 
 	portalsFolder.file(
@@ -2227,9 +2321,9 @@ export async function buildMcpHostZip(
 	zip.file(`${folderName}.smss`, generateSmssContent(projectName, projectId));
 	const assets = zip.folder("assets")!;
 	// Portal: opening the host project just forwards to the reporting-insights app.
-	assets.folder("portals")!.file("index.html", mcpHostRedirectHtml(appUrl));
+	assets.folder("portals")?.file("index.html", mcpHostRedirectHtml(appUrl));
 	// MCP tools: Python driver (functions) + manifest GetMCPTools reads.
-	assets.folder("mcp")!.file("py_mcp.json", manifestJson);
-	assets.folder("py")!.file("mcp_driver.py", driverPy);
+	assets.folder("mcp")?.file("py_mcp.json", manifestJson);
+	assets.folder("py")?.file("mcp_driver.py", driverPy);
 	return zip.generateAsync({ type: "blob", compression: "DEFLATE" });
 }

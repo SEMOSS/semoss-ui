@@ -29,10 +29,8 @@ export const publishedPortalUrl = (id: string): string =>
 export const appPublicBaseUrl = (): string => {
 	const configured = String(import.meta.env.VITE_APP_URL || "").trim();
 	const raw = configured || window.location.origin + window.location.pathname;
-	return (
-		raw
-			.replace(/index\.html$/i, "")
-			.replace(/#.*$/, "")
-			.replace(/\/+$/, "") + "/"
-	);
+	return `${raw
+		.replace(/index\.html$/i, "")
+		.replace(/#.*$/, "")
+		.replace(/\/+$/, "")}/`;
 };

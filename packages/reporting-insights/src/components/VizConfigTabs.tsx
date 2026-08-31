@@ -122,6 +122,9 @@ export function VizConfigTabs({
 						visualizationType={visualizationType}
 						styling={value.styling}
 						columns={columns.map((col) => col.name)}
+						columnTypes={Object.fromEntries(
+							columns.map((col) => [col.name, col.dataType]),
+						)}
 						sortableColumns={activeDropZoneColumns(value)}
 						rows={rows}
 						// KPI: configured metric columns (used by the per-card title selector)

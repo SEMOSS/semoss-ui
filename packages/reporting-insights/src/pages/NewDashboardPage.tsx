@@ -43,6 +43,7 @@ import { useToast } from "@/components/ui/Toast";
 import type { Column, DropZoneDataWithTable } from "@/components/VizConfigTabs";
 import { useHeaderSlot } from "@/layouts/AppHeader";
 import { DashboardFilterProvider } from "@/lib/dashboardFilters";
+import { useEmbedMode } from "@/lib/embedMode";
 import { EventParamProvider } from "@/lib/eventParamStore";
 import {
 	buildQueryPixel,
@@ -266,6 +267,7 @@ function collectVizLevelPalettes(sheets: Sheet[]): ColorPaletteType[] {
 export function NewDashboardPage() {
 	const { id } = useParams<{ id: string }>();
 	const navigate = useNavigate();
+	const embed = useEmbedMode();
 	const { actions } = useInsight();
 	const toast = useToast();
 	const {
@@ -771,9 +773,14 @@ export function NewDashboardPage() {
 		if (!src) return;
 		const queryId = ensureQueryForViz(src);
 		const newViz: Visualization = {
-			...structuredClone(src),
 			id: crypto.randomUUID(),
 			queryId,
+			title: "New Visualization",
+			visualizationType: "table",
+			databaseId: "",
+			databaseName: "",
+			query: "",
+			parameters: [],
 		};
 		if (target === "new") {
 			const color = SHEET_COLORS[sheets.length % SHEET_COLORS.length];
@@ -1408,7 +1415,7 @@ export function NewDashboardPage() {
 					// edit goes fully live — not just the working copy.
 					updateDashboard(id, dashboardData);
 					await redeployDashboard(id, dashboardData);
-					navigate(`/dashboard/${id}`);
+					navigate(`/dashboard/${id}${embed ? "/view?embed=1" : ""}`);
 				} else {
 					// Finishing a new dashboard saves it as a project. Public → everyone with
 					// access sees it immediately; Private → only you until you share it with
@@ -1453,7 +1460,9 @@ export function NewDashboardPage() {
 								: "Dashboard saved (private to you).",
 						isPublic ? "Published" : "Saved",
 					);
-					navigate(`/dashboard/${newId}`);
+					navigate(
+						`/dashboard/${newId}${embed ? "/view?embed=1" : ""}`,
+					);
 				}
 			} catch (e: any) {
 				toast.error(e?.message ?? "Failed to save dashboard.");
@@ -1572,7 +1581,11 @@ export function NewDashboardPage() {
 						</div>
 					)}
 					<Link
-						to={isEditing ? `/dashboard/${id}` : "/dashboards"}
+						to={
+							isEditing
+								? `/dashboard/${id}${embed ? "/view?embed=1" : ""}`
+								: "/dashboards"
+						}
 						className={buttonClasses("secondary", "sm")}
 					>
 						Cancel

@@ -387,9 +387,14 @@ export function EditMode() {
 		if (!src) return;
 		const queryId = ensureQueryForViz(src);
 		const newViz: Visualization = {
-			...structuredClone(src),
 			id: uid(),
 			queryId,
+			title: "New Visualization",
+			visualizationType: "table",
+			databaseId: "",
+			databaseName: "",
+			query: "",
+			parameters: [],
 		};
 		if (target === "new") {
 			const color = SHEET_COLORS[sheets.length % SHEET_COLORS.length];
@@ -444,7 +449,7 @@ export function EditMode() {
 		let modelHandled = false;
 		try {
 			const model = flexModelCacheRef.current[activeSheetId];
-			if (model && model.getNodeById(`tab-${vizId}`)) {
+			if (model?.getNodeById(`tab-${vizId}`)) {
 				model.doAction(Actions.deleteTab(`tab-${vizId}`));
 				flexModelCacheRef.current[activeSheetId] = model;
 				const flexLayout = model.toJson() as unknown as Record<

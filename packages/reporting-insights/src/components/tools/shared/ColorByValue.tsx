@@ -160,8 +160,8 @@ export function ColorByValue({
 							<select
 								value={
 									isTable
-										? tableRule!.targetColumn
-										: kpiRule!.metricColumn
+										? tableRule?.targetColumn
+										: kpiRule?.metricColumn
 								}
 								onChange={(e) =>
 									updateRule(
@@ -202,7 +202,7 @@ export function ColorByValue({
 										Select Column of Values
 									</label>
 									<select
-										value={tableRule!.valueColumn}
+										value={tableRule?.valueColumn}
 										onChange={(e) =>
 											updateRule(rule.id, {
 												valueColumn: e.target.value,
@@ -294,11 +294,11 @@ export function ColorByValue({
 										: "Select Value"}
 								</label>
 								{isTable &&
-								columnValues?.[tableRule!.valueColumn]
+								columnValues?.[tableRule?.valueColumn]
 									?.length ? (
 									<datalist id={`colvals-${rule.id}`}>
 										{columnValues[
-											tableRule!.valueColumn
+											tableRule?.valueColumn
 										].map((v) => (
 											<option key={v} value={v} />
 										))}
@@ -309,7 +309,7 @@ export function ColorByValue({
 									value={rule.value}
 									list={
 										isTable &&
-										columnValues?.[tableRule!.valueColumn]
+										columnValues?.[tableRule?.valueColumn]
 											?.length
 											? `colvals-${rule.id}`
 											: undefined
@@ -318,15 +318,15 @@ export function ColorByValue({
 										const val = e.target.value;
 										if (
 											!isTable ||
-											(tableRule!.comparator !==
+											(tableRule?.comparator !==
 												"contains" &&
-												tableRule!.comparator !==
+												tableRule?.comparator !==
 													"eq" &&
-												tableRule!.comparator !== "neq")
+												tableRule?.comparator !== "neq")
 										) {
 											const numVal = parseFloat(val);
 											updateRule(rule.id, {
-												value: isNaN(numVal)
+												value: Number.isNaN(numVal)
 													? val
 													: numVal,
 											});
@@ -340,14 +340,14 @@ export function ColorByValue({
 							</div>
 
 							{/* Max Value (for range comparator in KPI) */}
-							{!isTable && kpiRule!.comparator === "range" && (
+							{!isTable && kpiRule?.comparator === "range" && (
 								<div>
 									<label className="mb-1.5 block text-stone-500 text-xs">
 										Max Value
 									</label>
 									<input
 										type="number"
-										value={kpiRule!.maxValue || 0}
+										value={kpiRule?.maxValue || 0}
 										onChange={(e) =>
 											updateRule(rule.id, {
 												maxValue:
@@ -381,7 +381,7 @@ export function ColorByValue({
 											<input
 												type="checkbox"
 												checked={
-													tableRule!.colorEntireRow
+													tableRule?.colorEntireRow
 												}
 												onChange={(e) =>
 													updateRule(rule.id, {
@@ -411,7 +411,7 @@ export function ColorByValue({
 														name={`apply-to-${rule.id}`}
 														value={target}
 														checked={
-															kpiRule!.applyTo ===
+															kpiRule?.applyTo ===
 															target
 														}
 														onChange={(e) =>

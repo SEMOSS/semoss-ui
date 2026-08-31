@@ -4,8 +4,8 @@ import type { SortRule } from "@/types/dashboard";
 function isDateString(v: unknown): boolean {
 	if (v == null || v === "") return false;
 	const s = String(v);
-	if (!isNaN(Number(s))) return false; // plain numbers aren't dates
-	return !isNaN(Date.parse(s));
+	if (!Number.isNaN(Number(s))) return false; // plain numbers aren't dates
+	return !Number.isNaN(Date.parse(s));
 }
 
 /**
@@ -65,7 +65,7 @@ export function applyVizSort(
 				const ad = Date.parse(String(av ?? ""));
 				const bd = Date.parse(String(bv ?? ""));
 				cmp =
-					!isNaN(ad) && !isNaN(bd)
+					!Number.isNaN(ad) && !Number.isNaN(bd)
 						? ad - bd
 						: String(av ?? "").localeCompare(
 								String(bv ?? ""),
@@ -76,7 +76,7 @@ export function applyVizSort(
 				const an = Number(av);
 				const bn = Number(bv);
 				cmp =
-					!isNaN(an) && !isNaN(bn)
+					!Number.isNaN(an) && !Number.isNaN(bn)
 						? an - bn
 						: String(av ?? "").localeCompare(
 								String(bv ?? ""),

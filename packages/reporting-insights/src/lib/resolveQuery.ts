@@ -135,7 +135,7 @@ export function migrateSheetsToSharedQueries<
 	sheets: S[],
 	existingQueries?: DashboardQuery[],
 ): { sheets: S[]; queries: DashboardQuery[] } {
-	if (existingQueries && existingQueries.length) {
+	if (existingQueries?.length) {
 		return { sheets, queries: existingQueries };
 	}
 

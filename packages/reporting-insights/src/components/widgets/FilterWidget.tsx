@@ -178,15 +178,15 @@ export function FilterWidget({
 	// Slider: numeric detection and derived values
 	const sortedNums = useMemo(() => {
 		const nums = options.map(Number);
-		if (nums.some(isNaN)) return null;
+		if (nums.some(Number.isNaN)) return null;
 		return [...new Set(nums)].sort((a, b) => a - b);
 	}, [options]);
 	const isNumeric = sortedNums !== null && sortedNums.length > 0;
-	const numericMin = isNumeric ? sortedNums![0] : 0;
-	const numericMax = isNumeric ? sortedNums![sortedNums!.length - 1] : 0;
+	const numericMin = isNumeric ? sortedNums?.[0] : 0;
+	const numericMax = isNumeric ? sortedNums?.[sortedNums?.length - 1] : 0;
 	const numericStep = useMemo(() => {
-		if (!isNumeric || sortedNums!.length < 2) return 1;
-		const diffs = sortedNums!.slice(1).map((v, i) => v - sortedNums![i]);
+		if (!isNumeric || sortedNums?.length < 2) return 1;
+		const diffs = sortedNums?.slice(1).map((v, i) => v - sortedNums?.[i]);
 		const minDiff = Math.min(...diffs);
 		// Round to avoid floating-point noise
 		return parseFloat(minDiff.toPrecision(6));
@@ -365,10 +365,10 @@ export function FilterWidget({
 			return;
 		}
 		const s = start ? new Date(start).getTime() : -Infinity;
-		const e = end ? new Date(end + "T23:59:59").getTime() : Infinity;
+		const e = end ? new Date(`${end}T23:59:59`).getTime() : Infinity;
 		const inRange = options.filter((o) => {
 			const t = new Date(o).getTime();
-			return !isNaN(t) && t >= s && t <= e;
+			return !Number.isNaN(t) && t >= s && t <= e;
 		});
 		// If nothing matches, stage a sentinel so the filter stays active (empty values = inactive).
 		stage(inRange.length > 0 ? inRange : ["\x00"]);

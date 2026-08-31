@@ -493,6 +493,8 @@ export interface VisualizationStyling {
 		/** Initial rows shown per page. Empty string is allowed while editing but is
 		 *  rejected on save (see dashboard save validation). Defaults to 50 at runtime. */
 		pageSize?: number | "";
+		/** When true, rows are fetched in pages from the DB (Load more ↓). Default false. */
+		batchLoading?: boolean;
 	};
 	/** Pivot-specific styling and behavior configuration */
 	pivot?: PivotStyling;

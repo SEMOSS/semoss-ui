@@ -3,7 +3,7 @@
  * its own SQL query as a CSV file. Used by both the main app and the portal.
  */
 import type { CSSProperties } from "react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { PhiExportWarningModal } from "@/components/PhiExportWarningModal";
 import { csvColDisplayName } from "@/lib/tableAggregate";
 
@@ -65,7 +65,9 @@ function processRows(
 		const result: Record<string, any> = {};
 		for (const c of groupByCols) result[c] = grp[0][c];
 		for (const c of aggCols) {
-			const nums = grp.map((r) => Number(r[c])).filter((n) => !isNaN(n));
+			const nums = grp
+				.map((r) => Number(r[c]))
+				.filter((n) => !Number.isNaN(n));
 			const displayKey = csvColDisplayName(c, activeAggs[c]);
 			switch (activeAggs[c]) {
 				case "sum":
@@ -96,7 +98,7 @@ function processRows(
 function toCsv(rows: Record<string, any>[], columns?: string[]): string {
 	if (!rows.length) return "";
 	const cols = columns?.length ? columns : Object.keys(rows[0]);
-	const escape = (v: any) => {
+	const escapeValue = (v: any) => {
 		const s = v != null ? String(v) : "";
 		return s.includes(",") || s.includes('"') || s.includes("\n")
 			? `"${s.replace(/"/g, '""')}"`
@@ -104,7 +106,7 @@ function toCsv(rows: Record<string, any>[], columns?: string[]): string {
 	};
 	return [
 		cols.join(","),
-		...rows.map((r) => cols.map((c) => escape(r[c])).join(",")),
+		...rows.map((r) => cols.map((c) => escapeValue(r[c])).join(",")),
 	].join("\n");
 }
 
@@ -135,6 +137,10 @@ interface Props {
 	config?: CsvExportConfig;
 	/** When true, clicking the button shows a PHI/PII warning modal before downloading. */
 	phi?: boolean;
+	/** Called when the button is clicked but rows are not yet loaded. Parent fetches data on demand. */
+	onExportClick?: () => void;
+	/** Increment this value to trigger an automatic download once data has been fetched. */
+	downloadKey?: number;
 }
 
 export function CsvExportButton({
@@ -144,6 +150,8 @@ export function CsvExportButton({
 	label,
 	config,
 	phi,
+	onExportClick,
+	downloadKey,
 }: Props) {
 	const [showPhiModal, setShowPhiModal] = useState(false);
 	const cfg = config ?? {};
@@ -158,10 +166,21 @@ export function CsvExportButton({
 			? cfg.exportColumns
 			: columns;
 	const exportCols = baseCols?.map((c) => csvColDisplayName(c, aggs[c]));
-	const count = processedRows.length;
 
 	const doDownload = () =>
 		downloadCsvFile(processedRows, title || "export", exportCols);
+
+	// When the parent fetches data on click, it bumps downloadKey to signal that we
+	// should trigger the download now (respecting the PHI gate).
+	useEffect(() => {
+		if (!downloadKey || !processedRows.length) return;
+		if (phi) {
+			setShowPhiModal(true);
+		} else {
+			doDownload();
+		}
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [downloadKey]);
 
 	const alignMap: Record<string, CSSProperties["alignItems"]> = {
 		left: "flex-start",
@@ -207,15 +226,15 @@ export function CsvExportButton({
 		>
 			<button
 				type="button"
-				onClick={() => (phi ? setShowPhiModal(true) : doDownload())}
-				disabled={!count}
+				onClick={() => {
+					if (onExportClick) {
+						onExportClick();
+						return;
+					}
+					phi ? setShowPhiModal(true) : doDownload();
+				}}
 				style={buttonStyle}
-				className={[
-					"inline-flex items-center gap-2 rounded-lg px-4 py-2.5 font-semibold text-sm text-white shadow-soft",
-					"transition-colors disabled:cursor-not-allowed disabled:opacity-40",
-				]
-					.filter(Boolean)
-					.join(" ")}
+				className="inline-flex cursor-pointer items-center gap-2 rounded-lg px-4 py-2.5 font-semibold text-sm text-white shadow-soft transition-colors hover:opacity-90 active:opacity-75"
 			>
 				{cfg.csvExportLabel || label || "Export to CSV"}
 			</button>

@@ -30,10 +30,10 @@ export const usePortalStore = create<PortalState>((set) => ({
 
 	load: async () => {
 		try {
-			const r = await fetch("./dashboard.json?_=" + Date.now(), {
+			const r = await fetch(`./dashboard.json?_=${Date.now()}`, {
 				credentials: "include",
 			});
-			if (!r.ok) throw new Error("HTTP " + r.status);
+			if (!r.ok) throw new Error(`HTTP ${r.status}`);
 			const config = (await r.json()) as DashboardConfig;
 			set({ config, loadError: null });
 		} catch (e: unknown) {

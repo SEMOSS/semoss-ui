@@ -99,15 +99,34 @@ const DELIMITER_OPTIONS: { label: string; value: FormatDelimiter }[] = [
 
 // Helper functions
 
+function externalTypeToFormatType(t: string): FormatRuleType {
+	const u = t.toUpperCase();
+	if (u === "DATE" || u === "TIMESTAMP") return "date";
+	if (
+		u === "NUMBER" ||
+		u === "INT" ||
+		u === "INTEGER" ||
+		u === "LONG" ||
+		u === "BIGINT" ||
+		u === "DOUBLE" ||
+		u === "FLOAT" ||
+		u === "DECIMAL"
+	)
+		return "double";
+	return "string";
+}
+
 function inferColumnType(
 	col: string,
 	rows: Array<Record<string, unknown>>,
+	fallbackType?: string,
 ): FormatRuleType {
 	const vals = rows
 		.map((r) => r[col])
 		.filter((v) => v != null && v !== "")
 		.slice(0, 5);
-	if (!vals.length) return "string";
+	if (!vals.length)
+		return fallbackType ? externalTypeToFormatType(fallbackType) : "string";
 	const first = vals[0];
 	if (typeof first === "number") {
 		return vals.every((v) => Number.isInteger(v as number))
@@ -120,7 +139,7 @@ function inferColumnType(
 			/^\d{1,2}\/\d{1,2}\/\d{2,4}/.test(first)
 		)
 			return "date";
-		if (first.trim() !== "" && !isNaN(Number(first))) {
+		if (first.trim() !== "" && !Number.isNaN(Number(first))) {
 			return first.includes(".") ? "double" : "int";
 		}
 	}
@@ -330,6 +349,8 @@ interface FormatDataValuesProps {
 	columns: string[];
 	columnLabels?: Record<string, string>;
 	rows?: Array<Record<string, unknown>>;
+	/** Pre-built type map from metamodel/saved config: used when rows is empty. */
+	columnTypes?: Record<string, string>;
 	value: FormatRule[];
 	onChange: (rules: FormatRule[]) => void;
 	onReset: () => void;
@@ -339,6 +360,7 @@ export function FormatDataValues({
 	columns,
 	columnLabels,
 	rows = [],
+	columnTypes: externalColumnTypes,
 	value,
 	onChange,
 	onReset,
@@ -350,9 +372,12 @@ export function FormatDataValues({
 	const columnTypes = useMemo(
 		() =>
 			Object.fromEntries(
-				columns.map((col) => [col, inferColumnType(col, rows)]),
+				columns.map((col) => [
+					col,
+					inferColumnType(col, rows, externalColumnTypes?.[col]),
+				]),
 			),
-		[columns, rows],
+		[columns, rows, externalColumnTypes],
 	);
 
 	const upd = (updates: Partial<FormatRule>) =>

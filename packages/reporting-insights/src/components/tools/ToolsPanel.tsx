@@ -100,6 +100,8 @@ interface ToolsPanelProps {
 	visualizationType: VisualizationType;
 	styling?: VisualizationStyling;
 	columns: string[];
+	/** Pre-built column type map from metamodel/saved config. */
+	columnTypes?: Record<string, string>;
 	/** Sample rows from the editor preview — used by the Filter Visualization tool to suggest values. */
 	rows?: Array<Record<string, unknown>>;
 	/** KPI: column names currently configured in the Metrics drop zone. Drives the per-card title selector. */
@@ -137,6 +139,7 @@ export function ToolsPanel({
 	visualizationType,
 	styling = {},
 	columns,
+	columnTypes: externalColumnTypes,
 	rows = [],
 	metricColumns = [],
 	hasSizeColumn = false,
@@ -733,6 +736,7 @@ export function ToolsPanel({
 				columns={sortableColumns?.length ? sortableColumns : columns}
 				columnLabels={formatToolColumnLabels}
 				rows={rows}
+				columnTypes={externalColumnTypes}
 				value={styling.formatRules || []}
 				onChange={(formatRules) => updateStyling({ formatRules })}
 				onReset={() => updateStyling({ formatRules: undefined })}

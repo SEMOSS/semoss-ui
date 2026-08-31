@@ -37,12 +37,15 @@ import {
 	PY_MANIFEST_PATH,
 } from "./mcpManifest";
 import {
+	buildIframePortalZip,
 	buildMcpHostZip,
 	buildPortalZip,
 	escapeForPixel,
+	generateIframePortalHtml,
 	mcpHostRedirectHtml,
 	PORTAL_INDEX_HTML,
 	sanitizeProjectName,
+	USE_IFRAME_PORTAL,
 } from "./portalGenerator";
 
 const MODULE = "/Monolith";
@@ -310,22 +313,22 @@ export class ProjectStore {
 				/* try next candidate */
 			}
 		}
-		// 2. Published fallback — fetch the served portal asset. Use a RELATIVE URL so
-		//    it goes through the dev proxy (an absolute backend origin would be a
-		//    cross-origin request and get blocked by CORS).
-		if (published) {
-			try {
-				const r = await fetch(
-					`${MODULE_PATH}/public_home/${encodeURIComponent(id)}/portals/dashboard.json`,
-					{ credentials: "include" },
-				);
-				if (r.ok) {
-					const parsed = this.parseDefinition(await r.text(), id);
-					if (parsed) return parsed;
-				}
-			} catch {
-				/* fall through */
+		// 2. Public fallback: fetch the served portal asset. Always attempted, not
+		//    just when `published` is set: viewers who can't list a project via
+		//    MyProjects have no `meta.published` flag but can still read the public
+		//    portal asset. RELATIVE URL so it goes through the dev proxy.
+		void published;
+		try {
+			const r = await fetch(
+				`${MODULE_PATH}/public_home/${encodeURIComponent(id)}/portals/dashboard.json`,
+				{ credentials: "include" },
+			);
+			if (r.ok) {
+				const parsed = this.parseDefinition(await r.text(), id);
+				if (parsed) return parsed;
 			}
+		} catch {
+			/* fall through */
 		}
 		throw new Error("Could not load this dashboard’s definition.");
 	}
@@ -367,11 +370,17 @@ export class ProjectStore {
 		const tempId = crypto.randomUUID();
 
 		// 1. Build + upload the portal zip.
-		const zipBlob = await buildPortalZip(
-			{ ...dashboard, id: tempId },
-			projectName,
-			tempId,
-		);
+		const zipBlob = USE_IFRAME_PORTAL
+			? await buildIframePortalZip(
+					{ ...dashboard, id: tempId },
+					projectName,
+					tempId,
+				)
+			: await buildPortalZip(
+					{ ...dashboard, id: tempId },
+					projectName,
+					tempId,
+				);
 		const zipFile = new File([zipBlob], `${projectName}.zip`, {
 			type: "application/zip",
 		});
@@ -739,13 +748,12 @@ export class ProjectStore {
 	): Promise<{ released: boolean }> {
 		dashboard = inferSqlParameters(dashboard);
 		await this.ensureInsightId();
-		// 1. Replace the portal app bundle with the freshly-built one.
-		await this.uploadPortalAsset(
-			id,
-			"index.html",
-			PORTAL_INDEX_HTML,
-			"text/html",
-		);
+		// 1. Replace the portal app bundle with the freshly-built one. Either the
+		//    thin iframe shell (default) or the legacy self-contained React app.
+		const portalHtml = USE_IFRAME_PORTAL
+			? generateIframePortalHtml(id)
+			: PORTAL_INDEX_HTML;
+		await this.uploadPortalAsset(id, "index.html", portalHtml, "text/html");
 		// 2. Refresh the dashboard definition alongside it.
 		await this.writeJson(id, dashboard);
 		// 2b. Refresh the MCP tool manifest so the tool reflects the latest dashboard.

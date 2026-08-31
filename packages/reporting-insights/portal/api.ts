@@ -127,6 +127,87 @@ export async function runDatabaseQuery(
 	return { headers: headers as string[], values: values as unknown[][] };
 }
 
+const MAX_BATCH_PAGE = 1000;
+
+/** Run the first page of a SQL query via the task iterator. */
+export async function runDatabaseQueryPaged(
+	databaseId: string,
+	query: string,
+	pageSize: number,
+): Promise<{
+	headers: string[];
+	values: unknown[][];
+	taskId: string | null;
+	hasMore: boolean;
+}> {
+	const n = Math.min(pageSize, MAX_BATCH_PAGE);
+	const pixel = buildQueryPixel({ databaseId, query }, { collect: n });
+	const prs = await postPixel(pixel);
+	const { output: out, error } = lastPixelOutput(prs);
+	if (error) throw new Error(error);
+	const o = out as Record<string, unknown> | null;
+	const headers =
+		(o?.data as { headers?: string[] })?.headers ??
+		(o?.headers as string[]) ??
+		[];
+	const values =
+		(o?.data as { values?: unknown[][] })?.values ??
+		(o?.values as unknown[][]) ??
+		(o?.data as unknown[][]) ??
+		[];
+	if (!Array.isArray(values))
+		throw new Error("Unexpected query result format");
+	const taskRaw =
+		(o as any)?.taskId ?? (o as any)?.taskOptions?.taskId ?? null;
+	const taskId = taskRaw != null ? String(taskRaw) : null;
+	const hasMore = !!taskId && (values as unknown[][]).length >= n;
+	return {
+		headers: headers as string[],
+		values: values as unknown[][],
+		taskId,
+		hasMore,
+	};
+}
+
+/** Continue fetching rows from an open SEMOSS task iterator. */
+export async function loadMoreFromTask(
+	taskId: string,
+	pageSize: number,
+): Promise<{
+	headers: string[];
+	values: unknown[][];
+	taskId: string;
+	hasMore: boolean;
+}> {
+	const n = Math.min(pageSize, MAX_BATCH_PAGE);
+	const pixel = `Task(${taskId}) | Collect(${n});`;
+	const prs = await postPixel(pixel);
+	const { output: out, error } = lastPixelOutput(prs);
+	if (error) throw new Error(error);
+	const o = out as Record<string, unknown> | null;
+	const headers =
+		(o?.data as { headers?: string[] })?.headers ??
+		(o?.headers as string[]) ??
+		[];
+	const values =
+		(o?.data as { values?: unknown[][] })?.values ??
+		(o?.values as unknown[][]) ??
+		(o?.data as unknown[][]) ??
+		[];
+	if (!Array.isArray(values))
+		throw new Error("Unexpected query result format");
+	const taskRaw =
+		(o as any)?.taskId ?? (o as any)?.taskOptions?.taskId ?? null;
+	const newTaskId = taskRaw != null ? String(taskRaw) : taskId;
+	const hasMore = (values as unknown[][]).length >= n;
+	return {
+		headers: headers as string[],
+		values: values as unknown[][],
+		taskId: newTaskId,
+		hasMore,
+	};
+}
+
 export async function loadDatabases(): Promise<Database[]> {
 	const pixel = `MyEngines(engineTypes=['DATABASE'], sort=[{"ENGINENAME":"ASC"}], limit=[1000], offset=[0]);`;
 	return ((await runPixel(pixel)) as Database[]) ?? [];

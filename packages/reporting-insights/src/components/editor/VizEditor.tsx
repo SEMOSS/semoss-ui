@@ -829,7 +829,7 @@ export function VizEditor(props: VizEditorProps) {
 								<button
 									type="button"
 									onClick={() => {
-										if (!isQueryMaster) onSetAsMaster!();
+										if (!isQueryMaster) onSetAsMaster?.();
 									}}
 									disabled={isQueryMaster}
 									aria-label={
@@ -1170,7 +1170,9 @@ export function VizEditor(props: VizEditorProps) {
 												spinning
 												title="Running query…"
 											/>
-										) : !hasData ? (
+										) : !hasData &&
+											viz.visualizationType !==
+												"csvexport" ? (
 											<CenterState
 												icon={Table}
 												title={
@@ -1208,7 +1210,9 @@ export function VizEditor(props: VizEditorProps) {
 													spinning
 													title="Running query…"
 												/>
-											) : !hasData ? (
+											) : !hasData &&
+												viz.visualizationType !==
+													"csvexport" ? (
 												<CenterState
 													icon={Play}
 													title={
@@ -1513,7 +1517,7 @@ function QueryPicker({
 												type="button"
 												onClick={(e) => {
 													e.stopPropagation();
-													onDelete!(q.id);
+													onDelete?.(q.id);
 												}}
 												title="Delete this unused query"
 												className="flex-shrink-0 rounded p-1 text-stone-300 opacity-0 transition-opacity hover:bg-red-50 hover:text-red-500 group-hover:opacity-100"

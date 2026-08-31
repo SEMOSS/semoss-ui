@@ -129,9 +129,9 @@ function SheetTab({
 				active
 					? {
 							borderTopColor: tabColor,
-							backgroundColor: tabColor + "26",
+							backgroundColor: `${tabColor}26`,
 						}
-					: { backgroundColor: tabColor + "14" }
+					: { backgroundColor: `${tabColor}14` }
 			}
 			onClick={onSelect}
 			onDoubleClick={onDoubleClick}

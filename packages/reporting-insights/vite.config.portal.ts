@@ -1,6 +1,6 @@
 import react from "@vitejs/plugin-react";
-import path from "path";
 import { defineConfig } from "vite";
+import path from "node:path";
 
 // Standalone build for the published portal sub-app.
 // Output: portal/dist/index.html (single file after inline-build.mjs post-processing).

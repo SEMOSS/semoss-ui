@@ -212,7 +212,7 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
 	const loadDashboard = useCallback(
 		async (id: string): Promise<Dashboard> => {
 			const cached = defsCache.current.get(id);
-			if (cached && cached.sheets?.length) return cached;
+			if (cached?.sheets?.length) return cached;
 			// Read metadata from the ref (not the dashboards state) so this callback
 			// stays stable across renders and doesn't retrigger effects that depend on it.
 			const meta = dashboardsRef.current.find((d) => d.id === id);
@@ -300,11 +300,11 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
 						id,
 						merged!,
 					);
-					if (updates.name != null && merged!.name?.trim()) {
+					if (updates.name != null && merged?.name?.trim()) {
 						// Rename the SEMOSS project's display name to match the title.
 						// Owner-only (SetProjectDisplayName) — non-fatal for editors.
 						try {
-							await store.renameProject(id, merged!.name);
+							await store.renameProject(id, merged?.name);
 						} catch {
 							/* editor can't rename the project */
 						}
@@ -314,8 +314,8 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
 						try {
 							await store.setMetadata(
 								id,
-								merged!.tags ?? [],
-								merged!.description ?? "",
+								merged?.tags ?? [],
+								merged?.description ?? "",
 							);
 						} catch {
 							/* editor can't update project metadata */

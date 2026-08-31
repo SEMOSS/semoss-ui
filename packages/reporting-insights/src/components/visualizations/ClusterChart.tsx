@@ -97,7 +97,7 @@ export function ClusterChart({ data, config, onTrigger }: ClusterChartProps) {
 	const colorRules: ColorRule[] = clusterStyling.colorRules ?? [];
 	const palette: string[] = (config?.styling?.colorPalette as any)?.colors
 		?.length
-		? (config!.styling!.colorPalette as any).colors
+		? (config?.styling?.colorPalette as any).colors
 		: CHART_COLORS;
 
 	const [hovered, setHovered] = useState<{
@@ -120,7 +120,7 @@ export function ClusterChart({ data, config, onTrigger }: ClusterChartProps) {
 		for (const row of data) {
 			const key = String(row[xKey] ?? "");
 			if (!groupMap.has(key)) groupMap.set(key, []);
-			groupMap.get(key)!.push(row);
+			groupMap.get(key)?.push(row);
 		}
 		const groupEntries = [...groupMap.entries()]; // [name, rows][]
 		const numGroups = groupEntries.length;
@@ -253,7 +253,7 @@ export function ClusterChart({ data, config, onTrigger }: ClusterChartProps) {
 					const labelY =
 						clusterCY + (SVG_H - 2 * PAD - LABEL_RESERVE) / 2 + 18;
 					const displayName =
-						name.length > 20 ? name.slice(0, 19) + "…" : name;
+						name.length > 20 ? `${name.slice(0, 19)}…` : name;
 					return (
 						<g key={gi}>
 							<text

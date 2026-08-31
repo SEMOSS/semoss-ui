@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+        <meta name="ri-app-url" content="__APP_URL__" />
+        <meta name="ri-project-id" content="__PROJECT_ID__" />
+        <title>Dashboard</title>
+        <style>
+            html,
+            body {
+                margin: 0;
+                padding: 0;
+                height: 100%;
+                background: #f1f5f9;
+            }
+            iframe {
+                display: block;
+                width: 100%;
+                height: 100%;
+                border: 0;
+            }
+        </style>
+    </head>
+    <body>
+        <iframe id="ri-frame" title="Dashboard" allow="fullscreen; clipboard-read; clipboard-write"></iframe>
+        <script>
+            (function () {
+                var appUrl = document.querySelector('meta[name="ri-app-url"]').content || '';
+                var projectId = document.querySelector('meta[name="ri-project-id"]').content || '';
+                // Runtime override: ?app-url=... on the portal URL lets an admin repoint a
+                // portal at a different main-app deployment without re-zipping.
+                var override = new URLSearchParams(window.location.search).get('app-url');
+                if (override) appUrl = override;
+                // Same-origin fallback when nothing was baked in at build time.
+                if (!appUrl) appUrl = window.location.origin + '/';
+                // Ensure exactly one trailing slash before appending the hash route.
+                appUrl = appUrl.replace(/\/+$/, '') + '/';
+                document.getElementById('ri-frame').src =
+                    appUrl + '#/dashboard/' + encodeURIComponent(projectId) + '/view?embed=1';
+            })();
+        </script>
+    </body>
+</html>

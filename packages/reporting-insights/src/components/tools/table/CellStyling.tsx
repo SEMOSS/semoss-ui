@@ -50,7 +50,10 @@ export function CellStyling({
 					max="32"
 					value={currentValue.fontSize || 12}
 					onChange={(e) =>
-						updateField("fontSize", parseInt(e.target.value) || 12)
+						updateField(
+							"fontSize",
+							parseInt(e.target.value, 10) || 12,
+						)
 					}
 					className="w-full rounded border border-stone-200 px-3 py-2 text-sm focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
 				/>
