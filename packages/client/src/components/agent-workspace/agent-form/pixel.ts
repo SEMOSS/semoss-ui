@@ -21,6 +21,9 @@ const buildHooksPayload = (hooks: AgentFormValues["hooks"]) =>
 						kind: h.kind,
 						pixel: h.pixel,
 						...(h.events?.length ? { events: h.events } : {}),
+						...(h.bindings && Object.keys(h.bindings).length
+							? { bindings: h.bindings }
+							: {}),
 					}
 				: { kind: h.kind },
 		);

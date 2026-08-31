@@ -59,6 +59,7 @@ type GetWorkspaceResponse = {
 			kind: string;
 			pixel?: string;
 			events?: string[];
+			bindings?: Record<string, string>;
 		}[];
 	};
 };
@@ -73,9 +74,10 @@ export const AgentEditor = () => {
 	const descId = useId();
 	const instructionsId = useId();
 
-	const { control, handleSubmit, reset } = useForm<AgentFormValues>({
-		defaultValues: AGENT_FORM_DEFAULT_VALUES,
-	});
+	const { control, handleSubmit, reset, setError, clearErrors } =
+		useForm<AgentFormValues>({
+			defaultValues: AGENT_FORM_DEFAULT_VALUES,
+		});
 
 	useEffect(() => {
 		const load = async () => {
@@ -333,6 +335,8 @@ export const AgentEditor = () => {
 						>
 							<AgentHooksField
 								control={control}
+								setError={setError}
+								clearErrors={clearErrors}
 								knownKinds={knownHookKinds}
 							/>
 						</AgentFormSection>

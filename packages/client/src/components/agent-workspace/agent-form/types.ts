@@ -21,6 +21,7 @@ type HookEntry = {
 	kind: string;
 	pixel?: string;
 	events?: string[];
+	bindings?: Record<string, string>;
 };
 
 /** The only kind with configurable fields today. */
@@ -39,6 +40,34 @@ export const PIXEL_HOOK_EVENTS = [
 	"afterTool",
 	"afterRun",
 	"beforeAgentDeInit",
+] as const;
+
+/** Lifecycle payload paths supported by PixelReactorHook bindings. */
+export const PIXEL_HOOK_BINDING_SOURCES = [
+	"event",
+	"payload",
+	"context",
+	"context.runId",
+	"context.roomId",
+	"context.userId",
+	"context.input",
+	"context.spawnDepth",
+	"result",
+	"result.finalText",
+	"result.structuredOutput",
+	"result.iterations",
+	"result.reflectionsUsed",
+	"result.inputMessageId",
+	"result.finalOutputMessageId",
+	"result.toolCallRecords",
+	"tool",
+	"tool.name",
+	"tool.callId",
+	"tool.params",
+	"tool.resultContent",
+	"tool.durationMs",
+	"tool.success",
+	"tool.iteration",
 ] as const;
 
 /**

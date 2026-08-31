@@ -1,8 +1,17 @@
-import { Trash2 } from "lucide-react";
-import { type Control, Controller, useFieldArray } from "react-hook-form";
+import { ChevronRight, Trash2 } from "lucide-react";
+import {
+	type Control,
+	Controller,
+	type UseFormClearErrors,
+	type UseFormSetError,
+	useFieldArray,
+} from "react-hook-form";
 import {
 	Button,
 	Checkbox,
+	Collapsible,
+	CollapsibleContent,
+	CollapsibleTrigger,
 	Muted,
 	Select,
 	SelectContent,
@@ -11,6 +20,7 @@ import {
 	SelectValue,
 	Textarea,
 } from "@semoss/ui/next";
+import { AgentHookBindingsField } from "./agent-hook-bindings-field";
 import {
 	type AgentFormValues,
 	HOOK_KIND_DESCRIPTIONS,
@@ -20,12 +30,16 @@ import {
 
 export interface AgentHooksFieldProps {
 	control: Control<AgentFormValues>;
+	setError: UseFormSetError<AgentFormValues>;
+	clearErrors: UseFormClearErrors<AgentFormValues>;
 	/** Hook kinds the server recognizes (GetWorkspace's `known_hook_kinds`). */
 	knownKinds: string[];
 }
 
 export const AgentHooksField = ({
 	control,
+	setError,
+	clearErrors,
 	knownKinds,
 }: AgentHooksFieldProps) => {
 	const {
@@ -52,100 +66,140 @@ export const AgentHooksField = ({
 					</Muted>
 				)}
 				{hookFields.map((hookField, index) => (
-					<div
+					<Collapsible
 						key={hookField.id}
-						className="flex flex-col gap-2 border-border border-b pb-3 last:border-b-0 last:pb-0"
+						defaultOpen
+						className="group/hook border-border border-b pb-3 last:border-b-0 last:pb-0"
 					>
 						<div className="flex items-center justify-between gap-2">
-							<span className="font-medium text-sm">
-								{hookField.kind}
-							</span>
+							<CollapsibleTrigger asChild>
+								<Button
+									type="button"
+									variant="ghost"
+									className="min-w-0 flex-1 justify-start px-1"
+								>
+									<ChevronRight className="size-4 shrink-0 transition-transform group-data-[state=open]/hook:rotate-90" />
+									<span className="truncate font-medium text-sm">
+										{hookField.kind}
+									</span>
+								</Button>
+							</CollapsibleTrigger>
 							<Button
 								variant="ghost"
 								size="icon"
 								type="button"
+								aria-label="Remove hook"
 								onClick={() => removeHook(index)}
 							>
 								<Trash2 className="size-4" />
 							</Button>
 						</div>
-						{hookField.kind === PIXEL_HOOK_KIND ? (
-							<>
-								<Controller
-									name={`hooks.${index}.pixel`}
-									control={control}
-									render={({ field }) => (
-										<Textarea
-											aria-label="Pixel expression"
-											placeholder="Pixel expression to run, e.g. MyReactor(arg='value');"
-											className="max-h-[7.5rem]"
-											{...field}
-										/>
-									)}
-								/>
-								<Controller
-									name={`hooks.${index}.events`}
-									control={control}
-									render={({ field }) => (
-										<div className="flex flex-col gap-1.5">
-											<Muted className="text-muted-foreground text-xs">
-												Fires on every event if none are
-												checked
-											</Muted>
-											<div className="flex flex-wrap gap-x-4 gap-y-1.5">
-												{PIXEL_HOOK_EVENTS.map(
-													(event) => {
-														const checked = (
-															field.value ?? []
-														).includes(event);
-														return (
-															// biome-ignore lint/a11y/noLabelWithoutControl: Checkbox forwards its ref/props to the underlying input via Radix
-															<label
-																key={event}
-																className="flex items-center gap-1.5 text-sm"
-															>
-																<Checkbox
-																	checked={
-																		checked
-																	}
-																	onCheckedChange={(
-																		next,
-																	) => {
-																		const current =
-																			field.value ??
-																			[];
-																		field.onChange(
-																			next
-																				? [
-																						...current,
-																						event,
-																					]
-																				: current.filter(
-																						(
-																							e,
-																						) =>
-																							e !==
+						<CollapsibleContent className="flex flex-col gap-2 pt-1">
+							{hookField.kind === PIXEL_HOOK_KIND ? (
+								<>
+									<Controller
+										name={`hooks.${index}.pixel`}
+										control={control}
+										render={({ field }) => (
+											<Textarea
+												aria-label="Pixel expression"
+												placeholder="Pixel expression to run, e.g. MyReactor(arg='value');"
+												className="max-h-[7.5rem]"
+												{...field}
+											/>
+										)}
+									/>
+									<Controller
+										name={`hooks.${index}.bindings`}
+										control={control}
+										render={({ field, fieldState }) => (
+											<AgentHookBindingsField
+												value={field.value}
+												onChange={field.onChange}
+												onBlur={field.onBlur}
+												error={
+													fieldState.error?.message
+												}
+												onValidityChange={(message) => {
+													const name =
+														`hooks.${index}.bindings` as const;
+													if (message) {
+														setError(name, {
+															type: "validate",
+															message,
+														});
+													} else {
+														clearErrors(name);
+													}
+												}}
+											/>
+										)}
+									/>
+									<Controller
+										name={`hooks.${index}.events`}
+										control={control}
+										render={({ field }) => (
+											<div className="flex flex-col gap-1.5">
+												<Muted className="text-muted-foreground text-xs">
+													Fires on every event if none
+													are checked
+												</Muted>
+												<div className="flex flex-wrap gap-x-4 gap-y-1.5">
+													{PIXEL_HOOK_EVENTS.map(
+														(event) => {
+															const checked = (
+																field.value ??
+																[]
+															).includes(event);
+															return (
+																// biome-ignore lint/a11y/noLabelWithoutControl: Checkbox forwards its ref/props to the underlying input via Radix
+																<label
+																	key={event}
+																	className="flex items-center gap-1.5 text-sm"
+																>
+																	<Checkbox
+																		checked={
+																			checked
+																		}
+																		onCheckedChange={(
+																			next,
+																		) => {
+																			const current =
+																				field.value ??
+																				[];
+																			field.onChange(
+																				next
+																					? [
+																							...current,
 																							event,
-																					),
-																		);
-																	}}
-																/>
-																{event}
-															</label>
-														);
-													},
-												)}
+																						]
+																					: current.filter(
+																							(
+																								e,
+																							) =>
+																								e !==
+																								event,
+																						),
+																			);
+																		}}
+																	/>
+																	{event}
+																</label>
+															);
+														},
+													)}
+												</div>
 											</div>
-										</div>
-									)}
-								/>
-							</>
-						) : (
-							<Muted className="text-muted-foreground text-sm">
-								{HOOK_KIND_DESCRIPTIONS[hookField.kind]}
-							</Muted>
-						)}
-					</div>
+										)}
+									/>
+								</>
+							) : (
+								<Muted className="text-muted-foreground text-sm">
+									{HOOK_KIND_DESCRIPTIONS[hookField.kind]}
+								</Muted>
+							)}
+						</CollapsibleContent>
+					</Collapsible>
 				))}
 			</div>
 			<Select
@@ -153,7 +207,7 @@ export const AgentHooksField = ({
 				onValueChange={(kind) =>
 					appendHook(
 						kind === PIXEL_HOOK_KIND
-							? { kind, pixel: "", events: [] }
+							? { kind, pixel: "", events: [], bindings: {} }
 							: { kind },
 					)
 				}
