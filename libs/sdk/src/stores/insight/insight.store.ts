@@ -807,10 +807,10 @@ LoadPyFromFile(alias="${alias}", filePath="temp.py");
 		},
 
 		/**
-		 * Send a MCP tool response to the playground
+		 * Send a MCP tool response to the room
 		 * @param mcpToolResponse - response to send
 		 */
-		sendMCPResponseToPlayground: (
+		sendMCPResponseToRoom: (
 			mcpToolResponse: string,
 			mcpToolStatus: MCPToolResponse["tool_status"] = "success",
 			executedParameters: Record<string, unknown> = {},
@@ -845,7 +845,7 @@ LoadPyFromFile(alias="${alias}", filePath="temp.py");
 		},
 
 		/**
-		 * Run a MCP tool and send the response to the playground
+		 * Run a MCP tool and send the response to the room
 		 * @param name - name of the tool
 		 * @param parameters - parameters to pass to the tool
 		 */
@@ -870,14 +870,14 @@ LoadPyFromFile(alias="${alias}", filePath="temp.py");
 
 			if (Env.TOOL) {
 				try {
-					this.actions.sendMCPResponseToPlayground(
+					this.actions.sendMCPResponseToRoom(
 						output,
 						"success",
 						parameters,
 					);
 				} catch (e) {
 					console.warn(
-						`Failed to send MCP response to playground${e.message ? `: ${e.message}` : ""}`,
+						`Failed to send MCP response to room${e.message ? `: ${e.message}` : ""}`,
 					);
 				}
 			}

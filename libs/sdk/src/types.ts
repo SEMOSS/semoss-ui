@@ -73,13 +73,13 @@ export interface MCPToolResponse {
 }
 
 // -------------------------------------------------------------------------------------------------
-// CHAT / PLAYGROUND TYPES
+// CHAT / ROOM TYPES
 // -------------------------------------------------------------------------------------------------
 
 /**
  * Workspace reference embedded within room options
  */
-export interface PlaygroundWorkspace {
+export interface RoomWorkspace {
 	workspace_id: string;
 	name: string;
 }
@@ -119,9 +119,9 @@ export interface PredefinedPrompt {
 }
 
 /**
- * Configuration options for a playground room
+ * Configuration options for a room
  */
-export interface PlaygroundRoomOptions {
+export interface RoomOptions {
 	/** Predefined prompts shown as quick-start chips in the chat input */
 	predefinedPrompts: PredefinedPrompt[];
 	/** System-level instructions / persona injected into every conversation */
@@ -129,7 +129,7 @@ export interface PlaygroundRoomOptions {
 	/** MCP tool and knowledge-source entries enabled for the room */
 	mcp: MCPToolConfig[];
 	/** Agent workspace linked to the room, if any */
-	workspace?: PlaygroundWorkspace;
+	workspace?: RoomWorkspace;
 	/** ID of the model (engine) to use for this room */
 	modelId: string;
 	/** Set to "semoss" to run messages via the server-side RunAgent harness;
@@ -138,18 +138,18 @@ export interface PlaygroundRoomOptions {
 }
 
 /**
- * A playground room
+ * A room
  */
-export interface PlaygroundRoom {
+export interface RoomRecord {
 	roomId: string;
 	name: string;
 	[key: string]: unknown;
 }
 
 /**
- * A single message within a playground room
+ * A single message within a room
  */
-export interface PlaygroundMessage {
+export interface RoomMessage {
 	messageId: string;
 	content: string;
 	role: string;
@@ -179,7 +179,7 @@ export interface AskRoomParams {
 /**
  * The model response returned by AskRoom
  */
-export interface PlaygroundResponse {
+export interface RoomResponse {
 	messageId: string;
 	content: string;
 	[key: string]: unknown;

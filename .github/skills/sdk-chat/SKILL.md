@@ -1,5 +1,5 @@
 ---
-name: sdk-playground
+name: sdk-chat
 description: "How to use the @semoss/sdk room API. Use for: creating or listing rooms, sending messages (AskRoom), fetching room messages or options, binding a room to an insight, updating room config. Covers imports, typed parameters, error handling, and usage patterns for all room pixel wrappers."
 ---
 
@@ -25,10 +25,10 @@ import {
 
 // Types (all exported alongside functions)
 import type {
-    PlaygroundRoom,
-    PlaygroundMessage,
-    PlaygroundRoomOptions,
-    PlaygroundWorkspace,
+    RoomRecord,
+    RoomMessage,
+    RoomOptions,
+    RoomWorkspace,
     AskRoomParams,
     PixelStreamMessage,
     PixelJobStreamingStatus,
@@ -39,7 +39,7 @@ import type {
 
 ### `createRoom(insightId, workspaceId?)`
 
-Creates a new room tied to a workspace. Returns the created `PlaygroundRoom`.
+Creates a new room tied to a workspace. Returns the created `RoomRecord`.
 
 ```ts
 const room = await createRoom(insightId, "workspace-abc");
@@ -64,7 +64,7 @@ const pinned = await getUserRooms(insightId, { pinned: true, sort: "DESC" });
 
 ### `getRoomMessages(insightId, roomId)`
 
-Returns all messages in a room as `PlaygroundMessage[]`.
+Returns all messages in a room as `RoomMessage[]`.
 
 ```ts
 const messages = await getRoomMessages(insightId, room.roomId);
@@ -74,7 +74,7 @@ const messages = await getRoomMessages(insightId, room.roomId);
 
 ### `getRoomOptions(insightId, roomId)`
 
-Returns the current `PlaygroundRoomOptions` for a room (model, instructions, MCP tools, etc.).
+Returns the current `RoomOptions` for a room (model, instructions, MCP tools, etc.).
 
 ```ts
 const options = await getRoomOptions(insightId, room.roomId);
@@ -99,7 +99,7 @@ await setRoomForInsight(insightId, room.roomId);
 Replaces a room's configuration. Pass the full options array. Returns `void`.
 
 ```ts
-const newOptions: PlaygroundRoomOptions[] = [
+const newOptions: RoomOptions[] = [
     {
         predefinedPrompts: ["Summarize this", "Explain simply"],
         instructions: "You are a helpful assistant.",
@@ -168,7 +168,7 @@ All functions throw on pixel errors. Wrap calls in `try/catch`:
 
 ```ts
 try {
-    const room = await createPlaygroundRoom(insightId, workspaceId);
+    const room = await createRoom(insightId, workspaceId);
 } catch (error) {
     // error.message contains the reactor error string
     console.error("Failed to create room:", error);

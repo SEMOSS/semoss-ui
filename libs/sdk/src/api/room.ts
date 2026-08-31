@@ -1,10 +1,10 @@
 import type {
-	PlaygroundMessage,
-	PlaygroundRoomOptions,
 	RoomAskAgentOptions,
 	RoomAskAgentResult,
 	RoomAskOptions,
 	RoomAskResult,
+	RoomMessage,
+	RoomOptions,
 	RoomStreamChunk,
 } from "../types";
 import { runAgent } from "./agent";
@@ -17,7 +17,7 @@ import {
 } from "./base";
 import {
 	askRoom,
-	createPlaygroundRoom,
+	createRoomRecord,
 	getRoomMessages,
 	setRoomForInsight,
 	updateRoomOptions,
@@ -64,12 +64,12 @@ interface AskSettledOutput {
  * console.log(result.text); // "Paris"
  * ```
  *
- * @see sdk-playground skill for the full Room guide and chat-vs-agent comparison.
+ * @see sdk-chat skill for the full Room guide and chat-vs-agent comparison.
  */
 export class Room {
 	readonly roomId: string;
 	readonly insightId: string;
-	private _options: PlaygroundRoomOptions;
+	private _options: RoomOptions;
 	/**
 	 * Tracks the last response message ID so subsequent ask() calls
 	 * automatically continue the same conversation thread.
@@ -79,7 +79,7 @@ export class Room {
 	private constructor(
 		roomId: string,
 		insightId: string,
-		options: PlaygroundRoomOptions,
+		options: RoomOptions,
 	) {
 		this.roomId = roomId;
 		this.insightId = insightId;
@@ -87,7 +87,7 @@ export class Room {
 	}
 
 	/** Current room configuration. */
-	get options(): Readonly<PlaygroundRoomOptions> {
+	get options(): Readonly<RoomOptions> {
 		return this._options;
 	}
 
@@ -141,10 +141,8 @@ export class Room {
 	 *
 	 * @param options - Partial options to apply.
 	 */
-	async updateOptions(
-		options: Partial<PlaygroundRoomOptions>,
-	): Promise<void> {
-		const merged: PlaygroundRoomOptions = { ...this._options, ...options };
+	async updateOptions(options: Partial<RoomOptions>): Promise<void> {
+		const merged: RoomOptions = { ...this._options, ...options };
 		await updateRoomOptions(this.insightId, this.roomId, [merged]);
 		this._options = merged;
 	}
@@ -154,7 +152,7 @@ export class Room {
 	 *
 	 * @returns The full message history.
 	 */
-	async getMessages(): Promise<PlaygroundMessage[]> {
+	async getMessages(): Promise<RoomMessage[]> {
 		return getRoomMessages(this.insightId, this.roomId);
 	}
 
@@ -166,7 +164,7 @@ export class Room {
 	 * @param command - The message text to send.
 	 * @param options - Streaming callback and optional per-request overrides.
 	 * @returns Settled message IDs and the full response text.
-	 * @see sdk-playground skill for the full streaming guide.
+	 * @see sdk-chat skill for the full streaming guide.
 	 */
 	async ask(
 		command: string,
@@ -223,7 +221,7 @@ export class Room {
 	 * @param command - The message text to send.
 	 * @param options - Streaming callback.
 	 * @returns Settled message IDs, response text, and status.
-	 * @see sdk-playground skill for the chat-vs-agent-harness guide.
+	 * @see sdk-chat skill for the chat-vs-agent-harness guide.
 	 */
 	async askAgent(
 		command: string,
@@ -332,20 +330,17 @@ export class Room {
 		insightId: string,
 		workspaceId?: string,
 	): Promise<Room> {
-		const playgroundRoom = await createPlaygroundRoom(
-			insightId,
-			workspaceId,
-		);
-		await setRoomForInsight(insightId, playgroundRoom.roomId);
+		const roomRecord = await createRoomRecord(insightId, workspaceId);
+		await setRoomForInsight(insightId, roomRecord.roomId);
 
-		const defaultOptions: PlaygroundRoomOptions = {
+		const defaultOptions: RoomOptions = {
 			predefinedPrompts: [],
 			instructions: "",
 			mcp: [],
 			modelId: "",
 		};
 
-		return new Room(playgroundRoom.roomId, insightId, defaultOptions);
+		return new Room(roomRecord.roomId, insightId, defaultOptions);
 	}
 }
 
