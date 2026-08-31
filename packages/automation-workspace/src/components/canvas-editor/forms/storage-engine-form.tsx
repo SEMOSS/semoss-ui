@@ -9,12 +9,15 @@ export interface StorageEngineFormProps {
 	upstreamVars: string[];
 	/** Called with the updated config on every field change */
 	onChange: (c: StorageEngineConfig) => void;
+	/** When true, all fields are locked to their current values */
+	readOnly?: boolean;
 }
 
 export function StorageEngineForm({
 	config,
 	upstreamVars,
 	onChange,
+	readOnly = false,
 }: StorageEngineFormProps) {
 	return (
 		<div className="flex flex-col gap-4">
@@ -24,6 +27,7 @@ export function StorageEngineForm({
 				value={config.engineId}
 				engineTypes={["STORAGE"]}
 				required
+				disabled={readOnly}
 				onChange={(e) =>
 					onChange({
 						...config,
@@ -39,6 +43,7 @@ export function StorageEngineForm({
 				placeholder="/documents/${folder}"
 				onChange={(v) => onChange({ ...config, storagePath: v })}
 				upstreamVars={upstreamVars}
+				readOnly={readOnly}
 			/>
 			{(config.operation === "download" ||
 				config.operation === "upload") && (
@@ -57,6 +62,7 @@ export function StorageEngineForm({
 					}
 					onChange={(v) => onChange({ ...config, filePath: v })}
 					upstreamVars={upstreamVars}
+					readOnly={readOnly}
 				/>
 			)}
 			{config.operation === "upload" && (
@@ -66,6 +72,7 @@ export function StorageEngineForm({
 					placeholder='{"key": "value"}'
 					onChange={(v) => onChange({ ...config, metadata: v })}
 					upstreamVars={upstreamVars}
+					readOnly={readOnly}
 					mono
 				/>
 			)}

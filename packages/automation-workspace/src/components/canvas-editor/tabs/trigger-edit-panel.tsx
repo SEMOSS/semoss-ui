@@ -1,4 +1,4 @@
-import { Play, Plus, Trash2, X } from "lucide-react";
+import { Lock, Play, Plus, Trash2, X } from "lucide-react";
 import { useState } from "react";
 import { Button, Field, FieldLabel, Input, Textarea } from "@semoss/ui/next";
 import type { AutomationNode } from "../../../domain/automation.types";
@@ -11,6 +11,8 @@ interface TriggerEditPanelProps {
 	onClose: () => void;
 	step: AutomationNode;
 	onUpdate: (step: AutomationNode) => void;
+	/** When true, renders the trigger's configuration as view-only. */
+	readOnly?: boolean;
 }
 
 interface GlobalInputRow {
@@ -28,6 +30,7 @@ export function TriggerEditPanel({
 	onClose,
 	step,
 	onUpdate,
+	readOnly = false,
 }: TriggerEditPanelProps) {
 	const [globalRows, setGlobalRows] = useState<GlobalInputRow[]>(() => {
 		const globals = Array.isArray(step.workflowConfig?.globals)
@@ -36,6 +39,7 @@ export function TriggerEditPanel({
 		return globals.map(createGlobalInputRow);
 	});
 	const updateGlobals = (nextRows: GlobalInputRow[]) => {
+		if (readOnly) return;
 		setGlobalRows(nextRows);
 		onUpdate({
 			...step,
@@ -54,6 +58,12 @@ export function TriggerEditPanel({
 						<Play className="h-3.5 w-3.5 text-emerald-600" />
 					</span>
 					<span className="font-semibold text-sm">Trigger</span>
+					{readOnly && (
+						<span className="flex items-center gap-1 rounded-md border bg-background px-1.5 py-0.5 text-[10px] text-muted-foreground">
+							<Lock className="size-3" />
+							View only
+						</span>
+					)}
 				</div>
 				<Button
 					size="sm"
@@ -73,18 +83,20 @@ export function TriggerEditPanel({
 							className="resize-none text-sm"
 							rows={3}
 							value={description}
-							onChange={(event) =>
-								onDescriptionChange(event.target.value)
-							}
-							placeholder="// I want to monitor new files and notify my team"
+							onChange={(event) => {
+								if (readOnly) return;
+								onDescriptionChange(event.target.value);
+							}}
+							placeholder="I want to monitor new files and notify my team"
+							readOnly={readOnly}
 						/>
 					</Field>
 					<div className="space-y-3 rounded-lg border p-3">
 						<div>
 							<p className="font-medium text-sm">Global inputs</p>
 							<p className="text-[11px] text-muted-foreground">
-								Default values are available to every step and
-								are the inputs Playground asks for.
+								Inputs provided when this automation is started,
+								using the defaults below when none are given.
 							</p>
 						</div>
 						{globalRows.map((row) => (
@@ -95,6 +107,7 @@ export function TriggerEditPanel({
 								<Input
 									value={row.value.name}
 									placeholder="variable_name"
+									readOnly={readOnly}
 									onChange={(event) =>
 										updateGlobals(
 											globalRows.map((item) =>
@@ -116,6 +129,7 @@ export function TriggerEditPanel({
 								<Input
 									value={row.value.defaultValue}
 									placeholder="Default value"
+									readOnly={readOnly}
 									onChange={(event) =>
 										updateGlobals(
 											globalRows.map((item) =>
@@ -134,39 +148,44 @@ export function TriggerEditPanel({
 										)
 									}
 								/>
-								<Button
-									size="sm"
-									variant="ghost"
-									aria-label={`Remove ${row.value.name || "global input"}`}
-									onClick={() =>
-										updateGlobals(
-											globalRows.filter(
-												(item) => item.id !== row.id,
-											),
-										)
-									}
-								>
-									<Trash2 className="size-4" />
-								</Button>
+								{!readOnly && (
+									<Button
+										size="sm"
+										variant="ghost"
+										aria-label={`Remove ${row.value.name || "global input"}`}
+										onClick={() =>
+											updateGlobals(
+												globalRows.filter(
+													(item) =>
+														item.id !== row.id,
+												),
+											)
+										}
+									>
+										<Trash2 className="size-4" />
+									</Button>
+								)}
 							</div>
 						))}
-						<Button
-							size="sm"
-							variant="outline"
-							className="self-start"
-							onClick={() =>
-								updateGlobals([
-									...globalRows,
-									createGlobalInputRow({
-										name: "",
-										defaultValue: "",
-									}),
-								])
-							}
-						>
-							<Plus className="mr-1.5 size-4" />
-							Add input
-						</Button>
+						{!readOnly && (
+							<Button
+								size="sm"
+								variant="outline"
+								className="self-start"
+								onClick={() =>
+									updateGlobals([
+										...globalRows,
+										createGlobalInputRow({
+											name: "",
+											defaultValue: "",
+										}),
+									])
+								}
+							>
+								<Plus className="mr-1.5 size-4" />
+								Add input
+							</Button>
+						)}
 					</div>
 				</div>
 			</div>

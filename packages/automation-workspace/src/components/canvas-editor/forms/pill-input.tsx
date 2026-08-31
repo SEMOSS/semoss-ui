@@ -21,6 +21,10 @@ export interface PillInputProps {
 	minRows?: number;
 	/** Whether the form must be completed before the automation can run */
 	required?: boolean;
+	/** When true, renders the value as non-editable — hides insertion affordances and
+	 * blocks the underlying contenteditable from accepting input while keeping the value
+	 * focusable and readable for keyboard/screen-reader users. */
+	readOnly?: boolean;
 }
 
 const VAR_REGEX = /\$\{([^}]+)\}/g;
@@ -166,6 +170,7 @@ export function PillInput({
 	mono,
 	minRows = 4,
 	required = false,
+	readOnly = false,
 }: PillInputProps) {
 	const editorRef = useRef<HTMLDivElement>(null);
 	const lastValueRef = useRef<string>(value);
@@ -252,11 +257,12 @@ export function PillInput({
 	);
 
 	const handleInput = useCallback(() => {
+		if (readOnly) return;
 		const el = editorRef.current;
 		if (!el) return;
 		emitChange(el);
 		detectAutocomplete(el);
-	}, [emitChange, detectAutocomplete]);
+	}, [emitChange, detectAutocomplete, readOnly]);
 
 	/**
 	 * Handles three special key cases: Enter prevention in single-line mode,
@@ -265,6 +271,7 @@ export function PillInput({
 	 */
 	const handleKeyDown = useCallback(
 		(e: React.KeyboardEvent<HTMLDivElement>) => {
+			if (readOnly) return;
 			const el = editorRef.current;
 			if (!el) return;
 
@@ -328,12 +335,13 @@ export function PillInput({
 				}
 			}
 		},
-		[mono, upstreamVars, emitChange, detectAutocomplete],
+		[mono, upstreamVars, emitChange, detectAutocomplete, readOnly],
 	);
 
 	/** Inserts a known variable as a pill at the current caret position. */
 	const insertVar = useCallback(
 		(varName: string) => {
+			if (readOnly) return;
 			const el = editorRef.current;
 			if (!el) return;
 			el.focus();
@@ -387,7 +395,7 @@ export function PillInput({
 			setShowPicker(false);
 			emitChange(el);
 		},
-		[acPartialStart, emitChange],
+		[acPartialStart, emitChange, readOnly],
 	);
 
 	return (
@@ -401,7 +409,7 @@ export function PillInput({
 						</span>
 					)}
 				</FieldLabel>
-				{upstreamVars.length > 0 && (
+				{!readOnly && upstreamVars.length > 0 && (
 					<div ref={pickerRef} className="relative">
 						<button
 							type="button"
@@ -443,16 +451,18 @@ export function PillInput({
 					tabIndex={0}
 					aria-label={label}
 					aria-multiline={mono}
-					contentEditable
+					aria-readonly={readOnly}
+					contentEditable={!readOnly}
 					suppressContentEditableWarning
 					onInput={handleInput}
 					onKeyDown={handleKeyDown}
 					onKeyUp={() => {
-						if (editorRef.current)
+						if (!readOnly && editorRef.current)
 							detectAutocomplete(editorRef.current);
 					}}
 					onPaste={(e) => {
 						e.preventDefault();
+						if (readOnly) return;
 						const text = e.clipboardData.getData("text/plain");
 						if (!text || !editorRef.current) return;
 						const sel = window.getSelection();
@@ -476,6 +486,7 @@ export function PillInput({
 						mono
 							? `overflow-auto font-mono text-xs leading-relaxed ${MIN_H_MAP[minRows] ?? "min-h-[6rem]"}`
 							: "overflow-x-auto whitespace-nowrap",
+						readOnly ? "cursor-default bg-muted/30" : "",
 					].join(" ")}
 				/>
 				{/* Placeholder — shown when editor is empty */}
@@ -488,7 +499,7 @@ export function PillInput({
 					</span>
 				)}
 				{/* Autocomplete dropdown */}
-				{acVars.length > 0 && (
+				{!readOnly && acVars.length > 0 && (
 					<div className="absolute top-full right-0 left-0 z-50 mt-0.5 max-h-40 overflow-y-auto rounded-md border bg-popover shadow-md">
 						{acVars.map((v) => (
 							<button

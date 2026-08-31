@@ -9,12 +9,15 @@ export interface FunctionEngineFormProps {
 	upstreamVars: string[];
 	/** Called with the updated config on every field change */
 	onChange: (c: FunctionEngineConfig) => void;
+	/** When true, all fields are locked to their current values */
+	readOnly?: boolean;
 }
 
 export function FunctionEngineForm({
 	config,
 	upstreamVars,
 	onChange,
+	readOnly = false,
 }: FunctionEngineFormProps) {
 	return (
 		<div className="flex flex-col gap-4">
@@ -24,6 +27,7 @@ export function FunctionEngineForm({
 				value={config.engineId}
 				engineTypes={["FUNCTION"]}
 				required
+				disabled={readOnly}
 				onChange={(e) =>
 					onChange({
 						...config,
@@ -39,6 +43,7 @@ export function FunctionEngineForm({
 				placeholder='{"input": "${files}"}'
 				onChange={(v) => onChange({ ...config, params: v })}
 				upstreamVars={upstreamVars}
+				readOnly={readOnly}
 				mono
 			/>
 		</div>

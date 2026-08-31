@@ -21,6 +21,9 @@ interface InspectorTabProps {
 	onClose: () => void;
 	onUpdate: (step: AutomationNode) => void;
 	onDelete: (stepId: string) => void;
+	/** When true, the trigger/node panels render view-only and all mutating controls
+	 * (including delete and raw Python editing) are disabled. */
+	readOnly?: boolean;
 }
 
 export function InspectorTab({
@@ -37,6 +40,7 @@ export function InspectorTab({
 	onClose,
 	onUpdate,
 	onDelete,
+	readOnly = false,
 }: InspectorTabProps) {
 	if (editingStep?.type === "trigger") {
 		return (
@@ -46,6 +50,7 @@ export function InspectorTab({
 				onClose={onClose}
 				step={editingStep}
 				onUpdate={onUpdate}
+				readOnly={readOnly}
 			/>
 		);
 	}
@@ -63,6 +68,7 @@ export function InspectorTab({
 				devMode={devMode}
 				onUpdate={onUpdate}
 				onDelete={() => onDelete(editingStep.id)}
+				readOnly={readOnly}
 			/>
 		);
 	}

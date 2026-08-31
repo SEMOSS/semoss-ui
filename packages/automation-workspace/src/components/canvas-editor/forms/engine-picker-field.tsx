@@ -16,6 +16,8 @@ export interface EnginePickerFieldProps {
 	onChange: (e: Engine) => void;
 	/** Whether a selected engine is required before the automation can run */
 	required?: boolean;
+	/** When true, the picker is locked to its current selection */
+	disabled?: boolean;
 }
 
 export function EnginePickerField({
@@ -25,6 +27,7 @@ export function EnginePickerField({
 	engineTypes,
 	onChange,
 	required = false,
+	disabled = false,
 }: EnginePickerFieldProps) {
 	// Workflow JSON persists the stable engine ID, not a display label that can
 	// become stale. Resolve the label from the current user's accessible catalog
@@ -55,6 +58,7 @@ export function EnginePickerField({
 				value={value}
 				engineTypes={engineTypes}
 				onChange={onChange}
+				disabled={disabled}
 			/>
 		</Field>
 	);

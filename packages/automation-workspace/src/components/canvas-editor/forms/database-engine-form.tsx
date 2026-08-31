@@ -26,6 +26,8 @@ export interface DatabaseEngineFormProps {
 	onChange: (c: DatabaseEngineConfig) => void;
 	/** When false (business mode), schema browser and advanced fields are hidden */
 	devMode?: boolean;
+	/** When true, all mutating controls are disabled; schema browsing stays usable */
+	readOnly?: boolean;
 }
 
 export function DatabaseEngineForm({
@@ -33,6 +35,7 @@ export function DatabaseEngineForm({
 	upstreamVars,
 	onChange,
 	devMode = false,
+	readOnly = false,
 }: DatabaseEngineFormProps) {
 	const [structure, setStructure] = useState<TableStructure[]>([]);
 	const [schemaLoading, setSchemaLoading] = useState(false);
@@ -97,11 +100,15 @@ export function DatabaseEngineForm({
 	const toggleTable = (table: string) =>
 		setExpandedTables((prev) => ({ ...prev, [table]: !prev[table] }));
 
-	const insertTable = (table: string) =>
+	const insertTable = (table: string) => {
+		if (readOnly) return;
 		onChange({ ...config, expression: `SELECT * FROM ${table}` });
+	};
 
-	const insertColumn = (table: string, column: string) =>
+	const insertColumn = (table: string, column: string) => {
+		if (readOnly) return;
 		onChange({ ...config, expression: `SELECT ${column} FROM ${table}` });
+	};
 
 	return (
 		<div className="flex flex-col gap-4">
@@ -111,6 +118,7 @@ export function DatabaseEngineForm({
 				value={config.engineId}
 				engineTypes={["DATABASE"]}
 				required
+				disabled={readOnly}
 				onChange={(e) =>
 					onChange({
 						...config,
@@ -124,11 +132,12 @@ export function DatabaseEngineForm({
 				label="SQL Query"
 				required
 				value={config.expression}
-				placeholder="-- I want to find open claims from the last 7 days"
+				placeholder="I want to find open claims from the last 7 days"
 				onChange={(v) => onChange({ ...config, expression: v })}
 				upstreamVars={upstreamVars}
 				mono
 				minRows={6}
+				readOnly={readOnly}
 			/>
 
 			{devMode && config.engineId && (
@@ -141,7 +150,7 @@ export function DatabaseEngineForm({
 							<Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />
 						)}
 						<span className="ml-auto text-[10px] text-muted-foreground/60">
-							click to insert
+							{readOnly ? "view only" : "click to insert"}
 						</span>
 					</div>
 
@@ -192,8 +201,13 @@ export function DatabaseEngineForm({
 											onClick={() =>
 												insertTable(table.table)
 											}
-											className="flex flex-1 items-center gap-1.5 py-1.5 pr-2 text-left hover:bg-muted/50"
-											title={`SELECT * FROM ${table.table}`}
+											disabled={readOnly}
+											className="flex flex-1 items-center gap-1.5 py-1.5 pr-2 text-left hover:bg-muted/50 disabled:cursor-default disabled:hover:bg-transparent"
+											title={
+												readOnly
+													? table.table
+													: `SELECT * FROM ${table.table}`
+											}
 										>
 											<Database className="h-3 w-3 shrink-0 text-blue-500" />
 											<span className="font-medium">
@@ -214,8 +228,13 @@ export function DatabaseEngineForm({
 															col.column,
 														)
 													}
-													className="flex w-full items-center gap-1.5 py-1 pr-2 pl-7 text-left hover:bg-muted/50"
-													title={`SELECT ${col.column} FROM ${table.table}`}
+													disabled={readOnly}
+													className="flex w-full items-center gap-1.5 py-1 pr-2 pl-7 text-left hover:bg-muted/50 disabled:cursor-default disabled:hover:bg-transparent"
+													title={
+														readOnly
+															? col.column
+															: `SELECT ${col.column} FROM ${table.table}`
+													}
 												>
 													<span className="flex-1 font-mono text-foreground/80">
 														{col.column}

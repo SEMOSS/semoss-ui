@@ -188,7 +188,7 @@ export default function App() {
 	}, [inspectorMode, parentOrigin]);
 
 	useEffect(() => {
-		if (!inspectorMode) return;
+		if (!inspectorMode || readOnly) return;
 		const handlePythonSourceChanged = (event: MessageEvent<unknown>) => {
 			if (
 				event.source !== window.parent ||
@@ -214,6 +214,7 @@ export default function App() {
 			}
 			const step = inspectorSnapshot?.editingStep;
 			if (!step || step.id !== message.nodeId) return;
+			if (inspectorSnapshot?.readOnly) return;
 			const updatedStep = {
 				...step,
 				workflowCodeMode: "custom" as const,
@@ -236,7 +237,7 @@ export default function App() {
 		window.addEventListener("message", handlePythonSourceChanged);
 		return () =>
 			window.removeEventListener("message", handlePythonSourceChanged);
-	}, [appId, inspectorMode, inspectorSnapshot, parentOrigin]);
+	}, [appId, inspectorMode, inspectorSnapshot, parentOrigin, readOnly]);
 
 	useEffect(() => {
 		if (!traceMode) return;
@@ -338,32 +339,12 @@ export default function App() {
 		}
 		if (inspectorMode) {
 			const snapshot = inspectorSnapshot;
-			if (readOnly) {
-				const step = snapshot?.editingStep;
-				if (!step) {
-					return (
-						<div className="flex h-full items-center justify-center px-6 text-center text-muted-foreground text-sm">
-							Select a step on the canvas to inspect it.
-						</div>
-					);
-				}
-				return (
-					<div className="h-full overflow-y-auto p-4">
-						<p className="font-semibold text-sm">{step.label}</p>
-						<p className="mt-1 text-muted-foreground text-xs">
-							{step.workflowType ?? step.type}
-						</p>
-						<pre className="mt-4 overflow-auto whitespace-pre-wrap rounded-md border bg-muted/30 p-3 font-mono text-xs">
-							{JSON.stringify(
-								step.workflowConfig ?? step.config ?? {},
-								null,
-								2,
-							)}
-						</pre>
-					</div>
-				);
-			}
+			// Belt-and-suspenders: honor either the URL-level `readOnly` param (set from the
+			// host's permission check) or the canvas's own `readOnly` mirrored in the snapshot,
+			// so the inspector never renders editable controls if either signal says otherwise.
+			const effectiveReadOnly = readOnly || Boolean(snapshot?.readOnly);
 			const sendInspectorAction = (action: AutomationInspectorAction) => {
+				if (effectiveReadOnly && action.type !== "close") return;
 				window.parent.postMessage(
 					{ type: "SEMOSS_AUTOMATION_INSPECTOR_ACTION", action },
 					parentOrigin,
@@ -380,7 +361,9 @@ export default function App() {
 					stepRunError={snapshot?.stepRunError}
 					stepRunOutput={snapshot?.stepRunOutput}
 					stepRunTrace={snapshot?.stepRunTrace}
+					readOnly={effectiveReadOnly}
 					onDescriptionChange={(description) => {
+						if (effectiveReadOnly) return;
 						setInspectorSnapshot((current) =>
 							current ? { ...current, description } : current,
 						);
@@ -391,6 +374,7 @@ export default function App() {
 					}}
 					onClose={() => sendInspectorAction({ type: "close" })}
 					onUpdate={(step) => {
+						if (effectiveReadOnly) return;
 						setInspectorSnapshot((current) =>
 							current
 								? { ...current, editingStep: step }
@@ -399,6 +383,7 @@ export default function App() {
 						sendInspectorAction({ type: "update-step", step });
 					}}
 					onDelete={(stepId) => {
+						if (effectiveReadOnly) return;
 						setInspectorSnapshot((current) =>
 							current
 								? { ...current, editingStep: null }

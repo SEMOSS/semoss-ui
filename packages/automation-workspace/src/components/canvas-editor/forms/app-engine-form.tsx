@@ -46,6 +46,8 @@ export interface AppEngineFormProps {
 	currentAppId: string;
 	/** When false (business mode), raw pixel textarea is hidden when labeled param fields are available */
 	devMode?: boolean;
+	/** When true, all fields are locked to their current values */
+	readOnly?: boolean;
 }
 
 interface ReactorSignature {
@@ -79,6 +81,7 @@ export function AppEngineForm({
 	onChange,
 	currentAppId,
 	devMode = false,
+	readOnly = false,
 }: AppEngineFormProps) {
 	const [reactorSearch, setReactorSearch] = useState("");
 	const [sigLoading, setSigLoading] = useState<string | null>(null);
@@ -131,6 +134,7 @@ export function AppEngineForm({
 
 	/** Loads the project reactor's MCP-derived parameter signature, with a bounded fallback to a bare call. */
 	const handleReactorClick = async (name: string) => {
+		if (readOnly) return;
 		setSigLoading(name);
 		setReactorDescription("");
 		setReactorParams([]);
@@ -171,6 +175,7 @@ export function AppEngineForm({
 	};
 
 	const handleParamChange = (name: string, value: string) => {
+		if (readOnly) return;
 		const next = { ...paramValues, [name]: value };
 		setParamValues(next);
 		onChange({
@@ -190,6 +195,7 @@ export function AppEngineForm({
 					name={config.appName || ""}
 					value={config.appId || ""}
 					projectTypes={["CODE", "BLOCKS"]}
+					disabled={readOnly}
 					onChange={(projectId, projectName) =>
 						onChange({
 							...config,
@@ -240,7 +246,9 @@ export function AppEngineForm({
 										<button
 											key={name}
 											type="button"
-											disabled={sigLoading !== null}
+											disabled={
+												sigLoading !== null || readOnly
+											}
 											className={`flex w-full items-center justify-between px-3 py-1.5 text-left font-mono text-xs transition-colors disabled:opacity-50 ${reactorName === name ? "bg-primary/10 text-primary" : "hover:bg-muted"}`}
 											onClick={() =>
 												handleReactorClick(name)
@@ -280,6 +288,7 @@ export function AppEngineForm({
 							description={p.description ?? ""}
 							onChange={(v) => handleParamChange(p.name, v)}
 							upstreamVars={upstreamVars}
+							readOnly={readOnly}
 						/>
 					))}
 					{noParamInfo && (
@@ -304,6 +313,7 @@ export function AppEngineForm({
 						}
 						upstreamVars={upstreamVars}
 						mono
+						readOnly={readOnly}
 					/>
 					{sigLoading !== null && (
 						<div className="absolute inset-0 flex items-center justify-center rounded-lg bg-background/60">

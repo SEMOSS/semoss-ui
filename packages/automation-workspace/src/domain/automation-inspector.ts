@@ -7,6 +7,10 @@ import type {
 export interface AutomationInspectorSnapshot {
 	description: string;
 	devMode: boolean;
+	/** Whether the owning canvas is read-only — mirrors `AutomationCanvas`'s `readOnly` prop so the
+	 * inspector (rendered in a separate iframe) can disable its forms even if its own URL-level
+	 * `readOnly` param were ever out of sync with the canvas. */
+	readOnly: boolean;
 	editingStep: AutomationNode | null;
 	upstreamVars: string[];
 	stepRunStatus?: StepRunStatus;

@@ -12,6 +12,8 @@ export interface VectorEngineFormProps {
 	onChange: (c: VectorEngineConfig) => void;
 	/** When false (business mode), advanced JSON fields like Filters are hidden */
 	devMode?: boolean;
+	/** When true, all fields are locked to their current values */
+	readOnly?: boolean;
 }
 
 export function VectorEngineForm({
@@ -19,6 +21,7 @@ export function VectorEngineForm({
 	upstreamVars,
 	onChange,
 	devMode = false,
+	readOnly = false,
 }: VectorEngineFormProps) {
 	return (
 		<div className="flex flex-col gap-4">
@@ -28,6 +31,7 @@ export function VectorEngineForm({
 				value={config.engineId}
 				engineTypes={["VECTOR"]}
 				required
+				disabled={readOnly}
 				onChange={(e) =>
 					onChange({
 						...config,
@@ -45,6 +49,7 @@ export function VectorEngineForm({
 						placeholder="e.g. find documents about claims filed in 2024"
 						onChange={(v) => onChange({ ...config, command: v })}
 						upstreamVars={upstreamVars}
+						readOnly={readOnly}
 					/>
 					<Field>
 						<FieldLabel>Max Results</FieldLabel>
@@ -61,6 +66,7 @@ export function VectorEngineForm({
 								})
 							}
 							placeholder="5"
+							disabled={readOnly}
 						/>
 					</Field>
 					{devMode && (
@@ -72,6 +78,7 @@ export function VectorEngineForm({
 								onChange({ ...config, filters: v })
 							}
 							upstreamVars={upstreamVars}
+							readOnly={readOnly}
 							mono
 						/>
 					)}
@@ -85,6 +92,7 @@ export function VectorEngineForm({
 						placeholder="/path/to/file.pdf"
 						onChange={(v) => onChange({ ...config, filePath: v })}
 						upstreamVars={upstreamVars}
+						readOnly={readOnly}
 					/>
 					<BoundInput
 						label="Category (optional)"
@@ -92,6 +100,7 @@ export function VectorEngineForm({
 						placeholder="internal-docs"
 						onChange={(v) => onChange({ ...config, source: v })}
 						upstreamVars={upstreamVars}
+						readOnly={readOnly}
 					/>
 					<BoundInput
 						label="Collection (optional)"
@@ -99,6 +108,7 @@ export function VectorEngineForm({
 						placeholder="finance"
 						onChange={(v) => onChange({ ...config, space: v })}
 						upstreamVars={upstreamVars}
+						readOnly={readOnly}
 					/>
 				</>
 			)}
@@ -110,6 +120,7 @@ export function VectorEngineForm({
 						placeholder="/data/embeddings.csv"
 						onChange={(v) => onChange({ ...config, filePaths: v })}
 						upstreamVars={upstreamVars}
+						readOnly={readOnly}
 					/>
 					<BoundInput
 						label="Param Values (JSON, optional)"
@@ -119,6 +130,7 @@ export function VectorEngineForm({
 							onChange({ ...config, paramValues: v })
 						}
 						upstreamVars={upstreamVars}
+						readOnly={readOnly}
 						mono
 					/>
 				</>
@@ -131,6 +143,7 @@ export function VectorEngineForm({
 					placeholder="doc1.pdf, doc2.docx"
 					onChange={(v) => onChange({ ...config, fileNames: v })}
 					upstreamVars={upstreamVars}
+					readOnly={readOnly}
 				/>
 			)}
 		</div>

@@ -11,6 +11,8 @@ export interface ModelEngineFormProps {
 	onChange: (c: ModelEngineConfig) => void;
 	/** When false (business mode), advanced fields like Model Settings are hidden */
 	devMode?: boolean;
+	/** When true, all fields are locked to their current values */
+	readOnly?: boolean;
 }
 
 export function ModelEngineForm({
@@ -18,6 +20,7 @@ export function ModelEngineForm({
 	upstreamVars,
 	onChange,
 	devMode = false,
+	readOnly = false,
 }: ModelEngineFormProps) {
 	return (
 		<div className="flex flex-col gap-4">
@@ -27,6 +30,7 @@ export function ModelEngineForm({
 				value={config.engineId}
 				engineTypes={["MODEL"]}
 				required
+				disabled={readOnly}
 				onChange={(e) =>
 					onChange({
 						...config,
@@ -45,6 +49,7 @@ export function ModelEngineForm({
 						placeholder="Summarize: ${text}"
 						onChange={(v) => onChange({ ...config, command: v })}
 						upstreamVars={upstreamVars}
+						readOnly={readOnly}
 						mono
 					/>
 					<BoundInput
@@ -53,6 +58,7 @@ export function ModelEngineForm({
 						placeholder="e.g. You are a helpful assistant."
 						onChange={(v) => onChange({ ...config, context: v })}
 						upstreamVars={upstreamVars}
+						readOnly={readOnly}
 						mono
 					/>
 					{devMode && (
@@ -64,6 +70,7 @@ export function ModelEngineForm({
 								onChange({ ...config, paramValues: v })
 							}
 							upstreamVars={upstreamVars}
+							readOnly={readOnly}
 							mono
 						/>
 					)}
@@ -77,6 +84,7 @@ export function ModelEngineForm({
 					placeholder="${text_to_embed}"
 					onChange={(v) => onChange({ ...config, values: v })}
 					upstreamVars={upstreamVars}
+					readOnly={readOnly}
 				/>
 			)}
 			{config.operation === "vision" && (
@@ -88,6 +96,7 @@ export function ModelEngineForm({
 						placeholder="Describe what you see in this image."
 						onChange={(v) => onChange({ ...config, command: v })}
 						upstreamVars={upstreamVars}
+						readOnly={readOnly}
 						mono
 					/>
 					<BoundInput
@@ -97,6 +106,7 @@ export function ModelEngineForm({
 						placeholder="${image_url}"
 						onChange={(v) => onChange({ ...config, image: v })}
 						upstreamVars={upstreamVars}
+						readOnly={readOnly}
 					/>
 				</>
 			)}
@@ -109,6 +119,7 @@ export function ModelEngineForm({
 						placeholder="Extract entities from: ${text}"
 						onChange={(v) => onChange({ ...config, prompt: v })}
 						upstreamVars={upstreamVars}
+						readOnly={readOnly}
 						mono
 					/>
 					<BoundInput
@@ -118,6 +129,7 @@ export function ModelEngineForm({
 						placeholder='["PERSON", "ORG", "DATE"]'
 						onChange={(v) => onChange({ ...config, entities: v })}
 						upstreamVars={upstreamVars}
+						readOnly={readOnly}
 						mono
 					/>
 				</>

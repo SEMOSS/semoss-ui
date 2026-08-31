@@ -8,6 +8,8 @@ export interface AgentRunFormProps {
 	config: AgentRunConfig;
 	upstreamVars: string[];
 	onChange: (config: AgentRunConfig) => void;
+	/** When true, all fields are locked to their current values */
+	readOnly?: boolean;
 }
 
 /** Authors a RunAgent call against an agent workspace the current user can access. */
@@ -15,6 +17,7 @@ export function AgentRunForm({
 	config,
 	upstreamVars,
 	onChange,
+	readOnly = false,
 }: AgentRunFormProps) {
 	return (
 		<div className="flex flex-col gap-4">
@@ -33,6 +36,7 @@ export function AgentRunForm({
 					searchPlaceholder="Search agents…"
 					emptyText="No accessible agents found"
 					clearable={false}
+					disabled={readOnly}
 					onChange={(workspaceId, workspaceName) =>
 						onChange({
 							...config,
@@ -52,6 +56,7 @@ export function AgentRunForm({
 					value={config.engineId}
 					engineTypes={["MODEL"]}
 					required
+					disabled={readOnly}
 					onChange={(engine) =>
 						onChange({
 							...config,
@@ -73,6 +78,7 @@ export function AgentRunForm({
 				placeholder="Create a prototype for: ${rfi}"
 				onChange={(command) => onChange({ ...config, command })}
 				upstreamVars={upstreamVars}
+				readOnly={readOnly}
 				mono
 				minRows={4}
 			/>
