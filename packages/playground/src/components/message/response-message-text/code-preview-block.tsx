@@ -1,7 +1,6 @@
 import {
 	ChevronDownIcon,
 	CopyIcon,
-	ExpandIcon,
 	FileCodeIcon,
 	NotebookPenIcon,
 	PlayIcon,
@@ -72,6 +71,7 @@ export const CodePreviewBlock = ({
 	const [isAddToNotebookOpen, setIsAddToNotebookOpen] = useState(false);
 	const [isSaveCodeDialogOpen, setIsSaveCodeDialogOpen] = useState(false);
 	const [isCollapsed, setIsCollapsed] = useState(false);
+	const [isSavingToRoom, setIsSavingToRoom] = useState(false);
 	// the block is height capped, so it follows its own newest line
 	const codeScroll = useStickToBottom(code);
 	const [isExecuting, setIsExecuting] = useState(false);
@@ -164,6 +164,29 @@ export const CodePreviewBlock = ({
 			});
 		} finally {
 			setIsExecuting(false);
+		}
+	};
+
+	const saveInRoom = async () => {
+		if (!room || !code) return;
+		const filePath = `save-code-response-${Date.now()}.${codeExtension}`;
+		try {
+			setIsSavingToRoom(true);
+			await room.runRoomPixel(
+				`SaveInsightAssets(filePath=[${JSON.stringify(filePath)}], content=["<encode>${code}</encode>"]);`,
+				false,
+				false,
+			);
+			toast.success(`Saved in room as ${filePath}`);
+		} catch (error) {
+			const message =
+				error instanceof Error && error.message
+					? error.message
+					: "Error";
+
+			toast.error(message);
+		} finally {
+			setIsSavingToRoom(false);
 		}
 	};
 
@@ -301,55 +324,17 @@ export const CodePreviewBlock = ({
 								</TooltipContent>
 							</Tooltip>
 						</div>
-					<Tooltip>
-						<TooltipTrigger asChild>
-							<Button
-								className="text-muted-foreground text-xs hover:text-foreground"
-								variant="ghost"
-								size="sm"
-								disabled={!code}
-								onClick={() =>
-									void copyToClipboard(
-										code,
-										() =>
-											toast.success(
-												t("notifications.copySuccess"),
-											),
-										(msg) => toast.error(msg),
-									)
-								}
-							>
-								<CopyIcon className="size-3" />
-							</Button>
-						</TooltipTrigger>
-						<TooltipContent>Copy</TooltipContent>
-					</Tooltip>
-					<Tooltip>
-						<TooltipTrigger asChild>
-							<Button
-								className="text-muted-foreground text-xs hover:text-foreground"
-								variant="ghost"
-								size="sm"
-								disabled={!code}
-								onClick={() => setIsFullViewOpen(true)}
-							>
-								<ExpandIcon className="size-3" />
-							</Button>
-						</TooltipTrigger>
-						<TooltipContent side="bottom">Full view</TooltipContent>
-					</Tooltip>
-				</BlockHeader>
-				{!isCollapsed && (
-					// capped to the height an html preview uses, so a long block
-					// scrolls inside the message instead of pushing the rest of the
-					// conversation off screen
-					<div
-						ref={codeScroll.ref}
-						onScroll={codeScroll.onScroll}
-						className="overflow-auto p-3"
-						style={{ maxHeight: RESPONSE_BLOCK_MAX_HEIGHT }}
-					>
-						<Code code={code} language={language ?? "txt"} />
+						{/* capped to the height an html preview uses, so a long block
+						scrolls inside the message instead of pushing the rest of the
+						conversation off screen */}
+						<div
+							ref={codeScroll.ref}
+							onScroll={codeScroll.onScroll}
+							className="overflow-auto p-3"
+							style={{ maxHeight: RESPONSE_BLOCK_MAX_HEIGHT }}
+						>
+							<Code code={code} language={language ?? "txt"} />
+						</div>
 					</div>
 				)}
 				{executeResult && (
