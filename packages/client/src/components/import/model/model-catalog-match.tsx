@@ -45,7 +45,7 @@ export interface CatalogMatchState {
  * back to the import-flow copy, where picking an entry fills the form fields
  * below rather than saving anything.
  */
-export interface CatalogMatchMessages {
+interface CatalogMatchMessages {
 	/** note shown when an entry has been picked by hand */
 	picked?: ReactNode;
 	/** note shown when the ID resolved to a catalog entry on its own */

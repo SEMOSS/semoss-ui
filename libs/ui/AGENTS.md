@@ -30,11 +30,9 @@ Tokens are raw values on `:root` (light) and `.dark` (dark), mapped to Tailwind 
 | Token | Utility examples | Use for |
 |-------|------------------|---------|
 | `background` / `foreground` | `bg-background`, `text-foreground` | Page surface and default text |
-| `secondary-background` | `bg-secondary-background` | Alternate page surface |
 | `card` / `card-foreground` | `bg-card`, `text-card-foreground` | Card surfaces |
 | `popover` / `popover-foreground` | `bg-popover` | Popovers, dropdowns, menus |
 | `primary` / `primary-foreground` | `bg-primary`, `text-primary` | Brand blue; primary actions, links |
-| `secondary` / `secondary-foreground` | `bg-secondary` | Secondary actions |
 | `muted` / `muted-foreground` | `bg-muted`, `text-muted-foreground` | De-emphasized text/surfaces |
 | `accent` / `accent-foreground` | `hover:bg-accent` | Hover/active tints |
 | `destructive` / `destructive-foreground` | `text-destructive`, `bg-destructive/10` | Errors, dangerous actions |
