@@ -26,7 +26,6 @@
 			".turbo/**",
 			"coverage/**",
 			"**/*.min.js",
-			"**/*.d.ts",
 			"**/.DS_Store",
 			"**/*.local",
 			".history/**"
@@ -143,27 +142,11 @@
 			}
 		},
 		{
-			"includes": ["packages/reporting-insights/**"],
+			"includes": ["**/*.d.ts"],
 			"linter": {
 				"rules": {
-					"suspicious": {
-						"noExplicitAny": "warn",
-						"noArrayIndexKey": "warn",
-						"noAssignInExpressions": "warn",
-						"useIterableCallbackReturn": "warn"
-					},
-					"style": {
-						"noNonNullAssertion": "warn"
-					},
-					"a11y": {
-						"noLabelWithoutControl": "warn",
-						"useButtonType": "warn",
-						"useKeyWithClickEvents": "warn",
-						"noStaticElementInteractions": "warn",
-						"noSvgWithoutTitle": "warn"
-					},
 					"correctness": {
-						"useHookAtTopLevel": "warn"
+						"noUnusedVariables": "off"
 					}
 				}
 			}

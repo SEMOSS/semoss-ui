@@ -1,12 +1,7 @@
 import { Outlet } from "react-router-dom";
-import {
-	ProjectAccessControl,
-	ProjectCatalog,
-	ProjectEdit,
-} from "@/components/project";
+import { ProjectAccessControl, ProjectCatalog } from "@/components/project";
 import {
 	AppCommitsPage,
-	AppFilesPage,
 	AppGithubPage,
 	AppGithubSelectRepoPage,
 	AppMcpUsagePage,
@@ -17,12 +12,19 @@ import {
 } from "../app";
 import { AgentActivityPage } from "./agent/agent-activity-page";
 import { CreateAgentPage } from "./agent/create-agent-page";
+import { EditAgentPage } from "./agent/edit-agent-page";
+import { ViewAgentPage } from "./agent/view-agent-page";
 import { CreateAppPage } from "./app/create-app-page";
+import { EditAppPage } from "./app/edit-app-page";
+import { CreateNotebookPage } from "./notebook/create-notebook-page";
+import { EditNotebookPage } from "./notebook/edit-notebook-page";
+import { ViewNotebookPage } from "./notebook/view-notebook-page";
 import { ProjectDependenciesPage } from "./project-dependencies-page";
 import { ProjectLayout } from "./project-layout";
 import { ProjectOverviewPage } from "./project-overview-page";
 import { ProjectTabsLayout } from "./project-tabs-layout";
 import { CreateSkillPage } from "./skill/create-skill-page";
+import { EditSkillPage } from "./skill/edit-skill-page";
 import { ViewSkillPage } from "./skill/view-skill-page";
 
 export const PROJECT_ROUTES: {
@@ -53,11 +55,11 @@ export const PROJECT_ROUTES: {
 			},
 			{
 				path: ":appId",
-				element: <ProjectLayout type="CODE" />,
+				element: <ProjectLayout />,
 				children: [
 					{
 						path: "edit",
-						element: <ProjectEdit />,
+						element: <EditAppPage />,
 					},
 					{
 						path: "view",
@@ -108,11 +110,6 @@ export const PROJECT_ROUTES: {
 										restrict: ["OWNER", "EDIT"],
 									},
 									{
-										name: "Files",
-										path: "files",
-										restrict: ["OWNER", "EDIT"],
-									},
-									{
 										name: "SMSS",
 										path: "smss",
 										restrict: ["OWNER"],
@@ -154,10 +151,6 @@ export const PROJECT_ROUTES: {
 								element: <ProjectAccessControl />,
 							},
 							{
-								path: "files",
-								element: <AppFilesPage />,
-							},
-							{
 								path: "smss",
 								element: <AppSmssPage />,
 							},
@@ -181,15 +174,118 @@ export const PROJECT_ROUTES: {
 			},
 			{
 				path: ":appId",
-				element: <ProjectLayout type="SKILL" />,
+				element: <ProjectLayout />,
 				children: [
 					{
 						path: "edit",
-						element: <ProjectEdit />,
+						element: <EditSkillPage />,
 					},
 					{
 						path: "view",
 						element: <ViewSkillPage />,
+					},
+					{
+						path: "*",
+						element: (
+							<ProjectTabsLayout
+								tabs={[
+									{ name: "Overview", path: "" },
+									{
+										name: "MCP",
+										path: "mcp-usage",
+										restrict: [
+											"OWNER",
+											"EDIT",
+											"READ_ONLY",
+										],
+									},
+									{
+										name: "Commits",
+										path: "commits",
+										restrict: ["OWNER", "EDIT"],
+									},
+									{
+										name: "GitHub",
+										path: "github",
+										restrict: ["OWNER"],
+									},
+									{
+										name: "Access Control",
+										path: "access-control",
+										restrict: ["OWNER", "EDIT"],
+									},
+									{
+										name: "SMSS",
+										path: "smss",
+										restrict: ["OWNER"],
+									},
+								]}
+							/>
+						),
+						children: [
+							{
+								path: "",
+								element: <ProjectOverviewPage />,
+							},
+							{
+								// a skill serves its own tools, so there is no
+								// remote endpoint to repoint it at
+								path: "mcp-usage",
+								element: (
+									<AppMcpUsagePage
+										showRemoteConnection={false}
+									/>
+								),
+							},
+							{
+								path: "commits",
+								element: <AppCommitsPage />,
+							},
+							{
+								path: "github",
+								element: <AppGithubPage />,
+							},
+							{
+								path: "github/select-repo",
+								element: <AppGithubSelectRepoPage />,
+							},
+							{
+								path: "access-control",
+								element: <ProjectAccessControl />,
+							},
+							{
+								path: "smss",
+								element: <AppSmssPage />,
+							},
+						],
+					},
+				],
+			},
+		],
+	},
+	{
+		path: "notebook",
+		element: <Outlet />,
+		children: [
+			{
+				path: "",
+				element: <ProjectCatalog type="NOTEBOOK" />,
+			},
+			{
+				path: "new",
+				element: <CreateNotebookPage />,
+			},
+			{
+				path: ":appId",
+				element: <ProjectLayout />,
+				children: [
+					{
+						path: "edit",
+						element: <EditNotebookPage />,
+					},
+					{
+						path: "view",
+						element: <ViewNotebookPage />,
 					},
 					{
 						path: "*",
@@ -265,11 +361,15 @@ export const PROJECT_ROUTES: {
 			},
 			{
 				path: ":appId",
-				element: <ProjectLayout type="WORKSPACE" />,
+				element: <ProjectLayout />,
 				children: [
 					{
 						path: "edit",
-						element: <ProjectEdit />,
+						element: <EditAgentPage />,
+					},
+					{
+						path: "view",
+						element: <ViewAgentPage />,
 					},
 					{
 						path: "*",

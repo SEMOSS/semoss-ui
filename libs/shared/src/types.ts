@@ -45,7 +45,13 @@ export interface Project {
 	project_id: string;
 	project_name: string;
 	project_display_name?: string;
-	project_type: "SKILL" | "WORKSPACE" | "BLOCKS" | "CODE" | "INSIGHT";
+	project_type:
+		| "SKILL"
+		| "WORKSPACE"
+		| "BLOCKS"
+		| "CODE"
+		| "INSIGHT"
+		| "NOTEBOOK";
 	project_cost?: string;
 	project_global?: string;
 	project_created_by?: string;
@@ -111,6 +117,8 @@ export interface ThemeMap {
 		images: {
 			app: string;
 			logo: string;
+			appDark?: string;
+			logoDark?: string;
 			login: string;
 			landing: string;
 			tabIcon: string;
@@ -158,6 +166,7 @@ export interface ThemeMap {
 			headerItems: {
 				name: string;
 				icon: string;
+				iconDark?: string;
 				path: string;
 				url: string;
 				embed: boolean;
@@ -166,6 +175,7 @@ export interface ThemeMap {
 			footerItems: {
 				name: string;
 				icon: string;
+				iconDark?: string;
 				path: string;
 				url: string;
 				embed: boolean;
@@ -187,12 +197,16 @@ export interface ThemeMap {
 		 */
 		defaultRoomSettings?: {
 			model?: Engine;
+			/** Default temperature for new rooms (0–1). Only used when enableTemperature is true. */
+			temperature?: number;
 		};
 
 		/**
 		 * The number of tools that should be auto-executed at once
 		 */
 		toolAutoExecutionLimit?: number | null;
+
+		defaultCompactionStrategy?: "TOOL_PRUNE" | "SUMMARY" | "AUTO";
 
 		/**
 		 * The uploaded files that should be added to the file tool in the room
@@ -327,10 +341,6 @@ export interface ThemeMap {
 			enableKnowledgeMCP?: boolean;
 			/** Whether to show the embedding model selector in the new knowledge form. Defaults to true. */
 			allowEmbeddingOptions?: boolean;
-			/** Whether to show the Knowledge library picker in the chat input menu. Defaults to true. */
-			showKnowledgeMenu?: boolean;
-			/** Whether to show the Toolbox picker in the chat input menu. Defaults to true. */
-			showToolboxMenu?: boolean;
 			/** Whether to show the Activity Log (audit logs) option in the room menu. Defaults to true. */
 			showActivityLog?: boolean;
 			/** Whether to show external links to the SEMOSS platform. Defaults to true. */
@@ -339,6 +349,10 @@ export interface ThemeMap {
 			enableFeedbackText?: boolean;
 			/** Whether to show an export button on tables rendered in chat responses. Defaults to false. */
 			enableTableExport?: boolean;
+			/** Whether workspaces auto-open with a silent kickoff message when selected. Defaults to false. */
+			enableAutoGreeting?: boolean;
+			/** Whether to show the temperature slider in room settings. Defaults to false. */
+			enableTemperature?: boolean;
 		};
 	};
 }

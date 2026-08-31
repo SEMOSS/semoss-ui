@@ -1,15 +1,8 @@
 import { makeAutoObservable } from "mobx";
-import type { Role } from "@semoss/sdk";
 import { FlexLayout } from "@semoss/shared";
-import type { AppMetadata } from "@/components/app";
 import type { RootStore, WorkspaceOptions } from "@/stores";
 
-export interface WorkspaceStoreInterface {
-	/**
-	 * ID of App
-	 */
-	appId: string;
-
+interface WorkspaceStoreInterface {
 	/**
 	 * ID of Workspace Insight
 	 */
@@ -21,14 +14,9 @@ export interface WorkspaceStoreInterface {
 	isLoading: boolean;
 
 	/**
-	 * User's role relative to the app
+	 * ID of the loaded project
 	 */
-	role: Role;
-
-	/**
-	 * Metadata associated with the loaded app
-	 */
-	metadata: AppMetadata;
+	projectId: string;
 
 	/**
 	 * Optional Model Engine to use
@@ -36,49 +24,21 @@ export interface WorkspaceStoreInterface {
 	agentModelEngine: string;
 
 	/**
-	 * Type of the app
-	 */
-	type: "BLOCKS" | "CODE" | "SKILL" | "WORKSPACE";
-
-	/**
 	 * Model associated with the layout
 	 **/
 	model: FlexLayout.Model | null;
-
-	/**
-	 * insightId of the active terminal tab. Each terminal tab owns its own
-	 * insight; the "Insight" file explorer binds to this so INSIGHT-scoped
-	 * browsing/upload targets the same insight the user runs commands in.
-	 * `null` until a terminal tab's insight is ready.
-	 */
-	activeTerminalInsightId: string | null;
 }
 
-export interface WorkspaceConfigInterface {
-	/**
-	 * Get the ID of the connected app
-	 */
-	appId: string;
-
+interface WorkspaceConfigInterface {
 	/**
 	 * Get the ID of the Insight tied to app workspace
 	 */
 	insightId: string;
 
 	/**
-	 * User's role relative to the app
+	 * ID of the loaded project
 	 */
-	role: Role;
-
-	/**
-	 * Type of the app
-	 */
-	type: "BLOCKS" | "CODE" | "SKILL" | "WORKSPACE";
-
-	/**
-	 * Metadata associated with the loaded app
-	 */
-	metadata: AppMetadata;
+	projectId: string;
 }
 
 /**
@@ -88,45 +48,20 @@ export class WorkspaceStore {
 	// biome-ignore lint/correctness/noUnusedPrivateClassMembers: kept for future use
 	private _root: RootStore;
 	private _store: WorkspaceStoreInterface = {
-		appId: "",
 		insightId: "",
 		isLoading: false,
-		role: "READ_ONLY",
-		type: "CODE",
+		projectId: "",
 		agentModelEngine: "",
-		metadata: {
-			project_id: "",
-			project_name: "",
-			project_type: "",
-			project_cost: "",
-			project_global: "",
-			project_catalog_name: "",
-			project_created_by: "",
-			project_date_last_edited: "",
-			project_created_by_type: "",
-			project_date_created: "",
-		},
 		model: null,
-		activeTerminalInsightId: null,
 	};
 
 	constructor(root: RootStore, config: WorkspaceConfigInterface) {
 		// register the root
 		this._root = root;
 
-		// set the app and insight Id
-		this._store.appId = config.appId;
 		this._store.insightId = config.insightId;
-		this._store.type = config.type;
 
-		// update the data
-		if (config.role) {
-			this._store.role = config.role;
-		}
-
-		if (config.role) {
-			this._store.metadata = config.metadata;
-		}
+		this._store.projectId = config.projectId;
 
 		// make it observable
 		makeAutoObservable(this);
@@ -135,13 +70,6 @@ export class WorkspaceStore {
 	/**
 	 * Getters
 	 */
-	/**
-	 * Get the ID of the connected app
-	 */
-	get appId() {
-		return this._store.appId;
-	}
-
 	/**
 	 * Get the ID of the workspace insight
 	 */
@@ -171,39 +99,10 @@ export class WorkspaceStore {
 	}
 
 	/**
-	 * Get the user's role in relation to the app
-	 */
-	get role() {
-		return this._store.role;
-	}
-	/**
-	 * Type of the app
-	 */
-	get type() {
-		return this._store.type;
-	}
-
-	/**
-	 * Get metadata associated with the app
-	 */
-	get metadata() {
-		return this._store.metadata;
-	}
-
-	/**
-	 * insightId of the active terminal tab (or null before one is ready). The
-	 * Insight file explorer binds to this so its listing/upload stay in sync
-	 * with the terminal the user is running commands in.
-	 */
-	get activeTerminalInsightId() {
-		return this._store.activeTerminalInsightId;
-	}
-
-	/**
 	 * The key for the local storage cache
 	 */
 	get cacheKey() {
-		return `smss-workspace--${this._store.appId}-v7`;
+		return `smss-workspace--${this._store.projectId}-v7`;
 	}
 
 	/**
@@ -230,8 +129,6 @@ export class WorkspaceStore {
 	 * Load from the cache
 	 */
 	loadFromCache = (): boolean => {
-		// TODO::Version Check
-
 		let isLoaded = false;
 		try {
 			const item = localStorage.getItem(this.cacheKey);
@@ -257,7 +154,6 @@ export class WorkspaceStore {
 			}
 
 			const options: WorkspaceOptions = {
-				version: "",
 				layout: this._store.model.toJson(),
 			};
 
@@ -294,14 +190,5 @@ export class WorkspaceStore {
 	 */
 	setAgentModelEngine = (id: string) => {
 		this._store.agentModelEngine = id;
-	};
-
-	/**
-	 * Record the insightId of the active terminal tab so the Insight file
-	 * explorer can bind to it. Called by the terminal panel as tabs are
-	 * focused/opened/closed.
-	 */
-	setActiveTerminalInsightId = (insightId: string | null) => {
-		this._store.activeTerminalInsightId = insightId;
 	};
 }

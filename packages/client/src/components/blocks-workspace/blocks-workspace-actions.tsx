@@ -15,7 +15,7 @@ import {
 } from "@semoss/ui/next";
 import { ShareOverlay } from "@/components/ui";
 import { PreviewDialog } from "@/components/workspace";
-import { useRootStore, useWorkspace } from "@/hooks";
+import { useProject, useRootStore, useWorkspace } from "@/hooks";
 import { LLMSelectDialog } from "../llms";
 
 export const BlocksWorkspaceActions = observer(() => {
@@ -23,6 +23,7 @@ export const BlocksWorkspaceActions = observer(() => {
 
 	const { monolithStore } = useRootStore();
 	const { workspace } = useWorkspace();
+	const { permission, project } = useProject();
 
 	const [shareOpen, setShareOpen] = useState(false);
 	const [shareDiffs, setShareDiffs] = useState(false);
@@ -52,7 +53,7 @@ export const BlocksWorkspaceActions = observer(() => {
 	 */
 	const selectModel = async () => {
 		let modelList = [];
-		if (workspace.role === "OWNER" || workspace.role === "EDIT") {
+		if (permission === "OWNER" || permission === "EDIT") {
 			const pixel = `MyEngines(engineTypes=["MODEL"])`;
 			const res = await runPixel(pixel);
 
@@ -114,7 +115,7 @@ export const BlocksWorkspaceActions = observer(() => {
 			// save the json
 			const { errors } = await monolithStore.runQuery<[true]>(
 				`SaveAppBlocksJson(project=["${
-					workspace.appId
+					project.project_id
 				}"], json=["<encode>${JSON.stringify(json)}</encode>"]);`,
 			);
 
@@ -145,10 +146,10 @@ export const BlocksWorkspaceActions = observer(() => {
 			let isChanged = false;
 
 			// only get the json if the user can edit
-			if (workspace.role === "OWNER" || workspace.role === "EDIT") {
+			if (permission === "OWNER" || permission === "EDIT") {
 				const { pixelReturn, errors } = await monolithStore.runQuery<
 					[true]
-				>(`GetAppBlocksJson ( project=['${workspace.appId}']);`);
+				>(`GetAppBlocksJson ( project=['${project.project_id}']);`);
 
 				if (errors.length > 0) {
 					throw new Error(errors.join(""));
@@ -259,7 +260,7 @@ export const BlocksWorkspaceActions = observer(() => {
 			>
 				<DialogContent className="max-w-lg p-0">
 					<ShareOverlay
-						appId={workspace.appId}
+						appId={project.project_id}
 						diffs={shareDiffs}
 						onClose={() => setShareOpen(false)}
 					/>

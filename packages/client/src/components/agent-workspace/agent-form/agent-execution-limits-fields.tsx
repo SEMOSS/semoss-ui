@@ -1,22 +1,58 @@
 import { useId } from "react";
 import { type Control, Controller } from "react-hook-form";
-import { Field, FieldLabel, Input } from "@semoss/ui/next";
+import {
+	Field,
+	FieldDescription,
+	FieldLabel,
+	Input,
+	Switch,
+} from "@semoss/ui/next";
 import type { AgentFormValues } from "./types";
 
 export interface AgentExecutionLimitsFieldsProps {
 	control: Control<AgentFormValues>;
+	/** Hide the master toggle when a richer default-tools field is rendered elsewhere. */
+	showDefaultToolsToggle?: boolean;
 }
 
 export const AgentExecutionLimitsFields = ({
 	control,
+	showDefaultToolsToggle = true,
 }: AgentExecutionLimitsFieldsProps) => {
+	const useDefaultAgentToolsId = useId();
 	const maxTurnsId = useId();
+	const maxReflectionsId = useId();
+	const maxSecondsId = useId();
 	const maxSubagentDepthId = useId();
 	const maxSubagentsPerRunId = useId();
 	const maxSpawnsPerTurnId = useId();
 
 	return (
 		<>
+			{showDefaultToolsToggle && (
+				<Controller
+					name="useDefaultAgentTools"
+					control={control}
+					render={({ field }) => (
+						<Field orientation="horizontal">
+							<div>
+								<FieldLabel htmlFor={useDefaultAgentToolsId}>
+									Enable built-in agent tools
+								</FieldLabel>
+								<FieldDescription>
+									Include the deployment's default tools in
+									addition to selected toolboxes.
+								</FieldDescription>
+							</div>
+							<Switch
+								id={useDefaultAgentToolsId}
+								checked={field.value}
+								onCheckedChange={field.onChange}
+							/>
+						</Field>
+					)}
+				/>
+			)}
 			<Controller
 				name="maxTurns"
 				control={control}
@@ -28,6 +64,42 @@ export const AgentExecutionLimitsFields = ({
 							type="number"
 							min={1}
 							placeholder="30 (default)"
+							{...field}
+						/>
+					</Field>
+				)}
+			/>
+			<Controller
+				name="maxReflections"
+				control={control}
+				render={({ field }) => (
+					<Field>
+						<FieldLabel htmlFor={maxReflectionsId}>
+							Max reflections
+						</FieldLabel>
+						<Input
+							id={maxReflectionsId}
+							type="number"
+							min={0}
+							placeholder="0 (default; no reflections)"
+							{...field}
+						/>
+					</Field>
+				)}
+			/>
+			<Controller
+				name="maxSeconds"
+				control={control}
+				render={({ field }) => (
+					<Field>
+						<FieldLabel htmlFor={maxSecondsId}>
+							Max run seconds
+						</FieldLabel>
+						<Input
+							id={maxSecondsId}
+							type="number"
+							min={0}
+							placeholder="0 (default; no time limit)"
 							{...field}
 						/>
 					</Field>

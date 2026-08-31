@@ -64,12 +64,6 @@
 	"images": {
 		"logoAlt": "logo"
 	},
-	"fileDrag": {
-		"title": "Sleep bestanden hierheen om aan het bericht toe te voegen",
-		"modalTitle": "Documenten toevoegen",
-		"browse": "Bladeren",
-		"done": "Klaar"
-	},
 	"fileExplorer": {
 		"search": "Zoeken",
 		"name": "Naam",
@@ -136,7 +130,6 @@
 		"searchAllAria": "Alles doorzoeken",
 		"searchCurrentAria": "Alleen huidige map doorzoeken",
 		"searchCurrentTitle": "Alleen zoeken in {{path}}",
-		"moveDropHint": "Sleep om {{label}} naar {{path}} te verplaatsen",
 		"contextMenu": {
 			"copyPath": "Pad kopiëren",
 			"copy": "Kopiëren",

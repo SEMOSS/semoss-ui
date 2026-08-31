@@ -9,6 +9,7 @@ export * from "../lib";
 export * from "../hooks";
 // Re-export all components (only export what exists)
 export * from "./accordion";
+export * from "./agent-user-input-card";
 export * from "./alert";
 export * from "./avatar";
 export * from "./badge";
@@ -27,6 +28,7 @@ export * from "./drawer";
 export * from "./dropdown-menu";
 export * from "./field";
 export * from "./file-dropzone";
+export * from "./form";
 export * from "./hover-card";
 export * from "./input";
 export * from "./input-group";

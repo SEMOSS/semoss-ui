@@ -24,7 +24,7 @@ interface SortOption {
 	label: string;
 }
 
-export interface CatalogSearchBarProps {
+interface CatalogSearchBarProps {
 	/** Current search value */
 	search: string;
 

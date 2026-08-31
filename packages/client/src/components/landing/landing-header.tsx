@@ -13,6 +13,8 @@ import Appcode from "@/assets/img/Appcode.svg";
 import AppcodeDark from "@/assets/img/Appcode-dark.svg";
 import Appdragdrop from "@/assets/img/Appdragdrop.svg";
 import AppdragdropDark from "@/assets/img/Appdragdrop-dark.svg";
+import AppNotebook from "@/assets/img/Appnotebook.svg";
+import AppNotebookDark from "@/assets/img/Appnotebook-dark.svg";
 
 interface LandingCard {
 	title: string;
@@ -20,7 +22,7 @@ interface LandingCard {
 	image: string;
 	testId: string;
 	/** App-creation flow (mutually exclusive with `href`). */
-	type?: "blocks" | "code" | "agent";
+	type?: "blocks" | "code" | "agent" | "notebook";
 	/** External link (e.g. a bundled app served by SemossWeb). Opens in a new tab. */
 	href?: string;
 	/** Button label (defaults to "Get Started"). */
@@ -64,11 +66,20 @@ const CARDS: LandingCard[] = [
 		cta: "Launch Reporting Insights",
 		testId: "launch-reporting-insights-btn",
 	},
-];
+	{
+		title: "Run interactive notebooks",
+		description:
+			"Write and execute code cells, visualize data, and document your analysis in a live, interactive notebook environment.",
+		image: AppNotebook,
+		darkImage: AppNotebookDark,
+		type: "notebook",
+		testId: "new-notebook-btn",
+	},
+] as const;
 
 interface LandingHeaderProps {
 	/** Trigger creation of a new app */
-	onCreate: (type: "blocks" | "code" | "agent") => void;
+	onCreate: (type: "blocks" | "code" | "agent" | "notebook") => void;
 }
 
 export const LandingHeader: React.FC<LandingHeaderProps> = ({

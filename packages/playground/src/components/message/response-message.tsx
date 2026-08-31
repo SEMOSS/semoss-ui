@@ -46,6 +46,8 @@ import {
 	type RoomStore,
 	type ToolStore,
 } from "@/stores";
+import { isAskExecutionMode } from "@/utility/mcp-utils";
+import { ResponseMessageSubagent } from "./response-message-subagent";
 import { ResponseMessageText } from "./response-message-text";
 import { ResponseMessageThinking } from "./response-message-thinking";
 import { ResponseMessageTool } from "./response-message-tool";
@@ -103,6 +105,29 @@ const hasStreamedContent = (message: ResponseMessageStore) =>
 			part.type === "TOOL_CALL" ||
 			part.type === "MEDIA",
 	);
+
+/**
+ * One contiguous run of tool calls within a message — a single round of the
+ * agent loop. Grouping decisions are scoped to the run rather than the whole
+ * message, so a later round waiting on a tool decision leaves an earlier
+ * round's rendering alone.
+ */
+interface ToolRun {
+	/** Part index the run's group renders at — its first TOOL_CALL part. */
+	partIdx: number;
+
+	/** Every tool in the run, in part order. */
+	tools: ToolStore[];
+
+	/** The subset of `tools` that renders inside the group. */
+	grouped: ToolStore[];
+
+	/** Whether any tool in the run is still running or awaiting a decision. */
+	hasUnfinishedTools: boolean;
+
+	/** Whether any tool in the run needs a human decision. */
+	hasAskTools: boolean;
+}
 
 interface ResponseMessageProps {
 	/** Room */
@@ -304,45 +329,91 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 			{ value: "pdf", label: "PDF Document", extension: ".pdf" },
 		];
 
-		// Pre-compute completed tools for grouping; track the first TOOL_CALL
-		// part index (regardless of completion) so the group always renders at
-		// the top of the tool list even when an auto-execute tool completes first.
-		const getShouldGroupTool = (tool: ToolStore) => {
+		// Pre-compute completed tools for grouping. Tools cluster per contiguous
+		// run of TOOL_CALL parts: a run ends at the first part that renders
+		// something between them, so a second round of tools in an agent turn
+		// opens its own group in place rather than folding back into the first
+		// one above the text and thinking that preceded it. An empty part (the
+		// thinking placeholder a streaming message is seeded with) renders
+		// nothing, so it never splits a run.
+		const isToolRunBreak = (part: ResponseMessageStore["parts"][number]) =>
+			(part.type === "TEXT" && part.text.length > 0) ||
+			(part.type === "THINKING" && part.thinking.length > 0) ||
+			part.type === "MEDIA" ||
+			part.type === "SUBAGENT";
+
+		const getShouldGroupTool = (tool: ToolStore, run: ToolRun) => {
 			// tools whose call hasn't resolved yet (still streaming in, or in the
 			// gap before the final sync) fold into the group so they show as one
 			// loading cluster rather than separate raw-named pills
 			if (!tool.isResolved) return true;
-			// auto-execute tools should always be grouped
-			if (tool.json._meta.SMSS_MCP_EXECUTION === "auto") return true;
-			// ask tools only enter group when there are no unfinished tools
-			return !message.hasUnfinishedTools;
+			// non-interactive tools (auto-execute, or backend-executed e.g.
+			// agent-run tools) should always be grouped
+			if (!isAskExecutionMode(tool.json._meta?.SMSS_MCP_EXECUTION))
+				return true;
+			// ask tools only enter the group once their own run has nothing
+			// left running — a later round waiting on a decision must not pull
+			// a settled round's ask tools back out of their group
+			return !run.hasUnfinishedTools;
 		};
-		const { groupedTools, hasAskTools, firstToolPartIdx, numTools } =
-			(() => {
-				const groupedTools: ToolStore[] = [];
-				let hasAskTools = false;
-				let firstToolPartIdx = -1;
-				let numTools = 0;
-				message.parts.forEach((p, idx) => {
-					if (p.type !== "TOOL_CALL") return;
-					if (firstToolPartIdx === -1) firstToolPartIdx = idx;
-					const tool = room.getTool(p.toolCall.id);
-					if (!tool) return;
-					numTools++;
-					if (getShouldGroupTool(tool)) {
-						groupedTools.push(tool);
-					}
-					if (tool.json._meta.SMSS_MCP_EXECUTION === "ask") {
-						hasAskTools = true;
-					}
-				});
-				return {
-					groupedTools,
-					hasAskTools,
-					firstToolPartIdx,
-					numTools,
-				};
-			})();
+
+		// First pass: split the tool parts into runs. Grouping is decided in a
+		// second pass because it depends on the run as a whole, which isn't
+		// known until the run has been walked.
+		const { toolRuns, hasAskTools, numTools } = (() => {
+			const toolRuns: ToolRun[] = [];
+			let run: ToolRun | null = null;
+			let hasAskTools = false;
+			let numTools = 0;
+			for (let idx = 0; idx < message.parts.length; idx++) {
+				const p = message.parts[idx];
+				if (p.type !== "TOOL_CALL") {
+					if (isToolRunBreak(p)) run = null;
+					continue;
+				}
+				// Opened on the run's first TOOL_CALL part regardless of
+				// completion, so the group always sits at the top of that run's
+				// tool list even when an auto-execute tool completes first.
+				if (!run) {
+					run = {
+						partIdx: idx,
+						tools: [],
+						grouped: [],
+						hasUnfinishedTools: false,
+						hasAskTools: false,
+					};
+					toolRuns.push(run);
+				}
+				const tool = room.getTool(p.toolCall.id);
+				if (!tool) continue;
+				numTools++;
+				run.tools.push(tool);
+				// Mirrors ResponseMessageStore.hasUnfinishedTools, narrowed to
+				// this run.
+				if (tool.status === "LOADING" || tool.status === "INITIAL") {
+					run.hasUnfinishedTools = true;
+				}
+				if (isAskExecutionMode(tool.json._meta?.SMSS_MCP_EXECUTION)) {
+					run.hasAskTools = true;
+					hasAskTools = true;
+				}
+			}
+			return { toolRuns, hasAskTools, numTools };
+		})();
+
+		// Second pass: the group renders at the run's first part index, and
+		// every tool in it is skipped where its own part comes up.
+		const groupedToolIds = new Set<string>();
+		const runsByPartIdx = new Map<number, ToolRun>();
+		for (const run of toolRuns) {
+			run.grouped = run.tools.filter((tool) =>
+				getShouldGroupTool(tool, run),
+			);
+			for (const tool of run.grouped) {
+				groupedToolIds.add(tool.id);
+			}
+			runsByPartIdx.set(run.partIdx, run);
+		}
 
 		const hasText = message.parts.some((part) => part.type === "TEXT");
 
@@ -428,17 +499,10 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 											"image/png",
 									});
 								} else if (p.mediaInfo.fileLocation) {
-									room.addSidebarNode(
-										`FILE--${p.mediaInfo.fileLocation}`,
+									room.openFileEditorSidebarNode(
+										p.mediaInfo.fileLocation,
 										{
-											type: "tab",
 											name: p.mediaInfo.fileName,
-											component: "room-file-editor",
-											config: {
-												name: p.mediaInfo.fileName,
-												path: p.mediaInfo.fileLocation,
-											},
-											enableClose: true,
 										},
 									);
 								} else if (p.mediaInfo.base64Data) {
@@ -498,6 +562,13 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 								</div>
 							);
 						} else if (p.type === "THINKING") {
+							if (
+								!p.thinking &&
+								inputMessage &&
+								!inputMessage.visible
+							) {
+								return null;
+							}
 							return (
 								<ResponseMessageThinking
 									key={key}
@@ -509,10 +580,12 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 							);
 						} else if (p.type === "TOOL_CALL") {
 							const tool = room.getTool(p.toolCall.id);
-							const isGrouped = getShouldGroupTool(tool);
+							// Only set on the part the run's group renders at.
+							const run = runsByPartIdx.get(pIdx);
+							const groupedTools = run?.grouped ?? [];
 							return (
 								<Fragment key={key}>
-									{pIdx === firstToolPartIdx &&
+									{run &&
 										groupedTools.length > 0 &&
 										// A single tool renders as a group only while it's
 										// still resolving (so it shows as one loading
@@ -530,15 +603,15 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 												message={message}
 												tool={groupedTools[0]}
 												// getShouldGroupTool dictates that tools are grouped if auto, or all finished
-												// if the group size is 1, then this could be an auto tool and the message has an unfinished ask tool
+												// if the group size is 1, then this could be an auto tool and the run has an unfinished ask tool
 												// we should be large in this case for consistency
 												isLarge={
-													message.hasUnfinishedTools &&
-													hasAskTools
+													run.hasUnfinishedTools &&
+													run.hasAskTools
 												}
 											/>
 										))}
-									{tool && !isGrouped && (
+									{tool && !groupedToolIds.has(tool.id) && (
 										<ResponseMessageTool
 											message={message}
 											tool={tool}
@@ -547,6 +620,14 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 										/>
 									)}
 								</Fragment>
+							);
+						} else if (p.type === "SUBAGENT") {
+							return (
+								<ResponseMessageSubagent
+									key={key}
+									message={message}
+									part={p}
+								/>
 							);
 						}
 

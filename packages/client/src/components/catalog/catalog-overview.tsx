@@ -81,7 +81,7 @@ const EmptyValue = () => (
 	<div className="text-muted-foreground text-sm">None</div>
 );
 
-export interface CatalogOverviewProps {
+interface CatalogOverviewProps {
 	/** ID of the catalog */
 	id: string;
 	/** User's permission in the catalog */

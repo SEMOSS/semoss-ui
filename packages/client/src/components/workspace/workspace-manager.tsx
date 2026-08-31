@@ -1,8 +1,6 @@
 import {
 	Blocks,
 	Braces,
-	ChevronRightIcon,
-	FlaskConical,
 	Folder,
 	Layers,
 	type LucideIcon,
@@ -16,20 +14,10 @@ import {
 import { observer } from "mobx-react-lite";
 import type React from "react";
 import { useEffect, useMemo, useRef } from "react";
-import { Link } from "react-router-dom";
 import { FlexLayout, getFileIconComponent } from "@semoss/shared";
-import {
-	Breadcrumb,
-	BreadcrumbItem,
-	BreadcrumbLink,
-	BreadcrumbList,
-	BreadcrumbPage,
-	BreadcrumbSeparator,
-	cn,
-} from "@semoss/ui/next";
-import { useProject, useTabBarScroll, useWorkspace } from "@/hooks";
+import { cn } from "@semoss/ui/next";
+import { useTabBarScroll, useWorkspace } from "@/hooks";
 import type { WorkspaceOptions } from "@/stores";
-import { NavbarHeader, NavbarLeft, NavbarRight } from "../shared";
 import { WorkspaceLoading } from "./WorkspaceLoading";
 import { WorkspaceResetButton } from "./workspace-reset-button";
 import { WorkspaceSettingsToggle } from "./workspace-settings-toggle";
@@ -44,7 +32,6 @@ const WORKSPACE_TAB_ICON_BY_COMPONENT: Record<string, LucideIcon> = {
 	variables: Braces,
 	blocks: Blocks,
 	layers: Layers,
-	insight: FlaskConical,
 	"app-file-explorer": Folder,
 	"notebook-explorer": Notebook,
 };
@@ -68,9 +55,6 @@ const getWorkspaceTabIcon = (component: string, name: string) => {
 };
 
 type WorkspaceManagerProps = {
-	/** Actions to render in the navbar */
-	navbarActions?: React.ReactNode;
-
 	/** Options to load into the workspace */
 	options: WorkspaceOptions;
 
@@ -85,8 +69,11 @@ type WorkspaceManagerProps = {
 };
 
 export const WorkspaceManager: React.FC<WorkspaceManagerProps> = observer(
-	({ navbarActions, options, factory = () => null, onAction }) => {
-		const { catalog, project } = useProject();
+	({
+		options,
+		factory = () => null,
+		onAction = (action: FlexLayout.Action) => action,
+	}) => {
 		const { workspace } = useWorkspace();
 		const layoutRef = useRef<FlexLayout.Layout | null>(null);
 		const containerRef = useRef<HTMLDivElement | null>(null);
@@ -199,105 +186,65 @@ export const WorkspaceManager: React.FC<WorkspaceManagerProps> = observer(
 		}, [options]);
 
 		return (
-			<>
-				<NavbarLeft>
-					<NavbarHeader logo={null} />
-					<Breadcrumb>
-						<BreadcrumbList>
-							<BreadcrumbItem>
-								<BreadcrumbLink asChild>
-									<Link to={catalog.path}>
-										{catalog.name} Catalog
-									</Link>
-								</BreadcrumbLink>
-							</BreadcrumbItem>
-							<BreadcrumbSeparator>
-								<ChevronRightIcon />
-							</BreadcrumbSeparator>
-							<BreadcrumbItem>
-								<BreadcrumbLink asChild>
-									<Link
-										to={`${catalog.path}/${project.project_id}`}
-									>
-										{project.project_display_name ||
-											project.project_name}
-									</Link>
-								</BreadcrumbLink>
-							</BreadcrumbItem>
-							<BreadcrumbSeparator>
-								<ChevronRightIcon />
-							</BreadcrumbSeparator>
-							<BreadcrumbItem>
-								<BreadcrumbPage>Edit</BreadcrumbPage>
-							</BreadcrumbItem>
-						</BreadcrumbList>
-					</Breadcrumb>
-				</NavbarLeft>
-				<NavbarRight>{navbarActions}</NavbarRight>
-				<div className="relative flex h-full w-full flex-col overflow-hidden">
-					<WorkspaceLoading />
-					<div
-						ref={containerRef}
-						className="flexlayout__theme_smss absolute inset-0 overflow-hidden"
-					>
-						{workspace.model ? (
-							<>
-								<FlexLayout.Layout
-									ref={layoutRef}
+			<div className="relative flex h-full w-full flex-col overflow-hidden">
+				<WorkspaceLoading />
+				<div
+					ref={containerRef}
+					className="flexlayout__theme_smss absolute inset-0 overflow-hidden"
+				>
+					{workspace.model ? (
+						<>
+							<FlexLayout.Layout
+								ref={layoutRef}
+								model={workspace.model}
+								factory={(node) => {
+									return factory(
+										node,
+										layoutRef.current as FlexLayout.Layout,
+									);
+								}}
+								icons={{
+									close: <XIcon className="size-4" />,
+								}}
+								onModelChange={() => {
+									workspace.saveToCache();
+								}}
+								onAction={(action) => {
+									const external = onAction?.(action);
+									if (external === undefined) {
+										return undefined;
+									}
+
+									return action;
+								}}
+								onRenderTab={(tabNode, renderValues) => {
+									const tabIcon = getWorkspaceTabIcon(
+										tabNode.getComponent() as string,
+										tabNode.getName(),
+									);
+
+									if (tabIcon) {
+										renderValues.leading = tabIcon;
+									}
+
+									return renderValues;
+								}}
+							/>
+							<div
+								className={cn(
+									"absolute left-2 z-10 flex flex-col gap-1",
+									hasBottomBorder ? "bottom-14" : "bottom-2",
+								)}
+							>
+								<WorkspaceSettingsToggle
 									model={workspace.model}
-									factory={(node) => {
-										return factory(
-											node,
-											layoutRef.current as FlexLayout.Layout,
-										);
-									}}
-									icons={{
-										close: <XIcon className="size-4" />,
-									}}
-									onModelChange={() => {
-										workspace.saveToCache();
-									}}
-									onAction={(action) => {
-										const external = onAction?.(action);
-										if (external === undefined) {
-											return undefined;
-										}
-
-										return action;
-									}}
-									onRenderTab={(tabNode, renderValues) => {
-										const tabIcon = getWorkspaceTabIcon(
-											tabNode.getComponent() as string,
-											tabNode.getName(),
-										);
-
-										if (tabIcon) {
-											renderValues.leading = tabIcon;
-										}
-
-										return renderValues;
-									}}
 								/>
-								<div
-									className={cn(
-										"absolute left-2 z-10 flex flex-col gap-1",
-										hasBottomBorder
-											? "bottom-14"
-											: "bottom-2",
-									)}
-								>
-									<WorkspaceSettingsToggle
-										model={workspace.model}
-									/>
-									<WorkspaceResetButton
-										layout={options.layout}
-									/>
-								</div>
-							</>
-						) : null}
-					</div>
+								<WorkspaceResetButton layout={options.layout} />
+							</div>
+						</>
+					) : null}
 				</div>
-			</>
+			</div>
 		);
 	},
 );
