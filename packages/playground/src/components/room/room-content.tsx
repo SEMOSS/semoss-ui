@@ -39,6 +39,7 @@ import {
 } from "@/stores";
 import { decideAgentToolAction } from "@/stores/message/agent-harness";
 import { RoomCompactionIndicator } from "./room-compaction-indicator";
+import { RoomGeneratingIndicator } from "./room-generating-indicator";
 import { RoomSuggestions } from "./room-suggestions";
 
 const ROOM_CONFIGURATION_ID = "CONFIGURATION";
@@ -410,6 +411,22 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 				? "stop"
 				: "send";
 
+	// A response that's actively generating with nothing to show yet — no
+	// text, tool calls, media, or even real thinking content — renders as
+	// no entry at all; RoomGeneratingIndicator covers that window instead,
+	// so it never mounts as its own block only to fold away again the
+	// moment it gets its first tool call. The instant any real content
+	// exists (including thinking) it gets its own entry immediately.
+	const isPendingResponse = (
+		m: InputMessageStore | ResponseMessageStore,
+	): boolean =>
+		m.type === "OUTPUT" &&
+		m.isThinking &&
+		!m.hasVisibleContent &&
+		!m.parts.some(
+			(part) => part.type === "THINKING" && part.thinking.length > 0,
+		);
+
 	// Folds a run of tool-only responses up into the response preceding them.
 	const roomHistoryEntries = (() => {
 		type Entry = {
@@ -420,6 +437,10 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 
 		return room.history.reduce<Entry[]>((entries, m) => {
 			if (!m.visible) {
+				return entries;
+			}
+
+			if (isPendingResponse(m)) {
 				return entries;
 			}
 
@@ -519,6 +540,11 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 									);
 								},
 							)}
+							<div className="-mt-4">
+								<RoomGeneratingIndicator
+									active={showLoadingState}
+								/>
+							</div>
 							{room.theme.featureFlags?.enableSuggestions && (
 								<RoomSuggestions room={room} />
 							)}

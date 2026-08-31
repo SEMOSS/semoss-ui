@@ -23,22 +23,6 @@ export interface CancelCommitOutput {
 }
 
 /**
- * Removes a trailing empty THINKING part — the placeholder every streaming
- * message is seeded with — once real content is about to be pushed after
- * it. Without this it lingers alongside whatever streamed in next (a tool
- * call, most often, since only text already popped it), which reads as the
- * message still thinking after it clearly isn't.
- */
-export const popEmptyThinkingPlaceholder = (
-	parts: ResponsePixelMessage["parts"],
-): void => {
-	const last = parts[parts.length - 1];
-	if (last?.type === "THINKING" && !last.thinking) {
-		parts.pop();
-	}
-};
-
-/**
  * Create a messageStore from a pixelMessage
  * @param room - room store the message belongs to
  * @param pixelMessage - message from backend that needs to be converted

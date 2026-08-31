@@ -8,7 +8,6 @@ import { observer } from "mobx-react-lite";
 import { useState } from "react";
 import { useTranslation } from "@semoss/i18n";
 import { cn, Spinner } from "@semoss/ui/next";
-import { useLoadingMessage } from "@/hooks";
 import type { ToolStore } from "@/stores";
 import { ResponseMessageTool } from "./response-message-tool";
 
@@ -35,30 +34,23 @@ const analyzeTools = (tools: ToolStore[]) => {
 		CANCELLED: 0,
 		INITIAL: 0,
 	};
-	const loadingOptions: string[] = [];
 
 	// "Resolving" (the call is still streaming in, or in the gap before the
 	// final sync) is distinct from status LOADING (the call is done, the tool is
 	// executing). Both drive the same spinner, but the header copy differs.
 	let isResolving = false;
 
-	for (const tool of tools) {
+	tools.forEach((tool) => {
 		if (!tool.isResolved) isResolving = true;
 		counts[tool.status] = (counts[tool.status] ?? 0) + 1;
-		if (
-			tool.status === "LOADING" &&
-			tool.json._meta?.SMSS_MCP_UI?.loadingMessage
-		) {
-			loadingOptions.push(tool.json._meta?.SMSS_MCP_UI.loadingMessage);
-		}
-	}
+	});
 
 	let status: keyof typeof groupStatusConfig = "SUCCESS";
 	if (counts.LOADING > 0) status = "LOADING";
 	else if (counts.CANCELLED > 0) status = "CANCELLED";
 	else if (counts.ERROR > 0) status = "ERROR";
 
-	return { status, counts, loadingOptions, isResolving };
+	return { status, counts, isResolving };
 };
 
 interface ResponseMessageToolGroupProps {
@@ -71,14 +63,10 @@ export const ResponseMessageToolGroup: React.FC<ResponseMessageToolGroupProps> =
 		const { t } = useTranslation("tool");
 		const [isOpen, setIsOpen] = useState(false);
 
-		const { status, counts, loadingOptions, isResolving } =
-			analyzeTools(tools);
+		const { status, counts, isResolving } = analyzeTools(tools);
 		// While still resolving, tools sit at INITIAL (which would otherwise
 		// resolve to the SUCCESS check) — force the spinner instead.
 		const icon = isResolving ? <Spinner /> : groupStatusConfig[status].icon;
-		const isLoading = status === "LOADING";
-
-		const { loadingMessage } = useLoadingMessage(isLoading, loadingOptions);
 
 		const summaryParts = [
 			counts.SUCCESS > 0 &&
@@ -117,11 +105,6 @@ export const ResponseMessageToolGroup: React.FC<ResponseMessageToolGroupProps> =
 										count: tools.length - 1,
 									})}
 					</span>
-					{isLoading && !isOpen && loadingMessage && (
-						<span className="shrink-0 text-muted-foreground text-sm italic">
-							{loadingMessage}
-						</span>
-					)}
 					<ChevronDownIcon
 						className={cn(
 							"ms-auto me-1 size-5 shrink-0 text-muted-foreground transition-transform duration-200",

@@ -1,6 +1,5 @@
 import type { PixelMessageToolCallPart } from "@/types";
 import type { ResponseMessageStore } from "./response-message.store";
-import { popEmptyThinkingPlaceholder } from "./utility";
 
 /**
  * Shape of the `stream_type: "tool"` chunk's `data` payload — OpenAI-style
@@ -78,7 +77,6 @@ export const applyToolStreamChunk = (
 				},
 			},
 		};
-		popEmptyThinkingPlaceholder(message.parts);
 		message.parts.push(placeholderPart);
 
 		// ToolStore.syncMessage stores the placeholder as toolCall.part, but the

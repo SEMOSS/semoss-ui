@@ -19,11 +19,7 @@ import { runAgentMessage } from "./agent-harness";
 import { InputMessageStore } from "./input-message.store";
 import { ToolSaveController } from "./tool-save-controller";
 import { applyToolStreamChunk } from "./tool-stream";
-import {
-	type CancelCommitOutput,
-	popEmptyThinkingPlaceholder,
-	spliceHiddenMessages,
-} from "./utility";
+import { type CancelCommitOutput, spliceHiddenMessages } from "./utility";
 
 /**
  * Response Message Store
@@ -195,12 +191,7 @@ export class ResponseMessageStore extends AbstractMessageStore {
 				platform_generated: true,
 				modelId: room.model.engine_id,
 				dateCreated: new Date().toISOString(),
-				parts: [
-					{
-						type: "THINKING",
-						thinking: "",
-					},
-				],
+				parts: [],
 				tokens: 0,
 				ornaments: {
 					modelName:
@@ -395,7 +386,6 @@ paramValues=[${JSON.stringify(
 				lastPart.text += part.text;
 				lastPart.uiText += part.uiText;
 			} else {
-				popEmptyThinkingPlaceholder(this.parts);
 				this.parts.push(part);
 			}
 		} else if (part.type === "THINKING") {
@@ -572,10 +562,7 @@ paramValues=[${JSON.stringify(
 	/**
 	 * Whether this response should fold up into the one before it instead
 	 * of rendering as its own block — see room-content.tsx. True once it
-	 * has tool calls and nothing else worth showing on its own. An empty
-	 * THINKING part doesn't count against it: every streaming message is
-	 * seeded with one as a placeholder, so a currently-streaming tool round
-	 * still qualifies rather than only folding once it settles.
+	 * has tool calls and nothing else worth showing on its own.
 	 */
 	get shouldFoldUp() {
 		return (

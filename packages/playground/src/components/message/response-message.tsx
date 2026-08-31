@@ -1,7 +1,6 @@
 import {
 	ArrowLeftIcon,
 	ArrowRightIcon,
-	CircleAlert,
 	CopyIcon,
 	DownloadIcon,
 	FileArchiveIcon,
@@ -92,10 +91,9 @@ const getExtIcon = (fileName: string) => {
 
 /**
  * Whether the message has streamed any real content yet. A freshly-created
- * streaming message is seeded with a single empty THINKING part, so an empty
- * thinking string with no other parts means nothing has streamed. Used to tell
- * a first view (start animations from 0) apart from a return view (jump to the
- * latest part/chunk/content).
+ * streaming message starts with zero parts, so an empty array means nothing
+ * has streamed. Used to tell a first view (start animations from 0) apart
+ * from a return view (jump to the latest part/chunk/content).
  */
 const hasStreamedContent = (parts: ResponseMessageStore["parts"]) =>
 	parts.some(
@@ -350,9 +348,7 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 		// run of TOOL_CALL parts: a run ends at the first part that renders
 		// something between them, so a second round of tools in an agent turn
 		// opens its own group in place rather than folding back into the first
-		// one above the text and thinking that preceded it. An empty part (the
-		// thinking placeholder a streaming message is seeded with) renders
-		// nothing, so it never splits a run.
+		// one above the text and thinking that preceded it.
 		const isToolRunBreak = (part: ResponseMessageStore["parts"][number]) =>
 			(part.type === "TEXT" && part.text.length > 0) ||
 			(part.type === "THINKING" && part.thinking.length > 0) ||
@@ -384,90 +380,69 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 		// per-originating-message chunks. Grouping is decided in a second
 		// pass because it depends on the chunk as a whole, which isn't known
 		// until the chunk has been walked.
-		const { toolRuns, hasAskTools, numTools, chunkHasUnfinishedTools } =
-			(() => {
-				const toolRuns: ToolRun[] = [];
-				const chunkHasUnfinishedTools = new Map<string, boolean>();
-				let run: ToolRun | null = null;
-				let hasAskTools = false;
-				let numTools = 0;
+		const { toolRuns, chunkHasUnfinishedTools } = (() => {
+			const toolRuns: ToolRun[] = [];
+			const chunkHasUnfinishedTools = new Map<string, boolean>();
+			let run: ToolRun | null = null;
 
-				let chunkOwner: ResponseMessageStore | null = null;
-				let chunkTools: ToolStore[] = [];
-				let chunkUnfinished = false;
-				const flushChunk = () => {
-					chunkTools.forEach((chunkTool) => {
-						chunkHasUnfinishedTools.set(
-							chunkTool.id,
-							chunkUnfinished,
-						);
-					});
-					chunkOwner = null;
-					chunkTools = [];
-					chunkUnfinished = false;
-				};
-
-				partsWithOwners.forEach(({ part: p, owner }, idx) => {
-					if (p.type !== "TOOL_CALL") {
-						if (isToolRunBreak(p)) {
-							run = null;
-							flushChunk();
-						}
-						return;
-					}
-					// Opened on the run's first TOOL_CALL part regardless of
-					// completion, so the group always sits at the top of that run's
-					// tool list even when an auto-execute tool completes first.
-					if (!run) {
-						run = {
-							partIdx: idx,
-							tools: [],
-							grouped: [],
-							hasUnfinishedTools: false,
-							hasAskTools: false,
-						};
-						toolRuns.push(run);
-					}
-					const tool = room.getTool(p.toolCall.id);
-					if (!tool) return;
-					numTools++;
-					run.tools.push(tool);
-					// Mirrors ResponseMessageStore.hasUnfinishedTools, narrowed to
-					// this run.
-					if (
-						tool.status === "LOADING" ||
-						tool.status === "INITIAL"
-					) {
-						run.hasUnfinishedTools = true;
-					}
-					if (
-						isAskExecutionMode(tool.json._meta?.SMSS_MCP_EXECUTION)
-					) {
-						run.hasAskTools = true;
-						hasAskTools = true;
-					}
-
-					if (owner !== chunkOwner) {
-						flushChunk();
-						chunkOwner = owner;
-					}
-					chunkTools.push(tool);
-					if (
-						tool.status === "LOADING" ||
-						tool.status === "INITIAL"
-					) {
-						chunkUnfinished = true;
-					}
+			let chunkOwner: ResponseMessageStore | null = null;
+			let chunkTools: ToolStore[] = [];
+			let chunkUnfinished = false;
+			const flushChunk = () => {
+				chunkTools.forEach((chunkTool) => {
+					chunkHasUnfinishedTools.set(chunkTool.id, chunkUnfinished);
 				});
-				flushChunk();
+				chunkOwner = null;
+				chunkTools = [];
+				chunkUnfinished = false;
+			};
 
-				return {
-					toolRuns,
-					hasAskTools,
-					numTools,
-					chunkHasUnfinishedTools,
-				};
-			})();
+			partsWithOwners.forEach(({ part: p, owner }, idx) => {
+				if (p.type !== "TOOL_CALL") {
+					if (isToolRunBreak(p)) {
+						run = null;
+						flushChunk();
+					}
+					return;
+				}
+				// Opened on the run's first TOOL_CALL part regardless of
+				// completion, so the group always sits at the top of that run's
+				// tool list even when an auto-execute tool completes first.
+				if (!run) {
+					run = {
+						partIdx: idx,
+						tools: [],
+						grouped: [],
+						hasUnfinishedTools: false,
+						hasAskTools: false,
+					};
+					toolRuns.push(run);
+				}
+				const tool = room.getTool(p.toolCall.id);
+				if (!tool) return;
+				run.tools.push(tool);
+				// Mirrors ResponseMessageStore.hasUnfinishedTools, narrowed to
+				// this run.
+				if (tool.status === "LOADING" || tool.status === "INITIAL") {
+					run.hasUnfinishedTools = true;
+				}
+				if (isAskExecutionMode(tool.json._meta?.SMSS_MCP_EXECUTION)) {
+					run.hasAskTools = true;
+				}
+
+				if (owner !== chunkOwner) {
+					flushChunk();
+					chunkOwner = owner;
+				}
+				chunkTools.push(tool);
+				if (tool.status === "LOADING" || tool.status === "INITIAL") {
+					chunkUnfinished = true;
+				}
+			});
+			flushChunk();
+
+			return { toolRuns, chunkHasUnfinishedTools };
+		})();
 
 		// Second pass: the group renders at the run's first part index, and
 		// every tool in it is skipped where its own part comes up.
@@ -651,8 +626,13 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 							// Only set on the part the run's group renders at.
 							const run = runsByPartIdx.get(pIdx);
 							const groupedTools = run?.grouped ?? [];
+							// Keyed by tool id rather than part index: a run's
+							// position in allParts can shift as messages fold
+							// in around it, and a positional key would remount
+							// the group (losing its open/closed state) even
+							// though it's still logically the same run.
 							return (
-								<Fragment key={key}>
+								<Fragment key={p.toolCall.id}>
 									{run &&
 										groupedTools.length > 0 &&
 										// A single tool renders as a group only while it's
@@ -662,7 +642,7 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 										(groupedTools.length > 1 ||
 										!groupedTools[0].isResolved ? (
 											<ResponseMessageToolGroup
-												key={`${key}-group`}
+												key={`${p.toolCall.id}-group`}
 												tools={groupedTools}
 											/>
 										) : (
@@ -698,19 +678,6 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 
 						return null;
 					})}
-					{toolRuns.some((run) => run.hasUnfinishedTools) &&
-						!isThinking && (
-							<p className="mt-2 flex items-center gap-2 text-muted-foreground text-sm">
-								<CircleAlert className="size-4" />
-								{hasAskTools
-									? t("response.completeToolsAsk", {
-											count: numTools,
-										})
-									: t("response.completeToolsAuto", {
-											count: numTools,
-										})}
-							</p>
-						)}
 					{!hasVisibleContent &&
 						message.id !== STREAMING_PLACEHOLDER_ID && (
 							<p className="text-muted-foreground text-sm italic">

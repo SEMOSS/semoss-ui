@@ -1145,7 +1145,7 @@ export class RoomStore {
 			platform_generated: true,
 			modelId: this.model.engine_id,
 			dateCreated: new Date().toISOString(),
-			parts: [{ type: "THINKING", thinking: "" }],
+			parts: [],
 			tokens: 0,
 			ornaments: {
 				modelName:
