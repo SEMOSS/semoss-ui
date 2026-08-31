@@ -71,6 +71,7 @@ export const CodePreviewBlock = ({
 	const [isAddToNotebookOpen, setIsAddToNotebookOpen] = useState(false);
 	const [isSaveCodeDialogOpen, setIsSaveCodeDialogOpen] = useState(false);
 	const [isCollapsed, setIsCollapsed] = useState(false);
+	const [isSavingToRoom, setIsSavingToRoom] = useState(false);
 	// the block is height capped, so it follows its own newest line
 	const codeScroll = useStickToBottom(code);
 	const [isExecuting, setIsExecuting] = useState(false);
@@ -166,6 +167,29 @@ export const CodePreviewBlock = ({
 		}
 	};
 
+	const saveInRoom = async () => {
+		if (!room || !code) return;
+		const filePath = `save-code-response-${Date.now()}.${codeExtension}`;
+		try {
+			setIsSavingToRoom(true);
+			await room.runRoomPixel(
+				`SaveInsightAssets(filePath=[${JSON.stringify(filePath)}], content=["<encode>${code}</encode>"]);`,
+				false,
+				false,
+			);
+			toast.success(t("notifications.savedInRoom", { filePath }));
+		} catch (error) {
+			const message =
+				error instanceof Error && error.message
+					? error.message
+					: "Error";
+
+			toast.error(message);
+		} finally {
+			setIsSavingToRoom(false);
+		}
+	};
+
 	return (
 		<>
 			<div className="relative overflow-clip rounded-md border border-border bg-background">
@@ -256,7 +280,9 @@ export const CodePreviewBlock = ({
 						disabled={!room || !code || isSavingToRoom}
 						onClick={() => void saveInRoom()}
 					>
-						{isSavingToRoom ? "Saving..." : "Save In Room"}
+						{isSavingToRoom
+							? t("response.savingToRoom")
+							: t("response.saveInRoom")}
 					</Button>
 					<Button
 						className="-my-1 h-6 px-2 text-muted-foreground text-xs hover:text-foreground"
@@ -265,7 +291,7 @@ export const CodePreviewBlock = ({
 						disabled={!code}
 						onClick={() => setIsFullViewOpen(true)}
 					>
-						Full View
+						{t("response.fullView")}
 					</Button>
 				</BlockHeader>
 				{!isCollapsed && (
@@ -292,19 +318,21 @@ export const CodePreviewBlock = ({
 										}
 									>
 										<CopyIcon className="size-3.5" />
-										Copy
+										{t("response.copy")}
 									</Button>
 								</TooltipTrigger>
 								<TooltipContent side="bottom">
-									Copy
+									{t("response.copy")}
 								</TooltipContent>
 							</Tooltip>
 						</div>
-						{/* Cap to the HTML preview height so long code scrolls in place. */}
+						{/* capped to the height an html preview uses, so a long block
+						scrolls inside the message instead of pushing the rest of the
+						conversation off screen */}
 						<div
 							ref={codeScroll.ref}
 							onScroll={codeScroll.onScroll}
-							className="overflow-auto"
+							className="overflow-auto p-3"
 							style={{ maxHeight: RESPONSE_BLOCK_MAX_HEIGHT }}
 						>
 							<Code code={code} language={language ?? "txt"} />
