@@ -1,3 +1,16 @@
+/**
+ * Height ceiling for a rendered block in a response.
+ *
+ * The html preview, the raw html behind it, and any code block all use this so
+ * they are the same size. Switching between preview and raw then does not
+ * resize the message, and a long block scrolls inside itself instead of pushing
+ * the rest of the conversation off screen.
+ */
+export const RESPONSE_BLOCK_MAX_HEIGHT = "62.5dvh";
+
+/** Floor for the same blocks, so a nearly empty preview is still usable. */
+export const RESPONSE_BLOCK_MIN_HEIGHT = "8rem";
+
 export const FENCED_HTML_RE = /```html[ \t]*\n([\s\S]*?)(?:\n```|$)/i;
 
 export const KNOWN_SHIKI_LANGS = new Set([

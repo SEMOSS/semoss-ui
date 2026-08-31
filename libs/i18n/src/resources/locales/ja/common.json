@@ -64,12 +64,6 @@
 	"images": {
 		"logoAlt": "ロゴ"
 	},
-	"fileDrag": {
-		"title": "メッセージに添付するファイルをここにドロップ",
-		"modalTitle": "ドキュメントを追加",
-		"browse": "参照",
-		"done": "完了"
-	},
 	"fileExplorer": {
 		"search": "検索",
 		"name": "名前",
@@ -136,7 +130,6 @@
 		"searchAllAria": "すべて検索",
 		"searchCurrentAria": "現在のディレクトリのみ検索",
 		"searchCurrentTitle": "{{path}} のみで検索",
-		"moveDropHint": "ドロップして {{label}} を {{path}} に移動",
 		"contextMenu": {
 			"copyPath": "パスをコピー",
 			"copy": "コピー",

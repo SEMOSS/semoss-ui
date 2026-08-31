@@ -15,6 +15,21 @@ It is the home of large shared building blocks such as the file explorer/editor,
 editor wrappers, the FlexLayout wrapper, the shared login page, engine/MCP/prompt/skill UI,
 forms, and the workbench primitives.
 
+### The file explorer (`components/file/`)
+
+State lives in `useFileExplorer(options)`, which returns one `FileExplorerApi`; `FileExplorer`,
+`FileExplorerHeader`, `FileExplorerItem`, and the context menu are presentational consumers of
+it. A host calls the hook, passes the result down as `explorer`, and drives the tree through
+`explorer.commands` — a facade whose identity never changes, so it survives being handed to a
+surface outside the explorer's React subtree. The whole api object is identity-stable for the
+same reason; such a holder sees live behaviour but **not** live state, because it does not
+re-render when the explorer does.
+
+Three props are required with no fallback, so every consumer states its intent: `explorer`,
+`header` (`null` for none), and `newFileOverlay` (`null` for a browse-only tree). Everything
+mode-specific — capabilities and one Pixel per operation — lives in
+`file-explorer.adapters.ts`; nothing else branches on `mode.type`.
+
 ## Build System
 
 `@semoss/shared` is **source-only** — it has no bundler and no `dist/`. Its `package.json`
@@ -58,6 +73,20 @@ router):
 - `flexlayout-react` — dockable layout
 - `echarts` / `echarts-for-react` — charts
 - `@iconify/react`, `lucide-react` — icons
+
+## Design-System Notes
+
+Follow the root [Design System & Styling](../../AGENTS.md#design-system--styling) rules and
+[DESIGN.md](../../DESIGN.md).
+
+- Shared domain components still compose `@semoss/ui/next`; this package is not a second
+   component library or token source.
+- Promote a composite here only when more than one application needs the same domain contract.
+   Application-specific composition stays in its owning package.
+- `src/styles/globals.css` supplies Tailwind source discovery only. Do not add design tokens
+   there; token ownership remains in `@semoss/ui`.
+- `flex-layout/flexlayout.css` is a third-party style bridge. Map its variables to semantic UI
+   tokens and use the reason-bearing external-constraint carve-out for unavoidable literals.
 
 ## Agent Guardrails
 

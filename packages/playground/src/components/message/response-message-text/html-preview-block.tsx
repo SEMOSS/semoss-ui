@@ -6,6 +6,7 @@ import {
 	SaveIcon,
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { SandpackHtmlPreview } from "@semoss/shared";
 import {
 	Button,
 	Code,
@@ -22,8 +23,12 @@ import {
 import type { RoomStore } from "@/stores";
 import { copyToClipboard } from "@/utility/clipboard";
 import { BlockHeader } from "./block-header";
-import { SandpackHtmlPreview } from "./sandpack-html-preview";
+import {
+	RESPONSE_BLOCK_MAX_HEIGHT,
+	RESPONSE_BLOCK_MIN_HEIGHT,
+} from "./constants";
 import { SaveFileDialog } from "./save-file-dialog";
+import { useStickToBottom } from "./use-stick-to-bottom";
 
 interface HtmlPreviewBlockProps {
 	html: string;
@@ -96,6 +101,8 @@ export const HtmlPreviewBlock = ({
 	const [isSaveDialogOpen, setIsSaveDialogOpen] = useState(false);
 	const [isCollapsed, setIsCollapsed] = useState(false);
 	const [isRaw, setIsRaw] = useState(false);
+	// the raw view is height capped, so it follows its own newest line
+	const rawScroll = useStickToBottom(html);
 	const [streamedHtml, setStreamedHtml] = useState(() =>
 		isLoading ? (isPreviewChunkSafe(html) ? html : "") : html,
 	);
@@ -279,7 +286,18 @@ export const HtmlPreviewBlock = ({
 				</BlockHeader>
 				{!isCollapsed &&
 					(isRaw ? (
-						<div className="p-3">
+						// capped to the same height the preview uses, so switching
+						// between them does not resize the message, and anything
+						// longer scrolls inside the block
+						<div
+							ref={rawScroll.ref}
+							onScroll={rawScroll.onScroll}
+							className="overflow-auto p-3"
+							style={{
+								maxHeight: RESPONSE_BLOCK_MAX_HEIGHT,
+								minHeight: RESPONSE_BLOCK_MIN_HEIGHT,
+							}}
+						>
 							<Code code={html} language="html" />
 						</div>
 					) : (
@@ -289,8 +307,8 @@ export const HtmlPreviewBlock = ({
 								providerClassName="min-h-0"
 								className="w-full"
 								style={{
-									height: "62.5dvh",
-									minHeight: "8rem",
+									height: RESPONSE_BLOCK_MAX_HEIGHT,
+									minHeight: RESPONSE_BLOCK_MIN_HEIGHT,
 								}}
 							/>
 							{isLoading && (

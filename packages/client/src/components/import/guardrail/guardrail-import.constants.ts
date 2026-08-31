@@ -116,6 +116,166 @@ export const GUARDRAIL_CONNECTION = {
 			],
 		},
 		{
+			name: "On Topic",
+			disable: false,
+			icon: Python,
+			description:
+				"Checks whether a prompt is on-topic by performing a similarity search against a pre-loaded vector database of example on-topic content. Prompts whose best similarity score falls below the configured threshold are rejected.",
+			fields: [
+				{
+					key: "MODEL_NAME",
+					label: "Catalog Name",
+					value: "",
+					type: "text",
+					disabled: false,
+					required: true,
+					category: "General",
+					rules: {
+						pattern: {
+							value: /^[\w\-\s]+$/,
+							message:
+								"Catalog names can only contain alphanumeric characters and dashes.",
+						},
+						custom_rules: {
+							value: 'CheckEngineName ( "[VALUE]") ;',
+							message:
+								"This Catalog name has already been used, please try another.",
+						},
+					},
+				},
+				{
+					key: "VECTOR_ENGINE_ID",
+					label: "Vector Database",
+					value: "",
+					type: "select",
+					options: [],
+					optionRule: {
+						pixel: `MyEngines(engineTypes=['VECTOR']);`,
+						optionDisplay: "engine_name",
+						optionValue: "engine_id",
+					},
+					disabled: false,
+					required: true,
+					category: "Settings",
+					helperText:
+						"The vector database pre-loaded with on-topic example prompts/documents used for similarity search.",
+				},
+				{
+					key: "SCORE_IS_DISTANCE",
+					label: "Similarity Metric",
+					value: "true",
+					type: "select",
+					options: [
+						{ value: "true", display: "L2 Distance" },
+						{ value: "false", display: "Cosine" },
+					],
+					disabled: false,
+					required: true,
+					category: "Settings",
+					helperText:
+						"Whether the vector database's Score is a distance (L2) or a similarity (Cosine).",
+				},
+				{
+					key: "DEFAULT_THRESHOLD",
+					label: "Default Threshold",
+					value: "0.5",
+					type: "number",
+					disabled: false,
+					required: false,
+					category: "Settings",
+					helperText:
+						"Minimum similarity score (0-1) for a prompt to be considered on-topic. Defaults to 0.5.",
+				},
+				{
+					key: "LIMIT",
+					label: "Nearest Neighbour Limit",
+					value: "5",
+					type: "number",
+					disabled: false,
+					required: false,
+					category: "Settings",
+					helperText:
+						"Number of nearest neighbours retrieved from the vector database per query. Defaults to 5.",
+				},
+				{
+					key: "GUARDRAIL_TYPE",
+					label: "Guardrail Type",
+					value: "EMBEDDED_ON_TOPIC",
+					type: "text",
+					disabled: true,
+					required: false,
+					category: "Settings",
+				},
+			],
+		},
+		{
+			name: "Aggressive / Self-Harm",
+			disable: false,
+			icon: Python,
+			description:
+				"Detects aggressive, violent, or self-harm content in user prompts by routing the check through a configured LLM.",
+			fields: [
+				{
+					key: "MODEL_NAME",
+					label: "Catalog Name",
+					value: "",
+					type: "text",
+					disabled: false,
+					required: true,
+					category: "General",
+					rules: {
+						pattern: {
+							value: /^[\w\-\s]+$/,
+							message:
+								"Catalog names can only contain alphanumeric characters and dashes.",
+						},
+						custom_rules: {
+							value: 'CheckEngineName ( "[VALUE]") ;',
+							message:
+								"This Catalog name has already been used, please try another.",
+						},
+					},
+				},
+				{
+					key: "MODEL_ENGINE_ID",
+					label: "Model Engine",
+					value: "",
+					type: "select",
+					options: [],
+					optionRule: {
+						pixel: `MyEngines(engineTypes=['MODEL']);`,
+						optionDisplay: "engine_name",
+						optionValue: "engine_id",
+					},
+					disabled: false,
+					required: true,
+					category: "Settings",
+					helperText:
+						"The LLM used to evaluate whether a prompt contains aggressive or self-harm content.",
+				},
+				{
+					key: "DEFAULT_THRESHOLD",
+					label: "Default Threshold",
+					value: "0.5",
+					type: "number",
+					disabled: false,
+					required: false,
+					category: "Settings",
+					helperText:
+						"Score threshold (0-1) above which a prompt is considered harmful. Defaults to 0.5.",
+				},
+				{
+					key: "GUARDRAIL_TYPE",
+					label: "Guardrail Type",
+					value: "EMBEDDED_AGGRESSIVE_SELF_HARM",
+					type: "text",
+					disabled: true,
+					required: false,
+					category: "Settings",
+				},
+			],
+		},
+		{
 			name: "Local Python Guardrail",
 			disable: false,
 			icon: Python,

@@ -1,6 +1,6 @@
 import { Plus } from "lucide-react";
 import { observer } from "mobx-react-lite";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { useIteratorPixel, usePixel } from "@semoss/sdk/react";
 import type { Project } from "@semoss/shared";
@@ -37,7 +37,7 @@ const CATALOG_CONFIG = {
 		createPath: "/app/new",
 		basePath: "/app",
 		itemSubPath: "view",
-		pixelFilter: 'projectType=["CODE", "BLOCKS"]',
+		projectTypes: ["CODE", "BLOCKS"],
 		showSystemTab: true,
 	},
 	SKILL: {
@@ -47,7 +47,7 @@ const CATALOG_CONFIG = {
 		createPath: "/skill/new",
 		basePath: "/skill",
 		itemSubPath: "view",
-		pixelFilter: 'projectType=["SKILL"]',
+		projectTypes: ["SKILL"],
 		showSystemTab: false,
 	},
 	WORKSPACE: {
@@ -57,8 +57,7 @@ const CATALOG_CONFIG = {
 		createPath: "/agent/new",
 		basePath: "/agent",
 		itemSubPath: "edit",
-		pixelFilter: 'projectType=["WORKSPACE"]',
-
+		projectTypes: ["WORKSPACE"],
 		showSystemTab: false,
 	},
 	NOTEBOOK: {
@@ -68,9 +67,20 @@ const CATALOG_CONFIG = {
 		createPath: "/notebook/new",
 		basePath: "/notebook",
 		itemSubPath: "view",
-		pixelFilter: 'projectType=["NOTEBOOK"]',
+		projectTypes: ["NOTEBOOK"],
 		showSystemTab: false,
 	},
+} as const;
+
+// CATALOG_CONFIG keys are catalog UI types (CODE covers Code+Blocks project
+// creation); map each to the admin-only permission type that actually gates
+// it, since CODE creation still falls under the "PROJECT" restriction while
+// Skill/Agent now have their own independent admin-only flags.
+const CATALOG_PERMISSION_TYPE = {
+	CODE: "PROJECT",
+	SKILL: "SKILL",
+	WORKSPACE: "WORKSPACE",
+	NOTEBOOK: "PROJECT",
 } as const;
 
 type TabMode = "Mine" | "Discoverable" | "System";
@@ -159,13 +169,22 @@ export const ProjectCatalog = observer(
 
 		const metaKeysDescription = [...metaKeys, "description"];
 
+		// The project types this view lists. Shared by the MyProjects calls below
+		// and by the filter box's GetProjectMetaValues call, so the filter options
+		// are always counted over exactly the projects the view can show.
+		const projectTypes = useMemo(
+			() => [...config.projectTypes],
+			[config.projectTypes],
+		);
+		const projectTypeFilter = `projectType=${JSON.stringify(projectTypes)}`;
+
 		const getFavoriteProjects = usePixel<Project[]>(
 			tab === "Mine"
 				? `MyProjects(metaKeys = ${JSON.stringify(
 						metaKeysDescription,
 					)}, metaFilters=[${JSON.stringify(
 						metaFilters,
-					)}], filterWord=["${debouncedSearch}"], sort=[{"${sortValue}" : "${sortOrder}"}], ${config.pixelFilter}, onlyFavorites=[true]);`
+					)}], filterWord=["${debouncedSearch}"], sort=[{"${sortValue}" : "${sortOrder}"}], ${projectTypeFilter}, onlyFavorites=[true]);`
 				: "",
 			{
 				data: [],
@@ -188,7 +207,7 @@ export const ProjectCatalog = observer(
 					metaKeysDescription,
 				)}, metaFilters=[${JSON.stringify(
 					metaFilters,
-				)}], filterWord=["${debouncedSearch}"], sort=[{"${sortValue}" : "${sortOrder}"}], ${config.pixelFilter}, limit=[${limit}], offset=[${offset}]);`;
+				)}], filterWord=["${debouncedSearch}"], sort=[{"${sortValue}" : "${sortOrder}"}], ${projectTypeFilter}, limit=[${limit}], offset=[${offset}]);`;
 			},
 			(response) => {
 				// if its less than the limit, we know its the end
@@ -370,7 +389,9 @@ export const ProjectCatalog = observer(
 					description={config.description}
 					headerActions={
 						configStore.isEngineOperationAvailable(
-							"PROJECT",
+							CATALOG_PERMISSION_TYPE[
+								type as keyof typeof CATALOG_PERMISSION_TYPE
+							],
 							"add",
 						) ? (
 							<Button
@@ -450,12 +471,15 @@ export const ProjectCatalog = observer(
 					filterBox={
 						!configStore.store.config.adminOnlyViewMenuBarFlag &&
 						configStore.isEngineOperationAvailable(
-							"PROJECT",
+							CATALOG_PERMISSION_TYPE[
+								type as keyof typeof CATALOG_PERMISSION_TYPE
+							],
 							"add",
 						) ? (
 							<CatalogFilterBox
 								key={filterKey}
 								type={type}
+								projectTypes={projectTypes}
 								filters={
 									metaFilters as Record<string, string[]>
 								}

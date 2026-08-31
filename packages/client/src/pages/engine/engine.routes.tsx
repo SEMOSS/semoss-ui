@@ -5,9 +5,11 @@ import { GuardrailImport } from "@/components/import/guardrail/guardrail-import"
 import { StorageImport } from "@/components/import/storage/storage-import";
 import { VectorImport } from "@/components/import/vector/vector-import";
 import { ImportLayout, ModelImportPage } from "../import";
+import { DatabaseWorkbenchPage } from "./database-workbench-page";
 import { EngineActivityPage } from "./engine-activity-page";
 import { EngineCommitsPage } from "./engine-commits-page";
 import { EngineDescriptionSettingsPage } from "./engine-description-settings-page";
+import { EngineGuardrailSettingsPage } from "./engine-guardrail-settings-page";
 import { EngineIndexPage } from "./engine-index-page";
 import { EngineLayout } from "./engine-layout";
 import { EngineMcpUsagePage } from "./engine-mcp-usage-page";
@@ -20,7 +22,11 @@ import { EngineSmssPage } from "./engine-smss-page";
 import { EngineTabsLayout } from "./engine-tabs-layout";
 import { EngineTagsSettingsPage } from "./engine-tags-settings-page";
 import { EngineUsagePage } from "./engine-usage-page";
-import { EngineWorkbenchPage } from "./engine-workbench-page";
+import { FunctionWorkbenchPage } from "./function-workbench-page";
+import { GuardrailWorkbenchPage } from "./guardrail-workbench-page";
+import { ModelWorkbenchPage } from "./model-workbench-page";
+import { StorageWorkbenchPage } from "./storage-workbench-page";
+import { VectorWorkbenchPage } from "./vector-workbench-page";
 
 export const ENGINE_ROUTES: {
 	/** Name of the specific path (omitted for pathless layout routes) */
@@ -65,7 +71,7 @@ export const ENGINE_ROUTES: {
 				children: [
 					{
 						path: "workbench",
-						element: <EngineWorkbenchPage />,
+						element: <FunctionWorkbenchPage />,
 					},
 					{
 						path: "*",
@@ -189,7 +195,7 @@ export const ENGINE_ROUTES: {
 				children: [
 					{
 						path: "workbench",
-						element: <EngineWorkbenchPage />,
+						element: <ModelWorkbenchPage />,
 					},
 					{
 						path: "*",
@@ -291,6 +297,12 @@ export const ENGINE_ROUTES: {
 										),
 									},
 									{
+										path: "guardrails",
+										element: (
+											<EngineGuardrailSettingsPage />
+										),
+									},
+									{
 										path: "*",
 										element: (
 											<Navigate to="model" replace />
@@ -340,7 +352,7 @@ export const ENGINE_ROUTES: {
 				children: [
 					{
 						path: "workbench",
-						element: <EngineWorkbenchPage />,
+						element: <DatabaseWorkbenchPage />,
 					},
 					{
 						path: "*",
@@ -467,7 +479,7 @@ export const ENGINE_ROUTES: {
 				children: [
 					{
 						path: "workbench",
-						element: <EngineWorkbenchPage />,
+						element: <VectorWorkbenchPage />,
 					},
 					{
 						path: "*",
@@ -581,7 +593,7 @@ export const ENGINE_ROUTES: {
 				children: [
 					{
 						path: "workbench",
-						element: <EngineWorkbenchPage />,
+						element: <StorageWorkbenchPage />,
 					},
 					{
 						path: "*",
@@ -623,16 +635,6 @@ export const ENGINE_ROUTES: {
 											"READ_ONLY",
 											"EDIT",
 											"OWNER",
-										],
-									},
-									{
-										name: "Storage Viewer",
-										path: "storage-viewer",
-										restrict: [
-											"READ_ONLY",
-											"EDIT",
-											"OWNER",
-											"DISCOVERABLE",
 										],
 									},
 									{
@@ -705,7 +707,7 @@ export const ENGINE_ROUTES: {
 				children: [
 					{
 						path: "workbench",
-						element: <EngineWorkbenchPage />,
+						element: <GuardrailWorkbenchPage />,
 					},
 					{
 						path: "*",
