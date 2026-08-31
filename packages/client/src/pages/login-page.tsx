@@ -1,7 +1,6 @@
 import { Eye, EyeOff, Loader2 } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useEffect, useId, useMemo, useState } from "react";
-import { Controller, useForm } from "react-hook-form";
 import { type Location, Navigate, useLocation } from "react-router-dom";
 import {
 	getLoginProviderInitials,
@@ -12,6 +11,7 @@ import {
 	Alert,
 	AlertDescription,
 	Button,
+	Controller,
 	cn,
 	Dialog,
 	DialogContent,
@@ -25,6 +25,7 @@ import {
 	TooltipContent,
 	TooltipTrigger,
 	toast,
+	useForm,
 	useTheme,
 } from "@semoss/ui/next";
 import { setupResetPassword } from "@/api/auth";

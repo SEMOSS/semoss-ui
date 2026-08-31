@@ -1,6 +1,5 @@
 import { Copy, DownloadIcon, Link as LinkIcon, User } from "lucide-react";
 import { useEffect, useState } from "react";
-import { Controller, useForm } from "react-hook-form";
 import { download, usePixel } from "@semoss/sdk/react";
 import type { Project } from "@semoss/shared";
 import {
@@ -12,6 +11,7 @@ import {
 	CardDescription,
 	CardHeader,
 	CardTitle,
+	Controller,
 	Field,
 	FileDropzone,
 	H3,
@@ -25,6 +25,7 @@ import {
 	TableCell,
 	TableRow,
 	toast,
+	useForm,
 } from "@semoss/ui/next";
 import { uploadFile as uploadFileAPI } from "@/api";
 import { Java } from "@/assets/img/Java";

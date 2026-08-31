@@ -2,9 +2,8 @@ import { Notebook } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import type React from "react";
 import { useId } from "react";
-import { Controller, useForm } from "react-hook-form";
 import { ActionMessages, useBlocks } from "@semoss/renderer";
-import { Button, Input, Label } from "@semoss/ui/next";
+import { Button, Controller, Input, Label, useForm } from "@semoss/ui/next";
 import { useRootStore } from "@/hooks";
 
 type NewQueryForm = {

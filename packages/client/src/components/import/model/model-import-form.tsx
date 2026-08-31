@@ -3,7 +3,6 @@
 
 import { ChevronDown, ChevronUp, TriangleAlert, X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Controller, useForm, useWatch } from "react-hook-form";
 import { usePixel } from "@semoss/sdk/react";
 import {
 	Button,
@@ -11,6 +10,7 @@ import {
 	Collapsible,
 	CollapsibleContent,
 	CollapsibleTrigger,
+	Controller,
 	Field,
 	FieldDescription,
 	FieldLabel,
@@ -27,6 +27,8 @@ import {
 	Switch,
 	Textarea,
 	toast,
+	useForm,
+	useWatch,
 } from "@semoss/ui/next";
 import { uploadFile } from "@/api";
 import {

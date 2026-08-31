@@ -1,6 +1,5 @@
 import { SaveIcon } from "lucide-react";
 import { useEffect, useId, useState } from "react";
-import { Controller, useForm } from "react-hook-form";
 import {
 	type MCPConfig,
 	MCPSelector,
@@ -10,6 +9,7 @@ import {
 } from "@semoss/shared";
 import {
 	Button,
+	Controller,
 	Field,
 	FieldLabel,
 	Input,
@@ -17,6 +17,7 @@ import {
 	Spinner,
 	Textarea,
 	toast,
+	useForm,
 } from "@semoss/ui/next";
 import {
 	AGENT_FORM_DEFAULT_VALUES,

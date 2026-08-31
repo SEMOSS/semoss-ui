@@ -1,11 +1,11 @@
 import { X } from "lucide-react";
 import { useId, useMemo, useState } from "react";
-import { Controller, useForm } from "react-hook-form";
 import type { SerializedState } from "@semoss/renderer";
 import type { Project } from "@semoss/shared";
 import {
 	Badge,
 	Button,
+	Controller,
 	Dialog,
 	DialogContent,
 	DialogFooter,
@@ -16,6 +16,7 @@ import {
 	Progress,
 	Textarea,
 	toast,
+	useForm,
 } from "@semoss/ui/next";
 import { uploadImage } from "@/api";
 import { useRootStore } from "@/hooks";

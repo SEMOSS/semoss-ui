@@ -1,8 +1,9 @@
 import { Trash2 } from "lucide-react";
-import { type Control, Controller, useFieldArray } from "react-hook-form";
 import {
 	Button,
 	Checkbox,
+	type Control,
+	Controller,
 	Muted,
 	Select,
 	SelectContent,
@@ -10,6 +11,7 @@ import {
 	SelectTrigger,
 	SelectValue,
 	Textarea,
+	useFieldArray,
 } from "@semoss/ui/next";
 import {
 	type AgentFormValues,
