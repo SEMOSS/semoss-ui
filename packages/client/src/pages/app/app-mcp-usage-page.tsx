@@ -43,7 +43,7 @@ const hasPixelError = (operationType?: string[] | string): boolean => {
 	return false;
 };
 
-export interface AppMcpUsagePageProps {
+interface AppMcpUsagePageProps {
 	/**
 	 * Whether to offer the remote MCP connection editor, which repoints this
 	 * project's MCP at an external endpoint. Defaults to true; pass false where

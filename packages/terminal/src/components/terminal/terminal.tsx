@@ -10,7 +10,17 @@ import {
 import { createPortal } from "react-dom";
 import { getLanguageDirection, useTranslation } from "@semoss/i18n";
 import { InsightProvider } from "@semoss/sdk/react";
-import { FileExplorer, FlexLayout, getFileIconComponent } from "@semoss/shared";
+import {
+	FileExplorer,
+	FileExplorerHeader,
+	FileExplorerNewAction,
+	FileExplorerRefreshAction,
+	type FileItem,
+	FlexLayout,
+	getFileIconComponent,
+	NewFileOverlay,
+	useFileExplorer,
+} from "@semoss/shared";
 import type { FileMode, SelectedFile } from "../../types";
 import { modeKey } from "../../utility/file-mode";
 import {
@@ -24,15 +34,6 @@ import { ScopePicker } from "./scope-picker";
 import { useTerminal } from "./terminal-context";
 import { UploadModal } from "./upload-modal";
 import { UserMenu } from "./user-menu";
-
-// FileItem isn't re-exported from `@semoss/shared`'s public index — declare
-// the subset we touch locally so we don't have to reach into deep paths.
-interface FileExplorerItem {
-	name: string;
-	path: string;
-	type?: "directory";
-	lastModified?: string;
-}
 
 // Lazy-load the heavy editor panes so Monaco (file editor, via @semoss/shared's
 // FileEditor) doesn't sit in the main bundle. The Suspense fallback below
@@ -182,7 +183,7 @@ const getFileTabIcon = (fileName: string) => {
 
 interface FileExplorerPaneProps {
 	mode: ReturnType<typeof useTerminal>["fileMode"];
-	onItemSelect: (item: FileExplorerItem) => void;
+	onItemSelect: (item: FileItem) => void;
 }
 
 /**
@@ -190,14 +191,39 @@ interface FileExplorerPaneProps {
  * Help + User live in a fixed-position footer outside this pane so they
  * stay visible even when the border is collapsed (see SidebarFooter below).
  */
-const FileExplorerPane = ({ mode, onItemSelect }: FileExplorerPaneProps) => (
-	<div className="flex h-full flex-col bg-background">
-		<ScopePicker />
-		<div className="relative min-h-0 flex-1">
-			<FileExplorer mode={mode} onItemSelect={onItemSelect} />
+const FileExplorerPane = ({ mode, onItemSelect }: FileExplorerPaneProps) => {
+	const explorer = useFileExplorer({
+		mode: mode,
+		onItemSelect: onItemSelect,
+	});
+
+	return (
+		<div className="flex h-full flex-col bg-background">
+			<ScopePicker />
+			<div className="relative min-h-0 flex-1">
+				<FileExplorer
+					explorer={explorer}
+					header={
+						<FileExplorerHeader
+							explorer={explorer}
+							actions={
+								<>
+									<FileExplorerRefreshAction
+										explorer={explorer}
+									/>
+									<FileExplorerNewAction
+										explorer={explorer}
+									/>
+								</>
+							}
+						/>
+					}
+					newFileOverlay={NewFileOverlay}
+				/>
+			</div>
 		</div>
-	</div>
-);
+	);
+};
 
 interface SidebarFooterProps {
 	onHelpClick: () => void;
@@ -444,7 +470,7 @@ export const Terminal = ({
 	}, [paneDir]);
 
 	const handleItemSelect = useCallback(
-		(item: FileExplorerItem) => {
+		(item: FileItem) => {
 			if (item.type === "directory") return;
 			const stub: SelectedFile = {
 				name: item.name,
