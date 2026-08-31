@@ -77,7 +77,6 @@ export const ENGINE_IMAGES: Record<string, EngineImageEntry[]> = {
 		{ name: "BRAVE_SEARCH", icon: "BRAVE_SEARCH.svg" },
 		{ name: "EXCHANGE_IMAP", icon: "EXCHANGE_IMAP.svg" },
 		{ name: "EXCHANGE_POP3", icon: "EXCHANGE_POP3.svg" },
-		{ name: "EXCHANGE_SMTP", icon: "EXCHANGE_SMTP.svg" },
 		{ name: "GOOGLE_OCR", icon: "GOOGLE_OCR.png" },
 		{ name: "GOOGLE_OCR_CUSTOM_EMBEDDINGS", icon: "GOOGLE_OCR.png" },
 		{ name: "GOOGLE_SPEECH_TO_TEXT", icon: "GOOGLE_SPEECH_TO_TEXT.png" },
@@ -90,6 +89,7 @@ export const ENGINE_IMAGES: Record<string, EngineImageEntry[]> = {
 		{ name: "REST", icon: "REST-API.svg" },
 		{ name: "SERVICE_NOW", icon: "SERVICE_NOW.svg" },
 		{ name: "SMTP", icon: "SMTP.svg" },
+		{ name: "EXCHANGE_SMTP", icon: "EXCHANGE_SMTP.svg" },
 		{ name: "ZIP", icon: "ZIP.svg" },
 	],
 	GUARDRAIL: [

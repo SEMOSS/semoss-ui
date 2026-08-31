@@ -953,6 +953,27 @@ export const FUNCTION_CONNECTIONS = {
 					category: "General",
 				},
 				{
+					key: "MAIL_TRANSPORT",
+					label: "Read Through",
+					value: "graph",
+					type: "select",
+					options: [
+						{
+							display: "Microsoft Graph",
+							value: "graph",
+						},
+						{
+							display: "IMAP protocol",
+							value: "jakarta",
+						},
+					],
+					disabled: false,
+					required: true,
+					helperText:
+						"Graph reads through the Microsoft 365 API and needs only the Mail.ReadWrite application permission. IMAP additionally needs IMAP.AccessAsApp, a service principal, and a mailbox grant, and Microsoft keeps narrowing what the protocol endpoints will do.",
+					category: "General",
+				},
+				{
 					key: "IMAP_USERNAME",
 					label: "Mailbox Address",
 					value: "",
@@ -960,7 +981,7 @@ export const FUNCTION_CONNECTIONS = {
 					disabled: false,
 					required: true,
 					helperText:
-						"The mailbox to read, ie reports@yourdomain.com. Exchange has to have been told to let this application open this mailbox.",
+						"The mailbox to read, ie reports@yourdomain.com. The application has to have been granted access to it.",
 					category: "Credentials",
 				},
 				{
@@ -1016,6 +1037,7 @@ export const FUNCTION_CONNECTIONS = {
 					required: false,
 					helperText:
 						"Leave as is for Microsoft 365. Only change this for a different endpoint, such as a sovereign cloud.",
+					showWhen: { field: "MAIL_TRANSPORT", eq: "jakarta" },
 					category: "Credentials",
 				},
 				{
@@ -1027,6 +1049,7 @@ export const FUNCTION_CONNECTIONS = {
 					required: false,
 					helperText:
 						"993, the encrypted IMAP port Exchange Online serves.",
+					showWhen: { field: "MAIL_TRANSPORT", eq: "jakarta" },
 					category: "Credentials",
 				},
 				{
@@ -1319,6 +1342,27 @@ export const FUNCTION_CONNECTIONS = {
 					category: "General",
 				},
 				{
+					key: "MAIL_TRANSPORT",
+					label: "Read Through",
+					value: "graph",
+					type: "select",
+					options: [
+						{
+							display: "Microsoft Graph",
+							value: "graph",
+						},
+						{
+							display: "POP3 protocol",
+							value: "jakarta",
+						},
+					],
+					disabled: false,
+					required: true,
+					helperText:
+						"Graph reads through the Microsoft 365 API and needs only the Mail.ReadWrite application permission. POP3 additionally needs POP.AccessAsApp, a service principal, and a mailbox grant, and Microsoft keeps narrowing what the protocol endpoints will do.",
+					category: "General",
+				},
+				{
 					key: "POP3_USERNAME",
 					label: "Mailbox Address",
 					value: "",
@@ -1326,7 +1370,7 @@ export const FUNCTION_CONNECTIONS = {
 					disabled: false,
 					required: true,
 					helperText:
-						"The mailbox to read, ie reports@yourdomain.com. Exchange has to have been told to let this application open this mailbox.",
+						"The mailbox to read, ie reports@yourdomain.com. The application has to have been granted access to it.",
 					category: "Credentials",
 				},
 				{
@@ -1382,6 +1426,7 @@ export const FUNCTION_CONNECTIONS = {
 					required: false,
 					helperText:
 						"Leave as is for Microsoft 365. Only change this for a different endpoint, such as a sovereign cloud.",
+					showWhen: { field: "MAIL_TRANSPORT", eq: "jakarta" },
 					category: "Credentials",
 				},
 				{
@@ -1393,6 +1438,7 @@ export const FUNCTION_CONNECTIONS = {
 					required: false,
 					helperText:
 						"995, the encrypted POP3 port Exchange Online serves.",
+					showWhen: { field: "MAIL_TRANSPORT", eq: "jakarta" },
 					category: "Credentials",
 				},
 				{
@@ -1539,12 +1585,12 @@ export const FUNCTION_CONNECTIONS = {
 			],
 		},
 		{
-			name: "Exchange Send (SMTP)",
+			name: "Exchange Send",
 			disable: false,
 			icon: EXCHANGE_SMTP,
 			description:
-				"Send email as a Microsoft 365 mailbox, signing in with an Azure app registration rather than a mailbox password.",
-			notice: "Sending is immediate and cannot be recalled. On top of the usual recipient limits below, Exchange needs four things to line up: the SMTP.SendAsApp application permission with admin consent, an Exchange grant for this mailbox, SMTP AUTH enabled for both the tenant and the mailbox, and a sender address that matches the mailbox signed in to.",
+				"Send email as a Microsoft 365 mailbox, through the Graph API or over SMTP. Pick which below - the limits on what this engine may send are the same either way.",
+			notice: "Sending is immediate and cannot be recalled. Graph needs only the Mail.Send application permission with admin consent. SMTP additionally needs SMTP.SendAsApp, a service principal, a mailbox grant, and SMTP AUTH enabled for the tenant and the mailbox, which is why Graph is the default.",
 			fields: [
 				{
 					key: "FUNCTION_TYPE",
@@ -1578,14 +1624,130 @@ export const FUNCTION_CONNECTIONS = {
 					category: "General",
 				},
 				{
-					key: "SMTP_HOST",
-					label: "SMTP Host",
-					value: "smtp.office365.com",
+					key: "MAIL_TRANSPORT",
+					label: "Send Through",
+					value: "graph",
+					type: "select",
+					options: [
+						{
+							display: "Microsoft Graph",
+							value: "graph",
+						},
+						{
+							display: "SMTP mail server",
+							value: "smtp",
+						},
+					],
+					disabled: false,
+					required: true,
+					helperText:
+						"Graph sends through the Microsoft 365 API and only needs the Mail.Send application permission. SMTP sends through a mail server, which is the right choice for any relay that is not Microsoft 365, and against Microsoft 365 additionally needs SMTP AUTH enabled and a separate SMTP.SendAsApp grant.",
+					category: "General",
+				},
+				{
+					key: "SMTP_SENDER",
+					label: "Sender Address",
+					value: "",
 					type: "text",
 					disabled: false,
 					required: true,
 					helperText:
-						"Leave as is for Microsoft 365. Only change this for a different endpoint, such as a sovereign cloud.",
+						"The mailbox every email is sent from. Graph posts against this mailbox, and most relays reject a sender that does not match the authenticated account.",
+					category: "Credentials",
+				},
+				{
+					key: "SMTP_SENDER_NAME",
+					label: "Sender Display Name",
+					value: "",
+					type: "text",
+					disabled: false,
+					required: false,
+					helperText:
+						"Shown next to the sender address in the recipient's inbox, ie SEMOSS Notifications.",
+					category: "Credentials",
+				},
+				{
+					key: "GRAPH_TENANT",
+					label: "Tenant Id",
+					value: "",
+					type: "text",
+					disabled: false,
+					required: true,
+					helperText:
+						"The directory (tenant) id of the Azure app registration, or the tenant domain.",
+					showWhen: { field: "MAIL_TRANSPORT", eq: "graph" },
+					category: "Credentials",
+				},
+				{
+					key: "GRAPH_CLIENT_ID",
+					label: "Client Id",
+					value: "",
+					type: "text",
+					disabled: false,
+					required: true,
+					helperText:
+						"The application (client) id of the app registration.",
+					showWhen: { field: "MAIL_TRANSPORT", eq: "graph" },
+					category: "Credentials",
+				},
+				{
+					key: "GRAPH_CLIENT_SECRET",
+					label: "Client Secret",
+					value: "",
+					type: "password",
+					disabled: false,
+					required: true,
+					helperText:
+						"A client secret on the app registration. Secrets expire, so the engine stops sending when it does.",
+					showWhen: { field: "MAIL_TRANSPORT", eq: "graph" },
+					category: "Credentials",
+				},
+				{
+					key: "GRAPH_SCOPE",
+					label: "Token Scope",
+					value: "",
+					type: "text",
+					disabled: false,
+					required: false,
+					helperText:
+						"Optional. Defaults to https://graph.microsoft.com/.default, which asks for whatever application permissions the app registration was granted.",
+					showWhen: { field: "MAIL_TRANSPORT", eq: "graph" },
+					category: "Credentials",
+				},
+				{
+					key: "GRAPH_BASE_URL",
+					label: "Graph Base Url",
+					value: "",
+					type: "text",
+					disabled: false,
+					required: false,
+					helperText:
+						"Optional. Defaults to https://graph.microsoft.com/v1.0. Only change this for a sovereign cloud.",
+					showWhen: { field: "MAIL_TRANSPORT", eq: "graph" },
+					category: "Credentials",
+				},
+				{
+					key: "SAVE_TO_SENT_ITEMS",
+					label: "Save To Sent Items",
+					value: "true",
+					type: "text",
+					disabled: false,
+					required: false,
+					helperText:
+						"Whether a sent message is kept in the mailbox's Sent Items. Defaults to true.",
+					showWhen: { field: "MAIL_TRANSPORT", eq: "graph" },
+					category: "Settings",
+				},
+				{
+					key: "SMTP_HOST",
+					label: "SMTP Host",
+					value: "",
+					type: "text",
+					disabled: false,
+					required: true,
+					helperText:
+						"The mail server hostname, ie smtp.office365.com or an internal relay.",
+					showWhen: { field: "MAIL_TRANSPORT", eq: "smtp" },
 					category: "Credentials",
 				},
 				{
@@ -1596,7 +1758,8 @@ export const FUNCTION_CONNECTIONS = {
 					disabled: false,
 					required: true,
 					helperText:
-						"587, the submission port Exchange Online serves.",
+						"587 for STARTTLS, 465 for SSL, 25 for a relay that does no encryption.",
+					showWhen: { field: "MAIL_TRANSPORT", eq: "smtp" },
 					category: "Credentials",
 				},
 				{
@@ -1621,18 +1784,20 @@ export const FUNCTION_CONNECTIONS = {
 					disabled: false,
 					required: true,
 					helperText:
-						"STARTTLS, which is what Exchange Online serves on the submission port. It is required rather than optional, so a server that drops it cannot downgrade the message to plaintext.",
+						"STARTTLS is required rather than optional, so a server that drops it cannot downgrade the message to plaintext. Only use None for an internal relay.",
+					showWhen: { field: "MAIL_TRANSPORT", eq: "smtp" },
 					category: "Credentials",
 				},
 				{
 					key: "SMTP_USERNAME",
-					label: "Mailbox Address",
+					label: "Username",
 					value: "",
 					type: "text",
 					disabled: false,
-					required: true,
+					required: false,
 					helperText:
-						"The mailbox to send as, ie reports@yourdomain.com. Exchange has to have been told to let this application use it.",
+						"Leave the username and password both blank for a relay that does not authenticate.",
+					showWhen: { field: "MAIL_TRANSPORT", eq: "smtp" },
 					category: "Credentials",
 				},
 				{
@@ -1641,9 +1806,10 @@ export const FUNCTION_CONNECTIONS = {
 					value: "",
 					type: "text",
 					disabled: false,
-					required: true,
+					required: false,
 					helperText:
 						"The directory (tenant) id of the Azure app registration, or the tenant domain.",
+					showWhen: { field: "MAIL_TRANSPORT", eq: "smtp" },
 					category: "Credentials",
 				},
 				{
@@ -1652,9 +1818,10 @@ export const FUNCTION_CONNECTIONS = {
 					value: "",
 					type: "text",
 					disabled: false,
-					required: true,
+					required: false,
 					helperText:
-						"The application (client) id of the app registration.",
+						"The application (client) id. Over SMTP this needs the SMTP.SendAsApp permission rather than Mail.Send.",
+					showWhen: { field: "MAIL_TRANSPORT", eq: "smtp" },
 					category: "Credentials",
 				},
 				{
@@ -1663,42 +1830,9 @@ export const FUNCTION_CONNECTIONS = {
 					value: "",
 					type: "password",
 					disabled: false,
-					required: true,
-					helperText:
-						"A client secret on the app registration. Secrets expire, so the engine stops sending when it does.",
-					category: "Credentials",
-				},
-				{
-					key: "EXCHANGE_SCOPE",
-					label: "Token Scope",
-					value: "",
-					type: "text",
-					disabled: false,
 					required: false,
-					helperText:
-						"Optional. Defaults to https://outlook.office365.com/.default, which asks for whatever application permissions the app registration was granted.",
-					category: "Credentials",
-				},
-				{
-					key: "SMTP_SENDER",
-					label: "Sender Address",
-					value: "",
-					type: "text",
-					disabled: false,
-					required: true,
-					helperText:
-						"The address every email is sent from, which Exchange requires to be the mailbox signed in to above, so these normally match.",
-					category: "Credentials",
-				},
-				{
-					key: "SMTP_SENDER_NAME",
-					label: "Sender Display Name",
-					value: "",
-					type: "text",
-					disabled: false,
-					required: false,
-					helperText:
-						"Shown next to the sender address in the recipient's inbox, ie SEMOSS Notifications.",
+					helperText: "A client secret on the app registration.",
+					showWhen: { field: "MAIL_TRANSPORT", eq: "smtp" },
 					category: "Credentials",
 				},
 				{
@@ -1839,6 +1973,7 @@ export const FUNCTION_CONNECTIONS = {
 					required: false,
 					helperText:
 						"How long to wait for the mail server to accept a connection.",
+					showWhen: { field: "MAIL_TRANSPORT", eq: "smtp" },
 					category: "Settings",
 				},
 				{
@@ -1850,6 +1985,7 @@ export const FUNCTION_CONNECTIONS = {
 					required: false,
 					helperText:
 						"How long to wait on the mail server once connected.",
+					showWhen: { field: "MAIL_TRANSPORT", eq: "smtp" },
 					category: "Settings",
 				},
 				{
@@ -2892,6 +3028,333 @@ export const FUNCTION_CONNECTIONS = {
 			],
 		},
 		{
+			name: "SMTP Email",
+			disable: false,
+			icon: SMTP,
+			description:
+				"Send email through an SMTP mail server whose credentials live on this engine rather than in social.properties.",
+			notice: "Sending is immediate and cannot be recalled. Use the recipient domain, recipient count, and sender override settings below to bound what this engine is allowed to send.",
+			fields: [
+				{
+					key: "FUNCTION_TYPE",
+					label: "Function Type",
+					value: "SMTP",
+					type: "text",
+					disabled: true,
+					hidden: true,
+					required: true,
+					category: "General",
+				},
+				{
+					key: "NAME",
+					label: "Catalog Name",
+					value: "",
+					type: "text",
+					disabled: false,
+					required: true,
+					rules: {
+						pattern: {
+							value: /^[\w\-\s]+$/,
+							message:
+								"Catalog names can only contain alphanumeric characters and dashes.",
+						},
+						custom: {
+							value: 'CheckEngineName ( "[VALUE]") ;',
+							message:
+								"This Catalog name has already been used, please try another.",
+						},
+					},
+					category: "General",
+				},
+				{
+					key: "SMTP_SENDER",
+					label: "Sender Address",
+					value: "",
+					type: "text",
+					disabled: false,
+					required: true,
+					helperText:
+						"The address every email is sent from. Most relays reject a sender that does not match the authenticated account.",
+					category: "Credentials",
+				},
+				{
+					key: "SMTP_SENDER_NAME",
+					label: "Sender Display Name",
+					value: "",
+					type: "text",
+					disabled: false,
+					required: false,
+					helperText:
+						"Shown next to the sender address in the recipient's inbox, ie SEMOSS Notifications.",
+					category: "Credentials",
+				},
+				{
+					key: "SMTP_HOST",
+					label: "SMTP Host",
+					value: "",
+					type: "text",
+					disabled: false,
+					required: true,
+					helperText:
+						"The mail server hostname, ie smtp.office365.com or an internal relay.",
+					category: "Credentials",
+				},
+				{
+					key: "SMTP_PORT",
+					label: "SMTP Port",
+					value: "587",
+					type: "number",
+					disabled: false,
+					required: true,
+					helperText:
+						"587 for STARTTLS, 465 for SSL, 25 for a relay that does no encryption.",
+					category: "Credentials",
+				},
+				{
+					key: "SMTP_SECURITY",
+					label: "Connection Security",
+					value: "starttls",
+					type: "select",
+					options: [
+						{
+							display: "STARTTLS",
+							value: "starttls",
+						},
+						{
+							display: "SSL",
+							value: "ssl",
+						},
+						{
+							display: "None",
+							value: "none",
+						},
+					],
+					disabled: false,
+					required: true,
+					helperText:
+						"STARTTLS is required rather than optional, so a server that drops it cannot downgrade the message to plaintext. Only use None for an internal relay.",
+					category: "Credentials",
+				},
+				{
+					key: "SMTP_USERNAME",
+					label: "Username",
+					value: "",
+					type: "text",
+					disabled: false,
+					required: false,
+					helperText:
+						"Leave the username and password both blank for a relay that does not authenticate.",
+					category: "Credentials",
+				},
+				{
+					key: "SMTP_PASSWORD",
+					label: "Password",
+					value: "",
+					type: "password",
+					disabled: false,
+					required: false,
+					helperText:
+						"Required whenever a username is set. Many providers need an app password rather than the account password.",
+					category: "Credentials",
+				},
+				{
+					key: "ALLOWED_RECIPIENT_DOMAINS",
+					label: "Allowed Recipient Domains",
+					value: "",
+					type: "text",
+					disabled: false,
+					required: false,
+					helperText:
+						"Comma separated list, ie semoss.org. Subdomains are included. Leave blank to allow any recipient.",
+					category: "Settings",
+				},
+				{
+					key: "DEFAULT_TO",
+					label: "Default To Recipients",
+					value: "",
+					type: "text",
+					disabled: false,
+					required: false,
+					helperText:
+						"Comma separated addresses used when the caller does not pass any. Set this to pin the engine to a fixed distribution list.",
+					category: "Settings",
+				},
+				{
+					key: "DEFAULT_CC",
+					label: "Default CC Recipients",
+					value: "",
+					type: "text",
+					disabled: false,
+					required: false,
+					helperText:
+						"Comma separated addresses copied when the caller does not pass a cc list.",
+					category: "Settings",
+				},
+				{
+					key: "DEFAULT_BCC",
+					label: "Default BCC Recipients",
+					value: "",
+					type: "text",
+					disabled: false,
+					required: false,
+					helperText:
+						"Comma separated addresses blind copied when the caller does not pass a bcc list.",
+					category: "Settings",
+				},
+				{
+					key: "SUBJECT_PREFIX",
+					label: "Subject Prefix",
+					value: "",
+					type: "text",
+					disabled: false,
+					required: false,
+					helperText:
+						"Prepended to every subject line, ie [SEMOSS]. Leave blank to send the subject as written.",
+					category: "Settings",
+				},
+				{
+					key: "HTML",
+					label: "Default Body Format",
+					value: "false",
+					type: "select",
+					options: [
+						{
+							display: "Plain text",
+							value: "false",
+						},
+						{
+							display: "HTML",
+							value: "true",
+						},
+					],
+					disabled: false,
+					required: false,
+					helperText:
+						"How the message body is sent when the caller does not say. The caller can override this per email.",
+					category: "Settings",
+				},
+				{
+					key: "MAX_RECIPIENTS",
+					label: "Maximum Recipients Per Email",
+					value: "25",
+					type: "number",
+					disabled: false,
+					required: false,
+					helperText:
+						"Total across to, cc, and bcc. A call asking for more than this is rejected before anything is sent.",
+					category: "Settings",
+				},
+				{
+					key: "ALLOW_SENDER_OVERRIDE",
+					label: "Allow Sender Override",
+					value: "false",
+					type: "select",
+					options: [
+						{
+							display: "false",
+							value: "false",
+						},
+						{
+							display: "true",
+							value: "true",
+						},
+					],
+					disabled: false,
+					required: false,
+					helperText:
+						"Leave false to send everything as the sender address above. Set to true only when the relay accepts sending on behalf of other addresses.",
+					category: "Settings",
+				},
+				{
+					key: "ALLOW_ATTACHMENTS",
+					label: "Allow Attachments",
+					value: "false",
+					type: "select",
+					options: [
+						{
+							display: "false",
+							value: "false",
+						},
+						{
+							display: "true",
+							value: "true",
+						},
+					],
+					disabled: false,
+					required: false,
+					helperText:
+						"When true, a caller can attach files that already exist in the insight making the call. No other file on the server can be attached.",
+					category: "Settings",
+				},
+				{
+					key: "CONNECTION_TIMEOUT",
+					label: "Connection Timeout (ms)",
+					value: "10000",
+					type: "number",
+					disabled: false,
+					required: false,
+					helperText:
+						"How long to wait for the mail server to accept a connection.",
+					category: "Settings",
+				},
+				{
+					key: "READ_TIMEOUT",
+					label: "Read Timeout (ms)",
+					value: "30000",
+					type: "number",
+					disabled: false,
+					required: false,
+					helperText:
+						"How long to wait on the mail server once connected.",
+					category: "Settings",
+				},
+				{
+					key: "FUNCTION_NAME",
+					label: "Function Name",
+					value: "",
+					type: "text",
+					disabled: false,
+					required: true,
+					helperText:
+						"Becomes the MCP tool name, so name it for what it does, ie send_email.",
+					category: "Function Metadata",
+				},
+				{
+					key: "FUNCTION_DESCRIPTION",
+					label: "Function Description",
+					value: "",
+					type: "text",
+					disabled: false,
+					required: false,
+					helperText:
+						"Leave blank to use the built in description. Set it when this engine mails a specific audience, so a model knows who it is writing to.",
+					category: "Function Metadata",
+				},
+				{
+					key: "FUNCTION_PARAMETERS",
+					label: "Function Parameters",
+					value: [],
+					type: "parameter-list",
+					disabled: false,
+					required: false,
+					helperText:
+						"Leave empty to use the built in email parameters: to, cc, bcc, subject, message, and html.",
+					category: "Function Metadata",
+				},
+				{
+					key: "FUNCTION_REQUIRED_PARAMETERS",
+					label: "Function Required Parameters",
+					value: [],
+					type: "string-list",
+					disabled: false,
+					required: false,
+					helperText:
+						"List the names of parameters above that must be provided when calling this function.",
+					category: "Function Metadata",
+				},
+			],
+		},
+		{
 			name: "ServiceNow",
 			disable: false,
 			icon: SERVICE_NOW,
@@ -3154,333 +3617,6 @@ export const FUNCTION_CONNECTIONS = {
 					required: false,
 					helperText:
 						"Leave empty to use the built in table query parameters such as query, fields, limit, and orderBy.",
-					category: "Function Metadata",
-				},
-				{
-					key: "FUNCTION_REQUIRED_PARAMETERS",
-					label: "Function Required Parameters",
-					value: [],
-					type: "string-list",
-					disabled: false,
-					required: false,
-					helperText:
-						"List the names of parameters above that must be provided when calling this function.",
-					category: "Function Metadata",
-				},
-			],
-		},
-		{
-			name: "SMTP Email",
-			disable: false,
-			icon: SMTP,
-			description:
-				"Send email through an SMTP server whose credentials live on this engine rather than in social.properties.",
-			notice: "Sending is immediate and cannot be recalled. Use the recipient domain, recipient count, and sender override settings below to bound what this engine is allowed to send.",
-			fields: [
-				{
-					key: "FUNCTION_TYPE",
-					label: "Function Type",
-					value: "SMTP",
-					type: "text",
-					disabled: true,
-					hidden: true,
-					required: true,
-					category: "General",
-				},
-				{
-					key: "NAME",
-					label: "Catalog Name",
-					value: "",
-					type: "text",
-					disabled: false,
-					required: true,
-					rules: {
-						pattern: {
-							value: /^[\w\-\s]+$/,
-							message:
-								"Catalog names can only contain alphanumeric characters and dashes.",
-						},
-						custom: {
-							value: 'CheckEngineName ( "[VALUE]") ;',
-							message:
-								"This Catalog name has already been used, please try another.",
-						},
-					},
-					category: "General",
-				},
-				{
-					key: "SMTP_HOST",
-					label: "SMTP Host",
-					value: "",
-					type: "text",
-					disabled: false,
-					required: true,
-					helperText:
-						"The mail server hostname, ie smtp.office365.com or an internal relay.",
-					category: "Credentials",
-				},
-				{
-					key: "SMTP_PORT",
-					label: "SMTP Port",
-					value: "587",
-					type: "number",
-					disabled: false,
-					required: true,
-					helperText:
-						"587 for STARTTLS, 465 for SSL, 25 for a relay that does no encryption.",
-					category: "Credentials",
-				},
-				{
-					key: "SMTP_SECURITY",
-					label: "Connection Security",
-					value: "starttls",
-					type: "select",
-					options: [
-						{
-							display: "STARTTLS",
-							value: "starttls",
-						},
-						{
-							display: "SSL",
-							value: "ssl",
-						},
-						{
-							display: "None",
-							value: "none",
-						},
-					],
-					disabled: false,
-					required: true,
-					helperText:
-						"STARTTLS is required rather than optional, so a server that drops it cannot downgrade the message to plaintext. Only use None for an internal relay.",
-					category: "Credentials",
-				},
-				{
-					key: "SMTP_USERNAME",
-					label: "Username",
-					value: "",
-					type: "text",
-					disabled: false,
-					required: false,
-					helperText:
-						"Leave the username and password both blank for a relay that does not authenticate.",
-					category: "Credentials",
-				},
-				{
-					key: "SMTP_PASSWORD",
-					label: "Password",
-					value: "",
-					type: "password",
-					disabled: false,
-					required: false,
-					helperText:
-						"Required whenever a username is set. Many providers need an app password rather than the account password.",
-					category: "Credentials",
-				},
-				{
-					key: "SMTP_SENDER",
-					label: "Sender Address",
-					value: "",
-					type: "text",
-					disabled: false,
-					required: true,
-					helperText:
-						"The address every email is sent from. Most relays reject a sender that does not match the authenticated account.",
-					category: "Credentials",
-				},
-				{
-					key: "SMTP_SENDER_NAME",
-					label: "Sender Display Name",
-					value: "",
-					type: "text",
-					disabled: false,
-					required: false,
-					helperText:
-						"Shown next to the sender address in the recipient's inbox, ie SEMOSS Notifications.",
-					category: "Credentials",
-				},
-				{
-					key: "ALLOWED_RECIPIENT_DOMAINS",
-					label: "Allowed Recipient Domains",
-					value: "",
-					type: "text",
-					disabled: false,
-					required: false,
-					helperText:
-						"Comma separated list, ie semoss.org. Subdomains are included. Leave blank to allow any recipient.",
-					category: "Settings",
-				},
-				{
-					key: "DEFAULT_TO",
-					label: "Default To Recipients",
-					value: "",
-					type: "text",
-					disabled: false,
-					required: false,
-					helperText:
-						"Comma separated addresses used when the caller does not pass any. Set this to pin the engine to a fixed distribution list.",
-					category: "Settings",
-				},
-				{
-					key: "DEFAULT_CC",
-					label: "Default CC Recipients",
-					value: "",
-					type: "text",
-					disabled: false,
-					required: false,
-					helperText:
-						"Comma separated addresses copied when the caller does not pass a cc list.",
-					category: "Settings",
-				},
-				{
-					key: "DEFAULT_BCC",
-					label: "Default BCC Recipients",
-					value: "",
-					type: "text",
-					disabled: false,
-					required: false,
-					helperText:
-						"Comma separated addresses blind copied when the caller does not pass a bcc list.",
-					category: "Settings",
-				},
-				{
-					key: "SUBJECT_PREFIX",
-					label: "Subject Prefix",
-					value: "",
-					type: "text",
-					disabled: false,
-					required: false,
-					helperText:
-						"Prepended to every subject line, ie [SEMOSS]. Leave blank to send the subject as written.",
-					category: "Settings",
-				},
-				{
-					key: "HTML",
-					label: "Default Body Format",
-					value: "false",
-					type: "select",
-					options: [
-						{
-							display: "Plain text",
-							value: "false",
-						},
-						{
-							display: "HTML",
-							value: "true",
-						},
-					],
-					disabled: false,
-					required: false,
-					helperText:
-						"How the message body is sent when the caller does not say. The caller can override this per email.",
-					category: "Settings",
-				},
-				{
-					key: "MAX_RECIPIENTS",
-					label: "Maximum Recipients Per Email",
-					value: "25",
-					type: "number",
-					disabled: false,
-					required: false,
-					helperText:
-						"Total across to, cc, and bcc. A call asking for more than this is rejected before anything is sent.",
-					category: "Settings",
-				},
-				{
-					key: "ALLOW_SENDER_OVERRIDE",
-					label: "Allow Sender Override",
-					value: "false",
-					type: "select",
-					options: [
-						{
-							display: "false",
-							value: "false",
-						},
-						{
-							display: "true",
-							value: "true",
-						},
-					],
-					disabled: false,
-					required: false,
-					helperText:
-						"Leave false to send everything as the sender address above. Set to true only when the relay accepts sending on behalf of other addresses.",
-					category: "Settings",
-				},
-				{
-					key: "ALLOW_ATTACHMENTS",
-					label: "Allow Attachments",
-					value: "false",
-					type: "select",
-					options: [
-						{
-							display: "false",
-							value: "false",
-						},
-						{
-							display: "true",
-							value: "true",
-						},
-					],
-					disabled: false,
-					required: false,
-					helperText:
-						"When true, a caller can attach files that already exist in the insight making the call. No other file on the server can be attached.",
-					category: "Settings",
-				},
-				{
-					key: "CONNECTION_TIMEOUT",
-					label: "Connection Timeout (ms)",
-					value: "10000",
-					type: "number",
-					disabled: false,
-					required: false,
-					helperText:
-						"How long to wait for the mail server to accept a connection.",
-					category: "Settings",
-				},
-				{
-					key: "READ_TIMEOUT",
-					label: "Read Timeout (ms)",
-					value: "30000",
-					type: "number",
-					disabled: false,
-					required: false,
-					helperText:
-						"How long to wait on the mail server once connected.",
-					category: "Settings",
-				},
-				{
-					key: "FUNCTION_NAME",
-					label: "Function Name",
-					value: "",
-					type: "text",
-					disabled: false,
-					required: true,
-					helperText:
-						"Becomes the MCP tool name, so name it for what it does, ie send_email.",
-					category: "Function Metadata",
-				},
-				{
-					key: "FUNCTION_DESCRIPTION",
-					label: "Function Description",
-					value: "",
-					type: "text",
-					disabled: false,
-					required: false,
-					helperText:
-						"Leave blank to use the built in description. Set it when this engine mails a specific audience, so a model knows who it is writing to.",
-					category: "Function Metadata",
-				},
-				{
-					key: "FUNCTION_PARAMETERS",
-					label: "Function Parameters",
-					value: [],
-					type: "parameter-list",
-					disabled: false,
-					required: false,
-					helperText:
-						"Leave empty to use the built in email parameters: to, cc, bcc, subject, message, and html.",
 					category: "Function Metadata",
 				},
 				{
