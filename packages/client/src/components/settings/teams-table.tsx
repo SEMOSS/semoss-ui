@@ -27,11 +27,6 @@ interface RawTeam {
 	TYPE: string;
 	PERMISSION: number | string;
 	DATEADDED: string;
-	USAGERESTRICTION?: string | null;
-	USAGEFREQUENCY?: string | null;
-	MAXTOKENS?: number | null;
-	MAXRESPONSETIME?: number | null;
-	MAXCREDITS?: number | null;
 }
 
 interface TeamRow {
@@ -40,11 +35,6 @@ interface TeamRow {
 	type: string;
 	permission: string;
 	dateAdded: string;
-	usageRestriction?: string | null;
-	usageFrequency?: string | null;
-	maxTokens?: number | null;
-	maxResponseTime?: number | null;
-	maxCredits?: number | null;
 }
 
 const parseGroupsResponse = (result: unknown) => {
@@ -71,54 +61,13 @@ const parseGroupsResponse = (result: unknown) => {
 	return { groups: [] as RawTeam[], totalGroups: 0, hasTotal: false };
 };
 
-const RESTRICTION_LABEL: Record<string, string> = {
-	TOKEN: "Token",
-	COMPUTE: "Compute time",
-	CREDIT: "Credit",
-};
-
-const FREQUENCY_LABEL: Record<string, string> = {
-	DAY: "Daily",
-	WEEK: "Weekly",
-	MONTH: "Monthly",
-	YEAR: "Yearly",
-	ALL_TIME: "All time",
-};
-
-function restrictionType(team: TeamRow): string {
-	const r = team.usageRestriction?.toUpperCase();
-	if (!r || r === "NULL") return "—";
-	return RESTRICTION_LABEL[r] ?? r;
-}
-
-function restrictionValue(team: TeamRow): string {
-	const r = team.usageRestriction?.toUpperCase();
-	if (!r || r === "NULL") return "—";
-	if (r === "TOKEN" && team.maxTokens != null)
-		return team.maxTokens.toLocaleString();
-	if (r === "COMPUTE" && team.maxResponseTime != null)
-		return `${team.maxResponseTime.toLocaleString()} ms`;
-	if (r === "CREDIT" && team.maxCredits != null)
-		return team.maxCredits.toLocaleString();
-	return "—";
-}
-
-function restrictionFrequency(team: TeamRow): string {
-	const r = team.usageRestriction?.toUpperCase();
-	if (!r || r === "NULL" || !team.usageFrequency) return "—";
-	return FREQUENCY_LABEL[team.usageFrequency] ?? team.usageFrequency;
-}
-
 export const TeamsTable = ({
 	type,
 	id,
-	engineType,
 }: {
 	type: string;
 	id: string | number;
-	engineType?: string;
 }) => {
-	const showRestrictions = type === "ENGINE" && engineType === "MODEL";
 	const [teams, setTeams] = useState<TeamRow[]>([]);
 	const [totalTeams, setTotalTeams] = useState(0);
 	const [isLoading, setIsLoading] = useState(false);
@@ -206,11 +155,6 @@ export const TeamsTable = ({
 						permissionMap[String(team.PERMISSION)] ||
 						String(team.PERMISSION),
 					dateAdded: team.DATEADDED,
-					usageRestriction: team.USAGERESTRICTION,
-					usageFrequency: team.USAGEFREQUENCY,
-					maxTokens: team.MAXTOKENS,
-					maxResponseTime: team.MAXRESPONSETIME,
-					maxCredits: team.MAXCREDITS,
 				}));
 				setTeams(mappedTeams);
 				setTotalTeams(total);
@@ -261,19 +205,6 @@ export const TeamsTable = ({
 										Permission
 									</div>
 								</TableHead>
-								{showRestrictions && (
-									<>
-										<TableHead className="px-4">
-											Limit Type
-										</TableHead>
-										<TableHead className="px-4">
-											Limit Value
-										</TableHead>
-										<TableHead className="px-4">
-											Frequency
-										</TableHead>
-									</>
-								)}
 								<TableHead className="px-4">
 									Permission Date
 								</TableHead>
@@ -292,19 +223,6 @@ export const TeamsTable = ({
 										<TableCell className="px-4">
 											{team.permission}
 										</TableCell>
-										{showRestrictions && (
-											<>
-												<TableCell className="px-4">
-													{restrictionType(team)}
-												</TableCell>
-												<TableCell className="px-4">
-													{restrictionValue(team)}
-												</TableCell>
-												<TableCell className="px-4">
-													{restrictionFrequency(team)}
-												</TableCell>
-											</>
-										)}
 										<TableCell className="px-4">
 											{team.dateAdded}
 										</TableCell>
@@ -313,7 +231,7 @@ export const TeamsTable = ({
 							) : (
 								<TableRow>
 									<TableCell
-										colSpan={showRestrictions ? 7 : 4}
+										colSpan={4}
 										className="text-center"
 									>
 										No teams found
@@ -323,7 +241,7 @@ export const TeamsTable = ({
 						</TableBody>
 						<TableFooter>
 							<TableRow>
-								<TableCell colSpan={showRestrictions ? 7 : 4}>
+								<TableCell colSpan={4}>
 									<div className="flex items-center justify-end gap-4 px-2">
 										<div className="flex items-center gap-2">
 											<span className="text-sm">

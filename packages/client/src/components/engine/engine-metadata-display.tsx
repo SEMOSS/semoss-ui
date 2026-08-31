@@ -892,11 +892,23 @@ export const toModelSettingsValues = (
 		builtinToolsConfig: metadata?.builtinTools ?? null,
 		inputTokenCredit:
 			metadata?.inputTokenCredit != null
-				? String(metadata.inputTokenCredit)
+				? String(
+						parseFloat(
+							(metadata.inputTokenCredit * 1_000_000).toPrecision(
+								10,
+							),
+						),
+					)
 				: "",
 		outputTokenCredit:
 			metadata?.outputTokenCredit != null
-				? String(metadata.outputTokenCredit)
+				? String(
+						parseFloat(
+							(
+								metadata.outputTokenCredit * 1_000_000
+							).toPrecision(10),
+						),
+					)
 				: "",
 		cacheReadMultiplier:
 			metadata?.cacheReadMultiplier != null
@@ -1079,7 +1091,7 @@ export const ModelMetadataFields = ({
 	<>
 		<SettingsEntry label="Model ID" className="sm:col-span-2">
 			{modelId ? (
-				<span className="break-all font-mono text-sm">{modelId}</span>
+				<span className="break-all text-sm">{modelId}</span>
 			) : (
 				<EmptyValue />
 			)}
@@ -1180,21 +1192,17 @@ export const ModelMetadataFields = ({
 			<TokenValue value={values.maxOutputTokens} />
 		</SettingsEntry>
 
-		<SettingsEntry label="Credits / input token">
+		<SettingsEntry label="Credits / 1M input tokens">
 			{values.inputTokenCredit !== "" ? (
-				<span className="font-mono text-sm">
-					{values.inputTokenCredit}
-				</span>
+				<span className="text-sm">{values.inputTokenCredit}</span>
 			) : (
 				<EmptyValue />
 			)}
 		</SettingsEntry>
 
-		<SettingsEntry label="Credits / output token">
+		<SettingsEntry label="Credits / 1M output tokens">
 			{values.outputTokenCredit !== "" ? (
-				<span className="font-mono text-sm">
-					{values.outputTokenCredit}
-				</span>
+				<span className="text-sm">{values.outputTokenCredit}</span>
 			) : (
 				<EmptyValue />
 			)}
@@ -1202,9 +1210,7 @@ export const ModelMetadataFields = ({
 
 		<SettingsEntry label="Cache read multiplier">
 			{values.cacheReadMultiplier !== "" ? (
-				<span className="font-mono text-sm">
-					×{values.cacheReadMultiplier}
-				</span>
+				<span className="text-sm">×{values.cacheReadMultiplier}</span>
 			) : (
 				<EmptyValue />
 			)}
@@ -1212,9 +1218,7 @@ export const ModelMetadataFields = ({
 
 		<SettingsEntry label="Cache write multiplier">
 			{values.cacheWriteMultiplier !== "" ? (
-				<span className="font-mono text-sm">
-					×{values.cacheWriteMultiplier}
-				</span>
+				<span className="text-sm">×{values.cacheWriteMultiplier}</span>
 			) : (
 				<EmptyValue />
 			)}

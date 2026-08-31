@@ -177,6 +177,95 @@ const parseOptionalFloat = (value: string): number | null => {
 };
 
 /**
+ * Mirror of StaticBuiltinToolsCatalog.normalizeProviderKey — maps any of the
+ * shapes the platform stores providers in (SERVINGPROVIDER enum, SMSS
+ * MODEL_TYPE, catalog key) to a single lowercase canonical token.
+ */
+const normalizePricingProviderKey = (provider: string): string => {
+	const v = provider
+		.trim()
+		.toLowerCase()
+		.replace(/[\s-]+/g, "_");
+	if (v === "open_ai" || v === "openai") return "openai";
+	if (v === "azure_open_ai" || v === "azure_openai") return "azure";
+	if (v === "vertex" || v === "vertex_ai" || v === "google_vertex")
+		return "google";
+	if (v === "aws_bedrock" || v === "amazon_bedrock") return "bedrock";
+	return v;
+};
+
+/**
+ * When credit rates are unset but pricing data exists, returns pre-filled
+ * form values (in per-million units) and sets the per-million toggle.
+ * Returns null when no suggestion is possible.
+ */
+const suggestCreditRatesFromPricing = (
+	metadata: ModelMetadata,
+): Pick<
+	ModelSettingsValues,
+	| "inputTokenCredit"
+	| "outputTokenCredit"
+	| "cacheReadMultiplier"
+	| "cacheWriteMultiplier"
+> | null => {
+	if (
+		metadata.inputTokenCredit != null &&
+		metadata.outputTokenCredit != null
+	) {
+		return null;
+	}
+	const pricing = metadata.pricing;
+	if (!pricing || pricing.length === 0) return null;
+
+	const targetKey = metadata.servingProvider
+		? normalizePricingProviderKey(metadata.servingProvider)
+		: null;
+
+	const entry =
+		(targetKey
+			? pricing.find(
+					(p) =>
+						normalizePricingProviderKey(p.servingProvider) ===
+						targetKey,
+				)
+			: undefined) ?? pricing[0];
+
+	const inputRate = typeof entry.input === "number" ? entry.input : null;
+	const outputRate = typeof entry.output === "number" ? entry.output : null;
+	if (inputRate == null && outputRate == null) return null;
+
+	const cacheRead =
+		typeof entry.cache_read === "number" ? entry.cache_read : null;
+	const cacheWrite =
+		typeof entry.cache_write === "number" ? entry.cache_write : null;
+
+	return {
+		inputTokenCredit:
+			metadata.inputTokenCredit == null && inputRate != null
+				? String(inputRate)
+				: "",
+		outputTokenCredit:
+			metadata.outputTokenCredit == null && outputRate != null
+				? String(outputRate)
+				: "",
+		cacheReadMultiplier:
+			metadata.cacheReadMultiplier == null &&
+			inputRate &&
+			inputRate > 0 &&
+			cacheRead != null
+				? String(parseFloat((cacheRead / inputRate).toPrecision(10)))
+				: "",
+		cacheWriteMultiplier:
+			metadata.cacheWriteMultiplier == null &&
+			inputRate &&
+			inputRate > 0 &&
+			cacheWrite != null
+				? String(parseFloat((cacheWrite / inputRate).toPrecision(10)))
+				: "",
+	};
+};
+
+/**
  * Select for one of the nullable provider columns. Both are free to be unset,
  * so "Not set" is always offered alongside the curated list.
  */
@@ -248,6 +337,7 @@ export const EngineModelSettings = ({
 	const reasoningFieldId = `${fieldId}-reasoning`;
 
 	const [isSaving, setIsSaving] = useState(false);
+	const [isEditing, setIsEditing] = useState(false);
 	const [discardRevision, setDiscardRevision] = useState(0);
 	const [catalogApply, setCatalogApply] = useState<CatalogApplyAction | null>(
 		null,
@@ -502,6 +592,7 @@ export const EngineModelSettings = ({
 	const handleDiscard = () => {
 		setForm(initialForm);
 		setDiscardRevision((revision) => revision + 1);
+		setIsEditing(false);
 	};
 
 	/**
@@ -547,8 +638,14 @@ export const EngineModelSettings = ({
 				...(isBuiltinToolsDirty()
 					? { BUILTIN_TOOLS: form.builtinToolsConfig ?? {} }
 					: {}),
-				inputTokenCredit: parseOptionalFloat(form.inputTokenCredit),
-				outputTokenCredit: parseOptionalFloat(form.outputTokenCredit),
+				inputTokenCredit: (() => {
+					const n = parseOptionalFloat(form.inputTokenCredit);
+					return n !== null ? n / 1_000_000 : n;
+				})(),
+				outputTokenCredit: (() => {
+					const n = parseOptionalFloat(form.outputTokenCredit);
+					return n !== null ? n / 1_000_000 : n;
+				})(),
 				cacheReadMultiplier: parseOptionalFloat(
 					form.cacheReadMultiplier,
 				),
@@ -576,6 +673,7 @@ export const EngineModelSettings = ({
 			}
 
 			setInitialForm(form);
+			setIsEditing(false);
 			toast.success("Successfully updated model settings");
 
 			getModelMetadata.refresh();
@@ -693,6 +791,7 @@ export const EngineModelSettings = ({
 				// the form
 				setForm(initialForm);
 				setDiscardRevision((revision) => revision + 1);
+				setIsEditing(false);
 			}
 			setCatalogApply(null);
 			toast.success(
@@ -776,7 +875,52 @@ export const EngineModelSettings = ({
 					 * spans both text rows, so showing it cannot change the card's
 					 * height or width.
 					 */}
-					{isEditable && isDirty && (
+					{isEditable && !isEditing && (
+						<CardAction className="self-center">
+							<Button
+								variant="outline"
+								size="sm"
+								onClick={() => {
+									const suggestion =
+										getModelMetadata.data != null
+											? suggestCreditRatesFromPricing(
+													getModelMetadata.data,
+												)
+											: null;
+									if (suggestion) {
+										setForm((prev) => ({
+											...prev,
+											...(suggestion.inputTokenCredit !==
+												"" && {
+												inputTokenCredit:
+													suggestion.inputTokenCredit,
+											}),
+											...(suggestion.outputTokenCredit !==
+												"" && {
+												outputTokenCredit:
+													suggestion.outputTokenCredit,
+											}),
+											...(suggestion.cacheReadMultiplier !==
+												"" && {
+												cacheReadMultiplier:
+													suggestion.cacheReadMultiplier,
+											}),
+											...(suggestion.cacheWriteMultiplier !==
+												"" && {
+												cacheWriteMultiplier:
+													suggestion.cacheWriteMultiplier,
+											}),
+										}));
+									}
+									setIsEditing(true);
+								}}
+								data-testid="engine-model-settings--edit-btn"
+							>
+								Edit
+							</Button>
+						</CardAction>
+					)}
+					{isEditable && isEditing && (
 						<CardAction className="flex gap-2 self-center">
 							<Button
 								variant="outline"
@@ -785,7 +929,7 @@ export const EngineModelSettings = ({
 								disabled={isSaving}
 								data-testid="engine-model-settings--cancel-btn"
 							>
-								Discard
+								Cancel
 							</Button>
 							<Button
 								size="sm"
@@ -803,7 +947,7 @@ export const EngineModelSettings = ({
 					)}
 				</CardHeader>
 				<CardContent>
-					{isEditable ? (
+					{isEditable && isEditing ? (
 						<FieldGroup>
 							<Field>
 								<FieldLabel htmlFor={modelIdFieldId}>
@@ -1252,11 +1396,17 @@ export const EngineModelSettings = ({
 									/>
 								</Field>
 
+								<div className="border-t pt-4 sm:col-span-2">
+									<span className="font-medium text-sm">
+										Credit rates (per 1M tokens)
+									</span>
+								</div>
+
 								<Field>
 									<FieldLabel
 										htmlFor={`${engineId}-input-token-credit`}
 									>
-										Credits / input token
+										Credits / 1M input tokens
 									</FieldLabel>
 									<Input
 										id={`${engineId}-input-token-credit`}
@@ -1282,7 +1432,7 @@ export const EngineModelSettings = ({
 									<FieldLabel
 										htmlFor={`${engineId}-output-token-credit`}
 									>
-										Credits / output token
+										Credits / 1M output tokens
 									</FieldLabel>
 									<Input
 										id={`${engineId}-output-token-credit`}
