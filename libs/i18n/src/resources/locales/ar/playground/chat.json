@@ -17,6 +17,10 @@
 		"poorResponse": "استجابة ضعيفة",
 		"copyResponse": "نسخ الاستجابة",
 		"copyCode": "نسخ الكود",
+		"copy": "نسخ",
+		"saveInRoom": "حفظ في الغرفة",
+		"savingToRoom": "جارٍ الحفظ...",
+		"fullView": "عرض كامل",
 		"feedbackPlaceholder": "أضف تعليقًا (اختياري)",
 		"feedbackCancel": "إلغاء",
 		"feedbackSubmit": "إرسال",
@@ -43,6 +47,7 @@
 		"rewriteSuccess": "تمت إعادة كتابة الرسالة بنجاح",
 		"copySuccess": "تم النسخ إلى الحافظة بنجاح",
 		"noCopyContent": "لا يوجد محتوى للنسخ",
+		"savedInRoom": "تم الحفظ في الغرفة باسم {{filePath}}",
 		"planStepRemoved": "تمت إزالة الخطوة {{stepNumber}} من الخطة بنجاح"
 	},
 	"gracefulErrors": {

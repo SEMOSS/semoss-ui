@@ -177,7 +177,7 @@ export const CodePreviewBlock = ({
 				false,
 				false,
 			);
-			toast.success(`Saved in room as ${filePath}`);
+			toast.success(t("notifications.savedInRoom", { filePath }));
 		} catch (error) {
 			const message =
 				error instanceof Error && error.message
@@ -280,7 +280,9 @@ export const CodePreviewBlock = ({
 						disabled={!room || !code || isSavingToRoom}
 						onClick={() => void saveInRoom()}
 					>
-						{isSavingToRoom ? "Saving..." : "Save In Room"}
+						{isSavingToRoom
+							? t("response.savingToRoom")
+							: t("response.saveInRoom")}
 					</Button>
 					<Button
 						className="-my-1 h-6 px-2 text-muted-foreground text-xs hover:text-foreground"
@@ -289,7 +291,7 @@ export const CodePreviewBlock = ({
 						disabled={!code}
 						onClick={() => setIsFullViewOpen(true)}
 					>
-						Full View
+						{t("response.fullView")}
 					</Button>
 				</BlockHeader>
 				{!isCollapsed && (
@@ -316,11 +318,11 @@ export const CodePreviewBlock = ({
 										}
 									>
 										<CopyIcon className="size-3.5" />
-										Copy
+										{t("response.copy")}
 									</Button>
 								</TooltipTrigger>
 								<TooltipContent side="bottom">
-									Copy
+									{t("response.copy")}
 								</TooltipContent>
 							</Tooltip>
 						</div>

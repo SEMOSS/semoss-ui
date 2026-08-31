@@ -17,6 +17,10 @@
 		"poorResponse": "Slecht antwoord",
 		"copyResponse": "Antwoord kopiëren",
 		"copyCode": "Code kopiëren",
+		"copy": "Kopiëren",
+		"saveInRoom": "Opslaan in kamer",
+		"savingToRoom": "Bezig met opslaan...",
+		"fullView": "Volledige weergave",
 		"feedbackPlaceholder": "Voeg een opmerking toe (optioneel)",
 		"feedbackCancel": "Annuleren",
 		"feedbackSubmit": "Verzenden",
@@ -43,6 +47,7 @@
 		"rewriteSuccess": "Bericht succesvol herschreven",
 		"copySuccess": "Succesvol gekopieerd naar klembord",
 		"noCopyContent": "Geen inhoud om te kopiëren",
+		"savedInRoom": "Opgeslagen in kamer als {{filePath}}",
 		"planStepRemoved": "Stap {{stepNumber}} succesvol uit plan verwijderd"
 	},
 	"gracefulErrors": {

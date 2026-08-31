@@ -17,6 +17,10 @@
 		"poorResponse": "Mala respuesta",
 		"copyResponse": "Copiar respuesta",
 		"copyCode": "Copiar código",
+		"copy": "Copiar",
+		"saveInRoom": "Guardar en la sala",
+		"savingToRoom": "Guardando...",
+		"fullView": "Vista completa",
 		"feedbackPlaceholder": "Agregar un comentario (opcional)",
 		"feedbackCancel": "Cancelar",
 		"feedbackSubmit": "Enviar",
@@ -43,6 +47,7 @@
 		"rewriteSuccess": "Mensaje reescrito con éxito",
 		"copySuccess": "Copiado al portapapeles con éxito",
 		"noCopyContent": "No hay contenido para copiar",
+		"savedInRoom": "Guardado en la sala como {{filePath}}",
 		"planStepRemoved": "Paso {{stepNumber}} eliminado del plan con éxito"
 	},
 	"gracefulErrors": {

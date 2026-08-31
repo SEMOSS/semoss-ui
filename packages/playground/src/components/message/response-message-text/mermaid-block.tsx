@@ -171,7 +171,7 @@ export const MermaidBlock = ({ code, isLoading, room }: MermaidBlockProps) => {
 					))}
 			</div>
 			<Dialog open={isFullViewOpen} onOpenChange={setIsFullViewOpen}>
-				<DialogContent className="h-[100dvh] max-h-[100dvh] w-[100dvw] max-w-[100dvw] grid-rows-[auto_1fr] overflow-hidden rounded-none border-0 p-3 sm:w-[100dvw] sm:max-w-[100dvw]">
+				<DialogContent className="h-dvh max-h-dvh w-dvw max-w-dvw grid-rows-[auto_1fr] overflow-hidden rounded-none border-0 p-3 sm:w-dvw sm:max-w-dvw">
 					<DialogHeader>
 						<DialogTitle>Mermaid</DialogTitle>
 					</DialogHeader>
