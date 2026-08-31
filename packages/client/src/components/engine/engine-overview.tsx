@@ -20,7 +20,7 @@ interface EngineOverviewProps {
 	refresh: () => void;
 }
 
-export const getModelOverviewDescription = (
+const getModelOverviewDescription = (
 	catalogDescription: unknown,
 	staticDescription: unknown,
 ): string => {

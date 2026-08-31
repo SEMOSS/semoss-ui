@@ -145,7 +145,7 @@ export const NewRoomPage = observer(() => {
 		null,
 	);
 	const submittedRef = useRef(false);
-  const autoGreetedRef = useRef(false);
+	const autoGreetedRef = useRef(false);
 	const [mode, setMode] = useState<"chat" | "agent">("chat");
 
 	// tempRoomStore is only created once (createRoom below builds the real,
