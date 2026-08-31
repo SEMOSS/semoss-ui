@@ -278,7 +278,7 @@ const stringifyOutput = (value: unknown): string | undefined => {
  * pre-resolved input attachments.
  * @return A new BuildRun projection with empty activity feeds.
  */
-export const createRun = (
+const createRun = (
 	record: Partial<WorkbenchRunRecord> &
 		Pick<WorkbenchRunRecord, "runId"> & {
 			attachments?: BuildAttachment[];

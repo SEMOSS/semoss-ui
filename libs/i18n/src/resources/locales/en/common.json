@@ -66,6 +66,8 @@
 	},
 	"fileExplorer": {
 		"search": "Search",
+		"searchToggle": "Search files",
+		"clearSearch": "Clear search",
 		"name": "Name",
 		"dateModified": "Date Modified",
 		"pathLabel": "Path: {{path}}",
@@ -109,7 +111,8 @@
 			"saveSuccess": "Successfully saved file",
 			"saveFailed": "Error saving file",
 			"downloadFileSuccess": "Successfully downloaded file",
-			"downloadFileFailed": "Error downloading file"
+			"downloadFileFailed": "Error downloading file",
+			"syncFailed": "Failed to sync storage to local"
 		},
 		"dateFormat": {
 			"justNow": "Just now",
@@ -130,7 +133,6 @@
 		"searchAllAria": "Search all",
 		"searchCurrentAria": "Search only current directory",
 		"searchCurrentTitle": "Search only in {{path}}",
-		"moveDropHint": "Drop to move {{label}} into {{path}}",
 		"contextMenu": {
 			"copyPath": "Copy path",
 			"copy": "Copy",
@@ -152,13 +154,13 @@
 				"fileName": "File Name",
 				"directoryName": "Directory Name",
 				"uploadFileZip": "Upload File/Zip",
-				"location": "Location"
+				"location": "Path"
 			},
 			"placeholders": {
 				"selectAction": "Select action",
 				"fileName": "Enter File Name",
 				"directoryName": "Enter Directory Name",
-				"location": "Enter a destination folder"
+				"location": "Enter a path"
 			},
 			"actions": {
 				"upload": "Upload Files",
@@ -201,13 +203,9 @@
 		},
 		"itemCount_one": "1 item",
 		"itemCount_other": "{{count}} items",
-		"movingItems_one": "Moving 1 item",
-		"movingItems_other": "Moving {{count}} items",
-		"moveHere": "Move here",
 		"emptyFolder": "Empty folder",
-		"uploadDropHint": "Release to upload files to {{path}}",
-		"dragPreviewMoveItem": "Move {{name}}",
-		"dragPreviewMoveItems": "Move {{count}} items"
+		"noResults": "No results found",
+		"uploadDropHint": "Release to upload files to {{path}}"
 	},
 	"cellOutput": {
 		"panels": {

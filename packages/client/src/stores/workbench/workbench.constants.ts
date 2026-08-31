@@ -10,6 +10,8 @@ export const WORKBENCH_COMPONENTS = {
 	VECTOR_DOCUMENTS: "vector-documents",
 	STORAGE_EXPLORER: "storage-file-explorer",
 	MODEL_CHAT: "model-chat",
+	MODEL_CHAT_SETTINGS: "model-chat-settings",
+	MODEL_CHAT_HISTORY: "model-chat-history",
 	ENGINE_SETTINGS: "engine-settings",
 	PROJECT_FILE_EXPLORER: "project-file-explorer",
 	PROJECT_FILE_EDITOR: "project-file-editor",

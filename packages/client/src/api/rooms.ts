@@ -400,13 +400,34 @@ export const renameRoom = async (
 	assertPixelSuccess(response.errors);
 };
 
+/** Paging, name search, and date direction for a conversation-list query. */
+export interface ConversationRoomQuery {
+	nameSearch?: string;
+	sort?: "ASC" | "DESC";
+	limit?: number;
+	offset?: number;
+}
+
 /** List the user's persisted assistant conversation rooms. */
 export const getUserConversationRooms = async (
 	insightId: string,
 	search: string,
+	query: ConversationRoomQuery = {},
 ): Promise<ConversationRoom[]> => {
+	const args = [
+		`roomOptionsSearch=${JSON.stringify(search)}`,
+		`sort=[${JSON.stringify(query.sort ?? "DESC")}]`,
+	];
+	if (query.nameSearch) {
+		args.push(
+			`search=[${JSON.stringify(`<encode>${query.nameSearch}</encode>`)}]`,
+		);
+	}
+	if (query.limit !== undefined && query.offset !== undefined) {
+		args.push(`limit=[${query.limit}]`, `offset=[${query.offset}]`);
+	}
 	const response = await runPixel<[RawConversationRoom[]]>(
-		`GetUserConversationRooms(roomOptionsSearch=${JSON.stringify(search)}, sort=["DESC"]);`,
+		`GetUserConversationRooms(${args.join(", ")});`,
 		insightId,
 	);
 	assertPixelSuccess(response.errors);
@@ -500,6 +521,182 @@ export const makeEngineRoomMcp = async (
 ): Promise<void> => {
 	const response = await runPixel<[boolean]>(
 		`MakeDefaultRoomToolsForEngine(engine=[${JSON.stringify(engineId)}]);`,
+		insightId,
+	);
+	assertPixelSuccess(response.errors);
+};
+
+/** One streaming chunk as delivered by the generic AskRoom API. */
+export type RoomStreamChunk = WorkbenchRoomStreamChunk;
+
+/** The input and response messages persisted for a generic room turn. */
+export interface AskRoomResult {
+	inputMessage: PlaygroundMessage;
+	responseMessage: PlaygroundMessage;
+	extraMessages?: {
+		inputMessage: PlaygroundMessage;
+		responseMessage: PlaygroundMessage;
+	}[];
+}
+
+/** Parameters for a generic model-room turn. */
+export interface AskRoomRequest {
+	engineId: string;
+	roomId: string;
+	command: string;
+	parentMessageId?: string;
+	media?: string[];
+	paramValues?: Record<string, unknown>;
+}
+
+const ASK_ROOM_ABORTED = "AskRoomAbortedError";
+
+const askRoomAbortedError = (): Error => {
+	const error = new Error("The model stream was stopped");
+	error.name = ASK_ROOM_ABORTED;
+	return error;
+};
+
+/** Whether an AskRoom error represents an intentional user stop. */
+export const isAskRoomAborted = (error: unknown): boolean =>
+	error instanceof Error && error.name === ASK_ROOM_ABORTED;
+
+const buildAskRoomParams = (request: AskRoomRequest): string => {
+	const params = [
+		`engine=[${JSON.stringify(request.engineId)}]`,
+		`roomId=[${JSON.stringify(request.roomId)}]`,
+		`command=[${encodePixelText(request.command)}]`,
+		`image=${JSON.stringify(request.media ?? [])}`,
+	];
+	if (request.parentMessageId) {
+		params.push(
+			`parentMessageId=[${JSON.stringify(request.parentMessageId)}]`,
+		);
+	}
+	params.push(`paramValues=[${JSON.stringify(request.paramValues ?? {})}]`);
+	return params.join(", ");
+};
+
+const readAskRoomOutput = (
+	output: AskRoomResult | undefined,
+): AskRoomResult => {
+	if (!output?.responseMessage) {
+		throw new Error("AskRoom did not return a response message");
+	}
+	return output;
+};
+
+/** Create and bind a generic model-chat room. */
+export const createRoom = async (
+	insightId: string,
+	options: { name?: string; context?: string } = {},
+): Promise<string> => {
+	const args: string[] = [];
+	if (options.name) {
+		args.push(`name=[${encodePixelText(options.name)}]`);
+	}
+	if (options.context) {
+		args.push(`context=[${encodePixelText(options.context)}]`);
+	}
+	const response = await runPixel<[{ roomId: string }]>(
+		`CreateRoom(${args.join(", ")});`,
+		insightId,
+	);
+	assertPixelSuccess(response.errors);
+	const roomId = response.pixelReturn[0]?.output.roomId;
+	if (!roomId) {
+		throw new Error("CreateRoom did not return a room ID");
+	}
+	await setRoomForInsight(insightId, roomId);
+	return roomId;
+};
+
+/** Send a generic room turn while emitting its streamed response chunks. */
+export const askRoom = async (
+	insightId: string,
+	request: AskRoomRequest,
+	handlers: {
+		onJobStarted?: (jobId: string) => void;
+		onChunk?: (chunk: RoomStreamChunk) => void;
+		signal?: AbortSignal;
+	} = {},
+): Promise<AskRoomResult> => {
+	if (handlers.signal?.aborted) {
+		throw askRoomAbortedError();
+	}
+	const { jobId } = await runPixelAsync(
+		`AskRoom(${buildAskRoomParams(request)});`,
+		insightId,
+	);
+	if (!jobId) {
+		throw new Error("AskRoom did not return a job ID");
+	}
+	handlers.onJobStarted?.(jobId);
+
+	for (;;) {
+		if (handlers.signal?.aborted) {
+			throw askRoomAbortedError();
+		}
+		const response = await getPixelJobStreaming(jobId);
+		for (const chunk of response.message) {
+			handlers.onChunk?.(chunk);
+		}
+		if (
+			response.status === "Complete" ||
+			response.status === "ProgressComplete"
+		) {
+			break;
+		}
+		if (response.status === "Canceled") {
+			throw askRoomAbortedError();
+		}
+		if (response.status === "Error" || response.status === "UnknownJob") {
+			throw new Error("The model stream is no longer available");
+		}
+		await new Promise((resolve) =>
+			setTimeout(resolve, STREAM_POLL_INTERVAL_MS),
+		);
+	}
+
+	const result = await getPixelAsyncResult<[AskRoomResult]>(jobId);
+	assertPixelSuccess(result.errors);
+	return readAskRoomOutput(result.results[0]?.output);
+};
+
+/** Stop a streaming generic room turn. */
+export const stopPixelJob = async (
+	insightId: string,
+	jobId: string,
+): Promise<void> => {
+	const response = await runPixel<[string]>(
+		`StopPixelExecution(id=[${JSON.stringify(jobId)}]);`,
+		insightId,
+	);
+	assertPixelSuccess(response.errors);
+};
+
+/** Persist a turn that was stopped before its model stream completed. */
+export const commitCancelledTurn = async (
+	insightId: string,
+	request: AskRoomRequest,
+	responseParts: PlaygroundMessagePart[],
+	note: string,
+): Promise<AskRoomResult> => {
+	const response = await runPixel<[AskRoomResult]>(
+		`AskRoom(${buildAskRoomParams(request)}, responseParts=${JSON.stringify(responseParts)}, hiddenMessage=[${encodePixelText(note)}]);`,
+		insightId,
+	);
+	assertPixelSuccess(response.errors);
+	return readAskRoomOutput(response.pixelReturn[0]?.output);
+};
+
+/** Remove a persisted generic room from the user's history. */
+export const removeUserRoom = async (
+	insightId: string,
+	roomId: string,
+): Promise<void> => {
+	const response = await runPixel<[boolean]>(
+		`RemoveUserRoom(roomId=${JSON.stringify(roomId)});`,
 		insightId,
 	);
 	assertPixelSuccess(response.errors);
@@ -690,4 +887,18 @@ export const continueWorkbenchRoomAfterTool = async (
 	}
 
 	return output;
+};
+
+/** Record the user's rating of an assistant response. */
+export const submitLlmFeedback = async (
+	insightId: string,
+	roomId: string,
+	messageId: string,
+	rating: "true" | "false",
+): Promise<void> => {
+	const response = await runPixel<[unknown]>(
+		`SubmitLlmFeedback(messageId=${JSON.stringify(messageId)}, feedbackText="", rating=${JSON.stringify(rating)}, roomId=${JSON.stringify(roomId)});`,
+		insightId,
+	);
+	assertPixelSuccess(response.errors);
 };

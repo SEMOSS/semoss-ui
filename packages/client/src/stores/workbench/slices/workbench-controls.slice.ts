@@ -6,7 +6,7 @@ import type {
 } from "../workbench.types";
 
 /** Panel-contributed chrome controls, keyed by panel instance. */
-export interface WorkbenchControlsSliceFields {
+interface WorkbenchControlsSliceFields {
 	/**
 	 * One control per panel. The chrome draws only the active panel's control
 	 * in each stack, so a registration for a hidden keepAlive panel simply
@@ -16,7 +16,7 @@ export interface WorkbenchControlsSliceFields {
 }
 
 /** Control actions exposed under the store's `actions` namespace. */
-export interface WorkbenchControlsActions {
+interface WorkbenchControlsActions {
 	/**
 	 * Register (or replace) a panel's chrome control.
 	 *

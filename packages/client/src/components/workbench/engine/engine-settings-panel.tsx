@@ -40,9 +40,7 @@ export interface EngineSettingsPanelProps {
  * then provides the EngineContext so the embedded pages behave the same as
  * their standalone route counterparts.
  */
-export const EngineSettingsPanel: React.FC<EngineSettingsPanelProps> = ({
-	tabs,
-}) => {
+const EngineSettingsPanel: React.FC<EngineSettingsPanelProps> = ({ tabs }) => {
 	const { permission } = useEngine();
 
 	const [selectedComponent, setSelectedComponent] =

@@ -1,4 +1,3 @@
-export * from "./engine-model-test-sidebar";
 export * from "./file-table";
 export { MemberAccessPanel } from "./member-access-panel";
 export { MemberList } from "./member-list";

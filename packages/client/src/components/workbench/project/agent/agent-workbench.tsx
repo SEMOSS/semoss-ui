@@ -37,7 +37,6 @@ const AGENT_WORKBENCH_LAYOUT: WorkbenchLayout = {
 		size: 1,
 		panelIds: [WORKBENCH_COMPONENTS.PROJECT_AGENT_EDITOR],
 		activeId: WORKBENCH_COMPONENTS.PROJECT_AGENT_EDITOR,
-		enableDeleteWhenEmpty: false,
 	},
 	panels: {
 		[WORKBENCH_PANEL_RECORDS.PROJECT_AGENT_EDITOR.id]:

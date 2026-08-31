@@ -77,7 +77,6 @@ const CODE_WORKBENCH_LAYOUT: WorkbenchLayout = {
 		size: 1,
 		panelIds: [WORKBENCH_COMPONENTS.PROJECT_APP_RENDERER],
 		activeId: WORKBENCH_COMPONENTS.PROJECT_APP_RENDERER,
-		enableDeleteWhenEmpty: false,
 	},
 	panels: {
 		[WORKBENCH_PANEL_RECORDS.PROJECT_APP_RENDERER.id]: {

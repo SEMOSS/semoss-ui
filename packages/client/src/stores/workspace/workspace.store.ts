@@ -29,7 +29,7 @@ interface WorkspaceStoreInterface {
 	model: FlexLayout.Model | null;
 }
 
-export interface WorkspaceConfigInterface {
+interface WorkspaceConfigInterface {
 	/**
 	 * Get the ID of the Insight tied to app workspace
 	 */

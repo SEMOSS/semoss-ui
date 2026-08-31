@@ -18,7 +18,7 @@ import { ProjectInsightExplorer } from "./project-insight-explorer";
  * drops the insight the terminal owns. Shows a spinner until a terminal insight
  * is ready.
  */
-export const ProjectInsightExplorerPanel: WorkbenchComponent<
+const ProjectInsightExplorerPanel: WorkbenchComponent<
 	Record<string, unknown>,
 	FileExplorerApi
 > = ({ id, setValue }) => {

@@ -178,7 +178,6 @@ export const FileExplorerItem: React.FC<FileExplorerItemProps> = ({
 	const isRenaming = tree.renamingPath === item.path;
 	const [renameValue, setRenameValue] = useState(item.name);
 	const [isDraggingSource, setIsDraggingSource] = useState(false);
-	const [draggedItemCount, setDraggedItemCount] = useState(0);
 	const inputRef = useRef<HTMLInputElement>(null);
 
 	useEffect(() => {
@@ -283,7 +282,6 @@ export const FileExplorerItem: React.FC<FileExplorerItemProps> = ({
 				e.stopPropagation();
 				const dragItems = dnd.getDragItems(item);
 				setIsDraggingSource(true);
-				setDraggedItemCount(dragItems.length);
 				dnd.setDragState(dragItems.length, dragItems);
 				dnd.onItemDragStart(e, dragItems);
 			}}
@@ -332,7 +330,6 @@ export const FileExplorerItem: React.FC<FileExplorerItemProps> = ({
 				e.stopPropagation();
 				dnd.setActiveDropTargetPath(null);
 				setIsDraggingSource(false);
-				setDraggedItemCount(0);
 				dnd.setDragState(0, []);
 			}}
 			onClickCapture={(e) => {
@@ -369,10 +366,10 @@ export const FileExplorerItem: React.FC<FileExplorerItemProps> = ({
 						isBulkSelected &&
 							"bg-primary/10 text-accent-foreground ring-1 ring-primary/40 ring-inset",
 						isActiveDropTarget &&
-							"bg-primary/15 ring-1 ring-primary/50 ring-inset",
-						isDraggingSource &&
-							"opacity-60 ring-1 ring-primary/30 ring-inset",
-						dnd.canDrag && "cursor-grab active:cursor-grabbing",
+							"bg-primary/15 ring-1 ring-primary ring-inset",
+						// matches a dragged workbench tab; no ring, so the drop
+						// target stays the only ringed row on screen
+						isDraggingSource && "opacity-40",
 					)}
 					title={
 						item.lastModified
@@ -430,25 +427,6 @@ export const FileExplorerItem: React.FC<FileExplorerItemProps> = ({
 							>
 								{item.name}
 							</button>
-						)}
-						<div className="flex-1" />
-						{isDraggingSource && (
-							<span
-								data-testid={`${itemTestId}-drag-source-indicator`}
-								className="shrink-0 rounded border border-primary/30 bg-primary/10 px-1.5 py-0.5 text-[10px] text-primary"
-							>
-								{t("fileExplorer.movingItems", {
-									count: draggedItemCount,
-								})}
-							</span>
-						)}
-						{isActiveDropTarget && (
-							<span
-								data-testid={`${itemTestId}-drop-target-indicator`}
-								className="shrink-0 rounded border border-primary/40 bg-primary/10 px-1.5 py-0.5 text-[10px] text-primary"
-							>
-								{t("fileExplorer.moveHere")}
-							</span>
 						)}
 					</div>
 

@@ -4,7 +4,7 @@ import type {
 } from "./workbench-assistant.slice";
 
 /** One selectable argument for a slash command. */
-export interface SlashCommandOption {
+interface SlashCommandOption {
 	/** The argument value as typed ("high", "acceptEdits"). */
 	value: string;
 	/** Short description shown in the command menu. */
@@ -12,7 +12,7 @@ export interface SlashCommandOption {
 }
 
 /** One slash command the composer understands. */
-export interface SlashCommandDefinition {
+interface SlashCommandDefinition {
 	/** Command name without the leading slash. */
 	name: string;
 	/** Short description shown in the command menu. */
@@ -22,7 +22,7 @@ export interface SlashCommandDefinition {
 }
 
 /** Every slash command the assistant composer understands. */
-export const SLASH_COMMANDS: SlashCommandDefinition[] = [
+const SLASH_COMMANDS: SlashCommandDefinition[] = [
 	{
 		name: "compact",
 		description: "Summarize older messages to free up context",

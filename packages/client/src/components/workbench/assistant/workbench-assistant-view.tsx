@@ -14,7 +14,7 @@ import { WorkbenchAssistantPanel } from "./workbench-assistant-panel";
  * @name WorkbenchAssistantView
  * @return The assistant panel wired to the current insight.
  */
-export const WorkbenchAssistantView = () => {
+const WorkbenchAssistantView = () => {
 	const insight = useInsight();
 	const initialize = useWorkbench((state) => state.assistant.initialize);
 	const dispose = useWorkbench((state) => state.assistant.dispose);

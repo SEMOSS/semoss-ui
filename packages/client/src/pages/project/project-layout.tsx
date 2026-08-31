@@ -7,18 +7,15 @@ import { ResourceNotFound } from "@/components/common/resource-not-found";
 import { ProjectContext, type ProjectContextType } from "@/contexts";
 import { useAPI, useRootStore } from "@/hooks";
 
-export const CATALOG: Record<
-	Project["project_type"],
-	ProjectContextType["catalog"]
-> = {
-	CODE: { name: "App", path: "/app" },
-	BLOCKS: { name: "App", path: "/app" },
-	SKILL: { name: "Skill", path: "/skill" },
-	WORKSPACE: { name: "Agent", path: "/agent" },
-	NOTEBOOK: { name: "Notebook", path: "/notebook" },
-	AUTOMATION: { name: "Automation", path: "/automation" },
-	INSIGHT: { name: "App", path: "/app" },
-} as const;
+const CATALOG: Record<Project["project_type"], ProjectContextType["catalog"]> =
+	{
+		CODE: { name: "App", path: "/app" },
+		BLOCKS: { name: "App", path: "/app" },
+		SKILL: { name: "Skill", path: "/skill" },
+		WORKSPACE: { name: "Agent", path: "/agent" },
+		NOTEBOOK: { name: "Notebook", path: "/notebook" },
+		INSIGHT: { name: "App", path: "/app" },
+	} as const;
 
 /**
  * Wrap the project routes and provide the ProjectContext + permission gate

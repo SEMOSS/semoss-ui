@@ -36,7 +36,6 @@ const NOTEBOOK_WORKBENCH_LAYOUT: WorkbenchLayout = {
 		size: 1,
 		panelIds: [NOTEBOOK_EDITOR_ID],
 		activeId: NOTEBOOK_EDITOR_ID,
-		enableDeleteWhenEmpty: false,
 	},
 	panels: {
 		[NOTEBOOK_EDITOR_ID]: {

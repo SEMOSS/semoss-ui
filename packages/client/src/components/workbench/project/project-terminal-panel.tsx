@@ -22,7 +22,7 @@ interface ProjectTerminalPanelProps {
  * `@semoss/terminal` (`TerminalConsolePanel`) so it is shared with other
  * embedders; each tab is its own project-scoped insight.
  */
-export const ProjectTerminalPanel: React.FC<ProjectTerminalPanelProps> = ({
+const ProjectTerminalPanel: React.FC<ProjectTerminalPanelProps> = ({
 	onActiveInsightChange,
 }) => {
 	const { project } = useProject();

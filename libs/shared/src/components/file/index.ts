@@ -12,6 +12,7 @@ export * from "./file-explorer-header";
 export * from "./file-explorer-item";
 export * from "./file-explorer-new-action";
 export * from "./file-explorer-refresh-action";
+export * from "./file-html-editor";
 export * from "./file-image-viewer";
 export * from "./file-markdown-editor";
 export * from "./file-notebook";

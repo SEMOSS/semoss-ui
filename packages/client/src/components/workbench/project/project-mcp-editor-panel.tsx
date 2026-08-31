@@ -26,9 +26,9 @@ export interface ProjectMcpEditorConfig {
  * `EngineMcpEditorPanel`, reading and writing the toolbox JSON through
  * `GetAppAssets` / `SaveAppAssets`.
  */
-export const ProjectMcpEditorPanel: WorkbenchComponent<
-	ProjectMcpEditorConfig
-> = ({ config }) => {
+const ProjectMcpEditorPanel: WorkbenchComponent<ProjectMcpEditorConfig> = ({
+	config,
+}) => {
 	const { project, permission } = useProject();
 	const readOnly = !(permission === "OWNER" || permission === "EDIT");
 	const insight = useInsight();

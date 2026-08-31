@@ -252,6 +252,64 @@ callers. No provider component, no generics. Layout coupling is explicit: paired
 `config.sourcePanel`, titles derive reactively (custom `header` reading the workbench store),
 and cleanup runs through the shell's `onPanelClose(pid, record)` prop.
 
+`stores/workbench/model/model-chat.store.ts` is the second consumer and the simpler read:
+one store, one panel tree, no layout coupling at all.
+
+## The model workbench has no assistant
+
+`engine/model/` is the one engine workbench that does **not** register
+`WORKBENCH_ASSISTANT_PANEL`. Its main tab is `MODEL_CHAT_PANEL` — a plain streaming chat with
+the engine itself, not an agent harness — with `MODEL_CHAT_SETTINGS_PANEL` and
+`MODEL_CHAT_HISTORY_PANEL` on the right border, both collapsed by default. They are border
+panels rather than views inside the chat precisely so the rail draws their toggles: a panel
+gets at most one chrome control, and this needed two.
+
+- **`AskRoom`**, not `RunAgent`. Turns go through `askRoom` in `api/rooms.ts`:
+  `runPixelAsync` → poll `getPixelJobStreaming` → `getPixelAsyncResult`. Stopping is
+  `StopPixelExecution` followed by `commitCancelledTurn`, or the user's message is orphaned
+  in the room.
+- **`CreateRoom`, not `CreatePlaygroundRoom`.** The playground variant forces the room into
+  the playground system project, while `GetUserConversationRooms` scopes to the insight's
+  context project — so rooms created that way never appear in the list. `createRoom` passes
+  no project, which resolves the same way the list does.
+- **The history list lives in the panel, not the store.** Paging, search, and sort are that
+  one panel's view state; the store only owns the *active* conversation. The panel publishes
+  a `refresh` function on its scratch `value` so its chrome control can pull the list —
+  which is why that control has no spinner (see the control rules above).
+- **`GetUserConversationRooms` orders by `DATE_CREATED` only.** It takes a direction, not a
+  column, so the history offers newest/oldest and nothing else. **Sorting has to stay
+  server-side** — the list is paged, so a client-side sort would only order the rows already
+  fetched and rows would shuffle as pages arrive. A name sort needs a `sortBy` key on the
+  reactor first; until then the option stays off the menu rather than shipping a sort that
+  lies. It also returns no total, so "there may be more" is inferred from a page coming back
+  full, which `useIteratorPixel` cannot express (it derives `hasMore` from a `getTotalCount`).
+- **AskRoom takes no system prompt.** It reads the room's `instructions`, so
+  `updateRoomOptions` has to land *before* the turn. Same for the room's `mcp` list — which
+  this panel deliberately keeps empty, because MCP tools would make AskRoom return turns
+  needing a client-side execution loop the panel does not run.
+- **Attachments go to the insight space, gated permissively.** Files queue on the composer
+  (drop, paperclip, or paste) and are uploaded with `uploadInsight(insightId, "", files)`
+  only when the turn is sent, so a file the user queues and then removes never costs a
+  request. The returned `fileLocation`s ride out as AskRoom's `image` param — the same one
+  `AskPlayground` takes; `RunAgent` calls it `media`. The backend persists them as `MEDIA`
+  parts, which is what makes them survive a reload. The composer offers attachments unless
+  `GetModelMetadata` reports `attachment: false`: a **missing** flag means the provider never
+  reported one, not "no", so gating on `attachment === true` would silently disable uploads
+  on every engine whose metadata was never filled in. Gating on `inputModalities` is worse
+  still — `FILE` never comes from the static catalog, so almost nothing would qualify. The
+  drop target also has to ignore spawn drags (`isSpawnDrag`): the dock moves panels with
+  native HTML5 drags too, and a tab crossing the composer must not look droppable.
+- **Tools here means `built_in_tools`** — the provider-hosted ones from
+  `GetModelBuiltinTools`, rendered by the shared `EngineBuiltinToolsField`. They ride on
+  `paramValues`, which overrides the engine's saved selection only because the engine checks
+  `!parameters.containsKey(...)`; sending `{}` is how the user turns them all off. Nothing
+  here writes back to engine metadata. Temperature and max output tokens are deliberately
+  **not** offered: they are engine-level metadata, and a per-conversation override here only
+  duplicated what the engine already governs.
+- **Rooms are scoped by `workbench: "model-chat:<engineId>"`** in the room options, because
+  `GetUserConversationRooms` matches by LIKE over the serialized options. The prefix is what
+  keeps these rooms out of assistant history.
+
 ## File map
 
 | File/folder | Role |

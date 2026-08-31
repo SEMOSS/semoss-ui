@@ -2,7 +2,7 @@ import type { WorkbenchRect, WorkbenchSide } from "@/stores/workbench";
 import type { WorkbenchDropInfo } from "./workbench.types";
 
 /** How far a drop zone reaches in from the stage edge for border targets. */
-export const WORKBENCH_EDGE_BAND = 56;
+const WORKBENCH_EDGE_BAND = 56;
 
 /**
  * How deep the split zones reach into a dock. Generous on any dock big

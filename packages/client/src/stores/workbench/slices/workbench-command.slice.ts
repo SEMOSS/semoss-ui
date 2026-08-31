@@ -1,7 +1,7 @@
 import type { WorkbenchCommand, WorkbenchSlice } from "../workbench.types";
 
 /** Command registry fields owned by each workbench instance. */
-export interface WorkbenchCommandSliceFields {
+interface WorkbenchCommandSliceFields {
 	/** Whether the command palette is open for this workbench instance. */
 	isCommandOpen: boolean;
 
@@ -10,7 +10,7 @@ export interface WorkbenchCommandSliceFields {
 }
 
 /** Command actions exposed under the store's `actions` namespace. */
-export interface WorkbenchCommandActions {
+interface WorkbenchCommandActions {
 	/** Set whether the command palette is open for this workbench instance. */
 	setCommandOpen: (isOpen: boolean) => void;
 

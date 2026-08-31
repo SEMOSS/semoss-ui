@@ -28,7 +28,6 @@ const STORAGE_WORKBENCH_LAYOUT: WorkbenchLayout = {
 		size: 1,
 		panelIds: [],
 		activeId: null,
-		enableDeleteWhenEmpty: false,
 	},
 	panels: {
 		[WORKBENCH_PANEL_RECORDS.STORAGE_EXPLORER.id]:

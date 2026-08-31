@@ -57,21 +57,6 @@ export const formatLongMs = (ms: number): string => {
 };
 
 /**
- * Shorten a file path to its last few segments ("…/src/pages/home.tsx"),
- * normalizing backslashes so Windows paths shorten the same way.
- *
- * @name shortenPath
- * @param filePath - The path to shorten.
- * @param maxParts - Maximum trailing segments to keep (default 3).
- * @return The shortened path, or the original when already short enough.
- */
-export const shortenPath = (filePath: string, maxParts = 3): string => {
-	const parts = filePath.replace(/\\/g, "/").split("/").filter(Boolean);
-	if (parts.length <= maxParts) return filePath;
-	return `…/${parts.slice(-maxParts).join("/")}`;
-};
-
-/**
  * Truncate a string in the middle so both the beginning and end stay visible
  * ("beginning…end"), biasing the split toward the head.
  *
@@ -80,7 +65,7 @@ export const shortenPath = (filePath: string, maxParts = 3): string => {
  * @param maxLength - Maximum length of the result including the ellipsis.
  * @return The truncated string, or the original when within the limit.
  */
-export const truncateMiddle = (value: string, maxLength: number): string => {
+const truncateMiddle = (value: string, maxLength: number): string => {
 	if (value.length <= maxLength) return value;
 	const headLength = Math.ceil((maxLength - 1) * 0.62);
 	const tailLength = Math.floor((maxLength - 1) * 0.38);
@@ -121,7 +106,7 @@ const IMPORTANT_ARG_KEYS = [
  * @param value - The text body to summarize.
  * @return The bracketed size/line-count summary.
  */
-export const formatLargeTextSummary = (value: string): string => {
+const formatLargeTextSummary = (value: string): string => {
 	const lineCount = value.split(/\r\n|\r|\n/).length;
 	const bytes = new Blob([value]).size;
 	const size =
@@ -181,51 +166,6 @@ export const formatToolArgs = (args?: Record<string, unknown>): string => {
 		.join(", ");
 
 	return `${summary}${extraCount > 0 ? `, +${extraCount} more` : ""}`;
-};
-
-/**
- * Build a one-line preview of a tool output for collapsed rows: unescapes
- * literal "\n"/"\t" sequences, collapses whitespace, and middle-truncates.
- *
- * @name formatToolOutputPreview
- * @param value - The raw tool output.
- * @param maxLength - Maximum preview length (default 160).
- * @return The single-line output preview.
- */
-export const formatToolOutputPreview = (
-	value: string,
-	maxLength = 160,
-): string =>
-	truncateMiddle(
-		value
-			.replace(/\\n/g, "\n")
-			.replace(/\\t/g, "\t")
-			.replace(/\s+/g, " ")
-			.trim(),
-		maxLength,
-	);
-
-/**
- * Split a leading "**Bold Title**" off a markdown block so callers can
- * render the title and body separately.
- *
- * @name splitLeadingBoldTitle
- * @param value - The markdown block to split.
- * @return The extracted title (undefined when absent) and remaining body.
- */
-export const splitLeadingBoldTitle = (
-	value: string,
-): { title?: string; body: string } => {
-	const trimmed = value.trim();
-	const match = trimmed.match(/^\*\*([^*\n]{2,120})\*\*\s*([\s\S]*)$/);
-	if (!match) {
-		return { title: undefined, body: trimmed };
-	}
-
-	return {
-		title: match[1].trim(),
-		body: match[2].trim(),
-	};
 };
 
 /**

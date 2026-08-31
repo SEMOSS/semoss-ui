@@ -19,7 +19,6 @@ import {
 	Field,
 	FieldGroup,
 	FieldLabel,
-	FieldSeparator,
 	FieldSet,
 	Input,
 	Item,
@@ -422,25 +421,6 @@ export const NewFileOverlay: React.FC<FileExplorerNewFileOverlayProps> = ({
 					>
 						<FieldSet>
 							<FieldGroup>
-								<Field>
-									<FieldLabel htmlFor={destinationInputId}>
-										{t(
-											"fileExplorer.overlay.fields.location",
-										)}
-									</FieldLabel>
-									<Input
-										id={destinationInputId}
-										data-testid="new-file-overlay-location-input"
-										placeholder={t(
-											"fileExplorer.overlay.placeholders.location",
-										)}
-										value={destination}
-										onChange={(e) =>
-											setDestination(e.target.value)
-										}
-									/>
-								</Field>
-								<FieldSeparator />
 								{data.action === "upload" && (
 									<Field>
 										<FieldLabel>
@@ -522,6 +502,8 @@ export const NewFileOverlay: React.FC<FileExplorerNewFileOverlayProps> = ({
 													{data.files.map((file) => {
 														const fileKey = `${file.name}-${file.size}`;
 														const fileIsZip =
+															adapter.capabilities
+																.mutate &&
 															isZipFile(file);
 														const shouldUnzip =
 															fileIsZip &&
@@ -584,7 +566,6 @@ export const NewFileOverlay: React.FC<FileExplorerNewFileOverlayProps> = ({
 										)}
 									</Field>
 								)}
-
 								{data.action !== "upload" && (
 									<Field>
 										<FieldLabel>
@@ -620,9 +601,28 @@ export const NewFileOverlay: React.FC<FileExplorerNewFileOverlayProps> = ({
 														: previous,
 												)
 											}
+											autoFocus
 										/>
 									</Field>
 								)}
+								<Field>
+									<FieldLabel htmlFor={destinationInputId}>
+										{t(
+											"fileExplorer.overlay.fields.location",
+										)}
+									</FieldLabel>
+									<Input
+										id={destinationInputId}
+										data-testid="new-file-overlay-location-input"
+										placeholder={t(
+											"fileExplorer.overlay.placeholders.location",
+										)}
+										value={destination}
+										onChange={(e) =>
+											setDestination(e.target.value)
+										}
+									/>
+								</Field>
 							</FieldGroup>
 						</FieldSet>
 					</form>

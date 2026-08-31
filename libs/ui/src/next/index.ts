@@ -28,6 +28,7 @@ export * from "./drawer";
 export * from "./dropdown-menu";
 export * from "./field";
 export * from "./file-dropzone";
+export * from "./form";
 export * from "./hover-card";
 export * from "./input";
 export * from "./input-group";

@@ -37,9 +37,7 @@ export interface WorkbenchTabProps {
  * The inline rename input shown in place of a tab or border header. Mounted
  * only while its panel is being edited, so state seeds from the current name.
  */
-export const WorkbenchTabRenameInput: FC<{ pid: WorkbenchPanelId }> = ({
-	pid,
-}) => {
+const WorkbenchTabRenameInput: FC<{ pid: WorkbenchPanelId }> = ({ pid }) => {
 	const actions = useWorkbench((s) => s.layout.actions);
 	const name = useWorkbench((s) => s.layout.panels[pid]?.name ?? "");
 	const [value, setValue] = useState(name);

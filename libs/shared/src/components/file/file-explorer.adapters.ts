@@ -1,5 +1,8 @@
 import type { FileItem, FileMode } from "./file.types";
-import { mapStorageEntriesToFileItems } from "./file-explorer.utils";
+import {
+	ensureDirectoryPath,
+	mapStorageEntriesToFileItems,
+} from "./file-explorer.utils";
 
 /** Response shape shared by every `insight.actions.upload*` call. */
 export interface FileUploadResponse {
@@ -31,16 +34,20 @@ export interface FileExplorerUploadActions {
 		files: File | File[],
 	): Promise<FileUploadResponse>;
 	uploadUser(path: string, files: File | File[]): Promise<FileUploadResponse>;
+	/** Run a follow-up Pixel after the upload lands, e.g. to push it onward. */
+	run(pixel: string): Promise<unknown>;
 }
 
 /** What a mode supports. Drives which affordances render at all. */
 export interface FileExplorerCapabilities {
 	/** Server-side search. STORAGE filters client-side instead. */
 	search: boolean;
-	/** Rename / move / copy / delete / create. */
+	/** Rename / move / copy / create. */
 	mutate: boolean;
 	upload: boolean;
 	download: boolean;
+	/** Independent of `mutate` — STORAGE supports delete but not the rest. */
+	delete: boolean;
 }
 
 /**
@@ -108,6 +115,7 @@ const createAssetAdapter = (family: AssetFamily): FileExplorerAdapter => ({
 		mutate: true,
 		upload: true,
 		download: true,
+		delete: true,
 	},
 	browse: (path) =>
 		`Browse${family.name}Assets(filePath=["${path}"]${family.scopeTail});`,
@@ -136,12 +144,13 @@ const createAssetAdapter = (family: AssetFamily): FileExplorerAdapter => ({
 /**
  * Build the adapter for a storage bucket.
  *
- * Buckets are browse-only: the reactor family has no rename, delete, upload,
- * search, or download, so every mutating builder throws rather than returning
- * an empty Pixel that would silently no-op.
+ * Buckets support browse, upload (push), and delete. The reactor family has
+ * no rename, copy, create, search, or download/unzip, so those builders throw
+ * rather than returning an empty Pixel that would silently no-op.
  *
  * @param storage - The bucket's engine id.
- * @return A browse-only adapter.
+ * @return An adapter over `ListStoragePathDetails` / `PushToStorage` /
+ * `DeleteFromStorage`.
  */
 const createStorageAdapter = (storage: string): FileExplorerAdapter => {
 	/**
@@ -158,20 +167,39 @@ const createStorageAdapter = (storage: string): FileExplorerAdapter => {
 		capabilities: {
 			search: false,
 			mutate: false,
-			upload: false,
+			upload: true,
 			download: false,
+			delete: true,
 		},
 		browse: (path) =>
 			`ListStoragePathDetails(storage=["${storage}"], storagePath=["${path}"]);`,
 		search: unsupported("search"),
 		rename: unsupported("rename"),
 		copy: unsupported("copy"),
-		remove: unsupported("delete"),
+		remove: (path) =>
+			`Storage(storage = "${storage}") | DeleteFromStorage(storagePath='${path}', leaveFolderStructure=false);`,
 		download: unsupported("download"),
 		createFile: unsupported("create"),
 		createDirectory: unsupported("create"),
 		unzip: unsupported("unzip"),
-		upload: unsupported("upload"),
+		// buckets have no direct "upload into the tree" reactor — the file is
+		// first HTTP-uploaded to a server-side scratch location (the same
+		// endpoint every other family's upload goes through) to get a
+		// `fileLocation`, then pushed into the bucket from there.
+		upload: async (actions, path, files) => {
+			const response = await actions.uploadInsight(path, files);
+			const uploaded = response?.data || [];
+
+			for (const file of uploaded) {
+				const fileLocation = file.fileLocation.replace(/\\/g, "/");
+				const destPath = `${ensureDirectoryPath(path)}${file.fileName}`;
+				await actions.run(
+					`Storage(storage = "${storage}") | PushToStorage(storagePath='${destPath}', filePath='${fileLocation}', metadata=[]);`,
+				);
+			}
+
+			return response;
+		},
 		mapEntries: mapStorageEntriesToFileItems,
 	};
 };

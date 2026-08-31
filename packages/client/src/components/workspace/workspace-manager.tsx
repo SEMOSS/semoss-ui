@@ -1,7 +1,6 @@
 import {
 	Blocks,
 	Braces,
-	FlaskConical,
 	Folder,
 	Layers,
 	type LucideIcon,
@@ -33,7 +32,6 @@ const WORKSPACE_TAB_ICON_BY_COMPONENT: Record<string, LucideIcon> = {
 	variables: Braces,
 	blocks: Blocks,
 	layers: Layers,
-	insight: FlaskConical,
 	"app-file-explorer": Folder,
 	"notebook-explorer": Notebook,
 };
@@ -68,15 +66,6 @@ type WorkspaceManagerProps = {
 
 	/** Optional action handler — return the action to let FlexLayout process it, return undefined to consume it */
 	onAction?: (action: FlexLayout.Action) => FlexLayout.Action | undefined;
-
-	/** Optional hook to customise tab rendering after default icons are applied */
-	onRenderTab?: (
-		node: FlexLayout.TabNode,
-		renderValues: FlexLayout.ITabRenderValues,
-	) => void;
-
-	/** When true, the workspace is view-only: layout is not persisted to cache and the settings/reset controls are hidden */
-	readOnly?: boolean;
 };
 
 export const WorkspaceManager: React.FC<WorkspaceManagerProps> = observer(
@@ -84,8 +73,6 @@ export const WorkspaceManager: React.FC<WorkspaceManagerProps> = observer(
 		options,
 		factory = () => null,
 		onAction = (action: FlexLayout.Action) => action,
-		onRenderTab: externalOnRenderTab,
-		readOnly = false,
 	}) => {
 		const { workspace } = useWorkspace();
 		const layoutRef = useRef<FlexLayout.Layout | null>(null);
@@ -190,13 +177,6 @@ export const WorkspaceManager: React.FC<WorkspaceManagerProps> = observer(
 			// default options if not loaded from cache
 			const defaultOptions = JSON.parse(JSON.stringify(options));
 
-			// read-only workspaces always start from the passed options and never
-			// read/write the shared per-app layout cache (keyed by appId)
-			if (readOnly) {
-				workspace.load(defaultOptions);
-				return;
-			}
-
 			// set the workspace options
 			// try to load from cache
 			const isLoaded = workspace.loadFromCache();
@@ -227,9 +207,7 @@ export const WorkspaceManager: React.FC<WorkspaceManagerProps> = observer(
 									close: <XIcon className="size-4" />,
 								}}
 								onModelChange={() => {
-									if (!readOnly) {
-										workspace.saveToCache();
-									}
+									workspace.saveToCache();
 								}}
 								onAction={(action) => {
 									const external = onAction?.(action);
@@ -249,31 +227,20 @@ export const WorkspaceManager: React.FC<WorkspaceManagerProps> = observer(
 										renderValues.leading = tabIcon;
 									}
 
-									externalOnRenderTab?.(
-										tabNode,
-										renderValues,
-									);
-
 									return renderValues;
 								}}
 							/>
-							{!readOnly && (
-								<div
-									className={cn(
-										"absolute left-2 z-10 flex flex-col gap-1",
-										hasBottomBorder
-											? "bottom-14"
-											: "bottom-2",
-									)}
-								>
-									<WorkspaceSettingsToggle
-										model={workspace.model}
-									/>
-									<WorkspaceResetButton
-										layout={options.layout}
-									/>
-								</div>
-							)}
+							<div
+								className={cn(
+									"absolute left-2 z-10 flex flex-col gap-1",
+									hasBottomBorder ? "bottom-14" : "bottom-2",
+								)}
+							>
+								<WorkspaceSettingsToggle
+									model={workspace.model}
+								/>
+								<WorkspaceResetButton layout={options.layout} />
+							</div>
 						</>
 					) : null}
 				</div>

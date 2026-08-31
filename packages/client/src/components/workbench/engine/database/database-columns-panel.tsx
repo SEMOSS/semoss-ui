@@ -60,7 +60,7 @@ function getActionKey(action: { label: string }): string {
 		.replace(/^-+|-+$/g, "");
 }
 
-export const DatabaseColumnsPanel: WorkbenchComponent = ({ id }) => {
+const DatabaseColumnsPanel: WorkbenchComponent = ({ id }) => {
 	const { permission } = useEngine();
 	const mode = useDatabaseWorkbench((state) => state.mode);
 	const structure = useDatabaseWorkbench((state) => state.structure.data);

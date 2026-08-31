@@ -1,4 +1,4 @@
-import { Navigate, Outlet } from "react-router-dom";
+import { Outlet } from "react-router-dom";
 import { ProjectAccessControl, ProjectCatalog } from "@/components/project";
 import {
 	AppCommitsPage,
@@ -15,7 +15,6 @@ import { CreateAgentPage } from "./agent/create-agent-page";
 import { EditAgentPage } from "./agent/edit-agent-page";
 import { CreateAppPage } from "./app/create-app-page";
 import { EditAppPage } from "./app/edit-app-page";
-import { CreateAutomationPage } from "./automation/create-automation-page";
 import { CreateNotebookPage } from "./notebook/create-notebook-page";
 import { EditNotebookPage } from "./notebook/edit-notebook-page";
 import { ViewNotebookPage } from "./notebook/view-notebook-page";
@@ -341,93 +340,6 @@ export const PROJECT_ROUTES: {
 								path: "smss",
 								element: <AppSmssPage />,
 							},
-						],
-					},
-				],
-			},
-		],
-	},
-	{
-		path: "automation",
-		element: <Outlet />,
-		children: [
-			{
-				path: "",
-				element: <ProjectCatalog type="AUTOMATION" />,
-			},
-			{
-				path: "new",
-				element: <CreateAutomationPage />,
-			},
-			{
-				path: ":appId",
-				element: <ProjectLayout />,
-				children: [
-					{
-						path: "edit",
-						element: <EditAppPage />,
-					},
-					{
-						path: "*",
-						element: (
-							<ProjectTabsLayout
-								tabs={[
-									{ name: "Overview", path: "" },
-									{
-										name: "MCP",
-										path: "mcp-usage",
-										restrict: [
-											"OWNER",
-											"EDIT",
-											"READ_ONLY",
-										],
-									},
-									{
-										name: "Commits",
-										path: "commits",
-										restrict: ["OWNER", "EDIT"],
-									},
-									{
-										name: "GitHub",
-										path: "github",
-										restrict: ["OWNER"],
-									},
-									{
-										name: "Settings",
-										path: "settings",
-										restrict: ["OWNER"],
-									},
-									{
-										name: "Access Control",
-										path: "access-control",
-										restrict: ["OWNER", "EDIT"],
-									},
-									{
-										name: "SMSS",
-										path: "smss",
-										restrict: ["OWNER"],
-									},
-								]}
-							/>
-						),
-						children: [
-							{
-								path: "",
-								element: <Navigate to="settings" replace />,
-							},
-							{ path: "mcp-usage", element: <AppMcpUsagePage /> },
-							{ path: "commits", element: <AppCommitsPage /> },
-							{ path: "github", element: <AppGithubPage /> },
-							{
-								path: "github/select-repo",
-								element: <AppGithubSelectRepoPage />,
-							},
-							{ path: "settings", element: <AppSettingsPage /> },
-							{
-								path: "access-control",
-								element: <ProjectAccessControl />,
-							},
-							{ path: "smss", element: <AppSmssPage /> },
 						],
 					},
 				],

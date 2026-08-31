@@ -30,7 +30,7 @@ export type WorkbenchBorderSlot =
 	| ((ctx: WorkbenchBorderSlotCtx) => ReactNode);
 
 /** Rail add-ons per side, before and/or after the panel icons. */
-export type WorkbenchBorderSlots = Partial<
+type WorkbenchBorderSlots = Partial<
 	Record<
 		WorkbenchSide,
 		{ before?: WorkbenchBorderSlot; after?: WorkbenchBorderSlot }

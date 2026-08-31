@@ -226,7 +226,7 @@ export interface WorkbenchControl<P = WorkbenchPanelParams, V = unknown> {
 export type WorkbenchControlAny = WorkbenchControl<any, any>;
 
 /** A palette command contributed by a panel instance. */
-export interface WorkbenchPanelCommand {
+interface WorkbenchPanelCommand {
 	id: string;
 	/** Palette section prefix — commands display as `${category}: ${label}`. */
 	category?: string;

@@ -43,7 +43,7 @@ import {
 type WorkbenchPanelFlag = "canClose" | "canDrag" | "canMaximize" | "canRename";
 
 /** Layout state fields owned by each workbench instance. */
-export interface WorkbenchLayoutSliceFields {
+interface WorkbenchLayoutSliceFields {
 	/** Unique identity for this workbench instance. */
 	id: string;
 

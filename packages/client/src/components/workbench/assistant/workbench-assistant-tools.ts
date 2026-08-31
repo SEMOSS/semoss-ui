@@ -1,12 +1,5 @@
-import {
-	isRequestUserInputAction,
-	parseUserInputRequest as sdkParseUserInputRequest,
-} from "@semoss/sdk";
-import type {
-	BuildPendingAction,
-	BuildTool,
-	UserInputRequest,
-} from "@/stores/workbench";
+import { isRequestUserInputAction } from "@semoss/sdk";
+import type { BuildPendingAction, BuildTool } from "@/stores/workbench";
 
 /** Family a tool belongs to for phase titles and rollup rows. */
 export type ToolFamily =
@@ -45,7 +38,7 @@ const metadataString = (
  * @param metadata - Tool metadata that may record the original name.
  * @return The original tool name, or the input when no alias is detected.
  */
-export const stripMcpToolAlias = (
+const stripMcpToolAlias = (
 	name: string,
 	metadata?: Record<string, unknown>,
 ): string => {
@@ -237,13 +230,6 @@ export const phaseTitle = (tools: BuildTool[]): string => {
 	}
 	return "Working through the request";
 };
-
-// Question normalization/parsing for RequestUserInput now lives in
-// @semoss/sdk (shared with playground); re-export it here so existing
-// imports of this module keep working unchanged.
-export const parseUserInputRequest = (
-	action: BuildPendingAction,
-): UserInputRequest | null => sdkParseUserInputRequest(action);
 
 /**
  * Pretty-print a pending action's request payload for the details block:
