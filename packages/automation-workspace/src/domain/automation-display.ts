@@ -10,22 +10,8 @@ import {
 	Play,
 	Sigma,
 } from "lucide-react";
-import type {
-	AutomationNode,
-	AutomationNodeResult,
-	AutomationNodeType,
-	RunStatus,
-} from "./automation.types";
+import type { AutomationNode, AutomationNodeType } from "./automation.types";
 import { formatDurationMs } from "./automation-utils";
-
-export interface AutomationRunData {
-	STATUS: RunStatus;
-	RUN_ID?: string;
-	nodeResults?: AutomationNodeResult[];
-	ERROR_MESSAGE?: string;
-	/** Per-workflow human-readable summary (see AutomationConstants.RESULT_SUMMARY on the backend). */
-	summary?: string;
-}
 
 export const STEP_TYPES: {
 	type: AutomationNodeType;
@@ -184,17 +170,6 @@ export function formatRunDuration(
 	const ms =
 		parseUtcDate(completedAt).getTime() - parseUtcDate(startedAt).getTime();
 	return formatDurationMs(ms);
-}
-
-export const STEP_STATUS_BORDER: Record<string, string> = {
-	error: "border-destructive/40",
-	success: "border-emerald-500/40",
-	running: "border-primary/40",
-	idle: "border-border",
-};
-
-export function newStepId(type: AutomationNodeType) {
-	return `${type}-${crypto.randomUUID()}`;
 }
 
 export function getStepHeaderLabel(step: AutomationNode) {

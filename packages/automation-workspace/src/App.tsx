@@ -4,10 +4,9 @@ import { useTheme } from "@semoss/ui/next";
 import { AutomationCanvas } from "./components/canvas-editor/automation-canvas";
 import { InspectorTab } from "./components/canvas-editor/tabs/inspector-tab";
 import {
+	type AutomationTraceSnapshot,
 	RunsTab,
-	type RunsTabSnapshot,
 } from "./components/canvas-editor/tabs/runs-tab";
-import type { AutomationTraceSnapshot } from "./components/canvas-editor/tabs/trace-tab";
 import type { AutomationToolContext } from "./domain/automation.types";
 import type {
 	AutomationInspectorAction,
@@ -319,13 +318,14 @@ export default function App() {
 
 	if (ready) {
 		if (historyMode || traceMode) {
-			const snapshot: RunsTabSnapshot = traceSnapshot ?? {
+			const snapshot: AutomationTraceSnapshot = traceSnapshot ?? {
 				running: false,
 				latestRunStatus: null,
 				aiRunSummary: null,
 				generatingAiSummary: false,
 				steps: [],
 				results: [],
+				executedDefinition: null,
 			};
 			return (
 				<RunsTab

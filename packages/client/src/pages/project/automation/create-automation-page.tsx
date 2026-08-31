@@ -1,12 +1,18 @@
 import { ChevronRight } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, Navigate } from "react-router-dom";
 import { H4, Muted } from "@semoss/ui/next";
 import { NewAppModal } from "@/components/app";
 import { NavbarHeader, NavbarLeft } from "@/components/shared";
+import { useRootStore } from "@/hooks";
 import { useNavigate } from "@/hooks/useNavigate";
 
 export const CreateAutomationPage = () => {
 	const navigate = useNavigate();
+	const { configStore } = useRootStore();
+
+	if (!configStore.isEngineOperationAvailable("PROJECT", "add")) {
+		return <Navigate to="/" replace />;
+	}
 
 	return (
 		<>

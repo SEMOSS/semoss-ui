@@ -75,7 +75,7 @@ export const NewAppModal = (props: NewAppModalProps) => {
 			);
 			const operationType = pixelReturn[0].operationType[0];
 			if (operationType.indexOf("ERROR") > -1) {
-				toast.error(pixelReturn[0].output);
+				toast.error(String(pixelReturn[0].output));
 				return false;
 			}
 			return true;
@@ -161,7 +161,7 @@ export const NewAppModal = (props: NewAppModalProps) => {
 				let operationType = response.pixelReturn[0].operationType;
 
 				if (operationType.indexOf("ERROR") > -1) {
-					toast.error(output);
+					toast.error(String(output));
 					return;
 				}
 
@@ -169,7 +169,7 @@ export const NewAppModal = (props: NewAppModalProps) => {
 				operationType = response.pixelReturn[1].operationType;
 
 				if (operationType.indexOf("ERROR") > -1) {
-					toast.error(output);
+					toast.error(String(output));
 					return;
 				}
 

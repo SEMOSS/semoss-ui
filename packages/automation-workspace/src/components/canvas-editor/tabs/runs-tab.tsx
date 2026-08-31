@@ -10,6 +10,7 @@ import { CellOutputBlock } from "@semoss/shared";
 import { Button, toast } from "@semoss/ui/next";
 import { getAutomationRun, listAutomationRuns } from "../../../api";
 import type {
+	AutomationExecutedDefinition,
 	AutomationNode,
 	AutomationNodeResult,
 	AutomationRunDetail,
@@ -26,6 +27,8 @@ import { formatDurationMs } from "../../../domain/automation-utils";
 import type { AutomationWorkflowDocument } from "../../../domain/automation-workflow.types";
 import { canvasDocumentFromWorkflow } from "../../../domain/automation-workflow-adapter";
 import { getWorkflowNodeDisplay } from "../../../domain/automation-workflow-display";
+import { ExecutedDefinitionDetail } from "../../form-editor/executed-definition-detail";
+import { ErrorDetail, TraceDetail } from "../../form-editor/node-result-list";
 import { StatusBadge } from "../../status-badge";
 import { RunBanner } from "../run-banner";
 
@@ -38,7 +41,12 @@ export interface RunsTabSnapshot {
 	results: AutomationNodeResult[];
 }
 
-interface RunsTabProps extends RunsTabSnapshot {
+/** Live trace state shared with the host workbench's trace iframe. */
+export interface AutomationTraceSnapshot extends RunsTabSnapshot {
+	executedDefinition: AutomationExecutedDefinition | null;
+}
+
+interface RunsTabProps extends AutomationTraceSnapshot {
 	appId: string;
 	refreshToken: number;
 	onDismiss: () => void;
@@ -66,6 +74,7 @@ export function RunsTab({
 	generatingAiSummary,
 	steps,
 	results,
+	executedDefinition,
 	onDismiss,
 }: RunsTabProps) {
 	const [view, setView] = useState<View>("history");
@@ -149,6 +158,21 @@ export function RunsTab({
 		setSelectedRun(null);
 	}, []);
 
+	const handleOutputPopout = useCallback((output: string) => {
+		const parentOrigin = new URLSearchParams(window.location.search).get(
+			"parentOrigin",
+		);
+		if (parentOrigin && window.parent !== window) {
+			window.parent.postMessage(
+				{
+					type: "SEMOSS_AUTOMATION_OPEN_OUTPUT",
+					output,
+				},
+				parentOrigin,
+			);
+		}
+	}, []);
+
 	if (view === "live" || (view === "history" && running)) {
 		return (
 			<LiveRunView
@@ -158,6 +182,8 @@ export function RunsTab({
 				generatingAiSummary={generatingAiSummary}
 				steps={steps}
 				results={results}
+				executedDefinition={executedDefinition}
+				onOutputPopout={handleOutputPopout}
 				onDismiss={onDismiss}
 				onBack={goBack}
 			/>
@@ -176,7 +202,13 @@ export function RunsTab({
 			);
 		}
 		if (selectedRun) {
-			return <HistoryRunView run={selectedRun} onBack={goBack} />;
+			return (
+				<HistoryRunView
+					run={selectedRun}
+					onBack={goBack}
+					onOutputPopout={handleOutputPopout}
+				/>
+			);
 		}
 	}
 
@@ -281,7 +313,7 @@ function BackButton({ onClick }: { onClick: () => void }) {
 	);
 }
 
-/** Live run detail — same as the original TraceTab with a back button. */
+/** Live run detail with navigation back to the history list. */
 function LiveRunView({
 	running,
 	latestRunStatus,
@@ -289,9 +321,15 @@ function LiveRunView({
 	generatingAiSummary,
 	steps,
 	results,
+	executedDefinition,
+	onOutputPopout,
 	onDismiss,
 	onBack,
-}: RunsTabSnapshot & { onDismiss: () => void; onBack: () => void }) {
+}: AutomationTraceSnapshot & {
+	onOutputPopout: (output: string) => void;
+	onDismiss: () => void;
+	onBack: () => void;
+}) {
 	const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
 	const previousRunningNodeIdRef = useRef<string | null>(null);
 
@@ -343,11 +381,11 @@ function LiveRunView({
 				</div>
 			)}
 			<ResultsPanel
-				steps={steps}
 				results={results}
+				executedDefinition={executedDefinition}
+				onOutputPopout={onOutputPopout}
 				selectedResult={selectedResult}
 				stepMap={stepMap}
-				selectedNodeId={selectedNodeId}
 				onSelectNode={setSelectedNodeId}
 			/>
 		</div>
@@ -358,9 +396,11 @@ function LiveRunView({
 function HistoryRunView({
 	run,
 	onBack,
+	onOutputPopout,
 }: {
 	run: AutomationRunDetail;
 	onBack: () => void;
+	onOutputPopout: (output: string) => void;
 }) {
 	const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
 	const executedSteps = useMemo(() => getExecutedSteps(run), [run]);
@@ -388,11 +428,15 @@ function HistoryRunView({
 				</div>
 			)}
 			<ResultsPanel
-				steps={executedSteps}
 				results={results}
+				executedDefinition={{
+					version: run.DEFINITION_VERSION,
+					hash: run.DEFINITION_HASH,
+					snapshot: run.DEFINITION_SNAPSHOT,
+				}}
+				onOutputPopout={onOutputPopout}
 				selectedResult={selectedResult}
 				stepMap={stepMap}
-				selectedNodeId={selectedNodeId}
 				onSelectNode={setSelectedNodeId}
 			/>
 		</div>
@@ -402,17 +446,23 @@ function HistoryRunView({
 /** Shared results panel: left nav + right output. */
 function ResultsPanel({
 	results,
+	executedDefinition,
 	selectedResult,
 	stepMap,
+	onOutputPopout,
 	onSelectNode,
 }: {
-	steps: AutomationNode[];
 	results: AutomationNodeResult[];
+	executedDefinition: AutomationExecutedDefinition | null;
 	selectedResult: AutomationNodeResult | null;
 	stepMap: Map<string, AutomationNode>;
-	selectedNodeId: string | null;
+	onOutputPopout: (output: string) => void;
 	onSelectNode: (id: string) => void;
 }) {
+	const selectedStep = selectedResult
+		? stepMap.get(selectedResult.NODE_ID)
+		: undefined;
+
 	return (
 		<div className="flex min-h-0 flex-1 overflow-hidden">
 			<nav
@@ -491,12 +541,37 @@ function ResultsPanel({
 							</span>
 						</div>
 					) : (
-						<CellOutputBlock
-							output={
-								selectedResult.OUTPUT_PREVIEW ??
-								"No output was produced."
-							}
-						/>
+						<div className="space-y-3">
+							{selectedResult.ERROR_MESSAGE && (
+								<ErrorDetail
+									message={selectedResult.ERROR_MESSAGE}
+								/>
+							)}
+							<CellOutputBlock
+								output={
+									selectedResult.OUTPUT_PREVIEW ??
+									"No output was produced."
+								}
+								onOutputPopout={() =>
+									onOutputPopout(
+										selectedResult.OUTPUT_PREVIEW ??
+											"No output was produced.",
+									)
+								}
+							/>
+							{selectedStep?.workflowType === "trigger.start" &&
+								executedDefinition && (
+									<ExecutedDefinitionDetail
+										definition={executedDefinition}
+									/>
+								)}
+							{selectedResult.trace && (
+								<TraceDetail
+									trace={selectedResult.trace}
+									step={selectedStep}
+								/>
+							)}
+						</div>
 					)
 				) : (
 					<div className="flex h-full items-center justify-center text-muted-foreground text-xs">

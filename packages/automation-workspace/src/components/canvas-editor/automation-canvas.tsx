@@ -97,7 +97,7 @@ const nodeTypes = {
 	branch: BranchNode,
 } as const;
 
-interface DeletableEdgeData {
+interface DeletableEdgeData extends Record<string, unknown> {
 	onDelete: (edgeId: string) => void;
 	readOnly?: boolean;
 	hovered?: boolean;

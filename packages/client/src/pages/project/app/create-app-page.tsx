@@ -72,12 +72,14 @@ export const CreateAppPage = () => {
 	 *
 	 * appId - appId of the app
 	 */
-	const navigateApp = (appId: string) => {
+	const navigateApp = (appId: string, isAutomation = false) => {
 		if (!appId) {
 			return;
 		}
 
-		navigate(`/app/${appId}/edit`);
+		navigate(
+			isAutomation ? `/automation/${appId}/edit` : `/app/${appId}/edit`,
+		);
 	};
 
 	useEffect(() => {
@@ -156,7 +158,10 @@ export const CreateAppPage = () => {
 						options={newAppOptions}
 						onClose={(appId) => {
 							if (appId) {
-								navigateApp(appId);
+								navigateApp(
+									appId,
+									newAppOptions?.type === "automation",
+								);
 							} else {
 								// close the modal
 								setNewAppOptions(null);

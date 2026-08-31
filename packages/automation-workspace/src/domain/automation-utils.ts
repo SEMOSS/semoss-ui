@@ -5,34 +5,10 @@ import type {
 	DatabaseEngineConfig,
 	FunctionEngineConfig,
 	ModelEngineConfig,
-	OutputTransform,
 	StorageEngineConfig,
 	VectorEngineConfig,
 	WaitConfig,
 } from "./automation.types";
-
-// ─── shared constants ─────────────────────────────────────────────────────────
-
-export const TRANSFORM_MODES: {
-	value: OutputTransform["mode"];
-	label: string;
-	devOnly?: boolean;
-}[] = [
-	{ value: "raw", label: "Full result" },
-	{ value: "rows-as-objects", label: "Rows as objects" },
-	{ value: "first-row", label: "First result" },
-	{ value: "column", label: "Single column" },
-	{ value: "jsonpath", label: "JSONPath", devOnly: true },
-];
-
-export const TRANSFORM_ENABLED: Set<AutomationNodeType> = new Set([
-	"database-engine",
-	"model-engine",
-	"vector-engine",
-	"storage-engine",
-	"function-engine",
-	"app",
-]);
 
 export function formatDurationMs(
 	ms?: number | null,
@@ -294,15 +270,7 @@ export function extractVarRefs(pixel: string): string[] {
 	return [...pixel.matchAll(/\$\{([^}]+)\}/g)].map((m) => m[1]);
 }
 
-/**
- * Apply an output transform to a raw pixel result string.
- * Handles FORMATTED_DATA_SET envelope (SqlQuery / vector search).
- */
-// Normalises DB output into {headers, rows} regardless of the three formats the
-// backend may return:
-//   1. Rows-as-objects:  [{col: val, ...}, ...]
-//   2. SEMOSS wrapped:   {data: {headers, values}}
-//   3. SEMOSS direct:    {headers, values}
+// Normalizes common SEMOSS data-set output into a table-friendly shape.
 export function extractDataset(
 	parsed: unknown,
 ): { headers: string[]; rows: unknown[][] } | null {
@@ -315,90 +283,23 @@ export function extractDataset(
 		const keys = Object.keys(parsed[0] as Record<string, unknown>);
 		return {
 			headers: keys,
-			rows: (parsed as Record<string, unknown>[]).map((r) =>
-				keys.map((k) => r[k]),
+			rows: (parsed as Record<string, unknown>[]).map((row) =>
+				keys.map((key) => row[key]),
 			),
 		};
 	}
 	const inner = (parsed as Record<string, unknown>)?.data ?? parsed;
 	if (inner && typeof inner === "object" && !Array.isArray(inner)) {
-		const h = (inner as Record<string, unknown>).headers;
-		const v = (inner as Record<string, unknown>).values;
-		if (Array.isArray(h) && Array.isArray(v)) {
-			return { headers: h as string[], rows: v as unknown[][] };
+		const headers = (inner as Record<string, unknown>).headers;
+		const values = (inner as Record<string, unknown>).values;
+		if (Array.isArray(headers) && Array.isArray(values)) {
+			return {
+				headers: headers as string[],
+				rows: values as unknown[][],
+			};
 		}
 	}
 	return null;
-}
-
-export function applyOutputTransform(
-	rawStr: string,
-	transform?: OutputTransform,
-): string {
-	if (!transform || transform.mode === "raw") return rawStr;
-
-	let parsed: unknown;
-	try {
-		parsed = JSON.parse(rawStr);
-	} catch {
-		return rawStr;
-	}
-
-	switch (transform.mode) {
-		case "rows-as-objects": {
-			const ds = extractDataset(parsed);
-			if (!ds) return rawStr;
-			const rows = ds.rows.map((row) =>
-				Object.fromEntries(ds.headers.map((h, i) => [h, row[i]])),
-			);
-			return JSON.stringify(rows, null, 2);
-		}
-		case "first-row": {
-			const ds = extractDataset(parsed);
-			if (!ds) return rawStr;
-			if (ds.rows.length === 0) return "{}";
-			return JSON.stringify(
-				Object.fromEntries(
-					ds.headers.map((h, i) => [h, ds.rows[0][i]]),
-				),
-				null,
-				2,
-			);
-		}
-		case "column": {
-			const ds = extractDataset(parsed);
-			if (!ds) return rawStr;
-			const col = transform.column ?? ds.headers[0] ?? "";
-			const idx = ds.headers.indexOf(col);
-			if (idx === -1) return "[]";
-			return JSON.stringify(
-				ds.rows.map((row) => row[idx]),
-				null,
-				2,
-			);
-		}
-		case "jsonpath": {
-			const resolved = resolveSimplePath(parsed, transform.path ?? "");
-			return resolved !== null ? resolved : rawStr;
-		}
-		default:
-			return rawStr;
-	}
-}
-
-function resolveSimplePath(obj: unknown, path: string): string | null {
-	if (!path) return null;
-	const parts = path
-		.replace(/^\$\.?/, "")
-		.split(".")
-		.filter(Boolean);
-	let cur: unknown = obj;
-	for (const part of parts) {
-		if (cur == null || typeof cur !== "object") return null;
-		cur = (cur as Record<string, unknown>)[part];
-	}
-	if (cur == null) return null;
-	return typeof cur === "string" ? cur : JSON.stringify(cur, null, 2);
 }
 
 // ─── pre-run validation ───────────────────────────────────────────────────────

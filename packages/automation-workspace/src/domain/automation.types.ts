@@ -130,14 +130,6 @@ export type NodeConfig =
 	| BranchConfig
 	| WaitConfig;
 
-// ─── graph primitives ─────────────────────────────────────────────────────────
-
-export interface OutputTransform {
-	mode: "raw" | "rows-as-objects" | "first-row" | "column" | "jsonpath";
-	column?: string;
-	path?: string;
-}
-
 export interface AutomationNode {
 	id: string;
 	type: AutomationNodeType;
@@ -152,7 +144,6 @@ export interface AutomationNode {
 	workflowType?: AutomationWorkflowNodeType;
 	workflowConfig?: AutomationWorkflowNodeConfig;
 	workflowCodeMode?: AutomationNodeCodeMode;
-	outputTransform?: OutputTransform;
 	/** When set, this node branches: the Then path runs when the condition is truthy, otherwise Else. */
 	branchCondition?: string;
 }
@@ -165,20 +156,6 @@ export interface AutomationEdge {
 	targetHandle?: string;
 	kind?: "control" | "data";
 	dataType?: AutomationDataType;
-}
-
-export interface AutomationGraph {
-	nodes: AutomationNode[];
-	edges: AutomationEdge[];
-}
-
-// ─── full automation document (saved to app storage) ─────────────────────────
-
-export interface AutomationDocument {
-	version: 1;
-	/** Optional plain-text description shown in the editor header and used as the MCP tool description. */
-	description?: string;
-	graph: AutomationGraph;
 }
 
 // ─── step run status (live, FE-side during a manual run) ─────────────────────
@@ -253,46 +230,6 @@ export interface AutomationNodeResult {
 export interface AutomationRunDetail extends AutomationRunSummary {
 	DEFINITION_SNAPSHOT?: string;
 	nodeResults: AutomationNodeResult[];
-}
-
-// ─── config (SMSS key-value) ──────────────────────────────────────────────────
-
-export interface AutomationConfigEntry {
-	key: string;
-	value: string;
-	sensitive: boolean;
-}
-
-// ─── engine option (from MyEngines pixel) ────────────────────────────────────
-
-export interface EngineOption {
-	engine_id: string;
-	engine_name: string;
-	engine_display_name?: string;
-	engine_type?: string;
-	/** Model subtype (e.g. TEXT_EMBEDDINGS, NER, KSERVE_VISION, ANTHROPIC, OPEN_AI, etc.) */
-	engine_subtype?: string;
-}
-
-// ─── project option (from MyProjects pixel) ──────────────────────────────────
-
-export interface ProjectOption {
-	project_id: string;
-	project_name: string;
-	project_display_name?: string;
-	project_type?: string;
-}
-
-// ─── node type metadata (for palette) ────────────────────────────────────────
-
-export interface NodeTypeMeta {
-	type: AutomationNodeType;
-	label: string;
-	description: string;
-	tooltip: string;
-	category: "trigger" | "engine" | "logic";
-	defaultConfig: NodeConfig;
-	defaultOutputVar: string;
 }
 
 export interface AutomationToolContext {

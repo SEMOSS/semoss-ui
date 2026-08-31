@@ -22,6 +22,7 @@ import {
 	useState,
 } from "react";
 import { Link } from "react-router-dom";
+import { InsightProvider } from "@semoss/sdk/react";
 import {
 	JsonViewer,
 	type MCPConfig,
@@ -69,13 +70,6 @@ const AUTOMATION_WORKSPACE_URL =
 		? "http://localhost:5177/"
 		: "../../automation-workspace/dist/";
 const AUTOMATION_WORKSPACE_CACHE_KEY = "20260827-2";
-const AUTOMATION_MUTATION_TOOLS = new Set([
-	"AddAutomationStep",
-	"UpdateAutomationStep",
-	"UpdateAutomationCustomStep",
-	"RemoveAutomationStep",
-]);
-
 const EDITOR = "automation-editor";
 const INSPECTOR = "automation-inspector";
 const TRACE = "automation-trace";
@@ -619,14 +613,6 @@ export const AutomationWorkbench = observer(
 				automationOrigin,
 			);
 		}, [appId, automationOrigin]);
-		const handleAutomationToolCompleted = useCallback(
-			(tool: { name: string }) => {
-				if (AUTOMATION_MUTATION_TOOLS.has(tool.name)) {
-					notifyAutomationChanged();
-				}
-			},
-			[notifyAutomationChanged],
-		);
 		const components = useMemo<Record<string, WorkbenchPanelConfigAny>>(
 			() => ({
 				[EDITOR]: {
@@ -730,14 +716,12 @@ export const AutomationWorkbench = observer(
 				systemPrompt: `You create and modify the ${projectName} automation. Use the Automation Project Tools to make changes. Never invent an app, reactor, agent, or engine ID. Keep appId separate from pixel and ask the user when a required concrete value is unavailable.`,
 				mcp: automationMcp,
 				runParams: { project: appId },
-				onToolCompleted: handleAutomationToolCompleted,
 				onRunCompleted: notifyAutomationChanged,
 			});
 		}, [
 			appId,
 			automationMcp,
 			configureAssistant,
-			handleAutomationToolCompleted,
 			notifyAutomationChanged,
 			projectName,
 		]);
@@ -882,27 +866,29 @@ export const AutomationWorkbenchPage = observer(() => {
 	const [shareOpen, setShareOpen] = useState(false);
 	const readOnly = permission !== "OWNER" && permission !== "EDIT";
 	return (
-		<WorkbenchProvider id={project.project_id}>
-			<AutomationWorkbench
-				appId={project.project_id}
-				readOnly={readOnly}
-				projectName={
-					project.project_display_name || project.project_name
-				}
-				catalogPath={catalog?.path}
-				onShare={() => setShareOpen(true)}
-			/>
-			<Dialog
-				open={shareOpen}
-				onOpenChange={(open) => !open && setShareOpen(false)}
-			>
-				<DialogContent className="max-w-lg p-0">
-					<ShareOverlay
-						appId={project.project_id}
-						onClose={() => setShareOpen(false)}
-					/>
-				</DialogContent>
-			</Dialog>
-		</WorkbenchProvider>
+		<InsightProvider>
+			<WorkbenchProvider id={project.project_id}>
+				<AutomationWorkbench
+					appId={project.project_id}
+					readOnly={readOnly}
+					projectName={
+						project.project_display_name || project.project_name
+					}
+					catalogPath={catalog?.path}
+					onShare={() => setShareOpen(true)}
+				/>
+				<Dialog
+					open={shareOpen}
+					onOpenChange={(open) => !open && setShareOpen(false)}
+				>
+					<DialogContent className="max-w-lg p-0">
+						<ShareOverlay
+							appId={project.project_id}
+							onClose={() => setShareOpen(false)}
+						/>
+					</DialogContent>
+				</Dialog>
+			</WorkbenchProvider>
+		</InsightProvider>
 	);
 });

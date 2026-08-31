@@ -88,6 +88,7 @@ const CATALOG_CONFIG = {
 // Skill/Agent now have their own independent admin-only flags.
 const CATALOG_PERMISSION_TYPE = {
 	CODE: "PROJECT",
+	AUTOMATION: "PROJECT",
 	SKILL: "SKILL",
 	WORKSPACE: "WORKSPACE",
 	NOTEBOOK: "PROJECT",
