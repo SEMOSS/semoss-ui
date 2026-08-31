@@ -1,7 +1,6 @@
 import {
 	ChevronDownIcon,
 	CopyIcon,
-	ExpandIcon,
 	FileCodeIcon,
 	NotebookPenIcon,
 	PlayIcon,
@@ -301,55 +300,15 @@ export const CodePreviewBlock = ({
 								</TooltipContent>
 							</Tooltip>
 						</div>
-					<Tooltip>
-						<TooltipTrigger asChild>
-							<Button
-								className="text-muted-foreground text-xs hover:text-foreground"
-								variant="ghost"
-								size="sm"
-								disabled={!code}
-								onClick={() =>
-									void copyToClipboard(
-										code,
-										() =>
-											toast.success(
-												t("notifications.copySuccess"),
-											),
-										(msg) => toast.error(msg),
-									)
-								}
-							>
-								<CopyIcon className="size-3" />
-							</Button>
-						</TooltipTrigger>
-						<TooltipContent>Copy</TooltipContent>
-					</Tooltip>
-					<Tooltip>
-						<TooltipTrigger asChild>
-							<Button
-								className="text-muted-foreground text-xs hover:text-foreground"
-								variant="ghost"
-								size="sm"
-								disabled={!code}
-								onClick={() => setIsFullViewOpen(true)}
-							>
-								<ExpandIcon className="size-3" />
-							</Button>
-						</TooltipTrigger>
-						<TooltipContent side="bottom">Full view</TooltipContent>
-					</Tooltip>
-				</BlockHeader>
-				{!isCollapsed && (
-					// capped to the height an html preview uses, so a long block
-					// scrolls inside the message instead of pushing the rest of the
-					// conversation off screen
-					<div
-						ref={codeScroll.ref}
-						onScroll={codeScroll.onScroll}
-						className="overflow-auto p-3"
-						style={{ maxHeight: RESPONSE_BLOCK_MAX_HEIGHT }}
-					>
-						<Code code={code} language={language ?? "txt"} />
+						{/* Cap to the HTML preview height so long code scrolls in place. */}
+						<div
+							ref={codeScroll.ref}
+							onScroll={codeScroll.onScroll}
+							className="overflow-auto"
+							style={{ maxHeight: RESPONSE_BLOCK_MAX_HEIGHT }}
+						>
+							<Code code={code} language={language ?? "txt"} />
+						</div>
 					</div>
 				)}
 				{executeResult && (
