@@ -146,6 +146,15 @@ These rules apply to **all** packages. They are adopted incrementally — see
   members (`export * from "./file";`). A symbol is not importable from the package until it is
   re-exported up the barrel chain (folder `index.ts` → package `src/index.ts`).
 
+### Forms
+
+- Any time a form is created or touched (new form, added/changed field, altered submit or
+  validation logic), use the
+  [react-form-builder skill](./.github/skills/react-form-builder/SKILL.md). It defines the
+  required react-hook-form + zod pattern — `useForm`, `zodResolver`, and `z` imported from
+  `@semoss/ui/next`, fields composed from the `Form`/`Form*` wrappers, reads via `usePixel`,
+  and the `onSubmit(id?)` completion callback convention.
+
 ### Design System & Styling
 
 **`@semoss/ui` (`libs/ui`) is the single source of truth for design.** Full rules, decision

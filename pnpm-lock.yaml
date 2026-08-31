@@ -309,6 +309,9 @@ importers:
 
   libs/ui:
     dependencies:
+      '@hookform/resolvers':
+        specifier: ^3.0.0
+        version: 3.10.0(react-hook-form@7.66.1(react@18.3.1))
       '@radix-ui/react-accordion':
         specifier: ^1.2.12
         version: 1.2.12(@types/react-dom@18.3.0)(@types/react@18.3.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -405,6 +408,9 @@ importers:
       react-day-picker:
         specifier: ^9.12.0
         version: 9.13.0(react@18.3.1)
+      react-hook-form:
+        specifier: ^7.34.0
+        version: 7.66.1(react@18.3.1)
       react-markdown:
         specifier: 9.0.1
         version: 9.0.1(@types/react@18.3.1)(react@18.3.1)
@@ -429,6 +435,9 @@ importers:
       vaul:
         specifier: ^1.1.2
         version: 1.1.2(@types/react-dom@18.3.0)(@types/react@18.3.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      zod:
+        specifier: ^3.0.0
+        version: 3.25.76
     devDependencies:
       '@rollup/plugin-commonjs':
         specifier: 28.0.6
@@ -568,7 +577,7 @@ importers:
         version: 7.2.4(@types/node@25.9.3)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.48.0)
       vite-plugin-svgr:
         specifier: ^4.5.0
-        version: 4.5.0(rollup@4.59.0)(typescript@5.5.4)(vite@7.2.4(@types/node@25.9.3)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.48.0))
+        version: 4.5.0(rollup@4.59.0)(typescript@5.9.3)(vite@7.2.4(@types/node@25.9.3)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.48.0))
 
   packages/browser-automation:
     dependencies:
@@ -731,6 +740,9 @@ importers:
       '@hello-pangea/dnd':
         specifier: ^18.0.1
         version: 18.0.1(@types/react@18.3.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@hookform/resolvers':
+        specifier: ^3.9.0
+        version: 3.10.0(react-hook-form@7.66.1(react@18.3.1))
       '@mdi/js':
         specifier: ^6.9.96
         version: 6.9.96
@@ -782,6 +794,9 @@ importers:
       react-router-dom:
         specifier: 6.30.3
         version: 6.30.3(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      zod:
+        specifier: ^3.23.0
+        version: 3.25.76
       zustand:
         specifier: 4.5.7
         version: 4.5.7(@types/react@18.3.1)(react@18.3.1)
@@ -1931,6 +1946,11 @@ packages:
     peerDependencies:
       react: ^18.0.0 || ^19.0.0
       react-dom: ^18.0.0 || ^19.0.0
+
+  '@hookform/resolvers@3.10.0':
+    resolution: {integrity: sha512-79Dv+3mDF7i+2ajj7SkypSKHhl1cbln1OGavqrsF7p6mbUv11xpqpacPsGDCTRvCSjEEIez2ef1NveSVL3b0Ag==}
+    peerDependencies:
+      react-hook-form: ^7.0.0
 
   '@humanfs/core@0.19.2':
     resolution: {integrity: sha512-UhXNm+CFMWcbChXywFwkmhqjs3PRCmcSa/hfBgLIb7oQ5HNb1wS0icWsGtSAUNgefHeI+eBrA8I1fxmbHsGdvA==}
@@ -8991,6 +9011,9 @@ packages:
     resolution: {integrity: sha512-zK7YHHz4ZXpW89AHXUPbQVGKI7uvkd3hzusTdotCg1UxyaVtg0zFJSTfW/Dq5f7OBBVnq6cZIaC8Ti4hb6dtCA==}
     engines: {node: '>= 14'}
 
+  zod@3.25.76:
+    resolution: {integrity: sha512-gzUt/qt81nXsFGKIFcC3YnfEAx5NkunCfnDlvuBSSFS02bcXu4Lmea0AFIUwbLWxWPx3d9p8S5QoaujKcNQxcQ==}
+
   zrender@5.6.1:
     resolution: {integrity: sha512-OFXkDJKcrlx5su2XbzJvj/34Q3m6PvyCZkVPHGYpcCJ52ek4U/ymZyfuV1nKE23AyBJ51E/6Yr0mhZ7xGTO4ag==}
 
@@ -9932,6 +9955,10 @@ snapshots:
       redux: 5.0.1
     transitivePeerDependencies:
       - '@types/react'
+
+  '@hookform/resolvers@3.10.0(react-hook-form@7.66.1(react@18.3.1))':
+    dependencies:
+      react-hook-form: 7.66.1(react@18.3.1)
 
   '@humanfs/core@0.19.2':
     dependencies:
@@ -11625,6 +11652,17 @@ snapshots:
       - supports-color
       - typescript
 
+  '@svgr/core@8.1.0(typescript@5.9.3)':
+    dependencies:
+      '@babel/core': 7.21.8
+      '@svgr/babel-preset': 8.1.0(@babel/core@7.21.8)
+      camelcase: 6.3.0
+      cosmiconfig: 8.3.6(typescript@5.9.3)
+      snake-case: 3.0.4
+    transitivePeerDependencies:
+      - supports-color
+      - typescript
+
   '@svgr/hast-util-to-babel-ast@8.0.0':
     dependencies:
       '@babel/types': 7.29.7
@@ -11635,6 +11673,16 @@ snapshots:
       '@babel/core': 7.21.8
       '@svgr/babel-preset': 8.1.0(@babel/core@7.21.8)
       '@svgr/core': 8.1.0(typescript@5.5.4)
+      '@svgr/hast-util-to-babel-ast': 8.0.0
+      svg-parser: 2.0.4
+    transitivePeerDependencies:
+      - supports-color
+
+  '@svgr/plugin-jsx@8.1.0(@svgr/core@8.1.0(typescript@5.9.3))':
+    dependencies:
+      '@babel/core': 7.21.8
+      '@svgr/babel-preset': 8.1.0(@babel/core@7.21.8)
+      '@svgr/core': 8.1.0(typescript@5.9.3)
       '@svgr/hast-util-to-babel-ast': 8.0.0
       svg-parser: 2.0.4
     transitivePeerDependencies:
@@ -12964,6 +13012,15 @@ snapshots:
       path-type: 4.0.0
     optionalDependencies:
       typescript: 5.5.4
+
+  cosmiconfig@8.3.6(typescript@5.9.3):
+    dependencies:
+      import-fresh: 3.3.1
+      js-yaml: 4.2.0
+      parse-json: 5.2.0
+      path-type: 4.0.0
+    optionalDependencies:
+      typescript: 5.9.3
 
   cosmiconfig@9.0.0(typescript@5.5.4):
     dependencies:
@@ -17865,6 +17922,17 @@ snapshots:
       - supports-color
       - typescript
 
+  vite-plugin-svgr@4.5.0(rollup@4.59.0)(typescript@5.9.3)(vite@7.2.4(@types/node@25.9.3)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.48.0)):
+    dependencies:
+      '@rollup/pluginutils': 5.3.0(rollup@4.59.0)
+      '@svgr/core': 8.1.0(typescript@5.9.3)
+      '@svgr/plugin-jsx': 8.1.0(@svgr/core@8.1.0(typescript@5.9.3))
+      vite: 7.2.4(@types/node@25.9.3)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.48.0)
+    transitivePeerDependencies:
+      - rollup
+      - supports-color
+      - typescript
+
   vite@5.4.21(@types/node@24.12.2)(lightningcss@1.30.2)(terser@5.48.0):
     dependencies:
       esbuild: 0.21.5
@@ -18136,6 +18204,8 @@ snapshots:
       archiver-utils: 5.0.2
       compress-commons: 6.0.2
       readable-stream: 4.7.0
+
+  zod@3.25.76: {}
 
   zrender@5.6.1:
     dependencies:
