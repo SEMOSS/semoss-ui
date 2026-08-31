@@ -62,6 +62,7 @@ export type AgentFormValues = {
 	instructions: string;
 	modelId: string;
 	useDefaultAgentTools: boolean;
+	disabledDefaultTools: string[];
 	maxTurns: string;
 	maxReflections: string;
 	maxSeconds: string;
@@ -82,6 +83,7 @@ export const AGENT_FORM_DEFAULT_VALUES: AgentFormValues = {
 	instructions: "",
 	modelId: "",
 	useDefaultAgentTools: true,
+	disabledDefaultTools: [],
 	maxTurns: "",
 	maxReflections: "",
 	maxSeconds: "",
