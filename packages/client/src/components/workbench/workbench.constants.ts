@@ -11,6 +11,13 @@ export { WORKBENCH_COMPONENTS } from "@/stores/workbench";
  * the components map stay joined on the same `WORKBENCH_COMPONENTS` id.
  */
 export const WORKBENCH_PANEL_RECORDS = {
+	AGENT_EDITOR: {
+		id: WORKBENCH_COMPONENTS.AGENT_EDITOR,
+		type: WORKBENCH_COMPONENTS.AGENT_EDITOR,
+		name: "Agent",
+		helpText: "Agent Editor",
+		canClose: false,
+	},
 	ASSISTANT: {
 		id: WORKBENCH_COMPONENTS.ASSISTANT,
 		type: WORKBENCH_COMPONENTS.ASSISTANT,
@@ -117,13 +124,6 @@ export const WORKBENCH_PANEL_RECORDS = {
 		type: WORKBENCH_COMPONENTS.PROJECT_APP_RENDERER,
 		name: "App",
 		helpText: "App Preview",
-		canClose: false,
-	},
-	PROJECT_AGENT_EDITOR: {
-		id: WORKBENCH_COMPONENTS.PROJECT_AGENT_EDITOR,
-		type: WORKBENCH_COMPONENTS.PROJECT_AGENT_EDITOR,
-		name: "Agent",
-		helpText: "Agent Editor",
 		canClose: false,
 	},
 } as const satisfies Record<string, WorkbenchPanelRecord>;

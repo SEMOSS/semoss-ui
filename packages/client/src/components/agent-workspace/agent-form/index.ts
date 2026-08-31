@@ -1,5 +1,10 @@
 export { AgentDefaultToolsField } from "./agent-default-tools-field";
 export { AgentExecutionLimitsFields } from "./agent-execution-limits-fields";
+export {
+	type AgentDefaultTool,
+	AgentForm,
+	type AgentFormProps,
+} from "./agent-form";
 export { AgentFormSection } from "./agent-form-section";
 export { AgentHooksField } from "./agent-hooks-field";
 export { AgentModelField } from "./agent-model-field";
