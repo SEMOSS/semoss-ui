@@ -39,37 +39,6 @@ import { useNavigate } from "@/hooks/useNavigate";
 import { EngineFormHeader } from "../shared/engine-form-header";
 import { computeVisibility } from "../shared/import-form.utils";
 
-const generatePythonStarter = (formData) => {
-	const requiredParameters = Array.isArray(
-		formData.FUNCTION_REQUIRED_PARAMETERS,
-	)
-		? formData.FUNCTION_REQUIRED_PARAMETERS
-		: [];
-	const parameters = Array.isArray(formData.FUNCTION_PARAMETERS)
-		? formData.FUNCTION_PARAMETERS
-		: [];
-	const descriptions = new Map(
-		parameters.map((parameter) => [
-			parameter.parameterName,
-			parameter.parameterDescription || "",
-		]),
-	);
-	const signature = requiredParameters
-		.map((parameter) => `    ${parameter}: str,`)
-		.join("\n");
-	const args = requiredParameters
-		.map(
-			(parameter) =>
-				`        ${parameter} (str): ${descriptions.get(parameter) || ""}`,
-		)
-		.join("\n");
-	const body = requiredParameters
-		.map((parameter) => `    print("${parameter} - ", ${parameter})`)
-		.join("\n");
-
-	return `def ${formData.FUNCTION_NAME}(\n${signature}\n):\n    """\n    Args:\n${args}\n    """${body ? `\n${body}` : ""}\n`;
-};
-
 export const FunctionForm = ({
 	title,
 	description,
@@ -161,10 +130,7 @@ export const FunctionForm = ({
 			}
 
 			try {
-				const content =
-					files.length > 0
-						? await files[0].text()
-						: generatePythonStarter(formData);
+				const content = files.length > 0 ? await files[0].text() : "";
 				pixel = `CreatePythonFunctionEngine(function=["${
 					formData.NAME
 				}"],functionDetails=[${JSON.stringify(newFormData)}],content=[${JSON.stringify(content)}]);`;
