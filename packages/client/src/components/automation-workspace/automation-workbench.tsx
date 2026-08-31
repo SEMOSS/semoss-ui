@@ -712,8 +712,11 @@ export const AutomationWorkbench = observer(
 			(state) => state.assistant.configure,
 		);
 		useEffect(() => {
+			const accessInstructions = readOnly
+				? "You can answer questions but cannot modify this read-only automation."
+				: "Use the Automation Project Tools to inspect and make changes when needed.";
 			configureAssistant({
-				systemPrompt: `You create and modify the ${projectName} automation. Use the Automation Project Tools to make changes. Never invent an app, reactor, agent, or engine ID. Keep appId separate from pixel and ask the user when a required concrete value is unavailable.`,
+				systemPrompt: `You are the assistant for the ${projectName} automation. Help users understand, build, and troubleshoot this automation. ${accessInstructions} Explain that each step result is available to later steps as \${variableName}; configuration values are available as \${config.SETTING_NAME}; and fields marked for Playground input can be supplied at run time, overriding their default value. Use the automation's current project configuration and available tools as the source of truth. Never invent an app, reactor, agent, engine, or output variable ID. Keep appId separate from pixel, ask the user when a required concrete value is unavailable, and never claim a change or run succeeded unless a tool result confirms it.`,
 				mcp: automationMcp,
 				runParams: { project: appId },
 				onRunCompleted: notifyAutomationChanged,
@@ -724,6 +727,7 @@ export const AutomationWorkbench = observer(
 			configureAssistant,
 			notifyAutomationChanged,
 			projectName,
+			readOnly,
 		]);
 
 		return (

@@ -20,7 +20,6 @@ import {
 	CheckCircle,
 	Code2,
 	Hand,
-	HelpCircle,
 	Loader2,
 	Lock,
 	MousePointer2,
@@ -80,7 +79,6 @@ import {
 	getCanvasNodeSources,
 	validateCanvasWorkflowNode,
 } from "../../domain/automation-workflow-adapter";
-import { HelpModal } from "../form-editor/help-modal";
 import { OnboardingTour } from "../form-editor/onboarding-tour";
 import { AddNodeMenu } from "./add-node-menu";
 import { AutomationDockLayout } from "./automation-dock-layout";
@@ -442,7 +440,6 @@ export function AutomationCanvas({
 	const [undoSnapshot, setUndoSnapshot] = useState<AutomationNode[] | null>(
 		null,
 	);
-	const [showHelp, setShowHelp] = useState(false);
 	const [showScheduleDialog, setShowScheduleDialog] = useState(false);
 	const hasRunnableSteps = steps.some(
 		(step) => step.workflowType !== "trigger.start",
@@ -2110,26 +2107,6 @@ export function AutomationCanvas({
 													Zoom to fit workflow
 												</TooltipContent>
 											</Tooltip>
-											<Tooltip>
-												<TooltipTrigger asChild>
-													<button
-														type="button"
-														aria-label="Help"
-														onClick={() =>
-															setShowHelp(true)
-														}
-														className="flex size-8 items-center justify-center border-l text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-													>
-														<HelpCircle
-															className="size-4"
-															aria-hidden
-														/>
-													</button>
-												</TooltipTrigger>
-												<TooltipContent side="top">
-													Help
-												</TooltipContent>
-											</Tooltip>
 										</div>
 									)}
 
@@ -2266,9 +2243,6 @@ export function AutomationCanvas({
 				onOpenChange={setShowScheduleDialog}
 				onPrepareSchedule={prepareSchedule}
 			/>
-
-			{/* ---- Help modal ---- */}
-			<HelpModal open={showHelp} onClose={() => setShowHelp(false)} />
 		</>
 	);
 }
