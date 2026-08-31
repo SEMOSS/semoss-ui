@@ -149,6 +149,11 @@ export function WebMcpToolsPanel({
 												entry.reason ||
 												"Tool completed."}
 										</Muted>
+										{entry.toolResult ? (
+											<pre className="mt-1 max-h-20 overflow-auto whitespace-pre-wrap break-all rounded bg-surface-raised p-1 text-xs">
+												{entry.toolResult}
+											</pre>
+										) : null}
 									</div>
 								</div>
 							))}

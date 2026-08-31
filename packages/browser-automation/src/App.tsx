@@ -5,6 +5,7 @@ import {
 	Circle,
 	Copy,
 	ScanLine,
+	Square,
 	X,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -66,6 +67,7 @@ import {
 import { runPixel } from "./semoss/pixel";
 import type {
 	AutomationHistoryEntry,
+	AutomationRunStatus,
 	WebMcpDiscovery,
 	WebMcpTool,
 } from "./types/automation.types";
@@ -146,6 +148,55 @@ const INITIAL_WEB_MCP_DISCOVERY: WebMcpDiscovery = {
 	isLoading: false,
 	error: "",
 };
+
+/** Longest tool output kept per step; every entry is replayed into each prompt. */
+const MAX_TOOL_RESULT_CHARS = 1_500;
+
+/**
+ * Flattens a WebMCP tool result into text the planner can reason about.
+ * Spec results are MCP shaped ({ content: [{ type: "text", text }] }); the
+ * backend hands them over as a JSON string, so unwrap that when present.
+ */
+function webMcpResultText(value: unknown): string | undefined {
+	const raw = typeof value === "string" ? value.trim() : "";
+	if (!raw) return undefined;
+
+	let text = raw;
+	try {
+		const parsed: unknown = JSON.parse(raw);
+		if (isRecord(parsed) && Array.isArray(parsed.content)) {
+			const parts = parsed.content.flatMap((item) =>
+				isRecord(item) && typeof item.text === "string"
+					? [item.text]
+					: [],
+			);
+			if (parts.length) text = parts.join("\n");
+		}
+	} catch {
+		// Not JSON, so the raw string is already the result text.
+	}
+
+	return text.length > MAX_TOOL_RESULT_CHARS
+		? `${text.slice(0, MAX_TOOL_RESULT_CHARS)}… [truncated]`
+		: text;
+}
+
+/** Short status line describing the action the planner just chose. */
+function plannedActionDetail(action: Record<string, unknown>): string {
+	const type = typeof action.type === "string" ? action.type : "";
+	const label = typeof action.label === "string" ? action.label : "";
+	if (type === "webmcp") {
+		const toolName =
+			typeof action.toolName === "string" ? action.toolName : label;
+		return `Running tool ${toolName}…`;
+	}
+	if (type === "scroll") return "Scrolling the page…";
+	if (type === "click") return `Clicking ${label || "an element"}…`;
+	if (type === "fill" || type === "select") {
+		return `Filling ${label || "a field"}…`;
+	}
+	return "Running the next action…";
+}
 
 export default function App() {
 	const { insightId } = useInsight();
@@ -245,13 +296,12 @@ export default function App() {
 	const [automationGoalGenerationError, setAutomationGoalGenerationError] =
 		useState("");
 	const [automationMaxIterations, setAutomationMaxIterations] = useState(10);
-	const [automationProgress, setAutomationProgress] = useState<{
-		iteration: number;
-		maxIterations: number;
-	} | null>(null);
+	const [automationProgress, setAutomationProgress] =
+		useState<AutomationRunStatus | null>(null);
 	const [automationHistory, setAutomationHistory] = useState<
 		AutomationHistoryEntry[]
 	>([]);
+	const [automationActivityOpen, setAutomationActivityOpen] = useState(false);
 	const [webMcpDiscovery, setWebMcpDiscovery] = useState<WebMcpDiscovery>(
 		INITIAL_WEB_MCP_DISCOVERY,
 	);
@@ -2275,6 +2325,19 @@ export default function App() {
 					type,
 					label: label || toolName,
 					toolName,
+					toolArguments,
+					toolResult: succeeded
+						? webMcpResultText(
+								isRecord(execution)
+									? execution.result
+									: undefined,
+							)
+						: undefined,
+					elapsedMs:
+						isRecord(execution) &&
+						typeof execution.elapsedMs === "number"
+							? execution.elapsedMs
+							: undefined,
 					pageUrl: expectedUrl || "",
 					reason,
 					status: succeeded ? "success" : "failed",
@@ -2402,7 +2465,6 @@ export default function App() {
 		setAutomationProgress(null);
 		toast("Goal automation stopped.");
 	}, []);
-
 	const runGoalAutomation = useCallback(async () => {
 		if (!session?.sessionId) {
 			toast("No active browser session.");
@@ -2422,6 +2484,7 @@ export default function App() {
 		setIsGoalAutomationRunning(true);
 		const history: AutomationHistoryEntry[] = [];
 		setAutomationHistory([]);
+		setAutomationActivityOpen(true);
 		const resolvedGoal = automationGoal.trim();
 		let reachedGoal = false;
 		if (!resolvedGoal) {
@@ -2438,8 +2501,10 @@ export default function App() {
 			) {
 				if (automationRunTokenRef.current !== runToken) return;
 				setAutomationProgress({
+					phase: "planning",
 					iteration,
 					maxIterations: automationMaxIterations,
+					detail: "Planning the next action…",
 				});
 
 				const response = await runPixel<Record<string, unknown>>(
@@ -2483,6 +2548,12 @@ export default function App() {
 					return;
 				}
 
+				setAutomationProgress({
+					phase: "acting",
+					iteration,
+					maxIterations: automationMaxIterations,
+					detail: plannedActionDetail(output.action),
+				});
 				const completed = await executePlannedAutomationAction(
 					output,
 					iteration,
@@ -2560,11 +2631,7 @@ export default function App() {
 							goalGenerationError={
 								automationGoalGenerationError || undefined
 							}
-							progressLabel={
-								automationProgress
-									? `Step ${automationProgress.iteration}/${automationProgress.maxIterations}`
-									: undefined
-							}
+							runStatus={automationProgress}
 							webMcpDiscovery={webMcpDiscovery}
 							automationHistory={automationHistory}
 							onToggle={() => {
@@ -2673,6 +2740,42 @@ export default function App() {
 					)}
 				</div>
 			</div>
+
+			{automationProgress && (
+				<output
+					className="flex items-center gap-2 border-line border-b bg-surface px-2 py-1"
+					aria-live="polite"
+				>
+					<Spinner className="h-3.5 w-3.5 shrink-0 text-accent" />
+					<span className="shrink-0 text-ink-muted text-xs">
+						Step {automationProgress.iteration}/
+						{automationProgress.maxIterations}
+					</span>
+					<span className="min-w-0 flex-1 truncate text-ink text-xs">
+						{automationProgress.detail}
+					</span>
+					<div className="h-1 w-24 shrink-0 overflow-hidden rounded-full bg-surface-raised">
+						<div
+							className="h-full bg-accent transition-[width] duration-200"
+							style={{
+								width: `${Math.round(
+									(automationProgress.iteration /
+										automationProgress.maxIterations) *
+										100,
+								)}%`,
+							}}
+						/>
+					</div>
+					<Button
+						size="sm"
+						variant="outline"
+						onClick={cancelGoalAutomation}
+					>
+						<Square />
+						Stop
+					</Button>
+				</output>
+			)}
 
 			<BrowserTabStrip
 				tabs={browserTabs}
@@ -2828,6 +2931,12 @@ export default function App() {
 					onCopySelectedContext={handleCopySelectedContext}
 					onDeleteSelectedContext={handleDeleteSelectedContext}
 					onSaveSelectedContext={handleSaveSelectedContext}
+					automationActivityOpen={automationActivityOpen}
+					automationHistory={automationHistory}
+					automationRunStatus={automationProgress}
+					onToggleAutomationActivity={() =>
+						setAutomationActivityOpen((open) => !open)
+					}
 				/>
 			</div>
 

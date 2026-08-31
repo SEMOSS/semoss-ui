@@ -21,6 +21,7 @@ import {
 import { runPixel } from "../semoss/pixel";
 import type {
 	AutomationHistoryEntry,
+	AutomationRunStatus,
 	WebMcpDiscovery,
 } from "../types/automation.types";
 import { WebMcpToolsPanel } from "./web-mcp-tools-panel";
@@ -40,7 +41,7 @@ interface AutomationControlsProps {
 	maxIterations: number;
 	isGoalGenerating: boolean;
 	goalGenerationError?: string;
-	progressLabel?: string;
+	runStatus: AutomationRunStatus | null;
 	webMcpDiscovery: WebMcpDiscovery;
 	automationHistory: AutomationHistoryEntry[];
 	onToggle: () => void;
@@ -62,7 +63,7 @@ export const AutomationControls: React.FC<AutomationControlsProps> = ({
 	maxIterations,
 	isGoalGenerating,
 	goalGenerationError,
-	progressLabel,
+	runStatus,
 	webMcpDiscovery,
 	automationHistory,
 	onToggle,
@@ -138,9 +139,19 @@ export const AutomationControls: React.FC<AutomationControlsProps> = ({
 						}
 						onClick={onToggle}
 					>
-						{isGoalRunning ? <Square /> : <Wand2 />}
+						{isGoalRunning ? (
+							runStatus ? (
+								<Spinner className="h-3.5 w-3.5" />
+							) : (
+								<Square />
+							)
+						) : (
+							<Wand2 />
+						)}
 						{isGoalRunning
-							? progressLabel || "Stop automation"
+							? runStatus
+								? `${runStatus.phase === "planning" ? "Planning" : "Acting"} ${runStatus.iteration}/${runStatus.maxIterations}`
+								: "Stop automation"
 							: isActive
 								? subMode === "fill-page"
 									? "Filling…"
@@ -150,7 +161,9 @@ export const AutomationControls: React.FC<AutomationControlsProps> = ({
 				</TooltipTrigger>
 				<TooltipContent>
 					{isGoalRunning
-						? "Stop goal automation after the current operation"
+						? runStatus
+							? `${runStatus.detail} Click to stop after the current operation.`
+							: "Stop goal automation after the current operation"
 						: subMode === "run-goal"
 							? "Iterate through browser actions until the goal is reached"
 							: subMode === "fill-page"
