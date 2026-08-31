@@ -2,7 +2,7 @@ import { X } from "lucide-react";
 import { useState } from "react";
 import { normalizeTagArray } from "@/utility";
 
-export interface CatalogTagInputProps {
+interface CatalogTagInputProps {
 	/** Selected tag values */
 	value?: string[] | string;
 	/** Callback fired when tag collection changes */
