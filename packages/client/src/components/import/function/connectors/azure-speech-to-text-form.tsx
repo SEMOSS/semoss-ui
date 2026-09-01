@@ -2,6 +2,7 @@ import {
 	Form,
 	FormActions,
 	FormInput,
+	FormSection,
 	toast,
 	useForm,
 	z,
@@ -57,27 +58,45 @@ export const AzureSpeechToTextForm = () => {
 		<Form
 			form={form}
 			onSubmit={handleSubmit}
-			className="flex w-full max-w-2xl flex-col gap-6"
+			className="flex w-full flex-col gap-6"
 		>
-			<FormInput
-				name="NAME"
-				label="Catalog Name"
-				placeholder="Enter a name"
-				disabled={form.formState.isSubmitting}
-				data-testid="function-form-input-NAME"
-			/>
-			<FormInput
-				name="SPEECH_KEY"
-				label="Speech Key"
-				disabled={form.formState.isSubmitting}
-				data-testid="function-form-input-SPEECH_KEY"
-			/>
-			<FormInput
-				name="SPEECH_REGION"
-				label="Speech Region"
-				disabled={form.formState.isSubmitting}
-				data-testid="function-form-input-SPEECH_REGION"
-			/>
+			<FormSection
+				title="General"
+				description="Name this catalog entry."
+				testIdPrefix="function"
+			>
+				<FormInput
+					name="NAME"
+					label="Catalog Name"
+					placeholder="Enter a name"
+					disabled={form.formState.isSubmitting}
+					data-testid="function-form-input-NAME"
+				/>
+			</FormSection>
+			<FormSection
+				title="Credentials"
+				description="The Azure Speech resource key used to authenticate."
+				testIdPrefix="function"
+			>
+				<FormInput
+					name="SPEECH_KEY"
+					label="Speech Key"
+					disabled={form.formState.isSubmitting}
+					data-testid="function-form-input-SPEECH_KEY"
+				/>
+			</FormSection>
+			<FormSection
+				title="Settings"
+				description="Where the Azure Speech resource is located."
+				testIdPrefix="function"
+			>
+				<FormInput
+					name="SPEECH_REGION"
+					label="Speech Region"
+					disabled={form.formState.isSubmitting}
+					data-testid="function-form-input-SPEECH_REGION"
+				/>
+			</FormSection>
 			<FormActions
 				isSubmitting={form.formState.isSubmitting}
 				onCancel={() => navigate(-1)}

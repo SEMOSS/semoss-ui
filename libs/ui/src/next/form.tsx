@@ -29,10 +29,12 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/next/select";
+import { Separator } from "@/next/separator";
 import { Slider } from "@/next/slider";
 import { Spinner } from "@/next/spinner";
 import { Switch } from "@/next/switch";
 import { Textarea } from "@/next/textarea";
+import { H4, Muted } from "@/next/typography";
 
 /* -------------------------------------------------------------------------- */
 /*                               Core primitives                              */
@@ -487,6 +489,57 @@ function FormFileDropzone({
 }
 
 /* -------------------------------------------------------------------------- */
+/*                                Form Section                                */
+/* -------------------------------------------------------------------------- */
+
+type FormSectionProps = {
+	/** Category heading, e.g. "General", "Credentials", "Settings". */
+	title: string;
+	/** Short blurb explaining what this section configures. */
+	description?: string;
+	/** Prefix for the title/description data-testids (e.g. "function"). */
+	testIdPrefix: string;
+	children: React.ReactNode;
+};
+
+/**
+ * A labeled group of fields: a title + description column beside the field
+ * column, closed off with a separator. Use to group a long form's fields
+ * (e.g. General / Credentials / Settings) instead of one flat field list.
+ */
+function FormSection({
+	title,
+	description,
+	testIdPrefix,
+	children,
+}: FormSectionProps) {
+	return (
+		<div className="mb-4 flex flex-col gap-4">
+			<div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:gap-4">
+				<div className="flex flex-1 flex-col gap-1">
+					<H4
+						className="font-semibold text-base tracking-tight"
+						data-testid={`${testIdPrefix}-category-title`}
+					>
+						{title}
+					</H4>
+					{description && (
+						<Muted
+							className="text-sm leading-6"
+							data-testid={`${testIdPrefix}-category-description`}
+						>
+							{description}
+						</Muted>
+					)}
+				</div>
+				<div className="flex flex-[2] flex-col gap-2">{children}</div>
+			</div>
+			<Separator />
+		</div>
+	);
+}
+
+/* -------------------------------------------------------------------------- */
 /*                                Form Actions                                */
 /* -------------------------------------------------------------------------- */
 
@@ -542,6 +595,7 @@ export {
 	FormRadioGroup,
 	FormSlider,
 	FormFileDropzone,
+	FormSection,
 	FormActions,
 };
 
@@ -555,6 +609,7 @@ export type {
 	FormRadioGroupProps,
 	FormSliderProps,
 	FormFileDropzoneProps,
+	FormSectionProps,
 	FormActionsProps,
 };
 

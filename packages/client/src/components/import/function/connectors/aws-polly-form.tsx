@@ -2,6 +2,7 @@ import {
 	Form,
 	FormActions,
 	FormInput,
+	FormSection,
 	toast,
 	useForm,
 	z,
@@ -59,34 +60,52 @@ export const AwsPollyForm = () => {
 		<Form
 			form={form}
 			onSubmit={handleSubmit}
-			className="flex w-full max-w-2xl flex-col gap-6"
+			className="flex w-full flex-col gap-6"
 		>
-			<FormInput
-				name="NAME"
-				label="Catalog Name"
-				placeholder="Enter a name"
-				disabled={form.formState.isSubmitting}
-				data-testid="function-form-input-NAME"
-			/>
-			<FormInput
-				name="ACCESS_KEY"
-				label="Access Key"
-				disabled={form.formState.isSubmitting}
-				data-testid="function-form-input-ACCESS_KEY"
-			/>
-			<FormInput
-				name="SECRET_KEY"
-				label="Secret Key"
-				type="password"
-				disabled={form.formState.isSubmitting}
-				data-testid="function-form-input-SECRET_KEY"
-			/>
-			<FormInput
-				name="REGION"
-				label="Region"
-				disabled={form.formState.isSubmitting}
-				data-testid="function-form-input-REGION"
-			/>
+			<FormSection
+				title="General"
+				description="Name this catalog entry."
+				testIdPrefix="function"
+			>
+				<FormInput
+					name="NAME"
+					label="Catalog Name"
+					placeholder="Enter a name"
+					disabled={form.formState.isSubmitting}
+					data-testid="function-form-input-NAME"
+				/>
+			</FormSection>
+			<FormSection
+				title="Credentials"
+				description="AWS credentials used to call Polly."
+				testIdPrefix="function"
+			>
+				<FormInput
+					name="ACCESS_KEY"
+					label="Access Key"
+					disabled={form.formState.isSubmitting}
+					data-testid="function-form-input-ACCESS_KEY"
+				/>
+				<FormInput
+					name="SECRET_KEY"
+					label="Secret Key"
+					type="password"
+					disabled={form.formState.isSubmitting}
+					data-testid="function-form-input-SECRET_KEY"
+				/>
+			</FormSection>
+			<FormSection
+				title="Settings"
+				description="Where the AWS resources this connector talks to are located."
+				testIdPrefix="function"
+			>
+				<FormInput
+					name="REGION"
+					label="Region"
+					disabled={form.formState.isSubmitting}
+					data-testid="function-form-input-REGION"
+				/>
+			</FormSection>
 			<FormActions
 				isSubmitting={form.formState.isSubmitting}
 				onCancel={() => navigate(-1)}

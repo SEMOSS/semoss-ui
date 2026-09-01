@@ -3,6 +3,7 @@ import {
 	FormActions,
 	FormFileDropzone,
 	FormInput,
+	FormSection,
 	toast,
 	useForm,
 	z,
@@ -66,27 +67,45 @@ export const GoogleSpeechToTextForm = () => {
 		<Form
 			form={form}
 			onSubmit={handleSubmit}
-			className="flex w-full max-w-2xl flex-col gap-6"
+			className="flex w-full flex-col gap-6"
 		>
-			<FormInput
-				name="NAME"
-				label="Catalog Name"
-				placeholder="Enter a name"
-				disabled={form.formState.isSubmitting}
-				data-testid="function-form-input-NAME"
-			/>
-			<FormInput
-				name="GOOGLE_BUCKET_ENGINEID"
-				label="Google Bucket Engine Id"
-				disabled={form.formState.isSubmitting}
-				data-testid="function-form-input-GOOGLE_BUCKET_ENGINEID"
-			/>
-			<FormFileDropzone
-				name="FILE"
-				label="Upload Service Account File"
-				extensions={[".json"]}
-				disabled={form.formState.isSubmitting}
-			/>
+			<FormSection
+				title="General"
+				description="Name this catalog entry."
+				testIdPrefix="function"
+			>
+				<FormInput
+					name="NAME"
+					label="Catalog Name"
+					placeholder="Enter a name"
+					disabled={form.formState.isSubmitting}
+					data-testid="function-form-input-NAME"
+				/>
+			</FormSection>
+			<FormSection
+				title="Credentials"
+				description="The Google Cloud bucket this connector reads and writes through."
+				testIdPrefix="function"
+			>
+				<FormInput
+					name="GOOGLE_BUCKET_ENGINEID"
+					label="Google Bucket Engine Id"
+					disabled={form.formState.isSubmitting}
+					data-testid="function-form-input-GOOGLE_BUCKET_ENGINEID"
+				/>
+			</FormSection>
+			<FormSection
+				title="Settings"
+				description="The service account used to authenticate with Google Cloud."
+				testIdPrefix="function"
+			>
+				<FormFileDropzone
+					name="FILE"
+					label="Upload Service Account File"
+					extensions={[".json"]}
+					disabled={form.formState.isSubmitting}
+				/>
+			</FormSection>
 			<FormActions
 				isSubmitting={form.formState.isSubmitting}
 				onCancel={() => navigate(-1)}

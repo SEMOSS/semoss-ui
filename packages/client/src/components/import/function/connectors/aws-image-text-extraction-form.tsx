@@ -2,6 +2,7 @@ import {
 	Form,
 	FormActions,
 	FormInput,
+	FormSection,
 	FormSelect,
 	SelectItem,
 	toast,
@@ -65,49 +66,69 @@ export const AwsImageTextExtractionForm = () => {
 		<Form
 			form={form}
 			onSubmit={handleSubmit}
-			className="flex w-full max-w-2xl flex-col gap-6"
+			className="flex w-full flex-col gap-6"
 		>
-			<FormInput
-				name="NAME"
-				label="Catalog Name"
-				placeholder="Enter a name"
-				disabled={form.formState.isSubmitting}
-				data-testid="function-form-input-NAME"
-			/>
-			<FormSelect
-				name="FUNCTION_TYPE"
-				label="Function Type"
-				disabled={form.formState.isSubmitting}
-				data-testid="function-form-input-FUNCTION_TYPE"
+			<FormSection
+				title="General"
+				description="Name this catalog entry and choose which AWS service performs the extraction."
+				testIdPrefix="function"
 			>
-				<SelectItem value="AWS_TEXTRACT">AWS TEXTRACT</SelectItem>
-				<SelectItem value="AWS_REKOGNITION">AWS REKOGNITION</SelectItem>
-			</FormSelect>
-			<FormInput
-				name="ACCESS_KEY"
-				label="Access Key"
-				disabled={form.formState.isSubmitting}
-				data-testid="function-form-input-ACCESS_KEY"
-			/>
-			<FormInput
-				name="SECRET_KEY"
-				label="Secret Key"
-				type="password"
-				disabled={form.formState.isSubmitting}
-				data-testid="function-form-input-SECRET_KEY"
-			/>
-			<FormInput
-				name="REGION"
-				label="Region"
-				disabled={form.formState.isSubmitting}
-				data-testid="function-form-input-REGION"
-			/>
-			<FormInput
-				name="S3BUCKETENGINEID"
-				label="S3 Bucket Engine Id"
-				disabled={form.formState.isSubmitting}
-				data-testid="function-form-input-S3BUCKETENGINEID"
-			/>
+				<FormInput
+					name="NAME"
+					label="Catalog Name"
+					placeholder="Enter a name"
+					disabled={form.formState.isSubmitting}
+					data-testid="function-form-input-NAME"
+				/>
+				<FormSelect
+					name="FUNCTION_TYPE"
+					label="Function Type"
+					disabled={form.formState.isSubmitting}
+					data-testid="function-form-input-FUNCTION_TYPE"
+				>
+					<SelectItem value="AWS_TEXTRACT">AWS TEXTRACT</SelectItem>
+					<SelectItem value="AWS_REKOGNITION">
+						AWS REKOGNITION
+					</SelectItem>
+				</FormSelect>
+			</FormSection>
+			<FormSection
+				title="Credentials"
+				description="AWS credentials used to call Textract or Rekognition."
+				testIdPrefix="function"
+			>
+				<FormInput
+					name="ACCESS_KEY"
+					label="Access Key"
+					disabled={form.formState.isSubmitting}
+					data-testid="function-form-input-ACCESS_KEY"
+				/>
+				<FormInput
+					name="SECRET_KEY"
+					label="Secret Key"
+					type="password"
+					disabled={form.formState.isSubmitting}
+					data-testid="function-form-input-SECRET_KEY"
+				/>
+			</FormSection>
+			<FormSection
+				title="Settings"
+				description="Where the AWS resources this connector talks to are located."
+				testIdPrefix="function"
+			>
+				<FormInput
+					name="REGION"
+					label="Region"
+					disabled={form.formState.isSubmitting}
+					data-testid="function-form-input-REGION"
+				/>
+				<FormInput
+					name="S3BUCKETENGINEID"
+					label="S3 Bucket Engine Id"
+					disabled={form.formState.isSubmitting}
+					data-testid="function-form-input-S3BUCKETENGINEID"
+				/>
+			</FormSection>
 			<FormActions
 				isSubmitting={form.formState.isSubmitting}
 				onCancel={() => navigate(-1)}

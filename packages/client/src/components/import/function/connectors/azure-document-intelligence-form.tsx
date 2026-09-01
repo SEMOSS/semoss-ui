@@ -2,6 +2,7 @@ import {
 	Form,
 	FormActions,
 	FormInput,
+	FormSection,
 	toast,
 	useForm,
 	z,
@@ -61,27 +62,39 @@ export const AzureDocumentIntelligenceForm = () => {
 		<Form
 			form={form}
 			onSubmit={handleSubmit}
-			className="flex w-full max-w-2xl flex-col gap-6"
+			className="flex w-full flex-col gap-6"
 		>
-			<FormInput
-				name="NAME"
-				label="Catalog Name"
-				placeholder="Enter a name"
-				disabled={form.formState.isSubmitting}
-				data-testid="function-form-input-NAME"
-			/>
-			<FormInput
-				name="URL"
-				label="URL"
-				disabled={form.formState.isSubmitting}
-				data-testid="function-form-input-URL"
-			/>
-			<FormInput
-				name="API_KEY"
-				label="API Key"
-				disabled={form.formState.isSubmitting}
-				data-testid="function-form-input-API_KEY"
-			/>
+			<FormSection
+				title="General"
+				description="Name this catalog entry."
+				testIdPrefix="function"
+			>
+				<FormInput
+					name="NAME"
+					label="Catalog Name"
+					placeholder="Enter a name"
+					disabled={form.formState.isSubmitting}
+					data-testid="function-form-input-NAME"
+				/>
+			</FormSection>
+			<FormSection
+				title="Credentials"
+				description="The Azure resource and key used to call Document Intelligence."
+				testIdPrefix="function"
+			>
+				<FormInput
+					name="URL"
+					label="URL"
+					disabled={form.formState.isSubmitting}
+					data-testid="function-form-input-URL"
+				/>
+				<FormInput
+					name="API_KEY"
+					label="API Key"
+					disabled={form.formState.isSubmitting}
+					data-testid="function-form-input-API_KEY"
+				/>
+			</FormSection>
 			<FormActions
 				isSubmitting={form.formState.isSubmitting}
 				onCancel={() => navigate(-1)}

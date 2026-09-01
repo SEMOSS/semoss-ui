@@ -2,6 +2,7 @@ import {
 	Form,
 	FormActions,
 	FormInput,
+	FormSection,
 	FormSelect,
 	SelectItem,
 	toast,
@@ -75,73 +76,91 @@ export const RestForm = () => {
 		<Form
 			form={form}
 			onSubmit={handleSubmit}
-			className="flex w-full max-w-2xl flex-col gap-6"
+			className="flex w-full flex-col gap-6"
 		>
-			<FormInput
-				name="NAME"
-				label="Catalog Name"
-				placeholder="Enter a name"
-				disabled={form.formState.isSubmitting}
-				data-testid="function-form-input-NAME"
-			/>
-			<FormInput
-				name="URL"
-				label="URL"
-				disabled={form.formState.isSubmitting}
-				data-testid="function-form-input-URL"
-			/>
-			<FormSelect
-				name="HTTP_METHOD"
-				label="Http Method"
-				disabled={form.formState.isSubmitting}
-				data-testid="function-form-input-HTTP_METHOD"
+			<FormSection
+				title="General"
+				description="Name this catalog entry."
+				testIdPrefix="function"
 			>
-				<SelectItem value="GET">GET</SelectItem>
-				<SelectItem value="HEAD">HEAD</SelectItem>
-				<SelectItem value="POST">POST</SelectItem>
-				<SelectItem value="PUT">PUT</SelectItem>
-			</FormSelect>
-			<FormSelect
-				name="CONTENT_TYPE"
-				label="POST Message Body Type"
-				disabled={form.formState.isSubmitting}
-				data-testid="function-form-input-CONTENT_TYPE"
+				<FormInput
+					name="NAME"
+					label="Catalog Name"
+					placeholder="Enter a name"
+					disabled={form.formState.isSubmitting}
+					data-testid="function-form-input-NAME"
+				/>
+			</FormSection>
+			<FormSection
+				title="Credentials"
+				description="The endpoint this connector calls and how it sends the request."
+				testIdPrefix="function"
 			>
-				<SelectItem value="json">json</SelectItem>
-				<SelectItem value="x-www-form-urlencoded">
-					x-www-form-urlencoded
-				</SelectItem>
-			</FormSelect>
-			<FormInput
-				name="HEADERS"
-				label="Http Headers"
-				disabled={form.formState.isSubmitting}
-				data-testid="function-form-input-HEADERS"
-			/>
-			<FormInput
-				name="FUNCTION_NAME"
-				label="Function Name (metadata)"
-				disabled={form.formState.isSubmitting}
-				data-testid="function-form-input-FUNCTION_NAME"
-			/>
-			<FormInput
-				name="FUNCTION_DESCRIPTION"
-				label="Function Description (metadata)"
-				disabled={form.formState.isSubmitting}
-				data-testid="function-form-input-FUNCTION_DESCRIPTION"
-			/>
-			<ParameterListField
-				name="FUNCTION_PARAMETERS"
-				label="Function Parameters (metadata)"
-				description="Define each parameter with a name, type, and description."
-				disabled={form.formState.isSubmitting}
-			/>
-			<StringListField
-				name="FUNCTION_REQUIRED_PARAMETERS"
-				label="Function Required Parameters (metadata)"
-				description="List the names of parameters above that must be provided when calling this function."
-				disabled={form.formState.isSubmitting}
-			/>
+				<FormInput
+					name="URL"
+					label="URL"
+					disabled={form.formState.isSubmitting}
+					data-testid="function-form-input-URL"
+				/>
+				<FormSelect
+					name="HTTP_METHOD"
+					label="Http Method"
+					disabled={form.formState.isSubmitting}
+					data-testid="function-form-input-HTTP_METHOD"
+				>
+					<SelectItem value="GET">GET</SelectItem>
+					<SelectItem value="HEAD">HEAD</SelectItem>
+					<SelectItem value="POST">POST</SelectItem>
+					<SelectItem value="PUT">PUT</SelectItem>
+				</FormSelect>
+			</FormSection>
+			<FormSection
+				title="Settings"
+				description="How the request body is formed and how the resulting function is described."
+				testIdPrefix="function"
+			>
+				<FormSelect
+					name="CONTENT_TYPE"
+					label="POST Message Body Type"
+					disabled={form.formState.isSubmitting}
+					data-testid="function-form-input-CONTENT_TYPE"
+				>
+					<SelectItem value="json">json</SelectItem>
+					<SelectItem value="x-www-form-urlencoded">
+						x-www-form-urlencoded
+					</SelectItem>
+				</FormSelect>
+				<FormInput
+					name="HEADERS"
+					label="Http Headers"
+					disabled={form.formState.isSubmitting}
+					data-testid="function-form-input-HEADERS"
+				/>
+				<FormInput
+					name="FUNCTION_NAME"
+					label="Function Name (metadata)"
+					disabled={form.formState.isSubmitting}
+					data-testid="function-form-input-FUNCTION_NAME"
+				/>
+				<FormInput
+					name="FUNCTION_DESCRIPTION"
+					label="Function Description (metadata)"
+					disabled={form.formState.isSubmitting}
+					data-testid="function-form-input-FUNCTION_DESCRIPTION"
+				/>
+				<ParameterListField
+					name="FUNCTION_PARAMETERS"
+					label="Function Parameters (metadata)"
+					description="Define each parameter with a name, type, and description."
+					disabled={form.formState.isSubmitting}
+				/>
+				<StringListField
+					name="FUNCTION_REQUIRED_PARAMETERS"
+					label="Function Required Parameters (metadata)"
+					description="List the names of parameters above that must be provided when calling this function."
+					disabled={form.formState.isSubmitting}
+				/>
+			</FormSection>
 			<FormActions
 				isSubmitting={form.formState.isSubmitting}
 				onCancel={() => navigate(-1)}

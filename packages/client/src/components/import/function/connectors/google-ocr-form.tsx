@@ -3,6 +3,7 @@ import {
 	FormActions,
 	FormFileDropzone,
 	FormInput,
+	FormSection,
 	toast,
 	useForm,
 	z,
@@ -72,45 +73,63 @@ export const GoogleOcrForm = () => {
 		<Form
 			form={form}
 			onSubmit={handleSubmit}
-			className="flex w-full max-w-2xl flex-col gap-6"
+			className="flex w-full flex-col gap-6"
 		>
-			<FormInput
-				name="NAME"
-				label="Catalog Name"
-				placeholder="Enter a name"
-				disabled={form.formState.isSubmitting}
-				data-testid="function-form-input-NAME"
-			/>
-			<FormInput
-				name="PROJECT_ID"
-				label="Project Id"
-				disabled={form.formState.isSubmitting}
-				data-testid="function-form-input-PROJECT_ID"
-			/>
-			<FormInput
-				name="PROCESSOR_ID"
-				label="Processor Id"
-				disabled={form.formState.isSubmitting}
-				data-testid="function-form-input-PROCESSOR_ID"
-			/>
-			<FormInput
-				name="REGION"
-				label="Region"
-				disabled={form.formState.isSubmitting}
-				data-testid="function-form-input-REGION"
-			/>
-			<FormInput
-				name="GOOGLE_BUCKET_ENGINEID"
-				label="Google Bucket Engine Id"
-				disabled={form.formState.isSubmitting}
-				data-testid="function-form-input-GOOGLE_BUCKET_ENGINEID"
-			/>
-			<FormFileDropzone
-				name="FILE"
-				label="Upload Service Account File"
-				extensions={[".json"]}
-				disabled={form.formState.isSubmitting}
-			/>
+			<FormSection
+				title="General"
+				description="Name this catalog entry."
+				testIdPrefix="function"
+			>
+				<FormInput
+					name="NAME"
+					label="Catalog Name"
+					placeholder="Enter a name"
+					disabled={form.formState.isSubmitting}
+					data-testid="function-form-input-NAME"
+				/>
+			</FormSection>
+			<FormSection
+				title="Credentials"
+				description="The Google Cloud project this connector calls into."
+				testIdPrefix="function"
+			>
+				<FormInput
+					name="PROJECT_ID"
+					label="Project Id"
+					disabled={form.formState.isSubmitting}
+					data-testid="function-form-input-PROJECT_ID"
+				/>
+			</FormSection>
+			<FormSection
+				title="Settings"
+				description="The Document AI processor and service account used to run OCR."
+				testIdPrefix="function"
+			>
+				<FormInput
+					name="PROCESSOR_ID"
+					label="Processor Id"
+					disabled={form.formState.isSubmitting}
+					data-testid="function-form-input-PROCESSOR_ID"
+				/>
+				<FormInput
+					name="REGION"
+					label="Region"
+					disabled={form.formState.isSubmitting}
+					data-testid="function-form-input-REGION"
+				/>
+				<FormFileDropzone
+					name="FILE"
+					label="Upload Service Account File"
+					extensions={[".json"]}
+					disabled={form.formState.isSubmitting}
+				/>
+				<FormInput
+					name="GOOGLE_BUCKET_ENGINEID"
+					label="Google Bucket Engine Id"
+					disabled={form.formState.isSubmitting}
+					data-testid="function-form-input-GOOGLE_BUCKET_ENGINEID"
+				/>
+			</FormSection>
 			<FormActions
 				isSubmitting={form.formState.isSubmitting}
 				onCancel={() => navigate(-1)}

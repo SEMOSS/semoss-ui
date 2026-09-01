@@ -4,6 +4,7 @@ import {
 	Form,
 	FormActions,
 	FormInput,
+	FormSection,
 	FormSelect,
 	SelectItem,
 	toast,
@@ -95,7 +96,7 @@ export const BingWebSearchForm = () => {
 		<Form
 			form={form}
 			onSubmit={handleSubmit}
-			className="flex w-full max-w-2xl flex-col gap-6"
+			className="flex w-full flex-col gap-6"
 		>
 			<Alert>
 				<AlertDescription>
@@ -105,138 +106,156 @@ export const BingWebSearchForm = () => {
 					results, use Brave Web Search instead.
 				</AlertDescription>
 			</Alert>
-			<FormInput
-				name="NAME"
-				label="Catalog Name"
-				placeholder="Enter a name"
-				disabled={form.formState.isSubmitting}
-				data-testid="function-form-input-NAME"
-			/>
-			<FormInput
-				name="ENDPOINT"
-				label="Resource Endpoint"
-				description="The Azure OpenAI resource, ie https://YOUR-RESOURCE.openai.azure.com. The /openai/v1/responses path is added if you leave it off."
-				disabled={form.formState.isSubmitting}
-				data-testid="function-form-input-ENDPOINT"
-			/>
-			<FormInput
-				name="MODEL"
-				label="Model Deployment Name"
-				description="The deployment that performs the search, ie gpt-5.5. Must be GPT-4 or later."
-				disabled={form.formState.isSubmitting}
-				data-testid="function-form-input-MODEL"
-			/>
-			<FormSelect
-				name="AUTH_TYPE"
-				label="Authentication Type"
-				description="API key sends the value below on the api-key header. Entra ID sends it as a bearer token."
-				disabled={form.formState.isSubmitting}
-				data-testid="function-form-input-AUTH_TYPE"
+			<FormSection
+				title="General"
+				description="Name this catalog entry."
+				testIdPrefix="function"
 			>
-				<SelectItem value="api_key">API Key</SelectItem>
-				<SelectItem value="entra">Microsoft Entra ID</SelectItem>
-			</FormSelect>
-			<FormInput
-				name="API_KEY"
-				label="API Key or Entra Token"
-				type="password"
-				description="For Entra ID the token scope must be https://ai.azure.com/.default"
-				disabled={form.formState.isSubmitting}
-				data-testid="function-form-input-API_KEY"
-			/>
-			<FormInput
-				name="ALLOWED_DOMAINS"
-				label="Allowed Domains"
-				description="Comma separated list, up to 100, ie who.int,cdc.gov. Subdomains are included. Leave blank to search the whole web."
-				disabled={form.formState.isSubmitting}
-				data-testid="function-form-input-ALLOWED_DOMAINS"
-			/>
-			<FormInput
-				name="BLOCKED_DOMAINS"
-				label="Blocked Domains"
-				description="Comma separated list of domains to exclude from results."
-				disabled={form.formState.isSubmitting}
-				data-testid="function-form-input-BLOCKED_DOMAINS"
-			/>
-			<FormSelect
-				name="SEARCH_CONTEXT_SIZE"
-				label="Search Context Size"
-				description="How much web content the model reads before answering. Higher is more thorough and more expensive."
-				disabled={form.formState.isSubmitting}
-				data-testid="function-form-input-SEARCH_CONTEXT_SIZE"
+				<FormInput
+					name="NAME"
+					label="Catalog Name"
+					placeholder="Enter a name"
+					disabled={form.formState.isSubmitting}
+					data-testid="function-form-input-NAME"
+				/>
+			</FormSection>
+			<FormSection
+				title="Credentials"
+				description="The Azure OpenAI deployment that performs the grounded search and how it authenticates."
+				testIdPrefix="function"
 			>
-				<SelectItem value="low">low</SelectItem>
-				<SelectItem value="medium">medium</SelectItem>
-				<SelectItem value="high">high</SelectItem>
-			</FormSelect>
-			<FormInput
-				name="REASONING_EFFORT"
-				label="Reasoning Effort"
-				description="Only for reasoning model deployments, ie low, medium, high. Higher lets the model search repeatedly and take longer. Leave blank for a plain lookup."
-				disabled={form.formState.isSubmitting}
-				data-testid="function-form-input-REASONING_EFFORT"
-			/>
-			<FormInput
-				name="COUNTRY"
-				label="Country"
-				description="Two letter country code to search from, ie US. Leave blank for no country preference."
-				disabled={form.formState.isSubmitting}
-				data-testid="function-form-input-COUNTRY"
-			/>
-			<FormInput
-				name="REGION"
-				label="Region"
-				description="Region or state name, ie Illinois. Only used alongside a country."
-				disabled={form.formState.isSubmitting}
-				data-testid="function-form-input-REGION"
-			/>
-			<FormInput
-				name="CITY"
-				label="City"
-				description="City name, ie Chicago."
-				disabled={form.formState.isSubmitting}
-				data-testid="function-form-input-CITY"
-			/>
-			<FormInput
-				name="TIMEZONE"
-				label="Time Zone"
-				description="IANA time zone identifier, ie America/Chicago. Helps the model resolve words like today."
-				disabled={form.formState.isSubmitting}
-				data-testid="function-form-input-TIMEZONE"
-			/>
-			<FormInput
-				name="INSTRUCTION"
-				label="Search Instruction"
-				description="Prepended to every query to push the model to actually search rather than answer from memory. Leave blank to use the built in instruction."
-				disabled={form.formState.isSubmitting}
-				data-testid="function-form-input-INSTRUCTION"
-			/>
-			<FormInput
-				name="FUNCTION_NAME"
-				label="Function Name (metadata)"
-				description="Becomes the MCP tool name, so name it for what it does, ie web_research."
-				disabled={form.formState.isSubmitting}
-				data-testid="function-form-input-FUNCTION_NAME"
-			/>
-			<FormInput
-				name="FUNCTION_DESCRIPTION"
-				label="Function Description (metadata)"
-				description="Leave blank to use the built in description of what a grounded search returns."
-				disabled={form.formState.isSubmitting}
-				data-testid="function-form-input-FUNCTION_DESCRIPTION"
-			/>
-			<ParameterListField
-				name="FUNCTION_PARAMETERS"
-				label="Function Parameters (metadata)"
-				description="Leave empty to use the built in search parameters: query and country."
-				disabled={form.formState.isSubmitting}
-			/>
-			<StringListField
-				name="FUNCTION_REQUIRED_PARAMETERS"
-				label="Function Required Parameters (metadata)"
-				description="List the names of parameters above that must be provided when calling this function."
-				disabled={form.formState.isSubmitting}
-			/>
+				<FormInput
+					name="ENDPOINT"
+					label="Resource Endpoint"
+					description="The Azure OpenAI resource, ie https://YOUR-RESOURCE.openai.azure.com. The /openai/v1/responses path is added if you leave it off."
+					disabled={form.formState.isSubmitting}
+					data-testid="function-form-input-ENDPOINT"
+				/>
+				<FormInput
+					name="MODEL"
+					label="Model Deployment Name"
+					description="The deployment that performs the search, ie gpt-5.5. Must be GPT-4 or later."
+					disabled={form.formState.isSubmitting}
+					data-testid="function-form-input-MODEL"
+				/>
+				<FormSelect
+					name="AUTH_TYPE"
+					label="Authentication Type"
+					description="API key sends the value below on the api-key header. Entra ID sends it as a bearer token."
+					disabled={form.formState.isSubmitting}
+					data-testid="function-form-input-AUTH_TYPE"
+				>
+					<SelectItem value="api_key">API Key</SelectItem>
+					<SelectItem value="entra">Microsoft Entra ID</SelectItem>
+				</FormSelect>
+				<FormInput
+					name="API_KEY"
+					label="API Key or Entra Token"
+					type="password"
+					description="For Entra ID the token scope must be https://ai.azure.com/.default"
+					disabled={form.formState.isSubmitting}
+					data-testid="function-form-input-API_KEY"
+				/>
+			</FormSection>
+			<FormSection
+				title="Settings"
+				description="How the search is scoped and how the resulting function is described."
+				testIdPrefix="function"
+			>
+				<FormInput
+					name="ALLOWED_DOMAINS"
+					label="Allowed Domains"
+					description="Comma separated list, up to 100, ie who.int,cdc.gov. Subdomains are included. Leave blank to search the whole web."
+					disabled={form.formState.isSubmitting}
+					data-testid="function-form-input-ALLOWED_DOMAINS"
+				/>
+				<FormInput
+					name="BLOCKED_DOMAINS"
+					label="Blocked Domains"
+					description="Comma separated list of domains to exclude from results."
+					disabled={form.formState.isSubmitting}
+					data-testid="function-form-input-BLOCKED_DOMAINS"
+				/>
+				<FormSelect
+					name="SEARCH_CONTEXT_SIZE"
+					label="Search Context Size"
+					description="How much web content the model reads before answering. Higher is more thorough and more expensive."
+					disabled={form.formState.isSubmitting}
+					data-testid="function-form-input-SEARCH_CONTEXT_SIZE"
+				>
+					<SelectItem value="low">low</SelectItem>
+					<SelectItem value="medium">medium</SelectItem>
+					<SelectItem value="high">high</SelectItem>
+				</FormSelect>
+				<FormInput
+					name="REASONING_EFFORT"
+					label="Reasoning Effort"
+					description="Only for reasoning model deployments, ie low, medium, high. Higher lets the model search repeatedly and take longer. Leave blank for a plain lookup."
+					disabled={form.formState.isSubmitting}
+					data-testid="function-form-input-REASONING_EFFORT"
+				/>
+				<FormInput
+					name="COUNTRY"
+					label="Country"
+					description="Two letter country code to search from, ie US. Leave blank for no country preference."
+					disabled={form.formState.isSubmitting}
+					data-testid="function-form-input-COUNTRY"
+				/>
+				<FormInput
+					name="REGION"
+					label="Region"
+					description="Region or state name, ie Illinois. Only used alongside a country."
+					disabled={form.formState.isSubmitting}
+					data-testid="function-form-input-REGION"
+				/>
+				<FormInput
+					name="CITY"
+					label="City"
+					description="City name, ie Chicago."
+					disabled={form.formState.isSubmitting}
+					data-testid="function-form-input-CITY"
+				/>
+				<FormInput
+					name="TIMEZONE"
+					label="Time Zone"
+					description="IANA time zone identifier, ie America/Chicago. Helps the model resolve words like today."
+					disabled={form.formState.isSubmitting}
+					data-testid="function-form-input-TIMEZONE"
+				/>
+				<FormInput
+					name="INSTRUCTION"
+					label="Search Instruction"
+					description="Prepended to every query to push the model to actually search rather than answer from memory. Leave blank to use the built in instruction."
+					disabled={form.formState.isSubmitting}
+					data-testid="function-form-input-INSTRUCTION"
+				/>
+				<FormInput
+					name="FUNCTION_NAME"
+					label="Function Name (metadata)"
+					description="Becomes the MCP tool name, so name it for what it does, ie web_research."
+					disabled={form.formState.isSubmitting}
+					data-testid="function-form-input-FUNCTION_NAME"
+				/>
+				<FormInput
+					name="FUNCTION_DESCRIPTION"
+					label="Function Description (metadata)"
+					description="Leave blank to use the built in description of what a grounded search returns."
+					disabled={form.formState.isSubmitting}
+					data-testid="function-form-input-FUNCTION_DESCRIPTION"
+				/>
+				<ParameterListField
+					name="FUNCTION_PARAMETERS"
+					label="Function Parameters (metadata)"
+					description="Leave empty to use the built in search parameters: query and country."
+					disabled={form.formState.isSubmitting}
+				/>
+				<StringListField
+					name="FUNCTION_REQUIRED_PARAMETERS"
+					label="Function Required Parameters (metadata)"
+					description="List the names of parameters above that must be provided when calling this function."
+					disabled={form.formState.isSubmitting}
+				/>
+			</FormSection>
 			<FormActions
 				isSubmitting={form.formState.isSubmitting}
 				onCancel={() => navigate(-1)}
