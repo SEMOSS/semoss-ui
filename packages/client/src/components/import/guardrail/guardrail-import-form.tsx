@@ -36,6 +36,7 @@ import {
 	SelectTrigger,
 	SelectValue,
 	Separator,
+	Textarea,
 	Tooltip,
 	TooltipContent,
 	TooltipTrigger,
@@ -555,6 +556,43 @@ export const GuardrailForm = ({
 			}}
 			render={({ field, fieldState: { error } }) => {
 				switch (val.type) {
+					case "textarea":
+						return (
+							<Field
+								className={
+									computeVisibility(val, {}) ? "" : "hidden"
+								}
+								data-testid={`guardrail-form-field-${val.key}`}
+							>
+								<FieldLabel htmlFor={val.key}>
+									{val.label}
+									{val.required && (
+										<span className="text-destructive">
+											{" "}
+											*
+										</span>
+									)}
+								</FieldLabel>
+								<Textarea
+									{...field}
+									id={val.key}
+									rows={5}
+									disabled={val.disabled}
+									data-testid={`guardrail-form-input-${val.key}`}
+								/>
+								{error && (
+									<FieldDescription className="text-destructive">
+										{getHelperText(error, val)}
+									</FieldDescription>
+								)}
+								{!error && val.helperText && (
+									<FieldDescription>
+										{val.helperText}
+									</FieldDescription>
+								)}
+							</Field>
+						);
+
 					case "text":
 						return (
 							<Field
