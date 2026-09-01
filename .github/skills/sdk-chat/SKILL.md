@@ -8,6 +8,10 @@ description: "How to use the @semoss/sdk room API. Use for: creating or listing 
 All room functions are exported from `@semoss/sdk`. They wrap the underlying SEMOSS pixel
 reactors so consuming applications never need to write pixel strings directly.
 
+Import from `@semoss/sdk` unless the file also needs a React hook/provider (`usePixel`,
+`useInsight`, `InsightProvider`, etc.) — those live under `@semoss/sdk/react`. Non-React code
+(stores, plain functions) should not import from `@semoss/sdk/react` just for consistency.
+
 ## Imports
 
 ```ts

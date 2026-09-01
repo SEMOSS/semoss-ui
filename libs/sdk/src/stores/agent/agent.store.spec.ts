@@ -1,20 +1,22 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { getAgentRun, pollAgentRun } from "./agent";
+import { getAgentRun, pollAgentRun } from "../../api/agent";
 import type {
 	AgentRunItem,
 	AgentRunItemEvent,
 	AgentRunSnapshot,
-} from "./agent.types";
+} from "../../types";
 import {
+	AgentStore,
 	applyAgentRunItemEvent,
 	createAgentRunItemsState,
-	subscribeRunAgent,
-} from "./agent-subscription";
+} from "./agent.store";
 
-vi.mock("./agent", () => ({
+vi.mock("../../api/agent", () => ({
 	pollAgentRun: vi.fn(),
 	getAgentRun: vi.fn(),
 	decideAgentRunAction: vi.fn(),
+	runAgent: vi.fn(),
+	stopAgentRun: vi.fn(),
 }));
 
 const mockPollAgentRun = vi.mocked(pollAgentRun);
@@ -81,6 +83,9 @@ const completedEvent = (
 	type: "item.completed",
 	item,
 });
+
+const newAgent = (runId = "run-1") =>
+	new AgentStore("room-1", "insight-1", runId);
 
 beforeEach(() => {
 	mockPollAgentRun.mockReset();
@@ -191,7 +196,7 @@ describe("applyAgentRunItemEvent", () => {
 	});
 });
 
-describe("subscribeRunAgent", () => {
+describe("AgentStore.watch", () => {
 	it("delivers events in sequence order, dedups replays, and stops after a terminal empty drain", async () => {
 		const runId = "sub-order";
 		const first = startedEvent(1, messageItem("m1", ""), runId);
@@ -225,8 +230,7 @@ describe("subscribeRunAgent", () => {
 
 		const seen: AgentRunItemEvent[] = [];
 		const reconciles: AgentRunSnapshot[] = [];
-		const subscription = subscribeRunAgent(
-			runId,
+		const subscription = newAgent(runId).watch(
 			{
 				onEvent: (event) => seen.push(event),
 				onSnapshot: () => undefined,
@@ -260,8 +264,7 @@ describe("subscribeRunAgent", () => {
 		});
 
 		const metas: { droppedEvents: number }[] = [];
-		const subscription = subscribeRunAgent(
-			runId,
+		const subscription = newAgent(runId).watch(
 			{
 				onEvent: () => undefined,
 				onSnapshot: (_snapshot, meta) => metas.push(meta),
@@ -308,8 +311,7 @@ describe("subscribeRunAgent", () => {
 		});
 
 		const reconciles: AgentRunSnapshot[] = [];
-		const subscription = subscribeRunAgent(
-			runId,
+		const subscription = newAgent(runId).watch(
 			{
 				onEvent: () => undefined,
 				onSnapshot: () => undefined,
@@ -323,7 +325,7 @@ describe("subscribeRunAgent", () => {
 		expect(reconciles).toHaveLength(3);
 	});
 
-	it("returns the existing live subscription for a runId instead of double-draining", async () => {
+	it("returns the same subscription when watch() is called twice on one instance", async () => {
 		const runId = "sub-dedup";
 		mockPollAgentRun.mockImplementation(
 			() =>
@@ -345,21 +347,14 @@ describe("subscribeRunAgent", () => {
 			onSnapshot: () => undefined,
 			onReconcile: () => undefined,
 		};
-		const first = subscribeRunAgent(runId, handlers, { pollIntervalMs: 1 });
-		const second = subscribeRunAgent(runId, handlers, {
-			pollIntervalMs: 1,
-		});
+		const agent = newAgent(runId);
+		const first = agent.watch(handlers, { pollIntervalMs: 1 });
+		const second = agent.watch(handlers, { pollIntervalMs: 1 });
 
 		expect(second).toBe(first);
 
-		first.stop();
+		agent.stop();
 		await first.done;
-
-		// Once the first subscription ended, a fresh one may be created.
-		const third = subscribeRunAgent(runId, handlers, { pollIntervalMs: 1 });
-		expect(third).not.toBe(first);
-		third.stop();
-		await third.done;
 	});
 
 	it("falls back to a durable reconcile and stops at the failure cap", async () => {
@@ -372,8 +367,7 @@ describe("subscribeRunAgent", () => {
 
 		const errors: Error[] = [];
 		const reconciles: AgentRunSnapshot[] = [];
-		const subscription = subscribeRunAgent(
-			runId,
+		const subscription = newAgent(runId).watch(
 			{
 				onEvent: () => undefined,
 				onSnapshot: () => undefined,
@@ -400,8 +394,7 @@ describe("subscribeRunAgent", () => {
 		});
 
 		const controller = new AbortController();
-		const subscription = subscribeRunAgent(
-			runId,
+		const subscription = newAgent(runId).watch(
 			{
 				onEvent: () => undefined,
 				onSnapshot: () => undefined,

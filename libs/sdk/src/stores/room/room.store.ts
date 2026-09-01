@@ -1,6 +1,3 @@
-import { runAgent } from "../../api/agent";
-import type { AgentRunSnapshot } from "../../api/agent.types";
-import { subscribeRunAgent } from "../../api/agent-subscription";
 import {
 	getPixelAsyncResult,
 	getPixelJobStreaming,
@@ -14,6 +11,7 @@ import {
 	updateRoomOptions,
 } from "../../api/chat";
 import type {
+	AgentRunSnapshot,
 	RoomAskAgentOptions,
 	RoomAskAgentResult,
 	RoomAskOptions,
@@ -22,6 +20,7 @@ import type {
 	RoomOptions,
 	RoomStreamChunk,
 } from "../../types";
+import { AgentStore } from "../agent";
 
 // Statuses that signal the streaming job has finished (success or failure).
 const TERMINAL_STATUSES: PixelJobStreamingStatus[] = [
@@ -76,6 +75,9 @@ export class RoomStore {
 	 */
 	private _lastResponseMessageId: string = "ROOT_PLACEHOLDER_ID";
 
+	/** The most recent AgentStore created via {@link createAgent}/{@link askAgent}, if any. */
+	private _agent: AgentStore | null = null;
+
 	/**
 	 * Wrap an already-existing room (e.g. one an insight is already bound to)
 	 * with no new `CreateRoom` pixel call. Prefer {@link createRoom} /
@@ -94,6 +96,11 @@ export class RoomStore {
 	/** Current room configuration. */
 	get options(): Readonly<RoomOptions> {
 		return this._options;
+	}
+
+	/** The most recent agent run added to this room, if any. */
+	get agent(): AgentStore | null {
+		return this._agent;
 	}
 
 	// ---------------------------------------------------------------------------
@@ -216,6 +223,29 @@ export class RoomStore {
 	}
 
 	/**
+	 * Start a new agent-harness run in this room via {@link AgentStore.start},
+	 * caching it as {@link agent} so a caller holding this room can later
+	 * `.decide()` a paused tool call on the SAME instance that's watching it.
+	 * Prefer {@link askAgent} for the common single-shot case; use this
+	 * directly to drive `.watch()`/`.decide()` yourself.
+	 *
+	 * @param command - The message text to send.
+	 * @param engine - Model engine id override; defaults to the room's configured model.
+	 * @returns The started, not-yet-watched `AgentStore`.
+	 */
+	async createAgent(command: string, engine?: string): Promise<AgentStore> {
+		this._agent = await AgentStore.start(
+			{
+				roomId: this.roomId,
+				command,
+				engine: engine ?? this._options.modelId,
+			},
+			this.insightId,
+		);
+		return this._agent;
+	}
+
+	/**
 	 * Send a message via the server-side agent harness (RunAgent). The backend
 	 * drives the full agentic loop, polling its durable run to completion;
 	 * item events (message/reasoning/tool) are surfaced through `onChunk` as
@@ -234,14 +264,11 @@ export class RoomStore {
 	): Promise<RoomAskAgentResult> {
 		const { onChunk, onPendingActions } = options;
 
-		const { runId } = await runAgent(
-			{ roomId: this.roomId, command, engine: this._options.modelId },
-			this.insightId,
-		);
+		const agent = await this.createAgent(command);
 
 		const snapshot = await new Promise<AgentRunSnapshot>(
 			(resolve, reject) => {
-				const subscription = subscribeRunAgent(runId, {
+				agent.watch({
 					onEvent: (event) => {
 						if (!onChunk) {
 							return;
@@ -276,10 +303,10 @@ export class RoomStore {
 							if (onPendingActions) {
 								onPendingActions(full.pendingActions);
 							} else {
-								subscription.stop();
+								agent.stop();
 								reject(
 									new Error(
-										"Agent run paused awaiting a tool decision (INPUT_REQUIRED), but no onPendingActions handler was provided to askAgent — pass one and resolve each action with decideAgentRunAction/submitAgentToolDecision, or the run has no way to resume.",
+										"Agent run paused awaiting a tool decision (INPUT_REQUIRED), but no onPendingActions handler was provided to askAgent — pass one and resolve each action with agent.decide(), or the run has no way to resume.",
 									),
 								);
 							}

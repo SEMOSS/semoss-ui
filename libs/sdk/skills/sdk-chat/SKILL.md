@@ -8,6 +8,10 @@ description: "How to use the @semoss/sdk room API. Use for: creating or listing 
 All room functions are exported from `@semoss/sdk`. They wrap the underlying SEMOSS pixel
 reactors so consuming applications never need to write pixel strings directly.
 
+Import from `@semoss/sdk` unless the file also needs a React hook/provider (`usePixel`,
+`useInsight`, `InsightProvider`, etc.) — those live under `@semoss/sdk/react`. Non-React code
+(stores, plain functions) should not import from `@semoss/sdk/react` just for consistency.
+
 ## Imports
 
 ```ts
@@ -27,8 +31,7 @@ import {
     pollAgentRun,
     getAgentRun,
     decideAgentRunAction,
-    subscribeRunAgent,
-    submitAgentToolDecision,
+    AgentStore,
 } from "@semoss/sdk";
 
 // Types (exported from @semoss/sdk)
@@ -108,7 +111,7 @@ await room.updateOptions({
 
 // Use askAgent instead of ask — server drives the full agentic loop.
 // Internally this submits via runAgent (agent.ts) and polls the run to
-// completion with subscribeRunAgent — not job-streaming (see below).
+// completion via AgentStore.watch — not job-streaming (see below).
 const result = await room.askAgent("Summarize the latest news on AI.", {
     onChunk: (chunk) => {
         if (chunk.type === "content") appendToUI(chunk.content ?? "");
@@ -126,10 +129,10 @@ otherwise `askAgent` rejects as soon as the run pauses, since there'd be no way 
 const result = await room.askAgent("Delete all rows where status is 'archived'.", {
     onPendingActions: (pendingActions) => {
         for (const action of pendingActions) {
-            // Import decideAgentRunAction / submitAgentToolDecision from "@semoss/sdk".
-            // Use action.runId, not room.roomId — a paused subagent's action
-            // belongs to the subagent's own run.
-            submitAgentToolDecision(action, "submit"); // or "reject"
+            // A paused subagent's action belongs to the subagent's own run
+            // (action.runId), not room.roomId — build an AgentStore around
+            // it if you need to decide from outside the room that started it.
+            room.agent?.decide(action, "submit"); // or "reject"
         }
     },
 });
@@ -463,13 +466,13 @@ does **not** use job-streaming (`getPixelJobStreaming`/`getPixelAsyncResult`). T
 `RunAgent` reactor has no pollable-job path at all: it either returns an immediate handle
 (`wait=false`, what `runAgent` uses) or blocks the request synchronously until the run finishes
 (`wait=true`, no partial progress). Streaming progress instead comes from a separate durable-run
-endpoint, polled via `pollAgentRun`/`subscribeRunAgent`.
+endpoint, polled via `pollAgentRun` or `AgentStore.watch`.
 
 | | **Chat mode** (`askRoom`) | **Agent-harness mode** (`runAgent`) |
 |---|---|---|
 | Who drives the tool loop | **Client** — browser executes each tool and submits results | **Server** — backend runs the full agentic cycle autonomously |
 | Tool calls | Client calls `RunMCPTool`, then `addRoomToolExecution` per tool | Server handles all tool calls internally; paused (HITL) calls surface via `pendingActions` |
-| Wire protocol | Job-streaming: `{ jobId }` polled via `getPixelJobStreaming` | Durable run: `{ runId }` polled via `pollAgentRun`/`subscribeRunAgent` — no `jobId` |
+| Wire protocol | Job-streaming: `{ jobId }` polled via `getPixelJobStreaming` | Durable run: `{ runId }` polled via `pollAgentRun`/`AgentStore.watch` — no `jobId` |
 | Progress shape | Raw `content`/`thinking`/`tool` chunks | Typed `AgentRunItemEvent`s (`message`/`reasoning`/`tool`/`subagent`) |
 | Result shape | `{ inputMessage, responseMessage }` — full message objects | `AgentRunSnapshot` — `finalText`, `status`, message IDs, `pendingActions` |
 | Use when | Standard Q&A, simple tool use, full client control needed | Complex multi-step agents, subagent chains, audit logging, long-running jobs |
@@ -494,11 +497,12 @@ To switch back to chat mode, update the room options with `harnessType: undefine
 
 Submits a message to the server-side agent harness **without waiting** for it to finish
 (`wait=false`) and returns immediately with a `runId` — not a `jobId`, and not the settled
-result. Poll `runId` to completion with `pollAgentRun` directly, or use `subscribeRunAgent` to
-get polling, event dedup/ordering, backoff, and `INPUT_REQUIRED`/terminal reconciliation for free.
+result. Poll `runId` to completion with `pollAgentRun` directly, or prefer `AgentStore` (see
+`stores/agent/agent.store.ts`), which owns the poll loop, dedup, ordering, backoff, and
+`INPUT_REQUIRED`/terminal reconciliation for you.
 
 ```ts
-const { runId } = await runAgent(
+const agent = await AgentStore.start(
     {
         roomId: room.roomId,
         command: "Analyze this dataset and produce a summary report.",
@@ -509,7 +513,7 @@ const { runId } = await runAgent(
 );
 
 const finalSnapshot = await new Promise<AgentRunSnapshot>((resolve, reject) => {
-    subscribeRunAgent(runId, {
+    agent.watch({
         onEvent: (event: AgentRunItemEvent) => {
             // Typed item events, not raw content/thinking/tool chunks
             if (event.type === "item.updated" && event.kind === "message" && event.delta) {
@@ -557,7 +561,7 @@ console.log(finalSnapshot.finalText);            // full response text
 | `finalOutputMessageId` | Server-assigned ID for the persisted response, once complete |
 | `finalText` | The agent's full response text, once it completes successfully |
 | `errorMessage` | Set when `status` is `"FAILED"` |
-| `pendingActions` | Paused tool calls awaiting a human decision; non-empty only while `"INPUT_REQUIRED"` — resolve with `decideAgentRunAction`/`submitAgentToolDecision` |
+| `pendingActions` | Paused tool calls awaiting a human decision; non-empty only while `"INPUT_REQUIRED"` — resolve with `AgentStore.decide()` (or `decideAgentRunAction` directly) |
 
 ---
 

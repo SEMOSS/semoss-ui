@@ -118,8 +118,8 @@ immediately — there is no `jobId` and no job-streaming loop here. The backend'
 reactor only supports an immediate handle (`wait=false`) or a server-side blocking wait
 (`wait=true`, which returns the full result in one shot with no partial progress) — never a
 pollable job. The caller then:
-1. Polls `pollAgentRun(runId)` (`api/agent.ts`) directly, or uses `subscribeRunAgent(runId, handlers)`
-   (`api/agent-subscription.ts`) to have polling, dedup, backoff, and INPUT_REQUIRED reconciliation
+1. Polls `pollAgentRun(runId)` (`api/agent.ts`) directly, or uses `AgentStore.watch(handlers)`
+   (`stores/agent/agent.store.ts`) to have polling, ordering, backoff, and INPUT_REQUIRED reconciliation
    handled for you
 2. Item events (`message` / `reasoning` / `tool` / `subagent`) arrive as `AgentRunItemEvent`s, not
    raw content/thinking/tool chunks
@@ -129,7 +129,7 @@ pollable job. The caller then:
 ### Key distinctions between modes
 
 - **`askRoom`** settled result: `{ inputMessage, responseMessage }` — full pixel message objects. The client then calls `addRoomToolExecution` for each `TOOL_CALL` part.
-- **`runAgent`** settled state: `AgentRunSnapshot` (`inputMessageId`, `finalOutputMessageId`, `finalText`, `status`, `pendingActions`) — reached by polling, not returned directly from `runAgent` itself. No tool loop on the client for auto-executed tools; paused (HITL) tool calls surface via `pendingActions` and are resolved with `decideAgentRunAction` / `submitAgentToolDecision`.
+- **`runAgent`** settled state: `AgentRunSnapshot` (`inputMessageId`, `finalOutputMessageId`, `finalText`, `status`, `pendingActions`) — reached by polling, not returned directly from `runAgent` itself. No tool loop on the client for auto-executed tools; paused (HITL) tool calls surface via `pendingActions` and are resolved with `AgentStore.decide()` (or `decideAgentRunAction` directly).
 - `addRoomToolExecution` uses `room.model.app_id` (the *app* engine ID), **not** `engine_id` (the LLM engine ID) that `askRoom` uses.
 
 ### Adding new chat API functions
