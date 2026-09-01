@@ -32,6 +32,16 @@ interface RootStoreInterface {
 	 * Optional right-side actions to render in the main layout header
 	 */
 	navbarActions?: React.ReactNode | null;
+
+	/**
+	 * Set once a guardrail block also force-logged the user out (see
+	 * registerSessionRevokedHandler in @semoss/sdk). Never cleared — the
+	 * session is gone, so the only way out is the dialog's reload.
+	 */
+	sessionRevoked: {
+		revoked: boolean;
+		message: string;
+	};
 }
 
 /**
@@ -42,6 +52,10 @@ export class RootStore {
 		isInitialized: false,
 		breadcrumbs: [],
 		navbarActions: null,
+		sessionRevoked: {
+			revoked: false,
+			message: "",
+		},
 		theme: {
 			name: "",
 			banner: "",
@@ -164,6 +178,13 @@ export class RootStore {
 	}
 
 	/**
+	 * Get whether a guardrail block has force-logged the user out
+	 */
+	get sessionRevoked() {
+		return this._store.sessionRevoked;
+	}
+
+	/**
 	 * Set custom breadcrumbs
 	 */
 	setBreadcrumbs = (breadcrumbs: RootStore["breadcrumbs"]) => {
@@ -189,6 +210,17 @@ export class RootStore {
 	 */
 	clearNavbarActions = () => {
 		this._store.navbarActions = null;
+	};
+
+	/**
+	 * Record that a guardrail block force-logged the user out. Called from the
+	 * SDK's registerSessionRevokedHandler — see root-layout.tsx.
+	 */
+	setSessionRevoked = (message: string) => {
+		this._store.sessionRevoked = {
+			revoked: true,
+			message,
+		};
 	};
 
 	/**

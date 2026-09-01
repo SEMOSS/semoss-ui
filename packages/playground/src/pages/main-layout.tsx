@@ -25,6 +25,7 @@ import {
 import { GlobalFooter, GlobalNav } from "@/components";
 import { GlobalDialog } from "@/components/common/global-dialog";
 import { LandingTour } from "@/components/common/landing-tour";
+import { SessionRevokedDialog } from "@/components/common/session-revoked-dialog";
 import { ChatContext, NavbarContext, TourContext } from "@/contexts";
 import { useRoot } from "@/hooks";
 import { useThemeTitle } from "@/hooks/use-theme-title";
@@ -195,6 +196,7 @@ export const MainLayout = observer(() => {
 									}
 								}}
 							/>
+							<SessionRevokedDialog />
 							<div
 								data-testid="main-layout"
 								className="flex h-dvh w-full flex-col overflow-hidden bg-background"
