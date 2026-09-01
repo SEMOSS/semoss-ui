@@ -73,7 +73,11 @@ export const createFunctionEngine = async (
 	file: File | null | undefined,
 	insightId: string,
 ): Promise<string> => {
-	let pixel = `CreateRestFunctionEngine(function=["${name}"],functionDetails=[${JSON.stringify(
+	const createReactor =
+		functionDetails.FUNCTION_TYPE === "LOCAL_PYTHON"
+			? "CreatePythonFunctionEngine"
+			: "CreateFunctionEngine";
+	let pixel = `${createReactor}(function=["${name}"],functionDetails=[${JSON.stringify(
 		encodeListFields(functionDetails),
 	)}]);`;
 
