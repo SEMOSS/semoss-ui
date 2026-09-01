@@ -81,6 +81,14 @@ export type WorkbenchAssistantPermissionMode =
 /** Reasoning-effort level forwarded to the model provider for each run. */
 export type WorkbenchAssistantEffort = "low" | "medium" | "high" | "max";
 
+/** Minimal reference to a backend agent workspace selected for assistant runs. */
+export type WorkbenchAssistantAgent = {
+	/** Workspace id passed to RunAgent. */
+	workspace_id: string;
+	/** Display name retained for the settings selector. */
+	name?: string;
+};
+
 /**
  * The pixel value for a reasoning-effort level — the harness names the top
  * tier "xhigh" while the UI calls it "max".
@@ -168,6 +176,8 @@ export interface WorkbenchAssistantSliceState {
 
 	/** Model engine used for new runs. */
 	model: Engine | null;
+	/** Optional backend agent workspace used for new runs. */
+	agent: WorkbenchAssistantAgent | null;
 	/** Turn budget passed to RunAgent. */
 	maxTurns: number;
 	/** Permission mode for new runs; null defers to the harness default. */
@@ -284,6 +294,8 @@ export interface WorkbenchAssistantSliceState {
 	renameRoom: (roomId: string, name: string) => Promise<void>;
 	/** Set the model engine used for new runs. */
 	setModel: (model: Engine) => void;
+	/** Set the backend agent workspace used for new runs. */
+	setAgent: (agent: WorkbenchAssistantAgent | null) => void;
 	/** Set the turn budget; invalid values fall back to the default. */
 	setMaxTurns: (maxTurns: number) => void;
 	/** Set the permission mode for new runs (null = harness default). */
@@ -692,6 +704,7 @@ export const createWorkbenchAssistantSlice = (
 			onRebuild: null,
 
 			model: null,
+			agent: null,
 			maxTurns: DEFAULT_MAX_TURNS,
 			permissionMode: null,
 			effort: null,
@@ -862,6 +875,7 @@ export const createWorkbenchAssistantSlice = (
 						mcp: get().assistant.mcp,
 						predefinedPrompts: [],
 						modelId: model.engine_id,
+						workspace: get().assistant.agent,
 						harnessType: "semoss",
 						workbench: workbenchId,
 					});
@@ -905,7 +919,9 @@ export const createWorkbenchAssistantSlice = (
 							harnessType: "semoss",
 							// The SDK forwards agentId as the pixel's
 							// workspaceId.
-							agentId: WORKBENCH_AGENT_ID,
+							agentId:
+								assistantNow.agent?.workspace_id ??
+								WORKBENCH_AGENT_ID,
 							maxTurns: get().assistant.maxTurns,
 							maxReflections: 0,
 							media: attachments
@@ -1170,6 +1186,25 @@ export const createWorkbenchAssistantSlice = (
 						).catch(() => null);
 						if (model) setAssistant({ model });
 					}
+					const workspace = options?.workspace;
+					if (
+						workspace &&
+						typeof workspace === "object" &&
+						"workspace_id" in workspace &&
+						typeof workspace.workspace_id === "string"
+					) {
+						setAssistant({
+							agent: {
+								workspace_id: workspace.workspace_id,
+								name:
+									typeof workspace.name === "string"
+										? workspace.name
+										: undefined,
+							},
+						});
+					} else {
+						setAssistant({ agent: null });
+					}
 
 					const messages = await getPlaygroundMessages(
 						insightId,
@@ -1294,6 +1329,7 @@ export const createWorkbenchAssistantSlice = (
 			},
 
 			setModel: (model) => setAssistant({ model }),
+			setAgent: (agent) => setAssistant({ agent }),
 			setMaxTurns: (maxTurns) =>
 				setAssistant({
 					maxTurns:
