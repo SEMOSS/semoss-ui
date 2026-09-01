@@ -10,31 +10,44 @@ import {
 	ReactFlow,
 } from "@xyflow/react";
 import type { ReactNode } from "react";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import "@xyflow/react/dist/style.css";
 import {
 	Bot,
 	Brain,
 	CheckCircle2,
+	Maximize2,
 	MessageSquare,
+	Minimize2,
+	PanelRightClose,
+	PanelRightOpen,
 	User,
 	Wrench,
 	XCircle,
 } from "lucide-react";
 import {
 	Badge,
+	Button,
 	Code,
 	CodeContainer,
 	cn,
 	Markdown,
+	Tabs,
+	TabsContent,
+	TabsList,
+	TabsTrigger,
 	TreeView,
 	TreeViewItem,
 	useTheme,
 } from "@semoss/ui/next";
+import { useRootStore } from "@/hooks";
 import type {
 	AgentRunDetail,
+	AssessAgentEffectivenessOutput,
 	EngineInfo,
+	JudgeModelOption,
 	RoomRunDetail,
+	RunAssessmentState,
 	SubagentRunNode,
 	TranscriptToolCall,
 	TranscriptToolResult,
@@ -47,6 +60,7 @@ import {
 	toPrettyJson,
 	tryParseJson,
 } from "./agent-activity-types";
+import { AnalyzeRunPanel } from "./agent-run-assessment";
 
 // GRAPH DATA TYPES
 
@@ -73,7 +87,13 @@ type GraphSelection =
 	| { kind: "run"; run: RoomRunDetail }
 	| { kind: "subagent"; run: SubagentRunNode }
 	| { kind: "subroom"; roomId: string; run: SubagentRunNode }
-	| { kind: "tool"; toolName: string; invocations: ToolInvocation[] };
+	| {
+			kind: "tool";
+			toolName: string;
+			invocations: ToolInvocation[];
+			/** The run that made these calls - the Analyze tab's target. */
+			run: AgentRunDetail;
+	  };
 
 interface LayoutTreeNode {
 	id: string;
@@ -206,7 +226,7 @@ const buildToolTreeNodes = (run: AgentRunDetail): LayoutTreeNode[] =>
 					? "FAILED"
 					: undefined,
 			},
-			selection: { kind: "tool" as const, toolName, invocations },
+			selection: { kind: "tool" as const, toolName, invocations, run },
 			children: [],
 		}),
 	);
@@ -905,10 +925,18 @@ interface AgentRunGraphProps {
 	engineInfo?: Record<string, EngineInfo>;
 }
 
+/** Subset of the MyEngines output the judge model select reads. */
+interface ModelEngineOutput {
+	engine_id: string;
+	engine_name: string;
+	engine_display_name?: string;
+}
+
 /**
  * Node-graph view of a room's agent activity: room -> agent runs -> tool
  * calls and (recursive) sub-agent runs, with a detail panel for the selected
- * node. Render with key={roomId} so selection resets when the room changes.
+ * node (Inspect the transcript, or Analyze the run via LLM-as-judge).
+ * Render with key={roomId} so selection resets when the room changes.
  */
 export const AgentRunGraph = ({
 	roomId,
@@ -917,6 +945,7 @@ export const AgentRunGraph = ({
 	engineInfo = {},
 }: AgentRunGraphProps) => {
 	const { resolvedTheme } = useTheme();
+	const { monolithStore } = useRootStore();
 	const isDarkTheme = resolvedTheme === "dark";
 
 	const { nodes, edges, selectionById } = useMemo(
@@ -925,10 +954,143 @@ export const AgentRunGraph = ({
 	);
 
 	const [selectedNodeId, setSelectedNodeId] = useState<string>("room-root");
+	const [detailTab, setDetailTab] = useState<"inspect" | "analyze">(
+		"inspect",
+	);
+	const [isPanelOpen, setIsPanelOpen] = useState(true);
+	const [isFullscreen, setIsFullscreen] = useState(false);
+	// Keyed by runId so results survive switching nodes/tabs, and an in-flight
+	// assessment lands even if its run is no longer selected when it finishes.
+	const [assessments, setAssessments] = useState<
+		Record<string, RunAssessmentState>
+	>({});
+	const [judgeModels, setJudgeModels] = useState<JudgeModelOption[] | null>(
+		null,
+	);
+
 	const selection = selectionById.get(selectedNodeId) ?? null;
 
+	// Every selection maps to the run the Analyze tab would assess: the run
+	// itself, the run that owns the selected tool/sub-room node, or - for the
+	// room node - its lone run when there is exactly one.
+	const analyzeTarget = useMemo((): AgentRunDetail | null => {
+		if (!selection || selection.kind === "room") {
+			const roomRuns = selection?.kind === "room" ? selection.runs : runs;
+			return roomRuns.length === 1 ? roomRuns[0] : null;
+		}
+		return selection.run;
+	}, [selection, runs]);
+
+	useEffect(() => {
+		let cancelled = false;
+		monolithStore
+			.runQuery<[ModelEngineOutput[]]>(
+				`MyEngines(metaKeys=[], metaFilters=[{"tag":"text-generation"}], engineTypes=["MODEL"]);`,
+			)
+			.then((response) => {
+				const { operationType, output } = response.pixelReturn[0];
+				if (operationType.indexOf("ERROR") > -1) {
+					throw new Error(String(output));
+				}
+				if (!cancelled) {
+					setJudgeModels(
+						(output ?? []).map((engine) => ({
+							engineId: engine.engine_id,
+							engineName:
+								engine.engine_display_name ||
+								engine.engine_name,
+						})),
+					);
+				}
+			})
+			.catch((error) => {
+				console.error("Error fetching judge model options:", error);
+				// An empty list still renders the select (with the run's own
+				// model appended) instead of a permanent loading state.
+				if (!cancelled) {
+					setJudgeModels([]);
+				}
+			});
+		return () => {
+			cancelled = true;
+		};
+	}, [monolithStore]);
+
+	useEffect(() => {
+		if (!isFullscreen) {
+			return;
+		}
+		const handleKeyDown = (event: KeyboardEvent) => {
+			if (event.key === "Escape") {
+				setIsFullscreen(false);
+			}
+		};
+		window.addEventListener("keydown", handleKeyDown);
+		return () => {
+			window.removeEventListener("keydown", handleKeyDown);
+		};
+	}, [isFullscreen]);
+
+	const startAssessment = useCallback(
+		async (run: AgentRunDetail, judgeModelId: string, focus: string) => {
+			const runId = run.runId;
+			setAssessments((prev) => ({
+				...prev,
+				[runId]: { status: "running", judgeModelId },
+			}));
+			const startMs = performance.now();
+			try {
+				const args = [
+					`runId=["${runId}"]`,
+					`judgeModelId=["${judgeModelId}"]`,
+				];
+				const trimmedFocus = focus.trim();
+				if (trimmedFocus) {
+					args.push(`focus=[${JSON.stringify(trimmedFocus)}]`);
+				}
+				const response = await monolithStore.runQuery<
+					[AssessAgentEffectivenessOutput]
+				>(`AssessAgentEffectiveness(${args.join(", ")});`);
+				const { operationType, output } = response.pixelReturn[0];
+				if (operationType.indexOf("ERROR") > -1) {
+					throw new Error(String(output));
+				}
+				setAssessments((prev) => ({
+					...prev,
+					[runId]: {
+						status: "done",
+						judgeModelId,
+						elapsedMs: performance.now() - startMs,
+						output,
+					},
+				}));
+			} catch (error) {
+				console.error("Error assessing agent run:", error);
+				setAssessments((prev) => ({
+					...prev,
+					[runId]: {
+						status: "error",
+						judgeModelId,
+						message:
+							error instanceof Error
+								? error.message
+								: String(error),
+					},
+				}));
+			}
+		},
+		[monolithStore],
+	);
+
 	return (
-		<div className="flex h-[600px] overflow-hidden rounded-xl border">
+		<div
+			className={cn(
+				"flex overflow-hidden border",
+				isFullscreen
+					? "fixed inset-0 z-50 bg-background"
+					: "h-[600px] rounded-xl",
+			)}
+		>
 			<div className="relative min-w-0 flex-1">
 				<ReactFlow
 					nodes={nodes}
@@ -960,42 +1122,121 @@ export const AgentRunGraph = ({
 						</div>
 					))}
 				</div>
+				<div className="absolute top-2 right-2 z-10 flex gap-1.5">
+					<Button
+						variant="outline"
+						size="icon-sm"
+						className="bg-card/95 shadow-sm backdrop-blur"
+						title={
+							isFullscreen ? "Exit full screen" : "Full screen"
+						}
+						onClick={() => setIsFullscreen((prev) => !prev)}
+					>
+						{isFullscreen ? (
+							<Minimize2 className="size-4" />
+						) : (
+							<Maximize2 className="size-4" />
+						)}
+					</Button>
+					<Button
+						variant="outline"
+						size="icon-sm"
+						className="bg-card/95 shadow-sm backdrop-blur"
+						title={
+							isPanelOpen
+								? "Hide details panel"
+								: "Show details panel"
+						}
+						onClick={() => setIsPanelOpen((prev) => !prev)}
+					>
+						{isPanelOpen ? (
+							<PanelRightClose className="size-4" />
+						) : (
+							<PanelRightOpen className="size-4" />
+						)}
+					</Button>
+				</div>
 			</div>
-			<div className="w-[380px] shrink-0 overflow-y-auto border-l bg-background p-4">
-				{selection?.kind === "run" && (
-					<RunDetailPanel
-						run={selection.run}
-						title="Agent run"
-						engineInfo={engineInfo}
-					/>
-				)}
-				{selection?.kind === "subagent" && (
-					<RunDetailPanel
-						run={selection.run}
-						title="Sub-agent run"
-						engineInfo={engineInfo}
-					/>
-				)}
-				{selection?.kind === "subroom" && (
-					<SubroomDetailPanel
-						roomId={selection.roomId}
-						run={selection.run}
-					/>
-				)}
-				{selection?.kind === "tool" && (
-					<ToolDetailPanel
-						toolName={selection.toolName}
-						invocations={selection.invocations}
-					/>
-				)}
-				{(!selection || selection.kind === "room") && (
-					<RoomDetailPanel
-						roomId={roomId}
-						roomName={roomName}
-						runs={runs}
-					/>
-				)}
-			</div>
+			{isPanelOpen && (
+				<div className="flex w-[380px] shrink-0 flex-col border-l bg-background">
+					<Tabs
+						value={detailTab}
+						onValueChange={(value) =>
+							setDetailTab(value as "inspect" | "analyze")
+						}
+						className="flex min-h-0 flex-1 flex-col gap-0"
+					>
+						<div className="border-b p-3">
+							<TabsList className="w-full">
+								<TabsTrigger value="inspect">
+									Inspect
+								</TabsTrigger>
+								<TabsTrigger value="analyze">
+									Analyze
+								</TabsTrigger>
+							</TabsList>
+						</div>
+						<TabsContent
+							value="inspect"
+							className="min-h-0 flex-1 overflow-y-auto p-4"
+						>
+							{selection?.kind === "run" && (
+								<RunDetailPanel
+									run={selection.run}
+									title="Agent run"
+									engineInfo={engineInfo}
+								/>
+							)}
+							{selection?.kind === "subagent" && (
+								<RunDetailPanel
+									run={selection.run}
+									title="Sub-agent run"
+									engineInfo={engineInfo}
+								/>
+							)}
+							{selection?.kind === "subroom" && (
+								<SubroomDetailPanel
+									roomId={selection.roomId}
+									run={selection.run}
+								/>
+							)}
+							{selection?.kind === "tool" && (
+								<ToolDetailPanel
+									toolName={selection.toolName}
+									invocations={selection.invocations}
+								/>
+							)}
+							{(!selection || selection.kind === "room") && (
+								<RoomDetailPanel
+									roomId={roomId}
+									roomName={roomName}
+									runs={runs}
+								/>
+							)}
+						</TabsContent>
+						<TabsContent
+							value="analyze"
+							className="min-h-0 flex-1 overflow-y-auto p-4"
+						>
+							{analyzeTarget ? (
+								<AnalyzeRunPanel
+									key={analyzeTarget.runId}
+									run={analyzeTarget}
+									engineInfo={engineInfo}
+									judgeModels={judgeModels}
+									state={assessments[analyzeTarget.runId]}
+									onAnalyze={startAssessment}
+								/>
+							) : (
+								<p className="text-muted-foreground text-sm">
+									Select an agent run or sub-agent node to
+									analyze it.
+								</p>
+							)}
+						</TabsContent>
+					</Tabs>
+				</div>
+			)}
 		</div>
 	);
 };

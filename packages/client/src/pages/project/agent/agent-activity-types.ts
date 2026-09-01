@@ -148,6 +148,66 @@ export interface EngineInfo {
 	name: string;
 }
 
+/** Model engine option for the judge model select. */
+export interface JudgeModelOption {
+	engineId: string;
+	engineName: string;
+}
+
+/** One judge-scored dimension from AssessAgentEffectiveness. */
+export interface AssessmentDimension {
+	score?: number;
+	rationale?: string;
+}
+
+/**
+ * Structured judge output from AssessAgentEffectiveness. Every field is
+ * optional because the shape is produced by an LLM - render defensively.
+ */
+export interface AgentRunAssessment {
+	goalAchievement?: AssessmentDimension;
+	toolUseQuality?: AssessmentDimension;
+	efficiency?: AssessmentDimension;
+	skillUtilization?: AssessmentDimension;
+	communicationQuality?: AssessmentDimension;
+	overallScore?: number;
+	verdict?: string;
+	topIssues?: string[];
+	recommendations?: string[];
+	metricsDisagreements?: string[];
+}
+
+/** Full AssessAgentEffectiveness pixel output. */
+export interface AssessAgentEffectivenessOutput {
+	runId: string;
+	roomId?: string;
+	harnessType?: string;
+	judgeModelId: string;
+	/** null when the judge response was not parseable JSON - see assessmentRaw. */
+	assessment: AgentRunAssessment | null;
+	assessmentRaw?: string;
+	parseError?: string;
+	judgeUsage?: {
+		promptTokens?: number;
+		responseTokens?: number;
+	};
+	metrics?: Record<string, unknown>;
+}
+
+/**
+ * Lifecycle of one run's assessment. Keyed by runId in the graph so results
+ * survive switching between nodes while another assessment is in flight.
+ */
+export type RunAssessmentState =
+	| { status: "running"; judgeModelId: string }
+	| {
+			status: "done";
+			judgeModelId: string;
+			elapsedMs: number;
+			output: AssessAgentEffectivenessOutput;
+	  }
+	| { status: "error"; judgeModelId: string; message: string };
+
 export const toMs = (dateStr: string | undefined): number =>
 	dateStr && dayjs.utc(dateStr).isValid()
 		? dayjs.utc(dateStr).valueOf()
