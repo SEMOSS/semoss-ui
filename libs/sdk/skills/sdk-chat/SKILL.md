@@ -1,18 +1,22 @@
 ---
-name: sdk-playground
-description: "How to use the @semoss/sdk playground API. Use for: creating or listing playground rooms, sending messages (AskRoom or RunAgent), fetching room messages or options, binding a room to an insight, updating room config, toggling between chat and agent-harness mode. Covers imports, typed parameters, error handling, and usage patterns for all chat pixel wrappers."
+name: sdk-chat
+description: "How to use the @semoss/sdk room API. Use for: creating or listing rooms, sending messages (AskRoom or RunAgent), fetching room messages or options, binding a room to an insight, updating room config, toggling between chat and agent-harness mode. Covers imports, typed parameters, error handling, and usage patterns for all chat pixel wrappers."
 ---
 
-# @semoss/sdk — Playground / Chat API
+# @semoss/sdk — Room / Chat API
 
-All playground functions are exported from `@semoss/sdk`. They wrap the underlying SEMOSS pixel
+All room functions are exported from `@semoss/sdk`. They wrap the underlying SEMOSS pixel
 reactors so consuming applications never need to write pixel strings directly.
+
+Import from `@semoss/sdk` unless the file also needs a React hook/provider (`usePixel`,
+`useInsight`, `InsightProvider`, etc.) — those live under `@semoss/sdk/react`. Non-React code
+(stores, plain functions) should not import from `@semoss/sdk/react` just for consistency.
 
 ## Imports
 
 ```ts
 import {
-    createPlaygroundRoom,
+    createRoom,
     getUserRooms,
     getRoomMessages,
     getRoomOptions,
@@ -27,16 +31,15 @@ import {
     pollAgentRun,
     getAgentRun,
     decideAgentRunAction,
-    subscribeRunAgent,
-    submitAgentToolDecision,
+    AgentStore,
 } from "@semoss/sdk";
 
 // Types (exported from @semoss/sdk)
 import type {
-    PlaygroundRoom,
-    PlaygroundMessage,
-    PlaygroundRoomOptions,
-    PlaygroundWorkspace,
+    RoomRecord,
+    RoomMessage,
+    RoomOptions,
+    RoomWorkspace,
     MCPToolConfig,
     PredefinedPrompt,
     AskRoomParams,
@@ -108,7 +111,7 @@ await room.updateOptions({
 
 // Use askAgent instead of ask — server drives the full agentic loop.
 // Internally this submits via runAgent (agent.ts) and polls the run to
-// completion with subscribeRunAgent — not job-streaming (see below).
+// completion via AgentStore.watch — not job-streaming (see below).
 const result = await room.askAgent("Summarize the latest news on AI.", {
     onChunk: (chunk) => {
         if (chunk.type === "content") appendToUI(chunk.content ?? "");
@@ -126,10 +129,10 @@ otherwise `askAgent` rejects as soon as the run pauses, since there'd be no way 
 const result = await room.askAgent("Delete all rows where status is 'archived'.", {
     onPendingActions: (pendingActions) => {
         for (const action of pendingActions) {
-            // Import decideAgentRunAction / submitAgentToolDecision from "@semoss/sdk".
-            // Use action.runId, not room.roomId — a paused subagent's action
-            // belongs to the subagent's own run.
-            submitAgentToolDecision(action, "submit"); // or "reject"
+            // A paused subagent's action belongs to the subagent's own run
+            // (action.runId), not room.roomId — build an AgentStore around
+            // it if you need to decide from outside the room that started it.
+            room.agent?.decide(action, "submit"); // or "reject"
         }
     },
 });
@@ -150,7 +153,7 @@ const messages = await room.getMessages();
 | `room.getMessages()` | Fetch full message history |
 | `room.ask(command, options?)` | Chat mode — client-driven via AskRoom |
 | `room.askAgent(command, options?)` | Agent-harness mode — server-driven via RunAgent |
-| `room.options` | Read-only getter for the current `PlaygroundRoomOptions` |
+| `room.options` | Read-only getter for the current `RoomOptions` |
 | `room.roomId` | The room's server ID |
 | `room.insightId` | The insight the room is bound to |
 
@@ -174,12 +177,12 @@ const messages = await room.getMessages();
 
 ## Functions
 
-### `createPlaygroundRoom(insightId, workspaceId)`
+### `createRoomRecord(insightId, workspaceId)`
 
-Creates a new room tied to a workspace. Returns the created `PlaygroundRoom`.
+Creates a new room tied to a workspace. Returns the created `RoomRecord`.
 
 ```ts
-const room = await createPlaygroundRoom(insightId, "workspace-abc");
+const room = await createRoomRecord(insightId, "workspace-abc");
 console.log(room.roomId);
 ```
 
@@ -201,7 +204,7 @@ const pinned = await getUserRooms(insightId, { pinned: true, sort: "DESC" });
 
 ### `getRoomMessages(insightId, roomId)`
 
-Returns all messages in a room as `PlaygroundMessage[]`.
+Returns all messages in a room as `RoomMessage[]`.
 
 ```ts
 const messages = await getRoomMessages(insightId, room.roomId);
@@ -211,7 +214,7 @@ const messages = await getRoomMessages(insightId, room.roomId);
 
 ### `getRoomOptions(insightId, roomId)`
 
-Returns the current `PlaygroundRoomOptions` for a room (model, instructions, MCP tools, etc.).
+Returns the current `RoomOptions` for a room (model, instructions, MCP tools, etc.).
 
 ```ts
 const options = await getRoomOptions(insightId, room.roomId);
@@ -236,7 +239,7 @@ await setRoomForInsight(insightId, room.roomId);
 Replaces a room's configuration. Pass the full options array. Returns `void`.
 
 ```ts
-const newOptions: PlaygroundRoomOptions[] = [
+const newOptions: RoomOptions[] = [
     {
         // PredefinedPrompt objects, not plain strings
         predefinedPrompts: [
@@ -256,14 +259,14 @@ const newOptions: PlaygroundRoomOptions[] = [
 await updateRoomOptions(insightId, room.roomId, newOptions);
 ```
 
-**Key `PlaygroundRoomOptions` fields:**
+**Key `RoomOptions` fields:**
 
 | Field | Type | Description |
 |-------|------|-------------|
 | `predefinedPrompts` | `PredefinedPrompt[]` | Quick-start prompt chips shown in the chat input |
 | `instructions` | `string` | System persona / instructions injected into every turn |
 | `mcp` | `MCPToolConfig[]` | MCP tool servers and knowledge sources enabled for the room |
-| `workspace` | `PlaygroundWorkspace?` | Agent workspace linked to the room (omit for plain chat) |
+| `workspace` | `RoomWorkspace?` | Agent workspace linked to the room (omit for plain chat) |
 | `modelId` | `string` | Engine ID of the model to use |
 | `harnessType` | `string?` | Set to `"semoss"` to run via the server-side RunAgent harness |
 
@@ -331,7 +334,7 @@ All functions throw on pixel errors. Wrap calls in `try/catch`:
 
 ```ts
 try {
-    const room = await createPlaygroundRoom(insightId, workspaceId);
+    const room = await createRoomRecord(insightId, workspaceId);
 } catch (error) {
     // error.message contains the reactor error string
     console.error("Failed to create room:", error);
@@ -342,7 +345,7 @@ try {
 
 ```ts
 // 1. Create or load a room
-const room = await createPlaygroundRoom(insightId, workspaceId);
+const room = await createRoomRecord(insightId, workspaceId);
 
 // 2. Bind the room to the insight
 await setRoomForInsight(insightId, room.roomId);
@@ -381,7 +384,7 @@ const { errors, results } = await getPixelAsyncResult(jobId);
 
 ### `addRoomToolExecution(insightId, params)`
 
-Submits a tool execution result back to the playground and fires a follow-up LLM
+Submits a tool execution result back to the room and fires a follow-up LLM
 completion turn. Call this after your application has run an MCP tool and has its output.
 Returns `{ jobId }` — use `getPixelJobStreaming` and `getPixelAsyncResult` exactly as you
 would after `askRoom`.
@@ -456,20 +459,20 @@ if (typeof output.responseMessage === "string") {
 ## Chat mode vs Agent-harness mode
 
 The SDK supports two ways to send a message. The choice is made **at room creation**
-by setting `harnessType` in `PlaygroundRoomOptions`, and is persisted with the room.
+by setting `harnessType` in `RoomOptions`, and is persisted with the room.
 
 These are two genuinely different wire protocols, not just two functions — agent-harness mode
 does **not** use job-streaming (`getPixelJobStreaming`/`getPixelAsyncResult`). The backend's
 `RunAgent` reactor has no pollable-job path at all: it either returns an immediate handle
 (`wait=false`, what `runAgent` uses) or blocks the request synchronously until the run finishes
 (`wait=true`, no partial progress). Streaming progress instead comes from a separate durable-run
-endpoint, polled via `pollAgentRun`/`subscribeRunAgent`.
+endpoint, polled via `pollAgentRun` or `AgentStore.watch`.
 
 | | **Chat mode** (`askRoom`) | **Agent-harness mode** (`runAgent`) |
 |---|---|---|
 | Who drives the tool loop | **Client** — browser executes each tool and submits results | **Server** — backend runs the full agentic cycle autonomously |
 | Tool calls | Client calls `RunMCPTool`, then `addRoomToolExecution` per tool | Server handles all tool calls internally; paused (HITL) calls surface via `pendingActions` |
-| Wire protocol | Job-streaming: `{ jobId }` polled via `getPixelJobStreaming` | Durable run: `{ runId }` polled via `pollAgentRun`/`subscribeRunAgent` — no `jobId` |
+| Wire protocol | Job-streaming: `{ jobId }` polled via `getPixelJobStreaming` | Durable run: `{ runId }` polled via `pollAgentRun`/`AgentStore.watch` — no `jobId` |
 | Progress shape | Raw `content`/`thinking`/`tool` chunks | Typed `AgentRunItemEvent`s (`message`/`reasoning`/`tool`/`subagent`) |
 | Result shape | `{ inputMessage, responseMessage }` — full message objects | `AgentRunSnapshot` — `finalText`, `status`, message IDs, `pendingActions` |
 | Use when | Standard Q&A, simple tool use, full client control needed | Complex multi-step agents, subagent chains, audit logging, long-running jobs |
@@ -494,11 +497,12 @@ To switch back to chat mode, update the room options with `harnessType: undefine
 
 Submits a message to the server-side agent harness **without waiting** for it to finish
 (`wait=false`) and returns immediately with a `runId` — not a `jobId`, and not the settled
-result. Poll `runId` to completion with `pollAgentRun` directly, or use `subscribeRunAgent` to
-get polling, event dedup/ordering, backoff, and `INPUT_REQUIRED`/terminal reconciliation for free.
+result. Poll `runId` to completion with `pollAgentRun` directly, or prefer `AgentStore` (see
+`stores/agent/agent.store.ts`), which owns the poll loop, dedup, ordering, backoff, and
+`INPUT_REQUIRED`/terminal reconciliation for you.
 
 ```ts
-const { runId } = await runAgent(
+const agent = await AgentStore.start(
     {
         roomId: room.roomId,
         command: "Analyze this dataset and produce a summary report.",
@@ -509,7 +513,7 @@ const { runId } = await runAgent(
 );
 
 const finalSnapshot = await new Promise<AgentRunSnapshot>((resolve, reject) => {
-    subscribeRunAgent(runId, {
+    agent.watch({
         onEvent: (event: AgentRunItemEvent) => {
             // Typed item events, not raw content/thinking/tool chunks
             if (event.type === "item.updated" && event.kind === "message" && event.delta) {
@@ -557,14 +561,14 @@ console.log(finalSnapshot.finalText);            // full response text
 | `finalOutputMessageId` | Server-assigned ID for the persisted response, once complete |
 | `finalText` | The agent's full response text, once it completes successfully |
 | `errorMessage` | Set when `status` is `"FAILED"` |
-| `pendingActions` | Paused tool calls awaiting a human decision; non-empty only while `"INPUT_REQUIRED"` — resolve with `decideAgentRunAction`/`submitAgentToolDecision` |
+| `pendingActions` | Paused tool calls awaiting a human decision; non-empty only while `"INPUT_REQUIRED"` — resolve with `AgentStore.decide()` (or `decideAgentRunAction` directly) |
 
 ---
 
 ## Tool Execution Call Stack
 
 This section documents how `addRoomToolExecution` fits into the full
-tool-call lifecycle so you can replicate the same flow outside the playground app.
+tool-call lifecycle so you can replicate the same flow outside the room app.
 
 ```
 AskRoom → stream chunks → getPixelAsyncResult
