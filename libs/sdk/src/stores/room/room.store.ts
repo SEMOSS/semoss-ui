@@ -1,27 +1,26 @@
-import type {
-	PlaygroundMessage,
-	PlaygroundRoomOptions,
-	RoomAskAgentOptions,
-	RoomAskAgentResult,
-	RoomAskOptions,
-	RoomAskResult,
-	RoomStreamChunk,
-} from "../types";
-import { runAgent } from "./agent";
-import type { AgentRunSnapshot } from "./agent.types";
-import { subscribeRunAgent } from "./agent-subscription";
 import {
 	getPixelAsyncResult,
 	getPixelJobStreaming,
 	type PixelJobStreamingStatus,
-} from "./base";
+} from "../../api/base";
 import {
 	askRoom,
-	createPlaygroundRoom,
+	createRoomRecord,
 	getRoomMessages,
 	setRoomForInsight,
 	updateRoomOptions,
-} from "./chat";
+} from "../../api/chat";
+import type {
+	AgentRunSnapshot,
+	RoomAskAgentOptions,
+	RoomAskAgentResult,
+	RoomAskOptions,
+	RoomAskResult,
+	RoomMessage,
+	RoomOptions,
+	RoomStreamChunk,
+} from "../../types";
+import { AgentStore } from "../agent";
 
 // Statuses that signal the streaming job has finished (success or failure).
 const TERMINAL_STATUSES: PixelJobStreamingStatus[] = [
@@ -64,31 +63,44 @@ interface AskSettledOutput {
  * console.log(result.text); // "Paris"
  * ```
  *
- * @see sdk-playground skill for the full Room guide and chat-vs-agent comparison.
+ * @see sdk-chat skill for the full Room guide and chat-vs-agent comparison.
  */
-export class Room {
+export class RoomStore {
 	readonly roomId: string;
 	readonly insightId: string;
-	private _options: PlaygroundRoomOptions;
+	private _options: RoomOptions;
 	/**
 	 * Tracks the last response message ID so subsequent ask() calls
 	 * automatically continue the same conversation thread.
 	 */
 	private _lastResponseMessageId: string = "ROOT_PLACEHOLDER_ID";
 
-	private constructor(
-		roomId: string,
-		insightId: string,
-		options: PlaygroundRoomOptions,
-	) {
+	/** The most recent AgentStore created via {@link createAgent}/{@link askAgent}, if any. */
+	private _agent: AgentStore | null = null;
+
+	/**
+	 * Wrap an already-existing room (e.g. one an insight is already bound to)
+	 * with no new `CreateRoom` pixel call. Prefer {@link createRoom} /
+	 * {@link RoomStore.create} when you need to create a brand-new room record.
+	 *
+	 * @param roomId - ID of the existing room.
+	 * @param insightId - The active SEMOSS insight ID.
+	 * @param options - The room's current configuration (fetch with {@link getRoomOptions} if unknown).
+	 */
+	constructor(roomId: string, insightId: string, options: RoomOptions) {
 		this.roomId = roomId;
 		this.insightId = insightId;
 		this._options = options;
 	}
 
 	/** Current room configuration. */
-	get options(): Readonly<PlaygroundRoomOptions> {
+	get options(): Readonly<RoomOptions> {
 		return this._options;
+	}
+
+	/** The most recent agent run added to this room, if any. */
+	get agent(): AgentStore | null {
+		return this._agent;
 	}
 
 	// ---------------------------------------------------------------------------
@@ -141,10 +153,8 @@ export class Room {
 	 *
 	 * @param options - Partial options to apply.
 	 */
-	async updateOptions(
-		options: Partial<PlaygroundRoomOptions>,
-	): Promise<void> {
-		const merged: PlaygroundRoomOptions = { ...this._options, ...options };
+	async updateOptions(options: Partial<RoomOptions>): Promise<void> {
+		const merged: RoomOptions = { ...this._options, ...options };
 		await updateRoomOptions(this.insightId, this.roomId, [merged]);
 		this._options = merged;
 	}
@@ -154,7 +164,7 @@ export class Room {
 	 *
 	 * @returns The full message history.
 	 */
-	async getMessages(): Promise<PlaygroundMessage[]> {
+	async getMessages(): Promise<RoomMessage[]> {
 		return getRoomMessages(this.insightId, this.roomId);
 	}
 
@@ -166,7 +176,7 @@ export class Room {
 	 * @param command - The message text to send.
 	 * @param options - Streaming callback and optional per-request overrides.
 	 * @returns Settled message IDs and the full response text.
-	 * @see sdk-playground skill for the full streaming guide.
+	 * @see sdk-chat skill for the full streaming guide.
 	 */
 	async ask(
 		command: string,
@@ -213,6 +223,29 @@ export class Room {
 	}
 
 	/**
+	 * Start a new agent-harness run in this room via {@link AgentStore.start},
+	 * caching it as {@link agent} so a caller holding this room can later
+	 * `.decide()` a paused tool call on the SAME instance that's watching it.
+	 * Prefer {@link askAgent} for the common single-shot case; use this
+	 * directly to drive `.watch()`/`.decide()` yourself.
+	 *
+	 * @param command - The message text to send.
+	 * @param engine - Model engine id override; defaults to the room's configured model.
+	 * @returns The started, not-yet-watched `AgentStore`.
+	 */
+	async createAgent(command: string, engine?: string): Promise<AgentStore> {
+		this._agent = await AgentStore.start(
+			{
+				roomId: this.roomId,
+				command,
+				engine: engine ?? this._options.modelId,
+			},
+			this.insightId,
+		);
+		return this._agent;
+	}
+
+	/**
 	 * Send a message via the server-side agent harness (RunAgent). The backend
 	 * drives the full agentic loop, polling its durable run to completion;
 	 * item events (message/reasoning/tool) are surfaced through `onChunk` as
@@ -223,7 +256,7 @@ export class Room {
 	 * @param command - The message text to send.
 	 * @param options - Streaming callback.
 	 * @returns Settled message IDs, response text, and status.
-	 * @see sdk-playground skill for the chat-vs-agent-harness guide.
+	 * @see sdk-chat skill for the chat-vs-agent-harness guide.
 	 */
 	async askAgent(
 		command: string,
@@ -231,14 +264,11 @@ export class Room {
 	): Promise<RoomAskAgentResult> {
 		const { onChunk, onPendingActions } = options;
 
-		const { runId } = await runAgent(
-			{ roomId: this.roomId, command, engine: this._options.modelId },
-			this.insightId,
-		);
+		const agent = await this.createAgent(command);
 
 		const snapshot = await new Promise<AgentRunSnapshot>(
 			(resolve, reject) => {
-				const subscription = subscribeRunAgent(runId, {
+				agent.watch({
 					onEvent: (event) => {
 						if (!onChunk) {
 							return;
@@ -273,10 +303,10 @@ export class Room {
 							if (onPendingActions) {
 								onPendingActions(full.pendingActions);
 							} else {
-								subscription.stop();
+								agent.stop();
 								reject(
 									new Error(
-										"Agent run paused awaiting a tool decision (INPUT_REQUIRED), but no onPendingActions handler was provided to askAgent — pass one and resolve each action with decideAgentRunAction/submitAgentToolDecision, or the run has no way to resume.",
+										"Agent run paused awaiting a tool decision (INPUT_REQUIRED), but no onPendingActions handler was provided to askAgent — pass one and resolve each action with agent.decide(), or the run has no way to resume.",
 									),
 								);
 							}
@@ -321,41 +351,39 @@ export class Room {
 	// ---------------------------------------------------------------------------
 
 	/**
-	 * Create a new Room, bind it to the active insight, and return it ready to use.
-	 * Prefer this over `new Room(...)` — it handles insight binding automatically.
+	 * Create a brand-new room record, bind it to the active insight, and return
+	 * it ready to use. Prefer this (or the `new RoomStore(...)` constructor for
+	 * an already-existing room) over calling `createRoomRecord` yourself.
 	 *
 	 * @param insightId - The active SEMOSS insight ID.
 	 * @param workspaceId - Optional workspace to associate with the room.
-	 * @returns A fully initialized Room instance.
+	 * @returns A fully initialized RoomStore instance.
 	 */
 	static async create(
 		insightId: string,
 		workspaceId?: string,
-	): Promise<Room> {
-		const playgroundRoom = await createPlaygroundRoom(
-			insightId,
-			workspaceId,
-		);
-		await setRoomForInsight(insightId, playgroundRoom.roomId);
+	): Promise<RoomStore> {
+		const roomRecord = await createRoomRecord(insightId, workspaceId);
+		await setRoomForInsight(insightId, roomRecord.roomId);
 
-		const defaultOptions: PlaygroundRoomOptions = {
+		const defaultOptions: RoomOptions = {
 			predefinedPrompts: [],
 			instructions: "",
 			mcp: [],
 			modelId: "",
 		};
 
-		return new Room(playgroundRoom.roomId, insightId, defaultOptions);
+		return new RoomStore(roomRecord.roomId, insightId, defaultOptions);
 	}
 }
 
 /**
- * Convenience wrapper around {@link Room.create}. Creates a new Room and binds
+ * Convenience wrapper around {@link RoomStore.create}. Creates a new room and binds
  * it to the active insight.
  *
  * @param insightId - The active SEMOSS insight ID.
  * @param workspaceId - Optional workspace to associate with the room.
- * @returns A fully initialized Room instance.
+ * @returns A fully initialized RoomStore instance.
  *
  * @example
  * ```ts
@@ -367,4 +395,4 @@ export class Room {
 export const createRoom = (
 	insightId: string,
 	workspaceId?: string,
-): Promise<Room> => Room.create(insightId, workspaceId);
+): Promise<RoomStore> => RoomStore.create(insightId, workspaceId);
