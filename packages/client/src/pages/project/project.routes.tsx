@@ -13,6 +13,7 @@ import {
 import { AgentActivityPage } from "./agent/agent-activity-page";
 import { CreateAgentPage } from "./agent/create-agent-page";
 import { EditAgentPage } from "./agent/edit-agent-page";
+import { ViewAgentPage } from "./agent/view-agent-page";
 import { CreateAppPage } from "./app/create-app-page";
 import { EditAppPage } from "./app/edit-app-page";
 import { CreateNotebookPage } from "./notebook/create-notebook-page";
@@ -365,6 +366,10 @@ export const PROJECT_ROUTES: {
 					{
 						path: "edit",
 						element: <EditAgentPage />,
+					},
+					{
+						path: "view",
+						element: <ViewAgentPage />,
 					},
 					{
 						path: "*",

@@ -42,6 +42,12 @@ import {
 /** A per-instance capability flag key. */
 type WorkbenchPanelFlag = "canClose" | "canDrag" | "canMaximize" | "canRename";
 
+/** The user's current panel focus plus recent panel focus history. */
+interface WorkbenchSelectionState {
+	panel: WorkbenchPanelId | undefined;
+	history: WorkbenchPanelId[];
+}
+
 /** Layout state fields owned by each workbench instance. */
 interface WorkbenchLayoutSliceFields {
 	/** Unique identity for this workbench instance. */
@@ -65,8 +71,8 @@ interface WorkbenchLayoutSliceFields {
 	/** The four border edges. */
 	borders: WorkbenchBorders;
 
-	/** The panel the user last interacted with. */
-	selectedPanelId: WorkbenchPanelId | undefined;
+	/** The panel the user last interacted with, plus recent selection history. */
+	selection: WorkbenchSelectionState;
 
 	/**
 	 * The dock the user last worked in, and where a new panel lands. Tracked
@@ -333,6 +339,42 @@ const capitalize = (value: string): string =>
 
 const deepCopy = <T>(value: T): T => JSON.parse(JSON.stringify(value)) as T;
 
+const nextSelection = (
+	selection: WorkbenchSelectionState,
+	openPanelIds: WorkbenchPanelId[],
+): WorkbenchSelectionState => {
+	const open = new Set(openPanelIds);
+	const history: WorkbenchPanelId[] = [];
+
+	for (const pid of selection.history) {
+		if (!open.has(pid)) {
+			continue;
+		}
+		const existing = history.indexOf(pid);
+		if (existing !== -1) {
+			history.splice(existing, 1);
+		}
+		history.push(pid);
+	}
+
+	const panel =
+		selection.panel && open.has(selection.panel)
+			? selection.panel
+			: undefined;
+	if (panel) {
+		const existing = history.indexOf(panel);
+		if (existing !== -1) {
+			history.splice(existing, 1);
+		}
+		history.push(panel);
+	}
+
+	return {
+		panel,
+		history,
+	};
+};
+
 /** State the derived fields are computed from. */
 type DeriveInput = Pick<
 	WorkbenchLayoutSliceFields,
@@ -482,7 +524,7 @@ export const createWorkbenchLayoutSlice = (
 				tree: state.tree,
 				borders: state.borders,
 				panels: state.panels,
-				selectedPanelId: state.selectedPanelId,
+				selectedPanelId: state.selection.panel,
 				maximizedTabsetId: state.maximizedTabsetId,
 			};
 		};
@@ -576,10 +618,17 @@ export const createWorkbenchLayoutSlice = (
 				// every path that moves the selection comes through this write,
 				// and a selection that lands in a border holds no dock, so it
 				// correctly leaves the answer alone.
-				const selected =
-					"selectedPanelId" in patch
-						? patch.selectedPanelId
-						: state.selectedPanelId;
+				const openPanelIds =
+					(derived as Partial<Derived>).openPanelIds ??
+					state.openPanelIds;
+				const selection =
+					"selection" in patch || needsDerive
+						? nextSelection(
+								patch.selection ?? state.selection,
+								openPanelIds ?? [],
+							)
+						: state.selection;
+				const selected = selection.panel;
 				const holding = selected
 					? findTabsetOf(patch.tree ?? state.tree, selected)
 					: null;
@@ -588,6 +637,7 @@ export const createWorkbenchLayoutSlice = (
 						...state,
 						...patch,
 						...derived,
+						selection,
 						lastTabsetId: holding?.id ?? state.lastTabsetId,
 					},
 				};
@@ -624,7 +674,7 @@ export const createWorkbenchLayoutSlice = (
 			state: WorkbenchLayoutSliceState,
 		): string | undefined => {
 			const all = flatten(state.tree);
-			const selected = state.selectedPanelId;
+			const selected = state.selection.panel;
 			// the last dock worked in, then whichever holds the selection (a
 			// border panel holds none), then the first
 			const last = state.lastTabsetId
@@ -667,7 +717,10 @@ export const createWorkbenchLayoutSlice = (
 				tree: snapshot.tree,
 				panels: panels,
 				borders: borders,
-				selectedPanelId: selectedPanelId,
+				selection: {
+					panel: selectedPanelId,
+					history: selectedPanelId ? [selectedPanelId] : [],
+				},
 				maximizedTabsetId: snapshot.maximizedTabsetId,
 			}));
 		};
@@ -688,9 +741,8 @@ export const createWorkbenchLayoutSlice = (
 			panels: {},
 			tree: emptyTabset(),
 			borders: withAllBorders(),
-			selectedPanelId: undefined,
+			selection: { panel: undefined, history: [] },
 			lastTabsetId: undefined,
-			maximizedTabsetId: undefined,
 			values: {},
 			components: {},
 			componentStatuses: {},
@@ -914,7 +966,10 @@ export const createWorkbenchLayoutSlice = (
 								s.maximizedTabsetId !== inTabset.id
 									? undefined
 									: s.maximizedTabsetId,
-							selectedPanelId: existing.id,
+							selection: {
+								...s.selection,
+								panel: existing.id,
+							},
 							mobileActivePanelId: existing.id,
 						}));
 						return existing.id;
@@ -933,7 +988,10 @@ export const createWorkbenchLayoutSlice = (
 									activeId: existing.id,
 								},
 							},
-							selectedPanelId: existing.id,
+							selection: {
+								...s.selection,
+								panel: existing.id,
+							},
 							mobileActivePanelId: existing.id,
 						}));
 						return existing.id;
@@ -948,7 +1006,10 @@ export const createWorkbenchLayoutSlice = (
 							tree: host
 								? joinTabset(s.tree, host, existing.id)
 								: s.tree,
-							selectedPanelId: existing.id,
+							selection: {
+								...s.selection,
+								panel: existing.id,
+							},
 							mobileActivePanelId: existing.id,
 						};
 					});
@@ -993,7 +1054,10 @@ export const createWorkbenchLayoutSlice = (
 										activeId: pid,
 									},
 								},
-								selectedPanelId: pid,
+								selection: {
+									...s.selection,
+									panel: pid,
+								},
 								mobileActivePanelId: pid,
 							};
 						}
@@ -1008,7 +1072,10 @@ export const createWorkbenchLayoutSlice = (
 						return {
 							panels,
 							tree: host ? joinTabset(s.tree, host, pid) : s.tree,
-							selectedPanelId: pid,
+							selection: {
+								...s.selection,
+								panel: pid,
+							},
 							mobileActivePanelId: pid,
 						};
 					});
@@ -1032,10 +1099,13 @@ export const createWorkbenchLayoutSlice = (
 							borders: stripFromBorders(s.borders, pid),
 							panels: panels,
 							values: values,
-							selectedPanelId:
-								s.selectedPanelId === pid
-									? undefined
-									: s.selectedPanelId,
+							selection: {
+								...s.selection,
+								panel:
+									s.selection.panel === pid
+										? undefined
+										: s.selection.panel,
+							},
 							editingPanelId:
 								s.editingPanelId === pid
 									? undefined
@@ -1137,12 +1207,17 @@ export const createWorkbenchLayoutSlice = (
 					});
 				},
 				setSelectedPanel: (pid) => {
-					if (get().layout.selectedPanelId === pid) {
+					if (get().layout.selection.panel === pid) {
 						return;
 					}
-					commit(() => ({ selectedPanelId: pid }), {
-						persist: "defer",
-					});
+					commit(
+						(s) => ({
+							selection: { ...s.selection, panel: pid },
+						}),
+						{
+							persist: "defer",
+						},
+					);
 				},
 				activatePanel: (stack, pid) => {
 					commit((s) => {
@@ -1156,7 +1231,10 @@ export const createWorkbenchLayoutSlice = (
 										activeId: pid,
 									}),
 								),
-								selectedPanelId: pid,
+								selection: {
+									...s.selection,
+									panel: pid,
+								},
 								mobileActivePanelId: pid,
 							};
 						}
@@ -1169,7 +1247,10 @@ export const createWorkbenchLayoutSlice = (
 									activeId: pid,
 								},
 							},
-							selectedPanelId: pid,
+							selection: {
+								...s.selection,
+								panel: pid,
+							},
 							mobileActivePanelId: pid,
 						};
 					});
@@ -1334,7 +1415,7 @@ export const createWorkbenchLayoutSlice = (
 										: pid,
 							},
 						},
-						selectedPanelId: pid,
+						selection: { ...s.selection, panel: pid },
 					}));
 				},
 				collapseBorder: (side) => {
