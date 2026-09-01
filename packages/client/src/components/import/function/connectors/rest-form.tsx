@@ -15,6 +15,7 @@ import { useNavigate } from "@/hooks/useNavigate";
 import {
 	catalogNameSchema,
 	createFunctionEngine,
+	FUNCTION_METADATA_DESCRIPTION,
 	parameterListSchema,
 	stringListSchema,
 } from "../shared/function-engine.utils";
@@ -136,27 +137,33 @@ export const RestForm = () => {
 					disabled={form.formState.isSubmitting}
 					data-testid="function-form-input-HEADERS"
 				/>
+			</FormSection>
+			<FormSection
+				title="Function Metadata"
+				description={FUNCTION_METADATA_DESCRIPTION}
+				testIdPrefix="function"
+			>
 				<FormInput
 					name="FUNCTION_NAME"
-					label="Function Name (metadata)"
+					label="Function Name"
 					disabled={form.formState.isSubmitting}
 					data-testid="function-form-input-FUNCTION_NAME"
 				/>
 				<FormInput
 					name="FUNCTION_DESCRIPTION"
-					label="Function Description (metadata)"
+					label="Function Description"
 					disabled={form.formState.isSubmitting}
 					data-testid="function-form-input-FUNCTION_DESCRIPTION"
 				/>
 				<ParameterListField
 					name="FUNCTION_PARAMETERS"
-					label="Function Parameters (metadata)"
+					label="Function Parameters"
 					description="Define each parameter with a name, type, and description."
 					disabled={form.formState.isSubmitting}
 				/>
 				<StringListField
 					name="FUNCTION_REQUIRED_PARAMETERS"
-					label="Function Required Parameters (metadata)"
+					label="Function Required Parameters"
 					description="List the names of parameters above that must be provided when calling this function."
 					disabled={form.formState.isSubmitting}
 				/>

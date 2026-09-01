@@ -5,6 +5,10 @@ import { uploadFile } from "@/api";
 /** Catalog names may only contain alphanumerics, dashes, and spaces. */
 export const CATALOG_NAME_PATTERN = /^[\w\-\s]+$/;
 
+/** Shared description for every connector's "Function Metadata" section. */
+export const FUNCTION_METADATA_DESCRIPTION =
+	"What a model sees when it picks this function out of a tool list: the name it calls, what the function says it does, and the parameters it takes. Every function type fills these in for itself, so set them only to override that wording.";
+
 /** Shared zod schema for every connector's "Catalog Name" field. */
 export const catalogNameSchema = z
 	.string()

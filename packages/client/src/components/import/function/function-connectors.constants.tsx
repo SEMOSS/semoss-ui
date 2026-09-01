@@ -6,11 +6,17 @@ import AWS_TRANSCRIBE from "@/assets/img/AWS_TRANSCRIBE.png";
 import AZURE_SPEECH_TO_TEXT from "@/assets/img/AZURE_SPEECH_TO_TEXT.png";
 import BING_SEARCH from "@/assets/img/BING_SEARCH.svg";
 import BRAVE_SEARCH from "@/assets/img/BRAVE_SEARCH.svg";
+import EXCHANGE_IMAP from "@/assets/img/EXCHANGE_IMAP.svg";
+import EXCHANGE_POP3 from "@/assets/img/EXCHANGE_POP3.svg";
+import EXCHANGE_SMTP from "@/assets/img/EXCHANGE_SMTP.svg";
 import GOOGLE_OCR from "@/assets/img/GOOGLE_OCR.png";
 import GOOGLE_SPEECH_TO_TEXT from "@/assets/img/GOOGLE_SPEECH_TO_TEXT.png";
+import IMAP from "@/assets/img/IMAP.svg";
+import POP3 from "@/assets/img/POP3.svg";
 import PYTHON from "@/assets/img/PYTHON.svg";
 import RESTAPI from "@/assets/img/REST-API.svg";
 import SERVICE_NOW from "@/assets/img/SERVICE_NOW.svg";
+import SMTP from "@/assets/img/SMTP.svg";
 import { AwsComprehendForm } from "./connectors/aws-comprehend-form";
 import { AwsImageTextExtractionForm } from "./connectors/aws-image-text-extraction-form";
 import { AwsPollyForm } from "./connectors/aws-polly-form";
@@ -19,11 +25,17 @@ import { AzureDocumentIntelligenceForm } from "./connectors/azure-document-intel
 import { AzureSpeechToTextForm } from "./connectors/azure-speech-to-text-form";
 import { BingWebSearchForm } from "./connectors/bing-web-search-form";
 import { BraveWebSearchForm } from "./connectors/brave-web-search-form";
+import { ExchangeImapMailboxForm } from "./connectors/exchange-imap-mailbox-form";
+import { ExchangePop3MailboxForm } from "./connectors/exchange-pop3-mailbox-form";
+import { ExchangeSendForm } from "./connectors/exchange-send-form";
 import { GoogleOcrForm } from "./connectors/google-ocr-form";
 import { GoogleSpeechToTextForm } from "./connectors/google-speech-to-text-form";
+import { ImapMailboxForm } from "./connectors/imap-mailbox-form";
 import { LocalPythonFunctionForm } from "./connectors/local-python-function-form";
+import { Pop3MailboxForm } from "./connectors/pop3-mailbox-form";
 import { RestForm } from "./connectors/rest-form";
 import { ServiceNowForm } from "./connectors/servicenow-form";
+import { SmtpEmailForm } from "./connectors/smtp-email-form";
 
 export interface FunctionConnector {
 	/** Stable URL slug, used for `/function/new/:connector`. */
@@ -109,6 +121,33 @@ export const FUNCTION_CONNECTORS: FunctionConnector[] = [
 		Component: BingWebSearchForm,
 	},
 	{
+		slug: "exchange-imap-mailbox",
+		name: "Exchange Mailbox (IMAP)",
+		icon: EXCHANGE_IMAP,
+		description:
+			"Read the email in a Microsoft 365 mailbox over IMAP, signing in with an Azure app registration rather than a mailbox password.",
+		notice: "Exchange Online does not accept a mailbox password over IMAP, so this needs an app registration with the IMAP.AccessAsApp permission and admin consent, plus an Exchange grant for this mailbox (New-ServicePrincipal and Add-MailboxPermission). Without the mailbox grant a token is still issued and the sign in still fails.",
+		Component: ExchangeImapMailboxForm,
+	},
+	{
+		slug: "exchange-pop3-mailbox",
+		name: "Exchange Mailbox (POP3)",
+		icon: EXCHANGE_POP3,
+		description:
+			"Read the email in a Microsoft 365 mailbox over POP3, signing in with an Azure app registration rather than a mailbox password. One inbox, no folders, and no record of what has been read.",
+		notice: "Exchange Online does not accept a mailbox password over POP3, so this needs an app registration with the POP.AccessAsApp permission and admin consent, plus an Exchange grant for this mailbox. That permission is separate from the IMAP one. On a Microsoft 365 mailbox the IMAP engine is usually the better choice, since the same token reaches it and it keeps folders and read state.",
+		Component: ExchangePop3MailboxForm,
+	},
+	{
+		slug: "exchange-send",
+		name: "Exchange Send",
+		icon: EXCHANGE_SMTP,
+		description:
+			"Send email as a Microsoft 365 mailbox, through the Graph API or over SMTP. Pick which below - the limits on what this engine may send are the same either way.",
+		notice: "Sending is immediate and cannot be recalled. Graph needs only the Mail.Send application permission with admin consent. SMTP additionally needs SMTP.SendAsApp, a service principal, a mailbox grant, and SMTP AUTH enabled for the tenant and the mailbox, which is why Graph is the default.",
+		Component: ExchangeSendForm,
+	},
+	{
 		slug: "google-speech-to-text",
 		name: "Google Speech To Text",
 		icon: GOOGLE_SPEECH_TO_TEXT,
@@ -125,13 +164,31 @@ export const FUNCTION_CONNECTORS: FunctionConnector[] = [
 		Component: GoogleOcrForm,
 	},
 	{
+		slug: "imap-mailbox",
+		name: "IMAP Mailbox",
+		icon: IMAP,
+		description:
+			"Read the email in an IMAP mailbox, which keeps folders and tracks what has been read, and optionally mark, move, or delete a message.",
+		notice: "Reading is safe by default, since the folder is opened read only. The mark, move, and delete settings below let a caller change the mailbox for everyone who reads it, and a delete cannot be undone.",
+		Component: ImapMailboxForm,
+	},
+	{
 		slug: "local-python-function",
 		name: "Local Python Function",
 		icon: PYTHON,
 		description:
 			"Run a custom Python function stored within the engine. Useful for executing local Python logic as a callable function.",
-		notice: "After creating this engine, upload your Python file and any supporting files from the engine Edit page.",
+		notice: "A starter Python file is created from this function metadata. You can edit it and add supporting files from the engine Edit page.",
 		Component: LocalPythonFunctionForm,
+	},
+	{
+		slug: "pop3-mailbox",
+		name: "POP3 Mailbox",
+		icon: POP3,
+		description:
+			"Read the email in a POP3 mailbox. One inbox, no folders, and no record of what has already been read, so it suits a mailbox something drains rather than a person's mail.",
+		notice: "Whatever is in the mailbox can come back to whoever calls this, attachments included. Use the sender domain, message count, and body length settings below to bound what it can surface. Nothing here deletes mail.",
+		Component: Pop3MailboxForm,
 	},
 	{
 		slug: "rest",
@@ -140,6 +197,15 @@ export const FUNCTION_CONNECTORS: FunctionConnector[] = [
 		description: "Connect to any RESTful API endpoint",
 		link: "https://restfulapi.net/",
 		Component: RestForm,
+	},
+	{
+		slug: "smtp-email",
+		name: "SMTP Email",
+		icon: SMTP,
+		description:
+			"Send email through an SMTP mail server whose credentials live on this engine rather than in social.properties.",
+		notice: "Sending is immediate and cannot be recalled. Use the recipient domain, recipient count, and sender override settings below to bound what this engine is allowed to send.",
+		Component: SmtpEmailForm,
 	},
 	{
 		slug: "servicenow",

@@ -17,6 +17,7 @@ import { useNavigate } from "@/hooks/useNavigate";
 import {
 	catalogNameSchema,
 	createFunctionEngine,
+	FUNCTION_METADATA_DESCRIPTION,
 	parameterListSchema,
 	stringListSchema,
 } from "../shared/function-engine.utils";
@@ -229,29 +230,35 @@ export const BingWebSearchForm = () => {
 					disabled={form.formState.isSubmitting}
 					data-testid="function-form-input-INSTRUCTION"
 				/>
+			</FormSection>
+			<FormSection
+				title="Function Metadata"
+				description={FUNCTION_METADATA_DESCRIPTION}
+				testIdPrefix="function"
+			>
 				<FormInput
 					name="FUNCTION_NAME"
-					label="Function Name (metadata)"
+					label="Function Name"
 					description="Becomes the MCP tool name, so name it for what it does, ie web_research."
 					disabled={form.formState.isSubmitting}
 					data-testid="function-form-input-FUNCTION_NAME"
 				/>
 				<FormInput
 					name="FUNCTION_DESCRIPTION"
-					label="Function Description (metadata)"
+					label="Function Description"
 					description="Leave blank to use the built in description of what a grounded search returns."
 					disabled={form.formState.isSubmitting}
 					data-testid="function-form-input-FUNCTION_DESCRIPTION"
 				/>
 				<ParameterListField
 					name="FUNCTION_PARAMETERS"
-					label="Function Parameters (metadata)"
+					label="Function Parameters"
 					description="Leave empty to use the built in search parameters: query and country."
 					disabled={form.formState.isSubmitting}
 				/>
 				<StringListField
 					name="FUNCTION_REQUIRED_PARAMETERS"
-					label="Function Required Parameters (metadata)"
+					label="Function Required Parameters"
 					description="List the names of parameters above that must be provided when calling this function."
 					disabled={form.formState.isSubmitting}
 				/>
