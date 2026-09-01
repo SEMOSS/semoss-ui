@@ -215,10 +215,10 @@ export interface WorkbenchLayoutActions {
 	 */
 	renamePanel: (pid: WorkbenchPanelId, name: string) => void;
 
-	/** Merge a name/config/capability patch into a panel's record. */
+	/** Merge a type/name/config/capability patch into a panel's record. */
 	updatePanel: (
 		pid: WorkbenchPanelId,
-		patch: Partial<Omit<WorkbenchPanelRecord, "id" | "type">>,
+		patch: Partial<Omit<WorkbenchPanelRecord, "id">>,
 	) => void;
 
 	/** Write a panel's scratch value. */
@@ -1150,7 +1150,7 @@ export const createWorkbenchLayoutSlice = (
 											}
 										: record.config,
 									id: record.id,
-									type: record.type,
+									type: patch.type ?? record.type,
 								},
 							},
 						};
