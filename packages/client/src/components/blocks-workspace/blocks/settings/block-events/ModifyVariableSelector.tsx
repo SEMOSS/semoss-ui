@@ -1,15 +1,17 @@
 import { useEffect } from "react";
-import { type ListenerActions, useBlocks } from "@semoss/renderer";
 import {
 	type Control,
 	Controller,
+	type UseFormSetValue,
+} from "react-hook-form";
+import { type ListenerActions, useBlocks } from "@semoss/renderer";
+import {
 	Input,
 	Select,
 	SelectContent,
 	SelectItem,
 	SelectTrigger,
 	SelectValue,
-	type UseFormSetValue,
 } from "@semoss/ui/next";
 
 interface ModifyVariableSelectorProps {

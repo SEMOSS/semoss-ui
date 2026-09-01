@@ -3,6 +3,7 @@
 
 import { ChevronDown, ChevronUp, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Controller, useForm } from "react-hook-form";
 import { console as getPixelConsole } from "@semoss/sdk/react";
 import { PairedFileUpload, type PairedFileUploadRow } from "@semoss/shared";
 import {
@@ -11,7 +12,6 @@ import {
 	Collapsible,
 	CollapsibleContent,
 	CollapsibleTrigger,
-	Controller,
 	Dialog,
 	DialogContent,
 	Field,
@@ -31,7 +31,6 @@ import {
 	SelectValue,
 	Separator,
 	toast,
-	useForm,
 } from "@semoss/ui/next";
 import { uploadFile } from "@/api";
 import { useRootStore } from "@/hooks";

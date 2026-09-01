@@ -1,5 +1,6 @@
+import { type Control, Controller } from "react-hook-form";
 import type { ListenerActions } from "@semoss/renderer";
-import { type Control, Controller, Input } from "@semoss/ui/next";
+import { Input } from "@semoss/ui/next";
 
 interface BlockEventNameSelectorProps {
 	control: Control<ListenerActions>;

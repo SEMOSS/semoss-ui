@@ -1,6 +1,5 @@
 import * as React from "react";
 import {
-	type Control,
 	Controller,
 	type ControllerProps,
 	type FieldPath,
@@ -9,7 +8,6 @@ import {
 	type SubmitErrorHandler,
 	type SubmitHandler,
 	type UseFormReturn,
-	type UseFormSetValue,
 	useFormContext,
 } from "react-hook-form";
 import { Button } from "@/next/button";
@@ -562,6 +560,5 @@ export type {
 
 export { zodResolver } from "@hookform/resolvers/zod";
 // Bare-minimum re-exports so a full form can be built from a single import.
-export { Controller, useFieldArray, useForm, useWatch } from "react-hook-form";
-export type { Control, UseFormSetValue };
+export { useForm } from "react-hook-form";
 export { z } from "zod";

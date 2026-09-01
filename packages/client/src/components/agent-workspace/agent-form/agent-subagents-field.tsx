@@ -1,18 +1,16 @@
 import { Plus, Trash2 } from "lucide-react";
 import { useMemo } from "react";
+import { type Control, Controller, useFieldArray } from "react-hook-form";
 import { usePixel } from "@semoss/sdk/react";
 import type { Project } from "@semoss/shared";
 import {
 	Button,
-	type Control,
-	Controller,
 	Muted,
 	Select,
 	SelectContent,
 	SelectItem,
 	SelectTrigger,
 	SelectValue,
-	useFieldArray,
 } from "@semoss/ui/next";
 import type { AgentFormValues } from "./types";
 

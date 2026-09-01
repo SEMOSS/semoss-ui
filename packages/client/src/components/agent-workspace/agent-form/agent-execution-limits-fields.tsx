@@ -1,7 +1,6 @@
 import { useId } from "react";
+import { type Control, Controller } from "react-hook-form";
 import {
-	type Control,
-	Controller,
 	Field,
 	FieldDescription,
 	FieldLabel,

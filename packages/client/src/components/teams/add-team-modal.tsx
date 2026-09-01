@@ -1,5 +1,6 @@
 import { Users, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
+import { Controller, useForm } from "react-hook-form";
 import {
 	getLoginProviderInitials,
 	getLoginProviderKey,
@@ -7,7 +8,6 @@ import {
 } from "@semoss/shared";
 import {
 	Button,
-	Controller,
 	Dialog,
 	DialogContent,
 	DialogFooter,
@@ -25,7 +25,6 @@ import {
 	SelectValue,
 	Textarea,
 	toast,
-	useForm,
 } from "@semoss/ui/next";
 import { addTeam, editTeam } from "@/api/teams";
 import { useRootStore } from "@/hooks";
