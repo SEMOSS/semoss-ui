@@ -112,8 +112,8 @@ export const TemplatePage: React.FC = observer((): JSX.Element => {
 				<NavbarHeader />
 			</NavbarLeft>
 			<CatalogLayout
-				title="Templates"
-				description="See Templates"
+				title="Template Catalog"
+				description="Explore reusable templates for apps of every kind. Choose a starting point, create your own app, and customize it to fit your use case."
 				searchBar={
 					<CatalogSearchBar
 						search={search}
@@ -172,7 +172,6 @@ export const TemplatePage: React.FC = observer((): JSX.Element => {
 							<TemplateCard
 								key={template.project_id}
 								id={template.project_id}
-								path={`/templates/${template.project_id}`}
 								name={
 									template.project_display_name ||
 									template.project_name
