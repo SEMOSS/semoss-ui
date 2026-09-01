@@ -1,5 +1,6 @@
 /** Component IDs shared by workbench state, commands, and renderers. */
 export const WORKBENCH_COMPONENTS = {
+	AGENT_EDITOR: "project-agent-editor",
 	ASSISTANT: "workbench-assistant",
 	FILE_EXPLORER: "engine-file-explorer",
 	FILE_EDITOR: "engine-file-editor",
@@ -20,6 +21,5 @@ export const WORKBENCH_COMPONENTS = {
 	PROJECT_SETTINGS: "project-settings",
 	PROJECT_INSIGHT_EXPLORER: "project-insight-explorer",
 	PROJECT_APP_RENDERER: "project-app-renderer",
-	PROJECT_AGENT_EDITOR: "project-agent-editor",
 	PROJECT_ENGINES: "project-engines",
 } as const;

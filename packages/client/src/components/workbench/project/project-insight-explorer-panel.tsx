@@ -10,9 +10,12 @@ import type {
 import { WORKBENCH_COMPONENTS } from "../workbench.constants";
 import { ProjectInsightExplorer } from "./project-insight-explorer";
 
+const terminalInsightId = (value: unknown): string | null =>
+	typeof value === "string" && value ? value : null;
+
 /**
- * The "Insight" file explorer panel. Each terminal tab owns its own insight, so
- * this binds to the *active* terminal tab's insight via an adopting
+ * The "Insight" file explorer panel. Each terminal panel owns its own insight,
+ * so this binds to the active terminal panel via an adopting
  * InsightProvider — `mode.INSIGHT` browsing and uploads then land in the same
  * workspace the terminal sees. `destroyOnUnmount` is off so this pane never
  * drops the insight the terminal owns. Shows a spinner until a terminal insight
@@ -22,14 +25,37 @@ const ProjectInsightExplorerPanel: WorkbenchComponent<
 	Record<string, unknown>,
 	FileExplorerApi
 > = ({ id, setValue }) => {
-	// the terminal panel publishes its active insightId on its scratch value
-	const insightId = useWorkbench(
-		(state) =>
-			(state.layout.values[WORKBENCH_COMPONENTS.PROJECT_TERMINAL] as
-				| string
-				| null
-				| undefined) ?? null,
-	);
+	// Each terminal publishes its insight on its own scratch value. Follow the
+	// most recently selected terminal, regardless of where that panel was moved.
+	const insightId = useWorkbench((state) => {
+		const findInsightId = (panelIds: string[]): string | null => {
+			for (let i = panelIds.length - 1; i >= 0; i--) {
+				const terminalPanelId = panelIds[i];
+				if (
+					state.layout.panels[terminalPanelId]?.type !==
+					WORKBENCH_COMPONENTS.PROJECT_TERMINAL
+				) {
+					continue;
+				}
+
+				const insightId = terminalInsightId(
+					state.layout.values[terminalPanelId],
+				);
+				if (insightId) {
+					return insightId;
+				}
+			}
+
+			return null;
+		};
+
+		const selectedInsightId = findInsightId(state.layout.selection.history);
+		if (selectedInsightId) {
+			return selectedInsightId;
+		}
+
+		return findInsightId(state.layout.openPanelIds);
+	});
 
 	if (!insightId) {
 		return (
