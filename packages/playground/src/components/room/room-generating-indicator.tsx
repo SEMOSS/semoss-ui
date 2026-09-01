@@ -1,9 +1,10 @@
-import { cn, Spinner } from "@semoss/ui/next";
+import { cn } from "@semoss/ui/next";
 import { useLoadingMessage } from "@/hooks";
+import { TypewriterText } from "../common/typewriter-text";
 
 export interface RoomGeneratingIndicatorProps {
-	/** Whether to show the spinner + label. The div always reserves its
-	 * height, so toggling this never changes the page height. */
+	/** Whether to show the label. The div always reserves its height, so
+	 * toggling this never changes the page height. */
 	active: boolean;
 }
 
@@ -15,12 +16,11 @@ export const RoomGeneratingIndicator = ({
 	return (
 		<div
 			className={cn(
-				"ms-2.5 flex h-10 items-center gap-2 text-muted-foreground text-sm",
+				"flex h-10 items-center text-muted-foreground text-sm",
 				!active && "invisible",
 			)}
 		>
-			<Spinner className="size-4" />
-			<span>{loadingMessage}</span>
+			<TypewriterText text={loadingMessage} className="animate-pulse" />
 		</div>
 	);
 };
