@@ -1635,7 +1635,7 @@ export const FUNCTION_CONNECTIONS = {
 						},
 						{
 							display: "SMTP mail server",
-							value: "smtp",
+							value: "jakarta",
 						},
 					],
 					disabled: false,
@@ -1667,7 +1667,7 @@ export const FUNCTION_CONNECTIONS = {
 					category: "Credentials",
 				},
 				{
-					key: "GRAPH_TENANT",
+					key: "EXCHANGE_TENANT",
 					label: "Tenant Id",
 					value: "",
 					type: "text",
@@ -1675,23 +1675,21 @@ export const FUNCTION_CONNECTIONS = {
 					required: true,
 					helperText:
 						"The directory (tenant) id of the Azure app registration, or the tenant domain.",
-					showWhen: { field: "MAIL_TRANSPORT", eq: "graph" },
 					category: "Credentials",
 				},
 				{
-					key: "GRAPH_CLIENT_ID",
+					key: "EXCHANGE_CLIENT_ID",
 					label: "Client Id",
 					value: "",
 					type: "text",
 					disabled: false,
 					required: true,
 					helperText:
-						"The application (client) id of the app registration.",
-					showWhen: { field: "MAIL_TRANSPORT", eq: "graph" },
+						"The application (client) id of the app registration. Sending through Graph needs the Mail.Send permission on it; sending through SMTP needs SMTP.SendAsApp instead.",
 					category: "Credentials",
 				},
 				{
-					key: "GRAPH_CLIENT_SECRET",
+					key: "EXCHANGE_CLIENT_SECRET",
 					label: "Client Secret",
 					value: "",
 					type: "password",
@@ -1699,19 +1697,17 @@ export const FUNCTION_CONNECTIONS = {
 					required: true,
 					helperText:
 						"A client secret on the app registration. Secrets expire, so the engine stops sending when it does.",
-					showWhen: { field: "MAIL_TRANSPORT", eq: "graph" },
 					category: "Credentials",
 				},
 				{
-					key: "GRAPH_SCOPE",
+					key: "EXCHANGE_SCOPE",
 					label: "Token Scope",
 					value: "",
 					type: "text",
 					disabled: false,
 					required: false,
 					helperText:
-						"Optional. Defaults to https://graph.microsoft.com/.default, which asks for whatever application permissions the app registration was granted.",
-					showWhen: { field: "MAIL_TRANSPORT", eq: "graph" },
+						"Optional. Defaults to the resource the selected transport needs, which is graph.microsoft.com for Graph and outlook.office365.com for SMTP.",
 					category: "Credentials",
 				},
 				{
@@ -1747,7 +1743,7 @@ export const FUNCTION_CONNECTIONS = {
 					required: true,
 					helperText:
 						"The mail server hostname, ie smtp.office365.com or an internal relay.",
-					showWhen: { field: "MAIL_TRANSPORT", eq: "smtp" },
+					showWhen: { field: "MAIL_TRANSPORT", eq: "jakarta" },
 					category: "Credentials",
 				},
 				{
@@ -1759,7 +1755,7 @@ export const FUNCTION_CONNECTIONS = {
 					required: true,
 					helperText:
 						"587 for STARTTLS, 465 for SSL, 25 for a relay that does no encryption.",
-					showWhen: { field: "MAIL_TRANSPORT", eq: "smtp" },
+					showWhen: { field: "MAIL_TRANSPORT", eq: "jakarta" },
 					category: "Credentials",
 				},
 				{
@@ -1785,7 +1781,7 @@ export const FUNCTION_CONNECTIONS = {
 					required: true,
 					helperText:
 						"STARTTLS is required rather than optional, so a server that drops it cannot downgrade the message to plaintext. Only use None for an internal relay.",
-					showWhen: { field: "MAIL_TRANSPORT", eq: "smtp" },
+					showWhen: { field: "MAIL_TRANSPORT", eq: "jakarta" },
 					category: "Credentials",
 				},
 				{
@@ -1797,42 +1793,7 @@ export const FUNCTION_CONNECTIONS = {
 					required: false,
 					helperText:
 						"Leave the username and password both blank for a relay that does not authenticate.",
-					showWhen: { field: "MAIL_TRANSPORT", eq: "smtp" },
-					category: "Credentials",
-				},
-				{
-					key: "EXCHANGE_TENANT",
-					label: "Tenant Id",
-					value: "",
-					type: "text",
-					disabled: false,
-					required: false,
-					helperText:
-						"The directory (tenant) id of the Azure app registration, or the tenant domain.",
-					showWhen: { field: "MAIL_TRANSPORT", eq: "smtp" },
-					category: "Credentials",
-				},
-				{
-					key: "EXCHANGE_CLIENT_ID",
-					label: "Client Id",
-					value: "",
-					type: "text",
-					disabled: false,
-					required: false,
-					helperText:
-						"The application (client) id. Over SMTP this needs the SMTP.SendAsApp permission rather than Mail.Send.",
-					showWhen: { field: "MAIL_TRANSPORT", eq: "smtp" },
-					category: "Credentials",
-				},
-				{
-					key: "EXCHANGE_CLIENT_SECRET",
-					label: "Client Secret",
-					value: "",
-					type: "password",
-					disabled: false,
-					required: false,
-					helperText: "A client secret on the app registration.",
-					showWhen: { field: "MAIL_TRANSPORT", eq: "smtp" },
+					showWhen: { field: "MAIL_TRANSPORT", eq: "jakarta" },
 					category: "Credentials",
 				},
 				{
@@ -1973,7 +1934,7 @@ export const FUNCTION_CONNECTIONS = {
 					required: false,
 					helperText:
 						"How long to wait for the mail server to accept a connection.",
-					showWhen: { field: "MAIL_TRANSPORT", eq: "smtp" },
+					showWhen: { field: "MAIL_TRANSPORT", eq: "jakarta" },
 					category: "Settings",
 				},
 				{
@@ -1985,7 +1946,7 @@ export const FUNCTION_CONNECTIONS = {
 					required: false,
 					helperText:
 						"How long to wait on the mail server once connected.",
-					showWhen: { field: "MAIL_TRANSPORT", eq: "smtp" },
+					showWhen: { field: "MAIL_TRANSPORT", eq: "jakarta" },
 					category: "Settings",
 				},
 				{
@@ -2546,7 +2507,7 @@ export const FUNCTION_CONNECTIONS = {
 			icon: PYTHON,
 			description:
 				"Run a custom Python function stored within the engine. Useful for executing local Python logic as a callable function.",
-			notice: "After creating this engine, upload your Python file and any supporting files from the engine Edit page.",
+			notice: "A starter Python file is created from this function metadata. You can edit it and add supporting files from the engine Edit page.",
 			fields: [
 				{
 					key: "FUNCTION_TYPE",
@@ -2586,8 +2547,14 @@ export const FUNCTION_CONNECTIONS = {
 					type: "text",
 					disabled: false,
 					required: true,
+					rules: {
+						pattern: {
+							value: /^[A-Za-z0-9_.-]+\.py$/,
+							message: "Enter a .py file name without a path.",
+						},
+					},
 					helperText:
-						"Enter only the file name (e.g., my_function.py). Upload the file itself from the engine Edit page after the engine is created.",
+						"Enter the file name for the generated starter function (e.g., my_function.py).",
 					category: "Settings",
 				},
 				{
@@ -2597,6 +2564,12 @@ export const FUNCTION_CONNECTIONS = {
 					type: "text",
 					disabled: false,
 					required: true,
+					rules: {
+						pattern: {
+							value: /^[A-Za-z_][A-Za-z0-9_]*$/,
+							message: "Enter a valid Python function name.",
+						},
+					},
 					category: "Function Metadata",
 				},
 				{

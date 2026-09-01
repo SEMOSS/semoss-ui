@@ -262,7 +262,11 @@ export const FunctionForm = ({
 			}
 		});
 
-		let pixel = `CreateRestFunctionEngine(function=["${
+		const createReactor =
+			newFormData.FUNCTION_TYPE === "LOCAL_PYTHON"
+				? "CreatePythonFunctionEngine"
+				: "CreateFunctionEngine";
+		let pixel = `${createReactor}(function=["${
 			formData.NAME
 		}"],functionDetails=[${JSON.stringify(newFormData)}]);`;
 		if (FILE) {
