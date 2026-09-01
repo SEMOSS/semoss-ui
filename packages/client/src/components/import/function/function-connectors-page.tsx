@@ -3,9 +3,10 @@
 
 import { SearchIcon, UploadIcon } from "lucide-react";
 import type React from "react";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { runPixel } from "@semoss/sdk/react";
 import {
+	Badge,
 	Breadcrumb,
 	BreadcrumbItem,
 	BreadcrumbLink,
@@ -13,6 +14,7 @@ import {
 	BreadcrumbPage,
 	BreadcrumbSeparator,
 	Button,
+	cn,
 	Dialog,
 	DialogContent,
 	H4,
@@ -20,14 +22,142 @@ import {
 	InputGroupAddon,
 	InputGroupInput,
 	P,
+	Tooltip,
+	TooltipContent,
+	TooltipTrigger,
 	toast,
 } from "@semoss/ui/next";
 import { uploadFile } from "@/api";
 import { NavbarHeader, NavbarLeft } from "@/components/shared";
 import { useRootStore } from "@/hooks";
 import { useNavigate } from "@/hooks/useNavigate";
-import { FUNCTION_CONNECTORS } from "./function-connectors.constants";
-import { FunctionTitleCard } from "./function-title-card";
+import { formatToDataTestId } from "@/utility";
+import {
+	FUNCTION_CONNECTORS,
+	type FunctionConnector,
+} from "./function-connectors.constants";
+
+interface ConnectorCardProps {
+	connector: FunctionConnector;
+	onSelect: () => void;
+}
+
+const ConnectorCard = ({ connector, onSelect }: ConnectorCardProps) => {
+	const textRef = useRef<HTMLParagraphElement>(null);
+	const [isTruncated, setIsTruncated] = useState(false);
+
+	useEffect(() => {
+		const checkTruncated = () => {
+			const el = textRef.current;
+			if (el) {
+				setIsTruncated(el.scrollWidth > el.clientWidth);
+			}
+		};
+
+		checkTruncated();
+		window.addEventListener("resize", checkTruncated);
+		return () => {
+			window.removeEventListener("resize", checkTruncated);
+		};
+	}, []);
+
+	const handleCardClick = () => {
+		if (!connector.disable) {
+			onSelect();
+		}
+	};
+
+	const handleCardKeyDown = (e: React.KeyboardEvent) => {
+		if (e.key === "Enter" || e.key === " ") {
+			e.preventDefault();
+			handleCardClick();
+		}
+	};
+
+	const cardContent = (
+		// biome-ignore lint/a11y/useSemanticElements: matches existing engine-import cards
+		<div
+			className={cn(
+				"flex min-h-[204px] w-full cursor-pointer flex-col justify-between rounded-lg border border-input bg-card p-4 sm:w-[215px]",
+				"hover:border-[1.5px] hover:border-primary hover:bg-primary/5",
+				connector.disable &&
+					"cursor-auto opacity-60 hover:border hover:border-input hover:bg-card",
+			)}
+			onClick={handleCardClick}
+			onKeyDown={handleCardKeyDown}
+			data-testid={formatToDataTestId(
+				`importPageContent-connect-to-${connector.name}-img`,
+			)}
+			role="button"
+			tabIndex={connector.disable ? -1 : 0}
+		>
+			<div className="flex flex-col items-start gap-1">
+				<div className="flex w-full flex-row items-center gap-2">
+					<img
+						src={connector.icon}
+						alt={connector.name}
+						className="flex h-[30px] w-[30px] shrink-0 rounded-lg object-cover"
+					/>
+					{connector.disable && (
+						<Badge variant="secondary">Coming Soon</Badge>
+					)}
+				</div>
+				<p
+					ref={textRef}
+					className="mt-1 self-stretch overflow-hidden text-ellipsis whitespace-nowrap font-medium text-secondary-foreground text-sm leading-[143%] tracking-[0.17px]"
+				>
+					{connector.name}
+				</p>
+				<p
+					className="mt-1 line-clamp-3 text-[12px] text-muted-foreground leading-[1.3]"
+					title={connector.description}
+				>
+					{connector.description}
+				</p>
+			</div>
+			{connector.link && !connector.disable && (
+				<Button
+					type="button"
+					variant="link"
+					className="mt-2 flex justify-end p-0 text-sm"
+					onClick={(e) => {
+						e.stopPropagation();
+						window.open(
+							connector.link,
+							"_blank",
+							"noopener,noreferrer",
+						);
+					}}
+					onKeyDown={(e) => {
+						if (e.key === "Enter" || e.key === " ") {
+							e.preventDefault();
+							e.stopPropagation();
+							window.open(
+								connector.link,
+								"_blank",
+								"noopener,noreferrer",
+							);
+						}
+					}}
+					aria-label={`Open documentation for ${connector.name}`}
+				>
+					Docs
+				</Button>
+			)}
+		</div>
+	);
+
+	return isTruncated ? (
+		<Tooltip>
+			<TooltipTrigger asChild>
+				<span className="block w-full sm:w-[215px]">{cardContent}</span>
+			</TooltipTrigger>
+			<TooltipContent side="bottom">{connector.name}</TooltipContent>
+		</Tooltip>
+	) : (
+		cardContent
+	);
+};
 
 /**
  * Lists every available Function connector as a card grid; selecting one
@@ -244,17 +374,10 @@ export const FunctionConnectorsPage = ({ name }: { name: string }) => {
 						data-testid="function-grid"
 					>
 						{filteredConnectors.map((connector) => (
-							<FunctionTitleCard
+							<ConnectorCard
 								key={connector.slug}
-								selectedFunction={{
-									name: connector.name,
-									display: connector.name,
-									icon: connector.icon,
-									disable: connector.disable,
-									description: connector.description,
-									link: connector.link,
-								}}
-								onModelSelect={() =>
+								connector={connector}
+								onSelect={() =>
 									navigate(`/function/new/${connector.slug}`)
 								}
 							/>
