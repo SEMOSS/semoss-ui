@@ -1,17 +1,13 @@
-import type {
-	AgentRunItemEvent,
-	AgentRunSnapshot,
-	AgentRunSubscription,
-} from "@semoss/sdk/react";
+import type { AgentRunItemEvent, AgentRunSnapshot } from "@semoss/sdk";
 import {
+	AgentStore,
 	decideAgentRunAction,
 	getAgentRun,
 	getSubagentRuns,
 	runAgent,
 	stopAgentRun,
-	subscribeRunAgent,
 	uploadInsight,
-} from "@semoss/sdk/react";
+} from "@semoss/sdk";
 import type { Engine } from "@semoss/shared";
 import type {
 	ConversationRoom,
@@ -385,13 +381,13 @@ export const createWorkbenchAssistantSlice = (
 	workbenchId: string,
 ): WorkbenchSlice<WorkbenchAssistantSliceState> => {
 	// Runtime owned by this store instance, deliberately outside reactive
-	// state. Each entry pairs the live SDK subscription (for pokeNow/stop)
-	// with a promise that resolves at the run's first pause or terminal
-	// status — what submit() awaits before reporting the outcome.
+	// state. Each entry pairs the live AgentStore (for pokeNow/stop) with a
+	// promise that resolves at the run's first pause or terminal status --
+	// what submit() awaits before reporting the outcome.
 	const activeWatchers = new Map<
 		string,
 		{
-			subscription: AgentRunSubscription;
+			agent: AgentStore;
 			promise: Promise<AgentRunSnapshot>;
 		}
 	>();
@@ -541,8 +537,12 @@ export const createWorkbenchAssistantSlice = (
 			// per poll instead of one per event.
 			let pendingEvents: AgentRunItemEvent[] = [];
 
-			const subscription = subscribeRunAgent(
+			const agent = new AgentStore(
+				get().assistant.roomId ?? "",
+				insightId,
 				runId,
+			);
+			const subscription = agent.watch(
 				{
 					onEvent: (event) => {
 						pendingEvents.push(event);
@@ -639,9 +639,9 @@ export const createWorkbenchAssistantSlice = (
 				),
 			]);
 
-			activeWatchers.set(runId, { subscription, promise });
+			activeWatchers.set(runId, { agent, promise });
 			void subscription.done.finally(() => {
-				if (activeWatchers.get(runId)?.subscription === subscription) {
+				if (activeWatchers.get(runId)?.agent === agent) {
 					activeWatchers.delete(runId);
 				}
 			});
@@ -1042,7 +1042,7 @@ export const createWorkbenchAssistantSlice = (
 				// to a reconcile, which re-attaches the stream.
 				const watcher = activeWatchers.get(runId);
 				if (watcher) {
-					watcher.subscription.pokeNow();
+					watcher.agent.pokeNow();
 				} else {
 					await get().assistant.reconcileRun(runId);
 				}
@@ -1062,7 +1062,7 @@ export const createWorkbenchAssistantSlice = (
 				);
 				const watcher = activeWatchers.get(runId);
 				if (watcher) {
-					watcher.subscription.pokeNow();
+					watcher.agent.pokeNow();
 				} else {
 					await get().assistant.reconcileRun(runId);
 				}
@@ -1360,7 +1360,7 @@ export const createWorkbenchAssistantSlice = (
 					await stopAgentRun(activeRunId, insightId);
 					// The stream observes the CANCELLED snapshot on its
 					// next poll — poke it so the UI settles immediately.
-					activeWatchers.get(activeRunId)?.subscription.pokeNow();
+					activeWatchers.get(activeRunId)?.agent.pokeNow();
 				} catch (error) {
 					pushNotice(toErrorMessage(error), "error");
 				}
