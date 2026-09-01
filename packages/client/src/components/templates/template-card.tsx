@@ -62,7 +62,7 @@ export const TemplateCard = ({
 				)}
 			>
 				{/* Large visual header / cover banner */}
-				<div className="relative h-40 w-full overflow-hidden border-b bg-muted">
+				<div className="relative h-48 w-full overflow-hidden border-b bg-muted">
 					{image ? (
 						<img
 							src={image}
