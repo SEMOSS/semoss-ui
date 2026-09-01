@@ -151,7 +151,7 @@ export const uniqueName = (base: string, taken: Set<string>): string => {
  * hyphens. A space anywhere in the name is rejected before the tool ever runs,
  * so the editor never lets one through.
  */
-export const IDENTIFIER_PATTERN = /^[A-Za-z_][A-Za-z0-9_-]*$/;
+const IDENTIFIER_PATTERN = /^[A-Za-z_][A-Za-z0-9_-]*$/;
 
 /**
  * Coerces free text into a valid identifier rather than rejecting it. Spaces
@@ -172,7 +172,7 @@ export const slugifyIdentifier = (value: string): string => {
 };
 
 /** Turns `get_bank_statement` into `Get Bank Statement` for the display title. */
-export const humanizeIdentifier = (value: string): string =>
+const humanizeIdentifier = (value: string): string =>
 	value
 		.replace(/[_-]+/g, " ")
 		.trim()
@@ -201,7 +201,7 @@ export const validateIdentifier = (
  * `a<engineId>_` (38 characters) without truncating for that provider. See
  * MCPUtility.appendEngineIdToToolsMethodName.
  */
-export const MAX_SAFE_TOOL_NAME_LENGTH = 90;
+const MAX_SAFE_TOOL_NAME_LENGTH = 90;
 
 export type ToolNameIssue = {
 	name: string;

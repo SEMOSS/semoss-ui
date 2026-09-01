@@ -1,114 +1,107 @@
-import { Check, Copy, Terminal } from "lucide-react";
-import { Children, isValidElement, useState } from "react";
+import { Info, Terminal } from "lucide-react";
+import { useMemo } from "react";
 import { usePixel } from "@semoss/sdk/react";
 import {
-	CodeContainer,
 	H4,
 	Markdown,
+	MarkdownDocumentTitle,
 	P,
 	Separator,
 	Spinner,
-	toast,
+	Tabs,
+	TabsContent,
+	TabsList,
+	TabsTrigger,
 } from "@semoss/ui/next";
 import { useEngine } from "@/hooks";
 
+/** One usage channel returned by `GetEngineUsage`. */
+interface UsageSection {
+	/** Channel identifier, for example `introduction`, `pixel`, `javascript`. */
+	type: string;
+	/** Full heading supplied by the backend. */
+	label: string;
+	/** Markdown body of the channel. */
+	code: string;
+	/** Unique tab value, since the backend could repeat a type. */
+	value: string;
+}
+
 /**
- * Wraps a fenced code block with a header bar showing the language and a
- * copy-to-clipboard button.  Defined outside EngineUsagePage so React does
- * not treat it as a new component type on every render.
+ * Short tab titles per channel. The backend `label` is a full sentence
+ * ("How to use in JavaScript/TypeScript with the @semoss/sdk"), which is far
+ * too long for a tab trigger, so it stays as the panel heading and these
+ * drive the trigger text instead.
  */
-const CodeBlockWithCopy = ({ children }: { children: React.ReactNode }) => {
-	const [copied, setCopied] = useState(false);
-
-	const extractCodeDetails = (node: React.ReactNode) => {
-		let language: string | undefined;
-		let code = "";
-
-		const walk = (child: React.ReactNode) => {
-			if (typeof child === "string" || typeof child === "number") {
-				code += String(child);
-				return;
-			}
-
-			if (!isValidElement(child)) {
-				return;
-			}
-
-			const props = child.props as {
-				language?: string;
-				code?: string;
-				children?: React.ReactNode;
-			};
-
-			if (!language && typeof props.language === "string") {
-				language = props.language;
-			}
-
-			if (typeof props.code === "string") {
-				code += props.code;
-				return;
-			}
-
-			if (props.children) {
-				Children.forEach(props.children, walk);
-			}
-		};
-
-		Children.forEach(node, walk);
-
-		return { language, code };
-	};
-
-	const { language, code } = extractCodeDetails(children);
-
-	const handleCopy = async (e: React.MouseEvent) => {
-		e.stopPropagation();
-		try {
-			await navigator.clipboard.writeText(code);
-			setCopied(true);
-			setTimeout(() => setCopied(false), 2000);
-		} catch {
-			toast.error("Failed to copy code");
-		}
-	};
-
-	return (
-		<div className="my-2 overflow-hidden rounded-md border border-border">
-			{/* Header bar — language label left, copy button right */}
-			<div className="flex items-center justify-between border-border border-b bg-muted px-3 py-1.5">
-				{language && (
-					<span className="font-mono text-muted-foreground text-xs">
-						{language}
-					</span>
-				)}
-				<button
-					type="button"
-					onClick={handleCopy}
-					className="ml-auto flex items-center gap-1 rounded px-2 py-0.5 text-muted-foreground text-xs transition-colors hover:bg-background hover:text-foreground"
-				>
-					{copied ? (
-						<>
-							<Check className="size-3" />
-							Copied
-						</>
-					) : (
-						<>
-							<Copy className="size-3" />
-							Copy
-						</>
-					)}
-				</button>
-			</div>
-
-			{/* Scrollable code area */}
-			<div className="overflow-x-auto bg-muted/30">
-				<CodeContainer className="min-w-max whitespace-pre rounded-none bg-transparent p-4">
-					{children}
-				</CodeContainer>
-			</div>
-		</div>
-	);
+const TAB_TITLES: Record<string, string> = {
+	introduction: "Overview",
+	pixel: "Pixel",
+	javascript: "JavaScript",
+	python: "Python",
+	java: "Java",
+	langchain: "LangChain",
+	openai: "OpenAI",
+	anthropic: "Anthropic",
+	ollama: "Ollama",
 };
+
+/** Backend marker for a channel whose documentation has not been written yet. */
+const PENDING_CODE = "documentation pending";
+
+/**
+ * `GetEngineUsage` returns one entry per channel. Older engine types can come
+ * back as an index-keyed object rather than an array, so accept both and drop
+ * anything without a body.
+ */
+const normalizeSections = (data: unknown): UsageSection[] => {
+	if (!data || typeof data !== "object") {
+		return [];
+	}
+
+	const entries = Array.isArray(data) ? data : Object.values(data);
+
+	return entries.flatMap((entry, index) => {
+		if (!entry || typeof entry !== "object") {
+			return [];
+		}
+
+		const { code, label, type } = entry as Partial<UsageSection>;
+		if (typeof code !== "string" || !code.trim()) {
+			return [];
+		}
+
+		const resolvedType =
+			typeof type === "string" && type ? type : `section-${index}`;
+
+		return [
+			{
+				type: resolvedType,
+				label:
+					typeof label === "string" && label ? label : resolvedType,
+				code,
+				value: `${resolvedType}-${index}`,
+			},
+		];
+	});
+};
+
+/** Title-case an unrecognized channel so new backend integrations still read well. */
+const getTabTitle = ({ type }: UsageSection) => {
+	const known = TAB_TITLES[type.toLowerCase()];
+	if (known) {
+		return known;
+	}
+
+	return type.charAt(0).toUpperCase() + type.slice(1).toLowerCase();
+};
+
+/**
+ * True for a placeholder channel. Engine types the backend has not documented
+ * yet (guardrails, for example) come back with every channel set to this
+ * marker rather than being omitted.
+ */
+const isPending = ({ code }: UsageSection) =>
+	code.trim().toLowerCase() === PENDING_CODE;
 
 /**
  * Wrap the Database, Storage, Model routes
@@ -118,11 +111,22 @@ export const EngineUsagePage = () => {
 	const { engine } = useEngine();
 
 	// get the engine info
-	const GetEngineUsage = usePixel<{
-		code: string;
-		label: string;
-		type: string;
-	}>(`GetEngineUsage(engine=["${engine.engine_id}"]);`);
+	const GetEngineUsage = usePixel<UsageSection[]>(
+		`GetEngineUsage(engine=["${engine.engine_id}"]);`,
+	);
+
+	const sections = useMemo(
+		() => normalizeSections(GetEngineUsage.data),
+		[GetEngineUsage.data],
+	);
+
+	// placeholder channels get their own message rather than an empty tab
+	const documented = sections.filter((section) => !isPending(section));
+	const hasPendingDocs =
+		documented.length < sections.length &&
+		documented.every(
+			(section) => section.type.toLowerCase() === "introduction",
+		);
 
 	// show a loading screen when it is pending
 	if (GetEngineUsage.status !== "SUCCESS") {
@@ -158,45 +162,65 @@ export const EngineUsagePage = () => {
 
 			<H4 className="font-semibold">API & SDK Usage</H4>
 			<Separator />
-			{Object.keys(GetEngineUsage.data).length === 0 ? (
+
+			{hasPendingDocs && (
+				<div className="flex items-start gap-3 rounded-md border border-border bg-muted/40 p-4">
+					<Info className="mt-0.5 size-4 flex-shrink-0 text-muted-foreground" />
+					<div className="flex flex-col gap-1">
+						<span className="font-semibold text-sm">
+							Usage examples are not available yet
+						</span>
+						<P className="text-muted-foreground text-sm">
+							{documented.length > 0
+								? "This engine type has not been documented yet. The overview below still covers how to reach any engine on the platform."
+								: "This engine type has not been documented yet."}
+						</P>
+					</div>
+				</div>
+			)}
+
+			{documented.length === 0 && !hasPendingDocs && (
 				<div className="flex items-center justify-center p-8">
 					<P className="text-muted-foreground">No Details</P>
 				</div>
-			) : (
-				""
 			)}
-			{Object.keys(GetEngineUsage.data).map((key, index) => {
-				const { code, label } = GetEngineUsage.data[key];
 
-				if (!code) {
-					return null;
-				}
+			{documented.length > 0 && (
+				<Tabs
+					key={engine.engine_id}
+					defaultValue={documented[0].value}
+					className="min-w-0 gap-4"
+				>
+					<TabsList className="h-auto flex-wrap justify-start">
+						{documented.map((section) => (
+							<TabsTrigger
+								key={section.value}
+								value={section.value}
+							>
+								{getTabTitle(section)}
+							</TabsTrigger>
+						))}
+					</TabsList>
 
-				return (
-					<div key={key} className="flex min-w-0 flex-col gap-3">
-						{index > 0 && <Separator />}
-						<p className="font-semibold text-base text-foreground">
-							{label}
-						</p>
-						<Markdown
-							components={{
-								pre: ({ children }) => (
-									<CodeBlockWithCopy>
-										{children}
-									</CodeBlockWithCopy>
-								),
-								p: ({ children }) => (
-									<p className="mt-0 text-foreground text-sm leading-relaxed">
-										{children}
-									</p>
-								),
-							}}
+					{documented.map((section) => (
+						<TabsContent
+							key={section.value}
+							value={section.value}
+							className="flex min-w-0 flex-col gap-3"
 						>
-							{code}
-						</Markdown>
-					</div>
-				);
-			})}
+							<MarkdownDocumentTitle>
+								{section.label}
+							</MarkdownDocumentTitle>
+							<Markdown
+								className="w-full text-sm leading-relaxed"
+								variant="document"
+							>
+								{section.code}
+							</Markdown>
+						</TabsContent>
+					))}
+				</Tabs>
+			)}
 		</div>
 	);
 };

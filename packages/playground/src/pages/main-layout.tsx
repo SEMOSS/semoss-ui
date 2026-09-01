@@ -197,7 +197,7 @@ export const MainLayout = observer(() => {
 							/>
 							<div
 								data-testid="main-layout"
-								className="flex h-screen w-full flex-col overflow-hidden bg-background"
+								className="flex h-dvh w-full flex-col overflow-hidden bg-background"
 								style={{
 									...(!isDark && {
 										background:
@@ -308,7 +308,13 @@ export const MainLayout = observer(() => {
 												// @ts-expect-error fetchpriority is not yet in React's typings
 												fetchpriority="high"
 												style={{
-													opacity: isActive ? 1 : 0,
+													// visibility:hidden removes the iframe from
+													// the browser touch hit-test pipeline on
+													// mobile (opacity:0 alone does not), so
+													// inactive iframes no longer intercept swipe
+													visibility: isActive
+														? "visible"
+														: "hidden",
 													pointerEvents: isActive
 														? "auto"
 														: "none",

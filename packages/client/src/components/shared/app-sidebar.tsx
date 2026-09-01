@@ -7,6 +7,7 @@ import {
 	Database,
 	Home,
 	LayoutGrid,
+	NotebookText,
 	PanelLeftOpen,
 	Puzzle,
 	Settings,
@@ -77,6 +78,11 @@ const CATALOG_ROUTES = [
 		text: "Skills",
 		icon: <Puzzle className="size-4" />,
 		route: "/skill",
+	},
+	{
+		text: "Notebooks",
+		icon: <NotebookText className="size-4" />,
+		route: "/notebook",
 	},
 	{
 		text: "Guardrail",

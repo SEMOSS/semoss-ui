@@ -25,6 +25,21 @@ const buildHooksPayload = (hooks: AgentFormValues["hooks"]) =>
 				: { kind: h.kind },
 		);
 
+/** Returns a partial-save warning emitted by EditWorkspace, when present. */
+export const getWorkspaceSaveWarning = (
+	output: unknown,
+): string | undefined => {
+	if (
+		typeof output !== "object" ||
+		output === null ||
+		!("warning" in output)
+	) {
+		return undefined;
+	}
+	const warning = output.warning;
+	return typeof warning === "string" ? warning : undefined;
+};
+
 /**
  * Builds the EditWorkspace pixel call that mirrors the full agent form state.
  * Shared by the edit page's save and the create page's post-create follow-up
@@ -40,5 +55,5 @@ export const buildEditWorkspacePixel = (
 	const subagents = buildSubagentsPayload(data.subagents);
 	const hooks = buildHooksPayload(data.hooks);
 
-	return `EditWorkspace(workspaceId=["${workspaceId}"], name=${JSON.stringify(data.name)}, description=${JSON.stringify(data.description)}, systemPrompt=${JSON.stringify(data.instructions)}, mcp=${JSON.stringify(mcp)}, skills=${JSON.stringify(skills)}, prompts=${JSON.stringify(data.prompts)}, modelId=${JSON.stringify(data.modelId)}, maxTurns=${JSON.stringify(data.maxTurns)}, maxSubagentDepth=${JSON.stringify(data.maxSubagentDepth)}, maxSubagentsPerRun=${JSON.stringify(data.maxSubagentsPerRun)}, maxSpawnsPerTurn=${JSON.stringify(data.maxSpawnsPerTurn)}, subagents=${JSON.stringify(subagents)}, hooks=${JSON.stringify(hooks)});`;
+	return `EditWorkspace(workspaceId=["${workspaceId}"], name=${JSON.stringify(data.name)}, description=${JSON.stringify(data.description)}, systemPrompt=${JSON.stringify(data.instructions)}, mcp=${JSON.stringify(mcp)}, skills=${JSON.stringify(skills)}, prompts=${JSON.stringify(data.prompts)}, modelId=${JSON.stringify(data.modelId)}, useDefaultAgentTools=${JSON.stringify(data.useDefaultAgentTools)}, disabledDefaultTools=${JSON.stringify(data.disabledDefaultTools)}, maxTurns=${JSON.stringify(data.maxTurns)}, maxReflections=${JSON.stringify(data.maxReflections)}, maxSeconds=${JSON.stringify(data.maxSeconds)}, maxSubagentDepth=${JSON.stringify(data.maxSubagentDepth)}, maxSubagentsPerRun=${JSON.stringify(data.maxSubagentsPerRun)}, maxSpawnsPerTurn=${JSON.stringify(data.maxSpawnsPerTurn)}, subagents=${JSON.stringify(subagents)}, hooks=${JSON.stringify(hooks)});`;
 };

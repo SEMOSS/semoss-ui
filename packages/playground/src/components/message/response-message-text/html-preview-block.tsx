@@ -1,5 +1,12 @@
-import { CopyIcon, Loader2 } from "lucide-react";
+import {
+	CopyIcon,
+	ExpandIcon,
+	EyeIcon,
+	PencilIcon,
+	SaveIcon,
+} from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { SandpackHtmlPreview } from "@semoss/shared";
 import {
 	Button,
 	Code,
@@ -7,6 +14,7 @@ import {
 	DialogContent,
 	DialogHeader,
 	DialogTitle,
+	Spinner,
 	Tooltip,
 	TooltipContent,
 	TooltipTrigger,
@@ -15,8 +23,12 @@ import {
 import type { RoomStore } from "@/stores";
 import { copyToClipboard } from "@/utility/clipboard";
 import { BlockHeader } from "./block-header";
-import { createHtmlResponseFilePath } from "./constants";
-import { SandpackHtmlPreview } from "./sandpack-html-preview";
+import {
+	RESPONSE_BLOCK_MAX_HEIGHT,
+	RESPONSE_BLOCK_MIN_HEIGHT,
+} from "./constants";
+import { SaveFileDialog } from "./save-file-dialog";
+import { useStickToBottom } from "./use-stick-to-bottom";
 
 interface HtmlPreviewBlockProps {
 	html: string;
@@ -24,7 +36,6 @@ interface HtmlPreviewBlockProps {
 	isLoading?: boolean;
 	copyTooltip: string;
 	copySuccessMessage: string;
-	copyLabel: string;
 }
 
 const HTML_PREVIEW_STREAM_THROTTLE_MS = 120;
@@ -85,12 +96,13 @@ export const HtmlPreviewBlock = ({
 	isLoading,
 	copyTooltip,
 	copySuccessMessage,
-	copyLabel,
 }: HtmlPreviewBlockProps) => {
 	const [isFullViewOpen, setIsFullViewOpen] = useState(false);
-	const [isSavingToRoom, setIsSavingToRoom] = useState(false);
+	const [isSaveDialogOpen, setIsSaveDialogOpen] = useState(false);
 	const [isCollapsed, setIsCollapsed] = useState(false);
 	const [isRaw, setIsRaw] = useState(false);
+	// the raw view is height capped, so it follows its own newest line
+	const rawScroll = useStickToBottom(html);
 	const [streamedHtml, setStreamedHtml] = useState(() =>
 		isLoading ? (isPreviewChunkSafe(html) ? html : "") : html,
 	);
@@ -184,33 +196,6 @@ export const HtmlPreviewBlock = ({
 		return injectPreviewScrollSync(previewHtml, previewChannelRef.current);
 	}, [previewHtml]);
 
-	const saveInRoom = async () => {
-		if (!room || !html) {
-			return;
-		}
-
-		const filePath = createHtmlResponseFilePath();
-		try {
-			setIsSavingToRoom(true);
-
-			await room.runRoomPixel(
-				`SaveInsightAssets(filePath=[${JSON.stringify(filePath)}], content=["<encode>${html}</encode>"]);`,
-				false,
-				false,
-			);
-
-			toast.success(`Saved in room as ${filePath}`);
-		} catch (error) {
-			const message =
-				error instanceof Error && error.message
-					? error.message
-					: "Error";
-			toast.error(message);
-		} finally {
-			setIsSavingToRoom(false);
-		}
-	};
-
 	return (
 		<>
 			<div className="relative overflow-hidden rounded-md border border-border bg-background">
@@ -222,37 +207,64 @@ export const HtmlPreviewBlock = ({
 					}
 					collapseDisabled={!html}
 				>
-					<Button
-						className="-my-1 h-6 px-2 text-muted-foreground text-xs hover:text-foreground"
-						variant="ghost"
-						size="sm"
-						disabled={!html}
-						onClick={() => setIsRaw((prev) => !prev)}
-					>
-						{isRaw ? "Preview" : "Raw"}
-					</Button>
-					<Button
-						className="-my-1 h-6 px-2 text-muted-foreground text-xs hover:text-foreground"
-						variant="ghost"
-						size="sm"
-						disabled={!html}
-						onClick={() => setIsFullViewOpen(true)}
-					>
-						Full View
-					</Button>
-					<Button
-						className="-my-1 h-6 px-2 text-muted-foreground text-xs hover:text-foreground"
-						variant="ghost"
-						size="sm"
-						disabled={!room || !html || isSavingToRoom || isLoading}
-						onClick={() => void saveInRoom()}
-					>
-						{isSavingToRoom ? "Saving..." : "Save In Room"}
-					</Button>
 					<Tooltip>
 						<TooltipTrigger asChild>
 							<Button
-								className="-my-1 -me-2 h-6 gap-1 px-2 text-muted-foreground text-xs hover:text-foreground"
+								className="text-muted-foreground text-xs hover:text-foreground"
+								variant="ghost"
+								size="sm"
+								disabled={!html}
+								onClick={() => setIsRaw((prev) => !prev)}
+								aria-label={
+									isRaw ? "Switch to preview" : "Edit HTML"
+								}
+							>
+								{isRaw ? (
+									<EyeIcon className="size-3" />
+								) : (
+									<PencilIcon className="size-3" />
+								)}
+								{isRaw ? "Preview" : "Edit"}
+							</Button>
+						</TooltipTrigger>
+						<TooltipContent side="bottom">
+							{isRaw ? "Switch to preview" : "Edit HTML"}
+						</TooltipContent>
+					</Tooltip>
+					<Tooltip>
+						<TooltipTrigger asChild>
+							<Button
+								className="text-muted-foreground text-xs hover:text-foreground"
+								variant="ghost"
+								size="sm"
+								disabled={!html}
+								onClick={() => setIsFullViewOpen(true)}
+							>
+								<ExpandIcon className="size-3" />
+							</Button>
+						</TooltipTrigger>
+						<TooltipContent side="bottom">Full view</TooltipContent>
+					</Tooltip>
+					<Tooltip>
+						<TooltipTrigger asChild>
+							<Button
+								className="text-muted-foreground text-xs hover:text-foreground"
+								variant="ghost"
+								size="sm"
+								disabled={!room || !html || isLoading}
+								onClick={() => setIsSaveDialogOpen(true)}
+							>
+								<SaveIcon className="size-3" />
+							</Button>
+						</TooltipTrigger>
+						<TooltipContent side="bottom">
+							Save in room
+						</TooltipContent>
+					</Tooltip>
+					<Tooltip>
+						<TooltipTrigger asChild>
+							<Button
+								className="text-muted-foreground text-xs hover:text-foreground"
 								variant="ghost"
 								size="sm"
 								disabled={!html || isLoading}
@@ -264,8 +276,7 @@ export const HtmlPreviewBlock = ({
 									)
 								}
 							>
-								<CopyIcon className="size-3.5" />
-								{copyLabel}
+								<CopyIcon className="size-3" />
 							</Button>
 						</TooltipTrigger>
 						<TooltipContent side="bottom">
@@ -275,7 +286,18 @@ export const HtmlPreviewBlock = ({
 				</BlockHeader>
 				{!isCollapsed &&
 					(isRaw ? (
-						<div className="p-3">
+						// capped to the same height the preview uses, so switching
+						// between them does not resize the message, and anything
+						// longer scrolls inside the block
+						<div
+							ref={rawScroll.ref}
+							onScroll={rawScroll.onScroll}
+							className="overflow-auto p-3"
+							style={{
+								maxHeight: RESPONSE_BLOCK_MAX_HEIGHT,
+								minHeight: RESPONSE_BLOCK_MIN_HEIGHT,
+							}}
+						>
 							<Code code={html} language="html" />
 						</div>
 					) : (
@@ -285,14 +307,14 @@ export const HtmlPreviewBlock = ({
 								providerClassName="min-h-0"
 								className="w-full"
 								style={{
-									height: "62.5dvh",
-									minHeight: "8rem",
+									height: RESPONSE_BLOCK_MAX_HEIGHT,
+									minHeight: RESPONSE_BLOCK_MIN_HEIGHT,
 								}}
 							/>
 							{isLoading && (
 								<div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center">
 									<div className="flex items-center gap-2 rounded-md border border-border/70 bg-background/75 px-3 py-1 font-medium text-[11px] text-muted-foreground uppercase tracking-[0.08em] shadow-sm">
-										<Loader2 className="size-3 animate-spin" />
+										<Spinner className="size-3" />
 										Loading Preview...
 									</div>
 								</div>
@@ -319,7 +341,7 @@ export const HtmlPreviewBlock = ({
 						{isLoading && (
 							<div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center">
 								<div className="flex items-center gap-2 rounded-md border border-border/70 bg-background/75 px-3 py-1 font-medium text-[11px] text-muted-foreground uppercase tracking-[0.08em] shadow-sm">
-									<Loader2 className="size-3 animate-spin" />
+									<Spinner className="size-3" />
 									Loading Preview...
 								</div>
 							</div>
@@ -327,6 +349,13 @@ export const HtmlPreviewBlock = ({
 					</div>
 				</DialogContent>
 			</Dialog>
+			<SaveFileDialog
+				open={isSaveDialogOpen}
+				content={html}
+				onClose={() => setIsSaveDialogOpen(false)}
+				room={room}
+				extension="html"
+			/>
 		</>
 	);
 };

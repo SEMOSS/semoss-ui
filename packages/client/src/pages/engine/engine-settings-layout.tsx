@@ -1,4 +1,9 @@
-import { AlignLeftIcon, SlidersHorizontalIcon, TagsIcon } from "lucide-react";
+import {
+	AlignLeftIcon,
+	ShieldCheckIcon,
+	SlidersHorizontalIcon,
+	TagsIcon,
+} from "lucide-react";
 import { NavLink, Outlet } from "react-router";
 
 const SETTINGS_SECTIONS = [
@@ -19,6 +24,12 @@ const SETTINGS_SECTIONS = [
 		path: "description",
 		icon: AlignLeftIcon,
 		description: "Summary and About content",
+	},
+	{
+		name: "Guardrails",
+		path: "guardrails",
+		icon: ShieldCheckIcon,
+		description: "Input and output guardrail pipelines",
 	},
 ];
 

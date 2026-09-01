@@ -85,8 +85,25 @@ An application, so it uses the full `src/` layout from the root AGENTS.md includ
 
 ## Styling
 
-- Tailwind utility classes; prefer `@semoss/ui/next` components and merge classes with `cn()`.
-- Use theme variables from `globals.css`; no inline styles; no direct MUI/Emotion imports.
+Follow the root [Design System & Styling](../../AGENTS.md#design-system--styling) rules and
+[DESIGN.md](../../DESIGN.md). Client-specific notes:
+
+- **Priority boy-scout targets** (highest violation density — migrate to tokens/components as
+  you touch them): `src/components/blocks-workspace/blocks/settings/**` (especially
+  `custom/e-charts/**` and `shared/ColorPalatteSettings.tsx` — hex classes, inline colors,
+  arbitrary sizes).
+- **Ad-hoc status color maps to fold into tokens when touched**:
+  `components/engine/engine-metadata-display.tsx` (`BADGE_TONES`),
+  `pages/app/app-detail-tabs/commits-tab.tsx`, `pages/project/agent/agent-run-graph.tsx`.
+  Use `Badge` variants + `destructive`/`success`/`warning`/`chart-*` tokens instead.
+- **Overlays**: 9 hand-rolled `fixed inset-0` modals exist with divergent backdrops
+  (`bg-black/50|/40|/30`, `bg-background/50`) and z-hacks (`z-[100]`, `z-[1300]`, `z-[1501]`).
+  Never add a tenth — use `Dialog`/`Sheet`; replace hand-rolled ones when touched.
+- **ECharts carve-out**: chart option objects need literal colors — take them from the
+  `chart-1`…`chart-5` token values via one shared constants map, never per-file hex.
+- **Scoped reference**: `src/components/ui/section/section.tsx` demonstrates a small local
+  composite using `cn()` and token classes. Do not treat an entire application file as a
+  blanket design exemplar; audit the specific pattern before reusing it.
 
 ## Agent Guardrails
 

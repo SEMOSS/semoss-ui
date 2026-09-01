@@ -241,6 +241,9 @@ export const SettingsLayout = observer(() => {
 			if (projectType === "SKILL") {
 				return `/skill/${id}/edit`;
 			}
+			if (projectType === "NOTEBOOK") {
+				return `/notebook/${id}/edit`;
+			}
 			return `/app/${id}`;
 		}
 		return null;

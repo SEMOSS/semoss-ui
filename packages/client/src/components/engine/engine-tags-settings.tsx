@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
+import type { Role } from "@semoss/sdk";
 import { usePixel } from "@semoss/sdk/react";
-import type { Engine, Role } from "@semoss/shared";
+import type { Engine } from "@semoss/shared";
 import {
 	Button,
 	Card,

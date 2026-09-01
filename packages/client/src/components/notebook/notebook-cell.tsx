@@ -53,7 +53,7 @@ import {
 	TooltipTrigger,
 	toast,
 } from "@semoss/ui/next";
-import { useWorkspace } from "@/hooks";
+import { useProject, useWorkspace } from "@/hooks";
 import { MCP_NOTEBOOK_NAME } from "@/pages/app/app.constants";
 // TODO: MOVE TO SDK or a seperate lib specifically for utilities @semoss/utility
 import { copyTextToClipboard, isOutputJSON } from "@/utility";
@@ -99,6 +99,7 @@ export const NotebookCell = observer(
 
 		const { state, notebook } = useBlocks();
 		const { workspace } = useWorkspace();
+		const { project } = useProject();
 
 		const [showRaw, setShowRaw] = useState(false);
 		const [showRawLogging, setShowRawLogging] = useState(false);
@@ -386,11 +387,11 @@ export const NotebookCell = observer(
 				workspace.setLoading(true);
 				// Save current app state before making MCP tool
 				await runPixel(
-					`SaveAppBlocksJson(project=["${workspace.appId}"], json=["<encode>${JSON.stringify(state.toJSON())}</encode>"]);`,
+					`SaveAppBlocksJson(project=["${project.project_id}"], json=["<encode>${JSON.stringify(state.toJSON())}</encode>"]);`,
 				);
 				// Make pixel call to generate MCP tool
 				const { errors, pixelReturn } = await runPixel(
-					`MakeNotebookCellMCP(project="${workspace.appId}", model="${workspace.agentModelEngine}", cellId="${cell.id}")`,
+					`MakeNotebookCellMCP(project="${project.project_id}", model="${workspace.agentModelEngine}", cellId="${cell.id}")`,
 				);
 
 				workspace.setLoading(false);
@@ -451,7 +452,7 @@ export const NotebookCell = observer(
 						cellId: cell.id,
 						parameters: {
 							name: toolName,
-							projectId: workspace.appId,
+							projectId: project.project_id,
 							originalParams: {
 								widget: cell.widget,
 								parameters: cell.parameters,

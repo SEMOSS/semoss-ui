@@ -31,7 +31,10 @@
         "react": "^19.0.0",
         "react-dom": "^19.0.0",
         "react-hook-form": "^7.34.2",
-        "react-router": "8.3.0"
+        "@hookform/resolvers": "^3.9.0",
+        "react-router": "8.3.0",
+        "zod": "^3.23.0",
+        "zustand": "4.5.7"
     },
     "devDependencies": {
         "@semoss/config": "workspace:*",

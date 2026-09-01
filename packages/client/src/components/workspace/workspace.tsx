@@ -9,29 +9,9 @@ const BlocksWorkspace = lazy(() =>
 		default: m.BlocksWorkspace,
 	})),
 );
-const CodeWorkspace = lazy(() =>
-	import("@/components/code-workspace").then((m) => ({
-		default: m.CodeWorkspace,
-	})),
-);
-const SkillWorkspace = lazy(() =>
-	import("@/components/skill").then((m) => ({
-		default: m.SkillWorkspace,
-	})),
-);
-const AgentWorkspace = lazy(() =>
-	import("@/components/agent-workspace").then((m) => ({
-		default: m.AgentWorkspace,
-	})),
-);
 
-import { useRootStore } from "@/hooks";
+import { useProject, useRootStore } from "@/hooks";
 import type { WorkspaceStore } from "@/stores";
-
-interface WorkspaceProps {
-	/** App to load */
-	app: string;
-}
 
 const WorkspaceLoadingState = () => {
 	return (
@@ -41,14 +21,16 @@ const WorkspaceLoadingState = () => {
 	);
 };
 
-export const Workspace: React.FC<WorkspaceProps> = ({ app }) => {
+export const Workspace: React.FC = () => {
 	const insight = useInsight();
 	const { configStore } = useRootStore();
+	const { project, type } = useProject();
 
 	const navigate = useNavigate();
 
 	const [workspace, setWorkspace] = useState<WorkspaceStore | null>(null);
 
+	// biome-ignore lint/correctness/useExhaustiveDependencies: project/permission are stable within a loaded project context
 	useEffect(() => {
 		// clear out the old app
 		setWorkspace(null);
@@ -58,17 +40,16 @@ export const Workspace: React.FC<WorkspaceProps> = ({ app }) => {
 		}
 
 		configStore
-			.createWorkspace(app, insight.insightId)
+			.createWorkspace(project, insight.insightId)
 			.then((loadedWorkspace) => {
 				setWorkspace(loadedWorkspace);
 			})
 			.catch((_e) => {
 				toast.error("Failed to load app, returning to home page.");
-
 				navigate("/");
 			});
 	}, [
-		app,
+		project.project_id,
 		insight.isReady,
 		insight.insightId,
 		configStore.createWorkspace,
@@ -77,8 +58,8 @@ export const Workspace: React.FC<WorkspaceProps> = ({ app }) => {
 
 	// check the dependencies
 	usePixel(
-		insight.isReady && app
-			? `ValidateUserProjectDependencies(project="${app}");`
+		insight.isReady && project.project_id
+			? `ValidateUserProjectDependencies(project="${project.project_id}");`
 			: "",
 		{
 			onSuccess: (data: Record<string, boolean>) => {
@@ -113,10 +94,9 @@ export const Workspace: React.FC<WorkspaceProps> = ({ app }) => {
 			}}
 		>
 			<Suspense fallback={<WorkspaceLoadingState />}>
-				{workspace.type === "CODE" && <CodeWorkspace />}
-				{workspace.type === "BLOCKS" && <BlocksWorkspace />}
-				{workspace.type === "SKILL" && <SkillWorkspace />}
-				{workspace.type === "WORKSPACE" && <AgentWorkspace />}
+				{/* Only BLOCKS remains on this shell — CODE, NOTEBOOK, SKILL and
+				    AGENT render on the workbench. */}
+				{type === "BLOCKS" && <BlocksWorkspace />}
 			</Suspense>
 		</WorkspaceContext.Provider>
 	);

@@ -2,9 +2,9 @@
 /** biome-ignore-all lint/a11y/noStaticElementInteractions: legacy click handlers */
 
 import { ChevronDown, ChevronUp, TriangleAlert, X } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
-import { Controller, useForm } from "react-hook-form";
-import { runPixel } from "@semoss/sdk/react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Controller, useForm, useWatch } from "react-hook-form";
+import { usePixel } from "@semoss/sdk/react";
 import {
 	Button,
 	Checkbox,
@@ -29,12 +29,26 @@ import {
 	toast,
 } from "@semoss/ui/next";
 import { uploadFile } from "@/api";
+import {
+	EngineBuiltinToolsField,
+	type ModelBuiltinTools,
+} from "@/components/engine/engine-builtin-tools-field";
+import type {
+	BuiltinToolSelection,
+	ReasoningConfig,
+} from "@/components/engine/engine-metadata-display";
 import { useRootStore, useStepper } from "@/hooks";
 import { useNavigate } from "@/hooks/useNavigate";
 import { formatToDataTestId } from "@/utility";
 import type { CatalogMatchState } from "./model-catalog-match";
 import { ModelCatalogMatch } from "./model-catalog-match";
 import type { CategoryTexts, FieldDefinition } from "./model-import.constants";
+import { ModelReasoningConfigField } from "./model-reasoning-config-field";
+import {
+	RouterConfigField,
+	routerConfigToJson,
+	validateRouterConfig,
+} from "./router-config-field";
 
 interface ModelImportFormProps {
 	/**
@@ -118,9 +132,16 @@ const getModelFieldTestId = (
 const getDefaultFieldValue = (field: FieldDefinition) =>
 	field.default ??
 	field.value ??
-	(field.type === "boolean" ? false : field.type === "multiselect" ? [] : "");
+	(field.type === "boolean"
+		? false
+		: field.type === "multiselect"
+			? []
+			: field.type === "builtin-tools" ||
+					field.type === "reasoning-config"
+				? null
+				: "");
 
-export const hasSelectedMultiselectValue = (value: unknown) =>
+const hasSelectedMultiselectValue = (value: unknown) =>
 	Array.isArray(value) && value.length > 0;
 
 export const ModelImportForm = (props: ModelImportFormProps) => {
@@ -156,6 +177,7 @@ export const ModelImportForm = (props: ModelImportFormProps) => {
 		setError,
 		clearErrors,
 		setFocus,
+		setValue,
 		trigger,
 		formState: { isValid },
 	} = useForm({
@@ -196,6 +218,79 @@ export const ModelImportForm = (props: ModelImportFormProps) => {
 		reset(defaults, { keepDirtyValues: true, keepErrors: true });
 	}, [fields, advanced, reset]);
 
+	// The provider pair drives which built-in tools the catalog can offer.
+	// Both selects are user-editable, so the live form values are what count.
+	// REASONING rides along because the reasoning editor owns that switch even
+	// though the value belongs to its own hidden field.
+	const [
+		watchedServingProvider,
+		watchedModelProvider,
+		watchedModelId,
+		watchedReasoning,
+	] = useWatch({
+		control,
+		name: ["SERVING_PROVIDER", "MODEL_PROVIDER", "MODEL", "REASONING"],
+	});
+
+	// Let a typed model id settle before asking the catalog about it.
+	const [settledModelId, setSettledModelId] = useState("");
+	useEffect(() => {
+		const modelId =
+			typeof watchedModelId === "string" ? watchedModelId.trim() : "";
+		const timeout = setTimeout(
+			() => setSettledModelId(modelId),
+			MODEL_ID_LOOKUP_DEBOUNCE_MS,
+		);
+		return () => clearTimeout(timeout);
+	}, [watchedModelId]);
+
+	const hasBuiltinToolsField = [...fields, ...advanced].some(
+		(f) => f.type === "builtin-tools",
+	);
+
+	// Provider-hosted tools for the picked providers, fetched while the engine
+	// does not exist yet. An "OTHER" model provider is withheld so the backend
+	// infers the maker from the model id instead. Optional data - no match
+	// just leaves the free-text editor in place.
+	const builtinToolsPixel = useMemo(() => {
+		if (!hasBuiltinToolsField) {
+			return "";
+		}
+		const args: string[] = [];
+		const servingProvider =
+			typeof watchedServingProvider === "string"
+				? watchedServingProvider.trim()
+				: "";
+		const modelProvider =
+			typeof watchedModelProvider === "string"
+				? watchedModelProvider.trim()
+				: "";
+		if (servingProvider !== "") {
+			args.push(`servingProvider=[${JSON.stringify(servingProvider)}]`);
+		}
+		if (modelProvider !== "" && modelProvider !== "OTHER") {
+			args.push(`modelProvider=[${JSON.stringify(modelProvider)}]`);
+		}
+		if (settledModelId !== "") {
+			args.push(`modelId=[${JSON.stringify(settledModelId)}]`);
+		}
+		return args.length > 0
+			? `GetModelBuiltinTools(${args.join(", ")});`
+			: "";
+	}, [
+		hasBuiltinToolsField,
+		watchedServingProvider,
+		watchedModelProvider,
+		settledModelId,
+	]);
+
+	const getModelBuiltinTools = usePixel<ModelBuiltinTools>(builtinToolsPixel);
+	const builtinToolsCatalog =
+		getModelBuiltinTools.status === "SUCCESS"
+			? (getModelBuiltinTools.data?.tools ?? {})
+			: {};
+	const hasBuiltinToolsCatalog = Object.keys(builtinToolsCatalog).length > 0;
+
 	const getHelperText = (error, val) => {
 		if (!error) return val.helperText || "";
 		if (typeof error === "string") return error;
@@ -208,6 +303,44 @@ export const ModelImportForm = (props: ModelImportFormProps) => {
 
 	const onSubmit = async (data: Record<string, unknown>) => {
 		const { FILE, ...newFormData } = data;
+
+		// The backend writes the router config onto a single SMSS line, so it must
+		// be valid JSON and cannot contain raw newlines - validate and minify here.
+		// The router-config editor holds a structured object; a plain string is
+		// still accepted for safety.
+		if (typeof newFormData.ROUTER_CONFIG_JSON === "string") {
+			try {
+				newFormData.ROUTER_CONFIG_JSON = JSON.stringify(
+					JSON.parse(newFormData.ROUTER_CONFIG_JSON),
+				);
+			} catch {
+				toast.error("Routing Configuration must be valid JSON.");
+				return;
+			}
+		} else if (
+			newFormData.ROUTER_CONFIG_JSON !== undefined &&
+			newFormData.ROUTER_CONFIG_JSON !== null
+		) {
+			const validation = validateRouterConfig(
+				newFormData.ROUTER_CONFIG_JSON,
+			);
+			if (validation !== true) {
+				toast.error(validation);
+				return;
+			}
+			newFormData.ROUTER_CONFIG_JSON = routerConfigToJson(
+				newFormData.ROUTER_CONFIG_JSON,
+			);
+		}
+
+		if (
+			newFormData.REASONING_CONFIG &&
+			typeof newFormData.REASONING_CONFIG === "object"
+		) {
+			newFormData.REASONING_CONFIG = JSON.stringify(
+				newFormData.REASONING_CONFIG,
+			);
+		}
 
 		setIsLoading(true);
 		let pixel = `CreateModelEngine(model=["${
@@ -258,7 +391,7 @@ export const ModelImportForm = (props: ModelImportFormProps) => {
 
 			if (engineId && description) {
 				try {
-					const metadataResponse = await runPixel(
+					const metadataResponse = await configStore.runPixel(
 						`SetEngineMetadata(engine=[${JSON.stringify(engineId)}], meta=[${JSON.stringify(
 							{ description },
 						)}]);`,
@@ -436,6 +569,12 @@ export const ModelImportForm = (props: ModelImportFormProps) => {
 								validate: (value: unknown) =>
 									hasSelectedMultiselectValue(value) ||
 									`Select at least one ${f.label.toLowerCase()}.`,
+							}
+						: {}),
+					...(f.type === "router-config"
+						? {
+								validate: (value: unknown) =>
+									validateRouterConfig(value),
 							}
 						: {}),
 				}}
@@ -848,6 +987,108 @@ export const ModelImportForm = (props: ModelImportFormProps) => {
 									/>
 								</Field>
 							);
+						case "builtin-tools": {
+							const selection =
+								field.value &&
+								typeof field.value === "object" &&
+								!Array.isArray(field.value)
+									? (field.value as Record<
+											string,
+											BuiltinToolSelection
+										>)
+									: null;
+							return (
+								<Field data-testid={fieldWrapperTestId}>
+									<FieldLabel htmlFor={f.key}>
+										{f.label}
+									</FieldLabel>
+									{hasBuiltinToolsCatalog ? (
+										<EngineBuiltinToolsField
+											tools={builtinToolsCatalog}
+											value={selection}
+											onChange={(next) =>
+												field.onChange(next)
+											}
+											testId={fieldInputTestId}
+										/>
+									) : (
+										<p
+											className="text-muted-foreground text-sm"
+											data-testid={fieldInputTestId}
+										>
+											No provider-hosted tools are
+											available for this provider and
+											model.
+										</p>
+									)}
+									{f.helperText && (
+										<FieldDescription
+											data-testid={fieldErrorTestId}
+										>
+											{f.helperText}
+										</FieldDescription>
+									)}
+								</Field>
+							);
+						}
+						case "router-config":
+							return (
+								<Field data-testid={fieldWrapperTestId}>
+									<FieldLabel htmlFor={f.key}>
+										{f.label}
+										{f.required && (
+											<span className="text-destructive">
+												*
+											</span>
+										)}
+									</FieldLabel>
+									<RouterConfigField
+										value={field.value}
+										onChange={(next) =>
+											field.onChange(next)
+										}
+										disabled={f.disabled}
+										testId={fieldInputTestId}
+									/>
+									{(error || f.helperText) && (
+										<FieldDescription
+											data-testid={fieldErrorTestId}
+										>
+											{getHelperText(error, f)}
+										</FieldDescription>
+									)}
+								</Field>
+							);
+						case "reasoning-config": {
+							const asConfig = (raw: unknown) =>
+								raw &&
+								typeof raw === "object" &&
+								!Array.isArray(raw)
+									? (raw as ReasoningConfig)
+									: null;
+							return (
+								<div data-testid={fieldWrapperTestId}>
+									<ModelReasoningConfigField
+										catalogConfig={asConfig(f.default)}
+										value={asConfig(field.value)}
+										onChange={(next) =>
+											field.onChange(next)
+										}
+										reasoning={watchedReasoning === true}
+										// The switch belongs to this editor but
+										// the value is REASONING's own column.
+										onReasoningChange={(checked) =>
+											setValue("REASONING", checked, {
+												shouldDirty: true,
+											})
+										}
+										helperText={f.helperText}
+										helperTextTestId={fieldErrorTestId}
+										testId={fieldInputTestId}
+									/>
+								</div>
+							);
+						}
 						case "select":
 							return (
 								<Field data-testid={fieldWrapperTestId}>

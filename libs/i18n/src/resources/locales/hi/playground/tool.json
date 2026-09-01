@@ -3,9 +3,11 @@
 		"failed": "विफल",
 		"cancelled": "रद्द किया गया",
 		"completed": "पूर्ण",
-		"ready": "तैयार",
-		"autoExecute": "स्वतः निष्पादित हो रहा है",
-		"queued": "स्वतः निष्पादन की प्रतीक्षा में"
+		"queued": "स्वतः निष्पादन की प्रतीक्षा में",
+		"loadingTool": "टूल लोड हो रहा है…",
+		"waitingForArguments": "आर्गुमेंट की प्रतीक्षा में…",
+		"running": "चल रहा है",
+		"waitingForInput": "इनपुट की प्रतीक्षा में"
 	},
 	"actions": {
 		"cancel": "रद्द करें",
@@ -14,6 +16,11 @@
 		"openInSidebar": "साइडबार में खोलें",
 		"closeInSidebar": "साइडबार बंद करें",
 		"openInline": "इनलाइन खोलें"
+	},
+	"tabs": {
+		"output": "आउटपुट",
+		"inputs": "इनपुट",
+		"description": "विवरण"
 	},
 	"group": {
 		"labelClosed": "{{toolName}} + {{count}} और",
@@ -31,17 +38,23 @@
 		"schemaLoadFailedDescription": "टूल कॉन्फ़िगरेशन प्राप्त नहीं किया जा सका। कृपया बाद में पुनः प्रयास करें।",
 		"schemaLoading": "टूल स्कीमा लोड हो रहा है...",
 		"noParameters": "कोई पैरामीटर आवश्यक नहीं",
-		"showParameters": "पैरामीटर दिखाएं ({{count}})",
-		"hideParameters": "पैरामीटर छुपाएं ({{count}})",
 		"showOptionalFields": "वैकल्पिक फ़ील्ड दिखाएं ({{count}})",
 		"hideOptionalFields": "वैकल्पिक फ़ील्ड छुपाएं ({{count}})",
 		"execute": "टूल चलाएं",
-		"executing": "चल रहा है..."
+		"executing": "चल रहा है...",
+		"noOutput": "अभी तक कोई आउटपुट नहीं है।",
+		"noDescription": "कोई विवरण नहीं दिया गया है।",
+		"outputDialogTitle": "{{title}} — आउटपुट"
 	},
 	"playwright": {
 		"details": "Playwright स्क्रिप्ट विवरण",
 		"projectId": "प्रोजेक्ट ID",
 		"recordedFile": "रिकॉर्ड किया गया फ़ाइल"
+	},
+	"subagent": {
+		"title": "सब-एजेंट",
+		"notFound": "सब-एजेंट नहीं मिला",
+		"noResult": "अभी तक कोई प्रतिक्रिया नहीं"
 	},
 	"extension": {
 		"required": "ब्राउज़र एक्सटेंशन आवश्यक है",

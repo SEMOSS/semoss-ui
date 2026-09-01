@@ -1,10 +1,11 @@
 import type { FileMode } from "./file.types";
 import { FileCodeEditor } from "./file-code-editor";
 import { FileDownloadView } from "./file-download-view";
+import { FileHtmlEditor } from "./file-html-editor";
 import { FileImageViewer } from "./file-image-viewer";
 import { FileMarkdownEditor } from "./file-markdown-editor";
+import { FileNotebook } from "./file-notebook";
 import { FilePdfViewer } from "./file-pdf-viewer";
-import { Notebook } from "./notebook";
 
 // Extensions that cannot be rendered in the editor — show a download-first view instead
 const NON_RENDERED_EXTENSIONS = new Set([
@@ -62,6 +63,7 @@ export const FileEditor: React.FC<FileEditorProps> = ({
 	const isNotRendered = NON_RENDERED_EXTENSIONS.has(ext);
 	const isMarkdown = ext === "md" || ext === "markdown";
 	const isNotebook = ext === "ipynb";
+	const isHtml = ext === "html" || ext === "htm";
 
 	return (
 		<div className="relative flex h-full w-full flex-col overflow-hidden bg-background">
@@ -86,18 +88,30 @@ export const FileEditor: React.FC<FileEditorProps> = ({
 			)}
 			{/* .ipynb → interactive notebook renderer/runner */}
 			{isNotebook && (
-				<Notebook
+				<FileNotebook
 					key={path}
 					mode={mode}
 					path={path}
 					onChange={onChange}
+					readOnly={readOnly}
+				/>
+			)}
+			{/* .html -> code editor with a sandboxed preview of the page */}
+			{isHtml && (
+				<FileHtmlEditor
+					key={path}
+					mode={mode}
+					path={path}
+					onChange={onChange}
+					readOnly={readOnly}
 				/>
 			)}
 			{!isImage &&
 				!isPdf &&
 				!isNotRendered &&
 				!isMarkdown &&
-				!isNotebook && (
+				!isNotebook &&
+				!isHtml && (
 					<FileCodeEditor
 						key={path}
 						mode={mode}
@@ -105,6 +119,7 @@ export const FileEditor: React.FC<FileEditorProps> = ({
 						onChange={onChange}
 						onRun={onRun}
 						leadingToolbar={leadingToolbar}
+						readOnly={readOnly}
 					/>
 				)}
 		</div>

@@ -1,7 +1,7 @@
 import { ArrowRight } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useState } from "react";
-import { Link, Navigate } from "react-router";
+import { Link } from "react-router";
 import type { Variable } from "@semoss/renderer";
 import { STATE_VERSION } from "@semoss/renderer/version";
 import { Button, H4, Muted } from "@semoss/ui/next";
@@ -19,7 +19,7 @@ import {
 	LandingHeader,
 	SystemAppCard,
 } from "@/components/landing";
-import { usePage, useRootStore } from "@/hooks";
+import { usePage } from "@/hooks";
 import { useNavigate } from "@/hooks/useNavigate";
 import {
 	BASE_APP_QUERIES,
@@ -34,7 +34,6 @@ export const LandingPage: React.FC = observer(() => {
 		showNavbarSearch: true,
 	});
 
-	const { configStore } = useRootStore();
 	const navigate = useNavigate();
 
 	const [newAppOptions, setNewAppOptions] = useState<
@@ -42,15 +41,6 @@ export const LandingPage: React.FC = observer(() => {
 	>(null);
 
 	const isNameOpen = !!newAppOptions;
-
-	const isRestricted = !configStore.isEngineOperationAvailable(
-		"PROJECT",
-		"add",
-	);
-	if (isRestricted) {
-		return <Navigate to="/" replace />;
-	}
-
 	return (
 		<>
 			<NavbarLeft>
@@ -87,7 +77,7 @@ export const LandingPage: React.FC = observer(() => {
 								size="default"
 								className="shrink-0 text-primary hover:bg-transparent hover:text-primary"
 							>
-								<Link to="/app/new">
+								<Link to="templates">
 									Browse Templates
 									<ArrowRight className="size-4" />
 								</Link>
@@ -130,6 +120,8 @@ export const LandingPage: React.FC = observer(() => {
 								});
 							} else if (type === "agent") {
 								navigate("/app/new/prompt");
+							} else if (type === "notebook") {
+								navigate("/notebook");
 							}
 						}}
 					/>

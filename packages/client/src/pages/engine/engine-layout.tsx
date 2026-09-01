@@ -19,7 +19,7 @@ interface EngineLayoutProps {
 
 const DEDICATED_ENGINE_META_KEYS = new Set(["description", "markdown", "tags"]);
 
-export const getEngineOverviewMetaKeys = (
+const getEngineOverviewMetaKeys = (
 	configuredMetaKeys: { metakey: string }[],
 ): string[] => [
 	"markdown",

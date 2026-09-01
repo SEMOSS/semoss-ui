@@ -28,7 +28,7 @@ import {
 	AgentSubagentsField,
 	buildEditWorkspacePixel,
 } from "@/components/agent-workspace/agent-form";
-import { useRootStore, useWorkspace } from "@/hooks";
+import { useProject, useRootStore } from "@/hooks";
 import { mcpToPlatformUrl, promptToPlatformUrl } from "@/utility";
 
 type GetWorkspaceResponse = {
@@ -41,8 +41,11 @@ type GetWorkspaceResponse = {
 	known_hook_kinds?: string[];
 	config_json?: {
 		model_id?: string;
+		use_default_agent_tools?: boolean;
 		budgets?: {
 			max_turns?: number;
+			max_reflections?: number;
+			max_seconds?: number;
 		};
 		spawn_policy?: {
 			max_subagent_depth?: number;
@@ -61,7 +64,7 @@ type GetWorkspaceResponse = {
 };
 
 export const AgentEditor = () => {
-	const { workspace } = useWorkspace();
+	const { project } = useProject();
 	const { monolithStore } = useRootStore();
 	const [isLoading, setIsLoading] = useState(false);
 	const [isFetching, setIsFetching] = useState(true);
@@ -80,7 +83,7 @@ export const AgentEditor = () => {
 				setIsFetching(true);
 				const { errors, pixelReturn } = await monolithStore.runQuery<
 					[GetWorkspaceResponse]
-				>(`GetWorkspace(workspaceId=["${workspace.appId}"]);`);
+				>(`GetWorkspace(workspaceId=["${project.project_id}"]);`);
 				if (errors.length > 0) throw new Error(errors.join(", "));
 				const data = pixelReturn[0].output;
 				const allMcps = data.mcp ?? [];
@@ -90,8 +93,16 @@ export const AgentEditor = () => {
 					description: data.description ?? "",
 					instructions: data.system_prompt ?? "",
 					modelId: data.config_json?.model_id ?? "",
+					useDefaultAgentTools:
+						data.config_json?.use_default_agent_tools ?? true,
 					maxTurns:
 						data.config_json?.budgets?.max_turns?.toString() ?? "",
+					maxReflections:
+						data.config_json?.budgets?.max_reflections?.toString() ??
+						"",
+					maxSeconds:
+						data.config_json?.budgets?.max_seconds?.toString() ??
+						"",
 					maxSubagentDepth:
 						data.config_json?.spawn_policy?.max_subagent_depth?.toString() ??
 						"",
@@ -117,14 +128,14 @@ export const AgentEditor = () => {
 				setIsFetching(false);
 			}
 		};
-		if (workspace.appId) load();
-	}, [workspace.appId, monolithStore, reset]);
+		if (project.project_id) load();
+	}, [project.project_id, monolithStore, reset]);
 
 	const onSave = handleSubmit(async (data) => {
 		try {
 			setIsLoading(true);
 			const { errors } = await monolithStore.runQuery(
-				buildEditWorkspacePixel(workspace.appId, data),
+				buildEditWorkspacePixel(project.project_id, data),
 			);
 			if (errors.length > 0) throw new Error(errors.join(", "));
 			toast.success("Agent saved");
@@ -225,7 +236,7 @@ export const AgentEditor = () => {
 										className="h-112"
 										enableKnowledgeMCP={true}
 										getPlatformUrl={mcpToPlatformUrl}
-										workspaceId={workspace.appId}
+										workspaceId={project.project_id}
 									/>
 								)}
 							/>
@@ -248,7 +259,7 @@ export const AgentEditor = () => {
 										className="h-112"
 										enableKnowledgeMCP={true}
 										getPlatformUrl={mcpToPlatformUrl}
-										workspaceId={workspace.appId}
+										workspaceId={project.project_id}
 									/>
 								)}
 							/>
@@ -301,7 +312,7 @@ export const AgentEditor = () => {
 						>
 							<AgentSubagentsField
 								control={control}
-								excludeWorkspaceId={workspace.appId}
+								excludeWorkspaceId={project.project_id}
 							/>
 						</AgentFormSection>
 
