@@ -10,7 +10,6 @@ import { LandingPage } from "./landing-page";
 import { PageLayout } from "./page-layout";
 import { PrivacyNoticePage } from "./privacy-notice-page";
 import { ProjectLayout } from "./project/project-layout";
-import { TemplateDetailsPage } from "./template-details-page";
 import { TemplatePage } from "./template-page";
 
 const PromptRouter = lazy(() =>
@@ -80,10 +79,6 @@ export const Router = observer(() => {
 						<Route index element={<LandingPage />} />
 
 						<Route path="templates" element={<TemplatePage />} />
-						<Route
-							path="templates/:id"
-							element={<TemplateDetailsPage />}
-						/>
 						{PROJECT_ROUTES.map(renderRoute)}
 						<Route path="engine/*" element={<EngineRedirect />} />
 						{ENGINE_ROUTES.map(renderRoute)}

@@ -19,6 +19,7 @@ import {
 import { CloneProjectDialog } from "@/components/project";
 import { NavbarHeader, NavbarLeft } from "@/components/shared";
 import { TemplateCard } from "@/components/templates";
+import { TYPE_TO_ROUTE } from "@/constants";
 import { useRootStore } from "@/hooks";
 
 /**
@@ -210,7 +211,9 @@ export const TemplatePage: React.FC = observer((): JSX.Element => {
 					onClose={(newAppId) => {
 						setCloneTemplate(null);
 						if (newAppId) {
-							navigate(`/s/${newAppId}`);
+							navigate(
+								`/${TYPE_TO_ROUTE[cloneTemplate.project_type]}/${newAppId}/edit`,
+							);
 						}
 					}}
 				/>
