@@ -95,6 +95,7 @@ const initStore = async (
 
 beforeEach(() => {
 	vi.resetAllMocks();
+	vi.spyOn(console, "warn").mockImplementation(() => undefined);
 	Env.update({
 		MODULE: "http://localhost:9090/Monolith",
 		APP: "",
@@ -259,7 +260,8 @@ describe("InsightStore", () => {
 				uploadInsight: vi.fn(),
 				uploadUser: vi.fn(),
 			}));
-			Env.update({ MODULE: "http://localhost:9090/Monolith" });
+			const { Env: FreshEnv } = await import("../../env");
+			FreshEnv.update({ MODULE: "http://localhost:9090/Monolith" });
 			const { InsightStore: FreshStore } = await import(
 				"./insight.store"
 			);
