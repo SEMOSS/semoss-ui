@@ -23,8 +23,20 @@ import { StringListField } from "../shared/string-list-field";
 
 const schema = z.object({
 	NAME: catalogNameSchema,
-	PYTHON_FILE_NAME: z.string().min(1, "Python file name is required"),
-	FUNCTION_NAME: z.string().min(1, "Function name is required"),
+	PYTHON_FILE_NAME: z
+		.string()
+		.min(1, "Python file name is required")
+		.regex(
+			/^[A-Za-z0-9_.-]+\.py$/,
+			"Enter a .py file name without a path.",
+		),
+	FUNCTION_NAME: z
+		.string()
+		.min(1, "Function name is required")
+		.regex(
+			/^[A-Za-z_][A-Za-z0-9_]*$/,
+			"Enter a valid Python function name.",
+		),
 	FUNCTION_DESCRIPTION: z.string().min(1, "Function description is required"),
 	FUNCTION_PARAMETERS: parameterListSchema,
 	FUNCTION_REQUIRED_PARAMETERS: stringListSchema,
@@ -74,8 +86,9 @@ export const LocalPythonFunctionForm = () => {
 		>
 			<Alert>
 				<AlertDescription>
-					After creating this engine, upload your Python file and any
-					supporting files from the engine Edit page.
+					A starter Python file is created from this function
+					metadata. You can edit it and add supporting files from the
+					engine Edit page.
 				</AlertDescription>
 			</Alert>
 			<FormSection
@@ -99,7 +112,7 @@ export const LocalPythonFunctionForm = () => {
 				<FormInput
 					name="PYTHON_FILE_NAME"
 					label="Python File Name"
-					description="Enter only the file name (e.g., my_function.py). Upload the file itself from the engine Edit page after the engine is created."
+					description="Enter the file name for the generated starter function (e.g., my_function.py)."
 					disabled={form.formState.isSubmitting}
 					data-testid="function-form-input-PYTHON_FILE_NAME"
 				/>
