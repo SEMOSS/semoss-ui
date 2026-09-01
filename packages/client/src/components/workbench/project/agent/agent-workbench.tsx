@@ -11,18 +11,12 @@ import {
 	WORKBENCH_COMPONENTS,
 	WORKBENCH_PANEL_RECORDS,
 } from "../../workbench.constants";
-import { PROJECT_ENGINES_PANEL } from "../project-engines-panel";
-import { PROJECT_FILE_EDITOR_PANEL } from "../project-file-editor-panel";
-import { PROJECT_FILE_EXPLORER_PANEL } from "../project-file-explorer-panel";
-import { PROJECT_INSIGHT_EXPLORER_PANEL } from "../project-insight-explorer-panel";
-import { PROJECT_MCP_EDITOR_PANEL } from "../project-mcp-editor-panel";
-import { ProjectPublishButton } from "../project-publish-button";
 import {
 	createProjectSettingsPanel,
 	ProjectSettingsToggle,
 } from "../project-settings-toggle";
 import { PROJECT_TERMINAL_PANEL } from "../project-terminal-panel";
-import { PROJECT_AGENT_EDITOR_PANEL } from "./agent-editor-panel";
+import { AGENT_EDITOR_PANEL } from "./agent-editor-panel";
 
 /**
  * The default arrangement: the agent editor front and centre, files and the
@@ -35,35 +29,16 @@ const AGENT_WORKBENCH_LAYOUT: WorkbenchLayout = {
 		type: "tabset",
 		id: "main",
 		size: 1,
-		panelIds: [WORKBENCH_COMPONENTS.PROJECT_AGENT_EDITOR],
-		activeId: WORKBENCH_COMPONENTS.PROJECT_AGENT_EDITOR,
+		panelIds: [WORKBENCH_COMPONENTS.AGENT_EDITOR],
+		activeId: WORKBENCH_COMPONENTS.AGENT_EDITOR,
 	},
 	panels: {
-		[WORKBENCH_PANEL_RECORDS.PROJECT_AGENT_EDITOR.id]:
-			WORKBENCH_PANEL_RECORDS.PROJECT_AGENT_EDITOR,
-		[WORKBENCH_PANEL_RECORDS.PROJECT_FILE_EXPLORER.id]:
-			WORKBENCH_PANEL_RECORDS.PROJECT_FILE_EXPLORER,
-		[WORKBENCH_PANEL_RECORDS.PROJECT_INSIGHT_EXPLORER.id]:
-			WORKBENCH_PANEL_RECORDS.PROJECT_INSIGHT_EXPLORER,
-		[WORKBENCH_PANEL_RECORDS.PROJECT_TERMINAL.id]:
-			WORKBENCH_PANEL_RECORDS.PROJECT_TERMINAL,
+		[WORKBENCH_PANEL_RECORDS.AGENT_EDITOR.id]:
+			WORKBENCH_PANEL_RECORDS.AGENT_EDITOR,
 		[WORKBENCH_PANEL_RECORDS.ASSISTANT.id]:
 			WORKBENCH_PANEL_RECORDS.ASSISTANT,
 	},
 	borders: {
-		left: {
-			panelIds: [
-				WORKBENCH_COMPONENTS.PROJECT_FILE_EXPLORER,
-				WORKBENCH_COMPONENTS.PROJECT_INSIGHT_EXPLORER,
-			],
-			activeId: null,
-			size: 400,
-		},
-		bottom: {
-			panelIds: [WORKBENCH_COMPONENTS.PROJECT_TERMINAL],
-			activeId: null,
-			size: 300,
-		},
 		right: {
 			panelIds: [WORKBENCH_COMPONENTS.ASSISTANT],
 			activeId: null,
@@ -74,13 +49,7 @@ const AGENT_WORKBENCH_LAYOUT: WorkbenchLayout = {
 
 /** Blueprints, keyed by type. Module-scope so identities never churn. */
 const AGENT_WORKBENCH_COMPONENTS: Record<string, WorkbenchPanelConfigAny> = {
-	[WORKBENCH_COMPONENTS.PROJECT_AGENT_EDITOR]: PROJECT_AGENT_EDITOR_PANEL,
-	[WORKBENCH_COMPONENTS.PROJECT_FILE_EXPLORER]: PROJECT_FILE_EXPLORER_PANEL,
-	[WORKBENCH_COMPONENTS.PROJECT_INSIGHT_EXPLORER]:
-		PROJECT_INSIGHT_EXPLORER_PANEL,
-	[WORKBENCH_COMPONENTS.PROJECT_FILE_EDITOR]: PROJECT_FILE_EDITOR_PANEL,
-	[WORKBENCH_COMPONENTS.PROJECT_MCP_EDITOR]: PROJECT_MCP_EDITOR_PANEL,
-	[WORKBENCH_COMPONENTS.PROJECT_ENGINES]: PROJECT_ENGINES_PANEL,
+	[WORKBENCH_COMPONENTS.AGENT_EDITOR]: AGENT_EDITOR_PANEL,
 	[WORKBENCH_COMPONENTS.PROJECT_TERMINAL]: PROJECT_TERMINAL_PANEL,
 	[WORKBENCH_COMPONENTS.PROJECT_SETTINGS]: createProjectSettingsPanel([
 		{ name: "Overview", component: "project-overview" },
@@ -153,52 +122,12 @@ export const AgentWorkbench: React.FC = () => {
 
 	useWorkbenchCommands([
 		{
-			id: "workbench.project-file-explorer.open",
-			category: "View",
-			label: "Open File Explorer",
-			handler: (get) => {
-				get().layout.actions.selectPanel(
-					WORKBENCH_COMPONENTS.PROJECT_FILE_EXPLORER,
-				);
-			},
-		},
-		{
-			id: "workbench.project-insight-explorer.open",
-			category: "View",
-			label: "Open Insight File Explorer",
-			handler: (get) => {
-				get().layout.actions.selectPanel(
-					WORKBENCH_COMPONENTS.PROJECT_INSIGHT_EXPLORER,
-				);
-			},
-		},
-		{
 			id: "workbench.project-agent-editor.open",
 			category: "View",
 			label: "Open Agent Editor",
 			handler: (get) => {
 				get().layout.actions.selectPanel(
-					WORKBENCH_COMPONENTS.PROJECT_AGENT_EDITOR,
-				);
-			},
-		},
-		{
-			id: "workbench.project-terminal.open",
-			category: "View",
-			label: "Open Terminal",
-			handler: (get) => {
-				get().layout.actions.selectPanel(
-					WORKBENCH_COMPONENTS.PROJECT_TERMINAL,
-				);
-			},
-		},
-		{
-			id: "workbench.project-settings.open",
-			category: "View",
-			label: "Open Settings",
-			handler: (get) => {
-				get().layout.actions.selectPanel(
-					WORKBENCH_COMPONENTS.PROJECT_SETTINGS,
+					WORKBENCH_COMPONENTS.AGENT_EDITOR,
 				);
 			},
 		},
@@ -213,7 +142,6 @@ export const AgentWorkbench: React.FC = () => {
 					after: (
 						<>
 							<WorkbenchCommandMenuButton />
-							<ProjectPublishButton />
 							<ProjectSettingsToggle />
 						</>
 					),
