@@ -141,7 +141,7 @@ const getDefaultFieldValue = (field: FieldDefinition) =>
 				? null
 				: "");
 
-export const hasSelectedMultiselectValue = (value: unknown) =>
+const hasSelectedMultiselectValue = (value: unknown) =>
 	Array.isArray(value) && value.length > 0;
 
 export const ModelImportForm = (props: ModelImportFormProps) => {

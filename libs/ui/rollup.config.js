@@ -52,7 +52,7 @@ export default defineConfig({
 		}),
 		isProduction && terser(),
 	],
-	external: ["react", "react-dom"],
+	external: ["react", "react-dom", "react-hook-form", "zod", /@hookform/],
 	watch: {
 		clearScreen: false,
 	},
