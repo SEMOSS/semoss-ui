@@ -1,4 +1,4 @@
-import type { PendingAgentAction } from "./agent.types";
+import type { PendingAgentAction } from "../../types";
 
 /** One selectable option in a RequestUserInput question. */
 export interface UserInputOption {

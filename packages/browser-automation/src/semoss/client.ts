@@ -17,7 +17,7 @@ type EnvWithTool = typeof Env & { TOOL?: unknown };
 type McpToolStatus = "success" | "error" | "cancelled" | "paused";
 type InsightWithMcpResponse = typeof insight & {
 	actions: typeof insight.actions & {
-		sendMCPResponseToPlayground?: (
+		sendMCPResponseToRoom?: (
 			response: string,
 			status: McpToolStatus,
 			executedParameters: Record<string, unknown>,
@@ -352,7 +352,7 @@ export function subscribeToMcpToolContext(
 	return () => subscribers.delete(listener);
 }
 
-export function sendMcpResponseToPlayground(
+export function sendMcpResponseToRoom(
 	response: unknown,
 	toolStatus: McpToolStatus = "success",
 	executedParameters: Record<string, unknown> = {},
@@ -360,7 +360,7 @@ export function sendMcpResponseToPlayground(
 	const payload =
 		typeof response === "string" ? response : JSON.stringify(response);
 	const action = (insight as InsightWithMcpResponse).actions
-		.sendMCPResponseToPlayground;
+		.sendMCPResponseToRoom;
 	if (action) {
 		action(payload, toolStatus, executedParameters);
 		return;

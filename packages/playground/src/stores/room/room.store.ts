@@ -657,7 +657,7 @@ export class RoomStore {
 			if (this.tail.type === "OUTPUT") {
 				if (this.mode === "agent") {
 					// An agent-run turn is driven entirely server-side and
-					// only ever gets a live subscribeRunAgent connection from
+					// only ever gets a live AgentStore watching it from
 					// runAgentMessage's own submit — reconnect here so a
 					// reload doesn't leave it (and any paused tool decision)
 					// unwatched. See reconnectAgentRun.

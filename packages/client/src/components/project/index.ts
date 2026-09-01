@@ -1,3 +1,4 @@
+export { CloneProjectDialog } from "./clone-project-dialog";
 export { CodeRenderer } from "./code-renderer";
 export { EditProjectDependenciesDialog } from "./edit-project-dependencies-dialog";
 export { ProjectAccessControl } from "./project-access-control";
