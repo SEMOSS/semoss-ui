@@ -98,7 +98,7 @@ const getToolState = (
 	}
 };
 
-interface ResponseMessageToolProps {
+export interface ResponseMessageToolProps {
 	/** Tool to render */
 	tool: ToolStore;
 
@@ -106,8 +106,8 @@ interface ResponseMessageToolProps {
 	isLarge?: boolean;
 }
 
-export const ResponseMessageTool: React.FC<ResponseMessageToolProps> = observer(
-	({ tool, isLarge }) => {
+export const ResponseMessageTool = observer(
+	({ tool, isLarge }: ResponseMessageToolProps) => {
 		const { t } = useTranslation("tool");
 		const { room } = tool;
 		const isMobile = useIsMobile();

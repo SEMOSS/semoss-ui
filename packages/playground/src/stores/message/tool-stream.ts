@@ -39,12 +39,12 @@ export const applyToolStreamChunk = (
 	// The terminal chunk has no index — flip the streaming flag off for every
 	// tool we've been tracking in this turn.
 	if (data.finish_reason) {
-		for (const toolId of Object.values(indexToToolId)) {
+		Object.values(indexToToolId).forEach((toolId) => {
 			const tool = message.room.getTool(toolId);
 			if (tool) {
 				tool.endStreaming();
 			}
-		}
+		});
 		return;
 	}
 

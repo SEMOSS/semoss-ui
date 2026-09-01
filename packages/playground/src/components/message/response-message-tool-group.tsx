@@ -53,13 +53,13 @@ const analyzeTools = (tools: ToolStore[]) => {
 	return { status, counts, isResolving };
 };
 
-interface ResponseMessageToolGroupProps {
+export interface ResponseMessageToolGroupProps {
 	/** Tools to group */
 	tools: ToolStore[];
 }
 
-export const ResponseMessageToolGroup: React.FC<ResponseMessageToolGroupProps> =
-	observer(({ tools }) => {
+export const ResponseMessageToolGroup = observer(
+	({ tools }: ResponseMessageToolGroupProps) => {
 		const { t } = useTranslation("tool");
 		const [isOpen, setIsOpen] = useState(false);
 
@@ -151,4 +151,5 @@ export const ResponseMessageToolGroup: React.FC<ResponseMessageToolGroupProps> =
 				</div>
 			</div>
 		);
-	});
+	},
+);

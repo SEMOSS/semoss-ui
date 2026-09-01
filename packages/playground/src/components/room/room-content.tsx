@@ -45,7 +45,7 @@ import { RoomSuggestions } from "./room-suggestions";
 const ROOM_CONFIGURATION_ID = "CONFIGURATION";
 const SCROLL_THRESHOLD = 150;
 
-interface RoomContentProps {
+export interface RoomContentProps {
 	/** Room to load */
 	room: RoomStore;
 }
@@ -53,7 +53,7 @@ interface RoomContentProps {
 /**
  * The page for a room
  */
-export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
+export const RoomContent = observer(({ room }: RoomContentProps) => {
 	const { chat } = useChat();
 	const { t } = useTranslation("room");
 	const { getGracefulErrorMessage } = useGracefulErrors();
@@ -378,21 +378,19 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 			return false;
 		}
 
-		for (const part of room.latestResponseMessage.parts) {
+		return room.latestResponseMessage.parts.some((part) => {
 			if (
-				part.type === "TOOL_CALL" &&
-				part.toolCall._meta?.SMSS_MCP_EXECUTION === "auto"
+				part.type !== "TOOL_CALL" ||
+				part.toolCall._meta?.SMSS_MCP_EXECUTION !== "auto"
 			) {
-				const tool = room.getTool(part.toolCall.id);
-				if (
-					tool &&
-					(tool.status === "INITIAL" || tool.status === "LOADING")
-				) {
-					return true;
-				}
+				return false;
 			}
-		}
-		return false;
+			const tool = room.getTool(part.toolCall.id);
+			return (
+				!!tool &&
+				(tool.status === "INITIAL" || tool.status === "LOADING")
+			);
+		});
 	})();
 
 	const showLoadingState =
@@ -429,10 +427,10 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 
 	// Folds a run of tool-only responses up into the response preceding them.
 	const roomHistoryEntries = (() => {
-		type Entry = {
+		interface Entry {
 			message: InputMessageStore | ResponseMessageStore;
 			subsequentTools: ResponseMessageStore[];
-		};
+		}
 		let anchor: Entry | null = null;
 
 		return room.history.reduce<Entry[]>((entries, m) => {

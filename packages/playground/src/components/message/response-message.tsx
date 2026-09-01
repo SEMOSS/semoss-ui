@@ -89,6 +89,9 @@ const getExtIcon = (fileName: string) => {
 	return { Icon: FileIcon, ext };
 };
 
+const getErrorMessage = (e: unknown): string =>
+	e instanceof Error ? e.message : String(e);
+
 /**
  * Whether the message has streamed any real content yet. A freshly-created
  * streaming message starts with zero parts, so an empty array means nothing
@@ -127,7 +130,7 @@ interface ToolRun {
 	hasAskTools: boolean;
 }
 
-interface ResponseMessageProps {
+export interface ResponseMessageProps {
 	/** Room */
 	room: RoomStore;
 
@@ -138,8 +141,8 @@ interface ResponseMessageProps {
 	subsequentTools?: ResponseMessageStore[];
 }
 
-export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
-	({ room, message, subsequentTools = [] }) => {
+export const ResponseMessage = observer(
+	({ room, message, subsequentTools = [] }: ResponseMessageProps) => {
 		const { t } = useTranslation("chat");
 		const { root } = useRoot();
 
@@ -249,8 +252,7 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 					toast.success(t("notifications.feedbackSuccess"));
 				}
 			} catch (e: unknown) {
-				const error = e as { message: string };
-				toast.error(error.message);
+				toast.error(getErrorMessage(e));
 			}
 		};
 
@@ -268,8 +270,7 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 				setIsFeedbackTextOpen(false);
 				setPendingRating(null);
 			} catch (e: unknown) {
-				const error = e as { message: string };
-				toast.error(error.message);
+				toast.error(getErrorMessage(e));
 			}
 		};
 
@@ -282,26 +283,22 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 
 				toast.success(t("notifications.rewriteSuccess"));
 			} catch (e: unknown) {
-				const error = e as { message: string };
-				toast.error(error.message);
+				toast.error(getErrorMessage(e));
 			}
 		};
 
-		/**
-		 * Download the response in specified format
-		 * @param format - format to download (word, pdf)
-		 */
-		const downloadResponse = async (format: string) => {
+		const downloadResponse = async (format: "word" | "pdf") => {
 			setDownloadingFormat(format);
 			try {
-				await message.downloadResponse(format as "word" | "pdf");
+				await message.downloadResponse(format);
 				toast.success(
 					`Response downloaded successfully as ${format.toUpperCase()}`,
 				);
 				setIsDownloadDialogOpen(false);
 			} catch (e: unknown) {
-				const error = e as { message: string };
-				toast.error(error.message || "Failed to download response");
+				toast.error(
+					getErrorMessage(e) || "Failed to download response",
+				);
 			} finally {
 				setDownloadingFormat(null);
 			}
@@ -334,15 +331,14 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 				]);
 				toast.success(t("notifications.copySuccess"));
 			} catch (e: unknown) {
-				const error = e as { message: string };
-				toast.error(error.message);
+				toast.error(getErrorMessage(e));
 			}
 		};
 
 		const downloadFormats = [
 			{ value: "word", label: "Word Document", extension: ".docx" },
 			{ value: "pdf", label: "PDF Document", extension: ".pdf" },
-		];
+		] as const;
 
 		// Pre-compute completed tools for grouping. Tools cluster per contiguous
 		// run of TOOL_CALL parts: a run ends at the first part that renders
@@ -514,9 +510,17 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 										.pop()
 										?.toLowerCase() ?? "",
 								);
+							const extToMimeType: Record<string, string> = {
+								jpg: "image/jpeg",
+								jpeg: "image/jpeg",
+								gif: "image/gif",
+								webp: "image/webp",
+								svg: "image/svg+xml",
+								bmp: "image/bmp",
+							};
 							const imgSrc =
 								isImage && p.mediaInfo.base64Data
-									? `data:${p.mediaInfo.mimeType?.startsWith("image/") ? p.mediaInfo.mimeType : ({ jpg: "image/jpeg", jpeg: "image/jpeg", gif: "image/gif", webp: "image/webp", svg: "image/svg+xml", bmp: "image/bmp" } as Record<string, string>)[p.mediaInfo.fileName?.split(".").pop()?.toLowerCase() ?? ""] || "image/png"};base64,${p.mediaInfo.base64Data}`
+									? `data:${p.mediaInfo.mimeType?.startsWith("image/") ? p.mediaInfo.mimeType : extToMimeType[p.mediaInfo.fileName?.split(".").pop()?.toLowerCase() ?? ""] || "image/png"};base64,${p.mediaInfo.base64Data}`
 									: "";
 							const handleClick = () => {
 								if (isImage && p.mediaInfo.base64Data) {
@@ -910,7 +914,7 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 											message.isThinking ||
 											message.parts.length === 0
 										}
-										onClick={() => {
+										onClick={async () => {
 											const text = allParts
 												.map((part) => {
 													if (part.type === "TEXT") {
@@ -940,7 +944,7 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 											}
 
 											try {
-												navigator.clipboard.writeText(
+												await navigator.clipboard.writeText(
 													text,
 												);
 
@@ -950,10 +954,7 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 													),
 												);
 											} catch (e: unknown) {
-												const error = e as {
-													message: string;
-												};
-												toast.error(error.message);
+												toast.error(getErrorMessage(e));
 											}
 										}}
 									>
