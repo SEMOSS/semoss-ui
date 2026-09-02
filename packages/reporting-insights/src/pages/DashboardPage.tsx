@@ -234,8 +234,11 @@ export function DashboardPage() {
 		setRedeploying(true);
 		try {
 			await redeployDashboard(id);
-		} catch (e: any) {
-			toast.error(e?.message ?? "Redeploy failed.", "Redeploy failed");
+		} catch (e: unknown) {
+			toast.error(
+				e instanceof Error ? e.message : "Redeploy failed.",
+				"Redeploy failed",
+			);
 		} finally {
 			setRedeploying(false);
 		}
@@ -731,153 +734,192 @@ export function DashboardPage() {
 							</div>
 						)}
 
-						{/* ── flexlayout-react canvas ── */}
-						<div className="relative min-h-0 flex-1">
-							{/* Param sheet: rendered directly (not via keep-alive canvas) */}
-							{hasParamSheet && activeSheet?.isParamSheet && (
-								<div className="absolute inset-0 overflow-auto bg-stone-50 p-6">
-									<ParamSheet
-										paramGroups={paramGroups}
-										values={sharedParamValues}
-										onChangeValue={handleSharedParamChange}
-										onRunAll={handleRunAll}
-										allSatisfied={allParamsSatisfied}
-										config={activeSheet.paramSheetConfig}
-										isRunning={paramSheetRunning}
-										onParamOptionsChange={
-											setSheetParamOptions
-										}
-									/>
-								</div>
-							)}
-							{!hasVizs && !activeSheet?.isParamSheet && (
-								<div className="absolute inset-0 flex items-center justify-center text-stone-400">
-									No visualizations in this sheet
-								</div>
-							)}
-							{sheets
-								.filter(
-									(s) =>
-										!s.isParamSheet &&
-										visitedSheetIds.has(s.id) &&
-										s.visualizations.length > 0,
-								)
-								.map((sheet) => {
-									const isActive = sheet.id === activeSheetId;
-									return (
-										<div
-											key={sheet.id}
-											className="absolute inset-0"
-											style={
-												isActive
-													? {
-															visibility:
-																"visible",
-															zIndex: 1,
-														}
-													: {
-															visibility:
-																"hidden",
-															zIndex: 0,
-															pointerEvents:
-																"none",
-														}
-											}
-										>
-											<SheetCanvas
-												sheet={sheet}
-												model={getModel(sheet)}
-												queries={
-													dashboard.queries ?? []
-												}
-												paramValues={queryParamValues}
-												runKeys={runKeys}
-												hasParamSheet={hasParamSheet}
-												makeSaveModel={makeSaveModel}
-												layoutRef={getLayoutRef(
-													sheet.id,
-												)}
-											/>
+						{/* ── Main content: real render when embedded (the portal iframes
+						    this route); otherwise iframe the deployed portal so the
+						    main app's toolbar view always matches what's published. ── */}
+						{embed ? (
+							<>
+								<div className="relative min-h-0 flex-1">
+									{/* Param sheet: rendered directly (not via keep-alive canvas) */}
+									{hasParamSheet &&
+										activeSheet?.isParamSheet && (
+											<div className="absolute inset-0 overflow-auto bg-stone-50 p-6">
+												<ParamSheet
+													paramGroups={paramGroups}
+													values={sharedParamValues}
+													onChangeValue={
+														handleSharedParamChange
+													}
+													onRunAll={handleRunAll}
+													allSatisfied={
+														allParamsSatisfied
+													}
+													config={
+														activeSheet.paramSheetConfig
+													}
+													isRunning={
+														paramSheetRunning
+													}
+													onParamOptionsChange={
+														setSheetParamOptions
+													}
+												/>
+											</div>
+										)}
+									{!hasVizs && !activeSheet?.isParamSheet && (
+										<div className="absolute inset-0 flex items-center justify-center text-stone-400">
+											No visualizations in this sheet
 										</div>
-									);
-								})}
-						</div>
+									)}
+									{sheets
+										.filter(
+											(s) =>
+												!s.isParamSheet &&
+												visitedSheetIds.has(s.id) &&
+												s.visualizations.length > 0,
+										)
+										.map((sheet) => {
+											const isActive =
+												sheet.id === activeSheetId;
+											return (
+												<div
+													key={sheet.id}
+													className="absolute inset-0"
+													style={
+														isActive
+															? {
+																	visibility:
+																		"visible",
+																	zIndex: 1,
+																}
+															: {
+																	visibility:
+																		"hidden",
+																	zIndex: 0,
+																	pointerEvents:
+																		"none",
+																}
+													}
+												>
+													<SheetCanvas
+														sheet={sheet}
+														model={getModel(sheet)}
+														queries={
+															dashboard.queries ??
+															[]
+														}
+														paramValues={
+															queryParamValues
+														}
+														runKeys={runKeys}
+														hasParamSheet={
+															hasParamSheet
+														}
+														makeSaveModel={
+															makeSaveModel
+														}
+														layoutRef={getLayoutRef(
+															sheet.id,
+														)}
+													/>
+												</div>
+											);
+										})}
+								</div>
 
-						{/* ── Sheet tab bar ── */}
-						{sheets.length > 0 && (
-							<div className="flex-shrink-0 overflow-hidden rounded-xl border border-stone-200 bg-white shadow-soft">
-								<div className="flex items-stretch overflow-x-auto">
-									{sheets.map((sheet) => {
-										const isActive =
-											sheet.id === activeSheetId;
-										const tabColor = sheet.isParamSheet
-											? "#6366f1"
-											: (sheet.color ?? "#3b82f6");
-										return (
-											<button
-												key={sheet.id}
-												onClick={() => {
-													if (
-														sheet.id !==
-														activeSheetId
-													)
-														switchStartRef.current =
-															performance.now();
-													setActiveSheetId(sheet.id);
-												}}
-												className={`-mt-px flex flex-shrink-0 select-none items-center gap-2 border-stone-200 border-t-2 border-r px-5 py-2.5 text-sm transition-colors ${
-													isActive
-														? "font-semibold text-stone-900"
-														: "border-t-transparent text-stone-500 hover:text-stone-700"
-												}`}
-												style={
-													isActive
-														? {
-																borderTopColor:
-																	tabColor,
-																backgroundColor: `${tabColor}26`,
-															}
-														: {
-																backgroundColor: `${tabColor}14`,
-															}
-												}
-											>
-												{sheet.isParamSheet ? (
-													<SlidersHorizontal
-														className={`h-3 w-3 flex-shrink-0 ${isActive ? "text-indigo-500" : "text-stone-400"}`}
-													/>
-												) : (
-													<span
-														className="h-2.5 w-2.5 flex-shrink-0 rounded-full"
-														style={{
-															backgroundColor:
-																tabColor,
+								{/* ── Sheet tab bar ── */}
+								{sheets.length > 0 && (
+									<div className="flex-shrink-0 overflow-hidden rounded-xl border border-stone-200 bg-white shadow-soft">
+										<div className="flex items-stretch overflow-x-auto">
+											{sheets.map((sheet) => {
+												const isActive =
+													sheet.id === activeSheetId;
+												const tabColor =
+													sheet.isParamSheet
+														? "#6366f1"
+														: (sheet.color ??
+															"#3b82f6");
+												return (
+													<button
+														type="button"
+														key={sheet.id}
+														onClick={() => {
+															if (
+																sheet.id !==
+																activeSheetId
+															)
+																switchStartRef.current =
+																	performance.now();
+															setActiveSheetId(
+																sheet.id,
+															);
 														}}
-													/>
-												)}
-												{sheet.name}
-												{!sheet.isParamSheet && (
-													<span
-														className={`rounded-full px-1.5 py-0.5 text-xs ${isActive ? "text-white" : "bg-stone-200 text-stone-500"}`}
+														className={`-mt-px flex flex-shrink-0 select-none items-center gap-2 border-stone-200 border-t-2 border-r px-5 py-2.5 text-sm transition-colors ${
+															isActive
+																? "font-semibold text-stone-900"
+																: "border-t-transparent text-stone-500 hover:text-stone-700"
+														}`}
 														style={
 															isActive
 																? {
-																		backgroundColor:
+																		borderTopColor:
 																			tabColor,
+																		backgroundColor: `${tabColor}26`,
 																	}
-																: undefined
+																: {
+																		backgroundColor: `${tabColor}14`,
+																	}
 														}
 													>
-														{
-															sheet.visualizations
-																.length
-														}
-													</span>
-												)}
-											</button>
-										);
-									})}
-								</div>
+														{sheet.isParamSheet ? (
+															<SlidersHorizontal
+																className={`h-3 w-3 flex-shrink-0 ${isActive ? "text-indigo-500" : "text-stone-400"}`}
+															/>
+														) : (
+															<span
+																className="h-2.5 w-2.5 flex-shrink-0 rounded-full"
+																style={{
+																	backgroundColor:
+																		tabColor,
+																}}
+															/>
+														)}
+														{sheet.name}
+														{!sheet.isParamSheet && (
+															<span
+																className={`rounded-full px-1.5 py-0.5 text-xs ${isActive ? "text-white" : "bg-stone-200 text-stone-500"}`}
+																style={
+																	isActive
+																		? {
+																				backgroundColor:
+																					tabColor,
+																			}
+																		: undefined
+																}
+															>
+																{
+																	sheet
+																		.visualizations
+																		.length
+																}
+															</span>
+														)}
+													</button>
+												);
+											})}
+										</div>
+									</div>
+								)}
+							</>
+						) : (
+							<div className="min-h-0 flex-1 overflow-hidden rounded-xl border border-stone-200 bg-white shadow-soft">
+								<iframe
+									key={dashboard.id}
+									src={publishedPortalUrl(dashboard.id)}
+									title={`Dashboard: ${dashboard.name}`}
+									className="h-full w-full border-0"
+									style={{ display: "block" }}
+								/>
 							</div>
 						)}
 
