@@ -662,5 +662,13 @@ export function validateCanvasWorkflowNode(node: AutomationNode): string[] {
 			errors.push("JSON arguments must be valid JSON");
 		}
 	}
+	if (type === "control.if") {
+		const clauses = branchClauses(config.clauses);
+		if (clauses.length === 0) {
+			errors.push("An If condition is required");
+		} else if (clauses.some((clause) => clause.condition.trim() === "")) {
+			errors.push("Each If and Else if condition is required");
+		}
+	}
 	return errors;
 }

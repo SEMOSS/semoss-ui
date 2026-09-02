@@ -315,13 +315,7 @@ export const AUTOMATION_WORKFLOW_NODE_REGISTRY: readonly AutomationNodeDefinitio
 			defaultConfig: {
 				clauses: [{ id: "initial", condition: "" }],
 			},
-			configSchema: {
-				condition: {
-					type: "textarea",
-					label: "Condition",
-					required: true,
-				},
-			},
+			configSchema: {},
 			inputs: [controlIn],
 			outputs: [
 				{
