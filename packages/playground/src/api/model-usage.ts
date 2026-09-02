@@ -49,11 +49,15 @@ export const getUsageModels = async (): Promise<Engine[]> => {
 /** Return the current user's credit usage for a model. */
 export const getUserModelCreditInfo = async (
 	modelId: string,
-	startDate: string,
-	endDate: string,
+	startDate?: string,
+	endDate?: string,
 ): Promise<ModelCreditInfo> => {
+	const dateArguments =
+		startDate && endDate
+			? `, startDate=${JSON.stringify(startDate)}, endDate=${JSON.stringify(endDate)}`
+			: "";
 	const response = await runPixel<[ModelCreditInfo]>(
-		`META | GetUserModelCreditInfo(engine=${JSON.stringify(modelId)}, startDate=${JSON.stringify(startDate)}, endDate=${JSON.stringify(endDate)});`,
+		`META | GetUserModelCreditInfo(engine=${JSON.stringify(modelId)}${dateArguments});`,
 	);
 	assertPixelSuccess(response.errors);
 

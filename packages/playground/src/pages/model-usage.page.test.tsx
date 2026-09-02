@@ -38,12 +38,12 @@ describe("ModelUsagePage", () => {
 			frequency: "MONTH",
 			maxCredits: 10,
 			creditsUsed: 4,
-			creditsRemaining: null,
-			limitExceeded: null,
+			creditsRemaining: 6,
+			limitExceeded: false,
 			periodStart: "2026-09-01T00:00:00Z",
 			periodEnd: "2026-09-30T23:59:59Z",
 			trackingEnabled: true,
-			rangeType: "CUSTOM",
+			rangeType: "RESTRICTION",
 			inputTokenCredit: 0.000002,
 			outputTokenCredit: 0.000008,
 			inputCreditsPerMillion: 2,
@@ -61,12 +61,11 @@ describe("ModelUsagePage", () => {
 		await waitFor(() => {
 			expect(mocks.getUserModelCreditInfo).toHaveBeenCalledWith(
 				"model-1",
-				expect.stringMatching(/^\d{4}-\d{2}-01$/),
-				expect.stringMatching(/^\d{4}-\d{2}-\d{2}$/),
 			);
 		});
 		expect(screen.getByText("4")).toBeInTheDocument();
-		expect(screen.queryByText("40%")).not.toBeInTheDocument();
+		expect(screen.getByText("6")).toBeInTheDocument();
+		expect(screen.getByText("40%")).toBeInTheDocument();
 	});
 
 	test("shows an empty state when the user has no models", async () => {
@@ -105,6 +104,13 @@ describe("ModelUsagePage", () => {
 		expect(
 			await screen.findByText("usage:noRestriction.title"),
 		).toBeInTheDocument();
+		await waitFor(() => {
+			expect(mocks.getUserModelCreditInfo).toHaveBeenCalledWith(
+				"model-1",
+				expect.stringMatching(/^\d{4}-\d{2}-01$/),
+				expect.stringMatching(/^\d{4}-\d{2}-\d{2}$/),
+			);
+		});
 		expect(screen.queryByText("NaN")).not.toBeInTheDocument();
 		expect(screen.queryByText("NaN%")).not.toBeInTheDocument();
 		expect(

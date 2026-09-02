@@ -3,7 +3,13 @@
 	"description": "Bekijk je huidige creditsaldo, gebruiksperiode en de prijsopname voor elk model.",
 	"refresh": "Vernieuwen",
 	"retry": "Opnieuw proberen",
-	"dateRange": { "start": "Startdatum", "end": "Einddatum" },
+	"dateRange": {
+		"label": "Gebruiksperiode",
+		"configured": "Huidige limietperiode",
+		"custom": "Aangepast bereik",
+		"start": "Startdatum",
+		"end": "Einddatum"
+	},
 	"model": { "label": "Model", "placeholder": "Selecteer een model" },
 	"modelsError": {
 		"title": "Modellen konden niet worden geladen",

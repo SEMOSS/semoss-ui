@@ -3,7 +3,13 @@
 	"description": "各モデルの現在のクレジット残高、使用期間、料金スナップショットを確認します。",
 	"refresh": "更新",
 	"retry": "再試行",
-	"dateRange": { "start": "開始日", "end": "終了日" },
+	"dateRange": {
+		"label": "使用期間",
+		"configured": "現在の制限期間",
+		"custom": "カスタム範囲",
+		"start": "開始日",
+		"end": "終了日"
+	},
 	"model": { "label": "モデル", "placeholder": "モデルを選択" },
 	"modelsError": {
 		"title": "モデルを読み込めませんでした",

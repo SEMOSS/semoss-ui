@@ -3,7 +3,13 @@
 	"description": "Consultez votre solde de crédits, la période d'utilisation et l'instantané tarifaire de chaque modèle.",
 	"refresh": "Actualiser",
 	"retry": "Réessayer",
-	"dateRange": { "start": "Date de début", "end": "Date de fin" },
+	"dateRange": {
+		"label": "Période d’utilisation",
+		"configured": "Période limite actuelle",
+		"custom": "Période personnalisée",
+		"start": "Date de début",
+		"end": "Date de fin"
+	},
 	"model": { "label": "Modèle", "placeholder": "Sélectionner un modèle" },
 	"modelsError": {
 		"title": "Impossible de charger les modèles",

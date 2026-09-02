@@ -82,6 +82,7 @@ export const getPreviousMonthDateRange = (reference = new Date()) => ({
 export const ModelUsagePage = () => {
 	const { t, i18n } = useTranslation(["usage", "workspace"]);
 	const modelSelectId = useId();
+	const rangeSelectId = useId();
 	const startDateId = useId();
 	const endDateId = useId();
 	const [models, setModels] = useState<Engine[]>([]);
@@ -90,6 +91,9 @@ export const ModelUsagePage = () => {
 	const [initialDateRange] = useState(() => getPreviousMonthDateRange());
 	const [startDate, setStartDate] = useState(initialDateRange.startDate);
 	const [endDate, setEndDate] = useState(initialDateRange.endDate);
+	const [rangeMode, setRangeMode] = useState<"configured" | "custom">(
+		"configured",
+	);
 	const [isLoadingModels, setIsLoadingModels] = useState(true);
 	const [isLoadingUsage, setIsLoadingUsage] = useState(false);
 	const [modelsError, setModelsError] = useState(false);
@@ -121,14 +125,23 @@ export const ModelUsagePage = () => {
 	}, []);
 
 	const loadUsage = useCallback(
-		async (modelId: string, rangeStart: string, rangeEnd: string) => {
+		async (modelId: string, rangeStart?: string, rangeEnd?: string) => {
 			if (!modelId) return;
 			setIsLoadingUsage(true);
 			setUsageError(false);
 			try {
-				setCreditInfo(
-					await getUserModelCreditInfo(modelId, rangeStart, rangeEnd),
-				);
+				const info =
+					rangeStart && rangeEnd
+						? await getUserModelCreditInfo(
+								modelId,
+								rangeStart,
+								rangeEnd,
+							)
+						: await getUserModelCreditInfo(modelId);
+				setCreditInfo(info);
+				if (!rangeStart && !rangeEnd && !info.restrictionEnabled) {
+					setRangeMode("custom");
+				}
 			} catch {
 				setCreditInfo(null);
 				setUsageError(true);
@@ -144,12 +157,16 @@ export const ModelUsagePage = () => {
 	}, [loadModels]);
 
 	useEffect(() => {
-		if (selectedModelId && startDate && endDate && startDate <= endDate) {
+		if (!selectedModelId) {
+			setCreditInfo(null);
+		} else if (rangeMode === "configured") {
+			loadUsage(selectedModelId);
+		} else if (startDate && endDate && startDate <= endDate) {
 			loadUsage(selectedModelId, startDate, endDate);
 		} else {
 			setCreditInfo(null);
 		}
-	}, [endDate, loadUsage, selectedModelId, startDate]);
+	}, [endDate, loadUsage, rangeMode, selectedModelId, startDate]);
 
 	const selectedModel = models.find(
 		(model) => model.engine_id === selectedModelId,
@@ -186,13 +203,16 @@ export const ModelUsagePage = () => {
 					<Button
 						variant="outline"
 						onClick={() =>
-							loadUsage(selectedModelId, startDate, endDate)
+							rangeMode === "configured"
+								? loadUsage(selectedModelId)
+								: loadUsage(selectedModelId, startDate, endDate)
 						}
 						disabled={
 							!selectedModelId ||
-							!startDate ||
-							!endDate ||
-							startDate > endDate ||
+							(rangeMode === "custom" &&
+								(!startDate ||
+									!endDate ||
+									startDate > endDate)) ||
 							isLoadingUsage
 						}
 					>
@@ -233,14 +253,17 @@ export const ModelUsagePage = () => {
 						</CardHeader>
 					</Card>
 				) : (
-					<div className="grid w-full gap-4 md:grid-cols-3">
+					<div className="grid w-full gap-4 md:grid-cols-2 lg:grid-cols-4">
 						<div className="flex flex-col gap-2">
 							<Label htmlFor={modelSelectId}>
 								{t("usage:model.label")}
 							</Label>
 							<Select
 								value={selectedModelId}
-								onValueChange={setSelectedModelId}
+								onValueChange={(modelId) => {
+									setRangeMode("configured");
+									setSelectedModelId(modelId);
+								}}
 							>
 								<SelectTrigger
 									id={modelSelectId}
@@ -266,33 +289,73 @@ export const ModelUsagePage = () => {
 							</Select>
 						</div>
 						<div className="flex flex-col gap-2">
-							<Label htmlFor={startDateId}>
-								{t("usage:dateRange.start")}
+							<Label htmlFor={rangeSelectId}>
+								{t("usage:dateRange.label")}
 							</Label>
-							<Input
-								id={startDateId}
-								type="date"
-								value={startDate}
-								max={endDate}
-								onChange={(event) =>
-									setStartDate(event.target.value)
+							<Select
+								value={rangeMode}
+								onValueChange={(value) =>
+									setRangeMode(
+										value as "configured" | "custom",
+									)
 								}
-							/>
+							>
+								<SelectTrigger
+									id={rangeSelectId}
+									className="w-full"
+								>
+									<SelectValue />
+								</SelectTrigger>
+								<SelectContent>
+									<SelectItem
+										value="configured"
+										disabled={
+											!creditInfo?.restrictionEnabled
+										}
+									>
+										{t("usage:dateRange.configured")}
+										{creditInfo?.frequency
+											? ` · ${t(`usage:frequency.${creditInfo.frequency}`)}`
+											: ""}
+									</SelectItem>
+									<SelectItem value="custom">
+										{t("usage:dateRange.custom")}
+									</SelectItem>
+								</SelectContent>
+							</Select>
 						</div>
-						<div className="flex flex-col gap-2">
-							<Label htmlFor={endDateId}>
-								{t("usage:dateRange.end")}
-							</Label>
-							<Input
-								id={endDateId}
-								type="date"
-								value={endDate}
-								min={startDate}
-								onChange={(event) =>
-									setEndDate(event.target.value)
-								}
-							/>
-						</div>
+						{rangeMode === "custom" && (
+							<>
+								<div className="flex flex-col gap-2">
+									<Label htmlFor={startDateId}>
+										{t("usage:dateRange.start")}
+									</Label>
+									<Input
+										id={startDateId}
+										type="date"
+										value={startDate}
+										max={endDate}
+										onChange={(event) =>
+											setStartDate(event.target.value)
+										}
+									/>
+								</div>
+								<div className="flex flex-col gap-2">
+									<Label htmlFor={endDateId}>
+										{t("usage:dateRange.end")}
+									</Label>
+									<Input
+										id={endDateId}
+										type="date"
+										value={endDate}
+										min={startDate}
+										onChange={(event) =>
+											setEndDate(event.target.value)
+										}
+									/>
+								</div>
+							</>
+						)}
 					</div>
 				)}
 
