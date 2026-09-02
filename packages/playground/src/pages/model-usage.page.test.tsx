@@ -77,4 +77,28 @@ describe("ModelUsagePage", () => {
 		).toBeInTheDocument();
 		expect(mocks.getUserModelCreditInfo).not.toHaveBeenCalled();
 	});
+
+	test("does not render NaN when no credit limit is assigned", async () => {
+		mocks.getUserModelCreditInfo.mockResolvedValue({
+			engineId: "model-1",
+			userId: "user-1",
+			restrictionEnabled: false,
+			restrictionType: null,
+			frequency: null,
+			limitExceeded: null,
+			trackingEnabled: true,
+			pricingConfigured: false,
+		});
+
+		render(<ModelUsagePage />);
+
+		expect(
+			await screen.findByText("usage:noRestriction.title"),
+		).toBeInTheDocument();
+		expect(screen.queryByText("NaN")).not.toBeInTheDocument();
+		expect(screen.queryByText("NaN%")).not.toBeInTheDocument();
+		expect(
+			screen.queryByText("usage:period.title"),
+		).not.toBeInTheDocument();
+	});
 });

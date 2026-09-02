@@ -41,8 +41,11 @@ import { useGlobalBreadcrumbs } from "@/hooks";
 import type { Engine } from "@/types";
 
 /** Format a credit value without hiding useful fractional amounts. */
-const formatCredits = (value: number | null, locale: string): string => {
-	if (value === null) return "—";
+const formatCredits = (
+	value: number | null | undefined,
+	locale: string,
+): string => {
+	if (typeof value !== "number" || !Number.isFinite(value)) return "—";
 	return new Intl.NumberFormat(locale, {
 		maximumFractionDigits: 6,
 	}).format(value);
@@ -123,13 +126,16 @@ export const ModelUsagePage = () => {
 	const selectedModel = models.find(
 		(model) => model.engine_id === selectedModelId,
 	);
-	const usagePercent = useMemo(() => {
+	const usagePercent = useMemo<number | null>(() => {
 		if (
 			!creditInfo ||
-			creditInfo.maxCredits === null ||
-			creditInfo.creditsUsed === null
+			!creditInfo.restrictionEnabled ||
+			typeof creditInfo.maxCredits !== "number" ||
+			!Number.isFinite(creditInfo.maxCredits) ||
+			typeof creditInfo.creditsUsed !== "number" ||
+			!Number.isFinite(creditInfo.creditsUsed)
 		)
-			return 0;
+			return null;
 		if (creditInfo.maxCredits <= 0) {
 			return creditInfo.creditsUsed > 0 ? 100 : 0;
 		}
@@ -319,62 +325,70 @@ export const ModelUsagePage = () => {
 							</Card>
 						</div>
 
-						<Card>
-							<CardHeader>
-								<CardTitle>{t("usage:period.title")}</CardTitle>
-								<CardDescription>
-									{selectedModel?.engine_display_name ||
-										selectedModel?.engine_name}
-								</CardDescription>
-							</CardHeader>
-							<CardContent className="flex flex-col gap-4">
-								<div className="flex items-center justify-between gap-4">
-									<Muted>{t("usage:period.consumed")}</Muted>
-									<Badge
-										variant={
-											creditInfo.limitExceeded
-												? "destructive"
-												: "outline"
-										}
-									>
-										{Math.round(usagePercent)}%
-										{creditInfo.limitExceeded
-											? ` · ${t("usage:period.exceeded")}`
-											: ""}
-									</Badge>
-								</div>
-								<Progress
-									value={usagePercent}
-									aria-label={t("usage:period.progressLabel")}
-								/>
-								<div className="flex flex-col gap-2 text-sm sm:flex-row sm:items-center sm:justify-between">
-									<div className="flex items-center gap-2">
-										<CalendarRange
-											className="size-4 text-muted-foreground"
-											aria-hidden
-										/>
-										<Small>
-											{formatDate(
-												creditInfo.periodStart,
-												locale,
-											)}{" "}
-											–{" "}
-											{formatDate(
-												creditInfo.periodEnd,
-												locale,
-											)}
-										</Small>
+						{usagePercent !== null && (
+							<Card>
+								<CardHeader>
+									<CardTitle>
+										{t("usage:period.title")}
+									</CardTitle>
+									<CardDescription>
+										{selectedModel?.engine_display_name ||
+											selectedModel?.engine_name}
+									</CardDescription>
+								</CardHeader>
+								<CardContent className="flex flex-col gap-4">
+									<div className="flex items-center justify-between gap-4">
+										<Muted>
+											{t("usage:period.consumed")}
+										</Muted>
+										<Badge
+											variant={
+												creditInfo.limitExceeded
+													? "destructive"
+													: "outline"
+											}
+										>
+											{Math.round(usagePercent)}%
+											{creditInfo.limitExceeded
+												? ` · ${t("usage:period.exceeded")}`
+												: ""}
+										</Badge>
 									</div>
-									<Muted>
-										{creditInfo.frequency
-											? t(
-													`usage:frequency.${creditInfo.frequency}`,
-												)
-											: "—"}
-									</Muted>
-								</div>
-							</CardContent>
-						</Card>
+									<Progress
+										value={usagePercent}
+										aria-label={t(
+											"usage:period.progressLabel",
+										)}
+									/>
+									<div className="flex flex-col gap-2 text-sm sm:flex-row sm:items-center sm:justify-between">
+										<div className="flex items-center gap-2">
+											<CalendarRange
+												className="size-4 text-muted-foreground"
+												aria-hidden
+											/>
+											<Small>
+												{formatDate(
+													creditInfo.periodStart,
+													locale,
+												)}{" "}
+												–{" "}
+												{formatDate(
+													creditInfo.periodEnd,
+													locale,
+												)}
+											</Small>
+										</div>
+										<Muted>
+											{creditInfo.frequency
+												? t(
+														`usage:frequency.${creditInfo.frequency}`,
+													)
+												: "—"}
+										</Muted>
+									</div>
+								</CardContent>
+							</Card>
+						)}
 
 						<Card>
 							<CardHeader>
@@ -424,7 +438,17 @@ export const ModelUsagePage = () => {
 										{t("usage:pricing.cacheRead")}
 									</Muted>
 									<Large className="mt-2">
-										{creditInfo.cacheReadMultiplier}×
+										{formatCredits(
+											creditInfo.cacheReadMultiplier,
+											locale,
+										)}
+										{typeof creditInfo.cacheReadMultiplier ===
+											"number" &&
+										Number.isFinite(
+											creditInfo.cacheReadMultiplier,
+										)
+											? "×"
+											: ""}
 									</Large>
 								</div>
 								<div className="rounded-lg border border-border p-4">
@@ -432,7 +456,17 @@ export const ModelUsagePage = () => {
 										{t("usage:pricing.cacheWrite")}
 									</Muted>
 									<Large className="mt-2">
-										{creditInfo.cacheWriteMultiplier}×
+										{formatCredits(
+											creditInfo.cacheWriteMultiplier,
+											locale,
+										)}
+										{typeof creditInfo.cacheWriteMultiplier ===
+											"number" &&
+										Number.isFinite(
+											creditInfo.cacheWriteMultiplier,
+										)
+											? "×"
+											: ""}
 									</Large>
 								</div>
 							</CardContent>
