@@ -29,10 +29,12 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/next/select";
+import { Separator } from "@/next/separator";
 import { Slider } from "@/next/slider";
 import { Spinner } from "@/next/spinner";
 import { Switch } from "@/next/switch";
 import { Textarea } from "@/next/textarea";
+import { H4, Muted } from "@/next/typography";
 
 /* -------------------------------------------------------------------------- */
 /*                               Core primitives                              */
@@ -487,6 +489,44 @@ function FormFileDropzone({
 }
 
 /* -------------------------------------------------------------------------- */
+/*                                Form Section                                */
+/* -------------------------------------------------------------------------- */
+
+type FormSectionProps = {
+	/** Category heading, e.g. "General", "Credentials", "Settings". */
+	title: string;
+	/** Short blurb explaining what this section configures. */
+	description?: string;
+	children: React.ReactNode;
+};
+
+/**
+ * A labeled group of fields: a title + description column beside the field
+ * column, closed off with a separator. Use to group a long form's fields
+ * (e.g. General / Credentials / Settings) instead of one flat field list.
+ */
+function FormSection({ title, description, children }: FormSectionProps) {
+	return (
+		<div className="mb-4 flex flex-col gap-4">
+			<div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:gap-4">
+				<div className="flex flex-1 flex-col gap-1">
+					<H4 className="font-semibold text-base tracking-tight">
+						{title}
+					</H4>
+					{description && (
+						<Muted className="text-sm leading-6">
+							{description}
+						</Muted>
+					)}
+				</div>
+				<div className="flex flex-[2] flex-col gap-2">{children}</div>
+			</div>
+			<Separator />
+		</div>
+	);
+}
+
+/* -------------------------------------------------------------------------- */
 /*                                Form Actions                                */
 /* -------------------------------------------------------------------------- */
 
@@ -542,6 +582,7 @@ export {
 	FormRadioGroup,
 	FormSlider,
 	FormFileDropzone,
+	FormSection,
 	FormActions,
 };
 
@@ -555,20 +596,16 @@ export type {
 	FormRadioGroupProps,
 	FormSliderProps,
 	FormFileDropzoneProps,
+	FormSectionProps,
 	FormActionsProps,
 };
 
 export { zodResolver } from "@hookform/resolvers/zod";
 // Convenience re-exports so a full form can be built from a single import.
-export {
-	type Control,
-	Controller,
-	type FieldValues,
-	FormProvider,
-	type SubmitHandler,
-	type UseFormReturn,
-	useFieldArray,
-	useForm,
-	useFormContext,
-} from "react-hook-form";
+// NOTE: useFormContext/useFieldArray are consumed directly from here by
+// multiple components (e.g. guardrail-*-field.tsx) - do not narrow this
+// back down. Everything else (Control, Controller, FieldValues,
+// FormProvider, SubmitHandler, UseFormReturn) is used only internally
+// above and should stay imported directly from react-hook-form by callers.
+export { useFieldArray, useForm, useFormContext } from "react-hook-form";
 export { z } from "zod";

@@ -1,6 +1,7 @@
 import { Navigate, Outlet } from "react-router-dom";
 import { DatabasePageContent } from "@/components/import/database/database-page-content";
-import { FunctionImport } from "@/components/import/function/function-import";
+import { FunctionConnectorPage } from "@/components/import/function/function-connector-page";
+import { FunctionConnectorsPage } from "@/components/import/function/function-connectors-page";
 import { GuardrailImport } from "@/components/import/guardrail/guardrail-import";
 import { StorageImport } from "@/components/import/storage/storage-import";
 import { VectorImport } from "@/components/import/vector/vector-import";
@@ -56,7 +57,11 @@ export const ENGINE_ROUTES: {
 			},
 			{
 				path: "new",
-				element: <FunctionImport name="Function" />,
+				element: <FunctionConnectorsPage name="Function" />,
+			},
+			{
+				path: "new/:connector",
+				element: <FunctionConnectorPage />,
 			},
 			{
 				element: (
