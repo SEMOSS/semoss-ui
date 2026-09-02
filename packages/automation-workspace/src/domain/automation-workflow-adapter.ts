@@ -6,6 +6,7 @@ import type {
 } from "./automation.types";
 import { AUTOMATION_WORKFLOW_NODE_REGISTRY } from "./automation-workflow.constants";
 import type {
+	AutomationBranchClause,
 	AutomationNodeDefinition,
 	AutomationWorkflowDocument,
 	AutomationWorkflowEdge,
@@ -37,6 +38,18 @@ function numberValue(value: unknown, fallback: number): number {
 
 function pythonLiteral(value: unknown): string {
 	return JSON.stringify(value ?? "");
+}
+
+function branchClauses(value: unknown): AutomationBranchClause[] {
+	if (!Array.isArray(value)) return [];
+	return value.flatMap((clause) => {
+		if (!clause || typeof clause !== "object") return [];
+		const candidate = clause as Partial<AutomationBranchClause>;
+		return typeof candidate.id === "string" &&
+			typeof candidate.condition === "string"
+			? [{ id: candidate.id, condition: candidate.condition }]
+			: [];
+	});
 }
 
 /**
@@ -131,11 +144,14 @@ def run(scope):
 `;
 	}
 	if (type === "control.if") {
-		return `CONDITION = ${pythonLiteral(config.condition)}
+		const clauses = branchClauses(config.clauses);
+		return `CLAUSES = ${pythonLiteral(clauses)}
 
 def run(scope):
-    result = bool(eval(resolve(CONDITION, scope)))
-    return {"branch": "then" if result else "else", "value": result}
+	for clause in CLAUSES:
+		if bool(eval(resolve(clause["condition"], scope))):
+			return {"branch": "case:" + clause["id"], "value": True}
+	return {"branch": "else", "value": False}
 `;
 	}
 	return `def run(scope):
@@ -257,7 +273,18 @@ function defaultCanvasConfig(
 		return { seconds: String(numberValue(config.durationSeconds, 5)) };
 	}
 	if (type === "control.if") {
-		return { condition: stringValue(config.condition) };
+		const clauses = branchClauses(config.clauses);
+		return {
+			clauses:
+				clauses.length > 0
+					? clauses
+					: [
+							{
+								id: "legacy",
+								condition: stringValue(config.condition),
+							},
+						],
+		};
 	}
 	return {
 		pixel: stringValue(config.pixel) || stringValue(config.code),
@@ -382,8 +409,10 @@ function mergeCanvasConfig(
 		}
 	}
 	if (type === "control.if") {
-		const condition = getConfigValue(config, "condition");
-		if (typeof condition === "string") next.condition = condition;
+		const clauses = (config as Extract<NodeConfig, { clauses: unknown }>)
+			.clauses;
+		next.clauses = clauses;
+		delete next.condition;
 	}
 	return next;
 }
@@ -480,10 +509,12 @@ export function canvasDocumentFromWorkflow(
 				edge.sourcePort === "out" || edge.sourcePort === "next"
 					? `out-${edge.source}`
 					: edge.sourcePort === "then"
-						? `then-${edge.source}`
-						: edge.sourcePort === "else"
-							? `else-${edge.source}`
-							: edge.sourcePort,
+						? `case-${edge.source}-legacy`
+						: edge.sourcePort.startsWith("case:")
+							? `case-${edge.source}-${edge.sourcePort.slice(5)}`
+							: edge.sourcePort === "else"
+								? `else-${edge.source}`
+								: edge.sourcePort,
 			targetHandle:
 				edge.targetPort === "in"
 					? `in-${edge.target}`
@@ -571,10 +602,14 @@ export function canvasDocumentToWorkflow({
 						sourcePort: edge.sourceHandle?.startsWith("out-")
 							? "out"
 							: edge.sourceHandle?.startsWith("then-")
-								? "then"
-								: edge.sourceHandle?.startsWith("else-")
-									? "else"
-									: (edge.sourceHandle ?? "out"),
+								? "case:legacy"
+								: edge.sourceHandle?.startsWith("case-")
+									? `case:${edge.sourceHandle.slice(
+											`case-${edge.source}-`.length,
+										)}`
+									: edge.sourceHandle?.startsWith("else-")
+										? "else"
+										: (edge.sourceHandle ?? "out"),
 						target: edge.target,
 						targetPort: edge.targetHandle?.startsWith("in-")
 							? "in"

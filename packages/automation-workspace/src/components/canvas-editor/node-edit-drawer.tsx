@@ -260,7 +260,7 @@ export function NodeEditDrawer({
 							<p className="mb-1 font-medium text-[10px] text-destructive uppercase tracking-wide">
 								Step failed
 							</p>
-							<pre className="max-h-[80px] overflow-y-auto whitespace-pre-wrap break-all font-sans text-[11px] text-destructive/80">
+							<pre className="max-h-20 overflow-y-auto whitespace-pre-wrap break-all font-sans text-[11px] text-destructive/80">
 								{runError}
 							</pre>
 						</div>
@@ -294,7 +294,7 @@ export function NodeEditDrawer({
 								</p>
 								<p className="text-[11px] text-muted-foreground">
 									{isDecisionBranch
-										? "This decision uses generated code and keeps its Then and Else paths."
+										? "This decision evaluates its conditions in order and uses the first matching path."
 										: isDeveloperPython
 											? "This node runs its custom Python source."
 											: isCustomSource

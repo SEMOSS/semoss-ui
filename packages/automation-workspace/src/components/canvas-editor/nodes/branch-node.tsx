@@ -21,7 +21,7 @@ export type BranchNodeData = {
 	highlighted?: boolean;
 	onEdit?: () => void;
 	onDelete?: () => void;
-	onAddThen?: () => void;
+	onAddClause?: (clauseId: string) => void;
 	onAddElse?: () => void;
 };
 
@@ -38,10 +38,10 @@ export function BranchNode({ data }: NodeProps) {
 	const { step, runStatus, runDuration, isIncomplete, locked, highlighted } =
 		d;
 	const config = step.config as BranchConfig;
+	const firstCondition = config.clauses[0]?.condition;
+	const additionalConditions = config.clauses.length - 1;
 	const edges = useEdges();
-	const thenConnected = edges.some(
-		(e) => e.source === step.id && e.sourceHandle === `then-${step.id}`,
-	);
+	const outputCount = config.clauses.length + 1;
 	const elseConnected = edges.some(
 		(e) => e.source === step.id && e.sourceHandle === `else-${step.id}`,
 	);
@@ -57,8 +57,9 @@ export function BranchNode({ data }: NodeProps) {
 	return (
 		<div
 			className={`group relative w-[280px] rounded-2xl border-2 shadow-sm ${borderClass} ${runningClass} ${highlightClass} ${locked ? "opacity-75" : ""}`}
+			style={{ minHeight: `${88 + additionalConditions * 48}px` }}
 		>
-			<div className="relative z-[1] m-0.5 rounded-[14px] bg-card">
+			<div className="relative z-1 m-0.5 rounded-[14px] bg-card">
 				{/* Hover actions */}
 				{!locked && (
 					<div className="-top-2 absolute right-2 z-10 hidden items-center gap-0.5 rounded-full border bg-background px-1 py-0.5 shadow-sm group-hover:flex">
@@ -107,8 +108,8 @@ export function BranchNode({ data }: NodeProps) {
 								</TooltipContent>
 							</Tooltip>
 							<p className="mt-0.5 truncate text-[11px] text-muted-foreground">
-								{config.condition
-									? `if ${config.condition}`
+								{firstCondition
+									? `${additionalConditions > 0 ? `${additionalConditions + 1} conditions` : `if ${firstCondition}`}`
 									: "No condition set"}
 							</p>
 						</div>
@@ -141,128 +142,104 @@ export function BranchNode({ data }: NodeProps) {
 				type="target"
 				position={Position.Left}
 				isConnectable={!locked}
-				className="!h-2 !w-2 !border-2 !border-background !bg-muted-foreground/40"
+				className="h-2! w-2! border-2! border-background! bg-muted-foreground/40!"
 			/>
 
-			{/* Then handle (top-right) */}
-			{!locked && !thenConnected ? (
-				<>
-					<Handle
-						id={`then-${step.id}`}
-						type="source"
-						position={Position.Right}
-						isConnectable
-						onClick={(event) => {
-							event.stopPropagation();
-							d.onAddThen?.();
-						}}
-						style={{ top: "33%" }}
-						aria-label="Add node to Then branch"
-						className="!h-7 !w-7 !border !border-emerald-500/40 !bg-background hover:!border-emerald-500 shadow-sm transition-colors"
-					/>
-					<span
-						className="pointer-events-none absolute z-10 flex h-7 w-7 items-center justify-center text-emerald-600"
-						style={{
-							top: "33%",
-							right: 0,
-							transform: "translateX(50%) translateY(-50%)",
-						}}
-					>
-						<Plus className="h-4 w-4" />
-					</span>
-					<span
-						className="pointer-events-none absolute right-0 font-medium text-[9px] text-emerald-600"
-						style={{
-							top: "33%",
-							transform:
-								"translateX(calc(100% + 20px)) translateY(-50%)",
-						}}
-					>
-						Then
-					</span>
-				</>
-			) : (
-				<>
-					<Handle
-						id={`then-${step.id}`}
-						type="source"
-						position={Position.Right}
-						isConnectable={!locked}
-						style={{ top: "33%" }}
-						className="!h-2 !w-2 !border-2 !border-background !bg-emerald-500"
-					/>
-					<span
-						className="pointer-events-none absolute right-0 font-medium text-[9px] text-emerald-600"
-						style={{
-							top: "33%",
-							transform:
-								"translateX(calc(100% + 6px)) translateY(-50%)",
-						}}
-					>
-						Then
-					</span>
-				</>
-			)}
-
-			{/* Else handle (bottom-right) */}
-			{!locked && !elseConnected ? (
-				<>
-					<Handle
-						id={`else-${step.id}`}
-						type="source"
-						position={Position.Right}
-						isConnectable
-						onClick={(event) => {
-							event.stopPropagation();
-							d.onAddElse?.();
-						}}
-						style={{ top: "67%" }}
-						aria-label="Add node to Else branch"
-						className="!h-7 !w-7 !border !border-red-400/40 !bg-background hover:!border-red-400 shadow-sm transition-colors"
-					/>
-					<span
-						className="pointer-events-none absolute z-10 flex h-7 w-7 items-center justify-center text-red-500"
-						style={{
-							top: "67%",
-							right: 0,
-							transform: "translateX(50%) translateY(-50%)",
-						}}
-					>
-						<Plus className="h-4 w-4" />
-					</span>
-					<span
-						className="pointer-events-none absolute right-0 font-medium text-[9px] text-red-500"
-						style={{
-							top: "67%",
-							transform:
-								"translateX(calc(100% + 20px)) translateY(-50%)",
-						}}
-					>
-						Else
-					</span>
-				</>
-			) : (
-				<>
-					<Handle
-						id={`else-${step.id}`}
-						type="source"
-						position={Position.Right}
-						isConnectable={!locked}
-						style={{ top: "67%" }}
-						className="!h-2 !w-2 !border-2 !border-background !bg-red-400"
-					/>
-					<span
-						className="pointer-events-none absolute right-0 font-medium text-[9px] text-red-500"
-						style={{
-							top: "67%",
-							transform:
-								"translateX(calc(100% + 6px)) translateY(-50%)",
-						}}
-					>
-						Else
-					</span>
-				</>
-			)}
+			{config.clauses.map((clause, index) => (
+				<BranchOutputHandle
+					key={clause.id}
+					id={`case-${step.id}-${clause.id}`}
+					label={index === 0 ? "If" : "Else if"}
+					connected={edges.some(
+						(edge) =>
+							edge.source === step.id &&
+							edge.sourceHandle ===
+								`case-${step.id}-${clause.id}`,
+					)}
+					locked={locked}
+					top={`${((index + 1) / (outputCount + 1)) * 100}%`}
+					onAdd={() => d.onAddClause?.(clause.id)}
+				/>
+			))}
+			<BranchOutputHandle
+				id={`else-${step.id}`}
+				label="Else"
+				connected={elseConnected}
+				locked={locked}
+				top={`${(outputCount / (outputCount + 1)) * 100}%`}
+				onAdd={() => d.onAddElse?.()}
+				isElse
+			/>
 		</div>
+	);
+}
+
+function BranchOutputHandle({
+	id,
+	label,
+	connected,
+	locked,
+	top,
+	onAdd,
+	isElse = false,
+}: {
+	id: string;
+	label: string;
+	connected: boolean;
+	locked?: boolean;
+	top: string;
+	onAdd: () => void;
+	isElse?: boolean;
+}) {
+	const handleClass =
+		connected || locked
+			? isElse
+				? "h-2! w-2! border-2! border-background! bg-red-500!"
+				: "h-2! w-2! border-2! border-background! bg-emerald-500!"
+			: isElse
+				? "h-7! w-7! border! border-red-500/40! bg-background! hover:border-red-500! shadow-sm transition-colors"
+				: "h-7! w-7! border! border-emerald-500/40! bg-background! hover:border-emerald-500! shadow-sm transition-colors";
+	const labelClass = isElse ? "text-red-500" : "text-emerald-600";
+	return (
+		<>
+			<Handle
+				id={id}
+				type="source"
+				position={Position.Right}
+				isConnectable={!locked}
+				onClick={(event) => {
+					event.stopPropagation();
+					if (!locked && !connected) onAdd();
+				}}
+				style={{ top }}
+				aria-label={
+					connected
+						? `${label} branch`
+						: `Add node to ${label} branch`
+				}
+				className={handleClass}
+			/>
+			{!connected && !locked && (
+				<span
+					className={`pointer-events-none absolute z-10 flex h-7 w-7 items-center justify-center ${labelClass}`}
+					style={{
+						top,
+						right: 0,
+						transform: "translateX(50%) translateY(-50%)",
+					}}
+				>
+					<Plus className="h-4 w-4" />
+				</span>
+			)}
+			<span
+				className={`pointer-events-none absolute right-0 font-medium text-[9px] ${labelClass}`}
+				style={{
+					top,
+					transform: `translateX(calc(100% + ${connected || locked ? 6 : 20}px)) translateY(-50%)`,
+				}}
+			>
+				{label}
+			</span>
+		</>
 	);
 }

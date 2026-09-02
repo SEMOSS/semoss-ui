@@ -312,7 +312,9 @@ export const AUTOMATION_WORKFLOW_NODE_REGISTRY: readonly AutomationNodeDefinitio
 			label: "Decision",
 			description: "Evaluate a condition and route to the matching path.",
 			category: "control",
-			defaultConfig: { condition: "" },
+			defaultConfig: {
+				clauses: [{ id: "initial", condition: "" }],
+			},
 			configSchema: {
 				condition: {
 					type: "textarea",
@@ -323,8 +325,8 @@ export const AUTOMATION_WORKFLOW_NODE_REGISTRY: readonly AutomationNodeDefinitio
 			inputs: [controlIn],
 			outputs: [
 				{
-					id: "then",
-					label: "Then",
+					id: "case:<clause-id>",
+					label: "If / Else if",
 					kind: "control",
 					direction: "output",
 				},

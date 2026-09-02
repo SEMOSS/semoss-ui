@@ -172,6 +172,38 @@ const DEFAULT_NODE_HEIGHT = 120;
 const NODE_COLUMN_GAP = 100;
 const NODE_LANE_GAP = 40;
 
+function branchRouteIndex(step: AutomationNode, handle: string): number {
+	if (step.type !== "branch") return 0;
+	const clauses = (
+		step.config as import("../../domain/automation.types").BranchConfig
+	).clauses;
+	if (handle === `else-${step.id}`) return clauses.length;
+	const prefix = `case-${step.id}-`;
+	if (!handle.startsWith(prefix)) return 0;
+	const clauseId = handle.slice(prefix.length);
+	const index = clauses.findIndex((clause) => clause.id === clauseId);
+	return index < 0 ? 0 : index;
+}
+
+function downstreamControlNodeIds(
+	startIds: string[],
+	edges: AutomationEdge[],
+): Set<string> {
+	const downstreamIds = new Set(startIds);
+	const pendingIds = [...startIds];
+	while (pendingIds.length > 0) {
+		const sourceId = pendingIds.pop();
+		if (!sourceId) continue;
+		for (const edge of edges) {
+			if (edge.kind !== "control" || edge.source !== sourceId) continue;
+			if (downstreamIds.has(edge.target)) continue;
+			downstreamIds.add(edge.target);
+			pendingIds.push(edge.target);
+		}
+	}
+	return downstreamIds;
+}
+
 // ---- Types ----
 interface AutomationCanvasProps {
 	appId: string;
@@ -355,6 +387,7 @@ function upstreamVariablesFor(
 				.map((global) =>
 					typeof global === "object" &&
 					global !== null &&
+					"name" in global &&
 					typeof global.name === "string"
 						? global.name
 						: null,
@@ -1006,7 +1039,10 @@ export function AutomationCanvas({
 				const siblingNodes = steps.filter((s) =>
 					siblingIds.includes(s.id),
 				);
-				let targetY = previousStep.position.y;
+				let targetY =
+					previousStep.position.y +
+					branchRouteIndex(previousStep, sourceHandle) *
+						(DEFAULT_NODE_HEIGHT + NODE_LANE_GAP);
 				if (siblingNodes.length > 0) {
 					const maxY = Math.max(
 						...siblingNodes.map((s) => s.position.y),
@@ -1066,24 +1102,85 @@ export function AutomationCanvas({
 		],
 	);
 
-	const updateStep = useCallback((updated: AutomationNode) => {
-		setSteps((previous) =>
-			previous.map((step) => (step.id === updated.id ? updated : step)),
-		);
-		if (validateCanvasWorkflowNode(updated).length === 0) {
-			setStepErrors((previous) => {
-				const next = { ...previous };
-				delete next[updated.id];
-				return next;
-			});
-			setStepStatuses((previous) => {
-				if (previous[updated.id] !== "error") return previous;
-				const next = { ...previous };
-				delete next[updated.id];
-				return next;
-			});
-		}
-	}, []);
+	const updateStep = useCallback(
+		(updated: AutomationNode) => {
+			const currentStep = steps.find((step) => step.id === updated.id);
+			const currentClauses =
+				currentStep?.type === "branch"
+					? (
+							currentStep.config as import("../../domain/automation.types").BranchConfig
+						).clauses
+					: [];
+			const updatedClauses =
+				updated.type === "branch"
+					? (
+							updated.config as import("../../domain/automation.types").BranchConfig
+						).clauses
+					: [];
+			const routeCountChange =
+				updatedClauses.length - currentClauses.length;
+			const elseStartIds = graphEdges
+				.filter(
+					(edge) =>
+						edge.kind === "control" &&
+						edge.source === updated.id &&
+						edge.sourceHandle === `else-${updated.id}`,
+				)
+				.map((edge) => edge.target);
+			const repositionedElsePathIds =
+				routeCountChange === 0
+					? new Set<string>()
+					: downstreamControlNodeIds(elseStartIds, graphEdges);
+			setSteps((previous) =>
+				previous.map((step) => {
+					if (step.id === updated.id) return updated;
+					if (!repositionedElsePathIds.has(step.id)) return step;
+					return {
+						...step,
+						position: {
+							...step.position,
+							y:
+								step.position.y +
+								routeCountChange *
+									(DEFAULT_NODE_HEIGHT + NODE_LANE_GAP),
+						},
+					};
+				}),
+			);
+			if (updated.type === "branch") {
+				const validHandles = new Set([
+					`else-${updated.id}`,
+					...(
+						updated.config as import("../../domain/automation.types").BranchConfig
+					).clauses.map(
+						(clause) => `case-${updated.id}-${clause.id}`,
+					),
+				]);
+				setGraphEdges((previous) =>
+					previous.filter(
+						(edge) =>
+							edge.source !== updated.id ||
+							!edge.sourceHandle?.startsWith("case-") ||
+							validHandles.has(edge.sourceHandle),
+					),
+				);
+			}
+			if (validateCanvasWorkflowNode(updated).length === 0) {
+				setStepErrors((previous) => {
+					const next = { ...previous };
+					delete next[updated.id];
+					return next;
+				});
+				setStepStatuses((previous) => {
+					if (previous[updated.id] !== "error") return previous;
+					const next = { ...previous };
+					delete next[updated.id];
+					return next;
+				});
+			}
+		},
+		[graphEdges, steps],
+	);
 
 	const deleteStep = useCallback((id: string) => {
 		setSteps((prev) => prev.filter((s) => s.id !== id));
@@ -1737,10 +1834,10 @@ export function AutomationCanvas({
 							setEditingStepId(step.id);
 						},
 						onDelete: () => deleteStep(step.id),
-						onAddThen: () => {
+						onAddClause: (clauseId: string) => {
 							setEditingStepId(null);
 							setAddAfterStepId(step.id);
-							setAddAfterHandle(`then-${step.id}`);
+							setAddAfterHandle(`case-${step.id}-${clauseId}`);
 							setShowAddMenu(true);
 						},
 						onAddElse: () => {
@@ -1791,9 +1888,10 @@ export function AutomationCanvas({
 			for (const edge of graphEdges.filter(
 				(item) => item.source === step.id,
 			)) {
-				const isThenEdge = edge.sourceHandle?.startsWith("then-");
+				const isConditionalEdge =
+					edge.sourceHandle?.startsWith("case-");
 				const isElseEdge = edge.sourceHandle?.startsWith("else-");
-				const strokeColor = isThenEdge
+				const strokeColor = isConditionalEdge
 					? "#10b981"
 					: isElseEdge
 						? "#f87171"
