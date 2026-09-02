@@ -3,11 +3,15 @@ import {
 	type FileExplorerMovedItem,
 	type FileItem,
 	type FileMode,
+	getFileEditorKind,
 	getFileEditorPathScope,
 	notifyFileEditorPathMoved,
 	resolveMovedPath,
 } from "@semoss/shared";
-import type { WorkbenchPanelRecord } from "@/stores/workbench";
+import {
+	WORKBENCH_COMPONENTS,
+	type WorkbenchPanelRecord,
+} from "@/stores/workbench";
 import { useWorkbench } from "./use-workbench";
 
 /** The slice of a file-backed panel's config this hook cares about. */
@@ -64,7 +68,67 @@ export const useWorkbenchFilePanels = (fileMode: FileMode) => {
 				? `${newName}*`
 				: newName;
 
+			const isMcpEditor =
+				record.type === WORKBENCH_COMPONENTS.MCP_EDITOR ||
+				record.type === WORKBENCH_COMPONENTS.PROJECT_MCP_EDITOR;
+			let panelType = record.type;
+
+			if (!isMcpEditor) {
+				const fileKind = getFileEditorKind(newPath);
+				if (fileMode.type === "APP") {
+					switch (fileKind) {
+						case "download":
+							panelType =
+								WORKBENCH_COMPONENTS.PROJECT_FILE_DOWNLOAD_VIEWER;
+							break;
+						case "image":
+							panelType =
+								WORKBENCH_COMPONENTS.PROJECT_FILE_IMAGE_EDITOR;
+							break;
+						case "markdown":
+							panelType =
+								WORKBENCH_COMPONENTS.PROJECT_FILE_MARKDOWN_EDITOR;
+							break;
+						case "notebook":
+							panelType =
+								WORKBENCH_COMPONENTS.PROJECT_FILE_NOTEBOOK_EDITOR;
+							break;
+						case "pdf":
+							panelType =
+								WORKBENCH_COMPONENTS.PROJECT_FILE_PDF_EDITOR;
+							break;
+						default:
+							panelType =
+								WORKBENCH_COMPONENTS.PROJECT_FILE_CODE_EDITOR;
+					}
+				} else {
+					switch (fileKind) {
+						case "download":
+							panelType =
+								WORKBENCH_COMPONENTS.FILE_DOWNLOAD_VIEWER;
+							break;
+						case "image":
+							panelType = WORKBENCH_COMPONENTS.FILE_IMAGE_EDITOR;
+							break;
+						case "markdown":
+							panelType =
+								WORKBENCH_COMPONENTS.FILE_MARKDOWN_EDITOR;
+							break;
+						case "notebook":
+							panelType =
+								WORKBENCH_COMPONENTS.FILE_NOTEBOOK_EDITOR;
+							break;
+						case "pdf":
+							panelType = WORKBENCH_COMPONENTS.FILE_PDF_EDITOR;
+							break;
+						default:
+							panelType = WORKBENCH_COMPONENTS.FILE_CODE_EDITOR;
+					}
+				}
+			}
+
 			layoutActions.updatePanel(record.id, {
+				type: panelType,
 				name: displayName,
 				config: {
 					...record.config,
@@ -77,7 +141,7 @@ export const useWorkbenchFilePanels = (fileMode: FileMode) => {
 				notifyFileEditorPathMoved(oldPath, newPath, scope);
 			}
 		},
-		[layoutActions, scope],
+		[fileMode, layoutActions, scope],
 	);
 
 	/**

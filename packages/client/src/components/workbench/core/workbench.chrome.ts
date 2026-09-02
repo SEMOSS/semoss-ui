@@ -49,6 +49,10 @@ export const WORKBENCH_STYLES = {
 	/** The glyph in a `chromeButtonSm`. */
 	chromeIconSm: "size-3",
 
+	/** Compact select trigger used by mode controls in the workbench header. */
+	chromeSelect:
+		"h-6! border-0 bg-transparent py-0 px-1.5 text-xs text-muted-foreground shadow-none",
+
 	/** A mobile tab: touch target with a floor for short labels. */
 	mobileTab: "h-8 min-w-16",
 
