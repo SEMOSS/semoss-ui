@@ -1,3 +1,4 @@
+import { forwardRef, useImperativeHandle } from "react";
 import { useInsight, usePixel } from "@semoss/sdk/react";
 import { Muted, Spinner } from "@semoss/ui/next";
 import { getImageMimeType } from "../../utility/image";
@@ -11,10 +12,15 @@ interface FileImageViewerProps {
 	path: string;
 }
 
-export const FileImageViewer: React.FC<FileImageViewerProps> = ({
-	mode,
-	path,
-}) => {
+interface FileImageViewerRef {
+	/** Refresh the image from its asset source. */
+	refresh: () => void;
+}
+
+export const FileImageViewer = forwardRef<
+	FileImageViewerRef,
+	FileImageViewerProps
+>(({ mode, path }, actionsRef) => {
 	const insight = useInsight();
 	const ext = path.split(".").pop()?.toLowerCase() || "";
 	const targetInsightId =
@@ -34,6 +40,9 @@ export const FileImageViewer: React.FC<FileImageViewerProps> = ({
 	}
 
 	const getFile = usePixel<string>(getFilePixel, {}, targetInsightId);
+	useImperativeHandle(actionsRef, () => ({
+		refresh: getFile.refresh,
+	}));
 
 	return (
 		<div className="relative flex h-full w-full flex-col gap-1.5 overflow-hidden bg-background py-1">
@@ -59,4 +68,4 @@ export const FileImageViewer: React.FC<FileImageViewerProps> = ({
 			)}
 		</div>
 	);
-};
+});
