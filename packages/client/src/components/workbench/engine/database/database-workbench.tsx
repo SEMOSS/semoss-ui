@@ -32,6 +32,10 @@ import { ENGINE_FILE_PDF_EDITOR_PANEL } from "../engine-file-pdf-editor-panel";
 import { ENGINE_MCP_EDITOR_PANEL } from "../engine-mcp-editor-panel";
 import { createEngineSettingsPanel } from "../engine-settings-panel";
 import { EngineSettingsToggle } from "../engine-settings-toggle";
+import {
+	ENGINE_GIT_DIFF_PANEL,
+	ENGINE_VERSION_PANEL,
+} from "../version-control";
 import { DATABASE_COLUMNS_PANEL } from "./database-columns-panel";
 import { DATABASE_QUERY_PANEL } from "./database-query-panel";
 import { DATABASE_RESULTS_PANEL } from "./database-query-results-panel";
@@ -45,7 +49,7 @@ const INITIAL_QUERY_PANEL_ID = "database-query-1";
  * the right.
  */
 const DATABASE_WORKBENCH_LAYOUT: WorkbenchLayout = {
-	version: 1,
+	version: 2,
 	tree: {
 		type: "tabset",
 		id: "main",
@@ -65,6 +69,8 @@ const DATABASE_WORKBENCH_LAYOUT: WorkbenchLayout = {
 			WORKBENCH_PANEL_RECORDS.DATABASE_COLUMNS,
 		[WORKBENCH_PANEL_RECORDS.ENGINE_FILE_EXPLORER.id]:
 			WORKBENCH_PANEL_RECORDS.ENGINE_FILE_EXPLORER,
+		[WORKBENCH_PANEL_RECORDS.ENGINE_VERSION.id]:
+			WORKBENCH_PANEL_RECORDS.ENGINE_VERSION,
 		[WORKBENCH_PANEL_RECORDS.ASSISTANT.id]:
 			WORKBENCH_PANEL_RECORDS.ASSISTANT,
 	},
@@ -73,6 +79,7 @@ const DATABASE_WORKBENCH_LAYOUT: WorkbenchLayout = {
 			panelIds: [
 				WORKBENCH_COMPONENTS.DATABASE_COLUMNS,
 				WORKBENCH_COMPONENTS.FILE_EXPLORER,
+				WORKBENCH_COMPONENTS.ENGINE_VERSION,
 			],
 			activeId: WORKBENCH_COMPONENTS.DATABASE_COLUMNS,
 			size: 300,
@@ -99,6 +106,8 @@ const DATABASE_WORKBENCH_COMPONENTS: Record<string, WorkbenchPanelConfigAny> = {
 		ENGINE_FILE_NOTEBOOK_EDITOR_PANEL,
 	[WORKBENCH_COMPONENTS.FILE_PDF_EDITOR]: ENGINE_FILE_PDF_EDITOR_PANEL,
 	[WORKBENCH_COMPONENTS.MCP_EDITOR]: ENGINE_MCP_EDITOR_PANEL,
+	[WORKBENCH_COMPONENTS.ENGINE_VERSION]: ENGINE_VERSION_PANEL,
+	[WORKBENCH_COMPONENTS.ENGINE_GIT_DIFF]: ENGINE_GIT_DIFF_PANEL,
 	[WORKBENCH_COMPONENTS.DATABASE_COLUMNS]: DATABASE_COLUMNS_PANEL,
 	[WORKBENCH_COMPONENTS.DATABASE_QUERY]: DATABASE_QUERY_PANEL,
 	[WORKBENCH_COMPONENTS.DATABASE_RESULTS]: DATABASE_RESULTS_PANEL,
@@ -191,6 +200,16 @@ export const DatabaseWorkbench: React.FC = () => {
 			handler: (get) => {
 				get().layout.actions.selectPanel(
 					WORKBENCH_COMPONENTS.FILE_EXPLORER,
+				);
+			},
+		},
+		{
+			id: "workbench.version-control.open",
+			category: "View",
+			label: "Open Version Control",
+			handler: (get) => {
+				get().layout.actions.selectPanel(
+					WORKBENCH_COMPONENTS.ENGINE_VERSION,
 				);
 			},
 		},

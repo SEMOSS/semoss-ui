@@ -22,11 +22,15 @@ import { ENGINE_FILE_PDF_EDITOR_PANEL } from "../engine-file-pdf-editor-panel";
 import { ENGINE_MCP_EDITOR_PANEL } from "../engine-mcp-editor-panel";
 import { createEngineSettingsPanel } from "../engine-settings-panel";
 import { EngineSettingsToggle } from "../engine-settings-toggle";
+import {
+	ENGINE_GIT_DIFF_PANEL,
+	ENGINE_VERSION_PANEL,
+} from "../version-control";
 import { STORAGE_FILE_EXPLORER_PANEL } from "./storage-file-explorer-panel";
 
 /** The default arrangement: storage + files on the left, assistant right. */
 const STORAGE_WORKBENCH_LAYOUT: WorkbenchLayout = {
-	version: 1,
+	version: 2,
 	tree: {
 		type: "tabset",
 		id: "main",
@@ -39,6 +43,8 @@ const STORAGE_WORKBENCH_LAYOUT: WorkbenchLayout = {
 			WORKBENCH_PANEL_RECORDS.STORAGE_EXPLORER,
 		[WORKBENCH_PANEL_RECORDS.ENGINE_FILE_EXPLORER.id]:
 			WORKBENCH_PANEL_RECORDS.ENGINE_FILE_EXPLORER,
+		[WORKBENCH_PANEL_RECORDS.ENGINE_VERSION.id]:
+			WORKBENCH_PANEL_RECORDS.ENGINE_VERSION,
 		[WORKBENCH_PANEL_RECORDS.ASSISTANT.id]:
 			WORKBENCH_PANEL_RECORDS.ASSISTANT,
 	},
@@ -47,6 +53,7 @@ const STORAGE_WORKBENCH_LAYOUT: WorkbenchLayout = {
 			panelIds: [
 				WORKBENCH_COMPONENTS.STORAGE_EXPLORER,
 				WORKBENCH_COMPONENTS.FILE_EXPLORER,
+				WORKBENCH_COMPONENTS.ENGINE_VERSION,
 			],
 			activeId: WORKBENCH_COMPONENTS.STORAGE_EXPLORER,
 			size: 300,
@@ -73,6 +80,8 @@ const STORAGE_WORKBENCH_COMPONENTS: Record<string, WorkbenchPanelConfigAny> = {
 		ENGINE_FILE_NOTEBOOK_EDITOR_PANEL,
 	[WORKBENCH_COMPONENTS.FILE_PDF_EDITOR]: ENGINE_FILE_PDF_EDITOR_PANEL,
 	[WORKBENCH_COMPONENTS.MCP_EDITOR]: ENGINE_MCP_EDITOR_PANEL,
+	[WORKBENCH_COMPONENTS.ENGINE_VERSION]: ENGINE_VERSION_PANEL,
+	[WORKBENCH_COMPONENTS.ENGINE_GIT_DIFF]: ENGINE_GIT_DIFF_PANEL,
 	[WORKBENCH_COMPONENTS.ENGINE_SETTINGS]: createEngineSettingsPanel([
 		{
 			name: "Overview",
@@ -140,6 +149,16 @@ export const StorageWorkbench: React.FC = () => {
 			handler: (get) => {
 				get().layout.actions.selectPanel(
 					WORKBENCH_COMPONENTS.FILE_EXPLORER,
+				);
+			},
+		},
+		{
+			id: "workbench.version-control.open",
+			category: "View",
+			label: "Open Version Control",
+			handler: (get) => {
+				get().layout.actions.selectPanel(
+					WORKBENCH_COMPONENTS.ENGINE_VERSION,
 				);
 			},
 		},

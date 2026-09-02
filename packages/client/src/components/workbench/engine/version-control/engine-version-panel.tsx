@@ -1,32 +1,27 @@
 import { GitBranchIcon } from "lucide-react";
-import { useEffect } from "react";
 import { useIteratorPixel } from "@semoss/sdk/react";
 import type { GitCommit, GitDataStatus } from "@/components/git";
 import { GitHistory } from "@/components/git";
-import { useProject, useWorkbenchControl } from "@/hooks";
+import { useEngine } from "@/hooks";
 import type {
 	WorkbenchComponent,
 	WorkbenchPanelConfig,
 	WorkbenchPanelParams,
 } from "@/stores/workbench";
-import { ProjectGitCommitRow } from "./project-git-commit-row";
-import { ProjectVersionControl } from "./project-version-control";
+import { EngineGitCommitRow } from "./engine-git-commit-row";
 
 const PAGE_SIZE = 20;
 
-/** Connect project commit history and panel refresh state to shared Git UI. */
-const ProjectVersionPanel: WorkbenchComponent<WorkbenchPanelParams, number> = ({
-	id,
-	value,
-}) => {
-	const { project, permission } = useProject();
+/** Connect engine commit history and restore actions to shared Git UI. */
+const EngineVersionPanel: WorkbenchComponent<WorkbenchPanelParams> = () => {
+	const { engine, permission } = useEngine();
 	const history = useIteratorPixel<GitCommit[], GitCommit>(
 		(limit, offset) =>
-			`ProjectCommitDetails(project=[${JSON.stringify(project.project_id)}], limit=["${limit}"], offset=["${offset}"]);`,
+			`EngineCommitDetails(engine=[${JSON.stringify(engine.engine_id)}], limit=["${limit}"], offset=["${offset}"]);`,
 		(response) => (response.length < PAGE_SIZE ? -1 : Infinity),
 		(response) => response,
 		{ limit: PAGE_SIZE },
-		[project.project_id],
+		[engine.engine_id],
 	);
 	const historyStatus: GitDataStatus = history.isError
 		? history.data.length === 0
@@ -40,15 +35,6 @@ const ProjectVersionPanel: WorkbenchComponent<WorkbenchPanelParams, number> = ({
 				? "INITIAL"
 				: "SUCCESS";
 
-	useWorkbenchControl(id, ProjectVersionControl);
-
-	useEffect(() => {
-		if (value === undefined) {
-			return;
-		}
-		history.reset();
-	}, [history.reset, value]);
-
 	return (
 		<GitHistory
 			commits={history.data}
@@ -59,9 +45,9 @@ const ProjectVersionPanel: WorkbenchComponent<WorkbenchPanelParams, number> = ({
 			loadMoreError={history.isError && history.data.length > 0}
 			onLoadMore={history.isError ? history.reset : history.next}
 			renderCommit={(commit) => (
-				<ProjectGitCommitRow
+				<EngineGitCommitRow
 					key={commit.commitId}
-					projectId={project.project_id}
+					engineId={engine.engine_id}
 					commit={commit}
 					canRestore={permission === "OWNER" || permission === "EDIT"}
 					onRestored={history.reset}
@@ -71,17 +57,15 @@ const ProjectVersionPanel: WorkbenchComponent<WorkbenchPanelParams, number> = ({
 	);
 };
 
-/** Keep-alive project version history panel. */
-export const PROJECT_VERSION_PANEL: WorkbenchPanelConfig<
-	WorkbenchPanelParams,
-	number
-> = {
-	name: "Version Control",
-	helpText: "Version Control",
-	icon: ({ className }) => <GitBranchIcon className={className} />,
-	canClose: false,
-	canRename: false,
-	canSplitTab: true,
-	mount: "keepAlive",
-	content: ProjectVersionPanel,
-};
+/** Keep-alive engine version history panel without unsupported branch actions. */
+export const ENGINE_VERSION_PANEL: WorkbenchPanelConfig<WorkbenchPanelParams> =
+	{
+		name: "Version Control",
+		helpText: "Version Control",
+		icon: ({ className }) => <GitBranchIcon className={className} />,
+		canClose: false,
+		canRename: false,
+		canSplitTab: true,
+		mount: "keepAlive",
+		content: EngineVersionPanel,
+	};

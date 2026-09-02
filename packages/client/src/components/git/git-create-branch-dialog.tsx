@@ -1,4 +1,3 @@
-import { useInsight } from "@semoss/sdk/react";
 import {
 	Button,
 	Dialog,
@@ -14,7 +13,6 @@ import {
 	z,
 	zodResolver,
 } from "@semoss/ui/next";
-import { useProject } from "@/hooks";
 
 const branchSchema = z.object({
 	name: z
@@ -37,31 +35,31 @@ const branchSchema = z.object({
 
 type BranchFormValues = z.infer<typeof branchSchema>;
 
-/** Props for the create-branch dialog. */
+/** Props for the standalone create-branch dialog. */
 interface GitCreateBranchDialogProps {
 	/** Whether the dialog is open. */
 	open: boolean;
+	/** Create and check out a branch from the current HEAD. */
+	onCreate: (branch: string) => Promise<void>;
 	/** Complete with the branch name on success, or no value on cancel. */
 	onSubmit: (branch?: string) => void;
 }
 
-/** Create and check out a project Git branch from HEAD. */
+/** Create and check out a Git branch from HEAD. */
 export const GitCreateBranchDialog = ({
 	open,
+	onCreate,
 	onSubmit,
 }: GitCreateBranchDialogProps) => {
-	const { project } = useProject();
-	const insight = useInsight();
 	const form = useForm<BranchFormValues>({
 		resolver: zodResolver(branchSchema),
 		defaultValues: { name: "" },
 	});
 
+	/** Run the injected branch mutation with validated form values. */
 	const handleSubmit = async (values: BranchFormValues) => {
 		try {
-			await insight.actions.run(
-				`ProjectGitCreateBranch(project=[${JSON.stringify(project.project_id)}], branch=[${JSON.stringify(values.name)}], startPoint=["HEAD"]);`,
-			);
+			await onCreate(values.name);
 			toast.success(`Created branch ${values.name}`);
 			form.reset();
 			onSubmit(values.name);
@@ -71,6 +69,7 @@ export const GitCreateBranchDialog = ({
 		}
 	};
 
+	/** Reset transient form state before reporting cancellation. */
 	const cancel = () => {
 		form.reset();
 		onSubmit();

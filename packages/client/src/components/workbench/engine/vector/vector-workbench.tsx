@@ -22,6 +22,10 @@ import { ENGINE_FILE_PDF_EDITOR_PANEL } from "../engine-file-pdf-editor-panel";
 import { ENGINE_MCP_EDITOR_PANEL } from "../engine-mcp-editor-panel";
 import { createEngineSettingsPanel } from "../engine-settings-panel";
 import { EngineSettingsToggle } from "../engine-settings-toggle";
+import {
+	ENGINE_GIT_DIFF_PANEL,
+	ENGINE_VERSION_PANEL,
+} from "../version-control";
 import { VECTOR_DOCUMENTS_PANEL } from "./vector-documents-panel";
 
 /**
@@ -30,7 +34,7 @@ import { VECTOR_DOCUMENTS_PANEL } from "./vector-documents-panel";
  * its record carries no border min-width.
  */
 const VECTOR_WORKBENCH_LAYOUT: WorkbenchLayout = {
-	version: 1,
+	version: 2,
 	tree: {
 		type: "tabset",
 		id: "main",
@@ -53,10 +57,15 @@ const VECTOR_WORKBENCH_LAYOUT: WorkbenchLayout = {
 			WORKBENCH_PANEL_RECORDS.VECTOR_DOCUMENTS,
 		[WORKBENCH_PANEL_RECORDS.ENGINE_FILE_EXPLORER.id]:
 			WORKBENCH_PANEL_RECORDS.ENGINE_FILE_EXPLORER,
+		[WORKBENCH_PANEL_RECORDS.ENGINE_VERSION.id]:
+			WORKBENCH_PANEL_RECORDS.ENGINE_VERSION,
 	},
 	borders: {
 		left: {
-			panelIds: [WORKBENCH_COMPONENTS.FILE_EXPLORER],
+			panelIds: [
+				WORKBENCH_COMPONENTS.FILE_EXPLORER,
+				WORKBENCH_COMPONENTS.ENGINE_VERSION,
+			],
 			activeId: WORKBENCH_COMPONENTS.FILE_EXPLORER,
 			size: 300,
 		},
@@ -77,6 +86,8 @@ const VECTOR_WORKBENCH_COMPONENTS: Record<string, WorkbenchPanelConfigAny> = {
 		ENGINE_FILE_NOTEBOOK_EDITOR_PANEL,
 	[WORKBENCH_COMPONENTS.FILE_PDF_EDITOR]: ENGINE_FILE_PDF_EDITOR_PANEL,
 	[WORKBENCH_COMPONENTS.MCP_EDITOR]: ENGINE_MCP_EDITOR_PANEL,
+	[WORKBENCH_COMPONENTS.ENGINE_VERSION]: ENGINE_VERSION_PANEL,
+	[WORKBENCH_COMPONENTS.ENGINE_GIT_DIFF]: ENGINE_GIT_DIFF_PANEL,
 	[WORKBENCH_COMPONENTS.ENGINE_SETTINGS]: createEngineSettingsPanel([
 		{
 			name: "Overview",
@@ -145,6 +156,16 @@ export const VectorWorkbench: React.FC = () => {
 			handler: (get) => {
 				get().layout.actions.selectPanel(
 					WORKBENCH_COMPONENTS.FILE_EXPLORER,
+				);
+			},
+		},
+		{
+			id: "workbench.version-control.open",
+			category: "View",
+			label: "Open Version Control",
+			handler: (get) => {
+				get().layout.actions.selectPanel(
+					WORKBENCH_COMPONENTS.ENGINE_VERSION,
 				);
 			},
 		},

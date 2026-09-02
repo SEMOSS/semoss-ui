@@ -24,6 +24,10 @@ import { ENGINE_FILE_PDF_EDITOR_PANEL } from "../engine-file-pdf-editor-panel";
 import { ENGINE_MCP_EDITOR_PANEL } from "../engine-mcp-editor-panel";
 import { createEngineSettingsPanel } from "../engine-settings-panel";
 import { EngineSettingsToggle } from "../engine-settings-toggle";
+import {
+	ENGINE_GIT_DIFF_PANEL,
+	ENGINE_VERSION_PANEL,
+} from "../version-control";
 import { MODEL_CHAT_HISTORY_PANEL } from "./model-chat-conversations";
 import { MODEL_CHAT_PANEL } from "./model-chat-panel";
 import { MODEL_CHAT_SETTINGS_PANEL } from "./model-chat-settings";
@@ -39,7 +43,7 @@ import { MODEL_CHAT_SETTINGS_PANEL } from "./model-chat-settings";
  * retires the previous arrangement.
  */
 const MODEL_WORKBENCH_LAYOUT: WorkbenchLayout = {
-	version: 3,
+	version: 4,
 	tree: {
 		type: "tabset",
 		id: "main",
@@ -52,6 +56,8 @@ const MODEL_WORKBENCH_LAYOUT: WorkbenchLayout = {
 			WORKBENCH_PANEL_RECORDS.MODEL_CHAT,
 		[WORKBENCH_PANEL_RECORDS.ENGINE_FILE_EXPLORER.id]:
 			WORKBENCH_PANEL_RECORDS.ENGINE_FILE_EXPLORER,
+		[WORKBENCH_PANEL_RECORDS.ENGINE_VERSION.id]:
+			WORKBENCH_PANEL_RECORDS.ENGINE_VERSION,
 		[WORKBENCH_PANEL_RECORDS.MODEL_CHAT_SETTINGS.id]:
 			WORKBENCH_PANEL_RECORDS.MODEL_CHAT_SETTINGS,
 		[WORKBENCH_PANEL_RECORDS.MODEL_CHAT_HISTORY.id]:
@@ -59,7 +65,10 @@ const MODEL_WORKBENCH_LAYOUT: WorkbenchLayout = {
 	},
 	borders: {
 		left: {
-			panelIds: [WORKBENCH_COMPONENTS.FILE_EXPLORER],
+			panelIds: [
+				WORKBENCH_COMPONENTS.FILE_EXPLORER,
+				WORKBENCH_COMPONENTS.ENGINE_VERSION,
+			],
 			activeId: null,
 			size: 300,
 		},
@@ -90,6 +99,8 @@ const MODEL_WORKBENCH_COMPONENTS: Record<string, WorkbenchPanelConfigAny> = {
 	[WORKBENCH_COMPONENTS.MODEL_CHAT]: MODEL_CHAT_PANEL,
 	[WORKBENCH_COMPONENTS.MODEL_CHAT_SETTINGS]: MODEL_CHAT_SETTINGS_PANEL,
 	[WORKBENCH_COMPONENTS.MODEL_CHAT_HISTORY]: MODEL_CHAT_HISTORY_PANEL,
+	[WORKBENCH_COMPONENTS.ENGINE_VERSION]: ENGINE_VERSION_PANEL,
+	[WORKBENCH_COMPONENTS.ENGINE_GIT_DIFF]: ENGINE_GIT_DIFF_PANEL,
 	[WORKBENCH_COMPONENTS.ENGINE_SETTINGS]: createEngineSettingsPanel([
 		{
 			name: "Overview",
@@ -163,6 +174,16 @@ export const ModelWorkbench: React.FC = () => {
 			handler: (get) => {
 				get().layout.actions.selectPanel(
 					WORKBENCH_COMPONENTS.FILE_EXPLORER,
+				);
+			},
+		},
+		{
+			id: "workbench.version-control.open",
+			category: "View",
+			label: "Open Version Control",
+			handler: (get) => {
+				get().layout.actions.selectPanel(
+					WORKBENCH_COMPONENTS.ENGINE_VERSION,
 				);
 			},
 		},
