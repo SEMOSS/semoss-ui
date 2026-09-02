@@ -1,5 +1,5 @@
 import { Loader2 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTheme } from "@semoss/ui/next";
 import { AutomationCanvas } from "./components/canvas-editor/automation-canvas";
 import { InspectorTab } from "./components/canvas-editor/tabs/inspector-tab";
@@ -79,6 +79,40 @@ export default function App() {
 		initSemoss().finally(() => setReady(true));
 		return subscribeToMcpToolContext(setToolContext);
 	}, []);
+
+	const prepareSchedule = useCallback((): Promise<boolean> => {
+		return new Promise((resolve) => {
+			const requestId = crypto.randomUUID();
+			const handlePrepared = (event: MessageEvent<unknown>) => {
+				if (
+					event.source !== window.parent ||
+					event.origin !== parentOrigin ||
+					typeof event.data !== "object" ||
+					event.data === null
+				) {
+					return;
+				}
+				const message = event.data as {
+					type?: unknown;
+					requestId?: unknown;
+					saved?: unknown;
+				};
+				if (
+					message.type !== "SEMOSS_AUTOMATION_SCHEDULE_PREPARED" ||
+					message.requestId !== requestId
+				) {
+					return;
+				}
+				window.removeEventListener("message", handlePrepared);
+				resolve(message.saved === true);
+			};
+			window.addEventListener("message", handlePrepared);
+			window.parent.postMessage(
+				{ type: "SEMOSS_AUTOMATION_PREPARE_SCHEDULE", requestId },
+				parentOrigin,
+			);
+		});
+	}, [parentOrigin]);
 
 	// In create mode the project doesn't exist yet — create it once toolContext and
 	// the insight session are both ready, then use the returned ID as the appId.
@@ -356,6 +390,7 @@ export default function App() {
 					description={snapshot?.description ?? ""}
 					devMode={snapshot?.devMode ?? false}
 					editingStep={snapshot?.editingStep ?? null}
+					onPrepareSchedule={prepareSchedule}
 					upstreamVars={snapshot?.upstreamVars ?? []}
 					stepRunStatus={snapshot?.stepRunStatus}
 					stepRunError={snapshot?.stepRunError}

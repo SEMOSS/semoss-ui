@@ -1,17 +1,21 @@
 import { Handle, type NodeProps, Position } from "@xyflow/react";
-import { Plus, Zap } from "lucide-react";
+import { CalendarClock, Plus, Radio, Zap } from "lucide-react";
+
+type OptionalTriggerMode = "schedule" | "event-based";
 
 export type TriggerNodeData = {
 	label: string;
 	description?: string;
 	devMode?: boolean;
 	runStatus?: "running" | "success" | "error";
+	triggerModes?: OptionalTriggerMode[];
 	onEdit?: () => void;
 	onAdd?: () => void;
 };
 
 export function TriggerNode({ data, id }: NodeProps) {
 	const trigger = data as TriggerNodeData;
+	const triggerModes = trigger.triggerModes ?? [];
 	const statusBorderClass =
 		trigger.runStatus === "success"
 			? "border-emerald-500/60"
@@ -30,12 +34,16 @@ export function TriggerNode({ data, id }: NodeProps) {
 				aria-label="Edit trigger"
 				disabled={!trigger.onEdit}
 				onClick={() => trigger.onEdit?.()}
-				className={`relative h-[72px] w-[72px] rotate-45 appearance-none rounded-lg border-2 ${statusBorderClass} ${runningClass} bg-card p-0 shadow-sm disabled:cursor-default`}
+				className={`relative flex h-[72px] w-[72px] rotate-45 appearance-none items-center justify-center rounded-lg border-2 ${statusBorderClass} ${runningClass} bg-card p-0 shadow-sm disabled:cursor-default`}
 			>
-				<span className="absolute inset-[2px] z-[1] rounded-md bg-card" />
-				<span className="-rotate-45 relative z-[2] flex h-full w-full items-center justify-center">
-					<Zap className="h-5 w-5 text-emerald-600" />
-				</span>
+				<span className="absolute inset-[2px] rounded-md bg-card" />
+				<Zap className="-rotate-45 relative h-5 w-5 text-success" />
+				{triggerModes.includes("schedule") && (
+					<CalendarClock className="-top-1 -left-1 -rotate-45 absolute z-10 h-4 w-4 rounded-full bg-card p-0.5 text-success" />
+				)}
+				{triggerModes.includes("event-based") && (
+					<Radio className="-right-1 -bottom-1 -rotate-45 absolute z-10 h-4 w-4 rounded-full bg-card p-0.5 text-success" />
+				)}
 			</button>
 			<p className="-translate-x-1/2 pointer-events-none absolute top-[calc(50%+48px)] left-1/2 whitespace-nowrap font-medium text-foreground text-xs leading-tight">
 				{trigger.label || "Start"}

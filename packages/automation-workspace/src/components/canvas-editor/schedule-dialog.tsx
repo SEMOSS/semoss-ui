@@ -1,24 +1,6 @@
-import {
-	CalendarClock,
-	Loader2,
-	Pause,
-	Play,
-	Plus,
-	RefreshCw,
-	Trash2,
-} from "lucide-react";
+import { Loader2, Pause, Play, Plus, RefreshCw, Trash2 } from "lucide-react";
 import { useCallback, useEffect, useId, useMemo, useState } from "react";
-import {
-	Button,
-	Dialog,
-	DialogContent,
-	DialogDescription,
-	DialogHeader,
-	DialogTitle,
-	Input,
-	Label,
-	toast,
-} from "@semoss/ui/next";
+import { Button, Input, Label, toast } from "@semoss/ui/next";
 import {
 	type AutomationSchedule,
 	createAutomationSchedule,
@@ -29,10 +11,8 @@ import {
 } from "../../api";
 import { normalizeAutomationErrorMessage } from "../../domain/automation-utils";
 
-interface ScheduleDialogProps {
+interface SchedulePanelProps {
 	projectId: string;
-	open: boolean;
-	onOpenChange: (open: boolean) => void;
 	/** Saves the current definition before a new schedule can run it. */
 	onPrepareSchedule: () => Promise<boolean>;
 }
@@ -51,13 +31,11 @@ function getErrorMessage(error: unknown, fallback: string): string {
 		: fallback;
 }
 
-/** Project-scoped scheduler controls for an Automation editor. */
-export function ScheduleDialog({
+/** Inline project-scoped scheduler controls for an Automation trigger. */
+export function SchedulePanel({
 	projectId,
-	open,
-	onOpenChange,
 	onPrepareSchedule,
-}: ScheduleDialogProps) {
+}: SchedulePanelProps) {
 	const defaultTimezone = useMemo(getBrowserTimeZone, []);
 	const [schedules, setSchedules] = useState<AutomationSchedule[]>([]);
 	const [loading, setLoading] = useState(false);
@@ -68,6 +46,7 @@ export function ScheduleDialog({
 	const [name, setName] = useState("Automation schedule");
 	const [cronExpression, setCronExpression] = useState("0 0 9 * * ?");
 	const [timezone, setTimezone] = useState(defaultTimezone);
+	const scheduleHeadingId = useId();
 	const nameInputId = useId();
 	const cronInputId = useId();
 	const timezoneInputId = useId();
@@ -86,8 +65,8 @@ export function ScheduleDialog({
 	}, [projectId]);
 
 	useEffect(() => {
-		if (open) void refresh();
-	}, [open, refresh]);
+		void refresh();
+	}, [refresh]);
 
 	const createSchedule = useCallback(async () => {
 		if (!name.trim() || !cronExpression.trim() || !timezone.trim()) {
@@ -149,217 +128,193 @@ export function ScheduleDialog({
 	);
 
 	return (
-		<Dialog open={open} onOpenChange={onOpenChange}>
-			<DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-xl">
-				<DialogHeader>
-					<DialogTitle className="flex items-center gap-2">
-						<CalendarClock className="size-4" aria-hidden />
-						Automation schedule
-					</DialogTitle>
-					<DialogDescription>
-						Schedules run the currently saved automation. Run
-						outcomes and node details appear in History.
-					</DialogDescription>
-				</DialogHeader>
-
-				<div className="space-y-3 rounded-lg border bg-muted/20 p-3">
-					<div className="flex items-center justify-between gap-3">
-						<div>
-							<p className="font-medium text-sm">
-								Current schedules
-							</p>
-							<p className="text-muted-foreground text-xs">
-								Only schedules owned by this automation are
-								shown.
-							</p>
-						</div>
-						<Button
-							size="sm"
-							variant="ghost"
-							className="h-8 px-2"
-							onClick={() => void refresh()}
-							disabled={loading}
-						>
-							<RefreshCw
-								className={`size-3.5 ${loading ? "animate-spin" : ""}`}
-								aria-hidden
-							/>
-							<span className="sr-only">Refresh schedules</span>
-						</Button>
-					</div>
-					{loading ? (
-						<div className="flex h-20 items-center justify-center">
-							<Loader2
-								className="size-4 animate-spin text-muted-foreground"
-								aria-label="Loading schedules"
-							/>
-						</div>
-					) : schedules.length === 0 ? (
-						<p className="rounded-md border border-dashed bg-background px-3 py-4 text-center text-muted-foreground text-xs">
-							No schedules yet.
-						</p>
-					) : (
-						<div className="divide-y rounded-md border bg-background">
-							{schedules.map((schedule) => {
-								const busy = actionJobId === schedule.jobId;
-								return (
-									<div
-										key={schedule.jobId}
-										className="flex items-center gap-3 px-3 py-2.5"
-									>
-										<div className="min-w-0 flex-1">
-											<p className="truncate font-medium text-xs">
-												{schedule.jobName}
-											</p>
-											<p className="truncate text-[11px] text-muted-foreground">
-												{schedule.cronExpression} ·{" "}
-												{schedule.cronTz}
-											</p>
-											<p className="text-[11px] text-muted-foreground">
-												{schedule.isActive
-													? `Next: ${schedule.nextFireTime}`
-													: "Paused"}
-											</p>
-										</div>
-										<Button
-											size="sm"
-											variant="ghost"
-											className="size-8 p-0"
-											onClick={() =>
-												void updateSchedule(
-													schedule,
-													schedule.isActive
-														? "pause"
-														: "resume",
-												)
-											}
-											disabled={busy}
-											aria-label={
-												schedule.isActive
-													? `Pause ${schedule.jobName}`
-													: `Resume ${schedule.jobName}`
-											}
-										>
-											{busy ? (
-												<Loader2 className="size-3.5 animate-spin" />
-											) : schedule.isActive ? (
-												<Pause className="size-3.5" />
-											) : (
-												<Play className="size-3.5" />
-											)}
-										</Button>
-										<Button
-											size="sm"
-											variant="ghost"
-											className="size-8 p-0 text-destructive hover:text-destructive"
-											onClick={() =>
-												setScheduleToRemove(schedule)
-											}
-											disabled={busy}
-											aria-label={`Remove ${schedule.jobName}`}
-										>
-											<Trash2 className="size-3.5" />
-										</Button>
-									</div>
-								);
-							})}
-						</div>
-					)}
-				</div>
-
-				{scheduleToRemove && (
-					<div className="space-y-3 rounded-lg border border-destructive/40 bg-destructive/5 p-3">
-						<div>
-							<p className="font-medium text-sm">
-								Remove {scheduleToRemove.jobName}?
-							</p>
-							<p className="text-muted-foreground text-xs">
-								This removes the schedule and its stored recipe.
-								The automation and its run history are not
-								affected.
-							</p>
-						</div>
-						<div className="flex justify-end gap-2">
-							<Button
-								size="sm"
-								variant="outline"
-								onClick={() => setScheduleToRemove(null)}
-							>
-								Cancel
-							</Button>
-							<Button
-								size="sm"
-								variant="destructive"
-								disabled={
-									actionJobId === scheduleToRemove.jobId
-								}
-								onClick={() => {
-									void updateSchedule(
-										scheduleToRemove,
-										"remove",
-									);
-									setScheduleToRemove(null);
-								}}
-							>
-								Remove schedule
-							</Button>
-						</div>
-					</div>
-				)}
-
-				<div className="space-y-3 rounded-lg border p-3">
+		<section className="space-y-3" aria-labelledby={scheduleHeadingId}>
+			<div className="space-y-3 rounded-lg border bg-muted/20 p-3">
+				<div className="flex items-center justify-between gap-3">
 					<div>
-						<p className="font-medium text-sm">Add schedule</p>
+						<p className="font-medium text-sm">Current schedules</p>
 						<p className="text-muted-foreground text-xs">
-							Cron uses the Quartz format. Example:{" "}
-							<code>0 0 9 * * ?</code>
-							runs daily at 9:00 AM.
+							Only schedules owned by this automation are shown.
 						</p>
-					</div>
-					<div className="space-y-1.5">
-						<Label htmlFor={nameInputId}>Name</Label>
-						<Input
-							id={nameInputId}
-							value={name}
-							onChange={(event) => setName(event.target.value)}
-						/>
-					</div>
-					<div className="space-y-1.5">
-						<Label htmlFor={cronInputId}>Cron expression</Label>
-						<Input
-							id={cronInputId}
-							value={cronExpression}
-							onChange={(event) =>
-								setCronExpression(event.target.value)
-							}
-						/>
-					</div>
-					<div className="space-y-1.5">
-						<Label htmlFor={timezoneInputId}>Time zone</Label>
-						<Input
-							id={timezoneInputId}
-							value={timezone}
-							onChange={(event) =>
-								setTimezone(event.target.value)
-							}
-							placeholder="America/New_York"
-						/>
 					</div>
 					<Button
 						size="sm"
-						className="w-full"
-						onClick={() => void createSchedule()}
-						disabled={submitting}
+						variant="ghost"
+						className="h-8 px-2"
+						onClick={() => void refresh()}
+						disabled={loading}
 					>
-						{submitting ? (
-							<Loader2 className="mr-1.5 size-3.5 animate-spin" />
-						) : (
-							<Plus className="mr-1.5 size-3.5" />
-						)}
-						Add schedule
+						<RefreshCw
+							className={`size-3.5 ${loading ? "animate-spin" : ""}`}
+							aria-hidden
+						/>
+						<span className="sr-only">Refresh schedules</span>
 					</Button>
 				</div>
-			</DialogContent>
-		</Dialog>
+				{loading ? (
+					<div className="flex h-20 items-center justify-center">
+						<Loader2
+							className="size-4 animate-spin text-muted-foreground"
+							aria-label="Loading schedules"
+						/>
+					</div>
+				) : schedules.length === 0 ? (
+					<p className="rounded-md border border-dashed bg-background px-3 py-4 text-center text-muted-foreground text-xs">
+						No schedules yet.
+					</p>
+				) : (
+					<div className="divide-y rounded-md border bg-background">
+						{schedules.map((schedule) => {
+							const busy = actionJobId === schedule.jobId;
+							return (
+								<div
+									key={schedule.jobId}
+									className="flex items-center gap-3 px-3 py-2.5"
+								>
+									<div className="min-w-0 flex-1">
+										<p className="truncate font-medium text-xs">
+											{schedule.jobName}
+										</p>
+										<p className="truncate text-[11px] text-muted-foreground">
+											{schedule.cronExpression} ·{" "}
+											{schedule.cronTz}
+										</p>
+										<p className="text-[11px] text-muted-foreground">
+											{schedule.isActive
+												? `Next: ${schedule.nextFireTime}`
+												: "Paused"}
+										</p>
+									</div>
+									<Button
+										size="sm"
+										variant="ghost"
+										className="size-8 p-0"
+										onClick={() =>
+											void updateSchedule(
+												schedule,
+												schedule.isActive
+													? "pause"
+													: "resume",
+											)
+										}
+										disabled={busy}
+										aria-label={
+											schedule.isActive
+												? `Pause ${schedule.jobName}`
+												: `Resume ${schedule.jobName}`
+										}
+									>
+										{busy ? (
+											<Loader2 className="size-3.5 animate-spin" />
+										) : schedule.isActive ? (
+											<Pause className="size-3.5" />
+										) : (
+											<Play className="size-3.5" />
+										)}
+									</Button>
+									<Button
+										size="sm"
+										variant="ghost"
+										className="size-8 p-0 text-destructive hover:text-destructive"
+										onClick={() =>
+											setScheduleToRemove(schedule)
+										}
+										disabled={busy}
+										aria-label={`Remove ${schedule.jobName}`}
+									>
+										<Trash2 className="size-3.5" />
+									</Button>
+								</div>
+							);
+						})}
+					</div>
+				)}
+			</div>
+
+			{scheduleToRemove && (
+				<div className="space-y-3 rounded-lg border border-destructive/40 bg-destructive/5 p-3">
+					<div>
+						<p className="font-medium text-sm">
+							Remove {scheduleToRemove.jobName}?
+						</p>
+						<p className="text-muted-foreground text-xs">
+							This removes the schedule and its stored recipe. The
+							automation and its run history are not affected.
+						</p>
+					</div>
+					<div className="flex justify-end gap-2">
+						<Button
+							size="sm"
+							variant="outline"
+							onClick={() => setScheduleToRemove(null)}
+						>
+							Cancel
+						</Button>
+						<Button
+							size="sm"
+							variant="destructive"
+							disabled={actionJobId === scheduleToRemove.jobId}
+							onClick={() => {
+								void updateSchedule(scheduleToRemove, "remove");
+								setScheduleToRemove(null);
+							}}
+						>
+							Remove schedule
+						</Button>
+					</div>
+				</div>
+			)}
+
+			<div className="space-y-3 rounded-lg border p-3">
+				<div>
+					<p className="font-medium text-sm">Add schedule</p>
+					<p className="text-muted-foreground text-xs">
+						Cron uses the Quartz format. Example:{" "}
+						<code>0 0 9 * * ?</code>
+						runs daily at 9:00 AM.
+					</p>
+				</div>
+				<div className="space-y-1.5">
+					<Label htmlFor={nameInputId}>Name</Label>
+					<Input
+						id={nameInputId}
+						value={name}
+						onChange={(event) => setName(event.target.value)}
+					/>
+				</div>
+				<div className="space-y-1.5">
+					<Label htmlFor={cronInputId}>Cron expression</Label>
+					<Input
+						id={cronInputId}
+						value={cronExpression}
+						onChange={(event) =>
+							setCronExpression(event.target.value)
+						}
+					/>
+				</div>
+				<div className="space-y-1.5">
+					<Label htmlFor={timezoneInputId}>Time zone</Label>
+					<Input
+						id={timezoneInputId}
+						value={timezone}
+						onChange={(event) => setTimezone(event.target.value)}
+						placeholder="America/New_York"
+					/>
+				</div>
+				<Button
+					size="sm"
+					className="w-full"
+					onClick={() => void createSchedule()}
+					disabled={submitting}
+				>
+					{submitting ? (
+						<Loader2 className="mr-1.5 size-3.5 animate-spin" />
+					) : (
+						<Plus className="mr-1.5 size-3.5" />
+					)}
+					Add schedule
+				</Button>
+			</div>
+		</section>
 	);
 }

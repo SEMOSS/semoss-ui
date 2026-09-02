@@ -16,7 +16,6 @@ import {
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import {
-	CalendarClock,
 	CheckCircle,
 	Code2,
 	Hand,
@@ -24,7 +23,6 @@ import {
 	Lock,
 	MousePointer2,
 	Play,
-	Plus,
 	RefreshCw,
 	Save,
 	Scan,
@@ -86,7 +84,6 @@ import { AutomationDockLayout } from "./automation-dock-layout";
 import { AutomationNode as AutomationNodeCard } from "./nodes/automation-node";
 import { BranchNode } from "./nodes/branch-node";
 import { TriggerNode } from "./nodes/trigger-node";
-import { ScheduleDialog } from "./schedule-dialog";
 import { UndoBanner } from "./undo-banner";
 
 // ---- React Flow custom node registry (must be outside component) ----
@@ -508,7 +505,6 @@ export function AutomationCanvas({
 	const [undoSnapshot, setUndoSnapshot] = useState<AutomationNode[] | null>(
 		null,
 	);
-	const [showScheduleDialog, setShowScheduleDialog] = useState(false);
 	const hasRunnableSteps = steps.some(
 		(step) => step.workflowType !== "trigger.start",
 	);
@@ -1410,6 +1406,41 @@ export function AutomationCanvas({
 		[isDirty, save],
 	);
 
+	useEffect(() => {
+		const handleSchedulePreparation = (event: MessageEvent<unknown>) => {
+			if (
+				event.origin !== window.location.origin ||
+				typeof event.data !== "object" ||
+				event.data === null
+			) {
+				return;
+			}
+			const message = event.data as {
+				type?: unknown;
+				requestId?: unknown;
+			};
+			if (
+				message.type !== "SEMOSS_AUTOMATION_PREPARE_SCHEDULE" ||
+				typeof message.requestId !== "string"
+			) {
+				return;
+			}
+			void prepareSchedule().then((saved) =>
+				event.source?.postMessage(
+					{
+						type: "SEMOSS_AUTOMATION_SCHEDULE_PREPARED",
+						requestId: message.requestId,
+						saved,
+					},
+					{ targetOrigin: event.origin },
+				),
+			);
+		};
+		window.addEventListener("message", handleSchedulePreparation);
+		return () =>
+			window.removeEventListener("message", handleSchedulePreparation);
+	}, [prepareSchedule]);
+
 	// Cmd+S / Ctrl+S
 	useEffect(() => {
 		if (readOnly) return;
@@ -1795,6 +1826,21 @@ export function AutomationCanvas({
 					data: {
 						label: description.trim() || "Start",
 						devMode,
+						triggerModes: Array.isArray(
+							step.workflowConfig?.triggerModes,
+						)
+							? step.workflowConfig.triggerModes.filter(
+									(
+										mode,
+									): mode is "schedule" | "event-based" =>
+										mode === "schedule" ||
+										mode === "event-based",
+								)
+							: step.workflowConfig?.triggerType === "schedule" ||
+									step.workflowConfig?.triggerType ===
+										"event-based"
+								? [step.workflowConfig.triggerType]
+								: [],
 						runStatus:
 							stepStatuses[step.id] ??
 							(running ? "running" : undefined),
@@ -2165,22 +2211,6 @@ export function AutomationCanvas({
 												</Button>
 											</div>
 										)}
-										{!readOnly && !mcpContext && (
-											<Button
-												size="sm"
-												variant="outline"
-												className="bg-background shadow-sm"
-												onClick={() =>
-													setShowScheduleDialog(true)
-												}
-											>
-												<CalendarClock
-													className="mr-1.5 h-3.5 w-3.5"
-													aria-hidden
-												/>
-												Schedule
-											</Button>
-										)}
 										<Button
 											data-tour="run"
 											size="sm"
@@ -2203,29 +2233,6 @@ export function AutomationCanvas({
 											Run
 										</Button>
 									</div>
-
-									{!readOnly && (
-										<Tooltip>
-											<TooltipTrigger asChild>
-												<button
-													type="button"
-													aria-label="Add a disconnected node"
-													onClick={() => {
-														setEditingStepId(null);
-														setAddAfterStepId(null);
-														setAddAfterHandle(null);
-														setShowAddMenu(true);
-													}}
-													className="absolute top-16 right-4 z-30 flex h-10 w-10 items-center justify-center rounded-full border bg-background shadow-md transition-colors hover:bg-muted"
-												>
-													<Plus className="h-5 w-5 text-muted-foreground" />
-												</button>
-											</TooltipTrigger>
-											<TooltipContent side="left">
-												Add node
-											</TooltipContent>
-										</Tooltip>
-									)}
 
 									{!readOnly && (
 										<div className="absolute right-4 bottom-4 z-10 flex items-center overflow-hidden rounded-lg border bg-background shadow-sm">
@@ -2424,13 +2431,6 @@ export function AutomationCanvas({
 					<AddNodeMenu onSelect={addStep} />
 				</DialogContent>
 			</Dialog>
-
-			<ScheduleDialog
-				projectId={appId}
-				open={showScheduleDialog}
-				onOpenChange={setShowScheduleDialog}
-				onPrepareSchedule={prepareSchedule}
-			/>
 		</>
 	);
 }

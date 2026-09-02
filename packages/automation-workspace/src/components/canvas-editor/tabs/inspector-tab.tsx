@@ -12,6 +12,7 @@ interface InspectorTabProps {
 	description: string;
 	devMode: boolean;
 	editingStep: AutomationNode | null;
+	onPrepareSchedule: () => Promise<boolean>;
 	upstreamVars: string[];
 	stepRunStatus?: StepRunStatus;
 	stepRunError?: string;
@@ -31,6 +32,7 @@ export function InspectorTab({
 	description,
 	devMode,
 	editingStep,
+	onPrepareSchedule,
 	upstreamVars,
 	stepRunStatus,
 	stepRunError,
@@ -45,9 +47,11 @@ export function InspectorTab({
 	if (editingStep?.type === "trigger") {
 		return (
 			<TriggerEditPanel
+				appId={appId}
 				description={description}
 				onDescriptionChange={onDescriptionChange}
 				onClose={onClose}
+				onPrepareSchedule={onPrepareSchedule}
 				step={editingStep}
 				onUpdate={onUpdate}
 				readOnly={readOnly}
