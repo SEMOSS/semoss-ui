@@ -1,6 +1,6 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, test, vi } from "vitest";
-import { ModelUsagePage } from "./model-usage.page";
+import { getPreviousMonthDateRange, ModelUsagePage } from "./model-usage.page";
 
 const mocks = vi.hoisted(() => ({
 	getUsageModels: vi.fn(),
@@ -38,11 +38,12 @@ describe("ModelUsagePage", () => {
 			frequency: "MONTH",
 			maxCredits: 10,
 			creditsUsed: 4,
-			creditsRemaining: 6,
-			limitExceeded: false,
+			creditsRemaining: null,
+			limitExceeded: null,
 			periodStart: "2026-09-01T00:00:00Z",
 			periodEnd: "2026-09-30T23:59:59Z",
 			trackingEnabled: true,
+			rangeType: "CUSTOM",
 			inputTokenCredit: 0.000002,
 			outputTokenCredit: 0.000008,
 			inputCreditsPerMillion: 2,
@@ -60,11 +61,12 @@ describe("ModelUsagePage", () => {
 		await waitFor(() => {
 			expect(mocks.getUserModelCreditInfo).toHaveBeenCalledWith(
 				"model-1",
+				expect.stringMatching(/^\d{4}-\d{2}-01$/),
+				expect.stringMatching(/^\d{4}-\d{2}-\d{2}$/),
 			);
 		});
 		expect(screen.getByText("4")).toBeInTheDocument();
-		expect(screen.getByText("6")).toBeInTheDocument();
-		expect(screen.getByText("40%")).toBeInTheDocument();
+		expect(screen.queryByText("40%")).not.toBeInTheDocument();
 	});
 
 	test("shows an empty state when the user has no models", async () => {
@@ -78,6 +80,13 @@ describe("ModelUsagePage", () => {
 		expect(mocks.getUserModelCreditInfo).not.toHaveBeenCalled();
 	});
 
+	test("defaults the custom range to the previous calendar month", () => {
+		expect(getPreviousMonthDateRange(new Date(2026, 0, 15))).toEqual({
+			startDate: "2025-12-01",
+			endDate: "2025-12-31",
+		});
+	});
+
 	test("does not render NaN when no credit limit is assigned", async () => {
 		mocks.getUserModelCreditInfo.mockResolvedValue({
 			engineId: "model-1",
@@ -87,6 +96,7 @@ describe("ModelUsagePage", () => {
 			frequency: null,
 			limitExceeded: null,
 			trackingEnabled: true,
+			rangeType: "CUSTOM",
 			pricingConfigured: false,
 		});
 

@@ -15,6 +15,7 @@ export interface ModelCreditInfo {
 	periodStart: string | null;
 	periodEnd: string | null;
 	trackingEnabled: boolean;
+	rangeType: "CUSTOM" | "RESTRICTION";
 	inputTokenCredit: number | null;
 	outputTokenCredit: number | null;
 	inputCreditsPerMillion: number | null;
@@ -48,9 +49,11 @@ export const getUsageModels = async (): Promise<Engine[]> => {
 /** Return the current user's credit usage for a model. */
 export const getUserModelCreditInfo = async (
 	modelId: string,
+	startDate: string,
+	endDate: string,
 ): Promise<ModelCreditInfo> => {
 	const response = await runPixel<[ModelCreditInfo]>(
-		`META | GetUserModelCreditInfo(engine=${JSON.stringify(modelId)});`,
+		`META | GetUserModelCreditInfo(engine=${JSON.stringify(modelId)}, startDate=${JSON.stringify(startDate)}, endDate=${JSON.stringify(endDate)});`,
 	);
 	assertPixelSuccess(response.errors);
 

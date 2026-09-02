@@ -20,6 +20,7 @@ import {
 	CardHeader,
 	CardTitle,
 	H3,
+	Input,
 	Label,
 	Large,
 	Muted,
@@ -60,13 +61,35 @@ const formatDate = (value: string | null, locale: string): string => {
 	}).format(new Date(value));
 };
 
+const formatDateInput = (date: Date): string => {
+	const year = date.getFullYear();
+	const month = String(date.getMonth() + 1).padStart(2, "0");
+	const day = String(date.getDate()).padStart(2, "0");
+	return `${year}-${month}-${day}`;
+};
+
+/** Return the previous calendar month for the initial custom usage range. */
+export const getPreviousMonthDateRange = (reference = new Date()) => ({
+	startDate: formatDateInput(
+		new Date(reference.getFullYear(), reference.getMonth() - 1, 1),
+	),
+	endDate: formatDateInput(
+		new Date(reference.getFullYear(), reference.getMonth(), 0),
+	),
+});
+
 /** Self-service dashboard for model credit limits, usage, and pricing. */
 export const ModelUsagePage = () => {
 	const { t, i18n } = useTranslation(["usage", "workspace"]);
 	const modelSelectId = useId();
+	const startDateId = useId();
+	const endDateId = useId();
 	const [models, setModels] = useState<Engine[]>([]);
 	const [selectedModelId, setSelectedModelId] = useState("");
 	const [creditInfo, setCreditInfo] = useState<ModelCreditInfo | null>(null);
+	const [initialDateRange] = useState(() => getPreviousMonthDateRange());
+	const [startDate, setStartDate] = useState(initialDateRange.startDate);
+	const [endDate, setEndDate] = useState(initialDateRange.endDate);
 	const [isLoadingModels, setIsLoadingModels] = useState(true);
 	const [isLoadingUsage, setIsLoadingUsage] = useState(false);
 	const [modelsError, setModelsError] = useState(false);
@@ -97,31 +120,36 @@ export const ModelUsagePage = () => {
 		}
 	}, []);
 
-	const loadUsage = useCallback(async (modelId: string) => {
-		if (!modelId) return;
-		setIsLoadingUsage(true);
-		setUsageError(false);
-		try {
-			setCreditInfo(await getUserModelCreditInfo(modelId));
-		} catch {
-			setCreditInfo(null);
-			setUsageError(true);
-		} finally {
-			setIsLoadingUsage(false);
-		}
-	}, []);
+	const loadUsage = useCallback(
+		async (modelId: string, rangeStart: string, rangeEnd: string) => {
+			if (!modelId) return;
+			setIsLoadingUsage(true);
+			setUsageError(false);
+			try {
+				setCreditInfo(
+					await getUserModelCreditInfo(modelId, rangeStart, rangeEnd),
+				);
+			} catch {
+				setCreditInfo(null);
+				setUsageError(true);
+			} finally {
+				setIsLoadingUsage(false);
+			}
+		},
+		[],
+	);
 
 	useEffect(() => {
 		loadModels();
 	}, [loadModels]);
 
 	useEffect(() => {
-		if (selectedModelId) {
-			loadUsage(selectedModelId);
+		if (selectedModelId && startDate && endDate && startDate <= endDate) {
+			loadUsage(selectedModelId, startDate, endDate);
 		} else {
 			setCreditInfo(null);
 		}
-	}, [loadUsage, selectedModelId]);
+	}, [endDate, loadUsage, selectedModelId, startDate]);
 
 	const selectedModel = models.find(
 		(model) => model.engine_id === selectedModelId,
@@ -130,6 +158,7 @@ export const ModelUsagePage = () => {
 		if (
 			!creditInfo ||
 			!creditInfo.restrictionEnabled ||
+			creditInfo.rangeType === "CUSTOM" ||
 			typeof creditInfo.maxCredits !== "number" ||
 			!Number.isFinite(creditInfo.maxCredits) ||
 			typeof creditInfo.creditsUsed !== "number" ||
@@ -156,8 +185,16 @@ export const ModelUsagePage = () => {
 					</div>
 					<Button
 						variant="outline"
-						onClick={() => loadUsage(selectedModelId)}
-						disabled={!selectedModelId || isLoadingUsage}
+						onClick={() =>
+							loadUsage(selectedModelId, startDate, endDate)
+						}
+						disabled={
+							!selectedModelId ||
+							!startDate ||
+							!endDate ||
+							startDate > endDate ||
+							isLoadingUsage
+						}
 					>
 						<RefreshCw
 							className={
@@ -196,34 +233,66 @@ export const ModelUsagePage = () => {
 						</CardHeader>
 					</Card>
 				) : (
-					<div className="flex w-full max-w-md flex-col gap-2">
-						<Label htmlFor={modelSelectId}>
-							{t("usage:model.label")}
-						</Label>
-						<Select
-							value={selectedModelId}
-							onValueChange={setSelectedModelId}
-						>
-							<SelectTrigger
-								id={modelSelectId}
-								className="w-full"
+					<div className="grid w-full gap-4 md:grid-cols-3">
+						<div className="flex flex-col gap-2">
+							<Label htmlFor={modelSelectId}>
+								{t("usage:model.label")}
+							</Label>
+							<Select
+								value={selectedModelId}
+								onValueChange={setSelectedModelId}
 							>
-								<SelectValue
-									placeholder={t("usage:model.placeholder")}
-								/>
-							</SelectTrigger>
-							<SelectContent>
-								{models.map((model) => (
-									<SelectItem
-										key={model.engine_id}
-										value={model.engine_id}
-									>
-										{model.engine_display_name ||
-											model.engine_name}
-									</SelectItem>
-								))}
-							</SelectContent>
-						</Select>
+								<SelectTrigger
+									id={modelSelectId}
+									className="w-full"
+								>
+									<SelectValue
+										placeholder={t(
+											"usage:model.placeholder",
+										)}
+									/>
+								</SelectTrigger>
+								<SelectContent>
+									{models.map((model) => (
+										<SelectItem
+											key={model.engine_id}
+											value={model.engine_id}
+										>
+											{model.engine_display_name ||
+												model.engine_name}
+										</SelectItem>
+									))}
+								</SelectContent>
+							</Select>
+						</div>
+						<div className="flex flex-col gap-2">
+							<Label htmlFor={startDateId}>
+								{t("usage:dateRange.start")}
+							</Label>
+							<Input
+								id={startDateId}
+								type="date"
+								value={startDate}
+								max={endDate}
+								onChange={(event) =>
+									setStartDate(event.target.value)
+								}
+							/>
+						</div>
+						<div className="flex flex-col gap-2">
+							<Label htmlFor={endDateId}>
+								{t("usage:dateRange.end")}
+							</Label>
+							<Input
+								id={endDateId}
+								type="date"
+								value={endDate}
+								min={startDate}
+								onChange={(event) =>
+									setEndDate(event.target.value)
+								}
+							/>
+						</div>
 					</div>
 				)}
 

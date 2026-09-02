@@ -3,6 +3,7 @@
 	"description": "Consulta tu saldo de créditos, el período de uso y la instantánea de precios utilizada para cada modelo.",
 	"refresh": "Actualizar",
 	"retry": "Intentar de nuevo",
+	"dateRange": { "start": "Fecha de inicio", "end": "Fecha de finalización" },
 	"model": { "label": "Modelo", "placeholder": "Selecciona un modelo" },
 	"modelsError": {
 		"title": "No se pudieron cargar los modelos",
