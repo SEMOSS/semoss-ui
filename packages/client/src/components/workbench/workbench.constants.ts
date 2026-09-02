@@ -105,6 +105,20 @@ export const WORKBENCH_PANEL_RECORDS = {
 		helpText: "Available engines",
 		canClose: false,
 	},
+	PROJECT_VERSION_CONTROL: {
+		id: WORKBENCH_COMPONENTS.PROJECT_VERSION_CONTROL,
+		type: WORKBENCH_COMPONENTS.PROJECT_VERSION_CONTROL,
+		name: "Version Control",
+		helpText: "Version Control",
+		canClose: false,
+	},
+	PROJECT_GIT_CONFLICT_RESOLVER: {
+		id: WORKBENCH_COMPONENTS.PROJECT_GIT_CONFLICT_RESOLVER,
+		type: WORKBENCH_COMPONENTS.PROJECT_GIT_CONFLICT_RESOLVER,
+		name: "Resolve Conflict",
+		helpText: "Merge conflict resolver",
+		canClose: true,
+	},
 	PROJECT_SETTINGS: {
 		id: WORKBENCH_COMPONENTS.PROJECT_SETTINGS,
 		type: WORKBENCH_COMPONENTS.PROJECT_SETTINGS,

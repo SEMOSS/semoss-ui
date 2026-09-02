@@ -31,11 +31,12 @@ queries run the admin-permission pixels.
 ## One context, one hook, one namespace per domain
 
 Everything reaches the per-mount store through `useWorkbench(selector)`. State is grouped by
-domain — `layout`, `loading`, `command`, `control`, `assistant`, `notifications` — and each
+domain — `layout`, `loading`, `command`, `control`, `events`, `assistant`, `notifications` — and each
 namespace carries its own fields and its own `actions`:
 
 ```ts
 const actions = useWorkbench((s) => s.layout.actions); // stable object — never re-renders
+const events = useWorkbench((s) => s.events.actions); // transient, workbench-scoped signals
 const panel = useWorkbench((s) => s.layout.panels[pid]); // narrow state reads
 const open = useWorkbench((s) => s.command.isCommandOpen);
 ```
@@ -326,6 +327,7 @@ gets at most one chrome control, and this needed two.
 | `stores/workbench/slices/workbench-layout.tree.ts` | Pure, DOM-free tree ops |
 | `stores/workbench/slices/workbench-layout.commands.ts` | Layout-derived palette entries |
 | `stores/workbench/slices/workbench-controls.slice.ts` | Panel-contributed chrome controls, keyed by panel id; each control is its own `*-control.tsx` file beside its panel |
+| `stores/workbench/slices/workbench-events.slice.ts` | Synchronous transient event bus scoped to one workbench; use it for cross-panel signals instead of `window` events. Shared cross-package file events remain in `@semoss/shared` until all non-workbench consumers can migrate. |
 | `core/use-workbench-hit-test.ts` | The ordered geometric drop resolution, shared by the pointer-event tab drag and native spawn drags |
 | `core/workbench-spawn-drag.ts` | The `dataTransfer` protocol for "dropping me should open a panel" |
 | `file-explorer-control.tsx` | The refresh + new-file chrome control shared by every file-explorer panel (project, engine, storage, insight) |
