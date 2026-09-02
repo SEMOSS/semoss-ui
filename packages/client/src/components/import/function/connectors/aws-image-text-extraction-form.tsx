@@ -12,10 +12,8 @@ import {
 } from "@semoss/ui/next";
 import { useRootStore } from "@/hooks";
 import { useNavigate } from "@/hooks/useNavigate";
-import {
-	catalogNameSchema,
-	createFunctionEngine,
-} from "../shared/function-engine.utils";
+import { catalogNameSchema } from "@/utility/catalog";
+import { createFunctionEngine } from "../shared/function-engine.utils";
 
 const schema = z.object({
 	NAME: catalogNameSchema,

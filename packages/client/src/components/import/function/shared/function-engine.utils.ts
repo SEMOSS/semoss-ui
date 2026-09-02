@@ -2,24 +2,9 @@ import { runPixel } from "@semoss/sdk/react";
 import { z } from "@semoss/ui/next";
 import { uploadFile } from "@/api";
 
-/** Catalog names may only contain alphanumerics, dashes, and spaces. */
-export const CATALOG_NAME_PATTERN = /^[\w\-\s]+$/;
-
 /** Shared description for every connector's "Function Metadata" section. */
 export const FUNCTION_METADATA_DESCRIPTION =
 	"What a model sees when it picks this function out of a tool list: the name it calls, what the function says it does, and the parameters it takes. Every function type fills these in for itself, so set them only to override that wording.";
-
-/** Shared zod schema for every connector's "Catalog Name" field. */
-export const catalogNameSchema = z
-	.string()
-	.min(1, "Catalog name is required")
-	.regex(
-		CATALOG_NAME_PATTERN,
-		"Catalog names can only contain alphanumeric characters and dashes.",
-	)
-	.refine(async (name) => !(await isEngineNameTaken(name)), {
-		message: "This Catalog name has already been used, please try another.",
-	});
 
 /** Reusable zod fragment for the FUNCTION_PARAMETERS metadata field. */
 export const parameterListSchema = z.array(
@@ -32,16 +17,6 @@ export const parameterListSchema = z.array(
 
 /** Reusable zod fragment for the FUNCTION_REQUIRED_PARAMETERS metadata field. */
 export const stringListSchema = z.array(z.string());
-
-/**
- * Check whether a catalog name is already taken (CheckEngineName pixel).
- */
-export const isEngineNameTaken = async (name: string): Promise<boolean> => {
-	const response = await runPixel<[{ exists: boolean }]>(
-		`CheckEngineName ( "${name}") ;`,
-	);
-	return Boolean(response.pixelReturn[0]?.output?.exists);
-};
 
 /**
  * Structured-list fields are arrays in form state for the UI, but the

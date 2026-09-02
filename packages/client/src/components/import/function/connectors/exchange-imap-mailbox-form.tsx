@@ -14,8 +14,8 @@ import {
 } from "@semoss/ui/next";
 import { useRootStore } from "@/hooks";
 import { useNavigate } from "@/hooks/useNavigate";
+import { catalogNameSchema } from "@/utility/catalog";
 import {
-	catalogNameSchema,
 	createFunctionEngine,
 	FUNCTION_METADATA_DESCRIPTION,
 	parameterListSchema,
