@@ -42,6 +42,7 @@ import {
 	TooltipTrigger,
 	toast,
 } from "@semoss/ui/next";
+import { createGuardrailEngine } from "@/api";
 import { useRootStore } from "@/hooks";
 import { useNavigate } from "@/hooks/useNavigate";
 import { EngineFormHeader } from "../shared/engine-form-header";
@@ -99,7 +100,7 @@ export const GuardrailForm = ({
 	});
 
 	const watchedFieldRef = useRef({});
-	const { monolithStore } = useRootStore();
+	const { configStore, monolithStore } = useRootStore();
 	const navigate = useNavigate();
 	const defaultFields = resolvedFields;
 	const advancedFields = advanced;
@@ -223,30 +224,24 @@ export const GuardrailForm = ({
 		});
 
 		setLoading(true);
-		const pixel = `CreateGuardrailEngine(guardrail=["${
-			formData.MODEL_NAME
-		}"],guardrailDetails=[${JSON.stringify(newFormData)}])`;
-
-		monolithStore.runQuery(pixel).then(async (response) => {
-			const pixelOutput = response.pixelReturn[0].output,
-				operationType = response.pixelReturn[0].operationType;
-
-			if (operationType.indexOf("ERROR") > -1) {
-				toast.error(pixelOutput as string);
-				setLoading(false);
-				return;
-			}
+		try {
+			const engineId = await createGuardrailEngine(
+				configStore.store.insightID,
+				formData.MODEL_NAME,
+				newFormData,
+			);
 			toast.success("Successfully added new guardrail to catalog");
-			{
-				// engine_id is the current key; database_id is the legacy fallback
-				const o = pixelOutput as {
-					engine_id?: string;
-					database_id?: string;
-				};
-				navigate(`/guardrail/${o.engine_id || o.database_id}`);
-			}
+			navigate(`/guardrail/${engineId}`);
+		} catch (error) {
+			console.error(error);
+			toast.error(
+				error instanceof Error
+					? error.message
+					: "Unable to create the guardrail",
+			);
+		} finally {
 			setLoading(false);
-		});
+		}
 	};
 
 	useEffect(() => {
