@@ -171,6 +171,7 @@ const NODE_WIDTH = 280;
 const DEFAULT_NODE_HEIGHT = 120;
 const NODE_COLUMN_GAP = 100;
 const NODE_LANE_GAP = 40;
+const FIRST_BRANCH_ROUTE_OFFSET = 24;
 
 function branchRouteIndex(step: AutomationNode, handle: string): number {
 	if (step.type !== "branch") return 0;
@@ -1039,10 +1040,13 @@ export function AutomationCanvas({
 				const siblingNodes = steps.filter((s) =>
 					siblingIds.includes(s.id),
 				);
+				const routeIndex = branchRouteIndex(previousStep, sourceHandle);
 				let targetY =
 					previousStep.position.y +
-					branchRouteIndex(previousStep, sourceHandle) *
-						(DEFAULT_NODE_HEIGHT + NODE_LANE_GAP);
+					routeIndex * (DEFAULT_NODE_HEIGHT + NODE_LANE_GAP) -
+					(routeIndex === 0 && previousStep.type === "branch"
+						? FIRST_BRANCH_ROUTE_OFFSET
+						: 0);
 				if (siblingNodes.length > 0) {
 					const maxY = Math.max(
 						...siblingNodes.map((s) => s.position.y),
