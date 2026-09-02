@@ -211,7 +211,7 @@ export const TemplatePage: React.FC = observer((): JSX.Element => {
 						setCloneTemplate(null);
 						if (newAppId) {
 							navigate(
-								`/${TYPE_TO_ROUTE[cloneTemplate.project_type]}/${newAppId}/edit`,
+								`${TYPE_TO_ROUTE[cloneTemplate.project_type]}/${newAppId}/edit`,
 							);
 						}
 					}}

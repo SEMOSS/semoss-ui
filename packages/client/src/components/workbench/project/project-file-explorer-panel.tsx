@@ -9,6 +9,7 @@ import {
 	type FileExplorerMovedItem,
 	type FileItem,
 	type FileMode,
+	getFileEditorKind,
 	getParentPath,
 	NewFileOverlay,
 	useFileExplorer,
@@ -47,6 +48,23 @@ export interface ProjectFileExplorerConfig {
 const isRename = (moved: FileExplorerMovedItem) =>
 	getParentPath(moved.oldPath) === getParentPath(moved.newPath);
 
+const getFilePanelType = (path: string) => {
+	switch (getFileEditorKind(path)) {
+		case "download":
+			return WORKBENCH_COMPONENTS.PROJECT_FILE_DOWNLOAD_VIEWER;
+		case "image":
+			return WORKBENCH_COMPONENTS.PROJECT_FILE_IMAGE_EDITOR;
+		case "markdown":
+			return WORKBENCH_COMPONENTS.PROJECT_FILE_MARKDOWN_EDITOR;
+		case "notebook":
+			return WORKBENCH_COMPONENTS.PROJECT_FILE_NOTEBOOK_EDITOR;
+		case "pdf":
+			return WORKBENCH_COMPONENTS.PROJECT_FILE_PDF_EDITOR;
+		default:
+			return WORKBENCH_COMPONENTS.PROJECT_FILE_CODE_EDITOR;
+	}
+};
+
 /**
  * Project-scoped file explorer panel. The engine workbenches use
  * `EngineFileExplorerPanel`; this is its `APP`-mode twin, opening project files
@@ -81,11 +99,15 @@ const ProjectFileExplorerPanel: WorkbenchComponent<
 	const openFile = useCallback(
 		(item: FileItem) =>
 			layoutActions.selectPanel(
-				WORKBENCH_COMPONENTS.PROJECT_FILE_EDITOR,
-				{ name: item.name, path: item.path },
+				getFilePanelType(item.path),
+				{
+					name: item.name,
+					path: item.path,
+					readOnly: config.readOnly,
+				},
 				{ name: item.name },
 			),
-		[layoutActions],
+		[config.readOnly, layoutActions],
 	);
 
 	const explorer = useFileExplorer({
@@ -119,8 +141,12 @@ const ProjectFileExplorerPanel: WorkbenchComponent<
 			}
 
 			writeSpawnDragSpec(e.dataTransfer, {
-				type: WORKBENCH_COMPONENTS.PROJECT_FILE_EDITOR,
-				config: { name: items[0].name, path: items[0].path },
+				type: getFilePanelType(items[0].path),
+				config: {
+					name: items[0].name,
+					path: items[0].path,
+					readOnly: config.readOnly,
+				},
 				name: items[0].name,
 			});
 		},

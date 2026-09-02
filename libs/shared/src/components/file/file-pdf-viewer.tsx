@@ -1,3 +1,4 @@
+import { forwardRef, useImperativeHandle } from "react";
 import { useTranslation } from "@semoss/i18n";
 import { useInsight, usePixel } from "@semoss/sdk/react";
 import { Muted, Spinner } from "@semoss/ui/next";
@@ -12,53 +13,63 @@ interface FilePdfViewerProps {
 	path: string;
 }
 
-export const FilePdfViewer: React.FC<FilePdfViewerProps> = ({ mode, path }) => {
-	const insight = useInsight();
-	const { t } = useTranslation("common");
-	const targetInsightId =
-		mode.type === "INSIGHT"
-			? mode.insightId || insight.insightId
-			: insight.insightId;
+interface FilePdfViewerRef {
+	/** Refresh the PDF from its asset source. */
+	refresh: () => void;
+}
 
-	let getFilePixel = "";
-	if (mode.type === "APP") {
-		getFilePixel = `GetAppAssetsBase64(filePath=["${path}"], project=["${mode.app}"]);`;
-	} else if (mode.type === "ENGINE") {
-		getFilePixel = `GetEngineAssetsBase64(filePath=["${path}"], engine=["${mode.engine}"]);`;
-	} else if (mode.type === "INSIGHT" && targetInsightId) {
-		getFilePixel = `GetInsightAssetsBase64(filePath=["${path}"]);`;
-	} else if (mode.type === "USER") {
-		getFilePixel = `GetUserAssetsBase64(filePath=["${path}"]);`;
-	}
+export const FilePdfViewer = forwardRef<FilePdfViewerRef, FilePdfViewerProps>(
+	({ mode, path }, actionsRef) => {
+		const insight = useInsight();
+		const { t } = useTranslation("common");
+		const targetInsightId =
+			mode.type === "INSIGHT"
+				? mode.insightId || insight.insightId
+				: insight.insightId;
 
-	const getFile = usePixel<string>(getFilePixel, {}, targetInsightId);
+		let getFilePixel = "";
+		if (mode.type === "APP") {
+			getFilePixel = `GetAppAssetsBase64(filePath=["${path}"], project=["${mode.app}"]);`;
+		} else if (mode.type === "ENGINE") {
+			getFilePixel = `GetEngineAssetsBase64(filePath=["${path}"], engine=["${mode.engine}"]);`;
+		} else if (mode.type === "INSIGHT" && targetInsightId) {
+			getFilePixel = `GetInsightAssetsBase64(filePath=["${path}"]);`;
+		} else if (mode.type === "USER") {
+			getFilePixel = `GetUserAssetsBase64(filePath=["${path}"]);`;
+		}
 
-	return (
-		<div className="relative flex h-full w-full flex-col gap-1.5 overflow-hidden bg-background py-1">
-			{getFile.status === "LOADING" && (
-				<div className="flex flex-1 items-center justify-center py-4">
-					<Spinner />
-				</div>
-			)}
-			{getFile.status === "ERROR" && (
-				<div className="flex flex-1 items-center justify-center py-4">
-					<Muted className="text-destructive">
-						{getFile.error?.message ||
-							t("fileExplorer.failedToLoadFiles")}
-					</Muted>
-				</div>
-			)}
+		const getFile = usePixel<string>(getFilePixel, {}, targetInsightId);
+		useImperativeHandle(actionsRef, () => ({
+			refresh: getFile.refresh,
+		}));
 
-			{getFile.status === "SUCCESS" && (
-				<object
-					className="flex flex-1 overflow-hidden"
-					aria-label={`Preview of ${path}`}
-					data={`data:application/pdf;base64,${getFile.data}`}
-					type="application/pdf"
-				>
-					<FileDownloadView mode={mode} path={path} />
-				</object>
-			)}
-		</div>
-	);
-};
+		return (
+			<div className="relative flex h-full w-full flex-col gap-1.5 overflow-hidden bg-background py-1">
+				{getFile.status === "LOADING" && (
+					<div className="flex flex-1 items-center justify-center py-4">
+						<Spinner />
+					</div>
+				)}
+				{getFile.status === "ERROR" && (
+					<div className="flex flex-1 items-center justify-center py-4">
+						<Muted className="text-destructive">
+							{getFile.error?.message ||
+								t("fileExplorer.failedToLoadFiles")}
+						</Muted>
+					</div>
+				)}
+
+				{getFile.status === "SUCCESS" && (
+					<object
+						className="flex flex-1 overflow-hidden"
+						aria-label={`Preview of ${path}`}
+						data={`data:application/pdf;base64,${getFile.data}`}
+						type="application/pdf"
+					>
+						<FileDownloadView mode={mode} path={path} />
+					</object>
+				)}
+			</div>
+		);
+	},
+);
