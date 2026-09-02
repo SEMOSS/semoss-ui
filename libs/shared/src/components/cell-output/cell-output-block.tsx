@@ -16,6 +16,7 @@ import {
 	TooltipTrigger,
 } from "@semoss/ui/next";
 import { countInlineImages, hasInlineImage } from "../../utility/image";
+import { SandpackHtmlPreview } from "../html";
 import { InlineImageSegments } from "./inline-image";
 import { JsonViewer } from "./json-viewer";
 
@@ -116,6 +117,11 @@ export const CellOutputBlock = ({
 
 	const isMarkdownOutput =
 		!isObjectOutput && !error && !rawOutput && looksLikeMarkdown(output);
+	const isHtmlOutput =
+		!isObjectOutput &&
+		!error &&
+		!rawOutput &&
+		looksLikeHtmlDocument(output);
 
 	const markdownText = isMarkdownOutput ? normalizeForMarkdown(output) : "";
 
@@ -249,7 +255,8 @@ export const CellOutputBlock = ({
 						<>
 							{!error &&
 								(outputValue !== null ||
-									outputImageCount > 0) && (
+									outputImageCount > 0 ||
+									isHtmlOutput) && (
 									<RawToggle
 										raw={rawOutput}
 										onToggle={() => setRawOutput((v) => !v)}
@@ -291,6 +298,14 @@ export const CellOutputBlock = ({
 							forceVersion={expandRev}
 							forceOpen={expandAllTo}
 						/>
+					) : isHtmlOutput ? (
+						<div className="h-72">
+							<SandpackHtmlPreview
+								html={output}
+								forceFullHeight
+								className="border-0"
+							/>
+						</div>
 					) : isMarkdownOutput ? (
 						<div className="prose prose-sm dark:prose-invert max-w-none">
 							<Markdown>{markdownText}</Markdown>
@@ -386,12 +401,15 @@ export const CellOutputBlock = ({
 					})} · ${formatBytes(output)}`}
 					actions={
 						<>
-							{!error && outputValue !== null && (
-								<RawToggle
-									raw={rawOutput}
-									onToggle={() => setRawOutput((v) => !v)}
-								/>
-							)}
+							{!error &&
+								(outputValue !== null ||
+									outputImageCount > 0 ||
+									isHtmlOutput) && (
+									<RawToggle
+										raw={rawOutput}
+										onToggle={() => setRawOutput((v) => !v)}
+									/>
+								)}
 							{isObjectOutput && (
 								<ExpandAllToggle
 									onExpand={() => {
@@ -422,6 +440,14 @@ export const CellOutputBlock = ({
 							forceVersion={expandRev}
 							forceOpen={expandAllTo}
 						/>
+					) : isHtmlOutput ? (
+						<div className="h-full min-h-0">
+							<SandpackHtmlPreview
+								html={output}
+								forceFullHeight
+								className="border-0"
+							/>
+						</div>
 					) : isMarkdownOutput ? (
 						<div className="prose prose-sm dark:prose-invert max-w-none">
 							<Markdown>{markdownText}</Markdown>
@@ -923,6 +949,11 @@ const MARKDOWN_PATTERNS = [
 function looksLikeMarkdown(text: string): boolean {
 	if (!text || text.length < 4) return false;
 	return MARKDOWN_PATTERNS.some((pattern) => pattern.test(text));
+}
+
+/** Only complete HTML documents use the sandboxed preview; fragments stay plain text. */
+function looksLikeHtmlDocument(text: string): boolean {
+	return /^\s*(?:<!doctype\s+html\s*>|<html(?:\s|>))/i.test(text);
 }
 
 /** Convert literal \\n sequences to real newlines and strip surrounding quotes. */
