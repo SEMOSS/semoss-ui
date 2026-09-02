@@ -1,4 +1,5 @@
 import Brain from "@/assets/img/BRAIN.png";
+import Database from "@/assets/img/DATABASE.svg";
 import Gliner from "@/assets/img/HUGGINGFACE_COLOR.svg";
 import Python from "@/assets/img/PYTHON.svg";
 export const GUARDRAIL_CONNECTION = {
@@ -11,6 +12,16 @@ export const GUARDRAIL_CONNECTION = {
 			"Provide any credentials required by the selected guardrail provider.",
 	},
 	GUARDRAIL: [
+		{
+			name: "SQL Query Policy",
+			disable: false,
+			icon: Database,
+			form: "sql-query-policy",
+			description:
+				"Parse SQL into an AST and enforce database-aware policies for operations, identifiers, and risky query structures.",
+			fields: [],
+			advanced: [],
+		},
 		{
 			name: "Gliner",
 			disable: false,
@@ -905,5 +916,7 @@ export const GUARDRAIL_CONNECTION = {
 				},
 			],
 		},
-	],
+	].sort((left, right) =>
+		left.name.localeCompare(right.name, undefined, { sensitivity: "base" }),
+	),
 };

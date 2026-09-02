@@ -365,10 +365,128 @@ test("switches to the rule that was just added", async () => {
 	expect(
 		screen.queryByTestId("engine-guardrail-settings--pipeline-0-method"),
 	).not.toBeInTheDocument();
-	// it still needs an engine picked, but it does not arrive as a duplicate
+	// landing on a free call is what keeps it from arriving as a duplicate; the
+	// engine it still needs is not reported until a save is attempted
 	expect(
-		screen.getByTestId("engine-guardrail-settings--errors"),
-	).not.toHaveTextContent("used more than once");
+		screen.queryByTestId("engine-guardrail-settings--errors"),
+	).not.toBeInTheDocument();
+});
+
+test("holds blocking problems back until a save is attempted", async () => {
+	renderSettings();
+
+	// the starting configuration is valid, so nothing is reported
+	expect(
+		await screen.findByTestId("engine-guardrail-settings--rule-select"),
+	).toBeInTheDocument();
+	expect(
+		screen.queryByTestId("engine-guardrail-settings--errors"),
+	).not.toBeInTheDocument();
+
+	fireEvent.click(
+		screen.getByTestId("engine-guardrail-settings--add-pipeline-btn"),
+	);
+
+	// the new rule has no guardrail engine yet, but the reader has not been
+	// given a chance to pick one, so it is not faulted for it
+	const newCheck = screen.getByTestId(
+		"engine-guardrail-settings--pipeline-1-input-entry-0",
+	);
+	expect(
+		screen.queryByTestId("engine-guardrail-settings--errors"),
+	).not.toBeInTheDocument();
+	expect(
+		within(newCheck).queryByTestId(
+			"engine-guardrail-settings--pipeline-1-input-entry-0-error-dot",
+		),
+	).not.toBeInTheDocument();
+
+	fireEvent.click(screen.getByTestId("engine-guardrail-settings--save-btn"));
+
+	// attempting to save is what asks for the problems
+	expect(
+		await screen.findByTestId("engine-guardrail-settings--errors"),
+	).toHaveTextContent("needs a guardrail engine");
+	expect(
+		screen.getByTestId(
+			"engine-guardrail-settings--pipeline-1-input-entry-0-error-dot",
+		),
+	).toBeInTheDocument();
+});
+
+test("reports a stored rule's problems without waiting for a save", async () => {
+	// a configuration saved with a problem, or an engine deleted since, is not an
+	// unfinished edit, and Save is disabled while nothing is dirty
+	renderSettings({
+		pipelines: {
+			askRoom: {
+				input: [
+					{
+						reactorClass: INPUT_REACTOR,
+						params: {
+							guardrailEngineId: "",
+							blockOnGuardrailFailure: true,
+							inputMapping: { prompt: "arg0" },
+						},
+					},
+				],
+			},
+		},
+	});
+
+	expect(
+		await screen.findByTestId("engine-guardrail-settings--errors"),
+	).toHaveTextContent("needs a guardrail engine");
+	expect(
+		screen.getByTestId("engine-guardrail-settings--save-btn"),
+	).toBeDisabled();
+});
+
+test("counts a rule's problems in the list, not on the closed control", async () => {
+	renderSettings({
+		pipelines: {
+			askRoom: {
+				input: [
+					{
+						reactorClass: INPUT_REACTOR,
+						params: {
+							guardrailEngineId: "",
+							blockOnGuardrailFailure: true,
+							inputMapping: { prompt: "arg0" },
+						},
+					},
+				],
+			},
+			"*": {
+				input: [
+					{
+						reactorClass: INPUT_REACTOR,
+						params: {
+							guardrailEngineId: "guardrail-1",
+							blockOnGuardrailFailure: true,
+							inputMapping: { prompt: "arg0" },
+						},
+					},
+				],
+			},
+		},
+	});
+
+	// the control names the open rule and nothing more, so a problem inside the
+	// rule does not read as this field being invalid
+	const ruleSelect = await screen.findByTestId(
+		"engine-guardrail-settings--rule-select",
+	);
+	expect(ruleSelect).toHaveTextContent("askRoom");
+	expect(ruleSelect).not.toHaveTextContent("problem");
+
+	// the count sits with the rule's other details, where it reads as something
+	// about the rule rather than a fault on the picker
+	fireEvent.click(ruleSelect);
+	const options = await screen.findAllByRole("option");
+	expect(options[0]).toHaveTextContent("askRoom");
+	expect(options[0]).toHaveTextContent("1 problem");
+	expect(options[1]).toHaveTextContent("1 request, 0 response");
 });
 
 test("cannot claim a call another rule already covers", async () => {
@@ -623,6 +741,7 @@ test("lists every problem at once and navigates to the check that owns it", asyn
 		},
 	});
 
+	// a stored rule's problems are reported without needing a save attempt
 	const errors = await screen.findByTestId(
 		"engine-guardrail-settings--errors",
 	);
