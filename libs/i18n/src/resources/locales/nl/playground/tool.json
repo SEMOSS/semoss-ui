@@ -30,6 +30,7 @@
 		"labelPartial_one": "{{count}} tool voltooid, {{loadingCount}} aan het laden…",
 		"labelPartial_other": "{{count}} tools voltooid, {{loadingCount}} aan het laden…",
 		"summaryCompleted": "{{count}} voltooid",
+		"summaryLoading": "{{count}} aan het laden",
 		"summaryError": "{{count}} mislukt",
 		"summaryCancelled": "{{count}} geannuleerd"
 	},

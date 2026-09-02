@@ -30,6 +30,7 @@
 		"labelPartial_one": "{{count}} टूल पूर्ण, {{loadingCount}} लोड हो रहा है…",
 		"labelPartial_other": "{{count}} टूल पूर्ण, {{loadingCount}} लोड हो रहे हैं…",
 		"summaryCompleted": "{{count}} पूर्ण",
+		"summaryLoading": "{{count}} लोड हो रहा है",
 		"summaryError": "{{count}} विफल",
 		"summaryCancelled": "{{count}} रद्द"
 	},

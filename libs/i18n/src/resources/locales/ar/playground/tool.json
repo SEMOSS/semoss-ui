@@ -30,6 +30,7 @@
 		"labelPartial_one": "{{count}} أداة مكتملة، {{loadingCount}} قيد التحميل…",
 		"labelPartial_other": "{{count}} أدوات مكتملة، {{loadingCount}} قيد التحميل…",
 		"summaryCompleted": "{{count}} مكتمل",
+		"summaryLoading": "{{count}} قيد التحميل",
 		"summaryError": "{{count}} فشل",
 		"summaryCancelled": "{{count}} ملغى"
 	},

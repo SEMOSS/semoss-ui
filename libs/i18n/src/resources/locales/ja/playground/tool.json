@@ -30,6 +30,7 @@
 		"labelPartial_one": "{{count}} 件完了、{{loadingCount}} 件読み込み中…",
 		"labelPartial_other": "{{count}} 件完了、{{loadingCount}} 件読み込み中…",
 		"summaryCompleted": "{{count}} 件完了",
+		"summaryLoading": "{{count}} 件読み込み中",
 		"summaryError": "{{count}} 件失敗",
 		"summaryCancelled": "{{count}} 件キャンセル"
 	},

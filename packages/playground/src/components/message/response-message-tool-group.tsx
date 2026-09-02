@@ -76,12 +76,13 @@ export const ResponseMessageToolGroup = observer(
 
 		const summaryParts = [
 			counts.SUCCESS > 0 &&
-				counts.SUCCESS < tools.length &&
 				t("group.summaryCompleted", { count: counts.SUCCESS }),
 			counts.ERROR > 0 &&
 				t("group.summaryError", { count: counts.ERROR }),
 			counts.CANCELLED > 0 &&
 				t("group.summaryCancelled", { count: counts.CANCELLED }),
+			inProgressCount > 0 &&
+				t("group.summaryLoading", { count: inProgressCount }),
 		].filter((s): s is string => Boolean(s));
 
 		return (
@@ -100,21 +101,23 @@ export const ResponseMessageToolGroup = observer(
 						{isOpen ? <HammerIcon className="size-5" /> : icon}
 					</div>
 					<span className="-ms-1.5 truncate text-muted-foreground text-sm">
-						{isOpen
-							? t("group.labelOpen", { count: tools.length })
-							: isResolving
-								? t("group.labelStreaming", {
+						{inProgressCount > 0
+							? settledCount > 0
+								? t("group.labelPartial", {
+										count: settledCount,
+										loadingCount: inProgressCount,
+									})
+								: t("group.labelStreaming", {
 										count: tools.length,
 									})
-								: inProgressCount > 0
-									? t("group.labelPartial", {
-											count: settledCount,
-											loadingCount: inProgressCount,
-										})
-									: t("group.labelClosed", {
-											toolName: tools[0].displayName,
-											count: tools.length - 1,
-										})}
+							: isOpen
+								? t("group.labelOpen", {
+										count: tools.length,
+									})
+								: t("group.labelClosed", {
+										toolName: tools[0].displayName,
+										count: tools.length - 1,
+									})}
 					</span>
 					<ChevronDownIcon
 						className={cn(

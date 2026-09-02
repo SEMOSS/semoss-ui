@@ -30,6 +30,7 @@
 		"labelPartial_one": "{{count}} tool completed, {{loadingCount}} loading…",
 		"labelPartial_other": "{{count}} tools completed, {{loadingCount}} loading…",
 		"summaryCompleted": "{{count}} completed",
+		"summaryLoading": "{{count}} loading",
 		"summaryError": "{{count}} failed",
 		"summaryCancelled": "{{count}} cancelled"
 	},
