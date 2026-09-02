@@ -36,11 +36,10 @@ export default defineConfig(({ mode }) => {
 			"import.meta.env.ENDPOINT": JSON.stringify(env.ENDPOINT || ""),
 			"import.meta.env.ACCESS_KEY": JSON.stringify(env.ACCESS_KEY || ""),
 			"import.meta.env.SECRET_KEY": JSON.stringify(env.SECRET_KEY || ""),
-			// Portal iframe target — prod uses ENDPOINT (main app served at that origin);
-			// dev auto-points at the Vite server so ENDPOINT can stay on the SEMOSS proxy.
+			// Production discovers the SEMOSS project-aware public_home URL at runtime.
 			"import.meta.env.MAIN_APP_URL": JSON.stringify(
 				mode === "production"
-					? env.ENDPOINT || ""
+					? ""
 					: `http://${env.VITE_HOST || "localhost"}:${env.VITE_PORT || "5178"}/`,
 			),
 		},

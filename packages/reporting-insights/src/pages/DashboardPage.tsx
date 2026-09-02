@@ -37,7 +37,6 @@ import { DashboardFilterProvider } from "@/lib/dashboardFilters";
 import { useEmbedMode } from "@/lib/embedMode";
 import { EventParamProvider, useEventParamStore } from "@/lib/eventParamStore";
 import { fullTimestamp, timeAgo } from "@/lib/format";
-import { publishedPortalUrl } from "@/lib/portalUrl";
 import {
 	computeParamGroups,
 	ensureParamSheet,
@@ -57,7 +56,7 @@ import {
 	isViewOnlyLayoutAction,
 } from "@/utils/dashboardLayout";
 import { useWorkspace } from "@/workspace/WorkspaceProvider";
-import { GROUP_PERM_NUM } from "../services/permissionsApi";
+import { normalizeProjectPermission } from "../services/permissionsApi";
 
 function getDashboardSheets(dashboard: Dashboard): Sheet[] {
 	if (dashboard.sheets?.length) return dashboard.sheets;
@@ -202,26 +201,8 @@ export function DashboardPage() {
 	const sheets = dashboard ? getDashboardSheets(dashboard) : [];
 	useTabColors(sheets.flatMap((s) => s.visualizations));
 
-	// Permission (from the listing). Only OWNER/EDITOR users see the in-app
-	// dashboard view. Everyone else (Viewer, READ_ONLY, etc) is redirected to the deployed portal.
-	const permRaw = String(
-		Array.isArray(dashboard?.permission)
-			? (dashboard?.permission?.[0] ?? "")
-			: (dashboard?.permission ?? ""),
-	).toUpperCase();
-	// permRaw may be a role name ("OWNER") or a numeric string ("1").
-	// When the API omits permission entirely, permRaw is "" — treat as OWNER
-	// since only the creator's own dashboards appear in this view.
-	const permNum = Number(permRaw);
-	const perm = !permRaw
-		? "OWNER"
-		: Number.isNaN(permNum)
-			? permRaw in GROUP_PERM_NUM
-				? permRaw
-				: undefined
-			: Object.keys(GROUP_PERM_NUM).find(
-					(key) => GROUP_PERM_NUM[key] === permNum,
-				);
+	// Permission (from the listing).
+	const perm = normalizeProjectPermission(dashboard?.permission);
 	const canEdit = perm === "OWNER" || perm === "EDIT" || perm === "EDITOR";
 	const isOwner = perm === "OWNER";
 	const canManage = canEdit;
@@ -244,13 +225,6 @@ export function DashboardPage() {
 		}
 	};
 
-	useEffect(() => {
-		// When embedded (portal iframe), never redirect to publishedPortalUrl
-		// the portal shell iframes us; bouncing back would loop the iframe on itself.
-		if (id && isReadOnly && !embed)
-			window.location.replace(publishedPortalUrl(id));
-	}, [id, isReadOnly, embed]);
-
 	const [activeSheetId, setActiveSheetId] = useState<string>("");
 	const [paramValues, setParamValues] = useState<
 		Record<string, Record<string, string>>
@@ -264,10 +238,8 @@ export function DashboardPage() {
 	const [paramSheetRunning, setParamSheetRunning] = useState(false);
 
 	// Load the definition + initialise sheet/param state once it arrives.
-	// Skip for read-only users — they're redirected to the deployed portal.
-	// (In embed mode read-only users DO render the dashboard: no redirect.)
 	useEffect(() => {
-		if (!id || (isReadOnly && !embed)) return;
+		if (!id) return;
 		let cancelled = false;
 		setDef(null);
 		setLoadError(null);
@@ -337,21 +309,13 @@ export function DashboardPage() {
 				setParamValues(initial);
 			})
 			.catch(() => {
-				if (cancelled || !id) return;
-				// In embed mode (portal iframe / view route), showing an error keeps
-				// us inside the frame. Bouncing to publishedPortalUrl would open the
-				// portal shell again and iframe us back (infinite loop).
-				if (embed) {
-					setLoadError("Couldn't load this dashboard's data.");
-					return;
-				}
-				window.location.replace(publishedPortalUrl(id));
+				if (cancelled) return;
+				setLoadError("Couldn't load this dashboard's data.");
 			});
 		return () => {
 			cancelled = true;
 		};
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [id, isReadOnly]);
+	}, [id, loadDashboard]);
 
 	// ── flexlayout model — one per sheet, rebuilt when sheet changes ───────────
 	const modelCacheRef = useRef<Record<string, Model>>({});
@@ -401,6 +365,7 @@ export function DashboardPage() {
 
 	// ── Debounced save of model JSON back to store (per sheet) ────────────────
 	const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+	// biome-ignore lint/correctness/useExhaustiveDependencies: intentional - only dashboard.id/sheets should recreate this; dashboard itself is read fresh inside the debounced closure
 	const makeSaveModel = useCallback(
 		(sheetId: string) => (model: Model, action?: { type?: string }) => {
 			// Tab selection / active-tabset / maximize are view-only — never persist them
@@ -425,7 +390,6 @@ export function DashboardPage() {
 					customColorPalettes: dashboard.customColorPalettes,
 				});
 			}, 400);
-			// eslint-disable-next-line react-hooks/exhaustive-deps
 		},
 		[dashboard?.id, sheets],
 	);
@@ -445,6 +409,7 @@ export function DashboardPage() {
 
 	// ── PERF DIAGNOSTIC (temporary): time a sheet switch from click → painted ──
 	const switchStartRef = useRef<number>(0);
+	// biome-ignore lint/correctness/useExhaustiveDependencies: intentional - activeSheetId is a trigger-only dep, not read in the body
 	useEffect(() => {
 		const t0 = switchStartRef.current;
 		if (!t0) return;
@@ -568,14 +533,6 @@ export function DashboardPage() {
 		[allQueries, sheets],
 	);
 
-	if (isReadOnly && !embed) {
-		return (
-			<div className="flex h-full w-full flex-col items-center justify-center gap-3 text-stone-500">
-				<Loader2 className="h-6 w-6 animate-spin text-indigo-500" />
-				<p className="text-sm">Opening dashboard…</p>
-			</div>
-		);
-	}
 	if (loadError) {
 		return (
 			<div className="py-12 text-center">
@@ -734,192 +691,154 @@ export function DashboardPage() {
 							</div>
 						)}
 
-						{/* ── Main content: real render when embedded (the portal iframes
-						    this route); otherwise iframe the deployed portal so the
-						    main app's toolbar view always matches what's published. ── */}
-						{embed ? (
-							<>
-								<div className="relative min-h-0 flex-1">
-									{/* Param sheet: rendered directly (not via keep-alive canvas) */}
-									{hasParamSheet &&
-										activeSheet?.isParamSheet && (
-											<div className="absolute inset-0 overflow-auto bg-stone-50 p-6">
-												<ParamSheet
-													paramGroups={paramGroups}
-													values={sharedParamValues}
-													onChangeValue={
-														handleSharedParamChange
-													}
-													onRunAll={handleRunAll}
-													allSatisfied={
-														allParamsSatisfied
-													}
-													config={
-														activeSheet.paramSheetConfig
-													}
-													isRunning={
-														paramSheetRunning
-													}
-													onParamOptionsChange={
-														setSheetParamOptions
-													}
-												/>
-											</div>
-										)}
-									{!hasVizs && !activeSheet?.isParamSheet && (
-										<div className="absolute inset-0 flex items-center justify-center text-stone-400">
-											No visualizations in this sheet
-										</div>
-									)}
-									{sheets
-										.filter(
-											(s) =>
-												!s.isParamSheet &&
-												visitedSheetIds.has(s.id) &&
-												s.visualizations.length > 0,
-										)
-										.map((sheet) => {
-											const isActive =
-												sheet.id === activeSheetId;
-											return (
-												<div
-													key={sheet.id}
-													className="absolute inset-0"
-													style={
-														isActive
-															? {
-																	visibility:
-																		"visible",
-																	zIndex: 1,
-																}
-															: {
-																	visibility:
-																		"hidden",
-																	zIndex: 0,
-																	pointerEvents:
-																		"none",
-																}
-													}
-												>
-													<SheetCanvas
-														sheet={sheet}
-														model={getModel(sheet)}
-														queries={
-															dashboard.queries ??
-															[]
-														}
-														paramValues={
-															queryParamValues
-														}
-														runKeys={runKeys}
-														hasParamSheet={
-															hasParamSheet
-														}
-														makeSaveModel={
-															makeSaveModel
-														}
-														layoutRef={getLayoutRef(
-															sheet.id,
-														)}
-													/>
-												</div>
-											);
-										})}
+						{/* ── flexlayout-react canvas ── */}
+						<div className="relative min-h-0 flex-1">
+							{/* Param sheet: rendered directly (not via keep-alive canvas) */}
+							{hasParamSheet && activeSheet?.isParamSheet && (
+								<div className="absolute inset-0 overflow-auto bg-stone-50 p-6">
+									<ParamSheet
+										paramGroups={paramGroups}
+										values={sharedParamValues}
+										onChangeValue={handleSharedParamChange}
+										onRunAll={handleRunAll}
+										allSatisfied={allParamsSatisfied}
+										config={activeSheet.paramSheetConfig}
+										isRunning={paramSheetRunning}
+										onParamOptionsChange={
+											setSheetParamOptions
+										}
+									/>
 								</div>
+							)}
+							{!hasVizs && !activeSheet?.isParamSheet && (
+								<div className="absolute inset-0 flex items-center justify-center text-stone-400">
+									No visualizations in this sheet
+								</div>
+							)}
+							{sheets
+								.filter(
+									(s) =>
+										!s.isParamSheet &&
+										visitedSheetIds.has(s.id) &&
+										s.visualizations.length > 0,
+								)
+								.map((sheet) => {
+									const isActive = sheet.id === activeSheetId;
+									return (
+										<div
+											key={sheet.id}
+											className="absolute inset-0"
+											style={
+												isActive
+													? {
+															visibility:
+																"visible",
+															zIndex: 1,
+														}
+													: {
+															visibility:
+																"hidden",
+															zIndex: 0,
+															pointerEvents:
+																"none",
+														}
+											}
+										>
+											<SheetCanvas
+												sheet={sheet}
+												model={getModel(sheet)}
+												queries={
+													dashboard.queries ?? []
+												}
+												paramValues={queryParamValues}
+												runKeys={runKeys}
+												hasParamSheet={hasParamSheet}
+												makeSaveModel={makeSaveModel}
+												layoutRef={getLayoutRef(
+													sheet.id,
+												)}
+											/>
+										</div>
+									);
+								})}
+						</div>
 
-								{/* ── Sheet tab bar ── */}
-								{sheets.length > 0 && (
-									<div className="flex-shrink-0 overflow-hidden rounded-xl border border-stone-200 bg-white shadow-soft">
-										<div className="flex items-stretch overflow-x-auto">
-											{sheets.map((sheet) => {
-												const isActive =
-													sheet.id === activeSheetId;
-												const tabColor =
-													sheet.isParamSheet
-														? "#6366f1"
-														: (sheet.color ??
-															"#3b82f6");
-												return (
-													<button
-														type="button"
-														key={sheet.id}
-														onClick={() => {
-															if (
-																sheet.id !==
-																activeSheetId
-															)
-																switchStartRef.current =
-																	performance.now();
-															setActiveSheetId(
-																sheet.id,
-															);
+						{/* ── Sheet tab bar ── */}
+						{sheets.length > 0 && (
+							<div className="flex-shrink-0 overflow-hidden rounded-xl border border-stone-200 bg-white shadow-soft">
+								<div className="flex items-stretch overflow-x-auto">
+									{sheets.map((sheet) => {
+										const isActive =
+											sheet.id === activeSheetId;
+										const tabColor = sheet.isParamSheet
+											? "#6366f1"
+											: (sheet.color ?? "#3b82f6");
+										return (
+											<button
+												type="button"
+												key={sheet.id}
+												onClick={() => {
+													if (
+														sheet.id !==
+														activeSheetId
+													)
+														switchStartRef.current =
+															performance.now();
+													setActiveSheetId(sheet.id);
+												}}
+												className={`-mt-px flex flex-shrink-0 select-none items-center gap-2 border-stone-200 border-t-2 border-r px-5 py-2.5 text-sm transition-colors ${
+													isActive
+														? "font-semibold text-stone-900"
+														: "border-t-transparent text-stone-500 hover:text-stone-700"
+												}`}
+												style={
+													isActive
+														? {
+																borderTopColor:
+																	tabColor,
+																backgroundColor: `${tabColor}26`,
+															}
+														: {
+																backgroundColor: `${tabColor}14`,
+															}
+												}
+											>
+												{sheet.isParamSheet ? (
+													<SlidersHorizontal
+														className={`h-3 w-3 flex-shrink-0 ${isActive ? "text-indigo-500" : "text-stone-400"}`}
+													/>
+												) : (
+													<span
+														className="h-2.5 w-2.5 flex-shrink-0 rounded-full"
+														style={{
+															backgroundColor:
+																tabColor,
 														}}
-														className={`-mt-px flex flex-shrink-0 select-none items-center gap-2 border-stone-200 border-t-2 border-r px-5 py-2.5 text-sm transition-colors ${
-															isActive
-																? "font-semibold text-stone-900"
-																: "border-t-transparent text-stone-500 hover:text-stone-700"
-														}`}
+													/>
+												)}
+												{sheet.name}
+												{!sheet.isParamSheet && (
+													<span
+														className={`rounded-full px-1.5 py-0.5 text-xs ${isActive ? "text-white" : "bg-stone-200 text-stone-500"}`}
 														style={
 															isActive
 																? {
-																		borderTopColor:
+																		backgroundColor:
 																			tabColor,
-																		backgroundColor: `${tabColor}26`,
 																	}
-																: {
-																		backgroundColor: `${tabColor}14`,
-																	}
+																: undefined
 														}
 													>
-														{sheet.isParamSheet ? (
-															<SlidersHorizontal
-																className={`h-3 w-3 flex-shrink-0 ${isActive ? "text-indigo-500" : "text-stone-400"}`}
-															/>
-														) : (
-															<span
-																className="h-2.5 w-2.5 flex-shrink-0 rounded-full"
-																style={{
-																	backgroundColor:
-																		tabColor,
-																}}
-															/>
-														)}
-														{sheet.name}
-														{!sheet.isParamSheet && (
-															<span
-																className={`rounded-full px-1.5 py-0.5 text-xs ${isActive ? "text-white" : "bg-stone-200 text-stone-500"}`}
-																style={
-																	isActive
-																		? {
-																				backgroundColor:
-																					tabColor,
-																			}
-																		: undefined
-																}
-															>
-																{
-																	sheet
-																		.visualizations
-																		.length
-																}
-															</span>
-														)}
-													</button>
-												);
-											})}
-										</div>
-									</div>
-								)}
-							</>
-						) : (
-							<div className="min-h-0 flex-1 overflow-hidden rounded-xl border border-stone-200 bg-white shadow-soft">
-								<iframe
-									key={dashboard.id}
-									src={publishedPortalUrl(dashboard.id)}
-									title={`Dashboard: ${dashboard.name}`}
-									className="h-full w-full border-0"
-									style={{ display: "block" }}
-								/>
+														{
+															sheet.visualizations
+																.length
+														}
+													</span>
+												)}
+											</button>
+										);
+									})}
+								</div>
 							</div>
 						)}
 

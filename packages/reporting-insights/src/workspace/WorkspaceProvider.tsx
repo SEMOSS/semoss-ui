@@ -25,7 +25,11 @@ import {
 } from "react";
 import { useInsight } from "@semoss/sdk-react";
 import { useToast } from "@/components/ui/Toast";
-import { isAdminUser } from "@/services/permissionsApi";
+import {
+	getProjects,
+	isAdminUser,
+	normalizeProjectPermission,
+} from "@/services/permissionsApi";
 import {
 	type DashboardMeta,
 	LANDING_PAGE_TAG,
@@ -36,7 +40,8 @@ import type { Dashboard } from "@/types/dashboard";
 
 /** Owned = I'm the project OWNER, or (permission unknown) it's my private draft. */
 export function isOwnedDashboard(d: Dashboard): boolean {
-	return d.permission ? d.permission === "OWNER" : !d.published;
+	const permission = normalizeProjectPermission(d.permission);
+	return permission ? permission === "OWNER" : !d.published;
 }
 
 interface WorkspaceContextValue {
@@ -123,7 +128,8 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
 		() =>
 			new ProjectStore(
 				async (pixel: string) => {
-					const res: any = await actionsRef.current.run(pixel);
+					const res: { pixelReturn?: Array<{ output?: unknown }> } =
+						await actionsRef.current.run(pixel);
 					return res?.pixelReturn?.[0]?.output;
 				},
 				() => insightIdRef.current,
@@ -150,9 +156,15 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
 		if (viewerRef.current) return viewerRef.current;
 		let userId = "";
 		try {
-			const out: any = await actionsRef.current
-				.run("GetUserInfo();")
-				.then((r: any) => r?.pixelReturn?.[0]?.output);
+			const out: Record<string, unknown> | undefined =
+				await actionsRef.current
+					.run("GetUserInfo();")
+					.then(
+						(r: { pixelReturn?: Array<{ output?: unknown }> }) =>
+							r?.pixelReturn?.[0]?.output as
+								| Record<string, unknown>
+								| undefined,
+					);
 			userId = String(
 				out?.id ?? out?.ID ?? out?.user_id ?? out?.name ?? "",
 			);
@@ -176,19 +188,39 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
 		setError(null);
 		try {
 			await ensureViewer();
-			const metas = await store.list();
+			const [metas, permissionProjects] = await Promise.all([
+				store.list(),
+				getProjects(false).catch(() => []),
+			]);
+			const permissionsById = new Map(
+				permissionProjects.map((project) => [
+					project.id,
+					project.permission,
+				]),
+			);
+			const resolvedMetas = metas.map((meta) => ({
+				...meta,
+				permission: permissionsById.get(meta.id) ?? meta.permission,
+			}));
 			// Merge any cached full definitions so we don't lose sheets already loaded
 			// (e.g. after opening a dashboard, then navigating back to the listing).
-			setDashboards(
-				metas.map((m) =>
-					metaToDashboard(
-						m,
-						defsCache.current.get(m.id)?.sheets ?? [],
-					),
-				),
+			const nextDashboards = resolvedMetas.map((m) =>
+				metaToDashboard(m, defsCache.current.get(m.id)?.sheets ?? []),
 			);
-		} catch (e: any) {
-			setError(e?.message ?? "Failed to load workspace.");
+			for (const meta of resolvedMetas) {
+				const cached = defsCache.current.get(meta.id);
+				if (cached)
+					defsCache.current.set(meta.id, {
+						...cached,
+						permission: meta.permission,
+					});
+			}
+			dashboardsRef.current = nextDashboards;
+			setDashboards(nextDashboards);
+		} catch (e: unknown) {
+			setError(
+				e instanceof Error ? e.message : "Failed to load workspace.",
+			);
 		} finally {
 			setLoading(false);
 		}
@@ -205,7 +237,9 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
 	}, [dashboards]);
 
 	const writeThrough = useCallback((p: Promise<unknown>) => {
-		p.catch((e: any) => setError(e?.message ?? "Failed to save change."));
+		p.catch((e: unknown) =>
+			setError(e instanceof Error ? e.message : "Failed to save change."),
+		);
 	}, []);
 
 	// ── Definitions ─────────────────────────────────────────────────────────────
@@ -225,7 +259,7 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
 				id,
 				tags: meta?.tags ?? def.tags ?? [],
 				published: meta?.published ?? def.published ?? false,
-				permission: meta?.permission ?? def.permission,
+				permission: meta?.permission,
 				folderId: (meta?.tags ?? def.tags ?? [])[0],
 			};
 			defsCache.current.set(id, full);
@@ -240,8 +274,12 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
 	);
 
 	const getDashboard = useCallback(
-		(id: string) =>
-			defsCache.current.get(id) ?? dashboards.find((d) => d.id === id),
+		(id: string) => {
+			const meta = dashboards.find((dashboard) => dashboard.id === id);
+			const cached = defsCache.current.get(id);
+			if (!cached) return meta;
+			return meta ? { ...cached, permission: meta.permission } : cached;
+		},
 		[dashboards],
 	);
 
@@ -257,6 +295,7 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
 				id,
 				tags: opts.tags,
 				published: opts.published,
+				permission: "OWNER",
 				folderId: opts.tags[0],
 			};
 			defsCache.current.set(id, created);
@@ -268,6 +307,7 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
 						description: created.description ?? "",
 						tags: opts.tags,
 						published: opts.published,
+						permission: "OWNER",
 						updatedAt: now(),
 					},
 					created.sheets,
@@ -290,7 +330,8 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
 				}),
 			);
 			if (!merged) return;
-			defsCache.current.set(id, merged);
+			const mergedDashboard = merged;
+			defsCache.current.set(id, mergedDashboard);
 			// Persist the definition. Tags are NEVER written from an edit — they're
 			// only set when sharing/publishing (setDashboardTags). A description change
 			// updates metadata but preserves the existing tags.
@@ -298,13 +339,13 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
 				(async () => {
 					const { released } = await store.saveDefinition(
 						id,
-						merged!,
+						mergedDashboard,
 					);
-					if (updates.name != null && merged?.name?.trim()) {
+					if (updates.name != null && mergedDashboard.name?.trim()) {
 						// Rename the SEMOSS project's display name to match the title.
 						// Owner-only (SetProjectDisplayName) — non-fatal for editors.
 						try {
-							await store.renameProject(id, merged?.name);
+							await store.renameProject(id, mergedDashboard.name);
 						} catch {
 							/* editor can't rename the project */
 						}
@@ -314,8 +355,8 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
 						try {
 							await store.setMetadata(
 								id,
-								merged?.tags ?? [],
-								merged?.description ?? "",
+								mergedDashboard.tags ?? [],
+								mergedDashboard.description ?? "",
 							);
 						} catch {
 							/* editor can't update project metadata */

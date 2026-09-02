@@ -36,6 +36,7 @@ import {
 	PY_MANIFEST_FILE,
 	PY_MANIFEST_PATH,
 } from "./mcpManifest";
+import { normalizeProjectPermission } from "./permissionsApi";
 import {
 	buildIframePortalZip,
 	buildMcpHostZip,
@@ -134,6 +135,11 @@ function asTags(raw: unknown): string[] {
 
 const str = (v: unknown): string => (v == null ? "" : String(v));
 
+/** Loosely-shaped pixel-output row — SEMOSS field names vary by build. */
+type RawRecord = Record<string, unknown>;
+const asRecord = (v: unknown): RawRecord =>
+	v && typeof v === "object" ? (v as RawRecord) : {};
+
 /**
  * Candidate asset paths for dashboard.json. GetAppAssets resolves relative to the
  * project's app_root, so the canonical location (where uploadApp writes) is
@@ -183,7 +189,13 @@ export class ProjectStore {
 			body,
 		});
 		if (!r.ok) throw new Error(`HTTP ${r.status}`);
-		const json: any = await r.json();
+		const json: {
+			insightID?: string;
+			pixelReturn?: Array<{
+				operationType?: string[];
+				output?: unknown;
+			}>;
+		} = await r.json();
 		if (json?.insightID) this.capturedInsightId = json.insightID;
 		const pr = json?.pixelReturn?.[0];
 		if (
@@ -232,10 +244,10 @@ export class ProjectStore {
 			'MyProjects(metaKeys=["tag","description"], metaFilters=[{}], ' +
 			'sort=[{"DATELASTEDITED":"DESC"}], userT=[true], limit=[500], offset=[0]);';
 		const out = await this.run(pixel);
-		const rows: any[] = Array.isArray(out)
+		const rows: RawRecord[] = Array.isArray(out)
 			? out
-			: Array.isArray((out as any)?.data)
-				? (out as any).data
+			: Array.isArray(asRecord(out).data)
+				? (asRecord(out).data as RawRecord[])
 				: [];
 		return rows
 			.map((r) => {
@@ -269,15 +281,14 @@ export class ProjectStore {
 						r.DATELASTEDITED ??
 						"",
 				);
-				// project_permission may come back as an array (["OWNER"]) or a string.
-				const permRaw = r.project_permission ?? r.permission;
-				const permission = Array.isArray(permRaw)
-					? permRaw[0] != null
-						? String(permRaw[0])
-						: undefined
-					: permRaw != null
-						? String(permRaw)
-						: undefined;
+				// project_permission may come back as an array, an object, or a string
+				// in any of several field names — normalize it to a single Role.
+				const permission = normalizeProjectPermission(
+					r.project_permission ??
+						r.project_user_permission ??
+						r.user_permission ??
+						r.permission,
+				);
 				return {
 					id,
 					name,
@@ -341,6 +352,7 @@ export class ProjectStore {
 		try {
 			const obj = JSON.parse(text) as Partial<Dashboard>;
 			if (!obj || typeof obj !== "object") return null;
+			delete obj.permission;
 			// Always trust the project id as the dashboard id so edits target the right project.
 			return { ...(obj as Dashboard), id };
 		} catch {
@@ -390,14 +402,19 @@ export class ProjectStore {
 			throw new Error("Upload failed: no fileLocation returned.");
 
 		// 2. Create the project.
-		let projectId = tempId;
-		const output: any = await this.run(
+		let projectId: string = tempId;
+		const output: unknown = await this.run(
 			`UploadProjectApp(filePath=["${escapeForPixel(fileLocation)}"], global=[${opts.published}]);`,
 		);
 		if (typeof output === "string" && /^error/i.test(output))
 			throw new Error(output);
+		const outputRecord = asRecord(output);
 		projectId =
-			output?.project_id ?? output?.id ?? output?.app_id ?? tempId;
+			str(
+				outputRecord.project_id ??
+					outputRecord.id ??
+					outputRecord.app_id,
+			) || tempId;
 		// (No temp-zip cleanup: this instance has no DeleteInsightFile reactor and the
 		// temp upload is discarded with the insight session anyway.)
 
@@ -451,10 +468,10 @@ export class ProjectStore {
 			const out = await this.run(
 				'MyProjects(metaKeys=["tag"], metaFilters=[{}], userT=[true], limit=[500], offset=[0]);',
 			);
-			const rows: any[] = Array.isArray(out)
+			const rows: RawRecord[] = Array.isArray(out)
 				? out
-				: Array.isArray((out as any)?.data)
-					? (out as any).data
+				: Array.isArray(asRecord(out).data)
+					? (asRecord(out).data as RawRecord[])
 					: [];
 			for (const r of rows) {
 				const id = str(
@@ -559,13 +576,18 @@ export class ProjectStore {
 		const fileLocation = uploaded[0]?.fileLocation ?? uploaded[0]?.fileName;
 		if (!fileLocation)
 			throw new Error("Upload failed: no fileLocation returned.");
-		const output: any = await this.run(
+		const output: unknown = await this.run(
 			`UploadProjectApp(filePath=["${escapeForPixel(fileLocation)}"], global=[true]);`,
 		);
 		if (typeof output === "string" && /^error/i.test(output))
 			throw new Error(output);
+		const outputRecord = asRecord(output);
 		const projectId =
-			output?.project_id ?? output?.id ?? output?.app_id ?? tempId;
+			str(
+				outputRecord.project_id ??
+					outputRecord.id ??
+					outputRecord.app_id,
+			) || tempId;
 		// Tag as MCP + host (NOT the dashboard marker, so it never shows in the list).
 		const meta = JSON.stringify({
 			tag: [MCP_TAG, MCP_HOST_TAG],
@@ -628,6 +650,7 @@ export class ProjectStore {
 			projectId: id,
 			updatedAt: new Date().toISOString(),
 		};
+		delete payload.permission;
 		await this.uploadPortalAsset(
 			id,
 			"dashboard.json",
@@ -846,7 +869,7 @@ export class ProjectStore {
 
 	// ── Delete ───────────────────────────────────────────────────────────────────
 	async remove(id: string): Promise<void> {
-		const output: any = await this.run(
+		const output: unknown = await this.run(
 			`DeleteProject(project=["${escapeForPixel(id)}"]);`,
 		);
 		if (typeof output === "string" && /^error/i.test(output))

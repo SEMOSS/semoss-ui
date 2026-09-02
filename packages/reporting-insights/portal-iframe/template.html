@@ -14,6 +14,13 @@
                 height: 100%;
                 background: #f1f5f9;
             }
+            main {
+                display: grid;
+                place-items: center;
+                height: 100%;
+                color: #57534e;
+                font: 14px sans-serif;
+            }
             iframe {
                 display: block;
                 width: 100%;
@@ -32,12 +39,14 @@
                 // portal at a different main-app deployment without re-zipping.
                 var override = new URLSearchParams(window.location.search).get('app-url');
                 if (override) appUrl = override;
-                // Same-origin fallback when nothing was baked in at build time.
-                if (!appUrl) appUrl = window.location.origin + '/';
+                if (!appUrl) {
+                    document.body.innerHTML = '<main>Dashboard viewer is not configured.</main>';
+                    return;
+                }
                 // Ensure exactly one trailing slash before appending the hash route.
                 appUrl = appUrl.replace(/\/+$/, '') + '/';
                 document.getElementById('ri-frame').src =
-                    appUrl + '#/dashboard/' + encodeURIComponent(projectId) + '/view?embed=1';
+                    appUrl + '#/dashboard/' + encodeURIComponent(projectId) + '/view';
             })();
         </script>
     </body>

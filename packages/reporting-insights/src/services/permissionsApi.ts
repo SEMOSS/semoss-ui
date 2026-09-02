@@ -14,6 +14,11 @@
 
 const MODULE = "/Monolith";
 
+/** Loosely-shaped REST response row — these endpoints' field names vary by SEMOSS build. */
+type RawRecord = Record<string, unknown>;
+const asRecord = (v: unknown): RawRecord =>
+	v && typeof v === "object" ? (v as RawRecord) : {};
+
 export type Role =
 	| "OWNER"
 	| "EDIT"
@@ -116,8 +121,8 @@ export function isAdminUser(): Promise<boolean> {
 				);
 				return (
 					data === true ||
-					(data as any)?.data === true ||
-					(data as any) === "true"
+					asRecord(data).data === true ||
+					data === "true"
 				);
 			} catch {
 				return false;
@@ -127,7 +132,7 @@ export function isAdminUser(): Promise<boolean> {
 	return adminCheck;
 }
 
-function mapEngine(e: any): EngineInfo {
+function mapEngine(e: RawRecord): EngineInfo {
 	return {
 		id: String(e.app_id ?? e.database_id ?? e.engine_id ?? e.id ?? ""),
 		name: String(
@@ -143,18 +148,21 @@ function mapEngine(e: any): EngineInfo {
 			e.engine_global === true ||
 			e.database_global === true ||
 			e.global === true,
-		permission: e.user_permission ?? e.permission,
+		permission: (e.user_permission ?? e.permission) as string | undefined,
 	};
 }
 
 /** List databases. admin=true → all databases; admin=false → only the user's. */
 export async function getEngines(admin: boolean): Promise<EngineInfo[]> {
-	const out = await getJson<any>(
+	const out = await getJson<unknown>(
 		`/api/auth/${adminSeg(admin)}engine/getEngines?engineTypes=DATABASE&limit=1000&offset=0`,
 	);
-	const rows: any[] = Array.isArray(out)
+	const rows: RawRecord[] = Array.isArray(out)
 		? out
-		: (out?.data ?? out?.databases ?? out?.engines ?? []);
+		: ((asRecord(out).data ??
+				asRecord(out).databases ??
+				asRecord(out).engines ??
+				[]) as RawRecord[]);
 	return rows.map(mapEngine);
 }
 
@@ -163,11 +171,13 @@ export async function getEngineUsers(
 	admin: boolean,
 	engineId: string,
 ): Promise<EngineMember[]> {
-	const out = await getJson<any>(
+	const out = await getJson<unknown>(
 		`/api/auth/${adminSeg(admin)}engine/getEngineUsers?engineId=${encodeURIComponent(engineId)}&limit=1000&offset=0`,
 	);
-	const members: any[] =
-		out?.members ?? out?.data?.members ?? (Array.isArray(out) ? out : []);
+	const members: RawRecord[] =
+		(asRecord(out).members as RawRecord[] | undefined) ??
+		(asRecord(asRecord(out).data).members as RawRecord[] | undefined) ??
+		(Array.isArray(out) ? out : []);
 	return members.map((m) => ({
 		id: String(m.id),
 		name: String(m.name ?? m.id),
@@ -225,14 +235,51 @@ export interface ProjectInfo {
 	permission?: string;
 }
 
+/**
+ * Normalize a project permission value from any shape the backend returns
+ * (array, object, numeric string, role name with spaces/dashes) into a `Role`.
+ */
+export function normalizeProjectPermission(
+	permission: unknown,
+): Role | undefined {
+	let value: unknown = Array.isArray(permission) ? permission[0] : permission;
+	if (value && typeof value === "object") {
+		const record = value as Record<string, unknown>;
+		value =
+			record.project_permission ??
+			record.user_permission ??
+			record.permission ??
+			record.name ??
+			record.value;
+	}
+	const normalized = String(value ?? "")
+		.trim()
+		.toUpperCase()
+		.replace(/[ -]+/g, "_");
+	if (!normalized) return undefined;
+	if (normalized === "1") return "OWNER";
+	if (normalized === "2") return "EDIT";
+	if (normalized === "3") return "READ_ONLY";
+	if (normalized === "READONLY") return "READ_ONLY";
+	const roles: Role[] = [
+		"OWNER",
+		"EDIT",
+		"EDITOR",
+		"VIEWER",
+		"READ_ONLY",
+		"DISCOVERABLE",
+	];
+	return roles.find((role) => role === normalized);
+}
+
 /** List projects/apps. admin=true → all; admin=false → only the user's. */
 export async function getProjects(admin: boolean): Promise<ProjectInfo[]> {
-	const out = await getJson<any>(
+	const out = await getJson<unknown>(
 		`/api/auth/${adminSeg(admin)}project/getProjects?limit=1000&offset=0`,
 	);
-	const rows: any[] = Array.isArray(out)
+	const rows: RawRecord[] = Array.isArray(out)
 		? out
-		: (out?.data ?? out?.projects ?? []);
+		: ((asRecord(out).data ?? asRecord(out).projects ?? []) as RawRecord[]);
 	return rows
 		.map((p) => ({
 			id: String(p.project_id ?? p.id ?? p.app_id ?? ""),
@@ -244,7 +291,12 @@ export async function getProjects(admin: boolean): Promise<ProjectInfo[]> {
 					"Untitled",
 			),
 			global: p.project_global === true || p.global === true,
-			permission: p.project_permission ?? p.permission,
+			permission: normalizeProjectPermission(
+				p.project_permission ??
+					p.project_user_permission ??
+					p.user_permission ??
+					p.permission,
+			),
 		}))
 		.filter((p) => p.id);
 }
@@ -254,11 +306,13 @@ export async function getProjectUsers(
 	admin: boolean,
 	projectId: string,
 ): Promise<EngineMember[]> {
-	const out = await getJson<any>(
+	const out = await getJson<unknown>(
 		`/api/auth/${adminSeg(admin)}project/getProjectUsers?projectId=${encodeURIComponent(projectId)}&limit=1000&offset=0`,
 	);
-	const members: any[] =
-		out?.members ?? out?.data?.members ?? (Array.isArray(out) ? out : []);
+	const members: RawRecord[] =
+		(asRecord(out).members as RawRecord[] | undefined) ??
+		(asRecord(asRecord(out).data).members as RawRecord[] | undefined) ??
+		(Array.isArray(out) ? out : []);
 	return members.map((m) => ({
 		id: String(m.id),
 		name: String(m.name ?? m.id),
@@ -309,18 +363,18 @@ export async function setProjectGlobal(
 	});
 }
 
-function mapUserRows(out: any): DirectoryUser[] {
-	const rows: any[] =
-		out?.members ??
-		out?.users ??
-		out?.data ??
+function mapUserRows(out: unknown): DirectoryUser[] {
+	const rows: RawRecord[] =
+		(asRecord(out).members as RawRecord[] | undefined) ??
+		(asRecord(out).users as RawRecord[] | undefined) ??
+		(asRecord(out).data as RawRecord[] | undefined) ??
 		(Array.isArray(out) ? out : []);
 	if (!Array.isArray(rows)) return [];
 	return rows
 		.map((u) => ({
 			id: String(u.id ?? u.userId ?? u.ID ?? ""),
 			name: String(u.name ?? u.username ?? u.id ?? ""),
-			email: u.email ?? u.EMAIL,
+			email: (u.email ?? u.EMAIL) as string | undefined,
 		}))
 		.filter((u) => u.id);
 }
@@ -338,13 +392,15 @@ export async function getAllUsers(admin: boolean): Promise<DirectoryUser[]> {
 	for (const base of endpoints) {
 		try {
 			// No limit/offset params → the server returns every user.
-			const out = await getJson<any>(base);
+			const out = await getJson<unknown>(base);
 			const rows = mapUserRows(out);
 			if (!rows.length) continue; // endpoint shape didn't match → try next
 			const seen = new Set<string>();
-			return rows.filter((u) =>
-				seen.has(u.id) ? false : (seen.add(u.id), true),
-			);
+			return rows.filter((u) => {
+				if (seen.has(u.id)) return false;
+				seen.add(u.id);
+				return true;
+			});
 		} catch {
 			/* try next endpoint */
 		}
@@ -379,10 +435,10 @@ const numToRole = (n: unknown): string =>
 		Number(n)
 	] ?? (typeof n === "string" ? n : "READ_ONLY");
 
-const mapGroup = (g: any): GroupInfo => ({
+const mapGroup = (g: RawRecord): GroupInfo => ({
 	id: String(g.id ?? g.groupId ?? g.group_id ?? g.ID ?? ""),
 	name: String(g.name ?? g.groupName ?? g.group_name ?? g.id ?? ""),
-	type: g.type ?? g.groupType ?? g.group_type,
+	type: (g.type ?? g.groupType ?? g.group_type) as string | undefined,
 });
 
 /** Teams/groups the user can grant access to. */
@@ -392,13 +448,13 @@ export async function getGroups(
 ): Promise<GroupInfo[]> {
 	const q = `limit=500&offset=0${search ? `&searchTerm=${encodeURIComponent(search)}` : ""}`;
 	try {
-		const out = await getJson<any>(
+		const out = await getJson<unknown>(
 			`/api/auth/${adminSeg(admin)}group/getGroups?${q}`,
 		);
-		const rows: any[] =
-			out?.data ??
-			out?.groups ??
-			out?.members ??
+		const rows: RawRecord[] =
+			(asRecord(out).data as RawRecord[] | undefined) ??
+			(asRecord(out).groups as RawRecord[] | undefined) ??
+			(asRecord(out).members as RawRecord[] | undefined) ??
 			(Array.isArray(out) ? out : []);
 		return rows.map(mapGroup).filter((g) => g.id);
 	} catch {
@@ -411,11 +467,13 @@ export async function getProjectGroups(
 	projectId: string,
 ): Promise<GroupMember[]> {
 	try {
-		const out = await getJson<any>(
+		const out = await getJson<unknown>(
 			`/api/auth/group/project/getGroupsWithAccessToProject?projectId=${encodeURIComponent(projectId)}&limit=500&offset=0`,
 		);
-		const rows: any[] =
-			out?.data ?? out?.members ?? (Array.isArray(out) ? out : []);
+		const rows: RawRecord[] =
+			(asRecord(out).data as RawRecord[] | undefined) ??
+			(asRecord(out).members as RawRecord[] | undefined) ??
+			(Array.isArray(out) ? out : []);
 		return rows
 			.map((g) => ({
 				...mapGroup(g),

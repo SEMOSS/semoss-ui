@@ -21,18 +21,51 @@ export const PORTAL_INDEX_HTML: string = portalAppHtml;
  */
 export const USE_IFRAME_PORTAL = true;
 
+/** Extracts the SEMOSS project id from a `public_home` portal URL or an app-shell hash route. */
+function projectIdFromLocation(
+	location: Pick<Location, "pathname" | "hash">,
+): string {
+	const publicHomeMatch = location.pathname.match(
+		/\/public_home\/([^/]+)\/portals(?:\/|$)/i,
+	);
+	if (publicHomeMatch) return decodeURIComponent(publicHomeMatch[1]);
+
+	const shellMatch = location.hash.match(
+		/#?\/app\/([^/?#]+)\/view(?:[/?#]|$)/i,
+	);
+	return shellMatch ? decodeURIComponent(shellMatch[1]) : "";
+}
+
 /**
- * URL of this app that portals iframe back to. Baked from `VITE_MAIN_APP_URL`
- * at build time; empty => the portal shell defaults to `window.location.origin`
- * at runtime (main app served at the same origin as the portal).
+ * URL of this app's directly served document, used as the portal iframe target.
+ * Baked from `VITE_MAIN_APP_URL` at build time; otherwise discovered at runtime
+ * from the current (or parent/top) location's SEMOSS routing context.
  */
 export function getMainAppUrl(): string {
-	return String((import.meta as any).env?.MAIN_APP_URL || "");
+	const configuredUrl = String(import.meta.env.MAIN_APP_URL || "");
+	if (configuredUrl) return configuredUrl;
+	if (typeof window === "undefined") return "";
+
+	let appId = projectIdFromLocation(window.location);
+	for (const frame of [window.parent, window.top]) {
+		if (appId || !frame) break;
+		try {
+			appId = projectIdFromLocation(frame.location);
+		} catch {
+			// Cross-origin parents cannot provide SEMOSS routing context.
+		}
+	}
+	if (!appId) return "";
+
+	const modulePath = (
+		String(import.meta.env.MODULE || "") || "/Monolith"
+	).replace(/\/+$/, "");
+	return `${window.location.origin}${modulePath}/public_home/${encodeURIComponent(appId)}/portals/`;
 }
 
 /**
  * Thin portal HTML: plain `<iframe>` shell that loads
- * `{APP_URL}/#/dashboard/<projectId>/view?embed=1`. New features added to the
+ * `{APP_URL}/#/dashboard/<projectId>/view`. New features added to the
  * main app show up in every portal on next iframe load -- no rezip / redeploy.
  */
 export function generateIframePortalHtml(
@@ -51,6 +84,13 @@ function escapeHtmlAttr(v: string): string {
 		.replace(/"/g, "&quot;")
 		.replace(/</g, "&lt;")
 		.replace(/>/g, "&gt;");
+}
+
+/** Strips the caller's own permission from a dashboard before it's embedded in a published portal. */
+function sharedDashboardDefinition(dashboard: Dashboard): Dashboard {
+	const definition = { ...dashboard };
+	delete definition.permission;
+	return definition;
 }
 
 /**
@@ -2167,7 +2207,8 @@ export async function buildPortalZip(
 
 	zip.file(`${folderName}.smss`, generateSmssContent(projectName, projectId));
 
-	const portalsFolder = zip.folder("assets")?.folder("portals")!;
+	const portalsFolder = zip.folder("assets")?.folder("portals");
+	if (!portalsFolder) throw new Error("Failed to create zip portals folder");
 	portalsFolder.file("index.html", portalAppHtml);
 
 	// Build a portal-compatible config that always has flat visualizations + layout
@@ -2186,7 +2227,7 @@ export async function buildPortalZip(
 		"dashboard.json",
 		JSON.stringify(
 			{
-				...dashboard,
+				...sharedDashboardDefinition(dashboard),
 				projectId,
 				visualizations: allVizs,
 				layout: allLayout,
@@ -2220,7 +2261,8 @@ export async function buildIframePortalZip(
 
 	zip.file(`${folderName}.smss`, generateSmssContent(projectName, projectId));
 
-	const portalsFolder = zip.folder("assets")?.folder("portals")!;
+	const portalsFolder = zip.folder("assets")?.folder("portals");
+	if (!portalsFolder) throw new Error("Failed to create zip portals folder");
 	portalsFolder.file(
 		"index.html",
 		generateIframePortalHtml(projectId, appUrl),
@@ -2238,7 +2280,7 @@ export async function buildIframePortalZip(
 		"dashboard.json",
 		JSON.stringify(
 			{
-				...dashboard,
+				...sharedDashboardDefinition(dashboard),
 				projectId,
 				visualizations: allVizs,
 				layout: allLayout,
@@ -2319,7 +2361,8 @@ export async function buildMcpHostZip(
 	const folderName = `${projectName}__${projectId}`;
 	const zip = new JSZip();
 	zip.file(`${folderName}.smss`, generateSmssContent(projectName, projectId));
-	const assets = zip.folder("assets")!;
+	const assets = zip.folder("assets");
+	if (!assets) throw new Error("Failed to create zip assets folder");
 	// Portal: opening the host project just forwards to the reporting-insights app.
 	assets.folder("portals")?.file("index.html", mcpHostRedirectHtml(appUrl));
 	// MCP tools: Python driver (functions) + manifest GetMCPTools reads.

@@ -33,17 +33,17 @@ import {
 } from "@semoss/ui/next";
 import { DashboardVisualization } from "@/components/DashboardVisualization";
 import { DashboardNav } from "@/components/editor/DashboardNav";
-import { VizEditor } from "@/components/editor/VizEditor";
+import { VizEditor, type VizLike } from "@/components/editor/VizEditor";
 import { isParamSatisfied } from "@/components/ParamControl";
 import { ParamSheetEditor } from "@/components/ParamSheetEditor";
 import { UserSearchSelect } from "@/components/UserSearchSelect";
 import { Button, buttonClasses, Input, Select } from "@/components/ui";
 import { TagInput } from "@/components/ui/TagInput";
 import { useToast } from "@/components/ui/Toast";
+import type { DroppedColumn } from "@/components/VizConfigDropZones";
 import type { Column, DropZoneDataWithTable } from "@/components/VizConfigTabs";
 import { useHeaderSlot } from "@/layouts/AppHeader";
 import { DashboardFilterProvider } from "@/lib/dashboardFilters";
-import { useEmbedMode } from "@/lib/embedMode";
 import { EventParamProvider } from "@/lib/eventParamStore";
 import {
 	buildQueryPixel,
@@ -79,8 +79,23 @@ import type {
 	LayoutItem,
 	Sheet,
 	Visualization,
+	VisualizationConfig,
 	VisualizationType,
 } from "@/types/dashboard";
+
+/** Shape of a pixel query's Collect output, as read throughout this page's test/preview flows. */
+interface QueryOutput {
+	data?: { headers?: string[]; values?: unknown[][] };
+	headers?: string[];
+	values?: unknown[][];
+	headerInfo?: Array<{
+		header?: string;
+		alias?: string;
+		type?: string;
+		dataType?: string;
+	}>;
+}
+
 import {
 	buildFlexModel,
 	isViewOnlyLayoutAction,
@@ -214,7 +229,9 @@ function createLayoutSelectionStore() {
 		},
 		subscribe: (listener: () => void) => {
 			listeners.add(listener);
-			return () => listeners.delete(listener);
+			return () => {
+				listeners.delete(listener);
+			};
 		},
 	};
 }
@@ -267,7 +284,6 @@ function collectVizLevelPalettes(sheets: Sheet[]): ColorPaletteType[] {
 export function NewDashboardPage() {
 	const { id } = useParams<{ id: string }>();
 	const navigate = useNavigate();
-	const embed = useEmbedMode();
 	const { actions } = useInsight();
 	const toast = useToast();
 	const {
@@ -441,7 +457,9 @@ export function NewDashboardPage() {
 		{},
 	);
 	const [databases, setDatabases] = useState<IDatabase[]>([]);
-	const [testResults, setTestResults] = useState<Record<string, any>>({});
+	const [testResults, setTestResults] = useState<Record<string, QueryOutput>>(
+		{},
+	);
 	const [testLoading, setTestLoading] = useState<Record<string, boolean>>({});
 	// True while "Run All Queries" / the param sheet's Run button is executing every query.
 	const [runningAllQueries, setRunningAllQueries] = useState(false);
@@ -457,7 +475,7 @@ export function NewDashboardPage() {
 				name: "",
 				visualizations: [],
 				layout: [],
-			} as any);
+			});
 		if (!flexModelCacheRef.current[sheet.id]) {
 			flexModelCacheRef.current[sheet.id] = buildFlexModel(sheet);
 		}
@@ -475,9 +493,19 @@ export function NewDashboardPage() {
 		);
 	}, []);
 
+	const loadDatabases = useCallback(async () => {
+		try {
+			const pixel = `MyEngines(metaKeys=["tag","domain","data classification","data restrictions","description"], engineTypes=['DATABASE'], metaFilters=[{}], sort=[{"ENGINENAME":"ASC"}], userT=[true], limit=[1000], offset=[0]);`;
+			const { pixelReturn } = await actions.run(pixel);
+			setDatabases((pixelReturn[0].output as IDatabase[]) ?? []);
+		} catch (err) {
+			console.error("Error loading databases:", err);
+		}
+	}, [actions]);
+
 	useEffect(() => {
 		void loadDatabases();
-	}, []);
+	}, [loadDatabases]);
 
 	// Load the directory for the private-access picker (admins get the full list;
 	// others fall back to free-text user ids). Fetched lazily when first needed.
@@ -491,6 +519,7 @@ export function NewDashboardPage() {
 
 	// Editing: fetch the full definition (sheets) from the backing project, then
 	// hydrate the editor. New dashboards skip this (defReady starts true).
+	// biome-ignore lint/correctness/useExhaustiveDependencies: intentional - only re-run when switching dashboards, not on every applyTags/loadDashboard/toast identity change
 	useEffect(() => {
 		if (!isEditing || !id) return;
 		let cancelled = false;
@@ -530,8 +559,12 @@ export function NewDashboardPage() {
 					finalSheets.find((s) => !s.isParamSheet)?.visualizations[0]
 						?.id ?? "",
 				);
-			} catch (e: any) {
-				toast.error(e?.message ?? "Failed to load this dashboard.");
+			} catch (e: unknown) {
+				toast.error(
+					e instanceof Error
+						? e.message
+						: "Failed to load this dashboard.",
+				);
 			} finally {
 				if (!cancelled) setDefReady(true);
 			}
@@ -539,18 +572,7 @@ export function NewDashboardPage() {
 		return () => {
 			cancelled = true;
 		};
-		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [id, isEditing]);
-
-	const loadDatabases = async () => {
-		try {
-			const pixel = `MyEngines(metaKeys=["tag","domain","data classification","data restrictions","description"], engineTypes=['DATABASE'], metaFilters=[{}], sort=[{"ENGINENAME":"ASC"}], userT=[true], limit=[1000], offset=[0]);`;
-			const { pixelReturn } = await actions.run(pixel);
-			setDatabases((pixelReturn[0].output as IDatabase[]) ?? []);
-		} catch (err) {
-			console.error("Error loading databases:", err);
-		}
-	};
 
 	// ── Active sheet helpers ─────────────────────────────────────────────────
 	const activeSheet = sheets.find((s) => s.id === activeSheetId) ?? sheets[0];
@@ -617,6 +639,7 @@ export function NewDashboardPage() {
 	const shouldHaveParamSheet = queries.some((q) =>
 		q.parameters.some((p) => p.inputType !== "event"),
 	);
+	// biome-ignore lint/correctness/useExhaustiveDependencies: intentional - only re-run when shouldHaveParamSheet flips, not on every queries/sheets identity change
 	useEffect(() => {
 		if (shouldHaveParamSheet) {
 			setSheets((prev) => ensureParamSheet(prev, queries));
@@ -634,7 +657,6 @@ export function NewDashboardPage() {
 					: prev;
 			});
 		}
-		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [shouldHaveParamSheet]);
 
 	// ── Sheet CRUD ───────────────────────────────────────────────────────────
@@ -1099,9 +1121,9 @@ export function NewDashboardPage() {
 			};
 			const pixel = buildQueryPixel(source, { collect: 10, substitute });
 			const { pixelReturn } =
-				await actions.run<[{ output: any; operationType?: string[] }]>(
-					pixel,
-				);
+				await actions.run<
+					[{ output: QueryOutput; operationType?: string[] }]
+				>(pixel);
 			// SEMOSS reports bad SQL as an ERROR operationType (it does not throw) —
 			// surface the real database message instead of a generic alert.
 			const { output, error } = lastPixelOutput(pixelReturn);
@@ -1114,7 +1136,7 @@ export function NewDashboardPage() {
 			// is unreliable (often all-STRING), so we INFER from the actual values
 			// and only fall back to headerInfo when a column has no sampled data.
 			const headers: string[] = output?.data?.headers ?? [];
-			const values: any[][] = output?.data?.values ?? [];
+			const values: unknown[][] = output?.data?.values ?? [];
 			const headerInfo: Array<{
 				header?: string;
 				alias?: string;
@@ -1170,11 +1192,13 @@ export function NewDashboardPage() {
 					}),
 				);
 			}
-		} catch (err: any) {
+		} catch (err: unknown) {
 			console.error("Test query error:", err);
 			toast.error(
-				String(err?.message ?? err ?? "Query failed.").trim() ||
-					"Query failed.",
+				(err instanceof Error
+					? err.message
+					: String(err ?? "")
+				).trim() || "Query failed.",
 			);
 		} finally {
 			setTestLoading((prev) => ({ ...prev, [qKey]: false }));
@@ -1372,14 +1396,14 @@ export function NewDashboardPage() {
 				const label = viz.title || "Untitled";
 				try {
 					const { pixelReturn } = await actions.run<
-						[{ output: any; operationType?: string[] }]
+						[{ output: QueryOutput; operationType?: string[] }]
 					>(buildQueryPixel(source, { collect: 1, substitute }));
 					const { error } = lastPixelOutput(pixelReturn);
 					if (error)
 						errors.push(`“${label}” (${sheet.name}): ${error}`);
-				} catch (e: any) {
+				} catch (e: unknown) {
 					errors.push(
-						`“${label}” (${sheet.name}): ${String(e?.message ?? e ?? "invalid query")}`,
+						`“${label}” (${sheet.name}): ${String(e instanceof Error ? e.message : (e ?? "invalid query"))}`,
 					);
 				}
 			}
@@ -1415,7 +1439,7 @@ export function NewDashboardPage() {
 					// edit goes fully live — not just the working copy.
 					updateDashboard(id, dashboardData);
 					await redeployDashboard(id, dashboardData);
-					navigate(`/dashboard/${id}${embed ? "/view?embed=1" : ""}`);
+					navigate(`/dashboard/${id}`);
 				} else {
 					// Finishing a new dashboard saves it as a project. Public → everyone with
 					// access sees it immediately; Private → only you until you share it with
@@ -1460,12 +1484,14 @@ export function NewDashboardPage() {
 								: "Dashboard saved (private to you).",
 						isPublic ? "Published" : "Saved",
 					);
-					navigate(
-						`/dashboard/${newId}${embed ? "/view?embed=1" : ""}`,
-					);
+					navigate(`/dashboard/${newId}`);
 				}
-			} catch (e: any) {
-				toast.error(e?.message ?? "Failed to save dashboard.");
+			} catch (e: unknown) {
+				toast.error(
+					e instanceof Error
+						? e.message
+						: "Failed to save dashboard.",
+				);
 				setSaving(false);
 				setShowPublishDialog(false);
 			}
@@ -1554,6 +1580,7 @@ export function NewDashboardPage() {
 					{!activeSheet?.isParamSheet && (
 						<div className="inline-flex items-center gap-0.5 rounded-lg bg-stone-100 p-0.5">
 							<button
+								type="button"
 								onClick={() => {
 									const sel = layoutSelectedVizIdRef.current;
 									if (sel) {
@@ -1570,6 +1597,7 @@ export function NewDashboardPage() {
 								</span>
 							</button>
 							<button
+								type="button"
 								onClick={() => setEditorTab("layout")}
 								className={`inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 font-medium text-xs transition-colors ${editorTab === "layout" ? "bg-white text-stone-800 shadow-soft" : "text-stone-500 hover:text-stone-700"}`}
 							>
@@ -1581,16 +1609,13 @@ export function NewDashboardPage() {
 						</div>
 					)}
 					<Link
-						to={
-							isEditing
-								? `/dashboard/${id}${embed ? "/view?embed=1" : ""}`
-								: "/dashboards"
-						}
+						to={isEditing ? `/dashboard/${id}` : "/dashboards"}
 						className={buttonClasses("secondary", "sm")}
 					>
 						Cancel
 					</Link>
 					<button
+						type="button"
 						onClick={onSaveClick}
 						disabled={saving}
 						className={`${buttonClasses("primary", "sm")} disabled:cursor-not-allowed disabled:opacity-60`}
@@ -1999,7 +2024,7 @@ export function NewDashboardPage() {
 														raw?.data?.headers ??
 														raw?.headers ??
 														[];
-													const values: any[][] =
+													const values: unknown[][] =
 														raw?.data?.values ??
 														raw?.values ??
 														[];
@@ -2007,8 +2032,10 @@ export function NewDashboardPage() {
 														headers.length
 															? values.map(
 																	(row) => {
-																		const obj: any =
-																			{};
+																		const obj: Record<
+																			string,
+																			unknown
+																		> = {};
 																		headers.forEach(
 																			(
 																				h,
@@ -2413,9 +2440,9 @@ export function NewDashboardPage() {
 							</DialogDescription>
 
 							<div className="mt-4">
-								<label className="mb-1 block font-semibold text-[11px] text-stone-400 uppercase tracking-widest">
+								<span className="mb-1 block font-semibold text-[11px] text-stone-400 uppercase tracking-widest">
 									Folders (tags)
-								</label>
+								</span>
 								<TagInput
 									value={tags}
 									onChange={applyTags}
@@ -2432,9 +2459,9 @@ export function NewDashboardPage() {
 
 							{/* Visibility */}
 							<div className="mt-4">
-								<label className="mb-1 block font-semibold text-[11px] text-stone-400 uppercase tracking-widest">
+								<span className="mb-1 block font-semibold text-[11px] text-stone-400 uppercase tracking-widest">
 									Who can access
-								</label>
+								</span>
 								<div className="grid grid-cols-2 gap-2">
 									<button
 										type="button"
@@ -2565,6 +2592,7 @@ export function NewDashboardPage() {
 															{roleLabel(g.role)}
 														</span>
 														<button
+															type="button"
 															onClick={() =>
 																setGrants(
 																	(prev) =>
@@ -2683,6 +2711,7 @@ export function NewDashboardPage() {
 																Viewer
 															</span>
 															<button
+																type="button"
 																onClick={() =>
 																	setTeamGrants(
 																		(
@@ -2713,6 +2742,7 @@ export function NewDashboardPage() {
 
 							<div className="mt-5 flex justify-end gap-2 border-stone-100 border-t pt-4">
 								<button
+									type="button"
 									onClick={() => setShowPublishDialog(false)}
 									disabled={saving}
 									className={`${buttonClasses("secondary", "sm")} disabled:opacity-50`}
@@ -2720,6 +2750,7 @@ export function NewDashboardPage() {
 									Cancel
 								</button>
 								<button
+									type="button"
 									onClick={handleSave}
 									disabled={saving}
 									className={`${buttonClasses("primary", "sm")} disabled:cursor-not-allowed disabled:opacity-60`}
@@ -2755,7 +2786,7 @@ interface VizCardProps {
 	hasParamSheet?: boolean;
 	queryUsage: Record<string, number>;
 	databases: IDatabase[];
-	testResult: any;
+	testResult: QueryOutput | undefined;
 	testLoading: boolean;
 	inLayout: boolean;
 	/** Patch viz-only fields (config, title, type, phi…). Query fields are split out below. */
@@ -2819,14 +2850,19 @@ function VizCard({
 	const { actions } = useInsight();
 
 	// Normalised runPixel for HtmlBlockEditor / VizEditor — returns output directly
+	// biome-ignore lint/correctness/useExhaustiveDependencies: actions is intentionally omitted to keep a stable runPixel identity
 	const runPixel = React.useCallback(
 		// lastPixelOutput → the Collect output of a (possibly multi-statement) pixel,
 		// so data-product frame-merge previews work; identical to [0] for single stmts.
 		(pixel: string) =>
-			actions
-				.run(pixel)
-				.then((r: any) => lastPixelOutput(r.pixelReturn).output),
-		// eslint-disable-next-line react-hooks/exhaustive-deps
+			actions.run(pixel).then(
+				(r: {
+					pixelReturn: Array<{
+						output?: unknown;
+						operationType?: string[];
+					}>;
+				}) => lastPixelOutput(r.pixelReturn).output,
+			),
 		[],
 	);
 
@@ -2858,31 +2894,45 @@ function VizCard({
 		runPixel(
 			`GetDatabaseMetamodel(database=["${metaDbId}"], options=["dataTypes","logicalNames"]);`,
 		)
-			.then((out: any) => {
-				const dt = out?.dataTypes ?? out?.data?.dataTypes ?? {};
-				const logical =
-					out?.logicalNames ?? out?.data?.logicalNames ?? {};
-				// Build a CASE-INSENSITIVE map keyed by every name a query column might use:
-				// full "CONCEPT__PROP", bare "PROP", and the logical aliases (e.g. "number").
-				const map: Record<string, string> = {};
-				const put = (k: unknown, v: string) => {
-					if (k != null && k !== "") map[String(k).toLowerCase()] = v;
-				};
-				for (const [k, v] of Object.entries(dt)) {
-					const type = String(v);
-					put(k, type);
-					put(
-						k.includes("__")
-							? k.split("__").slice(1).join("__")
-							: k,
-						type,
-					);
-					(Array.isArray(logical[k]) ? logical[k] : []).forEach(
-						(alias: string) => put(alias, type),
-					);
-				}
-				if (!cancelled) setMetaTypes(map);
-			})
+			.then(
+				(out: {
+					dataTypes?: Record<string, unknown>;
+					logicalNames?: Record<string, unknown>;
+					data?: {
+						dataTypes?: Record<string, unknown>;
+						logicalNames?: Record<string, unknown>;
+					};
+				}) => {
+					const dt = out?.dataTypes ?? out?.data?.dataTypes ?? {};
+					const logical =
+						out?.logicalNames ?? out?.data?.logicalNames ?? {};
+					// Build a CASE-INSENSITIVE map keyed by every name a query column might use:
+					// full "CONCEPT__PROP", bare "PROP", and the logical aliases (e.g. "number").
+					const map: Record<string, string> = {};
+					const put = (k: unknown, v: string) => {
+						if (k != null && k !== "")
+							map[String(k).toLowerCase()] = v;
+					};
+					for (const [k, v] of Object.entries(dt)) {
+						const type = String(v);
+						put(k, type);
+						put(
+							k.includes("__")
+								? k.split("__").slice(1).join("__")
+								: k,
+							type,
+						);
+						const logicalValue = logical[k];
+						const aliases = Array.isArray(logicalValue)
+							? logicalValue
+							: [];
+						aliases.forEach((alias) => {
+							put(alias, type);
+						});
+					}
+					if (!cancelled) setMetaTypes(map);
+				},
+			)
 			.catch(() => {});
 		return () => {
 			cancelled = true;
@@ -2905,8 +2955,8 @@ function VizCard({
 		const vizPatch: Partial<Visualization> = {};
 		for (const [k, v] of Object.entries(patch)) {
 			if ((QUERY_FIELDS as readonly string[]).includes(k))
-				(queryPatch as any)[k] = v;
-			else (vizPatch as any)[k] = v;
+				(queryPatch as Record<string, unknown>)[k] = v;
+			else (vizPatch as Record<string, unknown>)[k] = v;
 		}
 		if (Object.keys(queryPatch).length) {
 			if (viz.queryId) {
@@ -2944,20 +2994,21 @@ function VizCard({
 	return (() => {
 		const liveHeaders: string[] =
 			testResult?.data?.headers ?? testResult?.headers ?? [];
-		const rawValues: any[][] =
+		const rawValues: unknown[][] =
 			testResult?.data?.values ?? testResult?.values ?? [];
 		const previewData = rawValues.map((row) => {
-			const obj: any = {};
+			const obj: Record<string, unknown> = {};
 			liveHeaders.forEach((h, i) => {
 				obj[h] = row[i];
 			});
 			return obj;
 		});
-		const headerInfo: Array<{ header: string; type: string }> =
+		const headerInfo: Array<{ header?: string; type?: string }> =
 			testResult?.headerInfo ?? [];
 		const headerInfoTypes: Record<string, string> = {};
 		headerInfo.forEach((info) => {
-			headerInfoTypes[info.header] = info.type;
+			if (info.header && info.type)
+				headerInfoTypes[info.header] = info.type;
 		});
 		const savedTypes = viz.config?.columnTypes ?? {};
 
@@ -2979,9 +3030,9 @@ function VizCard({
 		const metaLookup = (h: string): string | undefined => {
 			const low = (h ?? "").toLowerCase();
 			const bare = low.includes("__")
-				? low.split("__").pop()!
+				? (low.split("__").pop() ?? low)
 				: low.includes(".")
-					? low.split(".").pop()!
+					? (low.split(".").pop() ?? low)
 					: low;
 			return metaTypes[low] ?? metaTypes[bare];
 		};
@@ -3550,10 +3601,11 @@ function VizCard({
 
 			if (vizType === "kpi") {
 				// KPI: metrics → yKeys
-				newConfig.yKeys = data.metrics?.map((c: any) => c.name) || [];
+				newConfig.yKeys =
+					data.metrics?.map((c: DroppedColumn) => c.name) || [];
 				// Store per-column aggregations
 				newConfig.columnAggregations = {};
-				data.metrics?.forEach((c: any) => {
+				data.metrics?.forEach((c: DroppedColumn) => {
 					if (c.aggregation && newConfig.columnAggregations) {
 						newConfig.columnAggregations[c.name] = c.aggregation;
 					}
@@ -3561,7 +3613,7 @@ function VizCard({
 				// Keep legacy kpiAggregation for backward compat
 				if (data.metrics?.[0]?.aggregation) {
 					newConfig.kpiAggregation = data.metrics[0]
-						.aggregation as any;
+						.aggregation as VisualizationConfig["kpiAggregation"];
 				}
 			} else if (vizType === "pie") {
 				// Pie: name → xKey, value → yKeys[0]
@@ -3587,14 +3639,15 @@ function VizCard({
 				}
 			} else if (vizType === "pivot") {
 				// Pivot: rows → pivotRows, columns → pivotColumns, values → pivotValues
-				newConfig.pivotRows = data.rows?.map((c: any) => c.name) || [];
+				newConfig.pivotRows =
+					data.rows?.map((c: DroppedColumn) => c.name) || [];
 				newConfig.pivotColumns =
-					data.columns?.map((c: any) => c.name) || [];
+					data.columns?.map((c: DroppedColumn) => c.name) || [];
 				newConfig.pivotValues =
-					data.values?.map((c: any) => c.name) || [];
+					data.values?.map((c: DroppedColumn) => c.name) || [];
 				// Store per-column aggregations for value columns
 				newConfig.columnAggregations = {};
-				data.values?.forEach((c: any) => {
+				data.values?.forEach((c: DroppedColumn) => {
 					if (c.aggregation && newConfig.columnAggregations) {
 						newConfig.columnAggregations[c.name] = c.aggregation;
 					}
@@ -3615,7 +3668,7 @@ function VizCard({
 				// Store per-column aggregations
 				newConfig.columnAggregations = {};
 				[data.xAxis?.[0], data.yAxis?.[0], data.size?.[0]].forEach(
-					(col: any) => {
+					(col: DroppedColumn | undefined) => {
 						if (col?.aggregation && newConfig.columnAggregations) {
 							newConfig.columnAggregations[col.name] =
 								col.aggregation;
@@ -3717,7 +3770,7 @@ function VizCard({
 			} else if (vizType === "sunburst") {
 				// Sunburst: hierarchy levels + value column
 				newConfig.sunburstLevels =
-					data.levels?.map((c: any) => c.name) || [];
+					data.levels?.map((c: DroppedColumn) => c.name) || [];
 				newConfig.yKeys = data.value?.[0] ? [data.value[0].name] : [];
 				newConfig.columnAggregations = {};
 				if (data.value?.[0]?.aggregation)
@@ -3727,7 +3780,7 @@ function VizCard({
 			} else if (vizType === "puck") {
 				// Puck: group columns (nesting depth) + value column
 				newConfig.puckGroups =
-					data.puckGroups?.map((c: any) => c.name) || [];
+					data.puckGroups?.map((c: DroppedColumn) => c.name) || [];
 				newConfig.yKeys = data.size?.[0] ? [data.size[0].name] : [];
 				newConfig.columnAggregations = {};
 				if (data.size?.[0]?.aggregation)
@@ -3735,10 +3788,10 @@ function VizCard({
 						data.size[0].aggregation;
 				newConfig.xKey = "";
 			} else if (vizType === "combo") {
-				const barCols = (data.barSeries as any[]) ?? [];
-				const lineCols = (data.lineSeries as any[]) ?? [];
-				const barKeys = barCols.map((c: any) => c.name as string);
-				const lineKeys = lineCols.map((c: any) => c.name as string);
+				const barCols = data.barSeries ?? [];
+				const lineCols = data.lineSeries ?? [];
+				const barKeys = barCols.map((c) => c.name);
+				const lineKeys = lineCols.map((c) => c.name);
 				const sharedCols = new Set(
 					barKeys.filter((k) => lineKeys.includes(k)),
 				);
@@ -3751,13 +3804,13 @@ function VizCard({
 				newConfig.xKey = data.xAxis?.[0]?.name || "";
 				newConfig.yKeys = [...resolvedBarKeys, ...resolvedLineKeys];
 				newConfig.columnAggregations = {};
-				barCols.forEach((c: any, i: number) => {
+				barCols.forEach((c, i: number) => {
 					if (c.aggregation && newConfig.columnAggregations) {
 						newConfig.columnAggregations[resolvedBarKeys[i]] =
 							c.aggregation;
 					}
 				});
-				lineCols.forEach((c: any, i: number) => {
+				lineCols.forEach((c, i: number) => {
 					if (c.aggregation && newConfig.columnAggregations) {
 						newConfig.columnAggregations[resolvedLineKeys[i]] =
 							c.aggregation;
@@ -3766,10 +3819,11 @@ function VizCard({
 			} else {
 				// Standard: xAxis → xKey, yAxis → yKeys
 				newConfig.xKey = data.xAxis?.[0]?.name || "";
-				newConfig.yKeys = data.yAxis?.map((c: any) => c.name) || [];
+				newConfig.yKeys =
+					data.yAxis?.map((c: DroppedColumn) => c.name) || [];
 				// Store per-column aggregations
 				newConfig.columnAggregations = {};
-				data.yAxis?.forEach((c: any) => {
+				data.yAxis?.forEach((c: DroppedColumn) => {
 					if (c.aggregation && newConfig.columnAggregations) {
 						newConfig.columnAggregations[c.name] = c.aggregation;
 					}
@@ -3808,16 +3862,16 @@ function VizCard({
 
 			// Patch combo: save barKeys/lineKeys, per-zone aggregations, and seriesTypes
 			if (vizType === "combo") {
-				const barCols = (data.barSeries as any[]) ?? [];
-				const lineCols = (data.lineSeries as any[]) ?? [];
-				const barKeys = barCols.map((c: any) => c.name as string);
-				const lineKeys = lineCols.map((c: any) => c.name as string);
+				const barCols = data.barSeries ?? [];
+				const lineCols = data.lineSeries ?? [];
+				const barKeys = barCols.map((c) => c.name);
+				const lineKeys = lineCols.map((c) => c.name);
 				const barAggregations: Record<string, string> = {};
-				barCols.forEach((c: any) => {
+				barCols.forEach((c) => {
 					if (c.aggregation) barAggregations[c.name] = c.aggregation;
 				});
 				const lineAggregations: Record<string, string> = {};
-				lineCols.forEach((c: any) => {
+				lineCols.forEach((c) => {
 					if (c.aggregation) lineAggregations[c.name] = c.aggregation;
 				});
 				const existing = (newConfig.styling?.combo?.seriesTypes ??
@@ -3842,10 +3896,14 @@ function VizCard({
 			onUpdate({ config: newConfig });
 		};
 
+		const queryId = viz.queryId;
+
 		return (
 			<VizEditor
 				viz={vizForEditor}
-				onUpdate={handleEditorUpdate as any}
+				onUpdate={
+					handleEditorUpdate as (patch: Partial<VizLike>) => void
+				}
 				queries={queriesForPicker}
 				boundQueryId={viz.queryId}
 				onSelectQuery={onSelectQuery}
@@ -3855,9 +3913,9 @@ function VizCard({
 				hasParamSheet={hasParamSheet}
 				loadAfterParams={boundQuery?.loadAfterParams ?? false}
 				onToggleLoadAfterParams={
-					viz.queryId
+					queryId
 						? () =>
-								onUpdateQuery(viz.queryId!, {
+								onUpdateQuery(queryId, {
 									loadAfterParams: !(
 										boundQuery?.loadAfterParams ?? false
 									),
