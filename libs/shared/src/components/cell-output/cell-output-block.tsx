@@ -115,13 +115,18 @@ export const CellOutputBlock = ({
 
 	const isTableOutput = isObjectOutput && isTabularArray(outputValue);
 
-	const isMarkdownOutput =
-		!isObjectOutput && !error && !rawOutput && looksLikeMarkdown(output);
+	const htmlText = !isObjectOutput ? normalizeForMarkdown(output) : "";
 	const isHtmlOutput =
 		!isObjectOutput &&
 		!error &&
 		!rawOutput &&
-		looksLikeHtmlDocument(output);
+		looksLikeHtmlDocument(htmlText);
+	const isMarkdownOutput =
+		!isObjectOutput &&
+		!isHtmlOutput &&
+		!error &&
+		!rawOutput &&
+		looksLikeMarkdown(output);
 
 	const markdownText = isMarkdownOutput ? normalizeForMarkdown(output) : "";
 
@@ -301,7 +306,7 @@ export const CellOutputBlock = ({
 					) : isHtmlOutput ? (
 						<div className="h-72">
 							<SandpackHtmlPreview
-								html={output}
+								html={htmlText}
 								forceFullHeight
 								className="border-0"
 							/>
@@ -443,7 +448,7 @@ export const CellOutputBlock = ({
 					) : isHtmlOutput ? (
 						<div className="h-full min-h-0">
 							<SandpackHtmlPreview
-								html={output}
+								html={htmlText}
 								forceFullHeight
 								className="border-0"
 							/>
