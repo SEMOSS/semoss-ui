@@ -1,17 +1,13 @@
-import type {
-	AgentRunItemEvent,
-	AgentRunSnapshot,
-	AgentRunSubscription,
-} from "@semoss/sdk/react";
+import type { AgentRunItemEvent, AgentRunSnapshot } from "@semoss/sdk";
 import {
+	AgentStore,
 	decideAgentRunAction,
 	getAgentRun,
 	getSubagentRuns,
 	runAgent,
 	stopAgentRun,
-	subscribeRunAgent,
 	uploadInsight,
-} from "@semoss/sdk/react";
+} from "@semoss/sdk";
 import type { Engine } from "@semoss/shared";
 import type {
 	ConversationRoom,
@@ -80,6 +76,14 @@ export type WorkbenchAssistantPermissionMode =
 
 /** Reasoning-effort level forwarded to the model provider for each run. */
 export type WorkbenchAssistantEffort = "low" | "medium" | "high" | "max";
+
+/** Minimal reference to a backend agent workspace selected for assistant runs. */
+export type WorkbenchAssistantAgent = {
+	/** Workspace id passed to RunAgent. */
+	workspace_id: string;
+	/** Display name retained for the settings selector. */
+	name?: string;
+};
 
 /**
  * The pixel value for a reasoning-effort level — the harness names the top
@@ -168,6 +172,8 @@ export interface WorkbenchAssistantSliceState {
 
 	/** Model engine used for new runs. */
 	model: Engine | null;
+	/** Optional backend agent workspace used for new runs. */
+	agent: WorkbenchAssistantAgent | null;
 	/** Turn budget passed to RunAgent. */
 	maxTurns: number;
 	/** Permission mode for new runs; null defers to the harness default. */
@@ -284,6 +290,8 @@ export interface WorkbenchAssistantSliceState {
 	renameRoom: (roomId: string, name: string) => Promise<void>;
 	/** Set the model engine used for new runs. */
 	setModel: (model: Engine) => void;
+	/** Set the backend agent workspace used for new runs. */
+	setAgent: (agent: WorkbenchAssistantAgent | null) => void;
 	/** Set the turn budget; invalid values fall back to the default. */
 	setMaxTurns: (maxTurns: number) => void;
 	/** Set the permission mode for new runs (null = harness default). */
@@ -373,13 +381,13 @@ export const createWorkbenchAssistantSlice = (
 	workbenchId: string,
 ): WorkbenchSlice<WorkbenchAssistantSliceState> => {
 	// Runtime owned by this store instance, deliberately outside reactive
-	// state. Each entry pairs the live SDK subscription (for pokeNow/stop)
-	// with a promise that resolves at the run's first pause or terminal
-	// status — what submit() awaits before reporting the outcome.
+	// state. Each entry pairs the live AgentStore (for pokeNow/stop) with a
+	// promise that resolves at the run's first pause or terminal status --
+	// what submit() awaits before reporting the outcome.
 	const activeWatchers = new Map<
 		string,
 		{
-			subscription: AgentRunSubscription;
+			agent: AgentStore;
 			promise: Promise<AgentRunSnapshot>;
 		}
 	>();
@@ -529,8 +537,12 @@ export const createWorkbenchAssistantSlice = (
 			// per poll instead of one per event.
 			let pendingEvents: AgentRunItemEvent[] = [];
 
-			const subscription = subscribeRunAgent(
+			const agent = new AgentStore(
+				get().assistant.roomId ?? "",
+				insightId,
 				runId,
+			);
+			const subscription = agent.watch(
 				{
 					onEvent: (event) => {
 						pendingEvents.push(event);
@@ -627,9 +639,9 @@ export const createWorkbenchAssistantSlice = (
 				),
 			]);
 
-			activeWatchers.set(runId, { subscription, promise });
+			activeWatchers.set(runId, { agent, promise });
 			void subscription.done.finally(() => {
-				if (activeWatchers.get(runId)?.subscription === subscription) {
+				if (activeWatchers.get(runId)?.agent === agent) {
 					activeWatchers.delete(runId);
 				}
 			});
@@ -692,6 +704,7 @@ export const createWorkbenchAssistantSlice = (
 			onRebuild: null,
 
 			model: null,
+			agent: null,
 			maxTurns: DEFAULT_MAX_TURNS,
 			permissionMode: null,
 			effort: null,
@@ -862,6 +875,7 @@ export const createWorkbenchAssistantSlice = (
 						mcp: get().assistant.mcp,
 						predefinedPrompts: [],
 						modelId: model.engine_id,
+						workspace: get().assistant.agent,
 						harnessType: "semoss",
 						workbench: workbenchId,
 					});
@@ -905,7 +919,9 @@ export const createWorkbenchAssistantSlice = (
 							harnessType: "semoss",
 							// The SDK forwards agentId as the pixel's
 							// workspaceId.
-							agentId: WORKBENCH_AGENT_ID,
+							agentId:
+								assistantNow.agent?.workspace_id ??
+								WORKBENCH_AGENT_ID,
 							maxTurns: get().assistant.maxTurns,
 							maxReflections: 0,
 							media: attachments
@@ -1026,7 +1042,7 @@ export const createWorkbenchAssistantSlice = (
 				// to a reconcile, which re-attaches the stream.
 				const watcher = activeWatchers.get(runId);
 				if (watcher) {
-					watcher.subscription.pokeNow();
+					watcher.agent.pokeNow();
 				} else {
 					await get().assistant.reconcileRun(runId);
 				}
@@ -1046,7 +1062,7 @@ export const createWorkbenchAssistantSlice = (
 				);
 				const watcher = activeWatchers.get(runId);
 				if (watcher) {
-					watcher.subscription.pokeNow();
+					watcher.agent.pokeNow();
 				} else {
 					await get().assistant.reconcileRun(runId);
 				}
@@ -1169,6 +1185,25 @@ export const createWorkbenchAssistantSlice = (
 							persistedModelId,
 						).catch(() => null);
 						if (model) setAssistant({ model });
+					}
+					const workspace = options?.workspace;
+					if (
+						workspace &&
+						typeof workspace === "object" &&
+						"workspace_id" in workspace &&
+						typeof workspace.workspace_id === "string"
+					) {
+						setAssistant({
+							agent: {
+								workspace_id: workspace.workspace_id,
+								name:
+									typeof workspace.name === "string"
+										? workspace.name
+										: undefined,
+							},
+						});
+					} else {
+						setAssistant({ agent: null });
 					}
 
 					const messages = await getPlaygroundMessages(
@@ -1294,6 +1329,7 @@ export const createWorkbenchAssistantSlice = (
 			},
 
 			setModel: (model) => setAssistant({ model }),
+			setAgent: (agent) => setAssistant({ agent }),
 			setMaxTurns: (maxTurns) =>
 				setAssistant({
 					maxTurns:
@@ -1324,7 +1360,7 @@ export const createWorkbenchAssistantSlice = (
 					await stopAgentRun(activeRunId, insightId);
 					// The stream observes the CANCELLED snapshot on its
 					// next poll — poke it so the UI settles immediately.
-					activeWatchers.get(activeRunId)?.subscription.pokeNow();
+					activeWatchers.get(activeRunId)?.agent.pokeNow();
 				} catch (error) {
 					pushNotice(toErrorMessage(error), "error");
 				}

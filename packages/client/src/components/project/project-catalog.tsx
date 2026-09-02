@@ -14,7 +14,6 @@ import {
 } from "@semoss/ui/next";
 import { setProjectFavorite, setProjectGlobal } from "@/api";
 import { SystemAppGridItem } from "@/components/app";
-import { AddAppCloneModal } from "@/components/app/save-app/add-app-clone-modal";
 import {
 	CatalogGrid,
 	CatalogLayout,
@@ -27,6 +26,7 @@ import { DeleteEntityDialog } from "@/components/shared/delete-entity-dialog";
 import { useRootStore } from "@/hooks";
 import { getProjectLabel, isOwnerPermission } from "@/utility/catalog";
 import { NavbarHeader, NavbarLeft } from "../shared";
+import { CloneProjectDialog } from "./clone-project-dialog";
 import { ProjectGridItem } from "./project-grid-item";
 
 const CATALOG_CONFIG = {
@@ -668,14 +668,14 @@ export const ProjectCatalog = observer(
 					<Help />
 				</CatalogLayout>
 
-				{/* Clone Modal */}
+				{/* Clone Dialog */}
 				{cloneModalApp && (
-					<AddAppCloneModal
+					<CloneProjectDialog
 						open={Boolean(cloneModalApp)}
-						appId={cloneModalApp.project_id}
-						handleClose={(appId) => {
+						project={cloneModalApp}
+						onClose={(clonedId) => {
 							setCloneModalApp(null);
-							if (appId) {
+							if (clonedId) {
 								setFilterKey((prev) => prev + 1);
 								resetScroll();
 								getProjects.reset();

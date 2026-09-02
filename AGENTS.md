@@ -137,6 +137,11 @@ These rules apply to **all** packages. They are adopted incrementally — see
   only internally is not public until it is re-exported from the package barrel.
 - Back stores and config objects with an explicit `interface` (e.g.
   `<Name>StoreInterface`) rather than an inferred ad-hoc shape.
+- Don't create a `types.ts` / `types/` file for every type. Type things inline (prop
+  interfaces next to their component, function param/return types next to the function,
+  etc.) by default. Only pull a type into a dedicated types file when it's actually shared
+  across multiple files — a single-use type living next to its one usage is preferred over
+  a types file with one export.
 
 ### Components & Exports
 

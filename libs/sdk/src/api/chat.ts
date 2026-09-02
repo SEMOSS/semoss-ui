@@ -1,9 +1,9 @@
 import type {
 	AddRoomToolExecutionParams,
 	AskRoomParams,
-	PlaygroundMessage,
-	PlaygroundRoom,
-	PlaygroundRoomOptions,
+	RoomMessage,
+	RoomOptions,
+	RoomRecord,
 } from "../types";
 import { runPixel, runPixelAsync } from "./base";
 
@@ -12,20 +12,20 @@ import { runPixel, runPixelAsync } from "./base";
 // -------------------------------------------------------------------------------------------------
 
 /**
- * Creates a new playground room tied to a workspace.
+ * Creates a new room tied to a workspace.
  *
  * @param insightId - The active SEMOSS insight ID.
  * @param workspaceId - The ID of the workspace to create the room in.
- * @returns The newly created playground room.
+ * @returns The newly created room.
  */
-export const createPlaygroundRoom = async (
+export const createRoomRecord = async (
 	insightId: string,
 	workspaceId?: string,
-): Promise<PlaygroundRoom> => {
+): Promise<RoomRecord> => {
 	const pixel = workspaceId
 		? `CreateRoom(workspaceId="${workspaceId}");`
 		: `CreateRoom();`;
-	const { errors, pixelReturn } = await runPixel<[PlaygroundRoom]>(
+	const { errors, pixelReturn } = await runPixel<[RoomRecord]>(
 		pixel,
 		insightId,
 	);
@@ -43,7 +43,7 @@ export const createPlaygroundRoom = async (
 };
 
 /**
- * Retrieves all messages for a given playground room.
+ * Retrieves all messages for a given room.
  *
  * @param insightId - The active SEMOSS insight ID.
  * @param roomId - The ID of the room to fetch messages for.
@@ -52,9 +52,9 @@ export const createPlaygroundRoom = async (
 export const getRoomMessages = async (
 	insightId: string,
 	roomId: string,
-): Promise<PlaygroundMessage[]> => {
+): Promise<RoomMessage[]> => {
 	const pixel = `GetRoomMessages(roomId=["${roomId}"]);`;
-	const { errors, pixelReturn } = await runPixel<[PlaygroundMessage[]]>(
+	const { errors, pixelReturn } = await runPixel<[RoomMessage[]]>(
 		pixel,
 		insightId,
 	);
@@ -72,7 +72,7 @@ export const getRoomMessages = async (
 };
 
 /**
- * Fetches the current configuration options for a playground room.
+ * Fetches the current configuration options for a room.
  *
  * @param insightId - The active SEMOSS insight ID.
  * @param roomId - The ID of the room to get options for.
@@ -81,9 +81,9 @@ export const getRoomMessages = async (
 export const getRoomOptions = async (
 	insightId: string,
 	roomId: string,
-): Promise<PlaygroundRoomOptions> => {
+): Promise<RoomOptions> => {
 	const pixel = `GetRoomOptions(roomId="${roomId}");`;
-	const { errors, pixelReturn } = await runPixel<[PlaygroundRoomOptions]>(
+	const { errors, pixelReturn } = await runPixel<[RoomOptions]>(
 		pixel,
 		insightId,
 	);
@@ -101,7 +101,7 @@ export const getRoomOptions = async (
 };
 
 /**
- * Associates a playground room with the current insight session.
+ * Associates a room with the current insight session.
  *
  * @param insightId - The active SEMOSS insight ID.
  * @param roomId - The ID of the room to bind to the insight.
@@ -119,7 +119,29 @@ export const setRoomForInsight = async (
 };
 
 /**
- * Updates the configuration options for a playground room.
+ * Retrieves the room currently bound to the given insight, if any.
+ *
+ * @param insightId - The active SEMOSS insight ID.
+ * @returns The bound room, or `null` if the insight has no bound room.
+ */
+export const getRoomForInsight = async (
+	insightId: string,
+): Promise<RoomRecord | null> => {
+	const pixel = `GetRoomForInsight();`;
+	const { errors, pixelReturn } = await runPixel<[RoomRecord | null]>(
+		pixel,
+		insightId,
+	);
+
+	if (errors.length > 0) {
+		throw new Error(errors.join(", "));
+	}
+
+	return pixelReturn[0]?.output ?? null;
+};
+
+/**
+ * Updates the configuration options for a room.
  *
  * @param insightId - The active SEMOSS insight ID.
  * @param roomId - The ID of the room to update.
@@ -128,7 +150,7 @@ export const setRoomForInsight = async (
 export const updateRoomOptions = async (
 	insightId: string,
 	roomId: string,
-	roomOptions: PlaygroundRoomOptions[],
+	roomOptions: RoomOptions[],
 ): Promise<void> => {
 	const pixel = `UpdateRoomOptions(roomId="${roomId}", roomOptions=${JSON.stringify(roomOptions)});`;
 	const { errors } = await runPixel(pixel, insightId);
@@ -139,14 +161,14 @@ export const updateRoomOptions = async (
 };
 
 /**
- * Sends a message to the playground and returns the job ID for streaming.
+ * Sends a message to the room and returns the job ID for streaming.
  * Poll with {@link getPixelJobStreaming} until a terminal status, then fetch
  * the full result with {@link getPixelAsyncResult}.
  *
  * @param insightId - The active SEMOSS insight ID.
  * @param params - Message parameters. See {@link AskRoomParams}.
  * @returns `{ jobId }` to pass to {@link getPixelJobStreaming}.
- * @see sdk-playground skill for the full streaming loop and chat-vs-agent guide.
+ * @see sdk-chat skill for the full streaming loop and chat-vs-agent guide.
  */
 export const askRoom = async (
 	insightId: string,
@@ -168,13 +190,13 @@ export const askRoom = async (
 };
 
 /**
- * Submits a completed tool result back to the playground, triggering a
+ * Submits a completed tool result back to the room, triggering a
  * follow-up LLM turn. Returns a job ID for streaming the response.
  *
  * @param insightId - The active SEMOSS insight ID.
  * @param params - Tool execution details. See {@link AddRoomToolExecutionParams}.
  * @returns `{ jobId }` to pass to {@link getPixelJobStreaming}.
- * @see sdk-playground skill for the full tool-execution call stack.
+ * @see sdk-chat skill for the full tool-execution call stack.
  */
 export const addRoomToolExecution = async (
 	insightId: string,
@@ -212,13 +234,13 @@ export const addRoomToolExecution = async (
 };
 
 /**
- * Retrieves a list of playground rooms, optionally filtered by pinned status and sort order.
+ * Retrieves a list of rooms, optionally filtered by pinned status and sort order.
  *
  * @param insightId - The active SEMOSS insight ID.
  * @param options - Optional query parameters.
  * @param options.pinned - When true, returns only pinned rooms.
  * @param options.sort - Sort direction for the returned rooms.
- * @returns The list of playground rooms.
+ * @returns The list of rooms.
  */
 export const getUserRooms = async (
 	insightId: string,
@@ -226,7 +248,7 @@ export const getUserRooms = async (
 		pinned?: boolean;
 		sort?: "ASC" | "DESC";
 	} = {},
-): Promise<PlaygroundRoom[]> => {
+): Promise<RoomRecord[]> => {
 	const parts: string[] = [];
 
 	if (options.pinned !== undefined) {
@@ -238,7 +260,7 @@ export const getUserRooms = async (
 
 	const args = parts.length > 0 ? `(${parts.join(", ")})` : "()";
 	const pixel = `META | GetUserConversationRoomsReactor${args};`;
-	const { errors, pixelReturn } = await runPixel<[PlaygroundRoom[]]>(
+	const { errors, pixelReturn } = await runPixel<[RoomRecord[]]>(
 		pixel,
 		insightId,
 	);
