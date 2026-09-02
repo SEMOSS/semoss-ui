@@ -1,0 +1,56 @@
+{
+	"title": "Utilisation des modèles",
+	"description": "Consultez votre solde de crédits, la période d'utilisation et l'instantané tarifaire de chaque modèle.",
+	"refresh": "Actualiser",
+	"retry": "Réessayer",
+	"model": { "label": "Modèle", "placeholder": "Sélectionner un modèle" },
+	"modelsError": {
+		"title": "Impossible de charger les modèles",
+		"description": "Vérifiez votre connexion et réessayez."
+	},
+	"usageError": {
+		"title": "Impossible de charger l'utilisation",
+		"description": "Les informations de crédit du modèle sélectionné sont indisponibles."
+	},
+	"empty": {
+		"title": "Aucun modèle disponible",
+		"description": "Vous n'avez actuellement accès à aucun modèle de génération de texte."
+	},
+	"trackingDisabled": {
+		"title": "Le suivi d'utilisation est indisponible",
+		"description": "La configuration des crédits est affichée, mais l'utilisation actuelle ne peut pas être calculée."
+	},
+	"noRestriction": {
+		"title": "Aucune limite de crédit attribuée",
+		"description": "Ce modèle n'a actuellement aucune restriction de crédit au niveau utilisateur."
+	},
+	"metrics": {
+		"used": "Crédits utilisés",
+		"remaining": "Crédits restants",
+		"limit": "Limite de crédit"
+	},
+	"period": {
+		"title": "Période d'utilisation actuelle",
+		"consumed": "Limite de crédit consommée",
+		"progressLabel": "Pourcentage de la limite de crédit consommé",
+		"exceeded": "Limite dépassée"
+	},
+	"frequency": {
+		"DAY": "Quotidienne",
+		"WEEK": "Hebdomadaire",
+		"MONTH": "Mensuelle",
+		"YEAR": "Annuelle",
+		"ALL_TIME": "Depuis toujours"
+	},
+	"pricing": {
+		"title": "Instantané tarifaire",
+		"description": "Ces tarifs sont stockés avec le modèle et convertissent l'utilisation des jetons en crédits.",
+		"configured": "Configuré",
+		"notConfigured": "Non configuré",
+		"input": "Jetons d'entrée",
+		"output": "Jetons de sortie",
+		"cacheRead": "Multiplicateur de lecture du cache",
+		"cacheWrite": "Multiplicateur d'écriture du cache",
+		"perMillion": "crédits / 1 M de jetons"
+	}
+}

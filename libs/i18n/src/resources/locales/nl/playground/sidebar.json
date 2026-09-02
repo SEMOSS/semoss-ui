@@ -14,6 +14,10 @@
 			"label": "Alle chats",
 			"tooltip": "Alle chats"
 		},
+		"modelUsage": {
+			"label": "Modelgebruik",
+			"tooltip": "Bekijk je modelkredietgebruik en prijzen"
+		},
 		"agentsWorkspaces": {
 			"tooltip": "Agents/Werkruimtes - Open je werkruimtes of maak nieuwe AI-agents aan."
 		},

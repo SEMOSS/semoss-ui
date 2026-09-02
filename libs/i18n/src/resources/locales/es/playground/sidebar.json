@@ -14,6 +14,10 @@
 			"label": "Todos los chats",
 			"tooltip": "Todos los chats"
 		},
+		"modelUsage": {
+			"label": "Uso de modelos",
+			"tooltip": "Consulta tu uso de créditos y precios de modelos"
+		},
 		"agentsWorkspaces": {
 			"tooltip": "Agentes/Espacios de trabajo - Accede a tus espacios de trabajo o crea nuevos agentes de IA."
 		},

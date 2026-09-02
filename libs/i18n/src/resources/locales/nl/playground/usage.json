@@ -1,0 +1,56 @@
+{
+	"title": "Modelgebruik",
+	"description": "Bekijk je huidige creditsaldo, gebruiksperiode en de prijsopname voor elk model.",
+	"refresh": "Vernieuwen",
+	"retry": "Opnieuw proberen",
+	"model": { "label": "Model", "placeholder": "Selecteer een model" },
+	"modelsError": {
+		"title": "Modellen konden niet worden geladen",
+		"description": "Controleer je verbinding en probeer het opnieuw."
+	},
+	"usageError": {
+		"title": "Gebruik kon niet worden geladen",
+		"description": "De kredietgegevens van het geselecteerde model zijn momenteel niet beschikbaar."
+	},
+	"empty": {
+		"title": "Geen modellen beschikbaar",
+		"description": "Je hebt momenteel geen toegang tot een tekstgeneratiemodel."
+	},
+	"trackingDisabled": {
+		"title": "Gebruikstracering is niet beschikbaar",
+		"description": "De kredietconfiguratie wordt getoond, maar het huidige gebruik kan niet worden berekend."
+	},
+	"noRestriction": {
+		"title": "Geen kredietlimiet toegewezen",
+		"description": "Dit model heeft momenteel geen kredietbeperking op gebruikersniveau."
+	},
+	"metrics": {
+		"used": "Gebruikte credits",
+		"remaining": "Resterende credits",
+		"limit": "Kredietlimiet"
+	},
+	"period": {
+		"title": "Huidige gebruiksperiode",
+		"consumed": "Verbruikte kredietlimiet",
+		"progressLabel": "Percentage van de modelkredietlimiet dat is verbruikt",
+		"exceeded": "Limiet overschreden"
+	},
+	"frequency": {
+		"DAY": "Dagelijks",
+		"WEEK": "Wekelijks",
+		"MONTH": "Maandelijks",
+		"YEAR": "Jaarlijks",
+		"ALL_TIME": "Altijd"
+	},
+	"pricing": {
+		"title": "Prijsopname",
+		"description": "Deze tarieven worden bij het model opgeslagen en zetten tokengebruik om in credits.",
+		"configured": "Geconfigureerd",
+		"notConfigured": "Niet geconfigureerd",
+		"input": "Invoertokens",
+		"output": "Uitvoertokens",
+		"cacheRead": "Cache-leesvermenigvuldiger",
+		"cacheWrite": "Cache-schrijfvermenigvuldiger",
+		"perMillion": "credits / 1 mln. tokens"
+	}
+}

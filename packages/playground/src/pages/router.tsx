@@ -9,6 +9,7 @@ import { InitializedLayout } from "./initialized-layout";
 import { KnowledgeDetailPage } from "./knowledge-detail-page";
 import { LoginPage } from "./login-page";
 import { MainLayout } from "./main-layout";
+import { ModelUsagePage } from "./model-usage.page";
 import { NewRoomPage } from "./new-room-page";
 import { NewWorkspacePage } from "./new-workspace-page";
 import { RoomPage } from "./room-page";
@@ -46,6 +47,10 @@ const router = createHashRouter(
 										{
 											path: "chats",
 											element: <ChatsPage />,
+										},
+										{
+											path: "usage",
+											element: <ModelUsagePage />,
 										},
 										{
 											path: "embed/*",

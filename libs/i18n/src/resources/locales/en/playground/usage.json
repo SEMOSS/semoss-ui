@@ -1,0 +1,59 @@
+{
+	"title": "Model usage",
+	"description": "Review your current credit balance, usage period, and the pricing snapshot used for each model.",
+	"refresh": "Refresh",
+	"retry": "Try again",
+	"model": {
+		"label": "Model",
+		"placeholder": "Select a model"
+	},
+	"modelsError": {
+		"title": "Models could not be loaded",
+		"description": "Check your connection and try again."
+	},
+	"usageError": {
+		"title": "Usage could not be loaded",
+		"description": "The selected model's credit information is currently unavailable."
+	},
+	"empty": {
+		"title": "No models available",
+		"description": "You do not currently have access to a text-generation model."
+	},
+	"trackingDisabled": {
+		"title": "Usage tracking is unavailable",
+		"description": "Your credit configuration is shown, but current usage cannot be calculated."
+	},
+	"noRestriction": {
+		"title": "No credit limit is assigned",
+		"description": "This model does not currently have a user-level credit restriction."
+	},
+	"metrics": {
+		"used": "Credits used",
+		"remaining": "Credits remaining",
+		"limit": "Credit limit"
+	},
+	"period": {
+		"title": "Current usage period",
+		"consumed": "Credit limit consumed",
+		"progressLabel": "Percentage of model credit limit consumed",
+		"exceeded": "Limit exceeded"
+	},
+	"frequency": {
+		"DAY": "Daily",
+		"WEEK": "Weekly",
+		"MONTH": "Monthly",
+		"YEAR": "Yearly",
+		"ALL_TIME": "All time"
+	},
+	"pricing": {
+		"title": "Pricing snapshot",
+		"description": "These rates are stored with the model and are used to convert token usage into credits.",
+		"configured": "Configured",
+		"notConfigured": "Not configured",
+		"input": "Input tokens",
+		"output": "Output tokens",
+		"cacheRead": "Cache read multiplier",
+		"cacheWrite": "Cache write multiplier",
+		"perMillion": "credits / 1M tokens"
+	}
+}

@@ -1,0 +1,56 @@
+{
+	"title": "モデル使用状況",
+	"description": "各モデルの現在のクレジット残高、使用期間、料金スナップショットを確認します。",
+	"refresh": "更新",
+	"retry": "再試行",
+	"model": { "label": "モデル", "placeholder": "モデルを選択" },
+	"modelsError": {
+		"title": "モデルを読み込めませんでした",
+		"description": "接続を確認して再試行してください。"
+	},
+	"usageError": {
+		"title": "使用状況を読み込めませんでした",
+		"description": "選択したモデルのクレジット情報は現在利用できません。"
+	},
+	"empty": {
+		"title": "利用可能なモデルがありません",
+		"description": "現在、テキスト生成モデルへのアクセス権がありません。"
+	},
+	"trackingDisabled": {
+		"title": "使用状況の追跡を利用できません",
+		"description": "クレジット設定は表示されていますが、現在の使用量は計算できません。"
+	},
+	"noRestriction": {
+		"title": "クレジット上限が割り当てられていません",
+		"description": "このモデルには現在、ユーザーレベルのクレジット制限がありません。"
+	},
+	"metrics": {
+		"used": "使用済みクレジット",
+		"remaining": "残りクレジット",
+		"limit": "クレジット上限"
+	},
+	"period": {
+		"title": "現在の使用期間",
+		"consumed": "消費したクレジット上限",
+		"progressLabel": "モデルのクレジット上限を消費した割合",
+		"exceeded": "上限超過"
+	},
+	"frequency": {
+		"DAY": "毎日",
+		"WEEK": "毎週",
+		"MONTH": "毎月",
+		"YEAR": "毎年",
+		"ALL_TIME": "全期間"
+	},
+	"pricing": {
+		"title": "料金スナップショット",
+		"description": "これらの料金はモデルと共に保存され、トークン使用量をクレジットに変換するために使われます。",
+		"configured": "設定済み",
+		"notConfigured": "未設定",
+		"input": "入力トークン",
+		"output": "出力トークン",
+		"cacheRead": "キャッシュ読み取り倍率",
+		"cacheWrite": "キャッシュ書き込み倍率",
+		"perMillion": "クレジット / 100万トークン"
+	}
+}

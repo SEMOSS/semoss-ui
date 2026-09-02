@@ -14,6 +14,10 @@
 			"label": "Toutes les discussions",
 			"tooltip": "Toutes les discussions"
 		},
+		"modelUsage": {
+			"label": "Utilisation des modèles",
+			"tooltip": "Consultez votre utilisation des crédits et les tarifs des modèles"
+		},
 		"agentsWorkspaces": {
 			"tooltip": "Agents/Espaces de travail - Accédez à vos espaces ou créez de nouveaux agents IA."
 		},

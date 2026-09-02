@@ -1,0 +1,56 @@
+{
+	"title": "Uso de modelos",
+	"description": "Consulta tu saldo de créditos, el período de uso y la instantánea de precios utilizada para cada modelo.",
+	"refresh": "Actualizar",
+	"retry": "Intentar de nuevo",
+	"model": { "label": "Modelo", "placeholder": "Selecciona un modelo" },
+	"modelsError": {
+		"title": "No se pudieron cargar los modelos",
+		"description": "Comprueba tu conexión e inténtalo de nuevo."
+	},
+	"usageError": {
+		"title": "No se pudo cargar el uso",
+		"description": "La información de créditos del modelo seleccionado no está disponible."
+	},
+	"empty": {
+		"title": "No hay modelos disponibles",
+		"description": "Actualmente no tienes acceso a un modelo de generación de texto."
+	},
+	"trackingDisabled": {
+		"title": "El seguimiento de uso no está disponible",
+		"description": "Se muestra la configuración de créditos, pero no se puede calcular el uso actual."
+	},
+	"noRestriction": {
+		"title": "No hay límite de créditos asignado",
+		"description": "Este modelo no tiene actualmente una restricción de créditos para el usuario."
+	},
+	"metrics": {
+		"used": "Créditos usados",
+		"remaining": "Créditos restantes",
+		"limit": "Límite de créditos"
+	},
+	"period": {
+		"title": "Período de uso actual",
+		"consumed": "Límite de créditos consumido",
+		"progressLabel": "Porcentaje del límite de créditos consumido",
+		"exceeded": "Límite superado"
+	},
+	"frequency": {
+		"DAY": "Diario",
+		"WEEK": "Semanal",
+		"MONTH": "Mensual",
+		"YEAR": "Anual",
+		"ALL_TIME": "Todo el tiempo"
+	},
+	"pricing": {
+		"title": "Instantánea de precios",
+		"description": "Estas tarifas se guardan con el modelo y convierten el uso de tokens en créditos.",
+		"configured": "Configurado",
+		"notConfigured": "No configurado",
+		"input": "Tokens de entrada",
+		"output": "Tokens de salida",
+		"cacheRead": "Multiplicador de lectura de caché",
+		"cacheWrite": "Multiplicador de escritura de caché",
+		"perMillion": "créditos / 1 M de tokens"
+	}
+}

@@ -17,6 +17,7 @@ libs/i18n/src/
 │   │       ├── chat.json
 │   │       ├── room.json
 │   │       ├── sidebar.json
+│   │       ├── usage.json
 │   │       ├── knowledge.json
 │   │       ├── workspace.json
 │   │       └── mcp.json
@@ -41,7 +42,7 @@ Translations used across **all** packages:
 
 ### Tier 2: Package-Specific
 Translations specific to individual packages:
-- `playground/` - Playground app translations (chat, room, sidebar, knowledge, workspace, mcp)
+- `playground/` - Playground app translations (chat, room, sidebar, usage, knowledge, workspace, mcp)
 - `client/` - Client app translations (for example `githubApp`)
 
 ## Usage

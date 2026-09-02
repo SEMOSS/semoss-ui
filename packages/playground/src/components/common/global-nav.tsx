@@ -1,5 +1,6 @@
 import {
 	Bot,
+	ChartNoAxesCombined,
 	HelpCircle,
 	MapIcon,
 	MessagesSquareIcon,
@@ -477,6 +478,25 @@ export const GlobalNav = observer(() => {
 									<Link to={"/chats"} aria-label={"chats"}>
 										<MessagesSquareIcon />
 										{t("nav.allChats.label")}
+									</Link>
+								</SidebarMenuButton>
+							</SidebarMenuItem>
+
+							<SidebarMenuItem>
+								<SidebarMenuButton
+									asChild
+									isActive={!!matchPath("/usage", pathname)}
+									tooltip={{
+										children: t("nav.modelUsage.tooltip"),
+										hidden: false,
+									}}
+								>
+									<Link
+										to={"/usage"}
+										aria-label={t("nav.modelUsage.label")}
+									>
+										<ChartNoAxesCombined />
+										{t("nav.modelUsage.label")}
 									</Link>
 								</SidebarMenuButton>
 							</SidebarMenuItem>
