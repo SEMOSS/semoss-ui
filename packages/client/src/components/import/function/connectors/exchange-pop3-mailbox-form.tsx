@@ -132,7 +132,6 @@ export const ExchangePop3MailboxForm = () => {
 			<FormSection
 				title="General"
 				description="Name this catalog entry and choose how it reads the mailbox."
-				testIdPrefix="function"
 			>
 				<FormInput
 					name="NAME"
@@ -155,7 +154,6 @@ export const ExchangePop3MailboxForm = () => {
 			<FormSection
 				title="Credentials"
 				description="The mailbox to read and the Azure app registration used to sign in."
-				testIdPrefix="function"
 			>
 				<FormInput
 					name="POP3_USERNAME"
@@ -216,7 +214,6 @@ export const ExchangePop3MailboxForm = () => {
 			<FormSection
 				title="Settings"
 				description="How much a call can return and what it may include."
-				testIdPrefix="function"
 			>
 				<FormInput
 					name="MAX_MESSAGES"
@@ -286,7 +283,6 @@ export const ExchangePop3MailboxForm = () => {
 			<FormSection
 				title="Function Metadata"
 				description={FUNCTION_METADATA_DESCRIPTION}
-				testIdPrefix="function"
 			>
 				<FormInput
 					name="FUNCTION_NAME"

@@ -119,11 +119,7 @@ export const ImapMailboxForm = () => {
 			onSubmit={handleSubmit}
 			className="flex w-full flex-col gap-6"
 		>
-			<FormSection
-				title="General"
-				description="Name this catalog entry."
-				testIdPrefix="function"
-			>
+			<FormSection title="General" description="Name this catalog entry.">
 				<FormInput
 					name="NAME"
 					label="Catalog Name"
@@ -135,7 +131,6 @@ export const ImapMailboxForm = () => {
 			<FormSection
 				title="Credentials"
 				description="The mail server and mailbox this connector signs in to."
-				testIdPrefix="function"
 			>
 				<FormInput
 					name="IMAP_HOST"
@@ -182,7 +177,6 @@ export const ImapMailboxForm = () => {
 			<FormSection
 				title="Settings"
 				description="What can be read, changed, and how much of it at a time."
-				testIdPrefix="function"
 			>
 				<FormInput
 					name="DEFAULT_FOLDER"
@@ -302,7 +296,6 @@ export const ImapMailboxForm = () => {
 			<FormSection
 				title="Function Metadata"
 				description={FUNCTION_METADATA_DESCRIPTION}
-				testIdPrefix="function"
 			>
 				<FormInput
 					name="FUNCTION_NAME"

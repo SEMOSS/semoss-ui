@@ -79,11 +79,7 @@ export const RestForm = () => {
 			onSubmit={handleSubmit}
 			className="flex w-full flex-col gap-6"
 		>
-			<FormSection
-				title="General"
-				description="Name this catalog entry."
-				testIdPrefix="function"
-			>
+			<FormSection title="General" description="Name this catalog entry.">
 				<FormInput
 					name="NAME"
 					label="Catalog Name"
@@ -95,7 +91,6 @@ export const RestForm = () => {
 			<FormSection
 				title="Credentials"
 				description="The endpoint this connector calls and how it sends the request."
-				testIdPrefix="function"
 			>
 				<FormInput
 					name="URL"
@@ -118,7 +113,6 @@ export const RestForm = () => {
 			<FormSection
 				title="Settings"
 				description="How the request body is formed and how the resulting function is described."
-				testIdPrefix="function"
 			>
 				<FormSelect
 					name="CONTENT_TYPE"
@@ -141,7 +135,6 @@ export const RestForm = () => {
 			<FormSection
 				title="Function Metadata"
 				description={FUNCTION_METADATA_DESCRIPTION}
-				testIdPrefix="function"
 			>
 				<FormInput
 					name="FUNCTION_NAME"

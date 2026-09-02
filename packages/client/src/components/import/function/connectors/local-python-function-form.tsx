@@ -92,11 +92,7 @@ export const LocalPythonFunctionForm = () => {
 					engine Edit page.
 				</AlertDescription>
 			</Alert>
-			<FormSection
-				title="General"
-				description="Name this catalog entry."
-				testIdPrefix="function"
-			>
+			<FormSection title="General" description="Name this catalog entry.">
 				<FormInput
 					name="NAME"
 					label="Catalog Name"
@@ -108,7 +104,6 @@ export const LocalPythonFunctionForm = () => {
 			<FormSection
 				title="Settings"
 				description="The Python file to run and how it should be exposed as a function."
-				testIdPrefix="function"
 			>
 				<FormInput
 					name="PYTHON_FILE_NAME"
@@ -121,7 +116,6 @@ export const LocalPythonFunctionForm = () => {
 			<FormSection
 				title="Function Metadata"
 				description={FUNCTION_METADATA_DESCRIPTION}
-				testIdPrefix="function"
 			>
 				<FormInput
 					name="FUNCTION_NAME"

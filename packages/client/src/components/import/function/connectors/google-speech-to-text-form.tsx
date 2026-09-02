@@ -69,11 +69,7 @@ export const GoogleSpeechToTextForm = () => {
 			onSubmit={handleSubmit}
 			className="flex w-full flex-col gap-6"
 		>
-			<FormSection
-				title="General"
-				description="Name this catalog entry."
-				testIdPrefix="function"
-			>
+			<FormSection title="General" description="Name this catalog entry.">
 				<FormInput
 					name="NAME"
 					label="Catalog Name"
@@ -85,7 +81,6 @@ export const GoogleSpeechToTextForm = () => {
 			<FormSection
 				title="Credentials"
 				description="The Google Cloud bucket this connector reads and writes through."
-				testIdPrefix="function"
 			>
 				<FormInput
 					name="GOOGLE_BUCKET_ENGINEID"
@@ -97,7 +92,6 @@ export const GoogleSpeechToTextForm = () => {
 			<FormSection
 				title="Settings"
 				description="The service account used to authenticate with Google Cloud."
-				testIdPrefix="function"
 			>
 				<FormFileDropzone
 					name="FILE"

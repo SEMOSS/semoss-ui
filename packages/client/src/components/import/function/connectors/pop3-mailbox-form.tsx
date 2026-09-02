@@ -107,11 +107,7 @@ export const Pop3MailboxForm = () => {
 			onSubmit={handleSubmit}
 			className="flex w-full flex-col gap-6"
 		>
-			<FormSection
-				title="General"
-				description="Name this catalog entry."
-				testIdPrefix="function"
-			>
+			<FormSection title="General" description="Name this catalog entry.">
 				<FormInput
 					name="NAME"
 					label="Catalog Name"
@@ -123,7 +119,6 @@ export const Pop3MailboxForm = () => {
 			<FormSection
 				title="Credentials"
 				description="The mail server and mailbox this connector signs in to."
-				testIdPrefix="function"
 			>
 				<FormInput
 					name="POP3_HOST"
@@ -170,7 +165,6 @@ export const Pop3MailboxForm = () => {
 			<FormSection
 				title="Settings"
 				description="How much a call can return and what it may include."
-				testIdPrefix="function"
 			>
 				<FormInput
 					name="MAX_MESSAGES"
@@ -240,7 +234,6 @@ export const Pop3MailboxForm = () => {
 			<FormSection
 				title="Function Metadata"
 				description={FUNCTION_METADATA_DESCRIPTION}
-				testIdPrefix="function"
 			>
 				<FormInput
 					name="FUNCTION_NAME"

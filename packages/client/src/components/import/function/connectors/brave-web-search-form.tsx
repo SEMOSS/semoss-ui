@@ -91,11 +91,7 @@ export const BraveWebSearchForm = () => {
 			onSubmit={handleSubmit}
 			className="flex w-full flex-col gap-6"
 		>
-			<FormSection
-				title="General"
-				description="Name this catalog entry."
-				testIdPrefix="function"
-			>
+			<FormSection title="General" description="Name this catalog entry.">
 				<FormInput
 					name="NAME"
 					label="Catalog Name"
@@ -107,7 +103,6 @@ export const BraveWebSearchForm = () => {
 			<FormSection
 				title="Credentials"
 				description="The token used to authenticate against the Brave Search API."
-				testIdPrefix="function"
 			>
 				<FormInput
 					name="API_KEY"
@@ -128,7 +123,6 @@ export const BraveWebSearchForm = () => {
 			<FormSection
 				title="Settings"
 				description="How search results are scoped and how the resulting function is described."
-				testIdPrefix="function"
 			>
 				<FormInput
 					name="COUNT"
@@ -199,7 +193,6 @@ export const BraveWebSearchForm = () => {
 			<FormSection
 				title="Function Metadata"
 				description={FUNCTION_METADATA_DESCRIPTION}
-				testIdPrefix="function"
 			>
 				<FormInput
 					name="FUNCTION_NAME"

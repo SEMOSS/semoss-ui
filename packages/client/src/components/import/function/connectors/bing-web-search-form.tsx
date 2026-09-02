@@ -107,11 +107,7 @@ export const BingWebSearchForm = () => {
 					results, use Brave Web Search instead.
 				</AlertDescription>
 			</Alert>
-			<FormSection
-				title="General"
-				description="Name this catalog entry."
-				testIdPrefix="function"
-			>
+			<FormSection title="General" description="Name this catalog entry.">
 				<FormInput
 					name="NAME"
 					label="Catalog Name"
@@ -123,7 +119,6 @@ export const BingWebSearchForm = () => {
 			<FormSection
 				title="Credentials"
 				description="The Azure OpenAI deployment that performs the grounded search and how it authenticates."
-				testIdPrefix="function"
 			>
 				<FormInput
 					name="ENDPOINT"
@@ -161,7 +156,6 @@ export const BingWebSearchForm = () => {
 			<FormSection
 				title="Settings"
 				description="How the search is scoped and how the resulting function is described."
-				testIdPrefix="function"
 			>
 				<FormInput
 					name="ALLOWED_DOMAINS"
@@ -234,7 +228,6 @@ export const BingWebSearchForm = () => {
 			<FormSection
 				title="Function Metadata"
 				description={FUNCTION_METADATA_DESCRIPTION}
-				testIdPrefix="function"
 			>
 				<FormInput
 					name="FUNCTION_NAME"

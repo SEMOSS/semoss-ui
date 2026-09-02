@@ -143,7 +143,6 @@ export const ExchangeImapMailboxForm = () => {
 			<FormSection
 				title="General"
 				description="Name this catalog entry and choose how it reads the mailbox."
-				testIdPrefix="function"
 			>
 				<FormInput
 					name="NAME"
@@ -166,7 +165,6 @@ export const ExchangeImapMailboxForm = () => {
 			<FormSection
 				title="Credentials"
 				description="The mailbox to read and the Azure app registration used to sign in."
-				testIdPrefix="function"
 			>
 				<FormInput
 					name="IMAP_USERNAME"
@@ -227,7 +225,6 @@ export const ExchangeImapMailboxForm = () => {
 			<FormSection
 				title="Settings"
 				description="What can be read, changed, and how much of it at a time."
-				testIdPrefix="function"
 			>
 				<FormInput
 					name="DEFAULT_FOLDER"
@@ -347,7 +344,6 @@ export const ExchangeImapMailboxForm = () => {
 			<FormSection
 				title="Function Metadata"
 				description={FUNCTION_METADATA_DESCRIPTION}
-				testIdPrefix="function"
 			>
 				<FormInput
 					name="FUNCTION_NAME"

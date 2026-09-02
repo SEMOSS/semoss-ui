@@ -75,11 +75,7 @@ export const GoogleOcrForm = () => {
 			onSubmit={handleSubmit}
 			className="flex w-full flex-col gap-6"
 		>
-			<FormSection
-				title="General"
-				description="Name this catalog entry."
-				testIdPrefix="function"
-			>
+			<FormSection title="General" description="Name this catalog entry.">
 				<FormInput
 					name="NAME"
 					label="Catalog Name"
@@ -91,7 +87,6 @@ export const GoogleOcrForm = () => {
 			<FormSection
 				title="Credentials"
 				description="The Google Cloud project this connector calls into."
-				testIdPrefix="function"
 			>
 				<FormInput
 					name="PROJECT_ID"
@@ -103,7 +98,6 @@ export const GoogleOcrForm = () => {
 			<FormSection
 				title="Settings"
 				description="The Document AI processor and service account used to run OCR."
-				testIdPrefix="function"
 			>
 				<FormInput
 					name="PROCESSOR_ID"

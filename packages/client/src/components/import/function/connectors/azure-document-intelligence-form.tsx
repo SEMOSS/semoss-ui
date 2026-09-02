@@ -64,11 +64,7 @@ export const AzureDocumentIntelligenceForm = () => {
 			onSubmit={handleSubmit}
 			className="flex w-full flex-col gap-6"
 		>
-			<FormSection
-				title="General"
-				description="Name this catalog entry."
-				testIdPrefix="function"
-			>
+			<FormSection title="General" description="Name this catalog entry.">
 				<FormInput
 					name="NAME"
 					label="Catalog Name"
@@ -80,7 +76,6 @@ export const AzureDocumentIntelligenceForm = () => {
 			<FormSection
 				title="Credentials"
 				description="The Azure resource and key used to call Document Intelligence."
-				testIdPrefix="function"
 			>
 				<FormInput
 					name="URL"

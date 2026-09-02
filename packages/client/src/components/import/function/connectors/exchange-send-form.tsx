@@ -147,7 +147,6 @@ export const ExchangeSendForm = () => {
 			<FormSection
 				title="General"
 				description="Name this catalog entry and choose how it sends mail."
-				testIdPrefix="function"
 			>
 				<FormInput
 					name="NAME"
@@ -170,7 +169,6 @@ export const ExchangeSendForm = () => {
 			<FormSection
 				title="Credentials"
 				description="Who mail is sent as, and the Azure app registration used to authenticate."
-				testIdPrefix="function"
 			>
 				<FormInput
 					name="SMTP_SENDER"
@@ -265,7 +263,6 @@ export const ExchangeSendForm = () => {
 			<FormSection
 				title="Settings"
 				description="Who mail may go to, its default shape, and how much can be sent at once."
-				testIdPrefix="function"
 			>
 				{isGraph && (
 					<FormInput
@@ -371,7 +368,6 @@ export const ExchangeSendForm = () => {
 			<FormSection
 				title="Function Metadata"
 				description={FUNCTION_METADATA_DESCRIPTION}
-				testIdPrefix="function"
 			>
 				<FormInput
 					name="FUNCTION_NAME"

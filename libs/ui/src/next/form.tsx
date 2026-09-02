@@ -497,8 +497,6 @@ type FormSectionProps = {
 	title: string;
 	/** Short blurb explaining what this section configures. */
 	description?: string;
-	/** Prefix for the title/description data-testids (e.g. "function"). */
-	testIdPrefix: string;
 	children: React.ReactNode;
 };
 
@@ -507,27 +505,16 @@ type FormSectionProps = {
  * column, closed off with a separator. Use to group a long form's fields
  * (e.g. General / Credentials / Settings) instead of one flat field list.
  */
-function FormSection({
-	title,
-	description,
-	testIdPrefix,
-	children,
-}: FormSectionProps) {
+function FormSection({ title, description, children }: FormSectionProps) {
 	return (
 		<div className="mb-4 flex flex-col gap-4">
 			<div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:gap-4">
 				<div className="flex flex-1 flex-col gap-1">
-					<H4
-						className="font-semibold text-base tracking-tight"
-						data-testid={`${testIdPrefix}-category-title`}
-					>
+					<H4 className="font-semibold text-base tracking-tight">
 						{title}
 					</H4>
 					{description && (
-						<Muted
-							className="text-sm leading-6"
-							data-testid={`${testIdPrefix}-category-description`}
-						>
+						<Muted className="text-sm leading-6">
 							{description}
 						</Muted>
 					)}

@@ -60,11 +60,7 @@ export const AzureSpeechToTextForm = () => {
 			onSubmit={handleSubmit}
 			className="flex w-full flex-col gap-6"
 		>
-			<FormSection
-				title="General"
-				description="Name this catalog entry."
-				testIdPrefix="function"
-			>
+			<FormSection title="General" description="Name this catalog entry.">
 				<FormInput
 					name="NAME"
 					label="Catalog Name"
@@ -76,7 +72,6 @@ export const AzureSpeechToTextForm = () => {
 			<FormSection
 				title="Credentials"
 				description="The Azure Speech resource key used to authenticate."
-				testIdPrefix="function"
 			>
 				<FormInput
 					name="SPEECH_KEY"
@@ -88,7 +83,6 @@ export const AzureSpeechToTextForm = () => {
 			<FormSection
 				title="Settings"
 				description="Where the Azure Speech resource is located."
-				testIdPrefix="function"
 			>
 				<FormInput
 					name="SPEECH_REGION"

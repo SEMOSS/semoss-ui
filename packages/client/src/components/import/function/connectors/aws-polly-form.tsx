@@ -62,11 +62,7 @@ export const AwsPollyForm = () => {
 			onSubmit={handleSubmit}
 			className="flex w-full flex-col gap-6"
 		>
-			<FormSection
-				title="General"
-				description="Name this catalog entry."
-				testIdPrefix="function"
-			>
+			<FormSection title="General" description="Name this catalog entry.">
 				<FormInput
 					name="NAME"
 					label="Catalog Name"
@@ -78,7 +74,6 @@ export const AwsPollyForm = () => {
 			<FormSection
 				title="Credentials"
 				description="AWS credentials used to call Polly."
-				testIdPrefix="function"
 			>
 				<FormInput
 					name="ACCESS_KEY"
@@ -97,7 +92,6 @@ export const AwsPollyForm = () => {
 			<FormSection
 				title="Settings"
 				description="Where the AWS resources this connector talks to are located."
-				testIdPrefix="function"
 			>
 				<FormInput
 					name="REGION"

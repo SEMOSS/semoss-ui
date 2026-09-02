@@ -117,11 +117,7 @@ export const SmtpEmailForm = () => {
 			onSubmit={handleSubmit}
 			className="flex w-full flex-col gap-6"
 		>
-			<FormSection
-				title="General"
-				description="Name this catalog entry."
-				testIdPrefix="function"
-			>
+			<FormSection title="General" description="Name this catalog entry.">
 				<FormInput
 					name="NAME"
 					label="Catalog Name"
@@ -133,7 +129,6 @@ export const SmtpEmailForm = () => {
 			<FormSection
 				title="Credentials"
 				description="Who mail is sent as, and the mail server it goes through."
-				testIdPrefix="function"
 			>
 				<FormInput
 					name="SMTP_SENDER"
@@ -194,7 +189,6 @@ export const SmtpEmailForm = () => {
 			<FormSection
 				title="Settings"
 				description="Who mail may go to, its default shape, and how much can be sent at once."
-				testIdPrefix="function"
 			>
 				<FormInput
 					name="ALLOWED_RECIPIENT_DOMAINS"
@@ -287,7 +281,6 @@ export const SmtpEmailForm = () => {
 			<FormSection
 				title="Function Metadata"
 				description={FUNCTION_METADATA_DESCRIPTION}
-				testIdPrefix="function"
 			>
 				<FormInput
 					name="FUNCTION_NAME"

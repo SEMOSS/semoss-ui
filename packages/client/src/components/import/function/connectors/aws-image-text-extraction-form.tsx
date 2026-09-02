@@ -71,7 +71,6 @@ export const AwsImageTextExtractionForm = () => {
 			<FormSection
 				title="General"
 				description="Name this catalog entry and choose which AWS service performs the extraction."
-				testIdPrefix="function"
 			>
 				<FormInput
 					name="NAME"
@@ -95,7 +94,6 @@ export const AwsImageTextExtractionForm = () => {
 			<FormSection
 				title="Credentials"
 				description="AWS credentials used to call Textract or Rekognition."
-				testIdPrefix="function"
 			>
 				<FormInput
 					name="ACCESS_KEY"
@@ -114,7 +112,6 @@ export const AwsImageTextExtractionForm = () => {
 			<FormSection
 				title="Settings"
 				description="Where the AWS resources this connector talks to are located."
-				testIdPrefix="function"
 			>
 				<FormInput
 					name="REGION"

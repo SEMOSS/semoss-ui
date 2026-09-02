@@ -64,11 +64,7 @@ export const AwsTranscribeForm = () => {
 			onSubmit={handleSubmit}
 			className="flex w-full flex-col gap-6"
 		>
-			<FormSection
-				title="General"
-				description="Name this catalog entry."
-				testIdPrefix="function"
-			>
+			<FormSection title="General" description="Name this catalog entry.">
 				<FormInput
 					name="NAME"
 					label="Catalog Name"
@@ -80,7 +76,6 @@ export const AwsTranscribeForm = () => {
 			<FormSection
 				title="Credentials"
 				description="AWS credentials used to call Transcribe."
-				testIdPrefix="function"
 			>
 				<FormInput
 					name="ACCESS_KEY"
@@ -99,7 +94,6 @@ export const AwsTranscribeForm = () => {
 			<FormSection
 				title="Settings"
 				description="Where the AWS resources this connector talks to are located."
-				testIdPrefix="function"
 			>
 				<FormInput
 					name="REGION"
