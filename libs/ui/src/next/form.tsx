@@ -614,6 +614,11 @@ export type {
 };
 
 export { zodResolver } from "@hookform/resolvers/zod";
-// Bare-minimum re-exports so a full form can be built from a single import.
-export { useForm } from "react-hook-form";
+// Convenience re-exports so a full form can be built from a single import.
+// NOTE: useFormContext/useFieldArray are consumed directly from here by
+// multiple components (e.g. guardrail-*-field.tsx) - do not narrow this
+// back down. Everything else (Control, Controller, FieldValues,
+// FormProvider, SubmitHandler, UseFormReturn) is used only internally
+// above and should stay imported directly from react-hook-form by callers.
+export { useFieldArray, useForm, useFormContext } from "react-hook-form";
 export { z } from "zod";
