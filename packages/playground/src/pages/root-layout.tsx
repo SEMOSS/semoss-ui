@@ -1,5 +1,5 @@
 import { type PropsWithChildren, useMemo } from "react";
-import { useInsight } from "@semoss/sdk/react";
+import { registerSessionRevokedHandler, useInsight } from "@semoss/sdk/react";
 import type { ThemeMap } from "@semoss/shared";
 import { Spinner } from "@semoss/ui/next";
 import { RootContext } from "@/contexts";
@@ -11,6 +11,13 @@ export const RootLayout = ({ children }: PropsWithChildren) => {
 	// set up the store
 	const rootStore = useMemo(() => {
 		const store = new RootStore();
+
+		// the SDK stays UI-agnostic; this is the one place that connects a
+		// guardrail-forced logout to this store's observable (see
+		// session-revoked-dialog.tsx)
+		registerSessionRevokedHandler((message) => {
+			store.setSessionRevoked(message);
+		});
 
 		if (system?.config?.theme) {
 			// parse the theme
