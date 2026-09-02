@@ -69,11 +69,18 @@ export interface AutomationWorkflowNodeConfig
 		| number
 		| string
 		| string[]
+		| AutomationBranchClause[]
 		| AutomationGlobalVariable[]
 		| undefined
 	> {
 	/** Python artifact executed for this non-trigger node. */
 	pythonSource?: string;
+}
+
+/** An ordered conditional route on a `control.if` node. */
+export interface AutomationBranchClause {
+	id: string;
+	condition: string;
 }
 
 /** A trigger-owned input available to every downstream node at runtime. */

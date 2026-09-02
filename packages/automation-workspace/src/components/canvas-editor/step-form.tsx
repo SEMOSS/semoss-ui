@@ -140,8 +140,8 @@ export function StepForm({
 			const c = step.config as BranchConfig;
 			return (
 				<BranchConditionBuilder
-					condition={c.condition}
-					onChange={(condition) => update({ ...c, condition })}
+					clauses={c.clauses}
+					onChange={(clauses) => update({ ...c, clauses })}
 					upstreamVars={upstreamVars}
 					devMode={devMode}
 					readOnly={readOnly}

@@ -257,7 +257,18 @@ const NODE_DESCRIPTORS: Record<AutomationNodeType, NodeDescriptor> = {
 		buildPixel: () => "",
 		isReady(node) {
 			const c = node.config as unknown as Record<string, unknown>;
-			return typeof c.condition === "string" && c.condition.trim() !== "";
+			return (
+				Array.isArray(c.clauses) &&
+				c.clauses.length > 0 &&
+				c.clauses.every(
+					(clause) =>
+						typeof clause === "object" &&
+						clause !== null &&
+						"condition" in clause &&
+						typeof clause.condition === "string" &&
+						clause.condition.trim() !== "",
+				)
+			);
 		},
 	},
 };

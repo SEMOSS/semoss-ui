@@ -1,4 +1,5 @@
 import type {
+	AutomationBranchClause,
 	AutomationDataType,
 	AutomationNodeCodeMode,
 	AutomationWorkflowNodeConfig,
@@ -115,7 +116,7 @@ export interface WaitConfig {
 }
 
 export interface BranchConfig {
-	condition: string;
+	clauses: AutomationBranchClause[];
 }
 
 export type NodeConfig =

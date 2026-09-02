@@ -29,6 +29,7 @@ import {
 	type MCPConfig,
 	MonacoEditor,
 	PopoutModal,
+	SandpackHtmlPreview,
 } from "@semoss/shared";
 import {
 	Breadcrumb,
@@ -274,6 +275,8 @@ const AutomationOutputModalContent = ({
 	const isTable = isObjectOutput && isTabularArray(parsed);
 	const isMarkdown = !isObjectOutput && !raw && looksLikeMarkdown(value);
 	const markdownText = isMarkdown ? normalizeForMarkdown(value) : "";
+	const htmlText = !isObjectOutput ? normalizeForMarkdown(value) : "";
+	const isHtml = !raw && looksLikeHtml(htmlText);
 
 	return (
 		<PopoutModal
@@ -370,6 +373,10 @@ const AutomationOutputModalContent = ({
 				<div className="prose prose-sm dark:prose-invert max-w-none">
 					<Markdown>{markdownText}</Markdown>
 				</div>
+			) : isHtml ? (
+				<div className="h-[70vh] min-h-0">
+					<SandpackHtmlPreview html={htmlText} forceFullHeight />
+				</div>
 			) : (
 				<pre className="whitespace-pre-wrap break-all font-mono text-foreground text-sm">
 					{raw ? value : formatted}
@@ -392,6 +399,10 @@ const MARKDOWN_PATTERNS = [
 function looksLikeMarkdown(text: string): boolean {
 	if (!text || text.length < 4) return false;
 	return MARKDOWN_PATTERNS.some((p) => p.test(text));
+}
+
+function looksLikeHtml(text: string): boolean {
+	return /^\s*(?:<!doctype\s+html\b|<html\b)/i.test(text);
 }
 
 function normalizeForMarkdown(text: string): string {
