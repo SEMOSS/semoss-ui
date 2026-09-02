@@ -157,7 +157,12 @@ export const EngineOverview = ({
 				<div className="flex flex-col gap-4">
 					<h3 className="font-semibold">Details</h3>
 					{markdown.trim() ? (
-						<Markdown>{markdown}</Markdown>
+						<Markdown
+							className="w-full text-sm leading-relaxed"
+							variant="document"
+						>
+							{markdown}
+						</Markdown>
 					) : (
 						<p
 							className="text-muted-foreground text-sm"
@@ -199,6 +204,7 @@ export const EngineOverview = ({
 			}
 			description={overviewDescription}
 			markdown={engine.markdown || ""}
+			markdownVariant="document"
 			tags={normalizeTagArray(engine.tag) || []}
 			dataClassification={
 				normalizeTagArray(engine["data classification"]) || []
