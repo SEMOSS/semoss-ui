@@ -54,9 +54,12 @@ const LANGUAGE_COMMENT_CONFIG: Record<string, monaco.languages.CommentRule> = {
 	bash: { lineComment: "#" },
 };
 
-export interface FileCodeEditorActions {
+interface FileCodeEditorRef {
+	/** Save the current editor content. */
 	save: () => Promise<void>;
+	/** Refresh the editor content from its asset source. */
 	refresh: () => void;
+	/** Download the current file. */
 	download: () => Promise<void>;
 }
 
@@ -106,7 +109,7 @@ interface FileCodeEditorProps {
 }
 
 export const FileCodeEditor = forwardRef<
-	FileCodeEditorActions,
+	FileCodeEditorRef,
 	FileCodeEditorProps
 >(
 	(

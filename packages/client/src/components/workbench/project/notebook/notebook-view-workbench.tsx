@@ -1,7 +1,5 @@
 import type {
-	WorkbenchComponent,
 	WorkbenchLayout,
-	WorkbenchPanelConfig,
 	WorkbenchPanelConfigAny,
 } from "@/stores/workbench";
 import { Workbench } from "../../core";
@@ -9,12 +7,13 @@ import {
 	WORKBENCH_COMPONENTS,
 	WORKBENCH_PANEL_RECORDS,
 } from "../../workbench.constants";
-import {
-	PROJECT_FILE_EDITOR_PANEL,
-	type ProjectFileEditorConfig,
-	ProjectFileEditorPanel,
-} from "../project-file-editor-panel";
+import { PROJECT_FILE_CODE_EDITOR_PANEL } from "../project-file-code-editor-panel";
+import { PROJECT_FILE_DOWNLOAD_VIEWER_PANEL } from "../project-file-download-viewer-panel";
 import { PROJECT_FILE_EXPLORER_PANEL } from "../project-file-explorer-panel";
+import { PROJECT_FILE_IMAGE_EDITOR_PANEL } from "../project-file-image-editor-panel";
+import { PROJECT_FILE_MARKDOWN_EDITOR_PANEL } from "../project-file-markdown-editor-panel";
+import { PROJECT_FILE_NOTEBOOK_EDITOR_PANEL } from "../project-file-notebook-editor-panel";
+import { PROJECT_FILE_PDF_EDITOR_PANEL } from "../project-file-pdf-editor-panel";
 
 /** Notebook every project of type NOTEBOOK is created with. */
 const NOTEBOOK_PATH = "/public/main.ipynb";
@@ -25,23 +24,6 @@ const NOTEBOOK_EDITOR_ID = "notebook-main";
 
 /** Only published assets are browsable from the read-only surface. */
 const PUBLIC_ROOT_PATH = "/public";
-
-/** Forces every editor instance in this workbench into view-only mode. */
-const ViewProjectFileEditor: WorkbenchComponent<ProjectFileEditorConfig> = (
-	props,
-) => (
-	<ProjectFileEditorPanel
-		{...props}
-		config={{ ...props.config, readOnly: true }}
-	/>
-);
-
-/** The editor blueprint with view-only content, same dedupe and icon. */
-const VIEW_PROJECT_FILE_EDITOR_PANEL: WorkbenchPanelConfig<ProjectFileEditorConfig> =
-	{
-		...PROJECT_FILE_EDITOR_PANEL,
-		content: ViewProjectFileEditor,
-	};
 
 /** The default arrangement: main.ipynb open, the /public files on the left. */
 const NOTEBOOK_VIEW_WORKBENCH_LAYOUT: WorkbenchLayout = {
@@ -56,7 +38,7 @@ const NOTEBOOK_VIEW_WORKBENCH_LAYOUT: WorkbenchLayout = {
 	panels: {
 		[NOTEBOOK_EDITOR_ID]: {
 			id: NOTEBOOK_EDITOR_ID,
-			type: WORKBENCH_COMPONENTS.PROJECT_FILE_EDITOR,
+			type: WORKBENCH_COMPONENTS.PROJECT_FILE_NOTEBOOK_EDITOR,
 			name: NOTEBOOK_NAME,
 			canClose: true,
 			config: {
@@ -85,7 +67,18 @@ const NOTEBOOK_VIEW_WORKBENCH_COMPONENTS: Record<
 	WorkbenchPanelConfigAny
 > = {
 	[WORKBENCH_COMPONENTS.PROJECT_FILE_EXPLORER]: PROJECT_FILE_EXPLORER_PANEL,
-	[WORKBENCH_COMPONENTS.PROJECT_FILE_EDITOR]: VIEW_PROJECT_FILE_EDITOR_PANEL,
+	[WORKBENCH_COMPONENTS.PROJECT_FILE_CODE_EDITOR]:
+		PROJECT_FILE_CODE_EDITOR_PANEL,
+	[WORKBENCH_COMPONENTS.PROJECT_FILE_DOWNLOAD_VIEWER]:
+		PROJECT_FILE_DOWNLOAD_VIEWER_PANEL,
+	[WORKBENCH_COMPONENTS.PROJECT_FILE_IMAGE_EDITOR]:
+		PROJECT_FILE_IMAGE_EDITOR_PANEL,
+	[WORKBENCH_COMPONENTS.PROJECT_FILE_MARKDOWN_EDITOR]:
+		PROJECT_FILE_MARKDOWN_EDITOR_PANEL,
+	[WORKBENCH_COMPONENTS.PROJECT_FILE_NOTEBOOK_EDITOR]:
+		PROJECT_FILE_NOTEBOOK_EDITOR_PANEL,
+	[WORKBENCH_COMPONENTS.PROJECT_FILE_PDF_EDITOR]:
+		PROJECT_FILE_PDF_EDITOR_PANEL,
 };
 
 /**
