@@ -53,8 +53,13 @@ import { ProjectDetailTabs } from "@/components/project";
 import { ShareOverlay } from "@/components/ui";
 import { WorkbenchAssistantView } from "@/components/workbench/assistant";
 import { Workbench } from "@/components/workbench/core";
-import { PROJECT_FILE_EDITOR_PANEL } from "@/components/workbench/project/project-file-editor-panel";
+import { PROJECT_FILE_CODE_EDITOR_PANEL } from "@/components/workbench/project/project-file-code-editor-panel";
+import { PROJECT_FILE_DOWNLOAD_VIEWER_PANEL } from "@/components/workbench/project/project-file-download-viewer-panel";
 import { PROJECT_FILE_EXPLORER_PANEL } from "@/components/workbench/project/project-file-explorer-panel";
+import { PROJECT_FILE_IMAGE_EDITOR_PANEL } from "@/components/workbench/project/project-file-image-editor-panel";
+import { PROJECT_FILE_MARKDOWN_EDITOR_PANEL } from "@/components/workbench/project/project-file-markdown-editor-panel";
+import { PROJECT_FILE_NOTEBOOK_EDITOR_PANEL } from "@/components/workbench/project/project-file-notebook-editor-panel";
+import { PROJECT_FILE_PDF_EDITOR_PANEL } from "@/components/workbench/project/project-file-pdf-editor-panel";
 import { PROJECT_MCP_EDITOR_PANEL } from "@/components/workbench/project/project-mcp-editor-panel";
 import { WorkbenchProvider } from "@/contexts";
 import { useProject, useWorkbench } from "@/hooks";
@@ -748,7 +753,27 @@ export const AutomationWorkbench = observer(
 					),
 				},
 				[FILE_EDITOR]: {
-					...PROJECT_FILE_EDITOR_PANEL,
+					...PROJECT_FILE_CODE_EDITOR_PANEL,
+					canRename: false,
+				},
+				[WORKBENCH_COMPONENTS.PROJECT_FILE_DOWNLOAD_VIEWER]: {
+					...PROJECT_FILE_DOWNLOAD_VIEWER_PANEL,
+					canRename: false,
+				},
+				[WORKBENCH_COMPONENTS.PROJECT_FILE_IMAGE_EDITOR]: {
+					...PROJECT_FILE_IMAGE_EDITOR_PANEL,
+					canRename: false,
+				},
+				[WORKBENCH_COMPONENTS.PROJECT_FILE_MARKDOWN_EDITOR]: {
+					...PROJECT_FILE_MARKDOWN_EDITOR_PANEL,
+					canRename: false,
+				},
+				[WORKBENCH_COMPONENTS.PROJECT_FILE_NOTEBOOK_EDITOR]: {
+					...PROJECT_FILE_NOTEBOOK_EDITOR_PANEL,
+					canRename: false,
+				},
+				[WORKBENCH_COMPONENTS.PROJECT_FILE_PDF_EDITOR]: {
+					...PROJECT_FILE_PDF_EDITOR_PANEL,
 					canRename: false,
 				},
 				[MCP_EDITOR]: {
