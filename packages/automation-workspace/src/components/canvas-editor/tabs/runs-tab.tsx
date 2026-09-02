@@ -1,10 +1,4 @@
-import {
-	ArrowLeft,
-	CalendarClock,
-	Loader2,
-	Play,
-	RefreshCw,
-} from "lucide-react";
+import { CalendarClock, Loader2, Play, RefreshCw } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { CellOutputBlock } from "@semoss/shared";
 import { Button, toast } from "@semoss/ui/next";
@@ -216,8 +210,11 @@ export function RunsTab({
 	if (view === "detail") {
 		if (detailLoading) {
 			return (
-				<div className="flex h-full flex-col">
-					<BackButton onClick={goBack} />
+				<div className="flex h-full min-h-0 flex-col p-3">
+					<RunHistoryBreadcrumb
+						current="Loading run"
+						onHistoryClick={goBack}
+					/>
 					<div className="flex flex-1 items-center justify-center">
 						<Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
 					</div>
@@ -256,6 +253,7 @@ export function RunsTab({
 						variant="ghost"
 						className="h-7 px-2 text-xs"
 						onClick={() => void refresh()}
+						aria-label="Refresh run history"
 					>
 						<RefreshCw className="mr-1 h-3 w-3" aria-hidden />
 					</Button>
@@ -322,16 +320,44 @@ export function RunsTab({
 // Sub-views
 // ---------------------------------------------------------------------------
 
-function BackButton({ onClick }: { onClick: () => void }) {
+function RunHistoryBreadcrumb({
+	current,
+	onHistoryClick,
+}: {
+	current: string;
+	onHistoryClick: () => void;
+}) {
 	return (
-		<button
-			type="button"
-			onClick={onClick}
-			className="flex items-center gap-1 px-2 py-1 text-[11px] text-muted-foreground transition-colors hover:text-foreground"
+		<nav
+			className="flex min-w-0 items-center gap-1.5 overflow-hidden whitespace-nowrap"
+			aria-label="Run history breadcrumb"
 		>
-			<ArrowLeft className="h-3 w-3" />
-			Run History
-		</button>
+			<button
+				type="button"
+				onClick={onHistoryClick}
+				className="shrink-0 font-semibold text-sm transition-colors hover:text-muted-foreground"
+			>
+				Run History
+			</button>
+			<svg
+				xmlns="http://www.w3.org/2000/svg"
+				width="15"
+				height="15"
+				viewBox="0 0 24 24"
+				fill="none"
+				stroke="currentColor"
+				stroke-width="2"
+				stroke-linecap="round"
+				stroke-linejoin="round"
+				className="lucide lucide-chevron-right"
+				aria-hidden="true"
+			>
+				<path d="m9 18 6-6-6-6"></path>
+			</svg>
+			<span className="truncate font-semibold text-muted-foreground text-sm">
+				{current}
+			</span>
+		</nav>
 	);
 }
 
@@ -385,14 +411,11 @@ function LiveRunView({
 
 	return (
 		<div className="flex h-full min-h-0 flex-col">
-			<div className="flex items-center justify-between border-b px-2 py-1">
-				<BackButton onClick={onBack} />
-				{running && (
-					<span className="flex items-center gap-1.5 text-[11px] text-primary">
-						<span className="h-1.5 w-1.5 animate-pulse rounded-full bg-primary" />
-						Running
-					</span>
-				)}
+			<div className="border-b px-3 py-2">
+				<RunHistoryBreadcrumb
+					current={running ? "Live run" : "Latest run"}
+					onHistoryClick={onBack}
+				/>
 			</div>
 			{!running && latestRunStatus && latestRunStatus !== "RUNNING" && (
 				<div className="px-3 pt-2">
@@ -435,35 +458,42 @@ function HistoryRunView({
 		results.find((r) => r.NODE_ID === selectedNodeId) ?? results[0] ?? null;
 
 	return (
-		<div className="flex h-full min-h-0 flex-col">
-			<div className="flex items-center justify-between border-b px-2 py-1">
-				<BackButton onClick={onBack} />
-				<div className="flex items-center gap-2">
+		<div className="flex h-full min-h-0 flex-col p-3">
+			<div className="flex items-center justify-between gap-2">
+				<div className="min-w-0 flex-1">
+					<RunHistoryBreadcrumb
+						current={`${formatTimestamp(run.STARTED_AT)}${
+							run.COMPLETED_AT
+								? ` · ${formatRunDuration(run.STARTED_AT, run.COMPLETED_AT)}`
+								: ""
+						}`}
+						onHistoryClick={onBack}
+					/>
+					{run.RESULT_SUMMARY && (
+						<p className="mt-1 truncate text-[11px] text-muted-foreground">
+							{run.RESULT_SUMMARY}
+						</p>
+					)}
+				</div>
+				<div className="shrink-0">
 					<StatusBadge status={run.STATUS} />
-					<span className="text-[10px] text-muted-foreground">
-						{formatTimestamp(run.STARTED_AT)}
-						{run.COMPLETED_AT &&
-							` · ${formatRunDuration(run.STARTED_AT, run.COMPLETED_AT)}`}
-					</span>
 				</div>
 			</div>
-			{run.RESULT_SUMMARY && (
-				<div className="border-b px-3 py-2 text-[11px] text-muted-foreground">
-					{run.RESULT_SUMMARY}
-				</div>
-			)}
-			<ResultsPanel
-				results={results}
-				executedDefinition={{
-					version: run.DEFINITION_VERSION,
-					hash: run.DEFINITION_HASH,
-					snapshot: run.DEFINITION_SNAPSHOT,
-				}}
-				onOutputPopout={onOutputPopout}
-				selectedResult={selectedResult}
-				stepMap={stepMap}
-				onSelectNode={setSelectedNodeId}
-			/>
+
+			<div className="mt-3 min-h-0 flex-1 overflow-y-auto rounded-lg border bg-card">
+				<ResultsPanel
+					results={results}
+					executedDefinition={{
+						version: run.DEFINITION_VERSION,
+						hash: run.DEFINITION_HASH,
+						snapshot: run.DEFINITION_SNAPSHOT,
+					}}
+					onOutputPopout={onOutputPopout}
+					selectedResult={selectedResult}
+					stepMap={stepMap}
+					onSelectNode={setSelectedNodeId}
+				/>
+			</div>
 		</div>
 	);
 }
