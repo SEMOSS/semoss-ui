@@ -9,6 +9,7 @@ import {
 	Minus as MinusIcon,
 	PanelRightIcon,
 	Plus as PlusIcon,
+	SettingsIcon,
 	Share2,
 } from "lucide-react";
 import { observer } from "mobx-react-lite";
@@ -64,6 +65,7 @@ import type {
 } from "@/stores/workbench";
 import { WORKBENCH_COMPONENTS } from "@/stores/workbench";
 import { NavbarHeader, NavbarLeft, NavbarRight } from "../shared";
+import { AutomationSettingsToggle } from "./automation-settings-toggle";
 
 const AUTOMATION_WORKSPACE_URL =
 	window.location.port === "5173"
@@ -777,6 +779,9 @@ export const AutomationWorkbench = observer(
 				[SETTINGS]: {
 					name: "Settings",
 					canRename: false,
+					icon: ({ className }) => (
+						<SettingsIcon className={className} />
+					),
 					content: AutomationSettingsPanel,
 				},
 				[WORKBENCH_COMPONENTS.ASSISTANT]: {
@@ -947,6 +952,9 @@ export const AutomationWorkbench = observer(
 					layout={AUTOMATION_LAYOUT}
 					components={components}
 					readOnly={readOnly}
+					borderSlots={{
+						left: { after: <AutomationSettingsToggle /> },
+					}}
 				/>
 			</>
 		);

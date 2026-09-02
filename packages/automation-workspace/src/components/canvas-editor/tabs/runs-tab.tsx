@@ -258,7 +258,6 @@ export function RunsTab({
 						onClick={() => void refresh()}
 					>
 						<RefreshCw className="mr-1 h-3 w-3" aria-hidden />
-						Refresh
 					</Button>
 				</div>
 			</div>
