@@ -11,12 +11,13 @@ import {
 	Skeleton,
 	toast,
 } from "@semoss/ui/next";
-import { useProject, useWorkbench } from "@/hooks";
+import { useProject } from "@/hooks";
 import type {
 	WorkbenchComponent,
 	WorkbenchPanelConfig,
 } from "@/stores/workbench";
 import type {
+	ProjectGitCommitFile,
 	ProjectGitDiff,
 	ProjectGitDiffSide,
 	ProjectGitStageAction,
@@ -26,7 +27,8 @@ import type {
 export interface GitDiffPanelConfig {
 	name: string;
 	path: string;
-	side: ProjectGitDiffSide;
+	side: ProjectGitDiffSide | "COMMIT";
+	commitId?: string;
 }
 
 /** Return semantic styling for one unified diff line. */
@@ -58,21 +60,29 @@ const GitDiffPanel: WorkbenchComponent<GitDiffPanelConfig> = ({
 }) => {
 	const { project } = useProject();
 	const insight = useInsight();
-	const events = useWorkbench((state) => state.events.actions);
-	const diff = usePixel<ProjectGitDiff>(
-		`ProjectGitDiff(project=[${JSON.stringify(project.project_id)}], filePath=[${JSON.stringify(config.path)}], side=[${JSON.stringify(config.side)}]);`,
+	const historical = config.side === "COMMIT";
+	const diff = usePixel<ProjectGitDiff | ProjectGitCommitFile[]>(
+		historical
+			? `ProjectCommitDiff(project=[${JSON.stringify(project.project_id)}], commitId=[${JSON.stringify(config.commitId ?? "")}], filePath=[${JSON.stringify(config.path)}]);`
+			: `ProjectGitDiff(project=[${JSON.stringify(project.project_id)}], filePath=[${JSON.stringify(config.path)}], side=[${JSON.stringify(config.side)}]);`,
 	);
-	const action: ProjectGitStageAction =
-		config.side === "STAGED" ? "UNSTAGE" : "STAGE";
-	const actionLabel = action === "STAGE" ? "Stage file" : "Unstage file";
-	const ActionIcon = action === "STAGE" ? PlusIcon : MinusIcon;
+	const diffData = Array.isArray(diff.data) ? diff.data[0] : diff.data;
+	const action: ProjectGitStageAction | null = historical
+		? null
+		: config.side === "STAGED"
+			? "UNSTAGE"
+			: "STAGE";
+	const actionLabel = action === "UNSTAGE" ? "Unstage file" : "Stage file";
+	const ActionIcon = action === "UNSTAGE" ? MinusIcon : PlusIcon;
 
 	const mutateFile = async () => {
+		if (!action) {
+			return;
+		}
 		try {
 			await insight.actions.run(
 				`ProjectGitStage(project=[${JSON.stringify(project.project_id)}], paths=[${JSON.stringify(config.path)}], action=[${JSON.stringify(action)}]);`,
 			);
-			events.emit("git:status-changed", undefined);
 			toast.success(action === "STAGE" ? "File staged" : "File unstaged");
 			close();
 		} catch (error) {
@@ -95,7 +105,7 @@ const GitDiffPanel: WorkbenchComponent<GitDiffPanelConfig> = ({
 		);
 	}
 
-	if (diff.status === "ERROR" || !diff.data) {
+	if (diff.status === "ERROR" || !diffData) {
 		return (
 			<div
 				className="flex h-full flex-col items-center justify-center gap-3 p-6"
@@ -128,26 +138,28 @@ const GitDiffPanel: WorkbenchComponent<GitDiffPanelConfig> = ({
 				>
 					{config.path}
 				</span>
-				<Button
-					size="sm"
-					variant="outline"
-					onClick={() => void mutateFile()}
-				>
-					<ActionIcon className="size-4" aria-hidden="true" />
-					{actionLabel}
-				</Button>
+				{action ? (
+					<Button
+						size="sm"
+						variant="outline"
+						onClick={() => void mutateFile()}
+					>
+						<ActionIcon className="size-4" aria-hidden="true" />
+						{actionLabel}
+					</Button>
+				) : null}
 			</div>
-			{diff.data.isTruncated ? (
+			{diffData.isTruncated ? (
 				<div className="border-warning border-b bg-warning/10 px-3 py-2 text-sm text-warning">
 					Diff truncated because the file is too large to display in
 					full.
 				</div>
 			) : null}
-			{diff.data.isBinary ? (
+			{diffData.isBinary ? (
 				<div className="flex flex-1 items-center justify-center p-6 text-center">
 					<Muted>Binary file diff is not available.</Muted>
 				</div>
-			) : diff.data.diff ? (
+			) : diffData.diff ? (
 				<ContextMenu>
 					<ContextMenuTrigger asChild>
 						<section
@@ -155,7 +167,7 @@ const GitDiffPanel: WorkbenchComponent<GitDiffPanelConfig> = ({
 							aria-label={`Diff for ${config.path}`}
 						>
 							<div className="w-max min-w-full py-2">
-								{diff.data.diff
+								{diffData.diff
 									.split("\n")
 									.map((line, index) => (
 										<div
@@ -172,12 +184,17 @@ const GitDiffPanel: WorkbenchComponent<GitDiffPanelConfig> = ({
 							</div>
 						</section>
 					</ContextMenuTrigger>
-					<ContextMenuContent>
-						<ContextMenuItem onSelect={() => void mutateFile()}>
-							<ActionIcon className="size-4" aria-hidden="true" />
-							{actionLabel}
-						</ContextMenuItem>
-					</ContextMenuContent>
+					{action ? (
+						<ContextMenuContent>
+							<ContextMenuItem onSelect={() => void mutateFile()}>
+								<ActionIcon
+									className="size-4"
+									aria-hidden="true"
+								/>
+								{actionLabel}
+							</ContextMenuItem>
+						</ContextMenuContent>
+					) : null}
 				</ContextMenu>
 			) : (
 				<div className="flex flex-1 items-center justify-center p-6 text-center">
@@ -195,6 +212,7 @@ export const PROJECT_GIT_DIFF_PANEL: WorkbenchPanelConfig<GitDiffPanelConfig> =
 		helpText: "File diff",
 		icon: ({ className }) => <FileDiffIcon className={className} />,
 		mount: "keepAlive",
-		matches: (a, b) => a.path === b.path && a.side === b.side,
+		matches: (a, b) =>
+			a.path === b.path && a.side === b.side && a.commitId === b.commitId,
 		content: GitDiffPanel,
 	};

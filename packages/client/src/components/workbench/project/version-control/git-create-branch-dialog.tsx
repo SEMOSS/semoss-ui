@@ -14,7 +14,7 @@ import {
 	z,
 	zodResolver,
 } from "@semoss/ui/next";
-import { useProject, useWorkbench } from "@/hooks";
+import { useProject } from "@/hooks";
 
 const branchSchema = z.object({
 	name: z
@@ -52,7 +52,6 @@ export const GitCreateBranchDialog = ({
 }: GitCreateBranchDialogProps) => {
 	const { project } = useProject();
 	const insight = useInsight();
-	const events = useWorkbench((state) => state.events.actions);
 	const form = useForm<BranchFormValues>({
 		resolver: zodResolver(branchSchema),
 		defaultValues: { name: "" },
@@ -63,8 +62,6 @@ export const GitCreateBranchDialog = ({
 			await insight.actions.run(
 				`ProjectGitCreateBranch(project=[${JSON.stringify(project.project_id)}], branch=[${JSON.stringify(values.name)}], startPoint=["HEAD"]);`,
 			);
-			events.emit("git:branch-changed", { branch: values.name });
-			events.emit("git:status-changed", undefined);
 			toast.success(`Created branch ${values.name}`);
 			form.reset();
 			onSubmit(values.name);
@@ -116,7 +113,7 @@ export const GitCreateBranchDialog = ({
 							{form.formState.isSubmitting ? (
 								<Spinner className="size-4" />
 							) : null}
-							Create branch
+							Create
 						</Button>
 					</DialogFooter>
 				</Form>

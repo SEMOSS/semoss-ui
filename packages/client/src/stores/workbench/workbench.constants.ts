@@ -32,7 +32,6 @@ export const WORKBENCH_COMPONENTS = {
 	PROJECT_INSIGHT_EXPLORER: "project-insight-explorer",
 	PROJECT_APP_RENDERER: "project-app-renderer",
 	PROJECT_ENGINES: "project-engines",
-	PROJECT_VERSION_CONTROL: "project-version-control",
-	PROJECT_GIT_CONFLICT_RESOLVER: "project-git-conflict-resolver",
+	PROJECT_VERSION: "project-version",
 	PROJECT_GIT_DIFF: "project-git-diff",
 } as const;

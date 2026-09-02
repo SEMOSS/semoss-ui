@@ -17,10 +17,8 @@ import {
 } from "../project-settings-toggle";
 import { PROJECT_TERMINAL_PANEL } from "../project-terminal-panel";
 import {
-	GitBranchControl,
-	PROJECT_GIT_CONFLICT_RESOLVER_PANEL,
 	PROJECT_GIT_DIFF_PANEL,
-	PROJECT_VERSION_CONTROL_PANEL,
+	PROJECT_VERSION_PANEL,
 } from "../version-control";
 import { AGENT_EDITOR_PANEL } from "./agent-editor-panel";
 
@@ -30,7 +28,7 @@ import { AGENT_EDITOR_PANEL } from "./agent-editor-panel";
  * from the editor on first load.
  */
 const AGENT_WORKBENCH_LAYOUT: WorkbenchLayout = {
-	version: 1,
+	version: 2,
 	tree: {
 		type: "tabset",
 		id: "main",
@@ -43,12 +41,12 @@ const AGENT_WORKBENCH_LAYOUT: WorkbenchLayout = {
 			WORKBENCH_PANEL_RECORDS.AGENT_EDITOR,
 		[WORKBENCH_PANEL_RECORDS.ASSISTANT.id]:
 			WORKBENCH_PANEL_RECORDS.ASSISTANT,
-		[WORKBENCH_PANEL_RECORDS.PROJECT_VERSION_CONTROL.id]:
-			WORKBENCH_PANEL_RECORDS.PROJECT_VERSION_CONTROL,
+		[WORKBENCH_PANEL_RECORDS.PROJECT_VERSION.id]:
+			WORKBENCH_PANEL_RECORDS.PROJECT_VERSION,
 	},
 	borders: {
 		left: {
-			panelIds: [WORKBENCH_COMPONENTS.PROJECT_VERSION_CONTROL],
+			panelIds: [WORKBENCH_COMPONENTS.PROJECT_VERSION],
 			activeId: null,
 			size: 400,
 		},
@@ -63,10 +61,7 @@ const AGENT_WORKBENCH_LAYOUT: WorkbenchLayout = {
 /** Blueprints, keyed by type. Module-scope so identities never churn. */
 const AGENT_WORKBENCH_COMPONENTS: Record<string, WorkbenchPanelConfigAny> = {
 	[WORKBENCH_COMPONENTS.AGENT_EDITOR]: AGENT_EDITOR_PANEL,
-	[WORKBENCH_COMPONENTS.PROJECT_VERSION_CONTROL]:
-		PROJECT_VERSION_CONTROL_PANEL,
-	[WORKBENCH_COMPONENTS.PROJECT_GIT_CONFLICT_RESOLVER]:
-		PROJECT_GIT_CONFLICT_RESOLVER_PANEL,
+	[WORKBENCH_COMPONENTS.PROJECT_VERSION]: PROJECT_VERSION_PANEL,
 	[WORKBENCH_COMPONENTS.PROJECT_GIT_DIFF]: PROJECT_GIT_DIFF_PANEL,
 	[WORKBENCH_COMPONENTS.PROJECT_TERMINAL]: PROJECT_TERMINAL_PANEL,
 	[WORKBENCH_COMPONENTS.PROJECT_SETTINGS]: createProjectSettingsPanel([
@@ -156,9 +151,6 @@ export const AgentWorkbench: React.FC = () => {
 			layout={AGENT_WORKBENCH_LAYOUT}
 			components={AGENT_WORKBENCH_COMPONENTS}
 			borderSlots={{
-				bottom: {
-					before: <GitBranchControl />,
-				},
 				left: {
 					after: (
 						<>

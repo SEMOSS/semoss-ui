@@ -8,12 +8,10 @@ import {
 import {
 	createWorkbenchCommandSlice,
 	createWorkbenchControlsSlice,
-	createWorkbenchEventsSlice,
 	createWorkbenchLayoutSlice,
 	createWorkbenchLoadingSlice,
 	type WorkbenchCommandSliceState,
 	type WorkbenchControlsSliceState,
-	type WorkbenchEventsSliceState,
 	type WorkbenchLayoutSliceState,
 	type WorkbenchLoadingSliceState,
 } from "./slices";
@@ -29,8 +27,6 @@ export interface WorkbenchState {
 	loading: WorkbenchLoadingSliceState;
 	command: WorkbenchCommandSliceState;
 	control: WorkbenchControlsSliceState;
-	/** Transient events scoped to this workbench instance. */
-	events: WorkbenchEventsSliceState;
 	assistant: WorkbenchAssistantSliceState;
 	notifications: WorkbenchAssistantNotificationSliceState;
 }
@@ -44,7 +40,7 @@ export interface WorkbenchState {
  * @name createWorkbenchStore
  * @param id - Unique workbench ID used to isolate the cache.
  * @return Scoped workbench store composed from the layout, loading, command,
- * control, events, assistant, and assistant-notification slices.
+ * control, assistant, and assistant-notification slices.
  */
 export const createWorkbenchStore = (id: string): StoreApi<WorkbenchState> => {
 	return createStore<WorkbenchState>()((set, get, api) => {
@@ -54,7 +50,6 @@ export const createWorkbenchStore = (id: string): StoreApi<WorkbenchState> => {
 		const loading = createWorkbenchLoadingSlice()(set, get, api);
 		const command = createWorkbenchCommandSlice()(set, get, api);
 		const control = createWorkbenchControlsSlice()(set, get, api);
-		const events = createWorkbenchEventsSlice()(set, get, api);
 		const assistant = createWorkbenchAssistantSlice(id)(set, get, api);
 		// Subscribes to this store, so it is composed after the assistant
 		// slice it watches.
@@ -69,7 +64,6 @@ export const createWorkbenchStore = (id: string): StoreApi<WorkbenchState> => {
 			loading,
 			command,
 			control,
-			events,
 			assistant,
 			notifications,
 		};
