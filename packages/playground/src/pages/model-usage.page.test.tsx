@@ -1,6 +1,6 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, test, vi } from "vitest";
-import { getPreviousMonthDateRange, ModelUsagePage } from "./model-usage.page";
+import { getLastMonthDateRange, ModelUsagePage } from "./model-usage.page";
 
 const mocks = vi.hoisted(() => ({
 	getUsageModels: vi.fn(),
@@ -79,10 +79,14 @@ describe("ModelUsagePage", () => {
 		expect(mocks.getUserModelCreditInfo).not.toHaveBeenCalled();
 	});
 
-	test("defaults the custom range to the previous calendar month", () => {
-		expect(getPreviousMonthDateRange(new Date(2026, 0, 15))).toEqual({
-			startDate: "2025-12-01",
-			endDate: "2025-12-31",
+	test("defaults the custom range to the rolling month ending today", () => {
+		expect(getLastMonthDateRange(new Date(2026, 8, 2))).toEqual({
+			startDate: "2026-08-02",
+			endDate: "2026-09-02",
+		});
+		expect(getLastMonthDateRange(new Date(2026, 2, 31))).toEqual({
+			startDate: "2026-02-28",
+			endDate: "2026-03-31",
 		});
 	});
 
@@ -107,7 +111,7 @@ describe("ModelUsagePage", () => {
 		await waitFor(() => {
 			expect(mocks.getUserModelCreditInfo).toHaveBeenCalledWith(
 				"model-1",
-				expect.stringMatching(/^\d{4}-\d{2}-01$/),
+				expect.stringMatching(/^\d{4}-\d{2}-\d{2}$/),
 				expect.stringMatching(/^\d{4}-\d{2}-\d{2}$/),
 			);
 		});

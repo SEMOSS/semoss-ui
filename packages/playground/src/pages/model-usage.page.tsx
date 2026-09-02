@@ -68,15 +68,29 @@ const formatDateInput = (date: Date): string => {
 	return `${year}-${month}-${day}`;
 };
 
-/** Return the previous calendar month for the initial custom usage range. */
-export const getPreviousMonthDateRange = (reference = new Date()) => ({
-	startDate: formatDateInput(
-		new Date(reference.getFullYear(), reference.getMonth() - 1, 1),
-	),
-	endDate: formatDateInput(
-		new Date(reference.getFullYear(), reference.getMonth(), 0),
-	),
-});
+/** Return the rolling month ending today for the initial custom usage range. */
+export const getLastMonthDateRange = (reference = new Date()) => {
+	const targetYear =
+		reference.getMonth() === 0
+			? reference.getFullYear() - 1
+			: reference.getFullYear();
+	const targetMonth = (reference.getMonth() + 11) % 12;
+	const lastDayInTargetMonth = new Date(
+		targetYear,
+		targetMonth + 1,
+		0,
+	).getDate();
+	const startDate = new Date(
+		targetYear,
+		targetMonth,
+		Math.min(reference.getDate(), lastDayInTargetMonth),
+	);
+
+	return {
+		startDate: formatDateInput(startDate),
+		endDate: formatDateInput(reference),
+	};
+};
 
 /** Self-service dashboard for model credit limits, usage, and pricing. */
 export const ModelUsagePage = () => {
@@ -88,7 +102,7 @@ export const ModelUsagePage = () => {
 	const [models, setModels] = useState<Engine[]>([]);
 	const [selectedModelId, setSelectedModelId] = useState("");
 	const [creditInfo, setCreditInfo] = useState<ModelCreditInfo | null>(null);
-	const [initialDateRange] = useState(() => getPreviousMonthDateRange());
+	const [initialDateRange] = useState(() => getLastMonthDateRange());
 	const [startDate, setStartDate] = useState(initialDateRange.startDate);
 	const [endDate, setEndDate] = useState(initialDateRange.endDate);
 	const [rangeMode, setRangeMode] = useState<"configured" | "custom">(
