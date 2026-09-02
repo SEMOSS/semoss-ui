@@ -36,7 +36,9 @@ import {
 import {
 	getUsageModels,
 	getUserModelCreditInfo,
+	getUserModelUsage,
 	type ModelCreditInfo,
+	type ModelUsageSummary,
 } from "@/api";
 import { useGlobalBreadcrumbs } from "@/hooks";
 import type { Engine } from "@/types";
@@ -105,6 +107,12 @@ export const ModelUsagePage = () => {
 	const [initialDateRange] = useState(() => getLastMonthDateRange());
 	const [startDate, setStartDate] = useState(initialDateRange.startDate);
 	const [endDate, setEndDate] = useState(initialDateRange.endDate);
+	const [appliedStartDate, setAppliedStartDate] = useState(
+		initialDateRange.startDate,
+	);
+	const [appliedEndDate, setAppliedEndDate] = useState(
+		initialDateRange.endDate,
+	);
 	const [rangeMode, setRangeMode] = useState<"configured" | "custom">(
 		"configured",
 	);
@@ -112,6 +120,11 @@ export const ModelUsagePage = () => {
 	const [isLoadingUsage, setIsLoadingUsage] = useState(false);
 	const [modelsError, setModelsError] = useState(false);
 	const [usageError, setUsageError] = useState(false);
+	const [usageSummaries, setUsageSummaries] = useState<ModelUsageSummary[]>(
+		[],
+	);
+	const [isLoadingOverview, setIsLoadingOverview] = useState(false);
+	const [overviewError, setOverviewError] = useState(false);
 
 	useGlobalBreadcrumbs({
 		breadcrumbs: [
@@ -175,16 +188,66 @@ export const ModelUsagePage = () => {
 			setCreditInfo(null);
 		} else if (rangeMode === "configured") {
 			loadUsage(selectedModelId);
-		} else if (startDate && endDate && startDate <= endDate) {
-			loadUsage(selectedModelId, startDate, endDate);
+		} else if (
+			appliedStartDate &&
+			appliedEndDate &&
+			appliedStartDate <= appliedEndDate
+		) {
+			loadUsage(selectedModelId, appliedStartDate, appliedEndDate);
 		} else {
 			setCreditInfo(null);
 		}
-	}, [endDate, loadUsage, rangeMode, selectedModelId, startDate]);
+	}, [
+		appliedEndDate,
+		appliedStartDate,
+		loadUsage,
+		rangeMode,
+		selectedModelId,
+	]);
 
 	const selectedModel = models.find(
 		(model) => model.engine_id === selectedModelId,
 	);
+	const overviewStartDate =
+		rangeMode === "custom"
+			? appliedStartDate
+			: creditInfo?.periodStart?.slice(0, 10) || "";
+	const overviewEndDate =
+		rangeMode === "custom"
+			? appliedEndDate
+			: creditInfo?.periodEnd?.slice(0, 10) || "";
+
+	const loadOverview = useCallback(
+		async (rangeStart: string, rangeEnd: string) => {
+			if (!rangeStart || !rangeEnd || models.length === 0) return;
+			setIsLoadingOverview(true);
+			setOverviewError(false);
+			try {
+				const summaries = await getUserModelUsage(
+					models.map((model) => model.engine_id),
+					rangeStart,
+					rangeEnd,
+				);
+				setUsageSummaries(
+					[...summaries].sort(
+						(a, b) =>
+							(b.TOTAL_CREDITS || 0) - (a.TOTAL_CREDITS || 0) ||
+							(b.TOTAL_TOKENS || 0) - (a.TOTAL_TOKENS || 0),
+					),
+				);
+			} catch {
+				setUsageSummaries([]);
+				setOverviewError(true);
+			} finally {
+				setIsLoadingOverview(false);
+			}
+		},
+		[models],
+	);
+
+	useEffect(() => {
+		loadOverview(overviewStartDate, overviewEndDate);
+	}, [loadOverview, overviewEndDate, overviewStartDate]);
 	const usagePercent = useMemo<number | null>(() => {
 		if (
 			!creditInfo ||
@@ -216,11 +279,18 @@ export const ModelUsagePage = () => {
 					</div>
 					<Button
 						variant="outline"
-						onClick={() =>
-							rangeMode === "configured"
-								? loadUsage(selectedModelId)
-								: loadUsage(selectedModelId, startDate, endDate)
-						}
+						onClick={() => {
+							if (rangeMode === "configured") {
+								loadUsage(selectedModelId);
+							} else {
+								loadUsage(
+									selectedModelId,
+									appliedStartDate,
+									appliedEndDate,
+								);
+							}
+							loadOverview(overviewStartDate, overviewEndDate);
+						}}
 						disabled={
 							!selectedModelId ||
 							(rangeMode === "custom" &&
@@ -267,7 +337,7 @@ export const ModelUsagePage = () => {
 						</CardHeader>
 					</Card>
 				) : (
-					<div className="grid w-full gap-4 md:grid-cols-2 lg:grid-cols-4">
+					<div className="grid w-full gap-4 md:grid-cols-2 lg:grid-cols-5">
 						<div className="flex flex-col gap-2">
 							<Label htmlFor={modelSelectId}>
 								{t("usage:model.label")}
@@ -368,6 +438,24 @@ export const ModelUsagePage = () => {
 										}
 									/>
 								</div>
+								<div className="flex items-end">
+									<Button
+										className="w-full"
+										disabled={
+											!startDate ||
+											!endDate ||
+											startDate > endDate ||
+											(startDate === appliedStartDate &&
+												endDate === appliedEndDate)
+										}
+										onClick={() => {
+											setAppliedStartDate(startDate);
+											setAppliedEndDate(endDate);
+										}}
+									>
+										{t("usage:dateRange.apply")}
+									</Button>
+								</div>
 							</>
 						)}
 					</div>
@@ -381,6 +469,118 @@ export const ModelUsagePage = () => {
 							{t("usage:usageError.description")}
 						</AlertDescription>
 					</Alert>
+				)}
+
+				{models.length > 0 && overviewStartDate && overviewEndDate && (
+					<Card>
+						<CardHeader>
+							<CardTitle>{t("usage:overview.title")}</CardTitle>
+							<CardDescription>
+								{t("usage:overview.description", {
+									start: overviewStartDate,
+									end: overviewEndDate,
+								})}
+							</CardDescription>
+						</CardHeader>
+						<CardContent>
+							{overviewError ? (
+								<Alert variant="destructive">
+									<AlertCircle aria-hidden />
+									<AlertTitle>
+										{t("usage:overview.error")}
+									</AlertTitle>
+								</Alert>
+							) : isLoadingOverview ? (
+								<div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+									<Skeleton className="h-40" />
+									<Skeleton className="h-40" />
+									<Skeleton className="h-40" />
+								</div>
+							) : (
+								<div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+									{usageSummaries.map((summary) => {
+										const model = models.find(
+											(item) =>
+												item.engine_id ===
+												summary.ENGINE_ID,
+										);
+										return (
+											<button
+												type="button"
+												key={summary.ENGINE_ID}
+												onClick={() => {
+													setRangeMode("configured");
+													setCreditInfo(null);
+													setSelectedModelId(
+														summary.ENGINE_ID,
+													);
+												}}
+												className={`rounded-lg border p-4 text-left transition-colors hover:bg-muted/40 ${
+													selectedModelId ===
+													summary.ENGINE_ID
+														? "border-primary ring-1 ring-primary"
+														: "border-border"
+												}`}
+											>
+												<div className="mb-3 truncate font-semibold">
+													{model?.engine_display_name ||
+														model?.engine_name ||
+														summary.ENGINE_NAME ||
+														summary.ENGINE_ID}
+												</div>
+												<div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
+													<Muted>
+														{t(
+															"usage:overview.credits",
+														)}
+													</Muted>
+													<span className="text-right font-medium">
+														{formatCredits(
+															summary.TOTAL_CREDITS,
+															locale,
+														)}
+													</span>
+													<Muted>
+														{t(
+															"usage:overview.requests",
+														)}
+													</Muted>
+													<span className="text-right font-medium">
+														{formatCredits(
+															summary.TOTAL_REQUESTS,
+															locale,
+														)}
+													</span>
+													<Muted>
+														{t(
+															"usage:overview.inputTokens",
+														)}
+													</Muted>
+													<span className="text-right font-medium">
+														{formatCredits(
+															summary.INPUT_TOKENS,
+															locale,
+														)}
+													</span>
+													<Muted>
+														{t(
+															"usage:overview.outputTokens",
+														)}
+													</Muted>
+													<span className="text-right font-medium">
+														{formatCredits(
+															summary.RESPONSE_TOKENS,
+															locale,
+														)}
+													</span>
+												</div>
+											</button>
+										);
+									})}
+								</div>
+							)}
+						</CardContent>
+					</Card>
 				)}
 
 				{isLoadingUsage && selectedModelId ? (

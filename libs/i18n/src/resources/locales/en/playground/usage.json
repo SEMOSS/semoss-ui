@@ -8,7 +8,17 @@
 		"configured": "Current limit period",
 		"custom": "Custom range",
 		"start": "Start date",
-		"end": "End date"
+		"end": "End date",
+		"apply": "Apply"
+	},
+	"overview": {
+		"title": "All-model overview",
+		"description": "Usage from {{start}} through {{end}}, ranked by credits.",
+		"error": "Model usage totals could not be loaded.",
+		"credits": "Credits",
+		"requests": "Requests",
+		"inputTokens": "Input tokens",
+		"outputTokens": "Output tokens"
 	},
 	"model": {
 		"label": "Model",

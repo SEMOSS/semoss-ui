@@ -1,10 +1,11 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, test, vi } from "vitest";
 import { getLastMonthDateRange, ModelUsagePage } from "./model-usage.page";
 
 const mocks = vi.hoisted(() => ({
 	getUsageModels: vi.fn(),
 	getUserModelCreditInfo: vi.fn(),
+	getUserModelUsage: vi.fn(),
 }));
 
 vi.mock("@semoss/i18n", () => ({
@@ -52,6 +53,17 @@ describe("ModelUsagePage", () => {
 			cacheWriteMultiplier: 1.25,
 			pricingConfigured: true,
 		});
+		mocks.getUserModelUsage.mockResolvedValue([
+			{
+				ENGINE_ID: "model-1",
+				ENGINE_NAME: "Test Model",
+				INPUT_TOKENS: 100,
+				RESPONSE_TOKENS: 50,
+				TOTAL_TOKENS: 150,
+				TOTAL_REQUESTS: 2,
+				TOTAL_CREDITS: 4,
+			},
+		]);
 	});
 
 	test("loads the first model and displays its credit usage", async () => {
@@ -63,9 +75,10 @@ describe("ModelUsagePage", () => {
 				"model-1",
 			);
 		});
-		expect(screen.getByText("4")).toBeInTheDocument();
+		expect(screen.getAllByText("4")).toHaveLength(2);
 		expect(screen.getByText("6")).toBeInTheDocument();
 		expect(screen.getByText("40%")).toBeInTheDocument();
+		expect(screen.getByText("usage:overview.requests")).toBeInTheDocument();
 	});
 
 	test("shows an empty state when the user has no models", async () => {
@@ -120,5 +133,39 @@ describe("ModelUsagePage", () => {
 		expect(
 			screen.queryByText("usage:period.title"),
 		).not.toBeInTheDocument();
+	});
+
+	test("waits for Apply before loading a custom date range", async () => {
+		mocks.getUserModelCreditInfo.mockResolvedValue({
+			engineId: "model-1",
+			userId: "user-1",
+			restrictionEnabled: false,
+			restrictionType: null,
+			frequency: null,
+			limitExceeded: null,
+			trackingEnabled: true,
+			rangeType: "CUSTOM",
+			pricingConfigured: false,
+		});
+
+		render(<ModelUsagePage />);
+
+		const startInput = await screen.findByLabelText(
+			"usage:dateRange.start",
+		);
+		await waitFor(() => expect(mocks.getUserModelUsage).toHaveBeenCalled());
+		const callsBeforeEdit = mocks.getUserModelUsage.mock.calls.length;
+
+		fireEvent.change(startInput, { target: { value: "2026-08-01" } });
+		expect(mocks.getUserModelUsage).toHaveBeenCalledTimes(callsBeforeEdit);
+
+		fireEvent.click(screen.getByText("usage:dateRange.apply"));
+		await waitFor(() => {
+			expect(mocks.getUserModelUsage).toHaveBeenLastCalledWith(
+				["model-1"],
+				"2026-08-01",
+				expect.stringMatching(/^\d{4}-\d{2}-\d{2}$/),
+			);
+		});
 	});
 });

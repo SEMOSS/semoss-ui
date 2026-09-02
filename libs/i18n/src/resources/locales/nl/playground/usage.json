@@ -8,7 +8,17 @@
 		"configured": "Huidige limietperiode",
 		"custom": "Aangepast bereik",
 		"start": "Startdatum",
-		"end": "Einddatum"
+		"end": "Einddatum",
+		"apply": "Toepassen"
+	},
+	"overview": {
+		"title": "Overzicht van alle modellen",
+		"description": "Gebruik van {{start}} tot en met {{end}}, gerangschikt op credits.",
+		"error": "De gebruikstotalen van de modellen konden niet worden geladen.",
+		"credits": "Credits",
+		"requests": "Aanvragen",
+		"inputTokens": "Invoertokens",
+		"outputTokens": "Uitvoertokens"
 	},
 	"model": { "label": "Model", "placeholder": "Selecteer een model" },
 	"modelsError": {

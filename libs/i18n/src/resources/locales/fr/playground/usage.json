@@ -8,7 +8,17 @@
 		"configured": "Période limite actuelle",
 		"custom": "Période personnalisée",
 		"start": "Date de début",
-		"end": "Date de fin"
+		"end": "Date de fin",
+		"apply": "Appliquer"
+	},
+	"overview": {
+		"title": "Vue d’ensemble de tous les modèles",
+		"description": "Utilisation du {{start}} au {{end}}, classée par crédits.",
+		"error": "Impossible de charger les totaux d’utilisation des modèles.",
+		"credits": "Crédits",
+		"requests": "Requêtes",
+		"inputTokens": "Jetons d’entrée",
+		"outputTokens": "Jetons de sortie"
 	},
 	"model": { "label": "Modèle", "placeholder": "Sélectionner un modèle" },
 	"modelsError": {

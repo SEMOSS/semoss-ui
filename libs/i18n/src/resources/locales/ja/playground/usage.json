@@ -8,7 +8,17 @@
 		"configured": "現在の制限期間",
 		"custom": "カスタム範囲",
 		"start": "開始日",
-		"end": "終了日"
+		"end": "終了日",
+		"apply": "適用"
+	},
+	"overview": {
+		"title": "全モデルの概要",
+		"description": "{{start}}から{{end}}までの使用量をクレジット順に表示します。",
+		"error": "モデル使用量の合計を読み込めませんでした。",
+		"credits": "クレジット",
+		"requests": "リクエスト",
+		"inputTokens": "入力トークン",
+		"outputTokens": "出力トークン"
 	},
 	"model": { "label": "モデル", "placeholder": "モデルを選択" },
 	"modelsError": {

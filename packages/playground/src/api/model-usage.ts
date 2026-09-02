@@ -25,6 +25,17 @@ export interface ModelCreditInfo {
 	pricingConfigured: boolean;
 }
 
+/** Token, request, and credit totals returned for one model. */
+export interface ModelUsageSummary {
+	ENGINE_ID: string;
+	ENGINE_NAME: string | null;
+	INPUT_TOKENS: number;
+	RESPONSE_TOKENS: number;
+	TOTAL_TOKENS: number;
+	TOTAL_REQUESTS: number;
+	TOTAL_CREDITS: number;
+}
+
 /** Throw when a Pixel execution reports one or more backend errors. */
 const assertPixelSuccess = (errors: string[]): void => {
 	if (errors.length > 0) {
@@ -42,6 +53,31 @@ export const getUsageModels = async (): Promise<Engine[]> => {
 	const output = response.pixelReturn[0]?.output;
 	if (!Array.isArray(output)) {
 		throw new Error("No model response");
+	}
+	return output;
+};
+
+const getFollowingDate = (value: string): string => {
+	const [year, month, day] = value.split("-").map(Number);
+	const date = new Date(Date.UTC(year, month - 1, day + 1));
+	return date.toISOString().slice(0, 10);
+};
+
+/** Return usage totals for all requested models over an inclusive UI range. */
+export const getUserModelUsage = async (
+	modelIds: string[],
+	startDate: string,
+	endDate: string,
+): Promise<ModelUsageSummary[]> => {
+	if (modelIds.length === 0) return [];
+	const response = await runPixel<[ModelUsageSummary[]]>(
+		`META | GetUserModelUsage(engine=${JSON.stringify(modelIds)}, startDate=${JSON.stringify(startDate)}, endDate=${JSON.stringify(getFollowingDate(endDate))});`,
+	);
+	assertPixelSuccess(response.errors);
+
+	const output = response.pixelReturn[0]?.output;
+	if (!Array.isArray(output)) {
+		throw new Error("No model usage response");
 	}
 	return output;
 };
