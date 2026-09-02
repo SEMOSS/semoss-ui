@@ -72,7 +72,7 @@ helper the way the layout slice does. Reaching across namespaces is just another
    a raw string literal as a panel type.
 2. Co-export a module-scope blueprint const from the panel file
    (`export const MY_PANEL: WorkbenchPanelConfig<MyPanelConfig> = { name, icon, content, … }`) —
-   see `ENGINE_FILE_EDITOR_PANEL` or `WORKBENCH_ASSISTANT_PANEL`. Module scope matters:
+  see `ENGINE_FILE_CODE_EDITOR_PANEL` or `WORKBENCH_ASSISTANT_PANEL`. Module scope matters:
    blueprint identity churn remounts panels.
 3. Reference it in a domain workbench's module-scope `COMPONENTS` map; if it should be open by
    default, add a `WorkbenchPanelRecord` to the layout literal (shared singletons live in

@@ -10,6 +10,7 @@ import {
 	type FileExplorerMovedItem,
 	type FileItem,
 	type FileMode,
+	getFileEditorKind,
 	getParentPath,
 	NewFileOverlay,
 	useFileExplorer,
@@ -38,6 +39,23 @@ import { WORKBENCH_COMPONENTS } from "../workbench.constants";
  */
 const isRename = (moved: FileExplorerMovedItem) =>
 	getParentPath(moved.oldPath) === getParentPath(moved.newPath);
+
+const getFilePanelType = (path: string) => {
+	switch (getFileEditorKind(path)) {
+		case "download":
+			return WORKBENCH_COMPONENTS.FILE_DOWNLOAD_VIEWER;
+		case "image":
+			return WORKBENCH_COMPONENTS.FILE_IMAGE_EDITOR;
+		case "markdown":
+			return WORKBENCH_COMPONENTS.FILE_MARKDOWN_EDITOR;
+		case "notebook":
+			return WORKBENCH_COMPONENTS.FILE_NOTEBOOK_EDITOR;
+		case "pdf":
+			return WORKBENCH_COMPONENTS.FILE_PDF_EDITOR;
+		default:
+			return WORKBENCH_COMPONENTS.FILE_CODE_EDITOR;
+	}
+};
 
 /**
  * Engine-scoped file explorer panel — the `ENGINE`-mode twin of
@@ -70,7 +88,7 @@ const EngineFileExplorerPanel: WorkbenchComponent<
 	const openFile = useCallback(
 		(item: FileItem) =>
 			layoutActions.selectPanel(
-				WORKBENCH_COMPONENTS.FILE_EDITOR,
+				getFilePanelType(item.path),
 				{ name: item.name, path: item.path },
 				{ name: item.name },
 			),
@@ -104,7 +122,7 @@ const EngineFileExplorerPanel: WorkbenchComponent<
 			}
 
 			writeSpawnDragSpec(e.dataTransfer, {
-				type: WORKBENCH_COMPONENTS.FILE_EDITOR,
+				type: getFilePanelType(items[0].path),
 				config: { name: items[0].name, path: items[0].path },
 				name: items[0].name,
 			});
