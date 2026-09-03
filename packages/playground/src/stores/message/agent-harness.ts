@@ -97,18 +97,11 @@ const toAgentExecutionMode = (originalExecution: unknown): string =>
 		: MCP_EXECUTION_AGENT_AUTO;
 
 /**
- * Agent-run tool items arrive fully parsed, unlike the OpenAI-delta tool
- * stream (tool-stream.ts) — no placeholder phase needed.
- *
- * `item.metadata` is the tool's real `_meta` block (SMSS_ORIGINAL_TOOL_NAME,
- * SMSS_ENGINE_ID, etc.), passed through as-is by the backend — not wrapped in
- * another `_meta`.
- *
- * `item.name` is the raw, engine-id-prefixed LLM-facing name (e.g.
- * `a<uuid>_toolname`) — never display it directly. Prefer `item.title`
- * (resolved server-side) or `metadata.SMSS_ORIGINAL_TOOL_NAME` for anything
- * user-facing; ToolStore.displayName falls back to `name` only as a last
- * resort.
+ * Agent-run tool items arrive fully parsed (no placeholder phase like the
+ * OpenAI-delta tool stream in tool-stream.ts). `item.metadata` is the tool's
+ * real `_meta` block, passed through as-is. `item.name` is the raw,
+ * engine-id-prefixed LLM-facing name — never display it directly; prefer
+ * `item.title` or `metadata.SMSS_ORIGINAL_TOOL_NAME`.
  */
 const buildToolCallPart = (item: {
 	id: string;
@@ -156,6 +149,7 @@ const buildToolCallPart = (item: {
  */
 const buildPendingToolCallPart = (
 	action: PendingAgentAction,
+	toolCallId: string,
 ): PixelMessageToolCallPart => {
 	const displayName =
 		(action.toolMeta?.SMSS_ORIGINAL_TOOL_NAME as string | undefined) ||
@@ -164,7 +158,7 @@ const buildPendingToolCallPart = (
 	return {
 		type: "TOOL_CALL",
 		toolCall: {
-			id: action.toolCallId as string,
+			id: toolCallId,
 			type: "function",
 			name: action.toolName ?? "",
 			title: displayName,
@@ -200,13 +194,9 @@ const findSubagentPart = (
 
 /**
  * Apply one agent-run item event onto the response message. Must already be
- * inside a mobx action.
- *
- * Tool status reads from `items` (the SDK's already-merged state) rather
- * than the raw event, so Playground never handles patch merging itself.
- * Text is read straight off the event — item.started carries either empty
- * text (deltas follow) or the full text (nothing streamed incrementally);
- * item.completed never re-saves text either way.
+ * inside a mobx action. Tool status reads from `items` (the SDK's
+ * already-merged state), not the raw event, so Playground never handles
+ * patch merging itself. Text is read straight off the event.
  */
 const applyAgentRunItem = (
 	responseMessage: ResponseMessageStore,
@@ -217,16 +207,12 @@ const applyAgentRunItem = (
 
 	if (event.type === "item.started") {
 		const { item } = event;
-		// The sequential reveal queue (response-message.tsx) holds at the last
-		// known part while isThinking is true, waiting to see if more content
-		// lands on that SAME part. That's fine for token-by-token deltas, but
-		// agent-run items arrive as one-shot bursts — the queue can hold
-		// forever on a part that already finished animating, with no later
-		// event left to re-trigger it, permanently hiding every part after it
-		// (e.g. a tool call that starts moments after its preceding text).
-		// room.isLoading (set by runAgentMessage) already covers "run still in
-		// progress" for the input box, so it's safe to drop this the moment
-		// any real content exists.
+		// The sequential reveal queue (response-message.tsx) holds on the last
+		// part while isThinking is true, waiting for more content on that same
+		// part — fine for streamed deltas, but agent-run items arrive as
+		// one-shot bursts, so it would hang forever and hide every part after.
+		// room.isLoading already covers "run still in progress" for the input
+		// box, so it's safe to drop this once any real content exists.
 		responseMessage.isThinking = false;
 		if (item.kind === "message" && item.text) {
 			responseMessage.savePart({
@@ -331,9 +317,14 @@ const syncPendingActions = (
 	pendingActions: readonly PendingAgentAction[] | undefined,
 ) => {
 	const room = responseMessage.room;
-	const byToolCallId = new Map(
+	const byToolCallId = new Map<string, PendingAgentAction>(
 		(pendingActions ?? [])
-			.filter((action) => action.toolCallId)
+			.filter(
+				(
+					action,
+				): action is PendingAgentAction & { toolCallId: string } =>
+					Boolean(action.toolCallId),
+			)
 			.map((action) => [action.toolCallId, action]),
 	);
 
@@ -345,9 +336,9 @@ const syncPendingActions = (
 		if (hasPart) {
 			return;
 		}
-		const part = buildPendingToolCallPart(action);
+		const part = buildPendingToolCallPart(action, toolCallId);
 		responseMessage.parts.push(part);
-		room.syncTool(toolCallId as string, responseMessage, part);
+		room.syncTool(toolCallId, responseMessage, part);
 	});
 
 	responseMessage.parts.forEach((part) => {
@@ -364,14 +355,8 @@ const syncPendingActions = (
 
 /**
  * Resolve a tool call paused on a human decision. The legacy ask-tool paths
- * (message.saveToolExecution, room.processTool, RunMCPTool by
- * project/function) all write straight into room history and never touch the
- * AGENT_RUN_ACTION row — calling them here would leave the backend run stuck
- * at INPUT_REQUIRED forever while a stray, unrelated tool result lands in the
- * room. This is the only call that actually resumes the run.
- *
- * Thin wrapper over AgentStore.decide — approve-vs-edit resolution and
- * poking the run's live subscription both happen there.
+ * write straight into room history and never touch the AGENT_RUN_ACTION row,
+ * so this is the only call that actually resumes the run. Thin wrapper over AgentStore.decide.
  */
 export const decideAgentToolAction = async (
 	tool: ToolStore,
@@ -505,12 +490,7 @@ export const runAgentMessage = async (
 			platform_generated: true,
 			modelId: room.model.engine_id,
 			dateCreated: new Date().toISOString(),
-			parts: [
-				{
-					type: "THINKING",
-					thinking: "",
-				},
-			],
+			parts: [],
 			tokens: 0,
 			ornaments: {
 				modelName,
@@ -614,34 +594,29 @@ const findSpawningMessage = (
 };
 
 /**
- * Reconstruct every subagent spawned across this room's history from the
- * durable AGENT_RUN table (GetSubagentRuns) — one query per distinct
- * agentRunId, not just the tail's, since live subagent items only ever exist
- * in memory and don't survive a reload otherwise.
- *
- * Each part is placed on the message that spawned it (see
- * findSpawningMessage), falling back to the run's last message. Uses the same
- * part shape/id as the live path so a still-running child's later updates
- * find and mutate this same part instead of duplicating it.
+ * Rebuilds every subagent from GetSubagentRuns (one query per agentRunId)
+ * since live subagent parts don't survive a reload. Placed on the spawning
+ * message (see findSpawningMessage), using the same part shape/id as the live
+ * path so later updates mutate it instead of duplicating.
  */
 export const reconstructAllSubagents = async (room: RoomStore) => {
 	const messagesByRunId = new Map<
 		string,
 		(InputMessageStore | ResponseMessageStore)[]
 	>();
-	for (const message of room.history) {
+	room.history.forEach((message) => {
 		const runId = message.ornaments.agentRunId;
-		if (!runId) continue;
+		if (!runId) return;
 		const messages = messagesByRunId.get(runId) ?? [];
 		messages.push(message);
 		messagesByRunId.set(runId, messages);
-	}
+	});
 
 	for (const [runId, messages] of messagesByRunId) {
 		try {
 			const subagents = await getSubagentRuns(runId, room.insightId);
 			runInAction(() => {
-				for (const subagent of subagents) {
+				subagents.forEach((subagent) => {
 					const responseMessages = messages.filter(
 						(message): message is ResponseMessageStore =>
 							message instanceof ResponseMessageStore,
@@ -650,7 +625,7 @@ export const reconstructAllSubagents = async (room: RoomStore) => {
 						findSpawningMessage(messages, subagent.runId) ??
 						responseMessages[responseMessages.length - 1];
 					if (!target || findSubagentPart(target, subagent.runId)) {
-						continue;
+						return;
 					}
 					target.parts.push({
 						type: "SUBAGENT",
@@ -661,7 +636,7 @@ export const reconstructAllSubagents = async (room: RoomStore) => {
 							error: subagent.errorMessage ?? undefined,
 						},
 					});
-				}
+				});
 			});
 		} catch (e) {
 			console.error("Failed to reconstruct subagent runs", e);
@@ -671,17 +646,9 @@ export const reconstructAllSubagents = async (room: RoomStore) => {
 
 /**
  * Re-establish live polling for a room's most recent agent run after a page
- * reload. An AgentStore only ever starts watching from runAgentMessage's own
- * submit, so without this a turn still in progress (or paused on a decision)
- * goes unwatched after a refresh: pendingActions never repopulate, so
- * decideAgentToolAction silently no-ops, and the tool UI falls through to its
- * legacy per-tool execution path instead — which never touches this run, so
- * it never resumes.
- *
- * Fire-and-forget: there is no caller waiting on this, it just needs to start.
- * A no-op if the message was never part of an agent run, or if it already
- * settled (the very first poll will find a terminal status and reconcile
- * once, harmlessly).
+ * reload, since an AgentStore otherwise only ever starts watching from
+ * runAgentMessage's own submit. Fire-and-forget; a no-op if the message was
+ * never part of an agent run, or if it already settled.
  */
 export const reconnectAgentRun = (responseMessage: ResponseMessageStore) => {
 	const runId = responseMessage.ornaments.agentRunId;
@@ -700,15 +667,17 @@ export const reconnectAgentRun = (responseMessage: ResponseMessageStore) => {
 		responseMessage.isThinking = true;
 	});
 
-	const agent = getOrCreateAgent(room.roomId, room.insightId, runId);
-	watchAgentRun(agent, responseMessage, inputMessage)
-		.catch((e) => {
+	(async () => {
+		try {
+			const agent = getOrCreateAgent(room.roomId, room.insightId, runId);
+			await watchAgentRun(agent, responseMessage, inputMessage);
+		} catch (e) {
 			console.error("Failed to reconnect to agent run", e);
-		})
-		.finally(() => {
+		} finally {
 			runInAction(() => {
 				responseMessage.isThinking = false;
 			});
 			room.setIsLoading(false);
-		});
+		}
+	})();
 };

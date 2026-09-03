@@ -32,15 +32,20 @@ import {
 } from "@/components";
 import { useFileDrag } from "@/contexts";
 import { useChat, useGracefulErrors } from "@/hooks";
-import { ResponseMessageStore, type RoomStore } from "@/stores";
+import {
+	type InputMessageStore,
+	ResponseMessageStore,
+	type RoomStore,
+} from "@/stores";
 import { decideAgentToolAction } from "@/stores/message/agent-harness";
 import { RoomCompactionIndicator } from "./room-compaction-indicator";
+import { RoomGeneratingIndicator } from "./room-generating-indicator";
 import { RoomSuggestions } from "./room-suggestions";
 
 const ROOM_CONFIGURATION_ID = "CONFIGURATION";
 const SCROLL_THRESHOLD = 150;
 
-interface RoomContentProps {
+export interface RoomContentProps {
 	/** Room to load */
 	room: RoomStore;
 }
@@ -48,7 +53,7 @@ interface RoomContentProps {
 /**
  * The page for a room
  */
-export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
+export const RoomContent = observer(({ room }: RoomContentProps) => {
 	const { chat } = useChat();
 	const { t } = useTranslation("room");
 	const { getGracefulErrorMessage } = useGracefulErrors();
@@ -373,21 +378,19 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 			return false;
 		}
 
-		for (const part of room.latestResponseMessage.parts) {
+		return room.latestResponseMessage.parts.some((part) => {
 			if (
-				part.type === "TOOL_CALL" &&
-				part.toolCall._meta?.SMSS_MCP_EXECUTION === "auto"
+				part.type !== "TOOL_CALL" ||
+				part.toolCall._meta?.SMSS_MCP_EXECUTION !== "auto"
 			) {
-				const tool = room.getTool(part.toolCall.id);
-				if (
-					tool &&
-					(tool.status === "INITIAL" || tool.status === "LOADING")
-				) {
-					return true;
-				}
+				return false;
 			}
-		}
-		return false;
+			const tool = room.getTool(part.toolCall.id);
+			return (
+				!!tool &&
+				(tool.status === "INITIAL" || tool.status === "LOADING")
+			);
+		});
 	})();
 
 	const showLoadingState =
@@ -405,6 +408,66 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 			: room.canCancel || showLoadingState
 				? "stop"
 				: "send";
+
+	// A response that's actively generating with nothing to show yet — no
+	// text, tool calls, media, or even real thinking content — renders as
+	// no entry at all; RoomGeneratingIndicator covers that window instead,
+	// so it never mounts as its own block only to fold away again the
+	// moment it gets its first tool call. The instant any real content
+	// exists (including thinking) it gets its own entry immediately.
+	const isPendingResponse = (
+		m: InputMessageStore | ResponseMessageStore,
+	): boolean =>
+		m.type === "OUTPUT" &&
+		m.isThinking &&
+		!m.hasVisibleContent &&
+		!m.parts.some(
+			(part) => part.type === "THINKING" && part.thinking.length > 0,
+		);
+
+	// Folds a run of tool-only responses up into the response preceding them.
+	const roomHistoryEntries = (() => {
+		interface Entry {
+			message: InputMessageStore | ResponseMessageStore;
+			subsequentTools: ResponseMessageStore[];
+		}
+		let anchor: Entry | null = null;
+
+		return room.history.reduce<Entry[]>((entries, m) => {
+			if (!m.visible) {
+				return entries;
+			}
+
+			if (isPendingResponse(m)) {
+				return entries;
+			}
+
+			// A settled empty response is only meaningful as a direct reply
+			// to a user turn. When its nearest non-hidden ancestor is
+			// another response — e.g. the empty assistant message the
+			// backend commits after a stopped tool phase — it's just
+			// noise, so skip it. (Still-thinking placeholders are left
+			// alone so a streaming post-tool reply isn't hidden.)
+			if (
+				m.type === "OUTPUT" &&
+				!m.hasVisibleContent &&
+				!m.isThinking &&
+				m.findAncestor((a) => a.visible)?.type === "OUTPUT"
+			) {
+				return entries;
+			}
+
+			if (m.type === "OUTPUT" && m.shouldFoldUp && anchor) {
+				anchor.subsequentTools.push(m);
+				return entries;
+			}
+
+			const entry: Entry = { message: m, subsequentTools: [] };
+			anchor = m.type === "OUTPUT" ? entry : null;
+			entries.push(entry);
+			return entries;
+		}, []);
+	})();
 
 	return (
 		<div
@@ -427,69 +490,59 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 						}}
 					>
 						<div className="mx-auto flex w-full max-w-[1120px] flex-col gap-2 px-4 py-6 sm:px-8 lg:px-16">
-							{room.history.map((m) => {
-								if (!m.visible) {
-									return null;
-								}
+							{roomHistoryEntries.map(
+								({ message: m, subsequentTools }) => {
+									const showModelName = (() => {
+										// find the most recent ancestor that actually has a model
+										const ancestor = m.findAncestor(
+											(a) => !!a.modelId,
+										);
+										// If no ancestor has a model, show the model name for this message
+										if (!ancestor) return true;
+										// Only show the model name if it's different from the ancestor's model to reduce clutter
+										return m.modelId !== ancestor.modelId;
+									})();
 
-								// A settled empty response is only meaningful as a
-								// direct reply to a user turn. When its nearest
-								// non-hidden ancestor is another response — e.g. the
-								// empty assistant message the backend commits after
-								// a stopped tool phase — it's just noise, so skip
-								// it. (Still-thinking placeholders are left alone so
-								// a streaming post-tool reply isn't hidden.)
-								if (
-									m.type === "OUTPUT" &&
-									!m.hasVisibleContent &&
-									!m.isThinking &&
-									m.findAncestor((a) => a.visible)?.type ===
-										"OUTPUT"
-								)
-									return null;
-
-								const showModelName = (() => {
-									// find the most recent ancestor that actually has a model
-									const ancestor = m.findAncestor(
-										(a) => !!a.modelId,
-									);
-									// If no ancestor has a model, show the model name for this message
-									if (!ancestor) return true;
-									// Only show the model name if it's different from the ancestor's model to reduce clutter
-									return m.modelId !== ancestor.modelId;
-								})();
-
-								return (
-									<React.Fragment key={m.key}>
-										{showModelName && (
-											<div className="relative mb-4 flex flex-col items-center justify-center">
-												<div className="z-10 bg-background px-2 text-muted-foreground text-xs leading-normal">
-													{m.ornaments.modelName}
+									return (
+										<React.Fragment key={m.key}>
+											{showModelName && (
+												<div className="relative mb-4 flex flex-col items-center justify-center">
+													<div className="z-10 bg-background px-2 text-muted-foreground text-xs leading-normal">
+														{m.ornaments.modelName}
+													</div>
+													<Separator className="absolute top-1/2" />
 												</div>
-												<Separator className="absolute top-1/2" />
-											</div>
-										)}
-										{m.type === "INPUT" && (
-											<InputMessage
-												room={room}
-												message={m}
-											/>
-										)}
-										{m.type === "OUTPUT" && (
-											<ResponseMessage
-												room={room}
-												message={m}
-											/>
-										)}
+											)}
+											{m.type === "INPUT" && (
+												<InputMessage
+													room={room}
+													message={m}
+												/>
+											)}
+											{m.type === "OUTPUT" && (
+												<ResponseMessage
+													room={room}
+													message={m}
+													subsequentTools={
+														subsequentTools
+													}
+												/>
+											)}
 
-										{m.type === "OUTPUT" && (
-											<RoomCompactionIndicator
-												message={m}
-											/>
-										)}
-									</React.Fragment>
-								);
-							})}
+											{m.type === "OUTPUT" && (
+												<RoomCompactionIndicator
+													message={m}
+												/>
+											)}
+										</React.Fragment>
+									);
+								},
+							)}
+							<div className="-mt-4">
+								<RoomGeneratingIndicator
+									active={showLoadingState}
+								/>
+							</div>
 							{room.theme.featureFlags?.enableSuggestions && (
 								<RoomSuggestions room={room} />
 							)}
