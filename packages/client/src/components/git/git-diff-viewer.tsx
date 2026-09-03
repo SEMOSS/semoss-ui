@@ -1,9 +1,9 @@
 import { FileDiffIcon, RefreshCwIcon } from "lucide-react";
 import {
 	Button,
+	CodeDiffEditor,
 	CodeEditor,
 	type CodeEditorMenuItem,
-	DiffCodeEditor,
 	Muted,
 	Skeleton,
 } from "@semoss/ui/next";
@@ -13,7 +13,7 @@ import type { GitDataStatus } from "./git-commit-row";
 import { getGitDiffCodeModels } from "./git-diff.utility";
 
 /** Props for displaying a standalone Git diff. */
-interface GitDiffViewerProps {
+export interface GitDiffEditorProps {
 	/** Repository-relative path being compared. */
 	path: string;
 	/** Loaded diff data. */
@@ -28,10 +28,12 @@ interface GitDiffViewerProps {
 	onRetry: () => void;
 	/** Stage or unstage the displayed file. */
 	onAction?: () => void;
+	/** Whether to render diff side-by-side or inline. */
+	renderSideBySide?: boolean;
 }
 
 /** Display a unified Git diff with an optional index action. */
-export const GitDiffViewer = ({
+export const GitDiffEditor = ({
 	path,
 	diff,
 	status,
@@ -39,7 +41,8 @@ export const GitDiffViewer = ({
 	action,
 	onRetry,
 	onAction,
-}: GitDiffViewerProps) => {
+	renderSideBySide = true,
+}: GitDiffEditorProps) => {
 	const actionLabel = action === "UNSTAGE" ? "Unstage file" : "Stage file";
 	const actionMenuItems: CodeEditorMenuItem[] | undefined =
 		action && onAction
@@ -108,13 +111,14 @@ export const GitDiffViewer = ({
 					aria-label={`Diff for ${path}`}
 				>
 					{codeModels ? (
-						<DiffCodeEditor
+						<CodeDiffEditor
 							className="size-full"
 							original={codeModels.original}
 							modified={codeModels.modified}
 							disabled
 							language={language}
 							menuItems={actionMenuItems}
+							options={{ renderSideBySide }}
 						/>
 					) : (
 						<CodeEditor

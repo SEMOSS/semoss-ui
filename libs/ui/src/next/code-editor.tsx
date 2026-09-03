@@ -57,6 +57,8 @@ export interface CodeEditorProps {
 	completion?:
 		| monaco.languages.CompletionItemProvider
 		| monaco.languages.CompletionItemProvider[];
+	/** Additional Monaco editor options merged on top of the defaults. */
+	options?: monaco.editor.IStandaloneEditorConstructionOptions;
 }
 
 /** What Cut/Copy act on: the selection, or the whole line (newline included)
@@ -170,7 +172,7 @@ export const DEFAULT_CODE_EDITOR_MENU_ITEMS: CodeEditorMenuItem[] = [
 
 /**
  * Standardized, lazy-loaded Monaco code editor tied to the app's light/dark
- * theme. For a side-by-side diff view, use `DiffCodeEditor` instead.
+ * theme. For a side-by-side diff view, use `CodeDiffEditor` instead.
  */
 export const CodeEditor = React.forwardRef<
 	monaco.editor.IStandaloneCodeEditor,
@@ -185,6 +187,7 @@ export const CodeEditor = React.forwardRef<
 			language = "plaintext",
 			menuItems,
 			completion,
+			options,
 		},
 		ref,
 	) => {
@@ -192,6 +195,13 @@ export const CodeEditor = React.forwardRef<
 		const theme = resolvedTheme === "dark" ? "vs-dark" : "light";
 		const editorRef =
 			React.useRef<monaco.editor.IStandaloneCodeEditor | null>(null);
+		const editorOptions = {
+			automaticLayout: true,
+			scrollBeyondLastLine: false,
+			contextmenu: false,
+			...(options ?? {}),
+			readOnly: disabled || options?.readOnly === true,
+		};
 		const menuItemsRef = React.useRef(menuItems);
 		menuItemsRef.current = menuItems;
 
@@ -286,13 +296,7 @@ export const CodeEditor = React.forwardRef<
 								language={language}
 								theme={theme}
 								value={code}
-								options={{
-									readOnly: disabled,
-									automaticLayout: true,
-									scrollBeyondLastLine: false,
-									// off so the right-click reaches our ContextMenu instead of Monaco's own
-									contextmenu: false,
-								}}
+								options={editorOptions}
 								onChange={onChange}
 								onMount={onMount}
 							/>

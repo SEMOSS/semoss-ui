@@ -9,7 +9,7 @@ export interface GitDiffCodeModels {
 
 const OMITTED_LINES_MARKER = "... unchanged lines omitted ...";
 
-/** Convert a unified patch into aligned hunk snippets for DiffCodeEditor. */
+/** Convert a unified patch into aligned hunk snippets for CodeDiffEditor. */
 export const getGitDiffCodeModels = (
 	diff: string,
 ): GitDiffCodeModels | null => {

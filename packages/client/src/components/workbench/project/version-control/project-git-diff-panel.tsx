@@ -1,14 +1,16 @@
 import { FileDiffIcon } from "lucide-react";
+import { useEffect, useState } from "react";
 import { useInsight, usePixel } from "@semoss/sdk/react";
 import { toast } from "@semoss/ui/next";
 import type {
 	GitCommitFile,
 	GitDiff,
+	GitDiffControlValue,
 	GitDiffSide,
 	GitStageAction,
 } from "@/components/git";
-import { GitDiffViewer } from "@/components/git";
-import { useProject } from "@/hooks";
+import { GitDiffControl, GitDiffEditor } from "@/components/git";
+import { useProject, useWorkbenchControl } from "@/hooks";
 import type {
 	WorkbenchComponent,
 	WorkbenchPanelConfig,
@@ -27,12 +29,13 @@ export interface ProjectGitDiffPanelConfig {
 }
 
 /** Display a staged or unstaged project diff with its index action. */
-const ProjectGitDiffPanel: WorkbenchComponent<ProjectGitDiffPanelConfig> = ({
-	config,
-	close,
-}) => {
+const ProjectGitDiffPanel: WorkbenchComponent<
+	ProjectGitDiffPanelConfig,
+	GitDiffControlValue
+> = ({ config, id, setValue, close }) => {
 	const { project } = useProject();
 	const insight = useInsight();
+	const [renderSideBySide, setRenderSideBySide] = useState(true);
 	const historical = config.side === "COMMIT";
 	const diff = usePixel<GitDiff | GitCommitFile[]>(
 		historical
@@ -78,8 +81,17 @@ const ProjectGitDiffPanel: WorkbenchComponent<ProjectGitDiffPanelConfig> = ({
 		}
 	};
 
+	useEffect(() => {
+		setValue({
+			renderSideBySide,
+			setRenderSideBySide,
+		});
+	}, [renderSideBySide, setValue]);
+
+	useWorkbenchControl(id, GitDiffControl);
+
 	return (
-		<GitDiffViewer
+		<GitDiffEditor
 			path={config.path}
 			diff={diffData}
 			status={diff.status}
@@ -87,6 +99,7 @@ const ProjectGitDiffPanel: WorkbenchComponent<ProjectGitDiffPanelConfig> = ({
 			action={action ?? undefined}
 			onRetry={diff.refresh}
 			onAction={action ? () => void mutateFile() : undefined}
+			renderSideBySide={renderSideBySide}
 		/>
 	);
 };

@@ -20,6 +20,7 @@ export * from "./calendar";
 export * from "./card";
 export * from "./checkbox";
 export * from "./code";
+export * from "./code-diff-editor";
 export * from "./code-editor";
 export * from "./collapsible";
 export * from "./command";
