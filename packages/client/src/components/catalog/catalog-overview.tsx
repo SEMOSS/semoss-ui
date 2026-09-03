@@ -81,7 +81,7 @@ const EmptyValue = () => (
 	<div className="text-muted-foreground text-sm">None</div>
 );
 
-export interface CatalogOverviewProps {
+interface CatalogOverviewProps {
 	/** ID of the catalog */
 	id: string;
 	/** User's permission in the catalog */
@@ -120,6 +120,8 @@ export interface CatalogOverviewProps {
 	description: string;
 	/** Associated description */
 	markdown: string;
+	/** Markdown presentation used for read-only overview content. */
+	markdownVariant?: "default" | "document";
 	/** Associated tags  */
 	tags: string[];
 	/** Associated classification  */
@@ -143,6 +145,7 @@ export const CatalogOverview = ({
 	metaValues,
 	description,
 	markdown,
+	markdownVariant = "default",
 	tags,
 	dataClassification,
 	dataRestrictions,
@@ -217,6 +220,10 @@ export const CatalogOverview = ({
 	const isEditable = permission === "OWNER" || permission === "EDIT";
 	const isEditing = isEditable && isEditMode;
 	const isDirty = JSON.stringify(form) !== JSON.stringify(initialForm);
+	const markdownClassName =
+		markdownVariant === "document"
+			? "w-full text-sm leading-relaxed"
+			: undefined;
 
 	// Exclude fields already rendered in dedicated sections below.
 	const dynamicMetaKeys = metaKeys
@@ -354,7 +361,12 @@ export const CatalogOverview = ({
 			// Read mode honors markdown rendering when requested by metadata config.
 			if (displayOption === "markdown") {
 				return String(rawValue ?? "").trim() ? (
-					<Markdown>{String(rawValue)}</Markdown>
+					<Markdown
+						className={markdownClassName}
+						variant={markdownVariant}
+					>
+						{String(rawValue)}
+					</Markdown>
 				) : (
 					<EmptyValue />
 				);
@@ -704,7 +716,12 @@ export const CatalogOverview = ({
 						{String(form.markdown || "").trim() ? (
 							<div>
 								<Field>
-									<Markdown>{String(form.markdown)}</Markdown>
+									<Markdown
+										className={markdownClassName}
+										variant={markdownVariant}
+									>
+										{String(form.markdown)}
+									</Markdown>
 								</Field>
 							</div>
 						) : (

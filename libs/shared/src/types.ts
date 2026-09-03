@@ -341,10 +341,6 @@ export interface ThemeMap {
 			enableKnowledgeMCP?: boolean;
 			/** Whether to show the embedding model selector in the new knowledge form. Defaults to true. */
 			allowEmbeddingOptions?: boolean;
-			/** Whether to show the Knowledge library picker in the chat input menu. Defaults to true. */
-			showKnowledgeMenu?: boolean;
-			/** Whether to show the Toolbox picker in the chat input menu. Defaults to true. */
-			showToolboxMenu?: boolean;
 			/** Whether to show the Activity Log (audit logs) option in the room menu. Defaults to true. */
 			showActivityLog?: boolean;
 			/** Whether to show external links to the SEMOSS platform. Defaults to true. */
@@ -353,6 +349,8 @@ export interface ThemeMap {
 			enableFeedbackText?: boolean;
 			/** Whether to show an export button on tables rendered in chat responses. Defaults to false. */
 			enableTableExport?: boolean;
+			/** Whether workspaces auto-open with a silent kickoff message when selected. Defaults to false. */
+			enableAutoGreeting?: boolean;
 			/** Whether to show the temperature slider in room settings. Defaults to false. */
 			enableTemperature?: boolean;
 		};

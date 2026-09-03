@@ -11,6 +11,7 @@ const envStore: {
 	BEARER_TOKEN: string;
 	BEARER_PROVIDER: string;
 	CSRF: boolean;
+	REDIRECT_URL: string;
 	TOOL: MCPToolRequest | null;
 } = {
 	APP: "",
@@ -20,6 +21,7 @@ const envStore: {
 	BEARER_TOKEN: "",
 	BEARER_PROVIDER: "",
 	CSRF: false,
+	REDIRECT_URL: "",
 	TOOL: null,
 };
 
@@ -71,6 +73,13 @@ export const Env = {
 	 */
 	get CSRF() {
 		return envStore.CSRF;
+	},
+
+	/**
+	 * Host-configured URL to redirect to on an auth redirect, overriding the response's own value
+	 */
+	get REDIRECT_URL() {
+		return envStore.REDIRECT_URL;
 	},
 
 	/**

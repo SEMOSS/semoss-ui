@@ -28,7 +28,9 @@
 	"tools": {
 		"enterValues": "Ingresa valores separados por comas",
 		"selectField": "Seleccionar {{field}}",
-		"enterField": "Ingresar {{field}}"
+		"enterField": "Ingresar {{field}}",
+		"collapseField": "Colapsar campo",
+		"expandField": "Expandir campo"
 	},
 	"messages": {
 		"selectKnowledgeSource": "Por favor, selecciona un almacén de conocimiento",

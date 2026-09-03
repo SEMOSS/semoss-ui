@@ -162,7 +162,7 @@ const download = (path) => {
 };
 ```
 
--   Run an MCP tool and send the response to the playground
+-   Run an MCP tool and send the response to the room
 
 ```js
 const runMCPTool = (name, parameters,)  => {
@@ -353,7 +353,7 @@ const hello = (name) => {
 
 `@semoss/sdk` ships AI agent skills alongside its source code. These skills give your AI
 coding assistant (GitHub Copilot, Claude Code, Cursor, etc.) built-in knowledge of the SDK's
-APIs — including the playground, pixel calls, and hook patterns — without you having to paste
+APIs — including the room API, pixel calls, and hook patterns — without you having to paste
 docs into chat.
 
 Skills are bundled under `node_modules/@semoss/sdk/skills/` and follow the
@@ -410,7 +410,7 @@ Or configure the output path once and just run `npm run skills:extract`:
 
 | Skill | Covers |
 |-------|--------|
-| `sdk-playground` | Creating rooms, sending messages, fetching room options, updating config, binding rooms to insights |
+| `sdk-chat` | Creating rooms, sending messages, fetching room options, updating config, binding rooms to insights |
 
 Skills are versioned with the SDK — upgrading `@semoss/sdk` and re-running extraction keeps
 your assistant's knowledge current.

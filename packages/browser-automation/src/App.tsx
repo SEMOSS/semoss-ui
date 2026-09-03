@@ -65,7 +65,7 @@ import {
 	listPlaywrightRoomRecordings,
 	listRecordingMetadataModels,
 	resolvePlaywrightRoomRecording,
-	sendMcpResponseToPlayground,
+	sendMcpResponseToRoom,
 	subscribeToMcpToolContext,
 } from "./semoss/client";
 import type {
@@ -1000,7 +1000,7 @@ export default function App() {
 				) {
 					autoPlaybackErrorSentRef.current = true;
 					try {
-						sendMcpResponseToPlayground(
+						sendMcpResponseToRoom(
 							{
 								played: false,
 								error: message,
@@ -1096,7 +1096,7 @@ export default function App() {
 			if (!autoPlaybackErrorSentRef.current && toolContextRef.current) {
 				autoPlaybackErrorSentRef.current = true;
 				try {
-					sendMcpResponseToPlayground(
+					sendMcpResponseToRoom(
 						{ played: false, error: message },
 						"error",
 						toolContextRef.current.parameters,
@@ -1419,7 +1419,7 @@ export default function App() {
 				await flushDownloads();
 				const contextPayload = buildContextResponsePayload();
 				const downloadPayload = downloadMcpPayload();
-				sendMcpResponseToPlayground(
+				sendMcpResponseToRoom(
 					{
 						played: true,
 						status: "completed",
@@ -1990,7 +1990,7 @@ export default function App() {
 			await closeBrowserSession();
 			browserClosed = true;
 
-			sendMcpResponseToPlayground(
+			sendMcpResponseToRoom(
 				{
 					saved: true,
 					destination: "room",
@@ -2035,7 +2035,7 @@ export default function App() {
 					: "Failed to return recording to Playground";
 			setSnackError(message);
 			try {
-				sendMcpResponseToPlayground(
+				sendMcpResponseToRoom(
 					{ saved: false, destination: "room", error: message },
 					"error",
 					toolContext?.parameters ?? {},
@@ -2148,7 +2148,7 @@ export default function App() {
 				const downloadPayload = downloadMcpPayload();
 
 				const contextPayload = buildContextResponsePayload();
-				sendMcpResponseToPlayground(
+				sendMcpResponseToRoom(
 					{
 						played: false,
 						status: "paused",
@@ -2174,7 +2174,7 @@ export default function App() {
 				setSnackError(message);
 				try {
 					const downloadPayload = downloadMcpPayload();
-					sendMcpResponseToPlayground(
+					sendMcpResponseToRoom(
 						{ played: false, error: message, ...downloadPayload },
 						"error",
 						toolContext.parameters,
