@@ -4,7 +4,7 @@ import {
 	GitBranchPlusIcon,
 	RefreshCwIcon,
 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
 	Button,
 	Command,
@@ -35,6 +35,8 @@ interface GitBranchControlProps {
 	branches?: GitBranches;
 	/** Current state of the branches request. */
 	branchesStatus: GitDataStatus;
+	/** Whether repository status is currently refreshing. */
+	isRefreshing: boolean;
 	/** Accessible scope name for the control. */
 	label: string;
 	/** Notify the adapter when branch choices open or close. */
@@ -58,6 +60,7 @@ export const GitBranchControl = ({
 	status,
 	branches,
 	branchesStatus,
+	isRefreshing,
 	label,
 	onOpenChange,
 	onSwitch,
@@ -79,7 +82,7 @@ export const GitBranchControl = ({
 	);
 	const branchLabel = status?.detached
 		? "Detached HEAD"
-		: status?.branch || "No branch";
+		: status?.branch || "";
 
 	/** Check out a branch and refresh repository consumers after success. */
 	const switchBranch = async (branch: string) => {
@@ -115,6 +118,16 @@ export const GitBranchControl = ({
 		}
 	};
 
+	// keep the branch list hidden until a refresh finishes
+	useEffect(() => {
+		if (!isRefreshing) {
+			return;
+		}
+		setIsOpen(false);
+		onOpenChange(false);
+		setSearch("");
+	}, [isRefreshing, onOpenChange]);
+
 	/** Move focus from branch selection into the create-branch workflow. */
 	const openCreateBranch = () => {
 		handleOpenChange(false);
@@ -130,7 +143,7 @@ export const GitBranchControl = ({
 					<Button
 						variant="ghost"
 						size="sm"
-						disabled={isSwitching}
+						disabled={isSwitching || isRefreshing}
 						className={cn(
 							"min-w-0 max-w-56 justify-between rounded-md border border-input",
 							triggerClassName,
@@ -207,16 +220,24 @@ export const GitBranchControl = ({
 						variant="ghost"
 						size="icon-sm"
 						onClick={onRefresh}
+						disabled={isRefreshing}
 						aria-label={refreshLabel}
 						className={cn(
 							"flex-none text-muted-foreground",
 							refreshClassName,
 						)}
 					>
-						<RefreshCwIcon
-							aria-hidden
-							className={refreshIconClassName}
-						/>
+						{isRefreshing ? (
+							<Spinner
+								aria-hidden
+								className={refreshIconClassName}
+							/>
+						) : (
+							<RefreshCwIcon
+								aria-hidden
+								className={refreshIconClassName}
+							/>
+						)}
 					</Button>
 				</TooltipTrigger>
 				<TooltipContent>{refreshLabel}</TooltipContent>

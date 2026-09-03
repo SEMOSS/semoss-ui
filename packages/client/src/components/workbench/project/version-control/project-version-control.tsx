@@ -50,6 +50,7 @@ export const ProjectVersionControl: FC<
 			status={status.data}
 			branches={branches.data}
 			branchesStatus={branches.status}
+			isRefreshing={status.status === "LOADING"}
 			label="Project version"
 			onOpenChange={setIsBranchesOpen}
 			onSwitch={switchBranch}

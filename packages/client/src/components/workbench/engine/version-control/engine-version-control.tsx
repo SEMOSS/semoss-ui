@@ -50,6 +50,7 @@ export const EngineVersionControl: FC<
 			status={status.data}
 			branches={branches.data}
 			branchesStatus={branches.status}
+			isRefreshing={status.status === "LOADING"}
 			label="Engine version"
 			onOpenChange={setIsBranchesOpen}
 			onSwitch={switchBranch}
