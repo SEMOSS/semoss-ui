@@ -74,21 +74,6 @@ const formatCount = (
 	}).format(value);
 };
 
-/** Support granular-token responses from before the explicit availability flag. */
-const isTokenDetailAvailable = (
-	detail: ModelUsageSummary["TOKEN_DETAIL"],
-): boolean => {
-	if (!detail) return false;
-	if (typeof detail.AVAILABLE === "boolean") return detail.AVAILABLE;
-	return [
-		detail.INPUT_TOKENS,
-		detail.OUTPUT_TOKENS,
-		detail.CACHE_READ_TOKENS,
-		detail.CACHE_CREATION_TOKENS,
-		detail.THINKING_TOKENS,
-	].every((value) => typeof value === "number" && Number.isFinite(value));
-};
-
 /** Display an ISO timestamp in the viewer's locale. */
 const formatDate = (value: string | null, locale: string): string => {
 	if (!value) return "—";
@@ -286,7 +271,7 @@ export const ModelUsagePage = () => {
 		detail: ModelUsageSummary["TOKEN_DETAIL"],
 		nonCachedInput: number | undefined,
 	) => {
-		const available = isTokenDetailAvailable(detail);
+		const available = detail?.AVAILABLE === true;
 		const metrics = [
 			{
 				label: t("usage:overview.nonCachedInputTokens"),
@@ -668,9 +653,8 @@ export const ModelUsagePage = () => {
 														const detail =
 															summary.TOKEN_DETAIL;
 														const detailAvailable =
-															isTokenDetailAvailable(
-																detail,
-															);
+															detail?.AVAILABLE ===
+															true;
 														const nonCachedInput =
 															detailAvailable
 																? Math.max(
