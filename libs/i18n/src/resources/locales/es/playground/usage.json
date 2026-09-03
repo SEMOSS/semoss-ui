@@ -1,6 +1,6 @@
 {
 	"title": "Uso de modelos",
-	"description": "Consulta tu saldo de créditos, el período de uso y la instantánea de precios utilizada para cada modelo.",
+	"description": "Consulta tu saldo de créditos y las estadísticas de uso de cada modelo.",
 	"refresh": "Actualizar",
 	"retry": "Intentar de nuevo",
 	"dateRange": {

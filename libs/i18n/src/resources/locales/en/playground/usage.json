@@ -1,6 +1,6 @@
 {
 	"title": "Model usage",
-	"description": "Review your current credit balance, usage period, and the pricing snapshot used for each model.",
+	"description": "Review your current credit balance and usage statistics for each model.",
 	"refresh": "Refresh",
 	"retry": "Try again",
 	"dateRange": {

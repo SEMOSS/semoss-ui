@@ -79,6 +79,9 @@ describe("ModelUsagePage", () => {
 		expect(screen.getByText("6")).toBeInTheDocument();
 		expect(screen.getByText("40%")).toBeInTheDocument();
 		expect(screen.getByText("usage:overview.requests")).toBeInTheDocument();
+		expect(
+			screen.queryByText("usage:pricing.title"),
+		).not.toBeInTheDocument();
 	});
 
 	test("shows an empty state when the user has no models", async () => {

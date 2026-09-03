@@ -25,7 +25,6 @@ import {
 	H3,
 	Input,
 	Label,
-	Large,
 	Muted,
 	Progress,
 	Select,
@@ -809,88 +808,6 @@ export const ModelUsagePage = () => {
 								</CardContent>
 							</Card>
 						)}
-
-						<Card>
-							<CardHeader>
-								<div className="flex flex-wrap items-center justify-between gap-2">
-									<CardTitle>
-										{t("usage:pricing.title")}
-									</CardTitle>
-									<Badge
-										variant={
-											creditInfo.pricingConfigured
-												? "outline"
-												: "secondary"
-										}
-									>
-										{creditInfo.pricingConfigured
-											? t("usage:pricing.configured")
-											: t("usage:pricing.notConfigured")}
-									</Badge>
-								</div>
-								<CardDescription>
-									{t("usage:pricing.description")}
-								</CardDescription>
-							</CardHeader>
-							<CardContent className="grid gap-4 sm:grid-cols-2">
-								<div className="rounded-lg border border-border p-4">
-									<Muted>{t("usage:pricing.input")}</Muted>
-									<Large className="mt-2">
-										{formatCredits(
-											creditInfo.inputCreditsPerMillion,
-											locale,
-										)}{" "}
-										{t("usage:pricing.perMillion")}
-									</Large>
-								</div>
-								<div className="rounded-lg border border-border p-4">
-									<Muted>{t("usage:pricing.output")}</Muted>
-									<Large className="mt-2">
-										{formatCredits(
-											creditInfo.outputCreditsPerMillion,
-											locale,
-										)}{" "}
-										{t("usage:pricing.perMillion")}
-									</Large>
-								</div>
-								<div className="rounded-lg border border-border p-4">
-									<Muted>
-										{t("usage:pricing.cacheRead")}
-									</Muted>
-									<Large className="mt-2">
-										{formatCredits(
-											creditInfo.cacheReadMultiplier,
-											locale,
-										)}
-										{typeof creditInfo.cacheReadMultiplier ===
-											"number" &&
-										Number.isFinite(
-											creditInfo.cacheReadMultiplier,
-										)
-											? "×"
-											: ""}
-									</Large>
-								</div>
-								<div className="rounded-lg border border-border p-4">
-									<Muted>
-										{t("usage:pricing.cacheWrite")}
-									</Muted>
-									<Large className="mt-2">
-										{formatCredits(
-											creditInfo.cacheWriteMultiplier,
-											locale,
-										)}
-										{typeof creditInfo.cacheWriteMultiplier ===
-											"number" &&
-										Number.isFinite(
-											creditInfo.cacheWriteMultiplier,
-										)
-											? "×"
-											: ""}
-									</Large>
-								</div>
-							</CardContent>
-						</Card>
 					</>
 				) : null}
 			</div>

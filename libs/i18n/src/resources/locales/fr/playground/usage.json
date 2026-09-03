@@ -1,6 +1,6 @@
 {
 	"title": "Utilisation des modèles",
-	"description": "Consultez votre solde de crédits, la période d'utilisation et l'instantané tarifaire de chaque modèle.",
+	"description": "Consultez votre solde de crédits et les statistiques d’utilisation de chaque modèle.",
 	"refresh": "Actualiser",
 	"retry": "Réessayer",
 	"dateRange": {
