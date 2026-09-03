@@ -17,7 +17,8 @@
 	"restriction": { "label": "التقييد", "restricted": "مقيّد" },
 	"overview": {
 		"title": "الاستخدام حسب النموذج",
-		"selectedDescription": "الاستخدام من {{start}} إلى {{end}}.",
+		"summaryTitle": "جميع النماذج",
+		"summaryDescription": "الاستخدام من {{start}} إلى {{end}}.",
 		"description": "الاستخدام من {{start}} إلى {{end}}، مرتب حسب الرصيد.",
 		"error": "تعذر تحميل إجماليات استخدام النماذج.",
 		"credits": "الرصيد",

@@ -17,7 +17,8 @@
 	"restriction": { "label": "Restricción", "restricted": "Restringido" },
 	"overview": {
 		"title": "Uso por modelo",
-		"selectedDescription": "Uso del {{start}} al {{end}}.",
+		"summaryTitle": "Todos los modelos",
+		"summaryDescription": "Uso del {{start}} al {{end}}.",
 		"description": "Uso del {{start}} al {{end}}, ordenado por créditos.",
 		"error": "No se pudieron cargar los totales de uso de los modelos.",
 		"credits": "Créditos",

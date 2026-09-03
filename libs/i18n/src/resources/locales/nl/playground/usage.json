@@ -17,7 +17,8 @@
 	"restriction": { "label": "Beperking", "restricted": "Beperkt" },
 	"overview": {
 		"title": "Gebruik per model",
-		"selectedDescription": "Gebruik van {{start}} tot en met {{end}}.",
+		"summaryTitle": "Alle modellen",
+		"summaryDescription": "Gebruik van {{start}} tot en met {{end}}.",
 		"description": "Gebruik van {{start}} tot en met {{end}}, gerangschikt op credits.",
 		"error": "De gebruikstotalen van de modellen konden niet worden geladen.",
 		"credits": "Credits",

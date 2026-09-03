@@ -255,12 +255,20 @@ export const ModelUsagePage = () => {
 			Math.max(0, (creditInfo.creditsUsed / creditInfo.maxCredits) * 100),
 		);
 	}, [creditInfo]);
-	const selectedUsage = useMemo(
+	const usageTotals = useMemo(
 		() =>
-			usageSummaries.find(
-				(summary) => summary.ENGINE_ID === selectedModelId,
+			usageSummaries.reduce(
+				(totals, summary) => ({
+					credits: totals.credits + (summary.TOTAL_CREDITS || 0),
+					requests: totals.requests + (summary.TOTAL_REQUESTS || 0),
+					inputTokens:
+						totals.inputTokens + (summary.INPUT_TOKENS || 0),
+					outputTokens:
+						totals.outputTokens + (summary.RESPONSE_TOKENS || 0),
+				}),
+				{ credits: 0, requests: 0, inputTokens: 0, outputTokens: 0 },
 			),
-		[selectedModelId, usageSummaries],
+		[usageSummaries],
 	);
 	const locale = i18n.resolvedLanguage || i18n.language || "en";
 	const toggleModelDetails = (modelId: string) => {
@@ -510,14 +518,11 @@ export const ModelUsagePage = () => {
 							<>
 								<div>
 									<h2 className="font-semibold text-lg">
-										{selectedModel?.engine_display_name ||
-											selectedModel?.engine_name ||
-											selectedUsage?.ENGINE_NAME ||
-											selectedModelId}
+										{t("usage:overview.summaryTitle")}
 									</h2>
 									<Muted>
 										{t(
-											"usage:overview.selectedDescription",
+											"usage:overview.summaryDescription",
 											{
 												start: formatDateOnly(
 													overviewStartDate,
@@ -535,13 +540,13 @@ export const ModelUsagePage = () => {
 									{[
 										{
 											label: t("usage:overview.credits"),
-											value: selectedUsage?.TOTAL_CREDITS,
+											value: usageTotals.credits,
 											icon: TrendingUp,
 											format: formatCredits,
 										},
 										{
 											label: t("usage:overview.requests"),
-											value: selectedUsage?.TOTAL_REQUESTS,
+											value: usageTotals.requests,
 											icon: MessageSquare,
 											format: formatCount,
 										},
@@ -549,7 +554,7 @@ export const ModelUsagePage = () => {
 											label: t(
 												"usage:overview.inputTokens",
 											),
-											value: selectedUsage?.INPUT_TOKENS,
+											value: usageTotals.inputTokens,
 											icon: ArrowDownToLine,
 											format: formatCount,
 										},
@@ -557,7 +562,7 @@ export const ModelUsagePage = () => {
 											label: t(
 												"usage:overview.outputTokens",
 											),
-											value: selectedUsage?.RESPONSE_TOKENS,
+											value: usageTotals.outputTokens,
 											icon: ArrowUpFromLine,
 											format: formatCount,
 										},

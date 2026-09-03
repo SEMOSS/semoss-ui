@@ -86,14 +86,16 @@ describe("ModelUsagePage", () => {
 		]);
 	});
 
-	test("loads the first model and displays its credit usage", async () => {
+	test("loads models and displays aggregate usage", async () => {
 		render(<ModelUsagePage />);
 
 		expect(
 			await screen.findByRole("button", { name: "Test Model" }),
 		).toBeInTheDocument();
 		expect(
-			screen.getByRole("heading", { name: "Test Model" }),
+			screen.getByRole("heading", {
+				name: "usage:overview.summaryTitle",
+			}),
 		).toBeInTheDocument();
 		await waitFor(() => {
 			expect(mocks.getUserModelCreditInfo).toHaveBeenCalledWith(
@@ -196,8 +198,11 @@ describe("ModelUsagePage", () => {
 				"model-2",
 			);
 		});
+		expect(screen.getByText("5")).toBeInTheDocument();
 		expect(
-			screen.getByRole("heading", { name: "Second Model" }),
+			screen.getByRole("heading", {
+				name: "usage:overview.summaryTitle",
+			}),
 		).toBeInTheDocument();
 	});
 
