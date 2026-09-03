@@ -1,12 +1,27 @@
-import { useEffect, useRef } from "react";
-import { FileCodeEditor, getFileIconComponent } from "@semoss/shared";
-import { MetadataHelpDialog } from "@/components/shared";
-import { MCP } from "@/constants";
+import { useEffect, useRef, useState } from "react";
+import { useTranslation } from "@semoss/i18n";
+import {
+	download as downloadFile,
+	runPixel,
+	useInsight,
+	usePixel,
+} from "@semoss/sdk/react";
+import {
+	getFileEditorPathScope,
+	getFileIconComponent,
+	getFileOperationErrorMessage,
+	useFileEditorPathRef,
+} from "@semoss/shared";
+import { CodeEditor, Muted, Spinner, toast } from "@semoss/ui/next";
 import { useProject, useWorkbenchControl } from "@/hooks";
 import type {
 	WorkbenchComponent,
 	WorkbenchPanelConfig,
 } from "@/stores/workbench";
+import {
+	getCodeEditorLanguage,
+	getFileCodeEditorMenuItems,
+} from "../file-editor.utility";
 import {
 	ProjectFileCodeEditorControl,
 	type ProjectFileCodeEditorControlValue,
@@ -19,62 +34,198 @@ export interface ProjectFileCodeEditorConfig {
 }
 
 const ProjectFileCodeEditorPanel: WorkbenchComponent<
-	ProjectFileCodeEditorConfig
+	ProjectFileCodeEditorConfig,
+	ProjectFileCodeEditorControlValue
 > = ({ config, id, rename, setValue }) => {
 	const { project, permission } = useProject();
+	const insight = useInsight();
+	const { t } = useTranslation("common");
 	const readOnly =
 		Boolean(config.readOnly) ||
 		!(permission === "OWNER" || permission === "EDIT");
-	const actionsRef = useRef<React.ComponentRef<typeof FileCodeEditor> | null>(
-		null,
+	const pathScope = getFileEditorPathScope({
+		type: "APP",
+		app: project.project_id,
+	});
+	const currentPathRef = useFileEditorPathRef(config.path, pathScope);
+	const [content, setContent] = useState("");
+	const [loadRevision, setLoadRevision] = useState(0);
+	const [isSaving, setIsSaving] = useState(false);
+	const [isDownloading, setIsDownloading] = useState(false);
+	const baselineRef = useRef("");
+	const contentRef = useRef("");
+	const appliedRevisionRef = useRef(0);
+	const refreshRef = useRef<() => void>(() => undefined);
+	const saveRef = useRef<() => Promise<void>>(async () => undefined);
+
+	const getFile = usePixel<string>(
+		`GetAppAssets(filePath=[${JSON.stringify(config.path)}], project=[${JSON.stringify(project.project_id)}]);`,
+		{
+			data: "",
+			onSuccess: () => setLoadRevision((revision) => revision + 1),
+		},
+		insight.insightId,
 	);
-	const canSave = !readOnly;
+
+	/** Save the current editor buffer to the project asset. */
+	const save = async () => {
+		if (readOnly || isSaving) return;
+
+		const nextContent = contentRef.current;
+		setIsSaving(true);
+		try {
+			const response = await runPixel<[unknown]>(
+				`SaveAppAssets(project=["${project.project_id}"], filePath=["${currentPathRef.current}"], content=["<encode>${nextContent}</encode>"]);`,
+				insight.insightId,
+			);
+			if (response.errors.length > 0) {
+				throw new Error(response.errors[0]);
+			}
+
+			baselineRef.current = nextContent;
+			rename(config.name);
+			toast.success(t("fileExplorer.toasts.saveSuccess"));
+		} catch (error) {
+			toast.error(
+				getFileOperationErrorMessage(
+					t("fileExplorer.toasts.saveFailed"),
+					error,
+				),
+			);
+			console.error(error);
+		} finally {
+			setIsSaving(false);
+		}
+	};
+
+	/** Download the current project file. */
+	const download = async () => {
+		if (isDownloading) return;
+
+		setIsDownloading(true);
+		try {
+			const response = await runPixel<[string]>(
+				`DownloadAppAsset(project=[${JSON.stringify(project.project_id)}], filePath=[${JSON.stringify(currentPathRef.current)}]);`,
+				insight.insightId,
+			);
+			if (response.errors.length > 0) {
+				throw new Error(response.errors[0]);
+			}
+
+			const fileKey = response.pixelReturn[0]?.output;
+			if (!fileKey || !insight.insightId) {
+				throw new Error("No file download is available");
+			}
+
+			await downloadFile(insight.insightId, fileKey);
+			toast.success(t("fileExplorer.toasts.downloadFileSuccess"));
+		} catch (error) {
+			toast.error(
+				getFileOperationErrorMessage(
+					t("fileExplorer.toasts.downloadFileFailed"),
+					error,
+				),
+			);
+			console.error(error);
+		} finally {
+			setIsDownloading(false);
+		}
+	};
+
+	contentRef.current = content;
+	refreshRef.current = getFile.refresh;
+	saveRef.current = save;
+
+	useEffect(() => {
+		if (
+			getFile.status !== "SUCCESS" ||
+			appliedRevisionRef.current === loadRevision
+		) {
+			return;
+		}
+
+		appliedRevisionRef.current = loadRevision;
+		baselineRef.current = getFile.data;
+		contentRef.current = getFile.data;
+		setContent(getFile.data);
+		rename(config.name);
+	}, [config.name, getFile.data, getFile.status, loadRevision, rename]);
+
+	const isBusy = isSaving || isDownloading || getFile.status === "LOADING";
+
 	// setValue changes identity after writing the value.
 	// biome-ignore lint/correctness/useExhaustiveDependencies: see above
 	useEffect(() => {
 		const value: ProjectFileCodeEditorControlValue = {
-			canSave,
-			refresh: () => actionsRef.current?.refresh(),
-			save: () => void actionsRef.current?.save?.(),
+			canSave: !readOnly,
+			isBusy,
+			refresh: () => refreshRef.current(),
+			save: () => void saveRef.current(),
 		};
 		setValue(value);
-	}, [canSave]);
+	}, [isBusy, readOnly]);
 	useWorkbenchControl(id, ProjectFileCodeEditorControl);
-	const mode = { type: "APP" as const, app: project.project_id };
-	const onChange = (_content: string, isModified: boolean) => {
-		rename(isModified ? `${config.name}*` : config.name);
-	};
 
-	const isDriverFile = MCP.DRIVER_PATHS.some((path) =>
-		config.path.endsWith(path),
-	);
+	if (getFile.status === "LOADING" || getFile.status === "INITIAL") {
+		return (
+			<output
+				className="flex size-full items-center justify-center"
+				aria-label="Loading file"
+			>
+				<Spinner />
+			</output>
+		);
+	}
+
+	if (getFile.status === "ERROR") {
+		return (
+			<div className="flex size-full items-center justify-center p-4">
+				<Muted className="text-destructive" role="alert">
+					{getFile.error?.message || "Failed to load file"}
+				</Muted>
+			</div>
+		);
+	}
 
 	return (
-		<FileCodeEditor
-			ref={(actions) => {
-				actionsRef.current = actions;
+		<CodeEditor
+			className="size-full"
+			code={content}
+			disabled={readOnly}
+			language={getCodeEditorLanguage(config.path)}
+			menuItems={getFileCodeEditorMenuItems({
+				canSave: !readOnly,
+				isBusy,
+				onDownload: () => void download(),
+				onRefresh: () => refreshRef.current(),
+				onSave: () => void saveRef.current(),
+			})}
+			onChange={(value) => {
+				const nextContent = value ?? "";
+				console.log(nextContent);
+				contentRef.current = nextContent;
+				setContent(nextContent);
+				rename(
+					nextContent === baselineRef.current
+						? config.name
+						: `${config.name}*`,
+				);
 			}}
-			mode={mode}
-			path={config.path}
-			onChange={onChange}
-			leadingToolbar={
-				isDriverFile ? <MetadataHelpDialog compact /> : undefined
-			}
-			hideToolbar
-			readOnly={readOnly}
 		/>
 	);
 };
 
-export const PROJECT_FILE_CODE_EDITOR_PANEL: WorkbenchPanelConfig<ProjectFileCodeEditorConfig> =
-	{
-		name: "Editor",
-		canRename: false,
-		mount: "keepAlive",
-		matches: (a, b) => a.path === b.path,
-		icon: ({ name, className }) => {
-			const Icon = getFileIconComponent(name ?? "");
-			return <Icon className={className} />;
-		},
-		content: ProjectFileCodeEditorPanel,
-	};
+export const PROJECT_FILE_CODE_EDITOR_PANEL: WorkbenchPanelConfig<
+	ProjectFileCodeEditorConfig,
+	ProjectFileCodeEditorControlValue
+> = {
+	name: "Editor",
+	canRename: false,
+	mount: "keepAlive",
+	matches: (a, b) => a.path === b.path,
+	icon: ({ config, className }) => {
+		const Icon = getFileIconComponent(config.path ?? "");
+		return <Icon className={className} />;
+	},
+	content: ProjectFileCodeEditorPanel,
+};

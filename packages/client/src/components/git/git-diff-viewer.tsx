@@ -1,16 +1,16 @@
-import { FileDiffIcon, MinusIcon, PlusIcon, RefreshCwIcon } from "lucide-react";
+import { FileDiffIcon, RefreshCwIcon } from "lucide-react";
 import {
 	Button,
-	ContextMenu,
-	ContextMenuContent,
-	ContextMenuItem,
-	ContextMenuTrigger,
-	cn,
+	CodeEditor,
+	type CodeEditorMenuItem,
+	DiffCodeEditor,
 	Muted,
 	Skeleton,
 } from "@semoss/ui/next";
+import { getCodeEditorLanguage } from "@/components/workbench/file-editor.utility";
 import type { GitDiff, GitStageAction } from "./git.types";
 import type { GitDataStatus } from "./git-commit-row";
+import { getGitDiffCodeModels } from "./git-diff.utility";
 
 /** Props for displaying a standalone Git diff. */
 interface GitDiffViewerProps {
@@ -30,28 +30,6 @@ interface GitDiffViewerProps {
 	onAction?: () => void;
 }
 
-/** Return semantic styling for one unified diff line. */
-const getDiffLineClass = (line: string): string => {
-	if (line.startsWith("@@")) {
-		return "bg-primary/10 text-primary";
-	}
-	if (line.startsWith("+") && !line.startsWith("+++")) {
-		return "bg-success/10 text-success";
-	}
-	if (line.startsWith("-") && !line.startsWith("---")) {
-		return "bg-destructive/10 text-destructive";
-	}
-	if (
-		line.startsWith("diff --git") ||
-		line.startsWith("index ") ||
-		line.startsWith("---") ||
-		line.startsWith("+++")
-	) {
-		return "text-muted-foreground";
-	}
-	return "text-foreground";
-};
-
 /** Display a unified Git diff with an optional index action. */
 export const GitDiffViewer = ({
 	path,
@@ -63,7 +41,16 @@ export const GitDiffViewer = ({
 	onAction,
 }: GitDiffViewerProps) => {
 	const actionLabel = action === "UNSTAGE" ? "Unstage file" : "Stage file";
-	const ActionIcon = action === "UNSTAGE" ? MinusIcon : PlusIcon;
+	const actionMenuItems: CodeEditorMenuItem[] | undefined =
+		action && onAction
+			? [
+					{
+						id: `${action.toLowerCase()}-file`,
+						label: actionLabel,
+						onSelect: onAction,
+					},
+				]
+			: undefined;
 
 	if (status === "INITIAL" || status === "LOADING") {
 		return (
@@ -100,6 +87,9 @@ export const GitDiffViewer = ({
 		);
 	}
 
+	const codeModels = diff.diff ? getGitDiffCodeModels(diff.diff) : null;
+	const language = getCodeEditorLanguage(path);
+
 	return (
 		<div className="flex h-full min-h-0 flex-col">
 			{diff.isTruncated ? (
@@ -113,40 +103,29 @@ export const GitDiffViewer = ({
 					<Muted>Binary file diff is not available.</Muted>
 				</div>
 			) : diff.diff ? (
-				<ContextMenu>
-					<ContextMenuTrigger asChild>
-						<section
-							className="min-h-0 flex-1 overflow-auto bg-muted/30 font-mono text-xs"
-							aria-label={`Diff for ${path}`}
-						>
-							<div className="w-max min-w-full py-2">
-								{diff.diff.split("\n").map((line, index) => (
-									<div
-										// biome-ignore lint/suspicious/noArrayIndexKey: diff lines have no stable identity
-										key={index}
-										className={cn(
-											"whitespace-pre px-3 py-0.5",
-											getDiffLineClass(line),
-										)}
-									>
-										{line || " "}
-									</div>
-								))}
-							</div>
-						</section>
-					</ContextMenuTrigger>
-					{action && onAction ? (
-						<ContextMenuContent>
-							<ContextMenuItem onSelect={onAction}>
-								<ActionIcon
-									className="size-4"
-									aria-hidden="true"
-								/>
-								{actionLabel}
-							</ContextMenuItem>
-						</ContextMenuContent>
-					) : null}
-				</ContextMenu>
+				<section
+					className="min-h-0 flex-1 overflow-hidden bg-background"
+					aria-label={`Diff for ${path}`}
+				>
+					{codeModels ? (
+						<DiffCodeEditor
+							className="size-full"
+							original={codeModels.original}
+							modified={codeModels.modified}
+							disabled
+							language={language}
+							menuItems={actionMenuItems}
+						/>
+					) : (
+						<CodeEditor
+							className="size-full"
+							code={diff.diff}
+							disabled
+							language="diff"
+							menuItems={actionMenuItems}
+						/>
+					)}
+				</section>
 			) : (
 				<div className="flex flex-1 items-center justify-center p-6 text-center">
 					<Muted>No changes to display.</Muted>
