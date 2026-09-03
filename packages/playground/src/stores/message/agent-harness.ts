@@ -10,6 +10,7 @@ import { AgentStore, getSubagentRuns } from "@semoss/sdk";
 import {
 	MCP_EXECUTION_AGENT_ASK,
 	MCP_EXECUTION_AGENT_AUTO,
+	MCP_EXECUTION_AGENT_YESNO,
 	MCP_EXECUTION_ASK,
 	MCP_EXECUTION_YESNO,
 	STREAMING_PLACEHOLDER_ID,
@@ -83,18 +84,21 @@ const mapToolStatus = (
 /**
  * The backend never client-dispatches an agent-run tool, so its execution
  * mode must never literally be "auto" (the FE's own continueToolExecution
- * would try to re-run it) or "ask" (the legacy ask-decision flow would try to
- * resolve it via RunMCPTool instead of decideAgentRunAction). Tagging with an
- * agent- prefix avoids both while still preserving which one it originally
- * was, so ask/auto-mode rendering (grouping, tool UI, custom UI resolution)
- * stays keyed on execution mode alone — see isAskExecutionMode. yesno is
- * treated exactly like ask for now.
+ * would try to re-run it) or "ask"/"yesno" (the legacy ask-decision flow
+ * would try to resolve it via RunMCPTool instead of decideAgentRunAction).
+ * Tagging with an agent- prefix avoids both while still preserving which one
+ * it originally was, so rendering stays keyed on execution mode alone — see
+ * isAskExecutionMode/isYesNoExecutionMode.
  */
-const toAgentExecutionMode = (originalExecution: unknown): string =>
-	originalExecution === MCP_EXECUTION_ASK ||
-	originalExecution === MCP_EXECUTION_YESNO
-		? MCP_EXECUTION_AGENT_ASK
-		: MCP_EXECUTION_AGENT_AUTO;
+const toAgentExecutionMode = (originalExecution: unknown): string => {
+	if (originalExecution === MCP_EXECUTION_ASK) {
+		return MCP_EXECUTION_AGENT_ASK;
+	}
+	if (originalExecution === MCP_EXECUTION_YESNO) {
+		return MCP_EXECUTION_AGENT_YESNO;
+	}
+	return MCP_EXECUTION_AGENT_AUTO;
+};
 
 /**
  * Agent-run tool items arrive fully parsed (no placeholder phase like the

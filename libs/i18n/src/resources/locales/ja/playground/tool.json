@@ -10,6 +10,7 @@
 		"waitingForInput": "入力待ち"
 	},
 	"actions": {
+		"approve": "承認",
 		"cancel": "キャンセル",
 		"expand": "展開",
 		"collapse": "折りたたむ",

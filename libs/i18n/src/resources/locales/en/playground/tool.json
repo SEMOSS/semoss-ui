@@ -10,6 +10,7 @@
 		"waitingForInput": "Waiting for input"
 	},
 	"actions": {
+		"approve": "Approve",
 		"cancel": "Cancel",
 		"expand": "Expand",
 		"collapse": "Collapse",

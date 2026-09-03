@@ -10,6 +10,7 @@
 		"waitingForInput": "En attente d'une saisie"
 	},
 	"actions": {
+		"approve": "Approuver",
 		"cancel": "Annuler",
 		"expand": "Développer",
 		"collapse": "Réduire",

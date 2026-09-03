@@ -211,7 +211,8 @@ export interface PixelMessageToolCallPart {
 				| "disabled"
 				| "yesno"
 				| "agent-ask"
-				| "agent-auto";
+				| "agent-auto"
+				| "agent-yesno";
 			// The tool's declared name, before the backend rewrote it into the
 			// LLM-facing name. On length-limited providers that rewrite is not
 			// reversible (short engine-id prefix plus truncation), so this is the

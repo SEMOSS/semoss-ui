@@ -2,10 +2,10 @@ import { CheckIcon, HammerIcon, XCircleIcon } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useEffect } from "react";
 import { useTranslation } from "@semoss/i18n";
-import { Button, cn, Spinner, useIsMobile } from "@semoss/ui/next";
+import { Button, cn, Spinner, toast, useIsMobile } from "@semoss/ui/next";
 import { useLoadingMessage } from "@/hooks";
 import type { ToolStore } from "@/stores";
-import { isAskExecutionMode } from "@/utility/mcp-utils";
+import { isAskExecutionMode, isYesNoExecutionMode } from "@/utility/mcp-utils";
 import { RoomInlineTool } from "../room";
 import { ResponseMessageToolMenu } from "./response-message-tool-menu";
 import { ResponseMessageToolStreaming } from "./response-message-tool-streaming";
@@ -43,6 +43,7 @@ const getToolState = (
 				background: "bg-background" as const,
 				showHoverAccent: true,
 				showCancelInMenu: false,
+				showApprove: false,
 			};
 		}
 		case "SUCCESS":
@@ -56,6 +57,7 @@ const getToolState = (
 				background: "bg-sidebar" as const,
 				showHoverAccent: false,
 				showCancelInMenu: false,
+				showApprove: false,
 			};
 		case "LOADING":
 			return {
@@ -68,9 +70,12 @@ const getToolState = (
 				background: "bg-background" as const,
 				showHoverAccent: true,
 				showCancelInMenu: false,
+				showApprove: false,
 			};
-		default:
-			if (isAskExecutionMode(tool.json._meta?.SMSS_MCP_EXECUTION)) {
+		default: {
+			const execution = tool.json._meta?.SMSS_MCP_EXECUTION;
+			const isYesNo = isYesNoExecutionMode(execution);
+			if (isAskExecutionMode(execution) || isYesNo) {
 				return {
 					icon: <HammerIcon className="size-5" />,
 					iconClassName: "bg-primary/10 text-primary",
@@ -81,6 +86,7 @@ const getToolState = (
 					background: "bg-background" as const,
 					showHoverAccent: true,
 					showCancelInMenu: true,
+					showApprove: isYesNo,
 				};
 			}
 			// queued
@@ -94,7 +100,9 @@ const getToolState = (
 				background: "bg-background" as const,
 				showHoverAccent: true,
 				showCancelInMenu: false,
+				showApprove: false,
 			};
+		}
 	}
 };
 
@@ -164,6 +172,17 @@ export const ResponseMessageTool = observer(
 			e.stopPropagation();
 			message.saveToolExecution(tool, "", "cancelled", {});
 			tool.closeTool();
+		};
+
+		const handleApprove = async (e: React.MouseEvent) => {
+			e.stopPropagation();
+			try {
+				await tool.approve();
+			} catch (error) {
+				toast.error(
+					error instanceof Error ? error.message : String(error),
+				);
+			}
 		};
 
 		const handleClick = () => {
@@ -321,6 +340,24 @@ export const ResponseMessageTool = observer(
 							showCancelInMenu={toolState.showCancelInMenu}
 						/>
 					)}
+					{toolState.actionType === "menu" &&
+						toolState.showApprove && (
+							<Button
+								type="button"
+								size="icon"
+								variant="ghost"
+								className="me-2 shrink-0"
+								onClick={handleApprove}
+								disabled={tool.isApproving}
+								aria-label={t("actions.approve")}
+							>
+								{tool.isApproving ? (
+									<Spinner className="size-4" />
+								) : (
+									<CheckIcon className="size-4" />
+								)}
+							</Button>
+						)}
 				</div>
 
 				{/* MCP UI Area */}

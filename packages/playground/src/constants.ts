@@ -14,6 +14,8 @@ export const MCP_EXECUTION_YESNO = "yesno";
  */
 export const MCP_EXECUTION_AGENT_ASK = "agent-ask";
 export const MCP_EXECUTION_AGENT_AUTO = "agent-auto";
+/** Agent-run counterpart to MCP_EXECUTION_YESNO. */
+export const MCP_EXECUTION_AGENT_YESNO = "agent-yesno";
 
 export const MCP_DISPLAY_INLINE = "inline";
 export const MCP_DISPLAY_SIDEBAR = "sidebar";
