@@ -277,7 +277,7 @@ describe("ModelUsagePage", () => {
 		});
 	});
 
-	test("waits for Apply before loading a custom date range", async () => {
+	test("applies the default custom range and waits for Apply after edits", async () => {
 		mocks.getUserModelCreditInfo.mockResolvedValue({
 			engineId: "model-1",
 			userId: "user-1",
@@ -291,7 +291,9 @@ describe("ModelUsagePage", () => {
 		});
 
 		render(<ModelUsagePage />);
-		fireEvent.click(await screen.findByText("usage:dateRange.custom"));
+		await waitFor(() => expect(mocks.getUserModelUsage).toHaveBeenCalled());
+		const callsBeforeCustom = mocks.getUserModelUsage.mock.calls.length;
+		fireEvent.click(screen.getByText("usage:dateRange.custom"));
 
 		const startInput = await screen.findByLabelText(
 			"usage:dateRange.start",
@@ -301,7 +303,16 @@ describe("ModelUsagePage", () => {
 		expect(screen.getByLabelText("usage:dateRange.end")).toHaveValue(
 			defaultCustomRange.endDate,
 		);
-		await waitFor(() => expect(mocks.getUserModelUsage).toHaveBeenCalled());
+		await waitFor(() => {
+			expect(mocks.getUserModelUsage).toHaveBeenCalledTimes(
+				callsBeforeCustom + 1,
+			);
+			expect(mocks.getUserModelUsage).toHaveBeenLastCalledWith(
+				["model-1"],
+				defaultCustomRange.startDate,
+				defaultCustomRange.endDate,
+			);
+		});
 		const callsBeforeEdit = mocks.getUserModelUsage.mock.calls.length;
 
 		fireEvent.change(startInput, { target: { value: "2026-08-01" } });

@@ -350,7 +350,7 @@ export const ModelUsagePage = () => {
 
 	return (
 		<div className="h-full w-full overflow-y-auto bg-background">
-			<div className="mx-auto flex w-full max-w-5xl flex-col gap-6 p-4 md:p-6">
+			<div className="mx-auto flex w-full max-w-5xl flex-col gap-4 p-4 md:p-5">
 				<div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-start">
 					<div className="flex max-w-prose flex-col gap-2">
 						<H3>{t("usage:title")}</H3>
@@ -408,12 +408,12 @@ export const ModelUsagePage = () => {
 						</CardHeader>
 					</Card>
 				) : (
-					<div className="grid w-full gap-4 md:grid-cols-2 lg:grid-cols-4">
-						<fieldset className="flex flex-col gap-2 lg:col-span-4">
+					<div className="w-full">
+						<fieldset className="flex flex-col gap-2">
 							<legend className="font-medium text-sm">
 								{t("usage:dateRange.label")}
 							</legend>
-							<div className="flex flex-wrap gap-2">
+							<div className="flex flex-wrap items-center gap-2">
 								{(
 									[
 										"today",
@@ -425,6 +425,7 @@ export const ModelUsagePage = () => {
 									<Button
 										key={mode}
 										type="button"
+										size="sm"
 										variant={
 											rangeMode === mode
 												? "default"
@@ -437,6 +438,12 @@ export const ModelUsagePage = () => {
 													getDefaultCustomDateRange();
 												setStartDate(range.startDate);
 												setEndDate(range.endDate);
+												setAppliedStartDate(
+													range.startDate,
+												);
+												setAppliedEndDate(
+													range.endDate,
+												);
 											} else {
 												const range =
 													getPresetDateRange(mode);
@@ -454,58 +461,64 @@ export const ModelUsagePage = () => {
 										{t(`usage:dateRange.${mode}`)}
 									</Button>
 								))}
+								{rangeMode === "custom" && (
+									<>
+										<Label
+											htmlFor={startDateId}
+											className="sr-only"
+										>
+											{t("usage:dateRange.start")}
+										</Label>
+										<Input
+											id={startDateId}
+											type="date"
+											className="h-9 w-36"
+											value={startDate}
+											max={endDate}
+											onChange={(event) =>
+												setStartDate(event.target.value)
+											}
+										/>
+										<span className="text-muted-foreground text-sm">
+											–
+										</span>
+										<Label
+											htmlFor={endDateId}
+											className="sr-only"
+										>
+											{t("usage:dateRange.end")}
+										</Label>
+										<Input
+											id={endDateId}
+											type="date"
+											className="h-9 w-36"
+											value={endDate}
+											min={startDate}
+											onChange={(event) =>
+												setEndDate(event.target.value)
+											}
+										/>
+										<Button
+											size="sm"
+											disabled={
+												!startDate ||
+												!endDate ||
+												startDate > endDate ||
+												(startDate ===
+													appliedStartDate &&
+													endDate === appliedEndDate)
+											}
+											onClick={() => {
+												setAppliedStartDate(startDate);
+												setAppliedEndDate(endDate);
+											}}
+										>
+											{t("usage:dateRange.apply")}
+										</Button>
+									</>
+								)}
 							</div>
 						</fieldset>
-						{rangeMode === "custom" && (
-							<>
-								<div className="flex flex-col gap-2">
-									<Label htmlFor={startDateId}>
-										{t("usage:dateRange.start")}
-									</Label>
-									<Input
-										id={startDateId}
-										type="date"
-										value={startDate}
-										max={endDate}
-										onChange={(event) =>
-											setStartDate(event.target.value)
-										}
-									/>
-								</div>
-								<div className="flex flex-col gap-2">
-									<Label htmlFor={endDateId}>
-										{t("usage:dateRange.end")}
-									</Label>
-									<Input
-										id={endDateId}
-										type="date"
-										value={endDate}
-										min={startDate}
-										onChange={(event) =>
-											setEndDate(event.target.value)
-										}
-									/>
-								</div>
-								<div className="flex items-end">
-									<Button
-										className="w-full"
-										disabled={
-											!startDate ||
-											!endDate ||
-											startDate > endDate ||
-											(startDate === appliedStartDate &&
-												endDate === appliedEndDate)
-										}
-										onClick={() => {
-											setAppliedStartDate(startDate);
-											setAppliedEndDate(endDate);
-										}}
-									>
-										{t("usage:dateRange.apply")}
-									</Button>
-								</div>
-							</>
-						)}
 					</div>
 				)}
 
@@ -529,16 +542,16 @@ export const ModelUsagePage = () => {
 								</AlertTitle>
 							</Alert>
 						) : isLoadingOverview ? (
-							<div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+							<div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
 								{["credits", "requests", "input", "output"].map(
 									(key) => (
-										<Skeleton key={key} className="h-32" />
+										<Skeleton key={key} className="h-20" />
 									),
 								)}
 							</div>
 						) : (
 							<>
-								<div>
+								<div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
 									<h2 className="font-semibold text-lg">
 										{t("usage:overview.summaryTitle")}
 									</h2>
@@ -558,7 +571,7 @@ export const ModelUsagePage = () => {
 										)}
 									</Muted>
 								</div>
-								<div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+								<div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
 									{[
 										{
 											label: t("usage:overview.credits"),
@@ -596,40 +609,35 @@ export const ModelUsagePage = () => {
 											format,
 										}) => (
 											<Card key={label}>
-												<CardHeader>
-													<Icon
-														className="size-5 text-primary"
-														aria-hidden
-													/>
-													<CardDescription>
-														{label}
-													</CardDescription>
-													<CardTitle className="text-2xl tabular-nums">
-														{format(value, locale)}
-													</CardTitle>
-												</CardHeader>
+												<CardContent className="flex items-center gap-3 p-4">
+													<div className="rounded-md bg-primary/10 p-2">
+														<Icon
+															className="size-4 text-primary"
+															aria-hidden
+														/>
+													</div>
+													<div className="min-w-0">
+														<CardDescription>
+															{label}
+														</CardDescription>
+														<CardTitle className="text-xl tabular-nums">
+															{format(
+																value,
+																locale,
+															)}
+														</CardTitle>
+													</div>
+												</CardContent>
 											</Card>
 										),
 									)}
 								</div>
 
 								<Card>
-									<CardHeader>
-										<CardTitle>
+									<CardHeader className="px-4 py-3">
+										<CardTitle className="text-base">
 											{t("usage:overview.title")}
 										</CardTitle>
-										<CardDescription>
-											{t("usage:overview.description", {
-												start: formatDateOnly(
-													overviewStartDate,
-													locale,
-												),
-												end: formatDateOnly(
-													overviewEndDate,
-													locale,
-												),
-											})}
-										</CardDescription>
 									</CardHeader>
 									<CardContent className="overflow-x-auto p-0">
 										<Table>
