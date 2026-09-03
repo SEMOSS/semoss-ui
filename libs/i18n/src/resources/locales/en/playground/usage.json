@@ -17,6 +17,7 @@
 	"restriction": { "label": "Restriction", "restricted": "Restricted" },
 	"overview": {
 		"title": "Usage by model",
+		"selectedDescription": "Usage from {{start}} through {{end}}.",
 		"description": "Usage from {{start}} through {{end}}, ranked by credits.",
 		"error": "Model usage totals could not be loaded.",
 		"credits": "Credits",

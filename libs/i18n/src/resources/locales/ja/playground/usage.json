@@ -17,6 +17,7 @@
 	"restriction": { "label": "制限", "restricted": "制限あり" },
 	"overview": {
 		"title": "モデル別の使用状況",
+		"selectedDescription": "{{start}}から{{end}}までの使用量です。",
 		"description": "{{start}}から{{end}}までの使用量をクレジット順に表示します。",
 		"error": "モデル使用量の合計を読み込めませんでした。",
 		"credits": "クレジット",

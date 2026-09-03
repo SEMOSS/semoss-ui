@@ -81,7 +81,12 @@ describe("ModelUsagePage", () => {
 	test("loads the first model and displays its credit usage", async () => {
 		render(<ModelUsagePage />);
 
-		expect(await screen.findAllByText("Test Model")).toHaveLength(2);
+		expect(
+			await screen.findByRole("button", { name: "Test Model" }),
+		).toBeInTheDocument();
+		expect(
+			screen.getByRole("heading", { name: "Test Model" }),
+		).toBeInTheDocument();
 		await waitFor(() => {
 			expect(mocks.getUserModelCreditInfo).toHaveBeenCalledWith(
 				"model-1",
@@ -152,14 +157,19 @@ describe("ModelUsagePage", () => {
 
 		render(<ModelUsagePage />);
 
-		fireEvent.click(
-			await screen.findByRole("button", { name: "Second Model" }),
-		);
+		const secondModelRow = (
+			await screen.findByRole("button", { name: "Second Model" })
+		).closest("tr");
+		expect(secondModelRow).not.toBeNull();
+		fireEvent.click(secondModelRow as HTMLTableRowElement);
 		await waitFor(() => {
 			expect(mocks.getUserModelCreditInfo).toHaveBeenCalledWith(
 				"model-2",
 			);
 		});
+		expect(
+			screen.getByRole("heading", { name: "Second Model" }),
+		).toBeInTheDocument();
 	});
 
 	test("builds calendar-based preset ranges ending today", () => {
@@ -194,7 +204,7 @@ describe("ModelUsagePage", () => {
 
 		render(<ModelUsagePage />);
 
-		await screen.findByText("Test Model");
+		await screen.findByRole("button", { name: "Test Model" });
 		expect(
 			screen.queryByText("usage:noRestriction.title"),
 		).not.toBeInTheDocument();

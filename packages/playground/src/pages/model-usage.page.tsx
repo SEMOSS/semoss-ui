@@ -246,20 +246,12 @@ export const ModelUsagePage = () => {
 			Math.max(0, (creditInfo.creditsUsed / creditInfo.maxCredits) * 100),
 		);
 	}, [creditInfo]);
-	const usageTotals = useMemo(
+	const selectedUsage = useMemo(
 		() =>
-			usageSummaries.reduce(
-				(totals, summary) => ({
-					credits: totals.credits + (summary.TOTAL_CREDITS || 0),
-					requests: totals.requests + (summary.TOTAL_REQUESTS || 0),
-					inputTokens:
-						totals.inputTokens + (summary.INPUT_TOKENS || 0),
-					outputTokens:
-						totals.outputTokens + (summary.RESPONSE_TOKENS || 0),
-				}),
-				{ credits: 0, requests: 0, inputTokens: 0, outputTokens: 0 },
+			usageSummaries.find(
+				(summary) => summary.ENGINE_ID === selectedModelId,
 			),
-		[usageSummaries],
+		[selectedModelId, usageSummaries],
 	);
 	const locale = i18n.resolvedLanguage || i18n.language || "en";
 
@@ -448,17 +440,40 @@ export const ModelUsagePage = () => {
 							</div>
 						) : (
 							<>
+								<div>
+									<h2 className="font-semibold text-lg">
+										{selectedModel?.engine_display_name ||
+											selectedModel?.engine_name ||
+											selectedUsage?.ENGINE_NAME ||
+											selectedModelId}
+									</h2>
+									<Muted>
+										{t(
+											"usage:overview.selectedDescription",
+											{
+												start: formatDateOnly(
+													overviewStartDate,
+													locale,
+												),
+												end: formatDateOnly(
+													overviewEndDate,
+													locale,
+												),
+											},
+										)}
+									</Muted>
+								</div>
 								<div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
 									{[
 										{
 											label: t("usage:overview.credits"),
-											value: usageTotals.credits,
+											value: selectedUsage?.TOTAL_CREDITS,
 											icon: TrendingUp,
 											format: formatCredits,
 										},
 										{
 											label: t("usage:overview.requests"),
-											value: usageTotals.requests,
+											value: selectedUsage?.TOTAL_REQUESTS,
 											icon: MessageSquare,
 											format: formatCount,
 										},
@@ -466,7 +481,7 @@ export const ModelUsagePage = () => {
 											label: t(
 												"usage:overview.inputTokens",
 											),
-											value: usageTotals.inputTokens,
+											value: selectedUsage?.INPUT_TOKENS,
 											icon: ArrowDownToLine,
 											format: formatCount,
 										},
@@ -474,7 +489,7 @@ export const ModelUsagePage = () => {
 											label: t(
 												"usage:overview.outputTokens",
 											),
-											value: usageTotals.outputTokens,
+											value: selectedUsage?.RESPONSE_TOKENS,
 											icon: ArrowUpFromLine,
 											format: formatCount,
 										},
@@ -569,11 +584,20 @@ export const ModelUsagePage = () => {
 																key={
 																	summary.ENGINE_ID
 																}
-																className={
+																className={`cursor-pointer ${
 																	selectedModelId ===
 																	summary.ENGINE_ID
 																		? "bg-muted/50"
-																		: undefined
+																		: ""
+																}`}
+																aria-selected={
+																	selectedModelId ===
+																	summary.ENGINE_ID
+																}
+																onClick={() =>
+																	setSelectedModelId(
+																		summary.ENGINE_ID,
+																	)
 																}
 															>
 																<TableCell className="max-w-72 whitespace-normal font-medium">

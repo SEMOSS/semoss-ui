@@ -17,6 +17,7 @@
 	"restriction": { "label": "प्रतिबंध", "restricted": "प्रतिबंधित" },
 	"overview": {
 		"title": "मॉडल के अनुसार उपयोग",
+		"selectedDescription": "{{start}} से {{end}} तक का उपयोग।",
 		"description": "{{start}} से {{end}} तक का उपयोग, क्रेडिट के अनुसार क्रमबद्ध।",
 		"error": "मॉडल उपयोग के कुल आँकड़े लोड नहीं हो सके।",
 		"credits": "क्रेडिट",
