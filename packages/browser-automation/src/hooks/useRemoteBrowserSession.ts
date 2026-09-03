@@ -6,6 +6,9 @@ import {
 	runPixel,
 } from "../semoss/pixel";
 import type {
+	BrowserDownload,
+	DownloadError,
+	DownloadSaveResponse,
 	LoadedRecording,
 	RecordingProjectOption,
 	RemoteBrowserRecordedStep,
@@ -66,6 +69,11 @@ interface UseRemoteBrowserSessionReturn {
 		paramValues?: Record<string, string>,
 	) => Promise<ReplayStepResult>;
 	getRecordedSteps: () => Promise<RemoteBrowserRecordedStep[]>;
+	listDownloads: (runId?: string) => Promise<BrowserDownload[]>;
+	saveDownloadsToInsight: (
+		insightId: string,
+		downloadIds?: string[],
+	) => Promise<DownloadSaveResponse | null>;
 	/** Calls MakeRoomPlaywrightMCP() to regenerate mcp/pixel_mcp.json from all room recordings. */
 	saveRoomMcpEntry: (
 		insightId: string,
@@ -306,8 +314,7 @@ export function useRemoteBrowserSession(): UseRemoteBrowserSessionReturn {
 			setIsLoadingProjects(true);
 			setError(null);
 			try {
-				// Recordings can live in any app the user can edit. WORKSPACE and
-				// SKILL projects are deliberately excluded.
+				// Any app the user can edit; WORKSPACE and SKILL are deliberately excluded.
 				const pixel = `META | MyProjects(projectType=["CODE", "BLOCKS"], filterWord=[""]);`;
 				const res = await runPixel(pixel, insightId);
 				const output = res.pixelReturn?.[0]?.output;
@@ -499,6 +506,10 @@ export function useRemoteBrowserSession(): UseRemoteBrowserSessionReturn {
 							isNewTab?: boolean;
 							newTabId?: string;
 							tabTitle?: string;
+							downloadSummary?: string;
+							downloadCount?: number;
+							downloads?: BrowserDownload[];
+							downloadErrors?: DownloadError[];
 					  }
 					| undefined;
 
@@ -520,6 +531,10 @@ export function useRemoteBrowserSession(): UseRemoteBrowserSessionReturn {
 					isNewTab: output.isNewTab,
 					newTabId: output.newTabId,
 					tabTitle: output.tabTitle,
+					downloadSummary: output.downloadSummary,
+					downloadCount: output.downloadCount,
+					downloads: output.downloads,
+					downloadErrors: output.downloadErrors,
 				};
 			} catch (e: unknown) {
 				return {
@@ -553,6 +568,69 @@ export function useRemoteBrowserSession(): UseRemoteBrowserSessionReturn {
 			return [];
 		}
 	}, []);
+
+	const listDownloads = useCallback(
+		async (runId?: string): Promise<BrowserDownload[]> => {
+			const s = sessionRef.current;
+			if (!s) return [];
+			try {
+				const query = runId
+					? `?runId=${encodeURIComponent(runId)}`
+					: "";
+				const res = await fetch(
+					`${getApiBase()}/${s.sessionId}/downloads${query}`,
+					{ method: "GET", credentials: "include" },
+				);
+				if (!res.ok) return [];
+				const output = await res.json();
+				return Array.isArray(output?.downloads)
+					? (output.downloads as BrowserDownload[])
+					: [];
+			} catch {
+				return [];
+			}
+		},
+		[],
+	);
+
+	const saveDownloadsToInsight = useCallback(
+		async (
+			insightId: string,
+			downloadIds?: string[],
+		): Promise<DownloadSaveResponse | null> => {
+			const s = sessionRef.current;
+			if (!s || !insightId) return null;
+			try {
+				const payload: { insightId: string; downloadIds?: string[] } = {
+					insightId,
+				};
+				if (downloadIds && downloadIds.length > 0) {
+					payload.downloadIds = downloadIds;
+				}
+				const res = await fetchWithCsrf(
+					`${getApiBase()}/${s.sessionId}/downloads/save`,
+					{
+						method: "POST",
+						headers: { "Content-Type": "application/json" },
+						body: JSON.stringify(payload),
+					},
+				);
+				const output = await res.json().catch(() => null);
+				if (!res.ok) {
+					throw new Error(output?.error || `HTTP ${res.status}`);
+				}
+				return output as DownloadSaveResponse;
+			} catch (e: unknown) {
+				setError(
+					e instanceof Error
+						? e.message
+						: "Failed to save browser downloads",
+				);
+				return null;
+			}
+		},
+		[],
+	);
 
 	/**
 	 * Reads the room's `mcp/pixel_mcp.json` insight asset (if present), merges a
@@ -610,6 +688,8 @@ export function useRemoteBrowserSession(): UseRemoteBrowserSessionReturn {
 		loadRecording,
 		replaySingleStep,
 		getRecordedSteps,
+		listDownloads,
+		saveDownloadsToInsight,
 		saveRoomMcpEntry,
 		saveProjectMcpEntry,
 	};

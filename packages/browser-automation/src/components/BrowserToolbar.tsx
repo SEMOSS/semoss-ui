@@ -1,10 +1,13 @@
 import {
 	ArrowLeft,
 	ArrowRight,
+	Bug,
 	Circle,
+	FileText,
 	Play,
 	RefreshCw,
 	Save,
+	ScanLine,
 	Send,
 } from "lucide-react";
 import React, { useState } from "react";
@@ -33,6 +36,12 @@ interface BrowserToolbarProps {
 	canSaveRecording: boolean;
 	onToggleRecording: () => void;
 	onOpenSaveRecording: () => void;
+	isCapturingFullPage: boolean;
+	onCaptureFullPage: () => void;
+	isCapturingVision: boolean;
+	onToggleVisionCapture: () => void;
+	isDebugOpen: boolean;
+	onToggleDebug: () => void;
 }
 
 function ToolbarTip({
@@ -65,6 +74,12 @@ export const BrowserToolbar: React.FC<BrowserToolbarProps> = ({
 	canSaveRecording,
 	onToggleRecording,
 	onOpenSaveRecording,
+	isCapturingFullPage,
+	onCaptureFullPage,
+	isCapturingVision,
+	onToggleVisionCapture,
+	isDebugOpen,
+	onToggleDebug,
 }) => {
 	const [urlInput, setUrlInput] = useState(currentUrl);
 	const isActive =
@@ -180,6 +195,53 @@ export const BrowserToolbar: React.FC<BrowserToolbarProps> = ({
 					>
 						{isSaving ? <Spinner /> : <Save />}
 						<span className="hidden sm:inline">Save</span>
+					</Button>
+				</ToolbarTip>
+				<ToolbarTip label="Auto-scroll and capture full page text">
+					<Button
+						size="sm"
+						variant="outline"
+						disabled={
+							connectionState !== "connected" ||
+							isLoading ||
+							isCapturingFullPage
+						}
+						onClick={onCaptureFullPage}
+					>
+						{isCapturingFullPage ? <Spinner /> : <FileText />}
+						<span className="hidden sm:inline">
+							{isCapturingFullPage ? "Capturing" : "Page text"}
+						</span>
+					</Button>
+				</ToolbarTip>
+				<ToolbarTip
+					label={
+						isCapturingVision
+							? "Cancel vision region selection"
+							: "Select a screen region for vision context"
+					}
+				>
+					<Button
+						size="sm"
+						variant={isCapturingVision ? "default" : "outline"}
+						disabled={connectionState !== "connected" || isLoading}
+						onClick={onToggleVisionCapture}
+					>
+						<ScanLine />
+						<span className="hidden sm:inline">
+							{isCapturingVision ? "Select region" : "Vision"}
+						</span>
+					</Button>
+				</ToolbarTip>
+				<ToolbarTip label="Inspect browser network and console events">
+					<Button
+						size="sm"
+						variant={isDebugOpen ? "default" : "outline"}
+						disabled={connectionState !== "connected"}
+						onClick={onToggleDebug}
+					>
+						<Bug />
+						<span className="hidden sm:inline">Debug</span>
 					</Button>
 				</ToolbarTip>
 			</div>

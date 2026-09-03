@@ -20,8 +20,7 @@ export const AutomationActionIndicator: React.FC<
 	const OFFSET_X = 12;
 	const OFFSET_Y = 12;
 
-	// We don't know the container size here, so we just position and let the
-	// parent clip via overflow-hidden if needed.
+	// Container size is unknown here; the parent clips via overflow-hidden.
 	const left = localX + OFFSET_X;
 	const top = localY + OFFSET_Y;
 
