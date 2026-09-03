@@ -34,6 +34,9 @@ export interface ModelUsageSummary {
 	TOTAL_TOKENS: number;
 	TOTAL_REQUESTS: number;
 	TOTAL_CREDITS: number;
+	HAS_RESTRICTION: boolean;
+	RESTRICTION_TYPE: string | null;
+	RESTRICTION_FREQUENCY: string | null;
 }
 
 /** Throw when a Pixel execution reports one or more backend errors. */

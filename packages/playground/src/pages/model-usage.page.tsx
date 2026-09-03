@@ -25,11 +25,6 @@ import {
 	Label,
 	Muted,
 	Progress,
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
 	Skeleton,
 	Small,
 	Table,
@@ -84,23 +79,20 @@ const formatDateOnly = (value: string, locale: string): string => {
 	}).format(new Date(Date.UTC(year, month - 1, day)));
 };
 
-/** Return the rolling month ending today for the initial custom usage range. */
-export const getLastMonthDateRange = (reference = new Date()) => {
-	const targetYear =
-		reference.getMonth() === 0
-			? reference.getFullYear() - 1
-			: reference.getFullYear();
-	const targetMonth = (reference.getMonth() + 11) % 12;
-	const lastDayInTargetMonth = new Date(
-		targetYear,
-		targetMonth + 1,
-		0,
-	).getDate();
-	const startDate = new Date(
-		targetYear,
-		targetMonth,
-		Math.min(reference.getDate(), lastDayInTargetMonth),
-	);
+type UsageRangeMode = "today" | "week" | "month" | "custom";
+
+/** Return an inclusive, calendar-based usage range ending today. */
+export const getPresetDateRange = (
+	mode: Exclude<UsageRangeMode, "custom">,
+	reference = new Date(),
+) => {
+	const startDate = new Date(reference);
+	if (mode === "week") {
+		const daysSinceMonday = (reference.getDay() + 6) % 7;
+		startDate.setDate(reference.getDate() - daysSinceMonday);
+	} else if (mode === "month") {
+		startDate.setDate(1);
+	}
 
 	return {
 		startDate: formatDateInput(startDate),
@@ -111,13 +103,12 @@ export const getLastMonthDateRange = (reference = new Date()) => {
 /** Self-service dashboard for model credit limits and usage. */
 export const ModelUsagePage = () => {
 	const { t, i18n } = useTranslation(["usage", "workspace"]);
-	const rangeSelectId = useId();
 	const startDateId = useId();
 	const endDateId = useId();
 	const [models, setModels] = useState<Engine[]>([]);
 	const [selectedModelId, setSelectedModelId] = useState("");
 	const [creditInfo, setCreditInfo] = useState<ModelCreditInfo | null>(null);
-	const [initialDateRange] = useState(() => getLastMonthDateRange());
+	const [initialDateRange] = useState(() => getPresetDateRange("month"));
 	const [startDate, setStartDate] = useState(initialDateRange.startDate);
 	const [endDate, setEndDate] = useState(initialDateRange.endDate);
 	const [appliedStartDate, setAppliedStartDate] = useState(
@@ -126,9 +117,7 @@ export const ModelUsagePage = () => {
 	const [appliedEndDate, setAppliedEndDate] = useState(
 		initialDateRange.endDate,
 	);
-	const [rangeMode, setRangeMode] = useState<"configured" | "custom">(
-		"configured",
-	);
+	const [rangeMode, setRangeMode] = useState<UsageRangeMode>("month");
 	const [isLoadingModels, setIsLoadingModels] = useState(true);
 	const [isLoadingUsage, setIsLoadingUsage] = useState(false);
 	const [modelsError, setModelsError] = useState(false);
@@ -171,9 +160,6 @@ export const ModelUsagePage = () => {
 		try {
 			const info = await getUserModelCreditInfo(modelId);
 			setCreditInfo(info);
-			if (!info.restrictionEnabled) {
-				setRangeMode("custom");
-			}
 		} catch {
 			setCreditInfo(null);
 			setUsageError(true);
@@ -197,14 +183,8 @@ export const ModelUsagePage = () => {
 	const selectedModel = models.find(
 		(model) => model.engine_id === selectedModelId,
 	);
-	const overviewStartDate =
-		rangeMode === "custom"
-			? appliedStartDate
-			: creditInfo?.periodStart?.slice(0, 10) || "";
-	const overviewEndDate =
-		rangeMode === "custom"
-			? appliedEndDate
-			: creditInfo?.periodEnd?.slice(0, 10) || "";
+	const overviewStartDate = appliedStartDate;
+	const overviewEndDate = appliedEndDate;
 
 	const loadOverview = useCallback(
 		async (rangeStart: string, rangeEnd: string) => {
@@ -334,42 +314,48 @@ export const ModelUsagePage = () => {
 					</Card>
 				) : (
 					<div className="grid w-full gap-4 md:grid-cols-2 lg:grid-cols-4">
-						<div className="flex flex-col gap-2">
-							<Label htmlFor={rangeSelectId}>
+						<fieldset className="flex flex-col gap-2 lg:col-span-4">
+							<legend className="font-medium text-sm">
 								{t("usage:dateRange.label")}
-							</Label>
-							<Select
-								value={rangeMode}
-								onValueChange={(value) =>
-									setRangeMode(
-										value as "configured" | "custom",
-									)
-								}
-							>
-								<SelectTrigger
-									id={rangeSelectId}
-									className="w-full"
-								>
-									<SelectValue />
-								</SelectTrigger>
-								<SelectContent>
-									<SelectItem
-										value="configured"
-										disabled={
-											!creditInfo?.restrictionEnabled
+							</legend>
+							<div className="flex flex-wrap gap-2">
+								{(
+									[
+										"today",
+										"week",
+										"month",
+										"custom",
+									] as const
+								).map((mode) => (
+									<Button
+										key={mode}
+										type="button"
+										variant={
+											rangeMode === mode
+												? "default"
+												: "outline"
 										}
+										onClick={() => {
+											setRangeMode(mode);
+											if (mode !== "custom") {
+												const range =
+													getPresetDateRange(mode);
+												setStartDate(range.startDate);
+												setEndDate(range.endDate);
+												setAppliedStartDate(
+													range.startDate,
+												);
+												setAppliedEndDate(
+													range.endDate,
+												);
+											}
+										}}
 									>
-										{t("usage:dateRange.configured")}
-										{creditInfo?.frequency
-											? ` · ${t(`usage:frequency.${creditInfo.frequency}`)}`
-											: ""}
-									</SelectItem>
-									<SelectItem value="custom">
-										{t("usage:dateRange.custom")}
-									</SelectItem>
-								</SelectContent>
-							</Select>
-						</div>
+										{t(`usage:dateRange.${mode}`)}
+									</Button>
+								))}
+							</div>
+						</fieldset>
 						{rangeMode === "custom" && (
 							<>
 								<div className="flex flex-col gap-2">
@@ -524,6 +510,11 @@ export const ModelUsagePage = () => {
 													<TableHead>
 														{t("usage:model.label")}
 													</TableHead>
+													<TableHead>
+														{t(
+															"usage:restriction.label",
+														)}
+													</TableHead>
 													<TableHead className="text-right">
 														{t(
 															"usage:overview.credits",
@@ -582,6 +573,15 @@ export const ModelUsagePage = () => {
 																			summary.ENGINE_NAME ||
 																			summary.ENGINE_ID}
 																	</button>
+																</TableCell>
+																<TableCell>
+																	{summary.HAS_RESTRICTION && (
+																		<Badge variant="outline">
+																			{t(
+																				"usage:restriction.restricted",
+																			)}
+																		</Badge>
+																	)}
 																</TableCell>
 																{[
 																	{

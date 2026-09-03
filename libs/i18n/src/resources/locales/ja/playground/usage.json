@@ -6,11 +6,15 @@
 	"dateRange": {
 		"label": "使用期間",
 		"configured": "現在の制限期間",
+		"today": "今日",
+		"week": "今週",
+		"month": "今月",
 		"custom": "カスタム範囲",
 		"start": "開始日",
 		"end": "終了日",
 		"apply": "適用"
 	},
+	"restriction": { "label": "制限", "restricted": "制限あり" },
 	"overview": {
 		"title": "モデル別の使用状況",
 		"description": "{{start}}から{{end}}までの使用量をクレジット順に表示します。",

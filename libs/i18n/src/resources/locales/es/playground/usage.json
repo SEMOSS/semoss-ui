@@ -6,11 +6,15 @@
 	"dateRange": {
 		"label": "Período de uso",
 		"configured": "Período límite actual",
+		"today": "Hoy",
+		"week": "Esta semana",
+		"month": "Este mes",
 		"custom": "Intervalo personalizado",
 		"start": "Fecha de inicio",
 		"end": "Fecha de finalización",
 		"apply": "Aplicar"
 	},
+	"restriction": { "label": "Restricción", "restricted": "Restringido" },
 	"overview": {
 		"title": "Uso por modelo",
 		"description": "Uso del {{start}} al {{end}}, ordenado por créditos.",

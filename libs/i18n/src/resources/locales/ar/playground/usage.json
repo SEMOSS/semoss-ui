@@ -6,11 +6,15 @@
 	"dateRange": {
 		"label": "فترة الاستخدام",
 		"configured": "فترة الحد الحالية",
+		"today": "اليوم",
+		"week": "هذا الأسبوع",
+		"month": "هذا الشهر",
 		"custom": "نطاق مخصص",
 		"start": "تاريخ البدء",
 		"end": "تاريخ الانتهاء",
 		"apply": "تطبيق"
 	},
+	"restriction": { "label": "التقييد", "restricted": "مقيّد" },
 	"overview": {
 		"title": "الاستخدام حسب النموذج",
 		"description": "الاستخدام من {{start}} إلى {{end}}، مرتب حسب الرصيد.",

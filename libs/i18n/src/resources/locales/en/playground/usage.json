@@ -6,11 +6,15 @@
 	"dateRange": {
 		"label": "Usage period",
 		"configured": "Current limit period",
+		"today": "Today",
+		"week": "This week",
+		"month": "This month",
 		"custom": "Custom range",
 		"start": "Start date",
 		"end": "End date",
 		"apply": "Apply"
 	},
+	"restriction": { "label": "Restriction", "restricted": "Restricted" },
 	"overview": {
 		"title": "Usage by model",
 		"description": "Usage from {{start}} through {{end}}, ranked by credits.",

@@ -6,11 +6,15 @@
 	"dateRange": {
 		"label": "Gebruiksperiode",
 		"configured": "Huidige limietperiode",
+		"today": "Vandaag",
+		"week": "Deze week",
+		"month": "Deze maand",
 		"custom": "Aangepast bereik",
 		"start": "Startdatum",
 		"end": "Einddatum",
 		"apply": "Toepassen"
 	},
+	"restriction": { "label": "Beperking", "restricted": "Beperkt" },
 	"overview": {
 		"title": "Gebruik per model",
 		"description": "Gebruik van {{start}} tot en met {{end}}, gerangschikt op credits.",

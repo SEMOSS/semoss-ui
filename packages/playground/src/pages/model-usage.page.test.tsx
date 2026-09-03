@@ -1,6 +1,6 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, test, vi } from "vitest";
-import { getLastMonthDateRange, ModelUsagePage } from "./model-usage.page";
+import { getPresetDateRange, ModelUsagePage } from "./model-usage.page";
 
 const mocks = vi.hoisted(() => ({
 	getUsageModels: vi.fn(),
@@ -62,6 +62,9 @@ describe("ModelUsagePage", () => {
 				TOTAL_TOKENS: 150,
 				TOTAL_REQUESTS: 2,
 				TOTAL_CREDITS: 4,
+				HAS_RESTRICTION: true,
+				RESTRICTION_TYPE: "credit",
+				RESTRICTION_FREQUENCY: "MONTH",
 			},
 		]);
 	});
@@ -69,7 +72,7 @@ describe("ModelUsagePage", () => {
 	test("loads the first model and displays its credit usage", async () => {
 		render(<ModelUsagePage />);
 
-		expect(await screen.findByText("Test Model")).toBeInTheDocument();
+		expect(await screen.findAllByText("Test Model")).toHaveLength(2);
 		await waitFor(() => {
 			expect(mocks.getUserModelCreditInfo).toHaveBeenCalledWith(
 				"model-1",
@@ -79,6 +82,9 @@ describe("ModelUsagePage", () => {
 		expect(screen.getByText("6")).toBeInTheDocument();
 		expect(screen.getByText("40%")).toBeInTheDocument();
 		expect(screen.getAllByText("usage:overview.requests")).toHaveLength(2);
+		expect(
+			screen.getByText("usage:restriction.restricted"),
+		).toBeInTheDocument();
 		expect(
 			screen.queryByText("usage:pricing.title"),
 		).not.toBeInTheDocument();
@@ -117,6 +123,9 @@ describe("ModelUsagePage", () => {
 				TOTAL_TOKENS: 150,
 				TOTAL_REQUESTS: 2,
 				TOTAL_CREDITS: 4,
+				HAS_RESTRICTION: true,
+				RESTRICTION_TYPE: "credit",
+				RESTRICTION_FREQUENCY: "MONTH",
 			},
 			{
 				ENGINE_ID: "model-2",
@@ -126,6 +135,9 @@ describe("ModelUsagePage", () => {
 				TOTAL_TOKENS: 30,
 				TOTAL_REQUESTS: 1,
 				TOTAL_CREDITS: 1,
+				HAS_RESTRICTION: false,
+				RESTRICTION_TYPE: null,
+				RESTRICTION_FREQUENCY: null,
 			},
 		]);
 
@@ -141,14 +153,19 @@ describe("ModelUsagePage", () => {
 		});
 	});
 
-	test("defaults the custom range to the rolling month ending today", () => {
-		expect(getLastMonthDateRange(new Date(2026, 8, 2))).toEqual({
-			startDate: "2026-08-02",
-			endDate: "2026-09-02",
+	test("builds calendar-based preset ranges ending today", () => {
+		const reference = new Date(2026, 8, 3);
+		expect(getPresetDateRange("today", reference)).toEqual({
+			startDate: "2026-09-03",
+			endDate: "2026-09-03",
 		});
-		expect(getLastMonthDateRange(new Date(2026, 2, 31))).toEqual({
-			startDate: "2026-02-28",
-			endDate: "2026-03-31",
+		expect(getPresetDateRange("week", reference)).toEqual({
+			startDate: "2026-08-31",
+			endDate: "2026-09-03",
+		});
+		expect(getPresetDateRange("month", reference)).toEqual({
+			startDate: "2026-09-01",
+			endDate: "2026-09-03",
 		});
 	});
 
@@ -168,7 +185,7 @@ describe("ModelUsagePage", () => {
 
 		render(<ModelUsagePage />);
 
-		await screen.findByLabelText("usage:dateRange.start");
+		await screen.findByText("Test Model");
 		expect(
 			screen.queryByText("usage:noRestriction.title"),
 		).not.toBeInTheDocument();
@@ -209,6 +226,7 @@ describe("ModelUsagePage", () => {
 		});
 
 		render(<ModelUsagePage />);
+		fireEvent.click(await screen.findByText("usage:dateRange.custom"));
 
 		const startInput = await screen.findByLabelText(
 			"usage:dateRange.start",
