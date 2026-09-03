@@ -132,7 +132,7 @@ export const GitBranchControl = ({
 						size="sm"
 						disabled={isSwitching}
 						className={cn(
-							"min-w-0 max-w-56 justify-between",
+							"min-w-0 max-w-56 justify-between rounded-md border border-input",
 							triggerClassName,
 						)}
 						aria-label={`${label}: ${branchLabel}`}
