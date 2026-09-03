@@ -1,5 +1,5 @@
 import { DownloadIcon, FileIcon } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { useTranslation } from "@semoss/i18n";
 import {
 	download as downloadFile,
@@ -57,18 +57,7 @@ const EngineFileDownloadViewerPanel: WorkbenchComponent<
 		{ data: "" },
 		targetInsightId,
 	);
-	const refreshRef = useRef(rawFile.refresh);
-	refreshRef.current = rawFile.refresh;
-
-	// setValue changes identity after writing the value.
-	// biome-ignore lint/correctness/useExhaustiveDependencies: see above
-	useEffect(() => {
-		const value: EngineFileDownloadViewerControlValue = {
-			setViewMode,
-			viewMode,
-		};
-		setValue(value);
-	}, [viewMode]);
+	useEffect(() => setValue({ setViewMode, viewMode }), [setValue, viewMode]);
 	useWorkbenchControl(id, EngineFileDownloadViewerControl);
 
 	/** Download the current file from its owning engine or insight. */
@@ -160,7 +149,7 @@ const EngineFileDownloadViewerPanel: WorkbenchComponent<
 				canSave: false,
 				isBusy: isDownloading || rawFile.status === "LOADING",
 				onDownload: () => void download(),
-				onRefresh: () => refreshRef.current(),
+				onRefresh: () => rawFile.refresh(),
 			})}
 		/>
 	);

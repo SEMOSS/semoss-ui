@@ -1,4 +1,5 @@
 import type { StoreApi } from "zustand";
+import { shallow } from "zustand/shallow";
 import type {
 	WorkbenchBorders,
 	WorkbenchCommand,
@@ -1157,17 +1158,20 @@ export const createWorkbenchLayoutSlice = (
 					});
 				},
 				setPanelValue: (pid, next) => {
+					const prev = get().layout.values[pid];
+					const resolved =
+						typeof next === "function"
+							? (next as (prev: unknown) => unknown)(prev)
+							: next;
+					if (shallow(prev, resolved)) {
+						return;
+					}
 					set((root) => ({
 						layout: {
 							...root.layout,
 							values: {
 								...root.layout.values,
-								[pid]:
-									typeof next === "function"
-										? (next as (prev: unknown) => unknown)(
-												root.layout.values[pid],
-											)
-										: next,
+								[pid]: resolved,
 							},
 						},
 					}));

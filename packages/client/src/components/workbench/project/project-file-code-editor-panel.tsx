@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "@semoss/i18n";
 import {
 	download as downloadFile,
@@ -55,8 +55,6 @@ const ProjectFileCodeEditorPanel: WorkbenchComponent<
 	const baselineRef = useRef("");
 	const contentRef = useRef("");
 	const appliedRevisionRef = useRef(0);
-	const refreshRef = useRef<() => void>(() => undefined);
-	const saveRef = useRef<() => Promise<void>>(async () => undefined);
 
 	const getFile = usePixel<string>(
 		`GetAppAssets(filePath=[${JSON.stringify(config.path)}], project=[${JSON.stringify(project.project_id)}]);`,
@@ -68,7 +66,7 @@ const ProjectFileCodeEditorPanel: WorkbenchComponent<
 	);
 
 	/** Save the current editor buffer to the project asset. */
-	const save = async () => {
+	const save = useCallback(async () => {
 		if (readOnly || isSaving) return;
 
 		const nextContent = contentRef.current;
@@ -96,7 +94,16 @@ const ProjectFileCodeEditorPanel: WorkbenchComponent<
 		} finally {
 			setIsSaving(false);
 		}
-	};
+	}, [
+		readOnly,
+		isSaving,
+		project.project_id,
+		config.name,
+		insight.insightId,
+		rename,
+		t,
+		currentPathRef,
+	]);
 
 	/** Download the current project file. */
 	const download = async () => {
@@ -133,8 +140,6 @@ const ProjectFileCodeEditorPanel: WorkbenchComponent<
 	};
 
 	contentRef.current = content;
-	refreshRef.current = getFile.refresh;
-	saveRef.current = save;
 
 	useEffect(() => {
 		if (
@@ -153,17 +158,14 @@ const ProjectFileCodeEditorPanel: WorkbenchComponent<
 
 	const isBusy = isSaving || isDownloading || getFile.status === "LOADING";
 
-	// setValue changes identity after writing the value.
-	// biome-ignore lint/correctness/useExhaustiveDependencies: see above
 	useEffect(() => {
-		const value: ProjectFileCodeEditorControlValue = {
+		setValue({
 			canSave: !readOnly,
 			isBusy,
-			refresh: () => refreshRef.current(),
-			save: () => void saveRef.current(),
-		};
-		setValue(value);
-	}, [isBusy, readOnly]);
+			refresh: getFile.refresh,
+			save,
+		});
+	}, [getFile.refresh, isBusy, readOnly, save, setValue]);
 	useWorkbenchControl(id, ProjectFileCodeEditorControl);
 
 	if (getFile.status === "LOADING" || getFile.status === "INITIAL") {
@@ -197,12 +199,11 @@ const ProjectFileCodeEditorPanel: WorkbenchComponent<
 				canSave: !readOnly,
 				isBusy,
 				onDownload: () => void download(),
-				onRefresh: () => refreshRef.current(),
-				onSave: () => void saveRef.current(),
+				onRefresh: () => getFile.refresh(),
+				onSave: save,
 			})}
 			onChange={(value) => {
 				const nextContent = value ?? "";
-				console.log(nextContent);
 				contentRef.current = nextContent;
 				setContent(nextContent);
 				rename(

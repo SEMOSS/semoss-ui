@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect } from "react";
 import { usePixel } from "@semoss/sdk/react";
 import { getFileIconComponent } from "@semoss/shared";
 import { Muted, Spinner } from "@semoss/ui/next";
@@ -8,10 +8,7 @@ import type {
 	WorkbenchPanelConfig,
 } from "@/stores/workbench";
 import { getImageMimeType } from "../file-editor.utility";
-import {
-	ProjectFileImageEditorControl,
-	type ProjectFileImageEditorControlValue,
-} from "./project-file-image-editor-control";
+import { ProjectFileImageEditorControl } from "./project-file-image-editor-control";
 
 export interface ProjectFileImageEditorConfig {
 	name: string;
@@ -27,17 +24,10 @@ const ProjectFileImageEditorPanel: WorkbenchComponent<
 		`GetAppAssetsBase64(filePath=[${JSON.stringify(config.path)}], project=[${JSON.stringify(project.project_id)}]);`,
 		{ data: "" },
 	);
-	const refreshRef = useRef(image.refresh);
-	refreshRef.current = image.refresh;
-
-	// setValue changes identity after writing the value.
-	// biome-ignore lint/correctness/useExhaustiveDependencies: see above
-	useEffect(() => {
-		const value: ProjectFileImageEditorControlValue = {
-			refresh: () => refreshRef.current(),
-		};
-		setValue(value);
-	}, []);
+	useEffect(
+		() => setValue({ refresh: image.refresh }),
+		[image.refresh, setValue],
+	);
 	useWorkbenchControl(id, ProjectFileImageEditorControl);
 
 	if (image.status === "LOADING" || image.status === "INITIAL") {

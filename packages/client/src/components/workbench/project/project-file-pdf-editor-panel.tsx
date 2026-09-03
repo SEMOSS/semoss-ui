@@ -1,5 +1,5 @@
 import { DownloadIcon } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { useTranslation } from "@semoss/i18n";
 import {
 	download as downloadFile,
@@ -17,10 +17,7 @@ import type {
 	WorkbenchComponent,
 	WorkbenchPanelConfig,
 } from "@/stores/workbench";
-import {
-	ProjectFilePdfEditorControl,
-	type ProjectFilePdfEditorControlValue,
-} from "./project-file-pdf-editor-control";
+import { ProjectFilePdfEditorControl } from "./project-file-pdf-editor-control";
 
 export interface ProjectFilePdfEditorConfig {
 	name: string;
@@ -39,17 +36,10 @@ const ProjectFilePdfEditorPanel: WorkbenchComponent<
 		`GetAppAssetsBase64(filePath=[${JSON.stringify(config.path)}], project=[${JSON.stringify(project.project_id)}]);`,
 		{ data: "" },
 	);
-	const refreshRef = useRef(pdf.refresh);
-	refreshRef.current = pdf.refresh;
-
-	// setValue changes identity after writing the value.
-	// biome-ignore lint/correctness/useExhaustiveDependencies: see above
-	useEffect(() => {
-		const value: ProjectFilePdfEditorControlValue = {
-			refresh: () => refreshRef.current(),
-		};
-		setValue(value);
-	}, []);
+	useEffect(
+		() => setValue({ refresh: pdf.refresh }),
+		[pdf.refresh, setValue],
+	);
 	useWorkbenchControl(id, ProjectFilePdfEditorControl);
 
 	/** Download the PDF when the browser cannot render it inline. */

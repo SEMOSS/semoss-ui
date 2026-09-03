@@ -1,5 +1,5 @@
 import { PlayIcon, SquareIcon } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "@semoss/i18n";
 import {
 	download as downloadFile,
@@ -91,11 +91,6 @@ const EngineFileNotebookEditorPanel: WorkbenchComponent<
 	const contentRef = useRef("");
 	const viewModeRef = useRef<"notebook" | "raw">("notebook");
 	const appliedRevisionRef = useRef(0);
-	const refreshRef = useRef<() => void>(() => undefined);
-	const saveRef = useRef<() => Promise<void>>(async () => undefined);
-	const setViewModeRef = useRef<(mode: "notebook" | "raw") => void>(
-		() => undefined,
-	);
 
 	const getFile = usePixel<string>(
 		config.fileMode === "INSIGHT"
@@ -109,7 +104,7 @@ const EngineFileNotebookEditorPanel: WorkbenchComponent<
 	);
 
 	/** Save the serialized notebook to its owning asset scope. */
-	const save = async () => {
+	const save = useCallback(async () => {
 		if (readOnly || isSaving) return;
 
 		const serialized =
@@ -145,7 +140,17 @@ const EngineFileNotebookEditorPanel: WorkbenchComponent<
 		} finally {
 			setIsSaving(false);
 		}
-	};
+	}, [
+		readOnly,
+		isSaving,
+		config.fileMode,
+		config.name,
+		engine.engine_id,
+		targetInsightId,
+		rename,
+		t,
+		currentPathRef,
+	]);
 
 	/** Download the current notebook file. */
 	const download = async () => {
@@ -183,11 +188,8 @@ const EngineFileNotebookEditorPanel: WorkbenchComponent<
 		}
 	};
 
-	contentRef.current = content;
-	viewModeRef.current = viewMode;
-	refreshRef.current = getFile.refresh;
-	saveRef.current = save;
-	setViewModeRef.current = (nextMode) => {
+	/** Switch between the notebook and raw JSON views, serializing across the switch. */
+	const setNotebookViewMode = useCallback((nextMode: "notebook" | "raw") => {
 		if (nextMode === viewModeRef.current) return;
 
 		if (nextMode === "raw") {
@@ -205,7 +207,10 @@ const EngineFileNotebookEditorPanel: WorkbenchComponent<
 
 		viewModeRef.current = nextMode;
 		setViewMode(nextMode);
-	};
+	}, []);
+
+	contentRef.current = content;
+	viewModeRef.current = viewMode;
 
 	useEffect(() => {
 		if (
@@ -230,19 +235,24 @@ const EngineFileNotebookEditorPanel: WorkbenchComponent<
 		getFile.status === "LOADING" ||
 		notebookState.isRunning;
 
-	// setValue changes identity after writing the value.
-	// biome-ignore lint/correctness/useExhaustiveDependencies: see above
 	useEffect(() => {
-		const value: EngineFileNotebookEditorControlValue = {
+		setValue({
 			canSave: !readOnly,
 			isBusy,
-			refresh: () => refreshRef.current(),
-			save: () => void saveRef.current(),
-			setViewMode: (mode) => setViewModeRef.current(mode),
+			refresh: getFile.refresh,
+			save,
+			setViewMode: setNotebookViewMode,
 			viewMode,
-		};
-		setValue(value);
-	}, [isBusy, readOnly, viewMode]);
+		});
+	}, [
+		getFile.refresh,
+		isBusy,
+		readOnly,
+		save,
+		setValue,
+		setNotebookViewMode,
+		viewMode,
+	]);
 	useWorkbenchControl(id, EngineFileNotebookEditorControl);
 
 	if (getFile.status === "LOADING" || getFile.status === "INITIAL") {
@@ -277,8 +287,8 @@ const EngineFileNotebookEditorPanel: WorkbenchComponent<
 					canSave: !readOnly,
 					isBusy,
 					onDownload: () => void download(),
-					onRefresh: () => refreshRef.current(),
-					onSave: () => void saveRef.current(),
+					onRefresh: () => getFile.refresh(),
+					onSave: save,
 				})}
 				onChange={(value) => {
 					const nextContent = value ?? "";

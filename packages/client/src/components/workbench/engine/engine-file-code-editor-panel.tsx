@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "@semoss/i18n";
 import {
 	download as downloadFile,
@@ -65,8 +65,6 @@ const EngineFileCodeEditorPanel: WorkbenchComponent<
 	const baselineRef = useRef("");
 	const contentRef = useRef("");
 	const appliedRevisionRef = useRef(0);
-	const refreshRef = useRef<() => void>(() => undefined);
-	const saveRef = useRef<() => Promise<void>>(async () => undefined);
 
 	const getFile = usePixel<string>(
 		config.fileMode === "INSIGHT"
@@ -80,7 +78,7 @@ const EngineFileCodeEditorPanel: WorkbenchComponent<
 	);
 
 	/** Save the current editor buffer to its owning asset scope. */
-	const save = async () => {
+	const save = useCallback(async () => {
 		if (readOnly || isSaving) return;
 
 		const currentPath = currentPathRef.current;
@@ -111,7 +109,17 @@ const EngineFileCodeEditorPanel: WorkbenchComponent<
 		} finally {
 			setIsSaving(false);
 		}
-	};
+	}, [
+		readOnly,
+		isSaving,
+		config.fileMode,
+		config.name,
+		engine.engine_id,
+		targetInsightId,
+		rename,
+		t,
+		currentPathRef,
+	]);
 
 	/** Download the current file through its active insight. */
 	const download = async () => {
@@ -151,8 +159,6 @@ const EngineFileCodeEditorPanel: WorkbenchComponent<
 	};
 
 	contentRef.current = content;
-	refreshRef.current = getFile.refresh;
-	saveRef.current = save;
 
 	useEffect(() => {
 		if (
@@ -171,17 +177,14 @@ const EngineFileCodeEditorPanel: WorkbenchComponent<
 
 	const isBusy = isSaving || isDownloading || getFile.status === "LOADING";
 
-	// setValue changes identity after writing the value.
-	// biome-ignore lint/correctness/useExhaustiveDependencies: see above
 	useEffect(() => {
-		const value: EngineFileCodeEditorControlValue = {
+		setValue({
 			canSave: !readOnly,
 			isBusy,
-			refresh: () => refreshRef.current(),
-			save: () => void saveRef.current(),
-		};
-		setValue(value);
-	}, [isBusy, readOnly]);
+			refresh: getFile.refresh,
+			save,
+		});
+	}, [getFile.refresh, isBusy, readOnly, save, setValue]);
 	useWorkbenchControl(id, EngineFileCodeEditorControl);
 
 	if (getFile.status === "LOADING" || getFile.status === "INITIAL") {
@@ -215,8 +218,8 @@ const EngineFileCodeEditorPanel: WorkbenchComponent<
 				canSave: !readOnly,
 				isBusy,
 				onDownload: () => void download(),
-				onRefresh: () => refreshRef.current(),
-				onSave: () => void saveRef.current(),
+				onRefresh: () => getFile.refresh(),
+				onSave: save,
 			})}
 			onChange={(value) => {
 				const nextContent = value ?? "";

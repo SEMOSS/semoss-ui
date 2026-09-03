@@ -1,5 +1,5 @@
 import { DownloadIcon } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { useTranslation } from "@semoss/i18n";
 import {
 	download as downloadFile,
@@ -17,10 +17,7 @@ import type {
 	WorkbenchComponent,
 	WorkbenchPanelConfig,
 } from "@/stores/workbench";
-import {
-	EngineFilePdfEditorControl,
-	type EngineFilePdfEditorControlValue,
-} from "./engine-file-pdf-editor-control";
+import { EngineFilePdfEditorControl } from "./engine-file-pdf-editor-control";
 
 export interface EngineFilePdfEditorConfig {
 	name: string;
@@ -47,17 +44,10 @@ const EngineFilePdfEditorPanel: WorkbenchComponent<
 		{ data: "" },
 		targetInsightId,
 	);
-	const refreshRef = useRef(pdf.refresh);
-	refreshRef.current = pdf.refresh;
-
-	// setValue changes identity after writing the value.
-	// biome-ignore lint/correctness/useExhaustiveDependencies: see above
-	useEffect(() => {
-		const value: EngineFilePdfEditorControlValue = {
-			refresh: () => refreshRef.current(),
-		};
-		setValue(value);
-	}, []);
+	useEffect(
+		() => setValue({ refresh: pdf.refresh }),
+		[pdf.refresh, setValue],
+	);
 	useWorkbenchControl(id, EngineFilePdfEditorControl);
 
 	/** Download the PDF when the browser cannot render it inline. */

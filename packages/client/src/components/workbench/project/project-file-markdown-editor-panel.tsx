@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "@semoss/i18n";
 import {
 	download as downloadFile,
@@ -12,14 +12,7 @@ import {
 	getFileOperationErrorMessage,
 	useFileEditorPathRef,
 } from "@semoss/shared";
-import {
-	CodeEditor,
-	cn,
-	Markdown,
-	Muted,
-	Spinner,
-	toast,
-} from "@semoss/ui/next";
+import { CodeEditor, Markdown, Muted, Spinner, toast } from "@semoss/ui/next";
 import { useProject, useWorkbenchControl } from "@/hooks";
 import type {
 	WorkbenchComponent,
@@ -63,8 +56,6 @@ const ProjectFileMarkdownEditorPanel: WorkbenchComponent<
 	const baselineRef = useRef("");
 	const contentRef = useRef("");
 	const appliedRevisionRef = useRef(0);
-	const refreshRef = useRef<() => void>(() => undefined);
-	const saveRef = useRef<() => Promise<void>>(async () => undefined);
 
 	const getFile = usePixel<string>(
 		`GetAppAssets(filePath=[${JSON.stringify(config.path)}], project=[${JSON.stringify(project.project_id)}]);`,
@@ -76,7 +67,7 @@ const ProjectFileMarkdownEditorPanel: WorkbenchComponent<
 	);
 
 	/** Save the Markdown source to the project asset. */
-	const save = async () => {
+	const save = useCallback(async () => {
 		if (readOnly || isSaving) return;
 
 		const nextContent = contentRef.current;
@@ -104,7 +95,16 @@ const ProjectFileMarkdownEditorPanel: WorkbenchComponent<
 		} finally {
 			setIsSaving(false);
 		}
-	};
+	}, [
+		readOnly,
+		isSaving,
+		project.project_id,
+		config.name,
+		insight.insightId,
+		rename,
+		t,
+		currentPathRef,
+	]);
 
 	/** Download the current project Markdown file. */
 	const download = async () => {
@@ -141,8 +141,6 @@ const ProjectFileMarkdownEditorPanel: WorkbenchComponent<
 	};
 
 	contentRef.current = content;
-	refreshRef.current = getFile.refresh;
-	saveRef.current = save;
 
 	useEffect(() => {
 		if (
@@ -161,19 +159,16 @@ const ProjectFileMarkdownEditorPanel: WorkbenchComponent<
 
 	const isBusy = isSaving || isDownloading || getFile.status === "LOADING";
 
-	// setValue changes identity after writing the value.
-	// biome-ignore lint/correctness/useExhaustiveDependencies: see above
 	useEffect(() => {
-		const value: ProjectFileMarkdownEditorControlValue = {
+		setValue({
 			canSave: !readOnly,
 			isBusy,
-			refresh: () => refreshRef.current(),
-			save: () => void saveRef.current(),
+			refresh: getFile.refresh,
+			save,
 			setViewMode,
 			viewMode,
-		};
-		setValue(value);
-	}, [isBusy, readOnly, viewMode]);
+		});
+	}, [getFile.refresh, isBusy, readOnly, save, setValue, viewMode]);
 	useWorkbenchControl(id, ProjectFileMarkdownEditorControl);
 
 	if (getFile.status === "LOADING" || getFile.status === "INITIAL") {
@@ -199,12 +194,7 @@ const ProjectFileMarkdownEditorPanel: WorkbenchComponent<
 
 	return (
 		<div className="relative size-full overflow-hidden bg-background">
-			<div
-				className={cn(
-					"absolute inset-0",
-					viewMode === "preview" && "pointer-events-none invisible",
-				)}
-			>
+			{viewMode === "raw" ? (
 				<CodeEditor
 					className="size-full"
 					code={content}
@@ -214,8 +204,8 @@ const ProjectFileMarkdownEditorPanel: WorkbenchComponent<
 						canSave: !readOnly,
 						isBusy,
 						onDownload: () => void download(),
-						onRefresh: () => refreshRef.current(),
-						onSave: () => void saveRef.current(),
+						onRefresh: () => getFile.refresh(),
+						onSave: save,
 					})}
 					onChange={(value) => {
 						const nextContent = value ?? "";
@@ -228,8 +218,7 @@ const ProjectFileMarkdownEditorPanel: WorkbenchComponent<
 						);
 					}}
 				/>
-			</div>
-			{viewMode === "preview" && (
+			) : (
 				<div className="size-full overflow-y-auto px-6 py-4">
 					<Markdown>{content}</Markdown>
 				</div>

@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect } from "react";
 import { useInsight, usePixel } from "@semoss/sdk/react";
 import { getFileIconComponent } from "@semoss/shared";
 import { Muted, Spinner } from "@semoss/ui/next";
@@ -8,10 +8,7 @@ import type {
 	WorkbenchPanelConfig,
 } from "@/stores/workbench";
 import { getImageMimeType } from "../file-editor.utility";
-import {
-	EngineFileImageEditorControl,
-	type EngineFileImageEditorControlValue,
-} from "./engine-file-image-editor-control";
+import { EngineFileImageEditorControl } from "./engine-file-image-editor-control";
 
 export interface EngineFileImageEditorConfig {
 	name: string;
@@ -36,17 +33,10 @@ const EngineFileImageEditorPanel: WorkbenchComponent<
 		{ data: "" },
 		targetInsightId,
 	);
-	const refreshRef = useRef(image.refresh);
-	refreshRef.current = image.refresh;
-
-	// setValue changes identity after writing the value.
-	// biome-ignore lint/correctness/useExhaustiveDependencies: see above
-	useEffect(() => {
-		const value: EngineFileImageEditorControlValue = {
-			refresh: () => refreshRef.current(),
-		};
-		setValue(value);
-	}, []);
+	useEffect(
+		() => setValue({ refresh: image.refresh }),
+		[image.refresh, setValue],
+	);
 	useWorkbenchControl(id, EngineFileImageEditorControl);
 
 	if (image.status === "LOADING" || image.status === "INITIAL") {
