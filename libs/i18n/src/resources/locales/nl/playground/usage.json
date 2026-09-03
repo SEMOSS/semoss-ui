@@ -23,7 +23,12 @@
 		"credits": "Credits",
 		"requests": "Aanvragen",
 		"inputTokens": "Invoertokens",
-		"outputTokens": "Uitvoertokens"
+		"outputTokens": "Uitvoertokens",
+		"tokenBreakdown": "Tokenverdeling",
+		"totalTokens": "Totaal tokens",
+		"cacheReadTokens": "Cache-leestokens",
+		"cacheCreationTokens": "Cache-aanmaaktokens",
+		"thinkingTokens": "Redeneertokens"
 	},
 	"model": { "label": "Model", "placeholder": "Selecteer een model" },
 	"modelsError": {

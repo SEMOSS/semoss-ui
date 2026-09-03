@@ -23,7 +23,12 @@
 		"credits": "Credits",
 		"requests": "Requests",
 		"inputTokens": "Input tokens",
-		"outputTokens": "Output tokens"
+		"outputTokens": "Output tokens",
+		"tokenBreakdown": "Token breakdown",
+		"totalTokens": "Total tokens",
+		"cacheReadTokens": "Cache-read tokens",
+		"cacheCreationTokens": "Cache-creation tokens",
+		"thinkingTokens": "Thinking tokens"
 	},
 	"model": {
 		"label": "Model",

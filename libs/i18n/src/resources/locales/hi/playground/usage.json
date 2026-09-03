@@ -23,7 +23,12 @@
 		"credits": "क्रेडिट",
 		"requests": "अनुरोध",
 		"inputTokens": "इनपुट टोकन",
-		"outputTokens": "आउटपुट टोकन"
+		"outputTokens": "आउटपुट टोकन",
+		"tokenBreakdown": "टोकन विवरण",
+		"totalTokens": "कुल टोकन",
+		"cacheReadTokens": "कैश-पठन टोकन",
+		"cacheCreationTokens": "कैश-निर्माण टोकन",
+		"thinkingTokens": "रीज़निंग टोकन"
 	},
 	"model": { "label": "मॉडल", "placeholder": "मॉडल चुनें" },
 	"modelsError": {

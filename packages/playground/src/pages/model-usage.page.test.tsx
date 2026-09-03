@@ -71,6 +71,13 @@ describe("ModelUsagePage", () => {
 				TOTAL_TOKENS: 150,
 				TOTAL_REQUESTS: 2,
 				TOTAL_CREDITS: 4,
+				TOKEN_DETAIL: {
+					INPUT_TOKENS: 100,
+					OUTPUT_TOKENS: 50,
+					CACHE_READ_TOKENS: 25,
+					CACHE_CREATION_TOKENS: 10,
+					THINKING_TOKENS: 5,
+				},
 				HAS_RESTRICTION: true,
 				RESTRICTION_TYPE: "credit",
 				RESTRICTION_FREQUENCY: "MONTH",
@@ -98,6 +105,18 @@ describe("ModelUsagePage", () => {
 		expect(screen.getAllByText("usage:overview.requests")).toHaveLength(2);
 		expect(
 			screen.getByText("usage:restriction.restricted"),
+		).toBeInTheDocument();
+		expect(
+			screen.getByText("usage:overview.tokenBreakdown"),
+		).toBeInTheDocument();
+		expect(
+			screen.getByText("usage:overview.cacheReadTokens"),
+		).toBeInTheDocument();
+		expect(
+			screen.getByText("usage:overview.cacheCreationTokens"),
+		).toBeInTheDocument();
+		expect(
+			screen.getByText("usage:overview.thinkingTokens"),
 		).toBeInTheDocument();
 		expect(
 			screen.queryByText("usage:pricing.title"),

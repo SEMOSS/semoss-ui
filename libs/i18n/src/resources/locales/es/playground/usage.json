@@ -23,7 +23,12 @@
 		"credits": "Créditos",
 		"requests": "Solicitudes",
 		"inputTokens": "Tokens de entrada",
-		"outputTokens": "Tokens de salida"
+		"outputTokens": "Tokens de salida",
+		"tokenBreakdown": "Desglose de tokens",
+		"totalTokens": "Tokens totales",
+		"cacheReadTokens": "Tokens leídos de caché",
+		"cacheCreationTokens": "Tokens de creación de caché",
+		"thinkingTokens": "Tokens de razonamiento"
 	},
 	"model": { "label": "Modelo", "placeholder": "Selecciona un modelo" },
 	"modelsError": {

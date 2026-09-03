@@ -23,7 +23,12 @@
 		"credits": "Crédits",
 		"requests": "Requêtes",
 		"inputTokens": "Jetons d’entrée",
-		"outputTokens": "Jetons de sortie"
+		"outputTokens": "Jetons de sortie",
+		"tokenBreakdown": "Répartition des jetons",
+		"totalTokens": "Total des jetons",
+		"cacheReadTokens": "Jetons lus du cache",
+		"cacheCreationTokens": "Jetons de création du cache",
+		"thinkingTokens": "Jetons de raisonnement"
 	},
 	"model": { "label": "Modèle", "placeholder": "Sélectionner un modèle" },
 	"modelsError": {

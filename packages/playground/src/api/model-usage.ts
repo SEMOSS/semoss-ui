@@ -34,6 +34,13 @@ export interface ModelUsageSummary {
 	TOTAL_TOKENS: number;
 	TOTAL_REQUESTS: number;
 	TOTAL_CREDITS: number;
+	TOKEN_DETAIL?: {
+		INPUT_TOKENS: number;
+		OUTPUT_TOKENS: number;
+		CACHE_READ_TOKENS: number;
+		CACHE_CREATION_TOKENS: number;
+		THINKING_TOKENS: number;
+	};
 	HAS_RESTRICTION: boolean;
 	RESTRICTION_TYPE: string | null;
 	RESTRICTION_FREQUENCY: string | null;

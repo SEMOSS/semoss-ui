@@ -23,7 +23,12 @@
 		"credits": "الرصيد",
 		"requests": "الطلبات",
 		"inputTokens": "رموز الإدخال",
-		"outputTokens": "رموز الإخراج"
+		"outputTokens": "رموز الإخراج",
+		"tokenBreakdown": "تفصيل الرموز",
+		"totalTokens": "إجمالي الرموز",
+		"cacheReadTokens": "رموز قراءة ذاكرة التخزين المؤقت",
+		"cacheCreationTokens": "رموز إنشاء ذاكرة التخزين المؤقت",
+		"thinkingTokens": "رموز التفكير"
 	},
 	"model": { "label": "النموذج", "placeholder": "اختر نموذجًا" },
 	"modelsError": {

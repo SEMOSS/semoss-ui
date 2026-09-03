@@ -521,6 +521,58 @@ export const ModelUsagePage = () => {
 								<Card>
 									<CardHeader>
 										<CardTitle>
+											{t("usage:overview.tokenBreakdown")}
+										</CardTitle>
+									</CardHeader>
+									<CardContent className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+										{[
+											{
+												label: t(
+													"usage:overview.totalTokens",
+												),
+												value: selectedUsage?.TOTAL_TOKENS,
+											},
+											{
+												label: t(
+													"usage:overview.cacheReadTokens",
+												),
+												value: selectedUsage
+													?.TOKEN_DETAIL
+													?.CACHE_READ_TOKENS,
+											},
+											{
+												label: t(
+													"usage:overview.cacheCreationTokens",
+												),
+												value: selectedUsage
+													?.TOKEN_DETAIL
+													?.CACHE_CREATION_TOKENS,
+											},
+											{
+												label: t(
+													"usage:overview.thinkingTokens",
+												),
+												value: selectedUsage
+													?.TOKEN_DETAIL
+													?.THINKING_TOKENS,
+											},
+										].map(({ label, value }) => (
+											<div
+												key={label}
+												className="rounded-lg border p-4"
+											>
+												<Muted>{label}</Muted>
+												<div className="mt-1 font-semibold text-xl tabular-nums">
+													{formatCount(value, locale)}
+												</div>
+											</div>
+										))}
+									</CardContent>
+								</Card>
+
+								<Card>
+									<CardHeader>
+										<CardTitle>
 											{t("usage:overview.title")}
 										</CardTitle>
 										<CardDescription>

@@ -23,7 +23,12 @@
 		"credits": "クレジット",
 		"requests": "リクエスト",
 		"inputTokens": "入力トークン",
-		"outputTokens": "出力トークン"
+		"outputTokens": "出力トークン",
+		"tokenBreakdown": "トークン内訳",
+		"totalTokens": "合計トークン",
+		"cacheReadTokens": "キャッシュ読み取りトークン",
+		"cacheCreationTokens": "キャッシュ作成トークン",
+		"thinkingTokens": "思考トークン"
 	},
 	"model": { "label": "モデル", "placeholder": "モデルを選択" },
 	"modelsError": {
