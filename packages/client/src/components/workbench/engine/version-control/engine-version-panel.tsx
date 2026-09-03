@@ -1,19 +1,24 @@
 import { GitBranchIcon } from "lucide-react";
+import { useEffect } from "react";
 import { useIteratorPixel } from "@semoss/sdk/react";
 import type { GitCommit, GitDataStatus } from "@/components/git";
 import { GitHistory } from "@/components/git";
-import { useEngine } from "@/hooks";
+import { useEngine, useWorkbenchControl } from "@/hooks";
 import type {
 	WorkbenchComponent,
 	WorkbenchPanelConfig,
 	WorkbenchPanelParams,
 } from "@/stores/workbench";
 import { EngineGitCommitRow } from "./engine-git-commit-row";
+import { EngineVersionControl } from "./engine-version-control";
 
 const PAGE_SIZE = 20;
 
-/** Connect engine commit history and restore actions to shared Git UI. */
-const EngineVersionPanel: WorkbenchComponent<WorkbenchPanelParams> = () => {
+/** Connect engine commit history and panel refresh state to shared Git UI. */
+const EngineVersionPanel: WorkbenchComponent<WorkbenchPanelParams, number> = ({
+	id,
+	value,
+}) => {
 	const { engine, permission } = useEngine();
 	const history = useIteratorPixel<GitCommit[], GitCommit>(
 		(limit, offset) =>
@@ -34,6 +39,15 @@ const EngineVersionPanel: WorkbenchComponent<WorkbenchPanelParams> = () => {
 			: history.totalCount === 0
 				? "INITIAL"
 				: "SUCCESS";
+
+	useWorkbenchControl(id, EngineVersionControl);
+
+	useEffect(() => {
+		if (value === undefined) {
+			return;
+		}
+		history.reset();
+	}, [history.reset, value]);
 
 	return (
 		<GitHistory
@@ -57,15 +71,17 @@ const EngineVersionPanel: WorkbenchComponent<WorkbenchPanelParams> = () => {
 	);
 };
 
-/** Keep-alive engine version history panel without unsupported branch actions. */
-export const ENGINE_VERSION_PANEL: WorkbenchPanelConfig<WorkbenchPanelParams> =
-	{
-		name: "Version Control",
-		helpText: "Version Control",
-		icon: ({ className }) => <GitBranchIcon className={className} />,
-		canClose: false,
-		canRename: false,
-		canSplitTab: true,
-		mount: "keepAlive",
-		content: EngineVersionPanel,
-	};
+/** Keep-alive engine version history panel. */
+export const ENGINE_VERSION_PANEL: WorkbenchPanelConfig<
+	WorkbenchPanelParams,
+	number
+> = {
+	name: "Version Control",
+	helpText: "Version Control",
+	icon: ({ className }) => <GitBranchIcon className={className} />,
+	canClose: false,
+	canRename: false,
+	canSplitTab: true,
+	mount: "keepAlive",
+	content: EngineVersionPanel,
+};

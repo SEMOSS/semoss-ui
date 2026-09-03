@@ -42,6 +42,7 @@ export const EngineGitCommitRow = ({
 			{
 				name,
 				path: file.fileName,
+				side: "COMMIT",
 				commitId: commit.commitId,
 			},
 			{ name: `${name} (${commit.commitId.slice(0, 7)})` },
