@@ -3,10 +3,8 @@ import {
 	ArrowDownToLine,
 	ArrowUpFromLine,
 	CalendarRange,
-	CircleDollarSign,
 	MessageSquare,
 	RefreshCw,
-	TrendingDown,
 	TrendingUp,
 } from "lucide-react";
 import { useCallback, useEffect, useId, useMemo, useState } from "react";
@@ -34,6 +32,12 @@ import {
 	SelectValue,
 	Skeleton,
 	Small,
+	Table,
+	TableBody,
+	TableCell,
+	TableHead,
+	TableHeader,
+	TableRow,
 } from "@semoss/ui/next";
 import {
 	getUsageModels,
@@ -72,6 +76,14 @@ const formatDateInput = (date: Date): string => {
 	return `${year}-${month}-${day}`;
 };
 
+const formatDateOnly = (value: string, locale: string): string => {
+	const [year, month, day] = value.split("-").map(Number);
+	return new Intl.DateTimeFormat(locale, {
+		dateStyle: "medium",
+		timeZone: "UTC",
+	}).format(new Date(Date.UTC(year, month - 1, day)));
+};
+
 /** Return the rolling month ending today for the initial custom usage range. */
 export const getLastMonthDateRange = (reference = new Date()) => {
 	const targetYear =
@@ -96,10 +108,9 @@ export const getLastMonthDateRange = (reference = new Date()) => {
 	};
 };
 
-/** Self-service dashboard for model credit limits, usage, and pricing. */
+/** Self-service dashboard for model credit limits and usage. */
 export const ModelUsagePage = () => {
 	const { t, i18n } = useTranslation(["usage", "workspace"]);
-	const modelSelectId = useId();
 	const rangeSelectId = useId();
 	const startDateId = useId();
 	const endDateId = useId();
@@ -153,33 +164,23 @@ export const ModelUsagePage = () => {
 		}
 	}, []);
 
-	const loadUsage = useCallback(
-		async (modelId: string, rangeStart?: string, rangeEnd?: string) => {
-			if (!modelId) return;
-			setIsLoadingUsage(true);
-			setUsageError(false);
-			try {
-				const info =
-					rangeStart && rangeEnd
-						? await getUserModelCreditInfo(
-								modelId,
-								rangeStart,
-								rangeEnd,
-							)
-						: await getUserModelCreditInfo(modelId);
-				setCreditInfo(info);
-				if (!rangeStart && !rangeEnd && !info.restrictionEnabled) {
-					setRangeMode("custom");
-				}
-			} catch {
-				setCreditInfo(null);
-				setUsageError(true);
-			} finally {
-				setIsLoadingUsage(false);
+	const loadUsage = useCallback(async (modelId: string) => {
+		if (!modelId) return;
+		setIsLoadingUsage(true);
+		setUsageError(false);
+		try {
+			const info = await getUserModelCreditInfo(modelId);
+			setCreditInfo(info);
+			if (!info.restrictionEnabled) {
+				setRangeMode("custom");
 			}
-		},
-		[],
-	);
+		} catch {
+			setCreditInfo(null);
+			setUsageError(true);
+		} finally {
+			setIsLoadingUsage(false);
+		}
+	}, []);
 
 	useEffect(() => {
 		loadModels();
@@ -188,30 +189,13 @@ export const ModelUsagePage = () => {
 	useEffect(() => {
 		if (!selectedModelId) {
 			setCreditInfo(null);
-		} else if (rangeMode === "configured") {
-			loadUsage(selectedModelId);
-		} else if (
-			appliedStartDate &&
-			appliedEndDate &&
-			appliedStartDate <= appliedEndDate
-		) {
-			loadUsage(selectedModelId, appliedStartDate, appliedEndDate);
 		} else {
-			setCreditInfo(null);
+			loadUsage(selectedModelId);
 		}
-	}, [
-		appliedEndDate,
-		appliedStartDate,
-		loadUsage,
-		rangeMode,
-		selectedModelId,
-	]);
+	}, [loadUsage, selectedModelId]);
 
 	const selectedModel = models.find(
 		(model) => model.engine_id === selectedModelId,
-	);
-	const selectedUsageSummary = usageSummaries.find(
-		(summary) => summary.ENGINE_ID === selectedModelId,
 	);
 	const overviewStartDate =
 		rangeMode === "custom"
@@ -272,6 +256,21 @@ export const ModelUsagePage = () => {
 			Math.max(0, (creditInfo.creditsUsed / creditInfo.maxCredits) * 100),
 		);
 	}, [creditInfo]);
+	const usageTotals = useMemo(
+		() =>
+			usageSummaries.reduce(
+				(totals, summary) => ({
+					credits: totals.credits + (summary.TOTAL_CREDITS || 0),
+					requests: totals.requests + (summary.TOTAL_REQUESTS || 0),
+					inputTokens:
+						totals.inputTokens + (summary.INPUT_TOKENS || 0),
+					outputTokens:
+						totals.outputTokens + (summary.RESPONSE_TOKENS || 0),
+				}),
+				{ credits: 0, requests: 0, inputTokens: 0, outputTokens: 0 },
+			),
+		[usageSummaries],
+	);
 	const locale = i18n.resolvedLanguage || i18n.language || "en";
 
 	return (
@@ -285,15 +284,7 @@ export const ModelUsagePage = () => {
 					<Button
 						variant="outline"
 						onClick={() => {
-							if (rangeMode === "configured") {
-								loadUsage(selectedModelId);
-							} else {
-								loadUsage(
-									selectedModelId,
-									appliedStartDate,
-									appliedEndDate,
-								);
-							}
+							loadUsage(selectedModelId);
 							loadOverview(overviewStartDate, overviewEndDate);
 						}}
 						disabled={
@@ -342,41 +333,7 @@ export const ModelUsagePage = () => {
 						</CardHeader>
 					</Card>
 				) : (
-					<div className="grid w-full gap-4 md:grid-cols-2 lg:grid-cols-5">
-						<div className="flex flex-col gap-2">
-							<Label htmlFor={modelSelectId}>
-								{t("usage:model.label")}
-							</Label>
-							<Select
-								value={selectedModelId}
-								onValueChange={(modelId) => {
-									setRangeMode("configured");
-									setSelectedModelId(modelId);
-								}}
-							>
-								<SelectTrigger
-									id={modelSelectId}
-									className="w-full"
-								>
-									<SelectValue
-										placeholder={t(
-											"usage:model.placeholder",
-										)}
-									/>
-								</SelectTrigger>
-								<SelectContent>
-									{models.map((model) => (
-										<SelectItem
-											key={model.engine_id}
-											value={model.engine_id}
-										>
-											{model.engine_display_name ||
-												model.engine_name}
-										</SelectItem>
-									))}
-								</SelectContent>
-							</Select>
-						</div>
+					<div className="grid w-full gap-4 md:grid-cols-2 lg:grid-cols-4">
 						<div className="flex flex-col gap-2">
 							<Label htmlFor={rangeSelectId}>
 								{t("usage:dateRange.label")}
@@ -477,115 +434,201 @@ export const ModelUsagePage = () => {
 				)}
 
 				{models.length > 0 && overviewStartDate && overviewEndDate && (
-					<Card className="order-2">
-						<CardHeader>
-							<CardTitle>{t("usage:overview.title")}</CardTitle>
-							<CardDescription>
-								{t("usage:overview.description", {
-									start: overviewStartDate,
-									end: overviewEndDate,
-								})}
-							</CardDescription>
-						</CardHeader>
-						<CardContent>
-							{overviewError ? (
-								<Alert variant="destructive">
-									<AlertCircle aria-hidden />
-									<AlertTitle>
-										{t("usage:overview.error")}
-									</AlertTitle>
-								</Alert>
-							) : isLoadingOverview ? (
-								<div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-									<Skeleton className="h-40" />
-									<Skeleton className="h-40" />
-									<Skeleton className="h-40" />
+					<div className="contents">
+						{overviewError ? (
+							<Alert variant="destructive">
+								<AlertCircle aria-hidden />
+								<AlertTitle>
+									{t("usage:overview.error")}
+								</AlertTitle>
+							</Alert>
+						) : isLoadingOverview ? (
+							<div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+								{["credits", "requests", "input", "output"].map(
+									(key) => (
+										<Skeleton key={key} className="h-32" />
+									),
+								)}
+							</div>
+						) : (
+							<>
+								<div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+									{[
+										{
+											label: t("usage:overview.credits"),
+											value: usageTotals.credits,
+											icon: TrendingUp,
+										},
+										{
+											label: t("usage:overview.requests"),
+											value: usageTotals.requests,
+											icon: MessageSquare,
+										},
+										{
+											label: t(
+												"usage:overview.inputTokens",
+											),
+											value: usageTotals.inputTokens,
+											icon: ArrowDownToLine,
+										},
+										{
+											label: t(
+												"usage:overview.outputTokens",
+											),
+											value: usageTotals.outputTokens,
+											icon: ArrowUpFromLine,
+										},
+									].map(({ label, value, icon: Icon }) => (
+										<Card key={label}>
+											<CardHeader>
+												<Icon
+													className="size-5 text-primary"
+													aria-hidden
+												/>
+												<CardDescription>
+													{label}
+												</CardDescription>
+												<CardTitle className="text-2xl tabular-nums">
+													{formatCredits(
+														value,
+														locale,
+													)}
+												</CardTitle>
+											</CardHeader>
+										</Card>
+									))}
 								</div>
-							) : (
-								<div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-									{usageSummaries.map((summary) => {
-										const model = models.find(
-											(item) =>
-												item.engine_id ===
-												summary.ENGINE_ID,
-										);
-										return (
-											<button
-												type="button"
-												key={summary.ENGINE_ID}
-												onClick={() => {
-													setRangeMode("configured");
-													setCreditInfo(null);
-													setSelectedModelId(
-														summary.ENGINE_ID,
-													);
-												}}
-												className={`rounded-lg border p-4 text-left transition-colors hover:bg-muted/40 ${
-													selectedModelId ===
-													summary.ENGINE_ID
-														? "border-primary ring-1 ring-primary"
-														: "border-border"
-												}`}
-											>
-												<div className="mb-3 truncate font-semibold">
-													{model?.engine_display_name ||
-														model?.engine_name ||
-														summary.ENGINE_NAME ||
-														summary.ENGINE_ID}
-												</div>
-												<div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
-													<Muted>
+
+								<Card>
+									<CardHeader>
+										<CardTitle>
+											{t("usage:overview.title")}
+										</CardTitle>
+										<CardDescription>
+											{t("usage:overview.description", {
+												start: formatDateOnly(
+													overviewStartDate,
+													locale,
+												),
+												end: formatDateOnly(
+													overviewEndDate,
+													locale,
+												),
+											})}
+										</CardDescription>
+									</CardHeader>
+									<CardContent className="overflow-x-auto p-0">
+										<Table>
+											<TableHeader>
+												<TableRow className="hover:bg-transparent">
+													<TableHead>
+														{t("usage:model.label")}
+													</TableHead>
+													<TableHead className="text-right">
 														{t(
 															"usage:overview.credits",
 														)}
-													</Muted>
-													<span className="text-right font-medium">
-														{formatCredits(
-															summary.TOTAL_CREDITS,
-															locale,
-														)}
-													</span>
-													<Muted>
+													</TableHead>
+													<TableHead className="text-right">
 														{t(
 															"usage:overview.requests",
 														)}
-													</Muted>
-													<span className="text-right font-medium">
-														{formatCredits(
-															summary.TOTAL_REQUESTS,
-															locale,
-														)}
-													</span>
-													<Muted>
+													</TableHead>
+													<TableHead className="text-right">
 														{t(
 															"usage:overview.inputTokens",
 														)}
-													</Muted>
-													<span className="text-right font-medium">
-														{formatCredits(
-															summary.INPUT_TOKENS,
-															locale,
-														)}
-													</span>
-													<Muted>
+													</TableHead>
+													<TableHead className="text-right">
 														{t(
 															"usage:overview.outputTokens",
 														)}
-													</Muted>
-													<span className="text-right font-medium">
-														{formatCredits(
-															summary.RESPONSE_TOKENS,
-															locale,
-														)}
-													</span>
-												</div>
-											</button>
-										);
-									})}
-								</div>
-							)}
-						</CardContent>
-					</Card>
+													</TableHead>
+												</TableRow>
+											</TableHeader>
+											<TableBody>
+												{usageSummaries.map(
+													(summary) => {
+														const model =
+															models.find(
+																(item) =>
+																	item.engine_id ===
+																	summary.ENGINE_ID,
+															);
+														return (
+															<TableRow
+																key={
+																	summary.ENGINE_ID
+																}
+																className={
+																	selectedModelId ===
+																	summary.ENGINE_ID
+																		? "bg-muted/50"
+																		: undefined
+																}
+															>
+																<TableCell className="max-w-72 whitespace-normal font-medium">
+																	<button
+																		type="button"
+																		className="text-left hover:text-primary hover:underline"
+																		onClick={() =>
+																			setSelectedModelId(
+																				summary.ENGINE_ID,
+																			)
+																		}
+																	>
+																		{model?.engine_display_name ||
+																			model?.engine_name ||
+																			summary.ENGINE_NAME ||
+																			summary.ENGINE_ID}
+																	</button>
+																</TableCell>
+																{[
+																	{
+																		key: "credits",
+																		value: summary.TOTAL_CREDITS,
+																	},
+																	{
+																		key: "requests",
+																		value: summary.TOTAL_REQUESTS,
+																	},
+																	{
+																		key: "input",
+																		value: summary.INPUT_TOKENS,
+																	},
+																	{
+																		key: "output",
+																		value: summary.RESPONSE_TOKENS,
+																	},
+																].map(
+																	({
+																		key,
+																		value,
+																	}) => (
+																		<TableCell
+																			key={
+																				key
+																			}
+																			className="text-right tabular-nums"
+																		>
+																			{formatCredits(
+																				value,
+																				locale,
+																			)}
+																		</TableCell>
+																	),
+																)}
+															</TableRow>
+														);
+													},
+												)}
+											</TableBody>
+										</Table>
+									</CardContent>
+								</Card>
+							</>
+						)}
+					</div>
 				)}
 
 				{isLoadingUsage && selectedModelId ? (
@@ -610,128 +653,6 @@ export const ModelUsagePage = () => {
 								</AlertDescription>
 							</Alert>
 						)}
-						<div
-							className={`grid gap-4 ${
-								creditInfo.restrictionEnabled
-									? "sm:grid-cols-3"
-									: "sm:grid-cols-2 lg:grid-cols-4"
-							}`}
-						>
-							<Card>
-								<CardHeader>
-									<TrendingUp
-										className="size-5 text-primary"
-										aria-hidden
-									/>
-									<CardDescription>
-										{t("usage:metrics.used")}
-									</CardDescription>
-									<CardTitle className="text-2xl">
-										{formatCredits(
-											creditInfo.creditsUsed,
-											locale,
-										)}
-									</CardTitle>
-								</CardHeader>
-							</Card>
-							{creditInfo.restrictionEnabled ? (
-								<>
-									<Card>
-										<CardHeader>
-											<TrendingDown
-												className="size-5 text-success"
-												aria-hidden
-											/>
-											<CardDescription>
-												{t("usage:metrics.remaining")}
-											</CardDescription>
-											<CardTitle className="text-2xl">
-												{formatCredits(
-													creditInfo.creditsRemaining,
-													locale,
-												)}
-											</CardTitle>
-										</CardHeader>
-									</Card>
-									<Card>
-										<CardHeader>
-											<CircleDollarSign
-												className="size-5 text-primary"
-												aria-hidden
-											/>
-											<CardDescription>
-												{t("usage:metrics.limit")}
-											</CardDescription>
-											<CardTitle className="text-2xl">
-												{formatCredits(
-													creditInfo.maxCredits,
-													locale,
-												)}
-											</CardTitle>
-										</CardHeader>
-									</Card>
-								</>
-							) : (
-								<>
-									<Card>
-										<CardHeader>
-											<MessageSquare
-												className="size-5 text-primary"
-												aria-hidden
-											/>
-											<CardDescription>
-												{t("usage:overview.requests")}
-											</CardDescription>
-											<CardTitle className="text-2xl">
-												{formatCredits(
-													selectedUsageSummary?.TOTAL_REQUESTS,
-													locale,
-												)}
-											</CardTitle>
-										</CardHeader>
-									</Card>
-									<Card>
-										<CardHeader>
-											<ArrowDownToLine
-												className="size-5 text-primary"
-												aria-hidden
-											/>
-											<CardDescription>
-												{t(
-													"usage:overview.inputTokens",
-												)}
-											</CardDescription>
-											<CardTitle className="text-2xl">
-												{formatCredits(
-													selectedUsageSummary?.INPUT_TOKENS,
-													locale,
-												)}
-											</CardTitle>
-										</CardHeader>
-									</Card>
-									<Card>
-										<CardHeader>
-											<ArrowUpFromLine
-												className="size-5 text-primary"
-												aria-hidden
-											/>
-											<CardDescription>
-												{t(
-													"usage:overview.outputTokens",
-												)}
-											</CardDescription>
-											<CardTitle className="text-2xl">
-												{formatCredits(
-													selectedUsageSummary?.RESPONSE_TOKENS,
-													locale,
-												)}
-											</CardTitle>
-										</CardHeader>
-									</Card>
-								</>
-							)}
-						</div>
-
 						{usagePercent !== null && (
 							<Card>
 								<CardHeader>
@@ -744,6 +665,37 @@ export const ModelUsagePage = () => {
 									</CardDescription>
 								</CardHeader>
 								<CardContent className="flex flex-col gap-4">
+									<div className="grid gap-3 sm:grid-cols-3">
+										{[
+											{
+												label: t("usage:metrics.used"),
+												value: creditInfo.creditsUsed,
+											},
+											{
+												label: t(
+													"usage:metrics.remaining",
+												),
+												value: creditInfo.creditsRemaining,
+											},
+											{
+												label: t("usage:metrics.limit"),
+												value: creditInfo.maxCredits,
+											},
+										].map(({ label, value }) => (
+											<div
+												key={label}
+												className="rounded-lg border p-3"
+											>
+												<Muted>{label}</Muted>
+												<div className="mt-1 font-semibold text-lg tabular-nums">
+													{formatCredits(
+														value,
+														locale,
+													)}
+												</div>
+											</div>
+										))}
+									</div>
 									<div className="flex items-center justify-between gap-4">
 										<Muted>
 											{t("usage:period.consumed")}

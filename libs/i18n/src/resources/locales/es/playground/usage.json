@@ -12,7 +12,7 @@
 		"apply": "Aplicar"
 	},
 	"overview": {
-		"title": "Resumen de todos los modelos",
+		"title": "Uso por modelo",
 		"description": "Uso del {{start}} al {{end}}, ordenado por créditos.",
 		"error": "No se pudieron cargar los totales de uso de los modelos.",
 		"credits": "Créditos",

@@ -12,7 +12,7 @@
 		"apply": "Apply"
 	},
 	"overview": {
-		"title": "All-model overview",
+		"title": "Usage by model",
 		"description": "Usage from {{start}} through {{end}}, ranked by credits.",
 		"error": "Model usage totals could not be loaded.",
 		"credits": "Credits",

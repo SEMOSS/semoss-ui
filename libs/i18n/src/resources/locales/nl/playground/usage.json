@@ -12,7 +12,7 @@
 		"apply": "Toepassen"
 	},
 	"overview": {
-		"title": "Overzicht van alle modellen",
+		"title": "Gebruik per model",
 		"description": "Gebruik van {{start}} tot en met {{end}}, gerangschikt op credits.",
 		"error": "De gebruikstotalen van de modellen konden niet worden geladen.",
 		"credits": "Credits",

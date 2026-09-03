@@ -75,10 +75,10 @@ describe("ModelUsagePage", () => {
 				"model-1",
 			);
 		});
-		expect(screen.getAllByText("4")).toHaveLength(2);
+		expect(screen.getAllByText("4")).toHaveLength(3);
 		expect(screen.getByText("6")).toBeInTheDocument();
 		expect(screen.getByText("40%")).toBeInTheDocument();
-		expect(screen.getByText("usage:overview.requests")).toBeInTheDocument();
+		expect(screen.getAllByText("usage:overview.requests")).toHaveLength(2);
 		expect(
 			screen.queryByText("usage:pricing.title"),
 		).not.toBeInTheDocument();
@@ -93,6 +93,52 @@ describe("ModelUsagePage", () => {
 			await screen.findByText("usage:empty.title"),
 		).toBeInTheDocument();
 		expect(mocks.getUserModelCreditInfo).not.toHaveBeenCalled();
+	});
+
+	test("loads limit details when a model row is selected", async () => {
+		mocks.getUsageModels.mockResolvedValue([
+			{
+				engine_id: "model-1",
+				engine_name: "Test Model",
+				engine_type: "MODEL",
+			},
+			{
+				engine_id: "model-2",
+				engine_name: "Second Model",
+				engine_type: "MODEL",
+			},
+		]);
+		mocks.getUserModelUsage.mockResolvedValue([
+			{
+				ENGINE_ID: "model-1",
+				ENGINE_NAME: "Test Model",
+				INPUT_TOKENS: 100,
+				RESPONSE_TOKENS: 50,
+				TOTAL_TOKENS: 150,
+				TOTAL_REQUESTS: 2,
+				TOTAL_CREDITS: 4,
+			},
+			{
+				ENGINE_ID: "model-2",
+				ENGINE_NAME: "Second Model",
+				INPUT_TOKENS: 20,
+				RESPONSE_TOKENS: 10,
+				TOTAL_TOKENS: 30,
+				TOTAL_REQUESTS: 1,
+				TOTAL_CREDITS: 1,
+			},
+		]);
+
+		render(<ModelUsagePage />);
+
+		fireEvent.click(
+			await screen.findByRole("button", { name: "Second Model" }),
+		);
+		await waitFor(() => {
+			expect(mocks.getUserModelCreditInfo).toHaveBeenCalledWith(
+				"model-2",
+			);
+		});
 	});
 
 	test("defaults the custom range to the rolling month ending today", () => {
@@ -129,8 +175,6 @@ describe("ModelUsagePage", () => {
 		await waitFor(() => {
 			expect(mocks.getUserModelCreditInfo).toHaveBeenCalledWith(
 				"model-1",
-				expect.stringMatching(/^\d{4}-\d{2}-\d{2}$/),
-				expect.stringMatching(/^\d{4}-\d{2}-\d{2}$/),
 			);
 		});
 		expect(screen.queryByText("NaN")).not.toBeInTheDocument();
