@@ -1,8 +1,9 @@
-import { ChevronDownIcon, PlusIcon } from "lucide-react";
+import { ChevronDownIcon, TriangleAlertIcon } from "lucide-react";
 import { useEffect, useId, useState } from "react";
-import { Link } from "react-router-dom";
-import { EngineSelect, ProjectSelect } from "@semoss/shared";
+import { EngineSelect } from "@semoss/shared";
 import {
+	Alert,
+	AlertDescription,
 	Button,
 	Collapsible,
 	CollapsibleContent,
@@ -40,7 +41,7 @@ const PERMISSION_MODE_OPTIONS: {
 	{ value: "default", label: "Ask before edits" },
 	{ value: "acceptEdits", label: "Accept edits" },
 	{ value: "plan", label: "Plan first" },
-	{ value: "bypassPermissions", label: "Bypass permissions" },
+	{ value: "bypassPermissions", label: "Do not ask for approval" },
 ];
 
 /** Reasoning-effort levels, with display labels. */
@@ -60,7 +61,6 @@ const EFFORT_OPTIONS: { value: WorkbenchAssistantEffort; label: string }[] = [
  */
 export const WorkbenchAssistantSettings = () => {
 	const model = useWorkbench((state) => state.assistant.model);
-	const agent = useWorkbench((state) => state.assistant.agent);
 	const roomId = useWorkbench((state) => state.assistant.roomId);
 	const activeRunId = useWorkbench((state) => state.assistant.activeRunId);
 	const compact = useWorkbench((state) => state.assistant.compact);
@@ -71,7 +71,6 @@ export const WorkbenchAssistantSettings = () => {
 	const effort = useWorkbench((state) => state.assistant.effort);
 	const thinking = useWorkbench((state) => state.assistant.thinking);
 	const setModel = useWorkbench((state) => state.assistant.setModel);
-	const setAgent = useWorkbench((state) => state.assistant.setAgent);
 	const setMaxTurns = useWorkbench((state) => state.assistant.setMaxTurns);
 	const setPermissionMode = useWorkbench(
 		(state) => state.assistant.setPermissionMode,
@@ -104,14 +103,14 @@ export const WorkbenchAssistantSettings = () => {
 
 	const modelName =
 		model?.engine_display_name || model?.engine_name || "Select model";
-	const agentName = agent?.name || "App Builder (default)";
 
 	return (
 		<ScrollArea className="min-h-0 flex-1">
 			<div className="flex flex-col gap-4 p-3">
 				<Field>
-					<FieldLabel>Assistant Model</FieldLabel>
+					<FieldLabel>Model</FieldLabel>
 					<EngineSelect
+						className="h-9 w-full max-w-none justify-start border border-input px-3 shadow-xs"
 						name={modelName}
 						value={model?.engine_id || ""}
 						engineTypes={["MODEL"]}
@@ -122,44 +121,9 @@ export const WorkbenchAssistantSettings = () => {
 							className: "w-72 max-w-72",
 						}}
 					/>
-				</Field>
-
-				<Field>
-					<div className="flex justify-between">
-						<FieldLabel>Assistant Agent</FieldLabel>
-						<Link to="/agent/new">
-							<PlusIcon className="size-4" />
-						</Link>
-					</div>
-					<div className="flex items-center gap-2">
-						<ProjectSelect
-							name={agentName}
-							value={agent?.workspace_id || ""}
-							projectTypes={["WORKSPACE"]}
-							onChange={(nextAgent) =>
-								setAgent({
-									workspace_id: nextAgent.project_id,
-									name:
-										nextAgent.project_display_name ||
-										nextAgent.project_name,
-								})
-							}
-							popoverContentProps={{
-								align: "start",
-								className: "w-72 max-w-72",
-							}}
-						/>
-						{agent ? (
-							<Button
-								type="button"
-								variant="outline"
-								size="sm"
-								onClick={() => setAgent(null)}
-							>
-								Use default
-							</Button>
-						) : null}
-					</div>
+					<FieldDescription className="text-xs">
+						Model used for every assistant run in this room.
+					</FieldDescription>
 				</Field>
 
 				<Field orientation="horizontal">
@@ -185,7 +149,7 @@ export const WorkbenchAssistantSettings = () => {
 						}}
 					>
 						{isCompacting ? <Spinner className="size-3.5" /> : null}
-						Compact
+						Summarize conversation
 					</Button>
 				</Field>
 
@@ -213,7 +177,7 @@ export const WorkbenchAssistantSettings = () => {
 						<div className="flex flex-col gap-4 pt-4">
 							<Field>
 								<FieldLabel htmlFor={maxTurnsId}>
-									Max turns
+									Maximum steps per request
 								</FieldLabel>
 								<Input
 									id={maxTurnsId}
@@ -249,7 +213,7 @@ export const WorkbenchAssistantSettings = () => {
 									</SelectTrigger>
 									<SelectContent>
 										<SelectItem value={INHERIT}>
-											Harness default
+											Use workspace default
 										</SelectItem>
 										{PERMISSION_MODE_OPTIONS.map(
 											(option) => (
@@ -268,6 +232,17 @@ export const WorkbenchAssistantSettings = () => {
 									pause for approval, auto-accept edits, plan
 									before acting, or skip the gates entirely.
 								</FieldDescription>
+								{permissionMode === "bypassPermissions" && (
+									<Alert className="border-warning/40 bg-warning/10 text-warning">
+										<TriangleAlertIcon className="size-4" />
+										<AlertDescription className="text-warning/90">
+											The assistant can make changes
+											without asking first. Only use this
+											if you trust every action it might
+											take.
+										</AlertDescription>
+									</Alert>
+								)}
 							</Field>
 
 							<Field>

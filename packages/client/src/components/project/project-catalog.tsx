@@ -40,6 +40,16 @@ const CATALOG_CONFIG = {
 		projectTypes: ["CODE", "BLOCKS"],
 		showSystemTab: true,
 	},
+	AUTOMATION: {
+		name: "Automation",
+		description:
+			"Design, run, and govern repeatable workflows that connect your data, tools, models, and applications.",
+		createPath: "/automation/new",
+		basePath: "/automation",
+		itemSubPath: "edit",
+		projectTypes: ["AUTOMATION"],
+		showSystemTab: false,
+	},
 	SKILL: {
 		name: "Skill",
 		description:
@@ -78,6 +88,7 @@ const CATALOG_CONFIG = {
 // Skill/Agent now have their own independent admin-only flags.
 const CATALOG_PERMISSION_TYPE = {
 	CODE: "PROJECT",
+	AUTOMATION: "PROJECT",
 	SKILL: "SKILL",
 	WORKSPACE: "WORKSPACE",
 	NOTEBOOK: "PROJECT",

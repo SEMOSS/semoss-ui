@@ -1,0 +1,249 @@
+import type {
+	AutomationBranchClause,
+	AutomationDataType,
+	AutomationNodeCodeMode,
+	AutomationWorkflowNodeConfig,
+	AutomationWorkflowNodeType,
+} from "./automation-workflow.types";
+
+// ─── node types ───────────────────────────────────────────────────────────────
+
+export type AutomationNodeType =
+	| "trigger"
+	| "database-engine"
+	| "storage-engine"
+	| "vector-engine"
+	| "model-engine"
+	| "function-engine"
+	| "app"
+	| "branch"
+	| "wait";
+
+// ─── shared form types ────────────────────────────────────────────────────────
+
+/** A single parameter in a reactor's signature, as returned by GetReactorSignature. */
+export interface ReactorParam {
+	name: string;
+	type: string;
+	required: boolean;
+	description?: string;
+}
+
+// ─── node configs (one per node type) ────────────────────────────────────────
+
+export interface TriggerConfig {
+	/** Node-level config mode — lowercase by convention, distinct from the run-level AutomationTriggerType enum. */
+	mode: "manual";
+}
+
+export interface DatabaseEngineConfig {
+	engineId: string;
+	engineName?: string;
+	operation: "query" | "write";
+	expression: string;
+	limit: number;
+	commit: boolean;
+}
+
+export interface StorageEngineConfig {
+	engineId: string;
+	engineName?: string;
+	operation: "list" | "download" | "upload" | "delete" | "read-base64";
+	storagePath: string;
+	filePath: string;
+	metadata: string;
+}
+
+export interface VectorEngineConfig {
+	engineId: string;
+	engineName?: string;
+	operation:
+		| "search"
+		| "add-file"
+		| "add-csv"
+		| "list"
+		| "delete"
+		| "download";
+	command: string;
+	limit: number;
+	filters: string;
+	metaFilters: string;
+	filePath: string;
+	source: string;
+	space: string;
+	filePaths: string;
+	paramValues: string;
+	fileNames: string;
+}
+
+export interface ModelEngineConfig {
+	engineId: string;
+	engineName?: string;
+	engineSubtype?: string;
+	operation: "llm" | "embeddings" | "vision" | "ner";
+	command: string;
+	context: string;
+	paramValues: string;
+	values: string;
+	image: string;
+	prompt: string;
+	entities: string;
+}
+
+export interface FunctionEngineConfig {
+	engineId: string;
+	engineName?: string;
+	operation: "execute" | "streaming";
+	params: string;
+}
+
+export interface AppConfig {
+	pixel: string;
+	appId?: string;
+	appName?: string;
+}
+
+export interface AgentRunConfig {
+	workspaceId: string;
+	workspaceName?: string;
+	engineId: string;
+	engineName?: string;
+	command: string;
+}
+
+export interface WaitConfig {
+	seconds: string;
+}
+
+export interface BranchConfig {
+	clauses: AutomationBranchClause[];
+}
+
+export type NodeConfig =
+	| TriggerConfig
+	| DatabaseEngineConfig
+	| StorageEngineConfig
+	| VectorEngineConfig
+	| ModelEngineConfig
+	| FunctionEngineConfig
+	| AppConfig
+	| AgentRunConfig
+	| BranchConfig
+	| WaitConfig;
+
+export interface AutomationNode {
+	id: string;
+	type: AutomationNodeType;
+	position: { x: number; y: number };
+	label: string;
+	outputVar: string;
+	config: NodeConfig;
+	/**
+	 * The persisted workflow type and configuration. `type` and `config` remain the
+	 * canvas compatibility projection used by the established business forms.
+	 */
+	workflowType?: AutomationWorkflowNodeType;
+	workflowConfig?: AutomationWorkflowNodeConfig;
+	workflowCodeMode?: AutomationNodeCodeMode;
+}
+
+export interface AutomationEdge {
+	id: string;
+	source: string;
+	target: string;
+	sourceHandle?: string;
+	targetHandle?: string;
+	kind?: "control" | "data";
+	dataType?: AutomationDataType;
+}
+
+// ─── step run status (live, FE-side during a manual run) ─────────────────────
+
+export type StepRunStatus = "idle" | "running" | "success" | "error";
+
+// ─── run history ──────────────────────────────────────────────────────────────
+
+export type RunStatus =
+	| "RUNNING"
+	| "SUCCESS"
+	| "FAILED"
+	| "INTERRUPTED"
+	| "CANCELLED";
+
+export type NodeStatus =
+	| "PENDING"
+	| "RUNNING"
+	| "SUCCESS"
+	| "FAILED"
+	| "SKIPPED";
+
+/** Durable references to the SEMOSS activity produced by one automation node. */
+export interface AutomationNodeTrace {
+	roomId?: string;
+	modelMessageId?: string;
+	agentRunId?: string;
+	workspaceId?: string;
+	/** The durable Automation run that explicitly recorded this trace. */
+	automationRunId?: string;
+	/** The durable Automation node that explicitly recorded this trace. */
+	nodeId?: string;
+	/** Durable agent-run status (e.g. "RUNNING", "INPUT_REQUIRED") as of the last observed change. */
+	agentStatus?: string;
+}
+
+/**
+ * How a run was initiated.
+ * - MANUAL: triggered by a user clicking Run in the editor.
+ * - PLAYGROUND: triggered by the AI playground sidebar via the MCP TriggerAutomation tool.
+ * - SCHEDULED: triggered by a scheduler job configured for the automation.
+ */
+export type AutomationTriggerType = "MANUAL" | "PLAYGROUND" | "SCHEDULED";
+
+export interface AutomationRunSummary {
+	RUN_ID: string;
+	PROJECT_ID: string;
+	AUTOMATION_ID?: string;
+	STARTED_AT: string;
+	COMPLETED_AT: string | null;
+	STATUS: RunStatus;
+	TRIGGER_TYPE?: AutomationTriggerType;
+	TOTAL_NODES?: number;
+	COMPLETED_NODES?: number;
+	FAILED_NODE_ID?: string;
+	ERROR_MESSAGE?: string | null;
+	RESULT_SUMMARY?: string | null;
+	DEFINITION_VERSION?: number;
+	DEFINITION_HASH?: string;
+}
+
+/** Immutable definition metadata captured when an automation run starts. */
+export interface AutomationExecutedDefinition {
+	version?: number;
+	hash?: string;
+	snapshot?: string;
+}
+
+export interface AutomationNodeResult {
+	NODE_ID: string;
+	NODE_LABEL: string;
+	STATUS: NodeStatus;
+	DURATION_MS: number;
+	OUTPUT_PREVIEW: string | null;
+	ERROR_MESSAGE: string | null;
+	trace?: AutomationNodeTrace;
+}
+
+export interface AutomationRunDetail extends AutomationRunSummary {
+	DEFINITION_SNAPSHOT?: string;
+	nodeResults: AutomationNodeResult[];
+}
+
+export interface AutomationToolContext {
+	id: string;
+	name: string;
+	message: string;
+	roomId: string;
+	projectId: string;
+	parameters: Record<string, unknown>;
+	toolResponse?: unknown;
+}

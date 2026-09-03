@@ -9,6 +9,8 @@ import {
 } from "@semoss/ui/next";
 import Appagent from "@/assets/img/Appagent.svg";
 import AppagentDark from "@/assets/img/Appagent-dark.svg";
+import Appautomation from "@/assets/img/Appautomation.svg";
+import AppautomationDark from "@/assets/img/Appautomation-dark.svg";
 import Appcode from "@/assets/img/Appcode.svg";
 import AppcodeDark from "@/assets/img/Appcode-dark.svg";
 import Appdragdrop from "@/assets/img/Appdragdrop.svg";
@@ -16,7 +18,7 @@ import AppdragdropDark from "@/assets/img/Appdragdrop-dark.svg";
 import AppNotebook from "@/assets/img/Appnotebook.svg";
 import AppNotebookDark from "@/assets/img/Appnotebook-dark.svg";
 
-const CARDS = [
+const BASE_CARDS = [
 	{
 		title: "Develop in code",
 		description:
@@ -25,6 +27,7 @@ const CARDS = [
 		darkImage: AppcodeDark,
 		type: "code",
 		testId: "new-app-code-btn",
+		adminOnly: false,
 	},
 	{
 		title: "Drag and drop blocks",
@@ -34,6 +37,7 @@ const CARDS = [
 		darkImage: AppdragdropDark,
 		type: "blocks",
 		testId: "new-app-drag-btn",
+		adminOnly: false,
 	},
 	{
 		title: "Construct an agent",
@@ -43,6 +47,17 @@ const CARDS = [
 		darkImage: AppagentDark,
 		type: "agent",
 		testId: "new-app-agent-btn",
+		adminOnly: false,
+	},
+	{
+		title: "Build an automation",
+		description:
+			"Connect engines, models, and data sources into repeatable automated workflows, triggered manually.",
+		image: Appautomation,
+		darkImage: AppautomationDark,
+		type: "automation",
+		testId: "new-app-automation-btn",
+		adminOnly: true,
 	},
 	{
 		title: "Run interactive notebooks",
@@ -52,19 +67,29 @@ const CARDS = [
 		darkImage: AppNotebookDark,
 		type: "notebook",
 		testId: "new-notebook-btn",
+		adminOnly: false,
 	},
 ] as const;
 
 interface LandingHeaderProps {
 	/** Trigger creation of a new app */
-	onCreate: (type: "blocks" | "code" | "agent" | "notebook") => void;
+	onCreate: (
+		type: "blocks" | "code" | "agent" | "automation" | "notebook",
+	) => void;
+	/** Whether the current user is an admin — gates admin-only cards */
+	isAdmin: boolean;
 }
 
 export const LandingHeader: React.FC<LandingHeaderProps> = ({
 	onCreate = () => null,
+	isAdmin,
 }) => {
+	const CARDS = BASE_CARDS.filter((card) => !card.adminOnly || isAdmin);
+
 	return (
-		<div className="grid w-full grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
+		<div
+			className={`grid w-full grid-cols-1 gap-4 md:grid-cols-2 ${CARDS.length === 3 ? "lg:grid-cols-3" : "lg:grid-cols-4"}`}
+		>
 			{CARDS.map((card) => (
 				<Card
 					key={card.title}

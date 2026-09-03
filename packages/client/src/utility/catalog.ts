@@ -11,7 +11,8 @@ export const isProjectType = (type?: string): boolean => {
 		type === "BLOCKS" ||
 		type === "CODE" ||
 		type === "INSIGHT" ||
-		type === "NOTEBOOK"
+		type === "NOTEBOOK" ||
+		type === "AUTOMATION"
 	);
 };
 
@@ -33,6 +34,8 @@ export const getProjectLabel = (type?: Project["project_type"]): string => {
 		return "Insight";
 	} else if (type === "NOTEBOOK") {
 		return "Notebook";
+	} else if (type === "AUTOMATION") {
+		return "Automation";
 	}
 
 	return "Project";

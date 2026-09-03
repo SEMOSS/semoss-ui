@@ -13,6 +13,7 @@ import {
 	Settings,
 	ShieldCheck,
 	Sigma,
+	Workflow,
 } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import type React from "react";
@@ -83,6 +84,11 @@ const CATALOG_ROUTES = [
 		text: "Notebooks",
 		icon: <NotebookText className="size-4" />,
 		route: "/notebook",
+	},
+	{
+		text: "Automations",
+		icon: <Workflow className="size-4" />,
+		route: "/automation",
 	},
 	{
 		text: "Guardrail",

@@ -6,6 +6,7 @@ import {
 	RefreshCw,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { Badge, Button, Skeleton, toast } from "@semoss/ui/next";
 import { useProject, useRootStore } from "@/hooks";
 import { formatDateToRelative } from "@/utility/date";
@@ -96,6 +97,13 @@ const summarizeRoom = (
 export const AgentActivityPage = () => {
 	const { project } = useProject();
 	const { monolithStore } = useRootStore();
+	const [searchParams] = useSearchParams();
+	const targetRoomId = searchParams.get("roomId")?.trim() || null;
+	const targetRunId = searchParams.get("runId")?.trim() || null;
+	const handledDeepLink = useRef<string | null>(null);
+	const openRoom = useRef<
+		((room: RoomSummary, requestedRunId?: string) => Promise<void>) | null
+	>(null);
 
 	const [activity, setActivity] = useState<AgentActivityLogResponse>({});
 	const [loading, setLoading] = useState(true);
@@ -128,7 +136,7 @@ export const AgentActivityPage = () => {
 		const response = await monolithStore.runQuery<
 			[AgentActivityLogResponse]
 		>(
-			`GetAgentActivityLog(agentId=["${agentId}"], limit=[20], sortByRoom=[true]);`,
+			`GetAgentActivityLog(agentId=${JSON.stringify([agentId])}, limit=[20], sortByRoom=[true]);`,
 		);
 		const { operationType, output } = response.pixelReturn[0];
 		if (operationType.indexOf("ERROR") > -1) {
@@ -176,10 +184,22 @@ export const AgentActivityPage = () => {
 			.map(([roomId, runs]) => summarizeRoom(roomId, runs))
 			.sort((a, b) => b.sortMs - a.sortMs);
 	}, [activity]);
+	const deepLinkedRoom = useMemo(() => {
+		if (!targetRoomId) return null;
+		return (
+			rooms.find((room) => room.roomId === targetRoomId) ?? {
+				roomId: targetRoomId,
+				roomName: null,
+				runCount: targetRunId ? 1 : 0,
+				mostRecentCompletedAt: null,
+				sortMs: -Infinity,
+			}
+		);
+	}, [rooms, targetRoomId, targetRunId]);
 
 	const fetchRunDetail = async (runId: string): Promise<AgentRunDetail> => {
 		const response = await monolithStore.runQuery<[AgentRunDetail]>(
-			`GetAgentRun ( runId = "${runId}" , includeMessages = "true" ) ;`,
+			`GetAgentRun(runId=${JSON.stringify(runId)}, includeMessages=["true"]);`,
 		);
 		const { operationType, output } = response.pixelReturn[0];
 		if (operationType.indexOf("ERROR") > -1) {
@@ -198,7 +218,7 @@ export const AgentActivityPage = () => {
 		if (!pending) {
 			pending = monolithStore
 				.runQuery<[EngineMetadataOutput]>(
-					`GetEngineMetadata(engine=["${engineId}"], metaKeys=${JSON.stringify(
+					`GetEngineMetadata(engine=${JSON.stringify([engineId])}, metaKeys=${JSON.stringify(
 						[["engine_display_name", "engine_name"]],
 					)});`,
 				)
@@ -256,7 +276,7 @@ export const AgentActivityPage = () => {
 			if (!pending) {
 				pending = monolithStore
 					.runQuery<[ClaudeCodeTranscriptEvent[]]>(
-						`GetClaudeCodeTranscriptHistory ( roomId = "${run.roomId}" ) ;`,
+						`GetClaudeCodeTranscriptHistory(roomId=${JSON.stringify(run.roomId)});`,
 					)
 					.then((response) => {
 						const { operationType, output } =
@@ -305,7 +325,7 @@ export const AgentActivityPage = () => {
 			return [];
 		}
 		const response = await monolithStore.runQuery<[SubagentRun[]]>(
-			`GetSubagentRuns ( runId = "${runId}" ) ;`,
+			`GetSubagentRuns(runId=${JSON.stringify(runId)});`,
 		);
 		const { operationType, output } = response.pixelReturn[0];
 		if (operationType.indexOf("ERROR") > -1) {
@@ -345,20 +365,29 @@ export const AgentActivityPage = () => {
 	 * Load a room's graph data - each root run's transcript plus its sub-agent
 	 * tree - and hand it to the graph. `activityLog` is a parameter rather than
 	 * a read off state so a refresh works from the log it just fetched.
+	 * `requestedRunId` narrows to a single deep-linked run instead of the
+	 * room's root runs.
 	 */
 	const loadRoomRuns = async (
 		room: RoomSummary,
 		activityLog: AgentActivityLogResponse,
+		requestedRunId?: string,
 	) => {
 		const allRuns = activityLog[room.roomId] ?? [];
 		// Runs with a parent in this room render nested under it via
 		// GetSubagentRuns, so only root the ones whose parent is elsewhere.
 		const roomRunIds = new Set(allRuns.map((run) => run.runId));
-		const runs = allRuns.filter(
-			(run) => !run.parentRunId || !roomRunIds.has(run.parentRunId),
-		);
+		const runIds = requestedRunId
+			? [requestedRunId]
+			: allRuns
+					.filter(
+						(run) =>
+							!run.parentRunId ||
+							!roomRunIds.has(run.parentRunId),
+					)
+					.map((run) => run.runId);
 
-		const visited = new Set(runs.map((run) => run.runId));
+		const visited = new Set(runIds);
 		const transcriptCache = new Map<
 			string,
 			Promise<ClaudeCodeTranscriptEvent[]>
@@ -367,9 +396,9 @@ export const AgentActivityPage = () => {
 		// every run listed here - those need time-window filtering.
 		const multiRunRoomId = allRuns.length > 1 ? room.roomId : null;
 		const runDetails = await Promise.all(
-			runs.map(async (run) => {
+			runIds.map(async (runId) => {
 				const [detail, subagents] = await Promise.all([
-					fetchRunDetail(run.runId).then((fetched) =>
+					fetchRunDetail(runId).then((fetched) =>
 						enrichWithClaudeCodeTranscript(
 							fetched,
 							transcriptCache,
@@ -377,12 +406,21 @@ export const AgentActivityPage = () => {
 						),
 					),
 					fetchSubagentRunTree(
-						run.runId,
+						runId,
 						visited,
 						transcriptCache,
 						multiRunRoomId,
 					),
 				]);
+				if (
+					requestedRunId &&
+					(detail.roomId !== room.roomId ||
+						detail.workspaceId !== project.project_id)
+				) {
+					throw new Error(
+						"The requested run does not belong to this agent activity room.",
+					);
+				}
 				return { ...detail, subagents };
 			}),
 		);
@@ -393,13 +431,16 @@ export const AgentActivityPage = () => {
 		return runDetails;
 	};
 
-	const handleRoomClick = async (room: RoomSummary) => {
+	const handleRoomClick = async (
+		room: RoomSummary,
+		requestedRunId?: string,
+	) => {
 		setSelectedRoom(room);
 		setSelectedRoomRuns([]);
 		setLoadingRunDetails(true);
 
 		try {
-			await loadRoomRuns(room, activity);
+			await loadRoomRuns(room, activity, requestedRunId);
 		} catch (error) {
 			console.error("Error fetching agent run:", error);
 			toast.error(`Error fetching agent run: ${error}`);
@@ -407,6 +448,15 @@ export const AgentActivityPage = () => {
 			setLoadingRunDetails(false);
 		}
 	};
+	openRoom.current = handleRoomClick;
+
+	useEffect(() => {
+		if (!deepLinkedRoom) return;
+		const key = `${deepLinkedRoom.roomId}:${targetRunId ?? ""}`;
+		if (handledDeepLink.current === key) return;
+		handledDeepLink.current = key;
+		void openRoom.current?.(deepLinkedRoom, targetRunId ?? undefined);
+	}, [deepLinkedRoom, targetRunId]);
 
 	/**
 	 * Re-pull the open room: the activity log first (so a run that started

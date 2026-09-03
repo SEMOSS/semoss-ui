@@ -51,7 +51,8 @@ export interface Project {
 		| "BLOCKS"
 		| "CODE"
 		| "INSIGHT"
-		| "NOTEBOOK";
+		| "NOTEBOOK"
+		| "AUTOMATION";
 	project_cost?: string;
 	project_global?: string;
 	project_created_by?: string;

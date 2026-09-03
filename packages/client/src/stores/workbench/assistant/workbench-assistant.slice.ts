@@ -30,6 +30,7 @@ import type { WorkbenchSlice } from "../workbench.types";
 import type {
 	BuildAttachment,
 	BuildRun,
+	BuildTool,
 	RunStore,
 	WorkbenchRunRecord,
 } from "./workbench-assistant.runs";
@@ -123,6 +124,15 @@ interface WorkbenchAssistantConfig {
 	 */
 	onRunCompleted?: (run: BuildRun, runs: Record<string, BuildRun>) => void;
 	/**
+	 * Called after a tool reaches a terminal successful state, allowing a
+	 * workbench to refresh a server-backed preview during an active run.
+	 */
+	onToolCompleted?: (
+		tool: BuildTool,
+		run: BuildRun,
+		runs: Record<string, BuildRun>,
+	) => void;
+	/**
 	 * Manually rebuild the artifact this workbench previews (e.g. compile and
 	 * publish the app). When set, the assistant header shows a rebuild button;
 	 * failures it throws surface as an error toast.
@@ -166,6 +176,14 @@ export interface WorkbenchAssistantSliceState {
 	/** Called after a root run reaches a terminal status and reconciles. */
 	onRunCompleted:
 		| ((run: BuildRun, runs: Record<string, BuildRun>) => void)
+		| null;
+	/** Called after a tool completes successfully during an active run. */
+	onToolCompleted:
+		| ((
+				tool: BuildTool,
+				run: BuildRun,
+				runs: Record<string, BuildRun>,
+		  ) => void)
 		| null;
 	/** Rebuild action surfaced as a assistant-header button when set. */
 	onRebuild: (() => Promise<void>) | null;
@@ -565,6 +583,36 @@ export const createWorkbenchAssistantSlice = (
 								droppedEvents: meta.droppedEvents,
 							}),
 						);
+						const assistant = get().assistant;
+						const run = assistant.runs[runId];
+						if (run && assistant.onToolCompleted) {
+							for (const event of events) {
+								if (
+									event.type !== "item.completed" ||
+									event.item.kind !== "tool" ||
+									event.item.status !== "COMPLETED"
+								) {
+									continue;
+								}
+								const tool = run.tools.find(
+									(candidate) =>
+										candidate.id === event.item.id,
+								);
+								if (!tool) continue;
+								try {
+									assistant.onToolCompleted(
+										tool,
+										run,
+										assistant.runs,
+									);
+								} catch (error) {
+									console.warn(
+										"onToolCompleted handler failed:",
+										error,
+									);
+								}
+							}
+						}
 						for (const event of events) {
 							if (
 								event.type !== "item.updated" &&
@@ -701,6 +749,7 @@ export const createWorkbenchAssistantSlice = (
 			mcp: [],
 			runParams: {},
 			onRunCompleted: null,
+			onToolCompleted: null,
 			onRebuild: null,
 
 			model: null,

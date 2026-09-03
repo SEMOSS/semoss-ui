@@ -19,7 +19,7 @@ import {
 	LandingHeader,
 	SystemAppCard,
 } from "@/components/landing";
-import { usePage } from "@/hooks";
+import { useAdminMode, usePage, useRootStore } from "@/hooks";
 import { useNavigate } from "@/hooks/useNavigate";
 import {
 	BASE_APP_QUERIES,
@@ -34,13 +34,21 @@ export const LandingPage: React.FC = observer(() => {
 		showNavbarSearch: true,
 	});
 
+	const { configStore } = useRootStore();
 	const navigate = useNavigate();
+	const adminMode = useAdminMode();
 
 	const [newAppOptions, setNewAppOptions] = useState<
 		React.ComponentProps<typeof NewAppModal>["options"] | null
 	>(null);
 
 	const isNameOpen = !!newAppOptions;
+
+	const isRestricted = !configStore.isEngineOperationAvailable(
+		"PROJECT",
+		"add",
+	);
+
 	return (
 		<>
 			<NavbarLeft>
@@ -59,73 +67,79 @@ export const LandingPage: React.FC = observer(() => {
 						to: "../../playground/dist/",
 					}}
 				/>
-				<div className="flex w-full flex-col gap-6">
-					<div className="flex grow flex-row gap-6">
-						<div className="flex w-full flex-col items-start gap-2 sm:flex-row sm:items-center sm:justify-between">
-							<div className="flex flex-col gap-1">
-								<H4 className="font-bold text-foreground">
-									Get started with our tool
-								</H4>
-								<Muted>
-									Start building your app in the way that
-									works best for you.
-								</Muted>
+				{!isRestricted && (
+					<div className="flex w-full flex-col gap-6">
+						<div className="flex grow flex-row gap-6">
+							<div className="flex w-full flex-col items-start gap-2 sm:flex-row sm:items-center sm:justify-between">
+								<div className="flex flex-col gap-1">
+									<H4 className="font-bold text-foreground">
+										Get started with our tool
+									</H4>
+									<Muted>
+										Start building your app in the way that
+										works best for you.
+									</Muted>
+								</div>
+								<Button
+									asChild
+									variant="ghost"
+									size="default"
+									className="shrink-0 text-primary hover:bg-transparent hover:text-primary"
+								>
+									<Link to="/app/new">
+										Browse Templates
+										<ArrowRight className="size-4" />
+									</Link>
+								</Button>
 							</div>
-							<Button
-								asChild
-								variant="ghost"
-								size="default"
-								className="shrink-0 text-primary hover:bg-transparent hover:text-primary"
-							>
-								<Link to="templates">
-									Browse Templates
-									<ArrowRight className="size-4" />
-								</Link>
-							</Button>
 						</div>
-					</div>
-					{isNameOpen ? (
-						<NewAppModal
-							open={isNameOpen}
-							options={newAppOptions}
-							onClose={(appId) => {
-								if (appId) {
-									navigate(`/app/${appId}/edit`);
-								} else {
-									// close the modal
-									setNewAppOptions(null);
+						{isNameOpen ? (
+							<NewAppModal
+								open={isNameOpen}
+								options={newAppOptions}
+								onClose={(appId) => {
+									if (appId) {
+										navigate(`/app/${appId}/edit`);
+									} else {
+										// close the modal
+										setNewAppOptions(null);
+									}
+								}}
+							/>
+						) : null}
+						<LandingHeader
+							isAdmin={configStore.store.user.admin && adminMode}
+							onCreate={(type) => {
+								if (type === "blocks") {
+									setNewAppOptions({
+										type: "blocks",
+										state: {
+											version: STATE_VERSION,
+											variables:
+												BASE_APP_VARIABLES as Record<
+													string,
+													Variable
+												>,
+											queries: BASE_APP_QUERIES,
+											blocks: BASE_PAGE_BLOCKS,
+											executionOrder: [],
+										},
+									});
+								} else if (type === "code") {
+									setNewAppOptions({
+										type: "code",
+									});
+								} else if (type === "agent") {
+									navigate("/app/new/prompt");
+								} else if (type === "automation") {
+									navigate("/automation/new");
+								} else if (type === "notebook") {
+									navigate("/notebook");
 								}
 							}}
 						/>
-					) : null}
-					<LandingHeader
-						onCreate={(type) => {
-							if (type === "blocks") {
-								setNewAppOptions({
-									type: "blocks",
-									state: {
-										version: STATE_VERSION,
-										variables: BASE_APP_VARIABLES as Record<
-											string,
-											Variable
-										>,
-										queries: BASE_APP_QUERIES,
-										blocks: BASE_PAGE_BLOCKS,
-										executionOrder: [],
-									},
-								});
-							} else if (type === "code") {
-								setNewAppOptions({
-									type: "code",
-								});
-							} else if (type === "agent") {
-								navigate("/app/new/prompt");
-							} else if (type === "notebook") {
-								navigate("/notebook");
-							}
-						}}
-					/>
-				</div>
+					</div>
+				)}
 
 				<div className="flex w-full flex-col gap-3">
 					<div className="flex-col gap-1">

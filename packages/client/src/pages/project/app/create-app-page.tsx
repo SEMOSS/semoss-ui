@@ -1,6 +1,6 @@
 import { ChevronRight, UploadIcon } from "lucide-react";
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, Navigate } from "react-router-dom";
 import type { Variable } from "@semoss/renderer";
 import { STATE_VERSION } from "@semoss/renderer/version";
 import {
@@ -18,6 +18,7 @@ import { NewAppModal } from "@/components/app";
 import { LandingHeader } from "@/components/landing";
 import { UploadProjectDialog } from "@/components/project";
 import { NavbarHeader, NavbarLeft } from "@/components/shared";
+import { useAdminMode, useRootStore } from "@/hooks";
 import { useNavigate } from "@/hooks/useNavigate";
 import {
 	BASE_APP_QUERIES,
@@ -27,6 +28,9 @@ import {
 
 export const CreateAppPage = () => {
 	const navigate = useNavigate();
+
+	const { configStore } = useRootStore();
+	const adminMode = useAdminMode();
 
 	const [isUploadOpen, setIsUploadOpen] = useState(false);
 	const [newAppOptions, setNewAppOptions] = useState<
@@ -40,14 +44,23 @@ export const CreateAppPage = () => {
 	 *
 	 * appId - appId of the app
 	 */
-	const navigateApp = (appId: string) => {
+	const navigateApp = (appId: string, isAutomation = false) => {
 		if (!appId) {
 			return;
 		}
 
-		navigate(`/app/${appId}/edit`);
+		navigate(
+			isAutomation ? `/automation/${appId}/edit` : `/app/${appId}/edit`,
+		);
 	};
+	const isRestricted = !configStore.isEngineOperationAvailable(
+		"PROJECT",
+		"add",
+	);
 
+	if (isRestricted) {
+		return <Navigate to="/" replace />;
+	}
 	return (
 		<>
 			<NavbarLeft>
@@ -88,7 +101,10 @@ export const CreateAppPage = () => {
 						options={newAppOptions}
 						onClose={(appId) => {
 							if (appId) {
-								navigateApp(appId);
+								navigateApp(
+									appId,
+									newAppOptions?.type === "automation",
+								);
 							} else {
 								// close the modal
 								setNewAppOptions(null);
@@ -118,6 +134,7 @@ export const CreateAppPage = () => {
 				</P>
 				<div className="flex w-full flex-col gap-4">
 					<LandingHeader
+						isAdmin={configStore.store.user.admin && adminMode}
 						onCreate={(type) => {
 							if (type === "blocks") {
 								setNewAppOptions({
@@ -139,6 +156,10 @@ export const CreateAppPage = () => {
 								});
 							} else if (type === "agent") {
 								navigate("/app/new/prompt");
+							} else if (type === "automation") {
+								setNewAppOptions({
+									type: "automation",
+								});
 							}
 						}}
 					/>

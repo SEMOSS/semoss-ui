@@ -9,6 +9,7 @@ import { useWorkbenchCommands } from "./use-workbench-commands";
 import { useWorkbenchControl } from "./use-workbench-control";
 import { useWorkbenchFilePanels } from "./use-workbench-file-panels";
 import { useWorkbenchStoreApi } from "./use-workbench-store-api";
+import { useAdminMode } from "./useAdminMode";
 import { useDesigner } from "./useDesigner";
 import { useEngine } from "./useEngine";
 import { useMetamodel } from "./useMetamodel";
@@ -25,6 +26,7 @@ import { useWorkspace } from "./useWorkspace";
 // block/renderer dependencies into the broad `@/hooks` import graph, which
 // increases production bundle size.
 export {
+	useAdminMode,
 	useAPI,
 	useDatabaseWorkbench,
 	useDesigner,
