@@ -1,4 +1,12 @@
-import { AlertCircle, Bot, RefreshCw, Square } from "lucide-react";
+import {
+	AlertCircle,
+	Bot,
+	CheckCircle2,
+	Loader2,
+	RefreshCw,
+	Square,
+	XCircle,
+} from "lucide-react";
 import {
 	useCallback,
 	useEffect,
@@ -15,6 +23,7 @@ import {
 	Button,
 	Code,
 	CodeContainer,
+	cn,
 	Dialog,
 	DialogContent,
 	DialogDescription,
@@ -28,17 +37,24 @@ import { useAgentRunCoordinator } from "../../hooks";
 import type {
 	AutomationAgentRunActivity,
 	AutomationAgentRunSelection,
+	AutomationAgentRunToolGroup,
 } from "./agent-run.types";
 import {
 	agentRunStatusClass,
 	agentRunStatusLabel,
+	isActiveToolInvocationStatus,
 	isTerminalAgentRunStatus,
+	toolGroupStatus,
 } from "./agent-run.utils";
 import {
 	AgentRunActionCard,
 	type AgentRunActionDecision,
 } from "./agent-run-action-card";
-import { AgentRunGraph, collectAgentRunActivities } from "./agent-run-graph";
+import {
+	AgentRunGraph,
+	collectAgentRunActivities,
+	groupToolActivities,
+} from "./agent-run-graph";
 
 interface AgentRunDialogProps {
 	open: boolean;
@@ -50,11 +66,15 @@ interface AgentRunDialogProps {
 const messageText = (activity: AutomationAgentRunActivity): string =>
 	activity.text || activity.output || activity.error || activity.label;
 
+/** Returns null for a tool group — it gets its own per-call breakdown instead. */
 const detailsForSelection = (
 	selection: AutomationAgentRunSelection,
 	snapshot: AgentRunSnapshot,
 	trace: AutomationNodeTrace | null,
-): { title: string; content: string; language: "json" | "text" } => {
+): { title: string; content: string; language: "json" | "text" } | null => {
+	if (selection.kind === "toolGroup") {
+		return null;
+	}
 	if (selection.kind === "room") {
 		return {
 			title: "Agent room",
@@ -108,6 +128,76 @@ const detailsForSelection = (
 		language: "text",
 	};
 };
+
+/** Every call made to this tool, in order, with the in-flight one highlighted. */
+const ToolGroupDetail = ({ group }: { group: AutomationAgentRunToolGroup }) => (
+	<div>
+		<div className="flex items-center justify-between gap-2">
+			<p className="font-medium text-sm">{group.toolName}</p>
+			<span className="rounded-full bg-muted px-1.5 text-xs">
+				{group.invocations.length}{" "}
+				{group.invocations.length === 1 ? "call" : "calls"}
+			</span>
+		</div>
+		<div className="mt-2 max-h-72 space-y-2 overflow-auto">
+			{group.invocations.map((call, index) => {
+				const isActive = isActiveToolInvocationStatus(call.status);
+				const isFailed = Boolean(
+					call.status && /error|fail/i.test(call.status),
+				);
+				return (
+					<div
+						key={call.id}
+						className={cn(
+							"rounded-lg border p-2",
+							isActive && "border-primary/60 bg-primary/5",
+						)}
+					>
+						<div className="flex items-center justify-between gap-2 text-xs">
+							<span className="font-medium text-muted-foreground">
+								Call {index + 1}
+							</span>
+							{isActive ? (
+								<span className="flex items-center gap-1 text-primary">
+									<Loader2
+										className="size-3.5 animate-spin"
+										aria-hidden
+									/>
+									Active
+								</span>
+							) : isFailed ? (
+								<XCircle
+									className="size-3.5 text-destructive"
+									aria-hidden
+								/>
+							) : (
+								<CheckCircle2
+									className="size-3.5 text-success"
+									aria-hidden
+								/>
+							)}
+						</div>
+						<CodeContainer className="mt-1.5 max-h-40 overflow-auto bg-muted">
+							<Code
+								code={JSON.stringify(
+									{
+										arguments: call.arguments,
+										output: call.output,
+										error: call.error,
+									},
+									null,
+									2,
+								)}
+								language="json"
+								className="text-xs"
+							/>
+						</CodeContainer>
+					</div>
+				);
+			})}
+		</div>
+	</div>
+);
 
 /**
  * Automation-local durable agent run inspector.
@@ -173,6 +263,10 @@ export function AgentRunDialog({
 				: [],
 		[items, messages, snapshot],
 	);
+	const toolGroups = useMemo(
+		() => groupToolActivities(activities),
+		[activities],
+	);
 	const selection = useMemo<AutomationAgentRunSelection>(() => {
 		if (selectedId === "room") {
 			return { id: "room", kind: "room" };
@@ -180,11 +274,17 @@ export function AgentRunDialog({
 		if (selectedId === "run") {
 			return { id: "run", kind: "run" };
 		}
+		const group = toolGroups.find(
+			(item) => item.kind === "toolGroup" && item.id === selectedId,
+		);
+		if (group?.kind === "toolGroup") {
+			return { id: group.id, kind: "toolGroup", group: group.group };
+		}
 		const activity = activities.find((item) => item.id === selectedId);
 		return activity
 			? { id: activity.id, kind: "activity", activity }
 			: { id: "run", kind: "run" };
-	}, [activities, selectedId]);
+	}, [activities, toolGroups, selectedId]);
 	const selectionDetails = snapshot
 		? detailsForSelection(selection, snapshot, trace)
 		: null;
@@ -313,6 +413,36 @@ export function AgentRunDialog({
 								<AlertDescription>{liveError}</AlertDescription>
 							</Alert>
 						) : null}
+
+						{/* Rendered first (before the graph) so it's visible without
+						    scrolling — this is the reason most people open the dialog. */}
+						{snapshot?.pendingActions?.length ? (
+							<section aria-labelledby={actionHeadingId}>
+								<p
+									id={actionHeadingId}
+									className="font-medium text-sm"
+								>
+									Action required
+								</p>
+								<div className="mt-2 space-y-2">
+									{snapshot.pendingActions.map((action) => (
+										<AgentRunActionCard
+											key={action.actionId}
+											action={action}
+											canResolve={canControl}
+											resolving={resolvingActionIds.has(
+												action.actionId,
+											)}
+											resolved={resolvedActionIds.has(
+												action.actionId,
+											)}
+											onResolve={resolveAction}
+										/>
+									))}
+								</div>
+							</section>
+						) : null}
+
 						{loading ? (
 							<div className="flex h-96 items-center justify-center gap-2 text-muted-foreground text-sm">
 								<Spinner className="size-5" />
@@ -337,22 +467,30 @@ export function AgentRunDialog({
 										className="rounded-lg border border-border bg-card p-3"
 										aria-live="polite"
 									>
-										<p className="font-medium text-sm">
-											{selectionDetails?.title}
-										</p>
-										{selectionDetails ? (
-											<CodeContainer className="mt-2 max-h-48 overflow-auto bg-muted">
-												<Code
-													code={
-														selectionDetails.content
-													}
-													language={
-														selectionDetails.language
-													}
-													className="text-xs"
-												/>
-											</CodeContainer>
-										) : null}
+										{selection.kind === "toolGroup" ? (
+											<ToolGroupDetail
+												group={selection.group}
+											/>
+										) : (
+											<>
+												<p className="font-medium text-sm">
+													{selectionDetails?.title}
+												</p>
+												{selectionDetails ? (
+													<CodeContainer className="mt-2 max-h-48 overflow-auto bg-muted">
+														<Code
+															code={
+																selectionDetails.content
+															}
+															language={
+																selectionDetails.language
+															}
+															className="text-xs"
+														/>
+													</CodeContainer>
+												) : null}
+											</>
+										)}
 									</section>
 									<section
 										aria-labelledby={activityHeadingId}
@@ -364,40 +502,74 @@ export function AgentRunDialog({
 											Activity
 										</p>
 										<div className="mt-2 max-h-64 space-y-1 overflow-auto rounded-lg border border-border p-2">
-											{activities.length === 0 ? (
+											{toolGroups.length === 0 ? (
 												<p className="p-2 text-muted-foreground text-xs">
 													No activity has been
 													recorded yet.
 												</p>
 											) : (
-												activities.map((activity) => (
-													<button
-														key={activity.id}
-														type="button"
-														onClick={() =>
-															setSelectedId(
-																activity.id,
-															)
-														}
-														className={`w-full rounded-md px-2 py-1.5 text-left text-xs transition-colors ${
-															selection.id ===
-															activity.id
-																? "bg-accent text-accent-foreground"
-																: "hover:bg-muted"
-														}`}
-													>
-														<span className="block truncate font-medium">
-															{activity.label}
-														</span>
-														{activity.status ? (
-															<span className="text-muted-foreground">
-																{agentRunStatusLabel(
-																	activity.status,
-																)}
+												toolGroups.map((item) => {
+													const label =
+														item.kind ===
+														"toolGroup"
+															? item.group
+																	.toolName
+															: item.activity
+																	.label;
+													const status =
+														item.kind ===
+														"toolGroup"
+															? toolGroupStatus(
+																	item.group,
+																)
+															: item.activity
+																	.status;
+													return (
+														<button
+															key={item.id}
+															type="button"
+															onClick={() =>
+																setSelectedId(
+																	item.id,
+																)
+															}
+															className={`flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-xs transition-colors ${
+																selection.id ===
+																item.id
+																	? "bg-accent text-accent-foreground"
+																	: "hover:bg-muted"
+															}`}
+														>
+															<span className="min-w-0 flex-1">
+																<span className="block truncate font-medium">
+																	{label}
+																</span>
+																{status ? (
+																	<span className="text-muted-foreground">
+																		{agentRunStatusLabel(
+																			status,
+																		)}
+																	</span>
+																) : null}
 															</span>
-														) : null}
-													</button>
-												))
+															{item.kind ===
+																"toolGroup" &&
+																item.group
+																	.invocations
+																	.length >
+																	1 && (
+																	<span className="shrink-0 rounded-full bg-muted px-1.5 text-[10px]">
+																		{
+																			item
+																				.group
+																				.invocations
+																				.length
+																		}
+																	</span>
+																)}
+														</button>
+													);
+												})
 											)}
 										</div>
 									</section>
@@ -424,33 +596,6 @@ export function AgentRunDialog({
 									actions or stop this run.
 								</AlertDescription>
 							</Alert>
-						) : null}
-
-						{snapshot?.pendingActions?.length ? (
-							<section aria-labelledby={actionHeadingId}>
-								<p
-									id={actionHeadingId}
-									className="font-medium text-sm"
-								>
-									Action required
-								</p>
-								<div className="mt-2 space-y-2">
-									{snapshot.pendingActions.map((action) => (
-										<AgentRunActionCard
-											key={action.actionId}
-											action={action}
-											canResolve={canControl}
-											resolving={resolvingActionIds.has(
-												action.actionId,
-											)}
-											resolved={resolvedActionIds.has(
-												action.actionId,
-											)}
-											onResolve={resolveAction}
-										/>
-									))}
-								</div>
-							</section>
 						) : null}
 					</div>
 

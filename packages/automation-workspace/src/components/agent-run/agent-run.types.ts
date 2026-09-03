@@ -47,6 +47,13 @@ export interface AutomationAgentRunActivity {
 	timestamp?: string;
 }
 
+/** Every call made to one tool, grouped together instead of one node per call. */
+export interface AutomationAgentRunToolGroup {
+	id: string;
+	toolName: string;
+	invocations: AutomationAgentRunActivity[];
+}
+
 /** Selection state shared by the Automation agent-run graph and details pane. */
 export type AutomationAgentRunSelection =
 	| { id: "room"; kind: "room" }
@@ -55,6 +62,11 @@ export type AutomationAgentRunSelection =
 			id: string;
 			kind: "activity";
 			activity: AutomationAgentRunActivity;
+	  }
+	| {
+			id: string;
+			kind: "toolGroup";
+			group: AutomationAgentRunToolGroup;
 	  };
 
 /** Data sources used to rebuild an Automation agent-run graph. */

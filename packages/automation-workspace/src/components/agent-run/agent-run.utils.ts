@@ -1,4 +1,38 @@
 import type { PendingAgentAction } from "@semoss/sdk";
+import type { AutomationAgentRunToolGroup } from "./agent-run.types";
+
+/** A tool call is still in flight until its result part arrives. */
+export const isActiveToolInvocationStatus = (status?: string): boolean =>
+	!status;
+
+export const isFailedToolInvocationStatus = (status?: string): boolean =>
+	Boolean(status && /error|fail/i.test(status));
+
+/**
+ * One status for the whole group, in priority order: needs input > actively
+ * running > failed > done. Drives the group node's color/pulse and which
+ * card the detail panel highlights as "active".
+ */
+export const toolGroupStatus = (group: AutomationAgentRunToolGroup): string => {
+	if (group.invocations.some((call) => call.status === "INPUT_REQUIRED")) {
+		return "INPUT_REQUIRED";
+	}
+	if (
+		group.invocations.some((call) =>
+			isActiveToolInvocationStatus(call.status),
+		)
+	) {
+		return "RUNNING";
+	}
+	if (
+		group.invocations.some((call) =>
+			isFailedToolInvocationStatus(call.status),
+		)
+	) {
+		return "FAILED";
+	}
+	return "COMPLETED";
+};
 
 /** Return a concise user-facing label for an agent or tool status. */
 export const agentRunStatusLabel = (status: string): string => {

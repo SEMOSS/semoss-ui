@@ -15,13 +15,64 @@ import { cn } from "@semoss/ui/next";
 import type {
 	AutomationAgentRunActivity,
 	AutomationAgentRunGraphData,
+	AutomationAgentRunToolGroup,
 } from "./agent-run.types";
-import { agentRunStatusClass, agentToolLabel } from "./agent-run.utils";
+import {
+	agentRunStatusClass,
+	agentToolLabel,
+	toolGroupStatus,
+} from "./agent-run.utils";
 
 type FlowNodeData = {
 	kind: "room" | "run" | AutomationAgentRunActivity["kind"];
 	label: string;
 	status?: string;
+	/** Number of calls folded into this node, for a grouped tool node. */
+	count?: number;
+};
+
+/** One item on the graph's third column: either a single non-tool activity,
+ * or every call made to one tool folded into a single node. */
+export type AgentRunGraphItem =
+	| { id: string; kind: "activity"; activity: AutomationAgentRunActivity }
+	| { id: string; kind: "toolGroup"; group: AutomationAgentRunToolGroup };
+
+/**
+ * Folds every call to the same tool into one group, in the position of its
+ * first call — so "8 WriteFile calls" is one node with a count badge instead
+ * of 8 nodes stacked on the canvas. Non-tool activities (messages, thinking,
+ * sub-agents) stay as individual items.
+ */
+export const groupToolActivities = (
+	activities: AutomationAgentRunActivity[],
+): AgentRunGraphItem[] => {
+	const items: AgentRunGraphItem[] = [];
+	const groupIndexByToolName = new Map<string, number>();
+	for (const activity of activities) {
+		if (activity.kind !== "tool") {
+			items.push({ id: activity.id, kind: "activity", activity });
+			continue;
+		}
+		const existingIndex = groupIndexByToolName.get(activity.label);
+		if (existingIndex !== undefined) {
+			const existing = items[existingIndex];
+			if (existing.kind === "toolGroup") {
+				existing.group.invocations.push(activity);
+			}
+			continue;
+		}
+		groupIndexByToolName.set(activity.label, items.length);
+		items.push({
+			id: `tool-group-${activity.label}`,
+			kind: "toolGroup",
+			group: {
+				id: `tool-group-${activity.label}`,
+				toolName: activity.label,
+				invocations: [activity],
+			},
+		});
+	}
+	return items;
 };
 
 type AgentRunFlowNode = Node<FlowNodeData, "agent-run">;
@@ -152,18 +203,28 @@ export const collectAgentRunActivities = ({
 		});
 	}
 
-	return [...activityById.values()].sort((left, right) => {
-		const leftTimestamp = left.timestamp
-			? Date.parse(left.timestamp)
-			: Number.NaN;
-		const rightTimestamp = right.timestamp
-			? Date.parse(right.timestamp)
-			: Number.NaN;
-		if (Number.isNaN(leftTimestamp) || Number.isNaN(rightTimestamp)) {
-			return 0;
-		}
-		return leftTimestamp - rightTimestamp;
-	});
+	// Chat-style narration (the assistant's text, the user's input, the final
+	// answer) is redundant now that tool calls get their own grouped view —
+	// the instruction that kicked off the run is already visible on the
+	// automation node itself, and the final answer is still in the "run"
+	// node's own detail panel.
+	return [...activityById.values()]
+		.filter(
+			(activity) =>
+				activity.kind !== "message" && activity.kind !== "input",
+		)
+		.sort((left, right) => {
+			const leftTimestamp = left.timestamp
+				? Date.parse(left.timestamp)
+				: Number.NaN;
+			const rightTimestamp = right.timestamp
+				? Date.parse(right.timestamp)
+				: Number.NaN;
+			if (Number.isNaN(leftTimestamp) || Number.isNaN(rightTimestamp)) {
+				return 0;
+			}
+			return leftTimestamp - rightTimestamp;
+		});
 };
 
 const activityFromItem = (item: AgentRunItem): AutomationAgentRunActivity => {
@@ -221,11 +282,14 @@ const iconForKind = (kind: FlowNodeData["kind"]) => {
 
 const AgentRunGraphNode = ({ data, selected }: NodeProps<AgentRunFlowNode>) => {
 	const Icon = iconForKind(data.kind);
+	const isActive =
+		data.status === "RUNNING" || data.status === "INPUT_REQUIRED";
 	return (
 		<div
 			className={cn(
 				"w-52 rounded-lg border bg-card px-3 py-2 shadow-sm",
 				data.status && agentRunStatusClass(data.status),
+				isActive && "animate-pulse",
 				selected && "ring-2 ring-ring ring-ring/50",
 			)}
 		>
@@ -240,6 +304,11 @@ const AgentRunGraphNode = ({ data, selected }: NodeProps<AgentRunFlowNode>) => {
 				<span className="truncate capitalize">
 					{data.kind === "subagent" ? "Sub-agent" : data.kind}
 				</span>
+				{typeof data.count === "number" && data.count > 1 && (
+					<span className="ml-auto shrink-0 rounded-full bg-muted px-1.5 font-medium text-foreground">
+						{data.count}
+					</span>
+				)}
 			</div>
 			<p className="mt-1 truncate font-medium text-sm" title={data.label}>
 				{data.label}
@@ -302,19 +371,34 @@ export function AgentRunGraph({
 			},
 			selected: selectedId === "run",
 		};
-		const activityNodes: AgentRunFlowNode[] = activities.map(
-			(activity, index) => ({
-				id: activity.id,
+		const graphItems = groupToolActivities(activities);
+		const itemNodes: AgentRunFlowNode[] = graphItems.map((item, index) => {
+			if (item.kind === "toolGroup") {
+				return {
+					id: item.id,
+					type: "agent-run",
+					position: { x: 520, y: index * 100 },
+					data: {
+						kind: "tool",
+						label: item.group.toolName,
+						status: toolGroupStatus(item.group),
+						count: item.group.invocations.length,
+					},
+					selected: selectedId === item.id,
+				};
+			}
+			return {
+				id: item.id,
 				type: "agent-run",
 				position: { x: 520, y: index * 100 },
 				data: {
-					kind: activity.kind,
-					label: activity.label,
-					status: activity.status,
+					kind: item.activity.kind,
+					label: item.activity.label,
+					status: item.activity.status,
 				},
-				selected: selectedId === activity.id,
-			}),
-		);
+				selected: selectedId === item.id,
+			};
+		});
 		const nextEdges: Edge[] = [
 			{
 				id: "room-run",
@@ -322,14 +406,14 @@ export function AgentRunGraph({
 				target: run.id,
 				className: "stroke-border",
 			},
-			...activityNodes.map((node) => ({
+			...itemNodes.map((node) => ({
 				id: `run-${node.id}`,
 				source: run.id,
 				target: node.id,
 				className: "stroke-border",
 			})),
 		];
-		return { nodes: [root, run, ...activityNodes], edges: nextEdges };
+		return { nodes: [root, run, ...itemNodes], edges: nextEdges };
 	}, [
 		activities,
 		selectedId,
