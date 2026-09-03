@@ -36,7 +36,7 @@ const handleHeaderRedirect = (response: Response): boolean => {
 	if (redirectHeader) {
 		const redirectUrl = getAbsoluteUrl(redirectHeader);
 		if (redirectUrl) {
-			window.location.replace(redirectUrl);
+			window.location.replace(Env.REDIRECT_URL || redirectUrl);
 			return true;
 		}
 	}
