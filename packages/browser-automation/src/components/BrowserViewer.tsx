@@ -28,6 +28,8 @@ interface BrowserViewerProps {
 		bounds: SelectionBounds,
 		anchor: { clientX: number; clientY: number },
 	) => void;
+	visionCaptureMode?: boolean;
+	onVisionDragComplete?: (bounds: SelectionBounds) => void;
 	/** When true, clicks are delegated to onAutomationClick for acknowledged dispatch. */
 	automationMode?: boolean;
 	/** Called for an automation click with local and remote browser coordinates. */
@@ -58,6 +60,8 @@ export const BrowserViewer: React.FC<BrowserViewerProps> = ({
 	sendEvent,
 	onUserInput,
 	onTextDragComplete,
+	visionCaptureMode = false,
+	onVisionDragComplete,
 	automationMode = false,
 	onAutomationClick,
 }) => {
@@ -70,6 +74,12 @@ export const BrowserViewer: React.FC<BrowserViewerProps> = ({
 	const lastScrollbarDispatchRef = useRef(0);
 	const optimisticScrollTopRef = useRef(0);
 	const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
+	const [visionSelection, setVisionSelection] = useState<{
+		startX: number;
+		startY: number;
+		endX: number;
+		endY: number;
+	} | null>(null);
 
 	useEffect(() => {
 		if (!containerRef.current) return;
@@ -220,6 +230,18 @@ export const BrowserViewer: React.FC<BrowserViewerProps> = ({
 		},
 		[remoteHeight, remoteWidth],
 	);
+	const toCanvasCoords = useCallback((clientX: number, clientY: number) => {
+		const rect = canvasRef.current?.getBoundingClientRect();
+		if (!rect) return { x: 0, y: 0 };
+		return {
+			x: Math.max(0, Math.min(clientX - rect.left, rect.width)),
+			y: Math.max(0, Math.min(clientY - rect.top, rect.height)),
+		};
+	}, []);
+
+	useEffect(() => {
+		if (!visionCaptureMode) setVisionSelection(null);
+	}, [visionCaptureMode]);
 
 	// Without drag detection, mousedown+mouseup registers every click twice.
 	const dragDownPosRef = useRef<{ x: number; y: number } | null>(null);
@@ -234,9 +256,19 @@ export const BrowserViewer: React.FC<BrowserViewerProps> = ({
 			const point = toRemoteCoords(event.clientX, event.clientY);
 			dragDownPosRef.current = point;
 			isDraggingRef.current = false;
+			if (visionCaptureMode && event.button === 0) {
+				event.preventDefault();
+				const local = toCanvasCoords(event.clientX, event.clientY);
+				setVisionSelection({
+					startX: local.x,
+					startY: local.y,
+					endX: local.x,
+					endY: local.y,
+				});
+			}
 			// Don't send yet — wait to see if this is a drag or a clean click.
 		},
-		[onUserInput, toRemoteCoords],
+		[onUserInput, toCanvasCoords, toRemoteCoords, visionCaptureMode],
 	);
 	const handleMouseUp = useCallback(
 		(event: React.MouseEvent) => {
@@ -244,6 +276,21 @@ export const BrowserViewer: React.FC<BrowserViewerProps> = ({
 			const point = toRemoteCoords(event.clientX, event.clientY);
 			const dragStart = dragDownPosRef.current;
 			const wasDragging = isDraggingRef.current;
+			if (visionCaptureMode) {
+				event.preventDefault();
+				suppressNextClickRef.current = true;
+				if (event.button === 0 && dragStart && wasDragging) {
+					onVisionDragComplete?.({
+						startX: dragStart.x,
+						startY: dragStart.y,
+						endX: point.x,
+						endY: point.y,
+					});
+				}
+				isDraggingRef.current = false;
+				dragDownPosRef.current = null;
+				return;
+			}
 			if (wasDragging) {
 				sendEvent({
 					type: "mouse-up",
@@ -266,7 +313,14 @@ export const BrowserViewer: React.FC<BrowserViewerProps> = ({
 			isDraggingRef.current = false;
 			dragDownPosRef.current = null;
 		},
-		[onTextDragComplete, onUserInput, sendEvent, toRemoteCoords],
+		[
+			onTextDragComplete,
+			onUserInput,
+			onVisionDragComplete,
+			sendEvent,
+			toRemoteCoords,
+			visionCaptureMode,
+		],
 	);
 	const handleClick = useCallback(
 		(event: React.MouseEvent) => {
@@ -275,6 +329,7 @@ export const BrowserViewer: React.FC<BrowserViewerProps> = ({
 				suppressNextClickRef.current = false;
 				return;
 			}
+			if (visionCaptureMode) return;
 			onUserInput?.();
 			const point = toRemoteCoords(event.clientX, event.clientY);
 			if (automationMode && onAutomationClick) {
@@ -303,6 +358,7 @@ export const BrowserViewer: React.FC<BrowserViewerProps> = ({
 			onUserInput,
 			sendEvent,
 			toRemoteCoords,
+			visionCaptureMode,
 		],
 	);
 	const lastMoveTime = useRef(0);
@@ -312,6 +368,22 @@ export const BrowserViewer: React.FC<BrowserViewerProps> = ({
 			if (now - lastMoveTime.current < 32) return;
 			lastMoveTime.current = now;
 			const point = toRemoteCoords(event.clientX, event.clientY);
+			if (visionCaptureMode) {
+				if (dragDownPosRef.current) {
+					const dx = Math.abs(point.x - dragDownPosRef.current.x);
+					const dy = Math.abs(point.y - dragDownPosRef.current.y);
+					if (dx > DRAG_THRESHOLD_PX || dy > DRAG_THRESHOLD_PX) {
+						isDraggingRef.current = true;
+					}
+					const local = toCanvasCoords(event.clientX, event.clientY);
+					setVisionSelection((selection) =>
+						selection
+							? { ...selection, endX: local.x, endY: local.y }
+							: null,
+					);
+				}
+				return;
+			}
 
 			// Start drag if mouse moved past threshold from down position
 			if (dragDownPosRef.current && !isDraggingRef.current) {
@@ -329,7 +401,7 @@ export const BrowserViewer: React.FC<BrowserViewerProps> = ({
 
 			sendEvent({ type: "mouse-move", ...point });
 		},
-		[sendEvent, toRemoteCoords],
+		[sendEvent, toCanvasCoords, toRemoteCoords, visionCaptureMode],
 	);
 	const lastScrollTimeRef = useRef(0);
 	const scrollViewport = useCallback(
@@ -449,11 +521,13 @@ export const BrowserViewer: React.FC<BrowserViewerProps> = ({
 					style={{
 						objectFit: "contain",
 						cursor:
-							automationMode && isConnected
+							visionCaptureMode && isConnected
 								? "crosshair"
-								: isConnected
-									? browserCursor
-									: "default",
+								: automationMode && isConnected
+									? "crosshair"
+									: isConnected
+										? browserCursor
+										: "default",
 					}}
 					onMouseDown={handleMouseDown}
 					onMouseUp={handleMouseUp}
@@ -463,6 +537,27 @@ export const BrowserViewer: React.FC<BrowserViewerProps> = ({
 					onWheel={handleWheel}
 					onKeyDown={handleKeyDown}
 				/>
+				{visionSelection && (
+					<div
+						className="pointer-events-none absolute border-2 border-accent bg-accent/15 shadow-sm"
+						style={{
+							left: Math.min(
+								visionSelection.startX,
+								visionSelection.endX,
+							),
+							top: Math.min(
+								visionSelection.startY,
+								visionSelection.endY,
+							),
+							width: Math.abs(
+								visionSelection.endX - visionSelection.startX,
+							),
+							height: Math.abs(
+								visionSelection.endY - visionSelection.startY,
+							),
+						}}
+					/>
+				)}
 				{isConnected && remoteScrollableHeight > 0 && (
 					<div
 						ref={scrollbarTrackRef}

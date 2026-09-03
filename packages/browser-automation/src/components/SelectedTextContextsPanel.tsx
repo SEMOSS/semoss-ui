@@ -35,30 +35,30 @@ import {
 	returnBudgetOptions,
 } from "../domain/selected-text";
 import type {
+	CapturedContext,
 	RemoteBrowserContextLimits,
-	SelectedTextContext,
 } from "../types/browserEvents";
 
 interface SelectedTextContextsPanelProps {
 	open: boolean;
-	contexts: SelectedTextContext[];
+	contexts: CapturedContext[];
 	limits: RemoteBrowserContextLimits;
 	returnPlan: ContextReturnPlan;
 	returnBudgetChars: number;
 	includedContextIds: ReadonlySet<string>;
 	onToggle: () => void;
-	onCopy: (context: SelectedTextContext) => void;
+	onCopy: (context: CapturedContext) => void;
 	onDelete: (contextId: string) => void;
 	onSave: (contextId: string, content: string) => void;
 	onToggleIncluded: (contextId: string, include: boolean) => void;
 	onReturnBudgetChange: (chars: number) => void;
 }
 
-function contextLabel(context: SelectedTextContext, index: number): string {
+function contextLabel(context: CapturedContext, index: number): string {
 	if (context.label?.trim()) return context.label;
 	if (context.title?.trim())
-		return `${context.title} · ${context.kind === "full-page-text" ? "Full page" : "Selection"} ${index + 1}`;
-	return `${context.kind === "full-page-text" ? "Full page text" : "Selected text"} ${index + 1}`;
+		return `${context.title} · ${context.kind === "full-page-text" ? "Full page" : context.kind === "vision-image" ? "Vision" : "Selection"} ${index + 1}`;
+	return `${context.kind === "full-page-text" ? "Full page text" : context.kind === "vision-image" ? "Vision context" : "Selected text"} ${index + 1}`;
 }
 
 function dispositionBadge(item: ContextReturnPlanItem | undefined): {
@@ -86,7 +86,7 @@ function dispositionBadge(item: ContextReturnPlanItem | undefined): {
 	}
 }
 
-function captureTruncationMessage(context: SelectedTextContext): string | null {
+function captureTruncationMessage(context: CapturedContext): string | null {
 	if (!context.stats.truncated) return null;
 	const {
 		originalCharacterCount,
@@ -168,7 +168,7 @@ export const SelectedTextContextsPanel: React.FC<
 					</div>
 					<div className="text-muted-foreground text-xs">
 						{contexts.length === 0
-							? "Selected visible website text"
+							? "Selected website text and vision descriptions"
 							: `${summary.capturedContextCount} contexts captured · ${summary.returnedChars.toLocaleString()} / ${summary.limitChars.toLocaleString()} characters selected for Playground`}
 					</div>
 					{contexts.length > 0 && (
@@ -187,7 +187,8 @@ export const SelectedTextContextsPanel: React.FC<
 				<div className="border-line border-t bg-canvas/40 p-2.5">
 					{contexts.length === 0 ? (
 						<p className="text-muted-foreground text-sm">
-							Choose Capture Context, then drag over website text.
+							Capture website text or describe a selected screen
+							region.
 						</p>
 					) : (
 						<>
@@ -306,21 +307,27 @@ export const SelectedTextContextsPanel: React.FC<
 												<div className="mb-2 flex flex-wrap gap-1">
 													<Badge>
 														{context.kind ===
-														"full-page-text"
-															? "Full page"
-															: "Selected text"}
+														"vision-image"
+															? "Vision image"
+															: context.kind ===
+																	"full-page-text"
+																? "Full page"
+																: "Selected text"}
 													</Badge>
 													<Badge variant="secondary">
 														{context.extractionMethod ===
-														"dom-native-selection"
-															? "Browser selection"
+														"vision-model"
+															? "Vision model"
 															: context.extractionMethod ===
-																	"dom-range"
-																? "Exact range"
+																	"dom-native-selection"
+																? "Browser selection"
 																: context.extractionMethod ===
-																		"full-page-dom"
-																	? "Auto-scrolled DOM"
-																	: "Area text"}
+																		"dom-range"
+																	? "Exact range"
+																	: context.extractionMethod ===
+																			"full-page-dom"
+																		? "Auto-scrolled DOM"
+																		: "Area text"}
 													</Badge>
 													<Badge variant="outline">
 														{context.content.length}{" "}
@@ -402,8 +409,10 @@ export const SelectedTextContextsPanel: React.FC<
 												) : (
 													<div className="rounded-md border border-line bg-canvas shadow-black/10 shadow-inner">
 														<div className="border-line border-b px-2.5 py-1.5 font-medium text-[11px] text-muted-foreground uppercase tracking-wide">
-															Extracted website
-															text
+															{context.kind ===
+															"vision-image"
+																? "Vision description"
+																: "Extracted website text"}
 														</div>
 														<pre className="max-h-[360px] overflow-auto whitespace-pre-wrap break-words p-3 font-sans text-sm leading-6">
 															{context.content}

@@ -30,6 +30,7 @@ import {
 	SaveRecordingDialog,
 } from "./components/dialogs/SaveRecordingDialog";
 import { StopRecordingDialog } from "./components/dialogs/StopRecordingDialog";
+import { VisionContextDialog } from "./components/dialogs/vision-context-dialog";
 import { PlaygroundStartPrompt } from "./components/PlaygroundStartPrompt";
 import { ReplaySidebar } from "./components/replay/ReplaySidebar";
 import { normalizeBrowserUrl } from "./domain/browser-url";
@@ -43,7 +44,7 @@ import {
 	appendCapturedContext,
 	buildContextReturnPlan,
 	normalizeContextLimits,
-	renderSelectedTextContext,
+	renderCapturedContext,
 } from "./domain/selected-text";
 import {
 	getToolBooleanParameter,
@@ -58,6 +59,7 @@ import { useDownloads } from "./hooks/useDownloads";
 import { usePlaybackController } from "./hooks/usePlaybackController";
 import { useRemoteBrowserSession } from "./hooks/useRemoteBrowserSession";
 import {
+	analyzeBrowserImageContext,
 	bindSemossInsightToRoom,
 	generatePlaywrightRecordingMetadata,
 	getSemossInsightId,
@@ -71,6 +73,7 @@ import {
 import type {
 	BrowserScrollMetrics,
 	BrowserTabInfo,
+	CapturedContext,
 	ClientToServerEvent,
 	GeneratedRecordingMetadata,
 	LoadedRecordingStep,
@@ -80,6 +83,7 @@ import type {
 	SelectedTextContext,
 	SelectionBounds,
 	StepsEnvelope,
+	VisionImageContext,
 } from "./types/browserEvents";
 
 /** Seconds a finished replay stays on screen before the session is closed. */
@@ -106,6 +110,13 @@ type PendingTextSelection = {
 	context: SelectedTextContext | null;
 	clientX: number;
 	clientY: number;
+};
+
+type PendingVisionSelection = {
+	bounds: SelectionBounds;
+	tabId: string;
+	url: string;
+	title: string;
 };
 
 type ReplayContextCaptureError = {
@@ -197,7 +208,7 @@ export default function App() {
 		RemoteBrowserRecordedStep[]
 	>([]);
 	const [selectedTextContexts, setSelectedTextContexts] = useState<
-		SelectedTextContext[]
+		CapturedContext[]
 	>([]);
 	const [includedContextIds, setIncludedContextIds] = useState<Set<string>>(
 		() => new Set(),
@@ -210,6 +221,17 @@ export default function App() {
 	const [isCapturingFullPage, setIsCapturingFullPage] = useState(false);
 	const [pendingTextSelection, setPendingTextSelection] =
 		useState<PendingTextSelection | null>(null);
+	const [isVisionCaptureMode, setIsVisionCaptureMode] = useState(false);
+	const [pendingVisionSelection, setPendingVisionSelection] =
+		useState<PendingVisionSelection | null>(null);
+	const [visionPrompt, setVisionPrompt] = useState("Describe what you see");
+	const [visionModelId, setVisionModelId] = useState("");
+	const [visionModels, setVisionModels] = useState<
+		RecordingMetadataModelOption[]
+	>([]);
+	const [isLoadingVisionModels, setIsLoadingVisionModels] = useState(false);
+	const [isSubmittingVisionContext, setIsSubmittingVisionContext] =
+		useState(false);
 	const [pendingNavigationCount, setPendingNavigationCount] = useState(0);
 	const [isRemoteNavigating, setIsRemoteNavigating] = useState(false);
 	const [recordedStepsOpen, setRecordedStepsOpen] = useState(false);
@@ -227,7 +249,7 @@ export default function App() {
 	const autoPlaybackErrorSentRef = useRef(false);
 	const returningToPlaygroundRef = useRef(false);
 	const selectedContextSequenceRef = useRef(0);
-	const selectedTextContextsRef = useRef<SelectedTextContext[]>([]);
+	const selectedTextContextsRef = useRef<CapturedContext[]>([]);
 	// Refs are required because MCP replay completion runs outside React state.
 	const includedContextIdsRef = useRef<Set<string>>(new Set());
 	const returnBudgetCharsRef = useRef(returnBudgetChars);
@@ -270,6 +292,8 @@ export default function App() {
 		const budget = contextLimitsRef.current.defaultReturnBudgetChars;
 		returnBudgetCharsRef.current = budget;
 		setReturnBudgetChars(budget);
+		setIsVisionCaptureMode(false);
+		setPendingVisionSelection(null);
 	}, []);
 
 	const contextReturnPlan = useMemo(
@@ -484,8 +508,8 @@ export default function App() {
 		sendReplayEvent,
 	});
 
-	const storeSelectedTextContext = useCallback(
-		(context: SelectedTextContext): SelectedTextContext => {
+	const storeCapturedContext = useCallback(
+		(context: CapturedContext): CapturedContext => {
 			selectedContextSequenceRef.current += 1;
 			const title = (context.title || "Website text").trim().slice(0, 72);
 			const limits = contextLimitsRef.current;
@@ -496,11 +520,17 @@ export default function App() {
 			const trimmed = context.content.trim();
 			const boundedContent = trimmed.slice(0, maxChars);
 			const clientTruncated = trimmed.length > boundedContent.length;
-			const stored: SelectedTextContext = {
+			const contextKindLabel =
+				context.kind === "full-page-text"
+					? "Full page"
+					: context.kind === "vision-image"
+						? "Vision"
+						: "Selection";
+			const stored: CapturedContext = {
 				...context,
-				label: `${title} - ${context.kind === "full-page-text" ? "Full page" : "Selection"} ${selectedContextSequenceRef.current}`,
+				label: `${title} - ${contextKindLabel} ${selectedContextSequenceRef.current}`,
 				content: boundedContent,
-				text: renderSelectedTextContext({
+				text: renderCapturedContext({
 					...context,
 					content: boundedContent,
 				}),
@@ -539,7 +569,9 @@ export default function App() {
 			setSnackMessage(
 				stored.stats.truncated && omitted > 0
 					? `Captured ${boundedContent.length.toLocaleString()} of ${original.toLocaleString()} source characters. ${omitted.toLocaleString()} were omitted.`
-					: `Captured ${boundedContent.length.toLocaleString()} characters of website text`,
+					: context.kind === "vision-image"
+						? "Captured vision context"
+						: `Captured ${boundedContent.length.toLocaleString()} characters of website text`,
 			);
 			if (removed) {
 				setSnackError(
@@ -556,12 +588,12 @@ export default function App() {
 			const context = await captureFullPageText(
 				activeBrowserTabIdRef.current,
 			);
-			const stored = storeSelectedTextContext(context);
+			const stored = storeCapturedContext(context);
 			return stored;
 		} finally {
 			setIsCapturingFullPage(false);
 		}
-	}, [captureFullPageText, storeSelectedTextContext]);
+	}, [captureFullPageText, storeCapturedContext]);
 	const recordReplayContextCaptureError = useCallback(
 		(stepId: number, error: unknown) => {
 			const message =
@@ -622,13 +654,13 @@ export default function App() {
 				undefined,
 				activeBrowserTabIdRef.current,
 			);
-			storeSelectedTextContext(context);
+			storeCapturedContext(context);
 		},
 		[
 			captureSelectedText,
 			session?.viewport.height,
 			session?.viewport.width,
-			storeSelectedTextContext,
+			storeCapturedContext,
 		],
 	);
 	const loadRoomRecording = useCallback(
@@ -1121,7 +1153,6 @@ export default function App() {
 		playback.configureResolvedRecording,
 		playback.configureRoomRecordings,
 		// playback.project / playback.projects read through refs; see the refs above.
-		toolExecutionKey,
 	]);
 
 	useEffect(() => {
@@ -1191,8 +1222,127 @@ export default function App() {
 		[captureSelectedText],
 	);
 
+	const handleToggleVisionCapture = useCallback(async () => {
+		if (isVisionCaptureMode) {
+			setIsVisionCaptureMode(false);
+			return;
+		}
+		setPendingTextSelection(null);
+		setIsVisionCaptureMode(true);
+		if (visionModels.length > 0 || isLoadingVisionModels) return;
+		setIsLoadingVisionModels(true);
+		try {
+			const models =
+				await listRecordingMetadataModels(effectiveInsightId);
+			setVisionModels(models);
+			setVisionModelId((current) => current || models[0]?.value || "");
+			if (models.length === 0) {
+				setSnackError(
+					"No accessible model is available for vision context",
+				);
+			}
+		} catch (error) {
+			setSnackError(
+				error instanceof Error
+					? error.message
+					: "Could not load vision models",
+			);
+		} finally {
+			setIsLoadingVisionModels(false);
+		}
+	}, [
+		effectiveInsightId,
+		isLoadingVisionModels,
+		isVisionCaptureMode,
+		visionModels.length,
+	]);
+
+	const handleVisionDragComplete = useCallback(
+		(bounds: SelectionBounds) => {
+			const activeTab = browserTabsRef.current.find(
+				(tab) => tab.tabId === activeBrowserTabIdRef.current,
+			);
+			setPendingVisionSelection({
+				bounds,
+				tabId: activeBrowserTabIdRef.current,
+				url: activeTab?.url || currentUrl,
+				title: activeTab?.title || "Browser image",
+			});
+			setIsVisionCaptureMode(false);
+		},
+		[currentUrl],
+	);
+
+	const handleSubmitVisionContext = useCallback(async () => {
+		const selection = pendingVisionSelection;
+		const sessionId = session?.sessionId;
+		if (!selection || !sessionId || !visionModelId || !visionPrompt.trim())
+			return;
+		if (activeBrowserTabIdRef.current !== selection.tabId) {
+			setSnackError(
+				"The active browser tab changed. Select the image region again.",
+			);
+			setPendingVisionSelection(null);
+			return;
+		}
+		setIsSubmittingVisionContext(true);
+		try {
+			const result = await analyzeBrowserImageContext({
+				sessionId,
+				tabId: selection.tabId,
+				engineId: visionModelId,
+				prompt: visionPrompt.trim(),
+				bounds: selection.bounds,
+				insightId: effectiveInsightId,
+			});
+			const context: VisionImageContext = {
+				version: "1.0",
+				kind: "vision-image",
+				id: crypto.randomUUID(),
+				capturedAt: Date.now(),
+				url: selection.url,
+				title: selection.title,
+				throughStepId: 0,
+				extractionMethod: "vision-model",
+				bounds: selection.bounds,
+				prompt: visionPrompt.trim(),
+				modelId: result.engineId,
+				content: result.response,
+				edited: false,
+				sources: [],
+				text: "",
+				stats: {
+					characterCount: result.response.length,
+					fragmentCount: 1,
+					scannedTextNodes: 0,
+					truncated: false,
+				},
+			};
+			storeCapturedContext({
+				...context,
+				text: renderCapturedContext(context),
+			});
+			setPendingVisionSelection(null);
+		} catch (error) {
+			setSnackError(
+				error instanceof Error
+					? error.message
+					: "Could not capture vision context",
+			);
+		} finally {
+			setIsSubmittingVisionContext(false);
+		}
+	}, [
+		effectiveInsightId,
+		pendingVisionSelection,
+		session?.sessionId,
+		storeCapturedContext,
+		visionModelId,
+		visionPrompt,
+	]);
+
 	const handleCopySelectedContext = useCallback(
-		async (context: SelectedTextContext) => {
+		async (context: CapturedContext) => {
 			try {
 				await navigator.clipboard.writeText(context.content);
 				setSnackMessage("Selected website text copied");
@@ -1222,7 +1372,7 @@ export default function App() {
 							: "Could not record the context extraction step";
 				}
 			}
-			storeSelectedTextContext(captured);
+			storeCapturedContext(captured);
 			dismissPendingTextSelection();
 			if (recordingError) {
 				setSnackError(
@@ -1234,7 +1384,7 @@ export default function App() {
 			captureSelectedText,
 			dismissPendingTextSelection,
 			isRecording,
-			storeSelectedTextContext,
+			storeCapturedContext,
 		],
 	);
 
@@ -1295,7 +1445,7 @@ export default function App() {
 				};
 				return {
 					...updated,
-					text: renderSelectedTextContext(updated),
+					text: renderCapturedContext(updated),
 				};
 			});
 			selectedTextContextsRef.current = next;
@@ -2226,6 +2376,10 @@ export default function App() {
 					onOpenSaveRecording={handleOpenSaveRecording}
 					isCapturingFullPage={isCapturingFullPage}
 					onCaptureFullPage={() => void handleCaptureFullPage()}
+					isCapturingVision={isVisionCaptureMode}
+					onToggleVisionCapture={() =>
+						void handleToggleVisionCapture()
+					}
 					isDebugOpen={debugOpen}
 					onToggleDebug={() => void handleToggleDebug()}
 				/>
@@ -2488,6 +2642,8 @@ export default function App() {
 						browserCursor={browserCursor}
 						sendEvent={sendViewerEvent}
 						onTextDragComplete={handleTextDragComplete}
+						visionCaptureMode={isVisionCaptureMode}
+						onVisionDragComplete={handleVisionDragComplete}
 						onUserInput={() => {
 							playback.requestPause(
 								"Playback will pause after your interaction",
@@ -2580,6 +2736,20 @@ export default function App() {
 				onGenerateMetadata={() => void handleGenerateSaveMetadata()}
 				onDestinationChange={setSaveDestination}
 				onSave={handleSaveRecording}
+			/>
+
+			<VisionContextDialog
+				open={pendingVisionSelection !== null}
+				bounds={pendingVisionSelection?.bounds ?? null}
+				models={visionModels}
+				modelId={visionModelId}
+				prompt={visionPrompt}
+				isLoadingModels={isLoadingVisionModels}
+				isSubmitting={isSubmittingVisionContext}
+				onModelChange={setVisionModelId}
+				onPromptChange={setVisionPrompt}
+				onClose={() => setPendingVisionSelection(null)}
+				onSubmit={() => void handleSubmitVisionContext()}
 			/>
 		</div>
 	);

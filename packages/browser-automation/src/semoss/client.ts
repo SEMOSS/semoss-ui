@@ -3,6 +3,7 @@ import type {
 	GeneratedRecordingMetadata,
 	McpToolContext,
 	RecordingMetadataModelOption,
+	SelectionBounds,
 } from "../types/browserEvents";
 import { assertPixelSuccess, runPixel } from "./pixel";
 
@@ -198,6 +199,55 @@ export async function listRecordingMetadataModels(
 			value;
 		return [{ label, value }];
 	});
+}
+
+export async function analyzeBrowserImageContext(parameters: {
+	sessionId: string;
+	tabId: string;
+	engineId: string;
+	prompt: string;
+	bounds: SelectionBounds;
+	insightId?: string;
+}): Promise<{ response: string; engineId: string }> {
+	const expression = `ImageContext(sessionId=${JSON.stringify(
+		parameters.sessionId,
+	)}, tabId=${JSON.stringify(parameters.tabId)}, engine=${JSON.stringify(
+		parameters.engineId,
+	)}, paramValues=[${JSON.stringify({
+		startX: Math.round(parameters.bounds.startX),
+		startY: Math.round(parameters.bounds.startY),
+		endX: Math.round(parameters.bounds.endX),
+		endY: Math.round(parameters.bounds.endY),
+		userPrompt: parameters.prompt,
+	})}]);`;
+	const result = await runPixel<Record<string, unknown>>(
+		expression,
+		parameters.insightId,
+	);
+	assertPixelSuccess(result, "Browser vision context");
+	const output = result.pixelReturn?.[0]?.output;
+	if (!output || typeof output !== "object" || Array.isArray(output)) {
+		throw new Error("Browser vision context returned no result");
+	}
+	if (output.success === false) {
+		throw new Error(
+			typeof output.error === "string"
+				? output.error
+				: "Browser vision context failed",
+		);
+	}
+	const response =
+		typeof output.response === "string" ? output.response.trim() : "";
+	if (!response) {
+		throw new Error("The vision model returned an empty description");
+	}
+	return {
+		response,
+		engineId:
+			typeof output.engineId === "string"
+				? output.engineId
+				: parameters.engineId,
+	};
 }
 
 export async function generatePlaywrightRecordingMetadata(parameters: {

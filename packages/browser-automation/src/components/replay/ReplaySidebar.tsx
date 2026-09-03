@@ -1,9 +1,9 @@
 import type { ContextReturnPlan } from "../../domain/selected-text";
 import type { PlaybackController } from "../../hooks/usePlaybackController";
 import type {
+	CapturedContext,
 	RemoteBrowserContextLimits,
 	RemoteBrowserRecordedStep,
-	SelectedTextContext,
 } from "../../types/browserEvents";
 import { SelectedTextContextsPanel } from "../SelectedTextContextsPanel";
 import { LoadedRecordingPanel } from "./LoadedRecordingPanel";
@@ -18,13 +18,13 @@ interface ReplaySidebarProps {
 	onToggleRecordedSteps: () => void;
 	onSaveRecording: () => void;
 	selectedTextContextsOpen: boolean;
-	selectedTextContexts: SelectedTextContext[];
+	selectedTextContexts: CapturedContext[];
 	contextLimits: RemoteBrowserContextLimits;
 	contextReturnPlan: ContextReturnPlan;
 	returnBudgetChars: number;
 	includedContextIds: ReadonlySet<string>;
 	onToggleSelectedTextContexts: () => void;
-	onCopySelectedContext: (context: SelectedTextContext) => void;
+	onCopySelectedContext: (context: CapturedContext) => void;
 	onDeleteSelectedContext: (contextId: string) => void;
 	onSaveSelectedContext: (contextId: string, content: string) => void;
 	onToggleContextIncluded: (contextId: string, include: boolean) => void;

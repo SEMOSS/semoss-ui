@@ -7,6 +7,7 @@ import {
 	Play,
 	RefreshCw,
 	Save,
+	ScanLine,
 	Send,
 } from "lucide-react";
 import React, { useState } from "react";
@@ -37,6 +38,8 @@ interface BrowserToolbarProps {
 	onOpenSaveRecording: () => void;
 	isCapturingFullPage: boolean;
 	onCaptureFullPage: () => void;
+	isCapturingVision: boolean;
+	onToggleVisionCapture: () => void;
 	isDebugOpen: boolean;
 	onToggleDebug: () => void;
 }
@@ -73,6 +76,8 @@ export const BrowserToolbar: React.FC<BrowserToolbarProps> = ({
 	onOpenSaveRecording,
 	isCapturingFullPage,
 	onCaptureFullPage,
+	isCapturingVision,
+	onToggleVisionCapture,
 	isDebugOpen,
 	onToggleDebug,
 }) => {
@@ -206,6 +211,25 @@ export const BrowserToolbar: React.FC<BrowserToolbarProps> = ({
 						{isCapturingFullPage ? <Spinner /> : <FileText />}
 						<span className="hidden sm:inline">
 							{isCapturingFullPage ? "Capturing" : "Page text"}
+						</span>
+					</Button>
+				</ToolbarTip>
+				<ToolbarTip
+					label={
+						isCapturingVision
+							? "Cancel vision region selection"
+							: "Select a screen region for vision context"
+					}
+				>
+					<Button
+						size="sm"
+						variant={isCapturingVision ? "default" : "outline"}
+						disabled={connectionState !== "connected" || isLoading}
+						onClick={onToggleVisionCapture}
+					>
+						<ScanLine />
+						<span className="hidden sm:inline">
+							{isCapturingVision ? "Select region" : "Vision"}
 						</span>
 					</Button>
 				</ToolbarTip>
