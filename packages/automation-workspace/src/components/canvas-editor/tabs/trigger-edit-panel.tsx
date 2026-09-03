@@ -117,8 +117,26 @@ export function TriggerEditPanel({
 			</div>
 			<div className="flex-1 overflow-y-auto px-4 py-4">
 				<div className="space-y-4">
+					<section className="rounded-lg border p-3">
+						<Field>
+							<FieldLabel className="text-xs">
+								Description
+							</FieldLabel>
+							<Textarea
+								className="resize-none text-sm"
+								rows={3}
+								value={description}
+								onChange={(event) => {
+									if (!readOnly)
+										onDescriptionChange(event.target.value);
+								}}
+								placeholder="I want to monitor new files and notify my team"
+								readOnly={readOnly}
+							/>
+						</Field>
+					</section>
 					<section
-						className="space-y-1"
+						className="space-y-1 rounded-lg border p-3"
 						aria-labelledby={manualTriggerHeadingId}
 					>
 						<h3
@@ -131,20 +149,125 @@ export function TriggerEditPanel({
 							Run this automation directly from the workspace.
 						</p>
 					</section>
-					<Field>
-						<FieldLabel className="text-xs">Description</FieldLabel>
-						<Textarea
-							className="resize-none text-sm"
-							rows={3}
-							value={description}
-							onChange={(event) => {
-								if (!readOnly)
-									onDescriptionChange(event.target.value);
-							}}
-							placeholder="I want to monitor new files and notify my team"
-							readOnly={readOnly}
-						/>
-					</Field>
+					<section
+						className="space-y-3 rounded-lg border p-3"
+						aria-labelledby={scheduleTriggerHeadingId}
+					>
+						<div className="flex items-center justify-between gap-3">
+							<div>
+								<h3
+									id={scheduleTriggerHeadingId}
+									className="font-medium text-sm"
+								>
+									Schedule
+								</h3>
+								<p className="text-muted-foreground text-xs">
+									Run this automation on a recurring schedule.
+								</p>
+							</div>
+							{!readOnly && (
+								<Button
+									size="sm"
+									variant={
+										optionalTriggerModes.includes(
+											"schedule",
+										)
+											? "outline"
+											: "default"
+									}
+									onClick={() =>
+										updateOptionalTriggerMode(
+											"schedule",
+											!optionalTriggerModes.includes(
+												"schedule",
+											),
+										)
+									}
+								>
+									{optionalTriggerModes.includes("schedule")
+										? "Remove"
+										: "Add"}
+								</Button>
+							)}
+						</div>
+						{optionalTriggerModes.includes("schedule") && (
+							<SchedulePanel
+								projectId={appId}
+								onPrepareSchedule={onPrepareSchedule}
+							/>
+						)}
+					</section>
+					<section
+						className="space-y-3 rounded-lg border p-3"
+						aria-labelledby={eventTriggerHeadingId}
+					>
+						<div className="flex items-center justify-between gap-3">
+							<div>
+								<h3
+									id={eventTriggerHeadingId}
+									className="font-medium text-sm"
+								>
+									Event based
+								</h3>
+								<p className="text-muted-foreground text-xs">
+									Start this automation when an event is
+									received.
+								</p>
+							</div>
+							{!readOnly && (
+								<Button
+									size="sm"
+									variant={
+										optionalTriggerModes.includes(
+											"event-based",
+										)
+											? "outline"
+											: "default"
+									}
+									onClick={() =>
+										updateOptionalTriggerMode(
+											"event-based",
+											!optionalTriggerModes.includes(
+												"event-based",
+											),
+										)
+									}
+								>
+									{optionalTriggerModes.includes(
+										"event-based",
+									)
+										? "Remove"
+										: "Add"}
+								</Button>
+							)}
+						</div>
+						{optionalTriggerModes.includes("event-based") && (
+							<Field>
+								<FieldLabel className="text-xs">
+									Event source
+								</FieldLabel>
+								<Input
+									value={
+										typeof step.workflowConfig
+											?.eventSource === "string"
+											? step.workflowConfig.eventSource
+											: ""
+									}
+									placeholder="Event source"
+									readOnly={readOnly}
+									onChange={(event) =>
+										onUpdate({
+											...step,
+											workflowConfig: {
+												...step.workflowConfig,
+												eventSource: event.target.value,
+											},
+										})
+									}
+								/>
+							</Field>
+						)}
+					</section>
 					<div className="space-y-3 rounded-lg border p-3">
 						<div>
 							<p className="font-medium text-sm">Global inputs</p>
@@ -246,121 +369,6 @@ export function TriggerEditPanel({
 							</Button>
 						)}
 					</div>
-					<section
-						className="space-y-3"
-						aria-labelledby={scheduleTriggerHeadingId}
-					>
-						<div className="flex items-center justify-between gap-3">
-							<div>
-								<h3
-									id={scheduleTriggerHeadingId}
-									className="font-medium text-sm"
-								>
-									Schedule
-								</h3>
-								<p className="text-muted-foreground text-xs">
-									Run this automation on a recurring schedule.
-								</p>
-							</div>
-							{!readOnly && (
-								<Button
-									size="sm"
-									variant={
-										optionalTriggerModes.includes(
-											"schedule",
-										)
-											? "outline"
-											: "default"
-									}
-									onClick={() =>
-										updateOptionalTriggerMode(
-											"schedule",
-											!optionalTriggerModes.includes(
-												"schedule",
-											),
-										)
-									}
-								>
-									{optionalTriggerModes.includes("schedule")
-										? "Remove"
-										: "Add"}
-								</Button>
-							)}
-						</div>
-						{optionalTriggerModes.includes("schedule") && (
-							<SchedulePanel
-								projectId={appId}
-								onPrepareSchedule={onPrepareSchedule}
-							/>
-						)}
-					</section>
-					<section
-						className="space-y-3"
-						aria-labelledby={eventTriggerHeadingId}
-					>
-						<div className="flex items-center justify-between gap-3">
-							<div>
-								<h3
-									id={eventTriggerHeadingId}
-									className="font-medium text-sm"
-								>
-									Event based
-								</h3>
-								<p className="text-muted-foreground text-xs">
-									Start this automation when an event is
-									received.
-								</p>
-							</div>
-							{!readOnly && (
-								<Button
-									size="sm"
-									variant={
-										optionalTriggerModes.includes(
-											"event-based",
-										)
-											? "outline"
-											: "default"
-									}
-									onClick={() =>
-										updateOptionalTriggerMode(
-											"event-based",
-											!optionalTriggerModes.includes(
-												"event-based",
-											),
-										)
-									}
-								>
-									{optionalTriggerModes.includes(
-										"event-based",
-									)
-										? "Remove"
-										: "Add"}
-								</Button>
-							)}
-						</div>
-						{optionalTriggerModes.includes("event-based") && (
-							<Input
-								value={
-									typeof step.workflowConfig?.eventSource ===
-									"string"
-										? step.workflowConfig.eventSource
-										: ""
-								}
-								placeholder="Event source"
-								aria-label="Event source"
-								readOnly={readOnly}
-								onChange={(event) =>
-									onUpdate({
-										...step,
-										workflowConfig: {
-											...step.workflowConfig,
-											eventSource: event.target.value,
-										},
-									})
-								}
-							/>
-						)}
-					</section>
 				</div>
 			</div>
 		</div>
