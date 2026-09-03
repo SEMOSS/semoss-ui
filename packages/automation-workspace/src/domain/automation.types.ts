@@ -182,6 +182,13 @@ export interface AutomationNodeTrace {
 	roomId?: string;
 	modelMessageId?: string;
 	agentRunId?: string;
+	workspaceId?: string;
+	/** The durable Automation run that explicitly recorded this trace. */
+	automationRunId?: string;
+	/** The durable Automation node that explicitly recorded this trace. */
+	nodeId?: string;
+	/** Durable agent-run status (e.g. "RUNNING", "INPUT_REQUIRED") as of the last observed change. */
+	agentStatus?: string;
 }
 
 /**

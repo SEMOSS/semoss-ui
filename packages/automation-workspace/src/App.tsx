@@ -1,13 +1,17 @@
 import { Loader2 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTheme } from "@semoss/ui/next";
+import { AgentRunDialog } from "./components/agent-run";
 import { AutomationCanvas } from "./components/canvas-editor/automation-canvas";
 import { InspectorTab } from "./components/canvas-editor/tabs/inspector-tab";
 import {
 	type AutomationTraceSnapshot,
 	RunsTab,
 } from "./components/canvas-editor/tabs/runs-tab";
-import type { AutomationToolContext } from "./domain/automation.types";
+import type {
+	AutomationNodeTrace,
+	AutomationToolContext,
+} from "./domain/automation.types";
 import type {
 	AutomationInspectorAction,
 	AutomationInspectorSnapshot,
@@ -172,6 +176,8 @@ export default function App() {
 	const [inspectorSnapshot, setInspectorSnapshot] =
 		useState<AutomationInspectorSnapshot | null>(null);
 	const [historyRefreshToken, setHistoryRefreshToken] = useState(0);
+	const [agentRunTrace, setAgentRunTrace] =
+		useState<AutomationNodeTrace | null>(null);
 
 	useEffect(() => {
 		if (!historyMode && !traceMode) return;
@@ -424,18 +430,32 @@ export default function App() {
 								? { ...current, editingStep: null }
 								: current,
 						);
-						sendInspectorAction({ type: "delete-step", stepId });
+						sendInspectorAction({
+							type: "delete-step",
+							stepId,
+						});
 					}}
 				/>
 			);
 		}
 		return (
-			<AutomationCanvas
-				appId={appId}
-				readOnly={readOnly}
-				mcpMode={mcpMode}
-				mcpContext={toolContext ?? undefined}
-			/>
+			<>
+				<AutomationCanvas
+					appId={appId}
+					readOnly={readOnly}
+					mcpMode={mcpMode}
+					mcpContext={toolContext ?? undefined}
+					onViewAgentRun={setAgentRunTrace}
+				/>
+				<AgentRunDialog
+					open={agentRunTrace !== null}
+					projectId={appId}
+					trace={agentRunTrace}
+					onOpenChange={(open) => {
+						if (!open) setAgentRunTrace(null);
+					}}
+				/>
+			</>
 		);
 	}
 

@@ -50,11 +50,13 @@ import {
 	toast,
 	useTheme,
 } from "@semoss/ui/next";
+import { getAutomationRun } from "../../api";
 import type {
 	AutomationEdge,
 	AutomationExecutedDefinition,
 	AutomationNode,
 	AutomationNodeResult,
+	AutomationNodeTrace,
 	AutomationRunDetail,
 	AutomationToolContext,
 	BranchConfig,
@@ -239,12 +241,14 @@ interface AutomationCanvasProps {
 	readOnly?: boolean;
 	mcpMode?: "edit" | "create" | "trigger" | null;
 	mcpContext?: AutomationToolContext;
+	onViewAgentRun: (trace: AutomationNodeTrace) => void;
 }
 
 type TriggerAutomationOutput = AutomationRunDetail;
 
 interface AutomationNodeStreamData {
 	kind?: string;
+	RUN_ID?: string;
 	NODE_ID?: string;
 	NODE_LABEL?: string;
 	STATUS?: AutomationNodeResult["STATUS"];
@@ -462,6 +466,7 @@ export function AutomationCanvas({
 	readOnly = false,
 	mcpMode,
 	mcpContext,
+	onViewAgentRun,
 }: AutomationCanvasProps) {
 	const { resolvedTheme } = useTheme();
 	const isDark = resolvedTheme === "dark";
@@ -548,6 +553,10 @@ export function AutomationCanvas({
 	>([]);
 	const [latestRunDefinition, setLatestRunDefinition] =
 		useState<AutomationExecutedDefinition | null>(null);
+	// DB-backed run id for the in-progress run, used to poll GetAutomationRun as a
+	// fallback in case the live progress stream drops an update (see the periodic
+	// reconciliation effect below).
+	const [liveRunId, setLiveRunId] = useState<string | null>(null);
 	const [aiRunSummary, setAiRunSummary] = useState<string | null>(null);
 	const [generatingAiSummary, setGeneratingAiSummary] = useState(false);
 	const [isDirty, setIsDirty] = useState(false);
@@ -1550,6 +1559,12 @@ export function AutomationCanvas({
 	const applyNodeProgress = useCallback(
 		(progress: AutomationNodeStreamData) => {
 			const { NODE_ID: nodeId, STATUS: status } = progress;
+			const runId = progress.RUN_ID;
+			if (runId) {
+				setLiveRunId((previous) =>
+					previous === runId ? previous : runId,
+				);
+			}
 			if (!nodeId || !status) return;
 			const stepStatus: StepRunStatus =
 				status === "FAILED"
@@ -1595,7 +1610,19 @@ export function AutomationCanvas({
 						progress.ERROR_MESSAGE ??
 						existing?.ERROR_MESSAGE ??
 						null,
-					trace: progress.trace ?? existing?.trace,
+					trace: progress.trace
+						? {
+								...progress.trace,
+								automationRunId:
+									progress.RUN_ID ??
+									progress.trace.automationRunId ??
+									existing?.trace?.automationRunId,
+								nodeId:
+									progress.trace.nodeId ??
+									nodeId ??
+									existing?.trace?.nodeId,
+							}
+						: existing?.trace,
 				};
 				return existing
 					? previous.map((result) =>
@@ -1613,7 +1640,32 @@ export function AutomationCanvas({
 			hash: data.DEFINITION_HASH,
 			snapshot: data.DEFINITION_SNAPSHOT,
 		});
+		if (data.RUN_ID) {
+			setLiveRunId(data.RUN_ID);
+		}
 	}, []);
+
+	// Fallback reconciliation: the live progress stream is best-effort and can drop an
+	// update (observed with agent-run trace events). Re-fetch the DB-backed run detail
+	// on an interval while running so the canvas self-heals within a few seconds even
+	// if a stream event never arrives.
+	useEffect(() => {
+		if (!running || !liveRunId) return;
+		let cancelled = false;
+		const interval = window.setInterval(() => {
+			getAutomationRun(appId, liveRunId)
+				.then((detail) => {
+					if (!cancelled) applyRunData(detail);
+				})
+				.catch(() => {
+					// Best-effort; the live stream remains the primary source of truth.
+				});
+		}, 2500);
+		return () => {
+			cancelled = true;
+			window.clearInterval(interval);
+		};
+	}, [running, liveRunId, appId, applyRunData]);
 
 	const run = useCallback(async () => {
 		if (readOnly && mcpMode !== "trigger") {
@@ -1644,6 +1696,7 @@ export function AutomationCanvas({
 		setLatestRunStatus("RUNNING");
 		setLatestRunResults([]);
 		setLatestRunDefinition(null);
+		setLiveRunId(null);
 		try {
 			const { jobId } = await runPixelAsync(
 				`TriggerAutomation(project=${JSON.stringify([appId])});`,
@@ -1983,6 +2036,9 @@ export function AutomationCanvas({
 					style: { width: NODE_WIDTH },
 				});
 			} else {
+				const runTrace = latestRunResults.find(
+					(result) => result.NODE_ID === step.id,
+				)?.trace;
 				newNodes.push({
 					id: step.id,
 					type: "automation",
@@ -1994,6 +2050,7 @@ export function AutomationCanvas({
 						runError: stepErrors[step.id],
 						runDuration: stepDurations[step.id],
 						runOutput: stepOutputPreviews[step.id] ?? null,
+						runTrace,
 						isIncomplete:
 							validateCanvasWorkflowNode(step).length > 0 &&
 							!stepStatuses[step.id],
@@ -2007,6 +2064,9 @@ export function AutomationCanvas({
 							setShowAddMenu(false);
 							setEditingStepId(step.id);
 						},
+						onViewAgentRun: runTrace?.agentRunId
+							? () => onViewAgentRun(runTrace)
+							: undefined,
 						onDelete: () => deleteStep(step.id),
 						onAdd: () => {
 							setEditingStepId(null);
@@ -2052,6 +2112,7 @@ export function AutomationCanvas({
 		stepErrors,
 		stepDurations,
 		stepOutputPreviews,
+		latestRunResults,
 		description,
 		devMode,
 		running,
@@ -2066,6 +2127,7 @@ export function AutomationCanvas({
 		highlightedPathEdgeIds,
 		highlightedPathNodeIds,
 		layoutNodes,
+		onViewAgentRun,
 		setRfNodes,
 		setRfEdges,
 	]);

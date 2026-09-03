@@ -1,8 +1,14 @@
 import { Handle, type NodeProps, Position } from "@xyflow/react";
-import { Loader2, Pencil, Plus, Trash2 } from "lucide-react";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@semoss/ui/next";
+import { Bot, Loader2, Pencil, Plus, Trash2 } from "lucide-react";
+import {
+	Button,
+	Tooltip,
+	TooltipContent,
+	TooltipTrigger,
+} from "@semoss/ui/next";
 import type {
 	AutomationNode as AutomationGraphNode,
+	AutomationNodeTrace,
 	StepRunStatus,
 } from "../../../domain/automation.types";
 import {
@@ -26,6 +32,7 @@ export type AutomationNodeData = {
 	runError?: string;
 	runDuration?: number;
 	runOutput?: string | null;
+	runTrace?: AutomationNodeTrace;
 	isIncomplete?: boolean;
 	locked?: boolean;
 	/** True for a few seconds right after an Assistant tool call changes this step. */
@@ -35,6 +42,7 @@ export type AutomationNodeData = {
 	onEdit?: () => void;
 	onDelete?: () => void;
 	onAdd?: () => void;
+	onViewAgentRun?: () => void;
 };
 
 const STATUS_BORDER: Record<string, string> = {
@@ -53,6 +61,20 @@ export function AutomationNode({ data }: NodeProps) {
 		highlighted,
 		pathHighlighted,
 	} = d;
+	// This is the only place the live agent-run modal opens from. Only show it while
+	// the node is actively running — once finished, the trace is reachable from
+	// Agent Activity / Playground instead.
+	const hasActiveAgentRun = Boolean(
+		runStatus === "running" &&
+			d.runTrace?.agentRunId?.trim() &&
+			d.runTrace?.automationRunId?.trim() &&
+			d.runTrace?.nodeId?.trim() &&
+			d.onViewAgentRun,
+	);
+	// The agent paused itself waiting for a human decision (approve/reject/edit/respond).
+	// Distinguish this from "actively working" so it doesn't look like a stuck spinner.
+	const isWaitingForInput =
+		hasActiveAgentRun && d.runTrace?.agentStatus === "INPUT_REQUIRED";
 
 	const meta = getDisplayMeta(step.type);
 	const workflowDefinition = step.workflowType
@@ -64,11 +86,15 @@ export function AutomationNode({ data }: NodeProps) {
 	const Icon = workflowDisplay?.icon ?? meta.icon;
 	const label =
 		step.label || workflowDefinition?.label || getStepHeaderLabel(step);
-	const borderClass = getFlowBorderClass(
-		runStatus,
-		Boolean(pathHighlighted),
-		STATUS_BORDER[isIncomplete ? "incomplete" : "idle"],
-	);
+	// Waiting-for-input wins over both the run-status color and the path highlight —
+	// it's the most actionable state for whoever's looking at the canvas.
+	const borderClass = isWaitingForInput
+		? STATUS_BORDER.incomplete
+		: getFlowBorderClass(
+				runStatus,
+				Boolean(pathHighlighted),
+				STATUS_BORDER[isIncomplete ? "incomplete" : "idle"],
+			);
 	const runningClass =
 		runStatus === "running" ? "automation-node-running" : "";
 	const highlightClass = highlighted
@@ -161,6 +187,37 @@ export function AutomationNode({ data }: NodeProps) {
 									/>
 								)}
 							</div>
+						)}
+						{hasActiveAgentRun && (
+							<Tooltip>
+								<TooltipTrigger asChild>
+									<Button
+										type="button"
+										variant="ghost"
+										size="icon"
+										className={`nodrag size-7 shrink-0 ${isWaitingForInput ? "text-amber-500" : "text-primary"}`}
+										onClick={(event) => {
+											event.stopPropagation();
+											d.onViewAgentRun?.();
+										}}
+										aria-label={
+											isWaitingForInput
+												? "Agent is waiting for your input"
+												: "View active agent run"
+										}
+									>
+										<Bot
+											className="size-4 animate-pulse"
+											aria-hidden
+										/>
+									</Button>
+								</TooltipTrigger>
+								<TooltipContent side="top">
+									{isWaitingForInput
+										? "Waiting for your input"
+										: "View active agent run"}
+								</TooltipContent>
+							</Tooltip>
 						)}
 					</div>
 
