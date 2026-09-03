@@ -1,6 +1,10 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, test, vi } from "vitest";
-import { getPresetDateRange, ModelUsagePage } from "./model-usage.page";
+import {
+	formatCredits,
+	getPresetDateRange,
+	ModelUsagePage,
+} from "./model-usage.page";
 
 const mocks = vi.hoisted(() => ({
 	getUsageModels: vi.fn(),
@@ -22,6 +26,11 @@ vi.mock("@/hooks", () => ({
 }));
 
 describe("ModelUsagePage", () => {
+	test("formats credits without storage-level precision", () => {
+		expect(formatCredits(12483.000216, "en-US")).toBe("12,483");
+		expect(formatCredits(12.345, "en-US")).toBe("12.35");
+	});
+
 	beforeEach(() => {
 		vi.clearAllMocks();
 		mocks.getUsageModels.mockResolvedValue([
@@ -160,7 +169,7 @@ describe("ModelUsagePage", () => {
 			endDate: "2026-09-03",
 		});
 		expect(getPresetDateRange("week", reference)).toEqual({
-			startDate: "2026-08-31",
+			startDate: "2026-08-30",
 			endDate: "2026-09-03",
 		});
 		expect(getPresetDateRange("month", reference)).toEqual({

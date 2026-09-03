@@ -44,14 +44,25 @@ import {
 import { useGlobalBreadcrumbs } from "@/hooks";
 import type { Engine } from "@/types";
 
-/** Format a credit value without hiding useful fractional amounts. */
-const formatCredits = (
+/** Format credits as a currency-like value without noisy storage precision. */
+export const formatCredits = (
 	value: number | null | undefined,
 	locale: string,
 ): string => {
 	if (typeof value !== "number" || !Number.isFinite(value)) return "—";
 	return new Intl.NumberFormat(locale, {
-		maximumFractionDigits: 6,
+		maximumFractionDigits: 2,
+	}).format(value);
+};
+
+/** Format count metrics as localized whole numbers. */
+const formatCount = (
+	value: number | null | undefined,
+	locale: string,
+): string => {
+	if (typeof value !== "number" || !Number.isFinite(value)) return "—";
+	return new Intl.NumberFormat(locale, {
+		maximumFractionDigits: 0,
 	}).format(value);
 };
 
@@ -65,9 +76,9 @@ const formatDate = (value: string | null, locale: string): string => {
 };
 
 const formatDateInput = (date: Date): string => {
-	const year = date.getFullYear();
-	const month = String(date.getMonth() + 1).padStart(2, "0");
-	const day = String(date.getDate()).padStart(2, "0");
+	const year = date.getUTCFullYear();
+	const month = String(date.getUTCMonth() + 1).padStart(2, "0");
+	const day = String(date.getUTCDate()).padStart(2, "0");
 	return `${year}-${month}-${day}`;
 };
 
@@ -88,10 +99,9 @@ export const getPresetDateRange = (
 ) => {
 	const startDate = new Date(reference);
 	if (mode === "week") {
-		const daysSinceMonday = (reference.getDay() + 6) % 7;
-		startDate.setDate(reference.getDate() - daysSinceMonday);
+		startDate.setUTCDate(reference.getUTCDate() - reference.getUTCDay());
 	} else if (mode === "month") {
-		startDate.setDate(1);
+		startDate.setUTCDate(1);
 	}
 
 	return {
@@ -444,11 +454,13 @@ export const ModelUsagePage = () => {
 											label: t("usage:overview.credits"),
 											value: usageTotals.credits,
 											icon: TrendingUp,
+											format: formatCredits,
 										},
 										{
 											label: t("usage:overview.requests"),
 											value: usageTotals.requests,
 											icon: MessageSquare,
+											format: formatCount,
 										},
 										{
 											label: t(
@@ -456,6 +468,7 @@ export const ModelUsagePage = () => {
 											),
 											value: usageTotals.inputTokens,
 											icon: ArrowDownToLine,
+											format: formatCount,
 										},
 										{
 											label: t(
@@ -463,26 +476,31 @@ export const ModelUsagePage = () => {
 											),
 											value: usageTotals.outputTokens,
 											icon: ArrowUpFromLine,
+											format: formatCount,
 										},
-									].map(({ label, value, icon: Icon }) => (
-										<Card key={label}>
-											<CardHeader>
-												<Icon
-													className="size-5 text-primary"
-													aria-hidden
-												/>
-												<CardDescription>
-													{label}
-												</CardDescription>
-												<CardTitle className="text-2xl tabular-nums">
-													{formatCredits(
-														value,
-														locale,
-													)}
-												</CardTitle>
-											</CardHeader>
-										</Card>
-									))}
+									].map(
+										({
+											label,
+											value,
+											icon: Icon,
+											format,
+										}) => (
+											<Card key={label}>
+												<CardHeader>
+													<Icon
+														className="size-5 text-primary"
+														aria-hidden
+													/>
+													<CardDescription>
+														{label}
+													</CardDescription>
+													<CardTitle className="text-2xl tabular-nums">
+														{format(value, locale)}
+													</CardTitle>
+												</CardHeader>
+											</Card>
+										),
+									)}
 								</div>
 
 								<Card>
@@ -587,23 +605,28 @@ export const ModelUsagePage = () => {
 																	{
 																		key: "credits",
 																		value: summary.TOTAL_CREDITS,
+																		format: formatCredits,
 																	},
 																	{
 																		key: "requests",
 																		value: summary.TOTAL_REQUESTS,
+																		format: formatCount,
 																	},
 																	{
 																		key: "input",
 																		value: summary.INPUT_TOKENS,
+																		format: formatCount,
 																	},
 																	{
 																		key: "output",
 																		value: summary.RESPONSE_TOKENS,
+																		format: formatCount,
 																	},
 																].map(
 																	({
 																		key,
 																		value,
+																		format,
 																	}) => (
 																		<TableCell
 																			key={
@@ -611,7 +634,7 @@ export const ModelUsagePage = () => {
 																			}
 																			className="text-right tabular-nums"
 																		>
-																			{formatCredits(
+																			{format(
 																				value,
 																				locale,
 																			)}
