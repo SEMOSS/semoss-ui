@@ -17,6 +17,7 @@ import {
 import { getWorkflowNodeDefinition } from "../../../domain/automation-workflow-adapter";
 import { getWorkflowNodeDisplay } from "../../../domain/automation-workflow-display";
 import { StatusIcon } from "../../status-icon";
+import { getFlowBorderClass } from "../flow-colors";
 
 export type AutomationNodeData = {
 	step: AutomationGraphNode;
@@ -29,23 +30,29 @@ export type AutomationNodeData = {
 	locked?: boolean;
 	/** True for a few seconds right after an Assistant tool call changes this step. */
 	highlighted?: boolean;
+	/** True when this step sits on the path leading to the selected node. */
+	pathHighlighted?: boolean;
 	onEdit?: () => void;
 	onDelete?: () => void;
 	onAdd?: () => void;
 };
 
 const STATUS_BORDER: Record<string, string> = {
-	error: "border-destructive/60",
-	success: "border-emerald-500/60",
-	running: "border-blue-500/70",
 	incomplete: "border-amber-500/60",
 	idle: "border-border",
 };
 
 export function AutomationNode({ data }: NodeProps) {
 	const d = data as AutomationNodeData;
-	const { step, runStatus, runDuration, isIncomplete, locked, highlighted } =
-		d;
+	const {
+		step,
+		runStatus,
+		runDuration,
+		isIncomplete,
+		locked,
+		highlighted,
+		pathHighlighted,
+	} = d;
 
 	const meta = getDisplayMeta(step.type);
 	const workflowDefinition = step.workflowType
@@ -57,9 +64,11 @@ export function AutomationNode({ data }: NodeProps) {
 	const Icon = workflowDisplay?.icon ?? meta.icon;
 	const label =
 		step.label || workflowDefinition?.label || getStepHeaderLabel(step);
-	const borderClass =
-		STATUS_BORDER[runStatus ?? (isIncomplete ? "incomplete" : "idle")] ??
-		STATUS_BORDER.idle;
+	const borderClass = getFlowBorderClass(
+		runStatus,
+		Boolean(pathHighlighted),
+		STATUS_BORDER[isIncomplete ? "incomplete" : "idle"],
+	);
 	const runningClass =
 		runStatus === "running" ? "automation-node-running" : "";
 	const highlightClass = highlighted

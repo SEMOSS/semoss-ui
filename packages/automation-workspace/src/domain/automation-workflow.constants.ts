@@ -320,13 +320,13 @@ export const AUTOMATION_WORKFLOW_NODE_REGISTRY: readonly AutomationNodeDefinitio
 			outputs: [
 				{
 					id: "case:<clause-id>",
-					label: "If / Else if",
+					label: "Condition",
 					kind: "control",
 					direction: "output",
 				},
 				{
 					id: "else",
-					label: "Else",
+					label: "Path",
 					kind: "control",
 					direction: "output",
 				},

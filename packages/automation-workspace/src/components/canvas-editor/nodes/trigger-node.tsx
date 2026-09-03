@@ -1,5 +1,6 @@
 import { Handle, type NodeProps, Position } from "@xyflow/react";
 import { CalendarClock, Plus, Radio, Zap } from "lucide-react";
+import { getFlowBorderClass } from "../flow-colors";
 
 type OptionalTriggerMode = "schedule" | "event-based";
 
@@ -8,6 +9,8 @@ export type TriggerNodeData = {
 	description?: string;
 	devMode?: boolean;
 	runStatus?: "running" | "success" | "error";
+	/** True when this step sits on the path leading to the selected node. */
+	pathHighlighted?: boolean;
 	triggerModes?: OptionalTriggerMode[];
 	onEdit?: () => void;
 	onAdd?: () => void;
@@ -16,14 +19,11 @@ export type TriggerNodeData = {
 export function TriggerNode({ data, id }: NodeProps) {
 	const trigger = data as TriggerNodeData;
 	const triggerModes = trigger.triggerModes ?? [];
-	const statusBorderClass =
-		trigger.runStatus === "success"
-			? "border-emerald-500/60"
-			: trigger.runStatus === "error"
-				? "border-destructive/60"
-				: trigger.runStatus === "running"
-					? "border-blue-500/70"
-					: "border-emerald-500/40";
+	const statusBorderClass = getFlowBorderClass(
+		trigger.runStatus,
+		Boolean(trigger.pathHighlighted),
+		"border-emerald-500/40",
+	);
 	const runningClass =
 		trigger.runStatus === "running" ? "automation-trigger-running" : "";
 

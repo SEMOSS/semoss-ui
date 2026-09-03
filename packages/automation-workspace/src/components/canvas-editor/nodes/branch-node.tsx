@@ -8,6 +8,7 @@ import type {
 } from "../../../domain/automation.types";
 import { formatDurationMs } from "../../../domain/automation-utils";
 import { StatusIcon } from "../../status-icon";
+import { getFlowBorderClass } from "../flow-colors";
 
 export type BranchNodeData = {
 	step: AutomationGraphNode;
@@ -19,6 +20,10 @@ export type BranchNodeData = {
 	locked?: boolean;
 	/** True for a few seconds right after an Assistant tool call changes this step. */
 	highlighted?: boolean;
+	/** True when this step sits on the path leading to the selected node. */
+	pathHighlighted?: boolean;
+	/** Color for each output handle (keyed by handle id), matching its edge's current render color. */
+	handleColors?: Record<string, string>;
 	onEdit?: () => void;
 	onDelete?: () => void;
 	onAddClause?: (clauseId: string) => void;
@@ -26,17 +31,23 @@ export type BranchNodeData = {
 };
 
 const STATUS_BORDER: Record<string, string> = {
-	error: "border-destructive/60",
-	success: "border-emerald-500/60",
-	running: "border-blue-500/70",
 	incomplete: "border-amber-500/60",
 	idle: "border-border",
 };
 
+const DEFAULT_HANDLE_COLOR = "var(--muted-foreground)";
+
 export function BranchNode({ data }: NodeProps) {
 	const d = data as BranchNodeData;
-	const { step, runStatus, runDuration, isIncomplete, locked, highlighted } =
-		d;
+	const {
+		step,
+		runStatus,
+		runDuration,
+		isIncomplete,
+		locked,
+		highlighted,
+		pathHighlighted,
+	} = d;
 	const config = step.config as BranchConfig;
 	const firstCondition = config.clauses[0]?.condition;
 	const additionalConditions = config.clauses.length - 1;
@@ -45,9 +56,11 @@ export function BranchNode({ data }: NodeProps) {
 	const elseConnected = edges.some(
 		(e) => e.source === step.id && e.sourceHandle === `else-${step.id}`,
 	);
-	const borderClass =
-		STATUS_BORDER[runStatus ?? (isIncomplete ? "incomplete" : "idle")] ??
-		STATUS_BORDER.idle;
+	const borderClass = getFlowBorderClass(
+		runStatus,
+		Boolean(pathHighlighted),
+		STATUS_BORDER[isIncomplete ? "incomplete" : "idle"],
+	);
 	const runningClass =
 		runStatus === "running" ? "automation-node-running" : "";
 	const highlightClass = highlighted
@@ -149,7 +162,8 @@ export function BranchNode({ data }: NodeProps) {
 				<BranchOutputHandle
 					key={clause.id}
 					id={`case-${step.id}-${clause.id}`}
-					label={index === 0 ? "If" : "Else if"}
+					label={String(index)}
+					ariaLabel={`Condition ${index + 1}`}
 					connected={edges.some(
 						(edge) =>
 							edge.source === step.id &&
@@ -159,16 +173,23 @@ export function BranchNode({ data }: NodeProps) {
 					locked={locked}
 					top={`${((index + 1) / (outputCount + 1)) * 100}%`}
 					onAdd={() => d.onAddClause?.(clause.id)}
+					color={
+						d.handleColors?.[`case-${step.id}-${clause.id}`] ??
+						DEFAULT_HANDLE_COLOR
+					}
 				/>
 			))}
 			<BranchOutputHandle
 				id={`else-${step.id}`}
-				label="Else"
+				label={String(config.clauses.length)}
+				ariaLabel={`Path ${config.clauses.length + 1}`}
 				connected={elseConnected}
 				locked={locked}
 				top={`${(outputCount / (outputCount + 1)) * 100}%`}
 				onAdd={() => d.onAddElse?.()}
-				isElse
+				color={
+					d.handleColors?.[`else-${step.id}`] ?? DEFAULT_HANDLE_COLOR
+				}
 			/>
 		</div>
 	);
@@ -177,29 +198,29 @@ export function BranchNode({ data }: NodeProps) {
 function BranchOutputHandle({
 	id,
 	label,
+	ariaLabel,
 	connected,
 	locked,
 	top,
 	onAdd,
-	isElse = false,
+	color,
 }: {
 	id: string;
+	/** Plain number shown next to the edge (e.g. "0", "1"). */
 	label: string;
+	/** Descriptive name used for the handle's accessible name. */
+	ariaLabel: string;
 	connected: boolean;
 	locked?: boolean;
 	top: string;
 	onAdd: () => void;
-	isElse?: boolean;
+	/** Matches the color the connected edge is currently drawn with. */
+	color: string;
 }) {
 	const handleClass =
 		connected || locked
-			? isElse
-				? "h-2! w-2! border-2! border-background! bg-red-500!"
-				: "h-2! w-2! border-2! border-background! bg-emerald-500!"
-			: isElse
-				? "h-7! w-7! border! border-red-500/40! bg-background! hover:border-red-500! shadow-sm transition-colors"
-				: "h-7! w-7! border! border-emerald-500/40! bg-background! hover:border-emerald-500! shadow-sm transition-colors";
-	const labelClass = isElse ? "text-red-500" : "text-emerald-600";
+			? "h-2! w-2! border-2! border-background!"
+			: "h-7! w-7! border! bg-background! shadow-sm transition-colors hover:opacity-70";
 	return (
 		<>
 			<Handle
@@ -211,20 +232,26 @@ function BranchOutputHandle({
 					event.stopPropagation();
 					if (!locked && !connected) onAdd();
 				}}
-				style={{ top }}
+				style={{
+					top,
+					...(connected || locked
+						? { backgroundColor: color }
+						: { borderColor: color }),
+				}}
 				aria-label={
 					connected
-						? `${label} branch`
-						: `Add node to ${label} branch`
+						? `${ariaLabel} branch`
+						: `Add node to ${ariaLabel} branch`
 				}
 				className={handleClass}
 			/>
 			{!connected && !locked && (
 				<span
-					className={`pointer-events-none absolute z-10 flex h-7 w-7 items-center justify-center ${labelClass}`}
+					className="pointer-events-none absolute z-10 flex h-7 w-7 items-center justify-center"
 					style={{
 						top,
 						right: 0,
+						color,
 						transform: "translateX(50%) translateY(-50%)",
 					}}
 				>
@@ -232,9 +259,10 @@ function BranchOutputHandle({
 				</span>
 			)}
 			<span
-				className={`pointer-events-none absolute right-0 font-medium text-[9px] ${labelClass}`}
+				className="pointer-events-none absolute right-0 font-medium text-[9px]"
 				style={{
-					top,
+					top: `calc(${top} - 10px)`,
+					color,
 					transform: `translateX(calc(100% + ${connected || locked ? 6 : 20}px)) translateY(-50%)`,
 				}}
 			>

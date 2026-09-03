@@ -103,12 +103,12 @@ export function BranchConditionBuilder({
 					}
 				>
 					<Plus className="size-4" aria-hidden="true" />
-					Add Else if
+					Add Condition
 				</Button>
 			)}
 			<p className="text-muted-foreground text-xs">
 				Conditions run in order. The first match runs its path;
-				otherwise the <strong>Else</strong> path runs.
+				otherwise <strong>Path {clauses.length + 1}</strong> runs.
 			</p>
 		</div>
 	);
@@ -136,7 +136,7 @@ function BranchClauseEditor({
 	readOnly: boolean;
 }) {
 	const parsed = parseBranchCondition(clause.condition);
-	const label = index === 0 ? "If" : "Else if";
+	const label = `Condition ${index + 1}`;
 	const updateParsed = (next: {
 		value1: string;
 		operator: BranchConditionOperator;

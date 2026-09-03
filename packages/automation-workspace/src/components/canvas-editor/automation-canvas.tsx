@@ -57,6 +57,7 @@ import type {
 	AutomationNodeResult,
 	AutomationRunDetail,
 	AutomationToolContext,
+	BranchConfig,
 	RunStatus,
 	StepRunStatus,
 } from "../../domain/automation.types";
@@ -81,6 +82,7 @@ import {
 import { OnboardingTour } from "../form-editor/onboarding-tour";
 import { AddNodeMenu } from "./add-node-menu";
 import { AutomationDockLayout } from "./automation-dock-layout";
+import { getFlowStrokeColor } from "./flow-colors";
 import { AutomationNode as AutomationNodeCard } from "./nodes/automation-node";
 import { BranchNode } from "./nodes/branch-node";
 import { TriggerNode } from "./nodes/trigger-node";
@@ -200,6 +202,35 @@ function downstreamControlNodeIds(
 		}
 	}
 	return downstreamIds;
+}
+
+/** IDs of every control edge on some path from the trigger to `targetId`. */
+function ancestorControlEdgeIds(
+	targetId: string,
+	edges: AutomationEdge[],
+): Set<string> {
+	const incomingByTarget = new Map<string, AutomationEdge[]>();
+	for (const edge of edges) {
+		if (edge.kind !== "control") continue;
+		const list = incomingByTarget.get(edge.target) ?? [];
+		list.push(edge);
+		incomingByTarget.set(edge.target, list);
+	}
+
+	const edgeIds = new Set<string>();
+	const visited = new Set<string>([targetId]);
+	const pendingIds = [targetId];
+	while (pendingIds.length > 0) {
+		const currentId = pendingIds.pop();
+		if (!currentId) continue;
+		for (const edge of incomingByTarget.get(currentId) ?? []) {
+			edgeIds.add(edge.id);
+			if (visited.has(edge.source)) continue;
+			visited.add(edge.source);
+			pendingIds.push(edge.source);
+		}
+	}
+	return edgeIds;
 }
 
 // ---- Types ----
@@ -490,6 +521,25 @@ export function AutomationCanvas({
 		() => steps.find((s) => s.id === editingStepId) ?? null,
 		[steps, editingStepId],
 	);
+	/** Edges on the path from the trigger to the selected node, highlighted blue. */
+	const highlightedPathEdgeIds = useMemo(
+		() =>
+			editingStepId
+				? ancestorControlEdgeIds(editingStepId, graphEdges)
+				: new Set<string>(),
+		[editingStepId, graphEdges],
+	);
+	/** Steps on that same path (including the selected step), highlighted blue. */
+	const highlightedPathNodeIds = useMemo(() => {
+		if (!editingStepId) return new Set<string>();
+		const nodeIds = new Set<string>([editingStepId]);
+		for (const edge of graphEdges) {
+			if (!highlightedPathEdgeIds.has(edge.id)) continue;
+			nodeIds.add(edge.source);
+			nodeIds.add(edge.target);
+		}
+		return nodeIds;
+	}, [editingStepId, graphEdges, highlightedPathEdgeIds]);
 	const [latestRunStatus, setLatestRunStatus] = useState<RunStatus | null>(
 		null,
 	);
@@ -1817,7 +1867,18 @@ export function AutomationCanvas({
 			setSteps((previous) => layoutNodes(previous, graphEdges));
 		}
 
+		const getEdgeStrokeColor = (edge: AutomationEdge): string =>
+			getFlowStrokeColor(
+				stepStatuses[edge.target],
+				highlightedPathEdgeIds.has(edge.id),
+				edgeColor,
+			);
+
 		steps.forEach((step) => {
+			const outgoingEdges = graphEdges.filter(
+				(item) => item.source === step.id,
+			);
+
 			if (step.type === "trigger") {
 				newNodes.push({
 					id: step.id,
@@ -1844,6 +1905,7 @@ export function AutomationCanvas({
 						runStatus:
 							stepStatuses[step.id] ??
 							(running ? "running" : undefined),
+						pathHighlighted: highlightedPathNodeIds.has(step.id),
 						onEdit: readOnly
 							? undefined
 							: () => {
@@ -1861,6 +1923,25 @@ export function AutomationCanvas({
 					style: { width: NODE_WIDTH },
 				});
 			} else if (step.type === "branch") {
+				const branchConfig = step.config as BranchConfig;
+				const handleColors: Record<string, string> = {};
+				for (const clause of branchConfig.clauses) {
+					const handleId = `case-${step.id}-${clause.id}`;
+					const edge = outgoingEdges.find(
+						(item) => item.sourceHandle === handleId,
+					);
+					handleColors[handleId] = edge
+						? getEdgeStrokeColor(edge)
+						: edgeColor;
+				}
+				const elseHandleId = `else-${step.id}`;
+				const elseEdge = outgoingEdges.find(
+					(item) => item.sourceHandle === elseHandleId,
+				);
+				handleColors[elseHandleId] = elseEdge
+					? getEdgeStrokeColor(elseEdge)
+					: edgeColor;
+
 				newNodes.push({
 					id: step.id,
 					type: "branch",
@@ -1879,6 +1960,8 @@ export function AutomationCanvas({
 							changeHighlight,
 							step.id,
 						),
+						handleColors,
+						pathHighlighted: highlightedPathNodeIds.has(step.id),
 						onEdit: () => {
 							setShowAddMenu(false);
 							setEditingStepId(step.id);
@@ -1919,6 +2002,7 @@ export function AutomationCanvas({
 							changeHighlight,
 							step.id,
 						),
+						pathHighlighted: highlightedPathNodeIds.has(step.id),
 						onEdit: () => {
 							setShowAddMenu(false);
 							setEditingStepId(step.id);
@@ -1935,17 +2019,9 @@ export function AutomationCanvas({
 				});
 			}
 
-			for (const edge of graphEdges.filter(
-				(item) => item.source === step.id,
-			)) {
-				const isConditionalEdge =
-					edge.sourceHandle?.startsWith("case-");
-				const isElseEdge = edge.sourceHandle?.startsWith("else-");
-				const strokeColor = isConditionalEdge
-					? "#10b981"
-					: isElseEdge
-						? "#f87171"
-						: edgeColor;
+			for (const edge of outgoingEdges) {
+				const strokeColor = getEdgeStrokeColor(edge);
+				const isPathHighlighted = highlightedPathEdgeIds.has(edge.id);
 				newEdges.push({
 					...edge,
 					type: "deletable",
@@ -1955,7 +2031,10 @@ export function AutomationCanvas({
 						height: 12,
 						color: strokeColor,
 					},
-					style: { stroke: strokeColor, strokeWidth: 1.5 },
+					style: {
+						stroke: strokeColor,
+						strokeWidth: isPathHighlighted ? 2.5 : 1.5,
+					},
 					data: {
 						onDelete: deleteEdge,
 						readOnly,
@@ -1984,6 +2063,8 @@ export function AutomationCanvas({
 		deleteEdge,
 		edgeColor,
 		hoveredEdgeId,
+		highlightedPathEdgeIds,
+		highlightedPathNodeIds,
 		layoutNodes,
 		setRfNodes,
 		setRfEdges,
@@ -2158,6 +2239,7 @@ export function AutomationCanvas({
 										onNodeDragStop={onNodeDragStop}
 										onPaneClick={() => {
 											setShowAddMenu(false);
+											setEditingStepId(null);
 										}}
 										onConnect={onConnect}
 										onEdgeMouseEnter={(_e, edge) =>
