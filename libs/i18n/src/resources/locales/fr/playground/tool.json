@@ -11,6 +11,7 @@
 	},
 	"actions": {
 		"approve": "Approuver",
+		"reject": "Rejeter",
 		"cancel": "Annuler",
 		"expand": "Développer",
 		"collapse": "Réduire",

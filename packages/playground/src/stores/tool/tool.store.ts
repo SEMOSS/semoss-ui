@@ -84,6 +84,9 @@ export class ToolStore {
 	/** True while {@link approve} is in flight. */
 	isApproving: boolean = false;
 
+	/** True while {@link reject} is in flight. */
+	isRejecting: boolean = false;
+
 	/**
 	 * Whether the tool call is still streaming in (name/arguments arriving via SSE).
 	 * While true, the tool does not have its final `_meta`, `title`, or parsed
@@ -457,6 +460,27 @@ export class ToolStore {
 			);
 		} finally {
 			this.isApproving = false;
+		}
+	};
+
+	/** Rejects/cancels this tool call. */
+	reject = async (): Promise<void> => {
+		if (this.isRejecting) {
+			return;
+		}
+		this.isRejecting = true;
+		try {
+			if (this.pendingAction) {
+				await decideAgentToolAction(this, "reject");
+			} else {
+				const message = this.message;
+				if (message instanceof ResponseMessageStore) {
+					message.saveToolExecution(this, "", "cancelled", {});
+				}
+			}
+			this.closeTool();
+		} finally {
+			this.isRejecting = false;
 		}
 	};
 }

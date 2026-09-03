@@ -1,4 +1,4 @@
-import { CheckIcon, HammerIcon, XCircleIcon } from "lucide-react";
+import { CheckIcon, HammerIcon, XCircleIcon, XIcon } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useEffect } from "react";
 import { useTranslation } from "@semoss/i18n";
@@ -43,7 +43,7 @@ const getToolState = (
 				background: "bg-background" as const,
 				showHoverAccent: true,
 				showCancelInMenu: false,
-				showApprove: false,
+				showYesNoActions: false,
 			};
 		}
 		case "SUCCESS":
@@ -57,7 +57,7 @@ const getToolState = (
 				background: "bg-sidebar" as const,
 				showHoverAccent: false,
 				showCancelInMenu: false,
-				showApprove: false,
+				showYesNoActions: false,
 			};
 		case "LOADING":
 			return {
@@ -70,7 +70,7 @@ const getToolState = (
 				background: "bg-background" as const,
 				showHoverAccent: true,
 				showCancelInMenu: false,
-				showApprove: false,
+				showYesNoActions: false,
 			};
 		default: {
 			const execution = tool.json._meta?.SMSS_MCP_EXECUTION;
@@ -85,8 +85,9 @@ const getToolState = (
 					actionType: "menu" as const,
 					background: "bg-background" as const,
 					showHoverAccent: true,
-					showCancelInMenu: true,
-					showApprove: isYesNo,
+					// yesno tools reject via the dedicated button instead
+					showCancelInMenu: !isYesNo,
+					showYesNoActions: isYesNo,
 				};
 			}
 			// queued
@@ -100,7 +101,7 @@ const getToolState = (
 				background: "bg-background" as const,
 				showHoverAccent: true,
 				showCancelInMenu: false,
-				showApprove: false,
+				showYesNoActions: false,
 			};
 		}
 	}
@@ -178,6 +179,17 @@ export const ResponseMessageTool = observer(
 			e.stopPropagation();
 			try {
 				await tool.approve();
+			} catch (error) {
+				toast.error(
+					error instanceof Error ? error.message : String(error),
+				);
+			}
+		};
+
+		const handleReject = async (e: React.MouseEvent) => {
+			e.stopPropagation();
+			try {
+				await tool.reject();
 			} catch (error) {
 				toast.error(
 					error instanceof Error ? error.message : String(error),
@@ -341,20 +353,38 @@ export const ResponseMessageTool = observer(
 						/>
 					)}
 					{toolState.actionType === "menu" &&
-						toolState.showApprove && (
+						toolState.showYesNoActions && (
+							<Button
+								type="button"
+								size="icon"
+								variant="ghost"
+								className="me-2 shrink-0"
+								onClick={handleReject}
+								disabled={tool.isRejecting || tool.isApproving}
+								aria-label={t("actions.reject")}
+							>
+								{tool.isRejecting ? (
+									<Spinner className="size-5" />
+								) : (
+									<XIcon className="size-5" />
+								)}
+							</Button>
+						)}
+					{toolState.actionType === "menu" &&
+						toolState.showYesNoActions && (
 							<Button
 								type="button"
 								size="icon"
 								variant="ghost"
 								className="me-2 shrink-0"
 								onClick={handleApprove}
-								disabled={tool.isApproving}
+								disabled={tool.isApproving || tool.isRejecting}
 								aria-label={t("actions.approve")}
 							>
 								{tool.isApproving ? (
-									<Spinner className="size-4" />
+									<Spinner className="size-5" />
 								) : (
-									<CheckIcon className="size-4" />
+									<CheckIcon className="size-5" />
 								)}
 							</Button>
 						)}

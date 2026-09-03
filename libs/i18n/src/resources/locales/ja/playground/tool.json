@@ -11,6 +11,7 @@
 	},
 	"actions": {
 		"approve": "承認",
+		"reject": "拒否",
 		"cancel": "キャンセル",
 		"expand": "展開",
 		"collapse": "折りたたむ",
