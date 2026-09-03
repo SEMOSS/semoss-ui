@@ -110,6 +110,7 @@ describe("ModelUsagePage", () => {
 			restrictionEnabled: false,
 			restrictionType: null,
 			frequency: null,
+			creditsUsed: 4,
 			limitExceeded: null,
 			trackingEnabled: true,
 			rangeType: "CUSTOM",
@@ -133,6 +134,17 @@ describe("ModelUsagePage", () => {
 		expect(
 			screen.queryByText("usage:period.title"),
 		).not.toBeInTheDocument();
+		expect(
+			screen.queryByText("usage:metrics.remaining"),
+		).not.toBeInTheDocument();
+		expect(
+			screen.queryByText("usage:metrics.limit"),
+		).not.toBeInTheDocument();
+		await waitFor(() => {
+			expect(screen.getAllByText("100")).toHaveLength(2);
+			expect(screen.getAllByText("50")).toHaveLength(2);
+			expect(screen.getAllByText("2")).toHaveLength(2);
+		});
 	});
 
 	test("waits for Apply before loading a custom date range", async () => {

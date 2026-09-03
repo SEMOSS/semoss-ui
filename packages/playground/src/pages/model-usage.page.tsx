@@ -1,7 +1,10 @@
 import {
 	AlertCircle,
+	ArrowDownToLine,
+	ArrowUpFromLine,
 	CalendarRange,
 	CircleDollarSign,
+	MessageSquare,
 	RefreshCw,
 	TrendingDown,
 	TrendingUp,
@@ -207,6 +210,9 @@ export const ModelUsagePage = () => {
 
 	const selectedModel = models.find(
 		(model) => model.engine_id === selectedModelId,
+	);
+	const selectedUsageSummary = usageSummaries.find(
+		(summary) => summary.ENGINE_ID === selectedModelId,
 	);
 	const overviewStartDate =
 		rangeMode === "custom"
@@ -617,7 +623,13 @@ export const ModelUsagePage = () => {
 							</Alert>
 						)}
 
-						<div className="grid gap-4 sm:grid-cols-3">
+						<div
+							className={`grid gap-4 ${
+								creditInfo.restrictionEnabled
+									? "sm:grid-cols-3"
+									: "sm:grid-cols-2 lg:grid-cols-4"
+							}`}
+						>
 							<Card>
 								<CardHeader>
 									<TrendingUp
@@ -635,40 +647,102 @@ export const ModelUsagePage = () => {
 									</CardTitle>
 								</CardHeader>
 							</Card>
-							<Card>
-								<CardHeader>
-									<TrendingDown
-										className="size-5 text-success"
-										aria-hidden
-									/>
-									<CardDescription>
-										{t("usage:metrics.remaining")}
-									</CardDescription>
-									<CardTitle className="text-2xl">
-										{formatCredits(
-											creditInfo.creditsRemaining,
-											locale,
-										)}
-									</CardTitle>
-								</CardHeader>
-							</Card>
-							<Card>
-								<CardHeader>
-									<CircleDollarSign
-										className="size-5 text-primary"
-										aria-hidden
-									/>
-									<CardDescription>
-										{t("usage:metrics.limit")}
-									</CardDescription>
-									<CardTitle className="text-2xl">
-										{formatCredits(
-											creditInfo.maxCredits,
-											locale,
-										)}
-									</CardTitle>
-								</CardHeader>
-							</Card>
+							{creditInfo.restrictionEnabled ? (
+								<>
+									<Card>
+										<CardHeader>
+											<TrendingDown
+												className="size-5 text-success"
+												aria-hidden
+											/>
+											<CardDescription>
+												{t("usage:metrics.remaining")}
+											</CardDescription>
+											<CardTitle className="text-2xl">
+												{formatCredits(
+													creditInfo.creditsRemaining,
+													locale,
+												)}
+											</CardTitle>
+										</CardHeader>
+									</Card>
+									<Card>
+										<CardHeader>
+											<CircleDollarSign
+												className="size-5 text-primary"
+												aria-hidden
+											/>
+											<CardDescription>
+												{t("usage:metrics.limit")}
+											</CardDescription>
+											<CardTitle className="text-2xl">
+												{formatCredits(
+													creditInfo.maxCredits,
+													locale,
+												)}
+											</CardTitle>
+										</CardHeader>
+									</Card>
+								</>
+							) : (
+								<>
+									<Card>
+										<CardHeader>
+											<MessageSquare
+												className="size-5 text-primary"
+												aria-hidden
+											/>
+											<CardDescription>
+												{t("usage:overview.requests")}
+											</CardDescription>
+											<CardTitle className="text-2xl">
+												{formatCredits(
+													selectedUsageSummary?.TOTAL_REQUESTS,
+													locale,
+												)}
+											</CardTitle>
+										</CardHeader>
+									</Card>
+									<Card>
+										<CardHeader>
+											<ArrowDownToLine
+												className="size-5 text-primary"
+												aria-hidden
+											/>
+											<CardDescription>
+												{t(
+													"usage:overview.inputTokens",
+												)}
+											</CardDescription>
+											<CardTitle className="text-2xl">
+												{formatCredits(
+													selectedUsageSummary?.INPUT_TOKENS,
+													locale,
+												)}
+											</CardTitle>
+										</CardHeader>
+									</Card>
+									<Card>
+										<CardHeader>
+											<ArrowUpFromLine
+												className="size-5 text-primary"
+												aria-hidden
+											/>
+											<CardDescription>
+												{t(
+													"usage:overview.outputTokens",
+												)}
+											</CardDescription>
+											<CardTitle className="text-2xl">
+												{formatCredits(
+													selectedUsageSummary?.RESPONSE_TOKENS,
+													locale,
+												)}
+											</CardTitle>
+										</CardHeader>
+									</Card>
+								</>
+							)}
 						</div>
 
 						{usagePercent !== null && (
