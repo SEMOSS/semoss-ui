@@ -108,6 +108,10 @@ describe("ModelUsagePage", () => {
 			screen.getByText("usage:restriction.restricted"),
 		).toBeInTheDocument();
 		expect(
+			screen.queryByText("usage:overview.tokenBreakdown"),
+		).not.toBeInTheDocument();
+		fireEvent.click(screen.getByRole("button", { name: "Test Model" }));
+		expect(
 			screen.getByText("usage:overview.tokenBreakdown"),
 		).toBeInTheDocument();
 		expect(
@@ -120,6 +124,10 @@ describe("ModelUsagePage", () => {
 			screen.getByText("usage:overview.thinkingTokens"),
 		).toBeInTheDocument();
 		expect(screen.getByText("65")).toBeInTheDocument();
+		fireEvent.click(screen.getByRole("button", { name: "Test Model" }));
+		expect(
+			screen.queryByText("usage:overview.tokenBreakdown"),
+		).not.toBeInTheDocument();
 		expect(
 			screen.queryByText("usage:pricing.title"),
 		).not.toBeInTheDocument();
@@ -247,7 +255,7 @@ describe("ModelUsagePage", () => {
 		).not.toBeInTheDocument();
 		await waitFor(() => {
 			expect(screen.getAllByText("100")).toHaveLength(2);
-			expect(screen.getAllByText("50")).toHaveLength(3);
+			expect(screen.getAllByText("50")).toHaveLength(2);
 			expect(screen.getAllByText("2")).toHaveLength(2);
 		});
 	});

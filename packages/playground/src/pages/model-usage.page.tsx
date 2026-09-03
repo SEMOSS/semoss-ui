@@ -3,11 +3,19 @@ import {
 	ArrowDownToLine,
 	ArrowUpFromLine,
 	CalendarRange,
+	ChevronDown,
 	MessageSquare,
 	RefreshCw,
 	TrendingUp,
 } from "lucide-react";
-import { useCallback, useEffect, useId, useMemo, useState } from "react";
+import {
+	Fragment,
+	useCallback,
+	useEffect,
+	useId,
+	useMemo,
+	useState,
+} from "react";
 import { useTranslation } from "@semoss/i18n";
 import {
 	Alert,
@@ -117,6 +125,7 @@ export const ModelUsagePage = () => {
 	const endDateId = useId();
 	const [models, setModels] = useState<Engine[]>([]);
 	const [selectedModelId, setSelectedModelId] = useState("");
+	const [expandedModelId, setExpandedModelId] = useState("");
 	const [creditInfo, setCreditInfo] = useState<ModelCreditInfo | null>(null);
 	const [initialDateRange] = useState(() => getPresetDateRange("month"));
 	const [startDate, setStartDate] = useState(initialDateRange.startDate);
@@ -253,17 +262,66 @@ export const ModelUsagePage = () => {
 			),
 		[selectedModelId, usageSummaries],
 	);
-	const tokenDetail = selectedUsage?.TOKEN_DETAIL;
-	const tokenDetailAvailable = tokenDetail?.AVAILABLE === true;
-	const nonCachedInputTokens = tokenDetailAvailable
-		? Math.max(
-				0,
-				tokenDetail.INPUT_TOKENS -
-					tokenDetail.CACHE_READ_TOKENS -
-					tokenDetail.CACHE_CREATION_TOKENS,
-			)
-		: undefined;
 	const locale = i18n.resolvedLanguage || i18n.language || "en";
+	const toggleModelDetails = (modelId: string) => {
+		setSelectedModelId(modelId);
+		setExpandedModelId((current) => (current === modelId ? "" : modelId));
+	};
+	const renderTokenBreakdown = (
+		detail: ModelUsageSummary["TOKEN_DETAIL"],
+		nonCachedInput: number | undefined,
+	) => {
+		const available = detail?.AVAILABLE === true;
+		const metrics = [
+			{
+				label: t("usage:overview.nonCachedInputTokens"),
+				value: nonCachedInput,
+			},
+			{
+				label: t("usage:overview.cacheReadTokens"),
+				value: available ? detail.CACHE_READ_TOKENS : undefined,
+			},
+			{
+				label: t("usage:overview.cacheWriteTokens"),
+				value: available ? detail.CACHE_CREATION_TOKENS : undefined,
+			},
+			{
+				label: t("usage:overview.outputTokens"),
+				value: available ? detail.OUTPUT_TOKENS : undefined,
+			},
+			{
+				label: t("usage:overview.thinkingTokens"),
+				value: available ? detail.THINKING_TOKENS : undefined,
+			},
+		];
+		return (
+			<div className="flex flex-col gap-3">
+				<div>
+					<Small>{t("usage:overview.tokenBreakdown")}</Small>
+					{!available && (
+						<div>
+							<Muted>
+								{t("usage:overview.tokenDetailsUnavailable")}
+							</Muted>
+						</div>
+					)}
+				</div>
+				<div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+					{metrics.map(({ label, value }) => (
+						<div
+							key={label}
+							className="rounded-md border bg-background p-3"
+						>
+							<Muted>{label}</Muted>
+							<div className="mt-1 font-semibold tabular-nums">
+								{formatCount(value, locale)}
+							</div>
+						</div>
+					))}
+				</div>
+			</div>
+		);
+	};
 
 	return (
 		<div className="h-full w-full overflow-y-auto bg-background">
@@ -531,73 +589,6 @@ export const ModelUsagePage = () => {
 								<Card>
 									<CardHeader>
 										<CardTitle>
-											{t("usage:overview.tokenBreakdown")}
-										</CardTitle>
-										{!tokenDetailAvailable && (
-											<CardDescription>
-												{t(
-													"usage:overview.tokenDetailsUnavailable",
-												)}
-											</CardDescription>
-										)}
-									</CardHeader>
-									<CardContent className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
-										{[
-											{
-												label: t(
-													"usage:overview.nonCachedInputTokens",
-												),
-												value: nonCachedInputTokens,
-											},
-											{
-												label: t(
-													"usage:overview.cacheReadTokens",
-												),
-												value: tokenDetailAvailable
-													? tokenDetail.CACHE_READ_TOKENS
-													: undefined,
-											},
-											{
-												label: t(
-													"usage:overview.cacheWriteTokens",
-												),
-												value: tokenDetailAvailable
-													? tokenDetail.CACHE_CREATION_TOKENS
-													: undefined,
-											},
-											{
-												label: t(
-													"usage:overview.outputTokens",
-												),
-												value: tokenDetailAvailable
-													? tokenDetail.OUTPUT_TOKENS
-													: undefined,
-											},
-											{
-												label: t(
-													"usage:overview.thinkingTokens",
-												),
-												value: tokenDetailAvailable
-													? tokenDetail.THINKING_TOKENS
-													: undefined,
-											},
-										].map(({ label, value }) => (
-											<div
-												key={label}
-												className="rounded-lg border p-4"
-											>
-												<Muted>{label}</Muted>
-												<div className="mt-1 font-semibold text-xl tabular-nums">
-													{formatCount(value, locale)}
-												</div>
-											</div>
-										))}
-									</CardContent>
-								</Card>
-
-								<Card>
-									<CardHeader>
-										<CardTitle>
 											{t("usage:overview.title")}
 										</CardTitle>
 										<CardDescription>
@@ -656,93 +647,140 @@ export const ModelUsagePage = () => {
 																	item.engine_id ===
 																	summary.ENGINE_ID,
 															);
+														const isExpanded =
+															expandedModelId ===
+															summary.ENGINE_ID;
+														const detail =
+															summary.TOKEN_DETAIL;
+														const detailAvailable =
+															detail?.AVAILABLE ===
+															true;
+														const nonCachedInput =
+															detailAvailable
+																? Math.max(
+																		0,
+																		detail.INPUT_TOKENS -
+																			detail.CACHE_READ_TOKENS -
+																			detail.CACHE_CREATION_TOKENS,
+																	)
+																: undefined;
 														return (
-															<TableRow
+															<Fragment
 																key={
 																	summary.ENGINE_ID
 																}
-																className={`cursor-pointer ${
-																	selectedModelId ===
-																	summary.ENGINE_ID
-																		? "bg-muted/50"
-																		: ""
-																}`}
-																aria-selected={
-																	selectedModelId ===
-																	summary.ENGINE_ID
-																}
-																onClick={() =>
-																	setSelectedModelId(
-																		summary.ENGINE_ID,
-																	)
-																}
 															>
-																<TableCell className="max-w-72 whitespace-normal font-medium">
-																	<button
-																		type="button"
-																		className="text-left hover:text-primary hover:underline"
-																		onClick={() =>
-																			setSelectedModelId(
-																				summary.ENGINE_ID,
-																			)
-																		}
-																	>
-																		{model?.engine_display_name ||
-																			model?.engine_name ||
-																			summary.ENGINE_NAME ||
-																			summary.ENGINE_ID}
-																	</button>
-																</TableCell>
-																<TableCell>
-																	{summary.HAS_RESTRICTION && (
-																		<Badge variant="outline">
-																			{t(
-																				"usage:restriction.restricted",
-																			)}
-																		</Badge>
-																	)}
-																</TableCell>
-																{[
-																	{
-																		key: "credits",
-																		value: summary.TOTAL_CREDITS,
-																		format: formatCredits,
-																	},
-																	{
-																		key: "requests",
-																		value: summary.TOTAL_REQUESTS,
-																		format: formatCount,
-																	},
-																	{
-																		key: "input",
-																		value: summary.INPUT_TOKENS,
-																		format: formatCount,
-																	},
-																	{
-																		key: "output",
-																		value: summary.RESPONSE_TOKENS,
-																		format: formatCount,
-																	},
-																].map(
-																	({
-																		key,
-																		value,
-																		format,
-																	}) => (
-																		<TableCell
-																			key={
-																				key
+																<TableRow
+																	className={`cursor-pointer ${
+																		selectedModelId ===
+																		summary.ENGINE_ID
+																			? "bg-muted/50"
+																			: ""
+																	}`}
+																	aria-selected={
+																		selectedModelId ===
+																		summary.ENGINE_ID
+																	}
+																	onClick={() =>
+																		toggleModelDetails(
+																			summary.ENGINE_ID,
+																		)
+																	}
+																>
+																	<TableCell className="max-w-72 whitespace-normal font-medium">
+																		<button
+																			type="button"
+																			className="flex w-full items-center justify-between gap-2 text-left hover:text-primary"
+																			aria-expanded={
+																				isExpanded
 																			}
-																			className="text-right tabular-nums"
+																			onClick={(
+																				event,
+																			) => {
+																				event.stopPropagation();
+																				toggleModelDetails(
+																					summary.ENGINE_ID,
+																				);
+																			}}
 																		>
-																			{format(
-																				value,
-																				locale,
+																			<span>
+																				{model?.engine_display_name ||
+																					model?.engine_name ||
+																					summary.ENGINE_NAME ||
+																					summary.ENGINE_ID}
+																			</span>
+																			<ChevronDown
+																				className={`size-4 shrink-0 transition-transform ${isExpanded ? "rotate-180" : ""}`}
+																				aria-hidden
+																			/>
+																		</button>
+																	</TableCell>
+																	<TableCell>
+																		{summary.HAS_RESTRICTION && (
+																			<Badge variant="outline">
+																				{t(
+																					"usage:restriction.restricted",
+																				)}
+																			</Badge>
+																		)}
+																	</TableCell>
+																	{[
+																		{
+																			key: "credits",
+																			value: summary.TOTAL_CREDITS,
+																			format: formatCredits,
+																		},
+																		{
+																			key: "requests",
+																			value: summary.TOTAL_REQUESTS,
+																			format: formatCount,
+																		},
+																		{
+																			key: "input",
+																			value: summary.INPUT_TOKENS,
+																			format: formatCount,
+																		},
+																		{
+																			key: "output",
+																			value: summary.RESPONSE_TOKENS,
+																			format: formatCount,
+																		},
+																	].map(
+																		({
+																			key,
+																			value,
+																			format,
+																		}) => (
+																			<TableCell
+																				key={
+																					key
+																				}
+																				className="text-right tabular-nums"
+																			>
+																				{format(
+																					value,
+																					locale,
+																				)}
+																			</TableCell>
+																		),
+																	)}
+																</TableRow>
+																{isExpanded && (
+																	<TableRow className="bg-muted/30 hover:bg-muted/30">
+																		<TableCell
+																			colSpan={
+																				6
+																			}
+																			className="p-4"
+																		>
+																			{renderTokenBreakdown(
+																				detail,
+																				nonCachedInput,
 																			)}
 																		</TableCell>
-																	),
+																	</TableRow>
 																)}
-															</TableRow>
+															</Fragment>
 														);
 													},
 												)}
