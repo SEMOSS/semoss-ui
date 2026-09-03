@@ -118,6 +118,23 @@ export const getPresetDateRange = (
 	};
 };
 
+/** Return an inclusive custom range from the same calendar date last month through today. */
+export const getDefaultCustomDateRange = (reference = new Date()) => {
+	const startDate = new Date(reference);
+	const referenceDay = reference.getUTCDate();
+	startDate.setUTCDate(1);
+	startDate.setUTCMonth(startDate.getUTCMonth() - 1);
+	const lastDayOfPreviousMonth = new Date(
+		Date.UTC(startDate.getUTCFullYear(), startDate.getUTCMonth() + 1, 0),
+	).getUTCDate();
+	startDate.setUTCDate(Math.min(referenceDay, lastDayOfPreviousMonth));
+
+	return {
+		startDate: formatDateInput(startDate),
+		endDate: formatDateInput(reference),
+	};
+};
+
 /** Self-service dashboard for model credit limits and usage. */
 export const ModelUsagePage = () => {
 	const { t, i18n } = useTranslation(["usage", "workspace"]);
@@ -415,7 +432,12 @@ export const ModelUsagePage = () => {
 										}
 										onClick={() => {
 											setRangeMode(mode);
-											if (mode !== "custom") {
+											if (mode === "custom") {
+												const range =
+													getDefaultCustomDateRange();
+												setStartDate(range.startDate);
+												setEndDate(range.endDate);
+											} else {
 												const range =
 													getPresetDateRange(mode);
 												setStartDate(range.startDate);

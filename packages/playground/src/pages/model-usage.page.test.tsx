@@ -2,6 +2,7 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, test, vi } from "vitest";
 import {
 	formatCredits,
+	getDefaultCustomDateRange,
 	getPresetDateRange,
 	ModelUsagePage,
 } from "./model-usage.page";
@@ -222,6 +223,17 @@ describe("ModelUsagePage", () => {
 		});
 	});
 
+	test("defaults custom ranges to the same date one month ago", () => {
+		expect(getDefaultCustomDateRange(new Date(2026, 8, 3))).toEqual({
+			startDate: "2026-08-03",
+			endDate: "2026-09-03",
+		});
+		expect(getDefaultCustomDateRange(new Date(2026, 2, 31))).toEqual({
+			startDate: "2026-02-28",
+			endDate: "2026-03-31",
+		});
+	});
+
 	test("does not render NaN when no credit limit is assigned", async () => {
 		mocks.getUserModelCreditInfo.mockResolvedValue({
 			engineId: "model-1",
@@ -283,6 +295,11 @@ describe("ModelUsagePage", () => {
 
 		const startInput = await screen.findByLabelText(
 			"usage:dateRange.start",
+		);
+		const defaultCustomRange = getDefaultCustomDateRange();
+		expect(startInput).toHaveValue(defaultCustomRange.startDate);
+		expect(screen.getByLabelText("usage:dateRange.end")).toHaveValue(
+			defaultCustomRange.endDate,
 		);
 		await waitFor(() => expect(mocks.getUserModelUsage).toHaveBeenCalled());
 		const callsBeforeEdit = mocks.getUserModelUsage.mock.calls.length;
