@@ -477,7 +477,7 @@ export const ModelUsagePage = () => {
 				)}
 
 				{models.length > 0 && overviewStartDate && overviewEndDate && (
-					<Card>
+					<Card className="order-2">
 						<CardHeader>
 							<CardTitle>{t("usage:overview.title")}</CardTitle>
 							<CardDescription>
@@ -610,18 +610,6 @@ export const ModelUsagePage = () => {
 								</AlertDescription>
 							</Alert>
 						)}
-						{!creditInfo.restrictionEnabled && (
-							<Alert>
-								<AlertCircle aria-hidden />
-								<AlertTitle>
-									{t("usage:noRestriction.title")}
-								</AlertTitle>
-								<AlertDescription>
-									{t("usage:noRestriction.description")}
-								</AlertDescription>
-							</Alert>
-						)}
-
 						<div
 							className={`grid gap-4 ${
 								creditInfo.restrictionEnabled

@@ -122,9 +122,10 @@ describe("ModelUsagePage", () => {
 
 		render(<ModelUsagePage />);
 
+		await screen.findByLabelText("usage:dateRange.start");
 		expect(
-			await screen.findByText("usage:noRestriction.title"),
-		).toBeInTheDocument();
+			screen.queryByText("usage:noRestriction.title"),
+		).not.toBeInTheDocument();
 		await waitFor(() => {
 			expect(mocks.getUserModelCreditInfo).toHaveBeenCalledWith(
 				"model-1",
