@@ -3,7 +3,7 @@ import {
 	ArrowDownToLine,
 	ArrowUpFromLine,
 	CalendarRange,
-	ChevronDown,
+	ChevronRight,
 	MessageSquare,
 	RefreshCw,
 	TrendingUp,
@@ -690,7 +690,7 @@ export const ModelUsagePage = () => {
 																	<TableCell className="max-w-72 whitespace-normal font-medium">
 																		<button
 																			type="button"
-																			className="flex w-full items-center justify-between gap-2 text-left hover:text-primary"
+																			className="flex w-full items-center gap-2 text-left hover:text-primary"
 																			aria-expanded={
 																				isExpanded
 																			}
@@ -703,16 +703,16 @@ export const ModelUsagePage = () => {
 																				);
 																			}}
 																		>
+																			<ChevronRight
+																				className={`size-4 shrink-0 transition-transform ${isExpanded ? "rotate-90" : ""}`}
+																				aria-hidden
+																			/>
 																			<span>
 																				{model?.engine_display_name ||
 																					model?.engine_name ||
 																					summary.ENGINE_NAME ||
 																					summary.ENGINE_ID}
 																			</span>
-																			<ChevronDown
-																				className={`size-4 shrink-0 transition-transform ${isExpanded ? "rotate-180" : ""}`}
-																				aria-hidden
-																			/>
 																		</button>
 																	</TableCell>
 																	<TableCell>
