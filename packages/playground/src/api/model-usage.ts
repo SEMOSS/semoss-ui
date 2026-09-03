@@ -35,7 +35,7 @@ export interface ModelUsageSummary {
 	TOTAL_REQUESTS: number;
 	TOTAL_CREDITS: number;
 	TOKEN_DETAIL?: {
-		AVAILABLE: boolean;
+		AVAILABLE?: boolean;
 		INPUT_TOKENS: number;
 		OUTPUT_TOKENS: number;
 		CACHE_READ_TOKENS: number;

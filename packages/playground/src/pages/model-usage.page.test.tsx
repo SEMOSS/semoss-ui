@@ -72,7 +72,6 @@ describe("ModelUsagePage", () => {
 				TOTAL_REQUESTS: 2,
 				TOTAL_CREDITS: 4,
 				TOKEN_DETAIL: {
-					AVAILABLE: true,
 					INPUT_TOKENS: 100,
 					OUTPUT_TOKENS: 50,
 					CACHE_READ_TOKENS: 25,
