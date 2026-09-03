@@ -25,9 +25,10 @@
 		"inputTokens": "Invoertokens",
 		"outputTokens": "Uitvoertokens",
 		"tokenBreakdown": "Tokenverdeling",
-		"totalTokens": "Totaal tokens",
+		"tokenDetailsUnavailable": "Voor verouderd gebruik in deze periode is geen volledige cacheverdeling beschikbaar.",
+		"nonCachedInputTokens": "Niet-gecachete invoer",
 		"cacheReadTokens": "Cache-leestokens",
-		"cacheCreationTokens": "Cache-aanmaaktokens",
+		"cacheWriteTokens": "Cache-schrijftokens",
 		"thinkingTokens": "Redeneertokens"
 	},
 	"model": { "label": "Model", "placeholder": "Selecteer een model" },

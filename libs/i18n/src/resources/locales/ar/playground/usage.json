@@ -25,9 +25,10 @@
 		"inputTokens": "رموز الإدخال",
 		"outputTokens": "رموز الإخراج",
 		"tokenBreakdown": "تفصيل الرموز",
-		"totalTokens": "إجمالي الرموز",
+		"tokenDetailsUnavailable": "لا يتوفر تفصيل كامل لذاكرة التخزين المؤقت للاستخدام القديم في هذه الفترة.",
+		"nonCachedInputTokens": "إدخال غير مخزن مؤقتًا",
 		"cacheReadTokens": "رموز قراءة ذاكرة التخزين المؤقت",
-		"cacheCreationTokens": "رموز إنشاء ذاكرة التخزين المؤقت",
+		"cacheWriteTokens": "رموز كتابة ذاكرة التخزين المؤقت",
 		"thinkingTokens": "رموز التفكير"
 	},
 	"model": { "label": "النموذج", "placeholder": "اختر نموذجًا" },

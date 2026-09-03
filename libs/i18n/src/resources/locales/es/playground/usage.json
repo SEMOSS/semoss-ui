@@ -25,9 +25,10 @@
 		"inputTokens": "Tokens de entrada",
 		"outputTokens": "Tokens de salida",
 		"tokenBreakdown": "Desglose de tokens",
-		"totalTokens": "Tokens totales",
+		"tokenDetailsUnavailable": "No hay un desglose completo de caché para el uso heredado de este período.",
+		"nonCachedInputTokens": "Entrada sin caché",
 		"cacheReadTokens": "Tokens leídos de caché",
-		"cacheCreationTokens": "Tokens de creación de caché",
+		"cacheWriteTokens": "Tokens escritos en caché",
 		"thinkingTokens": "Tokens de razonamiento"
 	},
 	"model": { "label": "Modelo", "placeholder": "Selecciona un modelo" },

@@ -72,6 +72,7 @@ describe("ModelUsagePage", () => {
 				TOTAL_REQUESTS: 2,
 				TOTAL_CREDITS: 4,
 				TOKEN_DETAIL: {
+					AVAILABLE: true,
 					INPUT_TOKENS: 100,
 					OUTPUT_TOKENS: 50,
 					CACHE_READ_TOKENS: 25,
@@ -113,11 +114,12 @@ describe("ModelUsagePage", () => {
 			screen.getByText("usage:overview.cacheReadTokens"),
 		).toBeInTheDocument();
 		expect(
-			screen.getByText("usage:overview.cacheCreationTokens"),
+			screen.getByText("usage:overview.cacheWriteTokens"),
 		).toBeInTheDocument();
 		expect(
 			screen.getByText("usage:overview.thinkingTokens"),
 		).toBeInTheDocument();
+		expect(screen.getByText("65")).toBeInTheDocument();
 		expect(
 			screen.queryByText("usage:pricing.title"),
 		).not.toBeInTheDocument();
@@ -245,7 +247,7 @@ describe("ModelUsagePage", () => {
 		).not.toBeInTheDocument();
 		await waitFor(() => {
 			expect(screen.getAllByText("100")).toHaveLength(2);
-			expect(screen.getAllByText("50")).toHaveLength(2);
+			expect(screen.getAllByText("50")).toHaveLength(3);
 			expect(screen.getAllByText("2")).toHaveLength(2);
 		});
 	});

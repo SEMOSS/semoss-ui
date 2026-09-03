@@ -25,9 +25,10 @@
 		"inputTokens": "इनपुट टोकन",
 		"outputTokens": "आउटपुट टोकन",
 		"tokenBreakdown": "टोकन विवरण",
-		"totalTokens": "कुल टोकन",
+		"tokenDetailsUnavailable": "इस अवधि के पुराने उपयोग के लिए पूरा कैश विवरण उपलब्ध नहीं है।",
+		"nonCachedInputTokens": "गैर-कैश इनपुट",
 		"cacheReadTokens": "कैश-पठन टोकन",
-		"cacheCreationTokens": "कैश-निर्माण टोकन",
+		"cacheWriteTokens": "कैश-लेखन टोकन",
 		"thinkingTokens": "रीज़निंग टोकन"
 	},
 	"model": { "label": "मॉडल", "placeholder": "मॉडल चुनें" },

@@ -25,9 +25,10 @@
 		"inputTokens": "Input tokens",
 		"outputTokens": "Output tokens",
 		"tokenBreakdown": "Token breakdown",
-		"totalTokens": "Total tokens",
+		"tokenDetailsUnavailable": "A complete cache breakdown is unavailable for legacy usage in this period.",
+		"nonCachedInputTokens": "Non-cached input",
 		"cacheReadTokens": "Cache-read tokens",
-		"cacheCreationTokens": "Cache-creation tokens",
+		"cacheWriteTokens": "Cache-write tokens",
 		"thinkingTokens": "Thinking tokens"
 	},
 	"model": {

@@ -25,9 +25,10 @@
 		"inputTokens": "入力トークン",
 		"outputTokens": "出力トークン",
 		"tokenBreakdown": "トークン内訳",
-		"totalTokens": "合計トークン",
+		"tokenDetailsUnavailable": "この期間の古い使用履歴については、完全なキャッシュ内訳を利用できません。",
+		"nonCachedInputTokens": "非キャッシュ入力",
 		"cacheReadTokens": "キャッシュ読み取りトークン",
-		"cacheCreationTokens": "キャッシュ作成トークン",
+		"cacheWriteTokens": "キャッシュ書き込みトークン",
 		"thinkingTokens": "思考トークン"
 	},
 	"model": { "label": "モデル", "placeholder": "モデルを選択" },

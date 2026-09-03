@@ -253,6 +253,16 @@ export const ModelUsagePage = () => {
 			),
 		[selectedModelId, usageSummaries],
 	);
+	const tokenDetail = selectedUsage?.TOKEN_DETAIL;
+	const tokenDetailAvailable = tokenDetail?.AVAILABLE === true;
+	const nonCachedInputTokens = tokenDetailAvailable
+		? Math.max(
+				0,
+				tokenDetail.INPUT_TOKENS -
+					tokenDetail.CACHE_READ_TOKENS -
+					tokenDetail.CACHE_CREATION_TOKENS,
+			)
+		: undefined;
 	const locale = i18n.resolvedLanguage || i18n.language || "en";
 
 	return (
@@ -523,38 +533,53 @@ export const ModelUsagePage = () => {
 										<CardTitle>
 											{t("usage:overview.tokenBreakdown")}
 										</CardTitle>
+										{!tokenDetailAvailable && (
+											<CardDescription>
+												{t(
+													"usage:overview.tokenDetailsUnavailable",
+												)}
+											</CardDescription>
+										)}
 									</CardHeader>
-									<CardContent className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+									<CardContent className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
 										{[
 											{
 												label: t(
-													"usage:overview.totalTokens",
+													"usage:overview.nonCachedInputTokens",
 												),
-												value: selectedUsage?.TOTAL_TOKENS,
+												value: nonCachedInputTokens,
 											},
 											{
 												label: t(
 													"usage:overview.cacheReadTokens",
 												),
-												value: selectedUsage
-													?.TOKEN_DETAIL
-													?.CACHE_READ_TOKENS,
+												value: tokenDetailAvailable
+													? tokenDetail.CACHE_READ_TOKENS
+													: undefined,
 											},
 											{
 												label: t(
-													"usage:overview.cacheCreationTokens",
+													"usage:overview.cacheWriteTokens",
 												),
-												value: selectedUsage
-													?.TOKEN_DETAIL
-													?.CACHE_CREATION_TOKENS,
+												value: tokenDetailAvailable
+													? tokenDetail.CACHE_CREATION_TOKENS
+													: undefined,
+											},
+											{
+												label: t(
+													"usage:overview.outputTokens",
+												),
+												value: tokenDetailAvailable
+													? tokenDetail.OUTPUT_TOKENS
+													: undefined,
 											},
 											{
 												label: t(
 													"usage:overview.thinkingTokens",
 												),
-												value: selectedUsage
-													?.TOKEN_DETAIL
-													?.THINKING_TOKENS,
+												value: tokenDetailAvailable
+													? tokenDetail.THINKING_TOKENS
+													: undefined,
 											},
 										].map(({ label, value }) => (
 											<div

@@ -25,9 +25,10 @@
 		"inputTokens": "Jetons d’entrée",
 		"outputTokens": "Jetons de sortie",
 		"tokenBreakdown": "Répartition des jetons",
-		"totalTokens": "Total des jetons",
+		"tokenDetailsUnavailable": "La répartition complète du cache n’est pas disponible pour l’utilisation historique de cette période.",
+		"nonCachedInputTokens": "Entrée hors cache",
 		"cacheReadTokens": "Jetons lus du cache",
-		"cacheCreationTokens": "Jetons de création du cache",
+		"cacheWriteTokens": "Jetons écrits dans le cache",
 		"thinkingTokens": "Jetons de raisonnement"
 	},
 	"model": { "label": "Modèle", "placeholder": "Sélectionner un modèle" },
