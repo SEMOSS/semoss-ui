@@ -38,7 +38,7 @@ import {
 	type RoomStore,
 } from "@/stores";
 import { decideAgentToolAction } from "@/stores/message/agent-harness";
-import { isAskExecutionMode } from "@/utility/mcp-utils";
+import { isAskExecutionMode, isYesNoExecutionMode } from "@/utility/mcp-utils";
 import { RoomCompactionIndicator } from "./room-compaction-indicator";
 import { RoomGeneratingIndicator } from "./room-generating-indicator";
 import { RoomSuggestions } from "./room-suggestions";
@@ -395,10 +395,10 @@ export const RoomContent = observer(({ room }: RoomContentProps) => {
 		});
 	})();
 
-	// Count of ask-mode tools on the latest response genuinely waiting on the
-	// user to click into them — not auto tools (they don't need a click), and
-	// not ask tools that already resolved (SUCCESS/ERROR/CANCELLED) or are
-	// already running (LOADING) after being clicked.
+	// Count of ask/yesno-mode tools on the latest response genuinely waiting
+	// on the user to click into them — not auto tools (they don't need a
+	// click), and not ones that already resolved (SUCCESS/ERROR/CANCELLED) or
+	// are already running (LOADING) after being clicked.
 	const waitingAskToolCount = (() => {
 		if (!room.latestResponseMessage) {
 			return 0;
@@ -409,10 +409,12 @@ export const RoomContent = observer(({ room }: RoomContentProps) => {
 				return false;
 			}
 			const tool = room.getTool(part.toolCall.id);
+			if (!tool || tool.status !== "INITIAL") {
+				return false;
+			}
+			const execution = tool.json._meta?.SMSS_MCP_EXECUTION;
 			return (
-				!!tool &&
-				tool.status === "INITIAL" &&
-				isAskExecutionMode(tool.json._meta?.SMSS_MCP_EXECUTION)
+				isAskExecutionMode(execution) || isYesNoExecutionMode(execution)
 			);
 		}).length;
 	})();
