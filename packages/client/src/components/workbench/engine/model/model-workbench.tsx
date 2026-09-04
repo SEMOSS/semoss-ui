@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import type { StoreApi } from "zustand";
 import { useInsight } from "@semoss/sdk/react";
+import type { FileExplorerApi } from "@semoss/shared";
 import { useEngine, useWorkbenchCommands, useWorkbenchStoreApi } from "@/hooks";
 import type {
 	WorkbenchLayout,
@@ -167,6 +168,59 @@ export const ModelWorkbench: React.FC = () => {
 	}, [chatStore, engine.engine_id, insight.isReady, insight.insightId]);
 
 	useWorkbenchCommands([
+		{
+			id: "workbench.server.reconnect",
+			label: "Reconnect Server",
+			handler: () => {
+				void insight.actions
+					.run("ReconnectServer();")
+					.catch(console.error);
+			},
+		},
+		{
+			id: "workbench.file.create",
+			category: "File",
+			label: "Create File",
+			handler: (get) =>
+				(
+					get().layout.values[WORKBENCH_COMPONENTS.FILE_EXPLORER] as
+						| FileExplorerApi
+						| undefined
+				)?.commands.openNewFile(undefined, "add_file"),
+		},
+		{
+			id: "workbench.file.create-folder",
+			category: "File",
+			label: "Create Folder",
+			handler: (get) =>
+				(
+					get().layout.values[WORKBENCH_COMPONENTS.FILE_EXPLORER] as
+						| FileExplorerApi
+						| undefined
+				)?.commands.openNewFile(undefined, "add_directory"),
+		},
+		{
+			id: "workbench.file.upload",
+			category: "File",
+			label: "Upload Files",
+			handler: (get) =>
+				(
+					get().layout.values[WORKBENCH_COMPONENTS.FILE_EXPLORER] as
+						| FileExplorerApi
+						| undefined
+				)?.commands.openNewFile(undefined, "upload"),
+		},
+		{
+			id: "workbench.file.refresh",
+			category: "File",
+			label: "Refresh Files",
+			handler: (get) =>
+				(
+					get().layout.values[WORKBENCH_COMPONENTS.FILE_EXPLORER] as
+						| FileExplorerApi
+						| undefined
+				)?.commands.refresh(),
+		},
 		{
 			id: "workbench.file-explorer.open",
 			category: "View",

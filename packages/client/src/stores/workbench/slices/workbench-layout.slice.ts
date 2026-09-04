@@ -2,7 +2,6 @@ import type { StoreApi } from "zustand";
 import { shallow } from "zustand/shallow";
 import type {
 	WorkbenchBorders,
-	WorkbenchCommand,
 	WorkbenchLayout,
 	WorkbenchLayoutNode,
 	WorkbenchMoveTarget,
@@ -22,7 +21,6 @@ import type {
 	WorkbenchTabset,
 } from "../workbench.types";
 import { WORKBENCH_SIDES } from "../workbench.types";
-import { buildWorkbenchLayoutCommands } from "./workbench-layout.commands";
 import {
 	createNodeId,
 	emptyTabset,
@@ -315,9 +313,6 @@ export interface WorkbenchLayoutActions {
 	findPanels: (
 		predicate: (record: WorkbenchPanelRecord) => boolean,
 	) => WorkbenchPanelRecord[];
-
-	/** The layout-derived palette entries. Call when the palette opens. */
-	buildLayoutCommands: () => WorkbenchCommand[];
 }
 
 /** The layout slice: fields plus its `actions` contribution. */
@@ -890,7 +885,7 @@ export const createWorkbenchLayoutSlice = (
 				},
 
 				loadLayout: (layout, opts = {}) => {
-					cacheKey = `smss-workbench--${id}--${layout.version}`;
+					cacheKey = `smss-workbench--layout--${id}--${layout.version}`;
 					defaultLayout = deepCopy(layout);
 					set((root) => ({
 						layout: {
@@ -1524,7 +1519,6 @@ export const createWorkbenchLayoutSlice = (
 				getPanel: (pid) => (pid ? get().layout.panels[pid] : undefined),
 				findPanels: (predicate) =>
 					Object.values(get().layout.panels).filter(predicate),
-				buildLayoutCommands: () => buildWorkbenchLayoutCommands(get),
 			},
 		};
 	};

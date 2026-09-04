@@ -1,4 +1,6 @@
 import { useEffect } from "react";
+import { useInsight } from "@semoss/sdk/react";
+import type { FileExplorerApi } from "@semoss/shared";
 import { useProject, useWorkbench, useWorkbenchCommands } from "@/hooks";
 import type {
 	WorkbenchLayout,
@@ -112,11 +114,6 @@ const NOTEBOOK_WORKBENCH_COMPONENTS: Record<string, WorkbenchPanelConfigAny> = {
 			restrict: ["OWNER", "EDIT", "READ_ONLY"],
 		},
 		{
-			name: "Commits",
-			component: "commits",
-			restrict: ["OWNER", "EDIT"],
-		},
-		{
 			name: "GitHub",
 			component: "github",
 			restrict: ["OWNER"],
@@ -142,6 +139,7 @@ const NOTEBOOK_WORKBENCH_COMPONENTS: Record<string, WorkbenchPanelConfigAny> = {
  */
 export const NotebookWorkbench: React.FC = () => {
 	const { project } = useProject();
+	const insight = useInsight();
 
 	const configureAssistant = useWorkbench((s) => s.assistant.configure);
 
@@ -168,6 +166,59 @@ export const NotebookWorkbench: React.FC = () => {
 	]);
 
 	useWorkbenchCommands([
+		{
+			id: "workbench.server.reconnect",
+			label: "Reconnect Server",
+			handler: () => {
+				void insight.actions
+					.run("ReconnectServer();")
+					.catch(console.error);
+			},
+		},
+		{
+			id: "workbench.file.create",
+			category: "File",
+			label: "Create File",
+			handler: (get) =>
+				(
+					get().layout.values[
+						WORKBENCH_COMPONENTS.PROJECT_FILE_EXPLORER
+					] as FileExplorerApi | undefined
+				)?.commands.openNewFile(undefined, "add_file"),
+		},
+		{
+			id: "workbench.file.create-folder",
+			category: "File",
+			label: "Create Folder",
+			handler: (get) =>
+				(
+					get().layout.values[
+						WORKBENCH_COMPONENTS.PROJECT_FILE_EXPLORER
+					] as FileExplorerApi | undefined
+				)?.commands.openNewFile(undefined, "add_directory"),
+		},
+		{
+			id: "workbench.file.upload",
+			category: "File",
+			label: "Upload Files",
+			handler: (get) =>
+				(
+					get().layout.values[
+						WORKBENCH_COMPONENTS.PROJECT_FILE_EXPLORER
+					] as FileExplorerApi | undefined
+				)?.commands.openNewFile(undefined, "upload"),
+		},
+		{
+			id: "workbench.file.refresh",
+			category: "File",
+			label: "Refresh Files",
+			handler: (get) =>
+				(
+					get().layout.values[
+						WORKBENCH_COMPONENTS.PROJECT_FILE_EXPLORER
+					] as FileExplorerApi | undefined
+				)?.commands.refresh(),
+		},
 		{
 			id: "workbench.project-file-explorer.open",
 			category: "View",

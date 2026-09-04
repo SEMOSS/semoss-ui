@@ -1,4 +1,6 @@
 import { useEffect } from "react";
+import { useInsight } from "@semoss/sdk/react";
+import type { FileExplorerApi } from "@semoss/shared";
 import { makeEngineRoomMcp } from "@/api/rooms";
 import { useEngine, useWorkbench, useWorkbenchCommands } from "@/hooks";
 import type {
@@ -121,6 +123,7 @@ const GUARDRAIL_WORKBENCH_COMPONENTS: Record<string, WorkbenchPanelConfigAny> =
  */
 export const GuardrailWorkbench: React.FC = () => {
 	const { engine } = useEngine();
+	const insight = useInsight();
 
 	const configureAssistant = useWorkbench((s) => s.assistant.configure);
 
@@ -139,6 +142,59 @@ export const GuardrailWorkbench: React.FC = () => {
 	]);
 
 	useWorkbenchCommands([
+		{
+			id: "workbench.server.reconnect",
+			label: "Reconnect Server",
+			handler: () => {
+				void insight.actions
+					.run("ReconnectServer();")
+					.catch(console.error);
+			},
+		},
+		{
+			id: "workbench.file.create",
+			category: "File",
+			label: "Create File",
+			handler: (get) =>
+				(
+					get().layout.values[WORKBENCH_COMPONENTS.FILE_EXPLORER] as
+						| FileExplorerApi
+						| undefined
+				)?.commands.openNewFile(undefined, "add_file"),
+		},
+		{
+			id: "workbench.file.create-folder",
+			category: "File",
+			label: "Create Folder",
+			handler: (get) =>
+				(
+					get().layout.values[WORKBENCH_COMPONENTS.FILE_EXPLORER] as
+						| FileExplorerApi
+						| undefined
+				)?.commands.openNewFile(undefined, "add_directory"),
+		},
+		{
+			id: "workbench.file.upload",
+			category: "File",
+			label: "Upload Files",
+			handler: (get) =>
+				(
+					get().layout.values[WORKBENCH_COMPONENTS.FILE_EXPLORER] as
+						| FileExplorerApi
+						| undefined
+				)?.commands.openNewFile(undefined, "upload"),
+		},
+		{
+			id: "workbench.file.refresh",
+			category: "File",
+			label: "Refresh Files",
+			handler: (get) =>
+				(
+					get().layout.values[WORKBENCH_COMPONENTS.FILE_EXPLORER] as
+						| FileExplorerApi
+						| undefined
+				)?.commands.refresh(),
+		},
 		{
 			id: "workbench.file-explorer.open",
 			category: "View",
