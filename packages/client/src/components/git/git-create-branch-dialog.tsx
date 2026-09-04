@@ -65,7 +65,11 @@ export const GitCreateBranchDialog = ({
 			onSubmit(values.name);
 		} catch (error) {
 			console.error(error);
-			toast.error("Failed to create branch");
+			toast.error(
+				error instanceof Error
+					? error.message
+					: "Failed to create branch",
+			);
 		}
 	};
 
