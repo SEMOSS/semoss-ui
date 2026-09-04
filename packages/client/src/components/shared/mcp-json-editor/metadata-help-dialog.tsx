@@ -26,7 +26,7 @@ const META_TOP_LEVEL_KEYS: MetaKeyDoc[] = [
 	{
 		key: "SMSS_MCP_EXECUTION",
 		type: '"auto" | "ask" | "yesno" | "disabled"',
-		desc: "When the tool runs: auto runs it automatically, ask prompts for approval first, yesno currently behaves the same as ask, disabled prevents it from running. Defaults to ask.",
+		desc: "When the tool runs: auto runs it automatically, ask prompts for approval first, yesno prompts for a quick approve/reject decision, disabled prevents it from running. Defaults to ask.",
 	},
 	{
 		key: "SMSS_FUNCTION_NAME",
