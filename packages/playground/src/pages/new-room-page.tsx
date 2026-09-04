@@ -250,13 +250,13 @@ export const NewRoomPage = observer(() => {
 				// Files from the file explorer are already in the insight —
 				// only RoomInput drag/drop/paste attachments are passed here.
 				preCreatedRoom.setMode(mode === "agent" ? "agent" : "chat");
-				preCreatedRoom.setMetadata({ name: prompt.substring(0, 15) });
+				preCreatedRoom.setMetadata({ name: t("room:defaultName") });
 				await preCreatedRoom.updateRoomOptions(options);
 				// Optimistically surface the room in the nav — GetPlaygroundRooms
 				// won't return it until its first message has data.
 				chat.addOptimisticRoom({
 					ROOM_ID: preCreatedRoom.roomId,
-					ROOM_NAME: prompt.substring(0, 100),
+					ROOM_NAME: t("room:defaultName"),
 					DATE_CREATED: new Date().toISOString(),
 					WORKSPACE_ID: options.workspace?.workspace_id,
 				});
@@ -282,6 +282,7 @@ export const NewRoomPage = observer(() => {
 				const room = await chat.createRoom(
 					mode === "agent" ? "agent" : "chat",
 					prompt,
+					t("room:defaultName"),
 					files,
 					options,
 					getWorkspace.data?.workspace_id,

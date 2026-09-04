@@ -342,6 +342,8 @@ export interface AgentRunSnapshot {
 	runId: string;
 	/** The room this run's messages are written to. */
 	roomId: string;
+	/** The room's generated or user-provided display name. */
+	roomName?: string | null;
 	status: AgentRunStatusValue;
 	/** The persisted user message this run started from, once written. */
 	inputMessageId?: string;
