@@ -13,7 +13,7 @@ import {
 	Link as RouterLink,
 	useLocation,
 	useParams,
-} from "react-router-dom";
+} from "react-router";
 import { usePixel } from "@semoss/sdk/react";
 import {
 	AppCatalogAvatar,

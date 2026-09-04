@@ -11,6 +11,7 @@ import {
 	approveProjectUserAccessRequest,
 	denyProjectUserAccessRequest,
 } from "@semoss/sdk";
+import { usePixel } from "@semoss/sdk/react";
 import {
 	Button,
 	Checkbox,
@@ -33,7 +34,7 @@ import {
 	approveEngineUserAccessRequest,
 	denyEngineUserAccessRequest,
 } from "@/api";
-import { usePixel, useSettings } from "@/hooks";
+import { useSettings } from "@/hooks";
 import type { ALL_TYPES } from "@/types";
 import type { SETTINGS_PENDING_USER, SETTINGS_ROLE } from "./settings.types";
 

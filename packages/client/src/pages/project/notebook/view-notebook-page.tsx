@@ -1,5 +1,5 @@
 import { ChevronRightIcon, InfoIcon, PencilIcon } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link } from "react-router";
 import { InsightProvider } from "@semoss/sdk/react";
 import {
 	Breadcrumb,

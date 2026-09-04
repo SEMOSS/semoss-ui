@@ -1,6 +1,6 @@
 import { DownloadIcon } from "lucide-react";
 import { useState } from "react";
-import { download } from "@semoss/sdk/react";
+import { download, runPixel } from "@semoss/sdk/react";
 import {
 	Button,
 	Dialog,
@@ -39,14 +39,15 @@ export const EngineExportButton: React.FC = () => {
 		try {
 			setIsExporting(true);
 
-			const response = await configStore.runPixel(
+			const response = await runPixel(
 				`META | ExportEngine(engine=["${
 					engine.engine_id
 				}"], includeData="${includeData ? "true" : "false"}" );`,
+				configStore.store.insightID,
 			);
 
 			await download(
-				response.insightId,
+				configStore.store.insightID,
 				response.pixelReturn[0].output as string,
 			);
 		} catch (error) {

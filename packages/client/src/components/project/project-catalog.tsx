@@ -1,7 +1,7 @@
 import { Plus } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link } from "react-router";
 import { useIteratorPixel, usePixel } from "@semoss/sdk/react";
 import type { Project } from "@semoss/shared";
 import {
@@ -123,443 +123,385 @@ interface ProjectCatalogProps {
 	type: Project["project_type"];
 }
 
-export const ProjectCatalog = observer(
-	({ type }: ProjectCatalogProps): JSX.Element => {
-		const config = CATALOG_CONFIG[type as keyof typeof CATALOG_CONFIG];
-		const { configStore } = useRootStore();
+export const ProjectCatalog = observer(({ type }: ProjectCatalogProps) => {
+	const config = CATALOG_CONFIG[type as keyof typeof CATALOG_CONFIG];
+	const { configStore } = useRootStore();
 
-		// get metakeys of the ones we want
-		const metaKeys = configStore.store.config.projectMetaKeys
-			.filter((k) => {
-				return (
-					k.display_options === "single-checklist" ||
-					k.display_options === "multi-checklist" ||
-					k.display_options === "single-select" ||
-					k.display_options === "multi-select" ||
-					k.display_options === "single-typeahead" ||
-					k.display_options === "multi-typeahead" ||
-					k.display_options === "select-box"
-				);
-			})
-			.map((k) => {
-				return k.metakey;
-			});
+	// get metakeys of the ones we want
+	const metaKeys = configStore.store.config.projectMetaKeys
+		.filter((k) => {
+			return (
+				k.display_options === "single-checklist" ||
+				k.display_options === "multi-checklist" ||
+				k.display_options === "single-select" ||
+				k.display_options === "multi-select" ||
+				k.display_options === "single-typeahead" ||
+				k.display_options === "multi-typeahead" ||
+				k.display_options === "select-box"
+			);
+		})
+		.map((k) => {
+			return k.metakey;
+		});
 
-		const [search, setSearch] = useState("");
-		const debouncedSearch = useDebouncedValue(search);
-		const [sortValue, setSortValue] = useState("PROJECTNAME");
-		const [sortOrder, setSortOrder] = useState<"ASC" | "DESC">("ASC");
-		const [gridStyle, setGridStyle] = useState<"LIST" | "CARD">("LIST");
+	const [search, setSearch] = useState("");
+	const debouncedSearch = useDebouncedValue(search);
+	const [sortValue, setSortValue] = useState("PROJECTNAME");
+	const [sortOrder, setSortOrder] = useState<"ASC" | "DESC">("ASC");
+	const [gridStyle, setGridStyle] = useState<"LIST" | "CARD">("LIST");
 
-		const [metaFilters, setMetaFilters] = useState<Record<string, unknown>>(
-			{},
-		);
-		const [filterKey, setFilterKey] = useState<number>(0);
-		const [tab, setTab] = useState<string>("Mine");
+	const [metaFilters, setMetaFilters] = useState<Record<string, unknown>>({});
+	const [filterKey, setFilterKey] = useState<number>(0);
+	const [tab, setTab] = useState<string>("Mine");
 
-		const [isDeletingProject, setIsDeletingProject] = useState(false);
-		const [projectToDelete, setProjectToDelete] = useState<Project | null>(
-			null,
-		);
+	const [isDeletingProject, setIsDeletingProject] = useState(false);
+	const [projectToDelete, setProjectToDelete] = useState<Project | null>(
+		null,
+	);
 
-		// Clone modal state
-		const [cloneModalApp, setCloneModalApp] = useState<Project | null>(
-			null,
-		);
+	// Clone modal state
+	const [cloneModalApp, setCloneModalApp] = useState<Project | null>(null);
 
-		const metaKeysDescription = [...metaKeys, "description"];
+	const metaKeysDescription = [...metaKeys, "description"];
 
-		// The project types this view lists. Shared by the MyProjects calls below
-		// and by the filter box's GetProjectMetaValues call, so the filter options
-		// are always counted over exactly the projects the view can show.
-		const projectTypes = useMemo(
-			() => [...config.projectTypes],
-			[config.projectTypes],
-		);
-		const projectTypeFilter = `projectType=${JSON.stringify(projectTypes)}`;
+	// The project types this view lists. Shared by the MyProjects calls below
+	// and by the filter box's GetProjectMetaValues call, so the filter options
+	// are always counted over exactly the projects the view can show.
+	const projectTypes = useMemo(
+		() => [...config.projectTypes],
+		[config.projectTypes],
+	);
+	const projectTypeFilter = `projectType=${JSON.stringify(projectTypes)}`;
 
-		const getFavoriteProjects = usePixel<Project[]>(
-			tab === "Mine"
-				? `MyProjects(metaKeys = ${JSON.stringify(
-						metaKeysDescription,
-					)}, metaFilters=[${JSON.stringify(
-						metaFilters,
-					)}], filterWord=["${debouncedSearch}"], sort=[{"${sortValue}" : "${sortOrder}"}], ${projectTypeFilter}, onlyFavorites=[true]);`
-				: "",
-			{
-				data: [],
-			},
-		);
-
-		/**
-		 * Get all of the projects with lazy loading
-		 */
-		const projectPrefix =
-			tab === "Mine" ? "MyProjects" : "MyDiscoverableProjects";
-
-		const getProjects = useIteratorPixel<Project[], Project>(
-			(limit, offset) => {
-				if (tab === "System") {
-					return "";
-				}
-
-				return `${projectPrefix}(metaKeys = ${JSON.stringify(
+	const getFavoriteProjects = usePixel<Project[]>(
+		tab === "Mine"
+			? `MyProjects(metaKeys = ${JSON.stringify(
 					metaKeysDescription,
 				)}, metaFilters=[${JSON.stringify(
 					metaFilters,
-				)}], filterWord=["${debouncedSearch}"], sort=[{"${sortValue}" : "${sortOrder}"}], ${projectTypeFilter}, limit=[${limit}], offset=[${offset}]);`;
-			},
-			(response) => {
-				// if its less than the limit, we know its the end
-				if (response.length < 15) {
-					return -1;
-				}
+				)}], filterWord=["${debouncedSearch}"], sort=[{"${sortValue}" : "${sortOrder}"}], ${projectTypeFilter}, onlyFavorites=[true]);`
+			: "",
+		{
+			data: [],
+		},
+	);
 
-				return Infinity;
-			},
-			(response) => {
-				return response;
-			},
-			{
-				limit: 15,
-			},
-			[
-				tab,
-				debouncedSearch,
-				sortValue,
-				sortOrder,
-				JSON.stringify(metaFilters),
-			],
-		);
+	/**
+	 * Get all of the projects with lazy loading
+	 */
+	const projectPrefix =
+		tab === "Mine" ? "MyProjects" : "MyDiscoverableProjects";
 
-		const { setScroll, resetScroll } = useInfiniteScroll({
-			disabled:
-				tab === "System" ||
-				getProjects.isLoading ||
-				!getProjects.hasMore,
-			onNext: () => {
-				getProjects.next();
-			},
-		});
-
-		/**
-		 * @desc infinite scroll
-		 */
-		useEffect(() => {
-			const scrollEle = document.querySelector(
-				'[data-home-content="true"]',
-			) as HTMLDivElement;
-
-			setScroll(scrollEle);
-
-			return () => {
-				setScroll(null);
-			};
-		}, [setScroll]);
-
-		/**
-		 * Since this uses the same component for all engine types, we need to reset the search and scroll when the type changes
-		 */
-		useEffect(() => {
-			if (!type) {
-				return;
+	const getProjects = useIteratorPixel<Project[], Project>(
+		(limit, offset) => {
+			if (tab === "System") {
+				return "";
 			}
 
-			setSearch("");
-			setMetaFilters({});
-			setSortValue("PROJECTNAME");
-			setSortOrder("ASC");
-			setGridStyle("LIST");
-			resetScroll();
-		}, [type, resetScroll]);
-
-		/**
-		 * @name setGlobal
-		 * @param project
-		 */
-		const setGlobal = async (project: Project) => {
-			try {
-				await setProjectGlobal(
-					false,
-					project.project_id,
-					!project.project_global,
-				);
-
-				// reset it
-				getProjects.reset();
-				getFavoriteProjects.refresh();
-			} catch (error) {
-				console.error(error);
-				toast.error("Error updating global status");
+			return `${projectPrefix}(metaKeys = ${JSON.stringify(
+				metaKeysDescription,
+			)}, metaFilters=[${JSON.stringify(
+				metaFilters,
+			)}], filterWord=["${debouncedSearch}"], sort=[{"${sortValue}" : "${sortOrder}"}], ${projectTypeFilter}, limit=[${limit}], offset=[${offset}]);`;
+		},
+		(response) => {
+			// if its less than the limit, we know its the end
+			if (response.length < 15) {
+				return -1;
 			}
+
+			return Infinity;
+		},
+		(response) => {
+			return response;
+		},
+		{
+			limit: 15,
+		},
+		[
+			tab,
+			debouncedSearch,
+			sortValue,
+			sortOrder,
+			JSON.stringify(metaFilters),
+		],
+	);
+
+	const { setScroll, resetScroll } = useInfiniteScroll({
+		disabled:
+			tab === "System" || getProjects.isLoading || !getProjects.hasMore,
+		onNext: () => {
+			getProjects.next();
+		},
+	});
+
+	/**
+	 * @desc infinite scroll
+	 */
+	useEffect(() => {
+		const scrollEle = document.querySelector(
+			'[data-home-content="true"]',
+		) as HTMLDivElement;
+
+		setScroll(scrollEle);
+
+		return () => {
+			setScroll(null);
 		};
+	}, [setScroll]);
 
-		/**
-		 * @name setFavorite
-		 * @param project
-		 */
-		const setFavorite = async (project: Project) => {
-			// check if is favorited
-			const updatedFavorite = !(project.project_favorite === 1);
+	/**
+	 * Since this uses the same component for all engine types, we need to reset the search and scroll when the type changes
+	 */
+	useEffect(() => {
+		if (!type) {
+			return;
+		}
 
-			try {
-				await setProjectFavorite(project.project_id, updatedFavorite);
+		setSearch("");
+		setMetaFilters({});
+		setSortValue("PROJECTNAME");
+		setSortOrder("ASC");
+		setGridStyle("LIST");
+		resetScroll();
+	}, [type, resetScroll]);
 
-				// reset and refresh it
+	/**
+	 * @name setGlobal
+	 * @param project
+	 */
+	const setGlobal = async (project: Project) => {
+		try {
+			await setProjectGlobal(
+				false,
+				project.project_id,
+				!project.project_global,
+			);
+
+			// reset it
+			getProjects.reset();
+			getFavoriteProjects.refresh();
+		} catch (error) {
+			console.error(error);
+			toast.error("Error updating global status");
+		}
+	};
+
+	/**
+	 * @name setFavorite
+	 * @param project
+	 */
+	const setFavorite = async (project: Project) => {
+		// check if is favorited
+		const updatedFavorite = !(project.project_favorite === 1);
+
+		try {
+			await setProjectFavorite(project.project_id, updatedFavorite);
+
+			// reset and refresh it
+			resetScroll();
+			getFavoriteProjects.refresh();
+			getProjects.reset();
+		} catch (error) {
+			console.error(error);
+			toast.error("Error updating favorite status");
+		}
+	};
+
+	/**
+	 * @name openInfo
+	 * @param project
+	 */
+	const openInfo = async (project: Project) => {
+		window.open(`#${config.basePath}/${project.project_id}`, "_blank");
+	};
+
+	/**
+	 * @name deleteProject
+	 * @desc confirm deleting a project
+	 */
+	const deleteProject = async () => {
+		if (!projectToDelete) {
+			return;
+		}
+
+		try {
+			setIsDeletingProject(true);
+
+			const response = await configStore.runPixel(
+				`DeleteProject(project=['${projectToDelete.project_id}']);`,
+			);
+
+			const operationType =
+				response.pixelReturn?.[0]?.operationType || "";
+			const output = response.pixelReturn?.[0]?.output;
+
+			if (operationType.indexOf("ERROR") === -1) {
+				toast.success(
+					`Successfully deleted ${projectToDelete.project_display_name || projectToDelete.project_name}`,
+				);
 				resetScroll();
 				getFavoriteProjects.refresh();
 				getProjects.reset();
-			} catch (error) {
-				console.error(error);
-				toast.error("Error updating favorite status");
+				setFilterKey((prev) => prev + 1);
+			} else {
+				toast.error(String(output || "Failed to delete"));
 			}
-		};
+		} catch (error) {
+			toast.error(String(error));
+		} finally {
+			setIsDeletingProject(false);
+			setProjectToDelete(null);
+		}
+	};
 
-		/**
-		 * @name openInfo
-		 * @param project
-		 */
-		const openInfo = async (project: Project) => {
-			window.open(`#${config.basePath}/${project.project_id}`, "_blank");
-		};
+	/**
+	 * Handle delete request
+	 */
+	const handleDeleteRequest = (project: Project) => {
+		setProjectToDelete(project);
+	};
 
-		/**
-		 * @name deleteProject
-		 * @desc confirm deleting a project
-		 */
-		const deleteProject = async () => {
-			if (!projectToDelete) {
-				return;
-			}
+	// filter out the bookmarked
+	const nonBookmarked = getProjects.data.filter(
+		(db) => db.project_favorite !== 1,
+	);
 
-			try {
-				setIsDeletingProject(true);
+	// filter out system mode
+	const filteredSystemApps = SYSTEM_APPS.filter((app) =>
+		app.name.toLowerCase().includes(search.toLowerCase()),
+	);
 
-				const response = await configStore.runPixel(
-					`DeleteProject(project=['${projectToDelete.project_id}']);`,
-				);
-
-				const operationType =
-					response.pixelReturn?.[0]?.operationType || "";
-				const output = response.pixelReturn?.[0]?.output;
-
-				if (operationType.indexOf("ERROR") === -1) {
-					toast.success(
-						`Successfully deleted ${projectToDelete.project_display_name || projectToDelete.project_name}`,
-					);
-					resetScroll();
-					getFavoriteProjects.refresh();
-					getProjects.reset();
-					setFilterKey((prev) => prev + 1);
-				} else {
-					toast.error(String(output || "Failed to delete"));
+	return (
+		<>
+			<NavbarLeft>
+				<NavbarHeader />
+			</NavbarLeft>
+			<CatalogLayout
+				title={`${config.name} Catalog`}
+				description={config.description}
+				headerActions={
+					configStore.isEngineOperationAvailable(
+						CATALOG_PERMISSION_TYPE[
+							type as keyof typeof CATALOG_PERMISSION_TYPE
+						],
+						"add",
+					) ? (
+						<Button
+							variant="default"
+							aria-label={`Add ${config.name}`}
+							data-testid="ProjectPage-create-new-app-btn"
+							asChild
+						>
+							<Link to={config.createPath}>
+								<Plus className="size-4" />
+								Add {config.name}
+							</Link>
+						</Button>
+					) : null
 				}
-			} catch (error) {
-				toast.error(String(error));
-			} finally {
-				setIsDeletingProject(false);
-				setProjectToDelete(null);
-			}
-		};
+				searchBar={
+					<CatalogSearchBar
+						search={search}
+						onSearchChange={setSearch}
+						placeholder="Search"
+						sortValue={sortValue}
+						sortOrder={sortOrder}
+						sortOptions={[
+							{ value: "PROJECTNAME", label: "Name" },
+							{ value: "DATECREATED", label: "Date Created" },
+							{
+								value: "DATELASTEDITED",
+								label: "Date Last Edited",
+							},
+						]}
+						onSortChange={(value, order) => {
+							if (sortOrder === value && sortValue === order) {
+								return;
+							}
 
-		/**
-		 * Handle delete request
-		 */
-		const handleDeleteRequest = (project: Project) => {
-			setProjectToDelete(project);
-		};
-
-		// filter out the bookmarked
-		const nonBookmarked = getProjects.data.filter(
-			(db) => db.project_favorite !== 1,
-		);
-
-		// filter out system mode
-		const filteredSystemApps = SYSTEM_APPS.filter((app) =>
-			app.name.toLowerCase().includes(search.toLowerCase()),
-		);
-
-		return (
-			<>
-				<NavbarLeft>
-					<NavbarHeader />
-				</NavbarLeft>
-				<CatalogLayout
-					title={`${config.name} Catalog`}
-					description={config.description}
-					headerActions={
-						configStore.isEngineOperationAvailable(
-							CATALOG_PERMISSION_TYPE[
-								type as keyof typeof CATALOG_PERMISSION_TYPE
-							],
-							"add",
-						) ? (
-							<Button
-								variant="default"
-								aria-label={`Add ${config.name}`}
-								data-testid="ProjectPage-create-new-app-btn"
-								asChild
-							>
-								<Link to={config.createPath}>
-									<Plus className="size-4" />
-									Add {config.name}
-								</Link>
-							</Button>
-						) : null
-					}
-					searchBar={
-						<CatalogSearchBar
-							search={search}
-							onSearchChange={setSearch}
-							placeholder="Search"
-							sortValue={sortValue}
-							sortOrder={sortOrder}
-							sortOptions={[
-								{ value: "PROJECTNAME", label: "Name" },
-								{ value: "DATECREATED", label: "Date Created" },
-								{
-									value: "DATELASTEDITED",
-									label: "Date Last Edited",
-								},
-							]}
-							onSortChange={(value, order) => {
-								if (
-									sortOrder === value &&
-									sortValue === order
-								) {
-									return;
-								}
-
-								setSortValue(value);
-								setSortOrder(order);
-								resetScroll();
-								getProjects.reset();
+							setSortValue(value);
+							setSortOrder(order);
+							resetScroll();
+							getProjects.reset();
+						}}
+						showGridStyle={true}
+						gridStyle={gridStyle}
+						onGridStyleChange={(v) => setGridStyle(v)}
+					/>
+				}
+				tabs={
+					<CatalogTabs
+						value={tab}
+						onValueChange={(val) => setTab(val as TabMode)}
+						tabs={[
+							{
+								value: "Mine",
+								label: `My ${config.name}`,
+								dataTestId: "ProjectPage-myApps-tab",
+							},
+							{
+								value: "Discoverable",
+								label: `Discoverable ${config.name}s`,
+								dataTestId: "ProjectPage-discoverable-tab",
+							},
+							...(config.showSystemTab
+								? [
+										{
+											value: "System",
+											label: `System ${config.name}s`,
+											dataTestId:
+												"ProjectPage-systemApps-tab",
+										},
+									]
+								: []),
+						]}
+					/>
+				}
+				filterBox={
+					!configStore.store.config.adminOnlyViewMenuBarFlag &&
+					configStore.isEngineOperationAvailable(
+						CATALOG_PERMISSION_TYPE[
+							type as keyof typeof CATALOG_PERMISSION_TYPE
+						],
+						"add",
+					) ? (
+						<CatalogFilterBox
+							key={filterKey}
+							type={type}
+							projectTypes={projectTypes}
+							filters={metaFilters as Record<string, string[]>}
+							onChange={(filters) => {
+								setMetaFilters(filters);
 							}}
-							showGridStyle={true}
-							gridStyle={gridStyle}
-							onGridStyleChange={(v) => setGridStyle(v)}
 						/>
-					}
-					tabs={
-						<CatalogTabs
-							value={tab}
-							onValueChange={(val) => setTab(val as TabMode)}
-							tabs={[
-								{
-									value: "Mine",
-									label: `My ${config.name}`,
-									dataTestId: "ProjectPage-myApps-tab",
-								},
-								{
-									value: "Discoverable",
-									label: `Discoverable ${config.name}s`,
-									dataTestId: "ProjectPage-discoverable-tab",
-								},
-								...(config.showSystemTab
-									? [
-											{
-												value: "System",
-												label: `System ${config.name}s`,
-												dataTestId:
-													"ProjectPage-systemApps-tab",
-											},
-										]
-									: []),
-							]}
-						/>
-					}
-					filterBox={
-						!configStore.store.config.adminOnlyViewMenuBarFlag &&
-						configStore.isEngineOperationAvailable(
-							CATALOG_PERMISSION_TYPE[
-								type as keyof typeof CATALOG_PERMISSION_TYPE
-							],
-							"add",
-						) ? (
-							<CatalogFilterBox
-								key={filterKey}
-								type={type}
-								projectTypes={projectTypes}
-								filters={
-									metaFilters as Record<string, string[]>
-								}
-								onChange={(filters) => {
-									setMetaFilters(filters);
-								}}
-							/>
-						) : null
-					}
-				>
-					{tab === "Mine" ? (
-						<>
-							{/* Loading State */}
-							{getFavoriteProjects.status === "LOADING" &&
-							getProjects.isLoading ? (
-								<div className="flex flex-col items-center justify-center py-6">
-									<Spinner className="size-4" />
-								</div>
-							) : null}
+					) : null
+				}
+			>
+				{tab === "Mine" ? (
+					<>
+						{/* Loading State */}
+						{getFavoriteProjects.status === "LOADING" &&
+						getProjects.isLoading ? (
+							<div className="flex flex-col items-center justify-center py-6">
+								<Spinner className="size-4" />
+							</div>
+						) : null}
 
-							{/* Bookmarked Section */}
-							{getFavoriteProjects.data.length > 0 && (
-								<>
-									<p className="font-medium text-sm">
-										Bookmarked
-									</p>
-									<CatalogGrid variant={gridStyle}>
-										{getFavoriteProjects.data.map(
-											(project) => (
-												<ProjectGridItem
-													key={project.project_id}
-													variant={gridStyle}
-													path={`${config.basePath}/${project.project_id}/${config.itemSubPath}`}
-													project={project}
-													isFavorited={true}
-													showFavorite={true}
-													showGlobal={true}
-													showInfo={true}
-													showClone={true}
-													showDelete={isOwnerPermission(
-														project.user_permission,
-													)}
-													onFavorite={setFavorite}
-													onInfo={openInfo}
-													onGlobal={setGlobal}
-													onClone={setCloneModalApp}
-													onDelete={
-														handleDeleteRequest
-													}
-												/>
-											),
-										)}
-									</CatalogGrid>
-								</>
-							)}
-
-							{/* All Section Label */}
-							{Object.entries(metaFilters).length === 0 &&
-								nonBookmarked.length > 0 && (
-									<p className="font-medium text-sm">
-										All {config.name}s
-									</p>
-								)}
-
-							{/* All Items */}
-							{nonBookmarked.length > 0 && (
-								<CatalogGrid
-									isLoading={getProjects.isLoading}
-									showLoadingMore={nonBookmarked.length > 0}
-									variant={gridStyle}
-								>
-									{nonBookmarked.map((project) => (
+						{/* Bookmarked Section */}
+						{getFavoriteProjects.data.length > 0 && (
+							<>
+								<p className="font-medium text-sm">
+									Bookmarked
+								</p>
+								<CatalogGrid variant={gridStyle}>
+									{getFavoriteProjects.data.map((project) => (
 										<ProjectGridItem
 											key={project.project_id}
 											variant={gridStyle}
 											path={`${config.basePath}/${project.project_id}/${config.itemSubPath}`}
 											project={project}
-											isFavorited={
-												project.project_favorite === 1
-											} // should be false
+											isFavorited={true}
 											showFavorite={true}
 											showGlobal={true}
 											showInfo={true}
@@ -575,134 +517,173 @@ export const ProjectCatalog = observer(
 										/>
 									))}
 								</CatalogGrid>
+							</>
+						)}
+
+						{/* All Section Label */}
+						{Object.entries(metaFilters).length === 0 &&
+							nonBookmarked.length > 0 && (
+								<p className="font-medium text-sm">
+									All {config.name}s
+								</p>
 							)}
 
-							{/* Empty State */}
-							{!getProjects.isLoading &&
-								getFavoriteProjects.status !== "LOADING" &&
-								nonBookmarked.length === 0 &&
-								getFavoriteProjects.data.length === 0 && (
-									<div className="w-full px-2 py-4 text-center">
-										<Muted>No results found</Muted>
-									</div>
-								)}
-						</>
-					) : null}
-					{tab === "Discoverable" ? (
-						<>
-							{/* Loading State */}
-							{getProjects.isLoading ? (
-								<div className="flex flex-col items-center justify-center py-6">
-									<Spinner className="size-4" />
-								</div>
-							) : null}
-
-							{/* All Items */}
-							{getProjects.data.length > 0 && (
-								<CatalogGrid
-									isLoading={getProjects.isLoading}
-									showLoadingMore={
-										getProjects.data.length > 0
-									}
-									variant={gridStyle}
-								>
-									{getProjects.data.map((project) => (
-										<ProjectGridItem
-											key={project.project_id}
-											variant={gridStyle}
-											path={`${config.basePath}/${project.project_id}`}
-											project={project}
-											isFavorited={
-												project.project_favorite === 1
-											}
-											showFavorite={false}
-											showGlobal={isOwnerPermission(
-												project.user_permission,
-											)}
-											showInfo={false}
-											showClone={isOwnerPermission(
-												project.user_permission,
-											)}
-											showDelete={isOwnerPermission(
-												project.user_permission,
-											)}
-											onFavorite={setFavorite}
-											onInfo={openInfo}
-											onGlobal={setGlobal}
-											onClone={setCloneModalApp}
-											onDelete={handleDeleteRequest}
-										/>
-									))}
-								</CatalogGrid>
-							)}
-
-							{/* Empty State */}
-							{!getProjects.isLoading &&
-								getProjects.data.length === 0 && (
-									<div className="w-full px-2 py-4 text-center">
-										<Muted>No results found</Muted>
-									</div>
-								)}
-						</>
-					) : null}
-					{tab === "System" && (
-						<CatalogGrid variant={gridStyle}>
-							{filteredSystemApps.length > 0 ? (
-								filteredSystemApps.map((project) => (
-									<SystemAppGridItem
-										key={project.id}
-										id={project.id}
-										name={project.name}
-										description={project.description}
-										href={project.href}
-										gridStyle={gridStyle}
+						{/* All Items */}
+						{nonBookmarked.length > 0 && (
+							<CatalogGrid
+								isLoading={getProjects.isLoading}
+								showLoadingMore={nonBookmarked.length > 0}
+								variant={gridStyle}
+							>
+								{nonBookmarked.map((project) => (
+									<ProjectGridItem
+										key={project.project_id}
+										variant={gridStyle}
+										path={`${config.basePath}/${project.project_id}/${config.itemSubPath}`}
+										project={project}
+										isFavorited={
+											project.project_favorite === 1
+										} // should be false
+										showFavorite={true}
+										showGlobal={true}
+										showInfo={true}
+										showClone={true}
+										showDelete={isOwnerPermission(
+											project.user_permission,
+										)}
+										onFavorite={setFavorite}
+										onInfo={openInfo}
+										onGlobal={setGlobal}
+										onClone={setCloneModalApp}
+										onDelete={handleDeleteRequest}
 									/>
-								))
-							) : (
+								))}
+							</CatalogGrid>
+						)}
+
+						{/* Empty State */}
+						{!getProjects.isLoading &&
+							getFavoriteProjects.status !== "LOADING" &&
+							nonBookmarked.length === 0 &&
+							getFavoriteProjects.data.length === 0 && (
 								<div className="w-full px-2 py-4 text-center">
 									<Muted>No results found</Muted>
 								</div>
 							)}
-						</CatalogGrid>
-					)}
-					<Help />
-				</CatalogLayout>
+					</>
+				) : null}
+				{tab === "Discoverable" ? (
+					<>
+						{/* Loading State */}
+						{getProjects.isLoading ? (
+							<div className="flex flex-col items-center justify-center py-6">
+								<Spinner className="size-4" />
+							</div>
+						) : null}
 
-				{/* Clone Dialog */}
-				{cloneModalApp && (
-					<CloneProjectDialog
-						open={Boolean(cloneModalApp)}
-						project={cloneModalApp}
-						onClose={(clonedId) => {
-							setCloneModalApp(null);
-							if (clonedId) {
-								setFilterKey((prev) => prev + 1);
-								resetScroll();
-								getProjects.reset();
-								getFavoriteProjects.refresh();
-							}
-						}}
-					/>
+						{/* All Items */}
+						{getProjects.data.length > 0 && (
+							<CatalogGrid
+								isLoading={getProjects.isLoading}
+								showLoadingMore={getProjects.data.length > 0}
+								variant={gridStyle}
+							>
+								{getProjects.data.map((project) => (
+									<ProjectGridItem
+										key={project.project_id}
+										variant={gridStyle}
+										path={`${config.basePath}/${project.project_id}`}
+										project={project}
+										isFavorited={
+											project.project_favorite === 1
+										}
+										showFavorite={false}
+										showGlobal={isOwnerPermission(
+											project.user_permission,
+										)}
+										showInfo={false}
+										showClone={isOwnerPermission(
+											project.user_permission,
+										)}
+										showDelete={isOwnerPermission(
+											project.user_permission,
+										)}
+										onFavorite={setFavorite}
+										onInfo={openInfo}
+										onGlobal={setGlobal}
+										onClone={setCloneModalApp}
+										onDelete={handleDeleteRequest}
+									/>
+								))}
+							</CatalogGrid>
+						)}
+
+						{/* Empty State */}
+						{!getProjects.isLoading &&
+							getProjects.data.length === 0 && (
+								<div className="w-full px-2 py-4 text-center">
+									<Muted>No results found</Muted>
+								</div>
+							)}
+					</>
+				) : null}
+				{tab === "System" && (
+					<CatalogGrid variant={gridStyle}>
+						{filteredSystemApps.length > 0 ? (
+							filteredSystemApps.map((project) => (
+								<SystemAppGridItem
+									key={project.id}
+									id={project.id}
+									name={project.name}
+									description={project.description}
+									href={project.href}
+									gridStyle={gridStyle}
+								/>
+							))
+						) : (
+							<div className="w-full px-2 py-4 text-center">
+								<Muted>No results found</Muted>
+							</div>
+						)}
+					</CatalogGrid>
 				)}
+				<Help />
+			</CatalogLayout>
 
-				<DeleteEntityDialog
-					open={Boolean(projectToDelete)}
-					onOpenChange={(open) => {
-						if (!open) {
-							setProjectToDelete(null);
+			{/* Clone Dialog */}
+			{cloneModalApp && (
+				<CloneProjectDialog
+					open={Boolean(cloneModalApp)}
+					project={cloneModalApp}
+					onClose={(clonedId) => {
+						setCloneModalApp(null);
+						if (clonedId) {
+							setFilterKey((prev) => prev + 1);
+							resetScroll();
+							getProjects.reset();
+							getFavoriteProjects.refresh();
 						}
 					}}
-					entityLabel={getProjectLabel(projectToDelete?.project_type)}
-					entityName={
-						projectToDelete?.project_display_name ||
-						projectToDelete?.project_name ||
-						""
-					}
-					entityId={projectToDelete?.project_id || ""}
-					onConfirm={deleteProject}
-					isLoading={isDeletingProject}
 				/>
-			</>
-		);
-	},
-);
+			)}
+
+			<DeleteEntityDialog
+				open={Boolean(projectToDelete)}
+				onOpenChange={(open) => {
+					if (!open) {
+						setProjectToDelete(null);
+					}
+				}}
+				entityLabel={getProjectLabel(projectToDelete?.project_type)}
+				entityName={
+					projectToDelete?.project_display_name ||
+					projectToDelete?.project_name ||
+					""
+				}
+				entityId={projectToDelete?.project_id || ""}
+				onConfirm={deleteProject}
+				isLoading={isDeletingProject}
+			/>
+		</>
+	);
+});

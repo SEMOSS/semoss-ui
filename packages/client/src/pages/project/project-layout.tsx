@@ -1,5 +1,5 @@
 import { useCallback, useMemo } from "react";
-import { Outlet, useParams } from "react-router-dom";
+import { Outlet, useParams } from "react-router";
 import { usePixel } from "@semoss/sdk/react";
 import type { Project, ProjectDependency } from "@semoss/shared";
 import { Spinner } from "@semoss/ui/next";

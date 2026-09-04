@@ -1,5 +1,6 @@
 import { Copy, EyeOff, LockKeyhole, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
+import { usePixel } from "@semoss/sdk/react";
 import {
 	Button,
 	Card,
@@ -19,7 +20,7 @@ import {
 	setProjectVisiblity,
 } from "@/api";
 import { DeleteEntityDialog } from "@/components/shared/delete-entity-dialog";
-import { usePixel, useRootStore, useSettings } from "@/hooks";
+import { useRootStore, useSettings } from "@/hooks";
 import type { ALL_TYPES, ApiResponse } from "@/types";
 import { formatToDataTestId } from "@/utility";
 

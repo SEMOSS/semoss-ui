@@ -1,6 +1,6 @@
 import { FolderTreeIcon, HammerIcon, PencilIcon } from "lucide-react";
 import { useCallback, useEffect, useMemo } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams } from "react-router";
 import { useInsight } from "@semoss/sdk/react";
 import {
 	FileExplorer,

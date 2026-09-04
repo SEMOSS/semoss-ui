@@ -1,6 +1,6 @@
 import { observer } from "mobx-react-lite";
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router";
 import { useIteratorPixel } from "@semoss/sdk/react";
 import type { Project } from "@semoss/shared";
 import {

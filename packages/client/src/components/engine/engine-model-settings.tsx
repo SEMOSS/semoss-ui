@@ -1,7 +1,7 @@
 import { RotateCcw } from "lucide-react";
 import { useEffect, useId, useMemo, useRef, useState } from "react";
+import type { Role } from "@semoss/sdk";
 import { usePixel } from "@semoss/sdk/react";
-import type { Role } from "@semoss/shared";
 import {
 	Badge,
 	Button,

@@ -17,7 +17,7 @@ import {
 import { observer } from "mobx-react-lite";
 import type React from "react";
 import { useEffect, useState } from "react";
-import { Link, matchPath, useLocation } from "react-router-dom";
+import { Link, matchPath, useLocation } from "react-router";
 import {
 	Sidebar as ShadcnSidebar,
 	SidebarContent as ShadcnSidebarContent,

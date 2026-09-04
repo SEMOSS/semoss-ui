@@ -1,7 +1,7 @@
 import { Plus } from "lucide-react";
 import { observer } from "mobx-react-lite";
-import { useEffect, useState } from "react";
-import { useIteratorPixel, usePixel } from "@semoss/sdk/react";
+import { type JSX, useEffect, useState } from "react";
+import { runPixel, useIteratorPixel, usePixel } from "@semoss/sdk/react";
 import type { Engine } from "@semoss/shared";
 import {
 	Button,
@@ -228,7 +228,7 @@ export const EngineIndexPage: React.FC<EngineIndexPageProps> = observer(
 			try {
 				setIsDeletingEngine(true);
 
-				const response = await configStore.runPixel(
+				const response = await runPixel(
 					`DeleteEngine(engine=['${engineToDelete.engine_id}']);`,
 				);
 

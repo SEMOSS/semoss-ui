@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
+import { usePixel } from "@semoss/sdk/react";
 import {
 	Avatar,
 	AvatarFallback,
@@ -27,7 +28,7 @@ import {
 } from "@semoss/ui/next";
 import { uploadFile as uploadFileAPI } from "@/api";
 import { Java } from "@/assets/img/Java";
-import { usePixel, useRootStore, useSettings } from "@/hooks";
+import { useRootStore, useSettings } from "@/hooks";
 import { McpUsage } from "../shared/mcp-usage";
 
 interface AppSettingsProps {

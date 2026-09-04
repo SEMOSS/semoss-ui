@@ -1,16 +1,6 @@
 {
+	"extends": "@semoss/config/tsconfig.base.json",
 	"compilerOptions": {
-		"lib": ["ES2022", "dom"],
-		"target": "es6",
-		"jsx": "react-jsx",
-		"module": "esnext",
-		"moduleResolution": "bundler",
-		"allowSyntheticDefaultImports": true,
-		"resolveJsonModule": true,
-		"skipLibCheck": true,
-		"allowJs": true,
-		"esModuleInterop": true,
-		"isolatedModules": true,
 		"strict": true,
 		"paths": {
 			"@/*": ["./src/*"]

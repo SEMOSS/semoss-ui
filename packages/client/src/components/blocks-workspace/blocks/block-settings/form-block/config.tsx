@@ -2,6 +2,7 @@ import { Crosshair } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useMemo } from "react";
 import { ActionMessages, useBlocks } from "@semoss/renderer";
+import { usePixel } from "@semoss/sdk/react";
 import {
 	Select,
 	SelectContent,
@@ -9,7 +10,6 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@semoss/ui/next";
-import { usePixel } from "@/hooks";
 import { ContainerLayoutSettings } from "../../settings";
 import { BaseSettingSection } from "../../settings/BaseSettingSection";
 import { SelectInputSettings } from "../../settings/shared/SelectInputSettings";

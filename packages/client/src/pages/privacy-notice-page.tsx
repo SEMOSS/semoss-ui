@@ -1,10 +1,15 @@
 import { observer } from "mobx-react-lite";
+import { Navigate } from "react-router";
 import { useRootStore } from "@/hooks";
 
 export const PrivacyNoticePage = observer(() => {
 	const { configStore } = useRootStore();
 
 	const html = configStore.theme.privacyNoticePage;
+
+	if (!html) {
+		return <Navigate to="/" replace />;
+	}
 
 	return (
 		<div className="flex w-full justify-center px-10 py-14">

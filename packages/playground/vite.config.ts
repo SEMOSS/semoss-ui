@@ -1,114 +1,43 @@
-import tailwindcss from "@tailwindcss/vite";
-import react from "@vitejs/plugin-react";
-import { playwright } from "@vitest/browser-playwright";
-import { defineConfig, loadEnv } from "vite";
-import svgr from "vite-plugin-svgr";
 import { resolve } from "node:path";
+import {
+	createViteConfig,
+	DEV_SERVER_PORTS,
+	localeManualChunks,
+} from "@semoss/config";
 
-export default defineConfig(({ mode }) => {
-	const env = loadEnv(mode, process.cwd(), "");
+const monacoApi = resolve(
+	import.meta.dirname,
+	"../../libs/shared/node_modules/monaco-editor/esm/vs/editor/editor.api",
+);
 
-	const isProduction = mode === "production";
-
-	const MODULE = env.MODULE;
-	const ENDPOINT = env.ENDPOINT;
-
-	return {
-		base: "./",
-		plugins: [
-			tailwindcss(),
-			svgr(),
-			react({ include: /\.(js|jsx|ts|tsx)$/ }),
-		],
-		resolve: {
-			alias: [
-				{ find: "@", replacement: resolve(__dirname, "./src") },
-				{
-					find: /^monaco-editor$/,
-					replacement: resolve(
-						__dirname,
-						"../../libs/shared/node_modules/monaco-editor/esm/vs/editor/editor.api",
-					),
-				},
-			],
+export default createViteConfig({
+	rootDir: import.meta.dirname,
+	port: DEV_SERVER_PORTS.playground,
+	enableSvgr: true,
+	proxy: { ws: true },
+	alias: [{ find: /^monaco-editor$/, replacement: monacoApi }],
+	manualChunks: localeManualChunks,
+	define: (env, isProduction) => ({
+		"import.meta.env.ACCESS_KEY": isProduction
+			? undefined
+			: JSON.stringify(env.ACCESS_KEY),
+		"import.meta.env.SECRET_KEY": isProduction
+			? undefined
+			: JSON.stringify(env.SECRET_KEY),
+		"import.meta.env.VITE_THEME": JSON.stringify(env.VITE_THEME || "{}"),
+	}),
+	test: {
+		setupFiles: "./vitest.setup.ts",
+		coverage: {
+			reportsDirectory: "./coverage/packages/playground",
+			include: ["**/src/components"],
 		},
-		define: {
-			"import.meta.env.MODULE": JSON.stringify(MODULE),
-			"import.meta.env.ACCESS_KEY": isProduction
-				? undefined
-				: JSON.stringify(env.ACCESS_KEY),
-			"import.meta.env.SECRET_KEY": isProduction
-				? undefined
-				: JSON.stringify(env.SECRET_KEY),
-			"import.meta.env.VITE_THEME": JSON.stringify(
-				env.VITE_THEME || "{}",
-			),
-		},
-		build: {
-			minify: isProduction,
-			commonjsOptions: { transformMixedEsModules: true },
-			rollupOptions: {
-				output: {
-					manualChunks(id: string) {
-						// One lazy chunk per language so loading/switching a
-						// language is a single request and new languages never
-						// bloat the main bundle.
-						const locale = id.match(/\/locales\/([^/]+)\/.*\.json/);
-						if (locale) {
-							return `locale-${locale[1]}`;
-						}
-					},
+		deps: {
+			optimizer: {
+				web: {
+					include: ["vitest-canvas-mock"],
 				},
 			},
 		},
-		optimizeDeps: {
-			esbuildOptions: {
-				target: "es2020",
-			},
-		},
-		server: {
-			port: 5174,
-			proxy: {
-				[MODULE]: {
-					target: ENDPOINT,
-					ws: true,
-					changeOrigin: true,
-					secure: false,
-					preserveHeaderKeyCase: true,
-				},
-			},
-		},
-		test: {
-			name: "playground",
-			environment: "jsdom",
-			globals: true,
-			setupFiles: "./vitest.setup.ts",
-			reporters: ["default"],
-			pool: "vmForks",
-			testTimeout: 10000, // Set global timeout to 10 seconds
-			hookTimeout: 10000,
-			coverage: {
-				enabled: false,
-				provider: "v8",
-				reporter: ["text"],
-				reportOnFailure: true,
-				reportsDirectory: "./coverage/packages/playground",
-				include: ["**/src/components"],
-				exclude: ["**/node_modules", "**/dist"],
-			},
-			deps: {
-				// Force these packages to be processed by Vite instead of Node
-				optimizer: {
-					web: {
-						include: ["vitest-canvas-mock"],
-					},
-				},
-			},
-			browser: {
-				enabled: false,
-				instances: [{ browser: "chromium" }],
-				provider: playwright(),
-			},
-		},
-	};
+	},
 });

@@ -107,7 +107,9 @@ export const NotebookExplorerItem: React.FC<NotebookExplorerItemProps> =
 								value={newName}
 								onChange={(e) => setNewName(e.target.value)}
 								// biome-ignore lint/suspicious/noExplicitAny: input ref callback
-								ref={(input: any) => input?.focus()}
+								ref={(input: any) => {
+									input?.focus();
+								}}
 								onKeyDown={(e) => {
 									if (e.key === "Enter" && newName.trim()) {
 										onCopyClick(newName.trim());

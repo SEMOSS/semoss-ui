@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useIteratorPixel } from "@semoss/sdk/react";
+import { runPixel, useIteratorPixel } from "@semoss/sdk/react";
 import type { Engine } from "@semoss/shared";
 import {
 	Muted,
@@ -115,7 +115,7 @@ export const EngineSettingsIndexPage = (
 		try {
 			setIsDeletingEngine(true);
 
-			const response = await configStore.runPixel(
+			const response = await runPixel(
 				`DeleteEngine(engine=['${engineToDelete.engine_id}']);`,
 			);
 

@@ -1,55 +1,49 @@
 import { observer } from "mobx-react-lite";
-import { lazy, Suspense } from "react";
-import { Navigate, Route, Routes } from "react-router-dom";
+import { lazy } from "react";
+import { createHashRouter, Navigate } from "react-router";
+import { RouterProvider } from "react-router/dom";
 import { Spinner } from "@semoss/ui/next";
 import { useRootStore } from "@/hooks";
 import { AuthenticatedLayout } from "./authenticated-layout";
 import { CookieNoticePage } from "./cookie-notice-page";
 import { ENGINE_ROUTES, EngineRedirect } from "./engine";
 import { LandingPage } from "./landing-page";
+import { LoginPage } from "./login-page";
 import { PageLayout } from "./page-layout";
 import { PrivacyNoticePage } from "./privacy-notice-page";
-import { ProjectLayout } from "./project/project-layout";
-import { TemplatePage } from "./template-page";
-
-const PromptRouter = lazy(() =>
-	import("./prompt/PromptRouter").then((m) => ({ default: m.PromptRouter })),
-);
-const SettingsRouter = lazy(() =>
-	import("./settings/settings-router").then((m) => ({
-		default: m.SettingsRouter,
-	})),
-);
+import { PROJECT_ROUTES } from "./project";
+import { PROMPT_ROUTE } from "./prompt/prompt.routes";
+import { SETTINGS_ROUTE } from "./settings/settings.routes";
 
 const SharePage = lazy(() =>
 	import("./share-page").then((m) => ({ default: m.SharePage })),
 );
 
-import { LoginPage } from "./login-page";
-import { PROJECT_ROUTES } from "./project";
-
-type RouteConfig = {
-	/** Name of the specific path */
-	path: string;
-
-	/** Element to render */
-	element: React.ReactNode;
-
-	/** Child routes */
-	children?: RouteConfig[];
-};
-
-const renderRoute = (route: RouteConfig): React.ReactElement => {
-	if (route.path === "") {
-		return <Route key="index" index element={route.element} />;
-	}
-
-	return (
-		<Route key={route.path} path={route.path} element={route.element}>
-			{route.children?.map(renderRoute)}
-		</Route>
-	);
-};
+const router = createHashRouter([
+	{
+		path: "/",
+		element: <AuthenticatedLayout />,
+		children: [
+			{ path: "s/:appId/*", element: <SharePage /> },
+			{
+				// pathless layout route (replaces the former `path="*"` wrapper)
+				element: <PageLayout />,
+				children: [
+					{ index: true, element: <LandingPage /> },
+					...PROJECT_ROUTES,
+					{ path: "engine/*", element: <EngineRedirect /> },
+					...ENGINE_ROUTES,
+					PROMPT_ROUTE,
+					SETTINGS_ROUTE,
+					{ path: "*", element: <Navigate to="/" replace /> },
+				],
+			},
+		],
+	},
+	{ path: "/cookie-notice", element: <CookieNoticePage /> },
+	{ path: "/privacy-notice", element: <PrivacyNoticePage /> },
+	{ path: "/login", element: <LoginPage /> },
+]);
 
 const PageSpinner = () => (
 	<div className="flex h-screen w-screen items-center justify-center">
@@ -64,43 +58,5 @@ export const Router = observer(() => {
 		return <PageSpinner />;
 	}
 
-	const showCookieNotice = !!configStore.theme.cookiePolicyNoticePage;
-	const showPrivacyNotice = !!configStore.theme.privacyNoticePage;
-
-	return (
-		<Suspense fallback={<PageSpinner />}>
-			<Routes>
-				<Route path="/" element={<AuthenticatedLayout />}>
-					<Route path="s/:appId" element={<ProjectLayout />}>
-						<Route index element={<SharePage />} />
-						<Route path="*" element={<SharePage />} />
-					</Route>
-					<Route path="*" element={<PageLayout />}>
-						<Route index element={<LandingPage />} />
-
-						<Route path="templates" element={<TemplatePage />} />
-						{PROJECT_ROUTES.map(renderRoute)}
-						<Route path="engine/*" element={<EngineRedirect />} />
-						{ENGINE_ROUTES.map(renderRoute)}
-						<Route path="prompt/*" element={<PromptRouter />} />
-						<Route path="settings/*" element={<SettingsRouter />} />
-						<Route path="*" element={<Navigate to="/" replace />} />
-					</Route>
-				</Route>
-				{showCookieNotice && (
-					<Route
-						path="/cookie-notice"
-						element={<CookieNoticePage />}
-					/>
-				)}
-				{showPrivacyNotice && (
-					<Route
-						path="/privacy-notice"
-						element={<PrivacyNoticePage />}
-					/>
-				)}
-				<Route path="/login" element={<LoginPage />} />
-			</Routes>
-		</Suspense>
-	);
+	return <RouterProvider router={router} />;
 });
