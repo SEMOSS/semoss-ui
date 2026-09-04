@@ -326,6 +326,9 @@ export const NewRoomPage = observer(() => {
 			// clearing the agent clears the guard below, so picking the same
 			// agent again applies its default model again
 			appliedAgentModelRef.current = "";
+			if (chat.profileDefaultModelId) {
+				void chat.selectModelById(chat.profileDefaultModelId);
+			}
 			return;
 		}
 		if (getWorkspace.status !== "SUCCESS" || !getWorkspace.data) {
