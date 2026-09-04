@@ -1,4 +1,6 @@
 import { useEffect } from "react";
+import { useInsight } from "@semoss/sdk/react";
+import type { FileExplorerApi } from "@semoss/shared";
 import { makeEngineRoomMcp } from "@/api/rooms";
 import { useEngine, useWorkbench, useWorkbenchCommands } from "@/hooks";
 import type {
@@ -22,10 +24,14 @@ import { ENGINE_FILE_PDF_EDITOR_PANEL } from "../engine-file-pdf-editor-panel";
 import { ENGINE_MCP_EDITOR_PANEL } from "../engine-mcp-editor-panel";
 import { createEngineSettingsPanel } from "../engine-settings-panel";
 import { EngineSettingsToggle } from "../engine-settings-toggle";
+import {
+	ENGINE_GIT_DIFF_PANEL,
+	ENGINE_VERSION_PANEL,
+} from "../version-control";
 
 /** The default arrangement: files on the left, assistant on the right. */
 const GUARDRAIL_WORKBENCH_LAYOUT: WorkbenchLayout = {
-	version: 1,
+	version: 2,
 	tree: {
 		type: "tabset",
 		id: "main",
@@ -36,12 +42,17 @@ const GUARDRAIL_WORKBENCH_LAYOUT: WorkbenchLayout = {
 	panels: {
 		[WORKBENCH_PANEL_RECORDS.ENGINE_FILE_EXPLORER.id]:
 			WORKBENCH_PANEL_RECORDS.ENGINE_FILE_EXPLORER,
+		[WORKBENCH_PANEL_RECORDS.ENGINE_VERSION.id]:
+			WORKBENCH_PANEL_RECORDS.ENGINE_VERSION,
 		[WORKBENCH_PANEL_RECORDS.ASSISTANT.id]:
 			WORKBENCH_PANEL_RECORDS.ASSISTANT,
 	},
 	borders: {
 		left: {
-			panelIds: [WORKBENCH_COMPONENTS.FILE_EXPLORER],
+			panelIds: [
+				WORKBENCH_COMPONENTS.FILE_EXPLORER,
+				WORKBENCH_COMPONENTS.ENGINE_VERSION,
+			],
 			activeId: WORKBENCH_COMPONENTS.FILE_EXPLORER,
 			size: 300,
 		},
@@ -68,6 +79,8 @@ const GUARDRAIL_WORKBENCH_COMPONENTS: Record<string, WorkbenchPanelConfigAny> =
 			ENGINE_FILE_NOTEBOOK_EDITOR_PANEL,
 		[WORKBENCH_COMPONENTS.FILE_PDF_EDITOR]: ENGINE_FILE_PDF_EDITOR_PANEL,
 		[WORKBENCH_COMPONENTS.MCP_EDITOR]: ENGINE_MCP_EDITOR_PANEL,
+		[WORKBENCH_COMPONENTS.ENGINE_VERSION]: ENGINE_VERSION_PANEL,
+		[WORKBENCH_COMPONENTS.ENGINE_GIT_DIFF]: ENGINE_GIT_DIFF_PANEL,
 		[WORKBENCH_COMPONENTS.ENGINE_SETTINGS]: createEngineSettingsPanel([
 			{
 				name: "Overview",
@@ -110,6 +123,7 @@ const GUARDRAIL_WORKBENCH_COMPONENTS: Record<string, WorkbenchPanelConfigAny> =
  */
 export const GuardrailWorkbench: React.FC = () => {
 	const { engine } = useEngine();
+	const insight = useInsight();
 
 	const configureAssistant = useWorkbench((s) => s.assistant.configure);
 
@@ -129,12 +143,75 @@ export const GuardrailWorkbench: React.FC = () => {
 
 	useWorkbenchCommands([
 		{
+			id: "workbench.server.reconnect",
+			label: "Reconnect Server",
+			handler: () => {
+				void insight.actions
+					.run("ReconnectServer();")
+					.catch(console.error);
+			},
+		},
+		{
+			id: "workbench.file.create",
+			category: "File",
+			label: "Create File",
+			handler: (get) =>
+				(
+					get().layout.values[WORKBENCH_COMPONENTS.FILE_EXPLORER] as
+						| FileExplorerApi
+						| undefined
+				)?.commands.openNewFile(undefined, "add_file"),
+		},
+		{
+			id: "workbench.file.create-folder",
+			category: "File",
+			label: "Create Folder",
+			handler: (get) =>
+				(
+					get().layout.values[WORKBENCH_COMPONENTS.FILE_EXPLORER] as
+						| FileExplorerApi
+						| undefined
+				)?.commands.openNewFile(undefined, "add_directory"),
+		},
+		{
+			id: "workbench.file.upload",
+			category: "File",
+			label: "Upload Files",
+			handler: (get) =>
+				(
+					get().layout.values[WORKBENCH_COMPONENTS.FILE_EXPLORER] as
+						| FileExplorerApi
+						| undefined
+				)?.commands.openNewFile(undefined, "upload"),
+		},
+		{
+			id: "workbench.file.refresh",
+			category: "File",
+			label: "Refresh Files",
+			handler: (get) =>
+				(
+					get().layout.values[WORKBENCH_COMPONENTS.FILE_EXPLORER] as
+						| FileExplorerApi
+						| undefined
+				)?.commands.refresh(),
+		},
+		{
 			id: "workbench.file-explorer.open",
 			category: "View",
 			label: "Open File Explorer",
 			handler: (get) => {
 				get().layout.actions.selectPanel(
 					WORKBENCH_COMPONENTS.FILE_EXPLORER,
+				);
+			},
+		},
+		{
+			id: "workbench.version-control.open",
+			category: "View",
+			label: "Open Version Control",
+			handler: (get) => {
+				get().layout.actions.selectPanel(
+					WORKBENCH_COMPONENTS.ENGINE_VERSION,
 				);
 			},
 		},

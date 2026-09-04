@@ -10,7 +10,7 @@ import { useWorkbench } from "./use-workbench";
  *
  * The narrowing itself lives in `getDatabaseWorkbenchStore` so the untyped
  * `domainStore` attachment is cast in exactly one place, shared with the
- * non-React callers (a blueprint's `commands` / `menuItems` factory).
+ * non-React callers (a blueprint's `menuItems` factory).
  */
 export const useDatabaseWorkbench = <T>(
 	selector: (state: DatabaseWorkbenchState) => T,

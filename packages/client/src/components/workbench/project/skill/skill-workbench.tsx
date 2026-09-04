@@ -1,4 +1,6 @@
 import { useEffect } from "react";
+import { useInsight } from "@semoss/sdk/react";
+import type { FileExplorerApi } from "@semoss/shared";
 import { useProject, useWorkbench, useWorkbenchCommands } from "@/hooks";
 import type {
 	WorkbenchLayout,
@@ -20,12 +22,15 @@ import { PROJECT_FILE_NOTEBOOK_EDITOR_PANEL } from "../project-file-notebook-edi
 import { PROJECT_FILE_PDF_EDITOR_PANEL } from "../project-file-pdf-editor-panel";
 import { PROJECT_INSIGHT_EXPLORER_PANEL } from "../project-insight-explorer-panel";
 import { PROJECT_MCP_EDITOR_PANEL } from "../project-mcp-editor-panel";
-import { ProjectPublishButton } from "../project-publish-button";
 import {
 	createProjectSettingsPanel,
 	ProjectSettingsToggle,
 } from "../project-settings-toggle";
 import { PROJECT_TERMINAL_PANEL } from "../project-terminal-panel";
+import {
+	PROJECT_GIT_DIFF_PANEL,
+	PROJECT_VERSION_PANEL,
+} from "../version-control";
 
 /** Every SKILL project is created with this file. */
 const SKILL_PATH = "/public/SKILL.md";
@@ -36,7 +41,7 @@ const SKILL_EDITOR_ID = "skill-md";
 
 /** The default arrangement: SKILL.md open, files and insight on the left. */
 const SKILL_WORKBENCH_LAYOUT: WorkbenchLayout = {
-	version: 1,
+	version: 2,
 	tree: {
 		type: "tabset",
 		id: "main",
@@ -54,6 +59,8 @@ const SKILL_WORKBENCH_LAYOUT: WorkbenchLayout = {
 		},
 		[WORKBENCH_PANEL_RECORDS.PROJECT_FILE_EXPLORER.id]:
 			WORKBENCH_PANEL_RECORDS.PROJECT_FILE_EXPLORER,
+		[WORKBENCH_PANEL_RECORDS.PROJECT_VERSION.id]:
+			WORKBENCH_PANEL_RECORDS.PROJECT_VERSION,
 		[WORKBENCH_PANEL_RECORDS.PROJECT_INSIGHT_EXPLORER.id]:
 			WORKBENCH_PANEL_RECORDS.PROJECT_INSIGHT_EXPLORER,
 		[WORKBENCH_PANEL_RECORDS.PROJECT_TERMINAL.id]:
@@ -65,6 +72,7 @@ const SKILL_WORKBENCH_LAYOUT: WorkbenchLayout = {
 		left: {
 			panelIds: [
 				WORKBENCH_COMPONENTS.PROJECT_FILE_EXPLORER,
+				WORKBENCH_COMPONENTS.PROJECT_VERSION,
 				WORKBENCH_COMPONENTS.PROJECT_INSIGHT_EXPLORER,
 			],
 			activeId: WORKBENCH_COMPONENTS.PROJECT_FILE_EXPLORER,
@@ -86,6 +94,8 @@ const SKILL_WORKBENCH_LAYOUT: WorkbenchLayout = {
 /** Blueprints, keyed by type. Module-scope so identities never churn. */
 const SKILL_WORKBENCH_COMPONENTS: Record<string, WorkbenchPanelConfigAny> = {
 	[WORKBENCH_COMPONENTS.PROJECT_FILE_EXPLORER]: PROJECT_FILE_EXPLORER_PANEL,
+	[WORKBENCH_COMPONENTS.PROJECT_VERSION]: PROJECT_VERSION_PANEL,
+	[WORKBENCH_COMPONENTS.PROJECT_GIT_DIFF]: PROJECT_GIT_DIFF_PANEL,
 	[WORKBENCH_COMPONENTS.PROJECT_INSIGHT_EXPLORER]:
 		PROJECT_INSIGHT_EXPLORER_PANEL,
 	[WORKBENCH_COMPONENTS.PROJECT_FILE_CODE_EDITOR]:
@@ -108,11 +118,6 @@ const SKILL_WORKBENCH_COMPONENTS: Record<string, WorkbenchPanelConfigAny> = {
 			name: "MCP",
 			component: "mcp-usage",
 			restrict: ["OWNER", "EDIT", "READ_ONLY"],
-		},
-		{
-			name: "Commits",
-			component: "commits",
-			restrict: ["OWNER", "EDIT"],
 		},
 		{
 			name: "GitHub",
@@ -140,6 +145,7 @@ const SKILL_WORKBENCH_COMPONENTS: Record<string, WorkbenchPanelConfigAny> = {
  */
 export const SkillWorkbench: React.FC = () => {
 	const { project } = useProject();
+	const insight = useInsight();
 
 	const configureAssistant = useWorkbench((s) => s.assistant.configure);
 
@@ -166,6 +172,59 @@ export const SkillWorkbench: React.FC = () => {
 	]);
 
 	useWorkbenchCommands([
+		{
+			id: "workbench.server.reconnect",
+			label: "Reconnect Server",
+			handler: () => {
+				void insight.actions
+					.run("ReconnectServer();")
+					.catch(console.error);
+			},
+		},
+		{
+			id: "workbench.file.create",
+			category: "File",
+			label: "Create File",
+			handler: (get) =>
+				(
+					get().layout.values[
+						WORKBENCH_COMPONENTS.PROJECT_FILE_EXPLORER
+					] as FileExplorerApi | undefined
+				)?.commands.openNewFile(undefined, "add_file"),
+		},
+		{
+			id: "workbench.file.create-folder",
+			category: "File",
+			label: "Create Folder",
+			handler: (get) =>
+				(
+					get().layout.values[
+						WORKBENCH_COMPONENTS.PROJECT_FILE_EXPLORER
+					] as FileExplorerApi | undefined
+				)?.commands.openNewFile(undefined, "add_directory"),
+		},
+		{
+			id: "workbench.file.upload",
+			category: "File",
+			label: "Upload Files",
+			handler: (get) =>
+				(
+					get().layout.values[
+						WORKBENCH_COMPONENTS.PROJECT_FILE_EXPLORER
+					] as FileExplorerApi | undefined
+				)?.commands.openNewFile(undefined, "upload"),
+		},
+		{
+			id: "workbench.file.refresh",
+			category: "File",
+			label: "Refresh Files",
+			handler: (get) =>
+				(
+					get().layout.values[
+						WORKBENCH_COMPONENTS.PROJECT_FILE_EXPLORER
+					] as FileExplorerApi | undefined
+				)?.commands.refresh(),
+		},
 		{
 			id: "workbench.project-file-explorer.open",
 			category: "View",
@@ -217,7 +276,6 @@ export const SkillWorkbench: React.FC = () => {
 					after: (
 						<>
 							<WorkbenchCommandMenuButton />
-							<ProjectPublishButton />
 							<ProjectSettingsToggle />
 						</>
 					),

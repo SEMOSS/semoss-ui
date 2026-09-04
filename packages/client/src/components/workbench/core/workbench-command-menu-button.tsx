@@ -2,6 +2,8 @@ import { CommandIcon } from "lucide-react";
 import {
 	Button,
 	cn,
+	Kbd,
+	KbdGroup,
 	Tooltip,
 	TooltipContent,
 	TooltipTrigger,
@@ -31,7 +33,20 @@ export const WorkbenchCommandMenuButton = () => {
 					<CommandIcon className={WORKBENCH_STYLES.chromeIcon} />
 				</Button>
 			</TooltipTrigger>
-			<TooltipContent side="right">Commands</TooltipContent>
+			<TooltipContent
+				side="right"
+				className="flex flex-col items-center gap-1"
+			>
+				Commands
+				<div>
+					<KbdGroup>
+						<Kbd>⌘</Kbd>
+						<Kbd>⇧</Kbd>
+						<Kbd>P</Kbd>
+					</KbdGroup>{" "}
+					or <Kbd>F1</Kbd>
+				</div>
+			</TooltipContent>
 		</Tooltip>
 	);
 };

@@ -63,6 +63,13 @@ export const WORKBENCH_PANEL_RECORDS = {
 		helpText: "Settings",
 		canClose: true,
 	},
+	ENGINE_VERSION: {
+		id: WORKBENCH_COMPONENTS.ENGINE_VERSION,
+		type: WORKBENCH_COMPONENTS.ENGINE_VERSION,
+		name: "Version Control",
+		helpText: "Version Control",
+		canClose: false,
+	},
 	DATABASE_COLUMNS: {
 		id: WORKBENCH_COMPONENTS.DATABASE_COLUMNS,
 		type: WORKBENCH_COMPONENTS.DATABASE_COLUMNS,
@@ -103,6 +110,13 @@ export const WORKBENCH_PANEL_RECORDS = {
 		type: WORKBENCH_COMPONENTS.PROJECT_ENGINES,
 		name: "Engines",
 		helpText: "Available engines",
+		canClose: false,
+	},
+	PROJECT_VERSION: {
+		id: WORKBENCH_COMPONENTS.PROJECT_VERSION,
+		type: WORKBENCH_COMPONENTS.PROJECT_VERSION,
+		name: "Version Control",
+		helpText: "Version Control",
 		canClose: false,
 	},
 	PROJECT_SETTINGS: {

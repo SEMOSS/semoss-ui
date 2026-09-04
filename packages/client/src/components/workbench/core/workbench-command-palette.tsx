@@ -2,6 +2,7 @@ import { type FC, useEffect, useMemo, useState } from "react";
 import {
 	Command,
 	CommandEmpty,
+	CommandGroup,
 	CommandInput,
 	CommandItem,
 	CommandList,
@@ -12,9 +13,11 @@ import {
 	DialogTitle,
 } from "@semoss/ui/next";
 import { useWorkbench } from "@/hooks";
+import { buildWorkbenchLayoutCommands } from "@/stores/workbench/slices/workbench-layout.commands";
 
 interface WorkbenchPaletteItem {
 	id: string;
+	category?: string;
 	/** The full "Category: Label" line the row shows and sorts by. */
 	displayLabel: string;
 	description?: string;
@@ -22,19 +25,22 @@ interface WorkbenchPaletteItem {
 
 /** Render and control the command palette for the nearest workbench. */
 export const WorkbenchCommandPalette: FC = () => {
-	const layoutActions = useWorkbench((state) => state.layout.actions);
+	const layout = useWorkbench((state) => state.layout);
 
 	// list of all the currently registered commands in the workbench
 	const commandList = useWorkbench((state) =>
 		Object.values(state.command.commands),
+	);
+	const recentCommands = useWorkbench(
+		(state) => state.command.recentCommands,
 	);
 
 	// method to execute a command by its ID
 	const executeCommand = useWorkbench(
 		(state) => state.command.actions.executeCommand,
 	);
-	const runCommandDirectly = useWorkbench(
-		(state) => state.command.actions.runCommand,
+	const registerCommand = useWorkbench(
+		(state) => state.command.actions.registerCommand,
 	);
 	const isCommandOpen = useWorkbench((state) => state.command.isCommandOpen);
 	const setCommandOpen = useWorkbench(
@@ -43,51 +49,100 @@ export const WorkbenchCommandPalette: FC = () => {
 
 	const [search, setSearch] = useState("");
 
-	// layout-derived entries (go-to, close, borders, maximize, reset, …) are
-	// built only when the palette opens, never while the store churns
-	const layoutCommands = useMemo(
-		() => (isCommandOpen ? layoutActions.buildLayoutCommands() : []),
-		[isCommandOpen, layoutActions],
-	);
+	// Layout commands use the reserved workbench.layout.* namespace, so they
+	// can be registered directly without checking the registry first.
+	useEffect(() => {
+		if (!isCommandOpen) {
+			return;
+		}
 
-	const filteredItems = useMemo<WorkbenchPaletteItem[]>(() => {
+		const layoutCommands = buildWorkbenchLayoutCommands(layout);
+
+		return registerCommand(layoutCommands);
+	}, [isCommandOpen, layout, registerCommand]);
+
+	const commandSections = useMemo(() => {
 		const query = search.trim().toLowerCase();
 
-		// registered commands win over layout-derived ones on id collision
-		const registeredIds = new Set(commandList.map((command) => command.id));
-		const merged = [
-			...commandList,
-			...layoutCommands.filter(
-				(command) => !registeredIds.has(command.id),
-			),
-		];
-
-		return merged
-			.map((command) => ({
+		const filteredItems: WorkbenchPaletteItem[] = [];
+		const itemsById = new Map<string, WorkbenchPaletteItem>();
+		for (const command of commandList) {
+			const item: WorkbenchPaletteItem = {
 				id: command.id,
+				category: command.category,
 				displayLabel: command.category
 					? `${command.category}: ${command.label}`
 					: command.label,
 				description: command.description,
-			}))
-			.filter((item) => {
-				if (!query) {
-					return true;
-				}
+			};
+			if (
+				query &&
+				!`${item.displayLabel} ${item.id} ${item.description ?? ""}`
+					.toLowerCase()
+					.trim()
+					.includes(query)
+			) {
+				continue;
+			}
+			filteredItems.push(item);
+			itemsById.set(item.id, item);
+		}
 
-				const searchContent =
-					`${item.displayLabel} ${item.id} ${item.description ?? ""}`
-						.toLowerCase()
-						.trim();
-				return searchContent.includes(query);
-			})
-			.sort(
-				(a, b) =>
-					a.displayLabel.localeCompare(b.displayLabel, undefined, {
-						sensitivity: "base",
-					}) || a.id.localeCompare(b.id),
+		const recentItems: WorkbenchPaletteItem[] = [];
+		const recentItemIds = new Set<string>();
+		for (const commandId of recentCommands) {
+			const item = itemsById.get(commandId);
+			if (!item) {
+				continue;
+			}
+			recentItems.push(item);
+			recentItemIds.add(item.id);
+		}
+
+		const remainingItems: WorkbenchPaletteItem[] = [];
+		for (const item of filteredItems) {
+			if (!recentItemIds.has(item.id)) {
+				remainingItems.push(item);
+			}
+		}
+
+		remainingItems.sort((a, b) => {
+			const aIsUncategorized = !a.category;
+			const bIsUncategorized = !b.category;
+
+			if (aIsUncategorized !== bIsUncategorized) {
+				return aIsUncategorized ? -1 : 1;
+			}
+
+			return (
+				a.displayLabel.localeCompare(b.displayLabel, undefined, {
+					sensitivity: "base",
+				}) || a.id.localeCompare(b.id)
 			);
-	}, [commandList, layoutCommands, search]);
+		});
+
+		return {
+			recentItems,
+			remainingItems,
+		};
+	}, [commandList, recentCommands, search]);
+
+	const renderCommandItem = (item: WorkbenchPaletteItem) => (
+		<CommandItem
+			key={item.id}
+			value={item.id}
+			onSelect={() => {
+				executeCommandById(item.id);
+			}}
+		>
+			<span className="min-w-0 truncate">{item.displayLabel}</span>
+			{item.description ? (
+				<span className="ml-auto shrink-0 pl-3 text-muted-foreground text-xs">
+					{item.description}
+				</span>
+			) : null}
+		</CommandItem>
+	);
 
 	useEffect(() => {
 		const handleKeyDown = (event: KeyboardEvent): void => {
@@ -122,20 +177,9 @@ export const WorkbenchCommandPalette: FC = () => {
 		}
 	};
 
-	const runCommand = (commandId: string): void => {
+	const executeCommandById = (commandId: string): void => {
 		handleOpenChange(false);
-		// registered commands run through the registry; layout-derived ones
-		// execute directly
-		if (commandList.some((command) => command.id === commandId)) {
-			executeCommand(commandId);
-			return;
-		}
-		const layoutCommand = layoutCommands.find(
-			(command) => command.id === commandId,
-		);
-		if (layoutCommand) {
-			runCommandDirectly(layoutCommand);
-		}
+		executeCommand(commandId);
 	};
 
 	return (
@@ -153,7 +197,7 @@ export const WorkbenchCommandPalette: FC = () => {
 				    fuzzy re-ranking */}
 				<Command
 					shouldFilter={false}
-					className="[&_[cmdk-item]]:px-2 [&_[cmdk-item]]:py-1 [&_[cmdk-item]]:text-[13px]"
+					className="**:[[cmdk-item]]:px-2 **:[[cmdk-item]]:py-1 **:[[cmdk-item]]:text-xs"
 				>
 					<CommandInput
 						aria-label="Search workbench commands"
@@ -163,24 +207,20 @@ export const WorkbenchCommandPalette: FC = () => {
 					/>
 					<CommandList className="max-h-[320px] p-1">
 						<CommandEmpty>No Results Found</CommandEmpty>
-						{filteredItems.map((item) => (
-							<CommandItem
-								key={item.id}
-								value={item.id}
-								onSelect={() => {
-									runCommand(item.id);
-								}}
-							>
-								<span className="min-w-0 truncate">
-									{item.displayLabel}
-								</span>
-								{item.description ? (
-									<span className="ml-auto shrink-0 pl-3 text-muted-foreground text-xs">
-										{item.description}
-									</span>
-								) : null}
-							</CommandItem>
-						))}
+						{commandSections.recentItems.length > 0 ? (
+							<CommandGroup heading="Recents">
+								{commandSections.recentItems.map(
+									renderCommandItem,
+								)}
+							</CommandGroup>
+						) : null}
+						{commandSections.remainingItems.length > 0 ? (
+							<CommandGroup heading="All">
+								{commandSections.remainingItems.map(
+									renderCommandItem,
+								)}
+							</CommandGroup>
+						) : null}
 					</CommandList>
 				</Command>
 			</DialogContent>

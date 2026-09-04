@@ -1,5 +1,6 @@
 import { useCallback, useEffect } from "react";
 import { useInsight } from "@semoss/sdk/react";
+import type { FileExplorerApi } from "@semoss/shared";
 import { toast } from "@semoss/ui/next";
 import { useProject, useWorkbench, useWorkbenchCommands } from "@/hooks";
 import type {
@@ -30,6 +31,10 @@ import {
 	ProjectSettingsToggle,
 } from "../project-settings-toggle";
 import { PROJECT_TERMINAL_PANEL } from "../project-terminal-panel";
+import {
+	PROJECT_GIT_DIFF_PANEL,
+	PROJECT_VERSION_PANEL,
+} from "../version-control";
 import { PROJECT_APP_RENDERER_PANEL } from "./code-app-renderer-panel";
 
 /**
@@ -75,7 +80,7 @@ const runTreePublished = (
  * users who closed it).
  */
 const CODE_WORKBENCH_LAYOUT: WorkbenchLayout = {
-	version: 1,
+	version: 2,
 	tree: {
 		type: "tabset",
 		id: "main",
@@ -90,6 +95,8 @@ const CODE_WORKBENCH_LAYOUT: WorkbenchLayout = {
 		},
 		[WORKBENCH_PANEL_RECORDS.PROJECT_FILE_EXPLORER.id]:
 			WORKBENCH_PANEL_RECORDS.PROJECT_FILE_EXPLORER,
+		[WORKBENCH_PANEL_RECORDS.PROJECT_VERSION.id]:
+			WORKBENCH_PANEL_RECORDS.PROJECT_VERSION,
 		[WORKBENCH_PANEL_RECORDS.PROJECT_INSIGHT_EXPLORER.id]:
 			WORKBENCH_PANEL_RECORDS.PROJECT_INSIGHT_EXPLORER,
 		[WORKBENCH_PANEL_RECORDS.PROJECT_TERMINAL.id]:
@@ -103,6 +110,7 @@ const CODE_WORKBENCH_LAYOUT: WorkbenchLayout = {
 		left: {
 			panelIds: [
 				WORKBENCH_COMPONENTS.PROJECT_FILE_EXPLORER,
+				WORKBENCH_COMPONENTS.PROJECT_VERSION,
 				WORKBENCH_COMPONENTS.PROJECT_INSIGHT_EXPLORER,
 			],
 			activeId: WORKBENCH_COMPONENTS.PROJECT_FILE_EXPLORER,
@@ -128,6 +136,8 @@ const CODE_WORKBENCH_LAYOUT: WorkbenchLayout = {
 const CODE_WORKBENCH_COMPONENTS: Record<string, WorkbenchPanelConfigAny> = {
 	[WORKBENCH_COMPONENTS.PROJECT_APP_RENDERER]: PROJECT_APP_RENDERER_PANEL,
 	[WORKBENCH_COMPONENTS.PROJECT_FILE_EXPLORER]: PROJECT_FILE_EXPLORER_PANEL,
+	[WORKBENCH_COMPONENTS.PROJECT_VERSION]: PROJECT_VERSION_PANEL,
+	[WORKBENCH_COMPONENTS.PROJECT_GIT_DIFF]: PROJECT_GIT_DIFF_PANEL,
 	[WORKBENCH_COMPONENTS.PROJECT_INSIGHT_EXPLORER]:
 		PROJECT_INSIGHT_EXPLORER_PANEL,
 	[WORKBENCH_COMPONENTS.PROJECT_FILE_CODE_EDITOR]:
@@ -156,11 +166,6 @@ const CODE_WORKBENCH_COMPONENTS: Record<string, WorkbenchPanelConfigAny> = {
 			name: "MCP",
 			component: "mcp-usage",
 			restrict: ["OWNER", "EDIT", "READ_ONLY"],
-		},
-		{
-			name: "Commits",
-			component: "commits",
-			restrict: ["OWNER", "EDIT"],
 		},
 		{
 			name: "GitHub",
@@ -262,6 +267,59 @@ export const CodeWorkbench: React.FC = () => {
 	]);
 
 	useWorkbenchCommands([
+		{
+			id: "workbench.server.reconnect",
+			label: "Reconnect Server",
+			handler: () => {
+				void insight.actions
+					.run("ReconnectServer();")
+					.catch(console.error);
+			},
+		},
+		{
+			id: "workbench.file.create",
+			category: "File",
+			label: "Create File",
+			handler: (get) =>
+				(
+					get().layout.values[
+						WORKBENCH_COMPONENTS.PROJECT_FILE_EXPLORER
+					] as FileExplorerApi | undefined
+				)?.commands.openNewFile(undefined, "add_file"),
+		},
+		{
+			id: "workbench.file.create-folder",
+			category: "File",
+			label: "Create Folder",
+			handler: (get) =>
+				(
+					get().layout.values[
+						WORKBENCH_COMPONENTS.PROJECT_FILE_EXPLORER
+					] as FileExplorerApi | undefined
+				)?.commands.openNewFile(undefined, "add_directory"),
+		},
+		{
+			id: "workbench.file.upload",
+			category: "File",
+			label: "Upload Files",
+			handler: (get) =>
+				(
+					get().layout.values[
+						WORKBENCH_COMPONENTS.PROJECT_FILE_EXPLORER
+					] as FileExplorerApi | undefined
+				)?.commands.openNewFile(undefined, "upload"),
+		},
+		{
+			id: "workbench.file.refresh",
+			category: "File",
+			label: "Refresh Files",
+			handler: (get) =>
+				(
+					get().layout.values[
+						WORKBENCH_COMPONENTS.PROJECT_FILE_EXPLORER
+					] as FileExplorerApi | undefined
+				)?.commands.refresh(),
+		},
 		{
 			id: "workbench.project-file-explorer.open",
 			category: "View",

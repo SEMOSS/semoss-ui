@@ -19,6 +19,8 @@ export const WORKBENCH_COMPONENTS = {
 	MODEL_CHAT_SETTINGS: "model-chat-settings",
 	MODEL_CHAT_HISTORY: "model-chat-history",
 	ENGINE_SETTINGS: "engine-settings",
+	ENGINE_VERSION: "engine-version",
+	ENGINE_GIT_DIFF: "engine-git-diff",
 	PROJECT_FILE_EXPLORER: "project-file-explorer",
 	PROJECT_FILE_CODE_EDITOR: "project-file-code-editor",
 	PROJECT_FILE_DOWNLOAD_VIEWER: "project-file-download-viewer",
@@ -32,4 +34,6 @@ export const WORKBENCH_COMPONENTS = {
 	PROJECT_INSIGHT_EXPLORER: "project-insight-explorer",
 	PROJECT_APP_RENDERER: "project-app-renderer",
 	PROJECT_ENGINES: "project-engines",
+	PROJECT_VERSION: "project-version",
+	PROJECT_GIT_DIFF: "project-git-diff",
 } as const;
