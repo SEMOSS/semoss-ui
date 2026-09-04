@@ -1,4 +1,4 @@
-import { makeAutoObservable } from "mobx";
+import { makeAutoObservable, toJS } from "mobx";
 import type { PendingAgentAction } from "@semoss/sdk";
 import { MCP_EXECUTION_ASK } from "@/constants";
 import {
@@ -10,7 +10,8 @@ import type {
 	PixelMessageToolCallPart,
 	PixelMessageToolResultPart,
 } from "@/types";
-import { getToolAppId } from "@/utility/mcp-utils";
+import { getToolAppId, getToolEngineId } from "@/utility/mcp-utils";
+import { decideAgentToolAction } from "../message/agent-harness";
 
 /**
  * Build a synthetic toolCall payload for server tools (e.g. provider-side
@@ -79,6 +80,12 @@ export class ToolStore {
 	 * — see agent-harness.ts. Null for every tool outside an agent run.
 	 */
 	pendingAction: PendingAgentAction | null = null;
+
+	/** True while {@link approve} is in flight. */
+	isApproving: boolean = false;
+
+	/** True while {@link reject} is in flight. */
+	isRejecting: boolean = false;
 
 	/**
 	 * Whether the tool call is still streaming in (name/arguments arriving via SSE).
@@ -397,6 +404,83 @@ export class ToolStore {
 			this.room.removeSidebarNode(this.nodeId);
 		} else if (this.display === "hidden") {
 			// noop
+		}
+	};
+
+	/**
+	 * Runs the tool with its already-captured `parameters`, skipping the
+	 * form. No Playwright-extension check here — that only applies when the
+	 * form is open.
+	 */
+	approve = async (): Promise<void> => {
+		if (this.isApproving) {
+			return;
+		}
+		this.isApproving = true;
+		try {
+			const data = toJS(this.parameters);
+
+			// Agent-run tools resume through AGENT_RUN_ACTION, not the room-write
+			// path below — see decideAgentToolAction. This can throw; let it.
+			if (this.pendingAction) {
+				await decideAgentToolAction(this, "submit", data);
+				return;
+			}
+
+			const message = this.message;
+			if (!(message instanceof ResponseMessageStore)) {
+				return;
+			}
+
+			let success = false;
+			let output = "";
+			try {
+				const response = await this.room.runRoomPixel<[unknown]>(
+					`RunMCPTool(project = [ "${getToolEngineId(this.json._meta) || getToolAppId(this.json._meta)}" ], roomId=${JSON.stringify(this.room.roomId)}, function=[ "${this.json.name}" ], paramValues=[ ${JSON.stringify(data)} ]);`,
+					false,
+					false,
+				);
+				const rawOutput = response.pixelReturn[0].output;
+				output =
+					typeof rawOutput === "string"
+						? rawOutput
+						: JSON.stringify(rawOutput);
+				success = true;
+			} catch (error) {
+				output = (error as Error).toString();
+				success = false;
+			}
+
+			await this.room.processTool(
+				message.id,
+				this.id,
+				output,
+				success ? "success" : "error",
+				data,
+			);
+		} finally {
+			this.isApproving = false;
+		}
+	};
+
+	/** Rejects/cancels this tool call. */
+	reject = async (): Promise<void> => {
+		if (this.isRejecting) {
+			return;
+		}
+		this.isRejecting = true;
+		try {
+			if (this.pendingAction) {
+				await decideAgentToolAction(this, "reject");
+			} else {
+				const message = this.message;
+				if (message instanceof ResponseMessageStore) {
+					message.saveToolExecution(this, "", "cancelled", {});
+				}
+			}
+			this.closeTool();
+		} finally {
+			this.isRejecting = false;
 		}
 	};
 }

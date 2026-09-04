@@ -20,7 +20,11 @@ import {
 } from "@semoss/ui/next";
 import { ResponseMessageStore, type RoomStore, type ToolStore } from "@/stores";
 import { decideAgentToolAction } from "@/stores/message/agent-harness";
-import { getToolEngineId, isAskExecutionMode } from "@/utility/mcp-utils";
+import {
+	getToolEngineId,
+	isAskExecutionMode,
+	isYesNoExecutionMode,
+} from "@/utility/mcp-utils";
 import {
 	TOOL_CARD_TAB_CONTENT_CLASS,
 	ToolCardHeader,
@@ -159,8 +163,10 @@ export const ToolsDefaultView = observer(
 		);
 		const title = tool?.displayName || "";
 		const description = tool?.json.description || "";
+		const toolExecution = tool?.json._meta?.SMSS_MCP_EXECUTION;
 		const isAutoExecuting =
-			!isAskExecutionMode(tool?.json._meta?.SMSS_MCP_EXECUTION) &&
+			!isAskExecutionMode(toolExecution) &&
+			!isYesNoExecutionMode(toolExecution) &&
 			tool.status !== "SUCCESS";
 
 		// The call is over (succeeded or not), so the form is no longer actionable
