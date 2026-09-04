@@ -27,6 +27,8 @@
 		"feedbackCancel": "キャンセル",
 		"feedbackSubmit": "送信",
 		"fastForwardToEnd": "最後まで早送り",
+		"completeToolsAsk_one": "続行するにはツールを完了してください。",
+		"completeToolsAsk_other": "続行するにはすべてのツールを完了してください。",
 		"emptyResponse": "空のレスポンス。"
 	},
 	"input": {

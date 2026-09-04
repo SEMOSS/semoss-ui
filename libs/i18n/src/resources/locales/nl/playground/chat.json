@@ -27,6 +27,8 @@
 		"feedbackCancel": "Annuleren",
 		"feedbackSubmit": "Verzenden",
 		"fastForwardToEnd": "Snel doorspoelen naar het einde",
+		"completeToolsAsk_one": "Voltooi de tool om door te gaan.",
+		"completeToolsAsk_other": "Voltooi de tools om door te gaan.",
 		"emptyResponse": "Leeg antwoord."
 	},
 	"input": {
