@@ -29,8 +29,6 @@
 		"fastForwardToEnd": "Snel doorspoelen naar het einde",
 		"completeToolsAsk_one": "Voltooi de tool om door te gaan.",
 		"completeToolsAsk_other": "Voltooi de tools om door te gaan.",
-		"completeToolsAuto_one": "Wacht tot de tool is voltooid.",
-		"completeToolsAuto_other": "Wacht tot de tools zijn voltooid.",
 		"emptyResponse": "Leeg antwoord."
 	},
 	"input": {
