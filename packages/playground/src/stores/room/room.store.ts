@@ -87,6 +87,15 @@ interface RoomStoreInterface {
 	root: ResponseMessageStore;
 
 	/**
+	 * The agent's scripted opening message, rendered as the first bubble in
+	 * the transcript. Derived from the workspace this room was started from,
+	 * re-read on every initialize() — not a message, never sent to the model.
+	 * Empty when the room has no workspace, no greeting text, or the toggle
+	 * is off.
+	 */
+	agentGreeting: string;
+
+	/**
 	 * Active tools
 	 */
 	tools: Record<string, ToolStore>;
@@ -182,6 +191,7 @@ export class RoomStore {
 		},
 		model: null as unknown as Engine,
 		root: null as unknown as ResponseMessageStore,
+		agentGreeting: "",
 		tools: {},
 		options: {
 			predefinedPrompts: [],
@@ -321,6 +331,13 @@ export class RoomStore {
 	 */
 	get model() {
 		return this._store.model;
+	}
+
+	/**
+	 * Get the agent's scripted opening message (see RoomStoreInterface.agentGreeting).
+	 */
+	get agentGreeting() {
+		return this._store.agentGreeting;
 	}
 
 	/**
@@ -655,6 +672,9 @@ export class RoomStore {
 			// named a model of its own - a room the user has already chatted in
 			// keeps the model those messages ran on.
 			let agentDefaultModelId = "";
+			// The agent's scripted opening message, re-derived from the current
+			// workspace config on every load (not snapshotted).
+			let agentGreeting = "";
 
 			if (!newOptions.workspace?.workspace_id) {
 				delete newOptions.workspace;
@@ -676,6 +696,9 @@ export class RoomStore {
 
 				agentDefaultModelId =
 					workspaceOutput?.config_json?.model_id ?? "";
+				agentGreeting = workspaceOutput?.config_json?.greeting_enabled
+					? (workspaceOutput?.config_json?.greeting ?? "")
+					: "";
 
 				// Merge workspace MCPs into the mcp array with fromWorkspace flag
 				if (
@@ -732,6 +755,10 @@ export class RoomStore {
 			runInAction(() => {
 				// set the options based on the history
 				this.setOptions(newOptions);
+
+				// set the agent's scripted greeting (empty for rooms with no
+				// workspace, no greeting text, or the toggle off)
+				this._store.agentGreeting = agentGreeting;
 
 				// Restore the persisted room name so the breadcrumb shows it on
 				// load/refresh (GetPlaygroundMessages doesn't carry the name).
