@@ -1,6 +1,12 @@
 import { toJS } from "mobx";
 import { observer } from "mobx-react-lite";
-import { useCallback, useEffect, useRef, useState } from "react";
+import {
+	useCallback,
+	useEffect,
+	useLayoutEffect,
+	useRef,
+	useState,
+} from "react";
 import { isRequestUserInputAction, parseUserInputRequest } from "@semoss/sdk";
 import { Env, type MCPToolRequest, usePixel } from "@semoss/sdk/react";
 import { AgentUserInputCard, Skeleton, toast } from "@semoss/ui/next";
@@ -138,7 +144,11 @@ export const ToolsView = observer(
 		 * Effects
 		 */
 
-		useEffect(() => {
+		// useLayoutEffect, not useEffect: every early-return branch below
+		// resolves synchronously (before any `await`), so running this before
+		// paint applies that result immediately instead of painting the
+		// h-[60vh] Skeleton for a frame first.
+		useLayoutEffect(() => {
 			const chooseUrl = async () => {
 				// Ignore if no tool
 				if (!tool) {
@@ -174,6 +184,20 @@ export const ToolsView = observer(
 				// empty pixel string, so this must be checked before the
 				// loading gate below or it waits forever.
 				if (!app) {
+					setUrl("");
+					setIsLoading(false);
+					return;
+				}
+
+				// A modern tool with no resourceURI (or a malformed system://
+				// one) is always the form, which is already knowable from its
+				// own _meta — resolve it now rather than waiting on
+				// ProjectInfo/EngineInfo just to land back here.
+				const resourceURI = tool._meta?.SMSS_MCP_UI?.resourceURI;
+				if (
+					tool._meta?.SMSS_MCP_UI &&
+					(!resourceURI || resourceURI.startsWith("system://"))
+				) {
 					setUrl("");
 					setIsLoading(false);
 					return;
@@ -226,24 +250,13 @@ export const ToolsView = observer(
 							? `${Env.MODULE}/public_home/${app}/portals/`
 							: "",
 					);
+				} else if (getAppInfo.data.project_type === "BLOCKS") {
+					// Low code app
+					setUrl(`${PLATFORM_URL}/#/s/${app}${resourceURI}`);
 				} else {
-					// Modern
-					const resourceURI = tool._meta?.SMSS_MCP_UI?.resourceURI;
-					if (!resourceURI) {
-						// No UI defined, show form
-						setUrl("");
-					} else if (resourceURI.startsWith("system://")) {
-						// Malformed system URI. Fall back to the form rather than
-						// building a public_home path out of the scheme.
-						setUrl("");
-					} else if (getAppInfo.data.project_type === "BLOCKS") {
-						// Low code app
-						setUrl(`${PLATFORM_URL}/#/s/${app}${resourceURI}`);
-					} else {
-						setUrl(
-							`${Env.MODULE}/public_home/${app}/portals${resourceURI}`,
-						);
-					}
+					setUrl(
+						`${Env.MODULE}/public_home/${app}/portals${resourceURI}`,
+					);
 				}
 
 				setIsLoading(false);
@@ -277,10 +290,10 @@ export const ToolsView = observer(
 
 		return (
 			<div className="relative flex h-full w-full flex-col items-center justify-center overflow-hidden">
-				{isLoading && <Skeleton className="h-full w-full" />}
+				{isLoading && <Skeleton className="h-[60vh] w-full" />}
 				{!!url && !isLoading && (
 					<iframe
-						className="h-full w-full border-none"
+						className="h-[60vh] w-full border-none"
 						title="Tool"
 						ref={iframeRef}
 						src={url}

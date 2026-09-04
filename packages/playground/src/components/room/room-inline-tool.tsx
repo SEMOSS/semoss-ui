@@ -33,7 +33,7 @@ export const RoomInlineTool: React.FC<RoomInlineToolProps> = observer(
 		const { t } = useTranslation("room");
 
 		return (
-			<div className="relative h-[60vh] w-full overflow-hidden">
+			<div className="relative max-h-[60vh] w-full overflow-hidden">
 				{/* Backdrop for maximized state */}
 				<div
 					className={`fixed inset-0 z-50 bg-black/50 transition-opacity duration-200 ${
