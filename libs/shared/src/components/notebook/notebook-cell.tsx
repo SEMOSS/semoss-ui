@@ -95,14 +95,18 @@ export interface NotebookCellBaseProps {
 interface NotebookCellProps extends NotebookCellBaseProps {
 	/** The cell to render. */
 	cell: JupyterCell;
-	/** Type-specific primary toolbar control (Run/Stop, Edit/Preview). */
+	/** Type-specific primary toolbar control. */
 	primaryAction?: React.ReactNode;
+	/** Type-specific left gutter control. */
+	gutterAction?: React.ReactNode;
 	/** Type-specific menu actions appended to both menus. */
 	actions?: NotebookCellAction[];
 	/** The cell body (editor / preview / outputs). */
 	children: React.ReactNode;
 	/** Result of the last execution; null means never run or currently running. */
 	executionStatus?: "success" | "error" | null;
+	/** Duration of the last execution in milliseconds. */
+	executionDurationMs?: number;
 }
 
 const CELL_TYPES: { value: JupyterCellType; label: string }[] = [
@@ -110,6 +114,17 @@ const CELL_TYPES: { value: JupyterCellType; label: string }[] = [
 	{ value: "markdown", label: "Markdown" },
 	{ value: "raw", label: "Raw" },
 ];
+
+/** Format a cell's server-reported execution duration for compact display. */
+const formatExecutionDuration = (durationMs: number) => {
+	if (durationMs < 1000) {
+		return `${Math.max(0, Math.round(durationMs))} ms`;
+	}
+
+	return durationMs < 10000
+		? `${(durationMs / 1000).toFixed(1)} s`
+		: `${Math.round(durationMs / 1000)} s`;
+};
 
 /**
  * Positioning + chrome frame shared by every cell type: the drag/collapse
@@ -138,9 +153,11 @@ export const NotebookCell: React.FC<NotebookCellProps> = ({
 	readOnly = false,
 	dragHandleProps,
 	primaryAction,
+	gutterAction,
 	actions,
 	children,
 	executionStatus,
+	executionDurationMs,
 }) => {
 	// Initialise collapse state from the nbformat hide-input cell tag.
 	const [inputCollapsed, setInputCollapsed] = useState<boolean>(() => {
@@ -353,19 +370,18 @@ export const NotebookCell: React.FC<NotebookCellProps> = ({
 			<ContextMenuTrigger asChild>
 				<div className="group relative flex gap-1.5">
 					{/* Gutter — drag handle + collapse toggle, shown on hover. */}
-					<div className="flex shrink-0 flex-row items-start gap-0.5 pt-2 opacity-0 transition-opacity group-hover:opacity-100">
-						{!readOnly && (
-							<div
-								title="Drag to reorder"
-								className="flex size-5 cursor-grab items-center justify-center text-muted-foreground/60 hover:text-foreground"
-								{...dragHandleProps}
-							>
-								<GripVerticalIcon className="size-4" />
-							</div>
+					<div
+						className={cn(
+							"flex shrink-0 flex-row items-start gap-0.5 pt-1.5 transition-opacity",
+							isActive
+								? "opacity-100"
+								: "opacity-0 focus-within:opacity-100 group-hover:opacity-100",
 						)}
+					>
+						{gutterAction || <div className="size-6">&nbsp;</div>}
 						<button
 							type="button"
-							className="flex size-5 cursor-pointer items-center justify-center rounded text-muted-foreground/60 transition-colors hover:text-foreground"
+							className="flex size-6 cursor-pointer items-center justify-center rounded text-muted-foreground/60 transition-colors hover:text-foreground"
 							onClick={(e) => {
 								e.stopPropagation();
 								setInputCollapsed((prev) => !prev);
@@ -381,9 +397,10 @@ export const NotebookCell: React.FC<NotebookCellProps> = ({
 							)}
 						</button>
 					</div>
+
 					{/* Cell content column. */}
 					<div className="relative min-w-0 flex-1">
-						{/* Status indicator — floats above top-left */}
+						{/* Status indicator — floats above top-right */}
 						{executionStatus && (
 							<div className="-right-6 absolute top-2.5 z-20 rounded-full bg-background">
 								{executionStatus === "success" && (
@@ -411,6 +428,13 @@ export const NotebookCell: React.FC<NotebookCellProps> = ({
 										: "opacity-0 focus-within:opacity-100 group-hover:opacity-100",
 								)}
 							>
+								<div
+									title="Drag to reorder"
+									className="flex size-5 cursor-grab items-center justify-center text-muted-foreground/60 hover:text-foreground"
+									{...dragHandleProps}
+								>
+									<GripVerticalIcon className="size-4" />
+								</div>
 								{primaryAction}
 								{!readOnly && (
 									<Tooltip>
@@ -511,7 +535,7 @@ export const NotebookCell: React.FC<NotebookCellProps> = ({
 									</span>
 								)}
 							</div>
-							{inputCollapsed ? (
+							{inputCollapsed && (
 								<div className="flex items-center gap-2 px-3 py-2 text-muted-foreground text-xs italic">
 									{cell.cell_type === "code" && (
 										<span className="font-mono not-italic">
@@ -520,10 +544,29 @@ export const NotebookCell: React.FC<NotebookCellProps> = ({
 									)}
 									<span>&nbsp;</span>
 								</div>
-							) : (
-								children
 							)}
+							<div
+								aria-hidden={inputCollapsed}
+								className={cn(
+									"overflow-hidden",
+									inputCollapsed && "invisible h-0",
+								)}
+							>
+								{children}
+							</div>
 						</div>
+
+						{!inputCollapsed && executionStatus && (
+							<div className="-bottom-3 absolute right-1 z-20 flex h-6 items-center gap-1 rounded-full bg-background px-1.5 font-mono text-muted-foreground text-xs">
+								{executionDurationMs !== undefined && (
+									<span>
+										{formatExecutionDuration(
+											executionDurationMs,
+										)}
+									</span>
+								)}
+							</div>
+						)}
 					</div>
 				</div>
 			</ContextMenuTrigger>
