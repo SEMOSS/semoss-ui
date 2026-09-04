@@ -134,6 +134,42 @@ const interceptors: {
 };
 
 /**
+ * Registered once by the app so the SDK can report a guardrail block that
+ * also force-logged the user out (USER_LOGGED_OUT_ERROR op type), without the
+ * SDK depending on any UI framework. Mirrors the CSRF/interceptors module
+ * state above.
+ */
+let sessionRevokedHandler: ((message: string) => void) | null = null;
+
+/** Fires at most once per session — a multi-statement pixel, a retry, or two
+ * concurrent calls can all carry the op type, but the app should only ever
+ * see one notification. Effectively terminal, the same way handleHeaderRedirect's
+ * navigation is. */
+let sessionRevokedFired = false;
+
+/**
+ * Register the handler the SDK calls when a guardrail block also logs the
+ * user out. Intended to be called once by the app during setup.
+ */
+export const registerSessionRevokedHandler = (
+	handler: (message: string) => void,
+): void => {
+	sessionRevokedHandler = handler;
+};
+
+/**
+ * Report a guardrail-forced logout to the registered handler, if any. No-ops
+ * after the first call so the app can't be asked to show more than one notice.
+ */
+export const notifySessionRevoked = (message: string): void => {
+	if (sessionRevokedFired) {
+		return;
+	}
+	sessionRevokedFired = true;
+	sessionRevokedHandler?.(message);
+};
+
+/**
  * Make a get call to the backend
  * @param path - path
  * @param options - options to pass into the fetch
@@ -205,7 +241,7 @@ export const post = async <O>(
 			"application/x-www-form-urlencoded";
 	}
 
-	options = {
+	const baseOptions: RequestInit = {
 		method: "POST",
 		headers: headers,
 		body: isFormData
@@ -225,19 +261,30 @@ export const post = async <O>(
 		...options,
 	};
 
-	// intercept
-	if (interceptors.request) {
-		options = await interceptors.request(options);
-	}
+	// One attempt: intercept (attaches the CSRF header, fetching a nonce if
+	// CSRF.token is empty), fetch, then run the response interceptor.
+	const attempt = async (): Promise<Response> => {
+		let attemptOptions = baseOptions;
+		if (interceptors.request) {
+			attemptOptions = await interceptors.request(attemptOptions);
+		}
 
-	// get the data
-	const response = await fetch(`${path}`, options);
+		const response = await fetch(`${path}`, attemptOptions);
 
-	// handle the response
-	if (interceptors.response) {
-		await interceptors.response({
-			response: response,
-		});
+		if (interceptors.response) {
+			await interceptors.response({
+				response: response,
+			});
+		}
+
+		return response;
+	};
+
+	let response = await attempt();
+
+	if (response.status === 403) {
+		CSRF.token = "";
+		response = await attempt();
 	}
 
 	if (!response.ok) {
