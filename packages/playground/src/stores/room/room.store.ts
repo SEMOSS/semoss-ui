@@ -883,17 +883,19 @@ export class RoomStore {
 	getSubagentPart = (
 		subagentId: string,
 	): PixelMessageSubagentPart["subagent"] | undefined => {
-		const part = this.history
-			.filter(
-				(message): message is ResponseMessageStore =>
-					message instanceof ResponseMessageStore,
-			)
-			.flatMap((message) => message.parts)
-			.find(
+		for (const message of this.history) {
+			if (!(message instanceof ResponseMessageStore)) {
+				continue;
+			}
+			const part = message.parts.find(
 				(p): p is PixelMessageSubagentPart =>
 					p.type === "SUBAGENT" && p.subagent.id === subagentId,
 			);
-		return part?.subagent;
+			if (part) {
+				return part.subagent;
+			}
+		}
+		return undefined;
 	};
 
 	/**
