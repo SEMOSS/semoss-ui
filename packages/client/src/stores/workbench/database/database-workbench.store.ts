@@ -53,7 +53,47 @@ type DatabaseQueryResult =
 			sourcePanel: string;
 			message: string;
 			timeToRun: number;
+	  }
+	| {
+			type: "BATCH";
+			query: string;
+			raw: boolean;
+			sourcePanel: string;
+			results: DatabaseStatementResult[];
+			timeToRun: number;
 	  };
+
+interface DatabaseStatementResultBase {
+	statement: number;
+	query: string;
+	route: string;
+	timeToRun: number;
+}
+
+/** One eagerly collected statement result from a multi-statement SQL query. */
+export type DatabaseStatementResult = DatabaseStatementResultBase &
+	(
+		| {
+				type: "TABLE";
+				status: "SUCCESS";
+				output: { headers: string[]; values: unknown[][] };
+		  }
+		| {
+				type: "MESSAGE";
+				status: "SUCCESS";
+				message: string;
+		  }
+		| {
+				type: "ERROR";
+				status: "ERROR";
+				message: string;
+		  }
+		| {
+				type: "SKIPPED";
+				status: "SKIPPED";
+				message: string;
+		  }
+	);
 
 /** Async request state shared by the structure and category fetches. */
 interface DatabaseFetchState<TData> {
@@ -191,6 +231,85 @@ const parseAdminSchemaRows = (rows: unknown): DatabaseTableStructure[] => {
 		table,
 		columns,
 	}));
+};
+
+/** Narrows an unknown value to a property-bearing object. */
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+	typeof value === "object" && value !== null && !Array.isArray(value);
+
+/** Parses the stable SQL batch payload returned by AbstractSqlQueryReactor. */
+export const parseStatementResults = (
+	output: unknown,
+): DatabaseStatementResult[] | null => {
+	if (!Array.isArray(output) || output.length < 2) {
+		return null;
+	}
+
+	const results: DatabaseStatementResult[] = [];
+	for (const item of output) {
+		if (!isRecord(item)) {
+			return null;
+		}
+
+		const statement = item.statement;
+		const query = item.query;
+		const route = item.route;
+		const type = item.type;
+		const status = item.status;
+		const timeToRun = item.timeToRun;
+		if (
+			typeof statement !== "number" ||
+			typeof query !== "string" ||
+			typeof route !== "string" ||
+			typeof type !== "string" ||
+			typeof status !== "string" ||
+			typeof timeToRun !== "number"
+		) {
+			return null;
+		}
+
+		const base = { statement, query, route, timeToRun };
+		if (type === "TABLE" && status === "SUCCESS" && isRecord(item.output)) {
+			const headers = item.output.headers;
+			const values = item.output.values;
+			if (
+				Array.isArray(headers) &&
+				headers.every((header) => typeof header === "string") &&
+				Array.isArray(values) &&
+				values.every((row) => Array.isArray(row))
+			) {
+				results.push({
+					...base,
+					type,
+					status,
+					output: {
+						headers,
+						values: values as unknown[][],
+					},
+				});
+				continue;
+			}
+		}
+
+		if (typeof item.message === "string") {
+			if (type === "MESSAGE" && status === "SUCCESS") {
+				results.push({ ...base, type, status, message: item.message });
+				continue;
+			}
+			if (type === "ERROR" && status === "ERROR") {
+				results.push({ ...base, type, status, message: item.message });
+				continue;
+			}
+			if (type === "SKIPPED" && status === "SKIPPED") {
+				results.push({ ...base, type, status, message: item.message });
+				continue;
+			}
+		}
+
+		return null;
+	}
+
+	return results;
 };
 
 /**
@@ -496,8 +615,9 @@ export const createDatabaseWorkbenchStore = (
 
 				let nextResult: DatabaseQueryResult;
 
-				const output = response.pixelReturn[0].output;
-				const timeToRun = response.pixelReturn[0].timeToRun;
+				const firstReturn = response.pixelReturn[0];
+				const output = firstReturn?.output;
+				const timeToRun = firstReturn?.timeToRun ?? 0;
 
 				if (response.errors.length > 0) {
 					nextResult = {
@@ -528,7 +648,7 @@ export const createDatabaseWorkbenchStore = (
 						},
 						timeToRun,
 					};
-				} else if (output && typeof output === "string") {
+				} else if (typeof output === "string") {
 					nextResult = {
 						type: "MESSAGE",
 						query: q,
@@ -538,14 +658,26 @@ export const createDatabaseWorkbenchStore = (
 						timeToRun,
 					};
 				} else {
-					nextResult = {
-						type: "JSON",
-						query: q,
-						raw,
-						sourcePanel: panelId,
-						output,
-						timeToRun,
-					};
+					const statementResults = parseStatementResults(output);
+					if (statementResults) {
+						nextResult = {
+							type: "BATCH",
+							query: q,
+							raw,
+							sourcePanel: panelId,
+							results: statementResults,
+							timeToRun,
+						};
+					} else {
+						nextResult = {
+							type: "JSON",
+							query: q,
+							raw,
+							sourcePanel: panelId,
+							output,
+							timeToRun,
+						};
+					}
 				}
 
 				set((state) => ({
