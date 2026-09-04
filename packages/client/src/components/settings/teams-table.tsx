@@ -61,7 +61,13 @@ const parseGroupsResponse = (result: unknown) => {
 	return { groups: [] as RawTeam[], totalGroups: 0, hasTotal: false };
 };
 
-export const TeamsTable = ({ type, id }) => {
+export const TeamsTable = ({
+	type,
+	id,
+}: {
+	type: string;
+	id: string | number;
+}) => {
 	const [teams, setTeams] = useState<TeamRow[]>([]);
 	const [totalTeams, setTotalTeams] = useState(0);
 	const [isLoading, setIsLoading] = useState(false);

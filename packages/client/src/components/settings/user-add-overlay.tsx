@@ -38,6 +38,7 @@ interface User {
 	model_usage_frequency?: string;
 	model_max_tokens?: number;
 	model_max_response_time?: number;
+	model_max_credits?: number;
 	unit?: string;
 }
 
@@ -61,6 +62,7 @@ interface EditUserForm {
 	model_usage_frequency?: string;
 	model_max_tokens?: number;
 	model_max_response_time?: number;
+	model_max_credits?: number;
 	unit?: string;
 }
 
@@ -185,6 +187,7 @@ export const UserAddOverlay = observer((props: UserAddOverlayProps) => {
 		null: "None",
 		token: "Token",
 		compute: "Compute time",
+		credit: "Credit",
 	};
 	const frequencyTypes: Record<string, string> = {
 		DAY: "Daily",
@@ -216,14 +219,21 @@ export const UserAddOverlay = observer((props: UserAddOverlayProps) => {
 
 				if (data.model_usage_restriction === "token") {
 					data.model_max_response_time = null;
+					data.model_max_credits = null;
 				}
 				if (data.model_usage_restriction === "compute") {
 					data.model_max_tokens = null;
+					data.model_max_credits = null;
+				}
+				if (data.model_usage_restriction === "credit") {
+					data.model_max_tokens = null;
+					data.model_max_response_time = null;
 				}
 				if (data.model_usage_restriction === "null") {
 					data.model_usage_restriction = null;
 					data.model_max_response_time = null;
 					data.model_max_tokens = null;
+					data.model_max_credits = null;
 					data.model_usage_frequency = null;
 				}
 
@@ -777,6 +787,35 @@ export const UserAddOverlay = observer((props: UserAddOverlayProps) => {
 										}}
 									/>
 								</div>
+							)}
+							{limitType === "credit" && (
+								<Controller
+									name="model_max_credits"
+									control={control}
+									rules={{ required: true }}
+									render={({ field }) => {
+										return (
+											<div className="grid gap-1.5">
+												<Label>Max Credits</Label>
+												<Input
+													type="number"
+													value={
+														field.value
+															? field.value
+															: ""
+													}
+													onChange={(e) => {
+														field.onChange(
+															Number(
+																e.target.value,
+															),
+														);
+													}}
+												/>
+											</div>
+										);
+									}}
+								/>
 							)}
 							{limitType !== "null" && (
 								<Controller

@@ -684,6 +684,7 @@ export const getAllUsers = async (
 			model_usage_frequency?: string;
 			model_max_tokens?: number;
 			model_max_response_time?: number;
+			model_max_credits?: number;
 		}[]
 	>(getAllUsersURL).catch((error) => {
 		throw Error(error);
@@ -991,6 +992,12 @@ export const createUser = async (
 		newUserInfo = {
 			...newUserInfo,
 			modelMaxResponseTime: user.model_max_response_time,
+		};
+	}
+	if (user.model_max_credits) {
+		newUserInfo = {
+			...newUserInfo,
+			modelMaxCredits: user.model_max_credits,
 		};
 	}
 	const response = await post<boolean>(url, processPostData(newUserInfo), {});

@@ -54,6 +54,10 @@ export type ModelMetadata = {
 	supportedParameters?: string[] | null;
 	reasoningConfig?: Record<string, unknown> | null;
 	benchmarks?: Record<string, unknown>[] | null;
+	inputTokenCredit?: number | null;
+	outputTokenCredit?: number | null;
+	cacheReadMultiplier?: number | null;
+	cacheWriteMultiplier?: number | null;
 	pricing?: ModelPricing[] | null;
 };
 
@@ -771,6 +775,11 @@ export interface ModelSettingsValues {
 	 * authoritative for display.
 	 */
 	builtinToolsConfig: Record<string, BuiltinToolSelection> | null;
+	/** Empty string means the nullable column has no value stored. */
+	inputTokenCredit: string;
+	outputTokenCredit: string;
+	cacheReadMultiplier: string;
+	cacheWriteMultiplier: string;
 }
 
 /**
@@ -822,6 +831,34 @@ export const toModelSettingsValues = (
 				: "",
 		builtinTools: Object.keys(metadata?.builtinTools ?? {}),
 		builtinToolsConfig: metadata?.builtinTools ?? null,
+		inputTokenCredit:
+			metadata?.inputTokenCredit != null
+				? String(
+						parseFloat(
+							(metadata.inputTokenCredit * 1_000_000).toPrecision(
+								10,
+							),
+						),
+					)
+				: "",
+		outputTokenCredit:
+			metadata?.outputTokenCredit != null
+				? String(
+						parseFloat(
+							(
+								metadata.outputTokenCredit * 1_000_000
+							).toPrecision(10),
+						),
+					)
+				: "",
+		cacheReadMultiplier:
+			metadata?.cacheReadMultiplier != null
+				? String(metadata.cacheReadMultiplier)
+				: "",
+		cacheWriteMultiplier:
+			metadata?.cacheWriteMultiplier != null
+				? String(metadata.cacheWriteMultiplier)
+				: "",
 	};
 };
 
@@ -995,7 +1032,7 @@ export const ModelMetadataFields = ({
 	<>
 		<SettingsEntry label="Model ID" className="sm:col-span-2">
 			{modelId ? (
-				<span className="break-all font-mono text-sm">{modelId}</span>
+				<span className="break-all text-sm">{modelId}</span>
 			) : (
 				<EmptyValue />
 			)}
@@ -1095,6 +1132,38 @@ export const ModelMetadataFields = ({
 		<SettingsEntry label="Max output tokens">
 			<TokenValue value={values.maxOutputTokens} />
 		</SettingsEntry>
+
+		<SettingsEntry label="Credits / 1M input tokens">
+			{values.inputTokenCredit !== "" ? (
+				<span className="text-sm">{values.inputTokenCredit}</span>
+			) : (
+				<EmptyValue />
+			)}
+		</SettingsEntry>
+
+		<SettingsEntry label="Credits / 1M output tokens">
+			{values.outputTokenCredit !== "" ? (
+				<span className="text-sm">{values.outputTokenCredit}</span>
+			) : (
+				<EmptyValue />
+			)}
+		</SettingsEntry>
+
+		<SettingsEntry label="Cache read multiplier">
+			{values.cacheReadMultiplier !== "" ? (
+				<span className="text-sm">×{values.cacheReadMultiplier}</span>
+			) : (
+				<EmptyValue />
+			)}
+		</SettingsEntry>
+
+		<SettingsEntry label="Cache write multiplier">
+			{values.cacheWriteMultiplier !== "" ? (
+				<span className="text-sm">×{values.cacheWriteMultiplier}</span>
+			) : (
+				<EmptyValue />
+			)}
+		</SettingsEntry>
 	</>
 );
 
@@ -1109,11 +1178,6 @@ interface OverviewStatItem {
 	unit: string;
 }
 
-/**
- * The full-width strip of headline figures under the description: token
- * limits, dates, and the preferred provider's rates. Divider lines only
- * appear at xl, where the strip is guaranteed a single row.
- */
 const OverviewStatStrip = ({ stats }: { stats: OverviewStatItem[] }) => (
 	<div className="grid grid-cols-2 gap-x-8 gap-y-6 border-y py-5 sm:grid-cols-3 xl:flex xl:gap-0 xl:divide-x">
 		{stats.map((stat) => (

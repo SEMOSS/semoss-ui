@@ -47,6 +47,7 @@ export interface MemberUser {
 	usage_frequency?: string;
 	max_tokens?: number;
 	max_response_time?: number;
+	max_credits?: number;
 }
 
 interface MembersProps {
@@ -82,6 +83,7 @@ const formatValue = (input?: string) => {
 	const mappings: Record<string, string> = {
 		TOKEN: "Token",
 		COMPUTE: "Compute time",
+		CREDIT: "Credit",
 		DAY: "Daily",
 		WEEK: "Weekly",
 		MONTH: "Monthly",
@@ -222,6 +224,8 @@ export const MembersList = ({
 					user.max_response_time != null
 				)
 					payload.maxResponseTime = user.max_response_time;
+				if (r.toUpperCase() === "CREDIT" && user.max_credits != null)
+					payload.maxCredits = user.max_credits;
 				payload.usageFrequency = user.usage_frequency;
 			}
 		}
@@ -553,7 +557,11 @@ export const MembersList = ({
 																"TOKEN"
 															? (user.max_tokens?.toLocaleString() ??
 																"—")
-															: "—";
+															: user.usage_restriction?.toUpperCase() ===
+																	"CREDIT"
+																? (user.max_credits?.toLocaleString() ??
+																	"—")
+																: "—";
 												return (
 													<>
 														<TableCell>
