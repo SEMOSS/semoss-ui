@@ -467,10 +467,12 @@ paramValues=[${JSON.stringify(
 
 		let pixelCommand: string;
 
+		const appName = this.room.theme.name || "Chat";
+		const fileName = `${appName} Response Export`;
 		if (format === "word") {
-			pixelCommand = `ToDocx(markdown=["<encode>${text}</encode>"], fileName="${this.room.roomId}");`;
+			pixelCommand = `ToDocx(markdown=["<encode>${text}</encode>"], fileName="${fileName}");`;
 		} else if (format === "pdf") {
-			pixelCommand = `ToPdf(markdown=["<encode>${text}</encode>"], fileName="${this.room.roomId}");`;
+			pixelCommand = `ToPdf(markdown=["<encode>${text}</encode>"], fileName="${fileName}");`;
 		} else {
 			throw new Error(`Unsupported format: ${format}`);
 		}
