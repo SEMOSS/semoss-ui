@@ -122,6 +122,7 @@ const VIZ_TYPES: VisualizationType[] = [
 	"polarbar",
 	"cluster",
 	"htmlblock",
+	"markdown",
 	"multiline",
 	"wordcloud",
 	"bubble",
@@ -1266,6 +1267,7 @@ export function NewDashboardPage() {
 					// loaded rows — neither needs a database/query of its own.
 					if (
 						v.visualizationType === "htmlblock" ||
+						v.visualizationType === "markdown" ||
 						v.visualizationType === "filter"
 					)
 						return false;
@@ -1370,7 +1372,11 @@ export function NewDashboardPage() {
 		const seen = new Set<string>();
 		for (const sheet of data.sheets) {
 			for (const viz of sheet.visualizations) {
-				if (viz.visualizationType === "htmlblock") continue;
+				if (
+					viz.visualizationType === "htmlblock" ||
+					viz.visualizationType === "markdown"
+				)
+					continue;
 				const source = resolveQuery(viz, data.queries);
 				const dp = isDataProduct(source);
 				// Data products carry a `-- Data product…` sentinel in `query`; validate them

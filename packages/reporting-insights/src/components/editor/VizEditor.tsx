@@ -1,4 +1,4 @@
-import Editor from "@monaco-editor/react";
+import Editor, { type OnMount } from "@monaco-editor/react";
 import {
 	AlertCircle,
 	BarChart3,
@@ -22,7 +22,13 @@ import {
 	Wrench,
 	X,
 } from "lucide-react";
-import { type ReactNode, useEffect, useRef, useState } from "react";
+import {
+	type ReactNode,
+	useCallback,
+	useEffect,
+	useRef,
+	useState,
+} from "react";
 import { createPortal } from "react-dom";
 import {
 	Dialog,
@@ -49,8 +55,8 @@ import {
  *   └───────────────────────────────────────────────┴────────────────┘
  *
  * It is purely presentational: the parent computes the drop-zone data, columns,
- * preview node, and run state, and supplies handlers. HTML Block swaps the whole
- * body for the dedicated HtmlBlockEditor (which has its own editor + preview).
+ * preview node, and run state, and supplies handlers. Content blocks swap the
+ * whole body for their dedicated editor and preview.
  */
 import { CsvExportConfigPanel } from "@/components/editor/CsvExportConfigPanel";
 import {
@@ -61,6 +67,7 @@ import {
 import { QueryBuilderModal } from "@/components/editor/QueryBuilderModal";
 import { VizTypeSelect } from "@/components/editor/VizTypeSelect";
 import { HtmlBlockEditor } from "@/components/HtmlBlockEditor";
+import { MarkdownBlockEditor } from "@/components/MarkdownBlockEditor";
 import { QueryParameters } from "@/components/QueryParameters";
 import { ColorPicker } from "@/components/tools/shared/ColorPicker";
 import { FilterVisualization } from "@/components/tools/shared/FilterVisualization";
@@ -73,6 +80,11 @@ import {
 import { placeholderNames } from "@/lib/paramInference";
 import { isDataProduct } from "@/lib/queryPixel";
 import { makeVizFilterGroup } from "@/lib/vizFilter";
+import type {
+	ConditionalOptionBranch,
+	VisualizationConfig,
+	VisualizationType,
+} from "@/types/dashboard";
 
 const FILTER_DISPLAY_TYPE_OPTIONS = [
 	{ value: "dropdown", label: "Dropdown" },
@@ -82,6 +94,11 @@ const FILTER_DISPLAY_TYPE_OPTIONS = [
 	{ value: "slider", label: "Slider" },
 	{ value: "typeahead", label: "Typeahead" },
 	{ value: "float", label: "Float (rule builder)" },
+];
+
+const FILTER_BUTTON_LAYOUT_OPTIONS = [
+	{ value: "horizontal", label: "Horizontal" },
+	{ value: "vertical", label: "Vertical" },
 ];
 
 const SQL_EDITOR_OPTIONS = {
@@ -118,9 +135,9 @@ export interface VizLike {
 		optionsQuery?: string;
 		optionsDatabaseId?: string;
 		conditionalOn?: string;
-		conditionalBranches?: any[];
+		conditionalBranches?: ConditionalOptionBranch[];
 	}>;
-	config?: any;
+	config?: VisualizationConfig;
 	/** When true, the visualization's tab header is flagged as PHI/PII (red). */
 	phi?: boolean;
 	/** Hex color for this visualization's FlexLayout tab background. */
@@ -173,7 +190,7 @@ export interface VizEditorProps {
 	inLayout: boolean;
 	onAddToLayout: () => void;
 	/** Runs a pixel — used by the HTML Block AI generator + the table browser. */
-	runPixel: (pixel: string) => Promise<any>;
+	runPixel: (pixel: string) => Promise<unknown>;
 	/** Other visualizations in this dashboard (across ALL sheets) — the Filter widget targets these. */
 	siblings?: {
 		id: string;
@@ -247,8 +264,8 @@ interface BrowserTable {
 function migrateConfigOnTypeChange(
 	fromType: string,
 	toType: string,
-	config: Record<string, any> | undefined,
-): Record<string, any> | undefined {
+	config: VisualizationConfig | undefined,
+): VisualizationConfig | undefined {
 	if (!config) return config;
 
 	if (fromType === "table" && toType === "csvexport") {
@@ -354,10 +371,14 @@ function TabColorPicker({
 				pos &&
 				createPortal(
 					<>
-						<div
-							className="fixed inset-0 z-[998]"
+						<button
+							type="button"
+							aria-label="Close tab color picker"
+							className="fixed inset-0 z-[998] cursor-default"
 							onClick={() => setOpen(false)}
 						/>
+						{/* biome-ignore lint/a11y/noStaticElementInteractions: this stopPropagation guard prevents clicks inside the popover from bubbling to the backdrop button; the popover's own controls are independently keyboard-accessible. */}
+						{/* biome-ignore lint/a11y/useKeyWithClickEvents: this stopPropagation guard prevents clicks inside the popover from bubbling to the backdrop button; the popover's own controls are independently keyboard-accessible. */}
 						<div
 							className="fixed z-[999] rounded-xl border border-stone-200 bg-white p-3 shadow-lg"
 							style={{
@@ -455,6 +476,8 @@ export function VizEditor(props: VizEditorProps) {
 		!!onToggleLoadAfterParams;
 
 	const isHtml = viz.visualizationType === "htmlblock";
+	const isMarkdown = viz.visualizationType === "markdown";
+	const isContentBlock = isHtml || isMarkdown;
 	const canRun = !!viz.databaseId && !!viz.query.trim();
 
 	const [paramsOpen, setParamsOpen] = useState(false);
@@ -489,30 +512,45 @@ export function VizEditor(props: VizEditorProps) {
 			.current(
 				`GetDatabaseMetamodel(database=["${dbId}"], options=["physicalTypes","dataTypes"]);`,
 			)
-			.then((out: any) => {
-				const nodes: any[] = Array.isArray(out?.nodes) ? out.nodes : [];
-				const physTypes: Record<string, string> =
-					out?.physicalTypes ?? {};
-				const dataTypes: Record<string, string> = out?.dataTypes ?? {};
-				// Column ids may be "Concept__Property"; show just the property.
-				const colName = (p: string) =>
-					p.includes("__") ? p.split("__").slice(1).join("__") : p;
-				const result: BrowserTable[] = nodes
-					.map((n) => ({
-						table: String(n?.conceptualName ?? ""),
-						columns: (Array.isArray(n?.propSet) ? n.propSet : [])
-							.map((p: string) => ({
-								column: colName(String(p)),
-								type: String(
-									physTypes[p] ?? dataTypes[p] ?? "",
-								),
-							}))
-							.filter((c: { column: string }) => c.column),
-					}))
-					.filter((t) => t.table);
-				tablesCacheRef.current[dbId] = result;
-				if (!cancelled) setTables(result);
-			})
+			.then(
+				(
+					out: {
+						nodes?: unknown[];
+						physicalTypes?: Record<string, string>;
+					} | null,
+				) => {
+					const nodes: unknown[] = Array.isArray(out?.nodes)
+						? out.nodes
+						: [];
+					const physTypes: Record<string, string> =
+						out?.physicalTypes ?? {};
+					const dataTypes: Record<string, string> =
+						out?.dataTypes ?? {};
+					// Column ids may be "Concept__Property"; show just the property.
+					const colName = (p: string) =>
+						p.includes("__")
+							? p.split("__").slice(1).join("__")
+							: p;
+					const result: BrowserTable[] = nodes
+						.map((n) => ({
+							table: String(n?.conceptualName ?? ""),
+							columns: (Array.isArray(n?.propSet)
+								? n.propSet
+								: []
+							)
+								.map((p: string) => ({
+									column: colName(String(p)),
+									type: String(
+										physTypes[p] ?? dataTypes[p] ?? "",
+									),
+								}))
+								.filter((c: { column: string }) => c.column),
+						}))
+						.filter((t) => t.table);
+					tablesCacheRef.current[dbId] = result;
+					if (!cancelled) setTables(result);
+				},
+			)
 			.catch(() => {
 				if (!cancelled) setTables([]);
 			})
@@ -574,7 +612,7 @@ export function VizEditor(props: VizEditorProps) {
 	runRef.current = handleRun;
 	const canRunRef = useRef(canRun);
 	canRunRef.current = canRun;
-	const registerRun = (editor: any, monaco: any) => {
+	const registerRun: OnMount = (editor, monaco) => {
 		editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter, () => {
 			if (canRunRef.current) runRef.current();
 		});
@@ -625,7 +663,9 @@ export function VizEditor(props: VizEditorProps) {
 				) : (
 					<VizConfigTabs
 						columns={columns}
-						visualizationType={viz.visualizationType as any}
+						visualizationType={
+							viz.visualizationType as VisualizationType
+						}
 						value={dropZoneData}
 						onChange={onDropZoneChange}
 						rows={previewRows}
@@ -739,18 +779,21 @@ export function VizEditor(props: VizEditorProps) {
 					</div>
 
 					{/* ── Row B: query controls (source · reuse · configure · run) ── */}
-					{!isHtml && (
+					{!isContentBlock && (
 						<div className="flex flex-shrink-0 flex-wrap items-center gap-2 border-stone-100 border-b bg-white px-3 pt-3 pb-2">
-							{showQueryPicker && (
-								<QueryPicker
-									queries={queries!}
-									boundQueryId={boundQueryId}
-									onSelect={onSelectQuery!}
-									onNew={onNewQuery!}
-									onRename={onRenameQuery}
-									onDelete={onDeleteQuery}
-								/>
-							)}
+							{showQueryPicker &&
+								queries &&
+								onSelectQuery &&
+								onNewQuery && (
+									<QueryPicker
+										queries={queries}
+										boundQueryId={boundQueryId}
+										onSelect={onSelectQuery}
+										onNew={onNewQuery}
+										onRename={onRenameQuery}
+										onDelete={onDeleteQuery}
+									/>
+								)}
 							{reuse && (
 								<Popover
 									open={reuseOpen && reuse.canReuse}
@@ -959,7 +1002,7 @@ export function VizEditor(props: VizEditorProps) {
 										onUpdate({
 											sources: undefined,
 											joins: undefined,
-										} as any)
+										})
 									}
 									className="inline-flex items-center gap-1 rounded-md px-1.5 py-1.5 font-medium text-[11px] text-stone-400 hover:bg-red-50 hover:text-red-500"
 									title="Remove the data product (revert to a single query)"
@@ -1035,9 +1078,16 @@ export function VizEditor(props: VizEditorProps) {
 					{isHtml ? (
 						<div className="min-h-0 flex-1">
 							<HtmlBlockEditor
-								viz={viz as any}
-								onUpdate={(u) => onUpdate(u as any)}
+								viz={viz}
+								onUpdate={onUpdate}
 								runPixel={runPixel}
+							/>
+						</div>
+					) : isMarkdown ? (
+						<div className="min-h-0 flex-1">
+							<MarkdownBlockEditor
+								viz={viz}
+								onUpdate={onUpdate}
 							/>
 						</div>
 					) : (
@@ -1256,7 +1306,7 @@ export function VizEditor(props: VizEditorProps) {
 				</div>
 
 				{/* Mobile backdrop for the config overlay */}
-				{configOpen && !isHtml && (
+				{configOpen && !isContentBlock && (
 					<div
 						className="absolute inset-0 z-20 bg-black/20 lg:hidden"
 						onClick={() => setConfigOpen(false)}
@@ -1268,7 +1318,7 @@ export function VizEditor(props: VizEditorProps) {
 					className={cx(
 						"bg-white transition-[width] duration-200 ease-out",
 						"absolute inset-y-0 right-0 z-30 shadow-xl lg:static lg:z-auto lg:flex-shrink-0 lg:overflow-hidden lg:shadow-none",
-						configOpen && !isHtml
+						configOpen && !isContentBlock
 							? "w-[90vw] max-w-[440px] border-stone-200 border-l lg:w-[500px] lg:max-w-none"
 							: "w-0 overflow-hidden",
 					)}
@@ -1279,7 +1329,7 @@ export function VizEditor(props: VizEditorProps) {
 
 			{/* Parameters — roomy modal so inputs are never cramped */}
 			<Dialog
-				open={paramsOpen && !isHtml}
+				open={paramsOpen && !isContentBlock}
 				onOpenChange={(o) => {
 					if (!o) setParamsOpen(false);
 				}}
@@ -1334,9 +1384,9 @@ export function VizEditor(props: VizEditorProps) {
 					// specs by name; new tokens get a blank-default param (filled in the
 					// Parameters panel — the app requires a default before saving).
 					const names = new Set<string>();
-					sources.forEach((l) =>
-						placeholderNames(l.query).forEach((n) => names.add(n)),
-					);
+					for (const l of sources) {
+						for (const n of placeholderNames(l.query)) names.add(n);
+					}
 					const existing = new Map(
 						(viz.parameters ?? []).map((p) => [p.name, p]),
 					);
@@ -1360,7 +1410,7 @@ export function VizEditor(props: VizEditorProps) {
 						databaseName:
 							sources[0]?.databaseName ?? viz.databaseName,
 						query: desc,
-					} as any);
+					});
 				}}
 			/>
 		</>
@@ -1587,8 +1637,11 @@ function FilterConfigPanel({
 	}[];
 	onUpdate: (p: Partial<VizLike>) => void;
 }) {
-	const patch = (p: Record<string, unknown>) =>
-		onUpdate({ config: { ...viz.config, ...p } });
+	const patch = useCallback(
+		(p: Partial<VisualizationConfig>) =>
+			onUpdate({ config: { ...viz.config, ...p } }),
+		[onUpdate, viz.config],
+	);
 	const targets: string[] = viz.config?.filterTargets ?? [];
 	const displayType = viz.config?.filterDisplayType ?? "dropdown";
 	const toggleTarget = (id: string) =>
@@ -1669,8 +1722,7 @@ function FilterConfigPanel({
 		const cached = (viz.config?.filterFloatColumns ?? []).join(",");
 		if (cached === columnOptions.join(",")) return;
 		patch({ filterFloatColumns: columnOptions });
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [displayType, columnOptions.join(",")]);
+	}, [displayType, columnOptions, viz.config?.filterFloatColumns, patch]);
 
 	return (
 		<div className="space-y-4 p-3">
@@ -1696,6 +1748,24 @@ function FilterConfigPanel({
 					options={FILTER_DISPLAY_TYPE_OPTIONS}
 				/>
 			</div>
+
+			{displayType === "button" && (
+				<div>
+					<SubLabel>Button layout</SubLabel>
+					<SearchableSelect
+						value={viz.config?.filterButtonLayout ?? "horizontal"}
+						ariaLabel="Button layout"
+						onChange={(v) =>
+							patch({
+								filterButtonLayout:
+									(v as "horizontal" | "vertical") ||
+									"horizontal",
+							})
+						}
+						options={FILTER_BUTTON_LAYOUT_OPTIONS}
+					/>
+				</div>
+			)}
 
 			{/* Multiple selection (not available for typeahead or float) */}
 			{displayType !== "typeahead" && displayType !== "float" && (
@@ -2029,6 +2099,7 @@ function DataGrid({
 				</thead>
 				<tbody>
 					{shown.map((row, i) => (
+						// biome-ignore lint/suspicious/noArrayIndexKey: raw query preview rows have no stable identity column; the grid is a static, non-reorderable snapshot.
 						<tr key={i} className="hover:bg-stone-50/70">
 							{headers.map((h) => (
 								<td
@@ -2095,6 +2166,7 @@ function TableBrowser({
 						<div key={t.table}>
 							<div className="group flex items-center">
 								<button
+									type="button"
 									onClick={() => onToggle(t.table)}
 									className="flex min-w-0 flex-1 items-center gap-1 rounded px-2 py-1 text-left font-medium text-[12px] text-stone-700 hover:bg-stone-100"
 								>
@@ -2109,6 +2181,7 @@ function TableBrowser({
 									</span>
 								</button>
 								<button
+									type="button"
 									onClick={() => onInsert(t.table)}
 									title="Insert table name"
 									className="px-1.5 py-1 text-stone-300 opacity-0 hover:text-indigo-600 group-hover:opacity-100"
@@ -2120,6 +2193,7 @@ function TableBrowser({
 								<div className="pb-1">
 									{t.columns.map((c) => (
 										<button
+											type="button"
 											key={c.column}
 											onClick={() => onInsert(c.column)}
 											title={`${c.column} · ${c.type}`}

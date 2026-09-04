@@ -32,6 +32,7 @@ import {
 import { useTabColors } from "@/lib/tabColors";
 import { inferColumnType, normalizeDataType } from "@/lib/tableAggregate";
 import { VIZ_TYPE_META } from "@/lib/vizMeta";
+import type { Sheet as AppSheet } from "@/types/dashboard";
 import {
 	buildFlexModel,
 	isViewOnlyLayoutAction,
@@ -48,6 +49,15 @@ import type {
 	Visualization,
 	VisualizationConfig,
 } from "../types";
+
+/** A single test-run's query result (raw query rows) or a captured error message. */
+type TestResult = {
+	headers?: string[];
+	values?: unknown[][];
+	headerInfo?: { header: string; type: string }[];
+	error?: string;
+};
+
 import { ChartPreview } from "./ChartPreview";
 
 // ── Viz type options for the chart type dropdown ─────────────────────────────
@@ -150,7 +160,9 @@ export function EditMode() {
 	);
 	const [sheetMenuOpen, setSheetMenuOpen] = useState(false);
 	const [databases, setDatabases] = useState<Database[]>([]);
-	const [testResults, setTestResults] = useState<Record<string, any>>({});
+	const [testResults, setTestResults] = useState<Record<string, TestResult>>(
+		{},
+	);
 	const [testLoading, setTestLoading] = useState<Record<string, boolean>>({});
 
 	// Derived active-sheet data
@@ -180,19 +192,23 @@ export function EditMode() {
 				layout,
 				flexLayout: activeSheet?.flexLayout,
 			};
-			flexModelCacheRef.current[activeSheetId] = buildFlexModel(s as any);
+			// Portal's Visualization/Sheet types are a structural subset of the app's
+			// shared dashboard types; buildFlexModel only reads id/title/type/layout fields.
+			flexModelCacheRef.current[activeSheetId] = buildFlexModel(
+				s as unknown as AppSheet,
+			);
 		}
 		return flexModelCacheRef.current[activeSheetId];
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [activeSheetId, visualizations.length, layout.length]);
+	}, [activeSheetId, visualizations, layout, activeSheet?.flexLayout]);
 	const invalidateFlexModel = useCallback(() => {
 		delete flexModelCacheRef.current[activeSheetId];
 	}, [activeSheetId]);
 
 	// Build the save payload: always include sheets + flat fields for compat
-	const buildSavePayload = useCallback(
-		(): DashboardConfig => ({
-			...config!,
+	const buildSavePayload = useCallback((): DashboardConfig => {
+		if (!config) throw new Error("Dashboard config not loaded");
+		return {
+			...config,
 			name: draftName,
 			description: draftDesc,
 			sheets,
@@ -201,9 +217,8 @@ export function EditMode() {
 			layout: sheets[0]?.layout ?? [],
 			flexLayout: sheets[0]?.flexLayout,
 			updatedAt: new Date().toISOString(),
-		}),
-		[config, draftName, draftDesc, sheets, queries],
-	);
+		};
+	}, [config, draftName, draftDesc, sheets, queries]);
 
 	useEffect(() => {
 		loadDatabases()
@@ -229,7 +244,11 @@ export function EditMode() {
 		const seen = new Set<string>();
 		for (const sheet of sheetList) {
 			for (const viz of sheet.visualizations ?? []) {
-				if (viz.visualizationType === "htmlblock") continue;
+				if (
+					viz.visualizationType === "htmlblock" ||
+					viz.visualizationType === "markdown"
+				)
+					continue;
 				const source = resolveQuery(viz, cfg.queries);
 				if (!source.databaseId || !source.query?.trim()) continue;
 				let resolved = source.query;
@@ -247,9 +266,9 @@ export function EditMode() {
 					await runPixel(
 						`Database(database=["${source.databaseId}"]) | Query("${escapeSqlForPixel(resolved)}") | Collect(1);`,
 					);
-				} catch (e: any) {
+				} catch (e: unknown) {
 					errors.push(
-						`“${viz.title || "Untitled"}” (${sheet.name ?? "Sheet"}): ${String(e?.message ?? e ?? "invalid query")}`,
+						`“${viz.title || "Untitled"}” (${sheet.name ?? "Sheet"}): ${String((e as Error)?.message ?? e ?? "invalid query")}`,
 					);
 				}
 			}
@@ -277,7 +296,7 @@ export function EditMode() {
 				// A table's rows-per-page may be blank while editing, but not saved blank
 				// or out of range (1–1000; the page size is also the per-DB-call size).
 				if (v.visualizationType === "table") {
-					const ps = (v.config as any)?.styling?.table?.pageSize;
+					const ps = v.config?.styling?.table?.pageSize;
 					if (
 						ps === "" ||
 						(ps !== undefined &&
@@ -464,7 +483,7 @@ export function EditMode() {
 					layout: s.layout
 						.filter((l) => l.vizId !== vizId)
 						.map((l, i) => ({ ...l, order: i })),
-					flexLayout: flexLayout as any,
+					flexLayout,
 				}));
 				modelHandled = true;
 			}
@@ -555,7 +574,7 @@ export function EditMode() {
 						widthPct: 100,
 					},
 				],
-				flexLayout: flexLayout as any,
+				flexLayout,
 			}));
 		} catch {
 			updateActiveSheet((s) => ({
@@ -598,7 +617,7 @@ export function EditMode() {
 				const columnTypes: Record<string, string> = {};
 				r.headers.forEach((h: string, i: number) => {
 					const inferred = inferColumnType(
-						(r.values ?? []).map((row: any[]) => row[i]),
+						(r.values ?? []).map((row) => row[i]),
 					);
 					if (inferred !== "STRING") columnTypes[h] = inferred;
 				});
@@ -608,10 +627,10 @@ export function EditMode() {
 					});
 				}
 			}
-		} catch (e: any) {
+		} catch (e: unknown) {
 			setTestResults((prev) => ({
 				...prev,
-				[qKey]: { error: String(e?.message ?? e) },
+				[qKey]: { error: String((e as Error)?.message ?? e) },
 			}));
 		} finally {
 			setTestLoading((t) => ({ ...t, [qKey]: false }));
@@ -631,6 +650,7 @@ export function EditMode() {
 				{/* ── Editor toolbar ── */}
 				<div className="flex h-14 flex-shrink-0 items-center gap-3 border-stone-200 border-b bg-white px-4">
 					<button
+						type="button"
 						onClick={() => setMode("view")}
 						title="Back"
 						className="-ml-1 flex-shrink-0 rounded-md p-1.5 text-stone-400 transition-colors hover:bg-stone-100 hover:text-stone-800"
@@ -688,6 +708,7 @@ export function EditMode() {
 						return (
 							<div className="relative">
 								<button
+									type="button"
 									onClick={() =>
 										canDup && setSheetMenuOpen((v) => !v)
 									}
@@ -704,8 +725,10 @@ export function EditMode() {
 								</button>
 								{sheetMenuOpen && canDup && (
 									<>
-										<div
-											className="fixed inset-0 z-20"
+										<button
+											type="button"
+											aria-label="Close reuse-query menu"
+											className="fixed inset-0 z-20 cursor-default"
 											onClick={() =>
 												setSheetMenuOpen(false)
 											}
@@ -717,6 +740,7 @@ export function EditMode() {
 											<div className="max-h-56 overflow-y-auto">
 												{sheets.map((s) => (
 													<button
+														type="button"
 														key={s.id}
 														onClick={() =>
 															addVizFromQuery(
@@ -748,6 +772,7 @@ export function EditMode() {
 											</div>
 											<div className="mt-1 border-stone-100 border-t pt-1">
 												<button
+													type="button"
 													onClick={() =>
 														addVizFromQuery(
 															selectedVizId,
@@ -769,6 +794,7 @@ export function EditMode() {
 					{/* Build / Layout mode toggle (merged into the toolbar) */}
 					<div className="inline-flex items-center gap-0.5 rounded-lg bg-stone-100 p-0.5">
 						<button
+							type="button"
 							onClick={() => setEditorTab("visualize")}
 							className={`inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 font-medium text-xs transition-colors ${editorTab === "visualize" ? "bg-white text-stone-800 shadow-soft" : "text-stone-500 hover:text-stone-700"}`}
 						>
@@ -778,6 +804,7 @@ export function EditMode() {
 							</span>
 						</button>
 						<button
+							type="button"
 							onClick={() => setEditorTab("layout")}
 							className={`inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 font-medium text-xs transition-colors ${editorTab === "layout" ? "bg-white text-stone-800 shadow-soft" : "text-stone-500 hover:text-stone-700"}`}
 						>
@@ -789,6 +816,7 @@ export function EditMode() {
 					</div>
 					<div className="mx-1 h-5 w-px bg-stone-200" />
 					<button
+						type="button"
 						onClick={() => setMode("view")}
 						disabled={saving}
 						className={buttonClasses("secondary", "sm")}
@@ -796,6 +824,7 @@ export function EditMode() {
 						Cancel
 					</button>
 					<button
+						type="button"
 						onClick={() => void handleSaveClick()}
 						disabled={saving || validating}
 						className={buttonClasses("primary", "sm")}
@@ -821,11 +850,23 @@ export function EditMode() {
 										VIZ_TYPE_META[viz.visualizationType]
 											?.icon ?? BarChart2;
 									return (
+										// biome-ignore lint/a11y/useSemanticElements: nests real rename/remove <button>s and a rename <input> when active, which cannot live inside a native <button>.
 										<div
 											key={viz.id}
+											role="button"
+											tabIndex={0}
 											onClick={() =>
 												setSelectedVizId(viz.id)
 											}
+											onKeyDown={(e) => {
+												if (
+													e.key === "Enter" ||
+													e.key === " "
+												) {
+													e.preventDefault();
+													setSelectedVizId(viz.id);
+												}
+											}}
 											onDoubleClick={() => {
 												setSelectedVizId(viz.id);
 												setEditingVizId(viz.id);
@@ -880,6 +921,7 @@ export function EditMode() {
 																viz.id,
 															);
 														}}
+														type="button"
 														className="flex-shrink-0 rounded p-0.5 text-stone-400 hover:text-indigo-600"
 														title="Rename visualization"
 													>
@@ -894,6 +936,7 @@ export function EditMode() {
 											)}
 											{visualizations.length > 1 && (
 												<button
+													type="button"
 													onClick={(e) => {
 														e.stopPropagation();
 														removeViz(viz.id);
@@ -907,6 +950,7 @@ export function EditMode() {
 									);
 								})}
 								<button
+									type="button"
 									onClick={addViz}
 									className="my-1.5 inline-flex flex-shrink-0 items-center gap-1 whitespace-nowrap rounded-md border border-stone-300 border-dashed px-2.5 font-medium text-stone-500 text-xs transition-colors hover:border-indigo-300 hover:bg-white/70 hover:text-indigo-600"
 								>
@@ -1053,11 +1097,14 @@ export function EditMode() {
 												];
 											const headers: string[] =
 												raw?.headers ?? [];
-											const values: any[][] =
+											const values: unknown[][] =
 												raw?.values ?? [];
 											const preloadedData = headers.length
 												? values.map((row) => {
-														const obj: any = {};
+														const obj: Record<
+															string,
+															unknown
+														> = {};
 														headers.forEach(
 															(h, i) => {
 																obj[h] = row[i];
@@ -1236,7 +1283,7 @@ interface VizCardProps {
 	queries: DashboardQuery[];
 	queryUsage: Record<string, number>;
 	databases: Database[];
-	testResult: any;
+	testResult: TestResult;
 	testLoading: boolean;
 	inLayout: boolean;
 	onUpdate: (patch: Partial<Visualization>) => void;
@@ -1285,30 +1332,44 @@ function VizCard({
 		runPixel(
 			`GetDatabaseMetamodel(database=["${metaDbId}"], options=["dataTypes","logicalNames"]);`,
 		)
-			.then((out: any) => {
-				const dt = out?.dataTypes ?? out?.data?.dataTypes ?? {};
-				const logical =
-					out?.logicalNames ?? out?.data?.logicalNames ?? {};
-				// Case-insensitive map keyed by full "CONCEPT__PROP", bare "PROP", and logical aliases.
-				const map: Record<string, string> = {};
-				const put = (k: unknown, v: string) => {
-					if (k != null && k !== "") map[String(k).toLowerCase()] = v;
-				};
-				for (const [k, v] of Object.entries(dt)) {
-					const type = String(v);
-					put(k, type);
-					put(
-						k.includes("__")
-							? k.split("__").slice(1).join("__")
-							: k,
-						type,
-					);
-					(Array.isArray(logical[k]) ? logical[k] : []).forEach(
-						(alias: string) => put(alias, type),
-					);
-				}
-				if (!cancelled) setMetaTypes(map);
-			})
+			.then(
+				(
+					out: {
+						dataTypes?: Record<string, unknown>;
+						logicalNames?: Record<string, unknown>;
+						data?: {
+							dataTypes?: Record<string, unknown>;
+							logicalNames?: Record<string, unknown>;
+						};
+					} | null,
+				) => {
+					const dt = out?.dataTypes ?? out?.data?.dataTypes ?? {};
+					const logical =
+						out?.logicalNames ?? out?.data?.logicalNames ?? {};
+					// Case-insensitive map keyed by full "CONCEPT__PROP", bare "PROP", and logical aliases.
+					const map: Record<string, string> = {};
+					const put = (k: unknown, v: string) => {
+						if (k != null && k !== "")
+							map[String(k).toLowerCase()] = v;
+					};
+					for (const [k, v] of Object.entries(dt)) {
+						const type = String(v);
+						put(k, type);
+						put(
+							k.includes("__")
+								? k.split("__").slice(1).join("__")
+								: k,
+							type,
+						);
+						(Array.isArray(logical[k]) ? logical[k] : []).forEach(
+							(alias: string) => {
+								put(alias, type);
+							},
+						);
+					}
+					if (!cancelled) setMetaTypes(map);
+				},
+			)
 			.catch(() => {});
 		return () => {
 			cancelled = true;
@@ -1342,8 +1403,8 @@ function VizCard({
 		const vizPatch: Partial<Visualization> = {};
 		for (const [k, v] of Object.entries(patch)) {
 			if ((QUERY_FIELDS as readonly string[]).includes(k))
-				(queryPatch as any)[k] = v;
-			else (vizPatch as any)[k] = v;
+				(queryPatch as Record<string, unknown>)[k] = v;
+			else (vizPatch as Record<string, unknown>)[k] = v;
 		}
 		if (Object.keys(queryPatch).length) {
 			if (viz.queryId) {
@@ -1381,9 +1442,9 @@ function VizCard({
 	const liveHeaders: string[] = testResult?.headers ?? [];
 	const rawValues: unknown[][] = testResult?.values ?? [];
 	const previewData = rawValues.map((row) => {
-		const obj: any = {};
+		const obj: Record<string, unknown> = {};
 		liveHeaders.forEach((h, i) => {
-			obj[h] = (row as any[])[i];
+			obj[h] = row[i];
 		});
 		return obj;
 	});
@@ -1411,9 +1472,9 @@ function VizCard({
 		const metaLookup = (h: string): string | undefined => {
 			const low = (h ?? "").toLowerCase();
 			const bare = low.includes("__")
-				? low.split("__").pop()!
+				? (low.split("__").pop() ?? low)
 				: low.includes(".")
-					? low.split(".").pop()!
+					? (low.split(".").pop() ?? low)
 					: low;
 			return metaTypes[low] ?? metaTypes[bare];
 		};
@@ -1848,14 +1909,15 @@ function VizCard({
 				styling: data.styling,
 			};
 			if (vt === "kpi") {
-				newCfg.yKeys = data.metrics?.map((c: any) => c.name) || [];
-				newCfg.columnAggregations = {};
-				data.metrics?.forEach((c: any) => {
-					if (c.aggregation)
-						newCfg.columnAggregations![c.name] = c.aggregation;
+				newCfg.yKeys = data.metrics?.map((c) => c.name) || [];
+				const kpiAggs: Record<string, string> = {};
+				newCfg.columnAggregations = kpiAggs;
+				data.metrics?.forEach((c) => {
+					if (c.aggregation) kpiAggs[c.name] = c.aggregation;
 				});
 				if (data.metrics?.[0]?.aggregation)
-					newCfg.kpiAggregation = data.metrics[0].aggregation as any;
+					newCfg.kpiAggregation = data.metrics[0]
+						.aggregation as VisualizationConfig["kpiAggregation"];
 			} else if (vt === "pie") {
 				newCfg.xKey = data.name?.[0]?.name || "";
 				newCfg.yKeys = data.value?.[0] ? [data.value[0].name] : [];
@@ -1881,29 +1943,26 @@ function VizCard({
 				newCfg.xKey = data.xAxis?.[0]?.name || "";
 				newCfg.yKeys = data.yAxis?.[0] ? [data.yAxis[0].name] : [];
 				newCfg.targetKey = data.target?.[0]?.name || undefined;
-				newCfg.columnAggregations = {};
-				[...(data.yAxis ?? []), ...(data.target ?? [])].forEach(
-					(c: any) => {
-						if (c.aggregation)
-							newCfg.columnAggregations![c.name] = c.aggregation;
-					},
-				);
+				const halfdonutAggs: Record<string, string> = {};
+				newCfg.columnAggregations = halfdonutAggs;
+				[...(data.yAxis ?? []), ...(data.target ?? [])].forEach((c) => {
+					if (c.aggregation) halfdonutAggs[c.name] = c.aggregation;
+				});
 				if (data.tooltip?.length) {
-					newCfg.tooltips = data.tooltip.map((c: any) => ({
+					newCfg.tooltips = data.tooltip.map((c) => ({
 						column: c.name,
 						aggregation: c.aggregation,
 					}));
 				}
 			} else if (vt === "pivot") {
 				// Pivot: rows → pivotRows, columns → pivotColumns, values → pivotValues
-				newCfg.pivotRows = data.rows?.map((c: any) => c.name) || [];
-				newCfg.pivotColumns =
-					data.columns?.map((c: any) => c.name) || [];
-				newCfg.pivotValues = data.values?.map((c: any) => c.name) || [];
-				newCfg.columnAggregations = {};
-				data.values?.forEach((c: any) => {
-					if (c.aggregation)
-						newCfg.columnAggregations![c.name] = c.aggregation;
+				newCfg.pivotRows = data.rows?.map((c) => c.name) || [];
+				newCfg.pivotColumns = data.columns?.map((c) => c.name) || [];
+				newCfg.pivotValues = data.values?.map((c) => c.name) || [];
+				const pivotAggs: Record<string, string> = {};
+				newCfg.columnAggregations = pivotAggs;
+				data.values?.forEach((c) => {
+					if (c.aggregation) pivotAggs[c.name] = c.aggregation;
 				});
 				// Mirror to legacy yKeys for any code still reading it
 				newCfg.yKeys = newCfg.pivotValues;
@@ -1932,7 +1991,7 @@ function VizCard({
 				if (data.tooltip?.[0]) {
 					newCfg.tooltip = data.tooltip[0].name;
 					newCfg.tooltipAggregation =
-						(data.tooltip[0].aggregation as any) || "count";
+						data.tooltip[0].aggregation || "count";
 					newCfg.columnAggregations[data.tooltip[0].name] =
 						data.tooltip[0].aggregation || "count";
 				} else {
@@ -1968,7 +2027,7 @@ function VizCard({
 				if (data.tooltip?.[0]) {
 					newCfg.tooltip = data.tooltip[0].name;
 					newCfg.tooltipAggregation =
-						(data.tooltip[0].aggregation as any) || "count";
+						data.tooltip[0].aggregation || "count";
 					newCfg.columnAggregations[data.tooltip[0].name] =
 						data.tooltip[0].aggregation || "count";
 				} else {
@@ -1992,7 +2051,7 @@ function VizCard({
 				if (data.tooltip?.[0]) {
 					newCfg.tooltip = data.tooltip[0].name;
 					newCfg.tooltipAggregation =
-						(data.tooltip[0].aggregation as any) || "count";
+						data.tooltip[0].aggregation || "count";
 					newCfg.columnAggregations[data.tooltip[0].name] =
 						data.tooltip[0].aggregation || "count";
 				} else {
@@ -2012,35 +2071,34 @@ function VizCard({
 				newCfg.yKeys = data.yAxis?.[0] ? [data.yAxis[0].name] : [];
 				newCfg.size = data.size?.[0]?.name || "";
 				newCfg.color = data.color?.[0]?.name || "";
-				newCfg.columnAggregations = {};
+				const scatterAggs: Record<string, string> = {};
+				newCfg.columnAggregations = scatterAggs;
 				[data.xAxis?.[0], data.yAxis?.[0], data.size?.[0]].forEach(
-					(c: any) => {
-						if (c?.aggregation)
-							newCfg.columnAggregations![c.name] = c.aggregation;
+					(c) => {
+						if (c?.aggregation) scatterAggs[c.name] = c.aggregation;
 					},
 				);
 			} else if (vt === "sunburst") {
 				// Sunburst: hierarchy levels + value column
-				newCfg.sunburstLevels =
-					data.levels?.map((c: any) => c.name) || [];
+				newCfg.sunburstLevels = data.levels?.map((c) => c.name) || [];
 				newCfg.yKeys = data.value?.[0] ? [data.value[0].name] : [];
 				newCfg.columnAggregations = {};
 				if (data.value?.[0]?.aggregation)
-					newCfg.columnAggregations![data.value[0].name] =
+					newCfg.columnAggregations[data.value[0].name] =
 						data.value[0].aggregation;
 				newCfg.xKey = "";
 			} else {
 				newCfg.xKey = data.xAxis?.[0]?.name || "";
-				newCfg.yKeys = data.yAxis?.map((c: any) => c.name) || [];
-				newCfg.columnAggregations = {};
-				data.yAxis?.forEach((c: any) => {
-					if (c.aggregation)
-						newCfg.columnAggregations![c.name] = c.aggregation;
+				newCfg.yKeys = data.yAxis?.map((c) => c.name) || [];
+				const defaultAggs: Record<string, string> = {};
+				newCfg.columnAggregations = defaultAggs;
+				data.yAxis?.forEach((c) => {
+					if (c.aggregation) defaultAggs[c.name] = c.aggregation;
 				});
 			}
 			// Stacked bar: facet (stack-by) column.
 			if (vt === "stackbar") {
-				newCfg.facetKey = (data as any).facet?.[0]?.name || undefined;
+				newCfg.facetKey = data.facet?.[0]?.name || undefined;
 			}
 			onUpdate({ config: newCfg });
 		};
@@ -2048,7 +2106,11 @@ function VizCard({
 		return (
 			<VizEditor
 				viz={vizForEditor}
-				onUpdate={handleEditorUpdate as any}
+				onUpdate={(patch) =>
+					handleEditorUpdate(
+						patch as unknown as Partial<Visualization>,
+					)
+				}
 				queries={queriesForPicker}
 				boundQueryId={viz.queryId}
 				onSelectQuery={onSelectQuery}

@@ -536,6 +536,7 @@ const DROP_ZONES_CONFIG: Record<VisualizationType, DropZone[]> = {
 		},
 	],
 	htmlblock: [],
+	markdown: [],
 	multiline: [
 		{
 			id: "xAxis",
@@ -926,6 +927,7 @@ export function VizConfigDropZones({
 						</div>
 						<div className="flex items-center gap-1.5">
 							<button
+								type="button"
 								onClick={addAll}
 								disabled={availableCols.length === 0}
 								className="rounded-lg border border-stone-200 bg-stone-50 px-2.5 py-1.5 font-medium text-stone-600 text-xs transition-colors hover:bg-stone-100 hover:text-stone-900 disabled:opacity-50"
@@ -933,6 +935,7 @@ export function VizConfigDropZones({
 								Add all
 							</button>
 							<button
+								type="button"
 								onClick={removeAll}
 								disabled={selected.length === 0}
 								className="rounded-lg border border-stone-200 bg-stone-50 px-2.5 py-1.5 font-medium text-stone-600 text-xs transition-colors hover:bg-stone-100 hover:text-stone-900 disabled:opacity-50"
@@ -978,16 +981,17 @@ export function VizConfigDropZones({
 													<div
 														ref={p.innerRef}
 														{...p.draggableProps}
-														className={`flex items-center gap-1.5 rounded-md border px-2 py-2 transition-all ${
+														{...p.dragHandleProps}
+														className={`flex cursor-grab items-center gap-1.5 rounded-md border px-2 py-2 transition-all active:cursor-grabbing ${
 															snap.isDragging
 																? "border-indigo-400 bg-indigo-50 shadow-lg"
 																: "border-stone-200 bg-white hover:border-stone-300"
 														}`}
+														title="Drag into the table"
 													>
 														<span
-															{...p.dragHandleProps}
-															className="flex-shrink-0 cursor-grab text-stone-300 hover:text-stone-500"
-															title="Drag into the table"
+															className="flex-shrink-0 text-stone-300"
+															aria-hidden="true"
 														>
 															<GripVertical className="h-4 w-4" />
 														</span>
@@ -1002,6 +1006,16 @@ export function VizConfigDropZones({
 														</span>
 														<button
 															type="button"
+															onMouseDown={(
+																event,
+															) =>
+																event.stopPropagation()
+															}
+															onTouchStart={(
+																event,
+															) =>
+																event.stopPropagation()
+															}
 															onClick={() =>
 																setSelected([
 																	...selected,
@@ -1103,6 +1117,7 @@ export function VizConfigDropZones({
 																/>
 															</div>
 															<button
+																type="button"
 																onClick={() =>
 																	removeOne(
 																		name,
@@ -1179,16 +1194,17 @@ export function VizConfigDropZones({
 											<div
 												ref={provided.innerRef}
 												{...provided.draggableProps}
-												className={`relative flex items-center gap-1.5 rounded border px-2 py-1.5 text-xs transition-colors ${
+												{...provided.dragHandleProps}
+												className={`relative flex cursor-grab items-center gap-1.5 rounded border px-2 py-1.5 text-xs transition-colors active:cursor-grabbing ${
 													snapshot.isDragging
 														? "border-indigo-400 bg-indigo-50 shadow-sm"
 														: "border-stone-200 bg-white hover:bg-stone-50"
 												}`}
+												title="Drag into a drop zone"
 											>
 												<span
-													{...provided.dragHandleProps}
-													className="flex-shrink-0 cursor-grab text-stone-300 hover:text-stone-500"
-													title="Drag into a zone"
+													className="flex-shrink-0 text-stone-300"
+													aria-hidden="true"
 												>
 													<GripVertical className="h-3.5 w-3.5" />
 												</span>
@@ -1205,6 +1221,12 @@ export function VizConfigDropZones({
 												</span>
 												<button
 													type="button"
+													onMouseDown={(event) =>
+														event.stopPropagation()
+													}
+													onTouchStart={(event) =>
+														event.stopPropagation()
+													}
 													onClick={() => {
 														if (zones.length === 1)
 															addColumnToZone(
@@ -1232,15 +1254,40 @@ export function VizConfigDropZones({
 												{addColMenu === col.name &&
 													zones.length > 1 && (
 														<>
-															<div
+															<button
+																type="button"
+																aria-label="Close add-to-zone menu"
 																className="fixed inset-0 z-10"
+																onMouseDown={(
+																	event,
+																) =>
+																	event.stopPropagation()
+																}
+																onTouchStart={(
+																	event,
+																) =>
+																	event.stopPropagation()
+																}
 																onClick={() =>
 																	setAddColMenu(
 																		null,
 																	)
 																}
 															/>
-															<div className="absolute top-7 right-1 z-20 w-44 rounded-lg border border-stone-200 bg-white py-1 shadow-soft-lg">
+															{/* biome-ignore lint/a11y/noStaticElementInteractions: pointer-capture wrapper only, no click semantics of its own — stops the outer drag/close handlers from firing inside the menu. */}
+															<div
+																className="absolute top-7 right-1 z-20 w-44 rounded-lg border border-stone-200 bg-white py-1 shadow-soft-lg"
+																onMouseDown={(
+																	event,
+																) =>
+																	event.stopPropagation()
+																}
+																onTouchStart={(
+																	event,
+																) =>
+																	event.stopPropagation()
+																}
+															>
 																<p className="px-3 pt-0.5 pb-1 font-semibold text-[10px] text-stone-400 uppercase tracking-wider">
 																	Add to
 																</p>
@@ -1314,11 +1361,12 @@ export function VizConfigDropZones({
 						return (
 							<div key={zone.id}>
 								<div className="mb-2 flex items-center justify-between">
-									<label className="font-semibold text-stone-600 text-xs">
+									<span className="font-semibold text-stone-600 text-xs">
 										{zone.label}
-									</label>
+									</span>
 									{dropped.length > 0 && (
 										<button
+											type="button"
 											onClick={() =>
 												handleClearZone(zone.id)
 											}
@@ -1417,6 +1465,7 @@ export function VizConfigDropZones({
 																			/>
 																		)}
 																		<button
+																			type="button"
 																			onClick={() =>
 																				handleRemoveColumn(
 																					zone.id,

@@ -28,6 +28,7 @@ import { HeatmapChart } from "@/components/visualizations/HeatmapChart";
 import { HtmlBlockVisualization } from "@/components/visualizations/HtmlBlockVisualization";
 import { KPI } from "@/components/visualizations/KPI";
 import { Line_Chart } from "@/components/visualizations/Line_Chart";
+import { MarkdownVisualization } from "@/components/visualizations/MarkdownVisualization";
 import { MultiLineChart } from "@/components/visualizations/MultiLineChart";
 import { Pie_Chart } from "@/components/visualizations/Pie_Chart";
 import { PivotTable } from "@/components/visualizations/PivotTable";
@@ -44,7 +45,10 @@ import { FilterWidget } from "@/components/widgets/FilterWidget";
 import { usePivotTransform } from "@/hooks/usePivotTransform";
 import { applyVizFilter } from "@/lib/vizFilter";
 import { applyVizSort } from "@/lib/vizSort";
-import type { MultiLineStyling } from "@/types/dashboard";
+import type {
+	MultiLineStyling,
+	VisualizationConfig as SharedVisualizationConfig,
+} from "@/types/dashboard";
 import type { VisualizationConfig, VisualizationType } from "../types";
 
 const PALETTE = [
@@ -65,7 +69,7 @@ type RcHeight = number | `${number}%`;
 interface Props {
 	visualizationType: VisualizationType;
 	config?: VisualizationConfig;
-	data: any[];
+	data: Record<string, unknown>[];
 	height?: RcHeight;
 	/** Filter widget: pre-selected values (persisted from a prior editor session). */
 	filterDefaultValues?: string[];
@@ -84,18 +88,23 @@ export function ChartPreview({
 	onFilterDefaultValuesChange,
 	onMultilineStylingChange,
 }: Props) {
+	// Portal's VisualizationConfig is a structural subset of the shared dashboard
+	// config (kpiAggregation enums differ slightly); bridge it once for the shared
+	// visualization components below.
+	const sharedConfig = config as unknown as SharedVisualizationConfig;
+
 	// Author-defined per-viz filter (Filter Visualization tool) applies before render.
 	const data = applyVizSort(
-		applyVizFilter(rawData ?? [], (config as any).styling?.vizFilter),
-		(config as any).styling?.sortValues,
+		applyVizFilter(rawData ?? [], sharedConfig.styling?.vizFilter),
+		sharedConfig.styling?.sortValues,
 	);
 	// Pivot transform must run unconditionally to satisfy rules-of-hooks.
 	// Cast: portal's VisualizationConfig is a structural subset of the shared
 	// dashboard config (kpiAggregation enums differ slightly).
-	const pivotResult = usePivotTransform(data, config as any);
+	const pivotResult = usePivotTransform(data, sharedConfig);
 
 	// Chart title from Tools tab
-	const titleCfg = (config as any).styling?.title;
+	const titleCfg = sharedConfig.styling?.title;
 	const titleEl = titleCfg?.text ? (
 		<p
 			style={{
@@ -136,7 +145,7 @@ export function ChartPreview({
 			<CsvExportButton
 				rows={data}
 				title="export"
-				config={config as any}
+				config={sharedConfig}
 			/>,
 		);
 	}
@@ -146,8 +155,8 @@ export function ChartPreview({
 			<FilterWidget
 				vizId="preview"
 				title=""
-				column={(config as any).filterColumn ?? ""}
-				targets={(config as any).filterTargets ?? []}
+				column={sharedConfig.filterColumn ?? ""}
+				targets={sharedConfig.filterTargets ?? []}
 				rows={data}
 				defaultValues={filterDefaultValues}
 				onDefaultValuesChange={onFilterDefaultValuesChange}
@@ -159,7 +168,15 @@ export function ChartPreview({
 	if (vt === "htmlblock") {
 		return (
 			<div className="h-full w-full">
-				<HtmlBlockVisualization config={config as any} />
+				<HtmlBlockVisualization config={sharedConfig} />
+			</div>
+		);
+	}
+
+	if (vt === "markdown") {
+		return (
+			<div className="h-full w-full">
+				<MarkdownVisualization config={sharedConfig} />
 			</div>
 		);
 	}
@@ -179,63 +196,63 @@ export function ChartPreview({
 		return withTitle(
 			<HeatmapChart
 				data={data}
-				config={config as any}
-				formatRules={(config as any)?.styling?.formatRules ?? []}
+				config={sharedConfig}
+				formatRules={sharedConfig?.styling?.formatRules ?? []}
 			/>,
 		);
 	}
 	if (vt === "halfdonut") {
-		return withTitle(<HalfDonutChart data={data} config={config as any} />);
+		return withTitle(<HalfDonutChart data={data} config={sharedConfig} />);
 	}
 
 	if (vt === "boxplot") {
-		return withTitle(<BoxPlotChart data={data} config={config as any} />);
+		return withTitle(<BoxPlotChart data={data} config={sharedConfig} />);
 	}
 
 	if (vt === "polarbar") {
-		return withTitle(<PolarBarChart data={data} config={config as any} />);
+		return withTitle(<PolarBarChart data={data} config={sharedConfig} />);
 	}
 
 	if (vt === "cluster") {
-		return withTitle(<ClusterChart data={data} config={config as any} />);
+		return withTitle(<ClusterChart data={data} config={sharedConfig} />);
 	}
 
 	if (vt === "multiline") {
 		return withTitle(
 			<MultiLineChart
 				data={data}
-				config={config as any}
+				config={sharedConfig}
 				onStylingChange={onMultilineStylingChange}
 			/>,
 		);
 	}
 
 	if (vt === "worldmap") {
-		return withTitle(<WorldMapChart data={data} config={config as any} />);
+		return withTitle(<WorldMapChart data={data} config={sharedConfig} />);
 	}
 
 	if (vt === "wordcloud") {
-		return withTitle(<WordCloud data={data} config={config as any} />);
+		return withTitle(<WordCloud data={data} config={sharedConfig} />);
 	}
 
 	if (vt === "bubble") {
-		return withTitle(<BubbleChart data={data} config={config as any} />);
+		return withTitle(<BubbleChart data={data} config={sharedConfig} />);
 	}
 
 	if (vt === "sunburst") {
-		return withTitle(<SunburstChart data={data} config={config as any} />);
+		return withTitle(<SunburstChart data={data} config={sharedConfig} />);
 	}
 
 	if (vt === "kpi") {
 		return (
 			<div className="flex h-full min-h-[160px] flex-col overflow-hidden">
-				<KPI data={data} config={config as any} />
+				<KPI data={data} config={sharedConfig} />
 			</div>
 		);
 	}
 
 	if (vt === "pie") {
-		return withTitle(<Pie_Chart data={data} config={config as any} />);
+		return withTitle(<Pie_Chart data={data} config={sharedConfig} />);
 	}
 
 	if (vt === "radar") {
@@ -255,7 +272,7 @@ export function ChartPreview({
 						/>
 					))}
 					<Tooltip
-						content={<ChartTooltip config={config as any} />}
+						content={<ChartTooltip config={sharedConfig} />}
 						wrapperStyle={{ zIndex: 10 }}
 					/>
 					<Legend
@@ -269,7 +286,7 @@ export function ChartPreview({
 
 	if (vt === "treemap") {
 		return withTitle(
-			<TreemapChart data={data} config={config as any} height={height} />,
+			<TreemapChart data={data} config={sharedConfig} height={height} />,
 		);
 	}
 
@@ -301,7 +318,7 @@ export function ChartPreview({
 						}}
 					/>
 					<Tooltip
-						content={<ChartTooltip config={config as any} />}
+						content={<ChartTooltip config={sharedConfig} />}
 						wrapperStyle={{ zIndex: 10 }}
 						cursor={{ strokeDasharray: "3 3" }}
 					/>
@@ -320,37 +337,37 @@ export function ChartPreview({
 			<div className="flex h-full min-h-[300px] flex-col">
 				<PivotTable
 					pivot={pivotResult}
-					styling={(config as any).styling}
+					styling={sharedConfig.styling}
 				/>
 			</div>,
 		);
 	}
 
 	if (vt === "area") {
-		return withTitle(<Area_Chart data={data} config={config as any} />);
+		return withTitle(<Area_Chart data={data} config={sharedConfig} />);
 	}
 
 	if (vt === "line") {
-		return withTitle(<Line_Chart data={data} config={config as any} />);
+		return withTitle(<Line_Chart data={data} config={sharedConfig} />);
 	}
 
 	if (vt === "table") {
 		// Delegate to the shared `TableView` so editor preview honors header /
 		// cell styling, color rules, wrap text, and `fitContainerWidth` exactly
 		// the same way the published dashboard does.
-		return withTitle(<TableView data={data} config={config as any} />);
+		return withTitle(<TableView data={data} config={sharedConfig} />);
 	}
 
 	if (vt === "stackbar") {
 		return withTitle(
-			<Bar_Chart data={data} config={config as any} stacked />,
+			<Bar_Chart data={data} config={sharedConfig} stacked />,
 		);
 	}
 
 	if (vt === "combo") {
-		return withTitle(<Combo_Chart data={data} config={config as any} />);
+		return withTitle(<Combo_Chart data={data} config={sharedConfig} />);
 	}
 
 	// default: bar
-	return withTitle(<Bar_Chart data={data} config={config as any} />);
+	return withTitle(<Bar_Chart data={data} config={sharedConfig} />);
 }

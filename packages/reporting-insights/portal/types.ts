@@ -39,6 +39,7 @@ export type VisualizationType =
 	| "polarbar"
 	| "cluster"
 	| "htmlblock"
+	| "markdown"
 	| "multiline"
 	| "wordcloud"
 	| "bubble"
@@ -107,6 +108,8 @@ export interface VisualizationConfig {
 	llmPrompt?: string;
 	/** HTML Block: the selected LLM model engine ID (persisted) */
 	llmModel?: string;
+	/** MD Text File: the Markdown content to render */
+	markdownContent?: string;
 	/** CSV Export: optional custom label for the export button */
 	csvExportLabel?: string;
 	/** Filter widget: the column whose value is applied to the targeted frames */

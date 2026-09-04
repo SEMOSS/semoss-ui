@@ -44,6 +44,7 @@ import { HeatmapChart } from "@/components/visualizations/HeatmapChart";
 import { HtmlBlockVisualization } from "@/components/visualizations/HtmlBlockVisualization";
 import { KPI } from "@/components/visualizations/KPI";
 import { Line_Chart } from "@/components/visualizations/Line_Chart";
+import { MarkdownVisualization } from "@/components/visualizations/MarkdownVisualization";
 import { MultiLineChart } from "@/components/visualizations/MultiLineChart";
 import { Pie_Chart } from "@/components/visualizations/Pie_Chart";
 import { PivotTable } from "@/components/visualizations/PivotTable";
@@ -98,10 +99,69 @@ export const CHART_COLORS = [
 const AXIS_STYLE = { fontSize: 11, fill: "#94a3b8" };
 const GRID_STYLE = { stroke: "#f1f5f9", strokeDasharray: "0" };
 
-function downloadCsv(data: any[], filename: string) {
+type DashboardRow = Record<string, unknown>;
+type PixelResult = { output: unknown; operationType?: string[] };
+type AggregateGroup = {
+	[xKey: string]: string | number | undefined;
+	_values: Record<string, unknown[]>;
+};
+type ScatterGroup = {
+	label: string;
+	_xValues: unknown[];
+	_yValues: unknown[];
+	_sizeValues: unknown[];
+	_scatterTooltipValues: Record<string, unknown[]>;
+	colorCategory?: unknown;
+};
+type ScatterShapeProps = {
+	cx?: number;
+	cy?: number;
+	payload?: Record<string, unknown>;
+	index?: number;
+};
+
+/** Generic aggregation helper (for all chart types). */
+function aggregateValue(values: unknown[], aggType: string): number {
+	if (aggType === "count") {
+		return values.length;
+	}
+	if (aggType === "countUnique") {
+		return new Set(values).size;
+	}
+
+	// For numeric aggregations, filter to valid numbers
+	const numVals = values
+		.map((v) => Number(v))
+		.filter((v) => !Number.isNaN(v));
+	if (!numVals.length) return 0;
+
+	switch (aggType) {
+		case "avg":
+			return numVals.reduce((a, b) => a + b, 0) / numVals.length;
+		case "sum":
+			return numVals.reduce((a, b) => a + b, 0);
+		case "max":
+			return Math.max(...numVals);
+		case "min":
+			return Math.min(...numVals);
+		case "median": {
+			const sorted = [...numVals].sort((a, b) => a - b);
+			const mid = Math.floor(sorted.length / 2);
+			return sorted.length % 2 === 0
+				? (sorted[mid - 1] + sorted[mid]) / 2
+				: sorted[mid];
+		}
+		case "last":
+			return numVals[numVals.length - 1];
+		default:
+			return numVals.reduce((a, b) => a + b, 0); // sum
+	}
+}
+
+function downloadCsv(data: DashboardRow[], filename: string) {
 	if (!data.length) return;
 	const cols = Object.keys(data[0]);
-	const escapeCsv = (v: any) => {
+	const escapeCsv = (v: unknown) => {
 		const s = v != null ? String(v) : "";
 		return s.includes(",") || s.includes('"') || s.includes("\n")
 			? `"${s.replace(/"/g, '""')}"`
@@ -135,7 +195,7 @@ interface Props {
 	fillContainer?: boolean;
 	headerActions?: React.ReactNode;
 	/** Skip API call and render supplied data directly (editor preview) */
-	preloadedData?: any[];
+	preloadedData?: DashboardRow[];
 	/**
 	 * When true, the dashboard has a centralized Parameters sheet. All "waiting"
 	 * states redirect the user to that sheet instead of showing inline forms or
@@ -213,8 +273,10 @@ function FacetSelect({
 			</button>
 			{open && (
 				<>
-					<div
-						className="fixed inset-0 z-30"
+					<button
+						type="button"
+						aria-label="Close facet selector"
+						className="fixed inset-0 z-30 cursor-default"
 						onClick={() => setOpen(false)}
 					/>
 					<div className="-translate-x-1/2 absolute bottom-full left-1/2 z-40 mb-1.5 w-52 overflow-hidden rounded-lg border border-slate-200 bg-white shadow-lg">
@@ -305,11 +367,15 @@ function FacetNavBar({
 }
 
 /** Distinct first-column values from a SEMOSS query result (for dropdown options). */
-function firstColumnValues(output: any): string[] {
+function firstColumnValues(output: unknown): string[] {
+	const o = output as
+		| { data?: { values?: unknown[] } | unknown[]; values?: unknown[] }
+		| null
+		| undefined;
 	const values =
-		output?.data?.values ??
-		output?.values ??
-		(Array.isArray(output?.data) ? output.data : []);
+		(o?.data as { values?: unknown[] })?.values ??
+		o?.values ??
+		(Array.isArray(o?.data) ? o.data : []);
 	if (!Array.isArray(values)) return [];
 	const out: string[] = [];
 	const seen = new Set<string>();
@@ -351,7 +417,9 @@ export function DashboardVisualization({
 	const hasEventParams = (src.parameters ?? []).some(
 		(p) => p.inputType === "event",
 	);
-	const [rawData, setRawData] = useState<any[]>(() => preloadedData ?? []);
+	const [rawData, setRawData] = useState<DashboardRow[]>(
+		() => (preloadedData ?? []) as DashboardRow[],
+	);
 	const [showPhiModal, setShowPhiModal] = useState(false);
 	// csvexport: data is fetched on demand (button click) rather than on app load.
 	const [pendingExport, setPendingExport] = useState(false);
@@ -420,9 +488,10 @@ export function DashboardVisualization({
 		return vals;
 	}, [rawData, facetColumn]);
 
+	// biome-ignore lint/correctness/useExhaustiveDependencies: facet reset is intentionally tied to facet membership changing, not every raw row update.
 	useEffect(() => {
 		setFacetIndex(0);
-	}, [facetColumn, rawData]);
+	}, [facetColumn, facetValues.length]);
 
 	const facetValue = facetValues[facetIndex];
 	const facetData = useMemo(
@@ -494,6 +563,7 @@ export function DashboardVisualization({
 			(p) => p.inputType === "multiselect" && p.optionsQuery,
 		),
 	);
+	// biome-ignore lint/correctness/useExhaustiveDependencies: this options fetch is intentionally keyed to the parameter schema (paramOptionsKey) and database, not every derived value.
 	useEffect(() => {
 		const toFetch = (src.parameters ?? []).filter(
 			(p) =>
@@ -513,7 +583,7 @@ export function DashboardVisualization({
 			for (const p of toFetch) {
 				try {
 					const db = p.optionsDatabaseId || src.databaseId;
-					let outputRaw: any;
+					let outputRaw: unknown;
 					if (sharedRun) {
 						// Route through the shared cache so charts that reuse the same query
 						// (and thus the same dropdown options) fetch the options list once.
@@ -522,7 +592,7 @@ export function DashboardVisualization({
 					} else {
 						const q = escapeSqlForPixel(p.optionsQuery ?? "");
 						const { pixelReturn } = await actions.run<
-							[{ output: any; operationType?: string[] }]
+							[{ output: unknown; operationType?: string[] }]
 						>(
 							`Database(database=["${db}"]) | Query("${q}") | Collect(-1);`,
 						);
@@ -551,7 +621,6 @@ export function DashboardVisualization({
 		return () => {
 			cancelled = true;
 		};
-		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [src.databaseId, paramOptionsKey]);
 
 	useEffect(() => {
@@ -563,6 +632,7 @@ export function DashboardVisualization({
 		}
 	}, [preloadedData]);
 
+	// biome-ignore lint/correctness/useExhaustiveDependencies: this reset intentionally follows the transformed `data` output only, not the append-tracking ref.
 	useEffect(() => {
 		// A "Load more" append grows the dataset but should keep the user on their page
 		// (the seamless Next handler advances explicitly). A fresh load / filter change
@@ -585,11 +655,15 @@ export function DashboardVisualization({
 		}
 	}, [cfgPageSize]); // eslint-disable-line react-hooks/exhaustive-deps
 
+	// biome-ignore lint/correctness/useExhaustiveDependencies: this query lifecycle is intentionally keyed to the effective query/run identity, not every helper it closes over.
 	useEffect(() => {
 		// Allow event-triggered re-queries even when preloaded data was supplied.
 		if (preloadedData && !(hasEventParams && eventRunCounter > 0)) return;
-		// HTML blocks render from config — no database query needed
-		if (visualization.visualizationType === "htmlblock") {
+		// Content blocks render from config — no database query needed
+		if (
+			visualization.visualizationType === "htmlblock" ||
+			visualization.visualizationType === "markdown"
+		) {
 			setLoading(false);
 			return;
 		}
@@ -623,7 +697,6 @@ export function DashboardVisualization({
 		// is already a fresh fetch — and every chart bound to the same query collapses
 		// onto that one fetch. No per-chart bust here.
 		void loadData(0);
-		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [
 		src.query,
 		src.databaseId,
@@ -681,12 +754,9 @@ export function DashboardVisualization({
 	/** Map SEMOSS [headers, values[][]] into row objects. Coerce bare numeric strings to numbers
 	 *  so that downstream consumers (inferColumnType, formatValue) see proper JS number types. */
 	const NUMERIC_RE = /^-?\d+(\.\d+)?([eE][+-]?\d+)?$/;
-	const toRows = (
-		headers: string[],
-		values: any[][],
-	): Record<string, any>[] =>
+	const toRows = (headers: string[], values: unknown[][]): DashboardRow[] =>
 		values.map((row) => {
-			const obj: any = {};
+			const obj: DashboardRow = {};
 			headers.forEach((h, i) => {
 				const v = row[i];
 				obj[h] =
@@ -702,13 +772,17 @@ export function DashboardVisualization({
 	 * where SEMOSS puts them: either as top-level fields of pixelReturn[0].output
 	 * (data / numCollected / taskId), or as separate pixel outputs at [1]/[2].
 	 */
-	const readTaskMeta = (out: any, pixelReturn: any[], rowCount: number) => {
+	const readTaskMeta = (
+		out: Record<string, unknown> | null | undefined,
+		pixelReturn: PixelResult[],
+		rowCount: number,
+	) => {
 		const numCollected = Number(
 			out?.numCollected ?? pixelReturn?.[1]?.output ?? rowCount,
 		);
 		const taskRaw =
 			out?.taskId ??
-			out?.taskOptions?.taskId ??
+			(out?.taskOptions as { taskId?: unknown } | undefined)?.taskId ??
 			pixelReturn?.[2]?.output ??
 			null;
 		return {
@@ -733,7 +807,7 @@ export function DashboardVisualization({
 				const pixel = `Database(database=["${src.databaseId}"]) | Query("${escapeSqlForPixel(q)}") | Collect(${n});`;
 				const { pixelReturn } =
 					await actions.run<
-						[{ output: any; operationType?: string[] }]
+						[{ output: unknown; operationType?: string[] }]
 					>(pixel);
 				const pr = pixelReturn[0];
 				if (
@@ -744,12 +818,18 @@ export function DashboardVisualization({
 				}
 				// SEMOSS Collect output carries `data`, `numCollected`, and `taskId` as
 				// TOP-LEVEL fields of pixelReturn[0].output (not separate pixel steps).
-				const out = pr.output as any;
-				const headers = out?.data?.headers ?? out?.headers ?? [];
-				const values = out?.data?.values ?? out?.values ?? [];
+				const out = pr.output as Record<string, unknown> | null;
+				const headers =
+					(out?.data as { headers?: string[] })?.headers ??
+					(out?.headers as string[]) ??
+					[];
+				const values =
+					(out?.data as { values?: unknown[][] })?.values ??
+					(out?.values as unknown[][]) ??
+					[];
 				const { taskId } = readTaskMeta(
 					out,
-					pixelReturn as any[],
+					pixelReturn as PixelResult[],
 					values.length,
 				);
 				tableTaskId.current = taskId;
@@ -766,7 +846,9 @@ export function DashboardVisualization({
 			// EVERYTHING ELSE: collect all rows (-1) of the exact query via the shared
 			// cache (charts sharing a query fetch once). A too-large result will throw.
 			const version = `${runKey}:${refreshNonce.current}`;
-			let headers: any, values: any, raw: any;
+			let headers: string[] | null;
+			let values: unknown[] | null;
+			let raw: unknown;
 			if (sharedRun) {
 				const r = await sharedRun(
 					src.databaseId,
@@ -781,7 +863,7 @@ export function DashboardVisualization({
 				const pixel = `Database(database=["${src.databaseId}"]) | Query("${escapeSqlForPixel(q)}") | Collect(${batchSize});`;
 				const { pixelReturn } =
 					await actions.run<
-						[{ output: any; operationType?: string[] }]
+						[{ output: unknown; operationType?: string[] }]
 					>(pixel);
 				const pr = pixelReturn[0];
 				if (
@@ -790,9 +872,21 @@ export function DashboardVisualization({
 				) {
 					throw new Error(String(pr.output ?? "Query failed."));
 				}
-				raw = pr.output as any;
-				values = raw?.data?.values ?? raw?.values ?? raw?.data ?? null;
-				headers = raw?.data?.headers ?? raw?.headers ?? null;
+				raw = pr.output;
+				const rawObj = raw as Record<string, unknown> | null;
+				const rawData = rawObj?.data as
+					| { values?: unknown[]; headers?: string[] }
+					| unknown[]
+					| undefined;
+				values =
+					(Array.isArray(rawData) ? undefined : rawData?.values) ??
+					(rawObj?.values as unknown[] | undefined) ??
+					(Array.isArray(rawData) ? rawData : undefined) ??
+					null;
+				headers =
+					(Array.isArray(rawData) ? undefined : rawData?.headers) ??
+					(rawObj?.headers as string[] | undefined) ??
+					null;
 			}
 			if (
 				values &&
@@ -802,13 +896,17 @@ export function DashboardVisualization({
 			) {
 				setRawData(toRows(headers, values));
 			} else if (Array.isArray(raw) && raw.length > 0) {
-				setRawData(raw);
+				setRawData(raw as DashboardRow[]);
 			} else {
 				setError("Unexpected data format returned from query.");
 			}
-		} catch (err: any) {
+		} catch (err: unknown) {
 			// Surface the real database/pixel message so users can fix the SQL.
-			const msg = String(err?.message ?? err ?? "").trim();
+			const msg = String(
+				(err && typeof err === "object" && "message" in err
+					? (err as { message?: unknown }).message
+					: err) ?? "",
+			).trim();
 			setError(msg || "Failed to load data. Please check your query.");
 		} finally {
 			setLoading(false);
@@ -823,9 +921,9 @@ export function DashboardVisualization({
 		try {
 			const pixel = `Task(${tableTaskId.current}) | Collect(${n});`;
 			const { pixelReturn } =
-				await actions.run<[{ output: any; operationType?: string[] }]>(
-					pixel,
-				);
+				await actions.run<
+					[{ output: unknown; operationType?: string[] }]
+				>(pixel);
 			const pr = pixelReturn[0];
 			if (
 				Array.isArray(pr.operationType) &&
@@ -835,12 +933,18 @@ export function DashboardVisualization({
 					String(pr.output ?? "Failed to load more rows."),
 				);
 			}
-			const out = pr.output as any;
-			const headers = out?.data?.headers ?? out?.headers ?? [];
-			const values = out?.data?.values ?? out?.values ?? [];
+			const out = pr.output as Record<string, unknown> | null;
+			const headers =
+				(out?.data as { headers?: string[] })?.headers ??
+				(out?.headers as string[]) ??
+				[];
+			const values =
+				(out?.data as { values?: unknown[][] })?.values ??
+				(out?.values as unknown[][]) ??
+				[];
 			const { taskId } = readTaskMeta(
 				out,
-				pixelReturn as any[],
+				pixelReturn as PixelResult[],
 				values.length,
 			);
 			// Keep the (possibly refreshed) task id for the next page.
@@ -850,10 +954,13 @@ export function DashboardVisualization({
 			// END SIGNAL: fewer rows than requested this page → the task is exhausted.
 			// No total cap — a full page means there's still more to load.
 			setDbHasMore(values.length >= n);
-		} catch (err: any) {
+		} catch (err: unknown) {
 			setError(
-				String(err?.message ?? err ?? "").trim() ||
-					"Failed to load more rows.",
+				String(
+					(err && typeof err === "object" && "message" in err
+						? (err as { message?: unknown }).message
+						: err) ?? "",
+				).trim() || "Failed to load more rows.",
 			);
 		} finally {
 			setLoadingMore(false);
@@ -926,42 +1033,6 @@ export function DashboardVisualization({
 	);
 
 	// Generic aggregation helper (for all chart types)
-	const aggregateValue = (values: any[], aggType: string): number => {
-		if (aggType === "count") {
-			return values.length;
-		}
-		if (aggType === "countUnique") {
-			return new Set(values).size;
-		}
-
-		// For numeric aggregations, filter to valid numbers
-		const numVals = values
-			.map((v) => Number(v))
-			.filter((v) => !Number.isNaN(v));
-		if (!numVals.length) return 0;
-
-		switch (aggType) {
-			case "avg":
-				return numVals.reduce((a, b) => a + b, 0) / numVals.length;
-			case "sum":
-				return numVals.reduce((a, b) => a + b, 0);
-			case "max":
-				return Math.max(...numVals);
-			case "min":
-				return Math.min(...numVals);
-			case "median": {
-				const sorted = [...numVals].sort((a, b) => a - b);
-				const mid = Math.floor(sorted.length / 2);
-				return sorted.length % 2 === 0
-					? (sorted[mid - 1] + sorted[mid]) / 2
-					: sorted[mid];
-			}
-			case "last":
-				return numVals[numVals.length - 1];
-			default:
-				return numVals.reduce((a, b) => a + b, 0); // sum
-		}
-	};
 
 	// Group and aggregate data by xKey for charts (uses facetData so facet filter applies)
 	const chartData = useMemo(() => {
@@ -992,17 +1063,18 @@ export function DashboardVisualization({
 						},
 					]
 				: [];
-		const grouped = new Map<string, any>();
+		const grouped = new Map<string, AggregateGroup>();
 
 		facetData.forEach((row) => {
 			const key = String(row[xKey] ?? "");
 			if (!grouped.has(key)) {
 				grouped.set(key, {
 					[xKey]: key,
-					_values: {} as Record<string, any[]>,
+					_values: {},
 				});
 			}
-			const g = grouped.get(key)!;
+			const g = grouped.get(key);
+			if (!g) return;
 			yKeys.forEach((k) => {
 				if (!g._values[k]) g._values[k] = [];
 				g._values[k].push(row[k]);
@@ -1014,7 +1086,7 @@ export function DashboardVisualization({
 		});
 
 		return Array.from(grouped.values()).map((g) => {
-			const result: any = { [xKey]: g[xKey] };
+			const result: Record<string, unknown> = { [xKey]: g[xKey] };
 			yKeys.forEach((k) => {
 				const values = g._values[k] || [];
 				const aggType = cfg.columnAggregations?.[k] || "sum";
@@ -1042,6 +1114,9 @@ export function DashboardVisualization({
 		// HTML block renders directly from config — no data loading needed
 		if (visualization.visualizationType === "htmlblock") {
 			return <HtmlBlockVisualization config={visualization.config} />;
+		}
+		if (visualization.visualizationType === "markdown") {
+			return <MarkdownVisualization config={visualization.config} />;
 		}
 
 		// Event param viz: show idle state until the first trigger fires.
@@ -1185,6 +1260,9 @@ export function DashboardVisualization({
 					}
 					displayType={
 						visualization.config?.filterDisplayType ?? "dropdown"
+					}
+					buttonLayout={
+						visualization.config?.filterButtonLayout ?? "horizontal"
 					}
 					multiSelect={
 						visualization.config?.filterMultiSelect ?? true
@@ -1549,27 +1627,29 @@ export function DashboardVisualization({
 					: [];
 
 			// For scatter, we need to group by label and aggregate the numeric columns
-			let scatterData: any[] = [];
+			let scatterData: Record<string, unknown>[] = [];
 
 			if (labelKey && facetData.length > 0) {
-				const grouped = new Map<string, any>();
+				const grouped = new Map<string, ScatterGroup>();
 
 				facetData.forEach((row) => {
 					const labelValue = String(row[labelKey] ?? "");
 					if (!grouped.has(labelValue)) {
-						const _scatterTooltipValues: Record<string, any[]> = {};
+						const _scatterTooltipValues: Record<string, unknown[]> =
+							{};
 						for (const { column } of scatterTooltipCols)
 							_scatterTooltipValues[column] = [];
 						grouped.set(labelValue, {
 							label: labelValue,
-							_xValues: [] as any[],
-							_yValues: [] as any[],
-							_sizeValues: [] as any[],
+							_xValues: [],
+							_yValues: [],
+							_sizeValues: [],
 							_scatterTooltipValues,
 							colorCategory: colorKey ? row[colorKey] : undefined,
 						});
 					}
-					const g = grouped.get(labelValue)!;
+					const g = grouped.get(labelValue);
+					if (!g) return;
 					g._xValues.push(row[xKey]);
 					g._yValues.push(row[yKeys[0]]);
 					if (sizeKey) g._sizeValues.push(row[sizeKey]);
@@ -1578,7 +1658,7 @@ export function DashboardVisualization({
 				});
 
 				scatterData = Array.from(grouped.values()).map((g) => {
-					const point: any = { label: g.label };
+					const point: Record<string, unknown> = { label: g.label };
 
 					const xAgg = cfg.columnAggregations?.[xKey] || "avg";
 					point[xKey] = aggregateValue(g._xValues, xAgg);
@@ -1609,7 +1689,7 @@ export function DashboardVisualization({
 			} else {
 				// No label specified, use chartData as-is
 				scatterData = chartData.map((row) => {
-					const point: any = {
+					const point: Record<string, unknown> = {
 						[xKey]: row[xKey],
 						[yKeys[0]]: row[yKeys[0]],
 					};
@@ -1642,23 +1722,25 @@ export function DashboardVisualization({
 			if (sizeKey) {
 				const sizes = scatterData
 					.map((d) => d[sizeKey])
-					.filter((s) => s != null);
+					.filter((s): s is number | string => s != null)
+					.map((s) => Number(s));
 				if (sizes.length > 0) {
 					const minSize = Math.min(...sizes);
 					const maxSize = Math.max(...sizes);
 					const range = maxSize - minSize || 1;
-					scatterData.forEach((d) => {
+					for (const d of scatterData) {
 						if (d[sizeKey] != null) {
-							d.size = 3 + ((d[sizeKey] - minSize) / range) * 12; // Scale to 3-15 range
+							const sizeVal = Number(d[sizeKey]);
+							d.size = 3 + ((sizeVal - minSize) / range) * 12; // Scale to 3-15 range
 						} else {
 							d.size = 5; // Default size
 						}
-					});
+					}
 				} else {
-					scatterData.forEach((d) => (d.size = 5));
+					for (const d of scatterData) d.size = 5;
 				}
 			} else {
-				scatterData.forEach((d) => (d.size = 5));
+				for (const d of scatterData) d.size = 5;
 			}
 
 			return (
@@ -1790,9 +1872,11 @@ export function DashboardVisualization({
 										CHART_COLORS[idx % CHART_COLORS.length]
 									}
 									fillOpacity={0.75}
-									shape={(props: any) => {
-										const { cx, cy, payload } = props;
-										const r = payload.size || 5;
+									shape={(props: ScatterShapeProps) => {
+										const { cx, cy } = props;
+										const payload = props.payload ?? {};
+										const r =
+											Number(payload.size ?? 5) || 5;
 										const filterRow = labelKey
 											? { [labelKey]: payload.label }
 											: { [xKey]: payload[xKey] };
@@ -1800,6 +1884,7 @@ export function DashboardVisualization({
 											? String(payload.label ?? "")
 											: String(payload[xKey] ?? "");
 										return (
+											// biome-ignore lint/a11y/useSemanticElements: recharts renders this as a raw SVG shape; a real <button> isn't a valid child of a scatter series.
 											<circle
 												cx={cx}
 												cy={cy}
@@ -1814,6 +1899,9 @@ export function DashboardVisualization({
 												stroke="#fff"
 												strokeWidth={1}
 												style={{ cursor: "pointer" }}
+												role="button"
+												tabIndex={0}
+												aria-label={label}
 												onClick={() =>
 													onTrigger?.({
 														trigger: "click",
@@ -1821,6 +1909,18 @@ export function DashboardVisualization({
 														row: filterRow,
 													})
 												}
+												onKeyDown={(e) => {
+													if (
+														e.key === "Enter" ||
+														e.key === " "
+													) {
+														onTrigger?.({
+															trigger: "click",
+															label,
+															row: filterRow,
+														});
+													}
+												}}
 												onMouseEnter={() =>
 													onTrigger?.({
 														trigger: "hover",
@@ -1845,9 +1945,10 @@ export function DashboardVisualization({
 								isAnimationActive={false}
 								fill={CHART_COLORS[0]}
 								fillOpacity={0.75}
-								shape={(props: any) => {
-									const { cx, cy, payload } = props;
-									const r = payload.size || 5;
+								shape={(props: ScatterShapeProps) => {
+									const { cx, cy } = props;
+									const payload = props.payload ?? {};
+									const r = Number(payload.size ?? 5) || 5;
 									const filterRow = labelKey
 										? { [labelKey]: payload.label }
 										: { [xKey]: payload[xKey] };
@@ -1855,6 +1956,7 @@ export function DashboardVisualization({
 										? String(payload.label ?? "")
 										: String(payload[xKey] ?? "");
 									return (
+										// biome-ignore lint/a11y/useSemanticElements: recharts renders this as a raw SVG shape; a real <button> isn't a valid child of a scatter series.
 										<circle
 											cx={cx}
 											cy={cy}
@@ -1864,6 +1966,9 @@ export function DashboardVisualization({
 											stroke="#fff"
 											strokeWidth={1}
 											style={{ cursor: "pointer" }}
+											role="button"
+											tabIndex={0}
+											aria-label={label}
 											onClick={() =>
 												onTrigger?.({
 													trigger: "click",
@@ -1871,6 +1976,18 @@ export function DashboardVisualization({
 													row: filterRow,
 												})
 											}
+											onKeyDown={(e) => {
+												if (
+													e.key === "Enter" ||
+													e.key === " "
+												) {
+													onTrigger?.({
+														trigger: "click",
+														label,
+														row: filterRow,
+													});
+												}
+											}}
 											onMouseEnter={() =>
 												onTrigger?.({
 													trigger: "hover",
@@ -2024,20 +2141,23 @@ export function DashboardVisualization({
 									}
 									label={
 										radarShowValueLabels
-											? (props: any) => {
+											? (props: {
+													index?: number;
+													x?: number;
+													y?: number;
+												}) => {
+													const idx =
+														props.index ?? -1;
 													const raw =
-														radarPivoted[
-															props.index
-														]?.[s];
+														radarPivoted[idx]?.[s];
 													if (
 														raw === undefined ||
 														raw === null
 													)
 														return null;
 													const col = String(
-														radarPivoted[
-															props.index
-														]?._col ?? "",
+														radarPivoted[idx]
+															?._col ?? "",
 													);
 													const pos =
 														radarValueLabel?.position ??
@@ -2103,7 +2223,15 @@ export function DashboardVisualization({
 						{radarShowTooltip && (
 							<Tooltip
 								wrapperStyle={{ zIndex: 10 }}
-								content={(props: any) => {
+								content={(props: {
+									active?: boolean;
+									payload?: {
+										dataKey?: string;
+										name?: string;
+										color?: string;
+										payload?: Record<string, unknown>;
+									}[];
+								}) => {
 									if (!props.active || !props.payload?.length)
 										return null;
 									const spoke = props.payload[0]?.payload;
@@ -2111,9 +2239,9 @@ export function DashboardVisualization({
 									return (
 										<div className="min-w-[120px] rounded-md border border-slate-200 bg-white p-2 text-xs shadow-md">
 											<p className="mb-1.5 truncate font-semibold text-slate-700">
-												{spoke?._axis ?? ""}
+												{String(spoke?._axis ?? "")}
 											</p>
-											{props.payload.map((p: any) => {
+											{props.payload.map((p) => {
 												// Always show original raw value regardless of normalization mode
 												const rawVal =
 													radarPivoted.find(
@@ -2206,6 +2334,7 @@ export function DashboardVisualization({
 				footerExtra={
 					hasMoreInDb ? (
 						<button
+							type="button"
 							onClick={() => void loadMore()}
 							disabled={loadingMore}
 							title="Fetch the next page of rows from the database"
@@ -2233,7 +2362,7 @@ export function DashboardVisualization({
 					: [];
 			return (
 				aggregateTableRows(
-					data as Record<string, any>[],
+					data as Record<string, unknown>[],
 					cols,
 					visualization.config?.columnAggregations ?? {},
 				) ?? data
@@ -2242,26 +2371,24 @@ export function DashboardVisualization({
 		if (visualization.visualizationType !== "pivot") return data;
 		// Flatten the pivot result into rows for CSV
 		const rowFields = pivotResult.rowFields;
-		const out: any[] = [];
+		const out: Record<string, unknown>[] = [];
 		const flatten = (row: (typeof pivotResult.rows)[number]) => {
-			const flat: Record<string, any> = {};
-			rowFields.forEach(
-				(f, idx) => (flat[f] = row.rowHeaders[idx] ?? ""),
-			);
-			pivotResult.columns.forEach((col) => {
+			const flat: Record<string, unknown> = {};
+			for (const [idx, f] of rowFields.entries())
+				flat[f] = row.rowHeaders[idx] ?? "";
+			for (const col of pivotResult.columns) {
 				const header = col.columnHeaders.length
 					? `${col.columnHeaders.join(" / ")} - ${col.valueField}`
 					: col.valueField;
 				flat[header] = row.cells[col.key];
-			});
+			}
 			if (pivotResult.hasGrandTotalColumn) {
-				pivotResult.valueFields.forEach((vf) => {
+				for (const vf of pivotResult.valueFields)
 					flat[`Total ${vf}`] = row.rowTotals[vf];
-				});
 			}
 			return flat;
 		};
-		pivotResult.rows.forEach((r) => out.push(flatten(r)));
+		for (const r of pivotResult.rows) out.push(flatten(r));
 		if (pivotResult.grandTotalRow)
 			out.push(flatten(pivotResult.grandTotalRow));
 		return out;
@@ -2296,6 +2423,7 @@ export function DashboardVisualization({
 						(visualization.visualizationType !== "table" &&
 							visualization.visualizationType !== "kpi")) && (
 						<button
+							type="button"
 							onClick={() =>
 								visualization.phi
 									? setShowPhiModal(true)
@@ -2323,6 +2451,7 @@ export function DashboardVisualization({
 					/>
 				)}
 				<button
+					type="button"
 					onClick={() => void loadData(0, true)}
 					title="Refresh"
 					className="rounded-lg p-1 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600"
@@ -2349,6 +2478,7 @@ export function DashboardVisualization({
 					"csvexport",
 					"filter",
 					"htmlblock",
+					"markdown",
 				];
 				const stretch =
 					!!size?.stretch &&

@@ -8,7 +8,14 @@
  */
 
 import { Check, ChevronDown, Filter as FilterIcon, X } from "lucide-react";
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import {
+	useCallback,
+	useEffect,
+	useLayoutEffect,
+	useMemo,
+	useRef,
+	useState,
+} from "react";
 import { createPortal } from "react-dom";
 import { FilterVisualization } from "@/components/tools/shared/FilterVisualization";
 import {
@@ -31,6 +38,7 @@ type DisplayType =
 	| "datepicker"
 	| "button"
 	| "float";
+type ButtonLayout = "horizontal" | "vertical";
 
 interface Props {
 	vizId: string;
@@ -41,13 +49,15 @@ interface Props {
 	targets: string[];
 	/** Optional rows from the widget's own query (legacy). Options are normally
 	 *  derived from the TARGETS' loaded rows, so a query of its own is not needed. */
-	rows?: Record<string, any>[];
+	rows?: Record<string, unknown>[];
 	/** Values to pre-select when no store entry exists yet (saved from editor preview). */
 	defaultValues?: string[];
 	/** Called whenever the selection changes: The editor uses this to persist defaults. */
 	onDefaultValuesChange?: (values: string[]) => void;
 	/** How filter values are presented to the viewer. */
 	displayType?: DisplayType;
+	/** Arrange button options beside or above each other. */
+	buttonLayout?: ButtonLayout;
 	/** Allow selecting multiple values. Not applicable to typeahead. */
 	multiSelect?: boolean;
 	/** Apply filter immediately on selection. When false, shows Apply button. */
@@ -71,6 +81,7 @@ export function FilterWidget({
 	defaultValues,
 	onDefaultValuesChange,
 	displayType = "dropdown",
+	buttonLayout = "horizontal",
 	multiSelect = true,
 	autoRun = true,
 	filterFloatRules,
@@ -95,6 +106,7 @@ export function FilterWidget({
 
 	// Publish defaults into the store on mount so targeted vizzes filter immediately
 	// even before the user interacts with this widget.
+	// biome-ignore lint/correctness/useExhaustiveDependencies: intentional mount-only effect — publishes editor-saved defaults once without re-running on every dependency change.
 	useEffect(() => {
 		if (!store || !targets.length) return;
 		if (store.getFilter(vizId)) return; // already set — don't override
@@ -208,7 +220,7 @@ export function FilterWidget({
 	// Position the option list in a portal (fixed) so it overlays outside the panel
 	// instead of clipping — no window resize needed to see a long list. Flips upward
 	// when there isn't room below, and clamps to the viewport.
-	const reposition = () => {
+	const reposition = useCallback(() => {
 		const el = anchorRef.current;
 		if (!el) return;
 		const r = el.getBoundingClientRect();
@@ -228,11 +240,10 @@ export function FilterWidget({
 			Math.min(r.left, window.innerWidth - width - 8),
 		);
 		setPos({ top, left, width, maxH });
-	};
+	}, [filtered.length]);
 	useLayoutEffect(() => {
 		if (open) reposition();
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [open, filtered.length]);
+	}, [open, reposition]);
 	useEffect(() => {
 		if (!open) return;
 		const handle = () => reposition();
@@ -242,8 +253,7 @@ export function FilterWidget({
 			window.removeEventListener("resize", handle);
 			window.removeEventListener("scroll", handle, true);
 		};
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [open]);
+	}, [open, reposition]);
 
 	// Push to store immediately() also persists defaults via onDefaultValuesChange).
 	const apply = (next: string[]) => {
@@ -660,9 +670,9 @@ export function FilterWidget({
 					{/* Column label + Clear button (not shown for float) */}
 					{displayType !== "float" && (
 						<div className="flex items-center justify-between">
-							<label className="text-[11px] text-stone-500">
+							<span className="text-[11px] text-stone-500">
 								{column}
-							</label>
+							</span>
 							{(displaySelected.length > 0 ||
 								(displayType === "datepicker" &&
 									multiSelect &&
@@ -687,6 +697,8 @@ export function FilterWidget({
 					{/*Display type renderers */}
 					{displayType === "dropdown" && (
 						<div className="relative">
+							{/* biome-ignore lint/a11y/noStaticElementInteractions: the real interactive control is the nested <input>, which already opens on focus/keyboard; this click is a mouse convenience for the surrounding padding. */}
+							{/* biome-ignore lint/a11y/useKeyWithClickEvents: keyboard access is handled by the nested <input>'s own focus/key handling. */}
 							<div
 								ref={anchorRef}
 								onClick={() => setOpen(true)}
@@ -952,9 +964,9 @@ export function FilterWidget({
 											/>
 
 											{/* Tick marks — one per value, sitting on the track */}
-											{options.map((_, i) => (
+											{options.map((o, i) => (
 												<div
-													key={i}
+													key={o}
 													className="pointer-events-none absolute h-3 w-px bg-stone-400/60"
 													style={{
 														left: `${(i / (options.length - 1)) * 100}%`,
@@ -1047,7 +1059,7 @@ export function FilterWidget({
 										<div className="relative mx-3 h-4">
 											{options.map((o, i) => (
 												<span
-													key={i}
+													key={o}
 													className="-translate-x-1/2 absolute whitespace-nowrap text-[10px] text-stone-400 leading-none"
 													style={{
 														left: `${(i / (options.length - 1)) * 100}%`,
@@ -1212,7 +1224,13 @@ export function FilterWidget({
 					)}
 
 					{displayType === "button" && (
-						<div className="flex flex-wrap gap-1.5">
+						<div
+							className={
+								buttonLayout === "vertical"
+									? "flex flex-col items-stretch gap-1.5"
+									: "flex flex-wrap gap-1.5"
+							}
+						>
 							{options.length === 0 && (
 								<p className="text-[12px] text-stone-400">
 									No values loaded yet.
@@ -1229,7 +1247,7 @@ export function FilterWidget({
 											on
 												? "bg-indigo-600 text-white"
 												: "bg-stone-100 text-stone-600 hover:bg-stone-200"
-										}`}
+										} ${buttonLayout === "vertical" ? "w-full text-left" : ""}`}
 									>
 										{o}
 									</button>

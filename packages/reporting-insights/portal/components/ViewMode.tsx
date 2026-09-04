@@ -40,6 +40,7 @@ import { HeatmapChart } from "@/components/visualizations/HeatmapChart";
 import { HtmlBlockVisualization } from "@/components/visualizations/HtmlBlockVisualization";
 import { aggregateKpiValue, KPI } from "@/components/visualizations/KPI";
 import { Line_Chart } from "@/components/visualizations/Line_Chart";
+import { MarkdownVisualization } from "@/components/visualizations/MarkdownVisualization";
 import { MultiLineChart } from "@/components/visualizations/MultiLineChart";
 import { Pie_Chart } from "@/components/visualizations/Pie_Chart";
 import { PivotTable } from "@/components/visualizations/PivotTable";
@@ -53,7 +54,10 @@ import { TableView } from "@/components/visualizations/TableView";
 import { TreemapChart } from "@/components/visualizations/TreemapChart";
 import { WordCloud } from "@/components/visualizations/WordCloud";
 import { WorldMapChart } from "@/components/visualizations/WorldMapChart";
-import { CsvExportButton } from "@/components/widgets/CsvExportButton";
+import {
+	CsvExportButton,
+	type CsvExportConfig,
+} from "@/components/widgets/CsvExportButton";
 import { FilterWidget } from "@/components/widgets/FilterWidget";
 import { pivotTransform, usePivotTransform } from "@/hooks/usePivotTransform";
 import { useVizEvents } from "@/hooks/useVizEvents";
@@ -78,6 +82,10 @@ import { aggregateTableRows } from "@/lib/tableAggregate";
 import { filterRowMatrix } from "@/lib/vizFilter";
 import { contentSizeStyles, hasContentSize } from "@/lib/vizSize";
 import { applyVizSort } from "@/lib/vizSort";
+import type {
+	Sheet as AppSheet,
+	VisualizationConfig as SharedVisualizationConfig,
+} from "@/types/dashboard";
 import { buildFlexModel } from "@/utils/dashboardLayout";
 import {
 	loadMoreFromTask,
@@ -141,36 +149,39 @@ function exportCsv(
 		const rows = toChartData(result);
 		const yKeys = config?.yKeys ?? [];
 		headers = yKeys;
+		// Cast: portal's VisualizationConfig is a structural subset of the shared dashboard config
+		const sharedConfig = config as unknown as SharedVisualizationConfig;
 		const flat = yKeys.map((col) =>
-			String(aggregateKpiValue(rows, col, config as any)),
+			String(aggregateKpiValue(rows, col, sharedConfig)),
 		);
 		dataRows = [flat.map(escape).join(",")];
 	} else if (vizType === "pivot") {
 		// Flatten the pivot result into rows for CSV (mirrors DashboardVisualization.exportData)
 		const rows = toChartData(result);
 		// Cast: portal's VisualizationConfig is a structural subset of the shared dashboard config
-		const pivot = pivotTransform(rows, config as any);
+		const pivot = pivotTransform(
+			rows,
+			config as unknown as SharedVisualizationConfig,
+		);
 		const rowFields = pivot.rowFields;
 		const flatRows: Record<string, unknown>[] = [];
 		const flatten = (row: (typeof pivot.rows)[number]) => {
 			const flat: Record<string, unknown> = {};
-			rowFields.forEach(
-				(f, idx) => (flat[f] = row.rowHeaders[idx] ?? ""),
-			);
-			pivot.columns.forEach((col) => {
+			for (const [idx, f] of rowFields.entries())
+				flat[f] = row.rowHeaders[idx] ?? "";
+			for (const col of pivot.columns) {
 				const header = col.columnHeaders.length
 					? `${col.columnHeaders.join(" / ")} - ${col.valueField}`
 					: col.valueField;
 				flat[header] = row.cells[col.key];
-			});
+			}
 			if (pivot.hasGrandTotalColumn) {
-				pivot.valueFields.forEach((vf) => {
+				for (const vf of pivot.valueFields)
 					flat[`Total ${vf}`] = row.rowTotals[vf];
-				});
 			}
 			return flat;
 		};
-		pivot.rows.forEach((r) => flatRows.push(flatten(r)));
+		for (const r of pivot.rows) flatRows.push(flatten(r));
 		if (pivot.grandTotalRow) flatRows.push(flatten(pivot.grandTotalRow));
 		headers = flatRows.length ? Object.keys(flatRows[0]) : [];
 		dataRows = flatRows.map((r) =>
@@ -184,7 +195,7 @@ function exportCsv(
 		const aggregated =
 			vizType === "table"
 				? aggregateTableRows(
-						toChartData(result) as Record<string, any>[],
+						toChartData(result) as Record<string, unknown>[],
 						cols,
 						config?.columnAggregations ?? {},
 					)
@@ -248,6 +259,15 @@ function substituteParams(
 	});
 }
 
+type ScatterGroup = {
+	label: string;
+	_xValues: unknown[];
+	_yValues: unknown[];
+	_sizeValues: unknown[];
+	_ttVals: Record<string, unknown[]>;
+	colorCategory?: unknown;
+};
+
 interface VizState {
 	paramValues: Record<string, string>;
 	result: QueryResult | null;
@@ -278,6 +298,7 @@ function InlineExportButton({
 	return (
 		<>
 			<button
+				type="button"
 				onClick={() => (phi ? setShowModal(true) : onExport())}
 				className="rounded-md border border-gray-300 bg-white/90 px-2 py-1 font-medium text-gray-600 text-xs shadow-sm backdrop-blur-sm transition-colors hover:bg-gray-50"
 			>
@@ -370,7 +391,7 @@ function ViewModeInner() {
 			const result = await runDatabaseQuery(databaseId, query, -1);
 			return {
 				headers: result.headers,
-				values: result.values as any[][],
+				values: result.values as unknown[][],
 				raw: result,
 			};
 		},
@@ -414,6 +435,7 @@ function ViewModeInner() {
 	// with the target viz's ID and the resolved param values. Subscribe here to catch those
 	// triggers and re-run the target viz's query with the event params merged in.
 	const eventParamStore = useEventParamStore();
+	// biome-ignore lint/correctness/useExhaustiveDependencies: qKeyOf/cachedQuery are stable helpers defined in this component's body (qKeyOf is pure, cachedQuery reads/writes a ref-backed cache); adding them as deps would resubscribe every render.
 	useEffect(() => {
 		if (!eventParamStore) return;
 		const prevCounters = new Map<string, number>();
@@ -471,6 +493,7 @@ function ViewModeInner() {
 
 	// Initialise param defaults (one entry per distinct query) then auto-run
 	// parameter-less queries — each fetched a single time, shared across its charts.
+	// biome-ignore lint/correctness/useExhaustiveDependencies: initial fetch runs once per config load; queryStates/queries/configSheets are derived from config and re-running per their identity change would refetch on every render.
 	useEffect(() => {
 		if (!config) return;
 		const allVizs = configSheets.flatMap((s) => s.visualizations);
@@ -601,7 +624,6 @@ function ViewModeInner() {
 					}));
 				});
 		});
-		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [config]);
 
 	const setQueryParam = (key: string, name: string, value: string) => {
@@ -624,8 +646,8 @@ function ViewModeInner() {
 
 	const isVizBatchTable = (v: Visualization) =>
 		v.visualizationType === "table" &&
-		// eslint-disable-next-line @typescript-eslint/no-explicit-any
-		!!(v.config as any)?.styling?.table?.batchLoading;
+		!!(v.config as SharedVisualizationConfig | undefined)?.styling?.table
+			?.batchLoading;
 
 	const loadBatchTable = async (src: QuerySource, key: string) => {
 		const state = queryStates[key];
@@ -823,7 +845,7 @@ function ViewModeInner() {
 			if (s && !s.running && s.result) toDownload.push(key);
 		});
 		if (!toDownload.length) return;
-		toDownload.forEach((k) => pending.delete(k));
+		for (const k of toDownload) pending.delete(k);
 		setExportDownloadKeys((prev) => {
 			const next = { ...prev };
 			toDownload.forEach((k) => {
@@ -861,9 +883,9 @@ function ViewModeInner() {
 	// Per-sheet flexlayout model cache
 	const getModel = (sheet: {
 		id: string;
-		visualizations: any[];
-		layout: any[];
-		flexLayout?: any;
+		visualizations: Visualization[];
+		layout: Sheet["layout"];
+		flexLayout?: Sheet["flexLayout"];
 	}) => {
 		const sid = sheet?.id ?? "default";
 		if (!modelCacheRef.current[sid]) {
@@ -874,7 +896,10 @@ function ViewModeInner() {
 				layout: sheet?.layout ?? [],
 				flexLayout: sheet?.flexLayout,
 			};
-			modelCacheRef.current[sid] = buildFlexModel(s as any);
+			// Cast: portal's Sheet is a structural subset of the shared dashboard Sheet
+			modelCacheRef.current[sid] = buildFlexModel(
+				s as unknown as AppSheet,
+			);
 		}
 		return modelCacheRef.current[sid];
 	};
@@ -883,7 +908,8 @@ function ViewModeInner() {
 
 	// Factory: renders each viz panel for a given sheet.
 	const makeFactory =
-		(sheet: { id: string; visualizations: any[] }) => (node: TabNode) => {
+		(sheet: { id: string; visualizations: Visualization[] }) =>
+		(node: TabNode) => {
 			const cfg = node.getConfig() as { vizId?: string } | undefined;
 			const viz = sheet.visualizations.find((v) => v.id === cfg?.vizId);
 			if (!viz)
@@ -911,7 +937,9 @@ function ViewModeInner() {
 			// Param sheet (if present) — used to navigate the user there on click.
 			const paramSheet = configSheets.find((s) => s.isParamSheet) ?? null;
 			// Custom title: prefer `styling.title.text` from the Title tool, fall back to `viz.title`.
-			const titleCfg = (viz.config as any)?.styling?.title;
+			const titleCfg = (
+				viz.config as SharedVisualizationConfig | undefined
+			)?.styling?.title;
 			// Export-CSV gating — MUST mirror DashboardVisualization (main app) exactly:
 			// only table/pivot/kpi are exportable; table & kpi default to ON (`?? true`),
 			// pivot is always on. Anything else gets no button.
@@ -922,14 +950,19 @@ function ViewModeInner() {
 				!!state.result &&
 				isExportable &&
 				((viz.visualizationType === "table" &&
-					((viz.config as any)?.styling?.table?.showExport ??
+					((viz.config as SharedVisualizationConfig | undefined)
+						?.styling?.table?.showExport ??
 						true)) ||
 					(viz.visualizationType === "kpi" &&
-						((viz.config as any)?.styling?.kpi?.showExport ??
+						((viz.config as SharedVisualizationConfig | undefined)
+							?.styling?.kpi?.showExport ??
 							true)) ||
 					viz.visualizationType === "pivot");
-			// HTML Block: renders directly from config — no query/data needed
-			if (viz.visualizationType === "htmlblock") {
+			// Content blocks render directly from config — no query/data needed
+			if (
+				viz.visualizationType === "htmlblock" ||
+				viz.visualizationType === "markdown"
+			) {
 				return (
 					<div className="flex h-full flex-col overflow-hidden bg-white">
 						{/* Only a user-configured custom title gets a header bar — the tab already
@@ -952,9 +985,23 @@ function ViewModeInner() {
 							</div>
 						)}
 						<div className="min-h-0 flex-1">
-							<HtmlBlockVisualization
-								config={viz.config as any}
-							/>
+							{viz.visualizationType === "markdown" ? (
+								<MarkdownVisualization
+									config={
+										viz.config as
+											| SharedVisualizationConfig
+											| undefined
+									}
+								/>
+							) : (
+								<HtmlBlockVisualization
+									config={
+										viz.config as
+											| SharedVisualizationConfig
+											| undefined
+									}
+								/>
+							)}
 						</div>
 					</div>
 				);
@@ -986,14 +1033,16 @@ function ViewModeInner() {
                     on load and parameterized ones have their own Run button in the params
                     strip, so hiding these by default costs no discoverability. */}
 					<div className="absolute top-1 right-1 z-20 flex flex-shrink-0 items-center gap-1.5 opacity-0 transition-opacity focus-within:opacity-100 group-hover:opacity-100">
-						{showExport && (
+						{showExport && state.result && (
 							<InlineExportButton
 								onExport={() =>
 									exportCsv(
-										state.result!,
+										state.result as QueryResult,
 										viz.title,
 										viz.visualizationType,
-										viz.config as any,
+										viz.config as
+											| SharedVisualizationConfig
+											| undefined,
 									)
 								}
 								phi={viz.phi}
@@ -1007,6 +1056,7 @@ function ViewModeInner() {
 							!hasParams &&
 							!isLoadAfter && (
 								<button
+									type="button"
 									onClick={() => void runQuery(src, qKey)}
 									disabled={state.running}
 									className="rounded bg-blue-600 px-3 py-1 font-medium text-white text-xs shadow-sm transition-colors hover:bg-blue-700 disabled:opacity-50"
@@ -1054,13 +1104,15 @@ function ViewModeInner() {
 									<CsvExportButton
 										rows={
 											state.result
-												? (toChartData(
-														state.result,
-													) as Record<string, any>[])
+												? toChartData(state.result)
 												: []
 										}
 										title={viz.title || "export"}
-										config={viz.config as any}
+										config={
+											viz.config as
+												| CsvExportConfig
+												| undefined
+										}
 										phi={viz.phi}
 										onExportClick={
 											!state.result
@@ -1167,6 +1219,7 @@ function ViewModeInner() {
 									!state.error &&
 									!hasEventParams &&
 									(hasParams || isLoadAfter) && (
+										// biome-ignore lint/a11y/noStaticElementInteractions: role/tabIndex/onKeyDown are applied conditionally (only when paramSheet exists) alongside onClick, so this is interactive only when it has a role.
 										<div
 											className="flex h-full flex-col items-center justify-center gap-2 px-6 text-center"
 											onClick={
@@ -1176,6 +1229,29 @@ function ViewModeInner() {
 																paramSheet.id,
 															)
 													: undefined
+											}
+											onKeyDown={
+												paramSheet
+													? (e) => {
+															if (
+																e.key ===
+																	"Enter" ||
+																e.key === " "
+															) {
+																setActiveSheetId(
+																	paramSheet.id,
+																);
+															}
+														}
+													: undefined
+											}
+											role={
+												paramSheet
+													? "button"
+													: undefined
+											}
+											tabIndex={
+												paramSheet ? 0 : undefined
 											}
 											style={
 												paramSheet
@@ -1297,6 +1373,7 @@ function ViewModeInner() {
 								: (sheet.color ?? "#3b82f6");
 							return (
 								<button
+									type="button"
 									key={sheet.id}
 									onClick={() => setActiveSheetId(sheet.id)}
 									className={`flex flex-shrink-0 select-none items-center gap-2 border-stone-200 border-t-2 border-r px-5 text-sm transition-colors ${
@@ -1354,7 +1431,7 @@ function filterResult(
 ): QueryResult {
 	if (!filters.length) return result;
 	const idx: Record<string, number> = {};
-	result.headers.forEach((h, i) => (idx[h] = i));
+	for (const [i, h] of result.headers.entries()) idx[h] = i;
 	const values = result.values.filter((row) =>
 		filters.every((f) => {
 			// Row-based filter from event triggers (click-to-filter)
@@ -1420,6 +1497,7 @@ function BatchTablePane({
 			{batchState.hasMore && (
 				<div className="flex-shrink-0 border-gray-200 border-t px-3 py-2 text-center">
 					<button
+						type="button"
 						onClick={onLoadMore}
 						disabled={batchState.loadingMore}
 						className="rounded bg-blue-600 px-4 py-1.5 font-medium text-white text-xs shadow-sm transition-colors hover:bg-blue-700 disabled:opacity-50"
@@ -1449,15 +1527,12 @@ function VizContent({
 	const filterStore = useFilterStore();
 	const eventParamStore = useEventParamStore();
 	const { onTrigger } = useVizEvents(
-		(viz.config as any)?.styling?.events,
+		viz.config?.styling?.events,
 		viz.id,
 		filterStore,
 		eventParamStore,
 	);
-	const publishRows = useMemo(
-		() => toChartData(result) as Record<string, any>[],
-		[result],
-	);
+	const publishRows = useMemo(() => toChartData(result), [result]);
 	useEffect(() => {
 		if (!filterStore) return;
 		if (
@@ -1474,7 +1549,7 @@ function VizContent({
 		publishRows,
 	]);
 	// Author-defined per-viz filter (Filter Visualization tool) + cross-frame widget filters.
-	const vizFilter = (viz.config as any)?.styling?.vizFilter;
+	const vizFilter = viz.config?.styling?.vizFilter;
 	const filtered = useMemo(() => {
 		const f = filterResult(result, filters);
 		if (!vizFilter) return f;
@@ -1486,7 +1561,7 @@ function VizContent({
 
 	// Author-defined Size & Position — box the rendered content and align it within
 	// the panel (leaves the flexlayout panel itself untouched).
-	const size = (viz.config as any)?.styling?.size;
+	const size = viz.config?.styling?.size;
 	const wrapSize = (node: ReactNode) => {
 		if (!hasContentSize(size)) return node;
 		const { outer, inner } = contentSizeStyles(size);
@@ -1500,9 +1575,9 @@ function VizContent({
 	if (viz.visualizationType === "csvexport") {
 		return wrapSize(
 			<CsvExportButton
-				rows={toChartData(filtered) as Record<string, any>[]}
+				rows={toChartData(filtered)}
 				title={viz.title || "export"}
-				config={viz.config as any}
+				config={viz.config as CsvExportConfig | undefined}
 				phi={viz.phi}
 			/>,
 		);
@@ -1512,18 +1587,15 @@ function VizContent({
 			<FilterWidget
 				vizId={viz.id}
 				title={viz.title}
-				column={(viz.config as any)?.filterColumn ?? ""}
-				targets={(viz.config as any)?.filterTargets ?? []}
-				rows={toChartData(result) as Record<string, any>[]}
-				displayType={
-					(viz.config as any)?.filterDisplayType ?? "dropdown"
-				}
-				multiSelect={(viz.config as any)?.filterMultiSelect ?? true}
-				autoRun={(viz.config as any)?.filterAutoRun ?? true}
-				filterFloatRules={(viz.config as any)?.filterFloatRules}
-				floatSchemaColumns={
-					(viz.config as any)?.filterFloatColumns ?? []
-				}
+				column={viz.config?.filterColumn ?? ""}
+				targets={viz.config?.filterTargets ?? []}
+				rows={toChartData(result)}
+				displayType={viz.config?.filterDisplayType ?? "dropdown"}
+				buttonLayout={viz.config?.filterButtonLayout ?? "horizontal"}
+				multiSelect={viz.config?.filterMultiSelect ?? true}
+				autoRun={viz.config?.filterAutoRun ?? true}
+				filterFloatRules={viz.config?.filterFloatRules}
+				floatSchemaColumns={viz.config?.filterFloatColumns ?? []}
 			/>,
 		);
 	}
@@ -1534,7 +1606,7 @@ function VizContent({
 		<ChartOrTable
 			result={filtered}
 			vizType={viz.visualizationType}
-			config={viz.config as any}
+			config={viz.config as SharedVisualizationConfig | undefined}
 			onTrigger={onTrigger}
 			rawData={publishRows}
 		/>
@@ -1546,27 +1618,6 @@ function VizContent({
 			chart
 		);
 	return wrapSize(stretched);
-}
-
-interface VizConfig {
-	xKey?: string;
-	yKeys?: string[];
-	tableColumns?: string[];
-	tablePageSize?: number;
-	styling?: {
-		table?: {
-			colorRules?: Array<{
-				id: string;
-				targetColumn: string;
-				color: string;
-				colorEntireRow: boolean;
-				valueColumn: string;
-				comparator: string;
-				value: string | number;
-			}>;
-		};
-	};
-	[key: string]: unknown;
 }
 
 type OnTrigger = (
@@ -1582,7 +1633,7 @@ function ChartOrTable({
 }: {
 	result: QueryResult;
 	vizType: string;
-	config?: VizConfig;
+	config?: SharedVisualizationConfig;
 	onTrigger?: OnTrigger;
 	rawData?: Record<string, unknown>[];
 }) {
@@ -1636,13 +1687,13 @@ function ChartOrTable({
 	const chartY = result.headers.slice(1);
 
 	if (vizType === "radar") {
-		const radarXKey = (config as any)?.xKey || chartX;
-		const radarYKeys: string[] = (config as any)?.yKeys?.length
-			? (config as any).yKeys
+		const radarXKey = config?.xKey || chartX;
+		const radarYKeys: string[] = config?.yKeys?.length
+			? config.yKeys
 			: chartY;
-		const radarStyling = (config as any)?.styling?.radar;
+		const radarStyling = config?.styling?.radar;
 		const radarAggs: Record<string, string> =
-			(config as any)?.columnAggregations ?? {};
+			config?.columnAggregations ?? {};
 		const radarAggNames: Record<string, string> = {
 			sum: "Sum",
 			avg: "Average",
@@ -1657,22 +1708,18 @@ function ChartOrTable({
 			const agg = radarAggs[col];
 			return agg ? `${radarAggNames[agg] ?? agg} of ${col}` : col;
 		};
-		const radarColors = (config as any)?.styling?.colorPalette?.colors
-			?.length
-			? (config as any).styling.colorPalette.colors
+		const radarColors = config?.styling?.colorPalette?.colors?.length
+			? config.styling.colorPalette.colors
 			: COLORS;
-		const radarFmtRules = (config as any)?.styling?.formatRules ?? [];
+		const radarFmtRules = config?.styling?.formatRules ?? [];
 		// Apply sort rules before aggregation (mirrors DashboardVisualization behavior)
-		const radarSortedData = applyVizSort(
-			data,
-			(config as any)?.styling?.sortValues,
-		);
+		const radarSortedData = applyVizSort(data, config?.styling?.sortValues);
 		// Aggregate sorted rows by dimension column, then pivot so value columns become axes
 		const aggregated = aggregateChartData(
 			radarSortedData,
 			radarXKey,
 			radarYKeys,
-			config as any,
+			config,
 		);
 		const radarSeries = radarXKey
 			? [...new Set(aggregated.map((r) => String(r[radarXKey] ?? "")))]
@@ -1745,20 +1792,23 @@ function ChartOrTable({
 									}
 									label={
 										radarShowValueLabels
-											? (props: any) => {
+											? (props: {
+													index?: number;
+													x?: number;
+													y?: number;
+												}) => {
+													const idx =
+														props.index ?? -1;
 													const raw =
-														radarPivoted[
-															props.index
-														]?.[s];
+														radarPivoted[idx]?.[s];
 													if (
 														raw === undefined ||
 														raw === null
 													)
 														return null;
 													const col = String(
-														radarPivoted[
-															props.index
-														]?._col ?? "",
+														radarPivoted[idx]
+															?._col ?? "",
 													);
 													const pos =
 														radarValueLabel?.position ??
@@ -1780,9 +1830,12 @@ function ChartOrTable({
 													};
 													return (
 														<text
-															key={`rl-${s}-${props.index}`}
+															key={`rl-${s}-${idx}`}
 															x={props.x}
-															y={props.y + dy}
+															y={
+																(props.y ?? 0) +
+																dy
+															}
 															textAnchor="middle"
 															fill={
 																radarValueLabel?.color ??
@@ -1824,16 +1877,24 @@ function ChartOrTable({
 						{radarShowTooltip && (
 							<Tooltip
 								wrapperStyle={{ zIndex: 10 }}
-								content={(props: any) => {
+								content={(props: {
+									active?: boolean;
+									payload?: {
+										dataKey?: string;
+										name?: string;
+										color?: string;
+										payload?: Record<string, unknown>;
+									}[];
+								}) => {
 									if (!props.active || !props.payload?.length)
 										return null;
 									const spoke = props.payload[0]?.payload;
 									return (
 										<div className="min-w-[120px] rounded-md border border-slate-200 bg-white p-2 text-xs shadow-md">
 											<p className="mb-1.5 truncate font-semibold text-slate-700">
-												{spoke?._axis ?? ""}
+												{String(spoke?._axis ?? "")}
 											</p>
-											{props.payload.map((p: any) => {
+											{props.payload.map((p) => {
 												const rawEntry =
 													radarPivoted.find(
 														(r) =>
@@ -1889,7 +1950,7 @@ function ChartOrTable({
 			<div className="h-full w-full">
 				<TreemapChart
 					data={data}
-					config={config as any}
+					config={config}
 					height="100%"
 					onTrigger={onTrigger}
 				/>
@@ -1898,7 +1959,7 @@ function ChartOrTable({
 	}
 
 	if (vizType === "scatter") {
-		const scatterCfg = config as any;
+		const scatterCfg = config;
 		const labelKey: string = scatterCfg?.label || "";
 		const sizeKey: string = scatterCfg?.size || "";
 		const colorKey: string = scatterCfg?.color || "";
@@ -1922,7 +1983,7 @@ function ChartOrTable({
 					]
 				: [];
 
-		const aggVal = (vals: any[], type: string): number => {
+		const aggVal = (vals: unknown[], type: string): number => {
 			const nums = vals.map(Number).filter((n) => !Number.isNaN(n));
 			if (!nums.length) return 0;
 			switch (type) {
@@ -1939,26 +2000,27 @@ function ChartOrTable({
 			}
 		};
 
-		let scatterData: any[] = [];
+		let scatterData: Record<string, unknown>[] = [];
 
 		if (labelKey && data.length > 0) {
-			const grouped = new Map<string, any>();
+			const grouped = new Map<string, ScatterGroup>();
 			data.forEach((row) => {
 				const labelValue = String(row[labelKey] ?? "");
 				if (!grouped.has(labelValue)) {
-					const _ttVals: Record<string, any[]> = {};
+					const _ttVals: Record<string, unknown[]> = {};
 					for (const { column } of scatterTooltipCols)
 						_ttVals[column] = [];
 					grouped.set(labelValue, {
 						label: labelValue,
-						_xValues: [] as any[],
-						_yValues: [] as any[],
-						_sizeValues: [] as any[],
+						_xValues: [],
+						_yValues: [],
+						_sizeValues: [],
 						_ttVals,
 						colorCategory: colorKey ? row[colorKey] : undefined,
 					});
 				}
-				const g = grouped.get(labelValue)!;
+				const g = grouped.get(labelValue);
+				if (!g) return;
 				g._xValues.push(row[chartX]);
 				g._yValues.push(row[chartY[0]]);
 				if (sizeKey) g._sizeValues.push(row[sizeKey]);
@@ -1967,7 +2029,7 @@ function ChartOrTable({
 			});
 
 			scatterData = Array.from(grouped.values()).map((g) => {
-				const point: any = { label: g.label };
+				const point: Record<string, unknown> = { label: g.label };
 				const xAgg = scatterCfg?.columnAggregations?.[chartX] || "avg";
 				point[chartX] = aggVal(g._xValues, xAgg);
 				const yAgg =
@@ -1989,7 +2051,7 @@ function ChartOrTable({
 			});
 		} else {
 			scatterData = data.map((row) => {
-				const point: any = {
+				const point: Record<string, unknown> = {
 					[chartX]: row[chartX],
 					[chartY[0]]: row[chartY[0]],
 				};
@@ -2014,22 +2076,25 @@ function ChartOrTable({
 		if (sizeKey) {
 			const sizes = scatterData
 				.map((d) => d[sizeKey])
-				.filter((s) => s != null);
+				.filter((s): s is number | string => s != null)
+				.map((s) => Number(s));
 			if (sizes.length > 0) {
 				const minSize = Math.min(...sizes);
 				const maxSize = Math.max(...sizes);
 				const range = maxSize - minSize || 1;
-				scatterData.forEach((d) => {
-					d.size =
-						d[sizeKey] != null
-							? 3 + ((d[sizeKey] - minSize) / range) * 12
-							: 5;
-				});
+				for (const d of scatterData) {
+					if (d[sizeKey] != null) {
+						const sizeVal = Number(d[sizeKey]);
+						d.size = 3 + ((sizeVal - minSize) / range) * 12;
+					} else {
+						d.size = 5;
+					}
+				}
 			} else {
-				scatterData.forEach((d) => (d.size = 5));
+				for (const d of scatterData) d.size = 5;
 			}
 		} else {
-			scatterData.forEach((d) => (d.size = 5));
+			for (const d of scatterData) d.size = 5;
 		}
 
 		return (
@@ -2154,9 +2219,15 @@ function ChartOrTable({
 									)}
 									fill={COLORS[idx % COLORS.length]}
 									fillOpacity={0.75}
-									shape={(props: any) => {
-										const { cx, cy, payload } = props;
-										const r = payload.size || 5;
+									shape={(props: {
+										cx?: number;
+										cy?: number;
+										payload?: Record<string, unknown>;
+									}) => {
+										const { cx, cy } = props;
+										const payload = props.payload ?? {};
+										const r =
+											Number(payload.size ?? 5) || 5;
 										return (
 											<circle
 												cx={cx}
@@ -2179,9 +2250,14 @@ function ChartOrTable({
 								isAnimationActive={false}
 								fill={COLORS[0]}
 								fillOpacity={0.75}
-								shape={(props: any) => {
-									const { cx, cy, payload } = props;
-									const r = payload.size || 5;
+								shape={(props: {
+									cx?: number;
+									cy?: number;
+									payload?: Record<string, unknown>;
+								}) => {
+									const { cx, cy } = props;
+									const payload = props.payload ?? {};
+									const r = Number(payload.size ?? 5) || 5;
 									return (
 										<circle
 											cx={cx}
@@ -2217,8 +2293,8 @@ function ChartOrTable({
 			<div className="h-full w-full">
 				<HeatmapChart
 					data={data}
-					config={config as any}
-					formatRules={(config as any)?.styling?.formatRules ?? []}
+					config={config}
+					formatRules={config?.styling?.formatRules ?? []}
 					onTrigger={onTrigger}
 				/>
 			</div>
@@ -2230,7 +2306,7 @@ function ChartOrTable({
 			<div className="h-full w-full">
 				<HalfDonutChart
 					data={data}
-					config={config as any}
+					config={config}
 					onTrigger={onTrigger}
 				/>
 			</div>
@@ -2242,7 +2318,7 @@ function ChartOrTable({
 			<div className="h-full w-full">
 				<BoxPlotChart
 					data={data}
-					config={config as any}
+					config={config}
 					onTrigger={onTrigger}
 				/>
 			</div>
@@ -2254,7 +2330,7 @@ function ChartOrTable({
 			<div className="h-[380px]">
 				<PolarBarChart
 					data={data}
-					config={config as any}
+					config={config}
 					onTrigger={onTrigger}
 				/>
 			</div>
@@ -2266,7 +2342,7 @@ function ChartOrTable({
 			<div className="h-full w-full">
 				<ClusterChart
 					data={data}
-					config={config as any}
+					config={config}
 					onTrigger={onTrigger}
 				/>
 			</div>
@@ -2278,7 +2354,7 @@ function ChartOrTable({
 			<div className="h-full w-full">
 				<MultiLineChart
 					data={data}
-					config={config as any}
+					config={config}
 					onTrigger={onTrigger}
 				/>
 			</div>
@@ -2290,7 +2366,7 @@ function ChartOrTable({
 			<div className="h-full w-full">
 				<WorldMapChart
 					data={data}
-					config={config as any}
+					config={config}
 					onTrigger={onTrigger}
 				/>
 			</div>
@@ -2300,7 +2376,15 @@ function ChartOrTable({
 	if (vizType === "htmlblock") {
 		return (
 			<div className="h-full w-full">
-				<HtmlBlockVisualization config={config as any} />
+				<HtmlBlockVisualization config={config} />
+			</div>
+		);
+	}
+
+	if (vizType === "markdown") {
+		return (
+			<div className="h-full w-full">
+				<MarkdownVisualization config={config} />
 			</div>
 		);
 	}
@@ -2309,11 +2393,7 @@ function ChartOrTable({
 		// Self-contained wordcloud2.js renderer; uses its own canvas, no recharts wrapper.
 		return (
 			<div className="h-full w-full">
-				<WordCloud
-					data={data}
-					config={config as any}
-					onTrigger={onTrigger}
-				/>
+				<WordCloud data={data} config={config} onTrigger={onTrigger} />
 			</div>
 		);
 	}
@@ -2324,7 +2404,7 @@ function ChartOrTable({
 			<div className="h-full w-full">
 				<BubbleChart
 					data={data}
-					config={config as any}
+					config={config}
 					onTrigger={onTrigger}
 				/>
 			</div>
@@ -2336,8 +2416,8 @@ function ChartOrTable({
 			<div className="h-full w-full">
 				<SunburstChart
 					data={data}
-					config={config as any}
-					formatRules={(config as any)?.styling?.formatRules}
+					config={config}
+					formatRules={config?.styling?.formatRules}
 					onTrigger={onTrigger}
 				/>
 			</div>
@@ -2347,11 +2427,7 @@ function ChartOrTable({
 	if (vizType === "puck") {
 		return (
 			<div className="h-full w-full">
-				<PuckChart
-					data={data}
-					config={config as any}
-					onTrigger={onTrigger}
-				/>
+				<PuckChart data={data} config={config} onTrigger={onTrigger} />
 			</div>
 		);
 	}
@@ -2362,7 +2438,7 @@ function ChartOrTable({
 				<Pie_Chart
 					data={data}
 					rawData={rawData}
-					config={config as any}
+					config={config}
 					onTrigger={onTrigger}
 				/>
 			</div>
@@ -2372,11 +2448,7 @@ function ChartOrTable({
 	if (vizType === "line") {
 		return (
 			<div className="h-full w-full">
-				<Line_Chart
-					data={data}
-					config={config as any}
-					onTrigger={onTrigger}
-				/>
+				<Line_Chart data={data} config={config} onTrigger={onTrigger} />
 			</div>
 		);
 	}
@@ -2384,11 +2456,7 @@ function ChartOrTable({
 	if (vizType === "bar") {
 		return (
 			<div className="h-full w-full">
-				<Bar_Chart
-					data={data}
-					config={config as any}
-					onTrigger={onTrigger}
-				/>
+				<Bar_Chart data={data} config={config} onTrigger={onTrigger} />
 			</div>
 		);
 	}
@@ -2398,7 +2466,7 @@ function ChartOrTable({
 			<div className="h-full w-full">
 				<Bar_Chart
 					data={data}
-					config={config as any}
+					config={config}
 					stacked
 					onTrigger={onTrigger}
 				/>
@@ -2413,7 +2481,7 @@ function ChartOrTable({
 			<div className="h-full w-full">
 				<Combo_Chart
 					data={data}
-					config={config as any}
+					config={config}
 					onTrigger={onTrigger}
 				/>
 			</div>
@@ -2423,11 +2491,7 @@ function ChartOrTable({
 	if (vizType === "area") {
 		return (
 			<div className="h-full w-full">
-				<Area_Chart
-					data={data}
-					config={config as any}
-					onTrigger={onTrigger}
-				/>
+				<Area_Chart data={data} config={config} onTrigger={onTrigger} />
 			</div>
 		);
 	}
@@ -2458,10 +2522,10 @@ function DataTable({
 	config,
 }: {
 	result: QueryResult;
-	config?: VizConfig;
+	config?: SharedVisualizationConfig;
 }) {
 	const rows = toChartData(result);
-	return <TableView data={rows} config={config as any} />;
+	return <TableView data={rows} config={config} />;
 }
 
 // Pivot view
@@ -2472,11 +2536,11 @@ function PivotView({
 	config,
 }: {
 	result: QueryResult;
-	config?: VizConfig;
+	config?: SharedVisualizationConfig;
 }) {
 	const rows = toChartData(result);
 	// Cast: portal's VisualizationConfig is a structural subset of the shared dashboard config
-	const pivot = usePivotTransform(rows, config as any);
+	const pivot = usePivotTransform(rows, config);
 
 	// Note: do NOT use negative margins here. The published portal's panel body
 	// has no horizontal padding, so `-mx-*` would push the pivot past the
@@ -2498,12 +2562,12 @@ function KpiView({
 	config,
 }: {
 	result: QueryResult;
-	config?: VizConfig;
+	config?: SharedVisualizationConfig;
 }) {
 	const rows = toChartData(result);
 	return (
 		<div className="flex h-full min-h-[160px] flex-col overflow-hidden">
-			<KPI data={rows} config={config as any} />
+			<KPI data={rows} config={config} />
 		</div>
 	);
 }

@@ -4,6 +4,7 @@ import {
 	isValidElement,
 	type ReactElement,
 	type ReactNode,
+	useId,
 	useMemo,
 	useState,
 } from "react";
@@ -15,8 +16,10 @@ import {
 import type {
 	AxisConfig,
 	ColorPalette as ColorPaletteType,
+	ColorRule,
 	TreemapStyling,
 	TreemapTextConfig,
+	VisualizationConfig,
 	VisualizationStyling,
 	VisualizationType,
 } from "@/types/dashboard";
@@ -72,12 +75,13 @@ import { MapLayerControl } from "./worldmap/MapLayerControl";
 import { MarkerSizeControl } from "./worldmap/MarkerSizeControl";
 
 function collectAndSort(nodes: ReactNode[]): ReactNode {
+	type SectionProps = { title?: string; children?: ReactNode };
 	const flat: ReactElement[] = [];
 	const collect = (node: ReactNode) => {
-		Children.forEach(node as any, (child: ReactNode) => {
+		Children.forEach(node, (child: ReactNode) => {
 			if (!isValidElement(child)) return;
 			if (child.type === Fragment) {
-				collect((child.props as any).children);
+				collect((child.props as SectionProps).children);
 			} else {
 				flat.push(child);
 			}
@@ -85,12 +89,12 @@ function collectAndSort(nodes: ReactNode[]): ReactNode {
 	};
 	nodes.forEach(collect);
 	flat.sort((a, b) =>
-		String((a.props as any).title ?? "").localeCompare(
-			String((b.props as any).title ?? ""),
+		String((a.props as SectionProps).title ?? "").localeCompare(
+			String((b.props as SectionProps).title ?? ""),
 		),
 	);
 	return flat.map((el) => (
-		<Fragment key={String((el.props as any).title ?? el.key)}>
+		<Fragment key={String((el.props as SectionProps).title ?? el.key)}>
 			{el}
 		</Fragment>
 	));
@@ -154,6 +158,7 @@ export function ToolsPanel({
 	onChange,
 }: ToolsPanelProps) {
 	const [searchQuery, setSearchQuery] = useState("");
+	const fieldIdPrefix = useId();
 
 	const columnValues = useMemo(() => {
 		if (!rows.length) return {};
@@ -187,7 +192,7 @@ export function ToolsPanel({
 	// "Count of Phrase" rather than the original phrase strings.
 	const yKeyAggregatedColumnValues = useMemo(() => {
 		if (!rows.length || !xKey || !yKeys.length) return columnValues;
-		const config = { columnAggregations } as any;
+		const config: VisualizationConfig = { columnAggregations };
 		const chartData = aggregateChartData(
 			rows as Record<string, unknown>[],
 			xKey,
@@ -253,8 +258,8 @@ export function ToolsPanel({
 				? rows.map((row) => {
 						const out = { ...row } as Record<string, unknown>;
 						for (const k of sharedCols) {
-							out[`${k}__combo_bar`] = (row as any)[k];
-							out[`${k}__combo_line`] = (row as any)[k];
+							out[`${k}__combo_bar`] = row[k];
+							out[`${k}__combo_line`] = row[k];
 						}
 						return out;
 					})
@@ -264,7 +269,7 @@ export function ToolsPanel({
 		if (processedRows.length > 0 && xKey && cols.length > 0) {
 			const chartData = aggregateChartData(processedRows, xKey, cols, {
 				columnAggregations: aggMap,
-			} as any);
+			} satisfies VisualizationConfig);
 			for (const rk of cols) {
 				if (aggMap[rk]) {
 					values[rk] = [
@@ -291,9 +296,7 @@ export function ToolsPanel({
 			if (!mergedValues[col]) {
 				const rawVals = [
 					...new Set(
-						rows
-							.map((r) => String((r as any)[col] ?? ""))
-							.filter(Boolean),
+						rows.map((r) => String(r[col] ?? "")).filter(Boolean),
 					),
 				].sort();
 				if (rawVals.length) mergedValues[col] = rawVals;
@@ -763,7 +766,9 @@ export function ToolsPanel({
 					columnValues={columnValues}
 					value={styling.table?.colorRules || []}
 					onChange={(colorRules) =>
-						updateTableStyling({ colorRules: colorRules as any })
+						updateTableStyling({
+							colorRules: colorRules as ColorRule[],
+						})
 					}
 					onReset={() => updateTableStyling({ colorRules: [] })}
 				/>
@@ -1191,7 +1196,7 @@ export function ToolsPanel({
 					value={styling.wordcloud?.colorRules || []}
 					onChange={(colorRules) =>
 						updateWordcloudStyling({
-							colorRules: colorRules as any,
+							colorRules: colorRules as ColorRule[],
 						})
 					}
 					onReset={() => updateWordcloudStyling({ colorRules: [] })}
@@ -1249,7 +1254,9 @@ export function ToolsPanel({
 					columnValues={columnValues}
 					value={styling.bubble?.colorRules || []}
 					onChange={(colorRules) =>
-						updateBubbleStyling({ colorRules: colorRules as any })
+						updateBubbleStyling({
+							colorRules: colorRules as ColorRule[],
+						})
 					}
 					onReset={() => updateBubbleStyling({ colorRules: [] })}
 				/>
@@ -1314,7 +1321,9 @@ export function ToolsPanel({
 					columnValues={columnValues}
 					value={styling.puck?.colorRules || []}
 					onChange={(colorRules) =>
-						updatePuckStyling({ colorRules: colorRules as any })
+						updatePuckStyling({
+							colorRules: colorRules as ColorRule[],
+						})
 					}
 					onReset={() => updatePuckStyling({ colorRules: [] })}
 				/>
@@ -1386,9 +1395,15 @@ export function ToolsPanel({
 					columns={sbDroppedColumns}
 					valueColumns={sbDroppedColumns}
 					visualizationType="sunburst"
-					value={(styling.sunburst?.colorRules as any) ?? []}
+					value={
+						(styling.sunburst?.colorRules as
+							| ColorRule[]
+							| undefined) ?? []
+					}
 					onChange={(rules) =>
-						updateSunburstStyling({ colorRules: rules as any })
+						updateSunburstStyling({
+							colorRules: rules as ColorRule[],
+						})
 					}
 					onReset={() => updateSunburstStyling({ colorRules: [] })}
 					columnValues={columnValues}
@@ -1452,7 +1467,9 @@ export function ToolsPanel({
 					columnValues={columnValues}
 					value={styling.table?.colorRules || []}
 					onChange={(colorRules) =>
-						updateTableStyling({ colorRules: colorRules as any })
+						updateTableStyling({
+							colorRules: colorRules as ColorRule[],
+						})
 					}
 					onReset={() => updateTableStyling({ colorRules: [] })}
 				/>
@@ -1541,14 +1558,19 @@ export function ToolsPanel({
 			</ToolAccordion>
 			<ToolAccordion title="Legend">
 				<div className="space-y-2 px-4 py-3">
-					<label className="flex cursor-pointer items-center gap-3">
+					<button
+						type="button"
+						role="switch"
+						aria-checked={hdLegendOn}
+						className="flex cursor-pointer items-center gap-3"
+						onClick={() =>
+							updateHalfDonutStyling({
+								showLegend: !hdLegendOn,
+							})
+						}
+					>
 						<div
 							className={`relative h-5 w-10 rounded-full transition-colors ${hdLegendOn ? "bg-indigo-500" : "bg-stone-200"}`}
-							onClick={() =>
-								updateHalfDonutStyling({
-									showLegend: !hdLegendOn,
-								})
-							}
 						>
 							<span
 								className={`absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-transform ${hdLegendOn ? "translate-x-5" : "translate-x-0.5"}`}
@@ -1557,19 +1579,24 @@ export function ToolsPanel({
 						<span className="text-stone-600 text-xs">
 							{hdLegendOn ? "Legend visible" : "Legend hidden"}
 						</span>
-					</label>
+					</button>
 				</div>
 			</ToolAccordion>
 			<ToolAccordion title="Show Labels">
 				<div className="space-y-3 px-4 py-3">
-					<label className="flex cursor-pointer items-center gap-3">
+					<button
+						type="button"
+						role="switch"
+						aria-checked={hdValuesOn}
+						className="flex cursor-pointer items-center gap-3"
+						onClick={() =>
+							updateHalfDonutStyling({
+								showValues: !hdValuesOn,
+							})
+						}
+					>
 						<div
 							className={`relative h-5 w-10 rounded-full transition-colors ${hdValuesOn ? "bg-indigo-500" : "bg-stone-200"}`}
-							onClick={() =>
-								updateHalfDonutStyling({
-									showValues: !hdValuesOn,
-								})
-							}
 						>
 							<span
 								className={`absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-transform ${hdValuesOn ? "translate-x-5" : "translate-x-0.5"}`}
@@ -1580,7 +1607,7 @@ export function ToolsPanel({
 								? "Labels visible inside arcs"
 								: "Labels hidden"}
 						</span>
-					</label>
+					</button>
 					{hdValuesOn && (
 						<div className="flex items-center gap-3">
 							<span className="flex-1 text-stone-500 text-xs">
@@ -1616,11 +1643,15 @@ export function ToolsPanel({
 			</ToolAccordion>
 			<ToolAccordion title="Target Wedge">
 				<div className="space-y-2 px-4 py-3">
-					<label className="mb-1.5 block font-semibold text-stone-600 text-xs">
+					<label
+						htmlFor={`${fieldIdPrefix}-halfdonut-wedge-color`}
+						className="mb-1.5 block font-semibold text-stone-600 text-xs"
+					>
 						Wedge Color
 					</label>
 					<div className="flex items-center gap-2">
 						<input
+							id={`${fieldIdPrefix}-halfdonut-wedge-color`}
 							type="color"
 							value={
 								styling.halfdonut?.targetWedgeColor ?? "#1e293b"
@@ -1663,14 +1694,19 @@ export function ToolsPanel({
 			</ToolAccordion>
 			<ToolAccordion title="Value Labels">
 				<div className="space-y-2 px-4 py-3">
-					<label className="flex cursor-pointer items-center gap-3">
+					<button
+						type="button"
+						role="switch"
+						aria-checked={hdLabelsOn}
+						className="flex cursor-pointer items-center gap-3"
+						onClick={() =>
+							updateHalfDonutStyling({
+								showLabels: !hdLabelsOn,
+							})
+						}
+					>
 						<div
 							className={`relative h-5 w-10 rounded-full transition-colors ${hdLabelsOn ? "bg-indigo-500" : "bg-stone-200"}`}
-							onClick={() =>
-								updateHalfDonutStyling({
-									showLabels: !hdLabelsOn,
-								})
-							}
 						>
 							<span
 								className={`absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-transform ${hdLabelsOn ? "translate-x-5" : "translate-x-0.5"}`}
@@ -1681,7 +1717,7 @@ export function ToolsPanel({
 								? "Category labels visible"
 								: "Category labels hidden"}
 						</span>
-					</label>
+					</button>
 				</div>
 			</ToolAccordion>
 		</>
@@ -1713,7 +1749,9 @@ export function ToolsPanel({
 					columnValues={columnValues}
 					value={styling.polarbar?.colorRules || []}
 					onChange={(colorRules) =>
-						updatePolarBarStyling({ colorRules: colorRules as any })
+						updatePolarBarStyling({
+							colorRules: colorRules as ColorRule[],
+						})
 					}
 					onReset={() => updatePolarBarStyling({ colorRules: [] })}
 				/>
@@ -1783,14 +1821,19 @@ export function ToolsPanel({
 
 			<ToolAccordion title="Show Values">
 				<div className="space-y-2 px-4 py-3">
-					<label className="flex cursor-pointer items-center gap-3">
+					<button
+						type="button"
+						role="switch"
+						aria-checked={pbValuesOn}
+						className="flex cursor-pointer items-center gap-3"
+						onClick={() =>
+							updatePolarBarStyling({
+								showValues: !pbValuesOn,
+							})
+						}
+					>
 						<div
 							className={`relative h-5 w-10 rounded-full transition-colors ${pbValuesOn ? "bg-indigo-500" : "bg-stone-200"}`}
-							onClick={() =>
-								updatePolarBarStyling({
-									showValues: !pbValuesOn,
-								})
-							}
 						>
 							<span
 								className={`absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-transform ${pbValuesOn ? "translate-x-5" : "translate-x-0.5"}`}
@@ -1799,7 +1842,7 @@ export function ToolsPanel({
 						<span className="text-stone-600 text-xs">
 							{pbValuesOn ? "Values visible" : "Values hidden"}
 						</span>
-					</label>
+					</button>
 				</div>
 			</ToolAccordion>
 
@@ -1830,14 +1873,19 @@ export function ToolsPanel({
 
 			<ToolAccordion title="Value Labels">
 				<div className="space-y-2 px-4 py-3">
-					<label className="flex cursor-pointer items-center gap-3">
+					<button
+						type="button"
+						role="switch"
+						aria-checked={pbLabelsOn}
+						className="flex cursor-pointer items-center gap-3"
+						onClick={() =>
+							updatePolarBarStyling({
+								showLabels: !pbLabelsOn,
+							})
+						}
+					>
 						<div
 							className={`relative h-5 w-10 rounded-full transition-colors ${pbLabelsOn ? "bg-indigo-500" : "bg-stone-200"}`}
-							onClick={() =>
-								updatePolarBarStyling({
-									showLabels: !pbLabelsOn,
-								})
-							}
 						>
 							<span
 								className={`absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-transform ${pbLabelsOn ? "translate-x-5" : "translate-x-0.5"}`}
@@ -1846,7 +1894,7 @@ export function ToolsPanel({
 						<span className="text-stone-600 text-xs">
 							{pbLabelsOn ? "Labels visible" : "Labels hidden"}
 						</span>
-					</label>
+					</button>
 				</div>
 			</ToolAccordion>
 
@@ -1867,12 +1915,17 @@ export function ToolsPanel({
 		<>
 			<ToolAccordion title="Area Fill">
 				<div className="space-y-3 px-4 py-3">
-					<label className="flex cursor-pointer items-center gap-3">
+					<button
+						type="button"
+						role="switch"
+						aria-checked={radarAreaOn}
+						className="flex cursor-pointer items-center gap-3"
+						onClick={() =>
+							updateRadarStyling({ showArea: !radarAreaOn })
+						}
+					>
 						<div
 							className={`relative h-5 w-10 rounded-full transition-colors ${radarAreaOn ? "bg-indigo-500" : "bg-stone-200"}`}
-							onClick={() =>
-								updateRadarStyling({ showArea: !radarAreaOn })
-							}
 						>
 							<span
 								className={`absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-transform ${radarAreaOn ? "translate-x-5" : "translate-x-0.5"}`}
@@ -1881,7 +1934,7 @@ export function ToolsPanel({
 						<span className="text-stone-600 text-xs">
 							{radarAreaOn ? "Area fill on" : "Area fill off"}
 						</span>
-					</label>
+					</button>
 					{radarAreaOn && (
 						<div className="flex flex-col gap-2 pt-1">
 							<div className="flex items-center justify-between">
@@ -1921,6 +1974,7 @@ export function ToolsPanel({
 				<div className="px-4 py-3">
 					<div className="flex gap-2">
 						<button
+							type="button"
 							className={`flex-1 rounded-md border py-1.5 font-medium text-xs transition-colors ${radarPolygon ? "border-indigo-500 bg-indigo-50 text-indigo-700" : "border-stone-200 text-stone-500 hover:border-stone-300"}`}
 							onClick={() =>
 								updateRadarStyling({ shapePolygon: true })
@@ -1929,6 +1983,7 @@ export function ToolsPanel({
 							Polygon
 						</button>
 						<button
+							type="button"
 							className={`flex-1 rounded-md border py-1.5 font-medium text-xs transition-colors ${!radarPolygon ? "border-indigo-500 bg-indigo-50 text-indigo-700" : "border-stone-200 text-stone-500 hover:border-stone-300"}`}
 							onClick={() =>
 								updateRadarStyling({ shapePolygon: false })
@@ -1970,7 +2025,9 @@ export function ToolsPanel({
 					columnLabels={yKeyColumnLabels}
 					value={styling.radar?.colorRules || []}
 					onChange={(colorRules) =>
-						updateRadarStyling({ colorRules: colorRules as any })
+						updateRadarStyling({
+							colorRules: colorRules as ColorRule[],
+						})
 					}
 					onReset={() => updateRadarStyling({ colorRules: [] })}
 				/>
@@ -2022,7 +2079,9 @@ export function ToolsPanel({
 					columnLabels={yKeyColumnLabels}
 					value={styling.boxplot?.colorRules || []}
 					onChange={(colorRules) =>
-						updateBoxPlotStyling({ colorRules: colorRules as any })
+						updateBoxPlotStyling({
+							colorRules: colorRules as ColorRule[],
+						})
 					}
 					onReset={() => updateBoxPlotStyling({ colorRules: [] })}
 				/>
@@ -2168,7 +2227,7 @@ export function ToolsPanel({
 					value={styling.cluster?.colorRules || []}
 					onChange={(colorRules) =>
 						updateClusterStyling({
-							colorRules: colorRules as any,
+							colorRules: colorRules as ColorRule[],
 						})
 					}
 					onReset={() => updateClusterStyling({ colorRules: [] })}
@@ -2288,7 +2347,7 @@ export function ToolsPanel({
 					value={styling.multiline?.colorRules || []}
 					onChange={(colorRules) =>
 						updateMultilineStyling({
-							colorRules: colorRules as any,
+							colorRules: colorRules as ColorRule[],
 						})
 					}
 					onReset={() => updateMultilineStyling({ colorRules: [] })}
@@ -2320,9 +2379,7 @@ export function ToolsPanel({
 						lineType: styling.multiline?.lineType,
 						lineWidth: styling.multiline?.lineWidth,
 					}}
-					onChange={(updates) =>
-						updateMultilineStyling(updates as any)
-					}
+					onChange={(updates) => updateMultilineStyling(updates)}
 					onReset={() =>
 						updateMultilineStyling({
 							curveType: undefined,
@@ -2356,9 +2413,7 @@ export function ToolsPanel({
 					symbolType={styling.multiline?.symbolType}
 					symbolSize={styling.multiline?.symbolSize}
 					defaultSymbolType="circle"
-					onChange={(updates) =>
-						updateMultilineStyling(updates as any)
-					}
+					onChange={(updates) => updateMultilineStyling(updates)}
 					onReset={() =>
 						updateMultilineStyling({
 							symbolType: undefined,
@@ -2423,7 +2478,9 @@ export function ToolsPanel({
 					}
 					onChange={(v) =>
 						updateMultilineStyling({
-							trendlineType: v as any,
+							trendlineType: v as NonNullable<
+								VisualizationStyling["multiline"]
+							>["trendlineType"],
 							showTrendline: undefined,
 						})
 					}
@@ -2543,9 +2600,15 @@ export function ToolsPanel({
 					columns={tmAllColumns}
 					valueColumns={columns}
 					visualizationType="treemap"
-					value={(styling.treemap?.colorRules as any) ?? []}
+					value={
+						(styling.treemap?.colorRules as
+							| ColorRule[]
+							| undefined) ?? []
+					}
 					onChange={(rules) =>
-						updateTreemapStyling({ colorRules: rules as any })
+						updateTreemapStyling({
+							colorRules: rules as ColorRule[],
+						})
 					}
 					onReset={() => updateTreemapStyling({ colorRules: [] })}
 					columnValues={columnValues}
@@ -2555,8 +2618,14 @@ export function ToolsPanel({
 			<ToolAccordion title="Tile Labels">
 				<div className="space-y-3">
 					<div>
-						<label className={tmLabelCls}>Font Family</label>
+						<label
+							htmlFor={`${fieldIdPrefix}-treemap-tile-font-family`}
+							className={tmLabelCls}
+						>
+							Font Family
+						</label>
 						<select
+							id={`${fieldIdPrefix}-treemap-tile-font-family`}
 							value={
 								styling.treemap?.tileLabel?.fontFamily ??
 								"Inter"
@@ -2576,8 +2645,14 @@ export function ToolsPanel({
 						</select>
 					</div>
 					<div>
-						<label className={tmLabelCls}>Font Size</label>
+						<label
+							htmlFor={`${fieldIdPrefix}-treemap-tile-font-size`}
+							className={tmLabelCls}
+						>
+							Font Size
+						</label>
 						<input
+							id={`${fieldIdPrefix}-treemap-tile-font-size`}
 							type="number"
 							min={6}
 							max={32}
@@ -2591,8 +2666,14 @@ export function ToolsPanel({
 						/>
 					</div>
 					<div>
-						<label className={tmLabelCls}>Font Weight</label>
+						<label
+							htmlFor={`${fieldIdPrefix}-treemap-tile-font-weight`}
+							className={tmLabelCls}
+						>
+							Font Weight
+						</label>
 						<select
+							id={`${fieldIdPrefix}-treemap-tile-font-weight`}
 							value={
 								styling.treemap?.tileLabel?.fontWeight ?? "600"
 							}
@@ -2611,9 +2692,15 @@ export function ToolsPanel({
 						</select>
 					</div>
 					<div>
-						<label className={tmLabelCls}>Color</label>
+						<label
+							htmlFor={`${fieldIdPrefix}-treemap-tile-color`}
+							className={tmLabelCls}
+						>
+							Color
+						</label>
 						<div className="flex items-center gap-2">
 							<input
+								id={`${fieldIdPrefix}-treemap-tile-color`}
 								type="color"
 								value={
 									styling.treemap?.tileLabel?.color ??
@@ -2695,9 +2782,15 @@ export function ToolsPanel({
 							Header Style
 						</p>
 						<div>
-							<label className={tmLabelCls}>Background</label>
+							<label
+								htmlFor={`${fieldIdPrefix}-treemap-header-background`}
+								className={tmLabelCls}
+							>
+								Background
+							</label>
 							<div className="flex items-center gap-2">
 								<input
+									id={`${fieldIdPrefix}-treemap-header-background`}
 									type="color"
 									value={
 										styling.treemap?.headerFill ?? "#e2e8f0"
@@ -2715,8 +2808,14 @@ export function ToolsPanel({
 							</div>
 						</div>
 						<div>
-							<label className={tmLabelCls}>Font Family</label>
+							<label
+								htmlFor={`${fieldIdPrefix}-treemap-header-font-family`}
+								className={tmLabelCls}
+							>
+								Font Family
+							</label>
 							<select
+								id={`${fieldIdPrefix}-treemap-header-font-family`}
 								value={
 									styling.treemap?.headerLabel?.fontFamily ??
 									"Inter"
@@ -2736,8 +2835,14 @@ export function ToolsPanel({
 							</select>
 						</div>
 						<div>
-							<label className={tmLabelCls}>Font Size</label>
+							<label
+								htmlFor={`${fieldIdPrefix}-treemap-header-font-size`}
+								className={tmLabelCls}
+							>
+								Font Size
+							</label>
 							<input
+								id={`${fieldIdPrefix}-treemap-header-font-size`}
 								type="number"
 								min={6}
 								max={32}
@@ -2753,8 +2858,14 @@ export function ToolsPanel({
 							/>
 						</div>
 						<div>
-							<label className={tmLabelCls}>Font Weight</label>
+							<label
+								htmlFor={`${fieldIdPrefix}-treemap-header-font-weight`}
+								className={tmLabelCls}
+							>
+								Font Weight
+							</label>
 							<select
+								id={`${fieldIdPrefix}-treemap-header-font-weight`}
 								value={
 									styling.treemap?.headerLabel?.fontWeight ??
 									"bold"
@@ -2774,9 +2885,15 @@ export function ToolsPanel({
 							</select>
 						</div>
 						<div>
-							<label className={tmLabelCls}>Text Color</label>
+							<label
+								htmlFor={`${fieldIdPrefix}-treemap-header-text-color`}
+								className={tmLabelCls}
+							>
+								Text Color
+							</label>
 							<div className="flex items-center gap-2">
 								<input
+									id={`${fieldIdPrefix}-treemap-header-text-color`}
 									type="color"
 									value={
 										styling.treemap?.headerLabel?.color ??
@@ -2854,7 +2971,9 @@ export function ToolsPanel({
 					columnLabels={yKeyColumnLabels}
 					value={styling.stackbar?.colorRules || []}
 					onChange={(colorRules) =>
-						updateStackbarStyling({ colorRules: colorRules as any })
+						updateStackbarStyling({
+							colorRules: colorRules as ColorRule[],
+						})
 					}
 					onReset={() => updateStackbarStyling({ colorRules: [] })}
 				/>
@@ -3061,7 +3180,9 @@ export function ToolsPanel({
 					columnLabels={yKeyColumnLabels}
 					value={styling.bar?.colorRules || []}
 					onChange={(colorRules) =>
-						updateBarStyling({ colorRules: colorRules as any })
+						updateBarStyling({
+							colorRules: colorRules as ColorRule[],
+						})
 					}
 					onReset={() => updateBarStyling({ colorRules: [] })}
 				/>
@@ -3238,7 +3359,9 @@ export function ToolsPanel({
 					columnLabels={yKeyColumnLabels}
 					value={styling.area?.colorRules || []}
 					onChange={(colorRules) =>
-						updateAreaStyling({ colorRules: colorRules as any })
+						updateAreaStyling({
+							colorRules: colorRules as ColorRule[],
+						})
 					}
 					onReset={() => updateAreaStyling({ colorRules: [] })}
 				/>
@@ -3458,7 +3581,9 @@ export function ToolsPanel({
 					columnLabels={yKeyColumnLabels}
 					value={styling.line?.colorRules || []}
 					onChange={(colorRules) =>
-						updateLineStyling({ colorRules: colorRules as any })
+						updateLineStyling({
+							colorRules: colorRules as ColorRule[],
+						})
 					}
 					onReset={() => updateLineStyling({ colorRules: [] })}
 				/>
@@ -3585,7 +3710,11 @@ export function ToolsPanel({
 				<Trendline
 					value={styling.line?.trendlineType}
 					onChange={(v) =>
-						updateLineStyling({ trendlineType: v as any })
+						updateLineStyling({
+							trendlineType: v as NonNullable<
+								VisualizationStyling["line"]
+							>["trendlineType"],
+						})
 					}
 					onReset={() =>
 						updateLineStyling({ trendlineType: undefined })
@@ -3866,7 +3995,9 @@ export function ToolsPanel({
 					columnLabels={comboColorColumns?.labels ?? {}}
 					value={styling.combo?.colorRules || []}
 					onChange={(colorRules) =>
-						updateComboStyling({ colorRules: colorRules as any })
+						updateComboStyling({
+							colorRules: colorRules as ColorRule[],
+						})
 					}
 					onReset={() => updateComboStyling({ colorRules: [] })}
 				/>
@@ -4064,6 +4195,7 @@ export function ToolsPanel({
 							![
 								"filter",
 								"htmlblock",
+								"markdown",
 								"csvexport",
 								"table",
 								"pivot",
@@ -4071,14 +4203,20 @@ export function ToolsPanel({
 							].includes(visualizationType)
 								? eventsTool
 								: null,
-							!["filter", "htmlblock", "csvexport"].includes(
-								visualizationType,
-							)
+							![
+								"filter",
+								"htmlblock",
+								"markdown",
+								"csvexport",
+							].includes(visualizationType)
 								? sortTool
 								: null,
-							!["filter", "htmlblock", "csvexport"].includes(
-								visualizationType,
-							)
+							![
+								"filter",
+								"htmlblock",
+								"markdown",
+								"csvexport",
+							].includes(visualizationType)
 								? formatTool
 								: null,
 							visualizationType !== "puck" &&

@@ -64,6 +64,7 @@ export type VisualizationType =
 	| "polarbar"
 	| "cluster"
 	| "htmlblock"
+	| "markdown"
 	| "multiline"
 	| "wordcloud"
 	| "bubble"
@@ -131,6 +132,8 @@ export interface VisualizationConfig {
 	llmPrompt?: string;
 	/** HTML Block: the selected LLM model engine ID */
 	llmModel?: string;
+	/** MD Text File: the Markdown content to render */
+	markdownContent?: string;
 	/** Pivot: dimension columns used for vertical row grouping (in order) */
 	pivotRows?: string[];
 	/** Pivot: dimension columns whose values become dynamic column headers (crosstab) */
@@ -194,6 +197,8 @@ export interface VisualizationConfig {
 		| "datepicker"
 		| "button"
 		| "float";
+	/** Filter widget (button type): arrange options beside or above each other */
+	filterButtonLayout?: "horizontal" | "vertical";
 	/** Filter widget: allow selecting multiple values (not applicable to typeahead) */
 	filterMultiSelect?: boolean;
 	/** Filter widget: apply filter immediately on selection or require Apply button click */
