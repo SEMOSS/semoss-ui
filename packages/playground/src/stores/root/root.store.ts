@@ -348,5 +348,14 @@ export class RootStore {
 				this._store.theme.variables.secondaryColor,
 			);
 		}
+
+		const darkBase = this._store.theme.variables.darkModeBaseColor;
+		if (darkBase) {
+			const match = darkBase.match(/rgba?\s*\(\s*(\d+)/);
+			const base = match ? Number.parseInt(match[1], 10) : 10;
+			root.style.setProperty("--dark-base", String(base));
+		} else {
+			root.style.removeProperty("--dark-base");
+		}
 	};
 }

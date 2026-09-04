@@ -109,6 +109,7 @@ export interface ThemeMap {
 		/** Styles of the app */
 		variables: {
 			backgroundColor: string;
+			darkModeBaseColor?: string;
 			primaryColor: string;
 			secondaryColor: string;
 		};

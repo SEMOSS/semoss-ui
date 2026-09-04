@@ -25,7 +25,7 @@ export const AppLogo: React.FC<AppLogoProps> = observer(({ full = false }) => {
 		? root.theme.images.appDark
 		: root.theme.images.logoDark;
 	const src = isDarkMode && darkSrc ? darkSrc : lightSrc;
-	const imgClass = "";
+	const imgClass = isDarkMode && !darkSrc ? "brightness-0 invert" : "";
 
 	return (
 		<div
