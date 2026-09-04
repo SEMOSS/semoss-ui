@@ -38,6 +38,7 @@ import {
 	type RoomStore,
 } from "@/stores";
 import { decideAgentToolAction } from "@/stores/message/agent-harness";
+import { isAskExecutionMode } from "@/utility/mcp-utils";
 import { RoomCompactionIndicator } from "./room-compaction-indicator";
 import { RoomGeneratingIndicator } from "./room-generating-indicator";
 import { RoomSuggestions } from "./room-suggestions";
@@ -56,6 +57,7 @@ export interface RoomContentProps {
 export const RoomContent = observer(({ room }: RoomContentProps) => {
 	const { chat } = useChat();
 	const { t } = useTranslation("room");
+	const { t: tChat } = useTranslation("chat");
 	const { getGracefulErrorMessage } = useGracefulErrors();
 	const { isDragging } = useFileDrag();
 	const [scrollEle, setScrollEle] = useState<HTMLDivElement | null>(null);
@@ -393,6 +395,28 @@ export const RoomContent = observer(({ room }: RoomContentProps) => {
 		});
 	})();
 
+	// Count of ask-mode tools on the latest response genuinely waiting on the
+	// user to click into them — not auto tools (they don't need a click), and
+	// not ask tools that already resolved (SUCCESS/ERROR/CANCELLED) or are
+	// already running (LOADING) after being clicked.
+	const waitingAskToolCount = (() => {
+		if (!room.latestResponseMessage) {
+			return 0;
+		}
+
+		return room.latestResponseMessage.parts.filter((part) => {
+			if (part.type !== "TOOL_CALL") {
+				return false;
+			}
+			const tool = room.getTool(part.toolCall.id);
+			return (
+				!!tool &&
+				tool.status === "INITIAL" &&
+				isAskExecutionMode(tool.json._meta?.SMSS_MCP_EXECUTION)
+			);
+		}).length;
+	})();
+
 	const showLoadingState =
 		room.isLoading ||
 		room.latestResponseMessage.isThinking ||
@@ -540,7 +564,20 @@ export const RoomContent = observer(({ room }: RoomContentProps) => {
 							)}
 							<div className="-mt-4">
 								<RoomGeneratingIndicator
-									active={showLoadingState}
+									active={
+										showLoadingState ||
+										waitingAskToolCount > 0
+									}
+									overrideMessage={
+										waitingAskToolCount > 0
+											? tChat(
+													"response.completeToolsAsk",
+													{
+														count: waitingAskToolCount,
+													},
+												)
+											: undefined
+									}
 								/>
 							</div>
 							{room.theme.featureFlags?.enableSuggestions && (

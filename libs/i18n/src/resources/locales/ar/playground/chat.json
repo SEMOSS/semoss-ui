@@ -27,6 +27,8 @@
 		"feedbackCancel": "إلغاء",
 		"feedbackSubmit": "إرسال",
 		"fastForwardToEnd": "التقدم السريع إلى النهاية",
+		"completeToolsAsk_one": "يرجى إكمال الأداة للمتابعة.",
+		"completeToolsAsk_other": "يرجى إكمال الأدوات للمتابعة.",
 		"emptyResponse": "استجابة فارغة."
 	},
 	"input": {
