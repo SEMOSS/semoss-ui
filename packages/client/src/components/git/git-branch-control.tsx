@@ -37,6 +37,8 @@ interface GitBranchControlProps {
 	branchesStatus: GitDataStatus;
 	/** Whether repository status is currently refreshing. */
 	isRefreshing: boolean;
+	/** Whether branch mutations are disabled for this resource. */
+	readOnly?: boolean;
 	/** Accessible scope name for the control. */
 	label: string;
 	/** Notify the adapter when branch choices open or close. */
@@ -61,6 +63,7 @@ export const GitBranchControl = ({
 	branches,
 	branchesStatus,
 	isRefreshing,
+	readOnly = false,
 	label,
 	onOpenChange,
 	onSwitch,
@@ -143,7 +146,7 @@ export const GitBranchControl = ({
 					<Button
 						variant="ghost"
 						size="sm"
-						disabled={isSwitching || isRefreshing}
+						disabled={readOnly || isSwitching || isRefreshing}
 						className={cn(
 							"min-w-0 max-w-56 justify-between rounded-md border border-input",
 							triggerClassName,
@@ -242,11 +245,13 @@ export const GitBranchControl = ({
 				</TooltipTrigger>
 				<TooltipContent>{refreshLabel}</TooltipContent>
 			</Tooltip>
-			<GitCreateBranchDialog
-				open={isCreateOpen}
-				onCreate={onCreate}
-				onSubmit={handleCreateSubmit}
-			/>
+			{readOnly ? null : (
+				<GitCreateBranchDialog
+					open={isCreateOpen}
+					onCreate={onCreate}
+					onSubmit={handleCreateSubmit}
+				/>
+			)}
 		</>
 	);
 };

@@ -95,7 +95,7 @@ export const AdminQueryPage = () => {
 						{/* keyed per database so each system DB gets its own
 						workbench instance and persisted layout */}
 						<WorkbenchProvider
-							id={`admin-query--${selectedDatabase}`}
+							cacheKey={`admin-query--${selectedDatabase}`}
 							key={selectedDatabase}
 						>
 							<AdminQueryWorkbench />

@@ -20,12 +20,16 @@ import { WORKBENCH_STYLES } from "../core/workbench.chrome";
  * portal, so this is the step that makes edits visible there.
  */
 export const ProjectPublishButton: React.FC = () => {
-	const { project } = useProject();
+	const { project, permission } = useProject();
 	const insight = useInsight();
 	const [isLoading, setIsLoading] = useState(false);
+	const readOnly = !(permission === "OWNER" || permission === "EDIT");
 
 	/** Compile the project. */
 	const compile = useCallback(async () => {
+		if (readOnly) {
+			return false;
+		}
 		try {
 			setIsLoading(true);
 
@@ -43,10 +47,13 @@ export const ProjectPublishButton: React.FC = () => {
 		} finally {
 			setIsLoading(false);
 		}
-	}, [insight.actions, project.project_id]);
+	}, [readOnly, insight.actions, project.project_id]);
 
 	/** Publish the project. */
 	const publish = useCallback(async () => {
+		if (readOnly) {
+			return;
+		}
 		try {
 			setIsLoading(true);
 
@@ -61,7 +68,7 @@ export const ProjectPublishButton: React.FC = () => {
 		} finally {
 			setIsLoading(false);
 		}
-	}, [insight.actions, project.project_id]);
+	}, [readOnly, insight.actions, project.project_id]);
 
 	useWorkbenchCommands([
 		{
@@ -69,6 +76,7 @@ export const ProjectPublishButton: React.FC = () => {
 			category: "",
 			label: "Compile",
 			description: "Compile the project",
+			visible: !readOnly,
 			handler: () => {
 				void compile();
 			},
@@ -78,11 +86,16 @@ export const ProjectPublishButton: React.FC = () => {
 			category: "",
 			label: "Publish",
 			description: "Publish a new release",
+			visible: !readOnly,
 			handler: () => {
 				void publish();
 			},
 		},
 	]);
+
+	if (readOnly) {
+		return null;
+	}
 
 	return (
 		<Tooltip>
