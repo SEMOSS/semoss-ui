@@ -353,6 +353,12 @@ export interface ThemeMap {
 			enableAutoGreeting?: boolean;
 			/** Whether to show the temperature slider in room settings. Defaults to false. */
 			enableTemperature?: boolean;
+			/**
+			 * Whether to auto-apply the user's saved default agent profile when
+			 * they open a new chat. Exposes a toggle in the top-right of the new
+			 * room page. Defaults to false.
+			 */
+			enableDefaultAgent?: boolean;
 		};
 	};
 }

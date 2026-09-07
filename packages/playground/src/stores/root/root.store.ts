@@ -105,6 +105,7 @@ export class RootStore {
 				enableFeedbackText: true,
 				enableAutoGreeting: false,
 				enableTemperature: false,
+				enableDefaultAgent: false,
 			},
 		},
 	};

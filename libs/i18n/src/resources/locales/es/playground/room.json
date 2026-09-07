@@ -121,5 +121,8 @@
 		"searchPlaceholder": "Buscar conocimiento y cajas de herramientas",
 		"noResults": "No se encontraron elementos coincidentes",
 		"noItemsAvailable": "No hay conocimiento o cajas de herramientas disponibles"
+	},
+	"defaultAgent": {
+		"toggle": "Usar perfil de agente predeterminado"
 	}
 }

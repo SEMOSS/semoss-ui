@@ -22,6 +22,7 @@ import {
 	ResizablePanel,
 	ResizablePanelGroup,
 	ScrollArea,
+	Switch,
 	Tooltip,
 	TooltipContent,
 	TooltipTrigger,
@@ -156,6 +157,9 @@ export const NewRoomPage = observer(() => {
 		tempRoomStore.setMode(mode);
 	}, [mode, tempRoomStore]);
 	const [selectedWorkspaceId, setSelectedWorkspaceId] = useState<string>("");
+	// Whether to apply the user's default agent profile on this new chat.
+	// Starts true so the default loads on mount; URL params always override.
+	const [useDefaultAgent, setUseDefaultAgent] = useState(true);
 	// The agent whose default model has already been applied to the picker
 	const appliedAgentModelRef = useRef<string>("");
 	const [prompts, setPrompts] = useState<string[]>([]);
@@ -318,6 +322,43 @@ export const NewRoomPage = observer(() => {
 			setSelectedWorkspaceId(workspaceIdSearchParams);
 		}
 	}, [workspaceIdSearchParams]);
+
+	// Apply or clear the default agent profile when the toggle changes.
+	// URL params take full precedence — this effect is a no-op when one is set.
+	useEffect(() => {
+		if (
+			!root.theme.featureFlags?.enableDefaultAgent ||
+			!chat.isInitialized ||
+			!chat.profileDefaultAgentId ||
+			workspaceIdSearchParams
+		) {
+			return;
+		}
+
+		if (useDefaultAgent) {
+			setSelectedWorkspaceId(chat.profileDefaultAgentId);
+			tempRoomStore.setOptions({
+				...tempRoomStore.options,
+				workspace: { workspace_id: chat.profileDefaultAgentId },
+			});
+		} else {
+			setSelectedWorkspaceId("");
+			tempRoomStore.setOptions({
+				...tempRoomStore.options,
+				workspace: undefined,
+				instructions: "",
+				mcp: [...(root.theme.defaultTools || [])],
+			});
+		}
+	}, [
+		useDefaultAgent,
+		chat.isInitialized,
+		chat.profileDefaultAgentId,
+		root.theme.featureFlags?.enableDefaultAgent,
+		root.theme.defaultTools,
+		workspaceIdSearchParams,
+		tempRoomStore,
+	]);
 
 	// Handle workspace data loading from RoomWorkspace component selection
 	// biome-ignore lint/correctness/useExhaustiveDependencies: autoGreetedRef guards re-fires
@@ -518,6 +559,29 @@ export const NewRoomPage = observer(() => {
 							alt="Background"
 							className="absolute inset-0 h-full w-full select-none object-cover"
 						/>
+						{root.theme.featureFlags?.enableDefaultAgent &&
+						chat.isInitialized &&
+						chat.profileDefaultAgentId &&
+						!workspaceIdSearchParams ? (
+							<div className="absolute end-3 top-3 z-20 flex items-start gap-2 rounded-md border border-input bg-background/80 px-3 py-1.5 shadow-xs backdrop-blur-sm">
+								<BotIcon className="h-4 w-4 shrink-0 text-muted-foreground" />
+								<div className="flex flex-col">
+									<span className="text-muted-foreground text-sm">
+										{t("room:defaultAgent.toggle")}
+									</span>
+									{useDefaultAgent &&
+									getWorkspace.data?.name ? (
+										<span className="max-w-48 truncate font-medium text-sm">
+											{getWorkspace.data.name}
+										</span>
+									) : null}
+								</div>
+								<Switch
+									checked={useDefaultAgent}
+									onCheckedChange={setUseDefaultAgent}
+								/>
+							</div>
+						) : null}
 						<DropHighlight className="flex h-full flex-col items-center justify-center overflow-auto p-2">
 							<div className="z-10 mx-auto flex w-full max-w-2xl flex-col gap-6">
 								{root.theme.landing ? (

@@ -125,5 +125,8 @@
 		"searchPlaceholder": "Search knowledge and toolboxes",
 		"noResults": "No matching items found",
 		"noItemsAvailable": "No knowledge or toolboxes available"
+	},
+	"defaultAgent": {
+		"toggle": "Use default agent profile"
 	}
 }

@@ -125,5 +125,8 @@
 		"searchPlaceholder": "ナレッジとツールボックスを検索",
 		"noResults": "一致する項目が見つかりません",
 		"noItemsAvailable": "使用可能なナレッジまたはツールボックスはありません"
+	},
+	"defaultAgent": {
+		"toggle": "デフォルトエージェントプロフィールを使用する"
 	}
 }
