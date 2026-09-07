@@ -26,6 +26,9 @@ export const AgentEditorSaveControl: FC<
 > = ({ value }) => {
 	const isLoading = value?.isLoading ?? false;
 	const isFetching = value?.isFetching ?? false;
+	if (!value || value.readOnly) {
+		return null;
+	}
 
 	return (
 		<Tooltip>
@@ -35,8 +38,8 @@ export const AgentEditorSaveControl: FC<
 					size="icon-sm"
 					aria-label="Save agent"
 					data-testid="agent-editor-save-button"
-					disabled={!value || isLoading || isFetching}
-					onClick={() => value?.onSave()}
+					disabled={isLoading || isFetching}
+					onClick={value.onSave}
 					className={cn(
 						"flex-none text-muted-foreground",
 						WORKBENCH_STYLES.chromeButton,

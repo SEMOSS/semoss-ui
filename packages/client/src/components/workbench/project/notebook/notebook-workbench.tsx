@@ -1,4 +1,5 @@
 import { useEffect, useMemo } from "react";
+import type { Role } from "@semoss/sdk";
 import { useInsight } from "@semoss/sdk/react";
 import type { FileExplorerApi } from "@semoss/shared";
 import { useProject, useWorkbench, useWorkbenchCommands } from "@/hooks";
@@ -38,62 +39,71 @@ const NOTEBOOK_NAME = "main.ipynb";
 const NOTEBOOK_EDITOR_ID = "notebook-main";
 
 /** The default arrangement: main.ipynb open, files on the left. */
-const createNotebookWorkbenchLayout = (projectId: string): WorkbenchLayout => ({
-	version: 4,
-	tree: {
-		type: "tabset",
-		id: "main",
-		size: 1,
-		panelIds: [NOTEBOOK_EDITOR_ID],
-		activeId: NOTEBOOK_EDITOR_ID,
-	},
-	panels: {
-		[NOTEBOOK_EDITOR_ID]: {
-			id: NOTEBOOK_EDITOR_ID,
-			type: WORKBENCH_COMPONENTS.FILE_NOTEBOOK_EDITOR,
-			name: NOTEBOOK_NAME,
-			canClose: true,
-			config: {
-				type: "PROJECT",
-				id: projectId,
+const createNotebookWorkbenchLayout = (
+	projectId: string,
+	permission: Role,
+): WorkbenchLayout => {
+	const readOnly = !(permission === "OWNER" || permission === "EDIT");
+	return {
+		tree: {
+			type: "tabset",
+			id: "main",
+			size: 1,
+			panelIds: [NOTEBOOK_EDITOR_ID],
+			activeId: NOTEBOOK_EDITOR_ID,
+		},
+		panels: {
+			[NOTEBOOK_EDITOR_ID]: {
+				id: NOTEBOOK_EDITOR_ID,
+				type: WORKBENCH_COMPONENTS.FILE_NOTEBOOK_EDITOR,
 				name: NOTEBOOK_NAME,
-				path: NOTEBOOK_PATH,
+				canClose: true,
+				config: {
+					type: "PROJECT",
+					id: projectId,
+					name: NOTEBOOK_NAME,
+					path: NOTEBOOK_PATH,
+				},
+			},
+			[WORKBENCH_PANEL_RECORDS.FILE_EXPLORER.id]: {
+				...WORKBENCH_PANEL_RECORDS.FILE_EXPLORER,
+				config: { type: "PROJECT", id: projectId },
+			},
+			...(!readOnly
+				? {
+						[WORKBENCH_PANEL_RECORDS.GIT_VERSION.id]: {
+							...WORKBENCH_PANEL_RECORDS.GIT_VERSION,
+							config: { type: "PROJECT", id: projectId },
+						},
+					}
+				: {}),
+			[WORKBENCH_PANEL_RECORDS.PROJECT_TERMINAL.id]:
+				WORKBENCH_PANEL_RECORDS.PROJECT_TERMINAL,
+			[WORKBENCH_PANEL_RECORDS.ASSISTANT.id]:
+				WORKBENCH_PANEL_RECORDS.ASSISTANT,
+		},
+		borders: {
+			left: {
+				panelIds: [
+					WORKBENCH_COMPONENTS.FILE_EXPLORER,
+					...(!readOnly ? [WORKBENCH_COMPONENTS.GIT_VERSION] : []),
+				],
+				activeId: WORKBENCH_COMPONENTS.FILE_EXPLORER,
+				size: 400,
+			},
+			bottom: {
+				panelIds: [WORKBENCH_COMPONENTS.PROJECT_TERMINAL],
+				activeId: null,
+				size: 300,
+			},
+			right: {
+				panelIds: [WORKBENCH_COMPONENTS.ASSISTANT],
+				activeId: null,
+				size: 400,
 			},
 		},
-		[WORKBENCH_PANEL_RECORDS.FILE_EXPLORER.id]: {
-			...WORKBENCH_PANEL_RECORDS.FILE_EXPLORER,
-			config: { type: "PROJECT", id: projectId },
-		},
-		[WORKBENCH_PANEL_RECORDS.GIT_VERSION.id]: {
-			...WORKBENCH_PANEL_RECORDS.GIT_VERSION,
-			config: { type: "PROJECT", id: projectId },
-		},
-		[WORKBENCH_PANEL_RECORDS.PROJECT_TERMINAL.id]:
-			WORKBENCH_PANEL_RECORDS.PROJECT_TERMINAL,
-		[WORKBENCH_PANEL_RECORDS.ASSISTANT.id]:
-			WORKBENCH_PANEL_RECORDS.ASSISTANT,
-	},
-	borders: {
-		left: {
-			panelIds: [
-				WORKBENCH_COMPONENTS.FILE_EXPLORER,
-				WORKBENCH_COMPONENTS.GIT_VERSION,
-			],
-			activeId: WORKBENCH_COMPONENTS.FILE_EXPLORER,
-			size: 400,
-		},
-		bottom: {
-			panelIds: [WORKBENCH_COMPONENTS.PROJECT_TERMINAL],
-			activeId: null,
-			size: 300,
-		},
-		right: {
-			panelIds: [WORKBENCH_COMPONENTS.ASSISTANT],
-			activeId: null,
-			size: 400,
-		},
-	},
-});
+	};
+};
 
 /** Blueprints, keyed by type. Module-scope so identities never churn. */
 const NOTEBOOK_WORKBENCH_COMPONENTS: Record<string, WorkbenchPanelConfigAny> = {
@@ -140,32 +150,41 @@ const NOTEBOOK_WORKBENCH_COMPONENTS: Record<string, WorkbenchPanelConfigAny> = {
  * terminal, and the shared assistant panel.
  */
 export const NotebookWorkbench: React.FC = () => {
-	const { project } = useProject();
+	const { project, permission } = useProject();
 	const insight = useInsight();
+	const readOnly = !(permission === "OWNER" || permission === "EDIT");
 	const workbenchLayout = useMemo(
-		() => createNotebookWorkbenchLayout(project.project_id),
-		[project.project_id],
+		() => createNotebookWorkbenchLayout(project.project_id, permission),
+		[project.project_id, permission],
 	);
 
-	const configureAssistant = useWorkbench((s) => s.assistant.configure);
+	const configureWorkbench = useWorkbench((s) => s.configure);
 
 	// keep the assistant's system prompt/tools in sync with the active notebook
 	useEffect(() => {
 		const name = project.project_display_name || project.project_name;
 
-		configureAssistant({
-			systemPrompt: `You are the assistant for the ${name} notebook workbench (${project.project_id}). Your role is to help the user build and run this notebook and the rest of the project's files. Use only the tools provided in this room. Never claim that an operation succeeded unless its tool result confirms success. Keep answers concise and grounded in the active notebook.`,
-			mcp: [
-				{
-					type: "PROJECT",
-					id: project.project_id,
-					name: name,
-				},
-			],
-			runParams: { project: project.project_id },
+		configureWorkbench({
+			resource: {
+				type: "PROJECT",
+				id: project.project_id,
+				permission,
+			},
+			assistant: {
+				systemPrompt: `You are the assistant for the ${name} notebook workbench (${project.project_id}). Your role is to help the user build and run this notebook and the rest of the project's files. Use only the tools provided in this room. Never claim that an operation succeeded unless its tool result confirms success. Keep answers concise and grounded in the active notebook.`,
+				mcp: [
+					{
+						type: "PROJECT",
+						id: project.project_id,
+						name: name,
+					},
+				],
+				runParams: { project: project.project_id },
+			},
 		});
 	}, [
-		configureAssistant,
+		configureWorkbench,
+		permission,
 		project.project_display_name,
 		project.project_id,
 		project.project_name,
@@ -185,6 +204,7 @@ export const NotebookWorkbench: React.FC = () => {
 			id: "workbench.file.create",
 			category: "File",
 			label: "Create File",
+			visible: !readOnly,
 			handler: (get) =>
 				(
 					get().layout.values[WORKBENCH_COMPONENTS.FILE_EXPLORER] as
@@ -196,6 +216,7 @@ export const NotebookWorkbench: React.FC = () => {
 			id: "workbench.file.create-folder",
 			category: "File",
 			label: "Create Folder",
+			visible: !readOnly,
 			handler: (get) =>
 				(
 					get().layout.values[WORKBENCH_COMPONENTS.FILE_EXPLORER] as
@@ -207,6 +228,7 @@ export const NotebookWorkbench: React.FC = () => {
 			id: "workbench.file.upload",
 			category: "File",
 			label: "Upload Files",
+			visible: !readOnly,
 			handler: (get) =>
 				(
 					get().layout.values[WORKBENCH_COMPONENTS.FILE_EXPLORER] as

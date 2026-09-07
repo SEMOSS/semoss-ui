@@ -1,4 +1,5 @@
 import { useEffect, useMemo } from "react";
+import type { Role } from "@semoss/sdk";
 import { useInsight } from "@semoss/sdk/react";
 import type { FileExplorerApi } from "@semoss/shared";
 import { useProject, useWorkbench, useWorkbenchCommands } from "@/hooks";
@@ -36,45 +37,54 @@ import { AGENT_EDITOR_PANEL } from "./agent-editor-panel";
  * insight explorer on a collapsed left rail so they don't take space away
  * from the editor on first load.
  */
-const createAgentWorkbenchLayout = (projectId: string): WorkbenchLayout => ({
-	version: 4,
-	tree: {
-		type: "tabset",
-		id: "main",
-		size: 1,
-		panelIds: [WORKBENCH_COMPONENTS.AGENT_EDITOR],
-		activeId: WORKBENCH_COMPONENTS.AGENT_EDITOR,
-	},
-	panels: {
-		[WORKBENCH_PANEL_RECORDS.AGENT_EDITOR.id]:
-			WORKBENCH_PANEL_RECORDS.AGENT_EDITOR,
-		[WORKBENCH_PANEL_RECORDS.FILE_EXPLORER.id]: {
-			...WORKBENCH_PANEL_RECORDS.FILE_EXPLORER,
-			config: { type: "PROJECT", id: projectId },
+const createAgentWorkbenchLayout = (
+	projectId: string,
+	permission: Role,
+): WorkbenchLayout => {
+	const readOnly = !(permission === "OWNER" || permission === "EDIT");
+	return {
+		tree: {
+			type: "tabset",
+			id: "main",
+			size: 1,
+			panelIds: [WORKBENCH_COMPONENTS.AGENT_EDITOR],
+			activeId: WORKBENCH_COMPONENTS.AGENT_EDITOR,
 		},
-		[WORKBENCH_PANEL_RECORDS.ASSISTANT.id]:
-			WORKBENCH_PANEL_RECORDS.ASSISTANT,
-		[WORKBENCH_PANEL_RECORDS.GIT_VERSION.id]: {
-			...WORKBENCH_PANEL_RECORDS.GIT_VERSION,
-			config: { type: "PROJECT", id: projectId },
+		panels: {
+			[WORKBENCH_PANEL_RECORDS.AGENT_EDITOR.id]:
+				WORKBENCH_PANEL_RECORDS.AGENT_EDITOR,
+			[WORKBENCH_PANEL_RECORDS.FILE_EXPLORER.id]: {
+				...WORKBENCH_PANEL_RECORDS.FILE_EXPLORER,
+				config: { type: "PROJECT", id: projectId },
+			},
+			[WORKBENCH_PANEL_RECORDS.ASSISTANT.id]:
+				WORKBENCH_PANEL_RECORDS.ASSISTANT,
+			...(!readOnly
+				? {
+						[WORKBENCH_PANEL_RECORDS.GIT_VERSION.id]: {
+							...WORKBENCH_PANEL_RECORDS.GIT_VERSION,
+							config: { type: "PROJECT", id: projectId },
+						},
+					}
+				: {}),
 		},
-	},
-	borders: {
-		left: {
-			panelIds: [
-				WORKBENCH_COMPONENTS.FILE_EXPLORER,
-				WORKBENCH_COMPONENTS.GIT_VERSION,
-			],
-			activeId: null,
-			size: 400,
+		borders: {
+			left: {
+				panelIds: [
+					WORKBENCH_COMPONENTS.FILE_EXPLORER,
+					...(!readOnly ? [WORKBENCH_COMPONENTS.GIT_VERSION] : []),
+				],
+				activeId: null,
+				size: 400,
+			},
+			right: {
+				panelIds: [WORKBENCH_COMPONENTS.ASSISTANT],
+				activeId: null,
+				size: 400,
+			},
 		},
-		right: {
-			panelIds: [WORKBENCH_COMPONENTS.ASSISTANT],
-			activeId: null,
-			size: 400,
-		},
-	},
-});
+	};
+};
 
 /** Blueprints, keyed by type. Module-scope so identities never churn. */
 const AGENT_WORKBENCH_COMPONENTS: Record<string, WorkbenchPanelConfigAny> = {
@@ -128,32 +138,41 @@ const AGENT_WORKBENCH_COMPONENTS: Record<string, WorkbenchPanelConfigAny> = {
  * shared assistant panel.
  */
 export const AgentWorkbench: React.FC = () => {
-	const { project } = useProject();
+	const { project, permission } = useProject();
 	const insight = useInsight();
+	const readOnly = !(permission === "OWNER" || permission === "EDIT");
 	const workbenchLayout = useMemo(
-		() => createAgentWorkbenchLayout(project.project_id),
-		[project.project_id],
+		() => createAgentWorkbenchLayout(project.project_id, permission),
+		[project.project_id, permission],
 	);
 
-	const configureAssistant = useWorkbench((s) => s.assistant.configure);
+	const configureWorkbench = useWorkbench((s) => s.configure);
 
 	// keep the assistant's system prompt/tools in sync with the active skill
 	useEffect(() => {
 		const name = project.project_display_name || project.project_name;
 
-		configureAssistant({
-			systemPrompt: `You are the assistant for the ${name} agent workbench (${project.project_id}). Your role is to help the user configure this agent and work with the rest of the project's files. Use only the tools provided in this room. Never claim that an operation succeeded unless its tool result confirms success. Keep answers concise and grounded in the active project.`,
-			mcp: [
-				{
-					type: "PROJECT",
-					id: project.project_id,
-					name: name,
-				},
-			],
-			runParams: { project: project.project_id },
+		configureWorkbench({
+			resource: {
+				type: "PROJECT",
+				id: project.project_id,
+				permission,
+			},
+			assistant: {
+				systemPrompt: `You are the assistant for the ${name} agent workbench (${project.project_id}). Your role is to help the user configure this agent and work with the rest of the project's files. Use only the tools provided in this room. Never claim that an operation succeeded unless its tool result confirms success. Keep answers concise and grounded in the active project.`,
+				mcp: [
+					{
+						type: "PROJECT",
+						id: project.project_id,
+						name: name,
+					},
+				],
+				runParams: { project: project.project_id },
+			},
 		});
 	}, [
-		configureAssistant,
+		configureWorkbench,
+		permission,
 		project.project_display_name,
 		project.project_id,
 		project.project_name,
@@ -173,6 +192,7 @@ export const AgentWorkbench: React.FC = () => {
 			id: "workbench.file.create",
 			category: "File",
 			label: "Create File",
+			visible: !readOnly,
 			handler: (get) =>
 				(
 					get().layout.values[WORKBENCH_COMPONENTS.FILE_EXPLORER] as
@@ -184,6 +204,7 @@ export const AgentWorkbench: React.FC = () => {
 			id: "workbench.file.create-folder",
 			category: "File",
 			label: "Create Folder",
+			visible: !readOnly,
 			handler: (get) =>
 				(
 					get().layout.values[WORKBENCH_COMPONENTS.FILE_EXPLORER] as
@@ -195,6 +216,7 @@ export const AgentWorkbench: React.FC = () => {
 			id: "workbench.file.upload",
 			category: "File",
 			label: "Upload Files",
+			visible: !readOnly,
 			handler: (get) =>
 				(
 					get().layout.values[WORKBENCH_COMPONENTS.FILE_EXPLORER] as

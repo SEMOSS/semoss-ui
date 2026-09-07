@@ -18,7 +18,7 @@ export const GitVersionControl: FC<
 	const insight = useInsight();
 	const access = useWorkbenchAccess(config.type, config.id);
 	const [isBranchesOpen, setIsBranchesOpen] = useState(false);
-	const readOnly = access.status !== "ready" || !access.canEdit;
+	const readOnly = access.status !== "ready" || access.readOnly;
 	const prefix = config.type === "ENGINE" ? "Engine" : "Project";
 	const resource =
 		config.type === "ENGINE"

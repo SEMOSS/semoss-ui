@@ -49,7 +49,7 @@ const FileMcpEditorPanel = ({
 }: WorkbenchPanelProps<FileMcpEditorParams>) => {
 	const insight = useInsight();
 	const access = useWorkbenchAccess(config.type, config.id);
-	const readOnly = access.status !== "ready" || !access.canEdit;
+	const readOnly = access.status !== "ready" || access.readOnly;
 	const [loaded, setLoaded] = useState<LoadedMCPFile | null>(null);
 	const [isLoading, setIsLoading] = useState(false);
 	const readPixel = getFileMcpReadPixel(config);

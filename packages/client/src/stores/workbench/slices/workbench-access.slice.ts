@@ -15,6 +15,12 @@ export interface WorkbenchAccessEntry {
 }
 
 interface WorkbenchAccessActions {
+	/** Store an already-resolved permission for one resource. */
+	syncPermission: (
+		type: WorkbenchAccessType,
+		id: string,
+		permission: Role,
+	) => void;
 	load: (type: WorkbenchAccessType, id: string) => Promise<Role>;
 	refresh: (type: WorkbenchAccessType, id: string) => Promise<Role>;
 }
@@ -115,6 +121,26 @@ export const createWorkbenchAccessSlice =
 		return {
 			entries: {},
 			actions: {
+				syncPermission: (type, id, permission) => {
+					const key = getWorkbenchAccessKey(type, id);
+					const current = get().access.entries[key];
+					if (
+						current?.status === "SUCCESS" &&
+						current.permission === permission
+					) {
+						return;
+					}
+
+					set((root) => ({
+						access: {
+							...root.access,
+							entries: {
+								...root.access.entries,
+								[key]: { status: "SUCCESS", permission },
+							},
+						},
+					}));
+				},
 				load: (type, id) => fetchPermission(type, id, false),
 				refresh: (type, id) => fetchPermission(type, id, true),
 			},

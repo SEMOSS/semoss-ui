@@ -8,7 +8,11 @@ import {
 	TooltipContent,
 	TooltipTrigger,
 } from "@semoss/ui/next";
-import type { WorkbenchChromeProps } from "@/stores/workbench";
+import { useWorkbench } from "@/hooks";
+import {
+	getWorkbenchAccessKey,
+	type WorkbenchChromeProps,
+} from "@/stores/workbench";
 import { WORKBENCH_STYLES } from "../core/workbench.chrome";
 import type { FileExplorerParams } from "./file-explorer-panel";
 
@@ -16,31 +20,53 @@ import type { FileExplorerParams } from "./file-explorer-panel";
 export const FileExplorerControl: FC<
 	WorkbenchChromeProps<FileExplorerParams, FileExplorerApi>
 > = ({ value }) => {
+	const accessKey = value
+		? value.mode.type === "APP"
+			? getWorkbenchAccessKey("PROJECT", value.mode.app)
+			: value.mode.type === "ENGINE"
+				? getWorkbenchAccessKey("ENGINE", value.mode.engine)
+				: value.mode.type === "STORAGE"
+					? getWorkbenchAccessKey("ENGINE", value.mode.storage)
+					: null
+		: null;
+	const permission = useWorkbench((state) =>
+		accessKey ? state.access.entries[accessKey]?.permission : undefined,
+	);
+
 	if (!value) return null;
+
+	const readOnlyResource = accessKey
+		? !(permission === "OWNER" || permission === "EDIT")
+		: false;
+	const canCreate =
+		!readOnlyResource &&
+		(value.capabilities.mutate || value.capabilities.upload);
 
 	return (
 		<>
-			<Tooltip>
-				<TooltipTrigger asChild>
-					<Button
-						data-testid="file-explorer-new-button"
-						variant="ghost"
-						size="icon-sm"
-						className={cn(
-							"flex-none text-muted-foreground",
-							WORKBENCH_STYLES.chromeButton,
-						)}
-						aria-label="New"
-						onClick={() => value.commands.openNewFile()}
-					>
-						<FilePlus2Icon
-							aria-hidden
-							className={WORKBENCH_STYLES.chromeIcon}
-						/>
-					</Button>
-				</TooltipTrigger>
-				<TooltipContent>New</TooltipContent>
-			</Tooltip>
+			{canCreate ? (
+				<Tooltip>
+					<TooltipTrigger asChild>
+						<Button
+							data-testid="file-explorer-new-button"
+							variant="ghost"
+							size="icon-sm"
+							className={cn(
+								"flex-none text-muted-foreground",
+								WORKBENCH_STYLES.chromeButton,
+							)}
+							aria-label="New"
+							onClick={() => value.commands.openNewFile()}
+						>
+							<FilePlus2Icon
+								aria-hidden
+								className={WORKBENCH_STYLES.chromeIcon}
+							/>
+						</Button>
+					</TooltipTrigger>
+					<TooltipContent>New</TooltipContent>
+				</Tooltip>
+			) : null}
 			<Tooltip>
 				<TooltipTrigger asChild>
 					<Button

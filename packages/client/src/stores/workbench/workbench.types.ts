@@ -349,12 +349,6 @@ export interface WorkbenchPanelSlot {
 
 /** A complete arrangement: which instances exist and where they sit. */
 export interface WorkbenchLayout {
-	/**
-	 * This arrangement's version, and part of its cache key. Bump it whenever
-	 * the default's shape changes: cached copies are orphaned rather than
-	 * migrated, so a stale one would otherwise shadow the new default forever.
-	 */
-	version: number;
 	tree: WorkbenchLayoutNode;
 	panels: Record<WorkbenchPanelId, WorkbenchPanelRecord>;
 	/** Any side may be omitted; missing ones start empty. */
@@ -366,13 +360,13 @@ export interface WorkbenchLayout {
 /**
  * A persisted arrangement: a layout as it is cached. Internal to the store —
  * the shape is guarded structurally by `parseWorkbenchSnapshot`, and which
- * shape a cache entry belongs to is settled by the layout `version` in its key.
+ * shape a cache entry belongs to is settled by the workbench store's key.
  *
  * Closing a panel deletes it, so there is nothing here beyond what is open.
  * A cache written before that was true may still carry a `closed` array and
  * records for panels in no stack; both are dropped on load.
  */
-export type WorkbenchSnapshot = Omit<WorkbenchLayout, "version">;
+export type WorkbenchSnapshot = WorkbenchLayout;
 
 /** Options accepted when spawning or selecting a panel instance. */
 export type WorkbenchPanelOptions = Partial<
@@ -389,6 +383,8 @@ export interface WorkbenchCommand {
 	category?: string;
 	label: string;
 	description?: string;
+	/** False when the command is unavailable in the current runtime context. */
+	visible?: boolean;
 	handler: (get: () => WorkbenchState) => void;
 }
 

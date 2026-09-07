@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
 import type { StoreApi } from "zustand";
+import type { Role } from "@semoss/sdk";
 import { useInsight } from "@semoss/sdk/react";
 import type { FileExplorerApi } from "@semoss/shared";
 import { ModelChatStoreProvider } from "@/contexts/model-chat.context";
-import { useEngine, useWorkbenchCommands } from "@/hooks";
+import { useEngine, useWorkbench, useWorkbenchCommands } from "@/hooks";
 import type {
 	WorkbenchLayout,
 	WorkbenchPanelConfigAny,
@@ -43,50 +44,59 @@ import { MODEL_CHAT_SETTINGS_PANEL } from "./model-chat-settings";
  * border — a cached layout shadows the default forever, so the bump is what
  * retires the previous arrangement.
  */
-const createModelWorkbenchLayout = (engineId: string): WorkbenchLayout => ({
-	version: 6,
-	tree: {
-		type: "tabset",
-		id: "main",
-		size: 1,
-		panelIds: [WORKBENCH_COMPONENTS.MODEL_CHAT],
-		activeId: WORKBENCH_COMPONENTS.MODEL_CHAT,
-	},
-	panels: {
-		[WORKBENCH_PANEL_RECORDS.MODEL_CHAT.id]:
-			WORKBENCH_PANEL_RECORDS.MODEL_CHAT,
-		[WORKBENCH_PANEL_RECORDS.FILE_EXPLORER.id]: {
-			...WORKBENCH_PANEL_RECORDS.FILE_EXPLORER,
-			config: { type: "ENGINE", id: engineId },
+const createModelWorkbenchLayout = (
+	engineId: string,
+	permission: Role,
+): WorkbenchLayout => {
+	const readOnly = !(permission === "OWNER" || permission === "EDIT");
+	return {
+		tree: {
+			type: "tabset",
+			id: "main",
+			size: 1,
+			panelIds: [WORKBENCH_COMPONENTS.MODEL_CHAT],
+			activeId: WORKBENCH_COMPONENTS.MODEL_CHAT,
 		},
-		[WORKBENCH_PANEL_RECORDS.GIT_VERSION.id]: {
-			...WORKBENCH_PANEL_RECORDS.GIT_VERSION,
-			config: { type: "ENGINE", id: engineId },
+		panels: {
+			[WORKBENCH_PANEL_RECORDS.MODEL_CHAT.id]:
+				WORKBENCH_PANEL_RECORDS.MODEL_CHAT,
+			[WORKBENCH_PANEL_RECORDS.FILE_EXPLORER.id]: {
+				...WORKBENCH_PANEL_RECORDS.FILE_EXPLORER,
+				config: { type: "ENGINE", id: engineId },
+			},
+			...(!readOnly
+				? {
+						[WORKBENCH_PANEL_RECORDS.GIT_VERSION.id]: {
+							...WORKBENCH_PANEL_RECORDS.GIT_VERSION,
+							config: { type: "ENGINE", id: engineId },
+						},
+					}
+				: {}),
+			[WORKBENCH_PANEL_RECORDS.MODEL_CHAT_SETTINGS.id]:
+				WORKBENCH_PANEL_RECORDS.MODEL_CHAT_SETTINGS,
+			[WORKBENCH_PANEL_RECORDS.MODEL_CHAT_HISTORY.id]:
+				WORKBENCH_PANEL_RECORDS.MODEL_CHAT_HISTORY,
 		},
-		[WORKBENCH_PANEL_RECORDS.MODEL_CHAT_SETTINGS.id]:
-			WORKBENCH_PANEL_RECORDS.MODEL_CHAT_SETTINGS,
-		[WORKBENCH_PANEL_RECORDS.MODEL_CHAT_HISTORY.id]:
-			WORKBENCH_PANEL_RECORDS.MODEL_CHAT_HISTORY,
-	},
-	borders: {
-		left: {
-			panelIds: [
-				WORKBENCH_COMPONENTS.FILE_EXPLORER,
-				WORKBENCH_COMPONENTS.GIT_VERSION,
-			],
-			activeId: null,
-			size: 300,
+		borders: {
+			left: {
+				panelIds: [
+					WORKBENCH_COMPONENTS.FILE_EXPLORER,
+					...(!readOnly ? [WORKBENCH_COMPONENTS.GIT_VERSION] : []),
+				],
+				activeId: null,
+				size: 300,
+			},
+			right: {
+				panelIds: [
+					WORKBENCH_COMPONENTS.MODEL_CHAT_SETTINGS,
+					WORKBENCH_COMPONENTS.MODEL_CHAT_HISTORY,
+				],
+				activeId: null,
+				size: 360,
+			},
 		},
-		right: {
-			panelIds: [
-				WORKBENCH_COMPONENTS.MODEL_CHAT_SETTINGS,
-				WORKBENCH_COMPONENTS.MODEL_CHAT_HISTORY,
-			],
-			activeId: null,
-			size: 360,
-		},
-	},
-});
+	};
+};
 
 /** Blueprints, keyed by type. Module-scope so identities never churn. */
 const MODEL_WORKBENCH_COMPONENTS: Record<string, WorkbenchPanelConfigAny> = {
@@ -144,12 +154,24 @@ const MODEL_WORKBENCH_COMPONENTS: Record<string, WorkbenchPanelConfigAny> = {
  * single insight.
  */
 export const ModelWorkbench: React.FC = () => {
-	const { engine } = useEngine();
+	const { engine, permission } = useEngine();
 	const insight = useInsight();
+	const readOnly = !(permission === "OWNER" || permission === "EDIT");
 	const workbenchLayout = useMemo(
-		() => createModelWorkbenchLayout(engine.engine_id),
-		[engine.engine_id],
+		() => createModelWorkbenchLayout(engine.engine_id, permission),
+		[engine.engine_id, permission],
 	);
+	const configureWorkbench = useWorkbench((state) => state.configure);
+
+	useEffect(() => {
+		configureWorkbench({
+			resource: {
+				type: "ENGINE",
+				id: engine.engine_id,
+				permission,
+			},
+		});
+	}, [configureWorkbench, engine.engine_id, permission]);
 
 	// Created once per workbench instance before its panels render.
 	const [chatStore] = useState<StoreApi<ModelChatStoreInterface>>(() => {
@@ -183,6 +205,7 @@ export const ModelWorkbench: React.FC = () => {
 			id: "workbench.file.create",
 			category: "File",
 			label: "Create File",
+			visible: !readOnly,
 			handler: (get) =>
 				(
 					get().layout.values[WORKBENCH_COMPONENTS.FILE_EXPLORER] as
@@ -194,6 +217,7 @@ export const ModelWorkbench: React.FC = () => {
 			id: "workbench.file.create-folder",
 			category: "File",
 			label: "Create Folder",
+			visible: !readOnly,
 			handler: (get) =>
 				(
 					get().layout.values[WORKBENCH_COMPONENTS.FILE_EXPLORER] as
@@ -205,6 +229,7 @@ export const ModelWorkbench: React.FC = () => {
 			id: "workbench.file.upload",
 			category: "File",
 			label: "Upload Files",
+			visible: !readOnly,
 			handler: (get) =>
 				(
 					get().layout.values[WORKBENCH_COMPONENTS.FILE_EXPLORER] as
@@ -238,6 +263,7 @@ export const ModelWorkbench: React.FC = () => {
 			id: "workbench.version-control.open",
 			category: "View",
 			label: "Open Version Control",
+			visible: !readOnly,
 			handler: (get) => {
 				get().layout.actions.selectPanel(
 					WORKBENCH_COMPONENTS.GIT_VERSION,

@@ -97,6 +97,7 @@ export interface AgentEditorSaveValue {
 	onSave: () => void;
 	isLoading: boolean;
 	isFetching: boolean;
+	readOnly: boolean;
 }
 
 /**
@@ -105,8 +106,9 @@ export interface AgentEditorSaveValue {
  * Save rides the panel's chrome control instead of an in-body toolbar.
  */
 const AgentEditorPanel: WorkbenchComponent = ({ id, setValue }) => {
-	const { project } = useProject();
+	const { project, permission } = useProject();
 	const insight = useInsight();
+	const readOnly = !(permission === "OWNER" || permission === "EDIT");
 	// The insight's id resolves asynchronously after mount - fetching before
 	// it's ready would run GetWorkspace a wasted first time against no insight.
 	const { data: response, status } = usePixel<GetWorkspaceResponse>(
@@ -128,7 +130,7 @@ const AgentEditorPanel: WorkbenchComponent = ({ id, setValue }) => {
 	}, [status, response]);
 
 	const onSave = useCallback(async () => {
-		if (!formValues) return;
+		if (readOnly || !formValues) return;
 		try {
 			setIsLoading(true);
 			const { pixelReturn } = await insight.actions.run<[unknown]>(
@@ -146,7 +148,7 @@ const AgentEditorPanel: WorkbenchComponent = ({ id, setValue }) => {
 		} finally {
 			setIsLoading(false);
 		}
-	}, [formValues, insight, project.project_id]);
+	}, [readOnly, formValues, insight, project.project_id]);
 
 	useWorkbenchControl(id, AgentEditorSaveControl);
 
@@ -154,8 +156,8 @@ const AgentEditorPanel: WorkbenchComponent = ({ id, setValue }) => {
 	// value changes) - depending on it here would loop forever.
 	// biome-ignore lint/correctness/useExhaustiveDependencies: see above
 	useEffect(() => {
-		setValue({ onSave, isLoading, isFetching });
-	}, [onSave, isLoading, isFetching]);
+		setValue({ onSave, isLoading, isFetching, readOnly });
+	}, [onSave, isLoading, isFetching, readOnly]);
 
 	return (
 		<div className="h-full w-full overflow-auto">
@@ -167,7 +169,7 @@ const AgentEditorPanel: WorkbenchComponent = ({ id, setValue }) => {
 				<AgentForm
 					data={formValues}
 					onChange={setFormValues}
-					readOnly={isLoading}
+					readOnly={readOnly || isLoading}
 					knownHookKinds={response.known_hook_kinds ?? []}
 					defaultTools={response.default_tools ?? []}
 				/>

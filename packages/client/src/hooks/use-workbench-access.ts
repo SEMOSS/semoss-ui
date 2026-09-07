@@ -22,7 +22,7 @@ export interface WorkbenchAccessErrorState {
 export interface WorkbenchAccessReadyState {
 	status: "ready";
 	permission: Role;
-	canEdit: boolean;
+	readOnly: boolean;
 	/** A background refresh is in flight; last-known permission is still shown. */
 	refreshing: boolean;
 	/** Set when the most recent refresh failed; last-known permission is still shown. */
@@ -34,9 +34,6 @@ export type WorkbenchAccessState =
 	| WorkbenchAccessLoadingState
 	| WorkbenchAccessErrorState
 	| WorkbenchAccessReadyState;
-
-const canEditPermission = (permission: Role): boolean =>
-	permission === "OWNER" || permission === "EDIT";
 
 /** Lazily resolve and cache access for one workbench resource. */
 export const useWorkbenchAccess = (
@@ -76,7 +73,7 @@ export const useWorkbenchAccess = (
 	return {
 		status: "ready",
 		permission,
-		canEdit: canEditPermission(permission),
+		readOnly: !(permission === "OWNER" || permission === "EDIT"),
 		refreshing: entry.status === "LOADING",
 		refreshError: entry.status === "ERROR" ? entry.error : undefined,
 		refresh,

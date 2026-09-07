@@ -21,7 +21,7 @@ const AccessProbe = () => {
 			{access.status === "ready" ? (
 				<>
 					<span>permission:{access.permission}</span>
-					<span>canEdit:{String(access.canEdit)}</span>
+					<span>readOnly:{String(access.readOnly)}</span>
 					<span>refreshing:{String(access.refreshing)}</span>
 					<span>refreshError:{access.refreshError ?? ""}</span>
 					<button
@@ -66,7 +66,7 @@ describe("useWorkbenchAccess", () => {
 		await waitFor(() =>
 			expect(screen.getByText("permission:OWNER")).toBeVisible(),
 		);
-		expect(screen.getByText("canEdit:true")).toBeVisible();
+		expect(screen.getByText("readOnly:false")).toBeVisible();
 		expect(screen.getByText("refreshing:false")).toBeVisible();
 	});
 
@@ -102,7 +102,7 @@ describe("useWorkbenchAccess", () => {
 		await waitFor(() =>
 			expect(screen.getByText("permission:READ_ONLY")).toBeVisible(),
 		);
-		expect(screen.getByText("canEdit:false")).toBeVisible();
+		expect(screen.getByText("readOnly:true")).toBeVisible();
 		expect(screen.getByText("refreshing:false")).toBeVisible();
 	});
 

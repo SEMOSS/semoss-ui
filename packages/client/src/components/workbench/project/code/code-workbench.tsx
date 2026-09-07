@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo } from "react";
+import type { Role } from "@semoss/sdk";
 import { useInsight } from "@semoss/sdk/react";
 import type { FileExplorerApi } from "@semoss/shared";
 import { toast } from "@semoss/ui/next";
@@ -78,68 +79,77 @@ const runTreePublished = (
  * primary build surface for a CODE project (a cached layout still wins for
  * users who closed it).
  */
-const createCodeWorkbenchLayout = (projectId: string): WorkbenchLayout => ({
-	version: 4,
-	tree: {
-		type: "tabset",
-		id: "main",
-		size: 1,
-		panelIds: [WORKBENCH_COMPONENTS.PROJECT_APP_RENDERER],
-		activeId: WORKBENCH_COMPONENTS.PROJECT_APP_RENDERER,
-	},
-	panels: {
-		[WORKBENCH_PANEL_RECORDS.PROJECT_APP_RENDERER.id]: {
-			...WORKBENCH_PANEL_RECORDS.PROJECT_APP_RENDERER,
-			config: { previewVersion: 0 },
+const createCodeWorkbenchLayout = (
+	projectId: string,
+	permission: Role,
+): WorkbenchLayout => {
+	const readOnly = !(permission === "OWNER" || permission === "EDIT");
+	return {
+		tree: {
+			type: "tabset",
+			id: "main",
+			size: 1,
+			panelIds: [WORKBENCH_COMPONENTS.PROJECT_APP_RENDERER],
+			activeId: WORKBENCH_COMPONENTS.PROJECT_APP_RENDERER,
 		},
-		[WORKBENCH_PANEL_RECORDS.FILE_EXPLORER.id]: {
-			...WORKBENCH_PANEL_RECORDS.FILE_EXPLORER,
-			config: {
-				type: "PROJECT",
-				id: projectId,
+		panels: {
+			[WORKBENCH_PANEL_RECORDS.PROJECT_APP_RENDERER.id]: {
+				...WORKBENCH_PANEL_RECORDS.PROJECT_APP_RENDERER,
+				config: { previewVersion: 0 },
+			},
+			[WORKBENCH_PANEL_RECORDS.FILE_EXPLORER.id]: {
+				...WORKBENCH_PANEL_RECORDS.FILE_EXPLORER,
+				config: {
+					type: "PROJECT",
+					id: projectId,
+				},
+			},
+			...(!readOnly
+				? {
+						[WORKBENCH_PANEL_RECORDS.GIT_VERSION.id]: {
+							...WORKBENCH_PANEL_RECORDS.GIT_VERSION,
+							config: {
+								type: "PROJECT",
+								id: projectId,
+							},
+						},
+					}
+				: {}),
+			[WORKBENCH_PANEL_RECORDS.PROJECT_INSIGHT_EXPLORER.id]:
+				WORKBENCH_PANEL_RECORDS.PROJECT_INSIGHT_EXPLORER,
+			[WORKBENCH_PANEL_RECORDS.PROJECT_TERMINAL.id]:
+				WORKBENCH_PANEL_RECORDS.PROJECT_TERMINAL,
+			[WORKBENCH_PANEL_RECORDS.PROJECT_ENGINES.id]:
+				WORKBENCH_PANEL_RECORDS.PROJECT_ENGINES,
+			[WORKBENCH_PANEL_RECORDS.ASSISTANT.id]:
+				WORKBENCH_PANEL_RECORDS.ASSISTANT,
+		},
+		borders: {
+			left: {
+				panelIds: [
+					WORKBENCH_COMPONENTS.FILE_EXPLORER,
+					...(!readOnly ? [WORKBENCH_COMPONENTS.GIT_VERSION] : []),
+					WORKBENCH_COMPONENTS.PROJECT_INSIGHT_EXPLORER,
+				],
+				activeId: WORKBENCH_COMPONENTS.FILE_EXPLORER,
+				size: 400,
+			},
+			bottom: {
+				panelIds: [WORKBENCH_COMPONENTS.PROJECT_TERMINAL],
+				activeId: null,
+				size: 300,
+			},
+			right: {
+				panelIds: [
+					WORKBENCH_COMPONENTS.ASSISTANT,
+					WORKBENCH_COMPONENTS.PROJECT_ENGINES,
+				],
+				activeId: WORKBENCH_COMPONENTS.ASSISTANT,
+				size: 400,
 			},
 		},
-		[WORKBENCH_PANEL_RECORDS.GIT_VERSION.id]: {
-			...WORKBENCH_PANEL_RECORDS.GIT_VERSION,
-			config: {
-				type: "PROJECT",
-				id: projectId,
-			},
-		},
-		[WORKBENCH_PANEL_RECORDS.PROJECT_INSIGHT_EXPLORER.id]:
-			WORKBENCH_PANEL_RECORDS.PROJECT_INSIGHT_EXPLORER,
-		[WORKBENCH_PANEL_RECORDS.PROJECT_TERMINAL.id]:
-			WORKBENCH_PANEL_RECORDS.PROJECT_TERMINAL,
-		[WORKBENCH_PANEL_RECORDS.PROJECT_ENGINES.id]:
-			WORKBENCH_PANEL_RECORDS.PROJECT_ENGINES,
-		[WORKBENCH_PANEL_RECORDS.ASSISTANT.id]:
-			WORKBENCH_PANEL_RECORDS.ASSISTANT,
-	},
-	borders: {
-		left: {
-			panelIds: [
-				WORKBENCH_COMPONENTS.FILE_EXPLORER,
-				WORKBENCH_COMPONENTS.GIT_VERSION,
-				WORKBENCH_COMPONENTS.PROJECT_INSIGHT_EXPLORER,
-			],
-			activeId: WORKBENCH_COMPONENTS.FILE_EXPLORER,
-			size: 400,
-		},
-		bottom: {
-			panelIds: [WORKBENCH_COMPONENTS.PROJECT_TERMINAL],
-			activeId: null,
-			size: 300,
-		},
-		right: {
-			panelIds: [
-				WORKBENCH_COMPONENTS.ASSISTANT,
-				WORKBENCH_COMPONENTS.PROJECT_ENGINES,
-			],
-			activeId: WORKBENCH_COMPONENTS.ASSISTANT,
-			size: 400,
-		},
-	},
-});
+	};
+};
 
 /** Blueprints, keyed by type. Module-scope so identities never churn. */
 const CODE_WORKBENCH_COMPONENTS: Record<string, WorkbenchPanelConfigAny> = {
@@ -202,11 +212,12 @@ const CODE_WORKBENCH_COMPONENTS: Record<string, WorkbenchPanelConfigAny> = {
  */
 export const CodeWorkbench: React.FC = () => {
 	const layoutActions = useWorkbench((s) => s.layout.actions);
-	const { project } = useProject();
+	const { project, permission } = useProject();
 	const insight = useInsight();
+	const readOnly = !(permission === "OWNER" || permission === "EDIT");
 	const workbenchLayout = useMemo(
-		() => createCodeWorkbenchLayout(project.project_id),
-		[project.project_id],
+		() => createCodeWorkbenchLayout(project.project_id, permission),
+		[project.project_id, permission],
 	);
 
 	/**
@@ -237,37 +248,49 @@ export const CodeWorkbench: React.FC = () => {
 	// publish the agent's publish tool performs. Thrown errors surface as an
 	// error toast in the assistant panel.
 	const handleRebuild = useCallback(async () => {
+		if (readOnly) {
+			return;
+		}
 		await insight.actions.run(
 			`BuildAndPublishApp(project='${project.project_id}');`,
 		);
 		refreshCodeRenderer();
 		toast.success("App rebuilt and published.");
-	}, [insight.actions, project.project_id, refreshCodeRenderer]);
+	}, [readOnly, insight.actions, project.project_id, refreshCodeRenderer]);
 
-	const configureAssistant = useWorkbench((s) => s.assistant.configure);
+	const configureWorkbench = useWorkbench((s) => s.configure);
 
 	// keep the assistant's system prompt/tools in sync with the active app
 	useEffect(() => {
 		const name = project.project_display_name || project.project_name;
 
-		configureAssistant({
-			systemPrompt: `You are the assistant for the ${name} code workbench (${project.project_id}). Your role is to help the user build and run this app and the rest of the project's files. Use only the tools provided in this room. Never claim that an operation succeeded unless its tool result confirms success. Keep answers concise and grounded in the active project.`,
-			mcp: [
-				{
-					type: "PROJECT",
-					id: project.project_id,
-					name: name,
-				},
-			],
-			runParams: { project: project.project_id },
-			permissionMode: "acceptEdits",
-			onRunCompleted: handleRunCompleted,
-			onRebuild: handleRebuild,
+		configureWorkbench({
+			resource: {
+				type: "PROJECT",
+				id: project.project_id,
+				permission,
+			},
+			assistant: {
+				systemPrompt: `You are the assistant for the ${name} code workbench (${project.project_id}). Your role is to help the user build and run this app and the rest of the project's files. Use only the tools provided in this room. Never claim that an operation succeeded unless its tool result confirms success. Keep answers concise and grounded in the active project.`,
+				mcp: [
+					{
+						type: "PROJECT",
+						id: project.project_id,
+						name: name,
+					},
+				],
+				runParams: { project: project.project_id },
+				permissionMode: readOnly ? null : "acceptEdits",
+				onRunCompleted: handleRunCompleted,
+				onRebuild: readOnly ? undefined : handleRebuild,
+			},
 		});
 	}, [
-		configureAssistant,
+		readOnly,
+		configureWorkbench,
 		handleRebuild,
 		handleRunCompleted,
+		permission,
 		project.project_display_name,
 		project.project_id,
 		project.project_name,
@@ -287,6 +310,7 @@ export const CodeWorkbench: React.FC = () => {
 			id: "workbench.file.create",
 			category: "File",
 			label: "Create File",
+			visible: !readOnly,
 			handler: (get) =>
 				(
 					get().layout.values[WORKBENCH_COMPONENTS.FILE_EXPLORER] as
@@ -298,6 +322,7 @@ export const CodeWorkbench: React.FC = () => {
 			id: "workbench.file.create-folder",
 			category: "File",
 			label: "Create Folder",
+			visible: !readOnly,
 			handler: (get) =>
 				(
 					get().layout.values[WORKBENCH_COMPONENTS.FILE_EXPLORER] as
@@ -309,6 +334,7 @@ export const CodeWorkbench: React.FC = () => {
 			id: "workbench.file.upload",
 			category: "File",
 			label: "Upload Files",
+			visible: !readOnly,
 			handler: (get) =>
 				(
 					get().layout.values[WORKBENCH_COMPONENTS.FILE_EXPLORER] as

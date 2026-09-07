@@ -34,7 +34,7 @@ const GitDiffPanel = ({
 }: WorkbenchPanelProps<GitDiffParams, GitDiffControlValue>) => {
 	const insight = useInsight();
 	const access = useWorkbenchAccess(config.type, config.id);
-	const readOnly = access.status !== "ready" || !access.canEdit;
+	const readOnly = access.status !== "ready" || access.readOnly;
 	const [renderSideBySide, setRenderSideBySide] = useState(true);
 	const historical = config.side === "COMMIT";
 	const prefix = config.type === "ENGINE" ? "Engine" : "Project";

@@ -34,10 +34,11 @@ const StorageFileExplorerPanel: WorkbenchComponent<
 	Record<string, unknown>,
 	FileExplorerApi
 > = ({ id, setValue }) => {
-	const { engine } = useEngine();
+	const { engine, permission } = useEngine();
 	const insight = useInsight();
 	const { t } = useTranslation("common");
 	const layoutActions = useWorkbench((s) => s.layout.actions);
+	const readOnly = !(permission === "OWNER" || permission === "EDIT");
 	const mode = useMemo<FileMode>(
 		() => ({ type: "STORAGE", storage: engine.engine_id }),
 		[engine.engine_id],
@@ -45,6 +46,7 @@ const StorageFileExplorerPanel: WorkbenchComponent<
 
 	const explorer = useFileExplorer({
 		mode: mode,
+		readOnly,
 		onItemSelect: (item) => {
 			const fileName =
 				item.name.split("/").filter(Boolean).pop() || item.name;
@@ -97,18 +99,20 @@ const StorageFileExplorerPanel: WorkbenchComponent<
 			...explorer.commands,
 			refresh: (paths) => {
 				const target = paths?.[0] ?? explorer.header.path;
-				insight.actions
-					.run(
-						`Storage(storage = "${engine.engine_id}") | SyncStorageToLocal(storagePath='${target}', filePath='${target}');`,
-					)
-					.catch((e) => {
-						toast.error(
-							getFileOperationErrorMessage(
-								t("fileExplorer.toasts.syncFailed"),
-								e,
-							),
-						);
-					});
+				if (!readOnly) {
+					insight.actions
+						.run(
+							`Storage(storage = "${engine.engine_id}") | SyncStorageToLocal(storagePath='${target}', filePath='${target}');`,
+						)
+						.catch((e) => {
+							toast.error(
+								getFileOperationErrorMessage(
+									t("fileExplorer.toasts.syncFailed"),
+									e,
+								),
+							);
+						});
+				}
 				explorer.commands.refresh(paths);
 			},
 		};
@@ -140,7 +144,7 @@ const StorageFileExplorerPanel: WorkbenchComponent<
 			},
 			commands: wrappedCommands,
 		};
-	}, [explorer, engine.engine_id, insight.actions, t]);
+	}, [engine.engine_id, explorer, insight.actions, readOnly, t]);
 
 	// publish the explorer for the panel's chrome control. `wrappedExplorer`
 	// is identity-stable (built once above), so this runs once; `setValue` is

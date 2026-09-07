@@ -123,7 +123,7 @@ one type.
 
 **Authorization is runtime state, never layout config.** Resource panels call
 `useWorkbenchAccess(type, id)` directly in their body — it returns a discriminated union
-(`"loading"` / `"error"` / `"ready"`), narrowing to `permission`/`canEdit` only once resolved.
+(`"loading"` / `"error"` / `"ready"`), narrowing to `permission`/`readOnly` only once resolved.
 Do not serialize `permission` or `readOnly` into a panel record, DB layout, or localStorage
 snapshot. Backend authorization remains authoritative.
 
@@ -146,9 +146,10 @@ mounts before first show (the assistant uses it to initialize while its border i
 One file: module-scope `LAYOUT: WorkbenchLayout` + `COMPONENTS` map + a
 `useWorkbenchCommands([...])` call + `<Workbench layout components borderSlots />`. Toolbar
 controls (command menu, publish, settings toggle) go in `borderSlots.left.after` — there is no
-separate `actions` prop. The page wraps it in `<WorkbenchProvider id={<unique-instance-id>}>`;
-`id` just needs to be unique per instance. Follow `engine/function/function-workbench.tsx` as
-the exemplar.
+separate `actions` prop. The page wraps it in
+`<WorkbenchProvider cacheKey={<unique-cache-key>}>`; the key isolates all persisted workbench
+state and should include runtime variants such as read-only mode. Follow
+`engine/function/function-workbench.tsx` as the exemplar.
 
 **Commands**: register palette commands with `useWorkbenchCommands([...])` (`hooks/
 use-workbench-commands.ts`) from the component that owns them — a domain workbench or a panel.
@@ -373,10 +374,10 @@ gets at most one chrome control, and this needed two.
   `useWorkbenchCommands` (see `project-publish-button.tsx`).
 - **`canRename` gates user affordances only** (double-click, F2, context menu). Programmatic
   `renamePanel`/`rename` always works — the file editors' dirty `*` marker depends on it.
-- **Layout is cached per `id` and per layout version** as a
-  `WorkbenchSnapshot`. A cached layout shadows the default forever, so **bump that
-  `WorkbenchLayout.version`** whenever the default's shape changes — old entries are orphaned,
-  not migrated. The version is per-workbench, so a bump only invalidates its own layout.
+- **Layout is cached by the `WorkbenchProvider.cacheKey`** as a `WorkbenchSnapshot`. A cached
+  layout shadows the default forever, so change the provider key whenever the default's shape
+  changes. Include runtime variants such as read-only mode in the key so they cannot hydrate
+  incompatible layouts. Old entries are orphaned, not migrated.
   `loadLayout` hydrates on mount and every structural commit persists.
 - **readOnly** blocks structural edits (move/split/pin/user-rename/reset) at the store level
   and hides their affordances; navigation, opening files, and closing closable panels still

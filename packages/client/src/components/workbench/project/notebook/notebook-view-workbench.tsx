@@ -34,7 +34,6 @@ const PUBLIC_ROOT_PATH = "/public";
 const createNotebookViewWorkbenchLayout = (
 	projectId: string,
 ): WorkbenchLayout => ({
-	version: 3,
 	tree: {
 		type: "tabset",
 		id: "main",

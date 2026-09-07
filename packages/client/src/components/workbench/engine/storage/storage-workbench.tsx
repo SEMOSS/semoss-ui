@@ -1,4 +1,5 @@
 import { useEffect, useMemo } from "react";
+import type { Role } from "@semoss/sdk";
 import { useInsight } from "@semoss/sdk/react";
 import type { FileExplorerApi } from "@semoss/shared";
 import { makeEngineRoomMcp } from "@/api/rooms";
@@ -30,46 +31,55 @@ import { EngineSettingsToggle } from "../engine-settings-toggle";
 import { STORAGE_FILE_EXPLORER_PANEL } from "./storage-file-explorer-panel";
 
 /** The default arrangement: storage + files on the left, assistant right. */
-const createStorageWorkbenchLayout = (engineId: string): WorkbenchLayout => ({
-	version: 4,
-	tree: {
-		type: "tabset",
-		id: "main",
-		size: 1,
-		panelIds: [],
-		activeId: null,
-	},
-	panels: {
-		[WORKBENCH_PANEL_RECORDS.STORAGE_EXPLORER.id]:
-			WORKBENCH_PANEL_RECORDS.STORAGE_EXPLORER,
-		[WORKBENCH_PANEL_RECORDS.FILE_EXPLORER.id]: {
-			...WORKBENCH_PANEL_RECORDS.FILE_EXPLORER,
-			config: { type: "ENGINE", id: engineId },
-		},
-		[WORKBENCH_PANEL_RECORDS.GIT_VERSION.id]: {
-			...WORKBENCH_PANEL_RECORDS.GIT_VERSION,
-			config: { type: "ENGINE", id: engineId },
-		},
-		[WORKBENCH_PANEL_RECORDS.ASSISTANT.id]:
-			WORKBENCH_PANEL_RECORDS.ASSISTANT,
-	},
-	borders: {
-		left: {
-			panelIds: [
-				WORKBENCH_COMPONENTS.STORAGE_EXPLORER,
-				WORKBENCH_COMPONENTS.FILE_EXPLORER,
-				WORKBENCH_COMPONENTS.GIT_VERSION,
-			],
-			activeId: WORKBENCH_COMPONENTS.STORAGE_EXPLORER,
-			size: 300,
-		},
-		right: {
-			panelIds: [WORKBENCH_COMPONENTS.ASSISTANT],
+const createStorageWorkbenchLayout = (
+	engineId: string,
+	permission: Role,
+): WorkbenchLayout => {
+	const readOnly = !(permission === "OWNER" || permission === "EDIT");
+	return {
+		tree: {
+			type: "tabset",
+			id: "main",
+			size: 1,
+			panelIds: [],
 			activeId: null,
-			size: 400,
 		},
-	},
-});
+		panels: {
+			[WORKBENCH_PANEL_RECORDS.STORAGE_EXPLORER.id]:
+				WORKBENCH_PANEL_RECORDS.STORAGE_EXPLORER,
+			[WORKBENCH_PANEL_RECORDS.FILE_EXPLORER.id]: {
+				...WORKBENCH_PANEL_RECORDS.FILE_EXPLORER,
+				config: { type: "ENGINE", id: engineId },
+			},
+			...(!readOnly
+				? {
+						[WORKBENCH_PANEL_RECORDS.GIT_VERSION.id]: {
+							...WORKBENCH_PANEL_RECORDS.GIT_VERSION,
+							config: { type: "ENGINE", id: engineId },
+						},
+					}
+				: {}),
+			[WORKBENCH_PANEL_RECORDS.ASSISTANT.id]:
+				WORKBENCH_PANEL_RECORDS.ASSISTANT,
+		},
+		borders: {
+			left: {
+				panelIds: [
+					WORKBENCH_COMPONENTS.STORAGE_EXPLORER,
+					WORKBENCH_COMPONENTS.FILE_EXPLORER,
+					...(!readOnly ? [WORKBENCH_COMPONENTS.GIT_VERSION] : []),
+				],
+				activeId: WORKBENCH_COMPONENTS.STORAGE_EXPLORER,
+				size: 300,
+			},
+			right: {
+				panelIds: [WORKBENCH_COMPONENTS.ASSISTANT],
+				activeId: null,
+				size: 400,
+			},
+		},
+	};
+};
 
 /** Blueprints, keyed by type. Module-scope so identities never churn. */
 const STORAGE_WORKBENCH_COMPONENTS: Record<string, WorkbenchPanelConfigAny> = {
@@ -125,27 +135,36 @@ const STORAGE_WORKBENCH_COMPONENTS: Record<string, WorkbenchPanelConfigAny> = {
  * page so its file operations share a single insight.
  */
 export const StorageWorkbench: React.FC = () => {
-	const { engine } = useEngine();
+	const { engine, permission } = useEngine();
 	const insight = useInsight();
+	const readOnly = !(permission === "OWNER" || permission === "EDIT");
 	const workbenchLayout = useMemo(
-		() => createStorageWorkbenchLayout(engine.engine_id),
-		[engine.engine_id],
+		() => createStorageWorkbenchLayout(engine.engine_id, permission),
+		[engine.engine_id, permission],
 	);
 
-	const configureAssistant = useWorkbench((s) => s.assistant.configure);
+	const configureWorkbench = useWorkbench((s) => s.configure);
 
 	// Keep the assistant prompt and room tools in sync with the active engine.
 	useEffect(() => {
-		configureAssistant({
-			systemPrompt: `You are the assistant for the ${engine.engine_display_name || engine.engine_name} workbench (${engine.engine_id}). Your role is to help the user inspect and manage this storage engine. Use only the tools provided in this room. Never claim that an operation succeeded unless its tool result confirms success. Keep answers concise and grounded in the active engine.`,
-			prepareRoom: (insightId) =>
-				makeEngineRoomMcp(insightId, engine.engine_id),
+		configureWorkbench({
+			resource: {
+				type: "ENGINE",
+				id: engine.engine_id,
+				permission,
+			},
+			assistant: {
+				systemPrompt: `You are the assistant for the ${engine.engine_display_name || engine.engine_name} workbench (${engine.engine_id}). Your role is to help the user inspect and manage this storage engine. Use only the tools provided in this room. Never claim that an operation succeeded unless its tool result confirms success. Keep answers concise and grounded in the active engine.`,
+				prepareRoom: (insightId) =>
+					makeEngineRoomMcp(insightId, engine.engine_id),
+			},
 		});
 	}, [
-		configureAssistant,
+		configureWorkbench,
 		engine.engine_display_name,
 		engine.engine_id,
 		engine.engine_name,
+		permission,
 	]);
 
 	useWorkbenchCommands([
@@ -162,6 +181,7 @@ export const StorageWorkbench: React.FC = () => {
 			id: "workbench.file.upload",
 			category: "File",
 			label: "Upload Files",
+			visible: !readOnly,
 			handler: (get) =>
 				(
 					get().layout.values[
@@ -195,6 +215,7 @@ export const StorageWorkbench: React.FC = () => {
 			id: "workbench.version-control.open",
 			category: "View",
 			label: "Open Version Control",
+			visible: !readOnly,
 			handler: (get) => {
 				get().layout.actions.selectPanel(
 					WORKBENCH_COMPONENTS.GIT_VERSION,

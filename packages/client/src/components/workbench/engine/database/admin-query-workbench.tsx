@@ -39,7 +39,6 @@ const INITIAL_QUERY_PANEL_ID = "database-query-1";
  * privileged-SQL assistant is a separate decision.
  */
 const ADMIN_QUERY_LAYOUT: WorkbenchLayout = {
-	version: 1,
 	tree: {
 		type: "tabset",
 		id: "main",

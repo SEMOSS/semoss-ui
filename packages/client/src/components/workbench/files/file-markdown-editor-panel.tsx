@@ -54,7 +54,7 @@ const FileMarkdownEditorPanel = ({
 	const insight = useInsight();
 	const { t } = useTranslation("common");
 	const access = useWorkbenchAccess(config.type, config.id);
-	const readOnly = access.status !== "ready" || !access.canEdit;
+	const readOnly = access.status !== "ready" || access.readOnly;
 	const targetInsightId =
 		config.type === "INSIGHT" ? config.id : insight.insightId;
 	const pathScope = getFileEditorPathScope(

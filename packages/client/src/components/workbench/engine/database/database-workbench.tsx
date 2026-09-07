@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import type { StoreApi } from "zustand";
+import type { Role } from "@semoss/sdk";
 import { useInsight } from "@semoss/sdk/react";
 import type { FileExplorerApi } from "@semoss/shared";
 import { makeEngineRoomMcp } from "@/api/rooms";
@@ -50,54 +51,63 @@ const INITIAL_QUERY_PANEL_ID = "database-query-1";
  * border kept as the docking target for query results, and the assistant on
  * the right.
  */
-const createDatabaseWorkbenchLayout = (engineId: string): WorkbenchLayout => ({
-	version: 4,
-	tree: {
-		type: "tabset",
-		id: "main",
-		size: 1,
-		panelIds: [INITIAL_QUERY_PANEL_ID],
-		activeId: INITIAL_QUERY_PANEL_ID,
-	},
-	panels: {
-		[INITIAL_QUERY_PANEL_ID]: {
-			id: INITIAL_QUERY_PANEL_ID,
-			type: WORKBENCH_COMPONENTS.DATABASE_QUERY,
-			name: "Query",
-			canClose: false,
-			config: { initialQuery: "", queryNumber: 1 },
+const createDatabaseWorkbenchLayout = (
+	engineId: string,
+	permission: Role,
+): WorkbenchLayout => {
+	const readOnly = !(permission === "OWNER" || permission === "EDIT");
+	return {
+		tree: {
+			type: "tabset",
+			id: "main",
+			size: 1,
+			panelIds: [INITIAL_QUERY_PANEL_ID],
+			activeId: INITIAL_QUERY_PANEL_ID,
 		},
-		[WORKBENCH_PANEL_RECORDS.DATABASE_COLUMNS.id]:
-			WORKBENCH_PANEL_RECORDS.DATABASE_COLUMNS,
-		[WORKBENCH_PANEL_RECORDS.FILE_EXPLORER.id]: {
-			...WORKBENCH_PANEL_RECORDS.FILE_EXPLORER,
-			config: { type: "ENGINE", id: engineId },
+		panels: {
+			[INITIAL_QUERY_PANEL_ID]: {
+				id: INITIAL_QUERY_PANEL_ID,
+				type: WORKBENCH_COMPONENTS.DATABASE_QUERY,
+				name: "Query",
+				canClose: false,
+				config: { initialQuery: "", queryNumber: 1 },
+			},
+			[WORKBENCH_PANEL_RECORDS.DATABASE_COLUMNS.id]:
+				WORKBENCH_PANEL_RECORDS.DATABASE_COLUMNS,
+			[WORKBENCH_PANEL_RECORDS.FILE_EXPLORER.id]: {
+				...WORKBENCH_PANEL_RECORDS.FILE_EXPLORER,
+				config: { type: "ENGINE", id: engineId },
+			},
+			...(!readOnly
+				? {
+						[WORKBENCH_PANEL_RECORDS.GIT_VERSION.id]: {
+							...WORKBENCH_PANEL_RECORDS.GIT_VERSION,
+							config: { type: "ENGINE", id: engineId },
+						},
+					}
+				: {}),
+			[WORKBENCH_PANEL_RECORDS.ASSISTANT.id]:
+				WORKBENCH_PANEL_RECORDS.ASSISTANT,
 		},
-		[WORKBENCH_PANEL_RECORDS.GIT_VERSION.id]: {
-			...WORKBENCH_PANEL_RECORDS.GIT_VERSION,
-			config: { type: "ENGINE", id: engineId },
+		borders: {
+			left: {
+				panelIds: [
+					WORKBENCH_COMPONENTS.DATABASE_COLUMNS,
+					WORKBENCH_COMPONENTS.FILE_EXPLORER,
+					...(!readOnly ? [WORKBENCH_COMPONENTS.GIT_VERSION] : []),
+				],
+				activeId: WORKBENCH_COMPONENTS.DATABASE_COLUMNS,
+				size: 300,
+			},
+			bottom: { panelIds: [], activeId: null, size: 300 },
+			right: {
+				panelIds: [WORKBENCH_COMPONENTS.ASSISTANT],
+				activeId: null,
+				size: 400,
+			},
 		},
-		[WORKBENCH_PANEL_RECORDS.ASSISTANT.id]:
-			WORKBENCH_PANEL_RECORDS.ASSISTANT,
-	},
-	borders: {
-		left: {
-			panelIds: [
-				WORKBENCH_COMPONENTS.DATABASE_COLUMNS,
-				WORKBENCH_COMPONENTS.FILE_EXPLORER,
-				WORKBENCH_COMPONENTS.GIT_VERSION,
-			],
-			activeId: WORKBENCH_COMPONENTS.DATABASE_COLUMNS,
-			size: 300,
-		},
-		bottom: { panelIds: [], activeId: null, size: 300 },
-		right: {
-			panelIds: [WORKBENCH_COMPONENTS.ASSISTANT],
-			activeId: null,
-			size: 400,
-		},
-	},
-});
+	};
+};
 
 /** Blueprints, keyed by type. Module-scope so identities never churn. */
 const DATABASE_WORKBENCH_COMPONENTS: Record<string, WorkbenchPanelConfigAny> = {
@@ -165,11 +175,12 @@ const DATABASE_WORKBENCH_COMPONENTS: Record<string, WorkbenchPanelConfigAny> = {
  */
 export const DatabaseWorkbench: React.FC = () => {
 	const storeApi = useWorkbenchStoreApi();
-	const { engine } = useEngine();
+	const { engine, permission } = useEngine();
 	const insight = useInsight();
+	const readOnly = !(permission === "OWNER" || permission === "EDIT");
 	const workbenchLayout = useMemo(
-		() => createDatabaseWorkbenchLayout(engine.engine_id),
-		[engine.engine_id],
+		() => createDatabaseWorkbenchLayout(engine.engine_id, permission),
+		[engine.engine_id, permission],
 	);
 
 	// Created once per workbench instance before its panels render.
@@ -182,20 +193,28 @@ export const DatabaseWorkbench: React.FC = () => {
 		void databaseStore.getState().initialize(engine.engine_id);
 	}, [engine.engine_id, databaseStore]);
 
-	const configureAssistant = useWorkbench((s) => s.assistant.configure);
+	const configureWorkbench = useWorkbench((s) => s.configure);
 
 	// Keep the assistant prompt and room tools in sync with the active engine.
 	useEffect(() => {
-		configureAssistant({
-			systemPrompt: `You are the assistant for the ${engine.engine_display_name || engine.engine_name} workbench (${engine.engine_id}). Your role is to help the user understand and work with this database. Use only the tools provided in this room. Never claim that an operation succeeded unless its tool result confirms success. Keep answers concise and grounded in the active engine.`,
-			prepareRoom: (insightId) =>
-				makeEngineRoomMcp(insightId, engine.engine_id),
+		configureWorkbench({
+			resource: {
+				type: "ENGINE",
+				id: engine.engine_id,
+				permission,
+			},
+			assistant: {
+				systemPrompt: `You are the assistant for the ${engine.engine_display_name || engine.engine_name} workbench (${engine.engine_id}). Your role is to help the user understand and work with this database. Use only the tools provided in this room. Never claim that an operation succeeded unless its tool result confirms success. Keep answers concise and grounded in the active engine.`,
+				prepareRoom: (insightId) =>
+					makeEngineRoomMcp(insightId, engine.engine_id),
+			},
 		});
 	}, [
-		configureAssistant,
+		configureWorkbench,
 		engine.engine_display_name,
 		engine.engine_id,
 		engine.engine_name,
+		permission,
 	]);
 
 	useWorkbenchCommands([
@@ -221,6 +240,7 @@ export const DatabaseWorkbench: React.FC = () => {
 			id: "workbench.file.create",
 			category: "File",
 			label: "Create File",
+			visible: !readOnly,
 			handler: (get) =>
 				(
 					get().layout.values[WORKBENCH_COMPONENTS.FILE_EXPLORER] as
@@ -232,6 +252,7 @@ export const DatabaseWorkbench: React.FC = () => {
 			id: "workbench.file.create-folder",
 			category: "File",
 			label: "Create Folder",
+			visible: !readOnly,
 			handler: (get) =>
 				(
 					get().layout.values[WORKBENCH_COMPONENTS.FILE_EXPLORER] as
@@ -243,6 +264,7 @@ export const DatabaseWorkbench: React.FC = () => {
 			id: "workbench.file.upload",
 			category: "File",
 			label: "Upload Files",
+			visible: !readOnly,
 			handler: (get) =>
 				(
 					get().layout.values[WORKBENCH_COMPONENTS.FILE_EXPLORER] as
@@ -279,6 +301,7 @@ export const DatabaseWorkbench: React.FC = () => {
 			id: "workbench.version-control.open",
 			category: "View",
 			label: "Open Version Control",
+			visible: !readOnly,
 			handler: (get) => {
 				get().layout.actions.selectPanel(
 					WORKBENCH_COMPONENTS.GIT_VERSION,

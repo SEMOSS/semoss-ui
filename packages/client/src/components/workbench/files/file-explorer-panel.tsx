@@ -49,7 +49,7 @@ const FileExplorerPanel = ({
 }: WorkbenchPanelProps<FileExplorerParams, FileExplorerApi>) => {
 	const insight = useInsight();
 	const access = useWorkbenchAccess(config.type, config.id);
-	const readOnly = access.status !== "ready" || !access.canEdit;
+	const readOnly = access.status !== "ready" || access.readOnly;
 	const layoutActions = useWorkbench((state) => state.layout.actions);
 	const { id: resourceId, type: resourceType } = config;
 	const mode = useMemo(
@@ -159,6 +159,7 @@ const FileExplorerPanel = ({
 			if (
 				config.type !== "INSIGHT" &&
 				!isDirectory &&
+				!readOnly &&
 				MCP.JSON_PATHS.some((path) => item.path.startsWith(path))
 			) {
 				actions.push({

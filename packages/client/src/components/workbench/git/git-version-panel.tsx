@@ -93,7 +93,7 @@ const GitVersionPanel = ({
 						key={commit.commitId}
 						type={config.type}
 						id={config.id}
-						canRestore={access.canEdit}
+						canRestore={!access.readOnly}
 						commit={commit}
 						onRestored={history.reset}
 					/>

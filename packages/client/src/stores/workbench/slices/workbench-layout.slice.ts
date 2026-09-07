@@ -48,9 +48,6 @@ interface WorkbenchSelectionState {
 
 /** Layout state fields owned by each workbench instance. */
 interface WorkbenchLayoutSliceFields {
-	/** Unique identity for this workbench instance. */
-	id: string;
-
 	/** True once loadLayout has produced a usable arrangement. */
 	hydrated: boolean;
 
@@ -480,16 +477,13 @@ const slotRectsEqual = (a: WorkbenchSlotRect, b: WorkbenchSlotRect): boolean =>
  * Creates the dock layout slice for one workbench.
  *
  * @name createWorkbenchLayoutSlice
- * @param id - Unique workbench ID used to isolate the cache.
+ * @param cacheKey - Unique key used to isolate persisted layout state.
  * @return Zustand state creator for the workbench layout slice.
  */
 export const createWorkbenchLayoutSlice = (
-	id: string,
+	cacheKey: string,
 ): WorkbenchSlice<WorkbenchLayoutSliceState> => {
-	// `id` never changes for a store instance, so the key can be built once.
-	// resolved from the layout's version the first time one is loaded, so a
-	// workbench that bumps its version simply stops seeing the old entries
-	let cacheKey = "";
+	const storageKey = `smss-workbench--layout--${cacheKey}`;
 
 	// Closure-scoped, never in state: none of these should notify subscribers.
 	let defaultLayout: WorkbenchLayout | null = null;
@@ -522,7 +516,10 @@ export const createWorkbenchLayoutSlice = (
 				return;
 			}
 			try {
-				localStorage.setItem(cacheKey, JSON.stringify(buildSnapshot()));
+				localStorage.setItem(
+					storageKey,
+					JSON.stringify(buildSnapshot()),
+				);
 			} catch (e) {
 				console.error(e);
 			}
@@ -718,7 +715,6 @@ export const createWorkbenchLayoutSlice = (
 		});
 
 		return {
-			id: id,
 			hydrated: false,
 			isMobileLayout: false,
 			panels: {},
@@ -863,12 +859,11 @@ export const createWorkbenchLayoutSlice = (
 				},
 
 				loadLayout: (layout) => {
-					cacheKey = `smss-workbench--layout--${id}--${layout.version}`;
 					defaultLayout = deepCopy(layout);
 
 					let cached: WorkbenchSnapshot | null = null;
 					try {
-						const item = localStorage.getItem(cacheKey);
+						const item = localStorage.getItem(storageKey);
 						if (item) {
 							cached = parseWorkbenchSnapshot(JSON.parse(item));
 						}

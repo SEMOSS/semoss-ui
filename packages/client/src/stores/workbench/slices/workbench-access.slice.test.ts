@@ -36,6 +36,20 @@ describe("workbench access slice", () => {
 		});
 	});
 
+	it("stores an already-resolved permission without an API request", () => {
+		const store = createWorkbenchStore("access-seeded");
+
+		store
+			.getState()
+			.access.actions.syncPermission("PROJECT", "project-1", "READ_ONLY");
+
+		expect(projectPermission).not.toHaveBeenCalled();
+		expect(store.getState().access.entries["PROJECT:project-1"]).toEqual({
+			status: "SUCCESS",
+			permission: "READ_ONLY",
+		});
+	});
+
 	it("deduplicates concurrent permission requests", async () => {
 		let resolvePermission: (permission: "EDIT") => void = () => undefined;
 		enginePermission.mockReturnValue(
