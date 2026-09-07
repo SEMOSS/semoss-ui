@@ -483,7 +483,7 @@ const slotRectsEqual = (a: WorkbenchSlotRect, b: WorkbenchSlotRect): boolean =>
 export const createWorkbenchLayoutSlice = (
 	cacheKey: string,
 ): WorkbenchSlice<WorkbenchLayoutSliceState> => {
-	const storageKey = `smss-workbench--layout--${cacheKey}`;
+	const storageKey = `smss-workbench--layout--${cacheKey}--1`;
 
 	// Closure-scoped, never in state: none of these should notify subscribers.
 	let defaultLayout: WorkbenchLayout | null = null;

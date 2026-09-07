@@ -47,7 +47,7 @@ export interface WorkbenchCommandSliceState
 export const createWorkbenchCommandSlice =
 	(cacheKey: string): WorkbenchSlice<WorkbenchCommandSliceState> =>
 	(set, get) => {
-		const storageKey = `smss-workbench--commands--${cacheKey}--0`;
+		const storageKey = `smss-workbench--commands--${cacheKey}--1`;
 
 		let recentCommands: string[] = [];
 		try {
