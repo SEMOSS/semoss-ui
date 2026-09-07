@@ -22,38 +22,62 @@ import { WORKBENCH_STYLES } from "../core/workbench.chrome";
 export const ProjectPublishButton: React.FC = () => {
 	const { project } = useProject();
 	const insight = useInsight();
-	const [isPublishing, setIsPublishing] = useState(false);
+	const [isLoading, setIsLoading] = useState(false);
 
-	const publish = useCallback(async () => {
+	/** Compile the project. */
+	const compile = useCallback(async () => {
 		try {
-			setIsPublishing(true);
+			setIsLoading(true);
 
-			// Separate calls so we reload successfully compiled classes before
-			// publishing
+			// compile
 			await insight.actions.run(
-				`ReloadInsightClasses(project='${project.project_id}', release=false);`,
+				`CompileAppReactors(project='${project.project_id}', release=false);`,
 			);
 
+			toast.success("Successfully compiled");
+
+			return true;
+		} catch (e) {
+			toast.error(`Error: ${e}`);
+			return false;
+		} finally {
+			setIsLoading(false);
+		}
+	}, [insight.actions, project.project_id]);
+
+	/** Publish the project. */
+	const publish = useCallback(async () => {
+		try {
+			setIsLoading(true);
+
+			// publish
 			await insight.actions.run(
 				`PublishProject(project='${project.project_id}', release=true);`,
 			);
 
-			toast.success("Successfully compiled and published");
+			toast.success("Successfully published");
 		} catch (e) {
 			toast.error(`Error: ${e}`);
 		} finally {
-			setIsPublishing(false);
+			setIsLoading(false);
 		}
 	}, [insight.actions, project.project_id]);
 
-	// useWorkbenchCommands delegates handlers through a ref, so the latest
-	// publish closure always runs without re-registering per render.
 	useWorkbenchCommands([
 		{
+			id: "workbench.project.compile",
+			category: "",
+			label: "Compile",
+			description: "Compile the project",
+			handler: () => {
+				void compile();
+			},
+		},
+		{
 			id: "workbench.project.publish",
-			category: "Project",
-			label: "Compile and Publish",
-			description: "Compile the project and publish a new release",
+			category: "",
+			label: "Publish",
+			description: "Publish a new release",
 			handler: () => {
 				void publish();
 			},
@@ -72,12 +96,15 @@ export const ProjectPublishButton: React.FC = () => {
 						"border border-transparent text-muted-foreground",
 						WORKBENCH_STYLES.chromeButton,
 					)}
-					disabled={isPublishing}
-					onClick={() => {
-						void publish();
+					disabled={isLoading}
+					onClick={async () => {
+						const compiled = await compile();
+						if (compiled) {
+							await publish();
+						}
 					}}
 				>
-					{isPublishing ? (
+					{isLoading ? (
 						<Spinner className={WORKBENCH_STYLES.chromeIcon} />
 					) : (
 						<CloudUploadIcon

@@ -1,29 +1,26 @@
-import type { WorkbenchState } from "../workbench.store";
 import type { WorkbenchCommand } from "../workbench.types";
 import { WORKBENCH_SIDES } from "../workbench.types";
-import { workbenchPanelProps } from "../workbench-panel-props";
+import type { WorkbenchLayoutSliceState } from "./workbench-layout.slice";
 
 /**
  * Build the layout-derived palette entries — go-to, close, border
- * toggles, maximize/reset, and panel-contributed commands —
- * from the live store. Call when the palette opens; the result is merged
- * with the registered command list (registered ids win on collision).
+ * toggles, and maximize/reset from the current layout. Call when the palette
+ * opens; the result is merged with the registered command list.
  *
  * @name buildWorkbenchLayoutCommands
- * @param get - The scoped workbench store's getState.
+ * @param layout - The current workbench layout state.
  * @return Palette entries in the shared WorkbenchCommand shape.
  */
 export function buildWorkbenchLayoutCommands(
-	get: () => WorkbenchState,
+	layout: WorkbenchLayoutSliceState,
 ): WorkbenchCommand[] {
-	const state = get();
-	const { actions } = state.layout;
+	const { actions } = layout;
 	const list: WorkbenchCommand[] = [];
 
 	// go to any open panel, wherever it lives
-	for (const stack of state.layout.stacks) {
+	for (const stack of layout.stacks) {
 		for (const pid of stack.panelIds) {
-			const record = state.layout.panels[pid];
+			const record = layout.panels[pid];
 			if (!record) {
 				continue;
 			}
@@ -42,27 +39,27 @@ export function buildWorkbenchLayoutCommands(
 	}
 
 	// close open panels that allow it
-	for (const pid of state.layout.openPanelIds) {
+	for (const pid of layout.openPanelIds) {
 		if (!actions.canClose(pid)) {
 			continue;
 		}
 		list.push({
 			id: `workbench.layout.close.${pid}`,
 			category: "View",
-			label: `Close ${state.layout.panels[pid]?.name ?? pid}`,
+			label: `Close ${layout.panels[pid]?.name ?? pid}`,
 			handler: () => actions.closePanel(pid),
 		});
 	}
 
 	// border toggles
-	if (!state.layout.isMobileLayout) {
+	if (!layout.isMobileLayout) {
 		for (const side of WORKBENCH_SIDES) {
-			const border = state.layout.borders[side];
+			const border = layout.borders[side];
 			if (!border.panelIds.length) {
 				continue;
 			}
 			const names = border.panelIds
-				.map((pid) => state.layout.panels[pid]?.name)
+				.map((pid) => layout.panels[pid]?.name)
 				.filter(Boolean)
 				.join(", ");
 			const sideName = side.charAt(0).toUpperCase() + side.slice(1);
@@ -89,45 +86,19 @@ export function buildWorkbenchLayoutCommands(
 	list.push({
 		id: "workbench.layout.maximize",
 		category: "View",
-		label: state.layout.maximizedTabsetId
+		label: layout.maximizedTabsetId
 			? "Restore Dock"
 			: "Maximize Selected Dock",
 		handler: (getState) => getState().layout.actions.toggleMaximize(),
 	});
 
-	if (!state.layout.readOnly) {
+	if (!layout.readOnly) {
 		list.push({
 			id: "workbench.layout.reset",
 			category: "View",
 			label: "Reset Layout",
 			handler: (getState) => getState().layout.actions.resetLayout(),
 		});
-	}
-
-	// commands contributed by the panels themselves
-	for (const pid of state.layout.openPanelIds) {
-		const record = state.layout.panels[pid];
-		if (!record) {
-			continue;
-		}
-		const make = state.layout.components[record.type]?.commands;
-		if (typeof make !== "function") {
-			continue;
-		}
-		try {
-			const panel = workbenchPanelProps(state.layout, pid);
-			for (const command of make(panel, get) ?? []) {
-				list.push({
-					id: `workbench.panel.${pid}.${command.id}`,
-					category: command.category,
-					label: command.label,
-					description: command.hint ?? record.name,
-					handler: () => command.run(),
-				});
-			}
-		} catch {
-			// a broken panel shouldn't take the palette down
-		}
 	}
 
 	return list;

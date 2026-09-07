@@ -225,16 +225,6 @@ export interface WorkbenchControl<P = WorkbenchPanelParams, V = unknown> {
 // biome-ignore lint/suspicious/noExplicitAny: existential erasure, see above
 export type WorkbenchControlAny = WorkbenchControl<any, any>;
 
-/** A palette command contributed by a panel instance. */
-interface WorkbenchPanelCommand {
-	id: string;
-	/** Palette section prefix — commands display as `${category}: ${label}`. */
-	category?: string;
-	label: string;
-	hint?: string | undefined;
-	run: () => void;
-}
-
 /**
  * An entry a panel contributes to its own tab/rail context menu. `disabled`
  * items are filtered out, same as the built-in ones.
@@ -320,19 +310,8 @@ export interface WorkbenchPanelConfig<P = WorkbenchPanelParams, V = unknown> {
 	 */
 	content?: ComponentType<WorkbenchPanelProps<P, V>>;
 	/**
-	 * Palette commands contributed per open instance. Called outside React, so
-	 * reach store state through `get` rather than a hook — the same convention
-	 * as `useWorkbenchCommands`' `handler: (get) => …`. Prefer
-	 * `useWorkbenchCommands` from inside the body when the command needs React
-	 * state.
-	 */
-	commands?: (
-		panel: WorkbenchPanelProps<P, V>,
-		get: () => WorkbenchState,
-	) => WorkbenchPanelCommand[];
-	/**
 	 * Entries appended to this panel's context menu, below the built-ins. Also
-	 * called outside React — see `commands`.
+	 * called outside React, so reach store state through `get`.
 	 */
 	menuItems?: (
 		panel: WorkbenchPanelProps<P, V>,

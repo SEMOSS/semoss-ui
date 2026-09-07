@@ -20,6 +20,7 @@ import { WORKBENCH_STYLES } from "../core/workbench.chrome";
 
 export interface ProjectFileNotebookEditorControlValue {
 	canSave: boolean;
+	isBusy: boolean;
 	refresh: () => void;
 	save: () => void;
 	setViewMode: (mode: "notebook" | "raw") => void;
@@ -62,6 +63,7 @@ export const ProjectFileNotebookEditorControl: FC<
 							"flex-none text-muted-foreground",
 							WORKBENCH_STYLES.chromeButton,
 						)}
+						disabled={value.isBusy}
 						aria-label="Refresh file"
 						onClick={value.refresh}
 					>
@@ -83,6 +85,7 @@ export const ProjectFileNotebookEditorControl: FC<
 								"flex-none text-muted-foreground",
 								WORKBENCH_STYLES.chromeButton,
 							)}
+							disabled={value.isBusy}
 							aria-label="Save file"
 							onClick={value.save}
 						>

@@ -101,6 +101,15 @@ export const AdminQueryWorkbench: React.FC = () => {
 
 	useWorkbenchCommands([
 		{
+			id: "workbench.database-columns.refresh",
+			category: "Database",
+			label: "Refresh Database Structure",
+			description: "Columns",
+			handler: () => {
+				databaseStore.getState().structure.refresh();
+			},
+		},
+		{
 			id: "workbench.database-columns.open",
 			category: "View",
 			label: "Open Columns",

@@ -314,7 +314,7 @@ export const parseStatementResults = (
 
 /**
  * The database store a `DatabaseWorkbench` attached, for paths that can't use
- * `useDatabaseWorkbench` — a blueprint's `commands` / `menuItems` factory runs
+ * `useDatabaseWorkbench` — a blueprint's `menuItems` factory runs
  * outside React. This cast and the hook's are the only two points where the
  * untyped `domainStore` attachment is narrowed back to its concrete shape; the
  * attachment is only ever made by `DatabaseWorkbench`.

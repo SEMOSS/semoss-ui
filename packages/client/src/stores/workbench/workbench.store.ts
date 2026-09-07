@@ -48,7 +48,7 @@ export const createWorkbenchStore = (id: string): StoreApi<WorkbenchState> => {
 		// is mounted under its namespace here.
 		const layout = createWorkbenchLayoutSlice(id)(set, get, api);
 		const loading = createWorkbenchLoadingSlice()(set, get, api);
-		const command = createWorkbenchCommandSlice()(set, get, api);
+		const command = createWorkbenchCommandSlice(id)(set, get, api);
 		const control = createWorkbenchControlsSlice()(set, get, api);
 		const assistant = createWorkbenchAssistantSlice(id)(set, get, api);
 		// Subscribes to this store, so it is composed after the assistant
@@ -59,6 +59,13 @@ export const createWorkbenchStore = (id: string): StoreApi<WorkbenchState> => {
 			api,
 		);
 
-		return { layout, loading, command, control, assistant, notifications };
+		return {
+			layout,
+			loading,
+			command,
+			control,
+			assistant,
+			notifications,
+		};
 	});
 };
