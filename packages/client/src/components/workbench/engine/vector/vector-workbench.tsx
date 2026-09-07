@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import { useInsight } from "@semoss/sdk/react";
 import type { FileExplorerApi } from "@semoss/shared";
 import { makeEngineRoomMcp } from "@/api/rooms";
@@ -11,23 +11,22 @@ import { WORKBENCH_ASSISTANT_PANEL } from "../../assistant";
 import { Workbench } from "../../core";
 import { WorkbenchCommandMenuButton } from "../../core/workbench-command-menu-button";
 import {
+	FILE_CODE_EDITOR_PANEL,
+	FILE_DOWNLOAD_PANEL,
+	FILE_EXPLORER_PANEL,
+	FILE_IMAGE_VIEWER_PANEL,
+	FILE_MARKDOWN_EDITOR_PANEL,
+	FILE_MCP_EDITOR_PANEL,
+	FILE_NOTEBOOK_EDITOR_PANEL,
+	FILE_PDF_VIEWER_PANEL,
+} from "../../files";
+import { GIT_DIFF_PANEL, GIT_VERSION_PANEL } from "../../git";
+import {
 	WORKBENCH_COMPONENTS,
 	WORKBENCH_PANEL_RECORDS,
 } from "../../workbench.constants";
-import { ENGINE_FILE_CODE_EDITOR_PANEL } from "../engine-file-code-editor-panel";
-import { ENGINE_FILE_DOWNLOAD_VIEWER_PANEL } from "../engine-file-download-viewer-panel";
-import { ENGINE_FILE_EXPLORER_PANEL } from "../engine-file-explorer-panel";
-import { ENGINE_FILE_IMAGE_EDITOR_PANEL } from "../engine-file-image-editor-panel";
-import { ENGINE_FILE_MARKDOWN_EDITOR_PANEL } from "../engine-file-markdown-editor-panel";
-import { ENGINE_FILE_NOTEBOOK_EDITOR_PANEL } from "../engine-file-notebook-editor-panel";
-import { ENGINE_FILE_PDF_EDITOR_PANEL } from "../engine-file-pdf-editor-panel";
-import { ENGINE_MCP_EDITOR_PANEL } from "../engine-mcp-editor-panel";
 import { createEngineSettingsPanel } from "../engine-settings-panel";
 import { EngineSettingsToggle } from "../engine-settings-toggle";
-import {
-	ENGINE_GIT_DIFF_PANEL,
-	ENGINE_VERSION_PANEL,
-} from "../version-control";
 import { VECTOR_DOCUMENTS_PANEL } from "./vector-documents-panel";
 
 /**
@@ -35,8 +34,8 @@ import { VECTOR_DOCUMENTS_PANEL } from "./vector-documents-panel";
  * the left. The assistant lives in the main tabset here (not a border), so
  * its record carries no border min-width.
  */
-const VECTOR_WORKBENCH_LAYOUT: WorkbenchLayout = {
-	version: 2,
+const createVectorWorkbenchLayout = (engineId: string): WorkbenchLayout => ({
+	version: 4,
 	tree: {
 		type: "tabset",
 		id: "main",
@@ -57,39 +56,40 @@ const VECTOR_WORKBENCH_LAYOUT: WorkbenchLayout = {
 		},
 		[WORKBENCH_PANEL_RECORDS.VECTOR_DOCUMENTS.id]:
 			WORKBENCH_PANEL_RECORDS.VECTOR_DOCUMENTS,
-		[WORKBENCH_PANEL_RECORDS.ENGINE_FILE_EXPLORER.id]:
-			WORKBENCH_PANEL_RECORDS.ENGINE_FILE_EXPLORER,
-		[WORKBENCH_PANEL_RECORDS.ENGINE_VERSION.id]:
-			WORKBENCH_PANEL_RECORDS.ENGINE_VERSION,
+		[WORKBENCH_PANEL_RECORDS.FILE_EXPLORER.id]: {
+			...WORKBENCH_PANEL_RECORDS.FILE_EXPLORER,
+			config: { type: "ENGINE", id: engineId },
+		},
+		[WORKBENCH_PANEL_RECORDS.GIT_VERSION.id]: {
+			...WORKBENCH_PANEL_RECORDS.GIT_VERSION,
+			config: { type: "ENGINE", id: engineId },
+		},
 	},
 	borders: {
 		left: {
 			panelIds: [
 				WORKBENCH_COMPONENTS.FILE_EXPLORER,
-				WORKBENCH_COMPONENTS.ENGINE_VERSION,
+				WORKBENCH_COMPONENTS.GIT_VERSION,
 			],
 			activeId: WORKBENCH_COMPONENTS.FILE_EXPLORER,
 			size: 300,
 		},
 	},
-};
+});
 
 /** Blueprints, keyed by type. Module-scope so identities never churn. */
 const VECTOR_WORKBENCH_COMPONENTS: Record<string, WorkbenchPanelConfigAny> = {
-	[WORKBENCH_COMPONENTS.FILE_EXPLORER]: ENGINE_FILE_EXPLORER_PANEL,
+	[WORKBENCH_COMPONENTS.FILE_EXPLORER]: FILE_EXPLORER_PANEL,
 	[WORKBENCH_COMPONENTS.VECTOR_DOCUMENTS]: VECTOR_DOCUMENTS_PANEL,
-	[WORKBENCH_COMPONENTS.FILE_CODE_EDITOR]: ENGINE_FILE_CODE_EDITOR_PANEL,
-	[WORKBENCH_COMPONENTS.FILE_DOWNLOAD_VIEWER]:
-		ENGINE_FILE_DOWNLOAD_VIEWER_PANEL,
-	[WORKBENCH_COMPONENTS.FILE_IMAGE_EDITOR]: ENGINE_FILE_IMAGE_EDITOR_PANEL,
-	[WORKBENCH_COMPONENTS.FILE_MARKDOWN_EDITOR]:
-		ENGINE_FILE_MARKDOWN_EDITOR_PANEL,
-	[WORKBENCH_COMPONENTS.FILE_NOTEBOOK_EDITOR]:
-		ENGINE_FILE_NOTEBOOK_EDITOR_PANEL,
-	[WORKBENCH_COMPONENTS.FILE_PDF_EDITOR]: ENGINE_FILE_PDF_EDITOR_PANEL,
-	[WORKBENCH_COMPONENTS.MCP_EDITOR]: ENGINE_MCP_EDITOR_PANEL,
-	[WORKBENCH_COMPONENTS.ENGINE_VERSION]: ENGINE_VERSION_PANEL,
-	[WORKBENCH_COMPONENTS.ENGINE_GIT_DIFF]: ENGINE_GIT_DIFF_PANEL,
+	[WORKBENCH_COMPONENTS.FILE_CODE_EDITOR]: FILE_CODE_EDITOR_PANEL,
+	[WORKBENCH_COMPONENTS.FILE_DOWNLOAD]: FILE_DOWNLOAD_PANEL,
+	[WORKBENCH_COMPONENTS.FILE_IMAGE_VIEWER]: FILE_IMAGE_VIEWER_PANEL,
+	[WORKBENCH_COMPONENTS.FILE_MARKDOWN_EDITOR]: FILE_MARKDOWN_EDITOR_PANEL,
+	[WORKBENCH_COMPONENTS.FILE_NOTEBOOK_EDITOR]: FILE_NOTEBOOK_EDITOR_PANEL,
+	[WORKBENCH_COMPONENTS.FILE_PDF_VIEWER]: FILE_PDF_VIEWER_PANEL,
+	[WORKBENCH_COMPONENTS.FILE_MCP_EDITOR]: FILE_MCP_EDITOR_PANEL,
+	[WORKBENCH_COMPONENTS.GIT_VERSION]: GIT_VERSION_PANEL,
+	[WORKBENCH_COMPONENTS.GIT_DIFF]: GIT_DIFF_PANEL,
 	[WORKBENCH_COMPONENTS.ENGINE_SETTINGS]: createEngineSettingsPanel([
 		{
 			name: "Overview",
@@ -133,6 +133,10 @@ const VECTOR_WORKBENCH_COMPONENTS: Record<string, WorkbenchPanelConfigAny> = {
 export const VectorWorkbench: React.FC = () => {
 	const { engine } = useEngine();
 	const insight = useInsight();
+	const workbenchLayout = useMemo(
+		() => createVectorWorkbenchLayout(engine.engine_id),
+		[engine.engine_id],
+	);
 
 	const configureAssistant = useWorkbench((s) => s.assistant.configure);
 
@@ -212,6 +216,7 @@ export const VectorWorkbench: React.FC = () => {
 			handler: (get) => {
 				get().layout.actions.selectPanel(
 					WORKBENCH_COMPONENTS.FILE_EXPLORER,
+					{ type: "ENGINE", id: engine.engine_id },
 				);
 			},
 		},
@@ -221,7 +226,8 @@ export const VectorWorkbench: React.FC = () => {
 			label: "Open Version Control",
 			handler: (get) => {
 				get().layout.actions.selectPanel(
-					WORKBENCH_COMPONENTS.ENGINE_VERSION,
+					WORKBENCH_COMPONENTS.GIT_VERSION,
+					{ type: "ENGINE", id: engine.engine_id },
 				);
 			},
 		},
@@ -259,7 +265,7 @@ export const VectorWorkbench: React.FC = () => {
 
 	return (
 		<Workbench
-			layout={VECTOR_WORKBENCH_LAYOUT}
+			layout={workbenchLayout}
 			components={VECTOR_WORKBENCH_COMPONENTS}
 			borderSlots={{
 				left: {

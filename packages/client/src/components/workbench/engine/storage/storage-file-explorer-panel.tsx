@@ -8,7 +8,6 @@ import {
 	type FileExplorerCommands,
 	FileExplorerHeader,
 	type FileMode,
-	getFileEditorKind,
 	getFileOperationErrorMessage,
 	NewFileOverlay,
 	useFileExplorer,
@@ -19,25 +18,7 @@ import type {
 	WorkbenchComponent,
 	WorkbenchPanelConfig,
 } from "@/stores/workbench";
-import { FileExplorerControl } from "../../file-explorer-control";
-import { WORKBENCH_COMPONENTS } from "../../workbench.constants";
-
-const getFilePanelType = (path: string) => {
-	switch (getFileEditorKind(path)) {
-		case "download":
-			return WORKBENCH_COMPONENTS.FILE_DOWNLOAD_VIEWER;
-		case "image":
-			return WORKBENCH_COMPONENTS.FILE_IMAGE_EDITOR;
-		case "markdown":
-			return WORKBENCH_COMPONENTS.FILE_MARKDOWN_EDITOR;
-		case "notebook":
-			return WORKBENCH_COMPONENTS.FILE_NOTEBOOK_EDITOR;
-		case "pdf":
-			return WORKBENCH_COMPONENTS.FILE_PDF_EDITOR;
-		default:
-			return WORKBENCH_COMPONENTS.FILE_CODE_EDITOR;
-	}
-};
+import { FileExplorerControl, getFilePanelType } from "../../files";
 
 /**
  * Storage-bucket explorer panel.
@@ -81,10 +62,10 @@ const StorageFileExplorerPanel: WorkbenchComponent<
 					layoutActions.selectPanel(
 						getFilePanelType(insightFilePath),
 						{
+							type: "INSIGHT",
+							id: response.insightId,
 							name: item.name,
 							path: insightFilePath,
-							fileMode: "INSIGHT",
-							insightId: response.insightId,
 						},
 						{ name: item.name },
 					);

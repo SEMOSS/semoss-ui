@@ -6,10 +6,12 @@ import {
 	type WorkbenchAssistantSliceState,
 } from "./assistant";
 import {
+	createWorkbenchAccessSlice,
 	createWorkbenchCommandSlice,
 	createWorkbenchControlsSlice,
 	createWorkbenchLayoutSlice,
 	createWorkbenchLoadingSlice,
+	type WorkbenchAccessSliceState,
 	type WorkbenchCommandSliceState,
 	type WorkbenchControlsSliceState,
 	type WorkbenchLayoutSliceState,
@@ -23,6 +25,7 @@ import {
  * `const actions = useWorkbench((s) => s.layout.actions)`.
  */
 export interface WorkbenchState {
+	access: WorkbenchAccessSliceState;
 	layout: WorkbenchLayoutSliceState;
 	loading: WorkbenchLoadingSliceState;
 	command: WorkbenchCommandSliceState;
@@ -33,9 +36,8 @@ export interface WorkbenchState {
 
 /**
  * Creates an isolated vanilla Zustand store for one workbench ID. Domain
- * state (e.g. the database workbench) lives in its own store, attached at
- * runtime via `layout.actions.attachDomainStore` — it is no longer merged in
- * here.
+ * workbenches own their independent stores and React contexts; this store
+ * contains only generic workbench state.
  *
  * @name createWorkbenchStore
  * @param id - Unique workbench ID used to isolate the cache.
@@ -46,6 +48,7 @@ export const createWorkbenchStore = (id: string): StoreApi<WorkbenchState> => {
 	return createStore<WorkbenchState>()((set, get, api) => {
 		// Every slice takes the root set/get, returns its own state flat, and
 		// is mounted under its namespace here.
+		const access = createWorkbenchAccessSlice()(set, get, api);
 		const layout = createWorkbenchLayoutSlice(id)(set, get, api);
 		const loading = createWorkbenchLoadingSlice()(set, get, api);
 		const command = createWorkbenchCommandSlice(id)(set, get, api);
@@ -60,6 +63,7 @@ export const createWorkbenchStore = (id: string): StoreApi<WorkbenchState> => {
 		);
 
 		return {
+			access,
 			layout,
 			loading,
 			command,

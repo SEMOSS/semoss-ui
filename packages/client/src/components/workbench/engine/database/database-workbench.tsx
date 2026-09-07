@@ -1,8 +1,9 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { StoreApi } from "zustand";
 import { useInsight } from "@semoss/sdk/react";
 import type { FileExplorerApi } from "@semoss/shared";
 import { makeEngineRoomMcp } from "@/api/rooms";
+import { DatabaseWorkbenchStoreProvider } from "@/contexts/database-workbench.context";
 import {
 	useEngine,
 	useWorkbench,
@@ -21,23 +22,22 @@ import { WORKBENCH_ASSISTANT_PANEL } from "../../assistant";
 import { Workbench } from "../../core";
 import { WorkbenchCommandMenuButton } from "../../core/workbench-command-menu-button";
 import {
+	FILE_CODE_EDITOR_PANEL,
+	FILE_DOWNLOAD_PANEL,
+	FILE_EXPLORER_PANEL,
+	FILE_IMAGE_VIEWER_PANEL,
+	FILE_MARKDOWN_EDITOR_PANEL,
+	FILE_MCP_EDITOR_PANEL,
+	FILE_NOTEBOOK_EDITOR_PANEL,
+	FILE_PDF_VIEWER_PANEL,
+} from "../../files";
+import { GIT_DIFF_PANEL, GIT_VERSION_PANEL } from "../../git";
+import {
 	WORKBENCH_COMPONENTS,
 	WORKBENCH_PANEL_RECORDS,
 } from "../../workbench.constants";
-import { ENGINE_FILE_CODE_EDITOR_PANEL } from "../engine-file-code-editor-panel";
-import { ENGINE_FILE_DOWNLOAD_VIEWER_PANEL } from "../engine-file-download-viewer-panel";
-import { ENGINE_FILE_EXPLORER_PANEL } from "../engine-file-explorer-panel";
-import { ENGINE_FILE_IMAGE_EDITOR_PANEL } from "../engine-file-image-editor-panel";
-import { ENGINE_FILE_MARKDOWN_EDITOR_PANEL } from "../engine-file-markdown-editor-panel";
-import { ENGINE_FILE_NOTEBOOK_EDITOR_PANEL } from "../engine-file-notebook-editor-panel";
-import { ENGINE_FILE_PDF_EDITOR_PANEL } from "../engine-file-pdf-editor-panel";
-import { ENGINE_MCP_EDITOR_PANEL } from "../engine-mcp-editor-panel";
 import { createEngineSettingsPanel } from "../engine-settings-panel";
 import { EngineSettingsToggle } from "../engine-settings-toggle";
-import {
-	ENGINE_GIT_DIFF_PANEL,
-	ENGINE_VERSION_PANEL,
-} from "../version-control";
 import { DATABASE_COLUMNS_PANEL } from "./database-columns-panel";
 import { DATABASE_QUERY_PANEL } from "./database-query-panel";
 import { DATABASE_RESULTS_PANEL } from "./database-query-results-panel";
@@ -50,8 +50,8 @@ const INITIAL_QUERY_PANEL_ID = "database-query-1";
  * border kept as the docking target for query results, and the assistant on
  * the right.
  */
-const DATABASE_WORKBENCH_LAYOUT: WorkbenchLayout = {
-	version: 2,
+const createDatabaseWorkbenchLayout = (engineId: string): WorkbenchLayout => ({
+	version: 4,
 	tree: {
 		type: "tabset",
 		id: "main",
@@ -69,10 +69,14 @@ const DATABASE_WORKBENCH_LAYOUT: WorkbenchLayout = {
 		},
 		[WORKBENCH_PANEL_RECORDS.DATABASE_COLUMNS.id]:
 			WORKBENCH_PANEL_RECORDS.DATABASE_COLUMNS,
-		[WORKBENCH_PANEL_RECORDS.ENGINE_FILE_EXPLORER.id]:
-			WORKBENCH_PANEL_RECORDS.ENGINE_FILE_EXPLORER,
-		[WORKBENCH_PANEL_RECORDS.ENGINE_VERSION.id]:
-			WORKBENCH_PANEL_RECORDS.ENGINE_VERSION,
+		[WORKBENCH_PANEL_RECORDS.FILE_EXPLORER.id]: {
+			...WORKBENCH_PANEL_RECORDS.FILE_EXPLORER,
+			config: { type: "ENGINE", id: engineId },
+		},
+		[WORKBENCH_PANEL_RECORDS.GIT_VERSION.id]: {
+			...WORKBENCH_PANEL_RECORDS.GIT_VERSION,
+			config: { type: "ENGINE", id: engineId },
+		},
 		[WORKBENCH_PANEL_RECORDS.ASSISTANT.id]:
 			WORKBENCH_PANEL_RECORDS.ASSISTANT,
 	},
@@ -81,7 +85,7 @@ const DATABASE_WORKBENCH_LAYOUT: WorkbenchLayout = {
 			panelIds: [
 				WORKBENCH_COMPONENTS.DATABASE_COLUMNS,
 				WORKBENCH_COMPONENTS.FILE_EXPLORER,
-				WORKBENCH_COMPONENTS.ENGINE_VERSION,
+				WORKBENCH_COMPONENTS.GIT_VERSION,
 			],
 			activeId: WORKBENCH_COMPONENTS.DATABASE_COLUMNS,
 			size: 300,
@@ -93,23 +97,20 @@ const DATABASE_WORKBENCH_LAYOUT: WorkbenchLayout = {
 			size: 400,
 		},
 	},
-};
+});
 
 /** Blueprints, keyed by type. Module-scope so identities never churn. */
 const DATABASE_WORKBENCH_COMPONENTS: Record<string, WorkbenchPanelConfigAny> = {
-	[WORKBENCH_COMPONENTS.FILE_EXPLORER]: ENGINE_FILE_EXPLORER_PANEL,
-	[WORKBENCH_COMPONENTS.FILE_CODE_EDITOR]: ENGINE_FILE_CODE_EDITOR_PANEL,
-	[WORKBENCH_COMPONENTS.FILE_DOWNLOAD_VIEWER]:
-		ENGINE_FILE_DOWNLOAD_VIEWER_PANEL,
-	[WORKBENCH_COMPONENTS.FILE_IMAGE_EDITOR]: ENGINE_FILE_IMAGE_EDITOR_PANEL,
-	[WORKBENCH_COMPONENTS.FILE_MARKDOWN_EDITOR]:
-		ENGINE_FILE_MARKDOWN_EDITOR_PANEL,
-	[WORKBENCH_COMPONENTS.FILE_NOTEBOOK_EDITOR]:
-		ENGINE_FILE_NOTEBOOK_EDITOR_PANEL,
-	[WORKBENCH_COMPONENTS.FILE_PDF_EDITOR]: ENGINE_FILE_PDF_EDITOR_PANEL,
-	[WORKBENCH_COMPONENTS.MCP_EDITOR]: ENGINE_MCP_EDITOR_PANEL,
-	[WORKBENCH_COMPONENTS.ENGINE_VERSION]: ENGINE_VERSION_PANEL,
-	[WORKBENCH_COMPONENTS.ENGINE_GIT_DIFF]: ENGINE_GIT_DIFF_PANEL,
+	[WORKBENCH_COMPONENTS.FILE_EXPLORER]: FILE_EXPLORER_PANEL,
+	[WORKBENCH_COMPONENTS.FILE_CODE_EDITOR]: FILE_CODE_EDITOR_PANEL,
+	[WORKBENCH_COMPONENTS.FILE_DOWNLOAD]: FILE_DOWNLOAD_PANEL,
+	[WORKBENCH_COMPONENTS.FILE_IMAGE_VIEWER]: FILE_IMAGE_VIEWER_PANEL,
+	[WORKBENCH_COMPONENTS.FILE_MARKDOWN_EDITOR]: FILE_MARKDOWN_EDITOR_PANEL,
+	[WORKBENCH_COMPONENTS.FILE_NOTEBOOK_EDITOR]: FILE_NOTEBOOK_EDITOR_PANEL,
+	[WORKBENCH_COMPONENTS.FILE_PDF_VIEWER]: FILE_PDF_VIEWER_PANEL,
+	[WORKBENCH_COMPONENTS.FILE_MCP_EDITOR]: FILE_MCP_EDITOR_PANEL,
+	[WORKBENCH_COMPONENTS.GIT_VERSION]: GIT_VERSION_PANEL,
+	[WORKBENCH_COMPONENTS.GIT_DIFF]: GIT_DIFF_PANEL,
 	[WORKBENCH_COMPONENTS.DATABASE_COLUMNS]: DATABASE_COLUMNS_PANEL,
 	[WORKBENCH_COMPONENTS.DATABASE_QUERY]: DATABASE_QUERY_PANEL,
 	[WORKBENCH_COMPONENTS.DATABASE_RESULTS]: DATABASE_RESULTS_PANEL,
@@ -166,12 +167,14 @@ export const DatabaseWorkbench: React.FC = () => {
 	const storeApi = useWorkbenchStoreApi();
 	const { engine } = useEngine();
 	const insight = useInsight();
+	const workbenchLayout = useMemo(
+		() => createDatabaseWorkbenchLayout(engine.engine_id),
+		[engine.engine_id],
+	);
 
-	// created once per mount and attached before the panels first render
+	// Created once per workbench instance before its panels render.
 	const [databaseStore] = useState<StoreApi<DatabaseWorkbenchState>>(() => {
-		const store = createDatabaseWorkbenchStore({ workbench: storeApi });
-		storeApi.getState().layout.actions.attachDomainStore(store);
-		return store;
+		return createDatabaseWorkbenchStore({ workbench: storeApi });
 	});
 
 	// initialize the workbench
@@ -265,6 +268,10 @@ export const DatabaseWorkbench: React.FC = () => {
 			handler: (get) => {
 				get().layout.actions.selectPanel(
 					WORKBENCH_COMPONENTS.FILE_EXPLORER,
+					{
+						type: "ENGINE",
+						id: engine.engine_id,
+					},
 				);
 			},
 		},
@@ -274,7 +281,11 @@ export const DatabaseWorkbench: React.FC = () => {
 			label: "Open Version Control",
 			handler: (get) => {
 				get().layout.actions.selectPanel(
-					WORKBENCH_COMPONENTS.ENGINE_VERSION,
+					WORKBENCH_COMPONENTS.GIT_VERSION,
+					{
+						type: "ENGINE",
+						id: engine.engine_id,
+					},
 				);
 			},
 		},
@@ -309,22 +320,24 @@ export const DatabaseWorkbench: React.FC = () => {
 	]);
 
 	return (
-		<Workbench
-			layout={DATABASE_WORKBENCH_LAYOUT}
-			components={DATABASE_WORKBENCH_COMPONENTS}
-			onPanelClose={(pid, record) =>
-				databaseStore.getState().handlePanelClosed(pid, record)
-			}
-			borderSlots={{
-				left: {
-					after: (
-						<>
-							<WorkbenchCommandMenuButton />
-							<EngineSettingsToggle />
-						</>
-					),
-				},
-			}}
-		/>
+		<DatabaseWorkbenchStoreProvider store={databaseStore}>
+			<Workbench
+				layout={workbenchLayout}
+				components={DATABASE_WORKBENCH_COMPONENTS}
+				onPanelClose={(pid, record) =>
+					databaseStore.getState().handlePanelClosed(pid, record)
+				}
+				borderSlots={{
+					left: {
+						after: (
+							<>
+								<WorkbenchCommandMenuButton />
+								<EngineSettingsToggle />
+							</>
+						),
+					},
+				}}
+			/>
+		</DatabaseWorkbenchStoreProvider>
 	);
 };

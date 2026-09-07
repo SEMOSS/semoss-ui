@@ -1,4 +1,4 @@
-import { useCallback, useEffect } from "react";
+import { useCallback, useEffect, useMemo } from "react";
 import { useInsight } from "@semoss/sdk/react";
 import type { FileExplorerApi } from "@semoss/shared";
 import { toast } from "@semoss/ui/next";
@@ -12,29 +12,28 @@ import { WORKBENCH_ASSISTANT_PANEL } from "../../assistant";
 import { Workbench } from "../../core";
 import { WorkbenchCommandMenuButton } from "../../core/workbench-command-menu-button";
 import {
+	FILE_CODE_EDITOR_PANEL,
+	FILE_DOWNLOAD_PANEL,
+	FILE_EXPLORER_PANEL,
+	FILE_IMAGE_VIEWER_PANEL,
+	FILE_MARKDOWN_EDITOR_PANEL,
+	FILE_MCP_EDITOR_PANEL,
+	FILE_NOTEBOOK_EDITOR_PANEL,
+	FILE_PDF_VIEWER_PANEL,
+} from "../../files";
+import { GIT_DIFF_PANEL, GIT_VERSION_PANEL } from "../../git";
+import {
 	WORKBENCH_COMPONENTS,
 	WORKBENCH_PANEL_RECORDS,
 } from "../../workbench.constants";
 import { PROJECT_ENGINES_PANEL } from "../project-engines-panel";
-import { PROJECT_FILE_CODE_EDITOR_PANEL } from "../project-file-code-editor-panel";
-import { PROJECT_FILE_DOWNLOAD_VIEWER_PANEL } from "../project-file-download-viewer-panel";
-import { PROJECT_FILE_EXPLORER_PANEL } from "../project-file-explorer-panel";
-import { PROJECT_FILE_IMAGE_EDITOR_PANEL } from "../project-file-image-editor-panel";
-import { PROJECT_FILE_MARKDOWN_EDITOR_PANEL } from "../project-file-markdown-editor-panel";
-import { PROJECT_FILE_NOTEBOOK_EDITOR_PANEL } from "../project-file-notebook-editor-panel";
-import { PROJECT_FILE_PDF_EDITOR_PANEL } from "../project-file-pdf-editor-panel";
 import { PROJECT_INSIGHT_EXPLORER_PANEL } from "../project-insight-explorer-panel";
-import { PROJECT_MCP_EDITOR_PANEL } from "../project-mcp-editor-panel";
 import { ProjectPublishButton } from "../project-publish-button";
 import {
 	createProjectSettingsPanel,
 	ProjectSettingsToggle,
 } from "../project-settings-toggle";
 import { PROJECT_TERMINAL_PANEL } from "../project-terminal-panel";
-import {
-	PROJECT_GIT_DIFF_PANEL,
-	PROJECT_VERSION_PANEL,
-} from "../version-control";
 import { PROJECT_APP_RENDERER_PANEL } from "./code-app-renderer-panel";
 
 /**
@@ -79,8 +78,8 @@ const runTreePublished = (
  * primary build surface for a CODE project (a cached layout still wins for
  * users who closed it).
  */
-const CODE_WORKBENCH_LAYOUT: WorkbenchLayout = {
-	version: 2,
+const createCodeWorkbenchLayout = (projectId: string): WorkbenchLayout => ({
+	version: 4,
 	tree: {
 		type: "tabset",
 		id: "main",
@@ -93,10 +92,20 @@ const CODE_WORKBENCH_LAYOUT: WorkbenchLayout = {
 			...WORKBENCH_PANEL_RECORDS.PROJECT_APP_RENDERER,
 			config: { previewVersion: 0 },
 		},
-		[WORKBENCH_PANEL_RECORDS.PROJECT_FILE_EXPLORER.id]:
-			WORKBENCH_PANEL_RECORDS.PROJECT_FILE_EXPLORER,
-		[WORKBENCH_PANEL_RECORDS.PROJECT_VERSION.id]:
-			WORKBENCH_PANEL_RECORDS.PROJECT_VERSION,
+		[WORKBENCH_PANEL_RECORDS.FILE_EXPLORER.id]: {
+			...WORKBENCH_PANEL_RECORDS.FILE_EXPLORER,
+			config: {
+				type: "PROJECT",
+				id: projectId,
+			},
+		},
+		[WORKBENCH_PANEL_RECORDS.GIT_VERSION.id]: {
+			...WORKBENCH_PANEL_RECORDS.GIT_VERSION,
+			config: {
+				type: "PROJECT",
+				id: projectId,
+			},
+		},
 		[WORKBENCH_PANEL_RECORDS.PROJECT_INSIGHT_EXPLORER.id]:
 			WORKBENCH_PANEL_RECORDS.PROJECT_INSIGHT_EXPLORER,
 		[WORKBENCH_PANEL_RECORDS.PROJECT_TERMINAL.id]:
@@ -109,11 +118,11 @@ const CODE_WORKBENCH_LAYOUT: WorkbenchLayout = {
 	borders: {
 		left: {
 			panelIds: [
-				WORKBENCH_COMPONENTS.PROJECT_FILE_EXPLORER,
-				WORKBENCH_COMPONENTS.PROJECT_VERSION,
+				WORKBENCH_COMPONENTS.FILE_EXPLORER,
+				WORKBENCH_COMPONENTS.GIT_VERSION,
 				WORKBENCH_COMPONENTS.PROJECT_INSIGHT_EXPLORER,
 			],
-			activeId: WORKBENCH_COMPONENTS.PROJECT_FILE_EXPLORER,
+			activeId: WORKBENCH_COMPONENTS.FILE_EXPLORER,
 			size: 400,
 		},
 		bottom: {
@@ -130,29 +139,23 @@ const CODE_WORKBENCH_LAYOUT: WorkbenchLayout = {
 			size: 400,
 		},
 	},
-};
+});
 
 /** Blueprints, keyed by type. Module-scope so identities never churn. */
 const CODE_WORKBENCH_COMPONENTS: Record<string, WorkbenchPanelConfigAny> = {
 	[WORKBENCH_COMPONENTS.PROJECT_APP_RENDERER]: PROJECT_APP_RENDERER_PANEL,
-	[WORKBENCH_COMPONENTS.PROJECT_FILE_EXPLORER]: PROJECT_FILE_EXPLORER_PANEL,
-	[WORKBENCH_COMPONENTS.PROJECT_VERSION]: PROJECT_VERSION_PANEL,
-	[WORKBENCH_COMPONENTS.PROJECT_GIT_DIFF]: PROJECT_GIT_DIFF_PANEL,
+	[WORKBENCH_COMPONENTS.FILE_EXPLORER]: FILE_EXPLORER_PANEL,
+	[WORKBENCH_COMPONENTS.GIT_VERSION]: GIT_VERSION_PANEL,
+	[WORKBENCH_COMPONENTS.GIT_DIFF]: GIT_DIFF_PANEL,
 	[WORKBENCH_COMPONENTS.PROJECT_INSIGHT_EXPLORER]:
 		PROJECT_INSIGHT_EXPLORER_PANEL,
-	[WORKBENCH_COMPONENTS.PROJECT_FILE_CODE_EDITOR]:
-		PROJECT_FILE_CODE_EDITOR_PANEL,
-	[WORKBENCH_COMPONENTS.PROJECT_FILE_DOWNLOAD_VIEWER]:
-		PROJECT_FILE_DOWNLOAD_VIEWER_PANEL,
-	[WORKBENCH_COMPONENTS.PROJECT_FILE_IMAGE_EDITOR]:
-		PROJECT_FILE_IMAGE_EDITOR_PANEL,
-	[WORKBENCH_COMPONENTS.PROJECT_FILE_MARKDOWN_EDITOR]:
-		PROJECT_FILE_MARKDOWN_EDITOR_PANEL,
-	[WORKBENCH_COMPONENTS.PROJECT_FILE_NOTEBOOK_EDITOR]:
-		PROJECT_FILE_NOTEBOOK_EDITOR_PANEL,
-	[WORKBENCH_COMPONENTS.PROJECT_FILE_PDF_EDITOR]:
-		PROJECT_FILE_PDF_EDITOR_PANEL,
-	[WORKBENCH_COMPONENTS.PROJECT_MCP_EDITOR]: PROJECT_MCP_EDITOR_PANEL,
+	[WORKBENCH_COMPONENTS.FILE_CODE_EDITOR]: FILE_CODE_EDITOR_PANEL,
+	[WORKBENCH_COMPONENTS.FILE_DOWNLOAD]: FILE_DOWNLOAD_PANEL,
+	[WORKBENCH_COMPONENTS.FILE_IMAGE_VIEWER]: FILE_IMAGE_VIEWER_PANEL,
+	[WORKBENCH_COMPONENTS.FILE_MARKDOWN_EDITOR]: FILE_MARKDOWN_EDITOR_PANEL,
+	[WORKBENCH_COMPONENTS.FILE_NOTEBOOK_EDITOR]: FILE_NOTEBOOK_EDITOR_PANEL,
+	[WORKBENCH_COMPONENTS.FILE_PDF_VIEWER]: FILE_PDF_VIEWER_PANEL,
+	[WORKBENCH_COMPONENTS.FILE_MCP_EDITOR]: FILE_MCP_EDITOR_PANEL,
 	[WORKBENCH_COMPONENTS.PROJECT_ENGINES]: PROJECT_ENGINES_PANEL,
 	[WORKBENCH_COMPONENTS.PROJECT_TERMINAL]: PROJECT_TERMINAL_PANEL,
 	[WORKBENCH_COMPONENTS.PROJECT_SETTINGS]: createProjectSettingsPanel([
@@ -201,6 +204,10 @@ export const CodeWorkbench: React.FC = () => {
 	const layoutActions = useWorkbench((s) => s.layout.actions);
 	const { project } = useProject();
 	const insight = useInsight();
+	const workbenchLayout = useMemo(
+		() => createCodeWorkbenchLayout(project.project_id),
+		[project.project_id],
+	);
 
 	/**
 	 * Refresh the code renderer
@@ -282,9 +289,9 @@ export const CodeWorkbench: React.FC = () => {
 			label: "Create File",
 			handler: (get) =>
 				(
-					get().layout.values[
-						WORKBENCH_COMPONENTS.PROJECT_FILE_EXPLORER
-					] as FileExplorerApi | undefined
+					get().layout.values[WORKBENCH_COMPONENTS.FILE_EXPLORER] as
+						| FileExplorerApi
+						| undefined
 				)?.commands.openNewFile(undefined, "add_file"),
 		},
 		{
@@ -293,9 +300,9 @@ export const CodeWorkbench: React.FC = () => {
 			label: "Create Folder",
 			handler: (get) =>
 				(
-					get().layout.values[
-						WORKBENCH_COMPONENTS.PROJECT_FILE_EXPLORER
-					] as FileExplorerApi | undefined
+					get().layout.values[WORKBENCH_COMPONENTS.FILE_EXPLORER] as
+						| FileExplorerApi
+						| undefined
 				)?.commands.openNewFile(undefined, "add_directory"),
 		},
 		{
@@ -304,9 +311,9 @@ export const CodeWorkbench: React.FC = () => {
 			label: "Upload Files",
 			handler: (get) =>
 				(
-					get().layout.values[
-						WORKBENCH_COMPONENTS.PROJECT_FILE_EXPLORER
-					] as FileExplorerApi | undefined
+					get().layout.values[WORKBENCH_COMPONENTS.FILE_EXPLORER] as
+						| FileExplorerApi
+						| undefined
 				)?.commands.openNewFile(undefined, "upload"),
 		},
 		{
@@ -315,9 +322,9 @@ export const CodeWorkbench: React.FC = () => {
 			label: "Refresh Files",
 			handler: (get) =>
 				(
-					get().layout.values[
-						WORKBENCH_COMPONENTS.PROJECT_FILE_EXPLORER
-					] as FileExplorerApi | undefined
+					get().layout.values[WORKBENCH_COMPONENTS.FILE_EXPLORER] as
+						| FileExplorerApi
+						| undefined
 				)?.commands.refresh(),
 		},
 		{
@@ -326,7 +333,11 @@ export const CodeWorkbench: React.FC = () => {
 			label: "Open File Explorer",
 			handler: (get) => {
 				get().layout.actions.selectPanel(
-					WORKBENCH_COMPONENTS.PROJECT_FILE_EXPLORER,
+					WORKBENCH_COMPONENTS.FILE_EXPLORER,
+					{
+						type: "PROJECT",
+						id: project.project_id,
+					},
 				);
 			},
 		},
@@ -384,7 +395,7 @@ export const CodeWorkbench: React.FC = () => {
 
 	return (
 		<Workbench
-			layout={CODE_WORKBENCH_LAYOUT}
+			layout={workbenchLayout}
 			components={CODE_WORKBENCH_COMPONENTS}
 			borderSlots={{
 				left: {

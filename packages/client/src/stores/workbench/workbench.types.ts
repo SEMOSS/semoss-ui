@@ -105,7 +105,9 @@ export type WorkbenchBorders = Record<
  * name, config, and optional per-instance capability overrides.
  */
 export interface WorkbenchPanelRecord {
+	/** Opaque instance id; it is not required to equal `type`. */
 	id: WorkbenchPanelId;
+	/** Blueprint key shared by every instance of this panel kind. */
 	type: WorkbenchPanelType;
 	name: string;
 	config?: WorkbenchPanelParams;

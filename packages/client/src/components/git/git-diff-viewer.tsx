@@ -7,7 +7,7 @@ import {
 	Muted,
 	Skeleton,
 } from "@semoss/ui/next";
-import { getCodeEditorLanguage } from "@/components/workbench/file-editor.utility";
+import { getCodeEditorLanguage } from "@/components/workbench/files";
 import type { GitDiff, GitStageAction } from "./git.types";
 import type { GitDataStatus } from "./git-commit-row";
 import { getGitDiffCodeModels } from "./git-diff.utility";

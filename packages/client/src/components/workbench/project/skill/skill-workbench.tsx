@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import { useInsight } from "@semoss/sdk/react";
 import type { FileExplorerApi } from "@semoss/shared";
 import { useProject, useWorkbench, useWorkbenchCommands } from "@/hooks";
@@ -10,27 +10,26 @@ import { WORKBENCH_ASSISTANT_PANEL } from "../../assistant";
 import { Workbench } from "../../core";
 import { WorkbenchCommandMenuButton } from "../../core/workbench-command-menu-button";
 import {
+	FILE_CODE_EDITOR_PANEL,
+	FILE_DOWNLOAD_PANEL,
+	FILE_EXPLORER_PANEL,
+	FILE_IMAGE_VIEWER_PANEL,
+	FILE_MARKDOWN_EDITOR_PANEL,
+	FILE_MCP_EDITOR_PANEL,
+	FILE_NOTEBOOK_EDITOR_PANEL,
+	FILE_PDF_VIEWER_PANEL,
+} from "../../files";
+import { GIT_DIFF_PANEL, GIT_VERSION_PANEL } from "../../git";
+import {
 	WORKBENCH_COMPONENTS,
 	WORKBENCH_PANEL_RECORDS,
 } from "../../workbench.constants";
-import { PROJECT_FILE_CODE_EDITOR_PANEL } from "../project-file-code-editor-panel";
-import { PROJECT_FILE_DOWNLOAD_VIEWER_PANEL } from "../project-file-download-viewer-panel";
-import { PROJECT_FILE_EXPLORER_PANEL } from "../project-file-explorer-panel";
-import { PROJECT_FILE_IMAGE_EDITOR_PANEL } from "../project-file-image-editor-panel";
-import { PROJECT_FILE_MARKDOWN_EDITOR_PANEL } from "../project-file-markdown-editor-panel";
-import { PROJECT_FILE_NOTEBOOK_EDITOR_PANEL } from "../project-file-notebook-editor-panel";
-import { PROJECT_FILE_PDF_EDITOR_PANEL } from "../project-file-pdf-editor-panel";
 import { PROJECT_INSIGHT_EXPLORER_PANEL } from "../project-insight-explorer-panel";
-import { PROJECT_MCP_EDITOR_PANEL } from "../project-mcp-editor-panel";
 import {
 	createProjectSettingsPanel,
 	ProjectSettingsToggle,
 } from "../project-settings-toggle";
 import { PROJECT_TERMINAL_PANEL } from "../project-terminal-panel";
-import {
-	PROJECT_GIT_DIFF_PANEL,
-	PROJECT_VERSION_PANEL,
-} from "../version-control";
 
 /** Every SKILL project is created with this file. */
 const SKILL_PATH = "/public/SKILL.md";
@@ -40,8 +39,8 @@ const SKILL_NAME = "SKILL.md";
 const SKILL_EDITOR_ID = "skill-md";
 
 /** The default arrangement: SKILL.md open, files and insight on the left. */
-const SKILL_WORKBENCH_LAYOUT: WorkbenchLayout = {
-	version: 2,
+const createSkillWorkbenchLayout = (projectId: string): WorkbenchLayout => ({
+	version: 4,
 	tree: {
 		type: "tabset",
 		id: "main",
@@ -52,15 +51,24 @@ const SKILL_WORKBENCH_LAYOUT: WorkbenchLayout = {
 	panels: {
 		[SKILL_EDITOR_ID]: {
 			id: SKILL_EDITOR_ID,
-			type: WORKBENCH_COMPONENTS.PROJECT_FILE_MARKDOWN_EDITOR,
+			type: WORKBENCH_COMPONENTS.FILE_MARKDOWN_EDITOR,
 			name: SKILL_NAME,
 			canClose: false,
-			config: { name: SKILL_NAME, path: SKILL_PATH },
+			config: {
+				type: "PROJECT",
+				id: projectId,
+				name: SKILL_NAME,
+				path: SKILL_PATH,
+			},
 		},
-		[WORKBENCH_PANEL_RECORDS.PROJECT_FILE_EXPLORER.id]:
-			WORKBENCH_PANEL_RECORDS.PROJECT_FILE_EXPLORER,
-		[WORKBENCH_PANEL_RECORDS.PROJECT_VERSION.id]:
-			WORKBENCH_PANEL_RECORDS.PROJECT_VERSION,
+		[WORKBENCH_PANEL_RECORDS.FILE_EXPLORER.id]: {
+			...WORKBENCH_PANEL_RECORDS.FILE_EXPLORER,
+			config: { type: "PROJECT", id: projectId },
+		},
+		[WORKBENCH_PANEL_RECORDS.GIT_VERSION.id]: {
+			...WORKBENCH_PANEL_RECORDS.GIT_VERSION,
+			config: { type: "PROJECT", id: projectId },
+		},
 		[WORKBENCH_PANEL_RECORDS.PROJECT_INSIGHT_EXPLORER.id]:
 			WORKBENCH_PANEL_RECORDS.PROJECT_INSIGHT_EXPLORER,
 		[WORKBENCH_PANEL_RECORDS.PROJECT_TERMINAL.id]:
@@ -71,11 +79,11 @@ const SKILL_WORKBENCH_LAYOUT: WorkbenchLayout = {
 	borders: {
 		left: {
 			panelIds: [
-				WORKBENCH_COMPONENTS.PROJECT_FILE_EXPLORER,
-				WORKBENCH_COMPONENTS.PROJECT_VERSION,
+				WORKBENCH_COMPONENTS.FILE_EXPLORER,
+				WORKBENCH_COMPONENTS.GIT_VERSION,
 				WORKBENCH_COMPONENTS.PROJECT_INSIGHT_EXPLORER,
 			],
-			activeId: WORKBENCH_COMPONENTS.PROJECT_FILE_EXPLORER,
+			activeId: WORKBENCH_COMPONENTS.FILE_EXPLORER,
 			size: 400,
 		},
 		bottom: {
@@ -89,28 +97,22 @@ const SKILL_WORKBENCH_LAYOUT: WorkbenchLayout = {
 			size: 400,
 		},
 	},
-};
+});
 
 /** Blueprints, keyed by type. Module-scope so identities never churn. */
 const SKILL_WORKBENCH_COMPONENTS: Record<string, WorkbenchPanelConfigAny> = {
-	[WORKBENCH_COMPONENTS.PROJECT_FILE_EXPLORER]: PROJECT_FILE_EXPLORER_PANEL,
-	[WORKBENCH_COMPONENTS.PROJECT_VERSION]: PROJECT_VERSION_PANEL,
-	[WORKBENCH_COMPONENTS.PROJECT_GIT_DIFF]: PROJECT_GIT_DIFF_PANEL,
+	[WORKBENCH_COMPONENTS.FILE_EXPLORER]: FILE_EXPLORER_PANEL,
+	[WORKBENCH_COMPONENTS.GIT_VERSION]: GIT_VERSION_PANEL,
+	[WORKBENCH_COMPONENTS.GIT_DIFF]: GIT_DIFF_PANEL,
 	[WORKBENCH_COMPONENTS.PROJECT_INSIGHT_EXPLORER]:
 		PROJECT_INSIGHT_EXPLORER_PANEL,
-	[WORKBENCH_COMPONENTS.PROJECT_FILE_CODE_EDITOR]:
-		PROJECT_FILE_CODE_EDITOR_PANEL,
-	[WORKBENCH_COMPONENTS.PROJECT_FILE_DOWNLOAD_VIEWER]:
-		PROJECT_FILE_DOWNLOAD_VIEWER_PANEL,
-	[WORKBENCH_COMPONENTS.PROJECT_FILE_IMAGE_EDITOR]:
-		PROJECT_FILE_IMAGE_EDITOR_PANEL,
-	[WORKBENCH_COMPONENTS.PROJECT_FILE_MARKDOWN_EDITOR]:
-		PROJECT_FILE_MARKDOWN_EDITOR_PANEL,
-	[WORKBENCH_COMPONENTS.PROJECT_FILE_NOTEBOOK_EDITOR]:
-		PROJECT_FILE_NOTEBOOK_EDITOR_PANEL,
-	[WORKBENCH_COMPONENTS.PROJECT_FILE_PDF_EDITOR]:
-		PROJECT_FILE_PDF_EDITOR_PANEL,
-	[WORKBENCH_COMPONENTS.PROJECT_MCP_EDITOR]: PROJECT_MCP_EDITOR_PANEL,
+	[WORKBENCH_COMPONENTS.FILE_CODE_EDITOR]: FILE_CODE_EDITOR_PANEL,
+	[WORKBENCH_COMPONENTS.FILE_DOWNLOAD]: FILE_DOWNLOAD_PANEL,
+	[WORKBENCH_COMPONENTS.FILE_IMAGE_VIEWER]: FILE_IMAGE_VIEWER_PANEL,
+	[WORKBENCH_COMPONENTS.FILE_MARKDOWN_EDITOR]: FILE_MARKDOWN_EDITOR_PANEL,
+	[WORKBENCH_COMPONENTS.FILE_NOTEBOOK_EDITOR]: FILE_NOTEBOOK_EDITOR_PANEL,
+	[WORKBENCH_COMPONENTS.FILE_PDF_VIEWER]: FILE_PDF_VIEWER_PANEL,
+	[WORKBENCH_COMPONENTS.FILE_MCP_EDITOR]: FILE_MCP_EDITOR_PANEL,
 	[WORKBENCH_COMPONENTS.PROJECT_TERMINAL]: PROJECT_TERMINAL_PANEL,
 	[WORKBENCH_COMPONENTS.PROJECT_SETTINGS]: createProjectSettingsPanel([
 		{ name: "Overview", component: "project-overview" },
@@ -146,6 +148,10 @@ const SKILL_WORKBENCH_COMPONENTS: Record<string, WorkbenchPanelConfigAny> = {
 export const SkillWorkbench: React.FC = () => {
 	const { project } = useProject();
 	const insight = useInsight();
+	const workbenchLayout = useMemo(
+		() => createSkillWorkbenchLayout(project.project_id),
+		[project.project_id],
+	);
 
 	const configureAssistant = useWorkbench((s) => s.assistant.configure);
 
@@ -187,9 +193,9 @@ export const SkillWorkbench: React.FC = () => {
 			label: "Create File",
 			handler: (get) =>
 				(
-					get().layout.values[
-						WORKBENCH_COMPONENTS.PROJECT_FILE_EXPLORER
-					] as FileExplorerApi | undefined
+					get().layout.values[WORKBENCH_COMPONENTS.FILE_EXPLORER] as
+						| FileExplorerApi
+						| undefined
 				)?.commands.openNewFile(undefined, "add_file"),
 		},
 		{
@@ -198,9 +204,9 @@ export const SkillWorkbench: React.FC = () => {
 			label: "Create Folder",
 			handler: (get) =>
 				(
-					get().layout.values[
-						WORKBENCH_COMPONENTS.PROJECT_FILE_EXPLORER
-					] as FileExplorerApi | undefined
+					get().layout.values[WORKBENCH_COMPONENTS.FILE_EXPLORER] as
+						| FileExplorerApi
+						| undefined
 				)?.commands.openNewFile(undefined, "add_directory"),
 		},
 		{
@@ -209,9 +215,9 @@ export const SkillWorkbench: React.FC = () => {
 			label: "Upload Files",
 			handler: (get) =>
 				(
-					get().layout.values[
-						WORKBENCH_COMPONENTS.PROJECT_FILE_EXPLORER
-					] as FileExplorerApi | undefined
+					get().layout.values[WORKBENCH_COMPONENTS.FILE_EXPLORER] as
+						| FileExplorerApi
+						| undefined
 				)?.commands.openNewFile(undefined, "upload"),
 		},
 		{
@@ -220,9 +226,9 @@ export const SkillWorkbench: React.FC = () => {
 			label: "Refresh Files",
 			handler: (get) =>
 				(
-					get().layout.values[
-						WORKBENCH_COMPONENTS.PROJECT_FILE_EXPLORER
-					] as FileExplorerApi | undefined
+					get().layout.values[WORKBENCH_COMPONENTS.FILE_EXPLORER] as
+						| FileExplorerApi
+						| undefined
 				)?.commands.refresh(),
 		},
 		{
@@ -231,7 +237,11 @@ export const SkillWorkbench: React.FC = () => {
 			label: "Open File Explorer",
 			handler: (get) => {
 				get().layout.actions.selectPanel(
-					WORKBENCH_COMPONENTS.PROJECT_FILE_EXPLORER,
+					WORKBENCH_COMPONENTS.FILE_EXPLORER,
+					{
+						type: "PROJECT",
+						id: project.project_id,
+					},
 				);
 			},
 		},
@@ -269,7 +279,7 @@ export const SkillWorkbench: React.FC = () => {
 
 	return (
 		<Workbench
-			layout={SKILL_WORKBENCH_LAYOUT}
+			layout={workbenchLayout}
 			components={SKILL_WORKBENCH_COMPONENTS}
 			borderSlots={{
 				left: {
