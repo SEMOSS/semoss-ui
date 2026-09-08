@@ -6,6 +6,7 @@
  */
 import { X } from "lucide-react";
 import { useMemo, useRef, useState } from "react";
+import { isManagedSystemTag } from "@/lib/dashboardTags";
 
 interface Props {
 	value: string[];
@@ -38,7 +39,10 @@ export function TagInput({
 	const add = (raw: string) => {
 		if (atMax) return;
 		const t = raw.trim();
-		if (!t) return;
+		if (!t || isManagedSystemTag(t)) {
+			setDraft("");
+			return;
+		}
 		if (!value.some((v) => v.toLowerCase() === t.toLowerCase()))
 			onChange([...value, t]);
 		setDraft("");
@@ -48,6 +52,7 @@ export function TagInput({
 	const matches = useMemo(() => {
 		const q = draft.trim().toLowerCase();
 		return suggestions
+			.filter((s) => !isManagedSystemTag(s))
 			.filter(
 				(s) => !value.some((v) => v.toLowerCase() === s.toLowerCase()),
 			)
@@ -57,6 +62,8 @@ export function TagInput({
 
 	return (
 		<div className={`relative ${className}`}>
+			{/* biome-ignore lint/a11y/noStaticElementInteractions: click-to-focus convenience on a container that wraps a real, natively-focusable <input>. */}
+			{/* biome-ignore lint/a11y/useKeyWithClickEvents: the wrapped <input> is already keyboard-focusable via Tab; no separate key handler is needed. */}
 			<div
 				onClick={() => inputRef.current?.focus()}
 				className="flex flex-wrap items-center gap-1 rounded-md border border-stone-200 bg-stone-50 px-2 py-1 focus-within:border-indigo-400 focus-within:bg-white focus-within:ring-2 focus-within:ring-indigo-500/15"

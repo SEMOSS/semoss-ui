@@ -27,6 +27,8 @@ export interface WorkspaceFolder {
 	name: string;
 	kind: FolderKind;
 	visibility: FolderVisibility;
+	/** System-derived folders can be filtered but not manually assigned, renamed, or deleted. */
+	locked?: boolean;
 	ownerId?: string;
 	/** Higher = shown first. Client-side ordering only. */
 	sortOrder: number;

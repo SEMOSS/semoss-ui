@@ -384,11 +384,11 @@ export function DashboardPage() {
 				);
 				// Persist the migrated query registry alongside the sheets so the saved
 				// `queryId` references never dangle (they'd still fall back, but stay clean).
-				updateDashboard(dashboard.id, {
+				void updateDashboard(dashboard.id, {
 					sheets: newSheets,
 					queries: dashboard.queries,
 					customColorPalettes: dashboard.customColorPalettes,
-				});
+				}).catch(() => undefined);
 			}, 400);
 		},
 		[dashboard?.id, sheets],

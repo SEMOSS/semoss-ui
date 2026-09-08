@@ -26,15 +26,20 @@ import {
 import { useInsight } from "@semoss/sdk-react";
 import { useToast } from "@/components/ui/Toast";
 import {
+	canonicalizeProjectTags,
+	isManagedSystemTag,
+	isOwnershipMarkerTag,
+	isParamAppTag,
+	PARAM_APP_TAG,
+	syncParamAppTag,
+	userFolderTags,
+} from "@/lib/dashboardTags";
+import {
 	getProjects,
 	isAdminUser,
 	normalizeProjectPermission,
 } from "@/services/permissionsApi";
-import {
-	type DashboardMeta,
-	LANDING_PAGE_TAG,
-	ProjectStore,
-} from "@/services/projectStore";
+import { type DashboardMeta, ProjectStore } from "@/services/projectStore";
 import type { FolderKind, WorkspaceFolder } from "@/services/workspaceStore";
 import type { Dashboard } from "@/types/dashboard";
 
@@ -42,6 +47,11 @@ import type { Dashboard } from "@/types/dashboard";
 export function isOwnedDashboard(d: Dashboard): boolean {
 	const permission = normalizeProjectPermission(d.permission);
 	return permission ? permission === "OWNER" : !d.published;
+}
+
+export interface DashboardSaveResult {
+	released: boolean;
+	metadataSynced: boolean;
 }
 
 interface WorkspaceContextValue {
@@ -69,7 +79,10 @@ interface WorkspaceContextValue {
 		opts: { published: boolean; tags: string[] },
 	) => Promise<string>;
 	/** Merge updates into an existing dashboard and persist (definition + metadata). */
-	updateDashboard: (id: string, updates: Partial<Dashboard>) => void;
+	updateDashboard: (
+		id: string,
+		updates: Partial<Dashboard>,
+	) => Promise<DashboardSaveResult>;
 	/** Re-push the current portal bundle + definition to an existing project (owner-only release). */
 	redeployDashboard: (
 		id: string,
@@ -109,7 +122,7 @@ function metaToDashboard(
 		tags: m.tags,
 		published: m.published,
 		permission: m.permission,
-		folderId: m.tags[0], // compat: "primary" folder = first tag
+		folderId: userFolderTags(m.tags)[0], // compat: "primary" folder = first user folder tag
 		sheets,
 		createdAt: m.updatedAt ?? now(),
 		updatedAt: m.updatedAt ?? now(),
@@ -260,7 +273,7 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
 				tags: meta?.tags ?? def.tags ?? [],
 				published: meta?.published ?? def.published ?? false,
 				permission: meta?.permission,
-				folderId: (meta?.tags ?? def.tags ?? [])[0],
+				folderId: userFolderTags(meta?.tags ?? def.tags)[0],
 			};
 			defsCache.current.set(id, full);
 			setDashboards((prev) =>
@@ -289,14 +302,18 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
 			dashboard: Dashboard,
 			opts: { published: boolean; tags: string[] },
 		): Promise<string> => {
-			const id = await store.create(dashboard, opts);
+			const effectiveTags = syncParamAppTag(opts.tags, dashboard);
+			const dashboardWithTags = { ...dashboard, tags: effectiveTags };
+			const id = await store.create(dashboardWithTags, {
+				...opts,
+				tags: effectiveTags,
+			});
 			const created: Dashboard = {
-				...dashboard,
+				...dashboardWithTags,
 				id,
-				tags: opts.tags,
 				published: opts.published,
 				permission: "OWNER",
-				folderId: opts.tags[0],
+				folderId: userFolderTags(effectiveTags)[0],
 			};
 			defsCache.current.set(id, created);
 			setDashboards((prev) => [
@@ -305,7 +322,7 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
 						id,
 						name: created.name,
 						description: created.description ?? "",
-						tags: opts.tags,
+						tags: effectiveTags,
 						published: opts.published,
 						permission: "OWNER",
 						updatedAt: now(),
@@ -320,59 +337,121 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
 	);
 
 	const updateDashboard = useCallback(
-		(id: string, updates: Partial<Dashboard>) => {
-			let merged: Dashboard | undefined;
-			setDashboards((prev) =>
-				prev.map((d) => {
-					if (d.id !== id) return d;
-					merged = { ...d, ...updates, updatedAt: now() };
-					return merged;
-				}),
+		async (
+			id: string,
+			updates: Partial<Dashboard>,
+		): Promise<DashboardSaveResult> => {
+			const current =
+				defsCache.current.get(id) ??
+				dashboardsRef.current.find((dashboard) => dashboard.id === id);
+			if (!current) throw new Error("Dashboard not found.");
+
+			// Tags are NEVER written from an edit — they're only set when
+			// sharing/publishing (setDashboardTags). Retain any ownership markers
+			// (the param-app classification is re-derived below) so an edit save
+			// can never clobber them.
+			const retainedManagedTags = (current.tags ?? []).filter(
+				isOwnershipMarkerTag,
 			);
-			if (!merged) return;
-			const mergedDashboard = merged;
-			defsCache.current.set(id, mergedDashboard);
-			// Persist the definition. Tags are NEVER written from an edit — they're
-			// only set when sharing/publishing (setDashboardTags). A description change
-			// updates metadata but preserves the existing tags.
-			writeThrough(
-				(async () => {
-					const { released } = await store.saveDefinition(
-						id,
-						mergedDashboard,
-					);
-					if (updates.name != null && mergedDashboard.name?.trim()) {
-						// Rename the SEMOSS project's display name to match the title.
-						// Owner-only (SetProjectDisplayName) — non-fatal for editors.
-						try {
-							await store.renameProject(id, mergedDashboard.name);
-						} catch {
-							/* editor can't rename the project */
-						}
+			const requestedTags =
+				updates.tags === undefined
+					? current.tags
+					: [...updates.tags, ...retainedManagedTags];
+			const next = {
+				...current,
+				...updates,
+				tags: requestedTags,
+				updatedAt: now(),
+			};
+			const effectiveTags = syncParamAppTag(next.tags, next);
+			const merged: Dashboard = {
+				...next,
+				tags: effectiveTags,
+				folderId: userFolderTags(effectiveTags)[0],
+			};
+			const hadParamTag = (current.tags ?? []).some(isParamAppTag);
+			const hasParamTag = effectiveTags.some(isParamAppTag);
+			const classificationChanged = hadParamTag !== hasParamTag;
+
+			defsCache.current.set(id, merged);
+			setDashboards((prev) =>
+				prev.map((dashboard) =>
+					dashboard.id === id ? merged : dashboard,
+				),
+			);
+
+			try {
+				const { released } = await store.saveDefinition(id, merged);
+				if (updates.name != null && merged.name?.trim()) {
+					// Rename the SEMOSS project's display name to match the title.
+					// Owner-only (SetProjectDisplayName) — non-fatal for editors.
+					try {
+						await store.renameProject(id, merged.name);
+					} catch {
+						/* editor can't rename the project */
 					}
-					if (updates.description != null) {
-						// Metadata writes are owner-gated too — non-fatal for editors.
-						try {
-							await store.setMetadata(
-								id,
-								mergedDashboard.tags ?? [],
-								mergedDashboard.description ?? "",
-							);
-						} catch {
-							/* editor can't update project metadata */
-						}
-					}
-					if (!released) {
-						// Editor saved the working copy but can't release a new version.
-						toast.info(
-							"Your changes are saved. The live portal updates when an owner republishes.",
-							"Saved",
+				}
+
+				let metadataSynced = true;
+				if (classificationChanged) {
+					try {
+						await store.setMetadata(
+							id,
+							effectiveTags,
+							merged.description ?? "",
+						);
+					} catch {
+						// Owner-only write failed (e.g. editor permissions) — keep the
+						// locally-visible tags consistent with what the server still has.
+						metadataSynced = false;
+						const serverTags = effectiveTags.filter(
+							(tag) => !isParamAppTag(tag),
+						);
+						if (hadParamTag) serverTags.push(PARAM_APP_TAG);
+						const locallyAccurate = {
+							...merged,
+							tags: serverTags,
+							folderId: userFolderTags(serverTags)[0],
+						};
+						defsCache.current.set(id, locallyAccurate);
+						setDashboards((prev) =>
+							prev.map((dashboard) =>
+								dashboard.id === id
+									? locallyAccurate
+									: dashboard,
+							),
 						);
 					}
-				})(),
-			);
+				} else if (updates.description != null) {
+					// Metadata writes are owner-gated too — non-fatal for editors.
+					try {
+						await store.setMetadata(
+							id,
+							effectiveTags,
+							merged.description ?? "",
+						);
+					} catch {
+						/* editor can't update project metadata */
+					}
+				}
+				if (!released) {
+					// Editor saved the working copy but can't release a new version.
+					toast.info(
+						"Your changes are saved. The live portal updates when an owner republishes.",
+						"Saved",
+					);
+				}
+				return { released, metadataSynced };
+			} catch (error: unknown) {
+				setError(
+					error instanceof Error
+						? error.message
+						: "Failed to save change.",
+				);
+				throw error;
+			}
 		},
-		[store, writeThrough, toast],
+		[store, toast],
 	);
 
 	// Redeploy: push the CURRENT portal bundle + definition onto the existing
@@ -462,15 +541,25 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
 	// ── Tags (folders) ──────────────────────────────────────────────────────────
 	const setDashboardTags = useCallback(
 		(id: string, tags: string[]) => {
-			const clean = Array.from(
-				new Set(tags.map((t) => t.trim()).filter(Boolean)),
+			const current = dashboardsRef.current.find(
+				(dashboard) => dashboard.id === id,
 			);
+			const editableTags = canonicalizeProjectTags(tags).filter(
+				(tag) => !isManagedSystemTag(tag),
+			);
+			const clean = current?.tags?.some(isParamAppTag)
+				? [...editableTags, PARAM_APP_TAG]
+				: editableTags;
 			let desc = "";
 			setDashboards((prev) =>
 				prev.map((d) => {
 					if (d.id !== id) return d;
 					desc = d.description ?? "";
-					return { ...d, tags: clean, folderId: clean[0] };
+					return {
+						...d,
+						tags: clean,
+						folderId: userFolderTags(clean)[0],
+					};
 				}),
 			);
 			const cached = defsCache.current.get(id);
@@ -478,7 +567,7 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
 				defsCache.current.set(id, {
 					...cached,
 					tags: clean,
-					folderId: clean[0],
+					folderId: userFolderTags(clean)[0],
 				});
 			writeThrough(store.setMetadata(id, clean, desc));
 		},
@@ -487,6 +576,7 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
 
 	const toggleDashboardTag = useCallback(
 		(id: string, tag: string, on: boolean) => {
+			if (isManagedSystemTag(tag)) return;
 			const d = dashboards.find((x) => x.id === id);
 			const current = d?.tags ?? [];
 			const next = on
@@ -501,9 +591,8 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
 	const folders = useMemo<WorkspaceFolder[]>(() => {
 		const names = new Set<string>();
 		for (const d of dashboards)
-			for (const t of d.tags ?? [])
-				if (t !== LANDING_PAGE_TAG) names.add(t);
-		return [...names]
+			for (const t of userFolderTags(d.tags)) names.add(t);
+		const ordinaryFolders: WorkspaceFolder[] = [...names]
 			.sort((a, b) => a.localeCompare(b))
 			.map((name, i) => ({
 				id: name,
@@ -514,10 +603,26 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
 				createdAt: now(),
 				updatedAt: now(),
 			}));
+		if (!dashboards.some((d) => (d.tags ?? []).some(isParamAppTag)))
+			return ordinaryFolders;
+		return [
+			{
+				id: PARAM_APP_TAG,
+				name: "Parameterized Apps",
+				kind: "published" as FolderKind,
+				visibility: "public",
+				sortOrder: -1,
+				createdAt: now(),
+				updatedAt: now(),
+				locked: true,
+			},
+			...ordinaryFolders,
+		];
 	}, [dashboards]);
 
 	const renameFolder = useCallback(
 		(id: string, name: string) => {
+			if (isManagedSystemTag(id) || isManagedSystemTag(name)) return;
 			const next = name.trim();
 			if (!next || next === id) return;
 			// Rename the tag across every dashboard that has it.
@@ -534,6 +639,7 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
 
 	const deleteFolder = useCallback(
 		(id: string) => {
+			if (isManagedSystemTag(id)) return;
 			for (const d of dashboards) {
 				if (!(d.tags ?? []).includes(id)) continue;
 				setDashboardTags(

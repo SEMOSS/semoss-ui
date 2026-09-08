@@ -2,6 +2,7 @@ import { Folder, FolderPlus, Search } from "lucide-react";
 import { useRef, useState } from "react";
 import { Popover, PopoverContent, PopoverTrigger } from "@semoss/ui/next";
 import { Input } from "@/components/ui";
+import { isManagedSystemTag } from "@/lib/dashboardTags";
 import type { WorkspaceFolder } from "@/services/workspaceStore";
 
 /**
@@ -14,8 +15,6 @@ export function MoveToFolder({
 	selected,
 	onSelect,
 	className,
-	disabled,
-	disabledTooltip,
 }: {
 	folders: WorkspaceFolder[];
 	/** Tags currently on this dashboard. */
@@ -23,9 +22,6 @@ export function MoveToFolder({
 	/** Select a folder (replaces current) or pass null to deselect. */
 	onSelect: (folderId: string | null) => void;
 	className?: string;
-	/** When true, the trigger button is non-interactive and shows disabledTooltip on hover. */
-	disabled?: boolean;
-	disabledTooltip?: string;
 }) {
 	const [open, setOpen] = useState(false);
 	const [draft, setDraft] = useState("");
@@ -33,15 +29,19 @@ export function MoveToFolder({
 	const searchRef = useRef<HTMLInputElement>(null);
 	const selectedSet = new Set(selected);
 
+	const assignableFolders = folders.filter((folder) => !folder.locked);
 	const filteredFolders = search.trim()
-		? folders.filter((f) =>
+		? assignableFolders.filter((f) =>
 				f.name.toLowerCase().includes(search.trim().toLowerCase()),
 			)
-		: folders;
+		: assignableFolders;
 
 	const addNew = () => {
 		const name = draft.trim();
-		if (!name) return;
+		if (!name || isManagedSystemTag(name)) {
+			setDraft("");
+			return;
+		}
 		onSelect(name);
 		setDraft("");
 	};
@@ -56,23 +56,15 @@ export function MoveToFolder({
 		>
 			<PopoverTrigger asChild>
 				<button
-					title={
-						disabled ? (disabledTooltip ?? "Disabled") : "Folders"
-					}
-					onClick={
-						disabled
-							? undefined
-							: (e) => {
-									e.stopPropagation();
-									e.preventDefault();
-								}
-					}
-					disabled={disabled}
+					type="button"
+					title="Folders"
+					onClick={(e) => {
+						e.stopPropagation();
+						e.preventDefault();
+					}}
 					className={
-						disabled
-							? "cursor-not-allowed rounded-md p-1.5 text-stone-300"
-							: (className ??
-								"rounded-md p-1.5 text-stone-400 transition-colors hover:bg-stone-100 hover:text-stone-700")
+						className ??
+						"rounded-md p-1.5 text-stone-400 transition-colors hover:bg-stone-100 hover:text-stone-700"
 					}
 				>
 					<Folder className="h-3.5 w-3.5" />
@@ -122,6 +114,7 @@ export function MoveToFolder({
 						return (
 							<button
 								key={f.id}
+								type="button"
 								onClick={(e) => {
 									e.stopPropagation();
 									e.preventDefault();
@@ -161,6 +154,7 @@ export function MoveToFolder({
 					/>
 					{draft.trim() && (
 						<button
+							type="button"
 							onClick={(e) => {
 								e.stopPropagation();
 								e.preventDefault();

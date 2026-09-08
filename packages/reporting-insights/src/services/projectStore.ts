@@ -25,6 +25,7 @@
  */
 
 import { upload } from "@semoss/sdk";
+import { canonicalizeProjectTags, syncParamAppTag } from "@/lib/dashboardTags";
 import { inferSqlParameters } from "@/lib/paramInference";
 import { publishedPortalUrl } from "@/lib/portalUrl";
 import type { Dashboard } from "@/types/dashboard";
@@ -57,9 +58,6 @@ const MODULE = "/Monolith";
  * colliding with other apps' tags.
  */
 export const APP_TAG = "reporting-insights--app";
-
-/** Tag that marks a dashboard for display on the portal landing page. */
-export const LANDING_PAGE_TAG = "landing-page--insight";
 
 /** Older marker(s) still recognised so previously-published apps keep appearing. */
 const LEGACY_APP_TAGS = ["data--insight"];
@@ -270,7 +268,9 @@ export class ProjectStore {
 				const description = str(
 					r.project_description ?? r.description ?? "",
 				);
-				const allTags = asTags(r.tag ?? r.tags);
+				const allTags = canonicalizeProjectTags(
+					asTags(r.tag ?? r.tags),
+				);
 				const published =
 					r.project_global === true ||
 					r.global === true ||
@@ -372,6 +372,8 @@ export class ProjectStore {
 		// Register a Parameter for any {{placeholder}} in the SQL so the deployed
 		// dashboard's portal can substitute values AND its MCP tool exposes those inputs.
 		dashboard = inferSqlParameters(dashboard);
+		const effectiveTags = syncParamAppTag(opts.tags, dashboard);
+		const dashboardWithTags = { ...dashboard, tags: effectiveTags };
 		const insightId = this.getInsightId();
 		if (!insightId)
 			throw new Error(
@@ -384,12 +386,12 @@ export class ProjectStore {
 		// 1. Build + upload the portal zip.
 		const zipBlob = USE_IFRAME_PORTAL
 			? await buildIframePortalZip(
-					{ ...dashboard, id: tempId },
+					{ ...dashboardWithTags, id: tempId },
 					projectName,
 					tempId,
 				)
 			: await buildPortalZip(
-					{ ...dashboard, id: tempId },
+					{ ...dashboardWithTags, id: tempId },
 					projectName,
 					tempId,
 				);
@@ -429,9 +431,8 @@ export class ProjectStore {
 
 		// 3. Re-write dashboard.json with the real id so future saves target it.
 		const finalDashboard = {
-			...dashboard,
+			...dashboardWithTags,
 			id: projectId,
-			tags: opts.tags,
 			published: opts.published,
 		};
 		// The definition MUST land in the project's assets — surface failures rather
@@ -444,7 +445,7 @@ export class ProjectStore {
 		// 4. Tags + description (always include the marker + MCP tags).
 		await this.setMetadata(
 			projectId,
-			opts.tags,
+			effectiveTags,
 			dashboard.description ?? "",
 		);
 
@@ -817,11 +818,16 @@ export class ProjectStore {
 	): Promise<void> {
 		// Always include our marker + the MCP discovery tag; never let a marker tag be
 		// used as a folder. The MCP tag makes the deployed dashboard show up in the
-		// playground's MCP selector so it can be called as a tool.
-		const folderTags = tags
-			.map((t) => t.trim())
-			.filter((t) => t && !MARKER_TAGS.has(t));
-		const unique = Array.from(new Set([APP_TAG, MCP_TAG, ...folderTags]));
+		// playground's MCP selector so it can be called as a tool. Canonicalize so
+		// mixed-case variants of a managed tag can't become separate folders.
+		const folderTags = canonicalizeProjectTags(tags).filter(
+			(t) => !isMarkerTag(t),
+		);
+		const unique = canonicalizeProjectTags([
+			APP_TAG,
+			MCP_TAG,
+			...folderTags,
+		]);
 		// SEMOSS accepts the meta object inlined as raw JSON (proven by the existing
 		// publish flow). JSON.stringify already escapes inner quotes/newlines, which
 		// is exactly what the pixel parser needs for the embedded JSON value.

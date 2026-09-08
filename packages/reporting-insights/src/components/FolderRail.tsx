@@ -94,14 +94,23 @@ export function FolderRail({
 							className="mx-0.5 my-0.5 w-[calc(100%-4px)] rounded-md border border-indigo-300 bg-white px-2 py-1.5 text-[13px] focus:outline-none focus:ring-2 focus:ring-indigo-500/15"
 						/>
 					) : (
+						// biome-ignore lint/a11y/useSemanticElements: nests real rename/delete <button>s, which can't live inside a native <button>.
 						<div
 							key={f.id}
+							role="button"
+							tabIndex={0}
 							className={`group flex cursor-pointer items-center gap-2 rounded-md px-2.5 py-1.5 font-medium text-[13px] transition-colors ${
 								selected === f.id
 									? "bg-indigo-50 text-indigo-700"
 									: "text-stone-600 hover:bg-stone-100"
 							}`}
 							onClick={() => onSelect(f.id)}
+							onKeyDown={(e) => {
+								if (e.key === "Enter" || e.key === " ") {
+									e.preventDefault();
+									onSelect(f.id);
+								}
+							}}
 						>
 							<Folder
 								className={`h-4 w-4 flex-shrink-0 ${selected === f.id ? "text-indigo-500" : "text-stone-400"}`}
@@ -112,29 +121,33 @@ export function FolderRail({
 							<span className="flex-shrink-0 text-[11px] text-stone-400 tabular-nums group-hover:hidden">
 								{counts.map.get(f.id) ?? 0}
 							</span>
-							<span className="hidden flex-shrink-0 items-center gap-0.5 group-hover:flex">
-								<button
-									onClick={(e) => {
-										e.stopPropagation();
-										setEditingId(f.id);
-										setEditName(f.name);
-									}}
-									title="Rename"
-									className="rounded p-0.5 text-stone-400 hover:text-indigo-600"
-								>
-									<Pencil className="h-3 w-3" />
-								</button>
-								<button
-									onClick={(e) => {
-										e.stopPropagation();
-										onDelete(f.id);
-									}}
-									title="Delete folder"
-									className="rounded p-0.5 text-stone-400 hover:text-red-500"
-								>
-									<Trash2 className="h-3 w-3" />
-								</button>
-							</span>
+							{!f.locked && (
+								<span className="hidden flex-shrink-0 items-center gap-0.5 group-hover:flex">
+									<button
+										type="button"
+										onClick={(e) => {
+											e.stopPropagation();
+											setEditingId(f.id);
+											setEditName(f.name);
+										}}
+										title="Rename"
+										className="rounded p-0.5 text-stone-400 hover:text-indigo-600"
+									>
+										<Pencil className="h-3 w-3" />
+									</button>
+									<button
+										type="button"
+										onClick={(e) => {
+											e.stopPropagation();
+											onDelete(f.id);
+										}}
+										title="Delete folder"
+										className="rounded p-0.5 text-stone-400 hover:text-red-500"
+									>
+										<Trash2 className="h-3 w-3" />
+									</button>
+								</span>
+							)}
 						</div>
 					),
 				)}
@@ -158,6 +171,7 @@ function RailItem({
 }) {
 	return (
 		<button
+			type="button"
 			onClick={onClick}
 			className={`flex items-center gap-2 rounded-md px-2.5 py-1.5 font-medium text-[13px] transition-colors ${
 				active

@@ -44,6 +44,7 @@ import type { DroppedColumn } from "@/components/VizConfigDropZones";
 import type { Column, DropZoneDataWithTable } from "@/components/VizConfigTabs";
 import { useHeaderSlot } from "@/layouts/AppHeader";
 import { DashboardFilterProvider } from "@/lib/dashboardFilters";
+import { userFolderTags } from "@/lib/dashboardTags";
 import { EventParamProvider } from "@/lib/eventParamStore";
 import {
 	buildQueryPixel,
@@ -297,7 +298,14 @@ export function NewDashboardPage() {
 		isAdmin,
 	} = useWorkspace();
 	const tagSuggestions = useMemo(
-		() => Array.from(new Set(folders.map((f) => f.name))).sort(),
+		() =>
+			Array.from(
+				new Set(
+					folders
+						.filter((folder) => !folder.locked)
+						.map((folder) => folder.name),
+				),
+			).sort(),
 		[folders],
 	);
 
@@ -333,10 +341,12 @@ export function NewDashboardPage() {
 	const [description, setDescription] = useState(
 		seedSource?.description ?? "",
 	);
-	const [tags, setTags] = useState<string[]>(seedSource?.tags ?? []);
+	const [tags, setTags] = useState<string[]>(
+		userFolderTags(seedSource?.tags),
+	);
 	// Mirror tags in a ref so a Save click reads the latest value synchronously —
 	// even a tag just committed on blur in the same click (state would be stale).
-	const tagsRef = useRef<string[]>(seedSource?.tags ?? []);
+	const tagsRef = useRef<string[]>(userFolderTags(seedSource?.tags));
 	const applyTags = useCallback((next: string[]) => {
 		tagsRef.current = next;
 		setTags(next);
@@ -530,7 +540,7 @@ export function NewDashboardPage() {
 				if (cancelled) return;
 				setName(full.name ?? "");
 				setDescription(full.description ?? "");
-				applyTags(full.tags ?? []);
+				applyTags(userFolderTags(full.tags));
 				createdAtRef.current = full.createdAt ?? createdAtRef.current;
 				const { sheets: hydrated, queries: hydratedQueries } =
 					migrateSheetsToSharedQueries(
@@ -1443,7 +1453,13 @@ export function NewDashboardPage() {
 					// Update local state + name/description metadata, then ALWAYS do a full
 					// redeploy (re-push the portal bundle + definition + republish) so every
 					// edit goes fully live — not just the working copy.
-					updateDashboard(id, dashboardData);
+					const saveResult = await updateDashboard(id, dashboardData);
+					if (!saveResult.metadataSynced) {
+						toast.info(
+							"Dashboard changes were saved, but an owner must resave it to update parameterized app classification.",
+							"Classification not updated",
+						);
+					}
 					await redeployDashboard(id, dashboardData);
 					navigate(`/dashboard/${id}`);
 				} else {

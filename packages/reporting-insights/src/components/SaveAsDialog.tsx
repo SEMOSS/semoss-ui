@@ -1,10 +1,18 @@
-import { BookOpen, Globe, Loader2, Lock, Plus, Users, X } from "lucide-react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Globe, Loader2, Lock, Plus, Users, X } from "lucide-react";
+import {
+	useCallback,
+	useEffect,
+	useId,
+	useMemo,
+	useRef,
+	useState,
+} from "react";
 import { useNavigate } from "react-router-dom";
 import { UserSearchSelect } from "@/components/UserSearchSelect";
 import { Button, Input, Select } from "@/components/ui";
 import { TagInput } from "@/components/ui/TagInput";
 import { useToast } from "@/components/ui/Toast";
+import { userFolderTags } from "@/lib/dashboardTags";
 import {
 	type DirectoryUser,
 	type GroupInfo,
@@ -13,7 +21,6 @@ import {
 	grantProjectUser,
 	type Role,
 } from "@/services/permissionsApi";
-import { LANDING_PAGE_TAG } from "@/services/projectStore";
 import type { Dashboard } from "@/types/dashboard";
 import { useWorkspace } from "@/workspace/WorkspaceProvider";
 
@@ -38,12 +45,13 @@ export function SaveAsDialog({
 	const { createDashboard, folders, isAdmin } = useWorkspace();
 	const toast = useToast();
 	const navigate = useNavigate();
+	const nameFieldId = useId();
 
 	const [name, setName] = useState(`${dashboard.name} (copy)`);
 
 	// Seed tags from source, stripping system tags so they're never shown as chips
 	const seedTags = useMemo(
-		() => (dashboard.tags ?? []).filter((t) => t !== LANDING_PAGE_TAG),
+		() => userFolderTags(dashboard.tags),
 		[dashboard.tags],
 	);
 	const [tags, setTags] = useState<string[]>(seedTags);
@@ -54,7 +62,7 @@ export function SaveAsDialog({
 	}, []);
 
 	const [publishVisibility, setPublishVisibility] = useState<
-		"public" | "private" | "landing"
+		"public" | "private"
 	>("public");
 	const [grants, setGrants] = useState<
 		{ id: string; role: Role; name?: string }[]
@@ -67,7 +75,14 @@ export function SaveAsDialog({
 	const [saving, setSaving] = useState(false);
 
 	const tagSuggestions = useMemo(
-		() => Array.from(new Set(folders.map((f) => f.name))).sort(),
+		() =>
+			Array.from(
+				new Set(
+					folders
+						.filter((folder) => !folder.locked)
+						.map((folder) => folder.name),
+				),
+			).sort(),
 		[folders],
 	);
 
@@ -80,10 +95,7 @@ export function SaveAsDialog({
 	}, [publishVisibility, isAdmin, allGroups.length]);
 
 	const nameInvalid = !name.trim() || name.trim() === dashboard.name.trim();
-	const saveDisabled =
-		saving ||
-		nameInvalid ||
-		(publishVisibility === "landing" && tagsRef.current.length === 0);
+	const saveDisabled = saving || nameInvalid;
 
 	const handleSave = async () => {
 		if (!name.trim()) return;
@@ -94,13 +106,6 @@ export function SaveAsDialog({
 			);
 			return;
 		}
-		if (publishVisibility === "landing" && tagsRef.current.length === 0) {
-			toast.error(
-				"Add a folder tag so this insight appears in the correct Landing Page category.",
-				"Folder required for Landing Page",
-			);
-			return;
-		}
 		setSaving(true);
 		try {
 			const copy: Dashboard = {
@@ -108,13 +113,8 @@ export function SaveAsDialog({
 				id: "pending",
 				name: name.trim(),
 			};
-			const isPublic =
-				publishVisibility === "public" ||
-				publishVisibility === "landing";
-			const saveTags = [
-				...tagsRef.current,
-				...(publishVisibility === "landing" ? [LANDING_PAGE_TAG] : []),
-			];
+			const isPublic = publishVisibility === "public";
+			const saveTags = [...tagsRef.current];
 			const newId = await createDashboard(copy, {
 				published: isPublic,
 				tags: saveTags,
@@ -156,15 +156,22 @@ export function SaveAsDialog({
 	};
 
 	return (
+		// biome-ignore lint/a11y/noStaticElementInteractions: backdrop wraps the real dialog content (inputs/buttons), so it can't be a native <button>.
 		<div
 			className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
 			onClick={onClose}
+			onKeyDown={(e) => {
+				if (e.key === "Escape") onClose();
+			}}
 		>
+			{/* biome-ignore lint/a11y/noStaticElementInteractions: stopPropagation guard only, no interactive semantics of its own. */}
+			{/* biome-ignore lint/a11y/useKeyWithClickEvents: click-only propagation guard; no keyboard interaction to mirror. */}
 			<div
 				className="relative max-h-[88vh] w-full max-w-lg overflow-y-auto rounded-xl border border-stone-200 bg-white p-5 shadow-soft-lg"
 				onClick={(e) => e.stopPropagation()}
 			>
 				<button
+					type="button"
 					onClick={onClose}
 					disabled={saving}
 					title="Close"
@@ -182,11 +189,15 @@ export function SaveAsDialog({
 
 				{/* Name */}
 				<div className="mt-4">
-					<label className="mb-1 block font-semibold text-[11px] text-stone-400 uppercase tracking-widest">
+					<label
+						htmlFor={nameFieldId}
+						className="mb-1 block font-semibold text-[11px] text-stone-400 uppercase tracking-widest"
+					>
 						Name <span className="text-red-400">*</span>
 					</label>
 					<div className="relative">
 						<input
+							id={nameFieldId}
 							type="text"
 							value={name}
 							onChange={(e) => setName(e.target.value)}
@@ -207,23 +218,17 @@ export function SaveAsDialog({
 
 				{/* Folder tag */}
 				<div className="mt-4">
-					<label className="mb-1 block font-semibold text-[11px] text-stone-400 uppercase tracking-widest">
+					<span className="mb-1 block font-semibold text-[11px] text-stone-400 uppercase tracking-widest">
 						Folders (tags)
-					</label>
+					</span>
 					<TagInput
 						value={tags}
 						onChange={applyTags}
 						suggestions={tagSuggestions}
 						placeholder="Add a folder tag…"
 						max={1}
-						preventEmpty={publishVisibility === "landing"}
 					/>
-					{publishVisibility === "landing" && tags.length === 0 ? (
-						<p className="mt-1 text-[11px] text-violet-600">
-							A folder tag is required — it determines which
-							category this insight appears under in the portal.
-						</p>
-					) : tags.length >= 1 ? (
+					{tags.length >= 1 ? (
 						<p className="mt-1 text-[11px] text-stone-400">
 							Remove the current tag to move this copy to a
 							different folder.
@@ -238,12 +243,10 @@ export function SaveAsDialog({
 
 				{/* Visibility */}
 				<div className="mt-4">
-					<label className="mb-1 block font-semibold text-[11px] text-stone-400 uppercase tracking-widest">
+					<span className="mb-1 block font-semibold text-[11px] text-stone-400 uppercase tracking-widest">
 						Who can access
-					</label>
-					<div
-						className={`grid gap-2 ${isAdmin ? "grid-cols-3" : "grid-cols-2"}`}
-					>
+					</span>
+					<div className="grid grid-cols-2 gap-2">
 						<button
 							type="button"
 							onClick={() => setPublishVisibility("public")}
@@ -282,27 +285,6 @@ export function SaveAsDialog({
 								</span>
 							</span>
 						</button>
-						{isAdmin && (
-							<button
-								type="button"
-								onClick={() => setPublishVisibility("landing")}
-								className={`flex items-start gap-2 rounded-lg border p-3 text-left transition-colors ${publishVisibility === "landing" ? "border-violet-400 bg-violet-50/60 ring-1 ring-violet-500/20" : "border-stone-200 hover:border-stone-300"}`}
-							>
-								<BookOpen
-									className={`mt-0.5 h-4 w-4 ${publishVisibility === "landing" ? "text-violet-600" : "text-stone-400"}`}
-								/>
-								<span>
-									<span
-										className={`block font-semibold text-[13px] ${publishVisibility === "landing" ? "text-violet-900" : "text-stone-800"}`}
-									>
-										Landing Page
-									</span>
-									<span className="block text-[11px] text-stone-500">
-										Pinned to the Insights Portal
-									</span>
-								</span>
-							</button>
-						)}
 					</div>
 
 					{/* Private sub-panel */}
@@ -377,6 +359,7 @@ export function SaveAsDialog({
 												{roleLabel(g.role)}
 											</span>
 											<button
+												type="button"
 												onClick={() =>
 													setGrants((prev) =>
 														prev.filter(
@@ -478,6 +461,7 @@ export function SaveAsDialog({
 													Viewer
 												</span>
 												<button
+													type="button"
 													onClick={() =>
 														setTeamGrants((prev) =>
 															prev.filter(

@@ -20,6 +20,7 @@ import { UserSearchSelect } from "@/components/UserSearchSelect";
 import { Button, Input, Select } from "@/components/ui";
 import { TagInput } from "@/components/ui/TagInput";
 import { useToast } from "@/components/ui/Toast";
+import { userFolderTags } from "@/lib/dashboardTags";
 import {
 	type DirectoryUser,
 	type EngineMember,
@@ -63,8 +64,10 @@ export function ShareDialog({
 	const [visibility, setVisibility] = useState<"public" | "private">(
 		dashboard.published ? "public" : "private",
 	);
-	const [tags, setTags] = useState<string[]>(dashboard.tags ?? []);
-	const tagsRef = useRef<string[]>(dashboard.tags ?? []);
+	// Managed tags are tracked by app state and never shown as user-editable chips.
+	const visibleTags = userFolderTags(dashboard.tags);
+	const [tags, setTags] = useState<string[]>(visibleTags);
+	const tagsRef = useRef<string[]>(visibleTags);
 	const applyTags = useCallback((next: string[]) => {
 		tagsRef.current = next;
 		setTags(next);
@@ -82,7 +85,14 @@ export function ShareDialog({
 	const [busyGroup, setBusyGroup] = useState(false);
 
 	const tagSuggestions = useMemo(
-		() => Array.from(new Set(folders.map((f) => f.name))).sort(),
+		() =>
+			Array.from(
+				new Set(
+					folders
+						.filter((folder) => !folder.locked)
+						.map((folder) => folder.name),
+				),
+			).sort(),
 		[folders],
 	);
 
@@ -118,9 +128,9 @@ export function ShareDialog({
 				];
 			});
 			setPendingUser(null);
-		} catch (e: any) {
+		} catch (e: unknown) {
 			toast.error(
-				e?.message ?? "Could not grant access.",
+				(e as Error)?.message ?? "Could not grant access.",
 				"Share failed",
 			);
 		} finally {
@@ -132,9 +142,9 @@ export function ShareDialog({
 		try {
 			await revokeProjectUser(isAdmin, dashboard.id, uid);
 			setMembers((prev) => (prev ?? []).filter((m) => m.id !== uid));
-		} catch (e: any) {
+		} catch (e: unknown) {
 			toast.error(
-				e?.message ?? "Could not revoke access.",
+				(e as Error)?.message ?? "Could not revoke access.",
 				"Share failed",
 			);
 		}
@@ -172,9 +182,9 @@ export function ShareDialog({
 				];
 			});
 			setAddGroup("");
-		} catch (e: any) {
+		} catch (e: unknown) {
 			toast.error(
-				e?.message ?? "Could not grant team access.",
+				(e as Error)?.message ?? "Could not grant team access.",
 				"Share failed",
 			);
 		} finally {
@@ -187,9 +197,9 @@ export function ShareDialog({
 		try {
 			await revokeProjectGroup(isAdmin, dashboard.id, gid, g?.type);
 			setTeamMembers((prev) => (prev ?? []).filter((m) => m.id !== gid));
-		} catch (e: any) {
+		} catch (e: unknown) {
 			toast.error(
-				e?.message ?? "Could not revoke team access.",
+				(e as Error)?.message ?? "Could not revoke team access.",
 				"Share failed",
 			);
 		}
@@ -210,9 +220,9 @@ export function ShareDialog({
 				"Sharing updated",
 			);
 			onClose();
-		} catch (e: any) {
+		} catch (e: unknown) {
 			toast.error(
-				e?.message ?? "Failed to save sharing settings.",
+				(e as Error)?.message ?? "Failed to save sharing settings.",
 				"Save failed",
 			);
 		} finally {
@@ -237,9 +247,9 @@ export function ShareDialog({
 
 				{/* Tags / folder */}
 				<div className="mt-4">
-					<label className="mb-1 block font-semibold text-[11px] text-stone-400 uppercase tracking-widest">
+					<span className="mb-1 block font-semibold text-[11px] text-stone-400 uppercase tracking-widest">
 						Folders (tags)
-					</label>
+					</span>
 					<TagInput
 						value={tags}
 						onChange={applyTags}
@@ -262,9 +272,9 @@ export function ShareDialog({
 
 				{/* Visibility */}
 				<div className="mt-4">
-					<label className="mb-1 block font-semibold text-[11px] text-stone-400 uppercase tracking-widest">
+					<span className="mb-1 block font-semibold text-[11px] text-stone-400 uppercase tracking-widest">
 						Who can access
-					</label>
+					</span>
 					<div className="grid grid-cols-2 gap-2">
 						<VisCard
 							active={visibility === "public"}
@@ -288,9 +298,9 @@ export function ShareDialog({
 					<div className="mt-4 space-y-3 rounded-lg border border-stone-200 bg-stone-50/60 p-3">
 						<div className="flex flex-wrap items-end gap-2">
 							<div className="min-w-[200px] flex-1">
-								<label className="mb-1 block font-medium text-[11px] text-stone-500">
+								<span className="mb-1 block font-medium text-[11px] text-stone-500">
 									Add person
-								</label>
+								</span>
 								<UserSearchSelect
 									isAdmin={isAdmin}
 									excludeIds={grantedSet}
@@ -299,9 +309,9 @@ export function ShareDialog({
 								/>
 							</div>
 							<div className="w-28">
-								<label className="mb-1 block font-medium text-[11px] text-stone-500">
+								<span className="mb-1 block font-medium text-[11px] text-stone-500">
 									Role
-								</label>
+								</span>
 								<Select
 									value={role}
 									onChange={(e) =>
@@ -358,6 +368,7 @@ export function ShareDialog({
 												{roleLabel(m.permission)}
 											</span>
 											<button
+												type="button"
 												onClick={() =>
 													void revoke(m.id)
 												}
@@ -451,6 +462,7 @@ export function ShareDialog({
 													{roleLabel(g.permission)}
 												</span>
 												<button
+													type="button"
 													onClick={() =>
 														void revokeTeam(g.id)
 													}
@@ -503,6 +515,7 @@ function VisCard({
 }) {
 	return (
 		<button
+			type="button"
 			onClick={onClick}
 			className={`flex items-start gap-2 rounded-lg border p-3 text-left transition-colors ${active ? "border-indigo-400 bg-indigo-50/60 ring-1 ring-indigo-500/20" : "border-stone-200 bg-white hover:border-stone-300"}`}
 		>

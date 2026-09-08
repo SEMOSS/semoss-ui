@@ -9,7 +9,7 @@ import {
 	Rocket,
 	SlidersHorizontal,
 } from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { accentFor } from "@/components/DashboardCard";
 import { FolderRail, type FolderSel } from "@/components/FolderRail";
@@ -22,8 +22,12 @@ import {
 	LoadingState,
 } from "@/components/ui";
 import { useToast } from "@/components/ui/Toast";
+import {
+	isParamAppTag,
+	PARAM_APP_TAG,
+	userFolderTags,
+} from "@/lib/dashboardTags";
 import { publishedPortalUrl } from "@/lib/portalUrl";
-import { LANDING_PAGE_TAG } from "@/services/projectStore";
 import { useWorkspace } from "@/workspace/WorkspaceProvider";
 
 export function PublishedPage() {
@@ -36,8 +40,6 @@ export function PublishedPage() {
 		loading,
 		error,
 		reload,
-		loadDashboard,
-		isAdmin,
 	} = useWorkspace();
 	// Every dashboard you can access (access is enforced by SEMOSS — apps shared
 	// with no one but their owner never appear for other users).
@@ -53,44 +55,6 @@ export function PublishedPage() {
 			})),
 		[dashboards],
 	);
-
-	const [paramDashboardIds, setParamDashboardIds] = useState<Set<string>>(
-		new Set(),
-	);
-	// Track IDs we've already checked so re-renders (e.g. when a definition loads
-	// and updates dashboards state) don't re-fire GetAppAssets for known dashboards.
-	const checkedIdsRef = useRef(new Set<string>());
-	const loadDashboardRef = useRef(loadDashboard);
-	loadDashboardRef.current = loadDashboard;
-	useEffect(() => {
-		const newIds = dashboards
-			.map((d) => d.id)
-			.filter((id) => !checkedIdsRef.current.has(id));
-		if (!newIds.length) return;
-		newIds.forEach((id) => checkedIdsRef.current.add(id));
-		void Promise.all(
-			newIds.map(async (id) => {
-				try {
-					const full = await loadDashboardRef.current(id);
-					const has =
-						full.sheets.some((s) => s.isParamSheet) ||
-						full.queries?.some((q) =>
-							(q.parameters ?? []).some(
-								(p) => p.inputType !== "event",
-							),
-						) ||
-						false;
-					return has ? id : null;
-				} catch {
-					return null;
-				}
-			}),
-		).then((results) => {
-			const found = results.filter((id): id is string => id !== null);
-			if (found.length)
-				setParamDashboardIds((prev) => new Set([...prev, ...found]));
-		});
-	}, [dashboards]);
 
 	const [query, setQuery] = useState("");
 	const [folderSel, setFolderSel] = useState<FolderSel>("all");
@@ -114,15 +78,19 @@ export function PublishedPage() {
 		const map = new Map<string, number>();
 		let unfiled = 0;
 		for (const a of apps) {
-			if (a.tags.length === 0) unfiled += 1;
-			for (const t of a.tags) map.set(t, (map.get(t) ?? 0) + 1);
+			const folderTags = userFolderTags(a.tags);
+			if (folderTags.length === 0) unfiled += 1;
+			for (const tag of folderTags) map.set(tag, (map.get(tag) ?? 0) + 1);
+			if (a.tags.some(isParamAppTag))
+				map.set(PARAM_APP_TAG, (map.get(PARAM_APP_TAG) ?? 0) + 1);
 		}
 		return { map, unfiled };
 	}, [apps]);
 
 	const inFolder = (a: { tags: string[] }) => {
 		if (folderSel === "all") return true;
-		if (folderSel === "unfiled") return a.tags.length === 0;
+		if (folderSel === "unfiled") return userFolderTags(a.tags).length === 0;
+		if (folderSel === PARAM_APP_TAG) return a.tags.some(isParamAppTag);
 		return a.tags.includes(folderSel);
 	};
 
@@ -264,35 +232,13 @@ export function PublishedPage() {
 												folders={folders}
 												selected={app.tags}
 												onSelect={(folderId) => {
-													const systemTags =
-														app.tags.filter(
-															(t) =>
-																t ===
-																LANDING_PAGE_TAG,
-														);
-													if (
-														!folderId &&
-														systemTags.length > 0
-													)
-														return;
-													const newTags = folderId
-														? [
-																...systemTags,
-																folderId,
-															]
-														: systemTags;
 													setDashboardTags(
 														app.id,
-														newTags,
+														folderId
+															? [folderId]
+															: [],
 													);
 												}}
-												disabled={
-													!isAdmin &&
-													app.tags.includes(
-														LANDING_PAGE_TAG,
-													)
-												}
-												disabledTooltip="Only admins can edit the folder for landing page dashboards"
 												className="rounded-md bg-white/80 p-1.5 text-stone-400 backdrop-blur-sm transition-colors hover:bg-indigo-50 hover:text-indigo-600"
 											/>
 										</div>
@@ -328,15 +274,7 @@ export function PublishedPage() {
 										{/* Footer is a SIBLING of the card Link so it can hold a real
                                             anchor (an <a> nested inside <Link> would be invalid). */}
 										<div className="mt-auto flex items-center gap-2 border-stone-100 border-t bg-stone-50/60 px-2 py-2.5">
-											{app.published &&
-											(app.tags ?? []).includes(
-												LANDING_PAGE_TAG,
-											) ? (
-												<span className="inline-flex items-center gap-1.5 font-medium text-[11px] text-emerald-600">
-													<span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />{" "}
-													Landing Page
-												</span>
-											) : app.published ? (
+											{app.published ? (
 												<span className="inline-flex items-center gap-1.5 font-medium text-[11px] text-emerald-600">
 													<span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />{" "}
 													Public
@@ -347,7 +285,7 @@ export function PublishedPage() {
 													Private
 												</span>
 											)}
-											{paramDashboardIds.has(app.id) && (
+											{app.tags.some(isParamAppTag) && (
 												<span
 													className="inline-flex items-center gap-1 font-medium text-[11px] text-violet-500"
 													title="This dashboard has parameters"
