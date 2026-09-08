@@ -9,7 +9,7 @@ import {
 } from "@semoss/shared";
 import { useWorkbenchControl } from "@/hooks";
 import type { WorkbenchPanelId } from "@/stores/workbench";
-import { FileExplorerControl } from "../file-explorer-control";
+import { FileExplorerControl } from "../files";
 
 /** Module scope: the insight scope carries no parameters of its own. */
 const INSIGHT_MODE: FileMode = { type: "INSIGHT" };
