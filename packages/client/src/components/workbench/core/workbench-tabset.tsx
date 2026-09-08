@@ -106,7 +106,7 @@ export const WorkbenchTabset: FC<WorkbenchTabsetProps> = ({ node }) => {
 						: { flexGrow: node.size, flexBasis: 0, ...limits }
 				}
 				className={cn(
-					"flex min-h-0 min-w-0 flex-col overflow-hidden rounded-lg border border-border bg-card",
+					"flex min-h-0 min-w-0 flex-col overflow-hidden rounded-lg border border-border bg-card shadow-sm",
 					maximized && "fixed inset-4 z-50 shadow-lg",
 				)}
 			>
@@ -115,7 +115,7 @@ export const WorkbenchTabset: FC<WorkbenchTabsetProps> = ({ node }) => {
 						data-tabstrip={node.id}
 						role="tablist"
 						aria-label="Panels"
-						className="flex min-w-0 flex-none items-stretch gap-1 border-border border-b bg-card px-1.5 pt-1.5 pb-1"
+						className="flex min-w-0 flex-none items-stretch gap-1 border-border border-b bg-card px-1.5 pt-1.5 pb-1 shadow-sm"
 					>
 						<WorkbenchTabStrip
 							panelIds={node.panelIds}

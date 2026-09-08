@@ -1,4 +1,51 @@
-import { Env, get, post } from "@semoss/sdk/react";
+import { Env, get, post, runPixel } from "@semoss/sdk";
+
+interface CreateAppFromTemplateOptions {
+	/** Display name for the cloned project. */
+	name: string;
+	/** Project ID of the source template. */
+	templateId: string;
+	/** Whether the cloned project is globally visible. */
+	isGlobal: boolean;
+	/** Optional project description. */
+	description?: string;
+}
+
+/**
+ * Create an app project from a template and optionally set its description.
+ * @param options - Clone configuration.
+ * @return The new project ID.
+ */
+export const createAppFromTemplate = async (
+	options: CreateAppFromTemplateOptions,
+): Promise<string> => {
+	const name = options.name.trim();
+	const response = await runPixel<[{ project_id?: string }]>(
+		`CreateAppFromTemplate(project=[${JSON.stringify(name)}], projectTemplate=[${JSON.stringify(options.templateId)}], global=[${JSON.stringify(String(options.isGlobal))}]);`,
+	);
+
+	if (response.errors.length > 0) {
+		throw new Error(response.errors.join(""));
+	}
+
+	const projectId = response.pixelReturn[0]?.output?.project_id;
+	if (!projectId) {
+		throw new Error("CreateAppFromTemplate did not return a project ID");
+	}
+
+	const description = options.description?.trim();
+	if (description) {
+		const metadataResponse = await runPixel<[boolean]>(
+			`SetProjectMetadata(project=[${JSON.stringify(projectId)}], meta=[${JSON.stringify({ description })}]);`,
+		);
+
+		if (metadataResponse.errors.length > 0) {
+			throw new Error(metadataResponse.errors.join(""));
+		}
+	}
+
+	return projectId;
+};
 
 export const setProjectFavorite = async (
 	projectId: string,

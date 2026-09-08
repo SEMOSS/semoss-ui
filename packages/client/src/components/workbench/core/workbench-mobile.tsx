@@ -81,12 +81,12 @@ export const WorkbenchMobile: FC<WorkbenchMobileProps> = ({ actionsSlot }) => {
 
 	return (
 		<div className="flex h-full min-h-0 flex-col p-2">
-			<div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-lg border border-border bg-card">
+			<div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-lg border border-border bg-card shadow-sm">
 				<div
 					ref={stripRef}
 					role="tablist"
 					data-tabstrip
-					className="flex flex-none items-center gap-1 overflow-x-auto border-border border-b bg-card px-1.5 py-1.5"
+					className="flex flex-none items-center gap-1 overflow-x-auto border-border border-b bg-card px-1.5 py-1.5 shadow-sm"
 				>
 					{stacks.flatMap((stack) =>
 						stack.panelIds.map((pid) => (

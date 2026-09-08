@@ -149,7 +149,7 @@ export const ProjectCatalog = observer(
 		const debouncedSearch = useDebouncedValue(search);
 		const [sortValue, setSortValue] = useState("PROJECTNAME");
 		const [sortOrder, setSortOrder] = useState<"ASC" | "DESC">("ASC");
-		const [gridStyle, setGridStyle] = useState<"LIST" | "CARD">("LIST");
+		const [gridStyle, setGridStyle] = useState<"LIST" | "CARD">("CARD");
 
 		const [metaFilters, setMetaFilters] = useState<Record<string, unknown>>(
 			{},
@@ -269,7 +269,7 @@ export const ProjectCatalog = observer(
 			setMetaFilters({});
 			setSortValue("PROJECTNAME");
 			setSortOrder("ASC");
-			setGridStyle("LIST");
+			setGridStyle("CARD");
 			resetScroll();
 		}, [type, resetScroll]);
 

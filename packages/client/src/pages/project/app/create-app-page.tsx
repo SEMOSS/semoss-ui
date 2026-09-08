@@ -1,149 +1,216 @@
-import { ChevronRight, UploadIcon } from "lucide-react";
-import { useState } from "react";
-import { Link } from "react-router-dom";
-import type { Variable } from "@semoss/renderer";
-import { STATE_VERSION } from "@semoss/renderer/version";
+import { UploadIcon } from "lucide-react";
+import { observer } from "mobx-react-lite";
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useIteratorPixel } from "@semoss/sdk/react";
+import type { Project } from "@semoss/shared";
 import {
-	Breadcrumb,
-	BreadcrumbItem,
-	BreadcrumbLink,
-	BreadcrumbList,
-	BreadcrumbPage,
-	BreadcrumbSeparator,
 	Button,
-	H4,
+	Muted,
 	P,
+	Spinner,
+	useDebouncedValue,
+	useInfiniteScroll,
 } from "@semoss/ui/next";
-import { NewAppModal } from "@/components/app";
-import { LandingHeader } from "@/components/landing";
-import { UploadProjectDialog } from "@/components/project";
-import { NavbarHeader, NavbarLeft } from "@/components/shared";
-import { useNavigate } from "@/hooks/useNavigate";
 import {
-	BASE_APP_QUERIES,
-	BASE_APP_VARIABLES,
-	BASE_PAGE_BLOCKS,
-} from "../../app/app.constants";
+	CatalogFilterBox,
+	CatalogGrid,
+	CatalogLayout,
+	CatalogSearchBar,
+} from "@/components/catalog";
+import { NewAppChatComposer, NewAppTemplateCard } from "@/components/new-app";
+import { CloneProjectDialog, UploadProjectDialog } from "@/components/project";
+import { NavbarHeader, NavbarLeft } from "@/components/shared";
+import { TYPE_TO_ROUTE } from "@/constants";
+import { useRootStore } from "@/hooks";
 
-export const CreateAppPage = () => {
+/** Displays the template catalog used to create a new app. */
+export const CreateAppPage: React.FC = observer((): JSX.Element => {
 	const navigate = useNavigate();
-
+	const { configStore } = useRootStore();
+	const metaKeys = configStore.store.config.projectMetaKeys
+		.filter((metaKey) => {
+			return [
+				"single-checklist",
+				"multi-checklist",
+				"single-select",
+				"multi-select",
+				"single-typeahead",
+				"multi-typeahead",
+				"select-box",
+			].includes(metaKey.display_options);
+		})
+		.map((metaKey) => metaKey.metakey);
+	const [search, setSearch] = useState("");
+	const debouncedSearch = useDebouncedValue(search);
+	const [sortValue, setSortValue] = useState("PROJECTNAME");
+	const [sortOrder, setSortOrder] = useState<"ASC" | "DESC">("ASC");
+	const [cloneTemplate, setCloneTemplate] = useState<Project | null>(null);
 	const [isUploadOpen, setIsUploadOpen] = useState(false);
-	const [newAppOptions, setNewAppOptions] = useState<
-		React.ComponentProps<typeof NewAppModal>["options"] | null
-	>(null);
+	const [metaFilters, setMetaFilters] = useState<Record<string, unknown>>({});
+	const metaKeysDescription = [...metaKeys, "description"];
 
-	const isNameOpen = !!newAppOptions;
+	const getTemplates = useIteratorPixel<Project[], Project>(
+		(limit, offset) =>
+			`MyProjects(metaKeys = ${JSON.stringify(
+				metaKeysDescription,
+			)}, ${debouncedSearch ? `filterWord=["${debouncedSearch}"], ` : ""} ${Object.keys(metaFilters).length > 0 ? `metaFilters=[${JSON.stringify(metaFilters)}],` : ""} sort=[{"${sortValue}" : "${sortOrder}"}], onlyTemplates=[true], limit=[${limit}], offset=[${offset}]);`,
+		(response) => (response.length < 15 ? -1 : Infinity),
+		(response) => response,
+		{
+			limit: 15,
+		},
+		[debouncedSearch, sortValue, sortOrder, JSON.stringify(metaFilters)],
+	);
 
-	/**
-	 * Navigate to the app and open it
-	 *
-	 * appId - appId of the app
-	 */
+	const { setScroll, resetScroll } = useInfiniteScroll({
+		disabled: getTemplates.isLoading || !getTemplates.hasMore,
+		onNext: () => getTemplates.next(),
+	});
+
+	useEffect(() => {
+		const scrollElement = document.querySelector(
+			'[data-home-content="true"]',
+		) as HTMLDivElement;
+		setScroll(scrollElement);
+
+		return () => setScroll(null);
+	}, [setScroll]);
+
+	if (getTemplates.isError) {
+		return <P>ERROR</P>;
+	}
+
 	const navigateApp = (appId: string) => {
-		if (!appId) {
-			return;
+		if (appId) {
+			navigate(`/app/${appId}/edit`);
 		}
-
-		navigate(`/app/${appId}/edit`);
 	};
 
 	return (
 		<>
 			<NavbarLeft>
-				<NavbarHeader logo={null} />
-				<Breadcrumb>
-					<BreadcrumbList>
-						<BreadcrumbItem>
-							<BreadcrumbLink asChild>
-								<Link to="../">App Catalog</Link>
-							</BreadcrumbLink>
-						</BreadcrumbItem>
-						<BreadcrumbSeparator>
-							<ChevronRight />
-						</BreadcrumbSeparator>
-						<BreadcrumbItem>
-							<BreadcrumbPage>New</BreadcrumbPage>
-						</BreadcrumbItem>
-					</BreadcrumbList>
-				</Breadcrumb>
+				<NavbarHeader />
 			</NavbarLeft>
-			<div className="flex flex-col gap-4">
-				{isUploadOpen ? (
-					<UploadProjectDialog
-						open={isUploadOpen}
-						type="APP"
-						handleClose={(appId) => {
-							if (appId) {
-								navigateApp(appId);
-							}
-							setIsUploadOpen(false);
-						}}
-					/>
-				) : null}
-
-				{isNameOpen ? (
-					<NewAppModal
-						open={isNameOpen}
-						options={newAppOptions}
-						onClose={(appId) => {
-							if (appId) {
-								navigateApp(appId);
-							} else {
-								// close the modal
-								setNewAppOptions(null);
-							}
-						}}
-					/>
-				) : null}
-
-				<div className="flex flex-row items-center justify-between gap-2">
-					<H4>New App</H4>
+			<CatalogLayout
+				title="New App"
+				description="Build, organize, and share interactive experiences - from custom code to agent-powered workflows - so your team can turn data into action."
+				headerActions={
 					<Button
 						variant="outline"
-						data-testid={"createAppSection-upload-btn"}
 						onClick={() => setIsUploadOpen(true)}
 					>
-						<UploadIcon />
+						<UploadIcon aria-hidden="true" />
 						Upload
 					</Button>
-				</div>
-				<P className="mb-3 text-muted-foreground">
-					In a platform where data drives decisions, apps are how data
-					come to life. Whether you're a developer, data engineer, or
-					product owner, this page helps you build, organize, and
-					share interactive experiences — from drag-and-drop layouts
-					to custom code and agent-powered workflows — so your team
-					can turn data into action.
-				</P>
-				<div className="flex w-full flex-col gap-4">
-					<LandingHeader
-						onCreate={(type) => {
-							if (type === "blocks") {
-								setNewAppOptions({
-									type: "blocks",
-									state: {
-										version: STATE_VERSION,
-										variables: BASE_APP_VARIABLES as Record<
-											string,
-											Variable
-										>,
-										queries: BASE_APP_QUERIES,
-										blocks: BASE_PAGE_BLOCKS,
-										executionOrder: [],
-									},
-								});
-							} else if (type === "code") {
-								setNewAppOptions({
-									type: "code",
-								});
-							} else if (type === "agent") {
-								navigate("/app/new/prompt");
+				}
+				primaryTask={<NewAppChatComposer />}
+				searchBar={
+					<CatalogSearchBar
+						search={search}
+						onSearchChange={setSearch}
+						placeholder="Search templates"
+						sortValue={sortValue}
+						sortOrder={sortOrder}
+						sortOptions={[
+							{ value: "PROJECTNAME", label: "Name" },
+							{ value: "DATECREATED", label: "Date Created" },
+						]}
+						onSortChange={(value, order) => {
+							if (sortOrder === order && sortValue === value) {
+								return;
 							}
+
+							setSortValue(value);
+							setSortOrder(order);
+							resetScroll();
+							getTemplates.reset();
+						}}
+						showGridStyle={false}
+						gridStyle="CARD"
+						onGridStyleChange={() => null}
+					/>
+				}
+				filterBox={
+					<CatalogFilterBox
+						type="CODE"
+						filters={metaFilters as Record<string, string[]>}
+						onChange={(filters) => {
+							setMetaFilters(filters);
+							resetScroll();
+							getTemplates.reset();
 						}}
 					/>
-				</div>
-			</div>
+				}
+			>
+				{getTemplates.isLoading && getTemplates.data.length === 0 ? (
+					<div className="flex flex-col items-center justify-center py-6">
+						<Spinner className="size-4" />
+					</div>
+				) : null}
+				{getTemplates.data.length > 0 ? (
+					<CatalogGrid
+						variant="CARD"
+						columns={3}
+						gap={4}
+						isLoading={getTemplates.isLoading}
+						showLoadingMore={getTemplates.data.length > 0}
+					>
+						{getTemplates.data.map((template) => (
+							<NewAppTemplateCard
+								key={template.project_id}
+								id={template.project_id}
+								name={
+									template.project_display_name ||
+									template.project_name
+								}
+								description={template.description || ""}
+								image=""
+								dateLastEdited={
+									template.project_date_created || ""
+								}
+								tags={
+									Array.isArray(template.tag)
+										? template.tag
+										: template.tag
+											? [template.tag]
+											: []
+								}
+								onUseTemplate={() => setCloneTemplate(template)}
+							/>
+						))}
+					</CatalogGrid>
+				) : null}
+				{!getTemplates.isLoading && getTemplates.data.length === 0 ? (
+					<div className="w-full px-2 py-4 text-center">
+						<Muted>No results found</Muted>
+					</div>
+				) : null}
+			</CatalogLayout>
+			{isUploadOpen ? (
+				<UploadProjectDialog
+					open={isUploadOpen}
+					type="APP"
+					handleClose={(appId) => {
+						setIsUploadOpen(false);
+						navigateApp(appId);
+					}}
+				/>
+			) : null}
+			{cloneTemplate ? (
+				<CloneProjectDialog
+					open
+					project={cloneTemplate}
+					onClose={(newAppId) => {
+						setCloneTemplate(null);
+						if (newAppId) {
+							navigate(
+								`${TYPE_TO_ROUTE[cloneTemplate.project_type]}/${newAppId}/edit`,
+							);
+						}
+					}}
+				/>
+			) : null}
 		</>
 	);
-};
+});

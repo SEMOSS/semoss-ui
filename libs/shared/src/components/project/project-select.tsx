@@ -21,6 +21,12 @@ import {
 import type { Project } from "../../types";
 
 interface ProjectSelectProps {
+	/** ID applied to the combobox trigger. */
+	id?: string;
+	/** ID of helper or error content describing the combobox. */
+	"aria-describedby"?: string;
+	/** Whether the current selection is invalid. */
+	"aria-invalid"?: boolean;
 	/** CSS classes for styling customization. */
 	className?: string;
 	/** Whether the select is disabled. */
@@ -33,6 +39,8 @@ interface ProjectSelectProps {
 	onChange: (value: Project) => void;
 	/** Filter projects by type (e.g., WORKSPACE, CODE, NOTEBOOK). */
 	projectTypes?: Project["project_type"][];
+	/** Whether to return only projects marked as templates. */
+	onlyTemplates?: boolean;
 	/** Additional metadata filters for the project query. */
 	metaFilters?: unknown[];
 	/** Props forwarded to the PopoverContent component. */
@@ -48,12 +56,16 @@ interface ProjectSelectProps {
  * @return A project selector with filtering and infinite scrolling.
  */
 export const ProjectSelect = ({
+	id,
+	"aria-describedby": ariaDescribedBy,
+	"aria-invalid": ariaInvalid,
 	className,
 	disabled,
 	name,
 	value,
 	onChange,
 	projectTypes,
+	onlyTemplates,
 	metaFilters,
 	popoverContentProps = {},
 	showProjectId,
@@ -66,6 +78,8 @@ export const ProjectSelect = ({
 		(limit, offset) =>
 			open
 				? `META | MyProjects(${
+						onlyTemplates ? "onlyTemplates=[true], " : ""
+					}${
 						debouncedSearch
 							? `filterWord=${JSON.stringify(debouncedSearch)}, `
 							: ""
@@ -86,6 +100,7 @@ export const ProjectSelect = ({
 			open,
 			debouncedSearch,
 			JSON.stringify(projectTypes),
+			onlyTemplates,
 			JSON.stringify(metaFilters),
 		],
 	);
@@ -112,9 +127,12 @@ export const ProjectSelect = ({
 		<Popover open={open && !disabled} onOpenChange={setOpen}>
 			<PopoverTrigger asChild>
 				<Button
+					id={id}
+					aria-describedby={ariaDescribedBy}
 					variant="outline"
 					role="combobox"
 					aria-expanded={open}
+					aria-invalid={ariaInvalid}
 					disabled={disabled}
 					className={cn(
 						"w-full min-w-0 justify-start overflow-hidden border-input bg-transparent px-3 py-2",
@@ -125,7 +143,10 @@ export const ProjectSelect = ({
 						<span className="min-w-0 truncate">
 							{name || "Select"}
 						</span>
-						<ChevronDown className="inline-block! ms-auto size-4 shrink-0 opacity-70" />
+						<ChevronDown
+							aria-hidden="true"
+							className="inline-block! ms-auto size-4 shrink-0 opacity-70"
+						/>
 					</div>
 				</Button>
 			</PopoverTrigger>
@@ -187,6 +208,7 @@ export const ProjectSelect = ({
 										</div>
 										{value === project.project_id ? (
 											<CheckIcon
+												aria-hidden="true"
 												className="ms-2 size-4 shrink-0 text-primary"
 												strokeWidth={3}
 											/>

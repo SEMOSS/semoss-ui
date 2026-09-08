@@ -140,7 +140,7 @@ export const WorkbenchBorder: FC<WorkbenchBorderProps> = ({ side, slots }) => {
 			key="rail"
 			data-rail={side}
 			className={cn(
-				"flex flex-none items-center gap-1 border border-border bg-card",
+				"flex flex-none items-center gap-1 border border-border bg-card shadow-sm",
 				WORKBENCH_STYLES.railPadding,
 				vertical
 					? cn(WORKBENCH_STYLES.railThickness.vertical, "flex-col")
@@ -189,7 +189,7 @@ export const WorkbenchBorder: FC<WorkbenchBorderProps> = ({ side, slots }) => {
 			key="body"
 			style={vertical ? { width: border.size } : { height: border.size }}
 			className={cn(
-				"flex min-h-0 min-w-0 flex-col overflow-hidden border border-border bg-card",
+				"flex min-h-0 min-w-0 flex-col overflow-hidden border border-border bg-card shadow-sm",
 				BODY_ROUND[side],
 			)}
 		>
@@ -204,7 +204,7 @@ export const WorkbenchBorder: FC<WorkbenchBorderProps> = ({ side, slots }) => {
 					<div
 						data-border-header={side}
 						className={cn(
-							"flex min-w-0 flex-none items-center gap-1 border-border border-b bg-card px-2",
+							"flex min-w-0 flex-none items-center gap-1 border-border border-b bg-card px-2 shadow-sm",
 							WORKBENCH_STYLES.borderHeader,
 						)}
 					>

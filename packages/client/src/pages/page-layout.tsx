@@ -1,6 +1,6 @@
 import { observer } from "mobx-react-lite";
 import { useMemo } from "react";
-import { Outlet } from "react-router-dom";
+import { Outlet, useLocation } from "react-router-dom";
 import { ErrorBoundary } from "@/components/common/ErrorBoundary";
 import { Page } from "@/components/shared/page";
 import { PageContext } from "@/contexts";
@@ -14,6 +14,7 @@ export const PageLayout = observer(() => {
 	const page = useMemo(() => {
 		return new PageStore();
 	}, []);
+	const location = useLocation();
 
 	if (!page) {
 		return null;
@@ -27,7 +28,13 @@ export const PageLayout = observer(() => {
 				}}
 			>
 				<Page>
-					<Outlet />
+					{/* keyed so each navigation replays the fade-in */}
+					<div
+						key={location.pathname}
+						className="fade-in animate-in duration-200"
+					>
+						<Outlet />
+					</div>
 				</Page>
 			</PageContext.Provider>
 		</ErrorBoundary>

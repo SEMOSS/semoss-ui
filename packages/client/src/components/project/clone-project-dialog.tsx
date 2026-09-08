@@ -19,6 +19,7 @@ import {
 	z,
 	zodResolver,
 } from "@semoss/ui/next";
+import { createAppFromTemplate } from "@/api";
 import { useRootStore } from "@/hooks";
 
 const schema = z.object({
@@ -94,29 +95,12 @@ export const CloneProjectDialog = (props: CloneProjectDialogProps) => {
 						?.project_id || "",
 				);
 			} else {
-				const { errors, pixelReturn } = await configStore.runPixel(
-					`CreateAppFromTemplate(project=["${escapePixelString(values.name.trim())}"], projectTemplate=["${project.project_id}"], global=["${values.isGlobal}"]);`,
-				);
-
-				if (errors.length > 0) {
-					throw new Error(errors.join(""));
-				}
-
-				clonedProjectId = String(
-					(pixelReturn[0]?.output as { project_id?: string })
-						?.project_id || "",
-				);
-
-				const trimmedDescription = values.description.trim();
-				if (trimmedDescription && clonedProjectId) {
-					const metaResponse = await configStore.runPixel(
-						`SetProjectMetadata(project=["${escapePixelString(clonedProjectId)}"], meta=[${JSON.stringify({ description: trimmedDescription })}]);`,
-					);
-
-					if (metaResponse.errors.length > 0) {
-						throw new Error(metaResponse.errors.join(""));
-					}
-				}
+				clonedProjectId = await createAppFromTemplate({
+					name: values.name,
+					templateId: project.project_id,
+					isGlobal: values.isGlobal,
+					description: values.description,
+				});
 			}
 
 			toast.success(`${label} cloned successfully`);

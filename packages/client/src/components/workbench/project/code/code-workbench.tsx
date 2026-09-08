@@ -35,6 +35,7 @@ import {
 } from "../project-settings-toggle";
 import { PROJECT_TERMINAL_PANEL } from "../project-terminal-panel";
 import { PROJECT_APP_RENDERER_PANEL } from "./code-app-renderer-panel";
+import { useTemplateChatHandoff } from "./use-template-chat-handoff";
 
 /**
  * Tool names that publish the app's frontend, matched case-insensitively on
@@ -272,6 +273,8 @@ export const CodeWorkbench: React.FC = () => {
 		project.project_id,
 		project.project_name,
 	]);
+
+	useTemplateChatHandoff();
 
 	useWorkbenchCommands([
 		{

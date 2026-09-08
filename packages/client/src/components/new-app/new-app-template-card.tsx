@@ -14,7 +14,8 @@ import {
 import { formatToDataTestId, getTagBadgeStyle } from "@/utility";
 import { formatDateToLocal } from "@/utility/date";
 
-export interface TemplateCardProps extends React.ComponentProps<typeof Card> {
+export interface NewAppTemplateCardProps
+	extends React.ComponentProps<typeof Card> {
 	/** Unique template / project ID */
 	id?: string;
 	/** Display name */
@@ -31,7 +32,7 @@ export interface TemplateCardProps extends React.ComponentProps<typeof Card> {
 	onUseTemplate?: (id: string) => void;
 }
 
-export const TemplateCard = ({
+export const NewAppTemplateCard = ({
 	name,
 	description,
 	id = "",
@@ -41,7 +42,7 @@ export const TemplateCard = ({
 	className,
 	onUseTemplate,
 	...cardProps
-}: TemplateCardProps) => {
+}: NewAppTemplateCardProps) => {
 	const localDate = formatDateToLocal(dateLastEdited);
 
 	return (
@@ -51,7 +52,7 @@ export const TemplateCard = ({
 				"flex h-full flex-col gap-0 overflow-hidden p-0 transition-all",
 				className,
 			)}
-			data-testid={formatToDataTestId(`TemplateCard-${id}`)}
+			data-testid={formatToDataTestId(`NewAppTemplateCard-${id}`)}
 		>
 			{/* Large visual header / cover banner */}
 			<div className="relative h-48 w-full overflow-hidden border-b bg-muted">

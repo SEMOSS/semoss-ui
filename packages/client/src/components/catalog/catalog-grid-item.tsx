@@ -1,6 +1,6 @@
 import { Calendar, Clock, Copy, MoreVertical, Tag } from "lucide-react";
 import type { ReactNode } from "react";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import {
 	Badge,
@@ -71,20 +71,6 @@ const copyToClipboard = (text: string) => {
 	}
 };
 
-const hashString = (str: string): number => {
-	let h = 0;
-	for (let i = 0; i < str.length; i++) {
-		h = (h << 5) - h + str.charCodeAt(i);
-		h |= 0;
-	}
-	return Math.abs(h);
-};
-
-const generateGradient = (name: string): string => {
-	const base = hashString(name) % 360;
-	return `hsl(${base}, 22%, 72%)`;
-};
-
 export const CatalogGridItem = ({
 	variant,
 	options,
@@ -104,7 +90,6 @@ export const CatalogGridItem = ({
 	const [menuOpen, setMenuOpen] = useState(false);
 	const relativeDate = formatDateToRelative(dateLastEdited || dateCreated);
 
-	const gradient = useMemo(() => generateGradient(name || "Item"), [name]);
 	const cardClassName = `${className ?? ""}`.trim();
 
 	if (variant === "LIST") {
@@ -313,28 +298,31 @@ export const CatalogGridItem = ({
 		>
 			<Card
 				{...cardProps}
-				className={`flex h-full cursor-pointer flex-col gap-0 overflow-hidden p-0 hover:shadow-md group-focus:ring group-focus:ring-ring/50 group-focus:ring-inset ${cardClassName}`.trim()}
+				className={`flex h-full cursor-pointer flex-col gap-0 overflow-hidden rounded-2xl border-border/80 bg-card p-0 shadow-none transition-shadow hover:shadow-sm group-focus:ring group-focus:ring-ring/50 group-focus:ring-inset ${cardClassName}`.trim()}
 			>
-				<CardHeader
-					className="relative flex h-18 w-full items-center justify-center pt-4"
-					style={{
-						backgroundColor: options?.CARD?.background || gradient,
-					}}
-				>
+				<CardHeader className="flex w-full flex-row items-start justify-between p-5 pb-0">
 					{icon ? (
-						<div className="flex h-full w-full items-center justify-center">
+						<div className="flex size-11 items-center justify-center overflow-hidden rounded-2xl bg-muted/60 p-1">
 							{icon}
 						</div>
 					) : null}
+					{relativeDate ? (
+						<span className="font-mono text-muted-foreground text-xs uppercase tracking-wider">
+							{relativeDate}
+						</span>
+					) : null}
 				</CardHeader>
 
-				<CardContent className="flex flex-1 flex-col gap-2 p-4">
-					<P className="truncate font-medium" title={name}>
+				<CardContent className="flex flex-1 flex-col gap-2.5 p-5">
+					<P
+						className="truncate font-semibold font-serif text-lg"
+						title={name}
+					>
 						{name}
 					</P>
 
 					{description ? (
-						<P className="line-clamp-2 min-h-[40px] text-muted-foreground text-sm">
+						<P className="line-clamp-2 min-h-10 text-muted-foreground text-sm">
 							{description}
 						</P>
 					) : null}
@@ -377,9 +365,9 @@ export const CatalogGridItem = ({
 					)}
 				</CardContent>
 
-				<div className="flex items-center justify-between border-t px-4 py-2">
-					<span className="text-muted-foreground text-xs">
-						{relativeDate || ""}
+				<div className="flex items-center justify-between border-border/70 border-t px-5 py-3">
+					<span className="font-mono text-muted-foreground text-xs uppercase tracking-wider">
+						View details →
 					</span>
 
 					<div className="flex items-center gap-1">

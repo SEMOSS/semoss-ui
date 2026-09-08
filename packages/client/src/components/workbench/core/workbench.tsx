@@ -153,7 +153,7 @@ export const Workbench: FC<WorkbenchProps> = ({
 			<div
 				ref={rootRef}
 				data-testid="workbench-shell"
-				className="absolute inset-0 overflow-hidden bg-muted text-foreground"
+				className="absolute inset-0 overflow-hidden bg-background text-foreground"
 			>
 				{!hydrated ? (
 					<div className="absolute inset-0 flex items-center justify-center">
