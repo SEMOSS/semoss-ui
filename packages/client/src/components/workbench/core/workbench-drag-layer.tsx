@@ -67,7 +67,7 @@ export const WorkbenchDragLayer: FC<WorkbenchDragLayerProps> = ({
 				return;
 			}
 			const state = storeApi.getState();
-			if (state.layout.isMobileLayout || state.layout.readOnly) {
+			if (state.layout.isMobileLayout) {
 				return;
 			}
 			const tabEl = (e.target as Element | null)?.closest("[data-tab]");

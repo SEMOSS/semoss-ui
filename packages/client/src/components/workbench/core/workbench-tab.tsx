@@ -102,7 +102,6 @@ export const WorkbenchTab: FC<WorkbenchTabProps> = memo(
 		const isDragging = useWorkbench(
 			(s) => s.layout.draggingPanelId === pid,
 		);
-		const readOnly = useWorkbench((s) => s.layout.readOnly);
 		const isMobileLayout = useWorkbench((s) => s.layout.isMobileLayout);
 		const closable = useWorkbench((s) => s.layout.actions.canClose(pid));
 		const renamable = useWorkbench((s) => s.layout.actions.canRename(pid));
@@ -133,7 +132,7 @@ export const WorkbenchTab: FC<WorkbenchTabProps> = memo(
 			return null;
 		}
 
-		const userCanRename = renamable && !readOnly;
+		const userCanRename = renamable;
 		// on a rail the tab is the open/collapse control, which is what makes
 		// clicking the showing panel put it away again. There is no rail on
 		// mobile — there, a border tab activates like any other (toggling
@@ -267,11 +266,9 @@ export const WorkbenchTab: FC<WorkbenchTabProps> = memo(
 								<button
 									type="button"
 									onPointerDown={(e) => e.stopPropagation()}
-									onClick={() => {
-										if (!readOnly) {
-											actions.setPinned(pid, false);
-										}
-									}}
+									onClick={() =>
+										actions.setPinned(pid, false)
+									}
 									data-testid={`workbench-tab-pin-${pid}`}
 									className={cn(
 										"ml-1 flex items-center justify-center rounded text-muted-foreground hover:bg-accent hover:text-foreground",

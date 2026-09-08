@@ -1,20 +1,34 @@
 import { createStore, type StoreApi } from "zustand";
+import type { Role } from "@semoss/sdk";
 import {
 	createWorkbenchAssistantNotificationSlice,
 	createWorkbenchAssistantSlice,
+	type WorkbenchAssistantConfig,
 	type WorkbenchAssistantNotificationSliceState,
 	type WorkbenchAssistantSliceState,
 } from "./assistant";
 import {
+	createWorkbenchAccessSlice,
 	createWorkbenchCommandSlice,
 	createWorkbenchControlsSlice,
 	createWorkbenchLayoutSlice,
 	createWorkbenchLoadingSlice,
+	type WorkbenchAccessSliceState,
+	type WorkbenchAccessType,
 	type WorkbenchCommandSliceState,
 	type WorkbenchControlsSliceState,
 	type WorkbenchLayoutSliceState,
 	type WorkbenchLoadingSliceState,
 } from "./slices";
+
+export interface WorkbenchConfiguration {
+	resource: {
+		type: WorkbenchAccessType;
+		id: string;
+		permission: Role;
+	};
+	assistant?: WorkbenchAssistantConfig;
+}
 
 /**
  * State and actions exposed by a scoped workbench store, one namespace per
@@ -23,6 +37,9 @@ import {
  * `const actions = useWorkbench((s) => s.layout.actions)`.
  */
 export interface WorkbenchState {
+	/** Configure the active resource and optional assistant in one update path. */
+	configure: (configuration: WorkbenchConfiguration) => void;
+	access: WorkbenchAccessSliceState;
 	layout: WorkbenchLayoutSliceState;
 	loading: WorkbenchLoadingSliceState;
 	command: WorkbenchCommandSliceState;
@@ -32,25 +49,31 @@ export interface WorkbenchState {
 }
 
 /**
- * Creates an isolated vanilla Zustand store for one workbench ID. Domain
- * state (e.g. the database workbench) lives in its own store, attached at
- * runtime via `layout.actions.attachDomainStore` — it is no longer merged in
- * here.
+ * Creates an isolated vanilla Zustand store for one workbench cache key. Domain
+ * workbenches own their independent stores and React contexts; this store
+ * contains only generic workbench state.
  *
  * @name createWorkbenchStore
- * @param id - Unique workbench ID used to isolate the cache.
+ * @param cacheKey - Unique key used to isolate persisted workbench state.
  * @return Scoped workbench store composed from the layout, loading, command,
  * control, assistant, and assistant-notification slices.
  */
-export const createWorkbenchStore = (id: string): StoreApi<WorkbenchState> => {
+export const createWorkbenchStore = (
+	cacheKey: string,
+): StoreApi<WorkbenchState> => {
 	return createStore<WorkbenchState>()((set, get, api) => {
 		// Every slice takes the root set/get, returns its own state flat, and
 		// is mounted under its namespace here.
-		const layout = createWorkbenchLayoutSlice(id)(set, get, api);
+		const access = createWorkbenchAccessSlice()(set, get, api);
+		const layout = createWorkbenchLayoutSlice(cacheKey)(set, get, api);
 		const loading = createWorkbenchLoadingSlice()(set, get, api);
-		const command = createWorkbenchCommandSlice(id)(set, get, api);
+		const command = createWorkbenchCommandSlice(cacheKey)(set, get, api);
 		const control = createWorkbenchControlsSlice()(set, get, api);
-		const assistant = createWorkbenchAssistantSlice(id)(set, get, api);
+		const assistant = createWorkbenchAssistantSlice(cacheKey)(
+			set,
+			get,
+			api,
+		);
 		// Subscribes to this store, so it is composed after the assistant
 		// slice it watches.
 		const notifications = createWorkbenchAssistantNotificationSlice()(
@@ -60,6 +83,18 @@ export const createWorkbenchStore = (id: string): StoreApi<WorkbenchState> => {
 		);
 
 		return {
+			configure: (configuration) => {
+				const { resource, assistant: assistantConfig } = configuration;
+				access.actions.syncPermission(
+					resource.type,
+					resource.id,
+					resource.permission,
+				);
+				if (assistantConfig) {
+					assistant.configure(assistantConfig);
+				}
+			},
+			access,
 			layout,
 			loading,
 			command,
