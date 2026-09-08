@@ -388,6 +388,8 @@ export interface MCP {
 	/** Tags of the mcp */
 	tags: string[];
 	permission: "READ_ONLY" | "EDIT" | "OWNER";
+	/** Whether the user has starred/favorited this item */
+	favorite?: boolean;
 }
 
 export type MCPConfig = Pick<MCP, "type" | "id" | "name"> & {

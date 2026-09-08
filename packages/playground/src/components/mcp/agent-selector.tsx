@@ -4,6 +4,7 @@ import {
 	PlusIcon,
 	SearchIcon,
 	SquareArrowOutUpRightIcon,
+	StarIcon,
 } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useState } from "react";
@@ -137,152 +138,164 @@ export const AgentSelector = observer(
 					{getWorkspaces.data.length !== 0 && (
 						<>
 							<div className="grid grid-cols-1 gap-4 p-4 md:grid-cols-3">
-								{getWorkspaces.data.map((w) => {
-									const isSelected =
-										value?.workspace_id === w.project_id;
-									const permissionLabel =
-										w.user_permission === 1
-											? t("workspace:members.owner", {
-													defaultValue: "Owner",
-												})
-											: w.user_permission === 2
-												? t(
-														"workspace:members.editor",
-														{
-															defaultValue:
-																"Editor",
-														},
-													)
-												: t(
-														"workspace:members.readOnly",
-														{
-															defaultValue:
-																"Read-only",
-														},
-													);
-									return (
-										<Card
-											key={w.project_id}
-											onClick={() =>
-												!disabled && select(w)
-											}
-											className={cn(
-												"p-0 transition-colors",
-												!disabled &&
-													"cursor-pointer hover:bg-muted/30",
-												disabled &&
-													"cursor-not-allowed opacity-50",
-												isSelected && "border-primary",
-											)}
-										>
-											<CardContent className="flex flex-col gap-2 p-3">
-												{/* Row 1: open-page link + permission text on
+								{[...getWorkspaces.data]
+									.sort(
+										(a, b) =>
+											(b.project_favorite ?? 0) -
+											(a.project_favorite ?? 0),
+									)
+									.map((w) => {
+										const isSelected =
+											value?.workspace_id ===
+											w.project_id;
+										const permissionLabel =
+											w.user_permission === 1
+												? t("workspace:members.owner", {
+														defaultValue: "Owner",
+													})
+												: w.user_permission === 2
+													? t(
+															"workspace:members.editor",
+															{
+																defaultValue:
+																	"Editor",
+															},
+														)
+													: t(
+															"workspace:members.readOnly",
+															{
+																defaultValue:
+																	"Read-only",
+															},
+														);
+										return (
+											<Card
+												key={w.project_id}
+												onClick={() =>
+													!disabled && select(w)
+												}
+												className={cn(
+													"p-0 transition-colors",
+													!disabled &&
+														"cursor-pointer hover:bg-muted/30",
+													disabled &&
+														"cursor-not-allowed opacity-50",
+													isSelected &&
+														"border-primary",
+												)}
+											>
+												<CardContent className="flex flex-col gap-2 p-3">
+													{/* Row 1: open-page link + permission text on
 												    the left; selection checkbox on the right. */}
-												<div className="flex items-center gap-2">
-													<div className="flex min-w-0 flex-1 items-center gap-1.5">
-														<Tooltip>
-															<TooltipTrigger
-																asChild
-															>
-																<a
-																	href={`#/agent/${w.project_id}`}
-																	onClick={(
-																		event,
-																	) => {
-																		event.preventDefault();
-																		event.stopPropagation();
-																		navigate(
-																			`/agent/${w.project_id}`,
-																		);
-																	}}
-																	className="text-muted-foreground hover:text-foreground"
+													<div className="flex items-center gap-2">
+														<div className="flex min-w-0 flex-1 items-center gap-1.5">
+															<Tooltip>
+																<TooltipTrigger
+																	asChild
 																>
-																	<SquareArrowOutUpRightIcon className="size-4" />
-																</a>
-															</TooltipTrigger>
-															<TooltipContent>
-																{t(
-																	"agent.openAgentPage",
+																	<a
+																		href={`#/agent/${w.project_id}`}
+																		onClick={(
+																			event,
+																		) => {
+																			event.preventDefault();
+																			event.stopPropagation();
+																			navigate(
+																				`/agent/${w.project_id}`,
+																			);
+																		}}
+																		className="text-muted-foreground hover:text-foreground"
+																	>
+																		<SquareArrowOutUpRightIcon className="size-4" />
+																	</a>
+																</TooltipTrigger>
+																<TooltipContent>
+																	{t(
+																		"agent.openAgentPage",
+																		{
+																			defaultValue:
+																				"Open agent page",
+																		},
+																	)}
+																</TooltipContent>
+															</Tooltip>
+															{w.project_favorite ===
+															1 ? (
+																<StarIcon className="size-3.5 shrink-0 fill-amber-400 text-amber-400" />
+															) : null}
+															{permissionLabel ? (
+																<span className="-translate-y-px text-[10px] text-muted-foreground capitalize">
 																	{
-																		defaultValue:
-																			"Open agent page",
-																	},
-																)}
-															</TooltipContent>
-														</Tooltip>
-														{permissionLabel ? (
-															<span className="-translate-y-px text-[10px] text-muted-foreground capitalize">
-																{
-																	permissionLabel
-																}
-															</span>
-														) : null}
-													</div>
-													<div className="flex shrink-0 items-center gap-1.5">
-														<div
-															className={cn(
-																"flex size-4 items-center justify-center rounded border transition-colors",
-																isSelected
-																	? "border-primary bg-primary text-primary-foreground"
-																	: "border-muted-foreground/40",
-															)}
-														>
-															{isSelected ? (
-																<CheckIcon
-																	className="size-3"
-																	strokeWidth={
-																		3
+																		permissionLabel
 																	}
-																/>
+																</span>
 															) : null}
 														</div>
-													</div>
-												</div>
-
-												{/* Row 2: avatar + (name on top, type below). */}
-												<div className="flex items-start gap-2">
-													<AppCatalogAvatar
-														name={
-															w.project_display_name ||
-															w.project_name
-														}
-														className="size-10 shrink-0 rounded-md text-sm"
-													/>
-													<div className="flex min-w-0 flex-1 flex-col gap-0.5">
-														<div className="wrap-break-word line-clamp-2 font-medium text-sm leading-tight">
-															{w.project_display_name ||
-																w.project_name}
-														</div>
-														<div className="flex items-center gap-1.5 text-muted-foreground text-xs">
-															<Bot className="size-3.5 shrink-0" />
-															<span>
-																{t(
-																	"agent.typeLabel",
-																	{
-																		defaultValue:
-																			"Agent",
-																	},
+														<div className="flex shrink-0 items-center gap-1.5">
+															<div
+																className={cn(
+																	"flex size-4 items-center justify-center rounded border transition-colors",
+																	isSelected
+																		? "border-primary bg-primary text-primary-foreground"
+																		: "border-muted-foreground/40",
 																)}
-															</span>
+															>
+																{isSelected ? (
+																	<CheckIcon
+																		className="size-3"
+																		strokeWidth={
+																			3
+																		}
+																	/>
+																) : null}
+															</div>
 														</div>
 													</div>
-												</div>
 
-												{/* Row 3: description (full width) or spacer. */}
-												{w.description ? (
-													<div className="wrap-break-words line-clamp-4 text-muted-foreground text-xs">
-														{w.description}
+													{/* Row 2: avatar + (name on top, type below). */}
+													<div className="flex items-start gap-2">
+														<AppCatalogAvatar
+															name={
+																w.project_display_name ||
+																w.project_name
+															}
+															className="size-10 shrink-0 rounded-md text-sm"
+														/>
+														<div className="flex min-w-0 flex-1 flex-col gap-0.5">
+															<div className="wrap-break-word line-clamp-2 font-medium text-sm leading-tight">
+																{w.project_display_name ||
+																	w.project_name}
+															</div>
+															<div className="flex items-center gap-1.5 text-muted-foreground text-xs">
+																<Bot className="size-3.5 shrink-0" />
+																<span>
+																	{t(
+																		"agent.typeLabel",
+																		{
+																			defaultValue:
+																				"Agent",
+																		},
+																	)}
+																</span>
+															</div>
+														</div>
 													</div>
-												) : (
-													<div
-														className="h-1"
-														aria-hidden
-													/>
-												)}
-											</CardContent>
-										</Card>
-									);
-								})}
+
+													{/* Row 3: description (full width) or spacer. */}
+													{w.description ? (
+														<div className="wrap-break-words line-clamp-4 text-muted-foreground text-xs">
+															{w.description}
+														</div>
+													) : (
+														<div
+															className="h-1"
+															aria-hidden
+														/>
+													)}
+												</CardContent>
+											</Card>
+										);
+									})}
 							</div>
 							{getWorkspaces.isLoading && (
 								<div className="flex w-full items-center justify-center pb-4">
