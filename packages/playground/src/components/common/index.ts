@@ -6,3 +6,4 @@ export * from "./global-footer";
 export * from "./global-nav";
 export * from "./lexical";
 export * from "./pagination-buttons";
+export * from "./typewriter-text";

@@ -25,6 +25,7 @@ import {
 import { GlobalFooter, GlobalNav } from "@/components";
 import { GlobalDialog } from "@/components/common/global-dialog";
 import { LandingTour } from "@/components/common/landing-tour";
+import { TypewriterText } from "@/components/common/typewriter-text";
 import { ChatContext, NavbarContext, TourContext } from "@/contexts";
 import { useRoot } from "@/hooks";
 import { useThemeTitle } from "@/hooks/use-theme-title";
@@ -246,9 +247,15 @@ export const MainLayout = observer(() => {
 																			<Link
 																				to={`${crumb.path}`}
 																			>
-																				{
+																				{isLast ? (
+																					<TypewriterText
+																						text={
+																							crumb.name
+																						}
+																					/>
+																				) : (
 																					crumb.name
-																				}
+																				)}
 																			</Link>
 																		</BreadcrumbLink>
 																	) : (
@@ -260,9 +267,15 @@ export const MainLayout = observer(() => {
 																					: "text-muted-foreground",
 																			)}
 																		>
-																			{
+																			{isLast ? (
+																				<TypewriterText
+																					text={
+																						crumb.name
+																					}
+																				/>
+																			) : (
 																				crumb.name
-																			}
+																			)}
 																		</span>
 																	)}
 																</BreadcrumbItem>

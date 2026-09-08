@@ -295,6 +295,7 @@ export class ChatStore {
 	createRoom = async (
 		mode: "agent" | "chat",
 		prompt: string,
+		defaultName: string,
 		files: File[],
 		options: RoomStore["options"],
 		workspaceId?: string,
@@ -333,7 +334,7 @@ export class ChatStore {
 		room.setMode(mode);
 
 		// set default name
-		room.setMetadata({ name: prompt.substring(0, 15) });
+		room.setMetadata({ name: defaultName });
 
 		// initialize the room
 		await room.initialize();
@@ -349,7 +350,7 @@ export class ChatStore {
 			// won't return it until its first message has data
 			this._store.optimisticRooms[roomId] = {
 				ROOM_ID: roomId,
-				ROOM_NAME: prompt.substring(0, 100),
+				ROOM_NAME: defaultName,
 				DATE_CREATED: new Date().toISOString(),
 				WORKSPACE_ID: workspaceId,
 			};
