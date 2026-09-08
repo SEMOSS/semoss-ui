@@ -52,7 +52,16 @@ export default defineConfig({
 		}),
 		isProduction && terser(),
 	],
-	external: ["react", "react-dom", "react-hook-form", "zod", /@hookform/],
+	external: [
+		"react",
+		"react-dom",
+		"react-hook-form",
+		"zod",
+		/@hookform/,
+		"@monaco-editor/react",
+		"monaco-editor",
+		/^monaco-editor\//,
+	],
 	watch: {
 		clearScreen: false,
 	},

@@ -1,6 +1,7 @@
 export * from "./auth";
 export * from "./databases";
 export * from "./engines";
+export * from "./guardrails";
 export * from "./projects";
 export * from "./rooms";
 export * from "./teams";

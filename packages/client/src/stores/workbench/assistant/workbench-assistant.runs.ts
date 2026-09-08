@@ -4,7 +4,7 @@ import type {
 	AgentRunSnapshot,
 	PendingAgentAction,
 	SubagentRunSummary,
-} from "@semoss/sdk/react";
+} from "@semoss/sdk";
 import type { PlaygroundMessage } from "@/api/rooms";
 
 /**

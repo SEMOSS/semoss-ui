@@ -1,7 +1,10 @@
-import { Download, Table2Icon } from "lucide-react";
+import { AlertCircle, Download, Table2Icon } from "lucide-react";
 import { useState } from "react";
 import { download } from "@semoss/sdk/react";
 import {
+	Alert,
+	AlertDescription,
+	AlertTitle,
 	Button,
 	Code,
 	CodeContainer,
@@ -13,6 +16,10 @@ import {
 	TableHead,
 	TableHeader,
 	TableRow,
+	Tabs,
+	TabsContent,
+	TabsList,
+	TabsTrigger,
 	Tooltip,
 	TooltipContent,
 	TooltipTrigger,
@@ -24,6 +31,7 @@ import type {
 	WorkbenchPanelConfig,
 } from "@/stores/workbench";
 import { DatabaseResultsHeader } from "./database-results-header";
+import { DatabaseStatementResultView } from "./database-statement-result-view";
 
 /** The config a results instance is opened with. */
 export interface DatabaseQueryResultsConfig {
@@ -51,24 +59,30 @@ const DatabaseQueryResultsPanel: WorkbenchComponent<
 	// behavior, and the legacy admin tool never offered it
 	const canExport = mode !== "ADMIN_SQL";
 
-	const [isExporting, setIsExporting] = useState(false);
+	const [exportingStatement, setExportingStatement] = useState<number | null>(
+		null,
+	);
 	/**
 	 * Handle export to CSV click
 	 */
-	const handleExportToCsvClick = async () => {
-		if (result?.type !== "TABLE" || !canExport) {
+	const handleExportToCsvClick = async (
+		query: string,
+		raw: boolean,
+		statement: number,
+	) => {
+		if (!canExport) {
 			return;
 		}
 
 		let pixel: string;
 		if (mode === "SPARQL") {
-			pixel = `SparqlQuery(database=["${engine.engine_id}"], query=["<encode>${result.query}</encode>"], raw=[${result.raw}], commit=[true], limit=[-1]) | ToCsv();`;
+			pixel = `SparqlQuery(database=["${engine.engine_id}"], query=["<encode>${query}</encode>"], raw=[${raw}], commit=[true], limit=[-1]) | ToCsv();`;
 		} else {
-			pixel = `SqlQuery(database=["${engine.engine_id}"], query=["<encode>${result.query}</encode>"], commit=[true], limit=[-1]) | ToCsv();`;
+			pixel = `SqlQuery(database=["${engine.engine_id}"], query=["<encode>${query}</encode>"], commit=[true], limit=[-1]) | ToCsv();`;
 		}
 
 		try {
-			setIsExporting(true);
+			setExportingStatement(statement);
 
 			const response = await configStore.runPixel(pixel);
 
@@ -84,7 +98,7 @@ const DatabaseQueryResultsPanel: WorkbenchComponent<
 		} catch (error) {
 			toast.error(`Failed to export results: ${error}`);
 		} finally {
-			setIsExporting(false);
+			setExportingStatement(null);
 		}
 	};
 
@@ -102,13 +116,13 @@ const DatabaseQueryResultsPanel: WorkbenchComponent<
 			data-testid="query-results-panel"
 		>
 			<div className="w-full flex-1 overflow-hidden">
-				{!result || result.type === "ERROR" ? (
-					<div className="w-full">
-						<pre className="overflow-x-auto whitespace-pre-wrap rounded bg-destructive/5 p-3 font-mono text-destructive text-xs">
-							{result?.type === "ERROR" ? result.message : null}
-						</pre>
-					</div>
-				) : null}
+				{result?.type === "ERROR" && (
+					<Alert variant="destructive">
+						<AlertCircle aria-hidden />
+						<AlertTitle>Query failed</AlertTitle>
+						<AlertDescription>{result.message}</AlertDescription>
+					</Alert>
+				)}
 				{result && result.type === "TABLE" && (
 					<div className="h-full w-full overflow-hidden">
 						<Table wrapperClassName="h-full w-full rounded-md border border-border overflow-auto">
@@ -159,6 +173,50 @@ const DatabaseQueryResultsPanel: WorkbenchComponent<
 						</CodeContainer>
 					</div>
 				)}
+				{result && result.type === "BATCH" && (
+					<Tabs
+						key={result.query}
+						defaultValue={`statement-${result.results[0]?.statement ?? 1}`}
+						className="h-full min-h-0"
+					>
+						<div className="flex-none overflow-x-auto">
+							<TabsList>
+								{result.results.map((statementResult) => (
+									<TabsTrigger
+										key={statementResult.statement}
+										value={`statement-${statementResult.statement}`}
+									>
+										{statementResult.statement} ·{" "}
+										{statementResult.route}
+									</TabsTrigger>
+								))}
+							</TabsList>
+						</div>
+						{result.results.map((statementResult) => (
+							<TabsContent
+								key={statementResult.statement}
+								value={`statement-${statementResult.statement}`}
+								className="min-h-0 overflow-hidden"
+							>
+								<DatabaseStatementResultView
+									result={statementResult}
+									canExport={canExport}
+									isExporting={
+										exportingStatement ===
+										statementResult.statement
+									}
+									onExport={(item) =>
+										handleExportToCsvClick(
+											item.query,
+											result.raw,
+											item.statement,
+										)
+									}
+								/>
+							</TabsContent>
+						))}
+					</Tabs>
+				)}
 			</div>
 
 			<div
@@ -169,13 +227,24 @@ const DatabaseQueryResultsPanel: WorkbenchComponent<
 					<Tooltip>
 						<TooltipTrigger asChild>
 							<Button
-								disabled={isExporting}
+								disabled={exportingStatement !== null}
 								variant="outline"
 								size="icon-sm"
-								onClick={handleExportToCsvClick}
+								onClick={() =>
+									handleExportToCsvClick(
+										result.query,
+										result.raw,
+										0,
+									)
+								}
+								aria-label="Export query results"
 								data-testid="query-results-export-btn"
 							>
-								{isExporting ? <Spinner /> : <Download />}
+								{exportingStatement === 0 ? (
+									<Spinner />
+								) : (
+									<Download aria-hidden />
+								)}
 							</Button>
 						</TooltipTrigger>
 						<TooltipContent>Export Results</TooltipContent>
@@ -185,7 +254,7 @@ const DatabaseQueryResultsPanel: WorkbenchComponent<
 				<div className="flex items-center gap-4">
 					{result && (
 						<P className="font-medium text-xs">
-							Execution time:{" "}
+							Total execution time:{" "}
 							<span className="text-foreground">
 								{result.timeToRun || 0}ms
 							</span>

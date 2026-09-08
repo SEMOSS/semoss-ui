@@ -39,9 +39,16 @@ export function useWorkbenchPanel(
 			"pending",
 	);
 
+	// Kept out of the props memo below: methods only close over `actions`/`pid`,
+	// so this identity survives a `value` write and stays stable for the panel's life.
+	const methods = useMemo(
+		() => workbenchPanelMethods(actions, pid),
+		[actions, pid],
+	);
+
 	return useMemo(
 		() => ({
-			...workbenchPanelMethods(actions, pid),
+			...methods,
 			id: pid,
 			type: record?.type ?? "",
 			name: record?.name,
@@ -50,6 +57,6 @@ export function useWorkbenchPanel(
 			isVisible,
 			...(location ? { location, status } : {}),
 		}),
-		[actions, pid, record, value, isVisible, location, status],
+		[methods, pid, record, value, isVisible, location, status],
 	);
 }

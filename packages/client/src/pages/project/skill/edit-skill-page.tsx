@@ -26,7 +26,13 @@ export const EditSkillPage = () => {
 
 	return (
 		<InsightProvider options={{ app: project.project_id }}>
-			<WorkbenchProvider id={project.project_id}>
+			<WorkbenchProvider
+				cacheKey={
+					permission === "OWNER" || permission === "EDIT"
+						? project.project_id
+						: `${project.project_id}--read-only`
+				}
+			>
 				<ProjectNavbar actions={<ProjectShareButton />} />
 				<ProjectDependencyWarning />
 				<SkillWorkbench />

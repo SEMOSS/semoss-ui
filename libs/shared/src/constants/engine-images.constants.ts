@@ -106,6 +106,7 @@ export const ENGINE_IMAGES: Record<string, EngineImageEntry[]> = {
 		{ name: "EMBEDDED_PERSPECTIVE_API", icon: "BRAIN.png" },
 		{ name: "EMBEDDED_PROMPTGUARD_META", icon: "META_COLOR.svg" },
 		{ name: "EMBEDDED_REBUFF", icon: "BRAIN.png" },
+		{ name: "EMBEDDED_SQL_QUERY", icon: "DATABASE.svg" },
 		{ name: "GLINER", icon: "HUGGINGFACE_COLOR.svg" },
 		{ name: "LOCAL_PYTHON", icon: "PYTHON.svg" },
 	],

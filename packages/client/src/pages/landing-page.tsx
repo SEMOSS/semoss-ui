@@ -77,7 +77,7 @@ export const LandingPage: React.FC = observer(() => {
 								size="default"
 								className="shrink-0 text-primary hover:bg-transparent hover:text-primary"
 							>
-								<Link to="/app/new">
+								<Link to="templates">
 									Browse Templates
 									<ArrowRight className="size-4" />
 								</Link>
