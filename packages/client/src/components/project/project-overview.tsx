@@ -41,6 +41,14 @@ export const ProjectOverview = ({
 		refresh();
 	};
 
+	const onSaveDisplayName = async (id: string, name: string) => {
+		await configStore.runPixel(
+			`SetProjectDisplayName(project=["${id}"], name=["${name}"]);`,
+		);
+
+		refresh();
+	};
+
 	if (!project) {
 		return <div className="text-muted-foreground">No details found</div>;
 	}
@@ -49,6 +57,8 @@ export const ProjectOverview = ({
 		<CatalogOverview
 			id={project.project_id}
 			permission={permission}
+			displayName={project.project_display_name || project.project_name}
+			onSaveDisplayName={onSaveDisplayName}
 			metaKeys={configStore.store.config.projectMetaKeys}
 			metaValues={
 				getProjectMetaValues.status === "SUCCESS"
