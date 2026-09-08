@@ -23,6 +23,7 @@ import {
 	useState,
 } from "react";
 import { Link } from "react-router-dom";
+import type { Role } from "@semoss/sdk";
 import { InsightProvider } from "@semoss/sdk/react";
 import {
 	JsonViewer,
@@ -54,14 +55,16 @@ import { ProjectDetailTabs } from "@/components/project";
 import { ShareOverlay } from "@/components/ui";
 import { WorkbenchAssistantView } from "@/components/workbench/assistant";
 import { Workbench } from "@/components/workbench/core";
-import { PROJECT_FILE_CODE_EDITOR_PANEL } from "@/components/workbench/project/project-file-code-editor-panel";
-import { PROJECT_FILE_DOWNLOAD_VIEWER_PANEL } from "@/components/workbench/project/project-file-download-viewer-panel";
-import { PROJECT_FILE_EXPLORER_PANEL } from "@/components/workbench/project/project-file-explorer-panel";
-import { PROJECT_FILE_IMAGE_EDITOR_PANEL } from "@/components/workbench/project/project-file-image-editor-panel";
-import { PROJECT_FILE_MARKDOWN_EDITOR_PANEL } from "@/components/workbench/project/project-file-markdown-editor-panel";
-import { PROJECT_FILE_NOTEBOOK_EDITOR_PANEL } from "@/components/workbench/project/project-file-notebook-editor-panel";
-import { PROJECT_FILE_PDF_EDITOR_PANEL } from "@/components/workbench/project/project-file-pdf-editor-panel";
-import { PROJECT_MCP_EDITOR_PANEL } from "@/components/workbench/project/project-mcp-editor-panel";
+import {
+	FILE_CODE_EDITOR_PANEL,
+	FILE_DOWNLOAD_PANEL,
+	FILE_EXPLORER_PANEL,
+	FILE_IMAGE_VIEWER_PANEL,
+	FILE_MARKDOWN_EDITOR_PANEL,
+	FILE_MCP_EDITOR_PANEL,
+	FILE_NOTEBOOK_EDITOR_PANEL,
+	FILE_PDF_VIEWER_PANEL,
+} from "@/components/workbench/files";
 import { WorkbenchProvider } from "@/contexts";
 import { useProject, useWorkbench } from "@/hooks";
 import type {
@@ -124,9 +127,9 @@ function extractChangedStepIds(
 const EDITOR = "automation-editor";
 const INSPECTOR = "automation-inspector";
 const TRACE = "automation-trace";
-const FILES = WORKBENCH_COMPONENTS.PROJECT_FILE_EXPLORER;
-const FILE_EDITOR = WORKBENCH_COMPONENTS.PROJECT_FILE_CODE_EDITOR;
-const MCP_EDITOR = WORKBENCH_COMPONENTS.PROJECT_MCP_EDITOR;
+const FILES = WORKBENCH_COMPONENTS.FILE_EXPLORER;
+const FILE_EDITOR = WORKBENCH_COMPONENTS.FILE_CODE_EDITOR;
+const MCP_EDITOR = WORKBENCH_COMPONENTS.FILE_MCP_EDITOR;
 const SETTINGS = WORKBENCH_COMPONENTS.PROJECT_SETTINGS;
 
 const SETTINGS_TABS: React.ComponentProps<typeof ProjectDetailTabs>["tabs"] = [
@@ -146,8 +149,7 @@ const SETTINGS_TABS: React.ComponentProps<typeof ProjectDetailTabs>["tabs"] = [
 	{ name: "SMSS", component: "smss", restrict: ["OWNER"] },
 ];
 
-const AUTOMATION_LAYOUT: WorkbenchLayout = {
-	version: 1,
+const createAutomationLayout = (appId: string): WorkbenchLayout => ({
 	tree: {
 		type: "tabset",
 		id: "main",
@@ -170,7 +172,13 @@ const AUTOMATION_LAYOUT: WorkbenchLayout = {
 			name: "Inspector",
 			canClose: false,
 		},
-		[FILES]: { id: FILES, type: FILES, name: "Files", canClose: false },
+		[FILES]: {
+			id: FILES,
+			type: FILES,
+			name: "Files",
+			canClose: false,
+			config: { type: "PROJECT", id: appId },
+		},
 		[TRACE]: {
 			id: TRACE,
 			type: TRACE,
@@ -205,10 +213,11 @@ const AUTOMATION_LAYOUT: WorkbenchLayout = {
 			size: 400,
 		},
 	},
-};
+});
 
 interface AutomationWorkbenchProps {
 	appId: string;
+	permission: Role;
 	readOnly: boolean;
 	projectName: string;
 	catalogPath?: string;
@@ -477,12 +486,17 @@ function DataTable({ rows }: { rows: Record<string, unknown>[] }) {
 export const AutomationWorkbench = observer(
 	({
 		appId,
+		permission,
 		readOnly,
 		projectName,
 		catalogPath,
 		onShare,
 	}: AutomationWorkbenchProps) => {
 		const layoutActions = useWorkbench((state) => state.layout.actions);
+		const workbenchLayout = useMemo(
+			() => createAutomationLayout(appId),
+			[appId],
+		);
 		const setAssistantDraft = useWorkbench(
 			(state) => state.assistant.setDraft,
 		);
@@ -756,7 +770,7 @@ export const AutomationWorkbench = observer(
 					),
 				},
 				[FILES]: {
-					...PROJECT_FILE_EXPLORER_PANEL,
+					...FILE_EXPLORER_PANEL,
 					canRename: false,
 					enableBorderHeader: false,
 					icon: ({ className }) => (
@@ -764,31 +778,31 @@ export const AutomationWorkbench = observer(
 					),
 				},
 				[FILE_EDITOR]: {
-					...PROJECT_FILE_CODE_EDITOR_PANEL,
+					...FILE_CODE_EDITOR_PANEL,
 					canRename: false,
 				},
-				[WORKBENCH_COMPONENTS.PROJECT_FILE_DOWNLOAD_VIEWER]: {
-					...PROJECT_FILE_DOWNLOAD_VIEWER_PANEL,
+				[WORKBENCH_COMPONENTS.FILE_DOWNLOAD]: {
+					...FILE_DOWNLOAD_PANEL,
 					canRename: false,
 				},
-				[WORKBENCH_COMPONENTS.PROJECT_FILE_IMAGE_EDITOR]: {
-					...PROJECT_FILE_IMAGE_EDITOR_PANEL,
+				[WORKBENCH_COMPONENTS.FILE_IMAGE_VIEWER]: {
+					...FILE_IMAGE_VIEWER_PANEL,
 					canRename: false,
 				},
-				[WORKBENCH_COMPONENTS.PROJECT_FILE_MARKDOWN_EDITOR]: {
-					...PROJECT_FILE_MARKDOWN_EDITOR_PANEL,
+				[WORKBENCH_COMPONENTS.FILE_MARKDOWN_EDITOR]: {
+					...FILE_MARKDOWN_EDITOR_PANEL,
 					canRename: false,
 				},
-				[WORKBENCH_COMPONENTS.PROJECT_FILE_NOTEBOOK_EDITOR]: {
-					...PROJECT_FILE_NOTEBOOK_EDITOR_PANEL,
+				[WORKBENCH_COMPONENTS.FILE_NOTEBOOK_EDITOR]: {
+					...FILE_NOTEBOOK_EDITOR_PANEL,
 					canRename: false,
 				},
-				[WORKBENCH_COMPONENTS.PROJECT_FILE_PDF_EDITOR]: {
-					...PROJECT_FILE_PDF_EDITOR_PANEL,
+				[WORKBENCH_COMPONENTS.FILE_PDF_VIEWER]: {
+					...FILE_PDF_VIEWER_PANEL,
 					canRename: false,
 				},
 				[MCP_EDITOR]: {
-					...PROJECT_MCP_EDITOR_PANEL,
+					...FILE_MCP_EDITOR_PANEL,
 					canRename: false,
 					icon: ({ className }) => (
 						<BracesIcon className={className} />
@@ -835,26 +849,28 @@ export const AutomationWorkbench = observer(
 			[appId, readOnly],
 		);
 
-		const configureAssistant = useWorkbench(
-			(state) => state.assistant.configure,
-		);
+		const configureWorkbench = useWorkbench((state) => state.configure);
 		useEffect(() => {
 			const accessInstructions = readOnly
 				? "You can answer questions but cannot modify this read-only automation."
 				: "Use the Automation Project Tools to inspect and make changes when needed.";
-			configureAssistant({
-				systemPrompt: `You are the assistant for the ${projectName} automation. Help users understand, build, and troubleshoot this automation. ${accessInstructions} Explain that each step result is available to later steps as \${variableName}; configuration values are available as \${config.SETTING_NAME}; and fields marked for Playground input can be supplied at run time, overriding their default value. Use the automation's current project configuration and available tools as the source of truth. Never invent an app, reactor, agent, engine, or output variable ID. Keep appId separate from pixel, ask the user when a required concrete value is unavailable, and never claim a change or run succeeded unless a tool result confirms it.`,
-				mcp: automationMcp,
-				runParams: { project: appId },
-				onToolCompleted: handleAutomationToolCompleted,
-				onRunCompleted: () => notifyAutomationChanged(),
+			configureWorkbench({
+				resource: { type: "PROJECT", id: appId, permission },
+				assistant: {
+					systemPrompt: `You are the assistant for the ${projectName} automation. Help users understand, build, and troubleshoot this automation. ${accessInstructions} Explain that each step result is available to later steps as \${variableName}; configuration values are available as \${config.SETTING_NAME}; and fields marked for Playground input can be supplied at run time, overriding their default value. Use the automation's current project configuration and available tools as the source of truth. Never invent an app, reactor, agent, engine, or output variable ID. Keep appId separate from pixel, ask the user when a required concrete value is unavailable, and never claim a change or run succeeded unless a tool result confirms it.`,
+					mcp: automationMcp,
+					runParams: { project: appId },
+					onToolCompleted: handleAutomationToolCompleted,
+					onRunCompleted: () => notifyAutomationChanged(),
+				},
 			});
 		}, [
 			appId,
 			automationMcp,
-			configureAssistant,
+			configureWorkbench,
 			handleAutomationToolCompleted,
 			notifyAutomationChanged,
+			permission,
 			projectName,
 			readOnly,
 		]);
@@ -985,9 +1001,8 @@ export const AutomationWorkbench = observer(
 					onClose={() => setOutputModal(null)}
 				/>
 				<Workbench
-					layout={AUTOMATION_LAYOUT}
+					layout={workbenchLayout}
 					components={components}
-					readOnly={readOnly}
 					borderSlots={{
 						left: { after: <AutomationSettingsToggle /> },
 					}}
@@ -1003,9 +1018,16 @@ export const AutomationWorkbenchPage = observer(() => {
 	const readOnly = permission !== "OWNER" && permission !== "EDIT";
 	return (
 		<InsightProvider>
-			<WorkbenchProvider id={project.project_id}>
+			<WorkbenchProvider
+				cacheKey={
+					readOnly
+						? `${project.project_id}--read-only`
+						: project.project_id
+				}
+			>
 				<AutomationWorkbench
 					appId={project.project_id}
+					permission={permission}
 					readOnly={readOnly}
 					projectName={
 						project.project_display_name || project.project_name
