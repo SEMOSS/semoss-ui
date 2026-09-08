@@ -58,6 +58,11 @@
 		"logOut": "Log out",
 		"acknowledge": "Acknowledge"
 	},
+	"sessionRevoked": {
+		"title": "You have been signed out",
+		"body": "You have been signed out. Please contact support for assistance.",
+		"action": "Return to sign in"
+	},
 	"pagination": {
 		"rowsPerPage": "Rows per page:"
 	},

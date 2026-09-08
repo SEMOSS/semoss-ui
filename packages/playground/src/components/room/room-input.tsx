@@ -372,7 +372,11 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 		const [isPromptLibraryOpen, setIsPromptLibraryOpen] = useState(false);
 
 		const runPredefinedPrompt = async (prompt: string) => {
-			if (isLoading || hasOutstandingTools) {
+			if (
+				isLoading ||
+				hasOutstandingTools ||
+				root.sessionRevoked.revoked
+			) {
 				return;
 			}
 
@@ -530,8 +534,14 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 			// Capture files before clearing (for potential restore on error)
 			const userFiles = [...files];
 
-			// Guard: prevent submission if empty, loading, or waiting for tool response
-			if (!userInput || isLoading || hasOutstandingTools) {
+			// Guard: prevent submission if empty, loading, waiting for tool response,
+			// or the session has been revoked (every subsequent pixel would fail anyway)
+			if (
+				!userInput ||
+				isLoading ||
+				hasOutstandingTools ||
+				root.sessionRevoked.revoked
+			) {
 				return;
 			}
 
@@ -574,6 +584,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 		// parent from the turn + cancel state); only the idle "send" case needs
 		// the local editor/tool signals to decide enablement + tooltip.
 		const sendDisabled =
+			root.sessionRevoked.revoked ||
 			sendState === "loading" ||
 			(sendState === "send" && (isEmpty || hasOutstandingTools));
 		const handleSendClick = () => {
