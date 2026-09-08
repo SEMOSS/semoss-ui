@@ -38,8 +38,11 @@ export function parseSqlList(value: string): string[] {
 	if (!value) return [];
 	const out: string[] = [];
 	const re = /'((?:[^']|'')*)'/g;
-	let m: RegExpExecArray | null;
-	while ((m = re.exec(value)) !== null) out.push(m[1].replace(/''/g, "'"));
+	let m = re.exec(value);
+	while (m !== null) {
+		out.push(m[1].replace(/''/g, "'"));
+		m = re.exec(value);
+	}
 	return out;
 }
 
@@ -246,6 +249,8 @@ function MultiSelect({
 	};
 	return (
 		<div className="relative">
+			{/* biome-ignore lint/a11y/noStaticElementInteractions: click-to-focus convenience on a container that wraps a real, natively-focusable <input>. */}
+			{/* biome-ignore lint/a11y/useKeyWithClickEvents: the wrapped <input> is already keyboard-focusable via Tab; no separate key handler is needed. */}
 			<div
 				onClick={() => setOpen(true)}
 				className={`flex flex-wrap items-center gap-1 rounded-lg border border-slate-200 bg-white px-2 ${size === "sm" ? "py-1" : "py-1.5"} cursor-text focus-within:border-blue-400 focus-within:ring-2 focus-within:ring-blue-500/20`}
@@ -300,7 +305,10 @@ function MultiSelect({
 				/>
 			</div>
 			{open && (
-				<ul className="absolute z-30 mt-1 max-h-48 w-full overflow-auto rounded-lg border border-slate-200 bg-white py-1 shadow-lg">
+				<ul
+					className="absolute z-30 mt-1 max-h-48 w-full overflow-auto rounded-lg border border-slate-200 bg-white py-1 shadow-lg"
+					onMouseDown={(e) => e.preventDefault()}
+				>
 					{filtered.length === 0 && (
 						<li className="px-3 py-1.5 text-slate-400 text-xs">
 							No matches
@@ -312,10 +320,7 @@ function MultiSelect({
 							<li key={o}>
 								<button
 									type="button"
-									onMouseDown={(e) => {
-										e.preventDefault();
-										toggle(o);
-									}}
+									onClick={() => toggle(o)}
 									className={`flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm hover:bg-slate-50 ${on ? "font-semibold text-indigo-600" : "text-slate-700"}`}
 								>
 									<span
