@@ -63,6 +63,14 @@ export interface Workspace {
 		 * opinion and the room's own model is used.
 		 */
 		model_id?: string;
+		/**
+		 * The agent's scripted opening message, rendered as the first bubble in
+		 * a new room. Shown only when `greeting_enabled` is true and this is
+		 * non-empty; never sent to the model as context.
+		 */
+		greeting?: string;
+		/** Whether `greeting` is shown. Toggling this off keeps the authored text. */
+		greeting_enabled?: boolean;
 	};
 }
 

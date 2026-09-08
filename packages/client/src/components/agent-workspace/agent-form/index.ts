@@ -13,4 +13,5 @@ export { buildEditWorkspacePixel, getWorkspaceSaveWarning } from "./pixel";
 export {
 	AGENT_FORM_DEFAULT_VALUES,
 	type AgentFormValues,
+	MAX_GREETING_LENGTH,
 } from "./types";

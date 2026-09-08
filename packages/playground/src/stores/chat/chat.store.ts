@@ -290,17 +290,17 @@ export class ChatStore {
 	};
 
 	/**
-	 * Create a new room
+	 * Creates a room via CreatePlaygroundRoom and brings it to model/mode/name
+	 * ready state, without options, a message, or surfacing it anywhere.
+	 * Shared by createRoom and createEmptyRoom so neither duplicates the
+	 * room-creation pixel call — each then sequences initialize()/
+	 * updateRoomOptions() in whichever order its own needs require.
 	 */
-	createRoom = async (
+	private createRoomShell = async (
 		mode: "agent" | "chat",
-		prompt: string,
-		files: File[],
-		options: RoomStore["options"],
+		name: string,
 		workspaceId?: string,
-		askOptions?: { visible?: boolean },
 	): Promise<RoomStore> => {
-		// create the room in a new insight
 		const { errors, pixelReturn, insightId } = await runPixel<
 			[
 				{
@@ -312,34 +312,41 @@ export class ChatStore {
 			"new",
 		);
 
-		// throw errors
 		if (errors.length > 0) {
 			throw new Error(errors.join(""));
 		}
 
-		// get the output
-		const { output } = pixelReturn[0];
-
-		// get the new roomId
-		const roomId = output.roomId;
-
-		// create the room store
+		const roomId = pixelReturn[0].output.roomId;
 		const room = new RoomStore(this._theme, roomId, insightId);
 
-		// set the model
 		room.setModel(this.models.selected);
-
-		// set the mode
 		room.setMode(mode);
+		room.setMetadata({ name });
 
-		// set default name
-		room.setMetadata({ name: prompt.substring(0, 15) });
+		return room;
+	};
 
-		// initialize the room
+	/**
+	 * Create a new room
+	 */
+	createRoom = async (
+		mode: "agent" | "chat",
+		prompt: string,
+		files: File[],
+		options: RoomStore["options"],
+		workspaceId?: string,
+		askOptions?: { visible?: boolean },
+	): Promise<RoomStore> => {
+		const room = await this.createRoomShell(
+			mode,
+			prompt.substring(0, 15),
+			workspaceId,
+		);
+		// initialize() before updateRoomOptions() is deliberate: see the
+		// harnessType comment in RoomStore.initialize().
 		await room.initialize();
-
-		// set the options
 		await room.updateRoomOptions(options);
+		const roomId = room.roomId;
 
 		runInAction(() => {
 			// save it to the cache
@@ -375,6 +382,30 @@ export class ChatStore {
 		})();
 
 		// return the room
+		return room;
+	};
+
+	/**
+	 * Create a room with no first message — e.g. so an agent's scripted
+	 * greeting can render immediately on selection. Registered in the local
+	 * cache (not surfaced as an optimistic nav entry) so loadRoom finds it
+	 * after navigation; it only joins the nav once a real message gives
+	 * GetPlaygroundRooms something to return.
+	 */
+	createEmptyRoom = async (
+		mode: "agent" | "chat",
+		name: string,
+		options: RoomStore["options"],
+		workspaceId?: string,
+	): Promise<RoomStore> => {
+		const room = await this.createRoomShell(mode, name, workspaceId);
+		// updateRoomOptions() before initialize() — unlike createRoom — so the
+		// workspace is already persisted by the time initialize() reads options
+		// back and derives agentGreeting from it. Otherwise the greeting is
+		// silently empty until the room is reloaded once.
+		await room.updateRoomOptions(options);
+		await room.initialize();
+		this.registerRoom(room);
 		return room;
 	};
 

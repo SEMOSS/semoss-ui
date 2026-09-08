@@ -103,7 +103,6 @@ export class RootStore {
 				showActivityLog: true,
 				showPlatformLinks: true,
 				enableFeedbackText: true,
-				enableAutoGreeting: false,
 				enableTemperature: false,
 			},
 		},

@@ -12,11 +12,13 @@ import {
 	BreadcrumbSeparator,
 	Button,
 	Field,
+	FieldDescription,
 	FieldLabel,
 	H4,
 	Input,
 	P,
 	Progress,
+	Switch,
 	Textarea,
 	toast,
 } from "@semoss/ui/next";
@@ -29,6 +31,7 @@ import {
 	AgentSubagentsField,
 	buildEditWorkspacePixel,
 	getWorkspaceSaveWarning,
+	MAX_GREETING_LENGTH,
 } from "@/components/agent-workspace/agent-form";
 import { UploadProjectDialog } from "@/components/project";
 import { NavbarHeader, NavbarLeft } from "@/components/shared";
@@ -44,15 +47,19 @@ export const CreateAgentPage = () => {
 	const nameId = useId();
 	const descId = useId();
 	const instructionsId = useId();
+	const greetingId = useId();
 
 	const {
 		control,
 		handleSubmit,
+		watch,
 		formState: { isValid },
 	} = useForm<AgentFormValues>({
 		mode: "onChange",
 		defaultValues: AGENT_FORM_DEFAULT_VALUES,
 	});
+
+	const greetingEnabled = watch("greetingEnabled");
 
 	const navigateAgent = (appId: string) => {
 		if (!appId) return;
@@ -94,7 +101,9 @@ export const CreateAgentPage = () => {
 				data.maxSubagentsPerRun ||
 				data.maxSpawnsPerTurn ||
 				data.subagents.some((s) => s.workspaceId) ||
-				data.disabledDefaultTools.length > 0;
+				data.disabledDefaultTools.length > 0 ||
+				data.greeting ||
+				data.greetingEnabled;
 			if (hasExecutionSettings) {
 				const {
 					errors: settingsErrors,
@@ -230,6 +239,43 @@ export const CreateAgentPage = () => {
 								</Field>
 							)}
 						/>
+
+						<Field>
+							<div className="flex items-center justify-between gap-2">
+								<FieldLabel htmlFor={greetingId}>
+									Greeting
+								</FieldLabel>
+								<Controller
+									name="greetingEnabled"
+									control={control}
+									render={({ field }) => (
+										<Switch
+											checked={field.value}
+											onCheckedChange={field.onChange}
+										/>
+									)}
+								/>
+							</div>
+							<Controller
+								name="greeting"
+								control={control}
+								render={({ field }) => (
+									<Textarea
+										id={greetingId}
+										placeholder="Hi, I'm your IT support assistant. I can help you reset a password, check the status of an open ticket, or troubleshoot a common issue. What do you need help with?"
+										rows={3}
+										maxLength={MAX_GREETING_LENGTH}
+										disabled={!greetingEnabled}
+										{...field}
+									/>
+								)}
+							/>
+							<FieldDescription>
+								Shown as the agent's opening message when a room
+								starts. Costs no tokens and is never visible to
+								the model.
+							</FieldDescription>
+						</Field>
 
 						<AgentModelField control={control} />
 					</AgentFormSection>

@@ -145,7 +145,9 @@ export const NewRoomPage = observer(() => {
 		null,
 	);
 	const submittedRef = useRef(false);
-	const autoGreetedRef = useRef(false);
+	// Guards the greeting-room effect below so a remount / StrictMode
+	// double-invoke doesn't create two rooms for the same agent.
+	const greetingRoomStartedForRef = useRef<string>("");
 	const [mode, setMode] = useState<"chat" | "agent">("chat");
 
 	// tempRoomStore is only created once (createRoom below builds the real,
@@ -208,6 +210,45 @@ export const NewRoomPage = observer(() => {
 	}, [tempRoomStore, root.theme]);
 
 	/**
+	 * Options shared by every room-creation path: current MCPs, the agent
+	 * harness selection, and the selected workspace (if any).
+	 */
+	const buildRoomOptions = (): RoomStore["options"] => {
+		const options = {
+			...tempRoomStore.options,
+			mcp: tempRoomStore.options.mcp,
+			// Persist the agent harness selection so the room stays in agent
+			// mode across reloads.
+			harnessType: mode === "agent" ? "semoss" : undefined,
+		};
+
+		// add workspace id and name
+		if (selectedWorkspaceId) {
+			options.workspace = {
+				workspace_id: getWorkspace.data?.workspace_id || "",
+				name: getWorkspace.data?.name,
+			};
+		}
+
+		return options;
+	};
+
+	/** Shared error handling for every room-creation path below. */
+	const handleCreateRoomError = (error: unknown) => {
+		const sdkError = error as { message: string; code?: number };
+		if (
+			sdkError.code !== undefined &&
+			(sdkError.code === 403 || sdkError.code === 302)
+		) {
+			// User is unauthorized, likely due to expired session. Prompt them to log in again.
+			toast.error(t("chat:gracefulErrors.inactivity"));
+			return;
+		}
+
+		toast.error(t("room:errors.createRoom", { message: sdkError.message }));
+	};
+
+	/**
 	 * Create a new room and ask the model
 	 *
 	 * @param prompt The prompt to ask
@@ -228,21 +269,7 @@ export const NewRoomPage = observer(() => {
 			// turn the loading screen
 			setIsLoading(true);
 
-			const options = {
-				...tempRoomStore.options,
-				mcp: tempRoomStore.options.mcp,
-				// Persist the agent harness selection so the room stays in agent
-				// mode across reloads.
-				harnessType: mode === "agent" ? "semoss" : undefined,
-			};
-
-			// add workspace id and name
-			if (selectedWorkspaceId) {
-				options.workspace = {
-					workspace_id: getWorkspace.data?.workspace_id || "",
-					name: getWorkspace.data?.name,
-				};
-			}
+			const options = buildRoomOptions();
 
 			if (preCreatedRoom) {
 				// Room was pre-created so files could be uploaded to its insight.
@@ -291,19 +318,39 @@ export const NewRoomPage = observer(() => {
 				navigate(`/room/${room.roomId}`);
 			}
 		} catch (error: unknown) {
-			const sdkError = error as { message: string; code?: number };
-			if (
-				sdkError.code !== undefined &&
-				(sdkError.code === 403 || sdkError.code === 302)
-			) {
-				// User is unauthorized, likely due to expired session. Prompt them to log in again.
-				toast.error(t("chat:gracefulErrors.inactivity"));
-				return;
-			}
+			handleCreateRoomError(error);
+		} finally {
+			setIsLoading(false);
+		}
+	};
 
-			toast.error(
-				t("room:errors.createRoom", { message: sdkError.message }),
+	/**
+	 * Start a message-less room for an agent's scripted greeting — the room
+	 * exists with the workspace attached, but nothing is asked. No pixel ever
+	 * writes a message, so the greeting never reaches the model as context.
+	 */
+	const startAgentGreetingRoom = async (
+		workspaceId: string,
+		name: string,
+	) => {
+		if (isLoading) {
+			return;
+		}
+
+		try {
+			setIsLoading(true);
+
+			const options = buildRoomOptions();
+			const room = await chat.createEmptyRoom(
+				mode === "agent" ? "agent" : "chat",
+				name,
+				options,
+				workspaceId,
 			);
+			submittedRef.current = true;
+			navigate(`/room/${room.roomId}`);
+		} catch (error: unknown) {
+			handleCreateRoomError(error);
 		} finally {
 			setIsLoading(false);
 		}
@@ -320,7 +367,6 @@ export const NewRoomPage = observer(() => {
 	}, [workspaceIdSearchParams]);
 
 	// Handle workspace data loading from RoomWorkspace component selection
-	// biome-ignore lint/correctness/useExhaustiveDependencies: autoGreetedRef guards re-fires
 	useEffect(() => {
 		if (!selectedWorkspaceId) {
 			// clearing the agent clears the guard below, so picking the same
@@ -392,15 +438,6 @@ export const NewRoomPage = observer(() => {
 				name: getWorkspace.data.name,
 			},
 		});
-
-		// Kick off the workspace's greeting once, silently — only the reply shows.
-		if (
-			root.theme.featureFlags?.enableAutoGreeting &&
-			!autoGreetedRef.current
-		) {
-			autoGreetedRef.current = true;
-			createRoom("Hello", [], { visible: false });
-		}
 	}, [
 		selectedWorkspaceId,
 		getWorkspace.status,
@@ -408,6 +445,39 @@ export const NewRoomPage = observer(() => {
 		tempRoomStore,
 		chat,
 	]);
+
+	// Select an agent whose greeting is enabled and non-empty → drop straight
+	// into an empty room with it already rendered, instead of the landing
+	// page. Guarded per-workspace so a remount/StrictMode double-invoke (or
+	// re-selecting the same agent) doesn't create a second room.
+	// biome-ignore lint/correctness/useExhaustiveDependencies: greetingRoomStartedForRef guards re-fires; startAgentGreetingRoom/mode/tempRoomStore/chat/navigate are stable enough in practice and re-listing them would re-run this on every render
+	useEffect(() => {
+		if (
+			!selectedWorkspaceId ||
+			getWorkspace.status !== "SUCCESS" ||
+			!getWorkspace.data
+		) {
+			return;
+		}
+		// Same outgoing-agent-data guard as the effect above.
+		if (getWorkspace.data.workspace_id !== selectedWorkspaceId) {
+			return;
+		}
+		if (greetingRoomStartedForRef.current === selectedWorkspaceId) {
+			return;
+		}
+
+		const cfg = getWorkspace.data.config_json;
+		if (!cfg?.greeting_enabled || !cfg.greeting) {
+			return;
+		}
+
+		greetingRoomStartedForRef.current = selectedWorkspaceId;
+		void startAgentGreetingRoom(
+			selectedWorkspaceId,
+			getWorkspace.data.name,
+		);
+	}, [selectedWorkspaceId, getWorkspace.status, getWorkspace.data]);
 
 	// Handle knowledge vector engine from URL parameter
 	useEffect(() => {
