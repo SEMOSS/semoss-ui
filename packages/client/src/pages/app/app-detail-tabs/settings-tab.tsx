@@ -141,9 +141,9 @@ export const SettingsTab = (props: AppSettingsProps) => {
 	const recompileReactors = ({ release }) => {
 		let pixelString: string;
 		if (release == null) {
-			pixelString = `ReloadInsightClasses(project='${project.project_id}');`;
+			pixelString = `CompileAppReactors(project='${project.project_id}');`;
 		} else {
-			pixelString = `ReloadInsightClasses(project='${project.project_id}', release=true);`;
+			pixelString = `CompileAppReactors(project='${project.project_id}', release=true);`;
 		}
 
 		monolithStore
@@ -232,7 +232,7 @@ export const SettingsTab = (props: AppSettingsProps) => {
 
 			// Load the insight classes
 			await monolithStore.runQuery(
-				`ReloadInsightClasses(project='${project.project_id}', release=true);`,
+				`CompileAppReactors(project='${project.project_id}', release=true);`,
 			);
 
 			// Publish the app the insight classes

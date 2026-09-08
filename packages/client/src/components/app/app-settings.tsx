@@ -116,8 +116,8 @@ export const AppSettings = (props: AppSettingsProps) => {
 	const recompileReactors = ({ release }) => {
 		const pixelString =
 			release == null
-				? `ReloadInsightClasses(project='${id}');`
-				: `ReloadInsightClasses(project='${id}', release=true);`;
+				? `CompileAppReactors(project='${id}');`
+				: `CompileAppReactors(project='${id}', release=true);`;
 
 		monolithStore
 			.runQuery(pixelString)
@@ -174,7 +174,7 @@ export const AppSettings = (props: AppSettingsProps) => {
 				`UnzipFile(filePath=["${`${path}${upload[0].fileName}`}"], space=["${id}"]);`,
 			);
 			await monolithStore.runQuery(
-				`ReloadInsightClasses(project='${id}', release=true);`,
+				`CompileAppReactors(project='${id}', release=true);`,
 			);
 			await monolithStore.runQuery(
 				`PublishProject(project='${id}', release=true);`,
