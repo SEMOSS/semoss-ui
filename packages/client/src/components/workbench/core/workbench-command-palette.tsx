@@ -67,6 +67,9 @@ export const WorkbenchCommandPalette: FC = () => {
 		const filteredItems: WorkbenchPaletteItem[] = [];
 		const itemsById = new Map<string, WorkbenchPaletteItem>();
 		for (const command of commandList) {
+			if (command.visible === false) {
+				continue;
+			}
 			const item: WorkbenchPaletteItem = {
 				id: command.id,
 				category: command.category,

@@ -41,16 +41,17 @@ export interface WorkbenchCommandSliceState
  * Creates the flat command registry for one workbench.
  *
  * @name createWorkbenchCommandSlice
+ * @param cacheKey - Unique key used to isolate persisted command recents.
  * @return Zustand state creator for the workbench command slice.
  */
 export const createWorkbenchCommandSlice =
-	(id: string): WorkbenchSlice<WorkbenchCommandSliceState> =>
+	(cacheKey: string): WorkbenchSlice<WorkbenchCommandSliceState> =>
 	(set, get) => {
-		const cacheKey = `smss-workbench--commands--${id}--0`;
+		const storageKey = `smss-workbench--commands--${cacheKey}--1`;
 
 		let recentCommands: string[] = [];
 		try {
-			const item = localStorage.getItem(cacheKey);
+			const item = localStorage.getItem(storageKey);
 			if (item) {
 				recentCommands = JSON.parse(item);
 			}
@@ -142,6 +143,9 @@ export const createWorkbenchCommandSlice =
 						);
 						return;
 					}
+					if (registeredCommand.visible === false) {
+						return;
+					}
 
 					registeredCommand.handler(get);
 
@@ -158,7 +162,7 @@ export const createWorkbenchCommandSlice =
 
 					try {
 						localStorage.setItem(
-							cacheKey,
+							storageKey,
 							JSON.stringify(recentCommands),
 						);
 					} catch (e) {

@@ -4,6 +4,7 @@ import type { WorkbenchPanelConfigAny } from "../workbench.types";
 
 const EDITOR = "EDITOR";
 const OTHER = "OTHER";
+const PINNED = "PINNED";
 
 /** File-style blueprints dedupe on their path, the way the real editors do. */
 const COMPONENTS: Record<string, WorkbenchPanelConfigAny> = {
@@ -13,6 +14,11 @@ const COMPONENTS: Record<string, WorkbenchPanelConfigAny> = {
 		matches: (a, b) => a.path === b.path,
 	},
 	[OTHER]: { name: "Other", content: () => null },
+	[PINNED]: {
+		name: "Pinned",
+		content: () => null,
+		canClose: false,
+	},
 };
 
 /** A store with the blueprints registered and nothing open. */
@@ -58,16 +64,50 @@ describe("closePanel", () => {
 	});
 
 	it("honours canClose", () => {
-		const store = createWorkbenchStore("close-panel-cannot");
-		store.getState().layout.actions.registerComponents({
-			PINNED: { name: "Pinned", content: () => null, canClose: false },
-		});
-		const layout = () => store.getState().layout;
+		const layout = setup("close-panel-cannot");
 
-		const pid = layout().actions.spawnPanel("PINNED");
+		const pid = layout().actions.spawnPanel(PINNED);
 		layout().actions.closePanel(pid);
 
 		expect(layout().panels[pid]).toBeDefined();
+	});
+});
+
+describe("layout cache keys", () => {
+	it("isolates persisted layouts by cache key", () => {
+		localStorage.setItem(
+			"smss-workbench--layout--cache-variant",
+			JSON.stringify({
+				tree: {
+					type: "tabset",
+					id: "main",
+					size: 1,
+					panelIds: ["editable-only"],
+					activeId: "editable-only",
+				},
+				panels: {
+					"editable-only": {
+						id: "editable-only",
+						type: EDITOR,
+						name: "Editable only",
+					},
+				},
+				borders: {},
+			}),
+		);
+		const store = createWorkbenchStore("cache-variant--read-only");
+		store.getState().layout.actions.loadLayout({
+			tree: {
+				type: "tabset",
+				id: "main",
+				size: 1,
+				panelIds: [],
+				activeId: null,
+			},
+			panels: {},
+		});
+
+		expect(store.getState().layout.panels).toEqual({});
 	});
 });
 

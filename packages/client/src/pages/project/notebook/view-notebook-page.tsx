@@ -32,7 +32,7 @@ export const ViewNotebookPage = () => {
 
 	return (
 		<InsightProvider options={{ app: project.project_id }}>
-			<WorkbenchProvider id={`${project.project_id}-view`}>
+			<WorkbenchProvider cacheKey={`${project.project_id}-view`}>
 				<NavbarLeft>
 					<NavbarHeader logo={null} />
 					<Breadcrumb>
