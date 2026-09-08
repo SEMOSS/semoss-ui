@@ -30,6 +30,14 @@ function stringValue(value: unknown): string {
 	return typeof value === "string" ? value : "";
 }
 
+function jsonObjectValue(value: unknown): string {
+	if (typeof value === "string") return value;
+	if (value && typeof value === "object" && !Array.isArray(value)) {
+		return JSON.stringify(value);
+	}
+	return "";
+}
+
 function numberValue(value: unknown, fallback: number): number {
 	return typeof value === "number" && Number.isFinite(value)
 		? value
@@ -258,7 +266,7 @@ function defaultCanvasConfig(
 		return {
 			engineId,
 			operation: "execute",
-			params: stringValue(config.arguments),
+			params: jsonObjectValue(config.arguments),
 		};
 	}
 	if (type === "agent.run") {
