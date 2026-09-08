@@ -26,6 +26,7 @@ import {
 	type ReactNode,
 	useCallback,
 	useEffect,
+	useMemo,
 	useRef,
 	useState,
 } from "react";
@@ -77,6 +78,7 @@ import {
 	type DropZoneDataWithTable,
 	VizConfigTabs,
 } from "@/components/VizConfigTabs";
+import { useListboxNavigation } from "@/hooks/useListboxNavigation";
 import { placeholderNames } from "@/lib/paramInference";
 import { isDataProduct } from "@/lib/queryPixel";
 import { makeVizFilterGroup } from "@/lib/vizFilter";
@@ -1443,6 +1445,22 @@ function QueryPicker({
 	const [renaming, setRenaming] = useState(false);
 	const [draft, setDraft] = useState("");
 	const bound = queries.find((q) => q.id === boundQueryId);
+	const newQueryKey = "query-picker:new";
+	const itemKeys = useMemo(
+		() => [...queries.map((q) => q.id), newQueryKey],
+		[queries],
+	);
+	const navigation = useListboxNavigation({
+		keys: itemKeys,
+		open,
+		selectedKey: boundQueryId,
+		onActivate: (key) => {
+			if (key === newQueryKey) onNew();
+			else onSelect(key);
+			setOpen(false);
+		},
+		onEscape: () => setOpen(false),
+	});
 
 	const startRename = () => {
 		setDraft(bound?.name ?? "");
@@ -1503,6 +1521,25 @@ function QueryPicker({
 					<button
 						type="button"
 						title="Reuse a saved query across charts, or create a new one"
+						role="combobox"
+						aria-haspopup="listbox"
+						aria-expanded={open}
+						aria-controls={open ? navigation.listboxId : undefined}
+						onKeyDown={(event) => {
+							if (
+								!open &&
+								[
+									"ArrowDown",
+									"ArrowUp",
+									"Home",
+									"End",
+									"Enter",
+								].includes(event.key)
+							) {
+								event.preventDefault();
+								setOpen(true);
+							}
+						}}
 						className="inline-flex w-44 items-center justify-between gap-1.5 rounded-md border border-stone-200 bg-white px-2 py-1 text-[13px] text-stone-700 hover:border-stone-300"
 					>
 						<span className="truncate">
@@ -1517,29 +1554,59 @@ function QueryPicker({
 				<PopoverContent
 					align="start"
 					className="w-64 overflow-hidden p-1 py-1"
+					onKeyDown={(event) => {
+						if (
+							(event.target as HTMLElement).closest(
+								"[data-listbox-action]",
+							)
+						)
+							return;
+						navigation.onKeyDown(event);
+					}}
 				>
 					{queries.length === 0 ? (
 						<p className="px-2.5 py-2 text-[12px] text-stone-400">
 							No saved queries yet.
 						</p>
 					) : (
-						<div className="max-h-64 overflow-y-auto">
+						<div
+							id={navigation.listboxId}
+							role="listbox"
+							aria-label="Queries"
+							className="max-h-64 overflow-y-auto"
+						>
 							{queries.map((q) => {
 								const active = q.id === boundQueryId;
 								const removable =
 									q.usageCount === 0 && !!onDelete;
 								return (
+									// biome-ignore lint/a11y/noStaticElementInteractions: onMouseEnter only mirrors keyboard-driven hover-highlight for the nested option button; the real interaction is the button's onClick.
 									<div
 										key={q.id}
+										onMouseEnter={() =>
+											navigation.setActiveKey(q.id)
+										}
 										className={cx(
 											"group flex items-center gap-2 px-2.5 py-1.5 text-[13px]",
 											active
 												? "bg-indigo-50/60"
-												: "hover:bg-stone-50",
+												: navigation.activeKey === q.id
+													? "bg-stone-100"
+													: "hover:bg-stone-50",
 										)}
 									>
 										<button
+											ref={(node) =>
+												navigation.setOptionRef(
+													q.id,
+													node,
+												)
+											}
+											id={navigation.getOptionId(q.id)}
+											role="option"
+											aria-selected={active}
 											type="button"
+											tabIndex={-1}
 											onClick={() => {
 												onSelect(q.id);
 												setOpen(false);
@@ -1565,6 +1632,7 @@ function QueryPicker({
 										{removable && (
 											<button
 												type="button"
+												data-listbox-action
 												onClick={(e) => {
 													e.stopPropagation();
 													onDelete?.(q.id);
@@ -1582,12 +1650,26 @@ function QueryPicker({
 					)}
 					<div className="mt-1 border-stone-100 border-t pt-1">
 						<button
+							ref={(node) =>
+								navigation.setOptionRef(newQueryKey, node)
+							}
+							id={navigation.getOptionId(newQueryKey)}
+							role="option"
+							aria-selected="false"
 							type="button"
+							tabIndex={-1}
+							onMouseEnter={() =>
+								navigation.setActiveKey(newQueryKey)
+							}
 							onClick={() => {
 								onNew();
 								setOpen(false);
 							}}
-							className="flex w-full items-center gap-2 px-2.5 py-1.5 text-left font-semibold text-[13px] text-indigo-600 hover:bg-indigo-50"
+							className={cx(
+								"flex w-full items-center gap-2 px-2.5 py-1.5 text-left font-semibold text-[13px] text-indigo-600 hover:bg-indigo-50",
+								navigation.activeKey === newQueryKey &&
+									"bg-indigo-50",
+							)}
 						>
 							<Plus className="h-3.5 w-3.5" /> New query
 						</button>

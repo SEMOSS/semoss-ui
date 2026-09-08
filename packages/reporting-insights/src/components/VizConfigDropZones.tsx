@@ -5,8 +5,9 @@ import {
 	type DropResult,
 } from "@hello-pangea/dnd";
 import { GripVertical, Hash, Plus, Search, Type, X } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { SearchableSelect } from "@/components/ui/SearchableSelect";
+import { useListboxNavigation } from "@/hooks/useListboxNavigation";
 import { aggOptionsForType, normalizeDataType } from "@/lib/tableAggregate";
 import type {
 	VisualizationStyling,
@@ -732,8 +733,13 @@ export function VizConfigDropZones({
 	const [search, setSearch] = useState("");
 	// Which column's "add to zone" menu is open (the + next to a column name).
 	const [addColMenu, setAddColMenu] = useState<string | null>(null);
+	const standardSearchRef = useRef<HTMLInputElement>(null);
+	const tableSearchRef = useRef<HTMLInputElement>(null);
 
-	const zones = DROP_ZONES_CONFIG[visualizationType] || [];
+	const zones = useMemo(
+		() => DROP_ZONES_CONFIG[visualizationType] || [],
+		[visualizationType],
+	);
 
 	const filteredColumns = useMemo(() => {
 		if (!search.trim()) return columns;
@@ -841,18 +847,139 @@ export function VizConfigDropZones({
 		onChange({ ...value, [zoneId]: updated });
 	};
 
+	const tableSelected = useMemo(
+		() => value.tableColumns ?? [],
+		[value.tableColumns],
+	);
+	const tableSelectedSet = useMemo(
+		() => new Set(tableSelected),
+		[tableSelected],
+	);
+	const tableAvailableColumns = useMemo(() => {
+		const term = search.trim().toLowerCase();
+		return columns.filter(
+			(column) =>
+				!tableSelectedSet.has(column.name) &&
+				(!term || column.name.toLowerCase().includes(term)),
+		);
+	}, [columns, search, tableSelectedSet]);
+	const filteredColumnNames = useMemo(
+		() => filteredColumns.map((column) => column.name),
+		[filteredColumns],
+	);
+	const tableAvailableColumnNames = useMemo(
+		() => tableAvailableColumns.map((column) => column.name),
+		[tableAvailableColumns],
+	);
+
+	const dimensionsNavigation = useListboxNavigation({
+		keys: filteredColumnNames,
+		open: visualizationType !== "table",
+		autoActivate: false,
+		onActivate: (columnName) => {
+			if (zones.length === 1) addColumnToZone(zones[0].id, columnName);
+			else if (zones.length > 1) setAddColMenu(columnName);
+		},
+		onEscape: () => setAddColMenu(null),
+	});
+
+	const availableZoneIds = useMemo(
+		() =>
+			addColMenu
+				? zones
+						.filter(
+							(zone) =>
+								!(value[zone.id] || []).some(
+									(column) => column.name === addColMenu,
+								),
+						)
+						.map((zone) => zone.id)
+				: [],
+		[addColMenu, value, zones],
+	);
+	const zoneNavigation = useListboxNavigation({
+		keys: availableZoneIds,
+		open: addColMenu !== null && zones.length > 1,
+		onActivate: (zoneId) => {
+			if (!addColMenu) return;
+			addColumnToZone(zoneId, addColMenu);
+			setAddColMenu(null);
+			requestAnimationFrame(() => standardSearchRef.current?.focus());
+		},
+		onEscape: () => {
+			setAddColMenu(null);
+			requestAnimationFrame(() => standardSearchRef.current?.focus());
+		},
+	});
+	const tableNavigation = useListboxNavigation({
+		keys: tableAvailableColumnNames,
+		open: visualizationType === "table",
+		autoActivate: false,
+		onActivate: (columnName) => {
+			onChange({
+				...value,
+				tableColumns: [...tableSelected, columnName],
+			} as DropZoneDataWithTable);
+			requestAnimationFrame(() => tableSearchRef.current?.focus());
+		},
+		onEscape: () => setSearch(""),
+	});
+
+	useEffect(() => {
+		const onPointerDown = (event: MouseEvent) => {
+			const target = event.target as HTMLElement;
+			const rowAttribute =
+				visualizationType === "table"
+					? "data-table-column-row"
+					: "data-dimension-row";
+			const searchRef =
+				visualizationType === "table"
+					? tableSearchRef
+					: standardSearchRef;
+			if (
+				target.closest(`[${rowAttribute}]`) ||
+				searchRef.current?.contains(target)
+			)
+				return;
+			if (visualizationType === "table")
+				tableNavigation.setActiveKey(null);
+			else dimensionsNavigation.setActiveKey(null);
+		};
+		const onKeyDown = (event: KeyboardEvent) => {
+			if (addColMenu) return;
+			const navigation =
+				visualizationType === "table"
+					? tableNavigation
+					: dimensionsNavigation;
+			if (!navigation.activeKey) return;
+			const searchRef =
+				visualizationType === "table"
+					? tableSearchRef
+					: standardSearchRef;
+			if (event.target === searchRef.current) return;
+			const target = event.target as HTMLElement;
+			if (
+				target.closest(
+					'input, textarea, select, button, [contenteditable="true"]',
+				)
+			)
+				return;
+			navigation.onKeyDown(event);
+		};
+		document.addEventListener("mousedown", onPointerDown);
+		document.addEventListener("keydown", onKeyDown);
+		return () => {
+			document.removeEventListener("mousedown", onPointerDown);
+			document.removeEventListener("keydown", onKeyDown);
+		};
+	}, [addColMenu, dimensionsNavigation, tableNavigation, visualizationType]);
+
 	// For table type: manual column selection + per-column aggregation / group-by.
 	if (visualizationType === "table") {
 		// Empty by default — the user adds the columns they want.
-		const selected = value.tableColumns ?? [];
+		const selected = tableSelected;
 		const aggs = value.columnAggregations ?? {};
-		const selectedSet = new Set(selected);
-		const term = search.trim().toLowerCase();
-		const availableCols = columns.filter(
-			(c) =>
-				!selectedSet.has(c.name) &&
-				(!term || c.name.toLowerCase().includes(term)),
-		);
+		const availableCols = tableAvailableColumns;
 		const colByName = (name: string): Column =>
 			columns.find((c) => c.name === name) ??
 			columns.find(
@@ -955,12 +1082,29 @@ export function VizConfigDropZones({
 								<div className="relative">
 									<Search className="-translate-y-1/2 absolute top-1/2 left-2 h-3.5 w-3.5 text-stone-400" />
 									<input
+										ref={tableSearchRef}
+										role="combobox"
+										aria-autocomplete="list"
+										aria-expanded="true"
+										aria-controls={
+											tableNavigation.listboxId
+										}
+										aria-activedescendant={
+											tableNavigation.activeDescendant
+										}
 										className="w-full rounded border border-stone-200 py-1.5 pr-2 pl-8 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-400"
 										placeholder="Search columns..."
 										value={search}
 										onChange={(e) =>
 											setSearch(e.target.value)
 										}
+										onClick={() =>
+											tableNavigation.setActiveKey(
+												tableAvailableColumnNames[0] ??
+													null,
+											)
+										}
+										onKeyDown={tableNavigation.onKeyDown}
 									/>
 								</div>
 							</div>
@@ -969,6 +1113,9 @@ export function VizConfigDropZones({
 									<div
 										ref={provided.innerRef}
 										{...provided.droppableProps}
+										id={tableNavigation.listboxId}
+										role="listbox"
+										aria-label="Available table columns"
 										className={`flex-1 space-y-1.5 overflow-y-auto p-2 ${snapshot.isDraggingOver ? "bg-indigo-50/50" : ""}`}
 									>
 										{availableCols.map((c, index) => (
@@ -979,13 +1126,34 @@ export function VizConfigDropZones({
 											>
 												{(p, snap) => (
 													<div
-														ref={p.innerRef}
+														ref={(node) => {
+															p.innerRef(node);
+															tableNavigation.setOptionRef(
+																c.name,
+																node,
+															);
+														}}
 														{...p.draggableProps}
 														{...p.dragHandleProps}
+														id={tableNavigation.getOptionId(
+															c.name,
+														)}
+														role="option"
+														tabIndex={-1}
+														aria-selected="false"
+														data-table-column-row
+														onMouseEnter={() =>
+															tableNavigation.setActiveKey(
+																c.name,
+															)
+														}
 														className={`flex cursor-grab items-center gap-1.5 rounded-md border px-2 py-2 transition-all active:cursor-grabbing ${
 															snap.isDragging
 																? "border-indigo-400 bg-indigo-50 shadow-lg"
-																: "border-stone-200 bg-white hover:border-stone-300"
+																: tableNavigation.activeKey ===
+																		c.name
+																	? "border-indigo-300 bg-indigo-50"
+																	: "border-stone-200 bg-white hover:border-stone-300"
 														}`}
 														title="Drag into the table"
 													>
@@ -1170,10 +1338,34 @@ export function VizConfigDropZones({
 						<div className="relative">
 							<Search className="-translate-y-1/2 absolute top-1/2 left-2 h-3.5 w-3.5 text-stone-400" />
 							<input
+								ref={standardSearchRef}
+								role="combobox"
+								aria-autocomplete="list"
+								aria-expanded="true"
+								aria-controls={
+									addColMenu
+										? zoneNavigation.listboxId
+										: dimensionsNavigation.listboxId
+								}
+								aria-activedescendant={
+									addColMenu
+										? zoneNavigation.activeDescendant
+										: dimensionsNavigation.activeDescendant
+								}
 								className="w-full rounded border border-stone-200 py-1.5 pr-2 pl-8 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-400"
 								placeholder="Search columns..."
 								value={search}
 								onChange={(e) => setSearch(e.target.value)}
+								onClick={() =>
+									dimensionsNavigation.setActiveKey(
+										filteredColumnNames[0] ?? null,
+									)
+								}
+								onKeyDown={(event) => {
+									if (addColMenu)
+										zoneNavigation.onKeyDown(event);
+									else dimensionsNavigation.onKeyDown(event);
+								}}
 							/>
 						</div>
 					</div>
@@ -1182,6 +1374,9 @@ export function VizConfigDropZones({
 							<div
 								ref={provided.innerRef}
 								{...provided.droppableProps}
+								id={dimensionsNavigation.listboxId}
+								role="listbox"
+								aria-label="Dimensions"
 								className="flex-1 space-y-1 overflow-y-auto px-2"
 							>
 								{filteredColumns.map((col, index) => (
@@ -1192,13 +1387,34 @@ export function VizConfigDropZones({
 									>
 										{(provided, snapshot) => (
 											<div
-												ref={provided.innerRef}
+												ref={(node) => {
+													provided.innerRef(node);
+													dimensionsNavigation.setOptionRef(
+														col.name,
+														node,
+													);
+												}}
 												{...provided.draggableProps}
 												{...provided.dragHandleProps}
+												id={dimensionsNavigation.getOptionId(
+													col.name,
+												)}
+												role="option"
+												tabIndex={-1}
+												aria-selected="false"
+												data-dimension-row
+												onMouseEnter={() =>
+													dimensionsNavigation.setActiveKey(
+														col.name,
+													)
+												}
 												className={`relative flex cursor-grab items-center gap-1.5 rounded border px-2 py-1.5 text-xs transition-colors active:cursor-grabbing ${
 													snapshot.isDragging
 														? "border-indigo-400 bg-indigo-50 shadow-sm"
-														: "border-stone-200 bg-white hover:bg-stone-50"
+														: dimensionsNavigation.activeKey ===
+																col.name
+															? "border-indigo-300 bg-indigo-50"
+															: "border-stone-200 bg-white hover:bg-stone-50"
 												}`}
 												title="Drag into a drop zone"
 											>
@@ -1227,7 +1443,19 @@ export function VizConfigDropZones({
 													onTouchStart={(event) =>
 														event.stopPropagation()
 													}
+													onKeyDown={(event) => {
+														if (
+															addColMenu ===
+															col.name
+														)
+															zoneNavigation.onKeyDown(
+																event,
+															);
+													}}
 													onClick={() => {
+														dimensionsNavigation.setActiveKey(
+															col.name,
+														);
 														if (zones.length === 1)
 															addColumnToZone(
 																zones[0].id,
@@ -1274,8 +1502,12 @@ export function VizConfigDropZones({
 																	)
 																}
 															/>
-															{/* biome-ignore lint/a11y/noStaticElementInteractions: pointer-capture wrapper only, no click semantics of its own — stops the outer drag/close handlers from firing inside the menu. */}
 															<div
+																id={
+																	zoneNavigation.listboxId
+																}
+																role="listbox"
+																aria-label={`Add ${col.name} to`}
 																className="absolute top-7 right-1 z-20 w-44 rounded-lg border border-stone-200 bg-white py-1 shadow-soft-lg"
 																onMouseDown={(
 																	event,
@@ -1309,6 +1541,26 @@ export function VizConfigDropZones({
 																			);
 																		return (
 																			<button
+																				ref={(
+																					node,
+																				) => {
+																					if (
+																						!already
+																					)
+																						zoneNavigation.setOptionRef(
+																							z.id,
+																							node,
+																						);
+																				}}
+																				id={
+																					already
+																						? undefined
+																						: zoneNavigation.getOptionId(
+																								z.id,
+																							)
+																				}
+																				role="option"
+																				aria-selected="false"
 																				key={
 																					z.id
 																				}
@@ -1316,6 +1568,14 @@ export function VizConfigDropZones({
 																				disabled={
 																					already
 																				}
+																				onMouseEnter={() => {
+																					if (
+																						!already
+																					)
+																						zoneNavigation.setActiveKey(
+																							z.id,
+																						);
+																				}}
 																				onClick={() => {
 																					addColumnToZone(
 																						z.id,
@@ -1325,7 +1585,7 @@ export function VizConfigDropZones({
 																						null,
 																					);
 																				}}
-																				className="flex w-full items-center justify-between gap-2 px-3 py-1.5 text-left text-stone-700 text-xs hover:bg-stone-50 disabled:cursor-default disabled:text-stone-300 disabled:hover:bg-transparent"
+																				className={`flex w-full items-center justify-between gap-2 px-3 py-1.5 text-left text-stone-700 text-xs hover:bg-stone-50 disabled:cursor-default disabled:text-stone-300 disabled:hover:bg-transparent ${zoneNavigation.activeKey === z.id ? "bg-indigo-50" : ""}`}
 																			>
 																				<span className="truncate">
 																					{

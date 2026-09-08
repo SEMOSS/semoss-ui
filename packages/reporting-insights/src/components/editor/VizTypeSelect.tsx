@@ -1,7 +1,8 @@
 import { ChevronDown, Search, X } from "lucide-react";
 import type { ElementType } from "react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Input } from "@/components/ui";
+import { useListboxNavigation } from "@/hooks/useListboxNavigation";
 /**
  * VizTypeSelect — searchable, category-grouped chart-type picker.
  *
@@ -84,28 +85,44 @@ export function VizTypeSelect({
 	}, [items, query]);
 
 	// Close on outside click / Escape, and focus the search when opening.
+	const visibleKeys = useMemo(
+		() => grouped.flatMap((g) => g.items.map((i) => i.value)),
+		[grouped],
+	);
+
+	const closeMenu = useCallback((restoreFocus = false) => {
+		setOpen(false);
+		setQuery("");
+		if (restoreFocus)
+			requestAnimationFrame(() =>
+				rootRef.current?.querySelector("button")?.focus(),
+			);
+	}, []);
+
+	const pick = (v: string) => {
+		onChange(v);
+		closeMenu(true);
+	};
+
+	const navigation = useListboxNavigation({
+		keys: visibleKeys,
+		open,
+		selectedKey: value,
+		onActivate: pick,
+		onEscape: () => closeMenu(true),
+	});
+
 	useEffect(() => {
 		if (!open) return;
 		setTimeout(() => searchRef.current?.focus(), 0);
 		const onDown = (e: MouseEvent) => {
-			if (!rootRef.current?.contains(e.target as Node)) setOpen(false);
-		};
-		const onKey = (e: KeyboardEvent) => {
-			if (e.key === "Escape") setOpen(false);
+			if (!rootRef.current?.contains(e.target as Node)) closeMenu();
 		};
 		document.addEventListener("mousedown", onDown);
-		document.addEventListener("keydown", onKey);
 		return () => {
 			document.removeEventListener("mousedown", onDown);
-			document.removeEventListener("keydown", onKey);
 		};
-	}, [open]);
-
-	const pick = (v: string) => {
-		onChange(v);
-		setOpen(false);
-		setQuery("");
-	};
+	}, [closeMenu, open]);
 
 	const CurrentIcon = current?.Icon;
 
@@ -115,6 +132,26 @@ export function VizTypeSelect({
 				type="button"
 				onClick={() => setOpen((o) => !o)}
 				title="Visualization type"
+				aria-haspopup="listbox"
+				aria-expanded={open}
+				aria-controls={open ? navigation.listboxId : undefined}
+				onKeyDown={(event) => {
+					if (
+						!open &&
+						[
+							"ArrowDown",
+							"ArrowUp",
+							"Home",
+							"End",
+							"Enter",
+						].includes(event.key)
+					) {
+						event.preventDefault();
+						setOpen(true);
+						return;
+					}
+					if (open) navigation.onKeyDown(event);
+				}}
 				className={
 					className ??
 					"inline-flex h-8 items-center gap-1.5 rounded-lg border border-stone-200 bg-white px-2.5 font-medium text-[13px] text-stone-700 hover:border-stone-300 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
@@ -139,8 +176,16 @@ export function VizTypeSelect({
 							<Search className="-translate-y-1/2 pointer-events-none absolute top-1/2 left-2 h-3.5 w-3.5 text-stone-400" />
 							<Input
 								ref={searchRef}
+								role="combobox"
+								aria-autocomplete="list"
+								aria-expanded="true"
+								aria-controls={navigation.listboxId}
+								aria-activedescendant={
+									navigation.activeDescendant
+								}
 								value={query}
 								onChange={(e) => setQuery(e.target.value)}
+								onKeyDown={navigation.onKeyDown}
 								placeholder="Search chart types"
 								className="w-full rounded-md border border-stone-200 bg-white py-1.5 pr-7 pl-7 text-[12px] focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
 							/>
@@ -158,7 +203,12 @@ export function VizTypeSelect({
 					</div>
 
 					{/* Grouped list */}
-					<div className="max-h-80 overflow-y-auto py-1">
+					<div
+						id={navigation.listboxId}
+						role="listbox"
+						aria-label="Chart types"
+						className="max-h-80 overflow-y-auto py-1"
+					>
 						{grouped.length === 0 ? (
 							<p className="px-3 py-3 text-[12px] text-stone-400">
 								No chart types match "{query}".
@@ -172,15 +222,36 @@ export function VizTypeSelect({
 									{g.items.map((it) => {
 										const Icon = it.Icon;
 										const selected = it.value === value;
+										const active =
+											navigation.activeKey === it.value;
 										return (
 											<button
+												ref={(node) =>
+													navigation.setOptionRef(
+														it.value,
+														node,
+													)
+												}
+												id={navigation.getOptionId(
+													it.value,
+												)}
+												role="option"
+												aria-selected={selected}
 												key={it.value}
 												type="button"
+												tabIndex={-1}
+												onMouseEnter={() =>
+													navigation.setActiveKey(
+														it.value,
+													)
+												}
 												onClick={() => pick(it.value)}
 												className={`flex w-full items-center gap-2.5 px-3 py-1.5 text-left text-[13px] transition-colors ${
 													selected
 														? "bg-indigo-50 font-medium text-indigo-700"
-														: "text-stone-700 hover:bg-stone-50"
+														: active
+															? "bg-stone-100 text-stone-700"
+															: "text-stone-700 hover:bg-stone-50"
 												}`}
 											>
 												<Icon

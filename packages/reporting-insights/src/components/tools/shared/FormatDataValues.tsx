@@ -1,6 +1,7 @@
 import { ChevronDown, Pencil, Plus, Trash2 } from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { Checkbox, Input, Select } from "@/components/ui";
+import { useListboxNavigation } from "@/hooks/useListboxNavigation";
 import type {
 	DefaultNumericFormat,
 	FormatDelimiter,
@@ -192,6 +193,7 @@ function makeDraft(col: string, type: FormatRuleType): FormatRule {
 }
 
 interface DimensionSelectProps {
+	id?: string;
 	columns: string[];
 	columnTypes: Record<string, FormatRuleType>;
 	columnLabels?: Record<string, string>;
@@ -200,6 +202,7 @@ interface DimensionSelectProps {
 }
 
 function DimensionSelect({
+	id,
 	columns,
 	columnTypes,
 	columnLabels,
@@ -226,15 +229,19 @@ function DimensionSelect({
 		return () => document.removeEventListener("mousedown", handler);
 	}, []);
 
-	const filtered = search
-		? columns.filter(
-				(c) =>
-					c.toLowerCase().includes(search.toLowerCase()) ||
-					(columnLabels?.[c] ?? "")
-						.toLowerCase()
-						.includes(search.toLowerCase()),
-			)
-		: columns;
+	const filtered = useMemo(
+		() =>
+			search
+				? columns.filter(
+						(c) =>
+							c.toLowerCase().includes(search.toLowerCase()) ||
+							(columnLabels?.[c] ?? "")
+								.toLowerCase()
+								.includes(search.toLowerCase()),
+					)
+				: columns,
+		[columnLabels, columns, search],
+	);
 
 	const selectedType = columnTypes[value];
 	const badge = selectedType ? TYPE_BADGE[selectedType] : null;
@@ -249,16 +256,49 @@ function DimensionSelect({
 		onChange(col, columnTypes[col] ?? "string");
 		setOpen(false);
 		setSearch("");
+		requestAnimationFrame(() => containerRef.current?.focus());
 	};
+
+	const navigation = useListboxNavigation({
+		keys: filtered,
+		open,
+		selectedKey: value,
+		onActivate: select,
+		onEscape: () => {
+			setOpen(false);
+			setSearch("");
+			requestAnimationFrame(() => containerRef.current?.focus());
+		},
+	});
 
 	return (
 		<div className="relative" ref={containerRef}>
 			{/* Trigger */}
 			<div
+				id={id}
 				role="combobox"
-				tabIndex={0}
+				tabIndex={open ? -1 : 0}
 				aria-expanded={open}
+				aria-haspopup="listbox"
+				aria-controls={open ? navigation.listboxId : undefined}
 				onClick={openList}
+				onKeyDown={(event) => {
+					if (event.currentTarget !== event.target) return;
+					if (
+						!open &&
+						[
+							"ArrowDown",
+							"ArrowUp",
+							"Home",
+							"End",
+							"Enter",
+							" ",
+						].includes(event.key)
+					) {
+						event.preventDefault();
+						openList();
+					}
+				}}
 				className="flex w-full cursor-pointer items-center gap-2 rounded border border-stone-200 bg-white px-3 py-2 text-sm focus-within:border-indigo-400 focus-within:ring-2 focus-within:ring-indigo-500/20 hover:border-stone-300"
 			>
 				{open ? (
@@ -267,14 +307,12 @@ function DimensionSelect({
 						type="text"
 						value={search}
 						onChange={(e) => setSearch(e.target.value)}
-						onKeyDown={(e) => {
-							if (e.key === "Escape") {
-								setOpen(false);
-								setSearch("");
-							}
-							if (e.key === "Enter" && filtered.length > 0)
-								select(filtered[0]);
-						}}
+						role="combobox"
+						aria-autocomplete="list"
+						aria-expanded="true"
+						aria-controls={navigation.listboxId}
+						aria-activedescendant={navigation.activeDescendant}
+						onKeyDown={navigation.onKeyDown}
 						placeholder="Search dimensions…"
 						className="flex-1 bg-transparent text-stone-800 outline-none placeholder:text-stone-400"
 						onClick={(e) => e.stopPropagation()}
@@ -303,7 +341,12 @@ function DimensionSelect({
 
 			{/* Dropdown list */}
 			{open && (
-				<div className="absolute top-full right-0 left-0 z-30 mt-1 max-h-48 overflow-y-auto rounded-lg border border-stone-200 bg-white shadow-lg">
+				<div
+					id={navigation.listboxId}
+					role="listbox"
+					aria-label="Dimensions"
+					className="absolute top-full right-0 left-0 z-30 mt-1 max-h-48 overflow-y-auto rounded-lg border border-stone-200 bg-white shadow-lg"
+				>
 					{filtered.length === 0 ? (
 						<p className="px-3 py-2 text-stone-400 text-xs">
 							No dimensions match
@@ -313,10 +356,20 @@ function DimensionSelect({
 							const type = columnTypes[col] ?? "string";
 							const b = TYPE_BADGE[type];
 							const isSelected = col === value;
+							const isActive = navigation.activeKey === col;
 							return (
 								<button
+									ref={(node) =>
+										navigation.setOptionRef(col, node)
+									}
+									id={navigation.getOptionId(col)}
+									role="option"
+									aria-selected={isSelected}
 									key={col}
 									type="button"
+									onMouseEnter={() =>
+										navigation.setActiveKey(col)
+									}
 									onMouseDown={(e) => {
 										e.preventDefault();
 										select(col);
@@ -324,7 +377,9 @@ function DimensionSelect({
 									className={`flex w-full items-center justify-between gap-3 px-3 py-2 text-left text-sm transition-colors ${
 										isSelected
 											? "bg-indigo-50 font-medium text-indigo-700"
-											: "text-stone-700 hover:bg-stone-50"
+											: isActive
+												? "bg-stone-100 text-stone-700"
+												: "text-stone-700 hover:bg-stone-50"
 									}`}
 								>
 									<span className="truncate">
@@ -367,6 +422,7 @@ export function FormatDataValues({
 }: FormatDataValuesProps) {
 	const [draft, setDraft] = useState<FormatRule | null>(null);
 	const [editingId, setEditingId] = useState<string | null>(null);
+	const fieldIdPrefix = useId();
 
 	// Pre-compute type for every column once per columns/rows change
 	const columnTypes = useMemo(
@@ -440,10 +496,14 @@ export function FormatDataValues({
 
 					{/* Select Dimension: Searchable combobox with type badges */}
 					<div>
-						<label className="mb-1.5 block font-medium text-stone-600 text-xs">
+						<label
+							htmlFor={`${fieldIdPrefix}-dimension`}
+							className="mb-1.5 block font-medium text-stone-600 text-xs"
+						>
 							Select Dimension
 						</label>
 						<DimensionSelect
+							id={`${fieldIdPrefix}-dimension`}
 							columns={columns}
 							columnTypes={columnTypes}
 							columnLabels={columnLabels}
@@ -455,10 +515,14 @@ export function FormatDataValues({
 					{/* Prepend / Append */}
 					<div className="grid grid-cols-2 gap-2">
 						<div>
-							<label className="mb-1.5 block font-medium text-stone-600 text-xs">
+							<label
+								htmlFor={`${fieldIdPrefix}-prepend`}
+								className="mb-1.5 block font-medium text-stone-600 text-xs"
+							>
 								Prepend Value
 							</label>
 							<Input
+								id={`${fieldIdPrefix}-prepend`}
 								type="text"
 								value={draft.prepend ?? ""}
 								onChange={(e) =>
@@ -469,10 +533,14 @@ export function FormatDataValues({
 							/>
 						</div>
 						<div>
-							<label className="mb-1.5 block font-medium text-stone-600 text-xs">
+							<label
+								htmlFor={`${fieldIdPrefix}-append`}
+								className="mb-1.5 block font-medium text-stone-600 text-xs"
+							>
 								Append Value
 							</label>
 							<Input
+								id={`${fieldIdPrefix}-append`}
 								type="text"
 								value={draft.append ?? ""}
 								onChange={(e) =>
@@ -487,8 +555,12 @@ export function FormatDataValues({
 					{/* Numeric options */}
 					{isNumeric && (
 						<div className="space-y-3 border-stone-100 border-t pt-2">
-							<label className="flex cursor-pointer items-center gap-2">
+							<label
+								htmlFor={`${fieldIdPrefix}-use-default-format`}
+								className="flex cursor-pointer items-center gap-2"
+							>
 								<Checkbox
+									id={`${fieldIdPrefix}-use-default-format`}
 									checked={draft.useDefaultFormat ?? true}
 									onChange={(e) =>
 										upd({
@@ -503,10 +575,14 @@ export function FormatDataValues({
 
 							{draft.useDefaultFormat ? (
 								<div>
-									<label className="mb-1.5 block font-medium text-stone-600 text-xs">
+									<label
+										htmlFor={`${fieldIdPrefix}-default-format`}
+										className="mb-1.5 block font-medium text-stone-600 text-xs"
+									>
 										Default Format Options
 									</label>
 									<Select
+										id={`${fieldIdPrefix}-default-format`}
 										value={draft.defaultFormat ?? "comma"}
 										onChange={(e) =>
 											upd({
@@ -529,10 +605,14 @@ export function FormatDataValues({
 							) : (
 								<>
 									<div>
-										<label className="mb-1.5 block font-medium text-stone-600 text-xs">
+										<label
+											htmlFor={`${fieldIdPrefix}-format-number`}
+											className="mb-1.5 block font-medium text-stone-600 text-xs"
+										>
 											Format Number
 										</label>
 										<Select
+											id={`${fieldIdPrefix}-format-number`}
 											value={draft.formatNumber ?? "none"}
 											onChange={(e) =>
 												upd({
@@ -554,13 +634,17 @@ export function FormatDataValues({
 									</div>
 
 									<div>
-										<label className="mb-1.5 block font-medium text-stone-600 text-xs">
+										<label
+											htmlFor={`${fieldIdPrefix}-round-value`}
+											className="mb-1.5 block font-medium text-stone-600 text-xs"
+										>
 											Round Value{" "}
 											<span className="font-normal text-stone-400">
 												(decimal places)
 											</span>
 										</label>
 										<Input
+											id={`${fieldIdPrefix}-round-value`}
 											type="number"
 											min={0}
 											max={10}
@@ -585,10 +669,14 @@ export function FormatDataValues({
 									</div>
 
 									<div>
-										<label className="mb-1.5 block font-medium text-stone-600 text-xs">
+										<label
+											htmlFor={`${fieldIdPrefix}-delimiter`}
+											className="mb-1.5 block font-medium text-stone-600 text-xs"
+										>
 											Delimiter
 										</label>
 										<Select
+											id={`${fieldIdPrefix}-delimiter`}
 											value={draft.delimiter ?? "none"}
 											onChange={(e) =>
 												upd({
@@ -616,10 +704,14 @@ export function FormatDataValues({
 					{/* Date options*/}
 					{isDate && (
 						<div className="border-stone-100 border-t pt-2">
-							<label className="mb-1.5 block font-medium text-stone-600 text-xs">
+							<label
+								htmlFor={`${fieldIdPrefix}-date-format`}
+								className="mb-1.5 block font-medium text-stone-600 text-xs"
+							>
 								Format Date / Timestamp
 							</label>
 							<Select
+								id={`${fieldIdPrefix}-date-format`}
 								value={draft.dateFormat ?? "MM/DD/YYYY"}
 								onChange={(e) =>
 									upd({ dateFormat: e.target.value })
