@@ -139,13 +139,15 @@ export function useIteratorPixel<TResponse, TItem>(
 	}, [pixel.refresh]);
 
 	/**
-	 * Reset when dependencies change
+	 * Reset when dependencies change. Deliberately does not clear `allData`/
+	 * `totalCount`: the offset-0 fetch this triggers replaces them wholesale
+	 * once it resolves (the `onSuccess` branch above), so leaving the stale
+	 * rows in place until then avoids a flash to empty on every reset (search
+	 * term change, filter change, etc) — same pattern as `useIteratorApi`.
 	 */
 	useEffect(
 		() => {
 			setOffset(0);
-			setAllData([]);
-			setTotalCount(0);
 			isLoadingMoreRef.current = false;
 		},
 

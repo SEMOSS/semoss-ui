@@ -1,5 +1,6 @@
 import { CopyIcon } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import { useTranslation } from "@semoss/i18n";
 import {
 	Button,
 	Code,
@@ -35,6 +36,7 @@ interface MermaidBlockProps {
 }
 
 export const MermaidBlock = ({ code, isLoading, room }: MermaidBlockProps) => {
+	const { t } = useTranslation("chat");
 	const [svg, setSvg] = useState<string | null>(null);
 	const [isCollapsed, setIsCollapsed] = useState(false);
 	const [isFullViewOpen, setIsFullViewOpen] = useState(false);
@@ -82,7 +84,7 @@ export const MermaidBlock = ({ code, isLoading, room }: MermaidBlockProps) => {
 				false,
 				false,
 			);
-			toast.success(`Saved in room as ${filePath}`);
+			toast.success(t("notifications.savedInRoom", { filePath }));
 		} catch (error) {
 			const message =
 				error instanceof Error && error.message
@@ -114,7 +116,7 @@ export const MermaidBlock = ({ code, isLoading, room }: MermaidBlockProps) => {
 						disabled={isLoading || !svg}
 						onClick={() => setIsRaw((prev) => !prev)}
 					>
-						{isRaw ? "Diagram" : "Raw"}
+						{isRaw ? t("response.diagram") : t("response.raw")}
 					</Button>
 					<Button
 						className="-my-1 h-6 px-2 text-muted-foreground text-xs hover:text-foreground"
@@ -123,7 +125,7 @@ export const MermaidBlock = ({ code, isLoading, room }: MermaidBlockProps) => {
 						disabled={!svg}
 						onClick={() => setIsFullViewOpen(true)}
 					>
-						Full View
+						{t("response.fullView")}
 					</Button>
 					<Button
 						className="-my-1 h-6 px-2 text-muted-foreground text-xs hover:text-foreground"
@@ -132,7 +134,9 @@ export const MermaidBlock = ({ code, isLoading, room }: MermaidBlockProps) => {
 						disabled={!room || !code || isSavingToRoom}
 						onClick={() => void saveInRoom()}
 					>
-						{isSavingToRoom ? "Saving..." : "Save In Room"}
+						{isSavingToRoom
+							? t("response.savingToRoom")
+							: t("response.saveInRoom")}
 					</Button>
 					<Tooltip>
 						<TooltipTrigger asChild>
@@ -144,16 +148,21 @@ export const MermaidBlock = ({ code, isLoading, room }: MermaidBlockProps) => {
 								onClick={() =>
 									void copyToClipboard(
 										code,
-										() => toast.success("Copied"),
+										() =>
+											toast.success(
+												t("notifications.copySuccess"),
+											),
 										(msg) => toast.error(msg),
 									)
 								}
 							>
 								<CopyIcon className="size-3.5" />
-								Copy
+								{t("response.copy")}
 							</Button>
 						</TooltipTrigger>
-						<TooltipContent side="bottom">Copy</TooltipContent>
+						<TooltipContent side="bottom">
+							{t("response.copy")}
+						</TooltipContent>
 					</Tooltip>
 				</BlockHeader>
 				{!isCollapsed &&
@@ -171,7 +180,7 @@ export const MermaidBlock = ({ code, isLoading, room }: MermaidBlockProps) => {
 					))}
 			</div>
 			<Dialog open={isFullViewOpen} onOpenChange={setIsFullViewOpen}>
-				<DialogContent className="h-[100dvh] max-h-[100dvh] w-[100dvw] max-w-[100dvw] grid-rows-[auto_1fr] overflow-hidden rounded-none border-0 p-3 sm:w-[100dvw] sm:max-w-[100dvw]">
+				<DialogContent className="h-dvh max-h-dvh w-dvw max-w-dvw grid-rows-[auto_1fr] overflow-hidden rounded-none border-0 p-3 sm:w-dvw sm:max-w-dvw">
 					<DialogHeader>
 						<DialogTitle>Mermaid</DialogTitle>
 					</DialogHeader>

@@ -7,7 +7,6 @@ interface ImportMetaEnv {
 	// more env variables...
 }
 
-// biome-ignore lint/correctness/noUnusedVariables: Global type augmentation for Vite
 interface ImportMeta {
 	readonly env: ImportMetaEnv;
 }

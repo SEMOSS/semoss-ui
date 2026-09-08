@@ -33,15 +33,16 @@ import { useNavigate } from "@/hooks/useNavigate";
 import { GUARDRAIL_CONNECTION } from "./guardrail-import.constants";
 import { GuardrailForm } from "./guardrail-import-form";
 import { GuardrailTitleCard } from "./guardrail-title-card";
+import { SqlQueryGuardrailForm } from "./sql-query-guardrail-form";
 
-interface guardrail {
+interface GuardrailOption {
 	fields: [];
-	advanced: [];
-	id: number;
+	advanced?: [];
 	name: string;
 	icon: string;
 	disable: boolean;
 	notice?: string;
+	form?: "sql-query-policy";
 }
 
 export const GuardrailImport: React.FC<{ name: string }> = ({ name }) => {
@@ -50,9 +51,8 @@ export const GuardrailImport: React.FC<{ name: string }> = ({ name }) => {
 	const [loading, setLoading] = useState(false);
 	const [search, setSearch] = useState("");
 	const [selectedTab, setSelectedTab] = useState("");
-	const [selectedDatabase, setSelectedDatabase] = useState<guardrail | null>(
-		null,
-	);
+	const [selectedDatabase, setSelectedDatabase] =
+		useState<GuardrailOption | null>(null);
 
 	const [isFileUploadModalOpen, setIsFileUploadModalOpen] = useState(false);
 	const [filedata, setFiledata] = useState(null);
@@ -109,8 +109,19 @@ export const GuardrailImport: React.FC<{ name: string }> = ({ name }) => {
 					setFiledata(null);
 					return;
 				}
+				const uploadOutput = output as {
+					engine_id?: string;
+					database_id?: string;
+				};
+				const engineId =
+					uploadOutput.engine_id ?? uploadOutput.database_id;
+				if (!engineId) {
+					toast.error("Upload did not return a guardrail identifier");
+					setFiledata(null);
+					return;
+				}
 				toast.success("Successfully Created Guardrail Database");
-				navigate(`/guardrail/${output.database_id}`);
+				navigate(`/guardrail/${engineId}`);
 			}
 		} catch {
 			toast.error("Upload failed or returned invalid response.");
@@ -198,7 +209,7 @@ export const GuardrailImport: React.FC<{ name: string }> = ({ name }) => {
 		</Breadcrumb>
 	);
 
-	const renderDatabaseGrid = (Databases: guardrail[]) => (
+	const renderDatabaseGrid = (Databases: GuardrailOption[]) => (
 		<div
 			className="mt-4 flex flex-col gap-2 sm:flex-row sm:flex-wrap"
 			data-testid="guardrail-grid"
@@ -207,7 +218,7 @@ export const GuardrailImport: React.FC<{ name: string }> = ({ name }) => {
 				v.name.toLowerCase().includes(search.toLowerCase()),
 			).map((v) => (
 				<GuardrailTitleCard
-					key={v.id}
+					key={v.name}
 					guardrail={{
 						...v,
 						display: v.name,
@@ -319,16 +330,29 @@ export const GuardrailImport: React.FC<{ name: string }> = ({ name }) => {
 			</Dialog>
 			{selectedDatabase ? (
 				<div data-testid="guardrail-form-wrapper">
-					<GuardrailForm
-						//selectedTab={tabLabels[selectedTab]}
-						title={selectedDatabase.name}
-						description={`Fill out ${selectedDatabase.name} details in order to add guardrail to catalog`}
-						notice={selectedDatabase.notice}
-						icon={(selectedDatabase as { icon?: string }).icon}
-						fields={selectedDatabase.fields}
-						advanced={selectedDatabase.advanced}
-						categoryDescription={CategoryDescription}
-					/>
+					{selectedDatabase.form === "sql-query-policy" ? (
+						<SqlQueryGuardrailForm
+							icon={selectedDatabase.icon}
+							onSubmit={(engineId) => {
+								if (engineId) {
+									navigate(`/guardrail/${engineId}`);
+									return;
+								}
+								setSelectedDatabase(null);
+							}}
+						/>
+					) : (
+						<GuardrailForm
+							//selectedTab={tabLabels[selectedTab]}
+							title={selectedDatabase.name}
+							description={`Fill out ${selectedDatabase.name} details in order to add guardrail to catalog`}
+							notice={selectedDatabase.notice}
+							icon={(selectedDatabase as { icon?: string }).icon}
+							fields={selectedDatabase.fields}
+							advanced={selectedDatabase.advanced}
+							categoryDescription={CategoryDescription}
+						/>
+					)}
 				</div>
 			) : (
 				<div

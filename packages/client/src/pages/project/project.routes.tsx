@@ -1,7 +1,6 @@
 import { Outlet } from "react-router-dom";
 import { ProjectAccessControl, ProjectCatalog } from "@/components/project";
 import {
-	AppCommitsPage,
 	AppGithubPage,
 	AppGithubSelectRepoPage,
 	AppMcpUsagePage,
@@ -13,6 +12,7 @@ import {
 import { AgentActivityPage } from "./agent/agent-activity-page";
 import { CreateAgentPage } from "./agent/create-agent-page";
 import { EditAgentPage } from "./agent/edit-agent-page";
+import { ViewAgentPage } from "./agent/view-agent-page";
 import { CreateAppPage } from "./app/create-app-page";
 import { EditAppPage } from "./app/edit-app-page";
 import { CreateNotebookPage } from "./notebook/create-notebook-page";
@@ -89,11 +89,6 @@ export const PROJECT_ROUTES: {
 										],
 									},
 									{
-										name: "Commits",
-										path: "commits",
-										restrict: ["OWNER", "EDIT"],
-									},
-									{
 										name: "GitHub",
 										path: "github",
 										restrict: ["OWNER"],
@@ -129,10 +124,7 @@ export const PROJECT_ROUTES: {
 								path: "mcp-usage",
 								element: <AppMcpUsagePage />,
 							},
-							{
-								path: "commits",
-								element: <AppCommitsPage />,
-							},
+
 							{
 								path: "github",
 								element: <AppGithubPage />,
@@ -199,11 +191,6 @@ export const PROJECT_ROUTES: {
 										],
 									},
 									{
-										name: "Commits",
-										path: "commits",
-										restrict: ["OWNER", "EDIT"],
-									},
-									{
 										name: "GitHub",
 										path: "github",
 										restrict: ["OWNER"],
@@ -236,10 +223,7 @@ export const PROJECT_ROUTES: {
 									/>
 								),
 							},
-							{
-								path: "commits",
-								element: <AppCommitsPage />,
-							},
+
 							{
 								path: "github",
 								element: <AppGithubPage />,
@@ -293,11 +277,6 @@ export const PROJECT_ROUTES: {
 								tabs={[
 									{ name: "Overview", path: "" },
 									{
-										name: "Commits",
-										path: "commits",
-										restrict: ["OWNER", "EDIT"],
-									},
-									{
 										name: "GitHub",
 										path: "github",
 										restrict: ["OWNER"],
@@ -320,10 +299,7 @@ export const PROJECT_ROUTES: {
 								path: "",
 								element: <ProjectOverviewPage />,
 							},
-							{
-								path: "commits",
-								element: <AppCommitsPage />,
-							},
+
 							{
 								path: "github",
 								element: <AppGithubPage />,
@@ -367,16 +343,15 @@ export const PROJECT_ROUTES: {
 						element: <EditAgentPage />,
 					},
 					{
+						path: "view",
+						element: <ViewAgentPage />,
+					},
+					{
 						path: "*",
 						element: (
 							<ProjectTabsLayout
 								tabs={[
 									{ name: "Overview", path: "" },
-									{
-										name: "Commits",
-										path: "commits",
-										restrict: ["OWNER", "EDIT"],
-									},
 									{
 										name: "GitHub",
 										path: "github",
@@ -408,10 +383,6 @@ export const PROJECT_ROUTES: {
 							{
 								path: "",
 								element: <ProjectOverviewPage />,
-							},
-							{
-								path: "commits",
-								element: <AppCommitsPage />,
 							},
 							{
 								path: "github",

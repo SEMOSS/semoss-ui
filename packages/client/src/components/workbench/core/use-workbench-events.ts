@@ -51,9 +51,9 @@ export const useWorkbenchEvents = (props: WorkbenchEventProps): void => {
 
 			if (
 				h.onSelectionChange &&
-				state.layout.selectedPanelId !== prev.layout.selectedPanelId
+				state.layout.selection.panel !== prev.layout.selection.panel
 			) {
-				h.onSelectionChange(state.layout.selectedPanelId);
+				h.onSelectionChange(state.layout.selection.panel);
 			}
 
 			prev = state;

@@ -1,5 +1,7 @@
 export const MODEL_KEY = "SMSS-SELECTED-MODEL-V3";
 
+export const SYSTEM__PLAYGROUND = "SYSTEM__PLAYGROUND";
+
 export const MCP_EXECUTION_AUTO = "auto";
 export const MCP_EXECUTION_ASK = "ask";
 /**

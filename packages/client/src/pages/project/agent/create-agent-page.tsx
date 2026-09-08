@@ -28,6 +28,7 @@ import {
 	AgentModelField,
 	AgentSubagentsField,
 	buildEditWorkspacePixel,
+	getWorkspaceSaveWarning,
 } from "@/components/agent-workspace/agent-form";
 import { UploadProjectDialog } from "@/components/project";
 import { NavbarHeader, NavbarLeft } from "@/components/shared";
@@ -92,9 +93,13 @@ export const CreateAgentPage = () => {
 				data.maxSubagentDepth ||
 				data.maxSubagentsPerRun ||
 				data.maxSpawnsPerTurn ||
-				data.subagents.some((s) => s.workspaceId);
+				data.subagents.some((s) => s.workspaceId) ||
+				data.disabledDefaultTools.length > 0;
 			if (hasExecutionSettings) {
-				const { errors: settingsErrors } = await monolithStore.runQuery(
+				const {
+					errors: settingsErrors,
+					pixelReturn: settingsPixelReturn,
+				} = await monolithStore.runQuery<[unknown]>(
 					buildEditWorkspacePixel(agentId, data),
 				);
 				if (settingsErrors.length > 0) {
@@ -102,6 +107,11 @@ export const CreateAgentPage = () => {
 					toast.error(
 						"Agent created, but failed to save execution settings",
 					);
+				} else {
+					const warning = getWorkspaceSaveWarning(
+						settingsPixelReturn[0]?.output,
+					);
+					if (warning) toast.warning(warning);
 				}
 			}
 

@@ -7,7 +7,6 @@ import { VectorImport } from "@/components/import/vector/vector-import";
 import { ImportLayout, ModelImportPage } from "../import";
 import { DatabaseWorkbenchPage } from "./database-workbench-page";
 import { EngineActivityPage } from "./engine-activity-page";
-import { EngineCommitsPage } from "./engine-commits-page";
 import { EngineDescriptionSettingsPage } from "./engine-description-settings-page";
 import { EngineGuardrailSettingsPage } from "./engine-guardrail-settings-page";
 import { EngineIndexPage } from "./engine-index-page";
@@ -121,11 +120,6 @@ export const ENGINE_ROUTES: {
 										restrict: ["EDIT", "OWNER"],
 									},
 									{
-										name: "Commits",
-										path: "commits",
-										restrict: ["EDIT", "OWNER"],
-									},
-									{
 										name: "SMSS",
 										path: "smss",
 										restrict: ["OWNER"],
@@ -148,7 +142,6 @@ export const ENGINE_ROUTES: {
 								path: "access-control",
 								element: <EngineSettingsPage />,
 							},
-							{ path: "commits", element: <EngineCommitsPage /> },
 							{ path: "smss", element: <EngineSmssPage /> },
 							{ path: "*", element: <Navigate to="." replace /> },
 						],

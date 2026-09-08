@@ -7,11 +7,17 @@ import {
 	notifyFileEditorPathMoved,
 	resolveMovedPath,
 } from "@semoss/shared";
-import type { WorkbenchPanelRecord } from "@/stores/workbench";
+import { getFilePanelType } from "@/components/workbench/files/file-editor.utility";
+import {
+	WORKBENCH_COMPONENTS,
+	type WorkbenchPanelRecord,
+} from "@/stores/workbench";
 import { useWorkbench } from "./use-workbench";
 
 /** The slice of a file-backed panel's config this hook cares about. */
 interface FilePanelConfig {
+	type?: "ENGINE" | "PROJECT" | "INSIGHT";
+	id?: string;
 	path?: string;
 }
 
@@ -32,6 +38,25 @@ const filePathOf = (record: WorkbenchPanelRecord): string | undefined =>
  */
 const hasFilePath = (record: WorkbenchPanelRecord): boolean =>
 	Boolean(filePathOf(record));
+
+/** Whether a panel belongs to the resource represented by a file mode. */
+const isFilePanelInMode = (
+	params: FilePanelConfig | undefined,
+	mode: FileMode,
+): boolean => {
+	if (!params?.type || !params.id) return false;
+
+	switch (mode.type) {
+		case "APP":
+			return params.type === "PROJECT" && params.id === mode.app;
+		case "ENGINE":
+			return params.type === "ENGINE" && params.id === mode.engine;
+		case "INSIGHT":
+			return params.type === "INSIGHT" && params.id === mode.insightId;
+		default:
+			return false;
+	}
+};
 
 /**
  * Keep open file panels in step with the file tree.
@@ -64,7 +89,16 @@ export const useWorkbenchFilePanels = (fileMode: FileMode) => {
 				? `${newName}*`
 				: newName;
 
+			const isMcpEditor =
+				record.type === WORKBENCH_COMPONENTS.FILE_MCP_EDITOR;
+			let panelType = record.type;
+
+			if (!isMcpEditor) {
+				panelType = getFilePanelType(newPath);
+			}
+
 			layoutActions.updatePanel(record.id, {
+				type: panelType,
 				name: displayName,
 				config: {
 					...record.config,
@@ -90,7 +124,14 @@ export const useWorkbenchFilePanels = (fileMode: FileMode) => {
 		(movedItems: FileExplorerMovedItem[]) => {
 			let migrated = false;
 
-			for (const record of layoutActions.findPanels(hasFilePath)) {
+			for (const record of layoutActions.findPanels(
+				(record) =>
+					hasFilePath(record) &&
+					isFilePanelInMode(
+						record.config as FilePanelConfig | undefined,
+						fileMode,
+					),
+			)) {
 				const path = filePathOf(record);
 				if (!path) {
 					continue;
@@ -112,7 +153,7 @@ export const useWorkbenchFilePanels = (fileMode: FileMode) => {
 
 			return migrated;
 		},
-		[layoutActions, updatePanelPath],
+		[fileMode, layoutActions, updatePanelPath],
 	);
 
 	/**
@@ -132,11 +173,15 @@ export const useWorkbenchFilePanels = (fileMode: FileMode) => {
 				const doomed = layoutActions.findPanels((record) => {
 					const recordPath = filePathOf(record);
 					return (
-						recordPath === item.path ||
-						Boolean(
-							isDirectory &&
-								recordPath?.startsWith(directoryPath),
-						)
+						isFilePanelInMode(
+							record.config as FilePanelConfig | undefined,
+							fileMode,
+						) &&
+						(recordPath === item.path ||
+							Boolean(
+								isDirectory &&
+									recordPath?.startsWith(directoryPath),
+							))
 					);
 				});
 
@@ -145,7 +190,7 @@ export const useWorkbenchFilePanels = (fileMode: FileMode) => {
 				}
 			}
 		},
-		[layoutActions],
+		[fileMode, layoutActions],
 	);
 
 	return {

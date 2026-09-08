@@ -5,12 +5,14 @@ import {
 
 export { WORKBENCH_COMPONENTS } from "@/stores/workbench";
 
-/**
- * Shared panel-instance records seeded by the domain workbench layouts.
- * Static singletons keep `id === type` so persisted layouts, commands, and
- * the components map stay joined on the same `WORKBENCH_COMPONENTS` id.
- */
 export const WORKBENCH_PANEL_RECORDS = {
+	AGENT_EDITOR: {
+		id: WORKBENCH_COMPONENTS.AGENT_EDITOR,
+		type: WORKBENCH_COMPONENTS.AGENT_EDITOR,
+		name: "Agent",
+		helpText: "Agent Editor",
+		canClose: false,
+	},
 	ASSISTANT: {
 		id: WORKBENCH_COMPONENTS.ASSISTANT,
 		type: WORKBENCH_COMPONENTS.ASSISTANT,
@@ -19,11 +21,18 @@ export const WORKBENCH_PANEL_RECORDS = {
 		canClose: false,
 		minWidth: 320,
 	},
-	ENGINE_FILE_EXPLORER: {
+	FILE_EXPLORER: {
 		id: WORKBENCH_COMPONENTS.FILE_EXPLORER,
 		type: WORKBENCH_COMPONENTS.FILE_EXPLORER,
 		name: "Files",
 		helpText: "File Explorer",
+		canClose: false,
+	},
+	GIT_VERSION: {
+		id: WORKBENCH_COMPONENTS.GIT_VERSION,
+		type: WORKBENCH_COMPONENTS.GIT_VERSION,
+		name: "Version Control",
+		helpText: "Version Control",
 		canClose: false,
 	},
 	MODEL_CHAT: {
@@ -77,13 +86,6 @@ export const WORKBENCH_PANEL_RECORDS = {
 		helpText: "Documents",
 		canClose: false,
 	},
-	PROJECT_FILE_EXPLORER: {
-		id: WORKBENCH_COMPONENTS.PROJECT_FILE_EXPLORER,
-		type: WORKBENCH_COMPONENTS.PROJECT_FILE_EXPLORER,
-		name: "Files",
-		helpText: "File Explorer",
-		canClose: false,
-	},
 	PROJECT_TERMINAL: {
 		id: WORKBENCH_COMPONENTS.PROJECT_TERMINAL,
 		type: WORKBENCH_COMPONENTS.PROJECT_TERMINAL,
@@ -117,13 +119,6 @@ export const WORKBENCH_PANEL_RECORDS = {
 		type: WORKBENCH_COMPONENTS.PROJECT_APP_RENDERER,
 		name: "App",
 		helpText: "App Preview",
-		canClose: false,
-	},
-	PROJECT_AGENT_EDITOR: {
-		id: WORKBENCH_COMPONENTS.PROJECT_AGENT_EDITOR,
-		type: WORKBENCH_COMPONENTS.PROJECT_AGENT_EDITOR,
-		name: "Agent",
-		helpText: "Agent Editor",
 		canClose: false,
 	},
 } as const satisfies Record<string, WorkbenchPanelRecord>;

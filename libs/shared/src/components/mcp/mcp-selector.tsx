@@ -312,7 +312,11 @@ export const MCPSelector: React.FC<MCPSelectorProps> = ({
 										m={mcp}
 										type={type}
 										selected={!!selected[dep.engine_id]}
-										onClick={() => onSelect(mcp)}
+										onClick={
+											disabled
+												? undefined
+												: () => onSelect(mcp)
+										}
 										effectivePermission={getDepEffectivePermission(
 											dep,
 										)}
@@ -332,7 +336,11 @@ export const MCPSelector: React.FC<MCPSelectorProps> = ({
 										key={mcp.id}
 										m={mcp}
 										type={type}
-										onClick={() => onSelect(mcp)}
+										onClick={
+											disabled
+												? undefined
+												: () => onSelect(mcp)
+										}
 										selected={!!selectedEntry}
 										effectivePermission={mcp.permission}
 										fromWorkspace={fromWorkspace}
