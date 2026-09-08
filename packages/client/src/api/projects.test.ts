@@ -37,6 +37,22 @@ describe("createAppFromTemplate", () => {
 		);
 	});
 
+	it("creates a CODE project when no template is provided", async () => {
+		runPixelMock.mockResolvedValueOnce(
+			pixelResponse({ project_id: "project-1" }),
+		);
+
+		await expect(
+			createAppFromTemplate({
+				name: "New App",
+				isGlobal: false,
+			}),
+		).resolves.toBe("project-1");
+		expect(runPixelMock).toHaveBeenCalledWith(
+			'CreateProject(project=["New App"], global=["false"], projectType=["CODE"], portal=[true]);',
+		);
+	});
+
 	it("sets a trimmed description after cloning", async () => {
 		runPixelMock
 			.mockResolvedValueOnce(pixelResponse({ project_id: "project-1" }))

@@ -3,8 +3,8 @@ import { Env, get, post, runPixel } from "@semoss/sdk";
 interface CreateAppFromTemplateOptions {
 	/** Display name for the cloned project. */
 	name: string;
-	/** Project ID of the source template. */
-	templateId: string;
+	/** Optional project ID of the source template. */
+	templateId?: string;
 	/** Whether the cloned project is globally visible. */
 	isGlobal: boolean;
 	/** Optional project description. */
@@ -21,7 +21,9 @@ export const createAppFromTemplate = async (
 ): Promise<string> => {
 	const name = options.name.trim();
 	const response = await runPixel<[{ project_id?: string }]>(
-		`CreateAppFromTemplate(project=[${JSON.stringify(name)}], projectTemplate=[${JSON.stringify(options.templateId)}], global=[${JSON.stringify(String(options.isGlobal))}]);`,
+		options.templateId
+			? `CreateAppFromTemplate(project=[${JSON.stringify(name)}], projectTemplate=[${JSON.stringify(options.templateId)}], global=[${JSON.stringify(String(options.isGlobal))}]);`
+			: `CreateProject(project=[${JSON.stringify(name)}], global=[${JSON.stringify(String(options.isGlobal))}], projectType=["CODE"], portal=[true]);`,
 	);
 
 	if (response.errors.length > 0) {

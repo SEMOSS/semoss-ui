@@ -12,12 +12,11 @@ import CodeStarter from "@/assets/img/landing/code-starter.png";
 import GridMark from "@/assets/img/landing/grid-mark.svg";
 import NotebookStarter from "@/assets/img/landing/notebook-starter.png";
 import OrbitMark from "@/assets/img/landing/orbit-mark.svg";
-import PlaygroundHero from "@/assets/img/landing/playground-hero.png";
 import PlaygroundPreview from "@/assets/img/landing/playground-preview.png";
 import TemplatesPreview from "@/assets/img/landing/templates-preview.png";
 import TerminalPreview from "@/assets/img/landing/terminal-preview.png";
 import { NewAppModal } from "@/components/app";
-import { LandingFooter } from "@/components/landing";
+import { NewAppChatComposer } from "@/components/new-app";
 import { usePage } from "@/hooks";
 import { useNavigate } from "@/hooks/useNavigate";
 import {
@@ -120,18 +119,18 @@ export const LandingPage: React.FC = observer(() => {
 	return (
 		<>
 			<NavbarLeft>
-				<NavbarHeader variant="landing" />
+				<NavbarHeader />
 			</NavbarLeft>
-			<div className="mx-auto flex w-full max-w-300 flex-col gap-16 px-4 pt-8 pb-16 sm:px-6 md:gap-24 md:px-10 md:pt-16">
-				<section className="grid items-center gap-10 lg:grid-cols-2 lg:gap-10">
-					<div className="flex max-w-xl flex-col items-start gap-6">
+			<div className="mx-auto flex w-full max-w-300 flex-col items-center gap-12 px-4 pt-8 pb-16 sm:px-6 md:gap-16 md:px-10 md:pt-12">
+				{/* <section className="grid items-center gap-6 lg:grid-cols-2 lg:gap-8">
+					<div className="flex max-w-xl flex-col items-start gap-4">
 						<Muted className="font-mono font-normal text-xs uppercase tracking-widest">
 							Intelligent AI
 						</Muted>
-						<H3 className="font-medium text-3xl leading-tight sm:text-4xl md:text-5xl">
+						<H3 className="font-medium text-2xl leading-tight sm:text-3xl md:text-4xl">
 							Build apps that put AI to work
 						</H3>
-						<P className="text-base text-muted-foreground leading-normal md:text-lg">
+						<P className="text-muted-foreground text-sm leading-normal md:text-base">
 							Create AI-powered applications with the tools,
 							templates, and workflows your team needs. Start with
 							a proven foundation, customize it for your use case,
@@ -145,16 +144,32 @@ export const LandingPage: React.FC = observer(() => {
 						src={PlaygroundHero}
 						alt=""
 						aria-hidden="true"
-						className="w-full"
+						className="w-full max-w-96"
 					/>
+				</section> */}
+				<section className="flex flex-col gap-4">
+					<div className="flex flex-col gap-2">
+						<Muted className="font-mono font-normal text-xs uppercase tracking-widest">
+							Intelligent AI
+						</Muted>
+						<H3 className="font-medium text-2xl leading-tight sm:text-3xl md:text-4xl">
+							Build apps that put AI to work
+						</H3>
+						<P className="text-muted-foreground text-sm leading-normal md:text-base">
+							Create AI-powered applications with the tools,
+							templates, and workflows your team needs. Start with
+							a proven foundation, customize it for your use case,
+							and ship it on your infrastructure.
+						</P>
+					</div>
+					<NewAppChatComposer className="py-6" />
 				</section>
-
-				<section className="flex flex-col gap-6">
+				<section className="flex flex-col gap-4">
 					<div className="flex max-w-2xl flex-col gap-2">
-						<H3 className="font-medium text-3xl leading-tight sm:text-4xl">
+						<H3 className="font-medium text-2xl leading-tight sm:text-3xl">
 							Get started with our tools
 						</H3>
-						<P className="text-base text-muted-foreground md:text-lg">
+						<P className="text-muted-foreground text-sm md:text-base">
 							Start building your app in the way that works best
 							for you.
 						</P>
@@ -185,7 +200,7 @@ export const LandingPage: React.FC = observer(() => {
 									key={card.title}
 									type="button"
 									onClick={() => handleCreate(card.type)}
-									className="group flex min-w-0 flex-col gap-6 rounded-xl text-left outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+									className="group flex min-w-0 flex-col gap-6 rounded-xl p-4 text-left outline-none transition-colors hover:bg-muted/50 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
 									data-testid={card.testId}
 								>
 									{content}
@@ -194,7 +209,7 @@ export const LandingPage: React.FC = observer(() => {
 								<Link
 									key={card.title}
 									to={card.href}
-									className="group flex min-w-0 flex-col gap-6 rounded-xl text-left outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+									className="group flex min-w-0 flex-col gap-6 rounded-xl p-4 text-left outline-none transition-colors hover:bg-muted/50 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
 									data-testid={card.testId}
 								>
 									{content}
@@ -204,12 +219,12 @@ export const LandingPage: React.FC = observer(() => {
 					</div>
 				</section>
 
-				<section className="flex flex-col gap-6">
+				<section className="flex flex-col gap-4">
 					<div className="flex flex-col gap-2">
-						<H3 className="font-medium text-3xl leading-tight sm:text-4xl">
+						<H3 className="font-medium text-2xl leading-tight sm:text-3xl">
 							Try these fan favorites
 						</H3>
-						<P className="text-base text-muted-foreground md:text-lg">
+						<P className="text-muted-foreground text-sm md:text-base">
 							Explore popular apps built by the community.
 						</P>
 					</div>
@@ -217,7 +232,7 @@ export const LandingPage: React.FC = observer(() => {
 						{SYSTEM_APPS.map((app, index) => (
 							<div
 								key={app.name}
-								className="grid min-w-0 grid-cols-[auto_minmax(0,1fr)] gap-5 sm:grid-cols-[auto_minmax(0,1fr)_minmax(10rem,1fr)]"
+								className="grid min-w-0 grid-cols-[auto_minmax(0,1fr)] gap-5 rounded-xl p-4 transition-colors hover:bg-muted/50 sm:grid-cols-[auto_minmax(0,1fr)_minmax(10rem,1fr)]"
 							>
 								<span className="pt-1 font-mono text-primary text-xs tracking-widest">
 									{String(index + 1).padStart(2, "0")}
@@ -257,15 +272,15 @@ export const LandingPage: React.FC = observer(() => {
 					</div>
 				</section>
 
-				<section className="grid items-center gap-10 lg:grid-cols-2 lg:gap-10">
-					<div className="flex max-w-xl flex-col items-start gap-4">
+				<section className="grid items-center gap-6 lg:grid-cols-2 lg:gap-8">
+					<div className="flex max-w-xl flex-col items-start gap-3">
 						<Muted className="font-mono font-normal text-xs uppercase tracking-widest">
 							Customization
 						</Muted>
-						<H3 className="font-medium text-3xl leading-tight sm:text-4xl md:text-5xl">
+						<H3 className="font-medium text-2xl leading-tight sm:text-3xl md:text-4xl">
 							Browse our template catalog
 						</H3>
-						<P className="text-base text-muted-foreground md:text-lg">
+						<P className="text-muted-foreground text-sm md:text-base">
 							Explore reusable templates for apps of every kind.
 							Choose a starting point, create your own app, and
 							customize it to fit your use case.
@@ -286,7 +301,7 @@ export const LandingPage: React.FC = observer(() => {
 					/>
 				</section>
 
-				<section className="relative overflow-hidden rounded-xl bg-muted px-6 py-16 text-center sm:px-12 md:py-24">
+				<section className="relative overflow-hidden rounded-xl bg-muted px-6 py-12 text-center sm:px-12 md:py-16">
 					<img
 						src={GridMark}
 						alt=""
@@ -300,11 +315,11 @@ export const LandingPage: React.FC = observer(() => {
 						className="-right-8 absolute bottom-8 size-32 sm:right-8 sm:size-48"
 					/>
 					<div className="relative mx-auto flex max-w-3xl flex-col items-center gap-6">
-						<H3 className="font-medium text-3xl leading-tight sm:text-4xl md:text-5xl">
+						<H3 className="font-medium text-2xl leading-tight sm:text-3xl md:text-4xl">
 							Turn conversations into actions.{" "}
 							<em>Ideas into results.</em>
 						</H3>
-						<P className="max-w-xl text-base text-muted-foreground md:text-lg">
+						<P className="max-w-xl text-muted-foreground text-sm md:text-base">
 							Get started in minutes. Easily deploy production
 							ready applications.
 						</P>
@@ -319,8 +334,6 @@ export const LandingPage: React.FC = observer(() => {
 						</Button>
 					</div>
 				</section>
-
-				<LandingFooter />
 			</div>
 
 			{isNameOpen ? (

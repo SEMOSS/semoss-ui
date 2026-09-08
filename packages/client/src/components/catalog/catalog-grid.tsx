@@ -18,7 +18,7 @@ export interface CatalogGridProps {
 const COLUMN_CLASSES = {
 	1: "grid-cols-1",
 	2: "grid-cols-1 lg:grid-cols-2",
-	3: "grid-cols-1 lg:grid-cols-2 xl:grid-cols-3",
+	3: "grid-cols-1 lg:grid-cols-2 2xl:grid-cols-3",
 };
 
 const GAP_CLASSES = {

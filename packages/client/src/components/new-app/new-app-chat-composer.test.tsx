@@ -19,50 +19,6 @@ vi.mock("react-router-dom", async (importOriginal) => {
 	return { ...actual, useNavigate: () => mocks.navigate };
 });
 
-vi.mock("@semoss/shared", () => ({
-	ProjectSelect: ({
-		name,
-		onChange,
-		projectTypes,
-		disabled,
-	}: {
-		name: string;
-		onChange: (project: {
-			project_id: string;
-			project_name: string;
-			project_type: "CODE" | "WORKSPACE";
-		}) => void;
-		projectTypes?: string[];
-		disabled?: boolean;
-	}) => {
-		const isAgent = projectTypes?.includes("WORKSPACE");
-		return (
-			<button
-				type="button"
-				disabled={disabled}
-				aria-label={isAgent ? "Agent" : "Template"}
-				onClick={() =>
-					onChange(
-						isAgent
-							? {
-									project_id: "agent-1",
-									project_name: "Builder Agent",
-									project_type: "WORKSPACE",
-								}
-							: {
-									project_id: "template-1",
-									project_name: "Dashboard Starter",
-									project_type: "CODE",
-								},
-					)
-				}
-			>
-				{name}
-			</button>
-		);
-	},
-}));
-
 describe("NewAppChatComposer", () => {
 	beforeEach(() => {
 		mocks.createAppFromTemplate.mockReset();
@@ -71,20 +27,18 @@ describe("NewAppChatComposer", () => {
 
 	it("normalizes and caps generated workspace names", () => {
 		const name = createNewAppWorkspaceName(
-			" Dashboard   Starter ",
+			" New App ",
 			" Build   a detailed revenue dashboard with regional comparisons and forecasts ",
 		);
 
 		expect(name).toHaveLength(80);
-		expect(name).toMatch(/^Dashboard Starter - Build a detailed/);
+		expect(name).toMatch(/^New App - Build a detailed/);
 	});
 
 	it("creates a private workspace and navigates with the handoff", async () => {
 		mocks.createAppFromTemplate.mockResolvedValue("project-1");
 		render(<NewAppChatComposer />);
 
-		fireEvent.click(screen.getByRole("button", { name: "Agent" }));
-		fireEvent.click(screen.getByRole("button", { name: "Template" }));
 		fireEvent.change(screen.getByLabelText("Prompt"), {
 			target: { value: "Build a sales dashboard" },
 		});
@@ -96,8 +50,7 @@ describe("NewAppChatComposer", () => {
 
 		await waitFor(() =>
 			expect(mocks.createAppFromTemplate).toHaveBeenCalledWith({
-				name: "Dashboard Starter - Build a sales dashboard",
-				templateId: "template-1",
+				name: "New App - Build a sales dashboard",
 				isGlobal: false,
 			}),
 		);
@@ -105,8 +58,8 @@ describe("NewAppChatComposer", () => {
 			state: {
 				prompt: "Build a sales dashboard",
 				agent: {
-					workspace_id: "agent-1",
-					name: "Builder Agent",
+					workspace_id: "app-builder",
+					name: "app-builder",
 				},
 			},
 		});
@@ -116,8 +69,6 @@ describe("NewAppChatComposer", () => {
 		mocks.createAppFromTemplate.mockResolvedValue("project-1");
 		render(<NewAppChatComposer />);
 
-		fireEvent.click(screen.getByRole("button", { name: "Agent" }));
-		fireEvent.click(screen.getByRole("button", { name: "Template" }));
 		const prompt = screen.getByLabelText("Prompt");
 		fireEvent.change(prompt, { target: { value: "Build an app" } });
 		fireEvent.keyDown(prompt, { key: "Enter", shiftKey: true });
@@ -129,17 +80,10 @@ describe("NewAppChatComposer", () => {
 		);
 	});
 
-	it("announces required context when submitted empty", async () => {
+	it("does not render a template selector", () => {
+		mocks.createAppFromTemplate.mockResolvedValue("project-1");
 		render(<NewAppChatComposer />);
-		fireEvent.click(
-			screen.getByRole("button", {
-				name: "Create workspace and send prompt",
-			}),
-		);
 
-		expect(await screen.findByRole("alert")).toHaveTextContent(
-			"Select an agent",
-		);
-		expect(mocks.createAppFromTemplate).not.toHaveBeenCalled();
+		expect(screen.queryByText("Select template")).not.toBeInTheDocument();
 	});
 });

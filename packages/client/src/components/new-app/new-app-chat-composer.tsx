@@ -1,9 +1,9 @@
-import { BotIcon, LayoutTemplateIcon, SendIcon } from "lucide-react";
+import { SendIcon } from "lucide-react";
 import { useId, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { type Project, ProjectSelect } from "@semoss/shared";
 import {
 	Button,
+	cn,
 	Field,
 	FieldLabel,
 	Form,
@@ -22,14 +22,21 @@ import { createAppFromTemplate } from "@/api";
 import type { TemplateChatHandoffState } from "@/types";
 
 const MAX_WORKSPACE_NAME_LENGTH = 80;
+const APP_BUILDER_AGENT = {
+	workspace_id: "app-builder",
+	name: "app-builder",
+};
 
 const schema = z.object({
-	agentId: z.string().min(1, "Select an agent"),
-	templateId: z.string().min(1, "Select a template"),
 	prompt: z.string().trim().min(1, "Enter a prompt"),
 });
 
 type FormValues = z.infer<typeof schema>;
+
+interface NewAppChatComposerProps {
+	/** Additional classes for the composer wrapper. */
+	className?: string;
+}
 
 /**
  * Build a concise workspace name from the selected template and prompt.
@@ -51,51 +58,29 @@ export const createNewAppWorkspaceName = (
  * Playground-style prompt composer that creates a CODE app from a template.
  * @return Agent and template context controls with a prompt input.
  */
-export const NewAppChatComposer = () => {
+export const NewAppChatComposer = ({ className }: NewAppChatComposerProps) => {
 	const navigate = useNavigate();
-	const agentId = useId();
-	const templateId = useId();
 	const promptId = useId();
 	const errorId = useId();
-	const [selectedAgent, setSelectedAgent] = useState<Project | null>(null);
-	const [selectedTemplate, setSelectedTemplate] = useState<Project | null>(
-		null,
-	);
 	const [submitError, setSubmitError] = useState("");
 
 	const form = useForm<FormValues>({
 		resolver: zodResolver(schema),
 		defaultValues: {
-			agentId: "",
-			templateId: "",
 			prompt: "",
 		},
 	});
 
 	const handleSubmit = async (values: FormValues) => {
-		if (!selectedAgent || !selectedTemplate) {
-			return;
-		}
-
 		setSubmitError("");
 		try {
-			const agentName =
-				selectedAgent.project_display_name ||
-				selectedAgent.project_name;
-			const templateName =
-				selectedTemplate.project_display_name ||
-				selectedTemplate.project_name;
 			const projectId = await createAppFromTemplate({
-				name: createNewAppWorkspaceName(templateName, values.prompt),
-				templateId: selectedTemplate.project_id,
+				name: createNewAppWorkspaceName("New App", values.prompt),
 				isGlobal: false,
 			});
 			const state: TemplateChatHandoffState = {
 				prompt: values.prompt.trim(),
-				agent: {
-					workspace_id: selectedAgent.project_id,
-					name: agentName,
-				},
+				agent: APP_BUILDER_AGENT,
 			};
 
 			navigate(`/app/${projectId}/edit`, { state });
@@ -110,16 +95,16 @@ export const NewAppChatComposer = () => {
 		}
 	};
 
-	const validationError =
-		form.formState.errors.agentId?.message ||
-		form.formState.errors.templateId?.message ||
-		form.formState.errors.prompt?.message;
+	const validationError = form.formState.errors.prompt?.message;
 
 	return (
 		<Form
 			form={form}
 			onSubmit={handleSubmit}
-			className="mx-auto w-full max-w-4xl px-2 py-12 sm:px-4 md:py-16"
+			className={cn(
+				"mx-auto w-full max-w-4xl px-2 py-12 sm:px-4 md:py-16",
+				className,
+			)}
 		>
 			<div className="overflow-hidden rounded-xl border border-border bg-card shadow-sm transition-[color,box-shadow] focus-within:border-ring focus-within:ring-[3px] focus-within:ring-ring/50">
 				<FormField
@@ -161,124 +146,8 @@ export const NewAppChatComposer = () => {
 					)}
 				/>
 
-				<div className="flex min-w-0 items-center gap-2 border-border border-t bg-muted/50 p-3">
-					<div className="flex min-w-0 flex-1 items-center gap-2 overflow-hidden">
-						<FormField
-							control={form.control}
-							name="agentId"
-							render={({ fieldState }) => (
-								<Field
-									data-invalid={Boolean(fieldState.error)}
-									className="min-w-0 max-w-44 gap-0"
-								>
-									<FieldLabel
-										htmlFor={agentId}
-										className="sr-only"
-									>
-										Agent
-									</FieldLabel>
-									<div className="relative min-w-0">
-										<BotIcon
-											aria-hidden="true"
-											className="-translate-y-1/2 pointer-events-none absolute top-1/2 left-2.5 z-10 size-3.5"
-										/>
-										<ProjectSelect
-											id={agentId}
-											aria-describedby={
-												validationError || submitError
-													? errorId
-													: undefined
-											}
-											aria-invalid={Boolean(
-												fieldState.error,
-											)}
-											name={
-												selectedAgent?.project_display_name ||
-												selectedAgent?.project_name ||
-												"Select agent"
-											}
-											value={
-												selectedAgent?.project_id || ""
-											}
-											projectTypes={["WORKSPACE"]}
-											disabled={
-												form.formState.isSubmitting
-											}
-											className="h-8 min-w-0 border-border bg-background ps-8 text-xs shadow-none"
-											onChange={(agent) => {
-												setSelectedAgent(agent);
-												form.setValue(
-													"agentId",
-													agent.project_id,
-													{
-														shouldValidate: true,
-													},
-												);
-											}}
-										/>
-									</div>
-								</Field>
-							)}
-						/>
-
-						<FormField
-							control={form.control}
-							name="templateId"
-							render={({ fieldState }) => (
-								<Field
-									data-invalid={Boolean(fieldState.error)}
-									className="min-w-0 max-w-44 gap-0"
-								>
-									<FieldLabel
-										htmlFor={templateId}
-										className="sr-only"
-									>
-										Template
-									</FieldLabel>
-									<div className="relative min-w-0">
-										<LayoutTemplateIcon
-											aria-hidden="true"
-											className="-translate-y-1/2 pointer-events-none absolute top-1/2 left-2.5 z-10 size-3.5"
-										/>
-										<ProjectSelect
-											id={templateId}
-											aria-describedby={
-												validationError || submitError
-													? errorId
-													: undefined
-											}
-											aria-invalid={Boolean(
-												fieldState.error,
-											)}
-											name={
-												selectedTemplate?.project_display_name ||
-												selectedTemplate?.project_name ||
-												"Select template"
-											}
-											value={
-												selectedTemplate?.project_id ||
-												""
-											}
-											projectTypes={["CODE"]}
-											onlyTemplates
-											disabled={
-												form.formState.isSubmitting
-											}
-											className="h-8 min-w-0 border-border bg-background ps-8 text-xs shadow-none"
-											onChange={(template) => {
-												setSelectedTemplate(template);
-												form.setValue(
-													"templateId",
-													template.project_id,
-													{ shouldValidate: true },
-												);
-											}}
-										/>
-									</div>
-								</Field>
-							)}
-						/>
-					</div>
+				<div className="flex min-w-0 items-center gap-2 p-3">
+					<div className="flex min-w-0 flex-1" />
 
 					<Tooltip>
 						<TooltipTrigger asChild>

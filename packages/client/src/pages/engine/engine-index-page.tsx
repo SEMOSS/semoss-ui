@@ -66,7 +66,7 @@ export const EngineIndexPage: React.FC<EngineIndexPageProps> = observer(
 		const debouncedSearch = useDebouncedValue(search);
 		const [sortValue, setSortValue] = useState("ENGINENAME");
 		const [sortOrder, setSortOrder] = useState<"ASC" | "DESC">("ASC");
-		const [gridStyle, setGridStyle] = useState<"LIST" | "CARD">("CARD");
+		const [gridStyle, setGridStyle] = useState<"LIST" | "CARD">("LIST");
 
 		const [metaFilters, setMetaFilters] = useState<Record<string, unknown>>(
 			{},
@@ -170,7 +170,7 @@ export const EngineIndexPage: React.FC<EngineIndexPageProps> = observer(
 			setMetaFilters({});
 			setSortValue("ENGINENAME");
 			setSortOrder("ASC");
-			setGridStyle("CARD");
+			setGridStyle("LIST");
 			resetScroll();
 		}, [route.type, resetScroll]);
 

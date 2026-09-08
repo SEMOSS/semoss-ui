@@ -1,4 +1,9 @@
-import { ChevronDown, ChevronUp, Search as SearchIcon } from "lucide-react";
+import {
+	ChevronDown,
+	ChevronUp,
+	Search as SearchIcon,
+	SlidersHorizontal,
+} from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { usePixel } from "@semoss/sdk/react";
 import type { Engine, Project } from "@semoss/shared";
@@ -509,7 +514,7 @@ export const CatalogFilterBox = (props: CatalogFilterboxProps) => {
 	);
 
 	return (
-		<div className="flex w-full flex-col overflow-y-auto overflow-x-hidden rounded-lg border border-border/80 shadow-xs md:max-h-[calc(100vh-220px)] md:w-full">
+		<div className="flex w-full flex-col overflow-y-auto overflow-x-hidden rounded-xl border bg-card shadow-sm md:max-h-[calc(100vh-220px)] md:w-[352px]">
 			<div className="w-full">
 				<Collapsible
 					open={isDesktopFilterLayout ? true : headerOpen}
@@ -518,13 +523,14 @@ export const CatalogFilterBox = (props: CatalogFilterboxProps) => {
 					}
 				>
 					<div
-						className={`flex items-center border-border/70 border-b px-3 pb-3 ${
+						className={`flex items-center px-4 pb-2 ${
 							isDesktopFilterLayout
-								? "justify-start pt-3"
+								? "justify-start pt-4"
 								: "justify-between pt-2"
 						}`}
 					>
 						<div className="flex items-center gap-2">
+							<SlidersHorizontal className="size-4 text-muted-foreground" />
 							<h6 className="font-semibold text-foreground text-sm">
 								Filters
 							</h6>
