@@ -2,7 +2,6 @@ import { Outlet } from "react-router-dom";
 import { AutomationWorkbenchPage } from "@/components/automation-workspace";
 import { ProjectAccessControl, ProjectCatalog } from "@/components/project";
 import {
-	AppCommitsPage,
 	AppGithubPage,
 	AppGithubSelectRepoPage,
 	AppMcpUsagePage,
@@ -92,11 +91,6 @@ export const PROJECT_ROUTES: {
 										],
 									},
 									{
-										name: "Commits",
-										path: "commits",
-										restrict: ["OWNER", "EDIT"],
-									},
-									{
 										name: "GitHub",
 										path: "github",
 										restrict: ["OWNER"],
@@ -132,10 +126,7 @@ export const PROJECT_ROUTES: {
 								path: "mcp-usage",
 								element: <AppMcpUsagePage />,
 							},
-							{
-								path: "commits",
-								element: <AppCommitsPage />,
-							},
+
 							{
 								path: "github",
 								element: <AppGithubPage />,
@@ -202,11 +193,6 @@ export const PROJECT_ROUTES: {
 										],
 									},
 									{
-										name: "Commits",
-										path: "commits",
-										restrict: ["OWNER", "EDIT"],
-									},
-									{
 										name: "GitHub",
 										path: "github",
 										restrict: ["OWNER"],
@@ -239,10 +225,7 @@ export const PROJECT_ROUTES: {
 									/>
 								),
 							},
-							{
-								path: "commits",
-								element: <AppCommitsPage />,
-							},
+
 							{
 								path: "github",
 								element: <AppGithubPage />,
@@ -296,11 +279,6 @@ export const PROJECT_ROUTES: {
 								tabs={[
 									{ name: "Overview", path: "" },
 									{
-										name: "Commits",
-										path: "commits",
-										restrict: ["OWNER", "EDIT"],
-									},
-									{
 										name: "GitHub",
 										path: "github",
 										restrict: ["OWNER"],
@@ -323,10 +301,7 @@ export const PROJECT_ROUTES: {
 								path: "",
 								element: <ProjectOverviewPage />,
 							},
-							{
-								path: "commits",
-								element: <AppCommitsPage />,
-							},
+
 							{
 								path: "github",
 								element: <AppGithubPage />,
@@ -404,11 +379,6 @@ export const PROJECT_ROUTES: {
 								tabs={[
 									{ name: "Overview", path: "" },
 									{
-										name: "Commits",
-										path: "commits",
-										restrict: ["OWNER", "EDIT"],
-									},
-									{
 										name: "GitHub",
 										path: "github",
 										restrict: ["OWNER"],
@@ -439,10 +409,6 @@ export const PROJECT_ROUTES: {
 							{
 								path: "",
 								element: <ProjectOverviewPage />,
-							},
-							{
-								path: "commits",
-								element: <AppCommitsPage />,
 							},
 							{
 								path: "github",

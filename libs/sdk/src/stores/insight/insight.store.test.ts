@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { Env } from "../../env";
 import { UnauthorizedError } from "../../utility";
 
@@ -236,6 +236,84 @@ describe("InsightStore", () => {
 			expect(store.isInitialized).toBe(false);
 			expect(store.isAuthorized).toBe(false);
 			expect(store.isReady).toBe(false);
+		});
+
+		it("dedupes concurrent calls into one insight", async () => {
+			// Only one runPixel result is queued: a second setup would consume a
+			// second one and create a second server-side insight.
+			mockRunPixel.mockResolvedValueOnce(pixelResult("first-insight"));
+			const store = new InsightStore();
+
+			const [a, b] = await Promise.all([
+				store.initialize(),
+				store.initialize(),
+			]);
+
+			expect(mockRunPixel).toHaveBeenCalledTimes(1);
+			expect(store.insightId).toBe("first-insight");
+			expect(a).toBe(b);
+		});
+
+		it("allows a fresh initialize after a concurrent batch settles", async () => {
+			const store = new InsightStore();
+			mockRunPixel.mockResolvedValueOnce(pixelResult("first-insight"));
+			await Promise.all([store.initialize(), store.initialize()]);
+
+			mockRunPixel.mockResolvedValueOnce(pixelResult("second-insight"));
+			await store.initialize();
+
+			expect(mockRunPixel).toHaveBeenCalledTimes(2);
+			expect(store.insightId).toBe("second-insight");
+		});
+
+		it("does not wedge later calls when an initialize fails", async () => {
+			Env.update({ MODULE: "" });
+			const store = new InsightStore();
+			await store.initialize();
+			expect(store.error).toBeInstanceOf(Error);
+
+			Env.update({ MODULE: "http://localhost:9090/Monolith" });
+			await initStore(store);
+			expect(store.isReady).toBe(true);
+		});
+	});
+
+	// ---- semoss-env tag ------------------------------------------------------
+
+	describe("semoss-env tag", () => {
+		// Parsing and precedence are covered in env.test.ts. These two only check
+		// that initialize() consults the tag at all, and that an unusable one does
+		// not take the initialize path down with it.
+		const setEnvTag = (contents: string | null) => {
+			// The suite runs in the node environment, so there is no real document.
+			vi.stubGlobal("document", {
+				getElementById: (id: string) =>
+					id === "semoss-env" && contents !== null
+						? { textContent: contents }
+						: null,
+			});
+		};
+
+		afterEach(() => {
+			vi.unstubAllGlobals();
+		});
+
+		it("applies APP and MODULE from the tag", async () => {
+			setEnvTag(
+				JSON.stringify({ APP: "app-from-tag", MODULE: "/Monolith" }),
+			);
+			await initStore(new InsightStore());
+			expect(Env.APP).toBe("app-from-tag");
+			expect(Env.MODULE).toBe("/Monolith");
+		});
+
+		it("still initializes when the tag is unusable", async () => {
+			vi.spyOn(console, "warn").mockImplementation(() => undefined);
+			setEnvTag("{not json");
+			const store = new InsightStore();
+			await initStore(store);
+			expect(store.isReady).toBe(true);
+			expect(Env.MODULE).toBe("http://localhost:9090/Monolith");
 		});
 
 		it("sets isAuthorized false when system has no logins", async () => {

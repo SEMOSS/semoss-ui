@@ -98,7 +98,7 @@ const effortParamValue = (effort: WorkbenchAssistantEffort): string =>
 	effort === "max" ? "xhigh" : effort;
 
 /** Configuration each workbench injects for its ASSISTANT panel. */
-interface WorkbenchAssistantConfig {
+export interface WorkbenchAssistantConfig {
 	/** System prompt sent to the assistant. */
 	systemPrompt?: string;
 	/** Prepare the bound room's tools before an agent run starts. */
@@ -392,11 +392,11 @@ const toErrorMessage = (error: unknown): string =>
  * conversation history, and room usage.
  *
  * @name createWorkbenchAssistantSlice
- * @param workbenchId - Engine/workbench id persisted onto room options to scope conversation history.
+ * @param cacheKey - Workbench key persisted onto room options to scope conversation history.
  * @return Zustand state creator contributing the `assistant` key to the workbench store.
  */
 export const createWorkbenchAssistantSlice = (
-	workbenchId: string,
+	cacheKey: string,
 ): WorkbenchSlice<WorkbenchAssistantSliceState> => {
 	// Runtime owned by this store instance, deliberately outside reactive
 	// state. Each entry pairs the live AgentStore (for pokeNow/stop) with a
@@ -926,7 +926,7 @@ export const createWorkbenchAssistantSlice = (
 						modelId: model.engine_id,
 						workspace: get().assistant.agent,
 						harnessType: "semoss",
-						workbench: workbenchId,
+						workbench: cacheKey,
 					});
 
 					// Harness/run parameters: the workbench's static params
@@ -1185,7 +1185,7 @@ export const createWorkbenchAssistantSlice = (
 				try {
 					const conversations = await getUserConversationRooms(
 						insightId,
-						workbenchId,
+						cacheKey,
 					);
 					setAssistant({ conversations });
 				} catch (error) {

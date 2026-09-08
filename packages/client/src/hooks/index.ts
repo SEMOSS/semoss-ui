@@ -5,6 +5,7 @@ import { usePixel } from "./use-pixel";
 import { useProject } from "./use-project";
 import { useTabBarScroll } from "./use-tab-bar-scroll";
 import { useWorkbench } from "./use-workbench";
+import { useWorkbenchAccess } from "./use-workbench-access";
 import { useWorkbenchCommands } from "./use-workbench-commands";
 import { useWorkbenchControl } from "./use-workbench-control";
 import { useWorkbenchFilePanels } from "./use-workbench-file-panels";
@@ -42,6 +43,7 @@ export {
 	useTabBarScroll,
 	useThemeLogo,
 	useWorkbench,
+	useWorkbenchAccess,
 	useWorkbenchCommands,
 	useWorkbenchControl,
 	useWorkbenchFilePanels,
