@@ -9,6 +9,7 @@ import { observer } from "mobx-react-lite";
 import React, { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "@semoss/i18n";
 import type { MCPToolResponse } from "@semoss/sdk";
+import { runPixel } from "@semoss/sdk/react";
 import {
 	Button,
 	cn,
@@ -59,6 +60,62 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 	const [showScrollup, setShowScrollup] = useState(false);
 	const [showScrolldown, setShowScrolldown] = useState(false);
 	const [isScrollLocked, setIsScrollLocked] = useState(false);
+
+	/** Engine IDs whose monthly token quota is exhausted for the current user */
+	const [quotaExhaustedIds, setQuotaExhaustedIds] = useState<string[]>([]);
+
+	const refreshQuotaExhaustedIds = useCallback(async () => {
+		try {
+			// Step 1: fetch all text-generation engines (1 request).
+			const { pixelReturn: engineReturn } = await runPixel<
+				[{ app_id: string; engine_id: string }[]]
+			>(
+				`META | MyEngines(metaKeys=[], metaFilters=[{"tag":"text-generation"}], engineTypes=["MODEL"]);`,
+			);
+			const engineIds = (engineReturn[0].output ?? [])
+				.map((engine) => engine.app_id || engine.engine_id)
+				.filter(Boolean);
+
+			if (engineIds.length === 0) {
+				setQuotaExhaustedIds([]);
+				return;
+			}
+
+			// Step 2: chain all restriction checks into one pixel string so they
+			// are sent as a single HTTP request. Each operation maps to its own
+			// entry in pixelReturn.
+			const restrictionPixel = engineIds
+				.map((id) => `GetUserModelUsageRestrictions(engine=["${id}"]);`)
+				.join(" ");
+
+			const { pixelReturn: restrictionReturn } =
+				await runPixel(restrictionPixel);
+
+			// operationType is string[] — use .includes() to check for errors.
+			const exhausted = engineIds.filter((_, i) =>
+				restrictionReturn[i]?.operationType.includes("ERROR"),
+			);
+
+			setQuotaExhaustedIds(exhausted);
+		} catch {
+			// ignore — dropdown just won't show greys
+		}
+	}, []);
+
+	// Check quotas on mount so the model dropdown is accurate from the start.
+	// refreshQuotaExhaustedIds is stable (useCallback with no deps), so adding
+	// it as a dependency here does not cause extra calls.
+	useEffect(() => {
+		refreshQuotaExhaustedIds();
+	}, [refreshQuotaExhaustedIds]);
+
+	// Re-check quotas after each message completes (history grows).
+	// refreshQuotaExhaustedIds is stable, so it is safe to include as a dep.
+	useEffect(() => {
+		if (room.history.length > 0 && !room.isLoading) {
+			refreshQuotaExhaustedIds();
+		}
+	}, [room.history.length, room.isLoading, refreshQuotaExhaustedIds]);
 
 	/**
 	 * Functions
@@ -557,6 +614,7 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 					className="max-h-56 min-h-24"
 					isLoading={showLoadingState}
 					model={room.model}
+					disabledModelIds={quotaExhaustedIds}
 					room={room}
 					setModel={(model) => {
 						room.setModel(model);
