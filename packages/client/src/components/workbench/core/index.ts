@@ -3,6 +3,8 @@ export * from "./use-workbench-hit-test";
 export * from "./use-workbench-panel";
 export * from "./workbench";
 export * from "./workbench.types";
+export * from "./workbench-access-error";
+export * from "./workbench-access-loading";
 export * from "./workbench-border";
 export * from "./workbench-command-menu-button";
 export * from "./workbench-command-palette";

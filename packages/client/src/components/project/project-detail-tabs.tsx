@@ -4,7 +4,6 @@ import { Tabs, TabsList, TabsTrigger } from "@semoss/ui/next";
 import { ProjectAccessControl, ProjectOverview } from "@/components/project";
 import { useProject } from "@/hooks";
 import { AppActivityPage } from "@/pages/app/app-activity-page";
-import { AppCommitsPage } from "@/pages/app/app-commits-page";
 import { AppGithubPage } from "@/pages/app/app-github-page";
 import { AppMcpUsagePage } from "@/pages/app/app-mcp-usage-page";
 import { AppSettingsPage } from "@/pages/app/app-settings-page";
@@ -22,7 +21,6 @@ interface ProjectDetailTabsProps {
 			| "mcp-usage"
 			| "activity"
 			| "agent-activity"
-			| "commits"
 			| "github"
 			| "settings"
 			| "access-control"
@@ -102,7 +100,6 @@ export const ProjectDetailTabs = ({ tabs }: ProjectDetailTabsProps) => {
 				{activeTab?.component === "agent-activity" && (
 					<AgentActivityPage />
 				)}
-				{activeTab?.component === "commits" && <AppCommitsPage />}
 				{activeTab?.component === "github" && <AppGithubPage />}
 				{activeTab?.component === "settings" && <AppSettingsPage />}
 				{activeTab?.component === "access-control" && (
