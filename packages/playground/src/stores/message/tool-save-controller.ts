@@ -346,7 +346,7 @@ export class ToolSaveController {
 				platform_generated: true,
 				modelId: room.model.engine_id,
 				dateCreated: new Date().toISOString(),
-				parts: [{ type: "THINKING", thinking: "" }],
+				parts: [],
 				tokens: 0,
 				ornaments: {
 					modelName:
