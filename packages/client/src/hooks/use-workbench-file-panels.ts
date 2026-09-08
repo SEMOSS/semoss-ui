@@ -3,11 +3,11 @@ import {
 	type FileExplorerMovedItem,
 	type FileItem,
 	type FileMode,
-	getFileEditorKind,
 	getFileEditorPathScope,
 	notifyFileEditorPathMoved,
 	resolveMovedPath,
 } from "@semoss/shared";
+import { getFilePanelType } from "@/components/workbench/files/file-editor.utility";
 import {
 	WORKBENCH_COMPONENTS,
 	type WorkbenchPanelRecord,
@@ -16,6 +16,8 @@ import { useWorkbench } from "./use-workbench";
 
 /** The slice of a file-backed panel's config this hook cares about. */
 interface FilePanelConfig {
+	type?: "ENGINE" | "PROJECT" | "INSIGHT";
+	id?: string;
 	path?: string;
 }
 
@@ -36,6 +38,25 @@ const filePathOf = (record: WorkbenchPanelRecord): string | undefined =>
  */
 const hasFilePath = (record: WorkbenchPanelRecord): boolean =>
 	Boolean(filePathOf(record));
+
+/** Whether a panel belongs to the resource represented by a file mode. */
+const isFilePanelInMode = (
+	params: FilePanelConfig | undefined,
+	mode: FileMode,
+): boolean => {
+	if (!params?.type || !params.id) return false;
+
+	switch (mode.type) {
+		case "APP":
+			return params.type === "PROJECT" && params.id === mode.app;
+		case "ENGINE":
+			return params.type === "ENGINE" && params.id === mode.engine;
+		case "INSIGHT":
+			return params.type === "INSIGHT" && params.id === mode.insightId;
+		default:
+			return false;
+	}
+};
 
 /**
  * Keep open file panels in step with the file tree.
@@ -69,62 +90,11 @@ export const useWorkbenchFilePanels = (fileMode: FileMode) => {
 				: newName;
 
 			const isMcpEditor =
-				record.type === WORKBENCH_COMPONENTS.MCP_EDITOR ||
-				record.type === WORKBENCH_COMPONENTS.PROJECT_MCP_EDITOR;
+				record.type === WORKBENCH_COMPONENTS.FILE_MCP_EDITOR;
 			let panelType = record.type;
 
 			if (!isMcpEditor) {
-				const fileKind = getFileEditorKind(newPath);
-				if (fileMode.type === "APP") {
-					switch (fileKind) {
-						case "download":
-							panelType =
-								WORKBENCH_COMPONENTS.PROJECT_FILE_DOWNLOAD_VIEWER;
-							break;
-						case "image":
-							panelType =
-								WORKBENCH_COMPONENTS.PROJECT_FILE_IMAGE_EDITOR;
-							break;
-						case "markdown":
-							panelType =
-								WORKBENCH_COMPONENTS.PROJECT_FILE_MARKDOWN_EDITOR;
-							break;
-						case "notebook":
-							panelType =
-								WORKBENCH_COMPONENTS.PROJECT_FILE_NOTEBOOK_EDITOR;
-							break;
-						case "pdf":
-							panelType =
-								WORKBENCH_COMPONENTS.PROJECT_FILE_PDF_EDITOR;
-							break;
-						default:
-							panelType =
-								WORKBENCH_COMPONENTS.PROJECT_FILE_CODE_EDITOR;
-					}
-				} else {
-					switch (fileKind) {
-						case "download":
-							panelType =
-								WORKBENCH_COMPONENTS.FILE_DOWNLOAD_VIEWER;
-							break;
-						case "image":
-							panelType = WORKBENCH_COMPONENTS.FILE_IMAGE_EDITOR;
-							break;
-						case "markdown":
-							panelType =
-								WORKBENCH_COMPONENTS.FILE_MARKDOWN_EDITOR;
-							break;
-						case "notebook":
-							panelType =
-								WORKBENCH_COMPONENTS.FILE_NOTEBOOK_EDITOR;
-							break;
-						case "pdf":
-							panelType = WORKBENCH_COMPONENTS.FILE_PDF_EDITOR;
-							break;
-						default:
-							panelType = WORKBENCH_COMPONENTS.FILE_CODE_EDITOR;
-					}
-				}
+				panelType = getFilePanelType(newPath);
 			}
 
 			layoutActions.updatePanel(record.id, {
@@ -141,7 +111,7 @@ export const useWorkbenchFilePanels = (fileMode: FileMode) => {
 				notifyFileEditorPathMoved(oldPath, newPath, scope);
 			}
 		},
-		[fileMode, layoutActions, scope],
+		[layoutActions, scope],
 	);
 
 	/**
@@ -154,7 +124,14 @@ export const useWorkbenchFilePanels = (fileMode: FileMode) => {
 		(movedItems: FileExplorerMovedItem[]) => {
 			let migrated = false;
 
-			for (const record of layoutActions.findPanels(hasFilePath)) {
+			for (const record of layoutActions.findPanels(
+				(record) =>
+					hasFilePath(record) &&
+					isFilePanelInMode(
+						record.config as FilePanelConfig | undefined,
+						fileMode,
+					),
+			)) {
 				const path = filePathOf(record);
 				if (!path) {
 					continue;
@@ -176,7 +153,7 @@ export const useWorkbenchFilePanels = (fileMode: FileMode) => {
 
 			return migrated;
 		},
-		[layoutActions, updatePanelPath],
+		[fileMode, layoutActions, updatePanelPath],
 	);
 
 	/**
@@ -196,11 +173,15 @@ export const useWorkbenchFilePanels = (fileMode: FileMode) => {
 				const doomed = layoutActions.findPanels((record) => {
 					const recordPath = filePathOf(record);
 					return (
-						recordPath === item.path ||
-						Boolean(
-							isDirectory &&
-								recordPath?.startsWith(directoryPath),
-						)
+						isFilePanelInMode(
+							record.config as FilePanelConfig | undefined,
+							fileMode,
+						) &&
+						(recordPath === item.path ||
+							Boolean(
+								isDirectory &&
+									recordPath?.startsWith(directoryPath),
+							))
 					);
 				});
 
@@ -209,7 +190,7 @@ export const useWorkbenchFilePanels = (fileMode: FileMode) => {
 				}
 			}
 		},
-		[layoutActions],
+		[fileMode, layoutActions],
 	);
 
 	return {
