@@ -39,7 +39,7 @@ export interface RunsTabSnapshot {
 	results: AutomationNodeResult[];
 }
 
-/** Live trace state shared with the host workbench's trace iframe. */
+/** Live trace state shared with a host rendering `RunsTab` alongside `AutomationCanvas`. */
 export interface AutomationTraceSnapshot extends RunsTabSnapshot {
 	executedDefinition: AutomationExecutedDefinition | null;
 }
@@ -48,6 +48,11 @@ interface RunsTabProps extends AutomationTraceSnapshot {
 	appId: string;
 	refreshToken: number;
 	onDismiss: () => void;
+	/** Pop a step/run output value out into a larger viewer, for a host rendering this tab
+	 * alongside the canvas instead of in a separate iframe. */
+	onOpenOutput?: (output: string) => void;
+	/** Hand a run's status off to the Assistant as a draft prompt. */
+	onAskAssistant?: (prompt: string) => void;
 }
 
 type View = "history" | "live" | "detail";
@@ -74,6 +79,8 @@ export function RunsTab({
 	results,
 	executedDefinition,
 	onDismiss,
+	onOpenOutput,
+	onAskAssistant,
 }: RunsTabProps) {
 	const [view, setView] = useState<View>("history");
 	const [runs, setRuns] = useState<AutomationRunSummary[]>([]);
@@ -156,38 +163,21 @@ export function RunsTab({
 		setSelectedRun(null);
 	}, []);
 
-	const handleOutputPopout = useCallback((output: string) => {
-		const parentOrigin = new URLSearchParams(window.location.search).get(
-			"parentOrigin",
-		);
-		if (parentOrigin && window.parent !== window) {
-			window.parent.postMessage(
-				{
-					type: "SEMOSS_AUTOMATION_OPEN_OUTPUT",
-					output,
-				},
-				parentOrigin,
-			);
-		}
-	}, []);
+	const handleOutputPopout = useCallback(
+		(output: string) => onOpenOutput?.(output),
+		[onOpenOutput],
+	);
 
 	const handleAskAssistant = useCallback(() => {
-		if (!latestRunStatus) return;
-		const parentOrigin = new URLSearchParams(window.location.search).get(
-			"parentOrigin",
-		);
-		if (!parentOrigin || window.parent === window) return;
+		if (!latestRunStatus || !onAskAssistant) return;
 		const prompt = buildAssistantHandoffPrompt({
 			status: latestRunStatus,
 			runSummary: aiRunSummary,
 			steps,
 			results,
 		});
-		window.parent.postMessage(
-			{ type: "SEMOSS_AUTOMATION_ASK_ASSISTANT", prompt },
-			parentOrigin,
-		);
-	}, [aiRunSummary, latestRunStatus, results, steps]);
+		onAskAssistant(prompt);
+	}, [aiRunSummary, latestRunStatus, onAskAssistant, results, steps]);
 
 	if (view === "live" || (view === "history" && running)) {
 		return (

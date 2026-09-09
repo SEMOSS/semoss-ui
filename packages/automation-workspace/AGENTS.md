@@ -8,16 +8,18 @@ Workspace system app.
 
 ## Overview
 
-`@semoss/automation-workspace` is a **private** Vite "system app" — the same pattern as
-`@semoss/playwright-browser-sockets` — that renders an automation's steps, drives a live
-sequential run, and exposes a SEMOSS MCP surface for `TriggerAutomation`. It depends on
-`@semoss/sdk` and `@semoss/ui` only; it does **not** depend on `@semoss/client` or any of its
-MobX stores, so the exact same bundle renders identically whether:
-
-- embedded by `@semoss/client` via `?app=<projectId>` (optionally `&readOnly=1`), or
-- iframed by playground as the `TriggerAutomation` MCP tool's sidebar UI, resolved from
-  `SMSS_MCP_UI.resourceURI = "system://automation-workspace/"` and fed context via the
-  `SMSS_INIT_TOOL` postMessage handshake (see `src/semoss/client.ts`).
+`@semoss/automation-workspace` is a Vite "system app" that renders an automation's steps,
+drives a live sequential run, and exposes a SEMOSS MCP surface for `TriggerAutomation`. It
+depends on `@semoss/sdk` and `@semoss/ui` only; it does **not** depend on `@semoss/client` or
+any of its MobX stores. Its `src/index.ts` barrel is also consumed directly as a normal package
+import — `@semoss/client`'s automation workbench imports `AutomationCanvas`, `InspectorTab`, and
+`RunsTab` straight from `@semoss/automation-workspace` and renders them as sibling dock panels
+(no iframe, no postMessage) — see `packages/client/src/components/automation-workspace/automation-workbench.tsx`.
+The same components are also iframed as the `TriggerAutomation` MCP tool's sidebar UI, resolved
+from `SMSS_MCP_UI.resourceURI = "system://automation-workspace/"` and fed context via the
+`SMSS_INIT_TOOL` postMessage handshake (see `src/semoss/client.ts`) — that's the one remaining
+legitimate use of `src/App.tsx`'s standalone iframe entry point and of postMessage in this
+package (theme sync and MCP tool-completion signaling to the playground parent).
 
 ## Backend pairing
 
@@ -56,12 +58,13 @@ MobX stores, so the exact same bundle renders identically whether:
 
 | Folder / file | Purpose |
 |---------------|---------|
+| `src/index.ts` | Public package barrel — what `@semoss/client` imports directly |
 | `src/components/` | Components (one per file) |
 | `src/hooks/` | React hooks (`use-<name>.ts`) |
 | `src/domain/` | Automation types + display metadata (steps, statuses) |
 | `src/semoss/` | SEMOSS integration glue (Env/Insight setup, MCP tool-context handshake) |
 | `src/types/` | TypeScript types (`<name>.types.ts`) |
-| `src/App.tsx`, `src/main.tsx`, `src/index.css` | App entry files |
+| `src/App.tsx`, `src/main.tsx`, `src/index.css` | Standalone iframe entry, used only by the MCP/playground sidebar UI |
 | `mcp/` | MCP configuration (`pixel_mcp.json`) |
 
 ## Agent Guardrails

@@ -36,6 +36,9 @@ export interface NodeEditDrawerProps {
 	devMode?: boolean;
 	onUpdate: (step: AutomationNode) => void;
 	onDelete: () => void;
+	/** Pops the raw Python source out into a larger editor, for a host rendering this drawer
+	 * alongside the canvas instead of in a separate iframe. */
+	onOpenPythonEditor?: (nodeId: string, source: string) => void;
 	/** When true, renders the node's configuration as view-only: mutating fields, the
 	 * delete action, and raw Python editing (inline and the popout modal) are all disabled. */
 	readOnly?: boolean;
@@ -73,6 +76,7 @@ export function NodeEditDrawer({
 	devMode = false,
 	onUpdate,
 	onDelete,
+	onOpenPythonEditor,
 	readOnly = false,
 }: NodeEditDrawerProps) {
 	const [outputExpanded, setOutputExpanded] = useState(false);
@@ -190,19 +194,7 @@ export function NodeEditDrawer({
 	const openPythonModal = () => {
 		if (readOnly) return;
 		flushPythonUpdate();
-		const parentOrigin = new URLSearchParams(window.location.search).get(
-			"parentOrigin",
-		);
-		if (!parentOrigin || window.parent === window) return;
-		window.parent.postMessage(
-			{
-				type: "SEMOSS_AUTOMATION_OPEN_PYTHON_EDITOR",
-				projectId: appId,
-				nodeId: step.id,
-				source: pythonDraft,
-			},
-			parentOrigin,
-		);
+		onOpenPythonEditor?.(step.id, pythonDraft);
 	};
 
 	return (

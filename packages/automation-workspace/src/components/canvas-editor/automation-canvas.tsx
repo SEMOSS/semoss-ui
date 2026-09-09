@@ -31,7 +31,15 @@ import {
 	ZoomIn,
 	ZoomOut,
 } from "lucide-react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+	forwardRef,
+	useCallback,
+	useEffect,
+	useImperativeHandle,
+	useMemo,
+	useRef,
+	useState,
+} from "react";
 import {
 	getPixelAsyncResult,
 	getPixelJobStreaming,
@@ -88,6 +96,7 @@ import { getFlowStrokeColor } from "./flow-colors";
 import { AutomationNode as AutomationNodeCard } from "./nodes/automation-node";
 import { BranchNode } from "./nodes/branch-node";
 import { TriggerNode } from "./nodes/trigger-node";
+import type { AutomationTraceSnapshot } from "./tabs/runs-tab";
 import { UndoBanner } from "./undo-banner";
 
 // ---- React Flow custom node registry (must be outside component) ----
@@ -243,6 +252,23 @@ interface AutomationCanvasProps {
 	mcpContext?: AutomationToolContext;
 	onViewAgentRun: (trace: AutomationNodeTrace) => void;
 	externalRunUpdate?: AutomationRunDetail | null;
+	/** Fired whenever the live run/trace state changes, for a host rendering its own trace panel
+	 * (e.g. `RunsTab`) alongside this canvas instead of embedding it in a separate iframe. */
+	onTraceChange?: (snapshot: AutomationTraceSnapshot) => void;
+	/** Fired whenever the selected step's inspector state changes, for a host rendering its own
+	 * inspector panel (e.g. `InspectorTab`) alongside this canvas. */
+	onInspectorChange?: (snapshot: AutomationInspectorSnapshot) => void;
+	/** Fired after a run completes/refreshes, so a host's separately-rendered run history view
+	 * knows to refetch. */
+	onHistoryChanged?: () => void;
+}
+
+/** Imperative surface for hosts that render the inspector/schedule UI outside this canvas
+ * (e.g. as a sibling dock panel) and need to feed actions back in without postMessage. */
+export interface AutomationCanvasHandle {
+	applyInspectorAction: (action: AutomationInspectorAction) => void;
+	prepareSchedule: () => Promise<boolean>;
+	refresh: (change?: { toolName: string; changedStepIds: string[] }) => void;
 }
 
 type TriggerAutomationOutput = AutomationRunDetail;
@@ -462,14 +488,23 @@ function upstreamVariablesFor(
 }
 
 // ---- Component ----
-export function AutomationCanvas({
-	appId,
-	readOnly = false,
-	mcpMode,
-	mcpContext,
-	onViewAgentRun,
-	externalRunUpdate,
-}: AutomationCanvasProps) {
+export const AutomationCanvas = forwardRef<
+	AutomationCanvasHandle,
+	AutomationCanvasProps
+>(function AutomationCanvas(
+	{
+		appId,
+		readOnly = false,
+		mcpMode,
+		mcpContext,
+		onViewAgentRun,
+		externalRunUpdate,
+		onTraceChange,
+		onInspectorChange,
+		onHistoryChanged,
+	},
+	ref,
+) {
 	const { resolvedTheme } = useTheme();
 	const isDark = resolvedTheme === "dark";
 	const edgeColor = isDark ? "#475569" : "#94a3b8";
@@ -575,49 +610,25 @@ export function AutomationCanvas({
 	);
 
 	useEffect(() => {
-		const parentOrigin = new URLSearchParams(window.location.search).get(
-			"parentOrigin",
-		);
-		if (!parentOrigin || window.parent === window) return;
-		window.parent.postMessage(
-			{
-				type: "SEMOSS_AUTOMATION_TRACE",
-				snapshot: {
-					running,
-					latestRunStatus,
-					aiRunSummary,
-					generatingAiSummary,
-					steps,
-					results: latestRunResults,
-					executedDefinition: latestRunDefinition,
-				},
-			},
-			parentOrigin,
-		);
+		onTraceChange?.({
+			running,
+			latestRunStatus,
+			aiRunSummary,
+			generatingAiSummary,
+			steps,
+			results: latestRunResults,
+			executedDefinition: latestRunDefinition,
+		});
 	}, [
 		aiRunSummary,
 		generatingAiSummary,
 		latestRunResults,
 		latestRunDefinition,
 		latestRunStatus,
+		onTraceChange,
 		running,
 		steps,
 	]);
-
-	useEffect(() => {
-		const parentOrigin = new URLSearchParams(window.location.search).get(
-			"parentOrigin",
-		);
-		if (!parentOrigin || window.parent === window) return;
-		window.parent.postMessage(
-			{
-				type: "SEMOSS_AUTOMATION_DIRTY_STATE",
-				projectId: appId,
-				isDirty,
-			},
-			parentOrigin,
-		);
-	}, [appId, isDirty]);
 
 	useEffect(() => {
 		if (!isDirty) return;
@@ -631,18 +642,8 @@ export function AutomationCanvas({
 	}, [isDirty]);
 
 	const notifyHistoryChanged = useCallback(() => {
-		const parentOrigin = new URLSearchParams(window.location.search).get(
-			"parentOrigin",
-		);
-		if (!parentOrigin || window.parent === window) return;
-		window.parent.postMessage(
-			{
-				type: "SEMOSS_AUTOMATION_HISTORY_REFRESH",
-				projectId: appId,
-			},
-			parentOrigin,
-		);
-	}, [appId]);
+		onHistoryChanged?.();
+	}, [onHistoryChanged]);
 
 	const loadedRef = useRef(false);
 	const skipDraftPersistenceRef = useRef(true);
@@ -663,31 +664,8 @@ export function AutomationCanvas({
 	} | null>(null);
 	const restoredActiveRunForProjectRef = useRef<string | null>(null);
 
-	useEffect(() => {
-		const parentOrigin = new URLSearchParams(window.location.search).get(
-			"parentOrigin",
-		);
-		const handleMessage = (event: MessageEvent<unknown>) => {
-			if (
-				event.source !== window.parent ||
-				(parentOrigin !== null && event.origin !== parentOrigin) ||
-				typeof event.data !== "object" ||
-				event.data === null
-			) {
-				return;
-			}
-			const message = event.data as {
-				type?: unknown;
-				projectId?: unknown;
-				toolName?: unknown;
-				changedStepIds?: unknown;
-			};
-			if (
-				message.type !== "SEMOSS_AUTOMATION_REFRESH" ||
-				message.projectId !== appId
-			) {
-				return;
-			}
+	const refresh = useCallback(
+		(change?: { toolName: string; changedStepIds: string[] }) => {
 			if (isDirty) {
 				toast.error(
 					"The automation changed outside the editor. Your unsaved draft was preserved; save it before refreshing.",
@@ -699,18 +677,16 @@ export function AutomationCanvas({
 			setEditingStepId(null);
 			setWorkflowRefreshToken((value) => value + 1);
 
-			if (typeof message.toolName === "string") {
-				const changedStepIds = Array.isArray(message.changedStepIds)
-					? message.changedStepIds.filter(
-							(id): id is string => typeof id === "string",
-						)
-					: [];
+			if (change) {
 				if (changeHighlightTimeoutRef.current) {
 					clearTimeout(changeHighlightTimeoutRef.current);
 				}
 				setChangeHighlight(
-					changedStepIds.length > 0
-						? { all: false, stepIds: new Set(changedStepIds) }
+					change.changedStepIds.length > 0
+						? {
+								all: false,
+								stepIds: new Set(change.changedStepIds),
+							}
 						: { all: true },
 				);
 				changeHighlightTimeoutRef.current = setTimeout(() => {
@@ -718,10 +694,9 @@ export function AutomationCanvas({
 					changeHighlightTimeoutRef.current = null;
 				}, CHANGE_HIGHLIGHT_DURATION_MS);
 			}
-		};
-		window.addEventListener("message", handleMessage);
-		return () => window.removeEventListener("message", handleMessage);
-	}, [appId, isDirty]);
+		},
+		[appId, isDirty],
+	);
 
 	const getNodeHeight = useCallback((nodeId: string): number => {
 		const nodeElements =
@@ -1302,10 +1277,6 @@ export function AutomationCanvas({
 	);
 
 	useEffect(() => {
-		const parentOrigin = new URLSearchParams(window.location.search).get(
-			"parentOrigin",
-		);
-		if (!parentOrigin || window.parent === window) return;
 		const snapshot: AutomationInspectorSnapshot = {
 			description,
 			devMode,
@@ -1325,15 +1296,13 @@ export function AutomationCanvas({
 					)?.trace
 				: undefined,
 		};
-		window.parent.postMessage(
-			{ type: "SEMOSS_AUTOMATION_INSPECTOR", snapshot },
-			parentOrigin,
-		);
+		onInspectorChange?.(snapshot);
 	}, [
 		description,
 		devMode,
 		readOnly,
 		editingStep,
+		onInspectorChange,
 		stepErrors,
 		stepOutputPreviews,
 		stepStatuses,
@@ -1341,31 +1310,8 @@ export function AutomationCanvas({
 		upstreamVarsFor,
 	]);
 
-	useEffect(() => {
-		const parentOrigin = new URLSearchParams(window.location.search).get(
-			"parentOrigin",
-		);
-		const handleMessage = (event: MessageEvent<unknown>) => {
-			if (
-				event.source !== window.parent ||
-				(parentOrigin !== null && event.origin !== parentOrigin) ||
-				typeof event.data !== "object" ||
-				event.data === null
-			) {
-				return;
-			}
-			const message = event.data as {
-				type?: unknown;
-				action?: AutomationInspectorAction;
-			};
-			if (
-				message.type !== "SEMOSS_AUTOMATION_INSPECTOR_ACTION" ||
-				!message.action
-			) {
-				return;
-			}
-
-			const action = message.action;
+	const applyInspectorAction = useCallback(
+		(action: AutomationInspectorAction) => {
 			if (readOnly && action.type !== "close") return;
 			switch (action.type) {
 				case "update-step":
@@ -1384,10 +1330,9 @@ export function AutomationCanvas({
 					setEditingStepId(null);
 					break;
 			}
-		};
-		window.addEventListener("message", handleMessage);
-		return () => window.removeEventListener("message", handleMessage);
-	}, [deleteStep, handleDevModeChange, readOnly, updateStep]);
+		},
+		[deleteStep, handleDevModeChange, readOnly, updateStep],
+	);
 
 	const save = useCallback(async (): Promise<boolean> => {
 		if (readOnly) {
@@ -1468,40 +1413,11 @@ export function AutomationCanvas({
 		[isDirty, save],
 	);
 
-	useEffect(() => {
-		const handleSchedulePreparation = (event: MessageEvent<unknown>) => {
-			if (
-				event.origin !== window.location.origin ||
-				typeof event.data !== "object" ||
-				event.data === null
-			) {
-				return;
-			}
-			const message = event.data as {
-				type?: unknown;
-				requestId?: unknown;
-			};
-			if (
-				message.type !== "SEMOSS_AUTOMATION_PREPARE_SCHEDULE" ||
-				typeof message.requestId !== "string"
-			) {
-				return;
-			}
-			void prepareSchedule().then((saved) =>
-				event.source?.postMessage(
-					{
-						type: "SEMOSS_AUTOMATION_SCHEDULE_PREPARED",
-						requestId: message.requestId,
-						saved,
-					},
-					{ targetOrigin: event.origin },
-				),
-			);
-		};
-		window.addEventListener("message", handleSchedulePreparation);
-		return () =>
-			window.removeEventListener("message", handleSchedulePreparation);
-	}, [prepareSchedule]);
+	useImperativeHandle(
+		ref,
+		() => ({ applyInspectorAction, prepareSchedule, refresh }),
+		[applyInspectorAction, prepareSchedule, refresh],
+	);
 
 	// Cmd+S / Ctrl+S
 	useEffect(() => {
@@ -2636,4 +2552,4 @@ export function AutomationCanvas({
 			</Dialog>
 		</>
 	);
-}
+});

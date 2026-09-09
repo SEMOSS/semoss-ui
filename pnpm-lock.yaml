@@ -744,6 +744,9 @@ importers:
       '@mdi/js':
         specifier: ^6.9.96
         version: 6.9.96
+      '@semoss/automation-workspace':
+        specifier: workspace:*
+        version: link:../automation-workspace
       '@semoss/i18n':
         specifier: workspace:*
         version: link:../../libs/i18n

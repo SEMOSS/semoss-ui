@@ -8,18 +8,6 @@ import {
 	normalizeAutomationErrorMessage,
 } from "./automation-utils";
 
-/**
- * Posted from the trace iframe to the host when the user asks the Assistant
- * for help with a failed run. The host only accepts this after re-validating
- * the message's origin and source against its own trace iframe — the same
- * checks it already applies to every other trace → host message.
- */
-export interface AutomationAskAssistantMessage {
-	type: "SEMOSS_AUTOMATION_ASK_ASSISTANT";
-	/** Business-friendly, user-reviewable prompt prefilled into the Assistant composer. */
-	prompt: string;
-}
-
 const MAX_STEPS_IN_SUMMARY = 20;
 const MAX_ERROR_LENGTH = 400;
 const MAX_OUTPUT_PREVIEW_LENGTH = 160;

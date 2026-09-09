@@ -14,15 +14,27 @@ import {
 } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import {
-	type RefObject,
+	createContext,
 	Suspense,
 	useCallback,
+	useContext,
 	useEffect,
 	useMemo,
 	useRef,
 	useState,
 } from "react";
 import { Link } from "react-router";
+import {
+	AgentRunDialog,
+	AutomationCanvas,
+	type AutomationCanvasHandle,
+	type AutomationInspectorSnapshot,
+	type AutomationNodeTrace,
+	type AutomationRunDetail,
+	type AutomationTraceSnapshot,
+	InspectorTab,
+	RunsTab,
+} from "@semoss/automation-workspace";
 import type { Role } from "@semoss/sdk";
 import { InsightProvider } from "@semoss/sdk/react";
 import {
@@ -49,7 +61,6 @@ import {
 	Tooltip,
 	TooltipContent,
 	TooltipTrigger,
-	useTheme,
 } from "@semoss/ui/next";
 import { ProjectDetailTabs } from "@/components/project";
 import { ShareOverlay } from "@/components/ui";
@@ -76,19 +87,14 @@ import { WORKBENCH_COMPONENTS } from "@/stores/workbench";
 import { NavbarHeader, NavbarLeft, NavbarRight } from "../shared";
 import { AutomationSettingsToggle } from "./automation-settings-toggle";
 
-const AUTOMATION_WORKSPACE_URL =
-	window.location.port === "5173"
-		? "http://localhost:5177/"
-		: "../../automation-workspace/dist/";
-const AUTOMATION_WORKSPACE_CACHE_KEY = "20260827-2";
 const AUTOMATION_MUTATION_TOOLS = new Set([
 	"AddAutomationStep",
 	"UpdateAutomationStep",
 	"UpdateAutomationCustomStep",
 	"RemoveAutomationStep",
 ]);
-/** Defensive cap on a trace-iframe-supplied Assistant draft; the prompt itself is already
- * bounded when built, this only guards against an unexpectedly large same-origin message. */
+/** Defensive cap on a run-trace-supplied Assistant draft; the prompt itself is already
+ * bounded when built, this only guards against an unexpectedly large value. */
 const MAX_ASSISTANT_DRAFT_LENGTH = 8000;
 /** Keys that may hold a single changed step/node id in a completed tool's arguments. */
 const SINGLE_STEP_ID_KEYS = ["stepId", "nodeId", "step_id", "node_id", "id"];
@@ -224,27 +230,123 @@ interface AutomationWorkbenchProps {
 	onShare: () => void;
 }
 
-const AutomationFrame = ({
-	appId,
-	mode,
-	readOnly,
-	title,
-	srcRef,
-}: {
+/**
+ * Data for the Editor/Inspector/Trace dock panels, read via context instead of closures so
+ * `components[...].content` (rendered by Workbench as `<Content />`, i.e. as a component type)
+ * never changes identity when trace/inspector state ticks — an identity change there would
+ * unmount and remount the whole panel subtree every tick instead of just re-rendering it.
+ */
+interface AutomationWorkbenchContextValue {
 	appId: string;
-	mode: string;
-	readOnly?: boolean;
-	title: string;
-	srcRef: RefObject<HTMLIFrameElement | null>;
-}) => (
-	<iframe
-		ref={srcRef}
-		className="h-full w-full border-none"
-		title={title}
-		src={`${AUTOMATION_WORKSPACE_URL}?v=${AUTOMATION_WORKSPACE_CACHE_KEY}&app=${encodeURIComponent(appId)}&mode=${mode}${readOnly === undefined ? "" : `&readOnly=${readOnly ? "1" : "0"}`}&parentOrigin=${encodeURIComponent(window.location.origin)}`}
-		sandbox="allow-scripts allow-same-origin allow-forms allow-modals allow-popups allow-popups-to-escape-sandbox"
-	/>
-);
+	readOnly: boolean;
+	canvasRef: React.RefObject<AutomationCanvasHandle | null>;
+	agentRunAutomationUpdate: AutomationRunDetail | null;
+	onAgentRunTrace: (trace: AutomationNodeTrace | null) => void;
+	onTraceChange: (snapshot: AutomationTraceSnapshot) => void;
+	onInspectorChange: (snapshot: AutomationInspectorSnapshot) => void;
+	onHistoryChanged: () => void;
+	inspectorSnapshot: AutomationInspectorSnapshot | null;
+	traceSnapshot: AutomationTraceSnapshot | null;
+	historyRefreshToken: number;
+	onOpenOutput: (output: string) => void;
+	onAskAssistant: (prompt: string) => void;
+	onOpenPythonEditor: (nodeId: string, source: string) => void;
+}
+
+const AutomationWorkbenchContext =
+	createContext<AutomationWorkbenchContextValue | null>(null);
+
+function useAutomationWorkbenchContext(): AutomationWorkbenchContextValue {
+	const context = useContext(AutomationWorkbenchContext);
+	if (!context) {
+		throw new Error(
+			"Automation dock panels must render within AutomationWorkbench.",
+		);
+	}
+	return context;
+}
+
+const AutomationEditorPanel: WorkbenchComponent = () => {
+	const ctx = useAutomationWorkbenchContext();
+	return (
+		<AutomationCanvas
+			ref={ctx.canvasRef}
+			appId={ctx.appId}
+			readOnly={ctx.readOnly}
+			onViewAgentRun={ctx.onAgentRunTrace}
+			externalRunUpdate={ctx.agentRunAutomationUpdate}
+			onTraceChange={ctx.onTraceChange}
+			onInspectorChange={ctx.onInspectorChange}
+			onHistoryChanged={ctx.onHistoryChanged}
+		/>
+	);
+};
+
+const AutomationInspectorPanel: WorkbenchComponent = () => {
+	const ctx = useAutomationWorkbenchContext();
+	const snapshot = ctx.inspectorSnapshot;
+	return (
+		<InspectorTab
+			appId={ctx.appId}
+			description={snapshot?.description ?? ""}
+			devMode={snapshot?.devMode ?? false}
+			editingStep={snapshot?.editingStep ?? null}
+			onPrepareSchedule={() =>
+				ctx.canvasRef.current?.prepareSchedule() ??
+				Promise.resolve(false)
+			}
+			upstreamVars={snapshot?.upstreamVars ?? []}
+			stepRunStatus={snapshot?.stepRunStatus}
+			stepRunError={snapshot?.stepRunError}
+			stepRunOutput={snapshot?.stepRunOutput}
+			stepRunTrace={snapshot?.stepRunTrace}
+			readOnly={ctx.readOnly || Boolean(snapshot?.readOnly)}
+			onDescriptionChange={(description) =>
+				ctx.canvasRef.current?.applyInspectorAction({
+					type: "update-description",
+					description,
+				})
+			}
+			onClose={() =>
+				ctx.canvasRef.current?.applyInspectorAction({ type: "close" })
+			}
+			onUpdate={(step) =>
+				ctx.canvasRef.current?.applyInspectorAction({
+					type: "update-step",
+					step,
+				})
+			}
+			onDelete={(stepId) =>
+				ctx.canvasRef.current?.applyInspectorAction({
+					type: "delete-step",
+					stepId,
+				})
+			}
+			onOpenPythonEditor={ctx.onOpenPythonEditor}
+		/>
+	);
+};
+
+const AutomationTracePanel: WorkbenchComponent = () => {
+	const ctx = useAutomationWorkbenchContext();
+	const snapshot = ctx.traceSnapshot;
+	return (
+		<RunsTab
+			appId={ctx.appId}
+			refreshToken={ctx.historyRefreshToken}
+			running={snapshot?.running ?? false}
+			latestRunStatus={snapshot?.latestRunStatus ?? null}
+			aiRunSummary={snapshot?.aiRunSummary ?? null}
+			generatingAiSummary={snapshot?.generatingAiSummary ?? false}
+			steps={snapshot?.steps ?? []}
+			results={snapshot?.results ?? []}
+			executedDefinition={snapshot?.executedDefinition ?? null}
+			onDismiss={() => undefined}
+			onOpenOutput={ctx.onOpenOutput}
+			onAskAssistant={ctx.onAskAssistant}
+		/>
+	);
+};
 
 const AutomationSettingsPanel: WorkbenchComponent = () => (
 	<ProjectDetailTabs tabs={SETTINGS_TABS} />
@@ -500,25 +602,23 @@ export const AutomationWorkbench = observer(
 		const setAssistantDraft = useWorkbench(
 			(state) => state.assistant.setDraft,
 		);
-		const { resolvedTheme } = useTheme();
-		const editorRef = useRef<HTMLIFrameElement>(null);
-		const inspectorRef = useRef<HTMLIFrameElement>(null);
-		const traceRef = useRef<HTMLIFrameElement>(null);
-		const [traceSnapshot, setTraceSnapshot] = useState<unknown>(null);
+		const canvasRef = useRef<AutomationCanvasHandle>(null);
+		const [traceSnapshot, setTraceSnapshot] =
+			useState<AutomationTraceSnapshot | null>(null);
 		const [outputModal, setOutputModal] = useState<string | null>(null);
 		const [inspectorSnapshot, setInspectorSnapshot] =
-			useState<unknown>(null);
+			useState<AutomationInspectorSnapshot | null>(null);
+		const [historyRefreshToken, setHistoryRefreshToken] = useState(0);
+		const [agentRunTrace, setAgentRunTrace] =
+			useState<AutomationNodeTrace | null>(null);
+		const [agentRunAutomationUpdate, setAgentRunAutomationUpdate] =
+			useState<AutomationRunDetail | null>(null);
 		const [pythonEditor, setPythonEditor] = useState<{
 			nodeId: string;
 			source: string;
 		} | null>(null);
-
-		const automationOrigin = useMemo(
-			() =>
-				new URL(AUTOMATION_WORKSPACE_URL, window.location.origin)
-					.origin,
-			[],
-		);
+		const wasRunningRef = useRef(false);
+		const editingStepIdRef = useRef<string | null>(null);
 
 		const selectPanel = useCallback(
 			(panelId: string) => {
@@ -527,166 +627,29 @@ export const AutomationWorkbench = observer(
 			[layoutActions],
 		);
 
-		useEffect(() => {
-			const message = { type: "SEMOSS_THEME_SYNC", theme: resolvedTheme };
-			for (const frame of [editorRef, inspectorRef, traceRef]) {
-				frame.current?.contentWindow?.postMessage(
-					message,
-					automationOrigin,
-				);
-			}
-		}, [automationOrigin, resolvedTheme]);
-
-		useEffect(() => {
-			const handleMessage = (event: MessageEvent<unknown>) => {
-				if (
-					event.origin !== automationOrigin ||
-					typeof event.data !== "object" ||
-					event.data === null
-				)
-					return;
-				const message = event.data as {
-					type?: unknown;
-					snapshot?: unknown;
-					projectId?: unknown;
-					nodeId?: unknown;
-					source?: unknown;
-					output?: unknown;
-					prompt?: unknown;
-				};
-				if (
-					event.source === editorRef.current?.contentWindow &&
-					message.type === "SEMOSS_AUTOMATION_TRACE"
-				) {
-					setTraceSnapshot(message.snapshot);
-					if (
-						(message.snapshot as { running?: boolean } | null)
-							?.running
-					)
-						selectPanel(TRACE);
-				}
-				if (
-					event.source === editorRef.current?.contentWindow &&
-					message.type === "SEMOSS_AUTOMATION_INSPECTOR"
-				) {
-					setInspectorSnapshot(message.snapshot);
-					if (
-						(message.snapshot as { editingStep?: unknown } | null)
-							?.editingStep
-					)
-						selectPanel(INSPECTOR);
-				}
-				if (
-					event.source === editorRef.current?.contentWindow &&
-					message.type === "SEMOSS_AUTOMATION_HISTORY_REFRESH"
-				) {
-					traceRef.current?.contentWindow?.postMessage(
-						message,
-						automationOrigin,
-					);
-				}
-				if (
-					event.source === traceRef.current?.contentWindow &&
-					message.type === "SEMOSS_AUTOMATION_TRACE_READY"
-				) {
-					traceRef.current?.contentWindow?.postMessage(
-						{
-							type: "SEMOSS_AUTOMATION_TRACE",
-							snapshot: traceSnapshot,
-						},
-						automationOrigin,
-					);
-				}
-				if (
-					event.source === traceRef.current?.contentWindow &&
-					message.type === "SEMOSS_AUTOMATION_OPEN_OUTPUT" &&
-					typeof message.output === "string"
-				) {
-					setOutputModal(message.output);
-				}
-				if (
-					event.source === traceRef.current?.contentWindow &&
-					message.type === "SEMOSS_AUTOMATION_ASK_ASSISTANT" &&
-					typeof message.prompt === "string"
-				) {
-					setAssistantDraft(
-						message.prompt.slice(0, MAX_ASSISTANT_DRAFT_LENGTH),
-					);
-					selectPanel(WORKBENCH_COMPONENTS.ASSISTANT);
-				}
-				if (
-					event.source === inspectorRef.current?.contentWindow &&
-					message.type === "SEMOSS_AUTOMATION_INSPECTOR_READY"
-				) {
-					inspectorRef.current?.contentWindow?.postMessage(
-						{
-							type: "SEMOSS_AUTOMATION_INSPECTOR",
-							snapshot: inspectorSnapshot,
-						},
-						automationOrigin,
-					);
-				}
-				if (
-					event.source === inspectorRef.current?.contentWindow &&
-					message.type === "SEMOSS_AUTOMATION_OPEN_PYTHON_EDITOR" &&
-					typeof message.nodeId === "string" &&
-					typeof message.source === "string"
-				) {
-					setPythonEditor({
-						nodeId: message.nodeId,
-						source: message.source,
-					});
-				}
-				if (
-					event.source === inspectorRef.current?.contentWindow &&
-					message.type === "SEMOSS_AUTOMATION_INSPECTOR_ACTION"
-				) {
-					editorRef.current?.contentWindow?.postMessage(
-						message,
-						automationOrigin,
-					);
-				}
-			};
-			window.addEventListener("message", handleMessage);
-			return () => window.removeEventListener("message", handleMessage);
-		}, [
-			automationOrigin,
-			inspectorSnapshot,
-			selectPanel,
-			setAssistantDraft,
-			traceSnapshot,
-		]);
-
-		useEffect(() => {
-			inspectorRef.current?.contentWindow?.postMessage(
-				{
-					type: "SEMOSS_AUTOMATION_INSPECTOR",
-					snapshot: inspectorSnapshot,
-				},
-				automationOrigin,
-			);
-		}, [automationOrigin, inspectorSnapshot]);
-
-		useEffect(() => {
-			traceRef.current?.contentWindow?.postMessage(
-				{ type: "SEMOSS_AUTOMATION_TRACE", snapshot: traceSnapshot },
-				automationOrigin,
-			);
-		}, [automationOrigin, traceSnapshot]);
-
 		const sendPythonSource = useCallback(
 			(source: string, nodeId: string) => {
-				inspectorRef.current?.contentWindow?.postMessage(
-					{
-						type: "SEMOSS_AUTOMATION_PYTHON_SOURCE_CHANGED",
-						projectId: appId,
-						nodeId,
-						source,
+				const step = inspectorSnapshot?.editingStep;
+				if (
+					!step ||
+					step.id !== nodeId ||
+					inspectorSnapshot?.readOnly
+				) {
+					return;
+				}
+				canvasRef.current?.applyInspectorAction({
+					type: "update-step",
+					step: {
+						...step,
+						workflowCodeMode: "custom",
+						workflowConfig: {
+							...step.workflowConfig,
+							pythonSource: source,
+						},
 					},
-					automationOrigin,
-				);
+				});
 			},
-			[appId, automationOrigin],
+			[inspectorSnapshot],
 		);
 
 		const automationMcp = useMemo<MCPConfig[]>(
@@ -704,21 +667,9 @@ export const AutomationWorkbench = observer(
 		);
 		const notifyAutomationChanged = useCallback(
 			(change?: { toolName: string; changedStepIds: string[] }) => {
-				editorRef.current?.contentWindow?.postMessage(
-					{
-						type: "SEMOSS_AUTOMATION_REFRESH",
-						projectId: appId,
-						...(change
-							? {
-									toolName: change.toolName,
-									changedStepIds: change.changedStepIds,
-								}
-							: {}),
-					},
-					automationOrigin,
-				);
+				canvasRef.current?.refresh(change);
 			},
-			[appId, automationOrigin],
+			[],
 		);
 		const handleAutomationToolCompleted = useCallback(
 			(tool: { name: string; arguments?: Record<string, unknown> }) => {
@@ -731,6 +682,86 @@ export const AutomationWorkbench = observer(
 			},
 			[notifyAutomationChanged],
 		);
+		const handleTraceChange = useCallback(
+			(snapshot: AutomationTraceSnapshot) => {
+				setTraceSnapshot(snapshot);
+				// Only switch tabs on the false->true transition — the canvas re-emits this
+				// snapshot on every progress tick while a run is in flight, and re-selecting an
+				// already-active panel on every tick is unnecessary render churn.
+				if (snapshot.running && !wasRunningRef.current) {
+					selectPanel(TRACE);
+				}
+				wasRunningRef.current = snapshot.running;
+			},
+			[selectPanel],
+		);
+		const handleInspectorChange = useCallback(
+			(snapshot: AutomationInspectorSnapshot) => {
+				setInspectorSnapshot(snapshot);
+				const editingStepId = snapshot.editingStep?.id ?? null;
+				// Only switch tabs when a different step starts being edited, not on every
+				// snapshot re-emitted while the same step stays open (e.g. its run status ticking).
+				if (
+					editingStepId &&
+					editingStepId !== editingStepIdRef.current
+				) {
+					selectPanel(INSPECTOR);
+				}
+				editingStepIdRef.current = editingStepId;
+			},
+			[selectPanel],
+		);
+		const handleHistoryChanged = useCallback(() => {
+			setHistoryRefreshToken((token) => token + 1);
+		}, []);
+		const handleAskAssistant = useCallback(
+			(prompt: string) => {
+				setAssistantDraft(prompt.slice(0, MAX_ASSISTANT_DRAFT_LENGTH));
+				selectPanel(WORKBENCH_COMPONENTS.ASSISTANT);
+			},
+			[selectPanel, setAssistantDraft],
+		);
+		const handleOpenPythonEditor = useCallback(
+			(nodeId: string, source: string) =>
+				setPythonEditor({ nodeId, source }),
+			[],
+		);
+
+		const workbenchContextValue = useMemo<AutomationWorkbenchContextValue>(
+			() => ({
+				appId,
+				readOnly,
+				canvasRef,
+				agentRunAutomationUpdate,
+				onAgentRunTrace: setAgentRunTrace,
+				onTraceChange: handleTraceChange,
+				onInspectorChange: handleInspectorChange,
+				onHistoryChanged: handleHistoryChanged,
+				inspectorSnapshot,
+				traceSnapshot,
+				historyRefreshToken,
+				onOpenOutput: setOutputModal,
+				onAskAssistant: handleAskAssistant,
+				onOpenPythonEditor: handleOpenPythonEditor,
+			}),
+			[
+				appId,
+				agentRunAutomationUpdate,
+				handleAskAssistant,
+				handleHistoryChanged,
+				handleInspectorChange,
+				handleOpenPythonEditor,
+				handleTraceChange,
+				historyRefreshToken,
+				inspectorSnapshot,
+				readOnly,
+				traceSnapshot,
+			],
+		);
+
+		// Stable across renders — `content` is rendered by Workbench as a component type
+		// (`<Content />`), so a new function identity here would remount the whole panel
+		// subtree on every trace/inspector tick instead of just re-rendering it.
 		const components = useMemo<Record<string, WorkbenchPanelConfigAny>>(
 			() => ({
 				[EDITOR]: {
@@ -740,15 +771,7 @@ export const AutomationWorkbench = observer(
 					icon: ({ className }) => (
 						<FileCode2Icon className={className} />
 					),
-					content: () => (
-						<AutomationFrame
-							appId={appId}
-							mode="edit"
-							readOnly={readOnly}
-							title="Automation Workspace"
-							srcRef={editorRef}
-						/>
-					),
+					content: AutomationEditorPanel,
 				},
 				[INSPECTOR]: {
 					name: "Inspector",
@@ -759,15 +782,7 @@ export const AutomationWorkbench = observer(
 						<PanelRightIcon className={className} />
 					),
 					mount: "keepAlive",
-					content: () => (
-						<AutomationFrame
-							appId={appId}
-							mode="inspector"
-							readOnly={readOnly}
-							title="Automation inspector"
-							srcRef={inspectorRef}
-						/>
-					),
+					content: AutomationInspectorPanel,
 				},
 				[FILES]: {
 					...FILE_EXPLORER_PANEL,
@@ -817,14 +832,7 @@ export const AutomationWorkbench = observer(
 						<ActivityIcon className={className} />
 					),
 					mount: "keepAlive",
-					content: () => (
-						<AutomationFrame
-							appId={appId}
-							mode="trace"
-							title="Automation run details"
-							srcRef={traceRef}
-						/>
-					),
+					content: AutomationTracePanel,
 				},
 				[SETTINGS]: {
 					name: "Settings",
@@ -846,7 +854,7 @@ export const AutomationWorkbench = observer(
 					content: WorkbenchAssistantView,
 				},
 			}),
-			[appId, readOnly],
+			[],
 		);
 
 		const configureWorkbench = useWorkbench((state) => state.configure);
@@ -1000,13 +1008,26 @@ export const AutomationWorkbench = observer(
 					output={outputModal}
 					onClose={() => setOutputModal(null)}
 				/>
-				<Workbench
-					layout={workbenchLayout}
-					components={components}
-					borderSlots={{
-						left: { after: <AutomationSettingsToggle /> },
+				<AgentRunDialog
+					open={agentRunTrace !== null}
+					projectId={appId}
+					trace={agentRunTrace}
+					onAutomationRunUpdated={setAgentRunAutomationUpdate}
+					onOpenChange={(open) => {
+						if (!open) setAgentRunTrace(null);
 					}}
 				/>
+				<AutomationWorkbenchContext.Provider
+					value={workbenchContextValue}
+				>
+					<Workbench
+						layout={workbenchLayout}
+						components={components}
+						borderSlots={{
+							left: { after: <AutomationSettingsToggle /> },
+						}}
+					/>
+				</AutomationWorkbenchContext.Provider>
 			</>
 		);
 	},

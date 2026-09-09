@@ -1,22 +1,13 @@
 import { Loader2 } from "lucide-react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useTheme } from "@semoss/ui/next";
 import { AgentRunDialog } from "./components/agent-run";
 import { AutomationCanvas } from "./components/canvas-editor/automation-canvas";
-import { InspectorTab } from "./components/canvas-editor/tabs/inspector-tab";
-import {
-	type AutomationTraceSnapshot,
-	RunsTab,
-} from "./components/canvas-editor/tabs/runs-tab";
 import type {
 	AutomationNodeTrace,
 	AutomationRunDetail,
 	AutomationToolContext,
 } from "./domain/automation.types";
-import type {
-	AutomationInspectorAction,
-	AutomationInspectorSnapshot,
-} from "./domain/automation-inspector";
 import {
 	getMcpToolContext,
 	initSemoss,
@@ -29,11 +20,11 @@ function useQueryParams(): URLSearchParams {
 }
 
 /**
- * The Automation Workspace's single UI — a "system app" in the same sense as
- * `@semoss/playwright-browser-sockets`: it renders identically whether embedded directly by
- * the client app (`?app=<id>`) or iframed as the `TriggerAutomation` MCP tool's sidebar UI
- * (`system://automation-workspace/`, resolved by playground's ToolsView and fed context via
- * the `SMSS_INIT_TOOL` postMessage handshake).
+ * The Automation Workspace's single UI — iframed as the `TriggerAutomation` MCP tool's sidebar
+ * UI (`system://automation-workspace/`, resolved by playground's ToolsView and fed context via
+ * the `SMSS_INIT_TOOL` postMessage handshake). `@semoss/client` renders `AutomationCanvas` and
+ * its companion tabs (`InspectorTab`, `RunsTab`) directly as a normal package import instead of
+ * iframing this app — see that package's `automation-workbench.tsx`.
  */
 export default function App() {
 	const params = useQueryParams();
@@ -45,9 +36,6 @@ export default function App() {
 		rawMode === "edit" || rawMode === "create" || rawMode === "trigger"
 			? rawMode
 			: null;
-	const traceMode = rawMode === "trace";
-	const inspectorMode = rawMode === "inspector";
-	const historyMode = rawMode === "history";
 
 	const { setTheme } = useTheme();
 	useEffect(() => {
@@ -84,40 +72,6 @@ export default function App() {
 		initSemoss().finally(() => setReady(true));
 		return subscribeToMcpToolContext(setToolContext);
 	}, []);
-
-	const prepareSchedule = useCallback((): Promise<boolean> => {
-		return new Promise((resolve) => {
-			const requestId = crypto.randomUUID();
-			const handlePrepared = (event: MessageEvent<unknown>) => {
-				if (
-					event.source !== window.parent ||
-					event.origin !== parentOrigin ||
-					typeof event.data !== "object" ||
-					event.data === null
-				) {
-					return;
-				}
-				const message = event.data as {
-					type?: unknown;
-					requestId?: unknown;
-					saved?: unknown;
-				};
-				if (
-					message.type !== "SEMOSS_AUTOMATION_SCHEDULE_PREPARED" ||
-					message.requestId !== requestId
-				) {
-					return;
-				}
-				window.removeEventListener("message", handlePrepared);
-				resolve(message.saved === true);
-			};
-			window.addEventListener("message", handlePrepared);
-			window.parent.postMessage(
-				{ type: "SEMOSS_AUTOMATION_PREPARE_SCHEDULE", requestId },
-				parentOrigin,
-			);
-		});
-	}, [parentOrigin]);
 
 	// In create mode the project doesn't exist yet — create it once toolContext and
 	// the insight session are both ready, then use the returned ID as the appId.
@@ -172,145 +126,10 @@ export default function App() {
 	const appId =
 		params.get("app") || createdProjectId || toolContext?.projectId || "";
 
-	const [traceSnapshot, setTraceSnapshot] =
-		useState<AutomationTraceSnapshot | null>(null);
-	const [inspectorSnapshot, setInspectorSnapshot] =
-		useState<AutomationInspectorSnapshot | null>(null);
-	const [historyRefreshToken, setHistoryRefreshToken] = useState(0);
 	const [agentRunTrace, setAgentRunTrace] =
 		useState<AutomationNodeTrace | null>(null);
 	const [agentRunAutomationUpdate, setAgentRunAutomationUpdate] =
 		useState<AutomationRunDetail | null>(null);
-
-	useEffect(() => {
-		if (!historyMode && !traceMode) return;
-		const handleHistoryRefresh = (event: MessageEvent<unknown>) => {
-			if (
-				event.source !== window.parent ||
-				event.origin !== parentOrigin ||
-				typeof event.data !== "object" ||
-				event.data === null
-			) {
-				return;
-			}
-			const message = event.data as { type?: unknown };
-			if (message.type === "SEMOSS_AUTOMATION_HISTORY_REFRESH") {
-				setHistoryRefreshToken((token) => token + 1);
-			}
-		};
-		window.addEventListener("message", handleHistoryRefresh);
-		return () =>
-			window.removeEventListener("message", handleHistoryRefresh);
-	}, [historyMode, traceMode, parentOrigin]);
-
-	useEffect(() => {
-		if (!inspectorMode) return;
-		const handleInspector = (event: MessageEvent<unknown>) => {
-			if (
-				event.source !== window.parent ||
-				event.origin !== parentOrigin ||
-				typeof event.data !== "object" ||
-				event.data === null
-			) {
-				return;
-			}
-			const message = event.data as {
-				type?: unknown;
-				snapshot?: AutomationInspectorSnapshot | null;
-			};
-			if (message.type === "SEMOSS_AUTOMATION_INSPECTOR") {
-				setInspectorSnapshot(message.snapshot ?? null);
-			}
-		};
-		window.addEventListener("message", handleInspector);
-		window.parent.postMessage(
-			{ type: "SEMOSS_AUTOMATION_INSPECTOR_READY" },
-			parentOrigin,
-		);
-		return () => window.removeEventListener("message", handleInspector);
-	}, [inspectorMode, parentOrigin]);
-
-	useEffect(() => {
-		if (!inspectorMode || readOnly) return;
-		const handlePythonSourceChanged = (event: MessageEvent<unknown>) => {
-			if (
-				event.source !== window.parent ||
-				event.origin !== parentOrigin ||
-				typeof event.data !== "object" ||
-				event.data === null
-			) {
-				return;
-			}
-			const message = event.data as {
-				type?: unknown;
-				projectId?: unknown;
-				nodeId?: unknown;
-				source?: unknown;
-			};
-			if (
-				message.type !== "SEMOSS_AUTOMATION_PYTHON_SOURCE_CHANGED" ||
-				message.projectId !== appId ||
-				typeof message.nodeId !== "string" ||
-				typeof message.source !== "string"
-			) {
-				return;
-			}
-			const step = inspectorSnapshot?.editingStep;
-			if (!step || step.id !== message.nodeId) return;
-			if (inspectorSnapshot?.readOnly) return;
-			const updatedStep = {
-				...step,
-				workflowCodeMode: "custom" as const,
-				workflowConfig: {
-					...step.workflowConfig,
-					pythonSource: message.source,
-				},
-			};
-			setInspectorSnapshot((current) =>
-				current ? { ...current, editingStep: updatedStep } : current,
-			);
-			window.parent.postMessage(
-				{
-					type: "SEMOSS_AUTOMATION_INSPECTOR_ACTION",
-					action: { type: "update-step", step: updatedStep },
-				},
-				parentOrigin,
-			);
-		};
-		window.addEventListener("message", handlePythonSourceChanged);
-		return () =>
-			window.removeEventListener("message", handlePythonSourceChanged);
-	}, [appId, inspectorMode, inspectorSnapshot, parentOrigin, readOnly]);
-
-	useEffect(() => {
-		if (!traceMode) return;
-		const handleTrace = (event: MessageEvent<unknown>) => {
-			if (
-				event.source !== window.parent ||
-				event.origin !== parentOrigin ||
-				typeof event.data !== "object" ||
-				event.data === null
-			) {
-				return;
-			}
-			const message = event.data as {
-				type?: unknown;
-				snapshot?: AutomationTraceSnapshot;
-			};
-			if (
-				message.type === "SEMOSS_AUTOMATION_TRACE" &&
-				message.snapshot
-			) {
-				setTraceSnapshot(message.snapshot);
-			}
-		};
-		window.addEventListener("message", handleTrace);
-		window.parent.postMessage(
-			{ type: "SEMOSS_AUTOMATION_TRACE_READY" },
-			parentOrigin,
-		);
-		return () => window.removeEventListener("message", handleTrace);
-	}, [parentOrigin, traceMode]);
 
 	useEffect(() => {
 		if (!createError || !toolContext) return;
@@ -361,86 +180,6 @@ export default function App() {
 	}
 
 	if (ready) {
-		if (historyMode || traceMode) {
-			const snapshot: AutomationTraceSnapshot = traceSnapshot ?? {
-				running: false,
-				latestRunStatus: null,
-				aiRunSummary: null,
-				generatingAiSummary: false,
-				steps: [],
-				results: [],
-				executedDefinition: null,
-			};
-			return (
-				<RunsTab
-					appId={appId}
-					refreshToken={historyRefreshToken}
-					{...snapshot}
-					onDismiss={() => undefined}
-				/>
-			);
-		}
-		if (inspectorMode) {
-			const snapshot = inspectorSnapshot;
-			// Belt-and-suspenders: honor either the URL-level `readOnly` param (set from the
-			// host's permission check) or the canvas's own `readOnly` mirrored in the snapshot,
-			// so the inspector never renders editable controls if either signal says otherwise.
-			const effectiveReadOnly = readOnly || Boolean(snapshot?.readOnly);
-			const sendInspectorAction = (action: AutomationInspectorAction) => {
-				if (effectiveReadOnly && action.type !== "close") return;
-				window.parent.postMessage(
-					{ type: "SEMOSS_AUTOMATION_INSPECTOR_ACTION", action },
-					parentOrigin,
-				);
-			};
-			return (
-				<InspectorTab
-					appId={appId}
-					description={snapshot?.description ?? ""}
-					devMode={snapshot?.devMode ?? false}
-					editingStep={snapshot?.editingStep ?? null}
-					onPrepareSchedule={prepareSchedule}
-					upstreamVars={snapshot?.upstreamVars ?? []}
-					stepRunStatus={snapshot?.stepRunStatus}
-					stepRunError={snapshot?.stepRunError}
-					stepRunOutput={snapshot?.stepRunOutput}
-					stepRunTrace={snapshot?.stepRunTrace}
-					readOnly={effectiveReadOnly}
-					onDescriptionChange={(description) => {
-						if (effectiveReadOnly) return;
-						setInspectorSnapshot((current) =>
-							current ? { ...current, description } : current,
-						);
-						sendInspectorAction({
-							type: "update-description",
-							description,
-						});
-					}}
-					onClose={() => sendInspectorAction({ type: "close" })}
-					onUpdate={(step) => {
-						if (effectiveReadOnly) return;
-						setInspectorSnapshot((current) =>
-							current
-								? { ...current, editingStep: step }
-								: current,
-						);
-						sendInspectorAction({ type: "update-step", step });
-					}}
-					onDelete={(stepId) => {
-						if (effectiveReadOnly) return;
-						setInspectorSnapshot((current) =>
-							current
-								? { ...current, editingStep: null }
-								: current,
-						);
-						sendInspectorAction({
-							type: "delete-step",
-							stepId,
-						});
-					}}
-				/>
-			);
-		}
 		return (
 			<>
 				<AutomationCanvas
