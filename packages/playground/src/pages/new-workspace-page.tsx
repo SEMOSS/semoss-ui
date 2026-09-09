@@ -248,6 +248,12 @@ export const NewWorkspacePage = observer(() => {
 							enableKnowledgeMCP={
 								root.theme.featureFlags?.enableKnowledgeMCP
 							}
+							showSystemSkills={
+								root.theme.featureFlags?.showSystemSkills
+							}
+							showSystemTools={
+								root.theme.featureFlags?.showSystemTools
+							}
 							getPlatformUrl={
 								root.theme.featureFlags?.showPlatformLinks
 									? mcpToPlatformUrl
