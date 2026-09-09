@@ -9,18 +9,10 @@ import type {
 	PixelMessageToolCallPart,
 	Workspace,
 } from "@/types";
+import { normalizeTimestamp } from "@/utility";
 import { RoomStore } from "../room";
 
 const DEFAUlT_MODEL_ID = import.meta.env.VITE_DEFAUlT_MODEL_ID || "";
-
-const formatTimestamp = (d: Date): string => {
-	const mm = String(d.getMonth() + 1).padStart(2, "0");
-	const dd = String(d.getDate()).padStart(2, "0");
-	const h = d.getHours();
-	const min = String(d.getMinutes()).padStart(2, "0");
-	const ampm = h >= 12 ? "PM" : "AM";
-	return `${mm}-${dd}-${d.getFullYear()} ${h % 12 || 12}:${min} ${ampm}`;
-};
 const DEFAUlT_MODEL_NAME = import.meta.env.VITE_DEFAUlT_MODEL_NAME || "";
 
 const SESSION_MODEL_KEY = "smss-playground-session-model";
@@ -484,7 +476,9 @@ export class ChatStore {
 		const formattedMessages = messageOutput
 			.map((message: AbstractPixelMessage) => {
 				const timestamp = message.dateCreated
-					? formatTimestamp(new Date(message.dateCreated))
+					? normalizeTimestamp(message.dateCreated).format(
+							"MMM D, YYYY h:mm A",
+						)
 					: null;
 				const ts = timestamp ? `\n*${timestamp}*` : "";
 

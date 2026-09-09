@@ -79,15 +79,6 @@ try {
  *
  * @component
  */
-const formatTimestamp = (d: Date): string => {
-	const mm = String(d.getMonth() + 1).padStart(2, "0");
-	const dd = String(d.getDate()).padStart(2, "0");
-	const h = d.getHours();
-	const min = String(d.getMinutes()).padStart(2, "0");
-	const ampm = h >= 12 ? "PM" : "AM";
-	return `${mm}-${dd}-${d.getFullYear()} ${h % 12 || 12}:${min} ${ampm}`;
-};
-
 export const GlobalNav = observer(() => {
 	const { t } = useTranslation("sidebar");
 
@@ -628,11 +619,21 @@ export const GlobalNav = observer(() => {
 													t("messages.untitled");
 												const date = root.theme.sidebar
 													.chatHistoryDate
-													? formatTimestamp(
-															normalizeTimestamp(
-																room.DATE_CREATED,
-															).toDate(),
+													? normalizeTimestamp(
+															room.DATE_CREATED,
 														)
+															.toDate()
+															.toLocaleString(
+																undefined,
+																{
+																	month: "numeric",
+																	day: "numeric",
+																	year: "numeric",
+																	hour: "numeric",
+																	minute: "2-digit",
+																	hour12: true,
+																},
+															)
 													: null;
 												const isFavorite =
 													room.PINNED || false;
