@@ -2,7 +2,7 @@
 // CHUNK TYPES
 // ============================================================
 
-export type ChunkType = "md" | "html";
+type ChunkType = "md" | "html";
 
 export interface ContentChunk {
 	/**

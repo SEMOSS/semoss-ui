@@ -129,6 +129,11 @@ interface RoomStoreInterface {
 		 * AskPlayground. Persisted so the mode survives a reload.
 		 */
 		harnessType?: string;
+
+		/*
+		 * Temperature of the model (0–1). Only used when enableTemperature is true.
+		 */
+		temperature?: number;
 	};
 
 	/**
@@ -182,6 +187,7 @@ export class RoomStore {
 			predefinedPrompts: [],
 			instructions: "",
 			mcp: [],
+			temperature: undefined,
 		},
 		sidebar: {
 			isOpen: false,
@@ -634,7 +640,7 @@ export class RoomStore {
 			if (this.tail.type === "OUTPUT") {
 				if (this.mode === "agent") {
 					// An agent-run turn is driven entirely server-side and
-					// only ever gets a live subscribeRunAgent connection from
+					// only ever gets a live AgentStore watching it from
 					// runAgentMessage's own submit — reconnect here so a
 					// reload doesn't leave it (and any paused tool decision)
 					// unwatched. See reconnectAgentRun.
@@ -1084,8 +1090,16 @@ export class RoomStore {
 	 * Ask a message to the room
 	 * @param prompt - user message
 	 * @param files - files
+	 * @param askOptions.visible - whether the user's bubble renders (default
+	 *   true); pass false for a silent kickoff turn — the reply still shows.
 	 */
-	askMessage = async (prompt: string, files: File[] = []): Promise<void> => {
+	askMessage = async (
+		prompt: string,
+		files: File[] = [],
+		askOptions: { visible?: boolean } = {},
+	): Promise<void> => {
+		const { visible = true } = askOptions;
+
 		if (!this.model) {
 			throw new Error("Model is required");
 		}
@@ -1102,7 +1116,7 @@ export class RoomStore {
 			io: "INPUT",
 			type: "INPUT_TEXT",
 			messageId: "ASK_PLACEHOLDER_ID",
-			visible: true,
+			visible,
 			platform_generated: true,
 			modelId: this.model?.engine_id,
 			modelType: this.model?.engine_type,
@@ -1164,6 +1178,17 @@ export class RoomStore {
 
 				const uploaded = response.data;
 
+				// If files were sent but the server returned nothing, the files
+				// couldn't be read — most likely locked by another program (e.g.
+				// a .docx open in Word). Surface this as an UploadError so the
+				// caller can show a "file is in use" message instead of silently
+				// proceeding with no attachment.
+				if (uploaded.length === 0) {
+					const uploadError = new Error("File is in use");
+					uploadError.name = "UploadError";
+					throw uploadError;
+				}
+
 				const normalizeExt = (value: string) =>
 					value.trim().toLowerCase().replace(/^\./, "");
 
@@ -1207,6 +1232,12 @@ export class RoomStore {
 				uploadPlaceholder.isThinking = false;
 			});
 			parentMessage.removeChild(inputMessage);
+
+			// Re-throw UploadErrors as-is (e.g. the uploaded.length === 0 case above)
+			if ((e as Error)?.name === "UploadError") {
+				throw e;
+			}
+
 			throw e;
 		}
 

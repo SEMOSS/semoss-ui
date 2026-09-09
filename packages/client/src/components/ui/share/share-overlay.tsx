@@ -1,7 +1,7 @@
 import { Check, Copy, TriangleAlert } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useState } from "react";
-import { resolvePath } from "react-router-dom";
+import { resolvePath } from "react-router";
 import {
 	Button,
 	DialogDescription,

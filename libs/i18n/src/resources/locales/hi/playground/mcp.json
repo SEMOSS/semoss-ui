@@ -28,7 +28,9 @@
 	"tools": {
 		"enterValues": "अल्पविराम से अलग किए गए मान दर्ज करें",
 		"selectField": "{{field}} चुनें",
-		"enterField": "{{field}} दर्ज करें"
+		"enterField": "{{field}} दर्ज करें",
+		"collapseField": "फ़ील्ड संकुचित करें",
+		"expandField": "फ़ील्ड विस्तार करें"
 	},
 	"messages": {
 		"selectKnowledgeSource": "कृपया एक ज्ञान भंडार चुनें",

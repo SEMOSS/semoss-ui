@@ -1,7 +1,17 @@
 import { observer } from "mobx-react-lite";
-import { useMemo } from "react";
-import { Label, Textarea } from "@semoss/ui/next";
+import { useEffect, useMemo, useState } from "react";
+import { useTranslation } from "@semoss/i18n";
+import { Label, Tabs, TabsContent, Textarea } from "@semoss/ui/next";
 import type { ToolStore } from "@/stores";
+import {
+	TOOL_CARD_TAB_CONTENT_CLASS,
+	ToolCardHeader,
+	ToolCardTabsList,
+	ToolDescriptionTabContent,
+	ToolOutputDialog,
+	ToolOutputText,
+	ToolTabScrollArea,
+} from "./tool-card-tabs";
 
 interface ToolsServerViewProps {
 	/** Connected tool */
@@ -32,6 +42,7 @@ const formatJson = (raw: unknown): string => {
  * call's parameters and the raw result payload.
  */
 export const ToolsServerView = observer(({ tool }: ToolsServerViewProps) => {
+	const { t } = useTranslation("tool");
 	const title = tool.displayName;
 	const description = tool.json.description;
 	const parametersText = useMemo(
@@ -43,43 +54,99 @@ export const ToolsServerView = observer(({ tool }: ToolsServerViewProps) => {
 		[tool.response],
 	);
 	const hasResponse = tool.status === "SUCCESS" && !!responseText;
+	const toolFailed = tool.status === "ERROR" || tool.status === "CANCELLED";
+
+	const [tab, setTab] = useState<string>(
+		hasResponse || toolFailed ? "output" : "inputs",
+	);
+	const [showOutputDialog, setShowOutputDialog] = useState(false);
+
+	// The result can arrive after this view has already mounted (the
+	// provider executes the tool server-side), so switch to the output tab
+	// once it does rather than leaving the user stuck on Inputs.
+	useEffect(() => {
+		if (hasResponse || toolFailed) {
+			setTab("output");
+		}
+	}, [hasResponse, toolFailed]);
 
 	return (
-		<div className="flex h-full w-full flex-col space-y-4 overflow-auto px-3 py-4 text-foreground">
-			<div className="space-y-2 px-1">
-				<h2 className="font-semibold text-2xl text-foreground">
-					{title}
-				</h2>
-				{!!description && (
-					<p className="text-muted-foreground">{description}</p>
-				)}
-			</div>
+		<div className="flex h-full w-full flex-col overflow-hidden text-foreground">
+			<ToolCardHeader title={title} />
 
-			<div className="flex flex-1 flex-col gap-4 overflow-y-auto px-1">
-				<div className="flex flex-col space-y-2">
-					<Label className="shrink-0 font-semibold">Parameters</Label>
-					<Textarea
-						readOnly
-						className="w-full resize-none font-mono text-sm"
-						rows={Math.min(
-							12,
-							Math.max(3, parametersText.split("\n").length),
-						)}
-						value={parametersText || "{}"}
-					/>
-				</div>
+			<Tabs
+				value={tab}
+				onValueChange={setTab}
+				className="flex min-h-0 flex-1 flex-col"
+			>
+				<ToolCardTabsList />
 
-				{hasResponse && (
-					<div className="flex flex-1 flex-col space-y-2">
-						<Label className="shrink-0 font-semibold">Result</Label>
+				<ToolDescriptionTabContent description={description} />
+
+				<TabsContent
+					value="inputs"
+					className={TOOL_CARD_TAB_CONTENT_CLASS}
+				>
+					<ToolTabScrollArea>
+						<Label className="shrink-0 font-semibold">
+							{t("form.parameters")}
+						</Label>
 						<Textarea
 							readOnly
-							className="w-full flex-1 resize-none font-mono text-sm"
-							value={responseText}
+							className="w-full resize-none font-mono text-sm"
+							rows={Math.min(
+								12,
+								Math.max(3, parametersText.split("\n").length),
+							)}
+							value={parametersText || "{}"}
 						/>
-					</div>
-				)}
-			</div>
+					</ToolTabScrollArea>
+				</TabsContent>
+
+				<TabsContent
+					value="output"
+					className={TOOL_CARD_TAB_CONTENT_CLASS}
+				>
+					<ToolTabScrollArea>
+						{hasResponse && (
+							<ToolOutputText
+								text={responseText}
+								onExpand={() => setShowOutputDialog(true)}
+							/>
+						)}
+						{toolFailed && responseText && (
+							<div className="flex flex-col space-y-2">
+								<Label className="shrink-0 font-semibold text-destructive">
+									{t(
+										`status.${
+											tool.status === "ERROR"
+												? "failed"
+												: "cancelled"
+										}`,
+									)}
+								</Label>
+								<ToolOutputText
+									text={responseText}
+									destructive
+									onExpand={() => setShowOutputDialog(true)}
+								/>
+							</div>
+						)}
+						{!hasResponse && !toolFailed && (
+							<p className="py-8 text-center text-muted-foreground text-sm">
+								{t("form.noOutput")}
+							</p>
+						)}
+					</ToolTabScrollArea>
+				</TabsContent>
+			</Tabs>
+
+			<ToolOutputDialog
+				title={title}
+				text={responseText}
+				open={showOutputDialog}
+				onOpenChange={setShowOutputDialog}
+			/>
 		</div>
 	);
 });

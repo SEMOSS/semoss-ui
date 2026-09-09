@@ -3,9 +3,9 @@
 		"failed": "Échoué",
 		"cancelled": "Annulé",
 		"completed": "Terminé",
-		"ready": "Prêt",
-		"autoExecute": "Exécution automatique en cours",
 		"queued": "En file d'attente pour l'exécution automatique",
+		"loadingTool": "Chargement de l'outil…",
+		"waitingForArguments": "En attente des arguments…",
 		"running": "En cours d'exécution",
 		"waitingForInput": "En attente d'une saisie"
 	},
@@ -16,6 +16,11 @@
 		"openInSidebar": "Ouvrir dans le panneau latéral",
 		"closeInSidebar": "Fermer le panneau latéral",
 		"openInline": "Ouvrir en ligne"
+	},
+	"tabs": {
+		"output": "Sortie",
+		"inputs": "Entrées",
+		"description": "Description"
 	},
 	"group": {
 		"labelClosed": "{{toolName}} + {{count}} de plus",
@@ -33,12 +38,13 @@
 		"schemaLoadFailedDescription": "Impossible de récupérer la configuration de l'outil. Veuillez réessayer ultérieurement.",
 		"schemaLoading": "Chargement du schéma de l'outil...",
 		"noParameters": "Aucun paramètre requis",
-		"showParameters": "Afficher les paramètres ({{count}})",
-		"hideParameters": "Masquer les paramètres ({{count}})",
 		"showOptionalFields": "Afficher les champs optionnels ({{count}})",
 		"hideOptionalFields": "Masquer les champs optionnels ({{count}})",
 		"execute": "Exécuter l'outil",
-		"executing": "Exécution en cours..."
+		"executing": "Exécution en cours...",
+		"noOutput": "Pas encore de résultat.",
+		"noDescription": "Aucune description fournie.",
+		"outputDialogTitle": "{{title}} — Sortie"
 	},
 	"playwright": {
 		"details": "Détails du script Playwright",

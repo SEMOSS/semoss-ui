@@ -28,7 +28,9 @@
 	"tools": {
 		"enterValues": "カンマ区切りの値を入力",
 		"selectField": "{{field}}を選択",
-		"enterField": "{{field}}を入力"
+		"enterField": "{{field}}を入力",
+		"collapseField": "フィールドを折りたたむ",
+		"expandField": "フィールドを展開"
 	},
 	"messages": {
 		"selectKnowledgeSource": "ナレッジストアを選択してください",

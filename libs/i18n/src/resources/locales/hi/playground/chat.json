@@ -17,6 +17,12 @@
 		"poorResponse": "खराब जवाब",
 		"copyResponse": "जवाब कॉपी करें",
 		"copyCode": "कोड कॉपी करें",
+		"copy": "कॉपी करें",
+		"saveInRoom": "रूम में सेव करें",
+		"savingToRoom": "सेव हो रहा है...",
+		"fullView": "पूर्ण दृश्य",
+		"raw": "रॉ",
+		"diagram": "आरेख",
 		"feedbackPlaceholder": "टिप्पणी जोड़ें (वैकल्पिक)",
 		"feedbackCancel": "रद्द करें",
 		"feedbackSubmit": "सबमिट करें",
@@ -43,6 +49,7 @@
 		"rewriteSuccess": "संदेश सफलतापूर्वक फिर से लिखा गया",
 		"copySuccess": "क्लिपबोर्ड पर सफलतापूर्वक कॉपी किया गया",
 		"noCopyContent": "कॉपी करने के लिए कोई सामग्री नहीं",
+		"savedInRoom": "{{filePath}} के रूप में रूम में सेव किया गया",
 		"planStepRemoved": "योजना से चरण {{stepNumber}} सफलतापूर्वक हटाया गया"
 	},
 	"gracefulErrors": {

@@ -1,7 +1,7 @@
 import { observer } from "mobx-react-lite";
 import { Help } from "@/components/help";
 import { Sidebar } from "./app-sidebar";
-import { Navbar } from "./Navbar";
+import { Navbar } from "./navbar";
 import { PlatformMessages } from "./platform-messages";
 
 export interface PageProps {

@@ -1,183 +1,424 @@
-import { Plus, X } from "lucide-react";
+import { FoldVertical, Plus, UnfoldVertical } from "lucide-react";
+import { useEffect, useState } from "react";
 import {
+	Accordion,
 	Badge,
 	Button,
-	Field,
-	FieldDescription,
-	FieldLabel,
-	Input,
-	Separator,
+	Muted,
+	Tabs,
+	TabsContent,
+	TabsList,
+	TabsTrigger,
+	useFieldArray,
+	useFormContext,
 } from "@semoss/ui/next";
 import {
 	createGuardrailReactor,
+	type GuardrailConfigFormValue,
+	type GuardrailConfigIssue,
+	type GuardrailEngineDetails,
 	type GuardrailPhase,
 	type GuardrailPipelineFormValue,
+	type GuardrailReactorFormValue,
+	guardrailArgumentOptions,
+	type InterceptableMethod,
 } from "./engine-guardrail-settings.constants";
-import {
-	type GuardrailEngineOption,
-	GuardrailReactorEntryField,
-} from "./guardrail-reactor-entry-field";
+import { GuardrailMethodField } from "./guardrail-method-field";
+import { GuardrailReactorEntryField } from "./guardrail-reactor-entry-field";
+
+/** A check the rule editor should open. */
+export interface GuardrailRevealTarget {
+	entryId: string;
+}
 
 export interface GuardrailPipelineFieldProps {
+	/** The rule being edited. */
 	value: GuardrailPipelineFormValue;
-	onChange: (next: GuardrailPipelineFormValue) => void;
-	onRemove: () => void;
-	engineOptions: GuardrailEngineOption[];
-	enginesLoading: boolean;
-	engineNameFallbacks: Record<string, string>;
+
+	/** Phase whose checks are shown, held by the caller so switching rules
+	 * keeps the reader on the same side of the call. */
+	activePhase: GuardrailPhase;
+
+	/** Shows a different phase's checks. */
+	onPhaseChange: (phase: GuardrailPhase) => void;
+
+	/** Backend resolved details for engine ids the config references. */
+	engineDetails: Record<string, GuardrailEngineDetails>;
+
+	/** Display names for engine ids, keyed by id. */
+	engineNames: Record<string, string>;
+
+	/** Records the display name of a newly picked guardrail engine. */
+	onEngineResolved: (engineId: string, engineName: string) => void;
+
+	/** Methods the engine reports as interceptable. */
+	methods: InterceptableMethod[];
+
+	/** Methods other rules already cover, so this rule cannot claim them. */
+	takenMethods: string[];
+
+	/** Argument name carrying the intercepted method's return value. */
+	resultArgumentName: string;
+
+	/** Problems that belong to this rule. */
+	issues: GuardrailConfigIssue[];
+
+	/** Check to expand, set when a problem was selected from the summary. A
+	 * fresh object per selection reopens a check the user collapsed again. */
+	revealTarget?: GuardrailRevealTarget | null;
+
+	/** Whether the fields accept edits. */
 	disabled?: boolean;
+
+	/** Prefix for this rule's element ids. */
 	idPrefix: string;
+
+	/** Prefix for this rule's test ids. */
 	testIdPrefix: string;
+
+	/** React Hook Form path for this rule. */
+	namePrefix: `pipelines.${number}`;
 }
+
+/** Checks expanded by default, above which the list opens collapsed. */
+const AUTO_EXPAND_LIMIT = 2;
 
 const PHASES: Array<{
 	phase: GuardrailPhase;
 	label: string;
 	description: string;
+	addLabel: string;
+	emptyMessage: string;
 }> = [
 	{
 		phase: "input",
-		label: "Input phase",
-		description: "Run against the request before the model is called.",
+		label: "Request",
+		description: "Runs in order before the engine call.",
+		addLabel: "Add Request Check",
+		emptyMessage:
+			"Nothing screens the request before it reaches the engine.",
 	},
 	{
 		phase: "output",
-		label: "Output phase",
-		description: "Run against the model response before it is returned.",
+		label: "Response",
+		description: "Runs in order before the response is returned.",
+		addLabel: "Add Response Check",
+		emptyMessage:
+			"Nothing screens the response before it reaches the caller.",
 	},
 ];
 
 /**
- * Editor for one pipeline: the engine method it intercepts plus its ordered
- * input-phase and output-phase guardrail lists.
+ * Focused editor for one rule: the call it covers, then its request and
+ * response checks in the order they run.
  */
 export const GuardrailPipelineField = ({
 	value,
-	onChange,
-	onRemove,
-	engineOptions,
-	enginesLoading,
-	engineNameFallbacks,
+	activePhase,
+	onPhaseChange,
+	engineDetails,
+	engineNames,
+	onEngineResolved,
+	methods,
+	takenMethods,
+	resultArgumentName,
+	issues,
+	revealTarget,
 	disabled,
 	idPrefix,
 	testIdPrefix,
+	namePrefix,
 }: GuardrailPipelineFieldProps) => {
-	const updatePhase = (
-		phase: GuardrailPhase,
-		entries: GuardrailPipelineFormValue["input"],
-	) => onChange({ ...value, [phase]: entries });
+	const { control } = useFormContext<GuardrailConfigFormValue>();
+	const inputEntries = useFieldArray({
+		control,
+		name: `${namePrefix}.input`,
+		keyName: "fieldArrayId",
+	});
+	const outputEntries = useFieldArray({
+		control,
+		name: `${namePrefix}.output`,
+		keyName: "fieldArrayId",
+	});
+	const [expandedEntries, setExpandedEntries] = useState<
+		Record<GuardrailPhase, string[]>
+	>(() => {
+		const total = value.input.length + value.output.length;
+		return total > AUTO_EXPAND_LIMIT
+			? { input: [], output: [] }
+			: {
+					input: value.input.map((entry) => entry.id),
+					output: value.output.map((entry) => entry.id),
+				};
+	});
 
-	const moveEntry = (phase: GuardrailPhase, index: number, delta: number) => {
-		const entries = [...value[phase]];
-		const target = index + delta;
-		if (target < 0 || target >= entries.length) {
+	// a problem selected from the summary has to open the check it belongs to,
+	// including switching to the phase that check runs in
+	useEffect(() => {
+		const entryId = revealTarget?.entryId;
+		if (!entryId) {
 			return;
 		}
-		const [moved] = entries.splice(index, 1);
-		entries.splice(target, 0, moved);
-		updatePhase(phase, entries);
+		const phase: GuardrailPhase | null = value.input.some(
+			(entry) => entry.id === entryId,
+		)
+			? "input"
+			: value.output.some((entry) => entry.id === entryId)
+				? "output"
+				: null;
+		if (!phase) {
+			return;
+		}
+		onPhaseChange(phase);
+		setExpandedEntries((current) =>
+			current[phase].includes(entryId)
+				? current
+				: { ...current, [phase]: [...current[phase], entryId] },
+		);
+	}, [revealTarget, value.input, value.output, onPhaseChange]);
+
+	const addEntry = (phase: GuardrailPhase) => {
+		const entry = createGuardrailReactor(phase);
+		if (phase === "input") {
+			inputEntries.append(entry);
+		} else {
+			outputEntries.append(entry);
+		}
+		setExpandedEntries((current) => ({
+			...current,
+			[phase]: [...current[phase], entry.id],
+		}));
 	};
 
-	return (
-		<div
-			className="space-y-4 rounded-md border p-4"
-			data-testid={testIdPrefix}
-		>
-			<div className="flex items-end gap-2">
-				<Field className="flex-1">
-					<FieldLabel htmlFor={`${idPrefix}-method`}>
-						Method
-					</FieldLabel>
-					<Input
-						id={`${idPrefix}-method`}
-						placeholder="Method name, or * for all methods"
-						value={value.method}
-						onChange={(event) =>
-							onChange({ ...value, method: event.target.value })
-						}
-						disabled={disabled}
-						data-testid={`${testIdPrefix}-method`}
-					/>
-					<FieldDescription>
-						The engine method these guardrails intercept (e.g. ask).
-						Use * to apply to every method.
-					</FieldDescription>
-				</Field>
-				<Button
-					type="button"
-					variant="ghost"
-					size="icon"
-					aria-label="Remove pipeline"
-					className="mb-auto"
-					onClick={onRemove}
-					disabled={disabled}
-					data-testid={`${testIdPrefix}-remove`}
-				>
-					<X className="h-4 w-4" />
-				</Button>
-			</div>
+	const updateEntry = (
+		phase: GuardrailPhase,
+		index: number,
+		entry: GuardrailReactorFormValue,
+	) => {
+		if (phase === "input") {
+			inputEntries.update(index, entry);
+		} else {
+			outputEntries.update(index, entry);
+		}
+	};
 
-			{PHASES.map(({ phase, label, description }, phaseIndex) => (
-				<div key={phase} className="space-y-3">
-					{phaseIndex > 0 && <Separator />}
-					<div className="flex items-center gap-2">
-						<Badge>{label}</Badge>
-						<span className="text-muted-foreground text-xs">
-							{description}
-						</span>
-					</div>
-					{value[phase].map((entry, index) => (
-						<GuardrailReactorEntryField
-							key={entry.id}
-							value={entry}
-							onChange={(next) =>
-								updatePhase(
-									phase,
-									value[phase].map((other) =>
-										other.id === entry.id ? next : other,
-									),
-								)
-							}
-							onRemove={() =>
-								updatePhase(
-									phase,
-									value[phase].filter(
-										(other) => other.id !== entry.id,
-									),
-								)
-							}
-							onMoveUp={() => moveEntry(phase, index, -1)}
-							onMoveDown={() => moveEntry(phase, index, 1)}
-							index={index}
-							count={value[phase].length}
-							phase={phase}
-							engineOptions={engineOptions}
-							enginesLoading={enginesLoading}
-							engineNameFallbacks={engineNameFallbacks}
-							disabled={disabled}
-							idPrefix={`${idPrefix}-${phase}-${index}`}
-							testIdPrefix={`${testIdPrefix}-${phase}-entry-${index}`}
-						/>
+	const removeEntry = (
+		phase: GuardrailPhase,
+		index: number,
+		entryId: string,
+	) => {
+		if (phase === "input") {
+			inputEntries.remove(index);
+		} else {
+			outputEntries.remove(index);
+		}
+		setExpandedEntries((current) => ({
+			...current,
+			[phase]: current[phase].filter((id) => id !== entryId),
+		}));
+	};
+
+	const moveEntry = (phase: GuardrailPhase, index: number, delta: number) => {
+		const target = index + delta;
+		if (target < 0 || target >= value[phase].length) {
+			return;
+		}
+		if (phase === "input") {
+			inputEntries.move(index, target);
+		} else {
+			outputEntries.move(index, target);
+		}
+	};
+
+	const hasExpandedEntry = (phase: GuardrailPhase) =>
+		value[phase].some((entry) => expandedEntries[phase].includes(entry.id));
+
+	const toggleAllEntries = (phase: GuardrailPhase) => {
+		setExpandedEntries((current) => ({
+			...current,
+			[phase]: hasExpandedEntry(phase)
+				? []
+				: value[phase].map((entry) => entry.id),
+		}));
+	};
+
+	const phaseErrorCount = (phase: GuardrailPhase) =>
+		issues.filter(
+			(issue) => issue.severity === "error" && issue.phase === phase,
+		).length;
+
+	return (
+		<div className="space-y-4" data-testid={testIdPrefix}>
+			<GuardrailMethodField
+				name={`${namePrefix}.method`}
+				methods={methods}
+				takenMethods={takenMethods}
+				disabled={disabled}
+				testIdPrefix={testIdPrefix}
+				className="max-w-xl"
+			/>
+
+			<Tabs
+				value={activePhase}
+				onValueChange={(next) => onPhaseChange(next as GuardrailPhase)}
+				className="gap-3"
+			>
+				<TabsList>
+					{PHASES.map(({ phase, label }) => (
+						<TabsTrigger key={phase} value={phase}>
+							{label}
+							<Badge
+								variant={
+									phaseErrorCount(phase) > 0
+										? "destructive"
+										: "secondary"
+								}
+							>
+								{value[phase].length}
+							</Badge>
+						</TabsTrigger>
 					))}
-					<Button
-						type="button"
-						variant="outline"
-						size="sm"
-						className="w-fit"
-						onClick={() =>
-							updatePhase(phase, [
-								...value[phase],
-								createGuardrailReactor(phase),
-							])
-						}
-						disabled={disabled}
-						data-testid={`${testIdPrefix}-${phase}-add`}
-					>
-						<Plus className="h-4 w-4" />
-						Add Guardrail
-					</Button>
-				</div>
-			))}
+				</TabsList>
+
+				{PHASES.map(
+					({ phase, description, addLabel, emptyMessage }) => {
+						const entries = value[phase];
+						const argumentOptions = guardrailArgumentOptions({
+							method: value.method,
+							phase,
+							methods,
+							resultArgumentName,
+						});
+
+						return (
+							<TabsContent
+								key={phase}
+								value={phase}
+								// a small floor stops the panel collapsing when a
+								// rule with no checks in this phase is selected,
+								// without leaving dead space below the list
+								className="min-h-32 space-y-3"
+							>
+								<div className="flex flex-wrap items-center justify-between gap-2">
+									<Muted>{description}</Muted>
+									{entries.length > 0 && (
+										<Button
+											type="button"
+											variant="ghost"
+											size="sm"
+											onClick={() =>
+												toggleAllEntries(phase)
+											}
+											data-testid={`${testIdPrefix}-${phase}-toggle-all`}
+										>
+											{hasExpandedEntry(phase) ? (
+												<>
+													<FoldVertical
+														className="size-4"
+														aria-hidden
+													/>
+													Collapse all
+												</>
+											) : (
+												<>
+													<UnfoldVertical
+														className="size-4"
+														aria-hidden
+													/>
+													Expand all
+												</>
+											)}
+										</Button>
+									)}
+								</div>
+
+								{entries.length === 0 ? (
+									<p className="rounded-md border border-dashed px-3 py-4 text-center text-muted-foreground text-xs">
+										{emptyMessage}
+									</p>
+								) : (
+									<Accordion
+										type="multiple"
+										value={expandedEntries[phase]}
+										onValueChange={(next) =>
+											setExpandedEntries((current) => ({
+												...current,
+												[phase]: next,
+											}))
+										}
+										className="space-y-3"
+									>
+										{entries.map((entry, index) => (
+											<GuardrailReactorEntryField
+												// Controllers are registered to the ordered slot, so
+												// keeping the slot mounted prevents stale registrations.
+												// biome-ignore lint/suspicious/noArrayIndexKey: The index identifies the form slot, not the guardrail entity.
+												key={`${phase}-${index}`}
+												value={entry}
+												onChange={(next) =>
+													updateEntry(
+														phase,
+														index,
+														next,
+													)
+												}
+												onRemove={() =>
+													removeEntry(
+														phase,
+														index,
+														entry.id,
+													)
+												}
+												onMoveUp={() =>
+													moveEntry(phase, index, -1)
+												}
+												onMoveDown={() =>
+													moveEntry(phase, index, 1)
+												}
+												index={index}
+												count={entries.length}
+												phase={phase}
+												engineDetails={engineDetails}
+												engineNames={engineNames}
+												onEngineResolved={
+													onEngineResolved
+												}
+												argumentOptions={
+													argumentOptions
+												}
+												issues={issues.filter(
+													(issue) =>
+														issue.phase === phase &&
+														issue.entryId ===
+															entry.id,
+												)}
+												disabled={disabled}
+												idPrefix={`${idPrefix}-${phase}-${index}`}
+												testIdPrefix={`${testIdPrefix}-${phase}-entry-${index}`}
+												namePrefix={`${namePrefix}.${phase}.${index}`}
+											/>
+										))}
+									</Accordion>
+								)}
+
+								{/* the new check is appended, so the control that
+								    adds it sits after the list */}
+								<Button
+									type="button"
+									variant="outline"
+									size="sm"
+									onClick={() => addEntry(phase)}
+									disabled={disabled}
+									data-testid={`${testIdPrefix}-${phase}-add`}
+								>
+									<Plus className="size-4" aria-hidden />
+									{addLabel}
+								</Button>
+							</TabsContent>
+						);
+					},
+				)}
+			</Tabs>
 		</div>
 	);
 };

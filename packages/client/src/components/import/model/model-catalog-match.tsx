@@ -1,4 +1,5 @@
 import { Check, ChevronsUpDown, X } from "lucide-react";
+import type { ReactNode } from "react";
 import { useState } from "react";
 import {
 	Badge,
@@ -39,11 +40,28 @@ export interface CatalogMatchState {
 	allKeys: string[];
 }
 
+/**
+ * Context-specific wording for each match outcome. Anything not provided falls
+ * back to the import-flow copy, where picking an entry fills the form fields
+ * below rather than saving anything.
+ */
+interface CatalogMatchMessages {
+	/** note shown when an entry has been picked by hand */
+	picked?: ReactNode;
+	/** note shown when the ID resolved to a catalog entry on its own */
+	matched?: ReactNode;
+	/** note shown when the ID resolved to nothing */
+	unmatched?: ReactNode;
+	/** note shown when the catalog could not be reached */
+	error?: ReactNode;
+}
+
 interface ModelCatalogMatchProps {
 	state: CatalogMatchState | null;
 	/** the entry the user picked by hand, null while the ID stands on its own */
 	pickedKey: string | null;
 	onPick: (catalogKey: string | null) => void;
+	messages?: CatalogMatchMessages;
 }
 
 /** How many ranked suggestions to offer before falling back to the full list. */
@@ -61,7 +79,7 @@ const describeSuggestion = (suggestion: CatalogMatchSuggestion) => {
  * saved as CATALOG_MODEL_KEY.
  */
 export const ModelCatalogMatch = (props: ModelCatalogMatchProps) => {
-	const { state, pickedKey, onPick } = props;
+	const { state, pickedKey, onPick, messages } = props;
 	const [browserOpen, setBrowserOpen] = useState(false);
 
 	if (!state) {
@@ -124,12 +142,16 @@ export const ModelCatalogMatch = (props: ModelCatalogMatchProps) => {
 				data-testid="model-catalog-match-picked"
 			>
 				<Muted className="text-sm">
-					Using catalog entry{" "}
-					<span className="font-mono text-foreground">
-						{pickedKey}
-					</span>
-					. Its metadata has been filled in below and saved with this
-					model.
+					{messages?.picked ?? (
+						<>
+							Using catalog entry{" "}
+							<span className="font-mono text-foreground">
+								{pickedKey}
+							</span>
+							. Its metadata has been filled in below and saved
+							with this model.
+						</>
+					)}
 				</Muted>
 				<div className="flex flex-row items-center gap-2">
 					{catalogBrowser("Change entry")}
@@ -163,8 +185,8 @@ export const ModelCatalogMatch = (props: ModelCatalogMatchProps) => {
 	if (state.status === "ERROR") {
 		return (
 			<Muted className="text-sm" data-testid="model-catalog-match-error">
-				Could not reach the model catalog. Fill in the metadata fields
-				below yourself.
+				{messages?.error ??
+					"Could not reach the model catalog. Fill in the metadata fields below yourself."}
 			</Muted>
 		);
 	}
@@ -176,11 +198,15 @@ export const ModelCatalogMatch = (props: ModelCatalogMatchProps) => {
 				data-testid="model-catalog-match-exact"
 			>
 				<Muted className="text-sm">
-					Recognized as{" "}
-					<span className="font-mono text-foreground">
-						{state.exactMatch}
-					</span>
-					. The metadata below was filled in from the catalog.
+					{messages?.matched ?? (
+						<>
+							Recognized as{" "}
+							<span className="font-mono text-foreground">
+								{state.exactMatch}
+							</span>
+							. The metadata below was filled in from the catalog.
+						</>
+					)}
 				</Muted>
 				{catalogBrowser("Use a different entry")}
 			</div>
@@ -193,12 +219,16 @@ export const ModelCatalogMatch = (props: ModelCatalogMatchProps) => {
 			data-testid="model-catalog-match-unmatched"
 		>
 			<Muted className="text-sm">
-				<span className="font-mono text-foreground">
-					{state.modelId}
-				</span>{" "}
-				is not in the model catalog. Pick the entry it corresponds to
-				and its metadata will be filled in below, or leave this alone
-				and set the fields yourself.
+				{messages?.unmatched ?? (
+					<>
+						<span className="font-mono text-foreground">
+							{state.modelId}
+						</span>{" "}
+						is not in the model catalog. Pick the entry it
+						corresponds to and its metadata will be filled in below,
+						or leave this alone and set the fields yourself.
+					</>
+				)}
 			</Muted>
 			{state.suggestions.length > 0 && (
 				<div className="flex flex-col gap-1">

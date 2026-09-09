@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import { Navigate, Outlet, useLocation } from "react-router-dom";
+import { Navigate, Outlet, useLocation } from "react-router";
 import { useInsight } from "@semoss/sdk/react";
 import { SessionExpiredModal } from "@/components";
 

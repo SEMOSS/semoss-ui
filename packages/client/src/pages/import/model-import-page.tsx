@@ -3,7 +3,7 @@
 
 import { ChevronRight, SearchIcon, UploadIcon } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link } from "react-router";
 import { EngineSubtypeIcon } from "@semoss/shared";
 import {
 	Breadcrumb,
@@ -27,7 +27,6 @@ import {
 	TabsTrigger,
 	toast,
 } from "@semoss/ui/next";
-import { uploadFile } from "@/api";
 import {
 	CATALOG_MODALITIES,
 	toReasoningConfig,
@@ -43,19 +42,24 @@ import type {
 	ImportableModels,
 	ModelFieldOverride,
 	ModelVersionDefinition,
+	ModelVersionsByProvider,
 } from "@/components/import/model/model-import.constants";
 import {
 	IMPORTABLE_MODELS,
 	MODEL_VERSIONS,
 	UNKNOWN_MODEL_BRAND,
 } from "@/components/import/model/model-import.constants";
+import {
+	fetchCatalogModels,
+	mergeCatalogModels,
+} from "@/components/import/model/model-import-catalog";
 import { hasConfigurableReasoning } from "@/components/import/model/model-reasoning-config-field";
 import {
 	ModelEngineIcon,
 	ModelTileCard,
 } from "@/components/import/model/model-tile-card";
 import { NavbarHeader, NavbarLeft } from "@/components/shared";
-import { useRootStore } from "@/hooks";
+import { useSession } from "@/hooks";
 import { useNavigate } from "@/hooks/useNavigate";
 import {
 	getOptionLabels,
@@ -715,7 +719,8 @@ export const mergeModelMetadataFields = (
 export const ModelImportPage: React.FC = () => {
 	const navigate = useNavigate();
 
-	const { monolithStore, configStore } = useRootStore();
+	const runPixel = useSession((state) => state.runPixel);
+	const upload = useSession((state) => state.upload);
 
 	const [search, setSearch] = useState("");
 	const [importableModels, setImportableModels] =
@@ -723,6 +728,10 @@ export const ModelImportPage: React.FC = () => {
 	const [importableModelsCategory, setimportableModelsCategory] =
 		useState<CategoryTexts | null>(null);
 	const [selectedProvider, setSelectedProvider] = useState("");
+	// hardcoded cards enriched with meta/model.json catalog models once the
+	// ListStaticModelCatalog pixel resolves; stays hardcoded-only on failure
+	const [modelVersions, setModelVersions] =
+		useState<ModelVersionsByProvider>(MODEL_VERSIONS);
 	const [providerFilter, setProviderFilter] =
 		useState<string>(ALL_PROVIDERS_FILTER);
 	const [selectedModel, setSelectedModel] = useState<string | null>(null);
@@ -749,6 +758,7 @@ export const ModelImportPage: React.FC = () => {
 	/**
 	 * Any initialization logic for the model import flow - fetch importable models
 	 */
+	// biome-ignore lint/correctness/useExhaustiveDependencies: run-once init; runPixel is a stable reference
 	useEffect(() => {
 		const fetch = async () => {
 			setImportableModels(IMPORTABLE_MODELS as ImportableModels);
@@ -765,6 +775,17 @@ export const ModelImportPage: React.FC = () => {
 		};
 
 		fetch();
+
+		// enrich the hardcoded cards with whatever the server's catalog knows;
+		// on any failure the hardcoded cards simply stay as they are
+		let cancelled = false;
+		fetchCatalogModels((pixel) => runPixel(pixel)).then((catalog) => {
+			if (cancelled || !catalog) return;
+			setModelVersions(mergeCatalogModels(MODEL_VERSIONS, catalog));
+		});
+		return () => {
+			cancelled = true;
+		};
 	}, []);
 
 	useEffect(() => {
@@ -810,7 +831,7 @@ export const ModelImportPage: React.FC = () => {
 		const normalizedSearch = search.trim().toLowerCase();
 
 		return sortedProviders.map((provider) => {
-			const models = (MODEL_VERSIONS[provider.name] || []).filter(
+			const models = (modelVersions[provider.name] || []).filter(
 				(model) => {
 					if (!normalizedSearch) return true;
 
@@ -831,7 +852,7 @@ export const ModelImportPage: React.FC = () => {
 				models,
 			};
 		});
-	}, [sortedProviders, search]);
+	}, [sortedProviders, search, modelVersions]);
 
 	const visibleProviderSections = useMemo(() => {
 		if (providerFilter === ALL_PROVIDERS_FILTER) {
@@ -846,13 +867,13 @@ export const ModelImportPage: React.FC = () => {
 	const selectedModelMetadata = useMemo(() => {
 		if (!selectedProvider || selectedModel === null) return null;
 
-		const providerModels = MODEL_VERSIONS[selectedProvider] || [];
+		const providerModels = modelVersions[selectedProvider] || [];
 		return (
 			providerModels.find(
 				(m) => m.name === selectedModel || m.display === selectedModel,
 			) || null
 		);
-	}, [selectedProvider, selectedModel]);
+	}, [selectedProvider, selectedModel, modelVersions]);
 
 	// only an "other-" card leaves the Model ID to the user, and only then is there
 	// anything to match against the catalog
@@ -887,8 +908,7 @@ export const ModelImportPage: React.FC = () => {
 			modelId,
 		)});`;
 
-		monolithStore
-			.runQuery(pixel)
+		runPixel(pixel)
 			.then((response) => {
 				if (isCancelled) return;
 
@@ -932,7 +952,7 @@ export const ModelImportPage: React.FC = () => {
 		return () => {
 			isCancelled = true;
 		};
-	}, [monolithStore, typedModelId, isTypedModelId]);
+	}, [runPixel, typedModelId, isTypedModelId]);
 
 	// a hand-picked entry wins; otherwise a typed ID that resolved on its own is
 	// just as good a source of metadata, it simply is not worth storing
@@ -973,8 +993,7 @@ export const ModelImportPage: React.FC = () => {
 			staticMetadataLookup.modelId,
 		)});`;
 
-		monolithStore
-			.runQuery(pixel)
+		runPixel(pixel)
 			.then((response) => {
 				if (isCancelled) return;
 
@@ -1015,7 +1034,7 @@ export const ModelImportPage: React.FC = () => {
 		return () => {
 			isCancelled = true;
 		};
-	}, [monolithStore, staticMetadataLookup]);
+	}, [runPixel, staticMetadataLookup]);
 
 	// A typed Model ID is looked up while the form is already on screen, so blocking
 	// on it would tear the form down and lose whatever has been filled in. Only the
@@ -1065,11 +1084,11 @@ export const ModelImportPage: React.FC = () => {
 
 	const onSubmit = async (data) => {
 		setFormLoading(true);
-		const upload = await uploadFile([data], configStore.store.insightID);
+		const uploaded = await upload([data]);
 
-		const pixelString = `UploadEngine(filePath=["${upload[0].fileLocation}"], engineTypes=["MODEL"])`;
+		const pixelString = `UploadEngine(filePath=["${uploaded[0].fileLocation}"], engineTypes=["MODEL"])`;
 
-		const response = await monolithStore.runQuery(pixelString);
+		const response = await runPixel(pixelString);
 		const output = response.pixelReturn[0].output,
 			operationType = response.pixelReturn[0].operationType;
 

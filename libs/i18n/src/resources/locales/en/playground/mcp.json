@@ -28,7 +28,9 @@
 	"tools": {
 		"enterValues": "Enter comma-separated values",
 		"selectField": "Select {{field}}",
-		"enterField": "Enter {{field}}"
+		"enterField": "Enter {{field}}",
+		"collapseField": "Collapse field",
+		"expandField": "Expand field"
 	},
 	"messages": {
 		"selectKnowledgeSource": "Please select a knowledge store",

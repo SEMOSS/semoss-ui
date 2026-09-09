@@ -9,7 +9,8 @@ import {
 } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { lazy, Suspense, useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link } from "react-router";
+import { runPixel } from "@semoss/sdk/react";
 import {
 	Breadcrumb,
 	BreadcrumbItem,
@@ -34,13 +35,12 @@ const Renderer = lazy(() =>
 	import("@semoss/renderer").then((m) => ({ default: m.Renderer })),
 );
 const CodeRenderer = lazy(() =>
-	import("@/components/code-workspace").then((m) => ({
+	import("@/components/project").then((m) => ({
 		default: m.CodeRenderer,
 	})),
 );
 
-import { usePage, useProject, useRootStore } from "@/hooks";
-import type { WorkspaceStore } from "@/stores";
+import { usePage, useProject } from "@/hooks";
 import { NavbarHeader, NavbarLeft, NavbarRight } from "../../components/shared";
 
 const AppViewLoadingState = () => {
@@ -52,13 +52,11 @@ const AppViewLoadingState = () => {
 };
 
 export const ViewAppPage = observer(() => {
-	// App ID Needed for pixel calls
-	const { configStore } = useRootStore();
 	const { project, permission, catalog, type } = useProject();
 
 	const navigate = useNavigate();
 
-	const [workspace, setWorkspace] = useState<WorkspaceStore>(undefined);
+	const [insightId, setInsightId] = useState<string | undefined>(undefined);
 	const [isShareOpen, setIsShareOpen] = useState<boolean>(false);
 	const [bookmarked, setBookmarked] = useState<boolean>(false);
 
@@ -83,12 +81,11 @@ export const ViewAppPage = observer(() => {
 
 	useEffect(() => {
 		// clear out the old app
-		setWorkspace(undefined);
+		setInsightId(undefined);
 
-		configStore
-			.createWorkspace(project, permission)
-			.then((loadedWorkspace) => {
-				setWorkspace(loadedWorkspace);
+		runPixel(`SetContext("${project.project_id}")`, "new")
+			.then((response) => {
+				setInsightId(response.insightId);
 				setBookmarked(Boolean(project.project_favorite));
 			})
 			.catch((e) => {
@@ -98,7 +95,7 @@ export const ViewAppPage = observer(() => {
 	}, [project.project_id]);
 
 	// hide the screen while it loads
-	if (!workspace) {
+	if (!insightId) {
 		return <AppViewLoadingState />;
 	}
 
@@ -195,7 +192,7 @@ export const ViewAppPage = observer(() => {
 					{type === "BLOCKS" ? (
 						<Renderer
 							appId={project.project_id}
-							insightId={workspace.insightId}
+							insightId={insightId}
 						/>
 					) : null}
 					{type === "CODE" ? (

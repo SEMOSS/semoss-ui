@@ -115,6 +115,13 @@ Coverage reports output to `./coverage/packages/playground/` and include only `s
 
 Changes to these libraries are immediately reflected in the playground during development.
 
+## Design-System Notes
+
+Follow the root [Design System & Styling](../../AGENTS.md#design-system--styling) rules and
+[DESIGN.md](../../DESIGN.md). The playground is an operational chat application, not a looser
+visual sandbox: new user-facing UI uses `@semoss/ui/next`, semantic tokens, the standard state
+set, and the responsive/accessibility definition of done.
+
 ## Agent Guardrails
 
 ### Do Not Modify

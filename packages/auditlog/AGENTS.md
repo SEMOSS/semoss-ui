@@ -9,13 +9,13 @@ dashboard application.
 ## Overview
 
 `@semoss/auditlog-package` is a standalone dashboard application for viewing SEMOSS audit
-logs. It is a **private** package built with Vite, MobX, and `react-router-dom`.
+logs. It is a **private** package built with Vite, MobX, and `react-router`.
 
 ## Build System
 
 - **Bundler**: Vite 7
 - **State**: MobX (`mobx` + `mobx-react-lite`)
-- **Routing**: `react-router-dom` 6
+- **Routing**: `react-router` 7
 - **Styling**: Tailwind CSS v4
 
 ### Commands
@@ -56,6 +56,14 @@ An application, so it uses the `src/` layout from the root AGENTS.md including `
 > Some page files use the legacy PascalCase form (`AuthenticatedLayout.tsx`, `LoginPage.tsx`,
 > `MainLayout.tsx`) alongside newer kebab files (`root-layout.tsx`). Migrate to the dot
 > role-suffix (`authenticated.layout.tsx`, `login.page.tsx`) as you touch them.
+
+## Design-System Notes
+
+Follow the root [Design System & Styling](../../AGENTS.md#design-system--styling) rules and
+[DESIGN.md](../../DESIGN.md). Treat this as a dense operational dashboard: preserve the list
+and dashboard composition, keep filters and table actions compact, and deliberately choose
+table overflow or column prioritization for narrow screens. Existing files are not blanket
+design exemplars and must pass the touched-file design audit.
 
 ## Agent Guardrails
 

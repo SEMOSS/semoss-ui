@@ -9,7 +9,7 @@ import {
 	Merge,
 } from "lucide-react";
 import { observer } from "mobx-react-lite";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { type JSX, useEffect, useMemo, useRef, useState } from "react";
 import { Controller, useFieldArray, useForm } from "react-hook-form";
 import { runPixel, usePixel } from "@semoss/sdk/react";
 import { EngineSubtypeIcon } from "@semoss/shared";

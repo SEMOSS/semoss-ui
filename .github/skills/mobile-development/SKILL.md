@@ -23,8 +23,11 @@ Do not use this skill for:
 
 ## Core Principles
 
+- Follow [DESIGN.md](../../../DESIGN.md) for composition, tokens, primitives, states, and the
+  definition of done. This skill specializes those rules for small screens and touch input.
 - **Mobile-first by default.** Write base styles for the smallest viewport, then scale up with responsive modifiers.
-- **Touch targets must be large enough.** Minimum interactive area is 44 × 44 CSS pixels (WCAG 2.5.8 extended to touch).
+- **Touch targets must be large enough.** WCAG 2.2 AA requires at least 24 × 24 CSS pixels or
+  sufficient spacing; prefer 44 × 44 pixels for primary touch interactions.
 - **No hover-only interactions.** Every hover behavior must have an equivalent touch/focus interaction.
 - **Avoid fixed pixel widths.** Prefer `w-full`, `max-w-*`, percentages, or fluid grid units.
 - **Never suppress the viewport meta tag.** Do not use `user-scalable=no` or `maximum-scale=1`.
@@ -56,22 +59,22 @@ Use Tailwind's mobile-first breakpoint prefixes:
 
 ## Touch Target Rules
 
-- All `<button>` and `<a>` elements must have a minimum hit area of 44 × 44 px.
-- Use padding rather than fixed height/width to achieve target size while keeping visual proportion.
+- Use the sizes built into `Button` and other `@semoss/ui/next` controls. Prefer `icon-lg` for
+  an icon-only control used primarily on touch screens.
+- Increase the hit area with sanctioned component sizes or padding rather than arbitrary
+  pixel dimensions.
 - Never place two interactive elements closer than 8 px apart without additional spacing on touch viewports.
 
 **Pattern — ensuring minimum touch target:**
 ```tsx
-// Correct: padding provides touch area without inflating visual size
-<button className="p-3 min-w-[44px] min-h-[44px] flex items-center justify-center">
-  <Icon aria-hidden="true" />
-  <span className="sr-only">Delete record</span>
-</button>
-
-// Incorrect: icon-only button with no padding
-<button>
-  <Icon />
-</button>
+<Tooltip>
+  <TooltipTrigger asChild>
+    <Button size="icon-lg" variant="ghost" aria-label="Delete record">
+      <Trash2 aria-hidden="true" />
+    </Button>
+  </TooltipTrigger>
+  <TooltipContent>Delete record</TooltipContent>
+</Tooltip>
 ```
 
 ---
@@ -88,46 +91,41 @@ Use Tailwind's mobile-first breakpoint prefixes:
 </form>
 ```
 
-### Responsive table → card list
-On narrow viewports, tables should collapse into stacked card rows.
+### Responsive data tables
+
+Choose horizontal scrolling, column prioritization, or an alternate compact representation
+based on the task. Do not automatically duplicate every table as a card list. When preserving
+the table is useful, contain its overflow and label the region:
 
 ```tsx
-{/* Desktop: standard table */}
-<div className="hidden md:block overflow-x-auto">
-  <table className="w-full text-sm">
-    {/* ... */}
-  </table>
+<div className="overflow-x-auto" role="region" aria-label="Audit results">
+  <Table className="min-w-max">
+    <TableHeader>{/* column headers */}</TableHeader>
+    <TableBody>{/* rows */}</TableBody>
+  </Table>
 </div>
-
-{/* Mobile: card list */}
-<ul className="flex flex-col gap-3 md:hidden" role="list">
-  {items.map((item) => (
-    <li key={item.id} className="rounded-md border p-4 flex flex-col gap-1">
-      <span className="font-semibold">{item.name}</span>
-      <span className="text-sm text-muted-foreground">{item.status}</span>
-    </li>
-  ))}
-</ul>
 ```
 
 ### Bottom sheet / mobile drawer
-Use a `fixed bottom-0` panel for actions or detail views triggered on mobile.
+Use `Drawer` from `@semoss/ui/next` for a mobile-first task. It owns stacking, focus, keyboard
+behavior, and the backdrop.
 
 ```tsx
-<div
-  role="dialog"
-  aria-modal="true"
-  aria-labelledby="sheet-title"
-  className={`fixed inset-x-0 bottom-0 z-50 rounded-t-2xl bg-white shadow-xl
-              transition-transform duration-300
-              ${isOpen ? "translate-y-0" : "translate-y-full"}`}
->
-  <div className="mx-auto mt-2 h-1.5 w-10 rounded-full bg-muted" aria-hidden="true" />
-  <div className="p-4">
-    <h2 id="sheet-title" className="text-lg font-semibold">Title</h2>
-    {/* content */}
-  </div>
-</div>
+<Drawer open={open} onOpenChange={setOpen}>
+  <DrawerContent>
+    <DrawerHeader>
+      <DrawerTitle>Filter results</DrawerTitle>
+      <DrawerDescription>Choose the results to include.</DrawerDescription>
+    </DrawerHeader>
+    <div className="px-4">{/* filter fields */}</div>
+    <DrawerFooter>
+      <Button onClick={applyFilters}>Apply filters</Button>
+      <DrawerClose asChild>
+        <Button variant="outline">Cancel</Button>
+      </DrawerClose>
+    </DrawerFooter>
+  </DrawerContent>
+</Drawer>
 ```
 
 ---
@@ -138,30 +136,23 @@ Use a `fixed bottom-0` panel for actions or detail views triggered on mobile.
 - Ensure the mobile nav is reachable via keyboard and screen reader.
 - Close open menus when the user presses `Escape` or taps outside.
 
-**Pattern — responsive nav visibility:**
+**Pattern — responsive navigation:**
 ```tsx
-{/* Mobile hamburger */}
-<button
-  className="md:hidden p-3"
-  aria-expanded={menuOpen}
-  aria-controls="mobile-nav"
-  aria-label="Toggle navigation"
-  onClick={handleToggleMenu}
->
-  <MenuIcon aria-hidden="true" />
-</button>
+<Sheet open={menuOpen} onOpenChange={setMenuOpen}>
+  <SheetTrigger asChild>
+    <Button className="md:hidden" size="icon-lg" variant="ghost" aria-label="Open navigation">
+      <Menu aria-hidden="true" />
+    </Button>
+  </SheetTrigger>
+  <SheetContent side="left">
+    <SheetHeader>
+      <SheetTitle>Navigation</SheetTitle>
+    </SheetHeader>
+    <nav aria-label="Mobile navigation">{/* links */}</nav>
+  </SheetContent>
+</Sheet>
 
-{/* Desktop nav */}
 <nav className="hidden md:flex gap-4" aria-label="Main navigation">
-  {/* links */}
-</nav>
-
-{/* Mobile nav panel */}
-<nav
-  id="mobile-nav"
-  className={`md:hidden ${menuOpen ? "block" : "hidden"}`}
-  aria-label="Mobile navigation"
->
   {/* links */}
 </nav>
 ```
@@ -269,9 +260,9 @@ const swipeHandlers = useTouchSwipe(handleNext, handlePrev);
 - Line length should not exceed ~75 characters (`max-w-prose`) on readable text blocks.
 
 ```tsx
-<p className="text-sm leading-relaxed break-words md:text-base">
+<P className="break-words text-sm leading-relaxed md:text-base">
   {description}
-</p>
+</P>
 ```
 
 ---
@@ -282,13 +273,8 @@ const swipeHandlers = useTouchSwipe(handleNext, handlePrev);
 - Use `-webkit-overflow-scrolling: touch` equivalent (handled by modern browsers) for smooth scroll containers.
 - Horizontally scrollable areas must have visible scroll affordance (shadow or fading edge) or a clear label.
 
-```tsx
-<div className="overflow-x-auto" role="region" aria-label="Scrollable table">
-  <table className="min-w-[640px]">
-    {/* ... */}
-  </table>
-</div>
-```
+Use the responsive table pattern above rather than native table markup with an arbitrary fixed
+width.
 
 ---
 
@@ -305,7 +291,7 @@ const swipeHandlers = useTouchSwipe(handleNext, handlePrev);
 Before marking a mobile feature complete, verify:
 
 - [ ] Layout renders without horizontal scroll at 375 px (iPhone SE) and 390 px (iPhone 14)
-- [ ] All tap targets are at least 44 × 44 px
+- [ ] Targets meet the 24 × 24 px WCAG minimum; primary touch controls prefer 44 × 44 px
 - [ ] No hover-only interactions
 - [ ] Viewport meta tag does not restrict zoom
 - [ ] Images do not overflow their containers
@@ -317,5 +303,5 @@ Before marking a mobile feature complete, verify:
 ## Relationship to Other Skills
 
 - Always apply the **`accessibility`** skill alongside this one for any interactive component.
-- For forms, apply the **`react-hook-form`** skill.
-- For paginated list views, apply the **`search-pagination-filter-pattern`** skill and ensure the pagination controls meet touch target size requirements.
+- For forms and paginated lists, follow the existing feature pattern plus `DESIGN.md`; no
+  additional repository skill is currently defined for those patterns.

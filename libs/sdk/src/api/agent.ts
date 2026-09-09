@@ -1,19 +1,18 @@
 import { Env } from "../env";
-import { post } from "../utility";
 import type {
 	AgentRunItemEvent,
 	AgentRunSnapshot,
 	AgentRunStatusValue,
 	AgentToolDecision,
 	SubagentRunSummary,
-} from "./agent.types";
+} from "../types";
+import { post } from "../utility";
 import { runPixel } from "./base";
-
-export type * from "./agent.types";
 
 /**
  * Submit a durable agent run without waiting for it to finish (RunAgent with
- * wait=false). Poll progress with pollAgentRun(runId) or subscribeRunAgent.
+ * wait=false). Poll progress with pollAgentRun(runId), or prefer
+ * {@link AgentStore} (`stores/agent`) which owns the poll loop for you.
  *
  * @param params.roomId - Room the run's messages are written to.
  * @param params.command - The user's message text.
@@ -24,8 +23,15 @@ export type * from "./agent.types";
  * but "agent" is the term callers should use here.
  * @param params.maxTurns - Cap on model round-trips before the run stops itself.
  * @param params.maxReflections - Cap on self-reflection turns.
- * @param params.images - Image file locations to attach to the command.
+ * @param params.media - Media file locations to attach to the command. Any
+ * file type the model accepts (image, pdf, document, spreadsheet, audio,
+ * video), or base64 image/PDF data URIs.
  * @param params.urls - URLs to attach to the command.
+ * @param params.paramValues - Extra run parameters forwarded to the harness.
+ * The semoss harness honors `project` (project the run edits; also drives the
+ * git-commit hook), `permissionMode` ("default" | "acceptEdits" | "plan" |
+ * "bypassPermissions"), and strips its known keys before passing the rest
+ * (e.g. `thinking`, `effort`) through to the model provider.
  * @param insightId - Insight to run the pixel against.
  * @returns The submitted run's id, room id, and initial status (always
  * "SUBMITTED") — not a full snapshot.
@@ -39,8 +45,9 @@ export const runAgent = async (
 		agentId?: string;
 		maxTurns?: number;
 		maxReflections?: number;
-		images?: string[];
+		media?: string[];
 		urls?: string[];
+		paramValues?: Record<string, unknown>;
 	},
 	insightId?: string,
 ): Promise<{ runId: string; roomId: string; status: AgentRunStatusValue }> => {
@@ -52,8 +59,9 @@ export const runAgent = async (
 		agentId,
 		maxTurns,
 		maxReflections,
-		images,
+		media,
 		urls,
+		paramValues,
 	} = params;
 
 	const clauses = [
@@ -68,8 +76,11 @@ export const runAgent = async (
 		maxReflections !== undefined
 			? `maxReflections=${JSON.stringify(maxReflections)}`
 			: null,
-		images && images.length > 0 ? `image=${JSON.stringify(images)}` : null,
+		media && media.length > 0 ? `media=${JSON.stringify(media)}` : null,
 		urls && urls.length > 0 ? `url=${JSON.stringify(urls)}` : null,
+		paramValues && Object.keys(paramValues).length > 0
+			? `paramValues=[${JSON.stringify(paramValues)}]`
+			: null,
 		"wait=false",
 	].filter((clause): clause is string => clause !== null);
 
@@ -157,14 +168,49 @@ export const getAgentRun = async <
 };
 
 /**
+ * Cancel a durable agent run (StopAgentRun). The backend interrupts the
+ * harness, marks the run CANCELLED unless it already reached a terminal
+ * status, and notifies its stream — a live subscription observes the
+ * CANCELLED snapshot on its next poll (pokeNow() it for immediacy).
+ *
+ * @param runId - The run to cancel.
+ * @param insightId - Insight to run the pixel against.
+ * @returns The run's durable snapshot after the stop was applied.
+ */
+export const stopAgentRun = async (
+	runId: string,
+	insightId?: string,
+): Promise<AgentRunSnapshot> => {
+	if (!runId) {
+		throw new Error("Missing runId");
+	}
+
+	const response = await runPixel<[AgentRunSnapshot]>(
+		`StopAgentRun(runId=${JSON.stringify([runId])});`,
+		insightId,
+	);
+
+	if (response.errors.length > 0) {
+		throw new Error(response.errors.join(""));
+	}
+
+	const output = response.pixelReturn[0].output;
+
+	// Same normalization as getAgentRun — the backend omits pendingActions
+	// unless the run is INPUT_REQUIRED.
+	return { ...output, pendingActions: output.pendingActions ?? [] };
+};
+
+/**
  * Decide a pending agent tool call (RunMCPTool's HITL path) — resumes the run
  * once every pending action in the batch has been decided. For the common
  * case of resolving approve vs. edit from submitted params automatically, use
- * submitAgentToolDecision instead.
+ * {@link AgentStore.decide} instead.
  *
  * @param params.actionId - The PendingAgentAction.actionId being decided.
  * @param params.decision - "approve"/"edit" execute the tool; "reject"/"respond" don't.
- * @param params.paramValues - Required for "edit" and "respond"; ignored otherwise.
+ * @param params.paramValues - Required for "edit" (the tool's re-run arguments); ignored otherwise.
+ * @param params.mcpToolResult - Required for "respond" (the string the tool "returned", e.g. JSON-stringified answers); ignored otherwise.
  * @param insightId - Insight to run the pixel against.
  * @returns The tool-result string the decision produced.
  */
@@ -173,16 +219,20 @@ export const decideAgentRunAction = async (
 		actionId: string;
 		decision: AgentToolDecision;
 		paramValues?: Record<string, unknown>;
+		mcpToolResult?: string;
 	},
 	insightId?: string,
 ): Promise<string> => {
-	const { actionId, decision, paramValues } = params;
+	const { actionId, decision, paramValues, mcpToolResult } = params;
 
 	const clauses = [
 		`actionId=${JSON.stringify([actionId])}`,
 		`decision=${JSON.stringify([decision])}`,
-		decision === "edit" || decision === "respond"
-			? `paramValues=${JSON.stringify(paramValues)}`
+		decision === "edit"
+			? `paramValues=${JSON.stringify(paramValues ?? {})}`
+			: null,
+		decision === "respond"
+			? `mcpToolResult=${JSON.stringify([mcpToolResult ?? ""])}`
 			: null,
 	].filter((clause): clause is string => clause !== null);
 

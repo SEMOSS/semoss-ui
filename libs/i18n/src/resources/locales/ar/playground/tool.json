@@ -3,9 +3,9 @@
 		"failed": "فشل",
 		"cancelled": "ملغى",
 		"completed": "مكتمل",
-		"ready": "جاهز",
-		"autoExecute": "جارٍ التنفيذ التلقائي",
 		"queued": "في قائمة الانتظار للتنفيذ التلقائي",
+		"loadingTool": "جارٍ تحميل الأداة…",
+		"waitingForArguments": "في انتظار المعطيات…",
 		"running": "قيد التشغيل",
 		"waitingForInput": "في انتظار الإدخال"
 	},
@@ -16,6 +16,11 @@
 		"openInSidebar": "فتح في الشريط الجانبي",
 		"closeInSidebar": "إغلاق الشريط الجانبي",
 		"openInline": "فتح في السطر"
+	},
+	"tabs": {
+		"output": "الناتج",
+		"inputs": "المدخلات",
+		"description": "الوصف"
 	},
 	"group": {
 		"labelClosed": "{{toolName}} + {{count}} أخرى",
@@ -33,12 +38,13 @@
 		"schemaLoadFailedDescription": "تعذّر استرداد تكوين الأداة. يرجى المحاولة مرة أخرى لاحقاً.",
 		"schemaLoading": "جارٍ تحميل مخطط الأداة...",
 		"noParameters": "لا توجد معاملات مطلوبة",
-		"showParameters": "عرض المعاملات ({{count}})",
-		"hideParameters": "إخفاء المعاملات ({{count}})",
 		"showOptionalFields": "عرض الحقول الاختيارية ({{count}})",
 		"hideOptionalFields": "إخفاء الحقول الاختيارية ({{count}})",
 		"execute": "تشغيل الأداة",
-		"executing": "جارٍ التنفيذ..."
+		"executing": "جارٍ التنفيذ...",
+		"noOutput": "لا يوجد ناتج حتى الآن.",
+		"noDescription": "لم يتم تقديم وصف.",
+		"outputDialogTitle": "{{title}} — الناتج"
 	},
 	"playwright": {
 		"details": "تفاصيل سكريبت Playwright",

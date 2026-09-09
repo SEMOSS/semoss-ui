@@ -255,7 +255,12 @@ command=["<encode>${text}</encode>"],
 ${context ? `context=["<encode>${context}</encode>"],` : `context=[],`}
 ${media.length ? `media=${JSON.stringify(media)},` : "media=[],"}
 ${this.id ? `parentMessageId=["${this.id}"],` : ""}
-paramValues=[{}]`;
+paramValues=[${JSON.stringify(
+				room.theme.featureFlags?.enableTemperature &&
+					room.options.temperature !== undefined
+					? { temperature: room.options.temperature }
+					: {},
+			)}]`;
 
 			// wait for the pixel to run with streaming
 			await room.runRoomPixelStreaming<
@@ -462,10 +467,12 @@ paramValues=[{}]`;
 
 		let pixelCommand: string;
 
+		const appName = this.room.theme.name || "Chat";
+		const fileName = `${appName} Response Export`;
 		if (format === "word") {
-			pixelCommand = `ToDocx(markdown=["<encode>${text}</encode>"], fileName="${this.room.roomId}");`;
+			pixelCommand = `ToDocx(markdown=["<encode>${text}</encode>"], fileName="${fileName}");`;
 		} else if (format === "pdf") {
-			pixelCommand = `ToPdf(markdown=["<encode>${text}</encode>"], fileName="${this.room.roomId}");`;
+			pixelCommand = `ToPdf(markdown=["<encode>${text}</encode>"], fileName="${fileName}");`;
 		} else {
 			throw new Error(`Unsupported format: ${format}`);
 		}

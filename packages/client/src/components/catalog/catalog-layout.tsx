@@ -1,6 +1,6 @@
 import { Help } from "@/components/help";
 
-export interface CatalogLayoutProps {
+interface CatalogLayoutProps {
 	/** Main title for the catalog page */
 	title: string;
 	/** Optional description text */

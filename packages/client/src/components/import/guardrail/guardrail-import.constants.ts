@@ -1,15 +1,27 @@
+import Brain from "@/assets/img/BRAIN.png";
+import Database from "@/assets/img/DATABASE.svg";
 import Gliner from "@/assets/img/HUGGINGFACE_COLOR.svg";
 import Python from "@/assets/img/PYTHON.svg";
 export const GUARDRAIL_CONNECTION = {
 	description: {
 		General:
-			"Basic information about the storage catalog such as name, description, tags, type of storage, and high-level metadata.",
+			"Basic information used to identify the guardrail in the catalog.",
 		Settings:
-			"Configure your storage provider, index structure, dimensionality, and similarity metric to optimize retrieval accuracy and performance.",
+			"Configure how the guardrail evaluates content and which supporting engines it uses.",
 		Credentials:
-			"Provide your storage API key or connection details to securely enable indexing and search operations.",
+			"Provide any credentials required by the selected guardrail provider.",
 	},
 	GUARDRAIL: [
+		{
+			name: "SQL Query Policy",
+			disable: false,
+			icon: Database,
+			form: "sql-query-policy",
+			description:
+				"Parse SQL into an AST and enforce database-aware policies for operations, identifiers, and risky query structures.",
+			fields: [],
+			advanced: [],
+		},
 		{
 			name: "Gliner",
 			disable: false,
@@ -62,6 +74,7 @@ export const GUARDRAIL_CONNECTION = {
 					value: "EMBEDDED_GLINER",
 					type: "text",
 					disabled: true,
+					hidden: true,
 					required: false,
 					category: "Settings",
 				},
@@ -110,6 +123,7 @@ export const GUARDRAIL_CONNECTION = {
 					value: "EMBEDDED_DETOXIFY",
 					type: "text",
 					disabled: true,
+					hidden: true,
 					required: false,
 					category: "Settings",
 				},
@@ -203,6 +217,205 @@ export const GUARDRAIL_CONNECTION = {
 					value: "EMBEDDED_ON_TOPIC",
 					type: "text",
 					disabled: true,
+					hidden: true,
+					required: false,
+					category: "Settings",
+				},
+			],
+		},
+		{
+			name: "Aggressive / Self-Harm",
+			disable: false,
+			icon: Brain,
+			description:
+				"Detects aggressive, violent, or self-harm content in user prompts by routing the check through a configured LLM.",
+			fields: [
+				{
+					key: "MODEL_NAME",
+					label: "Catalog Name",
+					value: "",
+					type: "text",
+					disabled: false,
+					required: true,
+					category: "General",
+					rules: {
+						pattern: {
+							value: /^[\w\-\s]+$/,
+							message:
+								"Catalog names can only contain alphanumeric characters and dashes.",
+						},
+						custom_rules: {
+							value: 'CheckEngineName ( "[VALUE]") ;',
+							message:
+								"This Catalog name has already been used, please try another.",
+						},
+					},
+				},
+				{
+					key: "MODEL_ENGINE_ID",
+					label: "Model Engine",
+					value: "",
+					type: "select",
+					options: [],
+					optionRule: {
+						pixel: `MyEngines(engineTypes=['MODEL']);`,
+						optionDisplay: "engine_name",
+						optionValue: "engine_id",
+					},
+					disabled: false,
+					required: true,
+					category: "Settings",
+					helperText:
+						"The LLM used to evaluate whether a prompt contains aggressive or self-harm content.",
+				},
+				{
+					key: "SYSTEM_PROMPT",
+					label: "System Prompt Override",
+					value: "",
+					type: "textarea",
+					disabled: false,
+					required: false,
+					category: "Settings",
+					helperText:
+						"Optional SAFE/UNSAFE classifier instructions. Leave empty to use the built-in self-harm and aggression prompt.",
+				},
+				{
+					key: "BLOCKED_MESSAGE",
+					label: "Blocked Message Override",
+					value: "",
+					type: "textarea",
+					disabled: false,
+					required: false,
+					category: "Settings",
+					helperText:
+						"Optional message returned when a pipeline is configured to respond on guardrail failure. Leave empty to use the built-in crisis response.",
+				},
+				{
+					key: "FAIL_OPEN",
+					label: "On Judge Error",
+					value: "false",
+					type: "select",
+					options: [
+						{ value: "false", display: "Block the call" },
+						{ value: "true", display: "Allow the call" },
+					],
+					disabled: false,
+					required: true,
+					category: "Settings",
+					helperText:
+						"Choose whether the protected operation is allowed when the judge model is unavailable or errors.",
+				},
+				{
+					key: "GUARDRAIL_TYPE",
+					label: "Guardrail Type",
+					value: "EMBEDDED_AGGRESSIVE_SELF_HARM",
+					type: "text",
+					disabled: true,
+					hidden: true,
+					required: false,
+					category: "Settings",
+				},
+			],
+		},
+		{
+			name: "Policy Compliance",
+			disable: false,
+			icon: Brain,
+			description:
+				"Uses an LLM judge to classify prompts, responses, or function data against a configurable policy.",
+			fields: [
+				{
+					key: "MODEL_NAME",
+					label: "Catalog Name",
+					value: "",
+					type: "text",
+					disabled: false,
+					required: true,
+					category: "General",
+					rules: {
+						pattern: {
+							value: /^[\w\-\s]+$/,
+							message:
+								"Catalog names can only contain alphanumeric characters and dashes.",
+						},
+						custom_rules: {
+							value: 'CheckEngineName ( "[VALUE]") ;',
+							message:
+								"This Catalog name has already been used, please try another.",
+						},
+					},
+				},
+				{
+					key: "MODEL_ENGINE_ID",
+					label: "Model Engine",
+					value: "",
+					type: "select",
+					options: [],
+					optionRule: {
+						pixel: `MyEngines(engineTypes=['MODEL']);`,
+						optionDisplay: "engine_name",
+						optionValue: "engine_id",
+					},
+					disabled: false,
+					required: true,
+					category: "Settings",
+					helperText:
+						"The LLM judge that classifies selected content as SAFE or UNSAFE.",
+				},
+				{
+					key: "POLICY_DESCRIPTION",
+					label: "Default Policy",
+					value: "",
+					type: "textarea",
+					disabled: false,
+					required: true,
+					category: "Settings",
+					helperText:
+						"Describe precisely what should be classified as UNSAFE. A pipeline can override this policy for an individual use case.",
+				},
+				{
+					key: "SYSTEM_PROMPT",
+					label: "System Prompt Override",
+					value: "",
+					type: "textarea",
+					disabled: false,
+					required: false,
+					category: "Settings",
+					helperText: `Optional judge instructions. Use \${POLICY_DESCRIPTION} where the configured or per-call policy should be inserted.`,
+				},
+				{
+					key: "BLOCKED_MESSAGE",
+					label: "Blocked Message",
+					value: "",
+					type: "textarea",
+					disabled: false,
+					required: false,
+					category: "Settings",
+					helperText:
+						"Optional message returned when an input pipeline responds instead of throwing on a policy failure.",
+				},
+				{
+					key: "FAIL_OPEN",
+					label: "On Judge Error",
+					value: "false",
+					type: "select",
+					options: [
+						{ value: "false", display: "Block the call" },
+						{ value: "true", display: "Allow the call" },
+					],
+					disabled: false,
+					required: true,
+					category: "Settings",
+					helperText:
+						"Block is recommended for sends and other irreversible operations. Allow preserves availability if the judge fails.",
+				},
+				{
+					key: "GUARDRAIL_TYPE",
+					label: "Guardrail Type",
+					value: "EMBEDDED_POLICY_COMPLIANCE",
+					type: "text",
+					disabled: true,
+					hidden: true,
 					required: false,
 					category: "Settings",
 				},
@@ -243,6 +456,7 @@ export const GUARDRAIL_CONNECTION = {
 					value: "LOCAL_PYTHON",
 					type: "text",
 					disabled: true,
+					hidden: true,
 					required: false,
 					category: "Settings",
 				},
@@ -352,6 +566,7 @@ export const GUARDRAIL_CONNECTION = {
 					value: "EMBEDDED_PERSPECTIVE_API",
 					type: "text",
 					disabled: true,
+					hidden: true,
 					required: false,
 					category: "Settings",
 				},
@@ -408,6 +623,7 @@ export const GUARDRAIL_CONNECTION = {
 					value: "EMBEDDED_OPENAI_MODERATION",
 					type: "text",
 					disabled: true,
+					hidden: true,
 					required: false,
 					category: "Settings",
 				},
@@ -464,6 +680,7 @@ export const GUARDRAIL_CONNECTION = {
 					value: "EMBEDDED_MICROSOFT_CONTENT_MODERATION",
 					type: "text",
 					disabled: true,
+					hidden: true,
 					required: false,
 					category: "Settings",
 				},
@@ -529,6 +746,7 @@ export const GUARDRAIL_CONNECTION = {
 					value: "EMBEDDED_NVIDIA_NEMO",
 					type: "text",
 					disabled: true,
+					hidden: true,
 					required: false,
 					category: "Settings",
 				},
@@ -587,6 +805,7 @@ export const GUARDRAIL_CONNECTION = {
 					value: "EMBEDDED_REBUFF",
 					type: "text",
 					disabled: true,
+					hidden: true,
 					required: false,
 					category: "Settings",
 				},
@@ -643,6 +862,7 @@ export const GUARDRAIL_CONNECTION = {
 					value: "EMBEDDED_LAKERA_GUARD",
 					type: "text",
 					disabled: true,
+					hidden: true,
 					required: false,
 					category: "Settings",
 				},
@@ -690,10 +910,13 @@ export const GUARDRAIL_CONNECTION = {
 					value: "EMBEDDED_PROMPTGUARD_META",
 					type: "text",
 					disabled: true,
+					hidden: true,
 					required: false,
 					category: "Settings",
 				},
 			],
 		},
-	],
+	].sort((left, right) =>
+		left.name.localeCompare(right.name, undefined, { sensitivity: "base" }),
+	),
 };

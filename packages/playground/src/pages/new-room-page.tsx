@@ -10,7 +10,7 @@ import { runInAction } from "mobx";
 import { observer } from "mobx-react-lite";
 import type { ReactNode } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router";
 import { useTranslation } from "@semoss/i18n";
 import { InsightProvider, usePixel } from "@semoss/sdk/react";
 import {
@@ -145,6 +145,7 @@ export const NewRoomPage = observer(() => {
 		null,
 	);
 	const submittedRef = useRef(false);
+	const autoGreetedRef = useRef(false);
 	const [mode, setMode] = useState<"chat" | "agent">("chat");
 
 	// tempRoomStore is only created once (createRoom below builds the real,
@@ -200,6 +201,9 @@ export const NewRoomPage = observer(() => {
 			mcp: [...(root.theme.defaultTools || [])],
 			workspace: undefined,
 			predefinedPrompts: [],
+			temperature: root.theme.featureFlags?.enableTemperature
+				? (root.theme.defaultRoomSettings?.temperature ?? 0)
+				: undefined,
 		});
 	}, [tempRoomStore, root.theme]);
 
@@ -208,8 +212,13 @@ export const NewRoomPage = observer(() => {
 	 *
 	 * @param prompt The prompt to ask
 	 * @param files The files to upload
+	 * @param askOptions Options for the kickoff message (e.g. visible: false)
 	 */
-	const createRoom = async (prompt: string, files: File[]) => {
+	const createRoom = async (
+		prompt: string,
+		files: File[],
+		askOptions?: { visible?: boolean },
+	) => {
 		// ignore if loading
 		if (isLoading) {
 			return;
@@ -254,11 +263,18 @@ export const NewRoomPage = observer(() => {
 				// Fire-and-forget so we navigate without waiting on the response.
 				(async () => {
 					try {
-						await preCreatedRoom.askMessage(prompt, files);
+						await preCreatedRoom.askMessage(
+							prompt,
+							files,
+							askOptions,
+						);
 						runInAction(() => {
 							chat.keys.roomCounter++;
 						});
-					} catch {
+					} catch (e) {
+						if ((e as Error)?.name === "UploadError") {
+							toast.error(t("room:errors.fileInUse"));
+						}
 						chat.removeOptimisticRoom(preCreatedRoom.roomId);
 					}
 				})();
@@ -272,6 +288,7 @@ export const NewRoomPage = observer(() => {
 					files,
 					options,
 					getWorkspace.data?.workspace_id,
+					askOptions,
 				);
 				submittedRef.current = true;
 				navigate(`/room/${room.roomId}`);
@@ -306,11 +323,15 @@ export const NewRoomPage = observer(() => {
 	}, [workspaceIdSearchParams]);
 
 	// Handle workspace data loading from RoomWorkspace component selection
+	// biome-ignore lint/correctness/useExhaustiveDependencies: autoGreetedRef guards re-fires
 	useEffect(() => {
 		if (!selectedWorkspaceId) {
 			// clearing the agent clears the guard below, so picking the same
 			// agent again applies its default model again
 			appliedAgentModelRef.current = "";
+			if (chat.profileDefaultModelId) {
+				void chat.selectModelById(chat.profileDefaultModelId);
+			}
 			return;
 		}
 		if (getWorkspace.status !== "SUCCESS" || !getWorkspace.data) {
@@ -377,6 +398,15 @@ export const NewRoomPage = observer(() => {
 				name: getWorkspace.data.name,
 			},
 		});
+
+		// Kick off the workspace's greeting once, silently — only the reply shows.
+		if (
+			root.theme.featureFlags?.enableAutoGreeting &&
+			!autoGreetedRef.current
+		) {
+			autoGreetedRef.current = true;
+			createRoom("Hello", [], { visible: false });
+		}
 	}, [
 		selectedWorkspaceId,
 		getWorkspace.status,

@@ -4,15 +4,9 @@ import type {
 	AgentRunItemsState,
 	AgentRunSnapshot,
 	AgentRunStatusValue,
-	AgentRunSubscription,
 	PendingAgentAction,
 } from "@semoss/sdk";
-import {
-	getSubagentRuns,
-	runAgent,
-	submitAgentToolDecision,
-	subscribeRunAgent,
-} from "@semoss/sdk/react";
+import { AgentStore, getSubagentRuns } from "@semoss/sdk";
 import {
 	MCP_EXECUTION_AGENT_ASK,
 	MCP_EXECUTION_AGENT_AUTO,
@@ -33,6 +27,33 @@ import { ResponseMessageStore } from "./response-message.store";
  * Agent harness type sent to the backend RunAgent reactor.
  */
 export const AGENT_HARNESS_TYPE = "semoss";
+
+/**
+ * Live AgentStores keyed by runId, so a decision made from the tool UI (which
+ * only has the pendingAction, not the run's watcher) can poke the SAME
+ * instance that's polling it, and reconnectAgentRun never mounts a second,
+ * destructive poller on a run runAgentMessage (or an earlier reconnect) is
+ * already watching.
+ */
+const agentsByRunId = new Map<string, AgentStore>();
+
+/**
+ * Get the live AgentStore for a run if one is already being watched,
+ * otherwise create (and register) a fresh, not-yet-watched one.
+ */
+const getOrCreateAgent = (
+	roomId: string,
+	insightId: string,
+	runId: string,
+): AgentStore => {
+	const existing = agentsByRunId.get(runId);
+	if (existing) {
+		return existing;
+	}
+	const agent = new AgentStore(roomId, insightId, runId);
+	agentsByRunId.set(runId, agent);
+	return agent;
+};
 
 /**
  * QUEUED and INPUT_REQUIRED have no branch — they leave the tool at
@@ -79,35 +100,49 @@ const toAgentExecutionMode = (originalExecution: unknown): string =>
  * `item.metadata` is the tool's real `_meta` block (SMSS_ORIGINAL_TOOL_NAME,
  * SMSS_ENGINE_ID, etc.), passed through as-is by the backend — not wrapped in
  * another `_meta`.
+ *
+ * `item.name` is the raw, engine-id-prefixed LLM-facing name (e.g.
+ * `a<uuid>_toolname`) — never display it directly. Prefer `item.title`
+ * (resolved server-side) or `metadata.SMSS_ORIGINAL_TOOL_NAME` for anything
+ * user-facing; ToolStore.displayName falls back to `name` only as a last
+ * resort.
  */
 const buildToolCallPart = (item: {
 	id: string;
 	name: string;
+	title?: string;
 	arguments: Record<string, unknown>;
 	metadata?: Record<string, unknown>;
-}): PixelMessageToolCallPart => ({
-	type: "TOOL_CALL",
-	toolCall: {
-		id: item.id,
-		type: "function",
-		name: item.name,
-		arguments: item.arguments,
-		_tool_found: true,
-		original_name: item.name,
-		description: "",
-		_meta: {
-			SMSS_ENGINE_NAME: "",
-			SMSS_ENGINE_ID: "",
-			SMSS_ENGINE_TYPE: "",
-			SMSS_PROJECT_NAME: "",
-			SMSS_PROJECT_ID: "",
-			...item.metadata,
-			SMSS_MCP_EXECUTION: toAgentExecutionMode(
-				item.metadata?.SMSS_MCP_EXECUTION,
-			),
-		},
-	} as PixelMessageToolCallPart["toolCall"],
-});
+}): PixelMessageToolCallPart => {
+	const displayName =
+		item.title ||
+		(item.metadata?.SMSS_ORIGINAL_TOOL_NAME as string | undefined) ||
+		item.name;
+	return {
+		type: "TOOL_CALL",
+		toolCall: {
+			id: item.id,
+			type: "function",
+			name: item.name,
+			title: displayName,
+			arguments: item.arguments,
+			_tool_found: true,
+			original_name: displayName,
+			description: "",
+			_meta: {
+				SMSS_ENGINE_NAME: "",
+				SMSS_ENGINE_ID: "",
+				SMSS_ENGINE_TYPE: "",
+				SMSS_PROJECT_NAME: "",
+				SMSS_PROJECT_ID: "",
+				...item.metadata,
+				SMSS_MCP_EXECUTION: toAgentExecutionMode(
+					item.metadata?.SMSS_MCP_EXECUTION,
+				),
+			},
+		} as PixelMessageToolCallPart["toolCall"],
+	};
+};
 
 /**
  * The backend never emits a stream item for a tool call awaiting an ask
@@ -118,27 +153,34 @@ const buildToolCallPart = (item: {
  */
 const buildPendingToolCallPart = (
 	action: PendingAgentAction,
-): PixelMessageToolCallPart => ({
-	type: "TOOL_CALL",
-	toolCall: {
-		id: action.toolCallId as string,
-		type: "function",
-		name: action.toolName ?? "",
-		arguments: action.toolArgs ?? {},
-		_tool_found: true,
-		original_name: action.toolName ?? "",
-		description: "",
-		_meta: {
-			SMSS_ENGINE_NAME: "",
-			SMSS_ENGINE_ID: "",
-			SMSS_ENGINE_TYPE: "",
-			SMSS_PROJECT_NAME: "",
-			SMSS_PROJECT_ID: "",
-			...action.toolMeta,
-			SMSS_MCP_EXECUTION: MCP_EXECUTION_AGENT_ASK,
-		},
-	} as PixelMessageToolCallPart["toolCall"],
-});
+): PixelMessageToolCallPart => {
+	const displayName =
+		(action.toolMeta?.SMSS_ORIGINAL_TOOL_NAME as string | undefined) ||
+		action.toolName ||
+		"";
+	return {
+		type: "TOOL_CALL",
+		toolCall: {
+			id: action.toolCallId as string,
+			type: "function",
+			name: action.toolName ?? "",
+			title: displayName,
+			arguments: action.toolArgs ?? {},
+			_tool_found: true,
+			original_name: displayName,
+			description: "",
+			_meta: {
+				SMSS_ENGINE_NAME: "",
+				SMSS_ENGINE_ID: "",
+				SMSS_ENGINE_TYPE: "",
+				SMSS_PROJECT_NAME: "",
+				SMSS_PROJECT_ID: "",
+				...action.toolMeta,
+				SMSS_MCP_EXECUTION: MCP_EXECUTION_AGENT_ASK,
+			},
+		} as PixelMessageToolCallPart["toolCall"],
+	};
+};
 
 /**
  * Find an already-pushed SUBAGENT part by its item id, for item.updated/
@@ -325,24 +367,24 @@ const syncPendingActions = (
  * at INPUT_REQUIRED forever while a stray, unrelated tool result lands in the
  * room. This is the only call that actually resumes the run.
  *
- * Thin wrapper over the SDK's submitAgentToolDecision — approve-vs-edit
- * resolution and poking the run's live subscription both happen there.
+ * Thin wrapper over AgentStore.decide — approve-vs-edit resolution and
+ * poking the run's live subscription both happen there.
  */
 export const decideAgentToolAction = async (
 	tool: ToolStore,
-	decision: "reject" | "submit",
+	decision: "reject" | "submit" | "respond",
 	paramValues?: Record<string, unknown>,
 ): Promise<void> => {
 	const pendingAction = tool.pendingAction;
 	if (!pendingAction) {
 		return;
 	}
-	await submitAgentToolDecision(
-		pendingAction,
-		decision,
-		paramValues,
+	const agent = getOrCreateAgent(
+		tool.room.roomId,
 		tool.room.insightId,
+		pendingAction.runId,
 	);
+	await agent.decide(pendingAction, decision, paramValues);
 };
 
 /**
@@ -350,16 +392,14 @@ export const decideAgentToolAction = async (
  * responseMessage. Shared between a fresh submit (runAgentMessage) and
  * reconnecting to one already in progress after a page reload
  * (reconnectAgentRun) — the wiring is identical either way, only how the
- * runId was obtained differs.
+ * `agent` was obtained differs.
  */
 const watchAgentRun = (
-	runId: string,
+	agent: AgentStore,
 	responseMessage: ResponseMessageStore,
 	inputMessage: InputMessageStore | null,
 ): Promise<void> =>
 	new Promise<void>((resolve, reject) => {
-		let subscription: AgentRunSubscription | null = null;
-
 		const settleTerminal = (snapshot: AgentRunSnapshot) => {
 			const status: AgentRunStatusValue = snapshot.status;
 			if (
@@ -369,7 +409,7 @@ const watchAgentRun = (
 			) {
 				return;
 			}
-			subscription?.stop();
+			agent.stop();
 			if (status !== "COMPLETED") {
 				reject(
 					new Error(
@@ -382,7 +422,7 @@ const watchAgentRun = (
 			resolve();
 		};
 
-		subscription = subscribeRunAgent(runId, {
+		agent.watch({
 			onEvent: (event, items) => {
 				runInAction(() => {
 					applyAgentRunItem(responseMessage, event, items);
@@ -428,13 +468,17 @@ const watchAgentRun = (
 				console.error("Agent run stream error", e);
 			},
 		});
+	}).finally(() => {
+		if (agentsByRunId.get(agent.runId) === agent) {
+			agentsByRunId.delete(agent.runId);
+		}
 	});
 
 /**
  * Run a user message through the server-side agent harness (RunAgent).
  *
  * Submits without waiting (wait=false), then drives the response via
- * subscribeRunAgent. A non-COMPLETED terminal status rejects (caller removes
+ * AgentStore.watch. A non-COMPLETED terminal status rejects (caller removes
  * the optimistic input). INPUT_REQUIRED leaves the turn mounted and pending;
  * paused tool calls surface via ToolStore.pendingAction for the approval UI.
  */
@@ -494,7 +538,7 @@ export const runAgentMessage = async (
 			return acc;
 		}, "");
 
-		const handle = await runAgent(
+		const handle = await AgentStore.start(
 			{
 				roomId: room.roomId,
 				command: text,
@@ -504,8 +548,9 @@ export const runAgentMessage = async (
 			},
 			room.insightId,
 		);
+		agentsByRunId.set(handle.runId, handle);
 
-		await watchAgentRun(handle.runId, responseMessage, inputMessage);
+		await watchAgentRun(handle, responseMessage, inputMessage);
 	} catch (e) {
 		// remove message if we failed
 		message.removeChild(inputMessage);
@@ -623,7 +668,7 @@ export const reconstructAllSubagents = async (room: RoomStore) => {
 
 /**
  * Re-establish live polling for a room's most recent agent run after a page
- * reload. subscribeRunAgent only ever starts from runAgentMessage's own
+ * reload. An AgentStore only ever starts watching from runAgentMessage's own
  * submit, so without this a turn still in progress (or paused on a decision)
  * goes unwatched after a refresh: pendingActions never repopulate, so
  * decideAgentToolAction silently no-ops, and the tool UI falls through to its
@@ -652,7 +697,8 @@ export const reconnectAgentRun = (responseMessage: ResponseMessageStore) => {
 		responseMessage.isThinking = true;
 	});
 
-	watchAgentRun(runId, responseMessage, inputMessage)
+	const agent = getOrCreateAgent(room.roomId, room.insightId, runId);
+	watchAgentRun(agent, responseMessage, inputMessage)
 		.catch((e) => {
 			console.error("Failed to reconnect to agent run", e);
 		})

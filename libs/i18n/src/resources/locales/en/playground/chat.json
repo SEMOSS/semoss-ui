@@ -17,6 +17,12 @@
 		"poorResponse": "Poor response",
 		"copyResponse": "Copy Response",
 		"copyCode": "Copy Code",
+		"copy": "Copy",
+		"saveInRoom": "Save In Room",
+		"savingToRoom": "Saving...",
+		"fullView": "Full View",
+		"raw": "Raw",
+		"diagram": "Diagram",
 		"feedbackPlaceholder": "Add a comment (optional)",
 		"feedbackCancel": "Cancel",
 		"feedbackSubmit": "Submit",
@@ -43,6 +49,7 @@
 		"rewriteSuccess": "Successfully rewrote message",
 		"copySuccess": "Successfully copied to clipboard",
 		"noCopyContent": "No content to copy",
+		"savedInRoom": "Saved in room as {{filePath}}",
 		"planStepRemoved": "Successfully removed step {{stepNumber}} from plan"
 	},
 	"gracefulErrors": {

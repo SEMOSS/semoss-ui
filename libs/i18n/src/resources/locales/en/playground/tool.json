@@ -3,8 +3,6 @@
 		"failed": "Failed",
 		"cancelled": "Cancelled",
 		"completed": "Completed",
-		"ready": "Ready",
-		"autoExecute": "Auto-executing",
 		"queued": "In queue to auto-execute",
 		"loadingTool": "Loading tool…",
 		"waitingForArguments": "Waiting for arguments…",
@@ -18,6 +16,11 @@
 		"openInSidebar": "Open in sidebar",
 		"closeInSidebar": "Close sidebar",
 		"openInline": "Open in-line"
+	},
+	"tabs": {
+		"output": "Output",
+		"inputs": "Inputs",
+		"description": "Description"
 	},
 	"group": {
 		"labelClosed": "{{toolName}} + {{count}} more",
@@ -35,12 +38,13 @@
 		"schemaLoadFailedDescription": "Unable to retrieve tool configuration. Please try again later.",
 		"schemaLoading": "Loading tool schema...",
 		"noParameters": "No parameters required",
-		"showParameters": "Show Parameters ({{count}})",
-		"hideParameters": "Hide Parameters ({{count}})",
 		"showOptionalFields": "Show Optional Fields ({{count}})",
 		"hideOptionalFields": "Hide Optional Fields ({{count}})",
 		"execute": "Execute Tool",
-		"executing": "Executing..."
+		"executing": "Executing...",
+		"noOutput": "No output yet.",
+		"noDescription": "No description provided.",
+		"outputDialogTitle": "{{title}} — Output"
 	},
 	"playwright": {
 		"details": "Playwright Script Details",

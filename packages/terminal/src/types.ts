@@ -1,17 +1,11 @@
 export type TerminalLocation = "workspace" | "panel" | "popup" | "pipeline";
 
 /**
- * The scope a file lives in — passed verbatim to `<FileExplorer mode>` and
- * `<FileEditor mode>`. Mirrors the shape exported from
- * `libs/shared/src/components/file/file.types.ts`; declared locally so we
- * don't have to deep-import from that path.
+ * The scope a file lives in — passed verbatim to `useFileExplorer` and
+ * `<FileEditor mode>`. Re-exported rather than redeclared so the two can never
+ * drift.
  */
-export type FileMode =
-	| { type: "INSIGHT"; insightId?: string }
-	| { type: "APP"; app: string }
-	| { type: "ENGINE"; engine: string }
-	| { type: "STORAGE"; storage: string }
-	| { type: "USER" };
+export type { FileMode } from "@semoss/shared";
 
 export interface AppRef {
 	project_id: string;

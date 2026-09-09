@@ -1,7 +1,7 @@
 import { ChevronRight, UploadIcon } from "lucide-react";
 import { useId, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
-import { Link } from "react-router-dom";
+import { Link } from "react-router";
 import { MCPSelector, PromptSelector, SkillSelector } from "@semoss/shared";
 import {
 	Breadcrumb,
@@ -28,16 +28,17 @@ import {
 	AgentModelField,
 	AgentSubagentsField,
 	buildEditWorkspacePixel,
+	getWorkspaceSaveWarning,
 } from "@/components/agent-workspace/agent-form";
 import { UploadProjectDialog } from "@/components/project";
 import { NavbarHeader, NavbarLeft } from "@/components/shared";
-import { useRootStore } from "@/hooks";
+import { useSession } from "@/hooks";
 import { useNavigate } from "@/hooks/useNavigate";
 import { mcpToPlatformUrl, promptToPlatformUrl } from "@/utility";
 
 export const CreateAgentPage = () => {
 	const navigate = useNavigate();
-	const { monolithStore } = useRootStore();
+	const runPixel = useSession((state) => state.runPixel);
 	const [isUploadOpen, setIsUploadOpen] = useState(false);
 	const [isLoading, setIsLoading] = useState(false);
 	const nameId = useId();
@@ -67,9 +68,7 @@ export const CreateAgentPage = () => {
 
 			const skills = data.skills.map((s) => s.id);
 
-			const { errors, pixelReturn } = await monolithStore.runQuery<
-				[string]
-			>(
+			const { errors, pixelReturn } = await runPixel<[string]>(
 				`AddWorkspace(name=${JSON.stringify(data.name)}, description=${JSON.stringify(data.description)}, systemPrompt=${JSON.stringify(data.instructions)}, mcp=${JSON.stringify(mcp)}, skills=${JSON.stringify(skills)}, prompts=${JSON.stringify(data.prompts)});`,
 			);
 
@@ -92,9 +91,13 @@ export const CreateAgentPage = () => {
 				data.maxSubagentDepth ||
 				data.maxSubagentsPerRun ||
 				data.maxSpawnsPerTurn ||
-				data.subagents.some((s) => s.workspaceId);
+				data.subagents.some((s) => s.workspaceId) ||
+				data.disabledDefaultTools.length > 0;
 			if (hasExecutionSettings) {
-				const { errors: settingsErrors } = await monolithStore.runQuery(
+				const {
+					errors: settingsErrors,
+					pixelReturn: settingsPixelReturn,
+				} = await runPixel<[unknown]>(
 					buildEditWorkspacePixel(agentId, data),
 				);
 				if (settingsErrors.length > 0) {
@@ -102,6 +105,11 @@ export const CreateAgentPage = () => {
 					toast.error(
 						"Agent created, but failed to save execution settings",
 					);
+				} else {
+					const warning = getWorkspaceSaveWarning(
+						settingsPixelReturn[0]?.output,
+					);
+					if (warning) toast.warning(warning);
 				}
 			}
 
