@@ -6,9 +6,9 @@ import {
 	RefreshCw,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams } from "react-router";
 import { Badge, Button, Skeleton, toast } from "@semoss/ui/next";
-import { useProject, useRootStore } from "@/hooks";
+import { useProject, useSession } from "@/hooks";
 import { formatDateToRelative } from "@/utility/date";
 import type {
 	AgentActivityLogResponse,
@@ -96,7 +96,7 @@ const summarizeRoom = (
  */
 export const AgentActivityPage = () => {
 	const { project } = useProject();
-	const { monolithStore } = useRootStore();
+	const runPixel = useSession((state) => state.runPixel);
 	const [searchParams] = useSearchParams();
 	const targetRoomId = searchParams.get("roomId")?.trim() || null;
 	const targetRunId = searchParams.get("runId")?.trim() || null;
@@ -133,17 +133,15 @@ export const AgentActivityPage = () => {
 		if (!agentId) {
 			return {} as AgentActivityLogResponse;
 		}
-		const response = await monolithStore.runQuery<
-			[AgentActivityLogResponse]
-		>(
-			`GetAgentActivityLog(agentId=${JSON.stringify([agentId])}, limit=[20], sortByRoom=[true]);`,
+		const response = await runPixel<[AgentActivityLogResponse]>(
+			`GetAgentActivityLog(agentId=["${agentId}"], limit=[20], sortByRoom=[true]);`,
 		);
 		const { operationType, output } = response.pixelReturn[0];
 		if (operationType.indexOf("ERROR") > -1) {
 			throw new Error(String(output));
 		}
 		return output ?? {};
-	}, [project.project_id, monolithStore]);
+	}, [project.project_id, runPixel]);
 
 	useEffect(() => {
 		if (!project.project_id) {
@@ -198,8 +196,8 @@ export const AgentActivityPage = () => {
 	}, [rooms, targetRoomId, targetRunId]);
 
 	const fetchRunDetail = async (runId: string): Promise<AgentRunDetail> => {
-		const response = await monolithStore.runQuery<[AgentRunDetail]>(
-			`GetAgentRun(runId=${JSON.stringify(runId)}, includeMessages=["true"]);`,
+		const response = await runPixel<[AgentRunDetail]>(
+			`GetAgentRun ( runId = "${runId}" , includeMessages = "true" ) ;`,
 		);
 		const { operationType, output } = response.pixelReturn[0];
 		if (operationType.indexOf("ERROR") > -1) {
@@ -216,12 +214,11 @@ export const AgentActivityPage = () => {
 	const fetchEngineInfo = (engineId: string): Promise<EngineInfo | null> => {
 		let pending = engineInfoCache.current.get(engineId);
 		if (!pending) {
-			pending = monolithStore
-				.runQuery<[EngineMetadataOutput]>(
-					`GetEngineMetadata(engine=${JSON.stringify([engineId])}, metaKeys=${JSON.stringify(
-						[["engine_display_name", "engine_name"]],
-					)});`,
-				)
+			pending = runPixel<[EngineMetadataOutput]>(
+				`GetEngineMetadata(engine=["${engineId}"], metaKeys=${JSON.stringify(
+					[["engine_display_name", "engine_name"]],
+				)});`,
+			)
 				.then((response) => {
 					const { operationType, output } = response.pixelReturn[0];
 					if (operationType.indexOf("ERROR") > -1) {
@@ -274,18 +271,15 @@ export const AgentActivityPage = () => {
 		try {
 			let pending = transcriptCache.get(run.roomId);
 			if (!pending) {
-				pending = monolithStore
-					.runQuery<[ClaudeCodeTranscriptEvent[]]>(
-						`GetClaudeCodeTranscriptHistory(roomId=${JSON.stringify(run.roomId)});`,
-					)
-					.then((response) => {
-						const { operationType, output } =
-							response.pixelReturn[0];
-						if (operationType.indexOf("ERROR") > -1) {
-							throw new Error(String(output));
-						}
-						return output ?? [];
-					});
+				pending = runPixel<[ClaudeCodeTranscriptEvent[]]>(
+					`GetClaudeCodeTranscriptHistory ( roomId = "${run.roomId}" ) ;`,
+				).then((response) => {
+					const { operationType, output } = response.pixelReturn[0];
+					if (operationType.indexOf("ERROR") > -1) {
+						throw new Error(String(output));
+					}
+					return output ?? [];
+				});
 				transcriptCache.set(run.roomId, pending);
 			}
 			const events = await pending;
@@ -324,8 +318,8 @@ export const AgentActivityPage = () => {
 		if (depth >= MAX_SUBAGENT_DEPTH) {
 			return [];
 		}
-		const response = await monolithStore.runQuery<[SubagentRun[]]>(
-			`GetSubagentRuns(runId=${JSON.stringify(runId)});`,
+		const response = await runPixel<[SubagentRun[]]>(
+			`GetSubagentRuns ( runId = "${runId}" ) ;`,
 		);
 		const { operationType, output } = response.pixelReturn[0];
 		if (operationType.indexOf("ERROR") > -1) {

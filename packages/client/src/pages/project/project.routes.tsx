@@ -1,4 +1,4 @@
-import { Outlet } from "react-router-dom";
+import { Outlet } from "react-router";
 import { AutomationWorkbenchPage } from "@/components/automation-workspace";
 import { ProjectAccessControl, ProjectCatalog } from "@/components/project";
 import {

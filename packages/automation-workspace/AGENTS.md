@@ -39,7 +39,7 @@ MobX stores, so the exact same bundle renders identically whether:
 
 ## Build System
 
-- **Bundler**: Vite 7 + React
+- **Bundler**: Vite 8 + React 19
 - **Styling**: Tailwind CSS v4 + `@semoss/ui`
 
 ### Commands

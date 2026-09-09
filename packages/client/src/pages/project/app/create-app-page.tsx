@@ -1,6 +1,6 @@
 import { ChevronRight, UploadIcon } from "lucide-react";
 import { useState } from "react";
-import { Link, Navigate } from "react-router-dom";
+import { Link, Navigate } from "react-router";
 import type { Variable } from "@semoss/renderer";
 import { STATE_VERSION } from "@semoss/renderer/version";
 import {
@@ -18,7 +18,7 @@ import { NewAppModal } from "@/components/app";
 import { LandingHeader } from "@/components/landing";
 import { UploadProjectDialog } from "@/components/project";
 import { NavbarHeader, NavbarLeft } from "@/components/shared";
-import { useAdminMode, useRootStore } from "@/hooks";
+import { useAdminMode, useSession } from "@/hooks";
 import { useNavigate } from "@/hooks/useNavigate";
 import {
 	BASE_APP_QUERIES,
@@ -29,7 +29,10 @@ import {
 export const CreateAppPage = () => {
 	const navigate = useNavigate();
 
-	const { configStore } = useRootStore();
+	const isAdmin = useSession((state) => state.user.admin);
+	const isEngineOperationAvailable = useSession(
+		(state) => state.isEngineOperationAvailable,
+	);
 	const adminMode = useAdminMode();
 
 	const [isUploadOpen, setIsUploadOpen] = useState(false);
@@ -53,10 +56,7 @@ export const CreateAppPage = () => {
 			isAutomation ? `/automation/${appId}/edit` : `/app/${appId}/edit`,
 		);
 	};
-	const isRestricted = !configStore.isEngineOperationAvailable(
-		"PROJECT",
-		"add",
-	);
+	const isRestricted = !isEngineOperationAvailable("PROJECT", "add");
 
 	if (isRestricted) {
 		return <Navigate to="/" replace />;
@@ -134,7 +134,7 @@ export const CreateAppPage = () => {
 				</P>
 				<div className="flex w-full flex-col gap-4">
 					<LandingHeader
-						isAdmin={configStore.store.user.admin && adminMode}
+						isAdmin={isAdmin && adminMode}
 						onCreate={(type) => {
 							if (type === "blocks") {
 								setNewAppOptions({

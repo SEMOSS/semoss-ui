@@ -1,7 +1,6 @@
 import { ArrowRight } from "lucide-react";
-import { observer } from "mobx-react-lite";
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link } from "react-router";
 import type { Variable } from "@semoss/renderer";
 import { STATE_VERSION } from "@semoss/renderer/version";
 import { Button, H4, Muted } from "@semoss/ui/next";
@@ -19,7 +18,7 @@ import {
 	LandingHeader,
 	SystemAppCard,
 } from "@/components/landing";
-import { useAdminMode, usePage, useRootStore } from "@/hooks";
+import { useAdminMode, usePage, useSession } from "@/hooks";
 import { useNavigate } from "@/hooks/useNavigate";
 import {
 	BASE_APP_QUERIES,
@@ -28,13 +27,16 @@ import {
 } from "@/pages/app/app.constants";
 import { NavbarHeader, NavbarLeft } from "../components/shared";
 
-export const LandingPage: React.FC = observer(() => {
+export const LandingPage: React.FC = () => {
 	// setup the page
 	usePage({
 		showNavbarSearch: true,
 	});
 
-	const { configStore } = useRootStore();
+	const isAdmin = useSession((state) => state.user.admin);
+	const isEngineOperationAvailable = useSession(
+		(state) => state.isEngineOperationAvailable,
+	);
 	const navigate = useNavigate();
 	const adminMode = useAdminMode();
 
@@ -44,10 +46,7 @@ export const LandingPage: React.FC = observer(() => {
 
 	const isNameOpen = !!newAppOptions;
 
-	const isRestricted = !configStore.isEngineOperationAvailable(
-		"PROJECT",
-		"add",
-	);
+	const isRestricted = !isEngineOperationAvailable("PROJECT", "add");
 
 	return (
 		<>
@@ -108,7 +107,7 @@ export const LandingPage: React.FC = observer(() => {
 							/>
 						) : null}
 						<LandingHeader
-							isAdmin={configStore.store.user.admin && adminMode}
+							isAdmin={isAdmin && adminMode}
 							onCreate={(type) => {
 								if (type === "blocks") {
 									setNewAppOptions({
@@ -187,4 +186,4 @@ export const LandingPage: React.FC = observer(() => {
 			</div>
 		</>
 	);
-});
+};

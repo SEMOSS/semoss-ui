@@ -22,7 +22,7 @@ import {
 	useRef,
 	useState,
 } from "react";
-import { Link } from "react-router-dom";
+import { Link } from "react-router";
 import type { Role } from "@semoss/sdk";
 import { InsightProvider } from "@semoss/sdk/react";
 import {

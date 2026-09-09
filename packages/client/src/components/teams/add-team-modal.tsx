@@ -27,7 +27,7 @@ import {
 	toast,
 } from "@semoss/ui/next";
 import { addTeam, editTeam } from "@/api/teams";
-import { useRootStore } from "@/hooks";
+import { useConfig } from "@/hooks";
 import { useNavigate } from "@/hooks/useNavigate";
 
 type TeamReturn = {
@@ -66,7 +66,9 @@ export const AddTeamModal = (props: AddTeamModalProps) => {
 	const { open, onClose, isEdit, id, type, description } = props;
 
 	const navigate = useNavigate();
-	const { configStore } = useRootStore();
+	const availableProviders = useConfig(
+		(state) => state.config.availableProviders,
+	);
 	const [providerLogos, setProviderLogos] = useState<Record<string, string>>(
 		{},
 	);
@@ -113,14 +115,14 @@ export const AddTeamModal = (props: AddTeamModalProps) => {
 				description: "Directly manage users in the team",
 				isOauth: false,
 			},
-			...configStore.store.config.availableProviders,
+			...availableProviders,
 		] as {
 			provider: string;
 			name: string;
 			isOauth: boolean;
 			description?: string;
 		}[];
-	}, [configStore.store.config.availableProviders]);
+	}, [availableProviders]);
 
 	const loginTypesSignature = useMemo(() => {
 		return loginTypes

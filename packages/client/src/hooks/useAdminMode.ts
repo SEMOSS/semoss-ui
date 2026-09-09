@@ -28,8 +28,8 @@ function subscribe(callback: () => void): () => void {
  * Reads the "admin mode" toggle for routes that render outside the Settings
  * layout (e.g. the landing page, app catalog, new-app modal) where
  * `useSettings()` isn't available. This intentionally does not gate on
- * `configStore.store.user.admin` itself — callers combine the two the same
- * way `SettingsLayout` does (`configStore.store.user.admin && adminMode`).
+ * the current session's admin flag itself — callers combine the two the same
+ * way `SettingsLayout` does (`isAdmin && adminMode`).
  *
  * Note: like a plain `localStorage` read, this only reacts to changes made
  * from *other* tabs/windows (the browser `storage` event does not fire for

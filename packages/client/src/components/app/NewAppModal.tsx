@@ -18,7 +18,7 @@ import {
 	toast,
 } from "@semoss/ui/next";
 import { uploadImage } from "@/api";
-import { useRootStore } from "@/hooks";
+import { useSession } from "@/hooks";
 
 type NewAppForm = {
 	APP_NAME: string;
@@ -38,7 +38,8 @@ interface NewAppModalProps {
 
 export const NewAppModal = (props: NewAppModalProps) => {
 	const { open, options, onClose = () => null } = props;
-	const { monolithStore, configStore } = useRootStore();
+	const runPixel = useSession((state) => state.runPixel);
+	const insightID = useSession((state) => state.insightID);
 	const [isLoading, setIsLoading] = useState(false);
 	const [tagInput, setTagInput] = useState("");
 	const nameId = useId();
@@ -68,7 +69,7 @@ export const NewAppModal = (props: NewAppModalProps) => {
 		): Promise<boolean> => {
 			const tags = Array.from(new Set([...data.APP_TAGS, ...extraTags]));
 			if (!tags.length && !data.APP_DESCRIPTION) return true;
-			const { pixelReturn } = await monolithStore.runQuery(
+			const { pixelReturn } = await runPixel(
 				`SetProjectMetadata(project=["${resolvedAppId}"], meta=[${JSON.stringify(
 					{ tag: tags, description: data.APP_DESCRIPTION },
 				)}])`,
@@ -90,9 +91,7 @@ export const NewAppModal = (props: NewAppModalProps) => {
 				if (!state)
 					throw new Error("State is missing from the blocks app");
 
-				const { errors, pixelReturn } = await monolithStore.runQuery<
-					[Project]
-				>(
+				const { errors, pixelReturn } = await runPixel<[Project]>(
 					`CreateAppFromBlocks ( project = [ "${
 						data.APP_NAME
 					}" ] , json =[${JSON.stringify(state)}]  ) ;`,
@@ -103,47 +102,35 @@ export const NewAppModal = (props: NewAppModalProps) => {
 				appId = pixelReturn[0].output.project_id;
 
 				if (data.APP_IMG && appId) {
-					await uploadImage(
-						data.APP_IMG,
-						appId,
-						configStore.store.insightID,
-					);
+					await uploadImage(data.APP_IMG, appId, insightID);
 				}
 
 				if (!(await saveMetadata(appId))) return;
 			} else if (type === "automation") {
 				const pixel = `CreateAutomation(projectName=${JSON.stringify([data.APP_NAME])});`;
 				const { errors, pixelReturn } =
-					await monolithStore.runQuery<[Project]>(pixel);
+					await runPixel<[Project]>(pixel);
 
 				if (errors.length > 0) throw new Error(errors.join(","));
 
 				appId = pixelReturn[0].output.project_id;
 
 				if (data.APP_IMG && appId) {
-					await uploadImage(
-						data.APP_IMG,
-						appId,
-						configStore.store.insightID,
-					);
+					await uploadImage(data.APP_IMG, appId, insightID);
 				}
 
 				if (!(await saveMetadata(appId, ["AUTOMATION"]))) return;
 			} else if (type === "code") {
 				const pixel = `CreateProject(project=["${data.APP_NAME}"], portal=[true], projectType=["CODE"]);`;
 				const { errors, pixelReturn } =
-					await monolithStore.runQuery<[Project]>(pixel);
+					await runPixel<[Project]>(pixel);
 
 				if (errors.length > 0) throw new Error(errors.join(","));
 
 				appId = pixelReturn[0].output.project_id;
 
 				if (data.APP_IMG && appId) {
-					await uploadImage(
-						data.APP_IMG,
-						appId,
-						configStore.store.insightID,
-					);
+					await uploadImage(data.APP_IMG, appId, insightID);
 				}
 
 				const newIndexFilePath = "version/assets/portals/index.html";
@@ -154,8 +141,7 @@ export const NewAppModal = (props: NewAppModalProps) => {
                     CommitAsset(filePath=["${newIndexFilePath}"], comment=["Hardcoded comment from the App Page editor"], space=["${appId}"])
                 `;
 
-				const response =
-					await monolithStore.runQuery(saveIndexFilePixel);
+				const response = await runPixel(saveIndexFilePixel);
 
 				let output = response.pixelReturn[0].output;
 				let operationType = response.pixelReturn[0].operationType;
