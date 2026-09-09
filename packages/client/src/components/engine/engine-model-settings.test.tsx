@@ -32,7 +32,7 @@ vi.mock("@semoss/sdk/react", () => ({
 }));
 
 vi.mock("@/hooks", () => ({
-	useRootStore: () => ({ configStore: { runPixel: async () => ({}) } }),
+	useSession: () => ({ runPixel: async () => ({}) }),
 }));
 
 const { EngineModelSettings } = await import("./engine-model-settings");

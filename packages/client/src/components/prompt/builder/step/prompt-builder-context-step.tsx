@@ -1,4 +1,5 @@
 import { useId, useMemo, useState } from "react";
+import { usePixel } from "@semoss/sdk/react";
 import {
 	Input,
 	Label,
@@ -9,7 +10,6 @@ import {
 	SelectValue,
 	Textarea,
 } from "@semoss/ui/next";
-import { usePixel } from "@/hooks";
 import { StyledStepPaper } from "../../prompt.styled";
 import type { Builder } from "../../prompt.types";
 import { PromptBuilderContextTestDialogButton } from "./prompt-builder-context-test-dialog-button";

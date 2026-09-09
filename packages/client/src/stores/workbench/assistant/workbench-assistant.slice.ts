@@ -78,7 +78,7 @@ export type WorkbenchAssistantPermissionMode =
 export type WorkbenchAssistantEffort = "low" | "medium" | "high" | "max";
 
 /** Minimal reference to a backend agent workspace selected for assistant runs. */
-export type WorkbenchAssistantAgent = {
+type WorkbenchAssistantAgent = {
 	/** Workspace id passed to RunAgent. */
 	workspace_id: string;
 	/** Display name retained for the settings selector. */

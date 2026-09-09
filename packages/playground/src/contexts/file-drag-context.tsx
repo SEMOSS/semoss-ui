@@ -19,7 +19,7 @@ interface FileDragContextType {
 	openFilePicker: () => void;
 }
 
-export const FileDragContext = createContext<FileDragContextType | undefined>(
+const FileDragContext = createContext<FileDragContextType | undefined>(
 	undefined,
 );
 

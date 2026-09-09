@@ -25,7 +25,7 @@ import {
 } from "lucide-react";
 import { toJS } from "mobx";
 import { observer } from "mobx-react-lite";
-import React, { useEffect, useRef, useState } from "react";
+import React, { type JSX, useEffect, useRef, useState } from "react";
 import {
 	ActionMessages,
 	type BlockJSON,

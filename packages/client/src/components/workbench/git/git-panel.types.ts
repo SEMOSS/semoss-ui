@@ -1,4 +1,4 @@
-export type GitPanelScope = "ENGINE" | "PROJECT";
+type GitPanelScope = "ENGINE" | "PROJECT";
 
 /** Resource identity and access state carried by each Git panel config. */
 export interface GitPanelScopeParams {

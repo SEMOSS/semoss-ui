@@ -17,7 +17,7 @@ import {
 	zodResolver,
 } from "@semoss/ui/next";
 import { createGuardrailEngine } from "@/api";
-import { useRootStore } from "@/hooks";
+import { useSession } from "@/hooks";
 import { EngineFormHeader } from "../shared/engine-form-header";
 
 const REQUIREMENT_VALUES = [
@@ -297,7 +297,7 @@ export const SqlQueryGuardrailForm = ({
 	icon,
 	onSubmit,
 }: SqlQueryGuardrailFormProps) => {
-	const { configStore } = useRootStore();
+	const insightID = useSession((state) => state.insightID);
 	const form = useForm<SqlQueryGuardrailFormValues>({
 		resolver: zodResolver(sqlQueryGuardrailSchema),
 		defaultValues: SQL_QUERY_GUARDRAIL_DEFAULTS,
@@ -309,7 +309,7 @@ export const SqlQueryGuardrailForm = ({
 	const handleSubmit = async (values: SqlQueryGuardrailFormValues) => {
 		try {
 			const engineId = await createGuardrailEngine(
-				configStore.store.insightID,
+				insightID,
 				values.MODEL_NAME,
 				toSqlQueryGuardrailDetails(values),
 			);
