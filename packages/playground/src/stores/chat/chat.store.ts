@@ -1,7 +1,15 @@
 import { makeAutoObservable, runInAction } from "mobx";
-import { type Insight, runPixel } from "@semoss/sdk/react";
+import { download, type Insight, runPixel } from "@semoss/sdk/react";
 import type { ThemeMap } from "@semoss/shared";
-import type { Engine, MCPConfig, Workspace } from "@/types";
+import type {
+	AbstractPixelMessage,
+	Engine,
+	MCPConfig,
+	PixelMessageTextPart,
+	PixelMessageToolCallPart,
+	Workspace,
+} from "@/types";
+import { normalizeTimestamp } from "@/utility";
 import { RoomStore } from "../room";
 
 const DEFAUlT_MODEL_ID = import.meta.env.VITE_DEFAUlT_MODEL_ID || "";
@@ -447,6 +455,100 @@ export class ChatStore {
 		runInAction(() => {
 			this._store.keys.roomCounter++;
 		});
+	};
+
+	downloadConversation = async (
+		roomId: string,
+		format: "word" | "pdf",
+	): Promise<void> => {
+		const messagesResponse = await runPixel<AbstractPixelMessage[]>(
+			`GetPlaygroundMessages(roomId=["${roomId}"]);`,
+			"new",
+		);
+
+		if (!messagesResponse?.pixelReturn?.[0]?.output) {
+			throw new Error("Failed to fetch conversation messages");
+		}
+
+		const messageOutput: AbstractPixelMessage[] =
+			messagesResponse.pixelReturn[0].output;
+
+		const formattedMessages = messageOutput
+			.map((message: AbstractPixelMessage) => {
+				const timestamp = message.dateCreated
+					? normalizeTimestamp(message.dateCreated).format(
+							"MMM D, YYYY h:mm A",
+						)
+					: null;
+				const ts = timestamp ? `\n*${timestamp}*` : "";
+
+				if (message.io === "INPUT") {
+					const text = message.parts
+						?.filter(
+							(p): p is PixelMessageTextPart =>
+								p?.type === "TEXT",
+						)
+						.map((p) => p.text)
+						.join("");
+					return text ? `**You:**${ts}\n\n${text}` : null;
+				}
+				if (message.io === "OUTPUT") {
+					const text = message.parts
+						?.filter(
+							(p): p is PixelMessageTextPart =>
+								p?.type === "TEXT",
+						)
+						.map((p) => p.text)
+						.join("");
+					const tools: string[] =
+						message.parts
+							?.filter(
+								(p): p is PixelMessageToolCallPart =>
+									p?.type === "TOOL_CALL",
+							)
+							.map((p) => p.toolCall.title || p.toolCall.name)
+							.filter(Boolean) ?? [];
+					const toolLine =
+						tools.length > 0
+							? `\n\n*Tools used: ${tools.join(", ")}*`
+							: "";
+					return text || tools.length > 0
+						? `**Assistant:**${ts}\n\n${text}${toolLine}`
+						: null;
+				}
+				return null;
+			})
+			.filter(Boolean)
+			.join("\n\n---\n\n");
+
+		if (!formattedMessages) {
+			throw new Error("No conversation content to download");
+		}
+
+		const appName = this._theme.name || "Chat";
+		const pixelCommand =
+			format === "word"
+				? `ToDocx(markdown=["<encode>${formattedMessages}</encode>"], fileName="${appName} Room Export");`
+				: `ToPdf(markdown=["<encode>${formattedMessages}</encode>"], fileName="${appName} Room Export");`;
+
+		const downloadResponse = await runPixel<string>(
+			pixelCommand,
+			messagesResponse.insightId,
+		);
+
+		if (!downloadResponse?.pixelReturn?.[0]) {
+			throw new Error("No response received from server");
+		}
+
+		const { operationType, output } = downloadResponse.pixelReturn[0];
+
+		if (!operationType?.includes("FILE_DOWNLOAD")) {
+			throw new Error(
+				`Failed to generate ${format.toUpperCase()} file. Operation type: ${operationType}`,
+			);
+		}
+
+		download(downloadResponse.insightId, output);
 	};
 
 	/**
