@@ -271,7 +271,10 @@ export const NewRoomPage = observer(() => {
 						runInAction(() => {
 							chat.keys.roomCounter++;
 						});
-					} catch {
+					} catch (e) {
+						if ((e as Error)?.name === "UploadError") {
+							toast.error(t("room:errors.fileInUse"));
+						}
 						chat.removeOptimisticRoom(preCreatedRoom.roomId);
 					}
 				})();
