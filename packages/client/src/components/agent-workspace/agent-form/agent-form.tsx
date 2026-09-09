@@ -19,7 +19,7 @@ export type AgentDefaultTool = {
 	description?: string;
 };
 
-export interface AgentFormProps {
+interface AgentFormProps {
 	/** Initial values - read once on mount; this component owns edits after that. */
 	data: AgentFormValues;
 	/** Called with the full form values on every field change. */

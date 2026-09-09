@@ -26,5 +26,3 @@ export function ConfigStoreProvider({
 		</ConfigStoreContext.Provider>
 	);
 }
-
-export type ConfigStoreContextType = StoreApi<ConfigStoreState>;

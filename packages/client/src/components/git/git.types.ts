@@ -20,7 +20,7 @@ export interface GitDiff {
 }
 
 /** Author information returned with a Git commit. */
-export interface GitCommitAuthor {
+interface GitCommitAuthor {
 	userId: string;
 	userEmail: string;
 }
@@ -37,7 +37,7 @@ export interface GitCommit {
 }
 
 /** A branch or tag pointing to a Git commit. */
-export interface GitRef {
+interface GitRef {
 	name: string;
 	type: "LOCAL_BRANCH" | "REMOTE_BRANCH" | "TAG";
 }
@@ -54,7 +54,7 @@ export interface GitCommitFile {
 }
 
 /** A local or remote Git branch. */
-export interface GitBranch {
+interface GitBranch {
 	name: string;
 	fullName: string;
 	remote: boolean;

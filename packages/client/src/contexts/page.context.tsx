@@ -4,7 +4,7 @@ import type { PageStore } from "@/stores";
 /**
  * Value
  */
-export type PageContextType = {
+type PageContextType = {
 	/** Page store. */
 	store: PageStore;
 };

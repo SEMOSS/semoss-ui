@@ -11,7 +11,7 @@ interface MetaKey {
 	display_values?: string;
 }
 
-export interface RootConfig {
+interface RootConfig {
 	databaseMetaKeys: MetaKey[];
 	projectMetaKeys: MetaKey[];
 	availableProviders: {
@@ -30,7 +30,7 @@ export interface RootConfig {
 	[key: string]: unknown;
 }
 
-export interface RootTheme {
+interface RootTheme {
 	name: string;
 	logo: string;
 	logoLight: string;

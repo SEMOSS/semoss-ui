@@ -20,11 +20,11 @@ const DEFAULT_GUARDRAIL_PARAM = "prompt";
 export const GUARDRAIL_ALL_METHODS = "*";
 
 /** Argument name the interceptor uses for the intercepted method's return value. */
-export const GUARDRAIL_RESULT_ARGUMENT = "result";
+const GUARDRAIL_RESULT_ARGUMENT = "result";
 
 export type GuardrailPhase = "input" | "output";
-export const GUARDRAIL_FAILURE_ACTIONS = ["block", "mask", "respond"] as const;
-export const GUARDRAIL_DIRECT_PARAMETER_TYPES = [
+const GUARDRAIL_FAILURE_ACTIONS = ["block", "mask", "respond"] as const;
+const GUARDRAIL_DIRECT_PARAMETER_TYPES = [
 	"string",
 	"number",
 	"boolean",
@@ -104,7 +104,7 @@ export interface GetModelGuardrailConfigResponse {
 }
 
 /** Whether the engine loads a guardrail pipeline file, and which one. */
-export type GuardrailFileState = "loaded" | "file-missing" | "not-enabled";
+type GuardrailFileState = "loaded" | "file-missing" | "not-enabled";
 
 /** Everything the editor needs to explain the stored configuration's state. */
 export interface GuardrailFileStatus {
@@ -644,7 +644,7 @@ const validateDirectParameterValue = (
 		: `Direct parameter "${key}" must contain only ${itemType} values.`;
 };
 
-export type GuardrailIssueSeverity = "error" | "warning";
+type GuardrailIssueSeverity = "error" | "warning";
 
 /** A problem found in the editor's value. Errors block saving; warnings flag
  * configuration that saves cleanly but is unlikely to screen anything. */

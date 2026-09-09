@@ -12,7 +12,6 @@
         "test:coverage": "vitest --coverage --watch=false --configLoader runner"
     },
     "dependencies": {
-        "@codesandbox/sandpack-react": "^2.20.0",
         "@lexical/react": "^0.39.0",
         "@semoss/i18n": "workspace:*",
         "@semoss/sdk": "workspace:*",
@@ -26,8 +25,7 @@
         "mobx-react-lite": "^4.0.0",
         "react": "^19.0.0",
         "react-dom": "^19.0.0",
-        "react-router": "8.3.0",
-        "tailwindcss": "^4.3.3"
+        "react-router": "8.3.0"
     },
     "devDependencies": {
         "@semoss/config": "workspace:*",

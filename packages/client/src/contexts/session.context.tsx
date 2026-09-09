@@ -26,5 +26,3 @@ export function SessionStoreProvider({
 		</SessionStoreContext.Provider>
 	);
 }
-
-export type SessionStoreContextType = StoreApi<SessionStoreState>;

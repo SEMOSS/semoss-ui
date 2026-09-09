@@ -12,7 +12,7 @@ import {
 import type { ConfigStore } from "@/stores/config";
 import type { ALL_TYPES } from "@/types";
 
-export interface User {
+interface User {
 	loggedIn: boolean;
 	id: string;
 	name: string;
@@ -281,5 +281,3 @@ export const createSessionStore = (
 			}
 		},
 	}));
-
-export type SessionStore = StoreApi<SessionStoreState>;

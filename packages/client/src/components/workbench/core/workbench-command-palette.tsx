@@ -28,7 +28,6 @@ export const WorkbenchCommandPalette: FC = () => {
 	const layout = useWorkbench((state) => state.layout);
 
 	// list of all the currently registered commands in the workbench
-	// list of all the currently registered commands in the workbench
 	const commands = useWorkbench((state) => state.command.commands);
 	const recentCommands = useWorkbench(
 		(state) => state.command.recentCommands,

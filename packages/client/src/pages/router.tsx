@@ -1,4 +1,3 @@
-import { lazy } from "react";
 import { createHashRouter, Navigate } from "react-router";
 import { RouterProvider } from "react-router/dom";
 import { Spinner } from "@semoss/ui/next";
@@ -13,10 +12,8 @@ import { PrivacyNoticePage } from "./privacy-notice-page";
 import { PROJECT_ROUTES } from "./project";
 import { PROMPT_ROUTE } from "./prompt/prompt.routes";
 import { SETTINGS_ROUTE } from "./settings/settings.routes";
-
-const SharePage = lazy(() =>
-	import("./share-page").then((m) => ({ default: m.SharePage })),
-);
+import { SharePage } from "./share-page";
+import { TemplatePage } from "./template-page";
 
 const router = createHashRouter([
 	{
@@ -29,6 +26,7 @@ const router = createHashRouter([
 				element: <PageLayout />,
 				children: [
 					{ index: true, element: <LandingPage /> },
+					{ path: "templates", element: <TemplatePage /> },
 					...PROJECT_ROUTES,
 					{ path: "engine/*", element: <EngineRedirect /> },
 					...ENGINE_ROUTES,
@@ -44,17 +42,15 @@ const router = createHashRouter([
 	{ path: "/login", element: <LoginPage /> },
 ]);
 
-const PageSpinner = () => (
-	<div className="flex h-screen w-screen items-center justify-center">
-		<Spinner />
-	</div>
-);
-
 export const Router = () => {
 	const status = useSession((state) => state.status);
 
 	if (status === "INITIALIZING") {
-		return <PageSpinner />;
+		return (
+			<div className="flex h-screen w-screen items-center justify-center">
+				<Spinner />
+			</div>
+		);
 	}
 
 	return <RouterProvider router={router} />;
