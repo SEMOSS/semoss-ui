@@ -894,7 +894,12 @@ export const AutomationWorkbench = observer(
 									<BreadcrumbItem>
 										<BreadcrumbLink asChild>
 											<Link to={catalogPath}>
-												Automation Catalog
+												<span className="inline-flex items-center gap-1.5">
+													Automation Catalog
+													<span className="rounded border px-1 py-0.5 font-semibold text-[9px] leading-none">
+														BETA
+													</span>
+												</span>
 											</Link>
 										</BreadcrumbLink>
 									</BreadcrumbItem>

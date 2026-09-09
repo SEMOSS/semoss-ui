@@ -96,7 +96,14 @@ export const LandingHeader: React.FC<LandingHeaderProps> = ({
 					className="relative h-full w-full gap-2 overflow-hidden rounded-xl border-border bg-card py-4"
 				>
 					<CardHeader className="px-4">
-						<CardTitle>{card.title}</CardTitle>
+						<CardTitle className="flex items-center gap-2">
+							{card.title}
+							{card.type === "automation" && (
+								<span className="ms-1 self-center rounded border px-1 py-0.5 font-semibold text-[9px] leading-none">
+									BETA
+								</span>
+							)}
+						</CardTitle>
 						<CardDescription className="line-clamp-3 h-15">
 							{card.description}
 						</CardDescription>

@@ -395,7 +395,18 @@ export const ProjectCatalog = ({ type }: ProjectCatalogProps) => {
 				<NavbarHeader />
 			</NavbarLeft>
 			<CatalogLayout
-				title={`${config.name} Catalog`}
+				title={
+					type === "AUTOMATION" ? (
+						<span className="flex items-center gap-2">
+							{config.name} Catalog
+							<span className="ms-1 self-center rounded border px-1 py-0.5 font-semibold text-[9px] leading-none">
+								BETA
+							</span>
+						</span>
+					) : (
+						`${config.name} Catalog`
+					)
+				}
 				description={config.description}
 				headerActions={
 					isEngineOperationAvailable(

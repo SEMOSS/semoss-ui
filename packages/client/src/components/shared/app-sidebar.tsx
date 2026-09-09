@@ -258,6 +258,11 @@ export const Sidebar: React.FC = () => {
 												<span className="flex-1 truncate text-left">
 													{r.text}
 												</span>
+												{r.route === "/automation" && (
+													<span className="ms-1 self-center rounded border px-1 py-0.5 font-semibold text-[9px] leading-none">
+														BETA
+													</span>
+												)}
 											</Link>
 										</SidebarMenuButton>
 									</SidebarMenuItem>
