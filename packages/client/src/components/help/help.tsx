@@ -1,5 +1,5 @@
 import { HelpCircleIcon } from "lucide-react";
-import { observer } from "mobx-react-lite";
+import type { JSX } from "react";
 import {
 	Button,
 	DropdownMenu,
@@ -7,12 +7,14 @@ import {
 	DropdownMenuItem,
 	DropdownMenuTrigger,
 } from "@semoss/ui/next";
-import { useRootStore } from "@/hooks";
+import { useConfig } from "@/hooks";
 
-export const Help = observer((): JSX.Element => {
-	const { configStore } = useRootStore();
-
-	const raw = configStore.store.config.theme.THEME_MAP;
+export const Help = (): JSX.Element => {
+	const raw = useConfig(
+		(state) =>
+			(state.config.theme as { THEME_MAP?: string } | undefined)
+				?.THEME_MAP,
+	);
 	if (!raw) return null;
 
 	let themeMap: {
@@ -79,4 +81,4 @@ export const Help = observer((): JSX.Element => {
 			</DropdownMenu>
 		</div>
 	);
-});
+};

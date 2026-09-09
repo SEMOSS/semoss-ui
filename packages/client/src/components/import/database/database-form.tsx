@@ -32,8 +32,7 @@ import {
 	Separator,
 	toast,
 } from "@semoss/ui/next";
-import { uploadFile } from "@/api";
-import { useRootStore } from "@/hooks";
+import { useSession } from "@/hooks";
 import { useNavigate } from "@/hooks/useNavigate";
 import { EngineFormHeader } from "../shared/engine-form-header";
 import { computeOptions, computeVisibility } from "../shared/import-form.utils";
@@ -127,7 +126,9 @@ export const DatabaseForm = ({
 	const debounceTimeoutsRef = useRef<
 		Record<string, ReturnType<typeof setTimeout>>
 	>({});
-	const { monolithStore, configStore } = useRootStore();
+	const runPixel = useSession((state) => state.runPixel);
+	const upload = useSession((state) => state.upload);
+	const insightID = useSession((state) => state.insightID);
 	const navigate = useNavigate();
 	const defaultFields = resolvedFields;
 	const advancedFields = advanced;
@@ -204,7 +205,7 @@ export const DatabaseForm = ({
 
         `;
 			try {
-				const response = await monolithStore.runQuery(pixel);
+				const response = await runPixel(pixel);
 				const { output, operationType } = response.pixelReturn[0];
 				if (operationType.includes("ERROR")) {
 					toast.error(output as string);
@@ -237,7 +238,7 @@ export const DatabaseForm = ({
 						}),
 					};
 					const pixel = `databaseVar = CreateEmptyRdbmsDatabase(database=[${JSON.stringify(formData.NAME)}], rdbmsType=[${JSON.stringify(formData.dbDriver)}], username=[${JSON.stringify(formData.USERNAME ?? "")}], password=[${JSON.stringify(formData.PASSWORD ?? "")}]);SetDatabaseMetadata(database=[databaseVar], meta=[${JSON.stringify(meta)}]);SyncDatabaseWithLocalMaster(database=[databaseVar]);`;
-					const response = await monolithStore.runQuery(pixel);
+					const response = await runPixel(pixel);
 					if (response.errors?.length > 0) {
 						toast.error(response.errors.join(""));
 						setLoading(false);
@@ -267,10 +268,7 @@ export const DatabaseForm = ({
 				return;
 			}
 			try {
-				const uploadedFiles = await uploadFile(
-					formData.FILE_UPLOAD,
-					configStore.store.insightID,
-				);
+				const uploadedFiles = await upload(formData.FILE_UPLOAD);
 				if (
 					!uploadedFiles ||
 					!Array.isArray(uploadedFiles) ||
@@ -291,7 +289,7 @@ export const DatabaseForm = ({
 				setFormData(connectionData);
 				setFormValues(connectionData);
 				const pixel = `ExternalJdbcTablesAndViews(conDetails=[${JSON.stringify(connectionData)}]);`;
-				const response = await monolithStore.runQuery(pixel);
+				const response = await runPixel(pixel);
 				const { output, operationType } = response.pixelReturn[0];
 				if (operationType.includes("ERROR")) {
 					toast.error(output as string);
@@ -316,10 +314,7 @@ export const DatabaseForm = ({
 			const uploadedFilesResponse =
 				formData.METAMODEL_TYPE === "fromPropFile"
 					? []
-					: await uploadFile(
-							formData.FILE_UPLOAD,
-							configStore.store.insightID,
-						);
+					: await upload(formData.FILE_UPLOAD);
 
 			if (
 				formData.METAMODEL_TYPE !== "fromPropFile" &&
@@ -397,15 +392,9 @@ export const DatabaseForm = ({
 
 					for (const pair of validPairs) {
 						const [csvUpload, propUpload] = await Promise.all([
-							uploadFile(
-								[pair.dataFile as File],
-								configStore.store.insightID,
-							),
+							upload([pair.dataFile as File]),
 							pair.propFile
-								? uploadFile(
-										[pair.propFile as File],
-										configStore.store.insightID,
-									)
+								? upload([pair.propFile as File])
 								: Promise.resolve(null),
 						]);
 						if (!csvUpload?.length) {
@@ -422,7 +411,7 @@ export const DatabaseForm = ({
 						const pixel = propPath
 							? `ParseMetamodel(filePath=["${csvPath}"], delimiter=["${formData.DELIMITER ?? ","}"], rowCount=[false], propFile=["${propPath}"])`
 							: `PredictMetamodel(filePath=["${csvPath}"], delimiter=["${formData.DELIMITER ?? ","}"], rowCount=[false])`;
-						const response = await monolithStore.runQuery(pixel);
+						const response = await runPixel(pixel);
 						if (response.errors?.length > 0) {
 							toast.error(response.errors.join(""));
 							setLoading(false);
@@ -459,7 +448,7 @@ export const DatabaseForm = ({
 			const fileNames: string[] = [];
 
 			for (const pixelString of pixelExpressions) {
-				const response = await monolithStore.runQuery(pixelString);
+				const response = await runPixel(pixelString);
 				const output = response?.pixelReturn?.[0]?.output as {
 					engine_id?: string;
 					database_id?: string;
@@ -507,7 +496,7 @@ export const DatabaseForm = ({
 	const runPixelWithConsole = async <O extends unknown[] | []>(
 		pixel: string,
 	) => {
-		const insightId = configStore.store.insightID;
+		const insightId = insightID;
 		if (!insightId) {
 			throw new Error("Missing insight ID for database import request.");
 		}
@@ -554,7 +543,7 @@ export const DatabaseForm = ({
 
 		const pollPromise = pollConsole();
 		try {
-			return await monolithStore.runQuery<O>(pixel, insightId);
+			return await runPixel<O>(pixel);
 		} finally {
 			stopPolling = true;
 			await pollPromise;
@@ -654,7 +643,7 @@ export const DatabaseForm = ({
 				}),
 			};
 
-			const response = await monolithStore.runQuery(
+			const response = await runPixel(
 				`${pixelCommands.join("")}SetDatabaseMetadata(database=[${JSON.stringify(formValuesLocal.DATABASE_NAME)}], meta=[${JSON.stringify(meta)}]);`,
 			);
 
@@ -874,7 +863,7 @@ export const DatabaseForm = ({
 
 	const executeWatchedFieldPixel = useCallback(
 		async (key: string, pixelStr: string, type: "value" | "options") => {
-			const response = await monolithStore.runQuery(pixelStr);
+			const response = await runPixel(pixelStr);
 			const output = response.pixelReturn[0].output;
 			const operationType = response.pixelReturn[0].operationType;
 
@@ -912,7 +901,7 @@ export const DatabaseForm = ({
 				);
 			}
 		},
-		[monolithStore, setValue],
+		[runPixel, setValue],
 	);
 
 	useEffect(() => {
@@ -945,7 +934,7 @@ export const DatabaseForm = ({
 			userInput.trim(),
 		);
 
-		const response = await monolithStore.runQuery(pixelToExecute);
+		const response = await runPixel(pixelToExecute);
 		const output = response.pixelReturn[0].output;
 		const operationType = response.pixelReturn[0].operationType;
 
@@ -1418,7 +1407,7 @@ export const DatabaseForm = ({
 																	[],
 															);
 														}}
-														className="size-8 flex-shrink-0 hover:bg-destructive/10 hover:text-destructive"
+														className="size-8 shrink-0 hover:bg-destructive/10 hover:text-destructive"
 														data-testid={`remove-file-btn-${index}`}
 													>
 														<X className="size-4" />
@@ -1637,7 +1626,7 @@ export const DatabaseForm = ({
 												(entry, index) => (
 													<P
 														key={`${index}-${entry}`}
-														className="break-words text-muted-foreground text-sm leading-6"
+														className="wrap-break-word text-muted-foreground text-sm leading-6"
 													>
 														{entry}
 													</P>
@@ -1742,7 +1731,7 @@ export const DatabaseForm = ({
 		const pixel = `ExternalJdbcSchema(conDetails=[${JSON.stringify(formData)}], filters=${JSON.stringify(filter)})`;
 
 		try {
-			const response = await monolithStore.runQuery(pixel);
+			const response = await runPixel(pixel);
 			const { output, operationType } = response.pixelReturn[0];
 			if (operationType.includes("ERROR")) {
 				toast.error(output as string);
@@ -1795,7 +1784,7 @@ export const DatabaseForm = ({
 											"No description available."}
 									</Muted>
 								</div>
-								<div className="flex min-w-0 flex-[2] flex-col gap-2 py-2">
+								<div className="flex min-w-0 flex-2 flex-col gap-2 py-2">
 									{grouped[category].map((f) =>
 										renderControllerField(f),
 									)}
@@ -1871,7 +1860,7 @@ export const DatabaseForm = ({
 													settings
 												</Muted>
 											</div>
-											<div className="flex min-w-0 flex-[2] flex-col gap-2">
+											<div className="flex min-w-0 flex-2 flex-col gap-2">
 												{advancedFields.map((f) =>
 													renderControllerField(f),
 												)}

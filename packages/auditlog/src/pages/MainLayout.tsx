@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { Outlet } from "react-router-dom";
+import { Outlet } from "react-router";
 // import { useInsight } from "@semoss/sdk/react";
 // import { SidebarInset, SidebarProvider } from "@semoss/ui/next";
 // import { GlobalNav } from "@/components/global-nav";

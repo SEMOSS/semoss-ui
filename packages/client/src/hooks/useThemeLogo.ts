@@ -1,11 +1,10 @@
 import { useTheme } from "@semoss/ui/next";
 import { THEME } from "@/constants";
-import { useRootStore } from "./useRootStore";
+import { useConfig } from "./use-config";
 
 export const useThemeLogo = () => {
-	const { configStore } = useRootStore();
+	const theme = useConfig((state) => state.theme);
 	const { resolvedTheme } = useTheme();
-	const theme = configStore.theme;
 
 	const hasDefaultLogo = theme.logo === THEME.logo;
 	const customLightLogo =

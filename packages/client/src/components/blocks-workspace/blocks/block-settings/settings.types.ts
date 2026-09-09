@@ -1,3 +1,4 @@
+import type { JSX } from "react";
 export interface BlockSettingsConfig {
 	/** Block type: BLOCK_TYPE_ACTION | BLOCK_TYPE_CHART | BLOCK_TYPE_DISPLAY | BLOCK_TYPE_INPUT | BLOCK_TYPE_LAYOUT | BLOCK_TYPE_DATA */
 	type: string;

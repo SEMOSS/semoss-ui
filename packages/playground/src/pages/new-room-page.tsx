@@ -10,7 +10,7 @@ import { runInAction } from "mobx";
 import { observer } from "mobx-react-lite";
 import type { ReactNode } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router";
 import { useTranslation } from "@semoss/i18n";
 import { InsightProvider, usePixel } from "@semoss/sdk/react";
 import {
@@ -326,6 +326,9 @@ export const NewRoomPage = observer(() => {
 			// clearing the agent clears the guard below, so picking the same
 			// agent again applies its default model again
 			appliedAgentModelRef.current = "";
+			if (chat.profileDefaultModelId) {
+				void chat.selectModelById(chat.profileDefaultModelId);
+			}
 			return;
 		}
 		if (getWorkspace.status !== "SUCCESS" || !getWorkspace.data) {
