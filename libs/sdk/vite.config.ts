@@ -6,5 +6,5 @@ export default createViteLibConfig({
 		index: "src/index.ts",
 		"js-frameworks/react/index": "src/js-frameworks/react/index.ts",
 	},
-	external: ["react"],
+	external: ["react", /^react\//],
 });
