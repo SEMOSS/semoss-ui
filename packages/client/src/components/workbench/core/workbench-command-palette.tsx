@@ -28,9 +28,8 @@ export const WorkbenchCommandPalette: FC = () => {
 	const layout = useWorkbench((state) => state.layout);
 
 	// list of all the currently registered commands in the workbench
-	const commandList = useWorkbench((state) =>
-		Object.values(state.command.commands),
-	);
+	// list of all the currently registered commands in the workbench
+	const commands = useWorkbench((state) => state.command.commands);
 	const recentCommands = useWorkbench(
 		(state) => state.command.recentCommands,
 	);
@@ -66,7 +65,8 @@ export const WorkbenchCommandPalette: FC = () => {
 
 		const filteredItems: WorkbenchPaletteItem[] = [];
 		const itemsById = new Map<string, WorkbenchPaletteItem>();
-		for (const command of commandList) {
+		for (const c in commands) {
+			const command = commands[c];
 			if (command.visible === false) {
 				continue;
 			}
@@ -128,7 +128,7 @@ export const WorkbenchCommandPalette: FC = () => {
 			recentItems,
 			remainingItems,
 		};
-	}, [commandList, recentCommands, search]);
+	}, [commands, recentCommands, search]);
 
 	const renderCommandItem = (item: WorkbenchPaletteItem) => (
 		<CommandItem
