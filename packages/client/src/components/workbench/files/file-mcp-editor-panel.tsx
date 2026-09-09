@@ -24,7 +24,7 @@ export interface FileMcpEditorParams {
 }
 
 /** Build the scoped pixel used to read an MCP file. */
-export const getFileMcpReadPixel = ({
+const getFileMcpReadPixel = ({
 	type,
 	id,
 	path,
@@ -34,7 +34,7 @@ export const getFileMcpReadPixel = ({
 		: `GetEngineAssets(filePath=[${JSON.stringify(path)}], engine=[${JSON.stringify(id)}]);`;
 
 /** Build the scoped pixel used to save an MCP file. */
-export const getFileMcpSavePixel = (
+const getFileMcpSavePixel = (
 	config: Pick<FileMcpEditorParams, "type" | "id" | "path">,
 	data: MCPJsonData,
 ): string => {

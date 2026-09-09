@@ -1,6 +1,6 @@
 import { ChevronDown } from "lucide-react";
 import { observer } from "mobx-react-lite";
-import React, { createElement } from "react";
+import React, { createElement, type JSX } from "react";
 
 export const SelectedMenuSection = observer(
 	(props: {

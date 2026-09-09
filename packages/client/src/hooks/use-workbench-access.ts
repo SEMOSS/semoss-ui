@@ -7,19 +7,19 @@ import {
 import { useWorkbench } from "./use-workbench";
 
 /** Still resolving a resource's permission for the first time. */
-export interface WorkbenchAccessLoadingState {
+interface WorkbenchAccessLoadingState {
 	status: "loading";
 }
 
 /** Permission has never resolved and there is no stale value to fall back on. */
-export interface WorkbenchAccessErrorState {
+interface WorkbenchAccessErrorState {
 	status: "error";
 	error: string;
 	refresh: () => Promise<Role>;
 }
 
 /** Permission is known — either fresh, mid-refresh, or stale after a failed refresh. */
-export interface WorkbenchAccessReadyState {
+interface WorkbenchAccessReadyState {
 	status: "ready";
 	permission: Role;
 	readOnly: boolean;

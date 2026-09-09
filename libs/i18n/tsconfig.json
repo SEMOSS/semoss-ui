@@ -11,6 +11,8 @@
 		"allowJs": true,
 		"esModuleInterop": true,
 		"isolatedModules": true,
+		"strict": false,
+		"noUncheckedSideEffectImports": false,
 		"paths": {
 			"@/*": ["./src/*"]
 		}

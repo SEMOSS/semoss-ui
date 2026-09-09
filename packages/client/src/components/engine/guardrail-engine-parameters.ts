@@ -41,9 +41,7 @@ interface GuardrailUsageSection {
 
 /** Pull the parameter list out of a GetEngineUsage response, ignoring
  * sections that do not describe parameters. */
-export const getGuardrailParameters = (
-	data: unknown,
-): GuardrailParameterOption[] => {
+const getGuardrailParameters = (data: unknown): GuardrailParameterOption[] => {
 	if (!data || typeof data !== "object") {
 		return [];
 	}
