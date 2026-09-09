@@ -6,9 +6,9 @@ import {
 import type { WorkbenchSlice } from "../workbench.types";
 
 export type WorkbenchAccessType = "ENGINE" | "PROJECT" | "INSIGHT";
-export type WorkbenchAccessStatus = "INITIAL" | "LOADING" | "SUCCESS" | "ERROR";
+type WorkbenchAccessStatus = "INITIAL" | "LOADING" | "SUCCESS" | "ERROR";
 
-export interface WorkbenchAccessEntry {
+interface WorkbenchAccessEntry {
 	status: Exclude<WorkbenchAccessStatus, "INITIAL">;
 	permission?: Role;
 	error?: string;

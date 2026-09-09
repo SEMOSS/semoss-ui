@@ -1,8 +1,8 @@
 import { Ban, Eye, Pencil, User } from "lucide-react";
 import { type ReactNode, useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link } from "react-router";
 import type { Role } from "@semoss/sdk";
-import { usePixel } from "@semoss/sdk/react";
+import { runPixel, usePixel } from "@semoss/sdk/react";
 import type { Project, ProjectDependency } from "@semoss/shared";
 import {
 	Badge,
@@ -29,7 +29,6 @@ import {
 } from "@semoss/ui/next";
 import OPEN_AI from "@/assets/img/OPEN_AI.svg";
 import { PERMISSION_DESCRIPTION_MAP, TYPE_TO_ROUTE } from "@/constants";
-import { useRootStore } from "@/hooks";
 
 interface ProjectAccessRequestDialogProps {
 	/** Project details */
@@ -106,7 +105,6 @@ export const ProjectAccessRequestDialog = ({
 	open,
 	onClose,
 }: ProjectAccessRequestDialogProps) => {
-	const { configStore } = useRootStore();
 	const [tabValue, setTabValue] = useState("permissions");
 	const [requestedDeps, setRequestedDeps] = useState<Set<string>>(new Set());
 	const [requestedPermission, setRequestedPermission] = useState<Role | "">(
@@ -148,7 +146,7 @@ export const ProjectAccessRequestDialog = ({
 				return;
 			}
 
-			const response = await configStore.runPixel(
+			const response = await runPixel(
 				`META | RequestEngine(engine=['${depId}'], permission=['${requestedPermission}']${
 					roleChangeComment
 						? `, comment=['${roleChangeComment}']`
@@ -211,7 +209,7 @@ export const ProjectAccessRequestDialog = ({
 				})`;
 			}
 
-			const response = await configStore.runPixel(pixel);
+			const response = await runPixel(pixel);
 			const { pixelReturn } = response;
 
 			for (const [rIdx, r] of pixelReturn.entries()) {
@@ -261,7 +259,7 @@ export const ProjectAccessRequestDialog = ({
 		try {
 			setIsLoading(true);
 
-			const response = await configStore.runPixel(
+			const response = await runPixel(
 				`RequestProject(project=['${id}'], permission=['${requested}'], comment=['${comment}'])`,
 			);
 

@@ -8,7 +8,7 @@ import {
 	useLocation,
 	useNavigate as useReactRouterNavigate,
 	useResolvedPath,
-} from "react-router-dom";
+} from "react-router";
 
 const MODIFIER_NAVIGATION_WINDOW_MS = 700;
 
@@ -116,7 +116,12 @@ export const useNavigate = (): NavigateFunction => {
 
 	return useCallback<NavigateFunction>(
 		(to: To | number, options?: NavigateOptions) => {
-			if (typeof to !== "number" && shouldOpenInNewTab()) {
+			if (typeof to === "number") {
+				navigate(to);
+				return;
+			}
+
+			if (shouldOpenInNewTab()) {
 				openRouteInNewTab(
 					to,
 					location.pathname,

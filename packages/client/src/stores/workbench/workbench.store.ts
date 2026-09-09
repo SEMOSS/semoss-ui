@@ -21,7 +21,7 @@ import {
 	type WorkbenchLoadingSliceState,
 } from "./slices";
 
-export interface WorkbenchConfiguration {
+interface WorkbenchConfiguration {
 	resource: {
 		type: WorkbenchAccessType;
 		id: string;

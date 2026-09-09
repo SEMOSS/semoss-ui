@@ -1,16 +1,14 @@
+import { ConfigStoreContext, ConfigStoreProvider } from "./config.context";
 import { DesignerContext, type DesignerContextType } from "./DesignerContext";
 import { EngineContext, type EngineContextType } from "./engine-context";
 import {
 	MetamodelContext,
 	type MetamodelContextType,
 } from "./MetamodelContext";
-import { PageContext, type PageContextType } from "./PageContext";
+import { PageContext } from "./page.context";
 import { ProjectContext, type ProjectContextType } from "./project-context";
-import {
-	RootStoreContext,
-	type RootStoreContextType,
-} from "./RootStoreContext";
 import { StepperContext, type StepperContextType } from "./StepperContext";
+import { SessionStoreContext, SessionStoreProvider } from "./session.context";
 import { SettingsContext, type SettingsContextType } from "./settings-context";
 import {
 	WorkspaceContext,
@@ -23,19 +21,20 @@ export type {
 	DesignerContextType,
 	EngineContextType,
 	MetamodelContextType,
-	RootStoreContextType,
 	SettingsContextType,
 	StepperContextType,
-	PageContextType,
 	WorkspaceContextType,
 };
 
 export {
 	ProjectContext,
+	ConfigStoreContext,
+	ConfigStoreProvider,
 	DesignerContext,
 	EngineContext,
 	MetamodelContext,
-	RootStoreContext,
+	SessionStoreContext,
+	SessionStoreProvider,
 	SettingsContext,
 	StepperContext,
 	PageContext,

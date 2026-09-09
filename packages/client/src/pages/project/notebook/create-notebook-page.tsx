@@ -1,6 +1,6 @@
 import { ChevronRight, UploadIcon, X } from "lucide-react";
 import { useId, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router";
 import { runPixel } from "@semoss/sdk/react";
 import {
 	Badge,

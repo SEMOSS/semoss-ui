@@ -39,7 +39,7 @@ import {
 	decodeBase64Asset,
 	encodeBase64Asset,
 } from "@/components/workbench/files/file-panel.utility";
-import { useRootStore } from "@/hooks";
+import { useSession } from "@/hooks";
 
 const FilePptxViewerContent = lazy(
 	() => import("@/components/workbench/files/file-pptx-viewer-content"),
@@ -277,8 +277,7 @@ const MyFilesExplorer = () => {
 };
 
 export const MyFilesPage = observer(() => {
-	const { configStore } = useRootStore();
-	const insightId = configStore.store.insightID;
+	const insightId = useSession((state) => state.insightID);
 
 	if (!insightId) {
 		return (

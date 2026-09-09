@@ -8,7 +8,7 @@ import {
 } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useEffect, useId, useMemo, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router";
 import { useTranslation } from "@semoss/i18n";
 import { usePixel } from "@semoss/sdk/react";
 import {
