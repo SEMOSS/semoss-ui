@@ -18,7 +18,7 @@ import {
 	TooltipTrigger,
 	toast,
 } from "@semoss/ui/next";
-import { useRootStore } from "@/hooks";
+import { useSession } from "@/hooks";
 
 interface PromptModalProps {
 	isOpen: boolean;
@@ -36,7 +36,7 @@ interface PromptModalProps {
 }
 
 export const PromptModal = (props: PromptModalProps) => {
-	const { monolithStore } = useRootStore();
+	const runPixel = useSession((state) => state.runPixel);
 	const { isOpen, onClose, mode, prompt, initialData } = props;
 	const [context, setContext] = useState("");
 	const [title, setTitle] = useState("");
@@ -55,8 +55,7 @@ export const PromptModal = (props: PromptModalProps) => {
 			global: global,
 		};
 		const stringified = `AddPrompt ( map = [${JSON.stringify(promptMap)} ])`;
-		monolithStore
-			.runQuery(stringified)
+		runPixel(stringified)
 			.then(() => {
 				toast.success("Prompt added successfully");
 				onClose(true);
@@ -76,8 +75,7 @@ export const PromptModal = (props: PromptModalProps) => {
 			id: prompt,
 		};
 		const stringified = `UpdatePrompt ( map = [${JSON.stringify(promptMap)} ])`;
-		monolithStore
-			.runQuery(stringified)
+		runPixel(stringified)
 			.then(() => {
 				toast.success("Prompt updated successfully");
 				onClose(true);

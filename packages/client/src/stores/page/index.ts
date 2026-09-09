@@ -1,1 +1,1 @@
-export { PageStore } from "./page.store";
+export { createPageStore, type PageState, type PageStore } from "./page.store";
