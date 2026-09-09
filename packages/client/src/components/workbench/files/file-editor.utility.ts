@@ -124,6 +124,8 @@ export const getFilePanelType = (path: string): string => {
 			return WORKBENCH_COMPONENTS.FILE_NOTEBOOK_EDITOR;
 		case "pdf":
 			return WORKBENCH_COMPONENTS.FILE_PDF_VIEWER;
+		case "pptx":
+			return WORKBENCH_COMPONENTS.FILE_PPTX_VIEWER;
 		default:
 			return WORKBENCH_COMPONENTS.FILE_CODE_EDITOR;
 	}
