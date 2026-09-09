@@ -41,7 +41,9 @@
       "@crxjs/vite-plugin>rollup": "2.80.0",
       "archiver-utils>lodash": "4.18.1",
       "rollup-plugin-postcss>cssnano": "8.0.1",
-      "mocha>serialize-javascript": "7.0.5"
+      "mocha>serialize-javascript": "7.0.5",
+      "postcss@>=8.0.0 <8.5.28": "8.5.28",
+      "picomatch@>=4.0.0 <4.0.4": "4.0.4"
     }
   }
 }
