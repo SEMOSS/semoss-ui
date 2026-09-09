@@ -9,7 +9,7 @@ import {
 	TooltipTrigger,
 	toast,
 } from "@semoss/ui/next";
-import { useDesigner, useRootStore } from "@/hooks";
+import { useDesigner, useSession } from "@/hooks";
 import type {
 	BlockLocalStorageData,
 	DesignerMenuItem,
@@ -37,7 +37,7 @@ export const AddBlocksMenuCard = observer((props: AddBlocksMenuItemProps) => {
 	const { item, isCommunity, handleOnTrashClick } = props;
 	const { state } = useBlocks();
 	const { designer } = useDesigner();
-	const { configStore } = useRootStore();
+	const isAdmin = useSession((state) => state.user.admin);
 
 	const [_imageSrc, _setImageSrc] = useState(null);
 
@@ -260,7 +260,7 @@ export const AddBlocksMenuCard = observer((props: AddBlocksMenuItemProps) => {
 				onMouseLeave={() => setHovered(false)}
 				onMouseDown={handleMouseDown}
 			>
-				{hovered && isCommunity && configStore.store.user.admin && (
+				{hovered && isCommunity && isAdmin && (
 					<div
 						className="-right-6 absolute top-2.5 z-[1000] flex flex-col gap-1 rounded-lg border border-border bg-popover p-2"
 						style={{

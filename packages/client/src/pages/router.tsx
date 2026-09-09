@@ -1,9 +1,8 @@
-import { observer } from "mobx-react-lite";
 import { lazy } from "react";
 import { createHashRouter, Navigate } from "react-router";
 import { RouterProvider } from "react-router/dom";
 import { Spinner } from "@semoss/ui/next";
-import { useRootStore } from "@/hooks";
+import { useSession } from "@/hooks";
 import { AuthenticatedLayout } from "./authenticated-layout";
 import { CookieNoticePage } from "./cookie-notice-page";
 import { ENGINE_ROUTES, EngineRedirect } from "./engine";
@@ -51,12 +50,12 @@ const PageSpinner = () => (
 	</div>
 );
 
-export const Router = observer(() => {
-	const { configStore } = useRootStore();
+export const Router = () => {
+	const status = useSession((state) => state.status);
 
-	if (configStore.store.status === "INITIALIZING") {
+	if (status === "INITIALIZING") {
 		return <PageSpinner />;
 	}
 
 	return <RouterProvider router={router} />;
-});
+};

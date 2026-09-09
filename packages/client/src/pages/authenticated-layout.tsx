@@ -1,18 +1,17 @@
-import { observer } from "mobx-react-lite";
 import { Suspense } from "react";
 import { Navigate, Outlet, useLocation } from "react-router";
 import { Spinner } from "@semoss/ui/next";
-import { useRootStore } from "@/hooks/";
+import { useSession } from "@/hooks/";
 
 /**
  * Wrap the database routes and add additional funcitonality
  */
-export const AuthenticatedLayout = observer(() => {
-	const { configStore } = useRootStore();
+export const AuthenticatedLayout = () => {
+	const status = useSession((state) => state.status);
 	const location = useLocation();
 
 	// wait till the config is authenticated to load the view
-	if (configStore.store.status === "MISSING AUTHENTICATION") {
+	if (status === "MISSING AUTHENTICATION") {
 		return <Navigate to="/login" state={{ from: location }} replace />;
 	}
 
@@ -27,4 +26,4 @@ export const AuthenticatedLayout = observer(() => {
 			<Outlet />
 		</Suspense>
 	);
-});
+};

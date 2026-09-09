@@ -1,18 +1,17 @@
-import { observer } from "mobx-react-lite";
 import { useEffect } from "react";
 import { LoadingScreen } from "@semoss/ui/next";
 import { Router } from "@/pages";
 import { CookieWrapper } from "./components/cookies";
-import { useRootStore } from "./hooks";
+import { useConfig } from "./hooks";
 
-export const AppWrapper = observer(() => {
-	const { configStore } = useRootStore();
+export const AppWrapper = () => {
+	const theme = useConfig((state) => state.theme);
 
 	useEffect(() => {
 		try {
-			document.title = configStore.theme.name;
+			document.title = theme.name;
 
-			const faviconLink = configStore.theme.logo;
+			const faviconLink = theme.logo;
 			const link = document.createElement("link");
 			link.rel = "icon";
 			link.href = faviconLink;
@@ -20,7 +19,7 @@ export const AppWrapper = observer(() => {
 		} catch {
 			console.error("Unable to set title on page");
 		}
-	}, [configStore.theme]);
+	}, [theme]);
 
 	return (
 		<LoadingScreen>
@@ -29,4 +28,4 @@ export const AppWrapper = observer(() => {
 			</CookieWrapper>
 		</LoadingScreen>
 	);
-});
+};

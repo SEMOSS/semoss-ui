@@ -19,7 +19,7 @@ import {
 	toast,
 } from "@semoss/ui/next";
 import { MarkdownEditor } from "@/components/common";
-import { useRootStore } from "@/hooks";
+import { useSession } from "@/hooks";
 import { EmptyValue, SettingsEntry } from "./engine-metadata-display";
 
 interface DescriptionForm {
@@ -55,7 +55,7 @@ export const EngineDescriptionSettings = ({
 	permission,
 	onUpdated,
 }: EngineDescriptionSettingsProps) => {
-	const { configStore } = useRootStore();
+	const runPixel = useSession((state) => state.runPixel);
 
 	const [isSaving, setIsSaving] = useState(false);
 	const [form, setForm] = useState<DescriptionForm>(() => toForm(engine));
@@ -97,7 +97,7 @@ export const EngineDescriptionSettings = ({
 		try {
 			setIsSaving(true);
 
-			const response = await configStore.runPixel(
+			const response = await runPixel(
 				`SetEngineMetadata(engine=["${engine.engine_id}"], meta=[${JSON.stringify(
 					form,
 				)}])`,

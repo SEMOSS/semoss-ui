@@ -1,7 +1,6 @@
 import { AlertCircleIcon, Download } from "lucide-react";
 import type React from "react";
 import { useState } from "react";
-import { download, runPixel } from "@semoss/sdk/react";
 import type { FlexLayout } from "@semoss/shared";
 import {
 	Alert,
@@ -24,7 +23,7 @@ import {
 	TooltipTrigger,
 	toast,
 } from "@semoss/ui/next";
-import { useEngine, useRootStore } from "@/hooks";
+import { useEngine, useSession } from "@/hooks";
 import type { DatabaseType } from "./database-script-templates";
 
 interface DatabaseQueryResultsPanelProps {
@@ -87,7 +86,8 @@ export const DatabaseQueryResultsPanel: React.FC<
 	DatabaseQueryResultsPanelProps
 > = ({ mode, variant, model, isRunning, result }) => {
 	const { engine } = useEngine();
-	const { configStore } = useRootStore();
+	const runPixel = useSession((state) => state.runPixel);
+	const download = useSession((state) => state.download);
 
 	const [isExporting, setIsExporting] = useState(false);
 	/**
@@ -110,7 +110,7 @@ export const DatabaseQueryResultsPanel: React.FC<
 		try {
 			setIsExporting(true);
 
-			const response = await runPixel(pixel, configStore.store.insightID);
+			const response = await runPixel(pixel);
 
 			if (response.errors?.length) {
 				throw new Error(response.errors.join("\n"));
@@ -118,10 +118,7 @@ export const DatabaseQueryResultsPanel: React.FC<
 
 			const firstResult = response?.pixelReturn?.[0];
 
-			await download(
-				configStore.store.insightID,
-				firstResult.output as string,
-			);
+			await download(firstResult.output as string);
 
 			toast.success("Successfully exported results");
 		} catch (error) {

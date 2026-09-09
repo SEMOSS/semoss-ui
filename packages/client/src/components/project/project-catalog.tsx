@@ -1,5 +1,4 @@
 import { Plus } from "lucide-react";
-import { observer } from "mobx-react-lite";
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router";
 import { useIteratorPixel, usePixel } from "@semoss/sdk/react";
@@ -23,7 +22,7 @@ import {
 import { CatalogFilterBox } from "@/components/catalog/catalog-filter-box";
 import { Help } from "@/components/help";
 import { DeleteEntityDialog } from "@/components/shared/delete-entity-dialog";
-import { useRootStore } from "@/hooks";
+import { useConfig, useSession } from "@/hooks";
 import { getProjectLabel, isOwnerPermission } from "@/utility/catalog";
 import { NavbarHeader, NavbarLeft } from "../shared";
 import { CloneProjectDialog } from "./clone-project-dialog";
@@ -123,12 +122,19 @@ interface ProjectCatalogProps {
 	type: Project["project_type"];
 }
 
-export const ProjectCatalog = observer(({ type }: ProjectCatalogProps) => {
+export const ProjectCatalog = ({ type }: ProjectCatalogProps) => {
 	const config = CATALOG_CONFIG[type as keyof typeof CATALOG_CONFIG];
-	const { configStore } = useRootStore();
+	const projectMetaKeys = useConfig((state) => state.config.projectMetaKeys);
+	const adminOnlyViewMenuBarFlag = useConfig(
+		(state) => state.config.adminOnlyViewMenuBarFlag,
+	);
+	const runPixel = useSession((state) => state.runPixel);
+	const isEngineOperationAvailable = useSession(
+		(state) => state.isEngineOperationAvailable,
+	);
 
 	// get metakeys of the ones we want
-	const metaKeys = configStore.store.config.projectMetaKeys
+	const metaKeys = projectMetaKeys
 		.filter((k) => {
 			return (
 				k.display_options === "single-checklist" ||
@@ -328,7 +334,7 @@ export const ProjectCatalog = observer(({ type }: ProjectCatalogProps) => {
 		try {
 			setIsDeletingProject(true);
 
-			const response = await configStore.runPixel(
+			const response = await runPixel(
 				`DeleteProject(project=['${projectToDelete.project_id}']);`,
 			);
 
@@ -381,7 +387,7 @@ export const ProjectCatalog = observer(({ type }: ProjectCatalogProps) => {
 				title={`${config.name} Catalog`}
 				description={config.description}
 				headerActions={
-					configStore.isEngineOperationAvailable(
+					isEngineOperationAvailable(
 						CATALOG_PERMISSION_TYPE[
 							type as keyof typeof CATALOG_PERMISSION_TYPE
 						],
@@ -459,8 +465,8 @@ export const ProjectCatalog = observer(({ type }: ProjectCatalogProps) => {
 					/>
 				}
 				filterBox={
-					!configStore.store.config.adminOnlyViewMenuBarFlag &&
-					configStore.isEngineOperationAvailable(
+					!adminOnlyViewMenuBarFlag &&
+					isEngineOperationAvailable(
 						CATALOG_PERMISSION_TYPE[
 							type as keyof typeof CATALOG_PERMISSION_TYPE
 						],
@@ -686,4 +692,4 @@ export const ProjectCatalog = observer(({ type }: ProjectCatalogProps) => {
 			/>
 		</>
 	);
-});
+};

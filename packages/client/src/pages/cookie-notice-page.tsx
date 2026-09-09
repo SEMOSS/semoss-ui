@@ -1,11 +1,8 @@
-import { observer } from "mobx-react-lite";
 import { Navigate } from "react-router";
-import { useRootStore } from "@/hooks";
+import { useConfig } from "@/hooks";
 
-export const CookieNoticePage = observer(() => {
-	const { configStore } = useRootStore();
-
-	const html = configStore.theme.cookiePolicyNoticePage;
+export const CookieNoticePage = () => {
+	const html = useConfig((state) => state.theme.cookiePolicyNoticePage);
 
 	if (!html) {
 		return <Navigate to="/" replace />;
@@ -22,4 +19,4 @@ export const CookieNoticePage = observer(() => {
 			</div>
 		</div>
 	);
-});
+};

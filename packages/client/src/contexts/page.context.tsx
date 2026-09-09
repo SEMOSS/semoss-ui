@@ -5,8 +5,8 @@ import type { PageStore } from "@/stores";
  * Value
  */
 export type PageContextType = {
-	/** Page store*/
-	page: PageStore;
+	/** Page store. */
+	store: PageStore;
 };
 
 /**

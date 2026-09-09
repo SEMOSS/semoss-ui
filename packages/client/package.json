@@ -35,7 +35,7 @@
         "react-hook-form": "^7.34.2",
         "react-router": "8.3.0",
         "zod": "^3.23.0",
-        "zustand": "4.5.7"
+        "zustand": "^5.0.0"
     },
     "devDependencies": {
         "@semoss/config": "workspace:*",

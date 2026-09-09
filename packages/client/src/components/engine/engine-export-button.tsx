@@ -15,7 +15,7 @@ import {
 	TooltipTrigger,
 	toast,
 } from "@semoss/ui/next";
-import { useEngine, useRootStore } from "@/hooks";
+import { useEngine, useSession } from "@/hooks";
 import { formatToDataTestId } from "@/utility";
 
 /**
@@ -23,7 +23,7 @@ import { formatToDataTestId } from "@/utility";
  */
 export const EngineExportButton: React.FC = () => {
 	const { catalog, engine, permission } = useEngine();
-	const { configStore } = useRootStore();
+	const insightID = useSession((state) => state.insightID);
 
 	const [openExportModal, setOpenExportModal] = useState(false);
 
@@ -43,13 +43,10 @@ export const EngineExportButton: React.FC = () => {
 				`META | ExportEngine(engine=["${
 					engine.engine_id
 				}"], includeData="${includeData ? "true" : "false"}" );`,
-				configStore.store.insightID,
+				insightID,
 			);
 
-			await download(
-				configStore.store.insightID,
-				response.pixelReturn[0].output as string,
-			);
+			await download(insightID, response.pixelReturn[0].output as string);
 		} catch (error) {
 			toast.error(
 				error instanceof Error

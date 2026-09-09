@@ -17,7 +17,7 @@ import {
 	toast,
 } from "@semoss/ui/next";
 import { CatalogTagInput } from "@/components/catalog";
-import { useRootStore } from "@/hooks";
+import { useConfig, useSession } from "@/hooks";
 import { normalizeTagArray } from "@/utility";
 import { BadgeList, SettingsEntry } from "./engine-metadata-display";
 
@@ -66,7 +66,10 @@ export const EngineTagsSettings = ({
 	permission,
 	onUpdated,
 }: EngineTagsSettingsProps) => {
-	const { configStore } = useRootStore();
+	const databaseMetaKeys = useConfig(
+		(state) => state.config.databaseMetaKeys,
+	);
+	const runPixel = useSession((state) => state.runPixel);
 
 	const [isSaving, setIsSaving] = useState(false);
 	const [form, setForm] = useState<TagsForm>(() => toForm(engine));
@@ -119,7 +122,7 @@ export const EngineTagsSettings = ({
 
 	// Config-defined display values override inferred values for consistent
 	// option lists, mirroring the old Overview behavior.
-	configStore.store.config.databaseMetaKeys.forEach((metaKey) => {
+	databaseMetaKeys.forEach((metaKey) => {
 		if (!metaKey.display_values) {
 			return;
 		}
@@ -144,7 +147,7 @@ export const EngineTagsSettings = ({
 		try {
 			setIsSaving(true);
 
-			const response = await configStore.runPixel(
+			const response = await runPixel(
 				`SetEngineMetadata(engine=["${engine.engine_id}"], meta=[${JSON.stringify(
 					form,
 				)}])`,

@@ -28,7 +28,7 @@ import {
 	AgentSubagentsField,
 	buildEditWorkspacePixel,
 } from "@/components/agent-workspace/agent-form";
-import { useProject, useRootStore } from "@/hooks";
+import { useProject, useSession } from "@/hooks";
 import { mcpToPlatformUrl, promptToPlatformUrl } from "@/utility";
 
 type GetWorkspaceResponse = {
@@ -65,7 +65,7 @@ type GetWorkspaceResponse = {
 
 export const AgentEditor = () => {
 	const { project } = useProject();
-	const { monolithStore } = useRootStore();
+	const runPixel = useSession((state) => state.runPixel);
 	const [isLoading, setIsLoading] = useState(false);
 	const [isFetching, setIsFetching] = useState(true);
 	const [knownHookKinds, setKnownHookKinds] = useState<string[]>([]);
@@ -81,7 +81,7 @@ export const AgentEditor = () => {
 		const load = async () => {
 			try {
 				setIsFetching(true);
-				const { errors, pixelReturn } = await monolithStore.runQuery<
+				const { errors, pixelReturn } = await runPixel<
 					[GetWorkspaceResponse]
 				>(`GetWorkspace(workspaceId=["${project.project_id}"]);`);
 				if (errors.length > 0) throw new Error(errors.join(", "));
@@ -129,12 +129,12 @@ export const AgentEditor = () => {
 			}
 		};
 		if (project.project_id) load();
-	}, [project.project_id, monolithStore, reset]);
+	}, [project.project_id, runPixel, reset]);
 
 	const onSave = handleSubmit(async (data) => {
 		try {
 			setIsLoading(true);
-			const { errors } = await monolithStore.runQuery(
+			const { errors } = await runPixel(
 				buildEditWorkspacePixel(project.project_id, data),
 			);
 			if (errors.length > 0) throw new Error(errors.join(", "));

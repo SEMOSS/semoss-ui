@@ -10,12 +10,12 @@ import {
 import { CatalogGrid, CatalogSearchBar } from "@/components/catalog";
 import { ProjectGridItem } from "@/components/project";
 import { DeleteEntityDialog } from "@/components/shared/delete-entity-dialog";
-import { useRootStore, useSettings } from "@/hooks";
+import { useConfig, useSettings } from "@/hooks";
 import { getProjectLabel, isOwnerPermission } from "@/utility/catalog";
 
 export const ProjectSettingsIndexPage = () => {
 	const { adminMode } = useSettings();
-	const { configStore } = useRootStore();
+	const projectMetaKeys = useConfig((state) => state.config.projectMetaKeys);
 
 	const [search, setSearch] = useState("");
 	const debouncedSearch = useDebouncedValue(search);
@@ -27,7 +27,7 @@ export const ProjectSettingsIndexPage = () => {
 	);
 
 	// get metakeys to the ones we want
-	const metaKeys = configStore.store.config.projectMetaKeys
+	const metaKeys = projectMetaKeys
 		.filter((k) => {
 			return (
 				k.display_options === "single-checklist" ||

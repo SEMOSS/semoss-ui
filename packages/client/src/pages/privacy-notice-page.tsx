@@ -1,11 +1,8 @@
-import { observer } from "mobx-react-lite";
 import { Navigate } from "react-router";
-import { useRootStore } from "@/hooks";
+import { useConfig } from "@/hooks";
 
-export const PrivacyNoticePage = observer(() => {
-	const { configStore } = useRootStore();
-
-	const html = configStore.theme.privacyNoticePage;
+export const PrivacyNoticePage = () => {
+	const html = useConfig((state) => state.theme.privacyNoticePage);
 
 	if (!html) {
 		return <Navigate to="/" replace />;
@@ -22,4 +19,4 @@ export const PrivacyNoticePage = observer(() => {
 			</div>
 		</div>
 	);
-});
+};

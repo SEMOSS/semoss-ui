@@ -38,7 +38,7 @@ import {
 	getAllProjectLinks,
 	repoHtmlUrl,
 } from "@/api/github";
-import { useRootStore } from "@/hooks";
+import { useSession } from "@/hooks";
 import { useNavigate } from "@/hooks/useNavigate";
 
 interface GitHubManifestApp {
@@ -72,7 +72,7 @@ const CREATE_FORM_DEFAULTS: CreateGitHubAppFormValues = {
 };
 
 export const GitHubAppPage = () => {
-	const { configStore } = useRootStore();
+	const isAdmin = useSession((state) => state.user.admin);
 	const navigate = useNavigate();
 	const [searchParams, setSearchParams] = useSearchParams();
 	const { t } = useTranslation("githubApp");
@@ -102,7 +102,6 @@ export const GitHubAppPage = () => {
 		defaultValues: CREATE_FORM_DEFAULTS,
 	});
 	const createUnder = watch("createUnder");
-	const isAdmin = configStore.store.user.admin === true;
 
 	const formatDate = (rawDate?: string) => {
 		if (!rawDate) {

@@ -18,7 +18,7 @@ import {
 	toast,
 } from "@semoss/ui/next";
 import { uploadImage } from "@/api";
-import { useRootStore } from "@/hooks";
+import { useSession } from "@/hooks";
 
 type NewAppForm = {
 	APP_NAME: string;
@@ -35,7 +35,8 @@ interface NewAppModalProps {
 
 export const NewAppModal = (props: NewAppModalProps) => {
 	const { open, options, onClose = () => null } = props;
-	const { monolithStore, configStore } = useRootStore();
+	const runPixel = useSession((state) => state.runPixel);
+	const insightID = useSession((state) => state.insightID);
 	const [isLoading, setIsLoading] = useState(false);
 	const [tagInput, setTagInput] = useState("");
 	const nameId = useId();
@@ -67,9 +68,7 @@ export const NewAppModal = (props: NewAppModalProps) => {
 				if (!state)
 					throw new Error("State is missing from the blocks app");
 
-				const { errors, pixelReturn } = await monolithStore.runQuery<
-					[Project]
-				>(
+				const { errors, pixelReturn } = await runPixel<[Project]>(
 					`CreateAppFromBlocks ( project = [ "${
 						data.APP_NAME
 					}" ] , json =[${JSON.stringify(state)}]  ) ;`,
@@ -80,23 +79,18 @@ export const NewAppModal = (props: NewAppModalProps) => {
 				appId = pixelReturn[0].output.project_id;
 
 				if (data.APP_IMG && appId) {
-					await uploadImage(
-						data.APP_IMG,
-						appId,
-						configStore.store.insightID,
-					);
+					await uploadImage(data.APP_IMG, appId, insightID);
 				}
 
 				if (data.APP_TAGS.length || data.APP_DESCRIPTION) {
-					const setProjectMetadataResponse =
-						await monolithStore.runQuery(
-							`SetProjectMetadata(project=["${appId}"], meta=[${JSON.stringify(
-								{
-									tag: data.APP_TAGS,
-									description: data.APP_DESCRIPTION,
-								},
-							)}])`,
-						);
+					const setProjectMetadataResponse = await runPixel(
+						`SetProjectMetadata(project=["${appId}"], meta=[${JSON.stringify(
+							{
+								tag: data.APP_TAGS,
+								description: data.APP_DESCRIPTION,
+							},
+						)}])`,
+					);
 
 					const output =
 						setProjectMetadataResponse.pixelReturn[0].output;
@@ -112,18 +106,14 @@ export const NewAppModal = (props: NewAppModalProps) => {
 			} else if (type === "code") {
 				const pixel = `CreateProject(project=["${data.APP_NAME}"], portal=[true], projectType=["CODE"]);`;
 				const { errors, pixelReturn } =
-					await monolithStore.runQuery<[Project]>(pixel);
+					await runPixel<[Project]>(pixel);
 
 				if (errors.length > 0) throw new Error(errors.join(","));
 
 				appId = pixelReturn[0].output.project_id;
 
 				if (data.APP_IMG && appId) {
-					await uploadImage(
-						data.APP_IMG,
-						appId,
-						configStore.store.insightID,
-					);
+					await uploadImage(data.APP_IMG, appId, insightID);
 				}
 
 				const newIndexFilePath = "version/assets/portals/index.html";
@@ -134,8 +124,7 @@ export const NewAppModal = (props: NewAppModalProps) => {
                     CommitAsset(filePath=["${newIndexFilePath}"], comment=["Hardcoded comment from the App Page editor"], space=["${appId}"])
                 `;
 
-				const response =
-					await monolithStore.runQuery(saveIndexFilePixel);
+				const response = await runPixel(saveIndexFilePixel);
 
 				let output = response.pixelReturn[0].output;
 				let operationType = response.pixelReturn[0].operationType;
@@ -153,15 +142,14 @@ export const NewAppModal = (props: NewAppModalProps) => {
 				}
 
 				if (data.APP_TAGS.length || data.APP_DESCRIPTION) {
-					const setProjectMetadataResponse =
-						await monolithStore.runQuery(
-							`SetProjectMetadata(project=["${appId}"], meta=[${JSON.stringify(
-								{
-									tag: data.APP_TAGS,
-									description: data.APP_DESCRIPTION,
-								},
-							)}])`,
-						);
+					const setProjectMetadataResponse = await runPixel(
+						`SetProjectMetadata(project=["${appId}"], meta=[${JSON.stringify(
+							{
+								tag: data.APP_TAGS,
+								description: data.APP_DESCRIPTION,
+							},
+						)}])`,
+					);
 
 					output = setProjectMetadataResponse.pixelReturn[0].output;
 					operationType =
