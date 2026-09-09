@@ -56,7 +56,7 @@ function getFailureReason(error: string): string {
 	const terminalError =
 		terminalLineIndex >= 0
 			? lines.slice(terminalLineIndex).join(" ")
-			: (lines.at(-1) ?? error);
+			: (lines[lines.length - 1] ?? error);
 	const text = normalizeAutomationErrorMessage(terminalError);
 	return boundText(text || terminalError, MAX_ERROR_LENGTH);
 }
@@ -69,6 +69,7 @@ function truncatePrompt(value: string, maxLength: number): string {
 
 const STATUS_TEXT: Record<RunStatus, string> = {
 	RUNNING: "still running",
+	WAITING_FOR_INPUT: "is waiting for user input",
 	SUCCESS: "completed successfully",
 	FAILED: "failed",
 	INTERRUPTED: "was interrupted",

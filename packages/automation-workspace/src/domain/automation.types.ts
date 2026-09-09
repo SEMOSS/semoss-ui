@@ -159,12 +159,18 @@ export interface AutomationEdge {
 
 // ─── step run status (live, FE-side during a manual run) ─────────────────────
 
-export type StepRunStatus = "idle" | "running" | "success" | "error";
+export type StepRunStatus =
+	| "idle"
+	| "running"
+	| "waiting"
+	| "success"
+	| "error";
 
 // ─── run history ──────────────────────────────────────────────────────────────
 
 export type RunStatus =
 	| "RUNNING"
+	| "WAITING_FOR_INPUT"
 	| "SUCCESS"
 	| "FAILED"
 	| "INTERRUPTED"
@@ -173,6 +179,7 @@ export type RunStatus =
 export type NodeStatus =
 	| "PENDING"
 	| "RUNNING"
+	| "WAITING_FOR_INPUT"
 	| "SUCCESS"
 	| "FAILED"
 	| "SKIPPED";

@@ -50,7 +50,7 @@ import {
 	toast,
 	useTheme,
 } from "@semoss/ui/next";
-import { getAutomationRun } from "../../api";
+import { getAutomationRun, listAutomationRuns } from "../../api";
 import type {
 	AutomationEdge,
 	AutomationExecutedDefinition,
@@ -242,6 +242,7 @@ interface AutomationCanvasProps {
 	mcpMode?: "edit" | "create" | "trigger" | null;
 	mcpContext?: AutomationToolContext;
 	onViewAgentRun: (trace: AutomationNodeTrace) => void;
+	externalRunUpdate?: AutomationRunDetail | null;
 }
 
 type TriggerAutomationOutput = AutomationRunDetail;
@@ -467,6 +468,7 @@ export function AutomationCanvas({
 	mcpMode,
 	mcpContext,
 	onViewAgentRun,
+	externalRunUpdate,
 }: AutomationCanvasProps) {
 	const { resolvedTheme } = useTheme();
 	const isDark = resolvedTheme === "dark";
@@ -659,6 +661,7 @@ export function AutomationCanvas({
 		appId: string;
 		signature: string;
 	} | null>(null);
+	const restoredActiveRunForProjectRef = useRef<string | null>(null);
 
 	useEffect(() => {
 		const parentOrigin = new URLSearchParams(window.location.search).get(
@@ -1530,9 +1533,11 @@ export function AutomationCanvas({
 						? "error"
 						: result.STATUS === "RUNNING"
 							? "running"
-							: result.STATUS === "SUCCESS"
-								? "success"
-								: "idle";
+							: result.STATUS === "WAITING_FOR_INPUT"
+								? "waiting"
+								: result.STATUS === "SUCCESS"
+									? "success"
+									: "idle";
 				if (result.ERROR_MESSAGE) {
 					errors[step.id] = normalizeAutomationErrorMessage(
 						result.ERROR_MESSAGE,
@@ -1546,6 +1551,7 @@ export function AutomationCanvas({
 			setStepErrors(errors);
 			setStepDurations(durations);
 			setLatestRunStatus(runData.STATUS);
+			setRunning(runData.STATUS === "RUNNING");
 			setLatestRunResults(nodeResults);
 			setLatestRunDefinition({
 				version: runData.DEFINITION_VERSION,
@@ -1555,6 +1561,49 @@ export function AutomationCanvas({
 		},
 		[steps],
 	);
+
+	useEffect(() => {
+		if (
+			!workflowLoaded ||
+			restoredActiveRunForProjectRef.current === appId
+		) {
+			return;
+		}
+		restoredActiveRunForProjectRef.current = appId;
+		let cancelled = false;
+		void listAutomationRuns(appId, 20)
+			.then((runs) =>
+				runs.find(
+					(run) =>
+						run.STATUS === "WAITING_FOR_INPUT" ||
+						run.STATUS === "RUNNING",
+				),
+			)
+			.then((activeRun) =>
+				activeRun ? getAutomationRun(appId, activeRun.RUN_ID) : null,
+			)
+			.then((activeRun) => {
+				if (!cancelled && activeRun) {
+					applyRunData(activeRun);
+					setAiRunSummary(activeRun.RESULT_SUMMARY ?? null);
+					setLiveRunId(activeRun.RUN_ID);
+				}
+			})
+			.catch(() => {
+				// Run history remains available if best-effort active-run restoration fails.
+			});
+		return () => {
+			cancelled = true;
+		};
+	}, [appId, applyRunData, workflowLoaded]);
+
+	useEffect(() => {
+		if (!externalRunUpdate) return;
+		applyRunData(externalRunUpdate);
+		setAiRunSummary(externalRunUpdate.RESULT_SUMMARY ?? null);
+		setLiveRunId(externalRunUpdate.RUN_ID);
+		notifyHistoryChanged();
+	}, [applyRunData, externalRunUpdate, notifyHistoryChanged]);
 
 	const applyNodeProgress = useCallback(
 		(progress: AutomationNodeStreamData) => {
@@ -1571,9 +1620,11 @@ export function AutomationCanvas({
 					? "error"
 					: status === "RUNNING"
 						? "running"
-						: status === "SUCCESS"
-							? "success"
-							: "idle";
+						: status === "WAITING_FOR_INPUT"
+							? "waiting"
+							: status === "SUCCESS"
+								? "success"
+								: "idle";
 			setStepStatuses((previous) => ({
 				...previous,
 				[nodeId]: stepStatus,
@@ -1753,6 +1804,10 @@ export function AutomationCanvas({
 				toast.success(
 					finalDetail.RESULT_SUMMARY ?? "Automation completed",
 				);
+			} else if (finalDetail.STATUS === "WAITING_FOR_INPUT") {
+				toast.info(
+					"The agent needs your input before this run can continue.",
+				);
 			} else {
 				toast.error(
 					finalDetail.ERROR_MESSAGE
@@ -1763,7 +1818,9 @@ export function AutomationCanvas({
 				);
 			}
 			if (mcpMode === "trigger" && mcpContext) {
-				const succeeded = finalDetail.STATUS === "SUCCESS";
+				const succeeded =
+					finalDetail.STATUS === "SUCCESS" ||
+					finalDetail.STATUS === "WAITING_FOR_INPUT";
 				const nodeResultLines = (finalDetail.nodeResults ?? []).map(
 					(r) => {
 						const dur =
@@ -1781,7 +1838,9 @@ export function AutomationCanvas({
 				const baseSummary =
 					finalDetail.RESULT_SUMMARY ??
 					(succeeded
-						? "Automation completed successfully."
+						? finalDetail.STATUS === "WAITING_FOR_INPUT"
+							? "The automation is waiting for agent input in the editor."
+							: "Automation completed successfully."
 						: finalDetail.ERROR_MESSAGE
 							? normalizeAutomationErrorMessage(
 									finalDetail.ERROR_MESSAGE,
@@ -2346,7 +2405,7 @@ export function AutomationCanvas({
 															<Save className="h-3.5 w-3.5" />
 														)}
 														{isDirty && !saving && (
-															<span className="-top-1 -right-1 absolute h-2 w-2 rounded-full bg-amber-500 ring-1 ring-background" />
+															<span className="-top-1 -right-1 absolute h-2 w-2 rounded-full bg-warning ring-1 ring-background" />
 														)}
 													</span>
 													{mcpMode && mcpContext

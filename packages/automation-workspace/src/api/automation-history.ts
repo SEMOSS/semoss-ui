@@ -32,3 +32,23 @@ export async function getAutomationRun(
 	}
 	return output;
 }
+
+/** Continues a durable run after its trace-linked child agent finishes an input flow. */
+export async function resumeAutomationRun(
+	appId: string,
+	runId: string,
+): Promise<AutomationRunDetail> {
+	const response = await runPixel(
+		`ResumeAutomationRun(project=${JSON.stringify([appId])}, runId=${JSON.stringify([runId])});`,
+	);
+	if (response.errors.length > 0) {
+		throw new Error(response.errors.join("\n"));
+	}
+	const output = response.pixelReturn?.[0]?.output as
+		| AutomationRunDetail
+		| undefined;
+	if (!output?.RUN_ID) {
+		throw new Error("The waiting automation run could not be continued.");
+	}
+	return output;
+}

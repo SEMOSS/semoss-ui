@@ -1,4 +1,4 @@
-import { CalendarClock, Loader2, Play, RefreshCw } from "lucide-react";
+import { CalendarClock, Clock3, Loader2, Play, RefreshCw } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { CellOutputBlock } from "@semoss/shared";
 import { Button, toast } from "@semoss/ui/next";
@@ -384,7 +384,10 @@ function LiveRunView({
 	const previousRunningNodeIdRef = useRef<string | null>(null);
 
 	const stepMap = new Map(steps.map((step) => [step.id, step]));
-	const runningResult = results.find((r) => r.STATUS === "RUNNING") ?? null;
+	const runningResult =
+		results.find(
+			(r) => r.STATUS === "RUNNING" || r.STATUS === "WAITING_FOR_INPUT",
+		) ?? null;
 	const selectedResult =
 		results.find((r) => r.NODE_ID === selectedNodeId) ??
 		runningResult ??
@@ -593,6 +596,15 @@ function ResultsPanel({
 							<span>
 								Executing step{" "}
 								{selectedResult.NODE_LABEL || "..."}...
+							</span>
+						</div>
+					) : selectedResult.STATUS === "WAITING_FOR_INPUT" &&
+						!selectedResult.OUTPUT_PREVIEW?.trim() ? (
+						<div className="flex h-full flex-col items-center justify-center gap-2 text-muted-foreground text-xs">
+							<Clock3 className="size-5 text-warning" />
+							<span>
+								{selectedResult.NODE_LABEL || "Agent"} is
+								waiting for input.
 							</span>
 						</div>
 					) : (

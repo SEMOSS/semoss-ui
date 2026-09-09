@@ -8,6 +8,9 @@ export interface StatusIconProps {
 }
 
 export function StatusIcon({ status, className }: StatusIconProps) {
+	if (status === "WAITING_FOR_INPUT") {
+		return <Clock3 className={className} />;
+	}
 	if (status === "RUNNING" || status === "running") {
 		return <Loader2 className={`animate-spin ${className ?? ""}`} />;
 	}

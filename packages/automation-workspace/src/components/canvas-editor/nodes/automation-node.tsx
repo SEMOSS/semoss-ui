@@ -183,7 +183,7 @@ export function AutomationNode({ data }: NodeProps) {
 								) : (
 									<StatusIcon
 										status={runStatus}
-										className={`h-3.5 w-3.5 ${runStatus === "success" ? "text-emerald-500" : runStatus === "error" ? "text-destructive" : ""}`}
+										className={`h-3.5 w-3.5 ${runStatus === "success" ? "text-success" : runStatus === "waiting" ? "text-warning" : runStatus === "error" ? "text-destructive" : ""}`}
 									/>
 								)}
 							</div>
@@ -195,7 +195,7 @@ export function AutomationNode({ data }: NodeProps) {
 										type="button"
 										variant="ghost"
 										size="icon"
-										className={`nodrag size-7 shrink-0 ${isWaitingForInput ? "text-amber-500" : "text-primary"}`}
+										className={`nodrag size-7 shrink-0 ${isWaitingForInput ? "text-warning" : "text-primary"}`}
 										onClick={(event) => {
 											event.stopPropagation();
 											d.onViewAgentRun?.();

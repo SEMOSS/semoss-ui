@@ -21,12 +21,17 @@ export function RunBanner({
 	onAskAssistant,
 }: RunBannerProps) {
 	const isSuccess = status === "SUCCESS";
+	const isWaiting = status === "WAITING_FOR_INPUT";
 
 	const summaryText =
 		generatingAiSummary && !aiSummary
 			? "Summarizing run…"
 			: (aiSummary ??
-				(isSuccess ? "Run completed successfully." : "Run failed."));
+				(isSuccess
+					? "Run completed successfully."
+					: isWaiting
+						? "The agent needs your input before this run can continue."
+						: "Run failed."));
 
 	return (
 		<div
@@ -34,7 +39,9 @@ export function RunBanner({
 			className={`flex items-start justify-between gap-3 rounded-lg border px-3 py-2 text-xs ${
 				isSuccess
 					? "border-success/40 bg-success/10"
-					: "border-destructive/30 bg-destructive/5"
+					: isWaiting
+						? "border-warning/40 bg-warning/10"
+						: "border-destructive/30 bg-destructive/5"
 			}`}
 		>
 			<div className="flex flex-1 items-start gap-2">
@@ -42,13 +49,13 @@ export function RunBanner({
 					<Loader2 className="mt-0.5 h-3.5 w-3.5 shrink-0 animate-spin text-muted-foreground" />
 				)}
 				<span
-					className={`font-medium ${isSuccess ? "text-success" : "text-destructive"}`}
+					className={`font-medium ${isSuccess ? "text-success" : isWaiting ? "text-warning" : "text-destructive"}`}
 				>
 					{summaryText}
 				</span>
 			</div>
 			<div className="ml-3 flex shrink-0 items-center gap-3">
-				{!isSuccess && onAskAssistant && (
+				{!isSuccess && !isWaiting && onAskAssistant && (
 					<button
 						type="button"
 						onClick={onAskAssistant}

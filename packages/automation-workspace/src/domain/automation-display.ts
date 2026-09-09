@@ -74,10 +74,11 @@ export const STEP_TYPES: {
 // Two namespaces in one map: UPPERCASE keys match RunStatus/NodeStatus from the
 // backend (PENDING, RUNNING, SUCCESS, FAILED, SKIPPED, INTERRUPTED, CANCELLED);
 // lowercase keys match the FE-only StepRunStatus used during live poll (idle,
-// running, success, error). getStatusClasses() handles both.
+// running, waiting, success, error). getStatusClasses() handles both.
 export const STATUS_STYLES: Record<string, string> = {
 	PENDING: "bg-muted text-muted-foreground",
 	RUNNING: "bg-primary/10 text-primary",
+	WAITING_FOR_INPUT: "bg-warning/10 text-warning",
 	SUCCESS: "bg-emerald-500/10 text-emerald-700",
 	FAILED: "bg-destructive/10 text-destructive",
 	SKIPPED:
@@ -88,6 +89,7 @@ export const STATUS_STYLES: Record<string, string> = {
 	error: "bg-destructive/10 text-destructive",
 	success: "bg-emerald-500/10 text-emerald-700",
 	running: "bg-primary/10 text-primary",
+	waiting: "bg-warning/10 text-warning",
 	idle: "bg-muted text-muted-foreground",
 };
 

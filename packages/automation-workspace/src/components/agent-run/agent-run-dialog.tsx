@@ -32,7 +32,11 @@ import {
 	DialogTitle,
 	Spinner,
 } from "@semoss/ui/next";
-import type { AutomationNodeTrace } from "../../domain/automation.types";
+import { resumeAutomationRun } from "../../api";
+import type {
+	AutomationNodeTrace,
+	AutomationRunDetail,
+} from "../../domain/automation.types";
 import { useAgentRunCoordinator } from "../../hooks";
 import type {
 	AutomationAgentRunActivity,
@@ -61,6 +65,7 @@ interface AgentRunDialogProps {
 	projectId: string;
 	trace: AutomationNodeTrace | null;
 	onOpenChange: (open: boolean) => void;
+	onAutomationRunUpdated?: (run: AutomationRunDetail) => void;
 }
 
 const messageText = (activity: AutomationAgentRunActivity): string =>
@@ -207,6 +212,7 @@ export function AgentRunDialog({
 	projectId,
 	trace,
 	onOpenChange,
+	onAutomationRunUpdated,
 }: AgentRunDialogProps) {
 	const runId = trace?.agentRunId?.trim() ?? "";
 	const automationRunId = trace?.automationRunId?.trim() ?? "";
@@ -221,7 +227,10 @@ export function AgentRunDialog({
 	);
 	const [stopping, setStopping] = useState(false);
 	const [confirmStop, setConfirmStop] = useState(false);
+	const [resumingAutomation, setResumingAutomation] = useState(false);
+	const [resumeError, setResumeError] = useState<string | null>(null);
 	const connectedTraceRef = useRef<string | null>(null);
+	const resumedAgentStateRef = useRef<string | null>(null);
 	const activityHeadingId = useId();
 	const actionHeadingId = useId();
 	const {
@@ -250,6 +259,9 @@ export function AgentRunDialog({
 		connectedTraceRef.current = traceKey;
 		setResolvingActionIds(new Set());
 		setResolvedActionIds(new Set());
+		setResumeError(null);
+		setResumingAutomation(false);
+		resumedAgentStateRef.current = null;
 	}, [traceKey]);
 
 	const activities = useMemo(
@@ -291,6 +303,44 @@ export function AgentRunDialog({
 	const active =
 		snapshot !== null && !isTerminalAgentRunStatus(snapshot.status);
 	const canControl = snapshot?.canControl === true;
+
+	useEffect(() => {
+		if (
+			!open ||
+			!snapshot ||
+			!isTerminalAgentRunStatus(snapshot.status) ||
+			trace?.agentStatus !== "INPUT_REQUIRED" ||
+			!automationRunId
+		) {
+			return;
+		}
+		const terminalKey = `${traceKey}:${snapshot.status}:${snapshot.finalOutputMessageId ?? ""}`;
+		if (resumedAgentStateRef.current === terminalKey) return;
+		resumedAgentStateRef.current = terminalKey;
+		setResumingAutomation(true);
+		setResumeError(null);
+		void resumeAutomationRun(projectId, automationRunId)
+			.then((run) => {
+				onAutomationRunUpdated?.(run);
+			})
+			.catch((error: unknown) => {
+				resumedAgentStateRef.current = null;
+				setResumeError(
+					error instanceof Error
+						? error.message
+						: "The automation could not continue.",
+				);
+			})
+			.finally(() => setResumingAutomation(false));
+	}, [
+		automationRunId,
+		onAutomationRunUpdated,
+		open,
+		projectId,
+		snapshot,
+		trace?.agentStatus,
+		traceKey,
+	]);
 
 	const resolveAction = useCallback(
 		async (
@@ -411,6 +461,17 @@ export function AgentRunDialog({
 									Live updates need attention
 								</AlertTitle>
 								<AlertDescription>{liveError}</AlertDescription>
+							</Alert>
+						) : null}
+						{resumeError ? (
+							<Alert variant="destructive">
+								<AlertCircle aria-hidden />
+								<AlertTitle>
+									Unable to continue automation
+								</AlertTitle>
+								<AlertDescription>
+									{resumeError}
+								</AlertDescription>
 							</Alert>
 						) : null}
 
@@ -600,6 +661,12 @@ export function AgentRunDialog({
 					</div>
 
 					<DialogFooter className="border-border border-t px-4 py-3">
+						{resumingAutomation ? (
+							<span className="mr-auto flex items-center gap-2 text-muted-foreground text-xs">
+								<Spinner className="size-4" />
+								Continuing automation…
+							</span>
+						) : null}
 						<Button
 							type="button"
 							variant="outline"

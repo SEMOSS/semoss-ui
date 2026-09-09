@@ -14,12 +14,14 @@ export const PATH_HIGHLIGHT_BORDER_CLASS = "border-primary/60";
 
 const RUN_STATUS_COLOR: Partial<Record<StepRunStatus, string>> = {
 	running: "#3b82f6",
+	waiting: "var(--warning)",
 	success: "#10b981",
 	error: "var(--destructive)",
 };
 
 const RUN_STATUS_BORDER_CLASS: Partial<Record<StepRunStatus, string>> = {
 	running: "border-blue-500/70",
+	waiting: "border-warning/60",
 	success: "border-emerald-500/60",
 	error: "border-destructive/60",
 };

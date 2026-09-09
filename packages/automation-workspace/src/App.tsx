@@ -10,6 +10,7 @@ import {
 } from "./components/canvas-editor/tabs/runs-tab";
 import type {
 	AutomationNodeTrace,
+	AutomationRunDetail,
 	AutomationToolContext,
 } from "./domain/automation.types";
 import type {
@@ -178,6 +179,8 @@ export default function App() {
 	const [historyRefreshToken, setHistoryRefreshToken] = useState(0);
 	const [agentRunTrace, setAgentRunTrace] =
 		useState<AutomationNodeTrace | null>(null);
+	const [agentRunAutomationUpdate, setAgentRunAutomationUpdate] =
+		useState<AutomationRunDetail | null>(null);
 
 	useEffect(() => {
 		if (!historyMode && !traceMode) return;
@@ -446,11 +449,13 @@ export default function App() {
 					mcpMode={mcpMode}
 					mcpContext={toolContext ?? undefined}
 					onViewAgentRun={setAgentRunTrace}
+					externalRunUpdate={agentRunAutomationUpdate}
 				/>
 				<AgentRunDialog
 					open={agentRunTrace !== null}
 					projectId={appId}
 					trace={agentRunTrace}
+					onAutomationRunUpdated={setAgentRunAutomationUpdate}
 					onOpenChange={(open) => {
 						if (!open) setAgentRunTrace(null);
 					}}
