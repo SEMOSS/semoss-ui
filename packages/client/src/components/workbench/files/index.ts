@@ -12,6 +12,7 @@ export * from "./file-markdown-editor-panel";
 export * from "./file-mcp-editor-panel";
 export * from "./file-notebook-editor-control";
 export * from "./file-notebook-editor-panel";
+export * from "./file-panel.components";
 export * from "./file-panel.utility";
 export * from "./file-pdf-viewer-control";
 export * from "./file-pdf-viewer-panel";

@@ -9,6 +9,7 @@ import {
 } from "@semoss/shared";
 import { useWorkbench } from "@semoss/workbench";
 import { getFilePanelType } from "@/components/workbench/files/file-editor.utility";
+import { isFilePanelType } from "@/components/workbench/files/file-panel.components";
 import {
 	WORKBENCH_COMPONENTS,
 	type WorkbenchPanelRecord,
@@ -33,11 +34,17 @@ const filePathOf = (record: WorkbenchPanelRecord): string | undefined =>
 /**
  * Whether a path move or delete could affect this panel.
  *
+ * Gated on membership in `FILE_PANEL_COMPONENTS`, deliberately — not on "its
+ * config carries a `path`". The Git panels carry the same `{ type, id, name,
+ * path }` fields, so the structural test swept them up: renaming a file
+ * repointed every open Git diff for that resource, and `updatePanelPath` then
+ * retyped it into a code editor.
+ *
  * @param record - Any open panel instance.
- * @return True when it is file-backed.
+ * @return True when it is a file panel open on a path.
  */
-const hasFilePath = (record: WorkbenchPanelRecord): boolean =>
-	Boolean(filePathOf(record));
+const isFilePanel = (record: WorkbenchPanelRecord): boolean =>
+	isFilePanelType(record.type) && Boolean(filePathOf(record));
 
 /** Whether a panel belongs to the resource represented by a file mode. */
 const isFilePanelInMode = (
@@ -126,7 +133,7 @@ export const useWorkbenchFilePanels = (fileMode: FileMode) => {
 
 			for (const record of layoutActions.findPanels(
 				(record) =>
-					hasFilePath(record) &&
+					isFilePanel(record) &&
 					isFilePanelInMode(
 						record.config as FilePanelConfig | undefined,
 						fileMode,
@@ -173,6 +180,7 @@ export const useWorkbenchFilePanels = (fileMode: FileMode) => {
 				const doomed = layoutActions.findPanels((record) => {
 					const recordPath = filePathOf(record);
 					return (
+						isFilePanel(record) &&
 						isFilePanelInMode(
 							record.config as FilePanelConfig | undefined,
 							fileMode,
