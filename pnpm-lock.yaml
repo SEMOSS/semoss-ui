@@ -28,6 +28,8 @@ overrides:
   svgo@>=4 <4.1.0: 4.1.0
   shell-quote@>=1 <1.10.0: 1.10.0
   dompurify@>=3 <3.4.15: 3.4.15
+  vega-embed@>=6 <6.29.0: 6.29.0
+  vega-functions@>=6 <6.1.1: 6.1.1
 
 importers:
 
@@ -6085,9 +6087,6 @@ packages:
   json-stable-stringify-without-jsonify@1.0.1:
     resolution: {integrity: sha512-Bdboy+l7tA3OGW6FjyFHWkP5LuByj1Tk33Ljyq0axyzdk9//JSi2u3fP1QSmd1KNwq6VOKYGlAu87CisVir6Pw==}
 
-  json-stringify-pretty-compact@2.0.0:
-    resolution: {integrity: sha512-WRitRfs6BGq4q8gTgOy4ek7iPFXjbra0H3PmDLKm2xnZ+Gh1HUhiKGgCZkSPNULlP7mvfu6FV/mOLhCarspADQ==}
-
   json-stringify-pretty-compact@4.0.0:
     resolution: {integrity: sha512-3CNZ2DnrpByG9Nqj6Xo8vqbjT4F6N+tb4Gb28ESAZjYZ5yqvmc56J+/kuIwkaAMOyblTQhUW7PxMkUb8Q36N3Q==}
 
@@ -8347,10 +8346,10 @@ packages:
   vega-dataflow@6.1.0:
     resolution: {integrity: sha512-JxumGlODtFbzoQ4c/jQK8Tb/68ih0lrexlCozcMfTAwQ12XhTqCvlafh7MAKKTMBizjOfaQTHm4Jkyb1H5CfyQ==}
 
-  vega-embed@6.5.1:
-    resolution: {integrity: sha512-yz/L1bN3+fLOpgXVb/8sCRv4GlZpD2/ngeKJAFRiHTIRm5zK6W0KuqZZvyGaO7E4s7RuYjW1TWhRIOqh5rS5hA==}
+  vega-embed@6.29.0:
+    resolution: {integrity: sha512-PmlshTLtLFLgWtF/b23T1OwX53AugJ9RZ3qPE2c01VFAbgt3/GSNI/etzA/GzdrkceXFma+FDHNXUppKuM0U6Q==}
     peerDependencies:
-      vega: ^5.8.0
+      vega: ^5.21.0
       vega-lite: '*'
 
   vega-encode@5.1.0:
@@ -8368,14 +8367,17 @@ packages:
   vega-format@2.1.0:
     resolution: {integrity: sha512-i9Ht33IgqG36+S1gFDpAiKvXCPz+q+1vDhDGKK8YsgMxGOG4PzinKakI66xd7SdV4q97FgpR7odAXqtDN2wKqw==}
 
-  vega-functions@6.1.0:
-    resolution: {integrity: sha512-yooEbWt0FWMBNoohwLsl25lEh08WsWabTXbbS+q0IXZzWSpX4Cyi45+q7IFyy/2L4oaIfGIIV14dgn3srQQcGA==}
+  vega-functions@6.1.1:
+    resolution: {integrity: sha512-Due6jP0y0FfsGMTrHnzUGnEwXPu7VwE+9relfo+LjL/tRPYnnKqwWvzt7n9JkeBuZqjkgYjMzm/WucNn6Hkw5A==}
 
   vega-geo@5.1.0:
     resolution: {integrity: sha512-H8aBBHfthc3rzDbz/Th18+Nvp00J73q3uXGAPDQqizioDm/CoXCK8cX4pMePydBY9S6ikBiGJrLKFDa80wI20g==}
 
   vega-hierarchy@5.1.0:
     resolution: {integrity: sha512-rZlU8QJNETlB6o73lGCPybZtw2fBBsRIRuFE77aCLFHdGsh6wIifhplVarqE9icBqjUHRRUOmcEYfzwVIPr65g==}
+
+  vega-interpreter@1.2.1:
+    resolution: {integrity: sha512-EMHLGxJ+SWfh1K/fHDRlHEZtLA/2ZNAXItYb5e8CxuAIm/Ha/3DHX/8VlvbTGIciUpuwmcKx4tVhJWlKreQ/Yw==}
 
   vega-label@2.1.0:
     resolution: {integrity: sha512-/hgf+zoA3FViDBehrQT42Lta3t8In6YwtMnwjYlh72zNn1p3c7E3YUBwqmAqTM1x+tudgzMRGLYig+bX1ewZxQ==}
@@ -8408,8 +8410,8 @@ packages:
   vega-scenegraph@5.1.0:
     resolution: {integrity: sha512-4gA89CFIxkZX+4Nvl8SZF2MBOqnlj9J5zgdPh/HPx+JOwtzSlUqIhxFpFj7GWYfwzr/PyZnguBLPihPw1Og/cA==}
 
-  vega-schema-url-parser@1.1.0:
-    resolution: {integrity: sha512-Tc85J2ofMZZOsxiqDM9sbvfsa+Vdo3GwNLjEEsPOsCDeYqsUHKAlc1IpbbhPLZ6jusyM9Lk0e1izF64GGklFDg==}
+  vega-schema-url-parser@2.2.0:
+    resolution: {integrity: sha512-yAtdBnfYOhECv9YC70H2gEiqfIbVkq09aaE4y/9V/ovEFmH9gPKaEgzIZqgT7PSPQjKhsNkb6jk6XvSoboxOBw==}
 
   vega-selections@6.1.2:
     resolution: {integrity: sha512-xJ+V4qdd46nk2RBdwIRrQm2iSTMHdlu/omhLz1pqRL3jZDrkqNBXimrisci2kIKpH2WBpA1YVagwuZEKBmF2Qw==}
@@ -8426,8 +8428,8 @@ packages:
   vega-time@3.1.0:
     resolution: {integrity: sha512-G93mWzPwNa6UYQRkr8Ujur9uqxbBDjDT/WpXjbDY0yygdSkRT+zXF+Sb4gjhW0nPaqdiwkn0R6kZcSPMj1bMNA==}
 
-  vega-tooltip@0.22.1:
-    resolution: {integrity: sha512-mPmzxwvi6+2ZgbZ/+mNC7XbSu5I6Ckon8zdgUfH9neb+vV7CKlV/FYypMdVN/9iDMFUqGzybYdqNOiSPPIxFEQ==}
+  vega-tooltip@0.35.2:
+    resolution: {integrity: sha512-kuYcsAAKYn39ye5wKf2fq1BAxVcjoz0alvKp/G+7BWfIb94J0PHmwrJ5+okGefeStZnbXxINZEOKo7INHaj9GA==}
 
   vega-transforms@5.1.0:
     resolution: {integrity: sha512-mj/sO2tSuzzpiXX8JSl4DDlhEmVwM/46MTAzTNQUQzJPMI/n4ChCjr/SdEbfEyzlD4DPm1bjohZGjLc010yuMg==}
@@ -14536,8 +14538,6 @@ snapshots:
 
   json-stable-stringify-without-jsonify@1.0.1: {}
 
-  json-stringify-pretty-compact@2.0.0: {}
-
   json-stringify-pretty-compact@4.0.0: {}
 
   json5@2.2.3: {}
@@ -16047,7 +16047,7 @@ snapshots:
       prop-types: 15.8.1
       react: 18.3.1
       vega: 6.2.0
-      vega-embed: 6.5.1(vega-lite@6.4.1(vega@6.2.0))(vega@6.2.0)
+      vega-embed: 6.29.0(vega-lite@6.4.1(vega@6.2.0))(vega@6.2.0)
       vega-lite: 6.4.1(vega@6.2.0)
 
   react@18.3.1:
@@ -17098,16 +17098,18 @@ snapshots:
       vega-loader: 5.1.0
       vega-util: 2.1.0
 
-  vega-embed@6.5.1(vega-lite@6.4.1(vega@6.2.0))(vega@6.2.0):
+  vega-embed@6.29.0(vega-lite@6.4.1(vega@6.2.0))(vega@6.2.0):
     dependencies:
       fast-json-patch: 3.1.1
-      json-stringify-pretty-compact: 2.0.0
+      json-stringify-pretty-compact: 4.0.0
       semver: 7.8.4
+      tslib: 2.8.1
       vega: 6.2.0
+      vega-interpreter: 1.2.1
       vega-lite: 6.4.1(vega@6.2.0)
-      vega-schema-url-parser: 1.1.0
+      vega-schema-url-parser: 2.2.0
       vega-themes: 2.15.0(vega-lite@6.4.1(vega@6.2.0))(vega@6.2.0)
-      vega-tooltip: 0.22.1
+      vega-tooltip: 0.35.2
 
   vega-encode@5.1.0:
     dependencies:
@@ -17138,7 +17140,7 @@ snapshots:
       vega-time: 3.1.0
       vega-util: 2.1.0
 
-  vega-functions@6.1.0:
+  vega-functions@6.1.1:
     dependencies:
       d3-array: 3.2.4
       d3-color: 3.1.0
@@ -17169,6 +17171,10 @@ snapshots:
       vega-dataflow: 6.1.0
       vega-util: 2.1.0
 
+  vega-interpreter@1.2.1:
+    dependencies:
+      vega-util: 1.17.4
+
   vega-label@2.1.0:
     dependencies:
       vega-canvas: 2.0.0
@@ -17197,7 +17203,7 @@ snapshots:
     dependencies:
       vega-dataflow: 6.1.0
       vega-event-selector: 4.0.0
-      vega-functions: 6.1.0
+      vega-functions: 6.1.1
       vega-scale: 8.1.0
       vega-util: 2.1.0
 
@@ -17237,7 +17243,7 @@ snapshots:
       vega-scale: 8.1.0
       vega-util: 2.1.0
 
-  vega-schema-url-parser@1.1.0: {}
+  vega-schema-url-parser@2.2.0: {}
 
   vega-selections@6.1.2:
     dependencies:
@@ -17260,9 +17266,11 @@ snapshots:
       d3-time: 3.1.0
       vega-util: 2.1.0
 
-  vega-tooltip@0.22.1:
+  vega-tooltip@0.35.2:
     dependencies:
       vega-util: 1.17.4
+    optionalDependencies:
+      '@rollup/rollup-linux-x64-gnu': 4.59.0
 
   vega-transforms@5.1.0:
     dependencies:
@@ -17295,7 +17303,7 @@ snapshots:
       d3-timer: 3.0.1
       vega-dataflow: 6.1.0
       vega-format: 2.1.0
-      vega-functions: 6.1.0
+      vega-functions: 6.1.1
       vega-runtime: 7.1.0
       vega-scenegraph: 5.1.0
       vega-util: 2.1.0
@@ -17323,7 +17331,7 @@ snapshots:
       vega-expression: 6.1.0
       vega-force: 5.1.0
       vega-format: 2.1.0
-      vega-functions: 6.1.0
+      vega-functions: 6.1.1
       vega-geo: 5.1.0
       vega-hierarchy: 5.1.0
       vega-label: 2.1.0
