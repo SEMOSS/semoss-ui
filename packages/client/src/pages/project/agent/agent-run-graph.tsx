@@ -25,6 +25,7 @@ import {
 	Wrench,
 	XCircle,
 } from "lucide-react";
+import { runPixel } from "@semoss/sdk/react";
 import {
 	Badge,
 	Button,
@@ -40,7 +41,6 @@ import {
 	TreeViewItem,
 	useTheme,
 } from "@semoss/ui/next";
-import { useRootStore } from "@/hooks";
 import type {
 	AgentRunDetail,
 	AssessAgentEffectivenessOutput,
@@ -945,7 +945,6 @@ export const AgentRunGraph = ({
 	engineInfo = {},
 }: AgentRunGraphProps) => {
 	const { resolvedTheme } = useTheme();
-	const { monolithStore } = useRootStore();
 	const isDarkTheme = resolvedTheme === "dark";
 
 	const { nodes, edges, selectionById } = useMemo(
@@ -983,10 +982,9 @@ export const AgentRunGraph = ({
 
 	useEffect(() => {
 		let cancelled = false;
-		monolithStore
-			.runQuery<[ModelEngineOutput[]]>(
-				`MyEngines(metaKeys=[], metaFilters=[{"tag":"text-generation"}], engineTypes=["MODEL"]);`,
-			)
+		runPixel<[ModelEngineOutput[]]>(
+			`MyEngines(metaKeys=[], metaFilters=[{"tag":"text-generation"}], engineTypes=["MODEL"]);`,
+		)
 			.then((response) => {
 				const { operationType, output } = response.pixelReturn[0];
 				if (operationType.indexOf("ERROR") > -1) {
@@ -1014,7 +1012,7 @@ export const AgentRunGraph = ({
 		return () => {
 			cancelled = true;
 		};
-	}, [monolithStore]);
+	}, []);
 
 	useEffect(() => {
 		if (!isFullscreen) {
@@ -1048,7 +1046,7 @@ export const AgentRunGraph = ({
 				if (trimmedFocus) {
 					args.push(`focus=[${JSON.stringify(trimmedFocus)}]`);
 				}
-				const response = await monolithStore.runQuery<
+				const response = await runPixel<
 					[AssessAgentEffectivenessOutput]
 				>(`AssessAgentEffectiveness(${args.join(", ")});`);
 				const { operationType, output } = response.pixelReturn[0];
@@ -1079,7 +1077,7 @@ export const AgentRunGraph = ({
 				}));
 			}
 		},
-		[monolithStore],
+		[],
 	);
 
 	return (
