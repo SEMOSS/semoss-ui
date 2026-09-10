@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import type { WorkbenchCommand } from "../store";
+import type { WorkbenchCommand } from "../types";
 import { useWorkbench } from "./use-workbench";
 
 /**

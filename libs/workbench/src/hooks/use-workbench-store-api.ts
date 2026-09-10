@@ -1,7 +1,7 @@
 import { useContext } from "react";
 import type { StoreApi } from "zustand";
-import type { WorkbenchState } from "../store";
-import { WorkbenchStoreContext } from "../workbench.context";
+import { WorkbenchStoreContext } from "../contexts/workbench.context";
+import type { WorkbenchState } from "../stores";
 
 /**
  * The raw store handle of the nearest workbench, for vanilla

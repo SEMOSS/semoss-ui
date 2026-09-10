@@ -3,7 +3,7 @@ import type {
 	WorkbenchChromeProps,
 	WorkbenchPanelId,
 	WorkbenchPanelParams,
-} from "../store";
+} from "../types";
 import { useWorkbench } from "./use-workbench";
 
 /**

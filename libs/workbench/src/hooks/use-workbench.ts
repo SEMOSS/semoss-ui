@@ -1,7 +1,7 @@
 import { useContext } from "react";
 import { useStore } from "zustand";
-import type { WorkbenchState } from "../store";
-import { WorkbenchStoreContext } from "../workbench.context";
+import { WorkbenchStoreContext } from "../contexts/workbench.context";
+import type { WorkbenchState } from "../stores";
 
 /** Select state from the nearest scoped workbench store. */
 export const useWorkbench = <T>(selector: (state: WorkbenchState) => T): T => {

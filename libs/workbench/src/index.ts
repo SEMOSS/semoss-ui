@@ -1,38 +1,32 @@
-// Public surface of the dock. Deliberately explicit rather than `export *`:
-// the shell's internals (tabsets, tabs, stage, borders, drag layer, panel
-// hosts) are rendering details, and one of them — the WorkbenchTabset
-// component — collides by name with the WorkbenchTabset layout node.
+// The package's public surface. Deliberately curated rather than
+// `export * from "./components"`: the shell's internals -- tabsets, tabs,
+// stage, borders, drag layer, panel hosts and layers, resizers, the mobile
+// shell, the reset button and panel-error views the shell places itself --
+// are rendering details a host neither mounts nor types against. One of them,
+// the `WorkbenchTabset` *component*, would also collide by name with the
+// `WorkbenchTabset` layout node.
+//
+// Add to this list when a consumer genuinely needs a symbol, not before.
 
-/* Panel-level building blocks */
-export { useWorkbenchPanel } from "./core/use-workbench-panel";
-/* The shell */
-export { Workbench } from "./core/workbench";
-export { WORKBENCH_STYLES } from "./core/workbench.chrome";
-export type {
-	WorkbenchBorderSlot,
-	WorkbenchBorderSlotCtx,
-	WorkbenchDragState,
-	WorkbenchDropInfo,
-	WorkbenchProps,
-} from "./core/workbench.types";
+/* The shell, and the chrome a host places in a border slot */
 export {
+	WORKBENCH_STYLES,
+	Workbench,
 	WorkbenchAccessError,
-	type WorkbenchAccessErrorProps,
-} from "./core/workbench-access-error";
-export {
 	WorkbenchAccessLoading,
-	type WorkbenchAccessLoadingProps,
-} from "./core/workbench-access-loading";
-/* Chrome a host can place in a border slot */
-export { WorkbenchCommandMenuButton } from "./core/workbench-command-menu-button";
-export { WorkbenchPanelError } from "./core/workbench-panel-error";
-export { WorkbenchResetButton } from "./core/workbench-reset-button";
+	WorkbenchCommandMenuButton,
+} from "./components";
+/* One store per mount */
+export { WorkbenchProvider, WorkbenchStoreContext } from "./contexts";
+/* Reading and driving that store */
+export {
+	useWorkbench,
+	useWorkbenchCommands,
+	useWorkbenchControl,
+	useWorkbenchStoreApi,
+} from "./hooks";
+export { createWorkbenchStore, type WorkbenchState } from "./stores";
+/* The type contract for writing panels */
+export * from "./types";
 /* Opening a panel by dropping something onto the dock */
-export * from "./core/workbench-spawn-drag";
-/* Store, context, hooks */
-export * from "./hooks/use-workbench";
-export * from "./hooks/use-workbench-commands";
-export * from "./hooks/use-workbench-control";
-export * from "./hooks/use-workbench-store-api";
-export * from "./store";
-export { WorkbenchProvider, WorkbenchStoreContext } from "./workbench.context";
+export * from "./utility/workbench-spawn-drag";
