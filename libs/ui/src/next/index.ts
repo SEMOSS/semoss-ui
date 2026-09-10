@@ -22,6 +22,7 @@ export * from "./checkbox";
 export * from "./code";
 export * from "./code-diff-editor";
 export * from "./code-editor";
+export * from "./code-editor-word-wrap";
 export * from "./collapsible";
 export * from "./command";
 export * from "./context-menu";

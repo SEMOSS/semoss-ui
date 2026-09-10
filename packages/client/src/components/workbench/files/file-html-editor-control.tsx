@@ -14,24 +14,21 @@ import {
 } from "@semoss/ui/next";
 import type { WorkbenchChromeProps } from "@/stores/workbench";
 import { WORKBENCH_STYLES } from "../core/workbench.chrome";
-import type { FileNotebookEditorParams } from "./file-notebook-editor-panel";
+import type { FileHtmlEditorParams } from "./file-html-editor-panel";
 import { FileWordWrapButton } from "./file-word-wrap-button";
 
-export interface FileNotebookEditorControlValue {
+export interface FileHtmlEditorControlValue {
 	canSave: boolean;
 	isBusy: boolean;
 	refresh: () => void;
 	save: () => void;
-	setViewMode: (mode: "notebook" | "raw") => void;
-	viewMode: "notebook" | "raw";
+	setViewMode: (mode: "preview" | "raw") => void;
+	viewMode: "preview" | "raw";
 }
 
-/** Render notebook view and file actions in the active panel chrome. */
-export const FileNotebookEditorControl: FC<
-	WorkbenchChromeProps<
-		FileNotebookEditorParams,
-		FileNotebookEditorControlValue
-	>
+/** Render HTML view and file actions in the active panel chrome. */
+export const FileHtmlEditorControl: FC<
+	WorkbenchChromeProps<FileHtmlEditorParams, FileHtmlEditorControlValue>
 > = ({ value }) => {
 	if (!value) return null;
 
@@ -40,18 +37,18 @@ export const FileNotebookEditorControl: FC<
 			<Select
 				value={value.viewMode}
 				onValueChange={(mode) =>
-					value.setViewMode(mode as "notebook" | "raw")
+					value.setViewMode(mode as "preview" | "raw")
 				}
 			>
 				<SelectTrigger
 					className={WORKBENCH_STYLES.chromeSelect}
-					aria-label="Notebook view"
+					aria-label="HTML view"
 				>
 					<SelectValue />
 				</SelectTrigger>
 				<SelectContent>
-					<SelectItem value="notebook">Notebook</SelectItem>
 					<SelectItem value="raw">Raw</SelectItem>
+					<SelectItem value="preview">Preview</SelectItem>
 				</SelectContent>
 			</Select>
 			{value.viewMode === "raw" && <FileWordWrapButton />}

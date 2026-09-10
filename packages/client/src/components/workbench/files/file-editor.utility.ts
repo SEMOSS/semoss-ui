@@ -39,7 +39,8 @@ const IMAGE_MIME_TYPES: Record<string, string> = {
 };
 
 const READ_ONLY_CODE_EDITOR_MENU_ITEMS = DEFAULT_CODE_EDITOR_MENU_ITEMS.filter(
-	(item) => item.id === "copy" || item.id === "find",
+	(item) =>
+		item.id === "copy" || item.id === "find" || item.id === "word-wrap",
 );
 
 interface GetFileCodeEditorMenuItemsOptions {
@@ -116,6 +117,8 @@ export const getFilePanelType = (path: string): string => {
 	switch (getFileEditorKind(path)) {
 		case "download":
 			return WORKBENCH_COMPONENTS.FILE_DOWNLOAD;
+		case "html":
+			return WORKBENCH_COMPONENTS.FILE_HTML_EDITOR;
 		case "image":
 			return WORKBENCH_COMPONENTS.FILE_IMAGE_VIEWER;
 		case "markdown":

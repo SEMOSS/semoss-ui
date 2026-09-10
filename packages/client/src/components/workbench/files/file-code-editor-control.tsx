@@ -12,6 +12,7 @@ import { MCP } from "@/constants";
 import type { WorkbenchChromeProps } from "@/stores/workbench";
 import { WORKBENCH_STYLES } from "../core/workbench.chrome";
 import type { FileCodeEditorParams } from "./file-code-editor-panel";
+import { FileWordWrapButton } from "./file-word-wrap-button";
 
 export interface FileCodeEditorControlValue {
 	canSave: boolean;
@@ -33,6 +34,7 @@ export const FileCodeEditorControl: FC<
 	return (
 		<>
 			{showMetadataHelp && <MetadataHelpDialog compact />}
+			<FileWordWrapButton />
 			<Tooltip>
 				<TooltipTrigger asChild>
 					<Button
