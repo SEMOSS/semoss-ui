@@ -3,7 +3,7 @@
 		"target": "ES2020",
 		"module": "ESNext",
 		"lib": ["ES2020", "DOM"],
-		"jsx": "react",
+		"jsx": "react-jsx",
 		"strict": false,
 		"esModuleInterop": true,
 		"skipLibCheck": true,
@@ -11,6 +11,8 @@
 		"moduleResolution": "bundler",
 		"resolveJsonModule": true,
 		"allowSyntheticDefaultImports": true,
+		"noUncheckedSideEffectImports": false,
+		"types": ["chrome"],
 		"rootDir": "./src",
 		"outDir": "./dist"
 	},

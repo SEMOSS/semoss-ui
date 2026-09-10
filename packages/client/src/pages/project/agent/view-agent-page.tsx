@@ -3,8 +3,8 @@
 import { ChevronRightIcon, InfoIcon, PencilIcon } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { InsightProvider } from "@semoss/sdk/react";
+import { Link, useNavigate } from "react-router";
+import { InsightProvider, runPixel } from "@semoss/sdk/react";
 import {
 	Breadcrumb,
 	BreadcrumbItem,
@@ -21,10 +21,9 @@ import {
 } from "@semoss/ui/next";
 import { AgentViewer } from "@/components/agent-workspace/agent-viewer";
 import { NavbarHeader, NavbarLeft, NavbarRight } from "@/components/shared";
-import { usePage, useProject, useRootStore } from "@/hooks";
+import { usePage, useProject } from "@/hooks";
 
 export const ViewAgentPage = observer(() => {
-	const { configStore } = useRootStore();
 	const navigate = useNavigate();
 	const { project, catalog, permission } = useProject();
 
@@ -39,10 +38,9 @@ export const ViewAgentPage = observer(() => {
 		// so its own selection resets with it
 		setInsightId(null);
 
-		configStore
-			.createProjectInsight(project)
-			.then((loadedInsightId) => {
-				setInsightId(loadedInsightId);
+		runPixel(`SetContext("${project.project_id}")`, "new")
+			.then((response) => {
+				setInsightId(response.insightId);
 			})
 			.catch((e) => {
 				toast.error(e.message);

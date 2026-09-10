@@ -1,11 +1,11 @@
 import { useCallback, useMemo } from "react";
-import { Outlet, useParams } from "react-router-dom";
+import { Outlet, useParams } from "react-router";
 import { usePixel } from "@semoss/sdk/react";
 import type { Project, ProjectDependency } from "@semoss/shared";
 import { Spinner } from "@semoss/ui/next";
 import { ResourceNotFound } from "@/components/common/resource-not-found";
 import { ProjectContext, type ProjectContextType } from "@/contexts";
-import { useAPI, useRootStore } from "@/hooks";
+import { useAPI, useConfig } from "@/hooks";
 
 const CATALOG: Record<Project["project_type"], ProjectContextType["catalog"]> =
 	{
@@ -23,7 +23,7 @@ const CATALOG: Record<Project["project_type"], ProjectContextType["catalog"]> =
 export const ProjectLayout = () => {
 	const { appId } = useParams();
 
-	const { configStore } = useRootStore();
+	const projectMetaKeys = useConfig((state) => state.config.projectMetaKeys);
 
 	// get a user's permission
 	const getUserProjectPermission = useAPI(
@@ -41,7 +41,7 @@ export const ProjectLayout = () => {
 
 	// the core metadata keys plus any dynamic ones from the project config
 	const metaKeys = useMemo(() => {
-		const dynamicKeys = configStore.store.config.projectMetaKeys
+		const dynamicKeys = projectMetaKeys
 			.map((k) => k.metakey)
 			.filter(
 				(key) =>
@@ -51,7 +51,7 @@ export const ProjectLayout = () => {
 					key !== "tags",
 			);
 		return ["description", "markdown", "tag", ...dynamicKeys];
-	}, [configStore.store.config.projectMetaKeys]);
+	}, [projectMetaKeys]);
 
 	// get the metadata for the project
 	const getMetadata = usePixel<Project>(

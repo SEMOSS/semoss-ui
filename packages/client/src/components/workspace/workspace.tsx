@@ -1,5 +1,5 @@
 import { lazy, Suspense, useEffect, useState } from "react";
-import { useInsight, usePixel } from "@semoss/sdk/react";
+import { runPixel, useInsight, usePixel } from "@semoss/sdk/react";
 import { Spinner, toast } from "@semoss/ui/next";
 import { WorkspaceContext } from "@/contexts";
 import { useNavigate } from "@/hooks/useNavigate";
@@ -10,8 +10,8 @@ const BlocksWorkspace = lazy(() =>
 	})),
 );
 
-import { useProject, useRootStore } from "@/hooks";
-import type { WorkspaceStore } from "@/stores";
+import { useProject } from "@/hooks";
+import { WorkspaceStore } from "@/stores";
 
 const WorkspaceLoadingState = () => {
 	return (
@@ -23,14 +23,12 @@ const WorkspaceLoadingState = () => {
 
 export const Workspace: React.FC = () => {
 	const insight = useInsight();
-	const { configStore } = useRootStore();
 	const { project, type } = useProject();
 
 	const navigate = useNavigate();
 
 	const [workspace, setWorkspace] = useState<WorkspaceStore | null>(null);
 
-	// biome-ignore lint/correctness/useExhaustiveDependencies: project/permission are stable within a loaded project context
 	useEffect(() => {
 		// clear out the old app
 		setWorkspace(null);
@@ -39,22 +37,20 @@ export const Workspace: React.FC = () => {
 			return;
 		}
 
-		configStore
-			.createWorkspace(project, insight.insightId)
-			.then((loadedWorkspace) => {
-				setWorkspace(loadedWorkspace);
+		runPixel(`SetContext("${project.project_id}")`, insight.insightId)
+			.then(() => {
+				const w = new WorkspaceStore({
+					insightId: insight.insightId,
+					projectId: project.project_id,
+				});
+
+				setWorkspace(w);
 			})
 			.catch((_e) => {
 				toast.error("Failed to load app, returning to home page.");
 				navigate("/");
 			});
-	}, [
-		project.project_id,
-		insight.isReady,
-		insight.insightId,
-		configStore.createWorkspace,
-		navigate,
-	]);
+	}, [project.project_id, insight.isReady, insight.insightId, navigate]);
 
 	// check the dependencies
 	usePixel(

@@ -183,8 +183,8 @@ vi.mock("@semoss/sdk/react", () => ({
 }));
 
 vi.mock("@/hooks", () => ({
-	useRootStore: () => ({
-		configStore: { runPixel: async () => ({ errors: [] }) },
+	useSession: () => ({
+		runPixel: async () => ({ errors: [] }),
 	}),
 }));
 

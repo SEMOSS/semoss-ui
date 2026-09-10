@@ -1,6 +1,5 @@
-/** biome-ignore-all lint/correctness/useUniqueElementIds: <explanation> */
+// biome-ignore-all lint/correctness/useUniqueElementIds: shared navbar slot IDs
 import { Bell } from "lucide-react";
-import { observer } from "mobx-react-lite";
 import { lazy, Suspense, useEffect, useState } from "react";
 import { runPixel } from "@semoss/sdk";
 import {
@@ -10,7 +9,7 @@ import {
 	TooltipContent,
 	TooltipTrigger,
 } from "@semoss/ui/next";
-import { usePage, useRootStore } from "@/hooks";
+import { useConfig, usePage } from "@/hooks";
 import { NotificationDrawer } from "../notifications/notification-drawer";
 
 const PlatformSearch = lazy(() =>
@@ -19,12 +18,14 @@ const PlatformSearch = lazy(() =>
 	})),
 );
 
-export const Navbar: React.FC = observer(() => {
-	const { page } = usePage();
+export const Navbar: React.FC = () => {
+	const page = usePage();
+	const setNavbarElement = usePage((state) => state.setNavbarElement);
 	const [drawerOpen, setDrawerOpen] = useState<boolean>(false);
 	const [hasUnread, setHasUnread] = useState<number>(0);
-	const { configStore } = useRootStore();
-	const notificationsEnabled = configStore?.config?.notificationEnabled;
+	const notificationsEnabled = useConfig(
+		(state) => state.config.notificationEnabled,
+	);
 
 	useEffect(() => {
 		if (!notificationsEnabled) {
@@ -65,7 +66,7 @@ export const Navbar: React.FC = observer(() => {
 
 	return (
 		<div
-			ref={(n) => page.setNavbarElement(n as HTMLDivElement)}
+			ref={setNavbarElement}
 			className="absolute top-0 flex h-14 w-full flex-row items-center justify-between gap-4 border-border border-b bg-background px-8 text-foreground sm:gap-2 sm:px-2 md:gap-3 md:px-4"
 		>
 			{/* Left slot */}
@@ -130,4 +131,4 @@ export const Navbar: React.FC = observer(() => {
 			</div>
 		</div>
 	);
-});
+};

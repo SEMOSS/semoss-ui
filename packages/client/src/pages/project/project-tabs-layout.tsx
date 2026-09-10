@@ -1,12 +1,6 @@
 import { ChevronRightIcon, SquareArrowOutUpRight } from "lucide-react";
 import { useMemo } from "react";
-import {
-	Link,
-	matchPath,
-	Outlet,
-	useLocation,
-	useResolvedPath,
-} from "react-router-dom";
+import { Link, matchPath, Outlet, useLocation } from "react-router";
 import type { Role } from "@semoss/sdk";
 import { AppCatalogAvatar, EntityHeader } from "@semoss/shared";
 import {
@@ -43,7 +37,7 @@ export const ProjectTabsLayout = ({ tabs }: ProjectTabsLayoutProps) => {
 
 	const navigate = useNavigate();
 	const { pathname } = useLocation();
-	const resolvedPath = useResolvedPath("");
+	const projectPath = `${catalog.path}/${project.project_id}`;
 
 	// see all the visible tabs
 	const visibleTabs = useMemo(() => {
@@ -62,15 +56,18 @@ export const ProjectTabsLayout = ({ tabs }: ProjectTabsLayoutProps) => {
 	const activeTabIdx = useMemo(() => {
 		for (let i = 0; i < visibleTabs.length; i++) {
 			const tab = visibleTabs[i];
-			const fullPath = tab.path
-				? `${resolvedPath.pathname}/${tab.path}`
-				: resolvedPath.pathname;
-			if (matchPath({ path: fullPath, end: true }, pathname)) {
+			const tabPath = tab.path
+				? `${projectPath}/${tab.path}`
+				: projectPath;
+			if (
+				matchPath({ path: tabPath, end: true }, pathname) ||
+				(tab.path !== "" && matchPath(`${tabPath}/*`, pathname))
+			) {
 				return i;
 			}
 		}
 		return -1;
-	}, [visibleTabs, resolvedPath, pathname]);
+	}, [visibleTabs, projectPath, pathname]);
 
 	const activeTab = activeTabIdx >= 0 ? visibleTabs[activeTabIdx] : undefined;
 
@@ -170,7 +167,9 @@ export const ProjectTabsLayout = ({ tabs }: ProjectTabsLayoutProps) => {
 											value={tab.path}
 											onClick={() => {
 												navigate(
-													tab.path ? tab.path : ".",
+													tab.path
+														? `${projectPath}/${tab.path}`
+														: projectPath,
 												);
 											}}
 											data-testid={`appDetail-${tab.name}-tab`}

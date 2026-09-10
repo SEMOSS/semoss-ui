@@ -1,5 +1,5 @@
 import { useId, useState } from "react";
-import { Navigate } from "react-router-dom";
+import { Navigate } from "react-router";
 import {
 	Select,
 	SelectContent,
@@ -9,7 +9,7 @@ import {
 } from "@semoss/ui/next";
 import { AdminQueryWorkbench } from "@/components/workbench";
 import { EngineContext, WorkbenchProvider } from "@/contexts";
-import { useRootStore, useSettings } from "@/hooks";
+import { useConfig, useSettings } from "@/hooks";
 
 const DATABASE_OPTIONS = [
 	{ label: "Audit Logs", value: "AuditLogs" },
@@ -26,12 +26,14 @@ const DATABASE_OPTIONS = [
 ];
 
 export const AdminQueryPage = () => {
-	const { configStore } = useRootStore();
+	const notificationEnabled = useConfig(
+		(state) => state.config.notificationEnabled,
+	);
 	const { adminMode } = useSettings();
 	const dbSelectId = useId();
 	const [selectedDatabase, setSelectedDatabase] = useState("");
 
-	const databaseOptions = configStore.config.notificationEnabled
+	const databaseOptions = notificationEnabled
 		? [
 				...DATABASE_OPTIONS,
 				{ label: "Notification", value: "Notification" },

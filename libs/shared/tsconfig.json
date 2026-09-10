@@ -16,6 +16,8 @@
 		"allowJs": true,
 		"esModuleInterop": true,
 		"isolatedModules": true,
+		"strict": false,
+		"noUncheckedSideEffectImports": false,
 
 		/* Lang and Env */
 		"paths": {
