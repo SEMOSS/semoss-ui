@@ -64,6 +64,7 @@ export const engineProjectToMCP = (tool: Engine | App): MCP => {
 					: tool.engine_user_permission === 2
 						? "EDIT"
 						: "READ_ONLY",
+			favorite: tool.engine_favorite === 1,
 		};
 	} else {
 		// It's an App
@@ -79,6 +80,7 @@ export const engineProjectToMCP = (tool: Engine | App): MCP => {
 					: tool.user_permission === 2
 						? "EDIT"
 						: "READ_ONLY",
+			favorite: tool.project_favorite === 1,
 		};
 	}
 };

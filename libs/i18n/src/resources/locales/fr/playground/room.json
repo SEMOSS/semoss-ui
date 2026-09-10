@@ -126,5 +126,8 @@
 		"searchPlaceholder": "Rechercher des connaissances et des boîtes à outils",
 		"noResults": "Aucun élément correspondant trouvé",
 		"noItemsAvailable": "Aucune connaissance ou boîte à outils disponible"
+	},
+	"defaultAgent": {
+		"toggle": "Utiliser le profil d'agent par défaut"
 	}
 }

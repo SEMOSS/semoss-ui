@@ -331,6 +331,7 @@ export const MCPOverlay: React.FC<MCPOverlayProps> = ({
 												? mcpToPlatformUrl
 												: undefined
 										}
+										sortFavoritesFirst
 									/>
 								)}
 							</TabsContent>
@@ -354,6 +355,7 @@ export const MCPOverlay: React.FC<MCPOverlayProps> = ({
 												? mcpToPlatformUrl
 												: undefined
 										}
+										sortFavoritesFirst
 									/>
 								)}
 							</TabsContent>

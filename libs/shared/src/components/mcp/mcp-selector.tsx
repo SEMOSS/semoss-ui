@@ -86,6 +86,8 @@ interface MCPSelectorProps {
 	/** Optional workspace ID — when provided, GetProjectDependencies is fetched
 	 *  and any configured deps the user cannot access are injected into the grid. */
 	workspaceId?: string;
+	/** When true, favorited items are sorted to the top of the list. */
+	sortFavoritesFirst?: boolean;
 }
 
 /**
@@ -102,6 +104,7 @@ export const MCPSelector: React.FC<MCPSelectorProps> = ({
 	enableKnowledgeMCP = true,
 	getPlatformUrl,
 	workspaceId,
+	sortFavoritesFirst = false,
 }) => {
 	const { t } = useTranslation("mcp");
 	const isMobile = useIsMobile();
@@ -173,6 +176,12 @@ export const MCPSelector: React.FC<MCPSelectorProps> = ({
 	}
 	const isLoading = getEngines.isLoading || getProjects.isLoading;
 	const hasMore = getEngines.hasMore || getProjects.hasMore;
+
+	if (sortFavoritesFirst) {
+		combinedData.sort(
+			(a, b) => (b.favorite ? 1 : 0) - (a.favorite ? 1 : 0),
+		);
+	}
 
 	const getDependencies = usePixel<{
 		engines: ProjectDependency[];
@@ -345,6 +354,11 @@ export const MCPSelector: React.FC<MCPSelectorProps> = ({
 										effectivePermission={mcp.permission}
 										fromWorkspace={fromWorkspace}
 										getPlatformUrl={getPlatformUrl}
+										favorite={
+											sortFavoritesFirst
+												? mcp.favorite
+												: undefined
+										}
 									/>
 								);
 							})}
