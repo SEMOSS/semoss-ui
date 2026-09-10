@@ -62,6 +62,9 @@ import {
 	DropdownMenuContent,
 	DropdownMenuItem,
 	DropdownMenuSeparator,
+	DropdownMenuSub,
+	DropdownMenuSubContent,
+	DropdownMenuSubTrigger,
 	DropdownMenuTrigger,
 	Tooltip,
 	TooltipContent,
@@ -90,6 +93,7 @@ import type {
 	AutomationInspectorAction,
 	AutomationInspectorSnapshot,
 } from "../../domain/automation-inspector";
+import { downloadN8nExport } from "../../domain/automation-to-n8n-adapter";
 import { normalizeAutomationErrorMessage } from "../../domain/automation-utils";
 import type {
 	AutomationWorkflowDocument,
@@ -605,9 +609,12 @@ export const AutomationCanvas = forwardRef<
 		triggerBindings: TriggerBinding[];
 		warnings: string[];
 	} | null>(null);
-	/** Warnings from the last completed import — persists so the dialog can be reopened; `[]` means a clean import. */
+	/** Warnings from the last completed import/export — persists so the dialog can be reopened; `[]` means clean. */
 	const [importWarnings, setImportWarnings] = useState<string[] | null>(null);
 	const [showImportSummary, setShowImportSummary] = useState(false);
+	const [importSummaryKind, setImportSummaryKind] = useState<
+		"import" | "export-n8n"
+	>("import");
 	/** A historical run currently being viewed read-only on the canvas, in place of the live editable graph. */
 	const [historicalRun, setHistoricalRun] =
 		useState<AutomationRunDetail | null>(null);
@@ -1456,6 +1463,7 @@ export const AutomationCanvas = forwardRef<
 			setTriggerBindings(parsed.triggerBindings);
 			setIsDirty(true);
 			setEditingStepId(null);
+			setImportSummaryKind("import");
 			setImportWarnings(parsed.warnings);
 			setShowImportSummary(true);
 		},
@@ -1511,6 +1519,24 @@ export const AutomationCanvas = forwardRef<
 			definition,
 			nodeSources,
 		);
+	}, [appId, description, graphEdges, steps, triggerBindings]);
+
+	const handleExportToN8n = useCallback(() => {
+		const definition = canvasDocumentToWorkflow({
+			description,
+			triggerBindings,
+			steps,
+			edges: graphEdges,
+		});
+		const nodeSources = getCanvasNodeSources(steps);
+		const warnings = downloadN8nExport(
+			description.trim() || appId || "automation",
+			definition,
+			nodeSources,
+		);
+		setImportSummaryKind("export-n8n");
+		setImportWarnings(warnings);
+		setShowImportSummary(true);
 	}, [appId, description, graphEdges, steps, triggerBindings]);
 
 	const save = useCallback(async (): Promise<boolean> => {
@@ -2597,14 +2623,29 @@ export const AutomationCanvas = forwardRef<
 															<Upload className="mr-2 h-3.5 w-3.5" />
 															Import workflow
 														</DropdownMenuItem>
-														<DropdownMenuItem
-															onClick={
-																handleExportWorkflow
-															}
-														>
-															<Download className="mr-2 h-3.5 w-3.5" />
-															Export workflow
-														</DropdownMenuItem>
+														<DropdownMenuSub>
+															<DropdownMenuSubTrigger>
+																<Download className="mr-2 h-3.5 w-3.5" />
+																Export
+															</DropdownMenuSubTrigger>
+															<DropdownMenuSubContent>
+																<DropdownMenuItem
+																	onClick={
+																		handleExportWorkflow
+																	}
+																>
+																	SEMOSS
+																	format
+																</DropdownMenuItem>
+																<DropdownMenuItem
+																	onClick={
+																		handleExportToN8n
+																	}
+																>
+																	n8n format
+																</DropdownMenuItem>
+															</DropdownMenuSubContent>
+														</DropdownMenuSub>
 														{importWarnings &&
 															importWarnings.length >
 																0 && (
@@ -2619,7 +2660,10 @@ export const AutomationCanvas = forwardRef<
 																	>
 																		<AlertTriangle className="mr-2 h-3.5 w-3.5" />
 																		View
-																		import
+																		{importSummaryKind ===
+																		"export-n8n"
+																			? " export"
+																			: " import"}{" "}
 																		notes (
 																		{
 																			importWarnings.length
@@ -2929,13 +2973,17 @@ export const AutomationCanvas = forwardRef<
 					<DialogHeader>
 						<DialogTitle>
 							{importWarnings && importWarnings.length > 0
-								? `Imported with ${importWarnings.length} warning${importWarnings.length === 1 ? "" : "s"}`
-								: "Workflow imported"}
+								? `${importSummaryKind === "export-n8n" ? "Exported" : "Imported"} with ${importWarnings.length} warning${importWarnings.length === 1 ? "" : "s"}`
+								: importSummaryKind === "export-n8n"
+									? "Exported to n8n"
+									: "Workflow imported"}
 						</DialogTitle>
 						<DialogDescription>
 							{importWarnings && importWarnings.length > 0
 								? "Review the items below — they weren't translated automatically and may need manual edits."
-								: "Every step imported cleanly."}
+								: importSummaryKind === "export-n8n"
+									? "Every step exported cleanly."
+									: "Every step imported cleanly."}
 						</DialogDescription>
 					</DialogHeader>
 					{importWarnings && importWarnings.length > 0 && (
