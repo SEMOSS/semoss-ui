@@ -2529,7 +2529,9 @@ export const AutomationCanvas = forwardRef<
 											canvasMode === "interact" &&
 											!running
 										}
-										panOnDrag={canvasMode === "pan"}
+										panOnDrag={
+											canvasMode === "pan" ? true : [2]
+										}
 										panOnScroll={canvasMode !== "pan"}
 										zoomOnPinch
 										zoomOnScroll={canvasMode === "pan"}
@@ -2548,6 +2550,9 @@ export const AutomationCanvas = forwardRef<
 												instance;
 											setCanvasInitialized(true);
 										}}
+										onPaneContextMenu={(event) =>
+											event.preventDefault()
+										}
 										onNodeClick={
 											canvasMode === "interact"
 												? (_e, node) => {
