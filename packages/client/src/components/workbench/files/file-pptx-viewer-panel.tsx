@@ -8,6 +8,7 @@ import {
 	usePixel,
 } from "@semoss/sdk/react";
 import {
+	decodeBase64Asset,
 	getFileIconComponent,
 	getFileOperationErrorMessage,
 } from "@semoss/shared";
@@ -21,11 +22,7 @@ import type {
 	WorkbenchPanelConfig,
 	WorkbenchPanelProps,
 } from "@/stores/workbench";
-import {
-	decodeBase64Asset,
-	getFileDownloadPixel,
-	getFileReadPixel,
-} from "./file-panel.utility";
+import { getFileDownloadPixel, getFileReadPixel } from "./file-panel.utility";
 import {
 	FilePptxViewerControl,
 	type FilePptxViewerControlValue,

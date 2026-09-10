@@ -67,6 +67,17 @@ export interface FileExplorerAdapter {
 	remove(path: string): string;
 	/** Resolves to a file key, not the bytes. */
 	download(path: string): string;
+	/**
+	 * Read a file's contents. `base64` selects the `*Base64` reactor, for
+	 * bytes that are not text (images, PDFs, pptx).
+	 *
+	 * Callers must still decide *whether* to run it: an INSIGHT read before
+	 * the insight exists has to emit no Pixel at all, which is the caller's
+	 * gate, not the builder's.
+	 */
+	read(path: string, base64?: boolean): string;
+	/** Overwrite a file's contents. */
+	save(path: string, content: string): string;
 	/** `path` is the full destination path, name included. */
 	createFile(path: string): string;
 	/** `path` is the full destination path, name included. */
@@ -128,7 +139,16 @@ const createAssetAdapter = (family: AssetFamily): FileExplorerAdapter => ({
 	remove: (path) =>
 		`Delete${family.name}Assets(${family.scopeLead}filePath=["${path}"]);`,
 	download: (path) =>
-		`Download${family.name}Asset(${family.scopeLead}filePath=["${path}"]);`,
+		`Download${family.name}Asset(${family.scopeLead}filePath=[${JSON.stringify(path)}]);`,
+	// read/save/download quote the path with JSON.stringify; browse/search/
+	// rename/copy/remove/create/unzip above still interpolate it raw, which
+	// breaks on a path containing a quote or backslash. Identical output for
+	// every other path, so converting the rest is a safe follow-up rather
+	// than part of this change.
+	read: (path, base64 = false) =>
+		`Get${family.name}Assets${base64 ? "Base64" : ""}(filePath=[${JSON.stringify(path)}]${family.scopeTail});`,
+	save: (path, content) =>
+		`Save${family.name}Assets(${family.scopeLead}filePath=[${JSON.stringify(path)}], content=["<encode>${content}</encode>"]);`,
 	createFile: (path) =>
 		`New${family.name}AssetsFile(${family.scopeLead}filePath=["${path}"]);`,
 	createDirectory: (path) =>
@@ -173,6 +193,8 @@ const createStorageAdapter = (storage: string): FileExplorerAdapter => {
 		},
 		browse: (path) =>
 			`ListStoragePathDetails(storage=["${storage}"], storagePath=["${path}"]);`,
+		read: unsupported("read"),
+		save: unsupported("save"),
 		search: unsupported("search"),
 		rename: unsupported("rename"),
 		copy: unsupported("copy"),

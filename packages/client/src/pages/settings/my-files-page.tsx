@@ -17,6 +17,8 @@ import {
 	usePixel,
 } from "@semoss/sdk/react";
 import {
+	decodeBase64Asset,
+	encodeBase64Asset,
 	FileEditor,
 	FileExplorer,
 	FileExplorerHeader,
@@ -35,10 +37,6 @@ import {
 	TooltipTrigger,
 	toast,
 } from "@semoss/ui/next";
-import {
-	decodeBase64Asset,
-	encodeBase64Asset,
-} from "@/components/workbench/files/file-panel.utility";
 import { useSession } from "@/hooks";
 
 const FilePptxViewerContent = lazy(

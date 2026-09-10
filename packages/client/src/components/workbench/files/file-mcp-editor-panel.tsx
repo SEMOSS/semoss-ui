@@ -18,6 +18,7 @@ import type {
 	WorkbenchPanelConfig,
 	WorkbenchPanelProps,
 } from "@/stores/workbench";
+import { getFileReadPixel, getFileSavePixel } from "./file-panel.utility";
 export interface FileMcpEditorParams {
 	type: "ENGINE" | "PROJECT";
 	id: string;
@@ -25,26 +26,11 @@ export interface FileMcpEditorParams {
 	path: string;
 }
 
-/** Build the scoped pixel used to read an MCP file. */
-const getFileMcpReadPixel = ({
-	type,
-	id,
-	path,
-}: Pick<FileMcpEditorParams, "type" | "id" | "path">): string =>
-	type === "PROJECT"
-		? `GetAppAssets(filePath=[${JSON.stringify(path)}], project=[${JSON.stringify(id)}]);`
-		: `GetEngineAssets(filePath=[${JSON.stringify(path)}], engine=[${JSON.stringify(id)}]);`;
-
 /** Build the scoped pixel used to save an MCP file. */
 const getFileMcpSavePixel = (
 	config: Pick<FileMcpEditorParams, "type" | "id" | "path">,
 	data: MCPJsonData,
-): string => {
-	const content = `"<encode>${JSON.stringify(data, null, 2)}</encode>"`;
-	return config.type === "PROJECT"
-		? `SaveAppAssets(project=[${JSON.stringify(config.id)}], filePath=[${JSON.stringify(config.path)}], content=[${content}]);`
-		: `SaveEngineAssets(engine=[${JSON.stringify(config.id)}], filePath=[${JSON.stringify(config.path)}], content=[${content}]);`;
-};
+): string => getFileSavePixel(config, JSON.stringify(data, null, 2));
 
 const FileMcpEditorPanel = ({
 	config,
@@ -54,7 +40,7 @@ const FileMcpEditorPanel = ({
 	const readOnly = access.status !== "ready" || access.readOnly;
 	const [loaded, setLoaded] = useState<LoadedMCPFile | null>(null);
 	const [isLoading, setIsLoading] = useState(false);
-	const readPixel = getFileMcpReadPixel(config);
+	const readPixel = getFileReadPixel(config);
 
 	const getFile = usePixel<string>(
 		access.status === "ready" ? readPixel : "",
