@@ -16,10 +16,10 @@ import {
 	Spinner,
 	toast,
 } from "@semoss/ui/next";
-import { useWorkbench } from "@/hooks/use-workbench";
-import type { BuildPendingAction, BuildRun } from "@/stores/workbench";
-import { isRequestUserInputAction } from "@/stores/workbench";
-import { actionDetails, friendlyToolName } from "./workbench-assistant-tools";
+import { useAssistant } from "@/hooks/use-assistant";
+import type { BuildPendingAction, BuildRun } from "@/stores/assistant";
+import { isRequestUserInputAction } from "@/stores/assistant";
+import { actionDetails, friendlyToolName } from "./assistant-tools";
 
 /**
  * Extract a user-facing message from a thrown value.
@@ -73,7 +73,7 @@ const ActionRequestDetails = ({ details }: ActionRequestDetailsProps) => {
 	);
 };
 
-interface WorkbenchAssistantPendingActionsProps {
+interface AssistantPendingActionsProps {
 	/** The run whose pending review actions are shown */
 	run: BuildRun;
 }
@@ -85,15 +85,15 @@ interface WorkbenchAssistantPendingActionsProps {
  * decisions made elsewhere (or a resumed run) are picked up. Renders nothing
  * when the run has no review actions.
  *
- * @name WorkbenchAssistantPendingActions
+ * @name AssistantPendingActions
  * @param run - The run whose pending review actions are shown.
  * @return The pending-actions review panel, or null when there are none.
  */
-export const WorkbenchAssistantPendingActions = ({
+export const AssistantPendingActions = ({
 	run,
-}: WorkbenchAssistantPendingActionsProps) => {
-	const decideAction = useWorkbench((state) => state.assistant.decideAction);
-	const reconcileRun = useWorkbench((state) => state.assistant.reconcileRun);
+}: AssistantPendingActionsProps) => {
+	const decideAction = useAssistant((state) => state.decideAction);
+	const reconcileRun = useAssistant((state) => state.reconcileRun);
 	const [busyActionId, setBusyActionId] = useState<string | null>(null);
 	const [approvingAll, setApprovingAll] = useState(false);
 	const [approveAllProgress, setApproveAllProgress] = useState(0);

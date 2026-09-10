@@ -48,6 +48,13 @@ interface WorkbenchSelectionState {
 
 /** Layout state fields owned by each workbench instance. */
 interface WorkbenchLayoutSliceFields {
+	/**
+	 * The provider's cache key. Read-only; exposed so code that must scope
+	 * itself to this workbench instance (a sibling store keyed the same way)
+	 * does not have to be handed the key a second time.
+	 */
+	cacheKey: string;
+
 	/** True once loadLayout has produced a usable arrangement. */
 	hydrated: boolean;
 
@@ -715,6 +722,7 @@ export const createWorkbenchLayoutSlice = (
 		});
 
 		return {
+			cacheKey,
 			hydrated: false,
 			isMobileLayout: false,
 			panels: {},

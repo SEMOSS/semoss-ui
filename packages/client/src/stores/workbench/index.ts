@@ -1,4 +1,3 @@
-export * from "./assistant";
 export * from "./slices";
 export * from "./workbench.constants";
 export { createWorkbenchStore, type WorkbenchState } from "./workbench.store";

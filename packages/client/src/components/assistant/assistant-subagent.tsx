@@ -1,16 +1,16 @@
 import { BotIcon, ChevronDownIcon, ChevronRightIcon } from "lucide-react";
 import { type ReactNode, useEffect, useState } from "react";
 import { cn, Spinner } from "@semoss/ui/next";
-import { useWorkbench } from "@/hooks/use-workbench";
-import type { BuildRun } from "@/stores/workbench";
+import { useAssistant } from "@/hooks/use-assistant";
+import type { BuildRun } from "@/stores/assistant";
 import {
 	displayToolName,
 	isCompleteStatus,
 	isToolActive,
 	statusLabel,
-} from "./workbench-assistant-tools";
+} from "./assistant-tools";
 
-interface WorkbenchAssistantSubagentProps {
+interface AssistantSubagentProps {
 	/** ID of the delegated child run to display */
 	childRunId: string;
 
@@ -29,19 +29,19 @@ interface WorkbenchAssistantSubagentProps {
  * record when it hasn't been reconciled yet, then renders a nested run feed
  * via the `renderFeed` prop.
  *
- * @name WorkbenchAssistantSubagent
+ * @name AssistantSubagent
  * @param childRunId - ID of the delegated child run to display.
  * @param renderFeed - Renders the nested run feed for the expanded child.
  * @return The expandable subagent card.
  */
-export const WorkbenchAssistantSubagent = ({
+export const AssistantSubagent = ({
 	childRunId,
 	renderFeed,
-}: WorkbenchAssistantSubagentProps) => {
-	const child = useWorkbench((state) => state.assistant.runs[childRunId]) as
+}: AssistantSubagentProps) => {
+	const child = useAssistant((state) => state.runs[childRunId]) as
 		| BuildRun
 		| undefined;
-	const fetchRun = useWorkbench((state) => state.assistant.fetchRun);
+	const fetchRun = useAssistant((state) => state.fetchRun);
 	const status = child?.status ?? "SUBMITTED";
 	const failed = status === "FAILED";
 	const attention = failed || status === "INPUT_REQUIRED";

@@ -9,10 +9,10 @@ import {
 	TooltipContent,
 	TooltipTrigger,
 } from "@semoss/ui/next";
-import { useWorkbench } from "@/hooks/use-workbench";
-import type { WorkbenchAssistantNotice } from "@/stores/workbench";
-import { parseTime } from "./workbench-assistant-format";
-import { WorkbenchAssistantTurn } from "./workbench-assistant-turn";
+import { useAssistant } from "@/hooks/use-assistant";
+import type { AssistantNotice } from "@/stores/assistant";
+import { parseTime } from "./assistant-format";
+import { AssistantTurn } from "./assistant-turn";
 
 /** A run or system notice positioned on the timeline by timestamp. */
 type TimelineEntry =
@@ -21,12 +21,12 @@ type TimelineEntry =
 			type: "notice";
 			key: string;
 			time: number;
-			notice: WorkbenchAssistantNotice;
+			notice: AssistantNotice;
 	  };
 
 interface NoticeCardProps {
 	/** The system notice to display */
-	notice: WorkbenchAssistantNotice;
+	notice: AssistantNotice;
 
 	/** Called with the notice ID when the user dismisses an error notice */
 	onDismiss: (id: string) => void;
@@ -80,20 +80,16 @@ const NoticeCard = ({ notice, onDismiss }: NoticeCardProps) => {
  * scrolled away. Shows a spinner during assistant initialization and an empty
  * state before the first prompt.
  *
- * @name WorkbenchAssistantTimeline
+ * @name AssistantTimeline
  * @return The scrollable assistant timeline region.
  */
-export const WorkbenchAssistantTimeline = () => {
-	const roomRunIds = useWorkbench((state) => state.assistant.roomRunIds);
-	const runs = useWorkbench((state) => state.assistant.runs);
-	const notices = useWorkbench((state) => state.assistant.notices);
-	const isInitializing = useWorkbench(
-		(state) => state.assistant.isInitializing,
-	);
-	const activeRunId = useWorkbench((state) => state.assistant.activeRunId);
-	const dismissNotice = useWorkbench(
-		(state) => state.assistant.dismissNotice,
-	);
+export const AssistantTimeline = () => {
+	const roomRunIds = useAssistant((state) => state.roomRunIds);
+	const runs = useAssistant((state) => state.runs);
+	const notices = useAssistant((state) => state.notices);
+	const isInitializing = useAssistant((state) => state.isInitializing);
+	const activeRunId = useAssistant((state) => state.activeRunId);
+	const dismissNotice = useAssistant((state) => state.dismissNotice);
 
 	const containerRef = useRef<HTMLDivElement | null>(null);
 	const pinnedRef = useRef(true);
@@ -256,7 +252,7 @@ export const WorkbenchAssistantTimeline = () => {
 				<div className="flex min-h-full flex-col gap-2 px-4 py-6">
 					{entries.map((entry) =>
 						entry.type === "run" ? (
-							<WorkbenchAssistantTurn
+							<AssistantTurn
 								key={entry.key}
 								runId={entry.runId}
 							/>

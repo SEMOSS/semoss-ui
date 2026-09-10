@@ -76,12 +76,10 @@ const ASSISTANT_COMPONENTS: ComponentProps<typeof Markdown>["components"] = {
  * The shared Markdown renderer with assistant-scale typography — used for
  * assistant replies and tool output inside the assistant panel.
  *
- * @name WorkbenchAssistantMarkdown
+ * @name AssistantMarkdown
  * @param children - Markdown content to render.
  * @return The assistant-scaled markdown.
  */
-export const WorkbenchAssistantMarkdown = ({
-	children,
-}: {
-	children: string;
-}) => <Markdown components={ASSISTANT_COMPONENTS}>{children}</Markdown>;
+export const AssistantMarkdown = ({ children }: { children: string }) => (
+	<Markdown components={ASSISTANT_COMPONENTS}>{children}</Markdown>
+);

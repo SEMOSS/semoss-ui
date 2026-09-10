@@ -1,5 +1,5 @@
 import { isRequestUserInputAction } from "@semoss/sdk";
-import type { BuildPendingAction, BuildTool } from "@/stores/workbench";
+import type { BuildPendingAction, BuildTool } from "@/stores/assistant";
 
 /** Family a tool belongs to for phase titles and rollup rows. */
 export type ToolFamily =

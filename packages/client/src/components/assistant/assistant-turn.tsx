@@ -21,28 +21,24 @@ import {
 	Spinner,
 	toast,
 } from "@semoss/ui/next";
-import { useWorkbench } from "@/hooks/use-workbench";
+import { useAssistant } from "@/hooks/use-assistant";
 import type {
 	BuildAttachment,
 	BuildMessage,
 	BuildRun,
 	BuildTool,
-} from "@/stores/workbench";
+} from "@/stores/assistant";
 import {
 	isRequestUserInputAction,
 	isTerminalAgentRunStatus,
-} from "@/stores/workbench";
-import {
-	formatLongMs,
-	formatTime,
-	parseTime,
-} from "./workbench-assistant-format";
-import { WorkbenchAssistantMarkdown } from "./workbench-assistant-markdown";
-import { WorkbenchAssistantPendingActions } from "./workbench-assistant-pending-actions";
-import { WorkbenchAssistantSubagent } from "./workbench-assistant-subagent";
-import { WorkbenchAssistantToolPhase } from "./workbench-assistant-tool-phase";
-import { isPendingUserInputTool } from "./workbench-assistant-tools";
-import { WorkbenchAssistantUserInputCard } from "./workbench-assistant-user-input-card";
+} from "@/stores/assistant";
+import { formatLongMs, formatTime, parseTime } from "./assistant-format";
+import { AssistantMarkdown } from "./assistant-markdown";
+import { AssistantPendingActions } from "./assistant-pending-actions";
+import { AssistantSubagent } from "./assistant-subagent";
+import { AssistantToolPhase } from "./assistant-tool-phase";
+import { isPendingUserInputTool } from "./assistant-tools";
+import { AssistantUserInputCard } from "./assistant-user-input-card";
 
 /** A single run event (message, tool call, or child run) before grouping. */
 type Activity =
@@ -190,7 +186,7 @@ interface FeedItemsProps {
  * @return The ordered activity feed for the run.
  */
 const FeedItems = ({ run, nested = false }: FeedItemsProps) => {
-	const runs = useWorkbench((state) => state.assistant.runs);
+	const runs = useAssistant((state) => state.runs);
 
 	const activities = useMemo<Activity[]>(() => {
 		const items: Activity[] = [];
@@ -300,15 +296,15 @@ const FeedItems = ({ run, nested = false }: FeedItemsProps) => {
 				<ThinkingBlock message={activity.message} />
 			) : (
 				<div className="min-w-0 text-sm">
-					<WorkbenchAssistantMarkdown>
+					<AssistantMarkdown>
 						{activity.message.text}
-					</WorkbenchAssistantMarkdown>
+					</AssistantMarkdown>
 				</div>
 			)
 		) : activity.kind === "phase" ? (
-			<WorkbenchAssistantToolPhase tools={activity.tools} />
+			<AssistantToolPhase tools={activity.tools} />
 		) : (
-			<WorkbenchAssistantSubagent
+			<AssistantSubagent
 				childRunId={activity.childRunId}
 				renderFeed={(childRun) => <FeedItems run={childRun} nested />}
 			/>
@@ -316,9 +312,9 @@ const FeedItems = ({ run, nested = false }: FeedItemsProps) => {
 
 	const pendingBlock = inputRequired ? (
 		<div className="flex flex-col gap-2">
-			<WorkbenchAssistantPendingActions run={run} />
+			<AssistantPendingActions run={run} />
 			{userInputActions.map((action, index) => (
-				<WorkbenchAssistantUserInputCard
+				<AssistantUserInputCard
 					key={action.actionId ?? `input-${index}`}
 					run={run}
 					action={action}
@@ -329,9 +325,7 @@ const FeedItems = ({ run, nested = false }: FeedItemsProps) => {
 
 	const finalBlock = showFinal ? (
 		<div className="min-w-0 text-sm">
-			<WorkbenchAssistantMarkdown>
-				{run.finalText ?? ""}
-			</WorkbenchAssistantMarkdown>
+			<AssistantMarkdown>{run.finalText ?? ""}</AssistantMarkdown>
 		</div>
 	) : null;
 
@@ -545,8 +539,8 @@ const RunFailureDetails = ({ run }: RunFailureDetailsProps) => {
 	);
 };
 
-interface WorkbenchAssistantTurnProps {
-	/** ID of the run to render; resolved against the assistant slice's run map */
+interface AssistantTurnProps {
+	/** ID of the run to render; resolved against the assistant's run map */
 	runId: string;
 }
 
@@ -556,14 +550,12 @@ interface WorkbenchAssistantTurnProps {
  * order, an error alert on failure, and a trailing working indicator while
  * the run is still in flight. Renders nothing when the run ID is unknown.
  *
- * @name WorkbenchAssistantTurn
- * @param runId - ID of the run to render from the assistant slice's run map.
+ * @name AssistantTurn
+ * @param runId - ID of the run to render from the assistant's run map.
  * @return The rendered conversation turn, or null for an unknown run.
  */
-export const WorkbenchAssistantTurn = ({
-	runId,
-}: WorkbenchAssistantTurnProps) => {
-	const run = useWorkbench((state) => state.assistant.runs[runId]);
+export const AssistantTurn = ({ runId }: AssistantTurnProps) => {
+	const run = useAssistant((state) => state.runs[runId]);
 
 	if (!run) return null;
 

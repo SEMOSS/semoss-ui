@@ -21,11 +21,11 @@ import {
 	Separator,
 	Spinner,
 } from "@semoss/ui/next";
-import { useWorkbench } from "@/hooks/use-workbench";
+import { useAssistant } from "@/hooks/use-assistant";
 import type {
-	WorkbenchAssistantEffort,
-	WorkbenchAssistantPermissionMode,
-} from "@/stores/workbench";
+	AssistantEffort,
+	AssistantPermissionMode,
+} from "@/stores/assistant";
 
 const DEFAULT_MAX_TURNS = 30;
 
@@ -34,7 +34,7 @@ const INHERIT = "inherit";
 
 /** Permission modes the semoss harness accepts, with display labels. */
 const PERMISSION_MODE_OPTIONS: {
-	value: WorkbenchAssistantPermissionMode;
+	value: AssistantPermissionMode;
 	label: string;
 }[] = [
 	{ value: "default", label: "Ask before edits" },
@@ -44,7 +44,7 @@ const PERMISSION_MODE_OPTIONS: {
 ];
 
 /** Reasoning-effort levels, with display labels. */
-const EFFORT_OPTIONS: { value: WorkbenchAssistantEffort; label: string }[] = [
+const EFFORT_OPTIONS: { value: AssistantEffort; label: string }[] = [
 	{ value: "low", label: "Low" },
 	{ value: "medium", label: "Medium" },
 	{ value: "high", label: "High" },
@@ -55,29 +55,25 @@ const EFFORT_OPTIONS: { value: WorkbenchAssistantEffort; label: string }[] = [
  * Assistant settings view: model picker, conversation compaction, and advanced
  * controls (max turns). The compact action is disabled while a run is active.
  *
- * @name WorkbenchAssistantSettings
+ * @name AssistantSettings
  * @return The scrollable assistant settings view.
  */
-export const WorkbenchAssistantSettings = () => {
-	const model = useWorkbench((state) => state.assistant.model);
-	const agent = useWorkbench((state) => state.assistant.agent);
-	const roomId = useWorkbench((state) => state.assistant.roomId);
-	const activeRunId = useWorkbench((state) => state.assistant.activeRunId);
-	const compact = useWorkbench((state) => state.assistant.compact);
-	const maxTurns = useWorkbench((state) => state.assistant.maxTurns);
-	const permissionMode = useWorkbench(
-		(state) => state.assistant.permissionMode,
-	);
-	const effort = useWorkbench((state) => state.assistant.effort);
-	const thinking = useWorkbench((state) => state.assistant.thinking);
-	const setModel = useWorkbench((state) => state.assistant.setModel);
-	const setAgent = useWorkbench((state) => state.assistant.setAgent);
-	const setMaxTurns = useWorkbench((state) => state.assistant.setMaxTurns);
-	const setPermissionMode = useWorkbench(
-		(state) => state.assistant.setPermissionMode,
-	);
-	const setEffort = useWorkbench((state) => state.assistant.setEffort);
-	const setThinking = useWorkbench((state) => state.assistant.setThinking);
+export const AssistantSettings = () => {
+	const model = useAssistant((state) => state.model);
+	const agent = useAssistant((state) => state.agent);
+	const roomId = useAssistant((state) => state.roomId);
+	const activeRunId = useAssistant((state) => state.activeRunId);
+	const compact = useAssistant((state) => state.compact);
+	const maxTurns = useAssistant((state) => state.maxTurns);
+	const permissionMode = useAssistant((state) => state.permissionMode);
+	const effort = useAssistant((state) => state.effort);
+	const thinking = useAssistant((state) => state.thinking);
+	const setModel = useAssistant((state) => state.setModel);
+	const setAgent = useAssistant((state) => state.setAgent);
+	const setMaxTurns = useAssistant((state) => state.setMaxTurns);
+	const setPermissionMode = useAssistant((state) => state.setPermissionMode);
+	const setEffort = useAssistant((state) => state.setEffort);
+	const setThinking = useAssistant((state) => state.setThinking);
 
 	const fieldId = useId();
 	const maxTurnsId = `${fieldId}-max-turns`;
@@ -240,7 +236,7 @@ export const WorkbenchAssistantSettings = () => {
 										setPermissionMode(
 											value === INHERIT
 												? null
-												: (value as WorkbenchAssistantPermissionMode),
+												: (value as AssistantPermissionMode),
 										)
 									}
 								>
@@ -278,7 +274,7 @@ export const WorkbenchAssistantSettings = () => {
 										setEffort(
 											value === INHERIT
 												? null
-												: (value as WorkbenchAssistantEffort),
+												: (value as AssistantEffort),
 										)
 									}
 								>

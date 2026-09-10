@@ -1,7 +1,7 @@
 import type {
-	WorkbenchAssistantEffort,
-	WorkbenchAssistantPermissionMode,
-} from "./workbench-assistant.slice";
+	AssistantEffort,
+	AssistantPermissionMode,
+} from "./assistant.store";
 
 /** One selectable argument for a slash command. */
 interface SlashCommandOption {
@@ -67,11 +67,11 @@ export interface SlashCommandParseResult {
 	/** The message with command lines removed. */
 	text: string;
 	/** New effort when set by a command; null resets to the model default. */
-	effort?: WorkbenchAssistantEffort | null;
+	effort?: AssistantEffort | null;
 	/** New thinking flag when set by a command; null resets to the default. */
 	thinking?: boolean | null;
 	/** New permission mode when set by a command. */
-	permissionMode?: WorkbenchAssistantPermissionMode;
+	permissionMode?: AssistantPermissionMode;
 	/** Whether a /compact command was given. */
 	compact: boolean;
 	/** Acknowledgement messages for applied commands. */
@@ -84,7 +84,7 @@ export interface SlashCommandParseResult {
 
 const EFFORT_VALUES = new Set(["auto", "low", "medium", "high", "max"]);
 const THINKING_VALUES = new Set(["default", "on", "off"]);
-const PERMISSION_MODES: Record<string, WorkbenchAssistantPermissionMode> = {
+const PERMISSION_MODES: Record<string, AssistantPermissionMode> = {
 	default: "default",
 	acceptedits: "acceptEdits",
 	plan: "plan",
@@ -128,9 +128,7 @@ export const parseSlashCommands = (input: string): SlashCommandParseResult => {
 			const value = arg?.toLowerCase();
 			if (value && EFFORT_VALUES.has(value)) {
 				result.effort =
-					value === "auto"
-						? null
-						: (value as WorkbenchAssistantEffort);
+					value === "auto" ? null : (value as AssistantEffort);
 				result.feedback.push(
 					value === "auto"
 						? "Reasoning effort reset to the model default."

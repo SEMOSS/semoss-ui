@@ -1,25 +1,16 @@
+import type { StoreApi } from "zustand";
 import favicon from "@/assets/favicon.svg";
 import { notifyIfPageInactive } from "@/utility";
-import type { WorkbenchSlice } from "../workbench.types";
-import type { BuildRun } from "./workbench-assistant.runs";
-import { isTerminalAgentRunStatus } from "./workbench-assistant.runs";
-import { isRequestUserInputAction } from "./workbench-assistant.tools";
+import type { BuildRun } from "./assistant.runs";
+import { isTerminalAgentRunStatus } from "./assistant.runs";
+import type { AssistantState } from "./assistant.store";
+import { isRequestUserInputAction } from "./assistant.tools";
 
 /** Max characters of assistant text quoted in a notification body. */
 const BODY_MAX_LENGTH = 120;
 
 /** Room label used before the room has been named. */
 const DEFAULT_ROOM_LABEL = "Workbench assistant";
-
-/** Namespaced state contributed by the assistant notification slice. */
-export interface WorkbenchAssistantNotificationSliceState {
-	/**
-	 * Stop watching run transitions. The subscription otherwise lives as long
-	 * as the store and is garbage-collected with it, so the app never needs to
-	 * call this — it exists so tests can detach a watcher.
-	 */
-	dispose: () => void;
-}
 
 /**
  * Normalize a run status for comparison.
@@ -122,52 +113,45 @@ const describeTransition = (
 };
 
 /**
- * Creates the `notifications` slice: a store subscription that raises a browser
+ * Watches the assistant store and raises a browser
  * notification when a root assistant run pauses for input or finishes, but only
  * while the user is away from the page.
  *
- * Lives in the store rather than a React effect so it is active for the store's
- * lifetime instead of a component's, and so the transition logic is testable
- * without mounting anything. Zustand builds `subscribe` before it invokes this
- * creator, so subscribing here is safe.
+ * Attached to the store rather than a React effect so it is active for the
+ * store's lifetime instead of a component's, and so the transition logic is
+ * testable without mounting anything.
  *
- * Only root runs (`assistant.roomRunIds`) are considered, so a subagent finishing
- * mid-run never notifies. Runs with no previous entry are skipped — resuming a
- * room replaces the run store wholesale, and that guard is what keeps a room
- * full of already-finished runs silent.
+ * Only root runs (`roomRunIds`) are considered, so a subagent finishing mid-run
+ * never notifies. Runs with no previous entry are skipped — resuming a room
+ * replaces the run store wholesale, and that guard is what keeps a room full of
+ * already-finished runs silent.
  *
- * @name createWorkbenchAssistantNotificationSlice
- * @return Zustand state creator contributing the `notifications` key.
+ * @name attachAssistantNotifications
+ * @param api - The assistant store to watch.
+ * @return Unsubscribe, called from the store's `dispose()`.
  */
-export const createWorkbenchAssistantNotificationSlice =
-	(): WorkbenchSlice<WorkbenchAssistantNotificationSliceState> =>
-	(_set, _get, api) => {
-		const unsubscribe = api.subscribe((state, previous) => {
-			// State is always defined once the store is built; this only
-			// guards the theoretical case of a set() during construction.
-			if (!state?.assistant || !previous?.assistant) return;
+export const attachAssistantNotifications = (
+	api: StoreApi<AssistantState>,
+): (() => void) =>
+	api.subscribe((state, previous) => {
+		// State is always defined once the store is built; this only guards
+		// the theoretical case of a set() during construction.
+		if (!state || !previous) return;
 
-			const room = state.assistant.roomName || DEFAULT_ROOM_LABEL;
+		const room = state.roomName || DEFAULT_ROOM_LABEL;
 
-			for (const runId of state.assistant.roomRunIds) {
-				const run = state.assistant.runs[runId];
-				const before = previous.assistant.runs[runId];
-				if (!run || !before) continue;
+		for (const runId of state.roomRunIds) {
+			const run = state.runs[runId];
+			const before = previous.runs[runId];
+			if (!run || !before) continue;
 
-				const notification = describeTransition(
-					run,
-					before.status,
-					room,
-				);
-				if (!notification) continue;
+			const notification = describeTransition(run, before.status, room);
+			if (!notification) continue;
 
-				notifyIfPageInactive({
-					...notification,
-					icon: favicon,
-					tag: runId,
-				});
-			}
-		});
-
-		return { dispose: unsubscribe };
-	};
+			notifyIfPageInactive({
+				...notification,
+				icon: favicon,
+				tag: runId,
+			});
+		}
+	});

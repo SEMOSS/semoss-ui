@@ -2,12 +2,18 @@ import { useEffect, useMemo } from "react";
 import type { Role } from "@semoss/sdk";
 import { useInsight } from "@semoss/sdk/react";
 import type { FileExplorerApi } from "@semoss/shared";
-import { useProject, useWorkbench, useWorkbenchCommands } from "@/hooks";
+import { ASSISTANT_PANEL } from "@/components/assistant";
+import { AssistantStoreProvider } from "@/contexts";
+import {
+	useAssistantStore,
+	useProject,
+	useWorkbench,
+	useWorkbenchCommands,
+} from "@/hooks";
 import type {
 	WorkbenchLayout,
 	WorkbenchPanelConfigAny,
 } from "@/stores/workbench";
-import { WORKBENCH_ASSISTANT_PANEL } from "../../assistant";
 import { Workbench } from "../../core";
 import { WorkbenchCommandMenuButton } from "../../core/workbench-command-menu-button";
 import {
@@ -130,7 +136,7 @@ const AGENT_WORKBENCH_COMPONENTS: Record<string, WorkbenchPanelConfigAny> = {
 			restrict: ["OWNER"],
 		},
 	]),
-	[WORKBENCH_COMPONENTS.ASSISTANT]: WORKBENCH_ASSISTANT_PANEL,
+	[WORKBENCH_COMPONENTS.ASSISTANT]: ASSISTANT_PANEL,
 };
 
 /**
@@ -150,6 +156,8 @@ export const AgentWorkbench: React.FC = () => {
 
 	const configureWorkbench = useWorkbench((s) => s.configure);
 
+	const assistantStore = useAssistantStore();
+
 	// keep the assistant's system prompt/tools in sync with the active skill
 	useEffect(() => {
 		const name = project.project_display_name || project.project_name;
@@ -160,19 +168,21 @@ export const AgentWorkbench: React.FC = () => {
 				id: project.project_id,
 				permission,
 			},
-			assistant: {
-				systemPrompt: `You are the assistant for the ${name} agent workbench (${project.project_id}). Your role is to help the user configure this agent and work with the rest of the project's files. Use only the tools provided in this room. Never claim that an operation succeeded unless its tool result confirms success. Keep answers concise and grounded in the active project.`,
-				mcp: [
-					{
-						type: "PROJECT",
-						id: project.project_id,
-						name: name,
-					},
-				],
-				runParams: { project: project.project_id },
-			},
+		});
+
+		assistantStore.getState().configure({
+			systemPrompt: `You are the assistant for the ${name} agent workbench (${project.project_id}). Your role is to help the user configure this agent and work with the rest of the project's files. Use only the tools provided in this room. Never claim that an operation succeeded unless its tool result confirms success. Keep answers concise and grounded in the active project.`,
+			mcp: [
+				{
+					type: "PROJECT",
+					id: project.project_id,
+					name: name,
+				},
+			],
+			runParams: { project: project.project_id },
 		});
 	}, [
+		assistantStore,
 		configureWorkbench,
 		permission,
 		project.project_display_name,
@@ -250,19 +260,21 @@ export const AgentWorkbench: React.FC = () => {
 	]);
 
 	return (
-		<Workbench
-			layout={workbenchLayout}
-			components={AGENT_WORKBENCH_COMPONENTS}
-			borderSlots={{
-				left: {
-					after: (
-						<>
-							<WorkbenchCommandMenuButton />
-							<ProjectSettingsToggle />
-						</>
-					),
-				},
-			}}
-		/>
+		<AssistantStoreProvider store={assistantStore}>
+			<Workbench
+				layout={workbenchLayout}
+				components={AGENT_WORKBENCH_COMPONENTS}
+				borderSlots={{
+					left: {
+						after: (
+							<>
+								<WorkbenchCommandMenuButton />
+								<ProjectSettingsToggle />
+							</>
+						),
+					},
+				}}
+			/>
+		</AssistantStoreProvider>
 	);
 };

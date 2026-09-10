@@ -3,12 +3,18 @@ import type { Role } from "@semoss/sdk";
 import { useInsight } from "@semoss/sdk/react";
 import type { FileExplorerApi } from "@semoss/shared";
 import { makeEngineRoomMcp } from "@/api/rooms";
-import { useEngine, useWorkbench, useWorkbenchCommands } from "@/hooks";
+import { ASSISTANT_PANEL } from "@/components/assistant";
+import { AssistantStoreProvider } from "@/contexts";
+import {
+	useAssistantStore,
+	useEngine,
+	useWorkbench,
+	useWorkbenchCommands,
+} from "@/hooks";
 import type {
 	WorkbenchLayout,
 	WorkbenchPanelConfigAny,
 } from "@/stores/workbench";
-import { WORKBENCH_ASSISTANT_PANEL } from "../../assistant";
 import { Workbench } from "../../core";
 import { WorkbenchCommandMenuButton } from "../../core/workbench-command-menu-button";
 import {
@@ -134,7 +140,7 @@ const VECTOR_WORKBENCH_COMPONENTS: Record<string, WorkbenchPanelConfigAny> = {
 			restrict: ["OWNER"],
 		},
 	]),
-	[WORKBENCH_COMPONENTS.ASSISTANT]: WORKBENCH_ASSISTANT_PANEL,
+	[WORKBENCH_COMPONENTS.ASSISTANT]: ASSISTANT_PANEL,
 };
 
 /**
@@ -153,6 +159,8 @@ export const VectorWorkbench: React.FC = () => {
 
 	const configureWorkbench = useWorkbench((s) => s.configure);
 
+	const assistantStore = useAssistantStore();
+
 	// Keep the assistant prompt and room tools in sync with the active engine.
 	useEffect(() => {
 		configureWorkbench({
@@ -161,13 +169,15 @@ export const VectorWorkbench: React.FC = () => {
 				id: engine.engine_id,
 				permission,
 			},
-			assistant: {
-				systemPrompt: `You are the assistant for the ${engine.engine_display_name || engine.engine_name} vector workbench (${engine.engine_id}, subtype ${engine.engine_subtype || "unknown"}). Use only the tools provided in this room and decide whether a tool is needed for each request. For questions about indexed content, call VectorDatabaseQuery before answering, ground the answer only in its returned chunks, and cite the Source and Divider when available. Use ListDocumentsInVectorDatabase when the user asks what is indexed. For requests to add, download, or remove vector documents, or to inspect or change engine asset files, use the matching room tool; honor its approval requirement and the user's permissions. When the user attaches a file and asks to index it, use the available attachment path with the document embedding tool. Simple greetings or general guidance that do not require engine data can be answered without a tool. Do not invent unsupported parameters, and never claim an operation succeeded unless its tool result confirms success.`,
-				prepareRoom: (insightId) =>
-					makeEngineRoomMcp(insightId, engine.engine_id),
-			},
+		});
+
+		assistantStore.getState().configure({
+			systemPrompt: `You are the assistant for the ${engine.engine_display_name || engine.engine_name} vector workbench (${engine.engine_id}, subtype ${engine.engine_subtype || "unknown"}). Use only the tools provided in this room and decide whether a tool is needed for each request. For questions about indexed content, call VectorDatabaseQuery before answering, ground the answer only in its returned chunks, and cite the Source and Divider when available. Use ListDocumentsInVectorDatabase when the user asks what is indexed. For requests to add, download, or remove vector documents, or to inspect or change engine asset files, use the matching room tool; honor its approval requirement and the user's permissions. When the user attaches a file and asks to index it, use the available attachment path with the document embedding tool. Simple greetings or general guidance that do not require engine data can be answered without a tool. Do not invent unsupported parameters, and never claim an operation succeeded unless its tool result confirms success.`,
+			prepareRoom: (insightId) =>
+				makeEngineRoomMcp(insightId, engine.engine_id),
 		});
 	}, [
+		assistantStore,
 		configureWorkbench,
 		engine.engine_display_name,
 		engine.engine_id,
@@ -289,19 +299,21 @@ export const VectorWorkbench: React.FC = () => {
 	]);
 
 	return (
-		<Workbench
-			layout={workbenchLayout}
-			components={VECTOR_WORKBENCH_COMPONENTS}
-			borderSlots={{
-				left: {
-					after: (
-						<>
-							<WorkbenchCommandMenuButton />
-							<EngineSettingsToggle />
-						</>
-					),
-				},
-			}}
-		/>
+		<AssistantStoreProvider store={assistantStore}>
+			<Workbench
+				layout={workbenchLayout}
+				components={VECTOR_WORKBENCH_COMPONENTS}
+				borderSlots={{
+					left: {
+						after: (
+							<>
+								<WorkbenchCommandMenuButton />
+								<EngineSettingsToggle />
+							</>
+						),
+					},
+				}}
+			/>
+		</AssistantStoreProvider>
 	);
 };

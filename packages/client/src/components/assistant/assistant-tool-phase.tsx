@@ -15,10 +15,10 @@ import {
 	CollapsibleTrigger,
 	cn,
 } from "@semoss/ui/next";
-import type { BuildTool } from "@/stores/workbench";
-import { formatMs, formatToolArgs } from "./workbench-assistant-format";
-import { WorkbenchAssistantMarkdown } from "./workbench-assistant-markdown";
-import type { ToolFamily } from "./workbench-assistant-tools";
+import type { BuildTool } from "@/stores/assistant";
+import { formatMs, formatToolArgs } from "./assistant-format";
+import { AssistantMarkdown } from "./assistant-markdown";
+import type { ToolFamily } from "./assistant-tools";
 import {
 	displayToolName,
 	isCompleteStatus,
@@ -26,7 +26,7 @@ import {
 	isToolFailure,
 	phaseTitle,
 	toolFamily,
-} from "./workbench-assistant-tools";
+} from "./assistant-tools";
 
 interface StatusDotProps {
 	/** Tool or phase status (e.g. "COMPLETED", "FAILED", "INPUT_REQUIRED") */
@@ -151,9 +151,9 @@ const ToolRow = ({ tool }: ToolRowProps) => {
 									Output
 								</p>
 								<div className="max-h-[360px] overflow-y-auto text-xs">
-									<WorkbenchAssistantMarkdown>
+									<AssistantMarkdown>
 										{tool.output}
-									</WorkbenchAssistantMarkdown>
+									</AssistantMarkdown>
 								</div>
 							</div>
 						) : null}
@@ -298,7 +298,7 @@ const ToolRollup = ({ group }: ToolRollupProps) => {
 	);
 };
 
-interface WorkbenchAssistantToolPhaseProps {
+interface AssistantToolPhaseProps {
 	/** The consecutive tool invocations grouped into this phase */
 	tools: BuildTool[];
 }
@@ -309,13 +309,11 @@ interface WorkbenchAssistantToolPhaseProps {
  * or needs input; auto-collapses when the phase completes unless the user
  * toggled it manually. Expands to the individual tool rows.
  *
- * @name WorkbenchAssistantToolPhase
+ * @name AssistantToolPhase
  * @param tools - The consecutive tool invocations grouped into this phase.
  * @return The collapsible tool-phase card.
  */
-export const WorkbenchAssistantToolPhase = ({
-	tools,
-}: WorkbenchAssistantToolPhaseProps) => {
+export const AssistantToolPhase = ({ tools }: AssistantToolPhaseProps) => {
 	const active = tools.some(isToolActive);
 	const failure = tools.some(isToolFailure);
 	const inputRequired = tools.some(

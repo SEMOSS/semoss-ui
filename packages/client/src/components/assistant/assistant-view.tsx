@@ -1,23 +1,25 @@
 import { MessageSquareIcon } from "lucide-react";
 import { useEffect } from "react";
 import { useInsight } from "@semoss/sdk/react";
-import { useWorkbench } from "@/hooks/use-workbench";
+import { useAssistant } from "@/hooks/use-assistant";
 import type { WorkbenchPanelConfig } from "@/stores/workbench";
-import { WorkbenchAssistantPanel } from "./workbench-assistant-panel";
+import { AssistantPanel } from "./assistant-panel";
 
 /**
- * Renders the workbench ASSISTANT panel, initializing the assistant slice for the
- * insight. Waits until the insight is ready, initializes the assistant slice for
- * the insight ID, and disposes the slice (dropping subscriptions and state)
- * when the panel unmounts or the insight changes.
+ * Renders the workbench ASSISTANT panel. Waits until the insight is ready,
+ * initializes the assistant store for that insight ID, and disposes it
+ * (dropping run watchers) when the panel unmounts or the insight changes.
  *
- * @name WorkbenchAssistantView
+ * `dispose()`, not `destroy()`: the store outlives any one insight. Its
+ * lifetime belongs to `useAssistantStore`, which owns the teardown.
+ *
+ * @name AssistantView
  * @return The assistant panel wired to the current insight.
  */
-const WorkbenchAssistantView = () => {
+const AssistantView = () => {
 	const insight = useInsight();
-	const initialize = useWorkbench((state) => state.assistant.initialize);
-	const dispose = useWorkbench((state) => state.assistant.dispose);
+	const initialize = useAssistant((state) => state.initialize);
+	const dispose = useAssistant((state) => state.dispose);
 
 	useEffect(() => {
 		if (!insight.isReady || !insight.insightId) {
@@ -27,7 +29,7 @@ const WorkbenchAssistantView = () => {
 		return () => dispose();
 	}, [insight.isReady, insight.insightId, initialize, dispose]);
 
-	return <WorkbenchAssistantPanel />;
+	return <AssistantPanel />;
 };
 
 /**
@@ -35,9 +37,9 @@ const WorkbenchAssistantView = () => {
  * eagerly so the assistant initializes (and can surface notifications) while
  * its border is still collapsed.
  *
- * @name WORKBENCH_ASSISTANT_PANEL
+ * @name ASSISTANT_PANEL
  */
-export const WORKBENCH_ASSISTANT_PANEL: WorkbenchPanelConfig = {
+export const ASSISTANT_PANEL: WorkbenchPanelConfig = {
 	name: "Assistant",
 	helpText: "Assistant",
 	icon: ({ className }) => <MessageSquareIcon className={className} />,
@@ -47,5 +49,5 @@ export const WORKBENCH_ASSISTANT_PANEL: WorkbenchPanelConfig = {
 	// conversation — so the shell's border header would stack on top of it
 	enableBorderHeader: false,
 	mount: "eager",
-	content: () => <WorkbenchAssistantView />,
+	content: () => <AssistantView />,
 };

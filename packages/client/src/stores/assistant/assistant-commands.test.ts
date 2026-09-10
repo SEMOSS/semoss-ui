@@ -1,8 +1,5 @@
 import { describe, expect, it } from "vitest";
-import {
-	getSlashSuggestions,
-	parseSlashCommands,
-} from "./workbench-assistant-commands";
+import { getSlashSuggestions, parseSlashCommands } from "./assistant-commands";
 
 describe("parseSlashCommands", () => {
 	it("applies a leading command and keeps the message", () => {

@@ -1,4 +1,7 @@
 import { useAPI } from "./use-api";
+import { useAssistant } from "./use-assistant";
+import { useAssistantStore } from "./use-assistant-store";
+import { useAssistantStoreApi } from "./use-assistant-store-api";
 import { useConfig } from "./use-config";
 import { useDatabaseWorkbench } from "./use-database-workbench";
 import { useModelChat } from "./use-model-chat";
@@ -27,6 +30,9 @@ import { useWorkspace } from "./useWorkspace";
 // increases production bundle size.
 export {
 	useAPI,
+	useAssistant,
+	useAssistantStore,
+	useAssistantStoreApi,
 	useConfig,
 	useDatabaseWorkbench,
 	useDesigner,

@@ -1,13 +1,6 @@
 import { createStore, type StoreApi } from "zustand";
 import type { Role } from "@semoss/sdk";
 import {
-	createWorkbenchAssistantNotificationSlice,
-	createWorkbenchAssistantSlice,
-	type WorkbenchAssistantConfig,
-	type WorkbenchAssistantNotificationSliceState,
-	type WorkbenchAssistantSliceState,
-} from "./assistant";
-import {
 	createWorkbenchAccessSlice,
 	createWorkbenchCommandSlice,
 	createWorkbenchControlsSlice,
@@ -27,7 +20,6 @@ interface WorkbenchConfiguration {
 		id: string;
 		permission: Role;
 	};
-	assistant?: WorkbenchAssistantConfig;
 }
 
 /**
@@ -37,15 +29,13 @@ interface WorkbenchConfiguration {
  * `const actions = useWorkbench((s) => s.layout.actions)`.
  */
 export interface WorkbenchState {
-	/** Configure the active resource and optional assistant in one update path. */
+	/** Record the active resource so panels can resolve its permission. */
 	configure: (configuration: WorkbenchConfiguration) => void;
 	access: WorkbenchAccessSliceState;
 	layout: WorkbenchLayoutSliceState;
 	loading: WorkbenchLoadingSliceState;
 	command: WorkbenchCommandSliceState;
 	control: WorkbenchControlsSliceState;
-	assistant: WorkbenchAssistantSliceState;
-	notifications: WorkbenchAssistantNotificationSliceState;
 }
 
 /**
@@ -53,10 +43,14 @@ export interface WorkbenchState {
  * workbenches own their independent stores and React contexts; this store
  * contains only generic workbench state.
  *
+ * The assistant is deliberately *not* a slice here. It owns its own store
+ * (`stores/assistant`), created by the domain workbench and provided
+ * separately, so the dock carries no agent-harness dependency.
+ *
  * @name createWorkbenchStore
  * @param cacheKey - Unique key used to isolate persisted workbench state.
- * @return Scoped workbench store composed from the layout, loading, command,
- * control, assistant, and assistant-notification slices.
+ * @return Scoped workbench store composed from the access, layout, loading,
+ * command, and control slices.
  */
 export const createWorkbenchStore = (
 	cacheKey: string,
@@ -69,38 +63,20 @@ export const createWorkbenchStore = (
 		const loading = createWorkbenchLoadingSlice()(set, get, api);
 		const command = createWorkbenchCommandSlice(cacheKey)(set, get, api);
 		const control = createWorkbenchControlsSlice()(set, get, api);
-		const assistant = createWorkbenchAssistantSlice(cacheKey)(
-			set,
-			get,
-			api,
-		);
-		// Subscribes to this store, so it is composed after the assistant
-		// slice it watches.
-		const notifications = createWorkbenchAssistantNotificationSlice()(
-			set,
-			get,
-			api,
-		);
 
 		return {
-			configure: (configuration) => {
-				const { resource, assistant: assistantConfig } = configuration;
+			configure: ({ resource }) => {
 				access.actions.syncPermission(
 					resource.type,
 					resource.id,
 					resource.permission,
 				);
-				if (assistantConfig) {
-					assistant.configure(assistantConfig);
-				}
 			},
 			access,
 			layout,
 			loading,
 			command,
 			control,
-			assistant,
-			notifications,
 		};
 	});
 };

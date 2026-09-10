@@ -1,3 +1,4 @@
+import { createStore, type StoreApi } from "zustand";
 import type { AgentRunItemEvent, AgentRunSnapshot } from "@semoss/sdk";
 import {
 	AgentStore,
@@ -26,13 +27,13 @@ import {
 	setRoomForInsight,
 	updateRoomOptions,
 } from "@/api/rooms";
-import type { WorkbenchSlice } from "../workbench.types";
+import type { WorkbenchState } from "../workbench/workbench.store";
 import type {
 	BuildAttachment,
 	BuildRun,
 	RunStore,
 	WorkbenchRunRecord,
-} from "./workbench-assistant.runs";
+} from "./assistant.runs";
 import {
 	applyStreamBatch,
 	attachDurableMessages,
@@ -44,13 +45,14 @@ import {
 	setRoomRuns,
 	startRun,
 	subagentSummaryToRecord,
-} from "./workbench-assistant.runs";
-import type { RoomUsageStats } from "./workbench-assistant.usage";
+} from "./assistant.runs";
+import type { RoomUsageStats } from "./assistant.usage";
 import {
 	calculateRoomUsage,
 	findLatestCompactableResponseId,
-} from "./workbench-assistant.usage";
-import { parseSlashCommands } from "./workbench-assistant-commands";
+} from "./assistant.usage";
+import { parseSlashCommands } from "./assistant-commands";
+import { attachAssistantNotifications } from "./assistant-notifications";
 
 /** Turn budget used when none is configured. */
 const DEFAULT_MAX_TURNS = 30;
@@ -68,17 +70,17 @@ const POLL_INTERVAL_MS = 300;
 const WORKBENCH_AGENT_ID = "app-builder";
 
 /** Permission mode forwarded to the agent harness for each run. */
-export type WorkbenchAssistantPermissionMode =
+export type AssistantPermissionMode =
 	| "default"
 	| "acceptEdits"
 	| "plan"
 	| "bypassPermissions";
 
 /** Reasoning-effort level forwarded to the model provider for each run. */
-export type WorkbenchAssistantEffort = "low" | "medium" | "high" | "max";
+export type AssistantEffort = "low" | "medium" | "high" | "max";
 
 /** Minimal reference to a backend agent workspace selected for assistant runs. */
-type WorkbenchAssistantAgent = {
+type AssistantAgent = {
 	/** Workspace id passed to RunAgent. */
 	workspace_id: string;
 	/** Display name retained for the settings selector. */
@@ -93,11 +95,11 @@ type WorkbenchAssistantAgent = {
  * @param effort - The user-facing effort level.
  * @return The value the harness expects.
  */
-const effortParamValue = (effort: WorkbenchAssistantEffort): string =>
+const effortParamValue = (effort: AssistantEffort): string =>
 	effort === "max" ? "xhigh" : effort;
 
 /** Configuration each workbench injects for its ASSISTANT panel. */
-export interface WorkbenchAssistantConfig {
+export interface AssistantConfig {
 	/** System prompt sent to the assistant. */
 	systemPrompt?: string;
 	/** Prepare the bound room's tools before an agent run starts. */
@@ -115,7 +117,7 @@ export interface WorkbenchAssistantConfig {
 	 */
 	runParams?: Record<string, unknown>;
 	/** Default permission mode for runs; the user can change it in settings. */
-	permissionMode?: WorkbenchAssistantPermissionMode | null;
+	permissionMode?: AssistantPermissionMode | null;
 	/**
 	 * Called after a root run reaches a terminal status and its durable
 	 * reconcile lands, with the run and the full run map (so the workbench can
@@ -131,7 +133,7 @@ export interface WorkbenchAssistantConfig {
 }
 
 /** Transient system feedback rendered inline on the Build tab timeline. */
-export interface WorkbenchAssistantNotice {
+export interface AssistantNotice {
 	/** Store-unique id used for dismissal. */
 	id: string;
 	/** Notice text shown to the user. */
@@ -142,8 +144,8 @@ export interface WorkbenchAssistantNotice {
 	timestamp: string;
 }
 
-/** Domain state the base assistant slice contributes, mounted at `assistant`. */
-export interface WorkbenchAssistantSliceState {
+/** Everything one workbench's assistant owns. */
+export interface AssistantState {
 	/** Insight the room and every agent pixel is scoped to. */
 	insightId: string | null;
 	/** Room the conversation is bound to, once created or resumed. */
@@ -173,13 +175,13 @@ export interface WorkbenchAssistantSliceState {
 	/** Model engine used for new runs. */
 	model: Engine | null;
 	/** Optional backend agent workspace used for new runs. */
-	agent: WorkbenchAssistantAgent | null;
+	agent: AssistantAgent | null;
 	/** Turn budget passed to RunAgent. */
 	maxTurns: number;
 	/** Permission mode for new runs; null defers to the harness default. */
-	permissionMode: WorkbenchAssistantPermissionMode | null;
+	permissionMode: AssistantPermissionMode | null;
 	/** Reasoning effort for new runs; null defers to the model default. */
-	effort: WorkbenchAssistantEffort | null;
+	effort: AssistantEffort | null;
 	/** Extended thinking for new runs; null defers to the model default. */
 	thinking: boolean | null;
 
@@ -194,7 +196,7 @@ export interface WorkbenchAssistantSliceState {
 	/** Unsent composer draft, preserved while the composer is unmounted. */
 	draft: string;
 	/** Transient notices rendered inline on the timeline. */
-	notices: WorkbenchAssistantNotice[];
+	notices: AssistantNotice[];
 	/** Aggregated token usage for the room, when loaded. */
 	usage: RoomUsageStats | null;
 	/** True while refreshUsage() is loading messages. */
@@ -215,15 +217,22 @@ export interface WorkbenchAssistantSliceState {
 	/** Abort every live watcher (view unmount / insight change). */
 	dispose: () => void;
 	/**
+	 * Tear the store down for good: `dispose()` plus detaching the run
+	 * notification watcher. Called once when the provider unmounts —
+	 * `dispose()` alone runs on every insight change, so it must not take
+	 * the notification subscription with it.
+	 */
+	destroy: () => void;
+	/**
 	 * Update one or more assistant config fields (systemPrompt, prepareRoom,
 	 * mcp, runParams, permissionMode, onRunCompleted) for this workbench
 	 * instance; omitted fields keep their values.
 	 */
-	configure: (config: WorkbenchAssistantConfig) => void;
+	configure: (config: AssistantConfig) => void;
 	/**
 	 * Send a prompt with optional image files: applies any leading slash
 	 * commands (/effort, /thinking, /mode, /compact — see
-	 * workbench-assistant-commands.ts), uploads the files, persists room
+	 * assistant-commands.ts), uploads the files, persists room
 	 * options, starts the durable run, and drains its stream to
 	 * completion. Failures surface as error notices. Resolves true when
 	 * a run was started or commands were applied, false when nothing
@@ -291,15 +300,13 @@ export interface WorkbenchAssistantSliceState {
 	/** Set the model engine used for new runs. */
 	setModel: (model: Engine) => void;
 	/** Set the backend agent workspace used for new runs. */
-	setAgent: (agent: WorkbenchAssistantAgent | null) => void;
+	setAgent: (agent: AssistantAgent | null) => void;
 	/** Set the turn budget; invalid values fall back to the default. */
 	setMaxTurns: (maxTurns: number) => void;
 	/** Set the permission mode for new runs (null = harness default). */
-	setPermissionMode: (
-		permissionMode: WorkbenchAssistantPermissionMode | null,
-	) => void;
+	setPermissionMode: (permissionMode: AssistantPermissionMode | null) => void;
 	/** Set the reasoning effort for new runs (null = model default). */
-	setEffort: (effort: WorkbenchAssistantEffort | null) => void;
+	setEffort: (effort: AssistantEffort | null) => void;
 	/** Set extended thinking for new runs (null = model default). */
 	setThinking: (thinking: boolean | null) => void;
 	/**
@@ -326,6 +333,19 @@ export interface WorkbenchAssistantSliceState {
 	compact: () => Promise<void>;
 	/** Remove the notice with the given id from the timeline. */
 	dismissNotice: (id: string) => void;
+}
+
+/** Everything one assistant instance is wired to. */
+export interface AssistantStoreDeps {
+	/** Workbench key persisted onto room options to scope conversation history. */
+	cacheKey: string;
+	/**
+	 * The workbench this assistant is mounted in. Nothing reads it yet — the
+	 * assistant never touches layout — but it is the seam layout-aware tools
+	 * will use (revealing a file the agent just edited), and it is what keeps
+	 * the dependency arrow pointing assistant -> workbench.
+	 */
+	workbench: StoreApi<WorkbenchState>;
 }
 
 /**
@@ -368,18 +388,19 @@ const toErrorMessage = (error: unknown): string =>
 	error instanceof Error ? error.message : String(error);
 
 /**
- * Creates the base `assistant` slice merged into every workbench store: the
+ * Creates the assistant store for one workbench: the
  * workbench-injected system prompt and room preparation plus the full RunAgent
  * runtime — durable run projections fed by the agentRunStreaming poll loop,
  * conversation history, and room usage.
  *
- * @name createWorkbenchAssistantSlice
- * @param cacheKey - Workbench key persisted onto room options to scope conversation history.
- * @return Zustand state creator contributing the `assistant` key to the workbench store.
+ * @name createAssistantStore
+ * @param deps - The workbench this assistant is mounted in, plus its cache key.
+ * @return The assistant store for one workbench instance.
  */
-export const createWorkbenchAssistantSlice = (
-	cacheKey: string,
-): WorkbenchSlice<WorkbenchAssistantSliceState> => {
+export const createAssistantStore = (
+	deps: AssistantStoreDeps,
+): StoreApi<AssistantState> => {
+	const { cacheKey } = deps;
 	// Runtime owned by this store instance, deliberately outside reactive
 	// state. Each entry pairs the live AgentStore (for pokeNow/stop) with a
 	// promise that resolves at the run's first pause or terminal status --
@@ -396,17 +417,17 @@ export const createWorkbenchAssistantSlice = (
 		null;
 	let noticeCounter = 0;
 
-	return (set, get) => {
+	let detachNotifications: (() => void) | null = null;
+
+	const store = createStore<AssistantState>()((set, get) => {
 		/**
-		 * Shallow-merge a partial update into the `assistant` slice state.
+		 * Shallow-merge a partial update into the assistant state.
 		 *
 		 * @name setAssistant
 		 * @param partial - Assistant state fields to overwrite.
 		 */
-		const setAssistant = (
-			partial: Partial<WorkbenchAssistantSliceState>,
-		): void => {
-			set((state) => ({ assistant: { ...state.assistant, ...partial } }));
+		const setAssistant = (partial: Partial<AssistantState>): void => {
+			set((state) => ({ ...state, ...partial }));
 		};
 
 		/**
@@ -420,11 +441,11 @@ export const createWorkbenchAssistantSlice = (
 		const updateRunStore = (transition: (store: RunStore) => RunStore) => {
 			set((state) => {
 				const next = transition({
-					runs: state.assistant.runs,
-					roomRunIds: state.assistant.roomRunIds,
-					activeRunId: state.assistant.activeRunId,
+					runs: state.runs,
+					roomRunIds: state.roomRunIds,
+					activeRunId: state.activeRunId,
 				});
-				return { assistant: { ...state.assistant, ...next } };
+				return { ...state, ...next };
 			});
 		};
 
@@ -437,17 +458,15 @@ export const createWorkbenchAssistantSlice = (
 		 */
 		const pushNotice = (text: string, tone: "info" | "error" = "info") => {
 			noticeCounter += 1;
-			const notice: WorkbenchAssistantNotice = {
+			const notice: AssistantNotice = {
 				id: `notice-${noticeCounter}`,
 				text,
 				tone,
 				timestamp: new Date().toISOString(),
 			};
 			set((state) => ({
-				assistant: {
-					...state.assistant,
-					notices: [...state.assistant.notices, notice],
-				},
+				...state,
+				notices: [...state.notices, notice],
 			}));
 		};
 
@@ -485,7 +504,7 @@ export const createWorkbenchAssistantSlice = (
 			const existing = activeWatchers.get(runId);
 			if (existing) return existing.promise;
 
-			const insightId = get().assistant.insightId;
+			const insightId = get().insightId;
 			if (!insightId) {
 				return Promise.reject(
 					new Error("Assistant is not initialized"),
@@ -509,7 +528,7 @@ export const createWorkbenchAssistantSlice = (
 			const watchChild = (childRunId?: string) => {
 				if (!childRunId || childRunId === runId) return;
 				if (activeWatchers.has(childRunId)) return;
-				const child = get().assistant.runs[childRunId];
+				const child = get().runs[childRunId];
 				if (
 					child &&
 					isTerminalAgentRunStatus(child.status) &&
@@ -537,11 +556,7 @@ export const createWorkbenchAssistantSlice = (
 			// per poll instead of one per event.
 			let pendingEvents: AgentRunItemEvent[] = [];
 
-			const agent = new AgentStore(
-				get().assistant.roomId ?? "",
-				insightId,
-				runId,
-			);
+			const agent = new AgentStore(get().roomId ?? "", insightId, runId);
 			const subscription = agent.watch(
 				{
 					onEvent: (event) => {
@@ -573,9 +588,7 @@ export const createWorkbenchAssistantSlice = (
 								watchChild(event.item.childRunId);
 							}
 						}
-						get().assistant.runs[runId]?.childRunIds.forEach(
-							watchChild,
-						);
+						get().runs[runId]?.childRunIds.forEach(watchChild);
 						if (snapshot.status === "INPUT_REQUIRED") {
 							resolvePause(snapshot);
 						}
@@ -596,7 +609,7 @@ export const createWorkbenchAssistantSlice = (
 						);
 						if (!isTerminalAgentRunStatus(record.status)) return;
 
-						const assistant = get().assistant;
+						const assistant = get();
 						const run = assistant.runs[runId];
 						if (
 							run &&
@@ -632,7 +645,7 @@ export const createWorkbenchAssistantSlice = (
 					(snapshot) =>
 						snapshot ?? {
 							runId,
-							roomId: get().assistant.roomId ?? "",
+							roomId: get().roomId ?? "",
 							status: "SUBMITTED" as const,
 							pendingActions: [],
 						},
@@ -663,7 +676,7 @@ export const createWorkbenchAssistantSlice = (
 		): Promise<
 			(AgentRunSnapshot & { messages?: PlaygroundMessage[] }) | null
 		> => {
-			const insightId = get().assistant.insightId;
+			const insightId = get().insightId;
 			if (!insightId) return null;
 
 			const record = await getAgentRun<PlaygroundMessage>(
@@ -739,14 +752,14 @@ export const createWorkbenchAssistantSlice = (
 					try {
 						const [roomId, model] = await Promise.all([
 							createWorkbenchRoom(insightId),
-							get().assistant.model
-								? Promise.resolve(get().assistant.model)
+							get().model
+								? Promise.resolve(get().model)
 								: getDefaultWorkbenchAssistantModel(insightId),
 						]);
 						setAssistant({
 							roomId,
 							roomName: null,
-							model: model ?? get().assistant.model,
+							model: model ?? get().model,
 							isInitializing: false,
 						});
 					} catch (error) {
@@ -767,14 +780,21 @@ export const createWorkbenchAssistantSlice = (
 				activeWatchers.clear();
 			},
 
+			destroy: () => {
+				get().dispose();
+				detachNotifications?.();
+				detachNotifications = null;
+			},
+
 			configure: (config) => {
 				set((state) => ({
-					assistant: { ...state.assistant, ...config },
+					...state,
+					...config,
 				}));
 			},
 
 			submit: async (prompt, files = []) => {
-				const assistant = get().assistant;
+				const assistant = get();
 				if (
 					!assistant.insightId ||
 					!assistant.roomId ||
@@ -788,7 +808,7 @@ export const createWorkbenchAssistantSlice = (
 				// message before any send-readiness checks — a
 				// commands-only submission needs no model or tools.
 				const parsed = parseSlashCommands(prompt);
-				const settingsPatch: Partial<WorkbenchAssistantSliceState> = {};
+				const settingsPatch: Partial<AssistantState> = {};
 				if (parsed.effort !== undefined) {
 					settingsPatch.effort = parsed.effort;
 				}
@@ -808,13 +828,13 @@ export const createWorkbenchAssistantSlice = (
 					pushNotice(message, "error");
 				}
 				if (parsed.compact) {
-					if (get().assistant.activeRunId) {
+					if (get().activeRunId) {
 						pushNotice(
 							"Wait for the current run to finish before compacting.",
 							"error",
 						);
 					} else {
-						await get().assistant.compact();
+						await get().compact();
 					}
 				}
 
@@ -868,14 +888,14 @@ export const createWorkbenchAssistantSlice = (
 					}
 
 					await updateRoomOptions(insightId, roomId, {
-						instructions: get().assistant.systemPrompt,
+						instructions: get().systemPrompt,
 						// Engine workbenches load tools from the room's MCP
 						// file (prepareRoom); project workbenches pass their
 						// MCP entries directly.
-						mcp: get().assistant.mcp,
+						mcp: get().mcp,
 						predefinedPrompts: [],
 						modelId: model.engine_id,
-						workspace: get().assistant.agent,
+						workspace: get().agent,
 						harnessType: "semoss",
 						workbench: cacheKey,
 					});
@@ -885,7 +905,7 @@ export const createWorkbenchAssistantSlice = (
 					// so harness/model defaults apply. "ultrathink" in the
 					// message one-shots maximum reasoning without changing
 					// the saved settings.
-					const assistantNow = get().assistant;
+					const assistantNow = get();
 					const effectiveEffort = parsed.ultrathink
 						? "max"
 						: assistantNow.effort;
@@ -922,7 +942,7 @@ export const createWorkbenchAssistantSlice = (
 							agentId:
 								assistantNow.agent?.workspace_id ??
 								WORKBENCH_AGENT_ID,
-							maxTurns: get().assistant.maxTurns,
+							maxTurns: get().maxTurns,
 							maxReflections: 0,
 							media: attachments
 								.map((attachment) => attachment.fileLocation)
@@ -948,7 +968,7 @@ export const createWorkbenchAssistantSlice = (
 							status: record.status ?? "SUBMITTED",
 						}),
 					);
-					const isFirstTurn = get().assistant.roomRunIds.length === 1;
+					const isFirstTurn = get().roomRunIds.length === 1;
 
 					// The signal active when this run attached — the outer
 					// abortController is re-armed on room switches, so the
@@ -966,7 +986,7 @@ export const createWorkbenchAssistantSlice = (
 						pushNotice(
 							buildRunFailureMessage(
 								finalSnapshot,
-								get().assistant.maxTurns,
+								get().maxTurns,
 							),
 							"error",
 						);
@@ -994,25 +1014,20 @@ export const createWorkbenchAssistantSlice = (
 							void renameRoomPixel(insightId, roomId, autoName)
 								.then(() => {
 									set((state) => ({
-										assistant: {
-											...state.assistant,
-											roomName:
-												state.assistant.roomId ===
-												roomId
-													? autoName
-													: state.assistant.roomName,
-											conversations:
-												state.assistant.conversations.map(
-													(room) =>
-														room.roomId === roomId
-															? {
-																	...room,
-																	roomName:
-																		autoName,
-																}
-															: room,
-												),
-										},
+										...state,
+										roomName:
+											state.roomId === roomId
+												? autoName
+												: state.roomName,
+										conversations: state.conversations.map(
+											(room) =>
+												room.roomId === roomId
+													? {
+															...room,
+															roomName: autoName,
+														}
+													: room,
+										),
 									}));
 								})
 								.catch((error) => {
@@ -1021,7 +1036,7 @@ export const createWorkbenchAssistantSlice = (
 						}
 					}
 
-					void get().assistant.refreshUsage();
+					void get().refreshUsage();
 					return true;
 				} catch (error) {
 					pushNotice(toErrorMessage(error), "error");
@@ -1032,7 +1047,7 @@ export const createWorkbenchAssistantSlice = (
 			},
 
 			decideAction: async (runId, actionId, decision) => {
-				const insightId = get().assistant.insightId;
+				const insightId = get().insightId;
 				if (!insightId) return;
 
 				await decideAgentRunAction({ actionId, decision }, insightId);
@@ -1044,12 +1059,12 @@ export const createWorkbenchAssistantSlice = (
 				if (watcher) {
 					watcher.agent.pokeNow();
 				} else {
-					await get().assistant.reconcileRun(runId);
+					await get().reconcileRun(runId);
 				}
 			},
 
 			respondUserInput: async (runId, actionId, answers) => {
-				const insightId = get().assistant.insightId;
+				const insightId = get().insightId;
 				if (!insightId) return;
 
 				await decideAgentRunAction(
@@ -1064,7 +1079,7 @@ export const createWorkbenchAssistantSlice = (
 				if (watcher) {
 					watcher.agent.pokeNow();
 				} else {
-					await get().assistant.reconcileRun(runId);
+					await get().reconcileRun(runId);
 				}
 			},
 
@@ -1086,7 +1101,7 @@ export const createWorkbenchAssistantSlice = (
 					// active run again (root runs only) and that a stream
 					// subscription is attached; attachWatcher dedups onto
 					// any existing one.
-					const run = get().assistant.runs[runId];
+					const run = get().runs[runId];
 					if (run && !run.parentRunId) {
 						setAssistant({ activeRunId: runId });
 					}
@@ -1107,7 +1122,7 @@ export const createWorkbenchAssistantSlice = (
 			},
 
 			newRoom: async () => {
-				const insightId = get().assistant.insightId;
+				const insightId = get().insightId;
 				if (!insightId) return;
 
 				resetRuntime();
@@ -1129,7 +1144,7 @@ export const createWorkbenchAssistantSlice = (
 			},
 
 			loadConversations: async () => {
-				const insightId = get().assistant.insightId;
+				const insightId = get().insightId;
 				if (!insightId) return;
 
 				setAssistant({ isLoadingConversations: true });
@@ -1147,14 +1162,13 @@ export const createWorkbenchAssistantSlice = (
 			},
 
 			resumeRoom: async (roomId) => {
-				const insightId = get().assistant.insightId;
-				if (!insightId || get().assistant.roomId === roomId) return;
+				const insightId = get().insightId;
+				if (!insightId || get().roomId === roomId) return;
 
 				resetRuntime();
 				const roomName =
-					get().assistant.conversations.find(
-						(room) => room.roomId === roomId,
-					)?.roomName ?? null;
+					get().conversations.find((room) => room.roomId === roomId)
+						?.roomName ?? null;
 				setAssistant({
 					...createEmptyRunStore(),
 					roomId,
@@ -1178,7 +1192,7 @@ export const createWorkbenchAssistantSlice = (
 							: "";
 					if (
 						persistedModelId &&
-						persistedModelId !== get().assistant.model?.engine_id
+						persistedModelId !== get().model?.engine_id
 					) {
 						const model = await resolveWorkbenchAssistantModel(
 							insightId,
@@ -1297,14 +1311,14 @@ export const createWorkbenchAssistantSlice = (
 						);
 					}
 
-					void get().assistant.refreshUsage();
+					void get().refreshUsage();
 				} catch (error) {
 					pushNotice(toErrorMessage(error), "error");
 				}
 			},
 
 			renameRoom: async (roomId, name) => {
-				const insightId = get().assistant.insightId;
+				const insightId = get().insightId;
 				const trimmed = name.trim();
 				if (!insightId || !trimmed) {
 					throw new Error("Room name is required");
@@ -1312,19 +1326,14 @@ export const createWorkbenchAssistantSlice = (
 
 				await renameRoomPixel(insightId, roomId, trimmed);
 				set((state) => ({
-					assistant: {
-						...state.assistant,
-						roomName:
-							state.assistant.roomId === roomId
-								? trimmed
-								: state.assistant.roomName,
-						conversations: state.assistant.conversations.map(
-							(room) =>
-								room.roomId === roomId
-									? { ...room, roomName: trimmed }
-									: room,
-						),
-					},
+					...state,
+					roomName:
+						state.roomId === roomId ? trimmed : state.roomName,
+					conversations: state.conversations.map((room) =>
+						room.roomId === roomId
+							? { ...room, roomName: trimmed }
+							: room,
+					),
 				}));
 			},
 
@@ -1343,17 +1352,15 @@ export const createWorkbenchAssistantSlice = (
 			setThinking: (thinking) => setAssistant({ thinking }),
 			setDraft: (draft) =>
 				set((state) => ({
-					assistant: {
-						...state.assistant,
-						draft:
-							typeof draft === "function"
-								? draft(state.assistant.draft)
-								: draft,
-					},
+					...state,
+					draft:
+						typeof draft === "function"
+							? draft(state.draft)
+							: draft,
 				})),
 
 			stop: async () => {
-				const { insightId, activeRunId } = get().assistant;
+				const { insightId, activeRunId } = get();
 				if (!insightId || !activeRunId) return;
 
 				try {
@@ -1367,7 +1374,7 @@ export const createWorkbenchAssistantSlice = (
 			},
 
 			refreshUsage: async () => {
-				const { insightId, roomId } = get().assistant;
+				const { insightId, roomId } = get();
 				if (!insightId || !roomId) return;
 
 				setAssistant({ isLoadingUsage: true });
@@ -1385,7 +1392,7 @@ export const createWorkbenchAssistantSlice = (
 			},
 
 			compact: async () => {
-				const { insightId, roomId } = get().assistant;
+				const { insightId, roomId } = get();
 				if (!insightId || !roomId) return;
 
 				try {
@@ -1418,7 +1425,7 @@ export const createWorkbenchAssistantSlice = (
 					} else {
 						pushNotice("Room context compacted.");
 					}
-					void get().assistant.refreshUsage();
+					void get().refreshUsage();
 				} catch (error) {
 					pushNotice(toErrorMessage(error), "error");
 				}
@@ -1426,14 +1433,14 @@ export const createWorkbenchAssistantSlice = (
 
 			dismissNotice: (id) => {
 				set((state) => ({
-					assistant: {
-						...state.assistant,
-						notices: state.assistant.notices.filter(
-							(notice) => notice.id !== id,
-						),
-					},
+					...state,
+					notices: state.notices.filter((notice) => notice.id !== id),
 				}));
 			},
 		};
-	};
+	});
+
+	detachNotifications = attachAssistantNotifications(store);
+
+	return store;
 };

@@ -4,7 +4,7 @@ import {
 	TooltipContent,
 	TooltipTrigger,
 } from "@semoss/ui/next";
-import { useWorkbench } from "@/hooks/use-workbench";
+import { useAssistant } from "@/hooks/use-assistant";
 
 /**
  * Format a token count in compact notation ("12.4K").
@@ -22,17 +22,15 @@ const formatTokenCount = (tokens: number): string =>
 /**
  * The room's token/context display: a compact context-token chip with a
  * breakdown tooltip (current context, total processed, messages, cache
- * reads/writes, thinking), reading usage state from the assistant slice. Renders
+ * reads/writes, thinking), reading usage state from the assistant store. Renders
  * nothing until usage data exists or is being loaded.
  *
- * @name WorkbenchAssistantUsage
+ * @name AssistantUsage
  * @return The usage chip with its breakdown tooltip, or null.
  */
-export const WorkbenchAssistantUsage = () => {
-	const usage = useWorkbench((state) => state.assistant.usage);
-	const isLoadingUsage = useWorkbench(
-		(state) => state.assistant.isLoadingUsage,
-	);
+export const AssistantUsage = () => {
+	const usage = useAssistant((state) => state.usage);
+	const isLoadingUsage = useAssistant((state) => state.isLoadingUsage);
 
 	if (!usage && !isLoadingUsage) {
 		return null;

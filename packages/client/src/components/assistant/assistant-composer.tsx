@@ -16,11 +16,11 @@ import {
 	TooltipTrigger,
 	toast,
 } from "@semoss/ui/next";
-import { useWorkbench } from "@/hooks/use-workbench";
-import type { SlashSuggestion } from "@/stores/workbench";
-import { getSlashSuggestions } from "@/stores/workbench";
+import { useAssistant } from "@/hooks/use-assistant";
+import type { SlashSuggestion } from "@/stores/assistant";
+import { getSlashSuggestions } from "@/stores/assistant";
 import { ensureBrowserNotificationPermission } from "@/utility";
-import { WorkbenchAssistantUsage } from "./workbench-assistant-usage";
+import { AssistantUsage } from "./assistant-usage";
 
 const MAX_ATTACHMENTS = 5;
 const MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024;
@@ -123,20 +123,18 @@ const PendingFileStrip = ({
  * submit restores the draft and its attachments, and image previews revoke
  * their object URLs on removal, send, and unmount.
  *
- * @name WorkbenchAssistantComposer
+ * @name AssistantComposer
  * @return The assistant composer footer.
  */
-export const WorkbenchAssistantComposer = () => {
-	const roomId = useWorkbench((state) => state.assistant.roomId);
-	const isInitializing = useWorkbench(
-		(state) => state.assistant.isInitializing,
-	);
-	const isSending = useWorkbench((state) => state.assistant.isSending);
-	const activeRunId = useWorkbench((state) => state.assistant.activeRunId);
-	const submit = useWorkbench((state) => state.assistant.submit);
-	const stop = useWorkbench((state) => state.assistant.stop);
-	const draft = useWorkbench((state) => state.assistant.draft);
-	const setDraft = useWorkbench((state) => state.assistant.setDraft);
+export const AssistantComposer = () => {
+	const roomId = useAssistant((state) => state.roomId);
+	const isInitializing = useAssistant((state) => state.isInitializing);
+	const isSending = useAssistant((state) => state.isSending);
+	const activeRunId = useAssistant((state) => state.activeRunId);
+	const submit = useAssistant((state) => state.submit);
+	const stop = useAssistant((state) => state.stop);
+	const draft = useAssistant((state) => state.draft);
+	const setDraft = useAssistant((state) => state.setDraft);
 	const [files, setFiles] = useState<PendingFile[]>([]);
 	const [isDraggingFiles, setIsDraggingFiles] = useState(false);
 	const [isStopping, setIsStopping] = useState(false);
@@ -461,7 +459,7 @@ export const WorkbenchAssistantComposer = () => {
 						<TooltipContent>Attach files</TooltipContent>
 					</Tooltip>
 
-					<WorkbenchAssistantUsage />
+					<AssistantUsage />
 
 					<div className="min-w-0 flex-1" />
 

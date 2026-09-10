@@ -2,10 +2,10 @@ import { CheckIcon, PencilIcon, PlusIcon, XIcon } from "lucide-react";
 import type { KeyboardEvent } from "react";
 import { useEffect, useState } from "react";
 import { Button, cn, Input, ScrollArea, Spinner, toast } from "@semoss/ui/next";
-import { useWorkbench } from "@/hooks/use-workbench";
-import { formatSessionDate } from "./workbench-assistant-format";
+import { useAssistant } from "@/hooks/use-assistant";
+import { formatSessionDate } from "./assistant-format";
 
-interface WorkbenchAssistantConversationsProps {
+interface AssistantConversationsProps {
 	/** Called after a room is resumed or created so the panel can return to the assistant view */
 	onConversationSelected: () => void;
 }
@@ -16,27 +16,23 @@ interface WorkbenchAssistantConversationsProps {
  * and resumes a room on click. Loads the conversation list on mount and
  * offers a new-conversation action above the list.
  *
- * @name WorkbenchAssistantConversations
+ * @name AssistantConversations
  * @param onConversationSelected - Called after a room is resumed or created
  * so the panel can return to the assistant view.
  * @return The conversation history list view.
  */
-export const WorkbenchAssistantConversations = ({
+export const AssistantConversations = ({
 	onConversationSelected,
-}: WorkbenchAssistantConversationsProps) => {
-	const activeRoomId = useWorkbench((state) => state.assistant.roomId);
-	const conversations = useWorkbench(
-		(state) => state.assistant.conversations,
+}: AssistantConversationsProps) => {
+	const activeRoomId = useAssistant((state) => state.roomId);
+	const conversations = useAssistant((state) => state.conversations);
+	const isLoadingConversations = useAssistant(
+		(state) => state.isLoadingConversations,
 	);
-	const isLoadingConversations = useWorkbench(
-		(state) => state.assistant.isLoadingConversations,
-	);
-	const loadConversations = useWorkbench(
-		(state) => state.assistant.loadConversations,
-	);
-	const resumeRoom = useWorkbench((state) => state.assistant.resumeRoom);
-	const renameRoom = useWorkbench((state) => state.assistant.renameRoom);
-	const newRoom = useWorkbench((state) => state.assistant.newRoom);
+	const loadConversations = useAssistant((state) => state.loadConversations);
+	const resumeRoom = useAssistant((state) => state.resumeRoom);
+	const renameRoom = useAssistant((state) => state.renameRoom);
+	const newRoom = useAssistant((state) => state.newRoom);
 
 	const [editingRoomId, setEditingRoomId] = useState<string | null>(null);
 	const [draftRoomName, setDraftRoomName] = useState("");

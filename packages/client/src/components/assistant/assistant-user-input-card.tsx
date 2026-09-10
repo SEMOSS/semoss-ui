@@ -1,10 +1,10 @@
 import { useMemo } from "react";
 import { parseUserInputRequest } from "@semoss/sdk";
 import { AgentUserInputCard } from "@semoss/ui/next";
-import { useWorkbench } from "@/hooks/use-workbench";
-import type { BuildPendingAction, BuildRun } from "@/stores/workbench";
+import { useAssistant } from "@/hooks/use-assistant";
+import type { BuildPendingAction, BuildRun } from "@/stores/assistant";
 
-interface WorkbenchAssistantUserInputCardProps {
+interface AssistantUserInputCardProps {
 	/** The run awaiting the user's answers */
 	run: BuildRun;
 
@@ -17,18 +17,16 @@ interface WorkbenchAssistantUserInputCardProps {
  * parses this action's args and submits answers back through the
  * workbench's own respondUserInput.
  *
- * @name WorkbenchAssistantUserInputCard
+ * @name AssistantUserInputCard
  * @param run - The run awaiting the user's answers.
  * @param action - The pending RequestUserInput action defining the form.
  * @return The user-input form card, or an invalid-request notice.
  */
-export const WorkbenchAssistantUserInputCard = ({
+export const AssistantUserInputCard = ({
 	run,
 	action,
-}: WorkbenchAssistantUserInputCardProps) => {
-	const respondUserInput = useWorkbench(
-		(state) => state.assistant.respondUserInput,
-	);
+}: AssistantUserInputCardProps) => {
+	const respondUserInput = useAssistant((state) => state.respondUserInput);
 	const request = useMemo(() => parseUserInputRequest(action), [action]);
 
 	if (!request) {

@@ -17,15 +17,15 @@ import {
 	TooltipTrigger,
 	toast,
 } from "@semoss/ui/next";
-import { useWorkbench } from "@/hooks/use-workbench";
-import { WORKBENCH_STYLES } from "../core/workbench.chrome";
-import { WorkbenchAssistantComposer } from "./workbench-assistant-composer";
-import { WorkbenchAssistantConversations } from "./workbench-assistant-conversations";
-import { WorkbenchAssistantSettings } from "./workbench-assistant-settings";
-import { WorkbenchAssistantTimeline } from "./workbench-assistant-timeline";
+import { WORKBENCH_STYLES } from "@/components/workbench/core/workbench.chrome";
+import { useAssistant } from "@/hooks/use-assistant";
+import { AssistantComposer } from "./assistant-composer";
+import { AssistantConversations } from "./assistant-conversations";
+import { AssistantSettings } from "./assistant-settings";
+import { AssistantTimeline } from "./assistant-timeline";
 
 /** Which body the panel is currently showing. */
-type WorkbenchAssistantView = "assistant" | "conversations" | "settings";
+type AssistantView = "assistant" | "conversations" | "settings";
 
 /**
  * The workbench ASSISTANT border panel shell: a header with the room title,
@@ -34,22 +34,20 @@ type WorkbenchAssistantView = "assistant" | "conversations" | "settings";
  * settings. Toggling an already-active view returns to the assistant, and
  * initialization errors surface as a destructive alert under the header.
  *
- * @name WorkbenchAssistantPanel
+ * @name AssistantPanel
  * @return The assistant panel shell with its header and active body view.
  */
-export const WorkbenchAssistantPanel = () => {
-	const roomName = useWorkbench((state) => state.assistant.roomName);
-	const initError = useWorkbench((state) => state.assistant.initError);
-	const isInitializing = useWorkbench(
-		(state) => state.assistant.isInitializing,
-	);
-	const isSending = useWorkbench((state) => state.assistant.isSending);
-	const newRoom = useWorkbench((state) => state.assistant.newRoom);
-	const onRebuild = useWorkbench((state) => state.assistant.onRebuild);
-	const [view, setView] = useState<WorkbenchAssistantView>("assistant");
+export const AssistantPanel = () => {
+	const roomName = useAssistant((state) => state.roomName);
+	const initError = useAssistant((state) => state.initError);
+	const isInitializing = useAssistant((state) => state.isInitializing);
+	const isSending = useAssistant((state) => state.isSending);
+	const newRoom = useAssistant((state) => state.newRoom);
+	const onRebuild = useAssistant((state) => state.onRebuild);
+	const [view, setView] = useState<AssistantView>("assistant");
 	const [isRebuilding, setIsRebuilding] = useState(false);
 
-	const toggleView = (target: WorkbenchAssistantView) => {
+	const toggleView = (target: AssistantView) => {
 		setView((current) => (current === target ? "assistant" : target));
 	};
 
@@ -68,7 +66,7 @@ export const WorkbenchAssistantPanel = () => {
 	return (
 		<div
 			className="flex h-full min-h-0 w-full flex-col bg-background"
-			data-testid="workbench-assistant-panel"
+			data-testid="assistant-panel"
 		>
 			{/* this panel opts out of the shell's border header
 			    (`enableBorderHeader: false`) and draws its own — same height,
@@ -221,15 +219,15 @@ export const WorkbenchAssistantPanel = () => {
 
 			{view === "assistant" ? (
 				<>
-					<WorkbenchAssistantTimeline />
-					<WorkbenchAssistantComposer />
+					<AssistantTimeline />
+					<AssistantComposer />
 				</>
 			) : view === "conversations" ? (
-				<WorkbenchAssistantConversations
+				<AssistantConversations
 					onConversationSelected={() => setView("assistant")}
 				/>
 			) : (
-				<WorkbenchAssistantSettings />
+				<AssistantSettings />
 			)}
 		</div>
 	);

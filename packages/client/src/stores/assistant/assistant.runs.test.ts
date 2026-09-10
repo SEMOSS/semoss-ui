@@ -1,10 +1,6 @@
 import { describe, expect, it } from "vitest";
-import type { RunStore } from "./workbench-assistant.runs";
-import {
-	applyStreamBatch,
-	mergeDurableRun,
-	startRun,
-} from "./workbench-assistant.runs";
+import type { RunStore } from "./assistant.runs";
+import { applyStreamBatch, mergeDurableRun, startRun } from "./assistant.runs";
 
 /** A store seeded with one freshly submitted run. */
 const seedStore = (): RunStore =>

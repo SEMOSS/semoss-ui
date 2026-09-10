@@ -4,8 +4,11 @@ import type { Role } from "@semoss/sdk";
 import { useInsight } from "@semoss/sdk/react";
 import type { FileExplorerApi } from "@semoss/shared";
 import { makeEngineRoomMcp } from "@/api/rooms";
+import { ASSISTANT_PANEL } from "@/components/assistant";
+import { AssistantStoreProvider } from "@/contexts";
 import { DatabaseWorkbenchStoreProvider } from "@/contexts/database-workbench.context";
 import {
+	useAssistantStore,
 	useEngine,
 	useWorkbench,
 	useWorkbenchCommands,
@@ -19,7 +22,6 @@ import {
 	createDatabaseWorkbenchStore,
 	type DatabaseWorkbenchState,
 } from "@/stores/workbench/database";
-import { WORKBENCH_ASSISTANT_PANEL } from "../../assistant";
 import { Workbench } from "../../core";
 import { WorkbenchCommandMenuButton } from "../../core/workbench-command-menu-button";
 import {
@@ -163,7 +165,7 @@ const DATABASE_WORKBENCH_COMPONENTS: Record<string, WorkbenchPanelConfigAny> = {
 			restrict: ["OWNER"],
 		},
 	]),
-	[WORKBENCH_COMPONENTS.ASSISTANT]: WORKBENCH_ASSISTANT_PANEL,
+	[WORKBENCH_COMPONENTS.ASSISTANT]: ASSISTANT_PANEL,
 };
 
 /**
@@ -197,6 +199,8 @@ export const DatabaseWorkbench: React.FC = () => {
 
 	const configureWorkbench = useWorkbench((s) => s.configure);
 
+	const assistantStore = useAssistantStore();
+
 	// Keep the assistant prompt and room tools in sync with the active engine.
 	useEffect(() => {
 		configureWorkbench({
@@ -205,13 +209,15 @@ export const DatabaseWorkbench: React.FC = () => {
 				id: engine.engine_id,
 				permission,
 			},
-			assistant: {
-				systemPrompt: `You are the assistant for the ${engine.engine_display_name || engine.engine_name} workbench (${engine.engine_id}). Your role is to help the user understand and work with this database. Use only the tools provided in this room. Never claim that an operation succeeded unless its tool result confirms success. Keep answers concise and grounded in the active engine.`,
-				prepareRoom: (insightId) =>
-					makeEngineRoomMcp(insightId, engine.engine_id),
-			},
+		});
+
+		assistantStore.getState().configure({
+			systemPrompt: `You are the assistant for the ${engine.engine_display_name || engine.engine_name} workbench (${engine.engine_id}). Your role is to help the user understand and work with this database. Use only the tools provided in this room. Never claim that an operation succeeded unless its tool result confirms success. Keep answers concise and grounded in the active engine.`,
+			prepareRoom: (insightId) =>
+				makeEngineRoomMcp(insightId, engine.engine_id),
 		});
 	}, [
+		assistantStore,
 		configureWorkbench,
 		engine.engine_display_name,
 		engine.engine_id,
@@ -345,24 +351,26 @@ export const DatabaseWorkbench: React.FC = () => {
 	]);
 
 	return (
-		<DatabaseWorkbenchStoreProvider store={databaseStore}>
-			<Workbench
-				layout={workbenchLayout}
-				components={DATABASE_WORKBENCH_COMPONENTS}
-				onPanelClose={(pid, record) =>
-					databaseStore.getState().handlePanelClosed(pid, record)
-				}
-				borderSlots={{
-					left: {
-						after: (
-							<>
-								<WorkbenchCommandMenuButton />
-								<EngineSettingsToggle />
-							</>
-						),
-					},
-				}}
-			/>
-		</DatabaseWorkbenchStoreProvider>
+		<AssistantStoreProvider store={assistantStore}>
+			<DatabaseWorkbenchStoreProvider store={databaseStore}>
+				<Workbench
+					layout={workbenchLayout}
+					components={DATABASE_WORKBENCH_COMPONENTS}
+					onPanelClose={(pid, record) =>
+						databaseStore.getState().handlePanelClosed(pid, record)
+					}
+					borderSlots={{
+						left: {
+							after: (
+								<>
+									<WorkbenchCommandMenuButton />
+									<EngineSettingsToggle />
+								</>
+							),
+						},
+					}}
+				/>
+			</DatabaseWorkbenchStoreProvider>
+		</AssistantStoreProvider>
 	);
 };

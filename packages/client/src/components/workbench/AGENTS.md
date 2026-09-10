@@ -31,8 +31,8 @@ queries run the admin-permission pixels.
 ## One context, one hook, one namespace per domain
 
 Everything reaches the per-mount store through `useWorkbench(selector)`. State is grouped by
-domain — `layout`, `loading`, `command`, `control`, `assistant`, `notifications` — and each
-namespace carries its own fields and its own `actions`:
+domain — `layout`, `loading`, `command`, `control`, `access` — and each namespace carries its
+own fields and its own `actions`:
 
 ```ts
 const actions = useWorkbench((s) => s.layout.actions); // stable object — never re-renders
@@ -41,8 +41,15 @@ const open = useWorkbench((s) => s.command.isCommandOpen);
 ```
 
 Select from the namespace that owns the action — `s.command.actions.registerCommand`,
-`s.loading.actions.setLoading` — rather than expecting one merged object. There are no other
-React contexts.
+`s.loading.actions.setLoading` — rather than expecting one merged object.
+
+**The assistant is not a namespace here.** It owns a separate store
+(`stores/assistant/assistant.store.ts`), read through `useAssistant(selector)` off its own
+`AssistantStoreProvider`, and takes the workbench as an injected dependency rather than living
+inside it — so the dock carries no agent-harness code and nothing here may reach back into it.
+A domain workbench that wants one calls `useAssistantStore()`, configures it in its own effect,
+and wraps its `<Workbench>` in the provider. The database and model workbenches follow the same
+shape with their own domain stores; those three are the only other React contexts.
 
 `useWorkbenchStoreApi()` returns the raw `StoreApi` (same context). Reach for it only in the
 three cases that a selector genuinely cannot serve, and that are the only ones left in the tree:
@@ -209,7 +216,7 @@ identity every render, so whenever the chrome *does* re-render, React sees a new
 the wrapper's child and remounts the control, resetting an open popover or focus inside it.
 
 A blueprint that draws its own heading sets `enableBorderHeader: false` to suppress the shell's
-row (`assistant/workbench-assistant-view.tsx` is the one case). That opts out of the control
+row (`components/assistant/assistant-view.tsx` is the one case). That opts out of the control
 slot too — such a panel owns its whole chrome and draws its actions in its own heading. Note
 the mobile shell renders no controls at all; it has no rails and no per-panel header row.
 
@@ -387,10 +394,13 @@ gets at most one chrome control, and this needed two.
 
 - `workbench.constants.ts` (both copies), `workbench.store.ts`, and `core/workbench.tsx` —
   shared by every domain workbench.
-- **Store composition order** in `workbench.store.ts`: the assistant-notification slice
-  subscribes to the assistant slice and must stay composed after it.
 - **The assistant blueprint is `mount: "eager"`** — it must initialize (and surface
   notifications) while its border is collapsed. Don't "optimize" it to lazy.
+- **`dispose()` and `destroy()` on the assistant store are not the same teardown.** The panel
+  calls `dispose()` on every insight change to drop that insight's run watchers; `destroy()`
+  additionally detaches the browser-notification subscription and belongs to the store's
+  lifetime, which `useAssistantStore` owns. Folding the two together silences notifications
+  after the first insight switch.
 - **The database close cascade** (`onPanelClose` → `handlePanelClosed`): closing a query panel
   closes its paired results panel and prunes store state. Re-read before changing panel
   close/select behavior.
