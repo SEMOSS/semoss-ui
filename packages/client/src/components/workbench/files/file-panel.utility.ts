@@ -54,6 +54,33 @@ export const getFileSavePixel = (
 	return `SaveInsightAssets(filePath=[${JSON.stringify(path)}], content=[${encodedContent}]);`;
 };
 
+/** Decode a base64 asset payload (e.g. from a Get*AssetsBase64 pixel) into raw bytes. */
+export const decodeBase64Asset = (data: string): Uint8Array | null => {
+	if (!data) return null;
+	try {
+		const binary = atob(data.replace(/\s/g, ""));
+		const bytes = new Uint8Array(binary.length);
+		for (let i = 0; i < binary.length; i++) {
+			bytes[i] = binary.charCodeAt(i);
+		}
+		return bytes;
+	} catch (error) {
+		console.error("Failed to decode asset bytes", error);
+		return null;
+	}
+};
+
+/** Encode raw bytes as base64 (e.g. for a Save*AssetsBase64 pixel), chunked so
+ * large files don't overflow the argument limit of String.fromCharCode. */
+export const encodeBase64Asset = (bytes: Uint8Array): string => {
+	const CHUNK = 0x8000;
+	let binary = "";
+	for (let i = 0; i < bytes.length; i += CHUNK) {
+		binary += String.fromCharCode(...bytes.subarray(i, i + CHUNK));
+	}
+	return btoa(binary);
+};
+
 /** Build a scoped asset download pixel. */
 export const getFileDownloadPixel = ({
 	type,

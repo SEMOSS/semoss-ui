@@ -15,3 +15,5 @@ export * from "./file-notebook-editor-panel";
 export * from "./file-panel.utility";
 export * from "./file-pdf-viewer-control";
 export * from "./file-pdf-viewer-panel";
+export * from "./file-pptx-viewer-control";
+export * from "./file-pptx-viewer-panel";
