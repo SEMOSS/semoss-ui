@@ -344,6 +344,10 @@ const AutomationTracePanel: WorkbenchComponent = () => {
 			onDismiss={() => undefined}
 			onOpenOutput={ctx.onOpenOutput}
 			onAskAssistant={ctx.onAskAssistant}
+			onViewRun={(run) => ctx.canvasRef.current?.viewHistoricalRun(run)}
+			onExitHistoricalView={() =>
+				ctx.canvasRef.current?.exitHistoricalView()
+			}
 		/>
 	);
 };

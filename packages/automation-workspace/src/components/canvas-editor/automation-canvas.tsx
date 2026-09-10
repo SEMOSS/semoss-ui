@@ -16,16 +16,20 @@ import {
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import {
+	AlertTriangle,
 	CheckCircle,
 	Code2,
+	Download,
 	Hand,
 	Loader2,
 	Lock,
+	MoreHorizontal,
 	MousePointer2,
 	Play,
 	RefreshCw,
 	Save,
 	Scan,
+	Upload,
 	Workflow,
 	X,
 	ZoomIn,
@@ -50,8 +54,15 @@ import {
 	Button,
 	Dialog,
 	DialogContent,
+	DialogDescription,
+	DialogFooter,
 	DialogHeader,
 	DialogTitle,
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuItem,
+	DropdownMenuSeparator,
+	DropdownMenuTrigger,
 	Tooltip,
 	TooltipContent,
 	TooltipTrigger,
@@ -71,6 +82,10 @@ import type {
 	RunStatus,
 	StepRunStatus,
 } from "../../domain/automation.types";
+import {
+	downloadAutomationExport,
+	parseAutomationImportFile,
+} from "../../domain/automation-import-export";
 import type {
 	AutomationInspectorAction,
 	AutomationInspectorSnapshot,
@@ -269,6 +284,10 @@ export interface AutomationCanvasHandle {
 	applyInspectorAction: (action: AutomationInspectorAction) => void;
 	prepareSchedule: () => Promise<boolean>;
 	refresh: (change?: { toolName: string; changedStepIds: string[] }) => void;
+	/** Renders a past run's snapshot read-only in place of the live editable graph. */
+	viewHistoricalRun: (run: AutomationRunDetail) => void;
+	/** Returns the canvas to the live editable graph. */
+	exitHistoricalView: () => void;
 }
 
 type TriggerAutomationOutput = AutomationRunDetail;
@@ -559,29 +578,6 @@ export const AutomationCanvas = forwardRef<
 	const [canvasMode, setCanvasMode] = useState<"interact" | "pan">(
 		"interact",
 	);
-	const editingStep = useMemo(
-		() => steps.find((s) => s.id === editingStepId) ?? null,
-		[steps, editingStepId],
-	);
-	/** Edges on the path from the trigger to the selected node, highlighted blue. */
-	const highlightedPathEdgeIds = useMemo(
-		() =>
-			editingStepId
-				? ancestorControlEdgeIds(editingStepId, graphEdges)
-				: new Set<string>(),
-		[editingStepId, graphEdges],
-	);
-	/** Steps on that same path (including the selected step), highlighted blue. */
-	const highlightedPathNodeIds = useMemo(() => {
-		if (!editingStepId) return new Set<string>();
-		const nodeIds = new Set<string>([editingStepId]);
-		for (const edge of graphEdges) {
-			if (!highlightedPathEdgeIds.has(edge.id)) continue;
-			nodeIds.add(edge.source);
-			nodeIds.add(edge.target);
-		}
-		return nodeIds;
-	}, [editingStepId, graphEdges, highlightedPathEdgeIds]);
 	const [latestRunStatus, setLatestRunStatus] = useState<RunStatus | null>(
 		null,
 	);
@@ -601,13 +597,117 @@ export const AutomationCanvas = forwardRef<
 	const [undoSnapshot, setUndoSnapshot] = useState<AutomationNode[] | null>(
 		null,
 	);
+	const importFileInputRef = useRef<HTMLInputElement>(null);
+	const [pendingImport, setPendingImport] = useState<{
+		steps: AutomationNode[];
+		edges: AutomationEdge[];
+		description: string;
+		triggerBindings: TriggerBinding[];
+		warnings: string[];
+	} | null>(null);
+	/** Warnings from the last completed import — persists so the dialog can be reopened; `[]` means a clean import. */
+	const [importWarnings, setImportWarnings] = useState<string[] | null>(null);
+	const [showImportSummary, setShowImportSummary] = useState(false);
+	/** A historical run currently being viewed read-only on the canvas, in place of the live editable graph. */
+	const [historicalRun, setHistoricalRun] =
+		useState<AutomationRunDetail | null>(null);
+	const historicalDoc = useMemo(() => {
+		if (!historicalRun?.DEFINITION_SNAPSHOT) return null;
+		try {
+			return canvasDocumentFromWorkflow(
+				JSON.parse(
+					historicalRun.DEFINITION_SNAPSHOT,
+				) as AutomationWorkflowDocument,
+			);
+		} catch {
+			return null;
+		}
+	}, [historicalRun]);
+	const viewingHistory = historicalDoc !== null;
+	const displaySteps = useMemo(
+		() => (historicalDoc ? ensureTriggerNode(historicalDoc.steps) : steps),
+		[historicalDoc, steps],
+	);
+	const displayEdges = historicalDoc ? historicalDoc.edges : graphEdges;
+	const displayResults = useMemo(
+		() =>
+			historicalRun
+				? (historicalRun.nodeResults ?? [])
+				: latestRunResults,
+		[historicalRun, latestRunResults],
+	);
+	const { displayStatuses, displayErrors, displayDurations } = useMemo(() => {
+		if (!historicalRun) {
+			return {
+				displayStatuses: stepStatuses,
+				displayErrors: stepErrors,
+				displayDurations: stepDurations,
+			};
+		}
+		const statuses: Record<string, StepRunStatus> = {};
+		const errors: Record<string, string> = {};
+		const durations: Record<string, number> = {};
+		for (const result of historicalRun.nodeResults ?? []) {
+			statuses[result.NODE_ID] =
+				result.STATUS === "FAILED"
+					? "error"
+					: result.STATUS === "RUNNING"
+						? "running"
+						: result.STATUS === "WAITING_FOR_INPUT"
+							? "waiting"
+							: result.STATUS === "SUCCESS"
+								? "success"
+								: "idle";
+			if (result.ERROR_MESSAGE) {
+				errors[result.NODE_ID] = normalizeAutomationErrorMessage(
+					result.ERROR_MESSAGE,
+				);
+			}
+			if (typeof result.DURATION_MS === "number") {
+				durations[result.NODE_ID] = result.DURATION_MS;
+			}
+		}
+		return {
+			displayStatuses: statuses,
+			displayErrors: errors,
+			displayDurations: durations,
+		};
+	}, [historicalRun, stepStatuses, stepErrors, stepDurations]);
+	const viewHistoricalRun = useCallback((run: AutomationRunDetail) => {
+		setEditingStepId(null);
+		setHistoricalRun(run);
+	}, []);
+	const exitHistoricalView = useCallback(() => setHistoricalRun(null), []);
 	const hasRunnableSteps = steps.some(
 		(step) => step.workflowType !== "trigger.start",
 	);
 	const stepDisplayOrder = useMemo(
-		() => getStepDisplayOrder(steps, graphEdges),
-		[graphEdges, steps],
+		() => getStepDisplayOrder(displaySteps, displayEdges),
+		[displayEdges, displaySteps],
 	);
+	const editingStep = useMemo(
+		() => displaySteps.find((s) => s.id === editingStepId) ?? null,
+		[displaySteps, editingStepId],
+	);
+	/** Edges on the path from the trigger to the selected node, highlighted blue. */
+	const highlightedPathEdgeIds = useMemo(
+		() =>
+			editingStepId
+				? ancestorControlEdgeIds(editingStepId, displayEdges)
+				: new Set<string>(),
+		[editingStepId, displayEdges],
+	);
+	/** Steps on that same path (including the selected step), highlighted blue. */
+	const highlightedPathNodeIds = useMemo(() => {
+		if (!editingStepId) return new Set<string>();
+		const nodeIds = new Set<string>([editingStepId]);
+		for (const edge of displayEdges) {
+			if (!highlightedPathEdgeIds.has(edge.id)) continue;
+			nodeIds.add(edge.source);
+			nodeIds.add(edge.target);
+		}
+		return nodeIds;
+	}, [editingStepId, displayEdges, highlightedPathEdgeIds]);
 
 	useEffect(() => {
 		onTraceChange?.({
@@ -711,7 +811,7 @@ export const AutomationCanvas = forwardRef<
 
 	const onConnect = useCallback(
 		(connection: Connection) => {
-			if (readOnly) return;
+			if (readOnly || viewingHistory) return;
 			if (
 				!connection.source ||
 				!connection.target ||
@@ -764,7 +864,7 @@ export const AutomationCanvas = forwardRef<
 				];
 			});
 		},
-		[readOnly, steps],
+		[readOnly, steps, viewingHistory],
 	);
 
 	const deleteEdge = useCallback((edgeId: string) => {
@@ -1008,11 +1108,11 @@ export const AutomationCanvas = forwardRef<
 	const stepOutputPreviews = useMemo(
 		() =>
 			Object.fromEntries(
-				latestRunResults
+				displayResults
 					.filter((r) => r.OUTPUT_PREVIEW != null)
 					.map((r) => [r.NODE_ID, r.OUTPUT_PREVIEW as string]),
 			),
-		[latestRunResults],
+		[displayResults],
 	);
 
 	const validationIssues = useMemo(
@@ -1035,11 +1135,11 @@ export const AutomationCanvas = forwardRef<
 	// ---- Callbacks ----
 	const handleDevModeChange = useCallback(
 		(value: boolean) => {
-			if (readOnly) return;
+			if (readOnly || viewingHistory) return;
 			setDevMode(value);
 			localStorage.setItem(`automation-devmode-${appId}`, String(value));
 		},
-		[appId, readOnly],
+		[appId, readOnly, viewingHistory],
 	);
 
 	const fitWorkflow = useCallback(() => {
@@ -1052,7 +1152,7 @@ export const AutomationCanvas = forwardRef<
 
 	const addStep = useCallback(
 		(type: AutomationWorkflowNodeType) => {
-			if (readOnly) return;
+			if (readOnly || viewingHistory) return;
 			const previousStep = addAfterStepId
 				? steps.find((step) => step.id === addAfterStepId)
 				: undefined;
@@ -1136,6 +1236,7 @@ export const AutomationCanvas = forwardRef<
 			graphEdges,
 			readOnly,
 			steps,
+			viewingHistory,
 		],
 	);
 
@@ -1272,26 +1373,29 @@ export const AutomationCanvas = forwardRef<
 	}, []);
 
 	const upstreamVarsFor = useCallback(
-		(stepId: string) => upstreamVariablesFor(steps, graphEdges, stepId),
-		[graphEdges, steps],
+		(stepId: string) =>
+			upstreamVariablesFor(displaySteps, displayEdges, stepId),
+		[displayEdges, displaySteps],
 	);
 
 	useEffect(() => {
 		const snapshot: AutomationInspectorSnapshot = {
 			description,
 			devMode,
-			readOnly,
+			readOnly: readOnly || viewingHistory,
 			editingStep,
 			upstreamVars: editingStep ? upstreamVarsFor(editingStep.id) : [],
 			stepRunStatus: editingStep
-				? stepStatuses[editingStep.id]
+				? displayStatuses[editingStep.id]
 				: undefined,
-			stepRunError: editingStep ? stepErrors[editingStep.id] : undefined,
+			stepRunError: editingStep
+				? displayErrors[editingStep.id]
+				: undefined,
 			stepRunOutput: editingStep
 				? (stepOutputPreviews[editingStep.id] ?? null)
 				: null,
 			stepRunTrace: editingStep
-				? latestRunResults.find(
+				? displayResults.find(
 						(result) => result.NODE_ID === editingStep.id,
 					)?.trace
 				: undefined,
@@ -1301,18 +1405,19 @@ export const AutomationCanvas = forwardRef<
 		description,
 		devMode,
 		readOnly,
+		viewingHistory,
 		editingStep,
 		onInspectorChange,
-		stepErrors,
+		displayErrors,
 		stepOutputPreviews,
-		stepStatuses,
-		latestRunResults,
+		displayStatuses,
+		displayResults,
 		upstreamVarsFor,
 	]);
 
 	const applyInspectorAction = useCallback(
 		(action: AutomationInspectorAction) => {
-			if (readOnly && action.type !== "close") return;
+			if ((readOnly || viewingHistory) && action.type !== "close") return;
 			switch (action.type) {
 				case "update-step":
 					updateStep(action.step);
@@ -1331,10 +1436,88 @@ export const AutomationCanvas = forwardRef<
 					break;
 			}
 		},
-		[deleteStep, handleDevModeChange, readOnly, updateStep],
+		[deleteStep, handleDevModeChange, readOnly, updateStep, viewingHistory],
 	);
 
+	const applyImportedWorkflow = useCallback(
+		(parsed: {
+			steps: AutomationNode[];
+			edges: AutomationEdge[];
+			description: string;
+			triggerBindings: TriggerBinding[];
+			warnings: string[];
+		}) => {
+			skipDraftPersistenceRef.current = true;
+			setSteps(
+				layoutNodes(ensureTriggerNode(parsed.steps), parsed.edges),
+			);
+			setGraphEdges(parsed.edges);
+			setDescription(parsed.description);
+			setTriggerBindings(parsed.triggerBindings);
+			setIsDirty(true);
+			setEditingStepId(null);
+			setImportWarnings(parsed.warnings);
+			setShowImportSummary(true);
+		},
+		[layoutNodes],
+	);
+
+	const handleImportFile = useCallback(
+		async (file: File) => {
+			let parsed: ReturnType<typeof parseAutomationImportFile>;
+			try {
+				parsed = parseAutomationImportFile(await file.text());
+			} catch (error) {
+				toast.error(
+					error instanceof Error
+						? error.message
+						: "Unable to import this file.",
+				);
+				return;
+			}
+			const canvasDoc = canvasDocumentFromWorkflow(
+				parsed.document,
+				parsed.nodeSources,
+			);
+			const importPayload = {
+				steps: canvasDoc.steps,
+				edges: canvasDoc.edges,
+				description: canvasDoc.description,
+				triggerBindings: canvasDoc.triggerBindings,
+				warnings: parsed.warnings,
+			};
+			const isCurrentGraphEmpty =
+				steps.every((step) => step.workflowType === "trigger.start") &&
+				graphEdges.length === 0;
+			if (isCurrentGraphEmpty) {
+				applyImportedWorkflow(importPayload);
+			} else {
+				setPendingImport(importPayload);
+			}
+		},
+		[applyImportedWorkflow, graphEdges, steps],
+	);
+
+	const handleExportWorkflow = useCallback(() => {
+		const definition = canvasDocumentToWorkflow({
+			description,
+			triggerBindings,
+			steps,
+			edges: graphEdges,
+		});
+		const nodeSources = getCanvasNodeSources(steps);
+		downloadAutomationExport(
+			description.trim() || appId || "automation",
+			definition,
+			nodeSources,
+		);
+	}, [appId, description, graphEdges, steps, triggerBindings]);
+
 	const save = useCallback(async (): Promise<boolean> => {
+		if (viewingHistory) {
+			toast.error("Return to the editor before saving.");
+			return false;
+		}
 		if (readOnly) {
 			toast.error("You have read-only access to this automation.");
 			return false;
@@ -1406,7 +1589,15 @@ export const AutomationCanvas = forwardRef<
 		} finally {
 			setSaving(false);
 		}
-	}, [appId, description, graphEdges, readOnly, steps, triggerBindings]);
+	}, [
+		appId,
+		description,
+		graphEdges,
+		readOnly,
+		steps,
+		triggerBindings,
+		viewingHistory,
+	]);
 
 	const prepareSchedule = useCallback(
 		async (): Promise<boolean> => !isDirty || save(),
@@ -1415,13 +1606,25 @@ export const AutomationCanvas = forwardRef<
 
 	useImperativeHandle(
 		ref,
-		() => ({ applyInspectorAction, prepareSchedule, refresh }),
-		[applyInspectorAction, prepareSchedule, refresh],
+		() => ({
+			applyInspectorAction,
+			prepareSchedule,
+			refresh,
+			viewHistoricalRun,
+			exitHistoricalView,
+		}),
+		[
+			applyInspectorAction,
+			prepareSchedule,
+			refresh,
+			viewHistoricalRun,
+			exitHistoricalView,
+		],
 	);
 
 	// Cmd+S / Ctrl+S
 	useEffect(() => {
-		if (readOnly) return;
+		if (readOnly || viewingHistory) return;
 		const handler = (e: KeyboardEvent) => {
 			if ((e.metaKey || e.ctrlKey) && e.key === "s") {
 				e.preventDefault();
@@ -1430,7 +1633,7 @@ export const AutomationCanvas = forwardRef<
 		};
 		document.addEventListener("keydown", handler);
 		return () => document.removeEventListener("keydown", handler);
-	}, [readOnly, save]);
+	}, [readOnly, save, viewingHistory]);
 
 	const applyRunData = useCallback(
 		(runData: TriggerAutomationOutput) => {
@@ -1635,6 +1838,10 @@ export const AutomationCanvas = forwardRef<
 	}, [running, liveRunId, appId, applyRunData]);
 
 	const run = useCallback(async () => {
+		if (viewingHistory) {
+			toast.error("Return to the editor before running this automation.");
+			return;
+		}
 		if (readOnly && mcpMode !== "trigger") {
 			toast.error("You have read-only access to this automation.");
 			return;
@@ -1823,6 +2030,7 @@ export const AutomationCanvas = forwardRef<
 		readOnly,
 		save,
 		steps,
+		viewingHistory,
 	]);
 
 	const handleDoneReturnToChat = useCallback(async () => {
@@ -1880,14 +2088,16 @@ export const AutomationCanvas = forwardRef<
 
 	// ---- React Flow node/edge sync ----
 	useEffect(() => {
-		if (!steps.length) return;
+		if (!displaySteps.length) return;
 
 		const newNodes: Node[] = [];
 		const newEdges: Edge[] = [];
 
 		// Automations created before the canvas stored every node at the origin.
 		// Lay those out once so subsequent drag positions can be persisted per node.
+		// Skip while viewing a historical run — its snapshot positions are read-only.
 		if (
+			!viewingHistory &&
 			steps.every(
 				(step) => step.position.x === 0 && step.position.y === 0,
 			)
@@ -1895,15 +2105,27 @@ export const AutomationCanvas = forwardRef<
 			setSteps((previous) => layoutNodes(previous, graphEdges));
 		}
 
+		// An edge should only reflect its target's run status if its own source actually
+		// ran — otherwise a branch/merge node's *other*, untaken edge into a shared target
+		// lights up too, just because the target happened to run via the taken branch.
+		const triggerStepId = displaySteps.find(
+			(step) => step.workflowType === "trigger.start",
+		)?.id;
+		const hasStarted = (stepId: string): boolean =>
+			stepId === triggerStepId ||
+			(displayStatuses[stepId] !== undefined &&
+				displayStatuses[stepId] !== "idle");
 		const getEdgeStrokeColor = (edge: AutomationEdge): string =>
 			getFlowStrokeColor(
-				stepStatuses[edge.target],
+				hasStarted(edge.source)
+					? displayStatuses[edge.target]
+					: undefined,
 				highlightedPathEdgeIds.has(edge.id),
 				edgeColor,
 			);
 
-		steps.forEach((step) => {
-			const outgoingEdges = graphEdges.filter(
+		displaySteps.forEach((step) => {
+			const outgoingEdges = displayEdges.filter(
 				(item) => item.source === step.id,
 			);
 
@@ -1931,7 +2153,7 @@ export const AutomationCanvas = forwardRef<
 								? [step.workflowConfig.triggerType]
 								: [],
 						runStatus:
-							stepStatuses[step.id] ??
+							displayStatuses[step.id] ??
 							(running ? "running" : undefined),
 						pathHighlighted: highlightedPathNodeIds.has(step.id),
 						onEdit: readOnly
@@ -1940,12 +2162,14 @@ export const AutomationCanvas = forwardRef<
 									setShowAddMenu(false);
 									setEditingStepId(step.id);
 								},
-						onAdd: () => {
-							setEditingStepId(null);
-							setAddAfterStepId(step.id);
-							setAddAfterHandle(null);
-							setShowAddMenu(true);
-						},
+						onAdd: viewingHistory
+							? undefined
+							: () => {
+									setEditingStepId(null);
+									setAddAfterStepId(step.id);
+									setAddAfterHandle(null);
+									setShowAddMenu(true);
+								},
 					},
 					draggable: true,
 					style: { width: NODE_WIDTH },
@@ -1977,13 +2201,13 @@ export const AutomationCanvas = forwardRef<
 					data: {
 						step,
 						index: stepDisplayOrder.get(step.id) ?? 0,
-						runStatus: stepStatuses[step.id],
-						runError: stepErrors[step.id],
-						runDuration: stepDurations[step.id],
+						runStatus: displayStatuses[step.id],
+						runError: displayErrors[step.id],
+						runDuration: displayDurations[step.id],
 						isIncomplete:
 							validateCanvasWorkflowNode(step).length > 0 &&
-							!stepStatuses[step.id],
-						locked: running || readOnly,
+							!displayStatuses[step.id],
+						locked: running || readOnly || viewingHistory,
 						highlighted: isStepHighlighted(
 							changeHighlight,
 							step.id,
@@ -1994,24 +2218,32 @@ export const AutomationCanvas = forwardRef<
 							setShowAddMenu(false);
 							setEditingStepId(step.id);
 						},
-						onDelete: () => deleteStep(step.id),
-						onAddClause: (clauseId: string) => {
-							setEditingStepId(null);
-							setAddAfterStepId(step.id);
-							setAddAfterHandle(`case-${step.id}-${clauseId}`);
-							setShowAddMenu(true);
-						},
-						onAddElse: () => {
-							setEditingStepId(null);
-							setAddAfterStepId(step.id);
-							setAddAfterHandle(`else-${step.id}`);
-							setShowAddMenu(true);
-						},
+						onDelete: viewingHistory
+							? undefined
+							: () => deleteStep(step.id),
+						onAddClause: viewingHistory
+							? undefined
+							: (clauseId: string) => {
+									setEditingStepId(null);
+									setAddAfterStepId(step.id);
+									setAddAfterHandle(
+										`case-${step.id}-${clauseId}`,
+									);
+									setShowAddMenu(true);
+								},
+						onAddElse: viewingHistory
+							? undefined
+							: () => {
+									setEditingStepId(null);
+									setAddAfterStepId(step.id);
+									setAddAfterHandle(`else-${step.id}`);
+									setShowAddMenu(true);
+								},
 					},
 					style: { width: NODE_WIDTH },
 				});
 			} else {
-				const runTrace = latestRunResults.find(
+				const runTrace = displayResults.find(
 					(result) => result.NODE_ID === step.id,
 				)?.trace;
 				newNodes.push({
@@ -2021,15 +2253,15 @@ export const AutomationCanvas = forwardRef<
 					data: {
 						step,
 						index: stepDisplayOrder.get(step.id) ?? 0,
-						runStatus: stepStatuses[step.id],
-						runError: stepErrors[step.id],
-						runDuration: stepDurations[step.id],
+						runStatus: displayStatuses[step.id],
+						runError: displayErrors[step.id],
+						runDuration: displayDurations[step.id],
 						runOutput: stepOutputPreviews[step.id] ?? null,
 						runTrace,
 						isIncomplete:
 							validateCanvasWorkflowNode(step).length > 0 &&
-							!stepStatuses[step.id],
-						locked: running || readOnly,
+							!displayStatuses[step.id],
+						locked: running || readOnly || viewingHistory,
 						highlighted: isStepHighlighted(
 							changeHighlight,
 							step.id,
@@ -2042,13 +2274,17 @@ export const AutomationCanvas = forwardRef<
 						onViewAgentRun: runTrace?.agentRunId
 							? () => onViewAgentRun(runTrace)
 							: undefined,
-						onDelete: () => deleteStep(step.id),
-						onAdd: () => {
-							setEditingStepId(null);
-							setAddAfterStepId(step.id);
-							setAddAfterHandle(null);
-							setShowAddMenu(true);
-						},
+						onDelete: viewingHistory
+							? undefined
+							: () => deleteStep(step.id),
+						onAdd: viewingHistory
+							? undefined
+							: () => {
+									setEditingStepId(null);
+									setAddAfterStepId(step.id);
+									setAddAfterHandle(null);
+									setShowAddMenu(true);
+								},
 					},
 					style: { width: NODE_WIDTH },
 				});
@@ -2071,8 +2307,8 @@ export const AutomationCanvas = forwardRef<
 						strokeWidth: isPathHighlighted ? 2.5 : 1.5,
 					},
 					data: {
-						onDelete: deleteEdge,
-						readOnly,
+						onDelete: viewingHistory ? undefined : deleteEdge,
+						readOnly: readOnly || viewingHistory,
 						hovered: edge.id === hoveredEdgeId,
 					},
 				});
@@ -2083,11 +2319,14 @@ export const AutomationCanvas = forwardRef<
 		setRfEdges(newEdges);
 	}, [
 		steps,
-		stepStatuses,
-		stepErrors,
-		stepDurations,
+		displaySteps,
+		displayEdges,
+		displayStatuses,
+		displayErrors,
+		displayDurations,
+		displayResults,
+		viewingHistory,
 		stepOutputPreviews,
-		latestRunResults,
 		description,
 		devMode,
 		running,
@@ -2151,7 +2390,7 @@ export const AutomationCanvas = forwardRef<
 	// ---- Persist canvas positions ----
 	const onNodeDragStop = useCallback(
 		(_event: React.MouseEvent, draggedNode: Node) => {
-			if (readOnly) return;
+			if (readOnly || viewingHistory) return;
 			setSteps((previousSteps) =>
 				previousSteps.map((step) =>
 					step.id === draggedNode.id
@@ -2161,15 +2400,15 @@ export const AutomationCanvas = forwardRef<
 			);
 			setIsDirty(true);
 		},
-		[readOnly],
+		[readOnly, viewingHistory],
 	);
 
 	const cleanUpLayout = useCallback(() => {
 		initialViewFittedRef.current = false;
-		if (readOnly) return;
+		if (readOnly || viewingHistory) return;
 		setSteps((previous) => layoutNodes(previous, graphEdges));
 		setIsDirty(true);
-	}, [graphEdges, layoutNodes, readOnly]);
+	}, [graphEdges, layoutNodes, readOnly, viewingHistory]);
 
 	if (mcpDone) {
 		return (
@@ -2206,6 +2445,25 @@ export const AutomationCanvas = forwardRef<
 											Read-only
 										</div>
 									)}
+									{/* Historical run banner — read-only snapshot in place of the live graph */}
+									{viewingHistory && historicalRun && (
+										<div className="absolute inset-x-0 top-0 z-20 flex items-center justify-between gap-3 border-b bg-muted/60 px-4 py-2 text-sm">
+											<span className="text-muted-foreground">
+												Viewing run from{" "}
+												{new Date(
+													historicalRun.STARTED_AT,
+												).toLocaleString()}{" "}
+												— read-only
+											</span>
+											<Button
+												size="sm"
+												variant="outline"
+												onClick={exitHistoricalView}
+											>
+												Return to editor
+											</Button>
+										</div>
+									)}
 									{/* Undo banner above the canvas */}
 									{undoSnapshot && (
 										<div className="absolute inset-x-0 top-0 z-20 px-4 pt-3">
@@ -2236,10 +2494,12 @@ export const AutomationCanvas = forwardRef<
 										edgeTypes={edgeTypes as never}
 										nodesDraggable={
 											!readOnly &&
+											!viewingHistory &&
 											canvasMode === "interact"
 										}
 										nodesConnectable={
 											!readOnly &&
+											!viewingHistory &&
 											canvasMode === "interact" &&
 											!running
 										}
@@ -2295,8 +2555,83 @@ export const AutomationCanvas = forwardRef<
 									</ReactFlow>
 
 									<div
-										className={`absolute top-4 right-4 z-30 items-center gap-2 ${readOnly && mcpMode !== "trigger" ? "hidden" : "flex"}`}
+										className={`absolute top-4 right-4 z-30 items-center gap-2 ${(readOnly && mcpMode !== "trigger") || viewingHistory ? "hidden" : "flex"}`}
 									>
+										{!readOnly && mcpMode !== "trigger" && (
+											<div data-tour="import-export">
+												<input
+													ref={importFileInputRef}
+													type="file"
+													accept=".json,application/json"
+													className="hidden"
+													onChange={(event) => {
+														const file =
+															event.target
+																.files?.[0];
+														event.target.value = "";
+														if (file)
+															void handleImportFile(
+																file,
+															);
+													}}
+												/>
+												<DropdownMenu>
+													<DropdownMenuTrigger
+														asChild
+													>
+														<Button
+															size="sm"
+															variant="outline"
+															className="bg-background shadow-sm"
+															aria-label="Import or export this automation"
+														>
+															<MoreHorizontal className="h-3.5 w-3.5" />
+														</Button>
+													</DropdownMenuTrigger>
+													<DropdownMenuContent align="end">
+														<DropdownMenuItem
+															onClick={() =>
+																importFileInputRef.current?.click()
+															}
+														>
+															<Upload className="mr-2 h-3.5 w-3.5" />
+															Import workflow
+														</DropdownMenuItem>
+														<DropdownMenuItem
+															onClick={
+																handleExportWorkflow
+															}
+														>
+															<Download className="mr-2 h-3.5 w-3.5" />
+															Export workflow
+														</DropdownMenuItem>
+														{importWarnings &&
+															importWarnings.length >
+																0 && (
+																<>
+																	<DropdownMenuSeparator />
+																	<DropdownMenuItem
+																		onClick={() =>
+																			setShowImportSummary(
+																				true,
+																			)
+																		}
+																	>
+																		<AlertTriangle className="mr-2 h-3.5 w-3.5" />
+																		View
+																		import
+																		notes (
+																		{
+																			importWarnings.length
+																		}
+																		)
+																	</DropdownMenuItem>
+																</>
+															)}
+													</DropdownMenuContent>
+												</DropdownMenu>
+											</div>
+										)}
 										{mcpMode !== "trigger" && (
 											<div
 												className="relative"
@@ -2548,6 +2883,73 @@ export const AutomationCanvas = forwardRef<
 						<DialogTitle>Add workflow node</DialogTitle>
 					</DialogHeader>
 					<AddNodeMenu onSelect={addStep} />
+				</DialogContent>
+			</Dialog>
+
+			<Dialog
+				open={pendingImport !== null}
+				onOpenChange={(open) => {
+					if (!open) setPendingImport(null);
+				}}
+			>
+				<DialogContent className="max-w-md">
+					<DialogHeader>
+						<DialogTitle>Replace this automation?</DialogTitle>
+						<DialogDescription>
+							Importing will replace every step and connection in
+							this automation. This can&apos;t be undone once
+							saved.
+						</DialogDescription>
+					</DialogHeader>
+					<DialogFooter>
+						<Button
+							variant="outline"
+							onClick={() => setPendingImport(null)}
+						>
+							Cancel
+						</Button>
+						<Button
+							onClick={() => {
+								if (pendingImport)
+									applyImportedWorkflow(pendingImport);
+								setPendingImport(null);
+							}}
+						>
+							Replace automation
+						</Button>
+					</DialogFooter>
+				</DialogContent>
+			</Dialog>
+
+			<Dialog
+				open={showImportSummary}
+				onOpenChange={setShowImportSummary}
+			>
+				<DialogContent className="max-w-md">
+					<DialogHeader>
+						<DialogTitle>
+							{importWarnings && importWarnings.length > 0
+								? `Imported with ${importWarnings.length} warning${importWarnings.length === 1 ? "" : "s"}`
+								: "Workflow imported"}
+						</DialogTitle>
+						<DialogDescription>
+							{importWarnings && importWarnings.length > 0
+								? "Review the items below — they weren't translated automatically and may need manual edits."
+								: "Every step imported cleanly."}
+						</DialogDescription>
+					</DialogHeader>
+					{importWarnings && importWarnings.length > 0 && (
+						<ul className="max-h-64 list-disc space-y-1 overflow-y-auto pl-5 text-sm">
+							{importWarnings.map((warning) => (
+								<li key={warning}>{warning}</li>
+							))}
+						</ul>
+					)}
+					<DialogFooter>
+						<Button onClick={() => setShowImportSummary(false)}>
+							Done
+						</Button>
+					</DialogFooter>
 				</DialogContent>
 			</Dialog>
 		</>

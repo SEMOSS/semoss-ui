@@ -53,6 +53,10 @@ interface RunsTabProps extends AutomationTraceSnapshot {
 	onOpenOutput?: (output: string) => void;
 	/** Hand a run's status off to the Assistant as a draft prompt. */
 	onAskAssistant?: (prompt: string) => void;
+	/** Render a past run's snapshot read-only on the canvas, in place of the live editable graph. */
+	onViewRun?: (run: AutomationRunDetail) => void;
+	/** Returns the canvas to the live editable graph — fired whenever the run detail view is left. */
+	onExitHistoricalView?: () => void;
 }
 
 type View = "history" | "live" | "detail";
@@ -81,6 +85,8 @@ export function RunsTab({
 	onDismiss,
 	onOpenOutput,
 	onAskAssistant,
+	onViewRun,
+	onExitHistoricalView,
 }: RunsTabProps) {
 	const [view, setView] = useState<View>("history");
 	const [runs, setRuns] = useState<AutomationRunSummary[]>([]);
@@ -136,6 +142,7 @@ export function RunsTab({
 			if (cached) {
 				setSelectedRun(cached);
 				setView("detail");
+				onViewRun?.(cached);
 				return;
 			}
 			setDetailLoading(true);
@@ -144,6 +151,7 @@ export function RunsTab({
 				const detail = await getAutomationRun(appId, runId);
 				detailsCache.current[runId] = detail;
 				setSelectedRun(detail);
+				onViewRun?.(detail);
 			} catch (error) {
 				toast.error(
 					error instanceof Error
@@ -155,13 +163,14 @@ export function RunsTab({
 				setDetailLoading(false);
 			}
 		},
-		[appId],
+		[appId, onViewRun],
 	);
 
 	const goBack = useCallback(() => {
 		setView("history");
 		setSelectedRun(null);
-	}, []);
+		onExitHistoricalView?.();
+	}, [onExitHistoricalView]);
 
 	const handleOutputPopout = useCallback(
 		(output: string) => onOpenOutput?.(output),
@@ -217,6 +226,7 @@ export function RunsTab({
 					run={selectedRun}
 					onBack={goBack}
 					onOutputPopout={handleOutputPopout}
+					onViewRun={onViewRun}
 				/>
 			);
 		}
@@ -438,10 +448,12 @@ function HistoryRunView({
 	run,
 	onBack,
 	onOutputPopout,
+	onViewRun,
 }: {
 	run: AutomationRunDetail;
 	onBack: () => void;
 	onOutputPopout: (output: string) => void;
+	onViewRun?: (run: AutomationRunDetail) => void;
 }) {
 	const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
 	const executedSteps = useMemo(() => getExecutedSteps(run), [run]);
@@ -468,7 +480,17 @@ function HistoryRunView({
 						</p>
 					)}
 				</div>
-				<div className="shrink-0">
+				<div className="flex shrink-0 items-center gap-2">
+					{onViewRun && (
+						<Button
+							size="sm"
+							variant="outline"
+							className="h-6 rounded-full px-2.5 py-1 text-[11px]"
+							onClick={() => onViewRun(run)}
+						>
+							View on canvas
+						</Button>
+					)}
 					<StatusBadge status={run.STATUS} />
 				</div>
 			</div>

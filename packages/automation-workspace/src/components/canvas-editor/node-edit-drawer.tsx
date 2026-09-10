@@ -100,6 +100,10 @@ export function NodeEditDrawer({
 	const pythonSource =
 		persistedPythonSource ||
 		(isCustomSource ? "" : getGeneratedPythonPreview(step));
+	// Historical runs carry the executed graph shape but not saved node sources, so a
+	// custom-code node has nothing to show — hide the editor instead of rendering it empty.
+	const pythonSourceUnavailable =
+		readOnly && isCustomSource && !persistedPythonSource;
 	const [pythonDraft, setPythonDraft] = useState(pythonSource);
 	const pythonUpdateTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
 		null,
@@ -285,13 +289,15 @@ export function NodeEditDrawer({
 										: "Configuration"}
 								</p>
 								<p className="text-[11px] text-muted-foreground">
-									{isDecisionBranch
-										? "This decision evaluates its conditions in order and uses the first matching path."
-										: isDeveloperPython
-											? "This node runs its custom Python source."
-											: isCustomSource
-												? "This node uses custom Python."
-												: "Use the form or inspect the generated Python."}
+									{pythonSourceUnavailable
+										? "Not available for historical runs."
+										: isDecisionBranch
+											? "This decision evaluates its conditions in order and uses the first matching path."
+											: isDeveloperPython
+												? "This node runs its custom Python source."
+												: isCustomSource
+													? "This node uses custom Python."
+													: "Use the form or inspect the generated Python."}
 								</p>
 							</div>
 							{!isDeveloperPython &&
@@ -391,7 +397,14 @@ export function NodeEditDrawer({
 								</p>
 							))}
 
-						{showPythonEditor && (
+						{showPythonEditor && pythonSourceUnavailable && (
+							<p className="rounded-lg border border-dashed px-3 py-2 text-[11px] text-muted-foreground">
+								Python source isn&apos;t available for this
+								historical run.
+							</p>
+						)}
+
+						{showPythonEditor && !pythonSourceUnavailable && (
 							<Field>
 								<div>
 									<div className="flex items-center justify-between">
