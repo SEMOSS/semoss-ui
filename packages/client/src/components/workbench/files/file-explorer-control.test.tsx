@@ -1,11 +1,10 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import type { FileExplorerApi, FileMode } from "@semoss/shared";
-import { WorkbenchStoreContext } from "@/contexts/workbench.context";
-import {
-	createWorkbenchStore,
-	type WorkbenchChromeProps,
-} from "@/stores/workbench";
+import { SessionStoreContext } from "@/contexts/session.context";
+import { createConfigStore } from "@/stores/config";
+import { createSessionStore } from "@/stores/session";
+import type { WorkbenchChromeProps } from "@/stores/workbench";
 import { FileExplorerControl } from "./file-explorer-control";
 import type { FileExplorerParams } from "./file-explorer-panel";
 
@@ -27,34 +26,26 @@ const renderControl = (
 	explorer: FileExplorerApi,
 	permission?: "EDIT" | "READ_ONLY",
 ) => {
-	const store = createWorkbenchStore(`file-control-${explorer.mode.type}`);
+	const store = createSessionStore(createConfigStore());
 	if (permission && explorer.mode.type === "APP") {
 		store
 			.getState()
-			.access.actions.syncPermission(
-				"PROJECT",
-				explorer.mode.app,
-				permission,
-			);
+			.syncPermission("PROJECT", explorer.mode.app, permission);
 	}
 	if (permission && explorer.mode.type === "STORAGE") {
 		store
 			.getState()
-			.access.actions.syncPermission(
-				"ENGINE",
-				explorer.mode.storage,
-				permission,
-			);
+			.syncPermission("ENGINE", explorer.mode.storage, permission);
 	}
 
 	render(
-		<WorkbenchStoreContext.Provider value={store}>
+		<SessionStoreContext.Provider value={store}>
 			<FileExplorerControl
 				{...({
 					value: explorer,
 				} as WorkbenchChromeProps<FileExplorerParams, FileExplorerApi>)}
 			/>
-		</WorkbenchStoreContext.Provider>,
+		</SessionStoreContext.Provider>,
 	);
 };
 

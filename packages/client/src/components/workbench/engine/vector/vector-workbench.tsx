@@ -8,7 +8,7 @@ import { AssistantStoreProvider } from "@/contexts";
 import {
 	useAssistantStore,
 	useEngine,
-	useWorkbench,
+	useSession,
 	useWorkbenchCommands,
 } from "@/hooks";
 import type {
@@ -157,19 +157,18 @@ export const VectorWorkbench: React.FC = () => {
 		[engine.engine_id, permission],
 	);
 
-	const configureWorkbench = useWorkbench((s) => s.configure);
+	const syncPermission = useSession((s) => s.syncPermission);
+	const refreshPermission = useSession((s) => s.refreshPermission);
 
 	const assistantStore = useAssistantStore();
 
-	// Keep the assistant prompt and room tools in sync with the active engine.
+	// Revalidate the engine's permission and keep the assistant prompt and
+	// room tools in sync with it.
 	useEffect(() => {
-		configureWorkbench({
-			resource: {
-				type: "ENGINE",
-				id: engine.engine_id,
-				permission,
-			},
-		});
+		syncPermission("ENGINE", engine.engine_id, permission);
+		void refreshPermission("ENGINE", engine.engine_id).catch(
+			() => undefined,
+		);
 
 		assistantStore.getState().configure({
 			systemPrompt: `You are the assistant for the ${engine.engine_display_name || engine.engine_name} vector workbench (${engine.engine_id}, subtype ${engine.engine_subtype || "unknown"}). Use only the tools provided in this room and decide whether a tool is needed for each request. For questions about indexed content, call VectorDatabaseQuery before answering, ground the answer only in its returned chunks, and cite the Source and Divider when available. Use ListDocumentsInVectorDatabase when the user asks what is indexed. For requests to add, download, or remove vector documents, or to inspect or change engine asset files, use the matching room tool; honor its approval requirement and the user's permissions. When the user attaches a file and asks to index it, use the available attachment path with the document embedding tool. Simple greetings or general guidance that do not require engine data can be answered without a tool. Do not invent unsupported parameters, and never claim an operation succeeded unless its tool result confirms success.`,
@@ -178,7 +177,8 @@ export const VectorWorkbench: React.FC = () => {
 		});
 	}, [
 		assistantStore,
-		configureWorkbench,
+		syncPermission,
+		refreshPermission,
 		engine.engine_display_name,
 		engine.engine_id,
 		engine.engine_name,

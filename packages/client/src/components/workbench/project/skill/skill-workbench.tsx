@@ -7,7 +7,7 @@ import { AssistantStoreProvider } from "@/contexts";
 import {
 	useAssistantStore,
 	useProject,
-	useWorkbench,
+	useSession,
 	useWorkbenchCommands,
 } from "@/hooks";
 import type {
@@ -172,7 +172,8 @@ export const SkillWorkbench: React.FC = () => {
 		[project.project_id, permission],
 	);
 
-	const configureWorkbench = useWorkbench((s) => s.configure);
+	const syncPermission = useSession((s) => s.syncPermission);
+	const refreshPermission = useSession((s) => s.refreshPermission);
 
 	const assistantStore = useAssistantStore();
 
@@ -180,13 +181,10 @@ export const SkillWorkbench: React.FC = () => {
 	useEffect(() => {
 		const name = project.project_display_name || project.project_name;
 
-		configureWorkbench({
-			resource: {
-				type: "PROJECT",
-				id: project.project_id,
-				permission,
-			},
-		});
+		syncPermission("PROJECT", project.project_id, permission);
+		void refreshPermission("PROJECT", project.project_id).catch(
+			() => undefined,
+		);
 
 		assistantStore.getState().configure({
 			systemPrompt: `You are the assistant for the ${name} skill workbench (${project.project_id}). Your role is to help the user build and run this skill and the rest of the project's files. Use only the tools provided in this room. Never claim that an operation succeeded unless its tool result confirms success. Keep answers concise and grounded in the active project.`,
@@ -201,7 +199,8 @@ export const SkillWorkbench: React.FC = () => {
 		});
 	}, [
 		assistantStore,
-		configureWorkbench,
+		syncPermission,
+		refreshPermission,
 		permission,
 		project.project_display_name,
 		project.project_id,

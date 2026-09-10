@@ -1,25 +1,23 @@
 import { useCallback, useEffect } from "react";
 import type { Role } from "@semoss/sdk";
-import {
-	getWorkbenchAccessKey,
-	type WorkbenchAccessType,
-} from "@/stores/workbench";
-import { useWorkbench } from "./use-workbench";
+import type { ResourceType } from "@/stores/session";
+import { getPermissionKey } from "@/stores/session";
+import { useSession } from "./use-session";
 
 /** Still resolving a resource's permission for the first time. */
-interface WorkbenchAccessLoadingState {
+interface AccessLoadingState {
 	status: "loading";
 }
 
 /** Permission has never resolved and there is no stale value to fall back on. */
-interface WorkbenchAccessErrorState {
+interface AccessErrorState {
 	status: "error";
 	error: string;
 	refresh: () => Promise<Role>;
 }
 
 /** Permission is known — either fresh, mid-refresh, or stale after a failed refresh. */
-interface WorkbenchAccessReadyState {
+interface AccessReadyState {
 	status: "ready";
 	permission: Role;
 	readOnly: boolean;
@@ -30,29 +28,39 @@ interface WorkbenchAccessReadyState {
 	refresh: () => Promise<Role>;
 }
 
-export type WorkbenchAccessState =
-	| WorkbenchAccessLoadingState
-	| WorkbenchAccessErrorState
-	| WorkbenchAccessReadyState;
+export type AccessState =
+	| AccessLoadingState
+	| AccessErrorState
+	| AccessReadyState;
 
-/** Lazily resolve and cache access for one workbench resource. */
-export const useWorkbenchAccess = (
-	type: WorkbenchAccessType,
-	id: string,
-): WorkbenchAccessState => {
-	const key = getWorkbenchAccessKey(type, id);
-	const entry = useWorkbench((state) => state.access.entries[key]);
-	const actions = useWorkbench((state) => state.access.actions);
+/**
+ * Resolve one resource's permission off the session's shared cache.
+ *
+ * The cache is session-scoped, so every workbench open on a resource sees the
+ * same answer and a revalidation reaches all of them at once. Callers that
+ * want to force a round trip on mount use `refresh()`; the first read of an
+ * unknown resource loads it lazily.
+ *
+ * @name useAccess
+ * @param type - Kind of resource being accessed.
+ * @param id - The resource's id.
+ * @return Loading, error, or ready state — `permission`/`readOnly` only once resolved.
+ */
+export const useAccess = (type: ResourceType, id: string): AccessState => {
+	const key = getPermissionKey(type, id);
+	const entry = useSession((state) => state.permissions[key]);
+	const loadPermission = useSession((state) => state.loadPermission);
+	const refreshPermission = useSession((state) => state.refreshPermission);
 
 	useEffect(() => {
 		if (!entry) {
-			void actions.load(type, id).catch(() => undefined);
+			void loadPermission(type, id).catch(() => undefined);
 		}
-	}, [actions, entry, id, type]);
+	}, [loadPermission, entry, id, type]);
 
 	const refresh = useCallback(
-		() => actions.refresh(type, id),
-		[actions, id, type],
+		() => refreshPermission(type, id),
+		[refreshPermission, id, type],
 	);
 
 	if (!entry || (entry.status === "LOADING" && !entry.permission)) {

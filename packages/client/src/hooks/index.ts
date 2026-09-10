@@ -1,3 +1,4 @@
+import { useAccess } from "./use-access";
 import { useAPI } from "./use-api";
 import { useAssistant } from "./use-assistant";
 import { useAssistantStore } from "./use-assistant-store";
@@ -10,7 +11,6 @@ import { useProject } from "./use-project";
 import { useSession } from "./use-session";
 import { useTabBarScroll } from "./use-tab-bar-scroll";
 import { useWorkbench } from "./use-workbench";
-import { useWorkbenchAccess } from "./use-workbench-access";
 import { useWorkbenchCommands } from "./use-workbench-commands";
 import { useWorkbenchControl } from "./use-workbench-control";
 import { useWorkbenchFilePanels } from "./use-workbench-file-panels";
@@ -29,6 +29,7 @@ import { useWorkspace } from "./useWorkspace";
 // block/renderer dependencies into the broad `@/hooks` import graph, which
 // increases production bundle size.
 export {
+	useAccess,
 	useAPI,
 	useAssistant,
 	useAssistantStore,
@@ -47,7 +48,6 @@ export {
 	useTabBarScroll,
 	useThemeLogo,
 	useWorkbench,
-	useWorkbenchAccess,
 	useWorkbenchCommands,
 	useWorkbenchControl,
 	useWorkbenchFilePanels,

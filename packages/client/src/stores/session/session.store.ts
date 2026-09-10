@@ -11,6 +11,8 @@ import {
 } from "@/api";
 import type { ConfigStore } from "@/stores/config";
 import type { ALL_TYPES } from "@/types";
+import type { PermissionCache } from "./session-access";
+import { createPermissionCache } from "./session-access";
 
 interface User {
 	loggedIn: boolean;
@@ -23,7 +25,7 @@ interface User {
 	groupInfo?: { groups: string[] };
 }
 
-export interface SessionStoreState {
+export interface SessionStoreState extends PermissionCache {
 	status: "INITIALIZING" | "MISSING AUTHENTICATION" | "SUCCESS" | "ERROR";
 	authenticated: boolean;
 	insightID: string;
@@ -82,6 +84,11 @@ export const createSessionStore = (
 	configStore: ConfigStore,
 ): StoreApi<SessionStoreState> =>
 	createStore<SessionStoreState>()((set, get) => ({
+		...createPermissionCache(
+			(update) =>
+				set((state) => ({ permissions: update(state.permissions) })),
+			() => get().permissions,
+		),
 		status: "INITIALIZING",
 		authenticated: false,
 		insightID: "",
@@ -98,6 +105,10 @@ export const createSessionStore = (
 		defaultTextGenerationModel: "",
 		defaultCodeGenerationModel: "",
 		initialize: async (loggedIn) => {
+			// Permissions are per user and this store outlives every
+			// workbench, so a re-initialize must not let one user's cached
+			// access show up for the next.
+			get().clearPermissions();
 			set({
 				user: {
 					...get().user,
@@ -225,6 +236,7 @@ export const createSessionStore = (
 		},
 		logout: async () => {
 			await logout();
+			get().clearPermissions();
 			set({
 				user: resetUser(false),
 				status: "MISSING AUTHENTICATION",

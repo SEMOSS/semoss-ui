@@ -15,8 +15,8 @@ import {
 import { toast } from "@semoss/ui/next";
 import { MCP } from "@/constants";
 import {
+	useAccess,
 	useWorkbench,
-	useWorkbenchAccess,
 	useWorkbenchControl,
 	useWorkbenchFilePanels,
 } from "@/hooks";
@@ -48,7 +48,7 @@ const FileExplorerPanel = ({
 	setValue,
 }: WorkbenchPanelProps<FileExplorerParams, FileExplorerApi>) => {
 	const insight = useInsight();
-	const access = useWorkbenchAccess(config.type, config.id);
+	const access = useAccess(config.type, config.id);
 	const readOnly = access.status !== "ready" || access.readOnly;
 	const layoutActions = useWorkbench((state) => state.layout.actions);
 	const { id: resourceId, type: resourceType } = config;

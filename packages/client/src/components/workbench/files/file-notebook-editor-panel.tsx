@@ -26,7 +26,7 @@ import {
 	TooltipTrigger,
 	toast,
 } from "@semoss/ui/next";
-import { useWorkbenchAccess, useWorkbenchControl } from "@/hooks";
+import { useAccess, useWorkbenchControl } from "@/hooks";
 import type {
 	WorkbenchPanelConfig,
 	WorkbenchPanelProps,
@@ -73,7 +73,7 @@ const FileNotebookEditorPanel = ({
 >) => {
 	const insight = useInsight();
 	const { t } = useTranslation("common");
-	const access = useWorkbenchAccess(config.type, config.id);
+	const access = useAccess(config.type, config.id);
 	const readOnly = access.status !== "ready" || access.readOnly;
 	const targetInsightId =
 		config.type === "INSIGHT" ? config.id : insight.insightId;

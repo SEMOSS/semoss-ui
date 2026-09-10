@@ -10,7 +10,7 @@ import type {
 	GitStageAction,
 } from "@/components/git";
 import { GitDiffControl, GitDiffEditor } from "@/components/git";
-import { useWorkbenchAccess, useWorkbenchControl } from "@/hooks";
+import { useAccess, useWorkbenchControl } from "@/hooks";
 import type {
 	WorkbenchPanelConfig,
 	WorkbenchPanelProps,
@@ -33,7 +33,7 @@ const GitDiffPanel = ({
 	close,
 }: WorkbenchPanelProps<GitDiffParams, GitDiffControlValue>) => {
 	const insight = useInsight();
-	const access = useWorkbenchAccess(config.type, config.id);
+	const access = useAccess(config.type, config.id);
 	const readOnly = access.status !== "ready" || access.readOnly;
 	const [renderSideBySide, setRenderSideBySide] = useState(true);
 	const historical = config.side === "COMMIT";

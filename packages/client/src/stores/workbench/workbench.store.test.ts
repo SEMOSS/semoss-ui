@@ -1,22 +1,13 @@
 import { describe, expect, it } from "vitest";
 import { createWorkbenchStore } from "./workbench.store";
 
-describe("workbench configure", () => {
-	it("records the active resource's permission", () => {
-		const store = createWorkbenchStore("configure");
-
-		store.getState().configure({
-			resource: {
-				type: "PROJECT",
-				id: "project-1",
-				permission: "READ_ONLY",
-			},
-		});
-
-		expect(store.getState().access.entries["PROJECT:project-1"]).toEqual({
-			status: "SUCCESS",
-			permission: "READ_ONLY",
-		});
+describe("createWorkbenchStore", () => {
+	it("composes only the generic dock namespaces", () => {
+		// Permissions moved to the session store and the assistant owns its
+		// own, so anything domain-shaped reappearing here is a regression.
+		expect(
+			Object.keys(createWorkbenchStore("shape").getState()).sort(),
+		).toEqual(["command", "control", "layout", "loading"]);
 	});
 
 	it("exposes its cache key so sibling stores can scope themselves", () => {

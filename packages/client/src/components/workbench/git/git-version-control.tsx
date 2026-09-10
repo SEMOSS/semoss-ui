@@ -4,7 +4,7 @@ import { useInsight, usePixel } from "@semoss/sdk/react";
 import { Button, Spinner } from "@semoss/ui/next";
 import type { GitBranches, GitStatus } from "@/components/git";
 import { GitBranchControl } from "@/components/git";
-import { useWorkbenchAccess } from "@/hooks";
+import { useAccess } from "@/hooks";
 import type { WorkbenchChromeProps } from "@/stores/workbench";
 import { WORKBENCH_STYLES } from "../core/workbench.chrome";
 import type { GitPanelScopeParams } from "./git-panel.types";
@@ -16,7 +16,7 @@ export const GitVersionControl: FC<
 	WorkbenchChromeProps<GitVersionParams, number>
 > = ({ config, setValue }) => {
 	const insight = useInsight();
-	const access = useWorkbenchAccess(config.type, config.id);
+	const access = useAccess(config.type, config.id);
 	const [isBranchesOpen, setIsBranchesOpen] = useState(false);
 	const readOnly = access.status !== "ready" || access.readOnly;
 	const prefix = config.type === "ENGINE" ? "Engine" : "Project";

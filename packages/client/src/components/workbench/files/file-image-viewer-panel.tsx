@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import { useInsight, usePixel } from "@semoss/sdk/react";
 import { getFileIconComponent } from "@semoss/shared";
 import { Muted, Spinner } from "@semoss/ui/next";
-import { useWorkbenchAccess, useWorkbenchControl } from "@/hooks";
+import { useAccess, useWorkbenchControl } from "@/hooks";
 import type {
 	WorkbenchPanelConfig,
 	WorkbenchPanelProps,
@@ -29,7 +29,7 @@ const FileImageViewerPanel = ({
 	setValue,
 }: WorkbenchPanelProps<FileImageViewerParams, FileImageViewerControlValue>) => {
 	const insight = useInsight();
-	const access = useWorkbenchAccess(config.type, config.id);
+	const access = useAccess(config.type, config.id);
 	const image = usePixel<string>(
 		access.status === "ready" ? getFileReadPixel(config, true) : "",
 		{ data: "" },

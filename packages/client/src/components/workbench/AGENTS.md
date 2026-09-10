@@ -129,10 +129,19 @@ one type.
   records/config instead of relying on the static-layout exception.
 
 **Authorization is runtime state, never layout config.** Resource panels call
-`useWorkbenchAccess(type, id)` directly in their body — it returns a discriminated union
+`useAccess(type, id)` directly in their body — it returns a discriminated union
 (`"loading"` / `"error"` / `"ready"`), narrowing to `permission`/`readOnly` only once resolved.
 Do not serialize `permission` or `readOnly` into a panel record, DB layout, or localStorage
 snapshot. Backend authorization remains authoritative.
+
+**The permission cache lives on the session store, not here.** A permission is a fact about
+(user, resource), so two workbenches open on the same project can never disagree about whether
+it is editable. Two consequences: a domain workbench calls `refreshPermission` (not
+`loadPermission`) on mount, because the shared entry would otherwise be as old as whenever some
+other workbench last fetched it — the `refreshing` / `refreshError` fields keep the stale
+permission readable meanwhile, so nothing flashes to read-only; and the session clears the cache
+on logout, because it outlives every workbench and would otherwise hand one user's access to
+the next.
 
 **`config` optionality is a claim.** `props.config` is backed by `record.config ?? {}`, so a
 required field that no seeding site actually sets is `undefined` at runtime despite its type.

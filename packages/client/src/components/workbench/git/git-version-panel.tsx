@@ -3,7 +3,7 @@ import { useEffect } from "react";
 import { useIteratorPixel } from "@semoss/sdk/react";
 import type { GitCommit, GitDataStatus } from "@/components/git";
 import { GitHistory } from "@/components/git";
-import { useWorkbenchAccess, useWorkbenchControl } from "@/hooks";
+import { useAccess, useWorkbenchControl } from "@/hooks";
 import type {
 	WorkbenchPanelConfig,
 	WorkbenchPanelProps,
@@ -24,7 +24,7 @@ const GitVersionPanel = ({
 	id,
 	value,
 }: WorkbenchPanelProps<GitVersionParams, number>) => {
-	const access = useWorkbenchAccess(config.type, config.id);
+	const access = useAccess(config.type, config.id);
 	const prefix = config.type === "ENGINE" ? "Engine" : "Project";
 	const resource =
 		config.type === "ENGINE"

@@ -8,6 +8,7 @@ import { AssistantStoreProvider } from "@/contexts";
 import {
 	useAssistantStore,
 	useProject,
+	useSession,
 	useWorkbench,
 	useWorkbenchCommands,
 } from "@/hooks";
@@ -266,7 +267,8 @@ export const CodeWorkbench: React.FC = () => {
 		toast.success("App rebuilt and published.");
 	}, [readOnly, insight.actions, project.project_id, refreshCodeRenderer]);
 
-	const configureWorkbench = useWorkbench((s) => s.configure);
+	const syncPermission = useSession((s) => s.syncPermission);
+	const refreshPermission = useSession((s) => s.refreshPermission);
 
 	const assistantStore = useAssistantStore();
 
@@ -274,13 +276,10 @@ export const CodeWorkbench: React.FC = () => {
 	useEffect(() => {
 		const name = project.project_display_name || project.project_name;
 
-		configureWorkbench({
-			resource: {
-				type: "PROJECT",
-				id: project.project_id,
-				permission,
-			},
-		});
+		syncPermission("PROJECT", project.project_id, permission);
+		void refreshPermission("PROJECT", project.project_id).catch(
+			() => undefined,
+		);
 
 		assistantStore.getState().configure({
 			systemPrompt: `You are the assistant for the ${name} code workbench (${project.project_id}). Your role is to help the user build and run this app and the rest of the project's files. Use only the tools provided in this room. Never claim that an operation succeeded unless its tool result confirms success. Keep answers concise and grounded in the active project.`,
@@ -299,7 +298,8 @@ export const CodeWorkbench: React.FC = () => {
 	}, [
 		assistantStore,
 		readOnly,
-		configureWorkbench,
+		syncPermission,
+		refreshPermission,
 		handleRebuild,
 		handleRunCompleted,
 		permission,

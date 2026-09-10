@@ -9,7 +9,7 @@ import {
 	readMCPFile,
 	toFileText,
 } from "@/components/shared";
-import { useWorkbenchAccess } from "@/hooks";
+import { useAccess } from "@/hooks";
 import type {
 	WorkbenchPanelConfig,
 	WorkbenchPanelProps,
@@ -48,7 +48,7 @@ const FileMcpEditorPanel = ({
 	config,
 }: WorkbenchPanelProps<FileMcpEditorParams>) => {
 	const insight = useInsight();
-	const access = useWorkbenchAccess(config.type, config.id);
+	const access = useAccess(config.type, config.id);
 	const readOnly = access.status !== "ready" || access.readOnly;
 	const [loaded, setLoaded] = useState<LoadedMCPFile | null>(null);
 	const [isLoading, setIsLoading] = useState(false);

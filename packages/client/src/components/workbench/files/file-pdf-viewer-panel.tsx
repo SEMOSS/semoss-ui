@@ -12,7 +12,7 @@ import {
 	getFileOperationErrorMessage,
 } from "@semoss/shared";
 import { Button, Muted, Spinner, toast } from "@semoss/ui/next";
-import { useWorkbenchAccess, useWorkbenchControl } from "@/hooks";
+import { useAccess, useWorkbenchControl } from "@/hooks";
 import type {
 	WorkbenchPanelConfig,
 	WorkbenchPanelProps,
@@ -39,7 +39,7 @@ const FilePdfViewerPanel = ({
 }: WorkbenchPanelProps<FilePdfViewerParams, FilePdfViewerControlValue>) => {
 	const insight = useInsight();
 	const { t } = useTranslation("common");
-	const access = useWorkbenchAccess(config.type, config.id);
+	const access = useAccess(config.type, config.id);
 	const [isDownloading, setIsDownloading] = useState(false);
 	const targetInsightId =
 		config.type === "INSIGHT" ? config.id : insight.insightId;

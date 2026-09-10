@@ -10,7 +10,7 @@ import { DatabaseWorkbenchStoreProvider } from "@/contexts/database-workbench.co
 import {
 	useAssistantStore,
 	useEngine,
-	useWorkbench,
+	useSession,
 	useWorkbenchCommands,
 	useWorkbenchStoreApi,
 } from "@/hooks";
@@ -197,19 +197,18 @@ export const DatabaseWorkbench: React.FC = () => {
 		void databaseStore.getState().initialize(engine.engine_id);
 	}, [engine.engine_id, databaseStore]);
 
-	const configureWorkbench = useWorkbench((s) => s.configure);
+	const syncPermission = useSession((s) => s.syncPermission);
+	const refreshPermission = useSession((s) => s.refreshPermission);
 
 	const assistantStore = useAssistantStore();
 
-	// Keep the assistant prompt and room tools in sync with the active engine.
+	// Revalidate the engine's permission and keep the assistant prompt and
+	// room tools in sync with it.
 	useEffect(() => {
-		configureWorkbench({
-			resource: {
-				type: "ENGINE",
-				id: engine.engine_id,
-				permission,
-			},
-		});
+		syncPermission("ENGINE", engine.engine_id, permission);
+		void refreshPermission("ENGINE", engine.engine_id).catch(
+			() => undefined,
+		);
 
 		assistantStore.getState().configure({
 			systemPrompt: `You are the assistant for the ${engine.engine_display_name || engine.engine_name} workbench (${engine.engine_id}). Your role is to help the user understand and work with this database. Use only the tools provided in this room. Never claim that an operation succeeded unless its tool result confirms success. Keep answers concise and grounded in the active engine.`,
@@ -218,7 +217,8 @@ export const DatabaseWorkbench: React.FC = () => {
 		});
 	}, [
 		assistantStore,
-		configureWorkbench,
+		syncPermission,
+		refreshPermission,
 		engine.engine_display_name,
 		engine.engine_id,
 		engine.engine_name,

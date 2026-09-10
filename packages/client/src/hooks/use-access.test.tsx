@@ -1,9 +1,10 @@
 import { act, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { getUserEnginePermission } from "@semoss/sdk";
-import { WorkbenchStoreContext } from "@/contexts/workbench.context";
-import { createWorkbenchStore } from "@/stores/workbench";
-import { useWorkbenchAccess } from "./use-workbench-access";
+import { SessionStoreContext } from "@/contexts/session.context";
+import { createConfigStore } from "@/stores/config";
+import { createSessionStore } from "@/stores/session";
+import { useAccess } from "./use-access";
 
 vi.mock("@semoss/sdk", async (importOriginal) => {
 	const actual = await importOriginal<typeof import("@semoss/sdk")>();
@@ -14,7 +15,7 @@ const enginePermission = vi.mocked(getUserEnginePermission);
 
 /** Surfaces every field of the access state as text so tests can assert on it. */
 const AccessProbe = () => {
-	const access = useWorkbenchAccess("ENGINE", "engine-1");
+	const access = useAccess("ENGINE", "engine-1");
 	return (
 		<div>
 			<span>status:{access.status}</span>
@@ -42,11 +43,11 @@ const AccessProbe = () => {
 };
 
 const renderAccess = () => {
-	const store = createWorkbenchStore("access-hook");
+	const store = createSessionStore(createConfigStore());
 	render(
-		<WorkbenchStoreContext.Provider value={store}>
+		<SessionStoreContext.Provider value={store}>
 			<AccessProbe />
-		</WorkbenchStoreContext.Provider>,
+		</SessionStoreContext.Provider>,
 	);
 };
 
@@ -55,7 +56,7 @@ const clickRefresh = () => {
 	act(() => screen.getByRole("button", { name: "Refresh" }).click());
 };
 
-describe("useWorkbenchAccess", () => {
+describe("useAccess", () => {
 	beforeEach(() => enginePermission.mockReset());
 
 	it("starts loading, then resolves to ready", async () => {

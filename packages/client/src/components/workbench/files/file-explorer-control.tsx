@@ -8,11 +8,9 @@ import {
 	TooltipContent,
 	TooltipTrigger,
 } from "@semoss/ui/next";
-import { useWorkbench } from "@/hooks";
-import {
-	getWorkbenchAccessKey,
-	type WorkbenchChromeProps,
-} from "@/stores/workbench";
+import { useSession } from "@/hooks";
+import { getPermissionKey } from "@/stores/session";
+import type { WorkbenchChromeProps } from "@/stores/workbench";
 import { WORKBENCH_STYLES } from "../core/workbench.chrome";
 import type { FileExplorerParams } from "./file-explorer-panel";
 
@@ -22,15 +20,15 @@ export const FileExplorerControl: FC<
 > = ({ value }) => {
 	const accessKey = value
 		? value.mode.type === "APP"
-			? getWorkbenchAccessKey("PROJECT", value.mode.app)
+			? getPermissionKey("PROJECT", value.mode.app)
 			: value.mode.type === "ENGINE"
-				? getWorkbenchAccessKey("ENGINE", value.mode.engine)
+				? getPermissionKey("ENGINE", value.mode.engine)
 				: value.mode.type === "STORAGE"
-					? getWorkbenchAccessKey("ENGINE", value.mode.storage)
+					? getPermissionKey("ENGINE", value.mode.storage)
 					: null
 		: null;
-	const permission = useWorkbench((state) =>
-		accessKey ? state.access.entries[accessKey]?.permission : undefined,
+	const permission = useSession((state) =>
+		accessKey ? state.permissions[accessKey]?.permission : undefined,
 	);
 
 	if (!value) return null;

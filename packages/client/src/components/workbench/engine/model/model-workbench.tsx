@@ -4,7 +4,7 @@ import type { Role } from "@semoss/sdk";
 import { useInsight } from "@semoss/sdk/react";
 import type { FileExplorerApi } from "@semoss/shared";
 import { ModelChatStoreProvider } from "@/contexts/model-chat.context";
-import { useEngine, useWorkbench, useWorkbenchCommands } from "@/hooks";
+import { useEngine, useSession, useWorkbenchCommands } from "@/hooks";
 import type {
 	WorkbenchLayout,
 	WorkbenchPanelConfigAny,
@@ -163,17 +163,15 @@ export const ModelWorkbench: React.FC = () => {
 		() => createModelWorkbenchLayout(engine.engine_id, permission),
 		[engine.engine_id, permission],
 	);
-	const configureWorkbench = useWorkbench((state) => state.configure);
+	const syncPermission = useSession((state) => state.syncPermission);
+	const refreshPermission = useSession((state) => state.refreshPermission);
 
 	useEffect(() => {
-		configureWorkbench({
-			resource: {
-				type: "ENGINE",
-				id: engine.engine_id,
-				permission,
-			},
-		});
-	}, [configureWorkbench, engine.engine_id, permission]);
+		syncPermission("ENGINE", engine.engine_id, permission);
+		void refreshPermission("ENGINE", engine.engine_id).catch(
+			() => undefined,
+		);
+	}, [syncPermission, refreshPermission, engine.engine_id, permission]);
 
 	// Created once per workbench instance before its panels render.
 	const [chatStore] = useState<StoreApi<ModelChatStoreInterface>>(() => {
