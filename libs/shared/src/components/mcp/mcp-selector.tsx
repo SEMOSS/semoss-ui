@@ -78,14 +78,8 @@ interface MCPSelectorProps {
 	enableKnowledgeMCP?: boolean;
 
 	/**
-	 * When false, hides items tagged SYSTEM from the skills (Projects) list.
-	 * Defaults to true (show all).
-	 */
-	showSystemSkills?: boolean;
-
-	/**
-	 * When false, hides items tagged SYSTEM from the tools (Engines) list in
-	 * TOOLBOX mode. Defaults to true (show all).
+	 * When false, hides items tagged SYSTEM from the TOOLBOX list (both engines
+	 * and projects). Defaults to true (show all).
 	 */
 	showSystemTools?: boolean;
 
@@ -112,7 +106,6 @@ export const MCPSelector: React.FC<MCPSelectorProps> = ({
 	onRequestCreateKnowledge,
 	autoFocus = false,
 	enableKnowledgeMCP = true,
-	showSystemSkills = true,
 	showSystemTools = true,
 	getPlatformUrl,
 	workspaceId,
@@ -160,7 +153,7 @@ export const MCPSelector: React.FC<MCPSelectorProps> = ({
 				)
 				.map(engineProjectToMCP),
 		{ limit: 25 },
-		[debouncedSearch, applyEngineMCPFilter, type],
+		[debouncedSearch, applyEngineMCPFilter, type, showSystemTools],
 	);
 
 	/**
@@ -180,10 +173,10 @@ export const MCPSelector: React.FC<MCPSelectorProps> = ({
 		(response) => (response.length < 25 ? -1 : Infinity),
 		(response) =>
 			response
-				.filter((item) => showSystemSkills || !hasSystemTag(item.tag))
+				.filter((item) => showSystemTools || !hasSystemTag(item.tag))
 				.map(engineProjectToMCP),
 		{ limit: 25 },
-		[debouncedSearch, type],
+		[debouncedSearch, type, showSystemTools],
 	);
 
 	/**

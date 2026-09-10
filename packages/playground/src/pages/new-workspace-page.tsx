@@ -248,9 +248,6 @@ export const NewWorkspacePage = observer(() => {
 							enableKnowledgeMCP={
 								root.theme.featureFlags?.enableKnowledgeMCP
 							}
-							showSystemSkills={
-								root.theme.featureFlags?.showSystemSkills
-							}
 							showSystemTools={
 								root.theme.featureFlags?.showSystemTools
 							}
@@ -273,6 +270,9 @@ export const NewWorkspacePage = observer(() => {
 							disabled={isSaving}
 							onChange={(next) => setSkills(next)}
 							className="h-112"
+							showSystemSkills={
+								root.theme.featureFlags?.showSystemSkills
+							}
 						/>
 					</section>
 

@@ -348,10 +348,6 @@ export const MCPOverlay: React.FC<MCPOverlayProps> = ({
 											root.theme.featureFlags
 												?.enableKnowledgeMCP
 										}
-										showSystemSkills={
-											root.theme.featureFlags
-												?.showSystemSkills
-										}
 										showSystemTools={
 											root.theme.featureFlags
 												?.showSystemTools
