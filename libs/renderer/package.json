@@ -43,7 +43,7 @@
         "@vitest/coverage-v8": "^4.1.10",
         "@vitest/ui": "^4.1.10",
         "dompurify": "^2.3.10",
-        "echarts": "^5.5.1",
+        "echarts": "^6.1.0",
         "echarts-for-react": "^3.0.2",
         "react": "^19.0.0",
         "react-hook-form": "^7.34.2",
