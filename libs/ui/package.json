@@ -8,6 +8,7 @@
   "types": "./dist/types/index.d.ts",
   "exports": {
     "./globals.css": "./src/styles/globals.css",
+    "./monaco.css": "./src/styles/monaco.css",
     ".": {
       "types": "./dist/types/index.d.ts",
       "default": "./dist/index.mjs"
