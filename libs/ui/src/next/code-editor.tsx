@@ -6,6 +6,10 @@ import {
 	type OnMount,
 } from "../lib/";
 import {
+	toggleCodeEditorWordWrap,
+	useCodeEditorWordWrap,
+} from "./code-editor-word-wrap";
+import {
 	ContextMenu,
 	ContextMenuContent,
 	ContextMenuItem,
@@ -128,8 +132,18 @@ const pasteFromClipboard = (editor: monaco.editor.IStandaloneCodeEditor) => {
 		});
 };
 
-/** Undo/Redo/Cut/Copy/Paste/Find/Replace — pass this (or spread it) as `menuItems`. */
+/** Word wrap/Undo/Redo/Cut/Copy/Paste/Find/Replace — pass this (or spread it) as `menuItems`. */
 export const DEFAULT_CODE_EDITOR_MENU_ITEMS: CodeEditorMenuItem[] = [
+	{
+		id: "word-wrap",
+		label: "Toggle Word Wrap",
+		shortcut: "Alt + Z",
+		separator: true,
+		keybindings: (monacoInstance) => [
+			monacoInstance.KeyMod.Alt | monacoInstance.KeyCode.KeyZ,
+		],
+		onSelect: () => toggleCodeEditorWordWrap(),
+	},
 	{
 		id: "find",
 		label: "Find",
@@ -193,15 +207,20 @@ export const CodeEditor = React.forwardRef<
 	) => {
 		const { resolvedTheme } = useTheme();
 		const theme = resolvedTheme === "dark" ? "vs-dark" : "light";
+		const wordWrap = useCodeEditorWordWrap();
 		const editorRef =
 			React.useRef<monaco.editor.IStandaloneCodeEditor | null>(null);
-		const editorOptions = {
-			automaticLayout: true,
-			scrollBeyondLastLine: false,
-			contextmenu: false,
-			...(options ?? {}),
-			readOnly: disabled || options?.readOnly === true,
-		};
+		const editorOptions: monaco.editor.IStandaloneEditorConstructionOptions =
+			{
+				automaticLayout: true,
+				scrollBeyondLastLine: false,
+				contextmenu: false,
+				// the shared preference is a default: a caller that pins
+				// `wordWrap` itself keeps its own value
+				wordWrap: wordWrap ? "on" : "off",
+				...(options ?? {}),
+				readOnly: disabled || options?.readOnly === true,
+			};
 		const menuItemsRef = React.useRef(menuItems);
 		menuItemsRef.current = menuItems;
 
