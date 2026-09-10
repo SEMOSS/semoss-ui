@@ -8,6 +8,7 @@ import {
 	Database,
 	DatabaseZap,
 	FileText,
+	FolderOpen,
 	Github,
 	KeyRound,
 	LayoutGrid,
@@ -117,6 +118,10 @@ const CardMapper: Record<string, CardConfig> = {
 	"My Profile": {
 		icon: <CircleUserRound className={ICON_CLASS} />,
 		color: "#471F96",
+	},
+	"My Files": {
+		icon: <FolderOpen className={ICON_CLASS} />,
+		color: "#F59E0B",
 	},
 	Jobs: {
 		icon: <Briefcase className={ICON_CLASS} />,

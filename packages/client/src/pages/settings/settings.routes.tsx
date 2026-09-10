@@ -10,6 +10,7 @@ import { EngineSettingsIndexPage } from "./engine-settings-index-page";
 import { GitHubAppPage } from "./github-app-page";
 import { LLMFeedbackPage } from "./llm-feedback-page";
 import { MemberSettingsPage } from "./member-settings-page";
+import { MyFilesPage } from "./my-files-page";
 import { MyProfilePage } from "./my-profile-page";
 import { ProjectSettingsDetailsPage } from "./project-settings-details-page";
 import { ProjectSettingsIndexPage } from "./project-settings-index-page";
@@ -33,6 +34,7 @@ const SETTINGS_COMPONENTS: Record<string, ComponentType> = {
 	"admin-query": AdminQueryPage,
 	"admin-theme": AdminThemePage,
 	"my-profile": MyProfilePage,
+	"my-files": MyFilesPage,
 	jobs: JobsPage,
 	"jobs/add-new-job": AddNewJob,
 	"jobs/edit-job/:id": AddNewJob,

@@ -9,6 +9,7 @@ export const WORKBENCH_COMPONENTS = {
 	FILE_MARKDOWN_EDITOR: "file-markdown-editor",
 	FILE_NOTEBOOK_EDITOR: "file-notebook-editor",
 	FILE_PDF_VIEWER: "file-pdf-viewer",
+	FILE_PPTX_VIEWER: "file-pptx-viewer",
 	FILE_MCP_EDITOR: "file-mcp-editor",
 	DATABASE_COLUMNS: "database-columns",
 	DATABASE_QUERY: "database-query",
