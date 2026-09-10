@@ -10,6 +10,7 @@ import {
 	uploadInsight,
 } from "@semoss/sdk";
 import type { Engine } from "@semoss/shared";
+import type { WorkbenchState } from "@semoss/workbench";
 import type {
 	ConversationRoom,
 	PlaygroundMessage,
@@ -27,7 +28,6 @@ import {
 	setRoomForInsight,
 	updateRoomOptions,
 } from "@/api/rooms";
-import type { WorkbenchState } from "../workbench/workbench.store";
 import type {
 	BuildAttachment,
 	BuildRun,

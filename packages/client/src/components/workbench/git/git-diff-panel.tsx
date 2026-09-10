@@ -2,6 +2,10 @@ import { FileDiffIcon } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useInsight, usePixel } from "@semoss/sdk/react";
 import { toast } from "@semoss/ui/next";
+import {
+	WorkbenchAccessError,
+	WorkbenchAccessLoading,
+} from "@semoss/workbench";
 import type {
 	GitCommitFile,
 	GitDiff,
@@ -15,8 +19,6 @@ import type {
 	WorkbenchPanelConfig,
 	WorkbenchPanelProps,
 } from "@/stores/workbench";
-import { WorkbenchAccessError } from "../core/workbench-access-error";
-import { WorkbenchAccessLoading } from "../core/workbench-access-loading";
 import type { GitPanelScopeParams } from "./git-panel.types";
 
 export interface GitDiffParams extends GitPanelScopeParams {

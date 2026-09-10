@@ -1,9 +1,8 @@
 import { useEffect, useState } from "react";
 import type { StoreApi } from "zustand";
+import { useWorkbench, useWorkbenchStoreApi } from "@semoss/workbench";
 import type { AssistantState } from "@/stores/assistant";
 import { createAssistantStore } from "@/stores/assistant";
-import { useWorkbench } from "./use-workbench";
-import { useWorkbenchStoreApi } from "./use-workbench-store-api";
 
 /**
  * Create one assistant store bound to the nearest workbench, and tear it down

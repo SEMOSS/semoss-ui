@@ -7,10 +7,10 @@ import {
 	TooltipContent,
 	TooltipTrigger,
 } from "@semoss/ui/next";
+import { WORKBENCH_STYLES } from "@semoss/workbench";
 import { ProjectDetailTabs } from "@/components/project";
 import { useWorkbench } from "@/hooks";
 import type { WorkbenchPanelConfig } from "@/stores/workbench";
-import { WORKBENCH_STYLES } from "../core/workbench.chrome";
 import { WORKBENCH_COMPONENTS } from "../workbench.constants";
 
 /**

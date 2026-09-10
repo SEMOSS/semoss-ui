@@ -1,11 +1,11 @@
 import { MessageSquareIcon } from "lucide-react";
 import { Alert, AlertDescription, cn } from "@semoss/ui/next";
+import { WORKBENCH_STYLES } from "@semoss/workbench";
 import { useModelChat, useWorkbenchControl } from "@/hooks";
 import type {
 	WorkbenchComponent,
 	WorkbenchPanelConfig,
 } from "@/stores/workbench";
-import { WORKBENCH_STYLES } from "../../core/workbench.chrome";
 import { ModelChatComposer } from "./model-chat-composer";
 import { ModelChatMessages } from "./model-chat-messages";
 import { ModelChatNewConversationControl } from "./model-chat-new-conversation-control";

@@ -6,8 +6,8 @@ import {
 	TooltipContent,
 	TooltipTrigger,
 } from "@semoss/ui/next";
+import { WORKBENCH_STYLES } from "@semoss/workbench";
 import { useWorkbench } from "@/hooks";
-import { WORKBENCH_STYLES } from "../core/workbench.chrome";
 import { WORKBENCH_COMPONENTS } from "../workbench.constants";
 
 /**

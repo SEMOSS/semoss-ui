@@ -3,6 +3,7 @@ import type { StoreApi } from "zustand";
 import type { Role } from "@semoss/sdk";
 import { useInsight } from "@semoss/sdk/react";
 import type { FileExplorerApi } from "@semoss/shared";
+import { Workbench, WorkbenchCommandMenuButton } from "@semoss/workbench";
 import { makeEngineRoomMcp } from "@/api/rooms";
 import { ASSISTANT_PANEL } from "@/components/assistant";
 import { AssistantStoreProvider } from "@/contexts";
@@ -22,8 +23,6 @@ import {
 	createDatabaseWorkbenchStore,
 	type DatabaseWorkbenchState,
 } from "@/stores/workbench/database";
-import { Workbench } from "../../core";
-import { WorkbenchCommandMenuButton } from "../../core/workbench-command-menu-button";
 import {
 	FILE_CODE_EDITOR_PANEL,
 	FILE_DOWNLOAD_PANEL,

@@ -1,10 +1,10 @@
 import { useMemo } from "react";
+import { Workbench } from "@semoss/workbench";
 import { useProject } from "@/hooks";
 import type {
 	WorkbenchLayout,
 	WorkbenchPanelConfigAny,
 } from "@/stores/workbench";
-import { Workbench } from "../../core";
 import {
 	FILE_CODE_EDITOR_PANEL,
 	FILE_DOWNLOAD_PANEL,

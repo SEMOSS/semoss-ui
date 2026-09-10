@@ -3,6 +3,7 @@ import type { StoreApi } from "zustand";
 import type { Role } from "@semoss/sdk";
 import { useInsight } from "@semoss/sdk/react";
 import type { FileExplorerApi } from "@semoss/shared";
+import { Workbench, WorkbenchCommandMenuButton } from "@semoss/workbench";
 import { ModelChatStoreProvider } from "@/contexts/model-chat.context";
 import { useEngine, useSession, useWorkbenchCommands } from "@/hooks";
 import type {
@@ -11,8 +12,6 @@ import type {
 } from "@/stores/workbench";
 import type { ModelChatStoreInterface } from "@/stores/workbench/model";
 import { createModelChatStore } from "@/stores/workbench/model";
-import { Workbench } from "../../core";
-import { WorkbenchCommandMenuButton } from "../../core/workbench-command-menu-button";
 import {
 	FILE_CODE_EDITOR_PANEL,
 	FILE_DOWNLOAD_PANEL,

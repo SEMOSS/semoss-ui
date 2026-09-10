@@ -24,6 +24,7 @@
         "@semoss/shared": "workspace:*",
         "@semoss/terminal": "workspace:*",
         "@semoss/ui": "workspace:*",
+        "@semoss/workbench": "workspace:*",
         "@xyflow/react": "^12.0.4",
         "dayjs": "1.11.8",
         "diff": "5.2.2",

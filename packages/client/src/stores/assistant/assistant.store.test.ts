@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { createWorkbenchStore } from "../workbench/workbench.store";
+import { createWorkbenchStore } from "@semoss/workbench";
 import { createAssistantStore } from "./assistant.store";
 
 const makeStore = () =>

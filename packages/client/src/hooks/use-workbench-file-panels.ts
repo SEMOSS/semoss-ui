@@ -7,12 +7,12 @@ import {
 	notifyFileEditorPathMoved,
 	resolveMovedPath,
 } from "@semoss/shared";
+import { useWorkbench } from "@semoss/workbench";
 import { getFilePanelType } from "@/components/workbench/files/file-editor.utility";
 import {
 	WORKBENCH_COMPONENTS,
 	type WorkbenchPanelRecord,
 } from "@/stores/workbench";
-import { useWorkbench } from "./use-workbench";
 
 /** The slice of a file-backed panel's config this hook cares about. */
 interface FilePanelConfig {

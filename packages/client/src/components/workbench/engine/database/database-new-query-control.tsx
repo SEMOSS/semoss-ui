@@ -7,9 +7,9 @@ import {
 	TooltipContent,
 	TooltipTrigger,
 } from "@semoss/ui/next";
+import { WORKBENCH_STYLES } from "@semoss/workbench";
 import { useDatabaseWorkbench } from "@/hooks";
 import type { WorkbenchChromeProps } from "@/stores/workbench";
-import { WORKBENCH_STYLES } from "../../core/workbench.chrome";
 
 /**
  * The query panel's chrome control. New Query is the query surface's own

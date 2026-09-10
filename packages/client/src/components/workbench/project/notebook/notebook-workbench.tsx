@@ -2,6 +2,7 @@ import { useEffect, useMemo } from "react";
 import type { Role } from "@semoss/sdk";
 import { useInsight } from "@semoss/sdk/react";
 import type { FileExplorerApi } from "@semoss/shared";
+import { Workbench, WorkbenchCommandMenuButton } from "@semoss/workbench";
 import { ASSISTANT_PANEL } from "@/components/assistant";
 import { AssistantStoreProvider } from "@/contexts";
 import {
@@ -14,8 +15,6 @@ import type {
 	WorkbenchLayout,
 	WorkbenchPanelConfigAny,
 } from "@/stores/workbench";
-import { Workbench } from "../../core";
-import { WorkbenchCommandMenuButton } from "../../core/workbench-command-menu-button";
 import {
 	FILE_CODE_EDITOR_PANEL,
 	FILE_DOWNLOAD_PANEL,

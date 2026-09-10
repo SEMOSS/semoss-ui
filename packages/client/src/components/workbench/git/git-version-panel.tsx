@@ -1,6 +1,10 @@
 import { GitBranchIcon } from "lucide-react";
 import { useEffect } from "react";
 import { useIteratorPixel } from "@semoss/sdk/react";
+import {
+	WorkbenchAccessError,
+	WorkbenchAccessLoading,
+} from "@semoss/workbench";
 import type { GitCommit, GitDataStatus } from "@/components/git";
 import { GitHistory } from "@/components/git";
 import { useAccess, useWorkbenchControl } from "@/hooks";
@@ -8,8 +12,6 @@ import type {
 	WorkbenchPanelConfig,
 	WorkbenchPanelProps,
 } from "@/stores/workbench";
-import { WorkbenchAccessError } from "../core/workbench-access-error";
-import { WorkbenchAccessLoading } from "../core/workbench-access-loading";
 import { GitCommitRowAdapter } from "./git-commit-row";
 import {
 	GitVersionControl,

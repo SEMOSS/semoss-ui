@@ -7,10 +7,10 @@ import {
 	TooltipContent,
 	TooltipTrigger,
 } from "@semoss/ui/next";
+import { WORKBENCH_STYLES } from "@semoss/workbench";
 import { MetadataHelpDialog } from "@/components/shared";
 import { MCP } from "@/constants";
 import type { WorkbenchChromeProps } from "@/stores/workbench";
-import { WORKBENCH_STYLES } from "../core/workbench.chrome";
 import type { FileCodeEditorParams } from "./file-code-editor-panel";
 
 export interface FileCodeEditorControlValue {

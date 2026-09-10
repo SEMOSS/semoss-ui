@@ -6,8 +6,8 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@semoss/ui/next";
+import { WORKBENCH_STYLES } from "@semoss/workbench";
 import type { WorkbenchChromeProps } from "@/stores/workbench";
-import { WORKBENCH_STYLES } from "../core/workbench.chrome";
 import type { FileDownloadParams } from "./file-download-panel";
 
 export type FileDownloadViewMode = "download" | "raw";

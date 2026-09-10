@@ -8,6 +8,11 @@ import {
 	TooltipContent,
 	TooltipTrigger,
 } from "@semoss/ui/next";
+import {
+	WORKBENCH_STYLES,
+	Workbench,
+	WorkbenchCommandMenuButton,
+} from "@semoss/workbench";
 import { DatabaseWorkbenchStoreProvider } from "@/contexts/database-workbench.context";
 import { useEngine, useWorkbenchCommands, useWorkbenchStoreApi } from "@/hooks";
 import type {
@@ -18,9 +23,6 @@ import {
 	createDatabaseWorkbenchStore,
 	type DatabaseWorkbenchState,
 } from "@/stores/workbench/database";
-import { Workbench } from "../../core";
-import { WORKBENCH_STYLES } from "../../core/workbench.chrome";
-import { WorkbenchCommandMenuButton } from "../../core/workbench-command-menu-button";
 import {
 	WORKBENCH_COMPONENTS,
 	WORKBENCH_PANEL_RECORDS,

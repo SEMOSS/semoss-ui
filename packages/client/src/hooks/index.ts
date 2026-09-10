@@ -1,3 +1,9 @@
+import {
+	useWorkbench,
+	useWorkbenchCommands,
+	useWorkbenchControl,
+	useWorkbenchStoreApi,
+} from "@semoss/workbench";
 import { useAccess } from "./use-access";
 import { useAPI } from "./use-api";
 import { useAssistant } from "./use-assistant";
@@ -10,11 +16,7 @@ import { usePage } from "./use-page";
 import { useProject } from "./use-project";
 import { useSession } from "./use-session";
 import { useTabBarScroll } from "./use-tab-bar-scroll";
-import { useWorkbench } from "./use-workbench";
-import { useWorkbenchCommands } from "./use-workbench-commands";
-import { useWorkbenchControl } from "./use-workbench-control";
 import { useWorkbenchFilePanels } from "./use-workbench-file-panels";
-import { useWorkbenchStoreApi } from "./use-workbench-store-api";
 import { useDesigner } from "./useDesigner";
 import { useEngine } from "./useEngine";
 import { useMetamodel } from "./useMetamodel";

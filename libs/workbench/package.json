@@ -1,0 +1,31 @@
+{
+	"name": "@semoss/workbench",
+	"version": "1.0.0-beta.1",
+	"exports": {
+		".": "./src/index.ts"
+	},
+	"dependencies": {
+		"@semoss/ui": "workspace:*",
+		"lucide-react": "^0.545.0",
+		"react": "^19.0.0",
+		"react-dom": "^19.0.0"
+	},
+	"devDependencies": {
+		"@semoss/config": "workspace:*",
+		"@testing-library/jest-dom": "^6.6.3",
+		"@testing-library/react": "^16.2.0",
+		"@types/react": "^19.0.0",
+		"@types/react-dom": "^19.0.0",
+		"jsdom": "~22.1.0",
+		"typescript": "~6.0.0",
+		"vitest": "^4.1.10"
+	},
+	"peerDependencies": {
+		"zustand": "^5.0.0"
+	},
+	"scripts": {
+		"test": "vitest run --configLoader runner",
+		"test:watch": "vitest --watch --configLoader runner",
+		"check-types": "tsc --pretty --noEmit"
+	}
+}

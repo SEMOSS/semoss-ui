@@ -2,13 +2,15 @@ import { useEffect } from "react";
 import { useInsight, usePixel } from "@semoss/sdk/react";
 import { getFileIconComponent } from "@semoss/shared";
 import { Muted, Spinner } from "@semoss/ui/next";
+import {
+	WorkbenchAccessError,
+	WorkbenchAccessLoading,
+} from "@semoss/workbench";
 import { useAccess, useWorkbenchControl } from "@/hooks";
 import type {
 	WorkbenchPanelConfig,
 	WorkbenchPanelProps,
 } from "@/stores/workbench";
-import { WorkbenchAccessError } from "../core/workbench-access-error";
-import { WorkbenchAccessLoading } from "../core/workbench-access-loading";
 import { getImageMimeType } from "./file-editor.utility";
 import {
 	FileImageViewerControl,

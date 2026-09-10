@@ -7,8 +7,8 @@ import {
 	TooltipContent,
 	TooltipTrigger,
 } from "@semoss/ui/next";
+import { WORKBENCH_STYLES } from "@semoss/workbench";
 import type { WorkbenchChromeProps } from "@/stores/workbench";
-import { WORKBENCH_STYLES } from "../core/workbench.chrome";
 import type { FileImageViewerParams } from "./file-image-viewer-panel";
 
 export interface FileImageViewerControlValue {

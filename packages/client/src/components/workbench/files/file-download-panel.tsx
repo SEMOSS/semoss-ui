@@ -12,13 +12,15 @@ import {
 	getFileOperationErrorMessage,
 } from "@semoss/shared";
 import { Button, CodeEditor, Muted, Spinner, toast } from "@semoss/ui/next";
+import {
+	WorkbenchAccessError,
+	WorkbenchAccessLoading,
+} from "@semoss/workbench";
 import { useAccess, useWorkbenchControl } from "@/hooks";
 import type {
 	WorkbenchPanelConfig,
 	WorkbenchPanelProps,
 } from "@/stores/workbench";
-import { WorkbenchAccessError } from "../core/workbench-access-error";
-import { WorkbenchAccessLoading } from "../core/workbench-access-loading";
 import {
 	FileDownloadControl,
 	type FileDownloadControlValue,

@@ -13,6 +13,11 @@ import {
 	useFileExplorer,
 } from "@semoss/shared";
 import { toast } from "@semoss/ui/next";
+import {
+	WorkbenchAccessError,
+	WorkbenchAccessLoading,
+	writeSpawnDragSpec,
+} from "@semoss/workbench";
 import { MCP } from "@/constants";
 import {
 	useAccess,
@@ -25,9 +30,6 @@ import type {
 	WorkbenchPanelProps,
 } from "@/stores/workbench";
 import { WORKBENCH_COMPONENTS } from "@/stores/workbench";
-import { WorkbenchAccessError } from "../core/workbench-access-error";
-import { WorkbenchAccessLoading } from "../core/workbench-access-loading";
-import { writeSpawnDragSpec } from "../core/workbench-spawn-drag";
 import { getFilePanelType } from "./file-editor.utility";
 import { FileExplorerControl } from "./file-explorer-control";
 import { getFileMode } from "./file-panel.utility";

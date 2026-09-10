@@ -17,7 +17,7 @@ import {
 	TooltipTrigger,
 	toast,
 } from "@semoss/ui/next";
-import { WORKBENCH_STYLES } from "@/components/workbench/core/workbench.chrome";
+import { WORKBENCH_STYLES } from "@semoss/workbench";
 import { useAssistant } from "@/hooks/use-assistant";
 import { AssistantComposer } from "./assistant-composer";
 import { AssistantConversations } from "./assistant-conversations";
