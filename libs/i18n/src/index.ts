@@ -1,5 +1,6 @@
 export type { UseTranslationOptions } from "react-i18next";
 export {
+	getI18n,
 	I18nextProvider,
 	Trans,
 	Translation,

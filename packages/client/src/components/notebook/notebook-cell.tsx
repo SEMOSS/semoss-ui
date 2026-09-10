@@ -19,7 +19,14 @@ import {
 	X,
 } from "lucide-react";
 import { observer } from "mobx-react-lite";
-import { createElement, useEffect, useMemo, useRef, useState } from "react";
+import {
+	createElement,
+	type JSX,
+	useEffect,
+	useMemo,
+	useRef,
+	useState,
+} from "react";
 import {
 	ActionMessages,
 	type SerializedState,

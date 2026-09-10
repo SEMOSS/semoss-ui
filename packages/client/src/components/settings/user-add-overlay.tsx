@@ -1,5 +1,4 @@
 import { Download, Shield, Upload } from "lucide-react";
-import { observer } from "mobx-react-lite";
 import { useEffect } from "react";
 import { Controller, useForm } from "react-hook-form";
 import {
@@ -20,7 +19,7 @@ import {
 	toast,
 } from "@semoss/ui/next";
 import { createUser, editMemberInfo } from "@/api";
-import { useRootStore, useSettings } from "@/hooks";
+import { useConfig, useSettings } from "@/hooks";
 import type { ApiResponse } from "@/types";
 
 interface User {
@@ -131,10 +130,12 @@ interface UserAddOverlayProps {
 	onClose: (success: boolean) => void;
 }
 
-export const UserAddOverlay = observer((props: UserAddOverlayProps) => {
+export const UserAddOverlay = (props: UserAddOverlayProps) => {
 	const { open = false, user = null, onClose = () => null } = props;
 
-	const { configStore } = useRootStore();
+	const availableProviders = useConfig(
+		(state) => state.config.availableProviders,
+	);
 	const { adminMode } = useSettings();
 
 	const isNewUser = user === null;
@@ -317,7 +318,7 @@ export const UserAddOverlay = observer((props: UserAddOverlayProps) => {
 								rules={{}}
 								render={({ field }) => {
 									const availableTypeLabels =
-										configStore.store.config.availableProviders.map(
+										availableProviders.map(
 											(option) => option.label,
 										);
 									const fieldValue = field.value || "";
@@ -346,7 +347,7 @@ export const UserAddOverlay = observer((props: UserAddOverlayProps) => {
 													<SelectValue placeholder="Select type" />
 												</SelectTrigger>
 												<SelectContent>
-													{configStore.store.config.availableProviders.map(
+													{availableProviders.map(
 														(option, i) => {
 															return (
 																<SelectItem
@@ -935,4 +936,4 @@ export const UserAddOverlay = observer((props: UserAddOverlayProps) => {
 			</DialogContent>
 		</Dialog>
 	);
-});
+};

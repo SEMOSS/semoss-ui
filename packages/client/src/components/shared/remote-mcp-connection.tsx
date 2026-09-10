@@ -1,7 +1,7 @@
 import { Link2, Link2Off, Pencil } from "lucide-react";
 import { useCallback, useEffect, useId, useState } from "react";
 import { Button, H4, Input, Label, Spinner, toast } from "@semoss/ui/next";
-import { useRootStore } from "@/hooks";
+import { useSession } from "@/hooks";
 
 /**
  * Placeholder the backend returns in place of a stored credential. Must match
@@ -53,7 +53,7 @@ export const RemoteMcpConnection = ({
 	projectId,
 	onChange,
 }: RemoteMcpConnectionProps) => {
-	const { monolithStore } = useRootStore();
+	const runPixel = useSession((state) => state.runPixel);
 
 	const endpointId = useId();
 	const schemeId = useId();
@@ -74,7 +74,7 @@ export const RemoteMcpConnection = ({
 	const loadConnection = useCallback(async () => {
 		setLoading(true);
 		try {
-			const response = (await monolithStore.runQuery(
+			const response = (await runPixel(
 				`ProjectInfo(project=[${JSON.stringify(projectId)}])`,
 			)) as PixelResponse<ProjectInfoOutput>;
 
@@ -101,7 +101,7 @@ export const RemoteMcpConnection = ({
 		} finally {
 			setLoading(false);
 		}
-	}, [monolithStore, projectId]);
+	}, [runPixel, projectId]);
 
 	useEffect(() => {
 		if (!projectId) {
@@ -114,7 +114,7 @@ export const RemoteMcpConnection = ({
 		async (nextEndpoint: string, nextScheme: string, nextToken: string) => {
 			setSaving(true);
 			try {
-				const response = (await monolithStore.runQuery(
+				const response = (await runPixel(
 					`SetRemoteMCP(project=[${JSON.stringify(projectId)}], mcpEndpoint=[${JSON.stringify(
 						nextEndpoint,
 					)}], mcpAuthScheme=[${JSON.stringify(
@@ -149,7 +149,7 @@ export const RemoteMcpConnection = ({
 				setSaving(false);
 			}
 		},
-		[monolithStore, projectId, loadConnection, onChange],
+		[runPixel, projectId, loadConnection, onChange],
 	);
 
 	const connect = useCallback(() => {

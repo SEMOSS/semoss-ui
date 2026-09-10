@@ -9,7 +9,8 @@ import {
 } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { lazy, Suspense, useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link } from "react-router";
+import { runPixel } from "@semoss/sdk/react";
 import {
 	Breadcrumb,
 	BreadcrumbItem,
@@ -39,7 +40,7 @@ const CodeRenderer = lazy(() =>
 	})),
 );
 
-import { usePage, useProject, useRootStore } from "@/hooks";
+import { usePage, useProject } from "@/hooks";
 import { NavbarHeader, NavbarLeft, NavbarRight } from "../../components/shared";
 
 const AppViewLoadingState = () => {
@@ -51,8 +52,6 @@ const AppViewLoadingState = () => {
 };
 
 export const ViewAppPage = observer(() => {
-	// App ID Needed for pixel calls
-	const { configStore } = useRootStore();
 	const { project, permission, catalog, type } = useProject();
 
 	const navigate = useNavigate();
@@ -84,10 +83,9 @@ export const ViewAppPage = observer(() => {
 		// clear out the old app
 		setInsightId(undefined);
 
-		configStore
-			.createProjectInsight(project)
-			.then((loadedInsightId) => {
-				setInsightId(loadedInsightId);
+		runPixel(`SetContext("${project.project_id}")`, "new")
+			.then((response) => {
+				setInsightId(response.insightId);
 				setBookmarked(Boolean(project.project_favorite));
 			})
 			.catch((e) => {
