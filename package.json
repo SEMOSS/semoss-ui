@@ -40,7 +40,12 @@
       "flatted": "3.4.2",
       "@crxjs/vite-plugin>rollup": "2.80.0",
       "archiver-utils>lodash": "4.18.1",
-      "mocha>serialize-javascript": "7.0.5"
+      "mocha>serialize-javascript": "7.0.5",
+      "postcss@>=8.0.0 <8.5.28": "8.5.28",
+      "picomatch@>=4.0.0 <4.0.4": "4.0.4",
+      "dompurify@>=3 <3.4.15": "3.4.15",
+      "vega-embed@>=6 <6.29.0": "6.29.0",
+      "vega-functions@>=6 <6.1.1": "6.1.1"
     }
   }
 }
