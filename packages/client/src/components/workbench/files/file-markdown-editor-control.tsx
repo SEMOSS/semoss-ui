@@ -15,6 +15,7 @@ import {
 import type { WorkbenchChromeProps } from "@/stores/workbench";
 import { WORKBENCH_STYLES } from "../core/workbench.chrome";
 import type { FileMarkdownEditorParams } from "./file-markdown-editor-panel";
+import { FileWordWrapButton } from "./file-word-wrap-button";
 
 export interface FileMarkdownEditorControlValue {
 	canSave: boolean;
@@ -53,6 +54,7 @@ export const FileMarkdownEditorControl: FC<
 					<SelectItem value="preview">Preview</SelectItem>
 				</SelectContent>
 			</Select>
+			{value.viewMode === "raw" && <FileWordWrapButton />}
 			<Tooltip>
 				<TooltipTrigger asChild>
 					<Button
