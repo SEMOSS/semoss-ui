@@ -7,7 +7,6 @@ import {
 	usePixel,
 } from "@semoss/sdk/react";
 import {
-	getFileEditorPathScope,
 	getFileOperationErrorMessage,
 	useFileEditorPathRef,
 } from "@semoss/shared";
@@ -18,16 +17,19 @@ import {
 } from "@semoss/workbench";
 import { useAccess } from "@/hooks";
 import {
+	type FilePanelMode,
+	getFilePanelResource,
+	getFilePanelScope,
+} from "./file-panel.mode";
+import {
 	getFileDownloadPixel,
-	getFileMode,
 	getFileReadPixel,
 	getFileSavePixel,
 } from "./file-panel.utility";
 
-/** The resource scope and file every file panel is opened with. */
+/** The scope and file every file panel is opened with. */
 export interface FilePanelParams {
-	type: "ENGINE" | "PROJECT" | "INSIGHT";
-	id: string;
+	mode: FilePanelMode;
 	name: string;
 	path: string;
 }
@@ -97,15 +99,17 @@ export const useFilePanel = (
 ): FilePanelApi => {
 	const insight = useInsight();
 	const { t } = useTranslation("common");
-	const access = useAccess(config.type, config.id);
+	const resource = getFilePanelResource(config.mode);
+	const access = useAccess(resource?.type ?? "INSIGHT", resource?.id ?? "");
 	const readOnly = access.status !== "ready" || access.readOnly;
 	const targetInsightId =
-		config.type === "INSIGHT" ? config.id : insight.insightId;
-	const pathScope = getFileEditorPathScope(
-		getFileMode(config),
-		targetInsightId,
+		config.mode.type === "INSIGHT"
+			? config.mode.insightId
+			: insight.insightId;
+	const currentPathRef = useFileEditorPathRef(
+		config.path,
+		getFilePanelScope(config.mode),
 	);
-	const currentPathRef = useFileEditorPathRef(config.path, pathScope);
 	const [revision, setRevision] = useState(0);
 	const [isSaving, setIsSaving] = useState(false);
 	const [isDownloading, setIsDownloading] = useState(false);
@@ -114,7 +118,7 @@ export const useFilePanel = (
 
 	const read = usePixel<string>(
 		enabled && access.status === "ready"
-			? getFileReadPixel(config, base64)
+			? getFileReadPixel(config.mode, config.path, base64)
 			: "",
 		{ data: "", onSuccess: () => setRevision((r) => r + 1) },
 		targetInsightId,
@@ -128,7 +132,8 @@ export const useFilePanel = (
 			try {
 				const response = await runPixel<[unknown]>(
 					getFileSavePixel(
-						{ ...config, path: currentPathRef.current },
+						config.mode,
+						currentPathRef.current,
 						content,
 					),
 					targetInsightId,
@@ -161,10 +166,7 @@ export const useFilePanel = (
 		setIsDownloading(true);
 		try {
 			const response = await runPixel<[string]>(
-				getFileDownloadPixel({
-					...config,
-					path: currentPathRef.current,
-				}),
+				getFileDownloadPixel(config.mode, currentPathRef.current),
 				targetInsightId,
 			);
 			if (response.errors.length > 0) {

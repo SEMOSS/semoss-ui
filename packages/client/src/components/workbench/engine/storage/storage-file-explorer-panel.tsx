@@ -61,8 +61,10 @@ const StorageFileExplorerPanel: WorkbenchComponent<
 					layoutActions.selectPanel(
 						getFilePanelType(insightFilePath),
 						{
-							type: "INSIGHT",
-							id: response.insightId,
+							mode: {
+								type: "INSIGHT",
+								insightId: response.insightId,
+							},
 							name: item.name,
 							path: insightFilePath,
 						},

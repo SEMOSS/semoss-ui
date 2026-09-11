@@ -16,6 +16,7 @@ import {
 	getCodeEditorLanguage,
 	getFileCodeEditorMenuItems,
 } from "./file-editor.utility";
+import { matchesFilePanel } from "./file-panel.mode";
 import { type FilePanelParams, useFilePanel } from "./use-file-panel";
 
 export type FileDownloadParams = FilePanelParams;
@@ -87,7 +88,7 @@ export const FILE_DOWNLOAD_PANEL: WorkbenchPanelConfig<
 	name: "Download",
 	canRename: false,
 	mount: "keepAlive",
-	matches: (a, b) => a.type === b.type && a.id === b.id && a.path === b.path,
+	matches: matchesFilePanel,
 	icon: ({ config, className }) => {
 		const Icon = getFileIconComponent(config.path ?? "");
 		return <Icon className={className} />;

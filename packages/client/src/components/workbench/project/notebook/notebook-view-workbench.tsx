@@ -39,8 +39,7 @@ const createNotebookViewWorkbenchLayout = (
 			name: NOTEBOOK_NAME,
 			canClose: true,
 			config: {
-				type: "PROJECT",
-				id: projectId,
+				mode: { type: "APP", app: projectId },
 				name: NOTEBOOK_NAME,
 				path: NOTEBOOK_PATH,
 			},
@@ -48,8 +47,7 @@ const createNotebookViewWorkbenchLayout = (
 		[WORKBENCH_PANEL_RECORDS.FILE_EXPLORER.id]: {
 			...WORKBENCH_PANEL_RECORDS.FILE_EXPLORER,
 			config: {
-				type: "PROJECT",
-				id: projectId,
+				mode: { type: "APP", app: projectId },
 				initialPath: PUBLIC_ROOT_PATH,
 			},
 		},

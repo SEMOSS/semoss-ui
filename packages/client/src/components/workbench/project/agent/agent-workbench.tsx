@@ -51,7 +51,7 @@ const createAgentWorkbenchLayout = (
 				WORKBENCH_PANEL_RECORDS.AGENT_EDITOR,
 			[WORKBENCH_PANEL_RECORDS.FILE_EXPLORER.id]: {
 				...WORKBENCH_PANEL_RECORDS.FILE_EXPLORER,
-				config: { type: "PROJECT", id: projectId },
+				config: { mode: { type: "APP", app: projectId } },
 			},
 			[WORKBENCH_PANEL_RECORDS.ASSISTANT.id]:
 				WORKBENCH_PANEL_RECORDS.ASSISTANT,

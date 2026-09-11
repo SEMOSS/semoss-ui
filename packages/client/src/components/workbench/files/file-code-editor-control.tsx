@@ -27,7 +27,7 @@ export const FileCodeEditorControl: FC<
 	if (!value) return null;
 
 	const showMetadataHelp =
-		config.type !== "INSIGHT" &&
+		config.mode?.type !== "INSIGHT" &&
 		MCP.DRIVER_PATHS.some((path) => config.path.endsWith(path));
 
 	return (

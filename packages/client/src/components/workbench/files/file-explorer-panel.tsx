@@ -1,5 +1,5 @@
 import { FolderTreeIcon, HammerIcon, PencilIcon } from "lucide-react";
-import { useCallback, useMemo } from "react";
+import { useCallback } from "react";
 import { useInsight } from "@semoss/sdk/react";
 import {
 	type FileExplorerApi,
@@ -24,11 +24,14 @@ import type {
 import { WORKBENCH_COMPONENTS } from "@/stores/workbench";
 import { getFilePanelType } from "./file-editor.utility";
 import { FileExplorerPane } from "./file-explorer-pane";
-import { getFileMode } from "./file-panel.utility";
+import {
+	type FilePanelMode,
+	getFilePanelResource,
+	sameFileMode,
+} from "./file-panel.mode";
 
 export interface FileExplorerParams {
-	type: "ENGINE" | "PROJECT" | "INSIGHT";
-	id: string;
+	mode: FilePanelMode;
 	initialPath?: string;
 }
 
@@ -42,14 +45,11 @@ const FileExplorerPanel = ({
 	setValue,
 }: WorkbenchPanelProps<FileExplorerParams, FileExplorerApi>) => {
 	const insight = useInsight();
-	const access = useAccess(config.type, config.id);
+	const resource = getFilePanelResource(config.mode);
+	const access = useAccess(resource?.type ?? "INSIGHT", resource?.id ?? "");
 	const readOnly = access.status !== "ready" || access.readOnly;
 	const layoutActions = useWorkbench((state) => state.layout.actions);
-	const { id: resourceId, type: resourceType } = config;
-	const mode = useMemo(
-		() => getFileMode({ id: resourceId, type: resourceType }),
-		[resourceId, resourceType],
-	);
+	const mode = config.mode;
 	const { migrateMovedTabs, removeDeletedTabs } =
 		useWorkbenchFilePanels(mode);
 
@@ -57,15 +57,10 @@ const FileExplorerPanel = ({
 		(item: FileItem) =>
 			layoutActions.selectPanel(
 				getFilePanelType(item.path),
-				{
-					type: config.type,
-					id: config.id,
-					name: item.name,
-					path: item.path,
-				},
+				{ mode, name: item.name, path: item.path },
 				{ name: item.name },
 			),
-		[config.id, config.type, layoutActions],
+		[mode, layoutActions],
 	);
 
 	const explorer = useFileExplorer({
@@ -95,12 +90,7 @@ const FileExplorerPanel = ({
 
 			writeSpawnDragSpec(event.dataTransfer, {
 				type: getFilePanelType(items[0].path),
-				config: {
-					type: config.type,
-					id: config.id,
-					name: items[0].name,
-					path: items[0].path,
-				},
+				config: { mode, name: items[0].name, path: items[0].path },
 				name: items[0].name,
 			});
 		},
@@ -110,9 +100,12 @@ const FileExplorerPanel = ({
 		(item: FileItem): FileExplorerItemActions => {
 			const isDirectory = item.type === "directory";
 			const actions: FileExplorerItemActions["actions"] = [];
+			// toolboxes belong to a project or engine, never to an insight
+			const mcpMode =
+				mode.type === "APP" || mode.type === "ENGINE" ? mode : null;
 
 			if (
-				config.type !== "INSIGHT" &&
+				mcpMode &&
 				!isDirectory &&
 				!readOnly &&
 				MCP.DRIVER_PATHS.some((path) => item.path === path)
@@ -123,9 +116,12 @@ const FileExplorerPanel = ({
 					tooltip: "Create Toolbox",
 					action: async () => {
 						try {
-							const resource = config.type.toLowerCase();
+							const [reactorScope, resourceId] =
+								mcpMode.type === "APP"
+									? ["project", mcpMode.app]
+									: ["engine", mcpMode.engine];
 							await insight.actions.run(
-								`MakePythonMCP(${resource}=[${JSON.stringify(config.id)}]);`,
+								`MakePythonMCP(${reactorScope}=[${JSON.stringify(resourceId)}]);`,
 							);
 							explorer.commands.refresh();
 						} catch (error) {
@@ -135,8 +131,7 @@ const FileExplorerPanel = ({
 						layoutActions.selectPanel(
 							WORKBENCH_COMPONENTS.FILE_MCP_EDITOR,
 							{
-								type: config.type,
-								id: config.id,
+								mode: mcpMode,
 								name: "py_mcp.json",
 								path: "/mcp/py_mcp.json",
 							},
@@ -147,7 +142,7 @@ const FileExplorerPanel = ({
 			}
 
 			if (
-				config.type !== "INSIGHT" &&
+				mcpMode &&
 				!isDirectory &&
 				!readOnly &&
 				MCP.JSON_PATHS.some((path) => item.path.startsWith(path))
@@ -160,8 +155,7 @@ const FileExplorerPanel = ({
 						layoutActions.selectPanel(
 							WORKBENCH_COMPONENTS.FILE_MCP_EDITOR,
 							{
-								type: config.type,
-								id: config.id,
+								mode: mcpMode,
 								name: target.name,
 								path: target.path,
 							},
@@ -173,7 +167,7 @@ const FileExplorerPanel = ({
 
 			return { actions };
 		},
-		[config, explorer.commands, insight.actions, layoutActions, readOnly],
+		[mode, explorer.commands, insight.actions, layoutActions, readOnly],
 	);
 
 	if (access.status === "loading") {
@@ -234,6 +228,7 @@ export const FILE_EXPLORER_PANEL: WorkbenchPanelConfig<
 	canRename: false,
 	canSplitTab: true,
 	mount: "keepAlive",
-	matches: (a, b) => a.type === b.type && a.id === b.id,
+	matches: (a, b) =>
+		Boolean(a.mode) && Boolean(b.mode) && sameFileMode(a.mode, b.mode),
 	content: FileExplorerPanel,
 };

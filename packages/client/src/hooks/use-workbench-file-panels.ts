@@ -3,7 +3,6 @@ import {
 	type FileExplorerMovedItem,
 	type FileItem,
 	type FileMode,
-	getFileEditorPathScope,
 	notifyFileEditorPathMoved,
 	resolveMovedPath,
 } from "@semoss/shared";
@@ -11,14 +10,18 @@ import { useWorkbench } from "@semoss/workbench";
 import { getFilePanelType } from "@/components/workbench/files/file-editor.utility";
 import { isFilePanelType } from "@/components/workbench/files/file-panel.components";
 import {
+	type FilePanelMode,
+	getFilePanelScope,
+	sameFileMode,
+} from "@/components/workbench/files/file-panel.mode";
+import {
 	WORKBENCH_COMPONENTS,
 	type WorkbenchPanelRecord,
 } from "@/stores/workbench";
 
 /** The slice of a file-backed panel's config this hook cares about. */
 interface FilePanelConfig {
-	type?: "ENGINE" | "PROJECT" | "INSIGHT";
-	id?: string;
+	mode?: FilePanelMode;
 	path?: string;
 }
 
@@ -46,24 +49,11 @@ const filePathOf = (record: WorkbenchPanelRecord): string | undefined =>
 const isFilePanel = (record: WorkbenchPanelRecord): boolean =>
 	isFilePanelType(record.type) && Boolean(filePathOf(record));
 
-/** Whether a panel belongs to the resource represented by a file mode. */
+/** Whether a panel is scoped to the resource the explorer is browsing. */
 const isFilePanelInMode = (
 	params: FilePanelConfig | undefined,
 	mode: FileMode,
-): boolean => {
-	if (!params?.type || !params.id) return false;
-
-	switch (mode.type) {
-		case "APP":
-			return params.type === "PROJECT" && params.id === mode.app;
-		case "ENGINE":
-			return params.type === "ENGINE" && params.id === mode.engine;
-		case "INSIGHT":
-			return params.type === "INSIGHT" && params.id === mode.insightId;
-		default:
-			return false;
-	}
-};
+): boolean => Boolean(params?.mode) && sameFileMode(params.mode, mode);
 
 /**
  * Keep open file panels in step with the file tree.
@@ -78,7 +68,9 @@ const isFilePanelInMode = (
  */
 export const useWorkbenchFilePanels = (fileMode: FileMode) => {
 	const layoutActions = useWorkbench((s) => s.layout.actions);
-	const scope = getFileEditorPathScope(fileMode);
+	// one derivation, shared with the panels -- two independent ones would
+	// drift and a rename would silently stop reaching an open editor
+	const scope = getFilePanelScope(fileMode as FilePanelMode);
 
 	/**
 	 * Repoint one panel at a new path and notify its editor.

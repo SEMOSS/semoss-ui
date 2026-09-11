@@ -27,10 +27,18 @@ const COMPONENTS: Record<string, WorkbenchPanelConfigAny> = {
 };
 
 const fileConfig = (path: string) => ({
+	mode: MODE,
+	name: path.split("/").pop(),
+	path,
+});
+
+/** A Git panel's config keeps the old `{ type, id }` scope shape. */
+const gitConfig = (path: string) => ({
 	type: "PROJECT" as const,
 	id: PROJECT_ID,
 	name: path.split("/").pop(),
 	path,
+	side: "LOCAL" as const,
 });
 
 /** The hook over a store with one code editor and one git diff open. */
@@ -44,7 +52,7 @@ const setup = () => {
 		name: "a.py",
 	});
 	const diffId = actions.spawnPanel(WORKBENCH_COMPONENTS.GIT_DIFF, {
-		config: { ...fileConfig("/a.py"), side: "LOCAL" },
+		config: gitConfig("/a.py"),
 		name: "a.py",
 	});
 
@@ -84,7 +92,9 @@ describe("useWorkbenchFilePanels", () => {
 	it("leaves a Git panel alone even though its config looks file-shaped", () => {
 		// Regression: the old predicate was "config has a path", which a Git
 		// diff satisfies. Renaming a file repointed every open diff for the
-		// resource and retyped it into a code editor.
+		// resource and retyped it into a code editor. Git panels still carry
+		// `{ type, id }` while file panels carry `{ mode }`, so this also
+		// pins that the two vocabularies coexist.
 		const { store, result, diffId } = setup();
 
 		result.current.migrateMovedTabs([

@@ -16,13 +16,13 @@ import type {
 	WorkbenchPanelConfig,
 	WorkbenchPanelProps,
 } from "@/stores/workbench";
+import { type FilePanelMode, matchesFilePanel } from "./file-panel.mode";
 import { getFileReadPixel, getFileSavePixel } from "./file-panel.utility";
 import { useFilePanel } from "./use-file-panel";
 
 /** MCP toolboxes are project- or engine-scoped; there is no insight variant. */
 export interface FileMcpEditorParams {
-	type: "ENGINE" | "PROJECT";
-	id: string;
+	mode: Extract<FilePanelMode, { type: "APP" } | { type: "ENGINE" }>;
 	name: string;
 	path: string;
 }
@@ -45,7 +45,7 @@ const FileMcpEditorPanel = ({
 	const reloadFile = async (): Promise<string | null> => {
 		try {
 			const { pixelReturn } = await insight.actions.run<[string]>(
-				getFileReadPixel(config),
+				getFileReadPixel(config.mode, config.path),
 			);
 			return toFileText(pixelReturn?.[0]?.output);
 		} catch (error) {
@@ -61,7 +61,11 @@ const FileMcpEditorPanel = ({
 		try {
 			setIsSaving(true);
 			await insight.actions.run(
-				getFileSavePixel(config, JSON.stringify(data, null, 2)),
+				getFileSavePixel(
+					config.mode,
+					config.path,
+					JSON.stringify(data, null, 2),
+				),
 			);
 			toast.success("Successfully saved MCP tools");
 		} catch (error) {
@@ -131,8 +135,7 @@ export const FILE_MCP_EDITOR_PANEL: WorkbenchPanelConfig<FileMcpEditorParams> =
 		name: "Toolbox Editor",
 		canRename: false,
 		mount: "keepAlive",
-		matches: (a, b) =>
-			a.type === b.type && a.id === b.id && a.path === b.path,
+		matches: matchesFilePanel,
 		icon: ({ config, className }) => {
 			const Icon = getFileIconComponent(config.name);
 			return <Icon className={className} />;

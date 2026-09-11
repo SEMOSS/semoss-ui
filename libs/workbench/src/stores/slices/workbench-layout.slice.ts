@@ -481,6 +481,17 @@ const slotRectsEqual = (a: WorkbenchSlotRect, b: WorkbenchSlotRect): boolean =>
 	a.radius === b.radius;
 
 /**
+ * Storage format version for a persisted layout.
+ *
+ * Bump this whenever the shape of anything inside a `WorkbenchSnapshot`
+ * changes -- including a *host's* panel `config`, which the snapshot stores
+ * without inspecting. Old entries are removed rather than migrated, so every
+ * user loses their arrangement once; that is the trade for not carrying a
+ * repair path for every past shape.
+ */
+const LAYOUT_STORAGE_VERSION = 2;
+
+/**
  * Creates the dock layout slice for one workbench.
  *
  * @name createWorkbenchLayoutSlice
@@ -490,7 +501,21 @@ const slotRectsEqual = (a: WorkbenchSlotRect, b: WorkbenchSlotRect): boolean =>
 export const createWorkbenchLayoutSlice = (
 	cacheKey: string,
 ): WorkbenchSlice<WorkbenchLayoutSliceState> => {
-	const storageKey = `smss-workbench--layout--${cacheKey}--1`;
+	const storageKey = `smss-workbench--layout--${cacheKey}--${LAYOUT_STORAGE_VERSION}`;
+
+	// A snapshot holds each panel's `config` verbatim, so a host changing the
+	// shape of one invalidates every cached layout. Bump the version and drop
+	// the previous keys in the same breath -- an orphaned entry per cache key
+	// would otherwise sit in localStorage forever.
+	for (let previous = LAYOUT_STORAGE_VERSION - 1; previous > 0; previous--) {
+		try {
+			localStorage.removeItem(
+				`smss-workbench--layout--${cacheKey}--${previous}`,
+			);
+		} catch {
+			// private mode, or storage disabled -- nothing to clean up
+		}
+	}
 
 	// Closure-scoped, never in state: none of these should notify subscribers.
 	let defaultLayout: WorkbenchLayout | null = null;

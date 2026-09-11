@@ -55,15 +55,14 @@ const createNotebookWorkbenchLayout = (
 				name: NOTEBOOK_NAME,
 				canClose: true,
 				config: {
-					type: "PROJECT",
-					id: projectId,
+					mode: { type: "APP", app: projectId },
 					name: NOTEBOOK_NAME,
 					path: NOTEBOOK_PATH,
 				},
 			},
 			[WORKBENCH_PANEL_RECORDS.FILE_EXPLORER.id]: {
 				...WORKBENCH_PANEL_RECORDS.FILE_EXPLORER,
-				config: { type: "PROJECT", id: projectId },
+				config: { mode: { type: "APP", app: projectId } },
 			},
 			...(!readOnly
 				? {
@@ -247,8 +246,7 @@ export const NotebookWorkbench: React.FC = () => {
 				get().layout.actions.selectPanel(
 					WORKBENCH_COMPONENTS.FILE_EXPLORER,
 					{
-						type: "PROJECT",
-						id: project.project_id,
+						mode: { type: "APP", app: project.project_id },
 					},
 				);
 			},

@@ -42,7 +42,7 @@ const createGuardrailWorkbenchLayout = (
 		panels: {
 			[WORKBENCH_PANEL_RECORDS.FILE_EXPLORER.id]: {
 				...WORKBENCH_PANEL_RECORDS.FILE_EXPLORER,
-				config: { type: "ENGINE", id: engineId },
+				config: { mode: { type: "ENGINE", engine: engineId } },
 			},
 			...(!readOnly
 				? {
@@ -220,7 +220,7 @@ export const GuardrailWorkbench: React.FC = () => {
 			handler: (get) => {
 				get().layout.actions.selectPanel(
 					WORKBENCH_COMPONENTS.FILE_EXPLORER,
-					{ type: "ENGINE", id: engine.engine_id },
+					{ mode: { type: "ENGINE", engine: engine.engine_id } },
 				);
 			},
 		},

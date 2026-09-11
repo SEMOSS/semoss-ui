@@ -7,6 +7,7 @@ import type {
 	WorkbenchPanelConfig,
 	WorkbenchPanelProps,
 } from "@/stores/workbench";
+import { matchesFilePanel } from "./file-panel.mode";
 import {
 	FilePptxViewerControl,
 	type FilePptxViewerControlValue,
@@ -90,7 +91,7 @@ export const FILE_PPTX_VIEWER_PANEL: WorkbenchPanelConfig<
 	name: "PowerPoint",
 	canRename: false,
 	mount: "keepAlive",
-	matches: (a, b) => a.type === b.type && a.id === b.id && a.path === b.path,
+	matches: matchesFilePanel,
 	icon: ({ config, className }) => {
 		const Icon = getFileIconComponent(config.path ?? "");
 		return <Icon className={className} />;
