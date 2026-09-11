@@ -1,3 +1,4 @@
+export * from "./panels";
 export * from "./room-compaction-indicator";
 export * from "./room-content";
 export * from "./room-context-usage-indicator";
