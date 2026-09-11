@@ -108,6 +108,10 @@ interface FileCodeEditorProps {
 	readOnly?: boolean;
 }
 
+/**
+ * @deprecated Open the workbench's `FILE_CODE_EDITOR_PANEL` instead;
+ * `FileEditor`, which dispatches here, is deprecated with it.
+ */
 export const FileCodeEditor = forwardRef<
 	FileCodeEditorRef,
 	FileCodeEditorProps

@@ -18,6 +18,10 @@ interface FilePdfViewerRef {
 	refresh: () => void;
 }
 
+/**
+ * @deprecated Open the workbench's `FILE_PDF_VIEWER_PANEL` instead;
+ * `FileEditor`, which dispatches here, is deprecated with it.
+ */
 export const FilePdfViewer = forwardRef<FilePdfViewerRef, FilePdfViewerProps>(
 	({ mode, path }, actionsRef) => {
 		const insight = useInsight();

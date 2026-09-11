@@ -51,6 +51,10 @@ interface FileMarkdownEditorRef {
 	save?: () => Promise<void>;
 }
 
+/**
+ * @deprecated Open the workbench's `FILE_MARKDOWN_EDITOR_PANEL` instead;
+ * `FileEditor`, which dispatches here, is deprecated with it.
+ */
 export const FileMarkdownEditor = forwardRef<
 	FileMarkdownEditorRef,
 	FileMarkdownEditorProps

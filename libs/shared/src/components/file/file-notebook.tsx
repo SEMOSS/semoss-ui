@@ -61,6 +61,10 @@ interface FileNotebookRef {
  * actions (refresh / save / download, plus Ctrl+S) through its own toolbar,
  * while the Notebook itself handles editing and running cells.
  */
+/**
+ * @deprecated Open the workbench's `FILE_NOTEBOOK_EDITOR_PANEL` instead;
+ * `FileEditor`, which dispatches here, is deprecated with it.
+ */
 export const FileNotebook = forwardRef<FileNotebookRef, FileNotebookProps>(
 	(
 		{ mode, path, onChange = () => null, readOnly = false, viewMode },

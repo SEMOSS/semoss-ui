@@ -37,6 +37,10 @@ export interface FileHtmlEditorProps {
  * what the user has typed, and that takes precedence over what was read from
  * disk.
  */
+/**
+ * @deprecated Open the workbench's `FILE_CODE_EDITOR_PANEL` instead;
+ * `FileEditor`, which dispatches here, is deprecated with it.
+ */
 export const FileHtmlEditor: React.FC<FileHtmlEditorProps> = ({
 	mode,
 	path,

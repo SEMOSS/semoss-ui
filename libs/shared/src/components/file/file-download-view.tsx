@@ -24,6 +24,10 @@ interface FileDownloadViewProps {
 	onChange?: (content: string, isModified: boolean) => void;
 }
 
+/**
+ * @deprecated Open the workbench's `FILE_DOWNLOAD_PANEL` instead;
+ * `FileEditor`, which dispatches here, is deprecated with it.
+ */
 export const FileDownloadView: React.FC<FileDownloadViewProps> = ({
 	mode,
 	path,

@@ -40,6 +40,20 @@ interface FileEditorProps {
 	readOnly?: boolean;
 }
 
+/**
+ * Dispatch a file path to the right viewer or editor.
+ *
+ * @deprecated Open a workbench file panel instead. `getFilePanelType(path)`
+ * resolves the same classification to a panel type, and
+ * `layout.actions.selectPanel(type, config)` opens it — which gets tabs,
+ * split, persistence, and the chrome controls that this component's own
+ * toolbars predate. Nothing in the workbench has used `FileEditor` since the
+ * panels landed; it stays for the four surfaces that are not docks yet
+ * (app-workspace, my-files, the playground room sidebar, the terminal).
+ *
+ * The sub-editors it dispatches to are deprecated with it. `useFileExplorer`
+ * and `FileExplorer` are *not* — the explorer panel is built on them.
+ */
 export const FileEditor: React.FC<FileEditorProps> = ({
 	mode,
 	path,

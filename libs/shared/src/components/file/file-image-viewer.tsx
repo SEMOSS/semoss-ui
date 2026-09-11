@@ -17,6 +17,10 @@ interface FileImageViewerRef {
 	refresh: () => void;
 }
 
+/**
+ * @deprecated Open the workbench's `FILE_IMAGE_VIEWER_PANEL` instead;
+ * `FileEditor`, which dispatches here, is deprecated with it.
+ */
 export const FileImageViewer = forwardRef<
 	FileImageViewerRef,
 	FileImageViewerProps

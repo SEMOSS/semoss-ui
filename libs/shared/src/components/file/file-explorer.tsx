@@ -63,6 +63,17 @@ export interface FileExplorerProps {
  * chrome control, a command) holds the same api object and calls
  * `explorer.commands`.
  */
+/**
+ * The file tree.
+ *
+ * Not deprecated — this is the shell the workbench's `FILE_EXPLORER_PANEL`
+ * renders, and `useFileExplorer` is the engine underneath it. What is on its
+ * way out is mounting it *directly as a page-level surface*: new code should
+ * open the panel and get tabs, split, persistence, and the chrome controls
+ * with it. The remaining direct mounts (app-workspace, my-files,
+ * skill-public-files, the playground room sidebar, the terminal) are not
+ * docks yet, and a read-only embedded tree may never want to be one.
+ */
 export const FileExplorer: React.FC<FileExplorerProps> = ({
 	explorer,
 	header,
