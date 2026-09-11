@@ -1125,7 +1125,9 @@ export function NewDashboardPage() {
 					if (p.name)
 						r = r.replaceAll(
 							`{{${p.name}}}`,
-							paramOverrides?.[p.name] ?? resolveParamDefault(p),
+							paramOverrides?.[p.name] ??
+								(resolveParamDefault(p) ||
+									(p.inputType === "event" ? "NULL" : "")),
 						);
 				});
 				return r;
@@ -1399,7 +1401,8 @@ export function NewDashboardPage() {
 						if (p.name)
 							r = r.replaceAll(
 								`{{${p.name}}}`,
-								resolveParamDefault(p) ?? "",
+								resolveParamDefault(p) ||
+									(p.inputType === "event" ? "NULL" : ""),
 							);
 					});
 					return r;
