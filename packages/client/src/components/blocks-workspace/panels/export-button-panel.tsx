@@ -228,8 +228,8 @@ export const ExportButtonPanel = observer(() => {
 				}
 			}
 
-			// Create a listener action that runs the export query when the button is clicked
-			const runQueryAction: ListenerActions = {
+			// Create a listener action that runs the export notebook when the button is clicked
+			const runNotebookAction: ListenerActions = {
 				message: ActionMessages.RUN_NOTEBOOK,
 				payload: {
 					queryId: finalNotebookName,
@@ -266,7 +266,7 @@ export const ExportButtonPanel = observer(() => {
 					listeners: {
 						onClick: {
 							type: "sync",
-							order: [runQueryAction],
+							order: [runNotebookAction],
 						},
 						preProcess: {
 							type: "sync",

@@ -1,6 +1,4 @@
 import { SettingsIcon } from "lucide-react";
-import { useEffect, useState } from "react";
-import { FlexLayout } from "@semoss/shared";
 import {
 	Button,
 	cn,
@@ -8,33 +6,29 @@ import {
 	TooltipContent,
 	TooltipTrigger,
 } from "@semoss/ui/next";
-import { WORKBENCH_COMPONENTS } from "../workbench.contants";
-
-interface EngineSettingsToggleProps {
-	/** Workbench layout model whose settings tab is toggled */
-	model: FlexLayout.Model;
-}
+import { useWorkbench } from "@/hooks";
+import { WORKBENCH_STYLES } from "../core/workbench.chrome";
+import { WORKBENCH_COMPONENTS } from "../workbench.constants";
 
 /**
- * Toggles the shared engine settings tab within a workbench layout — opening,
- * selecting, or closing it — and highlights while it is the active tab.
+ * Toggles the shared engine settings panel within a workbench — opening,
+ * selecting, or closing it — and highlights while it is the shown tab.
  */
-export const EngineSettingsToggle: React.FC<EngineSettingsToggleProps> = ({
-	model,
-}) => {
-	// FlexLayout's model is not observable — re-render on change so the toggle
-	// reflects the settings tab being opened, selected, closed, or moved.
-	const [, setKey] = useState(0);
+export const EngineSettingsToggle: React.FC = () => {
+	const actions = useWorkbench((state) => state.layout.actions);
+	const settingsType = WORKBENCH_COMPONENTS.ENGINE_SETTINGS;
 
-	useEffect(() => {
-		const listener = () => setKey((key) => key + 1);
-		model.addChangeListener(listener);
-		return () => model.removeChangeListener(listener);
-	}, [model]);
-
-	const isSettingsOpen =
-		model.getNodeById(WORKBENCH_COMPONENTS.ENGINE_SETTINGS) instanceof
-		FlexLayout.TabNode;
+	const existingId = useWorkbench(
+		(state) =>
+			Object.values(state.layout.panels).find(
+				(record) => record.type === settingsType,
+			)?.id,
+	);
+	const isShowing = useWorkbench((state) =>
+		existingId
+			? (state.layout.panelSlots[existingId]?.active ?? false)
+			: false,
+	);
 
 	return (
 		<Tooltip>
@@ -45,71 +39,21 @@ export const EngineSettingsToggle: React.FC<EngineSettingsToggleProps> = ({
 					aria-label="Settings"
 					data-testid="workbench-settings-toggle"
 					onClick={() => {
-						const settingsId = WORKBENCH_COMPONENTS.ENGINE_SETTINGS;
-
-						const node = model.getNodeById(settingsId);
-
-						if (node instanceof FlexLayout.TabNode) {
-							const parent = node.getParent();
-
-							if (parent instanceof FlexLayout.TabSetNode) {
-								if (
-									parent.getSelectedNode()?.getId() ===
-									settingsId
-								) {
-									model.doAction(
-										FlexLayout.Actions.deleteTab(
-											settingsId,
-										),
-									);
-									return;
-								}
-
-								model.doAction(
-									FlexLayout.Actions.selectTab(settingsId),
-								);
-								return;
-							}
-
-							// Dragged into a border — remove it so it reopens as a full tab.
-							model.doAction(
-								FlexLayout.Actions.deleteTab(settingsId),
-							);
-						}
-
-						const targetTabsetId =
-							model.getActiveTabset()?.getId() ??
-							model.getRoot().getChildren()[0]?.getId() ??
-							"";
-
-						if (!targetTabsetId) {
+						if (existingId && isShowing) {
+							actions.closePanel(existingId);
 							return;
 						}
 
-						model.doAction(
-							FlexLayout.Actions.addNode(
-								{
-									type: "tab",
-									id: settingsId,
-									name: "Settings",
-									component: settingsId,
-									enableClose: true,
-								},
-								targetTabsetId,
-								FlexLayout.DockLocation.CENTER,
-								-1,
-								true,
-							),
-						);
+						actions.selectPanel(settingsType);
 					}}
 					className={cn(
-						"border",
-						isSettingsOpen
-							? "border-input text-primary shadow-xs dark:bg-input/30"
-							: "border-transparent text-muted-foreground",
+						WORKBENCH_STYLES.chromeButton,
+						isShowing
+							? WORKBENCH_STYLES.chromeButtonActive
+							: WORKBENCH_STYLES.chromeButtonInactive,
 					)}
 				>
-					<SettingsIcon className="size-4" />
+					<SettingsIcon className={WORKBENCH_STYLES.chromeIcon} />
 				</Button>
 			</TooltipTrigger>
 			<TooltipContent side="right">Settings</TooltipContent>

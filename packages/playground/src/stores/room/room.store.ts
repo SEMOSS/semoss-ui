@@ -640,7 +640,7 @@ export class RoomStore {
 			if (this.tail.type === "OUTPUT") {
 				if (this.mode === "agent") {
 					// An agent-run turn is driven entirely server-side and
-					// only ever gets a live subscribeRunAgent connection from
+					// only ever gets a live AgentStore watching it from
 					// runAgentMessage's own submit — reconnect here so a
 					// reload doesn't leave it (and any paused tool decision)
 					// unwatched. See reconnectAgentRun.
@@ -1178,6 +1178,17 @@ export class RoomStore {
 
 				const uploaded = response.data;
 
+				// If files were sent but the server returned nothing, the files
+				// couldn't be read — most likely locked by another program (e.g.
+				// a .docx open in Word). Surface this as an UploadError so the
+				// caller can show a "file is in use" message instead of silently
+				// proceeding with no attachment.
+				if (uploaded.length === 0) {
+					const uploadError = new Error("File is in use");
+					uploadError.name = "UploadError";
+					throw uploadError;
+				}
+
 				const normalizeExt = (value: string) =>
 					value.trim().toLowerCase().replace(/^\./, "");
 
@@ -1221,6 +1232,12 @@ export class RoomStore {
 				uploadPlaceholder.isThinking = false;
 			});
 			parentMessage.removeChild(inputMessage);
+
+			// Re-throw UploadErrors as-is (e.g. the uploaded.length === 0 case above)
+			if ((e as Error)?.name === "UploadError") {
+				throw e;
+			}
+
 			throw e;
 		}
 

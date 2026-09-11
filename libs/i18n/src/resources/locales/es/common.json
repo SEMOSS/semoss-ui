@@ -130,7 +130,6 @@
 		"searchAllAria": "Buscar en todo",
 		"searchCurrentAria": "Buscar solo en el directorio actual",
 		"searchCurrentTitle": "Buscar solo en {{path}}",
-		"moveDropHint": "Soltar para mover {{label}} a {{path}}",
 		"contextMenu": {
 			"copyPath": "Copiar ruta",
 			"copy": "Copiar",

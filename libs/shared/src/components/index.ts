@@ -19,5 +19,6 @@ export * from "./members";
 export * from "./monaco";
 export * from "./notebook";
 export * from "./paired-file-upload";
+export * from "./project";
 export * from "./prompts";
 export * from "./skills";

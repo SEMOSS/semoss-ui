@@ -1,5 +1,5 @@
 import { useId, useState } from "react";
-import { Navigate } from "react-router-dom";
+import { Navigate } from "react-router";
 import {
 	Select,
 	SelectContent,
@@ -7,9 +7,9 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@semoss/ui/next";
-import { AdminQueryWorkspace } from "@/components/settings";
-import { EngineContext } from "@/contexts";
-import { useRootStore, useSettings } from "@/hooks";
+import { AdminQueryWorkbench } from "@/components/workbench";
+import { EngineContext, WorkbenchProvider } from "@/contexts";
+import { useConfig, useSettings } from "@/hooks";
 
 const DATABASE_OPTIONS = [
 	{ label: "Audit Logs", value: "AuditLogs" },
@@ -26,12 +26,14 @@ const DATABASE_OPTIONS = [
 ];
 
 export const AdminQueryPage = () => {
-	const { configStore } = useRootStore();
+	const notificationEnabled = useConfig(
+		(state) => state.config.notificationEnabled,
+	);
 	const { adminMode } = useSettings();
 	const dbSelectId = useId();
 	const [selectedDatabase, setSelectedDatabase] = useState("");
 
-	const databaseOptions = configStore.config.notificationEnabled
+	const databaseOptions = notificationEnabled
 		? [
 				...DATABASE_OPTIONS,
 				{ label: "Notification", value: "Notification" },
@@ -92,7 +94,14 @@ export const AdminQueryPage = () => {
 							refresh: () => null,
 						}}
 					>
-						<AdminQueryWorkspace />
+						{/* keyed per database so each system DB gets its own
+						workbench instance and persisted layout */}
+						<WorkbenchProvider
+							cacheKey={`admin-query--${selectedDatabase}`}
+							key={selectedDatabase}
+						>
+							<AdminQueryWorkbench />
+						</WorkbenchProvider>
 					</EngineContext.Provider>
 				</div>
 			) : (

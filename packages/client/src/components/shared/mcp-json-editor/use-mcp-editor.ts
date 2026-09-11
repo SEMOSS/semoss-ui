@@ -413,5 +413,3 @@ export const useMCPEditor = (
 		markSaved,
 	};
 };
-
-export type MCPEditorController = ReturnType<typeof useMCPEditor>;
