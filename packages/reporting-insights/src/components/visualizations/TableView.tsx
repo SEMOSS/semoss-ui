@@ -14,13 +14,19 @@
  * leaves it null.
  */
 
-import { ChevronLeft, ChevronRight, Table2 } from "lucide-react";
+import {
+	ChevronLeft,
+	ChevronRight,
+	Download,
+	Loader2,
+	Table2,
+} from "lucide-react";
 import type React from "react";
 import { useState } from "react";
 import { Input } from "@/components/ui";
 import { formatValue } from "@/lib/formatValue";
 import { aggregateTableRows, aggShortLabel } from "@/lib/tableAggregate";
-import type { VisualizationConfig } from "@/types/dashboard";
+import type { ColorRule, VisualizationConfig } from "@/types/dashboard";
 
 type Row = Record<string, unknown>;
 
@@ -51,6 +57,14 @@ interface Props {
 	onLoadMore?: () => void;
 	/** True while a server page is being fetched (disables Next, shows a spinner state). */
 	loadingMore?: boolean;
+	/** Export the complete configured table, independently of the currently loaded page. */
+	onExport?: () => void;
+	/** True while the full export query and download are in progress. */
+	exporting?: boolean;
+	/** Disables export when the query is unavailable or the table cannot be exported. */
+	exportDisabled?: boolean;
+	exportTitle?: string;
+	exportError?: string | null;
 	/**
 	 * When true, the empty-column guard is shown if the user has explicitly
 	 * configured `tableColumns` to an empty array. Main app passes `true`
@@ -62,7 +76,7 @@ interface Props {
 
 // ── Helpers (module-private) ─────────────────────────────────────────────────
 
-function evaluateColorRule(rule: any, row: Row): boolean {
+function evaluateColorRule(rule: ColorRule, row: Row): boolean {
 	const cellValue = row[rule.valueColumn];
 	if (cellValue == null) return false;
 	const ruleValue = rule.value;
@@ -102,6 +116,11 @@ export function TableView({
 	hasMoreRows = false,
 	onLoadMore,
 	loadingMore = false,
+	onExport,
+	exporting = false,
+	exportDisabled = false,
+	exportTitle = "Export to CSV",
+	exportError,
 	showEmptyColumnsGuard = false,
 }: Props) {
 	const cfg = config ?? {};
@@ -135,7 +154,7 @@ export function TableView({
 			? Object.keys(data[0])
 			: [];
 	const aggregated = aggregateTableRows(
-		data as Record<string, any>[],
+		data as Record<string, unknown>[],
 		configuredCols,
 		aggs,
 	);
@@ -273,6 +292,7 @@ export function TableView({
 					<tbody>
 						{pagedData.map((row, ri) => (
 							<tr
+								// biome-ignore lint/suspicious/noArrayIndexKey: query result rows have no natural unique id.
 								key={ri}
 								className={
 									ri % 2 === 0 ? "bg-white" : "bg-slate-50/50"
@@ -338,6 +358,7 @@ export function TableView({
 						{hasMoreRows ? "+" : ""} rows
 					</span>
 					<button
+						type="button"
 						onClick={() =>
 							setCurrentPage(Math.max(0, currentPage - 1))
 						}
@@ -350,6 +371,7 @@ export function TableView({
 						{currentPage + 1} / {totalPages}
 					</span>
 					<button
+						type="button"
 						onClick={() => {
 							const atLastLoadedPage =
 								currentPage >= totalPages - 1;
@@ -381,6 +403,29 @@ export function TableView({
 						<ChevronRight className="h-4 w-4" />
 					</button>
 					{footerExtra}
+					{onExport && (
+						<button
+							type="button"
+							onClick={onExport}
+							disabled={exporting || exportDisabled}
+							title={exportTitle}
+							className="ml-1 inline-flex h-7 items-center gap-1.5 whitespace-nowrap rounded px-2 font-medium text-[12px] text-emerald-700 hover:bg-emerald-50 disabled:cursor-not-allowed disabled:opacity-50"
+						>
+							{exporting ? (
+								<Loader2 className="h-3.5 w-3.5 animate-spin" />
+							) : (
+								<Download className="h-3.5 w-3.5" />
+							)}
+						</button>
+					)}
+					{exportError && (
+						<span
+							className="max-w-52 truncate text-[12px] text-red-600"
+							title={exportError}
+						>
+							{exportError}
+						</span>
+					)}
 				</div>
 			</div>
 		</div>

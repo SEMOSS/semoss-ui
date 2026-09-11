@@ -26,12 +26,14 @@ import {
 import { useInsight } from "@semoss/sdk-react";
 import { useToast } from "@/components/ui/Toast";
 import {
-	canonicalizeProjectTags,
+	buildCanonicalFolderNames,
+	canonicalizeFolderTags,
 	isManagedSystemTag,
 	isOwnershipMarkerTag,
 	isParamAppTag,
 	PARAM_APP_TAG,
 	syncParamAppTag,
+	tagKey,
 	userFolderTags,
 } from "@/lib/dashboardTags";
 import {
@@ -124,7 +126,7 @@ function metaToDashboard(
 		permission: m.permission,
 		folderId: userFolderTags(m.tags)[0], // compat: "primary" folder = first user folder tag
 		sheets,
-		createdAt: m.updatedAt ?? now(),
+		createdAt: m.createdAt ?? m.updatedAt ?? now(),
 		updatedAt: m.updatedAt ?? now(),
 	};
 }
@@ -217,9 +219,22 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
 			}));
 			// Merge any cached full definitions so we don't lose sheets already loaded
 			// (e.g. after opening a dashboard, then navigating back to the listing).
-			const nextDashboards = resolvedMetas.map((m) =>
+			const listedDashboards = resolvedMetas.map((m) =>
 				metaToDashboard(m, defsCache.current.get(m.id)?.sheets ?? []),
 			);
+			const canonicalFolderNames =
+				buildCanonicalFolderNames(listedDashboards);
+			const nextDashboards = listedDashboards.map((dashboard) => {
+				const tags = canonicalizeFolderTags(
+					dashboard.tags ?? [],
+					canonicalFolderNames,
+				);
+				return {
+					...dashboard,
+					tags,
+					folderId: userFolderTags(tags)[0],
+				};
+			});
 			for (const meta of resolvedMetas) {
 				const cached = defsCache.current.get(meta.id);
 				if (cached)
@@ -302,7 +317,13 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
 			dashboard: Dashboard,
 			opts: { published: boolean; tags: string[] },
 		): Promise<string> => {
-			const effectiveTags = syncParamAppTag(opts.tags, dashboard);
+			const canonicalFolderNames = buildCanonicalFolderNames(
+				dashboardsRef.current,
+			);
+			const effectiveTags = syncParamAppTag(
+				canonicalizeFolderTags(opts.tags, canonicalFolderNames),
+				dashboard,
+			);
 			const dashboardWithTags = { ...dashboard, tags: effectiveTags };
 			const id = await store.create(dashboardWithTags, {
 				...opts,
@@ -353,10 +374,15 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
 			const retainedManagedTags = (current.tags ?? []).filter(
 				isOwnershipMarkerTag,
 			);
-			const requestedTags =
+			const canonicalFolderNames = buildCanonicalFolderNames(
+				dashboardsRef.current,
+			);
+			const requestedTags = canonicalizeFolderTags(
 				updates.tags === undefined
-					? current.tags
-					: [...updates.tags, ...retainedManagedTags];
+					? (current.tags ?? [])
+					: [...updates.tags, ...retainedManagedTags],
+				canonicalFolderNames,
+			);
 			const next = {
 				...current,
 				...updates,
@@ -544,9 +570,13 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
 			const current = dashboardsRef.current.find(
 				(dashboard) => dashboard.id === id,
 			);
-			const editableTags = canonicalizeProjectTags(tags).filter(
-				(tag) => !isManagedSystemTag(tag),
+			const canonicalFolderNames = buildCanonicalFolderNames(
+				dashboardsRef.current,
 			);
+			const editableTags = canonicalizeFolderTags(
+				tags,
+				canonicalFolderNames,
+			).filter((tag) => !isManagedSystemTag(tag));
 			const clean = current?.tags?.some(isParamAppTag)
 				? [...editableTags, PARAM_APP_TAG]
 				: editableTags;
@@ -579,9 +609,10 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
 			if (isManagedSystemTag(tag)) return;
 			const d = dashboards.find((x) => x.id === id);
 			const current = d?.tags ?? [];
+			const key = tagKey(tag);
 			const next = on
-				? Array.from(new Set([...current, tag]))
-				: current.filter((t) => t !== tag);
+				? [...current, tag]
+				: current.filter((t) => tagKey(t) !== key);
 			setDashboardTags(id, next);
 		},
 		[dashboards, setDashboardTags],
@@ -589,10 +620,8 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
 
 	// ── Derived folders (the distinct tags across everything I can see) ─────────
 	const folders = useMemo<WorkspaceFolder[]>(() => {
-		const names = new Set<string>();
-		for (const d of dashboards)
-			for (const t of userFolderTags(d.tags)) names.add(t);
-		const ordinaryFolders: WorkspaceFolder[] = [...names]
+		const names = buildCanonicalFolderNames(dashboards);
+		const ordinaryFolders: WorkspaceFolder[] = [...names.values()]
 			.sort((a, b) => a.localeCompare(b))
 			.map((name, i) => ({
 				id: name,
@@ -624,13 +653,14 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
 		(id: string, name: string) => {
 			if (isManagedSystemTag(id) || isManagedSystemTag(name)) return;
 			const next = name.trim();
+			const idKey = tagKey(id);
 			if (!next || next === id) return;
 			// Rename the tag across every dashboard that has it.
 			for (const d of dashboards) {
-				if (!(d.tags ?? []).includes(id)) continue;
+				if (!(d.tags ?? []).some((t) => tagKey(t) === idKey)) continue;
 				setDashboardTags(
 					d.id,
-					(d.tags ?? []).map((t) => (t === id ? next : t)),
+					(d.tags ?? []).map((t) => (tagKey(t) === idKey ? next : t)),
 				);
 			}
 		},
@@ -640,11 +670,12 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
 	const deleteFolder = useCallback(
 		(id: string) => {
 			if (isManagedSystemTag(id)) return;
+			const idKey = tagKey(id);
 			for (const d of dashboards) {
-				if (!(d.tags ?? []).includes(id)) continue;
+				if (!(d.tags ?? []).some((t) => tagKey(t) === idKey)) continue;
 				setDashboardTags(
 					d.id,
-					(d.tags ?? []).filter((t) => t !== id),
+					(d.tags ?? []).filter((t) => tagKey(t) !== idKey),
 				);
 			}
 		},

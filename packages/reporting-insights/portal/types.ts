@@ -15,6 +15,8 @@ export interface Parameter {
 	optionsQuery?: string;
 	/** Dropdown/multiselect: database to run optionsQuery against (defaults to the viz's database). */
 	optionsDatabaseId?: string;
+	/** Resolve `{{param}}` references in optionsQuery and reload when their values change. */
+	dynamicOptions?: boolean;
 	/** When true, the effective value at load/run time is always today's date. */
 	useCurrentDate?: boolean;
 }

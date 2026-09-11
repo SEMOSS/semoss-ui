@@ -36,6 +36,8 @@ export interface Parameter {
 	optionsQuery?: string;
 	/** Dropdown/multiselect: database to run `optionsQuery` against (defaults to the visualization's database). */
 	optionsDatabaseId?: string;
+	/** Resolve `{{param}}` references in `optionsQuery` and reload it when those parameter values change. */
+	dynamicOptions?: boolean;
 	/**
 	 * Conditional options: name of a sibling param whose value controls which options this
 	 * param shows. When set, `conditionalBranches` defines the per-value option sources and

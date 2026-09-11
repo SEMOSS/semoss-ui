@@ -116,6 +116,7 @@ export interface DashboardMeta {
 	tags: string[];
 	published: boolean;
 	permission?: string;
+	createdAt?: string;
 	updatedAt?: string;
 }
 
@@ -275,6 +276,12 @@ export class ProjectStore {
 					r.project_global === true ||
 					r.global === true ||
 					str(r.project_global) === "true";
+				const createdAt = str(
+					r.project_date_created ??
+						r.date_created ??
+						r.DATECREATED ??
+						"",
+				);
 				const updatedAt = str(
 					r.project_date_updated ??
 						r.last_modified_on ??
@@ -297,6 +304,7 @@ export class ProjectStore {
 					tags: allTags.filter((t) => !isMarkerTag(t)),
 					published,
 					permission,
+					createdAt: createdAt || undefined,
 					updatedAt: updatedAt || undefined,
 					_isOurs: !!id && isOurDashboard(allTags),
 				};

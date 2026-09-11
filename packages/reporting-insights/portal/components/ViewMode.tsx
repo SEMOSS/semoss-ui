@@ -61,6 +61,7 @@ import {
 import { FilterWidget } from "@/components/widgets/FilterWidget";
 import { pivotTransform, usePivotTransform } from "@/hooks/usePivotTransform";
 import { useVizEvents } from "@/hooks/useVizEvents";
+import { buildReportingCsvFilename, downloadCsvFile } from "@/lib/csvExport";
 import {
 	type AppliedFilter,
 	DashboardFilterProvider,
@@ -130,9 +131,10 @@ function toChartData(result: QueryResult): Record<string, unknown>[] {
 /** Download query result as a CSV file. Flattens pivot results when vizType is 'pivot'. */
 function exportCsv(
 	result: QueryResult,
-	title: string,
 	vizType: string,
-	config?: VisualizationConfig,
+	config: VisualizationConfig | undefined,
+	databaseName: string,
+	databaseId: string,
 ): void {
 	const escapeCsv = (v: unknown) => {
 		const s = String(v ?? "");
@@ -223,7 +225,7 @@ function exportCsv(
 	const url = URL.createObjectURL(blob);
 	const a = document.createElement("a");
 	a.href = url;
-	a.download = `${title || "export"}.csv`;
+	a.download = buildReportingCsvFilename(databaseName, databaseId);
 	a.click();
 	URL.revokeObjectURL(url);
 }
@@ -283,6 +285,11 @@ type BatchTableState = {
 	hasMore: boolean;
 	loading: boolean;
 	loadingMore: boolean;
+	error: string | null;
+};
+
+type TableExportState = {
+	running: boolean;
 	error: string | null;
 };
 
@@ -368,6 +375,10 @@ function ViewModeInner() {
 	// Batch-loading table state, keyed the same way as queryStates.
 	const [batchTableStates, setBatchTableStates] = useState<
 		Record<string, BatchTableState>
+	>({});
+	// Full-table-export state (only used when the table needs an all-row query), keyed by viz id.
+	const [tableExportStates, setTableExportStates] = useState<
+		Record<string, TableExportState>
 	>({});
 	// csvexport: track which query keys are awaiting an on-click fetch, and a per-key
 	// download counter that bumps to signal the button to auto-download on completion.
@@ -525,7 +536,8 @@ function ViewModeInner() {
 					(p) =>
 						(p.inputType === "dropdown" ||
 							p.inputType === "multiselect") &&
-						p.optionsQuery,
+						p.optionsQuery &&
+						!p.dynamicOptions,
 				)
 				.forEach((p) => {
 					if (seenOpt.has(p.id)) return;
@@ -729,6 +741,100 @@ function ViewModeInner() {
 					...prev[key],
 					loadingMore: false,
 					error: String((e as Error)?.message ?? e),
+				},
+			}));
+		}
+	};
+
+	const runFullTableExport = async (
+		viz: Visualization,
+		filters: AppliedFilter[],
+	) => {
+		if (tableExportStates[viz.id]?.running) return;
+		const src = resolveQuery(viz, queries);
+		if (!src.databaseId || !src.query) return;
+		setTableExportStates((prev) => ({
+			...prev,
+			[viz.id]: { running: true, error: null },
+		}));
+		try {
+			const qKey = qKeyOf(viz);
+			const values: Record<string, string> = {
+				...(queryStates[qKey]?.paramValues ?? {}),
+				...(eventParamStore?.getParamValues(viz.id) ?? {}),
+			};
+			src.parameters?.forEach((param) => {
+				if (param.useCurrentDate)
+					values[param.name] = resolveParamDefault(param);
+			});
+			const query = substituteParams(
+				src.query,
+				values,
+				src.parameters,
+				paramOptionsRef.current,
+				sheetParamOptionsRef.current,
+			);
+			const completeResult = await runDatabaseQuery(
+				src.databaseId,
+				query,
+				-1,
+			);
+			const vizConfig = viz.config as
+				| SharedVisualizationConfig
+				| undefined;
+			const crossFiltered = filterResult(completeResult, filters);
+			const vizFilter = vizConfig?.styling?.vizFilter;
+			const vizFiltered = vizFilter
+				? {
+						...crossFiltered,
+						values: filterRowMatrix(
+							crossFiltered.headers,
+							crossFiltered.values,
+							vizFilter,
+						),
+					}
+				: crossFiltered;
+			const sortedRows = applyVizSort(
+				toChartData(vizFiltered) as Record<string, unknown>[],
+				vizConfig?.styling?.sortValues,
+			);
+			const configuredColumns = vizConfig?.tableColumns;
+			const columns = configuredColumns?.length
+				? configuredColumns.filter((column) =>
+						vizFiltered.headers.includes(column),
+					)
+				: vizFiltered.headers;
+			const aggregated = aggregateTableRows(
+				sortedRows,
+				columns,
+				vizConfig?.columnAggregations ?? {},
+			);
+			const exportRows = (aggregated ?? sortedRows).map((row) =>
+				Object.fromEntries(
+					columns.map((column) => [column, row[column]]),
+				),
+			);
+			if (
+				!downloadCsvFile(
+					exportRows,
+					buildReportingCsvFilename(src.databaseName, src.databaseId),
+					columns,
+				)
+			) {
+				throw new Error("The query returned no rows to export.");
+			}
+			setTableExportStates((prev) => ({
+				...prev,
+				[viz.id]: { running: false, error: null },
+			}));
+		} catch (e: unknown) {
+			setTableExportStates((prev) => ({
+				...prev,
+				[viz.id]: {
+					running: false,
+					error:
+						String((e as Error)?.message ?? e) ||
+						"Failed to export the table.",
 				},
 			}));
 		}
@@ -943,20 +1049,21 @@ function ViewModeInner() {
 			// Export-CSV gating — MUST mirror DashboardVisualization (main app) exactly:
 			// only table/pivot/kpi are exportable; table & kpi default to ON (`?? true`),
 			// pivot is always on. Anything else gets no button.
-			const isExportable = ["table", "pivot", "kpi"].includes(
+			const isExportable = ["pivot", "kpi"].includes(
 				viz.visualizationType,
 			);
+			const showTableExport =
+				viz.visualizationType === "table" &&
+				((viz.config as SharedVisualizationConfig | undefined)?.styling
+					?.table?.showExport ??
+					true);
 			const showExport =
 				!!state.result &&
 				isExportable &&
-				((viz.visualizationType === "table" &&
+				((viz.visualizationType === "kpi" &&
 					((viz.config as SharedVisualizationConfig | undefined)
-						?.styling?.table?.showExport ??
+						?.styling?.kpi?.showExport ??
 						true)) ||
-					(viz.visualizationType === "kpi" &&
-						((viz.config as SharedVisualizationConfig | undefined)
-							?.styling?.kpi?.showExport ??
-							true)) ||
 					viz.visualizationType === "pivot");
 			// Content blocks render directly from config — no query/data needed
 			if (
@@ -1038,11 +1145,12 @@ function ViewModeInner() {
 								onExport={() =>
 									exportCsv(
 										state.result as QueryResult,
-										viz.title,
 										viz.visualizationType,
 										viz.config as
 											| SharedVisualizationConfig
 											| undefined,
+										src.databaseName,
+										src.databaseId,
 									)
 								}
 								phi={viz.phi}
@@ -1183,6 +1291,20 @@ function ViewModeInner() {
 									<VizContent
 										viz={viz}
 										result={state.result}
+										onTableExport={
+											showTableExport
+												? (filters) =>
+														exportLoadedTable(
+															state.result as QueryResult,
+															viz,
+															src,
+															filters,
+														)
+												: undefined
+										}
+										tableExportState={
+											tableExportStates[viz.id]
+										}
 									/>
 								)}
 								{/* Batch table pane — renders when the viz is a batch table */}
@@ -1196,6 +1318,52 @@ function ViewModeInner() {
 											batchState={batchTableStates[qKey]}
 											onLoadMore={() =>
 												void loadMoreBatch(qKey)
+											}
+											onExport={
+												showTableExport
+													? (filters) => {
+															const batchState =
+																batchTableStates[
+																	qKey
+																];
+															if (
+																batchState?.hasMore
+															) {
+																void runFullTableExport(
+																	viz,
+																	filters,
+																);
+																return;
+															}
+															if (batchState) {
+																exportLoadedTable(
+																	{
+																		headers:
+																			batchState.headers,
+																		values: batchState.rows.map(
+																			(
+																				row,
+																			) =>
+																				batchState.headers.map(
+																					(
+																						header,
+																					) =>
+																						row[
+																							header
+																						],
+																				),
+																		),
+																	},
+																	viz,
+																	src,
+																	filters,
+																);
+															}
+														}
+													: undefined
+											}
+											exportState={
+												tableExportStates[viz.id]
 											}
 										/>
 									)}
@@ -1457,6 +1625,51 @@ function filterResult(
 	return { ...result, values };
 }
 
+/** Export the visible (loaded, filtered) rows of a table viz as CSV. */
+function exportLoadedTable(
+	result: QueryResult,
+	viz: Visualization,
+	source: QuerySource,
+	filters: AppliedFilter[],
+): void {
+	const vizConfig = viz.config as SharedVisualizationConfig | undefined;
+	const crossFiltered = filterResult(result, filters);
+	const vizFilter = vizConfig?.styling?.vizFilter;
+	const filtered = vizFilter
+		? {
+				...crossFiltered,
+				values: filterRowMatrix(
+					crossFiltered.headers,
+					crossFiltered.values,
+					vizFilter,
+				),
+			}
+		: crossFiltered;
+	const rows = applyVizSort(
+		toChartData(filtered) as Record<string, unknown>[],
+		vizConfig?.styling?.sortValues,
+	);
+	const configuredColumns = vizConfig?.tableColumns;
+	const columns = configuredColumns?.length
+		? configuredColumns.filter((column) =>
+				filtered.headers.includes(column),
+			)
+		: filtered.headers;
+	const aggregated = aggregateTableRows(
+		rows,
+		columns,
+		vizConfig?.columnAggregations ?? {},
+	);
+	const exportRows = (aggregated ?? rows).map((row) =>
+		Object.fromEntries(columns.map((column) => [column, row[column]])),
+	);
+	downloadCsvFile(
+		exportRows,
+		buildReportingCsvFilename(source.databaseName, source.databaseId),
+		columns,
+	);
+}
+
 /**
 /**
  * Renders a batch-loaded table with a "Load more" button.
@@ -1465,12 +1678,18 @@ function BatchTablePane({
 	viz,
 	batchState,
 	onLoadMore,
+	onExport,
+	exportState,
 }: {
 	vizKey: string;
 	viz: Visualization;
 	batchState: BatchTableState;
 	onLoadMore: () => void;
+	onExport?: (filters: AppliedFilter[]) => void;
+	exportState?: TableExportState;
 }) {
+	const filters = useAppliedFilters(viz.id);
+	const [showPhiModal, setShowPhiModal] = useState(false);
 	if (batchState.loading) {
 		return (
 			<div className="flex h-full items-center justify-center text-gray-500 text-sm">
@@ -1492,7 +1711,12 @@ function BatchTablePane({
 	return (
 		<div className="flex h-full flex-col">
 			<div className="min-h-0 flex-1 overflow-auto">
-				<VizContent viz={viz} result={result} />
+				<VizContent
+					viz={viz}
+					result={result}
+					onTableExport={onExport}
+					tableExportState={exportState}
+				/>
 			</div>
 			{batchState.hasMore && (
 				<div className="flex-shrink-0 border-gray-200 border-t px-3 py-2 text-center">
@@ -1506,6 +1730,15 @@ function BatchTablePane({
 					</button>
 				</div>
 			)}
+			{showPhiModal && (
+				<PhiExportWarningModal
+					onConfirm={() => {
+						onExport?.(filters);
+						setShowPhiModal(false);
+					}}
+					onCancel={() => setShowPhiModal(false)}
+				/>
+			)}
 		</div>
 	);
 }
@@ -1517,11 +1750,16 @@ function BatchTablePane({
 function VizContent({
 	viz,
 	result,
+	onTableExport,
+	tableExportState,
 }: {
 	viz: Visualization;
 	result: QueryResult;
+	onTableExport?: (filters: AppliedFilter[]) => void;
+	tableExportState?: TableExportState;
 }) {
 	const filters = useAppliedFilters(viz.id);
+	const [showTablePhiModal, setShowTablePhiModal] = useState(false);
 	// Publish loaded rows so Filter widgets can build options from this viz's data
 	// (no query of their own needed). Filter/export widgets don't hold data themselves.
 	const filterStore = useFilterStore();
@@ -1609,6 +1847,15 @@ function VizContent({
 			config={viz.config as SharedVisualizationConfig | undefined}
 			onTrigger={onTrigger}
 			rawData={publishRows}
+			onTableExport={
+				onTableExport
+					? () =>
+							viz.phi
+								? setShowTablePhiModal(true)
+								: onTableExport(filters)
+					: undefined
+			}
+			tableExportState={tableExportState}
 		/>
 	);
 	const stretched =
@@ -1617,7 +1864,20 @@ function VizContent({
 		) : (
 			chart
 		);
-	return wrapSize(stretched);
+	return wrapSize(
+		<>
+			{stretched}
+			{showTablePhiModal && (
+				<PhiExportWarningModal
+					onConfirm={() => {
+						onTableExport?.(filters);
+						setShowTablePhiModal(false);
+					}}
+					onCancel={() => setShowTablePhiModal(false)}
+				/>
+			)}
+		</>,
+	);
 }
 
 type OnTrigger = (
@@ -1630,19 +1890,30 @@ function ChartOrTable({
 	config,
 	onTrigger,
 	rawData,
+	onTableExport,
+	tableExportState,
 }: {
 	result: QueryResult;
 	vizType: string;
 	config?: SharedVisualizationConfig;
 	onTrigger?: OnTrigger;
 	rawData?: Record<string, unknown>[];
+	onTableExport?: () => void;
+	tableExportState?: TableExportState;
 }) {
 	if (!result.headers.length || !result.values.length) {
 		return <p className="text-gray-500 text-sm">No results.</p>;
 	}
 
 	if (vizType === "table") {
-		return <DataTable result={result} config={config} />;
+		return (
+			<DataTable
+				result={result}
+				config={config}
+				onExport={onTableExport}
+				exportState={tableExportState}
+			/>
+		);
 	}
 
 	if (vizType === "pivot") {
@@ -2520,12 +2791,24 @@ function ChartOrTable({
 function DataTable({
 	result,
 	config,
+	onExport,
+	exportState,
 }: {
 	result: QueryResult;
 	config?: SharedVisualizationConfig;
+	onExport?: () => void;
+	exportState?: TableExportState;
 }) {
 	const rows = toChartData(result);
-	return <TableView data={rows} config={config} />;
+	return (
+		<TableView
+			data={rows}
+			config={config}
+			onExport={onExport}
+			exporting={exportState?.running}
+			exportError={exportState?.error}
+		/>
+	);
 }
 
 // Pivot view

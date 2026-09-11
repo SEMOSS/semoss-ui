@@ -25,6 +25,7 @@ import { useToast } from "@/components/ui/Toast";
 import {
 	isParamAppTag,
 	PARAM_APP_TAG,
+	tagKey,
 	userFolderTags,
 } from "@/lib/dashboardTags";
 import { publishedPortalUrl } from "@/lib/portalUrl";
@@ -80,18 +81,23 @@ export function PublishedPage() {
 		for (const a of apps) {
 			const folderTags = userFolderTags(a.tags);
 			if (folderTags.length === 0) unfiled += 1;
-			for (const tag of folderTags) map.set(tag, (map.get(tag) ?? 0) + 1);
+			for (const tag of folderTags) {
+				const canonicalName =
+					folders.find((folder) => tagKey(folder.id) === tagKey(tag))
+						?.id ?? tag;
+				map.set(canonicalName, (map.get(canonicalName) ?? 0) + 1);
+			}
 			if (a.tags.some(isParamAppTag))
 				map.set(PARAM_APP_TAG, (map.get(PARAM_APP_TAG) ?? 0) + 1);
 		}
 		return { map, unfiled };
-	}, [apps]);
+	}, [apps, folders]);
 
 	const inFolder = (a: { tags: string[] }) => {
 		if (folderSel === "all") return true;
 		if (folderSel === "unfiled") return userFolderTags(a.tags).length === 0;
 		if (folderSel === PARAM_APP_TAG) return a.tags.some(isParamAppTag);
-		return a.tags.includes(folderSel);
+		return a.tags.some((tag) => tagKey(tag) === tagKey(folderSel));
 	};
 
 	const filtered = apps.filter((a) => {

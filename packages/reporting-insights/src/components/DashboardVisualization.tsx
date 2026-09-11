@@ -61,6 +61,7 @@ import { CsvExportButton } from "@/components/widgets/CsvExportButton";
 import { FilterWidget } from "@/components/widgets/FilterWidget";
 import { usePivotTransform } from "@/hooks/usePivotTransform";
 import { useVizEvents } from "@/hooks/useVizEvents";
+import { buildReportingCsvFilename, downloadCsvFile } from "@/lib/csvExport";
 import {
 	applyFilters,
 	useAppliedFilters,
@@ -156,30 +157,6 @@ function aggregateValue(values: unknown[], aggType: string): number {
 		default:
 			return numVals.reduce((a, b) => a + b, 0); // sum
 	}
-}
-
-function downloadCsv(data: DashboardRow[], filename: string) {
-	if (!data.length) return;
-	const cols = Object.keys(data[0]);
-	const escapeCsv = (v: unknown) => {
-		const s = v != null ? String(v) : "";
-		return s.includes(",") || s.includes('"') || s.includes("\n")
-			? `"${s.replace(/"/g, '""')}"`
-			: s;
-	};
-	const csv = [
-		cols.join(","),
-		...data.map((row) => cols.map((c) => escapeCsv(row[c])).join(",")),
-	].join("\n");
-	const a = Object.assign(document.createElement("a"), {
-		href: URL.createObjectURL(
-			new Blob([csv], { type: "text/csv;charset=utf-8;" }),
-		),
-		download: filename,
-	});
-	document.body.appendChild(a);
-	a.click();
-	document.body.removeChild(a);
 }
 
 interface Props {
@@ -421,6 +398,13 @@ export function DashboardVisualization({
 		() => (preloadedData ?? []) as DashboardRow[],
 	);
 	const [showPhiModal, setShowPhiModal] = useState(false);
+	const [phiExportTarget, setPhiExportTarget] = useState<"table" | "overlay">(
+		"overlay",
+	);
+	const [exportingTable, setExportingTable] = useState(false);
+	const [tableExportError, setTableExportError] = useState<string | null>(
+		null,
+	);
 	// csvexport: data is fetched on demand (button click) rather than on app load.
 	const [pendingExport, setPendingExport] = useState(false);
 	const [exportDownloadKey, setExportDownloadKey] = useState(0);
@@ -553,6 +537,7 @@ export function DashboardVisualization({
 			p.inputType,
 			p.optionsQuery,
 			p.optionsDatabaseId,
+			p.dynamicOptions,
 		]),
 	);
 	// True once the SQL options fetch has settled (success or error). The data query
@@ -560,7 +545,10 @@ export function DashboardVisualization({
 	// expand an empty "All" value — prevents IN () in the generated SQL.
 	const [paramOptionsReady, setParamOptionsReady] = useState(
 		!(src.parameters ?? []).some(
-			(p) => p.inputType === "multiselect" && p.optionsQuery,
+			(p) =>
+				p.inputType === "multiselect" &&
+				p.optionsQuery &&
+				!p.dynamicOptions,
 		),
 	);
 	// biome-ignore lint/correctness/useExhaustiveDependencies: this options fetch is intentionally keyed to the parameter schema (paramOptionsKey) and database, not every derived value.
@@ -569,6 +557,7 @@ export function DashboardVisualization({
 			(p) =>
 				(p.inputType === "dropdown" || p.inputType === "multiselect") &&
 				p.optionsQuery &&
+				!p.dynamicOptions &&
 				(p.optionsDatabaseId || src.databaseId),
 		);
 
@@ -967,6 +956,124 @@ export function DashboardVisualization({
 		}
 	};
 
+	const downloadTableRows = (
+		rows: DashboardRow[],
+		availableColumns?: string[],
+	) => {
+		const columns = visualization.config?.tableColumns?.length
+			? visualization.config.tableColumns.filter((column) =>
+					(
+						availableColumns ??
+						(rows[0] ? Object.keys(rows[0]) : [])
+					).includes(column),
+				)
+			: (availableColumns ?? (rows[0] ? Object.keys(rows[0]) : []));
+		const aggregatedRows = aggregateTableRows(
+			rows,
+			columns,
+			visualization.config?.columnAggregations ?? {},
+		);
+		const exportRows = (aggregatedRows ?? rows).map((row) =>
+			Object.fromEntries(columns.map((column) => [column, row[column]])),
+		);
+		if (
+			!downloadCsvFile(
+				exportRows,
+				buildReportingCsvFilename(src.databaseName, src.databaseId),
+				columns,
+			)
+		) {
+			throw new Error("The table has no rows to export.");
+		}
+	};
+
+	const exportFullTableQuery = async () => {
+		if (exportingTable || !src.databaseId || !src.query) return;
+		setExportingTable(true);
+		setTableExportError(null);
+		try {
+			const q = interpolateQuery(src.query);
+			const pixel = `Database(database=["${src.databaseId}"]) | Query("${escapeSqlForPixel(q)}") | Collect(-1);`;
+			const { pixelReturn } =
+				await actions.run<
+					[{ output: unknown; operationType?: string[] }]
+				>(pixel);
+			const pr = pixelReturn[0];
+			if (
+				Array.isArray(pr.operationType) &&
+				pr.operationType.includes("ERROR")
+			) {
+				throw new Error(String(pr.output ?? "Query failed."));
+			}
+			const out = pr.output as Record<string, unknown> | null;
+			const headers =
+				(out?.data as { headers?: string[] })?.headers ??
+				(out?.headers as string[]) ??
+				[];
+			const values =
+				(out?.data as { values?: unknown[][] })?.values ??
+				(out?.values as unknown[][]) ??
+				[];
+			const completeRows = toRows(headers, values);
+			const filteredRows = applyVizSort(
+				applyVizFilter(
+					applyFilters(completeRows, appliedFilters),
+					vizFilter,
+				),
+				sortRules,
+			);
+			const facetedRows =
+				facetColumn && facetValue
+					? filteredRows.filter(
+							(row) =>
+								String(row[facetColumn] ?? "") === facetValue,
+						)
+					: filteredRows;
+			downloadTableRows(facetedRows, headers);
+		} catch (err: unknown) {
+			setTableExportError(
+				String(
+					(err && typeof err === "object" && "message" in err
+						? (err as { message?: unknown }).message
+						: err) ?? "",
+				).trim() || "Failed to export the table.",
+			);
+		} finally {
+			setExportingTable(false);
+		}
+	};
+
+	const performTableExport = () => {
+		// Editor previews contain only their Collect(10) sample. Batch-loaded saved
+		// tables can also be incomplete while the task has more rows. Those two cases
+		// need a separate all-row query; ordinary saved tables already hold Collect(-1).
+		if (preloadedData || dbHasMore) {
+			void exportFullTableQuery();
+			return;
+		}
+		setTableExportError(null);
+		try {
+			downloadTableRows(facetData);
+		} catch (err: unknown) {
+			setTableExportError(
+				String(
+					(err && typeof err === "object" && "message" in err
+						? (err as { message?: unknown }).message
+						: err) ?? "",
+				).trim() || "Failed to export the table.",
+			);
+		}
+	};
+
+	const requestTableExport = () => {
+		if (visualization.phi) {
+			setPhiExportTarget("table");
+			setShowPhiModal(true);
+			return;
+		}
+		performTableExport();
+	};
+
 	// When a csvexport click triggers a fetch, bump exportDownloadKey once data arrives
 	// so the button auto-triggers its download (respecting the PHI gate internally).
 	useEffect(() => {
@@ -1230,6 +1337,8 @@ export function DashboardVisualization({
 				<CsvExportButton
 					rows={facetData}
 					title={visualization.title || "export"}
+					databaseName={src.databaseName}
+					databaseId={src.databaseId}
 					label={visualization.config?.csvExportLabel}
 					config={visualization.config}
 					phi={visualization.phi}
@@ -2344,12 +2453,20 @@ export function DashboardVisualization({
 						</button>
 					) : null
 				}
+				onExport={
+					(visualization.config?.styling?.table?.showExport ?? true)
+						? requestTableExport
+						: undefined
+				}
+				exporting={exportingTable}
+				exportDisabled={!src.databaseId || !src.query}
+				exportError={tableExportError}
 			/>
 		);
 	};
 
 	// CSV export indicator
-	const isExportable = ["table", "pivot", "kpi"].includes(
+	const isExportable = ["pivot", "kpi"].includes(
 		visualization.visualizationType,
 	);
 	const exportData = useMemo(() => {
@@ -2414,24 +2531,26 @@ export function DashboardVisualization({
 				{headerActions}
 				{isExportable &&
 					data.length > 0 &&
-					((visualization.visualizationType === "table" &&
-						(visualization.config?.styling?.table?.showExport ??
+					((visualization.visualizationType === "kpi" &&
+						(visualization.config?.styling?.kpi?.showExport ??
 							true)) ||
-						(visualization.visualizationType === "kpi" &&
-							(visualization.config?.styling?.kpi?.showExport ??
-								true)) ||
-						(visualization.visualizationType !== "table" &&
-							visualization.visualizationType !== "kpi")) && (
+						visualization.visualizationType === "pivot") && (
 						<button
 							type="button"
-							onClick={() =>
-								visualization.phi
-									? setShowPhiModal(true)
-									: downloadCsv(
-											exportData,
-											`${visualization.title || "export"}.csv`,
-										)
-							}
+							onClick={() => {
+								if (visualization.phi) {
+									setPhiExportTarget("overlay");
+									setShowPhiModal(true);
+									return;
+								}
+								downloadCsvFile(
+									exportData,
+									buildReportingCsvFilename(
+										src.databaseName,
+										src.databaseId,
+									),
+								);
+							}}
 							title="Export to CSV"
 							className="rounded-lg p-1 text-slate-400 transition-colors hover:bg-emerald-50 hover:text-emerald-600"
 						>
@@ -2441,10 +2560,17 @@ export function DashboardVisualization({
 				{showPhiModal && (
 					<PhiExportWarningModal
 						onConfirm={() => {
-							downloadCsv(
-								exportData,
-								`${visualization.title || "export"}.csv`,
-							);
+							if (phiExportTarget === "table") {
+								performTableExport();
+							} else {
+								downloadCsvFile(
+									exportData,
+									buildReportingCsvFilename(
+										src.databaseName,
+										src.databaseId,
+									),
+								);
+							}
 							setShowPhiModal(false);
 						}}
 						onCancel={() => setShowPhiModal(false)}

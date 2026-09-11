@@ -8,17 +8,29 @@
 import { Loader2, Play, SlidersHorizontal } from "lucide-react";
 import type React from "react";
 import { useEffect, useState } from "react";
-import { ParamControl } from "@/components/ParamControl";
+import {
+	formatSqlList,
+	ParamControl,
+	parseSqlList,
+} from "@/components/ParamControl";
 import { type QueryRunFn, useQueryRunner } from "@/components/QueryRunner";
+import {
+	detectParameterTokens,
+	hasDynamicOptionsCycle,
+	interpolateParameterTokens,
+} from "@/lib/parameterTokens";
 import { type ParamGroup, resolveParamDefault } from "@/lib/resolveQuery";
 import type { ParamSheetConfig } from "@/types/dashboard";
 
 /** Distinct first-column values from a SEMOSS query result (for dropdown options). */
-function firstColumnValues(output: any): string[] {
+function firstColumnValues(output: unknown): string[] {
 	const values =
-		output?.data?.values ??
-		output?.values ??
-		(Array.isArray(output?.data) ? output.data : []);
+		(output as { data?: { values?: unknown[] }; values?: unknown[] })?.data
+			?.values ??
+		(output as { values?: unknown[] })?.values ??
+		(Array.isArray((output as { data?: unknown })?.data)
+			? ((output as { data?: unknown }).data as unknown[])
+			: []);
 	if (!Array.isArray(values)) return [];
 	const out: string[] = [];
 	const seen = new Set<string>();
@@ -68,19 +80,28 @@ export function ParamSheet({
 	const [conditionalParamOptions, setConditionalParamOptions] = useState<
 		Record<string, string[]>
 	>({});
+	// Dynamic options, re-fetched whenever any `{{param}}` referenced by the options query changes
+	const [dynamicParamOptions, setDynamicParamOptions] = useState<
+		Record<string, string[]>
+	>({});
 
 	// Notify parent whenever either options map changes so it can pre-expand empty multiselects
 	useEffect(() => {
 		if (!onParamOptionsChange) return;
-		onParamOptionsChange({ ...paramOptions, ...conditionalParamOptions });
+		onParamOptionsChange({
+			...paramOptions,
+			...conditionalParamOptions,
+			...dynamicParamOptions,
+		});
 		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [paramOptions, conditionalParamOptions]);
+	}, [paramOptions, conditionalParamOptions, dynamicParamOptions]);
 
 	// Effect A: fetch options for non-conditional params once on mount
 	useEffect(() => {
 		const toFetch = paramGroups.filter(
 			(g) =>
 				!g.conditionalOn &&
+				!g.dynamicOptions &&
 				(g.param.inputType === "dropdown" ||
 					g.param.inputType === "multiselect") &&
 				g.optionsQuery &&
@@ -93,7 +114,7 @@ export function ParamSheet({
 			for (const g of toFetch) {
 				try {
 					const db = g.optionsDatabaseId || g.databaseIdFallback;
-					let outputRaw: any;
+					let outputRaw: unknown;
 					if (sharedRun) {
 						const r = await sharedRun(db, g.optionsQuery ?? "", -1);
 						outputRaw = r.raw;
@@ -125,7 +146,7 @@ export function ParamSheet({
 		void (async () => {
 			const next: Record<string, string[]> = {};
 			for (const g of conditionalGroups) {
-				const parentVal = values[g.conditionalOn!] ?? "";
+				const parentVal = values[g.conditionalOn ?? ""] ?? "";
 				const branch = (g.conditionalBranches ?? []).find(
 					(b) => b.whenValue === parentVal,
 				);
@@ -181,7 +202,164 @@ export function ParamSheet({
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [conditionalDepKey, sharedRun]);
 
+	// Effect C: re-fetch dynamic options whenever a referenced `{{param}}` value changes
+	const dynamicGroups = paramGroups.filter(
+		(g) =>
+			g.dynamicOptions &&
+			!g.conditionalOn &&
+			(g.param.inputType === "dropdown" ||
+				g.param.inputType === "multiselect") &&
+			g.optionsQuery,
+	);
+	const optionValuesForDependency = (name: string): string[] => {
+		const dependency = paramGroups.find((group) => group.name === name);
+		if (!dependency) return [];
+		const loaded = dependency.dynamicOptions
+			? dynamicParamOptions[name]
+			: dependency.conditionalOn && dependency.conditionalBranches?.length
+				? conditionalParamOptions[name]
+				: paramOptions[name];
+		return Array.from(
+			new Set([...(loaded ?? []), ...dependency.mergedOptions]),
+		);
+	};
+	const dynamicDepKey = dynamicGroups
+		.map((group) => {
+			const dependencies = detectParameterTokens(
+				group.optionsQuery ?? "",
+			);
+			const dependencyState = dependencies.map((name) => {
+				const value = values[name] ?? "";
+				const dependency = paramGroups.find(
+					(candidate) => candidate.name === name,
+				);
+				const allOptions =
+					dependency?.param.inputType === "multiselect" && !value
+						? optionValuesForDependency(name)
+						: [];
+				return [name, value, allOptions];
+			});
+			return [
+				group.name,
+				group.optionsQuery,
+				group.optionsDatabaseId,
+				dependencyState,
+			];
+		})
+		.map((entry) => JSON.stringify(entry))
+		.join("|");
+
+	useEffect(() => {
+		if (!dynamicGroups.length || !sharedRun) return;
+		let cancelled = false;
+		void (async () => {
+			const knownNames = new Set(paramGroups.map((group) => group.name));
+			for (const group of dynamicGroups) {
+				const query = group.optionsQuery ?? "";
+				const dependencies = detectParameterTokens(query);
+				const invalid =
+					dependencies.length === 0 ||
+					dependencies.includes(group.name) ||
+					dependencies.some((name) => !knownNames.has(name)) ||
+					hasDynamicOptionsCycle(
+						paramGroups.map((candidate) => ({
+							name: candidate.name,
+							optionsQuery: candidate.optionsQuery,
+							dynamicOptions: candidate.dynamicOptions,
+						})),
+						group.name,
+					);
+				if (invalid) continue;
+
+				const dependencyValues: Record<string, string> = {};
+				let waitingForDependency = false;
+				for (const name of dependencies) {
+					const dependency = paramGroups.find(
+						(candidate) => candidate.name === name,
+					);
+					if (!dependency) {
+						waitingForDependency = true;
+						break;
+					}
+					let value = dependency.param.useCurrentDate
+						? resolveParamDefault(dependency.param)
+						: (values[name] ??
+							resolveParamDefault(dependency.param));
+					if (
+						dependency.param.inputType === "multiselect" &&
+						!value.trim()
+					) {
+						const allOptions = optionValuesForDependency(name);
+						if (allOptions.length === 0) {
+							waitingForDependency = true;
+							break;
+						}
+						value = formatSqlList(allOptions);
+					}
+					if (dependency.param.required && !value.trim()) {
+						waitingForDependency = true;
+						break;
+					}
+					dependencyValues[name] = value;
+				}
+				if (waitingForDependency) continue;
+
+				try {
+					const db =
+						group.optionsDatabaseId || group.databaseIdFallback;
+					const interpolated = interpolateParameterTokens(
+						query,
+						dependencyValues,
+					);
+					if (detectParameterTokens(interpolated).length > 0)
+						continue;
+					const result = await sharedRun(db, interpolated, -1);
+					if (cancelled) return;
+
+					const options = Array.from(
+						new Set([
+							...firstColumnValues(result.raw),
+							...group.mergedOptions,
+						]),
+					);
+					setDynamicParamOptions((prev) => ({
+						...prev,
+						[group.name]: options,
+					}));
+
+					const currentValue = values[group.name] ?? "";
+					if (
+						group.param.inputType === "dropdown" &&
+						currentValue &&
+						!options.includes(currentValue)
+					) {
+						onChangeValue(group.name, "");
+					} else if (
+						group.param.inputType === "multiselect" &&
+						currentValue
+					) {
+						const validSelections = parseSqlList(
+							currentValue,
+						).filter((value) => options.includes(value));
+						const reconciled = formatSqlList(validSelections);
+						if (reconciled !== currentValue)
+							onChangeValue(group.name, reconciled);
+					}
+				} catch {
+					// Keep the last successful options and selection when a dynamic query fails.
+				}
+			}
+		})();
+		return () => {
+			cancelled = true;
+		};
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [dynamicDepKey, sharedRun]);
+
 	const optionsFor = (g: ParamGroup): string[] => {
+		if (g.dynamicOptions) {
+			return dynamicParamOptions[g.name] ?? g.mergedOptions;
+		}
 		if (g.conditionalOn && g.conditionalBranches?.length) {
 			return conditionalParamOptions[g.name] ?? [];
 		}
@@ -310,7 +488,7 @@ export function ParamSheet({
 					<div className="grid gap-4" style={gridStyle}>
 						{paramGroups.map((g) => (
 							<div key={g.name}>
-								<label className="mb-1 block font-semibold text-slate-600 text-xs">
+								<div className="mb-1 block font-semibold text-slate-600 text-xs">
 									{g.label || g.name}
 									{g.param.required && (
 										<span className="ml-0.5 text-red-500">
@@ -322,7 +500,7 @@ export function ParamSheet({
 											({g.queryIds.length} queries)
 										</span>
 									)}
-								</label>
+								</div>
 								<ParamControl
 									param={g.param}
 									value={

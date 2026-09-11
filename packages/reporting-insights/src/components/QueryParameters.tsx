@@ -26,8 +26,13 @@ import {
 	X,
 } from "lucide-react";
 import { useEffect, useState } from "react";
+import {
+	detectParameterTokens,
+	hasDynamicOptionsCycle,
+	interpolateParameterTokens,
+} from "@/lib/parameterTokens";
 import { escapeSqlForPixel } from "@/lib/pixel";
-import { ParamControl } from "./ParamControl";
+import { formatSqlList, ParamControl } from "./ParamControl";
 
 export interface ConditionalBranch {
 	whenValue: string;
@@ -49,6 +54,7 @@ export interface QueryParam {
 	options?: string[];
 	optionsQuery?: string;
 	optionsDatabaseId?: string;
+	dynamicOptions?: boolean;
 	conditionalOn?: string;
 	conditionalBranches?: ConditionalBranch[];
 }
@@ -64,7 +70,7 @@ interface Props {
 	/** All databases the user can query — for picking the SQL-options source. */
 	databases?: { id: string; label: string }[];
 	/** Runs a pixel and returns the output (used to preview SQL-sourced options). */
-	runPixel?: (pixel: string) => Promise<any>;
+	runPixel?: (pixel: string) => Promise<unknown>;
 }
 
 const TYPE_LABEL: Record<NonNullable<QueryParam["inputType"]>, string> = {
@@ -76,11 +82,14 @@ const TYPE_LABEL: Record<NonNullable<QueryParam["inputType"]>, string> = {
 };
 
 /** Pull the distinct first-column values out of a SEMOSS query result. */
-function firstColumn(output: any): string[] {
+function firstColumn(output: unknown): string[] {
 	const values =
-		output?.data?.values ??
-		output?.values ??
-		(Array.isArray(output?.data) ? output.data : []);
+		(output as { data?: { values?: unknown[] }; values?: unknown[] })?.data
+			?.values ??
+		(output as { values?: unknown[] })?.values ??
+		(Array.isArray((output as { data?: unknown })?.data)
+			? ((output as { data?: unknown }).data as unknown[])
+			: []);
 	if (!Array.isArray(values)) return [];
 	const out: string[] = [];
 	const seen = new Set<string>();
@@ -96,22 +105,7 @@ function firstColumn(output: any): string[] {
 }
 
 // Matches the exact form the query resolver replaces: `{{name}}` (no inner spaces).
-const TOKEN_RE = /\{\{([a-zA-Z0-9_]+)\}\}/g;
-
-/** Unique `{{token}}` names in the query, in first-seen order. */
-export function detectTokens(query: string): string[] {
-	const seen = new Set<string>();
-	const out: string[] = [];
-	let m: RegExpExecArray | null;
-	TOKEN_RE.lastIndex = 0;
-	while ((m = TOKEN_RE.exec(query)) !== null) {
-		if (!seen.has(m[1])) {
-			seen.add(m[1]);
-			out.push(m[1]);
-		}
-	}
-	return out;
-}
+export const detectTokens = detectParameterTokens;
 
 const newId = () =>
 	typeof crypto !== "undefined" && crypto.randomUUID
@@ -136,7 +130,7 @@ export function QueryParameters({
 	const undefinedTokens = tokens.filter((t) => !definedNames.has(t));
 
 	const [showGuide, setShowGuide] = useState(false);
-	const [activeFlow, setActiveFlow] = useState<0 | 1 | 2>(0);
+	const [activeFlow, setActiveFlow] = useState(0);
 
 	const FLOWS: { label: string; steps: React.ReactNode[] }[] = [
 		{
@@ -219,6 +213,33 @@ export function QueryParameters({
 				</>,
 			],
 		},
+		{
+			label: "Dynamic Options",
+			steps: [
+				<>
+					Create the driver parameter first, such as a multi-select
+					named{" "}
+					<code className="rounded bg-stone-100 px-1 font-mono text-[11px] text-indigo-500">
+						{"{{facility}}"}
+					</code>
+					.
+				</>,
+				<>
+					On the dependent dropdown, enable{" "}
+					<strong className="text-stone-700">
+						Use parameters in this options query
+					</strong>
+					.
+				</>,
+				<>
+					Reference the driver directly in SQL, for example{" "}
+					<code className="rounded bg-stone-100 px-1 font-mono text-[11px] text-indigo-500">
+						{"WHERE facility_name IN ({{facility}})"}
+					</code>
+					. Its options reload whenever the driver changes.
+				</>,
+			],
+		},
 	];
 
 	// Accordion: only one parameter is open at a time, so a long list stays readable.
@@ -283,14 +304,12 @@ export function QueryParameters({
 				</button>
 				{showGuide && (
 					<div className="space-y-3 border-stone-100 border-t bg-stone-50/50 px-3 py-3">
-						<div className="flex gap-1.5">
+						<div className="flex flex-wrap gap-1.5">
 							{FLOWS.map((f, i) => (
 								<button
-									key={i}
+									key={f.label}
 									type="button"
-									onClick={() =>
-										setActiveFlow(i as 0 | 1 | 2)
-									}
+									onClick={() => setActiveFlow(i)}
 									className={`rounded-md px-2.5 py-1 font-semibold text-[11px] transition-colors ${
 										activeFlow === i
 											? "bg-indigo-100 text-indigo-700"
@@ -303,6 +322,7 @@ export function QueryParameters({
 						</div>
 						<ol className="space-y-2">
 							{FLOWS[activeFlow].steps.map((step, i) => (
+								// biome-ignore lint/suspicious/noArrayIndexKey: FLOWS steps are a static, never-reordered array of ReactNode content.
 								<li key={i} className="flex gap-2.5">
 									<span className="mt-0.5 grid h-4 w-4 flex-shrink-0 place-items-center rounded-full bg-indigo-100 font-bold text-[10px] text-indigo-600">
 										{i + 1}
@@ -515,7 +535,7 @@ export function QueryParameters({
 												</label>
 											)}
 											{param.inputType !== "event" && (
-												<label className="block">
+												<div className="block">
 													<span className="mb-1 flex items-center gap-1 font-medium text-[11px] text-stone-500">
 														{inputType === "text"
 															? param.required
@@ -705,7 +725,7 @@ export function QueryParameters({
 																below first
 															</div>
 														))}
-												</label>
+												</div>
 											)}
 										</div>
 
@@ -916,7 +936,7 @@ function ConditionalConfig({
 	allParams: QueryParam[];
 	databaseId?: string;
 	databases?: { id: string; label: string }[];
-	runPixel?: (pixel: string) => Promise<any>;
+	runPixel?: (pixel: string) => Promise<unknown>;
 	onPatch: (patch: Partial<QueryParam>) => void;
 	onBranchSqlLoad?: (opts: string[]) => void;
 }) {
@@ -978,10 +998,14 @@ function ConditionalConfig({
 				);
 				onBranchSqlLoad(allSqlOpts);
 			}
-		} catch (e: any) {
+		} catch (e: unknown) {
 			setDraft(i, {
 				loading: false,
-				error: String(e?.message ?? e ?? "Query failed."),
+				error: String(
+					(e as { message?: unknown })?.message ??
+						e ??
+						"Query failed.",
+				),
 			});
 		}
 	};
@@ -1049,6 +1073,7 @@ function ConditionalConfig({
 							branch.optionsQuery !== draft.sql.trim();
 						return (
 							<div
+								// biome-ignore lint/suspicious/noArrayIndexKey: branches have no natural id and whenValue may be blank/duplicated while being edited.
 								key={i}
 								className="space-y-2 rounded-lg border border-stone-200 bg-stone-50 p-3"
 							>
@@ -1389,7 +1414,7 @@ function DropdownConfig({
 	allParams: QueryParam[];
 	databaseId?: string;
 	databases?: { id: string; label: string }[];
-	runPixel?: (pixel: string) => Promise<any>;
+	runPixel?: (pixel: string) => Promise<unknown>;
 	onPatch: (patch: Partial<QueryParam>) => void;
 	preview: string[] | null;
 	onPreviewChange: (vals: string[] | null) => void;
@@ -1398,12 +1423,54 @@ function DropdownConfig({
 	const [manual, setManual] = useState("");
 	const [loading, setLoading] = useState(false);
 	const [err, setErr] = useState<string | null>(null);
+	const [notice, setNotice] = useState<string | null>(null);
 
 	const handleBranchSqlLoad = (opts: string[]) => {
 		onPreviewChange(opts.length > 0 ? opts : null);
 	};
 
 	const manualOptions = param.options ?? [];
+	const dynamicDependencies = param.dynamicOptions
+		? detectParameterTokens(sql)
+		: [];
+	const availableParams = [param, ...allParams];
+	const unknownDependencies = dynamicDependencies.filter(
+		(name) => !availableParams.some((candidate) => candidate.name === name),
+	);
+	const eventDependencies = dynamicDependencies.filter(
+		(name) =>
+			availableParams.find((candidate) => candidate.name === name)
+				?.inputType === "event",
+	);
+	const hasSelfReference = dynamicDependencies.includes(param.name);
+	const hasCycle =
+		!!param.dynamicOptions &&
+		!!param.name &&
+		hasDynamicOptionsCycle(
+			availableParams.map((candidate) =>
+				candidate.id === param.id
+					? {
+							...candidate,
+							optionsQuery: sql.trim(),
+							dynamicOptions: true,
+						}
+					: candidate,
+			),
+			param.name,
+		);
+	const dynamicIssue = !param.dynamicOptions
+		? null
+		: dynamicDependencies.length === 0
+			? "Add at least one {{parameter}} reference to the options query."
+			: unknownDependencies.length > 0
+				? `Unknown parameter${unknownDependencies.length > 1 ? "s" : ""}: ${unknownDependencies.join(", ")}`
+				: hasSelfReference
+					? "An options query cannot depend on its own parameter."
+					: eventDependencies.length > 0
+						? `Event parameters cannot drive options: ${eventDependencies.join(", ")}`
+						: hasCycle
+							? "These dynamic option queries create a circular dependency."
+							: null;
 
 	const loadOptions = async () => {
 		const db = param.optionsDatabaseId || databaseId;
@@ -1413,15 +1480,60 @@ function DropdownConfig({
 		}
 		setLoading(true);
 		setErr(null);
+		setNotice(null);
 		try {
+			let query = sql.trim();
+			if (param.dynamicOptions) {
+				if (dynamicIssue) {
+					setErr(dynamicIssue);
+					return;
+				}
+
+				const dependencyValues: Record<string, string> = {};
+				const missingDefaults: string[] = [];
+				for (const name of dynamicDependencies) {
+					const dependency = availableParams.find(
+						(candidate) => candidate.name === name,
+					);
+					if (!dependency) continue;
+					let value = dependency.useCurrentDate
+						? new Date().toISOString().slice(0, 10)
+						: dependency.defaultValue;
+					if (
+						!value &&
+						dependency.inputType === "multiselect" &&
+						dependency.options?.length
+					) {
+						value = formatSqlList(dependency.options);
+					}
+					if (!value) missingDefaults.push(name);
+					dependencyValues[name] = value;
+				}
+
+				onPatch({ optionsQuery: query, optionsDatabaseId: db });
+				if (missingDefaults.length > 0) {
+					onPreviewChange(null);
+					setNotice(
+						`Saved. Preview needs a default value for ${missingDefaults.map((name) => `{{${name}}}`).join(", ")}.`,
+					);
+					return;
+				}
+				query = interpolateParameterTokens(query, dependencyValues);
+			}
 			const out = await runPixel(
-				`Database(database=["${db}"]) | Query("${escapeSqlForPixel(sql.trim())}") | Collect(-1);`,
+				`Database(database=["${db}"]) | Query("${escapeSqlForPixel(query)}") | Collect(-1);`,
 			);
 			const vals = firstColumn(out);
 			onPreviewChange(vals);
 			onPatch({ optionsQuery: sql.trim(), optionsDatabaseId: db });
-		} catch (e: any) {
-			setErr(String(e?.message ?? e ?? "Query failed."));
+		} catch (e: unknown) {
+			setErr(
+				String(
+					(e as { message?: unknown })?.message ??
+						e ??
+						"Query failed.",
+				),
+			);
 			onPreviewChange(null);
 		} finally {
 			setLoading(false);
@@ -1513,6 +1625,28 @@ function DropdownConfig({
 						</button>
 					</div>
 					{err && <p className="text-[12px] text-red-500">{err}</p>}
+					{!err && notice && (
+						<p className="text-[12px] text-emerald-600">{notice}</p>
+					)}
+					{!err &&
+						!notice &&
+						param.dynamicOptions &&
+						dynamicDependencies.length > 0 && (
+							<p className="text-[11px] text-indigo-600">
+								Depends on{" "}
+								{dynamicDependencies
+									.map((name) => `{{${name}}}`)
+									.join(", ")}
+							</p>
+						)}
+					{!err &&
+						!notice &&
+						param.dynamicOptions &&
+						dynamicIssue && (
+							<p className="text-[11px] text-amber-600">
+								{dynamicIssue}
+							</p>
+						)}
 					{!err && dirty && (
 						<p className="text-[11px] text-amber-500">
 							Click Load to save these options.
@@ -1591,10 +1725,42 @@ function DropdownConfig({
 				</div>
 			)}
 
-			{/* Conditional options — branches driven by another param's value */}
+			{/* Conditional options — dynamic query or enumerated branches */}
 			{allParams.length > 0 && (
 				<div className="space-y-2 border-stone-100 border-t pt-3">
-					<label className="flex cursor-pointer select-none items-center gap-2 font-medium text-[12px] text-stone-600">
+					<div className="flex items-center gap-1.5 font-medium text-[11px] text-stone-500">
+						<GitBranch className="h-3.5 w-3.5 text-stone-400" />{" "}
+						Options based on other parameters
+					</div>
+					<label className="flex cursor-pointer select-none items-start gap-2 rounded-lg border border-stone-200 bg-stone-50 px-2.5 py-2 text-[12px] text-stone-600">
+						<input
+							type="checkbox"
+							checked={param.dynamicOptions ?? false}
+							onChange={(e) => {
+								onPatch({
+									dynamicOptions:
+										e.target.checked || undefined,
+									conditionalOn: undefined,
+									conditionalBranches: undefined,
+								});
+								onPreviewChange(null);
+								setErr(null);
+								setNotice(null);
+							}}
+							className="mt-0.5 h-4 w-4 rounded border-stone-300 text-indigo-600 focus:ring-indigo-500"
+						/>
+						<span>
+							<span className="block font-medium text-stone-700">
+								Use parameters directly in the options query
+							</span>
+							<span className="block font-normal text-[11px] text-stone-500">
+								Use one query above with tokens such as{" "}
+								{"{{param4}}"}; its results reload whenever a
+								referenced parameter changes.
+							</span>
+						</span>
+					</label>
+					<label className="flex cursor-pointer select-none items-start gap-2 rounded-lg border border-stone-200 bg-stone-50 px-2.5 py-2 text-[12px] text-stone-600">
 						<input
 							type="checkbox"
 							checked={!!param.conditionalOn}
@@ -1603,6 +1769,7 @@ function DropdownConfig({
 									onPatch({
 										conditionalOn: allParams[0]?.name ?? "",
 										conditionalBranches: [],
+										dynamicOptions: undefined,
 									});
 									onPreviewChange(null);
 								} else {
@@ -1613,10 +1780,17 @@ function DropdownConfig({
 									onPreviewChange(null);
 								}
 							}}
-							className="h-4 w-4 rounded border-stone-300 text-indigo-600 focus:ring-indigo-500"
+							className="mt-0.5 h-4 w-4 rounded border-stone-300 text-indigo-600 focus:ring-indigo-500"
 						/>
-						<GitBranch className="h-3.5 w-3.5 text-stone-400" />
-						Show different options based on another dropdown
+						<span>
+							<span className="block font-medium text-stone-700">
+								Define rules for individual parameter values
+							</span>
+							<span className="block font-normal text-[11px] text-stone-500">
+								Choose one parent dropdown, then configure a
+								separate option source for each value.
+							</span>
+						</span>
 					</label>
 					{param.conditionalOn && (
 						<ConditionalConfig

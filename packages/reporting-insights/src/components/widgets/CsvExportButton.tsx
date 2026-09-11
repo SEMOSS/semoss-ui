@@ -5,6 +5,7 @@
 import type { CSSProperties } from "react";
 import { useEffect, useState } from "react";
 import { PhiExportWarningModal } from "@/components/PhiExportWarningModal";
+import { buildReportingCsvFilename, downloadCsvFile } from "@/lib/csvExport";
 import { csvColDisplayName } from "@/lib/tableAggregate";
 
 export interface CsvExportConfig {
@@ -29,10 +30,10 @@ export interface CsvExportConfig {
 }
 
 function processRows(
-	rows: Record<string, any>[],
+	rows: Record<string, unknown>[],
 	exportColumns: string[] | undefined,
 	aggregations: Record<string, string>,
-): Record<string, any>[] {
+): Record<string, unknown>[] {
 	if (!rows.length) return rows;
 	const allCols = Object.keys(rows[0]);
 	const activeCols =
@@ -54,7 +55,7 @@ function processRows(
 
 	const groupByCols = activeCols.filter((c) => !activeAggs[c]);
 	const aggCols = activeCols.filter((c) => activeAggs[c]);
-	const groups = new Map<string, Record<string, any>[]>();
+	const groups = new Map<string, Record<string, unknown>[]>();
 	for (const row of rows) {
 		const key = groupByCols.map((c) => String(row[c] ?? "")).join("\x00");
 		const arr = groups.get(key) ?? [];
@@ -62,7 +63,7 @@ function processRows(
 		groups.set(key, arr);
 	}
 	return Array.from(groups.values()).map((grp) => {
-		const result: Record<string, any> = {};
+		const result: Record<string, unknown> = {};
 		for (const c of groupByCols) result[c] = grp[0][c];
 		for (const c of aggCols) {
 			const nums = grp
@@ -95,43 +96,12 @@ function processRows(
 	});
 }
 
-function toCsv(rows: Record<string, any>[], columns?: string[]): string {
-	if (!rows.length) return "";
-	const cols = columns?.length ? columns : Object.keys(rows[0]);
-	const escapeValue = (v: any) => {
-		const s = v != null ? String(v) : "";
-		return s.includes(",") || s.includes('"') || s.includes("\n")
-			? `"${s.replace(/"/g, '""')}"`
-			: s;
-	};
-	return [
-		cols.join(","),
-		...rows.map((r) => cols.map((c) => escapeValue(r[c])).join(",")),
-	].join("\n");
-}
-
-export function downloadCsvFile(
-	rows: Record<string, any>[],
-	filename: string,
-	columns?: string[],
-) {
-	const csv = toCsv(rows, columns);
-	if (!csv) return;
-	const a = Object.assign(document.createElement("a"), {
-		href: URL.createObjectURL(
-			new Blob([csv], { type: "text/csv;charset=utf-8;" }),
-		),
-		download: filename.endsWith(".csv") ? filename : `${filename}.csv`,
-	});
-	document.body.appendChild(a);
-	a.click();
-	document.body.removeChild(a);
-}
-
 interface Props {
-	rows: Record<string, any>[];
+	rows: Record<string, unknown>[];
 	columns?: string[];
 	title: string;
+	databaseName?: string;
+	databaseId?: string;
 	/** Optional custom button label — kept for backwards compatibility; config.csvExportLabel takes precedence. */
 	label?: string;
 	config?: CsvExportConfig;
@@ -146,7 +116,8 @@ interface Props {
 export function CsvExportButton({
 	rows,
 	columns,
-	title,
+	databaseName,
+	databaseId,
 	label,
 	config,
 	phi,
@@ -168,7 +139,11 @@ export function CsvExportButton({
 	const exportCols = baseCols?.map((c) => csvColDisplayName(c, aggs[c]));
 
 	const doDownload = () =>
-		downloadCsvFile(processedRows, title || "export", exportCols);
+		downloadCsvFile(
+			processedRows,
+			buildReportingCsvFilename(databaseName, databaseId),
+			exportCols,
+		);
 
 	// When the parent fetches data on click, it bumps downloadKey to signal that we
 	// should trigger the download now (respecting the PHI gate).

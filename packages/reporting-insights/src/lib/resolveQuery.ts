@@ -112,6 +112,7 @@ function fingerprint(src: QuerySource): string {
 		options: p.options,
 		optionsQuery: p.optionsQuery,
 		optionsDatabaseId: p.optionsDatabaseId,
+		dynamicOptions: p.dynamicOptions,
 		useCurrentDate: p.useCurrentDate,
 	}));
 	return JSON.stringify([src.databaseId, src.query, params]);
@@ -183,6 +184,7 @@ export interface ParamGroup {
 	mergedOptions: string[]; // union of all manual `options` arrays across queries
 	optionsQuery?: string; // SQL whose first column becomes the option list (first occurrence wins)
 	optionsDatabaseId?: string; // database for optionsQuery (first occurrence wins)
+	dynamicOptions?: boolean; // first-occurrence: interpolate option-query parameter references at runtime
 	databaseIdFallback: string; // databaseId of the first query — fallback when no optionsDatabaseId
 	conditionalOn?: string; // first-occurrence: parent param name driving the branches
 	conditionalBranches?: ConditionalOptionBranch[]; // first-occurrence: per-value option sources
@@ -214,6 +216,7 @@ export function computeParamGroups(queries: DashboardQuery[]): ParamGroup[] {
 					mergedOptions: [...(p.options ?? [])],
 					optionsQuery: p.optionsQuery,
 					optionsDatabaseId: p.optionsDatabaseId,
+					dynamicOptions: p.dynamicOptions,
 					databaseIdFallback: q.databaseId,
 					conditionalOn: p.conditionalOn,
 					conditionalBranches: p.conditionalBranches,

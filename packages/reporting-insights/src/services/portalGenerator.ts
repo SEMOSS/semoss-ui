@@ -1584,12 +1584,26 @@ function renderTable(container, headers, values, vizId, isPivot) {
 }
 
 function exportTableCsv(headers, rows, vizId) {
-  var esc = function(v){ var s=v!=null?String(v):''; return (s.indexOf(',')>-1||s.indexOf('"')>-1||s.indexOf('\\n')>-1)?'"'+s.replace(/"/g,'\\"')+'"':s; };
+  var esc = function(v){ var s=v!=null?String(v):''; return (s.indexOf(',')>-1||s.indexOf('"')>-1||s.indexOf('\\n')>-1)?'"'+s.replace(/"/g,'""')+'"':s; };
   var csv = [headers.map(esc).join(',')].concat(rows.map(function(r){ return r.map(esc).join(','); })).join('\\n');
   var a = document.createElement('a');
   a.href = 'data:text/csv;charset=utf-8,'+encodeURIComponent(csv);
-  a.download = (vizId||'export')+'.csv';
+  a.download = reportingCsvFilename(vizId);
   document.body.appendChild(a); a.click(); document.body.removeChild(a);
+}
+
+function reportingCsvFilename(vizId) {
+  var viz = null;
+  (CONFIG.sheets || []).some(function(sheet){
+    viz = (sheet.visualizations || []).find(function(item){ return item.id === vizId; }) || null;
+    return !!viz;
+  });
+  var database = String((viz && (viz.databaseName || viz.databaseId)) || 'Database')
+    .replace(/[<>:"/\\\\|?*\\u0000-\\u001f]/g, '_').replace(/[. ]+$/g, '').trim() || 'Database';
+  var date = new Date();
+  var pad = function(value){ return String(value).padStart(2, '0'); };
+  var timestamp = [date.getFullYear(), pad(date.getMonth()+1), pad(date.getDate()), pad(date.getHours()), pad(date.getMinutes()), pad(date.getSeconds())].join('-');
+  return 'Semoss Reporting Insights - '+database+'-'+timestamp+'.csv';
 }
 
 // ── Edit mode ─────────────────────────────────────────────────────────────────
