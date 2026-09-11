@@ -71,6 +71,7 @@ import {
 	normalizeCatalogModalities,
 	normalizeCatalogTokenLimit,
 	normalizeEfforts,
+	normalizePricing,
 	normalizeStringArray,
 	pickNearestEffort,
 	SettingsWarning,
@@ -177,6 +178,24 @@ const parseOptionalFloat = (value: string): number | null => {
 };
 
 /**
+ * JSON.stringify uses scientific notation (e.g. 2e-7) for numbers whose
+ * absolute value is < 1e-6. The Semoss pixel parser only accepts fixed-point
+ * decimals, so we post-process the serialized string to expand any
+ * exponential literals into their full decimal form.
+ */
+const pixelSafeJson = (obj: Record<string, unknown>): string =>
+	JSON.stringify(obj).replace(/-?\d+\.?\d*[eE][+-]?\d+/g, (match) => {
+		const n = parseFloat(match);
+		if (!isFinite(n)) return match;
+		// toFixed(20) gives enough decimal places for any credit-scale
+		// number (min ~1e-12), then strip insignificant trailing zeros.
+		return n
+			.toFixed(20)
+			.replace(/(\.\d*?)0+$/, "$1")
+			.replace(/\.$/, ".0");
+	});
+
+/**
  * Mirror of StaticBuiltinToolsCatalog.normalizeProviderKey — maps any of the
  * shapes the platform stores providers in (SERVINGPROVIDER enum, SMSS
  * MODEL_TYPE, catalog key) to a single lowercase canonical token.
@@ -214,8 +233,11 @@ const suggestCreditRatesFromPricing = (
 	) {
 		return null;
 	}
-	const pricing = metadata.pricing;
-	if (!pricing || pricing.length === 0) return null;
+
+	// Use normalizePricing so string rates from the backend are coerced to
+	// numbers the same way the Overview does.
+	const pricing = normalizePricing(metadata.pricing);
+	if (pricing.length === 0) return null;
 
 	const targetKey = metadata.servingProvider
 		? normalizePricingProviderKey(metadata.servingProvider)
@@ -230,14 +252,12 @@ const suggestCreditRatesFromPricing = (
 				)
 			: undefined) ?? pricing[0];
 
-	const inputRate = typeof entry.input === "number" ? entry.input : null;
-	const outputRate = typeof entry.output === "number" ? entry.output : null;
+	const inputRate = entry.input ?? null;
+	const outputRate = entry.output ?? null;
 	if (inputRate == null && outputRate == null) return null;
 
-	const cacheRead =
-		typeof entry.cache_read === "number" ? entry.cache_read : null;
-	const cacheWrite =
-		typeof entry.cache_write === "number" ? entry.cache_write : null;
+	const cacheRead = entry.cache_read ?? null;
+	const cacheWrite = entry.cache_write ?? null;
 
 	return {
 		inputTokenCredit:
@@ -362,6 +382,10 @@ export const EngineModelSettings = ({
 	const isDirtyRef = useRef(isDirty);
 	isDirtyRef.current = isDirty;
 
+	// Prevents the auto-save below from firing more than once per mount even
+	// when getModelMetadata re-fetches after the save completes.
+	const hasAutoSavedCreditsRef = useRef(false);
+
 	useEffect(() => {
 		if (getModelMetadata.status !== "SUCCESS") {
 			return;
@@ -376,6 +400,52 @@ export const EngineModelSettings = ({
 		const nextForm = toModelSettingsValues(getModelMetadata.data);
 		setForm(nextForm);
 		setInitialForm(nextForm);
+
+		// When credit rates are unset but pricing data exists, derive and
+		// persist them automatically so they appear without requiring the admin
+		// to open the edit form first.
+		if (
+			isEditable &&
+			!hasAutoSavedCreditsRef.current &&
+			getModelMetadata.data != null
+		) {
+			const suggestion = suggestCreditRatesFromPricing(
+				getModelMetadata.data,
+			);
+			if (suggestion) {
+				hasAutoSavedCreditsRef.current = true;
+				const autoPayload: Record<string, number | null> = {};
+				if (suggestion.inputTokenCredit !== "") {
+					const v = parseOptionalFloat(suggestion.inputTokenCredit);
+					if (v !== null)
+						autoPayload.inputTokenCredit = v / 1_000_000;
+				}
+				if (suggestion.outputTokenCredit !== "") {
+					const v = parseOptionalFloat(suggestion.outputTokenCredit);
+					if (v !== null)
+						autoPayload.outputTokenCredit = v / 1_000_000;
+				}
+				if (suggestion.cacheReadMultiplier !== "") {
+					autoPayload.cacheReadMultiplier = parseOptionalFloat(
+						suggestion.cacheReadMultiplier,
+					);
+				}
+				if (suggestion.cacheWriteMultiplier !== "") {
+					autoPayload.cacheWriteMultiplier = parseOptionalFloat(
+						suggestion.cacheWriteMultiplier,
+					);
+				}
+				void configStore
+					.runPixel(
+						`UpdateModelMetadata(engine=["${engineId}"], map=[${pixelSafeJson(autoPayload)}]);`,
+					)
+					.then((response) => {
+						if (response.errors.length === 0) {
+							getModelMetadata.refresh();
+						}
+					});
+			}
+		}
 	}, [getModelMetadata.status, getModelMetadata.data]);
 	const modelId =
 		typeof getModelMetadata.data?.modelId === "string"
@@ -655,7 +725,7 @@ export const EngineModelSettings = ({
 			};
 
 			const response = await configStore.runPixel(
-				`UpdateModelMetadata(engine=["${engineId}"], map=[${JSON.stringify(payload)}]);`,
+				`UpdateModelMetadata(engine=["${engineId}"], map=[${pixelSafeJson(payload as Record<string, unknown>)}]);`,
 			);
 			const result = response.pixelReturn?.[0];
 

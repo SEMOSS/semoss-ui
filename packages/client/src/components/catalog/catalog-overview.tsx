@@ -81,11 +81,15 @@ const EmptyValue = () => (
 	<div className="text-muted-foreground text-sm">None</div>
 );
 
-export interface CatalogOverviewProps {
+interface CatalogOverviewProps {
 	/** ID of the catalog */
 	id: string;
 	/** User's permission in the catalog */
 	permission: Role;
+	/** Current display name — shown as an editable field in edit mode. */
+	displayName?: string;
+	/** Called on save when the display name has changed. */
+	onSaveDisplayName?: (id: string, name: string) => Promise<void>;
 	/** Keys to show in the overview */
 	metaKeys: {
 		display_options:
@@ -120,6 +124,8 @@ export interface CatalogOverviewProps {
 	description: string;
 	/** Associated description */
 	markdown: string;
+	/** Markdown presentation used for read-only overview content. */
+	markdownVariant?: "default" | "document";
 	/** Associated tags  */
 	tags: string[];
 	/** Associated classification  */
@@ -139,10 +145,13 @@ export interface CatalogOverviewProps {
 export const CatalogOverview = ({
 	id,
 	permission,
+	displayName,
+	onSaveDisplayName,
 	metaKeys,
 	metaValues,
 	description,
 	markdown,
+	markdownVariant = "default",
 	tags,
 	dataClassification,
 	dataRestrictions,
@@ -153,6 +162,7 @@ export const CatalogOverview = ({
 }: CatalogOverviewProps) => {
 	const [isLoading, setIsLoading] = useState(false);
 	const [isEditMode, setIsEditMode] = useState(false);
+	const [editDisplayName, setEditDisplayName] = useState(displayName ?? "");
 	const [form, setForm] = useState<CatalogOverviewForm>({
 		description: "",
 		markdown: "",
@@ -203,9 +213,11 @@ export const CatalogOverview = ({
 
 		setForm(nextForm);
 		setInitialForm(nextForm);
+		setEditDisplayName(displayName ?? "");
 		setIsEditMode(false);
 	}, [
 		id,
+		displayName,
 		description,
 		markdown,
 		tags,
@@ -216,7 +228,13 @@ export const CatalogOverview = ({
 
 	const isEditable = permission === "OWNER" || permission === "EDIT";
 	const isEditing = isEditable && isEditMode;
-	const isDirty = JSON.stringify(form) !== JSON.stringify(initialForm);
+	const isDirty =
+		JSON.stringify(form) !== JSON.stringify(initialForm) ||
+		editDisplayName !== (displayName ?? "");
+	const markdownClassName =
+		markdownVariant === "document"
+			? "w-full text-sm leading-relaxed"
+			: undefined;
 
 	// Exclude fields already rendered in dedicated sections below.
 	const dynamicMetaKeys = metaKeys
@@ -305,8 +323,14 @@ export const CatalogOverview = ({
 				{},
 			);
 
-			// save it
 			await onSave(id, metadata);
+
+			if (
+				onSaveDisplayName &&
+				editDisplayName.trim() !== (displayName ?? "")
+			) {
+				await onSaveDisplayName(id, editDisplayName.trim());
+			}
 
 			setInitialForm(form);
 			setIsEditMode(false);
@@ -354,7 +378,12 @@ export const CatalogOverview = ({
 			// Read mode honors markdown rendering when requested by metadata config.
 			if (displayOption === "markdown") {
 				return String(rawValue ?? "").trim() ? (
-					<Markdown>{String(rawValue)}</Markdown>
+					<Markdown
+						className={markdownClassName}
+						variant={markdownVariant}
+					>
+						{String(rawValue)}
+					</Markdown>
 				) : (
 					<EmptyValue />
 				);
@@ -663,6 +692,18 @@ export const CatalogOverview = ({
 			<div className="my-1 border-border border-b pb-2 last:mb-0 last:border-b-0">
 				{isEditing ? (
 					<div className="space-y-6">
+						{onSaveDisplayName !== undefined && (
+							<Field>
+								<FieldLabel>Display Name</FieldLabel>
+								<Input
+									value={editDisplayName}
+									onChange={(e) =>
+										setEditDisplayName(e.target.value)
+									}
+									placeholder="Display name"
+								/>
+							</Field>
+						)}
 						<Field>
 							<FieldLabel>About</FieldLabel>
 							<MarkdownEditor
@@ -704,7 +745,12 @@ export const CatalogOverview = ({
 						{String(form.markdown || "").trim() ? (
 							<div>
 								<Field>
-									<Markdown>{String(form.markdown)}</Markdown>
+									<Markdown
+										className={markdownClassName}
+										variant={markdownVariant}
+									>
+										{String(form.markdown)}
+									</Markdown>
 								</Field>
 							</div>
 						) : (
