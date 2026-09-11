@@ -181,3 +181,102 @@ describe("selectPanel with several matching instances", () => {
 		expect(Object.keys(layout().panels)).toHaveLength(2);
 	});
 });
+
+/**
+ * A host whose store outlives its shell — the playground's room sidebar closes
+ * and reopens, and panels are opened while it is closed — re-runs `loadLayout`
+ * on every mount. Re-reading the cache there would drop whatever was opened in
+ * the meantime, because the write is debounced.
+ */
+describe("loadLayout", () => {
+	const EMPTY = {
+		tree: {
+			type: "tabset" as const,
+			id: "main",
+			size: 1,
+			panelIds: [],
+			activeId: null,
+		},
+		panels: {},
+	};
+
+	/** Plant a cache entry the next hydration would pick up. */
+	const writeCache = (cacheKey: string, pid: string) => {
+		localStorage.setItem(
+			`smss-workbench--layout--${cacheKey}--2`,
+			JSON.stringify({
+				tree: {
+					type: "tabset",
+					id: "main",
+					size: 1,
+					panelIds: [pid],
+					activeId: pid,
+				},
+				panels: {
+					[pid]: { id: pid, type: OTHER, name: "From the cache" },
+				},
+				borders: {},
+			}),
+		);
+	};
+
+	it("hydrates once per layout identity", () => {
+		const store = createWorkbenchStore("hydrate-once");
+		const { actions } = store.getState().layout;
+		actions.loadLayout(EMPTY);
+
+		writeCache("hydrate-once", "cached");
+		// the same object the host passed the first time, as a shell remount
+		// would hand it back
+		actions.loadLayout(EMPTY);
+
+		expect(store.getState().layout.panels.cached).toBeUndefined();
+	});
+
+	it("re-hydrates when the host genuinely swaps arrangements", () => {
+		const store = createWorkbenchStore("hydrate-swap");
+		const { actions } = store.getState().layout;
+		actions.loadLayout(EMPTY);
+
+		writeCache("hydrate-swap", "cached");
+		actions.loadLayout({ ...EMPTY });
+
+		expect(store.getState().layout.panels.cached).toBeDefined();
+	});
+});
+
+/**
+ * `matchPanels` is the identity rule `selectPanel` uses, exposed so a host can
+ * act on "the panel this config names" without re-deriving it.
+ */
+describe("matchPanels", () => {
+	it("returns matches without revealing one, visible first", () => {
+		const layout = setup("match-panels");
+		const { actions } = layout();
+
+		const inSide = actions.spawnPanel(EDITOR, {
+			config: { path: "/a.py" },
+		});
+		actions.movePanel(inSide, { kind: "border", side: "right" });
+		const sibling = actions.spawnPanel(OTHER);
+		actions.movePanel(sibling, { kind: "border", side: "right" });
+		const inDock = actions.spawnPanel(EDITOR, {
+			config: { path: "/a.py" },
+		});
+
+		const matched = actions.matchPanels(EDITOR, { path: "/a.py" });
+
+		expect(matched.map((record) => record.id)).toEqual([inDock, inSide]);
+		// nothing was revealed
+		expect(layout().borders.right.activeId).toBe(sibling);
+	});
+
+	it("is empty when nothing matches", () => {
+		const layout = setup("match-panels-empty");
+		layout().actions.spawnPanel(EDITOR, { config: { path: "/a.py" } });
+
+		expect(layout().actions.matchPanels(EDITOR, { path: "/b.py" })).toEqual(
+			[],
+		);
+	});
+});

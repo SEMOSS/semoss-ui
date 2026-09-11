@@ -184,6 +184,22 @@ export interface WorkbenchLayoutActions {
 	) => WorkbenchPanelId;
 
 	/**
+	 * Every open panel `selectPanel(type, config)` would consider the same
+	 * thing, in the order it would prefer them — a visible match first.
+	 *
+	 * The one place the identity rule lives: the blueprint's `matches`, falling
+	 * back to a shallow compare of config. Host code that has to act on "the
+	 * panel this config names" — close it, ask whether it is the one on screen —
+	 * goes through here rather than re-deriving the rule and drifting from it.
+	 *
+	 * @return The matching records, most-preferred first. Empty when none.
+	 */
+	matchPanels: (
+		type: WorkbenchPanelType,
+		config?: WorkbenchPanelParams,
+	) => WorkbenchPanelRecord[];
+
+	/**
 	 * Create a fresh instance of a blueprint. `opts.target` supports "join"
 	 * (a specific dock) and "border"; other kinds fall back to the main dock.
 	 *
@@ -519,6 +535,10 @@ export const createWorkbenchLayoutSlice = (
 
 	// Closure-scoped, never in state: none of these should notify subscribers.
 	let defaultLayout: WorkbenchLayout | null = null;
+	// The exact `layout` object hydration last ran for. Identity, not a
+	// boolean flag, so a host that genuinely swaps arrangements still
+	// re-hydrates -- see `loadLayout`.
+	let loadedLayout: WorkbenchLayout | null = null;
 	let rootElement: HTMLElement | null = null;
 	const slotElements = new Map<string, HTMLElement>();
 	let persistTimer: ReturnType<typeof setTimeout> | null = null;
@@ -892,6 +912,16 @@ export const createWorkbenchLayoutSlice = (
 				},
 
 				loadLayout: (layout) => {
+					// Hydration is once per store, per arrangement. The shell
+					// runs this on every mount, and a host whose store outlives
+					// its shell -- the playground's sidebar closes and reopens,
+					// and opens panels while closed -- would otherwise reload
+					// the cache over state the cache has not caught up with
+					// yet, silently dropping whatever was opened meanwhile.
+					if (loadedLayout === layout) {
+						return;
+					}
+					loadedLayout = layout;
 					defaultLayout = deepCopy(layout);
 
 					let cached: WorkbenchSnapshot | null = null;
@@ -918,7 +948,7 @@ export const createWorkbenchLayoutSlice = (
 				},
 				persistNow: persistNow,
 
-				selectPanel: (type, config = {}, opts = {}) => {
+				matchPanels: (type, config = {}) => {
 					const state = get().layout;
 					const same =
 						state.components[type]?.matches ?? shallowEqual;
@@ -931,10 +961,18 @@ export const createWorkbenchLayoutSlice = (
 					// bypasses it, so dragging a file out of the explorer
 					// leaves several views of it. Prefer one already on screen;
 					// revealing any other is a tab switch either way.
-					const existing =
-						candidates.find((record) =>
-							state.visiblePanelIds.includes(record.id),
-						) ?? candidates[0];
+					return candidates.sort(
+						(a, b) =>
+							Number(state.visiblePanelIds.includes(b.id)) -
+							Number(state.visiblePanelIds.includes(a.id)),
+					);
+				},
+				selectPanel: (type, config = {}, opts = {}) => {
+					const state = get().layout;
+					const existing = get().layout.actions.matchPanels(
+						type,
+						config,
+					)[0];
 
 					if (!existing) {
 						return get().layout.actions.spawnPanel(type, {

@@ -30,8 +30,12 @@ src/
 ├── access/     the permission cache, its provider, and `useAccess`
 ├── files/      the panels, their controls, and the two hooks they are built from
 ├── mcp/        the MCP toolbox editor (canonical copy — see below)
+├── styles/     the Tailwind `@source` every host imports
+├── vite/       build-time bits a host cannot skip (see below)
 └── index.ts
 ```
+
+`src/vite/` is Node-side and is **not** in the barrel — it has its own `./vite` export subpath.
 
 ## Access is provided by the host
 
@@ -76,3 +80,16 @@ would invert the dependency this package exists to establish.
 - Everything else about panels — blueprints, mount policy, chrome controls, the dirty `*` marker —
   is in [the dock's AGENTS.md](../workbench/AGENTS.md) and
   [the client's](../../packages/client/src/components/workbench/AGENTS.md).
+
+## What a host has to wire up
+
+Three things, each of which fails quietly or late if it is missed:
+
+| | Why |
+|---|---|
+| `@import "@semoss/panels/globals.css"` (and the dock's) | Tailwind only generates classes it has scanned. A package outside the host's `@source` globs contributes none, and a missing utility renders as an unstyled panel — never a build error. |
+| `aiSdkStubAlias` from `@semoss/panels/vite` | `pptx-react-viewer` imports the `ai` package (its unused AI chat panel). It is an optional peer and is not installed, so without the stub the **build fails outright**. |
+| `scopePptxViewerCssPlugin` from `@semoss/panels/vite` | The viewer ships its own Tailwind build emitting the same class and token names as the host's. Unscoped, whichever sheet loads last restyles the whole document. |
+
+Plus the `monaco-editor` alias above. All of it lives here rather than in each host's
+`vite.config.ts`, so adding a third host is an import rather than an archaeology exercise.

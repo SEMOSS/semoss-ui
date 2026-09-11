@@ -43,6 +43,18 @@ interface UseFilePanelOptions {
 	extraBusy?: boolean;
 }
 
+/**
+ * The part of a file panel's published scratch value every one of them has.
+ *
+ * Each panel publishes a richer value for its own chrome control, but they all
+ * carry `refresh`, which is what lets a host re-read a file it just wrote
+ * behind the panel's back.
+ */
+export interface FilePanelValue {
+	/** Re-read the file from the server, discarding the loaded copy. */
+	refresh: () => void;
+}
+
 /** Everything a file panel needs that is not specific to how it renders. */
 export interface FilePanelApi {
 	access: ReturnType<typeof useAccess>;

@@ -1,17 +1,12 @@
 import { observer } from "mobx-react-lite";
-import { useMemo } from "react";
 import { useTranslation } from "@semoss/i18n";
-import type { FlexLayout } from "@semoss/shared";
 import { cn, ScrollArea } from "@semoss/ui/next";
 import { getSubagentState } from "@/components/message/response-message-subagent";
-import type { RoomStore } from "@/stores";
+import { useRoom } from "@/contexts";
 
 interface RoomSubagentProps {
-	/** Room info */
-	room: RoomStore;
-
-	/** Node */
-	node: FlexLayout.TabNode;
+	/** Which subagent to show. */
+	subagentId?: string;
 }
 
 /**
@@ -21,14 +16,11 @@ interface RoomSubagentProps {
  * into the subagent's own turns yet.
  */
 export const RoomSubagent: React.FC<RoomSubagentProps> = observer(
-	({ room, node }) => {
+	({ subagentId }) => {
+		const room = useRoom();
 		const { t } = useTranslation("tool");
-		const config: { subagentId?: string } = useMemo(
-			() => node.getConfig(),
-			[node],
-		);
-		const subagent = config?.subagentId
-			? room.getSubagentPart(config.subagentId)
+		const subagent = subagentId
+			? room.getSubagentPart(subagentId)
 			: undefined;
 
 		if (!subagent) {

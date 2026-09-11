@@ -196,6 +196,13 @@ separate `actions` prop. The page wraps it in
 state and should include runtime variants such as read-only mode. Follow
 `engine/function/function-workbench.tsx` as the exemplar.
 
+**When the dock has to outlive its shell**, the host makes the store itself with
+`createWorkbenchStore(cacheKey)` and passes `<WorkbenchProvider store={…}>` instead. Take that
+branch when panels are opened from outside React, or while `<Workbench>` is unmounted — the
+playground's room sidebar is both, since a tool opens a panel *and* opens the sidebar that shows
+it. Such a host must call `loadLayout` itself when it creates the store, or a panel opened before
+the shell first mounts lands on an un-hydrated layout.
+
 **Commands**: register palette commands with `useWorkbenchCommands([...])` (`hooks/use-workbench-commands.ts`) from the component that owns them — a domain workbench or a panel.
 The array may be an inline literal: the hook re-registers only when
 ids/categories/labels/descriptions change and executed handlers always run the latest closures,
@@ -282,6 +289,10 @@ an identity-stable api object, so the panel publishes it once —
   is pruned on load (`applySnapshot`).
 - `spawnPanel(type, opts?)` always creates a new instance; `opts.target` supports
   `{ kind: "border", side }` and `{ kind: "join", tabsetId }`.
+- `matchPanels(type, config?)` returns what `selectPanel` *would* reveal, most-preferred first,
+  without revealing anything. It is the one place the identity rule lives, so host code that has
+  to act on "the panel this config names" — close it, ask whether it is the front tab — goes
+  through it rather than re-deriving `matches` and drifting.
 - File-style panels dedupe via blueprint `matches` on `config.path` — ids are minted, never
   encode data in them.
 
@@ -343,7 +354,10 @@ Two more constraints worth knowing before touching this:
   layout shadows the default forever, so a host must change its provider key whenever the
   default's shape changes, and include runtime variants such as read-only mode in the key so
   they cannot hydrate incompatible layouts. Old entries are orphaned, not migrated.
-  `loadLayout` hydrates on mount and every structural commit persists.
+  `loadLayout` hydrates on mount and every structural commit persists. It hydrates **once per
+  `layout` identity**, so keep the layout a module-scope (or memoized) constant: a host whose
+  store outlives its shell would otherwise re-read the cache on every remount, over state the
+  debounced write has not caught up with.
 - **Panel type ids are host data, and the storage format is a contract.** `WorkbenchPanelType`
   is `string`; the core never enumerates ids. `applySnapshot` prunes records whose type the
   host no longer registers, so changing a panel-id *string* silently drops that panel out of
@@ -358,6 +372,9 @@ Two more constraints worth knowing before touching this:
   *else* — spacing, alignment, auto-margins — must be logical (`ms-`, `ps-`, `text-start`).
   A host that wants its rail on the other side in RTL moves the panel to the other border; the dock
   does not mirror itself.
+- **Every host must `@import "@semoss/workbench/globals.css"`.** Tailwind only generates classes
+  it has scanned, and this package sits outside a host's own `@source` globs — without that import
+  the dock renders unstyled, with no build error anywhere.
 - **`layout.cacheKey` is read-only state.** Exposed so a sibling store can scope itself to the
   same workbench without being handed the key twice; it is not persisted (`buildSnapshot`
   picks fields explicitly).

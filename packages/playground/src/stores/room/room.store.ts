@@ -1,4 +1,12 @@
 import { makeAutoObservable, runInAction } from "mobx";
+import type { StoreApi } from "zustand";
+import {
+	FILE_PANEL_TYPES,
+	type FilePanelMode,
+	type FilePanelValue,
+	getFilePanelType,
+	isFilePanelType,
+} from "@semoss/panels";
 import {
 	getPixelAsyncResult,
 	console as getPixelConsole,
@@ -6,7 +14,14 @@ import {
 	runPixelAsync,
 	uploadInsight,
 } from "@semoss/sdk/react";
-import { FlexLayout, type ThemeMap } from "@semoss/shared";
+import type { FileExplorerApi, ThemeMap } from "@semoss/shared";
+import {
+	createWorkbenchStore,
+	type WorkbenchPanelId,
+	type WorkbenchPanelParams,
+	type WorkbenchPanelType,
+	type WorkbenchState,
+} from "@semoss/workbench";
 import { STREAMING_PLACEHOLDER_ID } from "@/constants";
 import {
 	type AbstractMessageStore,
@@ -31,6 +46,13 @@ import type {
 	ResponsePixelMessage,
 	Workspace,
 } from "@/types";
+import {
+	getRoomFileMode,
+	getRoomSidebarCacheKey,
+	isActiveSidebarPanel,
+	ROOM_PANEL_TYPES,
+	ROOM_SIDEBAR_LAYOUT,
+} from "./room-sidebar";
 import {
 	type StreamHandlers,
 	StreamJobController,
@@ -140,21 +162,22 @@ interface RoomStoreInterface {
 	 *  Sidebar information
 	 */
 	sidebar: {
-		/** Track if the sidebar is open */
+		/**
+		 * Track if the sidebar is open.
+		 *
+		 * Only whether the panel is on screen. What is *in* it lives in the
+		 * room's workbench store, which outlives every open/close.
+		 */
 		isOpen: boolean;
 
 		/**
-		 * FlexLayout model
+		 * Track if the sidebar is blown up over the page.
+		 *
+		 * Here rather than in the sidebar's own React state because a panel's
+		 * chrome has to put it back — opening a tool inline while the sidebar
+		 * covers the page would otherwise reveal nothing.
 		 */
-		model: FlexLayout.Model;
-
-		/**
-		 * Count of the model;
-		 */
-		counter: number;
-
-		/** Per-path counter used to force-remount file editor tabs */
-		fileKeys: Record<string, number>;
+		isMaximized: boolean;
 	};
 }
 
@@ -191,22 +214,22 @@ export class RoomStore {
 		},
 		sidebar: {
 			isOpen: false,
-			fileKeys: {},
-			model: FlexLayout.Model.fromJson({
-				global: {
-					borderEnableTabScrollbar: true,
-					tabSetEnableTabScrollbar: true,
-				},
-				borders: [],
-				layout: {
-					type: "row",
-					weight: 0,
-					children: [],
-				},
-			}),
-			counter: 0,
+			isMaximized: false,
 		},
 	};
+
+	/**
+	 * The dock backing the sidebar.
+	 *
+	 * Owned by the room rather than by `<Workbench>` for two reasons: panels are
+	 * opened from outside React (a tool store reacting to a stream) and while
+	 * the sidebar is closed, and the arrangement has to survive the sidebar
+	 * being closed and reopened, which unmounts the shell.
+	 *
+	 * Read it to drive the sidebar from React (`useStore(room.workbench, …)`);
+	 * the `openSidebarPanel` family covers everything the room itself needs.
+	 */
+	readonly workbench: StoreApi<WorkbenchState>;
 
 	constructor(
 		theme: ThemeMap["playground"],
@@ -218,14 +241,62 @@ export class RoomStore {
 		this._store.roomId = roomId;
 		this._store.insightId = insightId;
 
-		// make it observable
-		makeAutoObservable(this);
+		this.workbench = createWorkbenchStore(getRoomSidebarCacheKey(roomId));
+		// Hydrate now, not when the shell mounts: a panel opened while the
+		// sidebar is closed must land on the restored arrangement, not on an
+		// empty one the shell would then overwrite from the cache.
+		this.workbench
+			.getState()
+			.layout.actions.loadLayout(ROOM_SIDEBAR_LAYOUT);
+		this._syncSidebarFileMode();
 
-		// increment the counter whenever the model changes
-		this._store.sidebar.model.addChangeListener((action) => {
-			this.tickSidebar(action);
-		});
+		// make it observable -- the dock is a zustand store with its own
+		// subscription model, and deep-observing it would be nonsense
+		makeAutoObservable(this, { workbench: false });
+
+		this._watchSidebar();
 	}
+
+	/**
+	 * Mirror the dock's two facts the rest of the room cares about: a tool whose
+	 * panel was closed is no longer open, and a sidebar with nothing left in it
+	 * closes itself.
+	 *
+	 * This is the replacement for the FlexLayout change listener, and the reason
+	 * the room store holds the dock: both reactions have to fire whether the
+	 * close came from the tab's × or from `closeTool`.
+	 */
+	private _watchSidebar = (): void => {
+		let previous = this.workbench.getState().layout.panels;
+
+		this.workbench.subscribe((state) => {
+			const panels = state.layout.panels;
+			if (panels === previous) {
+				return;
+			}
+
+			const closed = Object.values(previous).filter(
+				(record) => !(record.id in panels),
+			);
+			previous = panels;
+
+			for (const record of closed) {
+				if (record.type !== ROOM_PANEL_TYPES.TOOL) {
+					continue;
+				}
+				const toolId = (record.config as { toolId?: string })?.toolId;
+				const tool = toolId ? this.getTool(toolId) : null;
+				tool?.setIsOpen(false);
+			}
+
+			if (
+				this._store.sidebar.isOpen &&
+				state.layout.openPanelIds.length === 0
+			) {
+				this.closeSidebar();
+			}
+		});
+	};
 
 	/**
 	 * Getters
@@ -541,6 +612,7 @@ export class RoomStore {
 			runInAction(() => {
 				this._store.insightId = response.insightId;
 			});
+			this._syncSidebarFileMode();
 
 			// create the root
 			const root = new ResponseMessageStore(this, {
@@ -852,27 +924,16 @@ export class RoomStore {
 		tool.syncMessage(message, part, options);
 	};
 
+	/** Every tool this room has seen, by id. */
+	get tools() {
+		return this._store.tools;
+	}
+
 	/**
 	 * Get a tool
 	 * @param toolId - the id of the tool
 	 */
 	getTool = (toolId: string): ToolStore => {
-		return this._store.tools[toolId] || null;
-	};
-
-	/**
-	 * Get a tool by nodeId
-	 * @param nodeId - the id of the tool
-	 */
-	getToolByNodeId = (nodeId: string): ToolStore => {
-		if (!nodeId.startsWith("tool--")) {
-			return null as unknown as ToolStore;
-		}
-
-		// strip out the id from the nodeId
-		const toolId = nodeId.replace("tool--", "");
-
-		//get the tool based on the id
 		return this._store.tools[toolId] || null;
 	};
 
@@ -902,141 +963,171 @@ export class RoomStore {
 	/**
 	 * Sidebar
 	 */
-	/**
-	 * Check if a sidebar node is selected
-	 * @param nodeId - node id to check
-	 */
-	isSidebarNodeSelected = (nodeId: string): boolean => {
-		if (!this._store.sidebar.isOpen) {
-			return false;
-		}
-
-		let isSelected = false;
-		this._store.sidebar.model.visitNodes((node) => {
-			if (node.getType() === "tabset") {
-				const tabset = node as FlexLayout.TabSetNode;
-				if (tabset.getSelectedNode()?.getId() === nodeId) {
-					isSelected = true;
-					return;
-				}
-			}
-		});
-
-		return isSelected;
-	};
+	/** The file scope every file panel in this sidebar is opened in. */
+	get fileMode() {
+		return getRoomFileMode(this._store.insightId);
+	}
 
 	/**
-	 * Add a sidebar node and open it
-	 * @param node - node to open. This will select and/or create the node
-	 */
-	addSidebarNode = (
-		nodeId: string,
-		options: {
-			[key: string]: unknown;
-		},
-	): void => {
-		// mark as open
-		this._store.sidebar.isOpen = true;
-
-		// select the node if there
-		const selectedNode = this._store.sidebar.model.getNodeById(nodeId);
-		if (selectedNode) {
-			this._store.sidebar.model.doAction(
-				FlexLayout.Actions.selectTab(selectedNode.getId()),
-			);
-			return;
-		}
-
-		// create the node if it is not there
-		// where to add the node
-		const addId =
-			this._store.sidebar.model.getActiveTabset()?.getId() ||
-			this._store.sidebar.model.getRoot().getChildren()[0]?.getId() ||
-			"";
-
-		// create and select the panel
-		this._store.sidebar.model.doAction(
-			FlexLayout.Actions.addNode(
-				{
-					...options,
-					id: nodeId,
-				},
-				addId,
-				FlexLayout.DockLocation.CENTER,
-				-1,
-				true,
-			),
-		);
-	};
-
-	/**
-	 * Open or focus a sidebar file-editor tab for a path.
+	 * Reveal a sidebar panel, opening the sidebar itself and creating the panel
+	 * if it is not already there.
 	 *
-	 * When `forceRefresh` is true and the tab already exists, increments a
-	 * config `refreshKey` to force a remount of the editor for that tab.
+	 * Identity is the blueprint's `matches` over `config`, so the callers no
+	 * longer mint node ids to dedupe by — a tool panel is "the same panel" when
+	 * its `toolId` matches, whatever its instance id happens to be.
+	 *
+	 * @param type - Which blueprint to open.
+	 * @param config - The instance's parameters, and what it dedupes on.
+	 * @param name - Tab label for a newly created instance.
+	 * @return The revealed or created panel id.
 	 */
-	openFileEditorSidebarNode = (
-		path: string,
-		options?: {
-			name?: string;
-			forceRefresh?: boolean;
-		},
-	): void => {
-		const fileName =
-			options?.name ?? path.split("/").filter(Boolean).pop() ?? path;
-		const model = this._store.sidebar.model;
-
-		const matchedNodes: FlexLayout.TabNode[] = [];
-		model.visitNodes((node) => {
-			if (
-				matchedNodes.length > 0 ||
-				!(node instanceof FlexLayout.TabNode)
-			) {
-				return;
-			}
-
-			const config = node.getConfig() as { path?: string } | undefined;
-			if (
-				node.getComponent() === "room-file-editor" &&
-				config?.path === path
-			) {
-				matchedNodes.push(node);
-			}
-		});
-
-		const selectedNode = matchedNodes[0];
-		if (selectedNode) {
-			if (options?.forceRefresh) {
-				const prev = this._store.sidebar.fileKeys[path] ?? 0;
-				this._store.sidebar.fileKeys[path] = prev + 1;
-			}
-
-			model.doAction(FlexLayout.Actions.selectTab(selectedNode.getId()));
-			this._store.sidebar.isOpen = true;
-			return;
-		}
-
-		this.addSidebarNode(`FILE--${path}`, {
-			type: "tab",
-			name: fileName,
-			component: "room-file-editor",
-			config: {
-				name: fileName,
-				path,
-			},
-			enableClose: true,
-		});
+	openSidebarPanel = (
+		type: WorkbenchPanelType,
+		config: WorkbenchPanelParams = {},
+		name?: string,
+	): WorkbenchPanelId => {
+		this._store.sidebar.isOpen = true;
+		return this.workbench
+			.getState()
+			.layout.actions.selectPanel(type, config, name ? { name } : {});
 	};
 
 	/**
-	 * Remove a sidebar node and close if last one
-	 * @param node - node to remove
+	 * Reveal the sidebar's editor for a file, opening it if it is not there.
+	 *
+	 * Which editor depends on the extension — `getFilePanelType` picks between
+	 * the code, markdown, notebook, image, PDF, pptx and download panels.
+	 *
+	 * @param path - The file's insight-relative path.
+	 * @param name - Tab label; defaults to the file's own name.
+	 * @return The revealed or created panel id.
 	 */
-	removeSidebarNode = (nodeId: string): void => {
-		// trigger the action to remove it
-		this._store.sidebar.model.doAction(
-			FlexLayout.Actions.deleteTab(nodeId),
+	openFileSidebarPanel = (
+		path: string,
+		name?: string,
+		options?: { refresh?: boolean },
+	): WorkbenchPanelId => {
+		const fileName = name ?? path.split("/").filter(Boolean).pop() ?? path;
+		const pid = this.openSidebarPanel(
+			getFilePanelType(path),
+			{ mode: this.fileMode, name: fileName, path: path },
+			fileName,
 		);
+
+		if (options?.refresh) {
+			// A panel this call just created reads on mount; one that was
+			// already open is holding the copy that was just overwritten.
+			(
+				this.workbench.getState().layout.values[pid] as
+					| FilePanelValue
+					| undefined
+			)?.refresh();
+		}
+
+		return pid;
+	};
+
+	/**
+	 * Re-point the sidebar's restored file panels at the room's current insight.
+	 *
+	 * A room binds to a fresh insight every time it loads, but its sidebar
+	 * arrangement is cached, so a restored panel carries the insight id of
+	 * whichever session wrote it. That id is what its reads and saves run
+	 * against — left alone, the panel talks to an insight that no longer
+	 * exists — and what its dedupe compares, so reopening the same file would
+	 * give a second tab. One pass, before anything mounts.
+	 */
+	private _syncSidebarFileMode = (): void => {
+		const { actions } = this.workbench.getState().layout;
+		const mode = this.fileMode;
+
+		for (const record of actions.findPanels((candidate) => {
+			const panelMode = (
+				candidate.config as { mode?: FilePanelMode } | undefined
+			)?.mode;
+			return (
+				isFilePanelType(candidate.type) &&
+				panelMode?.type === "INSIGHT" &&
+				panelMode.insightId !== mode.insightId
+			);
+		})) {
+			actions.updatePanel(record.id, {
+				config: { ...record.config, mode: mode },
+			});
+		}
+	};
+
+	/**
+	 * Reveal the sidebar's file explorer, opening it if it is not there.
+	 *
+	 * There is one explorer per room — the blueprint dedupes on scope alone —
+	 * so a link into a folder navigates the one that is already open rather
+	 * than stacking up a tab per directory, the way the old node-id-per-path
+	 * convention did.
+	 *
+	 * @param initialPath - Directory to show. Defaults to wherever it was.
+	 * @param name - Tab label for a newly created instance.
+	 * @return The revealed or created panel id.
+	 */
+	openSidebarFileExplorer = (
+		initialPath?: string,
+		name?: string,
+	): WorkbenchPanelId => {
+		const pid = this.openSidebarPanel(
+			FILE_PANEL_TYPES.FILE_EXPLORER,
+			{ mode: this.fileMode },
+			name,
+		);
+
+		if (initialPath) {
+			const { actions, values } = this.workbench.getState().layout;
+			// `initialPath` is read once, on mount, so it covers the panel this
+			// call just created; an explorer already on screen has to be told.
+			actions.updatePanel(pid, {
+				config: { mode: this.fileMode, initialPath: initialPath },
+			});
+			(values[pid] as FileExplorerApi | undefined)?.commands.navigateTo(
+				initialPath,
+			);
+		}
+
+		return pid;
+	};
+
+	/**
+	 * Close a sidebar panel matching `config`, if one is open.
+	 *
+	 * @param type - Which blueprint to close.
+	 * @param config - The instance's parameters, matched as `selectPanel` does.
+	 */
+	closeSidebarPanel = (
+		type: WorkbenchPanelType,
+		config: WorkbenchPanelParams = {},
+	): void => {
+		const { actions } = this.workbench.getState().layout;
+		for (const record of actions.matchPanels(type, config)) {
+			actions.closePanel(record.id);
+		}
+	};
+
+	/**
+	 * Whether the sidebar is showing a panel of `type` matching `config`.
+	 *
+	 * A point-in-time read, for imperative callers. React should subscribe
+	 * through `useSidebarPanelActive` instead.
+	 */
+	isSidebarPanelActive = (
+		type: WorkbenchPanelType,
+		config: WorkbenchPanelParams = {},
+	): boolean =>
+		this._store.sidebar.isOpen &&
+		isActiveSidebarPanel(this.workbench.getState(), type, config);
+
+	/**
+	 * Blow the sidebar up over the page, or put it back.
+	 */
+	setSidebarMaximized = (isMaximized: boolean): void => {
+		this._store.sidebar.isMaximized = isMaximized;
 	};
 
 	/**
@@ -1044,35 +1135,9 @@ export class RoomStore {
 	 */
 	closeSidebar = async (): Promise<void> => {
 		this._store.sidebar.isOpen = false;
+		this._store.sidebar.isMaximized = false;
 	};
 
-	/**
-	 * Increment the counter and close if there are no nodes
-	 */
-	tickSidebar = async (action: FlexLayout.Action): Promise<void> => {
-		this._store.sidebar.counter += 1;
-
-		// if it is a delete
-		if (action.type === FlexLayout.Actions.DELETE_TAB) {
-			const tool = this.getToolByNodeId(action.data.node);
-			if (tool) {
-				tool.setIsOpen(false);
-			}
-		}
-
-		// check if there are any tabs left
-		let hasTabs = false;
-		this._store.sidebar.model.visitNodes((node) => {
-			if (node.getType() === "tab") {
-				hasTabs = true;
-				return;
-			}
-		});
-
-		if (!hasTabs) {
-			this.closeSidebar();
-		}
-	};
 	/**
 	 * Helpers
 	 */

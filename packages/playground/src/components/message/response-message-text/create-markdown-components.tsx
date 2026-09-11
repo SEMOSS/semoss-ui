@@ -94,13 +94,7 @@ export const createMarkdownComponents = (
 						type="button"
 						className="cursor-pointer font-medium text-base text-primary underline underline-offset-1"
 						onClick={() => {
-							room.addSidebarNode(`FILE_EXPLORER--${path}`, {
-								type: "tab",
-								name: "Files",
-								component: "room-file-explorer",
-								config: { initialPath: path },
-								enableClose: true,
-							});
+							room.openSidebarFileExplorer(path);
 						}}
 					>
 						{children}
@@ -115,16 +109,8 @@ export const createMarkdownComponents = (
 					type="button"
 					className="cursor-pointer font-medium text-base text-primary underline underline-offset-1"
 					onClick={() => {
-						room.addSidebarNode("FILE_EXPLORER", {
-							type: "tab",
-							name: "Files",
-							component: "room-file-explorer",
-							config: {},
-							enableClose: true,
-						});
-						room.openFileEditorSidebarNode(path, {
-							name: filename,
-						});
+						room.openSidebarFileExplorer();
+						room.openFileSidebarPanel(path, filename);
 					}}
 				>
 					{children}

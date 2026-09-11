@@ -5,8 +5,6 @@ import { DropdownMenuItem, toast } from "@semoss/ui/next";
 import { useChat, useRoot } from "@/hooks";
 import { RoomStore } from "@/stores";
 
-const ROOM_FILE_EXPLORER_ID = "FILE_EXPLORER";
-
 interface RoomInputMenuNewFileExplorerProps {
 	/** Current room mode */
 	mode: "chat" | "agent" | "workspace";
@@ -57,13 +55,10 @@ export const RoomInputMenuNewFileExplorer = ({
 					chat.registerRoom(room);
 
 					// Open the file explorer sidebar tab.
-					room.addSidebarNode(ROOM_FILE_EXPLORER_ID, {
-						type: "tab",
-						name: t("menuFileExplorer.name"),
-						component: "room-file-explorer",
-						config: {},
-						enableClose: true,
-					});
+					room.openSidebarFileExplorer(
+						undefined,
+						t("menuFileExplorer.name"),
+					);
 
 					onRoomCreated(room);
 				} catch {

@@ -107,13 +107,43 @@ Coverage reports output to `./coverage/packages/playground/` and include only `s
 
 ```json
 {
+  "@semoss/panels": "workspace:*",
   "@semoss/sdk": "workspace:*",
   "@semoss/shared": "workspace:*",
-  "@semoss/ui": "workspace:*"
+  "@semoss/ui": "workspace:*",
+  "@semoss/workbench": "workspace:*"
 }
 ```
 
 Changes to these libraries are immediately reflected in the playground during development.
+
+## The room sidebar
+
+The right-hand panel is a `@semoss/workbench` dock. Five things about it are not obvious from the
+code and are easy to undo by accident:
+
+- **The dock store belongs to `RoomStore`, not to `<Workbench>`.** Tools open panels from outside
+  React and while the sidebar is closed, and the arrangement has to survive closing it — which
+  unmounts the shell. `RoomStore` creates the store and hydrates it in its constructor;
+  `<WorkbenchProvider store={room.workbench}>` only hands it down.
+- **Blueprints are registered from `RoomContent`, not from `RoomSidebar`.** They reach into
+  `@/components`, which imports `@/stores`, so the store cannot import them without closing a
+  module cycle — and registering them from the sidebar would be too late, since the sidebar mounts
+  only after something has already been opened in it. `useRoomPanels(room)` does it from a
+  component that is mounted for as long as the room is. Without the blueprints the dock falls back
+  to a shallow compare of config and opening the same tool twice gives two tabs.
+- **A restored file panel is re-pointed at the room's live insight.** A room binds to a fresh
+  insight on every load, and a file panel's `mode.insightId` is what its reads and saves run
+  against. `_syncSidebarFileMode` rewrites them once, before anything mounts.
+- **Close and maximize live in the sidebar's own header**, because they act on the container. The
+  only genuinely per-panel control — "open inline" — is registered by the tool panel with
+  `useWorkbenchControl`.
+- **The layout is cached per room** (`playground-room--<roomId>`), so switching rooms cannot bleed,
+  and one entry accumulates per room ever opened.
+
+Panel ids and the sidebar's default layout live in `stores/room/room-sidebar.ts`; the blueprints
+live in `components/room/panels/`. Changing a panel type string drops that panel out of every
+cached sidebar.
 
 ## Design-System Notes
 

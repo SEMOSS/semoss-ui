@@ -2,8 +2,10 @@
 	"name": "@semoss/panels",
 	"version": "1.0.0-beta.1",
 	"exports": {
+		"./globals.css": "./src/styles/globals.css",
 		".": "./src/index.ts",
-		"./files/file-pptx-viewer-content": "./src/files/file-pptx-viewer-content.tsx"
+		"./files/file-pptx-viewer-content": "./src/files/file-pptx-viewer-content.tsx",
+		"./vite": "./src/vite/index.ts"
 	},
 	"scripts": {
 		"test": "vitest run --configLoader runner",
@@ -17,6 +19,7 @@
 		"@semoss/ui": "workspace:*",
 		"@semoss/workbench": "workspace:*",
 		"lucide-react": "^0.545.0",
+		"postcss": "^8.5.6",
 		"pptx-react-viewer": "^3.9.0",
 		"react": "^19.0.0",
 		"react-dom": "^19.0.0"
@@ -29,6 +32,7 @@
 		"@types/react-dom": "^19.0.0",
 		"jsdom": "~22.1.0",
 		"typescript": "~6.0.0",
+		"vite": "^8.2.1",
 		"vitest": "^4.1.10"
 	},
 	"peerDependencies": {

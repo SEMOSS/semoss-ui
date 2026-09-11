@@ -38,6 +38,7 @@ import {
 	RoomInputMenuUpload,
 	RoomSidebar,
 } from "@/components";
+import { useRoomPanels } from "@/components/room/panels";
 import { RoomOptionsForm } from "@/components/room/room-options-form";
 import { FileDragProvider, useFileDrag } from "@/contexts";
 import { useChat, useGlobalBreadcrumbs, useRoot } from "@/hooks";
@@ -144,6 +145,9 @@ export const NewRoomPage = observer(() => {
 	const [preCreatedRoom, setPreCreatedRoom] = useState<RoomStore | null>(
 		null,
 	);
+	// the pre-created room's sidebar is opened before it is ever rendered, so
+	// its blueprints are registered from here rather than from RoomContent
+	useRoomPanels(preCreatedRoom);
 	const submittedRef = useRef(false);
 	const autoGreetedRef = useRef(false);
 	const [mode, setMode] = useState<"chat" | "agent">("chat");
