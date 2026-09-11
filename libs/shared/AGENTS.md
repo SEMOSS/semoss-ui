@@ -30,6 +30,27 @@ Three props are required with no fallback, so every consumer states its intent: 
 mode-specific — capabilities and one Pixel per operation — lives in
 `file-explorer.adapters.ts`; nothing else branches on `mode.type`.
 
+`FileExplorer` is **not** deprecated — it is the shell `@semoss/panels`'
+`FileExplorerPane` renders, and `libs/panels` is its main consumer.
+
+### The file editors are deprecated (`components/file/file-*.tsx`)
+
+`FileEditor` and the six viewers it dispatches to — `file-code-editor`,
+`file-download-view`, `file-html-editor`, `file-image-viewer`,
+`file-markdown-editor`, `file-notebook`, `file-pdf-viewer` — are superseded by
+the panels in [`@semoss/panels`](../panels/AGENTS.md), which do the same reading,
+saving and downloading through one shared pair of hooks (`useFilePanel`,
+`useFileBuffer`). Open a file panel, or build on those hooks the way
+`packages/terminal` does.
+
+Six of the seven have **no importer but `FileEditor` itself**. The whole island
+is ~1,400 lines and comes out as soon as its last consumer does, which is
+`app-file-editor.tsx` — BLOCKS, and so gated on the BLOCKS migration. Do not add
+a new one; do migrate any you touch.
+
+`components/notebook/` stays either way: `FILE_NOTEBOOK_EDITOR_PANEL` renders
+`Notebook` directly. Only the `FileNotebook` *wrapper* is deprecated.
+
 ## Build System
 
 `@semoss/shared` is **source-only** — it has no bundler and no `dist/`. Its `package.json`

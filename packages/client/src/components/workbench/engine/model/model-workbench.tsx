@@ -41,9 +41,11 @@ import { MODEL_CHAT_SETTINGS_PANEL } from "./model-chat-settings";
  * (collapsed). Both borders start closed so the chat opens full width; their
  * rails carry the toggles.
  *
- * Version 2 dropped the assistant border, version 3 added the settings/history
- * border — a cached layout shadows the default forever, so the bump is what
- * retires the previous arrangement.
+ * A cached layout shadows the default forever, so changing this arrangement
+ * needs the cache retired. That is `LAYOUT_STORAGE_VERSION` in the dock's
+ * layout slice, which busts every host's cache at once — not a per-workbench
+ * version, which is what an earlier note here described and nothing ever
+ * implemented.
  */
 const createModelWorkbenchLayout = (
 	engineId: string,

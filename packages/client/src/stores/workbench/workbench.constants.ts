@@ -4,8 +4,10 @@ import type { WorkbenchPanelRecord } from "@semoss/workbench";
 /**
  * Component IDs shared by workbench state, commands, and renderers.
  *
- * The file panel ids live in `@semoss/panels` and are spread in, so every
- * existing `WORKBENCH_COMPONENTS.FILE_*` reference keeps resolving.
+ * The file panel ids live in `@semoss/panels` and are spread in, so this stays
+ * one complete list of every panel type the client can register. Only three of
+ * the nine are ever read back through `WORKBENCH_COMPONENTS`; hosts register
+ * the panels themselves through `FILE_PANEL_COMPONENTS`.
  */
 export const WORKBENCH_COMPONENTS = {
 	...FILE_PANEL_TYPES,

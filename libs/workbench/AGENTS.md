@@ -375,6 +375,10 @@ Two more constraints worth knowing before touching this:
 - **Every host must `@import "@semoss/workbench/globals.css"`.** Tailwind only generates classes
   it has scanned, and this package sits outside a host's own `@source` globs — without that import
   the dock renders unstyled, with no build error anywhere.
+- **Chrome buttons come from `WorkbenchChromeButton`.** The Tooltip-around-a-ghost-Button at
+  `chromeButton`/`chromeIcon` size, muted until hovered, was hand-written in twenty-seven files
+  and drifted on `aria-label` and `disabled` in most of them. A control that is not a button —
+  a select, a dialog trigger — still composes its own.
 - **`layout.cacheKey` is read-only state.** Exposed so a sibling store can scope itself to the
   same workbench without being handed the key twice; it is not persisted (`buildSnapshot`
   picks fields explicitly).

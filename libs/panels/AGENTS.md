@@ -64,6 +64,25 @@ would invert the dependency this package exists to establish.
 
 ## Rules
 
+- **`src/files/index.ts` is curated, not `export *`.** Of the sixty symbols the folder used to
+  leak, eight had an external consumer. Panel blueprints are not among them — a host registers
+  `FILE_PANEL_COMPONENTS`. Add a symbol when a consumer needs it; `export *` also put
+  `getImageMimeType(path)` next to `@semoss/shared`'s incompatible `getImageMimeType(extension)`
+  in any barrel that re-exported both.
+- **`useFilePanel` and `useFileBuffer` are public**, for a host whose editor needs chrome of its
+  own. `packages/terminal` builds on them: its editor carries a Run toolbar and a scope guard,
+  and the dock allows one control per panel, so it cannot inherit `FILE_CODE_EDITOR_PANEL`
+  wholesale. That is the supported way to reuse the access/read/save/dirty machinery.
+- **Nothing a panel imports may import `file-panel.components.ts`.** It is an object literal
+  over every blueprint, so a module still initializing when it is built lands in the map as
+  `undefined` — the dock then renders "no component registered" and `matches` silently falls
+  back to a shallow compare, with nothing thrown. That is exactly what homing `isFilePanelType`
+  there did: it closed the cycle `file-panel.components` → `file-explorer-panel` →
+  `use-workbench-file-panels` → `file-panel.components`, and left the file explorer blueprint
+  undefined in every host. The predicate lives in `file-panel.constants.ts`, which imports
+  nothing. `file-panel.components.test.ts` states the invariant, and the playground's
+  `use-sidebar-panel-active.test.tsx` is what actually reproduces a cycle — it enters through
+  the package specifier, the way a host does.
 - **`FILE_PANEL_TYPES` string values are a storage contract.** `applySnapshot` prunes records whose
   type a host no longer registers, so changing one silently drops that panel out of every cached
   layout. The client spreads these into its own `WORKBENCH_COMPONENTS`.

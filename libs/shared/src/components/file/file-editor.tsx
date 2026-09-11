@@ -48,8 +48,9 @@ interface FileEditorProps {
  * `layout.actions.selectPanel(type, config)` opens it — which gets tabs,
  * split, persistence, and the chrome controls that this component's own
  * toolbars predate. Nothing in the workbench has used `FileEditor` since the
- * panels landed; it stays for the four surfaces that are not docks yet
- * (app-workspace, my-files, the playground room sidebar, the terminal).
+ * panels landed; it stays for the two surfaces that are not docks yet
+ * (app-workspace and my-files). The playground's room sidebar and the terminal
+ * both moved off it.
  *
  * The sub-editors it dispatches to are deprecated with it. `useFileExplorer`
  * and `FileExplorer` are *not* — the explorer panel is built on them.

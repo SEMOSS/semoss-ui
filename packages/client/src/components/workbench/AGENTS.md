@@ -72,41 +72,22 @@ to the next.
 
 ## File panels
 
-Eight editor/viewer panels plus three explorers, all built from two hooks and one body:
+They are not here any more — they live in
+[`@semoss/panels`](../../../../libs/panels/AGENTS.md), which the playground and
+the terminal mount too. Everything about how one is built (the two hooks, the
+shared controls, `FilePanelMode`, the blueprint map) is documented there.
 
-- **`useFilePanel(config, opts)`** — access, the insight, read/save/download, and the blocking
-  states. `gate` and `readGate` come back as *nodes*, not early returns: a panel must finish
-  calling its hooks (`useWorkbenchControl` especially) before it may return anything, so the
-  shape is `if (panel.gate) return panel.gate;` after the hooks, never inside them.
-- **`useFileBuffer`** — the working copy, the baseline, and the tab's dirty marker. The marker
-  is a trailing `*` on the panel name and it is **load-bearing across files**:
-  `useWorkbenchFilePanels` preserves it through a rename by inspecting
-  `record.name.endsWith("*")`. Express dirtiness any other way and renaming a dirty file
-  silently drops the only unsaved-work signal. The marker lives inside `setContent` because the
-  baseline it compares against is private to the hook.
-- **`FileExplorerPane`** — the shared explorer body. The three explorers stay separate panels
-  because they differ in where `mode` comes from (panel config, the engine context, a walk of
-  the layout's selection history) and the last two dictate where the hook may be called.
+Two things stay the client's problem:
 
-**Panel scope is a `FilePanelMode`, not `{ type, id }`.** It narrows the shared `FileMode`
-twice, and both narrowings are load-bearing. INSIGHT's `insightId` is **required** — it is
-optional upstream, and an id-less one makes a panel's path-event scope differ from its
-explorer's, at which point renames stop reaching open editors with no error anywhere. Use
-`getFilePanelScope` on both sides; never derive it twice. And there is **no STORAGE** arm:
-buckets have no read or save reactor, which is why the storage explorer opens a file by pulling
-it into a new insight and opening an INSIGHT-scoped panel.
+**Git panels deliberately still carry `{ type, id }`.** Their config is
+structurally identical to a file panel's, which is exactly why
+`useWorkbenchFilePanels` gates on membership in `FILE_PANEL_COMPONENTS` rather
+than on the shape of a config. It used to gate on "has a `path`", and a file
+rename retyped every open Git diff into a code editor.
 
-**Git panels deliberately still carry `{ type, id }`.** Their config is structurally identical
-to the old file config, which is exactly why `useWorkbenchFilePanels` gates on membership in
-`FILE_PANEL_COMPONENTS` rather than on the shape of a config. It used to gate on "has a
-`path`", and a file rename retyped every open Git diff into a code editor.
-
-**Never dereference `a.mode.type` in a blueprint `matches`.** `matches` runs inside
-`selectPanel`, a store action outside any error boundary — a config it cannot read must return
-false, not throw. Use `matchesFilePanel`.
-
-Pixels come from the shared `FileExplorerAdapter` (`read` / `save` / `download` alongside
-browse and the mutations), never hand-written per scope.
+**`WORKBENCH_COMPONENTS` spreads `FILE_PANEL_TYPES` in.** Only three of the nine
+`FILE_*` keys are ever read through `WORKBENCH_COMPONENTS`; the rest are there so
+the constant is one complete list.
 
 ## Domain state (database is the template)
 
@@ -180,15 +161,11 @@ gets at most one chrome control, and this needed two.
 
 | File/folder | Role |
 |---|---|
-| `workbench.constants.ts` | Re-exports `WORKBENCH_COMPONENTS`; defines `WORKBENCH_PANEL_RECORDS` (shared instance records) |
+| `@/stores/workbench/workbench.constants.ts` | `WORKBENCH_COMPONENTS` (blueprint ids) and `WORKBENCH_PANEL_RECORDS` (seeded instances). One file, not two with the same name in two folders |
 | `engine/`, `engine/<domain>/` | Engine-scoped panels + one `<Domain>Workbench` per engine type |
 | `project/`, `project/<domain>/` | Project-scoped (`APP` mode) equivalents; sibling of `engine/`, **not** inside it |
-| `files/`, `git/` | The file and git panels, shared by every domain workbench |
-| `files/use-file-panel.tsx` / `use-file-buffer.ts` | The two hooks every editor/viewer panel is built from |
-| `files/file-panel.mode.ts` | `FilePanelMode` and the one derivation of a scope, a resource, and a `matches` |
-| `files/file-panel.components.ts` | `FILE_PANEL_COMPONENTS` — what every workbench registers, and what counts as a file panel at runtime |
-| `files/file-explorer-pane.tsx` | The explorer body the three explorer panels share |
-| `files/file-explorer-control.tsx` | The refresh + new-file chrome control shared by every file-explorer panel (project, engine, storage, insight) |
+| `git/` | The git panels. The file panels are in `@semoss/panels` |
+| `workbench.presets.ts` | `createFileCommands` / `createReconnectCommand` / `createOpenPanelCommand`, and `withTab` — the palette and settings-tab pieces every domain workbench composes |
 | `../assistant/` | The assistant panel and its subviews; `ASSISTANT_PANEL` is its blueprint |
 | `stores/assistant/` | The assistant store (agent runs, rooms, notifications) |
 | `stores/workbench/database/` | The database domain store (the dedicated-store template) |
@@ -200,14 +177,19 @@ gets at most one chrome control, and this needed two.
   run `*EngineAsset*` pixels; `project/` panels call `useProject()` and run `*AppAsset*`
   pixels. Reuse before building.
 - **Relative imports inside this folder** — never import `@/components/workbench` (the barrel)
-  from within it; that creates cycles. The dock comes from `@semoss/workbench`.
+  from within it; that creates cycles. The dock comes from `@semoss/workbench` and the file
+  panels from `@semoss/panels`, always directly: the re-export shims that used to stand in for
+  both are gone, and one of them was quietly shadowing `@semoss/shared`'s `getImageMimeType`.
+- **Compose the palette from `workbench.presets.ts`.** The four File commands, `Reconnect
+  Server` and the `*.open` commands are the same in every workbench; only the explorer they
+  drive and the panels they open differ.
 - **Panels that belong to every project type go in `project/`**, not in a `project/<domain>/`
   folder. A component that owns a command should register it itself via
   `useWorkbenchCommands` (see `project-publish-button.tsx`).
 
 ## Be cautious with
 
-- `workbench.constants.ts` (both copies) — shared by every domain workbench, and its id
+- `@/stores/workbench/workbench.constants.ts` — shared by every domain workbench, and its id
   strings are a storage contract.
 - **The assistant blueprint is `mount: "eager"`** — it must initialize (and surface
   notifications) while its border is collapsed. Don't "optimize" it to lazy.
