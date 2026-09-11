@@ -2,6 +2,7 @@ import { SettingsIcon } from "lucide-react";
 import { useMemo, useState } from "react";
 import type { Role } from "@semoss/sdk";
 import { Tabs, TabsList, TabsTrigger } from "@semoss/ui/next";
+import type { WorkbenchPanelConfig } from "@semoss/workbench";
 import { useEngine } from "@/hooks";
 import { EngineActivityPage } from "@/pages/engine/engine-activity-page";
 import { EngineMcpUsagePage } from "@/pages/engine/engine-mcp-usage-page";
@@ -10,7 +11,6 @@ import { EngineOverviewPage } from "@/pages/engine/engine-overview-page";
 import { EngineSettingsPage } from "@/pages/engine/engine-settings-page";
 import { EngineSmssPage } from "@/pages/engine/engine-smss-page";
 import { EngineUsagePage } from "@/pages/engine/engine-usage-page";
-import type { WorkbenchPanelConfig } from "@/stores/workbench";
 
 export interface EngineSettingsPanelProps {
 	/** Settings tabs to display; differs by engine type */

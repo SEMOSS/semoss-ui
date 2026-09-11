@@ -1,34 +1,33 @@
 import { useEffect, useMemo, useState } from "react";
 import type { StoreApi } from "zustand";
+import { FILE_PANEL_COMPONENTS } from "@semoss/panels";
 import type { Role } from "@semoss/sdk";
 import { useInsight } from "@semoss/sdk/react";
 import type { FileExplorerApi } from "@semoss/shared";
-import { Workbench, WorkbenchCommandMenuButton } from "@semoss/workbench";
+import type {
+	WorkbenchLayout,
+	WorkbenchPanelConfigAny,
+} from "@semoss/workbench";
+import {
+	useWorkbenchCommands,
+	useWorkbenchStoreApi,
+	Workbench,
+	WorkbenchCommandMenuButton,
+} from "@semoss/workbench";
 import { makeEngineRoomMcp } from "@/api/rooms";
 import { ASSISTANT_PANEL } from "@/components/assistant";
 import { AssistantStoreProvider } from "@/contexts";
 import { DatabaseWorkbenchStoreProvider } from "@/contexts/database-workbench.context";
+import { useAssistantStore, useEngine, useSession } from "@/hooks";
 import {
-	useAssistantStore,
-	useEngine,
-	useSession,
-	useWorkbenchCommands,
-	useWorkbenchStoreApi,
-} from "@/hooks";
-import type {
-	WorkbenchLayout,
-	WorkbenchPanelConfigAny,
+	WORKBENCH_COMPONENTS,
+	WORKBENCH_PANEL_RECORDS,
 } from "@/stores/workbench";
 import {
 	createDatabaseWorkbenchStore,
 	type DatabaseWorkbenchState,
 } from "@/stores/workbench/database";
-import { FILE_PANEL_COMPONENTS } from "../../files";
 import { GIT_DIFF_PANEL, GIT_VERSION_PANEL } from "../../git";
-import {
-	WORKBENCH_COMPONENTS,
-	WORKBENCH_PANEL_RECORDS,
-} from "../../workbench.constants";
 import { createEngineSettingsPanel } from "../engine-settings-panel";
 import { EngineSettingsToggle } from "../engine-settings-toggle";
 import { DATABASE_COLUMNS_PANEL } from "./database-columns-panel";

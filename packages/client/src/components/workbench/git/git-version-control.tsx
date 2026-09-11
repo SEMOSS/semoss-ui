@@ -1,12 +1,12 @@
 import type { FC } from "react";
 import { useState } from "react";
+import { useAccess } from "@semoss/panels";
 import { useInsight, usePixel } from "@semoss/sdk/react";
 import { Button, Spinner } from "@semoss/ui/next";
+import type { WorkbenchChromeProps } from "@semoss/workbench";
 import { WORKBENCH_STYLES } from "@semoss/workbench";
 import type { GitBranches, GitStatus } from "@/components/git";
 import { GitBranchControl } from "@/components/git";
-import { useAccess } from "@/hooks";
-import type { WorkbenchChromeProps } from "@/stores/workbench";
 import type { GitPanelScopeParams } from "./git-panel.types";
 
 export type GitVersionParams = GitPanelScopeParams;

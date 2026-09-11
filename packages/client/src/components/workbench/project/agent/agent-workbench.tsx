@@ -1,31 +1,29 @@
 import { useEffect, useMemo } from "react";
+import { FILE_PANEL_COMPONENTS } from "@semoss/panels";
 import type { Role } from "@semoss/sdk";
 import { useInsight } from "@semoss/sdk/react";
 import type { FileExplorerApi } from "@semoss/shared";
-import { Workbench, WorkbenchCommandMenuButton } from "@semoss/workbench";
-import { ASSISTANT_PANEL } from "@/components/assistant";
-import { AssistantStoreProvider } from "@/contexts";
-import {
-	useAssistantStore,
-	useProject,
-	useSession,
-	useWorkbenchCommands,
-} from "@/hooks";
 import type {
 	WorkbenchLayout,
 	WorkbenchPanelConfigAny,
-} from "@/stores/workbench";
-import { FILE_PANEL_COMPONENTS } from "../../files";
-import { GIT_DIFF_PANEL, GIT_VERSION_PANEL } from "../../git";
+} from "@semoss/workbench";
+import {
+	useWorkbenchCommands,
+	Workbench,
+	WorkbenchCommandMenuButton,
+} from "@semoss/workbench";
+import { ASSISTANT_PANEL } from "@/components/assistant";
+import { AssistantStoreProvider } from "@/contexts";
+import { useAssistantStore, useProject, useSession } from "@/hooks";
 import {
 	WORKBENCH_COMPONENTS,
 	WORKBENCH_PANEL_RECORDS,
-} from "../../workbench.constants";
+} from "@/stores/workbench";
+import { GIT_DIFF_PANEL, GIT_VERSION_PANEL } from "../../git";
 import {
 	createProjectSettingsPanel,
 	ProjectSettingsToggle,
 } from "../project-settings-toggle";
-import { PROJECT_TERMINAL_PANEL } from "../project-terminal-panel";
 import { AGENT_EDITOR_PANEL } from "./agent-editor-panel";
 
 /**
@@ -88,7 +86,6 @@ const AGENT_WORKBENCH_COMPONENTS: Record<string, WorkbenchPanelConfigAny> = {
 	...FILE_PANEL_COMPONENTS,
 	[WORKBENCH_COMPONENTS.GIT_VERSION]: GIT_VERSION_PANEL,
 	[WORKBENCH_COMPONENTS.GIT_DIFF]: GIT_DIFF_PANEL,
-	[WORKBENCH_COMPONENTS.PROJECT_TERMINAL]: PROJECT_TERMINAL_PANEL,
 	[WORKBENCH_COMPONENTS.PROJECT_SETTINGS]: createProjectSettingsPanel([
 		{ name: "Overview", component: "project-overview" },
 		{
@@ -123,8 +120,12 @@ const AGENT_WORKBENCH_COMPONENTS: Record<string, WorkbenchPanelConfigAny> = {
 /**
  * Agent workbench — the editable surface for a WORKSPACE project. Opens the
  * agent configuration editor in the main tabset alongside the project file
- * explorer, the active terminal's insight explorer, a Pixel terminal, and the
- * shared assistant panel.
+ * explorer and the shared assistant panel.
+ *
+ * No terminal, unlike the code, notebook and skill workbenches: this one seeds
+ * no terminal record, has no bottom border to put one in, and registers no
+ * command to open one. It used to register the blueprint anyway, which only
+ * meant a panel nothing could reach.
  */
 export const AgentWorkbench: React.FC = () => {
 	const { project, permission } = useProject();

@@ -6,11 +6,11 @@ import {
 	TooltipContent,
 	TooltipTrigger,
 } from "@semoss/ui/next";
-import { WORKBENCH_STYLES } from "@semoss/workbench";
 import type {
 	WorkbenchChromeProps,
 	WorkbenchPanelParams,
-} from "@/stores/workbench";
+} from "@semoss/workbench";
+import { WORKBENCH_STYLES } from "@semoss/workbench";
 
 /**
  * The app preview's chrome control. Bumping the panel's scratch value rekeys

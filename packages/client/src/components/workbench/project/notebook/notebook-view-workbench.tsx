@@ -1,15 +1,15 @@
 import { useMemo } from "react";
-import { Workbench } from "@semoss/workbench";
-import { useProject } from "@/hooks";
+import { FILE_PANEL_COMPONENTS } from "@semoss/panels";
 import type {
 	WorkbenchLayout,
 	WorkbenchPanelConfigAny,
-} from "@/stores/workbench";
-import { FILE_PANEL_COMPONENTS } from "../../files";
+} from "@semoss/workbench";
+import { Workbench } from "@semoss/workbench";
+import { useProject } from "@/hooks";
 import {
 	WORKBENCH_COMPONENTS,
 	WORKBENCH_PANEL_RECORDS,
-} from "../../workbench.constants";
+} from "@/stores/workbench";
 
 /** Notebook every project of type NOTEBOOK is created with. */
 const NOTEBOOK_PATH = "/public/main.ipynb";

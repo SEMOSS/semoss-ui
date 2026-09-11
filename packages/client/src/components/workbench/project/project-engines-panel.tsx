@@ -31,8 +31,8 @@ import {
 	Spinner,
 	toast,
 } from "@semoss/ui/next";
+import type { WorkbenchPanelConfig } from "@semoss/workbench";
 import { useProject, useSession } from "@/hooks";
-import type { WorkbenchPanelConfig } from "@/stores/workbench";
 import { isProjectType } from "@/utility/catalog";
 
 /** Display metadata for one engine category card. */

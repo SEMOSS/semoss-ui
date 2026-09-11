@@ -308,11 +308,6 @@ export interface WorkbenchLayoutActions {
 	 */
 	canSplitTab: (pid: WorkbenchPanelId | null | undefined) => boolean;
 
-	/** One panel's record, or undefined when no such instance exists. */
-	getPanel: (
-		pid: WorkbenchPanelId | null | undefined,
-	) => WorkbenchPanelRecord | undefined;
-
 	/**
 	 * Every panel record matching a predicate — open, closed, or docked in a
 	 * border. Reads live state, so callers in imperative handlers stay correct
@@ -327,16 +322,6 @@ export interface WorkbenchLayoutActions {
 export interface WorkbenchLayoutSliceState extends WorkbenchLayoutSliceFields {
 	actions: WorkbenchLayoutActions;
 }
-
-/** Default identity for selectPanel(): same config, shallowly. */
-const shallowEqual = (
-	a: WorkbenchPanelParams,
-	b: WorkbenchPanelParams,
-): boolean => {
-	const keysA = Object.keys(a);
-	const keysB = Object.keys(b);
-	return keysA.length === keysB.length && keysA.every((k) => a[k] === b[k]);
-};
 
 const capitalize = (value: string): string =>
 	value.length ? value[0].toUpperCase() + value.slice(1) : value;
@@ -951,7 +936,8 @@ export const createWorkbenchLayoutSlice = (
 				matchPanels: (type, config = {}) => {
 					const state = get().layout;
 					const same =
-						state.components[type]?.matches ?? shallowEqual;
+						// the blueprint's rule, else same config shallowly
+						state.components[type]?.matches ?? shallow;
 					const candidates = Object.values(state.panels).filter(
 						(record) =>
 							record.type === type &&
@@ -1548,7 +1534,6 @@ export const createWorkbenchLayoutSlice = (
 					);
 				},
 
-				getPanel: (pid) => (pid ? get().layout.panels[pid] : undefined),
 				findPanels: (predicate) =>
 					Object.values(get().layout.panels).filter(predicate),
 			},

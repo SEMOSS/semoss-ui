@@ -1,26 +1,25 @@
 import { useEffect, useMemo } from "react";
+import { FILE_PANEL_COMPONENTS } from "@semoss/panels";
 import type { Role } from "@semoss/sdk";
 import { useInsight } from "@semoss/sdk/react";
 import type { FileExplorerApi } from "@semoss/shared";
-import { Workbench, WorkbenchCommandMenuButton } from "@semoss/workbench";
-import { ASSISTANT_PANEL } from "@/components/assistant";
-import { AssistantStoreProvider } from "@/contexts";
-import {
-	useAssistantStore,
-	useProject,
-	useSession,
-	useWorkbenchCommands,
-} from "@/hooks";
 import type {
 	WorkbenchLayout,
 	WorkbenchPanelConfigAny,
-} from "@/stores/workbench";
-import { FILE_PANEL_COMPONENTS } from "../../files";
-import { GIT_DIFF_PANEL, GIT_VERSION_PANEL } from "../../git";
+} from "@semoss/workbench";
+import {
+	useWorkbenchCommands,
+	Workbench,
+	WorkbenchCommandMenuButton,
+} from "@semoss/workbench";
+import { ASSISTANT_PANEL } from "@/components/assistant";
+import { AssistantStoreProvider } from "@/contexts";
+import { useAssistantStore, useProject, useSession } from "@/hooks";
 import {
 	WORKBENCH_COMPONENTS,
 	WORKBENCH_PANEL_RECORDS,
-} from "../../workbench.constants";
+} from "@/stores/workbench";
+import { GIT_DIFF_PANEL, GIT_VERSION_PANEL } from "../../git";
 import { PROJECT_INSIGHT_EXPLORER_PANEL } from "../project-insight-explorer-panel";
 import {
 	createProjectSettingsPanel,

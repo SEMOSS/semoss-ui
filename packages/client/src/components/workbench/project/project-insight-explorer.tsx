@@ -1,10 +1,10 @@
+import { FileExplorerPane } from "@semoss/panels";
 import {
 	type FileExplorerApi,
 	type FileMode,
 	useFileExplorer,
 } from "@semoss/shared";
-import type { WorkbenchPanelId } from "@/stores/workbench";
-import { FileExplorerPane } from "../files";
+import type { WorkbenchPanelId } from "@semoss/workbench";
 
 /** Module scope: the insight scope carries no parameters of its own. */
 const INSIGHT_MODE: FileMode = { type: "INSIGHT" };

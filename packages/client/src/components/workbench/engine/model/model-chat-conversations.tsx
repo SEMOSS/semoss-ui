@@ -30,14 +30,15 @@ import {
 	useDebouncedValue,
 	useInfiniteScroll,
 } from "@semoss/ui/next";
-import type { ConversationRoom } from "@/api/rooms";
-import { getUserConversationRooms } from "@/api/rooms";
-import { formatSessionDate } from "@/components/assistant/assistant-format";
-import { useModelChat, useWorkbenchControl } from "@/hooks";
 import type {
 	WorkbenchComponent,
 	WorkbenchPanelConfig,
-} from "@/stores/workbench";
+} from "@semoss/workbench";
+import { useWorkbenchControl } from "@semoss/workbench";
+import type { ConversationRoom } from "@/api/rooms";
+import { getUserConversationRooms } from "@/api/rooms";
+import { formatSessionDate } from "@/components/assistant/assistant-format";
+import { useModelChat } from "@/hooks";
 import { roomScopeToken } from "@/stores/workbench/model";
 import { ModelChatHistoryRefreshControl } from "./model-chat-history-refresh-control";
 

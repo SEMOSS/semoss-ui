@@ -1,23 +1,27 @@
 import { useEffect, useMemo, useState } from "react";
 import type { StoreApi } from "zustand";
+import { FILE_PANEL_COMPONENTS } from "@semoss/panels";
 import type { Role } from "@semoss/sdk";
 import { useInsight } from "@semoss/sdk/react";
 import type { FileExplorerApi } from "@semoss/shared";
-import { Workbench, WorkbenchCommandMenuButton } from "@semoss/workbench";
-import { ModelChatStoreProvider } from "@/contexts/model-chat.context";
-import { useEngine, useSession, useWorkbenchCommands } from "@/hooks";
 import type {
 	WorkbenchLayout,
 	WorkbenchPanelConfigAny,
-} from "@/stores/workbench";
-import type { ModelChatStoreInterface } from "@/stores/workbench/model";
-import { createModelChatStore } from "@/stores/workbench/model";
-import { FILE_PANEL_COMPONENTS } from "../../files";
-import { GIT_DIFF_PANEL, GIT_VERSION_PANEL } from "../../git";
+} from "@semoss/workbench";
+import {
+	useWorkbenchCommands,
+	Workbench,
+	WorkbenchCommandMenuButton,
+} from "@semoss/workbench";
+import { ModelChatStoreProvider } from "@/contexts/model-chat.context";
+import { useEngine, useSession } from "@/hooks";
 import {
 	WORKBENCH_COMPONENTS,
 	WORKBENCH_PANEL_RECORDS,
-} from "../../workbench.constants";
+} from "@/stores/workbench";
+import type { ModelChatStoreInterface } from "@/stores/workbench/model";
+import { createModelChatStore } from "@/stores/workbench/model";
+import { GIT_DIFF_PANEL, GIT_VERSION_PANEL } from "../../git";
 import { createEngineSettingsPanel } from "../engine-settings-panel";
 import { EngineSettingsToggle } from "../engine-settings-toggle";
 import { MODEL_CHAT_HISTORY_PANEL } from "./model-chat-conversations";

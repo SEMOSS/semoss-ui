@@ -7,8 +7,8 @@ import {
 	TooltipContent,
 	TooltipTrigger,
 } from "@semoss/ui/next";
+import type { WorkbenchChromeProps } from "@semoss/workbench";
 import { WORKBENCH_STYLES } from "@semoss/workbench";
-import type { WorkbenchChromeProps } from "@/stores/workbench";
 import type { ModelChatHistoryApi } from "./model-chat-conversations";
 
 /**

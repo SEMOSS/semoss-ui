@@ -8,11 +8,11 @@ import {
 	TooltipContent,
 	TooltipTrigger,
 } from "@semoss/ui/next";
-import { WORKBENCH_STYLES } from "@semoss/workbench";
 import type {
 	WorkbenchChromeProps,
 	WorkbenchPanelParams,
-} from "@/stores/workbench";
+} from "@semoss/workbench";
+import { WORKBENCH_STYLES } from "@semoss/workbench";
 import type { AgentEditorSaveValue } from "./agent-editor-panel";
 
 /**

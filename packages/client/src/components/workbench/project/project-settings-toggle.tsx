@@ -7,11 +7,10 @@ import {
 	TooltipContent,
 	TooltipTrigger,
 } from "@semoss/ui/next";
-import { WORKBENCH_STYLES } from "@semoss/workbench";
+import type { WorkbenchPanelConfig } from "@semoss/workbench";
+import { useWorkbench, WORKBENCH_STYLES } from "@semoss/workbench";
 import { ProjectDetailTabs } from "@/components/project";
-import { useWorkbench } from "@/hooks";
-import type { WorkbenchPanelConfig } from "@/stores/workbench";
-import { WORKBENCH_COMPONENTS } from "../workbench.constants";
+import { WORKBENCH_COMPONENTS } from "@/stores/workbench";
 
 /**
  * Builds the settings blueprint for one project domain. Each domain calls

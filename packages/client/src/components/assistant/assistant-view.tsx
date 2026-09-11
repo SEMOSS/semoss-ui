@@ -1,8 +1,8 @@
 import { MessageSquareIcon } from "lucide-react";
 import { useEffect } from "react";
 import { useInsight } from "@semoss/sdk/react";
+import type { WorkbenchPanelConfig } from "@semoss/workbench";
 import { useAssistant } from "@/hooks/use-assistant";
-import type { WorkbenchPanelConfig } from "@/stores/workbench";
 import { AssistantPanel } from "./assistant-panel";
 
 /**

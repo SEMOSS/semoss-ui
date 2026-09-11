@@ -1,6 +1,7 @@
 import { CloudIcon } from "lucide-react";
 import { useMemo } from "react";
 import { useTranslation } from "@semoss/i18n";
+import { FileExplorerPane, getFilePanelType } from "@semoss/panels";
 import { runPixel, useInsight } from "@semoss/sdk/react";
 import {
 	decorateExplorer,
@@ -10,12 +11,12 @@ import {
 	useFileExplorer,
 } from "@semoss/shared";
 import { toast } from "@semoss/ui/next";
-import { useEngine, useWorkbench } from "@/hooks";
 import type {
 	WorkbenchComponent,
 	WorkbenchPanelConfig,
-} from "@/stores/workbench";
-import { FileExplorerPane, getFilePanelType } from "../../files";
+} from "@semoss/workbench";
+import { useWorkbench } from "@semoss/workbench";
+import { useEngine } from "@/hooks";
 
 /**
  * Storage-bucket explorer panel.

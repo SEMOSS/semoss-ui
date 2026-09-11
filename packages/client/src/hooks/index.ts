@@ -1,11 +1,3 @@
-import { useWorkbenchFilePanels } from "@semoss/panels";
-import {
-	useWorkbench,
-	useWorkbenchCommands,
-	useWorkbenchControl,
-	useWorkbenchStoreApi,
-} from "@semoss/workbench";
-import { useAccess } from "./use-access";
 import { useAPI } from "./use-api";
 import { useAssistant } from "./use-assistant";
 import { useAssistantStore } from "./use-assistant-store";
@@ -31,7 +23,6 @@ import { useWorkspace } from "./useWorkspace";
 // block/renderer dependencies into the broad `@/hooks` import graph, which
 // increases production bundle size.
 export {
-	useAccess,
 	useAPI,
 	useAssistant,
 	useAssistantStore,
@@ -49,11 +40,6 @@ export {
 	useStepper,
 	useTabBarScroll,
 	useThemeLogo,
-	useWorkbench,
-	useWorkbenchCommands,
-	useWorkbenchControl,
-	useWorkbenchFilePanels,
-	useWorkbenchStoreApi,
 	useWorkspace,
 	useProject,
 };

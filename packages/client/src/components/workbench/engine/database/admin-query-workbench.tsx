@@ -8,25 +8,27 @@ import {
 	TooltipContent,
 	TooltipTrigger,
 } from "@semoss/ui/next";
+import type {
+	WorkbenchLayout,
+	WorkbenchPanelConfigAny,
+} from "@semoss/workbench";
 import {
+	useWorkbenchCommands,
+	useWorkbenchStoreApi,
 	WORKBENCH_STYLES,
 	Workbench,
 	WorkbenchCommandMenuButton,
 } from "@semoss/workbench";
 import { DatabaseWorkbenchStoreProvider } from "@/contexts/database-workbench.context";
-import { useEngine, useWorkbenchCommands, useWorkbenchStoreApi } from "@/hooks";
-import type {
-	WorkbenchLayout,
-	WorkbenchPanelConfigAny,
+import { useEngine } from "@/hooks";
+import {
+	WORKBENCH_COMPONENTS,
+	WORKBENCH_PANEL_RECORDS,
 } from "@/stores/workbench";
 import {
 	createDatabaseWorkbenchStore,
 	type DatabaseWorkbenchState,
 } from "@/stores/workbench/database";
-import {
-	WORKBENCH_COMPONENTS,
-	WORKBENCH_PANEL_RECORDS,
-} from "../../workbench.constants";
 import { DATABASE_COLUMNS_PANEL } from "./database-columns-panel";
 import { DATABASE_QUERY_PANEL } from "./database-query-panel";
 import { DATABASE_RESULTS_PANEL } from "./database-query-results-panel";

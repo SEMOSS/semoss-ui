@@ -7,8 +7,8 @@ import {
 	TooltipContent,
 	TooltipTrigger,
 } from "@semoss/ui/next";
+import type { WorkbenchChromeProps } from "@semoss/workbench";
 import { WORKBENCH_STYLES } from "@semoss/workbench";
-import type { WorkbenchChromeProps } from "@/stores/workbench";
 
 /** Value shape stored in diff panel state for the chrome control. */
 export interface GitDiffControlValue {
