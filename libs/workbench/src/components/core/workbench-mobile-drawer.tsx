@@ -115,7 +115,7 @@ export const WorkbenchMobileDrawer: FC<WorkbenchMobileDrawerProps> = ({
 																? "true"
 																: undefined
 														}
-														className="w-full cursor-pointer text-left hover:bg-accent/50"
+														className="w-full cursor-pointer text-start hover:bg-accent/50"
 														onClick={() => {
 															actions.activatePanel(
 																{

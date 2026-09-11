@@ -349,6 +349,15 @@ Two more constraints worth knowing before touching this:
   host no longer registers, so changing a panel-id *string* silently drops that panel out of
   every saved layout. The persistence keys (`smss-workbench--layout--<cacheKey>--1`,
   `smss-workbench--commands--<cacheKey>--1`) are part of that contract too.
+- **`WorkbenchSide` is a *physical* side, so some classes are physical on purpose.** A host names
+  its borders `left`/`right`/`top`/`bottom` and gets that side. So `BODY_ROUND`
+  (`workbench-border.tsx`) and `BORDER_GUTTER` (`workbench-resizer.tsx`) are keyed by that side and
+  use `border-l` / `left-full` correctly — converting them to logical would mirror a border's
+  rounding away from the border in RTL. `RAIL_TAB_TURN`'s `left-1/2` is likewise correct: it pairs
+  with `-translate-x-1/2`, and both are physical, so the centring is self-consistent. Everything
+  *else* — spacing, alignment, auto-margins — must be logical (`ms-`, `ps-`, `text-start`).
+  A host that wants its rail on the other side in RTL moves the panel to the other border; the dock
+  does not mirror itself.
 - **`layout.cacheKey` is read-only state.** Exposed so a sibling store can scope itself to the
   same workbench without being handed the key twice; it is not persisted (`buildSnapshot`
   picks fields explicitly).

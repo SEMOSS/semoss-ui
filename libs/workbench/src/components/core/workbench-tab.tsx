@@ -271,7 +271,7 @@ export const WorkbenchTab: FC<WorkbenchTabProps> = memo(
 									}
 									data-testid={`workbench-tab-pin-${pid}`}
 									className={cn(
-										"ml-1 flex items-center justify-center rounded text-muted-foreground hover:bg-accent hover:text-foreground",
+										"ms-1 flex items-center justify-center rounded text-muted-foreground hover:bg-accent hover:text-foreground",
 										WORKBENCH_STYLES.chromeButtonSm,
 									)}
 									aria-label={`Unpin ${record.name}`}
@@ -294,7 +294,7 @@ export const WorkbenchTab: FC<WorkbenchTabProps> = memo(
 									onClick={() => actions.closePanel(pid)}
 									data-testid={`workbench-tab-close-${pid}`}
 									className={cn(
-										"ml-1 flex items-center justify-center rounded text-muted-foreground hover:bg-accent hover:text-foreground",
+										"ms-1 flex items-center justify-center rounded text-muted-foreground hover:bg-accent hover:text-foreground",
 										WORKBENCH_STYLES.chromeButtonSm,
 										"opacity-60 group-hover:opacity-100",
 									)}

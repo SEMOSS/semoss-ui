@@ -139,7 +139,7 @@ export const WorkbenchCommandPalette: FC = () => {
 		>
 			<span className="min-w-0 truncate">{item.displayLabel}</span>
 			{item.description ? (
-				<span className="ml-auto shrink-0 pl-3 text-muted-foreground text-xs">
+				<span className="ms-auto shrink-0 ps-3 text-muted-foreground text-xs">
 					{item.description}
 				</span>
 			) : null}
