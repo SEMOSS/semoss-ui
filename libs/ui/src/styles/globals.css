@@ -106,20 +106,21 @@
 }
 
 .dark {
-  --background: rgba(10, 10, 10, 1);
-  --secondary-background: rgba(38, 38, 38, 1);
+  --dark-base: 10;
+  --background: rgba(var(--dark-base), var(--dark-base), var(--dark-base), 1);
+  --secondary-background: rgba(calc(var(--dark-base) + 28), calc(var(--dark-base) + 28), calc(var(--dark-base) + 28), 1);
   --foreground: rgba(250, 250, 250, 1);
-  --card: rgba(23, 23, 23, 1);
+  --card: rgba(calc(var(--dark-base) + 13), calc(var(--dark-base) + 13), calc(var(--dark-base) + 13), 1);
   --card-foreground: rgba(250, 250, 250, 1);
-  --popover: rgba(38, 38, 38, 1);
+  --popover: rgba(calc(var(--dark-base) + 28), calc(var(--dark-base) + 28), calc(var(--dark-base) + 28), 1);
   --popover-foreground: rgba(250, 250, 250, 1);
   --primary: rgba(5, 112, 240, 1);
   --primary-foreground: rgba(250, 250, 250, 1);
-  --secondary: rgba(38, 38, 38, 1);
+  --secondary: rgba(calc(var(--dark-base) + 28), calc(var(--dark-base) + 28), calc(var(--dark-base) + 28), 1);
   --secondary-foreground: rgba(250, 250, 250, 1);
-  --muted: rgba(38, 38, 38, 1);
+  --muted: rgba(calc(var(--dark-base) + 28), calc(var(--dark-base) + 28), calc(var(--dark-base) + 28), 1);
   --muted-foreground: rgba(163, 163, 163, 1);
-  --accent: rgba(64, 64, 64, 1);
+  --accent: rgba(calc(var(--dark-base) + 54), calc(var(--dark-base) + 54), calc(var(--dark-base) + 54), 1);
   --accent-foreground: rgba(250, 250, 250, 1);
   --destructive: rgba(247, 112, 112, 1);
   --destructive-foreground: rgba(255, 242, 242, 1);
@@ -130,17 +131,17 @@
   --border: rgba(255, 255, 255, 0.1);
   --input: rgba(255, 255, 255, 0.15);
   --ring: rgba(115, 115, 115, 1);
-  --ring-offset: rgba(10, 10, 10, 1);
+  --ring-offset: rgba(var(--dark-base), var(--dark-base), var(--dark-base), 1);
   --chart-1: rgba(28, 79, 217, 1);
   --chart-2: rgba(15, 186, 130, 1);
   --chart-3: rgba(245, 158, 10, 1);
   --chart-4: rgba(168, 84, 247, 1);
   --chart-5: rgba(245, 64, 94, 1);
-  --sidebar: rgba(23, 23, 23, 1);
+  --sidebar: rgba(calc(var(--dark-base) + 13), calc(var(--dark-base) + 13), calc(var(--dark-base) + 13), 1);
   --sidebar-foreground: rgba(250, 250, 250, 1);
   --sidebar-primary-foreground: rgba(23, 23, 23, 1);
   --sidebar-primary: rgba(250, 250, 250, 1);
-  --sidebar-accent: rgba(38, 38, 38, 1);
+  --sidebar-accent: rgba(calc(var(--dark-base) + 28), calc(var(--dark-base) + 28), calc(var(--dark-base) + 28), 1);
   --sidebar-accent-foreground: rgba(250, 250, 250, 1);
   --sidebar-border: rgba(255, 255, 255, 0.1);
   --sidebar-ring: rgba(82, 82, 82, 1);

@@ -348,5 +348,34 @@ export class RootStore {
 				this._store.theme.variables.secondaryColor,
 			);
 		}
+
+		const darkBase = this._store.theme.variables.darkModeBaseColor;
+		if (darkBase) {
+			const numericMatch = darkBase.match(/^\s*(\d+)\s*$/);
+			const rgbMatch = darkBase.match(/rgba?\s*\(\s*(\d+)/);
+			const hexMatch = darkBase.match(/^#?([0-9a-fA-F]{2})/);
+
+			let base: number | undefined;
+			if (numericMatch) {
+				base = Number.parseInt(numericMatch[1], 10);
+			} else if (rgbMatch) {
+				base = Number.parseInt(rgbMatch[1], 10);
+			} else if (hexMatch) {
+				base = Number.parseInt(hexMatch[1], 16);
+			}
+
+			if (base === undefined || Number.isNaN(base)) {
+				console.warn(
+					`darkModeBaseColor "${darkBase}" is not a recognized format ` +
+						"(expected a number, hex color, or rgb()/rgba() string); " +
+						"dark mode base color will not be applied.",
+				);
+				root.style.removeProperty("--dark-base");
+			} else {
+				root.style.setProperty("--dark-base", String(base));
+			}
+		} else {
+			root.style.removeProperty("--dark-base");
+		}
 	};
 }
