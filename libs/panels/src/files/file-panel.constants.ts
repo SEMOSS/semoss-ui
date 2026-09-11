@@ -29,3 +29,21 @@ export const MCP = {
 	DRIVER_PATHS: ["/py/mcp_driver.py"],
 	JSON_PATHS: ["/mcp/py_mcp.json", "/mcp/pixel_mcp.json"],
 } as const;
+
+/**
+ * Whether an open panel's type is one of the file panels.
+ *
+ * Lives here, next to the ids, rather than beside `FILE_PANEL_COMPONENTS` —
+ * this module imports nothing, and `file-panel.components.ts` imports every
+ * panel. `useWorkbenchFilePanels` needs this predicate and the file explorer
+ * panel needs that hook, so homing it on the map closed an import cycle that
+ * left `FILE_PANEL_COMPONENTS["file-explorer"]` undefined.
+ *
+ * The map is keyed by exactly these values, so the two agree by construction —
+ * `file-panel.components.test.ts` asserts it.
+ *
+ * @param type - An open panel's blueprint type.
+ * @return True when it is one of the file panels.
+ */
+export const isFilePanelType = (type: string): boolean =>
+	(Object.values(FILE_PANEL_TYPES) as string[]).includes(type);

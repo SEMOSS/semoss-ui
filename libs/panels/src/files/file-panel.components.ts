@@ -33,7 +33,3 @@ export const FILE_PANEL_COMPONENTS: Record<string, WorkbenchPanelConfigAny> = {
 	[FILE_PANEL_TYPES.FILE_PPTX_VIEWER]: FILE_PPTX_VIEWER_PANEL,
 	[FILE_PANEL_TYPES.FILE_MCP_EDITOR]: FILE_MCP_EDITOR_PANEL,
 };
-
-/** Whether an open panel's type is one of the file panels. */
-export const isFilePanelType = (type: string): boolean =>
-	type in FILE_PANEL_COMPONENTS;

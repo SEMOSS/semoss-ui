@@ -49,7 +49,6 @@ import type {
 import {
 	getRoomFileMode,
 	getRoomSidebarCacheKey,
-	isActiveSidebarPanel,
 	ROOM_PANEL_TYPES,
 	ROOM_SIDEBAR_LAYOUT,
 } from "./room-sidebar";
@@ -1109,19 +1108,6 @@ export class RoomStore {
 			actions.closePanel(record.id);
 		}
 	};
-
-	/**
-	 * Whether the sidebar is showing a panel of `type` matching `config`.
-	 *
-	 * A point-in-time read, for imperative callers. React should subscribe
-	 * through `useSidebarPanelActive` instead.
-	 */
-	isSidebarPanelActive = (
-		type: WorkbenchPanelType,
-		config: WorkbenchPanelParams = {},
-	): boolean =>
-		this._store.sidebar.isOpen &&
-		isActiveSidebarPanel(this.workbench.getState(), type, config);
 
 	/**
 	 * Blow the sidebar up over the page, or put it back.

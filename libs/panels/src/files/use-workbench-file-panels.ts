@@ -8,8 +8,7 @@ import {
 } from "@semoss/shared";
 import { useWorkbench, type WorkbenchPanelRecord } from "@semoss/workbench";
 import { getFilePanelType } from "./file-editor.utility";
-import { isFilePanelType } from "./file-panel.components";
-import { FILE_PANEL_TYPES } from "./file-panel.constants";
+import { FILE_PANEL_TYPES, isFilePanelType } from "./file-panel.constants";
 import {
 	type FilePanelMode,
 	getFilePanelScope,
