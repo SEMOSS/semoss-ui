@@ -1,8 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Trans, useTranslation } from "@semoss/i18n";
 import { useInsight } from "@semoss/sdk/react";
-import { FileEditor, FlexLayout } from "@semoss/shared";
+import { FileEditor } from "@semoss/shared";
 import { toast } from "@semoss/ui/next";
+import type { WorkbenchPanelId } from "@semoss/workbench";
+import { useWorkbench } from "@semoss/workbench";
 import { Logo } from "../../assets/logos";
 import type { ConsoleContext, FileMode } from "../../types";
 import { modeKey } from "../../utility/file-mode";
@@ -73,7 +75,7 @@ export interface FileEditorTabConfig {
 	path: string;
 	mode: FileMode;
 	/** Display name without the modified-indicator asterisk. Stored in
-	 * config so renames via FlexLayout.Actions.renameTab don't lose it. */
+	 * config so a rename of the tab label doesn't lose it. */
 	baseName: string;
 	/** Human-readable project name when `mode.type === "APP"`, captured at
 	 * open time so the scope-changed banner can show name + id rather than
@@ -103,23 +105,38 @@ const scopeLabel = (
 };
 
 interface TerminalFileProps {
-	/** The FlexLayout tab node this pane is mounted in. We read the path /
-	 * mode / appName from its config and write back name (with asterisk) +
-	 * ext via FlexLayout actions. */
-	node: FlexLayout.TabNode;
+	/** This pane's panel instance, for the maximize check. */
+	id: WorkbenchPanelId;
+	/** Path, mode and appName, read from the panel's config. */
+	config: FileEditorTabConfig;
+	/** Writes the tab label, including the unsaved-work asterisk. */
+	rename: (name: string) => void;
+	/** Persists the chosen run language back onto the panel. */
+	setConfig: (patch: Partial<FileEditorTabConfig>) => void;
 }
 
 /**
- * Per-tab file editor pane. One instance per file editor tab — FlexLayout
- * keeps inactive tabs mounted (hidden via CSS) so each editor preserves its
- * state across tab switches.
+ * Per-panel file editor. One instance per open file — the blueprint is
+ * `mount: "keepAlive"`, so a hidden editor stays mounted and preserves its
+ * buffer across tab switches.
  */
-export const TerminalFile = ({ node }: TerminalFileProps) => {
+export const TerminalFile = ({
+	id,
+	config,
+	rename,
+	setConfig,
+}: TerminalFileProps) => {
 	const terminal = useTerminal();
 	const { actions } = useInsight();
 	const { t } = useTranslation("file");
-
-	const config = node.getConfig() as FileEditorTabConfig;
+	const maximizedTabsetId = useWorkbench(
+		(state) => state.layout.maximizedTabsetId,
+	);
+	const ownTabsetId = useWorkbench(
+		(state) =>
+			state.layout.tabsets.find((tabset) => tabset.panelIds.includes(id))
+				?.id,
+	);
 	const [ext, setExtState] = useState<Ext | null>(
 		isRunnableExt(config.ext) ? config.ext : inferExt(config.baseName),
 	);
@@ -128,29 +145,21 @@ export const TerminalFile = ({ node }: TerminalFileProps) => {
 	const contentRef = useRef(content);
 	contentRef.current = content;
 
-	// Mirror the asterisk back onto the FlexLayout tab name whenever the
-	// editor reports a modified state change. Without this, the tab title
-	// would show just the filename even when the buffer has unsaved edits.
+	// Mirror the asterisk back onto the tab label whenever the editor reports
+	// a modified state change. Without this the tab shows just the filename
+	// even when the buffer has unsaved edits.
 	useEffect(() => {
-		const model = node.getModel();
-		const next = isModified ? `${config.baseName}*` : config.baseName;
-		if (node.getName() !== next) {
-			model.doAction(FlexLayout.Actions.renameTab(node.getId(), next));
-		}
-	}, [isModified, config.baseName, node]);
+		rename(isModified ? `${config.baseName}*` : config.baseName);
+	}, [isModified, config.baseName, rename]);
 
 	const setExt = useCallback(
 		(nextExt: Ext) => {
 			setExtState(nextExt);
-			// persist on the tab config so the choice survives tab switches /
-			// is recovered if we ever serialize the layout
-			node.getModel().doAction(
-				FlexLayout.Actions.updateNodeAttributes(node.getId(), {
-					config: { ...config, ext: nextExt },
-				}),
-			);
+			// persist onto the panel so the choice survives tab switches and
+			// comes back with a restored layout
+			setConfig({ ext: nextExt });
 		},
-		[config, node],
+		[setConfig],
 	);
 
 	const active = modeKey(config.mode) === modeKey(terminal.fileMode);
@@ -211,17 +220,25 @@ export const TerminalFile = ({ node }: TerminalFileProps) => {
 			context: extToContext(ext),
 		});
 
-		// If a non-REPL tabset is currently maximized, the REPL is hidden
-		// from view — the user just kicked off a run with no visible output.
-		// Nudge them to un-maximize. (A maximized REPL is fine; output is
+		// If the maximized dock is this editor's own, the REPL is hidden from
+		// view — the user just kicked off a run with no visible output. Nudge
+		// them to un-maximize. (A maximized REPL is fine; output is
 		// front-and-center there.)
-		const maximized = node.getModel().getMaximizedTabset();
-		if (maximized && maximized.getId() !== "REPL_TABSET") {
+		if (maximizedTabsetId && maximizedTabsetId === ownTabsetId) {
 			toast.info(t("maximizedToast.title"), {
 				description: t("maximizedToast.description"),
 			});
 		}
-	}, [actions, config, ext, isModified, node, t, terminal]);
+	}, [
+		actions,
+		config,
+		ext,
+		isModified,
+		maximizedTabsetId,
+		ownTabsetId,
+		t,
+		terminal,
+	]);
 
 	// Ctrl/Cmd+Enter inside the editor runs the file — same path as the Run
 	// button. Fenced off when the tab's scope no longer matches the active

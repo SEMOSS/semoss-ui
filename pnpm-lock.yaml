@@ -1011,9 +1011,9 @@ importers:
       '@semoss/ui':
         specifier: workspace:*
         version: link:../../libs/ui
-      flexlayout-react:
-        specifier: ^0.8.1
-        version: 0.8.17(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
+      '@semoss/workbench':
+        specifier: workspace:*
+        version: link:../../libs/workbench
       lucide-react:
         specifier: ^0.545.0
         version: 0.545.0(react@19.2.8)
@@ -1026,6 +1026,9 @@ importers:
       tailwindcss:
         specifier: ^4.3.3
         version: 4.3.3
+      zustand:
+        specifier: ^5.0.0
+        version: 5.0.15(@types/react@19.2.18)(react@19.2.8)(use-sync-external-store@1.6.0(react@19.2.8))
     devDependencies:
       '@semoss/config':
         specifier: workspace:*
