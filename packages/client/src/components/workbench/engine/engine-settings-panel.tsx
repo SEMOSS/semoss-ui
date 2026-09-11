@@ -107,6 +107,45 @@ const EngineSettingsPanel: React.FC<EngineSettingsPanelProps> = ({ tabs }) => {
 };
 
 /**
+ * The tabs every engine workbench shows.
+ *
+ * Five of the six passed this exact array literal — thirty-one lines each. The
+ * sixth, database, adds Metadata; see `withTab`.
+ */
+export const ENGINE_SETTINGS_TABS: EngineSettingsPanelProps["tabs"] = [
+	{
+		name: "Overview",
+		component: "overview",
+		restrict: ["READ_ONLY", "EDIT", "OWNER", "DISCOVERABLE"],
+	},
+	{
+		name: "Usage",
+		component: "usage",
+		restrict: ["READ_ONLY", "EDIT", "OWNER"],
+	},
+	{
+		name: "MCP",
+		component: "mcp-usage",
+		restrict: ["READ_ONLY", "EDIT", "OWNER"],
+	},
+	{
+		name: "Activity Log",
+		component: "activity",
+		restrict: ["READ_ONLY", "EDIT", "OWNER"],
+	},
+	{
+		name: "Access Control",
+		component: "access-control",
+		restrict: ["EDIT", "OWNER"],
+	},
+	{
+		name: "SMSS",
+		component: "smss",
+		restrict: ["OWNER"],
+	},
+];
+
+/**
  * Builds the settings blueprint for one engine domain. Each domain calls
  * this at module scope with its static tab list, so the blueprint identity
  * stays stable and the panel never remounts from map churn.

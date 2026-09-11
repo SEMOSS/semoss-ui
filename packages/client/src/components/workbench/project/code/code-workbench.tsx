@@ -2,7 +2,6 @@ import { useCallback, useEffect, useMemo } from "react";
 import { FILE_PANEL_COMPONENTS } from "@semoss/panels";
 import type { Role } from "@semoss/sdk";
 import { useInsight } from "@semoss/sdk/react";
-import type { FileExplorerApi } from "@semoss/shared";
 import { toast } from "@semoss/ui/next";
 import type {
 	WorkbenchLayout,
@@ -23,6 +22,11 @@ import {
 	WORKBENCH_PANEL_RECORDS,
 } from "@/stores/workbench";
 import { GIT_DIFF_PANEL, GIT_VERSION_PANEL } from "../../git";
+import {
+	createFileCommands,
+	createOpenPanelCommand,
+	createReconnectCommand,
+} from "../../workbench.presets";
 import { PROJECT_ENGINES_PANEL } from "../project-engines-panel";
 import { PROJECT_INSIGHT_EXPLORER_PANEL } from "../project-insight-explorer-panel";
 import { ProjectPublishButton } from "../project-publish-button";
@@ -151,6 +155,9 @@ const CODE_WORKBENCH_COMPONENTS: Record<string, WorkbenchPanelConfigAny> = {
 		PROJECT_INSIGHT_EXPLORER_PANEL,
 	[WORKBENCH_COMPONENTS.PROJECT_ENGINES]: PROJECT_ENGINES_PANEL,
 	[WORKBENCH_COMPONENTS.PROJECT_TERMINAL]: PROJECT_TERMINAL_PANEL,
+	// PROJECT_SETTINGS_TABS plus Dependencies and Settings, inserted at two
+	// different points — written out rather than nested `withTab` calls, where
+	// the second index would have to account for the first insertion
 	[WORKBENCH_COMPONENTS.PROJECT_SETTINGS]: createProjectSettingsPanel([
 		{ name: "Overview", component: "project-overview" },
 		{
@@ -283,125 +290,41 @@ export const CodeWorkbench: React.FC = () => {
 	]);
 
 	useWorkbenchCommands([
-		{
-			id: "workbench.server.reconnect",
-			label: "Reconnect Server",
-			handler: () => {
-				void insight.actions
-					.run("ReconnectServer();")
-					.catch(console.error);
-			},
-		},
-		{
-			id: "workbench.file.create",
-			category: "File",
-			label: "Create File",
-			visible: !readOnly,
-			handler: (get) =>
-				(
-					get().layout.values[WORKBENCH_COMPONENTS.FILE_EXPLORER] as
-						| FileExplorerApi
-						| undefined
-				)?.commands.openNewFile(undefined, "add_file"),
-		},
-		{
-			id: "workbench.file.create-folder",
-			category: "File",
-			label: "Create Folder",
-			visible: !readOnly,
-			handler: (get) =>
-				(
-					get().layout.values[WORKBENCH_COMPONENTS.FILE_EXPLORER] as
-						| FileExplorerApi
-						| undefined
-				)?.commands.openNewFile(undefined, "add_directory"),
-		},
-		{
-			id: "workbench.file.upload",
-			category: "File",
-			label: "Upload Files",
-			visible: !readOnly,
-			handler: (get) =>
-				(
-					get().layout.values[WORKBENCH_COMPONENTS.FILE_EXPLORER] as
-						| FileExplorerApi
-						| undefined
-				)?.commands.openNewFile(undefined, "upload"),
-		},
-		{
-			id: "workbench.file.refresh",
-			category: "File",
-			label: "Refresh Files",
-			handler: (get) =>
-				(
-					get().layout.values[WORKBENCH_COMPONENTS.FILE_EXPLORER] as
-						| FileExplorerApi
-						| undefined
-				)?.commands.refresh(),
-		},
-		{
+		createReconnectCommand(insight),
+		...createFileCommands({ readOnly: readOnly }),
+		createOpenPanelCommand({
 			id: "workbench.project-file-explorer.open",
-			category: "View",
 			label: "Open File Explorer",
-			handler: (get) => {
-				get().layout.actions.selectPanel(
-					WORKBENCH_COMPONENTS.FILE_EXPLORER,
-					{
-						mode: { type: "APP", app: project.project_id },
-					},
-				);
+			type: WORKBENCH_COMPONENTS.FILE_EXPLORER,
+			config: {
+				mode: { type: "APP", app: project.project_id },
 			},
-		},
-		{
+		}),
+		createOpenPanelCommand({
 			id: "workbench.project-insight-explorer.open",
-			category: "View",
 			label: "Open Insight File Explorer",
-			handler: (get) => {
-				get().layout.actions.selectPanel(
-					WORKBENCH_COMPONENTS.PROJECT_INSIGHT_EXPLORER,
-				);
-			},
-		},
-		{
+			type: WORKBENCH_COMPONENTS.PROJECT_INSIGHT_EXPLORER,
+		}),
+		createOpenPanelCommand({
 			id: "workbench.project-app-renderer.open",
-			category: "View",
 			label: "Open App Preview",
-			handler: (get) => {
-				get().layout.actions.selectPanel(
-					WORKBENCH_COMPONENTS.PROJECT_APP_RENDERER,
-				);
-			},
-		},
-		{
+			type: WORKBENCH_COMPONENTS.PROJECT_APP_RENDERER,
+		}),
+		createOpenPanelCommand({
 			id: "workbench.project-terminal.open",
-			category: "View",
 			label: "Open Terminal",
-			handler: (get) => {
-				get().layout.actions.selectPanel(
-					WORKBENCH_COMPONENTS.PROJECT_TERMINAL,
-				);
-			},
-		},
-		{
+			type: WORKBENCH_COMPONENTS.PROJECT_TERMINAL,
+		}),
+		createOpenPanelCommand({
 			id: "workbench.project-engines.open",
-			category: "View",
 			label: "Open Available Engines",
-			handler: (get) => {
-				get().layout.actions.selectPanel(
-					WORKBENCH_COMPONENTS.PROJECT_ENGINES,
-				);
-			},
-		},
-		{
+			type: WORKBENCH_COMPONENTS.PROJECT_ENGINES,
+		}),
+		createOpenPanelCommand({
 			id: "workbench.project-settings.open",
-			category: "View",
 			label: "Open Settings",
-			handler: (get) => {
-				get().layout.actions.selectPanel(
-					WORKBENCH_COMPONENTS.PROJECT_SETTINGS,
-				);
-			},
-		},
+			type: WORKBENCH_COMPONENTS.PROJECT_SETTINGS,
+		}),
 	]);
 
 	return (

@@ -3,7 +3,6 @@ import type { StoreApi } from "zustand";
 import { FILE_PANEL_COMPONENTS } from "@semoss/panels";
 import type { Role } from "@semoss/sdk";
 import { useInsight } from "@semoss/sdk/react";
-import type { FileExplorerApi } from "@semoss/shared";
 import type {
 	WorkbenchLayout,
 	WorkbenchPanelConfigAny,
@@ -28,7 +27,16 @@ import {
 	type DatabaseWorkbenchState,
 } from "@/stores/workbench/database";
 import { GIT_DIFF_PANEL, GIT_VERSION_PANEL } from "../../git";
-import { createEngineSettingsPanel } from "../engine-settings-panel";
+import {
+	createFileCommands,
+	createOpenPanelCommand,
+	createReconnectCommand,
+	withTab,
+} from "../../workbench.presets";
+import {
+	createEngineSettingsPanel,
+	ENGINE_SETTINGS_TABS,
+} from "../engine-settings-panel";
 import { EngineSettingsToggle } from "../engine-settings-toggle";
 import { DATABASE_COLUMNS_PANEL } from "./database-columns-panel";
 import { DATABASE_QUERY_PANEL } from "./database-query-panel";
@@ -108,43 +116,18 @@ const DATABASE_WORKBENCH_COMPONENTS: Record<string, WorkbenchPanelConfigAny> = {
 	[WORKBENCH_COMPONENTS.DATABASE_COLUMNS]: DATABASE_COLUMNS_PANEL,
 	[WORKBENCH_COMPONENTS.DATABASE_QUERY]: DATABASE_QUERY_PANEL,
 	[WORKBENCH_COMPONENTS.DATABASE_RESULTS]: DATABASE_RESULTS_PANEL,
-	[WORKBENCH_COMPONENTS.ENGINE_SETTINGS]: createEngineSettingsPanel([
-		{
-			name: "Overview",
-			component: "overview",
-			restrict: ["READ_ONLY", "EDIT", "OWNER", "DISCOVERABLE"],
-		},
-		{
-			name: "Usage",
-			component: "usage",
-			restrict: ["READ_ONLY", "EDIT", "OWNER"],
-		},
-		{
-			name: "MCP",
-			component: "mcp-usage",
-			restrict: ["READ_ONLY", "EDIT", "OWNER"],
-		},
-		{
-			name: "Activity Log",
-			component: "activity",
-			restrict: ["READ_ONLY", "EDIT", "OWNER"],
-		},
-		{
-			name: "Metadata",
-			component: "metadata",
-			restrict: ["READ_ONLY", "EDIT", "OWNER"],
-		},
-		{
-			name: "Access Control",
-			component: "access-control",
-			restrict: ["EDIT", "OWNER"],
-		},
-		{
-			name: "SMSS",
-			component: "smss",
-			restrict: ["OWNER"],
-		},
-	]),
+	[WORKBENCH_COMPONENTS.ENGINE_SETTINGS]: createEngineSettingsPanel(
+		withTab(
+			ENGINE_SETTINGS_TABS,
+			{
+				name: "Metadata",
+				component: "metadata",
+				restrict: ["READ_ONLY", "EDIT", "OWNER"],
+			},
+			// before Access Control, where it has always sat
+			4,
+		),
+	),
 	[WORKBENCH_COMPONENTS.ASSISTANT]: ASSISTANT_PANEL,
 };
 
@@ -215,110 +198,36 @@ export const DatabaseWorkbench: React.FC = () => {
 				databaseStore.getState().structure.refresh();
 			},
 		},
-		{
-			id: "workbench.server.reconnect",
-			label: "Reconnect Server",
-			handler: () => {
-				void insight.actions
-					.run("ReconnectServer();")
-					.catch(console.error);
-			},
-		},
-		{
-			id: "workbench.file.create",
-			category: "File",
-			label: "Create File",
-			visible: !readOnly,
-			handler: (get) =>
-				(
-					get().layout.values[WORKBENCH_COMPONENTS.FILE_EXPLORER] as
-						| FileExplorerApi
-						| undefined
-				)?.commands.openNewFile(undefined, "add_file"),
-		},
-		{
-			id: "workbench.file.create-folder",
-			category: "File",
-			label: "Create Folder",
-			visible: !readOnly,
-			handler: (get) =>
-				(
-					get().layout.values[WORKBENCH_COMPONENTS.FILE_EXPLORER] as
-						| FileExplorerApi
-						| undefined
-				)?.commands.openNewFile(undefined, "add_directory"),
-		},
-		{
-			id: "workbench.file.upload",
-			category: "File",
-			label: "Upload Files",
-			visible: !readOnly,
-			handler: (get) =>
-				(
-					get().layout.values[WORKBENCH_COMPONENTS.FILE_EXPLORER] as
-						| FileExplorerApi
-						| undefined
-				)?.commands.openNewFile(undefined, "upload"),
-		},
-		{
-			id: "workbench.file.refresh",
-			category: "File",
-			label: "Refresh Files",
-			handler: (get) =>
-				(
-					get().layout.values[WORKBENCH_COMPONENTS.FILE_EXPLORER] as
-						| FileExplorerApi
-						| undefined
-				)?.commands.refresh(),
-		},
-		{
+		createReconnectCommand(insight),
+		...createFileCommands({ readOnly: readOnly }),
+		createOpenPanelCommand({
 			id: "workbench.file-explorer.open",
-			category: "View",
 			label: "Open File Explorer",
-			handler: (get) => {
-				get().layout.actions.selectPanel(
-					WORKBENCH_COMPONENTS.FILE_EXPLORER,
-					{
-						mode: { type: "ENGINE", engine: engine.engine_id },
-					},
-				);
+			type: WORKBENCH_COMPONENTS.FILE_EXPLORER,
+			config: {
+				mode: { type: "ENGINE", engine: engine.engine_id },
 			},
-		},
-		{
+		}),
+		createOpenPanelCommand({
 			id: "workbench.version-control.open",
-			category: "View",
 			label: "Open Version Control",
+			type: WORKBENCH_COMPONENTS.GIT_VERSION,
+			config: {
+				type: "ENGINE",
+				id: engine.engine_id,
+			},
 			visible: !readOnly,
-			handler: (get) => {
-				get().layout.actions.selectPanel(
-					WORKBENCH_COMPONENTS.GIT_VERSION,
-					{
-						type: "ENGINE",
-						id: engine.engine_id,
-					},
-				);
-			},
-		},
-		{
+		}),
+		createOpenPanelCommand({
 			id: "workbench.settings.open",
-			category: "View",
 			label: "Open Settings",
-			handler: (get) => {
-				get().layout.actions.selectPanel(
-					WORKBENCH_COMPONENTS.ENGINE_SETTINGS,
-				);
-			},
-		},
-		{
+			type: WORKBENCH_COMPONENTS.ENGINE_SETTINGS,
+		}),
+		createOpenPanelCommand({
 			id: "workbench.database-columns.open",
-			category: "View",
 			label: "Open Columns",
-			handler: (get) => {
-				get().layout.actions.selectPanel(
-					WORKBENCH_COMPONENTS.DATABASE_COLUMNS,
-				);
-			},
-		},
+			type: WORKBENCH_COMPONENTS.DATABASE_COLUMNS,
+		}),
 		{
 			id: "workbench.database-query.open",
 			category: "Database",

@@ -2,7 +2,6 @@ import { useEffect, useMemo } from "react";
 import { FILE_PANEL_COMPONENTS } from "@semoss/panels";
 import type { Role } from "@semoss/sdk";
 import { useInsight } from "@semoss/sdk/react";
-import type { FileExplorerApi } from "@semoss/shared";
 import type {
 	WorkbenchLayout,
 	WorkbenchPanelConfigAny,
@@ -20,9 +19,15 @@ import {
 	WORKBENCH_PANEL_RECORDS,
 } from "@/stores/workbench";
 import { GIT_DIFF_PANEL, GIT_VERSION_PANEL } from "../../git";
+import {
+	createFileCommands,
+	createOpenPanelCommand,
+	createReconnectCommand,
+} from "../../workbench.presets";
 import { PROJECT_INSIGHT_EXPLORER_PANEL } from "../project-insight-explorer-panel";
 import {
 	createProjectSettingsPanel,
+	PROJECT_SETTINGS_TABS,
 	ProjectSettingsToggle,
 } from "../project-settings-toggle";
 import { PROJECT_TERMINAL_PANEL } from "../project-terminal-panel";
@@ -111,29 +116,9 @@ const SKILL_WORKBENCH_COMPONENTS: Record<string, WorkbenchPanelConfigAny> = {
 	[WORKBENCH_COMPONENTS.PROJECT_INSIGHT_EXPLORER]:
 		PROJECT_INSIGHT_EXPLORER_PANEL,
 	[WORKBENCH_COMPONENTS.PROJECT_TERMINAL]: PROJECT_TERMINAL_PANEL,
-	[WORKBENCH_COMPONENTS.PROJECT_SETTINGS]: createProjectSettingsPanel([
-		{ name: "Overview", component: "project-overview" },
-		{
-			name: "MCP",
-			component: "mcp-usage",
-			restrict: ["OWNER", "EDIT", "READ_ONLY"],
-		},
-		{
-			name: "GitHub",
-			component: "github",
-			restrict: ["OWNER"],
-		},
-		{
-			name: "Access Control",
-			component: "access-control",
-			restrict: ["OWNER", "EDIT"],
-		},
-		{
-			name: "SMSS",
-			component: "smss",
-			restrict: ["OWNER"],
-		},
-	]),
+	[WORKBENCH_COMPONENTS.PROJECT_SETTINGS]: createProjectSettingsPanel(
+		PROJECT_SETTINGS_TABS,
+	),
 	[WORKBENCH_COMPONENTS.ASSISTANT]: ASSISTANT_PANEL,
 };
 
@@ -187,105 +172,31 @@ export const SkillWorkbench: React.FC = () => {
 	]);
 
 	useWorkbenchCommands([
-		{
-			id: "workbench.server.reconnect",
-			label: "Reconnect Server",
-			handler: () => {
-				void insight.actions
-					.run("ReconnectServer();")
-					.catch(console.error);
-			},
-		},
-		{
-			id: "workbench.file.create",
-			category: "File",
-			label: "Create File",
-			visible: !readOnly,
-			handler: (get) =>
-				(
-					get().layout.values[WORKBENCH_COMPONENTS.FILE_EXPLORER] as
-						| FileExplorerApi
-						| undefined
-				)?.commands.openNewFile(undefined, "add_file"),
-		},
-		{
-			id: "workbench.file.create-folder",
-			category: "File",
-			label: "Create Folder",
-			visible: !readOnly,
-			handler: (get) =>
-				(
-					get().layout.values[WORKBENCH_COMPONENTS.FILE_EXPLORER] as
-						| FileExplorerApi
-						| undefined
-				)?.commands.openNewFile(undefined, "add_directory"),
-		},
-		{
-			id: "workbench.file.upload",
-			category: "File",
-			label: "Upload Files",
-			visible: !readOnly,
-			handler: (get) =>
-				(
-					get().layout.values[WORKBENCH_COMPONENTS.FILE_EXPLORER] as
-						| FileExplorerApi
-						| undefined
-				)?.commands.openNewFile(undefined, "upload"),
-		},
-		{
-			id: "workbench.file.refresh",
-			category: "File",
-			label: "Refresh Files",
-			handler: (get) =>
-				(
-					get().layout.values[WORKBENCH_COMPONENTS.FILE_EXPLORER] as
-						| FileExplorerApi
-						| undefined
-				)?.commands.refresh(),
-		},
-		{
+		createReconnectCommand(insight),
+		...createFileCommands({ readOnly: readOnly }),
+		createOpenPanelCommand({
 			id: "workbench.project-file-explorer.open",
-			category: "View",
 			label: "Open File Explorer",
-			handler: (get) => {
-				get().layout.actions.selectPanel(
-					WORKBENCH_COMPONENTS.FILE_EXPLORER,
-					{
-						mode: { type: "APP", app: project.project_id },
-					},
-				);
+			type: WORKBENCH_COMPONENTS.FILE_EXPLORER,
+			config: {
+				mode: { type: "APP", app: project.project_id },
 			},
-		},
-		{
+		}),
+		createOpenPanelCommand({
 			id: "workbench.project-insight-explorer.open",
-			category: "View",
 			label: "Open Insight File Explorer",
-			handler: (get) => {
-				get().layout.actions.selectPanel(
-					WORKBENCH_COMPONENTS.PROJECT_INSIGHT_EXPLORER,
-				);
-			},
-		},
-		{
+			type: WORKBENCH_COMPONENTS.PROJECT_INSIGHT_EXPLORER,
+		}),
+		createOpenPanelCommand({
 			id: "workbench.project-terminal.open",
-			category: "View",
 			label: "Open Terminal",
-			handler: (get) => {
-				get().layout.actions.selectPanel(
-					WORKBENCH_COMPONENTS.PROJECT_TERMINAL,
-				);
-			},
-		},
-		{
+			type: WORKBENCH_COMPONENTS.PROJECT_TERMINAL,
+		}),
+		createOpenPanelCommand({
 			id: "workbench.project-settings.open",
-			category: "View",
 			label: "Open Settings",
-			handler: (get) => {
-				get().layout.actions.selectPanel(
-					WORKBENCH_COMPONENTS.PROJECT_SETTINGS,
-				);
-			},
-		},
+			type: WORKBENCH_COMPONENTS.PROJECT_SETTINGS,
+		}),
 	]);
 
 	return (

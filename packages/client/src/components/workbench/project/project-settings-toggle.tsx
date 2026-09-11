@@ -12,6 +12,33 @@ import { useWorkbench, WORKBENCH_STYLES } from "@semoss/workbench";
 import { ProjectDetailTabs } from "@/components/project";
 import { WORKBENCH_COMPONENTS } from "@/stores/workbench";
 
+/** The tabs every project workbench shows. Notebook and skill use it as-is. */
+export const PROJECT_SETTINGS_TABS: ComponentProps<
+	typeof ProjectDetailTabs
+>["tabs"] = [
+	{ name: "Overview", component: "project-overview" },
+	{
+		name: "MCP",
+		component: "mcp-usage",
+		restrict: ["OWNER", "EDIT", "READ_ONLY"],
+	},
+	{
+		name: "GitHub",
+		component: "github",
+		restrict: ["OWNER"],
+	},
+	{
+		name: "Access Control",
+		component: "access-control",
+		restrict: ["OWNER", "EDIT"],
+	},
+	{
+		name: "SMSS",
+		component: "smss",
+		restrict: ["OWNER"],
+	},
+];
+
 /**
  * Builds the settings blueprint for one project domain. Each domain calls
  * this at module scope with its static tab list, so the blueprint identity

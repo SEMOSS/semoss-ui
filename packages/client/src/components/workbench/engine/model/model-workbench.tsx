@@ -3,7 +3,6 @@ import type { StoreApi } from "zustand";
 import { FILE_PANEL_COMPONENTS } from "@semoss/panels";
 import type { Role } from "@semoss/sdk";
 import { useInsight } from "@semoss/sdk/react";
-import type { FileExplorerApi } from "@semoss/shared";
 import type {
 	WorkbenchLayout,
 	WorkbenchPanelConfigAny,
@@ -22,7 +21,15 @@ import {
 import type { ModelChatStoreInterface } from "@/stores/workbench/model";
 import { createModelChatStore } from "@/stores/workbench/model";
 import { GIT_DIFF_PANEL, GIT_VERSION_PANEL } from "../../git";
-import { createEngineSettingsPanel } from "../engine-settings-panel";
+import {
+	createFileCommands,
+	createOpenPanelCommand,
+	createReconnectCommand,
+} from "../../workbench.presets";
+import {
+	createEngineSettingsPanel,
+	ENGINE_SETTINGS_TABS,
+} from "../engine-settings-panel";
 import { EngineSettingsToggle } from "../engine-settings-toggle";
 import { MODEL_CHAT_HISTORY_PANEL } from "./model-chat-conversations";
 import { MODEL_CHAT_PANEL } from "./model-chat-panel";
@@ -100,38 +107,8 @@ const MODEL_WORKBENCH_COMPONENTS: Record<string, WorkbenchPanelConfigAny> = {
 	[WORKBENCH_COMPONENTS.MODEL_CHAT_HISTORY]: MODEL_CHAT_HISTORY_PANEL,
 	[WORKBENCH_COMPONENTS.GIT_VERSION]: GIT_VERSION_PANEL,
 	[WORKBENCH_COMPONENTS.GIT_DIFF]: GIT_DIFF_PANEL,
-	[WORKBENCH_COMPONENTS.ENGINE_SETTINGS]: createEngineSettingsPanel([
-		{
-			name: "Overview",
-			component: "overview",
-			restrict: ["READ_ONLY", "EDIT", "OWNER", "DISCOVERABLE"],
-		},
-		{
-			name: "Usage",
-			component: "usage",
-			restrict: ["READ_ONLY", "EDIT", "OWNER"],
-		},
-		{
-			name: "MCP",
-			component: "mcp-usage",
-			restrict: ["READ_ONLY", "EDIT", "OWNER"],
-		},
-		{
-			name: "Activity Log",
-			component: "activity",
-			restrict: ["READ_ONLY", "EDIT", "OWNER"],
-		},
-		{
-			name: "Access Control",
-			component: "access-control",
-			restrict: ["EDIT", "OWNER"],
-		},
-		{
-			name: "SMSS",
-			component: "smss",
-			restrict: ["OWNER"],
-		},
-	]),
+	[WORKBENCH_COMPONENTS.ENGINE_SETTINGS]:
+		createEngineSettingsPanel(ENGINE_SETTINGS_TABS),
 };
 
 /**
@@ -177,125 +154,41 @@ export const ModelWorkbench: React.FC = () => {
 	}, [chatStore, engine.engine_id, insight.isReady, insight.insightId]);
 
 	useWorkbenchCommands([
-		{
-			id: "workbench.server.reconnect",
-			label: "Reconnect Server",
-			handler: () => {
-				void insight.actions
-					.run("ReconnectServer();")
-					.catch(console.error);
-			},
-		},
-		{
-			id: "workbench.file.create",
-			category: "File",
-			label: "Create File",
-			visible: !readOnly,
-			handler: (get) =>
-				(
-					get().layout.values[WORKBENCH_COMPONENTS.FILE_EXPLORER] as
-						| FileExplorerApi
-						| undefined
-				)?.commands.openNewFile(undefined, "add_file"),
-		},
-		{
-			id: "workbench.file.create-folder",
-			category: "File",
-			label: "Create Folder",
-			visible: !readOnly,
-			handler: (get) =>
-				(
-					get().layout.values[WORKBENCH_COMPONENTS.FILE_EXPLORER] as
-						| FileExplorerApi
-						| undefined
-				)?.commands.openNewFile(undefined, "add_directory"),
-		},
-		{
-			id: "workbench.file.upload",
-			category: "File",
-			label: "Upload Files",
-			visible: !readOnly,
-			handler: (get) =>
-				(
-					get().layout.values[WORKBENCH_COMPONENTS.FILE_EXPLORER] as
-						| FileExplorerApi
-						| undefined
-				)?.commands.openNewFile(undefined, "upload"),
-		},
-		{
-			id: "workbench.file.refresh",
-			category: "File",
-			label: "Refresh Files",
-			handler: (get) =>
-				(
-					get().layout.values[WORKBENCH_COMPONENTS.FILE_EXPLORER] as
-						| FileExplorerApi
-						| undefined
-				)?.commands.refresh(),
-		},
-		{
+		createReconnectCommand(insight),
+		...createFileCommands({ readOnly: readOnly }),
+		createOpenPanelCommand({
 			id: "workbench.file-explorer.open",
-			category: "View",
 			label: "Open File Explorer",
-			handler: (get) => {
-				get().layout.actions.selectPanel(
-					WORKBENCH_COMPONENTS.FILE_EXPLORER,
-					{ mode: { type: "ENGINE", engine: engine.engine_id } },
-				);
-			},
-		},
-		{
+			type: WORKBENCH_COMPONENTS.FILE_EXPLORER,
+			config: { mode: { type: "ENGINE", engine: engine.engine_id } },
+		}),
+		createOpenPanelCommand({
 			id: "workbench.version-control.open",
-			category: "View",
 			label: "Open Version Control",
+			type: WORKBENCH_COMPONENTS.GIT_VERSION,
+			config: { type: "ENGINE", id: engine.engine_id },
 			visible: !readOnly,
-			handler: (get) => {
-				get().layout.actions.selectPanel(
-					WORKBENCH_COMPONENTS.GIT_VERSION,
-					{ type: "ENGINE", id: engine.engine_id },
-				);
-			},
-		},
-		{
+		}),
+		createOpenPanelCommand({
 			id: "workbench.settings.open",
-			category: "View",
 			label: "Open Settings",
-			handler: (get) => {
-				get().layout.actions.selectPanel(
-					WORKBENCH_COMPONENTS.ENGINE_SETTINGS,
-				);
-			},
-		},
-		{
+			type: WORKBENCH_COMPONENTS.ENGINE_SETTINGS,
+		}),
+		createOpenPanelCommand({
 			id: "workbench.model-chat.open",
-			category: "View",
 			label: "Open Model Chat",
-			handler: (get) => {
-				get().layout.actions.selectPanel(
-					WORKBENCH_COMPONENTS.MODEL_CHAT,
-				);
-			},
-		},
-		{
+			type: WORKBENCH_COMPONENTS.MODEL_CHAT,
+		}),
+		createOpenPanelCommand({
 			id: "workbench.model-chat-settings.open",
-			category: "View",
 			label: "Open Model Settings",
-			handler: (get) => {
-				get().layout.actions.selectPanel(
-					WORKBENCH_COMPONENTS.MODEL_CHAT_SETTINGS,
-				);
-			},
-		},
-		{
+			type: WORKBENCH_COMPONENTS.MODEL_CHAT_SETTINGS,
+		}),
+		createOpenPanelCommand({
 			id: "workbench.model-chat-history.open",
-			category: "View",
 			label: "Open Conversation History",
-			handler: (get) => {
-				get().layout.actions.selectPanel(
-					WORKBENCH_COMPONENTS.MODEL_CHAT_HISTORY,
-				);
-			},
-		},
+			type: WORKBENCH_COMPONENTS.MODEL_CHAT_HISTORY,
+		}),
 		{
 			id: "workbench.model-chat.new-conversation",
 			category: "View",
