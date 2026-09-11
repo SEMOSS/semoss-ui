@@ -67,15 +67,8 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 		// update the options
 		await room.updateRoomOptions(room.options);
 
-		try {
-			// ask the room
-			await room.askMessage(prompt, files);
-		} catch (e) {
-			if ((e as Error)?.name === "UploadError") {
-				toast.error(t("errors.fileInUse"));
-			}
-			throw e;
-		}
+		// ask the room — let errors propagate so room-input can restore files
+		await room.askMessage(prompt, files);
 
 		// re-sync room options from backend after message completes,
 		// preserving workspace MCPs that are only held in memory. Skipped when
