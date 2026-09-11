@@ -412,7 +412,9 @@ export interface Skill {
  * separate lookup. Reduced to IDs only at the EditWorkspace/AddWorkspace
  * pixel boundary.
  */
-export type SkillConfig = Pick<Skill, "id" | "name">;
+export type SkillConfig = Pick<Skill, "id" | "name"> & {
+	fromWorkspace?: boolean;
+};
 
 export interface ProjectDependency {
 	engine_type: Project["project_type"] | Engine["engine_type"];
