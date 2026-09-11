@@ -176,6 +176,8 @@ const EMPTY_PLAYGROUND: ThemeMap["playground"] = {
 		enableDarkMode: true,
 		hideToolsInIframe: false,
 		enableAutoGreeting: false,
+		showSystemSkills: true,
+		showSystemTools: true,
 	},
 };
 
@@ -281,6 +283,18 @@ const FEATURE_FLAGS: {
 		label: "Enable Auto Greeting",
 		description:
 			"Shows an opening message upon opening a new chat in Playground",
+	},
+	{
+		key: "showSystemSkills",
+		label: "Show System Skills",
+		description:
+			"Shows MCP-tagged projects with the SYSTEM tag in the toolbox skills list.",
+	},
+	{
+		key: "showSystemTools",
+		label: "Show System Tools",
+		description:
+			"Shows engines with the SYSTEM tag in the toolbox tools list.",
 	},
 ];
 

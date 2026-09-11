@@ -78,6 +78,12 @@ interface MCPSelectorProps {
 	enableKnowledgeMCP?: boolean;
 
 	/**
+	 * When false, hides items tagged SYSTEM from the TOOLBOX list (both engines
+	 * and projects). Defaults to true (show all).
+	 */
+	showSystemTools?: boolean;
+
+	/**
 	 * Optional callback to generate an external platform URL for each MCP.
 	 * When provided, MCPCards will show an external link icon.
 	 */
@@ -100,6 +106,7 @@ export const MCPSelector: React.FC<MCPSelectorProps> = ({
 	onRequestCreateKnowledge,
 	autoFocus = false,
 	enableKnowledgeMCP = true,
+	showSystemTools = true,
 	getPlatformUrl,
 	workspaceId,
 }) => {
@@ -109,6 +116,11 @@ export const MCPSelector: React.FC<MCPSelectorProps> = ({
 
 	const debouncedSearch = useDebouncedValue(search);
 	const applyEngineMCPFilter = type === "TOOLBOX" || enableKnowledgeMCP;
+
+	const hasSystemTag = (tag: string | string[] | undefined): boolean => {
+		if (!tag) return false;
+		return Array.isArray(tag) ? tag.includes("SYSTEM") : tag === "SYSTEM";
+	};
 
 	// track the selected one
 	const selected = values.reduce(
@@ -131,9 +143,17 @@ export const MCPSelector: React.FC<MCPSelectorProps> = ({
 		(limit, offset) =>
 			`META | MyEngines (metaKeys = ["tag", "description"], ${applyEngineMCPFilter ? `metaFilters=[{"tag":["MCP"]}], ` : ""}engineTypes=${type === "TOOLBOX" ? `["STORAGE", "DATABASE", "FUNCTION", "MODEL"]` : `["VECTOR"]`}, ${debouncedSearch ? `filterWord=${JSON.stringify(debouncedSearch)}, ` : ""}limit=[${limit}], offset=[${offset}])`,
 		(response) => (response.length < 25 ? -1 : Infinity),
-		(response) => response.map(engineProjectToMCP),
+		(response) =>
+			response
+				.filter(
+					(item) =>
+						type !== "TOOLBOX" ||
+						showSystemTools ||
+						!hasSystemTag(item.tag),
+				)
+				.map(engineProjectToMCP),
 		{ limit: 25 },
-		[debouncedSearch, applyEngineMCPFilter, type],
+		[debouncedSearch, applyEngineMCPFilter, type, showSystemTools],
 	);
 
 	/**
@@ -142,15 +162,21 @@ export const MCPSelector: React.FC<MCPSelectorProps> = ({
 	 * projects of type WORKSPACE are mutually exclusive, so we don't
 	 * need a separate workspace filter to keep agents out of here.
 	 */
-	const getProjects = useIteratorPixel<App[], MCP>(
+	const getProjects = useIteratorPixel<
+		(App & { tag?: string | string[] })[],
+		MCP
+	>(
 		(limit, offset) =>
 			type === "TOOLBOX"
 				? `META | MyProjects (metaKeys = ["tag", "description"], metaFilters=[{"tag":["MCP"]}], ${debouncedSearch ? `filterWord=${JSON.stringify(debouncedSearch)}, ` : ""}limit=[${limit}], offset=[${offset}])`
 				: "",
 		(response) => (response.length < 25 ? -1 : Infinity),
-		(response) => response.map(engineProjectToMCP),
+		(response) =>
+			response
+				.filter((item) => showSystemTools || !hasSystemTag(item.tag))
+				.map(engineProjectToMCP),
 		{ limit: 25 },
-		[debouncedSearch, type],
+		[debouncedSearch, type, showSystemTools],
 	);
 
 	/**
