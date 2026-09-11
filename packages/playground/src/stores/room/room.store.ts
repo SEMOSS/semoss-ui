@@ -1227,15 +1227,21 @@ export class RoomStore {
 				});
 			}
 		} catch (e) {
-			// remove the placeholder messages if the upload fails
+			// remove the placeholder messages and stop the room spinner
 			runInAction(() => {
 				uploadPlaceholder.isThinking = false;
 			});
 			parentMessage.removeChild(inputMessage);
+			this.setIsLoading(false);
 
-			// Re-throw UploadErrors as-is (e.g. the uploaded.length === 0 case above)
-			if ((e as Error)?.name === "UploadError") {
-				throw e;
+			// Network-level failures (ERR_FAILED / Failed to fetch) mean the
+			// browser couldn't complete the request — most likely the file is
+			// locked at the OS level. Convert to UploadError so callers show
+			// the "file in use" toast instead of a silent failure.
+			if (e instanceof TypeError) {
+				const uploadError = new Error("File is in use");
+				uploadError.name = "UploadError";
+				throw uploadError;
 			}
 
 			throw e;

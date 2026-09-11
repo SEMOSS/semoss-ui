@@ -1,6 +1,8 @@
 import { makeAutoObservable, runInAction } from "mobx";
+import { getI18n } from "@semoss/i18n";
 import { download, type Insight, runPixel } from "@semoss/sdk/react";
 import type { ThemeMap } from "@semoss/shared";
+import { toast } from "@semoss/ui/next";
 import type {
 	AbstractPixelMessage,
 	Engine,
@@ -376,10 +378,11 @@ export class ChatStore {
 					this._store.keys.roomCounter++;
 				});
 			} catch (e) {
-				// UploadError: the message was never sent but the room still
-				// exists — leave the optimistic entry so the user can retry.
-				// Any other error means the room has no data; drop it.
-				if ((e as Error)?.name !== "UploadError") {
+				if ((e as Error)?.name === "UploadError") {
+					// Leave the optimistic room so the user can retry with a new message.
+					toast.error(getI18n().t("room:errors.fileInUse"));
+				} else {
+					// Any other error means the room has no data; drop it.
 					this.removeOptimisticRoom(roomId);
 				}
 			}
