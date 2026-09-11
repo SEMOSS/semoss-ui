@@ -8,7 +8,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "js-yaml": "^4.1.0",
+    "js-yaml": "^4.3.2",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
   },
