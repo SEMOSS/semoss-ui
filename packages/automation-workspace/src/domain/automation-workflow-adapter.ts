@@ -26,6 +26,30 @@ export interface CanvasWorkflowDocument {
 export type AutomationNodeSources = Record<string, string>;
 
 const MANUAL_TRIGGER: TriggerBinding = { id: "manual", type: "manual" };
+const PYTHON_IDENTIFIER_PATTERN = /^[A-Za-z_][A-Za-z0-9_]*$/;
+const PYTHON_KEYWORDS = new Set(
+	"False None True and as assert async await break class continue def del elif else except finally for from global if import in is lambda nonlocal not or pass raise return try while with yield".split(
+		" ",
+	),
+);
+const RESERVED_OUTPUT_VARIABLES = new Set([
+	"date",
+	"triggered_at",
+	"run_id",
+	"_automation_room_id",
+]);
+
+/** Returns the user-facing validation error for a node output variable. */
+export function validateAutomationOutputVariable(value: string): string | null {
+	if (!PYTHON_IDENTIFIER_PATTERN.test(value) || PYTHON_KEYWORDS.has(value)) {
+		return "Use a valid Python variable name";
+	}
+	if (RESERVED_OUTPUT_VARIABLES.has(value)) {
+		return "This name is reserved by the automation runtime";
+	}
+	return null;
+}
+
 function stringValue(value: unknown): string {
 	return typeof value === "string" ? value : "";
 }
@@ -633,7 +657,10 @@ export function canvasDocumentToWorkflow({
 	};
 }
 
-export function validateCanvasWorkflowNode(node: AutomationNode): string[] {
+export function validateCanvasWorkflowNode(
+	node: AutomationNode,
+	allNodes: AutomationNode[] = [node],
+): string[] {
 	const type = node.workflowType ?? canvasTypeToWorkflow(node.type);
 	const definition = getWorkflowNodeDefinition(type);
 	if (!definition) return ["This node type is not supported"];
@@ -663,6 +690,22 @@ export function validateCanvasWorkflowNode(node: AutomationNode): string[] {
 			return [];
 		},
 	);
+	if (type !== "trigger.start" && type !== "control.if") {
+		const outputVariableError = validateAutomationOutputVariable(
+			node.outputVar,
+		);
+		if (outputVariableError) {
+			errors.push(outputVariableError);
+		} else if (
+			allNodes.some(
+				(candidate) =>
+					candidate.id !== node.id &&
+					candidate.outputVar === node.outputVar,
+			)
+		) {
+			errors.push("Output variable must be unique");
+		}
+	}
 	if (type === "function.execute" && typeof config.arguments === "string") {
 		try {
 			JSON.parse(config.arguments);

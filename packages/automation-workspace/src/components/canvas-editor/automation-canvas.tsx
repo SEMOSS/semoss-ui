@@ -143,6 +143,54 @@ function isStepHighlighted(
 	return highlight.all || highlight.stepIds.has(stepId);
 }
 
+function replaceOutputVariableReferences<T>(
+	value: T,
+	previousName: string,
+	nextName: string,
+): T {
+	if (typeof value === "string") {
+		return value.replaceAll(`\${${previousName}}`, `\${${nextName}}`) as T;
+	}
+	if (Array.isArray(value)) {
+		return value.map((item) =>
+			replaceOutputVariableReferences(item, previousName, nextName),
+		) as T;
+	}
+	if (value && typeof value === "object") {
+		return Object.fromEntries(
+			Object.entries(value as Record<string, unknown>).map(
+				([key, item]) => [
+					key,
+					key === "pythonSource"
+						? item
+						: replaceOutputVariableReferences(
+								item,
+								previousName,
+								nextName,
+							),
+				],
+			),
+		) as T;
+	}
+	return value;
+}
+
+function customSourceReferencesOutput(
+	step: AutomationNode,
+	outputVariable: string,
+): boolean {
+	if (step.workflowCodeMode !== "custom") return false;
+	const source = step.workflowConfig?.pythonSource;
+	if (typeof source !== "string") return false;
+	return (
+		source.includes(`\${${outputVariable}}`) ||
+		source.includes(`scope["${outputVariable}"]`) ||
+		source.includes(`scope['${outputVariable}']`) ||
+		source.includes(`scope.get("${outputVariable}"`) ||
+		source.includes(`scope.get('${outputVariable}'`)
+	);
+}
+
 interface DeletableEdgeData extends Record<string, unknown> {
 	onDelete: (edgeId: string) => void;
 	readOnly?: boolean;
@@ -1126,7 +1174,7 @@ export const AutomationCanvas = forwardRef<
 		() =>
 			steps.flatMap((step) => {
 				if (step.workflowType === "trigger.start") return [];
-				const issues = validateCanvasWorkflowNode(step);
+				const issues = validateCanvasWorkflowNode(step, steps);
 				return issues.length > 0 ? [{ step, issues }] : [];
 			}),
 		[steps],
@@ -1250,6 +1298,35 @@ export const AutomationCanvas = forwardRef<
 	const updateStep = useCallback(
 		(updated: AutomationNode) => {
 			const currentStep = steps.find((step) => step.id === updated.id);
+			const previousOutputVariable = currentStep?.outputVar ?? "";
+			const outputVariableChanged =
+				previousOutputVariable !== updated.outputVar;
+			if (outputVariableChanged) {
+				if (
+					steps.some(
+						(step) =>
+							step.id !== updated.id &&
+							step.outputVar === updated.outputVar,
+					)
+				) {
+					toast.error("Output variables must be unique.");
+					return;
+				}
+				const customReference = steps.find(
+					(step) =>
+						step.id !== updated.id &&
+						customSourceReferencesOutput(
+							step,
+							previousOutputVariable,
+						),
+				);
+				if (customReference) {
+					toast.error(
+						`Update the custom Python in “${customReference.label}” before renaming this output variable.`,
+					);
+					return;
+				}
+			}
 			const currentClauses =
 				currentStep?.type === "branch"
 					? (
@@ -1279,13 +1356,30 @@ export const AutomationCanvas = forwardRef<
 			setSteps((previous) =>
 				previous.map((step) => {
 					if (step.id === updated.id) return updated;
-					if (!repositionedElsePathIds.has(step.id)) return step;
+					const renamedStep = outputVariableChanged
+						? {
+								...step,
+								config: replaceOutputVariableReferences(
+									step.config,
+									previousOutputVariable,
+									updated.outputVar,
+								),
+								workflowConfig: replaceOutputVariableReferences(
+									step.workflowConfig,
+									previousOutputVariable,
+									updated.outputVar,
+								),
+							}
+						: step;
+					if (!repositionedElsePathIds.has(step.id)) {
+						return renamedStep;
+					}
 					return {
-						...step,
+						...renamedStep,
 						position: {
-							...step.position,
+							...renamedStep.position,
 							y:
-								step.position.y +
+								renamedStep.position.y +
 								routeCountChange *
 									(DEFAULT_NODE_HEIGHT + NODE_LANE_GAP),
 						},
@@ -1310,7 +1404,7 @@ export const AutomationCanvas = forwardRef<
 					),
 				);
 			}
-			if (validateCanvasWorkflowNode(updated).length === 0) {
+			if (validateCanvasWorkflowNode(updated, steps).length === 0) {
 				setStepErrors((previous) => {
 					const next = { ...previous };
 					delete next[updated.id];
@@ -1551,7 +1645,7 @@ export const AutomationCanvas = forwardRef<
 		const invalidSteps = steps.filter(
 			(step) =>
 				step.workflowType !== "trigger.start" &&
-				validateCanvasWorkflowNode(step).length > 0,
+				validateCanvasWorkflowNode(step, steps).length > 0,
 		);
 		if (invalidSteps.length > 0) {
 			setEditingStepId(invalidSteps[0].id);
@@ -1875,7 +1969,7 @@ export const AutomationCanvas = forwardRef<
 		const invalidSteps = steps.filter(
 			(step) =>
 				step.workflowType !== "trigger.start" &&
-				validateCanvasWorkflowNode(step).length > 0,
+				validateCanvasWorkflowNode(step, steps).length > 0,
 		);
 		if (invalidSteps.length > 0) {
 			toast.error(
@@ -2231,8 +2325,8 @@ export const AutomationCanvas = forwardRef<
 						runError: displayErrors[step.id],
 						runDuration: displayDurations[step.id],
 						isIncomplete:
-							validateCanvasWorkflowNode(step).length > 0 &&
-							!displayStatuses[step.id],
+							validateCanvasWorkflowNode(step, steps).length >
+								0 && !displayStatuses[step.id],
 						locked: running || readOnly || viewingHistory,
 						highlighted: isStepHighlighted(
 							changeHighlight,
@@ -2285,8 +2379,8 @@ export const AutomationCanvas = forwardRef<
 						runOutput: stepOutputPreviews[step.id] ?? null,
 						runTrace,
 						isIncomplete:
-							validateCanvasWorkflowNode(step).length > 0 &&
-							!displayStatuses[step.id],
+							validateCanvasWorkflowNode(step, steps).length >
+								0 && !displayStatuses[step.id],
 						locked: running || readOnly || viewingHistory,
 						highlighted: isStepHighlighted(
 							changeHighlight,

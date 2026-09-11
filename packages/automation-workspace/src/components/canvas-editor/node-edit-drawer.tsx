@@ -20,6 +20,7 @@ import { getDisplayMeta } from "../../domain/automation-display";
 import {
 	getGeneratedPythonPreview,
 	getWorkflowNodeDefinition,
+	validateAutomationOutputVariable,
 } from "../../domain/automation-workflow-adapter";
 import { TraceDetail } from "../form-editor/node-result-list";
 import { OutputPreview } from "../form-editor/output-preview";
@@ -88,6 +89,11 @@ export function NodeEditDrawer({
 	const isCustomSource = step.workflowCodeMode === "custom";
 	const isDeveloperPython = step.workflowType === "developer.python";
 	const isDecisionBranch = step.workflowType === "control.if";
+	const hasOutputVariable =
+		step.workflowType !== "trigger.start" && !isDecisionBranch;
+	const outputVariableError = hasOutputVariable
+		? validateAutomationOutputVariable(step.outputVar)
+		: null;
 	const showPythonEditor =
 		isDeveloperPython ||
 		(!isDecisionBranch && devMode && editorMode === "python");
@@ -279,6 +285,34 @@ export function NodeEditDrawer({
 							readOnly={readOnly}
 						/>
 					</Field>
+
+					{hasOutputVariable && (
+						<Field>
+							<FieldLabel className="text-xs">
+								Output variable
+							</FieldLabel>
+							<Input
+								className="h-9 font-mono text-sm"
+								value={step.outputVar}
+								onChange={(event) => {
+									if (readOnly) return;
+									onUpdate({
+										...step,
+										outputVar: event.target.value,
+									});
+								}}
+								placeholder="step_output"
+								readOnly={readOnly}
+								aria-invalid={Boolean(outputVariableError)}
+							/>
+							<p
+								className={`text-[11px] ${outputVariableError ? "text-destructive" : "text-muted-foreground"}`}
+							>
+								{outputVariableError ??
+									`Later steps can use \${${step.outputVar}}.`}
+							</p>
+						</Field>
+					)}
 
 					<div className="space-y-3 border-t pt-4">
 						<div className="flex items-center justify-between gap-3">
