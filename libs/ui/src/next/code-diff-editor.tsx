@@ -1,6 +1,7 @@
 import * as React from "react";
 import { type DiffOnMount, LazyMonacoDiffEditor, type monaco } from "../lib/";
 import type { CodeEditorMenuItem } from "./code-editor";
+import { useCodeEditorWordWrap } from "./code-editor-word-wrap";
 import {
 	ContextMenu,
 	ContextMenuContent,
@@ -83,13 +84,17 @@ export const CodeDiffEditor = React.forwardRef<
 	) => {
 		const { resolvedTheme } = useTheme();
 		const theme = resolvedTheme === "dark" ? "vs-dark" : "light";
+		const wordWrap = useCodeEditorWordWrap();
 		const modifiedEditorRef =
 			React.useRef<monaco.editor.IStandaloneCodeEditor | null>(null);
 		const menuItemsRef = React.useRef(menuItems);
 		menuItemsRef.current = menuItems;
 
-		const editorOptions = {
+		const editorOptions: monaco.editor.IDiffEditorConstructionOptions = {
 			...DEFAULT_CODE_DIFF_EDITOR_OPTIONS,
+			// the shared preference is a default: a caller that pins
+			// `wordWrap` itself keeps its own value
+			wordWrap: wordWrap ? "on" : "off",
 			...(options ?? {}),
 			readOnly: disabled || options?.readOnly === true,
 		};
