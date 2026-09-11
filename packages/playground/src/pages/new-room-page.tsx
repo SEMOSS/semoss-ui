@@ -35,6 +35,7 @@ import {
 	RoomInputMenuFileExplorer,
 	RoomInputMenuMCP,
 	RoomInputMenuNewFileExplorer,
+	RoomInputMenuSkill,
 	RoomInputMenuUpload,
 	RoomSidebar,
 } from "@/components";
@@ -387,12 +388,21 @@ export const NewRoomPage = observer(() => {
 					)
 				: [],
 		);
+		const workspaceSkills = (getWorkspace.data.skills || []).map((s) => ({
+			...s,
+			fromWorkspace: true,
+		}));
+		const nonWorkspaceSkills = (tempRoomStore.options.skills ?? []).filter(
+			(s) => !s.fromWorkspace,
+		);
+
 		tempRoomStore.setOptions({
 			...tempRoomStore.options,
 			instructions:
 				getWorkspace.data?.system_prompt ||
 				tempRoomStore.options.instructions,
 			mcp: Array.from(mcpMap.values()),
+			skills: [...workspaceSkills, ...nonWorkspaceSkills],
 			workspace: {
 				workspace_id: getWorkspace.data.workspace_id,
 				name: getWorkspace.data.name,
@@ -478,13 +488,14 @@ export const NewRoomPage = observer(() => {
 		});
 	}, [getPrompts.status, getPrompts.data, tempRoomStore]);
 
-	// Clear instructions and workspace MCPs when no workspace is selected
+	// Clear instructions, workspace MCPs, and workspace skills when no workspace is selected
 	useEffect(() => {
 		if (!selectedWorkspaceId) {
 			tempRoomStore.setOptions({
 				...tempRoomStore.options,
 				instructions: "",
-				mcp: [...(root.theme.defaultTools || [])], // Remove workspace MCPs
+				mcp: [...(root.theme.defaultTools || [])],
+				skills: [],
 			});
 		}
 	}, [selectedWorkspaceId, root.theme.defaultTools, tempRoomStore]);
@@ -572,6 +583,12 @@ export const NewRoomPage = observer(() => {
 										tempRoomStore.setOptions({
 											...tempRoomStore.options,
 											mcp,
+										})
+									}
+									onSkillsChange={(skills) =>
+										tempRoomStore.setOptions({
+											...tempRoomStore.options,
+											skills,
 										})
 									}
 									onWorkspaceChange={(next) => {
@@ -716,6 +733,18 @@ export const NewRoomPage = observer(() => {
 													onSelect={() => {
 														onOpenMcpOverlay(
 															"TOOLBOX",
+														);
+														onOpenChange(false);
+													}}
+												/>
+												<RoomInputMenuSkill
+													skills={
+														tempRoomStore.options
+															.skills ?? []
+													}
+													onSelect={() => {
+														onOpenMcpOverlay(
+															"SKILL",
 														);
 														onOpenChange(false);
 													}}

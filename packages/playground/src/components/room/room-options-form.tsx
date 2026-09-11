@@ -1,9 +1,9 @@
-import { Bot, HammerIcon, PlusIcon, TrashIcon } from "lucide-react";
+import { BlocksIcon, Bot, HammerIcon, PlusIcon, TrashIcon } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import type { MouseEvent } from "react";
 import { useState } from "react";
 import { useTranslation } from "@semoss/i18n";
-import { EngineSelect, type MCPConfig } from "@semoss/shared";
+import { EngineSelect, type MCPConfig, type SkillConfig } from "@semoss/shared";
 import {
 	Badge,
 	Button,
@@ -60,7 +60,7 @@ export const RoomOptionsForm: React.FC<RoomOptionsFormProps> = observer(
 		 * State
 		 */
 		const [mCPOverlay, setMCPOverlay] = useState<{
-			type: "AGENT" | "KNOWLEDGE" | "TOOLBOX";
+			type: "AGENT" | "KNOWLEDGE" | "TOOLBOX" | "SKILL";
 			isOpen: boolean;
 		}>({
 			type: "KNOWLEDGE",
@@ -454,10 +454,118 @@ export const RoomOptionsForm: React.FC<RoomOptionsFormProps> = observer(
 									)}
 								</div>
 							</Field>
+							<Field>
+								<FieldLabel
+									onClick={(
+										event: MouseEvent<HTMLLabelElement>,
+									) => {
+										event.preventDefault();
+										event.stopPropagation();
+										setMCPOverlay({
+											type: "SKILL",
+											isOpen: true,
+										});
+									}}
+								>
+									<div className="flex-1">
+										{t("room:form.skillsLabel")}
+									</div>
+									<Tooltip>
+										<TooltipTrigger asChild>
+											<Button
+												variant="outline"
+												size="sm"
+												onClick={(event) => {
+													event.preventDefault();
+													event.stopPropagation();
+													setMCPOverlay({
+														type: "SKILL",
+														isOpen: true,
+													});
+												}}
+											>
+												<PlusIcon />
+											</Button>
+										</TooltipTrigger>
+										<TooltipContent>
+											{t("room:menuSkill.addSkill")}
+										</TooltipContent>
+									</Tooltip>
+								</FieldLabel>
+								<div className="space-y-2">
+									{(options.skills ?? []).length ? (
+										(options.skills ?? []).map(
+											(s: SkillConfig) => (
+												<div
+													key={s.id}
+													className={`group flex h-10 items-center justify-between gap-2 rounded-md border border-border bg-card px-3 py-2 text-card-foreground ${s.fromWorkspace ? "" : "hover:bg-muted/50"}`}
+												>
+													<BlocksIcon className="size-4" />
+													<span className="flex-1 truncate text-sm">
+														{s.name}
+													</span>
+													{s.fromWorkspace ? (
+														<Badge
+															variant="outline"
+															className="me-2 border border-primary text-primary text-xs"
+														>
+															{t(
+																"common:badges.fromAgent",
+															)}
+														</Badge>
+													) : (
+														<Button
+															variant="ghost"
+															size="icon-sm"
+															className="invisible group-hover:visible"
+															onClick={() =>
+																onOptionsChange(
+																	{
+																		skills: (
+																			options.skills ??
+																			[]
+																		).filter(
+																			(
+																				x: SkillConfig,
+																			) =>
+																				x.id !==
+																				s.id,
+																		),
+																	},
+																)
+															}
+														>
+															<TrashIcon className="text-destructive" />
+														</Button>
+													)}
+												</div>
+											),
+										)
+									) : (
+										<button
+											type="button"
+											className="w-full cursor-pointer rounded-md border border-border bg-card py-4 text-center text-card-foreground"
+											onClick={() =>
+												setMCPOverlay({
+													type: "SKILL",
+													isOpen: true,
+												})
+											}
+										>
+											<span className="text-muted-foreground text-xs">
+												{t(
+													"room:menuSkill.noSkillsFound",
+												)}
+											</span>
+										</button>
+									)}
+								</div>
+							</Field>
 							<MCPOverlay
 								open={mCPOverlay.isOpen}
 								defaultTab={mCPOverlay.type}
 								values={options?.mcp ?? []}
+								skills={options?.skills ?? []}
 								workspace={options?.workspace ?? null}
 								agentEditable={agentEditable}
 								onClose={(next) => {
@@ -465,6 +573,9 @@ export const RoomOptionsForm: React.FC<RoomOptionsFormProps> = observer(
 										const updates: Partial<
 											RoomStore["options"]
 										> = { mcp: next.mcp };
+										if (next.skills) {
+											updates.skills = next.skills;
+										}
 										if (
 											agentEditable &&
 											"workspace" in next

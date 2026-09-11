@@ -1,9 +1,20 @@
-import { BookOpenIcon, Bot, CheckIcon, HammerIcon } from "lucide-react";
+import {
+	BlocksIcon,
+	BookOpenIcon,
+	Bot,
+	CheckIcon,
+	HammerIcon,
+} from "lucide-react";
 import type React from "react";
 import { useEffect, useId, useRef, useState } from "react";
 import { useTranslation } from "@semoss/i18n";
 import { usePixel } from "@semoss/sdk/react";
-import { type MCPConfig, MCPSelector } from "@semoss/shared";
+import {
+	type MCPConfig,
+	MCPSelector,
+	type SkillConfig,
+	SkillSelector,
+} from "@semoss/shared";
 import {
 	Badge,
 	Button,
@@ -25,12 +36,13 @@ import { mcpToPlatformUrl, splitMcpByType } from "@/utility/mcp-utils";
 import { NewKnowledgeFormBody } from "../knowledge/new-knowledge-form-body";
 import { AgentSelector } from "./agent-selector";
 
-type Tab = "AGENT" | "TOOLBOX" | "KNOWLEDGE";
+type Tab = "AGENT" | "TOOLBOX" | "KNOWLEDGE" | "SKILL";
 type WorkspaceRef = Pick<Workspace, "workspace_id"> &
 	Partial<Pick<Workspace, "name">>;
 
 interface MCPOverlaySave {
 	mcp: MCPConfig[];
+	skills?: SkillConfig[];
 	/** Only present when the overlay was opened with an `workspace` prop. */
 	workspace?: WorkspaceRef | null;
 }
@@ -44,6 +56,9 @@ interface MCPOverlayProps {
 
 	/** Full MCP list (any types). The overlay splits these into the two tabs. */
 	values: MCPConfig[];
+
+	/** Skills attached to the room. */
+	skills?: SkillConfig[];
 
 	/**
 	 * Currently-selected agent (workspace), if any. When `agentEditable` is
@@ -70,6 +85,7 @@ export const MCPOverlay: React.FC<MCPOverlayProps> = ({
 	open,
 	defaultTab,
 	values,
+	skills = [],
 	workspace,
 	agentEditable = false,
 	onClose,
@@ -82,6 +98,9 @@ export const MCPOverlay: React.FC<MCPOverlayProps> = ({
 	);
 	const [toolbox, setToolbox] = useState<MCPConfig[]>(
 		() => splitMcpByType(values).toolbox,
+	);
+	const [skillsDraft, setSkillsDraft] = useState<SkillConfig[]>(() =>
+		skills.filter((s) => !s.fromWorkspace),
 	);
 	const [workspaceDraft, setWorkspaceDraft] = useState<WorkspaceRef | null>(
 		workspace ?? null,
@@ -111,6 +130,7 @@ export const MCPOverlay: React.FC<MCPOverlayProps> = ({
 			const next = splitMcpByType(values);
 			setKnowledge(next.knowledge);
 			setToolbox(next.toolbox);
+			setSkillsDraft(skills.filter((s) => !s.fromWorkspace));
 			setWorkspaceDraft(workspace ?? null);
 			setActiveTab(defaultTab);
 			setView("list");
@@ -257,7 +277,7 @@ export const MCPOverlay: React.FC<MCPOverlayProps> = ({
 							className="flex min-h-0 flex-1 flex-col gap-3"
 						>
 							<TabsList
-								className={`grid h-10 w-full ${agentEditable ? "grid-cols-3" : "grid-cols-2"} p-1`}
+								className={`grid h-10 w-full ${agentEditable ? "grid-cols-4" : "grid-cols-3"} p-1`}
 							>
 								{agentEditable && (
 									<TabsTrigger
@@ -291,6 +311,16 @@ export const MCPOverlay: React.FC<MCPOverlayProps> = ({
 									{t("overlay.tabToolbox")}
 									<Badge variant="outline" className="ms-1">
 										{toolbox.length}
+									</Badge>
+								</TabsTrigger>
+								<TabsTrigger
+									value="SKILL"
+									className="h-full gap-2"
+								>
+									<BlocksIcon className="size-4" />
+									{t("overlay.tabSkill")}
+									<Badge variant="outline" className="ms-1">
+										{skillsDraft.length}
 									</Badge>
 								</TabsTrigger>
 							</TabsList>
@@ -357,6 +387,18 @@ export const MCPOverlay: React.FC<MCPOverlayProps> = ({
 									/>
 								)}
 							</TabsContent>
+							<TabsContent
+								value="SKILL"
+								className="flex min-h-0 flex-1 flex-col"
+							>
+								{activeTab === "SKILL" && (
+									<SkillSelector
+										values={skillsDraft}
+										onChange={setSkillsDraft}
+										className="h-full"
+									/>
+								)}
+							</TabsContent>
 						</Tabs>
 
 						<DialogFooter>
@@ -368,6 +410,12 @@ export const MCPOverlay: React.FC<MCPOverlayProps> = ({
 								onClick={() =>
 									onClose({
 										mcp: [...knowledge, ...toolbox],
+										skills: [
+											...skills.filter(
+												(s) => s.fromWorkspace,
+											),
+											...skillsDraft,
+										],
 										workspace: workspaceDraft,
 									})
 								}

@@ -27,6 +27,7 @@ import {
 	RoomInput,
 	RoomInputMenuFileExplorer,
 	RoomInputMenuMCP,
+	RoomInputMenuSkill,
 	RoomInputMenuUpload,
 	type SendButtonState,
 } from "@/components";
@@ -576,6 +577,12 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 							mcp,
 						})
 					}
+					onSkillsChange={(skills) =>
+						room.setOptions({
+							...room.options,
+							skills,
+						})
+					}
 					MenuComponent={observer(
 						({ onOpenChange, onOpenMcpOverlay }) => (
 							<>
@@ -596,6 +603,13 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 									options={room.options}
 									onSelect={() => {
 										onOpenMcpOverlay("TOOLBOX");
+										onOpenChange(false);
+									}}
+								/>
+								<RoomInputMenuSkill
+									skills={room.options.skills ?? []}
+									onSelect={() => {
+										onOpenMcpOverlay("SKILL");
 										onOpenChange(false);
 									}}
 								/>

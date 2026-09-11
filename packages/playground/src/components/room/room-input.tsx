@@ -14,6 +14,7 @@ import {
 	type LexicalEditor,
 } from "lexical";
 import {
+	BlocksIcon,
 	BookOpenIcon,
 	Bot,
 	HammerIcon,
@@ -62,7 +63,7 @@ import { useFileDrag } from "@/contexts";
 import { useGracefulErrors, useRoot } from "@/hooks";
 import type { RoomStore } from "@/stores";
 import { AGENT_HARNESS_TYPE } from "@/stores/message/agent-harness";
-import type { Engine, MCPConfig, Workspace } from "@/types";
+import type { Engine, MCPConfig, SkillConfig, Workspace } from "@/types";
 import { isKnowledgeMcp } from "@/utility/mcp-utils";
 import { PromptOptimizer } from "../../components/prompt/PromptOptimizer";
 import { RoomContextUsageIndicator } from "./room-context-usage-indicator";
@@ -130,7 +131,7 @@ interface RoomInputProps {
 		onOpenChange: (isOpen: boolean) => void;
 		/** Open the MCP overlay on the given tab */
 		onOpenMcpOverlay: (
-			defaultTab: "AGENT" | "TOOLBOX" | "KNOWLEDGE",
+			defaultTab: "AGENT" | "TOOLBOX" | "KNOWLEDGE" | "SKILL",
 		) => void;
 	}>;
 
@@ -139,6 +140,9 @@ interface RoomInputProps {
 	 * Save button). Receives the next merged `mcp` array.
 	 */
 	onMcpChange?: (mcp: MCPConfig[]) => void;
+
+	/** Callback when the skills list changes via the overlay Save button. */
+	onSkillsChange?: (skills: SkillConfig[]) => void;
 
 	/**
 	 * When provided, the MCP overlay grows an Agent tab and this callback
@@ -222,6 +226,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 		options,
 		onPrompt = () => null,
 		onMcpChange,
+		onSkillsChange,
 		onWorkspaceChange,
 		hasOutstandingTools = false,
 		sendState = "send",
@@ -252,11 +257,11 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 		// MCP overlay state — managed here so the overlay renders outside the DropdownMenu's React subtree
 		const [mcpOverlay, setMcpOverlay] = useState<{
 			open: boolean;
-			defaultTab: "AGENT" | "TOOLBOX" | "KNOWLEDGE";
+			defaultTab: "AGENT" | "TOOLBOX" | "KNOWLEDGE" | "SKILL";
 		}>({ open: false, defaultTab: "KNOWLEDGE" });
 
 		const handleOpenMcpOverlay = useCallback(
-			(defaultTab: "AGENT" | "TOOLBOX" | "KNOWLEDGE") =>
+			(defaultTab: "AGENT" | "TOOLBOX" | "KNOWLEDGE" | "SKILL") =>
 				setMcpOverlay({ open: true, defaultTab }),
 			[],
 		);
@@ -287,6 +292,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 			[options.mcp],
 		);
 		const toolboxCount = options.mcp.length - knowledgeCount;
+		const skillsCount = (options.skills ?? []).length;
 		// Agent chip indicates a current selection. The Agent tab inside the
 		// modal is always visible; editability is gated on `onWorkspaceChange`.
 		const agentChipWorkspace = options.workspace ?? null;
@@ -325,6 +331,12 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 				icon: BookOpenIcon,
 				label: String(knowledgeCount),
 				onClick: () => handleOpenMcpOverlay("KNOWLEDGE"),
+			},
+			skillsCount > 0 && {
+				key: "skills",
+				icon: BlocksIcon,
+				label: String(skillsCount),
+				onClick: () => handleOpenMcpOverlay("SKILL"),
 			},
 		];
 		const chipSections = rawChipSections.filter(
@@ -1155,18 +1167,20 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 						/>
 					</LexicalComposer>
 				</SlashCommandProvider>
-				{onMcpChange && (
+				{(onMcpChange || onSkillsChange) && (
 					<MCPOverlay
 						open={mcpOverlay.open}
 						defaultTab={mcpOverlay.defaultTab}
 						values={options.mcp}
+						skills={options.skills ?? []}
 						workspace={agentChipWorkspace}
 						agentEditable={!!onWorkspaceChange}
 						onClose={(next) => {
 							setMcpOverlay((prev) => ({ ...prev, open: false }));
 							editorRef.current?.focus();
 							if (!next) return;
-							onMcpChange(next.mcp);
+							onMcpChange?.(next.mcp);
+							if (next.skills) onSkillsChange?.(next.skills);
 							if (onWorkspaceChange && "workspace" in next) {
 								onWorkspaceChange(next.workspace ?? null);
 							}

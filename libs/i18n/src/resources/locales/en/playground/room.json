@@ -33,6 +33,7 @@
 		"agentLabel": "Agent",
 		"knowledgeLabel": "Knowledge",
 		"toolboxLabel": "Toolboxes",
+		"skillsLabel": "Skills",
 		"temperatureLabel": "Temperature"
 	},
 	"modes": {
@@ -126,5 +127,9 @@
 		"searchPlaceholder": "Search knowledge and toolboxes",
 		"noResults": "No matching items found",
 		"noItemsAvailable": "No knowledge or toolboxes available"
+	},
+	"menuSkill": {
+		"addSkill": "Add Skills",
+		"noSkillsFound": "No skills attached"
 	}
 }

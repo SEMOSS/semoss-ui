@@ -23,7 +23,8 @@
 		"description": "Pick a saved agent, or assemble your own knowledge and toolboxes.",
 		"tabAgent": "Agent",
 		"tabKnowledge": "Knowledge",
-		"tabToolbox": "Toolboxes"
+		"tabToolbox": "Toolboxes",
+		"tabSkill": "Skills"
 	},
 	"tools": {
 		"enterValues": "Enter comma-separated values",

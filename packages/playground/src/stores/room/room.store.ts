@@ -29,6 +29,7 @@ import type {
 	PixelMessageToolResultPart,
 	Prompt,
 	ResponsePixelMessage,
+	SkillConfig,
 	Workspace,
 } from "@/types";
 import {
@@ -111,6 +112,11 @@ interface RoomStoreInterface {
 		mcp: MCPConfig[];
 
 		/*
+		 * Skills attached to the room (includes workspace-inherited skills distinguished by fromWorkspace flag)
+		 */
+		skills?: SkillConfig[];
+
+		/*
 		 * Workspace associated with the room
 		 */
 		workspace?: {
@@ -187,6 +193,7 @@ export class RoomStore {
 			predefinedPrompts: [],
 			instructions: "",
 			mcp: [],
+			skills: [],
 			temperature: undefined,
 		},
 		sidebar: {
@@ -710,6 +717,25 @@ export class RoomStore {
 					) {
 						newOptions.instructions = workspaceOutput.system_prompt;
 					}
+				}
+
+				if (
+					workspaceOutput?.skills &&
+					Array.isArray(workspaceOutput.skills)
+				) {
+					const workspaceSkills = workspaceOutput.skills.map(
+						(s: SkillConfig) => ({
+							...s,
+							fromWorkspace: true,
+						}),
+					);
+					const roomSkills = (newOptions.skills ?? []).filter(
+						(s) =>
+							!workspaceSkills.some(
+								(ws: SkillConfig) => ws.id === s.id,
+							),
+					);
+					newOptions.skills = [...workspaceSkills, ...roomSkills];
 				}
 			}
 
