@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { getFileIconComponent } from "@semoss/shared";
 import { CodeEditor, Markdown } from "@semoss/ui/next";
 import type {
 	WorkbenchPanelConfig,
@@ -10,15 +9,20 @@ import {
 	getCodeEditorLanguage,
 	getFileCodeEditorMenuItems,
 } from "./file-editor.utility";
-import {
-	FileMarkdownEditorControl,
-	type FileMarkdownEditorControlValue,
-} from "./file-markdown-editor-control";
 import { matchesFilePanel } from "./file-panel.mode";
+import {
+	FileEditorControl,
+	type FileEditorControlValue,
+} from "./file-panel-control";
+import { FilePanelIcon } from "./file-panel-icon";
 import { useFileBuffer } from "./use-file-buffer";
 import { type FilePanelParams, useFilePanel } from "./use-file-panel";
 
-export type FileMarkdownEditorParams = FilePanelParams;
+/** The view switch this editor offers. Module scope — the control reads it. */
+const MARKDOWN_VIEW_MODES = [
+	{ value: "raw", label: "Raw" },
+	{ value: "preview", label: "Preview" },
+];
 
 /** Edit a Markdown file, with a rendered preview and a raw editor. */
 const FileMarkdownEditorPanel = ({
@@ -26,10 +30,7 @@ const FileMarkdownEditorPanel = ({
 	id,
 	rename,
 	setValue,
-}: WorkbenchPanelProps<
-	FileMarkdownEditorParams,
-	FileMarkdownEditorControlValue
->) => {
+}: WorkbenchPanelProps<FilePanelParams, FileEditorControlValue>) => {
 	const panel = useFilePanel(config);
 	const buffer = useFileBuffer({ panel, name: config.name, rename });
 	const [viewMode, setViewMode] = useState<"preview" | "raw">("preview");
@@ -40,8 +41,10 @@ const FileMarkdownEditorPanel = ({
 			isBusy: panel.isBusy,
 			refresh: panel.read.refresh,
 			save: buffer.save,
-			setViewMode,
-			viewMode,
+			viewModes: MARKDOWN_VIEW_MODES,
+			viewMode: viewMode,
+			// the union is known here, not in the shared control
+			setViewMode: (mode) => setViewMode(mode as "preview" | "raw"),
 		});
 	}, [
 		panel.readOnly,
@@ -51,7 +54,7 @@ const FileMarkdownEditorPanel = ({
 		setValue,
 		viewMode,
 	]);
-	useWorkbenchControl(id, FileMarkdownEditorControl);
+	useWorkbenchControl(id, FileEditorControl);
 
 	if (panel.gate) return panel.gate;
 	if (panel.readGate) return panel.readGate;
@@ -85,16 +88,13 @@ const FileMarkdownEditorPanel = ({
 
 /** Scope-aware Markdown editor blueprint shared by all workbenches. */
 export const FILE_MARKDOWN_EDITOR_PANEL: WorkbenchPanelConfig<
-	FileMarkdownEditorParams,
-	FileMarkdownEditorControlValue
+	FilePanelParams,
+	FileEditorControlValue
 > = {
 	name: "Markdown",
 	canRename: false,
 	mount: "keepAlive",
 	matches: matchesFilePanel,
-	icon: ({ config, className }) => {
-		const Icon = getFileIconComponent(config.path ?? "");
-		return <Icon className={className} />;
-	},
+	icon: FilePanelIcon,
 	content: FileMarkdownEditorPanel,
 };

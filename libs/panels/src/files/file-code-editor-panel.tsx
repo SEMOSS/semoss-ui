@@ -1,5 +1,4 @@
 import { useEffect } from "react";
-import { getFileIconComponent } from "@semoss/shared";
 import { CodeEditor } from "@semoss/ui/next";
 import type {
 	WorkbenchPanelConfig,
@@ -7,18 +6,17 @@ import type {
 } from "@semoss/workbench";
 import { useWorkbenchControl } from "@semoss/workbench";
 import {
-	FileCodeEditorControl,
-	type FileCodeEditorControlValue,
-} from "./file-code-editor-control";
-import {
 	getCodeEditorLanguage,
 	getFileCodeEditorMenuItems,
 } from "./file-editor.utility";
 import { matchesFilePanel } from "./file-panel.mode";
+import {
+	FileEditorControl,
+	type FileEditorControlValue,
+} from "./file-panel-control";
+import { FilePanelIcon } from "./file-panel-icon";
 import { useFileBuffer } from "./use-file-buffer";
 import { type FilePanelParams, useFilePanel } from "./use-file-panel";
-
-export type FileCodeEditorParams = FilePanelParams;
 
 /** Edit a file in a project, engine, or insight resource. */
 const FileCodeEditorPanel = ({
@@ -26,7 +24,7 @@ const FileCodeEditorPanel = ({
 	id,
 	rename,
 	setValue,
-}: WorkbenchPanelProps<FileCodeEditorParams, FileCodeEditorControlValue>) => {
+}: WorkbenchPanelProps<FilePanelParams, FileEditorControlValue>) => {
 	const panel = useFilePanel(config);
 	const buffer = useFileBuffer({
 		panel,
@@ -48,7 +46,7 @@ const FileCodeEditorPanel = ({
 		buffer.save,
 		setValue,
 	]);
-	useWorkbenchControl(id, FileCodeEditorControl);
+	useWorkbenchControl(id, FileEditorControl);
 
 	if (panel.gate) return panel.gate;
 	if (panel.readGate) return panel.readGate;
@@ -76,16 +74,13 @@ const FileCodeEditorPanel = ({
 
 /** Scope-aware code editor blueprint shared by all workbenches. */
 export const FILE_CODE_EDITOR_PANEL: WorkbenchPanelConfig<
-	FileCodeEditorParams,
-	FileCodeEditorControlValue
+	FilePanelParams,
+	FileEditorControlValue
 > = {
 	name: "Editor",
 	canRename: false,
 	mount: "keepAlive",
 	matches: matchesFilePanel,
-	icon: ({ config, className }) => {
-		const Icon = getFileIconComponent(config.path ?? "");
-		return <Icon className={className} />;
-	},
+	icon: FilePanelIcon,
 	content: FileCodeEditorPanel,
 };

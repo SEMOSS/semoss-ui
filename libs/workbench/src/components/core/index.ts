@@ -3,6 +3,7 @@ export * from "./workbench.constants";
 export * from "./workbench-access-error";
 export * from "./workbench-access-loading";
 export * from "./workbench-border";
+export * from "./workbench-chrome-button";
 export * from "./workbench-command-menu-button";
 export * from "./workbench-command-palette";
 export * from "./workbench-context-menu";

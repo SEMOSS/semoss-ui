@@ -1,6 +1,5 @@
 import { DownloadIcon, FileIcon } from "lucide-react";
 import { useEffect, useState } from "react";
-import { getFileIconComponent } from "@semoss/shared";
 import { Button, CodeEditor, Muted } from "@semoss/ui/next";
 import type {
 	WorkbenchPanelConfig,
@@ -17,6 +16,7 @@ import {
 	getFileCodeEditorMenuItems,
 } from "./file-editor.utility";
 import { matchesFilePanel } from "./file-panel.mode";
+import { FilePanelIcon } from "./file-panel-icon";
 import { type FilePanelParams, useFilePanel } from "./use-file-panel";
 
 export type FileDownloadParams = FilePanelParams;
@@ -89,9 +89,6 @@ export const FILE_DOWNLOAD_PANEL: WorkbenchPanelConfig<
 	canRename: false,
 	mount: "keepAlive",
 	matches: matchesFilePanel,
-	icon: ({ config, className }) => {
-		const Icon = getFileIconComponent(config.path ?? "");
-		return <Icon className={className} />;
-	},
+	icon: FilePanelIcon,
 	content: FileDownloadPanel,
 };

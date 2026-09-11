@@ -1,32 +1,31 @@
 import { useEffect } from "react";
-import { getFileIconComponent } from "@semoss/shared";
 import type {
 	WorkbenchPanelConfig,
 	WorkbenchPanelProps,
 } from "@semoss/workbench";
 import { useWorkbenchControl } from "@semoss/workbench";
 import { getImageMimeType } from "./file-editor.utility";
-import {
-	FileImageViewerControl,
-	type FileImageViewerControlValue,
-} from "./file-image-viewer-control";
 import { matchesFilePanel } from "./file-panel.mode";
-import { type FilePanelParams, useFilePanel } from "./use-file-panel";
-
-export type FileImageViewerParams = FilePanelParams;
+import { FileRefreshControl } from "./file-panel-control";
+import { FilePanelIcon } from "./file-panel-icon";
+import {
+	type FilePanelParams,
+	type FilePanelValue,
+	useFilePanel,
+} from "./use-file-panel";
 
 /** Preview an image file from a project, engine, or insight resource. */
 const FileImageViewerPanel = ({
 	config,
 	id,
 	setValue,
-}: WorkbenchPanelProps<FileImageViewerParams, FileImageViewerControlValue>) => {
+}: WorkbenchPanelProps<FilePanelParams, FilePanelValue>) => {
 	const panel = useFilePanel(config, { base64: true });
 
 	useEffect(() => {
 		setValue({ refresh: panel.read.refresh });
 	}, [panel.read.refresh, setValue]);
-	useWorkbenchControl(id, FileImageViewerControl);
+	useWorkbenchControl(id, FileRefreshControl);
 
 	if (panel.gate) return panel.gate;
 	if (panel.readGate) return panel.readGate;
@@ -47,16 +46,13 @@ const FileImageViewerPanel = ({
 
 /** Scope-aware image viewer blueprint shared by all workbenches. */
 export const FILE_IMAGE_VIEWER_PANEL: WorkbenchPanelConfig<
-	FileImageViewerParams,
-	FileImageViewerControlValue
+	FilePanelParams,
+	FilePanelValue
 > = {
 	name: "Image",
 	canRename: false,
 	mount: "keepAlive",
 	matches: matchesFilePanel,
-	icon: ({ config, className }) => {
-		const Icon = getFileIconComponent(config.path ?? "");
-		return <Icon className={className} />;
-	},
+	icon: FilePanelIcon,
 	content: FileImageViewerPanel,
 };

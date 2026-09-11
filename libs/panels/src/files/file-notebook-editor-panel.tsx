@@ -1,7 +1,6 @@
 import { PlayIcon, SquareIcon } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
-	getFileIconComponent,
 	Notebook,
 	type NotebookHandle,
 	type NotebookState,
@@ -22,15 +21,14 @@ import {
 	getCodeEditorLanguage,
 	getFileCodeEditorMenuItems,
 } from "./file-editor.utility";
-import {
-	FileNotebookEditorControl,
-	type FileNotebookEditorControlValue,
-} from "./file-notebook-editor-control";
 import { matchesFilePanel } from "./file-panel.mode";
+import {
+	FileEditorControl,
+	type FileEditorControlValue,
+} from "./file-panel-control";
+import { FilePanelIcon } from "./file-panel-icon";
 import { useFileBuffer } from "./use-file-buffer";
 import { type FilePanelParams, useFilePanel } from "./use-file-panel";
-
-export type FileNotebookEditorParams = FilePanelParams;
 
 const EMPTY_NOTEBOOK_STATE: NotebookState = {
 	isRunning: false,
@@ -39,16 +37,19 @@ const EMPTY_NOTEBOOK_STATE: NotebookState = {
 	hasOutputs: false,
 };
 
+/** The view switch this editor offers. Module scope — the control reads it. */
+const NOTEBOOK_VIEW_MODES = [
+	{ value: "notebook", label: "Notebook" },
+	{ value: "raw", label: "Raw" },
+];
+
 /** Edit and run a Jupyter notebook, with a raw JSON escape hatch. */
 const FileNotebookEditorPanel = ({
 	config,
 	id,
 	rename,
 	setValue,
-}: WorkbenchPanelProps<
-	FileNotebookEditorParams,
-	FileNotebookEditorControlValue
->) => {
+}: WorkbenchPanelProps<FilePanelParams, FileEditorControlValue>) => {
 	const notebookRef = useRef<NotebookHandle | null>(null);
 	const [reloadToken, setReloadToken] = useState(0);
 	const [viewMode, setViewMode] = useState<"notebook" | "raw">("notebook");
@@ -114,8 +115,11 @@ const FileNotebookEditorPanel = ({
 			isBusy: panel.isBusy,
 			refresh: panel.read.refresh,
 			save: buffer.save,
-			setViewMode: setNotebookViewMode,
-			viewMode,
+			viewModes: NOTEBOOK_VIEW_MODES,
+			viewMode: viewMode,
+			// the union is known here, not in the shared control
+			setViewMode: (mode) =>
+				setNotebookViewMode(mode as "notebook" | "raw"),
 		});
 	}, [
 		panel.readOnly,
@@ -126,7 +130,7 @@ const FileNotebookEditorPanel = ({
 		setNotebookViewMode,
 		viewMode,
 	]);
-	useWorkbenchControl(id, FileNotebookEditorControl);
+	useWorkbenchControl(id, FileEditorControl);
 
 	if (panel.gate) return panel.gate;
 	if (panel.readGate) return panel.readGate;
@@ -233,16 +237,13 @@ const FileNotebookEditorPanel = ({
 
 /** Scope-aware notebook editor blueprint shared by all workbenches. */
 export const FILE_NOTEBOOK_EDITOR_PANEL: WorkbenchPanelConfig<
-	FileNotebookEditorParams,
-	FileNotebookEditorControlValue
+	FilePanelParams,
+	FileEditorControlValue
 > = {
 	name: "Notebook",
 	canRename: false,
 	mount: "keepAlive",
 	matches: matchesFilePanel,
-	icon: ({ config, className }) => {
-		const Icon = getFileIconComponent(config.path ?? "");
-		return <Icon className={className} />;
-	},
+	icon: FilePanelIcon,
 	content: FileNotebookEditorPanel,
 };

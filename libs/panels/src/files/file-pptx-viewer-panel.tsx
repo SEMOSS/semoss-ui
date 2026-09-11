@@ -1,6 +1,6 @@
 import { DownloadIcon } from "lucide-react";
 import { lazy, Suspense, useEffect, useMemo } from "react";
-import { decodeBase64Asset, getFileIconComponent } from "@semoss/shared";
+import { decodeBase64Asset } from "@semoss/shared";
 import { Button, Muted, Spinner } from "@semoss/ui/next";
 import type {
 	WorkbenchPanelConfig,
@@ -8,22 +8,22 @@ import type {
 } from "@semoss/workbench";
 import { useWorkbenchControl } from "@semoss/workbench";
 import { matchesFilePanel } from "./file-panel.mode";
+import { FileRefreshControl } from "./file-panel-control";
+import { FilePanelIcon } from "./file-panel-icon";
 import {
-	FilePptxViewerControl,
-	type FilePptxViewerControlValue,
-} from "./file-pptx-viewer-control";
-import { type FilePanelParams, useFilePanel } from "./use-file-panel";
+	type FilePanelParams,
+	type FilePanelValue,
+	useFilePanel,
+} from "./use-file-panel";
 
 const FilePptxViewerContent = lazy(() => import("./file-pptx-viewer-content"));
-
-export type FilePptxViewerParams = FilePanelParams;
 
 /** Preview a PowerPoint file from a project, engine, or insight resource. */
 const FilePptxViewerPanel = ({
 	config,
 	id,
 	setValue,
-}: WorkbenchPanelProps<FilePptxViewerParams, FilePptxViewerControlValue>) => {
+}: WorkbenchPanelProps<FilePanelParams, FilePanelValue>) => {
 	const panel = useFilePanel(config, { base64: true });
 	const content = useMemo(
 		() => decodeBase64Asset(panel.read.data),
@@ -33,7 +33,7 @@ const FilePptxViewerPanel = ({
 	useEffect(() => {
 		setValue({ refresh: panel.read.refresh });
 	}, [panel.read.refresh, setValue]);
-	useWorkbenchControl(id, FilePptxViewerControl);
+	useWorkbenchControl(id, FileRefreshControl);
 
 	if (panel.gate) return panel.gate;
 
@@ -85,16 +85,13 @@ const FilePptxViewerPanel = ({
 
 /** Scope-aware PowerPoint viewer blueprint shared by all workbenches. */
 export const FILE_PPTX_VIEWER_PANEL: WorkbenchPanelConfig<
-	FilePptxViewerParams,
-	FilePptxViewerControlValue
+	FilePanelParams,
+	FilePanelValue
 > = {
 	name: "PowerPoint",
 	canRename: false,
 	mount: "keepAlive",
 	matches: matchesFilePanel,
-	icon: ({ config, className }) => {
-		const Icon = getFileIconComponent(config.path ?? "");
-		return <Icon className={className} />;
-	},
+	icon: FilePanelIcon,
 	content: FilePptxViewerPanel,
 };

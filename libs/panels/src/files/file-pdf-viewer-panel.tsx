@@ -1,6 +1,5 @@
 import { DownloadIcon } from "lucide-react";
 import { useEffect } from "react";
-import { getFileIconComponent } from "@semoss/shared";
 import { Button, Muted } from "@semoss/ui/next";
 import type {
 	WorkbenchPanelConfig,
@@ -8,26 +7,26 @@ import type {
 } from "@semoss/workbench";
 import { useWorkbenchControl } from "@semoss/workbench";
 import { matchesFilePanel } from "./file-panel.mode";
+import { FileRefreshControl } from "./file-panel-control";
+import { FilePanelIcon } from "./file-panel-icon";
 import {
-	FilePdfViewerControl,
-	type FilePdfViewerControlValue,
-} from "./file-pdf-viewer-control";
-import { type FilePanelParams, useFilePanel } from "./use-file-panel";
-
-export type FilePdfViewerParams = FilePanelParams;
+	type FilePanelParams,
+	type FilePanelValue,
+	useFilePanel,
+} from "./use-file-panel";
 
 /** Preview a PDF from a project, engine, or insight resource. */
 const FilePdfViewerPanel = ({
 	config,
 	id,
 	setValue,
-}: WorkbenchPanelProps<FilePdfViewerParams, FilePdfViewerControlValue>) => {
+}: WorkbenchPanelProps<FilePanelParams, FilePanelValue>) => {
 	const panel = useFilePanel(config, { base64: true });
 
 	useEffect(() => {
 		setValue({ refresh: panel.read.refresh });
 	}, [panel.read.refresh, setValue]);
-	useWorkbenchControl(id, FilePdfViewerControl);
+	useWorkbenchControl(id, FileRefreshControl);
 
 	if (panel.gate) return panel.gate;
 	if (panel.readGate) return panel.readGate;
@@ -59,16 +58,13 @@ const FilePdfViewerPanel = ({
 
 /** Scope-aware PDF viewer blueprint shared by all workbenches. */
 export const FILE_PDF_VIEWER_PANEL: WorkbenchPanelConfig<
-	FilePdfViewerParams,
-	FilePdfViewerControlValue
+	FilePanelParams,
+	FilePanelValue
 > = {
 	name: "PDF",
 	canRename: false,
 	mount: "keepAlive",
 	matches: matchesFilePanel,
-	icon: ({ config, className }) => {
-		const Icon = getFileIconComponent(config.path ?? "");
-		return <Icon className={className} />;
-	},
+	icon: FilePanelIcon,
 	content: FilePdfViewerPanel,
 };

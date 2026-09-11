@@ -14,6 +14,7 @@ export {
 	Workbench,
 	WorkbenchAccessError,
 	WorkbenchAccessLoading,
+	WorkbenchChromeButton,
 	WorkbenchCommandMenuButton,
 } from "./components";
 /* One store per mount */

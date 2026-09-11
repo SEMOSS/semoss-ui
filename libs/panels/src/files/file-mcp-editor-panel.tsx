@@ -1,6 +1,5 @@
 import { useMemo, useState } from "react";
 import { useInsight } from "@semoss/sdk/react";
-import { getFileIconComponent } from "@semoss/shared";
 import { Muted, Spinner, toast } from "@semoss/ui/next";
 import type {
 	WorkbenchPanelConfig,
@@ -18,6 +17,7 @@ import {
 } from "../mcp";
 import { type FilePanelMode, matchesFilePanel } from "./file-panel.mode";
 import { getFileReadPixel, getFileSavePixel } from "./file-panel.utility";
+import { FilePanelIcon } from "./file-panel-icon";
 import { useFilePanel } from "./use-file-panel";
 
 /** MCP toolboxes are project- or engine-scoped; there is no insight variant. */
@@ -136,9 +136,6 @@ export const FILE_MCP_EDITOR_PANEL: WorkbenchPanelConfig<FileMcpEditorParams> =
 		canRename: false,
 		mount: "keepAlive",
 		matches: matchesFilePanel,
-		icon: ({ config, className }) => {
-			const Icon = getFileIconComponent(config.name);
-			return <Icon className={className} />;
-		},
+		icon: FilePanelIcon,
 		content: FileMcpEditorPanel,
 	};
