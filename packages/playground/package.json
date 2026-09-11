@@ -20,7 +20,7 @@
         "dayjs": "1.11.8",
         "lexical": "^0.39.0",
         "lucide-react": "^0.545.0",
-        "mermaid": "^11.15.0",
+        "mermaid": "^11.17.2",
         "mobx": "6.3.7",
         "mobx-react-lite": "^4.0.0",
         "react": "^19.0.0",

@@ -25,7 +25,7 @@
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
     "jest": "30.4.2",
-    "jsdom": "~22.1.0",
+    "jsdom": "^28.1.0",
     "lefthook": "^1.12.2",
     "turbo": "^2.9.14",
     "typescript": "~6.0.0"
