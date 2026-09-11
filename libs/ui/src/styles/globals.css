@@ -5,6 +5,22 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 
+/**
+ * Monaco ships its layout rules as a stylesheet, and nothing else in the build
+ * pulls them in: the apps alias `monaco-editor` to `esm/vs/editor/editor.api`,
+ * the API-only entry that imports no CSS, and the CSS the `libs/ui` lib build
+ * extracts lands in `dist/index.css`, which the package does not export. Without
+ * these rules Monaco still positions glyphs inline, so a file looks almost
+ * right — but `.overflow-guard` is not the containing block it expects, so the
+ * caret lands away from the pointer and the suggest widget anchors nowhere near
+ * the cursor. Imported here because every app already pulls in this file.
+ *
+ * Left unlayered on purpose: Tailwind's preflight sits in `@layer base`, and
+ * unlayered rules beat layered ones whatever the source order, so Monaco's
+ * layout survives the `box-sizing`/`margin` reset.
+ */
+@import "monaco-editor/min/vs/editor/editor.main.css";
+
 /** Add all of the component styles **/
 @source "../**/*.{ts,tsx}";
 
