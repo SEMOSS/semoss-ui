@@ -34,7 +34,9 @@
 		"weekly": "Weekly",
 		"monthly": "Monthly",
 		"yearly": "Yearly",
-		"allTime": "All time"
+		"allTime": "All time",
+		"credit": "Credit",
+		"maxCredits": "Max Credits"
 	},
 	"footer": {
 		"add": "Add",

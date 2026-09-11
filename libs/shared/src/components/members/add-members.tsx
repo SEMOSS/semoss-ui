@@ -93,6 +93,7 @@ export const AddMembersOverlay = ({
 	const [restriction, setRestriction] = useState<string>("null");
 	const [maxTokens, setMaxTokens] = useState<string>("");
 	const [maxTime, setMaxTime] = useState<string>("");
+	const [maxCredits, setMaxCredits] = useState<string>("");
 	const [frequency, setFrequency] = useState<string>("DAY");
 	const [userPermission, setUserPermission] = useState<string>("");
 	const isProject = type === "PROJECT" || type === "WORKSPACE";
@@ -197,6 +198,9 @@ export const AddMembersOverlay = ({
 				...(restriction === "compute" && {
 					maxResponseTime: Number(maxTime),
 				}),
+				...(restriction === "credit" && {
+					maxCredits: Number(maxCredits),
+				}),
 				...(restriction !== "null" && { usageFrequency: frequency }),
 			};
 		});
@@ -236,6 +240,7 @@ export const AddMembersOverlay = ({
 		setRestriction("null");
 		setMaxTokens("");
 		setMaxTime("");
+		setMaxCredits("");
 		setFrequency("DAY");
 		setUserPermission("");
 	};
@@ -571,6 +576,8 @@ export const AddMembersOverlay = ({
 							setMaxTokens={setMaxTokens}
 							maxTime={maxTime}
 							setMaxTime={setMaxTime}
+							maxCredits={maxCredits}
+							setMaxCredits={setMaxCredits}
 							frequency={frequency}
 							setFrequency={setFrequency}
 						/>

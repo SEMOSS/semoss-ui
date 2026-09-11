@@ -22,6 +22,7 @@ export interface SETTINGS_MEMBER {
 	model_usage_frequency?: string;
 	model_max_tokens?: number;
 	model_max_response_time?: number;
+	model_max_credits?: number;
 	unit?: string;
 }
 

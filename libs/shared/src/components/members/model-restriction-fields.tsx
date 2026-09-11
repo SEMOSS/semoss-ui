@@ -22,6 +22,8 @@ export interface ModelRestrictionFieldsProps {
 	setMaxTokens: (value: string) => void;
 	maxTime: string;
 	setMaxTime: (value: string) => void;
+	maxCredits: string;
+	setMaxCredits: (value: string) => void;
 	frequency: string;
 	setFrequency: (value: string) => void;
 }
@@ -33,6 +35,8 @@ export const ModelRestrictionFields = ({
 	setMaxTokens,
 	maxTime,
 	setMaxTime,
+	maxCredits,
+	setMaxCredits,
 	frequency,
 	setFrequency,
 }: ModelRestrictionFieldsProps) => {
@@ -67,6 +71,7 @@ export const ModelRestrictionFields = ({
 							setRestriction(val);
 							setMaxTokens("");
 							setMaxTime("");
+							setMaxCredits("");
 						}}
 					>
 						<SelectTrigger className="w-full">
@@ -81,6 +86,9 @@ export const ModelRestrictionFields = ({
 							</SelectItem>
 							<SelectItem value="compute">
 								{t("restrictions.computeTime")}
+							</SelectItem>
+							<SelectItem value="credit">
+								{t("restrictions.credit")}
 							</SelectItem>
 						</SelectContent>
 					</Select>
@@ -118,6 +126,19 @@ export const ModelRestrictionFields = ({
 								readOnly
 							/>
 						</div>
+					</div>
+				)}
+				{restriction === "credit" && (
+					<div className="flex flex-col gap-1.5">
+						<Label>{t("restrictions.maxCredits")}</Label>
+						<Input
+							type="text"
+							inputMode="numeric"
+							value={formatNum(maxCredits)}
+							onChange={(e) =>
+								setMaxCredits(parseNum(e.target.value))
+							}
+						/>
 					</div>
 				)}
 				{restriction !== "null" && (

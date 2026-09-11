@@ -35,7 +35,9 @@
 		"weekly": "Semanal",
 		"monthly": "Mensual",
 		"yearly": "Anual",
-		"allTime": "Todo el tiempo"
+		"allTime": "Todo el tiempo",
+		"credit": "Credit",
+		"maxCredits": "Max Credits"
 	},
 	"footer": {
 		"add": "Agregar",
