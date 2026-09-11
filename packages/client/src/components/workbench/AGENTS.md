@@ -51,6 +51,9 @@ Follow the package's three steps. The client-specific parts:
    `applySnapshot` will silently prune that panel out of every cached layout.
 2. Shared instance records live in `WORKBENCH_PANEL_RECORDS`
    (`components/workbench/workbench.constants.ts`).
+3. A *file* panel also goes in `FILE_PANEL_COMPONENTS` (`files/file-panel.components.ts`),
+   which every domain workbench spreads. That list is also what
+   `useWorkbenchFilePanels` means by "a file panel" — see the Git note below.
 
 **Authorization is runtime state, never layout config.** Resource panels call
 `useAccess(type, id)` directly in their body — it returns a discriminated union
@@ -66,6 +69,44 @@ other workbench last fetched it — the `refreshing` / `refreshError` fields kee
 permission readable meanwhile, so nothing flashes to read-only; and the session clears the
 cache on logout, because it outlives every workbench and would otherwise hand one user's access
 to the next.
+
+## File panels
+
+Eight editor/viewer panels plus three explorers, all built from two hooks and one body:
+
+- **`useFilePanel(config, opts)`** — access, the insight, read/save/download, and the blocking
+  states. `gate` and `readGate` come back as *nodes*, not early returns: a panel must finish
+  calling its hooks (`useWorkbenchControl` especially) before it may return anything, so the
+  shape is `if (panel.gate) return panel.gate;` after the hooks, never inside them.
+- **`useFileBuffer`** — the working copy, the baseline, and the tab's dirty marker. The marker
+  is a trailing `*` on the panel name and it is **load-bearing across files**:
+  `useWorkbenchFilePanels` preserves it through a rename by inspecting
+  `record.name.endsWith("*")`. Express dirtiness any other way and renaming a dirty file
+  silently drops the only unsaved-work signal. The marker lives inside `setContent` because the
+  baseline it compares against is private to the hook.
+- **`FileExplorerPane`** — the shared explorer body. The three explorers stay separate panels
+  because they differ in where `mode` comes from (panel config, the engine context, a walk of
+  the layout's selection history) and the last two dictate where the hook may be called.
+
+**Panel scope is a `FilePanelMode`, not `{ type, id }`.** It narrows the shared `FileMode`
+twice, and both narrowings are load-bearing. INSIGHT's `insightId` is **required** — it is
+optional upstream, and an id-less one makes a panel's path-event scope differ from its
+explorer's, at which point renames stop reaching open editors with no error anywhere. Use
+`getFilePanelScope` on both sides; never derive it twice. And there is **no STORAGE** arm:
+buckets have no read or save reactor, which is why the storage explorer opens a file by pulling
+it into a new insight and opening an INSIGHT-scoped panel.
+
+**Git panels deliberately still carry `{ type, id }`.** Their config is structurally identical
+to the old file config, which is exactly why `useWorkbenchFilePanels` gates on membership in
+`FILE_PANEL_COMPONENTS` rather than on the shape of a config. It used to gate on "has a
+`path`", and a file rename retyped every open Git diff into a code editor.
+
+**Never dereference `a.mode.type` in a blueprint `matches`.** `matches` runs inside
+`selectPanel`, a store action outside any error boundary — a config it cannot read must return
+false, not throw. Use `matchesFilePanel`.
+
+Pixels come from the shared `FileExplorerAdapter` (`read` / `save` / `download` alongside
+browse and the mutations), never hand-written per scope.
 
 ## Domain state (database is the template)
 
@@ -143,6 +184,10 @@ gets at most one chrome control, and this needed two.
 | `engine/`, `engine/<domain>/` | Engine-scoped panels + one `<Domain>Workbench` per engine type |
 | `project/`, `project/<domain>/` | Project-scoped (`APP` mode) equivalents; sibling of `engine/`, **not** inside it |
 | `files/`, `git/` | The file and git panels, shared by every domain workbench |
+| `files/use-file-panel.tsx` / `use-file-buffer.ts` | The two hooks every editor/viewer panel is built from |
+| `files/file-panel.mode.ts` | `FilePanelMode` and the one derivation of a scope, a resource, and a `matches` |
+| `files/file-panel.components.ts` | `FILE_PANEL_COMPONENTS` — what every workbench registers, and what counts as a file panel at runtime |
+| `files/file-explorer-pane.tsx` | The explorer body the three explorer panels share |
 | `files/file-explorer-control.tsx` | The refresh + new-file chrome control shared by every file-explorer panel (project, engine, storage, insight) |
 | `../assistant/` | The assistant panel and its subviews; `ASSISTANT_PANEL` is its blueprint |
 | `stores/assistant/` | The assistant store (agent runs, rooms, notifications) |
@@ -171,6 +216,12 @@ gets at most one chrome control, and this needed two.
   additionally detaches the browser-notification subscription and belongs to the store's
   lifetime, which `useAssistantStore` owns. Folding the two together silences notifications
   after the first insight switch.
+- **A decorated explorer must be memoized.** `useExplorerPanelValue` publishes on the api's
+  identity, and `setValue` takes a new identity whenever the value it writes does — an
+  unmemoized `decorateExplorer` loops forever, and TypeScript says nothing.
+- **`selectPanel`'s `config` is loosely typed.** Changing a panel's config shape will not
+  produce an error at its call sites; grep them. That is how the storage explorer and four
+  palette commands survived the `{ type, id }` → `{ mode }` change still passing the old shape.
 - **The database close cascade** (`onPanelClose` → `handlePanelClosed`): closing a query panel
   closes its paired results panel and prunes store state. Re-read before changing panel
   close/select behavior.
