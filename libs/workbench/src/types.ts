@@ -421,7 +421,7 @@ export type WorkbenchBorderSlot =
 	| ((ctx: WorkbenchBorderSlotCtx) => ReactNode);
 
 /** Rail add-ons per side, before and/or after the panel icons. */
-type WorkbenchBorderSlots = Partial<
+export type WorkbenchBorderSlots = Partial<
 	Record<
 		WorkbenchSide,
 		{ before?: WorkbenchBorderSlot; after?: WorkbenchBorderSlot }
@@ -440,35 +440,4 @@ export interface WorkbenchDragState {
 	pid: WorkbenchPanelId;
 	x: number;
 	y: number;
-}
-
-/** Props of the workbench shell. */
-export interface WorkbenchProps {
-	/**
-	 * Panel blueprints keyed by type. Keep the map module-scope (or memoized)
-	 * so re-registration is an identity no-op and panels never remount.
-	 */
-	components: Record<WorkbenchPanelType, WorkbenchPanelConfigAny>;
-
-	/** The default arrangement. Read once per identity — the store owns it after. */
-	layout: WorkbenchLayout;
-
-	/**
-	 * Rail add-ons per side (before/after the icon list). A rail carrying slot
-	 * content renders even with no panels docked to it. The mobile layout has
-	 * no rails, so `left.after` falls back to floating bottom-left there.
-	 */
-	borderSlots?: WorkbenchBorderSlots;
-
-	/** Fired when a panel becomes docked somewhere. */
-	onPanelOpen?: (pid: WorkbenchPanelId) => void;
-
-	/** Fired when a panel stops being docked, with its (still stored) record. */
-	onPanelClose?: (
-		pid: WorkbenchPanelId,
-		record: WorkbenchPanelRecord,
-	) => void;
-
-	/** Fired when the selected panel changes. */
-	onSelectionChange?: (pid: WorkbenchPanelId | undefined) => void;
 }

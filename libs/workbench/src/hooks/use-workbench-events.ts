@@ -1,11 +1,15 @@
 import { useEffect, useRef } from "react";
 import { useWorkbenchStoreApi } from "../hooks/use-workbench-store-api";
-import type { WorkbenchProps } from "../types";
+import type { WorkbenchPanelId, WorkbenchPanelRecord } from "../types";
 
-type WorkbenchEventProps = Pick<
-	WorkbenchProps,
-	"onPanelOpen" | "onPanelClose" | "onSelectionChange"
->;
+interface WorkbenchEventProps {
+	onPanelOpen?: (pid: WorkbenchPanelId) => void;
+	onPanelClose?: (
+		pid: WorkbenchPanelId,
+		record: WorkbenchPanelRecord,
+	) => void;
+	onSelectionChange?: (pid: WorkbenchPanelId | undefined) => void;
+}
 
 /**
  * Bridges store transitions to the host's event props through one vanilla

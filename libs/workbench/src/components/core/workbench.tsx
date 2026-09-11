@@ -1,7 +1,15 @@
 import { type FC, useEffect, useLayoutEffect, useMemo, useRef } from "react";
 import { Spinner, useIsMobile } from "@semoss/ui/next";
 import { useWorkbench, useWorkbenchEvents } from "../../hooks";
-import type { WorkbenchBorderSlotCtx, WorkbenchProps } from "../../types";
+import type {
+	WorkbenchBorderSlotCtx,
+	WorkbenchBorderSlots,
+	WorkbenchLayout,
+	WorkbenchPanelConfigAny,
+	WorkbenchPanelId,
+	WorkbenchPanelRecord,
+	WorkbenchPanelType,
+} from "../../types";
 import { resolveBorderSlot, WorkbenchBorder } from "./workbench-border";
 import { WorkbenchCommandPalette } from "./workbench-command-palette";
 import { WorkbenchDragLayer } from "./workbench-drag-layer";
@@ -35,6 +43,37 @@ const focusOwnsEscape = (): boolean => {
 		el.closest("[role='dialog'],[role='menu'],[role='listbox']"),
 	);
 };
+
+/** Props of the workbench shell. */
+interface WorkbenchProps {
+	/**
+	 * Panel blueprints keyed by type. Keep the map module-scope (or memoized)
+	 * so re-registration is an identity no-op and panels never remount.
+	 */
+	components: Record<WorkbenchPanelType, WorkbenchPanelConfigAny>;
+
+	/** The default arrangement. Read once per identity — the store owns it after. */
+	layout: WorkbenchLayout;
+
+	/**
+	 * Rail add-ons per side (before/after the icon list). A rail carrying slot
+	 * content renders even with no panels docked to it. The mobile layout has
+	 * no rails, so `left.after` and `top.after` surface in the actions drawer.
+	 */
+	borderSlots?: WorkbenchBorderSlots;
+
+	/** Fired when a panel becomes docked somewhere. */
+	onPanelOpen?: (pid: WorkbenchPanelId) => void;
+
+	/** Fired when a panel stops being docked, with its (still stored) record. */
+	onPanelClose?: (
+		pid: WorkbenchPanelId,
+		record: WorkbenchPanelRecord,
+	) => void;
+
+	/** Fired when the selected panel changes. */
+	onSelectionChange?: (pid: WorkbenchPanelId | undefined) => void;
+}
 
 /**
  * Initialize and render one workbench inside the nearest scoped provider.
@@ -146,6 +185,26 @@ export const Workbench: FC<WorkbenchProps> = ({
 		return () => window.removeEventListener("keydown", onKey);
 	}, [actions, maximized]);
 
+	const mobileActionsSlot = useMemo(() => {
+		const leftAfter = borderSlots?.left?.after;
+		const topAfter = borderSlots?.top?.after;
+
+		if (!topAfter) {
+			return leftAfter;
+		}
+
+		return (ctx: WorkbenchBorderSlotCtx) => (
+			<>
+				{resolveBorderSlot(leftAfter, ctx)}
+				{resolveBorderSlot(topAfter, {
+					...ctx,
+					side: "top",
+					vertical: false,
+				})}
+			</>
+		);
+	}, [borderSlots]);
+
 	return (
 		<>
 			<WorkbenchCommandPalette />
@@ -159,7 +218,7 @@ export const Workbench: FC<WorkbenchProps> = ({
 						<Spinner />
 					</div>
 				) : isMobileLayout ? (
-					<WorkbenchMobile actionsSlot={borderSlots?.left?.after} />
+					<WorkbenchMobile actionsSlot={mobileActionsSlot} />
 				) : (
 					<div className="relative flex h-full w-full flex-row gap-2 p-2">
 						<WorkbenchBorder side="left" slots={leftSlots} />
