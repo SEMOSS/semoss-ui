@@ -6,6 +6,7 @@ export * from "./file-editor-kind";
 export * from "./file-editor-path-events";
 export * from "./file-explorer";
 export * from "./file-explorer.adapters";
+export * from "./file-explorer.decorate";
 export * from "./file-explorer.types";
 export * from "./file-explorer.utils";
 export * from "./file-explorer-context-menu";

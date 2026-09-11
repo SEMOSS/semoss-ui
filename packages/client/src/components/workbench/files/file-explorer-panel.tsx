@@ -1,15 +1,12 @@
 import { FolderTreeIcon, HammerIcon, PencilIcon } from "lucide-react";
-import { useCallback, useEffect, useMemo } from "react";
+import { useCallback, useMemo } from "react";
 import { useInsight } from "@semoss/sdk/react";
 import {
-	FileExplorer,
 	type FileExplorerApi,
-	FileExplorerHeader,
 	type FileExplorerItemActions,
 	type FileExplorerMovedItem,
 	type FileItem,
 	getParentPath,
-	NewFileOverlay,
 	useFileExplorer,
 } from "@semoss/shared";
 import { toast } from "@semoss/ui/next";
@@ -19,19 +16,14 @@ import {
 	writeSpawnDragSpec,
 } from "@semoss/workbench";
 import { MCP } from "@/constants";
-import {
-	useAccess,
-	useWorkbench,
-	useWorkbenchControl,
-	useWorkbenchFilePanels,
-} from "@/hooks";
+import { useAccess, useWorkbench, useWorkbenchFilePanels } from "@/hooks";
 import type {
 	WorkbenchPanelConfig,
 	WorkbenchPanelProps,
 } from "@/stores/workbench";
 import { WORKBENCH_COMPONENTS } from "@/stores/workbench";
 import { getFilePanelType } from "./file-editor.utility";
-import { FileExplorerControl } from "./file-explorer-control";
+import { FileExplorerPane } from "./file-explorer-pane";
 import { getFileMode } from "./file-panel.utility";
 
 export interface FileExplorerParams {
@@ -113,10 +105,6 @@ const FileExplorerPanel = ({
 			});
 		},
 	});
-
-	// biome-ignore lint/correctness/useExhaustiveDependencies: the explorer is identity-stable; setValue changes after writes
-	useEffect(() => setValue(explorer), [explorer]);
-	useWorkbenchControl(id, FileExplorerControl);
 
 	const itemActions = useCallback(
 		(item: FileItem): FileExplorerItemActions => {
@@ -208,27 +196,29 @@ const FileExplorerPanel = ({
 	}
 
 	return (
-		<div className="relative size-full">
-			<FileExplorer
-				explorer={explorer}
-				header={<FileExplorerHeader explorer={explorer} />}
-				newFileOverlay={NewFileOverlay}
-				itemActions={itemActions}
-			/>
-			{access.refreshing ? (
-				<WorkbenchAccessLoading
-					className="absolute inset-0 bg-background/80"
-					label="Refreshing resource access"
-				/>
-			) : null}
-			{access.refreshError ? (
-				<WorkbenchAccessError
-					className="absolute inset-0 bg-background/90"
-					message={access.refreshError}
-					onRetry={() => void access.refresh()}
-				/>
-			) : null}
-		</div>
+		<FileExplorerPane
+			id={id}
+			explorer={explorer}
+			setValue={setValue}
+			itemActions={itemActions}
+			overlay={
+				<>
+					{access.refreshing ? (
+						<WorkbenchAccessLoading
+							className="absolute inset-0 bg-background/80"
+							label="Refreshing resource access"
+						/>
+					) : null}
+					{access.refreshError ? (
+						<WorkbenchAccessError
+							className="absolute inset-0 bg-background/90"
+							message={access.refreshError}
+							onRetry={() => void access.refresh()}
+						/>
+					) : null}
+				</>
+			}
+		/>
 	);
 };
 
