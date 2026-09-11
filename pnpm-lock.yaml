@@ -101,6 +101,64 @@ importers:
         specifier: ~6.0.0
         version: 6.0.3
 
+  libs/panels:
+    dependencies:
+      '@semoss/i18n':
+        specifier: workspace:*
+        version: link:../i18n
+      '@semoss/sdk':
+        specifier: workspace:*
+        version: link:../sdk
+      '@semoss/shared':
+        specifier: workspace:*
+        version: link:../shared
+      '@semoss/ui':
+        specifier: workspace:*
+        version: link:../ui
+      '@semoss/workbench':
+        specifier: workspace:*
+        version: link:../workbench
+      lucide-react:
+        specifier: ^0.545.0
+        version: 0.545.0(react@19.2.8)
+      pptx-react-viewer:
+        specifier: ^3.9.0
+        version: 3.9.0(fast-xml-parser@5.11.1)(framer-motion@13.2.0(react-dom@19.2.8(react@19.2.8))(react@19.2.8))(i18next@25.10.10(typescript@6.0.3))(jspdf@4.2.1)(jszip@3.10.1)(lucide-react@0.545.0(react@19.2.8))(react-dom@19.2.8(react@19.2.8))(react-i18next@16.6.6(i18next@25.10.10(typescript@6.0.3))(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(typescript@6.0.3))(react-icons@5.7.0(react@19.2.8))(react@19.2.8)
+      react:
+        specifier: ^19.0.0
+        version: 19.2.8
+      react-dom:
+        specifier: ^19.0.0
+        version: 19.2.8(react@19.2.8)
+      zustand:
+        specifier: ^5.0.0
+        version: 5.0.15(@types/react@19.2.18)(react@19.2.8)(use-sync-external-store@1.6.0(react@19.2.8))
+    devDependencies:
+      '@semoss/config':
+        specifier: workspace:*
+        version: link:../config
+      '@testing-library/jest-dom':
+        specifier: ^6.6.3
+        version: 6.9.1
+      '@testing-library/react':
+        specifier: ^16.2.0
+        version: 16.3.0(@testing-library/dom@10.4.1)(@types/react-dom@19.2.5(@types/react@19.2.18))(@types/react@19.2.18)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
+      '@types/react':
+        specifier: ^19.0.0
+        version: 19.2.18
+      '@types/react-dom':
+        specifier: ^19.0.0
+        version: 19.2.5(@types/react@19.2.18)
+      jsdom:
+        specifier: ~22.1.0
+        version: 22.1.0
+      typescript:
+        specifier: ~6.0.0
+        version: 6.0.3
+      vitest:
+        specifier: ^4.1.10
+        version: 4.1.11(@types/node@25.9.3)(@vitest/coverage-v8@4.1.11)(@vitest/ui@4.1.10)(jsdom@22.1.0)(vite@8.2.1(@types/node@25.9.3)(jiti@2.7.0)(terser@5.48.0))
+
   libs/renderer:
     dependencies:
       '@semoss/sdk':
@@ -738,6 +796,9 @@ importers:
       '@semoss/i18n':
         specifier: workspace:*
         version: link:../../libs/i18n
+      '@semoss/panels':
+        specifier: workspace:*
+        version: link:../../libs/panels
       '@semoss/renderer':
         specifier: workspace:*
         version: link:../../libs/renderer

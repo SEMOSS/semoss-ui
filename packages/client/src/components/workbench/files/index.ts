@@ -1,25 +1,5 @@
-export * from "./file-code-editor-control";
-export * from "./file-code-editor-panel";
-export * from "./file-download-control";
-export * from "./file-download-panel";
-export * from "./file-editor.utility";
-export * from "./file-explorer-control";
-export * from "./file-explorer-pane";
-export * from "./file-explorer-panel";
-export * from "./file-image-viewer-control";
-export * from "./file-image-viewer-panel";
-export * from "./file-markdown-editor-control";
-export * from "./file-markdown-editor-panel";
-export * from "./file-mcp-editor-panel";
-export * from "./file-notebook-editor-control";
-export * from "./file-notebook-editor-panel";
-export * from "./file-panel.components";
-export * from "./file-panel.mode";
-export * from "./file-panel.utility";
-export * from "./file-pdf-viewer-control";
-export * from "./file-pdf-viewer-panel";
-export * from "./file-pptx-viewer-control";
-export * from "./file-pptx-viewer-panel";
-export * from "./use-explorer-panel-value";
-export * from "./use-file-buffer";
-export * from "./use-file-panel";
+// The file panels moved to @semoss/panels so the playground and terminal can
+// mount them too. Re-exported here so the eleven domain workbenches and the
+// `@/components/workbench` barrel keep resolving; new code should import the
+// package directly.
+export * from "@semoss/panels";

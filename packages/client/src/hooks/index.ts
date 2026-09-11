@@ -1,3 +1,4 @@
+import { useWorkbenchFilePanels } from "@semoss/panels";
 import {
 	useWorkbench,
 	useWorkbenchCommands,
@@ -16,7 +17,6 @@ import { usePage } from "./use-page";
 import { useProject } from "./use-project";
 import { useSession } from "./use-session";
 import { useTabBarScroll } from "./use-tab-bar-scroll";
-import { useWorkbenchFilePanels } from "./use-workbench-file-panels";
 import { useDesigner } from "./useDesigner";
 import { useEngine } from "./useEngine";
 import { useMetamodel } from "./useMetamodel";

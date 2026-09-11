@@ -40,7 +40,7 @@ import {
 import { useSession } from "@/hooks";
 
 const FilePptxViewerContent = lazy(
-	() => import("@/components/workbench/files/file-pptx-viewer-content"),
+	() => import("@semoss/panels/files/file-pptx-viewer-content"),
 );
 
 const USER_MODE: FileMode = { type: "USER" };

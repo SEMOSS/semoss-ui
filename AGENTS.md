@@ -35,7 +35,8 @@ semoss/
 │   ├── i18n/       # @semoss/i18n - Internationalization library
 │   ├── shared/     # @semoss/shared - Shared utilities
 │   ├── renderer/   # @semoss/renderer - Visualization components
-│   └── workbench/  # @semoss/workbench - Multi-panel dock shell
+│   ├── workbench/  # @semoss/workbench - Multi-panel dock shell
+│   └── panels/     # @semoss/panels - File panels for the dock
 ├── packages/       # Applications (not published)
 │   ├── client/                     # @semoss/client - Main web application
 │   ├── playground/                 # @semoss/playground - Chat
@@ -322,6 +323,7 @@ pnpm test           # Verify tests pass
 - [libs/renderer/AGENTS.md](./libs/renderer/AGENTS.md) - Visualization components specifics
 - [libs/i18n/AGENTS.md](./libs/i18n/AGENTS.md) - Internationalization library specifics
 - [libs/workbench/AGENTS.md](./libs/workbench/AGENTS.md) - Workbench dock shell specifics
+- [libs/panels/AGENTS.md](./libs/panels/AGENTS.md) - File panels for the dock
 
 **Applications** (`packages/*`):
 - [packages/client/AGENTS.md](./packages/client/AGENTS.md) - Main web application specifics

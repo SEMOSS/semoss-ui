@@ -1,16 +1,15 @@
-/** Component IDs shared by workbench state, commands, and renderers. */
+import { FILE_PANEL_TYPES } from "@semoss/panels";
+
+/**
+ * Component IDs shared by workbench state, commands, and renderers.
+ *
+ * The file panel ids live in `@semoss/panels` and are spread in, so every
+ * existing `WORKBENCH_COMPONENTS.FILE_*` reference keeps resolving.
+ */
 export const WORKBENCH_COMPONENTS = {
+	...FILE_PANEL_TYPES,
 	AGENT_EDITOR: "project-agent-editor",
 	ASSISTANT: "workbench-assistant",
-	FILE_EXPLORER: "file-explorer",
-	FILE_CODE_EDITOR: "file-code-editor",
-	FILE_DOWNLOAD: "file-download",
-	FILE_IMAGE_VIEWER: "file-image-viewer",
-	FILE_MARKDOWN_EDITOR: "file-markdown-editor",
-	FILE_NOTEBOOK_EDITOR: "file-notebook-editor",
-	FILE_PDF_VIEWER: "file-pdf-viewer",
-	FILE_PPTX_VIEWER: "file-pptx-viewer",
-	FILE_MCP_EDITOR: "file-mcp-editor",
 	DATABASE_COLUMNS: "database-columns",
 	DATABASE_QUERY: "database-query",
 	DATABASE_RESULTS: "database-results",
