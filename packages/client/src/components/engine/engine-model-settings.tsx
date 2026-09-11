@@ -382,17 +382,12 @@ export const EngineModelSettings = ({
 	const isDirtyRef = useRef(isDirty);
 	isDirtyRef.current = isDirty;
 
-	// Prevents the auto-save below from firing more than once per mount even
-	// when getModelMetadata re-fetches after the save completes.
-	const hasAutoSavedCreditsRef = useRef(false);
-
 	useEffect(() => {
 		if (getModelMetadata.status !== "SUCCESS") {
 			return;
 		}
 
-		// The fields are always editable now, so a refetch must not overwrite
-		// in-progress edits.
+		// A refetch must not overwrite in-progress edits.
 		if (isDirtyRef.current) {
 			return;
 		}
@@ -400,52 +395,6 @@ export const EngineModelSettings = ({
 		const nextForm = toModelSettingsValues(getModelMetadata.data);
 		setForm(nextForm);
 		setInitialForm(nextForm);
-
-		// When credit rates are unset but pricing data exists, derive and
-		// persist them automatically so they appear without requiring the admin
-		// to open the edit form first.
-		if (
-			isEditable &&
-			!hasAutoSavedCreditsRef.current &&
-			getModelMetadata.data != null
-		) {
-			const suggestion = suggestCreditRatesFromPricing(
-				getModelMetadata.data,
-			);
-			if (suggestion) {
-				hasAutoSavedCreditsRef.current = true;
-				const autoPayload: Record<string, number | null> = {};
-				if (suggestion.inputTokenCredit !== "") {
-					const v = parseOptionalFloat(suggestion.inputTokenCredit);
-					if (v !== null)
-						autoPayload.inputTokenCredit = v / 1_000_000;
-				}
-				if (suggestion.outputTokenCredit !== "") {
-					const v = parseOptionalFloat(suggestion.outputTokenCredit);
-					if (v !== null)
-						autoPayload.outputTokenCredit = v / 1_000_000;
-				}
-				if (suggestion.cacheReadMultiplier !== "") {
-					autoPayload.cacheReadMultiplier = parseOptionalFloat(
-						suggestion.cacheReadMultiplier,
-					);
-				}
-				if (suggestion.cacheWriteMultiplier !== "") {
-					autoPayload.cacheWriteMultiplier = parseOptionalFloat(
-						suggestion.cacheWriteMultiplier,
-					);
-				}
-				void configStore
-					.runPixel(
-						`UpdateModelMetadata(engine=["${engineId}"], map=[${pixelSafeJson(autoPayload)}]);`,
-					)
-					.then((response) => {
-						if (response.errors.length === 0) {
-							getModelMetadata.refresh();
-						}
-					});
-			}
-		}
 	}, [getModelMetadata.status, getModelMetadata.data]);
 	const modelId =
 		typeof getModelMetadata.data?.modelId === "string"
@@ -722,6 +671,14 @@ export const EngineModelSettings = ({
 				cacheWriteMultiplier: parseOptionalFloat(
 					form.cacheWriteMultiplier,
 				),
+				batchInputTokenCredit: (() => {
+					const n = parseOptionalFloat(form.batchInputTokenCredit);
+					return n !== null ? n / 1_000_000 : n;
+				})(),
+				batchOutputTokenCredit: (() => {
+					const n = parseOptionalFloat(form.batchOutputTokenCredit);
+					return n !== null ? n / 1_000_000 : n;
+				})(),
 			};
 
 			const response = await configStore.runPixel(
@@ -1573,6 +1530,60 @@ export const EngineModelSettings = ({
 									<FieldDescription>
 										Multiplier applied to cache-write token
 										credits (input rate × multiplier).
+									</FieldDescription>
+								</Field>
+
+								<Field>
+									<FieldLabel
+										htmlFor={`${engineId}-batch-input-token-credit`}
+									>
+										Credits / 1M batch input tokens
+									</FieldLabel>
+									<Input
+										id={`${engineId}-batch-input-token-credit`}
+										type="number"
+										step="any"
+										min="0"
+										placeholder="e.g. 0.5"
+										value={form.batchInputTokenCredit}
+										onChange={(event) =>
+											updateForm(
+												"batchInputTokenCredit",
+												event.target.value,
+											)
+										}
+									/>
+									<FieldDescription>
+										Credits charged per batch input token.
+										Defaults to the standard input rate if
+										unset.
+									</FieldDescription>
+								</Field>
+
+								<Field>
+									<FieldLabel
+										htmlFor={`${engineId}-batch-output-token-credit`}
+									>
+										Credits / 1M batch output tokens
+									</FieldLabel>
+									<Input
+										id={`${engineId}-batch-output-token-credit`}
+										type="number"
+										step="any"
+										min="0"
+										placeholder="e.g. 2.5"
+										value={form.batchOutputTokenCredit}
+										onChange={(event) =>
+											updateForm(
+												"batchOutputTokenCredit",
+												event.target.value,
+											)
+										}
+									/>
+									<FieldDescription>
+										Credits charged per batch output token.
+										Defaults to the standard output rate if
+										unset.
 									</FieldDescription>
 								</Field>
 							</div>

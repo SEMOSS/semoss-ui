@@ -58,6 +58,8 @@ export type ModelMetadata = {
 	outputTokenCredit?: number | null;
 	cacheReadMultiplier?: number | null;
 	cacheWriteMultiplier?: number | null;
+	batchInputTokenCredit?: number | null;
+	batchOutputTokenCredit?: number | null;
 	pricing?: ModelPricing[] | null;
 };
 
@@ -780,6 +782,8 @@ export interface ModelSettingsValues {
 	outputTokenCredit: string;
 	cacheReadMultiplier: string;
 	cacheWriteMultiplier: string;
+	batchInputTokenCredit: string;
+	batchOutputTokenCredit: string;
 }
 
 /**
@@ -858,6 +862,26 @@ export const toModelSettingsValues = (
 		cacheWriteMultiplier:
 			metadata?.cacheWriteMultiplier != null
 				? String(metadata.cacheWriteMultiplier)
+				: "",
+		batchInputTokenCredit:
+			metadata?.batchInputTokenCredit != null
+				? String(
+						parseFloat(
+							(
+								metadata.batchInputTokenCredit * 1_000_000
+							).toPrecision(10),
+						),
+					)
+				: "",
+		batchOutputTokenCredit:
+			metadata?.batchOutputTokenCredit != null
+				? String(
+						parseFloat(
+							(
+								metadata.batchOutputTokenCredit * 1_000_000
+							).toPrecision(10),
+						),
+					)
 				: "",
 	};
 };
@@ -1160,6 +1184,22 @@ export const ModelMetadataFields = ({
 		<SettingsEntry label="Cache write multiplier">
 			{values.cacheWriteMultiplier !== "" ? (
 				<span className="text-sm">×{values.cacheWriteMultiplier}</span>
+			) : (
+				<EmptyValue />
+			)}
+		</SettingsEntry>
+
+		<SettingsEntry label="Credits / 1M batch input tokens">
+			{values.batchInputTokenCredit !== "" ? (
+				<span className="text-sm">{values.batchInputTokenCredit}</span>
+			) : (
+				<EmptyValue />
+			)}
+		</SettingsEntry>
+
+		<SettingsEntry label="Credits / 1M batch output tokens">
+			{values.batchOutputTokenCredit !== "" ? (
+				<span className="text-sm">{values.batchOutputTokenCredit}</span>
 			) : (
 				<EmptyValue />
 			)}
