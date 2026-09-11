@@ -1,19 +1,18 @@
 import { Env } from "../env";
-import { post } from "../utility";
 import type {
 	AgentRunItemEvent,
 	AgentRunSnapshot,
 	AgentRunStatusValue,
 	AgentToolDecision,
 	SubagentRunSummary,
-} from "./agent.types";
+} from "../types";
+import { post } from "../utility";
 import { runPixel } from "./base";
-
-export type * from "./agent.types";
 
 /**
  * Submit a durable agent run without waiting for it to finish (RunAgent with
- * wait=false). Poll progress with pollAgentRun(runId) or subscribeRunAgent.
+ * wait=false). Poll progress with pollAgentRun(runId), or prefer
+ * {@link AgentStore} (`stores/agent`) which owns the poll loop for you.
  *
  * @param params.roomId - Room the run's messages are written to.
  * @param params.command - The user's message text.
@@ -206,7 +205,7 @@ export const stopAgentRun = async (
  * Decide a pending agent tool call (RunMCPTool's HITL path) — resumes the run
  * once every pending action in the batch has been decided. For the common
  * case of resolving approve vs. edit from submitted params automatically, use
- * submitAgentToolDecision instead.
+ * {@link AgentStore.decide} instead.
  *
  * @param params.actionId - The PendingAgentAction.actionId being decided.
  * @param params.decision - "approve"/"edit" execute the tool; "reject"/"respond" don't.

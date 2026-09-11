@@ -38,10 +38,10 @@ import {
 	z,
 	zodResolver,
 } from "@semoss/ui/next";
-import { uploadFile } from "@/api";
-import { useRootStore } from "@/hooks";
+import { useSession } from "@/hooks";
 import { useNavigate } from "@/hooks/useNavigate";
 import { EngineFormHeader } from "../shared/engine-form-header";
+import type { FormField as FormFieldConfig } from "../shared/import-form.types";
 import { computeVisibility } from "../shared/import-form.utils";
 
 // Builds a per-field zod schema from the dynamic field config driving this form.
@@ -50,6 +50,10 @@ type FunctionFormFieldConfig = {
 	type: string;
 	label?: string;
 	required?: boolean;
+	value?: unknown;
+	// the same rule shape computeVisibility reads, for a field that only applies
+	// to one answer of another field
+	showWhen?: FormFieldConfig["showWhen"];
 	rules?: { pattern?: { value: RegExp; message?: string } };
 };
 
@@ -71,7 +75,7 @@ const buildFieldSchema = (field: FunctionFormFieldConfig) => {
 			const file = z.instanceof(File, {
 				message: `${field.label ?? "A file"} is required`,
 			});
-			return field.required ? file : file.optional().nullable();
+			return requiredNow(field) ? file : file.optional().nullable();
 		}
 		default: {
 			let stringSchema = z.string();
@@ -81,7 +85,7 @@ const buildFieldSchema = (field: FunctionFormFieldConfig) => {
 					field.rules.pattern.message ?? "Invalid value",
 				);
 			}
-			return field.required
+			return requiredNow(field)
 				? stringSchema.min(
 						1,
 						`${field.label ?? "This field"} is required`,
@@ -91,16 +95,68 @@ const buildFieldSchema = (field: FunctionFormFieldConfig) => {
 	}
 };
 
+/**
+ * Whether the schema itself can hold a field to being required.
+ *
+ * A field that only shows under a condition cannot be, because the schema is
+ * built once and the condition is answered per keystroke. Those are enforced in
+ * the refinement below instead, where the rest of the values are in hand.
+ */
+const requiredNow = (field: FunctionFormFieldConfig) =>
+	field.required && !field.showWhen;
+
+/** The value a field starts at, and goes back to when it stops applying. */
+const defaultValueFor = (field: FunctionFormFieldConfig) => {
+	if (field.type === "parameter-list" || field.type === "string-list") {
+		return Array.isArray(field.value) ? field.value : [];
+	}
+	if (field.type === "file-upload") {
+		return field.value instanceof File ? field.value : null;
+	}
+	if (field.type === "checkbox") {
+		return typeof field.value === "boolean" ? field.value : false;
+	}
+	return field.value || "";
+};
+
 const buildFunctionFormSchema = (allFields: FunctionFormFieldConfig[]) =>
-	z.object(
-		allFields.reduce<Record<string, ReturnType<typeof buildFieldSchema>>>(
-			(acc, field) => {
+	z
+		.object(
+			allFields.reduce<
+				Record<string, ReturnType<typeof buildFieldSchema>>
+			>((acc, field) => {
 				acc[field.key] = buildFieldSchema(field);
 				return acc;
-			},
-			{},
-		),
-	);
+			}, {}),
+		)
+		.superRefine((values, ctx) => {
+			// a conditional field is required only while it is on screen. without
+			// this the hidden half of a choice - the SMTP settings when a mail
+			// engine is sending through Graph, say - holds the form invalid and
+			// there is nothing the user can do about it, because the input that
+			// would satisfy it is not rendered
+			for (const field of allFields) {
+				if (!field.required || !field.showWhen) {
+					continue;
+				}
+				if (!computeVisibility(field as FormFieldConfig, values)) {
+					continue;
+				}
+				const value = values[field.key];
+				const empty =
+					value === undefined ||
+					value === null ||
+					value === "" ||
+					(Array.isArray(value) && value.length === 0);
+				if (empty) {
+					ctx.addIssue({
+						code: z.ZodIssueCode.custom,
+						path: [field.key],
+						message: `${field.label ?? "This field"} is required`,
+					});
+				}
+			}
+		});
 
 export const FunctionForm = ({
 	title,
@@ -141,21 +197,42 @@ export const FunctionForm = ({
 		mode: "onChange",
 		reValidateMode: "onChange",
 		defaultValues: allFormFields.reduce((acc, f) => {
-			if (f.type === "parameter-list" || f.type === "string-list") {
-				acc[f.key] = Array.isArray(f.value) ? f.value : [];
-			} else if (f.type === "file-upload") {
-				acc[f.key] = f.value instanceof File ? f.value : null;
-			} else if (f.type === "checkbox") {
-				acc[f.key] = typeof f.value === "boolean" ? f.value : false;
-			} else {
-				acc[f.key] = f.value || "";
-			}
+			acc[f.key] = defaultValueFor(f);
 			return acc;
 		}, {}),
 	});
 
 	const watchedFieldRef = useRef({});
-	const { monolithStore, configStore } = useRootStore();
+	// every value, so a field that only applies to one choice can say so with
+	// showWhen. without this the rules are evaluated against nothing and a
+	// conditional field never appears
+	const watchedValues = form.watch();
+
+	// eslint-disable-next-line react-hooks/exhaustive-deps
+	useEffect(() => {
+		// a field that has stopped applying goes back to its default, so switching
+		// a choice does not carry the other branch's values into the engine, and
+		// does not leave an error on an input nobody can see
+		for (const field of allFormFields) {
+			if (
+				!field.showWhen ||
+				computeVisibility(field as FormFieldConfig, watchedValues)
+			) {
+				continue;
+			}
+			const fallback = defaultValueFor(field);
+			const current = form.getValues(field.key);
+			if (JSON.stringify(current) !== JSON.stringify(fallback)) {
+				form.setValue(field.key, fallback, {
+					shouldDirty: false,
+					shouldValidate: false,
+				});
+				form.clearErrors(field.key);
+			}
+		}
+	}, [watchedValues, allFormFields]);
+	const runPixel = useSession((state) => state.runPixel);
+	const upload = useSession((state) => state.upload);
 	const navigate = useNavigate();
 	const defaultFields = resolvedFields;
 	const advancedFields = advanced;
@@ -185,15 +262,16 @@ export const FunctionForm = ({
 			}
 		});
 
-		let pixel = `CreateRestFunctionEngine(function=["${
+		const createReactor =
+			newFormData.FUNCTION_TYPE === "LOCAL_PYTHON"
+				? "CreatePythonFunctionEngine"
+				: "CreateFunctionEngine";
+		let pixel = `${createReactor}(function=["${
 			formData.NAME
 		}"],functionDetails=[${JSON.stringify(newFormData)}]);`;
 		if (FILE) {
 			try {
-				const uploadedFiles = await uploadFile(
-					[FILE],
-					configStore.store.insightID,
-				);
+				const uploadedFiles = await upload([FILE]);
 
 				if (!uploadedFiles || !Array.isArray(uploadedFiles)) {
 					toast.error("Upload failed or returned invalid response.");
@@ -209,7 +287,7 @@ export const FunctionForm = ({
 			}
 		}
 
-		const response = await monolithStore.runQuery(pixel);
+		const response = await runPixel(pixel);
 		const pixelOutput = response.pixelReturn[0].output;
 		const operationType = response.pixelReturn[0].operationType;
 
@@ -272,7 +350,7 @@ export const FunctionForm = ({
 	const hasParameterizedValue = (str) => /<([^>]+)>/.test(str);
 
 	const executeWatchedFieldPixel = async (key, pixelStr, type) => {
-		const response = await monolithStore.runQuery(pixelStr);
+		const response = await runPixel(pixelStr);
 		const output = response.pixelReturn[0].output;
 		const operationType = response.pixelReturn[0].operationType;
 
@@ -310,7 +388,7 @@ export const FunctionForm = ({
 			userInput.trim(),
 		);
 
-		const response = await monolithStore.runQuery(pixelToExecute);
+		const response = await runPixel(pixelToExecute);
 		const output = response.pixelReturn[0].output;
 		const operationType = response.pixelReturn[0].operationType;
 
@@ -350,7 +428,9 @@ export const FunctionForm = ({
 					}
 					extensions={val.options?.extensions}
 					disabled={val.disabled}
-					className={computeVisibility(val, {}) ? "" : "hidden"}
+					className={
+						computeVisibility(val, watchedValues) ? "" : "hidden"
+					}
 					data-testid={`function-form-input-${val.key}`}
 				/>
 			);
@@ -367,7 +447,7 @@ export const FunctionForm = ({
 							return (
 								<Field
 									className={
-										computeVisibility(val, {})
+										computeVisibility(val, watchedValues)
 											? ""
 											: "hidden"
 									}
@@ -479,7 +559,7 @@ export const FunctionForm = ({
 							return (
 								<Field
 									className={
-										computeVisibility(val, {})
+										computeVisibility(val, watchedValues)
 											? ""
 											: "hidden"
 									}
@@ -515,7 +595,7 @@ export const FunctionForm = ({
 							return (
 								<Field
 									className={
-										computeVisibility(val, {})
+										computeVisibility(val, watchedValues)
 											? ""
 											: "hidden"
 									}
@@ -578,7 +658,7 @@ export const FunctionForm = ({
 							return (
 								<Field
 									className={
-										computeVisibility(val, {})
+										computeVisibility(val, watchedValues)
 											? ""
 											: "hidden"
 									}
@@ -628,7 +708,7 @@ export const FunctionForm = ({
 							return (
 								<div
 									className={
-										computeVisibility(val, {})
+										computeVisibility(val, watchedValues)
 											? "flex items-center gap-2"
 											: "hidden"
 									}
@@ -664,7 +744,7 @@ export const FunctionForm = ({
 							return (
 								<Field
 									className={
-										computeVisibility(val, {})
+										computeVisibility(val, watchedValues)
 											? ""
 											: "hidden"
 									}
@@ -726,7 +806,7 @@ export const FunctionForm = ({
 							return (
 								<Field
 									className={
-										computeVisibility(val, {})
+										computeVisibility(val, watchedValues)
 											? ""
 											: "hidden"
 									}
@@ -883,7 +963,7 @@ export const FunctionForm = ({
 							return (
 								<Field
 									className={
-										computeVisibility(val, {})
+										computeVisibility(val, watchedValues)
 											? ""
 											: "hidden"
 									}

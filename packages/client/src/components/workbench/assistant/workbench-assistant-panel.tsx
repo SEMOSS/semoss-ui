@@ -88,22 +88,28 @@ export const WorkbenchAssistantPanel = () => {
 									variant="ghost"
 									size="icon-sm"
 									aria-label="Back to assistant"
-									className="-ms-1.5"
+									className={cn(
+										"-ms-1.5",
+										WORKBENCH_STYLES.chromeButton,
+										WORKBENCH_STYLES.chromeButtonInactive,
+									)}
 									onClick={() => setView("assistant")}
 								>
-									<ArrowLeftIcon />
+									<ArrowLeftIcon
+										className={WORKBENCH_STYLES.chromeIcon}
+									/>
 								</Button>
 							</TooltipTrigger>
 							<TooltipContent>Back to assistant</TooltipContent>
 						</Tooltip>
-						<h2 className="min-w-0 flex-1 truncate font-medium text-sm">
+						<h2 className="min-w-0 flex-1 truncate font-medium text-foreground text-xs">
 							{view === "conversations"
 								? "Conversations"
 								: "Settings"}
 						</h2>
 					</>
 				) : (
-					<h2 className="min-w-0 flex-1 truncate font-medium text-sm">
+					<h2 className="min-w-0 flex-1 truncate font-medium text-foreground text-xs">
 						{roomName || "New conversation"}
 					</h2>
 				)}
@@ -116,12 +122,18 @@ export const WorkbenchAssistantPanel = () => {
 								size="icon-sm"
 								aria-label="Rebuild the app"
 								disabled={isRebuilding}
+								className={cn(
+									WORKBENCH_STYLES.chromeButton,
+									WORKBENCH_STYLES.chromeButtonInactive,
+								)}
 								onClick={() => void handleRebuild()}
 							>
 								{isRebuilding ? (
 									<Spinner className="size-3.5" />
 								) : (
-									<HammerIcon />
+									<HammerIcon
+										className={WORKBENCH_STYLES.chromeIcon}
+									/>
 								)}
 							</Button>
 						</TooltipTrigger>
@@ -136,11 +148,16 @@ export const WorkbenchAssistantPanel = () => {
 							size="icon-sm"
 							aria-label="Conversation history"
 							className={cn(
-								view === "conversations" && "bg-accent",
+								WORKBENCH_STYLES.chromeButton,
+								view === "conversations"
+									? WORKBENCH_STYLES.chromeButtonActive
+									: WORKBENCH_STYLES.chromeButtonInactive,
 							)}
 							onClick={() => toggleView("conversations")}
 						>
-							<HistoryIcon />
+							<HistoryIcon
+								className={WORKBENCH_STYLES.chromeIcon}
+							/>
 						</Button>
 					</TooltipTrigger>
 					<TooltipContent>Conversation history</TooltipContent>
@@ -152,10 +169,17 @@ export const WorkbenchAssistantPanel = () => {
 							variant="ghost"
 							size="icon-sm"
 							aria-label="Assistant settings"
-							className={cn(view === "settings" && "bg-accent")}
+							className={cn(
+								WORKBENCH_STYLES.chromeButton,
+								view === "settings"
+									? WORKBENCH_STYLES.chromeButtonActive
+									: WORKBENCH_STYLES.chromeButtonInactive,
+							)}
 							onClick={() => toggleView("settings")}
 						>
-							<Settings2Icon />
+							<Settings2Icon
+								className={WORKBENCH_STYLES.chromeIcon}
+							/>
 						</Button>
 					</TooltipTrigger>
 					<TooltipContent>Assistant settings</TooltipContent>
@@ -168,12 +192,16 @@ export const WorkbenchAssistantPanel = () => {
 							size="icon-sm"
 							aria-label="Start a new conversation"
 							disabled={isInitializing || isSending}
+							className={cn(
+								WORKBENCH_STYLES.chromeButton,
+								WORKBENCH_STYLES.chromeButtonInactive,
+							)}
 							onClick={() => {
 								void newRoom();
 								setView("assistant");
 							}}
 						>
-							<PlusIcon />
+							<PlusIcon className={WORKBENCH_STYLES.chromeIcon} />
 						</Button>
 					</TooltipTrigger>
 					<TooltipContent>Start a new conversation</TooltipContent>

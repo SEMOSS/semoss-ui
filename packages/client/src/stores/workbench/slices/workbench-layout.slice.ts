@@ -1,7 +1,6 @@
-import type { StoreApi } from "zustand";
+import { shallow } from "zustand/shallow";
 import type {
 	WorkbenchBorders,
-	WorkbenchCommand,
 	WorkbenchLayout,
 	WorkbenchLayoutNode,
 	WorkbenchMoveTarget,
@@ -21,7 +20,6 @@ import type {
 	WorkbenchTabset,
 } from "../workbench.types";
 import { WORKBENCH_SIDES } from "../workbench.types";
-import { buildWorkbenchLayoutCommands } from "./workbench-layout.commands";
 import {
 	createNodeId,
 	emptyTabset,
@@ -50,14 +48,8 @@ interface WorkbenchSelectionState {
 
 /** Layout state fields owned by each workbench instance. */
 interface WorkbenchLayoutSliceFields {
-	/** Unique identity for this workbench instance. */
-	id: string;
-
 	/** True once loadLayout has produced a usable arrangement. */
 	hydrated: boolean;
-
-	/** Structural edits (move/split/pin/reset) are rejected when true. */
-	readOnly: boolean;
 
 	/** Mirrors the shell's mobile breakpoint so visibility derives here. */
 	isMobileLayout: boolean;
@@ -88,7 +80,11 @@ interface WorkbenchLayoutSliceFields {
 	/** The single panel shown by the mobile stack. Not persisted. */
 	mobileActivePanelId: WorkbenchPanelId | undefined;
 
-	/** Per-panel scratch values read/written through the panel api. Never persisted. */
+	/**
+	 * Per-panel scratch values keyed by opaque panel instance id. Never persisted.
+	 * A blueprint type is only a valid key when a static layout deliberately uses
+	 * that same string as the instance id.
+	 */
 	values: Record<WorkbenchPanelId, unknown>;
 
 	/** Panel blueprints keyed by type, registered by the shell. */
@@ -120,9 +116,6 @@ interface WorkbenchLayoutSliceFields {
 
 	/** Derived: which slot each open panel is drawn over. */
 	panelSlots: Record<WorkbenchPanelId, WorkbenchPanelSlot>;
-
-	/** Optional domain store attached by a domain workbench (e.g. database). */
-	domainStore: StoreApi<object> | undefined;
 }
 
 /** Layout actions exposed under the store's `actions` namespace. */
@@ -141,9 +134,6 @@ export interface WorkbenchLayoutActions {
 	/** Mark a panel type's body as failed. */
 	markComponentError: (type: WorkbenchPanelType) => void;
 
-	/** Attach a domain store so domain hooks can reach it without a context. */
-	attachDomainStore: (store: StoreApi<object>) => void;
-
 	/** Register the root element slot rects are measured against. */
 	registerRootElement: (el: HTMLElement | null) => void;
 
@@ -158,14 +148,8 @@ export interface WorkbenchLayoutActions {
 	 * default when nothing usable is cached. Read once per layout identity.
 	 *
 	 * @param layout - Default layout used when the cache is empty or unusable.
-	 * @param opts - The readOnly flag.
 	 */
-	loadLayout: (
-		layout: WorkbenchLayout,
-		opts?: {
-			readOnly?: boolean;
-		},
-	) => void;
+	loadLayout: (layout: WorkbenchLayout) => void;
 
 	/** Back to the default layout; overwrites the cache immediately. */
 	resetLayout: () => void;
@@ -215,10 +199,10 @@ export interface WorkbenchLayoutActions {
 	 */
 	renamePanel: (pid: WorkbenchPanelId, name: string) => void;
 
-	/** Merge a name/config/capability patch into a panel's record. */
+	/** Merge a type/name/config/capability patch into a panel's record. */
 	updatePanel: (
 		pid: WorkbenchPanelId,
-		patch: Partial<Omit<WorkbenchPanelRecord, "id" | "type">>,
+		patch: Partial<Omit<WorkbenchPanelRecord, "id">>,
 	) => void;
 
 	/** Write a panel's scratch value. */
@@ -314,9 +298,6 @@ export interface WorkbenchLayoutActions {
 	findPanels: (
 		predicate: (record: WorkbenchPanelRecord) => boolean,
 	) => WorkbenchPanelRecord[];
-
-	/** The layout-derived palette entries. Call when the palette opens. */
-	buildLayoutCommands: () => WorkbenchCommand[];
 }
 
 /** The layout slice: fields plus its `actions` contribution. */
@@ -496,16 +477,13 @@ const slotRectsEqual = (a: WorkbenchSlotRect, b: WorkbenchSlotRect): boolean =>
  * Creates the dock layout slice for one workbench.
  *
  * @name createWorkbenchLayoutSlice
- * @param id - Unique workbench ID used to isolate the cache.
+ * @param cacheKey - Unique key used to isolate persisted layout state.
  * @return Zustand state creator for the workbench layout slice.
  */
 export const createWorkbenchLayoutSlice = (
-	id: string,
+	cacheKey: string,
 ): WorkbenchSlice<WorkbenchLayoutSliceState> => {
-	// `id` never changes for a store instance, so the key can be built once.
-	// resolved from the layout's version the first time one is loaded, so a
-	// workbench that bumps its version simply stops seeing the old entries
-	let cacheKey = "";
+	const storageKey = `smss-workbench--layout--${cacheKey}--1`;
 
 	// Closure-scoped, never in state: none of these should notify subscribers.
 	let defaultLayout: WorkbenchLayout | null = null;
@@ -538,7 +516,10 @@ export const createWorkbenchLayoutSlice = (
 				return;
 			}
 			try {
-				localStorage.setItem(cacheKey, JSON.stringify(buildSnapshot()));
+				localStorage.setItem(
+					storageKey,
+					JSON.stringify(buildSnapshot()),
+				);
 			} catch (e) {
 				console.error(e);
 			}
@@ -734,9 +715,7 @@ export const createWorkbenchLayoutSlice = (
 		});
 
 		return {
-			id: id,
 			hydrated: false,
-			readOnly: false,
 			isMobileLayout: false,
 			panels: {},
 			tree: emptyTabset(),
@@ -749,7 +728,6 @@ export const createWorkbenchLayoutSlice = (
 			draggingPanelId: undefined,
 			editingPanelId: undefined,
 			slotRects: {},
-			domainStore: undefined,
 			...initialDerived,
 
 			actions: {
@@ -785,14 +763,6 @@ export const createWorkbenchLayoutSlice = (
 								[type]: "error",
 							},
 						},
-					}));
-				},
-				attachDomainStore: (store) => {
-					if (get().layout.domainStore === store) {
-						return;
-					}
-					set((root) => ({
-						layout: { ...root.layout, domainStore: store },
 					}));
 				},
 				registerRootElement: (el) => {
@@ -888,19 +858,12 @@ export const createWorkbenchLayoutSlice = (
 					}));
 				},
 
-				loadLayout: (layout, opts = {}) => {
-					cacheKey = `smss-workbench--${id}--${layout.version}`;
+				loadLayout: (layout) => {
 					defaultLayout = deepCopy(layout);
-					set((root) => ({
-						layout: {
-							...root.layout,
-							readOnly: opts.readOnly ?? false,
-						},
-					}));
 
 					let cached: WorkbenchSnapshot | null = null;
 					try {
-						const item = localStorage.getItem(cacheKey);
+						const item = localStorage.getItem(storageKey);
 						if (item) {
 							cached = parseWorkbenchSnapshot(JSON.parse(item));
 						}
@@ -915,7 +878,7 @@ export const createWorkbenchLayoutSlice = (
 					persistNow();
 				},
 				resetLayout: () => {
-					if (get().layout.readOnly || !defaultLayout) {
+					if (!defaultLayout) {
 						return;
 					}
 					applySnapshot(deepCopy(defaultLayout));
@@ -1150,32 +1113,32 @@ export const createWorkbenchLayoutSlice = (
 											}
 										: record.config,
 									id: record.id,
-									type: record.type,
+									type: patch.type ?? record.type,
 								},
 							},
 						};
 					});
 				},
 				setPanelValue: (pid, next) => {
+					const prev = get().layout.values[pid];
+					const resolved =
+						typeof next === "function"
+							? (next as (prev: unknown) => unknown)(prev)
+							: next;
+					if (shallow(prev, resolved)) {
+						return;
+					}
 					set((root) => ({
 						layout: {
 							...root.layout,
 							values: {
 								...root.layout.values,
-								[pid]:
-									typeof next === "function"
-										? (next as (prev: unknown) => unknown)(
-												root.layout.values[pid],
-											)
-										: next,
+								[pid]: resolved,
 							},
 						},
 					}));
 				},
 				setPinned: (pid, pinned) => {
-					if (get().layout.readOnly) {
-						return;
-					}
 					commit((s) => {
 						const record = s.panels[pid];
 						if (!record) {
@@ -1256,7 +1219,7 @@ export const createWorkbenchLayoutSlice = (
 					});
 				},
 				movePanel: (pid, target) => {
-					if (get().layout.readOnly || !flagOf(pid, "canDrag")) {
+					if (!flagOf(pid, "canDrag")) {
 						return;
 					}
 					if (target.kind === "border") {
@@ -1365,9 +1328,6 @@ export const createWorkbenchLayoutSlice = (
 					});
 				},
 				splitInTab: (tabsetId, dir = "row") => {
-					if (get().layout.readOnly) {
-						return;
-					}
 					commit((s) => ({
 						tree: updateTabset(s.tree, tabsetId, (tabset) =>
 							dir === "off"
@@ -1520,7 +1480,6 @@ export const createWorkbenchLayoutSlice = (
 				getPanel: (pid) => (pid ? get().layout.panels[pid] : undefined),
 				findPanels: (predicate) =>
 					Object.values(get().layout.panels).filter(predicate),
-				buildLayoutCommands: () => buildWorkbenchLayoutCommands(get),
 			},
 		};
 	};

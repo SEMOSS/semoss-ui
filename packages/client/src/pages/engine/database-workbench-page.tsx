@@ -1,5 +1,5 @@
 import { ChevronRightIcon } from "lucide-react";
-import { Link, Navigate } from "react-router-dom";
+import { Link, Navigate } from "react-router";
 import { InsightProvider } from "@semoss/sdk/react";
 import {
 	Breadcrumb,
@@ -23,7 +23,13 @@ export const DatabaseWorkbenchPage = () => {
 
 	return (
 		<InsightProvider>
-			<WorkbenchProvider id={engine.engine_id}>
+			<WorkbenchProvider
+				cacheKey={
+					permission === "OWNER" || permission === "EDIT"
+						? engine.engine_id
+						: `${engine.engine_id}--read-only`
+				}
+			>
 				<NavbarLeft>
 					<NavbarHeader logo={null} />
 					<Breadcrumb>

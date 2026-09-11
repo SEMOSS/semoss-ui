@@ -491,7 +491,7 @@ function FormFileDropzone({
 /* -------------------------------------------------------------------------- */
 
 type FormActionsProps = {
-	/** Mirrors form.formState.isSubmitting — disables both buttons and shows the Spinner. */
+	/** Mirrors form.formState.isSubmitting - disables both buttons and shows the Spinner. */
 	isSubmitting: boolean;
 	/** Called when the user clicks Cancel. */
 	onCancel: () => void;
@@ -567,6 +567,7 @@ export {
 	FormProvider,
 	type SubmitHandler,
 	type UseFormReturn,
+	useFieldArray,
 	useForm,
 	useFormContext,
 } from "react-hook-form";

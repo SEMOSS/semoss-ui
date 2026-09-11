@@ -1,20 +1,26 @@
+import { useMemo } from "react";
+import { useProject } from "@/hooks";
 import type {
-	WorkbenchComponent,
 	WorkbenchLayout,
-	WorkbenchPanelConfig,
 	WorkbenchPanelConfigAny,
 } from "@/stores/workbench";
 import { Workbench } from "../../core";
 import {
+	FILE_CODE_EDITOR_PANEL,
+	FILE_DOWNLOAD_PANEL,
+	FILE_EXPLORER_PANEL,
+	FILE_HTML_EDITOR_PANEL,
+	FILE_IMAGE_VIEWER_PANEL,
+	FILE_MARKDOWN_EDITOR_PANEL,
+	FILE_MCP_EDITOR_PANEL,
+	FILE_NOTEBOOK_EDITOR_PANEL,
+	FILE_PDF_VIEWER_PANEL,
+	FILE_PPTX_VIEWER_PANEL,
+} from "../../files";
+import {
 	WORKBENCH_COMPONENTS,
 	WORKBENCH_PANEL_RECORDS,
 } from "../../workbench.constants";
-import {
-	PROJECT_FILE_EDITOR_PANEL,
-	type ProjectFileEditorConfig,
-	ProjectFileEditorPanel,
-} from "../project-file-editor-panel";
-import { PROJECT_FILE_EXPLORER_PANEL } from "../project-file-explorer-panel";
 
 /** Notebook every project of type NOTEBOOK is created with. */
 const NOTEBOOK_PATH = "/public/main.ipynb";
@@ -26,26 +32,10 @@ const NOTEBOOK_EDITOR_ID = "notebook-main";
 /** Only published assets are browsable from the read-only surface. */
 const PUBLIC_ROOT_PATH = "/public";
 
-/** Forces every editor instance in this workbench into view-only mode. */
-const ViewProjectFileEditor: WorkbenchComponent<ProjectFileEditorConfig> = (
-	props,
-) => (
-	<ProjectFileEditorPanel
-		{...props}
-		config={{ ...props.config, readOnly: true }}
-	/>
-);
-
-/** The editor blueprint with view-only content, same dedupe and icon. */
-const VIEW_PROJECT_FILE_EDITOR_PANEL: WorkbenchPanelConfig<ProjectFileEditorConfig> =
-	{
-		...PROJECT_FILE_EDITOR_PANEL,
-		content: ViewProjectFileEditor,
-	};
-
 /** The default arrangement: main.ipynb open, the /public files on the left. */
-const NOTEBOOK_VIEW_WORKBENCH_LAYOUT: WorkbenchLayout = {
-	version: 1,
+const createNotebookViewWorkbenchLayout = (
+	projectId: string,
+): WorkbenchLayout => ({
 	tree: {
 		type: "tabset",
 		id: "main",
@@ -56,36 +46,49 @@ const NOTEBOOK_VIEW_WORKBENCH_LAYOUT: WorkbenchLayout = {
 	panels: {
 		[NOTEBOOK_EDITOR_ID]: {
 			id: NOTEBOOK_EDITOR_ID,
-			type: WORKBENCH_COMPONENTS.PROJECT_FILE_EDITOR,
+			type: WORKBENCH_COMPONENTS.FILE_NOTEBOOK_EDITOR,
 			name: NOTEBOOK_NAME,
 			canClose: true,
 			config: {
+				type: "PROJECT",
+				id: projectId,
 				name: NOTEBOOK_NAME,
 				path: NOTEBOOK_PATH,
-				readOnly: true,
 			},
 		},
-		[WORKBENCH_PANEL_RECORDS.PROJECT_FILE_EXPLORER.id]: {
-			...WORKBENCH_PANEL_RECORDS.PROJECT_FILE_EXPLORER,
-			config: { initialPath: PUBLIC_ROOT_PATH, readOnly: true },
+		[WORKBENCH_PANEL_RECORDS.FILE_EXPLORER.id]: {
+			...WORKBENCH_PANEL_RECORDS.FILE_EXPLORER,
+			config: {
+				type: "PROJECT",
+				id: projectId,
+				initialPath: PUBLIC_ROOT_PATH,
+			},
 		},
 	},
 	borders: {
 		left: {
-			panelIds: [WORKBENCH_COMPONENTS.PROJECT_FILE_EXPLORER],
-			activeId: WORKBENCH_COMPONENTS.PROJECT_FILE_EXPLORER,
+			panelIds: [WORKBENCH_COMPONENTS.FILE_EXPLORER],
+			activeId: WORKBENCH_COMPONENTS.FILE_EXPLORER,
 			size: 400,
 		},
 	},
-};
+});
 
 /** Blueprints, keyed by type. Module-scope so identities never churn. */
 const NOTEBOOK_VIEW_WORKBENCH_COMPONENTS: Record<
 	string,
 	WorkbenchPanelConfigAny
 > = {
-	[WORKBENCH_COMPONENTS.PROJECT_FILE_EXPLORER]: PROJECT_FILE_EXPLORER_PANEL,
-	[WORKBENCH_COMPONENTS.PROJECT_FILE_EDITOR]: VIEW_PROJECT_FILE_EDITOR_PANEL,
+	[WORKBENCH_COMPONENTS.FILE_EXPLORER]: FILE_EXPLORER_PANEL,
+	[WORKBENCH_COMPONENTS.FILE_CODE_EDITOR]: FILE_CODE_EDITOR_PANEL,
+	[WORKBENCH_COMPONENTS.FILE_DOWNLOAD]: FILE_DOWNLOAD_PANEL,
+	[WORKBENCH_COMPONENTS.FILE_HTML_EDITOR]: FILE_HTML_EDITOR_PANEL,
+	[WORKBENCH_COMPONENTS.FILE_IMAGE_VIEWER]: FILE_IMAGE_VIEWER_PANEL,
+	[WORKBENCH_COMPONENTS.FILE_MARKDOWN_EDITOR]: FILE_MARKDOWN_EDITOR_PANEL,
+	[WORKBENCH_COMPONENTS.FILE_NOTEBOOK_EDITOR]: FILE_NOTEBOOK_EDITOR_PANEL,
+	[WORKBENCH_COMPONENTS.FILE_PDF_VIEWER]: FILE_PDF_VIEWER_PANEL,
+	[WORKBENCH_COMPONENTS.FILE_PPTX_VIEWER]: FILE_PPTX_VIEWER_PANEL,
+	[WORKBENCH_COMPONENTS.FILE_MCP_EDITOR]: FILE_MCP_EDITOR_PANEL,
 };
 
 /**
@@ -94,11 +97,16 @@ const NOTEBOOK_VIEW_WORKBENCH_COMPONENTS: Record<
  * terminal, assistant, or settings surfaces of the editable workbench.
  */
 export const NotebookViewWorkbench: React.FC = () => {
+	const { project } = useProject();
+	const workbenchLayout = useMemo(
+		() => createNotebookViewWorkbenchLayout(project.project_id),
+		[project.project_id],
+	);
+
 	return (
 		<Workbench
-			layout={NOTEBOOK_VIEW_WORKBENCH_LAYOUT}
+			layout={workbenchLayout}
 			components={NOTEBOOK_VIEW_WORKBENCH_COMPONENTS}
-			readOnly
 		/>
 	);
 };

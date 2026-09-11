@@ -37,7 +37,7 @@ import {
 	setUserDefaultModel,
 } from "@/api/auth";
 import { SdkBlock } from "@/components/shared/sdk-block";
-import { useAPI, useRootStore, useSettings } from "@/hooks";
+import { useAPI, useConfig, useSession, useSettings } from "@/hooks";
 import { formatDate, getSDKSnippet } from "@/utility";
 import { ChangePasswordModal } from "./change-password-modal";
 
@@ -64,11 +64,25 @@ interface EditUserInfoForm {
 export const MyProfilePage = () => {
 	const modelSelectId = useId();
 	const generateKeyFormId = useId();
-	const { configStore, insightStore } = useRootStore();
-	const { email, id, name } = configStore.store.user;
-	const { isNative } = configStore.store;
-	const lastLogin = configStore.store.user.lastLogin;
-	const groups = configStore.store.user.groupInfo?.groups ?? [];
+	const nativeRegistration = useConfig(
+		(state) => state.config.nativeRegistration,
+	);
+	const logins = useConfig((state) => state.config.logins);
+	const loginDetails = useConfig((state) => state.config.loginDetails);
+	const defaultTextGenerationModel = useSession(
+		(state) => state.defaultTextGenerationModel,
+	);
+	const defaultCodeGenerationModel = useSession(
+		(state) => state.defaultCodeGenerationModel,
+	);
+	const updateUserDefaultModel = useSession(
+		(state) => state.updateUserDefaultModel,
+	);
+	const { email, id, name, admin, lastLogin, groupInfo } = useSession(
+		(state) => state.user,
+	);
+	const isNative = useSession((state) => state.isNative);
+	const groups = groupInfo?.groups ?? [];
 	const { adminMode } = useSettings();
 
 	const [addModal, setAddModal] = useState(false);
@@ -89,7 +103,6 @@ export const MyProfilePage = () => {
 		setSelectedCodeGenerationDefaultModel,
 	] = useState<string>("");
 
-	const logins = configStore.store.config.logins;
 	const nativeLogin = (logins as unknown as { NATIVE: string })?.NATIVE;
 
 	const { control, reset, setValue, handleSubmit, watch } =
@@ -152,17 +165,17 @@ export const MyProfilePage = () => {
 			: [];
 
 	useEffect(() => {
-		if (insightStore.defaultTextGenerationModel && modals.length > 0) {
+		if (defaultTextGenerationModel && modals.length > 0) {
 			const matchingEngine = modals.find(
-				(e) => e.engine_id === insightStore.defaultTextGenerationModel,
+				(e) => e.engine_id === defaultTextGenerationModel,
 			);
 			if (matchingEngine) {
 				setSelectedTextGenerationDefaultModel(matchingEngine.engine_id);
 			}
 		}
-		if (insightStore.defaultCodeGenerationModel && modals.length > 0) {
+		if (defaultCodeGenerationModel && modals.length > 0) {
 			const matchingCodeEngine = modals.find(
-				(e) => e.engine_id === insightStore.defaultCodeGenerationModel,
+				(e) => e.engine_id === defaultCodeGenerationModel,
 			);
 			if (matchingCodeEngine) {
 				setSelectedCodeGenerationDefaultModel(
@@ -170,11 +183,7 @@ export const MyProfilePage = () => {
 				);
 			}
 		}
-	}, [
-		insightStore.defaultTextGenerationModel,
-		insightStore.defaultCodeGenerationModel,
-		modals,
-	]);
+	}, [defaultTextGenerationModel, defaultCodeGenerationModel, modals]);
 
 	const profileEditSubmit = async (data: EditUserInfoForm) => {
 		try {
@@ -185,10 +194,8 @@ export const MyProfilePage = () => {
 				email: email,
 				username: id,
 				name: data.NAME,
-				type: configStore.store.config.nativeRegistration
-					? "NATIVE"
-					: "CUSTOM",
-				admin: configStore.store.user?.admin || false,
+				type: nativeRegistration ? "NATIVE" : "CUSTOM",
+				admin: admin || false,
 			};
 			userObj.id =
 				data.USERID !== nativeLogin ? data.USERID : nativeLogin;
@@ -226,7 +233,7 @@ export const MyProfilePage = () => {
 			);
 			if (!selectedEngine) throw new Error("Selected model not found");
 
-			insightStore.updateUserDefaultModel(modelType, selectedEngineId);
+			updateUserDefaultModel(modelType, selectedEngineId);
 			await setUserDefaultModel(modelType, selectedEngineId);
 			toast.success(`Default ${modelType} saved successfully`);
 		} catch (e) {
@@ -469,8 +476,7 @@ export const MyProfilePage = () => {
 									<Input
 										value={
 											Object.keys(
-												configStore.store.config
-													.loginDetails as object,
+												loginDetails as object,
 											)[0]
 										}
 										maxLength={500}

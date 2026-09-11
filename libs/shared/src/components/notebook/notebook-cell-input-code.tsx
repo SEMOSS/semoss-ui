@@ -102,16 +102,28 @@ export const NotebookCellInputCode: React.FC<{
 	const handleMount: OnMount = (editor, monacoInstance) => {
 		syncHeight(editor);
 		editor.onDidContentSizeChange(() => syncHeight(editor));
-		editor.addCommand(
-			monacoInstance.KeyMod.CtrlCmd | monacoInstance.KeyCode.Enter,
-			() => onRunInPlaceRef.current?.(),
-		);
-		editor.addCommand(
-			monacoInstance.KeyMod.Shift | monacoInstance.KeyCode.Enter,
-			() => onRunAndAdvanceRef.current?.(),
-		);
-		// focus on it
-		editor.focus();
+		editor.onKeyDown((event) => {
+			if (
+				(event.ctrlKey || event.metaKey) &&
+				!event.shiftKey &&
+				event.keyCode === monacoInstance.KeyCode.Enter
+			) {
+				// run in place
+				event.preventDefault();
+				event.stopPropagation();
+				onRunInPlaceRef.current?.();
+			} else if (
+				event.shiftKey &&
+				!event.ctrlKey &&
+				!event.metaKey &&
+				event.keyCode === monacoInstance.KeyCode.Enter
+			) {
+				// run and advance
+				event.preventDefault();
+				event.stopPropagation();
+				onRunAndAdvanceRef.current?.();
+			}
+		});
 	};
 
 	return (

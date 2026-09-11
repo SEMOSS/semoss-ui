@@ -3,7 +3,7 @@ import { observer } from "mobx-react-lite";
 import type React from "react";
 import { useEffect, useState } from "react";
 import { Button } from "@semoss/ui/next";
-import { useRootStore } from "@/hooks";
+import { useConfig } from "@/hooks";
 import { PrivacyPreferenceCenterModal } from "./privacy-preference-center-modal";
 
 interface CookieWrapperProps {
@@ -15,7 +15,9 @@ const cookieName = `smss-optional-cookie`;
 
 export const CookieWrapper = observer((props: CookieWrapperProps) => {
 	const { children } = props;
-	const { configStore } = useRootStore();
+	const cookiePolicyBannerReact = useConfig(
+		(state) => state.theme.cookiePolicyBannerReact,
+	);
 
 	const [visible, setVisible] = useState(false);
 	const [viewCookiePolicy, setViewCookiePolicy] = useState(false);
@@ -27,11 +29,8 @@ export const CookieWrapper = observer((props: CookieWrapperProps) => {
 
 		if (!permissionGranted) {
 			try {
-				const themeCookieBanner =
-					configStore.theme.cookiePolicyBannerReact;
-
-				if (themeCookieBanner) {
-					setCookieBanner(themeCookieBanner);
+				if (cookiePolicyBannerReact) {
+					setCookieBanner(cookiePolicyBannerReact);
 					setVisible(true);
 				}
 			} catch {
@@ -42,7 +41,7 @@ export const CookieWrapper = observer((props: CookieWrapperProps) => {
 		return () => {
 			setVisible(false);
 		};
-	}, [configStore.theme.cookiePolicyBannerReact]);
+	}, [cookiePolicyBannerReact]);
 
 	const acceptCookies = () => {
 		localStorage.setItem(cookieName, JSON.stringify(true));

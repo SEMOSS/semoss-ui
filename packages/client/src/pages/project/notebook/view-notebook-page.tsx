@@ -1,5 +1,5 @@
 import { ChevronRightIcon, InfoIcon, PencilIcon } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link } from "react-router";
 import { InsightProvider } from "@semoss/sdk/react";
 import {
 	Breadcrumb,
@@ -32,7 +32,7 @@ export const ViewNotebookPage = () => {
 
 	return (
 		<InsightProvider options={{ app: project.project_id }}>
-			<WorkbenchProvider id={`${project.project_id}-view`}>
+			<WorkbenchProvider cacheKey={`${project.project_id}-view`}>
 				<NavbarLeft>
 					<NavbarHeader logo={null} />
 					<Breadcrumb>
