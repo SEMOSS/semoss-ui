@@ -2,9 +2,10 @@ import { HelpCircle } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useShallow } from "zustand/react/shallow";
 import { getLanguageDirection, useTranslation } from "@semoss/i18n";
-import type { WorkbenchLayout } from "@semoss/workbench";
+import { useCacheState } from "@semoss/ui/next";
+import type { WorkbenchLayout, WorkbenchSnapshot } from "@semoss/workbench";
 import {
-	createWorkbenchStore,
+	parseWorkbenchSnapshot,
 	useWorkbench,
 	useWorkbenchStoreApi,
 	Workbench,
@@ -264,25 +265,24 @@ export const Terminal = ({
 	const side =
 		getLanguageDirection(i18n.language) === "rtl" ? "right" : "left";
 
-	// The layout is read once per identity, so it must not churn — but the
-	// border side genuinely changes when the user switches language, and
-	// re-hydrating is how Files moves to the other edge.
-	const layout = useMemo(
-		() => createTerminalLayout(side, allowMultipleTerminals),
-		[side, allowMultipleTerminals],
-	);
+	// One cache entry per arrangement, so a cached one never lands in a layout
+	// it does not fit. `allowMultipleTerminals` is in the name because an
+	// embedded single terminal and the full one are different layouts, and
+	// `side` because the RTL arrangement puts Files on the other edge — the two
+	// directions keep their own arrangements rather than overwriting each
+	// other's.
+	const cacheName = `terminal--${terminal.location}--${
+		allowMultipleTerminals ? "multi" : "single"
+	}--${side}`;
 
-	// One store per arrangement. `allowMultipleTerminals` is in the key because
-	// an embedded single terminal and the full one are different layouts, and a
-	// cached one must not hydrate into the other.
-	const store = useMemo(
-		() =>
-			createWorkbenchStore(
-				`terminal--${terminal.location}--${
-					allowMultipleTerminals ? "multi" : "single"
-				}`,
-			),
-		[terminal.location, allowMultipleTerminals],
+	const [snapshot, onSnapshotChange] = useCacheState<WorkbenchSnapshot>(
+		// read once per identity, so the default must not churn
+		useMemo(
+			() => createTerminalLayout(side, allowMultipleTerminals),
+			[side, allowMultipleTerminals],
+		),
+		cacheName,
+		parseWorkbenchSnapshot,
 	);
 
 	if (!terminal.open) return null;
@@ -344,11 +344,19 @@ export const Terminal = ({
 				)}
 
 				<div className="relative min-h-0 flex-1 overflow-hidden">
-					<WorkbenchProvider store={store}>
+					{/* The dock is this component's — nothing opens a panel
+					into it while the shell is unmounted, so `onUnmount` is the
+					whole of its persistence. Keyed by the arrangement it is
+					open on, so switching one starts a fresh dock rather than
+					pouring a cached layout into a shape it does not fit. */}
+					<WorkbenchProvider
+						key={cacheName}
+						components={TERMINAL_PANEL_COMPONENTS}
+					>
 						<TerminalDockBindings />
 						<Workbench
-							components={TERMINAL_PANEL_COMPONENTS}
-							layout={layout}
+							snapshot={snapshot}
+							onUnmount={onSnapshotChange}
 							borderSlots={{
 								[side]: {
 									after: (

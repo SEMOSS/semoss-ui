@@ -4,11 +4,9 @@ import { useWorkbench, useWorkbenchEvents } from "../../hooks";
 import type {
 	WorkbenchBorderSlotCtx,
 	WorkbenchBorderSlots,
-	WorkbenchLayout,
-	WorkbenchPanelConfigAny,
 	WorkbenchPanelId,
 	WorkbenchPanelRecord,
-	WorkbenchPanelType,
+	WorkbenchSnapshot,
 } from "../../types";
 import { resolveBorderSlot, WorkbenchBorder } from "./workbench-border";
 import { WorkbenchCommandPalette } from "./workbench-command-palette";
@@ -47,13 +45,33 @@ const focusOwnsEscape = (): boolean => {
 /** Props of the workbench shell. */
 interface WorkbenchProps {
 	/**
-	 * Panel blueprints keyed by type. Keep the map module-scope (or memoized)
-	 * so re-registration is an identity no-op and panels never remount.
+	 * What to open with — whatever the host restored, or its default when it
+	 * restored nothing. Read once per identity, so a host may pass the same
+	 * object on every render; the store owns it after.
 	 */
-	components: Record<WorkbenchPanelType, WorkbenchPanelConfigAny>;
+	snapshot: WorkbenchSnapshot;
 
-	/** The default arrangement. Read once per identity — the store owns it after. */
-	layout: WorkbenchLayout;
+	/**
+	 * Handed a fresh snapshot whenever the arrangement moves, for a host that
+	 * persists continuously.
+	 *
+	 * Fires while this shell is mounted and only then, so a dock that is also
+	 * written to while unmounted — a panel opened by something outside React —
+	 * sees those writes at its next change or at `onUnmount`.
+	 *
+	 * Don't pass this alongside a `snapshot` that changes identity: the
+	 * re-apply would be reported back as a change and overwrite whatever the
+	 * host just switched to.
+	 */
+	onChange?: (snapshot: WorkbenchSnapshot) => void;
+
+	/**
+	 * Handed this workbench's snapshot when the shell unmounts.
+	 *
+	 * Named for when it fires, because that is the whole of it: React runs
+	 * cleanups on navigation, **not** on a refresh or a closed tab.
+	 */
+	onUnmount?: (snapshot: WorkbenchSnapshot) => void;
 
 	/**
 	 * Rail add-ons per side (before/after the icon list). A rail carrying slot
@@ -77,13 +95,14 @@ interface WorkbenchProps {
 
 /**
  * Initialize and render one workbench inside the nearest scoped provider.
- * Registers the blueprint map, hydrates the persisted layout (falling back
- * to the supplied default), and renders the dock frame, borders, panel
- * layer, and interaction chrome.
+ * Applies the arrangement it is given and renders the dock frame, borders,
+ * panel layer, and interaction chrome. Blueprints come from the store, which
+ * was built with them.
  */
 export const Workbench: FC<WorkbenchProps> = ({
-	components,
-	layout,
+	snapshot,
+	onChange,
+	onUnmount,
 	borderSlots,
 	onPanelOpen,
 	onPanelClose,
@@ -120,17 +139,13 @@ export const Workbench: FC<WorkbenchProps> = ({
 		onPanelOpen,
 		onPanelClose,
 		onSelectionChange,
+		onChange,
 	});
 
-	// blueprints must be registered before hydration reads them
+	// apply the arrangement the host restored
 	useLayoutEffect(() => {
-		actions.registerComponents(components);
-	}, [actions, components]);
-
-	// restore the cached layout, falling back to the default
-	useLayoutEffect(() => {
-		actions.loadLayout(layout);
-	}, [actions, layout]);
+		actions.loadSnapshot(snapshot);
+	}, [actions, snapshot]);
 
 	useEffect(() => {
 		actions.setMobileLayout(isMobile);
@@ -158,8 +173,15 @@ export const Workbench: FC<WorkbenchProps> = ({
 		return () => observer.disconnect();
 	}, [actions]);
 
-	// flush any deferred cache write when the workbench unmounts
-	useEffect(() => () => actions.persistNow(), [actions]);
+	// hand the host its snapshot on the way out
+	const onUnmountRef = useRef(onUnmount);
+	onUnmountRef.current = onUnmount;
+	useEffect(
+		() => () => {
+			onUnmountRef.current?.(actions.getSnapshot());
+		},
+		[actions],
+	);
 
 	// ⌘/Ctrl+M toggles maximize on the dock last worked in; Escape restores
 	useEffect(() => {

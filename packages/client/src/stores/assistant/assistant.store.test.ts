@@ -4,8 +4,8 @@ import { createAssistantStore } from "./assistant.store";
 
 const makeStore = () =>
 	createAssistantStore({
-		cacheKey: "test-workbench",
-		workbench: createWorkbenchStore("test-workbench"),
+		workbenchId: "test-workbench",
+		workbench: createWorkbenchStore({ components: {} }),
 	});
 
 describe("assistant store", () => {

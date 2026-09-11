@@ -3,7 +3,7 @@ import { RoomStore } from "./room.store";
 export { RoomStore };
 export {
 	getRoomFileMode,
-	getRoomSidebarCacheKey,
+	getRoomSidebarCacheName,
 	isActiveSidebarPanel,
 	ROOM_PANEL_TYPES,
 	ROOM_SIDEBAR_LAYOUT,

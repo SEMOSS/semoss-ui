@@ -16,17 +16,17 @@ vi.mock("@semoss/sdk/react", () => ({
 const THEME = {} as ThemeMap["playground"];
 
 /**
- * A room with its sidebar blueprints registered, as `useRoomPanels` does once
- * the room is on screen. Without them the dock falls back to a shallow compare
- * of config and every dedupe assertion below would pass for the wrong reason.
+ * A room built the way the app builds one. The blueprints are load-bearing:
+ * without them the dock falls back to a shallow compare of config and every
+ * dedupe assertion below would pass for the wrong reason.
  */
-const createRoom = (roomId: string) => {
-	const room = new RoomStore(THEME, roomId, "insight-1");
-	room.workbench
-		.getState()
-		.layout.actions.registerComponents(ROOM_PANEL_COMPONENTS);
-	return room;
-};
+const createRoom = (roomId: string, insightId = "insight-1") =>
+	new RoomStore({
+		theme: THEME,
+		roomId,
+		insightId,
+		panelComponents: ROOM_PANEL_COMPONENTS,
+	});
 
 beforeEach(() => {
 	localStorage.clear();
@@ -97,9 +97,13 @@ test("a restored file panel is re-pointed at the room's current insight", () => 
 	// a previous session's cache, written against an insight that is now gone
 	const previous = createRoom(roomId);
 	previous.openFileSidebarPanel("/README.md");
-	previous.workbench.getState().layout.actions.persistNow();
+	// the shell hands the snapshot back on change and on unmount; headless,
+	// that is this call
+	previous.persistSidebar(
+		previous.workbench.getState().layout.actions.getSnapshot(),
+	);
 
-	const room = new RoomStore(THEME, roomId, "insight-2");
+	const room = createRoom(roomId, "insight-2");
 	const [record] = room.workbench
 		.getState()
 		.layout.actions.findPanels(
@@ -122,4 +126,45 @@ test("the sidebar's default arrangement survives its last panel closing", () => 
 	// tabset has nowhere to put the next panel
 	expect(room.workbench.getState().layout.tabsets).toHaveLength(1);
 	expect(ROOM_SIDEBAR_LAYOUT.panels).toEqual({});
+});
+
+test("a room whose sidebar never mounted still dedupes", () => {
+	// The regression the old registration hook papered over: blueprints used to
+	// arrive from a React effect, so a room built outside React -- the "open a
+	// file explorer" menu item does exactly this -- matched on a shallow
+	// compare of config instead. `mode` is a fresh object per call, so it never
+	// matched and every open spawned another tab.
+	const room = createRoom("room-never-mounted");
+
+	room.openSidebarFileExplorer();
+	room.openSidebarFileExplorer();
+
+	expect(Object.keys(room.workbench.getState().layout.panels)).toHaveLength(
+		1,
+	);
+});
+
+test("nothing is cached until the sidebar hands a snapshot back", () => {
+	// Persistence is the shell's now: `<Workbench onChange onUnmount>` is what
+	// calls `persistSidebar`. A panel opened while the sidebar is closed is
+	// therefore in memory only until one of those fires -- which is why the
+	// shell passes `onUnmount` as well as `onChange`.
+	const room = createRoom("room-unmounted-write");
+	room.openSidebarFileExplorer();
+
+	expect(
+		Object.keys(
+			createRoom("room-unmounted-write").workbench.getState().layout
+				.panels,
+		),
+	).toHaveLength(0);
+
+	room.persistSidebar(room.workbench.getState().layout.actions.getSnapshot());
+
+	expect(
+		Object.keys(
+			createRoom("room-unmounted-write").workbench.getState().layout
+				.panels,
+		),
+	).toHaveLength(1);
 });

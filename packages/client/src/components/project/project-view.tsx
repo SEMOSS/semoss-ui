@@ -3,7 +3,10 @@ import { lazy, Suspense } from "react";
 import { InsightProvider } from "@semoss/sdk/react";
 import { Spinner } from "@semoss/ui/next";
 import { SkillPublicFiles } from "@/components/skill";
-import { NotebookViewWorkbench } from "@/components/workbench";
+import {
+	NOTEBOOK_VIEW_WORKBENCH_COMPONENTS,
+	NotebookViewWorkbench,
+} from "@/components/workbench";
 import { WorkbenchProvider } from "@/contexts";
 import { useProject } from "@/hooks";
 
@@ -76,8 +79,10 @@ export const ProjectView = observer(({ insightId }: ProjectViewProps) => {
 					options={{ insightId }}
 					destroyOnUnmount={false}
 				>
-					<WorkbenchProvider cacheKey={`${project.project_id}-share`}>
-						<NotebookViewWorkbench />
+					<WorkbenchProvider
+						components={NOTEBOOK_VIEW_WORKBENCH_COMPONENTS}
+					>
+						<NotebookViewWorkbench variant="share" />
 					</WorkbenchProvider>
 				</InsightProvider>
 			);

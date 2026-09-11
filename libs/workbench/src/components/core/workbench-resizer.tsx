@@ -166,7 +166,6 @@ export const WorkbenchResizer: FC<WorkbenchResizerProps> = (props) => {
 			if (latest) {
 				apply(latest);
 			}
-			actions.persistNow();
 		};
 		window.addEventListener("pointermove", onMove);
 		window.addEventListener("pointerup", onUp);

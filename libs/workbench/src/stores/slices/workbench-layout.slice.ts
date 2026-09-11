@@ -1,7 +1,6 @@
 import { shallow } from "zustand/shallow";
 import type {
 	WorkbenchBorders,
-	WorkbenchLayout,
 	WorkbenchLayoutNode,
 	WorkbenchMoveTarget,
 	WorkbenchPanelConfigAny,
@@ -28,7 +27,6 @@ import {
 	flatten,
 	joinTabset,
 	movePanelInTree,
-	parseWorkbenchSnapshot,
 	removePanel,
 	resizeChildren,
 	resolvePinDrop,
@@ -48,14 +46,7 @@ interface WorkbenchSelectionState {
 
 /** Layout state fields owned by each workbench instance. */
 interface WorkbenchLayoutSliceFields {
-	/**
-	 * The provider's cache key. Read-only; exposed so code that must scope
-	 * itself to this workbench instance (a sibling store keyed the same way)
-	 * does not have to be handed the key a second time.
-	 */
-	cacheKey: string;
-
-	/** True once loadLayout has produced a usable arrangement. */
+	/** True once loadSnapshot has produced a usable arrangement. */
 	hydrated: boolean;
 
 	/** Mirrors the shell's mobile breakpoint so visibility derives here. */
@@ -127,14 +118,6 @@ interface WorkbenchLayoutSliceFields {
 
 /** Layout actions exposed under the store's `actions` namespace. */
 export interface WorkbenchLayoutActions {
-	/**
-	 * Register the components map. Blueprints should be module-scope constants
-	 * so re-registration is an identity no-op.
-	 */
-	registerComponents: (
-		components: Record<WorkbenchPanelType, WorkbenchPanelConfigAny>,
-	) => void;
-
 	/** Mark a panel type's body as resolved. */
 	markComponentReady: (type: WorkbenchPanelType) => void;
 
@@ -151,18 +134,28 @@ export interface WorkbenchLayoutActions {
 	measureSlots: () => void;
 
 	/**
-	 * Restore this workbench's cached snapshot, falling back to the supplied
-	 * default when nothing usable is cached. Read once per layout identity.
+	 * Apply the arrangement this workbench opens with. Read once per layout
+	 * identity, so a host may pass the same object on every render.
 	 *
-	 * @param layout - Default layout used when the cache is empty or unusable.
+	 * The host owns the cache: pass whatever it restored, or a default when it
+	 * restored nothing. Anything a snapshot carries beyond the tree — the
+	 * palette's recents — is applied here too.
+	 *
+	 * @param snapshot - What to open with.
 	 */
-	loadLayout: (layout: WorkbenchLayout) => void;
+	loadSnapshot: (snapshot: WorkbenchSnapshot) => void;
 
-	/** Back to the default layout; overwrites the cache immediately. */
+	/** Back to the snapshot `loadSnapshot` was given. */
 	resetLayout: () => void;
 
-	/** Flush any deferred cache write (resize end, unload). */
-	persistNow: () => void;
+	/**
+	 * What this workbench would have persisted, right now.
+	 *
+	 * The read half of the host's persistence: the shell hands it to
+	 * `onChange` as the arrangement moves and to `onUnmount` on the way out,
+	 * and a host driving the dock itself can call it whenever.
+	 */
+	getSnapshot: () => WorkbenchSnapshot;
 
 	/**
 	 * Reveal an instance of `type` matching `config` (blueprint `matches`,
@@ -321,6 +314,18 @@ export interface WorkbenchLayoutActions {
 /** The layout slice: fields plus its `actions` contribution. */
 export interface WorkbenchLayoutSliceState extends WorkbenchLayoutSliceFields {
 	actions: WorkbenchLayoutActions;
+}
+
+/** What one workbench's layout slice is built with. */
+export interface WorkbenchLayoutSliceOptions {
+	/**
+	 * Panel blueprints, keyed by type. Supplied here rather than registered
+	 * later because the slice itself reads them — `matchPanels` takes each
+	 * type's identity rule from here, `spawnPanel` its default name — from the
+	 * first call, which for a host driving the dock from outside React happens
+	 * long before anything mounts.
+	 */
+	components: Record<WorkbenchPanelType, WorkbenchPanelConfigAny>;
 }
 
 const capitalize = (value: string): string =>
@@ -482,57 +487,37 @@ const slotRectsEqual = (a: WorkbenchSlotRect, b: WorkbenchSlotRect): boolean =>
 	a.radius === b.radius;
 
 /**
- * Storage format version for a persisted layout.
- *
- * Bump this whenever the shape of anything inside a `WorkbenchSnapshot`
- * changes -- including a *host's* panel `config`, which the snapshot stores
- * without inspecting. Old entries are removed rather than migrated, so every
- * user loses their arrangement once; that is the trade for not carrying a
- * repair path for every past shape.
- */
-const LAYOUT_STORAGE_VERSION = 2;
-
-/**
  * Creates the dock layout slice for one workbench.
  *
  * @name createWorkbenchLayoutSlice
- * @param cacheKey - Unique key used to isolate persisted layout state.
+ * @param options - This workbench's identity, blueprints, and change callback.
  * @return Zustand state creator for the workbench layout slice.
  */
 export const createWorkbenchLayoutSlice = (
-	cacheKey: string,
+	options: WorkbenchLayoutSliceOptions,
 ): WorkbenchSlice<WorkbenchLayoutSliceState> => {
-	const storageKey = `smss-workbench--layout--${cacheKey}--${LAYOUT_STORAGE_VERSION}`;
-
-	// A snapshot holds each panel's `config` verbatim, so a host changing the
-	// shape of one invalidates every cached layout. Bump the version and drop
-	// the previous keys in the same breath -- an orphaned entry per cache key
-	// would otherwise sit in localStorage forever.
-	for (let previous = LAYOUT_STORAGE_VERSION - 1; previous > 0; previous--) {
-		try {
-			localStorage.removeItem(
-				`smss-workbench--layout--${cacheKey}--${previous}`,
-			);
-		} catch {
-			// private mode, or storage disabled -- nothing to clean up
-		}
-	}
+	const { components } = options;
 
 	// Closure-scoped, never in state: none of these should notify subscribers.
-	let defaultLayout: WorkbenchLayout | null = null;
+	let defaultSnapshot: WorkbenchSnapshot | null = null;
 	// The exact `layout` object hydration last ran for. Identity, not a
 	// boolean flag, so a host that genuinely swaps arrangements still
-	// re-hydrates -- see `loadLayout`.
-	let loadedLayout: WorkbenchLayout | null = null;
+	// re-applies -- see `loadSnapshot`.
+	let loadedSnapshot: WorkbenchSnapshot | null = null;
 	let rootElement: HTMLElement | null = null;
 	const slotElements = new Map<string, HTMLElement>();
-	let persistTimer: ReturnType<typeof setTimeout> | null = null;
 	// Watches every registered slot, so geometry that moves without a layout
 	// commit (a taller tab strip, a webfont landing) still re-measures.
 	let slotObserver: ResizeObserver | null = null;
 	let measureFrame = 0;
 
 	return (set, get) => {
+		/**
+		 * Everything worth restoring about this workbench: the arrangement,
+		 * plus the palette's recents, which have nowhere else to ride now that
+		 * the host keeps one cache entry per dock rather than the dock keeping
+		 * two of its own.
+		 */
 		const buildSnapshot = (): WorkbenchSnapshot => {
 			const state = get().layout;
 			return {
@@ -541,32 +526,8 @@ export const createWorkbenchLayoutSlice = (
 				panels: state.panels,
 				selectedPanelId: state.selection.panel,
 				maximizedTabsetId: state.maximizedTabsetId,
+				recentCommands: get().command.recentCommands,
 			};
-		};
-
-		const persistNow = (): void => {
-			if (persistTimer) {
-				clearTimeout(persistTimer);
-				persistTimer = null;
-			}
-			if (!get().layout.hydrated) {
-				return;
-			}
-			try {
-				localStorage.setItem(
-					storageKey,
-					JSON.stringify(buildSnapshot()),
-				);
-			} catch (e) {
-				console.error(e);
-			}
-		};
-
-		const schedulePersist = (): void => {
-			if (persistTimer) {
-				clearTimeout(persistTimer);
-			}
-			persistTimer = setTimeout(persistNow, 300);
 		};
 
 		/**
@@ -595,14 +556,17 @@ export const createWorkbenchLayoutSlice = (
 		};
 
 		/**
-		 * The single write path: applies a patch, recomputes derived fields,
-		 * and persists.
+		 * The single write path: applies a patch and recomputes derived fields.
+		 *
+		 * Everything a snapshot holds changes here and nowhere else. Every
+		 * transient write (`measureSlots`, `setPanelValue`, `setDragging`)
+		 * goes straight to `set` instead, which is what lets the shell notice
+		 * real arrangement changes by comparing field identities.
 		 */
 		const commit = (
 			mutate: (
 				state: WorkbenchLayoutSliceState,
 			) => Partial<WorkbenchLayoutSliceFields>,
-			opts: { persist?: "now" | "defer" | "skip" } = {},
 		): void => {
 			set((root) => {
 				const state = root.layout;
@@ -660,12 +624,6 @@ export const createWorkbenchLayoutSlice = (
 					},
 				};
 			});
-			const mode = opts.persist ?? "now";
-			if (mode === "now") {
-				persistNow();
-			} else if (mode === "defer") {
-				schedulePersist();
-			}
 		};
 
 		const flagOf = (
@@ -752,7 +710,6 @@ export const createWorkbenchLayoutSlice = (
 		});
 
 		return {
-			cacheKey,
 			hydrated: false,
 			isMobileLayout: false,
 			panels: {},
@@ -761,7 +718,7 @@ export const createWorkbenchLayoutSlice = (
 			selection: { panel: undefined, history: [] },
 			lastTabsetId: undefined,
 			values: {},
-			components: {},
+			components,
 			componentStatuses: {},
 			draggingPanelId: undefined,
 			editingPanelId: undefined,
@@ -769,12 +726,6 @@ export const createWorkbenchLayoutSlice = (
 			...initialDerived,
 
 			actions: {
-				registerComponents: (components) => {
-					if (get().layout.components === components) {
-						return;
-					}
-					set((root) => ({ layout: { ...root.layout, components } }));
-				},
 				markComponentReady: (type) => {
 					if (get().layout.componentStatuses[type] === "ready") {
 						return;
@@ -896,42 +847,36 @@ export const createWorkbenchLayoutSlice = (
 					}));
 				},
 
-				loadLayout: (layout) => {
-					// Hydration is once per store, per arrangement. The shell
-					// runs this on every mount, and a host whose store outlives
-					// its shell -- the playground's sidebar closes and reopens,
-					// and opens panels while closed -- would otherwise reload
-					// the cache over state the cache has not caught up with
-					// yet, silently dropping whatever was opened meanwhile.
-					if (loadedLayout === layout) {
+				loadSnapshot: (snapshot) => {
+					// Once per store, per arrangement. The shell runs this on
+					// every mount, and a host whose store outlives its shell --
+					// the playground's sidebar closes and reopens, and opens
+					// panels while closed -- would otherwise re-apply a
+					// restored arrangement over panels opened since, silently
+					// dropping them.
+					if (loadedSnapshot === snapshot) {
 						return;
 					}
-					loadedLayout = layout;
-					defaultLayout = deepCopy(layout);
+					loadedSnapshot = snapshot;
+					defaultSnapshot = deepCopy(snapshot);
 
-					let cached: WorkbenchSnapshot | null = null;
-					try {
-						const item = localStorage.getItem(storageKey);
-						if (item) {
-							cached = parseWorkbenchSnapshot(JSON.parse(item));
-						}
-					} catch (e) {
-						console.error(e);
+					applySnapshot(deepCopy(snapshot));
+					if (snapshot.recentCommands) {
+						get().command.actions.loadRecentCommands(
+							snapshot.recentCommands,
+						);
 					}
-
-					applySnapshot(cached ?? deepCopy(layout));
 					set((root) => ({
 						layout: { ...root.layout, hydrated: true },
 					}));
-					persistNow();
 				},
 				resetLayout: () => {
-					if (!defaultLayout) {
+					if (!defaultSnapshot) {
 						return;
 					}
-					applySnapshot(deepCopy(defaultLayout));
+					applySnapshot(deepCopy(defaultSnapshot));
 				},
-				persistNow: persistNow,
+				getSnapshot: buildSnapshot,
 
 				matchPanels: (type, config = {}) => {
 					const state = get().layout;
@@ -1230,14 +1175,9 @@ export const createWorkbenchLayoutSlice = (
 					if (get().layout.selection.panel === pid) {
 						return;
 					}
-					commit(
-						(s) => ({
-							selection: { ...s.selection, panel: pid },
-						}),
-						{
-							persist: "defer",
-						},
-					);
+					commit((s) => ({
+						selection: { ...s.selection, panel: pid },
+					}));
 				},
 				activatePanel: (stack, pid) => {
 					commit((s) => {
@@ -1444,60 +1384,41 @@ export const createWorkbenchLayoutSlice = (
 					}));
 				},
 				setMobileActivePanel: (pid) => {
-					commit(() => ({ mobileActivePanelId: pid }), {
-						persist: "skip",
-					});
+					commit(() => ({ mobileActivePanelId: pid }));
 				},
 				setMobileLayout: (isMobile) => {
 					if (get().layout.isMobileLayout === isMobile) {
 						return;
 					}
-					commit(() => ({ isMobileLayout: isMobile }), {
-						persist: "skip",
-					});
+					commit(() => ({ isMobileLayout: isMobile }));
 				},
 				resizeTreeChildren: (containerId, index, a, b) => {
-					commit(
-						(s) => ({
-							tree: resizeChildren(
-								s.tree,
-								containerId,
-								index,
-								a,
-								b,
-							),
-						}),
-						{ persist: "defer" },
-					);
+					commit((s) => ({
+						tree: resizeChildren(s.tree, containerId, index, a, b),
+					}));
 				},
 				resizeTabSplit: (tabsetId, ratio) => {
-					commit(
-						(s) => ({
-							tree: updateTabset(s.tree, tabsetId, (tabset) =>
-								tabset.split
-									? {
-											...tabset,
-											split: {
-												...tabset.split,
-												ratio,
-											},
-										}
-									: tabset,
-							),
-						}),
-						{ persist: "defer" },
-					);
+					commit((s) => ({
+						tree: updateTabset(s.tree, tabsetId, (tabset) =>
+							tabset.split
+								? {
+										...tabset,
+										split: {
+											...tabset.split,
+											ratio,
+										},
+									}
+								: tabset,
+						),
+					}));
 				},
 				resizeBorder: (side, size) => {
-					commit(
-						(s) => ({
-							borders: {
-								...s.borders,
-								[side]: { ...s.borders[side], size },
-							},
-						}),
-						{ persist: "defer" },
-					);
+					commit((s) => ({
+						borders: {
+							...s.borders,
+							[side]: { ...s.borders[side], size },
+						},
+					}));
 				},
 				setEditingPanel: (pid) => {
 					set((root) => ({

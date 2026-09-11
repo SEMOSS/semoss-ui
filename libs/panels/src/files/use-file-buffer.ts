@@ -105,7 +105,25 @@ export const useFileBuffer = ({
 		[markDirty],
 	);
 
+	/**
+	 * Identity-stable, deliberately.
+	 *
+	 * `useFilePanel` returns a fresh object every render, so a `save` that
+	 * closed over `panel` directly would be a new function every render too.
+	 * Every editor publishes `save` to its chrome through `setValue`, which
+	 * writes to the dock when the value is not shallow-equal — a new identity
+	 * each render means a write each render, and that write re-renders the
+	 * panel, which is an infinite loop rather than a slow one.
+	 *
+	 * So the volatile inputs go in a ref refreshed every render, the same way
+	 * `useWorkbenchControl` holds a control's content.
+	 */
+	const latest = useRef({ panel, name, rename, getContent, skipEmptySave });
+	latest.current = { panel, name, rename, getContent, skipEmptySave };
+
 	const save = useCallback(async () => {
+		const { panel, name, rename, getContent, skipEmptySave } =
+			latest.current;
 		const next = getContent
 			? getContent(contentRef.current)
 			: contentRef.current;
@@ -114,7 +132,7 @@ export const useFileBuffer = ({
 			baselineRef.current = next;
 			rename(name);
 		}
-	}, [getContent, name, panel, rename, skipEmptySave]);
+	}, []);
 
 	return {
 		content,

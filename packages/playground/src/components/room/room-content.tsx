@@ -38,7 +38,6 @@ import {
 	type RoomStore,
 } from "@/stores";
 import { decideAgentToolAction } from "@/stores/message/agent-harness";
-import { useRoomPanels } from "./panels";
 import { RoomCompactionIndicator } from "./room-compaction-indicator";
 import { RoomSuggestions } from "./room-suggestions";
 
@@ -63,10 +62,6 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 	const [showScrollup, setShowScrollup] = useState(false);
 	const [showScrolldown, setShowScrolldown] = useState(false);
 	const [isScrollLocked, setIsScrollLocked] = useState(false);
-
-	// the sidebar's blueprints, registered here rather than in the sidebar --
-	// tools open panels while the sidebar is closed and unmounted
-	useRoomPanels(room);
 
 	/**
 	 * Functions

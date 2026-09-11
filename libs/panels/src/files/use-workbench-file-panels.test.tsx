@@ -47,9 +47,10 @@ const gitConfig = (path: string) => ({
 
 /** The hook over a store with one code editor and one git diff open. */
 const setup = () => {
-	const store = createWorkbenchStore(`file-panels-${Math.random()}`);
+	const store = createWorkbenchStore({
+		components: COMPONENTS,
+	});
 	const { actions } = store.getState().layout;
-	actions.registerComponents(COMPONENTS);
 
 	const editorId = actions.spawnPanel(FILE_PANEL_TYPES.FILE_CODE_EDITOR, {
 		config: fileConfig("/a.py"),

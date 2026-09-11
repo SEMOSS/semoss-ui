@@ -3,7 +3,9 @@ import { createWorkbenchStore } from "../workbench.store";
 
 describe("workbench command visibility", () => {
 	it("does not execute or remember a hidden command", () => {
-		const store = createWorkbenchStore("hidden-command");
+		const store = createWorkbenchStore({
+			components: {},
+		});
 		const handler = vi.fn();
 		store.getState().command.actions.registerCommand({
 			id: "hidden",

@@ -15,11 +15,15 @@ import {
 	uploadInsight,
 } from "@semoss/sdk/react";
 import type { FileExplorerApi, ThemeMap } from "@semoss/shared";
+import { readCacheState, writeCacheState } from "@semoss/ui/next";
 import {
 	createWorkbenchStore,
+	parseWorkbenchSnapshot,
+	type WorkbenchPanelConfigAny,
 	type WorkbenchPanelId,
 	type WorkbenchPanelParams,
 	type WorkbenchPanelType,
+	type WorkbenchSnapshot,
 	type WorkbenchState,
 } from "@semoss/workbench";
 import { STREAMING_PLACEHOLDER_ID } from "@/constants";
@@ -48,7 +52,7 @@ import type {
 } from "@/types";
 import {
 	getRoomFileMode,
-	getRoomSidebarCacheKey,
+	getRoomSidebarCacheName,
 	ROOM_PANEL_TYPES,
 	ROOM_SIDEBAR_LAYOUT,
 } from "./room-sidebar";
@@ -217,6 +221,9 @@ export class RoomStore {
 		},
 	};
 
+	/** Where this room's sidebar arrangement is cached. */
+	private _cacheName: string;
+
 	/**
 	 * The dock backing the sidebar.
 	 *
@@ -230,23 +237,37 @@ export class RoomStore {
 	 */
 	readonly workbench: StoreApi<WorkbenchState>;
 
-	constructor(
-		theme: ThemeMap["playground"],
-		roomId: string,
-		insightId: string = "new",
-	) {
+	constructor(options: {
+		theme: ThemeMap["playground"];
+		roomId: string;
+		insightId?: string;
+		/**
+		 * The sidebar's panel blueprints. Handed in rather than imported: they
+		 * live in `@/components`, which imports `@/stores`, so importing them
+		 * here would close a module cycle. The composition root passes them
+		 * down.
+		 */
+		panelComponents: Record<string, WorkbenchPanelConfigAny>;
+	}) {
+		const { theme, roomId, insightId = "new", panelComponents } = options;
 		this._theme = theme;
 		// register the roomId, insightId, and actions
 		this._store.roomId = roomId;
 		this._store.insightId = insightId;
 
-		this.workbench = createWorkbenchStore(getRoomSidebarCacheKey(roomId));
-		// Hydrate now, not when the shell mounts: a panel opened while the
+		this._cacheName = getRoomSidebarCacheName(roomId);
+		this.workbench = createWorkbenchStore({ components: panelComponents });
+		// Restore now, not when the shell mounts: a panel opened while the
 		// sidebar is closed must land on the restored arrangement, not on an
-		// empty one the shell would then overwrite from the cache.
+		// empty one the shell would then replace.
 		this.workbench
 			.getState()
-			.layout.actions.loadLayout(ROOM_SIDEBAR_LAYOUT);
+			.layout.actions.loadSnapshot(
+				readCacheState<WorkbenchSnapshot>(
+					this._cacheName,
+					parseWorkbenchSnapshot,
+				) ?? ROOM_SIDEBAR_LAYOUT,
+			);
 		this._syncSidebarFileMode();
 
 		// make it observable -- the dock is a zustand store with its own
@@ -1107,6 +1128,19 @@ export class RoomStore {
 		for (const record of actions.matchPanels(type, config)) {
 			actions.closePanel(record.id);
 		}
+	};
+
+	/**
+	 * Cache the sidebar's arrangement.
+	 *
+	 * Handed to the dock as both `onChange` and `onUnmount`: the first covers
+	 * every rearrangement while the sidebar is on screen, the second catches
+	 * the close, which is a MobX-only change the dock never sees. A panel
+	 * opened while the sidebar is closed is written by whichever fires next —
+	 * the snapshot is the whole arrangement, not a delta.
+	 */
+	persistSidebar = (snapshot: WorkbenchSnapshot): void => {
+		writeCacheState(this._cacheName, snapshot);
 	};
 
 	/**

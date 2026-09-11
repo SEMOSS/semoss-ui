@@ -1,7 +1,10 @@
 import { Navigate } from "react-router";
 import { InsightProvider } from "@semoss/sdk/react";
 import { ProjectNavbar, ProjectShareButton } from "@/components/project";
-import { AgentWorkbench } from "@/components/workbench";
+import {
+	AGENT_WORKBENCH_COMPONENTS,
+	AgentWorkbench,
+} from "@/components/workbench";
 import { WorkbenchProvider } from "@/contexts";
 import { usePage, useProject } from "@/hooks";
 import { ProjectDependencyWarning } from "../app/project-dependency-warning";
@@ -26,13 +29,7 @@ export const EditAgentPage = () => {
 
 	return (
 		<InsightProvider options={{ app: project.project_id }}>
-			<WorkbenchProvider
-				cacheKey={
-					permission === "OWNER" || permission === "EDIT"
-						? project.project_id
-						: `${project.project_id}--read-only`
-				}
-			>
+			<WorkbenchProvider components={AGENT_WORKBENCH_COMPONENTS}>
 				<ProjectNavbar actions={<ProjectShareButton />} />
 				<ProjectDependencyWarning />
 				<AgentWorkbench />

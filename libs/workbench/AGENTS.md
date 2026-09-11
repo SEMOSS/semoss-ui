@@ -7,9 +7,12 @@ engines, projects, pixels, or auth.
 
 ## What it is
 
-A multi-panel dock shell (no FlexLayout). The core only knows about a `WorkbenchProvider`
-scoped by an arbitrary unique `cacheKey` string; a host supplies the panel blueprints and the
-default layout, and gets a dock back. `packages/client` is the first consumer — one
+A multi-panel dock shell (no FlexLayout). The core knows about a `WorkbenchProvider` and nothing
+else about who is using it: a host supplies the panel blueprints and a snapshot to open with, and
+gets a dock back. It has no id of its own — a host that wants a fresh dock gives the provider a
+React `key`, and anything that needs to be *named* (a cache entry, a server-side record) is named
+by the host. **The dock stores nothing** — a host hands it a
+layout and takes snapshots back, so where an arrangement lives is the host's decision. `packages/client` is the first consumer — one
 `<Domain>Workbench` component and one isolated store instance per engine and project type —
 and the playground and terminal are the reason this is a package rather than a folder.
 
@@ -189,19 +192,24 @@ mounts before first show (the assistant uses it to initialize while its border i
 ## Adding a domain workbench
 
 One file: module-scope `LAYOUT: WorkbenchLayout` + `COMPONENTS` map + a
-`useWorkbenchCommands([...])` call + `<Workbench layout components borderSlots />`. Toolbar
+`useWorkbenchCommands([...])` call + `<Workbench snapshot onUnmount borderSlots />`. Toolbar
 controls (command menu, publish, settings toggle) go in `borderSlots.left.after` — there is no
-separate `actions` prop. The page wraps it in
-`<WorkbenchProvider cacheKey={<unique-cache-key>}>`; the key isolates all persisted workbench
-state and should include runtime variants such as read-only mode. Follow
-`engine/function/function-workbench.tsx` as the exemplar.
+separate `actions` prop. The page wraps it in `<WorkbenchProvider components={COMPONENTS}>`, and
+the shell caches its own arrangement with `useCacheState` under a name it builds from what it is
+open on — include runtime variants such as read-only mode in that name, or the two arrangements
+collide. Follow `engine/function/function-workbench.tsx` as the exemplar.
+
+**Blueprints are construction data, not registration.** The store reads them from its first call
+— `matchPanels` takes each type's identity rule from the map — so they are passed to
+`createWorkbenchStore`, never pushed in later from an effect. A host whose blueprints are not in
+place before it opens a panel silently dedupes on a shallow compare of config instead.
 
 **When the dock has to outlive its shell**, the host makes the store itself with
-`createWorkbenchStore(cacheKey)` and passes `<WorkbenchProvider store={…}>` instead. Take that
-branch when panels are opened from outside React, or while `<Workbench>` is unmounted — the
-playground's room sidebar is both, since a tool opens a panel *and* opens the sidebar that shows
-it. Such a host must call `loadLayout` itself when it creates the store, or a panel opened before
-the shell first mounts lands on an un-hydrated layout.
+`createWorkbenchStore({ components })` and passes
+`<WorkbenchProvider store={…}>` instead. Take that branch when panels are opened from outside
+React, or while `<Workbench>` is unmounted — the playground's room sidebar is both, since a tool
+opens a panel *and* opens the sidebar that shows it. Such a host restores the arrangement itself
+with `loadSnapshot` when it creates the store.
 
 **Commands**: register palette commands with `useWorkbenchCommands([...])` (`hooks/use-workbench-commands.ts`) from the component that owns them — a domain workbench or a panel.
 The array may be an inline literal: the hook re-registers only when
@@ -350,19 +358,28 @@ Two more constraints worth knowing before touching this:
   (tab context menu, drag, tab close button); mobile deliberately has no per-panel menu.
 - **`canRename` gates user affordances only** (double-click, F2, context menu). Programmatic
   `renamePanel`/`rename` always works — a host's dirty `*` marker depends on it.
-- **Layout is cached by the `WorkbenchProvider.cacheKey`** as a `WorkbenchSnapshot`. A cached
-  layout shadows the default forever, so a host must change its provider key whenever the
-  default's shape changes, and include runtime variants such as read-only mode in the key so
-  they cannot hydrate incompatible layouts. Old entries are orphaned, not migrated.
-  `loadLayout` hydrates on mount and every structural commit persists. It hydrates **once per
-  `layout` identity**, so keep the layout a module-scope (or memoized) constant: a host whose
-  store outlives its shell would otherwise re-read the cache on every remount, over state the
-  debounced write has not caught up with.
-- **Panel type ids are host data, and the storage format is a contract.** `WorkbenchPanelType`
-  is `string`; the core never enumerates ids. `applySnapshot` prunes records whose type the
-  host no longer registers, so changing a panel-id *string* silently drops that panel out of
-  every saved layout. The persistence keys (`smss-workbench--layout--<cacheKey>--1`,
-  `smss-workbench--commands--<cacheKey>--1`) are part of that contract too.
+- **The host owns persistence; the dock owns nothing.** `<Workbench snapshot>` is what to open
+  with — whatever the host restored — and it comes back through two props. `onChange` fires
+  whenever the arrangement moves; `onUnmount` fires once, on unmount, and React runs no cleanup
+  for a refresh or a closed tab, so on its own it means "written when the user navigates away".
+  Both are shell-scoped: a dock written to while its shell is unmounted sees those changes at the
+  next one that fires. **Don't pass `onChange` alongside a `snapshot` whose identity changes** —
+  the re-apply is reported back as a change and overwrites what the host just switched to.
+- **The `onChange` gate is field identity, in `use-workbench-events.ts`.** `commit` spreads the
+  previous slice before its patch, and every transient write (`measureSlots`, `setPanelValue`,
+  `setDragging`, `setEditingPanel`, `markComponentReady`) is a plain `set` touching one field no
+  snapshot holds — so comparing `tree`/`borders`/`panels`/`selection.panel`/`maximizedTabsetId`/
+  `recentCommands` by reference is exact. Route a transient write through `commit` to "tidy up"
+  and you start persisting it sixty times a second; `use-workbench-events.test.tsx` pins that.
+- **`loadSnapshot` applies once per `snapshot` identity**, so keep it a module-scope (or
+  memoized) constant: a host whose store outlives its shell would otherwise re-apply a restored
+  arrangement on every remount, dropping panels opened in between.
+- **Panel type ids are host data, and the snapshot format is a contract.** `WorkbenchPanelType`
+  is `string`; the core never enumerates ids. A record whose type is not registered survives as a
+  "no component registered" placeholder rather than being dropped — changing a panel-id *string*
+  turns every cached instance of it into one. A `WorkbenchSnapshot` also carries `recentCommands`,
+  so the palette's recents version with the arrangement. Hosts name their own cache entries and
+  carry the version in that name.
 - **`WorkbenchSide` is a *physical* side, so some classes are physical on purpose.** A host names
   its borders `left`/`right`/`top`/`bottom` and gets that side. So `BODY_ROUND`
   (`workbench-border.tsx`) and `BORDER_GUTTER` (`workbench-resizer.tsx`) are keyed by that side and
@@ -379,9 +396,11 @@ Two more constraints worth knowing before touching this:
   `chromeButton`/`chromeIcon` size, muted until hovered, was hand-written in twenty-seven files
   and drifted on `aria-label` and `disabled` in most of them. A control that is not a button —
   a select, a dialog trigger — still composes its own.
-- **`layout.cacheKey` is read-only state.** Exposed so a sibling store can scope itself to the
-  same workbench without being handed the key twice; it is not persisted (`buildSnapshot`
-  picks fields explicitly).
+- **The dock has no identity field.** It used to carry one, which quietly meant two things at
+  once: where a layout was stored, and which workbench the server thought a conversation belonged
+  to. Both are the host's to name now — a client shell builds one id and uses it for its cache
+  name and for `useAssistantStore(id)`, and that second use reaches the server, so changing what
+  a workbench passes orphans its conversation history.
 - **readOnly** blocks structural edits (move/split/pin/user-rename/reset) at the store level
   and hides their affordances; navigation, opening files, and closing closable panels still
   work, and the instance still persists under its own id.

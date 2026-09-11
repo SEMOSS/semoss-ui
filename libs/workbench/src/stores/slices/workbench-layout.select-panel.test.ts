@@ -21,10 +21,21 @@ const COMPONENTS: Record<string, WorkbenchPanelConfigAny> = {
 	},
 };
 
-/** A store with the blueprints registered and nothing open. */
-const setup = (id: string) => {
-	const store = createWorkbenchStore(id);
-	store.getState().layout.actions.registerComponents(COMPONENTS);
+/** The arrangement a store opens with when nothing was restored. */
+const EMPTY_LAYOUT = {
+	tree: {
+		type: "tabset" as const,
+		id: "main",
+		size: 1,
+		panelIds: [],
+		activeId: null,
+	},
+	panels: {},
+};
+
+/** A store built with the blueprints and nothing open. */
+const setup = () => {
+	const store = createWorkbenchStore({ components: COMPONENTS });
 	return () => store.getState().layout;
 };
 
@@ -35,7 +46,7 @@ const setup = (id: string) => {
  */
 describe("closePanel", () => {
 	it("deletes the record and its scratch value", () => {
-		const layout = setup("close-panel-deletes");
+		const layout = setup();
 		const { actions } = layout();
 
 		const pid = actions.spawnPanel(EDITOR, { config: { path: "/a.py" } });
@@ -51,7 +62,7 @@ describe("closePanel", () => {
 	});
 
 	it("leaves nothing behind for a later lookup to find", () => {
-		const layout = setup("close-panel-no-ghost");
+		const layout = setup();
 		const { actions } = layout();
 
 		const first = actions.spawnPanel(EDITOR, { config: { path: "/a.py" } });
@@ -64,7 +75,7 @@ describe("closePanel", () => {
 	});
 
 	it("honours canClose", () => {
-		const layout = setup("close-panel-cannot");
+		const layout = setup();
 
 		const pid = layout().actions.spawnPanel(PINNED);
 		layout().actions.closePanel(pid);
@@ -73,41 +84,67 @@ describe("closePanel", () => {
 	});
 });
 
-describe("layout cache keys", () => {
-	it("isolates persisted layouts by cache key", () => {
-		localStorage.setItem(
-			"smss-workbench--layout--cache-variant",
-			JSON.stringify({
-				tree: {
-					type: "tabset",
-					id: "main",
-					size: 1,
-					panelIds: ["editable-only"],
-					activeId: "editable-only",
-				},
-				panels: {
-					"editable-only": {
-						id: "editable-only",
-						type: EDITOR,
-						name: "Editable only",
-					},
-				},
-				borders: {},
-			}),
-		);
-		const store = createWorkbenchStore("cache-variant--read-only");
-		store.getState().layout.actions.loadLayout({
+describe("host-owned persistence", () => {
+	it("opens with the arrangement the host hands it", () => {
+		const store = createWorkbenchStore({
+			components: COMPONENTS,
+		});
+		store.getState().layout.actions.loadSnapshot({
 			tree: {
 				type: "tabset",
 				id: "main",
 				size: 1,
-				panelIds: [],
-				activeId: null,
+				panelIds: ["restored-panel"],
+				activeId: "restored-panel",
 			},
-			panels: {},
+			panels: {
+				"restored-panel": {
+					id: "restored-panel",
+					type: EDITOR,
+					name: "Restored",
+				},
+			},
+			recentCommands: ["view.reset"],
 		});
 
-		expect(store.getState().layout.panels).toEqual({});
+		expect(store.getState().layout.panels["restored-panel"]).toBeDefined();
+		// recents ride in the snapshot rather than a cache entry of their own
+		expect(store.getState().command.recentCommands).toEqual(["view.reset"]);
+	});
+
+	it("ignores recents that are not a list of ids", () => {
+		// the value came from storage, which a user can edit by hand; a bad
+		// one used to land in state and throw inside executeCommand
+		const store = createWorkbenchStore({
+			components: COMPONENTS,
+		});
+		store.getState().layout.actions.loadSnapshot({
+			...EMPTY_LAYOUT,
+			recentCommands: { nope: true } as unknown as string[],
+		});
+
+		expect(store.getState().command.recentCommands).toEqual([]);
+	});
+
+	it("hands back what it would persist", () => {
+		const store = createWorkbenchStore({
+			components: COMPONENTS,
+		});
+		const { actions } = store.getState().layout;
+		actions.loadSnapshot(EMPTY_LAYOUT);
+		const pid = actions.spawnPanel(EDITOR, { config: { path: "/a.py" } });
+
+		const snapshot = store.getState().layout.actions.getSnapshot();
+
+		expect(Object.keys(snapshot.panels)).toEqual([pid]);
+		expect(Object.keys(snapshot).sort()).toEqual([
+			"borders",
+			"maximizedTabsetId",
+			"panels",
+			"recentCommands",
+			"selectedPanelId",
+			"tree",
+		]);
 	});
 });
 
@@ -118,7 +155,7 @@ describe("layout cache keys", () => {
  */
 describe("selectPanel with several matching instances", () => {
 	it("reveals an open hidden match instead of spawning another", () => {
-		const layout = setup("select-panel-hidden-wins");
+		const layout = setup();
 		const { actions } = layout();
 
 		// drag the file into the main dock, then into the side
@@ -149,7 +186,7 @@ describe("selectPanel with several matching instances", () => {
 	});
 
 	it("prefers a match already on screen over an open hidden one", () => {
-		const layout = setup("select-panel-visible-wins");
+		const layout = setup();
 		const { actions } = layout();
 
 		const inSide = actions.spawnPanel(EDITOR, {
@@ -171,7 +208,7 @@ describe("selectPanel with several matching instances", () => {
 	});
 
 	it("spawns when nothing matches", () => {
-		const layout = setup("select-panel-spawns");
+		const layout = setup();
 		const { actions } = layout();
 
 		actions.spawnPanel(EDITOR, { config: { path: "/a.py" } });
@@ -183,65 +220,39 @@ describe("selectPanel with several matching instances", () => {
 });
 
 /**
+/**
  * A host whose store outlives its shell — the playground's room sidebar closes
- * and reopens, and panels are opened while it is closed — re-runs `loadLayout`
- * on every mount. Re-reading the cache there would drop whatever was opened in
- * the meantime, because the write is debounced.
+ * and reopens, and panels are opened while it is closed — re-runs `loadSnapshot`
+ * on every mount. Re-applying there would drop whatever was opened in the
+ * meantime, so the arrangement is read once per identity.
  */
-describe("loadLayout", () => {
-	const EMPTY = {
-		tree: {
-			type: "tabset" as const,
-			id: "main",
-			size: 1,
-			panelIds: [],
-			activeId: null,
-		},
-		panels: {},
-	};
-
-	/** Plant a cache entry the next hydration would pick up. */
-	const writeCache = (cacheKey: string, pid: string) => {
-		localStorage.setItem(
-			`smss-workbench--layout--${cacheKey}--2`,
-			JSON.stringify({
-				tree: {
-					type: "tabset",
-					id: "main",
-					size: 1,
-					panelIds: [pid],
-					activeId: pid,
-				},
-				panels: {
-					[pid]: { id: pid, type: OTHER, name: "From the cache" },
-				},
-				borders: {},
-			}),
-		);
-	};
-
-	it("hydrates once per layout identity", () => {
-		const store = createWorkbenchStore("hydrate-once");
+describe("loadSnapshot", () => {
+	it("applies an arrangement once per identity", () => {
+		const store = createWorkbenchStore({
+			components: COMPONENTS,
+		});
 		const { actions } = store.getState().layout;
-		actions.loadLayout(EMPTY);
+		actions.loadSnapshot(EMPTY_LAYOUT);
+		const pid = actions.spawnPanel(OTHER);
 
-		writeCache("hydrate-once", "cached");
 		// the same object the host passed the first time, as a shell remount
 		// would hand it back
-		actions.loadLayout(EMPTY);
+		actions.loadSnapshot(EMPTY_LAYOUT);
 
-		expect(store.getState().layout.panels.cached).toBeUndefined();
+		expect(store.getState().layout.panels[pid]).toBeDefined();
 	});
 
-	it("re-hydrates when the host genuinely swaps arrangements", () => {
-		const store = createWorkbenchStore("hydrate-swap");
+	it("re-applies when the host genuinely swaps arrangements", () => {
+		const store = createWorkbenchStore({
+			components: COMPONENTS,
+		});
 		const { actions } = store.getState().layout;
-		actions.loadLayout(EMPTY);
+		actions.loadSnapshot(EMPTY_LAYOUT);
+		const pid = actions.spawnPanel(OTHER);
 
-		writeCache("hydrate-swap", "cached");
-		actions.loadLayout({ ...EMPTY });
+		actions.loadSnapshot({ ...EMPTY_LAYOUT });
 
-		expect(store.getState().layout.panels.cached).toBeDefined();
+		expect(store.getState().layout.panels[pid]).toBeUndefined();
 	});
 });
 
@@ -251,7 +262,7 @@ describe("loadLayout", () => {
  */
 describe("matchPanels", () => {
 	it("returns matches without revealing one, visible first", () => {
-		const layout = setup("match-panels");
+		const layout = setup();
 		const { actions } = layout();
 
 		const inSide = actions.spawnPanel(EDITOR, {
@@ -272,7 +283,7 @@ describe("matchPanels", () => {
 	});
 
 	it("is empty when nothing matches", () => {
-		const layout = setup("match-panels-empty");
+		const layout = setup();
 		layout().actions.spawnPanel(EDITOR, { config: { path: "/a.py" } });
 
 		expect(layout().actions.matchPanels(EDITOR, { path: "/b.py" })).toEqual(

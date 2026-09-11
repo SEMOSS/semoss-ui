@@ -29,6 +29,15 @@ interface WorkbenchCommandActions {
 
 	/** Execute a registered command by id. */
 	executeCommand: (commandId: string) => void;
+
+	/**
+	 * Restore the recents a host had cached.
+	 *
+	 * Recents ride in the layout snapshot rather than in a second cache entry
+	 * of their own, so `loadSnapshot` hands them over here. Ignores anything
+	 * that is not a list of ids: the value comes from storage a user can edit.
+	 */
+	loadRecentCommands: (recentCommands: string[]) => void;
 }
 
 /** The command slice: fields plus its `actions` contribution. */
@@ -40,29 +49,18 @@ export interface WorkbenchCommandSliceState
 /**
  * Creates the flat command registry for one workbench.
  *
+ * Recents start empty and are restored by `loadSnapshot`: they travel in the
+ * host's layout snapshot, so this slice keeps no storage of its own.
+ *
  * @name createWorkbenchCommandSlice
- * @param cacheKey - Unique key used to isolate persisted command recents.
  * @return Zustand state creator for the workbench command slice.
  */
 export const createWorkbenchCommandSlice =
-	(cacheKey: string): WorkbenchSlice<WorkbenchCommandSliceState> =>
-	(set, get) => {
-		const storageKey = `smss-workbench--commands--${cacheKey}--1`;
-
-		let recentCommands: string[] = [];
-		try {
-			const item = localStorage.getItem(storageKey);
-			if (item) {
-				recentCommands = JSON.parse(item);
-			}
-		} catch {
-			// noop
-		}
-
+	(): WorkbenchSlice<WorkbenchCommandSliceState> => (set, get) => {
 		return {
 			isCommandOpen: false,
 			commands: {},
-			recentCommands: recentCommands,
+			recentCommands: [],
 			actions: {
 				setCommandOpen: (isOpen) => {
 					set((root) => ({
@@ -156,18 +154,25 @@ export const createWorkbenchCommandSlice =
 							(recentCommandId) => recentCommandId !== commandId,
 						),
 					].slice(0, 10);
+					// Recents ride in the layout snapshot but change through a
+					// plain `set` rather than the layout's commit path, so a
+					// host persisting on change picks this up with the next
+					// arrangement change; one persisting on unmount gets it
+					// either way.
 					set((root) => ({
 						command: { ...root.command, recentCommands },
 					}));
-
-					try {
-						localStorage.setItem(
-							storageKey,
-							JSON.stringify(recentCommands),
-						);
-					} catch (e) {
-						console.error(e);
+				},
+				loadRecentCommands: (recentCommands) => {
+					if (
+						!Array.isArray(recentCommands) ||
+						recentCommands.some((id) => typeof id !== "string")
+					) {
+						return;
 					}
+					set((root) => ({
+						command: { ...root.command, recentCommands },
+					}));
 				},
 			},
 		};

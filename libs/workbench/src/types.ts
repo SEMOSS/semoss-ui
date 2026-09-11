@@ -358,15 +358,24 @@ export interface WorkbenchLayout {
 }
 
 /**
- * A persisted arrangement: a layout as it is cached. Internal to the store —
- * the shape is guarded structurally by `parseWorkbenchSnapshot`, and which
- * shape a cache entry belongs to is settled by the workbench store's key.
+ * A workbench as it is handed to a host to persist, and handed back to open
+ * with: the arrangement plus the palette's recents.
+ *
+ * Recents live here rather than in a cache of their own because a host keeps
+ * one entry per dock. `recentCommands` is optional so a default layout literal
+ * stays a plain `WorkbenchLayout`.
+ *
+ * Validate anything read back from storage with `parseWorkbenchSnapshot`: the
+ * shape is only as trustworthy as the storage it came from, and a host is free
+ * to decide which cache entry belongs to which shape by naming it.
  *
  * Closing a panel deletes it, so there is nothing here beyond what is open.
  * A cache written before that was true may still carry a `closed` array and
  * records for panels in no stack; both are dropped on load.
  */
-export type WorkbenchSnapshot = WorkbenchLayout;
+export type WorkbenchSnapshot = WorkbenchLayout & {
+	recentCommands?: string[];
+};
 
 /** Options accepted when spawning or selecting a panel instance. */
 export type WorkbenchPanelOptions = Partial<

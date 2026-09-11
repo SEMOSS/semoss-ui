@@ -1,6 +1,7 @@
 import { createContext, type ReactNode, useRef } from "react";
 import type { StoreApi } from "zustand";
 import { createWorkbenchStore, type WorkbenchState } from "../stores";
+import type { WorkbenchPanelConfigAny, WorkbenchPanelType } from "../types";
 
 /** Scoped zustand store for the nearest workbench. */
 export const WorkbenchStoreContext = createContext<
@@ -12,8 +13,13 @@ type WorkbenchProviderProps = {
 	children: ReactNode;
 } & (
 	| {
-			/** Unique key used to isolate persisted workbench state. */
-			cacheKey: string;
+			/**
+			 * Panel blueprints keyed by type. Keep the map module-scope: it is
+			 * read once, when the store is built, so a map that churns
+			 * identity is not re-read.
+			 */
+			components: Record<WorkbenchPanelType, WorkbenchPanelConfigAny>;
+
 			store?: never;
 	  }
 	| {
@@ -24,38 +30,40 @@ type WorkbenchProviderProps = {
 			 * that unmounts `<Workbench>` (the playground closes its sidebar)
 			 * or that drives the dock from outside React (a MobX store opening
 			 * a panel) owns the store, and the provider only hands it down.
+			 * Such a host passes its own blueprints to `createWorkbenchStore`.
 			 */
 			store: StoreApi<WorkbenchState>;
-			cacheKey?: never;
+			components?: never;
 	  }
 );
 
-/** Provide one isolated workbench store. */
+/**
+ * Provide one isolated workbench store.
+ *
+ * The store lives for as long as this provider is mounted. A host that needs a
+ * fresh dock when something about it changes — a different database, say —
+ * gives the provider a React `key`, the same as any other component; there is
+ * no identity prop to compare, because the dock has no identity of its own.
+ */
 export function WorkbenchProvider({
-	cacheKey,
+	components,
 	store,
 	children,
 }: WorkbenchProviderProps) {
-	const storeRef = useRef<{
-		cacheKey: string;
-		store: StoreApi<WorkbenchState>;
-	} | null>(null);
-	if (!store && cacheKey !== undefined) {
-		if (!storeRef.current || storeRef.current.cacheKey !== cacheKey) {
-			storeRef.current = {
-				cacheKey,
-				store: createWorkbenchStore(cacheKey),
-			};
-		}
+	const storeRef = useRef<StoreApi<WorkbenchState> | null>(null);
+	if (!store && components && !storeRef.current) {
+		storeRef.current = createWorkbenchStore({ components });
 	}
 
-	const value = store ?? storeRef.current?.store;
+	const value = store ?? storeRef.current;
 	if (!value) {
-		throw new Error("WorkbenchProvider needs either a cacheKey or a store");
+		throw new Error(
+			"WorkbenchProvider needs either a store or a components map",
+		);
 	}
 
 	return (
-		<WorkbenchStoreContext.Provider key={cacheKey} value={value}>
+		<WorkbenchStoreContext.Provider value={value}>
 			{children}
 		</WorkbenchStoreContext.Provider>
 	);

@@ -1,1 +1,1 @@
-export { ModelWorkbench } from "./model-workbench";
+export { MODEL_WORKBENCH_COMPONENTS, ModelWorkbench } from "./model-workbench";

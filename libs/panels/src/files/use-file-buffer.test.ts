@@ -114,4 +114,37 @@ describe("useFileBuffer", () => {
 
 		expect(save).not.toHaveBeenCalled();
 	});
+
+	// `useFilePanel` returns a fresh object every render. Every editor
+	// publishes `save` to its chrome through `setValue`, which writes to the
+	// dock whenever the value is not shallow-equal — so a `save` that changed
+	// identity per render wrote per render, and each write re-rendered the
+	// panel: "Maximum update depth exceeded", not a slow leak.
+	it("keeps save identity-stable across renders", async () => {
+		const rename = vi.fn();
+		const save = vi.fn().mockResolvedValue(true);
+		const { result, rerender } = renderHook(
+			({ name }: { name: string }) =>
+				useFileBuffer({
+					// a new panel object every render, as the real hook gives
+					panel: stubPanel("hello", save),
+					name,
+					rename,
+				}),
+			{ initialProps: { name: "a.py" } },
+		);
+		const first = result.current.save;
+
+		rerender({ name: "a.py" });
+		rerender({ name: "b.py" });
+
+		expect(result.current.save).toBe(first);
+
+		// stable, but never stale: it saves under the latest name
+		act(() => result.current.setContent("changed"));
+		await act(async () => await result.current.save());
+
+		expect(save).toHaveBeenCalledWith("changed");
+		expect(rename).toHaveBeenLastCalledWith("b.py");
+	});
 });

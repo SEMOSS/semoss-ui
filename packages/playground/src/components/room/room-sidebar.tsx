@@ -10,7 +10,6 @@ import {
 import { Workbench, WorkbenchProvider } from "@semoss/workbench";
 import { RoomProvider } from "@/contexts";
 import { ROOM_SIDEBAR_LAYOUT, type RoomStore } from "@/stores";
-import { ROOM_PANEL_COMPONENTS } from "./panels";
 
 interface RoomSidebarProps {
 	/** Room to render */
@@ -48,8 +47,9 @@ export const RoomSidebar: React.FC<RoomSidebarProps> = observer(({ room }) => {
 				<RoomProvider room={room}>
 					<WorkbenchProvider store={room.workbench}>
 						<Workbench
-							components={ROOM_PANEL_COMPONENTS}
-							layout={ROOM_SIDEBAR_LAYOUT}
+							snapshot={ROOM_SIDEBAR_LAYOUT}
+							onChange={room.persistSidebar}
+							onUnmount={room.persistSidebar}
 							borderSlots={{
 								top: {
 									after: (

@@ -17,11 +17,12 @@ vi.mock("@semoss/sdk/react", () => ({
 const THEME = {} as ThemeMap["playground"];
 
 const createRoom = (roomId: string) => {
-	const room = new RoomStore(THEME, roomId, "insight-1");
-	room.workbench
-		.getState()
-		.layout.actions.registerComponents(ROOM_PANEL_COMPONENTS);
-	return room;
+	return new RoomStore({
+		theme: THEME,
+		roomId,
+		insightId: "insight-1",
+		panelComponents: ROOM_PANEL_COMPONENTS,
+	});
 };
 
 beforeEach(() => {

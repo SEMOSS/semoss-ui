@@ -11,16 +11,18 @@ const Probe = ({ label }: { label: string }) => {
 };
 
 describe("WorkbenchProvider", () => {
-	it("recreates the store and remounts children when the cache key changes", () => {
+	it("recreates the store and remounts children when the host keys it", () => {
+		// The dock has no identity of its own, so a host that wants a fresh one
+		// says so the way it would for any component: with a `key`.
 		const { rerender } = render(
-			<WorkbenchProvider cacheKey="editable">
+			<WorkbenchProvider key="editable" components={{}}>
 				<Probe label="editable" />
 			</WorkbenchProvider>,
 		);
 		expect(screen.getByText("editable:editable")).toBeVisible();
 
 		rerender(
-			<WorkbenchProvider cacheKey="read-only">
+			<WorkbenchProvider key="read-only" components={{}}>
 				<Probe label="read-only" />
 			</WorkbenchProvider>,
 		);
@@ -28,9 +30,32 @@ describe("WorkbenchProvider", () => {
 		expect(screen.getByText("read-only:read-only")).toBeVisible();
 	});
 
+	it("keeps one store for the life of the provider", () => {
+		let seen: unknown;
+		const StoreProbe = () => {
+			seen = useWorkbenchStoreApi();
+			return null;
+		};
+		const { rerender } = render(
+			<WorkbenchProvider components={{}}>
+				<StoreProbe />
+			</WorkbenchProvider>,
+		);
+		const first = seen;
+
+		rerender(
+			<WorkbenchProvider components={{}}>
+				<StoreProbe />
+			</WorkbenchProvider>,
+		);
+
+		// a fresh `components` literal must not throw away the arrangement
+		expect(seen).toBe(first);
+	});
+
 	it("hands down a store the host made, instead of making one", () => {
 		// the shape a host takes when the dock has to outlive its shell
-		const store = createWorkbenchStore("host-owned");
+		const store = createWorkbenchStore({ components: {} });
 		let seen: unknown;
 		const StoreProbe = () => {
 			seen = useWorkbenchStoreApi();

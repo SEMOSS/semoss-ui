@@ -3,11 +3,14 @@ import type { StoreApi } from "zustand";
 import { FILE_PANEL_COMPONENTS } from "@semoss/panels";
 import type { Role } from "@semoss/sdk";
 import { useInsight } from "@semoss/sdk/react";
+import { useCacheState } from "@semoss/ui/next";
 import type {
 	WorkbenchLayout,
 	WorkbenchPanelConfigAny,
+	WorkbenchSnapshot,
 } from "@semoss/workbench";
 import {
+	parseWorkbenchSnapshot,
 	useWorkbenchCommands,
 	Workbench,
 	WorkbenchCommandMenuButton,
@@ -102,7 +105,10 @@ const createModelWorkbenchLayout = (
 };
 
 /** Blueprints, keyed by type. Module-scope so identities never churn. */
-const MODEL_WORKBENCH_COMPONENTS: Record<string, WorkbenchPanelConfigAny> = {
+export const MODEL_WORKBENCH_COMPONENTS: Record<
+	string,
+	WorkbenchPanelConfigAny
+> = {
 	...FILE_PANEL_COMPONENTS,
 	[WORKBENCH_COMPONENTS.MODEL_CHAT]: MODEL_CHAT_PANEL,
 	[WORKBENCH_COMPONENTS.MODEL_CHAT_SETTINGS]: MODEL_CHAT_SETTINGS_PANEL,
@@ -126,6 +132,19 @@ export const ModelWorkbench: React.FC = () => {
 	const workbenchLayout = useMemo(
 		() => createModelWorkbenchLayout(engine.engine_id, permission),
 		[engine.engine_id, permission],
+	);
+
+	// What this workbench is known by: its own cache entry, and — where there
+	// is an assistant — the workbench its conversations are tagged with,
+	// server-side. Read-only variants keep their own arrangement.
+	const workbenchId = readOnly
+		? `${engine.engine_id}--read-only`
+		: engine.engine_id;
+
+	const [snapshot, onSnapshotChange] = useCacheState<WorkbenchSnapshot>(
+		workbenchLayout,
+		`workbench-layout--${workbenchId}--1`,
+		parseWorkbenchSnapshot,
 	);
 	const syncPermission = useSession((state) => state.syncPermission);
 	const refreshPermission = useSession((state) => state.refreshPermission);
@@ -207,8 +226,8 @@ export const ModelWorkbench: React.FC = () => {
 	return (
 		<ModelChatStoreProvider store={chatStore}>
 			<Workbench
-				layout={workbenchLayout}
-				components={MODEL_WORKBENCH_COMPONENTS}
+				snapshot={snapshot}
+				onUnmount={onSnapshotChange}
 				borderSlots={{
 					left: {
 						after: (

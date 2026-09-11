@@ -68,9 +68,16 @@ export const getRoomFileMode = (
 	insightId: insightId,
 });
 
-/** The localStorage namespace for one room's sidebar arrangement. */
-export const getRoomSidebarCacheKey = (roomId: string): string =>
-	`playground-room--${roomId}`;
+/**
+ * The cache name for one room's sidebar arrangement.
+ *
+ * The name carries the version: bump the suffix whenever the shape of anything
+ * inside a snapshot changes, a panel's `config` included. Entries are dropped
+ * rather than migrated, so every user loses their arrangement once — the trade
+ * for not carrying a repair path for every past shape.
+ */
+export const getRoomSidebarCacheName = (roomId: string): string =>
+	`playground-room--${roomId}--1`;
 
 /**
  * Whether the panel `type`/`config` names is the one the sidebar is showing.

@@ -26,7 +26,13 @@ export {
 	useWorkbenchControl,
 	useWorkbenchStoreApi,
 } from "./hooks";
-export { createWorkbenchStore, type WorkbenchState } from "./stores";
+export {
+	createWorkbenchStore,
+	/* Validate a snapshot read back from wherever the host keeps it */
+	parseWorkbenchSnapshot,
+	type WorkbenchState,
+	type WorkbenchStoreOptions,
+} from "./stores";
 /* The type contract for writing panels */
 export * from "./types";
 /* Opening a panel by dropping something onto the dock */

@@ -337,8 +337,12 @@ export interface AssistantState {
 
 /** Everything one assistant instance is wired to. */
 export interface AssistantStoreDeps {
-	/** Workbench key persisted onto room options to scope conversation history. */
-	cacheKey: string;
+	/**
+	 * Which workbench this assistant belongs to. Persisted onto room options
+	 * and used to scope conversation history, so the value reaches the server:
+	 * changing what a workbench passes orphans its existing conversations.
+	 */
+	workbenchId: string;
 	/**
 	 * The workbench this assistant is mounted in. Nothing reads it yet — the
 	 * assistant never touches layout — but it is the seam layout-aware tools
@@ -400,7 +404,7 @@ const toErrorMessage = (error: unknown): string =>
 export const createAssistantStore = (
 	deps: AssistantStoreDeps,
 ): StoreApi<AssistantState> => {
-	const { cacheKey } = deps;
+	const { workbenchId } = deps;
 	// Runtime owned by this store instance, deliberately outside reactive
 	// state. Each entry pairs the live AgentStore (for pokeNow/stop) with a
 	// promise that resolves at the run's first pause or terminal status --
@@ -897,7 +901,7 @@ export const createAssistantStore = (
 						modelId: model.engine_id,
 						workspace: get().agent,
 						harnessType: "semoss",
-						workbench: cacheKey,
+						workbench: workbenchId,
 					});
 
 					// Harness/run parameters: the workbench's static params
@@ -1151,7 +1155,7 @@ export const createAssistantStore = (
 				try {
 					const conversations = await getUserConversationRooms(
 						insightId,
-						cacheKey,
+						workbenchId,
 					);
 					setAssistant({ conversations });
 				} catch (error) {

@@ -2,11 +2,14 @@ import { useEffect, useMemo } from "react";
 import { FILE_PANEL_COMPONENTS } from "@semoss/panels";
 import type { Role } from "@semoss/sdk";
 import { useInsight } from "@semoss/sdk/react";
+import { useCacheState } from "@semoss/ui/next";
 import type {
 	WorkbenchLayout,
 	WorkbenchPanelConfigAny,
+	WorkbenchSnapshot,
 } from "@semoss/workbench";
 import {
+	parseWorkbenchSnapshot,
 	useWorkbenchCommands,
 	Workbench,
 	WorkbenchCommandMenuButton,
@@ -84,7 +87,10 @@ const createStorageWorkbenchLayout = (
 };
 
 /** Blueprints, keyed by type. Module-scope so identities never churn. */
-const STORAGE_WORKBENCH_COMPONENTS: Record<string, WorkbenchPanelConfigAny> = {
+export const STORAGE_WORKBENCH_COMPONENTS: Record<
+	string,
+	WorkbenchPanelConfigAny
+> = {
 	[WORKBENCH_COMPONENTS.STORAGE_EXPLORER]: STORAGE_FILE_EXPLORER_PANEL,
 	...FILE_PANEL_COMPONENTS,
 	[WORKBENCH_COMPONENTS.GIT_VERSION]: GIT_VERSION_PANEL,
@@ -108,10 +114,23 @@ export const StorageWorkbench: React.FC = () => {
 		[engine.engine_id, permission],
 	);
 
+	// What this workbench is known by: its own cache entry, and — where there
+	// is an assistant — the workbench its conversations are tagged with,
+	// server-side. Read-only variants keep their own arrangement.
+	const workbenchId = readOnly
+		? `${engine.engine_id}--read-only`
+		: engine.engine_id;
+
+	const [snapshot, onSnapshotChange] = useCacheState<WorkbenchSnapshot>(
+		workbenchLayout,
+		`workbench-layout--${workbenchId}--1`,
+		parseWorkbenchSnapshot,
+	);
+
 	const syncPermission = useSession((s) => s.syncPermission);
 	const refreshPermission = useSession((s) => s.refreshPermission);
 
-	const assistantStore = useAssistantStore();
+	const assistantStore = useAssistantStore(workbenchId);
 
 	// Revalidate the engine's permission and keep the assistant prompt and
 	// room tools in sync with it.
@@ -173,8 +192,8 @@ export const StorageWorkbench: React.FC = () => {
 	return (
 		<AssistantStoreProvider store={assistantStore}>
 			<Workbench
-				layout={workbenchLayout}
-				components={STORAGE_WORKBENCH_COMPONENTS}
+				snapshot={snapshot}
+				onUnmount={onSnapshotChange}
 				borderSlots={{
 					left: {
 						after: (
