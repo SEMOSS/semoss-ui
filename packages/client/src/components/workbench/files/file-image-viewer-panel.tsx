@@ -1,12 +1,6 @@
 import { useEffect } from "react";
-import { useInsight, usePixel } from "@semoss/sdk/react";
 import { getFileIconComponent } from "@semoss/shared";
-import { Muted, Spinner } from "@semoss/ui/next";
-import {
-	WorkbenchAccessError,
-	WorkbenchAccessLoading,
-} from "@semoss/workbench";
-import { useAccess, useWorkbenchControl } from "@/hooks";
+import { useWorkbenchControl } from "@/hooks";
 import type {
 	WorkbenchPanelConfig,
 	WorkbenchPanelProps,
@@ -16,96 +10,36 @@ import {
 	FileImageViewerControl,
 	type FileImageViewerControlValue,
 } from "./file-image-viewer-control";
-import { getFileReadPixel } from "./file-panel.utility";
+import { type FilePanelParams, useFilePanel } from "./use-file-panel";
 
-export interface FileImageViewerParams {
-	type: "ENGINE" | "PROJECT" | "INSIGHT";
-	id: string;
-	name: string;
-	path: string;
-}
+export type FileImageViewerParams = FilePanelParams;
 
+/** Preview an image file from a project, engine, or insight resource. */
 const FileImageViewerPanel = ({
 	config,
 	id,
 	setValue,
 }: WorkbenchPanelProps<FileImageViewerParams, FileImageViewerControlValue>) => {
-	const insight = useInsight();
-	const access = useAccess(config.type, config.id);
-	const image = usePixel<string>(
-		access.status === "ready" ? getFileReadPixel(config, true) : "",
-		{ data: "" },
-		config.type === "INSIGHT" ? config.id : insight.insightId,
-	);
+	const panel = useFilePanel(config, { base64: true });
 
-	useEffect(
-		() => setValue({ refresh: image.refresh }),
-		[image.refresh, setValue],
-	);
+	useEffect(() => {
+		setValue({ refresh: panel.read.refresh });
+	}, [panel.read.refresh, setValue]);
 	useWorkbenchControl(id, FileImageViewerControl);
 
-	if (access.status === "loading") {
-		return (
-			<WorkbenchAccessLoading
-				className="size-full"
-				label="Loading resource access"
-			/>
-		);
-	}
-
-	if (access.status === "error") {
-		return (
-			<WorkbenchAccessError
-				className="size-full"
-				message={access.error}
-				onRetry={() => void access.refresh()}
-			/>
-		);
-	}
-
-	if (image.status === "LOADING" || image.status === "INITIAL") {
-		return (
-			<output
-				className="flex size-full items-center justify-center"
-				aria-label="Loading image"
-			>
-				<Spinner />
-			</output>
-		);
-	}
-
-	if (image.status === "ERROR") {
-		return (
-			<div className="flex size-full items-center justify-center p-4">
-				<Muted className="text-destructive" role="alert">
-					{image.error?.message || "Failed to load image"}
-				</Muted>
-			</div>
-		);
-	}
+	if (panel.gate) return panel.gate;
+	if (panel.readGate) return panel.readGate;
 
 	return (
 		<div className="relative size-full items-center justify-center overflow-hidden bg-background p-4">
 			<div className="flex size-full items-center justify-center">
 				<img
 					className="max-h-full max-w-full object-contain"
-					src={`data:${getImageMimeType(config.path)};base64,${image.data}`}
+					src={`data:${getImageMimeType(config.path)};base64,${panel.read.data}`}
 					alt={`Preview of ${config.name}`}
 				/>
 			</div>
-			{access.refreshing ? (
-				<WorkbenchAccessLoading
-					className="absolute inset-0 bg-background/80"
-					label="Refreshing resource access"
-				/>
-			) : null}
-			{access.refreshError ? (
-				<WorkbenchAccessError
-					className="absolute inset-0 bg-background/90"
-					message={access.refreshError}
-					onRetry={() => void access.refresh()}
-				/>
-			) : null}
+			{panel.overlay}
 		</div>
 	);
 };

@@ -18,3 +18,5 @@ export * from "./file-pdf-viewer-control";
 export * from "./file-pdf-viewer-panel";
 export * from "./file-pptx-viewer-control";
 export * from "./file-pptx-viewer-panel";
+export * from "./use-file-buffer";
+export * from "./use-file-panel";

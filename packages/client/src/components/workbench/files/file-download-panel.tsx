@@ -1,22 +1,8 @@
 import { DownloadIcon, FileIcon } from "lucide-react";
 import { useEffect, useState } from "react";
-import { useTranslation } from "@semoss/i18n";
-import {
-	download as downloadFile,
-	runPixel,
-	useInsight,
-	usePixel,
-} from "@semoss/sdk/react";
-import {
-	getFileIconComponent,
-	getFileOperationErrorMessage,
-} from "@semoss/shared";
-import { Button, CodeEditor, Muted, Spinner, toast } from "@semoss/ui/next";
-import {
-	WorkbenchAccessError,
-	WorkbenchAccessLoading,
-} from "@semoss/workbench";
-import { useAccess, useWorkbenchControl } from "@/hooks";
+import { getFileIconComponent } from "@semoss/shared";
+import { Button, CodeEditor, Muted } from "@semoss/ui/next";
+import { useWorkbenchControl } from "@/hooks";
 import type {
 	WorkbenchPanelConfig,
 	WorkbenchPanelProps,
@@ -30,90 +16,25 @@ import {
 	getCodeEditorLanguage,
 	getFileCodeEditorMenuItems,
 } from "./file-editor.utility";
-import { getFileDownloadPixel, getFileReadPixel } from "./file-panel.utility";
+import { type FilePanelParams, useFilePanel } from "./use-file-panel";
 
-export interface FileDownloadParams {
-	type: "ENGINE" | "PROJECT" | "INSIGHT";
-	id: string;
-	name: string;
-	path: string;
-}
+export type FileDownloadParams = FilePanelParams;
 
+/** Offer a download for a file the browser cannot render, with a raw escape hatch. */
 const FileDownloadPanel = ({
 	config,
 	id,
 	setValue,
 }: WorkbenchPanelProps<FileDownloadParams, FileDownloadControlValue>) => {
-	const insight = useInsight();
-	const { t } = useTranslation("common");
-	const access = useAccess(config.type, config.id);
 	const [viewMode, setViewMode] = useState<FileDownloadViewMode>("download");
-	const [isDownloading, setIsDownloading] = useState(false);
-	const targetInsightId =
-		config.type === "INSIGHT" ? config.id : insight.insightId;
-	const rawFile = usePixel<string>(
-		access.status === "ready" && viewMode === "raw"
-			? getFileReadPixel(config)
-			: "",
-		{ data: "" },
-		targetInsightId,
-	);
+	// nothing to read unless the user asks for the raw view — this panel's
+	// formats are download-first
+	const panel = useFilePanel(config, { enabled: viewMode === "raw" });
 
 	useEffect(() => setValue({ setViewMode, viewMode }), [setValue, viewMode]);
 	useWorkbenchControl(id, FileDownloadControl);
 
-	if (access.status === "loading") {
-		return (
-			<WorkbenchAccessLoading
-				className="size-full"
-				label="Loading resource access"
-			/>
-		);
-	}
-
-	if (access.status === "error") {
-		return (
-			<WorkbenchAccessError
-				className="size-full"
-				message={access.error}
-				onRetry={() => void access.refresh()}
-			/>
-		);
-	}
-
-	/** Download the current file from its owning resource. */
-	const download = async () => {
-		if (isDownloading) return;
-
-		setIsDownloading(true);
-		try {
-			const response = await runPixel<[string]>(
-				getFileDownloadPixel(config),
-				targetInsightId,
-			);
-			if (response.errors.length > 0) {
-				throw new Error(response.errors[0]);
-			}
-
-			const fileKey = response.pixelReturn[0]?.output;
-			if (!fileKey || !targetInsightId) {
-				throw new Error("No file download is available");
-			}
-
-			await downloadFile(targetInsightId, fileKey);
-			toast.success(t("fileExplorer.toasts.downloadFileSuccess"));
-		} catch (error) {
-			toast.error(
-				getFileOperationErrorMessage(
-					t("fileExplorer.toasts.downloadFileFailed"),
-					error,
-				),
-			);
-			console.error(error);
-		} finally {
-			setIsDownloading(false);
-		}
-	};
+	if (panel.gate) return panel.gate;
 
 	if (viewMode === "download") {
 		return (
@@ -127,64 +48,33 @@ const FileDownloadPanel = ({
 				</Muted>
 				<Button
 					type="button"
-					onClick={() => void download()}
-					disabled={isDownloading}
+					onClick={() => void panel.download()}
+					disabled={panel.isDownloading}
 				>
 					<DownloadIcon aria-hidden className="size-4" />
-					{isDownloading ? "Downloading" : "Download"}
+					{panel.isDownloading ? "Downloading" : "Download"}
 				</Button>
 			</div>
 		);
 	}
 
-	if (rawFile.status === "LOADING" || rawFile.status === "INITIAL") {
-		return (
-			<output
-				className="flex size-full items-center justify-center"
-				aria-label="Loading raw file"
-			>
-				<Spinner />
-			</output>
-		);
-	}
-
-	if (rawFile.status === "ERROR") {
-		return (
-			<div className="flex size-full items-center justify-center p-4">
-				<Muted className="text-destructive" role="alert">
-					{rawFile.error?.message || "Failed to load raw file"}
-				</Muted>
-			</div>
-		);
-	}
+	if (panel.readGate) return panel.readGate;
 
 	return (
 		<div className="relative size-full">
 			<CodeEditor
 				className="size-full"
-				code={rawFile.data}
+				code={panel.read.data}
 				disabled
 				language={getCodeEditorLanguage(config.path)}
 				menuItems={getFileCodeEditorMenuItems({
 					canSave: false,
-					isBusy: isDownloading,
-					onDownload: () => void download(),
-					onRefresh: rawFile.refresh,
+					isBusy: panel.isDownloading,
+					onDownload: () => void panel.download(),
+					onRefresh: panel.read.refresh,
 				})}
 			/>
-			{access.refreshing ? (
-				<WorkbenchAccessLoading
-					className="absolute inset-0 bg-background/80"
-					label="Refreshing resource access"
-				/>
-			) : null}
-			{access.refreshError ? (
-				<WorkbenchAccessError
-					className="absolute inset-0 bg-background/90"
-					message={access.refreshError}
-					onRetry={() => void access.refresh()}
-				/>
-			) : null}
+			{panel.overlay}
 		</div>
 	);
 };

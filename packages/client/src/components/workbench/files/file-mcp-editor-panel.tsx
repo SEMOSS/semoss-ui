@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useInsight, usePixel } from "@semoss/sdk/react";
+import { useMemo, useState } from "react";
+import { useInsight } from "@semoss/sdk/react";
 import { getFileIconComponent } from "@semoss/shared";
 import { Muted, Spinner, toast } from "@semoss/ui/next";
 import {
@@ -7,18 +7,19 @@ import {
 	WorkbenchAccessLoading,
 } from "@semoss/workbench";
 import {
-	type LoadedMCPFile,
 	type MCPJsonData,
 	MCPJsonEditor,
 	readMCPFile,
 	toFileText,
 } from "@/components/shared";
-import { useAccess } from "@/hooks";
 import type {
 	WorkbenchPanelConfig,
 	WorkbenchPanelProps,
 } from "@/stores/workbench";
 import { getFileReadPixel, getFileSavePixel } from "./file-panel.utility";
+import { useFilePanel } from "./use-file-panel";
+
+/** MCP toolboxes are project- or engine-scoped; there is no insight variant. */
 export interface FileMcpEditorParams {
 	type: "ENGINE" | "PROJECT";
 	id: string;
@@ -26,39 +27,26 @@ export interface FileMcpEditorParams {
 	path: string;
 }
 
-/** Build the scoped pixel used to save an MCP file. */
-const getFileMcpSavePixel = (
-	config: Pick<FileMcpEditorParams, "type" | "id" | "path">,
-	data: MCPJsonData,
-): string => getFileSavePixel(config, JSON.stringify(data, null, 2));
-
+/** Edit an MCP toolbox JSON file in a project or engine resource. */
 const FileMcpEditorPanel = ({
 	config,
 }: WorkbenchPanelProps<FileMcpEditorParams>) => {
 	const insight = useInsight();
-	const access = useAccess(config.type, config.id);
-	const readOnly = access.status !== "ready" || access.readOnly;
-	const [loaded, setLoaded] = useState<LoadedMCPFile | null>(null);
-	const [isLoading, setIsLoading] = useState(false);
-	const readPixel = getFileReadPixel(config);
+	const panel = useFilePanel(config);
+	const { access, readOnly, read } = panel;
+	const [isSaving, setIsSaving] = useState(false);
 
-	const getFile = usePixel<string>(
-		access.status === "ready" ? readPixel : "",
-		{
-			onSuccess: (fileContent) => {
-				setLoaded(readMCPFile(fileContent));
-			},
-			onError: () => {
-				setLoaded(null);
-			},
-		},
+	const loaded = useMemo(
+		() => (read.status === "SUCCESS" ? readMCPFile(read.data) : null),
+		[read.status, read.data],
 	);
 
 	/** Re-read the MCP file so external changes are reflected. */
 	const reloadFile = async (): Promise<string | null> => {
 		try {
-			const { pixelReturn } =
-				await insight.actions.run<[string]>(readPixel);
+			const { pixelReturn } = await insight.actions.run<[string]>(
+				getFileReadPixel(config),
+			);
 			return toFileText(pixelReturn?.[0]?.output);
 		} catch (error) {
 			console.error(error);
@@ -71,17 +59,21 @@ const FileMcpEditorPanel = ({
 		if (readOnly) return;
 
 		try {
-			setIsLoading(true);
-			await insight.actions.run(getFileMcpSavePixel(config, data));
+			setIsSaving(true);
+			await insight.actions.run(
+				getFileSavePixel(config, JSON.stringify(data, null, 2)),
+			);
 			toast.success("Successfully saved MCP tools");
 		} catch (error) {
 			toast.error("Error saving MCP tools");
 			console.error(error);
 		} finally {
-			setIsLoading(false);
+			setIsSaving(false);
 		}
 	};
 
+	// gated inline rather than by early return: every branch is a flex child
+	// of the same column, and `useFilePanel`'s full-panel gates are not
 	return (
 		<div className="relative flex h-full w-full flex-col gap-1.5 overflow-hidden bg-background py-1">
 			{access.status === "loading" && (
@@ -98,20 +90,20 @@ const FileMcpEditorPanel = ({
 				/>
 			)}
 			{access.status === "ready" &&
-				(getFile.status === "LOADING" || isLoading) && (
+				(read.status === "LOADING" || isSaving) && (
 					<div className="flex flex-1 items-center justify-center py-4">
 						<Spinner />
 					</div>
 				)}
-			{access.status === "ready" && getFile.status === "ERROR" && (
+			{access.status === "ready" && read.status === "ERROR" && (
 				<div className="flex flex-1 items-center justify-center py-4">
 					<Muted className="text-destructive" role="alert">
-						{getFile.error?.message || "Failed to load editor"}
+						{read.error?.message || "Failed to load editor"}
 					</Muted>
 				</div>
 			)}
 			{access.status === "ready" &&
-				getFile.status === "SUCCESS" &&
+				read.status === "SUCCESS" &&
 				loaded && (
 					<div className="flex h-full min-h-0 w-full flex-1 flex-col overflow-hidden">
 						<MCPJsonEditor
@@ -128,19 +120,7 @@ const FileMcpEditorPanel = ({
 						/>
 					</div>
 				)}
-			{access.status === "ready" && access.refreshing ? (
-				<WorkbenchAccessLoading
-					className="absolute inset-0 bg-background/80"
-					label="Refreshing resource access"
-				/>
-			) : null}
-			{access.status === "ready" && access.refreshError ? (
-				<WorkbenchAccessError
-					className="absolute inset-0 bg-background/90"
-					message={access.refreshError}
-					onRetry={() => void access.refresh()}
-				/>
-			) : null}
+			{panel.overlay}
 		</div>
 	);
 };

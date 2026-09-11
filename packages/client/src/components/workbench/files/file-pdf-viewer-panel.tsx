@@ -1,169 +1,57 @@
 import { DownloadIcon } from "lucide-react";
-import { useEffect, useState } from "react";
-import { useTranslation } from "@semoss/i18n";
-import {
-	download as downloadFile,
-	runPixel,
-	useInsight,
-	usePixel,
-} from "@semoss/sdk/react";
-import {
-	getFileIconComponent,
-	getFileOperationErrorMessage,
-} from "@semoss/shared";
-import { Button, Muted, Spinner, toast } from "@semoss/ui/next";
-import {
-	WorkbenchAccessError,
-	WorkbenchAccessLoading,
-} from "@semoss/workbench";
-import { useAccess, useWorkbenchControl } from "@/hooks";
+import { useEffect } from "react";
+import { getFileIconComponent } from "@semoss/shared";
+import { Button, Muted } from "@semoss/ui/next";
+import { useWorkbenchControl } from "@/hooks";
 import type {
 	WorkbenchPanelConfig,
 	WorkbenchPanelProps,
 } from "@/stores/workbench";
-import { getFileDownloadPixel, getFileReadPixel } from "./file-panel.utility";
 import {
 	FilePdfViewerControl,
 	type FilePdfViewerControlValue,
 } from "./file-pdf-viewer-control";
+import { type FilePanelParams, useFilePanel } from "./use-file-panel";
 
-export interface FilePdfViewerParams {
-	type: "ENGINE" | "PROJECT" | "INSIGHT";
-	id: string;
-	name: string;
-	path: string;
-}
+export type FilePdfViewerParams = FilePanelParams;
 
+/** Preview a PDF from a project, engine, or insight resource. */
 const FilePdfViewerPanel = ({
 	config,
 	id,
 	setValue,
 }: WorkbenchPanelProps<FilePdfViewerParams, FilePdfViewerControlValue>) => {
-	const insight = useInsight();
-	const { t } = useTranslation("common");
-	const access = useAccess(config.type, config.id);
-	const [isDownloading, setIsDownloading] = useState(false);
-	const targetInsightId =
-		config.type === "INSIGHT" ? config.id : insight.insightId;
-	const pdf = usePixel<string>(
-		access.status === "ready" ? getFileReadPixel(config, true) : "",
-		{ data: "" },
-		targetInsightId,
-	);
+	const panel = useFilePanel(config, { base64: true });
 
-	useEffect(
-		() => setValue({ refresh: pdf.refresh }),
-		[pdf.refresh, setValue],
-	);
+	useEffect(() => {
+		setValue({ refresh: panel.read.refresh });
+	}, [panel.read.refresh, setValue]);
 	useWorkbenchControl(id, FilePdfViewerControl);
 
-	if (access.status === "loading") {
-		return (
-			<WorkbenchAccessLoading
-				className="size-full"
-				label="Loading resource access"
-			/>
-		);
-	}
-
-	if (access.status === "error") {
-		return (
-			<WorkbenchAccessError
-				className="size-full"
-				message={access.error}
-				onRetry={() => void access.refresh()}
-			/>
-		);
-	}
-
-	/** Download the PDF when the browser cannot render it inline. */
-	const download = async () => {
-		if (isDownloading) return;
-
-		setIsDownloading(true);
-		try {
-			const response = await runPixel<[string]>(
-				getFileDownloadPixel(config),
-				targetInsightId,
-			);
-			if (response.errors.length > 0) {
-				throw new Error(response.errors[0]);
-			}
-
-			const fileKey = response.pixelReturn[0]?.output;
-			if (!fileKey || !targetInsightId) {
-				throw new Error("No PDF download is available");
-			}
-
-			await downloadFile(targetInsightId, fileKey);
-			toast.success(t("fileExplorer.toasts.downloadFileSuccess"));
-		} catch (error) {
-			toast.error(
-				getFileOperationErrorMessage(
-					t("fileExplorer.toasts.downloadFileFailed"),
-					error,
-				),
-			);
-			console.error(error);
-		} finally {
-			setIsDownloading(false);
-		}
-	};
-
-	if (pdf.status === "LOADING" || pdf.status === "INITIAL") {
-		return (
-			<output
-				className="flex size-full items-center justify-center"
-				aria-label="Loading PDF"
-			>
-				<Spinner />
-			</output>
-		);
-	}
-
-	if (pdf.status === "ERROR") {
-		return (
-			<div className="flex size-full items-center justify-center p-4">
-				<Muted className="text-destructive" role="alert">
-					{pdf.error?.message || "Failed to load PDF"}
-				</Muted>
-			</div>
-		);
-	}
+	if (panel.gate) return panel.gate;
+	if (panel.readGate) return panel.readGate;
 
 	return (
 		<div className="relative size-full">
 			<object
 				className="size-full"
 				aria-label={`Preview of ${config.name}`}
-				data={`data:application/pdf;base64,${pdf.data}`}
+				data={`data:application/pdf;base64,${panel.read.data}`}
 				type="application/pdf"
 			>
 				<div className="flex size-full flex-col items-center justify-center gap-4 p-4">
 					<Muted>This browser cannot display the PDF.</Muted>
 					<Button
 						type="button"
-						onClick={() => void download()}
-						disabled={isDownloading}
+						onClick={() => void panel.download()}
+						disabled={panel.isDownloading}
 					>
 						<DownloadIcon aria-hidden className="size-4" />
-						{isDownloading ? "Downloading" : "Download PDF"}
+						{panel.isDownloading ? "Downloading" : "Download PDF"}
 					</Button>
 				</div>
 			</object>
-			{access.refreshing ? (
-				<WorkbenchAccessLoading
-					className="absolute inset-0 bg-background/80"
-					label="Refreshing resource access"
-				/>
-			) : null}
-			{access.refreshError ? (
-				<WorkbenchAccessError
-					className="absolute inset-0 bg-background/90"
-					message={access.refreshError}
-					onRetry={() => void access.refresh()}
-				/>
-			) : null}
+			{panel.overlay}
 		</div>
 	);
 };

@@ -1,148 +1,64 @@
 import { DownloadIcon } from "lucide-react";
-import { lazy, Suspense, useEffect, useMemo, useState } from "react";
-import { useTranslation } from "@semoss/i18n";
-import {
-	download as downloadFile,
-	runPixel,
-	useInsight,
-	usePixel,
-} from "@semoss/sdk/react";
-import {
-	decodeBase64Asset,
-	getFileIconComponent,
-	getFileOperationErrorMessage,
-} from "@semoss/shared";
-import { Button, Muted, Spinner, toast } from "@semoss/ui/next";
-import {
-	WorkbenchAccessError,
-	WorkbenchAccessLoading,
-} from "@semoss/workbench";
-import { useAccess, useWorkbenchControl } from "@/hooks";
+import { lazy, Suspense, useEffect, useMemo } from "react";
+import { decodeBase64Asset, getFileIconComponent } from "@semoss/shared";
+import { Button, Muted, Spinner } from "@semoss/ui/next";
+import { useWorkbenchControl } from "@/hooks";
 import type {
 	WorkbenchPanelConfig,
 	WorkbenchPanelProps,
 } from "@/stores/workbench";
-import { getFileDownloadPixel, getFileReadPixel } from "./file-panel.utility";
 import {
 	FilePptxViewerControl,
 	type FilePptxViewerControlValue,
 } from "./file-pptx-viewer-control";
+import { type FilePanelParams, useFilePanel } from "./use-file-panel";
 
 const FilePptxViewerContent = lazy(() => import("./file-pptx-viewer-content"));
 
-export interface FilePptxViewerParams {
-	type: "ENGINE" | "PROJECT" | "INSIGHT";
-	id: string;
-	name: string;
-	path: string;
-}
+export type FilePptxViewerParams = FilePanelParams;
 
+/** Preview a PowerPoint file from a project, engine, or insight resource. */
 const FilePptxViewerPanel = ({
 	config,
 	id,
 	setValue,
 }: WorkbenchPanelProps<FilePptxViewerParams, FilePptxViewerControlValue>) => {
-	const insight = useInsight();
-	const { t } = useTranslation("common");
-	const access = useAccess(config.type, config.id);
-	const [isDownloading, setIsDownloading] = useState(false);
-	const targetInsightId =
-		config.type === "INSIGHT" ? config.id : insight.insightId;
-	const pptx = usePixel<string>(
-		access.status === "ready" ? getFileReadPixel(config, true) : "",
-		{ data: "" },
-		targetInsightId,
+	const panel = useFilePanel(config, { base64: true });
+	const content = useMemo(
+		() => decodeBase64Asset(panel.read.data),
+		[panel.read.data],
 	);
 
-	const content = useMemo(() => decodeBase64Asset(pptx.data), [pptx.data]);
-
-	useEffect(
-		() => setValue({ refresh: pptx.refresh }),
-		[pptx.refresh, setValue],
-	);
+	useEffect(() => {
+		setValue({ refresh: panel.read.refresh });
+	}, [panel.read.refresh, setValue]);
 	useWorkbenchControl(id, FilePptxViewerControl);
 
-	if (access.status === "loading") {
-		return (
-			<WorkbenchAccessLoading
-				className="size-full"
-				label="Loading resource access"
-			/>
-		);
-	}
+	if (panel.gate) return panel.gate;
 
-	if (access.status === "error") {
-		return (
-			<WorkbenchAccessError
-				className="size-full"
-				message={access.error}
-				onRetry={() => void access.refresh()}
-			/>
-		);
-	}
-
-	/** Download the presentation when it cannot be rendered inline. */
-	const download = async () => {
-		if (isDownloading) return;
-
-		setIsDownloading(true);
-		try {
-			const response = await runPixel<[string]>(
-				getFileDownloadPixel(config),
-				targetInsightId,
-			);
-			if (response.errors.length > 0) {
-				throw new Error(response.errors[0]);
-			}
-
-			const fileKey = response.pixelReturn[0]?.output;
-			if (!fileKey || !targetInsightId) {
-				throw new Error("No presentation download is available");
-			}
-
-			await downloadFile(targetInsightId, fileKey);
-			toast.success(t("fileExplorer.toasts.downloadFileSuccess"));
-		} catch (error) {
-			toast.error(
-				getFileOperationErrorMessage(
-					t("fileExplorer.toasts.downloadFileFailed"),
-					error,
-				),
-			);
-			console.error(error);
-		} finally {
-			setIsDownloading(false);
-		}
-	};
-
-	if (pptx.status === "LOADING" || pptx.status === "INITIAL") {
-		return (
-			<output
-				className="flex size-full items-center justify-center"
-				aria-label="Loading presentation"
-			>
-				<Spinner />
-			</output>
-		);
-	}
-
-	if (pptx.status === "ERROR" || !content) {
+	// checked before the shared read gate: a decode failure is not a read
+	// failure, and both offer the download as the way out
+	if (panel.read.status === "ERROR" || (panel.read.data && !content)) {
 		return (
 			<div className="flex size-full flex-col items-center justify-center gap-4 p-4">
 				<Muted className="text-destructive" role="alert">
-					{pptx.error?.message || "Failed to load the presentation"}
+					{panel.read.error?.message ||
+						"Failed to load the presentation"}
 				</Muted>
 				<Button
 					type="button"
-					onClick={() => void download()}
-					disabled={isDownloading}
+					onClick={() => void panel.download()}
+					disabled={panel.isDownloading}
 				>
 					<DownloadIcon aria-hidden className="size-4" />
-					{isDownloading ? "Downloading" : "Download file"}
+					{panel.isDownloading ? "Downloading" : "Download file"}
 				</Button>
 			</div>
 		);
 	}
+
+	if (panel.readGate) return panel.readGate;
+	if (!content) return null;
 
 	return (
 		<div className="relative size-full">
@@ -161,19 +77,7 @@ const FilePptxViewerPanel = ({
 					fileName={config.name}
 				/>
 			</Suspense>
-			{access.refreshing ? (
-				<WorkbenchAccessLoading
-					className="absolute inset-0 bg-background/80"
-					label="Refreshing resource access"
-				/>
-			) : null}
-			{access.refreshError ? (
-				<WorkbenchAccessError
-					className="absolute inset-0 bg-background/90"
-					message={access.refreshError}
-					onRetry={() => void access.refresh()}
-				/>
-			) : null}
+			{panel.overlay}
 		</div>
 	);
 };
