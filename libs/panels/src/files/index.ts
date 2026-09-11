@@ -11,8 +11,12 @@
 //
 // Add to this list when a consumer genuinely needs a symbol, not before.
 
-/* Picking the panel for a path, and reading a file panel's published value */
-export { getCodeEditorLanguage, getFilePanelType } from "./file-editor.utility";
+/* Picking the panel for a path, and its editor's context menu */
+export {
+	getCodeEditorLanguage,
+	getFileCodeEditorMenuItems,
+	getFilePanelType,
+} from "./file-editor.utility";
 /* The explorer body a host builds its own explorer panel from */
 export { FileExplorerPane } from "./file-explorer-pane";
 /* The blueprint map a host registers */
@@ -25,4 +29,14 @@ export {
 } from "./file-panel.constants";
 /* The scope a file panel is opened in */
 export type { FilePanelMode } from "./file-panel.mode";
-export type { FilePanelValue } from "./use-file-panel";
+export { type FileBuffer, useFileBuffer } from "./use-file-buffer";
+/* The two hooks a file panel is built from, for a host whose editor needs
+ * chrome of its own — the terminal's carries a Run toolbar and a scope guard
+ * the shared control has no room for. Reaching for these is how a host reuses
+ * the access/read/save/dirty machinery without inheriting a blueprint. */
+export {
+	type FilePanelApi,
+	type FilePanelParams,
+	type FilePanelValue,
+	useFilePanel,
+} from "./use-file-panel";

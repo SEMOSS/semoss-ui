@@ -15,6 +15,7 @@
     },
     "dependencies": {
         "@semoss/i18n": "workspace:*",
+        "@semoss/panels": "workspace:*",
         "@semoss/sdk": "workspace:*",
         "@semoss/shared": "workspace:*",
         "@semoss/ui": "workspace:*",

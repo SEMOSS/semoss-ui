@@ -153,6 +153,11 @@ const TerminalDockBindings = () => {
 		(file: SelectedFile) => {
 			if (!file.path) return;
 			const mode = terminal.fileMode;
+			if (mode.type === "STORAGE") {
+				// buckets have no read or save reactor; the scope picker never
+				// selects one, so this is unreachable rather than a limitation
+				return;
+			}
 			const appName =
 				mode.type === "APP" &&
 				terminal.selectedApp?.project_id === mode.app

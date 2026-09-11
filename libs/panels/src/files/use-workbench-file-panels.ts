@@ -49,7 +49,7 @@ const isFilePanel = (record: WorkbenchPanelRecord): boolean =>
 const isFilePanelInMode = (
 	params: FilePanelConfig | undefined,
 	mode: FileMode,
-): boolean => Boolean(params?.mode) && sameFileMode(params.mode, mode);
+): boolean => (params?.mode ? sameFileMode(params.mode, mode) : false);
 
 /**
  * Keep open file panels in step with the file tree.

@@ -1002,6 +1002,9 @@ importers:
       '@semoss/i18n':
         specifier: workspace:*
         version: link:../../libs/i18n
+      '@semoss/panels':
+        specifier: workspace:*
+        version: link:../../libs/panels
       '@semoss/sdk':
         specifier: workspace:*
         version: link:../../libs/sdk

@@ -1,20 +1,19 @@
 import { Plus } from "lucide-react";
 import { lazy, Suspense } from "react";
 import { useTranslation } from "@semoss/i18n";
+import { FileExplorerPane } from "@semoss/panels";
 import { InsightProvider } from "@semoss/sdk/react";
 import {
-	FileExplorer,
-	FileExplorerHeader,
-	FileExplorerNewAction,
-	FileExplorerRefreshAction,
+	type FileExplorerApi,
 	type FileItem,
 	getFileIconComponent,
-	NewFileOverlay,
 	useFileExplorer,
 } from "@semoss/shared";
 import type {
 	WorkbenchChromeProps,
 	WorkbenchPanelConfig,
+	WorkbenchPanelId,
+	WorkbenchPanelParams,
 	WorkbenchPanelProps,
 } from "@semoss/workbench";
 import { useWorkbench, useWorkbenchControl } from "@semoss/workbench";
@@ -83,18 +82,34 @@ const AdoptingInsight = ({
 };
 
 /** The Files pane: scope picker over the explorer, on the active insight. */
-const TerminalFileExplorerPanel = () => {
+const TerminalFileExplorerPanel = ({
+	id,
+	setValue,
+}: WorkbenchPanelProps<WorkbenchPanelParams, FileExplorerApi>) => {
 	const terminal = useTerminal();
 
 	return (
 		<AdoptingInsight insightId={terminal.activeInsightId}>
-			<TerminalFileExplorerPane />
+			<TerminalFileExplorerPane id={id} setValue={setValue} />
 		</AdoptingInsight>
 	);
 };
 
-/** Inside the adopted insight, so `useFileExplorer` reads the right one. */
-const TerminalFileExplorerPane = () => {
+/**
+ * Inside the adopted insight, so `useFileExplorer` reads the right one.
+ *
+ * The tree, its header and the refresh/new chrome come from
+ * `@semoss/panels`' `FileExplorerPane` — the same body the client's three
+ * explorers render. All this adds is the scope picker above it, and the file
+ * mode, which the terminal takes from its own context rather than panel config.
+ */
+const TerminalFileExplorerPane = ({
+	id,
+	setValue,
+}: {
+	id: WorkbenchPanelId;
+	setValue: (value: FileExplorerApi) => void;
+}) => {
 	const terminal = useTerminal();
 	const explorer = useFileExplorer({
 		mode: terminal.fileMode,
@@ -120,24 +135,10 @@ const TerminalFileExplorerPane = () => {
 		<div className="flex h-full flex-col bg-background">
 			<ScopePicker />
 			<div className="relative min-h-0 flex-1">
-				<FileExplorer
+				<FileExplorerPane
+					id={id}
 					explorer={explorer}
-					header={
-						<FileExplorerHeader
-							explorer={explorer}
-							actions={
-								<>
-									<FileExplorerRefreshAction
-										explorer={explorer}
-									/>
-									<FileExplorerNewAction
-										explorer={explorer}
-									/>
-								</>
-							}
-						/>
-					}
-					newFileOverlay={NewFileOverlay}
+					setValue={setValue}
 				/>
 			</div>
 		</div>
@@ -145,7 +146,10 @@ const TerminalFileExplorerPane = () => {
 };
 
 /** The Files border panel. Pinned open-or-closed by the rail, never closable. */
-export const TERMINAL_FILE_EXPLORER_PANEL: WorkbenchPanelConfig = {
+export const TERMINAL_FILE_EXPLORER_PANEL: WorkbenchPanelConfig<
+	WorkbenchPanelParams,
+	FileExplorerApi
+> = {
 	name: "Files",
 	canClose: false,
 	canDrag: false,
