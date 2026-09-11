@@ -26,6 +26,7 @@ import {
 	TooltipContent,
 	TooltipTrigger,
 	toast,
+	useIsMobile,
 	useTheme,
 } from "@semoss/ui/next";
 import landingImage from "@/assets/img/landing.png";
@@ -81,6 +82,7 @@ export const NewRoomPage = observer(() => {
 	const { t } = useTranslation(["room", "workspace", "common", "chat"]);
 	const { root } = useRoot();
 	const { theme: colorMode } = useTheme();
+	const isMobile = useIsMobile();
 
 	const isDark =
 		colorMode === "dark" ||
@@ -745,11 +747,11 @@ export const NewRoomPage = observer(() => {
 													/>
 												)}
 												<DropdownMenuItem
-													onSelect={(e) => {
-														e.preventDefault();
+													onSelect={() => {
 														setIsConfgurationOpen(
 															!isConfigurationOpen,
 														);
+														onOpenChange(false);
 													}}
 												>
 													<Settings2Icon />
@@ -796,7 +798,7 @@ export const NewRoomPage = observer(() => {
 						</DropHighlight>
 					</FileDragProvider>
 				</ResizablePanel>
-				{isConfigurationOpen && (
+				{isConfigurationOpen && !isMobile && (
 					<>
 						<ResizableHandle />
 						<ResizablePanel
@@ -806,67 +808,108 @@ export const NewRoomPage = observer(() => {
 							<div
 								className={`relative h-full w-full overflow-hidden rounded-lg border border-input bg-background shadow-xs`}
 							>
-								{isConfigurationOpen && (
-									<>
-										<Tooltip>
-											<TooltipTrigger asChild>
-												<Button
-													className="absolute end-2 top-2 z-10"
-													variant="ghost"
-													size="icon-sm"
-													onClick={() => {
-														// close it
-														setIsConfgurationOpen(
-															false,
-														);
-													}}
-												>
-													<XIcon />
-												</Button>
-											</TooltipTrigger>
-											<TooltipContent>
-												{t("room:settings.close")}
-											</TooltipContent>
-										</Tooltip>
+								<Tooltip>
+									<TooltipTrigger asChild>
+										<Button
+											className="absolute end-2 top-2 z-10"
+											variant="ghost"
+											size="icon-sm"
+											onClick={() => {
+												// close it
+												setIsConfgurationOpen(false);
+											}}
+										>
+											<XIcon />
+										</Button>
+									</TooltipTrigger>
+									<TooltipContent>
+										{t("room:settings.close")}
+									</TooltipContent>
+								</Tooltip>
 
-										<ScrollArea className="h-full w-full px-2">
-											<RoomOptionsForm
-												model={chat.models.selected}
-												options={tempRoomStore.options}
-												onModelChange={(model) => {
-													if (model) {
-														chat.setSelectedModel(
-															model,
-														);
-													}
-												}}
-												agentEditable
-												onOptionsChange={(opts) => {
-													if (!opts) return;
-													if ("workspace" in opts) {
-														if (opts.workspace) {
-															setSelectedWorkspaceId(
-																opts.workspace
-																	.workspace_id,
-															);
-														} else {
-															setSelectedWorkspaceId(
-																"",
-															);
-														}
-													}
-													tempRoomStore.setOptions({
-														...tempRoomStore.options,
-														...opts,
-													});
-												}}
-											/>
-										</ScrollArea>
-									</>
-								)}
+								<ScrollArea className="h-full w-full px-2">
+									<RoomOptionsForm
+										model={chat.models.selected}
+										options={tempRoomStore.options}
+										onModelChange={(model) => {
+											if (model) {
+												chat.setSelectedModel(model);
+											}
+										}}
+										agentEditable
+										onOptionsChange={(opts) => {
+											if (!opts) return;
+											if ("workspace" in opts) {
+												if (opts.workspace) {
+													setSelectedWorkspaceId(
+														opts.workspace
+															.workspace_id,
+													);
+												} else {
+													setSelectedWorkspaceId("");
+												}
+											}
+											tempRoomStore.setOptions({
+												...tempRoomStore.options,
+												...opts,
+											});
+										}}
+									/>
+								</ScrollArea>
 							</div>
 						</ResizablePanel>
 					</>
+				)}
+				{isConfigurationOpen && isMobile && (
+					<div className="fixed inset-0 z-50 flex flex-col bg-background">
+						<Tooltip>
+							<TooltipTrigger asChild>
+								<Button
+									className="absolute end-2 top-2 z-10"
+									variant="ghost"
+									size="icon-sm"
+									onClick={() => {
+										// close it
+										setIsConfgurationOpen(false);
+									}}
+								>
+									<XIcon />
+								</Button>
+							</TooltipTrigger>
+							<TooltipContent>
+								{t("room:settings.close")}
+							</TooltipContent>
+						</Tooltip>
+
+						<ScrollArea className="h-full w-full px-2">
+							<RoomOptionsForm
+								model={chat.models.selected}
+								options={tempRoomStore.options}
+								onModelChange={(model) => {
+									if (model) {
+										chat.setSelectedModel(model);
+									}
+								}}
+								agentEditable
+								onOptionsChange={(opts) => {
+									if (!opts) return;
+									if ("workspace" in opts) {
+										if (opts.workspace) {
+											setSelectedWorkspaceId(
+												opts.workspace.workspace_id,
+											);
+										} else {
+											setSelectedWorkspaceId("");
+										}
+									}
+									tempRoomStore.setOptions({
+										...tempRoomStore.options,
+										...opts,
+									});
+								}}
+							/>
+						</ScrollArea>
+					</div>
 				)}
 				{preCreatedRoom?.sidebar.isOpen && (
 					<>
