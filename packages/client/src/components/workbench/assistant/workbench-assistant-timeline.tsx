@@ -233,17 +233,18 @@ export const WorkbenchAssistantTimeline = () => {
 					</div>
 					<div className="flex max-w-sm flex-col gap-2">
 						<p className="font-semibold text-foreground text-lg">
-							Describe what you want to build
+							What can I help you with?
 						</p>
 						<p className="text-muted-foreground text-sm">
-							Share a workflow, paste requirements, or ask for
-							changes in plain language.
+							Share a workflow, paste requirements, ask for
+							changes, or get help in plain language.
 						</p>
 					</div>
 					<p className="max-w-sm text-muted-foreground/80 text-xs">
 						Examples: &quot;Create an intake app for internal
 						requests&quot; or &quot;Turn this spreadsheet into a
-						dashboard.&quot;
+						dashboard&quot; or &quot;How do I pass data between
+						automation steps?&quot;
 					</p>
 				</div>
 			</div>

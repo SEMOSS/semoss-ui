@@ -94,7 +94,9 @@ export const projectDependencyToMCP = (dep: ProjectDependency): MCP => ({
 		dep.engine_type === "WORKSPACE" ||
 		dep.engine_type === "BLOCKS" ||
 		dep.engine_type === "CODE" ||
-		dep.engine_type === "INSIGHT"
+		dep.engine_type === "INSIGHT" ||
+		dep.engine_type === "NOTEBOOK" ||
+		dep.engine_type === "AUTOMATION"
 			? "PROJECT"
 			: dep.engine_type,
 	subtype: dep.engine_subtype,

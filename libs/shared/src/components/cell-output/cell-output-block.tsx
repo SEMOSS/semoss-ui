@@ -9,8 +9,14 @@ import {
 } from "lucide-react";
 import { type ReactNode, useEffect, useState } from "react";
 import { useTranslation } from "@semoss/i18n";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@semoss/ui/next";
+import {
+	Markdown,
+	Tooltip,
+	TooltipContent,
+	TooltipTrigger,
+} from "@semoss/ui/next";
 import { countInlineImages, hasInlineImage } from "../../utility/image";
+import { SandpackHtmlPreview } from "../html";
 import { InlineImageSegments } from "./inline-image";
 import { JsonViewer } from "./json-viewer";
 
@@ -41,6 +47,8 @@ export interface CellOutputBlockProps {
 
 	/** Marks the row as an error: red panel, red border, red text. */
 	error?: boolean;
+	/** Optional parent-owned popout for the result panel. */
+	onOutputPopout?: () => void;
 }
 
 /**
@@ -63,6 +71,7 @@ export const CellOutputBlock = ({
 	logs = [],
 	pending = false,
 	error = false,
+	onOutputPopout,
 }: CellOutputBlockProps) => {
 	// `common` is preloaded by every app's I18nBuilder (it's in each app's
 	// initial `ns`), so this works from libs/shared without coupling.
@@ -103,6 +112,23 @@ export const CellOutputBlock = ({
 		typeof outputValue === "object" &&
 		!error &&
 		!rawOutput;
+
+	const isTableOutput = isObjectOutput && isTabularArray(outputValue);
+
+	const htmlText = !isObjectOutput ? normalizeForMarkdown(output) : "";
+	const isHtmlOutput =
+		!isObjectOutput &&
+		!error &&
+		!rawOutput &&
+		looksLikeHtmlDocument(htmlText);
+	const isMarkdownOutput =
+		!isObjectOutput &&
+		!isHtmlOutput &&
+		!error &&
+		!rawOutput &&
+		looksLikeMarkdown(output);
+
+	const markdownText = isMarkdownOutput ? normalizeForMarkdown(output) : "";
 
 	// Python executions return rendered figures as inline base64 images. In
 	// FORMATTED mode we show the picture; RAW mode falls through to the plain
@@ -234,7 +260,8 @@ export const CellOutputBlock = ({
 						<>
 							{!error &&
 								(outputValue !== null ||
-									outputImageCount > 0) && (
+									outputImageCount > 0 ||
+									isHtmlOutput) && (
 									<RawToggle
 										raw={rawOutput}
 										onToggle={() => setRawOutput((v) => !v)}
@@ -257,17 +284,37 @@ export const CellOutputBlock = ({
 								label={t("cellOutput.copy.output")}
 							/>
 							<PopoutButton
-								onClick={() => setPopoutSection("result")}
+								onClick={() =>
+									onOutputPopout
+										? onOutputPopout()
+										: setPopoutSection("result")
+								}
 							/>
 						</>
 					}
 				>
-					{isObjectOutput ? (
+					{isTableOutput ? (
+						<DataTable
+							rows={outputValue as Record<string, unknown>[]}
+						/>
+					) : isObjectOutput ? (
 						<JsonViewer
 							value={outputValue}
 							forceVersion={expandRev}
 							forceOpen={expandAllTo}
 						/>
+					) : isHtmlOutput ? (
+						<div className="h-72">
+							<SandpackHtmlPreview
+								html={htmlText}
+								forceFullHeight
+								className="border-0"
+							/>
+						</div>
+					) : isMarkdownOutput ? (
+						<div className="prose prose-sm dark:prose-invert max-w-none">
+							<Markdown>{markdownText}</Markdown>
+						</div>
 					) : showOutputImages ? (
 						<InlineImageSegments
 							text={output}
@@ -359,12 +406,15 @@ export const CellOutputBlock = ({
 					})} · ${formatBytes(output)}`}
 					actions={
 						<>
-							{!error && outputValue !== null && (
-								<RawToggle
-									raw={rawOutput}
-									onToggle={() => setRawOutput((v) => !v)}
-								/>
-							)}
+							{!error &&
+								(outputValue !== null ||
+									outputImageCount > 0 ||
+									isHtmlOutput) && (
+									<RawToggle
+										raw={rawOutput}
+										onToggle={() => setRawOutput((v) => !v)}
+									/>
+								)}
 							{isObjectOutput && (
 								<ExpandAllToggle
 									onExpand={() => {
@@ -385,12 +435,28 @@ export const CellOutputBlock = ({
 					}
 					onClose={() => setPopoutSection(null)}
 				>
-					{isObjectOutput ? (
+					{isTableOutput ? (
+						<DataTable
+							rows={outputValue as Record<string, unknown>[]}
+						/>
+					) : isObjectOutput ? (
 						<JsonViewer
 							value={outputValue}
 							forceVersion={expandRev}
 							forceOpen={expandAllTo}
 						/>
+					) : isHtmlOutput ? (
+						<div className="h-full min-h-0">
+							<SandpackHtmlPreview
+								html={htmlText}
+								forceFullHeight
+								className="border-0"
+							/>
+						</div>
+					) : isMarkdownOutput ? (
+						<div className="prose prose-sm dark:prose-invert max-w-none">
+							<Markdown>{markdownText}</Markdown>
+						</div>
 					) : showOutputImages ? (
 						<InlineImageSegments
 							text={output}
@@ -723,7 +789,7 @@ const ExpandAllToggle = ({
 // PopoutModal — viewport-sized modal that re-renders panel content bigger
 // ---------------------------------------------------------------------------
 
-const PopoutModal = ({
+export const PopoutModal = ({
 	title,
 	meta,
 	actions,
@@ -873,3 +939,95 @@ const tryParseStructured = (raw: string): unknown | null => {
 // Re-export so consumers can compose their own renderers if they want just
 // the JSON tree.
 export { JsonViewer } from "./json-viewer";
+
+/** Heuristic: returns true if the text contains markdown syntax worth rendering. */
+const MARKDOWN_PATTERNS = [
+	/^#{1,6}\s/m, // headings
+	/\|.+\|.+\|/m, // tables
+	/^[-*+]\s/m, // unordered lists
+	/^\d+\.\s/m, // ordered lists
+	/```[\s\S]*?```/, // fenced code blocks
+	/\*\*.+?\*\*/, // bold
+	/\[.+?\]\(.+?\)/, // links
+];
+
+function looksLikeMarkdown(text: string): boolean {
+	if (!text || text.length < 4) return false;
+	return MARKDOWN_PATTERNS.some((pattern) => pattern.test(text));
+}
+
+/** Only complete HTML documents use the sandboxed preview; fragments stay plain text. */
+function looksLikeHtmlDocument(text: string): boolean {
+	return /^\s*(?:<!doctype\s+html\s*>|<html(?:\s|>))/i.test(text);
+}
+
+/** Convert literal \\n sequences to real newlines and strip surrounding quotes. */
+function normalizeForMarkdown(text: string): string {
+	let s = text;
+	// Strip wrapping JSON string quotes
+	if (s.startsWith('"') && s.endsWith('"')) {
+		try {
+			const parsed = JSON.parse(s);
+			if (typeof parsed === "string") s = parsed;
+		} catch {
+			s = s.slice(1, -1);
+		}
+	}
+	// Convert literal \n to real newlines
+	if (s.includes("\\n")) {
+		s = s.replace(/\\n/g, "\n");
+	}
+	return s;
+}
+
+/** True if the value is a non-empty array of flat objects with consistent keys. */
+function isTabularArray(value: unknown): boolean {
+	if (!Array.isArray(value) || value.length === 0) return false;
+	if (typeof value[0] !== "object" || value[0] === null) return false;
+	const keys = Object.keys(value[0]);
+	if (keys.length === 0) return false;
+	return value.every(
+		(item) =>
+			typeof item === "object" && item !== null && !Array.isArray(item),
+	);
+}
+
+/** Renders an array of objects as a simple table. */
+function DataTable({ rows }: { rows: Record<string, unknown>[] }) {
+	const columns = Object.keys(rows[0]);
+	return (
+		<div className="overflow-auto">
+			<table className="w-full border-collapse text-xs">
+				<thead>
+					<tr className="border-b bg-muted/50">
+						{columns.map((col) => (
+							<th
+								key={col}
+								className="whitespace-nowrap px-2 py-1.5 text-left font-semibold text-muted-foreground"
+							>
+								{col}
+							</th>
+						))}
+					</tr>
+				</thead>
+				<tbody>
+					{rows.map((row, i) => (
+						<tr
+							key={`row-${i}-${String(row[columns[0]] ?? i)}`}
+							className="border-b last:border-0 hover:bg-muted/30"
+						>
+							{columns.map((col) => (
+								<td
+									key={col}
+									className="whitespace-nowrap px-2 py-1 text-foreground"
+								>
+									{String(row[col] ?? "")}
+								</td>
+							))}
+						</tr>
+					))}
+				</tbody>
+			</table>
+		</div>
+	);
+}

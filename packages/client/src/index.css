@@ -5,3 +5,4 @@
 @source "./**/*.{ts,tsx}";
 @source "../../../libs/shared/src/**/*.{ts,tsx}";
 @source "../../terminal/src/**/*.{ts,tsx}";
+@source "../../automation-workspace/src/**/*.{ts,tsx}";

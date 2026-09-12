@@ -13,6 +13,7 @@ import {
 	Settings,
 	ShieldCheck,
 	Sigma,
+	Workflow,
 } from "lucide-react";
 import type React from "react";
 import { useEffect, useState } from "react";
@@ -82,6 +83,11 @@ const CATALOG_ROUTES = [
 		text: "Notebooks",
 		icon: <NotebookText className="size-4" />,
 		route: "/notebook",
+	},
+	{
+		text: "Automations",
+		icon: <Workflow className="size-4" />,
+		route: "/automation",
 	},
 	{
 		text: "Guardrail",
@@ -252,6 +258,11 @@ export const Sidebar: React.FC = () => {
 												<span className="flex-1 truncate text-left">
 													{r.text}
 												</span>
+												{r.route === "/automation" && (
+													<span className="ms-1 self-center rounded border px-1 py-0.5 font-semibold text-[9px] leading-none">
+														BETA
+													</span>
+												)}
 											</Link>
 										</SidebarMenuButton>
 									</SidebarMenuItem>

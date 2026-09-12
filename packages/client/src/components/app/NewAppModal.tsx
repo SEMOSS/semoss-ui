@@ -29,7 +29,10 @@ type NewAppForm = {
 
 interface NewAppModalProps {
 	open: boolean;
-	options: { type: "blocks"; state: SerializedState } | { type: "code" };
+	options:
+		| { type: "automation" }
+		| { type: "blocks"; state: SerializedState }
+		| { type: "code" };
 	onClose: (appId?: string) => void;
 }
 
@@ -59,6 +62,26 @@ export const NewAppModal = (props: NewAppModalProps) => {
 
 	const onSubmit = handleSubmit(async (data: NewAppForm) => {
 		let appId = "";
+
+		const saveMetadata = async (
+			resolvedAppId: string,
+			extraTags: string[] = [],
+		): Promise<boolean> => {
+			const tags = Array.from(new Set([...data.APP_TAGS, ...extraTags]));
+			if (!tags.length && !data.APP_DESCRIPTION) return true;
+			const { pixelReturn } = await runPixel(
+				`SetProjectMetadata(project=["${resolvedAppId}"], meta=[${JSON.stringify(
+					{ tag: tags, description: data.APP_DESCRIPTION },
+				)}])`,
+			);
+			const operationType = pixelReturn[0].operationType[0];
+			if (operationType.indexOf("ERROR") > -1) {
+				toast.error(String(pixelReturn[0].output));
+				return false;
+			}
+			return true;
+		};
+
 		try {
 			setIsLoading(true);
 			const { type } = options;
@@ -82,27 +105,21 @@ export const NewAppModal = (props: NewAppModalProps) => {
 					await uploadImage(data.APP_IMG, appId, insightID);
 				}
 
-				if (data.APP_TAGS.length || data.APP_DESCRIPTION) {
-					const setProjectMetadataResponse = await runPixel(
-						`SetProjectMetadata(project=["${appId}"], meta=[${JSON.stringify(
-							{
-								tag: data.APP_TAGS,
-								description: data.APP_DESCRIPTION,
-							},
-						)}])`,
-					);
+				if (!(await saveMetadata(appId))) return;
+			} else if (type === "automation") {
+				const pixel = `CreateAutomation(projectName=${JSON.stringify([data.APP_NAME])});`;
+				const { errors, pixelReturn } =
+					await runPixel<[Project]>(pixel);
 
-					const output =
-						setProjectMetadataResponse.pixelReturn[0].output;
-					const operationType =
-						setProjectMetadataResponse.pixelReturn[0]
-							.operationType[0];
+				if (errors.length > 0) throw new Error(errors.join(","));
 
-					if (operationType.indexOf("ERROR") > -1) {
-						toast.error(output);
-						return;
-					}
+				appId = pixelReturn[0].output.project_id;
+
+				if (data.APP_IMG && appId) {
+					await uploadImage(data.APP_IMG, appId, insightID);
 				}
+
+				if (!(await saveMetadata(appId, ["AUTOMATION"]))) return;
 			} else if (type === "code") {
 				const pixel = `CreateProject(project=["${data.APP_NAME}"], portal=[true], projectType=["CODE"]);`;
 				const { errors, pixelReturn } =
@@ -130,35 +147,19 @@ export const NewAppModal = (props: NewAppModalProps) => {
 				let operationType = response.pixelReturn[0].operationType;
 
 				if (operationType.indexOf("ERROR") > -1) {
-					toast.error(output);
-					return false;
+					toast.error(String(output));
+					return;
 				}
 
 				output = response.pixelReturn[1].output;
 				operationType = response.pixelReturn[1].operationType;
 
 				if (operationType.indexOf("ERROR") > -1) {
-					toast.error(output);
+					toast.error(String(output));
+					return;
 				}
 
-				if (data.APP_TAGS.length || data.APP_DESCRIPTION) {
-					const setProjectMetadataResponse = await runPixel(
-						`SetProjectMetadata(project=["${appId}"], meta=[${JSON.stringify(
-							{
-								tag: data.APP_TAGS,
-								description: data.APP_DESCRIPTION,
-							},
-						)}])`,
-					);
-
-					output = setProjectMetadataResponse.pixelReturn[0].output;
-					operationType =
-						setProjectMetadataResponse.pixelReturn[0].operationType;
-
-					if (operationType.indexOf("ERROR") > -1) {
-						toast.error(output);
-					}
-				}
+				if (!(await saveMetadata(appId))) return;
 			} else {
 				return;
 			}
@@ -166,7 +167,6 @@ export const NewAppModal = (props: NewAppModalProps) => {
 			if (!appId) throw new Error("Error creating app");
 			onClose(appId);
 		} catch (e) {
-			console.error(e);
 			toast.error(e.message);
 		} finally {
 			setIsLoading(false);
