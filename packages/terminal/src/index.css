@@ -1,5 +1,4 @@
 @import "@semoss/ui/globals.css";
-@import "@semoss/ui/monaco.css";
 @import "@semoss/shared/globals.css";
 /* FlexLayout's base + SMSS-theme styles. Imported directly so the
    bundler can't tree-shake them out of the production CSS bundle —

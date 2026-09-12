@@ -15,7 +15,6 @@ import {
 import type { WorkbenchChromeProps } from "@/stores/workbench";
 import { WORKBENCH_STYLES } from "../core/workbench.chrome";
 import type { FileNotebookEditorParams } from "./file-notebook-editor-panel";
-import { FileWordWrapButton } from "./file-word-wrap-button";
 
 export interface FileNotebookEditorControlValue {
 	canSave: boolean;
@@ -54,7 +53,6 @@ export const FileNotebookEditorControl: FC<
 					<SelectItem value="raw">Raw</SelectItem>
 				</SelectContent>
 			</Select>
-			{value.viewMode === "raw" && <FileWordWrapButton />}
 			<Tooltip>
 				<TooltipTrigger asChild>
 					<Button
