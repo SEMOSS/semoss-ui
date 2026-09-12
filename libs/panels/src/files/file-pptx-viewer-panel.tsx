@@ -1,6 +1,15 @@
 import { DownloadIcon } from "lucide-react";
-import { lazy, Suspense, useEffect, useMemo } from "react";
-import { decodeBase64Asset } from "@semoss/shared";
+import type { PowerPointViewerHandle } from "pptx-react-viewer";
+import {
+	lazy,
+	Suspense,
+	useCallback,
+	useEffect,
+	useMemo,
+	useRef,
+	useState,
+} from "react";
+import { decodeBase64Asset, encodeBase64Asset } from "@semoss/shared";
 import { Button, Muted, Spinner } from "@semoss/ui/next";
 import type {
 	WorkbenchPanelConfig,
@@ -8,32 +17,62 @@ import type {
 } from "@semoss/workbench";
 import { useWorkbenchControl } from "@semoss/workbench";
 import { matchesFilePanel } from "./file-panel.mode";
-import { FileRefreshControl } from "./file-panel-control";
-import { FilePanelIcon } from "./file-panel-icon";
 import {
-	type FilePanelParams,
-	type FilePanelValue,
-	useFilePanel,
-} from "./use-file-panel";
+	FileEditorControl,
+	type FileEditorControlValue,
+} from "./file-panel-control";
+import { FilePanelIcon } from "./file-panel-icon";
+import { type FilePanelParams, useFilePanel } from "./use-file-panel";
 
 const FilePptxViewerContent = lazy(() => import("./file-pptx-viewer-content"));
 
-/** Preview a PowerPoint file from a project, engine, or insight resource. */
+/** Preview and edit a PowerPoint file from a project, engine, or user resource. */
 const FilePptxViewerPanel = ({
 	config,
 	id,
 	setValue,
-}: WorkbenchPanelProps<FilePanelParams, FilePanelValue>) => {
+}: WorkbenchPanelProps<FilePanelParams, FileEditorControlValue>) => {
 	const panel = useFilePanel(config, { base64: true });
+	const viewerRef = useRef<PowerPointViewerHandle>(null);
+	const [isDirty, setIsDirty] = useState(false);
 	const content = useMemo(
 		() => decodeBase64Asset(panel.read.data),
 		[panel.read.data],
 	);
 
+	// The deck is edited in the viewer's own memory, so the bytes only exist
+	// once it is asked for them — unlike the text editors, where the panel
+	// holds the buffer and the save just posts it.
+	const save = useCallback(async () => {
+		const handle = viewerRef.current;
+		if (!handle) return;
+
+		const bytes = await handle.getContent();
+		const saved = await panel.save(encodeBase64Asset(bytes));
+		if (saved) {
+			setIsDirty(false);
+		}
+	}, [panel.save]);
+
 	useEffect(() => {
-		setValue({ refresh: panel.read.refresh });
-	}, [panel.read.refresh, setValue]);
-	useWorkbenchControl(id, FileRefreshControl);
+		setValue({
+			// gated on the deck being dirty, not just writable: the bytes come
+			// back re-serialised every time, so an idle save would rewrite the
+			// file with a byte-different copy of what is already there
+			canSave: !panel.readOnly && isDirty,
+			isBusy: panel.isBusy,
+			refresh: panel.read.refresh,
+			save: () => void save(),
+		});
+	}, [
+		panel.readOnly,
+		panel.isBusy,
+		panel.read.refresh,
+		isDirty,
+		save,
+		setValue,
+	]);
+	useWorkbenchControl(id, FileEditorControl);
 
 	if (panel.gate) return panel.gate;
 
@@ -74,8 +113,11 @@ const FilePptxViewerPanel = ({
 				}
 			>
 				<FilePptxViewerContent
+					ref={viewerRef}
 					content={content}
 					fileName={config.name}
+					canEdit={!panel.readOnly}
+					onDirtyChange={setIsDirty}
 				/>
 			</Suspense>
 			{panel.overlay}
@@ -83,10 +125,10 @@ const FilePptxViewerPanel = ({
 	);
 };
 
-/** Scope-aware PowerPoint viewer blueprint shared by all workbenches. */
+/** Scope-aware PowerPoint editor blueprint shared by all workbenches. */
 export const FILE_PPTX_VIEWER_PANEL: WorkbenchPanelConfig<
 	FilePanelParams,
-	FilePanelValue
+	FileEditorControlValue
 > = {
 	name: "PowerPoint",
 	canRename: false,

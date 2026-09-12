@@ -26,7 +26,8 @@ export const getFileSavePixel = (
 	mode: FilePanelMode,
 	path: string,
 	content: string,
-): string => adapterFor(mode).save(path, content);
+	base64 = false,
+): string => adapterFor(mode).save(path, content, base64);
 
 /** Build a scoped asset download pixel. */
 export const getFileDownloadPixel = (

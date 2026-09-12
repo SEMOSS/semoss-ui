@@ -12,11 +12,10 @@ interface SkillFileViewerProps {
  * Read-only preview of the selected file. Markdown files render through the
  * `Markdown` component; everything else is shown in a read-only Monaco view.
  *
- * Reads the file itself and renders `CodeEditor` directly rather than going
- * through `@semoss/shared`'s `FileEditor` family: with `readOnly` and
- * `hideToolbar` set, all that wrapper added was the same pixel this component
- * already ran for its Markdown branch. The workbench's own file panels take the
- * same direct route.
+ * Reads the file itself and renders `CodeEditor` directly rather than opening a
+ * workbench file panel: this is a read-only preview with no tabs, no chrome and
+ * no save, so a panel would add only the pixel this component already runs for
+ * its Markdown branch.
  */
 export const SkillFileViewer: React.FC<SkillFileViewerProps> = ({
 	projectId,

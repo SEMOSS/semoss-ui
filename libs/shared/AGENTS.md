@@ -33,23 +33,19 @@ mode-specific — capabilities and one Pixel per operation — lives in
 `FileExplorer` is **not** deprecated — it is the shell `@semoss/panels`'
 `FileExplorerPane` renders, and `libs/panels` is its main consumer.
 
-### The file editors are deprecated (`components/file/file-*.tsx`)
+### The file editors are gone (`components/file/file-*.tsx`)
 
-`FileEditor` and the six viewers it dispatches to — `file-code-editor`,
+`FileEditor` and the six viewers it dispatched to — `file-code-editor`,
 `file-download-view`, `file-html-editor`, `file-image-viewer`,
-`file-markdown-editor`, `file-notebook`, `file-pdf-viewer` — are superseded by
-the panels in [`@semoss/panels`](../panels/AGENTS.md), which do the same reading,
-saving and downloading through one shared pair of hooks (`useFilePanel`,
-`useFileBuffer`). Open a file panel, or build on those hooks the way
-`packages/terminal` does.
+`file-markdown-editor`, `file-notebook`, `file-pdf-viewer` — have been deleted.
+They were superseded by the panels in [`@semoss/panels`](../panels/AGENTS.md),
+which do the same reading, saving and downloading through one shared pair of
+hooks (`useFilePanel`, `useFileBuffer`). Open a file panel, or build on those
+hooks the way `packages/terminal` does. Do not reintroduce a bespoke editor
+here.
 
-Six of the seven have **no importer but `FileEditor` itself**. The whole island
-is ~1,400 lines and comes out as soon as its last consumer does, which is
-`app-file-editor.tsx` — BLOCKS, and so gated on the BLOCKS migration. Do not add
-a new one; do migrate any you touch.
-
-`components/notebook/` stays either way: `FILE_NOTEBOOK_EDITOR_PANEL` renders
-`Notebook` directly. Only the `FileNotebook` *wrapper* is deprecated.
+`components/notebook/` was never part of that island and stays:
+`FILE_NOTEBOOK_EDITOR_PANEL` renders `Notebook` directly.
 
 ## Build System
 

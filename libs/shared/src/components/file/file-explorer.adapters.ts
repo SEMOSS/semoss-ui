@@ -76,8 +76,12 @@ export interface FileExplorerAdapter {
 	 * gate, not the builder's.
 	 */
 	read(path: string, base64?: boolean): string;
-	/** Overwrite a file's contents. */
-	save(path: string, content: string): string;
+	/**
+	 * Overwrite a file's contents. `base64` selects the `*Base64` reactor, for
+	 * bytes that are not text (a re-serialised pptx) — the same switch
+	 * {@link read} takes.
+	 */
+	save(path: string, content: string, base64?: boolean): string;
 	/** `path` is the full destination path, name included. */
 	createFile(path: string): string;
 	/** `path` is the full destination path, name included. */
@@ -93,14 +97,42 @@ export interface FileExplorerAdapter {
 }
 
 /**
+ * The reactor a family uses for each operation.
+ *
+ * Spelled out per family rather than assembled from a family word. The names
+ * are close enough to look derivable and are not: `Rename*Asset`,
+ * `Copy*Asset`, `Download*Asset` and `Unzip*AssetFile` are singular while
+ * `Browse*Assets`, `Search*Assets`, `Delete*Assets`, `Get*Assets`,
+ * `Save*Assets` and `New*Assets*` are plural. Writing them out also means a
+ * reactor name can be found by searching for it, which an interpolated
+ * `` `Browse${family.name}Assets` `` could not.
+ */
+interface AssetReactors {
+	browse: string;
+	search: string;
+	rename: string;
+	copy: string;
+	remove: string;
+	read: string;
+	/** The `*Base64` read, for bytes that are not text. */
+	readBase64: string;
+	save: string;
+	/** The `*Base64` write, for bytes that are not text. */
+	saveBase64: string;
+	download: string;
+	createFile: string;
+	createDirectory: string;
+	unzip: string;
+}
+
+/**
  * The four asset families (`APP`, `ENGINE`, `INSIGHT`, `USER`) share one
- * reactor naming scheme and differ only in the family word and the scope
+ * reactor argument shape and differ only in their reactor names and the scope
  * argument. Argument order and quoting are inconsistent across the reactors
  * themselves, so both a leading and a trailing form are kept.
  */
 interface AssetFamily {
-	/** The word inside the reactor name, e.g. `App` in `BrowseAppAssets`. */
-	name: "App" | "Engine" | "Insight" | "User";
+	reactors: AssetReactors;
 	/** Bracketed leading scope, e.g. `project=["p1"], ` — may be empty. */
 	scopeLead: string;
 	/** Bracketed trailing scope, e.g. `, project=["p1"]` — may be empty. */
@@ -129,34 +161,34 @@ const createAssetAdapter = (family: AssetFamily): FileExplorerAdapter => ({
 		delete: true,
 	},
 	browse: (path) =>
-		`Browse${family.name}Assets(filePath=["${path}"]${family.scopeTail});`,
+		`${family.reactors.browse}(filePath=["${path}"]${family.scopeTail});`,
 	search: (path, term) =>
-		`Search${family.name}Assets(filePath=["${path}"]${family.scopeTail}, search=["${term}"]);`,
+		`${family.reactors.search}(filePath=["${path}"]${family.scopeTail}, search=["${term}"]);`,
 	rename: (oldPath, newPath) =>
-		`Rename${family.name}Asset(${family.scopeLead}filePath=["${oldPath}"], newValue=["${newPath}"]);`,
+		`${family.reactors.rename}(${family.scopeLead}filePath=["${oldPath}"], newValue=["${newPath}"]);`,
 	copy: (oldPath, newPath) =>
-		`Copy${family.name}Asset(${family.scopeLeadBare}filePath="${oldPath}", newValue="${newPath}");`,
+		`${family.reactors.copy}(${family.scopeLeadBare}filePath="${oldPath}", newValue="${newPath}");`,
 	remove: (path) =>
-		`Delete${family.name}Assets(${family.scopeLead}filePath=["${path}"]);`,
+		`${family.reactors.remove}(${family.scopeLead}filePath=["${path}"]);`,
 	download: (path) =>
-		`Download${family.name}Asset(${family.scopeLead}filePath=[${JSON.stringify(path)}]);`,
+		`${family.reactors.download}(${family.scopeLead}filePath=[${JSON.stringify(path)}]);`,
 	// read/save/download quote the path with JSON.stringify; browse/search/
 	// rename/copy/remove/create/unzip above still interpolate it raw, which
 	// breaks on a path containing a quote or backslash. Identical output for
 	// every other path, so converting the rest is a safe follow-up rather
 	// than part of this change.
 	read: (path, base64 = false) =>
-		`Get${family.name}Assets${base64 ? "Base64" : ""}(filePath=[${JSON.stringify(path)}]${family.scopeTail});`,
-	save: (path, content) =>
-		`Save${family.name}Assets(${family.scopeLead}filePath=[${JSON.stringify(path)}], content=["<encode>${content}</encode>"]);`,
+		`${base64 ? family.reactors.readBase64 : family.reactors.read}(filePath=[${JSON.stringify(path)}]${family.scopeTail});`,
+	save: (path, content, base64 = false) =>
+		`${base64 ? family.reactors.saveBase64 : family.reactors.save}(${family.scopeLead}filePath=[${JSON.stringify(path)}], content=["<encode>${content}</encode>"]);`,
 	createFile: (path) =>
-		`New${family.name}AssetsFile(${family.scopeLead}filePath=["${path}"]);`,
+		`${family.reactors.createFile}(${family.scopeLead}filePath=["${path}"]);`,
 	createDirectory: (path) =>
-		`New${family.name}AssetsDirectory(${family.scopeLead}filePath=["${path}"]);`,
+		`${family.reactors.createDirectory}(${family.scopeLead}filePath=["${path}"]);`,
 	// deliberately unterminated — this reactor has always been run without a
 	// trailing semicolon
 	unzip: (path) =>
-		`Unzip${family.name}AssetFile(${family.scopeLead}filePath=["${path}"])`,
+		`${family.reactors.unzip}(${family.scopeLead}filePath=["${path}"])`,
 	upload: family.upload,
 	mapEntries: (raw) => (Array.isArray(raw) ? (raw as FileItem[]) : []),
 });
@@ -235,7 +267,21 @@ const createStorageAdapter = (storage: string): FileExplorerAdapter => {
 export const getFileExplorerAdapter = (mode: FileMode): FileExplorerAdapter => {
 	if (mode.type === "APP") {
 		return createAssetAdapter({
-			name: "App",
+			reactors: {
+				browse: "BrowseAppAssets",
+				search: "SearchAppAssets",
+				rename: "RenameAppAsset",
+				copy: "CopyAppAsset",
+				remove: "DeleteAppAssets",
+				read: "GetAppAssets",
+				readBase64: "GetAppAssetsBase64",
+				save: "SaveAppAssets",
+				saveBase64: "SaveAppAssetsBase64",
+				download: "DownloadAppAsset",
+				createFile: "NewAppAssetsFile",
+				createDirectory: "NewAppAssetsDirectory",
+				unzip: "UnzipAppAssetFile",
+			},
 			scopeLead: `project=["${mode.app}"], `,
 			scopeTail: `, project=["${mode.app}"]`,
 			scopeLeadBare: `project="${mode.app}", `,
@@ -246,7 +292,21 @@ export const getFileExplorerAdapter = (mode: FileMode): FileExplorerAdapter => {
 
 	if (mode.type === "ENGINE") {
 		return createAssetAdapter({
-			name: "Engine",
+			reactors: {
+				browse: "BrowseEngineAssets",
+				search: "SearchEngineAssets",
+				rename: "RenameEngineAsset",
+				copy: "CopyEngineAsset",
+				remove: "DeleteEngineAssets",
+				read: "GetEngineAssets",
+				readBase64: "GetEngineAssetsBase64",
+				save: "SaveEngineAssets",
+				saveBase64: "SaveEngineAssetsBase64",
+				download: "DownloadEngineAsset",
+				createFile: "NewEngineAssetsFile",
+				createDirectory: "NewEngineAssetsDirectory",
+				unzip: "UnzipEngineAssetFile",
+			},
 			scopeLead: `engine=["${mode.engine}"], `,
 			scopeTail: `, engine=["${mode.engine}"]`,
 			scopeLeadBare: `engine="${mode.engine}", `,
@@ -257,7 +317,21 @@ export const getFileExplorerAdapter = (mode: FileMode): FileExplorerAdapter => {
 
 	if (mode.type === "INSIGHT") {
 		return createAssetAdapter({
-			name: "Insight",
+			reactors: {
+				browse: "BrowseInsightAssets",
+				search: "SearchInsightAssets",
+				rename: "RenameInsightAsset",
+				copy: "CopyInsightAsset",
+				remove: "DeleteInsightAssets",
+				read: "GetInsightAssets",
+				readBase64: "GetInsightAssetsBase64",
+				save: "SaveInsightAssets",
+				saveBase64: "SaveInsightAssetsBase64",
+				download: "DownloadInsightAsset",
+				createFile: "NewInsightAssetsFile",
+				createDirectory: "NewInsightAssetsDirectory",
+				unzip: "UnzipInsightAssetFile",
+			},
 			scopeLead: "",
 			scopeTail: "",
 			scopeLeadBare: "",
@@ -268,7 +342,21 @@ export const getFileExplorerAdapter = (mode: FileMode): FileExplorerAdapter => {
 
 	if (mode.type === "USER") {
 		return createAssetAdapter({
-			name: "User",
+			reactors: {
+				browse: "BrowseUserAssets",
+				search: "SearchUserAssets",
+				rename: "RenameUserAsset",
+				copy: "CopyUserAsset",
+				remove: "DeleteUserAssets",
+				read: "GetUserAssets",
+				readBase64: "GetUserAssetsBase64",
+				save: "SaveUserAssets",
+				saveBase64: "SaveUserAssetsBase64",
+				download: "DownloadUserAsset",
+				createFile: "NewUserAssetsFile",
+				createDirectory: "NewUserAssetsDirectory",
+				unzip: "UnzipUserAssetFile",
+			},
 			scopeLead: "",
 			scopeTail: "",
 			scopeLeadBare: "",

@@ -35,7 +35,10 @@ export interface FilePanelParams {
 }
 
 interface UseFilePanelOptions {
-	/** Read through the `*Base64` reactor — images, PDFs, pptx. */
+	/**
+	 * Read *and* write through the `*Base64` reactors — images, PDFs, pptx.
+	 * The panel's encoding, declared once, rather than per call.
+	 */
 	base64?: boolean;
 	/** Skip the read entirely, e.g. a panel that only fetches on demand. */
 	enabled?: boolean;
@@ -75,6 +78,7 @@ export interface FilePanelApi {
 		/** Bumped on every successful load, so a buffer knows to re-seed. */
 		revision: number;
 	};
+	/** Writes in the panel's declared encoding — see the `base64` option. */
 	save: (content: string) => Promise<boolean>;
 	download: () => Promise<void>;
 	isSaving: boolean;
@@ -136,6 +140,14 @@ export const useFilePanel = (
 		targetInsightId,
 	);
 
+	/**
+	 * Write the file back, in whichever encoding the panel reads it in — the
+	 * `base64` option covers both directions, so a panel declares once whether
+	 * it deals in text or bytes.
+	 *
+	 * Always writes `currentPathRef.current` rather than `config.path`, so a
+	 * save after a rename lands on the file the panel is actually showing.
+	 */
 	const save = useCallback(
 		async (content: string): Promise<boolean> => {
 			if (readOnly || savingRef.current) return false;
@@ -147,6 +159,7 @@ export const useFilePanel = (
 						config.mode,
 						currentPathRef.current,
 						content,
+						base64,
 					),
 					targetInsightId,
 				);
@@ -169,7 +182,7 @@ export const useFilePanel = (
 				setIsSaving(false);
 			}
 		},
-		[config, currentPathRef, readOnly, t, targetInsightId],
+		[base64, config, currentPathRef, readOnly, t, targetInsightId],
 	);
 
 	const download = useCallback(async (): Promise<void> => {

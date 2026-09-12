@@ -189,7 +189,7 @@ export const TerminalFile = ({
 		}
 
 		// Route through the REPL transcript so the user can see the output
-		// (FileEditor doesn't surface pixel results on its own).
+		// (the editor doesn't surface pixel results on its own).
 		terminal.submitToConsole(pixel, {
 			displayInput: body,
 			context: extToContext(ext),
@@ -237,7 +237,7 @@ export const TerminalFile = ({
 				{panel.overlay}
 				{!active && (
 					// Pointer-events overlay blocks edits / clicks on the
-					// FileEditor when the active scope no longer matches the
+					// editor when the active scope no longer matches the
 					// tab's captured scope. Save/Run in this state would write
 					// to the wrong scope or execute against the wrong Python
 					// environment, so we fence it off until the user switches
