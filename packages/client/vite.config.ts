@@ -1,11 +1,11 @@
-import postcss from "postcss";
-import type { ConfigEnv, Plugin } from "vite";
+import type { ConfigEnv } from "vite";
 import { resolve } from "node:path";
 import {
 	createViteConfig,
 	DEV_SERVER_PORTS,
 	localeManualChunks,
 } from "@semoss/config";
+import { aiSdkStubAlias, scopePptxViewerCssPlugin } from "@semoss/panels/vite";
 
 const sharedAssets = resolve(
 	import.meta.dirname,
@@ -15,58 +15,6 @@ const monacoApi = resolve(
 	import.meta.dirname,
 	"../../libs/shared/node_modules/monaco-editor/esm/vs/editor/editor.api",
 );
-
-const PPTX_VIEWER_SCOPE = ".pptx-viewer-scope";
-
-/**
- * Confine pptx-react-viewer's stylesheet to its mount point. Its Tailwind
- * build emits the same utility class names and layer names as the app's own
- * Tailwind build (e.g. `.border-border`), compiled against `--color-*` tokens
- * it defines on `:root` — whichever stylesheet loads last would restyle the
- * whole document. Prefixing every selector pins its rules (and its tokens,
- * whose `:root`/`html` blocks become the scope element itself) to the viewer
- * subtree, and the +1 specificity lets them beat the app's same-named
- * utilities inside it.
- */
-const scopePptxViewerCss = (code: string): string => {
-	const sheet = postcss.parse(code);
-	sheet.walkRules((rule) => {
-		const parent = rule.parent;
-		if (
-			parent?.type === "atrule" &&
-			/keyframes/i.test((parent as postcss.AtRule).name)
-		) {
-			return;
-		}
-		rule.selectors = rule.selectors.map((selector) => {
-			const trimmed = selector.trim();
-			const rehomed = trimmed.replace(
-				/^(:root|:host|html)(?![\w-])/,
-				PPTX_VIEWER_SCOPE,
-			);
-			if (rehomed !== trimmed) {
-				return rehomed;
-			}
-			return `${PPTX_VIEWER_SCOPE} ${trimmed}`;
-		});
-	});
-	return sheet.toString();
-};
-
-const scopePptxViewerCssPlugin: Plugin = {
-	// See scopePptxViewerCss — the scope class is applied by
-	// file-pptx-viewer-content.tsx around the viewer mount.
-	name: "scope-pptx-viewer-css",
-	transform(code: string, id: string) {
-		if (
-			!id.includes("pptx-react-viewer") ||
-			!id.split("?")[0].endsWith(".css")
-		) {
-			return null;
-		}
-		return { code: scopePptxViewerCss(code), map: null };
-	},
-};
 
 const baseConfig = createViteConfig({
 	rootDir: import.meta.dirname,
@@ -83,15 +31,7 @@ const baseConfig = createViteConfig({
 			replacement: `${resolve(sharedAssets, "loginProviders")}/`,
 		},
 		{ find: /^monaco-editor$/, replacement: monacoApi },
-		{
-			// Optional peer of pptx-react-viewer (AI chat panel, unused
-			// here); stubbed so the bundler can resolve its named imports.
-			find: /^ai$/,
-			replacement: resolve(
-				import.meta.dirname,
-				"./src/utility/ai-sdk-stub.ts",
-			),
-		},
+		aiSdkStubAlias,
 	],
 	manualChunks(id) {
 		const locale = localeManualChunks(id);

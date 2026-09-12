@@ -1,15 +1,18 @@
 import { GitBranchIcon } from "lucide-react";
 import { useEffect } from "react";
+import { useAccess } from "@semoss/panels";
 import { useIteratorPixel } from "@semoss/sdk/react";
-import type { GitCommit, GitDataStatus } from "@/components/git";
-import { GitHistory } from "@/components/git";
-import { useWorkbenchAccess, useWorkbenchControl } from "@/hooks";
 import type {
 	WorkbenchPanelConfig,
 	WorkbenchPanelProps,
-} from "@/stores/workbench";
-import { WorkbenchAccessError } from "../core/workbench-access-error";
-import { WorkbenchAccessLoading } from "../core/workbench-access-loading";
+} from "@semoss/workbench";
+import {
+	useWorkbenchControl,
+	WorkbenchAccessError,
+	WorkbenchAccessLoading,
+} from "@semoss/workbench";
+import type { GitCommit, GitDataStatus } from "@/components/git";
+import { GitHistory } from "@/components/git";
 import { GitCommitRowAdapter } from "./git-commit-row";
 import {
 	GitVersionControl,
@@ -24,7 +27,7 @@ const GitVersionPanel = ({
 	id,
 	value,
 }: WorkbenchPanelProps<GitVersionParams, number>) => {
-	const access = useWorkbenchAccess(config.type, config.id);
+	const access = useAccess(config.type, config.id);
 	const prefix = config.type === "ENGINE" ? "Engine" : "Project";
 	const resource =
 		config.type === "ENGINE"

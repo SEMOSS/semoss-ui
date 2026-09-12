@@ -2,12 +2,12 @@ import { FlaskConicalIcon } from "lucide-react";
 import { InsightProvider } from "@semoss/sdk/react";
 import type { FileExplorerApi } from "@semoss/shared";
 import { Spinner } from "@semoss/ui/next";
-import { useWorkbench } from "@/hooks";
 import type {
 	WorkbenchComponent,
 	WorkbenchPanelConfig,
-} from "@/stores/workbench";
-import { WORKBENCH_COMPONENTS } from "../workbench.constants";
+} from "@semoss/workbench";
+import { useWorkbench } from "@semoss/workbench";
+import { WORKBENCH_COMPONENTS } from "@/stores/workbench";
 import { ProjectInsightExplorer } from "./project-insight-explorer";
 
 const terminalInsightId = (value: unknown): string | null =>

@@ -499,11 +499,9 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 											"image/png",
 									});
 								} else if (p.mediaInfo.fileLocation) {
-									room.openFileEditorSidebarNode(
+									room.openFileSidebarPanel(
 										p.mediaInfo.fileLocation,
-										{
-											name: p.mediaInfo.fileName,
-										},
+										p.mediaInfo.fileName,
 									);
 								} else if (p.mediaInfo.base64Data) {
 									setPreviewPdf({

@@ -1,12 +1,18 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { Trans, useTranslation } from "@semoss/i18n";
-import { useInsight } from "@semoss/sdk/react";
-import { FileEditor, FlexLayout } from "@semoss/shared";
-import { toast } from "@semoss/ui/next";
+import {
+	type FilePanelMode,
+	getCodeEditorLanguage,
+	getFileCodeEditorMenuItems,
+	useFileBuffer,
+	useFilePanel,
+} from "@semoss/panels";
+import { CodeEditor, toast } from "@semoss/ui/next";
+import type { WorkbenchPanelId } from "@semoss/workbench";
+import { useWorkbench } from "@semoss/workbench";
 import { Logo } from "../../assets/logos";
-import type { ConsoleContext, FileMode } from "../../types";
+import type { ConsoleContext } from "../../types";
 import { modeKey } from "../../utility/file-mode";
-import { runPixel } from "../../utility/pixel";
 import { useTerminal } from "../terminal/terminal-context";
 import { Tooltip } from "../tooltip";
 
@@ -51,29 +57,19 @@ const buildRunPixel = (ext: Ext, content: string): string => {
 	return "";
 };
 
-/**
- * Pixel used to fetch the on-disk content of a file in the tab's scope.
- * Matches what FileCodeEditor uses internally so we ask the backend in the
- * same way it does.
- */
-const buildFetchContentPixel = (mode: FileMode, path: string): string => {
-	if (mode.type === "APP") {
-		return `GetAppAssets(filePath=["${path}"], project=["${mode.app}"]);`;
-	}
-	if (mode.type === "ENGINE") {
-		return `GetEngineAssets(filePath=["${path}"], engine=["${mode.engine}"]);`;
-	}
-	if (mode.type === "USER") {
-		return `GetUserAssets(filePath=["${path}"]);`;
-	}
-	return `GetInsightAssets(filePath=["${path}"]);`;
-};
-
 export interface FileEditorTabConfig {
 	path: string;
-	mode: FileMode;
+	/**
+	 * The scope this file was opened against.
+	 *
+	 * `FilePanelMode`, not the wider `FileMode`: buckets have no read or save
+	 * reactor, so a STORAGE-scoped editor could neither load nor write. The
+	 * scope picker only ever selects INSIGHT, USER or APP, so nothing is lost —
+	 * and the old code silently fetched a storage file with `GetInsightAssets`.
+	 */
+	mode: FilePanelMode;
 	/** Display name without the modified-indicator asterisk. Stored in
-	 * config so renames via FlexLayout.Actions.renameTab don't lose it. */
+	 * config so a rename of the tab label doesn't lose it. */
 	baseName: string;
 	/** Human-readable project name when `mode.type === "APP"`, captured at
 	 * open time so the scope-changed banner can show name + id rather than
@@ -96,61 +92,69 @@ const scopeLabel = (
 			: t("scopeLabel.appIdOnly", { id: m.app });
 	}
 	if (m.type === "ENGINE") return t("scopeLabel.engine", { id: m.engine });
-	if (m.type === "STORAGE")
-		return t("scopeLabel.storage", { name: m.storage });
 	if (m.type === "USER") return t("scopeLabel.user");
 	return t("scopeLabel.insight");
 };
 
 interface TerminalFileProps {
-	/** The FlexLayout tab node this pane is mounted in. We read the path /
-	 * mode / appName from its config and write back name (with asterisk) +
-	 * ext via FlexLayout actions. */
-	node: FlexLayout.TabNode;
+	/** This pane's panel instance, for the maximize check. */
+	id: WorkbenchPanelId;
+	/** Path, mode and appName, read from the panel's config. */
+	config: FileEditorTabConfig;
+	/** Writes the tab label, including the unsaved-work asterisk. */
+	rename: (name: string) => void;
+	/** Persists the chosen run language back onto the panel. */
+	setConfig: (patch: Partial<FileEditorTabConfig>) => void;
 }
 
 /**
- * Per-tab file editor pane. One instance per file editor tab — FlexLayout
- * keeps inactive tabs mounted (hidden via CSS) so each editor preserves its
- * state across tab switches.
+ * Per-panel file editor. One instance per open file — the blueprint is
+ * `mount: "keepAlive"`, so a hidden editor stays mounted and preserves its
+ * buffer across tab switches.
  */
-export const TerminalFile = ({ node }: TerminalFileProps) => {
+export const TerminalFile = ({
+	id,
+	config,
+	rename,
+	setConfig,
+}: TerminalFileProps) => {
 	const terminal = useTerminal();
-	const { actions } = useInsight();
 	const { t } = useTranslation("file");
-
-	const config = node.getConfig() as FileEditorTabConfig;
+	const maximizedTabsetId = useWorkbench(
+		(state) => state.layout.maximizedTabsetId,
+	);
+	const ownTabsetId = useWorkbench(
+		(state) =>
+			state.layout.tabsets.find((tabset) => tabset.panelIds.includes(id))
+				?.id,
+	);
 	const [ext, setExtState] = useState<Ext | null>(
 		isRunnableExt(config.ext) ? config.ext : inferExt(config.baseName),
 	);
-	const [content, setContent] = useState("");
-	const [isModified, setIsModified] = useState(false);
-	const contentRef = useRef(content);
-	contentRef.current = content;
 
-	// Mirror the asterisk back onto the FlexLayout tab name whenever the
-	// editor reports a modified state change. Without this, the tab title
-	// would show just the filename even when the buffer has unsaved edits.
-	useEffect(() => {
-		const model = node.getModel();
-		const next = isModified ? `${config.baseName}*` : config.baseName;
-		if (node.getName() !== next) {
-			model.doAction(FlexLayout.Actions.renameTab(node.getId(), next));
-		}
-	}, [isModified, config.baseName, node]);
+	// Access, the insight, reading, saving, downloading and the three blocking
+	// states come from `@semoss/panels` — the same machinery the workbench's
+	// own file panels are built from. Only the Run toolbar and the scope guard
+	// below are the terminal's.
+	const panel = useFilePanel({
+		mode: config.mode,
+		path: config.path,
+		name: config.baseName,
+	});
+	const buffer = useFileBuffer({
+		panel: panel,
+		name: config.baseName,
+		rename: rename,
+	});
 
 	const setExt = useCallback(
 		(nextExt: Ext) => {
 			setExtState(nextExt);
-			// persist on the tab config so the choice survives tab switches /
-			// is recovered if we ever serialize the layout
-			node.getModel().doAction(
-				FlexLayout.Actions.updateNodeAttributes(node.getId(), {
-					config: { ...config, ext: nextExt },
-				}),
-			);
+			// persist onto the panel so the choice survives tab switches and
+			// comes back with a restored layout
+			setConfig({ ext: nextExt });
 		},
-		[config, node],
+		[setConfig],
 	);
 
 	const active = modeKey(config.mode) === modeKey(terminal.fileMode);
@@ -170,30 +174,10 @@ export const TerminalFile = ({ node }: TerminalFileProps) => {
 			return;
 		}
 
-		// content is only populated by FileEditor's onChange — which doesn't
-		// fire on initial load. For a tab the user hasn't typed in, fetch the
-		// on-disk content first.
-		let body = contentRef.current;
-		if (!isModified && !body) {
-			const fetchPixel = buildFetchContentPixel(config.mode, config.path);
-			const resp = await runPixel<string>(actions, fetchPixel);
-			if (
-				!resp ||
-				resp.operationType.some(
-					(opType) => opType.indexOf("ERROR") > -1,
-				)
-			) {
-				terminal.alert(
-					"error",
-					t("errors.loadFailed", { name: config.baseName }),
-				);
-				return;
-			}
-			body =
-				typeof resp.output === "string"
-					? resp.output
-					: String(resp.output ?? "");
-		}
+		// the buffer holds the live text, seeded from disk on load, so a run
+		// never has to re-fetch the file the way it did when the editor only
+		// reported content through onChange
+		const body = buffer.contentRef.current;
 
 		const pixel = buildRunPixel(ext, body);
 		if (!pixel) {
@@ -205,47 +189,55 @@ export const TerminalFile = ({ node }: TerminalFileProps) => {
 		}
 
 		// Route through the REPL transcript so the user can see the output
-		// (FileEditor doesn't surface pixel results on its own).
+		// (the editor doesn't surface pixel results on its own).
 		terminal.submitToConsole(pixel, {
 			displayInput: body,
 			context: extToContext(ext),
 		});
 
-		// If a non-REPL tabset is currently maximized, the REPL is hidden
-		// from view — the user just kicked off a run with no visible output.
-		// Nudge them to un-maximize. (A maximized REPL is fine; output is
+		// If the maximized dock is this editor's own, the REPL is hidden from
+		// view — the user just kicked off a run with no visible output. Nudge
+		// them to un-maximize. (A maximized REPL is fine; output is
 		// front-and-center there.)
-		const maximized = node.getModel().getMaximizedTabset();
-		if (maximized && maximized.getId() !== "REPL_TABSET") {
+		if (maximizedTabsetId && maximizedTabsetId === ownTabsetId) {
 			toast.info(t("maximizedToast.title"), {
 				description: t("maximizedToast.description"),
 			});
 		}
-	}, [actions, config, ext, isModified, node, t, terminal]);
+	}, [
+		buffer.contentRef,
+		config.baseName,
+		ext,
+		maximizedTabsetId,
+		ownTabsetId,
+		t,
+		terminal,
+	]);
 
-	// Ctrl/Cmd+Enter inside the editor runs the file — same path as the Run
-	// button. Fenced off when the tab's scope no longer matches the active
-	// scope (mirrors the disabled button + overlay).
-	const handleRun = useCallback(() => {
-		if (!activeRef.current) return;
-		runFile();
-	}, [runFile]);
+	if (panel.gate) return panel.gate;
+	if (panel.readGate) return panel.readGate;
 
 	return (
 		<div className="flex h-full flex-col bg-background">
 			<div className="relative min-h-0 flex-1">
-				<FileEditor
-					mode={config.mode}
-					path={config.path}
-					onChange={(value, modifiedFlag) => {
-						setContent(value);
-						setIsModified(modifiedFlag);
-					}}
-					onRun={handleRun}
+				<CodeEditor
+					className="size-full"
+					code={buffer.content}
+					disabled={panel.readOnly || !active}
+					language={getCodeEditorLanguage(config.path)}
+					menuItems={getFileCodeEditorMenuItems({
+						canSave: !panel.readOnly && active,
+						isBusy: panel.isBusy,
+						onDownload: () => void panel.download(),
+						onRefresh: panel.read.refresh,
+						onSave: () => void buffer.save(),
+					})}
+					onChange={(value) => buffer.setContent(value ?? "")}
 				/>
+				{panel.overlay}
 				{!active && (
 					// Pointer-events overlay blocks edits / clicks on the
-					// FileEditor when the active scope no longer matches the
+					// editor when the active scope no longer matches the
 					// tab's captured scope. Save/Run in this state would write
 					// to the wrong scope or execute against the wrong Python
 					// environment, so we fence it off until the user switches

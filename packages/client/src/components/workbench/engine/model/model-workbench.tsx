@@ -1,35 +1,38 @@
 import { useEffect, useMemo, useState } from "react";
 import type { StoreApi } from "zustand";
+import { FILE_PANEL_COMPONENTS } from "@semoss/panels";
 import type { Role } from "@semoss/sdk";
 import { useInsight } from "@semoss/sdk/react";
-import type { FileExplorerApi } from "@semoss/shared";
-import { ModelChatStoreProvider } from "@/contexts/model-chat.context";
-import { useEngine, useWorkbench, useWorkbenchCommands } from "@/hooks";
+import { useCacheState } from "@semoss/ui/next";
 import type {
 	WorkbenchLayout,
 	WorkbenchPanelConfigAny,
-} from "@/stores/workbench";
-import type { ModelChatStoreInterface } from "@/stores/workbench/model";
-import { createModelChatStore } from "@/stores/workbench/model";
-import { Workbench } from "../../core";
-import { WorkbenchCommandMenuButton } from "../../core/workbench-command-menu-button";
+	WorkbenchSnapshot,
+} from "@semoss/workbench";
 import {
-	FILE_CODE_EDITOR_PANEL,
-	FILE_DOWNLOAD_PANEL,
-	FILE_EXPLORER_PANEL,
-	FILE_IMAGE_VIEWER_PANEL,
-	FILE_MARKDOWN_EDITOR_PANEL,
-	FILE_MCP_EDITOR_PANEL,
-	FILE_NOTEBOOK_EDITOR_PANEL,
-	FILE_PDF_VIEWER_PANEL,
-	FILE_PPTX_VIEWER_PANEL,
-} from "../../files";
-import { GIT_DIFF_PANEL, GIT_VERSION_PANEL } from "../../git";
+	parseWorkbenchSnapshot,
+	useWorkbenchCommands,
+	Workbench,
+	WorkbenchCommandMenuButton,
+} from "@semoss/workbench";
+import { ModelChatStoreProvider } from "@/contexts/model-chat.context";
+import { useEngine, useSession } from "@/hooks";
 import {
 	WORKBENCH_COMPONENTS,
 	WORKBENCH_PANEL_RECORDS,
-} from "../../workbench.constants";
-import { createEngineSettingsPanel } from "../engine-settings-panel";
+} from "@/stores/workbench";
+import type { ModelChatStoreInterface } from "@/stores/workbench/model";
+import { createModelChatStore } from "@/stores/workbench/model";
+import { GIT_DIFF_PANEL, GIT_VERSION_PANEL } from "../../git";
+import {
+	createFileCommands,
+	createOpenPanelCommand,
+	createReconnectCommand,
+} from "../../workbench.presets";
+import {
+	createEngineSettingsPanel,
+	ENGINE_SETTINGS_TABS,
+} from "../engine-settings-panel";
 import { EngineSettingsToggle } from "../engine-settings-toggle";
 import { MODEL_CHAT_HISTORY_PANEL } from "./model-chat-conversations";
 import { MODEL_CHAT_PANEL } from "./model-chat-panel";
@@ -41,9 +44,11 @@ import { MODEL_CHAT_SETTINGS_PANEL } from "./model-chat-settings";
  * (collapsed). Both borders start closed so the chat opens full width; their
  * rails carry the toggles.
  *
- * Version 2 dropped the assistant border, version 3 added the settings/history
- * border — a cached layout shadows the default forever, so the bump is what
- * retires the previous arrangement.
+ * A cached layout shadows the default forever, so changing this arrangement
+ * needs the cache retired. That is `LAYOUT_STORAGE_VERSION` in the dock's
+ * layout slice, which busts every host's cache at once — not a per-workbench
+ * version, which is what an earlier note here described and nothing ever
+ * implemented.
  */
 const createModelWorkbenchLayout = (
 	engineId: string,
@@ -63,7 +68,7 @@ const createModelWorkbenchLayout = (
 				WORKBENCH_PANEL_RECORDS.MODEL_CHAT,
 			[WORKBENCH_PANEL_RECORDS.FILE_EXPLORER.id]: {
 				...WORKBENCH_PANEL_RECORDS.FILE_EXPLORER,
-				config: { type: "ENGINE", id: engineId },
+				config: { mode: { type: "ENGINE", engine: engineId } },
 			},
 			...(!readOnly
 				? {
@@ -100,53 +105,18 @@ const createModelWorkbenchLayout = (
 };
 
 /** Blueprints, keyed by type. Module-scope so identities never churn. */
-const MODEL_WORKBENCH_COMPONENTS: Record<string, WorkbenchPanelConfigAny> = {
-	[WORKBENCH_COMPONENTS.FILE_EXPLORER]: FILE_EXPLORER_PANEL,
-	[WORKBENCH_COMPONENTS.FILE_CODE_EDITOR]: FILE_CODE_EDITOR_PANEL,
-	[WORKBENCH_COMPONENTS.FILE_DOWNLOAD]: FILE_DOWNLOAD_PANEL,
-	[WORKBENCH_COMPONENTS.FILE_IMAGE_VIEWER]: FILE_IMAGE_VIEWER_PANEL,
-	[WORKBENCH_COMPONENTS.FILE_MARKDOWN_EDITOR]: FILE_MARKDOWN_EDITOR_PANEL,
-	[WORKBENCH_COMPONENTS.FILE_NOTEBOOK_EDITOR]: FILE_NOTEBOOK_EDITOR_PANEL,
-	[WORKBENCH_COMPONENTS.FILE_PDF_VIEWER]: FILE_PDF_VIEWER_PANEL,
-	[WORKBENCH_COMPONENTS.FILE_PPTX_VIEWER]: FILE_PPTX_VIEWER_PANEL,
-	[WORKBENCH_COMPONENTS.FILE_MCP_EDITOR]: FILE_MCP_EDITOR_PANEL,
+export const MODEL_WORKBENCH_COMPONENTS: Record<
+	string,
+	WorkbenchPanelConfigAny
+> = {
+	...FILE_PANEL_COMPONENTS,
 	[WORKBENCH_COMPONENTS.MODEL_CHAT]: MODEL_CHAT_PANEL,
 	[WORKBENCH_COMPONENTS.MODEL_CHAT_SETTINGS]: MODEL_CHAT_SETTINGS_PANEL,
 	[WORKBENCH_COMPONENTS.MODEL_CHAT_HISTORY]: MODEL_CHAT_HISTORY_PANEL,
 	[WORKBENCH_COMPONENTS.GIT_VERSION]: GIT_VERSION_PANEL,
 	[WORKBENCH_COMPONENTS.GIT_DIFF]: GIT_DIFF_PANEL,
-	[WORKBENCH_COMPONENTS.ENGINE_SETTINGS]: createEngineSettingsPanel([
-		{
-			name: "Overview",
-			component: "overview",
-			restrict: ["READ_ONLY", "EDIT", "OWNER", "DISCOVERABLE"],
-		},
-		{
-			name: "Usage",
-			component: "usage",
-			restrict: ["READ_ONLY", "EDIT", "OWNER"],
-		},
-		{
-			name: "MCP",
-			component: "mcp-usage",
-			restrict: ["READ_ONLY", "EDIT", "OWNER"],
-		},
-		{
-			name: "Activity Log",
-			component: "activity",
-			restrict: ["READ_ONLY", "EDIT", "OWNER"],
-		},
-		{
-			name: "Access Control",
-			component: "access-control",
-			restrict: ["EDIT", "OWNER"],
-		},
-		{
-			name: "SMSS",
-			component: "smss",
-			restrict: ["OWNER"],
-		},
-	]),
+	[WORKBENCH_COMPONENTS.ENGINE_SETTINGS]:
+		createEngineSettingsPanel(ENGINE_SETTINGS_TABS),
 };
 
 /**
@@ -163,17 +133,28 @@ export const ModelWorkbench: React.FC = () => {
 		() => createModelWorkbenchLayout(engine.engine_id, permission),
 		[engine.engine_id, permission],
 	);
-	const configureWorkbench = useWorkbench((state) => state.configure);
+
+	// What this workbench is known by: its own cache entry, and — where there
+	// is an assistant — the workbench its conversations are tagged with,
+	// server-side. Read-only variants keep their own arrangement.
+	const workbenchId = readOnly
+		? `${engine.engine_id}--read-only`
+		: engine.engine_id;
+
+	const [snapshot, onSnapshotChange] = useCacheState<WorkbenchSnapshot>(
+		workbenchLayout,
+		`workbench-layout--${workbenchId}--1`,
+		parseWorkbenchSnapshot,
+	);
+	const syncPermission = useSession((state) => state.syncPermission);
+	const refreshPermission = useSession((state) => state.refreshPermission);
 
 	useEffect(() => {
-		configureWorkbench({
-			resource: {
-				type: "ENGINE",
-				id: engine.engine_id,
-				permission,
-			},
-		});
-	}, [configureWorkbench, engine.engine_id, permission]);
+		syncPermission("ENGINE", engine.engine_id, permission);
+		void refreshPermission("ENGINE", engine.engine_id).catch(
+			() => undefined,
+		);
+	}, [syncPermission, refreshPermission, engine.engine_id, permission]);
 
 	// Created once per workbench instance before its panels render.
 	const [chatStore] = useState<StoreApi<ModelChatStoreInterface>>(() => {
@@ -194,125 +175,41 @@ export const ModelWorkbench: React.FC = () => {
 	}, [chatStore, engine.engine_id, insight.isReady, insight.insightId]);
 
 	useWorkbenchCommands([
-		{
-			id: "workbench.server.reconnect",
-			label: "Reconnect Server",
-			handler: () => {
-				void insight.actions
-					.run("ReconnectServer();")
-					.catch(console.error);
-			},
-		},
-		{
-			id: "workbench.file.create",
-			category: "File",
-			label: "Create File",
-			visible: !readOnly,
-			handler: (get) =>
-				(
-					get().layout.values[WORKBENCH_COMPONENTS.FILE_EXPLORER] as
-						| FileExplorerApi
-						| undefined
-				)?.commands.openNewFile(undefined, "add_file"),
-		},
-		{
-			id: "workbench.file.create-folder",
-			category: "File",
-			label: "Create Folder",
-			visible: !readOnly,
-			handler: (get) =>
-				(
-					get().layout.values[WORKBENCH_COMPONENTS.FILE_EXPLORER] as
-						| FileExplorerApi
-						| undefined
-				)?.commands.openNewFile(undefined, "add_directory"),
-		},
-		{
-			id: "workbench.file.upload",
-			category: "File",
-			label: "Upload Files",
-			visible: !readOnly,
-			handler: (get) =>
-				(
-					get().layout.values[WORKBENCH_COMPONENTS.FILE_EXPLORER] as
-						| FileExplorerApi
-						| undefined
-				)?.commands.openNewFile(undefined, "upload"),
-		},
-		{
-			id: "workbench.file.refresh",
-			category: "File",
-			label: "Refresh Files",
-			handler: (get) =>
-				(
-					get().layout.values[WORKBENCH_COMPONENTS.FILE_EXPLORER] as
-						| FileExplorerApi
-						| undefined
-				)?.commands.refresh(),
-		},
-		{
+		createReconnectCommand(insight),
+		...createFileCommands({ readOnly: readOnly }),
+		createOpenPanelCommand({
 			id: "workbench.file-explorer.open",
-			category: "View",
 			label: "Open File Explorer",
-			handler: (get) => {
-				get().layout.actions.selectPanel(
-					WORKBENCH_COMPONENTS.FILE_EXPLORER,
-					{ type: "ENGINE", id: engine.engine_id },
-				);
-			},
-		},
-		{
+			type: WORKBENCH_COMPONENTS.FILE_EXPLORER,
+			config: { mode: { type: "ENGINE", engine: engine.engine_id } },
+		}),
+		createOpenPanelCommand({
 			id: "workbench.version-control.open",
-			category: "View",
 			label: "Open Version Control",
+			type: WORKBENCH_COMPONENTS.GIT_VERSION,
+			config: { type: "ENGINE", id: engine.engine_id },
 			visible: !readOnly,
-			handler: (get) => {
-				get().layout.actions.selectPanel(
-					WORKBENCH_COMPONENTS.GIT_VERSION,
-					{ type: "ENGINE", id: engine.engine_id },
-				);
-			},
-		},
-		{
+		}),
+		createOpenPanelCommand({
 			id: "workbench.settings.open",
-			category: "View",
 			label: "Open Settings",
-			handler: (get) => {
-				get().layout.actions.selectPanel(
-					WORKBENCH_COMPONENTS.ENGINE_SETTINGS,
-				);
-			},
-		},
-		{
+			type: WORKBENCH_COMPONENTS.ENGINE_SETTINGS,
+		}),
+		createOpenPanelCommand({
 			id: "workbench.model-chat.open",
-			category: "View",
 			label: "Open Model Chat",
-			handler: (get) => {
-				get().layout.actions.selectPanel(
-					WORKBENCH_COMPONENTS.MODEL_CHAT,
-				);
-			},
-		},
-		{
+			type: WORKBENCH_COMPONENTS.MODEL_CHAT,
+		}),
+		createOpenPanelCommand({
 			id: "workbench.model-chat-settings.open",
-			category: "View",
 			label: "Open Model Settings",
-			handler: (get) => {
-				get().layout.actions.selectPanel(
-					WORKBENCH_COMPONENTS.MODEL_CHAT_SETTINGS,
-				);
-			},
-		},
-		{
+			type: WORKBENCH_COMPONENTS.MODEL_CHAT_SETTINGS,
+		}),
+		createOpenPanelCommand({
 			id: "workbench.model-chat-history.open",
-			category: "View",
 			label: "Open Conversation History",
-			handler: (get) => {
-				get().layout.actions.selectPanel(
-					WORKBENCH_COMPONENTS.MODEL_CHAT_HISTORY,
-				);
-			},
-		},
+			type: WORKBENCH_COMPONENTS.MODEL_CHAT_HISTORY,
+		}),
 		{
 			id: "workbench.model-chat.new-conversation",
 			category: "View",
@@ -329,8 +226,8 @@ export const ModelWorkbench: React.FC = () => {
 	return (
 		<ModelChatStoreProvider store={chatStore}>
 			<Workbench
-				layout={workbenchLayout}
-				components={MODEL_WORKBENCH_COMPONENTS}
+				snapshot={snapshot}
+				onUnmount={onSnapshotChange}
 				borderSlots={{
 					left: {
 						after: (

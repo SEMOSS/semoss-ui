@@ -1,5 +1,13 @@
 import { observer } from "mobx-react-lite";
-import { FileEditor, FlexLayout } from "@semoss/shared";
+import { useCallback } from "react";
+import {
+	getCodeEditorLanguage,
+	getFileCodeEditorMenuItems,
+	useFileBuffer,
+	useFilePanel,
+} from "@semoss/panels";
+import { FlexLayout } from "@semoss/shared";
+import { CodeEditor } from "@semoss/ui/next";
 import { MetadataHelpDialog } from "@/components/shared";
 import { MCP } from "@/constants";
 
@@ -20,33 +28,59 @@ export const AppFileEditor: React.FC<AppFileEditorProps> = observer(
 			name: string;
 			path: string;
 		} = node.getConfig();
+		const panel = useFilePanel({
+			mode: {
+				type: "APP",
+				app,
+			},
+			name: config.name,
+			path: config.path,
+		});
+		const renameTab = useCallback(
+			(name: string) => {
+				node.getModel().doAction(
+					FlexLayout.Actions.renameTab(node.getId(), name),
+				);
+			},
+			[node],
+		);
+		const buffer = useFileBuffer({
+			panel,
+			name: config.name,
+			rename: renameTab,
+		});
 
 		const isDriverFile = MCP.DRIVER_PATHS.some((f) =>
 			config.path.endsWith(f),
 		);
+		const editorReadOnly = readOnly || panel.readOnly;
+
+		if (panel.gate) return panel.gate;
+		if (panel.readGate) return panel.readGate;
 
 		return (
-			<FileEditor
-				mode={{
-					type: "APP",
-					app: app,
-				}}
-				path={config.path}
-				readOnly={readOnly}
-				leadingToolbar={
-					isDriverFile ? <MetadataHelpDialog compact /> : undefined
-				}
-				onChange={(_content, isModified) => {
-					const updated = isModified
-						? `${config.name}*`
-						: config.name;
-
-					// rename the tab
-					node.getModel().doAction(
-						FlexLayout.Actions.renameTab(node.getId(), updated),
-					);
-				}}
-			/>
+			<div className="relative size-full">
+				<CodeEditor
+					className="size-full"
+					code={buffer.content}
+					disabled={editorReadOnly}
+					language={getCodeEditorLanguage(config.path)}
+					menuItems={getFileCodeEditorMenuItems({
+						canSave: !editorReadOnly,
+						isBusy: panel.isBusy,
+						onDownload: () => void panel.download(),
+						onRefresh: panel.read.refresh,
+						onSave: buffer.save,
+					})}
+					onChange={(value) => buffer.setContent(value ?? "")}
+				/>
+				{isDriverFile ? (
+					<div className="absolute top-2 right-2">
+						<MetadataHelpDialog compact />
+					</div>
+				) : null}
+				{panel.overlay}
+			</div>
 		);
 	},
 );

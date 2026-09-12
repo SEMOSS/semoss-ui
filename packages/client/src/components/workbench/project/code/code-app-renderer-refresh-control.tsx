@@ -9,8 +9,8 @@ import {
 import type {
 	WorkbenchChromeProps,
 	WorkbenchPanelParams,
-} from "@/stores/workbench";
-import { WORKBENCH_STYLES } from "../../core/workbench.chrome";
+} from "@semoss/workbench";
+import { WORKBENCH_STYLES } from "@semoss/workbench";
 
 /**
  * The app preview's chrome control. Bumping the panel's scratch value rekeys

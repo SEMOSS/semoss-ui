@@ -1,6 +1,6 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
-import type { WorkbenchChromeProps } from "@/stores/workbench";
+import type { WorkbenchChromeProps } from "@semoss/workbench";
 import type { AgentEditorSaveValue } from "./agent-editor-panel";
 import { AgentEditorSaveControl } from "./agent-editor-save-control";
 

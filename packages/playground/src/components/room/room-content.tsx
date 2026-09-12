@@ -32,12 +32,15 @@ import {
 } from "@/components";
 import { useFileDrag } from "@/contexts";
 import { useChat, useGracefulErrors } from "@/hooks";
-import { ResponseMessageStore, type RoomStore } from "@/stores";
+import {
+	ResponseMessageStore,
+	ROOM_PANEL_TYPES,
+	type RoomStore,
+} from "@/stores";
 import { decideAgentToolAction } from "@/stores/message/agent-harness";
 import { RoomCompactionIndicator } from "./room-compaction-indicator";
 import { RoomSuggestions } from "./room-suggestions";
 
-const ROOM_CONFIGURATION_ID = "CONFIGURATION";
 const SCROLL_THRESHOLD = 150;
 
 interface RoomContentProps {
@@ -93,26 +96,14 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 	 * Open the room configuration sidebar tab
 	 */
 	const handleOpenSettings = useCallback(() => {
-		room.addSidebarNode(ROOM_CONFIGURATION_ID, {
-			type: "tab",
-			name: "Configuration",
-			component: "room-configuration",
-			config: {},
-			enableClose: true,
-		});
+		room.openSidebarPanel(ROOM_PANEL_TYPES.CONFIGURATION);
 	}, [room]);
 
 	/**
 	 * Open the audit logs dashboard for this room in the right side panel.
 	 */
 	const handleOpenActivityLog = useCallback(() => {
-		room.addSidebarNode("room-activity-log", {
-			type: "tab",
-			name: "Activity Log",
-			component: "audit-log-report",
-			config: {},
-			enableClose: true,
-		});
+		room.openSidebarPanel(ROOM_PANEL_TYPES.AUDIT_LOG);
 	}, [room]);
 
 	/**

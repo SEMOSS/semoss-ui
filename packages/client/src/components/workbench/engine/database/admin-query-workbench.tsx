@@ -7,24 +7,31 @@ import {
 	Tooltip,
 	TooltipContent,
 	TooltipTrigger,
+	useCacheState,
 } from "@semoss/ui/next";
-import { DatabaseWorkbenchStoreProvider } from "@/contexts/database-workbench.context";
-import { useEngine, useWorkbenchCommands, useWorkbenchStoreApi } from "@/hooks";
 import type {
 	WorkbenchLayout,
 	WorkbenchPanelConfigAny,
+	WorkbenchSnapshot,
+} from "@semoss/workbench";
+import {
+	parseWorkbenchSnapshot,
+	useWorkbenchCommands,
+	useWorkbenchStoreApi,
+	WORKBENCH_STYLES,
+	Workbench,
+	WorkbenchCommandMenuButton,
+} from "@semoss/workbench";
+import { DatabaseWorkbenchStoreProvider } from "@/contexts/database-workbench.context";
+import { useEngine } from "@/hooks";
+import {
+	WORKBENCH_COMPONENTS,
+	WORKBENCH_PANEL_RECORDS,
 } from "@/stores/workbench";
 import {
 	createDatabaseWorkbenchStore,
 	type DatabaseWorkbenchState,
 } from "@/stores/workbench/database";
-import { Workbench } from "../../core";
-import { WORKBENCH_STYLES } from "../../core/workbench.chrome";
-import { WorkbenchCommandMenuButton } from "../../core/workbench-command-menu-button";
-import {
-	WORKBENCH_COMPONENTS,
-	WORKBENCH_PANEL_RECORDS,
-} from "../../workbench.constants";
 import { DATABASE_COLUMNS_PANEL } from "./database-columns-panel";
 import { DATABASE_QUERY_PANEL } from "./database-query-panel";
 import { DATABASE_RESULTS_PANEL } from "./database-query-results-panel";
@@ -68,7 +75,7 @@ const ADMIN_QUERY_LAYOUT: WorkbenchLayout = {
 };
 
 /** Blueprints, keyed by type. Module-scope so identities never churn. */
-const ADMIN_QUERY_COMPONENTS: Record<string, WorkbenchPanelConfigAny> = {
+export const ADMIN_QUERY_COMPONENTS: Record<string, WorkbenchPanelConfigAny> = {
 	[WORKBENCH_COMPONENTS.DATABASE_COLUMNS]: DATABASE_COLUMNS_PANEL,
 	[WORKBENCH_COMPONENTS.DATABASE_QUERY]: DATABASE_QUERY_PANEL,
 	[WORKBENCH_COMPONENTS.DATABASE_RESULTS]: DATABASE_RESULTS_PANEL,
@@ -85,6 +92,14 @@ const ADMIN_QUERY_COMPONENTS: Record<string, WorkbenchPanelConfigAny> = {
 export const AdminQueryWorkbench: React.FC = () => {
 	const storeApi = useWorkbenchStoreApi();
 	const { engine } = useEngine();
+
+	// One arrangement per system database. `engine.engine_id` is the selected
+	// database — the page builds this context from it.
+	const [snapshot, onSnapshotChange] = useCacheState<WorkbenchSnapshot>(
+		ADMIN_QUERY_LAYOUT,
+		`workbench-layout--admin-query--${engine.engine_id}--1`,
+		parseWorkbenchSnapshot,
+	);
 	const [isMaximized, setIsMaximized] = useState(false);
 
 	// Created once per workbench instance before its panels render.
@@ -143,8 +158,8 @@ export const AdminQueryWorkbench: React.FC = () => {
 			>
 				<DatabaseWorkbenchStoreProvider store={databaseStore}>
 					<Workbench
-						layout={ADMIN_QUERY_LAYOUT}
-						components={ADMIN_QUERY_COMPONENTS}
+						snapshot={snapshot}
+						onUnmount={onSnapshotChange}
 						onPanelClose={(pid, record) =>
 							databaseStore
 								.getState()

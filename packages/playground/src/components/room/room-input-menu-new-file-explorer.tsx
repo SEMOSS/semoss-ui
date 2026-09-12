@@ -4,8 +4,7 @@ import { runPixel } from "@semoss/sdk/react";
 import { DropdownMenuItem, toast } from "@semoss/ui/next";
 import { useChat, useRoot } from "@/hooks";
 import { RoomStore } from "@/stores";
-
-const ROOM_FILE_EXPLORER_ID = "FILE_EXPLORER";
+import { ROOM_PANEL_COMPONENTS } from "./panels";
 
 interface RoomInputMenuNewFileExplorerProps {
 	/** Current room mode */
@@ -46,7 +45,12 @@ export const RoomInputMenuNewFileExplorer = ({
 					}
 
 					const roomId = pixelReturn[0].output.roomId;
-					const room = new RoomStore(root.theme, roomId, insightId);
+					const room = new RoomStore({
+						theme: root.theme,
+						roomId,
+						insightId,
+						panelComponents: ROOM_PANEL_COMPONENTS,
+					});
 
 					room.setModel(chat.models.selected);
 					room.setMode(mode === "agent" ? "agent" : "chat");
@@ -57,13 +61,10 @@ export const RoomInputMenuNewFileExplorer = ({
 					chat.registerRoom(room);
 
 					// Open the file explorer sidebar tab.
-					room.addSidebarNode(ROOM_FILE_EXPLORER_ID, {
-						type: "tab",
-						name: t("menuFileExplorer.name"),
-						component: "room-file-explorer",
-						config: {},
-						enableClose: true,
-					});
+					room.openSidebarFileExplorer(
+						undefined,
+						t("menuFileExplorer.name"),
+					);
 
 					onRoomCreated(room);
 				} catch {

@@ -58,10 +58,16 @@ export interface FileExplorerProps {
  * A file tree over one asset scope: browse, search, open, and (when the mode
  * allows it) create, rename, move, copy, delete, upload, and download.
  *
- * This component is presentational — `useFileExplorer` owns the state, so a
- * consumer that needs to drive the explorer from outside (a toolbar, a panel
- * chrome control, a command) holds the same api object and calls
- * `explorer.commands`.
+ * Presentational — `useFileExplorer` owns the state, so a consumer that needs
+ * to drive the explorer from outside (a toolbar, a panel chrome control, a
+ * command) holds the same api object and calls `explorer.commands`.
+ *
+ * Not deprecated: this is the shell the workbench's `FILE_EXPLORER_PANEL`
+ * renders, through `@semoss/panels`' `FileExplorerPane`. What is on its way
+ * out is mounting it *directly as a page-level surface* — new code should open
+ * the panel and get tabs, split, persistence, and the chrome controls with it.
+ * Two direct mounts are left, `app-workspace` and `skill-public-files`, and a
+ * read-only embedded tree may never want to be a dock.
  */
 export const FileExplorer: React.FC<FileExplorerProps> = ({
 	explorer,

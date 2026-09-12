@@ -1,33 +1,35 @@
 import { useEffect, useMemo } from "react";
+import { FILE_PANEL_COMPONENTS } from "@semoss/panels";
 import type { Role } from "@semoss/sdk";
 import { useInsight } from "@semoss/sdk/react";
-import type { FileExplorerApi } from "@semoss/shared";
-import { useProject, useWorkbench, useWorkbenchCommands } from "@/hooks";
+import { useCacheState } from "@semoss/ui/next";
 import type {
 	WorkbenchLayout,
 	WorkbenchPanelConfigAny,
-} from "@/stores/workbench";
-import { WORKBENCH_ASSISTANT_PANEL } from "../../assistant";
-import { Workbench } from "../../core";
-import { WorkbenchCommandMenuButton } from "../../core/workbench-command-menu-button";
+	WorkbenchSnapshot,
+} from "@semoss/workbench";
 import {
-	FILE_CODE_EDITOR_PANEL,
-	FILE_DOWNLOAD_PANEL,
-	FILE_EXPLORER_PANEL,
-	FILE_IMAGE_VIEWER_PANEL,
-	FILE_MARKDOWN_EDITOR_PANEL,
-	FILE_MCP_EDITOR_PANEL,
-	FILE_NOTEBOOK_EDITOR_PANEL,
-	FILE_PDF_VIEWER_PANEL,
-	FILE_PPTX_VIEWER_PANEL,
-} from "../../files";
-import { GIT_DIFF_PANEL, GIT_VERSION_PANEL } from "../../git";
+	parseWorkbenchSnapshot,
+	useWorkbenchCommands,
+	Workbench,
+	WorkbenchCommandMenuButton,
+} from "@semoss/workbench";
+import { ASSISTANT_PANEL } from "@/components/assistant";
+import { AssistantStoreProvider } from "@/contexts";
+import { useAssistantStore, useProject, useSession } from "@/hooks";
 import {
 	WORKBENCH_COMPONENTS,
 	WORKBENCH_PANEL_RECORDS,
-} from "../../workbench.constants";
+} from "@/stores/workbench";
+import { GIT_DIFF_PANEL, GIT_VERSION_PANEL } from "../../git";
+import {
+	createFileCommands,
+	createOpenPanelCommand,
+	createReconnectCommand,
+} from "../../workbench.presets";
 import {
 	createProjectSettingsPanel,
+	PROJECT_SETTINGS_TABS,
 	ProjectSettingsToggle,
 } from "../project-settings-toggle";
 import { PROJECT_TERMINAL_PANEL } from "../project-terminal-panel";
@@ -60,15 +62,14 @@ const createNotebookWorkbenchLayout = (
 				name: NOTEBOOK_NAME,
 				canClose: true,
 				config: {
-					type: "PROJECT",
-					id: projectId,
+					mode: { type: "APP", app: projectId },
 					name: NOTEBOOK_NAME,
 					path: NOTEBOOK_PATH,
 				},
 			},
 			[WORKBENCH_PANEL_RECORDS.FILE_EXPLORER.id]: {
 				...WORKBENCH_PANEL_RECORDS.FILE_EXPLORER,
-				config: { type: "PROJECT", id: projectId },
+				config: { mode: { type: "APP", app: projectId } },
 			},
 			...(!readOnly
 				? {
@@ -107,43 +108,18 @@ const createNotebookWorkbenchLayout = (
 };
 
 /** Blueprints, keyed by type. Module-scope so identities never churn. */
-const NOTEBOOK_WORKBENCH_COMPONENTS: Record<string, WorkbenchPanelConfigAny> = {
-	[WORKBENCH_COMPONENTS.FILE_EXPLORER]: FILE_EXPLORER_PANEL,
+export const NOTEBOOK_WORKBENCH_COMPONENTS: Record<
+	string,
+	WorkbenchPanelConfigAny
+> = {
+	...FILE_PANEL_COMPONENTS,
 	[WORKBENCH_COMPONENTS.GIT_VERSION]: GIT_VERSION_PANEL,
 	[WORKBENCH_COMPONENTS.GIT_DIFF]: GIT_DIFF_PANEL,
-	[WORKBENCH_COMPONENTS.FILE_CODE_EDITOR]: FILE_CODE_EDITOR_PANEL,
-	[WORKBENCH_COMPONENTS.FILE_DOWNLOAD]: FILE_DOWNLOAD_PANEL,
-	[WORKBENCH_COMPONENTS.FILE_IMAGE_VIEWER]: FILE_IMAGE_VIEWER_PANEL,
-	[WORKBENCH_COMPONENTS.FILE_MARKDOWN_EDITOR]: FILE_MARKDOWN_EDITOR_PANEL,
-	[WORKBENCH_COMPONENTS.FILE_NOTEBOOK_EDITOR]: FILE_NOTEBOOK_EDITOR_PANEL,
-	[WORKBENCH_COMPONENTS.FILE_PDF_VIEWER]: FILE_PDF_VIEWER_PANEL,
-	[WORKBENCH_COMPONENTS.FILE_PPTX_VIEWER]: FILE_PPTX_VIEWER_PANEL,
-	[WORKBENCH_COMPONENTS.FILE_MCP_EDITOR]: FILE_MCP_EDITOR_PANEL,
 	[WORKBENCH_COMPONENTS.PROJECT_TERMINAL]: PROJECT_TERMINAL_PANEL,
-	[WORKBENCH_COMPONENTS.PROJECT_SETTINGS]: createProjectSettingsPanel([
-		{ name: "Overview", component: "project-overview" },
-		{
-			name: "MCP",
-			component: "mcp-usage",
-			restrict: ["OWNER", "EDIT", "READ_ONLY"],
-		},
-		{
-			name: "GitHub",
-			component: "github",
-			restrict: ["OWNER"],
-		},
-		{
-			name: "Access Control",
-			component: "access-control",
-			restrict: ["OWNER", "EDIT"],
-		},
-		{
-			name: "SMSS",
-			component: "smss",
-			restrict: ["OWNER"],
-		},
-	]),
-	[WORKBENCH_COMPONENTS.ASSISTANT]: WORKBENCH_ASSISTANT_PANEL,
+	[WORKBENCH_COMPONENTS.PROJECT_SETTINGS]: createProjectSettingsPanel(
+		PROJECT_SETTINGS_TABS,
+	),
+	[WORKBENCH_COMPONENTS.ASSISTANT]: ASSISTANT_PANEL,
 };
 
 /**
@@ -160,32 +136,48 @@ export const NotebookWorkbench: React.FC = () => {
 		[project.project_id, permission],
 	);
 
-	const configureWorkbench = useWorkbench((s) => s.configure);
+	// What this workbench is known by: its own cache entry, and — where there
+	// is an assistant — the workbench its conversations are tagged with,
+	// server-side. Read-only variants keep their own arrangement.
+	const workbenchId = readOnly
+		? `${project.project_id}--read-only`
+		: project.project_id;
+
+	const [snapshot, onSnapshotChange] = useCacheState<WorkbenchSnapshot>(
+		workbenchLayout,
+		`workbench-layout--${workbenchId}--1`,
+		parseWorkbenchSnapshot,
+	);
+
+	const syncPermission = useSession((s) => s.syncPermission);
+	const refreshPermission = useSession((s) => s.refreshPermission);
+
+	const assistantStore = useAssistantStore(workbenchId);
 
 	// keep the assistant's system prompt/tools in sync with the active notebook
 	useEffect(() => {
 		const name = project.project_display_name || project.project_name;
 
-		configureWorkbench({
-			resource: {
-				type: "PROJECT",
-				id: project.project_id,
-				permission,
-			},
-			assistant: {
-				systemPrompt: `You are the assistant for the ${name} notebook workbench (${project.project_id}). Your role is to help the user build and run this notebook and the rest of the project's files. Use only the tools provided in this room. Never claim that an operation succeeded unless its tool result confirms success. Keep answers concise and grounded in the active notebook.`,
-				mcp: [
-					{
-						type: "PROJECT",
-						id: project.project_id,
-						name: name,
-					},
-				],
-				runParams: { project: project.project_id },
-			},
+		syncPermission("PROJECT", project.project_id, permission);
+		void refreshPermission("PROJECT", project.project_id).catch(
+			() => undefined,
+		);
+
+		assistantStore.getState().configure({
+			systemPrompt: `You are the assistant for the ${name} notebook workbench (${project.project_id}). Your role is to help the user build and run this notebook and the rest of the project's files. Use only the tools provided in this room. Never claim that an operation succeeded unless its tool result confirms success. Keep answers concise and grounded in the active notebook.`,
+			mcp: [
+				{
+					type: "PROJECT",
+					id: project.project_id,
+					name: name,
+				},
+			],
+			runParams: { project: project.project_id },
 		});
 	}, [
-		configureWorkbench,
+		assistantStore,
+		syncPermission,
+		refreshPermission,
 		permission,
 		project.project_display_name,
 		project.project_id,
@@ -193,112 +185,44 @@ export const NotebookWorkbench: React.FC = () => {
 	]);
 
 	useWorkbenchCommands([
-		{
-			id: "workbench.server.reconnect",
-			label: "Reconnect Server",
-			handler: () => {
-				void insight.actions
-					.run("ReconnectServer();")
-					.catch(console.error);
-			},
-		},
-		{
-			id: "workbench.file.create",
-			category: "File",
-			label: "Create File",
-			visible: !readOnly,
-			handler: (get) =>
-				(
-					get().layout.values[WORKBENCH_COMPONENTS.FILE_EXPLORER] as
-						| FileExplorerApi
-						| undefined
-				)?.commands.openNewFile(undefined, "add_file"),
-		},
-		{
-			id: "workbench.file.create-folder",
-			category: "File",
-			label: "Create Folder",
-			visible: !readOnly,
-			handler: (get) =>
-				(
-					get().layout.values[WORKBENCH_COMPONENTS.FILE_EXPLORER] as
-						| FileExplorerApi
-						| undefined
-				)?.commands.openNewFile(undefined, "add_directory"),
-		},
-		{
-			id: "workbench.file.upload",
-			category: "File",
-			label: "Upload Files",
-			visible: !readOnly,
-			handler: (get) =>
-				(
-					get().layout.values[WORKBENCH_COMPONENTS.FILE_EXPLORER] as
-						| FileExplorerApi
-						| undefined
-				)?.commands.openNewFile(undefined, "upload"),
-		},
-		{
-			id: "workbench.file.refresh",
-			category: "File",
-			label: "Refresh Files",
-			handler: (get) =>
-				(
-					get().layout.values[WORKBENCH_COMPONENTS.FILE_EXPLORER] as
-						| FileExplorerApi
-						| undefined
-				)?.commands.refresh(),
-		},
-		{
+		createReconnectCommand(insight),
+		...createFileCommands({ readOnly: readOnly }),
+		createOpenPanelCommand({
 			id: "workbench.project-file-explorer.open",
-			category: "View",
 			label: "Open File Explorer",
-			handler: (get) => {
-				get().layout.actions.selectPanel(
-					WORKBENCH_COMPONENTS.FILE_EXPLORER,
-					{
-						type: "PROJECT",
-						id: project.project_id,
-					},
-				);
+			type: WORKBENCH_COMPONENTS.FILE_EXPLORER,
+			config: {
+				mode: { type: "APP", app: project.project_id },
 			},
-		},
-		{
+		}),
+		createOpenPanelCommand({
 			id: "workbench.project-terminal.open",
-			category: "View",
 			label: "Open Terminal",
-			handler: (get) => {
-				get().layout.actions.selectPanel(
-					WORKBENCH_COMPONENTS.PROJECT_TERMINAL,
-				);
-			},
-		},
-		{
+			type: WORKBENCH_COMPONENTS.PROJECT_TERMINAL,
+		}),
+		createOpenPanelCommand({
 			id: "workbench.project-settings.open",
-			category: "View",
 			label: "Open Settings",
-			handler: (get) => {
-				get().layout.actions.selectPanel(
-					WORKBENCH_COMPONENTS.PROJECT_SETTINGS,
-				);
-			},
-		},
+			type: WORKBENCH_COMPONENTS.PROJECT_SETTINGS,
+		}),
 	]);
 
 	return (
-		<Workbench
-			layout={workbenchLayout}
-			components={NOTEBOOK_WORKBENCH_COMPONENTS}
-			borderSlots={{
-				left: {
-					after: (
-						<>
-							<WorkbenchCommandMenuButton />
-							<ProjectSettingsToggle />
-						</>
-					),
-				},
-			}}
-		/>
+		<AssistantStoreProvider store={assistantStore}>
+			<Workbench
+				snapshot={snapshot}
+				onUnmount={onSnapshotChange}
+				borderSlots={{
+					left: {
+						after: (
+							<>
+								<WorkbenchCommandMenuButton />
+								<ProjectSettingsToggle />
+							</>
+						),
+					},
+				}}
+			/>
+		</AssistantStoreProvider>
 	);
 };

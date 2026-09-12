@@ -1,10 +1,10 @@
 import { FolderTreeIcon } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useTranslation } from "@semoss/i18n";
+import { FILE_PANEL_TYPES } from "@semoss/panels";
 import { DropdownMenuItem } from "@semoss/ui/next";
+import { useSidebarPanelActive } from "@/hooks";
 import type { RoomStore } from "@/stores";
-
-const ROOM_FILE_EXPLORER_ID = "FILE_EXPLORER";
 
 interface RoomInputMenuFileExplorerProps {
 	/** Room  */
@@ -18,26 +18,26 @@ export const RoomInputMenuFileExplorer: React.FC<RoomInputMenuFileExplorerProps>
 	observer(({ room, onSelect = () => null }) => {
 		const { t } = useTranslation("room");
 
-		// this will render the component whenever the sidebar model changes
-		room.sidebar.counter;
-
-		// track if selected
-		const isSelected = room.isSidebarNodeSelected(ROOM_FILE_EXPLORER_ID);
+		const explorerConfig = { mode: room.fileMode };
+		const isSelected = useSidebarPanelActive(
+			room,
+			FILE_PANEL_TYPES.FILE_EXPLORER,
+			explorerConfig,
+		);
 
 		return (
 			<DropdownMenuItem
 				onSelect={() => {
-					if (room.isSidebarNodeSelected(ROOM_FILE_EXPLORER_ID)) {
-						room.removeSidebarNode(ROOM_FILE_EXPLORER_ID);
+					if (isSelected) {
+						room.closeSidebarPanel(
+							FILE_PANEL_TYPES.FILE_EXPLORER,
+							explorerConfig,
+						);
 					} else {
-						// this will select if there or open if not
-						room.addSidebarNode(ROOM_FILE_EXPLORER_ID, {
-							type: "tab",
-							name: t("menuFileExplorer.name"),
-							component: "room-file-explorer",
-							config: {},
-							enableClose: true,
-						});
+						room.openSidebarFileExplorer(
+							undefined,
+							t("menuFileExplorer.name"),
+						);
 					}
 
 					onSelect();

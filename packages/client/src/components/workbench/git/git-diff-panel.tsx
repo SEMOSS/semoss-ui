@@ -1,7 +1,17 @@
 import { FileDiffIcon } from "lucide-react";
 import { useEffect, useState } from "react";
+import { useAccess } from "@semoss/panels";
 import { useInsight, usePixel } from "@semoss/sdk/react";
 import { toast } from "@semoss/ui/next";
+import type {
+	WorkbenchPanelConfig,
+	WorkbenchPanelProps,
+} from "@semoss/workbench";
+import {
+	useWorkbenchControl,
+	WorkbenchAccessError,
+	WorkbenchAccessLoading,
+} from "@semoss/workbench";
 import type {
 	GitCommitFile,
 	GitDiff,
@@ -10,13 +20,6 @@ import type {
 	GitStageAction,
 } from "@/components/git";
 import { GitDiffControl, GitDiffEditor } from "@/components/git";
-import { useWorkbenchAccess, useWorkbenchControl } from "@/hooks";
-import type {
-	WorkbenchPanelConfig,
-	WorkbenchPanelProps,
-} from "@/stores/workbench";
-import { WorkbenchAccessError } from "../core/workbench-access-error";
-import { WorkbenchAccessLoading } from "../core/workbench-access-loading";
 import type { GitPanelScopeParams } from "./git-panel.types";
 
 export interface GitDiffParams extends GitPanelScopeParams {
@@ -33,7 +36,7 @@ const GitDiffPanel = ({
 	close,
 }: WorkbenchPanelProps<GitDiffParams, GitDiffControlValue>) => {
 	const insight = useInsight();
-	const access = useWorkbenchAccess(config.type, config.id);
+	const access = useAccess(config.type, config.id);
 	const readOnly = access.status !== "ready" || access.readOnly;
 	const [renderSideBySide, setRenderSideBySide] = useState(true);
 	const historical = config.side === "COMMIT";

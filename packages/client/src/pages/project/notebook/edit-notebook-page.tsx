@@ -15,7 +15,10 @@ import {
 } from "@semoss/ui/next";
 import { ProjectShareButton } from "@/components/project";
 import { NavbarHeader, NavbarLeft, NavbarRight } from "@/components/shared";
-import { NotebookWorkbench } from "@/components/workbench";
+import {
+	NOTEBOOK_WORKBENCH_COMPONENTS,
+	NotebookWorkbench,
+} from "@/components/workbench";
 import { WorkbenchProvider } from "@/contexts";
 import { usePage, useProject } from "@/hooks";
 
@@ -39,13 +42,7 @@ export const EditNotebookPage = () => {
 
 	return (
 		<InsightProvider options={{ app: project.project_id }}>
-			<WorkbenchProvider
-				cacheKey={
-					permission === "OWNER" || permission === "EDIT"
-						? project.project_id
-						: `${project.project_id}--read-only`
-				}
-			>
+			<WorkbenchProvider components={NOTEBOOK_WORKBENCH_COMPONENTS}>
 				<NavbarLeft>
 					<NavbarHeader logo={null} />
 					<Breadcrumb>

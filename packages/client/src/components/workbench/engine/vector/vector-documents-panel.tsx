@@ -1,7 +1,7 @@
 import { FileTextIcon } from "lucide-react";
+import type { WorkbenchPanelConfig } from "@semoss/workbench";
 import { FileTable } from "@/components/settings";
 import { useEngine } from "@/hooks";
-import type { WorkbenchPanelConfig } from "@/stores/workbench";
 
 /**
  * Vector workbench panel that manages the engine's documents through the shared

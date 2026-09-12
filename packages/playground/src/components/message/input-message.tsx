@@ -116,14 +116,11 @@ export const InputMessage: React.FC<InputMessageProps> = observer(
 															p.mediaInfo
 																.fileLocation
 														) {
-															room.openFileEditorSidebarNode(
+															room.openFileSidebarPanel(
 																p.mediaInfo
 																	.fileLocation,
-																{
-																	name: p
-																		.mediaInfo
-																		.fileName,
-																},
+																p.mediaInfo
+																	.fileName,
 															);
 														} else if (
 															p.mediaInfo
