@@ -9,6 +9,7 @@ import {
 	guardrailArgumentOptions,
 	guardrailConfigFromResponse,
 	guardrailConfigToJson,
+	guardrailToolResultArgument,
 	type InterceptableMethod,
 	validateGuardrailConfig,
 } from "./engine-guardrail-settings.constants";
@@ -46,6 +47,7 @@ const ASK_ROOM: InterceptableMethod = {
 			nameIsFromSource: false,
 			type: "InputMessage",
 			guardable: true,
+			carriesToolResults: true,
 		},
 		{
 			name: "arg1",
@@ -53,6 +55,7 @@ const ASK_ROOM: InterceptableMethod = {
 			nameIsFromSource: false,
 			type: "Room",
 			guardable: false,
+			carriesToolResults: false,
 		},
 	],
 };
@@ -380,6 +383,157 @@ describe("guardrail settings configuration", () => {
 		expect(warnings[0]?.message).toBe(
 			'"result" only exists after the model runs, so an input guardrail receives nothing for "prompt".',
 		);
+	});
+});
+
+describe("guardrail tool-result continuations", () => {
+	test("a new check screens tool results and writes no skip keys", () => {
+		const form = { pipelines: [createGuardrailPipeline("askRoom")] };
+		const entry = form.pipelines[0]?.input[0];
+		if (entry) {
+			entry.guardrailEngineId = "guardrail-1";
+		}
+
+		expect(entry?.toolContinuationSkip).toBe("none");
+		const params = JSON.parse(guardrailConfigToJson(form)).pipelines.askRoom
+			.input[0].params;
+		expect(params).not.toHaveProperty("skipOnToolContinuationForAllTools");
+		expect(params).not.toHaveProperty("skipOnToolContinuationForTools");
+		expect(params).not.toHaveProperty("toolContinuationArg");
+	});
+
+	test("round-trips an allowlisted skip", () => {
+		const form = guardrailConfigFromResponse({
+			pipelines: {
+				askRoom: {
+					input: [
+						{
+							reactorClass: INPUT_REACTOR,
+							params: {
+								guardrailEngineId: "guardrail-1",
+								blockOnGuardrailFailure: true,
+								inputMapping: { prompt: "arg0" },
+								skipOnToolContinuationForTools: [
+									"a1234_search",
+									"a1234_read_file",
+								],
+							},
+						},
+					],
+				},
+			},
+		});
+
+		expect(form.pipelines[0]?.input[0]).toMatchObject({
+			toolContinuationSkip: "listed",
+			toolContinuationTools: "a1234_search, a1234_read_file",
+		});
+		expect(validateGuardrailConfig(form)).toBe(true);
+
+		const params = JSON.parse(guardrailConfigToJson(form)).pipelines.askRoom
+			.input[0].params;
+		expect(params.skipOnToolContinuationForTools).toEqual([
+			"a1234_search",
+			"a1234_read_file",
+		]);
+		expect(params).not.toHaveProperty("skipOnToolContinuationForAllTools");
+	});
+
+	test("keeps a hand-written argument override", () => {
+		const form = guardrailConfigFromResponse({
+			pipelines: {
+				askRoom: {
+					input: [
+						{
+							reactorClass: INPUT_REACTOR,
+							params: {
+								guardrailEngineId: "guardrail-1",
+								blockOnGuardrailFailure: true,
+								inputMapping: { prompt: "arg3" },
+								skipOnToolContinuationForAllTools: true,
+								toolContinuationArg: "arg3",
+							},
+						},
+					],
+				},
+			},
+		});
+
+		const params = JSON.parse(guardrailConfigToJson(form)).pipelines.askRoom
+			.input[0].params;
+		expect(params.toolContinuationArg).toBe("arg3");
+	});
+
+	test("warns that a blanket skip stops screening tool output", () => {
+		const pipeline = createGuardrailPipeline("askRoom");
+		const entry = pipeline.input[0];
+		if (entry) {
+			entry.guardrailEngineId = "guardrail-1";
+			entry.toolContinuationSkip = "all";
+		}
+		const form = { pipelines: [pipeline] };
+
+		const issues = collectGuardrailConfigIssues(form, {
+			methods: [ASK_ROOM],
+		});
+		expect(
+			issues.some(
+				(issue) =>
+					issue.severity === "warning" &&
+					issue.message.includes("stops screening"),
+			),
+		).toBe(true);
+		// a warning does not stop the save
+		expect(validateGuardrailConfig(form)).toBe(true);
+	});
+
+	test("refuses an empty allowlist and a method with no tool results", () => {
+		const pipeline = createGuardrailPipeline("listBatches");
+		const entry = pipeline.input[0];
+		if (entry) {
+			entry.guardrailEngineId = "guardrail-1";
+			entry.toolContinuationSkip = "listed";
+		}
+		const form = { pipelines: [pipeline] };
+
+		const issues = collectGuardrailConfigIssues(form, {
+			methods: [LIST_BATCHES],
+		});
+		expect(
+			issues.some(
+				(issue) =>
+					issue.severity === "error" &&
+					issue.message.includes("Name at least one tool"),
+			),
+		).toBe(true);
+		expect(
+			issues.some(
+				(issue) =>
+					issue.severity === "warning" &&
+					issue.message.includes("never carries tool results"),
+			),
+		).toBe(true);
+	});
+
+	test("finds the argument tool results arrive on, including for every method", () => {
+		expect(
+			guardrailToolResultArgument({
+				method: "askRoom",
+				methods: [ASK_ROOM, LIST_BATCHES],
+			})?.name,
+		).toBe("arg0");
+		expect(
+			guardrailToolResultArgument({
+				method: "*",
+				methods: [LIST_BATCHES, ASK_ROOM],
+			})?.name,
+		).toBe("arg0");
+		expect(
+			guardrailToolResultArgument({
+				method: "listBatches",
+				methods: [LIST_BATCHES],
+			}),
+		).toBeUndefined();
 	});
 });
 
