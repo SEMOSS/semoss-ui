@@ -14,6 +14,7 @@ import {
 	useWorkbenchCommands,
 	Workbench,
 	WorkbenchCommandMenuButton,
+	WorkbenchResetButton,
 } from "@semoss/workbench";
 import { ModelChatStoreProvider } from "@/contexts/model-chat.context";
 import { useEngine, useSession } from "@/hooks";
@@ -234,6 +235,7 @@ export const ModelWorkbench: React.FC = () => {
 							<>
 								<WorkbenchCommandMenuButton />
 								<EngineSettingsToggle />
+								<WorkbenchResetButton />
 							</>
 						),
 					},

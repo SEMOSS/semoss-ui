@@ -21,6 +21,7 @@ import {
 	WORKBENCH_STYLES,
 	Workbench,
 	WorkbenchCommandMenuButton,
+	WorkbenchResetButton,
 } from "@semoss/workbench";
 import {
 	WORKBENCH_COMPONENTS,
@@ -174,6 +175,7 @@ export const MyFilesWorkbench: React.FC = () => {
 												: "Maximize"}
 										</TooltipContent>
 									</Tooltip>
+									<WorkbenchResetButton />
 								</>
 							),
 						},

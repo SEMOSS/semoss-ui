@@ -21,6 +21,7 @@ import {
 	WORKBENCH_STYLES,
 	Workbench,
 	WorkbenchCommandMenuButton,
+	WorkbenchResetButton,
 } from "@semoss/workbench";
 import { DatabaseWorkbenchStoreProvider } from "@/contexts/database-workbench.context";
 import { useEngine } from "@/hooks";
@@ -214,6 +215,7 @@ export const AdminQueryWorkbench: React.FC = () => {
 													: "Maximize"}
 											</TooltipContent>
 										</Tooltip>
+										<WorkbenchResetButton />
 									</>
 								),
 							},

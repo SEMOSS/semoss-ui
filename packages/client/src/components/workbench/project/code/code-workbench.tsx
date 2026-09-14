@@ -14,6 +14,7 @@ import {
 	useWorkbenchCommands,
 	Workbench,
 	WorkbenchCommandMenuButton,
+	WorkbenchResetButton,
 } from "@semoss/workbench";
 import { ASSISTANT_PANEL } from "@/components/assistant";
 import { AssistantStoreProvider } from "@/contexts";
@@ -357,6 +358,7 @@ export const CodeWorkbench: React.FC = () => {
 								<WorkbenchCommandMenuButton />
 								<ProjectPublishButton />
 								<ProjectSettingsToggle />
+								<WorkbenchResetButton />
 							</>
 						),
 					},

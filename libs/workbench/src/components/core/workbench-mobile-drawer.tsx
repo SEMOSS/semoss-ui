@@ -16,7 +16,6 @@ import {
 import { useWorkbench } from "../../hooks";
 import type { WorkbenchBorderSlot } from "../../types";
 import { resolveBorderSlot } from "./workbench-border";
-import { WorkbenchResetButton } from "./workbench-reset-button";
 
 export interface WorkbenchMobileDrawerProps {
 	open: boolean;
@@ -55,7 +54,7 @@ export const WorkbenchMobileDrawer: FC<WorkbenchMobileDrawerProps> = ({
 		open: false,
 		panelIds: [],
 	});
-	const showActions = true;
+	const showActions = Boolean(slotContent);
 
 	return (
 		<Drawer open={open} onOpenChange={onOpenChange}>
@@ -78,7 +77,6 @@ export const WorkbenchMobileDrawer: FC<WorkbenchMobileDrawerProps> = ({
 								</Muted>
 								<div className="mt-2 flex items-center justify-center gap-2 [&_button]:size-10 [&_svg]:size-4">
 									{slotContent}
-									<WorkbenchResetButton />
 								</div>
 							</div>
 						) : null}

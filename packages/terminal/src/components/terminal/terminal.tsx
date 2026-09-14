@@ -10,6 +10,7 @@ import {
 	useWorkbenchStoreApi,
 	Workbench,
 	WorkbenchProvider,
+	WorkbenchResetButton,
 } from "@semoss/workbench";
 import type { SelectedFile } from "../../types";
 import { inferExt } from "../terminal-file/terminal-file";
@@ -100,6 +101,7 @@ const SidebarFooter = ({ onHelpClick }: SidebarFooterProps) => {
 					<HelpCircle className="size-4" />
 				</button>
 			</Tooltip>
+			<WorkbenchResetButton />
 			<UserMenu />
 		</div>
 	);

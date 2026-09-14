@@ -1,9 +1,9 @@
 // The package's public surface. Deliberately curated rather than
 // `export * from "./components"`: the shell's internals -- tabsets, tabs,
 // stage, borders, drag layer, panel hosts and layers, resizers, the mobile
-// shell, the reset button and panel-error views the shell places itself --
-// are rendering details a host neither mounts nor types against. One of them,
-// the `WorkbenchTabset` *component*, would also collide by name with the
+// shell, and panel-error views the shell places itself -- are rendering
+// details a host neither mounts nor types against. One of them, the
+// `WorkbenchTabset` *component*, would also collide by name with the
 // `WorkbenchTabset` layout node.
 //
 // Add to this list when a consumer genuinely needs a symbol, not before.
@@ -16,6 +16,7 @@ export {
 	WorkbenchAccessLoading,
 	WorkbenchChromeButton,
 	WorkbenchCommandMenuButton,
+	WorkbenchResetButton,
 } from "./components";
 /* One store per mount */
 export { WorkbenchProvider, WorkbenchStoreContext } from "./contexts";

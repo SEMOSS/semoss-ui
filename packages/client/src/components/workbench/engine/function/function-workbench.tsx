@@ -13,6 +13,7 @@ import {
 	useWorkbenchCommands,
 	Workbench,
 	WorkbenchCommandMenuButton,
+	WorkbenchResetButton,
 } from "@semoss/workbench";
 import { makeEngineRoomMcp } from "@/api/rooms";
 import { ASSISTANT_PANEL } from "@/components/assistant";
@@ -184,6 +185,7 @@ export const FunctionWorkbench: React.FC = () => {
 							<>
 								<WorkbenchCommandMenuButton />
 								<EngineSettingsToggle />
+								<WorkbenchResetButton />
 							</>
 						),
 					},

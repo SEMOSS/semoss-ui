@@ -13,7 +13,6 @@ import { WorkbenchCommandPalette } from "./workbench-command-palette";
 import { WorkbenchDragLayer } from "./workbench-drag-layer";
 import { WorkbenchMobile } from "./workbench-mobile";
 import { WorkbenchPanelLayer } from "./workbench-panel-layer";
-import { WorkbenchResetButton } from "./workbench-reset-button";
 import { WorkbenchSlotMeasure } from "./workbench-slot-measure";
 import { WorkbenchStage } from "./workbench-stage";
 
@@ -118,22 +117,6 @@ export const Workbench: FC<WorkbenchProps> = ({
 
 	const rootRef = useRef<HTMLDivElement | null>(null);
 	const stageRef = useRef<HTMLDivElement | null>(null);
-
-	// The shell's own rail chrome rides at the end of the left rail, after
-	// whatever the host put there — so it sits in the rail's flow instead of
-	// floating on top of it.
-	const leftSlots = useMemo(() => {
-		const hostAfter = borderSlots?.left?.after;
-		return {
-			before: borderSlots?.left?.before,
-			after: (ctx: WorkbenchBorderSlotCtx) => (
-				<>
-					{resolveBorderSlot(hostAfter, ctx)}
-					<WorkbenchResetButton />
-				</>
-			),
-		};
-	}, [borderSlots]);
 
 	useWorkbenchEvents({
 		onPanelOpen,
@@ -243,7 +226,10 @@ export const Workbench: FC<WorkbenchProps> = ({
 					<WorkbenchMobile actionsSlot={mobileActionsSlot} />
 				) : (
 					<div className="relative flex h-full w-full flex-row gap-2 p-2">
-						<WorkbenchBorder side="left" slots={leftSlots} />
+						<WorkbenchBorder
+							side="left"
+							slots={borderSlots?.left}
+						/>
 						<div className="relative flex min-h-0 min-w-0 flex-1 flex-col gap-2">
 							<WorkbenchBorder
 								side="top"
