@@ -292,7 +292,7 @@ const splitArgs = (args: string): string[] =>
 
 /** Tool names are entered as a comma separated list, one name per tool as the
  * model sees it. */
-export const splitToolNames = (tools: string): string[] =>
+const splitToolNames = (tools: string): string[] =>
 	tools
 		.split(",")
 		.map((tool) => tool.trim())
@@ -1045,8 +1045,7 @@ const serializeReactorEntry = (
 	if (failureAction === "block" && entry.blockErrorMessage.trim()) {
 		params.blockErrorMessage = entry.blockErrorMessage.trim();
 	}
-	// tool-result turns are screened unless this check opts out, so the keys are
-	// written only when it does
+	// the keys are written only by a check that opts out of screening tool results
 	if (phase === "input" && entry.toolContinuationSkip !== "none") {
 		if (entry.toolContinuationSkip === "all") {
 			params.skipOnToolContinuationForAllTools = true;
