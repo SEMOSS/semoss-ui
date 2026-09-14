@@ -2,11 +2,12 @@ import { SquareTerminalIcon } from "lucide-react";
 import { useCallback, useEffect, useRef } from "react";
 import { InsightProvider, useInsight } from "@semoss/sdk/react";
 import { TerminalConsole, TerminalProvider } from "@semoss/terminal";
-import { useProject, useWorkbenchControl } from "@/hooks";
 import type {
 	WorkbenchComponent,
 	WorkbenchPanelConfig,
-} from "@/stores/workbench";
+} from "@semoss/workbench";
+import { useWorkbenchControl } from "@semoss/workbench";
+import { useProject } from "@/hooks";
 import { ProjectNewTerminalControl } from "./project-new-terminal-control";
 
 /** The configuration used to retain the default Terminal N name. */

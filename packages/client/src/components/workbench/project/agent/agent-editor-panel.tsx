@@ -3,6 +3,11 @@ import { useCallback, useEffect, useState } from "react";
 import { useInsight, usePixel } from "@semoss/sdk/react";
 import type { MCPConfig, SkillConfig } from "@semoss/shared";
 import { Spinner, toast } from "@semoss/ui/next";
+import type {
+	WorkbenchComponent,
+	WorkbenchPanelConfig,
+} from "@semoss/workbench";
+import { useWorkbenchControl } from "@semoss/workbench";
 import {
 	type AgentDefaultTool,
 	AgentForm,
@@ -10,11 +15,7 @@ import {
 	buildEditWorkspacePixel,
 	getWorkspaceSaveWarning,
 } from "@/components/agent-workspace/agent-form";
-import { useProject, useWorkbenchControl } from "@/hooks";
-import type {
-	WorkbenchComponent,
-	WorkbenchPanelConfig,
-} from "@/stores/workbench";
+import { useProject } from "@/hooks";
 import { AgentEditorSaveControl } from "./agent-editor-save-control";
 
 type GetWorkspaceResponse = {

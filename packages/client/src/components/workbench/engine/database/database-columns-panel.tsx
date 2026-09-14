@@ -38,11 +38,12 @@ import {
 	TooltipContent,
 	TooltipTrigger,
 } from "@semoss/ui/next";
-import { useDatabaseWorkbench, useEngine, useWorkbenchControl } from "@/hooks";
 import type {
 	WorkbenchComponent,
 	WorkbenchPanelConfig,
-} from "@/stores/workbench";
+} from "@semoss/workbench";
+import { useWorkbenchControl } from "@semoss/workbench";
+import { useDatabaseWorkbench, useEngine } from "@/hooks";
 import { DatabaseColumnsRefreshControl } from "./database-columns-refresh-control";
 import {
 	type DatabaseColumnAction,

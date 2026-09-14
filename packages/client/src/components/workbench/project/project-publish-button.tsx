@@ -10,8 +10,8 @@ import {
 	TooltipTrigger,
 	toast,
 } from "@semoss/ui/next";
-import { useProject, useWorkbenchCommands } from "@/hooks";
-import { WORKBENCH_STYLES } from "../core/workbench.chrome";
+import { useWorkbenchCommands, WORKBENCH_STYLES } from "@semoss/workbench";
+import { useProject } from "@/hooks";
 
 /**
  * Compiles and publishes the project, and registers the matching command so the

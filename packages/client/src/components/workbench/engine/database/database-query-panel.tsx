@@ -9,11 +9,12 @@ import {
 	SPARQL_THEME_LIGHT,
 } from "@semoss/shared";
 import { Button, Spinner, useTheme } from "@semoss/ui/next";
-import { useDatabaseWorkbench, useWorkbenchControl } from "@/hooks";
 import type {
 	WorkbenchComponent,
 	WorkbenchPanelConfig,
-} from "@/stores/workbench";
+} from "@semoss/workbench";
+import { useWorkbenchControl } from "@semoss/workbench";
+import { useDatabaseWorkbench } from "@/hooks";
 import { DatabaseNewQueryControl } from "./database-new-query-control";
 
 const SQL_KEYWORDS = [

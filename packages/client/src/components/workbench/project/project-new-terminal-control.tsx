@@ -7,10 +7,9 @@ import {
 	TooltipContent,
 	TooltipTrigger,
 } from "@semoss/ui/next";
-import { useWorkbench } from "@/hooks";
-import type { WorkbenchChromeProps } from "@/stores/workbench";
-import { WORKBENCH_STYLES } from "../core/workbench.chrome";
-import { WORKBENCH_COMPONENTS } from "../workbench.constants";
+import type { WorkbenchChromeProps } from "@semoss/workbench";
+import { useWorkbench, WORKBENCH_STYLES } from "@semoss/workbench";
+import { WORKBENCH_COMPONENTS } from "@/stores/workbench";
 
 /** Opens another independent project terminal alongside the active one. */
 export const ProjectNewTerminalControl: FC<WorkbenchChromeProps> = () => {
