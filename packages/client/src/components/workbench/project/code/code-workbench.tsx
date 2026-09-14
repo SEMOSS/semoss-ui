@@ -2,14 +2,13 @@ import { useCallback, useEffect, useMemo } from "react";
 import { FILE_PANEL_COMPONENTS } from "@semoss/panels";
 import type { Role } from "@semoss/sdk";
 import { useInsight } from "@semoss/sdk/react";
-import { toast, useCacheState } from "@semoss/ui/next";
+import { toast, useCacheData } from "@semoss/ui/next";
 import type {
 	WorkbenchLayout,
 	WorkbenchPanelConfigAny,
 	WorkbenchSnapshot,
 } from "@semoss/workbench";
 import {
-	parseWorkbenchSnapshot,
 	useWorkbench,
 	useWorkbenchCommands,
 	Workbench,
@@ -223,10 +222,9 @@ export const CodeWorkbench: React.FC = () => {
 		? `${project.project_id}--read-only`
 		: project.project_id;
 
-	const [snapshot, onSnapshotChange] = useCacheState<WorkbenchSnapshot>(
-		workbenchLayout,
+	const [snapshot, onSnapshotChange] = useCacheData<WorkbenchSnapshot>(
 		`workbench-layout--${workbenchId}--1`,
-		parseWorkbenchSnapshot,
+		workbenchLayout,
 	);
 
 	/**
@@ -350,7 +348,7 @@ export const CodeWorkbench: React.FC = () => {
 		<AssistantStoreProvider store={assistantStore}>
 			<Workbench
 				snapshot={snapshot}
-				onUnmount={onSnapshotChange}
+				onChange={onSnapshotChange}
 				borderSlots={{
 					left: {
 						after: (
@@ -358,7 +356,9 @@ export const CodeWorkbench: React.FC = () => {
 								<WorkbenchCommandMenuButton />
 								<ProjectPublishButton />
 								<ProjectSettingsToggle />
-								<WorkbenchResetButton />
+								<WorkbenchResetButton
+									snapshot={workbenchLayout}
+								/>
 							</>
 						),
 					},

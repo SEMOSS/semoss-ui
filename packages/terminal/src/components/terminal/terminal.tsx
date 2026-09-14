@@ -2,10 +2,9 @@ import { HelpCircle } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useShallow } from "zustand/react/shallow";
 import { getLanguageDirection, useTranslation } from "@semoss/i18n";
-import { useCacheState } from "@semoss/ui/next";
+import { useCacheData } from "@semoss/ui/next";
 import type { WorkbenchLayout, WorkbenchSnapshot } from "@semoss/workbench";
 import {
-	parseWorkbenchSnapshot,
 	useWorkbench,
 	useWorkbenchStoreApi,
 	Workbench,
@@ -77,6 +76,8 @@ const createTerminalLayout = (
 
 interface SidebarFooterProps {
 	onHelpClick: () => void;
+	/** The arrangement the reset button goes back to. */
+	defaultLayout: WorkbenchLayout;
 }
 
 /**
@@ -87,7 +88,7 @@ interface SidebarFooterProps {
  * Files is collapsed — which is what the old `createPortal` into
  * `.flexlayout__border_toolbar_left` was buying.
  */
-const SidebarFooter = ({ onHelpClick }: SidebarFooterProps) => {
+const SidebarFooter = ({ onHelpClick, defaultLayout }: SidebarFooterProps) => {
 	const { t } = useTranslation("chrome");
 	return (
 		<div className="flex flex-col items-center gap-1 py-1.5">
@@ -101,7 +102,7 @@ const SidebarFooter = ({ onHelpClick }: SidebarFooterProps) => {
 					<HelpCircle className="size-4" />
 				</button>
 			</Tooltip>
-			<WorkbenchResetButton />
+			<WorkbenchResetButton snapshot={defaultLayout} />
 			<UserMenu />
 		</div>
 	);
@@ -277,14 +278,15 @@ export const Terminal = ({
 		allowMultipleTerminals ? "multi" : "single"
 	}--${side}`;
 
-	const [snapshot, onSnapshotChange] = useCacheState<WorkbenchSnapshot>(
-		// read once per identity, so the default must not churn
-		useMemo(
-			() => createTerminalLayout(side, allowMultipleTerminals),
-			[side, allowMultipleTerminals],
-		),
+	// read once per identity, so the default must not churn
+	const defaultLayout = useMemo(
+		() => createTerminalLayout(side, allowMultipleTerminals),
+		[side, allowMultipleTerminals],
+	);
+
+	const [snapshot, onSnapshotChange] = useCacheData<WorkbenchSnapshot>(
 		cacheName,
-		parseWorkbenchSnapshot,
+		defaultLayout,
 	);
 
 	if (!terminal.open) return null;
@@ -346,11 +348,9 @@ export const Terminal = ({
 				)}
 
 				<div className="relative min-h-0 flex-1 overflow-hidden">
-					{/* The dock is this component's — nothing opens a panel
-					into it while the shell is unmounted, so `onUnmount` is the
-					whole of its persistence. Keyed by the arrangement it is
-					open on, so switching one starts a fresh dock rather than
-					pouring a cached layout into a shape it does not fit. */}
+					{/* Keyed by the arrangement it is open on, so switching
+					one starts a fresh dock rather than pouring a cached layout
+					into a shape it does not fit. */}
 					<WorkbenchProvider
 						key={cacheName}
 						components={TERMINAL_PANEL_COMPONENTS}
@@ -358,11 +358,14 @@ export const Terminal = ({
 						<TerminalDockBindings />
 						<Workbench
 							snapshot={snapshot}
-							onUnmount={onSnapshotChange}
+							onChange={onSnapshotChange}
 							borderSlots={{
 								[side]: {
 									after: (
-										<SidebarFooter onHelpClick={openHelp} />
+										<SidebarFooter
+											onHelpClick={openHelp}
+											defaultLayout={defaultLayout}
+										/>
 									),
 								},
 							}}

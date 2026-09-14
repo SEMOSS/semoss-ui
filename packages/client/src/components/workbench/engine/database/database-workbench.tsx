@@ -3,14 +3,13 @@ import type { StoreApi } from "zustand";
 import { FILE_PANEL_COMPONENTS } from "@semoss/panels";
 import type { Role } from "@semoss/sdk";
 import { useInsight } from "@semoss/sdk/react";
-import { useCacheState } from "@semoss/ui/next";
+import { useCacheData } from "@semoss/ui/next";
 import type {
 	WorkbenchLayout,
 	WorkbenchPanelConfigAny,
 	WorkbenchSnapshot,
 } from "@semoss/workbench";
 import {
-	parseWorkbenchSnapshot,
 	useWorkbenchCommands,
 	useWorkbenchStoreApi,
 	Workbench,
@@ -164,10 +163,9 @@ export const DatabaseWorkbench: React.FC = () => {
 		? `${engine.engine_id}--read-only`
 		: engine.engine_id;
 
-	const [snapshot, onSnapshotChange] = useCacheState<WorkbenchSnapshot>(
-		workbenchLayout,
+	const [snapshot, onSnapshotChange] = useCacheData<WorkbenchSnapshot>(
 		`workbench-layout--${workbenchId}--1`,
-		parseWorkbenchSnapshot,
+		workbenchLayout,
 	);
 
 	// Created once per workbench instance before its panels render.
@@ -263,7 +261,7 @@ export const DatabaseWorkbench: React.FC = () => {
 			<DatabaseWorkbenchStoreProvider store={databaseStore}>
 				<Workbench
 					snapshot={snapshot}
-					onUnmount={onSnapshotChange}
+					onChange={onSnapshotChange}
 					onPanelClose={(pid, record) =>
 						databaseStore.getState().handlePanelClosed(pid, record)
 					}
@@ -273,7 +271,9 @@ export const DatabaseWorkbench: React.FC = () => {
 								<>
 									<WorkbenchCommandMenuButton />
 									<EngineSettingsToggle />
-									<WorkbenchResetButton />
+									<WorkbenchResetButton
+										snapshot={workbenchLayout}
+									/>
 								</>
 							),
 						},

@@ -7,7 +7,7 @@ import {
 	Tooltip,
 	TooltipContent,
 	TooltipTrigger,
-	useCacheState,
+	useCacheData,
 } from "@semoss/ui/next";
 import type {
 	WorkbenchLayout,
@@ -15,7 +15,6 @@ import type {
 	WorkbenchSnapshot,
 } from "@semoss/workbench";
 import {
-	parseWorkbenchSnapshot,
 	useWorkbenchCommands,
 	useWorkbenchStoreApi,
 	WORKBENCH_STYLES,
@@ -96,10 +95,9 @@ export const AdminQueryWorkbench: React.FC = () => {
 
 	// One arrangement per system database. `engine.engine_id` is the selected
 	// database — the page builds this context from it.
-	const [snapshot, onSnapshotChange] = useCacheState<WorkbenchSnapshot>(
-		ADMIN_QUERY_LAYOUT,
+	const [snapshot, onSnapshotChange] = useCacheData<WorkbenchSnapshot>(
 		`workbench-layout--admin-query--${engine.engine_id}--1`,
-		parseWorkbenchSnapshot,
+		ADMIN_QUERY_LAYOUT,
 	);
 	const [isMaximized, setIsMaximized] = useState(false);
 
@@ -160,7 +158,7 @@ export const AdminQueryWorkbench: React.FC = () => {
 				<DatabaseWorkbenchStoreProvider store={databaseStore}>
 					<Workbench
 						snapshot={snapshot}
-						onUnmount={onSnapshotChange}
+						onChange={onSnapshotChange}
 						onPanelClose={(pid, record) =>
 							databaseStore
 								.getState()
@@ -215,7 +213,9 @@ export const AdminQueryWorkbench: React.FC = () => {
 													: "Maximize"}
 											</TooltipContent>
 										</Tooltip>
-										<WorkbenchResetButton />
+										<WorkbenchResetButton
+											snapshot={ADMIN_QUERY_LAYOUT}
+										/>
 									</>
 								),
 							},

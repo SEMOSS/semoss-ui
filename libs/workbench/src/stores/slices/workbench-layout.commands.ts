@@ -92,12 +92,5 @@ export function buildWorkbenchLayoutCommands(
 		handler: (getState) => getState().layout.actions.toggleMaximize(),
 	});
 
-	list.push({
-		id: "workbench.layout.reset",
-		category: "View",
-		label: "Reset Layout",
-		handler: (getState) => getState().layout.actions.resetLayout(),
-	});
-
 	return list;
 }

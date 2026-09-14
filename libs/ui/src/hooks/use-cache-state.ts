@@ -15,27 +15,24 @@ const getKey = (name: string) => `smss--${name}`;
  *
  * The React-free half of {@link useCacheState}, for callers that need the
  * cache before any component mounts — a store hydrating in its constructor,
- * say. Same key format and same validation as the hook, so the two can share
- * a name.
+ * say. Same key format as the hooks, so all three can share a name.
  *
  * @param name - Cache name, as passed to `useCacheState`.
- * @param parse - Optional validator. Anything it rejects is treated as a miss.
- * @return The cached value, or null when absent, unreadable, or rejected.
+ * @return The cached value, or null when absent or unreadable.
  */
-export const readCacheState = <T>(
-	name: string,
-	parse?: (raw: unknown) => T | null,
-): T | null => {
+export const readCacheState = <T>(name: string): T | null => {
 	try {
 		const item = localStorage.getItem(getKey(name));
 		if (!item) {
 			return null;
 		}
 		const state = (JSON.parse(item) as { state?: unknown })?.state;
-		// Without a validator the stored shape is taken on trust, as it always
-		// has been. Pass one for anything a renderer walks: a truncated or
-		// stale entry would otherwise be handed straight to it.
-		return parse ? parse(state) : (state as T);
+		// The stored shape is taken on trust: `T` says what was written, not
+		// what came back. Storage can hand back a truncated entry, or one an
+		// older build wrote, so anything a renderer walks belongs behind a
+		// check where it is consumed — the workbench validates an arrangement
+		// in `loadSnapshot`, not here.
+		return state as T;
 	} catch (e) {
 		console.error(e);
 		return null;
@@ -65,22 +62,17 @@ export const writeCacheState = <T>(name: string, value: T): void => {
  *
  * @param initialState - Value to use when nothing is cached.
  * @param name - Cache name; see {@link getKey} for how it versions.
- * @param parse - Optional validator, as {@link readCacheState}.
  * @return The current value and a setter that caches it.
  */
-export const useCacheState = <T>(
-	initialState: T,
-	name: string,
-	parse?: (raw: unknown) => T | null,
-) => {
+export const useCacheState = <T>(initialState: T, name: string) => {
 	const [state, setState] = useState<T>(
-		() => readCacheState<T>(name, parse) ?? initialState,
+		() => readCacheState<T>(name) ?? initialState,
 	);
 
 	// Read on a name change, never depended on: both are routinely inline
 	// literals, so depending on them would re-read on every render.
-	const fallback = useRef({ initialState, parse });
-	fallback.current = { initialState, parse };
+	const fallback = useRef({ initialState });
+	fallback.current = { initialState };
 
 	// The initializer covered the name this hook mounted with; this is only
 	// for a caller that genuinely swaps names mid-life.
@@ -90,8 +82,8 @@ export const useCacheState = <T>(
 			return;
 		}
 		loaded.current = name;
-		const { initialState: fresh, parse: validate } = fallback.current;
-		setState(readCacheState<T>(name, validate) ?? fresh);
+		const { initialState: fresh } = fallback.current;
+		setState(readCacheState<T>(name) ?? fresh);
 	}, [name]);
 
 	/**
