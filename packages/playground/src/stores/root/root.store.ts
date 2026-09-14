@@ -98,6 +98,7 @@ export class RootStore {
 				enablePromptOptimizer: true,
 				enableDarkMode: true,
 				hideToolsInIframe: false,
+				hideChatHistory: false,
 				enableKnowledgeMCP: true,
 				allowEmbeddingOptions: true,
 				showActivityLog: true,

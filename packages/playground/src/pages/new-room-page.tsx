@@ -31,6 +31,7 @@ import {
 import landingImage from "@/assets/img/landing.png";
 import landingDarkImage from "@/assets/img/landing-darkmode.png";
 import {
+	RoomGreeting,
 	RoomInput,
 	RoomInputMenuFileExplorer,
 	RoomInputMenuMCP,
@@ -145,9 +146,6 @@ export const NewRoomPage = observer(() => {
 		null,
 	);
 	const submittedRef = useRef(false);
-	// Guards the greeting-room effect below so a remount / StrictMode
-	// double-invoke doesn't create two rooms for the same agent.
-	const greetingRoomStartedForRef = useRef<string>("");
 	const [mode, setMode] = useState<"chat" | "agent">("chat");
 
 	// tempRoomStore is only created once (createRoom below builds the real,
@@ -172,6 +170,15 @@ export const NewRoomPage = observer(() => {
 			data: null,
 		},
 	);
+
+	// The agent's scripted opening message — read straight off the workspace
+	// config (never sent to the model) so it can render on the landing page
+	// as soon as an agent is selected, without creating a room.
+	const agentGreeting =
+		getWorkspace.data?.workspace_id === selectedWorkspaceId &&
+		getWorkspace.data?.config_json?.greeting_enabled
+			? (getWorkspace.data?.config_json?.greeting ?? "")
+			: "";
 
 	// Fetch knowledge vector engine if knowledgeId is provided
 	const getKnowledge = usePixel<
@@ -328,38 +335,6 @@ export const NewRoomPage = observer(() => {
 	};
 
 	/**
-	 * Start a message-less room for an agent's scripted greeting — the room
-	 * exists with the workspace attached, but nothing is asked. No pixel ever
-	 * writes a message, so the greeting never reaches the model as context.
-	 */
-	const startAgentGreetingRoom = async (
-		workspaceId: string,
-		name: string,
-	) => {
-		if (isLoading) {
-			return;
-		}
-
-		try {
-			setIsLoading(true);
-
-			const options = buildRoomOptions();
-			const room = await chat.createEmptyRoom(
-				mode === "agent" ? "agent" : "chat",
-				name,
-				options,
-				workspaceId,
-			);
-			submittedRef.current = true;
-			navigate(`/room/${room.roomId}`);
-		} catch (error: unknown) {
-			handleCreateRoomError(error);
-		} finally {
-			setIsLoading(false);
-		}
-	};
-
-	/**
 	 * Effects
 	 */
 	// Handle workspace data loading
@@ -451,39 +426,6 @@ export const NewRoomPage = observer(() => {
 		tempRoomStore,
 		chat,
 	]);
-
-	// Select an agent whose greeting is enabled and non-empty → drop straight
-	// into an empty room with it already rendered, instead of the landing
-	// page. Guarded per-workspace so a remount/StrictMode double-invoke (or
-	// re-selecting the same agent) doesn't create a second room.
-	// biome-ignore lint/correctness/useExhaustiveDependencies: greetingRoomStartedForRef guards re-fires; startAgentGreetingRoom/mode/tempRoomStore/chat/navigate are stable enough in practice and re-listing them would re-run this on every render
-	useEffect(() => {
-		if (
-			!selectedWorkspaceId ||
-			getWorkspace.status !== "SUCCESS" ||
-			!getWorkspace.data
-		) {
-			return;
-		}
-		// Same outgoing-agent-data guard as the effect above.
-		if (getWorkspace.data.workspace_id !== selectedWorkspaceId) {
-			return;
-		}
-		if (greetingRoomStartedForRef.current === selectedWorkspaceId) {
-			return;
-		}
-
-		const cfg = getWorkspace.data.config_json;
-		if (!cfg?.greeting_enabled || !cfg.greeting) {
-			return;
-		}
-
-		greetingRoomStartedForRef.current = selectedWorkspaceId;
-		void startAgentGreetingRoom(
-			selectedWorkspaceId,
-			getWorkspace.data.name,
-		);
-	}, [selectedWorkspaceId, getWorkspace.status, getWorkspace.data]);
 
 	// Handle knowledge vector engine from URL parameter
 	useEffect(() => {
@@ -624,6 +566,12 @@ export const NewRoomPage = observer(() => {
 											</div>
 										) : null}
 									</div>
+								)}
+								{agentGreeting && (
+									<RoomGreeting
+										room={tempRoomStore}
+										greeting={agentGreeting}
+									/>
 								)}
 								<RoomInput
 									predefinedPrompts={

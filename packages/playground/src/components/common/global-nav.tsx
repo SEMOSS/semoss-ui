@@ -513,26 +513,30 @@ export const GlobalNav = observer(() => {
 									</SidebarMenuItem>
 								)}
 
-								<SidebarMenuItem>
-									<SidebarMenuButton
-										asChild
-										isActive={
-											!!matchPath("/chats", pathname)
-										}
-										tooltip={{
-											children: t("nav.allChats.tooltip"),
-											hidden: false,
-										}}
-									>
-										<Link
-											to={"/chats"}
-											aria-label={"chats"}
+								{!root.theme.featureFlags?.hideChatHistory && (
+									<SidebarMenuItem>
+										<SidebarMenuButton
+											asChild
+											isActive={
+												!!matchPath("/chats", pathname)
+											}
+											tooltip={{
+												children: t(
+													"nav.allChats.tooltip",
+												),
+												hidden: false,
+											}}
 										>
-											<MessagesSquareIcon />
-											{t("nav.allChats.label")}
-										</Link>
-									</SidebarMenuButton>
-								</SidebarMenuItem>
+											<Link
+												to={"/chats"}
+												aria-label={"chats"}
+											>
+												<MessagesSquareIcon />
+												{t("nav.allChats.label")}
+											</Link>
+										</SidebarMenuButton>
+									</SidebarMenuItem>
+								)}
 
 								{root.theme.sidebar.headerItems.map(
 									(item, index) => (
