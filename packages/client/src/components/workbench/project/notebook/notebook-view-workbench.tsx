@@ -1,25 +1,17 @@
 import { useMemo } from "react";
-import { useProject } from "@/hooks";
+import { FILE_PANEL_COMPONENTS } from "@semoss/panels";
+import { useCacheState } from "@semoss/ui/next";
 import type {
 	WorkbenchLayout,
 	WorkbenchPanelConfigAny,
-} from "@/stores/workbench";
-import { Workbench } from "../../core";
-import {
-	FILE_CODE_EDITOR_PANEL,
-	FILE_DOWNLOAD_PANEL,
-	FILE_EXPLORER_PANEL,
-	FILE_IMAGE_VIEWER_PANEL,
-	FILE_MARKDOWN_EDITOR_PANEL,
-	FILE_MCP_EDITOR_PANEL,
-	FILE_NOTEBOOK_EDITOR_PANEL,
-	FILE_PDF_VIEWER_PANEL,
-	FILE_PPTX_VIEWER_PANEL,
-} from "../../files";
+	WorkbenchSnapshot,
+} from "@semoss/workbench";
+import { parseWorkbenchSnapshot, Workbench } from "@semoss/workbench";
+import { useProject } from "@/hooks";
 import {
 	WORKBENCH_COMPONENTS,
 	WORKBENCH_PANEL_RECORDS,
-} from "../../workbench.constants";
+} from "@/stores/workbench";
 
 /** Notebook every project of type NOTEBOOK is created with. */
 const NOTEBOOK_PATH = "/public/main.ipynb";
@@ -49,8 +41,7 @@ const createNotebookViewWorkbenchLayout = (
 			name: NOTEBOOK_NAME,
 			canClose: true,
 			config: {
-				type: "PROJECT",
-				id: projectId,
+				mode: { type: "APP", app: projectId },
 				name: NOTEBOOK_NAME,
 				path: NOTEBOOK_PATH,
 			},
@@ -58,8 +49,7 @@ const createNotebookViewWorkbenchLayout = (
 		[WORKBENCH_PANEL_RECORDS.FILE_EXPLORER.id]: {
 			...WORKBENCH_PANEL_RECORDS.FILE_EXPLORER,
 			config: {
-				type: "PROJECT",
-				id: projectId,
+				mode: { type: "APP", app: projectId },
 				initialPath: PUBLIC_ROOT_PATH,
 			},
 		},
@@ -74,19 +64,11 @@ const createNotebookViewWorkbenchLayout = (
 });
 
 /** Blueprints, keyed by type. Module-scope so identities never churn. */
-const NOTEBOOK_VIEW_WORKBENCH_COMPONENTS: Record<
+export const NOTEBOOK_VIEW_WORKBENCH_COMPONENTS: Record<
 	string,
 	WorkbenchPanelConfigAny
 > = {
-	[WORKBENCH_COMPONENTS.FILE_EXPLORER]: FILE_EXPLORER_PANEL,
-	[WORKBENCH_COMPONENTS.FILE_CODE_EDITOR]: FILE_CODE_EDITOR_PANEL,
-	[WORKBENCH_COMPONENTS.FILE_DOWNLOAD]: FILE_DOWNLOAD_PANEL,
-	[WORKBENCH_COMPONENTS.FILE_IMAGE_VIEWER]: FILE_IMAGE_VIEWER_PANEL,
-	[WORKBENCH_COMPONENTS.FILE_MARKDOWN_EDITOR]: FILE_MARKDOWN_EDITOR_PANEL,
-	[WORKBENCH_COMPONENTS.FILE_NOTEBOOK_EDITOR]: FILE_NOTEBOOK_EDITOR_PANEL,
-	[WORKBENCH_COMPONENTS.FILE_PDF_VIEWER]: FILE_PDF_VIEWER_PANEL,
-	[WORKBENCH_COMPONENTS.FILE_PPTX_VIEWER]: FILE_PPTX_VIEWER_PANEL,
-	[WORKBENCH_COMPONENTS.FILE_MCP_EDITOR]: FILE_MCP_EDITOR_PANEL,
+	...FILE_PANEL_COMPONENTS,
 };
 
 /**
@@ -94,17 +76,32 @@ const NOTEBOOK_VIEW_WORKBENCH_COMPONENTS: Record<
  * page. Shows `main.ipynb` and the published `/public` files without the
  * terminal, assistant, or settings surfaces of the editable workbench.
  */
-export const NotebookViewWorkbench: React.FC = () => {
+interface NotebookViewWorkbenchProps {
+	/**
+	 * Which mount this is. The notebook's own view page and the share page
+	 * render the same dock and keep separate arrangements, and nothing inside
+	 * the shell tells them apart.
+	 */
+	variant: "view" | "share";
+}
+
+export const NotebookViewWorkbench: React.FC<NotebookViewWorkbenchProps> = ({
+	variant,
+}) => {
 	const { project } = useProject();
 	const workbenchLayout = useMemo(
 		() => createNotebookViewWorkbenchLayout(project.project_id),
 		[project.project_id],
 	);
 
-	return (
-		<Workbench
-			layout={workbenchLayout}
-			components={NOTEBOOK_VIEW_WORKBENCH_COMPONENTS}
-		/>
+	// This shell is mounted by two pages — the notebook's own view and the
+	// share page — and they keep separate arrangements, so the variant is a
+	// prop rather than something the shell can work out for itself.
+	const [snapshot, onSnapshotChange] = useCacheState<WorkbenchSnapshot>(
+		workbenchLayout,
+		`workbench-layout--${project.project_id}-${variant}--1`,
+		parseWorkbenchSnapshot,
 	);
+
+	return <Workbench snapshot={snapshot} onUnmount={onSnapshotChange} />;
 };

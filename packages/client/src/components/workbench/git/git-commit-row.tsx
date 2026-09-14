@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { useInsight, usePixel } from "@semoss/sdk/react";
+import { useWorkbench } from "@semoss/workbench";
 import type { GitCommit, GitCommitFile } from "@/components/git";
 import { GitCommitRow } from "@/components/git";
-import { useWorkbench } from "@/hooks";
 import { WORKBENCH_COMPONENTS } from "@/stores/workbench";
 import type { GitPanelScopeParams } from "./git-panel.types";
 

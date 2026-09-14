@@ -15,13 +15,15 @@
     },
     "dependencies": {
         "@semoss/i18n": "workspace:*",
+        "@semoss/panels": "workspace:*",
         "@semoss/sdk": "workspace:*",
         "@semoss/shared": "workspace:*",
         "@semoss/ui": "workspace:*",
-        "flexlayout-react": "^0.8.1",
+        "@semoss/workbench": "workspace:*",
         "lucide-react": "^0.545.0",
         "react": "^19.0.0",
         "react-dom": "^19.0.0",
+        "zustand": "^5.0.0",
         "tailwindcss": "^4.3.3"
     },
     "devDependencies": {

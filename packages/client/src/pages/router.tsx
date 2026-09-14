@@ -10,6 +10,7 @@ import { LoginPage } from "./login-page";
 import { PageLayout } from "./page-layout";
 import { PrivacyNoticePage } from "./privacy-notice-page";
 import { PROJECT_ROUTES } from "./project";
+import { ProjectLayout } from "./project/project-layout";
 import { PROMPT_ROUTE } from "./prompt/prompt.routes";
 import { SETTINGS_ROUTE } from "./settings/settings.routes";
 import { SharePage } from "./share-page";
@@ -20,7 +21,15 @@ const router = createHashRouter([
 		path: "/",
 		element: <AuthenticatedLayout />,
 		children: [
-			{ path: "s/:appId/*", element: <SharePage /> },
+			{
+				// ProjectLayout provides the ProjectContext the share view reads
+				path: "s/:appId",
+				element: <ProjectLayout />,
+				children: [
+					{ index: true, element: <SharePage /> },
+					{ path: "*", element: <SharePage /> },
+				],
+			},
 			{
 				// pathless layout route (replaces the former `path="*"` wrapper)
 				element: <PageLayout />,

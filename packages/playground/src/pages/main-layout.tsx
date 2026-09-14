@@ -25,6 +25,7 @@ import {
 import { GlobalFooter, GlobalNav } from "@/components";
 import { GlobalDialog } from "@/components/common/global-dialog";
 import { LandingTour } from "@/components/common/landing-tour";
+import { ROOM_PANEL_COMPONENTS } from "@/components/room/panels";
 import { ChatContext, NavbarContext, TourContext } from "@/contexts";
 import { useRoot } from "@/hooks";
 import { useThemeTitle } from "@/hooks/use-theme-title";
@@ -54,7 +55,7 @@ export const MainLayout = observer(() => {
 
 	// set up the chat store
 	const chatStore = useMemo(() => {
-		const store = new ChatStore(root.theme, actions);
+		const store = new ChatStore(root.theme, actions, ROOM_PANEL_COMPONENTS);
 
 		// initialize it
 		store.initialize();
