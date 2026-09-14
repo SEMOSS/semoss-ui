@@ -1,10 +1,11 @@
 import { PanelsTopLeftIcon } from "lucide-react";
-import { CodeRenderer } from "@/components/project";
-import { useProject, useWorkbenchControl } from "@/hooks";
 import type {
 	WorkbenchComponent,
 	WorkbenchPanelConfig,
-} from "@/stores/workbench";
+} from "@semoss/workbench";
+import { useWorkbenchControl } from "@semoss/workbench";
+import { CodeRenderer } from "@/components/project";
+import { useProject } from "@/hooks";
 import { CodeAppRendererRefreshControl } from "./code-app-renderer-refresh-control";
 
 /** The config an app-preview instance is opened with. */

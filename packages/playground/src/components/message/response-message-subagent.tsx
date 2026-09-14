@@ -3,7 +3,8 @@ import { observer } from "mobx-react-lite";
 import { useTranslation } from "@semoss/i18n";
 import type { AgentRunStatusValue } from "@semoss/sdk";
 import { cn, Spinner } from "@semoss/ui/next";
-import type { ResponseMessageStore } from "@/stores";
+import { useSidebarPanelActive } from "@/hooks";
+import { type ResponseMessageStore, ROOM_PANEL_TYPES } from "@/stores";
 import type { PixelMessageSubagentPart } from "@/types";
 
 export const getSubagentState = (
@@ -68,17 +69,19 @@ export const ResponseMessageSubagent: React.FC<ResponseMessageSubagentProps> =
 		const { room } = message;
 		const { subagent } = part;
 		const state = getSubagentState(subagent.status, subagent, t);
-		const nodeId = `subagent--${subagent.id}`;
-		const isActive = room.isSidebarNodeSelected(nodeId);
+		const panelConfig = { subagentId: subagent.id };
+		const isActive = useSidebarPanelActive(
+			room,
+			ROOM_PANEL_TYPES.SUBAGENT,
+			panelConfig,
+		);
 
 		const handleClick = () => {
-			room.addSidebarNode(nodeId, {
-				type: "tab",
-				name: subagent.alias || t("subagent.title"),
-				component: "room-subagent",
-				config: { subagentId: subagent.id },
-				enableClose: true,
-			});
+			room.openSidebarPanel(
+				ROOM_PANEL_TYPES.SUBAGENT,
+				panelConfig,
+				subagent.alias || t("subagent.title"),
+			);
 		};
 
 		return (

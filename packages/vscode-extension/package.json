@@ -138,7 +138,7 @@
         "@semoss/sdk": "workspace:*",
         "archiver": "^7.0.1",
         "form-data": "^4.0.0",
-        "js-yaml": "^4.1.0",
+        "js-yaml": "^4.3.2",
         "ncp": "^2.0.0",
         "node-fetch": "^3.3.2",
         "node-stream-zip": "^1.15.0"

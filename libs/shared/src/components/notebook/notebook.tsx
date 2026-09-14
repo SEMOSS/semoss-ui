@@ -102,7 +102,8 @@ export interface NotebookHandle {
  * run server-side (Python via the `Py()` reactor) with their outputs mapped
  * back to nbformat. Edits are surfaced through `onChange`; running and
  * serializing are also available imperatively via `ref` (`NotebookHandle`).
- * File I/O (load / save / download) is owned by the `FileNotebook` wrapper.
+ * File I/O (load / save / download) is owned by the caller — the workbench's
+ * `FILE_NOTEBOOK_EDITOR_PANEL`, or the terminal's notebook tab.
  */
 export const Notebook = forwardRef<NotebookHandle, NotebookProps>(
 	(
@@ -680,8 +681,9 @@ export const Notebook = forwardRef<NotebookHandle, NotebookProps>(
 			});
 		};
 
-		// Expose running + serialization so a wrapper (e.g. FileNotebook) can drive
-		// the notebook from its own toolbar and persist the current state.
+		// Expose running + serialization so a wrapper (e.g. the workbench's
+		// notebook panel) can drive the notebook from its own toolbar and
+		// persist the current state.
 		useImperativeHandle(ref, () => ({
 			runAll: runAllCells,
 			interrupt: interruptExecution,

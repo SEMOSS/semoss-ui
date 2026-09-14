@@ -1,6 +1,6 @@
 import { Table2Icon } from "lucide-react";
-import { useWorkbench } from "@/hooks";
-import type { WorkbenchChrome } from "@/stores/workbench";
+import type { WorkbenchChrome } from "@semoss/workbench";
+import { useWorkbench } from "@semoss/workbench";
 import type { DatabaseQueryResultsConfig } from "./database-query-results-panel";
 
 /**

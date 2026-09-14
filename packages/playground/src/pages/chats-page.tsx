@@ -1,6 +1,7 @@
 import { SearchIcon, StarIcon, Trash2Icon } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Navigate } from "react-router";
 import { useTranslation } from "@semoss/i18n";
 import { useIteratorPixel, usePixel } from "@semoss/sdk/react";
 import {
@@ -24,7 +25,7 @@ import {
 } from "@semoss/ui/next";
 import { CHECKBOX_CLASS, ChatRow, type RoomItem } from "@/components";
 import { SYSTEM__PLAYGROUND } from "@/constants";
-import { useChat, useGlobalBreadcrumbs } from "@/hooks";
+import { useChat, useGlobalBreadcrumbs, useRoot } from "@/hooks";
 import {
 	DATE_BUCKET_ORDER,
 	getDateBucket,
@@ -40,6 +41,7 @@ import {
 export const ChatsPage = observer(() => {
 	const { t } = useTranslation(["workspace", "common", "sidebar"]);
 	const { chat } = useChat();
+	const { root } = useRoot();
 
 	const [search, setSearch] = useState("");
 	const debouncedSearch = useDebouncedValue(search);
@@ -379,6 +381,10 @@ export const ChatsPage = observer(() => {
 			onTogglePin={() => handleTogglePin(room.ROOM_ID)}
 		/>
 	);
+
+	if (root.theme.featureFlags?.hideChatHistory) {
+		return <Navigate to="/" replace />;
+	}
 
 	return (
 		<div
