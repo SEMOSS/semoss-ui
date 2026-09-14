@@ -20,15 +20,15 @@ import {
 	WorkbenchAccessLoading,
 	writeSpawnDragSpec,
 } from "@semoss/workbench";
-import { FILE_PANEL_TYPES, MCP } from "../constants/file-panel.constants";
-import { useAccess } from "../hooks/use-access";
-import { useWorkbenchFilePanels } from "../hooks/use-workbench-file-panels";
+import { FILE_PANEL_TYPES, MCP } from "../../constants/file-panel.constants";
+import { useAccess } from "../../hooks/use-access";
+import { useWorkbenchFilePanels } from "../../hooks/use-workbench-file-panels";
 import {
 	type FilePanelMode,
 	getFilePanelResource,
 	sameFileMode,
-} from "../types/file-panel.types";
-import { getFilePanelType } from "../utility/file-editor.utility";
+} from "../../types/file-panel.types";
+import { getFilePanelType } from "../../utility/file-editor.utility";
 import { FileExplorerPane } from "./file-explorer-pane";
 
 export interface FileExplorerParams {

@@ -5,18 +5,18 @@ import type {
 	WorkbenchPanelProps,
 } from "@semoss/workbench";
 import { useWorkbenchControl } from "@semoss/workbench";
-import { useFileBuffer } from "../hooks/use-file-buffer";
-import { type FilePanelParams, useFilePanel } from "../hooks/use-file-panel";
-import { matchesFilePanel } from "../types/file-panel.types";
+import { useFileBuffer } from "../../hooks/use-file-buffer";
+import { type FilePanelParams, useFilePanel } from "../../hooks/use-file-panel";
+import { matchesFilePanel } from "../../types/file-panel.types";
 import {
 	getCodeEditorLanguage,
 	getFileCodeEditorMenuItems,
-} from "../utility/file-editor.utility";
+} from "../../utility/file-editor.utility";
 import {
 	FileEditorControl,
 	type FileEditorControlValue,
-} from "./file-panel-control";
-import { FilePanelIcon } from "./file-panel-icon";
+} from "../file-panel-control";
+import { FilePanelIcon } from "../file-panel-icon";
 
 /** The view switch this editor offers. Module scope — the control reads it. */
 const MARKDOWN_VIEW_MODES = [

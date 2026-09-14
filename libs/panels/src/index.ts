@@ -1,4 +1,4 @@
-export { FileExplorerPane } from "./components/file-explorer-pane";
+export { FileExplorerPane } from "./components/explorers/file-explorer-pane";
 export { FILE_PANEL_COMPONENTS } from "./components/file-panel.components";
 export { MCPJsonEditor, MetadataHelpDialog } from "./components/mcp";
 export {

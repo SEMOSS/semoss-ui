@@ -10,10 +10,10 @@ import {
 	type FilePanelParams,
 	type FilePanelValue,
 	useFilePanel,
-} from "../hooks/use-file-panel";
-import { matchesFilePanel } from "../types/file-panel.types";
-import { FileRefreshControl } from "./file-panel-control";
-import { FilePanelIcon } from "./file-panel-icon";
+} from "../../hooks/use-file-panel";
+import { matchesFilePanel } from "../../types/file-panel.types";
+import { FileRefreshControl } from "../file-panel-control";
+import { FilePanelIcon } from "../file-panel-icon";
 
 /** Preview a PDF from a project, engine, or insight resource. */
 const FilePdfViewerPanel = ({

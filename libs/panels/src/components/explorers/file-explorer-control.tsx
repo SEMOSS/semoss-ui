@@ -10,8 +10,8 @@ import {
 	TooltipTrigger,
 } from "@semoss/ui/next";
 import { WORKBENCH_STYLES, type WorkbenchChromeProps } from "@semoss/workbench";
-import { useAccessStore } from "../hooks/use-access";
-import { getPermissionKey } from "../types/access.types";
+import { useAccessStore } from "../../hooks/use-access";
+import { getPermissionKey } from "../../types/access.types";
 import type { FileExplorerParams } from "./file-explorer-panel";
 
 /** File explorer refresh and create actions for the active panel. */

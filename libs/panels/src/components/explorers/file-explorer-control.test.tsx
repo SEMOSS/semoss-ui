@@ -2,8 +2,8 @@ import { render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import type { FileExplorerApi, FileMode } from "@semoss/shared";
 import type { WorkbenchChromeProps } from "@semoss/workbench";
-import { AccessStoreProvider } from "../contexts/access.context";
-import { createAccessStore } from "../stores/access.store";
+import { AccessStoreProvider } from "../../contexts/access.context";
+import { createAccessStore } from "../../stores/access.store";
 import { FileExplorerControl } from "./file-explorer-control";
 import type { FileExplorerParams } from "./file-explorer-panel";
 

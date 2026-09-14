@@ -8,11 +8,11 @@ import {
 	type FilePanelParams,
 	type FilePanelValue,
 	useFilePanel,
-} from "../hooks/use-file-panel";
-import { matchesFilePanel } from "../types/file-panel.types";
-import { getImageMimeType } from "../utility/file-editor.utility";
-import { FileRefreshControl } from "./file-panel-control";
-import { FilePanelIcon } from "./file-panel-icon";
+} from "../../hooks/use-file-panel";
+import { matchesFilePanel } from "../../types/file-panel.types";
+import { getImageMimeType } from "../../utility/file-editor.utility";
+import { FileRefreshControl } from "../file-panel-control";
+import { FilePanelIcon } from "../file-panel-icon";
 
 /** Preview an image file from a project, engine, or insight resource. */
 const FileImageViewerPanel = ({

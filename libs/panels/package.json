@@ -4,8 +4,6 @@
 	"exports": {
 		"./globals.css": "./src/styles/globals.css",
 		".": "./src/index.ts",
-		"./files/file-pptx-viewer-content": "./src/files/file-pptx-viewer-content.tsx",
-		"./files/file-pptx-viewer-content": "./src/components/file-pptx-viewer-content.tsx",
 		"./vite": "./src/vite/index.ts"
 	},
 	"scripts": {

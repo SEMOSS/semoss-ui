@@ -9,19 +9,19 @@ import {
 	WorkbenchAccessError,
 	WorkbenchAccessLoading,
 } from "@semoss/workbench";
-import { useFilePanel } from "../hooks/use-file-panel";
+import { useFilePanel } from "../../hooks/use-file-panel";
 import {
 	type FilePanelMode,
 	matchesFilePanel,
-} from "../types/file-panel.types";
-import type { MCPJsonData } from "../types/mcp.types";
+} from "../../types/file-panel.types";
+import type { MCPJsonData } from "../../types/mcp.types";
 import {
 	getFileReadPixel,
 	getFileSavePixel,
-} from "../utility/file-panel.utility";
-import { readMCPFile, toFileText } from "../utility/mcp-json-utils";
-import { FilePanelIcon } from "./file-panel-icon";
-import { MCPJsonEditor } from "./mcp";
+} from "../../utility/file-panel.utility";
+import { readMCPFile, toFileText } from "../../utility/mcp-json-utils";
+import { FilePanelIcon } from "../file-panel-icon";
+import { MCPJsonEditor } from ".";
 
 /** MCP toolboxes are project- or engine-scoped; there is no insight variant. */
 export interface FileMcpEditorParams {

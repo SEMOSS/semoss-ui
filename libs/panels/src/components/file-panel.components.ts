@@ -1,14 +1,18 @@
 import type { WorkbenchPanelConfigAny } from "@semoss/workbench";
 import { FILE_PANEL_TYPES } from "../constants/file-panel.constants";
-import { FILE_CODE_EDITOR_PANEL } from "./file-code-editor-panel";
+import {
+	FILE_CODE_EDITOR_PANEL,
+	FILE_MARKDOWN_EDITOR_PANEL,
+	FILE_NOTEBOOK_EDITOR_PANEL,
+} from "./editors";
+import { FILE_EXPLORER_PANEL } from "./explorers";
 import { FILE_DOWNLOAD_PANEL } from "./file-download-panel";
-import { FILE_EXPLORER_PANEL } from "./file-explorer-panel";
-import { FILE_IMAGE_VIEWER_PANEL } from "./file-image-viewer-panel";
-import { FILE_MARKDOWN_EDITOR_PANEL } from "./file-markdown-editor-panel";
-import { FILE_MCP_EDITOR_PANEL } from "./file-mcp-editor-panel";
-import { FILE_NOTEBOOK_EDITOR_PANEL } from "./file-notebook-editor-panel";
-import { FILE_PDF_VIEWER_PANEL } from "./file-pdf-viewer-panel";
-import { FILE_PPTX_VIEWER_PANEL } from "./file-pptx-viewer-panel";
+import { FILE_MCP_EDITOR_PANEL } from "./mcp/file-mcp-editor-panel";
+import {
+	FILE_IMAGE_VIEWER_PANEL,
+	FILE_PDF_VIEWER_PANEL,
+	FILE_PPTX_VIEWER_PANEL,
+} from "./viewers";
 
 /**
  * Every file-backed panel, keyed by type. Spread into a domain workbench's

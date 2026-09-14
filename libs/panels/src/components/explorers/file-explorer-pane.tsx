@@ -8,7 +8,7 @@ import {
 	NewFileOverlay,
 } from "@semoss/shared";
 import type { WorkbenchPanelId } from "@semoss/workbench";
-import { useExplorerPanelValue } from "../hooks/use-explorer-panel-value";
+import { useExplorerPanelValue } from "../../hooks/use-explorer-panel-value";
 
 interface FileExplorerPaneProps {
 	/** The panel instance, for the chrome control. */

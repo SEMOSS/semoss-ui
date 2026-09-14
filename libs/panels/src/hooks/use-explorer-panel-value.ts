@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import type { FileExplorerApi } from "@semoss/shared";
 import type { WorkbenchPanelId } from "@semoss/workbench";
 import { useWorkbenchControl } from "@semoss/workbench";
-import { FileExplorerControl } from "../components/file-explorer-control";
+import { FileExplorerControl } from "../components/explorers/file-explorer-control";
 
 /**
  * Publish an explorer's api to its panel's scratch value and mount the shared

@@ -16,13 +16,13 @@ import type {
 	WorkbenchPanelProps,
 } from "@semoss/workbench";
 import { useWorkbenchControl } from "@semoss/workbench";
-import { type FilePanelParams, useFilePanel } from "../hooks/use-file-panel";
-import { matchesFilePanel } from "../types/file-panel.types";
+import { type FilePanelParams, useFilePanel } from "../../hooks/use-file-panel";
+import { matchesFilePanel } from "../../types/file-panel.types";
 import {
 	FileEditorControl,
 	type FileEditorControlValue,
-} from "./file-panel-control";
-import { FilePanelIcon } from "./file-panel-icon";
+} from "../file-panel-control";
+import { FilePanelIcon } from "../file-panel-icon";
 
 const FilePptxViewerContent = lazy(() => import("./file-pptx-viewer-content"));
 
