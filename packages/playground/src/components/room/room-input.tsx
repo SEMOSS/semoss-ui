@@ -95,6 +95,59 @@ try {
 
 const noop = () => {};
 
+const DRAFT_STORAGE_KEY_PREFIX = "semoss:playground:room-draft:";
+const TEMP_COMPOSE_ID_KEY = "semoss:playground:temp-compose-id";
+
+/**
+ * The new-room page always passes the same "temp" roomId (no real room
+ * exists yet), so multiple tabs each starting a new chat would otherwise
+ * share -- and clobber -- one draft slot. Give "temp" a per-tab id via
+ * sessionStorage: stable across a same-tab reload (what session timeout
+ * triggers) but distinct per tab.
+ */
+const getDraftStorageId = (roomId: string): string => {
+	if (roomId !== "temp") return roomId;
+
+	try {
+		let composeId = window.sessionStorage.getItem(TEMP_COMPOSE_ID_KEY);
+		if (!composeId) {
+			composeId = Math.random().toString(36).slice(2);
+			window.sessionStorage.setItem(TEMP_COMPOSE_ID_KEY, composeId);
+		}
+		return `temp-${composeId}`;
+	} catch {
+		return roomId;
+	}
+};
+
+/**
+ * Persist the in-progress draft per room in localStorage so it survives a
+ * hard page reload (e.g. the full navigation the app does on session
+ * timeout), not just an in-memory unmount/remount.
+ */
+const readDraft = (roomId: string): string => {
+	const key = DRAFT_STORAGE_KEY_PREFIX + getDraftStorageId(roomId);
+	try {
+		return window.localStorage.getItem(key) ?? "";
+	} catch {
+		return "";
+	}
+};
+
+const writeDraft = (roomId: string, value: string) => {
+	const key = DRAFT_STORAGE_KEY_PREFIX + getDraftStorageId(roomId);
+	try {
+		if (value) {
+			window.localStorage.setItem(key, value);
+		} else {
+			window.localStorage.removeItem(key);
+		}
+	} catch {
+		// localStorage can throw (quota exceeded, private browsing) -- the
+		// draft is a nicety, not something worth surfacing an error for.
+	}
+};
+
 // ============================================================================
 // TypeScript Interfaces
 // ============================================================================
@@ -481,6 +534,25 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 				root.append(paragraph);
 			});
 		}, [initialValue]);
+
+		// Restore a persisted draft for this room, e.g. after the page had to
+		// hard-reload to re-authenticate. initialValue (prompt library, etc.)
+		// takes priority since it reflects an explicit user action.
+		useEffect(() => {
+			if (initialValue) return;
+
+			const draft = readDraft(room.roomId);
+			if (!draft) return;
+
+			editorRef.current?.update(() => {
+				const root = $getRoot();
+				root.clear();
+				const paragraph = $createParagraphNode();
+				paragraph.append($createTextNode(draft));
+				root.append(paragraph);
+			});
+			// biome-ignore lint/correctness/useExhaustiveDependencies: only restore once per room mount, not on every initialValue change
+		}, [room.roomId]);
 		// Find and cache the ScrollArea viewport element
 		useEffect(() => {
 			if (contentEditableRef.current) {
@@ -1106,6 +1178,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 										text.length === 0 && !hasSlashCommands,
 									);
 									setInputText(text);
+									writeDraft(room.roomId, text);
 
 									// Check if content is scrollable
 									setTimeout(() => {
