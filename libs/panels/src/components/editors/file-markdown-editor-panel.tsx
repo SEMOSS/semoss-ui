@@ -81,7 +81,6 @@ const FileMarkdownEditorPanel = ({
 					<Markdown>{buffer.content}</Markdown>
 				</div>
 			)}
-			{panel.overlay}
 		</div>
 	);
 };

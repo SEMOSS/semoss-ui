@@ -227,12 +227,7 @@ const FileNotebookEditorPanel = ({
 			</div>
 		);
 
-	return (
-		<div className="relative size-full">
-			{body}
-			{panel.overlay}
-		</div>
-	);
+	return <div className="relative size-full">{body}</div>;
 };
 
 /** Scope-aware notebook editor blueprint shared by all workbenches. */

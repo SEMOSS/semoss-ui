@@ -120,7 +120,6 @@ const FilePptxViewerPanel = ({
 					onDirtyChange={setIsDirty}
 				/>
 			</Suspense>
-			{panel.overlay}
 		</div>
 	);
 };

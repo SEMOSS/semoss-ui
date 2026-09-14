@@ -67,7 +67,6 @@ const FileCodeEditorPanel = ({
 				})}
 				onChange={(value) => buffer.setContent(value ?? "")}
 			/>
-			{panel.overlay}
 		</div>
 	);
 };

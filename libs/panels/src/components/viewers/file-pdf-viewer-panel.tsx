@@ -51,7 +51,6 @@ const FilePdfViewerPanel = ({
 					</Button>
 				</div>
 			</object>
-			{panel.overlay}
 		</div>
 	);
 };

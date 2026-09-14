@@ -1,17 +1,18 @@
-import { type FC, type ReactNode, useCallback } from "react";
+import { type FC, useCallback } from "react";
 import { cn, Separator } from "@semoss/ui/next";
+import { WORKBENCH_STYLES } from "../../constants/workbench.constants";
 import { useWorkbench } from "../../hooks";
 import type {
 	WorkbenchBorderSlot,
 	WorkbenchBorderSlotCtx,
 	WorkbenchSide,
 } from "../../types";
-import { WORKBENCH_STYLES } from "./workbench.constants";
-import { WorkbenchPanelContextMenu } from "./workbench-context-menu";
+import { resolveBorderSlot } from "../../utility/workbench-border-slot";
+import { WorkbenchPanelContextMenu } from "../menu/workbench-context-menu";
 import {
 	WorkbenchPanelControls,
 	WorkbenchPanelHeaderContent,
-} from "./workbench-panel-header";
+} from "../panel/workbench-panel-header";
 import { WorkbenchResizer } from "./workbench-resizer";
 import { WorkbenchTab } from "./workbench-tab";
 
@@ -64,12 +65,6 @@ export interface WorkbenchBorderProps {
 	side: WorkbenchSide;
 	slots?: { before?: WorkbenchBorderSlot; after?: WorkbenchBorderSlot };
 }
-
-/** External rail content: a node as-is, or a function of the border's state. */
-export const resolveBorderSlot = (
-	slot: WorkbenchBorderSlot | undefined,
-	ctx: WorkbenchBorderSlotCtx,
-): ReactNode => (typeof slot === "function" ? slot(ctx) : slot);
 
 /** One border edge: its icon rail, and the open panel body when expanded. */
 export const WorkbenchBorder: FC<WorkbenchBorderProps> = ({ side, slots }) => {

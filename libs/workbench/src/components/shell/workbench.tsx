@@ -8,13 +8,14 @@ import type {
 	WorkbenchPanelRecord,
 	WorkbenchSnapshot,
 } from "../../types";
-import { resolveBorderSlot, WorkbenchBorder } from "./workbench-border";
-import { WorkbenchCommandPalette } from "./workbench-command-palette";
+import { resolveBorderSlot } from "../../utility/workbench-border-slot";
+import { WorkbenchCommandPalette } from "../command/workbench-command-palette";
+import { WorkbenchBorder } from "../dock/workbench-border";
+import { WorkbenchStage } from "../dock/workbench-stage";
+import { WorkbenchMobile } from "../mobile/workbench-mobile";
+import { WorkbenchPanelLayer } from "../panel/workbench-panel-layer";
 import { WorkbenchDragLayer } from "./workbench-drag-layer";
-import { WorkbenchMobile } from "./workbench-mobile";
-import { WorkbenchPanelLayer } from "./workbench-panel-layer";
 import { WorkbenchSlotMeasure } from "./workbench-slot-measure";
-import { WorkbenchStage } from "./workbench-stage";
 
 /**
  * Whether whatever has focus should get Escape before the shell does — a field

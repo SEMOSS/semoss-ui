@@ -15,6 +15,7 @@ import {
 	TooltipContent,
 	TooltipTrigger,
 } from "@semoss/ui/next";
+import { WORKBENCH_STYLES } from "../../constants/workbench.constants";
 import { useWorkbench } from "../../hooks";
 import { measure } from "../../stores";
 import type {
@@ -22,8 +23,7 @@ import type {
 	WorkbenchPanelRecord,
 	WorkbenchTabset as WorkbenchTabsetNode,
 } from "../../types";
-import { WORKBENCH_STYLES } from "./workbench.constants";
-import { WorkbenchPanelControls } from "./workbench-panel-header";
+import { WorkbenchPanelControls } from "../panel/workbench-panel-header";
 import { WorkbenchResizer } from "./workbench-resizer";
 import { WorkbenchTab } from "./workbench-tab";
 import { WorkbenchTabStrip } from "./workbench-tab-strip";

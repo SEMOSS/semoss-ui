@@ -15,7 +15,7 @@ import {
 } from "@semoss/ui/next";
 import { useWorkbench } from "../../hooks";
 import type { WorkbenchBorderSlot } from "../../types";
-import { resolveBorderSlot } from "./workbench-border";
+import { resolveBorderSlot } from "../../utility/workbench-border-slot";
 
 export interface WorkbenchMobileDrawerProps {
 	open: boolean;

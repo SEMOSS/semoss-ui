@@ -6,7 +6,7 @@ import {
 	TooltipContent,
 	TooltipTrigger,
 } from "@semoss/ui/next";
-import { WORKBENCH_STYLES } from "./workbench.constants";
+import { WORKBENCH_STYLES } from "../../constants/workbench.constants";
 
 interface WorkbenchChromeButtonProps {
 	/** The glyph. Sized by the button, so pass the component, not an element. */

@@ -5,10 +5,7 @@ import type {
 	WorkbenchPanelConfig,
 	WorkbenchPanelProps,
 } from "@semoss/workbench";
-import {
-	WorkbenchAccessError,
-	WorkbenchAccessLoading,
-} from "@semoss/workbench";
+import { WorkbenchPanelError, WorkbenchPanelLoading } from "@semoss/workbench";
 import { useFilePanel } from "../../hooks/use-file-panel";
 import {
 	type FilePanelMode,
@@ -79,19 +76,17 @@ const FileMcpEditorPanel = ({
 		}
 	};
 
-	// gated inline rather than by early return: every branch is a flex child
-	// of the same column, and `useFilePanel`'s full-panel gates are not
+	// Gated inline rather than by early return, so every branch stays a child
+	// of the same column. Each gate is that column's only child in its own
+	// state -- every other branch requires `access.status === "ready"` -- so a
+	// full-size gate fills the column without a flex override.
 	return (
 		<div className="relative flex h-full w-full flex-col gap-1.5 overflow-hidden bg-background py-1">
 			{access.status === "loading" && (
-				<WorkbenchAccessLoading
-					className="flex-1"
-					label="Loading resource access"
-				/>
+				<WorkbenchPanelLoading label="Loading resource access" />
 			)}
 			{access.status === "error" && (
-				<WorkbenchAccessError
-					className="flex-1"
+				<WorkbenchPanelError
 					message={access.error}
 					onRetry={() => void access.refresh()}
 				/>
@@ -127,7 +122,6 @@ const FileMcpEditorPanel = ({
 						/>
 					</div>
 				)}
-			{panel.overlay}
 		</div>
 	);
 };

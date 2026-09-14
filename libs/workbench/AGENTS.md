@@ -44,24 +44,44 @@ Standard library layout per the [root conventions](../../AGENTS.md#package-struc
 
 ```
 src/
-├── components/core/   the dock's components (one per file, kebab-case)
+├── components/        the dock, split by seam (one component per file, kebab-case)
+│   ├── shell/         the root, and the two invisible layers it mounts over everything
+│   ├── dock/          the arrangement surfaces: stage, tabsets, tabs, strip, resizer, borders
+│   ├── panel/         one panel's body pipeline, and its own loading/error states
+│   ├── mobile/        the no-rails shell and its drawer
+│   ├── command/       the palette and its navbar trigger
+│   ├── menu/          the per-panel right-click menu
+│   └── chrome/        reusable chrome controls the shell or a host places
+├── constants/         workbench.constants.ts — WORKBENCH_STYLES
 ├── contexts/          workbench.context.tsx
 ├── hooks/             use-<name>.ts
 ├── stores/            workbench.store.ts + slices/
-├── utility/           React-free helpers (drop geometry, the spawn-drag protocol)
+├── utility/           React-free helpers (drop geometry, slot resolution, the spawn-drag protocol)
 ├── types.ts           every shared type — one file, don't start a second
 └── index.ts           the curated public surface
 ```
 
-Each folder has an `index.ts` re-exporting its members, so internal imports go through the
-folder barrel. **`src/index.ts` is the exception**: it names its exports one by one rather than
-`export *`-ing the folders, because most of what is in here is a rendering detail a host never
-touches. Adding a symbol there is a deliberate act — do it when a consumer needs it, not in
-advance.
+**A folder gets an `index.ts` only when several files import several of its members as a set.**
+That is true of `hooks/` and `stores/` (and `stores/slices/`), and of nothing else — so those
+barrels exist and the rest do not. Components import each other by direct path, which is what
+keeps the folder graph above honest: a barrel would make `mobile/` look like it depends on the
+whole of `dock/` when it needs one tab.
 
-Type imports come from `../../types`, value imports from `../../stores`. Keep them as separate
+**No barrel uses `export *`.** `src/index.ts` names the file that defines each symbol and does
+not hop through an internal barrel. Two wildcards used to sit there, and they leaked 28 symbols
+past the "add it when a consumer needs it" rule without anyone deciding to. Adding a symbol to
+that file is a deliberate act; a type with no consumer does not belong in it, and a host that
+needs a missing shape should try deriving it first (`ComponentProps<typeof Workbench>`, or
+indexed access like `NonNullable<WorkbenchPanelConfig["menuItems"]>`).
+
+Type imports come from `../../types`, constants from `../../constants/workbench.constants`,
+store values from `../../stores`, hooks from `../../hooks`. Keep types and values as separate
 statements rather than a mixed `import { type X, y }`; the split is what stops a type file and
 a runtime barrel getting tangled.
+
+The folder graph is acyclic and must stay that way: `shell → {dock, panel, command, mobile}`,
+`dock → {panel, menu}`, `mobile → dock`, and `chrome`/`menu`/`command`/`panel` point at nothing
+in `components/` above them.
 
 ## One context, one hook, one namespace per domain
 
@@ -88,7 +108,7 @@ three cases that a selector genuinely cannot serve, and that are the only ones l
 
 - a vanilla `subscribe` that must not re-render (`hooks/use-workbench-events.ts`)
 - wiring one store into another (a domain workbench wiring one store into another)
-- reading live state per animation frame (`components/core/workbench-drag-layer.tsx`'s hit-test)
+- reading live state per animation frame (`components/shell/workbench-drag-layer.tsx`'s hit-test)
 
 Needing a *fresh* read inside an imperative handler is not one of them — that belongs on a query
 action beside `canClose` / `findPanels` / `getPanel`, where it closes over the slice's own `get()`
@@ -175,6 +195,35 @@ permission readable meanwhile, so nothing flashes to read-only; and the session 
 on logout, because it outlives every workbench and would otherwise hand one user's access to
 the next.
 
+**The dock's state views know nothing about access.** `WorkbenchPanelLoading` and
+`WorkbenchPanelError` (`components/panel/`) are the shared look of "this panel has no body to
+show yet" and "this panel failed" — no hooks, no store reads, no notion of permission. They
+were once called `WorkbenchAccess*`, which made a generic view look like part of an
+authorization feature it has never been able to see. A caller supplies the vocabulary
+(`label="Loading resource access"`) and the dock supplies the pixels.
+
+Neither takes a `className`; placement is not the caller's. Sixteen sites used to hand-write
+`size-full` or `absolute inset-0 bg-background/80`, and the two scrim opacities had already
+drifted apart. Don't add the escape hatch back — a caller needing different placement wraps.
+
+**Neither has an overlay form, and neither should grow one.** Both are drawn *instead of* a
+body that cannot be shown — the first load, before there is anything to render. A **background**
+refresh must never take over a panel that still works, in either direction:
+
+- Every domain workbench calls `refreshPermission` on mount, so a full-panel scrim would cover
+  every panel on every mount — hiding the stale-but-usable content that `refreshing` exists to
+  preserve, which is the exact flash it was added to prevent.
+- A refresh that *fails* says nothing about access; it says the network hiccuped. Revoked
+  access comes back as a **successful** fetch with a lower role. So blocking a working panel
+  behind a scrim and a Retry button trades a functioning UI for no information — and backend
+  authorization stays authoritative regardless, so it buys no safety either.
+
+When a background refresh does need to be visible, spin the control, not the panel — see
+`isRefreshing` on `GitBranchControl`, which is what `access.refreshing` is for.
+
+`access.refreshError` consequently has no consumer. Leave it computed, or surface it in a
+control; do not reintroduce a panel-level scrim for it.
+
 **`config` optionality is a claim.** `props.config` is backed by `record.config ?? {}`, so a
 required field that no seeding site actually sets is `undefined` at runtime despite its type.
 Mark a field optional unless every `selectPanel`/layout-literal that opens the panel sets it.
@@ -235,7 +284,7 @@ churns only when a control appears or disappears, and a keepAlive panel's regist
 waits, hidden, until its tab is front again.
 
 **A control does not re-render with its panel — read this twice.** It draws inside
-`WorkbenchPanelControls` (`components/core/workbench-panel-header.tsx`), a separate subtree subscribed only
+`WorkbenchPanelControls` (`components/panel/workbench-panel-header.tsx`), a separate subtree subscribed only
 to `s.control.controls[pid]` and to `useWorkbenchPanel(pid, location)`. Refreshing the ref
 schedules nothing, so a fresh closure sits unread until the *chrome* re-renders for its own
 reasons — a control closed over a panel's `useState` silently never updates.
@@ -331,10 +380,15 @@ Two more constraints worth knowing before touching this:
 
 | File/folder | Role |
 |---|---|
-| `components/core/` | The dock: shell (`workbench.tsx`), stage/tabset/tab/strip/border, panel layer + hosts (never-unmount bodies), drag layer, resizers, context menu, mobile shell + its drawer, command palette + menu button, reset button |
-| `components/core/workbench-command-palette.tsx` | Cmd/Ctrl+Shift+P or F1 palette: registered commands + layout-derived entries (built only while open), icon-less `Category: Label` rows in a deterministic alphabetical order |
-| `components/core/workbench-mobile-drawer.tsx` / `components/core/workbench-reset-button.tsx` | On desktop the reset control rides at the end of the left rail, appended to `borderSlots.left.after`. The mobile layout has no rails, so `WorkbenchMobile` passes that slot to its **drawer** instead: the pager bar's ☰ opens a bottom drawer leading with that slot content + reset as an actions row, then every open panel as one full-width row that switches to it. Reset restores the default layout (hidden when `readOnly`) |
-| `components/core/workbench.constants.ts` | `WORKBENCH_STYLES` — the one size scale the chrome draws itself at |
+| `components/shell/` | `workbench.tsx` (the shell), plus the two invisible layers it mounts over everything: the drag layer and the slot measurer |
+| `components/dock/` | The arrangement surfaces: stage, tabset, tab, tab strip, resizer, and the four borders |
+| `components/panel/` | One panel's body pipeline — the flat layer, its per-panel hosts (never-unmount bodies), the body itself, its header content/controls, the error boundary — plus `WorkbenchPanelLoading` / `WorkbenchPanelError`, the two **public** state views a panel draws in place of its own body |
+| `components/mobile/` | The no-rails phone shell and its bottom drawer |
+| `components/menu/` | The per-panel right-click menu: the Radix trigger, and the menu body keyed on where the panel lives |
+| `components/chrome/` | `WorkbenchChromeButton` (the canonical chrome icon button) and `WorkbenchResetButton`, both public |
+| `components/command/workbench-command-palette.tsx` | Cmd/Ctrl+Shift+P or F1 palette: registered commands + layout-derived entries (built only while open), icon-less `Category: Label` rows in a deterministic alphabetical order |
+| `components/mobile/workbench-mobile-drawer.tsx` / `components/chrome/workbench-reset-button.tsx` | On desktop the reset control rides at the end of the left rail, appended to `borderSlots.left.after`. The mobile layout has no rails, so `WorkbenchMobile` passes that slot to its **drawer** instead: the pager bar's ☰ opens a bottom drawer leading with that slot content + reset as an actions row, then every open panel as one full-width row that switches to it. Reset restores the default layout (hidden when `readOnly`) |
+| `constants/workbench.constants.ts` | `WORKBENCH_STYLES` — the one size scale the chrome draws itself at |
 | `contexts/workbench.context.tsx` | `WorkbenchProvider` — one store per mount |
 | `hooks/` | `use-workbench` / `-store-api` (store access), `-commands`, `-control`, `-panel` (a panel's flat props), `-events` (vanilla subscribe bridge), `-hit-test` (drop resolution shared by tab drags and spawn drags) |
 | `stores/workbench.store.ts` | Composes the four slices; `WorkbenchState` is exactly `{ layout, loading, command, control }` |
@@ -345,8 +399,9 @@ Two more constraints worth knowing before touching this:
 | `stores/slices/workbench-controls.slice.ts` | Panel-contributed chrome controls, keyed by panel id; each control is its own `*-control.tsx` file beside its panel |
 | `utility/workbench-spawn-drag.ts` | The `dataTransfer` protocol for "dropping me should open a panel" |
 | `utility/workbench-drop.ts` | The ordered geometric drop resolution |
-| `types.ts` | Every workbench type: `WorkbenchLayout`, `WorkbenchPanelConfig`, `WorkbenchPanelProps`, `WorkbenchComponent`, the shell's own `WorkbenchProps`/`WorkbenchBorderSlot`, plus `WorkbenchCommand` and `WorkbenchSlice`. One file — don't start a second |
-| `index.ts` | The public surface — curated by hand, not `export *`. Shell internals (tabset, tab, stage, border, drag layer, panel hosts, resizers, the reset button and panel-error views the shell places itself) stay private; the `WorkbenchTabset` **component** would also collide with the `WorkbenchTabset` layout-node type. Add to it when a consumer needs a symbol, not before |
+| `utility/workbench-border-slot.ts` | `resolveBorderSlot` — a slot is a node or a function of the border's state. Out here because three shells resolve slots, including the mobile drawer, which has no rails |
+| `types.ts` | Every *shared* workbench type: `WorkbenchLayout`, `WorkbenchPanelConfig`, `WorkbenchPanelProps`, `WorkbenchComponent`, `WorkbenchBorderSlot`, `WorkbenchCommand`, `WorkbenchSlice`. One file — don't start a second. This is the package's **internal** contract; `index.ts` re-exports only the slice of it a consumer imports. The shell's own `WorkbenchProps` is *not* here — it is declared unexported in `components/shell/workbench.tsx`, because nothing but the shell needs it |
+| `index.ts` | The public surface — every export names its defining file, and there is no `export *` anywhere. Shell internals (tabset, tab, stage, border, drag layer, panel hosts, resizers, the mobile shell, the context menu, the error boundary) stay private; the `WorkbenchTabset` **component** would also collide with the `WorkbenchTabset` layout-node type. `types.ts` stays the internal contract — only the types a consumer actually imports are re-exported here. Add to it when a consumer needs a symbol, not before |
 
 ## Rules
 
@@ -382,7 +437,7 @@ Two more constraints worth knowing before touching this:
   carry the version in that name.
 - **`WorkbenchSide` is a *physical* side, so some classes are physical on purpose.** A host names
   its borders `left`/`right`/`top`/`bottom` and gets that side. So `BODY_ROUND`
-  (`workbench-border.tsx`) and `BORDER_GUTTER` (`workbench-resizer.tsx`) are keyed by that side and
+  (`components/dock/workbench-border.tsx`) and `BORDER_GUTTER` (`components/dock/workbench-resizer.tsx`) are keyed by that side and
   use `border-l` / `left-full` correctly — converting them to logical would mirror a border's
   rounding away from the border in RTL. `RAIL_TAB_TURN`'s `left-1/2` is likewise correct: it pairs
   with `-translate-x-1/2`, and both are physical, so the centring is self-consistent. Everything
@@ -407,8 +462,8 @@ Two more constraints worth knowing before touching this:
 
 ## Known design deviation
 
-`components/core/workbench-stage.tsx` (the click-to-minimize backdrop) and
-`components/core/workbench.tsx` (the busy scrim) use `bg-black/50`, which trips DESIGN.md's
+`components/dock/workbench-stage.tsx` (the click-to-minimize backdrop) and
+`components/shell/workbench.tsx` (the busy scrim) use `bg-black/50`, which trips DESIGN.md's
 "opacity on raw colors" rule, and no enumerated carve-out covers a hand-rolled scrim.
 
 It is deliberate: `bg-black/50` is exactly what `libs/ui`'s own `Dialog` and `Drawer` overlays
@@ -423,6 +478,6 @@ that exists, leave these alone rather than churning them.
 
 ## Be cautious with
 
-- `stores/workbench.store.ts` and `components/core/workbench.tsx` — shared by every consumer.
+- `stores/workbench.store.ts` and `components/shell/workbench.tsx` — shared by every consumer.
 - **Mount policy** — re-read the "read this twice" note above before changing a blueprint's.
 - **Control re-render semantics** — likewise. A control does not re-render with its panel.

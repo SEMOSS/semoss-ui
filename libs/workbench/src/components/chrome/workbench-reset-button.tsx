@@ -7,8 +7,8 @@ import {
 	TooltipContent,
 	TooltipTrigger,
 } from "@semoss/ui/next";
+import { WORKBENCH_STYLES } from "../../constants/workbench.constants";
 import { useWorkbench } from "../../hooks";
-import { WORKBENCH_STYLES } from "./workbench.constants";
 
 /**
  * Resets the workbench layout back to its default arrangement, overwriting

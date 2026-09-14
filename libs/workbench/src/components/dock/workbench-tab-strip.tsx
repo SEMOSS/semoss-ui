@@ -8,8 +8,8 @@ import {
 	DropdownMenuItem,
 	DropdownMenuTrigger,
 } from "@semoss/ui/next";
+import { WORKBENCH_STYLES } from "../../constants/workbench.constants";
 import type { WorkbenchPanelId } from "../../types";
-import { WORKBENCH_STYLES } from "./workbench.constants";
 
 export interface WorkbenchTabStripProps {
 	panelIds: WorkbenchPanelId[];

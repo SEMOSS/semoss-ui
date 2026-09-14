@@ -75,7 +75,6 @@ const FileDownloadPanel = ({
 					onRefresh: panel.read.refresh,
 				})}
 			/>
-			{panel.overlay}
 		</div>
 	);
 };

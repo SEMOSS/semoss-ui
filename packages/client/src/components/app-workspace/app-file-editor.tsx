@@ -79,7 +79,6 @@ export const AppFileEditor: React.FC<AppFileEditorProps> = observer(
 						<MetadataHelpDialog compact />
 					</div>
 				) : null}
-				{panel.overlay}
 			</div>
 		);
 	},

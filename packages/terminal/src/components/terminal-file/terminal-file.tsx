@@ -234,7 +234,6 @@ export const TerminalFile = ({
 					})}
 					onChange={(value) => buffer.setContent(value ?? "")}
 				/>
-				{panel.overlay}
 				{!active && (
 					// Pointer-events overlay blocks edits / clicks on the
 					// editor when the active scope no longer matches the

@@ -39,7 +39,6 @@ const FileImageViewerPanel = ({
 					alt={`Preview of ${config.name}`}
 				/>
 			</div>
-			{panel.overlay}
 		</div>
 	);
 };

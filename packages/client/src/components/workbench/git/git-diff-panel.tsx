@@ -9,8 +9,8 @@ import type {
 } from "@semoss/workbench";
 import {
 	useWorkbenchControl,
-	WorkbenchAccessError,
-	WorkbenchAccessLoading,
+	WorkbenchPanelError,
+	WorkbenchPanelLoading,
 } from "@semoss/workbench";
 import type {
 	GitCommitFile,
@@ -97,18 +97,12 @@ const GitDiffPanel = ({
 	useWorkbenchControl(id, GitDiffControl);
 
 	if (access.status === "loading") {
-		return (
-			<WorkbenchAccessLoading
-				className="size-full"
-				label="Loading resource access"
-			/>
-		);
+		return <WorkbenchPanelLoading label="Loading resource access" />;
 	}
 
 	if (access.status === "error") {
 		return (
-			<WorkbenchAccessError
-				className="size-full"
+			<WorkbenchPanelError
 				message={access.error}
 				onRetry={() => void access.refresh()}
 			/>
@@ -127,19 +121,6 @@ const GitDiffPanel = ({
 				onAction={action ? () => void mutateFile() : undefined}
 				renderSideBySide={renderSideBySide}
 			/>
-			{access.refreshing ? (
-				<WorkbenchAccessLoading
-					className="absolute inset-0 bg-background/80"
-					label="Refreshing resource access"
-				/>
-			) : null}
-			{access.refreshError ? (
-				<WorkbenchAccessError
-					className="absolute inset-0 bg-background/90"
-					message={access.refreshError}
-					onRetry={() => void access.refresh()}
-				/>
-			) : null}
 		</div>
 	);
 };

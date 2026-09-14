@@ -1,4 +1,3 @@
-import type { ReactNode } from "react";
 import {
 	FileExplorer,
 	type FileExplorerApi,
@@ -20,7 +19,6 @@ interface FileExplorerPaneProps {
 	/** Per-row actions, e.g. the MCP toolbox glyphs. */
 	itemActions?: (item: FileItem) => FileExplorerItemActions;
 	/** Access chrome drawn over the tree while a permission refresh is in flight. */
-	overlay?: ReactNode;
 }
 
 /**
@@ -41,7 +39,6 @@ export const FileExplorerPane = ({
 	explorer,
 	setValue,
 	itemActions,
-	overlay,
 }: FileExplorerPaneProps) => {
 	useExplorerPanelValue(id, explorer, setValue);
 
@@ -53,7 +50,6 @@ export const FileExplorerPane = ({
 				newFileOverlay={NewFileOverlay}
 				itemActions={itemActions}
 			/>
-			{overlay}
 		</div>
 	);
 };

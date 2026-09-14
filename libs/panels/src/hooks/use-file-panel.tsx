@@ -11,10 +11,7 @@ import {
 	useFileEditorPathRef,
 } from "@semoss/shared";
 import { Muted, Spinner, toast } from "@semoss/ui/next";
-import {
-	WorkbenchAccessError,
-	WorkbenchAccessLoading,
-} from "@semoss/workbench";
+import { WorkbenchPanelError, WorkbenchPanelLoading } from "@semoss/workbench";
 import {
 	type FilePanelMode,
 	getFilePanelResource,
@@ -88,8 +85,6 @@ export interface FilePanelApi {
 	gate: ReactNode | null;
 	/** Blocking file-load state, or null once loaded. Return it after `gate`. */
 	readGate: ReactNode | null;
-	/** Non-blocking access-refresh chrome. Render inside the panel body. */
-	overlay: ReactNode;
 }
 
 /**
@@ -219,13 +214,9 @@ export const useFilePanel = (
 
 	const gate =
 		access.status === "loading" ? (
-			<WorkbenchAccessLoading
-				className="size-full"
-				label="Loading resource access"
-			/>
+			<WorkbenchPanelLoading label="Loading resource access" />
 		) : access.status === "error" ? (
-			<WorkbenchAccessError
-				className="size-full"
+			<WorkbenchPanelError
 				message={access.error}
 				onRetry={() => void access.refresh()}
 			/>
@@ -247,27 +238,6 @@ export const useFilePanel = (
 			</div>
 		) : null;
 
-	// Only the "ready" arm carries the refresh fields, and a panel only reaches
-	// its body once `gate` is null — so this is null exactly when it is unused.
-	const overlay =
-		access.status === "ready" ? (
-			<>
-				{access.refreshing ? (
-					<WorkbenchAccessLoading
-						className="absolute inset-0 bg-background/80"
-						label="Refreshing resource access"
-					/>
-				) : null}
-				{access.refreshError ? (
-					<WorkbenchAccessError
-						className="absolute inset-0 bg-background/90"
-						message={access.refreshError}
-						onRetry={() => void access.refresh()}
-					/>
-				) : null}
-			</>
-		) : null;
-
 	return {
 		access,
 		readOnly,
@@ -282,6 +252,5 @@ export const useFilePanel = (
 			isSaving || isDownloading || extraBusy || read.status === "LOADING",
 		gate,
 		readGate,
-		overlay,
 	};
 };

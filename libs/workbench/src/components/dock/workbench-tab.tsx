@@ -8,6 +8,7 @@ import {
 	useState,
 } from "react";
 import { cn, Tooltip, TooltipContent, TooltipTrigger } from "@semoss/ui/next";
+import { WORKBENCH_STYLES } from "../../constants/workbench.constants";
 import { useWorkbench } from "../../hooks";
 import type {
 	WorkbenchHeaderLocation,
@@ -15,9 +16,8 @@ import type {
 	WorkbenchSide,
 	WorkbenchStack,
 } from "../../types";
-import { WORKBENCH_STYLES } from "./workbench.constants";
-import { WorkbenchPanelContextMenu } from "./workbench-context-menu";
-import { WorkbenchPanelHeaderContent } from "./workbench-panel-header";
+import { WorkbenchPanelContextMenu } from "../menu/workbench-context-menu";
+import { WorkbenchPanelHeaderContent } from "../panel/workbench-panel-header";
 
 export interface WorkbenchTabProps {
 	pid: WorkbenchPanelId;

@@ -8,11 +8,11 @@ import {
 	useState,
 } from "react";
 import { Button, cn } from "@semoss/ui/next";
+import { WORKBENCH_STYLES } from "../../constants/workbench.constants";
 import { useWorkbench } from "../../hooks";
 import type { WorkbenchBorderSlot } from "../../types";
-import { WORKBENCH_STYLES } from "./workbench.constants";
+import { WorkbenchTab } from "../dock/workbench-tab";
 import { WorkbenchMobileDrawer } from "./workbench-mobile-drawer";
-import { WorkbenchTab } from "./workbench-tab";
 
 export interface WorkbenchMobileProps {
 	/**

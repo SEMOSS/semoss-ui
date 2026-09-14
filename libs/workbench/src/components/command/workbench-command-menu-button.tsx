@@ -8,8 +8,8 @@ import {
 	TooltipContent,
 	TooltipTrigger,
 } from "@semoss/ui/next";
+import { WORKBENCH_STYLES } from "../../constants/workbench.constants";
 import { useWorkbench } from "../../hooks";
-import { WORKBENCH_STYLES } from "./workbench.constants";
 
 /** Open the command palette for the nearest workbench from the global navbar. */
 export const WorkbenchCommandMenuButton = () => {

@@ -1,8 +1,8 @@
 import type { FC } from "react";
 import { cn } from "@semoss/ui/next";
+import { WORKBENCH_STYLES } from "../../constants/workbench.constants";
 import { useWorkbench, useWorkbenchPanel } from "../../hooks";
 import type { WorkbenchHeaderLocation, WorkbenchPanelId } from "../../types";
-import { WORKBENCH_STYLES } from "./workbench.constants";
 
 /** The panel's glyph, at whatever size the caller has room for. */
 const WorkbenchPanelIcon: FC<{
