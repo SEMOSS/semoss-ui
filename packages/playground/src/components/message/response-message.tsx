@@ -1,7 +1,6 @@
 import {
 	ArrowLeftIcon,
 	ArrowRightIcon,
-	CircleAlert,
 	CopyIcon,
 	DownloadIcon,
 	FileArchiveIcon,
@@ -90,15 +89,17 @@ const getExtIcon = (fileName: string) => {
 	return { Icon: FileIcon, ext };
 };
 
+const getErrorMessage = (e: unknown): string =>
+	e instanceof Error ? e.message : String(e);
+
 /**
  * Whether the message has streamed any real content yet. A freshly-created
- * streaming message is seeded with a single empty THINKING part, so an empty
- * thinking string with no other parts means nothing has streamed. Used to tell
- * a first view (start animations from 0) apart from a return view (jump to the
- * latest part/chunk/content).
+ * streaming message starts with zero parts, so an empty array means nothing
+ * has streamed. Used to tell a first view (start animations from 0) apart
+ * from a return view (jump to the latest part/chunk/content).
  */
-const hasStreamedContent = (message: ResponseMessageStore) =>
-	message.parts.some(
+const hasStreamedContent = (parts: ResponseMessageStore["parts"]) =>
+	parts.some(
 		(part) =>
 			(part.type === "TEXT" && part.text.length > 0) ||
 			(part.type === "THINKING" && part.thinking.length > 0) ||
@@ -107,10 +108,10 @@ const hasStreamedContent = (message: ResponseMessageStore) =>
 	);
 
 /**
- * One contiguous run of tool calls within a message — a single round of the
- * agent loop. Grouping decisions are scoped to the run rather than the whole
- * message, so a later round waiting on a tool decision leaves an earlier
- * round's rendering alone.
+ * One contiguous run of tool calls — may span multiple folded-in messages
+ * (see room-content.tsx). Per-tool grouping is decided by chunk (the
+ * originating message within the run), not the run as a whole — see
+ * chunkHasUnfinishedTools.
  */
 interface ToolRun {
 	/** Part index the run's group renders at — its first TOOL_CALL part. */
@@ -129,18 +130,35 @@ interface ToolRun {
 	hasAskTools: boolean;
 }
 
-interface ResponseMessageProps {
+export interface ResponseMessageProps {
 	/** Room */
 	room: RoomStore;
 
 	/** Message to render */
 	message: ResponseMessageStore;
+
+	/** Tool-only messages folded into this one — see room-content.tsx */
+	subsequentTools?: ResponseMessageStore[];
 }
 
-export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
-	({ room, message }) => {
+export const ResponseMessage = observer(
+	({ room, message, subsequentTools = [] }: ResponseMessageProps) => {
 		const { t } = useTranslation("chat");
 		const { root } = useRoot();
+
+		// Tracks which original message each part came from, so tool
+		// grouping can tell folded-in messages apart without breaking the
+		// visual run they render in — see chunkHasUnfinishedTools below.
+		const partsWithOwners = [
+			...message.parts.map((part) => ({ part, owner: message })),
+			...subsequentTools.flatMap((sub) =>
+				sub.parts.map((part) => ({ part, owner: sub })),
+			),
+		];
+		const allParts = partsWithOwners.map(({ part }) => part);
+
+		const isThinking =
+			message.isThinking || subsequentTools.some((m) => m.isThinking);
 
 		const [previewPdf, setPreviewPdf] = useState<{
 			fileName: string;
@@ -170,7 +188,7 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 		// part/chunk/content. Anchored here at the message level so a late-
 		// mounting part (e.g. text revealed after thinking) still inherits the
 		// correct decision instead of inferring it from its own mount.
-		const [isFirstView] = useState(() => !hasStreamedContent(message));
+		const [isFirstView] = useState(() => !hasStreamedContent(allParts));
 
 		// Sequential reveal queue: parts animate in order, each waiting for the
 		// part above to finish. Text parts type via their own nested typewriter;
@@ -178,8 +196,8 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 		// turn. Once the message stops streaming, every part renders in full. On a
 		// return view, seed at the latest part to jump straight to the frontier.
 		const { chunkCallbacks, getChunkStatus } = useActiveIndex(
-			message.parts.length,
-			message.isThinking,
+			allParts.length,
+			isThinking,
 			undefined,
 			!isFirstView,
 		);
@@ -192,9 +210,9 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 		// to the next part until it lands on a text part or a part the hook holds
 		// (the last one while streaming), where the advance call bails harmlessly.
 		useEffect(() => {
-			for (let i = 0; i < message.parts.length; i++) {
+			for (let i = 0; i < allParts.length; i++) {
 				if (getChunkStatus(i) !== "active") continue;
-				if (message.parts[i].type !== "TEXT") {
+				if (allParts[i].type !== "TEXT") {
 					chunkCallbacks[i]();
 				}
 				break;
@@ -234,8 +252,7 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 					toast.success(t("notifications.feedbackSuccess"));
 				}
 			} catch (e: unknown) {
-				const error = e as { message: string };
-				toast.error(error.message);
+				toast.error(getErrorMessage(e));
 			}
 		};
 
@@ -253,8 +270,7 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 				setIsFeedbackTextOpen(false);
 				setPendingRating(null);
 			} catch (e: unknown) {
-				const error = e as { message: string };
-				toast.error(error.message);
+				toast.error(getErrorMessage(e));
 			}
 		};
 
@@ -267,26 +283,22 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 
 				toast.success(t("notifications.rewriteSuccess"));
 			} catch (e: unknown) {
-				const error = e as { message: string };
-				toast.error(error.message);
+				toast.error(getErrorMessage(e));
 			}
 		};
 
-		/**
-		 * Download the response in specified format
-		 * @param format - format to download (word, pdf)
-		 */
-		const downloadResponse = async (format: string) => {
+		const downloadResponse = async (format: "word" | "pdf") => {
 			setDownloadingFormat(format);
 			try {
-				await message.downloadResponse(format as "word" | "pdf");
+				await message.downloadResponse(format);
 				toast.success(
 					`Response downloaded successfully as ${format.toUpperCase()}`,
 				);
 				setIsDownloadDialogOpen(false);
 			} catch (e: unknown) {
-				const error = e as { message: string };
-				toast.error(error.message || "Failed to download response");
+				toast.error(
+					getErrorMessage(e) || "Failed to download response",
+				);
 			} finally {
 				setDownloadingFormat(null);
 			}
@@ -319,30 +331,30 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 				]);
 				toast.success(t("notifications.copySuccess"));
 			} catch (e: unknown) {
-				const error = e as { message: string };
-				toast.error(error.message);
+				toast.error(getErrorMessage(e));
 			}
 		};
 
 		const downloadFormats = [
 			{ value: "word", label: "Word Document", extension: ".docx" },
 			{ value: "pdf", label: "PDF Document", extension: ".pdf" },
-		];
+		] as const;
 
 		// Pre-compute completed tools for grouping. Tools cluster per contiguous
 		// run of TOOL_CALL parts: a run ends at the first part that renders
 		// something between them, so a second round of tools in an agent turn
 		// opens its own group in place rather than folding back into the first
-		// one above the text and thinking that preceded it. An empty part (the
-		// thinking placeholder a streaming message is seeded with) renders
-		// nothing, so it never splits a run.
+		// one above the text and thinking that preceded it.
 		const isToolRunBreak = (part: ResponseMessageStore["parts"][number]) =>
 			(part.type === "TEXT" && part.text.length > 0) ||
 			(part.type === "THINKING" && part.thinking.length > 0) ||
 			part.type === "MEDIA" ||
 			part.type === "SUBAGENT";
 
-		const getShouldGroupTool = (tool: ToolStore, run: ToolRun) => {
+		const getShouldGroupTool = (
+			tool: ToolStore,
+			chunkHasUnfinishedTools: Map<string, boolean>,
+		) => {
 			// tools whose call hasn't resolved yet (still streaming in, or in the
 			// gap before the final sync) fold into the group so they show as one
 			// loading cluster rather than separate raw-named pills
@@ -351,25 +363,43 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 			// agent-run tools) should always be grouped
 			if (!isAskExecutionMode(tool.json._meta?.SMSS_MCP_EXECUTION))
 				return true;
-			// ask tools only enter the group once their own run has nothing
+			// ask tools only enter the group once their own chunk has nothing
 			// left running — a later round waiting on a decision must not pull
-			// a settled round's ask tools back out of their group
-			return !run.hasUnfinishedTools;
+			// a settled round's ask tools back out of their group. Scoped to the
+			// chunk (its own originating message) rather than the whole run, so
+			// a folded-in message's unfinished tool doesn't reach back and
+			// un-group an earlier message's already-settled ones.
+			return !chunkHasUnfinishedTools.get(tool.id);
 		};
 
-		// First pass: split the tool parts into runs. Grouping is decided in a
-		// second pass because it depends on the run as a whole, which isn't
-		// known until the run has been walked.
-		const { toolRuns, hasAskTools, numTools } = (() => {
+		// First pass: split the tool parts into runs, and runs into
+		// per-originating-message chunks. Grouping is decided in a second
+		// pass because it depends on the chunk as a whole, which isn't known
+		// until the chunk has been walked.
+		const { toolRuns, chunkHasUnfinishedTools } = (() => {
 			const toolRuns: ToolRun[] = [];
+			const chunkHasUnfinishedTools = new Map<string, boolean>();
 			let run: ToolRun | null = null;
-			let hasAskTools = false;
-			let numTools = 0;
-			for (let idx = 0; idx < message.parts.length; idx++) {
-				const p = message.parts[idx];
+
+			let chunkOwner: ResponseMessageStore | null = null;
+			let chunkTools: ToolStore[] = [];
+			let chunkUnfinished = false;
+			const flushChunk = () => {
+				chunkTools.forEach((chunkTool) => {
+					chunkHasUnfinishedTools.set(chunkTool.id, chunkUnfinished);
+				});
+				chunkOwner = null;
+				chunkTools = [];
+				chunkUnfinished = false;
+			};
+
+			partsWithOwners.forEach(({ part: p, owner }, idx) => {
 				if (p.type !== "TOOL_CALL") {
-					if (isToolRunBreak(p)) run = null;
-					continue;
+					if (isToolRunBreak(p)) {
+						run = null;
+						flushChunk();
+					}
+					return;
 				}
 				// Opened on the run's first TOOL_CALL part regardless of
 				// completion, so the group always sits at the top of that run's
@@ -385,8 +415,7 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 					toolRuns.push(run);
 				}
 				const tool = room.getTool(p.toolCall.id);
-				if (!tool) continue;
-				numTools++;
+				if (!tool) return;
 				run.tools.push(tool);
 				// Mirrors ResponseMessageStore.hasUnfinishedTools, narrowed to
 				// this run.
@@ -395,25 +424,35 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 				}
 				if (isAskExecutionMode(tool.json._meta?.SMSS_MCP_EXECUTION)) {
 					run.hasAskTools = true;
-					hasAskTools = true;
 				}
-			}
-			return { toolRuns, hasAskTools, numTools };
+
+				if (owner !== chunkOwner) {
+					flushChunk();
+					chunkOwner = owner;
+				}
+				chunkTools.push(tool);
+				if (tool.status === "LOADING" || tool.status === "INITIAL") {
+					chunkUnfinished = true;
+				}
+			});
+			flushChunk();
+
+			return { toolRuns, chunkHasUnfinishedTools };
 		})();
 
 		// Second pass: the group renders at the run's first part index, and
 		// every tool in it is skipped where its own part comes up.
 		const groupedToolIds = new Set<string>();
 		const runsByPartIdx = new Map<number, ToolRun>();
-		for (const run of toolRuns) {
+		toolRuns.forEach((run) => {
 			run.grouped = run.tools.filter((tool) =>
-				getShouldGroupTool(tool, run),
+				getShouldGroupTool(tool, chunkHasUnfinishedTools),
 			);
-			for (const tool of run.grouped) {
+			run.grouped.forEach((tool) => {
 				groupedToolIds.add(tool.id);
-			}
+			});
 			runsByPartIdx.set(run.partIdx, run);
-		}
+		});
 
 		const hasText = message.parts.some((part) => part.type === "TEXT");
 
@@ -430,7 +469,7 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 		return (
 			<div className="group">
 				<div className="mb-0 flex w-full flex-col gap-2 pe-3 sm:pe-10">
-					{message.parts.map((p, pIdx) => {
+					{allParts.map((p, pIdx) => {
 						const key = `message-part-${pIdx}`;
 						const status = getChunkStatus(pIdx);
 
@@ -471,9 +510,17 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 										.pop()
 										?.toLowerCase() ?? "",
 								);
+							const extToMimeType: Record<string, string> = {
+								jpg: "image/jpeg",
+								jpeg: "image/jpeg",
+								gif: "image/gif",
+								webp: "image/webp",
+								svg: "image/svg+xml",
+								bmp: "image/bmp",
+							};
 							const imgSrc =
 								isImage && p.mediaInfo.base64Data
-									? `data:${p.mediaInfo.mimeType?.startsWith("image/") ? p.mediaInfo.mimeType : ({ jpg: "image/jpeg", jpeg: "image/jpeg", gif: "image/gif", webp: "image/webp", svg: "image/svg+xml", bmp: "image/bmp" } as Record<string, string>)[p.mediaInfo.fileName?.split(".").pop()?.toLowerCase() ?? ""] || "image/png"};base64,${p.mediaInfo.base64Data}`
+									? `data:${p.mediaInfo.mimeType?.startsWith("image/") ? p.mediaInfo.mimeType : extToMimeType[p.mediaInfo.fileName?.split(".").pop()?.toLowerCase() ?? ""] || "image/png"};base64,${p.mediaInfo.base64Data}`
 									: "";
 							const handleClick = () => {
 								if (isImage && p.mediaInfo.base64Data) {
@@ -583,8 +630,13 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 							// Only set on the part the run's group renders at.
 							const run = runsByPartIdx.get(pIdx);
 							const groupedTools = run?.grouped ?? [];
+							// Keyed by tool id rather than part index: a run's
+							// position in allParts can shift as messages fold
+							// in around it, and a positional key would remount
+							// the group (losing its open/closed state) even
+							// though it's still logically the same run.
 							return (
-								<Fragment key={key}>
+								<Fragment key={p.toolCall.id}>
 									{run &&
 										groupedTools.length > 0 &&
 										// A single tool renders as a group only while it's
@@ -594,13 +646,11 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 										(groupedTools.length > 1 ||
 										!groupedTools[0].isResolved ? (
 											<ResponseMessageToolGroup
-												key={`${key}-group`}
-												message={message}
+												key={`${p.toolCall.id}-group`}
 												tools={groupedTools}
 											/>
 										) : (
 											<ResponseMessageTool
-												message={message}
 												tool={groupedTools[0]}
 												// getShouldGroupTool dictates that tools are grouped if auto, or all finished
 												// if the group size is 1, then this could be an auto tool and the run has an unfinished ask tool
@@ -613,7 +663,6 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 										))}
 									{tool && !groupedToolIds.has(tool.id) && (
 										<ResponseMessageTool
-											message={message}
 											tool={tool}
 											// See logic above, but ungrouped tools are always unfinished ask tools - large
 											isLarge
@@ -633,18 +682,6 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 
 						return null;
 					})}
-					{message.hasUnfinishedTools && !message.isThinking && (
-						<p className="mt-2 flex items-center gap-2 text-muted-foreground text-sm">
-							<CircleAlert className="size-4" />
-							{hasAskTools
-								? t("response.completeToolsAsk", {
-										count: numTools,
-									})
-								: t("response.completeToolsAuto", {
-										count: numTools,
-									})}
-						</p>
-					)}
 					{!hasVisibleContent &&
 						message.id !== STREAMING_PLACEHOLDER_ID && (
 							<p className="text-muted-foreground text-sm italic">
@@ -653,206 +690,273 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 						)}
 				</div>
 
-				{message.id !== STREAMING_PLACEHOLDER_ID && (
-					<div className="flex flex-row items-center gap-0.5 pt-2">
-						{inputMessage?.siblings.length &&
-							inputMessage?.siblings.length > 1 && (
-								<div className="flex flex-row items-center gap-0.5">
-									<Tooltip>
-										<TooltipTrigger asChild>
-											<Button
-												variant="ghost"
-												size="icon"
-												disabled={
-													!inputMessage.previousSibling
-												}
-												onClick={() => {
-													if (
-														!inputMessage.previousSibling
-													) {
-														return;
-													}
-
-													inputMessage.previousSibling.activateMessage();
-												}}
-											>
-												<ArrowLeftIcon className="rtl:-scale-x-100" />
-											</Button>
-										</TooltipTrigger>
-										<TooltipContent side="bottom">
-											{t("response.previousMessage")}
-										</TooltipContent>
-									</Tooltip>
-									<span className="text-muted-foreground text-xs">
-										{inputMessage.position + 1}/
-										{inputMessage.siblings.length}
-									</span>
-
-									<Tooltip>
-										<TooltipTrigger asChild>
-											<Button
-												variant="ghost"
-												size="icon"
-												disabled={
-													!inputMessage.nextSibling
-												}
-												onClick={() => {
-													if (
-														!inputMessage.nextSibling
-													) {
-														return;
-													}
-
-													inputMessage.nextSibling.activateMessage();
-												}}
-											>
-												<ArrowRightIcon className="rtl:-scale-x-100" />
-											</Button>
-										</TooltipTrigger>
-										<TooltipContent side="bottom">
-											{t("response.nextMessage")}
-										</TooltipContent>
-									</Tooltip>
-								</div>
-							)}
-
-						{root.theme.featureFlags?.enableRewrite &&
-							parentHasContent && (
+				<div className="flex flex-row items-center gap-0.5 pt-2">
+					{inputMessage?.siblings.length &&
+						inputMessage?.siblings.length > 1 && (
+							<div className="flex flex-row items-center gap-0.5">
 								<Tooltip>
 									<TooltipTrigger asChild>
 										<Button
-											disabled={
-												!inputMessage?.parent?.parent
-											}
 											variant="ghost"
 											size="icon"
+											disabled={
+												message.isThinking ||
+												!inputMessage.previousSibling
+											}
 											onClick={() => {
-												rewriteMessage();
+												if (
+													!inputMessage.previousSibling
+												) {
+													return;
+												}
+
+												inputMessage.previousSibling.activateMessage();
 											}}
 										>
-											<RefreshCwIcon />
+											<ArrowLeftIcon className="rtl:-scale-x-100" />
 										</Button>
 									</TooltipTrigger>
 									<TooltipContent side="bottom">
-										{t("response.rewriteMessage")}
+										{t("response.previousMessage")}
 									</TooltipContent>
 								</Tooltip>
-							)}
+								<span className="text-muted-foreground text-xs">
+									{inputMessage.position + 1}/
+									{inputMessage.siblings.length}
+								</span>
 
-						<Tooltip>
-							<TooltipTrigger asChild>
-								<Button
-									variant="ghost"
-									size="icon"
-									onClick={() => {
-										recordFeedback(true);
-									}}
-								>
-									<ThumbsUpIcon
-										fill={
-											message.feedback?.rating === true
-												? "currentColor"
-												: "none"
-										}
-									/>
-								</Button>
-							</TooltipTrigger>
-							<TooltipContent side="bottom">
-								{t("response.goodResponse")}
-							</TooltipContent>
-						</Tooltip>
-
-						<Tooltip>
-							<TooltipTrigger asChild>
-								<Button
-									variant="ghost"
-									size="icon"
-									onClick={() => {
-										recordFeedback(false);
-									}}
-								>
-									<ThumbsDownIcon
-										fill={
-											message.feedback?.rating === false
-												? "currentColor"
-												: "none"
-										}
-									/>
-								</Button>
-							</TooltipTrigger>
-							<TooltipContent side="bottom">
-								{t("response.poorResponse")}
-							</TooltipContent>
-						</Tooltip>
-
-						{feedbackTextEnabled && isFeedbackTextOpen && (
-							<Dialog
-								open={isFeedbackTextOpen}
-								onOpenChange={(open) => {
-									if (!open) {
-										setIsFeedbackTextOpen(false);
-										setPendingRating(null);
-										setFeedbackText("");
-									}
-								}}
-							>
-								<DialogContent className="sm:max-w-md">
-									<DialogHeader>
-										<DialogTitle className="flex items-center gap-2">
-											{pendingRating === true ? (
-												<ThumbsUpIcon
-													className="size-5"
-													fill="currentColor"
-												/>
-											) : (
-												<ThumbsDownIcon
-													className="size-5"
-													fill="currentColor"
-												/>
-											)}
-											{pendingRating === true
-												? t("response.goodResponse")
-												: t("response.poorResponse")}
-										</DialogTitle>
-									</DialogHeader>
-									<Textarea
-										ref={feedbackTextRef}
-										placeholder={t(
-											"response.feedbackPlaceholder",
-										)}
-										value={feedbackText}
-										onChange={(e) =>
-											setFeedbackText(e.target.value)
-										}
-										rows={3}
-										className="text-sm"
-									/>
-									<div className="flex justify-end gap-2">
+								<Tooltip>
+									<TooltipTrigger asChild>
 										<Button
 											variant="ghost"
+											size="icon"
+											disabled={
+												message.isThinking ||
+												!inputMessage.nextSibling
+											}
 											onClick={() => {
-												setIsFeedbackTextOpen(false);
-												setPendingRating(null);
-												setFeedbackText("");
+												if (!inputMessage.nextSibling) {
+													return;
+												}
+
+												inputMessage.nextSibling.activateMessage();
 											}}
 										>
-											{t("response.feedbackCancel")}
+											<ArrowRightIcon className="rtl:-scale-x-100" />
 										</Button>
-										<Button onClick={submitFeedbackText}>
-											{t("response.feedbackSubmit")}
-										</Button>
-									</div>
-								</DialogContent>
-							</Dialog>
+									</TooltipTrigger>
+									<TooltipContent side="bottom">
+										{t("response.nextMessage")}
+									</TooltipContent>
+								</Tooltip>
+							</div>
 						)}
 
-						{hasImage && (
+					{root.theme.featureFlags?.enableRewrite &&
+						parentHasContent && (
+							<Tooltip>
+								<TooltipTrigger asChild>
+									<Button
+										disabled={
+											message.isThinking ||
+											!inputMessage?.parent?.parent
+										}
+										variant="ghost"
+										size="icon"
+										onClick={() => {
+											rewriteMessage();
+										}}
+									>
+										<RefreshCwIcon />
+									</Button>
+								</TooltipTrigger>
+								<TooltipContent side="bottom">
+									{t("response.rewriteMessage")}
+								</TooltipContent>
+							</Tooltip>
+						)}
+
+					<Tooltip>
+						<TooltipTrigger asChild>
+							<Button
+								variant="ghost"
+								size="icon"
+								disabled={message.isThinking}
+								onClick={() => {
+									recordFeedback(true);
+								}}
+							>
+								<ThumbsUpIcon
+									fill={
+										message.feedback?.rating === true
+											? "currentColor"
+											: "none"
+									}
+								/>
+							</Button>
+						</TooltipTrigger>
+						<TooltipContent side="bottom">
+							{t("response.goodResponse")}
+						</TooltipContent>
+					</Tooltip>
+
+					<Tooltip>
+						<TooltipTrigger asChild>
+							<Button
+								variant="ghost"
+								size="icon"
+								disabled={message.isThinking}
+								onClick={() => {
+									recordFeedback(false);
+								}}
+							>
+								<ThumbsDownIcon
+									fill={
+										message.feedback?.rating === false
+											? "currentColor"
+											: "none"
+									}
+								/>
+							</Button>
+						</TooltipTrigger>
+						<TooltipContent side="bottom">
+							{t("response.poorResponse")}
+						</TooltipContent>
+					</Tooltip>
+
+					{feedbackTextEnabled && isFeedbackTextOpen && (
+						<Dialog
+							open={isFeedbackTextOpen}
+							onOpenChange={(open) => {
+								if (!open) {
+									setIsFeedbackTextOpen(false);
+									setPendingRating(null);
+									setFeedbackText("");
+								}
+							}}
+						>
+							<DialogContent className="sm:max-w-md">
+								<DialogHeader>
+									<DialogTitle className="flex items-center gap-2">
+										{pendingRating === true ? (
+											<ThumbsUpIcon
+												className="size-5"
+												fill="currentColor"
+											/>
+										) : (
+											<ThumbsDownIcon
+												className="size-5"
+												fill="currentColor"
+											/>
+										)}
+										{pendingRating === true
+											? t("response.goodResponse")
+											: t("response.poorResponse")}
+									</DialogTitle>
+								</DialogHeader>
+								<Textarea
+									ref={feedbackTextRef}
+									placeholder={t(
+										"response.feedbackPlaceholder",
+									)}
+									value={feedbackText}
+									onChange={(e) =>
+										setFeedbackText(e.target.value)
+									}
+									rows={3}
+									className="text-sm"
+								/>
+								<div className="flex justify-end gap-2">
+									<Button
+										variant="ghost"
+										onClick={() => {
+											setIsFeedbackTextOpen(false);
+											setPendingRating(null);
+											setFeedbackText("");
+										}}
+									>
+										{t("response.feedbackCancel")}
+									</Button>
+									<Button onClick={submitFeedbackText}>
+										{t("response.feedbackSubmit")}
+									</Button>
+								</div>
+							</DialogContent>
+						</Dialog>
+					)}
+
+					{hasImage && (
+						<Tooltip>
+							<TooltipTrigger asChild>
+								<Button
+									variant="ghost"
+									size="icon"
+									disabled={message.isThinking}
+									onClick={copyImage}
+								>
+									<CopyIcon />
+								</Button>
+							</TooltipTrigger>
+							<TooltipContent side="bottom">
+								{t("response.copyResponse")}
+							</TooltipContent>
+						</Tooltip>
+					)}
+
+					{hasText && (
+						<>
 							<Tooltip>
 								<TooltipTrigger asChild>
 									<Button
 										variant="ghost"
 										size="icon"
-										onClick={copyImage}
+										disabled={
+											message.isThinking ||
+											message.parts.length === 0
+										}
+										onClick={async () => {
+											const text = allParts
+												.map((part) => {
+													if (part.type === "TEXT") {
+														return part.text;
+													} else if (
+														part.type === "MEDIA"
+													) {
+														return `<${part.mediaInfo.fileName}?`;
+													} else if (
+														part.type ===
+														"TOOL_CALL"
+													) {
+														return `<${part.toolCall.name}?`;
+													}
+
+													return "";
+												})
+												.join("\n");
+
+											if (!text) {
+												toast.warning(
+													t(
+														"notifications.noCopyContent",
+													),
+												);
+												return;
+											}
+
+											try {
+												await navigator.clipboard.writeText(
+													text,
+												);
+
+												toast.success(
+													t(
+														"notifications.copySuccess",
+													),
+												);
+											} catch (e: unknown) {
+												toast.error(getErrorMessage(e));
+											}
+										}}
 									>
 										<CopyIcon />
 									</Button>
@@ -861,98 +965,29 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 									{t("response.copyResponse")}
 								</TooltipContent>
 							</Tooltip>
-						)}
-
-						{hasText && (
-							<>
-								<Tooltip>
-									<TooltipTrigger asChild>
-										<Button
-											variant="ghost"
-											size="icon"
-											disabled={
-												message.parts.length === 0
-											}
-											onClick={() => {
-												const text = message.parts
-													.map((part) => {
-														if (
-															part.type === "TEXT"
-														) {
-															return part.text;
-														} else if (
-															part.type ===
-															"MEDIA"
-														) {
-															return `<${part.mediaInfo.fileName}?`;
-														} else if (
-															part.type ===
-															"TOOL_CALL"
-														) {
-															return `<${part.toolCall.name}?`;
-														}
-
-														return "";
-													})
-													.join("\n");
-
-												if (!text) {
-													toast.warning(
-														t(
-															"notifications.noCopyContent",
-														),
-													);
-													return;
-												}
-
-												try {
-													navigator.clipboard.writeText(
-														text,
-													);
-
-													toast.success(
-														t(
-															"notifications.copySuccess",
-														),
-													);
-												} catch (e: unknown) {
-													const error = e as {
-														message: string;
-													};
-													toast.error(error.message);
-												}
-											}}
-										>
-											<CopyIcon />
-										</Button>
-									</TooltipTrigger>
-									<TooltipContent side="bottom">
-										{t("response.copyResponse")}
-									</TooltipContent>
-								</Tooltip>
-								<Tooltip>
-									<TooltipTrigger asChild>
-										<Button
-											variant="ghost"
-											size="icon"
-											disabled={
-												message.parts.length === 0
-											}
-											onClick={() =>
-												setIsDownloadDialogOpen(true)
-											}
-										>
-											<DownloadIcon />
-										</Button>
-									</TooltipTrigger>
-									<TooltipContent side="bottom">
-										{t("Download Response")}
-									</TooltipContent>
-								</Tooltip>
-							</>
-						)}
-					</div>
-				)}
+							<Tooltip>
+								<TooltipTrigger asChild>
+									<Button
+										variant="ghost"
+										size="icon"
+										disabled={
+											message.isThinking ||
+											message.parts.length === 0
+										}
+										onClick={() =>
+											setIsDownloadDialogOpen(true)
+										}
+									>
+										<DownloadIcon />
+									</Button>
+								</TooltipTrigger>
+								<TooltipContent side="bottom">
+									{t("Download Response")}
+								</TooltipContent>
+							</Tooltip>
+						</>
+					)}
+				</div>
 
 				<Dialog
 					open={isDownloadDialogOpen}

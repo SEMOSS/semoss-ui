@@ -106,6 +106,11 @@ export class ToolStore {
 	 */
 	isStreamingPlaceholder: boolean = false;
 
+	/** The message whose `parts` actually contains this tool's TOOL_CALL. */
+	get message() {
+		return this.toolCall.message;
+	}
+
 	/**
 	 * Json for the tool
 	 */
