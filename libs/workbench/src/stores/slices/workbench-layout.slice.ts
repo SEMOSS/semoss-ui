@@ -27,6 +27,7 @@ import {
 	flatten,
 	joinTabset,
 	movePanelInTree,
+	parseWorkbenchSnapshot,
 	removePanel,
 	resizeChildren,
 	resolvePinDrop,
@@ -141,19 +142,22 @@ export interface WorkbenchLayoutActions {
 	 * restored nothing. Anything a snapshot carries beyond the tree — the
 	 * palette's recents — is applied here too.
 	 *
+	 * Validated here, because a restored arrangement is the one input the dock
+	 * gets that nothing in this codebase wrote: a half-written entry, one from
+	 * an older build, or one a user edited by hand would otherwise reach the
+	 * renderer. Anything that fails leaves the current arrangement alone — on
+	 * mount that is the empty dock, which the reset button puts right.
+	 *
 	 * @param snapshot - What to open with.
 	 */
 	loadSnapshot: (snapshot: WorkbenchSnapshot) => void;
-
-	/** Back to the snapshot `loadSnapshot` was given. */
-	resetLayout: () => void;
 
 	/**
 	 * What this workbench would have persisted, right now.
 	 *
 	 * The read half of the host's persistence: the shell hands it to
-	 * `onChange` as the arrangement moves and to `onUnmount` on the way out,
-	 * and a host driving the dock itself can call it whenever.
+	 * `onChange` as the arrangement moves, and a host driving the dock itself
+	 * can call it whenever.
 	 */
 	getSnapshot: () => WorkbenchSnapshot;
 
@@ -499,7 +503,6 @@ export const createWorkbenchLayoutSlice = (
 	const { components } = options;
 
 	// Closure-scoped, never in state: none of these should notify subscribers.
-	let defaultSnapshot: WorkbenchSnapshot | null = null;
 	// The exact `layout` object hydration last ran for. Identity, not a
 	// boolean flag, so a host that genuinely swaps arrangements still
 	// re-applies -- see `loadSnapshot`.
@@ -858,23 +861,26 @@ export const createWorkbenchLayoutSlice = (
 						return;
 					}
 					loadedSnapshot = snapshot;
-					defaultSnapshot = deepCopy(snapshot);
 
-					applySnapshot(deepCopy(snapshot));
-					if (snapshot.recentCommands) {
-						get().command.actions.loadRecentCommands(
-							snapshot.recentCommands,
+					// Hydrated either way: a rejected arrangement is not a
+					// reason to leave the shell on its loading state forever.
+					const valid = parseWorkbenchSnapshot(snapshot);
+					if (valid) {
+						applySnapshot(deepCopy(valid));
+						if (valid.recentCommands) {
+							get().command.actions.loadRecentCommands(
+								valid.recentCommands,
+							);
+						}
+					} else {
+						console.error(
+							"workbench: ignoring an unreadable arrangement",
+							snapshot,
 						);
 					}
 					set((root) => ({
 						layout: { ...root.layout, hydrated: true },
 					}));
-				},
-				resetLayout: () => {
-					if (!defaultSnapshot) {
-						return;
-					}
-					applySnapshot(deepCopy(defaultSnapshot));
 				},
 				getSnapshot: buildSnapshot,
 

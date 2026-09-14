@@ -8,7 +8,7 @@ import {
 	Tooltip,
 	TooltipContent,
 	TooltipTrigger,
-	useCacheState,
+	useCacheData,
 } from "@semoss/ui/next";
 import type {
 	WorkbenchLayout,
@@ -16,7 +16,6 @@ import type {
 	WorkbenchSnapshot,
 } from "@semoss/workbench";
 import {
-	parseWorkbenchSnapshot,
 	useWorkbenchCommands,
 	WORKBENCH_STYLES,
 	Workbench,
@@ -91,10 +90,9 @@ const MY_FILES_LAYOUT: WorkbenchLayout = {
  */
 export const MyFilesWorkbench: React.FC = () => {
 	const insight = useInsight();
-	const [snapshot, onSnapshotChange] = useCacheState<WorkbenchSnapshot>(
-		MY_FILES_LAYOUT,
+	const [snapshot, onSnapshotChange] = useCacheData<WorkbenchSnapshot>(
 		"workbench-layout--my-files--1",
-		parseWorkbenchSnapshot,
+		MY_FILES_LAYOUT,
 	);
 	const [isMaximized, setIsMaximized] = useState(false);
 
@@ -127,7 +125,7 @@ export const MyFilesWorkbench: React.FC = () => {
 			>
 				<Workbench
 					snapshot={snapshot}
-					onUnmount={onSnapshotChange}
+					onChange={onSnapshotChange}
 					borderSlots={{
 						left: {
 							after: (
@@ -175,7 +173,9 @@ export const MyFilesWorkbench: React.FC = () => {
 												: "Maximize"}
 										</TooltipContent>
 									</Tooltip>
-									<WorkbenchResetButton />
+									<WorkbenchResetButton
+										snapshot={MY_FILES_LAYOUT}
+									/>
 								</>
 							),
 						},

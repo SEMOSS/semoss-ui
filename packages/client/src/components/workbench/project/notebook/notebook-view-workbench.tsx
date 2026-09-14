@@ -1,12 +1,12 @@
 import { useMemo } from "react";
 import { FILE_PANEL_COMPONENTS } from "@semoss/panels";
-import { useCacheState } from "@semoss/ui/next";
+import { useCacheData } from "@semoss/ui/next";
 import type {
 	WorkbenchLayout,
 	WorkbenchPanelConfigAny,
 	WorkbenchSnapshot,
 } from "@semoss/workbench";
-import { parseWorkbenchSnapshot, Workbench } from "@semoss/workbench";
+import { Workbench } from "@semoss/workbench";
 import { useProject } from "@/hooks";
 import {
 	WORKBENCH_COMPONENTS,
@@ -97,11 +97,10 @@ export const NotebookViewWorkbench: React.FC<NotebookViewWorkbenchProps> = ({
 	// This shell is mounted by two pages — the notebook's own view and the
 	// share page — and they keep separate arrangements, so the variant is a
 	// prop rather than something the shell can work out for itself.
-	const [snapshot, onSnapshotChange] = useCacheState<WorkbenchSnapshot>(
-		workbenchLayout,
+	const [snapshot, onSnapshotChange] = useCacheData<WorkbenchSnapshot>(
 		`workbench-layout--${project.project_id}-${variant}--1`,
-		parseWorkbenchSnapshot,
+		workbenchLayout,
 	);
 
-	return <Workbench snapshot={snapshot} onUnmount={onSnapshotChange} />;
+	return <Workbench snapshot={snapshot} onChange={onSnapshotChange} />;
 };

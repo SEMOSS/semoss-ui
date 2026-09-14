@@ -37,9 +37,9 @@ export type WorkbenchStoreOptions = WorkbenchLayoutSliceOptions;
  * identity rule from the map, and a host that opens a panel before its shell
  * has ever mounted would otherwise dedupe against a shallow compare.
  *
- * Persistence is the host's: the shell's `onChange` and `onUnmount` props hand
- * back a snapshot, and `layout.actions.getSnapshot()` is that same read for a
- * host driving the dock itself. Nothing here touches storage.
+ * Persistence is the host's: the shell's `onChange` prop hands back a
+ * snapshot, and `layout.actions.getSnapshot()` is that same read for a host
+ * driving the dock itself. Nothing here touches storage.
  *
  * Neither the assistant nor resource access is a slice here. The assistant
  * owns its own store (`stores/assistant`), created by the domain workbench;

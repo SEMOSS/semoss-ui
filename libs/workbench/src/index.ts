@@ -36,8 +36,6 @@ export { useWorkbench } from "./hooks/use-workbench";
 export { useWorkbenchCommands } from "./hooks/use-workbench-commands";
 export { useWorkbenchControl } from "./hooks/use-workbench-control";
 export { useWorkbenchStoreApi } from "./hooks/use-workbench-store-api";
-/* Validate a snapshot read back from wherever the host keeps it */
-export { parseWorkbenchSnapshot } from "./stores/slices/workbench-layout.tree";
 export {
 	createWorkbenchStore,
 	type WorkbenchState,

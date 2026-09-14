@@ -365,9 +365,9 @@ export interface WorkbenchLayout {
  * one entry per dock. `recentCommands` is optional so a default layout literal
  * stays a plain `WorkbenchLayout`.
  *
- * Validate anything read back from storage with `parseWorkbenchSnapshot`: the
- * shape is only as trustworthy as the storage it came from, and a host is free
- * to decide which cache entry belongs to which shape by naming it.
+ * A host hands one back unvalidated: the shape is only as trustworthy as the
+ * storage it came from, and `loadSnapshot` is where it is checked before the
+ * dock is built from it.
  *
  * Closing a panel deletes it, so there is nothing here beyond what is open.
  * A cache written before that was true may still carry a `closed` array and
