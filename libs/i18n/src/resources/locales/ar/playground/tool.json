@@ -10,6 +10,8 @@
 		"waitingForInput": "في انتظار الإدخال"
 	},
 	"actions": {
+		"approve": "الموافقة",
+		"reject": "رفض",
 		"cancel": "إلغاء",
 		"expand": "توسيع",
 		"collapse": "طي",

@@ -45,7 +45,7 @@ import {
 	type RoomStore,
 	type ToolStore,
 } from "@/stores";
-import { isAskExecutionMode } from "@/utility/mcp-utils";
+import { isAskExecutionMode, isYesNoExecutionMode } from "@/utility/mcp-utils";
 import { ResponseMessageSubagent } from "./response-message-subagent";
 import { ResponseMessageText } from "./response-message-text";
 import { ResponseMessageThinking } from "./response-message-thinking";
@@ -361,7 +361,11 @@ export const ResponseMessage = observer(
 			if (!tool.isResolved) return true;
 			// non-interactive tools (auto-execute, or backend-executed e.g.
 			// agent-run tools) should always be grouped
-			if (!isAskExecutionMode(tool.json._meta?.SMSS_MCP_EXECUTION))
+			const execution = tool.json._meta?.SMSS_MCP_EXECUTION;
+			if (
+				!isAskExecutionMode(execution) &&
+				!isYesNoExecutionMode(execution)
+			)
 				return true;
 			// ask tools only enter the group once their own chunk has nothing
 			// left running — a later round waiting on a decision must not pull
@@ -422,7 +426,11 @@ export const ResponseMessage = observer(
 				if (tool.status === "LOADING" || tool.status === "INITIAL") {
 					run.hasUnfinishedTools = true;
 				}
-				if (isAskExecutionMode(tool.json._meta?.SMSS_MCP_EXECUTION)) {
+				const toolExecution = tool.json._meta?.SMSS_MCP_EXECUTION;
+				if (
+					isAskExecutionMode(toolExecution) ||
+					isYesNoExecutionMode(toolExecution)
+				) {
 					run.hasAskTools = true;
 				}
 
