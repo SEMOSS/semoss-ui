@@ -15,15 +15,12 @@ import {
 	uploadInsight,
 } from "@semoss/sdk/react";
 import type { FileExplorerApi, ThemeMap } from "@semoss/shared";
-import { readCacheState, writeCacheState } from "@semoss/ui/next";
 import {
 	createWorkbenchStore,
-	parseWorkbenchSnapshot,
 	type WorkbenchPanelConfigAny,
 	type WorkbenchPanelId,
 	type WorkbenchPanelParams,
 	type WorkbenchPanelType,
-	type WorkbenchSnapshot,
 	type WorkbenchState,
 } from "@semoss/workbench";
 import { STREAMING_PLACEHOLDER_ID } from "@/constants";
@@ -52,7 +49,6 @@ import type {
 } from "@/types";
 import {
 	getRoomFileMode,
-	getRoomSidebarCacheName,
 	ROOM_PANEL_TYPES,
 	ROOM_SIDEBAR_LAYOUT,
 } from "./room-sidebar";
@@ -221,9 +217,6 @@ export class RoomStore {
 		},
 	};
 
-	/** Where this room's sidebar arrangement is cached. */
-	private _cacheName: string;
-
 	/**
 	 * The dock backing the sidebar.
 	 *
@@ -255,19 +248,10 @@ export class RoomStore {
 		this._store.roomId = roomId;
 		this._store.insightId = insightId;
 
-		this._cacheName = getRoomSidebarCacheName(roomId);
 		this.workbench = createWorkbenchStore({ components: panelComponents });
-		// Restore now, not when the shell mounts: a panel opened while the
-		// sidebar is closed must land on the restored arrangement, not on an
-		// empty one the shell would then replace.
 		this.workbench
 			.getState()
-			.layout.actions.loadSnapshot(
-				readCacheState<WorkbenchSnapshot>(
-					this._cacheName,
-					parseWorkbenchSnapshot,
-				) ?? ROOM_SIDEBAR_LAYOUT,
-			);
+			.layout.actions.loadSnapshot(ROOM_SIDEBAR_LAYOUT);
 		this._syncSidebarFileMode();
 
 		// make it observable -- the dock is a zustand store with its own
@@ -318,9 +302,6 @@ export class RoomStore {
 		});
 	};
 
-	/**
-	 * Getters
-	 */
 	/**
 	 * Get the id of the roomId
 	 */
@@ -1050,12 +1031,9 @@ export class RoomStore {
 	/**
 	 * Re-point the sidebar's restored file panels at the room's current insight.
 	 *
-	 * A room binds to a fresh insight every time it loads, but its sidebar
-	 * arrangement is cached, so a restored panel carries the insight id of
-	 * whichever session wrote it. That id is what its reads and saves run
-	 * against — left alone, the panel talks to an insight that no longer
-	 * exists — and what its dedupe compares, so reopening the same file would
-	 * give a second tab. One pass, before anything mounts.
+	 * A room binds to a fresh insight every time it loads. Panels opened before
+	 * that binding completes need their mode updated before they mount so reads,
+	 * saves, and dedupe all use the room's live insight.
 	 */
 	private _syncSidebarFileMode = (): void => {
 		const { actions } = this.workbench.getState().layout;
@@ -1128,19 +1106,6 @@ export class RoomStore {
 		for (const record of actions.matchPanels(type, config)) {
 			actions.closePanel(record.id);
 		}
-	};
-
-	/**
-	 * Cache the sidebar's arrangement.
-	 *
-	 * Handed to the dock as both `onChange` and `onUnmount`: the first covers
-	 * every rearrangement while the sidebar is on screen, the second catches
-	 * the close, which is a MobX-only change the dock never sees. A panel
-	 * opened while the sidebar is closed is written by whichever fires next —
-	 * the snapshot is the whole arrangement, not a delta.
-	 */
-	persistSidebar = (snapshot: WorkbenchSnapshot): void => {
-		writeCacheState(this._cacheName, snapshot);
 	};
 
 	/**

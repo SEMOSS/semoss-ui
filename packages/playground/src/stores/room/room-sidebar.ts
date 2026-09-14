@@ -9,9 +9,7 @@ import type {
 /**
  * Panel type ids the room sidebar can dock.
  *
- * These strings are persisted into the room's cached layout, so a record whose
- * type no longer has a blueprint renders as "no component registered" rather
- * than disappearing — changing one is a visible break, not a silent one.
+ * These strings identify the panels the room sidebar can dock.
  *
  * They live beside the store rather than beside the blueprints because both
  * halves need them and the store must not import the blueprints: those reach
@@ -31,10 +29,8 @@ export const ROOM_PANEL_TYPES = {
  * tabset itself has to survive its last close, or the dock would prune its only
  * container and have nowhere to put the next panel.
  *
- * Module scope is load-bearing twice over: `loadLayout` hydrates once per
- * layout identity, and both the store (at construction) and `<Workbench>` (on
- * mount) pass this same object, so the shell's mount does not re-read the cache
- * over panels opened while the sidebar was closed.
+ * Module scope keeps the store and `<Workbench>` aligned on the same starting
+ * layout when the sidebar mounts.
  */
 export const ROOM_SIDEBAR_LAYOUT: WorkbenchLayout = {
 	tree: {
@@ -54,9 +50,8 @@ export const ROOM_SIDEBAR_LAYOUT: WorkbenchLayout = {
  * Every read, save and download a file panel makes runs against the insight
  * named here, and it is also the key renames are broadcast on and the config
  * the file panels dedupe by — so it has to be the room's *live* insight, not
- * whichever one was current when the sidebar was last cached. A room binds to a
- * fresh insight on every load, which is what `RoomStore` re-points restored
- * panels at.
+ * A room binds to a fresh insight on every load, and `RoomStore` updates any
+ * panels opened before that binding completes.
  *
  * @param insightId - The room's current insight.
  * @return The mode every file panel in that sidebar is opened with.
@@ -67,17 +62,6 @@ export const getRoomFileMode = (
 	type: "INSIGHT",
 	insightId: insightId,
 });
-
-/**
- * The cache name for one room's sidebar arrangement.
- *
- * The name carries the version: bump the suffix whenever the shape of anything
- * inside a snapshot changes, a panel's `config` included. Entries are dropped
- * rather than migrated, so every user loses their arrangement once — the trade
- * for not carrying a repair path for every past shape.
- */
-export const getRoomSidebarCacheName = (roomId: string): string =>
-	`playground-room--${roomId}--1`;
 
 /**
  * Whether the panel `type`/`config` names is the one the sidebar is showing.

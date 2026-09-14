@@ -48,8 +48,6 @@ export const RoomSidebar: React.FC<RoomSidebarProps> = observer(({ room }) => {
 					<WorkbenchProvider store={room.workbench}>
 						<Workbench
 							snapshot={ROOM_SIDEBAR_LAYOUT}
-							onChange={room.persistSidebar}
-							onUnmount={room.persistSidebar}
 							borderSlots={{
 								top: {
 									after: (

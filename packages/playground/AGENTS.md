@@ -133,25 +133,21 @@ code and are easy to undo by accident:
   to be in place before the first `openSidebarPanel`, which for a streaming tool is long before
   anything mounts — without them the dock falls back to a shallow compare of config, and since a
   file panel's `mode` is a fresh object per call, every open would spawn another tab.
-- **`RoomSidebar` passes `persistSidebar` as both `onChange` and `onUnmount`.** The first covers
-  every rearrangement while the sidebar is on screen; the second catches the close, which is a
-  MobX-only change the dock never sees. Both are shell-scoped, so a panel opened into a *closed*
-  sidebar is in memory only until one of them next fires — a snapshot is the whole arrangement,
-  not a delta, so the next write carries it. `room-sidebar.test.ts` pins that boundary.
+- **`RoomSidebar` always starts from `ROOM_SIDEBAR_LAYOUT`.** The sidebar arrangement is owned by
+  the room instance and is not persisted between room sessions. Panels opened while the sidebar
+  is closed remain in that room's workbench store until the sidebar mounts.
 - **A restored file panel is re-pointed at the room's live insight.** A room binds to a fresh
   insight on every load, and a file panel's `mode.insightId` is what its reads and saves run
   against. `_syncSidebarFileMode` rewrites them once, before anything mounts.
 - **Close and maximize live in the sidebar's own header**, because they act on the container. The
   only genuinely per-panel control — "open inline" — is registered by the tool panel with
   `useWorkbenchControl`.
-- **The layout is cached per room** (`smss--playground-room--<roomId>--1`, via `useCacheState`'s
-  React-free twins), so switching rooms cannot bleed, and one entry accumulates per room ever
-  opened. The name carries the version: bump the suffix in `getRoomSidebarCacheName` when a
-  snapshot's shape changes.
+- **The layout is not cached.** Each new `RoomStore` starts with the empty default arrangement,
+  so switching rooms cannot bleed panel state between room instances.
 
 Panel ids and the sidebar's default layout live in `stores/room/room-sidebar.ts`; the blueprints
-live in `components/room/panels/`. Changing a panel type string drops that panel out of every
-cached sidebar.
+live in `components/room/panels/`. Changing a panel type string affects only the current room
+instance.
 
 ## Design-System Notes
 

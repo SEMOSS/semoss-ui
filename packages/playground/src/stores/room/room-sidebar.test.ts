@@ -1,5 +1,4 @@
 import { beforeEach, expect, test, vi } from "vitest";
-import { FILE_PANEL_TYPES } from "@semoss/panels";
 import type { ThemeMap } from "@semoss/shared";
 import { ROOM_PANEL_COMPONENTS } from "@/components/room/panels";
 import { RoomStore } from "./room.store";
@@ -92,31 +91,6 @@ test("closing a tool's panel marks the tool closed", () => {
 	expect(setIsOpen).toHaveBeenCalledWith(false);
 });
 
-test("a restored file panel is re-pointed at the room's current insight", () => {
-	const roomId = "room-restore";
-	// a previous session's cache, written against an insight that is now gone
-	const previous = createRoom(roomId);
-	previous.openFileSidebarPanel("/README.md");
-	// the shell hands the snapshot back on change and on unmount; headless,
-	// that is this call
-	previous.persistSidebar(
-		previous.workbench.getState().layout.actions.getSnapshot(),
-	);
-
-	const room = createRoom(roomId, "insight-2");
-	const [record] = room.workbench
-		.getState()
-		.layout.actions.findPanels(
-			(candidate) =>
-				candidate.type === FILE_PANEL_TYPES.FILE_MARKDOWN_EDITOR,
-		);
-
-	expect(record).toBeDefined();
-	expect(
-		(record.config as { mode: { insightId: string } }).mode.insightId,
-	).toBe("insight-2");
-});
-
 test("the sidebar's default arrangement survives its last panel closing", () => {
 	const room = createRoom("room-empty");
 	const pid = room.openSidebarPanel(ROOM_PANEL_TYPES.CONFIGURATION);
@@ -142,29 +116,4 @@ test("a room whose sidebar never mounted still dedupes", () => {
 	expect(Object.keys(room.workbench.getState().layout.panels)).toHaveLength(
 		1,
 	);
-});
-
-test("nothing is cached until the sidebar hands a snapshot back", () => {
-	// Persistence is the shell's now: `<Workbench onChange onUnmount>` is what
-	// calls `persistSidebar`. A panel opened while the sidebar is closed is
-	// therefore in memory only until one of those fires -- which is why the
-	// shell passes `onUnmount` as well as `onChange`.
-	const room = createRoom("room-unmounted-write");
-	room.openSidebarFileExplorer();
-
-	expect(
-		Object.keys(
-			createRoom("room-unmounted-write").workbench.getState().layout
-				.panels,
-		),
-	).toHaveLength(0);
-
-	room.persistSidebar(room.workbench.getState().layout.actions.getSnapshot());
-
-	expect(
-		Object.keys(
-			createRoom("room-unmounted-write").workbench.getState().layout
-				.panels,
-		),
-	).toHaveLength(1);
 });
