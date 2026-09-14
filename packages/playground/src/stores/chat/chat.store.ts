@@ -310,17 +310,15 @@ export class ChatStore {
 	};
 
 	/**
-	 * Create a new room
+	 * Creates a room via CreatePlaygroundRoom and brings it to model/mode/name
+	 * ready state, without options, a message, or surfacing it anywhere.
+	 * Callers sequence initialize()/updateRoomOptions() themselves.
 	 */
-	createRoom = async (
+	private createRoomShell = async (
 		mode: "agent" | "chat",
-		prompt: string,
-		files: File[],
-		options: RoomStore["options"],
+		name: string,
 		workspaceId?: string,
-		askOptions?: { visible?: boolean },
 	): Promise<RoomStore> => {
-		// create the room in a new insight
 		const { errors, pixelReturn, insightId } = await runPixel<
 			[
 				{
@@ -332,7 +330,6 @@ export class ChatStore {
 			"new",
 		);
 
-		// throw errors
 		if (errors.length > 0) {
 			throw new Error(errors.join(""));
 		}
@@ -351,20 +348,33 @@ export class ChatStore {
 			panelComponents: this._panelComponents,
 		});
 
-		// set the model
 		room.setModel(this.models.selected);
-
-		// set the mode
 		room.setMode(mode);
+		room.setMetadata({ name });
 
-		// set default name
-		room.setMetadata({ name: prompt.substring(0, 15) });
+		return room;
+	};
 
-		// initialize the room
+	/**
+	 * Create a new room
+	 */
+	createRoom = async (
+		mode: "agent" | "chat",
+		prompt: string,
+		files: File[],
+		options: RoomStore["options"],
+		workspaceId?: string,
+		askOptions?: { visible?: boolean },
+	): Promise<RoomStore> => {
+		const room = await this.createRoomShell(
+			mode,
+			prompt.substring(0, 15),
+			workspaceId,
+		);
+		// Order matters: see the harnessType comment in RoomStore.initialize().
 		await room.initialize();
-
-		// set the options
 		await room.updateRoomOptions(options);
+		const roomId = room.roomId;
 
 		runInAction(() => {
 			// save it to the cache
@@ -403,6 +413,27 @@ export class ChatStore {
 		})();
 
 		// return the room
+		return room;
+	};
+
+	/**
+	 * Create a room with no first message — e.g. so an agent's scripted
+	 * greeting can render immediately on selection. Registered in the local
+	 * cache so loadRoom finds it after navigation, but not surfaced in the
+	 * nav until a real message lands.
+	 */
+	createEmptyRoom = async (
+		mode: "agent" | "chat",
+		name: string,
+		options: RoomStore["options"],
+		workspaceId?: string,
+	): Promise<RoomStore> => {
+		const room = await this.createRoomShell(mode, name, workspaceId);
+		// Reversed vs createRoom: the workspace must be persisted before
+		// initialize() reads it back to derive agentGreeting.
+		await room.updateRoomOptions(options);
+		await room.initialize();
+		this.registerRoom(room);
 		return room;
 	};
 

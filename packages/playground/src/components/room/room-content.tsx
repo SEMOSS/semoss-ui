@@ -39,6 +39,7 @@ import {
 } from "@/stores";
 import { decideAgentToolAction } from "@/stores/message/agent-harness";
 import { RoomCompactionIndicator } from "./room-compaction-indicator";
+import { RoomGreeting } from "./room-greeting";
 import { RoomSuggestions } from "./room-suggestions";
 
 const SCROLL_THRESHOLD = 150;
@@ -425,6 +426,12 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 						}}
 					>
 						<div className="mx-auto flex w-full max-w-[1120px] flex-col gap-2 px-4 py-6 sm:px-8 lg:px-16">
+							{room.agentGreeting && (
+								<RoomGreeting
+									room={room}
+									greeting={room.agentGreeting}
+								/>
+							)}
 							{room.history.map((m) => {
 								if (!m.visible) {
 									return null;
