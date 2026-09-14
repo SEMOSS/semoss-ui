@@ -5,7 +5,6 @@ export const WORKBENCH_COMPONENTS = {
 	FILE_EXPLORER: "file-explorer",
 	FILE_CODE_EDITOR: "file-code-editor",
 	FILE_DOWNLOAD: "file-download",
-	FILE_HTML_EDITOR: "file-html-editor",
 	FILE_IMAGE_VIEWER: "file-image-viewer",
 	FILE_MARKDOWN_EDITOR: "file-markdown-editor",
 	FILE_NOTEBOOK_EDITOR: "file-notebook-editor",
