@@ -312,9 +312,7 @@ export class ChatStore {
 	/**
 	 * Creates a room via CreatePlaygroundRoom and brings it to model/mode/name
 	 * ready state, without options, a message, or surfacing it anywhere.
-	 * Shared by createRoom and createEmptyRoom so neither duplicates the
-	 * room-creation pixel call — each then sequences initialize()/
-	 * updateRoomOptions() in whichever order its own needs require.
+	 * Callers sequence initialize()/updateRoomOptions() themselves.
 	 */
 	private createRoomShell = async (
 		mode: "agent" | "chat",
@@ -373,8 +371,7 @@ export class ChatStore {
 			prompt.substring(0, 15),
 			workspaceId,
 		);
-		// initialize() before updateRoomOptions() is deliberate: see the
-		// harnessType comment in RoomStore.initialize().
+		// Order matters: see the harnessType comment in RoomStore.initialize().
 		await room.initialize();
 		await room.updateRoomOptions(options);
 		const roomId = room.roomId;
@@ -422,9 +419,8 @@ export class ChatStore {
 	/**
 	 * Create a room with no first message — e.g. so an agent's scripted
 	 * greeting can render immediately on selection. Registered in the local
-	 * cache (not surfaced as an optimistic nav entry) so loadRoom finds it
-	 * after navigation; it only joins the nav once a real message gives
-	 * GetPlaygroundRooms something to return.
+	 * cache so loadRoom finds it after navigation, but not surfaced in the
+	 * nav until a real message lands.
 	 */
 	createEmptyRoom = async (
 		mode: "agent" | "chat",
@@ -433,10 +429,8 @@ export class ChatStore {
 		workspaceId?: string,
 	): Promise<RoomStore> => {
 		const room = await this.createRoomShell(mode, name, workspaceId);
-		// updateRoomOptions() before initialize() — unlike createRoom — so the
-		// workspace is already persisted by the time initialize() reads options
-		// back and derives agentGreeting from it. Otherwise the greeting is
-		// silently empty until the room is reloaded once.
+		// Reversed vs createRoom: the workspace must be persisted before
+		// initialize() reads it back to derive agentGreeting.
 		await room.updateRoomOptions(options);
 		await room.initialize();
 		this.registerRoom(room);

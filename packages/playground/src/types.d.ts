@@ -64,9 +64,8 @@ export interface Workspace {
 		 */
 		model_id?: string;
 		/**
-		 * The agent's scripted opening message, rendered as the first bubble in
-		 * a new room. Shown only when `greeting_enabled` is true and this is
-		 * non-empty; never sent to the model as context.
+		 * The agent's scripted opening message. Shown only when
+		 * `greeting_enabled` is true; never sent to the model as context.
 		 */
 		greeting?: string;
 		/** Whether `greeting` is shown. Toggling this off keeps the authored text. */

@@ -109,10 +109,8 @@ interface RoomStoreInterface {
 
 	/**
 	 * The agent's scripted opening message, rendered as the first bubble in
-	 * the transcript. Derived from the workspace this room was started from,
-	 * re-read on every initialize() — not a message, never sent to the model.
-	 * Empty when the room has no workspace, no greeting text, or the toggle
-	 * is off.
+	 * the transcript. Re-read from the workspace on every initialize() — not
+	 * a message, never sent to the model. Empty when there is none.
 	 */
 	agentGreeting: string;
 
@@ -745,8 +743,6 @@ export class RoomStore {
 			// named a model of its own - a room the user has already chatted in
 			// keeps the model those messages ran on.
 			let agentDefaultModelId = "";
-			// The agent's scripted opening message, re-derived from the current
-			// workspace config on every load (not snapshotted).
 			let agentGreeting = "";
 
 			if (!newOptions.workspace?.workspace_id) {
@@ -829,8 +825,6 @@ export class RoomStore {
 				// set the options based on the history
 				this.setOptions(newOptions);
 
-				// set the agent's scripted greeting (empty for rooms with no
-				// workspace, no greeting text, or the toggle off)
 				this._store.agentGreeting = agentGreeting;
 
 				// Restore the persisted room name so the breadcrumb shows it on

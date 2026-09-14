@@ -3,7 +3,10 @@ import { useMemo } from "react";
 import { Markdown } from "@semoss/ui/next";
 import { useRoot } from "@/hooks";
 import type { RoomStore } from "@/stores";
-import { createMarkdownComponents } from "../message/response-message-text/create-markdown-components";
+import {
+	createMarkdownComponents,
+	createMarkdownUrlTransform,
+} from "../message/response-message-text/create-markdown-components";
 
 interface RoomGreetingProps {
 	/** Room the greeting is rendered for. */
@@ -15,11 +18,9 @@ interface RoomGreetingProps {
 
 /**
  * The agent's scripted opening message. Derived from the workspace config at
- * render time (room.agentGreeting) rather than stored as a message, so it
- * carries none of the message affordances - no id, no feedback/copy/token
- * controls - and never reaches room.history or the model. Reuses the same
- * markdown renderer as a real assistant reply so it's visually
- * indistinguishable from one.
+ * render time rather than stored as a message, so it carries no message
+ * affordances and never reaches room.history or the model. Uses the same
+ * markdown renderer and URL allowlist as a real assistant reply.
  */
 export const RoomGreeting: React.FC<RoomGreetingProps> = observer(
 	({ room, greeting }) => {
@@ -35,17 +36,10 @@ export const RoomGreeting: React.FC<RoomGreetingProps> = observer(
 			[room, root.theme.featureFlags?.enableTableExport],
 		);
 
-		const urlTransform = (url: string) => {
-			if (url.startsWith("room://")) return url;
-			if (
-				root.theme.allowedUrlPrefixes?.some((prefix) =>
-					url.startsWith(prefix),
-				)
-			)
-				return url;
-			if (/^(https?:|mailto:|#)/.test(url)) return url;
-			return "";
-		};
+		const urlTransform = useMemo(
+			() => createMarkdownUrlTransform(root.theme.allowedUrlPrefixes),
+			[root.theme.allowedUrlPrefixes],
+		);
 
 		return (
 			<div className="group">

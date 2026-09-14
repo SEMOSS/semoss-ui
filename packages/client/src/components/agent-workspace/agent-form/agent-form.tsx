@@ -128,6 +128,7 @@ export const AgentForm = ({
 								control={control}
 								render={({ field }) => (
 									<Switch
+										aria-label="Enable greeting"
 										checked={field.value}
 										onCheckedChange={field.onChange}
 									/>
@@ -150,8 +151,9 @@ export const AgentForm = ({
 						/>
 						<FieldDescription>
 							Shown as the agent's opening message when a room
-							starts. Costs no tokens and is never visible to the
-							model.
+							starts. Costs no tokens - but the model cannot see
+							it, so repeat anything it needs to act on (the
+							options you offer here) in Instructions.
 						</FieldDescription>
 					</Field>
 					<AgentModelField control={control} />

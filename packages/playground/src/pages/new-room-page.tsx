@@ -154,8 +154,6 @@ export const NewRoomPage = observer(() => {
 	// the pre-created room's sidebar is opened before it is ever rendered, so
 	// its blueprints are registered from here rather than from RoomContent
 	const submittedRef = useRef(false);
-	// Guards the greeting-room effect below so a remount / StrictMode
-	// double-invoke doesn't create two rooms for the same agent.
 	const greetingRoomStartedForRef = useRef<string>("");
 	const [mode, setMode] = useState<"chat" | "agent">("chat");
 
@@ -182,19 +180,12 @@ export const NewRoomPage = observer(() => {
 		},
 	);
 
-	// True only when the selected workspace came from the ?workspaceId= URL
-	// param (a direct/shared agent link) rather than the in-room "+" modal.
+	// Direct/shared agent link, rather than the in-room "+" modal.
 	const isWorkspaceFromUrl =
 		!!workspaceIdSearchParams &&
 		workspaceIdSearchParams === selectedWorkspaceId;
 
-	// The agent's scripted opening message — read straight off the workspace
-	// config (never sent to the model). Only shown for a workspace routed in
-	// via the URL (see isWorkspaceFromUrl): the greeting-room effect below
-	// bounces that case into a real room almost immediately, so this is just
-	// what's visible for the brief moment while that room is being created.
-	// A modal-selected agent gets no greeting treatment at all — same as
-	// attaching any other tool, the regular Playground landing page.
+	// Only visible for the moment the greeting room below is being created.
 	const agentGreeting =
 		isWorkspaceFromUrl &&
 		getWorkspace.data?.workspace_id === selectedWorkspaceId &&
@@ -246,8 +237,7 @@ export const NewRoomPage = observer(() => {
 		const options = {
 			...tempRoomStore.options,
 			mcp: tempRoomStore.options.mcp,
-			// Persist the agent harness selection so the room stays in agent
-			// mode across reloads.
+			// Persisted so agent mode survives a reload.
 			harnessType: mode === "agent" ? "semoss" : undefined,
 		};
 
@@ -357,12 +347,9 @@ export const NewRoomPage = observer(() => {
 	};
 
 	/**
-	 * Start a message-less room for an agent's scripted greeting — the room
-	 * exists with the workspace attached, but nothing is asked. No pixel ever
-	 * writes a message, so the greeting never reaches the model as context.
-	 * Only used when the workspace was selected via direct URL routing (see
-	 * isWorkspaceFromUrl) — a modal selection shows the greeting inline
-	 * instead, via agentGreeting above, without creating a room.
+	 * Start a message-less room for an agent's scripted greeting. No pixel
+	 * ever writes a message, so the greeting never reaches the model as
+	 * context. URL-routed workspaces only.
 	 */
 	const startAgentGreetingRoom = async (
 		workspaceId: string,
@@ -371,6 +358,9 @@ export const NewRoomPage = observer(() => {
 		if (isLoading) {
 			return;
 		}
+
+		// Claimed here, not in the effect, so bailing above stays retryable.
+		greetingRoomStartedForRef.current = workspaceId;
 
 		try {
 			setIsLoading(true);
@@ -484,14 +474,9 @@ export const NewRoomPage = observer(() => {
 		chat,
 	]);
 
-	// A workspace selected via direct URL routing (?workspaceId=...) whose
-	// greeting is enabled and non-empty drops straight into an empty room
-	// with it already rendered, instead of the landing page. Selecting an
-	// agent from the in-room "+" modal never bounces — see agentGreeting
-	// above, which shows the same text inline with no room created.
-	// Guarded per-workspace so a remount/StrictMode double-invoke (or
-	// re-selecting the same agent) doesn't create a second room.
-	// biome-ignore lint/correctness/useExhaustiveDependencies: greetingRoomStartedForRef guards re-fires; startAgentGreetingRoom/mode/tempRoomStore/chat/navigate are stable enough in practice and re-listing them would re-run this on every render
+	// A URL-routed agent with a greeting drops straight into a room with it
+	// already rendered, instead of the landing page.
+	// biome-ignore lint/correctness/useExhaustiveDependencies: greetingRoomStartedForRef guards re-fires; re-listing the rest would re-run this every render
 	useEffect(() => {
 		if (!isWorkspaceFromUrl) {
 			return;
@@ -516,7 +501,6 @@ export const NewRoomPage = observer(() => {
 			return;
 		}
 
-		greetingRoomStartedForRef.current = selectedWorkspaceId;
 		void startAgentGreetingRoom(
 			selectedWorkspaceId,
 			getWorkspace.data.name,

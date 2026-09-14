@@ -37,6 +37,20 @@ type BlockQuoteProps = ComponentProps<"blockquote"> & {
 	node?: unknown;
 };
 
+/**
+ * Builds the `urlTransform` for anything rendered as assistant content.
+ * Unmatched urls are rewritten to "", leaving the link inert.
+ */
+export const createMarkdownUrlTransform =
+	(allowedUrlPrefixes?: string[]) =>
+	(url: string): string => {
+		if (url.startsWith("room://")) return url;
+		if (allowedUrlPrefixes?.some((prefix) => url.startsWith(prefix)))
+			return url;
+		if (/^(https?:|mailto:|#)/.test(url)) return url;
+		return "";
+	};
+
 export const createMarkdownComponents = (
 	room?: RoomStore,
 	isHtmlPreviewLoading?: boolean,
