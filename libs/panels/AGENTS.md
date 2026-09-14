@@ -27,12 +27,16 @@ the dock — two copies would mean two store instances and silently divergent st
 
 ```
 src/
-├── access/     the permission cache, its provider, and `useAccess`
-├── files/      the panels, their controls, and the two hooks they are built from
-├── mcp/        the MCP toolbox editor (canonical copy — see below)
+├── components/ the panels, controls, explorer, and `components/mcp/` editor UI
+├── contexts/   access provider context
+├── stores/     access store factory
+├── hooks/      access, file-panel, explorer, and MCP hooks
+├── utility/    file-panel and MCP utility functions
+├── types/      access, file-panel, and MCP types
+├── constants/  file-panel runtime constants
 ├── styles/     the Tailwind `@source` every host imports
 ├── vite/       build-time bits a host cannot skip (see below)
-└── index.ts
+└── index.ts    curated public surface
 ```
 
 `src/vite/` is Node-side and is **not** in the barrel — it has its own `./vite` export subpath.
@@ -57,14 +61,14 @@ cannot reuse the access the panel already resolved.
 
 ## The MCP editor is duplicated on purpose
 
-`src/mcp/` is the canonical copy. `packages/client/src/components/shared/mcp-json-editor/` is a
+`src/components/mcp/` is the canonical copy. `packages/client/src/components/shared/mcp-json-editor/` is a
 second one kept alive only for the legacy BLOCKS workspace, and is deleted when BLOCKS migrates
 off FlexLayout. Do not re-point the panel at the client's copy to remove the duplication — that
 would invert the dependency this package exists to establish.
 
 ## Rules
 
-- **`src/files/index.ts` is curated, not `export *`.** Of the sixty symbols the folder used to
+- **`src/index.ts` is curated, not `export *`.** Of the sixty symbols the source tree used to
   leak, eight had an external consumer. Panel blueprints are not among them — a host registers
   `FILE_PANEL_COMPONENTS`. Add a symbol when a consumer needs it; `export *` also put
   `getImageMimeType(path)` next to `@semoss/shared`'s incompatible `getImageMimeType(extension)`
