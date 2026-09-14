@@ -2,6 +2,7 @@ import {
 	type ComponentPropsWithRef,
 	type ForwardedRef,
 	forwardRef,
+	type JSX,
 } from "react";
 import { cn } from "@semoss/ui/next";
 

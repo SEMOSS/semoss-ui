@@ -45,7 +45,6 @@ export const WorkbenchMobileDrawer: FC<WorkbenchMobileDrawerProps> = ({
 	const actions = useWorkbench((s) => s.layout.actions);
 	const stacks = useWorkbench((s) => s.layout.stacks);
 	const panels = useWorkbench((s) => s.layout.panels);
-	const readOnly = useWorkbench((s) => s.layout.readOnly);
 	const mobileActivePanelId = useWorkbench(
 		(s) => s.layout.mobileActivePanelId,
 	);
@@ -56,7 +55,7 @@ export const WorkbenchMobileDrawer: FC<WorkbenchMobileDrawerProps> = ({
 		open: false,
 		panelIds: [],
 	});
-	const showActions = Boolean(slotContent) || !readOnly;
+	const showActions = true;
 
 	return (
 		<Drawer open={open} onOpenChange={onOpenChange}>
@@ -79,7 +78,7 @@ export const WorkbenchMobileDrawer: FC<WorkbenchMobileDrawerProps> = ({
 								</Muted>
 								<div className="mt-2 flex items-center justify-center gap-2 [&_button]:size-10 [&_svg]:size-4">
 									{slotContent}
-									{readOnly ? null : <WorkbenchResetButton />}
+									<WorkbenchResetButton />
 								</div>
 							</div>
 						) : null}

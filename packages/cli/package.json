@@ -33,7 +33,7 @@
         "add": "^2.0.6",
         "shx": "^0.3.4",
         "ts-node": "^10.9.2",
-        "typescript": "^5"
+        "typescript": "~6.0.0"
     },
     "engines": {
         "node": ">=20.0.0"

@@ -12,7 +12,7 @@ import {
 	Webhook,
 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation } from "react-router";
 import { useTranslation } from "@semoss/i18n";
 import {
 	Badge,
@@ -41,7 +41,7 @@ import {
 	selectRepo,
 	setProjectBranch,
 } from "@/api/github";
-import { useProject, useRootStore } from "@/hooks";
+import { useProject, useSession } from "@/hooks";
 import { GithubBranchSelect } from "./app-detail-tabs/github-branch-select";
 import { GithubInstallationPicker } from "./app-detail-tabs/github-installation-picker";
 import { GithubRepoPicker } from "./app-detail-tabs/github-repo-picker";
@@ -62,7 +62,7 @@ export const AppGithubPage = () => {
 	const { t } = useTranslation("githubApp");
 	const { project } = useProject();
 	const appId = project.project_id;
-	const { monolithStore } = useRootStore();
+	const runPixel = useSession((state) => state.runPixel);
 	const location = useLocation();
 
 	// Seed from router state (set when the select-repo page links a repo and
@@ -138,7 +138,7 @@ export const AppGithubPage = () => {
 	// Is the linked GitHub App installation still valid (not uninstalled)?
 	const loadInstallationHealth = useCallback(async () => {
 		try {
-			const res = await monolithStore.runQuery<[GithubInstallationCheck]>(
+			const res = await runPixel<[GithubInstallationCheck]>(
 				`GitHubCheckInstallation(project=["${appId}"]);`,
 			);
 			if (res.errors.length) {
@@ -152,13 +152,13 @@ export const AppGithubPage = () => {
 			// Leave as "unknown" — don't block the rest of the tab on this check.
 			setInstallationValid(null);
 		}
-	}, [appId, monolithStore]);
+	}, [appId, runPixel]);
 
 	// Recent webhook deliveries for this project's installation.
 	const loadDeliveries = useCallback(async () => {
 		setIsDeliveriesLoading(true);
 		try {
-			const res = await monolithStore.runQuery<
+			const res = await runPixel<
 				[{ deliveries?: GithubWebhookDelivery[] }]
 			>(
 				`GitHubWebhookDeliveries(project=["${appId}"], limit=[${DELIVERY_LIMIT}]);`,
@@ -181,7 +181,7 @@ export const AppGithubPage = () => {
 		} finally {
 			setIsDeliveriesLoading(false);
 		}
-	}, [appId, monolithStore, t]);
+	}, [appId, runPixel, t]);
 
 	// Load health + deliveries whenever the project becomes connected.
 	useEffect(() => {

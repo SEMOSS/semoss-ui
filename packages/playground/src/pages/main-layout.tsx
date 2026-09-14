@@ -6,7 +6,7 @@ import React, {
 	useRef,
 	useState,
 } from "react";
-import { Link, matchPath, Outlet, useLocation } from "react-router-dom";
+import { Link, matchPath, Outlet, useLocation } from "react-router";
 import { useInsight } from "@semoss/sdk/react";
 import {
 	Breadcrumb,

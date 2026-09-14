@@ -51,6 +51,41 @@ const loadSystemConfig = async () => {
 	}
 };
 
+/** Options accepted by {@link InsightStore.initialize}. */
+interface InitializeOptions {
+	/**
+	 * App to load into the insight
+	 */
+	app?: string | false;
+
+	/**
+	 * Python file to load into an insight
+	 */
+	python?:
+		| {
+				type: "file";
+				path: string;
+				alias: string;
+		  }
+		| {
+				type: "script";
+				script: string;
+				alias: string;
+		  }
+		| false;
+
+	/**
+	 * Whether to disable connecting the insight to a room
+	 * Defaults to false
+	 */
+	disableRoom?: boolean;
+
+	/**
+	 * Connect this insight to an existing insight ID
+	 */
+	insightId?: string;
+}
+
 interface InsightStoreInterface {
 	/** insightId of the app */
 	insightId: string;
@@ -222,45 +257,56 @@ export class InsightStore {
 		this._store.meta = { ...meta };
 	}
 
+	/**
+	 * The initialize() call currently in flight, or null when idle. Concurrent
+	 * callers await this one instead of starting a second setup.
+	 */
+	private _initializing: Promise<{
+		tool: (typeof Env)["TOOL"] | null;
+	} | null> | null = null;
+
 	/** Methods */
 	/**
-	 * Initialize the insight
+	 * Initialize the insight.
+	 *
+	 * <p>
+	 * Calling this while a previous call is still running returns that same call
+	 * rather than starting a second one. Without that, two overlapping calls each
+	 * create a server-side insight, the second overwrites the first's id, and the
+	 * first is orphaned for the rest of the session. React StrictMode's double
+	 * mount makes this the common case, not an edge case.
+	 *
+	 * <p>
+	 * Calling it again after one has finished re-initializes, replacing the
+	 * insight.
 	 *
 	 * options - options to initialize with
 	 */
-	initialize = async (options?: {
-		/**
-		 * App to load into the insight
-		 */
-		app?: string | false;
+	initialize = async (
+		options?: InitializeOptions,
+	): Promise<{
+		tool: (typeof Env)["TOOL"] | null;
+	}> => {
+		if (this._initializing) {
+			return this._initializing;
+		}
+		this._initializing = this.runInitialize(options);
+		try {
+			return await this._initializing;
+		} finally {
+			// Cleared in a finally so a rejected or aborted attempt does not wedge
+			// every later call into returning the failed promise.
+			this._initializing = null;
+		}
+	};
 
-		/**
-		 * Python file to load into an insight
-		 */
-		python?:
-			| {
-					type: "file";
-					path: string;
-					alias: string;
-			  }
-			| {
-					type: "script";
-					script: string;
-					alias: string;
-			  }
-			| false;
-
-		/**
-		 * Whether to disable connecting the insight to a room
-		 * Defaults to false
-		 */
-		disableRoom?: boolean;
-
-		/**
-		 * Connect this insight to an existing insight ID
-		 */
-		insightId?: string;
-	}): Promise<{
+	/**
+	 * The body of {@link initialize}. Split out so the in-flight guard above has a
+	 * single promise to hand to concurrent callers.
+	 */
+	private runInitialize = async (
+		options?: InitializeOptions,
+	): Promise<{
 		tool: (typeof Env)["TOOL"] | null;
 	}> => {
 		// reset it
@@ -309,27 +355,9 @@ export class InsightStore {
 		// save the disable room option
 		this._store.options.disableRoom = merged.disableRoom || false;
 
-		// load the environment from the document (production)
-		try {
-			if (typeof document !== "undefined") {
-				const env = JSON.parse(
-					document.getElementById("semoss-env")?.textContent || "",
-				) as {
-					APP: string;
-					MODULE: string;
-				};
-
-				// update the enviornment variables with the module
-				if (env) {
-					Env.update({
-						APP: env.APP,
-						MODULE: env.MODULE,
-					});
-				}
-			}
-		} catch (_e) {
-			// noop
-		}
+		// Already applied when the SDK loaded; repeated here so a tag injected after
+		// load is still picked up. A missing or unreadable tag leaves Env untouched.
+		Env.refreshFromDocument();
 
 		try {
 			// reset the id based on the Environment if set

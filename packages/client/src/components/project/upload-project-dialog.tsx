@@ -25,8 +25,7 @@ import {
 	Textarea,
 	toast,
 } from "@semoss/ui/next";
-import { uploadFile } from "@/api";
-import { useRootStore } from "@/hooks";
+import { useSession } from "@/hooks";
 
 /** Title and error message shown based on the entity being uploaded. */
 const DIALOG_CONFIG = {
@@ -81,7 +80,8 @@ export const UploadProjectDialog = ({
 	handleClose,
 }: UploadProjectDialogProps) => {
 	const config = DIALOG_CONFIG[type];
-	const { monolithStore, configStore } = useRootStore();
+	const runPixel = useSession((state) => state.runPixel);
+	const sessionUpload = useSession((state) => state.upload);
 
 	// --- Form state ---
 	const [upload, setUpload] = useState<File | null>(null);
@@ -118,17 +118,14 @@ export const UploadProjectDialog = ({
 	const handleSubmit = async () => {
 		setIsLoading(true);
 		try {
-			if (isAppZip) {
-				if (!upload) {
-					throw new Error("No file selected for upload.");
-				}
+			if (!upload) {
+				throw new Error("No file selected for upload.");
+			}
 
+			if (isAppZip) {
 				// App Zip: single pixel handles the full project creation
-				const uploaded = await uploadFile(
-					[upload],
-					configStore.store.insightID,
-				);
-				const resp = await monolithStore.runQuery(
+				const uploaded = await sessionUpload([upload]);
+				const resp = await runPixel(
 					`UploadProjectApp(filePath=["${uploaded[0].fileLocation}"], global=[${isGlobal}]);`,
 				);
 				const output = resp.pixelReturn[0].output as {
@@ -143,7 +140,7 @@ export const UploadProjectDialog = ({
 			} else {
 				// Assets Copy: create the project shell, set metadata, then
 				// delete the default assets folder and unzip the uploaded file
-				const createResp = await monolithStore.runQuery(
+				const createResp = await runPixel(
 					`CreateProject(project=["${name}"], global=["${isGlobal}"], projectType=["${appType}"], portal=["true"])`,
 				);
 				const createOutput = createResp.pixelReturn[0].output as {
@@ -158,7 +155,7 @@ export const UploadProjectDialog = ({
 					return;
 				}
 
-				const metaResp = await monolithStore.runQuery(
+				const metaResp = await runPixel(
 					`SetProjectMetadata(project=["${createOutput.project_id}"], meta=[${JSON.stringify({ tag: tags, description })}])`,
 				);
 				if (
@@ -170,7 +167,7 @@ export const UploadProjectDialog = ({
 					return;
 				}
 
-				const deleteResp = await monolithStore.runQuery(
+				const deleteResp = await runPixel(
 					`DeleteAsset(filePath=["version/assets/"], space=["${createOutput.project_id}"]);`,
 				);
 				if (
@@ -182,14 +179,13 @@ export const UploadProjectDialog = ({
 					return;
 				}
 
-				const uploaded = await uploadFile(
-					[upload!],
-					configStore.store.insightID,
+				const uploaded = await sessionUpload(
+					[upload],
 					createOutput.project_id,
 					"version",
 				);
 
-				const unzipResp = await monolithStore.runQuery(
+				const unzipResp = await runPixel(
 					`UnzipFile(filePath=["${uploaded[0].fileLocation}"], space=["${createOutput.project_id}"]);`,
 				);
 				if (

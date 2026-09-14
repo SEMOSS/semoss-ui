@@ -22,7 +22,7 @@ import {
 	TooltipTrigger,
 	toast,
 } from "@semoss/ui/next";
-import { useRootStore } from "@/hooks";
+import { useSession } from "@/hooks";
 import { getBlockElement } from "@/stores";
 import { SECTION_ORDER } from "../blocks-workspace/menus/default-menu";
 import type { DesignerMenuItem } from "../blocks-workspace/menus/menu-types";
@@ -66,7 +66,7 @@ export const AddClientBlockModal = (props: EditDetailsModalProps) => {
 	const { isOpen, selected, onClose, isEdit, block_json } = props;
 	const { control, setValue, reset, handleSubmit } =
 		useForm<AddAsClientBlockTypes>({ defaultValues: AddAsClientBlock });
-	const { monolithStore } = useRootStore();
+	const runPixel = useSession((state) => state.runPixel);
 	const { state } = useBlocks();
 	const allowedKeys = ["widget", "data", "listeners", "slots", "id"];
 	const [showPreviewModal, setShowPreviewModal] = useState(false);
@@ -264,7 +264,7 @@ export const AddClientBlockModal = (props: EditDetailsModalProps) => {
 				variables: result.variables,
 			} as typeof newClientBlock & { queries: Dict; variables: Dict };
 
-			const response = await monolithStore.runQuery<[true]>(
+			const response = await runPixel<[true]>(
 				`AddBlock(name=["${data.name}"], section=["${
 					data.section
 				}"], json=["<encode>${JSON.stringify(newClientBlock)}</encode>"]);`,

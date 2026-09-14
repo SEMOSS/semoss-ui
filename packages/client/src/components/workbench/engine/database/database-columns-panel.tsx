@@ -43,7 +43,6 @@ import type {
 	WorkbenchComponent,
 	WorkbenchPanelConfig,
 } from "@/stores/workbench";
-import { getDatabaseWorkbenchStore } from "@/stores/workbench/database";
 import { DatabaseColumnsRefreshControl } from "./database-columns-refresh-control";
 import {
 	type DatabaseColumnAction,
@@ -542,19 +541,4 @@ export const DATABASE_COLUMNS_PANEL: WorkbenchPanelConfig = {
 	canRename: false,
 	mount: "keepAlive",
 	content: DatabaseColumnsPanel,
-	// A contributed command runs outside React, so the domain store comes from
-	// `get` rather than `useDatabaseWorkbench`.
-	commands: (panel, get) => [
-		{
-			id: "refresh-structure",
-			category: "Database",
-			label: "Refresh Database Structure",
-			hint: panel.name,
-			run: () => {
-				void getDatabaseWorkbenchStore(get())
-					?.getState()
-					.structure.refresh();
-			},
-		},
-	],
 };

@@ -43,7 +43,6 @@ export const WorkbenchPanelMenuContent: FC<{ pid: WorkbenchPanelId }> = ({
 }) => {
 	const store = useWorkbenchStoreApi();
 	const actions = useWorkbench((s) => s.layout.actions);
-	const readOnly = useWorkbench((s) => s.layout.readOnly);
 	const panels = useWorkbench((s) => s.layout.panels);
 	const tree = useWorkbench((s) => s.layout.tree);
 	const borders = useWorkbench((s) => s.layout.borders);
@@ -55,8 +54,8 @@ export const WorkbenchPanelMenuContent: FC<{ pid: WorkbenchPanelId }> = ({
 	}
 
 	const closable = actions.canClose(pid);
-	const draggable = actions.canDrag(pid) && !readOnly;
-	const renamable = actions.canRename(pid) && !readOnly;
+	const draggable = actions.canDrag(pid);
+	const renamable = actions.canRename(pid);
 
 	// whatever the panel's own blueprint contributes, guarded so a broken
 	// panel can't take the menu down with it
@@ -193,7 +192,7 @@ export const WorkbenchPanelMenuContent: FC<{ pid: WorkbenchPanelId }> = ({
 		: [];
 
 	const editGroup =
-		renamable || !readOnly ? (
+		renamable || draggable ? (
 			<ContextMenuGroup>
 				{renamable ? (
 					<ContextMenuItem
@@ -202,7 +201,7 @@ export const WorkbenchPanelMenuContent: FC<{ pid: WorkbenchPanelId }> = ({
 						Rename
 					</ContextMenuItem>
 				) : null}
-				{!readOnly ? (
+				{draggable ? (
 					<ContextMenuItem
 						onSelect={() => actions.setPinned(pid, !record.pinned)}
 					>
@@ -249,7 +248,7 @@ export const WorkbenchPanelMenuContent: FC<{ pid: WorkbenchPanelId }> = ({
 	// single-tab dock offers no Split at all
 	const canSplit = draggable && (host?.panelIds.length ?? 0) > 1;
 	// the in-place viewport split is opt-in per panel type
-	const canSplitTab = !readOnly && actions.canSplitTab(pid);
+	const canSplitTab = actions.canSplitTab(pid);
 
 	const layoutGroup =
 		host && (canSplit || canSplitTab || draggable) ? (

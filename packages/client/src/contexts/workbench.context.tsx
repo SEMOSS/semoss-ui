@@ -8,22 +8,34 @@ export const WorkbenchStoreContext = createContext<
 >(undefined);
 
 interface WorkbenchProviderProps {
-	/** Unique identity used to isolate workbench state. */
-	id: string;
+	/** Unique key used to isolate persisted workbench state. */
+	cacheKey: string;
 
 	/** Workbench content that consumes the scoped store. */
 	children: ReactNode;
 }
 
 /** Provide one isolated workbench store. */
-export function WorkbenchProvider({ id, children }: WorkbenchProviderProps) {
-	const storeRef = useRef<StoreApi<WorkbenchState> | null>(null);
-	if (!storeRef.current) {
-		storeRef.current = createWorkbenchStore(id);
+export function WorkbenchProvider({
+	cacheKey,
+	children,
+}: WorkbenchProviderProps) {
+	const storeRef = useRef<{
+		cacheKey: string;
+		store: StoreApi<WorkbenchState>;
+	} | null>(null);
+	if (!storeRef.current || storeRef.current.cacheKey !== cacheKey) {
+		storeRef.current = {
+			cacheKey,
+			store: createWorkbenchStore(cacheKey),
+		};
 	}
 
 	return (
-		<WorkbenchStoreContext.Provider value={storeRef.current}>
+		<WorkbenchStoreContext.Provider
+			key={cacheKey}
+			value={storeRef.current.store}
+		>
 			{children}
 		</WorkbenchStoreContext.Provider>
 	);

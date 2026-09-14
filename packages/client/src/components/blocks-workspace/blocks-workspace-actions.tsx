@@ -15,13 +15,13 @@ import {
 } from "@semoss/ui/next";
 import { ShareOverlay } from "@/components/ui";
 import { PreviewDialog } from "@/components/workspace";
-import { useProject, useRootStore, useWorkspace } from "@/hooks";
+import { useProject, useSession, useWorkspace } from "@/hooks";
 import { LLMSelectDialog } from "../llms";
 
 export const BlocksWorkspaceActions = observer(() => {
 	const { state } = useBlocks();
 
-	const { monolithStore } = useRootStore();
+	const sessionRunPixel = useSession((state) => state.runPixel);
 	const { workspace } = useWorkspace();
 	const { permission, project } = useProject();
 
@@ -113,7 +113,7 @@ export const BlocksWorkspaceActions = observer(() => {
 		});
 		try {
 			// save the json
-			const { errors } = await monolithStore.runQuery<[true]>(
+			const { errors } = await sessionRunPixel<[true]>(
 				`SaveAppBlocksJson(project=["${
 					project.project_id
 				}"], json=["<encode>${JSON.stringify(json)}</encode>"]);`,
@@ -147,9 +147,9 @@ export const BlocksWorkspaceActions = observer(() => {
 
 			// only get the json if the user can edit
 			if (permission === "OWNER" || permission === "EDIT") {
-				const { pixelReturn, errors } = await monolithStore.runQuery<
-					[true]
-				>(`GetAppBlocksJson ( project=['${project.project_id}']);`);
+				const { pixelReturn, errors } = await sessionRunPixel<[true]>(
+					`GetAppBlocksJson ( project=['${project.project_id}']);`,
+				);
 
 				if (errors.length > 0) {
 					throw new Error(errors.join(""));

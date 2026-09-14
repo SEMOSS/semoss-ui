@@ -1,9 +1,9 @@
 import { useEffect } from "react";
 import { clientResources, I18nBuilder, I18nextProvider } from "@semoss/i18n";
-import { CSRF, Env } from "@semoss/sdk/react";
+import { Env } from "@semoss/sdk/react";
 import { ThemeProvider, Toaster } from "@semoss/ui/next";
-import { RootStoreContext } from "@/contexts";
-import { RootStore } from "@/stores";
+import { ConfigStoreProvider, SessionStoreProvider } from "@/contexts";
+import { createConfigStore, createSessionStore } from "@/stores";
 import { AppWrapper } from "./app-wrapper";
 
 // use the environment variable to set the module
@@ -23,8 +23,8 @@ const i18n = i18nBuilder.i18n;
 // instead of raw keys.
 export const i18nReady = i18nBuilder.ready;
 
-// create a new root store
-const _store = new RootStore();
+const configStore = createConfigStore();
+const sessionStore = createSessionStore(configStore);
 
 export const App = () => {
 	useEffect(() => {
@@ -48,12 +48,14 @@ export const App = () => {
 				});
 			}
 		} catch (_e) {}
-		// intialize it
-		_store.configStore.initialize().then(() => {
-			// set as enabled
-			CSRF.isEnabled = _store.configStore.store.config.csrf;
-			Env.update({ CSRF: _store.configStore.store.config.csrf });
-		});
+
+		// initialize the platform config, then the user session
+		configStore
+			.getState()
+			.initialize()
+			.then((loggedIn) => {
+				return sessionStore.getState().initialize(loggedIn);
+			});
 	}, []);
 
 	//  NCRT ASK - (https://play.semoss.org/ncrt/SemossWeb/packages/client/dist/#!/)
@@ -65,16 +67,18 @@ export const App = () => {
 	}
 
 	return (
-		<I18nextProvider i18n={i18n}>
-			<RootStoreContext.Provider value={_store}>
-				<ThemeProvider
-					defaultTheme="light"
-					storageKey="smss-ui-theme-client"
-				>
-					<AppWrapper />
-					<Toaster />
-				</ThemeProvider>
-			</RootStoreContext.Provider>
-		</I18nextProvider>
+		<ConfigStoreProvider store={configStore}>
+			<SessionStoreProvider store={sessionStore}>
+				<I18nextProvider i18n={i18n}>
+					<ThemeProvider
+						defaultTheme="light"
+						storageKey="smss-ui-theme-client"
+					>
+						<AppWrapper />
+						<Toaster />
+					</ThemeProvider>
+				</I18nextProvider>
+			</SessionStoreProvider>
+		</ConfigStoreProvider>
 	);
 };

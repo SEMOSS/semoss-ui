@@ -69,13 +69,6 @@ export interface WorkbenchProps {
 	 */
 	borderSlots?: WorkbenchBorderSlots;
 
-	/**
-	 * Disables structural edits (drag, split, pin, rename, reset) while
-	 * navigation still works. View-only workbenches still persist their own
-	 * layout under their own id.
-	 */
-	readOnly?: boolean;
-
 	/** Fired when a panel becomes docked somewhere. */
 	onPanelOpen?: (pid: WorkbenchPanelId) => void;
 

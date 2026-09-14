@@ -1,5 +1,4 @@
 import { Filter, LayoutGrid, List, Plus, Search, X } from "lucide-react";
-import { observer } from "mobx-react-lite";
 import { useEffect, useMemo, useState } from "react";
 import {
 	Badge,
@@ -19,7 +18,7 @@ import {
 } from "@semoss/ui/next";
 import { NavbarHeader } from "@/components/shared/navbar-header";
 import { NavbarLeft } from "@/components/shared/navbar-left";
-import { useRootStore } from "@/hooks";
+import { useSession } from "@/hooks";
 import { useNavigate } from "@/hooks/useNavigate";
 import { PromptLibraryCards } from "../../components/prompt/library/prompt-library-cards";
 import type { Prompt } from "../../components/prompt/prompt.types";
@@ -28,8 +27,9 @@ import { PromptModal } from "./PromptModal";
 type ViewMode = "grid" | "list";
 type PromptTabMode = "My Prompts" | "Global Prompts";
 
-export const PromptPage = observer(() => {
-	const { configStore, monolithStore } = useRootStore();
+export const PromptPage = () => {
+	const runPixel = useSession((state) => state.runPixel);
+	const userId = useSession((state) => state.user.id);
 	const navigate = useNavigate();
 	const [isPromptModalOpen, setIsPromptModalOpen] = useState(false);
 	const [promptMode, setPromptMode] = useState("");
@@ -56,7 +56,7 @@ export const PromptPage = observer(() => {
 	 * @desc Gets All prompts
 	 */
 	const init = () => {
-		monolithStore.runQuery("ListPrompt()").then((response) => {
+		runPixel("ListPrompt()").then((response) => {
 			const { output } = response.pixelReturn[0];
 			if (output.length > 0) {
 				const promptArr = [];
@@ -83,8 +83,8 @@ export const PromptPage = observer(() => {
 	 * @desc Gets all filter tag options
 	 */
 	const loadTags = () => {
-		monolithStore
-			.runQuery('GetPromptMetaValues( metaKeys = ["tag","domain"])')
+		sessionStore
+			.runPixel('GetPromptMetaValues( metaKeys = ["tag","domain"])')
 			.then((response) => {
 				const { output } = response.pixelReturn[0];
 				if (output.length > 0) {
@@ -105,10 +105,7 @@ export const PromptPage = observer(() => {
 
 		return allPrompts
 			.filter((prompt) => {
-				if (
-					mode === "My Prompts" &&
-					prompt.created_by !== configStore.store.user.id
-				) {
+				if (mode === "My Prompts" && prompt.created_by !== userId) {
 					return false;
 				}
 				if (mode === "Global Prompts" && !prompt.global) {
@@ -139,7 +136,7 @@ export const PromptPage = observer(() => {
 				if (firstTitle > secondTitle) return 1;
 				return 0;
 			});
-	}, [allPrompts, filters, searchValue, mode, configStore.store.user.id]);
+	}, [allPrompts, filters, searchValue, mode, userId]);
 
 	const hasActiveFilter = filters.length > 0;
 
@@ -356,7 +353,7 @@ export const PromptPage = observer(() => {
 						<PromptLibraryCards
 							prompts={filteredPrompts}
 							view={view}
-							currentUserId={configStore.store.user.id}
+							currentUserId={userId}
 							onClick={(p: Prompt) => {
 								handlePromptClick(p);
 							}}
@@ -385,4 +382,4 @@ export const PromptPage = observer(() => {
 			/>
 		</>
 	);
-});
+};
