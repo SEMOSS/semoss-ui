@@ -6,7 +6,6 @@ import {
 	DownloadIcon,
 	RefreshCwIcon,
 	SaveIcon,
-	WrapTextIcon,
 } from "lucide-react";
 import type * as monaco from "monaco-editor";
 import {
@@ -28,8 +27,6 @@ import {
 	TooltipContent,
 	TooltipTrigger,
 	toast,
-	toggleCodeEditorWordWrap,
-	useCodeEditorWordWrap,
 } from "@semoss/ui/next";
 import {
 	MONACO_CONFIG,
@@ -147,7 +144,7 @@ export const FileCodeEditor = forwardRef<
 			null,
 		);
 		const monacoRef = useRef<typeof monaco | null>(null);
-		const wordWrap = useCodeEditorWordWrap();
+		const wordWrapRef = useRef<boolean>(false);
 		const decorationsRef = useRef<string[]>([]);
 		const [jsonErrors, setJsonErrors] = useState<monaco.editor.IMarker[]>(
 			[],
@@ -371,10 +368,11 @@ export const FileCodeEditor = forwardRef<
 				id: "toggle-word-wrap",
 				label: "Toggle Word Wrap",
 				keybindings: [monaco.KeyMod.Alt | monaco.KeyCode.KeyZ],
-				run: async () => {
-					// the preference drives `options` below, so every open
-					// editor rewraps together
-					toggleCodeEditorWordWrap();
+				run: async (editor) => {
+					wordWrapRef.current = !wordWrapRef.current;
+					editor.updateOptions({
+						wordWrap: wordWrapRef.current ? "on" : "off",
+					});
 				},
 			});
 
@@ -577,31 +575,6 @@ export const FileCodeEditor = forwardRef<
 								</TooltipTrigger>
 								<TooltipContent>Refresh</TooltipContent>
 							</Tooltip>
-							<Tooltip>
-								<TooltipTrigger asChild>
-									<Button
-										variant="ghost"
-										size="sm"
-										className={
-											wordWrap
-												? "text-foreground"
-												: "text-muted-foreground"
-										}
-										onClick={() =>
-											toggleCodeEditorWordWrap()
-										}
-										aria-label="Toggle word wrap"
-										aria-pressed={wordWrap}
-									>
-										<WrapTextIcon className="size-3" />
-									</Button>
-								</TooltipTrigger>
-								<TooltipContent>
-									{wordWrap
-										? "Disable word wrap"
-										: "Enable word wrap"}
-								</TooltipContent>
-							</Tooltip>
 							{toolbarStart}
 						</div>
 						<div className="flex items-center gap-1">
@@ -707,7 +680,6 @@ export const FileCodeEditor = forwardRef<
 								accessibilitySupport: "off",
 								padding: { top: 12 },
 								scrollBeyondLastLine: false,
-								wordWrap: wordWrap ? "on" : "off",
 								// relayout when the container resizes or is shown
 								// again, so an editor kept mounted behind another
 								// view comes back correctly sized
