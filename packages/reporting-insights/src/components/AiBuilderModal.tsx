@@ -6,7 +6,7 @@
  */
 
 import { ArrowLeft, Loader2, Plus, Sparkles, Wrench } from "lucide-react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useId, useMemo, useState } from "react";
 import { useInsight } from "@semoss/sdk-react";
 import { Button, Select } from "@/components/ui";
 import { useToast } from "@/components/ui/Toast";
@@ -32,11 +32,27 @@ const BUILDER_CHARTS: {
 	needsDimension: boolean;
 }[] = [
 	{ value: "bar chart", label: "Bar chart", needsDimension: true },
+	{ value: "stacked bar chart", label: "Stacked bar", needsDimension: true },
+	{ value: "combo chart", label: "Combo chart", needsDimension: true },
 	{ value: "line chart", label: "Line chart", needsDimension: true },
+	{ value: "multi-line chart", label: "Multi-line", needsDimension: true },
 	{ value: "area chart", label: "Area chart", needsDimension: true },
 	{ value: "pie chart", label: "Pie chart", needsDimension: true },
-	{ value: "stacked bar chart", label: "Stacked bar", needsDimension: true },
+	{ value: "half donut chart", label: "Half donut", needsDimension: true },
+	{ value: "radar chart", label: "Radar", needsDimension: true },
+	{ value: "polar bar chart", label: "Polar bar", needsDimension: true },
+	{ value: "treemap", label: "Treemap", needsDimension: true },
+	{ value: "sunburst chart", label: "Sunburst", needsDimension: true },
+	{ value: "packed circle chart", label: "Pack", needsDimension: true },
+	{ value: "scatter plot", label: "Scatter", needsDimension: true },
+	{ value: "bubble chart", label: "Bubble", needsDimension: true },
+	{ value: "box plot", label: "Box plot", needsDimension: true },
+	{ value: "cluster chart", label: "Cluster", needsDimension: true },
+	{ value: "heat map", label: "Heat map", needsDimension: true },
+	{ value: "world map", label: "World map", needsDimension: true },
+	{ value: "word cloud", label: "Word cloud", needsDimension: true },
 	{ value: "table", label: "Table", needsDimension: false },
+	{ value: "pivot table", label: "Pivot table", needsDimension: true },
 	{ value: "KPI", label: "KPI (single value)", needsDimension: false },
 ];
 
@@ -60,10 +76,13 @@ interface Props {
 export function AiBuilder({ onGenerated, onCancel, onSwitchToManual }: Props) {
 	const { actions } = useInsight();
 	const toast = useToast();
+	const descriptionId = useId();
 
 	const runPixel = useCallback(
 		(pixel: string) =>
-			actions.run(pixel).then((r: any) => r.pixelReturn[0].output),
+			actions
+				.run<[{ output: unknown; operationType?: string[] }]>(pixel)
+				.then((r) => r.pixelReturn[0].output),
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 		[],
 	);
@@ -77,7 +96,7 @@ export function AiBuilder({ onGenerated, onCancel, onSwitchToManual }: Props) {
 				const pixel = `Database(database=["${dbId}"]) | Query("${escapeSqlForPixel(sql)}") | Collect(1);`;
 				const { pixelReturn } =
 					await actions.run<
-						[{ output: any; operationType?: string[] }]
+						[{ output: unknown; operationType?: string[] }]
 					>(pixel);
 				const pr = pixelReturn[0];
 				if (
@@ -89,12 +108,17 @@ export function AiBuilder({ onGenerated, onCancel, onSwitchToManual }: Props) {
 						error: String(pr.output ?? "Query failed."),
 					};
 				}
-				const result: any = pr.output;
+				const result = pr.output as
+					| { data?: { headers?: string[] }; headers?: string[] }
+					| undefined;
 				const headers: string[] =
 					result?.data?.headers ?? result?.headers ?? [];
 				return { ok: true, headers };
-			} catch (e: any) {
-				return { ok: false, error: String(e?.message ?? e) };
+			} catch (e: unknown) {
+				return {
+					ok: false,
+					error: String((e as Error)?.message ?? e),
+				};
 			}
 		},
 		// eslint-disable-next-line react-hooks/exhaustive-deps
@@ -128,17 +152,23 @@ export function AiBuilder({ onGenerated, onCancel, onSwitchToManual }: Props) {
 				const out = await runPixel(
 					`MyEngines(engineTypes=['DATABASE'], sort=[{"ENGINENAME":"ASC"}], userT=[true], limit=[1000], offset=[0]);`,
 				);
-				const list: DbOption[] = (Array.isArray(out) ? out : []).map(
-					(d: any) => ({
-						id: d.app_id ?? d.database_id ?? d.engine_id,
-						label: d.engine_name ?? d.app_name ?? d.app_id,
-					}),
-				);
+				const rows: unknown[] = Array.isArray(out) ? out : [];
+				const list: DbOption[] = rows.map((d) => {
+					const r = d as Record<string, unknown>;
+					return {
+						id: String(
+							r.app_id ?? r.database_id ?? r.engine_id ?? "",
+						),
+						label: String(
+							r.engine_name ?? r.app_name ?? r.app_id ?? "",
+						),
+					};
+				});
 				setDatabases(list.filter((d) => d.id));
 				if (list.length) setDatabaseId((prev) => prev || list[0].id);
-			} catch (e: any) {
+			} catch (e: unknown) {
 				toast.error(
-					e?.message ?? "Failed to load databases.",
+					(e as Error)?.message ?? "Failed to load databases.",
 					"Databases",
 				);
 			}
@@ -149,8 +179,11 @@ export function AiBuilder({ onGenerated, onCancel, onSwitchToManual }: Props) {
 				const list = await fetchModels(runPixel);
 				setModels(list);
 				if (list.length) setModelId((prev) => prev || list[0].id);
-			} catch (e: any) {
-				toast.error(e?.message ?? "Failed to load models.", "Models");
+			} catch (e: unknown) {
+				toast.error(
+					(e as Error)?.message ?? "Failed to load models.",
+					"Models",
+				);
 			}
 		})();
 		// eslint-disable-next-line react-hooks/exhaustive-deps
@@ -270,8 +303,11 @@ export function AiBuilder({ onGenerated, onCancel, onSwitchToManual }: Props) {
 				"Dashboard generated",
 			);
 			onGenerated(dashboard);
-		} catch (e: any) {
-			toast.error(e?.message ?? "Generation failed.", "AI Builder");
+		} catch (e: unknown) {
+			toast.error(
+				(e as Error)?.message ?? "Generation failed.",
+				"AI Builder",
+			);
 		} finally {
 			setGenerating(false);
 			setStatus("");
@@ -323,9 +359,9 @@ export function AiBuilder({ onGenerated, onCancel, onSwitchToManual }: Props) {
 					<div className="flex-1 space-y-4 overflow-auto p-5">
 						<div className="grid grid-cols-2 gap-3">
 							<div>
-								<label className="mb-1.5 block font-semibold text-stone-600 text-xs">
+								<div className="mb-1.5 block font-semibold text-stone-600 text-xs">
 									Model
-								</label>
+								</div>
 								<Select
 									value={modelId}
 									onChange={(e) => setModelId(e.target.value)}
@@ -344,9 +380,9 @@ export function AiBuilder({ onGenerated, onCancel, onSwitchToManual }: Props) {
 								</Select>
 							</div>
 							<div>
-								<label className="mb-1.5 block font-semibold text-stone-600 text-xs">
+								<div className="mb-1.5 block font-semibold text-stone-600 text-xs">
 									Database
-								</label>
+								</div>
 								<Select
 									value={databaseId}
 									onChange={(e) =>
@@ -367,10 +403,14 @@ export function AiBuilder({ onGenerated, onCancel, onSwitchToManual }: Props) {
 						</div>
 
 						<div>
-							<label className="mb-1.5 block font-semibold text-stone-600 text-xs">
+							<label
+								htmlFor={descriptionId}
+								className="mb-1.5 block font-semibold text-stone-600 text-xs"
+							>
 								Describe your dashboard
 							</label>
 							<textarea
+								id={descriptionId}
 								value={description}
 								onChange={(e) => setDescription(e.target.value)}
 								disabled={generating}
@@ -409,7 +449,7 @@ export function AiBuilder({ onGenerated, onCancel, onSwitchToManual }: Props) {
 
 							<div className="grid grid-cols-2 gap-2">
 								{bKind === "chart" ? (
-									<label className="flex flex-col gap-1">
+									<div className="flex flex-col gap-1">
 										<span className="font-medium text-[11px] text-stone-500">
 											Chart type
 										</span>
@@ -430,9 +470,9 @@ export function AiBuilder({ onGenerated, onCancel, onSwitchToManual }: Props) {
 												</option>
 											))}
 										</Select>
-									</label>
+									</div>
 								) : (
-									<label className="flex flex-col gap-1">
+									<div className="flex flex-col gap-1">
 										<span className="font-medium text-[11px] text-stone-500">
 											Utility
 										</span>
@@ -451,10 +491,10 @@ export function AiBuilder({ onGenerated, onCancel, onSwitchToManual }: Props) {
 												CSV export button
 											</option>
 										</Select>
-									</label>
+									</div>
 								)}
 
-								<label className="flex flex-col gap-1">
+								<div className="flex flex-col gap-1">
 									<span className="font-medium text-[11px] text-stone-500">
 										Table
 									</span>
@@ -480,11 +520,11 @@ export function AiBuilder({ onGenerated, onCancel, onSwitchToManual }: Props) {
 											</option>
 										))}
 									</Select>
-								</label>
+								</div>
 
 								{bKind === "chart" && (
 									<>
-										<label className="flex flex-col gap-1">
+										<div className="flex flex-col gap-1">
 											<span className="font-medium text-[11px] text-stone-500">
 												Aggregate
 											</span>
@@ -505,8 +545,8 @@ export function AiBuilder({ onGenerated, onCancel, onSwitchToManual }: Props) {
 													</option>
 												))}
 											</Select>
-										</label>
-										<label className="flex flex-col gap-1">
+										</div>
+										<div className="flex flex-col gap-1">
 											<span className="font-medium text-[11px] text-stone-500">
 												{aggMeta?.needsColumn
 													? "Measure column"
@@ -536,9 +576,9 @@ export function AiBuilder({ onGenerated, onCancel, onSwitchToManual }: Props) {
 													</option>
 												))}
 											</Select>
-										</label>
+										</div>
 										{chartMeta?.needsDimension && (
-											<label className="col-span-2 flex flex-col gap-1">
+											<div className="col-span-2 flex flex-col gap-1">
 												<span className="font-medium text-[11px] text-stone-500">
 													Group by (category / x-axis)
 												</span>
@@ -567,14 +607,14 @@ export function AiBuilder({ onGenerated, onCancel, onSwitchToManual }: Props) {
 														</option>
 													))}
 												</Select>
-											</label>
+											</div>
 										)}
 									</>
 								)}
 
 								{bKind === "utility" &&
 									bUtility === "filter" && (
-										<label className="col-span-2 flex flex-col gap-1">
+										<div className="col-span-2 flex flex-col gap-1">
 											<span className="font-medium text-[11px] text-stone-500">
 												Filter on column
 											</span>
@@ -603,7 +643,7 @@ export function AiBuilder({ onGenerated, onCancel, onSwitchToManual }: Props) {
 													</option>
 												))}
 											</Select>
-										</label>
+										</div>
 									)}
 							</div>
 

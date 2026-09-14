@@ -28,7 +28,7 @@ export function aiEnabled(): boolean {
 	return true;
 }
 
-export type RunPixel = (pixel: string) => Promise<any>;
+export type RunPixel = (pixel: string) => Promise<unknown>;
 
 /** A SEMOSS model engine the user can pick for the AI Builder. */
 export interface ModelEngine {
@@ -39,11 +39,15 @@ export interface ModelEngine {
 /** List the model engines the current user can access (for the model picker). */
 export async function fetchModels(runPixel: RunPixel): Promise<ModelEngine[]> {
 	const out = await runPixel(`MyEngines(engineTypes=['MODEL']);`);
-	return (Array.isArray(out) ? out : [])
-		.map((m: any) => ({
-			id: m.app_id ?? m.database_id ?? m.engine_id,
-			name: m.engine_name ?? m.app_name ?? m.app_id,
-		}))
+	const rows: unknown[] = Array.isArray(out) ? out : [];
+	return rows
+		.map((m) => {
+			const r = asRecord(m);
+			return {
+				id: String(r.app_id ?? r.database_id ?? r.engine_id ?? ""),
+				name: String(r.engine_name ?? r.app_name ?? r.app_id ?? ""),
+			};
+		})
 		.filter((m: ModelEngine) => m.id);
 }
 
@@ -62,18 +66,25 @@ function escPixel(s: string): string {
 		.replace(/\t/g, "\\t");
 }
 
+/** Loosely-shaped pixel-output object — SEMOSS field names/shapes vary by call. */
+type RawRecord = Record<string, unknown>;
+const asRecord = (v: unknown): RawRecord =>
+	v && typeof v === "object" ? (v as RawRecord) : {};
+
 /** Every renderable data-visualization type the builder may emit. Excludes the
- *  non-data widgets (htmlblock, csvexport, filter) which need bespoke config. */
+ *  non-data widgets (htmlblock, markdown) which need bespoke, non-query-driven content. */
 const ALLOWED_TYPES: VisualizationType[] = [
 	"bar",
 	"stackbar",
 	"line",
 	"area",
+	"combo",
 	"multiline",
 	"pie",
 	"halfdonut",
 	"treemap",
 	"sunburst",
+	"puck",
 	"wordcloud",
 	"radar",
 	"polarbar",
@@ -99,21 +110,31 @@ export async function fetchMetamodel(
 	const out = await runPixel(
 		`GetDatabaseMetamodel(database=["${escPixel(dbId)}"], options=["physicalTypes","dataTypes"]);`,
 	);
-	const nodes: any[] = Array.isArray(out?.nodes) ? out.nodes : [];
-	const physTypes: Record<string, string> = out?.physicalTypes ?? {};
-	const dataTypes: Record<string, string> = out?.dataTypes ?? {};
+	const outRec = asRecord(out);
+	const nodes: unknown[] = Array.isArray(outRec.nodes) ? outRec.nodes : [];
+	const physTypes = asRecord(outRec.physicalTypes) as Record<string, string>;
+	const dataTypes = asRecord(outRec.dataTypes) as Record<string, string>;
 	const colName = (p: string) =>
 		p.includes("__") ? p.split("__").slice(1).join("__") : p;
 	return nodes
-		.map((n) => ({
-			table: String(n?.conceptualName ?? ""),
-			columns: (Array.isArray(n?.propSet) ? n.propSet : [])
-				.map((p: string) => ({
-					column: colName(String(p)),
-					type: String(physTypes[p] ?? dataTypes[p] ?? ""),
-				}))
-				.filter((c: { column: string }) => c.column),
-		}))
+		.map((n) => {
+			const rec = asRecord(n);
+			const propSet = Array.isArray(rec.propSet) ? rec.propSet : [];
+			return {
+				table: String(rec.conceptualName ?? ""),
+				columns: propSet
+					.map((p) => {
+						const key = String(p);
+						return {
+							column: colName(key),
+							type: String(
+								physTypes[key] ?? dataTypes[key] ?? "",
+							),
+						};
+					})
+					.filter((c: { column: string }) => c.column),
+			};
+		})
 		.filter((t) => t.table);
 }
 
@@ -177,13 +198,13 @@ export async function askLlm(
 	if (!modelId) throw new Error("Select a model to use.");
 	const pixel = `LLM(engine=["${escPixel(modelId)}"], command=["${escPixel(command)}"], context=["${escPixel(context)}"]);`;
 	const out = await runPixel(pixel);
-	const text =
-		typeof out === "string" ? out : (out?.response ?? out?.output ?? "");
-	return String(text ?? "");
+	if (typeof out === "string") return out;
+	const rec = asRecord(out);
+	return String(rec.response ?? rec.output ?? "");
 }
 
 /** Pull the first JSON object out of a model response (tolerates code fences/prose). */
-function extractJson(text: string): any {
+function extractJson(text: string): unknown {
 	let t = text
 		.trim()
 		.replace(/^```(?:json)?\s*/i, "")
@@ -212,7 +233,7 @@ interface AiSpecViz {
 	title: string;
 	type: string;
 	queryId?: string; // omitted for filter widgets
-	config?: Record<string, any>;
+	config?: Record<string, unknown>;
 	width?: number; // 3 | 4 | 6 | 12 (grid columns)
 }
 interface AiSpec {
@@ -289,8 +310,12 @@ const SYSTEM_CONTEXT = [
 	"config maps query columns to the chart. Use these keys per type:",
 	'- bar, line, area, scatter, cluster: {"xKey":"<category>","yKeys":["<numeric>", ...],"columnAggregations":{"<col>":"sum|avg|count|min|max"}}',
 	'- stackbar: same as bar plus {"facetKey":"<column whose values become the stacked series>"}',
+	'- combo: {"xKey":"<category>","yKeys":["<numeric>", ...],"columnAggregations":{...},"styling":{"combo":{"barKeys":["<col>", ...],"lineKeys":["<col>", ...]}}} — barKeys',
+	"  + lineKeys together must equal yKeys; put trend/goal-line-style series in lineKeys and the rest in barKeys.",
 	'- multiline: {"xKey":"<x>","yKeys":["<numeric>"],"categoryKey":"<column that splits into lines>"}',
 	'- pie, halfdonut, treemap, wordcloud: {"xKey":"<label/category>","yKeys":["<numeric value>"]}',
+	'- puck (packed-circle chart, one circle per group, sized by value): {"puckGroups":["<grouping column>", ...],',
+	'  "yKeys":["<numeric value>"],"columnAggregations":{"<col>":"sum|avg|count|min|max"}}',
 	'- radar, polarbar: {"xKey":"<category>","yKeys":["<numeric>", ...]}',
 	'- boxplot: {"xKey":"<group>","yKeys":["<numeric>"]}',
 	'- bubble: {"label":"<label col>","yKeys":["<size numeric>"],"xKey":"<optional numeric>"}',
@@ -337,6 +362,7 @@ const ARRAY_COL_KEYS = [
 	"yKeys",
 	"tableColumns",
 	"sunburstLevels",
+	"puckGroups",
 	"pivotRows",
 	"pivotColumns",
 	"pivotValues",
@@ -350,46 +376,75 @@ const ARRAY_COL_KEYS = [
  */
 function sanitizeConfig(
 	type: VisualizationType,
-	config: Record<string, any>,
+	config: Record<string, unknown>,
 	headers: string[] | undefined,
-): Record<string, any> {
+): Record<string, unknown> {
 	if (!headers?.length) return config;
 	const valid = new Set(headers);
-	const out: Record<string, any> = { ...config };
+	const out: Record<string, unknown> = { ...config };
 
-	for (const k of SINGLE_COL_KEYS)
-		if (out[k] && !valid.has(out[k])) delete out[k];
+	for (const k of SINGLE_COL_KEYS) {
+		const v = out[k];
+		if (typeof v === "string" && !valid.has(v)) delete out[k];
+	}
 	// `size` is a column for bubble/worldmap but a number elsewhere — only treat as a column here.
-	if (out.size && typeof out.size === "string" && !valid.has(out.size))
-		delete out.size;
+	if (typeof out.size === "string" && !valid.has(out.size)) delete out.size;
 	for (const k of ARRAY_COL_KEYS) {
-		if (Array.isArray(out[k])) {
-			out[k] = out[k].filter(
+		const arr = out[k];
+		if (Array.isArray(arr)) {
+			const filtered = arr.filter(
 				(c: unknown) => typeof c === "string" && valid.has(c),
 			);
-			if (!out[k].length) delete out[k];
+			if (!filtered.length) delete out[k];
+			else out[k] = filtered;
 		}
 	}
-	if (out.columnAggregations && typeof out.columnAggregations === "object") {
+	const aggs = out.columnAggregations;
+	if (aggs && typeof aggs === "object") {
 		out.columnAggregations = Object.fromEntries(
-			Object.entries(out.columnAggregations).filter(([c]) =>
+			Object.entries(aggs as Record<string, string>).filter(([c]) =>
 				valid.has(c),
 			),
 		);
+	}
+	// combo splits its yKeys into bar/line series under styling.combo — keep both
+	// lists confined to the (now-sanitized) yKeys so no stray column slips through.
+	const styling = out.styling as
+		| { combo?: Record<string, unknown> }
+		| undefined;
+	if (type === "combo" && styling?.combo) {
+		const yKeys = new Set<string>(
+			Array.isArray(out.yKeys) ? (out.yKeys as string[]) : [],
+		);
+		const combo: Record<string, unknown> = { ...styling.combo };
+		for (const k of ["barKeys", "lineKeys"]) {
+			const arr = combo[k];
+			if (Array.isArray(arr)) {
+				const filtered = arr.filter(
+					(c: unknown) => typeof c === "string" && yKeys.has(c),
+				);
+				if (!filtered.length) delete combo[k];
+				else combo[k] = filtered;
+			}
+		}
+		out.styling = { ...styling, combo };
 	}
 
 	// Fill sensible defaults from the real output columns.
 	const [first, ...rest] = headers;
 	if (type === "table") {
-		if (!out.tableColumns?.length) out.tableColumns = headers;
+		const tableColumns = out.tableColumns as string[] | undefined;
+		if (!tableColumns?.length) out.tableColumns = headers;
 	} else if (type === "kpi") {
-		if (!out.yKeys?.length) out.yKeys = rest.length ? rest : [first];
+		const yKeys = out.yKeys as string[] | undefined;
+		if (!yKeys?.length) out.yKeys = rest.length ? rest : [first];
 	} else if (
 		[
 			"bar",
 			"stackbar",
 			"line",
 			"area",
+			"combo",
 			"multiline",
 			"pie",
 			"halfdonut",
@@ -403,11 +458,19 @@ function sanitizeConfig(
 		].includes(type)
 	) {
 		if (!out.xKey) out.xKey = first;
-		if (!out.yKeys?.length)
-			out.yKeys = (rest.length ? rest : [first]).filter(
+		let yKeys = out.yKeys as string[] | undefined;
+		if (!yKeys?.length) {
+			yKeys = (rest.length ? rest : [first]).filter(
 				(c) => c !== out.xKey,
 			);
-		if (!out.yKeys.length) out.yKeys = [first];
+			out.yKeys = yKeys;
+		}
+		if (!yKeys.length) out.yKeys = [first];
+	} else if (type === "puck") {
+		const puckGroups = out.puckGroups as string[] | undefined;
+		if (!puckGroups?.length) out.puckGroups = [first];
+		const yKeys = out.yKeys as string[] | undefined;
+		if (!yKeys?.length) out.yKeys = [rest[rest.length - 1] ?? first];
 	}
 	return out;
 }
@@ -515,13 +578,10 @@ function specToDashboard(
 		// Everything else needs a backing query.
 		const mappedQueryId = queryIdMap.get(v?.queryId ?? "");
 		if (!mappedQueryId) return;
-		const boundQuery = queries.find((q) => q.id === mappedQueryId)!;
+		const boundQuery = queries.find((q) => q.id === mappedQueryId);
+		if (!boundQuery) return;
 		const headers = v.queryId ? headersBySpecQueryId[v.queryId] : undefined;
-		const config = sanitizeConfig(
-			type,
-			(v.config ?? {}) as Record<string, any>,
-			headers,
-		);
+		const config = sanitizeConfig(type, v.config ?? {}, headers);
 		visualizations.push({
 			id: vizId,
 			title: v.title?.trim() || "Visualization",
