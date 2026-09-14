@@ -25,11 +25,11 @@ import {
 	TooltipTrigger,
 	toast,
 } from "@semoss/ui/next";
-import { useDatabaseWorkbench, useEngine, useSession } from "@/hooks";
 import type {
 	WorkbenchComponent,
 	WorkbenchPanelConfig,
-} from "@/stores/workbench";
+} from "@semoss/workbench";
+import { useDatabaseWorkbench, useEngine, useSession } from "@/hooks";
 import { DatabaseResultsHeader } from "./database-results-header";
 import { DatabaseStatementResultView } from "./database-statement-result-view";
 

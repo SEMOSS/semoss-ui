@@ -39,6 +39,7 @@ import {
 	RoomInputMenuUpload,
 	RoomSidebar,
 } from "@/components";
+import { ROOM_PANEL_COMPONENTS } from "@/components/room/panels";
 import { RoomOptionsForm } from "@/components/room/room-options-form";
 import { FileDragProvider, useFileDrag } from "@/contexts";
 import { useChat, useGlobalBreadcrumbs, useRoot } from "@/hooks";
@@ -121,7 +122,12 @@ export const NewRoomPage = observer(() => {
 	// Create a temporary RoomStore instance to handle options mutations
 	// This prevents re-renders on tool selection since MobX handles the mutations
 	const tempRoomStore = useMemo(
-		() => new RoomStore(root.theme, "temp"),
+		() =>
+			new RoomStore({
+				theme: root.theme,
+				roomId: "temp",
+				panelComponents: ROOM_PANEL_COMPONENTS,
+			}),
 		[root.theme],
 	);
 	const bannerRef = useRef<HTMLDivElement>(null);
@@ -145,6 +151,8 @@ export const NewRoomPage = observer(() => {
 	const [preCreatedRoom, setPreCreatedRoom] = useState<RoomStore | null>(
 		null,
 	);
+	// the pre-created room's sidebar is opened before it is ever rendered, so
+	// its blueprints are registered from here rather than from RoomContent
 	const submittedRef = useRef(false);
 	// Guards the greeting-room effect below so a remount / StrictMode
 	// double-invoke doesn't create two rooms for the same agent.

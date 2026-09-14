@@ -7,9 +7,9 @@ import {
 	TooltipContent,
 	TooltipTrigger,
 } from "@semoss/ui/next";
+import type { WorkbenchChromeProps } from "@semoss/workbench";
+import { WORKBENCH_STYLES } from "@semoss/workbench";
 import { useModelChat } from "@/hooks";
-import type { WorkbenchChromeProps } from "@/stores/workbench";
-import { WORKBENCH_STYLES } from "../../core/workbench.chrome";
 
 /**
  * The chat panel's chrome control: start a new conversation. It abandons the

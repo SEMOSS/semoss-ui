@@ -7,9 +7,9 @@ import {
 	TooltipContent,
 	TooltipTrigger,
 } from "@semoss/ui/next";
+import type { WorkbenchChromeProps } from "@semoss/workbench";
+import { WORKBENCH_STYLES } from "@semoss/workbench";
 import { useDatabaseWorkbench } from "@/hooks";
-import type { WorkbenchChromeProps } from "@/stores/workbench";
-import { WORKBENCH_STYLES } from "../../core/workbench.chrome";
 
 /**
  * The columns panel's chrome control. Refresh acts on the whole structure the

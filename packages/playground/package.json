@@ -14,9 +14,11 @@
     "dependencies": {
         "@lexical/react": "^0.39.0",
         "@semoss/i18n": "workspace:*",
+        "@semoss/panels": "workspace:*",
         "@semoss/sdk": "workspace:*",
         "@semoss/shared": "workspace:*",
         "@semoss/ui": "workspace:*",
+        "@semoss/workbench": "workspace:*",
         "dayjs": "1.11.8",
         "lexical": "^0.39.0",
         "lucide-react": "^0.545.0",
@@ -25,7 +27,8 @@
         "mobx-react-lite": "^4.0.0",
         "react": "^19.0.0",
         "react-dom": "^19.0.0",
-        "react-router": "8.3.0"
+        "react-router": "8.3.0",
+        "zustand": "^5.0.0"
     },
     "devDependencies": {
         "@semoss/config": "workspace:*",

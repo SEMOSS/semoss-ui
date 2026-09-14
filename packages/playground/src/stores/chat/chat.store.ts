@@ -1,6 +1,7 @@
 import { makeAutoObservable, runInAction } from "mobx";
 import { download, type Insight, runPixel } from "@semoss/sdk/react";
 import type { ThemeMap } from "@semoss/shared";
+import type { WorkbenchPanelConfigAny } from "@semoss/workbench";
 import type {
 	AbstractPixelMessage,
 	Engine,
@@ -106,6 +107,7 @@ interface ChatStoreInterface {
 export class ChatStore {
 	private _theme: ThemeMap["playground"];
 	private _actions: Insight["actions"];
+	private _panelComponents: Record<string, WorkbenchPanelConfigAny>;
 	private _store: ChatStoreInterface = {
 		isInitialized: false,
 		models: {
@@ -126,9 +128,19 @@ export class ChatStore {
 		profileDefaultModelId: "",
 	};
 
-	constructor(theme: ThemeMap["playground"], actions: Insight["actions"]) {
+	constructor(
+		theme: ThemeMap["playground"],
+		actions: Insight["actions"],
+		/**
+		 * The sidebar blueprints every room it creates is built with. Passed
+		 * through rather than imported: they live in `@/components`, which
+		 * imports `@/stores`.
+		 */
+		panelComponents: Record<string, WorkbenchPanelConfigAny>,
+	) {
 		this._theme = theme;
 		this._actions = actions;
+		this._panelComponents = panelComponents;
 		this._store.embeddedPageMap = [
 			...theme.sidebar.headerItems,
 			...theme.sidebar.footerItems,
@@ -324,8 +336,19 @@ export class ChatStore {
 			throw new Error(errors.join(""));
 		}
 
-		const roomId = pixelReturn[0].output.roomId;
-		const room = new RoomStore(this._theme, roomId, insightId);
+		// get the output
+		const { output } = pixelReturn[0];
+
+		// get the new roomId
+		const roomId = output.roomId;
+
+		// create the room store
+		const room = new RoomStore({
+			theme: this._theme,
+			roomId,
+			insightId,
+			panelComponents: this._panelComponents,
+		});
 
 		room.setModel(this.models.selected);
 		room.setMode(mode);
@@ -596,7 +619,11 @@ export class ChatStore {
 		}
 
 		// create the room store
-		const room = new RoomStore(this._theme, roomId);
+		const room = new RoomStore({
+			theme: this._theme,
+			roomId,
+			panelComponents: this._panelComponents,
+		});
 
 		// initialize the room
 		await room.initialize();
