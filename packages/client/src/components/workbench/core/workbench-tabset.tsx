@@ -115,16 +115,6 @@ export const WorkbenchTabset: FC<WorkbenchTabsetProps> = ({ node }) => {
 						data-tabstrip={node.id}
 						role="tablist"
 						aria-label="Panels"
-						onDoubleClick={(e) => {
-							if (
-								(e.target as HTMLElement).closest("[data-tab]")
-							) {
-								return;
-							}
-							if (showMaximize) {
-								actions.toggleMaximize(node.id);
-							}
-						}}
 						className="flex min-w-0 flex-none items-stretch gap-1 border-border border-b bg-card px-1.5 pt-1.5 pb-1"
 					>
 						<WorkbenchTabStrip

@@ -1,5 +1,5 @@
 import { ChevronRightIcon, EyeIcon } from "lucide-react";
-import { Link, Navigate } from "react-router-dom";
+import { Link, Navigate } from "react-router";
 import { InsightProvider } from "@semoss/sdk/react";
 import {
 	Breadcrumb,
@@ -39,7 +39,13 @@ export const EditNotebookPage = () => {
 
 	return (
 		<InsightProvider options={{ app: project.project_id }}>
-			<WorkbenchProvider id={project.project_id}>
+			<WorkbenchProvider
+				cacheKey={
+					permission === "OWNER" || permission === "EDIT"
+						? project.project_id
+						: `${project.project_id}--read-only`
+				}
+			>
 				<NavbarLeft>
 					<NavbarHeader logo={null} />
 					<Breadcrumb>

@@ -1,6 +1,6 @@
 // biome-ignore-all lint/correctness/useExhaustiveDependencies: TODO
 import { useEffect, useMemo, useState } from "react";
-import { usePixel } from "@/hooks";
+import { usePixel } from "@semoss/sdk/react";
 import { INPUT_TYPE_TEXT, TOKEN_TYPE_INPUT } from "../../prompt.constants";
 import type { Builder, Token } from "../../prompt.types";
 import { PromptBuilderInputTypeSelection } from "./prompt-builder-input-type-selection";

@@ -5,6 +5,7 @@ import type {
 	Spread,
 } from "lexical";
 import { DecoratorNode } from "lexical";
+import type { JSX } from "react";
 import { useSlashCommands } from "./context";
 
 // ============================================================================

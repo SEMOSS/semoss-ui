@@ -31,6 +31,7 @@ export const useWorkbenchCommands = (commands: WorkbenchCommand[]): void => {
 			command.category ?? "",
 			command.label,
 			command.description ?? "",
+			command.visible ?? true,
 		]),
 	);
 

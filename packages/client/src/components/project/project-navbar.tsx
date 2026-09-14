@@ -1,7 +1,7 @@
 import { ChevronRightIcon } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import type React from "react";
-import { Link } from "react-router-dom";
+import { Link } from "react-router";
 import {
 	Breadcrumb,
 	BreadcrumbItem,

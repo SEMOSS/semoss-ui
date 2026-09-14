@@ -20,7 +20,7 @@ import shikiLangYML from "@shikijs/langs/yml";
 import gitHubDark from "@shikijs/themes/github-dark";
 import minLight from "@shikijs/themes/min-light";
 import type * as React from "react";
-import { useEffect, useState } from "react";
+import { type JSX, useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 
 const minLightAccessibleComments = {

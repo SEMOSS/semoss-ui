@@ -16,7 +16,7 @@ import {
 	useRef,
 	useState,
 } from "react";
-import { Navigate } from "react-router-dom";
+import { Navigate } from "react-router";
 import type { ThemeMap } from "@semoss/shared";
 import { MonacoEditor } from "@semoss/shared";
 import {

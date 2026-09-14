@@ -1,3 +1,4 @@
+export * from "./workbench-access.slice";
 export * from "./workbench-command.slice";
 export * from "./workbench-controls.slice";
 export * from "./workbench-layout.commands";

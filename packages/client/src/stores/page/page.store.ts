@@ -1,171 +1,78 @@
-import { autorun, makeAutoObservable } from "mobx";
+import { createStore, type StoreApi } from "zustand";
 import type { PageCache } from "./page.types";
 
-const CACHE_KEY = `PAGE_STORE_CACHE--1`;
+const CACHE_KEY = "PAGE_STORE_CACHE--1";
 
-export interface PageStoreInterface {
-	/**
-	 * Navigation bar information
-	 **/
+export interface PageState {
 	navbar: {
-		/**
-		 *  Save the element of the navbar
-		 */
-		element: HTMLElement;
-
-		/**
-		 *  Show the logo
-		 */
+		element: HTMLElement | null;
 		logo: boolean;
-
-		/**
-		 *  Show the search
-		 */
 		search: boolean;
 	};
-
-	/**
-	 * Sidebar information
-	 **/
 	sidebar: {
-		/**
-		 * Track if it is open or closed
-		 */
 		open: boolean;
-
-		/**
-		 * Track if it is pinned
-		 */
 		pinned: boolean;
 	};
+	setNavbarElement: (element: HTMLElement | null) => void;
+	updateNavbarLogo: (logo?: boolean) => void;
+	updateNavbarSearch: (search?: boolean) => void;
+	setSidebar: (content?: PageState["sidebar"]) => void;
+	openSidebar: () => void;
+	closeSidebar: () => void;
+	pinSidebar: () => void;
+	unpinSidebar: () => void;
 }
 
-/**
- * Store that manages instances of the insights and handles applicaiton level querying
- */
-export class PageStore {
-	private _store: PageStoreInterface = {
-		navbar: {
-			element: null,
-			logo: true,
-			search: true,
-		},
-		sidebar: {
-			open: false,
-			pinned: false,
-		},
-	};
+const getCachedPinnedState = (): boolean => {
+	try {
+		const cached = JSON.parse(
+			localStorage.getItem(CACHE_KEY) || "null",
+		) as PageCache | null;
+		return cached?.sidebar.pinned ?? false;
+	} catch (error) {
+		console.error(error);
+		return false;
+	}
+};
 
-	constructor() {
-		// set from the catch
+/** Create an isolated page store for one route layout. */
+export const createPageStore = (): StoreApi<PageState> => {
+	const store = createStore<PageState>()((set) => ({
+		navbar: { element: null, logo: true, search: true },
+		sidebar: { open: false, pinned: getCachedPinnedState() },
+		setNavbarElement: (element) =>
+			set((state) =>
+				state.navbar.element === element
+					? state
+					: { navbar: { ...state.navbar, element } },
+			),
+		updateNavbarLogo: (logo = true) =>
+			set((state) => ({ navbar: { ...state.navbar, logo } })),
+		updateNavbarSearch: (search = true) =>
+			set((state) => ({ navbar: { ...state.navbar, search } })),
+		setSidebar: (sidebar = { open: false, pinned: false }) =>
+			set({ sidebar }),
+		openSidebar: () =>
+			set((state) => ({ sidebar: { ...state.sidebar, open: true } })),
+		closeSidebar: () => set({ sidebar: { open: false, pinned: false } }),
+		pinSidebar: () =>
+			set((state) => ({ sidebar: { ...state.sidebar, pinned: true } })),
+		unpinSidebar: () =>
+			set((state) => ({ sidebar: { ...state.sidebar, pinned: false } })),
+	}));
+
+	store.subscribe((state) => {
 		try {
-			const cached = JSON.parse(
-				localStorage.getItem(CACHE_KEY),
-			) as PageCache;
-
-			if (cached) {
-				this._store.sidebar.pinned = cached.sidebar.pinned;
-			}
-		} catch (e) {
-			console.error(e);
+			const item: PageCache = {
+				sidebar: { pinned: state.sidebar.pinned },
+			};
+			localStorage.setItem(CACHE_KEY, JSON.stringify(item));
+		} catch (error) {
+			console.error(error);
 		}
+	});
 
-		// make it observable
-		makeAutoObservable(this);
+	return store;
+};
 
-		// auto run and save to cache
-		autorun(() => {
-			try {
-				const item: PageCache = {
-					sidebar: {
-						pinned: this._store.sidebar.pinned,
-					},
-				};
-
-				// save cache
-				localStorage.setItem(CACHE_KEY, JSON.stringify(item));
-			} catch (e) {
-				console.error(e);
-			}
-		});
-	}
-
-	/**
-	 * Getters
-	 */
-	/**
-	 * Get top navigation information
-	 */
-	get navbar() {
-		return this._store.navbar;
-	}
-
-	/**
-	 * Get sidebar information
-	 */
-	get sidebar() {
-		return this._store.sidebar;
-	}
-
-	/**
-	 * Actions
-	 */
-	/**
-	 * Update the navbar logo
-	 */
-	setNavbarElement = (ele: HTMLElement) => {
-		this._store.navbar.element = ele;
-	};
-
-	/**
-	 * Update the navbar logo
-	 */
-	updateNavbarLogo = (logo = true) => {
-		this._store.navbar.logo = logo;
-	};
-
-	/**
-	 * Update the navbar search
-	 */
-	updateNavbarSearch = (search = true) => {
-		this._store.navbar.search = search;
-	};
-
-	/**
-	 * Set the sidebar
-	 */
-	setSidebar = (
-		content: PageStoreInterface["sidebar"] = { open: false, pinned: false },
-	) => {
-		this._store.sidebar = content;
-	};
-
-	/**
-	 * Open the sidebar
-	 */
-	openSidebar = () => {
-		this._store.sidebar.open = true;
-	};
-
-	/**
-	 * Close the sidebar
-	 */
-	closeSidebar = () => {
-		this._store.sidebar.pinned = false;
-		this._store.sidebar.open = false;
-	};
-
-	/**
-	 * Pin the sidebar
-	 */
-	pinSidebar = () => {
-		this._store.sidebar.pinned = true;
-	};
-
-	/**
-	 * Unpin the sidebar
-	 */
-	unpinSidebar = () => {
-		this._store.sidebar.pinned = false;
-	};
-}
+export type PageStore = StoreApi<PageState>;

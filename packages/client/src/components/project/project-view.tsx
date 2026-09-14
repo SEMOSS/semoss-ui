@@ -76,7 +76,7 @@ export const ProjectView = observer(({ insightId }: ProjectViewProps) => {
 					options={{ insightId }}
 					destroyOnUnmount={false}
 				>
-					<WorkbenchProvider id={`${project.project_id}-share`}>
+					<WorkbenchProvider cacheKey={`${project.project_id}-share`}>
 						<NotebookViewWorkbench />
 					</WorkbenchProvider>
 				</InsightProvider>

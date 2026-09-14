@@ -31,7 +31,7 @@ import {
 	Spinner,
 	toast,
 } from "@semoss/ui/next";
-import { useProject, useRootStore } from "@/hooks";
+import { useProject, useSession } from "@/hooks";
 import type { WorkbenchPanelConfig } from "@/stores/workbench";
 import { isProjectType } from "@/utility/catalog";
 
@@ -143,7 +143,7 @@ const ManageEnginesDialog = ({
 	dependencies,
 	onClose,
 }: ManageEnginesDialogProps) => {
-	const { configStore } = useRootStore();
+	const runPixel = useSession((state) => state.runPixel);
 	const meta = CATEGORY_META[category];
 
 	const [search, setSearch] = useState("");
@@ -173,7 +173,7 @@ const ManageEnginesDialog = ({
 				const filterClause = trimmed
 					? `filterWord=${JSON.stringify(trimmed)}, `
 					: "";
-				const response = await configStore.runPixel<[Engine[]]>(
+				const response = await runPixel<[Engine[]]>(
 					`MyEngines(${filterClause}engineTypes=${JSON.stringify([category])}, limit=[${MANAGE_FETCH_LIMIT}], offset=[0]);`,
 				);
 				if (response.errors.length > 0) {
@@ -205,7 +205,7 @@ const ManageEnginesDialog = ({
 			cancelled = true;
 			window.clearTimeout(timer);
 		};
-	}, [category, configStore, search]);
+	}, [category, runPixel, search]);
 
 	const toggleEngine = (engineId: string) => {
 		setSelectedIds((current) => {
@@ -231,7 +231,7 @@ const ManageEnginesDialog = ({
 				...others.map(toDependencyPayload),
 				...[...selectedIds].map((id) => ({ id, type: category })),
 			];
-			const response = await configStore.runPixel<string[]>(
+			const response = await runPixel<string[]>(
 				`SetProjectDependencies(project="${appId}", dependencies=${JSON.stringify(payload)})`,
 			);
 			if (response.errors.length > 0) {
@@ -468,7 +468,7 @@ const EngineCategoryCard = ({
  */
 const ProjectEnginesPanel = () => {
 	const { project, dependencies, permission, refresh } = useProject();
-	const { configStore } = useRootStore();
+	const runPixel = useSession((state) => state.runPixel);
 	const [manageCategory, setManageCategory] = useState<string | null>(null);
 	const [isRemoving, setIsRemoving] = useState(false);
 	const canEdit = permission === "OWNER" || permission === "EDIT";
@@ -500,7 +500,7 @@ const ProjectEnginesPanel = () => {
 					(dependency) => dependency.engine_id !== engine.engine_id,
 				)
 				.map(toDependencyPayload);
-			const response = await configStore.runPixel<string[]>(
+			const response = await runPixel<string[]>(
 				`SetProjectDependencies(project="${project.project_id}", dependencies=${JSON.stringify(payload)})`,
 			);
 			if (response.errors.length > 0) {
