@@ -1,16 +1,28 @@
-import { CircleUserRound, LogOut } from "lucide-react";
+import {
+	ChevronRight,
+	CircleUserRound,
+	LogOut,
+	Monitor,
+	Moon,
+	Sun,
+} from "lucide-react";
 import type React from "react";
 import { useState } from "react";
 import {
 	Avatar,
 	AvatarFallback,
 	Button,
+	DropdownMenu,
+	DropdownMenuCheckboxItem,
+	DropdownMenuContent,
+	DropdownMenuTrigger,
 	Popover,
 	PopoverContent,
 	PopoverTrigger,
 	Spinner,
+	useTheme,
 } from "@semoss/ui/next";
-import { useRootStore } from "@/hooks";
+import { useConfig, useSession } from "@/hooks";
 
 interface LogoutPopoverProps {
 	/** Content to popover */
@@ -22,9 +34,19 @@ interface LogoutPopoverProps {
 export const LogoutPopover: React.FC<LogoutPopoverProps> = (props) => {
 	const { children, onOpenChange } = props;
 
-	const { configStore } = useRootStore();
+	const appTheme = useConfig((state) => state.theme);
+	const version = useConfig((state) => state.config.version);
+	const user = useSession((state) => state.user);
+	const logout = useSession((state) => state.logout);
+	const { theme, setTheme } = useTheme();
 	const [loggingOut, setLoggingOut] = useState(false);
 	const [open, setOpen] = useState(false);
+	const darkModeEnabled =
+		(
+			appTheme as {
+				featureFlags?: { enableDarkMode?: boolean };
+			}
+		).featureFlags?.enableDarkMode ?? true;
 
 	const handleOpenChange = (next: boolean) => {
 		setOpen(next);
@@ -36,7 +58,7 @@ export const LogoutPopover: React.FC<LogoutPopoverProps> = (props) => {
 		handleOpenChange(false);
 		try {
 			setLoggingOut(true);
-			await configStore.logout();
+			await logout();
 		} catch (error) {
 			console.error(error);
 			throw error;
@@ -75,26 +97,93 @@ export const LogoutPopover: React.FC<LogoutPopoverProps> = (props) => {
 				>
 					{/* User info row */}
 					<div className="flex items-center gap-3 border-border border-b px-4 py-3">
-						{configStore.store.user.name ? (
+						{user.name ? (
 							<Avatar>
-								<AvatarFallback>
-									{configStore.store.user.name[0]}
-								</AvatarFallback>
+								<AvatarFallback>{user.name[0]}</AvatarFallback>
 							</Avatar>
 						) : null}
 						<span className="max-w-[9rem] truncate font-medium text-foreground text-sm">
-							{configStore.store.user.name}
+							{user.name}
 						</span>
 					</div>
-					{configStore.store.user.lastLogin &&
-						configStore.store.user.lastLogin !== "null" && (
-							<div className="flex items-center justify-center border-border border-b px-4 py-2">
-								<span className="text-muted-foreground text-xs">
-									Last login:{" "}
-									{configStore.store.user.lastLogin} UTC
-								</span>
-							</div>
-						)}
+					{user.lastLogin && user.lastLogin !== "null" && (
+						<div className="flex items-center justify-center border-border border-b px-4 py-2">
+							<span className="text-muted-foreground text-xs">
+								Last login: {user.lastLogin} UTC
+							</span>
+						</div>
+					)}
+					{darkModeEnabled && (
+						<div className="border-border border-b px-4 py-2">
+							<DropdownMenu>
+								<DropdownMenuTrigger asChild>
+									<button
+										type="button"
+										className="flex w-full items-center rounded-md px-2 py-2 text-sm hover:bg-accent"
+									>
+										{theme === "dark" ? (
+											<Moon className="size-4" />
+										) : theme === "system" ? (
+											<Monitor className="size-4" />
+										) : (
+											<Sun className="size-4" />
+										)}
+										<span className="ml-2">
+											{theme === "dark"
+												? "Dark"
+												: theme === "system"
+													? "System"
+													: "Light"}
+										</span>
+										{(theme === "dark" ||
+											theme === "system") && (
+											<span className="ms-1 self-center rounded border px-1 py-0.5 font-semibold text-[9px] leading-none">
+												BETA
+											</span>
+										)}
+										<ChevronRight className="ml-auto size-4 opacity-70" />
+									</button>
+								</DropdownMenuTrigger>
+								<DropdownMenuContent
+									side="right"
+									align="start"
+									sideOffset={8}
+								>
+									<DropdownMenuCheckboxItem
+										checked={theme === "light"}
+										onCheckedChange={() =>
+											setTheme("light")
+										}
+									>
+										<Sun className="size-4" />
+										Light
+									</DropdownMenuCheckboxItem>
+									<DropdownMenuCheckboxItem
+										checked={theme === "dark"}
+										onCheckedChange={() => setTheme("dark")}
+									>
+										<Moon className="size-4" />
+										Dark
+										<span className="ms-auto self-center rounded border px-1 py-0.5 font-semibold text-[9px] leading-none">
+											BETA
+										</span>
+									</DropdownMenuCheckboxItem>
+									<DropdownMenuCheckboxItem
+										checked={theme === "system"}
+										onCheckedChange={() =>
+											setTheme("system")
+										}
+									>
+										<Monitor className="size-4" />
+										System
+										<span className="ms-auto self-center rounded border px-1 py-0.5 font-semibold text-[9px] leading-none">
+											BETA
+										</span>
+									</DropdownMenuCheckboxItem>
+								</DropdownMenuContent>
+							</DropdownMenu>
+						</div>
+					)}
 					{/* Logout button row */}
 					<div className="flex items-center justify-center border-border border-b px-4 py-3">
 						<Button
@@ -115,10 +204,10 @@ export const LogoutPopover: React.FC<LogoutPopoverProps> = (props) => {
 					{/* Version info row */}
 					<div className="flex flex-col items-center gap-0.5 px-4 py-3">
 						<span className="truncate text-muted-foreground text-xs">
-							{configStore.store.config.version.version}
+							{version.version}
 						</span>
 						<span className="truncate text-muted-foreground text-xs">
-							{configStore.store.config.version.datetime}
+							{version.datetime}
 						</span>
 					</div>
 				</PopoverContent>

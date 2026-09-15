@@ -12,9 +12,7 @@ import {
 	FieldGroup,
 	FieldLabel,
 	FieldLegend,
-	FieldSeparator,
 	FieldSet,
-	Input,
 	Slider,
 	Textarea,
 	Tooltip,
@@ -107,27 +105,24 @@ export const RoomOptionsForm: React.FC<RoomOptionsFormProps> = observer(
 									<FieldLabel>
 										{t("room:form.modelLabel")}
 									</FieldLabel>
-									<div className="rounded-md border border-input bg-transparent px-1 py-1 shadow-xs dark:bg-input/30">
-										<EngineSelect
-											className="w-full max-w-none"
-											name={
-												model?.engine_display_name ||
-												model?.app_name ||
-												""
-											}
-											value={model?.app_id || ""}
-											engineTypes={["MODEL"]}
-											metaFilters={[
-												{ tag: "text-generation" },
-											]}
-											onChange={(v) => {
-												onModelChange(v);
-											}}
-											popoverContentProps={{
-												align: "start",
-											}}
-										/>
-									</div>
+									<EngineSelect
+										name={
+											model?.engine_display_name ||
+											model?.app_name ||
+											""
+										}
+										value={model?.app_id || ""}
+										engineTypes={["MODEL"]}
+										metaFilters={[
+											{ tag: "text-generation" },
+										]}
+										onChange={(v) => {
+											onModelChange(v);
+										}}
+										popoverContentProps={{
+											align: "start",
+										}}
+									/>
 								</Field>
 							)}
 							<Field>
@@ -485,49 +480,25 @@ export const RoomOptionsForm: React.FC<RoomOptionsFormProps> = observer(
 									});
 								}}
 							/>
-						</FieldGroup>
-					</FieldSet>
-					<FieldSeparator />
-					<FieldSet>
-						<FieldGroup>
-							<Field>
-								<FieldLabel>
-									{t("room:form.maxTokenLabel")}
-								</FieldLabel>
-								<Input
-									type="number"
-									placeholder={t(
-										"common:placeholders.updateTokenLength",
-									)}
-									value={options.tokenLength}
-									onChange={(e) =>
-										onOptionsChange({
-											tokenLength:
-												Number(e.target.value) || 0,
-										})
-									}
-									min={0}
-									className="w-full"
-								/>
-							</Field>
-
-							<Field>
-								<FieldLabel>
-									{t("room:form.temperatureLabel")} (
-									{options.temperature?.toFixed(2)})
-								</FieldLabel>
-								<Slider
-									min={0}
-									max={1}
-									step={0.01}
-									value={[options.temperature]}
-									onValueChange={(value) =>
-										onOptionsChange({
-											temperature: value[0],
-										})
-									}
-								/>
-							</Field>
+							{root.theme.featureFlags?.enableTemperature && (
+								<Field>
+									<FieldLabel>
+										{t("room:form.temperatureLabel")} (
+										{(options.temperature ?? 0).toFixed(2)})
+									</FieldLabel>
+									<Slider
+										min={0}
+										max={1}
+										step={0.01}
+										value={[options.temperature ?? 0]}
+										onValueChange={(value) =>
+											onOptionsChange({
+												temperature: value[0],
+											})
+										}
+									/>
+								</Field>
+							)}
 						</FieldGroup>
 					</FieldSet>
 				</FieldGroup>

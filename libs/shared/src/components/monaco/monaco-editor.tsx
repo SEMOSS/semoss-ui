@@ -1,6 +1,9 @@
 /// <reference path="../../vite-env.d.ts" />
 import { createElement, lazy } from "react";
 
+export type { OnMount } from "@monaco-editor/react";
+export type * as monaco from "monaco-editor";
+
 type MonacoReactModule = typeof import("@monaco-editor/react");
 
 type MonacoEnvironment = {

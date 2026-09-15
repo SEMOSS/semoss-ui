@@ -83,7 +83,7 @@ export const suggestVariableRenames = async (
 
 			// Get variable name suggestions from LLM
 			const resp = await runPixel(
-				`LLM(engine=["${agentModelEngine}"], command = "<encode>${prompt}</encode>", paramValues=[{'max_completion_tokens':10,'temperature':0.3}]);`,
+				`LLM(engine=["${agentModelEngine}"], command = "<encode>${prompt}</encode>", paramValues=[{'max_completion_tokens':10}]);`,
 			);
 
 			const output = resp.pixelReturn[0].output as LLMResponse;

@@ -5,6 +5,22 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 
+/**
+ * Monaco ships its layout rules as a stylesheet, and nothing else in the build
+ * pulls them in: the apps alias `monaco-editor` to `esm/vs/editor/editor.api`,
+ * the API-only entry that imports no CSS, and the CSS the `libs/ui` lib build
+ * extracts lands in `dist/index.css`, which the package does not export. Without
+ * these rules Monaco still positions glyphs inline, so a file looks almost
+ * right — but `.overflow-guard` is not the containing block it expects, so the
+ * caret lands away from the pointer and the suggest widget anchors nowhere near
+ * the cursor. Imported here because every app already pulls in this file.
+ *
+ * Left unlayered on purpose: Tailwind's preflight sits in `@layer base`, and
+ * unlayered rules beat layered ones whatever the source order, so Monaco's
+ * layout survives the `box-sizing`/`margin` reset.
+ */
+@import "monaco-editor/min/vs/editor/editor.main.css";
+
 /** Add all of the component styles **/
 @source "../**/*.{ts,tsx}";
 
@@ -80,6 +96,8 @@
   --destructive-foreground: rgba(255, 242, 242, 1);
   --success: rgba(22, 163, 74, 1);
   --success-foreground: rgba(240, 253, 244, 1);
+  --warning: rgba(245, 158, 11, 1);
+  --warning-foreground: rgba(69, 26, 3, 1);
   --border: rgba(230, 230, 230, 1);
   --input: rgba(230, 230, 230, 1);
   --ring: rgba(163, 163, 163, 1);
@@ -97,6 +115,10 @@
   --sidebar-accent-foreground: rgba(23, 23, 23, 1);
   --sidebar-border: rgba(230, 230, 230, 1);
   --sidebar-ring: rgba(163, 163, 163, 1);
+  --login-background: var(--background);
+  --login-input: var(--background);
+  --login-input-border: var(--input);
+  --login-input-placeholder: var(--muted-foreground);
 }
 
 .dark {
@@ -119,6 +141,8 @@
   --destructive-foreground: rgba(255, 242, 242, 1);
   --success: rgba(74, 222, 128, 1);
   --success-foreground: rgba(20, 83, 45, 1);
+  --warning: rgba(251, 191, 36, 1);
+  --warning-foreground: rgba(69, 26, 3, 1);
   --border: rgba(255, 255, 255, 0.1);
   --input: rgba(255, 255, 255, 0.15);
   --ring: rgba(115, 115, 115, 1);
@@ -136,6 +160,16 @@
   --sidebar-accent-foreground: rgba(250, 250, 250, 1);
   --sidebar-border: rgba(255, 255, 255, 0.1);
   --sidebar-ring: rgba(82, 82, 82, 1);
+  --login-background:
+    linear-gradient(
+      48deg,
+      rgba(32, 39, 54, 0.5) 7.37%,
+      rgba(30, 41, 75, 0.49) 39.18%,
+      rgba(120, 133, 213, 0) 84.89%
+    );
+  --login-input: #171d2b;
+  --login-input-border: #3b4254;
+  --login-input-placeholder: #a0a7b7;
 }
 
 /* Custom */
@@ -167,6 +201,8 @@
   --color-destructive: var(--destructive);
   --color-success: var(--success);
   --color-success-foreground: var(--success-foreground);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
   --color-accent-foreground: var(--accent-foreground);
   --color-accent: var(--accent);
   --color-muted-foreground: var(--muted-foreground);
@@ -198,6 +234,42 @@
   }
   button {
     cursor: pointer;
+  }
+
+  .semoss-login-page {
+    background: var(--login-background);
+  }
+
+  .dark .semoss-login-form input {
+    background-color: var(--login-input);
+    border-color: var(--login-input-border);
+    color: var(--foreground);
+    box-shadow: none;
+  }
+
+  .dark .semoss-login-form input::placeholder {
+    color: var(--login-input-placeholder);
+  }
+
+  .dark .semoss-login-form input:-webkit-autofill,
+  .dark .semoss-login-form input:-webkit-autofill:hover,
+  .dark .semoss-login-form input:-webkit-autofill:focus {
+    border-color: var(--login-input-border);
+    -webkit-text-fill-color: var(--foreground);
+    caret-color: var(--foreground);
+    box-shadow: 0 0 0 1000px var(--login-input) inset;
+  }
+
+  .shiki,
+  .shiki span {
+    background-color: var(--shiki-light-bg, transparent);
+    color: var(--shiki-light);
+  }
+
+  .dark .shiki,
+  .dark .shiki span {
+    background-color: var(--shiki-dark-bg, transparent);
+    color: var(--shiki-dark);
   }
   
   .heading-xl {

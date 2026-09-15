@@ -18,7 +18,7 @@ import {
 	SelectValue,
 } from "@semoss/ui/next";
 
-export type CustomNode = {
+type CustomNode = {
 	id: string;
 	type: string;
 	data: {
@@ -49,7 +49,7 @@ interface ConnectionProps {
 	isRdf?: boolean;
 }
 
-export const CreateConnection: React.FC<ConnectionProps> = ({
+const CreateConnection: React.FC<ConnectionProps> = ({
 	open,
 	onClose,
 	nodes,

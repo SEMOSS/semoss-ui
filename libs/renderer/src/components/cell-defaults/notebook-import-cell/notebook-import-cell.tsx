@@ -9,6 +9,7 @@ import {
 	MonacoEditor,
 	registerSparqlLanguage,
 	SPARQL_LANGUAGE_ID,
+	SPARQL_THEME_DARK,
 	SPARQL_THEME_LIGHT,
 } from "@semoss/shared";
 import {
@@ -31,6 +32,17 @@ import { DatabaseTables } from "./database-tables";
 const EDITOR_LINE_HEIGHT = 20;
 const EDITOR_MIN_LINES = 6;
 const EDITOR_MAX_HEIGHT = 700;
+const NOTEBOOK_SQL_THEME_LIGHT = "notebook-sql-theme-light";
+const NOTEBOOK_SQL_THEME_DARK = "notebook-sql-theme-dark";
+
+const isDarkMode = () =>
+	typeof document !== "undefined" &&
+	document.documentElement.classList.contains("dark");
+
+const getSparqlTheme = () =>
+	isDarkMode() ? SPARQL_THEME_DARK : SPARQL_THEME_LIGHT;
+const getNotebookSqlTheme = () =>
+	isDarkMode() ? NOTEBOOK_SQL_THEME_DARK : NOTEBOOK_SQL_THEME_LIGHT;
 
 export interface NotebookImportCellDef extends CellDef<"query-import"> {
 	widget: "query-import";
@@ -45,6 +57,7 @@ export interface NotebookImportCellDef extends CellDef<"query-import"> {
 export const NotebookImportCell: CellComponent<NotebookImportCellDef> =
 	observer((props) => {
 		const editorRef = useRef(null);
+		const monacoRef = useRef(null);
 
 		const { cell, isExpanded } = props;
 		const { state } = useBlocks();
@@ -145,6 +158,7 @@ export const NotebookImportCell: CellComponent<NotebookImportCellDef> =
 		// biome-ignore lint/suspicious/noExplicitAny: monaco editor + monaco namespace types
 		const handleEditorMount = (editor: any, monaco: any) => {
 			editorRef.current = editor;
+			monacoRef.current = monaco;
 
 			let ignoreResize = false;
 			editor.onDidContentSizeChange(() => {
@@ -186,18 +200,51 @@ export const NotebookImportCell: CellComponent<NotebookImportCellDef> =
 
 			if (isSparql) {
 				registerSparqlLanguage(monaco);
-				monaco.editor.setTheme(SPARQL_THEME_LIGHT);
+				monaco.editor.setTheme(getSparqlTheme());
 			} else {
-				monaco.editor.defineTheme("notebook-sql-theme", {
+				monaco.editor.defineTheme(NOTEBOOK_SQL_THEME_LIGHT, {
 					base: "vs",
 					inherit: true,
 					rules: [],
 					colors: { "editor.background": "#FAFAFA" },
 				});
-				monaco.editor.setTheme("notebook-sql-theme");
+				monaco.editor.defineTheme(NOTEBOOK_SQL_THEME_DARK, {
+					base: "vs-dark",
+					inherit: true,
+					rules: [],
+					colors: { "editor.background": "#171717" },
+				});
+				monaco.editor.setTheme(getNotebookSqlTheme());
 			}
 			resizeEditor();
 		};
+
+		useEffect(() => {
+			const root =
+				typeof document !== "undefined"
+					? document.documentElement
+					: null;
+			if (!root) return;
+
+			const applyTheme = () => {
+				const monaco = monacoRef.current;
+				if (!monaco) return;
+				if (isSparql) {
+					monaco.editor.setTheme(getSparqlTheme());
+					return;
+				}
+				monaco.editor.setTheme(getNotebookSqlTheme());
+			};
+
+			applyTheme();
+			const observer = new MutationObserver(applyTheme);
+			observer.observe(root, {
+				attributes: true,
+				attributeFilter: ["class"],
+			});
+
+			return () => observer.disconnect();
+		}, [isSparql]);
 
 		const resizeEditor = () => {
 			if (!editorRef.current) return;

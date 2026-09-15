@@ -8,6 +8,7 @@ import {
 	TabsContent,
 	TabsList,
 	TabsTrigger,
+	useTheme,
 } from "@semoss/ui/next";
 
 interface MarkdownEditorProps
@@ -24,6 +25,8 @@ export const MarkdownEditor = ({
 	className,
 	...otherProps
 }: MarkdownEditorProps) => {
+	const { resolvedTheme } = useTheme();
+
 	const [view, setView] = useState<"edit" | "view">("edit");
 
 	return (
@@ -39,7 +42,7 @@ export const MarkdownEditor = ({
 				onValueChange={(val) => setView(val as "edit" | "view")}
 				className="flex h-full w-full flex-col gap-0 overflow-hidden"
 			>
-				<div className="flex w-full shrink-0 flex-row items-center gap-2 border-border border-b bg-muted p-4">
+				<div className="flex w-full shrink-0 flex-row items-center gap-2 border-border border-b bg-muted px-4 py-2">
 					<div className="flex-1 truncate text-sm leading-none">
 						Enter as Markdown
 					</div>
@@ -73,6 +76,11 @@ export const MarkdownEditor = ({
 							width="100%"
 							value={value}
 							language="markdown"
+							theme={
+								resolvedTheme === "dark"
+									? "vs-dark"
+									: "vs-light"
+							}
 							onChange={(newValue) => onChange(newValue || "")}
 							options={{
 								minimap: { enabled: false },

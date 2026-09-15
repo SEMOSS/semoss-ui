@@ -1,6 +1,13 @@
 import { Plus, Search } from "lucide-react";
 import { useEffect, useState } from "react";
-import { Env, get, post, runPixel } from "@semoss/sdk";
+import {
+	editEngineUserPermissions,
+	editProjectUserPermissions,
+	getUserEnginePermission,
+	getUserProjectPermission,
+	type PostUser,
+	runPixel,
+} from "@semoss/sdk";
 import {
 	Avatar,
 	Button,
@@ -23,6 +30,7 @@ import {
 	useDebouncedValue,
 } from "@semoss/ui/next";
 import { AddMembersOverlay } from "./add-members";
+import { formatNum, parseNum } from "./common";
 import { MembersList, type MemberUser } from "./members-list";
 
 interface MembersProps {
@@ -48,16 +56,6 @@ interface MembersProps {
 	 *   - renders the Permission column as static text (no dropdown)
 	 */
 	readOnly?: boolean;
-}
-
-function formatNum(val: string): string {
-	const digits = val.replace(/[^0-9]/g, "");
-	if (!digits) return "";
-	return Number(digits).toLocaleString();
-}
-
-function parseNum(val: string): string {
-	return val.replace(/[^0-9]/g, "");
 }
 
 export const MembersTable = ({
@@ -95,12 +93,11 @@ export const MembersTable = ({
 
 	useEffect(() => {
 		const isProject = type === "PROJECT" || type === "WORKSPACE";
-		const endpoint = isProject
-			? `project/getUserProjectPermission?projectId=${id}`
-			: `engine/getUserEnginePermission?engineId=${id}`;
-		get(`${Env.MODULE}/api/auth/${endpoint}`)
-			.then((res) => {
-				const perm = (res?.data as { permission?: string })?.permission;
+		const fetchPermission = isProject
+			? getUserProjectPermission(id)
+			: getUserEnginePermission(id);
+		fetchPermission
+			.then((perm) => {
 				if (perm) setMyPermission(perm);
 			})
 			.catch(() => undefined);
@@ -125,9 +122,7 @@ export const MembersTable = ({
 
 	const saveUserEdit = async () => {
 		if (!editUser) return;
-		const isEngine = type !== "PROJECT" && type !== "WORKSPACE";
-		const authBase = `${Env.MODULE}/api/auth${adminMode ? "/admin" : ""}`;
-		const url = `${authBase}/${isEngine ? "engine" : "project"}/${isEngine ? "editEngineUserPermissions" : "editProjectUserPermissions"}`;
+		const isProject = type === "PROJECT" || type === "WORKSPACE";
 
 		const payload: Record<string, unknown> = {
 			userid: editUser.id,
@@ -149,16 +144,31 @@ export const MembersTable = ({
 			}
 		}
 
-		const response = await post<{ success: boolean }>(url, {
-			[isEngine ? "engineId" : "projectId"]: id,
-			userpermissions: [payload],
-		}).catch((error: Error) => {
+		const success = await (isProject
+			? editProjectUserPermissions(
+					id,
+					[payload] as unknown as PostUser[],
+					adminMode,
+				)
+			: editEngineUserPermissions(
+					id,
+					[payload] as unknown as PostUser[],
+					adminMode,
+				)
+		).catch((error: Error) => {
 			toast.error(error?.message || "Error updating user.");
-			return null;
+			return false;
 		});
 
-		if (response?.data?.success) {
+		if (success) {
 			toast.success("User updated successfully.");
+			// Editing your own permission can change what you're allowed to see/do
+			// here (and in ancestors gating on it), so let them resync — unlike
+			// adding a member, which never changes your own permission.
+			if (editUser.id === myUserId) {
+				setMyPermission(editPermission);
+				onChange?.();
+			}
 			setEditUser(null);
 			setListRefreshKey((prev) => prev + 1);
 		}
@@ -220,9 +230,10 @@ export const MembersTable = ({
 				open={openAddMembers}
 				onClose={(success) => {
 					setOpenAddMembers(false);
+					// Adding a member never changes your own permission, so unlike
+					// editing, this doesn't need to notify ancestors via onChange.
 					if (success) {
 						setListRefreshKey((prev) => prev + 1);
-						if (onChange) onChange();
 					}
 				}}
 				adminMode={adminMode}

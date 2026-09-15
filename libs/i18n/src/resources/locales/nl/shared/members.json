@@ -1,0 +1,50 @@
+{
+	"dialog": {
+		"title": "Leden toevoegen",
+		"description": "Zoek gebruikers en nodig ze uit voor deze resource."
+	},
+	"search": {
+		"placeholder": "Zoeken op naam of e-mail...",
+		"searching": "Gebruikers zoeken...",
+		"empty": "Geen gebruikers gevonden",
+		"added": "Toegevoegd"
+	},
+	"selected": {
+		"count_one": "{{count}} gebruiker geselecteerd",
+		"count_other": "{{count}} gebruikers geselecteerd",
+		"empty": "Geen gebruikers geselecteerd"
+	},
+	"permission": {
+		"viewer": "Kijker",
+		"editor": "Bewerker",
+		"owner": "Eigenaar"
+	},
+	"restrictions": {
+		"title": "Modelgebruikslimieten (voor alle geselecteerde gebruikers)",
+		"usageLimitType": "Type gebruikslimiet",
+		"none": "Geen",
+		"token": "Tokens",
+		"computeTime": "Rekentijd",
+		"maxTokens": "Maximum aantal tokens",
+		"maxResponseTime": "Maximale responstijd",
+		"unit": "Eenheid",
+		"milliseconds": "milliseconden",
+		"frequency": "Frequentie",
+		"daily": "Dagelijks",
+		"weekly": "Wekelijks",
+		"monthly": "Maandelijks",
+		"yearly": "Jaarlijks",
+		"allTime": "Altijd"
+	},
+	"footer": {
+		"add": "Toevoegen",
+		"addWithCount": "Toevoegen ({{count}})"
+	},
+	"errors": {
+		"loadUsersFailed": "Gebruikers laden mislukt.",
+		"addMembersFailed": "Er is een fout opgetreden bij het toevoegen van de geselecteerde leden."
+	},
+	"success": {
+		"membersAdded": "Geselecteerde leden zijn succesvol toegevoegd."
+	}
+}

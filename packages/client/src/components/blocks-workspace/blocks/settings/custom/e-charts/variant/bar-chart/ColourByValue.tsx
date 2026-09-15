@@ -23,12 +23,6 @@ import {
 	ECHART_BAR_COLOUR,
 } from "../../Visualization.constants";
 
-export interface ColourByValueProps {
-	id: string;
-	// biome-ignore lint/suspicious/noExplicitAny: echart/gantt type
-	updateChart: (option: any) => void;
-}
-
 const INITIAL_NEW_RULES = {
 	column: "",
 	columnColour: "#000000",

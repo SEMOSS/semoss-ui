@@ -1,7 +1,14 @@
-import { CopyIcon, PlayIcon } from "lucide-react";
+import {
+	ChevronDownIcon,
+	CopyIcon,
+	FileCodeIcon,
+	NotebookPenIcon,
+	PlayIcon,
+	SaveIcon,
+} from "lucide-react";
 import { type ComponentProps, useState } from "react";
 import { useTranslation } from "@semoss/i18n";
-import { CellOutputBlock } from "@semoss/shared";
+import { CellOutputBlock, unwrapPixelOutput } from "@semoss/shared";
 import {
 	Button,
 	Code,
@@ -9,39 +16,50 @@ import {
 	DialogContent,
 	DialogHeader,
 	DialogTitle,
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuItem,
+	DropdownMenuLabel,
+	DropdownMenuSeparator,
+	DropdownMenuTrigger,
+	Spinner,
 	Tooltip,
 	TooltipContent,
 	TooltipTrigger,
 	toast,
 } from "@semoss/ui/next";
 import type { RoomStore } from "@/stores";
+import { copyToClipboard } from "@/utility/clipboard";
 import { BlockHeader } from "./block-header";
-import { copyToClipboard, getErrorMessage } from "./clipboard";
 import {
 	buildExecutePixel,
+	CODE_LANG_EXT,
 	CODE_LANG_LABELS,
-	createCodeFilePath,
 	formatExecuteOutput,
 	MAX_EXECUTE_LOG_CHARS,
-	unwrapPixelOutput,
+	RESPONSE_BLOCK_MAX_HEIGHT,
 } from "./constants";
-
-interface ExecuteResult {
-	output: string;
-	logs: string[];
-	isError: boolean;
-	pending: boolean;
-}
+import { SaveCodeNotebookDialog } from "./save-code-notebook-dialog";
+import { SaveFileDialog } from "./save-file-dialog";
+import { useStickToBottom } from "./use-stick-to-bottom";
 
 interface CodePreviewBlockProps {
+	/** The code block's source text. */
 	code: string;
 	/** Shiki-safe language used for syntax highlighting */
 	language: ComponentProps<typeof Code>["language"];
 	/** Original language token from the fence (used for label + filename) */
 	rawLanguage?: string;
+	/** Room store used to execute code and save/append to notebooks. */
 	room?: RoomStore;
 }
 
+/**
+ * A chat code block with actions: syntax-highlighted preview, run server-side
+ * (Python / R / pixel), copy, save to the room, a full-screen view, and an
+ * "Add to Notebook" flow that appends the run as a cell to a new or existing
+ * .ipynb.
+ */
 export const CodePreviewBlock = ({
 	code,
 	language,
@@ -50,33 +68,51 @@ export const CodePreviewBlock = ({
 }: CodePreviewBlockProps) => {
 	const { t } = useTranslation("chat");
 	const [isFullViewOpen, setIsFullViewOpen] = useState(false);
-	const [isSavingToRoom, setIsSavingToRoom] = useState(false);
+	const [isAddToNotebookOpen, setIsAddToNotebookOpen] = useState(false);
+	const [isSaveCodeDialogOpen, setIsSaveCodeDialogOpen] = useState(false);
 	const [isCollapsed, setIsCollapsed] = useState(false);
+	const [isSavingToRoom, setIsSavingToRoom] = useState(false);
+	// the block is height capped, so it follows its own newest line
+	const codeScroll = useStickToBottom(code);
 	const [isExecuting, setIsExecuting] = useState(false);
-	const [executeResult, setExecuteResult] = useState<ExecuteResult | null>(
-		null,
-	);
+	const [executeResult, setExecuteResult] = useState<
+		| React.ComponentProps<typeof SaveCodeNotebookDialog>["result"]
+		| undefined
+	>(undefined);
 
-	// Prefer rawLanguage for display/filename so custom tokens like "pixel"
-	// show their proper label even though Shiki falls back to "txt" for rendering.
 	const langStr = rawLanguage ?? language ?? "txt";
+	const normalizedLang = langStr.toLowerCase();
+	const canSaveAsNotebook =
+		normalizedLang === "py" || normalizedLang === "python";
+	const codeExtension =
+		(CODE_LANG_EXT[normalizedLang] ?? normalizedLang) || "txt";
 	const langLabel = CODE_LANG_LABELS[langStr] ?? langStr.toUpperCase();
-
-	// Only Python, R, and Pixel blocks can be run server-side.
 	const executePixel = buildExecutePixel(langStr, code);
 	const canExecute = executePixel !== null;
 
+	/** Opens the save-as dialog with a generated default name. */
+	const openSaveCodeDialog = () => {
+		setIsSaveCodeDialogOpen(true);
+	};
+
+	/**
+	 * Run the code block server-side, streaming console logs into state and
+	 * mapping the final result (or error) into the output panel.
+	 */
 	const execute = async () => {
-		if (!room || !executePixel) return;
+		if (!room || !executePixel) {
+			return;
+		}
 		setIsExecuting(true);
-		// Seed a pending row so the result panel shows the running spinner and
-		// streams console logs in, just like the terminal transcript.
+
 		setExecuteResult({
 			output: "",
 			logs: [],
 			isError: false,
 			pending: true,
+			rawOutput: undefined,
 		});
+
 		try {
 			const { errors, results, logs } =
 				await room.runRoomPixelWithConsole(
@@ -94,30 +130,37 @@ export const CodePreviewBlock = ({
 					logs,
 					isError: true,
 					pending: false,
+					rawOutput: errors.join("\n"),
 				});
 				return;
 			}
 
-			// Pixel reactors can return multiple outputs; process the last one
-			// the same way the terminal REPL does (unwrap by operationType,
-			// then format for display).
 			const last = results.at(-1);
 			const opType = last?.operationType?.[0] ?? "";
 			const value = unwrapPixelOutput(last ?? {});
 			const formatted = formatExecuteOutput(value, opType);
 			const isError = opType === "ERROR" || opType === "INVALID_SYNTAX";
-			// A CODE_EXECUTION pixel (Py/R) with no return value renders nothing,
-			// which reads like it never ran — show a success marker instead.
 			const output =
 				!formatted && !isError ? "Success (no output)" : formatted;
 
-			setExecuteResult({ output, logs, isError, pending: false });
-		} catch (error) {
 			setExecuteResult({
-				output: getErrorMessage(error),
+				output,
+				logs,
+				isError,
+				pending: false,
+				rawOutput: value,
+			});
+		} catch (error) {
+			const message =
+				error instanceof Error && error.message
+					? error.message
+					: "Error";
+			setExecuteResult({
+				output: message,
 				logs: [],
 				isError: true,
 				pending: false,
+				rawOutput: message,
 			});
 		} finally {
 			setIsExecuting(false);
@@ -126,7 +169,7 @@ export const CodePreviewBlock = ({
 
 	const saveInRoom = async () => {
 		if (!room || !code) return;
-		const filePath = createCodeFilePath(langStr);
+		const filePath = `save-code-response-${Date.now()}.${codeExtension}`;
 		try {
 			setIsSavingToRoom(true);
 			await room.runRoomPixel(
@@ -134,9 +177,14 @@ export const CodePreviewBlock = ({
 				false,
 				false,
 			);
-			toast.success(`Saved in room as ${filePath}`);
+			toast.success(t("notifications.savedInRoom", { filePath }));
 		} catch (error) {
-			toast.error(getErrorMessage(error));
+			const message =
+				error instanceof Error && error.message
+					? error.message
+					: "Error";
+
+			toast.error(message);
 		} finally {
 			setIsSavingToRoom(false);
 		}
@@ -144,7 +192,7 @@ export const CodePreviewBlock = ({
 
 	return (
 		<>
-			<div className="relative overflow-hidden rounded-md border border-border bg-background">
+			<div className="relative overflow-clip rounded-md border border-border bg-background">
 				<BlockHeader
 					label={langLabel}
 					isCollapsed={isCollapsed}
@@ -152,16 +200,78 @@ export const CodePreviewBlock = ({
 					collapseDisabled={!code}
 				>
 					{canExecute && (
-						<Button
-							className="-my-1 h-6 gap-1 px-2 text-muted-foreground text-xs hover:text-foreground"
-							variant="ghost"
-							size="sm"
-							disabled={!room || isExecuting}
-							onClick={() => void execute()}
-						>
-							<PlayIcon className="size-3.5" />
-							{isExecuting ? "Running..." : "Execute"}
-						</Button>
+						<Tooltip>
+							<TooltipTrigger asChild>
+								<Button
+									className="text-muted-foreground text-xs hover:text-foreground"
+									variant="ghost"
+									size="sm"
+									disabled={!room || isExecuting}
+									onClick={() => void execute()}
+								>
+									{isExecuting ? (
+										<Spinner className="size-3" />
+									) : (
+										<PlayIcon className="size-3" />
+									)}
+									{isExecuting ? "Running" : "Run"}
+								</Button>
+							</TooltipTrigger>
+							<TooltipContent>Run the script</TooltipContent>
+						</Tooltip>
+					)}
+
+					{canSaveAsNotebook ? (
+						<DropdownMenu>
+							<Tooltip>
+								<TooltipTrigger asChild>
+									<DropdownMenuTrigger asChild>
+										<Button
+											className="text-muted-foreground text-xs hover:text-foreground"
+											variant="ghost"
+											size="sm"
+											disabled={!room || !code}
+										>
+											<SaveIcon className="size-3" />
+
+											<ChevronDownIcon className="size-3" />
+										</Button>
+									</DropdownMenuTrigger>
+								</TooltipTrigger>
+								<TooltipContent side="bottom">
+									Save
+								</TooltipContent>
+							</Tooltip>
+							<DropdownMenuContent align="end">
+								<DropdownMenuLabel>Save</DropdownMenuLabel>
+								<DropdownMenuSeparator />
+								<DropdownMenuItem onClick={openSaveCodeDialog}>
+									<FileCodeIcon />
+									Code
+								</DropdownMenuItem>
+								<DropdownMenuItem
+									onClick={() => setIsAddToNotebookOpen(true)}
+								>
+									<NotebookPenIcon />
+									Notebook
+								</DropdownMenuItem>
+							</DropdownMenuContent>
+						</DropdownMenu>
+					) : (
+						<Tooltip>
+							<TooltipTrigger asChild>
+								<Button
+									className="text-muted-foreground text-xs hover:text-foreground"
+									variant="ghost"
+									size="sm"
+									disabled={!room || !code}
+									onClick={openSaveCodeDialog}
+								>
+									<SaveIcon className="size-3" />
+								</Button>
+							</TooltipTrigger>
+							<TooltipContent side="bottom">Save</TooltipContent>
+						</Tooltip>
 					)}
 					<Button
 						className="-my-1 h-6 px-2 text-muted-foreground text-xs hover:text-foreground"
@@ -170,7 +280,9 @@ export const CodePreviewBlock = ({
 						disabled={!room || !code || isSavingToRoom}
 						onClick={() => void saveInRoom()}
 					>
-						{isSavingToRoom ? "Saving..." : "Save In Room"}
+						{isSavingToRoom
+							? t("response.savingToRoom")
+							: t("response.saveInRoom")}
 					</Button>
 					<Button
 						className="-my-1 h-6 px-2 text-muted-foreground text-xs hover:text-foreground"
@@ -179,36 +291,52 @@ export const CodePreviewBlock = ({
 						disabled={!code}
 						onClick={() => setIsFullViewOpen(true)}
 					>
-						Full View
+						{t("response.fullView")}
 					</Button>
-					<Tooltip>
-						<TooltipTrigger asChild>
-							<Button
-								className="-my-1 -me-2 h-6 gap-1 px-2 text-muted-foreground text-xs hover:text-foreground"
-								variant="ghost"
-								size="sm"
-								disabled={!code}
-								onClick={() =>
-									void copyToClipboard(
-										code,
-										() =>
-											toast.success(
-												t("notifications.copySuccess"),
-											),
-										(msg) => toast.error(msg),
-									)
-								}
-							>
-								<CopyIcon className="size-3.5" />
-								Copy
-							</Button>
-						</TooltipTrigger>
-						<TooltipContent side="bottom">Copy</TooltipContent>
-					</Tooltip>
 				</BlockHeader>
 				{!isCollapsed && (
 					<div className="p-3">
-						<Code code={code} language={language ?? "txt"} />
+						<div className="-mb-7 sticky top-2 z-10 float-right ml-2">
+							<Tooltip>
+								<TooltipTrigger asChild>
+									<Button
+										className="h-6 gap-1 px-2 text-muted-foreground text-xs hover:text-foreground"
+										variant="ghost"
+										size="sm"
+										disabled={!code}
+										onClick={() =>
+											void copyToClipboard(
+												code,
+												() =>
+													toast.success(
+														t(
+															"notifications.copySuccess",
+														),
+													),
+												(msg) => toast.error(msg),
+											)
+										}
+									>
+										<CopyIcon className="size-3.5" />
+										{t("response.copy")}
+									</Button>
+								</TooltipTrigger>
+								<TooltipContent side="bottom">
+									{t("response.copy")}
+								</TooltipContent>
+							</Tooltip>
+						</div>
+						{/* capped to the height an html preview uses, so a long block
+						scrolls inside the message instead of pushing the rest of the
+						conversation off screen */}
+						<div
+							ref={codeScroll.ref}
+							onScroll={codeScroll.onScroll}
+							className="overflow-auto p-3"
+							style={{ maxHeight: RESPONSE_BLOCK_MAX_HEIGHT }}
+						>
+							<Code code={code} language={language ?? "txt"} />
+						</div>
 					</div>
 				)}
 				{executeResult && (
@@ -226,15 +354,11 @@ export const CodePreviewBlock = ({
 								variant="ghost"
 								size="sm"
 								disabled={isExecuting}
-								onClick={() => setExecuteResult(null)}
+								onClick={() => setExecuteResult(undefined)}
 							>
 								Clear
 							</Button>
 						</div>
-						{/* Cap the rendered height so a really large response
-						    scrolls within the block instead of stretching the
-						    whole chat message. CellOutputBlock's popout still
-						    opens the full result in a viewport-sized modal. */}
 						<div className="max-h-96 overflow-auto">
 							<CellOutputBlock
 								output={executeResult.output}
@@ -246,8 +370,9 @@ export const CodePreviewBlock = ({
 					</div>
 				)}
 			</div>
+
 			<Dialog open={isFullViewOpen} onOpenChange={setIsFullViewOpen}>
-				<DialogContent className="h-[100dvh] max-h-[100dvh] w-[100dvw] max-w-[100dvw] grid-rows-[auto_1fr] overflow-hidden rounded-none border-0 p-3 sm:w-[100dvw] sm:max-w-[100dvw]">
+				<DialogContent className="h-dvh max-h-dvh w-dvw max-w-dvw grid-rows-[auto_1fr] overflow-hidden rounded-none border-0 p-3 sm:w-dvw sm:max-w-dvw">
 					<DialogHeader>
 						<DialogTitle>{langLabel}</DialogTitle>
 					</DialogHeader>
@@ -256,6 +381,22 @@ export const CodePreviewBlock = ({
 					</div>
 				</DialogContent>
 			</Dialog>
+
+			<SaveCodeNotebookDialog
+				open={isAddToNotebookOpen}
+				onOpenChange={setIsAddToNotebookOpen}
+				code={code}
+				result={executeResult}
+				room={room}
+			/>
+
+			<SaveFileDialog
+				open={isSaveCodeDialogOpen}
+				content={code}
+				onClose={() => setIsSaveCodeDialogOpen(false)}
+				room={room}
+				extension={codeExtension}
+			/>
 		</>
 	);
 };

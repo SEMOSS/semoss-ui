@@ -1,3 +1,4 @@
+export * from "./use-cache-data";
 export * from "./use-cache-state";
 export * from "./use-debounced-callback";
 export * from "./use-debounced-value";

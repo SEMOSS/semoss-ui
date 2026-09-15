@@ -1,5 +1,6 @@
 {
 	"$schema": "https://turborepo.com/schema.json",
+	"concurrency": "20",
 	"tasks": {
 		"build": {
 			"cache": false,

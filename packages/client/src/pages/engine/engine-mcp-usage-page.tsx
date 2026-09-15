@@ -14,7 +14,7 @@ import {
 	toast,
 } from "@semoss/ui/next";
 import { McpUsage } from "@/components/shared/mcp-usage";
-import { useEngine, useRootStore } from "@/hooks";
+import { useEngine, useSession } from "@/hooks";
 
 interface MCPToolInputProperty {
 	title?: string;
@@ -59,14 +59,14 @@ const hasPixelError = (operationType?: string[] | string): boolean => {
  * Render MCP tool listing and connection instructions for an engine.
  */
 export const EngineMcpUsagePage = () => {
-	const { active } = useEngine();
-	const { monolithStore } = useRootStore();
+	const { engine, permission } = useEngine();
+	const runPixel = useSession((state) => state.runPixel);
 	const [mcpTools, setMcpTools] = useState<MCPToolDefinition[]>([]);
 	const [mcpToolsLoading, setMcpToolsLoading] = useState(false);
 	const [mcpToolsError, setMcpToolsError] = useState("");
 	const [generatingMCP, setGeneratingMCP] = useState(false);
 	const [openGenerateMcpDialog, setOpenGenerateMcpDialog] = useState(false);
-	const canGenerateMCP = active.role === "OWNER" || active.role === "EDIT";
+	const canGenerateMCP = permission === "OWNER" || permission === "EDIT";
 
 	const fetchMcpTools = useCallback(
 		async (engineId: string) => {
@@ -74,7 +74,7 @@ export const EngineMcpUsagePage = () => {
 			setMcpToolsError("");
 
 			try {
-				const response = (await monolithStore.runQuery(
+				const response = (await runPixel(
 					`GetMCPTools(engine=["${engineId}"]);`,
 				)) as MCPToolsPixelResponse;
 
@@ -106,36 +106,29 @@ export const EngineMcpUsagePage = () => {
 				setMcpToolsLoading(false);
 			}
 		},
-		[monolithStore],
+		[runPixel],
 	);
 
 	useEffect(() => {
-		if (!active.id) {
+		if (!engine.engine_id) {
 			return;
 		}
 
-		fetchMcpTools(active.id);
-	}, [active.id, fetchMcpTools]);
+		fetchMcpTools(engine.engine_id);
+	}, [engine.engine_id, fetchMcpTools]);
 
 	const handleMCPClick = async () => {
 		setGeneratingMCP(true);
 		try {
-			const pixel = `MakeEngineMCP(engine="${active.id}");`;
-			const { pixelReturn } = await monolithStore.runQuery(pixel);
+			const pixel = `MakeEngineMCP(engine="${engine.engine_id}");`;
+			const { pixelReturn } = await runPixel(pixel);
 
 			if (pixelReturn[0].operationType.includes("ERROR")) {
 				throw pixelReturn[0].output as string;
 			}
 
-			const existingTags = Array.isArray(active.metadata.tag)
-				? (active.metadata.tag as string[])
-				: [];
-			if (!existingTags.includes("MCP")) {
-				active.metadata.tag = [...existingTags, "MCP"];
-			}
-
 			toast.success("MCP generated");
-			fetchMcpTools(active.id);
+			fetchMcpTools(engine.engine_id);
 		} catch (error) {
 			toast.error(error as string);
 		} finally {
@@ -335,7 +328,10 @@ export const EngineMcpUsagePage = () => {
 				)}
 			</div>
 
-			<McpUsage id={active.id} name={active.name} />
+			<McpUsage
+				id={engine.engine_id}
+				name={engine.engine_display_name || engine.engine_name}
+			/>
 		</div>
 	);
 };

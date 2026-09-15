@@ -61,7 +61,7 @@ const isEngineType = (type: string): boolean =>
  * Constant-typed variables store their value directly on `variable.value`.
  * Pointer types (block/cell/query) and engine types resolve indirectly.
  */
-export const isConstantType = (type: string): boolean =>
+const isConstantType = (type: string): boolean =>
 	type === "string" ||
 	type === "number" ||
 	type === "JSON" ||

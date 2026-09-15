@@ -1,6 +1,6 @@
 import { observer } from "mobx-react-lite";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router";
 import { useTranslation } from "@semoss/i18n";
 import { InsightProvider } from "@semoss/sdk/react";
 import {
@@ -10,12 +10,7 @@ import {
 	Spinner,
 	toast,
 } from "@semoss/ui/next";
-import {
-	FileDragOverlay,
-	RoomContent,
-	RoomSidebar,
-	SaveWorkspaceDialog,
-} from "@/components";
+import { RoomContent, RoomSidebar, SaveWorkspaceDialog } from "@/components";
 import { FileDragProvider } from "@/contexts";
 import { useChat, useGlobalBreadcrumbs, useRoot } from "@/hooks";
 import type { RoomStore } from "@/stores";
@@ -163,9 +158,8 @@ export const RoomPage = observer(() => {
 					direction="horizontal"
 					className="w-full flex-1 overflow-hidden"
 				>
-					<ResizablePanel className="h-full w-full flex-1 overflow-hidden p-2">
+					<ResizablePanel className="h-full w-full flex-1 overflow-hidden">
 						<FileDragProvider>
-							<FileDragOverlay />
 							<RoomContent room={room} />
 						</FileDragProvider>
 					</ResizablePanel>
@@ -173,7 +167,7 @@ export const RoomPage = observer(() => {
 						<>
 							<ResizableHandle />
 							<ResizablePanel
-								className={"relative p-2"}
+								className={"relative"}
 								defaultSize={50}
 								minSize={20}
 							>

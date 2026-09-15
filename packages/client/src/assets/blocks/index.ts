@@ -25,8 +25,6 @@ export { default as CONTAINER_ACTIVE } from "./Container_Active.png";
 export { default as CONTAINER_HOVER } from "./Container_Hover.png";
 export { default as DATA_GRID_ACTIVE } from "./Data_Grid_Active.png";
 export { default as DATA_GRID_HOVER } from "./Data_Grid_Hover.png";
-export { default as DATE_PICKER_ACTIVE } from "./Date_Picker_Active.png";
-export { default as DATE_PICKER_HOVER } from "./Date_Picker_Hover.png";
 export { default as DENDROGRAM_CHART_ACTIVE } from "./Dendrogram_Active.png";
 export { default as DENDROGRAM_CHART_HOVER } from "./Dendrogram_Hover.png";
 export { default as DIVIDER_ACTIVE } from "./Divider_Active.png";

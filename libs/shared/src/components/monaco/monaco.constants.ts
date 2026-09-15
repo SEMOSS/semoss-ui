@@ -41,6 +41,7 @@ export const MONACO_EXT_LANGUAGE_MAPPING: Record<string, MONACO_LANGUAGES> = {
 	py: "python",
 
 	// JSON
+	ipynb: "json",
 	json: "json",
 
 	// Java

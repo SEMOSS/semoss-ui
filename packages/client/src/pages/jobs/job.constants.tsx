@@ -728,10 +728,10 @@ export const Months: Array<MonthsDef> = [
 	},
 ];
 
-export const FrequencyDaily = "Daily";
-export const FrequencyWeekly = "Weekly";
-export const FrequencyMonthly = "Monthly";
-export const FrequencyYearly = "Yearly";
+const FrequencyDaily = "Daily";
+const FrequencyWeekly = "Weekly";
+const FrequencyMonthly = "Monthly";
+const FrequencyYearly = "Yearly";
 
 export const FrequencyOptions: Frequencies[] = [
 	FrequencyDaily,
@@ -739,44 +739,3 @@ export const FrequencyOptions: Frequencies[] = [
 	FrequencyMonthly,
 	FrequencyYearly,
 ];
-
-export const ERROR_MSGES = {
-	MINUTE_ERROR_MSG:
-		"Must be 0–59, or use allowed symbols: '*', ',', '-', '/'.",
-	HOUR_ERROR_MSG: "Must be 0–23, or use allowed symbols: '*', ',', '-', '/'.",
-	DAY_OF_MONTH_ERROR_MSG:
-		"Must be 1–31, '*', ',', '-', '/', 'L', 'L-N' (e.g., 'L-3'), or 'W' (e.g., '15W').",
-	MONTH_ERROR_MSG:
-		"Must be 1–12, 3-letter abbreviation (JAN–DEC), or use '*', ',', '-', '/'.",
-	DAY_OF_WEEK_ERROR_MSG:
-		"Must be 1–7, or used allowed symbols '*', ',', '-', '/', 'L', or '#' (e.g., '3#2' for the second Tuesday)",
-	DAY_OF_WEEK_OCCURENCE_ERROR_MSG:
-		"A numeric value between 1-5 must follow the # option",
-	DAY_OF_WEEK_WEEKDAY_ERROR_MSG:
-		"Numeric values before # option must be between 1-7",
-};
-
-export const MonthAlias: { [key: string]: string } = {
-	jan: "1",
-	feb: "2",
-	mar: "3",
-	apr: "4",
-	may: "5",
-	jun: "6",
-	jul: "7",
-	aug: "8",
-	sep: "9",
-	oct: "10",
-	nov: "11",
-	dec: "12",
-};
-
-export const WeekdaysAlias: { [key: string]: string } = {
-	sun: "1",
-	mon: "2",
-	tue: "3",
-	wed: "4",
-	thu: "5",
-	fri: "6",
-	sat: "7",
-};

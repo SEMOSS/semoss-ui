@@ -1,12 +1,9 @@
 import { ToggleLeft } from "lucide-react";
-import type { CSSProperties } from "react";
 import { OptionsSettings, SelectInputSettings } from "../../settings";
 import { SwitchSettings } from "../../settings/shared/SwitchSettings";
 import { BLOCK_TYPE_ACTION } from "../block-defaults.constants";
 import { buildListener, buildShowField } from "../block-defaults.shared";
 import type { BlockSettingsConfig } from "../settings.types";
-
-export const DefaultStyles: CSSProperties = {};
 
 // export the config for the block
 export const config: BlockSettingsConfig = {

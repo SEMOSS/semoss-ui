@@ -1,18 +1,29 @@
 import { makeAutoObservable, runInAction } from "mobx";
+import type { StoreApi } from "zustand";
+import {
+	FILE_PANEL_TYPES,
+	type FilePanelMode,
+	type FilePanelValue,
+	getFilePanelType,
+	isFilePanelType,
+} from "@semoss/panels";
 import {
 	getPixelAsyncResult,
 	console as getPixelConsole,
-	getPixelJobStreaming,
 	runPixel,
 	runPixelAsync,
 	uploadInsight,
 } from "@semoss/sdk/react";
-import { FlexLayout, type ThemeMap } from "@semoss/shared";
+import type { FileExplorerApi, ThemeMap } from "@semoss/shared";
 import {
-	STREAMING_PLACEHOLDER_ID,
-	TEMPERATURE,
-	TOKEN_LENGTH,
-} from "@/constants";
+	createWorkbenchStore,
+	type WorkbenchPanelConfigAny,
+	type WorkbenchPanelId,
+	type WorkbenchPanelParams,
+	type WorkbenchPanelType,
+	type WorkbenchState,
+} from "@semoss/workbench";
+import { STREAMING_PLACEHOLDER_ID } from "@/constants";
 import {
 	type AbstractMessageStore,
 	createMessageStore,
@@ -20,17 +31,32 @@ import {
 	ResponseMessageStore,
 	ToolStore,
 } from "@/stores";
+import {
+	reconnectAgentRun,
+	reconstructAllSubagents,
+} from "@/stores/message/agent-harness";
 import type {
 	Engine,
 	InputPixelMessage,
 	MCPConfig,
 	PixelMessage,
+	PixelMessageSubagentPart,
 	PixelMessageToolCallPart,
 	PixelMessageToolResultPart,
 	Prompt,
 	ResponsePixelMessage,
 	Workspace,
 } from "@/types";
+import {
+	getRoomFileMode,
+	ROOM_PANEL_TYPES,
+	ROOM_SIDEBAR_LAYOUT,
+} from "./room-sidebar";
+import {
+	type StreamHandlers,
+	StreamJobController,
+	type StreamOptions,
+} from "./stream-job-controller";
 
 interface RoomStoreInterface {
 	/**
@@ -82,6 +108,13 @@ interface RoomStoreInterface {
 	root: ResponseMessageStore;
 
 	/**
+	 * The agent's scripted opening message, rendered as the first bubble in
+	 * the transcript. Re-read from the workspace on every initialize() — not
+	 * a message, never sent to the model. Empty when there is none.
+	 */
+	agentGreeting: string;
+
+	/**
 	 * Active tools
 	 */
 	tools: Record<string, ToolStore>;
@@ -106,16 +139,6 @@ interface RoomStoreInterface {
 		mcp: MCPConfig[];
 
 		/*
-		 * Length of the token
-		 */
-		tokenLength: number;
-
-		/*
-		 * Temperature of the model
-		 */
-		temperature: number;
-
-		/*
 		 * Workspace associated with the room
 		 */
 		workspace?: {
@@ -134,24 +157,33 @@ interface RoomStoreInterface {
 		 * AskPlayground. Persisted so the mode survives a reload.
 		 */
 		harnessType?: string;
+
+		/*
+		 * Temperature of the model (0–1). Only used when enableTemperature is true.
+		 */
+		temperature?: number;
 	};
 
 	/**
 	 *  Sidebar information
 	 */
 	sidebar: {
-		/** Track if the sidebar is open */
+		/**
+		 * Track if the sidebar is open.
+		 *
+		 * Only whether the panel is on screen. What is *in* it lives in the
+		 * room's workbench store, which outlives every open/close.
+		 */
 		isOpen: boolean;
 
 		/**
-		 * FlexLayout model
+		 * Track if the sidebar is blown up over the page.
+		 *
+		 * Here rather than in the sidebar's own React state because a panel's
+		 * chrome has to put it back — opening a tool inline while the sidebar
+		 * covers the page would otherwise reveal nothing.
 		 */
-		model: FlexLayout.Model;
-
-		/**
-		 * Count of the model;
-		 */
-		counter: number;
+		isMaximized: boolean;
 	};
 }
 
@@ -160,6 +192,14 @@ interface RoomStoreInterface {
  */
 export class RoomStore {
 	private _theme: ThemeMap["playground"];
+	readonly streamJob = new StreamJobController({
+		getInsightId: () => this._store.insightId,
+		setLoading: (isLoading) => this.setIsLoading(isLoading),
+		setError: (error) =>
+			runInAction(() => {
+				this._store.error = error;
+			}),
+	});
 	private _store: RoomStoreInterface = {
 		roomId: "",
 		insightId: "new",
@@ -171,54 +211,105 @@ export class RoomStore {
 		},
 		model: null as unknown as Engine,
 		root: null as unknown as ResponseMessageStore,
+		agentGreeting: "",
 		tools: {},
 		options: {
 			predefinedPrompts: [],
 			instructions: "",
 			mcp: [],
-			tokenLength: TOKEN_LENGTH,
-			temperature: TEMPERATURE,
+			temperature: undefined,
 		},
 		sidebar: {
 			isOpen: false,
-			model: FlexLayout.Model.fromJson({
-				global: {
-					borderEnableTabScrollbar: true,
-					tabSetEnableTabScrollbar: true,
-				},
-				borders: [],
-				layout: {
-					type: "row",
-					weight: 0,
-					children: [],
-				},
-			}),
-			counter: 0,
+			isMaximized: false,
 		},
 	};
 
-	constructor(
-		theme: ThemeMap["playground"],
-		roomId: string,
-		insightId: string = "new",
-	) {
+	/**
+	 * The dock backing the sidebar.
+	 *
+	 * Owned by the room rather than by `<Workbench>` for two reasons: panels are
+	 * opened from outside React (a tool store reacting to a stream) and while
+	 * the sidebar is closed, and the arrangement has to survive the sidebar
+	 * being closed and reopened, which unmounts the shell.
+	 *
+	 * Read it to drive the sidebar from React (`useStore(room.workbench, …)`);
+	 * the `openSidebarPanel` family covers everything the room itself needs.
+	 */
+	readonly workbench: StoreApi<WorkbenchState>;
+
+	constructor(options: {
+		theme: ThemeMap["playground"];
+		roomId: string;
+		insightId?: string;
+		/**
+		 * The sidebar's panel blueprints. Handed in rather than imported: they
+		 * live in `@/components`, which imports `@/stores`, so importing them
+		 * here would close a module cycle. The composition root passes them
+		 * down.
+		 */
+		panelComponents: Record<string, WorkbenchPanelConfigAny>;
+	}) {
+		const { theme, roomId, insightId = "new", panelComponents } = options;
 		this._theme = theme;
 		// register the roomId, insightId, and actions
 		this._store.roomId = roomId;
 		this._store.insightId = insightId;
 
-		// make it observable
-		makeAutoObservable(this);
+		this.workbench = createWorkbenchStore({ components: panelComponents });
+		this.workbench
+			.getState()
+			.layout.actions.loadSnapshot(ROOM_SIDEBAR_LAYOUT);
+		this._syncSidebarFileMode();
 
-		// increment the counter whenever the model changes
-		this._store.sidebar.model.addChangeListener((action) => {
-			this.tickSidebar(action);
-		});
+		// make it observable -- the dock is a zustand store with its own
+		// subscription model, and deep-observing it would be nonsense
+		makeAutoObservable(this, { workbench: false });
+
+		this._watchSidebar();
 	}
 
 	/**
-	 * Getters
+	 * Mirror the dock's two facts the rest of the room cares about: a tool whose
+	 * panel was closed is no longer open, and a sidebar with nothing left in it
+	 * closes itself.
+	 *
+	 * This is the replacement for the FlexLayout change listener, and the reason
+	 * the room store holds the dock: both reactions have to fire whether the
+	 * close came from the tab's × or from `closeTool`.
 	 */
+	private _watchSidebar = (): void => {
+		let previous = this.workbench.getState().layout.panels;
+
+		this.workbench.subscribe((state) => {
+			const panels = state.layout.panels;
+			if (panels === previous) {
+				return;
+			}
+
+			const closed = Object.values(previous).filter(
+				(record) => !(record.id in panels),
+			);
+			previous = panels;
+
+			for (const record of closed) {
+				if (record.type !== ROOM_PANEL_TYPES.TOOL) {
+					continue;
+				}
+				const toolId = (record.config as { toolId?: string })?.toolId;
+				const tool = toolId ? this.getTool(toolId) : null;
+				tool?.setIsOpen(false);
+			}
+
+			if (
+				this._store.sidebar.isOpen &&
+				state.layout.openPanelIds.length === 0
+			) {
+				this.closeSidebar();
+			}
+		});
+	};
+
 	/**
 	 * Get the id of the roomId
 	 */
@@ -248,11 +339,48 @@ export class RoomStore {
 	}
 
 	/**
+	 * A tool-phase stop is committing (cancelling the remaining tool calls). The
+	 * stream cancel state lives in the controller; this covers the tool phase,
+	 * where there's no stream job to track.
+	 */
+	private cancellingTools = false;
+
+	/**
+	 * Whether there's something the user can still stop: a cancellable streaming
+	 * call (e.g. AskPlayground / the post-tool response), or a turn parked on
+	 * unfinished tool calls — and a stop isn't already underway.
+	 */
+	get canCancel() {
+		return (
+			this.streamJob.canCancel ||
+			(!this.cancellingTools &&
+				Boolean(this.latestResponseMessage?.hasUnfinishedTools))
+		);
+	}
+
+	/** A stop has been issued and it's still unwinding. */
+	get isCancelling() {
+		return this.streamJob.isCancelling || this.cancellingTools;
+	}
+
+	/**
 	 * Get the error of the room
 	 */
 	get error() {
 		return this._store.error;
 	}
+
+	/**
+	 * Surface an error on the room. Public so callers outside this store — e.g.
+	 * ToolSaveController, when a tool-phase stop fails to persist — can report a
+	 * failure that isn't already caught by runRoomPixel/streamJob's own
+	 * setErrorOnFail handling.
+	 */
+	setError = (error: Error): void => {
+		runInAction(() => {
+			this._store.error = error;
+		});
+	};
 
 	/**
 	 * Get the mode of the room
@@ -273,6 +401,13 @@ export class RoomStore {
 	 */
 	get model() {
 		return this._store.model;
+	}
+
+	/**
+	 * Get the agent's scripted opening message (see RoomStoreInterface.agentGreeting).
+	 */
+	get agentGreeting() {
+		return this._store.agentGreeting;
 	}
 
 	/**
@@ -464,6 +599,7 @@ export class RoomStore {
 			...metadata,
 		};
 	};
+
 	/** Actions */
 	/**
 	 * Initialize the room and load messages and options if they are there
@@ -492,6 +628,7 @@ export class RoomStore {
 			runInAction(() => {
 				this._store.insightId = response.insightId;
 			});
+			this._syncSidebarFileMode();
 
 			// create the root
 			const root = new ResponseMessageStore(this, {
@@ -567,6 +704,47 @@ export class RoomStore {
 			// options
 			const newOptions = { ...optionsOutput.OPTIONS };
 
+			runInAction(() => {
+				// Restore agent-harness mode from the persisted options so a
+				// reloaded agent room keeps sending messages via RunAgent. Only
+				// promote to "agent" here — never demote — so that a freshly
+				// created room whose mode was set via setMode() before its
+				// options have been persisted (createRoom runs initialize()
+				// before updateRoomOptions) keeps its explicitly-set mode.
+				if (newOptions.harnessType) {
+					this.setMode("agent");
+				}
+
+				// store it
+				this._store.root = root;
+			});
+
+			// Fired here, before the workspace/model round trips below, since
+			// neither depends on them — waiting on those was delaying subagent
+			// boxes and live status for no reason.
+			if (this.mode === "agent") {
+				void reconstructAllSubagents(this);
+			}
+			if (this.tail.type === "OUTPUT") {
+				if (this.mode === "agent") {
+					// An agent-run turn is driven entirely server-side and
+					// only ever gets a live AgentStore watching it from
+					// runAgentMessage's own submit — reconnect here so a
+					// reload doesn't leave it (and any paused tool decision)
+					// unwatched. See reconnectAgentRun.
+					reconnectAgentRun(this.tail);
+				} else {
+					this.tail.continueToolExecution();
+				}
+			}
+
+			// The agent's default model, read below off the workspace this room
+			// was started from. It only stands in for a room that has never
+			// named a model of its own - a room the user has already chatted in
+			// keeps the model those messages ran on.
+			let agentDefaultModelId = "";
+			let agentGreeting = "";
+
 			if (!newOptions.workspace?.workspace_id) {
 				delete newOptions.workspace;
 			} else {
@@ -584,6 +762,12 @@ export class RoomStore {
 				if (workspaceOutput?.name && newOptions.workspace) {
 					newOptions.workspace.name = workspaceOutput.name;
 				}
+
+				agentDefaultModelId =
+					workspaceOutput?.config_json?.model_id ?? "";
+				agentGreeting = workspaceOutput?.config_json?.greeting_enabled
+					? (workspaceOutput?.config_json?.greeting ?? "")
+					: "";
 
 				// Merge workspace MCPs into the mcp array with fromWorkspace flag
 				if (
@@ -621,45 +805,34 @@ export class RoomStore {
 				}
 			}
 
-			// set the model based on the history
-			if (activeModelId) {
+			// set the model based on the history, or on the agent's default when
+			// the room has never named one
+			const modelIdToLoad = activeModelId || agentDefaultModelId;
+			if (modelIdToLoad) {
 				const { pixelReturn } = await this.runRoomPixel<[Engine[]]>(
-					`META | MyEngines(metaKeys=[], metaFilters=[{"tag":"text-generation"}], engineTypes=['MODEL'], filterWord=${JSON.stringify(activeModelId)})`,
+					`META | MyEngines(metaKeys=[], metaFilters=[{"tag":"text-generation"}], engineTypes=['MODEL'], filterWord=${JSON.stringify(modelIdToLoad)})`,
 				);
 
-				runInAction(() => {
-					this.setModel(pixelReturn[0].output[0]);
-				});
+				const model = pixelReturn[0].output[0];
+				if (model) {
+					runInAction(() => {
+						this.setModel(model);
+					});
+				}
 			}
 
 			runInAction(() => {
 				// set the options based on the history
 				this.setOptions(newOptions);
 
+				this._store.agentGreeting = agentGreeting;
+
 				// Restore the persisted room name so the breadcrumb shows it on
 				// load/refresh (GetPlaygroundMessages doesn't carry the name).
 				if (optionsOutput.ROOM_NAME) {
 					this.setMetadata({ name: optionsOutput.ROOM_NAME });
 				}
-
-				// Restore agent-harness mode from the persisted options so a
-				// reloaded agent room keeps sending messages via RunAgent. Only
-				// promote to "agent" here — never demote — so that a freshly
-				// created room whose mode was set via setMode() before its
-				// options have been persisted (createRoom runs initialize()
-				// before updateRoomOptions) keeps its explicitly-set mode.
-				if (newOptions.harnessType) {
-					this.setMode("agent");
-				}
-
-				// store it
-				this._store.root = root;
 			});
-
-			// If the last message is a response and it has tool executions, start them (happens for new rooms and page reloads)
-			if (this.tail.type === "OUTPUT") {
-				this.tail.continueToolExecution();
-			}
 		} catch (e) {
 			console.error(e);
 			runInAction(() => {
@@ -725,11 +898,14 @@ export class RoomStore {
 	 */
 	updateRoomOptions = async (options: RoomStore["options"]) => {
 		try {
-			// Filter out workspace MCPs before saving (they shouldn't be persisted to the room)
+			// Filter out MCPs the backend reports but does not store: workspace MCPs
+			// and the room's own toolbox, which is read from the room folder.
 			const optionsToSave = {
 				...options,
 				modelId: this._store.model.engine_id,
-				mcp: options.mcp.filter((mcp) => !mcp?.fromWorkspace),
+				mcp: options.mcp.filter(
+					(mcp) => !mcp?.fromWorkspace && !mcp?.fromRoom,
+				),
 			};
 
 			await this.runRoomPixel(
@@ -759,6 +935,7 @@ export class RoomStore {
 		toolId: string,
 		message: InputMessageStore | ResponseMessageStore,
 		part: PixelMessageToolCallPart | PixelMessageToolResultPart,
+		options?: { placeholder?: boolean },
 	) => {
 		let tool = this._store.tools[toolId];
 		if (!tool) {
@@ -766,8 +943,13 @@ export class RoomStore {
 			this._store.tools[tool.id] = tool;
 		}
 
-		tool.syncMessage(message, part);
+		tool.syncMessage(message, part, options);
 	};
+
+	/** Every tool this room has seen, by id. */
+	get tools() {
+		return this._store.tools;
+	}
 
 	/**
 	 * Get a tool
@@ -778,100 +960,180 @@ export class RoomStore {
 	};
 
 	/**
-	 * Get a tool by nodeId
-	 * @param nodeId - the id of the tool
+	 * Find a spawned subagent's part by id, wherever it falls in the room's
+	 * history. Looked up live (not snapshotted) so a panel showing it stays in
+	 * sync with status/result updates while open.
 	 */
-	getToolByNodeId = (nodeId: string): ToolStore => {
-		if (!nodeId.startsWith("tool--")) {
-			return null as unknown as ToolStore;
+	getSubagentPart = (
+		subagentId: string,
+	): PixelMessageSubagentPart["subagent"] | undefined => {
+		for (const message of this.history) {
+			if (!(message instanceof ResponseMessageStore)) {
+				continue;
+			}
+			const part = message.parts.find(
+				(p): p is PixelMessageSubagentPart =>
+					p.type === "SUBAGENT" && p.subagent.id === subagentId,
+			);
+			if (part) {
+				return part.subagent;
+			}
 		}
-
-		// strip out the id from the nodeId
-		const toolId = nodeId.replace("tool--", "");
-
-		//get the tool based on the id
-		return this._store.tools[toolId] || null;
+		return undefined;
 	};
 
 	/**
 	 * Sidebar
 	 */
-	/**
-	 * Check if a sidebar node is selected
-	 * @param nodeId - node id to check
-	 */
-	isSidebarNodeSelected = (nodeId: string): boolean => {
-		if (!this._store.sidebar.isOpen) {
-			return false;
-		}
-
-		let isSelected = false;
-		this._store.sidebar.model.visitNodes((node) => {
-			if (node.getType() === "tabset") {
-				const tabset = node as FlexLayout.TabSetNode;
-				if (tabset.getSelectedNode()?.getId() === nodeId) {
-					isSelected = true;
-					return;
-				}
-			}
-		});
-
-		return isSelected;
-	};
+	/** The file scope every file panel in this sidebar is opened in. */
+	get fileMode() {
+		return getRoomFileMode(this._store.insightId);
+	}
 
 	/**
-	 * Add a sidebar node and open it
-	 * @param node - node to open. This will select and/or create the node
+	 * Reveal a sidebar panel, opening the sidebar itself and creating the panel
+	 * if it is not already there.
+	 *
+	 * Identity is the blueprint's `matches` over `config`, so the callers no
+	 * longer mint node ids to dedupe by — a tool panel is "the same panel" when
+	 * its `toolId` matches, whatever its instance id happens to be.
+	 *
+	 * @param type - Which blueprint to open.
+	 * @param config - The instance's parameters, and what it dedupes on.
+	 * @param name - Tab label for a newly created instance.
+	 * @return The revealed or created panel id.
 	 */
-	addSidebarNode = (
-		nodeId: string,
-		options: {
-			[key: string]: unknown;
-		},
-	): void => {
-		// mark as open
+	openSidebarPanel = (
+		type: WorkbenchPanelType,
+		config: WorkbenchPanelParams = {},
+		name?: string,
+	): WorkbenchPanelId => {
 		this._store.sidebar.isOpen = true;
-
-		// select the node if there
-		const selectedNode = this._store.sidebar.model.getNodeById(nodeId);
-		if (selectedNode) {
-			this._store.sidebar.model.doAction(
-				FlexLayout.Actions.selectTab(selectedNode.getId()),
-			);
-			return;
-		}
-
-		// create the node if it is not there
-		// where to add the node
-		const addId =
-			this._store.sidebar.model.getActiveTabset()?.getId() ||
-			this._store.sidebar.model.getRoot().getChildren()[0]?.getId() ||
-			"";
-
-		// create and select the panel
-		this._store.sidebar.model.doAction(
-			FlexLayout.Actions.addNode(
-				{
-					...options,
-					id: nodeId,
-				},
-				addId,
-				FlexLayout.DockLocation.CENTER,
-				-1,
-				true,
-			),
-		);
+		return this.workbench
+			.getState()
+			.layout.actions.selectPanel(type, config, name ? { name } : {});
 	};
 
 	/**
-	 * Remove a sidebar node and close if last one
-	 * @param node - node to remove
+	 * Reveal the sidebar's editor for a file, opening it if it is not there.
+	 *
+	 * Which editor depends on the extension — `getFilePanelType` picks between
+	 * the code, markdown, notebook, image, PDF, pptx and download panels.
+	 *
+	 * @param path - The file's insight-relative path.
+	 * @param name - Tab label; defaults to the file's own name.
+	 * @return The revealed or created panel id.
 	 */
-	removeSidebarNode = (nodeId: string): void => {
-		// trigger the action to remove it
-		this._store.sidebar.model.doAction(
-			FlexLayout.Actions.deleteTab(nodeId),
+	openFileSidebarPanel = (
+		path: string,
+		name?: string,
+		options?: { refresh?: boolean },
+	): WorkbenchPanelId => {
+		const fileName = name ?? path.split("/").filter(Boolean).pop() ?? path;
+		const pid = this.openSidebarPanel(
+			getFilePanelType(path),
+			{ mode: this.fileMode, name: fileName, path: path },
+			fileName,
 		);
+
+		if (options?.refresh) {
+			// A panel this call just created reads on mount; one that was
+			// already open is holding the copy that was just overwritten.
+			(
+				this.workbench.getState().layout.values[pid] as
+					| FilePanelValue
+					| undefined
+			)?.refresh();
+		}
+
+		return pid;
+	};
+
+	/**
+	 * Re-point the sidebar's restored file panels at the room's current insight.
+	 *
+	 * A room binds to a fresh insight every time it loads. Panels opened before
+	 * that binding completes need their mode updated before they mount so reads,
+	 * saves, and dedupe all use the room's live insight.
+	 */
+	private _syncSidebarFileMode = (): void => {
+		const { actions } = this.workbench.getState().layout;
+		const mode = this.fileMode;
+
+		for (const record of actions.findPanels((candidate) => {
+			const panelMode = (
+				candidate.config as { mode?: FilePanelMode } | undefined
+			)?.mode;
+			return (
+				isFilePanelType(candidate.type) &&
+				panelMode?.type === "INSIGHT" &&
+				panelMode.insightId !== mode.insightId
+			);
+		})) {
+			actions.updatePanel(record.id, {
+				config: { ...record.config, mode: mode },
+			});
+		}
+	};
+
+	/**
+	 * Reveal the sidebar's file explorer, opening it if it is not there.
+	 *
+	 * There is one explorer per room — the blueprint dedupes on scope alone —
+	 * so a link into a folder navigates the one that is already open rather
+	 * than stacking up a tab per directory, the way the old node-id-per-path
+	 * convention did.
+	 *
+	 * @param initialPath - Directory to show. Defaults to wherever it was.
+	 * @param name - Tab label for a newly created instance.
+	 * @return The revealed or created panel id.
+	 */
+	openSidebarFileExplorer = (
+		initialPath?: string,
+		name?: string,
+	): WorkbenchPanelId => {
+		const pid = this.openSidebarPanel(
+			FILE_PANEL_TYPES.FILE_EXPLORER,
+			{ mode: this.fileMode },
+			name,
+		);
+
+		if (initialPath) {
+			const { actions, values } = this.workbench.getState().layout;
+			// `initialPath` is read once, on mount, so it covers the panel this
+			// call just created; an explorer already on screen has to be told.
+			actions.updatePanel(pid, {
+				config: { mode: this.fileMode, initialPath: initialPath },
+			});
+			(values[pid] as FileExplorerApi | undefined)?.commands.navigateTo(
+				initialPath,
+			);
+		}
+
+		return pid;
+	};
+
+	/**
+	 * Close a sidebar panel matching `config`, if one is open.
+	 *
+	 * @param type - Which blueprint to close.
+	 * @param config - The instance's parameters, matched as `selectPanel` does.
+	 */
+	closeSidebarPanel = (
+		type: WorkbenchPanelType,
+		config: WorkbenchPanelParams = {},
+	): void => {
+		const { actions } = this.workbench.getState().layout;
+		for (const record of actions.matchPanels(type, config)) {
+			actions.closePanel(record.id);
+		}
+	};
+
+	/**
+	 * Blow the sidebar up over the page, or put it back.
+	 */
+	setSidebarMaximized = (isMaximized: boolean): void => {
+		this._store.sidebar.isMaximized = isMaximized;
 	};
 
 	/**
@@ -879,43 +1141,19 @@ export class RoomStore {
 	 */
 	closeSidebar = async (): Promise<void> => {
 		this._store.sidebar.isOpen = false;
+		this._store.sidebar.isMaximized = false;
 	};
 
-	/**
-	 * Increment the counter and close if there are no nodes
-	 */
-	tickSidebar = async (action: FlexLayout.Action): Promise<void> => {
-		this._store.sidebar.counter += 1;
-
-		// if it is a delete
-		if (action.type === FlexLayout.Actions.DELETE_TAB) {
-			const tool = this.getToolByNodeId(action.data.node);
-			if (tool) {
-				tool.setIsOpen(false);
-			}
-		}
-
-		// check if there are any tabs left
-		let hasTabs = false;
-		this._store.sidebar.model.visitNodes((node) => {
-			if (node.getType() === "tab") {
-				hasTabs = true;
-				return;
-			}
-		});
-
-		if (!hasTabs) {
-			this.closeSidebar();
-		}
-	};
 	/**
 	 * Helpers
 	 */
 	/**
-	 * Set the isLoading boolean
+	 * Set the isLoading boolean. Public so callers that don't go through
+	 * streamJob.run() — e.g. the agent-run poll subscription — can still
+	 * participate in the room's loading state.
 	 * @param isLoading - is it loading
 	 */
-	private setIsLoading = (isLoading: boolean): void => {
+	setIsLoading = (isLoading: boolean): void => {
 		this._store.isLoading = isLoading;
 	};
 
@@ -923,8 +1161,16 @@ export class RoomStore {
 	 * Ask a message to the room
 	 * @param prompt - user message
 	 * @param files - files
+	 * @param askOptions.visible - whether the user's bubble renders (default
+	 *   true); pass false for a silent kickoff turn — the reply still shows.
 	 */
-	askMessage = async (prompt: string, files: File[] = []): Promise<void> => {
+	askMessage = async (
+		prompt: string,
+		files: File[] = [],
+		askOptions: { visible?: boolean } = {},
+	): Promise<void> => {
+		const { visible = true } = askOptions;
+
 		if (!this.model) {
 			throw new Error("Model is required");
 		}
@@ -941,7 +1187,7 @@ export class RoomStore {
 			io: "INPUT",
 			type: "INPUT_TEXT",
 			messageId: "ASK_PLACEHOLDER_ID",
-			visible: true,
+			visible,
 			platform_generated: true,
 			modelId: this.model?.engine_id,
 			modelType: this.model?.engine_type,
@@ -1003,6 +1249,17 @@ export class RoomStore {
 
 				const uploaded = response.data;
 
+				// If files were sent but the server returned nothing, the files
+				// couldn't be read — most likely locked by another program (e.g.
+				// a .docx open in Word). Surface this as an UploadError so the
+				// caller can show a "file is in use" message instead of silently
+				// proceeding with no attachment.
+				if (uploaded.length === 0) {
+					const uploadError = new Error("File is in use");
+					uploadError.name = "UploadError";
+					throw uploadError;
+				}
+
 				const normalizeExt = (value: string) =>
 					value.trim().toLowerCase().replace(/^\./, "");
 
@@ -1046,6 +1303,12 @@ export class RoomStore {
 				uploadPlaceholder.isThinking = false;
 			});
 			parentMessage.removeChild(inputMessage);
+
+			// Re-throw UploadErrors as-is (e.g. the uploaded.length === 0 case above)
+			if ((e as Error)?.name === "UploadError") {
+				throw e;
+			}
+
 			throw e;
 		}
 
@@ -1065,7 +1328,7 @@ export class RoomStore {
 		messageId: string,
 		toolId: string,
 		toolResponse: string,
-		toolStatus: "success" | "error" | "cancelled" | "paused" = "success",
+		toolStatus: "success" | "error" | "cancelled" = "success",
 		executedParameters: Record<string, unknown>,
 	): Promise<void> => {
 		try {
@@ -1099,11 +1362,18 @@ export class RoomStore {
 	/**
 	 * Run a pixel
 	 * @param pixel - pixel
+	 * @param showLoading - toggle the room's loading state around the run
+	 * @param setErrorOnFail - surface a thrown failure on the room's error state
+	 * @param throwOnError - when true (default), throw if any statement returns
+	 *   an error. Pass false for multi-statement pixels where the caller wants to
+	 *   inspect per-statement outcomes (each `pixelReturn` entry's `operationType`
+	 *   contains "ERROR" on failure) rather than get an all-or-nothing throw.
 	 */
 	runRoomPixel = async <O extends [] | unknown[]>(
 		pixel: string,
 		showLoading: boolean = true,
 		setErrorOnFail: boolean = true,
+		throwOnError: boolean = true,
 	): Promise<{
 		errors: string[];
 		insightId: string;
@@ -1125,7 +1395,7 @@ export class RoomStore {
 			// get the response
 			const response = await runPixel<O>(pixel, this._store.insightId);
 
-			if (response.errors.length > 0) {
+			if (throwOnError && response.errors.length > 0) {
 				throw new Error(response.errors.join(""));
 			}
 
@@ -1229,90 +1499,41 @@ export class RoomStore {
 	};
 
 	/**
-	 * Run a pixel with streaming support for LLM responses
-	 * @param pixel - pixel to execute
-	 * @param onPoll - callback for each streaming chunk
+	 * Run a pixel with streaming support for LLM responses. Pass `onCancel` in
+	 * the handlers to make the job cancellable via {@link cancelActiveJob}
+	 * (AskPlayground); omit it for fire-to-completion jobs (tool execution,
+	 * agent harness).
 	 */
-	runRoomPixelStreaming = async <O extends unknown[] | []>(
+	runRoomPixelStreaming = <O extends unknown[] | []>(
 		pixel: string,
-		onPoll: (
-			message: Awaited<
-				ReturnType<typeof getPixelJobStreaming>
-			>["message"][number],
-		) => void,
-		showLoading: boolean = true,
-		setErrorOnFail: boolean = true,
-	) => {
-		try {
-			if (showLoading) {
-				this.setIsLoading(true);
-			}
+		handlers: StreamHandlers<O>,
+		options?: StreamOptions,
+	): Promise<void> => this.streamJob.run<O>(pixel, handlers, options);
 
-			// Start async execution to get job ID
-			const { jobId } = await runPixelAsync(pixel, this._store.insightId);
+	/**
+	 * Stop whatever the current turn is doing. A live cancellable stream (e.g.
+	 * AskPlayground / the post-tool response) takes priority; otherwise, if the
+	 * turn is parked on unfinished tool calls, hard-stop the tool phase. No-op
+	 * when nothing is cancellable, so it's safe to wire to an always-visible
+	 * button.
+	 */
+	cancelActiveJob = async (): Promise<void> => {
+		if (this.streamJob.canCancel) {
+			await this.streamJob.stop();
+			return;
+		}
 
-			if (!jobId) {
-				throw new Error("No job ID returned from pixel execution");
-			}
-
-			// Poll for streaming content
-			let isPolling = true;
-
-			const pollingInterval = 500; // 500ms between streaming polls
-
-			while (isPolling) {
-				try {
-					const response = await getPixelJobStreaming(jobId);
-
-					if (response && response.message.length > 0) {
-						for (const message of response.message) {
-							onPoll(message);
-						}
-					}
-
-					// Check status for completion
-					if (
-						response.status === "ProgressComplete" ||
-						response.status === "Complete"
-					) {
-						isPolling = false;
-					} else if (response.status === "Error") {
-						throw new Error("Streaming job encountered an error");
-					}
-
-					if (isPolling) {
-						await new Promise((resolve) =>
-							setTimeout(resolve, pollingInterval),
-						);
-					}
-				} catch (error) {
-					isPolling = false;
-					throw error;
-				}
-			}
-
-			// get the final result
-			const result = await getPixelAsyncResult<O>(jobId);
-
-			if (result.errors.length > 0) {
-				throw new Error(result.errors.join(""));
-			}
-
-			return result;
-		} catch (e) {
-			console.error(e);
-
-			if (setErrorOnFail) {
-				// show the error
+		const message = this.latestResponseMessage;
+		if (message?.hasUnfinishedTools && !this.cancellingTools) {
+			runInAction(() => {
+				this.cancellingTools = true;
+			});
+			try {
+				await message.cancelPendingTools();
+			} finally {
 				runInAction(() => {
-					this._store.error = e as Error;
+					this.cancellingTools = false;
 				});
-			}
-
-			throw e;
-		} finally {
-			if (showLoading) {
-				this.setIsLoading(false);
 			}
 		}
 	};
@@ -1320,17 +1541,17 @@ export class RoomStore {
 	/**
 	 * Compact the messages in the room
 	 */
-	compactMessages = async () => {
-		// Find the last response message in the chain
-		let cur: AbstractMessageStore | null = this.tail;
-		while (cur !== null) {
-			if (cur instanceof ResponseMessageStore) break;
-			cur = cur.parent;
+	compactMessages = async (strategy?: "TOOL_PRUNE" | "SUMMARY" | "AUTO") => {
+		// Compact into the last real response in the chain.
+		const curResponse = this.latestResponseMessage;
+
+		if (!curResponse) throw new Error("No response message to compact");
+
+		if (curResponse.hasTools) {
+			throw new Error(
+				"Cannot compact a response that includes tool calls",
+			);
 		}
-
-		if (!cur) throw new Error();
-
-		const curResponse = cur as ResponseMessageStore;
 
 		curResponse.setIsCompacting(true);
 
@@ -1351,10 +1572,14 @@ export class RoomStore {
 		};
 
 		try {
+			const compactionTypesParam =
+				strategy && strategy !== "AUTO"
+					? `, compactionTypes=${JSON.stringify([strategy])}`
+					: "";
 			const response = await this.runRoomPixel<
 				(SummaryResponse | ToolPruneResponse)[][]
 			>(
-				`CompactRoomMessages(roomId=${JSON.stringify(this.roomId)}, parentMessageId=${JSON.stringify(cur.id)});`,
+				`CompactRoomMessages(roomId=${JSON.stringify(this.roomId)}, parentMessageId=${JSON.stringify(curResponse.id)}${compactionTypesParam});`,
 				true,
 			);
 

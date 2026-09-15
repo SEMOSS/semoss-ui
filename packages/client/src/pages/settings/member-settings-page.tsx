@@ -1,6 +1,6 @@
 import { ArrowLeft } from "lucide-react";
 import { useEffect, useState } from "react";
-import { Navigate } from "react-router-dom";
+import { Navigate } from "react-router";
 import { Button, Card } from "@semoss/ui/next";
 import {
 	MemberAccessPanel,

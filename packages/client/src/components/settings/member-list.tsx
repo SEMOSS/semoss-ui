@@ -21,7 +21,7 @@ import type { SETTINGS_MEMBER } from "./settings.types";
 import { useMembers } from "./use-members";
 import { UserAddOverlay } from "./user-add-overlay";
 
-export interface MemberListProps {
+interface MemberListProps {
 	/** id of the currently selected user */
 	selectedUserId?: string;
 	/** Called when a user is selected (or cleared, e.g. after delete) */

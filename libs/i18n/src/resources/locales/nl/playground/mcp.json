@@ -28,7 +28,9 @@
 	"tools": {
 		"enterValues": "Voer door komma's gescheiden waarden in",
 		"selectField": "Selecteer {{field}}",
-		"enterField": "Voer {{field}} in"
+		"enterField": "Voer {{field}} in",
+		"collapseField": "Veld samenvouwen",
+		"expandField": "Veld uitvouwen"
 	},
 	"messages": {
 		"selectKnowledgeSource": "Selecteer een kennisopslag",

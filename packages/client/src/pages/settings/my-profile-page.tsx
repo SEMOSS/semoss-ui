@@ -37,7 +37,7 @@ import {
 	setUserDefaultModel,
 } from "@/api/auth";
 import { SdkBlock } from "@/components/shared/sdk-block";
-import { useAPI, useRootStore, useSettings } from "@/hooks";
+import { useAPI, useConfig, useSession, useSettings } from "@/hooks";
 import { formatDate, getSDKSnippet } from "@/utility";
 import { ChangePasswordModal } from "./change-password-modal";
 
@@ -64,11 +64,25 @@ interface EditUserInfoForm {
 export const MyProfilePage = () => {
 	const modelSelectId = useId();
 	const generateKeyFormId = useId();
-	const { configStore, insightStore } = useRootStore();
-	const { email, id, name } = configStore.store.user;
-	const { isNative } = configStore.store;
-	const lastLogin = configStore.store.user.lastLogin;
-	const groups = configStore.store.user.groupInfo?.groups ?? [];
+	const nativeRegistration = useConfig(
+		(state) => state.config.nativeRegistration,
+	);
+	const logins = useConfig((state) => state.config.logins);
+	const loginDetails = useConfig((state) => state.config.loginDetails);
+	const defaultTextGenerationModel = useSession(
+		(state) => state.defaultTextGenerationModel,
+	);
+	const defaultCodeGenerationModel = useSession(
+		(state) => state.defaultCodeGenerationModel,
+	);
+	const updateUserDefaultModel = useSession(
+		(state) => state.updateUserDefaultModel,
+	);
+	const { email, id, name, admin, lastLogin, groupInfo } = useSession(
+		(state) => state.user,
+	);
+	const isNative = useSession((state) => state.isNative);
+	const groups = groupInfo?.groups ?? [];
 	const { adminMode } = useSettings();
 
 	const [addModal, setAddModal] = useState(false);
@@ -89,7 +103,6 @@ export const MyProfilePage = () => {
 		setSelectedCodeGenerationDefaultModel,
 	] = useState<string>("");
 
-	const logins = configStore.store.config.logins;
 	const nativeLogin = (logins as unknown as { NATIVE: string })?.NATIVE;
 
 	const { control, reset, setValue, handleSubmit, watch } =
@@ -152,17 +165,17 @@ export const MyProfilePage = () => {
 			: [];
 
 	useEffect(() => {
-		if (insightStore.defaultTextGenerationModel && modals.length > 0) {
+		if (defaultTextGenerationModel && modals.length > 0) {
 			const matchingEngine = modals.find(
-				(e) => e.engine_id === insightStore.defaultTextGenerationModel,
+				(e) => e.engine_id === defaultTextGenerationModel,
 			);
 			if (matchingEngine) {
 				setSelectedTextGenerationDefaultModel(matchingEngine.engine_id);
 			}
 		}
-		if (insightStore.defaultCodeGenerationModel && modals.length > 0) {
+		if (defaultCodeGenerationModel && modals.length > 0) {
 			const matchingCodeEngine = modals.find(
-				(e) => e.engine_id === insightStore.defaultCodeGenerationModel,
+				(e) => e.engine_id === defaultCodeGenerationModel,
 			);
 			if (matchingCodeEngine) {
 				setSelectedCodeGenerationDefaultModel(
@@ -170,11 +183,7 @@ export const MyProfilePage = () => {
 				);
 			}
 		}
-	}, [
-		insightStore.defaultTextGenerationModel,
-		insightStore.defaultCodeGenerationModel,
-		modals,
-	]);
+	}, [defaultTextGenerationModel, defaultCodeGenerationModel, modals]);
 
 	const profileEditSubmit = async (data: EditUserInfoForm) => {
 		try {
@@ -185,10 +194,8 @@ export const MyProfilePage = () => {
 				email: email,
 				username: id,
 				name: data.NAME,
-				type: configStore.store.config.nativeRegistration
-					? "NATIVE"
-					: "CUSTOM",
-				admin: configStore.store.user?.admin || false,
+				type: nativeRegistration ? "NATIVE" : "CUSTOM",
+				admin: admin || false,
 			};
 			userObj.id =
 				data.USERID !== nativeLogin ? data.USERID : nativeLogin;
@@ -226,7 +233,7 @@ export const MyProfilePage = () => {
 			);
 			if (!selectedEngine) throw new Error("Selected model not found");
 
-			insightStore.updateUserDefaultModel(modelType, selectedEngineId);
+			updateUserDefaultModel(modelType, selectedEngineId);
 			await setUserDefaultModel(modelType, selectedEngineId);
 			toast.success(`Default ${modelType} saved successfully`);
 		} catch (e) {
@@ -422,7 +429,7 @@ export const MyProfilePage = () => {
 									<div>
 										<button
 											type="button"
-											className="cursor-pointer font-medium text-[#0471F0] text-sm underline"
+											className="cursor-pointer font-medium text-primary text-sm underline"
 											onClick={() =>
 												setPasswordModal(true)
 											}
@@ -469,8 +476,7 @@ export const MyProfilePage = () => {
 									<Input
 										value={
 											Object.keys(
-												configStore.store.config
-													.loginDetails as object,
+												loginDetails as object,
 											)[0]
 										}
 										maxLength={500}
@@ -510,7 +516,7 @@ export const MyProfilePage = () => {
 				</h2>
 				{getModals.status === "INITIAL" ||
 				getModals.status === "LOADING" ? (
-					<span className="font-medium text-gray-700 text-sm">
+					<span className="font-medium text-muted-foreground text-sm">
 						Loading models...
 					</span>
 				) : getModals.status === "ERROR" ? (
@@ -671,23 +677,23 @@ export const MyProfilePage = () => {
 				<div className="mt-4 overflow-x-auto">
 					<table className="w-full text-sm">
 						<thead>
-							<tr className="bg-[#f3f3f3]">
-								<th className="rounded-tl-xl border-[#ccc] border-b px-3 py-2 text-left font-medium">
+							<tr className="bg-muted text-muted-foreground">
+								<th className="rounded-tl-xl border-border border-b px-3 py-2 text-left font-medium">
 									Name
 								</th>
-								<th className="border-[#ccc] border-b px-3 py-2 text-left font-medium">
+								<th className="border-border border-b px-3 py-2 text-left font-medium">
 									Description
 								</th>
-								<th className="border-[#ccc] border-b px-3 py-2 text-left font-medium">
+								<th className="border-border border-b px-3 py-2 text-left font-medium">
 									Date Created
 								</th>
-								<th className="border-[#ccc] border-b px-3 py-2 text-left font-medium">
+								<th className="border-border border-b px-3 py-2 text-left font-medium">
 									Last Used Created
 								</th>
-								<th className="border-[#ccc] border-b px-3 py-2 text-left font-medium">
+								<th className="border-border border-b px-3 py-2 text-left font-medium">
 									Access Key
 								</th>
-								<th className="rounded-tr-xl border-[#ccc] border-b px-3 py-2">
+								<th className="rounded-tr-xl border-border border-b px-3 py-2">
 									&nbsp;
 								</th>
 							</tr>
@@ -770,7 +776,7 @@ export const MyProfilePage = () => {
 				</div>
 				{getUserAccessKeys.status === "SUCCESS" &&
 					getUserAccessKeys.data?.length === 0 && (
-						<div className="mx-auto my-[75px] block w-full text-center text-[#666] text-[13px]">
+						<div className="mx-auto my-[75px] block w-full text-center text-[13px] text-muted-foreground">
 							No Personal Access Tokens to display at this time
 							<br />
 							Click New Key to create a new Personal Access Token
@@ -798,6 +804,10 @@ export const MyProfilePage = () => {
 							className="my-profile-page__generate-key-form"
 						>
 							<div className="flex flex-col gap-3">
+								<div className="rounded-md border border-primary/20 bg-primary/10 px-4 py-3 text-primary text-sm">
+									Note: Your private key will only be
+									generated once
+								</div>
 								<Controller
 									name="TOKENNAME"
 									control={control}

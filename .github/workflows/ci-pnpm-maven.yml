@@ -27,7 +27,7 @@ jobs:
         runs-on: codebuild-semoss-github-runner-${{ github.run_id }}-${{ github.run_attempt }}
         if: ${{ vars.RELEASE != 'TRUE'  && (github.event_name =='push' || github.event_name =='pull_request')  }}
         container:
-            image: public.ecr.aws/docker/library/node:24-bullseye
+            image: public.ecr.aws/docker/library/node:24-bookworm
         steps:
             - name: Checkout code
               uses: actions/checkout@v4
@@ -81,6 +81,11 @@ jobs:
                 cd packages/terminal
                 pnpm run build
 
+            - name: Build browser automation
+              run: |
+                cd packages/browser-automation
+                pnpm run build
+
             # ---------- Download and Set Up semoss/bi -----------
             
             - name: Remove previous legacy folder
@@ -129,9 +134,11 @@ jobs:
                 mkdir -p semoss-ui-build/packages/client
                 mkdir -p semoss-ui-build/packages/playground
                 mkdir -p semoss-ui-build/packages/terminal
+                mkdir -p semoss-ui-build/packages/browser-automation
                 cp -r packages/client/dist semoss-ui-build/packages/client
                 cp -r packages/playground/dist semoss-ui-build/packages/playground
                 cp -r packages/terminal/dist semoss-ui-build/packages/terminal
+                cp -r packages/browser-automation/dist semoss-ui-build/packages/browser-automation
                 cp -r packages/legacy semoss-ui-build/packages
                 cp -r index.html semoss-ui-build/
             
@@ -166,7 +173,7 @@ jobs:
         runs-on: codebuild-semoss-github-runner-${{ github.run_id }}-${{ github.run_attempt }}
         if: ${{ vars.RELEASE != 'TRUE'  && github.event_name =='workflow_dispatch' }}
         container:
-            image: public.ecr.aws/docker/library/node:24-bullseye
+            image: public.ecr.aws/docker/library/node:24-bookworm
         steps:
             - name: Checkout code
               uses: actions/checkout@v4
@@ -257,6 +264,11 @@ jobs:
             - name: Build terminal
               run: |
                 cd packages/terminal
+                pnpm run build
+
+            - name: Build browser automation
+              run: |
+                cd packages/browser-automation
                 pnpm run build
 
             # ---------- Download and Set Up semoss/bi -----------
@@ -395,7 +407,7 @@ jobs:
         runs-on: codebuild-semoss-github-runner-${{ github.run_id }}-${{ github.run_attempt }}
         if: ${{ vars.RELEASE == 'TRUE' && github.event_name == 'workflow_dispatch' && (github.ref_name == 'main' || github.ref_name == 'dev') }}
         container:
-            image: public.ecr.aws/docker/library/node:24-bullseye
+            image: public.ecr.aws/docker/library/node:24-bookworm
         steps:
             - name: Checkout code
               uses: actions/checkout@v4
@@ -483,6 +495,11 @@ jobs:
             - name: Build terminal
               run: |
                 cd packages/terminal
+                pnpm run build
+
+            - name: Build browser automation
+              run: |
+                cd packages/browser-automation
                 pnpm run build
 
             # ---------- Download and Set Up semoss/bi -----------

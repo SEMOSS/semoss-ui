@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import { hasInlineImage, InlineImageSegments } from "@semoss/shared";
 import {
 	countExpandedJsonLines,
 	JSON_VIEWER_LINE_HEIGHT_PX,
@@ -22,10 +23,21 @@ interface ConsoleProps {
 	 * of the list rather than between entries.
 	 */
 	fixedHeight?: boolean;
+	/**
+	 * Height cap applied to inline images. Defaults to a small preview that
+	 * fits the collapsed console; the expand modal passes `max-h-none`.
+	 */
+	imageClassName?: string;
 }
 
 export const NotebookCellConsole = (props: ConsoleProps) => {
-	const { messages, expandAll, hideJsonToggle, fixedHeight } = props;
+	const {
+		messages,
+		expandAll,
+		hideJsonToggle,
+		fixedHeight,
+		imageClassName = "max-h-[180px]",
+	} = props;
 	const gutterChars = String(messages.length).length;
 
 	const fullyOpenHeightPx = useMemo(() => {
@@ -63,6 +75,14 @@ export const NotebookCellConsole = (props: ConsoleProps) => {
 									value={value}
 									expandAll={expandAll}
 									hideToggle={hideJsonToggle}
+								/>
+							) : hasInlineImage(m) ? (
+								// Figures land on the log channel when an
+								// execution raised or returned a non-text value.
+								<InlineImageSegments
+									text={m}
+									textClassName="whitespace-pre-wrap break-all text-xs"
+									imageClassName={imageClassName}
 								/>
 							) : (
 								<span className="text-xs">{m}</span>

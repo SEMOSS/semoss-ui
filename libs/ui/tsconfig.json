@@ -12,6 +12,7 @@
 		"resolveJsonModule": true,
 
 		/* Emit */
+		"rootDir": "./src",
 		"declaration": true,
 		"outDir": "./dist",
 		"declarationDir": "./dist/types",
@@ -22,6 +23,8 @@
 		"allowJs": true,
 		"esModuleInterop": true,
 		"isolatedModules": true,
+		"strict": false,
+		"noUncheckedSideEffectImports": false,
 
 		/* Lang and Env */
 		"paths": {

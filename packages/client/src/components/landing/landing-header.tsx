@@ -8,8 +8,13 @@ import {
 	CardTitle,
 } from "@semoss/ui/next";
 import Appagent from "@/assets/img/Appagent.svg";
+import AppagentDark from "@/assets/img/Appagent-dark.svg";
 import Appcode from "@/assets/img/Appcode.svg";
+import AppcodeDark from "@/assets/img/Appcode-dark.svg";
 import Appdragdrop from "@/assets/img/Appdragdrop.svg";
+import AppdragdropDark from "@/assets/img/Appdragdrop-dark.svg";
+import AppNotebook from "@/assets/img/Appnotebook.svg";
+import AppNotebookDark from "@/assets/img/Appnotebook-dark.svg";
 
 const CARDS = [
 	{
@@ -17,6 +22,7 @@ const CARDS = [
 		description:
 			"Choose a framework or start from scratch—code and preview your app seamlessly in our editor!",
 		image: Appcode,
+		darkImage: AppcodeDark,
 		type: "code",
 		testId: "new-app-code-btn",
 	},
@@ -25,6 +31,7 @@ const CARDS = [
 		description:
 			"Drag and drop UI components to make your app come to life. Customize the design of your app in this low code environment.",
 		image: Appdragdrop,
+		darkImage: AppdragdropDark,
 		type: "blocks",
 		testId: "new-app-drag-btn",
 	},
@@ -33,25 +40,35 @@ const CARDS = [
 		description:
 			"Engineer a prompt to interact with your LLM. Structure the text and design inputs to generate the optimal AI response.",
 		image: Appagent,
+		darkImage: AppagentDark,
 		type: "agent",
 		testId: "new-app-agent-btn",
+	},
+	{
+		title: "Run interactive notebooks",
+		description:
+			"Write and execute code cells, visualize data, and document your analysis in a live, interactive notebook environment.",
+		image: AppNotebook,
+		darkImage: AppNotebookDark,
+		type: "notebook",
+		testId: "new-notebook-btn",
 	},
 ] as const;
 
 interface LandingHeaderProps {
 	/** Trigger creation of a new app */
-	onCreate: (type: "blocks" | "code" | "agent") => void;
+	onCreate: (type: "blocks" | "code" | "agent" | "notebook") => void;
 }
 
 export const LandingHeader: React.FC<LandingHeaderProps> = ({
 	onCreate = () => null,
 }) => {
 	return (
-		<div className="grid w-full grid-cols-1 gap-4 md:grid-cols-3">
+		<div className="grid w-full grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
 			{CARDS.map((card) => (
 				<Card
 					key={card.title}
-					className="relative h-full w-full gap-2 overflow-hidden py-4"
+					className="relative h-full w-full gap-2 overflow-hidden rounded-xl border-border bg-card py-4"
 				>
 					<CardHeader className="px-4">
 						<CardTitle>{card.title}</CardTitle>
@@ -80,7 +97,12 @@ export const LandingHeader: React.FC<LandingHeaderProps> = ({
 						<img
 							src={card.image}
 							alt={card.title}
-							className="block h-auto w-full object-contain"
+							className="block h-auto w-full object-contain dark:hidden"
+						/>
+						<img
+							src={card.darkImage}
+							alt={card.title}
+							className="hidden h-auto w-full object-contain dark:block"
 						/>
 					</div>
 				</Card>

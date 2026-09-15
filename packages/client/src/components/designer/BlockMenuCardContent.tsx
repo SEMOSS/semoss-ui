@@ -10,7 +10,7 @@ export interface BlockCardContentProps {
 }
 
 export const blockCardWidth = "133px";
-export const blockCardHeight = "106px";
+const blockCardHeight = "106px";
 
 export const BlockCardContent = (props: BlockCardContentProps) => {
 	const {

@@ -17,6 +17,12 @@
 		"poorResponse": "Mauvaise réponse",
 		"copyResponse": "Copier la réponse",
 		"copyCode": "Copier le code",
+		"copy": "Copier",
+		"saveInRoom": "Enregistrer dans la salle",
+		"savingToRoom": "Enregistrement...",
+		"fullView": "Vue complète",
+		"raw": "Brut",
+		"diagram": "Diagramme",
 		"feedbackPlaceholder": "Ajouter un commentaire (facultatif)",
 		"feedbackCancel": "Annuler",
 		"feedbackSubmit": "Envoyer",
@@ -43,6 +49,7 @@
 		"rewriteSuccess": "Message réécrit avec succès",
 		"copySuccess": "Copié dans le presse-papiers avec succès",
 		"noCopyContent": "Aucun contenu à copier",
+		"savedInRoom": "Enregistré dans la salle sous {{filePath}}",
 		"planStepRemoved": "Étape {{stepNumber}} supprimée du plan avec succès"
 	},
 	"gracefulErrors": {

@@ -27,7 +27,6 @@ import {
 	toast,
 } from "@semoss/ui/next";
 import type { InputMessageStore, RoomStore } from "@/stores";
-import { DateDisplay } from "../common";
 
 const getExtIcon = (fileName: string) => {
 	const ext = fileName.split(".").pop()?.toLowerCase() ?? "";
@@ -117,25 +116,11 @@ export const InputMessage: React.FC<InputMessageProps> = observer(
 															p.mediaInfo
 																.fileLocation
 														) {
-															room.addSidebarNode(
-																`FILE--${p.mediaInfo.fileLocation}`,
-																{
-																	type: "tab",
-																	name: p
-																		.mediaInfo
-																		.fileName,
-																	component:
-																		"room-file-editor",
-																	config: {
-																		name: p
-																			.mediaInfo
-																			.fileName,
-																		path: p
-																			.mediaInfo
-																			.fileLocation,
-																	},
-																	enableClose: true,
-																},
+															room.openFileSidebarPanel(
+																p.mediaInfo
+																	.fileLocation,
+																p.mediaInfo
+																	.fileName,
 															);
 														} else if (
 															p.mediaInfo
@@ -284,9 +269,18 @@ export const InputMessage: React.FC<InputMessageProps> = observer(
 							</span>
 						))}
 					</div>
-					<div className="flex flex-row items-center gap-0.5 pt-2 opacity-0 transition-opacity group-hover:opacity-100">
+					<div className="flex flex-row items-center gap-0.5 pt-2">
 						<span className="px-2 text-muted-foreground text-xs">
-							<DateDisplay date={message.dateCreated} smart />
+							<time dateTime={message.dateCreated.toISOString()}>
+								{message.dateCreated.toLocaleString(undefined, {
+									month: "numeric",
+									day: "numeric",
+									year: "numeric",
+									hour: "numeric",
+									minute: "2-digit",
+									hour12: true,
+								})}
+							</time>
 						</span>
 						<Tooltip>
 							<TooltipTrigger asChild>

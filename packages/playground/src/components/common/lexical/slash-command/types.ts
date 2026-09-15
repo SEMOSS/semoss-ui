@@ -10,6 +10,6 @@ export interface SlashCommand {
 	hiddenInMenu?: boolean;
 	/** If true, selecting the command fires onExecute immediately without inserting a chip */
 	noChip?: boolean;
-	/** If true, the command is shown as disabled (non-selectable) while the room is loading */
-	disableDuringLoading?: boolean;
+	/** If true, the command is shown as disabled (non-selectable) while the model is responding or the latest response has tool calls */
+	disableWithTools?: boolean;
 }

@@ -80,7 +80,7 @@ export const PromptOptimizer: React.FC<PromptOptimizerProps> = observer(
 				const contextValue = context
 					? `"<encode>${context}</encode>"`
 					: "";
-				const pixel = `LLM(engine=["${selectedModelId}"], command=["${escapedPrompt}"], context=[${contextValue}], paramValues=[{"temperature":0.3, "max_tokens":10000}]);`;
+				const pixel = `LLM(engine=["${selectedModelId}"], command=["${escapedPrompt}"], context=[${contextValue}], paramValues=[{"max_tokens":10000}]);`;
 				const response = (await actions.run(pixel)) as LLMResponse;
 
 				if (!response?.pixelReturn?.[0]) {

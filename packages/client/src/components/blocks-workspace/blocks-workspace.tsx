@@ -11,18 +11,17 @@ import {
 	StateStore,
 } from "@semoss/renderer";
 import { runPixel, useInsight } from "@semoss/sdk/react";
+import { FlexLayout } from "@semoss/shared";
 import { Spinner, toast } from "@semoss/ui/next";
 import { AppFileEditor } from "@/components/app-workspace/app-file-editor";
 import { AppFileExplorer } from "@/components/app-workspace/app-file-explorer";
-import { FlexLayout } from "@/components/flex-layout";
-import { ProjectDetailTabs } from "@/components/project";
-import { useWorkspace } from "@/hooks";
+import { ProjectDetailTabs, ProjectNavbar } from "@/components/project";
+import { useProject, useWorkspace } from "@/hooks";
 import { DesignerStore, type WorkspaceOptions } from "@/stores";
 import { WorkspaceManager } from "../../components/workspace";
 import { WorkspaceTerminal } from "../../components/workspace/panels";
 import { DesignerContext } from "../../contexts";
 import { MCPJsonEditor } from "../shared";
-import { GraphPanel } from "../workspace/panels/graph-panel";
 import { BlocksWorkspaceDev } from "./BlocksWorkspaceDev";
 import { BlocksWorkspaceActions } from "./blocks-workspace-actions";
 import { DEFAULT_MENU } from "./menus/default-menu";
@@ -41,8 +40,6 @@ const DEFAULT_BORDER_SIZE = 300;
 const BLOCK_SETTINGS_MIN_WIDTH = 450;
 
 const DEFAULT_OPTIONS: WorkspaceOptions = {
-	version: "",
-
 	layout: {
 		global: { tabEnableClose: false, tabEnableRename: false },
 		borders: [
@@ -90,16 +87,6 @@ const DEFAULT_OPTIONS: WorkspaceOptions = {
 						component: "app-file-explorer",
 						config: {},
 						helpText: "Files",
-					},
-					{
-						type: "tab",
-						id: "settings",
-						name: "Settings",
-						component: "settingsPanel",
-						config: {},
-						// maxWidth: 1,
-						helpText: "Settings",
-						enableDrag: false,
 					},
 				],
 			},
@@ -197,6 +184,7 @@ const ACTIVE = "page-1";
  */
 export const BlocksWorkspace: React.FC = observer(() => {
 	const { workspace } = useWorkspace();
+	const { project } = useProject();
 	const insight = useInsight();
 	const [state, setState] = useState<StateStore>();
 
@@ -232,7 +220,7 @@ export const BlocksWorkspace: React.FC = observer(() => {
 
 		// load the app
 		runPixel<[SerializedState]>(
-			`GetAppBlocksJson ( project=["${workspace.appId}"]);`,
+			`GetAppBlocksJson ( project=["${project.project_id}"]);`,
 			workspace.insightId ? workspace.insightId : "new",
 		)
 			.then(async ({ pixelReturn, errors, insightId }) => {
@@ -355,15 +343,11 @@ export const BlocksWorkspace: React.FC = observer(() => {
 				<AppFileExplorer
 					node={node}
 					layout={layout}
-					app={workspace.appId}
-					onOpenStateChange={workspace.setFileBrowserOpen}
-					onVisibleAssetPathsChange={({ path, paths }) => {
-						workspace.setFileBrowserVisiblePaths(path, paths);
-					}}
+					app={project.project_id}
 				/>
 			);
 		} else if (component === "app-file-editor") {
-			return <AppFileEditor node={node} app={workspace.appId} />;
+			return <AppFileEditor node={node} app={project.project_id} />;
 		} else if (component === "mcpJsonEditor") {
 			return <MCPJsonEditor dataMap={config.data} />;
 		} else if (component === "notebook-explorer") {
@@ -373,32 +357,37 @@ export const BlocksWorkspace: React.FC = observer(() => {
 		} else if (component === "notebook-viewer") {
 			return <NotebookViewerPanel id={config.id} />;
 		} else if (component === "terminal") {
-			return <WorkspaceTerminal appId={workspace.appId} />;
-		} else if (component === "graph") {
-			return <GraphPanel />;
-		} else if (component === "settingsPanel") {
+			return <WorkspaceTerminal appId={project.project_id} />;
+		} else if (component === "settings-panel") {
 			return (
 				<ProjectDetailTabs
-					type="CODE"
 					tabs={[
-						{ name: "Overview", path: "" },
+						{ name: "Overview", component: "project-overview" },
 						{
-							name: "Commits",
-							path: "commits",
-							restrict: ["OWNER", "EDIT"],
+							name: "MCP",
+							component: "mcp-usage",
+							restrict: ["OWNER", "EDIT", "READ_ONLY"],
 						},
-						{ name: "GitHub", path: "github", restrict: ["OWNER"] },
+						{
+							name: "GitHub",
+							component: "github",
+							restrict: ["OWNER"],
+						},
 						{
 							name: "Settings",
-							path: "settings",
+							component: "settings",
 							restrict: ["OWNER"],
 						},
 						{
 							name: "Access Control",
-							path: "access-control",
+							component: "access-control",
 							restrict: ["OWNER", "EDIT"],
 						},
-						{ name: "SMSS", path: "smss", restrict: ["OWNER"] },
+						{
+							name: "SMSS",
+							component: "smss",
+							restrict: ["OWNER"],
+						},
 					]}
 				/>
 			);
@@ -423,7 +412,7 @@ export const BlocksWorkspace: React.FC = observer(() => {
 			!(tabNode instanceof FlexLayout.TabNode) ||
 			tabNode.getComponent() !== "app-file-editor"
 		)
-			return undefined;
+			return action;
 		const cfg = tabNode.getConfig() as { path?: string };
 		if (!cfg?.path) return action;
 		const path = cfg.path;
@@ -432,7 +421,7 @@ export const BlocksWorkspace: React.FC = observer(() => {
 		(async () => {
 			try {
 				await insight.actions.run(
-					`RenameAppAsset(project=["${workspace.appId}"], filePath=["${path}"], newValue=["${newPath}"]);`,
+					`RenameAppAsset(project=["${project.project_id}"], filePath=["${path}"], newValue=["${newPath}"]);`,
 				);
 				const tabsetId =
 					tabNode.getParent()?.getId() ??
@@ -471,8 +460,8 @@ export const BlocksWorkspace: React.FC = observer(() => {
 					designer: designer,
 				}}
 			>
+				<ProjectNavbar actions={<BlocksWorkspaceActions />} />
 				<WorkspaceManager
-					navbarActions={<BlocksWorkspaceActions />}
 					options={DEFAULT_OPTIONS}
 					factory={FACTORY}
 					onAction={handleAction}

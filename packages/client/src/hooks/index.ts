@@ -1,23 +1,21 @@
 import { useAPI } from "./use-api";
-import { useQueryEditor } from "./use-database-query-editor";
-import { useQueryResults } from "./use-database-query-results";
-import { useIteratorApi } from "./use-iterator-api";
-import { usePixel } from "./use-pixel";
+import { useAssistant } from "./use-assistant";
+import { useAssistantStore } from "./use-assistant-store";
+import { useAssistantStoreApi } from "./use-assistant-store-api";
+import { useConfig } from "./use-config";
+import { useDatabaseWorkbench } from "./use-database-workbench";
+import { useModelChat } from "./use-model-chat";
+import { usePage } from "./use-page";
 import { useProject } from "./use-project";
-import { useSparqlQueryExecution } from "./use-sparql-query-execution";
-import { useSqlQueryExecution } from "./use-sql-query-execution";
+import { useSession } from "./use-session";
 import { useTabBarScroll } from "./use-tab-bar-scroll";
-import { useCacheState } from "./useCacheState";
-import { useDatabaseStructure } from "./useDatabaseStructure";
 import { useDesigner } from "./useDesigner";
 import { useEngine } from "./useEngine";
-import { useLLM } from "./useLLM";
 import { useMetamodel } from "./useMetamodel";
-import { usePage } from "./usePage";
-import { useRootStore } from "./useRootStore";
 import { useServerPagination } from "./useServerPagination";
 import { useSettings } from "./useSettings";
 import { useStepper } from "./useStepper";
+import { useThemeLogo } from "./useThemeLogo";
 import { useWorkspace } from "./useWorkspace";
 
 // NOTE: Do not export `useBlockSettings` from this barrel.
@@ -26,24 +24,22 @@ import { useWorkspace } from "./useWorkspace";
 // increases production bundle size.
 export {
 	useAPI,
-	useCacheState,
-	useDatabaseStructure,
+	useAssistant,
+	useAssistantStore,
+	useAssistantStoreApi,
+	useConfig,
+	useDatabaseWorkbench,
 	useDesigner,
 	useEngine,
-	useIteratorApi,
-	useLLM,
 	useMetamodel,
+	useModelChat,
 	usePage,
-	usePixel,
-	useQueryEditor,
-	useSqlQueryExecution,
-	useSparqlQueryExecution,
-	useQueryResults,
-	useRootStore,
 	useServerPagination,
+	useSession,
 	useSettings,
 	useStepper,
 	useTabBarScroll,
+	useThemeLogo,
 	useWorkspace,
 	useProject,
 };

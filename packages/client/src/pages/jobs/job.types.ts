@@ -61,7 +61,7 @@ export interface HistoryPaginationProps {
 
 export type Frequencies = "Daily" | "Weekly" | "Monthly" | "Yearly";
 
-export type DayOfWeek =
+type DayOfWeek =
 	| "Sunday"
 	| "Monday"
 	| "Tuesday"
@@ -70,7 +70,7 @@ export type DayOfWeek =
 	| "Friday"
 	| "Saturday";
 
-export type Month =
+type Month =
 	| "January"
 	| "February"
 	| "March"
@@ -95,11 +95,6 @@ export type DayOfWeekDef = {
 	value: 0 | 1 | 2 | 3 | 4 | 5 | 6;
 };
 
-export type CronValidation = {
-	error: boolean;
-	errorMessage: string | null;
-};
-
 export interface SchedulerStats {
 	activeJobs?: number;
 	pausedJobs?: number;
@@ -117,7 +112,7 @@ export interface SchedulerStats {
 	} | null;
 }
 
-export type CronMode = "standard" | "dropdown" | "expression";
+type CronMode = "standard" | "dropdown" | "expression";
 
 export interface ParsedCron {
 	mode: CronMode;

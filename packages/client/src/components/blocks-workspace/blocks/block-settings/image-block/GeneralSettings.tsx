@@ -1,16 +1,15 @@
-import { observer } from "mobx-react-lite";
-import { useParams } from "react-router-dom";
+import { useParams } from "react-router";
 import { useBlock } from "@semoss/renderer";
-import { useRootStore } from "@/hooks";
+import { useSession } from "@/hooks";
 import TabsComponent from "./SelectionTabs";
 
 interface GeneralSettingsProps {
 	id: string;
 }
 
-const GeneralSettings: React.FC<GeneralSettingsProps> = observer(({ id }) => {
+const GeneralSettings: React.FC<GeneralSettingsProps> = ({ id }) => {
 	const { data, setData } = useBlock(id);
-	const { configStore } = useRootStore();
+	const insightID = useSession((state) => state.insightID);
 	const { appId } = useParams();
 
 	return (
@@ -18,7 +17,7 @@ const GeneralSettings: React.FC<GeneralSettingsProps> = observer(({ id }) => {
 			<TabsComponent
 				{...{
 					data,
-					insightId: configStore.store.insightID,
+					insightId: insightID,
 					appId,
 					id,
 					setData,
@@ -26,6 +25,6 @@ const GeneralSettings: React.FC<GeneralSettingsProps> = observer(({ id }) => {
 			/>
 		</div>
 	);
-});
+};
 
 export default GeneralSettings;

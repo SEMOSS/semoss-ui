@@ -8,7 +8,7 @@ import { useEffect, useRef, useState } from "react";
  */
 export const useDebouncedValue = <T>(value: T, delay: number = 300) => {
 	const [debouncedValue, setDebouncedValue] = useState<T>(value);
-	const timeoutRef = useRef<ReturnType<typeof setTimeout>>();
+	const timeoutRef = useRef<ReturnType<typeof setTimeout>>(undefined);
 
 	useEffect(() => {
 		timeoutRef.current = setTimeout(() => {

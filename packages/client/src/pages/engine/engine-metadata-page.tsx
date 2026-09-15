@@ -1,4 +1,5 @@
 import {
+	AlertCircleIcon,
 	ChevronDown,
 	ChevronLeft,
 	ChevronRight,
@@ -12,12 +13,15 @@ import {
 import { observer } from "mobx-react-lite";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
-	download,
 	console as getPixelConsole,
+	runPixel,
 	usePixel,
 } from "@semoss/sdk/react";
 import { ColumnMetadataModal, type LogicalDataType } from "@semoss/shared";
 import {
+	Alert,
+	AlertDescription,
+	AlertTitle,
 	Badge,
 	Button,
 	Card,
@@ -33,6 +37,7 @@ import {
 	SelectItem,
 	SelectTrigger,
 	SelectValue,
+	Spinner,
 	Table,
 	TableBody,
 	TableCell,
@@ -47,8 +52,7 @@ import {
 import { SyncExternalDatabaseOverlay } from "@/components/database";
 import { Metamodel, type MetamodelNodeType } from "@/components/metamodel";
 import { Section } from "@/components/ui";
-import { useEngine, useRootStore } from "@/hooks";
-import { useQueryResults } from "@/hooks/use-database-query-results";
+import { useEngine, useSession } from "@/hooks";
 
 const normalizeSearchValue = (value: string) =>
 	value.toLowerCase().replace(/[\s_]+/g, "");
@@ -160,8 +164,10 @@ export const EngineMetadataPage = observer(() => {
 		relName?: string;
 	};
 
-	const { active } = useEngine();
-	const { configStore } = useRootStore();
+	const { engine } = useEngine();
+	const sessionRunPixel = useSession((state) => state.runPixel);
+	const insightID = useSession((state) => state.insightID);
+	const download = useSession((state) => state.download);
 
 	const [isModified, setIsModified] = useState(false);
 	const [nodes, setNodes] = useState<
@@ -198,8 +204,6 @@ export const EngineMetadataPage = observer(() => {
 	const [selectedColumnDetails, setSelectedColumnDetails] =
 		useState<ColumnDetails | null>(null);
 
-	const renderQueryResults = useQueryResults();
-
 	const getDatabaseMetamodel = usePixel<{
 		dataTypes: Record<string, string>;
 		logicalNames: Record<string, string[]>;
@@ -222,8 +226,8 @@ export const EngineMetadataPage = observer(() => {
 		descriptions: Record<string, string>;
 		additionalDataTypes: Record<string, string>;
 	}>(
-		active.id
-			? `GetDatabaseMetamodel( database=["${active.id}"], options=["dataTypes","physicalTypes","additionalDataTypes","logicalNames","descriptions","positions"]);`
+		engine.engine_id
+			? `GetDatabaseMetamodel( database=["${engine.engine_id}"], options=["dataTypes","physicalTypes","additionalDataTypes","logicalNames","descriptions","positions"]);`
 			: "",
 		{
 			onSuccess({
@@ -289,7 +293,7 @@ export const EngineMetadataPage = observer(() => {
 				setEdges(e);
 			},
 		},
-		configStore.store.insightID,
+		insightID,
 	);
 
 	// get the data if a table is selected
@@ -310,7 +314,7 @@ export const EngineMetadataPage = observer(() => {
 	}>(
 		selectedNode && selectedNode.data.properties.length > 0
 			? `Database(database=["${
-					active.id
+					engine.engine_id
 				}"]) | Distinct(false) | Select(${selectedNode.data.properties
 					.map((p) => p.id)
 					.join(", ")}) | Collect(100);`
@@ -325,11 +329,13 @@ export const EngineMetadataPage = observer(() => {
 				numCollected: 0,
 			},
 		},
-		configStore.store.insightID,
+		insightID,
 	);
 
 	const getDatabaseCategory = usePixel<string>(
-		active.id ? `GetDatabaseCategory(engine=["${active.id}"]);` : "",
+		engine.engine_id
+			? `GetDatabaseCategory(engine=["${engine.engine_id}"]);`
+			: "",
 	);
 	const isRdbms = getDatabaseCategory.data?.toUpperCase() === "SQL";
 
@@ -362,7 +368,7 @@ export const EngineMetadataPage = observer(() => {
 	const runPixelWithConsole = async <O extends unknown[] | []>(
 		pixel: string,
 	) => {
-		const insightId = configStore.store.insightID;
+		const insightId = insightID;
 		if (!insightId) {
 			throw new Error("Missing insight ID for metadata save request.");
 		}
@@ -409,7 +415,7 @@ export const EngineMetadataPage = observer(() => {
 
 		const pollPromise = pollConsole();
 		try {
-			return await configStore.runPixel<O>(pixel);
+			return await runPixel<O>(pixel, insightID);
 		} finally {
 			stopPolling = true;
 			await pollPromise;
@@ -576,7 +582,7 @@ export const EngineMetadataPage = observer(() => {
 			const filters = JSON.stringify([...tables, ...views]);
 
 			// run it
-			const { errors, pixelReturn } = await configStore.runPixel<
+			const { errors, pixelReturn } = await runPixel<
 				[
 					{
 						positions: Record<
@@ -606,7 +612,7 @@ export const EngineMetadataPage = observer(() => {
 					},
 				]
 			>(
-				`ExternalUpdateJdbcSchema(database=["${active.id}"], filters=${filters});`,
+				`ExternalUpdateJdbcSchema(database=["${engine.engine_id}"], filters=${filters});`,
 			);
 
 			if (errors.length > 0) {
@@ -869,10 +875,9 @@ Error ${e.message || "Unknown error"}
 	const downloadDatabaseMetadata = async () => {
 		try {
 			// run it
-			const { errors, pixelReturn, insightId } =
-				await configStore.runPixel<[string]>(
-					`DatabaseMetadataToPdf(database=["${active.id}"]);`,
-				);
+			const { errors, pixelReturn } = await sessionRunPixel<[string]>(
+				`DatabaseMetadataToPdf(database=["${engine.engine_id}"]);`,
+			);
 
 			if (errors.length > 0) {
 				throw new Error(errors.join(""));
@@ -881,7 +886,7 @@ Error ${e.message || "Unknown error"}
 			const output = pixelReturn[0]?.output;
 
 			// download the file
-			download(insightId, output);
+			download(output);
 		} catch (e) {
 			toast.error(
 				`
@@ -944,15 +949,15 @@ Error ${e.message || "Unknown error"}
 				}
 
 				const { errors } = await runPixelWithConsole(
-					`RdbmsExternalUpload(database=["${active.id}"], metamodel=[${JSON.stringify({ relationships: relationships, tables: tables })}], existing=[true]); META|SaveOwlPositions(database=["${active.id}"], positionMap=[${JSON.stringify(positions)}]);SyncDatabaseWithLocalMaster(database=["${active.id}"]);`,
+					`RdbmsExternalUpload(database=["${engine.engine_id}"], metamodel=[${JSON.stringify({ relationships: relationships, tables: tables })}], existing=[true]); META|SaveOwlPositions(database=["${engine.engine_id}"], positionMap=[${JSON.stringify(positions)}]);SyncDatabaseWithLocalMaster(database=["${engine.engine_id}"]);`,
 				);
 
 				if (errors.length > 0) {
 					throw new Error(errors.join(""));
 				}
 			} else {
-				const { errors } = await configStore.runPixel(
-					`META|SaveOwlPositions(database=["${active.id}"], positionMap=[${JSON.stringify(positions)}]);`,
+				const { errors } = await runPixel(
+					`META|SaveOwlPositions(database=["${engine.engine_id}"], positionMap=[${JSON.stringify(positions)}]);`,
 				);
 
 				if (errors.length > 0) {
@@ -1062,8 +1067,8 @@ Error ${e.message || "Unknown error"}
 		? "Positions updated. Save to persist layout."
 		: "Save changes or they will be lost.";
 	const saveButtonHighlightClass = isPositionOnlyChange
-		? "border-sky-500 bg-sky-50 text-sky-900 hover:bg-sky-100"
-		: "border-amber-500 bg-amber-50 text-amber-900 hover:bg-amber-100";
+		? "border-primary/40 bg-primary/10 text-foreground hover:bg-primary/15"
+		: "border-destructive/40 bg-destructive/10 text-foreground hover:bg-destructive/15";
 	const saveTooltipText = isPositionOnlyChange
 		? "Save to persist updated table positions."
 		: "You must save your changes or they will be lost.";
@@ -1078,15 +1083,15 @@ Error ${e.message || "Unknown error"}
 								<div
 									className={
 										isPositionOnlyChange
-											? "rounded-md border border-sky-300 bg-sky-50 px-2 py-1"
-											: "rounded-md border border-amber-300 bg-amber-50 px-2 py-1"
+											? "rounded-md border border-primary/40 bg-primary/10 px-2 py-1"
+											: "rounded-md border border-destructive/40 bg-destructive/10 px-2 py-1"
 									}
 								>
 									<P
 										className={
 											isPositionOnlyChange
-												? "whitespace-nowrap font-medium text-[11px] text-sky-900"
-												: "whitespace-nowrap font-medium text-[11px] text-amber-900"
+												? "whitespace-nowrap font-medium text-[11px] text-foreground"
+												: "whitespace-nowrap font-medium text-[11px] text-foreground"
 										}
 									>
 										{saveReminderText}
@@ -1116,7 +1121,6 @@ Error ${e.message || "Unknown error"}
 									<TooltipTrigger asChild>
 										<Button
 											size="sm"
-											disabled={!active?.id}
 											variant="outline"
 											onClick={() =>
 												setShowSyncDatabase(true)
@@ -1136,7 +1140,6 @@ Error ${e.message || "Unknown error"}
 								<TooltipTrigger asChild>
 									<Button
 										size="sm"
-										disabled={!active?.id}
 										variant="outline"
 										onClick={() =>
 											downloadDatabaseMetadata()
@@ -1155,7 +1158,7 @@ Error ${e.message || "Unknown error"}
 								<TooltipTrigger asChild>
 									<Button
 										size="sm"
-										disabled={!active?.id || !isModified}
+										disabled={!isModified}
 										variant="outline"
 										className={
 											showSaveReminder
@@ -1280,7 +1283,7 @@ Error ${e.message || "Unknown error"}
 															(entry, index) => (
 																<P
 																	key={`${index}-${entry}`}
-																	className="break-words text-muted-foreground text-sm leading-6"
+																	className="wrap-break-word text-muted-foreground text-sm leading-6"
 																>
 																	{entry}
 																</P>
@@ -1378,7 +1381,7 @@ Error ${e.message || "Unknown error"}
 									className={`min-h-[120px] overflow-auto rounded-lg border border-border/60 bg-background ${columnTableViewportClass}`}
 								>
 									<Table className="text-sm">
-										<TableHeader className="sticky top-0 z-10 bg-muted/80 backdrop-blur supports-[backdrop-filter]:bg-muted/60">
+										<TableHeader className="sticky top-0 z-10 bg-muted/80 backdrop-blur supports-backdrop-filter:bg-muted/60">
 											<TableRow>
 												<TableHead className="h-10 w-12 px-2" />
 												<TableHead className="h-10 min-w-[220px] px-3 font-semibold text-[11px] text-muted-foreground uppercase tracking-wide">
@@ -1511,7 +1514,7 @@ Error ${e.message || "Unknown error"}
 																	className={
 																		isMetadataMatch ||
 																		isColumnSearchMatch
-																			? "rounded bg-yellow-200 px-1 py-0.5 font-medium text-[13px] text-foreground leading-5"
+																			? "rounded bg-primary/20 px-1 py-0.5 font-medium text-[13px] text-foreground leading-5"
 																			: "font-medium text-[13px] text-foreground leading-5"
 																	}
 																>
@@ -1556,7 +1559,7 @@ Error ${e.message || "Unknown error"}
 															</div>
 														</TableCell>
 														<TableCell className="min-w-[260px] px-3 py-2.5 align-top">
-															<P className="max-w-[420px] break-words text-muted-foreground text-xs leading-5">
+															<P className="wrap-break-word max-w-[420px] text-muted-foreground text-xs leading-5">
 																{desc || "-"}
 															</P>
 														</TableCell>
@@ -1649,28 +1652,79 @@ Error ${e.message || "Unknown error"}
 							<div className="min-h-0 flex-1 overflow-hidden">
 								{getData.status === "SUCCESS" &&
 								metadataPreviewData ? (
-									renderQueryResults(
-										metadataPreviewData,
-										100,
-										true,
-									)
+									<div className="h-full w-full overflow-hidden px-4 py-1.5">
+										<Table wrapperClassName="h-full w-full rounded-md border border-border overflow-auto">
+											<TableHeader className="sticky top-0 z-10 bg-secondary">
+												<TableRow>
+													{metadataPreviewData.output.data.headers.map(
+														(header) => (
+															<TableHead
+																key={header}
+															>
+																{header}
+															</TableHead>
+														),
+													)}
+												</TableRow>
+											</TableHeader>
+											<TableBody>
+												{metadataPreviewData.output.data.values.map(
+													(row, rowIdx) => (
+														// biome-ignore lint/suspicious/noArrayIndexKey: table rows have no natural unique key
+														<TableRow key={rowIdx}>
+															{(
+																row as unknown[]
+															).map(
+																(
+																	cell,
+																	cellIdx,
+																) => (
+																	<TableCell
+																		key={
+																			metadataPreviewData
+																				.output
+																				.data
+																				.headers[
+																				cellIdx
+																			]
+																		}
+																	>
+																		{String(
+																			cell ??
+																				"",
+																		)}
+																	</TableCell>
+																),
+															)}
+														</TableRow>
+													),
+												)}
+											</TableBody>
+										</Table>
+									</div>
 								) : getData.status === "LOADING" ? (
 									<div className="flex h-full items-center justify-center p-8">
-										<P className="text-muted-foreground text-sm">
-											Loading data preview...
-										</P>
+										<Spinner />
 									</div>
 								) : getData.status === "ERROR" ? (
-									<div className="flex h-full items-center justify-center p-8">
-										<P className="text-muted-foreground text-sm">
-											Unable to load data preview.
-										</P>
+									<div className="flex h-full w-full items-center justify-center">
+										<Alert
+											variant="destructive"
+											className="max-w-md"
+										>
+											<AlertCircleIcon />
+											<AlertTitle>Error</AlertTitle>
+											<AlertDescription>
+												{getData.error?.message ||
+													"Error"}
+											</AlertDescription>
+										</Alert>
 									</div>
 								) : (
 									<div className="flex h-full items-center justify-center p-8">
-										<P className="text-muted-foreground text-sm">
+										<Muted>
 											Select a table to view data.
-										</P>
+										</Muted>
 									</div>
 								)}
 							</div>
@@ -1689,22 +1743,20 @@ Error ${e.message || "Unknown error"}
 				description={selectedColumnDetails?.description}
 			/>
 
-			{active?.id && (
-				<SyncExternalDatabaseOverlay
-					engine={active.id}
-					tables={concepts} // for RDBMS, tables and views are the same in terms of metadata, so we can just pass the concepts as both
-					views={concepts} // for RDBMS, tables and views are the same in terms of metadata, so we can just pass the concepts as both
-					open={showSyncDatabase}
-					onClose={async (success, data) => {
-						if (success) {
-							await syncDatabase(data.tables, data.views);
-						}
+			<SyncExternalDatabaseOverlay
+				engine={engine.engine_id}
+				tables={concepts} // for RDBMS, tables and views are the same in terms of metadata, so we can just pass the concepts as both
+				views={concepts} // for RDBMS, tables and views are the same in terms of metadata, so we can just pass the concepts as both
+				open={showSyncDatabase}
+				onClose={async (success, data) => {
+					if (success && data) {
+						await syncDatabase(data.tables, data.views);
+					}
 
-						// close it
-						setShowSyncDatabase(false);
-					}}
-				/>
-			)}
+					// close it
+					setShowSyncDatabase(false);
+				}}
+			/>
 		</div>
 	);
 });

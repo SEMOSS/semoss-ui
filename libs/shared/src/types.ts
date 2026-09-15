@@ -1,3 +1,5 @@
+import type { Role } from "@semoss/sdk";
+
 export interface Engine {
 	engine_id: string;
 	engine_name: string;
@@ -16,12 +18,15 @@ export interface Engine {
 	engine_user_permission?: number;
 	engine_group_permission?: number;
 	engine_date_created?: string;
+	engine_created_by?: string;
 	engine_date_last_edited?: string;
 	engine_cost?: string;
 	low_engine_name?: string;
-	description?: string;
 	tag?: string;
-
+	description?: string;
+	markdown?: string;
+	"data classification"?: string[];
+	"data restrictions"?: string[];
 	/** @deprecated legacy keys from MyEngines */
 	app_id?: string;
 	/** @deprecated legacy keys from MyEngines */
@@ -40,7 +45,13 @@ export interface Project {
 	project_id: string;
 	project_name: string;
 	project_display_name?: string;
-	project_type: "SKILL" | "WORKSPACE" | "BLOCKS" | "CODE" | "INSIGHT";
+	project_type:
+		| "SKILL"
+		| "WORKSPACE"
+		| "BLOCKS"
+		| "CODE"
+		| "INSIGHT"
+		| "NOTEBOOK";
 	project_cost?: string;
 	project_global?: string;
 	project_created_by?: string;
@@ -106,6 +117,8 @@ export interface ThemeMap {
 		images: {
 			app: string;
 			logo: string;
+			appDark?: string;
+			logoDark?: string;
 			login: string;
 			landing: string;
 			tabIcon: string;
@@ -153,6 +166,7 @@ export interface ThemeMap {
 			headerItems: {
 				name: string;
 				icon: string;
+				iconDark?: string;
 				path: string;
 				url: string;
 				embed: boolean;
@@ -161,6 +175,7 @@ export interface ThemeMap {
 			footerItems: {
 				name: string;
 				icon: string;
+				iconDark?: string;
 				path: string;
 				url: string;
 				embed: boolean;
@@ -182,14 +197,16 @@ export interface ThemeMap {
 		 */
 		defaultRoomSettings?: {
 			model?: Engine;
+			/** Default temperature for new rooms (0–1). Only used when enableTemperature is true. */
 			temperature?: number;
-			tokenLength?: number;
 		};
 
 		/**
 		 * The number of tools that should be auto-executed at once
 		 */
 		toolAutoExecutionLimit?: number | null;
+
+		defaultCompactionStrategy?: "TOOL_PRUNE" | "SUMMARY" | "AUTO";
 
 		/**
 		 * The uploaded files that should be added to the file tool in the room
@@ -320,14 +337,12 @@ export interface ThemeMap {
 			enablePromptOptimizer?: boolean;
 			/** Whether to hide tools when the app is rendered inside an iframe. */
 			hideToolsInIframe?: boolean;
+			/** Whether to hide the chat-history list (sidebar and the "All Chats" page/nav link) so users cannot browse past conversations. */
+			hideChatHistory?: boolean;
 			/** Whether to run MakeEngineMCP after creating a new knowledge source. Defaults to true. */
 			enableKnowledgeMCP?: boolean;
 			/** Whether to show the embedding model selector in the new knowledge form. Defaults to true. */
 			allowEmbeddingOptions?: boolean;
-			/** Whether to show the Knowledge library picker in the chat input menu. Defaults to true. */
-			showKnowledgeMenu?: boolean;
-			/** Whether to show the Toolbox picker in the chat input menu. Defaults to true. */
-			showToolboxMenu?: boolean;
 			/** Whether to show the Activity Log (audit logs) option in the room menu. Defaults to true. */
 			showActivityLog?: boolean;
 			/** Whether to show external links to the SEMOSS platform. Defaults to true. */
@@ -336,42 +351,17 @@ export interface ThemeMap {
 			enableFeedbackText?: boolean;
 			/** Whether to show an export button on tables rendered in chat responses. Defaults to false. */
 			enableTableExport?: boolean;
+			/** Whether to show the temperature slider in room settings. Defaults to false. */
+			enableTemperature?: boolean;
 		};
 	};
 }
 
-export type Role = "OWNER" | "EDIT" | "READ_ONLY" | "DISCOVERABLE";
-
-/**
- * User permission entry for adding/editing permissions
- */
-export interface PostUser {
-	userid: string;
-	permission: Role;
-}
-
-/**
- * User details with permission information
- */
-export interface User {
-	date_added?: string;
-	name: string;
-	permission: Role;
-	id: string;
-	type?: string;
-	email?: string;
-}
-
-/**
- * User access request for approval
- */
-export interface UserAccessRequest {
-	id: string;
-	permission: Role;
-}
-
 export interface MCP {
-	/** Type of the mcp */
+	/**
+	 * Type of the mcp. Every value but ROOM is an engine or project catalog type.
+	 * ROOM is the room's own toolbox, which has no catalog entry behind it.
+	 */
 	type:
 		| "PROJECT"
 		| "STORAGE"
@@ -379,7 +369,8 @@ export interface MCP {
 		| "FUNCTION"
 		| "MODEL"
 		| "VECTOR"
-		| "GUARDRAIL";
+		| "GUARDRAIL"
+		| "ROOM";
 	/** Id of the mcp */
 	id: string;
 	/** Name of the mcp */
@@ -396,6 +387,12 @@ export interface MCP {
 export type MCPConfig = Pick<MCP, "type" | "id" | "name"> & {
 	/** Flag to indicate if this MCP comes from a workspace */
 	fromWorkspace?: boolean;
+	/**
+	 * Set by the backend on the room's own toolbox, which is derived from the tool
+	 * definitions in the room folder rather than stored in room options. Not
+	 * persisted.
+	 */
+	fromRoom?: boolean;
 };
 
 export interface Skill {

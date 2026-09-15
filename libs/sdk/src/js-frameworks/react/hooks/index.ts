@@ -1,3 +1,4 @@
+export { useIteratorApi } from "./use-iterator-api";
 export { useIteratorPixel } from "./use-iterator-pixel";
 export {
 	/**@deprecated use useDebouncedCallback from @semoss/ui/next */

@@ -36,7 +36,7 @@ const handleHeaderRedirect = (response: Response): boolean => {
 	if (redirectHeader) {
 		const redirectUrl = getAbsoluteUrl(redirectHeader);
 		if (redirectUrl) {
-			window.location.replace(redirectUrl);
+			window.location.replace(Env.REDIRECT_URL || redirectUrl);
 			return true;
 		}
 	}
@@ -87,8 +87,11 @@ const interceptors: {
 			};
 		}
 
+		// Basic auth isn't cookie-based, so it isn't CSRF-forgeable — skip the handshake.
+		const usingBasicAuth = Boolean(Env.ACCESS_KEY && Env.SECRET_KEY);
+
 		// only set if enabled
-		if (CSRF.isEnabled || Env.CSRF) {
+		if (!usingBasicAuth && (CSRF.isEnabled || Env.CSRF)) {
 			if (options.method === "POST") {
 				// use the token if it is there otherwise fetch it
 				if (!CSRF.token) {

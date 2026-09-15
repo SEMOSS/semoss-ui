@@ -1,0 +1,54 @@
+{
+	"dialog": {
+		"title": "إضافة أعضاء",
+		"description": "ابحث عن المستخدمين وادعهم إلى هذا المورد."
+	},
+	"search": {
+		"placeholder": "البحث بالاسم أو البريد الإلكتروني...",
+		"searching": "جارٍ البحث عن المستخدمين...",
+		"empty": "لم يتم العثور على مستخدمين",
+		"added": "تمت الإضافة"
+	},
+	"selected": {
+		"count_zero": "{{count}} مستخدم محدد",
+		"count_one": "{{count}} مستخدم محدد",
+		"count_two": "{{count}} مستخدمان محددان",
+		"count_few": "{{count}} مستخدمين محددين",
+		"count_many": "{{count}} مستخدمًا محددًا",
+		"count_other": "{{count}} مستخدم محدد",
+		"empty": "لم يتم تحديد أي مستخدم"
+	},
+	"permission": {
+		"viewer": "مُشاهد",
+		"editor": "محرر",
+		"owner": "مالك"
+	},
+	"restrictions": {
+		"title": "حدود استخدام النموذج (لجميع المستخدمين المحددين)",
+		"usageLimitType": "نوع حد الاستخدام",
+		"none": "بلا",
+		"token": "الرموز (Tokens)",
+		"computeTime": "وقت المعالجة",
+		"maxTokens": "الحد الأقصى للرموز",
+		"maxResponseTime": "الحد الأقصى لوقت الاستجابة",
+		"unit": "الوحدة",
+		"milliseconds": "ميلي ثانية",
+		"frequency": "التكرار",
+		"daily": "يوميًا",
+		"weekly": "أسبوعيًا",
+		"monthly": "شهريًا",
+		"yearly": "سنويًا",
+		"allTime": "كل الأوقات"
+	},
+	"footer": {
+		"add": "إضافة",
+		"addWithCount": "إضافة ({{count}})"
+	},
+	"errors": {
+		"loadUsersFailed": "فشل تحميل المستخدمين.",
+		"addMembersFailed": "حدث خطأ أثناء إضافة الأعضاء المحددين."
+	},
+	"success": {
+		"membersAdded": "تمت إضافة الأعضاء المحددين بنجاح."
+	}
+}

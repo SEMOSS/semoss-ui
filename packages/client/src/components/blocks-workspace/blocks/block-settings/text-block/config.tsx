@@ -1,5 +1,4 @@
 import { Type } from "lucide-react";
-import type { CSSProperties } from "react";
 import { QueryInputSettings } from "../../settings";
 import { ShowLoadingSettings } from "../../settings/shared/ShowLoadingSettings";
 import { SwitchSettings } from "../../settings/shared/SwitchSettings";
@@ -11,12 +10,6 @@ import {
 	buildTypographySection,
 } from "../block-defaults.shared";
 import type { BlockSettingsConfig } from "../settings.types";
-
-export const DefaultStyles: CSSProperties = {
-	padding: "4px",
-	whiteSpace: "pre-line",
-	textOverflow: "ellipsis",
-};
 
 // export the config for the block
 export const config: BlockSettingsConfig = {

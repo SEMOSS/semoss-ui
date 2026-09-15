@@ -1,11 +1,17 @@
 import {
+	confirmOTP,
 	download,
+	getRoomForInsight,
+	getRoomOptions,
 	getSystemConfig,
 	login,
+	loginLDAP,
+	loginOTP,
 	logout,
 	oauth,
 	runPixel,
 	runPixelAsync,
+	setRoomForInsight,
 	upload,
 	uploadApp,
 	uploadEngine,
@@ -15,6 +21,7 @@ import {
 import { Env } from "../../env";
 import type { MCPToolResponse, Script } from "../../types";
 import { UnauthorizedError } from "../../utility";
+import { createRoom, RoomStore } from "../room";
 
 /**
  * Module-level cache for the system config. It is static for a page session, so
@@ -43,6 +50,41 @@ const loadSystemConfig = async () => {
 		throw e;
 	}
 };
+
+/** Options accepted by {@link InsightStore.initialize}. */
+interface InitializeOptions {
+	/**
+	 * App to load into the insight
+	 */
+	app?: string | false;
+
+	/**
+	 * Python file to load into an insight
+	 */
+	python?:
+		| {
+				type: "file";
+				path: string;
+				alias: string;
+		  }
+		| {
+				type: "script";
+				script: string;
+				alias: string;
+		  }
+		| false;
+
+	/**
+	 * Whether to disable connecting the insight to a room
+	 * Defaults to false
+	 */
+	disableRoom?: boolean;
+
+	/**
+	 * Connect this insight to an existing insight ID
+	 */
+	insightId?: string;
+}
 
 interface InsightStoreInterface {
 	/** insightId of the app */
@@ -122,6 +164,9 @@ export class InsightStore {
 			disableRoom: false,
 		},
 	};
+
+	/** Room bound to the current insightId, lazily created/cached by getRoom(). */
+	private _room: RoomStore | null = null;
 
 	/** Getters */
 	/**
@@ -212,51 +257,63 @@ export class InsightStore {
 		this._store.meta = { ...meta };
 	}
 
+	/**
+	 * The initialize() call currently in flight, or null when idle. Concurrent
+	 * callers await this one instead of starting a second setup.
+	 */
+	private _initializing: Promise<{
+		tool: (typeof Env)["TOOL"] | null;
+	} | null> | null = null;
+
 	/** Methods */
 	/**
-	 * Initialize the insight
+	 * Initialize the insight.
+	 *
+	 * <p>
+	 * Calling this while a previous call is still running returns that same call
+	 * rather than starting a second one. Without that, two overlapping calls each
+	 * create a server-side insight, the second overwrites the first's id, and the
+	 * first is orphaned for the rest of the session. React StrictMode's double
+	 * mount makes this the common case, not an edge case.
+	 *
+	 * <p>
+	 * Calling it again after one has finished re-initializes, replacing the
+	 * insight.
 	 *
 	 * options - options to initialize with
 	 */
-	initialize = async (options?: {
-		/**
-		 * App to load into the insight
-		 */
-		app?: string | false;
+	initialize = async (
+		options?: InitializeOptions,
+	): Promise<{
+		tool: (typeof Env)["TOOL"] | null;
+	}> => {
+		if (this._initializing) {
+			return this._initializing;
+		}
+		this._initializing = this.runInitialize(options);
+		try {
+			return await this._initializing;
+		} finally {
+			// Cleared in a finally so a rejected or aborted attempt does not wedge
+			// every later call into returning the failed promise.
+			this._initializing = null;
+		}
+	};
 
-		/**
-		 * Python file to load into an insight
-		 */
-		python?:
-			| {
-					type: "file";
-					path: string;
-					alias: string;
-			  }
-			| {
-					type: "script";
-					script: string;
-					alias: string;
-			  }
-			| false;
-
-		/**
-		 * Whether to disable connecting the insight to a room
-		 * Defaults to false
-		 */
-		disableRoom?: boolean;
-
-		/**
-		 * Connect this insight to an existing insight ID
-		 */
-		insightId?: string;
-	}): Promise<{
+	/**
+	 * The body of {@link initialize}. Split out so the in-flight guard above has a
+	 * single promise to hand to concurrent callers.
+	 */
+	private runInitialize = async (
+		options?: InitializeOptions,
+	): Promise<{
 		tool: (typeof Env)["TOOL"] | null;
 	}> => {
 		// reset it
 		this._store.isInitialized = false;
 		this._store.isAuthorized = false;
 		this._store.isReady = false;
+		this._room = null;
 
 		const merged: NonNullable<typeof options> = {
 			app: options?.app || "",
@@ -298,27 +355,9 @@ export class InsightStore {
 		// save the disable room option
 		this._store.options.disableRoom = merged.disableRoom || false;
 
-		// load the environment from the document (production)
-		try {
-			if (typeof document !== "undefined") {
-				const env = JSON.parse(
-					document.getElementById("semoss-env")?.textContent || "",
-				) as {
-					APP: string;
-					MODULE: string;
-				};
-
-				// update the enviornment variables with the module
-				if (env) {
-					Env.update({
-						APP: env.APP,
-						MODULE: env.MODULE,
-					});
-				}
-			}
-		} catch (_e) {
-			// noop
-		}
+		// Already applied when the SDK loaded; repeated here so a tag injected after
+		// load is still picked up. A missing or unreadable tag leaves Env untouched.
+		Env.refreshFromDocument();
 
 		try {
 			// reset the id based on the Environment if set
@@ -482,10 +521,7 @@ LoadPyFromFile(alias="${alias}", filePath="temp.py");
 		if (!pixel && isExistingInsight) {
 			// still bind the insight to the room when running in tool/embed mode
 			if (Env?.TOOL?.roomId && !this._store.options.disableRoom) {
-				await runPixel<[boolean]>(
-					`SetRoomForInsight(roomId=${JSON.stringify(Env.TOOL.roomId)});`,
-					this._store.insightId,
-				);
+				await this.actions.getRoom();
 			}
 
 			// already initialized — mark ready
@@ -514,10 +550,7 @@ LoadPyFromFile(alias="${alias}", filePath="temp.py");
 
 		// point the insight space toward the room
 		if (Env?.TOOL?.roomId && !this._store.options.disableRoom) {
-			await runPixel<[boolean]>(
-				`SetRoomForInsight(roomId=${JSON.stringify(Env.TOOL.roomId)});`,
-				insightId,
-			);
+			await this.actions.getRoom();
 		}
 
 		// set as ready
@@ -544,6 +577,7 @@ LoadPyFromFile(alias="${alias}", filePath="temp.py");
 
 		// set the insight ID
 		this._store.insightId = "";
+		this._room = null;
 	};
 
 	/**
@@ -597,6 +631,25 @@ LoadPyFromFile(alias="${alias}", filePath="temp.py");
 	/** Accessible by the end user */
 	actions = {
 		/**
+		 * Start a linotp login. The pin is verified and a challenge is sent to
+		 * the user, no session exists until the otp is passed back into
+		 * login({ type: "linotp", otp }).
+		 *
+		 * @param username - username to login with
+		 * @param pin - pin to login with
+		 * @returns true if the challenge was accepted
+		 */
+		requestOTP: async (username: string, pin: string): Promise<boolean> => {
+			try {
+				return await loginOTP(username, pin);
+			} catch (error) {
+				this.processActionError(error as Error);
+			}
+
+			return false;
+		},
+
+		/**
 		 * Allow the user to login
 		 * @param credentials
 		 * @returns
@@ -607,6 +660,15 @@ LoadPyFromFile(alias="${alias}", filePath="temp.py");
 						type: "native";
 						username: string;
 						password: string;
+				  }
+				| {
+						type: "ldap";
+						username: string;
+						password: string;
+				  }
+				| {
+						type: "linotp";
+						otp: string;
 				  }
 				| {
 						type: "oauth";
@@ -621,6 +683,21 @@ LoadPyFromFile(alias="${alias}", filePath="temp.py");
 						credentials.username,
 						credentials.password,
 					);
+
+					if (response) {
+						loggedIn = true;
+					}
+				} else if (credentials.type === "ldap") {
+					const response = await loginLDAP(
+						credentials.username,
+						credentials.password,
+					);
+
+					if (response) {
+						loggedIn = true;
+					}
+				} else if (credentials.type === "linotp") {
+					const response = await confirmOTP(credentials.otp);
 
 					if (response) {
 						loggedIn = true;
@@ -668,6 +745,7 @@ LoadPyFromFile(alias="${alias}", filePath="temp.py");
 				// reset insight state so re-login creates a fresh insight
 				this._store.insightId = "";
 				this._store.isReady = false;
+				this._room = null;
 
 				// success
 				return true;
@@ -761,10 +839,61 @@ LoadPyFromFile(alias="${alias}", filePath="temp.py");
 		},
 
 		/**
-		 * Send a MCP tool response to the playground
+		 * Get the room bound to this insightId, wrapped as a `RoomStore`. Cached
+		 * per insight — repeated calls return the same instance. Resolution order:
+		 * a tool execution context's room (`Env.TOOL.roomId`), then whatever room
+		 * {@link getRoomForInsight} reports is already bound to this insightId,
+		 * then finally a brand-new room created and bound via {@link createRoom}.
+		 *
+		 * @returns The bound `RoomStore`, or `null` if `disableRoom` was set on this insight.
+		 */
+		getRoom: async (): Promise<RoomStore | null> => {
+			if (this._store.options.disableRoom) {
+				return null;
+			}
+
+			if (this._room) {
+				return this._room;
+			}
+
+			const toolRoomId = Env.TOOL?.roomId;
+			if (toolRoomId) {
+				await setRoomForInsight(this._store.insightId, toolRoomId);
+				const options = await getRoomOptions(
+					this._store.insightId,
+					toolRoomId,
+				);
+				this._room = new RoomStore(
+					toolRoomId,
+					this._store.insightId,
+					options,
+				);
+				return this._room;
+			}
+
+			const existingRoom = await getRoomForInsight(this._store.insightId);
+			if (existingRoom) {
+				const options = await getRoomOptions(
+					this._store.insightId,
+					existingRoom.roomId,
+				);
+				this._room = new RoomStore(
+					existingRoom.roomId,
+					this._store.insightId,
+					options,
+				);
+				return this._room;
+			}
+
+			this._room = await createRoom(this._store.insightId);
+			return this._room;
+		},
+
+		/**
+		 * Send a MCP tool response to the room
 		 * @param mcpToolResponse - response to send
 		 */
-		sendMCPResponseToPlayground: (
+		sendMCPResponseToRoom: (
 			mcpToolResponse: string,
 			mcpToolStatus: MCPToolResponse["tool_status"] = "success",
 			executedParameters: Record<string, unknown> = {},
@@ -799,7 +928,7 @@ LoadPyFromFile(alias="${alias}", filePath="temp.py");
 		},
 
 		/**
-		 * Run a MCP tool and send the response to the playground
+		 * Run a MCP tool and send the response to the room
 		 * @param name - name of the tool
 		 * @param parameters - parameters to pass to the tool
 		 */
@@ -824,14 +953,14 @@ LoadPyFromFile(alias="${alias}", filePath="temp.py");
 
 			if (Env.TOOL) {
 				try {
-					this.actions.sendMCPResponseToPlayground(
+					this.actions.sendMCPResponseToRoom(
 						output,
 						"success",
 						parameters,
 					);
 				} catch (e) {
 					console.warn(
-						`Failed to send MCP response to playground${e.message ? `: ${e.message}` : ""}`,
+						`Failed to send MCP response to room${e.message ? `: ${e.message}` : ""}`,
 					);
 				}
 			}

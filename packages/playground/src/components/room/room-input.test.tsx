@@ -40,15 +40,11 @@ vi.mock("@/contexts", async (importOriginal) => {
 		...actual,
 		useFileDrag: () => ({
 			isDragging: false,
-			setIsDragging: vi.fn(),
-			shouldStayOpen: false,
-			setShouldStayOpen: vi.fn(),
 			files: [],
 			addFiles: vi.fn(),
 			removeFile: vi.fn(),
 			clearFiles: vi.fn(),
-			fileInputRef: { current: null },
-			containerRef: { current: null },
+			openFilePicker: vi.fn(),
 		}),
 	};
 });
@@ -157,8 +153,6 @@ const defaultProps = {
 	options: {
 		instructions: "",
 		mcp: [],
-		tokenLength: 4096,
-		temperature: 0.5,
 		workspace: null,
 		predefinedPrompts: [],
 	},

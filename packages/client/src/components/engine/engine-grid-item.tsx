@@ -1,6 +1,7 @@
 import {
 	Bookmark,
 	BookmarkCheck,
+	Info,
 	LockKeyhole,
 	LockKeyholeOpen,
 	Trash2,
@@ -30,8 +31,12 @@ export interface EngineGridItemProps {
 	showGlobal: boolean;
 	/** Override whether the user can delete (defaults to owner permission check) */
 	showDelete: boolean;
+	/** Show the info button */
+	showInfo?: boolean;
 	/** Callback when favorite/bookmark is toggled */
 	onFavorite: (engine: Engine) => void;
+	/** Callback when info button is clicked */
+	onInfo?: (engine: Engine) => void;
 	/** Callback when global toggle is clicked */
 	onGlobalToggle: (engine: Engine) => void;
 	/** Callback when delete is requested */
@@ -50,7 +55,9 @@ export const EngineGridItem: React.FC<EngineGridItemProps> = ({
 	showFavorite = true,
 	showGlobal = true,
 	showDelete = true,
+	showInfo = false,
 	onFavorite,
+	onInfo,
 	onGlobalToggle,
 	onDelete,
 }) => {
@@ -68,6 +75,24 @@ export const EngineGridItem: React.FC<EngineGridItemProps> = ({
 
 	const actions = (
 		<>
+			{showInfo && onInfo && (
+				<Tooltip>
+					<TooltipTrigger asChild>
+						<Button
+							variant="ghost"
+							size="icon-sm"
+							onClick={(e) => {
+								e.preventDefault();
+								e.stopPropagation();
+								onInfo(engine);
+							}}
+						>
+							<Info className="size-4" />
+						</Button>
+					</TooltipTrigger>
+					<TooltipContent>Open Details in a New Tab</TooltipContent>
+				</Tooltip>
+			)}
 			{typeof engine.engine_global === "boolean" && showGlobal && (
 				<Tooltip>
 					<TooltipTrigger asChild>

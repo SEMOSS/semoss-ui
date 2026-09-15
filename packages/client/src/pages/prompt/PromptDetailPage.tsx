@@ -6,9 +6,8 @@ import {
 	Pencil,
 	Trash2,
 } from "lucide-react";
-import { observer } from "mobx-react-lite";
 import { useEffect, useMemo, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useParams } from "react-router";
 import {
 	Alert,
 	AlertDescription,
@@ -37,7 +36,8 @@ import {
 	TooltipTrigger,
 	toast,
 } from "@semoss/ui/next";
-import { useRootStore } from "@/hooks";
+import { NavbarHeader, NavbarLeft } from "@/components/shared";
+import { useSession } from "@/hooks";
 import { useNavigate } from "@/hooks/useNavigate";
 import type { Prompt } from "../../components/prompt/prompt.types";
 import { PromptDeleteModal } from "../../components/prompt/prompt-delete-modal";
@@ -118,9 +118,10 @@ const normalizeModelOption = (value: unknown): LlmModelOption | null => {
 	};
 };
 
-export const PromptDetailPage = observer(() => {
+export const PromptDetailPage = () => {
 	const { promptId } = useParams<{ promptId: string }>();
-	const { configStore, monolithStore } = useRootStore();
+	const userId = useSession((state) => state.user.id);
+	const runPixel = useSession((state) => state.runPixel);
 	const navigate = useNavigate();
 
 	const [versions, setVersions] = useState<Prompt[]>([]);
@@ -145,20 +146,20 @@ export const PromptDetailPage = observer(() => {
 
 	const isOwner = useMemo(() => {
 		if (!latestVersion) return false;
-		return latestVersion.created_by === configStore.store.user.id;
-	}, [latestVersion, configStore.store.user.id]);
+		return latestVersion.created_by === userId;
+	}, [latestVersion, userId]);
 
 	const loadPrompt = () => {
 		if (!promptId) return;
-		monolithStore
-			.runQuery(`GetPromptWithVersions(promptId='${promptId}')`)
-			.then((response) => {
+		runPixel(`GetPromptWithVersions(promptId='${promptId}')`).then(
+			(response) => {
 				const output = response.pixelReturn[0].output as Prompt[];
 				if (output && output.length > 0) {
 					setVersions(output);
 					setSelectedVersionIndex(0);
 				}
-			});
+			},
+		);
 	};
 
 	// biome-ignore lint/correctness/useExhaustiveDependencies: intentional — reruns on promptId change only
@@ -177,8 +178,7 @@ export const PromptDetailPage = observer(() => {
 		const pixel =
 			'META | MyEngines(metaKeys=[], metaFilters=[{"tag":"text-generation"}], engineTypes=["MODEL"]);';
 
-		monolithStore
-			.runQuery(pixel)
+		runPixel(pixel)
 			.then((response) => {
 				if (!isMounted) return;
 
@@ -215,7 +215,7 @@ export const PromptDetailPage = observer(() => {
 		return () => {
 			isMounted = false;
 		};
-	}, [monolithStore]);
+	}, [runPixel]);
 
 	const selectVersion = (index: number) => {
 		setSelectedVersionIndex(index);
@@ -232,8 +232,7 @@ export const PromptDetailPage = observer(() => {
 			id: promptId,
 		};
 		const stringified = `UpdatePrompt ( map = [${JSON.stringify(promptMap)} ])`;
-		monolithStore
-			.runQuery(stringified)
+		runPixel(stringified)
 			.then(() => {
 				loadPrompt();
 			})
@@ -261,7 +260,7 @@ export const PromptDetailPage = observer(() => {
 
 		try {
 			const pixel = `LLM(engine="${selectedModelId}", command=["<encode>${promptInput}</encode>"])`;
-			const response = await monolithStore.runQuery(pixel);
+			const response = await runPixel(pixel);
 			const { output, operationType } = response.pixelReturn[0];
 
 			if (operationType.indexOf("ERROR") > -1) {
@@ -315,7 +314,7 @@ export const PromptDetailPage = observer(() => {
 		const stringified = `UpdatePrompt ( map = [${JSON.stringify(promptMap)} ])`;
 
 		try {
-			const response = await monolithStore.runQuery(stringified);
+			const response = await runPixel(stringified);
 			const { operationType, output } = response.pixelReturn[0];
 
 			if (operationType.indexOf("ERROR") > -1) {
@@ -361,24 +360,28 @@ export const PromptDetailPage = observer(() => {
 
 	return (
 		<div className="flex h-full w-full flex-col gap-3 pb-12">
-			{/* Breadcrumb */}
-			<Breadcrumb>
-				<BreadcrumbList>
-					<BreadcrumbItem>
-						<BreadcrumbLink asChild>
-							<Link to="/prompt" className="text-inherit">
-								Prompts
-							</Link>
-						</BreadcrumbLink>
-					</BreadcrumbItem>
-					<BreadcrumbSeparator>
-						<ChevronRight className="size-3.5" />
-					</BreadcrumbSeparator>
-					<BreadcrumbItem>
-						<BreadcrumbPage>{latestVersion.title}</BreadcrumbPage>
-					</BreadcrumbItem>
-				</BreadcrumbList>
-			</Breadcrumb>
+			<NavbarLeft>
+				<NavbarHeader logo={null} />
+				<Breadcrumb>
+					<BreadcrumbList>
+						<BreadcrumbItem>
+							<BreadcrumbLink asChild>
+								<Link to="/prompt" className="text-inherit">
+									Prompts
+								</Link>
+							</BreadcrumbLink>
+						</BreadcrumbItem>
+						<BreadcrumbSeparator>
+							<ChevronRight className="size-3.5" />
+						</BreadcrumbSeparator>
+						<BreadcrumbItem>
+							<BreadcrumbPage>
+								{latestVersion.title}
+							</BreadcrumbPage>
+						</BreadcrumbItem>
+					</BreadcrumbList>
+				</Breadcrumb>
+			</NavbarLeft>
 
 			{/* Avatar + Title + ID + Action Buttons */}
 			<div className="flex w-full flex-col gap-4 md:flex-row md:items-center">
@@ -960,4 +963,4 @@ export const PromptDetailPage = observer(() => {
 			/>
 		</div>
 	);
-});
+};

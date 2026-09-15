@@ -81,7 +81,7 @@ export const TextSettingsMask = observer(() => {
 
 	return (
 		<div
-			className="flex items-center gap-2 rounded bg-white p-2"
+			className="flex items-center gap-2 rounded border border-border bg-popover p-2 text-popover-foreground"
 			style={{
 				boxShadow:
 					"0px 5px 22px 0px rgba(0, 0, 0, 0.10), 0px 4px 4px 0.5px rgba(0, 0, 0, 0.03)",

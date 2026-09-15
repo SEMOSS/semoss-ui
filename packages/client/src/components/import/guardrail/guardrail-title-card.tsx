@@ -87,7 +87,7 @@ export const GuardrailTitleCard: React.FC<GuardrailTileCardProps> = ({
 					<img
 						src={iconSrc}
 						alt={label}
-						className="flex h-[30px] w-[30px] rounded-lg object-cover"
+						className="flex size-8 rounded-lg object-cover"
 					/>
 					{guardrail.disable && (
 						<Badge variant="secondary">Coming Soon</Badge>

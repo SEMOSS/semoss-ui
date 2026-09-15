@@ -1,0 +1,206 @@
+import { ChevronRightIcon, SquareArrowOutUpRightIcon } from "lucide-react";
+import { useMemo } from "react";
+import { Link, matchPath, Navigate, Outlet, useLocation } from "react-router";
+import type { Role } from "@semoss/sdk";
+import { EngineSubtypeIcon, EntityHeader } from "@semoss/shared";
+import {
+	Breadcrumb,
+	BreadcrumbItem,
+	BreadcrumbLink,
+	BreadcrumbList,
+	BreadcrumbPage,
+	BreadcrumbSeparator,
+	Button,
+	Tabs,
+	TabsList,
+	TabsTrigger,
+} from "@semoss/ui/next";
+import { EngineAccessButton, EngineExportButton } from "@/components/engine";
+import { NavbarHeader, NavbarLeft } from "@/components/shared";
+import { useEngine } from "@/hooks";
+import { useNavigate } from "@/hooks/useNavigate";
+
+interface EngineTabsLayoutProps {
+	tabs: {
+		/** Name of the specific page */
+		name: string;
+
+		/** Path of the specific page */
+		path: string;
+
+		/** Restrict to certain roles */
+		restrict: Role[];
+	}[];
+}
+
+/**
+ * Wrap the engine routes and add additional funcitonality
+ */
+export const EngineTabsLayout: React.FC<EngineTabsLayoutProps> = ({ tabs }) => {
+	const { pathname } = useLocation();
+	const navigate = useNavigate();
+	const { catalog, engine, permission, type } = useEngine();
+	const enginePath = `${catalog.path}/${engine.engine_id}`;
+
+	// get the visible tabs based on permission
+	const visibleTabs = useMemo(() => {
+		// get the routes based on permission
+		return tabs.filter((tab) => {
+			if (!tab.restrict || tab.restrict.length === 0) {
+				return true;
+			}
+			if (!permission) {
+				return false;
+			}
+			return tab.restrict.includes(permission);
+		});
+	}, [tabs, permission]);
+
+	/**
+	 * Gets active tab
+	 * @returns index of selectedTab
+	 */
+	const activeTabIdx: number = useMemo(() => {
+		for (
+			let tabIdx = 0, tabLen = visibleTabs.length;
+			tabIdx < tabLen;
+			tabIdx++
+		) {
+			const tab = visibleTabs[tabIdx];
+			const tabPath = tab.path ? `${enginePath}/${tab.path}` : enginePath;
+
+			if (
+				matchPath({ path: tabPath, end: true }, pathname) ||
+				// Keep tabs with nested routes (e.g. settings/*) highlighted;
+				// skip the Overview tab ("") or it would match every path.
+				(tab.path !== "" && matchPath(`${tabPath}/*`, pathname))
+			) {
+				return tabIdx;
+			}
+		}
+
+		return -1;
+	}, [visibleTabs, enginePath, pathname]);
+
+	if (activeTabIdx === -1 && visibleTabs.length > 0) {
+		const firstTabPath = visibleTabs[0].path;
+		return (
+			<Navigate
+				to={firstTabPath ? `${enginePath}/${firstTabPath}` : enginePath}
+				replace
+			/>
+		);
+	}
+
+	return (
+		<>
+			<NavbarLeft>
+				<NavbarHeader logo={null} />
+				<Breadcrumb>
+					<BreadcrumbList>
+						<BreadcrumbItem>
+							<BreadcrumbLink asChild>
+								<Link to={catalog.path}>
+									{catalog.name} Catalog
+								</Link>
+							</BreadcrumbLink>
+						</BreadcrumbItem>
+						<BreadcrumbSeparator>
+							<ChevronRightIcon />
+						</BreadcrumbSeparator>
+						<BreadcrumbItem>
+							<BreadcrumbPage
+								title={
+									engine.engine_display_name ||
+									engine.engine_name
+								}
+							>
+								{engine.engine_display_name ||
+									engine.engine_name}
+							</BreadcrumbPage>
+						</BreadcrumbItem>
+					</BreadcrumbList>
+				</Breadcrumb>
+			</NavbarLeft>
+			<div className="flex flex-col gap-4">
+				<div className="flex w-full flex-col items-start gap-4 p-0">
+					<EntityHeader
+						icon={
+							<EngineSubtypeIcon
+								engineType={type}
+								engineSubtype={engine.engine_subtype}
+								alt={catalog.name}
+								className="size-full object-contain drop-shadow-[0_1px_1px_rgba(0,0,0,0.08)]"
+							/>
+						}
+						name={engine.engine_display_name || engine.engine_name}
+						id={engine.engine_id}
+						copyLabel={`Copy ${name} ID`}
+						nameTestId="Title"
+						idTestId={`engineHeader-${name}-id`}
+						copyTestId={`engineHeader-copy-${name}-id-btn`}
+						actions={
+							<>
+								<EngineAccessButton />
+
+								<EngineExportButton />
+								{(permission === "OWNER" ||
+									permission === "EDIT" ||
+									permission === "READ_ONLY") && (
+									<Button
+										variant="default"
+										data-testid="engine-tabs-layout--open-btn"
+										asChild
+									>
+										<Link to={`${enginePath}/workbench`}>
+											<SquareArrowOutUpRightIcon className="size-4" />
+											Workbench
+										</Link>
+									</Button>
+								)}
+							</>
+						}
+					/>
+				</div>
+				<div className="flex flex-col rounded-lg bg-(--muted)">
+					{visibleTabs.length > 0 && (
+						<div>
+							<Tabs
+								value={
+									activeTabIdx !== -1
+										? visibleTabs[activeTabIdx].path
+										: undefined
+								}
+								className="gap-0 bg-transparent"
+							>
+								<div className="w-full overflow-x-auto md:w-[80%]">
+									<TabsList className="w-max flex-nowrap gap-2">
+										{visibleTabs.map((t) => (
+											<TabsTrigger
+												key={t.path}
+												value={t.path}
+												onClick={() =>
+													navigate(
+														t.path
+															? `${enginePath}/${t.path}`
+															: enginePath,
+													)
+												}
+												data-testid={`engineLayout-${t.name}-tab`}
+											>
+												{t.name}
+											</TabsTrigger>
+										))}
+									</TabsList>
+								</div>
+							</Tabs>
+						</div>
+					)}
+					<div className="w-full bg-(--card) p-4">
+						<Outlet />
+					</div>
+				</div>
+			</div>
+		</>
+	);
+};

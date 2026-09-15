@@ -118,8 +118,11 @@ const TreeViewItem = React.forwardRef(function TreeViewItem<T>(
 		const now = Date.now();
 		const isDoubleClick = now - lastClickRef.current < DOUBLE_CLICK_MS;
 		lastClickRef.current = isDoubleClick ? 0 : now;
-		if (isDoubleClick) {
-			treeView.onItemDoubleClick?.(item);
+		// a double-click replaces the second click's select — otherwise a
+		// folder that double-click re-roots would also re-toggle its expansion
+		if (isDoubleClick && treeView.onItemDoubleClick) {
+			treeView.onItemDoubleClick(item);
+			return;
 		}
 		treeView.onItemSelect?.(item);
 	};

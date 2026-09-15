@@ -12,12 +12,12 @@ export const RoomInputMenuUpload = ({
 	onSelect = () => null,
 }: RoomInputMenuUploadProps) => {
 	const { t } = useTranslation("room");
-	const { setShouldStayOpen } = useFileDrag();
+	const { openFilePicker } = useFileDrag();
 
 	return (
 		<DropdownMenuItem
 			onSelect={() => {
-				setShouldStayOpen(true);
+				openFilePicker();
 				onSelect();
 			}}
 		>

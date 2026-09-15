@@ -12,14 +12,6 @@ export const LINE_CHART_DATA = {
 	ECHARTCODE: "line-e-chart",
 	JSONVALUE: ["line"],
 };
-export const PIE_CHART_DATA = {
-	NAME: "Pie Chart",
-	CODE: "pie-chart",
-	ECHARTCODE: "pie-e-chart",
-	JSONVALUE: ["pie"],
-	HEIGHT: 350,
-	WEIGHT: 450,
-};
 export const FontFamily = [
 	"Arail",
 	"Arail Black",
@@ -55,21 +47,6 @@ export const FontWeights = [
 ];
 export const Title_Alignment = ["left", "right", "center"];
 export const ECHART_BAR_COLOUR = "#5470c6";
-export const Line_Alignment = [
-	"top",
-	"bottom",
-	"left",
-	"right",
-	"inside",
-	"insideTop",
-	"insideBottom",
-	"insideLeft",
-	"insideRight",
-	"insideTopLeft",
-	"insideTopRight",
-	"insideBottomLeft",
-	"insideBottomRight",
-];
 export const Line_Curve_Type = ["Smooth", "Exact", "Step"];
 export const Line_Type = ["Solid", "Dashed", "Dotted"];
 export const GANTT_CHART = {

@@ -1,10 +1,23 @@
 // biome-ignore-all lint/correctness/useExhaustiveDependencies: TODO
 
-import { Bookmark, Pencil, Settings, Share2 } from "lucide-react";
+import {
+	Bookmark,
+	ChevronRightIcon,
+	InfoIcon,
+	Pencil,
+	Share2,
+} from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { lazy, Suspense, useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { Link } from "react-router";
+import { runPixel } from "@semoss/sdk/react";
 import {
+	Breadcrumb,
+	BreadcrumbItem,
+	BreadcrumbLink,
+	BreadcrumbList,
+	BreadcrumbPage,
+	BreadcrumbSeparator,
 	Button,
 	Dialog,
 	DialogContent,
@@ -22,43 +35,34 @@ const Renderer = lazy(() =>
 	import("@semoss/renderer").then((m) => ({ default: m.Renderer })),
 );
 const CodeRenderer = lazy(() =>
-	import("@/components/code-workspace").then((m) => ({
+	import("@/components/project").then((m) => ({
 		default: m.CodeRenderer,
 	})),
 );
 
-import { usePage, useRootStore } from "@/hooks";
-import type { WorkspaceStore } from "@/stores";
+import { usePage, useProject } from "@/hooks";
 import { NavbarHeader, NavbarLeft, NavbarRight } from "../../components/shared";
 
 const AppViewLoadingState = () => {
 	return (
-		<div
-			className="absolute inset-0 flex items-center justify-center"
-			style={{
-				background: "rgba(255, 255, 255, 0.5)",
-				zIndex: 1501,
-			}}
-		>
-			<Spinner className="size-6" />
+		<div className="absolute inset-0 z-[1501] flex items-center justify-center bg-background/50">
+			<Spinner className="size-4" />
 		</div>
 	);
 };
 
 export const ViewAppPage = observer(() => {
-	// App ID Needed for pixel calls
-	const { appId } = useParams();
-	const { configStore } = useRootStore();
+	const { project, permission, catalog, type } = useProject();
 
 	const navigate = useNavigate();
 
-	const [workspace, setWorkspace] = useState<WorkspaceStore>(undefined);
+	const [insightId, setInsightId] = useState<string | undefined>(undefined);
 	const [isShareOpen, setIsShareOpen] = useState<boolean>(false);
 	const [bookmarked, setBookmarked] = useState<boolean>(false);
 
 	const handleBookmark = (status: boolean) => {
 		setBookmarked(status);
-		setProjectFavorite(appId, status)
+		setProjectFavorite(project.project_id, status)
 			.then(() => {
 				toast.success(
 					`Project ${bookmarked ? "unbookmarked" : "bookmarked"}`,
@@ -77,44 +81,53 @@ export const ViewAppPage = observer(() => {
 
 	useEffect(() => {
 		// clear out the old app
-		setWorkspace(undefined);
+		setInsightId(undefined);
 
-		configStore
-			.createWorkspace(appId)
-			.then((loadedWorkspace) => {
-				setWorkspace(loadedWorkspace);
-				setBookmarked(
-					Boolean(loadedWorkspace.metadata.project_favorite),
-				);
+		runPixel(`SetContext("${project.project_id}")`, "new")
+			.then((response) => {
+				setInsightId(response.insightId);
+				setBookmarked(Boolean(project.project_favorite));
 			})
 			.catch((e) => {
 				toast.error(e.message);
 				navigate("/");
 			});
-	}, [appId]);
+	}, [project.project_id]);
 
 	// hide the screen while it loads
-	if (!workspace) {
+	if (!insightId) {
 		return <AppViewLoadingState />;
 	}
 
 	return (
 		<>
 			<NavbarLeft>
-				<NavbarHeader
-					logo={
-						<div
-							title={
-								workspace?.metadata?.project_display_name ||
-								workspace?.metadata?.project_name
-							}
-							className="w-[30ch] truncate text-ellipsis font-normal text-[16px] leading-[175%]"
-						>
-							{workspace?.metadata?.project_display_name ||
-								workspace?.metadata?.project_name}
-						</div>
-					}
-				/>
+				<NavbarHeader logo={null} />
+				<Breadcrumb>
+					<BreadcrumbList>
+						<BreadcrumbItem>
+							<BreadcrumbLink asChild>
+								<Link to={catalog.path}>
+									{catalog.name} Catalog
+								</Link>
+							</BreadcrumbLink>
+						</BreadcrumbItem>
+						<BreadcrumbSeparator>
+							<ChevronRightIcon />
+						</BreadcrumbSeparator>
+						<BreadcrumbItem>
+							<BreadcrumbPage
+								title={
+									project.project_display_name ||
+									project.project_name
+								}
+							>
+								{project.project_display_name ||
+									project.project_name}
+							</BreadcrumbPage>
+						</BreadcrumbItem>
+					</BreadcrumbList>
+				</Breadcrumb>
 			</NavbarLeft>
 			<NavbarRight>
 				<Tooltip>
@@ -122,13 +135,15 @@ export const ViewAppPage = observer(() => {
 						<Button
 							variant="ghost"
 							size="icon"
-							onClick={() => navigate(`/app/${appId}`)}
 							data-testid={"settings"}
+							asChild
 						>
-							<Settings className="size-4" />
+							<Link to={`..`}>
+								<InfoIcon className="size-4" />
+							</Link>
 						</Button>
 					</TooltipTrigger>
-					<TooltipContent>Settings</TooltipContent>
+					<TooltipContent>Details</TooltipContent>
 				</Tooltip>
 				<Tooltip>
 					<TooltipTrigger asChild>
@@ -158,28 +173,30 @@ export const ViewAppPage = observer(() => {
 					</TooltipTrigger>
 					<TooltipContent>Share App</TooltipContent>
 				</Tooltip>
-				{(workspace.role === "OWNER" || workspace.role === "EDIT") && (
+				{(permission === "OWNER" || permission === "EDIT") && (
 					<Button
 						variant="default"
 						size="sm"
-						onClick={() => navigate(`../../../app/${appId}/edit`)}
 						data-testid={"viewAppPage-edit-btn"}
+						asChild
 					>
-						<Pencil className="mr-1 size-4" />
-						Edit
+						<Link to={`../edit`}>
+							<Pencil className="mr-1 size-4" />
+							Edit
+						</Link>
 					</Button>
 				)}
 			</NavbarRight>
 			<div className="absolute inset-0">
 				<Suspense fallback={<AppViewLoadingState />}>
-					{workspace.type === "BLOCKS" ? (
+					{type === "BLOCKS" ? (
 						<Renderer
-							appId={appId}
-							insightId={workspace.insightId}
+							appId={project.project_id}
+							insightId={insightId}
 						/>
 					) : null}
-					{workspace.type === "CODE" ? (
-						<CodeRenderer appId={appId} />
+					{type === "CODE" ? (
+						<CodeRenderer appId={project.project_id} />
 					) : null}
 				</Suspense>
 			</div>
@@ -190,7 +207,7 @@ export const ViewAppPage = observer(() => {
 			>
 				<DialogContent className="max-w-lg p-0">
 					<ShareOverlay
-						appId={appId}
+						appId={project.project_id}
 						onClose={() => setIsShareOpen(false)}
 					/>
 				</DialogContent>

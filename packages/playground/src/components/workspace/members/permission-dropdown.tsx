@@ -1,6 +1,6 @@
 import { Trash2 } from "lucide-react";
 import { useTranslation } from "@semoss/i18n";
-import type { Role } from "@semoss/shared";
+import type { Role } from "@semoss/sdk";
 import {
 	Select,
 	SelectContent,

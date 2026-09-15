@@ -1,5 +1,5 @@
 import { useTranslation } from "@semoss/i18n";
-import type { User } from "@semoss/shared";
+import type { User } from "@semoss/sdk";
 import { Avatar, AvatarFallback } from "@semoss/ui/next";
 import { toInitials } from "@/utility";
 import {

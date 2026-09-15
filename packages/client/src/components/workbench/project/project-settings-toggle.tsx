@@ -1,0 +1,114 @@
+import { SettingsIcon } from "lucide-react";
+import type { ComponentProps } from "react";
+import {
+	Button,
+	cn,
+	Tooltip,
+	TooltipContent,
+	TooltipTrigger,
+} from "@semoss/ui/next";
+import type { WorkbenchPanelConfig } from "@semoss/workbench";
+import { useWorkbench, WORKBENCH_STYLES } from "@semoss/workbench";
+import { ProjectDetailTabs } from "@/components/project";
+import { WORKBENCH_COMPONENTS } from "@/stores/workbench";
+
+/** The tabs every project workbench shows. Notebook and skill use it as-is. */
+export const PROJECT_SETTINGS_TABS: ComponentProps<
+	typeof ProjectDetailTabs
+>["tabs"] = [
+	{ name: "Overview", component: "project-overview" },
+	{
+		name: "MCP",
+		component: "mcp-usage",
+		restrict: ["OWNER", "EDIT", "READ_ONLY"],
+	},
+	{
+		name: "GitHub",
+		component: "github",
+		restrict: ["OWNER"],
+	},
+	{
+		name: "Access Control",
+		component: "access-control",
+		restrict: ["OWNER", "EDIT"],
+	},
+	{
+		name: "SMSS",
+		component: "smss",
+		restrict: ["OWNER"],
+	},
+];
+
+/**
+ * Builds the settings blueprint for one project domain. Each domain calls
+ * this at module scope with its static tab list, so the blueprint identity
+ * stays stable and the panel never remounts from map churn.
+ *
+ * @name createProjectSettingsPanel
+ * @param tabs - Settings tabs the domain exposes.
+ * @return The blueprint registered under PROJECT_SETTINGS.
+ */
+export const createProjectSettingsPanel = (
+	tabs: ComponentProps<typeof ProjectDetailTabs>["tabs"],
+): WorkbenchPanelConfig => ({
+	name: "Settings",
+	helpText: "Settings",
+	icon: ({ className }) => <SettingsIcon className={className} />,
+	canClose: true,
+	canRename: false,
+	mount: "keepAlive",
+	content: function ProjectSettingsContent() {
+		return <ProjectDetailTabs tabs={tabs} />;
+	},
+});
+
+/**
+ * Toggles the shared project settings panel within a workbench — opening,
+ * selecting, or closing it — and highlights while it is the shown tab.
+ */
+export const ProjectSettingsToggle: React.FC = () => {
+	const actions = useWorkbench((state) => state.layout.actions);
+	const settingsType = WORKBENCH_COMPONENTS.PROJECT_SETTINGS;
+
+	const existingId = useWorkbench(
+		(state) =>
+			Object.values(state.layout.panels).find(
+				(record) => record.type === settingsType,
+			)?.id,
+	);
+	const isShowing = useWorkbench((state) =>
+		existingId
+			? (state.layout.panelSlots[existingId]?.active ?? false)
+			: false,
+	);
+
+	return (
+		<Tooltip>
+			<TooltipTrigger asChild>
+				<Button
+					variant="ghost"
+					size="icon-sm"
+					aria-label="Settings"
+					data-testid="workbench-project-settings-toggle"
+					onClick={() => {
+						if (existingId && isShowing) {
+							actions.closePanel(existingId);
+							return;
+						}
+
+						actions.selectPanel(settingsType);
+					}}
+					className={cn(
+						WORKBENCH_STYLES.chromeButton,
+						isShowing
+							? WORKBENCH_STYLES.chromeButtonActive
+							: WORKBENCH_STYLES.chromeButtonInactive,
+					)}
+				>
+					<SettingsIcon className={WORKBENCH_STYLES.chromeIcon} />
+				</Button>
+			</TooltipTrigger>
+			<TooltipContent side="right">Settings</TooltipContent>
+		</Tooltip>
+	);
+};

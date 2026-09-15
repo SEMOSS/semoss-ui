@@ -17,6 +17,12 @@
 		"poorResponse": "悪い回答",
 		"copyResponse": "回答をコピー",
 		"copyCode": "コードをコピー",
+		"copy": "コピー",
+		"saveInRoom": "ルームに保存",
+		"savingToRoom": "保存中...",
+		"fullView": "全画面表示",
+		"raw": "ソース",
+		"diagram": "図",
 		"feedbackPlaceholder": "コメントを追加（任意）",
 		"feedbackCancel": "キャンセル",
 		"feedbackSubmit": "送信",
@@ -43,6 +49,7 @@
 		"rewriteSuccess": "メッセージを正常に書き直しました",
 		"copySuccess": "クリップボードに正常にコピーしました",
 		"noCopyContent": "コピーするコンテンツがありません",
+		"savedInRoom": "{{filePath}} としてルームに保存しました",
 		"planStepRemoved": "プランからステップ{{stepNumber}}を正常に削除しました"
 	},
 	"gracefulErrors": {

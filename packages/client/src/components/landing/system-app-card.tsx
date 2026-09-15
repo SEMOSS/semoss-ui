@@ -6,6 +6,7 @@ interface SystemAppCardProps extends React.HTMLAttributes<HTMLAnchorElement> {
 	description: string;
 	href: string;
 	img: string;
+	darkImg?: string;
 }
 
 /**
@@ -16,6 +17,7 @@ export const SystemAppCard = ({
 	description,
 	href,
 	img,
+	darkImg,
 	...props
 }: SystemAppCardProps) => {
 	return (
@@ -59,8 +61,15 @@ export const SystemAppCard = ({
 							<img
 								src={img}
 								alt={`${name} illustration`}
-								className={`absolute inset-0 h-full w-full transform object-cover object-right`}
+								className={`absolute inset-0 h-full w-full transform object-cover object-right ${darkImg ? "dark:hidden" : ""}`}
 							/>
+							{darkImg ? (
+								<img
+									src={darkImg}
+									alt={`${name} illustration`}
+									className="absolute inset-0 hidden h-full w-full transform object-cover object-right dark:block"
+								/>
+							) : null}
 						</div>
 					</div>
 				</div>

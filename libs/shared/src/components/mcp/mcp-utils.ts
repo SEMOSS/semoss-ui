@@ -89,7 +89,14 @@ export const engineProjectToMCP = (tool: Engine | App): MCP => {
 export const projectDependencyToMCP = (dep: ProjectDependency): MCP => ({
 	id: dep.engine_id,
 	name: dep.engine_name,
-	type: dep.engine_type,
+	type:
+		dep.engine_type === "SKILL" ||
+		dep.engine_type === "WORKSPACE" ||
+		dep.engine_type === "BLOCKS" ||
+		dep.engine_type === "CODE" ||
+		dep.engine_type === "INSIGHT"
+			? "PROJECT"
+			: dep.engine_type,
 	subtype: dep.engine_subtype,
 	description: dep.description ?? "",
 	tags: dep.tags
@@ -98,7 +105,10 @@ export const projectDependencyToMCP = (dep: ProjectDependency): MCP => ({
 				.map((t) => t.trim())
 				.filter(Boolean)
 		: [],
-	permission: dep.permission_name ?? "READ_ONLY",
+	permission:
+		dep.permission_name && dep.permission_name !== "DISCOVERABLE"
+			? dep.permission_name
+			: "READ_ONLY",
 });
 
 /**

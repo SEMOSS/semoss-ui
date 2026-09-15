@@ -18,12 +18,6 @@ import { buildListener } from "../../../../block-settings/block-defaults.shared"
 import { BAR_CHART_DATA } from "../Visualization.constants";
 import { DataTabStyling } from "./bar-chart/DataTabStyling";
 
-//frame operations component props structure
-export interface FrameOperationsProps {
-	id: string;
-	updateFrame: (option) => void;
-}
-
 const COLOUR_PALATTE_DATA = [
 	"#5470c6",
 	"#91cc75",

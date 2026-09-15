@@ -19,13 +19,21 @@ import {
 	X,
 } from "lucide-react";
 import { observer } from "mobx-react-lite";
-import { createElement, useEffect, useMemo, useRef, useState } from "react";
+import {
+	createElement,
+	type JSX,
+	useEffect,
+	useMemo,
+	useRef,
+	useState,
+} from "react";
 import {
 	ActionMessages,
 	type SerializedState,
 	useBlocks,
 } from "@semoss/renderer";
 import { runPixel } from "@semoss/sdk";
+import { hasInlineImage } from "@semoss/shared";
 import {
 	Button,
 	ButtonGroup,
@@ -45,7 +53,7 @@ import {
 	TooltipTrigger,
 	toast,
 } from "@semoss/ui/next";
-import { useWorkspace } from "@/hooks";
+import { useProject, useWorkspace } from "@/hooks";
 import { MCP_NOTEBOOK_NAME } from "@/pages/app/app.constants";
 // TODO: MOVE TO SDK or a seperate lib specifically for utilities @semoss/utility
 import { copyTextToClipboard, isOutputJSON } from "@/utility";
@@ -91,6 +99,7 @@ export const NotebookCell = observer(
 
 		const { state, notebook } = useBlocks();
 		const { workspace } = useWorkspace();
+		const { project } = useProject();
 
 		const [showRaw, setShowRaw] = useState(false);
 		const [showRawLogging, setShowRawLogging] = useState(false);
@@ -378,11 +387,11 @@ export const NotebookCell = observer(
 				workspace.setLoading(true);
 				// Save current app state before making MCP tool
 				await runPixel(
-					`SaveAppBlocksJson(project=["${workspace.appId}"], json=["<encode>${JSON.stringify(state.toJSON())}</encode>"]);`,
+					`SaveAppBlocksJson(project=["${project.project_id}"], json=["<encode>${JSON.stringify(state.toJSON())}</encode>"]);`,
 				);
 				// Make pixel call to generate MCP tool
 				const { errors, pixelReturn } = await runPixel(
-					`MakeNotebookCellMCP(project="${workspace.appId}", model="${workspace.agentModelEngine}", cellId="${cell.id}")`,
+					`MakeNotebookCellMCP(project="${project.project_id}", model="${workspace.agentModelEngine}", cellId="${cell.id}")`,
 				);
 
 				workspace.setLoading(false);
@@ -443,7 +452,7 @@ export const NotebookCell = observer(
 						cellId: cell.id,
 						parameters: {
 							name: toolName,
-							projectId: workspace.appId,
+							projectId: project.project_id,
 							originalParams: {
 								widget: cell.widget,
 								parameters: cell.parameters,
@@ -473,6 +482,14 @@ export const NotebookCell = observer(
 		const outputIsJson = useMemo(
 			() => isOutputJSON(cell.output) != null,
 			[cell.output],
+		);
+
+		// Python cells return rendered figures as inline base64 images. Badged
+		// in the header the same way JSON is, so it is obvious the Formatted
+		// view is showing a picture rather than markup.
+		const outputHasImage = useMemo(
+			() => hasInlineImage(rawOutput),
+			[rawOutput],
 		);
 
 		const outputStats = useMemo(() => {
@@ -514,6 +531,11 @@ export const NotebookCell = observer(
 					{outputIsJson && (
 						<span className="inline-flex items-center rounded bg-muted px-1.5 py-0.5 font-medium text-[10px] text-muted-foreground uppercase tracking-wider">
 							JSON
+						</span>
+					)}
+					{outputHasImage && (
+						<span className="inline-flex items-center rounded bg-muted px-1.5 py-0.5 font-medium text-[10px] text-muted-foreground uppercase tracking-wider">
+							Image
 						</span>
 					)}
 				</div>
@@ -1240,6 +1262,9 @@ export const NotebookCell = observer(
 										expandAll={expandAllLogging}
 										hideJsonToggle
 										fixedHeight
+										// the modal has room, so show figures
+										// at full size
+										imageClassName="max-h-none"
 									/>
 								)}
 							</div>
@@ -1370,6 +1395,9 @@ export const NotebookCell = observer(
 														}
 														hideJsonToggle
 														fixedJsonHeight
+														// the modal has room,
+														// so show figures full size
+														imageClassName="max-h-none"
 														cellData={{
 															cellId: cell.id.toString(),
 															queryId:

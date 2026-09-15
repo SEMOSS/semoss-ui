@@ -17,31 +17,6 @@ import { TeamTileCard } from "@/components/teams/team-tile-card";
 import { useNavigate } from "@/hooks/useNavigate";
 import { useSettings } from "@/hooks/useSettings";
 
-export interface DBMember {
-	ID: string;
-	NAME: string;
-	PERMISSION: string;
-	EMAIL: string;
-	SELECTED: boolean;
-}
-
-export interface Database {
-	app_cost: string;
-	app_favorite: number;
-	app_id: string;
-	app_name: string;
-	app_type: string;
-	database_cost: string;
-	database_id: string;
-	database_name: string;
-	database_type: string;
-	low_database_name: string;
-	database_global: true;
-	database_favorite?: number;
-	permission?: number;
-	user_permission?: number;
-}
-
 const initialState = {
 	favoritedDbs: [],
 	teams: [],

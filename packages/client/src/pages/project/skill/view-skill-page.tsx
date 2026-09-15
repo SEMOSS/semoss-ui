@@ -1,13 +1,17 @@
 // biome-ignore-all lint/correctness/useExhaustiveDependencies: TODO
 
-import { PencilIcon, SettingsIcon } from "lucide-react";
+import { ChevronRightIcon, InfoIcon, PencilIcon } from "lucide-react";
 import { observer } from "mobx-react-lite";
-import { useEffect, useRef, useState } from "react";
-import { useParams } from "react-router-dom";
-import { InsightProvider } from "@semoss/sdk/react";
-import type { FileItem } from "@semoss/shared";
-import { FileExplorer } from "@semoss/shared";
+import { useEffect, useState } from "react";
+import { Link, useNavigate } from "react-router";
+import { InsightProvider, runPixel } from "@semoss/sdk/react";
 import {
+	Breadcrumb,
+	BreadcrumbItem,
+	BreadcrumbLink,
+	BreadcrumbList,
+	BreadcrumbPage,
+	BreadcrumbSeparator,
 	Button,
 	Spinner,
 	Tooltip,
@@ -16,71 +20,35 @@ import {
 	toast,
 } from "@semoss/ui/next";
 import { NavbarHeader, NavbarLeft, NavbarRight } from "@/components/shared";
-import { SkillFileViewer } from "@/components/skill";
-import { usePage, useRootStore } from "@/hooks";
-import { useNavigate } from "@/hooks/useNavigate";
-import type { WorkspaceStore } from "@/stores";
-
-const PUBLIC_ROOT_PATH = "/public";
+import { SkillPublicFiles } from "@/components/skill";
+import { usePage, useProject } from "@/hooks";
 
 export const ViewSkillPage = observer(() => {
-	const { appId } = useParams();
-	const { configStore } = useRootStore();
 	const navigate = useNavigate();
+	const { project, catalog, permission } = useProject();
 
-	const [workspace, setWorkspace] = useState<WorkspaceStore | null>(null);
-	const [selectedPath, setSelectedPath] = useState<string | null>(null);
-	const hasAutoSelectedRef = useRef(false);
+	const [insightId, setInsightId] = useState<string | null>(null);
 
 	usePage({
 		showNavbarLogo: false,
 	});
 
 	useEffect(() => {
-		if (!appId) {
-			return;
-		}
+		// clear out the old insight; SkillPublicFiles is keyed on the project,
+		// so its own selection resets with it
+		setInsightId(null);
 
-		// clear out the old workspace/selection
-		setWorkspace(null);
-		setSelectedPath(null);
-		hasAutoSelectedRef.current = false;
-
-		configStore
-			.createWorkspace(appId)
-			.then((loadedWorkspace) => {
-				setWorkspace(loadedWorkspace);
+		runPixel(`SetContext("${project.project_id}")`, "new")
+			.then((response) => {
+				setInsightId(response.insightId);
 			})
 			.catch((e) => {
 				toast.error(e.message);
 				navigate("/");
 			});
-	}, [appId]);
+	}, [project.project_id]);
 
-	/**
-	 * Auto-select SKILL.md the first time the /public root finishes loading
-	 */
-	const handleVisibleItemsChange = (payload: {
-		path: string;
-		items: FileItem[];
-	}) => {
-		if (hasAutoSelectedRef.current) {
-			return;
-		}
-		if (payload.path !== PUBLIC_ROOT_PATH) {
-			return;
-		}
-
-		const skillMd = payload.items.find(
-			(item) => item.type !== "directory" && item.name === "SKILL.md",
-		);
-		if (skillMd) {
-			hasAutoSelectedRef.current = true;
-			setSelectedPath(skillMd.path);
-		}
-	};
-
-	if (!workspace || !appId) {
+	if (!insightId || !project.project_id) {
 		return (
 			<div className="absolute inset-0 flex flex-1 items-center justify-center">
 				<Spinner />
@@ -91,20 +59,32 @@ export const ViewSkillPage = observer(() => {
 	return (
 		<>
 			<NavbarLeft>
-				<NavbarHeader
-					logo={
-						<div
-							title={
-								workspace?.metadata?.project_display_name ||
-								workspace?.metadata?.project_name
-							}
-							className="w-[30ch] truncate text-ellipsis font-normal text-[16px] leading-[175%]"
-						>
-							{workspace?.metadata?.project_display_name ||
-								workspace?.metadata?.project_name}
-						</div>
-					}
-				/>
+				<NavbarHeader logo={null} />
+				<Breadcrumb>
+					<BreadcrumbList>
+						<BreadcrumbItem>
+							<BreadcrumbLink asChild>
+								<Link to={catalog.path}>
+									{catalog.name} Catalog
+								</Link>
+							</BreadcrumbLink>
+						</BreadcrumbItem>
+						<BreadcrumbSeparator>
+							<ChevronRightIcon />
+						</BreadcrumbSeparator>
+						<BreadcrumbItem>
+							<BreadcrumbPage
+								title={
+									project.project_display_name ||
+									project.project_name
+								}
+							>
+								{project.project_display_name ||
+									project.project_name}
+							</BreadcrumbPage>
+						</BreadcrumbItem>
+					</BreadcrumbList>
+				</Breadcrumb>
 			</NavbarLeft>
 			<NavbarRight>
 				<Tooltip>
@@ -112,47 +92,39 @@ export const ViewSkillPage = observer(() => {
 						<Button
 							variant="ghost"
 							size="icon"
-							onClick={() => navigate(`/skill/${appId}`)}
 							data-testid={"settings"}
+							asChild
 						>
-							<SettingsIcon className="size-4" />
+							<Link to={`..`}>
+								<InfoIcon className="size-4" />
+							</Link>
 						</Button>
 					</TooltipTrigger>
 					<TooltipContent>Settings</TooltipContent>
 				</Tooltip>
-				{(workspace.role === "OWNER" || workspace.role === "EDIT") && (
+				{(permission === "OWNER" || permission === "EDIT") && (
 					<Button
 						variant="default"
 						size="sm"
-						onClick={() => navigate(`/skill/${appId}/edit`)}
 						data-testid={"viewSkillPage-edit-btn"}
+						asChild
 					>
-						<PencilIcon className="mr-1 size-4" />
-						Edit
+						<Link to={`../edit`}>
+							<PencilIcon className="mr-1 size-4" />
+							Edit
+						</Link>
 					</Button>
 				)}
 			</NavbarRight>
 			<div className="w-full pb-2">
 				<InsightProvider
-					options={{ insightId: workspace.insightId }}
+					options={{ insightId: insightId }}
 					destroyOnUnmount={false}
 				>
-					<div className="mb-6 h-[35vh] min-h-[220px] overflow-hidden rounded-md border border-border">
-						<FileExplorer
-							mode={{
-								type: "APP",
-								app: appId,
-							}}
-							initialPath={PUBLIC_ROOT_PATH}
-							readOnly
-							onItemSelect={(item) => setSelectedPath(item.path)}
-							onVisibleItemsChange={handleVisibleItemsChange}
-						/>
-					</div>
-					<SkillFileViewer
-						projectId={appId}
-						insightId={workspace.insightId}
-						path={selectedPath}
+					<SkillPublicFiles
+						key={project.project_id}
+						projectId={project.project_id}
+						insightId={insightId}
 					/>
 				</InsightProvider>
 			</div>

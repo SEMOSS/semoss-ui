@@ -28,7 +28,9 @@
 	"tools": {
 		"enterValues": "Entrez des valeurs séparées par des virgules",
 		"selectField": "Sélectionner {{field}}",
-		"enterField": "Entrer {{field}}"
+		"enterField": "Entrer {{field}}",
+		"collapseField": "Réduire le champ",
+		"expandField": "Développer le champ"
 	},
 	"messages": {
 		"selectKnowledgeSource": "Veuillez sélectionner une base de connaissances",

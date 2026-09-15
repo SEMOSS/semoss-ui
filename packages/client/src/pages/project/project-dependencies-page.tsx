@@ -8,7 +8,7 @@ import {
 	User,
 } from "lucide-react";
 import { useState } from "react";
-import type { Role } from "@semoss/shared";
+import type { Role } from "@semoss/sdk";
 import { AppCatalogAvatar, EngineSubtypeIcon } from "@semoss/shared";
 import {
 	Badge,
@@ -60,7 +60,7 @@ const toCapitalized = (word: string): string => {
 };
 
 export const ProjectDependenciesPage = () => {
-	const { appId, project, dependencies, permission, refresh } = useProject();
+	const { project, dependencies, permission, refresh } = useProject();
 	const [isOpen, setIsOpen] = useState(false);
 
 	const canEdit = permission === "OWNER" || permission === "EDIT";
@@ -277,7 +277,7 @@ export const ProjectDependenciesPage = () => {
 					}
 					setIsOpen(false);
 				}}
-				appId={appId || ""}
+				appId={project.project_id}
 			/>
 		</>
 	);

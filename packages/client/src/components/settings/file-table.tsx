@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
+import { usePixel } from "@semoss/sdk/react";
 import {
 	Button,
 	Checkbox,
@@ -31,14 +32,19 @@ import {
 	TableRow,
 	toast,
 } from "@semoss/ui/next";
-import { uploadFile } from "@/api";
-import { usePixel, useRootStore } from "@/hooks";
+import { useSession } from "@/hooks";
 
 interface FileTableProps {
 	/**
 	 * Id of the vector engine
 	 */
 	id: string;
+
+	/**
+	 * When true, the table is view-only: upload/embed and delete controls are
+	 * hidden. Download, search, and listing remain available. Defaults to false.
+	 */
+	readOnly?: boolean;
 }
 
 type FileUploadForm = {
@@ -93,7 +99,9 @@ export const FileTable = (props: FileTableProps) => {
 	const fileSearchRef = useRef<HTMLInputElement>(null);
 	const fileInputRef = useRef<HTMLInputElement>(null);
 	const didMount = useRef<boolean>(false);
-	const { monolithStore, configStore } = useRootStore();
+	const runPixel = useSession((state) => state.runPixel);
+	const sessionUpload = useSession((state) => state.upload);
+	const download = useSession((state) => state.download);
 	const [exportLoading, setExportLoading] = useState(false);
 
 	// newly added state
@@ -135,7 +143,7 @@ export const FileTable = (props: FileTableProps) => {
 		},
 	];
 
-	const { id } = props;
+	const { id, readOnly = false } = props;
 
 	/**
 	 * Helper function to format file names for Pixel query syntax.
@@ -286,7 +294,7 @@ export const FileTable = (props: FileTableProps) => {
 		query: string,
 	): Promise<PixelReturnLike> => {
 		try {
-			const response = await monolithStore.runQuery(query);
+			const response = await runPixel(query);
 			return response?.pixelReturn?.[0] ?? {};
 		} catch (queryError: unknown) {
 			const error = queryError as Record<string, unknown>;
@@ -405,13 +413,10 @@ export const FileTable = (props: FileTableProps) => {
 
 		try {
 			// Upload files to the server first
-			const upload = await uploadFile(
-				data.PROJECT_UPLOAD,
-				configStore.store.insightID,
-			);
+			const uploaded = await sessionUpload(data.PROJECT_UPLOAD);
 
 			const pixelReturn = await runEmbeddingQuery(
-				upload.map((file) => file.fileLocation),
+				uploaded.map((file) => file.fileLocation),
 			);
 
 			handleEmbeddingResponse(pixelReturn, "Successfully added document");
@@ -433,7 +438,7 @@ export const FileTable = (props: FileTableProps) => {
 		const { fileName } = file;
 		setIsLoading(true);
 		try {
-			const response = await monolithStore.runQuery(`
+			const response = await runPixel(`
             RemoveDocumentFromVectorDatabase(engine = "${id}", fileNames=["${fileName}"])
             `);
 
@@ -462,7 +467,7 @@ export const FileTable = (props: FileTableProps) => {
 		const fileArray = buildFileArrayString(files);
 
 		try {
-			const response = await monolithStore.runQuery(`
+			const response = await runPixel(`
                 RemoveDocumentFromVectorDatabase(engine = "${id}", fileNames=[${fileArray}])
             `);
 
@@ -493,10 +498,9 @@ export const FileTable = (props: FileTableProps) => {
 		const pixel = `META | VectorFileDownload(engine = "${id}", fileNames=[${fileArray}]);`;
 
 		try {
-			const response = await monolithStore.runQuery(pixel);
+			const response = await runPixel(pixel);
 			const { output } = response.pixelReturn[0];
-			const { insightId } = response;
-			monolithStore.download(insightId, String(output));
+			download(String(output));
 		} finally {
 			setExportLoading(false);
 		}
@@ -571,7 +575,7 @@ export const FileTable = (props: FileTableProps) => {
 								? "Try adjusting your search terms"
 								: "Upload your first document to get started"}
 						</P>
-						{!isFiltered && (
+						{!isFiltered && !readOnly && (
 							<Button
 								onClick={() => setOpen(true)}
 								size="sm"
@@ -776,7 +780,7 @@ export const FileTable = (props: FileTableProps) => {
 								data-testid="file-search"
 							/>
 						</div>
-						{selectedFiles.length > 0 && (
+						{selectedFiles.length > 0 && !readOnly && (
 							<Button
 								variant="outline"
 								size="sm"
@@ -809,6 +813,7 @@ export const FileTable = (props: FileTableProps) => {
 							onClick={() => setOpen(true)}
 							size="sm"
 							data-testid="embed-new-document-btn"
+							className={readOnly ? "hidden" : undefined}
 						>
 							<Plus className="size-4" />
 							<span className="hidden sm:inline">
@@ -936,21 +941,23 @@ export const FileTable = (props: FileTableProps) => {
 															)}
 														</TableCell>
 														<TableCell>
-															<Button
-																variant="ghost"
-																size="icon"
-																onClick={() => {
-																	setDeleteFileModal(
-																		true,
-																	);
-																	setFileToDelete(
-																		file,
-																	);
-																}}
-																data-testid={`delete-file-${file.fileName}`}
-															>
-																<Trash2 className="size-4" />
-															</Button>
+															{!readOnly && (
+																<Button
+																	variant="ghost"
+																	size="icon"
+																	onClick={() => {
+																		setDeleteFileModal(
+																			true,
+																		);
+																		setFileToDelete(
+																			file,
+																		);
+																	}}
+																	data-testid={`delete-file-${file.fileName}`}
+																>
+																	<Trash2 className="size-4" />
+																</Button>
+															)}
 														</TableCell>
 													</TableRow>
 												);
@@ -1106,7 +1113,7 @@ export const FileTable = (props: FileTableProps) => {
 														: ""}{" "}
 													selected
 												</P>
-												<P className="break-words text-center text-muted-foreground text-sm">
+												<P className="wrap-break-word text-center text-muted-foreground text-sm">
 													{field.value
 														.map((f) => f.name)
 														.join(", ")}

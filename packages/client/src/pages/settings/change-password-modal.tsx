@@ -181,7 +181,7 @@ export const ChangePasswordModal = ({ open, onClose }) => {
 	}, [newPassword]);
 
 	const getBarColor = (index: number) => {
-		if (index >= rulesPassed) return "#D9D9D9";
+		if (index >= rulesPassed) return "var(--border)";
 		if (rulesPassed === 5) return "green";
 		if (rulesPassed >= 3) return "orange";
 		return "red";

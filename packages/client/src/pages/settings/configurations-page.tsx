@@ -14,12 +14,13 @@ import {
 	TabsTrigger,
 	toast,
 } from "@semoss/ui/next";
+import { modifyLoginProperties } from "@/api";
 import dropbox from "@/assets/img/DROPBOX.png";
 import github from "@/assets/img/GITHUB.svg";
 import google from "@/assets/img/GOOGLE.svg";
 import ms from "@/assets/img/ms.png";
 import other from "@/assets/img/other.png";
-import { useAPI, useRootStore, useSettings } from "@/hooks";
+import { useAPI, useSettings } from "@/hooks";
 import { useNavigate } from "@/hooks/useNavigate";
 import { formatToDataTestId } from "@/utility";
 
@@ -239,7 +240,7 @@ export const ConfigurationsPage = () => {
 	const fileContentsPage = () => {
 		const defaultTyping = ``;
 		return (
-			<div className="mb-4 flex flex-col rounded-[15px] bg-white p-6 shadow-[0px_5px_22px_0px_rgba(0,0,0,0.06)]">
+			<div className="mb-4 flex flex-col rounded-[15px] border border-border bg-card p-6 text-card-foreground shadow-sm">
 				<div className="mb-2 flex justify-between">
 					<h2 className="font-semibold text-xl">social.properties</h2>
 					<div className="flex justify-center gap-2">
@@ -317,11 +318,9 @@ const SocialProperty = (props) => {
 	const { fieldName, fields, resetLoginProperties, updateSocialProps } =
 		props;
 
-	const { monolithStore } = useRootStore();
-
 	const onSubmit = () => {
 		const values = mapDefaultValues(fields);
-		monolithStore.modifyLoginProperties(fieldName, values).then(() => {
+		modifyLoginProperties(fieldName, values).then(() => {
 			toast.success(`Successfully modified ${fieldName} properties`);
 		});
 	};
@@ -355,7 +354,7 @@ const SocialProperty = (props) => {
 			{fields.map((f, i) => (
 				<div
 					key={`${fieldName}-${f.label}`}
-					className="mb-4 flex flex-col rounded-[15px] bg-white p-6 shadow-[0px_5px_22px_0px_rgba(0,0,0,0.06)]"
+					className="mb-4 flex flex-col rounded-[15px] border border-border bg-card p-6 text-card-foreground shadow-sm"
 				>
 					<div className="flex gap-3">
 						<div className="flex flex-1 flex-col gap-1">

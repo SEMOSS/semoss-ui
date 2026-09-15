@@ -1,8 +1,7 @@
 import { Eye, EyeOff, Loader2 } from "lucide-react";
-import { observer } from "mobx-react-lite";
 import { useEffect, useId, useMemo, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
-import { type Location, Navigate, useLocation } from "react-router-dom";
+import { type Location, Navigate, useLocation } from "react-router";
 import {
 	getLoginProviderInitials,
 	getLoginProviderKey,
@@ -25,10 +24,12 @@ import {
 	TooltipContent,
 	TooltipTrigger,
 	toast,
+	useTheme,
 } from "@semoss/ui/next";
 import { setupResetPassword } from "@/api/auth";
-import loginHero from "@/assets/img/login-hero.jpeg";
-import { useRootStore } from "@/hooks";
+import loginDarkHero from "@/assets/img/login-dark-hero.gif";
+import loginHero from "@/assets/img/login-gif.gif";
+import { useConfig, useSession, useThemeLogo } from "@/hooks";
 
 interface TypeUserLogin {
 	USERNAME: string;
@@ -53,8 +54,33 @@ const LOGIN_PASSWORD_RESET_TYPES = ["native", "ldap", "linotp"] as const;
 type LoginPasswordResetType = (typeof LOGIN_PASSWORD_RESET_TYPES)[number];
 type LoginPasswordResetApiType = "NATIVE" | "LDAP" | "LINOTP";
 
-export const LoginPage = observer(() => {
-	const { configStore } = useRootStore();
+/**
+ * Default labels for the username / password logins. The provider keys stay
+ * as the backend defines them, only what the user reads changes.
+ */
+const LOGIN_TYPE_LABELS: Record<LoginPasswordResetType, string> = {
+	native: "Native",
+	ldap: "Active Directory",
+	linotp: "LinOTP",
+};
+
+export const LoginPage = () => {
+	const theme = useConfig((state) => state.theme);
+	const availableProviders = useConfig(
+		(state) => state.config.availableProviders,
+	);
+	const nativeRegistration = useConfig(
+		(state) => state.config.nativeRegistration,
+	);
+	const status = useSession((state) => state.status);
+	const sessionLogin = useSession((state) => state.login);
+	const sessionLoginLDAP = useSession((state) => state.loginLDAP);
+	const sessionLoginOTP = useSession((state) => state.loginOTP);
+	const sessionConfirmOTP = useSession((state) => state.confirmOTP);
+	const sessionRegister = useSession((state) => state.register);
+	const sessionOauth = useSession((state) => state.oauth);
+	const { resolvedTheme } = useTheme();
+	const themeLogo = useThemeLogo();
 	const location = useLocation();
 	const uid = useId();
 
@@ -77,6 +103,13 @@ export const LoginPage = observer(() => {
 		Record<string, string>
 	>({});
 	const [heroImage, setHeroImage] = useState<string>(loginHero);
+	const customLightHeroImage = theme.loginHeroImage.trim();
+	const customDarkHeroImage = theme.loginHeroImageDark.trim();
+	const includeNameWithLogo = theme.includeNameWithLogo;
+	const isDarkMode = resolvedTheme === "dark";
+	const activeHeroImage = isDarkMode
+		? customDarkHeroImage || customLightHeroImage || loginDarkHero
+		: customLightHeroImage || heroImage;
 
 	const {
 		control,
@@ -133,21 +166,19 @@ export const LoginPage = observer(() => {
 			name: string;
 			isOauth: boolean;
 		}
-	> = configStore.store.config.availableProviders.reduce((acc, val) => {
+	> = availableProviders.reduce((acc, val) => {
 		acc[val.provider] = val;
 		return acc;
 	}, {});
 
-	const hasOAuth = configStore.store.config.availableProviders.some(
-		(val) => val.isOauth,
-	);
+	const hasOAuth = availableProviders.some((val) => val.isOauth);
 
 	const oauthProvidersSignature = useMemo(() => {
-		return configStore.store.config.availableProviders
+		return availableProviders
 			.filter((provider) => provider.isOauth)
 			.map((provider) => provider.provider.trim().toLowerCase())
 			.join("|");
-	}, [configStore.store.config.availableProviders]);
+	}, [availableProviders]);
 
 	const isNative = Object.hasOwn(availableProvidersMap, "native"),
 		isLdap = Object.hasOwn(availableProvidersMap, "ldap"),
@@ -160,6 +191,14 @@ export const LoginPage = observer(() => {
 	const canRequestPasswordReset = LOGIN_PASSWORD_RESET_TYPES.includes(
 		loginType as LoginPasswordResetType,
 	);
+
+	// prefer the display name the backend sends (e.g. ldap_display_name)
+	const getLoginTypeLabel = (type: LoginPasswordResetType) =>
+		availableProvidersMap[type]?.name || LOGIN_TYPE_LABELS[type];
+
+	const loginTypeLabel = loginType
+		? getLoginTypeLabel(loginType as LoginPasswordResetType)
+		: "";
 
 	useEffect(() => {
 		if (isNative) {
@@ -208,6 +247,8 @@ export const LoginPage = observer(() => {
 	}, [oauthProvidersSignature]);
 
 	useEffect(() => {
+		if (isDarkMode || customLightHeroImage) return;
+
 		const timeoutId = window.setTimeout(() => {
 			import("@/assets/img/login-gif.gif")
 				.then((module) => setHeroImage(module.default))
@@ -215,7 +256,7 @@ export const LoginPage = observer(() => {
 		}, 1200);
 
 		return () => window.clearTimeout(timeoutId);
-	}, []);
+	}, [isDarkMode, customLightHeroImage]);
 
 	const login = handleSubmit(async (data: TypeUserLogin): Promise<void> => {
 		setIsLoading(true);
@@ -228,8 +269,7 @@ export const LoginPage = observer(() => {
 
 		if (!showOTPCodeField) {
 			if (loginType === "native") {
-				await configStore
-					.login(data.USERNAME, data.PASSWORD)
+				await sessionLogin(data.USERNAME, data.PASSWORD)
 					.catch((err) => {
 						setError(err.message);
 					})
@@ -238,8 +278,7 @@ export const LoginPage = observer(() => {
 					});
 			}
 			if (loginType === "ldap") {
-				await configStore
-					.loginLDAP(data.USERNAME, data.PASSWORD)
+				await sessionLoginLDAP(data.USERNAME, data.PASSWORD)
 					.catch((err) => {
 						setError(err.message);
 					})
@@ -248,8 +287,7 @@ export const LoginPage = observer(() => {
 					});
 			}
 			if (loginType === "linotp") {
-				await configStore
-					.loginOTP(data.USERNAME, data.PASSWORD)
+				await sessionLoginOTP(data.USERNAME, data.PASSWORD)
 					.then(() => {
 						setShowOTPCodeField(true);
 					})
@@ -262,8 +300,7 @@ export const LoginPage = observer(() => {
 			}
 		}
 		if (showOTPCodeField) {
-			await configStore
-				.confirmOTP(data.OTP_CONFIRM)
+			await sessionConfirmOTP(data.OTP_CONFIRM)
 				.catch((err) => {
 					setError(err.message);
 				})
@@ -299,16 +336,15 @@ export const LoginPage = observer(() => {
 				return;
 			}
 
-			await configStore
-				.register(
-					`${data.FIRST_NAME} ${data.LAST_NAME}`,
-					data.USERNAME,
-					data.EMAIL,
-					data.PASSWORD,
-					data.PHONE,
-					data.EXTENTION,
-					data.COUNTRY_CODE,
-				)
+			await sessionRegister(
+				`${data.FIRST_NAME} ${data.LAST_NAME}`,
+				data.USERNAME,
+				data.EMAIL,
+				data.PASSWORD,
+				data.PHONE,
+				data.EXTENTION,
+				data.COUNTRY_CODE,
+			)
 				.then((res) => {
 					if (res) {
 						setError("");
@@ -332,8 +368,7 @@ export const LoginPage = observer(() => {
 	const oauth = async (provider: string) => {
 		setIsLoading(true);
 
-		await configStore
-			.oauth(provider)
+		await sessionOauth(provider)
 			.then(() => {
 				setIsLoading(false);
 				toast.success("Successfully logged in");
@@ -376,14 +411,14 @@ export const LoginPage = observer(() => {
 
 		if (!canRequestPasswordReset) {
 			setResetPasswordError(
-				"Password reset is only available for Native, LDAP, and LinOTP logins.",
+				"Password reset is only available for Native, Active Directory, and LinOTP logins.",
 			);
 			return;
 		}
 
 		const selectedLoginType =
 			loginType.toUpperCase() as LoginPasswordResetApiType;
-		const subjectPrefix = configStore.theme.name?.trim() || "SEMOSS";
+		const subjectPrefix = theme.name?.trim() || "SEMOSS";
 		const subject = `${subjectPrefix} Reset Password Request`;
 
 		setIsResetPasswordSubmitting(true);
@@ -416,7 +451,7 @@ export const LoginPage = observer(() => {
 
 	const path = (location.state as { from: Location })?.from?.pathname || "/";
 
-	if (configStore.store.status === "SUCCESS") {
+	if (status === "SUCCESS") {
 		return <Navigate to={path} replace />;
 	}
 
@@ -427,6 +462,10 @@ export const LoginPage = observer(() => {
 					.login-grid {
 						grid-template-columns: 1fr clamp(512px, calc(100vw - 512px), 60vw);
 					}
+				}
+
+				.dark .login-grid {
+					background: linear-gradient(48deg, rgba(32, 39, 54, 0.50) 7.37%, rgba(30, 41, 75, 0.49) 39.18%, rgba(120, 133, 213, 0.00) 84.89%);
 				}
 
 				@keyframes loginFeaturePillFadeUp {
@@ -449,30 +488,30 @@ export const LoginPage = observer(() => {
 					}
 				}
 			`}</style>
-			<div className="login-grid relative grid min-h-screen w-full bg-white dark:bg-muted/20">
+			<div className="semoss-login-page login-grid relative grid min-h-screen w-full bg-background">
 				<div className="relative flex min-h-screen w-full flex-col overflow-hidden">
 					<div className="relative z-10 flex w-full flex-1 items-center justify-center overflow-y-auto px-6 pt-4 pb-4 md:px-10 md:pt-8 md:pb-6">
 						<div className="relative w-full max-w-[520px] overflow-hidden rounded-2xl p-6 md:p-8 dark:bg-background/95 dark:shadow-sm">
 							<div className="mb-6">
 								<div className="mb-2 flex flex-row items-center gap-2">
-									{configStore.theme.logo ? (
+									{themeLogo ? (
 										<img
-											src={configStore.theme.logo}
-											alt={
-												configStore.theme.name || "logo"
-											}
+											src={themeLogo}
+											alt={theme.name || "logo"}
 										/>
 									) : null}
-									<span className="font-bold text-xl">
-										{configStore.theme.name}
-									</span>
+									{includeNameWithLogo ? (
+										<span className="font-bold text-xl">
+											{theme.name}
+										</span>
+									) : null}
 								</div>
 								<h4 className="mb-2 min-h-[2.2rem] scroll-m-20 font-semibold text-2xl tracking-tight md:min-h-[2.6rem] md:text-3xl">
 									{register
 										? "Create your account"
 										: "Welcome back"}
 								</h4>
-								<p className="min-h-[1.25rem] text-black text-sm md:text-base dark:text-muted-foreground">
+								<p className="min-h-[1.25rem] text-muted-foreground text-sm md:text-base">
 									{register
 										? "Register to access your workspace."
 										: "Sign in to continue to your workspace."}
@@ -492,66 +531,61 @@ export const LoginPage = observer(() => {
 							)}
 
 							<form>
-								<div className="flex flex-col gap-4 [&_input]:border-[#9ea5af] [&_input]:bg-white [&_input]:shadow-none [&_input]:focus-visible:border-[#0176d3] [&_input]:focus-visible:ring-[#0176d3]/35 dark:[&_input]:border-input dark:[&_input]:bg-background dark:[&_input]:focus-visible:border-primary dark:[&_input]:focus-visible:ring-primary/30 [&_label]:font-medium [&_label]:text-black dark:[&_label]:text-muted-foreground">
+								<div className="flex flex-col gap-4 [&_input]:border-input [&_input]:bg-background [&_input]:text-foreground [&_input]:shadow-none [&_input]:focus-visible:border-primary [&_input]:focus-visible:ring-primary/30 [&_label]:font-medium [&_label]:text-foreground">
 									{!register && hasOAuth && (
 										<>
-											{configStore.store.config.availableProviders.map(
-												(p) => {
-													if (!p.isOauth) return null;
+											{availableProviders.map((p) => {
+												if (!p.isOauth) return null;
 
-													const providerKey =
-														getLoginProviderKey(
-															p.provider,
-														);
-													const providerLogo =
-														oauthProviderLogos[
-															providerKey
-														];
-													const providerInitials =
-														getLoginProviderInitials(
-															p.name ||
-																p.provider,
-														);
-
-													return (
-														<Button
-															key={p.provider}
-															type="button"
-															variant="outline"
-															className="w-full gap-2"
-															onClick={() =>
-																oauth(
-																	p.provider,
-																)
-															}
-														>
-															{providerLogo ? (
-																<img
-																	src={
-																		providerLogo
-																	}
-																	alt=""
-																	aria-hidden="true"
-																	className="h-4 w-4 shrink-0 object-contain"
-																	loading="lazy"
-																	decoding="async"
-																/>
-															) : (
-																<span className="inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-sm border border-border/70 bg-muted/60 font-semibold text-[9px] text-muted-foreground">
-																	{
-																		providerInitials
-																	}
-																</span>
-															)}
-															{p.name}
-														</Button>
+												const providerKey =
+													getLoginProviderKey(
+														p.provider,
 													);
-												},
-											)}
+												const providerLogo =
+													oauthProviderLogos[
+														providerKey
+													];
+												const providerInitials =
+													getLoginProviderInitials(
+														p.name || p.provider,
+													);
+
+												return (
+													<Button
+														key={p.provider}
+														type="button"
+														variant="outline"
+														className="w-full gap-2"
+														onClick={() =>
+															oauth(p.provider)
+														}
+													>
+														{providerLogo ? (
+															<img
+																src={
+																	providerLogo
+																}
+																alt=""
+																aria-hidden="true"
+																className="h-4 w-4 shrink-0 object-contain"
+																loading="lazy"
+																decoding="async"
+															/>
+														) : (
+															<span className="inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-sm border border-border/70 bg-muted/60 font-semibold text-[9px] text-muted-foreground">
+																{
+																	providerInitials
+																}
+															</span>
+														)}
+														{p.name}
+													</Button>
+												);
+											})}
 											{hasUsernamePassword && (
 												<div className="flex items-center gap-4 py-1">
 													<Separator className="flex-1" />
-													<span className="font-medium text-black text-sm dark:text-muted-foreground">
+													<span className="font-medium text-muted-foreground text-sm">
 														or
 													</span>
 													<Separator className="flex-1" />
@@ -588,7 +622,9 @@ export const LoginPage = observer(() => {
 																)}
 																data-testid="loginPage-button-native"
 															>
-																Native
+																{getLoginTypeLabel(
+																	"native",
+																)}
 															</button>
 														)}
 														{isLdap && (
@@ -614,7 +650,9 @@ export const LoginPage = observer(() => {
 																)}
 																data-testid="loginPage-button-ldap"
 															>
-																LDAP
+																{getLoginTypeLabel(
+																	"ldap",
+																)}
 															</button>
 														)}
 														{isLinOTP && (
@@ -640,7 +678,9 @@ export const LoginPage = observer(() => {
 																)}
 																data-testid="loginPage-button-linotp"
 															>
-																LinOTP
+																{getLoginTypeLabel(
+																	"linotp",
+																)}
 															</button>
 														)}
 													</div>
@@ -1386,8 +1426,7 @@ export const LoginPage = observer(() => {
 															"Login"
 														)}
 													</Button>
-													{configStore.store.config
-														.nativeRegistration && (
+													{nativeRegistration && (
 														<div className="flex items-center justify-center gap-1 text-sm">
 															Don&apos;t have an
 															account?{" "}
@@ -1435,7 +1474,7 @@ export const LoginPage = observer(() => {
 				</div>
 				<aside className="relative hidden overflow-hidden lg:block">
 					<img
-						src={heroImage}
+						src={activeHeroImage}
 						alt=""
 						className="absolute inset-0 h-full w-full object-cover"
 						loading="lazy"
@@ -1466,7 +1505,7 @@ export const LoginPage = observer(() => {
 					<div className="flex flex-col gap-3">
 						<p className="text-muted-foreground text-sm">
 							Enter the email associated with your{" "}
-							{loginType.toUpperCase()} login.
+							{loginTypeLabel} login.
 						</p>
 						<div className="flex flex-col gap-1.5">
 							<Label htmlFor={`${uid}-forgot-password-email`}>
@@ -1521,4 +1560,4 @@ export const LoginPage = observer(() => {
 			</Dialog>
 		</>
 	);
-});
+};

@@ -5,7 +5,6 @@ import {
 	ShieldCheck,
 	Trash2,
 } from "lucide-react";
-import { observer } from "mobx-react-lite";
 import { Fragment, useEffect, useMemo, useState } from "react";
 import {
 	matchPath,
@@ -13,7 +12,7 @@ import {
 	Link as RouterLink,
 	useLocation,
 	useParams,
-} from "react-router-dom";
+} from "react-router";
 import { usePixel } from "@semoss/sdk/react";
 import {
 	AppCatalogAvatar,
@@ -42,7 +41,7 @@ import { deleteTeam, getGroupDetails } from "@/api";
 import { PrivacyPreferenceCenterModal } from "@/components/cookies/privacy-preference-center-modal";
 import { AddTeamModal, TeamDeleteDialog } from "@/components/teams";
 import { SettingsContext } from "@/contexts";
-import { useAPI, useRootStore } from "@/hooks";
+import { useAPI, useConfig, useSession } from "@/hooks";
 import { useNavigate } from "@/hooks/useNavigate";
 import { NavbarHeader, NavbarLeft } from "../../components/shared";
 import { SETTINGS_ROUTES } from "./settings.constants";
@@ -59,8 +58,9 @@ const ENGINE_CATALOG_SETTINGS_PATHS = new Set([
 	"vector",
 ]);
 
-export const SettingsLayout = observer(() => {
-	const { configStore } = useRootStore();
+export const SettingsLayout = () => {
+	const themeConfig = useConfig((state) => state.theme);
+	const isAdmin = useSession((state) => state.user.admin);
 	const { id, type } = useParams();
 	const { pathname, search } = useLocation();
 	const navigate = useNavigate();
@@ -79,13 +79,13 @@ export const SettingsLayout = observer(() => {
 
 	// if the user is not an admin turn it off
 	useEffect(() => {
-		if (!configStore.store.user.admin) {
+		if (!isAdmin) {
 			setAdminMode(false);
 			if (typeof window !== "undefined") {
 				window.localStorage.removeItem(ADMIN_MODE_STORAGE_KEY);
 			}
 		}
-	}, [configStore.store.user.admin]);
+	}, [isAdmin]);
 
 	const matchedRoute = useMemo(() => {
 		for (const r of SETTINGS_ROUTES) {
@@ -107,7 +107,7 @@ export const SettingsLayout = observer(() => {
 	}, [matchedRoute, search]);
 
 	const hasPrivacyCenterThemeContent = useMemo(() => {
-		const theme = configStore.theme as Record<string, unknown>;
+		const theme = themeConfig as Record<string, unknown>;
 		const order = Array.isArray(theme.cookiePolicyOrderReact)
 			? theme.cookiePolicyOrderReact
 			: [];
@@ -125,7 +125,7 @@ export const SettingsLayout = observer(() => {
 			(order.length > 0 && Object.keys(policies).length > 0) ||
 			body.length > 0
 		);
-	}, [configStore.theme]);
+	}, [themeConfig]);
 	const showPrivacyCenter =
 		isSettingsIndexRoute && hasPrivacyCenterThemeContent;
 
@@ -199,11 +199,7 @@ export const SettingsLayout = observer(() => {
 
 	const hasCatalogAccess = useMemo(() => {
 		if (engineDetailType && id) {
-			const permission = (
-				userEnginePermissionApi.data as
-					| { permission?: string }
-					| undefined
-			)?.permission;
+			const permission = userEnginePermissionApi.data;
 			return userEnginePermissionApi.status === "SUCCESS" && !!permission;
 		}
 		if (isAppDetail && id) {
@@ -245,6 +241,9 @@ export const SettingsLayout = observer(() => {
 			if (projectType === "SKILL") {
 				return `/skill/${id}/edit`;
 			}
+			if (projectType === "NOTEBOOK") {
+				return `/notebook/${id}/edit`;
+			}
 			return `/app/${id}`;
 		}
 		return null;
@@ -278,10 +277,10 @@ export const SettingsLayout = observer(() => {
 
 	// force admin mode on admin-only routes for admins (prevents redirect on refresh)
 	useEffect(() => {
-		if (configStore.store.user.admin && matchedRoute?.admin && !adminMode) {
+		if (isAdmin && matchedRoute?.admin && !adminMode) {
 			setAdminMode(true);
 		}
-	}, [configStore.store.user.admin, matchedRoute?.admin, adminMode]);
+	}, [isAdmin, matchedRoute?.admin, adminMode]);
 
 	useEffect(() => {
 		if (!showPrivacyCenter && privacyCenterOpen) {
@@ -291,7 +290,7 @@ export const SettingsLayout = observer(() => {
 
 	// persist admin mode for admins
 	useEffect(() => {
-		if (!configStore.store.user.admin) {
+		if (!isAdmin) {
 			return;
 		}
 		if (typeof window !== "undefined") {
@@ -300,7 +299,7 @@ export const SettingsLayout = observer(() => {
 				String(adminMode),
 			);
 		}
-	}, [adminMode, configStore.store.user.admin]);
+	}, [adminMode, isAdmin]);
 
 	useEffect(() => {
 		let isMounted = true;
@@ -373,7 +372,7 @@ export const SettingsLayout = observer(() => {
 	return (
 		<>
 			<NavbarLeft>
-				<NavbarHeader />
+				<NavbarHeader logo={matchedRoute.path ? null : undefined} />
 			</NavbarLeft>
 			<SettingsContext.Provider
 				value={{
@@ -386,7 +385,7 @@ export const SettingsLayout = observer(() => {
 				<div className="flex flex-col gap-2">
 					<div className="flex flex-col gap-2">
 						{matchedRoute.path && (
-							<div className="flex justify-between">
+							<NavbarLeft>
 								<Breadcrumb>
 									<BreadcrumbList>
 										<BreadcrumbItem>
@@ -459,7 +458,7 @@ export const SettingsLayout = observer(() => {
 										})}
 									</BreadcrumbList>
 								</Breadcrumb>
-							</div>
+							</NavbarLeft>
 						)}
 						<div className="z-1">
 							{(() => {
@@ -493,7 +492,7 @@ export const SettingsLayout = observer(() => {
 												</RouterLink>
 											</Button>
 										)}
-										{configStore.store.user.admin && (
+										{isAdmin && (
 											<Button
 												variant="outline"
 												size="sm"
@@ -703,4 +702,4 @@ export const SettingsLayout = observer(() => {
 			</SettingsContext.Provider>
 		</>
 	);
-});
+};
