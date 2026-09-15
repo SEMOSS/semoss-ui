@@ -42,7 +42,11 @@ export const EngineSettingsPage = () => {
 						/>
 						<MembersTable type={type} id={engine.engine_id} />
 						<div className="mt-6">
-							<TeamsTable type="ENGINE" id={engine.engine_id} />
+							<TeamsTable
+								type="ENGINE"
+								id={engine.engine_id}
+								engineType={type}
+							/>
 						</div>
 					</div>
 				</section>

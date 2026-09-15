@@ -35,7 +35,9 @@
 		"weekly": "Hebdomadaire",
 		"monthly": "Mensuelle",
 		"yearly": "Annuelle",
-		"allTime": "Depuis toujours"
+		"allTime": "Depuis toujours",
+		"credit": "Credit",
+		"maxCredits": "Max Credits"
 	},
 	"footer": {
 		"add": "Ajouter",

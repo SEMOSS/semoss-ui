@@ -34,7 +34,9 @@
 		"weekly": "Wekelijks",
 		"monthly": "Maandelijks",
 		"yearly": "Jaarlijks",
-		"allTime": "Altijd"
+		"allTime": "Altijd",
+		"credit": "Credit",
+		"maxCredits": "Max Credits"
 	},
 	"footer": {
 		"add": "Toevoegen",

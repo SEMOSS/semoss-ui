@@ -34,7 +34,9 @@
 		"weekly": "साप्ताहिक",
 		"monthly": "मासिक",
 		"yearly": "वार्षिक",
-		"allTime": "सभी समय"
+		"allTime": "सभी समय",
+		"credit": "Credit",
+		"maxCredits": "Max Credits"
 	},
 	"footer": {
 		"add": "जोड़ें",
