@@ -9,7 +9,7 @@ import {
 	ContextMenuSubTrigger,
 } from "@semoss/ui/next";
 import { useWorkbench, useWorkbenchStoreApi } from "../../hooks";
-import { findTabsetOf, workbenchPanelProps } from "../../stores";
+import { findTabsetOf, workbenchPanel } from "../../stores";
 import type {
 	WorkbenchPanelId,
 	WorkbenchPanelMenuItem,
@@ -62,7 +62,7 @@ export const WorkbenchPanelMenuContent: FC<{ pid: WorkbenchPanelId }> = ({
 		try {
 			contributed = (
 				make(
-					workbenchPanelProps(store.getState().layout, pid),
+					workbenchPanel(store.getState().layout, pid),
 					store.getState,
 				) ?? []
 			).filter((item) => !item.disabled);

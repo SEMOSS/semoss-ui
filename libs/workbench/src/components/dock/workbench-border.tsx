@@ -204,15 +204,9 @@ export const WorkbenchBorder: FC<WorkbenchBorderProps> = ({ side, slots }) => {
 						)}
 					>
 						<div className="flex min-w-0 flex-1 items-center gap-1.5 text-muted-foreground text-xs">
-							<WorkbenchPanelHeaderContent
-								pid={openPid}
-								location="header"
-							/>
+							<WorkbenchPanelHeaderContent pid={openPid} />
 						</div>
-						<WorkbenchPanelControls
-							pid={openPid}
-							location="header"
-						/>
+						<WorkbenchPanelControls pid={openPid} />
 					</div>
 				</WorkbenchPanelContextMenu>
 			)}

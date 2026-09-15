@@ -16,7 +16,7 @@ import type {
 	WorkbenchPanelConfig,
 	WorkbenchPanelProps,
 } from "@semoss/workbench";
-import { useWorkbenchControl } from "@semoss/workbench";
+import { useWorkbenchControl, useWorkbenchPanel } from "@semoss/workbench";
 import { useFileBuffer } from "../../hooks/use-file-buffer";
 import { type FilePanelParams, useFilePanel } from "../../hooks/use-file-panel";
 import { matchesFilePanel } from "../../types/file-panel.types";
@@ -44,12 +44,12 @@ const NOTEBOOK_VIEW_MODES = [
 ];
 
 /** Edit and run a Jupyter notebook, with a raw JSON escape hatch. */
-const FileNotebookEditorPanel = ({
-	config,
-	id,
-	rename,
-	setValue,
-}: WorkbenchPanelProps<FilePanelParams, FileEditorControlValue>) => {
+const FileNotebookEditorPanel = ({ id }: WorkbenchPanelProps) => {
+	const { config, rename, setValue } = useWorkbenchPanel<
+		FilePanelParams,
+		FileEditorControlValue
+	>(id);
+
 	const notebookRef = useRef<NotebookHandle | null>(null);
 	const [reloadToken, setReloadToken] = useState(0);
 	const [viewMode, setViewMode] = useState<"notebook" | "raw">("notebook");

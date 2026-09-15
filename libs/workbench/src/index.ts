@@ -35,6 +35,8 @@ export {
 export { useWorkbench } from "./hooks/use-workbench";
 export { useWorkbenchCommands } from "./hooks/use-workbench-commands";
 export { useWorkbenchControl } from "./hooks/use-workbench-control";
+/* Everything a panel renderer knows about itself — it is handed only an id */
+export { useWorkbenchPanel } from "./hooks/use-workbench-panel";
 export { useWorkbenchStoreApi } from "./hooks/use-workbench-store-api";
 export {
 	createWorkbenchStore,
@@ -50,13 +52,13 @@ export {
  * and add a name here only when that is unusable.
  */
 export type {
-	WorkbenchChrome,
-	WorkbenchChromeProps,
 	WorkbenchCommand,
 	WorkbenchComponent,
 	WorkbenchLayout,
+	WorkbenchPanel,
 	WorkbenchPanelConfig,
 	WorkbenchPanelConfigAny,
+	WorkbenchPanelIconProps,
 	WorkbenchPanelId,
 	WorkbenchPanelParams,
 	WorkbenchPanelProps,

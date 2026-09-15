@@ -2,7 +2,7 @@ import { type FC, Suspense, useEffect } from "react";
 import { Skeleton } from "@semoss/ui/next";
 import type {
 	WorkbenchPanelConfigAny,
-	WorkbenchPanelProps,
+	WorkbenchPanelId,
 	WorkbenchPanelRecord,
 } from "../../types";
 import { WorkbenchPanelError } from "./workbench-panel-error";
@@ -32,8 +32,8 @@ export interface WorkbenchPanelBodyProps {
 	record: WorkbenchPanelRecord | undefined;
 	/** The instance's blueprint, absent for unregistered types. */
 	component: WorkbenchPanelConfigAny | undefined;
-	/** The props handed to the blueprint's content. */
-	panel: WorkbenchPanelProps;
+	/** The instance the body is drawn for — all the content is handed. */
+	pid: WorkbenchPanelId;
 	/** Reported once the body has resolved and rendered. */
 	onReady: () => void;
 	/** Reported when the body throws. */
@@ -44,7 +44,7 @@ export interface WorkbenchPanelBodyProps {
 export const WorkbenchPanelBody: FC<WorkbenchPanelBodyProps> = ({
 	record,
 	component,
-	panel,
+	pid,
 	onReady,
 	onError,
 }) => {
@@ -71,7 +71,7 @@ export const WorkbenchPanelBody: FC<WorkbenchPanelBodyProps> = ({
 	return (
 		<WorkbenchPanelErrorBoundary onError={onError}>
 			<Suspense fallback={<WorkbenchPanelSkeleton />}>
-				<Content {...panel} />
+				<Content id={pid} />
 				<WorkbenchReadyPing onReady={onReady} />
 			</Suspense>
 		</WorkbenchPanelErrorBoundary>

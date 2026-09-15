@@ -6,8 +6,8 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@semoss/ui/next";
-import type { WorkbenchChromeProps } from "@semoss/workbench";
-import { WORKBENCH_STYLES } from "@semoss/workbench";
+import type { WorkbenchPanelProps } from "@semoss/workbench";
+import { useWorkbenchPanel, WORKBENCH_STYLES } from "@semoss/workbench";
 import type { FileDownloadParams } from "./file-download-panel";
 
 export type FileDownloadViewMode = "download" | "raw";
@@ -18,9 +18,12 @@ export interface FileDownloadControlValue {
 }
 
 /** Switch a download-only file between download and raw views. */
-export const FileDownloadControl: FC<
-	WorkbenchChromeProps<FileDownloadParams, FileDownloadControlValue>
-> = ({ value }) => {
+export const FileDownloadControl: FC<WorkbenchPanelProps> = ({ id }) => {
+	const { value } = useWorkbenchPanel<
+		FileDownloadParams,
+		FileDownloadControlValue
+	>(id);
+
 	if (!value) return null;
 
 	return (

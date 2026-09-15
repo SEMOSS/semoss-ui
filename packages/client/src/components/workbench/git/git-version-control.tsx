@@ -3,8 +3,8 @@ import { useState } from "react";
 import { useAccess } from "@semoss/panels";
 import { useInsight, usePixel } from "@semoss/sdk/react";
 import { Button, Spinner } from "@semoss/ui/next";
-import type { WorkbenchChromeProps } from "@semoss/workbench";
-import { WORKBENCH_STYLES } from "@semoss/workbench";
+import type { WorkbenchPanelProps } from "@semoss/workbench";
+import { useWorkbenchPanel, WORKBENCH_STYLES } from "@semoss/workbench";
 import type { GitBranches, GitStatus } from "@/components/git";
 import { GitBranchControl } from "@/components/git";
 import type { GitPanelScopeParams } from "./git-panel.types";
@@ -12,9 +12,11 @@ import type { GitPanelScopeParams } from "./git-panel.types";
 export type GitVersionParams = GitPanelScopeParams;
 
 /** Select, create, and refresh branches for a configured Git resource. */
-export const GitVersionControl: FC<
-	WorkbenchChromeProps<GitVersionParams, number>
-> = ({ config, setValue }) => {
+export const GitVersionControl: FC<WorkbenchPanelProps> = ({ id }) => {
+	const { config, setValue } = useWorkbenchPanel<GitVersionParams, number>(
+		id,
+	);
+
 	const insight = useInsight();
 	const access = useAccess(config.type, config.id);
 	const [isBranchesOpen, setIsBranchesOpen] = useState(false);

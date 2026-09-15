@@ -2,15 +2,14 @@ import type { FC } from "react";
 import { cn } from "@semoss/ui/next";
 import { WORKBENCH_STYLES } from "../../constants/workbench.constants";
 import { useWorkbench, useWorkbenchPanel } from "../../hooks";
-import type { WorkbenchHeaderLocation, WorkbenchPanelId } from "../../types";
+import type { WorkbenchPanelId } from "../../types";
 
 /** The panel's glyph, at whatever size the caller has room for. */
 const WorkbenchPanelIcon: FC<{
 	pid: WorkbenchPanelId;
-	location: WorkbenchHeaderLocation;
 	className: string;
-}> = ({ pid, location, className }) => {
-	const chrome = useWorkbenchPanel(pid, location);
+}> = ({ pid, className }) => {
+	const status = useWorkbenchPanel(pid).status;
 	const Icon = useWorkbench((s) => {
 		const type = s.layout.panels[pid]?.type;
 		return type ? s.layout.components[type]?.icon : undefined;
@@ -24,39 +23,34 @@ const WorkbenchPanelIcon: FC<{
 				aria-hidden
 				className={cn(
 					"flex-none rounded-sm border border-border",
-					chrome.status === "pending" && "animate-pulse",
+					status === "pending" && "animate-pulse",
 					className,
 				)}
 			/>
 		);
 	}
-	return <Icon {...chrome} className={cn("flex-none", className)} />;
+	return <Icon id={pid} className={cn("flex-none", className)} />;
 };
 
 /**
  * The tab or rail label. A blueprint that supplies no header gets its icon and
- * its name, which is what almost every panel wants. `location` reaches the
- * blueprint's own header too, so a panel can draw itself differently on a
- * vertical rail than in a tab.
+ * its name, which is what almost every panel wants.
  */
 export const WorkbenchPanelHeaderContent: FC<{
 	pid: WorkbenchPanelId;
-	location: WorkbenchHeaderLocation;
-}> = ({ pid, location }) => {
-	const chrome = useWorkbenchPanel(pid, location);
+}> = ({ pid }) => {
 	const name = useWorkbench((s) => s.layout.panels[pid]?.name);
 	const Header = useWorkbench((s) => {
 		const type = s.layout.panels[pid]?.type;
 		return type ? s.layout.components[type]?.header : undefined;
 	});
 	if (Header) {
-		return <Header {...chrome} />;
+		return <Header id={pid} />;
 	}
 	return (
 		<>
 			<WorkbenchPanelIcon
 				pid={pid}
-				location={location}
 				className={WORKBENCH_STYLES.chromeIcon}
 			/>
 			<span className="min-w-0 truncate whitespace-nowrap">{name}</span>
@@ -70,12 +64,9 @@ export const WorkbenchPanelHeaderContent: FC<{
  */
 export const WorkbenchPanelControls: FC<{
 	pid: WorkbenchPanelId | null | undefined;
-	location: WorkbenchHeaderLocation;
-}> = ({ pid, location }) => {
-	const safePid = pid ?? "";
-	const chrome = useWorkbenchPanel(safePid, location);
+}> = ({ pid }) => {
 	const control = useWorkbench((s) =>
-		safePid ? s.control.controls[safePid] : undefined,
+		pid ? s.control.controls[pid] : undefined,
 	);
 	if (!pid || !control) {
 		return null;
@@ -88,7 +79,7 @@ export const WorkbenchPanelControls: FC<{
 			onPointerDown={(e) => e.stopPropagation()}
 			className="flex flex-none items-center gap-1"
 		>
-			<Content {...chrome} />
+			<Content id={pid} />
 		</div>
 	);
 };

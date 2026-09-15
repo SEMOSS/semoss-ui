@@ -4,7 +4,7 @@ import type {
 	WorkbenchPanelConfig,
 	WorkbenchPanelProps,
 } from "@semoss/workbench";
-import { useWorkbenchControl } from "@semoss/workbench";
+import { useWorkbenchControl, useWorkbenchPanel } from "@semoss/workbench";
 import { useFileBuffer } from "../../hooks/use-file-buffer";
 import { type FilePanelParams, useFilePanel } from "../../hooks/use-file-panel";
 import { matchesFilePanel } from "../../types/file-panel.types";
@@ -19,12 +19,12 @@ import {
 import { FilePanelIcon } from "../file-panel-icon";
 
 /** Edit a file in a project, engine, or insight resource. */
-const FileCodeEditorPanel = ({
-	config,
-	id,
-	rename,
-	setValue,
-}: WorkbenchPanelProps<FilePanelParams, FileEditorControlValue>) => {
+const FileCodeEditorPanel = ({ id }: WorkbenchPanelProps) => {
+	const { config, rename, setValue } = useWorkbenchPanel<
+		FilePanelParams,
+		FileEditorControlValue
+	>(id);
+
 	const panel = useFilePanel(config);
 	const buffer = useFileBuffer({
 		panel,

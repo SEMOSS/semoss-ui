@@ -10,13 +10,17 @@ import {
 	useFileExplorer,
 } from "@semoss/shared";
 import type {
-	WorkbenchChromeProps,
 	WorkbenchPanelConfig,
+	WorkbenchPanelIconProps,
 	WorkbenchPanelId,
 	WorkbenchPanelParams,
 	WorkbenchPanelProps,
 } from "@semoss/workbench";
-import { useWorkbench, useWorkbenchControl } from "@semoss/workbench";
+import {
+	useWorkbench,
+	useWorkbenchControl,
+	useWorkbenchPanel,
+} from "@semoss/workbench";
 import type { FileMode, SelectedFile } from "../../types";
 import { modeKey } from "../../utility/file-mode";
 import type { FileEditorTabConfig } from "../terminal-file/terminal-file";
@@ -82,15 +86,12 @@ const AdoptingInsight = ({
 };
 
 /** The Files pane: scope picker over the explorer, on the active insight. */
-const TerminalFileExplorerPanel = ({
-	id,
-	setValue,
-}: WorkbenchPanelProps<WorkbenchPanelParams, FileExplorerApi>) => {
+const TerminalFileExplorerPanel = ({ id }: WorkbenchPanelProps) => {
 	const terminal = useTerminal();
 
 	return (
 		<AdoptingInsight insightId={terminal.activeInsightId}>
-			<TerminalFileExplorerPane id={id} setValue={setValue} />
+			<TerminalFileExplorerPane id={id} />
 		</AdoptingInsight>
 	);
 };
@@ -103,13 +104,7 @@ const TerminalFileExplorerPanel = ({
  * explorers render. All this adds is the scope picker above it, and the file
  * mode, which the terminal takes from its own context rather than panel config.
  */
-const TerminalFileExplorerPane = ({
-	id,
-	setValue,
-}: {
-	id: WorkbenchPanelId;
-	setValue: (value: FileExplorerApi) => void;
-}) => {
+const TerminalFileExplorerPane = ({ id }: { id: WorkbenchPanelId }) => {
 	const terminal = useTerminal();
 	const explorer = useFileExplorer({
 		mode: terminal.fileMode,
@@ -135,11 +130,7 @@ const TerminalFileExplorerPane = ({
 		<div className="flex h-full flex-col bg-background">
 			<ScopePicker />
 			<div className="relative min-h-0 flex-1">
-				<FileExplorerPane
-					id={id}
-					explorer={explorer}
-					setValue={setValue}
-				/>
+				<FileExplorerPane id={id} explorer={explorer} />
 			</div>
 		</div>
 	);
@@ -158,12 +149,10 @@ export const TERMINAL_FILE_EXPLORER_PANEL: WorkbenchPanelConfig<
 	content: TerminalFileExplorerPanel,
 };
 
-const TerminalFileEditorPanel = ({
-	id,
-	config,
-	rename,
-	setConfig,
-}: WorkbenchPanelProps<FileEditorTabConfig>) => {
+const TerminalFileEditorPanel = ({ id }: WorkbenchPanelProps) => {
+	const { config, rename, setConfig } =
+		useWorkbenchPanel<FileEditorTabConfig>(id);
+
 	// An editor stays bound to the insight its file was opened against, so it
 	// keeps reading and saving the right workspace after the user switches
 	// terminals. APP/USER/ENGINE files are insight-independent and fall back to
@@ -188,6 +177,13 @@ const TerminalFileEditorPanel = ({
 	);
 };
 
+/** A file tab's glyph: the icon for the file type it is editing. */
+const TerminalFileEditorIcon = ({ id, className }: WorkbenchPanelIconProps) => {
+	const { config } = useWorkbenchPanel<FileEditorTabConfig>(id);
+	const Icon = getFileIconComponent(config.baseName ?? "");
+	return <Icon className={className} />;
+};
+
 /** One open file. Dedupes on (scope, path), the way the tab ids used to. */
 export const TERMINAL_FILE_EDITOR_PANEL: WorkbenchPanelConfig<FileEditorTabConfig> =
 	{
@@ -199,10 +195,7 @@ export const TERMINAL_FILE_EDITOR_PANEL: WorkbenchPanelConfig<FileEditorTabConfi
 			Boolean(b.mode) &&
 			modeKey(a.mode as FileMode) === modeKey(b.mode as FileMode) &&
 			a.path === b.path,
-		icon: ({ config, className }) => {
-			const Icon = getFileIconComponent(config.baseName ?? "");
-			return <Icon className={className} />;
-		},
+		icon: TerminalFileEditorIcon,
 		content: TerminalFileEditorPanel,
 	};
 
@@ -225,10 +218,9 @@ export interface TerminalReplParams {
  * stack the panel is in, so splitting terminals side by side still gives each
  * strip its own "+".
  */
-const TerminalReplControl = ({
-	id,
-	config,
-}: WorkbenchChromeProps<TerminalReplParams>) => {
+const TerminalReplControl = ({ id }: WorkbenchPanelProps) => {
+	const { config } = useWorkbenchPanel<TerminalReplParams>(id);
+
 	const { t } = useTranslation("chrome");
 	const actions = useWorkbench((state) => state.layout.actions);
 	// the strip this terminal sits in, so a split pair each get their own "+"
@@ -280,7 +272,7 @@ const TerminalReplControl = ({
 	);
 };
 
-const TerminalReplPanel = ({ id }: WorkbenchPanelProps<TerminalReplParams>) => {
+const TerminalReplPanel = ({ id }: WorkbenchPanelProps) => {
 	useWorkbenchControl(id, TerminalReplControl);
 
 	// Each terminal gets its own insight, so sessions stay independent

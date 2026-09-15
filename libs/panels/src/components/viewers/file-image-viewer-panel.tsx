@@ -3,7 +3,7 @@ import type {
 	WorkbenchPanelConfig,
 	WorkbenchPanelProps,
 } from "@semoss/workbench";
-import { useWorkbenchControl } from "@semoss/workbench";
+import { useWorkbenchControl, useWorkbenchPanel } from "@semoss/workbench";
 import {
 	type FilePanelParams,
 	type FilePanelValue,
@@ -15,11 +15,12 @@ import { FileRefreshControl } from "../file-panel-control";
 import { FilePanelIcon } from "../file-panel-icon";
 
 /** Preview an image file from a project, engine, or insight resource. */
-const FileImageViewerPanel = ({
-	config,
-	id,
-	setValue,
-}: WorkbenchPanelProps<FilePanelParams, FilePanelValue>) => {
+const FileImageViewerPanel = ({ id }: WorkbenchPanelProps) => {
+	const { config, setValue } = useWorkbenchPanel<
+		FilePanelParams,
+		FilePanelValue
+	>(id);
+
 	const panel = useFilePanel(config, { base64: true });
 
 	useEffect(() => {

@@ -1,32 +1,40 @@
 import { useMemo } from "react";
-import { useWorkbench } from "../hooks/use-workbench";
-import { workbenchPanelMethods } from "../stores";
+import { buildWorkbenchPanel, workbenchPanelMethods } from "../stores";
 import type {
-	WorkbenchChromeProps,
-	WorkbenchHeaderLocation,
+	WorkbenchPanel,
 	WorkbenchPanelId,
-	WorkbenchPanelProps,
+	WorkbenchPanelParams,
 } from "../types";
+import { useWorkbench } from "./use-workbench";
 
 /**
- * The flat props for one panel instance: the stable per-pid methods merged with
- * narrowly-subscribed data, so the object's identity changes only when the
- * panel's own inputs do. Pass a `location` to also get the two fields chrome
- * renderers need (`location`, `status`).
+ * Everything about one panel instance: its record, its live state, and the
+ * methods bound to its id. Every panel renderer is handed only an id and calls
+ * this — a body, a header, an icon, a control all read the same object.
  *
- * The fields are read through individual selectors rather than off the whole
- * layout on purpose — memoizing on `s.layout` would rebuild these props on
- * every unrelated commit, and a churning identity remounts panel bodies.
+ * Name the panel's own types at the call site to get them back typed:
+ * `useWorkbenchPanel<MyConfig, MyValue>(id)`. `P` and `V` describe what the
+ * panel is opened with and what it publishes for its chrome; the store holds
+ * both erased, so this is where they are declared and it is on the caller to
+ * declare them the same way its blueprint does.
+ *
+ * **What is identity-stable.** The fields are read through individual selectors
+ * rather than off the whole layout on purpose — memoizing on `s.layout` would
+ * rebuild this on every unrelated commit, and a churning identity remounts
+ * panel bodies. Within that:
+ *
+ * - the methods (`setValue`, `rename`, `close`, …) are built once per `pid`,
+ *   because the store's actions are created once, so they are safe effect
+ *   dependencies and stay put across every write;
+ * - `config` and `value` are the store's own objects, so they change identity
+ *   only when something actually writes them;
+ * - the returned object itself changes when any of its fields do, which is
+ *   what makes a renderer re-render. Destructure it; don't put the whole
+ *   object in a dependency array.
  */
-export function useWorkbenchPanel(pid: WorkbenchPanelId): WorkbenchPanelProps;
-export function useWorkbenchPanel(
+export function useWorkbenchPanel<P = WorkbenchPanelParams, V = unknown>(
 	pid: WorkbenchPanelId,
-	location: WorkbenchHeaderLocation,
-): WorkbenchChromeProps;
-export function useWorkbenchPanel(
-	pid: WorkbenchPanelId,
-	location?: WorkbenchHeaderLocation,
-): WorkbenchPanelProps | WorkbenchChromeProps {
+): WorkbenchPanel<P, V> {
 	const actions = useWorkbench((s) => s.layout.actions);
 	const record = useWorkbench((s) => s.layout.panels[pid]);
 	const value = useWorkbench((s) => s.layout.values[pid]);
@@ -39,24 +47,23 @@ export function useWorkbenchPanel(
 			"pending",
 	);
 
-	// Kept out of the props memo below: methods only close over `actions`/`pid`,
-	// so this identity survives a `value` write and stays stable for the panel's life.
+	// Kept out of the memo below: these close over `actions`/`pid` only, so
+	// this identity survives a `value` write and stays stable for the panel's life.
 	const methods = useMemo(
 		() => workbenchPanelMethods(actions, pid),
 		[actions, pid],
 	);
 
 	return useMemo(
-		() => ({
-			...methods,
-			id: pid,
-			type: record?.type ?? "",
-			name: record?.name,
-			config: record?.config ?? {},
-			value,
-			isVisible,
-			...(location ? { location, status } : {}),
-		}),
-		[methods, pid, record, value, isVisible, location, status],
+		() =>
+			buildWorkbenchPanel(
+				pid,
+				record,
+				value,
+				isVisible,
+				status,
+				methods,
+			) as WorkbenchPanel<P, V>,
+		[methods, pid, record, value, isVisible, status],
 	);
 }

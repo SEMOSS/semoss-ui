@@ -1,6 +1,6 @@
 import { type FC, memo, useCallback } from "react";
 import { cn } from "@semoss/ui/next";
-import { useWorkbench, useWorkbenchPanel } from "../../hooks";
+import { useWorkbench } from "../../hooks";
 import type { WorkbenchPanelId } from "../../types";
 import { WorkbenchPanelBody } from "./workbench-panel-body";
 
@@ -45,7 +45,6 @@ export const WorkbenchPanelHost: FC<WorkbenchPanelHostProps> = memo(
 		const lifted =
 			Boolean(maximizedId) &&
 			(slotKey === maximizedId || slotKey === `${maximizedId}::b`);
-		const panel = useWorkbenchPanel(pid);
 
 		const type = record?.type ?? "";
 		const handleReady = useCallback(
@@ -111,7 +110,7 @@ export const WorkbenchPanelHost: FC<WorkbenchPanelHostProps> = memo(
 				<WorkbenchPanelBody
 					record={record}
 					component={component}
-					panel={panel}
+					pid={pid}
 					onReady={handleReady}
 					onError={handleError}
 				/>

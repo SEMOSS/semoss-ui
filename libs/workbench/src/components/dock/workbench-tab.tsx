@@ -249,10 +249,7 @@ export const WorkbenchTab: FC<WorkbenchTabProps> = memo(
 					{isEditing ? (
 						<WorkbenchTabRenameInput pid={pid} />
 					) : (
-						<WorkbenchPanelHeaderContent
-							pid={pid}
-							location={location}
-						/>
+						<WorkbenchPanelHeaderContent pid={pid} />
 					)}
 					{/* the controls belong to the selected desktop tab. An
 				    unselected one is its icon and its name, and measures to

@@ -3,7 +3,7 @@ import type {
 	WorkbenchComponent,
 	WorkbenchPanelConfig,
 } from "@semoss/workbench";
-import { useWorkbenchControl } from "@semoss/workbench";
+import { useWorkbenchControl, useWorkbenchPanel } from "@semoss/workbench";
 import { CodeRenderer } from "@/components/project";
 import { useProject } from "@/hooks";
 import { CodeAppRendererRefreshControl } from "./code-app-renderer-refresh-control";
@@ -13,10 +13,9 @@ export type CodeAppRendererConfig = Record<string, never>;
 
 // `value` is the manual-refresh counter the chrome control bumps — the panel
 // cannot share a setter with a control, which draws in the chrome's subtree
-const CodeAppRendererPanelContent: WorkbenchComponent<
-	CodeAppRendererConfig,
-	number
-> = ({ id, value }) => {
+const CodeAppRendererPanelContent: WorkbenchComponent = ({ id }) => {
+	const { value } = useWorkbenchPanel<CodeAppRendererConfig, number>(id);
+
 	const { project } = useProject();
 
 	useWorkbenchControl(id, CodeAppRendererRefreshControl);

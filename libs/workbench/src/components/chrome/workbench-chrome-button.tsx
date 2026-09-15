@@ -30,11 +30,14 @@ interface WorkbenchChromeButtonProps {
  * This is the shape every chrome control was writing by hand: a `Tooltip` around
  * a ghost `Button` at `chromeButton` size, muted until hovered, with an
  * `aria-hidden` glyph at `chromeIcon` size inside. `WORKBENCH_STYLES` already
- * owned the sizes; nothing owned the button, so twenty-seven files each kept
- * their own copy and drifted on `aria-label` and `disabled`.
+ * owned the sizes; nothing owned the button, so each control kept its own copy
+ * and drifted on `aria-label` and `disabled`. Every panel control now comes
+ * from here — reach for it before writing a `Tooltip` in a control again.
  *
- * A control that is not a button — a select, a dialog trigger — composes its
- * own thing; this is only for the common case.
+ * A control that is not a button — a select, a dialog trigger, a button that
+ * needs the click event itself — composes its own thing; this is only for the
+ * common case. The shell's own chrome (tabs, rails, border slots) is not a
+ * panel control and keeps its own markup.
  */
 export const WorkbenchChromeButton = ({
 	icon: Icon,

@@ -4,7 +4,7 @@ import type {
 	WorkbenchPanelConfig,
 	WorkbenchPanelProps,
 } from "@semoss/workbench";
-import { useWorkbenchControl } from "@semoss/workbench";
+import { useWorkbenchControl, useWorkbenchPanel } from "@semoss/workbench";
 import { useFileBuffer } from "../../hooks/use-file-buffer";
 import { type FilePanelParams, useFilePanel } from "../../hooks/use-file-panel";
 import { matchesFilePanel } from "../../types/file-panel.types";
@@ -25,12 +25,12 @@ const MARKDOWN_VIEW_MODES = [
 ];
 
 /** Edit a Markdown file, with a rendered preview and a raw editor. */
-const FileMarkdownEditorPanel = ({
-	config,
-	id,
-	rename,
-	setValue,
-}: WorkbenchPanelProps<FilePanelParams, FileEditorControlValue>) => {
+const FileMarkdownEditorPanel = ({ id }: WorkbenchPanelProps) => {
+	const { config, rename, setValue } = useWorkbenchPanel<
+		FilePanelParams,
+		FileEditorControlValue
+	>(id);
+
 	const panel = useFilePanel(config);
 	const buffer = useFileBuffer({ panel, name: config.name, rename });
 	const [viewMode, setViewMode] = useState<"preview" | "raw">("preview");

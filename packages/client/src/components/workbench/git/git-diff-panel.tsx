@@ -9,6 +9,7 @@ import type {
 } from "@semoss/workbench";
 import {
 	useWorkbenchControl,
+	useWorkbenchPanel,
 	WorkbenchPanelError,
 	WorkbenchPanelLoading,
 } from "@semoss/workbench";
@@ -29,12 +30,12 @@ export interface GitDiffParams extends GitPanelScopeParams {
 	commitId?: string;
 }
 
-const GitDiffPanel = ({
-	config,
-	id,
-	setValue,
-	close,
-}: WorkbenchPanelProps<GitDiffParams, GitDiffControlValue>) => {
+const GitDiffPanel = ({ id }: WorkbenchPanelProps) => {
+	const { config, setValue, close } = useWorkbenchPanel<
+		GitDiffParams,
+		GitDiffControlValue
+	>(id);
+
 	const insight = useInsight();
 	const access = useAccess(config.type, config.id);
 	const readOnly = access.status !== "ready" || access.readOnly;

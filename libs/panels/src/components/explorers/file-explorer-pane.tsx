@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import {
 	FileExplorer,
 	type FileExplorerApi,
@@ -7,40 +8,44 @@ import {
 	NewFileOverlay,
 } from "@semoss/shared";
 import type { WorkbenchPanelId } from "@semoss/workbench";
-import { useExplorerPanelValue } from "../../hooks/use-explorer-panel-value";
+import { useWorkbenchControl, useWorkbenchPanel } from "@semoss/workbench";
+import { FileExplorerControl } from "./file-explorer-control";
 
 interface FileExplorerPaneProps {
-	/** The panel instance, for the chrome control. */
+	/** The panel instance this explorer belongs to. */
 	id: WorkbenchPanelId;
 	/** The explorer to render. Decorated ones must be memoized. */
 	explorer: FileExplorerApi;
-	/** The panel's scratch-value setter. */
-	setValue: (value: FileExplorerApi) => void;
 	/** Per-row actions, e.g. the MCP toolbox glyphs. */
 	itemActions?: (item: FileItem) => FileExplorerItemActions;
-	/** Access chrome drawn over the tree while a permission refresh is in flight. */
 }
 
 /**
  * The body every file-explorer panel renders.
  *
- * The three explorers differ in where their `mode` comes from — panel config,
- * the engine context, or a walk of the layout's selection history — and two of
- * those dictate where the hook may be called, so they stay separate panels.
- * What they share is everything below `useFileExplorer`: the same tree, the
- * same header with no actions (those live in the chrome control instead), the
- * same overlay, and the same publish-and-register pair.
+ * The four explorers differ in where their `mode` comes from — panel config,
+ * the engine context, the terminal's scope, or a walk of the layout's
+ * selection history — and those dictate where the hook may be called, so they
+ * stay separate panels. What they share is everything below `useFileExplorer`:
+ * the same tree, the same header with no actions (those live in the chrome
+ * control instead), the same overlay, and the same publish-and-register pair.
+ *
+ * Publishing is done here rather than by each panel: the api is identity-stable
+ * by design and so is `setValue`, so the effect runs once, and the control
+ * reads the api back off the panel's scratch value.
  *
  * @param props - The explorer and its panel wiring.
- * @return The tree, its header, and any access chrome.
+ * @return The tree and its header.
  */
 export const FileExplorerPane = ({
 	id,
 	explorer,
-	setValue,
 	itemActions,
 }: FileExplorerPaneProps) => {
-	useExplorerPanelValue(id, explorer, setValue);
+	const { setValue } = useWorkbenchPanel<unknown, FileExplorerApi>(id);
+
+	useEffect(() => setValue(explorer), [explorer, setValue]);
+	useWorkbenchControl(id, FileExplorerControl);
 
 	return (
 		<div className="relative size-full">

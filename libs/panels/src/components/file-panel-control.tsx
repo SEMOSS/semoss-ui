@@ -7,8 +7,12 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@semoss/ui/next";
-import type { WorkbenchChromeProps } from "@semoss/workbench";
-import { WORKBENCH_STYLES, WorkbenchChromeButton } from "@semoss/workbench";
+import type { WorkbenchPanelProps } from "@semoss/workbench";
+import {
+	useWorkbenchPanel,
+	WORKBENCH_STYLES,
+	WorkbenchChromeButton,
+} from "@semoss/workbench";
 import { MCP } from "../constants/file-panel.constants";
 import type { FilePanelParams, FilePanelValue } from "../hooks/use-file-panel";
 import { MetadataHelpDialog } from "./mcp";
@@ -44,9 +48,12 @@ export interface FileEditorControlValue extends FilePanelValue {
  * being a toolbox driver — a path only the code editor ever opens, so the other
  * two never draw it.
  */
-export const FileEditorControl: FC<
-	WorkbenchChromeProps<FilePanelParams, FileEditorControlValue>
-> = ({ config, value }) => {
+export const FileEditorControl: FC<WorkbenchPanelProps> = ({ id }) => {
+	const { config, value } = useWorkbenchPanel<
+		FilePanelParams,
+		FileEditorControlValue
+	>(id);
+
 	if (!value) return null;
 
 	const showMetadataHelp =
@@ -102,9 +109,9 @@ export const FileEditorControl: FC<
  * The image, PDF and PowerPoint viewers had a 46-line control file each,
  * identical apart from the type names and one `aria-label`.
  */
-export const FileRefreshControl: FC<
-	WorkbenchChromeProps<FilePanelParams, FilePanelValue>
-> = ({ value }) => {
+export const FileRefreshControl: FC<WorkbenchPanelProps> = ({ id }) => {
+	const { value } = useWorkbenchPanel<FilePanelParams, FilePanelValue>(id);
+
 	if (!value) return null;
 
 	return (

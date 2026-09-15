@@ -1,9 +1,5 @@
 import { type ComponentType, useEffect, useRef, useState } from "react";
-import type {
-	WorkbenchChromeProps,
-	WorkbenchPanelId,
-	WorkbenchPanelParams,
-} from "../types";
+import type { WorkbenchPanelId, WorkbenchPanelProps } from "../types";
 import { useWorkbench } from "./use-workbench";
 
 /**
@@ -12,30 +8,27 @@ import { useWorkbench } from "./use-workbench";
  * active tab of the panel's stack — one control per panel, visible only while
  * the panel is the front tab.
  *
- * `content` draws in the chrome's subtree, not the panel's, so it does NOT
- * re-render when the panel does. The hook holds the latest renderer in a ref —
- * a stale closure never draws, and the registered wrapper keeps one identity
- * so registration never churns — but refreshing a ref schedules nothing, and
- * the chrome only reads it when it re-renders for its own reasons.
+ * `content` is handed the panel's id and nothing else, and draws in the
+ * chrome's subtree rather than the panel's — so it does NOT re-render when the
+ * panel does. It reads its own panel with `useWorkbenchPanel<P, V>(id)`, which
+ * subscribes it directly, and the `value` it finds there is whatever the panel
+ * published with `setValue`.
  *
- * So pass a stable component from its own file, subscribing to whatever live
- * state it shows (domain hooks work: the chrome is under the same provider),
- * and reaching the panel's own state through the `value`/`config` it is handed.
- * An inline arrow is only correct when the control's output is constant — it
- * also takes a new identity every render, which remounts the control on the
- * chrome's next render, resetting an open popover or focus inside it.
- *
- * `P`/`V` are inferred from `content`'s annotation, so a control typed
- * `FC<WorkbenchChromeProps<MyConfig, MyValue>>` reads them without a cast.
+ * The hook holds the latest renderer in a ref — a stale closure never draws,
+ * and the registered wrapper keeps one identity so registration never churns.
+ * So pass a stable component from its own file. An inline arrow is only
+ * correct when the control's output is constant — it also takes a new identity
+ * every render, which remounts the control on the chrome's next render,
+ * resetting an open popover or focus inside it.
  *
  * @name useWorkbenchControl
  * @param pid - The panel instance the control belongs to.
  * @param content - The control renderer; it owns its own label, disabled
  * state, and click handling. Pass null to register nothing.
  */
-export const useWorkbenchControl = <P = WorkbenchPanelParams, V = unknown>(
+export const useWorkbenchControl = (
 	pid: WorkbenchPanelId,
-	content: ComponentType<WorkbenchChromeProps<P, V>> | null,
+	content: ComponentType<WorkbenchPanelProps> | null,
 ): void => {
 	const registerControl = useWorkbench(
 		(state) => state.control.actions.registerControl,
@@ -47,10 +40,8 @@ export const useWorkbenchControl = <P = WorkbenchPanelParams, V = unknown>(
 
 	// one wrapper per hook instance — the registered identity never changes
 	const [Stable] = useState(
-		(): ComponentType<WorkbenchChromeProps<P, V>> =>
-			function WorkbenchControlContent(
-				props: WorkbenchChromeProps<P, V>,
-			) {
+		(): ComponentType<WorkbenchPanelProps> =>
+			function WorkbenchControlContent(props: WorkbenchPanelProps) {
 				const Latest = contentRef.current;
 				return Latest ? <Latest {...props} /> : null;
 			},

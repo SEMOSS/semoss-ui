@@ -159,10 +159,7 @@ export const WorkbenchTabset: FC<WorkbenchTabsetProps> = ({ node }) => {
 							})}
 						</WorkbenchTabStrip>
 						<div className="flex flex-none items-center gap-1">
-							<WorkbenchPanelControls
-								pid={node.activeId}
-								location="tab"
-							/>
+							<WorkbenchPanelControls pid={node.activeId} />
 							{showMaximize && (
 								<Tooltip>
 									<TooltipTrigger asChild>

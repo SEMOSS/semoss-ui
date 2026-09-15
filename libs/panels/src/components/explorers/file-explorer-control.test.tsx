@@ -1,11 +1,13 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import type { FileExplorerApi, FileMode } from "@semoss/shared";
-import type { WorkbenchChromeProps } from "@semoss/workbench";
+import { createWorkbenchStore, WorkbenchProvider } from "@semoss/workbench";
 import { AccessStoreProvider } from "../../contexts/access.context";
 import { createAccessStore } from "../../stores/access.store";
 import { FileExplorerControl } from "./file-explorer-control";
-import type { FileExplorerParams } from "./file-explorer-panel";
+
+/** The one panel id every case's dock holds. */
+const PANEL_ID = "explorer";
 
 const createExplorer = (
 	mode: FileMode,
@@ -37,14 +39,30 @@ const renderControl = (
 			.syncPermission("ENGINE", explorer.mode.storage, permission);
 	}
 
+	// the control reads its panel out of the dock now, so it needs one: a
+	// workbench holding a single explorer instance, with `explorer` as the
+	// value that instance published
+	const workbench = createWorkbenchStore({ components: {} });
+	workbench.getState().layout.actions.loadSnapshot({
+		tree: {
+			type: "tabset",
+			id: "main",
+			size: 1,
+			panelIds: [PANEL_ID],
+			activeId: PANEL_ID,
+		},
+		panels: {
+			[PANEL_ID]: { id: PANEL_ID, type: "EXPLORER", name: "Files" },
+		},
+	});
+	workbench.getState().layout.actions.setPanelValue(PANEL_ID, explorer);
+
 	render(
-		<AccessStoreProvider store={store}>
-			<FileExplorerControl
-				{...({
-					value: explorer,
-				} as WorkbenchChromeProps<FileExplorerParams, FileExplorerApi>)}
-			/>
-		</AccessStoreProvider>,
+		<WorkbenchProvider store={workbench}>
+			<AccessStoreProvider store={store}>
+				<FileExplorerControl id={PANEL_ID} />
+			</AccessStoreProvider>
+		</WorkbenchProvider>,
 	);
 };
 

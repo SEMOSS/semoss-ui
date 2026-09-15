@@ -8,6 +8,7 @@ import type {
 } from "@semoss/workbench";
 import {
 	useWorkbenchControl,
+	useWorkbenchPanel,
 	WorkbenchPanelError,
 	WorkbenchPanelLoading,
 } from "@semoss/workbench";
@@ -22,11 +23,9 @@ import {
 const PAGE_SIZE = 20;
 
 /** Connect scoped commit history and panel refresh state to shared Git UI. */
-const GitVersionPanel = ({
-	config,
-	id,
-	value,
-}: WorkbenchPanelProps<GitVersionParams, number>) => {
+const GitVersionPanel = ({ id }: WorkbenchPanelProps) => {
+	const { config, value } = useWorkbenchPanel<GitVersionParams, number>(id);
+
 	const access = useAccess(config.type, config.id);
 	const prefix = config.type === "ENGINE" ? "Engine" : "Project";
 	const resource =

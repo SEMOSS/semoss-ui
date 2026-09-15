@@ -139,7 +139,11 @@ export type WorkbenchPanelStatus = "pending" | "loading" | "ready" | "error";
 /**
  * Where a panel's chrome is being drawn: a dock strip, the header row over an
  * open border body, a top/bottom border rail, or a left/right one — where the
- * tab is turned on its side, and a glyph has to turn with it.
+ * tab is turned on its side, and a glyph has to turn with it. Internal to the
+ * shell's own chrome: the same panel is drawn in two of these at once (a
+ * border's rail and its header row), so this is a fact about a render site,
+ * never about a panel, and it is not on `WorkbenchPanel`. A blueprint that one
+ * day needs it takes it from a context the chrome publishes.
  */
 export type WorkbenchHeaderLocation =
 	| "tab"
@@ -148,8 +152,8 @@ export type WorkbenchHeaderLocation =
 	| "rail-vertical";
 
 /**
- * The per-instance methods half of a panel's props. `P` is the panel's config
- * shape, `V` its scratch value.
+ * The per-instance methods half of a panel. `P` is the panel's config shape,
+ * `V` its scratch value.
  */
 export interface WorkbenchPanelMethods<P = WorkbenchPanelParams, V = unknown> {
 	rename: (name: string) => void;
@@ -166,10 +170,13 @@ export interface WorkbenchPanelMethods<P = WorkbenchPanelParams, V = unknown> {
 }
 
 /**
- * Everything a panel renderer is handed about its own instance: its record,
- * its live state, and the methods bound to its id.
+ * Everything there is to know about one panel instance: its record, its live
+ * state, and the methods bound to its id. `useWorkbenchPanel(id)` returns
+ * this, and it is the same object whether the caller is the body, the header,
+ * the icon, or the control — a panel and its chrome read one contract, not
+ * two.
  */
-export interface WorkbenchPanelProps<P = WorkbenchPanelParams, V = unknown>
+export interface WorkbenchPanel<P = WorkbenchPanelParams, V = unknown>
 	extends WorkbenchPanelMethods<P, V> {
 	id: WorkbenchPanelId;
 	type: WorkbenchPanelType;
@@ -178,32 +185,29 @@ export interface WorkbenchPanelProps<P = WorkbenchPanelParams, V = unknown>
 	value: V | undefined;
 	/** False while a keepAlive/eager panel is mounted but hidden. */
 	isVisible: boolean;
+	/** Whether the body has resolved yet. */
+	status: WorkbenchPanelStatus;
 }
 
 /**
- * A panel body. Annotate your component with this to type its props:
- * `const MyPanel: WorkbenchComponent<MyPanelConfig> = ({ config }) => …`.
+ * What every panel renderer is handed — a body, a header, an icon, a control:
+ * the instance id, and nothing else. Everything else comes from
+ * `useWorkbenchPanel(id)`, typed at the call site:
+ *
+ * `const MyPanel = ({ id }: WorkbenchPanelProps) => {
+ *     const { config, setValue } = useWorkbenchPanel<MyConfig, MyValue>(id);`
  */
-export type WorkbenchComponent<P = WorkbenchPanelParams, V = unknown> = (
-	props: WorkbenchPanelProps<P, V>,
-) => ReactNode;
+export interface WorkbenchPanelProps {
+	id: WorkbenchPanelId;
+}
 
-/**
- * What the chrome renderers get: the same flat props, plus where they are being
- * drawn and whether the body has resolved yet.
- */
-export type WorkbenchChromeProps<
-	P = WorkbenchPanelParams,
-	V = unknown,
-> = WorkbenchPanelProps<P, V> & {
-	location: WorkbenchHeaderLocation;
-	status: WorkbenchPanelStatus;
-};
+/** An icon renderer's props: the id, plus the size class its caller has room for. */
+export interface WorkbenchPanelIconProps extends WorkbenchPanelProps {
+	className: string;
+}
 
-/** A panel's header renderer. */
-export type WorkbenchChrome<P = WorkbenchPanelParams, V = unknown> = (
-	props: WorkbenchChromeProps<P, V>,
-) => ReactNode;
+/** A panel renderer. Annotate a body, header, or control with this. */
+export type WorkbenchComponent = (props: WorkbenchPanelProps) => ReactNode;
 
 /**
  * A panel-contributed chrome control, drawn in the header row of the panel's
@@ -212,20 +216,12 @@ export type WorkbenchChrome<P = WorkbenchPanelParams, V = unknown> = (
  * than on the blueprint, so a panel can register it conditionally and drop it
  * on unmount. `content` owns its label, disabled state, and click handling;
  * the core only places it. It renders in the chrome's subtree, not the
- * panel's, so it subscribes to whatever live state it draws.
+ * panel's, so it subscribes to whatever live state it draws — its own panel's
+ * included, through `useWorkbenchPanel(id)`.
  */
-export interface WorkbenchControl<P = WorkbenchPanelParams, V = unknown> {
-	content: ComponentType<WorkbenchChromeProps<P, V>>;
+export interface WorkbenchControl {
+	content: ComponentType<WorkbenchPanelProps>;
 }
-
-/**
- * A control with its generics erased — what the controls map holds. Same
- * existential erasure as `WorkbenchPanelConfigAny`: the registry is
- * heterogeneous and the chrome only ever has a `WorkbenchPanelParams` bag at
- * runtime, so each control recovers its parameters from its own annotation.
- */
-// biome-ignore lint/suspicious/noExplicitAny: existential erasure, see above
-export type WorkbenchControlAny = WorkbenchControl<any, any>;
 
 /**
  * An entry a panel contributes to its own tab/rail context menu. `disabled`
@@ -243,12 +239,12 @@ export interface WorkbenchPanelMenuItem {
  * type from that map and share its loaded module and capability defaults.
  *
  * `P` is the shape of the `config` its instances are opened with, `V` its
- * scratch value type. Annotating them here is what types every renderer's
- * props: `WorkbenchPanelConfig<MyPanelConfig>` gives `content`, `icon`,
- * `header`, and `matches` a typed `config` with no casts.
+ * scratch value type. They type `matches` and `menuItems` here; the renderer
+ * slots take only an id, and each renderer names `P`/`V` itself where it calls
+ * `useWorkbenchPanel<P, V>(id)`.
  *
  * Note the two senses of "config": this type is the panel's *definition*,
- * while `WorkbenchPanelProps.config` is one instance's parameters.
+ * while `WorkbenchPanel.config` is one instance's parameters.
  */
 export interface WorkbenchPanelConfig<P = WorkbenchPanelParams, V = unknown> {
 	/** Default instance name. */
@@ -301,22 +297,22 @@ export interface WorkbenchPanelConfig<P = WorkbenchPanelParams, V = unknown> {
 	 * The glyph. Drawn alone on a border rail and inline by the default
 	 * header.
 	 */
-	icon?: ComponentType<WorkbenchChromeProps<P, V> & { className: string }>;
+	icon?: ComponentType<WorkbenchPanelIconProps>;
 	/** The tab and border-header label. Omit for icon + instance name. */
-	header?: ComponentType<WorkbenchChromeProps<P, V>>;
+	header?: ComponentType<WorkbenchPanelProps>;
 	/**
 	 * The body. Wrap it in React.lazy to code-split it — the shell renders it
 	 * inside Suspense and shows a skeleton while it resolves. (These slots take
 	 * a `ComponentType` rather than the bare function aliases so `React.lazy`
 	 * and class components still fit.)
 	 */
-	content?: ComponentType<WorkbenchPanelProps<P, V>>;
+	content?: ComponentType<WorkbenchPanelProps>;
 	/**
 	 * Entries appended to this panel's context menu, below the built-ins. Also
 	 * called outside React, so reach store state through `get`.
 	 */
 	menuItems?: (
-		panel: WorkbenchPanelProps<P, V>,
+		panel: WorkbenchPanel<P, V>,
 		get: () => WorkbenchState,
 	) => WorkbenchPanelMenuItem[];
 }

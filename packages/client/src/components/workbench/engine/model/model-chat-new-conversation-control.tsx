@@ -1,14 +1,7 @@
 import { PlusIcon } from "lucide-react";
 import type { FC } from "react";
-import {
-	Button,
-	cn,
-	Tooltip,
-	TooltipContent,
-	TooltipTrigger,
-} from "@semoss/ui/next";
-import type { WorkbenchChromeProps } from "@semoss/workbench";
-import { WORKBENCH_STYLES } from "@semoss/workbench";
+import type { WorkbenchPanelProps } from "@semoss/workbench";
+import { WorkbenchChromeButton } from "@semoss/workbench";
 import { useModelChat } from "@/hooks";
 
 /**
@@ -23,31 +16,19 @@ import { useModelChat } from "@/hooks";
  * @name ModelChatNewConversationControl
  * @return The new-conversation chrome button.
  */
-export const ModelChatNewConversationControl: FC<WorkbenchChromeProps> = () => {
+export const ModelChatNewConversationControl: FC<WorkbenchPanelProps> = () => {
 	const isInitializing = useModelChat((state) => state.isInitializing);
 	const isSending = useModelChat((state) => state.isSending);
 	const isStopping = useModelChat((state) => state.isStopping);
 	const newRoom = useModelChat((state) => state.newRoom);
 
 	return (
-		<Tooltip>
-			<TooltipTrigger asChild>
-				<Button
-					variant="ghost"
-					size="icon-sm"
-					onClick={() => void newRoom()}
-					disabled={isInitializing || isSending || isStopping}
-					aria-label="Start a new conversation"
-					data-testid="model-chat-panel--new-conversation-btn"
-					className={cn(
-						"flex-none text-muted-foreground",
-						WORKBENCH_STYLES.chromeButton,
-					)}
-				>
-					<PlusIcon className={WORKBENCH_STYLES.chromeIcon} />
-				</Button>
-			</TooltipTrigger>
-			<TooltipContent>Start a new conversation</TooltipContent>
-		</Tooltip>
+		<WorkbenchChromeButton
+			icon={PlusIcon}
+			label="Start a new conversation"
+			onClick={() => void newRoom()}
+			disabled={isInitializing || isSending || isStopping}
+			data-testid="model-chat-panel--new-conversation-btn"
+		/>
 	);
 };

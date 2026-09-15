@@ -16,6 +16,7 @@ import type {
 } from "@semoss/workbench";
 import {
 	useWorkbench,
+	useWorkbenchPanel,
 	WorkbenchPanelError,
 	WorkbenchPanelLoading,
 	writeSpawnDragSpec,
@@ -40,11 +41,9 @@ export interface FileExplorerParams {
 const isRename = (moved: FileExplorerMovedItem): boolean =>
 	getParentPath(moved.oldPath) === getParentPath(moved.newPath);
 
-const FileExplorerPanel = ({
-	id,
-	config,
-	setValue,
-}: WorkbenchPanelProps<FileExplorerParams, FileExplorerApi>) => {
+const FileExplorerPanel = ({ id }: WorkbenchPanelProps) => {
+	const { config } = useWorkbenchPanel<FileExplorerParams>(id);
+
 	const insight = useInsight();
 	const resource = getFilePanelResource(config.mode);
 	const access = useAccess(resource?.type ?? "INSIGHT", resource?.id ?? "");
@@ -188,7 +187,6 @@ const FileExplorerPanel = ({
 		<FileExplorerPane
 			id={id}
 			explorer={explorer}
-			setValue={setValue}
 			itemActions={itemActions}
 		/>
 	);

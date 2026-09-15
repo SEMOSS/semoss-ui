@@ -9,11 +9,14 @@ import {
 	TooltipTrigger,
 } from "@semoss/ui/next";
 import type {
-	WorkbenchChromeProps,
 	WorkbenchPanelConfig,
 	WorkbenchPanelProps,
 } from "@semoss/workbench";
-import { useWorkbenchControl, WORKBENCH_STYLES } from "@semoss/workbench";
+import {
+	useWorkbenchControl,
+	useWorkbenchPanel,
+	WORKBENCH_STYLES,
+} from "@semoss/workbench";
 import { ToolsView } from "@/components";
 import { useRoom } from "@/contexts";
 
@@ -32,64 +35,64 @@ export interface RoomToolParams {
  * that panel's control rather than sitting in the sidebar header beside close
  * and maximize.
  */
-const RoomToolInlineControl: FC<WorkbenchChromeProps<RoomToolParams>> =
-	observer(({ config }) => {
-		const { t } = useTranslation("sidebar");
-		const room = useRoom();
-		const tool = config?.toolId ? room.getTool(config.toolId) : null;
+const RoomToolInlineControl: FC<WorkbenchPanelProps> = observer(({ id }) => {
+	const { config } = useWorkbenchPanel<RoomToolParams>(id);
+	const { t } = useTranslation("sidebar");
+	const room = useRoom();
+	const tool = config?.toolId ? room.getTool(config.toolId) : null;
 
-		if (!tool) {
-			return null;
-		}
+	if (!tool) {
+		return null;
+	}
 
-		return (
-			<Tooltip>
-				<TooltipTrigger asChild>
-					<Button
-						type="button"
-						size="icon-sm"
-						variant="ghost"
-						className={WORKBENCH_STYLES.chromeButton}
-						aria-label={t("actions.openInline")}
-						onClick={(e) => {
-							e.stopPropagation();
-							room.setSidebarMaximized(false);
-							tool.openTool("inline");
-						}}
-					>
-						<PanelBottomIcon
-							aria-hidden
-							className={WORKBENCH_STYLES.chromeIcon}
-						/>
-					</Button>
-				</TooltipTrigger>
-				<TooltipContent>{t("actions.openInline")}</TooltipContent>
-			</Tooltip>
-		);
-	});
+	return (
+		<Tooltip>
+			<TooltipTrigger asChild>
+				<Button
+					type="button"
+					size="icon-sm"
+					variant="ghost"
+					className={WORKBENCH_STYLES.chromeButton}
+					aria-label={t("actions.openInline")}
+					onClick={(e) => {
+						e.stopPropagation();
+						room.setSidebarMaximized(false);
+						tool.openTool("inline");
+					}}
+				>
+					<PanelBottomIcon
+						aria-hidden
+						className={WORKBENCH_STYLES.chromeIcon}
+					/>
+				</Button>
+			</TooltipTrigger>
+			<TooltipContent>{t("actions.openInline")}</TooltipContent>
+		</Tooltip>
+	);
+});
 
-const RoomToolPanel = observer(
-	({ id, config }: WorkbenchPanelProps<RoomToolParams>) => {
-		const room = useRoom();
+const RoomToolPanel = observer(({ id }: WorkbenchPanelProps) => {
+	const { config } = useWorkbenchPanel<RoomToolParams>(id);
 
-		useWorkbenchControl(id, RoomToolInlineControl);
+	const room = useRoom();
 
-		// `app` is empty for server tools (provider-executed) -- ToolsView
-		// handles the routing internally.
-		if (!config?.message || !config?.toolId) {
-			return <div>No Tool</div>;
-		}
+	useWorkbenchControl(id, RoomToolInlineControl);
 
-		return (
-			<ToolsView
-				room={room}
-				app={config.app}
-				message={config.message}
-				toolId={config.toolId}
-			/>
-		);
-	},
-);
+	// `app` is empty for server tools (provider-executed) -- ToolsView
+	// handles the routing internally.
+	if (!config?.message || !config?.toolId) {
+		return <div>No Tool</div>;
+	}
+
+	return (
+		<ToolsView
+			room={room}
+			app={config.app}
+			message={config.message}
+			toolId={config.toolId}
+		/>
+	);
+});
 
 /** One tool, opened into the room sidebar. */
 export const ROOM_TOOL_PANEL: WorkbenchPanelConfig<RoomToolParams> = {

@@ -21,10 +21,7 @@ const terminalInsightId = (value: unknown): string | null =>
  * drops the insight the terminal owns. Shows a spinner until a terminal insight
  * is ready.
  */
-const ProjectInsightExplorerPanel: WorkbenchComponent<
-	Record<string, unknown>,
-	FileExplorerApi
-> = ({ id, setValue }) => {
+const ProjectInsightExplorerPanel: WorkbenchComponent = ({ id }) => {
 	// Each terminal publishes its insight on its own scratch value. Follow the
 	// most recently selected terminal, regardless of where that panel was moved.
 	const insightId = useWorkbench((state) => {
@@ -67,7 +64,7 @@ const ProjectInsightExplorerPanel: WorkbenchComponent<
 
 	return (
 		<InsightProvider options={{ insightId }} destroyOnUnmount={false}>
-			<ProjectInsightExplorer id={id} setValue={setValue} />
+			<ProjectInsightExplorer id={id} />
 		</InsightProvider>
 	);
 };
