@@ -1,3 +1,8 @@
+import { WorkbenchProvider, WorkbenchStoreContext } from "@semoss/workbench";
+import {
+	AssistantStoreContext,
+	AssistantStoreProvider,
+} from "./assistant.context";
 import { ConfigStoreContext, ConfigStoreProvider } from "./config.context";
 import { DesignerContext, type DesignerContextType } from "./DesignerContext";
 import { EngineContext, type EngineContextType } from "./engine-context";
@@ -14,7 +19,6 @@ import {
 	WorkspaceContext,
 	type WorkspaceContextType,
 } from "./WorkspaceContext";
-import { WorkbenchProvider, WorkbenchStoreContext } from "./workbench.context";
 
 export type {
 	ProjectContextType,
@@ -28,6 +32,8 @@ export type {
 
 export {
 	ProjectContext,
+	AssistantStoreContext,
+	AssistantStoreProvider,
 	ConfigStoreContext,
 	ConfigStoreProvider,
 	DesignerContext,

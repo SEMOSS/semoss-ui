@@ -30,15 +30,16 @@ import {
 	useDebouncedValue,
 	useInfiniteScroll,
 } from "@semoss/ui/next";
-import type { ConversationRoom } from "@/api/rooms";
-import { getUserConversationRooms } from "@/api/rooms";
-import { useModelChat, useWorkbenchControl } from "@/hooks";
 import type {
 	WorkbenchComponent,
 	WorkbenchPanelConfig,
-} from "@/stores/workbench";
+} from "@semoss/workbench";
+import { useWorkbenchControl, useWorkbenchPanel } from "@semoss/workbench";
+import type { ConversationRoom } from "@/api/rooms";
+import { getUserConversationRooms } from "@/api/rooms";
+import { formatSessionDate } from "@/components/assistant/assistant-format";
+import { useModelChat } from "@/hooks";
 import { roomScopeToken } from "@/stores/workbench/model";
-import { formatSessionDate } from "../../assistant/workbench-assistant-format";
 import { ModelChatHistoryRefreshControl } from "./model-chat-history-refresh-control";
 
 /** Rows fetched per page. Scrolling to the bottom asks for the next one. */
@@ -80,10 +81,12 @@ export interface ModelChatHistoryApi {
  * @name ModelChatConversations
  * @return The conversation history panel body.
  */
-const ModelChatConversations: WorkbenchComponent<
-	Record<string, unknown>,
-	ModelChatHistoryApi
-> = ({ id, setValue }) => {
+const ModelChatConversations: WorkbenchComponent = ({ id }) => {
+	const { setValue } = useWorkbenchPanel<
+		Record<string, unknown>,
+		ModelChatHistoryApi
+	>(id);
+
 	const insightId = useModelChat((state) => state.insightId);
 	const engineId = useModelChat((state) => state.engineId);
 	const activeRoomId = useModelChat((state) => state.roomId);
