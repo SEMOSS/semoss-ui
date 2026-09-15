@@ -88,26 +88,37 @@ const FileNotebookEditorPanel = ({
 		onLoaded,
 	});
 
+	/**
+	 * Identity-stable, deliberately.
+	 *
+	 * `useFileBuffer` returns a fresh object every render, so closing over
+	 * `buffer` directly would make this a new function every render. It is a
+	 * dependency of the `setValue` effect below, so the effect would then run
+	 * on every render and publish a value the dock is never shallow-equal to,
+	 * and each of those writes re-renders this panel: an infinite loop rather
+	 * than a slow one. The volatile input goes in a ref refreshed every
+	 * render, the same way `useFileBuffer` holds its own.
+	 */
+	const setBufferContentRef = useRef(buffer.setContent);
+	setBufferContentRef.current = buffer.setContent;
+
 	/** Switch views while preserving the latest serialized notebook. */
-	const setNotebookViewMode = useCallback(
-		(nextMode: "notebook" | "raw") => {
-			if (nextMode === viewModeRef.current) return;
+	const setNotebookViewMode = useCallback((nextMode: "notebook" | "raw") => {
+		if (nextMode === viewModeRef.current) return;
 
-			if (nextMode === "raw") {
-				const serialized =
-					notebookRef.current?.save() || latestContentRef.current;
-				latestContentRef.current = serialized;
-				buffer.setContent(serialized);
-			} else {
-				buffer.setContent(latestContentRef.current);
-				setReloadToken((token) => token + 1);
-			}
+		if (nextMode === "raw") {
+			const serialized =
+				notebookRef.current?.save() || latestContentRef.current;
+			latestContentRef.current = serialized;
+			setBufferContentRef.current(serialized);
+		} else {
+			setBufferContentRef.current(latestContentRef.current);
+			setReloadToken((token) => token + 1);
+		}
 
-			viewModeRef.current = nextMode;
-			setViewMode(nextMode);
-		},
-		[buffer],
-	);
+		viewModeRef.current = nextMode;
+		setViewMode(nextMode);
+	}, []);
 
 	useEffect(() => {
 		setValue({
