@@ -8,7 +8,8 @@ import {
 } from "@semoss/ui/next";
 import { WORKBENCH_STYLES } from "../../constants/workbench.constants";
 
-interface WorkbenchChromeButtonProps {
+interface WorkbenchChromeButtonProps
+	extends React.ButtonHTMLAttributes<HTMLButtonElement> {
 	/** The glyph. Sized by the button, so pass the component, not an element. */
 	icon: ComponentType<{ className?: string; "aria-hidden"?: boolean }>;
 	/** Accessible name, and the tooltip unless `tooltip` overrides it. */
@@ -30,11 +31,14 @@ interface WorkbenchChromeButtonProps {
  * This is the shape every chrome control was writing by hand: a `Tooltip` around
  * a ghost `Button` at `chromeButton` size, muted until hovered, with an
  * `aria-hidden` glyph at `chromeIcon` size inside. `WORKBENCH_STYLES` already
- * owned the sizes; nothing owned the button, so twenty-seven files each kept
- * their own copy and drifted on `aria-label` and `disabled`.
+ * owned the sizes; nothing owned the button, so each control kept its own copy
+ * and drifted on `aria-label` and `disabled`. Every panel control now comes
+ * from here — reach for it before writing a `Tooltip` in a control again.
  *
- * A control that is not a button — a select, a dialog trigger — composes its
- * own thing; this is only for the common case.
+ * A control that is not a button — a select, a dialog trigger, a button that
+ * needs the click event itself — composes its own thing; this is only for the
+ * common case. The shell's own chrome (tabs, rails, border slots) is not a
+ * panel control and keeps its own markup.
  */
 export const WorkbenchChromeButton = ({
 	icon: Icon,
@@ -43,12 +47,11 @@ export const WorkbenchChromeButton = ({
 	disabled,
 	tooltip,
 	className,
-	"data-testid": testId,
+	...otherProps
 }: WorkbenchChromeButtonProps) => (
 	<Tooltip>
 		<TooltipTrigger asChild>
 			<Button
-				data-testid={testId}
 				variant="ghost"
 				size="icon-sm"
 				className={cn(
@@ -59,6 +62,7 @@ export const WorkbenchChromeButton = ({
 				disabled={disabled}
 				aria-label={label}
 				onClick={onClick}
+				{...otherProps}
 			>
 				<Icon aria-hidden className={WORKBENCH_STYLES.chromeIcon} />
 			</Button>

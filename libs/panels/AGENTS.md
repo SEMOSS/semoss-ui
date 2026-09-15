@@ -93,6 +93,12 @@ would invert the dependency this package exists to establish.
 - **`FILE_PANEL_COMPONENTS` defines what "a file panel" *is* at runtime.** `useWorkbenchFilePanels`
   decides which open panels follow a rename by membership in it, never by the shape of a config —
   the Git panels carry the same `{ type, id, name, path }` fields and were being swept up.
+- **Workbench event names live in `file-panel.constants.ts`, beside the panel types.** That file
+  imports nothing, which is what keeps an event name safe to import from anywhere — the same
+  cycle rule as `isFilePanelType`. The hook that subscribes is an ordinary hook in `hooks/`.
+- **An event with no subscriber does not belong here.** `useFilesChanged` earns its place because
+  four explorers and eight file panels consume it; an event added "for later" is surface with no
+  consumer, and the dock's own panel-lifecycle events were deleted for exactly that reason.
 - **Never dereference `a.mode.type` in a blueprint `matches`.** It runs inside `selectPanel`, a
   store action outside any error boundary; a config it cannot read must return false, not throw.
   Use `matchesFilePanel`.

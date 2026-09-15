@@ -7,7 +7,7 @@ import type {
 	WorkbenchComponent,
 	WorkbenchPanelConfig,
 } from "@semoss/workbench";
-import { useWorkbenchControl } from "@semoss/workbench";
+import { useWorkbenchControl, useWorkbenchPanel } from "@semoss/workbench";
 import {
 	type AgentDefaultTool,
 	AgentForm,
@@ -110,7 +110,9 @@ export interface AgentEditorSaveValue {
  * `GetWorkspace`/`EditWorkspace` itself; `AgentForm` just renders the fields.
  * Save rides the panel's chrome control instead of an in-body toolbar.
  */
-const AgentEditorPanel: WorkbenchComponent = ({ id, setValue }) => {
+const AgentEditorPanel: WorkbenchComponent = ({ id }) => {
+	const { setValue } = useWorkbenchPanel(id);
+
 	const { project, permission } = useProject();
 	const insight = useInsight();
 	const readOnly = !(permission === "OWNER" || permission === "EDIT");

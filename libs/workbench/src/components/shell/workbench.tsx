@@ -1,6 +1,6 @@
 import { type FC, useEffect, useLayoutEffect, useMemo, useRef } from "react";
 import { Spinner, useIsMobile } from "@semoss/ui/next";
-import { useWorkbench, useWorkbenchEvents } from "../../hooks";
+import { useWorkbench, useWorkbenchLifeCycle } from "../../hooks";
 import type {
 	WorkbenchBorderSlotCtx,
 	WorkbenchBorderSlots,
@@ -104,7 +104,7 @@ export const Workbench: FC<WorkbenchProps> = ({
 	const rootRef = useRef<HTMLDivElement | null>(null);
 	const stageRef = useRef<HTMLDivElement | null>(null);
 
-	useWorkbenchEvents({
+	useWorkbenchLifeCycle({
 		onPanelOpen,
 		onPanelClose,
 		onSelectionChange,
@@ -229,8 +229,12 @@ export const Workbench: FC<WorkbenchProps> = ({
 					</div>
 				)}
 
+				{/* Above the maximized tabset and the panel layer (both z-50):
+				    panel bodies live in a flat overlay rendered after this, so
+				    a scrim below them covers nothing while a panel is
+				    maximized — which is exactly when it has to be seen. */}
 				{isLoading ? (
-					<div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center bg-black/50">
+					<div className="pointer-events-none absolute inset-0 z-60 flex items-center justify-center bg-black/50">
 						<Spinner />
 					</div>
 				) : null}

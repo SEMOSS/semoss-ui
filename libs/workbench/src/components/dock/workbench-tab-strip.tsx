@@ -11,7 +11,7 @@ import {
 import { WORKBENCH_STYLES } from "../../constants/workbench.constants";
 import type { WorkbenchPanelId } from "../../types";
 
-export interface WorkbenchTabStripProps {
+interface WorkbenchTabStripProps {
 	panelIds: WorkbenchPanelId[];
 	activeId: WorkbenchPanelId | null;
 	nameOf: (pid: WorkbenchPanelId) => string;

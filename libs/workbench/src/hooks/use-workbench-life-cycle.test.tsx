@@ -4,7 +4,7 @@ import { describe, expect, it, vi } from "vitest";
 import { WorkbenchStoreContext } from "../contexts/workbench.context";
 import { createWorkbenchStore } from "../stores";
 import type { WorkbenchPanelConfigAny } from "../types";
-import { useWorkbenchEvents } from "./use-workbench-events";
+import { useWorkbenchLifeCycle } from "./use-workbench-life-cycle";
 
 const EDITOR = "EDITOR";
 
@@ -36,7 +36,7 @@ const setup = () => {
 			{children}
 		</WorkbenchStoreContext.Provider>
 	);
-	renderHook(() => useWorkbenchEvents({ onChange }), { wrapper });
+	renderHook(() => useWorkbenchLifeCycle({ onChange }), { wrapper });
 
 	return { actions, onChange, pid, store };
 };

@@ -3,29 +3,38 @@ import type {
 	WorkbenchPanelConfig,
 	WorkbenchPanelProps,
 } from "@semoss/workbench";
-import { useWorkbenchControl } from "@semoss/workbench";
+import { useWorkbenchControl, useWorkbenchPanel } from "@semoss/workbench";
 import {
 	type FilePanelParams,
 	type FilePanelValue,
 	useFilePanel,
 } from "../../hooks/use-file-panel";
+import { useFilesChanged } from "../../hooks/use-files-changed";
 import { matchesFilePanel } from "../../types/file-panel.types";
 import { getImageMimeType } from "../../utility/file-editor.utility";
 import { FileRefreshControl } from "../file-panel-control";
 import { FilePanelIcon } from "../file-panel-icon";
 
 /** Preview an image file from a project, engine, or insight resource. */
-const FileImageViewerPanel = ({
-	config,
-	id,
-	setValue,
-}: WorkbenchPanelProps<FilePanelParams, FilePanelValue>) => {
+const FileImageViewerPanel = ({ id }: WorkbenchPanelProps) => {
+	const { config, setValue } = useWorkbenchPanel<
+		FilePanelParams,
+		FilePanelValue
+	>(id);
+
 	const panel = useFilePanel(config, { base64: true });
 
 	useEffect(() => {
 		setValue({ refresh: panel.read.refresh });
 	}, [panel.read.refresh, setValue]);
 	useWorkbenchControl(id, FileRefreshControl);
+	// Nothing unsaved to protect in a viewer, so a change on the server is
+	// always worth re-reading.
+	useFilesChanged({
+		mode: config.mode,
+		path: config.path,
+		refresh: panel.read.refresh,
+	});
 
 	if (panel.gate) return panel.gate;
 	if (panel.readGate) return panel.readGate;

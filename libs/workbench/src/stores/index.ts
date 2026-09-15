@@ -4,4 +4,3 @@ export {
 	type WorkbenchState,
 	type WorkbenchStoreOptions,
 } from "./workbench.store";
-export * from "./workbench-panel-props";

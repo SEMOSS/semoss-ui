@@ -407,7 +407,7 @@ export function movePanelInTree(
 }
 
 /** Px constraints along one axis. */
-export interface WorkbenchExtent {
+interface WorkbenchExtent {
 	min: number;
 	max: number;
 }

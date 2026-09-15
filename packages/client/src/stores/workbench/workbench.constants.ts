@@ -32,6 +32,35 @@ export const WORKBENCH_COMPONENTS = {
 } as const;
 
 /**
+ * Topics panels publish to each other on the workbench event bus.
+ *
+ * The dock never interprets a topic — it only routes — so the names and their
+ * payloads are ours, the same way `WORKBENCH_COMPONENTS` above owns the panel
+ * type strings. Unlike those, these are never persisted, so renaming one only
+ * has to be done on both sides of the same release.
+ */
+export const WORKBENCH_EVENTS = {
+	/**
+	 * The project's frontend was published, so anything showing it is stale.
+	 * Emitted by whoever did the publishing — the assistant's build run, the
+	 * Publish button, or a manual rebuild.
+	 */
+	APP_PUBLISHED: "app:published",
+	/**
+	 * A Git index changed — a file was staged or unstaged. The staged counts
+	 * live in the version panel's control, which is a different panel from the
+	 * diff that does the staging.
+	 */
+	GIT_STATUS_CHANGED: "git:status-changed",
+} as const;
+
+/** What each topic carries. */
+export interface WorkbenchEventPayloads {
+	[WORKBENCH_EVENTS.APP_PUBLISHED]: { projectId: string };
+	[WORKBENCH_EVENTS.GIT_STATUS_CHANGED]: { scope: string };
+}
+
+/**
  * Shared panel instance records, keyed by role.
  *
  * A record is the *instance* a layout seeds (id, name, help text, capability

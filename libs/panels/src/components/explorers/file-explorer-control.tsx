@@ -3,21 +3,20 @@ import type { FC } from "react";
 import { useStore } from "zustand";
 import type { FileExplorerApi } from "@semoss/shared";
 import {
-	Button,
-	cn,
-	Tooltip,
-	TooltipContent,
-	TooltipTrigger,
-} from "@semoss/ui/next";
-import { WORKBENCH_STYLES, type WorkbenchChromeProps } from "@semoss/workbench";
+	useWorkbenchPanel,
+	WorkbenchChromeButton,
+	type WorkbenchPanelProps,
+} from "@semoss/workbench";
 import { useAccessStore } from "../../hooks/use-access";
 import { getPermissionKey } from "../../types/access.types";
 import type { FileExplorerParams } from "./file-explorer-panel";
 
 /** File explorer refresh and create actions for the active panel. */
-export const FileExplorerControl: FC<
-	WorkbenchChromeProps<FileExplorerParams, FileExplorerApi>
-> = ({ value }) => {
+export const FileExplorerControl: FC<WorkbenchPanelProps> = ({ id }) => {
+	const { value } = useWorkbenchPanel<FileExplorerParams, FileExplorerApi>(
+		id,
+	);
+
 	const accessKey = value
 		? value.mode.type === "APP"
 			? getPermissionKey("PROJECT", value.mode.app)
@@ -47,49 +46,20 @@ export const FileExplorerControl: FC<
 	return (
 		<>
 			{canCreate ? (
-				<Tooltip>
-					<TooltipTrigger asChild>
-						<Button
-							data-testid="file-explorer-new-button"
-							variant="ghost"
-							size="icon-sm"
-							className={cn(
-								"flex-none text-muted-foreground",
-								WORKBENCH_STYLES.chromeButton,
-							)}
-							aria-label="New"
-							onClick={() => value.commands.openNewFile()}
-						>
-							<FilePlus2Icon
-								aria-hidden
-								className={WORKBENCH_STYLES.chromeIcon}
-							/>
-						</Button>
-					</TooltipTrigger>
-					<TooltipContent>New</TooltipContent>
-				</Tooltip>
+				<WorkbenchChromeButton
+					icon={FilePlus2Icon}
+					label="New"
+					onClick={() => value.commands.openNewFile()}
+					data-testid="file-explorer-new-button"
+				/>
 			) : null}
-			<Tooltip>
-				<TooltipTrigger asChild>
-					<Button
-						data-testid="file-explorer-refresh-button"
-						variant="ghost"
-						size="icon-sm"
-						className={cn(
-							"flex-none text-muted-foreground",
-							WORKBENCH_STYLES.chromeButton,
-						)}
-						aria-label="Refresh"
-						onClick={() => value.commands.refresh()}
-					>
-						<RefreshCwIcon
-							aria-hidden
-							className={WORKBENCH_STYLES.chromeIcon}
-						/>
-					</Button>
-				</TooltipTrigger>
-				<TooltipContent>Refresh {value.header.path}</TooltipContent>
-			</Tooltip>
+			<WorkbenchChromeButton
+				icon={RefreshCwIcon}
+				label="Refresh"
+				tooltip={`Refresh ${value.header.path}`}
+				onClick={() => value.commands.refresh()}
+				data-testid="file-explorer-refresh-button"
+			/>
 		</>
 	);
 };

@@ -13,7 +13,7 @@ import {
 	readSpawnDragSpec,
 } from "../../utility/workbench-spawn-drag";
 
-export interface WorkbenchDragLayerProps {
+interface WorkbenchDragLayerProps {
 	/** The workbench root, drag initiation is delegated from it. */
 	rootRef: RefObject<HTMLDivElement | null>;
 	/** The stage element edge bands and outside-crossings resolve against. */

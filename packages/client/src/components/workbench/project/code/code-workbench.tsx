@@ -21,9 +21,14 @@ import { useAssistantStore, useProject, useSession } from "@/hooks";
 import type { BuildRun } from "@/stores/assistant";
 import {
 	WORKBENCH_COMPONENTS,
+	WORKBENCH_EVENTS,
 	WORKBENCH_PANEL_RECORDS,
 } from "@/stores/workbench";
 import { GIT_DIFF_PANEL, GIT_VERSION_PANEL } from "../../git";
+import {
+	runTreeTools,
+	useAssistantFilesChanged,
+} from "../../use-assistant-files-changed";
 import {
 	createFileCommands,
 	createOpenPanelCommand,
@@ -46,36 +51,6 @@ import { PROJECT_APP_RENDERER_PANEL } from "./code-app-renderer-panel";
 const PUBLISH_TOOL_RE = /buildandpublishapp|publishproject/i;
 
 /**
- * Whether a completed run — or any subagent run in its tree — invoked a tool
- * that published the app's frontend, meaning the preview iframe is stale.
- *
- * @name runTreePublished
- * @param run - The completed root run.
- * @param runs - The assistant slice's full run map, for resolving subagents.
- * @return Whether any tool in the run tree published the frontend.
- */
-const runTreePublished = (
-	run: BuildRun,
-	runs: Record<string, BuildRun>,
-): boolean => {
-	const stack: BuildRun[] = [run];
-	const seen = new Set<string>();
-	while (stack.length > 0) {
-		const current = stack.pop();
-		if (!current || seen.has(current.runId)) continue;
-		seen.add(current.runId);
-		if (current.tools.some((tool) => PUBLISH_TOOL_RE.test(tool.name))) {
-			return true;
-		}
-		for (const childRunId of current.childRunIds) {
-			const child = runs[childRunId];
-			if (child) stack.push(child);
-		}
-	}
-	return false;
-};
-
-/**
  * The default arrangement: the app preview front and centre, files on the
  * left, the terminal below, and the assistant open on the right — it is the
  * primary build surface for a CODE project (a cached layout still wins for
@@ -95,10 +70,8 @@ const createCodeWorkbenchLayout = (
 			activeId: WORKBENCH_COMPONENTS.PROJECT_APP_RENDERER,
 		},
 		panels: {
-			[WORKBENCH_PANEL_RECORDS.PROJECT_APP_RENDERER.id]: {
-				...WORKBENCH_PANEL_RECORDS.PROJECT_APP_RENDERER,
-				config: { previewVersion: 0 },
-			},
+			[WORKBENCH_PANEL_RECORDS.PROJECT_APP_RENDERER.id]:
+				WORKBENCH_PANEL_RECORDS.PROJECT_APP_RENDERER,
 			[WORKBENCH_PANEL_RECORDS.FILE_EXPLORER.id]: {
 				...WORKBENCH_PANEL_RECORDS.FILE_EXPLORER,
 				config: { mode: { type: "APP", app: projectId } },
@@ -206,7 +179,7 @@ export const CODE_WORKBENCH_COMPONENTS: Record<
  * assistant panel.
  */
 export const CodeWorkbench: React.FC = () => {
-	const layoutActions = useWorkbench((s) => s.layout.actions);
+	const emit = useWorkbench((s) => s.events.actions.emit);
 	const { project, permission } = useProject();
 	const insight = useInsight();
 	const readOnly = !(permission === "OWNER" || permission === "EDIT");
@@ -228,27 +201,39 @@ export const CodeWorkbench: React.FC = () => {
 	);
 
 	/**
-	 * Refresh the code renderer
+	 * Announce that the project's frontend was published.
+	 *
+	 * Whoever is showing it decides what to do — today that is the preview
+	 * panel, which remounts its iframe. This used to reach into that panel and
+	 * bump its scratch value by a hardcoded id, which the dock's own rules
+	 * forbid and which only ever worked for this one publisher.
 	 */
-	const refreshCodeRenderer = useCallback(() => {
-		layoutActions.setPanelValue(
-			WORKBENCH_COMPONENTS.PROJECT_APP_RENDERER,
-			(count = 0) => count + 1,
-		);
-	}, [layoutActions]);
+	const announcePublished = useCallback(() => {
+		emit(WORKBENCH_EVENTS.APP_PUBLISHED, { projectId: project.project_id });
+	}, [emit, project.project_id]);
+
+	const filesChanged = useAssistantFilesChanged({
+		type: "APP",
+		app: project.project_id,
+	});
 
 	const handleRunCompleted = useCallback(
 		(run: BuildRun, runs: Record<string, BuildRun>) => {
-			if (!runTreePublished(run, runs)) {
-				return;
+			filesChanged(run, runs);
+
+			if (
+				runTreeTools(run, runs).some((tool) =>
+					PUBLISH_TOOL_RE.test(tool.name),
+				)
+			) {
+				// The run only tells us a publish *tool ran*, not that the
+				// server finished moving the assets — there is no settle signal
+				// to wait on, so the delay stays here, with the producer that
+				// knows why it is needed, rather than in every consumer.
+				window.setTimeout(announcePublished, 500);
 			}
-			// Give the publish a beat to finish moving assets before the
-			// preview remounts.
-			window.setTimeout(() => {
-				refreshCodeRenderer();
-			}, 500);
 		},
-		[refreshCodeRenderer],
+		[announcePublished, filesChanged],
 	);
 
 	// Manual "rebuild the app" from the assistant header — the same full compile +
@@ -261,9 +246,11 @@ export const CodeWorkbench: React.FC = () => {
 		await insight.actions.run(
 			`BuildAndPublishApp(project='${project.project_id}');`,
 		);
-		refreshCodeRenderer();
+		// No delay needed here: the pixel is awaited, so the publish has
+		// already settled by the time this returns.
+		announcePublished();
 		toast.success("App rebuilt and published.");
-	}, [readOnly, insight.actions, project.project_id, refreshCodeRenderer]);
+	}, [readOnly, insight.actions, project.project_id, announcePublished]);
 
 	const syncPermission = useSession((s) => s.syncPermission);
 	const refreshPermission = useSession((s) => s.refreshPermission);

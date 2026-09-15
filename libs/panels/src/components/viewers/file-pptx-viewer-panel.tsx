@@ -15,8 +15,9 @@ import type {
 	WorkbenchPanelConfig,
 	WorkbenchPanelProps,
 } from "@semoss/workbench";
-import { useWorkbenchControl } from "@semoss/workbench";
+import { useWorkbenchControl, useWorkbenchPanel } from "@semoss/workbench";
 import { type FilePanelParams, useFilePanel } from "../../hooks/use-file-panel";
+import { useFilesChanged } from "../../hooks/use-files-changed";
 import { matchesFilePanel } from "../../types/file-panel.types";
 import {
 	FileEditorControl,
@@ -27,11 +28,12 @@ import { FilePanelIcon } from "../file-panel-icon";
 const FilePptxViewerContent = lazy(() => import("./file-pptx-viewer-content"));
 
 /** Preview and edit a PowerPoint file from a project, engine, or user resource. */
-const FilePptxViewerPanel = ({
-	config,
-	id,
-	setValue,
-}: WorkbenchPanelProps<FilePanelParams, FileEditorControlValue>) => {
+const FilePptxViewerPanel = ({ id }: WorkbenchPanelProps) => {
+	const { config, setValue } = useWorkbenchPanel<
+		FilePanelParams,
+		FileEditorControlValue
+	>(id);
+
 	const panel = useFilePanel(config, { base64: true });
 	const viewerRef = useRef<PowerPointViewerHandle>(null);
 	const [isDirty, setIsDirty] = useState(false);
@@ -73,6 +75,13 @@ const FilePptxViewerPanel = ({
 		setValue,
 	]);
 	useWorkbenchControl(id, FileEditorControl);
+	// Nothing unsaved to protect in a viewer, so a change on the server is
+	// always worth re-reading.
+	useFilesChanged({
+		mode: config.mode,
+		path: config.path,
+		refresh: panel.read.refresh,
+	});
 
 	if (panel.gate) return panel.gate;
 

@@ -61,12 +61,6 @@ export interface FilePanelApi {
 	readOnly: boolean;
 	/** The insight every Pixel for this file runs through. */
 	targetInsightId: string | undefined;
-	/**
-	 * The file's *current* path — it follows a rename while the panel stays
-	 * mounted, which `config.path` does not. Always save and download through
-	 * this, never through `config.path`.
-	 */
-	currentPathRef: { current: string };
 	read: {
 		status: string;
 		data: string;
@@ -78,7 +72,6 @@ export interface FilePanelApi {
 	/** Writes in the panel's declared encoding — see the `base64` option. */
 	save: (content: string) => Promise<boolean>;
 	download: () => Promise<void>;
-	isSaving: boolean;
 	isDownloading: boolean;
 	isBusy: boolean;
 	/** Blocking access state, or null once resolved. Return it before anything else. */
@@ -242,11 +235,9 @@ export const useFilePanel = (
 		access,
 		readOnly,
 		targetInsightId,
-		currentPathRef,
 		read: { ...read, revision },
 		save,
 		download,
-		isSaving,
 		isDownloading,
 		isBusy:
 			isSaving || isDownloading || extraBusy || read.status === "LOADING",

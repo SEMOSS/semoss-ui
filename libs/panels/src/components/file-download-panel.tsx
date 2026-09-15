@@ -5,8 +5,9 @@ import type {
 	WorkbenchPanelConfig,
 	WorkbenchPanelProps,
 } from "@semoss/workbench";
-import { useWorkbenchControl } from "@semoss/workbench";
+import { useWorkbenchControl, useWorkbenchPanel } from "@semoss/workbench";
 import { type FilePanelParams, useFilePanel } from "../hooks/use-file-panel";
+import { useFilesChanged } from "../hooks/use-files-changed";
 import { matchesFilePanel } from "../types/file-panel.types";
 import {
 	getCodeEditorLanguage,
@@ -22,11 +23,12 @@ import { FilePanelIcon } from "./file-panel-icon";
 export type FileDownloadParams = FilePanelParams;
 
 /** Offer a download for a file the browser cannot render, with a raw escape hatch. */
-const FileDownloadPanel = ({
-	config,
-	id,
-	setValue,
-}: WorkbenchPanelProps<FileDownloadParams, FileDownloadControlValue>) => {
+const FileDownloadPanel = ({ id }: WorkbenchPanelProps) => {
+	const { config, setValue } = useWorkbenchPanel<
+		FileDownloadParams,
+		FileDownloadControlValue
+	>(id);
+
 	const [viewMode, setViewMode] = useState<FileDownloadViewMode>("download");
 	// nothing to read unless the user asks for the raw view — this panel's
 	// formats are download-first
@@ -34,6 +36,13 @@ const FileDownloadPanel = ({
 
 	useEffect(() => setValue({ setViewMode, viewMode }), [setValue, viewMode]);
 	useWorkbenchControl(id, FileDownloadControl);
+	// Nothing unsaved to protect in a viewer, so a change on the server is
+	// always worth re-reading.
+	useFilesChanged({
+		mode: config.mode,
+		path: config.path,
+		refresh: panel.read.refresh,
+	});
 
 	if (panel.gate) return panel.gate;
 

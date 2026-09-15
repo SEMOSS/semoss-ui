@@ -4,9 +4,10 @@ import type {
 	WorkbenchPanelConfig,
 	WorkbenchPanelProps,
 } from "@semoss/workbench";
-import { useWorkbenchControl } from "@semoss/workbench";
+import { useWorkbenchControl, useWorkbenchPanel } from "@semoss/workbench";
 import { useFileBuffer } from "../../hooks/use-file-buffer";
 import { type FilePanelParams, useFilePanel } from "../../hooks/use-file-panel";
+import { useFilesChanged } from "../../hooks/use-files-changed";
 import { matchesFilePanel } from "../../types/file-panel.types";
 import {
 	getCodeEditorLanguage,
@@ -25,12 +26,12 @@ const MARKDOWN_VIEW_MODES = [
 ];
 
 /** Edit a Markdown file, with a rendered preview and a raw editor. */
-const FileMarkdownEditorPanel = ({
-	config,
-	id,
-	rename,
-	setValue,
-}: WorkbenchPanelProps<FilePanelParams, FileEditorControlValue>) => {
+const FileMarkdownEditorPanel = ({ id }: WorkbenchPanelProps) => {
+	const { config, rename, setValue } = useWorkbenchPanel<
+		FilePanelParams,
+		FileEditorControlValue
+	>(id);
+
 	const panel = useFilePanel(config);
 	const buffer = useFileBuffer({ panel, name: config.name, rename });
 	const [viewMode, setViewMode] = useState<"preview" | "raw">("preview");
@@ -55,6 +56,15 @@ const FileMarkdownEditorPanel = ({
 		viewMode,
 	]);
 	useWorkbenchControl(id, FileEditorControl);
+	// Someone else changed this file — an agent, a branch switch, a commit
+	// restore. Held back while the buffer is dirty: re-reading re-seeds it
+	// from the server, which would throw the user's unsaved edits away.
+	useFilesChanged({
+		mode: config.mode,
+		path: config.path,
+		skip: buffer.isDirty,
+		refresh: panel.read.refresh,
+	});
 
 	if (panel.gate) return panel.gate;
 	if (panel.readGate) return panel.readGate;

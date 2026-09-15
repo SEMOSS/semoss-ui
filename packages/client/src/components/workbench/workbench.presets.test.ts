@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
+import { toast } from "@semoss/ui/next";
 import { WORKBENCH_COMPONENTS } from "@/stores/workbench";
 import {
 	createFileCommands,
@@ -103,14 +104,65 @@ describe("createOpenPanelCommand", () => {
 });
 
 describe("createReconnectCommand", () => {
-	it("runs ReconnectServer on the workbench's insight", () => {
+	/** A `get` carrying just the loading actions the handler reaches for. */
+	const withLoading = () => {
+		const setLoading = vi.fn();
+		return {
+			setLoading,
+			get: (() => ({ loading: { actions: { setLoading } } })) as never,
+		};
+	};
+
+	it("runs ReconnectServer on the workbench's insight", async () => {
 		const run = vi.fn(() => Promise.resolve());
 		const command = createReconnectCommand({ actions: { run: run } });
+		const { get } = withLoading();
 
-		command.handler(undefined as never);
+		command.handler(get);
+		await vi.waitFor(() => expect(run).toHaveBeenCalled());
 
 		expect(command.id).toBe("workbench.server.reconnect");
 		expect(run).toHaveBeenCalledWith("ReconnectServer();");
+	});
+
+	it("covers the shell while in flight and clears it on success", async () => {
+		const success = vi.spyOn(toast, "success").mockImplementation(vi.fn());
+		const command = createReconnectCommand({
+			actions: { run: () => Promise.resolve() },
+		});
+		const { setLoading, get } = withLoading();
+
+		command.handler(get);
+
+		// synchronously, before the pixel resolves
+		expect(setLoading).toHaveBeenCalledWith(true);
+
+		await vi.waitFor(() =>
+			expect(setLoading).toHaveBeenLastCalledWith(false),
+		);
+		expect(success).toHaveBeenCalledWith("Server reconnected");
+		success.mockRestore();
+	});
+
+	it("clears the scrim when the reconnect fails", async () => {
+		const error = vi.spyOn(toast, "error").mockImplementation(vi.fn());
+		const logged = vi
+			.spyOn(console, "error")
+			.mockImplementation(() => undefined);
+		const command = createReconnectCommand({
+			actions: { run: () => Promise.reject(new Error("no route")) },
+		});
+		const { setLoading, get } = withLoading();
+
+		command.handler(get);
+
+		// a scrim that outlived a failed pixel would lock the whole shell
+		await vi.waitFor(() =>
+			expect(setLoading).toHaveBeenLastCalledWith(false),
+		);
+		expect(error).toHaveBeenCalled();
+		error.mockRestore();
+		logged.mockRestore();
 	});
 });
 

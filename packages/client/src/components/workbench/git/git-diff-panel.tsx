@@ -8,7 +8,9 @@ import type {
 	WorkbenchPanelProps,
 } from "@semoss/workbench";
 import {
+	useWorkbench,
 	useWorkbenchControl,
+	useWorkbenchPanel,
 	WorkbenchPanelError,
 	WorkbenchPanelLoading,
 } from "@semoss/workbench";
@@ -20,7 +22,8 @@ import type {
 	GitStageAction,
 } from "@/components/git";
 import { GitDiffControl, GitDiffEditor } from "@/components/git";
-import type { GitPanelScopeParams } from "./git-panel.types";
+import { WORKBENCH_EVENTS } from "@/stores/workbench";
+import { type GitPanelScopeParams, gitFileScope } from "./git-panel.types";
 
 export interface GitDiffParams extends GitPanelScopeParams {
 	name: string;
@@ -29,13 +32,14 @@ export interface GitDiffParams extends GitPanelScopeParams {
 	commitId?: string;
 }
 
-const GitDiffPanel = ({
-	config,
-	id,
-	setValue,
-	close,
-}: WorkbenchPanelProps<GitDiffParams, GitDiffControlValue>) => {
+const GitDiffPanel = ({ id }: WorkbenchPanelProps) => {
+	const { config, setValue, close } = useWorkbenchPanel<
+		GitDiffParams,
+		GitDiffControlValue
+	>(id);
+
 	const insight = useInsight();
+	const emit = useWorkbench((state) => state.events.actions.emit);
 	const access = useAccess(config.type, config.id);
 	const readOnly = access.status !== "ready" || access.readOnly;
 	const [renderSideBySide, setRenderSideBySide] = useState(true);
@@ -80,6 +84,11 @@ const GitDiffPanel = ({
 				`${prefix}GitStage(${resource}, paths=[${JSON.stringify(config.path)}], action=[${JSON.stringify(action)}]);`,
 			);
 			toast.success(action === "STAGE" ? "File staged" : "File unstaged");
+			// The staged counts live in the version panel's control, which is a
+			// different panel and does not re-render with this one.
+			emit(WORKBENCH_EVENTS.GIT_STATUS_CHANGED, {
+				scope: gitFileScope(config),
+			});
 			close();
 		} catch (error) {
 			console.error(error);
