@@ -14,8 +14,6 @@ import {
 	mdiTabletCellphone,
 } from "@mdi/js";
 
-console.log(mdiPalette);
-
 export const SETTINGS_ROUTES: {
 	/*** Title of the page */
 	title: string;

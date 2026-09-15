@@ -347,6 +347,8 @@ export interface ThemeMap {
 			enablePromptOptimizer?: boolean;
 			/** Whether to hide tools when the app is rendered inside an iframe. */
 			hideToolsInIframe?: boolean;
+			/** Whether to hide the chat-history list (sidebar and the "All Chats" page/nav link) so users cannot browse past conversations. */
+			hideChatHistory?: boolean;
 			/** Whether to run MakeEngineMCP after creating a new knowledge source. Defaults to true. */
 			enableKnowledgeMCP?: boolean;
 			/** Whether to show the embedding model selector in the new knowledge form. Defaults to true. */
@@ -359,8 +361,6 @@ export interface ThemeMap {
 			enableFeedbackText?: boolean;
 			/** Whether to show an export button on tables rendered in chat responses. Defaults to false. */
 			enableTableExport?: boolean;
-			/** Whether workspaces auto-open with a silent kickoff message when selected. Defaults to false. */
-			enableAutoGreeting?: boolean;
 			/** Whether to show the temperature slider in room settings. Defaults to false. */
 			enableTemperature?: boolean;
 		};

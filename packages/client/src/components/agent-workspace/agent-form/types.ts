@@ -26,6 +26,9 @@ type HookEntry = {
 /** The only kind with configurable fields today. */
 export const PIXEL_HOOK_KIND = "pixel";
 
+/** Max length for the agent's scripted opening message. Mirrors EditWorkspaceReactor's server-side cap. */
+export const MAX_GREETING_LENGTH = 2000;
+
 /**
  * Lifecycle event names `PixelReactorHook` filters on. Not returned by any
  * API (only `knownKinds` is) since this is specific to the `pixel` kind -
@@ -60,6 +63,8 @@ export type AgentFormValues = {
 	name: string;
 	description: string;
 	instructions: string;
+	greeting: string;
+	greetingEnabled: boolean;
 	modelId: string;
 	useDefaultAgentTools: boolean;
 	disabledDefaultTools: string[];
@@ -81,6 +86,8 @@ export const AGENT_FORM_DEFAULT_VALUES: AgentFormValues = {
 	name: "",
 	description: "",
 	instructions: "",
+	greeting: "",
+	greetingEnabled: false,
 	modelId: "",
 	useDefaultAgentTools: true,
 	disabledDefaultTools: [],
