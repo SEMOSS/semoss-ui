@@ -24,6 +24,11 @@ const GUARDRAIL_RESULT_ARGUMENT = "result";
 
 export type GuardrailPhase = "input" | "output";
 const GUARDRAIL_FAILURE_ACTIONS = ["block", "mask", "respond"] as const;
+
+/** What a check does with the agent loop's tool-result turns: screen them like
+ * any other input, leave the listed tools' results alone, or leave all of them
+ * alone. Screening every turn is the default. */
+const GUARDRAIL_TOOL_CONTINUATION_MODES = ["none", "listed", "all"] as const;
 const GUARDRAIL_DIRECT_PARAMETER_TYPES = [
 	"string",
 	"number",
@@ -68,6 +73,10 @@ export interface InterceptableMethodArgument {
 
 	/** Whether a guardrail can screen this argument's value. */
 	guardable: boolean;
+
+	/** Whether this argument can hold a tool-result continuation, which only a
+	 * message argument can. Marks where the tool-continuation settings apply. */
+	carriesToolResults: boolean;
 }
 
 /** A model engine method a guardrail pipeline can intercept. */
@@ -134,6 +143,9 @@ const guardrailDirectParamSchema = z.object({
 });
 
 const guardrailFailureActionSchema = z.enum(GUARDRAIL_FAILURE_ACTIONS);
+const guardrailToolContinuationSchema = z.enum(
+	GUARDRAIL_TOOL_CONTINUATION_MODES,
+);
 
 const guardrailReactorSchema = z
 	.object({
@@ -142,6 +154,9 @@ const guardrailReactorSchema = z
 		failureAction: guardrailFailureActionSchema,
 		closeRoomOnBlock: z.boolean(),
 		blockErrorMessage: z.string(),
+		toolContinuationSkip: guardrailToolContinuationSchema,
+		toolContinuationTools: z.string(),
+		toolContinuationArg: z.string(),
 		inputMapping: z
 			.array(guardrailMappingEntrySchema)
 			.min(1, "Add at least one parameter mapping."),
@@ -157,6 +172,17 @@ const guardrailReactorSchema = z
 				code: z.ZodIssueCode.custom,
 				message: "The custom block message cannot be blank.",
 				path: ["blockErrorMessage"],
+			});
+		}
+		if (
+			value.toolContinuationSkip === "listed" &&
+			splitToolNames(value.toolContinuationTools).length === 0
+		) {
+			context.addIssue({
+				code: z.ZodIssueCode.custom,
+				message:
+					"Name at least one tool to skip, or screen every turn.",
+				path: ["toolContinuationTools"],
 			});
 		}
 	});
@@ -188,6 +214,9 @@ export type GuardrailDirectParamFormValue = z.infer<
 >;
 export type GuardrailFailureAction = z.infer<
 	typeof guardrailFailureActionSchema
+>;
+export type GuardrailToolContinuationSkip = z.infer<
+	typeof guardrailToolContinuationSchema
 >;
 export type GuardrailReactorFormValue = z.infer<typeof guardrailReactorSchema>;
 export type GuardrailPipelineFormValue = z.infer<
@@ -226,6 +255,10 @@ export const createGuardrailReactor = (
 	failureAction: "block",
 	closeRoomOnBlock: false,
 	blockErrorMessage: "",
+	// a new check screens tool-result turns like everything else
+	toolContinuationSkip: "none",
+	toolContinuationTools: "",
+	toolContinuationArg: "",
 	// without a mapping the guardrail receives no content to check, so new
 	// entries start wired to the first argument (request) or the return value
 	// (response) - "arg0" is the intercepted method's first argument
@@ -255,6 +288,14 @@ const splitArgs = (args: string): string[] =>
 	args
 		.split(",")
 		.map((arg) => arg.trim())
+		.filter(Boolean);
+
+/** Tool names are entered as a comma separated list, one name per tool as the
+ * model sees it. */
+const splitToolNames = (tools: string): string[] =>
+	tools
+		.split(",")
+		.map((tool) => tool.trim())
 		.filter(Boolean);
 
 const inferDirectParameterType = (
@@ -337,6 +378,25 @@ const normalizeReactorEntry = (
 		typeof params.blockErrorMessage === "string"
 	) {
 		base.blockErrorMessage = params.blockErrorMessage;
+	}
+	if (phase === "input") {
+		if (params.skipOnToolContinuationForAllTools === true) {
+			base.toolContinuationSkip = "all";
+		} else if (Array.isArray(params.skipOnToolContinuationForTools)) {
+			const tools = params.skipOnToolContinuationForTools.filter(
+				(tool): tool is string => typeof tool === "string",
+			);
+			if (tools.length > 0) {
+				base.toolContinuationSkip = "listed";
+				base.toolContinuationTools = tools.join(", ");
+			}
+		}
+		if (
+			base.toolContinuationSkip !== "none" &&
+			typeof params.toolContinuationArg === "string"
+		) {
+			base.toolContinuationArg = params.toolContinuationArg;
+		}
 	}
 	if (params.inputMapping && typeof params.inputMapping === "object") {
 		base.inputMapping = Object.entries(
@@ -497,6 +557,7 @@ export const extractInterceptableMethods = (
 							nameIsFromSource: a.nameIsFromSource === true,
 							type: typeof a.type === "string" ? a.type : "",
 							guardable: a.guardable === true,
+							carriesToolResults: a.carriesToolResults === true,
 						},
 					];
 				}),
@@ -578,6 +639,7 @@ export const guardrailArgumentOptions = ({
 		nameIsFromSource: true,
 		type: matched ? matched.returnType : "model response",
 		guardable: matched ? matched.returnsModelResponse : true,
+		carriesToolResults: false,
 	};
 	if (!matched) {
 		return phase === "output" ? [resultArgument] : [];
@@ -585,6 +647,35 @@ export const guardrailArgumentOptions = ({
 	return phase === "output"
 		? [resultArgument, ...matched.arguments]
 		: matched.arguments;
+};
+
+/**
+ * The argument that can hold the agent loop's tool results for a pipeline's
+ * method, or undefined when that method never carries them. A pipeline on every
+ * method is answered by whichever method does carry them, since that is the
+ * traffic the setting acts on.
+ */
+export const guardrailToolResultArgument = ({
+	method,
+	methods,
+}: {
+	method: string;
+	methods: InterceptableMethod[];
+}): InterceptableMethodArgument | undefined => {
+	const trimmed = method.trim();
+	const candidates =
+		trimmed && trimmed !== GUARDRAIL_ALL_METHODS
+			? methods.filter((candidate) => candidate.name === trimmed)
+			: methods;
+	for (const candidate of candidates) {
+		const argument = candidate.arguments.find(
+			(entry) => entry.carriesToolResults,
+		);
+		if (argument) {
+			return argument;
+		}
+	}
+	return undefined;
 };
 
 /** Whether a check has no input a masked value could be written back to. */
@@ -782,6 +873,41 @@ export const collectGuardrailConfigIssues = (
 						...target,
 					});
 				}
+				if (
+					phase === "input" &&
+					(entry.toolContinuationSkip === "all" ||
+						entry.toolContinuationSkip === "listed")
+				) {
+					if (
+						entry.toolContinuationSkip === "listed" &&
+						splitToolNames(entry.toolContinuationTools).length === 0
+					) {
+						issues.push({
+							message: `Name at least one tool to skip in pipeline "${method}", or screen every turn.`,
+							severity: "error",
+							...target,
+						});
+					}
+					if (
+						matchedMethod &&
+						!matchedMethod.arguments.some(
+							(argument) => argument.carriesToolResults,
+						)
+					) {
+						issues.push({
+							message: `${method} never carries tool results, so skipping them changes nothing for this check.`,
+							severity: "warning",
+							...target,
+						});
+					}
+					if (entry.toolContinuationSkip === "all") {
+						issues.push({
+							message: `This check skips every tool result in pipeline "${method}", so it stops screening the content tools return - a web search or file read reaches the model unchecked.`,
+							severity: "warning",
+							...target,
+						});
+					}
+				}
 				if (entryHasMaskConflict(entry)) {
 					issues.push({
 						message: `Masking needs one input that reads a single argument and is not overridden by a fixed value, because the masked value is written back to that argument.`,
@@ -918,6 +1044,20 @@ const serializeReactorEntry = (
 	};
 	if (failureAction === "block" && entry.blockErrorMessage.trim()) {
 		params.blockErrorMessage = entry.blockErrorMessage.trim();
+	}
+	// the keys are written only by a check that opts out of screening tool results
+	if (phase === "input" && entry.toolContinuationSkip !== "none") {
+		if (entry.toolContinuationSkip === "all") {
+			params.skipOnToolContinuationForAllTools = true;
+		} else {
+			params.skipOnToolContinuationForTools = splitToolNames(
+				entry.toolContinuationTools,
+			);
+		}
+		const toolContinuationArg = entry.toolContinuationArg.trim();
+		if (toolContinuationArg && toolContinuationArg !== "arg0") {
+			params.toolContinuationArg = toolContinuationArg;
+		}
 	}
 	if (entry.inputMapping.length > 0) {
 		const inputMapping: Record<string, unknown> = {};

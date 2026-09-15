@@ -124,9 +124,7 @@ export const SaveCodeNotebookDialog = ({
 			false,
 			false,
 		);
-		room.openFileEditorSidebarNode(path, {
-			forceRefresh: true,
-		});
+		room.openFileSidebarPanel(path, undefined, { refresh: true });
 	};
 
 	/** Appends the code (with its execution outputs) as a new cell to the target notebook. */

@@ -1,22 +1,32 @@
 import type { FC } from "react";
 import { useState } from "react";
+import { FILE_PANEL_EVENTS, useAccess } from "@semoss/panels";
 import { useInsight, usePixel } from "@semoss/sdk/react";
 import { Button, Spinner } from "@semoss/ui/next";
+import type { WorkbenchPanelProps } from "@semoss/workbench";
+import {
+	useWorkbench,
+	useWorkbenchEvent,
+	useWorkbenchPanel,
+	WORKBENCH_STYLES,
+} from "@semoss/workbench";
 import type { GitBranches, GitStatus } from "@/components/git";
 import { GitBranchControl } from "@/components/git";
-import { useWorkbenchAccess } from "@/hooks";
-import type { WorkbenchChromeProps } from "@/stores/workbench";
-import { WORKBENCH_STYLES } from "../core/workbench.chrome";
-import type { GitPanelScopeParams } from "./git-panel.types";
+import { WORKBENCH_EVENTS } from "@/stores/workbench";
+import { type GitPanelScopeParams, gitFileScope } from "./git-panel.types";
 
 export type GitVersionParams = GitPanelScopeParams;
 
 /** Select, create, and refresh branches for a configured Git resource. */
-export const GitVersionControl: FC<
-	WorkbenchChromeProps<GitVersionParams, number>
-> = ({ config, setValue }) => {
+export const GitVersionControl: FC<WorkbenchPanelProps> = ({ id }) => {
+	const { config, setValue } = useWorkbenchPanel<GitVersionParams, number>(
+		id,
+	);
+
 	const insight = useInsight();
-	const access = useWorkbenchAccess(config.type, config.id);
+	const emit = useWorkbench((s) => s.events.actions.emit);
+	const scope = gitFileScope(config);
+	const access = useAccess(config.type, config.id);
 	const [isBranchesOpen, setIsBranchesOpen] = useState(false);
 	const readOnly = access.status !== "ready" || access.readOnly;
 	const prefix = config.type === "ENGINE" ? "Engine" : "Project";
@@ -32,6 +42,17 @@ export const GitVersionControl: FC<
 		hasAccess && isBranchesOpen ? `${prefix}GitBranches(${resource});` : "",
 	);
 
+	// Staging happens in the diff panel, which is a different panel; without
+	// this the staged/unstaged counts here stayed wrong until a manual refresh.
+	useWorkbenchEvent<{ scope: string }>(
+		WORKBENCH_EVENTS.GIT_STATUS_CHANGED,
+		(changed) => {
+			if (changed.scope === scope) {
+				status.refresh();
+			}
+		},
+	);
+
 	const refresh = () => {
 		if (access.status !== "loading") {
 			void access.refresh().catch(() => undefined);
@@ -45,6 +66,11 @@ export const GitVersionControl: FC<
 		await insight.actions.run(
 			`${prefix}GitCheckout(${resource}, branch=[${JSON.stringify(branch)}]);`,
 		);
+		// A checkout rewrites the whole working tree, so every explorer and
+		// open editor in this resource is showing the old branch. No paths: the
+		// pixel does not report what it touched, and "everything" is the honest
+		// answer anyway.
+		emit(FILE_PANEL_EVENTS.FILES_CHANGED, { scope });
 	};
 
 	const createBranch = async (branch: string) => {
