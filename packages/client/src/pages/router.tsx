@@ -26,7 +26,7 @@ const router = createHashRouter([
 				path: "s/:appId",
 				element: <ProjectLayout />,
 				children: [
-					{ path: "", element: <SharePage /> },
+					{ index: true, element: <SharePage /> },
 					{ path: "*", element: <SharePage /> },
 				],
 			},

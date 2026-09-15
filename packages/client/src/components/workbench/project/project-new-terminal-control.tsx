@@ -1,19 +1,11 @@
 import { PlusIcon } from "lucide-react";
 import type { FC } from "react";
-import {
-	Button,
-	cn,
-	Tooltip,
-	TooltipContent,
-	TooltipTrigger,
-} from "@semoss/ui/next";
-import { useWorkbench } from "@/hooks";
-import type { WorkbenchChromeProps } from "@/stores/workbench";
-import { WORKBENCH_STYLES } from "../core/workbench.chrome";
-import { WORKBENCH_COMPONENTS } from "../workbench.constants";
+import type { WorkbenchPanelProps } from "@semoss/workbench";
+import { useWorkbench, WorkbenchChromeButton } from "@semoss/workbench";
+import { WORKBENCH_COMPONENTS } from "@/stores/workbench";
 
 /** Opens another independent project terminal alongside the active one. */
-export const ProjectNewTerminalControl: FC<WorkbenchChromeProps> = () => {
+export const ProjectNewTerminalControl: FC<WorkbenchPanelProps> = () => {
 	const spawnPanel = useWorkbench((state) => state.layout.actions.spawnPanel);
 	const nextTerminalNumber = useWorkbench((state) => {
 		const terminalNumbers = Object.values(state.layout.panels)
@@ -27,30 +19,18 @@ export const ProjectNewTerminalControl: FC<WorkbenchChromeProps> = () => {
 	});
 
 	return (
-		<Tooltip>
-			<TooltipTrigger asChild>
-				<Button
-					variant="ghost"
-					size="icon-sm"
-					aria-label="New terminal"
-					data-testid="workbench-new-terminal-button"
-					onClick={() =>
-						spawnPanel(WORKBENCH_COMPONENTS.PROJECT_TERMINAL, {
-							name: `Terminal ${nextTerminalNumber}`,
-							config: { terminalNumber: nextTerminalNumber },
-							canClose: true,
-							target: { kind: "border", side: "bottom" },
-						})
-					}
-					className={cn(
-						"flex-none text-muted-foreground",
-						WORKBENCH_STYLES.chromeButton,
-					)}
-				>
-					<PlusIcon className={WORKBENCH_STYLES.chromeIcon} />
-				</Button>
-			</TooltipTrigger>
-			<TooltipContent>New terminal</TooltipContent>
-		</Tooltip>
+		<WorkbenchChromeButton
+			icon={PlusIcon}
+			label="New terminal"
+			onClick={() =>
+				spawnPanel(WORKBENCH_COMPONENTS.PROJECT_TERMINAL, {
+					name: `Terminal ${nextTerminalNumber}`,
+					config: { terminalNumber: nextTerminalNumber },
+					canClose: true,
+					target: { kind: "border", side: "bottom" },
+				})
+			}
+			data-testid="workbench-new-terminal-button"
+		/>
 	);
 };
