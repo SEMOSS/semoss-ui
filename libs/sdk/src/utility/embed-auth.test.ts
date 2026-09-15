@@ -145,7 +145,7 @@ describe("waitForEmbedAuth", () => {
 					loginProvider: "semoss",
 				},
 			},
-		} as MessageEvent);
+		} as unknown as MessageEvent);
 
 		await pending;
 		expect(Env.BEARER_TOKEN).toBe("token-123");
@@ -185,7 +185,7 @@ describe("waitForEmbedAuth", () => {
 					loginProvider: "malicious",
 				},
 			},
-		} as MessageEvent);
+		} as unknown as MessageEvent);
 
 		expect(Env.BEARER_TOKEN).toBe("");
 		expect(Env.BEARER_PROVIDER).toBe("");
