@@ -6,9 +6,8 @@ import {
 	TooltipContent,
 	TooltipTrigger,
 } from "@semoss/ui/next";
-import { useWorkbench } from "@/hooks";
-import { WORKBENCH_STYLES } from "../workbench/core/workbench.chrome";
-import { WORKBENCH_COMPONENTS } from "../workbench/workbench.constants";
+import { useWorkbench, WORKBENCH_STYLES } from "@semoss/workbench";
+import { WORKBENCH_COMPONENTS } from "@/stores/workbench";
 
 /**
  * Opens or closes the automation project's existing settings panel.

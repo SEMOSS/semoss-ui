@@ -5,7 +5,6 @@ import {
 	CopyIcon,
 	FileCode2Icon,
 	FolderTreeIcon,
-	MessageSquareIcon,
 	Minus as MinusIcon,
 	PanelRightIcon,
 	Plus as PlusIcon,
@@ -35,6 +34,7 @@ import {
 	InspectorTab,
 	RunsTab,
 } from "@semoss/automation-workspace";
+import { FILE_PANEL_COMPONENTS } from "@semoss/panels";
 import type { Role } from "@semoss/sdk";
 import { InsightProvider } from "@semoss/sdk/react";
 import {
@@ -62,27 +62,18 @@ import {
 	TooltipContent,
 	TooltipTrigger,
 } from "@semoss/ui/next";
+import {
+	useWorkbench,
+	Workbench,
+	type WorkbenchComponent,
+	type WorkbenchLayout,
+	type WorkbenchPanelConfigAny,
+} from "@semoss/workbench";
+import { ASSISTANT_PANEL } from "@/components/assistant";
 import { ProjectDetailTabs } from "@/components/project";
 import { ShareOverlay } from "@/components/ui";
-import { WorkbenchAssistantView } from "@/components/workbench/assistant";
-import { Workbench } from "@/components/workbench/core";
-import {
-	FILE_CODE_EDITOR_PANEL,
-	FILE_DOWNLOAD_PANEL,
-	FILE_EXPLORER_PANEL,
-	FILE_IMAGE_VIEWER_PANEL,
-	FILE_MARKDOWN_EDITOR_PANEL,
-	FILE_MCP_EDITOR_PANEL,
-	FILE_NOTEBOOK_EDITOR_PANEL,
-	FILE_PDF_VIEWER_PANEL,
-} from "@/components/workbench/files";
-import { WorkbenchProvider } from "@/contexts";
-import { useProject, useWorkbench } from "@/hooks";
-import type {
-	WorkbenchComponent,
-	WorkbenchLayout,
-	WorkbenchPanelConfigAny,
-} from "@/stores/workbench";
+import { AssistantStoreProvider, WorkbenchProvider } from "@/contexts";
+import { useAssistantStore, useProject } from "@/hooks";
 import { WORKBENCH_COMPONENTS } from "@/stores/workbench";
 import { NavbarHeader, NavbarLeft, NavbarRight } from "../shared";
 import { AutomationSettingsToggle } from "./automation-settings-toggle";
@@ -356,6 +347,78 @@ const AutomationSettingsPanel: WorkbenchComponent = () => (
 	<ProjectDetailTabs tabs={SETTINGS_TABS} />
 );
 
+const AUTOMATION_COMPONENTS: Record<string, WorkbenchPanelConfigAny> = {
+	[EDITOR]: {
+		name: "Editor",
+		canClose: false,
+		canRename: false,
+		icon: ({ className }) => <FileCode2Icon className={className} />,
+		content: AutomationEditorPanel,
+	},
+	[INSPECTOR]: {
+		name: "Inspector",
+		canClose: false,
+		canRename: false,
+		enableBorderHeader: false,
+		icon: ({ className }) => <PanelRightIcon className={className} />,
+		mount: "keepAlive",
+		content: AutomationInspectorPanel,
+	},
+	[FILES]: {
+		...FILE_PANEL_COMPONENTS[WORKBENCH_COMPONENTS.FILE_EXPLORER],
+		canRename: false,
+		enableBorderHeader: false,
+		icon: ({ className }) => <FolderTreeIcon className={className} />,
+	},
+	[FILE_EDITOR]: {
+		...FILE_PANEL_COMPONENTS[WORKBENCH_COMPONENTS.FILE_CODE_EDITOR],
+		canRename: false,
+	},
+	[WORKBENCH_COMPONENTS.FILE_DOWNLOAD]: {
+		...FILE_PANEL_COMPONENTS[WORKBENCH_COMPONENTS.FILE_DOWNLOAD],
+		canRename: false,
+	},
+	[WORKBENCH_COMPONENTS.FILE_IMAGE_VIEWER]: {
+		...FILE_PANEL_COMPONENTS[WORKBENCH_COMPONENTS.FILE_IMAGE_VIEWER],
+		canRename: false,
+	},
+	[WORKBENCH_COMPONENTS.FILE_MARKDOWN_EDITOR]: {
+		...FILE_PANEL_COMPONENTS[WORKBENCH_COMPONENTS.FILE_MARKDOWN_EDITOR],
+		canRename: false,
+	},
+	[WORKBENCH_COMPONENTS.FILE_NOTEBOOK_EDITOR]: {
+		...FILE_PANEL_COMPONENTS[WORKBENCH_COMPONENTS.FILE_NOTEBOOK_EDITOR],
+		canRename: false,
+	},
+	[WORKBENCH_COMPONENTS.FILE_PDF_VIEWER]: {
+		...FILE_PANEL_COMPONENTS[WORKBENCH_COMPONENTS.FILE_PDF_VIEWER],
+		canRename: false,
+	},
+	[MCP_EDITOR]: {
+		...FILE_PANEL_COMPONENTS[WORKBENCH_COMPONENTS.FILE_MCP_EDITOR],
+		canRename: false,
+		icon: ({ className }) => <BracesIcon className={className} />,
+	},
+	[TRACE]: {
+		name: "Run details",
+		canClose: false,
+		canRename: false,
+		enableBorderHeader: false,
+		icon: ({ className }) => <ActivityIcon className={className} />,
+		mount: "keepAlive",
+		content: AutomationTracePanel,
+	},
+	[SETTINGS]: {
+		name: "Settings",
+		canRename: false,
+		icon: ({ className }) => <SettingsIcon className={className} />,
+		content: AutomationSettingsPanel,
+	},
+	[WORKBENCH_COMPONENTS.ASSISTANT]: {
+		...ASSISTANT_PANEL,
+	},
+};
+
 const AutomationOutputModal = ({
 	output,
 	onClose,
@@ -603,9 +666,9 @@ export const AutomationWorkbench = observer(
 			() => createAutomationLayout(appId),
 			[appId],
 		);
-		const setAssistantDraft = useWorkbench(
-			(state) => state.assistant.setDraft,
-		);
+		const workbenchId = readOnly ? `${appId}--read-only` : appId;
+		const assistantStore = useAssistantStore(workbenchId);
+		const setAssistantDraft = assistantStore.getState().setDraft;
 		const canvasRef = useRef<AutomationCanvasHandle>(null);
 		const [traceSnapshot, setTraceSnapshot] =
 			useState<AutomationTraceSnapshot | null>(null);
@@ -763,123 +826,22 @@ export const AutomationWorkbench = observer(
 			],
 		);
 
-		// Stable across renders — `content` is rendered by Workbench as a component type
-		// (`<Content />`), so a new function identity here would remount the whole panel
-		// subtree on every trace/inspector tick instead of just re-rendering it.
-		const components = useMemo<Record<string, WorkbenchPanelConfigAny>>(
-			() => ({
-				[EDITOR]: {
-					name: "Editor",
-					canClose: false,
-					canRename: false,
-					icon: ({ className }) => (
-						<FileCode2Icon className={className} />
-					),
-					content: AutomationEditorPanel,
-				},
-				[INSPECTOR]: {
-					name: "Inspector",
-					canClose: false,
-					canRename: false,
-					enableBorderHeader: false,
-					icon: ({ className }) => (
-						<PanelRightIcon className={className} />
-					),
-					mount: "keepAlive",
-					content: AutomationInspectorPanel,
-				},
-				[FILES]: {
-					...FILE_EXPLORER_PANEL,
-					canRename: false,
-					enableBorderHeader: false,
-					icon: ({ className }) => (
-						<FolderTreeIcon className={className} />
-					),
-				},
-				[FILE_EDITOR]: {
-					...FILE_CODE_EDITOR_PANEL,
-					canRename: false,
-				},
-				[WORKBENCH_COMPONENTS.FILE_DOWNLOAD]: {
-					...FILE_DOWNLOAD_PANEL,
-					canRename: false,
-				},
-				[WORKBENCH_COMPONENTS.FILE_IMAGE_VIEWER]: {
-					...FILE_IMAGE_VIEWER_PANEL,
-					canRename: false,
-				},
-				[WORKBENCH_COMPONENTS.FILE_MARKDOWN_EDITOR]: {
-					...FILE_MARKDOWN_EDITOR_PANEL,
-					canRename: false,
-				},
-				[WORKBENCH_COMPONENTS.FILE_NOTEBOOK_EDITOR]: {
-					...FILE_NOTEBOOK_EDITOR_PANEL,
-					canRename: false,
-				},
-				[WORKBENCH_COMPONENTS.FILE_PDF_VIEWER]: {
-					...FILE_PDF_VIEWER_PANEL,
-					canRename: false,
-				},
-				[MCP_EDITOR]: {
-					...FILE_MCP_EDITOR_PANEL,
-					canRename: false,
-					icon: ({ className }) => (
-						<BracesIcon className={className} />
-					),
-				},
-				[TRACE]: {
-					name: "Run details",
-					canClose: false,
-					canRename: false,
-					enableBorderHeader: false,
-					icon: ({ className }) => (
-						<ActivityIcon className={className} />
-					),
-					mount: "keepAlive",
-					content: AutomationTracePanel,
-				},
-				[SETTINGS]: {
-					name: "Settings",
-					canRename: false,
-					icon: ({ className }) => (
-						<SettingsIcon className={className} />
-					),
-					content: AutomationSettingsPanel,
-				},
-				[WORKBENCH_COMPONENTS.ASSISTANT]: {
-					name: "Assistant",
-					canClose: false,
-					canRename: false,
-					enableBorderHeader: false,
-					mount: "eager",
-					icon: ({ className }) => (
-						<MessageSquareIcon className={className} />
-					),
-					content: WorkbenchAssistantView,
-				},
-			}),
-			[],
-		);
-
-		const configureWorkbench = useWorkbench((state) => state.configure);
+		const configureAssistant = assistantStore.getState().configure;
 		useEffect(() => {
 			const accessInstructions = readOnly
 				? "You can answer questions but cannot modify this read-only automation."
 				: "Use the Automation Project Tools to inspect and make changes when needed.";
-			configureWorkbench({
-				resource: { type: "PROJECT", id: appId, permission },
-				assistant: {
-					systemPrompt: `You are the assistant for the ${projectName} automation. Help users understand, build, and troubleshoot this automation. ${accessInstructions} Explain that each step result is available to later steps as \${variableName}; configuration values are available as \${config.SETTING_NAME}; and fields marked for Playground input can be supplied at run time, overriding their default value. Use the automation's current project configuration and available tools as the source of truth. Never invent an app, reactor, agent, engine, or output variable ID. Keep appId separate from pixel, ask the user when a required concrete value is unavailable, and never claim a change or run succeeded unless a tool result confirms it.`,
-					mcp: automationMcp,
-					runParams: { project: appId },
-					onToolCompleted: handleAutomationToolCompleted,
-					onRunCompleted: () => notifyAutomationChanged(),
-				},
+			configureAssistant({
+				systemPrompt: `You are the assistant for the ${projectName} automation. Help users understand, build, and troubleshoot this automation. ${accessInstructions} Explain that each step result is available to later steps as \${variableName}; configuration values are available as \${config.SETTING_NAME}; and fields marked for Playground input can be supplied at run time, overriding their default value. Use the automation's current project configuration and available tools as the source of truth. Never invent an app, reactor, agent, engine, or output variable ID. Keep appId separate from pixel, ask the user when a required concrete value is unavailable, and never claim a change or run succeeded unless a tool result confirms it.`,
+				mcp: automationMcp,
+				runParams: { project: appId },
+				onToolCompleted: handleAutomationToolCompleted,
+				onRunCompleted: () => notifyAutomationChanged(),
 			});
 		}, [
 			appId,
 			automationMcp,
-			configureWorkbench,
+			configureAssistant,
 			handleAutomationToolCompleted,
 			notifyAutomationChanged,
 			permission,
@@ -1026,17 +988,18 @@ export const AutomationWorkbench = observer(
 						if (!open) setAgentRunTrace(null);
 					}}
 				/>
-				<AutomationWorkbenchContext.Provider
-					value={workbenchContextValue}
-				>
-					<Workbench
-						layout={workbenchLayout}
-						components={components}
-						borderSlots={{
-							left: { after: <AutomationSettingsToggle /> },
-						}}
-					/>
-				</AutomationWorkbenchContext.Provider>
+				<AssistantStoreProvider store={assistantStore}>
+					<AutomationWorkbenchContext.Provider
+						value={workbenchContextValue}
+					>
+						<Workbench
+							snapshot={workbenchLayout}
+							borderSlots={{
+								left: { after: <AutomationSettingsToggle /> },
+							}}
+						/>
+					</AutomationWorkbenchContext.Provider>
+				</AssistantStoreProvider>
 			</>
 		);
 	},
@@ -1048,13 +1011,7 @@ export const AutomationWorkbenchPage = observer(() => {
 	const readOnly = permission !== "OWNER" && permission !== "EDIT";
 	return (
 		<InsightProvider>
-			<WorkbenchProvider
-				cacheKey={
-					readOnly
-						? `${project.project_id}--read-only`
-						: project.project_id
-				}
-			>
+			<WorkbenchProvider components={AUTOMATION_COMPONENTS}>
 				<AutomationWorkbench
 					appId={project.project_id}
 					permission={permission}
