@@ -552,7 +552,11 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 				}
 			} catch (e) {
 				// Show error to user
-				toast.error(getGracefulErrorMessage(e as Error as Error));
+				toast.error(
+					(e as Error)?.name === "UploadError"
+						? t("errors.fileInUse")
+						: getGracefulErrorMessage(e as Error),
+				);
 
 				// Restore files for retry
 				addFiles(userFiles);
