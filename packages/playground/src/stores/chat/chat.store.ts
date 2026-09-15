@@ -58,6 +58,12 @@ interface ChatStoreInterface {
 	profileDefaultModelId: string;
 
 	/**
+	 * Project ID of the workspace set as the user's default agent profile.
+	 * Read from GetUserMetadata key "default-agent". Empty string if unset.
+	 */
+	profileDefaultAgentId: string;
+
+	/**
 	 * Cached rooms
 	 */
 	rooms: Record<string, RoomStore>;
@@ -126,6 +132,7 @@ export class ChatStore {
 		},
 		embeddedPageMap: {},
 		profileDefaultModelId: "",
+		profileDefaultAgentId: "",
 	};
 
 	constructor(
@@ -208,6 +215,13 @@ export class ChatStore {
 	}
 
 	/**
+	 * Get the project ID of the user's default agent profile
+	 */
+	get profileDefaultAgentId() {
+		return this._store.profileDefaultAgentId;
+	}
+
+	/**
 	 * Get the rooms optimistically shown in the nav
 	 */
 	get optimisticRooms() {
@@ -243,7 +257,10 @@ export class ChatStore {
 						string,
 						{ id: string; name: string; lastLogin?: string }
 					>,
-					{ "text-generation-model"?: string | string[] },
+					{
+						"text-generation-model"?: string | string[];
+						"default-agent"?: string | string[];
+					},
 				]
 			>(`META | GetUserInfo(); META | GetUserMetadata();`);
 
@@ -268,8 +285,17 @@ export class ChatStore {
 					? metaValue
 					: "";
 
+			// Extract profile default agent from GetUserMetadata
+			const agentMetaValue = meta?.["default-agent"];
+			const profileDefaultAgentId = Array.isArray(agentMetaValue)
+				? (agentMetaValue[0] as string) || ""
+				: typeof agentMetaValue === "string"
+					? agentMetaValue
+					: "";
+
 			runInAction(() => {
 				this._store.profileDefaultModelId = profileDefaultModelId;
+				this._store.profileDefaultAgentId = profileDefaultAgentId;
 			});
 		} catch (e) {
 			console.error(e);
