@@ -1,33 +1,39 @@
 import { useCallback, useEffect, useMemo } from "react";
+import { FILE_PANEL_COMPONENTS } from "@semoss/panels";
 import type { Role } from "@semoss/sdk";
 import { useInsight } from "@semoss/sdk/react";
-import type { FileExplorerApi } from "@semoss/shared";
-import { toast } from "@semoss/ui/next";
-import { useProject, useWorkbench, useWorkbenchCommands } from "@/hooks";
+import { toast, useCacheData } from "@semoss/ui/next";
 import type {
-	BuildRun,
 	WorkbenchLayout,
 	WorkbenchPanelConfigAny,
-} from "@/stores/workbench";
-import { WORKBENCH_ASSISTANT_PANEL } from "../../assistant";
-import { Workbench } from "../../core";
-import { WorkbenchCommandMenuButton } from "../../core/workbench-command-menu-button";
+	WorkbenchSnapshot,
+} from "@semoss/workbench";
 import {
-	FILE_CODE_EDITOR_PANEL,
-	FILE_DOWNLOAD_PANEL,
-	FILE_EXPLORER_PANEL,
-	FILE_IMAGE_VIEWER_PANEL,
-	FILE_MARKDOWN_EDITOR_PANEL,
-	FILE_MCP_EDITOR_PANEL,
-	FILE_NOTEBOOK_EDITOR_PANEL,
-	FILE_PDF_VIEWER_PANEL,
-	FILE_PPTX_VIEWER_PANEL,
-} from "../../files";
-import { GIT_DIFF_PANEL, GIT_VERSION_PANEL } from "../../git";
+	useWorkbench,
+	useWorkbenchCommands,
+	Workbench,
+	WorkbenchCommandMenuButton,
+	WorkbenchResetButton,
+} from "@semoss/workbench";
+import { ASSISTANT_PANEL } from "@/components/assistant";
+import { AssistantStoreProvider } from "@/contexts";
+import { useAssistantStore, useProject, useSession } from "@/hooks";
+import type { BuildRun } from "@/stores/assistant";
 import {
 	WORKBENCH_COMPONENTS,
+	WORKBENCH_EVENTS,
 	WORKBENCH_PANEL_RECORDS,
-} from "../../workbench.constants";
+} from "@/stores/workbench";
+import { GIT_DIFF_PANEL, GIT_VERSION_PANEL } from "../../git";
+import {
+	runTreeTools,
+	useAssistantFilesChanged,
+} from "../../use-assistant-files-changed";
+import {
+	createFileCommands,
+	createOpenPanelCommand,
+	createReconnectCommand,
+} from "../../workbench.presets";
 import { PROJECT_ENGINES_PANEL } from "../project-engines-panel";
 import { PROJECT_INSIGHT_EXPLORER_PANEL } from "../project-insight-explorer-panel";
 import { ProjectPublishButton } from "../project-publish-button";
@@ -43,36 +49,6 @@ import { PROJECT_APP_RENDERER_PANEL } from "./code-app-renderer-panel";
  * the (possibly MCP-aliased) tool name.
  */
 const PUBLISH_TOOL_RE = /buildandpublishapp|publishproject/i;
-
-/**
- * Whether a completed run — or any subagent run in its tree — invoked a tool
- * that published the app's frontend, meaning the preview iframe is stale.
- *
- * @name runTreePublished
- * @param run - The completed root run.
- * @param runs - The assistant slice's full run map, for resolving subagents.
- * @return Whether any tool in the run tree published the frontend.
- */
-const runTreePublished = (
-	run: BuildRun,
-	runs: Record<string, BuildRun>,
-): boolean => {
-	const stack: BuildRun[] = [run];
-	const seen = new Set<string>();
-	while (stack.length > 0) {
-		const current = stack.pop();
-		if (!current || seen.has(current.runId)) continue;
-		seen.add(current.runId);
-		if (current.tools.some((tool) => PUBLISH_TOOL_RE.test(tool.name))) {
-			return true;
-		}
-		for (const childRunId of current.childRunIds) {
-			const child = runs[childRunId];
-			if (child) stack.push(child);
-		}
-	}
-	return false;
-};
 
 /**
  * The default arrangement: the app preview front and centre, files on the
@@ -94,25 +70,17 @@ const createCodeWorkbenchLayout = (
 			activeId: WORKBENCH_COMPONENTS.PROJECT_APP_RENDERER,
 		},
 		panels: {
-			[WORKBENCH_PANEL_RECORDS.PROJECT_APP_RENDERER.id]: {
-				...WORKBENCH_PANEL_RECORDS.PROJECT_APP_RENDERER,
-				config: { previewVersion: 0 },
-			},
+			[WORKBENCH_PANEL_RECORDS.PROJECT_APP_RENDERER.id]:
+				WORKBENCH_PANEL_RECORDS.PROJECT_APP_RENDERER,
 			[WORKBENCH_PANEL_RECORDS.FILE_EXPLORER.id]: {
 				...WORKBENCH_PANEL_RECORDS.FILE_EXPLORER,
-				config: {
-					type: "PROJECT",
-					id: projectId,
-				},
+				config: { mode: { type: "APP", app: projectId } },
 			},
 			...(!readOnly
 				? {
 						[WORKBENCH_PANEL_RECORDS.GIT_VERSION.id]: {
 							...WORKBENCH_PANEL_RECORDS.GIT_VERSION,
-							config: {
-								type: "PROJECT",
-								id: projectId,
-							},
+							config: { type: "PROJECT", id: projectId },
 						},
 					}
 				: {}),
@@ -153,23 +121,21 @@ const createCodeWorkbenchLayout = (
 };
 
 /** Blueprints, keyed by type. Module-scope so identities never churn. */
-const CODE_WORKBENCH_COMPONENTS: Record<string, WorkbenchPanelConfigAny> = {
+export const CODE_WORKBENCH_COMPONENTS: Record<
+	string,
+	WorkbenchPanelConfigAny
+> = {
 	[WORKBENCH_COMPONENTS.PROJECT_APP_RENDERER]: PROJECT_APP_RENDERER_PANEL,
-	[WORKBENCH_COMPONENTS.FILE_EXPLORER]: FILE_EXPLORER_PANEL,
+	...FILE_PANEL_COMPONENTS,
 	[WORKBENCH_COMPONENTS.GIT_VERSION]: GIT_VERSION_PANEL,
 	[WORKBENCH_COMPONENTS.GIT_DIFF]: GIT_DIFF_PANEL,
 	[WORKBENCH_COMPONENTS.PROJECT_INSIGHT_EXPLORER]:
 		PROJECT_INSIGHT_EXPLORER_PANEL,
-	[WORKBENCH_COMPONENTS.FILE_CODE_EDITOR]: FILE_CODE_EDITOR_PANEL,
-	[WORKBENCH_COMPONENTS.FILE_DOWNLOAD]: FILE_DOWNLOAD_PANEL,
-	[WORKBENCH_COMPONENTS.FILE_IMAGE_VIEWER]: FILE_IMAGE_VIEWER_PANEL,
-	[WORKBENCH_COMPONENTS.FILE_MARKDOWN_EDITOR]: FILE_MARKDOWN_EDITOR_PANEL,
-	[WORKBENCH_COMPONENTS.FILE_NOTEBOOK_EDITOR]: FILE_NOTEBOOK_EDITOR_PANEL,
-	[WORKBENCH_COMPONENTS.FILE_PDF_VIEWER]: FILE_PDF_VIEWER_PANEL,
-	[WORKBENCH_COMPONENTS.FILE_PPTX_VIEWER]: FILE_PPTX_VIEWER_PANEL,
-	[WORKBENCH_COMPONENTS.FILE_MCP_EDITOR]: FILE_MCP_EDITOR_PANEL,
 	[WORKBENCH_COMPONENTS.PROJECT_ENGINES]: PROJECT_ENGINES_PANEL,
 	[WORKBENCH_COMPONENTS.PROJECT_TERMINAL]: PROJECT_TERMINAL_PANEL,
+	// PROJECT_SETTINGS_TABS plus Dependencies and Settings, inserted at two
+	// different points — written out rather than nested `withTab` calls, where
+	// the second index would have to account for the first insertion
 	[WORKBENCH_COMPONENTS.PROJECT_SETTINGS]: createProjectSettingsPanel([
 		{ name: "Overview", component: "project-overview" },
 		{
@@ -203,7 +169,7 @@ const CODE_WORKBENCH_COMPONENTS: Record<string, WorkbenchPanelConfigAny> = {
 			restrict: ["OWNER"],
 		},
 	]),
-	[WORKBENCH_COMPONENTS.ASSISTANT]: WORKBENCH_ASSISTANT_PANEL,
+	[WORKBENCH_COMPONENTS.ASSISTANT]: ASSISTANT_PANEL,
 };
 
 /**
@@ -213,7 +179,7 @@ const CODE_WORKBENCH_COMPONENTS: Record<string, WorkbenchPanelConfigAny> = {
  * assistant panel.
  */
 export const CodeWorkbench: React.FC = () => {
-	const layoutActions = useWorkbench((s) => s.layout.actions);
+	const emit = useWorkbench((s) => s.events.actions.emit);
 	const { project, permission } = useProject();
 	const insight = useInsight();
 	const readOnly = !(permission === "OWNER" || permission === "EDIT");
@@ -222,28 +188,52 @@ export const CodeWorkbench: React.FC = () => {
 		[project.project_id, permission],
 	);
 
+	// What this workbench is known by: its own cache entry, and — where there
+	// is an assistant — the workbench its conversations are tagged with,
+	// server-side. Read-only variants keep their own arrangement.
+	const workbenchId = readOnly
+		? `${project.project_id}--read-only`
+		: project.project_id;
+
+	const [snapshot, onSnapshotChange] = useCacheData<WorkbenchSnapshot>(
+		`workbench-layout--${workbenchId}--1`,
+		workbenchLayout,
+	);
+
 	/**
-	 * Refresh the code renderer
+	 * Announce that the project's frontend was published.
+	 *
+	 * Whoever is showing it decides what to do — today that is the preview
+	 * panel, which remounts its iframe. This used to reach into that panel and
+	 * bump its scratch value by a hardcoded id, which the dock's own rules
+	 * forbid and which only ever worked for this one publisher.
 	 */
-	const refreshCodeRenderer = useCallback(() => {
-		layoutActions.setPanelValue(
-			WORKBENCH_COMPONENTS.PROJECT_APP_RENDERER,
-			(count = 0) => count + 1,
-		);
-	}, [layoutActions]);
+	const announcePublished = useCallback(() => {
+		emit(WORKBENCH_EVENTS.APP_PUBLISHED, { projectId: project.project_id });
+	}, [emit, project.project_id]);
+
+	const filesChanged = useAssistantFilesChanged({
+		type: "APP",
+		app: project.project_id,
+	});
 
 	const handleRunCompleted = useCallback(
 		(run: BuildRun, runs: Record<string, BuildRun>) => {
-			if (!runTreePublished(run, runs)) {
-				return;
+			filesChanged(run, runs);
+
+			if (
+				runTreeTools(run, runs).some((tool) =>
+					PUBLISH_TOOL_RE.test(tool.name),
+				)
+			) {
+				// The run only tells us a publish *tool ran*, not that the
+				// server finished moving the assets — there is no settle signal
+				// to wait on, so the delay stays here, with the producer that
+				// knows why it is needed, rather than in every consumer.
+				window.setTimeout(announcePublished, 500);
 			}
-			// Give the publish a beat to finish moving assets before the
-			// preview remounts.
-			window.setTimeout(() => {
-				refreshCodeRenderer();
-			}, 500);
 		},
-		[refreshCodeRenderer],
+		[announcePublished, filesChanged],
 	);
 
 	// Manual "rebuild the app" from the assistant header — the same full compile +
@@ -256,40 +246,45 @@ export const CodeWorkbench: React.FC = () => {
 		await insight.actions.run(
 			`BuildAndPublishApp(project='${project.project_id}');`,
 		);
-		refreshCodeRenderer();
+		// No delay needed here: the pixel is awaited, so the publish has
+		// already settled by the time this returns.
+		announcePublished();
 		toast.success("App rebuilt and published.");
-	}, [readOnly, insight.actions, project.project_id, refreshCodeRenderer]);
+	}, [readOnly, insight.actions, project.project_id, announcePublished]);
 
-	const configureWorkbench = useWorkbench((s) => s.configure);
+	const syncPermission = useSession((s) => s.syncPermission);
+	const refreshPermission = useSession((s) => s.refreshPermission);
+
+	const assistantStore = useAssistantStore(workbenchId);
 
 	// keep the assistant's system prompt/tools in sync with the active app
 	useEffect(() => {
 		const name = project.project_display_name || project.project_name;
 
-		configureWorkbench({
-			resource: {
-				type: "PROJECT",
-				id: project.project_id,
-				permission,
-			},
-			assistant: {
-				systemPrompt: `You are the assistant for the ${name} code workbench (${project.project_id}). Your role is to help the user build and run this app and the rest of the project's files. Use only the tools provided in this room. Never claim that an operation succeeded unless its tool result confirms success. Keep answers concise and grounded in the active project.`,
-				mcp: [
-					{
-						type: "PROJECT",
-						id: project.project_id,
-						name: name,
-					},
-				],
-				runParams: { project: project.project_id },
-				permissionMode: readOnly ? null : "acceptEdits",
-				onRunCompleted: handleRunCompleted,
-				onRebuild: readOnly ? undefined : handleRebuild,
-			},
+		syncPermission("PROJECT", project.project_id, permission);
+		void refreshPermission("PROJECT", project.project_id).catch(
+			() => undefined,
+		);
+
+		assistantStore.getState().configure({
+			systemPrompt: `You are the assistant for the ${name} code workbench (${project.project_id}). Your role is to help the user build and run this app and the rest of the project's files. Use only the tools provided in this room. Never claim that an operation succeeded unless its tool result confirms success. Keep answers concise and grounded in the active project.`,
+			mcp: [
+				{
+					type: "PROJECT",
+					id: project.project_id,
+					name: name,
+				},
+			],
+			runParams: { project: project.project_id },
+			permissionMode: readOnly ? null : "acceptEdits",
+			onRunCompleted: handleRunCompleted,
+			onRebuild: readOnly ? undefined : handleRebuild,
 		});
 	}, [
+		assistantStore,
 		readOnly,
-		configureWorkbench,
+		syncPermission,
+		refreshPermission,
 		handleRebuild,
 		handleRunCompleted,
 		permission,
@@ -299,143 +294,63 @@ export const CodeWorkbench: React.FC = () => {
 	]);
 
 	useWorkbenchCommands([
-		{
-			id: "workbench.server.reconnect",
-			label: "Reconnect Server",
-			handler: () => {
-				void insight.actions
-					.run("ReconnectServer();")
-					.catch(console.error);
-			},
-		},
-		{
-			id: "workbench.file.create",
-			category: "File",
-			label: "Create File",
-			visible: !readOnly,
-			handler: (get) =>
-				(
-					get().layout.values[WORKBENCH_COMPONENTS.FILE_EXPLORER] as
-						| FileExplorerApi
-						| undefined
-				)?.commands.openNewFile(undefined, "add_file"),
-		},
-		{
-			id: "workbench.file.create-folder",
-			category: "File",
-			label: "Create Folder",
-			visible: !readOnly,
-			handler: (get) =>
-				(
-					get().layout.values[WORKBENCH_COMPONENTS.FILE_EXPLORER] as
-						| FileExplorerApi
-						| undefined
-				)?.commands.openNewFile(undefined, "add_directory"),
-		},
-		{
-			id: "workbench.file.upload",
-			category: "File",
-			label: "Upload Files",
-			visible: !readOnly,
-			handler: (get) =>
-				(
-					get().layout.values[WORKBENCH_COMPONENTS.FILE_EXPLORER] as
-						| FileExplorerApi
-						| undefined
-				)?.commands.openNewFile(undefined, "upload"),
-		},
-		{
-			id: "workbench.file.refresh",
-			category: "File",
-			label: "Refresh Files",
-			handler: (get) =>
-				(
-					get().layout.values[WORKBENCH_COMPONENTS.FILE_EXPLORER] as
-						| FileExplorerApi
-						| undefined
-				)?.commands.refresh(),
-		},
-		{
+		createReconnectCommand(insight),
+		...createFileCommands({ readOnly: readOnly }),
+		createOpenPanelCommand({
 			id: "workbench.project-file-explorer.open",
-			category: "View",
 			label: "Open File Explorer",
-			handler: (get) => {
-				get().layout.actions.selectPanel(
-					WORKBENCH_COMPONENTS.FILE_EXPLORER,
-					{
-						type: "PROJECT",
-						id: project.project_id,
-					},
-				);
+			type: WORKBENCH_COMPONENTS.FILE_EXPLORER,
+			config: {
+				mode: { type: "APP", app: project.project_id },
 			},
-		},
-		{
+		}),
+		createOpenPanelCommand({
 			id: "workbench.project-insight-explorer.open",
-			category: "View",
 			label: "Open Insight File Explorer",
-			handler: (get) => {
-				get().layout.actions.selectPanel(
-					WORKBENCH_COMPONENTS.PROJECT_INSIGHT_EXPLORER,
-				);
-			},
-		},
-		{
+			type: WORKBENCH_COMPONENTS.PROJECT_INSIGHT_EXPLORER,
+		}),
+		createOpenPanelCommand({
 			id: "workbench.project-app-renderer.open",
-			category: "View",
 			label: "Open App Preview",
-			handler: (get) => {
-				get().layout.actions.selectPanel(
-					WORKBENCH_COMPONENTS.PROJECT_APP_RENDERER,
-				);
-			},
-		},
-		{
+			type: WORKBENCH_COMPONENTS.PROJECT_APP_RENDERER,
+		}),
+		createOpenPanelCommand({
 			id: "workbench.project-terminal.open",
-			category: "View",
 			label: "Open Terminal",
-			handler: (get) => {
-				get().layout.actions.selectPanel(
-					WORKBENCH_COMPONENTS.PROJECT_TERMINAL,
-				);
-			},
-		},
-		{
+			type: WORKBENCH_COMPONENTS.PROJECT_TERMINAL,
+		}),
+		createOpenPanelCommand({
 			id: "workbench.project-engines.open",
-			category: "View",
 			label: "Open Available Engines",
-			handler: (get) => {
-				get().layout.actions.selectPanel(
-					WORKBENCH_COMPONENTS.PROJECT_ENGINES,
-				);
-			},
-		},
-		{
+			type: WORKBENCH_COMPONENTS.PROJECT_ENGINES,
+		}),
+		createOpenPanelCommand({
 			id: "workbench.project-settings.open",
-			category: "View",
 			label: "Open Settings",
-			handler: (get) => {
-				get().layout.actions.selectPanel(
-					WORKBENCH_COMPONENTS.PROJECT_SETTINGS,
-				);
-			},
-		},
+			type: WORKBENCH_COMPONENTS.PROJECT_SETTINGS,
+		}),
 	]);
 
 	return (
-		<Workbench
-			layout={workbenchLayout}
-			components={CODE_WORKBENCH_COMPONENTS}
-			borderSlots={{
-				left: {
-					after: (
-						<>
-							<WorkbenchCommandMenuButton />
-							<ProjectPublishButton />
-							<ProjectSettingsToggle />
-						</>
-					),
-				},
-			}}
-		/>
+		<AssistantStoreProvider store={assistantStore}>
+			<Workbench
+				snapshot={snapshot}
+				onChange={onSnapshotChange}
+				borderSlots={{
+					left: {
+						after: (
+							<>
+								<WorkbenchCommandMenuButton />
+								<ProjectPublishButton />
+								<ProjectSettingsToggle />
+								<WorkbenchResetButton
+									snapshot={workbenchLayout}
+								/>
+							</>
+						),
+					},
+				}}
+			/>
+		</AssistantStoreProvider>
 	);
 };

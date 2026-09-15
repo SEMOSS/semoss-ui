@@ -1,7 +1,19 @@
 import { FileDiffIcon } from "lucide-react";
 import { useEffect, useState } from "react";
+import { useAccess } from "@semoss/panels";
 import { useInsight, usePixel } from "@semoss/sdk/react";
 import { toast } from "@semoss/ui/next";
+import type {
+	WorkbenchPanelConfig,
+	WorkbenchPanelProps,
+} from "@semoss/workbench";
+import {
+	useWorkbench,
+	useWorkbenchControl,
+	useWorkbenchPanel,
+	WorkbenchPanelError,
+	WorkbenchPanelLoading,
+} from "@semoss/workbench";
 import type {
 	GitCommitFile,
 	GitDiff,
@@ -10,14 +22,8 @@ import type {
 	GitStageAction,
 } from "@/components/git";
 import { GitDiffControl, GitDiffEditor } from "@/components/git";
-import { useWorkbenchAccess, useWorkbenchControl } from "@/hooks";
-import type {
-	WorkbenchPanelConfig,
-	WorkbenchPanelProps,
-} from "@/stores/workbench";
-import { WorkbenchAccessError } from "../core/workbench-access-error";
-import { WorkbenchAccessLoading } from "../core/workbench-access-loading";
-import type { GitPanelScopeParams } from "./git-panel.types";
+import { WORKBENCH_EVENTS } from "@/stores/workbench";
+import { type GitPanelScopeParams, gitFileScope } from "./git-panel.types";
 
 export interface GitDiffParams extends GitPanelScopeParams {
 	name: string;
@@ -26,14 +32,15 @@ export interface GitDiffParams extends GitPanelScopeParams {
 	commitId?: string;
 }
 
-const GitDiffPanel = ({
-	config,
-	id,
-	setValue,
-	close,
-}: WorkbenchPanelProps<GitDiffParams, GitDiffControlValue>) => {
+const GitDiffPanel = ({ id }: WorkbenchPanelProps) => {
+	const { config, setValue, close } = useWorkbenchPanel<
+		GitDiffParams,
+		GitDiffControlValue
+	>(id);
+
 	const insight = useInsight();
-	const access = useWorkbenchAccess(config.type, config.id);
+	const emit = useWorkbench((state) => state.events.actions.emit);
+	const access = useAccess(config.type, config.id);
 	const readOnly = access.status !== "ready" || access.readOnly;
 	const [renderSideBySide, setRenderSideBySide] = useState(true);
 	const historical = config.side === "COMMIT";
@@ -77,6 +84,11 @@ const GitDiffPanel = ({
 				`${prefix}GitStage(${resource}, paths=[${JSON.stringify(config.path)}], action=[${JSON.stringify(action)}]);`,
 			);
 			toast.success(action === "STAGE" ? "File staged" : "File unstaged");
+			// The staged counts live in the version panel's control, which is a
+			// different panel and does not re-render with this one.
+			emit(WORKBENCH_EVENTS.GIT_STATUS_CHANGED, {
+				scope: gitFileScope(config),
+			});
 			close();
 		} catch (error) {
 			console.error(error);
@@ -94,18 +106,12 @@ const GitDiffPanel = ({
 	useWorkbenchControl(id, GitDiffControl);
 
 	if (access.status === "loading") {
-		return (
-			<WorkbenchAccessLoading
-				className="size-full"
-				label="Loading resource access"
-			/>
-		);
+		return <WorkbenchPanelLoading label="Loading resource access" />;
 	}
 
 	if (access.status === "error") {
 		return (
-			<WorkbenchAccessError
-				className="size-full"
+			<WorkbenchPanelError
 				message={access.error}
 				onRetry={() => void access.refresh()}
 			/>
@@ -124,19 +130,6 @@ const GitDiffPanel = ({
 				onAction={action ? () => void mutateFile() : undefined}
 				renderSideBySide={renderSideBySide}
 			/>
-			{access.refreshing ? (
-				<WorkbenchAccessLoading
-					className="absolute inset-0 bg-background/80"
-					label="Refreshing resource access"
-				/>
-			) : null}
-			{access.refreshError ? (
-				<WorkbenchAccessError
-					className="absolute inset-0 bg-background/90"
-					message={access.refreshError}
-					onRetry={() => void access.refresh()}
-				/>
-			) : null}
 		</div>
 	);
 };

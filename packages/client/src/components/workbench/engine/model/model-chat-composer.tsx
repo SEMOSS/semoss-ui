@@ -9,8 +9,8 @@ import {
 	Textarea,
 	toast,
 } from "@semoss/ui/next";
+import { isSpawnDrag } from "@semoss/workbench";
 import { useModelChat } from "@/hooks";
-import { isSpawnDrag } from "../../core/workbench-spawn-drag";
 import { ModelChatAttachmentStrip } from "./model-chat-attachment-strip";
 
 /**
