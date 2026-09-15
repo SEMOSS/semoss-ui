@@ -8,7 +8,8 @@ import {
 } from "@semoss/ui/next";
 import { WORKBENCH_STYLES } from "../../constants/workbench.constants";
 
-interface WorkbenchChromeButtonProps {
+interface WorkbenchChromeButtonProps
+	extends React.ButtonHTMLAttributes<HTMLButtonElement> {
 	/** The glyph. Sized by the button, so pass the component, not an element. */
 	icon: ComponentType<{ className?: string; "aria-hidden"?: boolean }>;
 	/** Accessible name, and the tooltip unless `tooltip` overrides it. */
@@ -46,12 +47,11 @@ export const WorkbenchChromeButton = ({
 	disabled,
 	tooltip,
 	className,
-	"data-testid": testId,
+	...otherProps
 }: WorkbenchChromeButtonProps) => (
 	<Tooltip>
 		<TooltipTrigger asChild>
 			<Button
-				data-testid={testId}
 				variant="ghost"
 				size="icon-sm"
 				className={cn(
@@ -62,6 +62,7 @@ export const WorkbenchChromeButton = ({
 				disabled={disabled}
 				aria-label={label}
 				onClick={onClick}
+				{...otherProps}
 			>
 				<Icon aria-hidden className={WORKBENCH_STYLES.chromeIcon} />
 			</Button>

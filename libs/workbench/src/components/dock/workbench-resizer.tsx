@@ -20,7 +20,7 @@ const BORDER_GUTTER: Record<WorkbenchSide, string> = {
 	bottom: "absolute inset-x-0 bottom-full h-2",
 };
 
-export type WorkbenchResizerProps =
+type WorkbenchResizerProps =
 	| { kind: "container"; container: WorkbenchContainer; index: number }
 	| { kind: "tab-split"; tabset: WorkbenchTabset }
 	| { kind: "border"; side: WorkbenchSide };

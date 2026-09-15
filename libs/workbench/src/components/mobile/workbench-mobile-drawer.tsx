@@ -17,7 +17,7 @@ import { useWorkbench } from "../../hooks";
 import type { WorkbenchBorderSlot } from "../../types";
 import { resolveBorderSlot } from "../../utility/workbench-border-slot";
 
-export interface WorkbenchMobileDrawerProps {
+interface WorkbenchMobileDrawerProps {
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
 	/**

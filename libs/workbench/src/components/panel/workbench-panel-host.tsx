@@ -4,7 +4,7 @@ import { useWorkbench } from "../../hooks";
 import type { WorkbenchPanelId } from "../../types";
 import { WorkbenchPanelBody } from "./workbench-panel-body";
 
-export interface WorkbenchPanelHostProps {
+interface WorkbenchPanelHostProps {
 	pid: WorkbenchPanelId;
 	/**
 	 * Draw over this slot instead of the panel's own — used by split-in-tab

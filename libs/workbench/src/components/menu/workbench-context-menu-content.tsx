@@ -8,8 +8,12 @@ import {
 	ContextMenuSubContent,
 	ContextMenuSubTrigger,
 } from "@semoss/ui/next";
-import { useWorkbench, useWorkbenchStoreApi } from "../../hooks";
-import { findTabsetOf, workbenchPanel } from "../../stores";
+import {
+	useWorkbench,
+	useWorkbenchPanel,
+	useWorkbenchStoreApi,
+} from "../../hooks";
+import { findTabsetOf } from "../../stores";
 import type {
 	WorkbenchPanelId,
 	WorkbenchPanelMenuItem,
@@ -44,6 +48,7 @@ export const WorkbenchPanelMenuContent: FC<{ pid: WorkbenchPanelId }> = ({
 	const tree = useWorkbench((s) => s.layout.tree);
 	const borders = useWorkbench((s) => s.layout.borders);
 	const main = useWorkbench((s) => s.layout.tabsets[0]);
+	const panel = useWorkbenchPanel(pid);
 
 	const record = panels[pid];
 	if (!record) {
@@ -60,12 +65,9 @@ export const WorkbenchPanelMenuContent: FC<{ pid: WorkbenchPanelId }> = ({
 	const make = store.getState().layout.components[record.type]?.menuItems;
 	if (typeof make === "function") {
 		try {
-			contributed = (
-				make(
-					workbenchPanel(store.getState().layout, pid),
-					store.getState,
-				) ?? []
-			).filter((item) => !item.disabled);
+			contributed = (make(panel, store.getState) ?? []).filter(
+				(item) => !item.disabled,
+			);
 		} catch {
 			// ignore a broken contributor
 		}

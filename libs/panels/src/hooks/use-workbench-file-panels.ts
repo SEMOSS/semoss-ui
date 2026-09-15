@@ -87,13 +87,12 @@ export const useWorkbenchFilePanels = (fileMode: FileMode) => {
 				? `${newName}*`
 				: newName;
 
-			const isMcpEditor =
-				record.type === FILE_PANEL_TYPES.FILE_MCP_EDITOR;
-			let panelType = record.type;
-
-			if (!isMcpEditor) {
-				panelType = getFilePanelType(newPath);
-			}
+			// the toolbox editor keeps its type through a rename; every other
+			// panel re-derives it from the new extension
+			const panelType =
+				record.type === FILE_PANEL_TYPES.FILE_MCP_EDITOR
+					? record.type
+					: getFilePanelType(newPath);
 
 			layoutActions.updatePanel(record.id, {
 				type: panelType,
@@ -192,8 +191,5 @@ export const useWorkbenchFilePanels = (fileMode: FileMode) => {
 		[fileMode, layoutActions],
 	);
 
-	return {
-		migrateMovedTabs: migrateMovedTabs,
-		removeDeletedTabs: removeDeletedTabs,
-	};
+	return { migrateMovedTabs, removeDeletedTabs };
 };

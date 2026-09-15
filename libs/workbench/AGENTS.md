@@ -165,9 +165,8 @@ call. Declare them the same way the blueprint does — nothing checks that the t
 `WorkbenchPanel<P, V>`: `id`, `type`, `name`, `config`, `value`, `isVisible`, `status`, plus
 `rename`, `close`, `moveTo`, `setConfig`, `setValue`, `select`. Wrapping another panel is
 passing the id on: `<Other id={id} />`. `useWorkbenchPanel(pid)`
-(`hooks/use-workbench-panel.ts`) is the one hook that builds this; `workbenchPanel(layout, pid)`
-(`stores/workbench-panel.ts`) is its pure, React-free twin for the vanilla derivations. Both
-assemble the object with the same `buildWorkbenchPanel` — the field list has one home.
+(`hooks/use-workbench-panel.ts`) is the only place one is assembled — there is no second,
+React-free builder, and nothing outside that file should grow one.
 
 `WorkbenchHeaderLocation` ("tab" | "header" | "rail" | "rail-vertical") is deliberately *not*
 on it. The same panel is drawn in two of them at once — a border's rail and the header row over
@@ -410,7 +409,6 @@ Two more constraints worth knowing before touching this:
 | `contexts/workbench.context.tsx` | `WorkbenchProvider` — one store per mount |
 | `hooks/` | `use-workbench` / `-store-api` (store access), `-commands`, `-control`, `-panel` (everything about one panel), `-events` (vanilla subscribe bridge), `-hit-test` (drop resolution shared by tab drags and spawn drags) |
 | `stores/workbench.store.ts` | Composes the four slices; `WorkbenchState` is exactly `{ layout, loading, command, control }` |
-| `stores/workbench-panel.ts` | Pure builders for a panel (no React) — `buildWorkbenchPanel` (the one field list), its methods, and the layout-snapshot read used by the vanilla command/menu derivations |
 | `stores/slices/workbench-layout.slice.ts` | The dock state + `actions` (registry, slots, persistence, ephemeral UI) |
 | `stores/slices/workbench-layout.tree.ts` | Pure, DOM-free tree ops |
 | `stores/slices/workbench-layout.commands.ts` | Layout-derived palette entries |

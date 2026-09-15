@@ -28,7 +28,7 @@ import { WorkbenchResizer } from "./workbench-resizer";
 import { WorkbenchTab } from "./workbench-tab";
 import { WorkbenchTabStrip } from "./workbench-tab-strip";
 
-export interface WorkbenchTabsetProps {
+interface WorkbenchTabsetProps {
 	node: WorkbenchTabsetNode;
 }
 
@@ -79,7 +79,13 @@ export const WorkbenchTabset: FC<WorkbenchTabsetProps> = ({ node }) => {
 		[actions, node.id],
 	);
 
-	const stack = { kind: "tabset" as const, id: node.id };
+	// memoized for the same reason as the ref callbacks above: a fresh literal
+	// every render defeats `WorkbenchTab`'s memo, re-rendering every tab in
+	// every dock on every tree commit
+	const stack = useMemo(
+		() => ({ kind: "tabset" as const, id: node.id }),
+		[node.id],
+	);
 	const showMaximize = node.enableMaximize !== false && activeCanMaximize;
 	// with no strip the slot reaches the card's top edge too
 	const capped = node.enableTabStrip === false;

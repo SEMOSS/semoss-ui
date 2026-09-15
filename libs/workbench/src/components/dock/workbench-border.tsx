@@ -1,4 +1,4 @@
-import { type FC, useCallback } from "react";
+import { type FC, useCallback, useMemo } from "react";
 import { cn, Separator } from "@semoss/ui/next";
 import { WORKBENCH_STYLES } from "../../constants/workbench.constants";
 import { useWorkbench } from "../../hooks";
@@ -61,7 +61,7 @@ const RAIL_ROUND: Record<WorkbenchSide, string> = {
 	bottom: "rounded-b-lg",
 };
 
-export interface WorkbenchBorderProps {
+interface WorkbenchBorderProps {
 	side: WorkbenchSide;
 	slots?: { before?: WorkbenchBorderSlot; after?: WorkbenchBorderSlot };
 }
@@ -91,6 +91,13 @@ export const WorkbenchBorder: FC<WorkbenchBorderProps> = ({ side, slots }) => {
 		},
 		[actions, side],
 	);
+	// Memoized, and up here for the same hook-order reason: a fresh literal
+	// every render defeats `WorkbenchTab`'s memo, and this border re-renders
+	// every frame of a resize drag.
+	const railStack = useMemo(
+		() => ({ kind: "border" as const, id: side }),
+		[side],
+	);
 
 	// A rail carrying slot content still renders with no panels — panels can
 	// be dragged out of a border, and the slot must not leave with them.
@@ -102,8 +109,6 @@ export const WorkbenchBorder: FC<WorkbenchBorderProps> = ({ side, slots }) => {
 	const leading = side === "left" || side === "top";
 	const openPid = openRecord?.id ?? null;
 	const headed = Boolean(openPid) && headerEnabled;
-	const railStack = { kind: "border" as const, id: side };
-
 	const ctx: WorkbenchBorderSlotCtx = {
 		side,
 		vertical,
@@ -166,7 +171,7 @@ export const WorkbenchBorder: FC<WorkbenchBorderProps> = ({ side, slots }) => {
 						pid={pid}
 						stack={railStack}
 						active={border.activeId === pid}
-						location={vertical ? "rail-vertical" : "rail"}
+						vertical={vertical}
 					/>
 				))}
 			</div>

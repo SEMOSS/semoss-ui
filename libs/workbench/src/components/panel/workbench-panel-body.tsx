@@ -1,4 +1,4 @@
-import { type FC, Suspense, useEffect } from "react";
+import { type FC, memo, Suspense, useEffect } from "react";
 import { Skeleton } from "@semoss/ui/next";
 import type {
 	WorkbenchPanelConfigAny,
@@ -27,7 +27,7 @@ const WorkbenchPanelSkeleton: FC = () => (
 	</div>
 );
 
-export interface WorkbenchPanelBodyProps {
+interface WorkbenchPanelBodyProps {
 	/** The instance record, absent for an empty dock placeholder. */
 	record: WorkbenchPanelRecord | undefined;
 	/** The instance's blueprint, absent for unregistered types. */
@@ -40,40 +40,48 @@ export interface WorkbenchPanelBodyProps {
 	onError: () => void;
 }
 
-/** One panel body: placeholders, error boundary, suspense, and content. */
-export const WorkbenchPanelBody: FC<WorkbenchPanelBodyProps> = ({
-	record,
-	component,
-	pid,
-	onReady,
-	onError,
-}) => {
-	if (!record) {
-		return (
-			<div className="flex h-full items-center justify-center p-6 text-center text-muted-foreground text-sm">
-				No panel here.
-			</div>
-		);
-	}
+/**
+ * One panel body: placeholders, error boundary, suspense, and content.
+ *
+ * Memoized because its parent host re-renders whenever its measured slot rect
+ * changes — every frame of a splitter or border drag, and for every panel at
+ * once on a window resize. Only the host's wrapper `<div>` needs that; without
+ * this, each of those frames re-rendered the host-supplied `content`, which is
+ * an editor, a terminal or a viewer and is not memoized itself. Every prop
+ * here is already identity-stable (store objects, a constant pid, and two
+ * `useCallback`s).
+ */
+export const WorkbenchPanelBody: FC<WorkbenchPanelBodyProps> = memo(
+	({ record, component, pid, onReady, onError }) => {
+		if (!record) {
+			return (
+				<div className="flex h-full items-center justify-center p-6 text-center text-muted-foreground text-sm">
+					No panel here.
+				</div>
+			);
+		}
 
-	const Content = component?.content;
-	if (!Content) {
-		// A misconfiguration, not an empty state — surfaced like a thrown body
-		// so the two failure modes read the same.
-		return (
-			<WorkbenchPanelError
-				message={`No component registered for “${record.type}”.`}
-				testId="workbench-panel-unregistered-message"
-			/>
-		);
-	}
+		const Content = component?.content;
+		if (!Content) {
+			// A misconfiguration, not an empty state — surfaced like a thrown body
+			// so the two failure modes read the same.
+			return (
+				<WorkbenchPanelError
+					message={`No component registered for “${record.type}”.`}
+					testId="workbench-panel-unregistered-message"
+				/>
+			);
+		}
 
-	return (
-		<WorkbenchPanelErrorBoundary onError={onError}>
-			<Suspense fallback={<WorkbenchPanelSkeleton />}>
-				<Content id={pid} />
-				<WorkbenchReadyPing onReady={onReady} />
-			</Suspense>
-		</WorkbenchPanelErrorBoundary>
-	);
-};
+		return (
+			<WorkbenchPanelErrorBoundary onError={onError}>
+				<Suspense fallback={<WorkbenchPanelSkeleton />}>
+					<Content id={pid} />
+					<WorkbenchReadyPing onReady={onReady} />
+				</Suspense>
+			</WorkbenchPanelErrorBoundary>
+		);
+	},
+);
+
+WorkbenchPanelBody.displayName = "WorkbenchPanelBody";

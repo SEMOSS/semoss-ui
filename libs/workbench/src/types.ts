@@ -137,21 +137,6 @@ export interface WorkbenchPanelRecord {
 export type WorkbenchPanelStatus = "pending" | "loading" | "ready" | "error";
 
 /**
- * Where a panel's chrome is being drawn: a dock strip, the header row over an
- * open border body, a top/bottom border rail, or a left/right one — where the
- * tab is turned on its side, and a glyph has to turn with it. Internal to the
- * shell's own chrome: the same panel is drawn in two of these at once (a
- * border's rail and its header row), so this is a fact about a render site,
- * never about a panel, and it is not on `WorkbenchPanel`. A blueprint that one
- * day needs it takes it from a context the chrome publishes.
- */
-export type WorkbenchHeaderLocation =
-	| "tab"
-	| "header"
-	| "rail"
-	| "rail-vertical";
-
-/**
  * The per-instance methods half of a panel. `P` is the panel's config shape,
  * `V` its scratch value.
  */

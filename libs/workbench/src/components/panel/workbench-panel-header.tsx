@@ -1,7 +1,7 @@
 import type { FC } from "react";
 import { cn } from "@semoss/ui/next";
 import { WORKBENCH_STYLES } from "../../constants/workbench.constants";
-import { useWorkbench, useWorkbenchPanel } from "../../hooks";
+import { useWorkbench } from "../../hooks";
 import type { WorkbenchPanelId } from "../../types";
 
 /** The panel's glyph, at whatever size the caller has room for. */
@@ -9,7 +9,14 @@ const WorkbenchPanelIcon: FC<{
 	pid: WorkbenchPanelId;
 	className: string;
 }> = ({ pid, className }) => {
-	const status = useWorkbenchPanel(pid).status;
+	// one narrow selector, not `useWorkbenchPanel(pid)`: that returns a fresh
+	// object whenever any field of the panel changes, which re-rendered every
+	// tab's icon on every setValue, rename and config write
+	const status = useWorkbench(
+		(s) =>
+			s.layout.componentStatuses[s.layout.panels[pid]?.type ?? ""] ??
+			"pending",
+	);
 	const Icon = useWorkbench((s) => {
 		const type = s.layout.panels[pid]?.type;
 		return type ? s.layout.components[type]?.icon : undefined;

@@ -1,16 +1,41 @@
 import { useMemo } from "react";
-import { buildWorkbenchPanel, workbenchPanelMethods } from "../stores";
+import type { WorkbenchLayoutActions } from "../stores";
 import type {
 	WorkbenchPanel,
 	WorkbenchPanelId,
+	WorkbenchPanelMethods,
 	WorkbenchPanelParams,
 } from "../types";
 import { useWorkbench } from "./use-workbench";
 
 /**
+ * The config of a panel opened without one. Module scope so it is the same
+ * object every time: a panel that lists `config` in an effect's dependencies
+ * must not see a new `{}` on every unrelated write.
+ */
+const EMPTY_CONFIG: WorkbenchPanelParams = {};
+
+/**
+ * The methods half of a panel, bound to one id. `actions` is already
+ * identity-stable, so this is stable for as long as the pid is.
+ */
+const panelMethods = (
+	actions: WorkbenchLayoutActions,
+	pid: WorkbenchPanelId,
+): WorkbenchPanelMethods => ({
+	rename: (name) => actions.renamePanel(pid, name),
+	close: () => actions.closePanel(pid),
+	moveTo: (target) => actions.movePanel(pid, target),
+	setConfig: (patch) => actions.updatePanel(pid, { config: patch }),
+	setValue: (value) => actions.setPanelValue(pid, value),
+	select: (type, config) => actions.selectPanel(type, config),
+});
+
+/**
  * Everything about one panel instance: its record, its live state, and the
  * methods bound to its id. Every panel renderer is handed only an id and calls
- * this — a body, a header, an icon, a control all read the same object.
+ * this — a body, a header, an icon, a control all read the same object. It is
+ * the only place a `WorkbenchPanel` is assembled.
  *
  * Name the panel's own types at the call site to get them back typed:
  * `useWorkbenchPanel<MyConfig, MyValue>(id)`. `P` and `V` describe what the
@@ -50,20 +75,21 @@ export function useWorkbenchPanel<P = WorkbenchPanelParams, V = unknown>(
 	// Kept out of the memo below: these close over `actions`/`pid` only, so
 	// this identity survives a `value` write and stays stable for the panel's life.
 	const methods = useMemo(
-		() => workbenchPanelMethods(actions, pid),
+		() => panelMethods(actions, pid) as WorkbenchPanelMethods<P, V>,
 		[actions, pid],
 	);
 
 	return useMemo(
-		() =>
-			buildWorkbenchPanel(
-				pid,
-				record,
-				value,
-				isVisible,
-				status,
-				methods,
-			) as WorkbenchPanel<P, V>,
+		() => ({
+			...methods,
+			id: pid,
+			type: record?.type ?? "",
+			name: record?.name,
+			config: (record?.config ?? EMPTY_CONFIG) as P,
+			value: value as V | undefined,
+			isVisible,
+			status,
+		}),
 		[methods, pid, record, value, isVisible, status],
 	);
 }

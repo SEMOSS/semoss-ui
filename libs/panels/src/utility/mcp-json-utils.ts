@@ -203,7 +203,7 @@ export const validateIdentifier = (
  */
 const MAX_SAFE_TOOL_NAME_LENGTH = 90;
 
-export type ToolNameIssue = {
+type ToolNameIssue = {
 	name: string;
 	reason: string;
 };
@@ -362,7 +362,7 @@ export const toolSearchText = (tool: MCPTool): string => {
 	return parts.join(" ").toLowerCase();
 };
 
-export type ParsedMCPFile = {
+type ParsedMCPFile = {
 	data: MCPJsonData;
 	/** Top-level keys the editor does not model, preserved for round tripping. */
 	extras: Record<string, unknown>;
