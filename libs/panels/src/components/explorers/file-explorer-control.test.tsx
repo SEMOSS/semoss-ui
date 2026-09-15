@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import type { FileExplorerApi, FileMode } from "@semoss/shared";
 import { createWorkbenchStore, WorkbenchProvider } from "@semoss/workbench";
@@ -78,6 +78,20 @@ describe("FileExplorerControl", () => {
 
 		expect(screen.queryByRole("button", { name: "New" })).toBeNull();
 		expect(screen.getByRole("button", { name: "Refresh" })).toBeVisible();
+	});
+
+	it("refreshes the explorer when Refresh is clicked", () => {
+		// The button is the only way to force a re-read; it renders in the
+		// chrome's subtree and reaches the panel through its published api.
+		const explorer = createExplorer(
+			{ type: "APP", app: "project-1" },
+			{ mutate: true, upload: true },
+		);
+		renderControl(explorer, "EDIT");
+
+		fireEvent.click(screen.getByRole("button", { name: "Refresh" }));
+
+		expect(explorer.commands.refresh).toHaveBeenCalled();
 	});
 
 	it("shows New for an editable upload-only storage resource", () => {

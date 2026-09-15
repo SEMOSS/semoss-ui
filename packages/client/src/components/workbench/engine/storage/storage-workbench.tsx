@@ -23,6 +23,7 @@ import {
 	WORKBENCH_PANEL_RECORDS,
 } from "@/stores/workbench";
 import { GIT_DIFF_PANEL, GIT_VERSION_PANEL } from "../../git";
+import { useAssistantFilesChanged } from "../../use-assistant-files-changed";
 import {
 	createFileCommands,
 	createOpenPanelCommand,
@@ -133,6 +134,11 @@ export const StorageWorkbench: React.FC = () => {
 
 	// Revalidate the engine's permission and keep the assistant prompt and
 	// room tools in sync with it.
+	const filesChanged = useAssistantFilesChanged({
+		type: "ENGINE",
+		engine: engine.engine_id,
+	});
+
 	useEffect(() => {
 		syncPermission("ENGINE", engine.engine_id, permission);
 		void refreshPermission("ENGINE", engine.engine_id).catch(
@@ -140,11 +146,13 @@ export const StorageWorkbench: React.FC = () => {
 		);
 
 		assistantStore.getState().configure({
+			onRunCompleted: filesChanged,
 			systemPrompt: `You are the assistant for the ${engine.engine_display_name || engine.engine_name} workbench (${engine.engine_id}). Your role is to help the user inspect and manage this storage engine. Use only the tools provided in this room. Never claim that an operation succeeded unless its tool result confirms success. Keep answers concise and grounded in the active engine.`,
 			prepareRoom: (insightId) =>
 				makeEngineRoomMcp(insightId, engine.engine_id),
 		});
 	}, [
+		filesChanged,
 		assistantStore,
 		syncPermission,
 		refreshPermission,

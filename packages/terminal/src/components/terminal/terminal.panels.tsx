@@ -1,5 +1,5 @@
 import { Plus } from "lucide-react";
-import { lazy, Suspense } from "react";
+import { lazy, Suspense, useEffect } from "react";
 import { useTranslation } from "@semoss/i18n";
 import { FileExplorerPane } from "@semoss/panels";
 import { InsightProvider } from "@semoss/sdk/react";
@@ -125,6 +125,19 @@ const TerminalFileExplorerPane = ({ id }: { id: WorkbenchPanelId }) => {
 			} satisfies SelectedFile);
 		},
 	});
+
+	// Saving or uploading through the terminal's own modals writes files this
+	// tree is showing. Those modals render outside the dock's provider, so they
+	// cannot reach the workbench event bus — but the terminal already has a
+	// channel for exactly this, which until now had no consumer at all.
+	const renderToken = terminal.browserRenderToken;
+	const refresh = explorer.commands.refresh;
+	// biome-ignore lint/correctness/useExhaustiveDependencies: the token is the trigger, not a value this reads
+	useEffect(() => {
+		if (renderToken > 0) {
+			refresh();
+		}
+	}, [renderToken, refresh]);
 
 	return (
 		<div className="flex h-full flex-col bg-background">

@@ -21,12 +21,17 @@ import {
 	WorkbenchPanelLoading,
 	writeSpawnDragSpec,
 } from "@semoss/workbench";
-import { FILE_PANEL_TYPES, MCP } from "../../constants/file-panel.constants";
+import {
+	FILE_PANEL_EVENTS,
+	FILE_PANEL_TYPES,
+	MCP,
+} from "../../constants/file-panel.constants";
 import { useAccess } from "../../hooks/use-access";
 import { useWorkbenchFilePanels } from "../../hooks/use-workbench-file-panels";
 import {
 	type FilePanelMode,
 	getFilePanelResource,
+	getFilePanelScope,
 	sameFileMode,
 } from "../../types/file-panel.types";
 import { getFilePanelType } from "../../utility/file-editor.utility";
@@ -49,6 +54,7 @@ const FileExplorerPanel = ({ id }: WorkbenchPanelProps) => {
 	const access = useAccess(resource?.type ?? "INSIGHT", resource?.id ?? "");
 	const readOnly = access.status !== "ready" || access.readOnly;
 	const layoutActions = useWorkbench((state) => state.layout.actions);
+	const emit = useWorkbench((state) => state.events.actions.emit);
 	const mode = config.mode;
 	const { migrateMovedTabs, removeDeletedTabs } =
 		useWorkbenchFilePanels(mode);
@@ -83,6 +89,14 @@ const FileExplorerPanel = ({ id }: WorkbenchPanelProps) => {
 			}
 		},
 		onItemsDeleted: removeDeletedTabs,
+		// An extract or a copy can land on a file an editor is showing. Nothing
+		// about the panel changes, so without this it keeps displaying — and
+		// would save back — the content that was just replaced.
+		onItemsWritten: (paths) =>
+			emit(FILE_PANEL_EVENTS.FILES_CHANGED, {
+				scope: getFilePanelScope(mode),
+				paths,
+			}),
 		onItemDragStart: (event, items) => {
 			if (items.length !== 1 || items[0].type === "directory") {
 				return;

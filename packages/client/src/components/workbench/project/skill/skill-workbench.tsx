@@ -22,6 +22,7 @@ import {
 	WORKBENCH_PANEL_RECORDS,
 } from "@/stores/workbench";
 import { GIT_DIFF_PANEL, GIT_VERSION_PANEL } from "../../git";
+import { useAssistantFilesChanged } from "../../use-assistant-files-changed";
 import {
 	createFileCommands,
 	createOpenPanelCommand,
@@ -160,6 +161,11 @@ export const SkillWorkbench: React.FC = () => {
 	const assistantStore = useAssistantStore(workbenchId);
 
 	// keep the assistant's system prompt/tools in sync with the active skill
+	const filesChanged = useAssistantFilesChanged({
+		type: "APP",
+		app: project.project_id,
+	});
+
 	useEffect(() => {
 		const name = project.project_display_name || project.project_name;
 
@@ -169,6 +175,7 @@ export const SkillWorkbench: React.FC = () => {
 		);
 
 		assistantStore.getState().configure({
+			onRunCompleted: filesChanged,
 			systemPrompt: `You are the assistant for the ${name} skill workbench (${project.project_id}). Your role is to help the user build and run this skill and the rest of the project's files. Use only the tools provided in this room. Never claim that an operation succeeded unless its tool result confirms success. Keep answers concise and grounded in the active project.`,
 			mcp: [
 				{
@@ -180,6 +187,7 @@ export const SkillWorkbench: React.FC = () => {
 			runParams: { project: project.project_id },
 		});
 	}, [
+		filesChanged,
 		assistantStore,
 		syncPermission,
 		refreshPermission,

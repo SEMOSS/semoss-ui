@@ -11,7 +11,7 @@ describe("createWorkbenchStore", () => {
 					components: {},
 				}).getState(),
 			).sort(),
-		).toEqual(["command", "control", "layout", "loading"]);
+		).toEqual(["command", "control", "events", "layout", "loading"]);
 	});
 
 	it("touches no storage of its own", () => {

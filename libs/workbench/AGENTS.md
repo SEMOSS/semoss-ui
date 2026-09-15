@@ -36,7 +36,7 @@ grep -rnE '^\s*(import|export)[^;]*from\s+"' src \
 Two things that used to live here and deliberately do not any more: the **assistant**, which is
 an agent harness and owns its own store in the host, and **resource permissions**, which are a
 fact about (user, resource) and belong to the host's session. `WorkbenchState` is exactly
-`{ layout, loading, command, control }`.
+`{ layout, loading, command, control, events }`.
 
 ## Layout
 
@@ -86,8 +86,8 @@ in `components/` above them.
 ## One context, one hook, one namespace per domain
 
 Everything reaches the per-mount store through `useWorkbench(selector)`. State is grouped by
-domain — `layout`, `loading`, `command`, `control` — and each namespace carries its own fields
-and its own `actions`:
+domain — `layout`, `loading`, `command`, `control`, `events` — and each namespace carries its own
+fields and its own `actions`:
 
 ```ts
 const actions = useWorkbench((s) => s.layout.actions); // stable object — never re-renders
@@ -106,7 +106,7 @@ import or assume any of them.
 `useWorkbenchStoreApi()` returns the raw `StoreApi` (same context). Reach for it only in the
 three cases that a selector genuinely cannot serve, and that are the only ones left in the tree:
 
-- a vanilla `subscribe` that must not re-render (`hooks/use-workbench-events.ts`)
+- a vanilla `subscribe` that must not re-render (`hooks/use-workbench-life-cycle.ts`)
 - wiring one store into another (a domain workbench wiring one store into another)
 - reading live state per animation frame (`components/shell/workbench-drag-layer.tsx`'s hit-test)
 
@@ -407,12 +407,13 @@ Two more constraints worth knowing before touching this:
 | `components/mobile/workbench-mobile-drawer.tsx` / `components/chrome/workbench-reset-button.tsx` | On desktop the reset control rides at the end of the left rail, appended to `borderSlots.left.after`. The mobile layout has no rails, so `WorkbenchMobile` passes that slot to its **drawer** instead: the pager bar's ☰ opens a bottom drawer leading with that slot content + reset as an actions row, then every open panel as one full-width row that switches to it. Reset restores the default layout (hidden when `readOnly`) |
 | `constants/workbench.constants.ts` | `WORKBENCH_STYLES` — the one size scale the chrome draws itself at |
 | `contexts/workbench.context.tsx` | `WorkbenchProvider` — one store per mount |
-| `hooks/` | `use-workbench` / `-store-api` (store access), `-commands`, `-control`, `-panel` (everything about one panel), `-events` (vanilla subscribe bridge), `-hit-test` (drop resolution shared by tab drags and spawn drags) |
-| `stores/workbench.store.ts` | Composes the four slices; `WorkbenchState` is exactly `{ layout, loading, command, control }` |
+| `hooks/` | `use-workbench` / `-store-api` (store access), `-commands`, `-control`, `-panel` (everything about one panel), `-event` (subscribe to the bus), `-life-cycle` (vanilla store→host bridge), `-hit-test` (drop resolution shared by tab drags and spawn drags) |
+| `stores/workbench.store.ts` | Composes the five slices; `WorkbenchState` is exactly `{ layout, loading, command, control, events }` |
 | `stores/slices/workbench-layout.slice.ts` | The dock state + `actions` (registry, slots, persistence, ephemeral UI) |
 | `stores/slices/workbench-layout.tree.ts` | Pure, DOM-free tree ops |
 | `stores/slices/workbench-layout.commands.ts` | Layout-derived palette entries |
 | `stores/slices/workbench-controls.slice.ts` | Panel-contributed chrome controls, keyed by panel id; each control is its own `*-control.tsx` file beside its panel |
+| `stores/slices/workbench-events.slice.ts` | The panel-to-panel bus. Fire-and-forget, nothing retained, subscribers held in the slice closure rather than in state |
 | `utility/workbench-spawn-drag.ts` | The `dataTransfer` protocol for "dropping me should open a panel" |
 | `utility/workbench-drop.ts` | The ordered geometric drop resolution |
 | `utility/workbench-border-slot.ts` | `resolveBorderSlot` — a slot is a node or a function of the border's state. Out here because three shells resolve slots, including the mobile drawer, which has no rails |
@@ -422,6 +423,16 @@ Two more constraints worth knowing before touching this:
 ## Rules
 
 - **Keep it domain-agnostic.** This is the package's reason to exist; see the grep above.
+- **Three channels, three jobs — pick by what you are saying.** An **event**
+  (`events.actions.emit` / `useWorkbenchEvent`) says *"this just happened"* to whoever is
+  listening: fire-and-forget, nothing retained, only mounted panels hear it. **`setValue`** says
+  *"here is my current state, or my api"* — for a value a late-mounting panel still needs, or a
+  handle something else calls methods on. **`selectPanel`** says *"open this now"*. Reaching into
+  another panel's `values` by a well-known id to poke a counter is none of these and is already
+  forbidden two sections up; emit instead.
+- **Events are temporal, and that is what makes them safe.** A panel that was not mounted for one
+  reads fresh when it mounts, so `emit` after `selectPanel` covers both the panel that was
+  already open and the one just spawned — no second config write for the not-yet-mounted case.
 - **The mobile drawer is mobile-only, and its state is local.** `WorkbenchMobile` owns one
   `useState` boolean and renders `WorkbenchMobileDrawer` itself; the shell does not. Nothing
   outside that view can open it, so it has no representation in the layout store — don't add
@@ -436,12 +447,12 @@ Two more constraints worth knowing before touching this:
   Both are shell-scoped: a dock written to while its shell is unmounted sees those changes at the
   next one that fires. **Don't pass `onChange` alongside a `snapshot` whose identity changes** —
   the re-apply is reported back as a change and overwrites what the host just switched to.
-- **The `onChange` gate is field identity, in `use-workbench-events.ts`.** `commit` spreads the
+- **The `onChange` gate is field identity, in `use-workbench-life-cycle.ts`.** `commit` spreads the
   previous slice before its patch, and every transient write (`measureSlots`, `setPanelValue`,
   `setDragging`, `setEditingPanel`, `markComponentReady`) is a plain `set` touching one field no
   snapshot holds — so comparing `tree`/`borders`/`panels`/`selection.panel`/`maximizedTabsetId`/
   `recentCommands` by reference is exact. Route a transient write through `commit` to "tidy up"
-  and you start persisting it sixty times a second; `use-workbench-events.test.tsx` pins that.
+  and you start persisting it sixty times a second; `use-workbench-life-cycle.test.tsx` pins that.
 - **`loadSnapshot` applies once per `snapshot` identity**, so keep it a module-scope (or
   memoized) constant: a host whose store outlives its shell would otherwise re-apply a restored
   arrangement on every remount, dropping panels opened in between.

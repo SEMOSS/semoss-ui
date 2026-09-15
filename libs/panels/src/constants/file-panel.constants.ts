@@ -47,3 +47,33 @@ export const MCP = {
  */
 export const isFilePanelType = (type: string): boolean =>
 	(Object.values(FILE_PANEL_TYPES) as string[]).includes(type);
+
+/**
+ * The workbench events the file panels speak.
+ *
+ * Here rather than in the client because both hosts produce and consume them,
+ * and in this file for the same import-cycle reason as `isFilePanelType` above:
+ * it imports nothing, so a panel importing an event name cannot close a loop
+ * back through `file-panel.components.ts`.
+ */
+export const FILE_PANEL_EVENTS = {
+	/**
+	 * Files changed on the server, by something other than the panel showing
+	 * them: an agent wrote them, a branch was checked out, a commit was
+	 * restored, a terminal saved one.
+	 */
+	FILES_CHANGED: "files:changed",
+} as const;
+
+/**
+ * What `FILES_CHANGED` carries.
+ *
+ * `paths` omitted means "assume everything in this scope changed" — a branch
+ * switch rewrites the whole working tree and cannot enumerate it.
+ */
+export interface FilesChangedEvent {
+	/** `getFilePanelScope(mode)` of whatever changed. */
+	scope: string;
+	/** The specific files, when the producer knows them. */
+	paths?: string[];
+}

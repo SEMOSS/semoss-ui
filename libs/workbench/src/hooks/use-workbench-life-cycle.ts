@@ -7,7 +7,7 @@ import type {
 	WorkbenchSnapshot,
 } from "../types";
 
-interface WorkbenchEventProps {
+interface WorkbenchLifeCycleProps {
 	onPanelOpen?: (pid: WorkbenchPanelId) => void;
 	onPanelClose?: (
 		pid: WorkbenchPanelId,
@@ -38,11 +38,17 @@ const snapshotChanged = (a: WorkbenchState, b: WorkbenchState): boolean =>
 
 /**
  * Bridges store transitions to the host's event props through one vanilla
- * subscription — no React re-renders are involved. Open/close is about
- * being docked somewhere, not about existing in the panels record: a closed
- * panel stays there so it can be reopened.
+ * subscription — no React re-renders are involved. Open/close is about being
+ * docked somewhere, not about existing in the panels record.
+ *
+ * These are host props, not workbench events. A panel opening is not something
+ * another panel has ever needed to hear about, and an event nothing subscribes
+ * to is surface with no consumer. Should one ever need it, emit from this diff
+ * rather than from the layout actions: a panel becomes open through spawn,
+ * move, `loadSnapshot` and a border toggle alike, so only the diff catches
+ * every path — and emitting inside an action would run handlers mid-`set`.
  */
-export const useWorkbenchEvents = (props: WorkbenchEventProps): void => {
+export const useWorkbenchLifeCycle = (props: WorkbenchLifeCycleProps): void => {
 	const storeApi = useWorkbenchStoreApi();
 	const handlers = useRef(props);
 	handlers.current = props;
@@ -65,13 +71,13 @@ export const useWorkbenchEvents = (props: WorkbenchEventProps): void => {
 				}
 				if (h.onPanelClose) {
 					for (const pid of prevOpen) {
-						if (!nextOpen.has(pid)) {
-							const record =
-								state.layout.panels[pid] ??
-								prev.layout.panels[pid];
-							if (record) {
-								h.onPanelClose(pid, record);
-							}
+						if (nextOpen.has(pid)) {
+							continue;
+						}
+						const record =
+							state.layout.panels[pid] ?? prev.layout.panels[pid];
+						if (record) {
+							h.onPanelClose(pid, record);
 						}
 					}
 				}

@@ -7,6 +7,7 @@ import type {
 } from "@semoss/workbench";
 import { useWorkbenchControl, useWorkbenchPanel } from "@semoss/workbench";
 import { type FilePanelParams, useFilePanel } from "../hooks/use-file-panel";
+import { useFilesChanged } from "../hooks/use-files-changed";
 import { matchesFilePanel } from "../types/file-panel.types";
 import {
 	getCodeEditorLanguage,
@@ -35,6 +36,13 @@ const FileDownloadPanel = ({ id }: WorkbenchPanelProps) => {
 
 	useEffect(() => setValue({ setViewMode, viewMode }), [setValue, viewMode]);
 	useWorkbenchControl(id, FileDownloadControl);
+	// Nothing unsaved to protect in a viewer, so a change on the server is
+	// always worth re-reading.
+	useFilesChanged({
+		mode: config.mode,
+		path: config.path,
+		refresh: panel.read.refresh,
+	});
 
 	if (panel.gate) return panel.gate;
 

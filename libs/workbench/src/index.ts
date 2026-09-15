@@ -35,6 +35,8 @@ export {
 export { useWorkbench } from "./hooks/use-workbench";
 export { useWorkbenchCommands } from "./hooks/use-workbench-commands";
 export { useWorkbenchControl } from "./hooks/use-workbench-control";
+/* Telling another panel that something happened */
+export { useWorkbenchEvent } from "./hooks/use-workbench-event";
 /* Everything a panel renderer knows about itself — it is handed only an id */
 export { useWorkbenchPanel } from "./hooks/use-workbench-panel";
 export { useWorkbenchStoreApi } from "./hooks/use-workbench-store-api";

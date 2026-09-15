@@ -9,6 +9,8 @@ import {
 } from "@semoss/shared";
 import type { WorkbenchPanelId } from "@semoss/workbench";
 import { useWorkbenchControl, useWorkbenchPanel } from "@semoss/workbench";
+import { useFilesChanged } from "../../hooks/use-files-changed";
+import type { FilePanelMode } from "../../types/file-panel.types";
 import { FileExplorerControl } from "./file-explorer-control";
 
 interface FileExplorerPaneProps {
@@ -46,6 +48,12 @@ export const FileExplorerPane = ({
 
 	useEffect(() => setValue(explorer), [explorer, setValue]);
 	useWorkbenchControl(id, FileExplorerControl);
+	// The tree is stale the moment anything else writes a file in this scope.
+	// Here rather than in each explorer panel: all four render this body.
+	useFilesChanged({
+		mode: explorer.mode as FilePanelMode,
+		refresh: explorer.commands.refresh,
+	});
 
 	return (
 		<div className="relative size-full">

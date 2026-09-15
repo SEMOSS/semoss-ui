@@ -11,6 +11,7 @@ import {
 	type FilePanelValue,
 	useFilePanel,
 } from "../../hooks/use-file-panel";
+import { useFilesChanged } from "../../hooks/use-files-changed";
 import { matchesFilePanel } from "../../types/file-panel.types";
 import { FileRefreshControl } from "../file-panel-control";
 import { FilePanelIcon } from "../file-panel-icon";
@@ -28,6 +29,13 @@ const FilePdfViewerPanel = ({ id }: WorkbenchPanelProps) => {
 		setValue({ refresh: panel.read.refresh });
 	}, [panel.read.refresh, setValue]);
 	useWorkbenchControl(id, FileRefreshControl);
+	// Nothing unsaved to protect in a viewer, so a change on the server is
+	// always worth re-reading.
+	useFilesChanged({
+		mode: config.mode,
+		path: config.path,
+		refresh: panel.read.refresh,
+	});
 
 	if (panel.gate) return panel.gate;
 	if (panel.readGate) return panel.readGate;

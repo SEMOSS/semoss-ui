@@ -1,6 +1,6 @@
 import { type FC, useEffect, useLayoutEffect, useMemo, useRef } from "react";
 import { Spinner, useIsMobile } from "@semoss/ui/next";
-import { useWorkbench, useWorkbenchEvents } from "../../hooks";
+import { useWorkbench, useWorkbenchLifeCycle } from "../../hooks";
 import type {
 	WorkbenchBorderSlotCtx,
 	WorkbenchBorderSlots,
@@ -104,7 +104,7 @@ export const Workbench: FC<WorkbenchProps> = ({
 	const rootRef = useRef<HTMLDivElement | null>(null);
 	const stageRef = useRef<HTMLDivElement | null>(null);
 
-	useWorkbenchEvents({
+	useWorkbenchLifeCycle({
 		onPanelOpen,
 		onPanelClose,
 		onSelectionChange,
