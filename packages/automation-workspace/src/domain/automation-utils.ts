@@ -1,3 +1,4 @@
+import { looksLikeHtmlDocument } from "@semoss/utility/string/markdown";
 import type {
 	AppConfig,
 	AutomationNode,
@@ -22,8 +23,7 @@ export function formatDurationMs(
 
 /** Removes markup from server-generated HTML error documents without changing plain-text errors. */
 export function normalizeAutomationErrorMessage(value: string): string {
-	const isHtmlDocument = /<(?:!doctype\s+html|html)(?:\s|>)/i.test(value);
-	if (!isHtmlDocument) return value;
+	if (!looksLikeHtmlDocument(value)) return value;
 	return value
 		.replace(/<[^>]*>/g, " ")
 		.replace(/\s+/g, " ")

@@ -81,7 +81,7 @@ export const getImageMimeType = (extension: string): string => {
 		svg: "image/svg+xml",
 		bmp: "image/bmp",
 	};
-	return mimeTypes[extension.toLowerCase()] ?? "image/png";
+	return mimeTypes[extension.toLowerCase().replace(/^\./, "")] ?? "image/png";
 };
 
 /** Ordered image MIME types a rich output may carry, most preferred first. */

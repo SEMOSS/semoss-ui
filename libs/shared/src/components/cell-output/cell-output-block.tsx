@@ -15,7 +15,16 @@ import {
 	TooltipContent,
 	TooltipTrigger,
 } from "@semoss/ui/next";
-import { countInlineImages, hasInlineImage } from "../../utility/image";
+import { countInlineImages, hasInlineImage } from "@semoss/utility/file";
+import { isTabularArray, parseStructuredOutput } from "@semoss/utility/json";
+import {
+	countLines,
+	formatBytes,
+	looksLikeHtmlDocument,
+	looksLikeMarkdown,
+	normalizeForMarkdown,
+	splitMessageLines,
+} from "@semoss/utility/string/markdown";
 import { SandpackHtmlPreview } from "../html";
 import { InlineImageSegments } from "./inline-image";
 import { JsonViewer } from "./json-viewer";
@@ -103,10 +112,10 @@ export const CellOutputBlock = ({
 	const hasStructuredLogs =
 		!rawLogsMode &&
 		messageLines.some((line) => {
-			const v = tryParseStructured(line);
+			const v = parseStructuredOutput(line);
 			return v !== null && typeof v === "object";
 		});
-	const outputValue = parseOutputValue(output);
+	const outputValue = parseStructuredOutput(output);
 	const isObjectOutput =
 		outputValue !== null &&
 		typeof outputValue === "object" &&
@@ -516,7 +525,7 @@ const FormattedLines = ({
 					/>
 				);
 			}
-			const structured = tryParseStructured(line);
+			const structured = parseStructuredOutput(line);
 			return (
 				<div key={key}>
 					{structured !== null && typeof structured === "object" ? (
@@ -869,128 +878,9 @@ export const PopoutModal = ({
 // helpers
 // ---------------------------------------------------------------------------
 
-const splitMessageLines = (messages: string[]): string[] => {
-	const out: string[] = [];
-	for (const msg of messages) {
-		if (msg === undefined || msg === null) continue;
-		const trimmed = msg.replace(/\n$/, "");
-		const parts = trimmed.split("\n");
-		out.push(...parts);
-	}
-	return out;
-};
-
-const countLines = (text: string): number => {
-	if (!text) return 0;
-	const trimmed = text.endsWith("\n") ? text.slice(0, -1) : text;
-	if (!trimmed) return 0;
-	return trimmed.split("\n").length;
-};
-
-const formatBytes = (text: string): string => {
-	const n = new Blob([text || ""]).size;
-	if (n < 1024) return `${n} B`;
-	if (n < 1024 * 1024) return `${(n / 1024).toFixed(1)} KB`;
-	return `${(n / 1024 / 1024).toFixed(1)} MB`;
-};
-
-const parseOutputValue = (output: string): unknown | null => {
-	return tryParseStructured(output);
-};
-
-/**
- * Try to coerce a string into a JSON-ish value so we can render it via the
- * JsonViewer. Handles both real JSON and Python's dict/list repr (single
- * quotes + `True`/`False`/`None`) — which is what `print(some_dict)` emits.
- *
- * Returns `null` when the string doesn't look structured or can't be parsed.
- */
-const tryParseStructured = (raw: string): unknown | null => {
-	if (!raw) return null;
-	const trimmed = raw.trim();
-	if (
-		!(trimmed.startsWith("{") && trimmed.endsWith("}")) &&
-		!(trimmed.startsWith("[") && trimmed.endsWith("]"))
-	) {
-		return null;
-	}
-	// Pass 1 — straight JSON.
-	try {
-		return JSON.parse(trimmed);
-	} catch {
-		// fall through
-	}
-	// Pass 2 — best-effort Python repr → JSON. Swap single → double quotes
-	// for keys/strings and convert Python literals. We intentionally don't
-	// try to handle every edge case (escaped quotes inside strings) — if
-	// it doesn't round-trip, we just give up and render as plain text.
-	try {
-		const swapped = trimmed
-			.replace(/(^|[\s,{[(])'((?:\\.|[^'\\])*)'/g, '$1"$2"')
-			.replace(/\bTrue\b/g, "true")
-			.replace(/\bFalse\b/g, "false")
-			.replace(/\bNone\b/g, "null");
-		return JSON.parse(swapped);
-	} catch {
-		return null;
-	}
-};
-
 // Re-export so consumers can compose their own renderers if they want just
 // the JSON tree.
 export { JsonViewer } from "./json-viewer";
-
-/** Heuristic: returns true if the text contains markdown syntax worth rendering. */
-const MARKDOWN_PATTERNS = [
-	/^#{1,6}\s/m, // headings
-	/\|.+\|.+\|/m, // tables
-	/^[-*+]\s/m, // unordered lists
-	/^\d+\.\s/m, // ordered lists
-	/```[\s\S]*?```/, // fenced code blocks
-	/\*\*.+?\*\*/, // bold
-	/\[.+?\]\(.+?\)/, // links
-];
-
-function looksLikeMarkdown(text: string): boolean {
-	if (!text || text.length < 4) return false;
-	return MARKDOWN_PATTERNS.some((pattern) => pattern.test(text));
-}
-
-/** Only complete HTML documents use the sandboxed preview; fragments stay plain text. */
-function looksLikeHtmlDocument(text: string): boolean {
-	return /^\s*(?:<!doctype\s+html\s*>|<html(?:\s|>))/i.test(text);
-}
-
-/** Convert literal \\n sequences to real newlines and strip surrounding quotes. */
-function normalizeForMarkdown(text: string): string {
-	let s = text;
-	// Strip wrapping JSON string quotes
-	if (s.startsWith('"') && s.endsWith('"')) {
-		try {
-			const parsed = JSON.parse(s);
-			if (typeof parsed === "string") s = parsed;
-		} catch {
-			s = s.slice(1, -1);
-		}
-	}
-	// Convert literal \n to real newlines
-	if (s.includes("\\n")) {
-		s = s.replace(/\\n/g, "\n");
-	}
-	return s;
-}
-
-/** True if the value is a non-empty array of flat objects with consistent keys. */
-function isTabularArray(value: unknown): boolean {
-	if (!Array.isArray(value) || value.length === 0) return false;
-	if (typeof value[0] !== "object" || value[0] === null) return false;
-	const keys = Object.keys(value[0]);
-	if (keys.length === 0) return false;
-	return value.every(
-		(item) =>
-			typeof item === "object" && item !== null && !Array.isArray(item),
-	);
-}
 
 /** Renders an array of objects as a simple table. */
 function DataTable({ rows }: { rows: Record<string, unknown>[] }) {

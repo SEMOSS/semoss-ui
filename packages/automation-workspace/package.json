@@ -19,6 +19,7 @@
     "@semoss/sdk": "workspace:*",
     "@semoss/shared": "workspace:*",
     "@semoss/ui": "workspace:*",
+    "@semoss/utility": "workspace:*",
     "@xyflow/react": "^12.3.6",
     "flexlayout-react": "^0.8.17",
     "lucide-react": "^0.545.0",

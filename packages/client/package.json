@@ -25,6 +25,7 @@
         "@semoss/sdk": "workspace:*",
         "@semoss/shared": "workspace:*",
         "@semoss/terminal": "workspace:*",
+        "@semoss/utility": "workspace:*",
         "@semoss/ui": "workspace:*",
         "@semoss/workbench": "workspace:*",
         "@xyflow/react": "^12.0.4",

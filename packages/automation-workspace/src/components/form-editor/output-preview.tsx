@@ -1,6 +1,10 @@
 import { ChevronDown, ChevronRight, ClipboardCopy } from "lucide-react";
 import { Fragment, useMemo, useState } from "react";
 import { toast } from "@semoss/ui/next";
+import {
+	looksLikeMarkdown,
+	splitMessageLines,
+} from "@semoss/utility/string/markdown";
 import { extractDataset } from "../../domain/automation-utils";
 
 export interface OutputPreviewProps {
@@ -37,7 +41,8 @@ export function OutputPreview({
 	);
 
 	const renderMode = useMemo(() => {
-		if (nodeType === "model-engine") return "markdown";
+		if (nodeType === "model-engine" || looksLikeMarkdown(value))
+			return "markdown";
 		if (nodeType === "vector-engine" && Array.isArray(parsed))
 			return "vector-results";
 		if (dbDataset) return "table";
@@ -48,7 +53,7 @@ export function OutputPreview({
 		if (renderMode === "markdown") {
 			return (
 				<div className="prose prose-sm dark:prose-invert max-h-64 max-w-none overflow-auto pr-8 text-[12px]">
-					{value.split("\n").map((line, i) => {
+					{splitMessageLines([value]).map((line, i) => {
 						if (line.startsWith("# "))
 							return (
 								// biome-ignore lint/suspicious/noArrayIndexKey: static text preview rebuilt whole from `value` each render, never reordered

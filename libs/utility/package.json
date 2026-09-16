@@ -1,0 +1,61 @@
+{
+	"name": "@semoss/utility",
+	"version": "1.0.0-beta.1",
+	"description": "Shared browser-safe and runtime-independent utility functions for SEMOSS",
+	"type": "module",
+	"main": "./dist/index.mjs",
+	"module": "./dist/index.mjs",
+	"types": "./dist/types/index.d.ts",
+	"exports": {
+		".": {
+			"types": "./dist/types/index.d.ts",
+			"default": "./dist/index.mjs"
+		},
+		"./clipboard": {
+			"types": "./dist/types/clipboard/index.d.ts",
+			"default": "./dist/clipboard/index.mjs"
+		},
+		"./date": {
+			"types": "./dist/types/date/index.d.ts",
+			"default": "./dist/date/index.mjs"
+		},
+		"./file": {
+			"types": "./dist/types/file/index.d.ts",
+			"default": "./dist/file/index.mjs"
+		},
+		"./file/image": {
+			"types": "./dist/types/file/image.d.ts",
+			"default": "./dist/file/image.mjs"
+		},
+		"./json": {
+			"types": "./dist/types/json/index.d.ts",
+			"default": "./dist/json/index.mjs"
+		},
+		"./string": {
+			"types": "./dist/types/string/index.d.ts",
+			"default": "./dist/string/index.mjs"
+		},
+		"./string/markdown": {
+			"types": "./dist/types/string/markdown.d.ts",
+			"default": "./dist/string/markdown.mjs"
+		}
+	},
+	"files": ["src", "dist"],
+	"scripts": {
+		"dev": "vite build --watch --mode development --configLoader runner",
+		"build": "vite build --configLoader runner",
+		"build:dev": "vite build --mode development --configLoader runner",
+		"test": "vitest run --configLoader runner",
+		"test:watch": "vitest --watch --configLoader runner"
+	},
+	"dependencies": {
+		"dayjs": "^1.11.14"
+	},
+	"devDependencies": {
+		"@semoss/config": "workspace:*",
+		"@types/node": "^24.3.1",
+		"typescript": "~6.0.0",
+		"vite": "^8.2.1",
+		"vitest": "^4.1.11"
+	}
+}

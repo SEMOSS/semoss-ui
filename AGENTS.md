@@ -12,6 +12,7 @@ SEMOSS is a React-based analytics platform built as a pnpm monorepo with Turbore
 **Dependency Graph:**
 
 Libraries (`libs/*`, publishable):
+- `@semoss/utility` → Generic date, string, file, clipboard, and JSON helpers
 - `@semoss/sdk` → Core SDK (no internal dependencies)
 - `@semoss/ui` → Component library (no internal dependencies)
 - `@semoss/i18n` → Internationalization library (no internal dependencies)
@@ -41,6 +42,7 @@ Applications (`packages/*`, not published):
 ```
 semoss/
 ├── libs/           # Shared libraries (publishable)
+│   ├── utility/    # Generic cross-package utility functions
 │   ├── sdk/        # @semoss/sdk - Core SDK
 │   ├── ui/         # @semoss/ui - Component library
 │   ├── i18n/       # @semoss/i18n - Internationalization library
