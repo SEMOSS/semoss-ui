@@ -393,11 +393,7 @@ function isValidConversionResult(
 }
 
 function placeholderForNode(node: N8nNode): MappedNode {
-	const pythonSource = [
-		"def run(scope):",
-		`    raise NotImplementedError(${JSON.stringify(`Port n8n node "${node.name}" (${node.type}) to Python`)})`,
-		"",
-	].join("\n");
+	const pythonSource = pythonFallbackSource(node);
 	return {
 		type: "developer.python",
 		config: { pythonSource },
@@ -405,6 +401,22 @@ function placeholderForNode(node: N8nNode): MappedNode {
 		pythonSource,
 		label: `\u26a0\ufe0f ${node.name}`,
 	};
+}
+
+function pythonFallbackSource(node: N8nNode, source?: string): string {
+	const comments =
+		source
+			?.split("\n")
+			.filter((line) => line.trim().startsWith("#"))
+			.map((line) => `    ${line.trim()}`) ?? [];
+	return [
+		"def run(scope):",
+		...(comments.length > 0
+			? comments
+			: [`    # No direct SEMOSS mapping for ${node.type}.`]),
+		`    raise NotImplementedError(${JSON.stringify(`Implement n8n node "${node.name}" (${node.type})`)})`,
+		"",
+	].join("\n");
 }
 
 function sourcePortFor(n8nNode: N8nNode, outputIndex: number): string {
@@ -571,13 +583,16 @@ export async function n8nWorkflowToAutomationDocumentWithModel(
 		if (!importedNode) continue;
 		const placeholderWarning = `"${node.name}": no mapping for n8n node type "${node.type}" — added as a placeholder Python step, fill it in manually.`;
 		const isPythonFallback = converted.type === "developer.python";
+		const pythonSource = isPythonFallback
+			? pythonFallbackSource(node, converted.pythonSource)
+			: converted.pythonSource;
 		result.warnings = result.warnings.filter(
 			(warning) => warning !== placeholderWarning,
 		);
 		Object.assign(importedNode, {
 			type: converted.type,
-			config: converted.config,
-			codeMode: converted.codeMode,
+			config: isPythonFallback ? { pythonSource } : converted.config,
+			codeMode: isPythonFallback ? "custom" : converted.codeMode,
 			label: isPythonFallback
 				? `\u26a0\ufe0f ${converted.label ?? node.name}`.replace(
 						"\u26a0\ufe0f \u26a0\ufe0f ",
@@ -585,8 +600,8 @@ export async function n8nWorkflowToAutomationDocumentWithModel(
 					)
 				: (converted.label ?? node.name),
 		});
-		if (converted.pythonSource) {
-			result.nodeSources[node.id] = converted.pythonSource;
+		if (pythonSource) {
+			result.nodeSources[node.id] = pythonSource;
 		} else {
 			delete result.nodeSources[node.id];
 		}

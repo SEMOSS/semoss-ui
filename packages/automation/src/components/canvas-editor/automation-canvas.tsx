@@ -1521,8 +1521,9 @@ export const AutomationCanvasContent = forwardRef<
 			setImportSummaryKind("import");
 			setImportWarnings(parsed.warnings);
 			setShowImportSummary(true);
+			window.requestAnimationFrame(fitWorkflow);
 		},
-		[layoutNodes],
+		[fitWorkflow, layoutNodes],
 	);
 
 	const handleImportFile = useCallback(
@@ -1616,9 +1617,14 @@ export const AutomationCanvasContent = forwardRef<
 				validateCanvasWorkflowNode(step, steps).length > 0,
 		);
 		if (invalidSteps.length > 0) {
-			setEditingStepId(invalidSteps[0].id);
+			const firstInvalidStep = invalidSteps[0];
+			const firstIssue = validateCanvasWorkflowNode(
+				firstInvalidStep,
+				steps,
+			)[0];
+			setEditingStepId(firstInvalidStep.id);
 			toast.error(
-				`Complete ${invalidSteps.length} step${invalidSteps.length === 1 ? "" : "s"} before saving`,
+				`Cannot save: "${firstInvalidStep.label}" needs ${firstIssue ?? "required information"}.${invalidSteps.length > 1 ? ` Review ${invalidSteps.length - 1} other highlighted step${invalidSteps.length === 2 ? "" : "s"}.` : ""}`,
 			);
 			return false;
 		}
@@ -1940,8 +1946,13 @@ export const AutomationCanvasContent = forwardRef<
 				validateCanvasWorkflowNode(step, steps).length > 0,
 		);
 		if (invalidSteps.length > 0) {
+			const firstInvalidStep = invalidSteps[0];
+			const firstIssue = validateCanvasWorkflowNode(
+				firstInvalidStep,
+				steps,
+			)[0];
 			toast.error(
-				`Fix ${invalidSteps.length} step${invalidSteps.length === 1 ? "" : "s"} before running`,
+				`Cannot run: "${firstInvalidStep.label}" needs ${firstIssue ?? "required information"}.${invalidSteps.length > 1 ? ` Review ${invalidSteps.length - 1} other highlighted step${invalidSteps.length === 2 ? "" : "s"}.` : ""}`,
 			);
 			setActiveDockTab("validation");
 			return;

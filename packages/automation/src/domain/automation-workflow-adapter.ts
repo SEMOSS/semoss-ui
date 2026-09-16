@@ -372,6 +372,14 @@ function withPythonSource(
 	return pythonSource ? { ...config, pythonSource } : config;
 }
 
+function normalizeWorkflowConfig(
+	config: unknown,
+): AutomationWorkflowNodeConfig {
+	return config && typeof config === "object" && !Array.isArray(config)
+		? (config as AutomationWorkflowNodeConfig)
+		: {};
+}
+
 function canvasTypeToWorkflow(
 	type: AutomationNodeType,
 ): AutomationWorkflowNodeType {
@@ -538,7 +546,7 @@ function canvasNodeFromWorkflow(
 ): AutomationNode {
 	const persistedConfig = withPythonSource(
 		node.type,
-		structuredClone(node.config),
+		structuredClone(normalizeWorkflowConfig(node.config)),
 	);
 	const workflowConfig =
 		node.type === "trigger.start" ||
