@@ -1,9 +1,8 @@
 import { createStore, type StoreApi } from "zustand";
 import type { ColumnInterface } from "@semoss/sdk";
 import { runPixel } from "@semoss/sdk/react";
+import type { WorkbenchPanelRecord, WorkbenchState } from "@semoss/workbench";
 import { WORKBENCH_COMPONENTS } from "../workbench.constants";
-import type { WorkbenchState } from "../workbench.store";
-import type { WorkbenchPanelRecord } from "../workbench.types";
 
 /**
  * Query mode handled by the database workbench. SQL/SPARQL are derived from

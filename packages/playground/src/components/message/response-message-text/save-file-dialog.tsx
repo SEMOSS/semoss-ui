@@ -58,9 +58,7 @@ export const SaveFileDialog = ({
 				false,
 				false,
 			);
-			room.openFileEditorSidebarNode(filePath, {
-				forceRefresh: true,
-			});
+			room.openFileSidebarPanel(filePath, undefined, { refresh: true });
 			toast.success(`Saved in room as ${filePath}`);
 			onClose(true);
 		} catch (error) {

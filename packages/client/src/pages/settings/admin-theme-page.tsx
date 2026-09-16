@@ -175,7 +175,7 @@ const EMPTY_PLAYGROUND: ThemeMap["playground"] = {
 		showPlatformLinks: true,
 		enableDarkMode: true,
 		hideToolsInIframe: false,
-		enableAutoGreeting: false,
+		hideChatHistory: false,
 	},
 };
 
@@ -277,10 +277,10 @@ const FEATURE_FLAGS: {
 			"When the app is embedded in an iframe, hides the New Chat nav item, the tools (+) menu, and slash commands in the room input.",
 	},
 	{
-		key: "enableAutoGreeting",
-		label: "Enable Auto Greeting",
+		key: "hideChatHistory",
+		label: "Hide Chat History",
 		description:
-			"Shows an opening message upon opening a new chat in Playground",
+			'Hides the chat-history list in the sidebar and the "All Chats" page/nav link, so users cannot browse past conversations. New chats can still be started.',
 	},
 ];
 
