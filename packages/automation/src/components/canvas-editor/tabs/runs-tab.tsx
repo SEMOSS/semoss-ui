@@ -25,8 +25,9 @@ import {
 import type { AutomationWorkflowDocument } from "../../../domain/automation-workflow.types";
 import { canvasDocumentFromWorkflow } from "../../../domain/automation-workflow-adapter";
 import { getWorkflowNodeDisplay } from "../../../domain/automation-workflow-display";
+import { ErrorDetail } from "../../form-editor/error-detail";
 import { ExecutedDefinitionDetail } from "../../form-editor/executed-definition-detail";
-import { ErrorDetail, TraceDetail } from "../../form-editor/node-result-list";
+import { TraceDetail } from "../../form-editor/trace-detail";
 import { StatusBadge } from "../../status-badge";
 import { RunBanner } from "../run-banner";
 

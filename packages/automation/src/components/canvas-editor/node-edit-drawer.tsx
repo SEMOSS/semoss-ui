@@ -22,8 +22,8 @@ import {
 	getWorkflowNodeDefinition,
 	validateAutomationOutputVariable,
 } from "../../domain/automation-workflow-adapter";
-import { TraceDetail } from "../form-editor/node-result-list";
 import { OutputPreview } from "../form-editor/output-preview";
+import { TraceDetail } from "../form-editor/trace-detail";
 import { StepForm } from "./step-form";
 
 export interface NodeEditDrawerProps {

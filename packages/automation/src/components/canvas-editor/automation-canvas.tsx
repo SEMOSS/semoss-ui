@@ -1,12 +1,8 @@
 import {
 	Background,
 	BackgroundVariant,
-	BaseEdge,
 	type Connection,
 	type Edge,
-	EdgeLabelRenderer,
-	type EdgeProps,
-	getSmoothStepPath,
 	MarkerType,
 	type Node,
 	ReactFlow,
@@ -31,7 +27,6 @@ import {
 	Scan,
 	Upload,
 	Workflow,
-	X,
 	ZoomIn,
 	ZoomOut,
 } from "lucide-react";
@@ -111,6 +106,7 @@ import {
 import { OnboardingTour } from "../form-editor/onboarding-tour";
 import { AddNodeMenu } from "./add-node-menu";
 import { AutomationDockLayout } from "./automation-dock-layout";
+import { DeletableEdge } from "./deletable-edge";
 import { getFlowStrokeColor } from "./flow-colors";
 import { AutomationNode as AutomationNodeCard } from "./nodes/automation-node";
 import { BranchNode } from "./nodes/branch-node";
@@ -188,54 +184,6 @@ function customSourceReferencesOutput(
 		source.includes(`scope['${outputVariable}']`) ||
 		source.includes(`scope.get("${outputVariable}"`) ||
 		source.includes(`scope.get('${outputVariable}'`)
-	);
-}
-
-interface DeletableEdgeData extends Record<string, unknown> {
-	onDelete: (edgeId: string) => void;
-	readOnly?: boolean;
-	hovered?: boolean;
-}
-
-function DeletableEdge({
-	id,
-	sourceX,
-	sourceY,
-	sourcePosition,
-	targetX,
-	targetY,
-	targetPosition,
-	style,
-	markerEnd,
-	data,
-}: EdgeProps<Edge<DeletableEdgeData>>) {
-	const [edgePath, labelX, labelY] = getSmoothStepPath({
-		sourceX,
-		sourceY,
-		sourcePosition,
-		targetX,
-		targetY,
-		targetPosition,
-	});
-
-	return (
-		<>
-			<BaseEdge path={edgePath} markerEnd={markerEnd} style={style} />
-			<EdgeLabelRenderer>
-				<button
-					type="button"
-					className={`nodrag nopan pointer-events-auto absolute size-5 items-center justify-center rounded-full border bg-background text-muted-foreground shadow-sm transition-opacity hover:border-destructive/50 hover:text-destructive ${data?.readOnly ? "hidden" : "flex"}`}
-					style={{
-						transform: `translate(-50%, -50%) translate(${labelX}px, ${labelY}px)`,
-						opacity: data?.hovered ? 1 : 0,
-					}}
-					onClick={() => data?.onDelete(id)}
-					aria-label="Remove connection"
-				>
-					<X className="size-3" />
-				</button>
-			</EdgeLabelRenderer>
-		</>
 	);
 }
 
