@@ -769,6 +769,8 @@ const toolStatusRank = (status: string): number => {
 		case "INPUT_REQUIRED":
 			return 2;
 		case "COMPLETED":
+		case "SUCCESS":
+		case "SUCCEEDED":
 		case "FAILED":
 		case "CANCELLED":
 			return 3;

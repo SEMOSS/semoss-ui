@@ -67,7 +67,7 @@ const POLL_INTERVAL_MS = 300;
  * Agent (workspace) every workbench assistant run executes under — the backend's
  * app-builder agent record. Sent as the RunAgent pixel's workspaceId.
  */
-const WORKBENCH_AGENT_ID = "app-builder";
+export const WORKBENCH_AGENT_ID = "app-builder";
 
 /** Permission mode forwarded to the agent harness for each run. */
 export type AssistantPermissionMode =

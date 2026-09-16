@@ -302,7 +302,7 @@ const FeedItems = ({ run, nested = false }: FeedItemsProps) => {
 				</div>
 			)
 		) : activity.kind === "phase" ? (
-			<AssistantToolPhase tools={activity.tools} />
+			<AssistantToolPhase tools={activity.tools} roomId={run.roomId} />
 		) : (
 			<AssistantSubagent
 				childRunId={activity.childRunId}

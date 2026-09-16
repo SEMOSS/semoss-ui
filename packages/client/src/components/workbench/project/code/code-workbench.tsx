@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useMemo } from "react";
 import { FILE_PANEL_COMPONENTS } from "@semoss/panels";
 import type { Role } from "@semoss/sdk";
-import { useInsight } from "@semoss/sdk/react";
+import { useInsight, usePixel } from "@semoss/sdk/react";
+import type { Project } from "@semoss/shared";
 import { toast, useCacheState } from "@semoss/ui/next";
 import type {
 	WorkbenchLayout,
@@ -45,6 +46,13 @@ import { PROJECT_APP_RENDERER_PANEL } from "./code-app-renderer-panel";
  * the (possibly MCP-aliased) tool name.
  */
 const PUBLISH_TOOL_RE = /buildandpublishapp|publishproject/i;
+
+/**
+ * Tag Reporting Insights marks its MCP host project with, so every code
+ * workbench assistant can build a dashboard by default alongside the app
+ * being edited.
+ */
+const REPORTING_INSIGHTS_MCP_HOST_TAG = "reporting-insights--mcp-host";
 
 /**
  * Whether a completed run — or any subagent run in its tree — invoked a tool
@@ -272,6 +280,16 @@ export const CodeWorkbench: React.FC = () => {
 
 	const assistantStore = useAssistantStore(workbenchId);
 
+	// Reporting Insights' MCP host project - best-effort, silently omitted from
+	// mcp[] below if it isn't found.
+	const { data: reportingInsightsHosts } = usePixel<Project[]>(
+		`MyProjects(metaKeys=["tag"], metaFilters=[${JSON.stringify({
+			tag: [REPORTING_INSIGHTS_MCP_HOST_TAG],
+		})}], limit=[1], offset=[0]);`,
+		{ data: [] },
+	);
+	const reportingInsightsHostId = reportingInsightsHosts[0]?.project_id;
+
 	// keep the assistant's system prompt/tools in sync with the active app
 	useEffect(() => {
 		const name = project.project_display_name || project.project_name;
@@ -282,13 +300,26 @@ export const CodeWorkbench: React.FC = () => {
 		);
 
 		assistantStore.getState().configure({
-			systemPrompt: `You are the assistant for the ${name} code workbench (${project.project_id}). Your role is to help the user build and run this app and the rest of the project's files. Use only the tools provided in this room. Never claim that an operation succeeded unless its tool result confirms success. Keep answers concise and grounded in the active project.`,
+			systemPrompt: `You are the assistant for the ${name} code workbench (${project.project_id}). Your role is to help the user build and run this app and the rest of the project's files. Use only the tools provided in this room. Never claim that an operation succeeded unless its tool result confirms success. Keep answers concise and grounded in the active project.${
+				reportingInsightsHostId
+					? ` You can also build dashboards using the Reporting Insights tools. Whenever you call create_dashboard from this room, always pass target_project="${project.project_id}" so the dashboard is built into THIS app (${name}) instead of a separate project — do not omit it unless the user explicitly asks for a separate, standalone dashboard. create_dashboard with target_project set ALREADY deploys the complete dashboard portal (assets/portals/index.html and everything else it needs) into this app — that is the finished result. Do NOT also write your own assets/portals/index.html (or any other hand-built app) afterward: doing so overwrites and destroys the dashboard that was just deployed. Only write additional files if the user asks for something beyond the dashboard itself.`
+					: ""
+			}`,
 			mcp: [
 				{
 					type: "PROJECT",
 					id: project.project_id,
 					name: name,
 				},
+				...(reportingInsightsHostId
+					? [
+							{
+								type: "PROJECT",
+								id: reportingInsightsHostId,
+								name: "Reporting Insights",
+							},
+						]
+					: []),
 			],
 			runParams: { project: project.project_id },
 			permissionMode: readOnly ? null : "acceptEdits",
@@ -306,6 +337,7 @@ export const CodeWorkbench: React.FC = () => {
 		project.project_display_name,
 		project.project_id,
 		project.project_name,
+		reportingInsightsHostId,
 	]);
 
 	useWorkbenchCommands([

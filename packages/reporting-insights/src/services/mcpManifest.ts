@@ -25,7 +25,7 @@ import type { Dashboard, Parameter } from "@/types/dashboard";
  * `buildHostMcp` or `mcpHostRedirectHtml` change so clients pick up the new host once.
  */
 export const HOST_ARTIFACT_VERSION =
-	"2026-07-22.data-products-merge-base-accumulate";
+	"2026-09-16.create-dashboard-target-project";
 
 export const PY_DRIVER_PATH = "py/"; // → version/assets/py/mcp_driver.py
 export const PY_DRIVER_FILE = "mcp_driver.py";
@@ -346,6 +346,12 @@ export function buildHostMcp(
 					title: "Database",
 					description:
 						'Database name or engine id to build from (e.g. "alphabet2")',
+				},
+				target_project: {
+					type: "string",
+					title: "Target project id",
+					description:
+						"Id of an existing app project to build the dashboard into, overwriting its current content. Only set this when the caller is running inside that app's own workbench and was asked to turn THIS app into the dashboard rather than create a separate one — omit it to create a new, separate dashboard project as usual.",
 				},
 			},
 			["description"],
@@ -742,9 +748,9 @@ def query_dashboard(dashboard_id="", visualization="", limit="20"):
 
 
 # ── UI tools (open the app) ───────────────────────────────────────────────────
-def create_dashboard(description="", database=""):
+def create_dashboard(description="", database="", target_project=""):
     """Create and deploy a new Reporting Insights dashboard from a description."""
-    q = {k: v for k, v in {"description": description, "database": database}.items() if v}
+    q = {k: v for k, v in {"description": description, "database": database, "target_project": target_project}.items() if v}
     url = APP_URL + "#/mcp/create" + (("?" + urllib.parse.urlencode(q)) if q else "")
     return {"message": "Building and deploying your dashboard…", "url": url, "description": description, "database": database}
 

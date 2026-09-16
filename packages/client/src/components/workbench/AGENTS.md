@@ -42,6 +42,28 @@ dependency so the arrow points client -> dock and never back:
 domain store, and the model chat store. Its `index.ts` re-exports `@semoss/workbench` so the
 existing `@/stores/workbench` imports keep resolving.
 
+## Inline tool UI (`SMSS_MCP_UI`)
+
+Any MCP tool can opt into rendering its own UI inline in the assistant feed by setting
+`_meta.SMSS_MCP_UI` (`resourceURI`, `autoOpen`, `displayLocation`) on its tool definition —
+this is a platform-wide convention, not something specific to one tool or project.
+`../assistant/assistant-tool-ui.tsx` (`AssistantToolUi`) renders it as an iframe, mirroring
+what `packages/playground`'s `ToolsView` already does for its own rooms. It prefers the
+tool's own returned `url` (parsed from `tool.output` once the call completes) over
+reconstructing a `public_home/<app>/portals<resourceURI>` path and relying on a
+`SMSS_INIT_TOOL` postMessage handoff — the latter is racy for any parameter that matters and
+is only a fallback for tools that don't return their own url.
+
+- **Render it outside every `Collapsible`, not nested inside one.** `AssistantToolPhase` and
+  `ToolRollup` auto-collapse (and Radix's `CollapsibleContent` unmounts its children) the
+  instant the tool *call* completes — which can be almost immediately, well before an
+  `autoOpen` tool's own iframe has finished its async work. `AssistantToolPhase` renders
+  `AssistantToolUi` once per tool as a sibling after its `Collapsible`, unconditionally, so
+  the iframe stays mounted regardless of expand/collapse state.
+- **A durable tool result's status can come back as `"success"`, not `"COMPLETED"`.** Compare
+  with `isCompleteStatus` (`assistant-tools.ts`), never an exact `=== "COMPLETED"` check —
+  the latter silently skips the tool's direct-url path for every durably-loaded run.
+
 ## Adding a panel
 
 Follow the package's three steps. The client-specific parts:
@@ -167,6 +189,7 @@ gets at most one chrome control, and this needed two.
 | `git/` | The git panels. The file panels are in `@semoss/panels` |
 | `workbench.presets.ts` | `createFileCommands` / `createReconnectCommand` / `createOpenPanelCommand`, and `withTab` — the palette and settings-tab pieces every domain workbench composes |
 | `../assistant/` | The assistant panel and its subviews; `ASSISTANT_PANEL` is its blueprint |
+| `../assistant/assistant-tool-ui.tsx` | Renders a tool's opted-in `SMSS_MCP_UI` iframe; see "Inline tool UI" above |
 | `stores/assistant/` | The assistant store (agent runs, rooms, notifications) |
 | `stores/workbench/database/` | The database domain store (the dedicated-store template) |
 | `stores/workbench/model/` | The model chat store — one store, one panel tree, no layout coupling |

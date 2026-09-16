@@ -1,4 +1,5 @@
 import JSZip from "jszip";
+import { appPublicBaseUrl } from "@/lib/portalUrl";
 import type { Dashboard } from "@/types/dashboard";
 // Pre-built React portal app (portal/dist/index.html inlined by inline-build.mjs)
 import portalAppHtml from "../../portal/dist/index.html?raw";
@@ -21,56 +22,19 @@ export const PORTAL_INDEX_HTML: string = portalAppHtml;
  */
 export const USE_IFRAME_PORTAL = true;
 
-/** Extracts the SEMOSS project id from a `public_home` portal URL or an app-shell hash route. */
-function projectIdFromLocation(
-	location: Pick<Location, "pathname" | "hash">,
-): string {
-	const publicHomeMatch = location.pathname.match(
-		/\/public_home\/([^/]+)\/portals(?:\/|$)/i,
-	);
-	if (publicHomeMatch) return decodeURIComponent(publicHomeMatch[1]);
-
-	const shellMatch = location.hash.match(
-		/#?\/app\/([^/?#]+)\/view(?:[/?#]|$)/i,
-	);
-	return shellMatch ? decodeURIComponent(shellMatch[1]) : "";
-}
-
-/**
- * URL of this app's directly served document, used as the portal iframe target.
- * Baked from `VITE_MAIN_APP_URL` at build time; otherwise discovered at runtime
- * from the current (or parent/top) location's SEMOSS routing context.
- */
-export function getMainAppUrl(): string {
-	const configuredUrl = String(import.meta.env.MAIN_APP_URL || "");
-	if (configuredUrl) return configuredUrl;
-	if (typeof window === "undefined") return "";
-
-	let appId = projectIdFromLocation(window.location);
-	for (const frame of [window.parent, window.top]) {
-		if (appId || !frame) break;
-		try {
-			appId = projectIdFromLocation(frame.location);
-		} catch {
-			// Cross-origin parents cannot provide SEMOSS routing context.
-		}
-	}
-	if (!appId) return "";
-
-	const modulePath = (
-		String(import.meta.env.MODULE || "") || "/Monolith"
-	).replace(/\/+$/, "");
-	return `${window.location.origin}${modulePath}/public_home/${encodeURIComponent(appId)}/portals/`;
-}
-
 /**
  * Thin portal HTML: plain `<iframe>` shell that loads
  * `{APP_URL}/#/dashboard/<projectId>/view`. New features added to the
  * main app show up in every portal on next iframe load -- no rezip / redeploy.
+ *
+ * Defaults `appUrl` to {@link appPublicBaseUrl} — the URL this app is actually
+ * served from — rather than trying to reverse-engineer it from the current
+ * page's location, which is only ever a public_home/portals path when viewing
+ * an ALREADY-deployed portal, never while McpCreatePage is generating one.
  */
 export function generateIframePortalHtml(
 	projectId: string,
-	appUrl = getMainAppUrl(),
+	appUrl = appPublicBaseUrl(),
 ): string {
 	return iframePortalTemplate
 		.replace(/__APP_URL__/g, escapeHtmlAttr(appUrl))
@@ -2268,7 +2232,7 @@ export async function buildIframePortalZip(
 	dashboard: Dashboard,
 	projectName: string,
 	projectId: string,
-	appUrl = getMainAppUrl(),
+	appUrl = appPublicBaseUrl(),
 ): Promise<Blob> {
 	const folderName = `${projectName}__${projectId}`;
 	const zip = new JSZip();

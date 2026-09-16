@@ -36,6 +36,8 @@ import {
 	tagKey,
 	userFolderTags,
 } from "@/lib/dashboardTags";
+import { appPublicBaseUrl } from "@/lib/portalUrl";
+import { HOST_ARTIFACT_VERSION } from "@/services/mcpManifest";
 import {
 	getProjects,
 	isAdminUser,
@@ -77,6 +79,12 @@ interface WorkspaceContextValue {
 
 	/** Create a new dashboard as a SEMOSS project. Returns the new project id. */
 	createDashboard: (
+		dashboard: Dashboard,
+		opts: { published: boolean; tags: string[] },
+	) => Promise<string>;
+	/** Deploy a dashboard into an already-existing project, overwriting its content. */
+	createDashboardInProject: (
+		projectId: string,
 		dashboard: Dashboard,
 		opts: { published: boolean; tags: string[] },
 	) => Promise<string>;
@@ -258,6 +266,46 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
 		void reload();
 	}, [reload]);
 
+	// Self-heal the MCP host's tool manifest/driver/redirect once per
+	// HOST_ARTIFACT_VERSION (+ app URL) change, remembered in localStorage so a
+	// normal reload doesn't re-upload every time. Best-effort: a stale host isn't
+	// fatal, and this must never block the rest of the app from loading.
+	useEffect(() => {
+		const HOST_SYNC_KEY = "ri-mcp-host-sync";
+		const appBaseUrl = appPublicBaseUrl();
+		(async () => {
+			const stored = localStorage.getItem(HOST_SYNC_KEY);
+			// A previous, incompatible version of this key (or hand-edited
+			// storage) can leave non-JSON data behind — never let that abort
+			// the sync, just treat it as "not up to date".
+			let parsed: { version?: string; appBaseUrl?: string } | null = null;
+			try {
+				parsed = stored ? JSON.parse(stored) : null;
+			} catch {
+				parsed = null;
+			}
+			const upToDate =
+				parsed?.version === HOST_ARTIFACT_VERSION &&
+				parsed?.appBaseUrl === appBaseUrl;
+			try {
+				await store.ensureMcpHost(appBaseUrl, !upToDate);
+				if (!upToDate) {
+					localStorage.setItem(
+						HOST_SYNC_KEY,
+						JSON.stringify({
+							version: HOST_ARTIFACT_VERSION,
+							appBaseUrl,
+						}),
+					);
+				}
+			} catch (e) {
+				// Surfaced (not swallowed) — a stale host is otherwise silently
+				// undebuggable from the console.
+				console.error("[ri-mcp-host-sync] ensureMcpHost failed", e);
+			}
+		})();
+	}, [store]);
+
 	// Keep dashboardsRef in sync so loadDashboard can read the latest metadata
 	// without capturing dashboards in its dep array.
 	useEffect(() => {
@@ -329,6 +377,57 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
 				...opts,
 				tags: effectiveTags,
 			});
+			const created: Dashboard = {
+				...dashboardWithTags,
+				id,
+				published: opts.published,
+				permission: "OWNER",
+				folderId: userFolderTags(effectiveTags)[0],
+			};
+			defsCache.current.set(id, created);
+			setDashboards((prev) => [
+				metaToDashboard(
+					{
+						id,
+						name: created.name,
+						description: created.description ?? "",
+						tags: effectiveTags,
+						published: opts.published,
+						permission: "OWNER",
+						updatedAt: now(),
+					},
+					created.sheets,
+				),
+				...prev.filter((d) => d.id !== id),
+			]);
+			return id;
+		},
+		[store],
+	);
+
+	/** Deploy a dashboard into an already-existing project, overwriting its content. */
+	const createDashboardInProject = useCallback(
+		async (
+			projectId: string,
+			dashboard: Dashboard,
+			opts: { published: boolean; tags: string[] },
+		): Promise<string> => {
+			const canonicalFolderNames = buildCanonicalFolderNames(
+				dashboardsRef.current,
+			);
+			const effectiveTags = syncParamAppTag(
+				canonicalizeFolderTags(opts.tags, canonicalFolderNames),
+				dashboard,
+			);
+			const dashboardWithTags = { ...dashboard, tags: effectiveTags };
+			const id = await store.createInProject(
+				projectId,
+				dashboardWithTags,
+				{
+					...opts,
+					tags: effectiveTags,
+				},
+			);
 			const created: Dashboard = {
 				...dashboardWithTags,
 				id,
@@ -700,6 +799,7 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
 			getDashboard,
 			loadDashboard,
 			createDashboard,
+			createDashboardInProject,
 			updateDashboard,
 			redeployDashboard,
 			deleteDashboard,
@@ -723,6 +823,7 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
 			getDashboard,
 			loadDashboard,
 			createDashboard,
+			createDashboardInProject,
 			updateDashboard,
 			redeployDashboard,
 			deleteDashboard,

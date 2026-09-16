@@ -23,9 +23,14 @@ import { fetchModels, generateDashboard } from "@/services/aiBuilder";
 import { ProjectStore } from "@/services/projectStore";
 import { useWorkspace } from "@/workspace/WorkspaceProvider";
 
+type RawRecord = Record<string, unknown>;
+const asRecord = (v: unknown): RawRecord =>
+	v && typeof v === "object" ? (v as RawRecord) : {};
+const str = (v: unknown): string => (v == null ? "" : String(v));
+
 export function McpCreatePage() {
 	const { actions } = useInsight();
-	const { createDashboard } = useWorkspace();
+	const { createDashboard, createDashboardInProject } = useWorkspace();
 	const navigate = useNavigate();
 	const [params] = useSearchParams();
 
@@ -34,18 +39,23 @@ export function McpCreatePage() {
 	const modelParam = (params.get("model") || "").trim();
 	// "public" (default) | "private" — published visibility of the created dashboard.
 	const visibility = (params.get("visibility") || "public").toLowerCase();
+	// When set, deploy into this already-existing project instead of creating a new one.
+	const targetProject = (params.get("target_project") || "").trim();
 
 	const [status, setStatus] = useState("Starting…");
 	const [error, setError] = useState<string | null>(null);
 	const startedRef = useRef(false);
 
+	// biome-ignore lint/correctness/useExhaustiveDependencies: run once, actions is stable
 	const runPixel = useCallback(
 		(pixel: string) =>
-			actions.run(pixel).then((r: any) => r.pixelReturn[0].output),
-		// eslint-disable-next-line react-hooks/exhaustive-deps
+			actions
+				.run<[{ output: unknown }]>(pixel)
+				.then((r) => r.pixelReturn[0].output),
 		[],
 	);
 
+	// biome-ignore lint/correctness/useExhaustiveDependencies: run once, actions is stable
 	const runSql = useCallback(
 		async (
 			dbId: string,
@@ -55,7 +65,7 @@ export function McpCreatePage() {
 				const pixel = `Database(database=["${dbId}"]) | Query("${escapeSqlForPixel(sql)}") | Collect(1);`;
 				const { pixelReturn } =
 					await actions.run<
-						[{ output: any; operationType?: string[] }]
+						[{ output: unknown; operationType?: string[] }]
 					>(pixel);
 				const pr = pixelReturn[0];
 				if (
@@ -67,18 +77,22 @@ export function McpCreatePage() {
 						error: String(pr.output ?? "Query failed."),
 					};
 				}
-				const result: any = pr.output;
-				const headers: string[] =
-					result?.data?.headers ?? result?.headers ?? [];
+				const result = asRecord(pr.output);
+				const resultData = asRecord(result.data);
+				const headers: string[] = Array.isArray(resultData.headers)
+					? resultData.headers
+					: Array.isArray(result.headers)
+						? result.headers
+						: [];
 				return { ok: true, headers };
-			} catch (e: any) {
-				return { ok: false, error: String(e?.message ?? e) };
+			} catch (e) {
+				return { ok: false, error: String((e as Error)?.message ?? e) };
 			}
 		},
-		// eslint-disable-next-line react-hooks/exhaustive-deps
 		[],
 	);
 
+	// biome-ignore lint/correctness/useExhaustiveDependencies: run once on mount by design (startedRef guards re-entry)
 	useEffect(() => {
 		if (startedRef.current) return;
 		startedRef.current = true;
@@ -96,51 +110,56 @@ export function McpCreatePage() {
 				//    already deployed for this exact request signature and reopen it. This
 				//    is durable — unlike client storage, which is blocked/partitioned in a
 				//    cross-origin tool iframe (why reloads still rebuilt before).
+				// Skipped entirely when target_project is set: the destination is already
+				// fixed to that one project, so there's no duplicate to detect or reopen.
 				const signature = `${databaseParam.toLowerCase()}|${description.toLowerCase()}|${visibility}`;
 				const sigTag = ProjectStore.sigTag(signature);
-				setStatus("Checking for an existing dashboard…");
 
-				// Look for a dashboard already deployed for this exact request (tagged with
-				// its signature) and reopen it instead of rebuilding on every reload.
-				let prior: string | null = null;
-				try {
-					const out = await runPixel(
-						'MyProjects(metaKeys=["tag"], metaFilters=[{}], userT=[true], limit=[500], offset=[0]);',
-					);
-					const rows: any[] = Array.isArray(out)
-						? out
-						: Array.isArray((out as any)?.data)
-							? (out as any).data
-							: [];
-					for (const r of rows) {
-						const id = String(
-							r.project_id ??
-								r.app_id ??
-								r.id ??
-								r.PROJECT_ID ??
-								"",
+				if (!targetProject) {
+					setStatus("Checking for an existing dashboard…");
+
+					// Look for a dashboard already deployed for this exact request (tagged with
+					// its signature) and reopen it instead of rebuilding on every reload.
+					let prior: string | null = null;
+					try {
+						const out = await runPixel(
+							'MyProjects(metaKeys=["tag"], metaFilters=[{}], userT=[true], limit=[500], offset=[0]);',
 						);
-						const rawTag = r.tag ?? r.tags ?? r.TAG;
-						const tags = Array.isArray(rawTag)
-							? rawTag.map((t: any) => String(t).trim())
-							: typeof rawTag === "string"
-								? rawTag
-										.split(/[,;]/)
-										.map((t: string) => t.trim())
+						const outRecord = asRecord(out);
+						const rows: RawRecord[] = Array.isArray(out)
+							? (out as RawRecord[])
+							: Array.isArray(outRecord.data)
+								? (outRecord.data as RawRecord[])
 								: [];
-						if (id && tags.includes(sigTag)) {
-							prior = id;
-							break;
+						for (const r of rows) {
+							const id = str(
+								r.project_id ??
+									r.app_id ??
+									r.id ??
+									r.PROJECT_ID,
+							);
+							const rawTag = r.tag ?? r.tags ?? r.TAG;
+							const tags = Array.isArray(rawTag)
+								? rawTag.map((t) => str(t).trim())
+								: typeof rawTag === "string"
+									? rawTag
+											.split(/[,;]/)
+											.map((t: string) => t.trim())
+									: [];
+							if (id && tags.includes(sigTag)) {
+								prior = id;
+								break;
+							}
 						}
+					} catch {
+						/* fall through to build if the lookup fails */
 					}
-				} catch {
-					/* fall through to build if the lookup fails */
-				}
 
-				if (prior) {
-					setStatus("Opening your dashboard…");
-					navigate(`/dashboard/${prior}`, { replace: true });
-					return;
+					if (prior) {
+						setStatus("Opening your dashboard…");
+						navigate(`/dashboard/${prior}`, { replace: true });
+						return;
+					}
 				}
 
 				// 1. Resolve the database — match the tool's value against MyEngines by
@@ -150,13 +169,13 @@ export function McpCreatePage() {
 					`MyEngines(engineTypes=['DATABASE'], sort=[{"ENGINENAME":"ASC"}], userT=[true], limit=[1000], offset=[0]);`,
 				);
 				const dbs: { id: string; name: string }[] = (
-					Array.isArray(engines) ? engines : []
+					Array.isArray(engines) ? (engines as RawRecord[]) : []
 				)
-					.map((d: any) => ({
-						id: d.app_id ?? d.database_id ?? d.engine_id,
-						name: d.engine_name ?? d.app_name ?? d.app_id ?? "",
+					.map((d) => ({
+						id: str(d.app_id ?? d.database_id ?? d.engine_id),
+						name: str(d.engine_name ?? d.app_name ?? d.app_id),
 					}))
-					.filter((d: any) => d.id);
+					.filter((d) => d.id);
 				if (!dbs.length)
 					throw new Error(
 						"You have no accessible databases to build against.",
@@ -207,22 +226,33 @@ export function McpCreatePage() {
 					onProgress: setStatus,
 				});
 
-				// 4. Deploy it as a real, published SEMOSS project.
-				setStatus("Deploying the dashboard…");
-				const newId = await createDashboard(dashboard, {
-					published: visibility !== "private",
-					// Tag with the request signature so a reload finds + reopens this
-					// dashboard instead of rebuilding (see step 0). Hidden from folders.
-					tags: [ProjectStore.sigTag(signature)],
-				});
+				// 4. Deploy it as a real, published SEMOSS project — either into the
+				//    caller's own app (overwriting it) or as a new, separate project.
+				setStatus(
+					targetProject
+						? "Turning this app into the dashboard…"
+						: "Deploying the dashboard…",
+				);
+				const newId = targetProject
+					? await createDashboardInProject(targetProject, dashboard, {
+							published: visibility !== "private",
+							tags: [],
+						})
+					: await createDashboard(dashboard, {
+							published: visibility !== "private",
+							// Tag with the request signature so a reload finds + reopens this
+							// dashboard instead of rebuilding (see step 0). Hidden from folders.
+							tags: [ProjectStore.sigTag(signature)],
+						});
 
 				setStatus("Opening your dashboard…");
 				navigate(`/dashboard/${newId}`, { replace: true });
-			} catch (e: any) {
-				setError(e?.message ?? "Failed to create the dashboard.");
+			} catch (e) {
+				setError(
+					(e as Error)?.message ?? "Failed to create the dashboard.",
+				);
 			}
 		})();
-		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, []);
 
 	if (error) {

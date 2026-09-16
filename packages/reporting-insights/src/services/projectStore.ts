@@ -470,8 +470,64 @@ export class ProjectStore {
 		return projectId;
 	}
 
+	/**
+	 * Deploy a dashboard into an ALREADY-EXISTING project, overwriting its portal
+	 * and metadata, instead of creating a separate new project. Used when the
+	 * assistant is asked to turn the app it's currently editing into a dashboard
+	 * rather than deploy one elsewhere. The project id never changes.
+	 */
+	async createInProject(
+		projectId: string,
+		dashboard: Dashboard,
+		opts: { published: boolean; tags: string[] },
+	): Promise<string> {
+		dashboard = inferSqlParameters(dashboard);
+		const effectiveTags = syncParamAppTag(opts.tags, dashboard);
+		const finalDashboard: Dashboard = {
+			...dashboard,
+			id: projectId,
+			published: opts.published,
+			tags: effectiveTags,
+		};
+
+		await this.ensureInsightId();
+		const portalHtml = USE_IFRAME_PORTAL
+			? generateIframePortalHtml(projectId)
+			: PORTAL_INDEX_HTML;
+		await this.uploadPortalAsset(
+			projectId,
+			"index.html",
+			portalHtml,
+			"text/html",
+		);
+		await this.writeJson(projectId, finalDashboard);
+		await this.writeMcpManifest(projectId, finalDashboard);
+		await this.setMetadata(
+			projectId,
+			effectiveTags,
+			dashboard.description ?? "",
+		);
+		if (dashboard.name.trim()) {
+			try {
+				await this.renameProject(projectId, dashboard.name.trim());
+			} catch {
+				/* non-fatal — editor may lack rename permission */
+			}
+		}
+		await this.markHasPortal(projectId);
+		if (opts.published) {
+			try {
+				await this.run(
+					`PublishProject(project=["${escapeForPixel(projectId)}"], release=[true]);`,
+				);
+			} catch {
+				/* non-fatal */
+			}
+		}
+		return projectId;
+	}
+
 	// ── MCP host (register the app itself as an MCP) ──────────────────────────────
-	/** Find one of our projects carrying a specific tag (or null). */
 	private async findProjectIdByTag(tag: string): Promise<string | null> {
 		try {
 			const out = await this.run(
@@ -791,6 +847,20 @@ export class ProjectStore {
 		// 2b. Refresh the MCP tool manifest so the tool reflects the latest dashboard.
 		await this.writeMcpManifest(id, dashboard);
 		// 3. Make sure the project is still flagged as having a portal.
+		await this.markHasPortal(id);
+		// 4. Release so the deployed/public copy serves the new bundle.
+		try {
+			await this.runPixelRaw(
+				`PublishProject(project=["${escapeForPixel(id)}"], release=[true]);`,
+			);
+			return { released: true };
+		} catch {
+			return { released: false };
+		}
+	}
+
+	/** Mark a project as having a portal (best-effort, never blocks the caller). */
+	private async markHasPortal(id: string): Promise<void> {
 		try {
 			const csrf = await this.csrf();
 			const headers: Record<string, string> = {
@@ -805,15 +875,6 @@ export class ProjectStore {
 			});
 		} catch {
 			/* non-fatal */
-		}
-		// 4. Release so the deployed/public copy serves the new bundle.
-		try {
-			await this.runPixelRaw(
-				`PublishProject(project=["${escapeForPixel(id)}"], release=[true]);`,
-			);
-			return { released: true };
-		} catch {
-			return { released: false };
 		}
 	}
 

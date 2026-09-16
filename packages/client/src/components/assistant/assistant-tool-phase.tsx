@@ -18,6 +18,7 @@ import {
 import type { BuildTool } from "@/stores/assistant";
 import { formatMs, formatToolArgs } from "./assistant-format";
 import { AssistantMarkdown } from "./assistant-markdown";
+import { AssistantToolUi } from "./assistant-tool-ui";
 import type { ToolFamily } from "./assistant-tools";
 import {
 	displayToolName,
@@ -301,6 +302,8 @@ const ToolRollup = ({ group }: ToolRollupProps) => {
 interface AssistantToolPhaseProps {
 	/** The consecutive tool invocations grouped into this phase */
 	tools: BuildTool[];
+	/** Room the tools ran in, forwarded to any opted-in tool UI */
+	roomId: string;
 }
 
 /**
@@ -313,7 +316,10 @@ interface AssistantToolPhaseProps {
  * @param tools - The consecutive tool invocations grouped into this phase.
  * @return The collapsible tool-phase card.
  */
-export const AssistantToolPhase = ({ tools }: AssistantToolPhaseProps) => {
+export const AssistantToolPhase = ({
+	tools,
+	roomId,
+}: AssistantToolPhaseProps) => {
 	const active = tools.some(isToolActive);
 	const failure = tools.some(isToolFailure);
 	const inputRequired = tools.some(
@@ -337,39 +343,54 @@ export const AssistantToolPhase = ({ tools }: AssistantToolPhaseProps) => {
 				: "COMPLETED";
 
 	return (
-		<Collapsible
-			open={open}
-			onOpenChange={(next) => {
-				userToggledRef.current = true;
-				setOpen(next);
-			}}
-			className="rounded-xl border border-border bg-card shadow-xs"
-		>
-			<CollapsibleTrigger className="flex w-full cursor-pointer items-center gap-2 px-3 py-2.5 text-left text-sm">
-				<StatusDot status={status} active={active} />
-				<span className="min-w-0 truncate font-semibold">
-					{phaseTitle(tools)}
-				</span>
-				<span className="shrink-0 text-muted-foreground text-xs">
-					{tools.length} {tools.length === 1 ? "action" : "actions"}
-				</span>
-				<ChevronDownIcon
-					className={cn(
-						"ml-auto size-4 shrink-0 text-muted-foreground transition-transform",
-						open && "rotate-180",
-					)}
+		<>
+			<Collapsible
+				open={open}
+				onOpenChange={(next) => {
+					userToggledRef.current = true;
+					setOpen(next);
+				}}
+				className="rounded-xl border border-border bg-card shadow-xs"
+			>
+				<CollapsibleTrigger className="flex w-full cursor-pointer items-center gap-2 px-3 py-2.5 text-left text-sm">
+					<StatusDot status={status} active={active} />
+					<span className="min-w-0 truncate font-semibold">
+						{phaseTitle(tools)}
+					</span>
+					<span className="shrink-0 text-muted-foreground text-xs">
+						{tools.length}{" "}
+						{tools.length === 1 ? "action" : "actions"}
+					</span>
+					<ChevronDownIcon
+						className={cn(
+							"ml-auto size-4 shrink-0 text-muted-foreground transition-transform",
+							open && "rotate-180",
+						)}
+					/>
+				</CollapsibleTrigger>
+				<CollapsibleContent>
+					<div className="flex flex-col gap-1.5 border-border border-t p-2">
+						{groupByFamily(tools).map((group, index) => (
+							<ToolRollup
+								key={`${group.family}-${group.tools[0].id}-${index}`}
+								group={group}
+							/>
+						))}
+					</div>
+				</CollapsibleContent>
+			</Collapsible>
+			{/* Rendered unconditionally (not inside the collapsibles above) so a tool's
+				opted-in auto-open UI (e.g. create_dashboard's iframe) stays mounted and
+				keeps running its own async work even after the phase/rollup auto-collapses
+				once the tool CALL itself completes. AssistantToolUi no-ops for tools that
+				didn't opt in. */}
+			{tools.map((tool) => (
+				<AssistantToolUi
+					key={`ui-${tool.id}`}
+					tool={tool}
+					roomId={roomId}
 				/>
-			</CollapsibleTrigger>
-			<CollapsibleContent>
-				<div className="flex flex-col gap-1.5 border-border border-t p-2">
-					{groupByFamily(tools).map((group, index) => (
-						<ToolRollup
-							key={`${group.family}-${group.tools[0].id}-${index}`}
-							group={group}
-						/>
-					))}
-				</div>
-			</CollapsibleContent>
-		</Collapsible>
+			))}
+		</>
 	);
 };

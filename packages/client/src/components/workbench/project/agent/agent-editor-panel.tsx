@@ -1,7 +1,7 @@
 import { BotIcon } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { useInsight, usePixel } from "@semoss/sdk/react";
-import type { MCPConfig, SkillConfig } from "@semoss/shared";
+import type { MCPConfig, Project, SkillConfig } from "@semoss/shared";
 import { Spinner, toast } from "@semoss/ui/next";
 import type {
 	WorkbenchComponent,
@@ -16,7 +16,14 @@ import {
 	getWorkspaceSaveWarning,
 } from "@/components/agent-workspace/agent-form";
 import { useProject } from "@/hooks";
+import { WORKBENCH_AGENT_ID } from "@/stores/assistant";
 import { AgentEditorSaveControl } from "./agent-editor-save-control";
+
+/**
+ * Tag Reporting Insights marks its MCP host project with — used to default
+ * it onto the app-builder agent's toolboxes below.
+ */
+const REPORTING_INSIGHTS_MCP_HOST_TAG = "reporting-insights--mcp-host";
 
 type GetWorkspaceResponse = {
 	name: string;
@@ -123,37 +130,92 @@ const AgentEditorPanel: WorkbenchComponent = ({ id, setValue }) => {
 	);
 	const isFetching = status !== "SUCCESS";
 
+	// The app-builder agent should always have Reporting Insights' dashboard
+	// tools available — best-effort lookup, only needed for that one agent.
+	const isAppBuilderAgent = project.project_id === WORKBENCH_AGENT_ID;
+	const { data: reportingInsightsHosts } = usePixel<Project[]>(
+		isAppBuilderAgent
+			? `MyProjects(metaKeys=["tag"], metaFilters=[${JSON.stringify({
+					tag: [REPORTING_INSIGHTS_MCP_HOST_TAG],
+				})}], limit=[1], offset=[0]);`
+			: "",
+		{ data: [] },
+	);
+	const reportingInsightsHost = reportingInsightsHosts[0];
+
 	const [isLoading, setIsLoading] = useState(false);
 	const [formValues, setFormValues] = useState<AgentFormValues | null>(null);
 
-	// Seeds the editable copy once the fetch resolves; AgentForm owns edits
-	// after that, so this doesn't re-run on every keystroke.
-	useEffect(() => {
-		if (status === "SUCCESS") {
-			setFormValues(toFormValues(response));
-		}
-	}, [status, response]);
-
-	const onSave = useCallback(async () => {
-		if (readOnly || !formValues) return;
-		try {
-			setIsLoading(true);
-			const { pixelReturn } = await insight.actions.run<[unknown]>(
-				buildEditWorkspacePixel(project.project_id, formValues),
-			);
-			const warning = getWorkspaceSaveWarning(pixelReturn[0]?.output);
-			if (warning) {
-				toast.warning(warning);
-			} else {
-				toast.success("Agent saved");
+	const saveWorkspace = useCallback(
+		async (values: AgentFormValues, savedMessage = "Agent saved") => {
+			if (readOnly) return;
+			try {
+				setIsLoading(true);
+				const { pixelReturn } = await insight.actions.run<[unknown]>(
+					buildEditWorkspacePixel(project.project_id, values),
+				);
+				const warning = getWorkspaceSaveWarning(pixelReturn[0]?.output);
+				if (warning) {
+					toast.warning(warning);
+				} else {
+					toast.success(savedMessage);
+				}
+			} catch (e) {
+				console.error(e);
+				toast.error((e as Error).message || "Failed to save agent");
+			} finally {
+				setIsLoading(false);
 			}
-		} catch (e) {
-			console.error(e);
-			toast.error((e as Error).message || "Failed to save agent");
-		} finally {
-			setIsLoading(false);
+		},
+		[readOnly, insight, project.project_id],
+	);
+
+	// Seeds the editable copy once the fetch resolves; AgentForm owns edits
+	// after that, so this doesn't re-run on every keystroke. For the
+	// app-builder agent, self-heal Reporting Insights back into the toolboxes
+	// list if it's ever missing (e.g. a fresh/reseeded agent record) - and
+	// persist that immediately, since RunAgent reads the saved record, not
+	// this form's local state.
+	useEffect(() => {
+		if (status !== "SUCCESS") return;
+		const values = toFormValues(response);
+		const needsReportingInsights =
+			isAppBuilderAgent &&
+			reportingInsightsHost &&
+			!values.toolboxes.some(
+				(t) => t.id === reportingInsightsHost.project_id,
+			);
+		if (needsReportingInsights) {
+			values.toolboxes = [
+				...values.toolboxes,
+				{
+					type: "PROJECT",
+					id: reportingInsightsHost.project_id,
+					name:
+						reportingInsightsHost.project_display_name ||
+						reportingInsightsHost.project_name,
+				},
+			];
 		}
-	}, [readOnly, formValues, insight, project.project_id]);
+		setFormValues(values);
+		if (needsReportingInsights) {
+			void saveWorkspace(
+				values,
+				"Added Reporting Insights to this agent's toolboxes",
+			);
+		}
+	}, [
+		status,
+		response,
+		isAppBuilderAgent,
+		reportingInsightsHost,
+		saveWorkspace,
+	]);
+
+	const onSave = useCallback(() => {
+		if (!formValues) return;
+		void saveWorkspace(formValues);
+	}, [formValues, saveWorkspace]);
 
 	useWorkbenchControl(id, AgentEditorSaveControl);
 
