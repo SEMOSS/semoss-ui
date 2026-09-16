@@ -260,12 +260,20 @@ function ancestorControlEdgeIds(
 }
 
 // ---- Types ----
-interface AutomationCanvasProps {
+
+/** Inputs supported by the Automation workflow canvas. */
+export interface AutomationCanvasProps {
+	/** SEMOSS Automation project identifier. */
 	appId: string;
+	/** Prevents graph and configuration changes when true. */
 	readOnly?: boolean;
+	/** Optional MCP host mode for the standalone Automation surface. */
 	mcpMode?: "edit" | "create" | "trigger" | null;
+	/** Tool context supplied when the canvas is hosted by Playground. */
 	mcpContext?: AutomationToolContext;
+	/** Opens the activity produced by an agent node. */
 	onViewAgentRun: (trace: AutomationNodeTrace) => void;
+	/** Durable run update received from an external agent activity surface. */
 	externalRunUpdate?: AutomationRunDetail | null;
 	/** Fired whenever the live run/trace state changes, for a host rendering its own trace panel
 	 * (e.g. `RunsTab`) alongside this canvas instead of embedding it in a separate iframe. */
@@ -507,10 +515,10 @@ function upstreamVariablesFor(
 }
 
 // ---- Component ----
-export const AutomationCanvas = forwardRef<
+export const AutomationCanvasContent = forwardRef<
 	AutomationCanvasHandle,
 	AutomationCanvasProps
->(function AutomationCanvas(
+>(function AutomationCanvasContent(
 	{
 		appId,
 		readOnly = false,

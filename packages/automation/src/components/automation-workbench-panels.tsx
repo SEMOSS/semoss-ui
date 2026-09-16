@@ -4,10 +4,8 @@ import type {
 	AutomationRunDetail,
 } from "../domain/automation.types";
 import type { AutomationInspectorSnapshot } from "../domain/automation-inspector";
-import {
-	AutomationCanvas,
-	type AutomationCanvasHandle,
-} from "./canvas-editor/automation-canvas";
+import type { AutomationCanvasHandle } from "./canvas-editor/automation-canvas";
+import { AutomationCanvas } from "./canvas-editor/automation-canvas-loader";
 import { InspectorTab } from "./canvas-editor/tabs/inspector-tab";
 import {
 	type AutomationTraceSnapshot,

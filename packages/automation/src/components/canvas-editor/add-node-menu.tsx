@@ -12,7 +12,7 @@ import {
 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Input } from "@semoss/ui/next";
-import { AUTOMATION_WORKFLOW_NODE_REGISTRY } from "../../domain/automation-workflow.constants";
+import { getAutomationNodeDefinitions } from "../../domain/automation-node-catalog";
 import type {
 	AutomationNodeCategory,
 	AutomationWorkflowNodeType,
@@ -55,11 +55,12 @@ const CATEGORY_META: Record<
 export function AddNodeMenu({ onSelect }: AddNodeMenuProps) {
 	const [query, setQuery] = useState("");
 	const normalizedQuery = query.trim().toLowerCase();
+	const nodeDefinitions = getAutomationNodeDefinitions();
 	const entriesByCategory = useMemo(
 		() =>
 			CATEGORY_ORDER.map((category) => ({
 				category,
-				entries: AUTOMATION_WORKFLOW_NODE_REGISTRY.filter(
+				entries: nodeDefinitions.filter(
 					(node) =>
 						node.category === category &&
 						node.type !== "trigger.start" &&
@@ -69,7 +70,7 @@ export function AddNodeMenu({ onSelect }: AddNodeMenuProps) {
 								.includes(normalizedQuery)),
 				),
 			})),
-		[normalizedQuery],
+		[nodeDefinitions, normalizedQuery],
 	);
 
 	return (

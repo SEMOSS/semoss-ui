@@ -65,10 +65,7 @@ export type TriggerBinding =
 export interface AutomationWorkflowNodeConfig
 	extends Record<
 		string,
-		| boolean
-		| number
-		| string
-		| string[]
+		| AutomationJsonValue
 		| AutomationBranchClause[]
 		| AutomationGlobalVariable[]
 		| undefined
@@ -76,6 +73,15 @@ export interface AutomationWorkflowNodeConfig
 	/** Python artifact executed for this non-trigger node. */
 	pythonSource?: string;
 }
+
+/** JSON-compatible configuration supplied by a backend node definition. */
+export type AutomationJsonValue =
+	| boolean
+	| number
+	| string
+	| null
+	| AutomationJsonValue[]
+	| { [key: string]: AutomationJsonValue };
 
 /** An ordered conditional route on a `control.if` node. */
 export interface AutomationBranchClause {
@@ -139,7 +145,11 @@ export interface AutomationWorkflowDocument {
 
 export type ConfigFieldType =
 	| "boolean"
+	| "branch-clauses"
 	| "number"
+	| "engine"
+	| "globals"
+	| "json"
 	| "string"
 	| "string[]"
 	| "textarea"
@@ -151,7 +161,10 @@ export interface ConfigFieldSchema {
 	description?: string;
 	required?: boolean;
 	minimum?: number;
+	maximum?: number;
 	placeholder?: string;
+	defaultValue?: AutomationJsonValue;
+	engineType?: string;
 }
 
 export interface AutomationNodeDefinition {
@@ -164,4 +177,14 @@ export interface AutomationNodeDefinition {
 	inputs: readonly AutomationPort[];
 	outputs: readonly AutomationPort[];
 	defaultCodeMode: AutomationNodeCodeMode;
+	requiredPermission: string;
+	supportsOutput: boolean;
+	supportsCustomCode: boolean;
+	engineType?: string;
+}
+
+/** Versioned node-definition catalog returned by SEMOSS. */
+export interface AutomationNodeCatalog {
+	schemaVersion: number;
+	nodes: readonly AutomationNodeDefinition[];
 }

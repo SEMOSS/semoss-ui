@@ -51,18 +51,12 @@ interface PendingPythonUpdate {
 }
 
 function supportsBusinessForm(step: AutomationNode): boolean {
-	const type = step.workflowType;
-	return Boolean(
-		type &&
-			(type.startsWith("database.") ||
-				type.startsWith("model.") ||
-				type.startsWith("storage.") ||
-				type.startsWith("vector.") ||
-				type === "function.execute" ||
-				type === "agent.run" ||
-				type === "app.pixel" ||
-				type === "control.wait" ||
-				type === "control.if"),
+	if (!step.workflowType) return false;
+	const category = getWorkflowNodeDefinition(step.workflowType)?.category;
+	return (
+		category !== undefined &&
+		category !== "trigger" &&
+		category !== "developer"
 	);
 }
 

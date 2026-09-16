@@ -11,6 +11,7 @@ import {
 	Sparkles,
 	Variable,
 } from "lucide-react";
+import { getAutomationNodeDefinition } from "./automation-node-catalog";
 import type { AutomationWorkflowNodeType } from "./automation-workflow.types";
 
 /** Visual metadata shared by workflow-node pickers and canvas cards. */
@@ -22,28 +23,29 @@ export interface AutomationWorkflowNodeDisplay {
 export function getWorkflowNodeDisplay(
 	type: AutomationWorkflowNodeType,
 ): AutomationWorkflowNodeDisplay {
+	const category = getAutomationNodeDefinition(type)?.category;
 	if (type === "trigger.start") {
 		return { icon: Braces, color: "text-emerald-600" };
 	}
-	if (type.startsWith("database.")) {
+	if (category === "database") {
 		return { icon: Database, color: "text-blue-600" };
 	}
-	if (type.startsWith("model.")) {
+	if (category === "model") {
 		return { icon: Sparkles, color: "text-purple-600" };
 	}
-	if (type === "agent.run") {
+	if (category === "agent") {
 		return { icon: Bot, color: "text-indigo-600" };
 	}
-	if (type.startsWith("storage.")) {
+	if (category === "storage") {
 		return { icon: FolderOpen, color: "text-emerald-600" };
 	}
-	if (type.startsWith("vector.")) {
+	if (category === "vector") {
 		return { icon: Network, color: "text-amber-600" };
 	}
-	if (type === "function.execute") {
+	if (category === "function") {
 		return { icon: FunctionSquare, color: "text-cyan-600" };
 	}
-	if (type === "app.pixel") {
+	if (category === "app") {
 		return { icon: Variable, color: "text-slate-600" };
 	}
 	if (type === "control.wait") {

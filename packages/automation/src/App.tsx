@@ -2,7 +2,7 @@ import { Loader2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useTheme } from "@semoss/ui/next";
 import { AgentRunDialog } from "./components/agent-run";
-import { AutomationCanvas } from "./components/canvas-editor/automation-canvas";
+import { AutomationCanvas } from "./components/canvas-editor/automation-canvas-loader";
 import type {
 	AutomationNodeTrace,
 	AutomationRunDetail,

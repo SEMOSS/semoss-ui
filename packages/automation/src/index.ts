@@ -11,8 +11,11 @@ export {
 	AutomationTracePanel,
 	AutomationWorkbenchContext,
 } from "./components/automation-workbench-panels";
-export type { AutomationCanvasHandle } from "./components/canvas-editor/automation-canvas";
-export { AutomationCanvas } from "./components/canvas-editor/automation-canvas";
+export type {
+	AutomationCanvasHandle,
+	AutomationCanvasProps,
+} from "./components/canvas-editor/automation-canvas";
+export { AutomationCanvas } from "./components/canvas-editor/automation-canvas-loader";
 export { InspectorTab } from "./components/canvas-editor/tabs/inspector-tab";
 export type { AutomationTraceSnapshot } from "./components/canvas-editor/tabs/runs-tab";
 export { RunsTab } from "./components/canvas-editor/tabs/runs-tab";

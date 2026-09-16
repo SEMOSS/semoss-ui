@@ -4,9 +4,10 @@ import type {
 	AutomationNodeType,
 	NodeConfig,
 } from "./automation.types";
-import { AUTOMATION_WORKFLOW_NODE_REGISTRY } from "./automation-workflow.constants";
+import { getAutomationNodeDefinition } from "./automation-node-catalog";
 import type {
 	AutomationBranchClause,
+	AutomationJsonValue,
 	AutomationNodeDefinition,
 	AutomationWorkflowDocument,
 	AutomationWorkflowEdge,
@@ -62,6 +63,37 @@ function jsonObjectValue(value: unknown): string {
 	return "";
 }
 
+function jsonArrayValue(value: unknown): string {
+	if (typeof value === "string") return value;
+	return Array.isArray(value) ? JSON.stringify(value) : "";
+}
+
+function isAutomationJsonValue(value: unknown): value is AutomationJsonValue {
+	if (
+		value === null ||
+		typeof value === "boolean" ||
+		typeof value === "number" ||
+		typeof value === "string"
+	) {
+		return true;
+	}
+	if (Array.isArray(value)) return value.every(isAutomationJsonValue);
+	return (
+		typeof value === "object" &&
+		value !== null &&
+		Object.values(value).every(isAutomationJsonValue)
+	);
+}
+
+function parsedJsonValue(value: string): AutomationJsonValue | undefined {
+	try {
+		const parsed: unknown = JSON.parse(value);
+		return isAutomationJsonValue(parsed) ? parsed : undefined;
+	} catch {
+		return undefined;
+	}
+}
+
 function numberValue(value: unknown, fallback: number): number {
 	return typeof value === "number" && Number.isFinite(value)
 		? value
@@ -93,7 +125,10 @@ export function getGeneratedPythonPreview(step: AutomationNode): string {
 	const config = type
 		? mergeCanvasConfig(type, step.config, step.workflowConfig ?? {})
 		: {};
-	if (type?.startsWith("database.")) {
+	const category = type
+		? getWorkflowNodeDefinition(type)?.category
+		: undefined;
+	if (category === "database") {
 		return `from ai_server import DatabaseEngine
 
 ENGINE_ID = ${pythonLiteral(config.engineId)}
@@ -104,7 +139,7 @@ def run(scope):
     return database.execQuery(query=resolve(QUERY, scope), return_pandas=False)
 `;
 	}
-	if (type?.startsWith("model.")) {
+	if (category === "model") {
 		return `from ai_server import ModelEngine
 
 ENGINE_ID = ${pythonLiteral(config.engineId)}
@@ -115,7 +150,7 @@ def run(scope):
     return model.ask(command=resolve(PROMPT, scope))
 `;
 	}
-	if (type?.startsWith("storage.")) {
+	if (category === "storage") {
 		return `from ai_server import StorageEngine
 
 ENGINE_ID = ${pythonLiteral(config.engineId)}
@@ -126,7 +161,7 @@ def run(scope):
     return storage.list(resolve(STORAGE_PATH, scope))
 `;
 	}
-	if (type?.startsWith("vector.")) {
+	if (category === "vector") {
 		return `from ai_server import VectorEngine
 
 ENGINE_ID = ${pythonLiteral(config.engineId)}
@@ -194,11 +229,12 @@ def run(scope):
 function canvasTypeForWorkflow(
 	type: AutomationWorkflowNodeType,
 ): AutomationNodeType {
+	const category = getWorkflowNodeDefinition(type)?.category;
 	if (type === "trigger.start") return "trigger";
-	if (type.startsWith("database.")) return "database-engine";
-	if (type.startsWith("model.")) return "model-engine";
-	if (type.startsWith("storage.")) return "storage-engine";
-	if (type.startsWith("vector.")) return "vector-engine";
+	if (category === "database") return "database-engine";
+	if (category === "model") return "model-engine";
+	if (category === "storage") return "storage-engine";
+	if (category === "vector") return "vector-engine";
 	if (type === "function.execute") return "function-engine";
 	if (type === "control.wait") return "wait";
 	if (type === "control.if") return "branch";
@@ -210,8 +246,9 @@ function defaultCanvasConfig(
 	config: AutomationWorkflowNodeConfig,
 ): NodeConfig {
 	const engineId = stringValue(config.engineId);
+	const category = getWorkflowNodeDefinition(type)?.category;
 	if (type === "trigger.start") return { mode: "manual" };
-	if (type.startsWith("database.")) {
+	if (category === "database") {
 		return {
 			engineId,
 			operation: type === "database.query" ? "query" : "write",
@@ -223,7 +260,7 @@ function defaultCanvasConfig(
 			commit: config.commit !== false,
 		};
 	}
-	if (type.startsWith("model.")) {
+	if (category === "model") {
 		const operation =
 			type === "model.embeddings"
 				? "embeddings"
@@ -237,14 +274,14 @@ function defaultCanvasConfig(
 			operation,
 			command: stringValue(config.prompt) || stringValue(config.text),
 			context: stringValue(config.systemPrompt),
-			paramValues: "",
+			paramValues: jsonObjectValue(config.paramValues),
 			values: stringValue(config.text),
 			image: stringValue(config.image),
 			prompt: stringValue(config.prompt),
-			entities: "",
+			entities: jsonArrayValue(config.entities),
 		};
 	}
-	if (type.startsWith("storage.")) {
+	if (category === "storage") {
 		const operation =
 			type === "storage.read"
 				? "read-base64"
@@ -263,7 +300,7 @@ function defaultCanvasConfig(
 			metadata: "",
 		};
 	}
-	if (type.startsWith("vector.")) {
+	if (category === "vector") {
 		return {
 			engineId,
 			operation:
@@ -275,7 +312,7 @@ function defaultCanvasConfig(
 							? "delete"
 							: "list",
 			command: stringValue(config.value),
-			limit: 5,
+			limit: numberValue(config.limit, 5),
 			filters: "",
 			metaFilters: "",
 			filePath: "",
@@ -378,20 +415,23 @@ function mergeCanvasConfig(
 	workflowConfig: AutomationWorkflowNodeConfig,
 ): AutomationWorkflowNodeConfig {
 	const next = { ...workflowConfig };
+	const category = getWorkflowNodeDefinition(type)?.category;
 	const engineId = getConfigValue(config, "engineId");
 	if (typeof engineId === "string") next.engineId = engineId;
 
-	if (type.startsWith("database.")) {
+	if (category === "database") {
 		const expression = getConfigValue(config, "expression");
 		const limit = getConfigValue(config, "limit");
 		if (typeof expression === "string") next.query = expression;
 		if (typeof limit === "number") next.limit = limit;
 	}
-	if (type.startsWith("model.")) {
+	if (category === "model") {
 		const command = getConfigValue(config, "command");
 		const context = getConfigValue(config, "context");
 		const values = getConfigValue(config, "values");
 		const image = getConfigValue(config, "image");
+		const paramValues = getConfigValue(config, "paramValues");
+		const entities = getConfigValue(config, "entities");
 		if (typeof command === "string") {
 			if (type === "model.embeddings") next.text = command;
 			else next.prompt = command;
@@ -401,22 +441,36 @@ function mergeCanvasConfig(
 			next.text = values;
 		}
 		if (typeof image === "string") next.image = image;
+		if (type === "model.chat" && typeof paramValues === "string") {
+			if (paramValues.trim()) {
+				next.paramValues = parsedJsonValue(paramValues) ?? paramValues;
+			} else {
+				delete next.paramValues;
+			}
+		}
+		if (type === "model.ner" && typeof entities === "string") {
+			next.entities = parsedJsonValue(entities) ?? entities;
+		}
 	}
-	if (type.startsWith("storage.")) {
+	if (category === "storage") {
 		const storagePath = getConfigValue(config, "storagePath");
 		const filePath = getConfigValue(config, "filePath");
 		if (typeof storagePath === "string") next.path = storagePath;
 		if (typeof filePath === "string") next.destination = filePath;
 	}
-	if (type.startsWith("vector.")) {
+	if (category === "vector") {
 		const command = getConfigValue(config, "command");
 		const collection = getConfigValue(config, "space");
+		const limit = getConfigValue(config, "limit");
 		if (typeof command === "string") next.value = command;
 		if (typeof collection === "string") next.collection = collection;
+		if (typeof limit === "number") next.limit = limit;
 	}
 	if (type === "function.execute") {
 		const params = getConfigValue(config, "params");
-		if (typeof params === "string") next.arguments = params;
+		if (typeof params === "string") {
+			next.arguments = parsedJsonValue(params) ?? params;
+		}
 	}
 	if (type === "agent.run") {
 		const workspaceId = getConfigValue(config, "workspaceId");
@@ -452,7 +506,7 @@ function mergeCanvasConfig(
 export function getWorkflowNodeDefinition(
 	type: AutomationWorkflowNodeType,
 ): AutomationNodeDefinition | undefined {
-	return AUTOMATION_WORKFLOW_NODE_REGISTRY.find((node) => node.type === type);
+	return getAutomationNodeDefinition(type);
 }
 
 export function createCanvasWorkflowNode(
@@ -600,7 +654,9 @@ export function canvasDocumentToWorkflow({
 			id: step.id,
 			type,
 			label: step.label || definition.label,
-			...(type === "trigger.start" ? {} : { outputVar: step.outputVar }),
+			...(type === "trigger.start" || type === "control.if"
+				? {}
+				: { outputVar: step.outputVar }),
 			position: step.position,
 			config: persistedConfig,
 			codeMode:

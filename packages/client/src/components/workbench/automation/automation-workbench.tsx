@@ -61,10 +61,12 @@ import {
 	type WorkbenchPanelConfigAny,
 } from "@semoss/workbench";
 import { ASSISTANT_PANEL } from "@/components/assistant";
+import { stripMcpToolAlias } from "@/components/assistant/assistant-tools";
 import { ProjectDetailTabs } from "@/components/project";
 import { ShareOverlay } from "@/components/ui";
 import { AssistantStoreProvider, WorkbenchProvider } from "@/contexts";
 import { useAssistantStore, useProject } from "@/hooks";
+import type { BuildTool } from "@/stores/assistant";
 import { WORKBENCH_COMPONENTS } from "@/stores/workbench";
 import { NavbarHeader, NavbarLeft, NavbarRight } from "../../shared";
 import { AutomationSettingsToggle } from "./automation-settings-toggle";
@@ -362,10 +364,11 @@ export const AutomationWorkbench = observer(
 			[],
 		);
 		const handleAutomationToolCompleted = useCallback(
-			(tool: { name: string; arguments?: Record<string, unknown> }) => {
-				if (AUTOMATION_MUTATION_TOOLS.has(tool.name)) {
+			(tool: BuildTool) => {
+				const toolName = stripMcpToolAlias(tool.name, tool.metadata);
+				if (AUTOMATION_MUTATION_TOOLS.has(toolName)) {
 					notifyAutomationChanged({
-						toolName: tool.name,
+						toolName,
 						changedStepIds: extractChangedStepIds(tool.arguments),
 					});
 				}
