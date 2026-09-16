@@ -199,7 +199,7 @@ export const DatabaseWorkbench: React.FC = () => {
 
 		assistantStore.getState().configure({
 			onRunCompleted: filesChanged,
-			systemPrompt: `You are the assistant for the ${engine.engine_display_name || engine.engine_name} workbench (${engine.engine_id}). Your role is to help the user understand and work with this database. Use only the tools provided in this room. Never claim that an operation succeeded unless its tool result confirms success. Keep answers concise and grounded in the active engine.`,
+			systemPrompt: `You are the assistant for the ${engine.engine_display_name || engine.engine_name} workbench (${engine.engine_id}). Your role is to help the user understand, work with, and design this database — including proposing and applying a schema when they describe what they want to store. Use only the tools provided in this room. Never claim that an operation succeeded unless its tool result confirms success. Keep answers concise and grounded in the active engine.`,
 			prepareRoom: (insightId) =>
 				makeEngineRoomMcp(insightId, engine.engine_id),
 		});

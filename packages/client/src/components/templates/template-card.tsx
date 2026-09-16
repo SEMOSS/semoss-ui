@@ -36,9 +36,12 @@ export const TemplateCard = ({
 		>
 			{/* Large visual header / cover banner */}
 			<div className="relative h-40 w-full overflow-hidden border-b bg-muted">
-				{/* The gradient and initials are the fallback layer: the
-					image request 404s when the template has no custom one. */}
-				<div className="relative flex h-full w-full items-center justify-center overflow-hidden bg-linear-to-br from-primary/10 via-background to-secondary/30">
+				{/* The gradient and initials show until a custom image loads,
+					and stay put when the template has none. */}
+				<div
+					data-image-fallback=""
+					className="relative flex h-full w-full items-center justify-center overflow-hidden bg-linear-to-br from-primary/10 via-background to-secondary/30"
+				>
 					<div className="absolute inset-0 bg-[radial-gradient(#e5e7eb_1px,transparent_1px)] bg-size-[16px_16px] opacity-40 dark:bg-[radial-gradient(#1f2937_1px,transparent_1px)]" />
 					<AppCatalogAvatar
 						name={name}
@@ -50,7 +53,14 @@ export const TemplateCard = ({
 						src={getProjectImageUrl(id)}
 						alt={name}
 						loading="lazy"
-						className="absolute inset-0 h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+						className="absolute inset-0 h-full w-full object-contain transition-transform duration-300 group-hover:scale-105"
+						onLoad={(e) => {
+							// a real image loaded - drop the fallback so a
+							// transparent image does not show it through
+							e.currentTarget.parentElement
+								?.querySelector("[data-image-fallback]")
+								?.classList.add("hidden");
+						}}
 						onError={(e) => {
 							e.currentTarget.style.display = "none";
 						}}

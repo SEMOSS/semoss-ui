@@ -164,11 +164,12 @@ export const ProjectGridItem: React.FC<ProjectGridItemProps> = ({
 		</>
 	);
 
-	// The image request 404s when the project has no custom image, which
-	// uncovers the initials tile layered underneath it.
+	// The initials tile shows until a custom image loads, and stays put when
+	// the request 404s because the project has none.
 	const icon = (
-		<div className="relative size-full overflow-hidden rounded">
+		<div className="relative size-full overflow-hidden rounded bg-card">
 			<AppCatalogAvatar
+				data-image-fallback=""
 				name={displayName || project.project_id}
 				className="absolute inset-0 size-full text-lg"
 			/>
@@ -176,7 +177,14 @@ export const ProjectGridItem: React.FC<ProjectGridItemProps> = ({
 				src={getProjectImageUrl(project.project_id)}
 				alt=""
 				loading="lazy"
-				className="absolute inset-0 size-full object-cover"
+				className="absolute inset-0 size-full object-contain"
+				onLoad={(e) => {
+					// a real image loaded - drop the fallback so a
+					// transparent image does not show it through
+					e.currentTarget.parentElement
+						?.querySelector("[data-image-fallback]")
+						?.classList.add("hidden");
+				}}
 				onError={(e) => {
 					e.currentTarget.style.display = "none";
 				}}

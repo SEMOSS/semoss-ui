@@ -80,7 +80,7 @@ export type AssistantPermissionMode =
 export type AssistantEffort = "low" | "medium" | "high" | "max";
 
 /** Minimal reference to a backend agent workspace selected for assistant runs. */
-type AssistantAgent = {
+export type AssistantAgent = {
 	/** Workspace id passed to RunAgent. */
 	workspace_id: string;
 	/** Display name retained for the settings selector. */
@@ -314,6 +314,12 @@ export interface AssistantState {
 	 * composer can merge into edits made while an async submit was in flight.
 	 */
 	setDraft: (draft: string | ((current: string) => string)) => void;
+	/**
+	 * Adopt a run that was started elsewhere — the template catalog's prompt
+	 * box starts one before navigating here — by switching to its room and
+	 * reattaching to its live stream. Resolves once the stream is attached.
+	 */
+	adoptRun: (roomId: string, runId: string, prompt: string) => Promise<void>;
 	/**
 	 * Cancel the active run (StopAgentRun). The run's stream observes the
 	 * CANCELLED status and reconciles; failures surface as error notices.
@@ -1362,6 +1368,51 @@ export const createAssistantStore = (
 							? draft(state.draft)
 							: draft,
 				})),
+
+			adoptRun: async (roomId, runId, prompt) => {
+				if (!get().insightId || !roomId || !runId) {
+					return;
+				}
+
+				// Loads the room's options, messages, model and agent, and
+				// reattaches any run it finds. Safe to call for a room this
+				// workbench has never seen.
+				await get().resumeRoom(roomId);
+
+				// resumeRoom discovers runs by scanning the agentRunId ornament
+				// on persisted messages, which a run submitted moments ago may
+				// not have written yet. Register and attach it explicitly; the
+				// watcher registry keeps this to one drain consumer even when
+				// resumeRoom already found it.
+				if (!get().runs[runId]) {
+					updateRunStore((store) =>
+						startRun(store, {
+							runId,
+							roomId,
+							input: prompt,
+							attachments: [],
+							harnessType: "semoss",
+							status: "SUBMITTED",
+						}),
+					);
+				}
+
+				const snapshot = await attachWatcher(runId).catch((error) => {
+					console.warn(
+						`Unable to attach to adopted agent run ${runId}:`,
+						error,
+					);
+					return null;
+				});
+
+				const status = (snapshot?.status ?? "").trim().toUpperCase();
+				if (status === "FAILED" || status === "CANCELLED") {
+					pushNotice(
+						buildRunFailureMessage(snapshot, get().maxTurns),
+						"error",
+					);
+				}
+			},
 
 			stop: async () => {
 				const { insightId, activeRunId } = get();

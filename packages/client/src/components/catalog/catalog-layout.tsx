@@ -8,7 +8,7 @@ interface CatalogLayoutProps {
 	/** Action to show in the header */
 	headerActions?: React.ReactNode;
 	/** Search bar content */
-	searchBar: React.ReactNode;
+	searchBar?: React.ReactNode;
 	/** Tabs content */
 	tabs?: React.ReactNode;
 	/** Main content area */

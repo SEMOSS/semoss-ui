@@ -39,4 +39,27 @@ describe("assistant store", () => {
 		// StrictMode double-invoke both land here.
 		expect(() => store.getState().destroy()).not.toThrow();
 	});
+
+	it("ignores an adopted run with no room or run id", async () => {
+		// The handoff record is validated before it gets here, but a malformed
+		// one must not reach resumeRoom or the stream.
+		const store = makeStore();
+		const resumeRoom = vi.fn().mockResolvedValue(undefined);
+		store.setState({ insightId: "insight-1", resumeRoom });
+
+		await store.getState().adoptRun("", "run-1", "prompt");
+		await store.getState().adoptRun("room-1", "", "prompt");
+
+		expect(resumeRoom).not.toHaveBeenCalled();
+	});
+
+	it("ignores an adopted run before the assistant has an insight", async () => {
+		const store = makeStore();
+		const resumeRoom = vi.fn().mockResolvedValue(undefined);
+		store.setState({ resumeRoom });
+
+		await store.getState().adoptRun("room-1", "run-1", "prompt");
+
+		expect(resumeRoom).not.toHaveBeenCalled();
+	});
 });

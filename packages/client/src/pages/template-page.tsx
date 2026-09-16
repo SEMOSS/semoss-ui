@@ -4,12 +4,15 @@ import type { Project } from "@semoss/shared";
 import { CatalogLayout } from "@/components/catalog";
 import { CloneProjectDialog } from "@/components/project";
 import { NavbarHeader, NavbarLeft } from "@/components/shared";
-import { TemplateGrid } from "@/components/templates";
+import { TemplateGrid, TemplateInput } from "@/components/templates";
 import { TYPE_TO_ROUTE } from "@/constants";
 
 /**
  * Template Catalog Landing Page
- * Lists every template; picking one opens the clone dialog.
+ * Lists every template; picking one opens the clone dialog. Describing what you
+ * want in the prompt box instead skips the browsing: the backend picks the type,
+ * template and agent, and the new project opens with the prompt already running
+ * in its assistant.
  */
 export const TemplatePage: React.FC = (): React.JSX.Element => {
 	const navigate = useNavigate();
@@ -23,8 +26,10 @@ export const TemplatePage: React.FC = (): React.JSX.Element => {
 			<CatalogLayout
 				title="Template Catalog"
 				description="Explore reusable templates for apps of every kind. Choose a starting point, create your own app, and customize it to fit your use case."
-				searchBar={null}
 			>
+				<div className="mx-auto my-4 w-full max-w-5xl md:my-32">
+					<TemplateInput />
+				</div>
 				<TemplateGrid
 					onSelect={(template) => {
 						if (template) {

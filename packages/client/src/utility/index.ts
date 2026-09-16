@@ -1,3 +1,4 @@
+export * from "./assistant-handoff";
 export * from "./browser-notification";
 export * from "./general";
 export * from "./mcp-utils";

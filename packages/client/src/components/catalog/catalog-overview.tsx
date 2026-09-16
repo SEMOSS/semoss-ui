@@ -392,8 +392,9 @@ export const CatalogOverview = ({
 		const src = imagePreview || (imageCleared ? "" : image.url);
 
 		return (
-			<div className="relative size-16 shrink-0 overflow-hidden rounded-lg border">
+			<div className="relative size-16 shrink-0 overflow-hidden rounded-lg border bg-card">
 				<AppCatalogAvatar
+					data-image-fallback=""
 					name={image.fallbackName}
 					className="absolute inset-0 size-full text-xl"
 				/>
@@ -404,7 +405,14 @@ export const CatalogOverview = ({
 						key={src}
 						src={src}
 						alt=""
-						className="absolute inset-0 size-full object-cover"
+						className="absolute inset-0 size-full object-contain"
+						onLoad={(e) => {
+							// a real image loaded - drop the fallback so a
+							// transparent image does not show it through
+							e.currentTarget.parentElement
+								?.querySelector("[data-image-fallback]")
+								?.classList.add("hidden");
+						}}
 						onError={(e) => {
 							e.currentTarget.style.display = "none";
 						}}

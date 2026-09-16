@@ -106,10 +106,11 @@ export const ProjectTabsLayout = ({ tabs }: ProjectTabsLayoutProps) => {
 				<div className={`mx-auto flex h-full w-full flex-col gap-3`}>
 					<EntityHeader
 						icon={
-							// A 404 means the project has no custom image, which
-							// uncovers the initials tile layered underneath.
-							<div className="relative size-full overflow-hidden rounded-lg">
+							// The initials tile shows until a custom image loads,
+							// and stays put when the project has none.
+							<div className="relative size-full overflow-hidden rounded-lg bg-card">
 								<AppCatalogAvatar
+									data-image-fallback=""
 									name={
 										project.project_display_name ||
 										project.project_name ||
@@ -120,7 +121,16 @@ export const ProjectTabsLayout = ({ tabs }: ProjectTabsLayoutProps) => {
 								<img
 									src={getProjectImageUrl(project.project_id)}
 									alt=""
-									className="absolute inset-0 size-full object-cover"
+									className="absolute inset-0 size-full object-contain"
+									onLoad={(e) => {
+										// a real image loaded - drop the fallback so a
+										// transparent image does not show it through
+										e.currentTarget.parentElement
+											?.querySelector(
+												"[data-image-fallback]",
+											)
+											?.classList.add("hidden");
+									}}
 									onError={(e) => {
 										e.currentTarget.style.display = "none";
 									}}

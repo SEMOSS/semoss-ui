@@ -5,5 +5,6 @@ export * from "./guardrails";
 export * from "./projects";
 export * from "./rooms";
 export * from "./teams";
+export * from "./templates";
 export * from "./theme";
 export * from "./user-access";
