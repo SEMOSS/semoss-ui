@@ -26,7 +26,7 @@ import {
 	toast,
 } from "@semoss/ui/next";
 import DuplicateIcon from "@/assets/img/Duplicate.svg";
-import { useDesigner, useRootStore } from "@/hooks";
+import { useDesigner, useSession } from "@/hooks";
 import { getBlockElement, getRelativeSize } from "@/stores";
 import { getDependencyCells } from "@/utility/dependency-scanner";
 import { DependencyPromptModal } from "../blocks-workspace";
@@ -79,7 +79,7 @@ export const DeleteDuplicateMask = observer(
 
 		const { registry, state } = useBlocks();
 		const { designer } = useDesigner();
-		const { configStore } = useRootStore();
+		const isAdmin = useSession((state) => state.user.admin);
 
 		const block = state.getBlock(designer.selected);
 
@@ -449,7 +449,7 @@ export const DeleteDuplicateMask = observer(
 								)}
 							</>
 						)}
-						{configStore.store.user.admin && (
+						{isAdmin && (
 							<Tooltip>
 								<TooltipTrigger asChild>
 									<button

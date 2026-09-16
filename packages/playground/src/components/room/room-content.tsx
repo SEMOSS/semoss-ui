@@ -35,15 +35,16 @@ import { useChat, useGracefulErrors } from "@/hooks";
 import {
 	type InputMessageStore,
 	ResponseMessageStore,
+	ROOM_PANEL_TYPES,
 	type RoomStore,
 } from "@/stores";
 import { decideAgentToolAction } from "@/stores/message/agent-harness";
 import { isAskExecutionMode, isYesNoExecutionMode } from "@/utility/mcp-utils";
 import { RoomCompactionIndicator } from "./room-compaction-indicator";
 import { RoomGeneratingIndicator } from "./room-generating-indicator";
+import { RoomGreeting } from "./room-greeting";
 import { RoomSuggestions } from "./room-suggestions";
 
-const ROOM_CONFIGURATION_ID = "CONFIGURATION";
 const SCROLL_THRESHOLD = 150;
 
 export interface RoomContentProps {
@@ -74,8 +75,15 @@ export const RoomContent = observer(({ room }: RoomContentProps) => {
 		// update the options
 		await room.updateRoomOptions(room.options);
 
-		// ask the room
-		await room.askMessage(prompt, files);
+		try {
+			// ask the room
+			await room.askMessage(prompt, files);
+		} catch (e) {
+			if ((e as Error)?.name === "UploadError") {
+				toast.error(t("errors.fileInUse"));
+			}
+			throw e;
+		}
 
 		// re-sync room options from backend after message completes,
 		// preserving workspace MCPs that are only held in memory. Skipped when
@@ -93,26 +101,14 @@ export const RoomContent = observer(({ room }: RoomContentProps) => {
 	 * Open the room configuration sidebar tab
 	 */
 	const handleOpenSettings = useCallback(() => {
-		room.addSidebarNode(ROOM_CONFIGURATION_ID, {
-			type: "tab",
-			name: "Configuration",
-			component: "room-configuration",
-			config: {},
-			enableClose: true,
-		});
+		room.openSidebarPanel(ROOM_PANEL_TYPES.CONFIGURATION);
 	}, [room]);
 
 	/**
 	 * Open the audit logs dashboard for this room in the right side panel.
 	 */
 	const handleOpenActivityLog = useCallback(() => {
-		room.addSidebarNode("room-activity-log", {
-			type: "tab",
-			name: "Activity Log",
-			component: "audit-log-report",
-			config: {},
-			enableClose: true,
-		});
+		room.openSidebarPanel(ROOM_PANEL_TYPES.AUDIT_LOG);
 	}, [room]);
 
 	/**
@@ -516,6 +512,12 @@ export const RoomContent = observer(({ room }: RoomContentProps) => {
 						}}
 					>
 						<div className="mx-auto flex w-full max-w-[1120px] flex-col gap-2 px-4 py-6 sm:px-8 lg:px-16">
+							{room.agentGreeting && (
+								<RoomGreeting
+									room={room}
+									greeting={room.agentGreeting}
+								/>
+							)}
 							{roomHistoryEntries.map(
 								({ message: m, subsequentTools }) => {
 									const showModelName = (() => {

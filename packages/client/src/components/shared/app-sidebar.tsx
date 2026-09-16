@@ -14,10 +14,9 @@ import {
 	ShieldCheck,
 	Sigma,
 } from "lucide-react";
-import { observer } from "mobx-react-lite";
 import type React from "react";
 import { useEffect, useState } from "react";
-import { Link, matchPath, useLocation } from "react-router-dom";
+import { Link, matchPath, useLocation } from "react-router";
 import {
 	Sidebar as ShadcnSidebar,
 	SidebarContent as ShadcnSidebarContent,
@@ -34,7 +33,7 @@ import {
 	SidebarProvider,
 	SidebarSeparator,
 } from "@semoss/ui/next";
-import { usePage, useRootStore } from "@/hooks";
+import { useConfig, usePage, useSession } from "@/hooks";
 import { formatToDataTestId } from "@/utility";
 import { LogoutPopover } from "./LogoutPopover";
 
@@ -95,9 +94,14 @@ const SIDEBAR_WIDTH = "18rem";
 const NAV_BUTTON_CLASS =
 	"h-auto rounded-none px-4 py-2 text-sm data-[active=true]:rounded-md data-[active=true]:bg-primary/10 data-[active=true]:text-primary";
 
-export const Sidebar: React.FC = observer(() => {
-	const { configStore } = useRootStore();
-	const { page } = usePage();
+export const Sidebar: React.FC = () => {
+	const themeName = useConfig((state) => state.theme.name);
+	const adminOnlyViewMenuBarFlag = useConfig(
+		(state) => state.config.adminOnlyViewMenuBarFlag,
+	);
+	const isAdmin = useSession((state) => state.user.admin);
+	const userName = useSession((state) => state.user.name);
+	const page = usePage();
 
 	const { pathname } = useLocation();
 
@@ -105,18 +109,12 @@ export const Sidebar: React.FC = observer(() => {
 	const [isLogoutPopoverOpen, setIsLogoutPopoverOpen] = useState(false);
 
 	useEffect(() => {
-		if (configStore.store.user.admin) {
+		if (isAdmin) {
 			setViewSidebar(true);
-		} else if (
-			!configStore.store.user.admin &&
-			!configStore.store.config.adminOnlyViewMenuBarFlag
-		) {
+		} else if (!isAdmin && !adminOnlyViewMenuBarFlag) {
 			setViewSidebar(true);
 		}
-	}, [
-		configStore.store.user.admin,
-		configStore.store.config.adminOnlyViewMenuBarFlag,
-	]);
+	}, [isAdmin, adminOnlyViewMenuBarFlag]);
 
 	function closeSidebar() {
 		if (page.sidebar.pinned || isLogoutPopoverOpen) {
@@ -156,7 +154,7 @@ export const Sidebar: React.FC = observer(() => {
 							className="flex-1 font-bold text-lg leading-tight"
 							data-testid="sidebar-theme-name"
 						>
-							{configStore.theme.name}
+							{themeName}
 						</span>
 						<button
 							type="button"
@@ -319,7 +317,7 @@ export const Sidebar: React.FC = observer(() => {
 										<CircleUserRound className="size-6" />
 									</span>
 									<span className="max-w-full flex-1 overflow-hidden text-ellipsis whitespace-nowrap text-left">
-										{configStore.store.user.name || ""}
+										{userName || ""}
 									</span>
 								</SidebarMenuButton>
 							</LogoutPopover>
@@ -362,4 +360,4 @@ export const Sidebar: React.FC = observer(() => {
 			</SheetContent>
 		</Sheet>
 	);
-});
+};

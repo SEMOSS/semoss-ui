@@ -1,26 +1,38 @@
-import { useEffect } from "react";
-import { makeEngineRoomMcp } from "@/api/rooms";
-import { useEngine, useWorkbench, useWorkbenchCommands } from "@/hooks";
+import { useEffect, useMemo } from "react";
+import { FILE_PANEL_COMPONENTS } from "@semoss/panels";
+import type { Role } from "@semoss/sdk";
+import { useInsight } from "@semoss/sdk/react";
+import { useCacheData } from "@semoss/ui/next";
 import type {
 	WorkbenchLayout,
 	WorkbenchPanelConfigAny,
-} from "@/stores/workbench";
-import { WORKBENCH_ASSISTANT_PANEL } from "../../assistant";
-import { Workbench } from "../../core";
-import { WorkbenchCommandMenuButton } from "../../core/workbench-command-menu-button";
+	WorkbenchSnapshot,
+} from "@semoss/workbench";
+import {
+	useWorkbenchCommands,
+	Workbench,
+	WorkbenchCommandMenuButton,
+	WorkbenchResetButton,
+} from "@semoss/workbench";
+import { makeEngineRoomMcp } from "@/api/rooms";
+import { ASSISTANT_PANEL } from "@/components/assistant";
+import { AssistantStoreProvider } from "@/contexts";
+import { useAssistantStore, useEngine, useSession } from "@/hooks";
 import {
 	WORKBENCH_COMPONENTS,
 	WORKBENCH_PANEL_RECORDS,
-} from "../../workbench.constants";
-import { ENGINE_FILE_CODE_EDITOR_PANEL } from "../engine-file-code-editor-panel";
-import { ENGINE_FILE_DOWNLOAD_VIEWER_PANEL } from "../engine-file-download-viewer-panel";
-import { ENGINE_FILE_EXPLORER_PANEL } from "../engine-file-explorer-panel";
-import { ENGINE_FILE_IMAGE_EDITOR_PANEL } from "../engine-file-image-editor-panel";
-import { ENGINE_FILE_MARKDOWN_EDITOR_PANEL } from "../engine-file-markdown-editor-panel";
-import { ENGINE_FILE_NOTEBOOK_EDITOR_PANEL } from "../engine-file-notebook-editor-panel";
-import { ENGINE_FILE_PDF_EDITOR_PANEL } from "../engine-file-pdf-editor-panel";
-import { ENGINE_MCP_EDITOR_PANEL } from "../engine-mcp-editor-panel";
-import { createEngineSettingsPanel } from "../engine-settings-panel";
+} from "@/stores/workbench";
+import { GIT_DIFF_PANEL, GIT_VERSION_PANEL } from "../../git";
+import { useAssistantFilesChanged } from "../../use-assistant-files-changed";
+import {
+	createFileCommands,
+	createOpenPanelCommand,
+	createReconnectCommand,
+} from "../../workbench.presets";
+import {
+	createEngineSettingsPanel,
+	ENGINE_SETTINGS_TABS,
+} from "../engine-settings-panel";
 import { EngineSettingsToggle } from "../engine-settings-toggle";
 import { VECTOR_DOCUMENTS_PANEL } from "./vector-documents-panel";
 
@@ -29,87 +41,70 @@ import { VECTOR_DOCUMENTS_PANEL } from "./vector-documents-panel";
  * the left. The assistant lives in the main tabset here (not a border), so
  * its record carries no border min-width.
  */
-const VECTOR_WORKBENCH_LAYOUT: WorkbenchLayout = {
-	version: 1,
-	tree: {
-		type: "tabset",
-		id: "main",
-		size: 1,
-		panelIds: [
-			WORKBENCH_COMPONENTS.ASSISTANT,
-			WORKBENCH_COMPONENTS.VECTOR_DOCUMENTS,
-		],
-		activeId: WORKBENCH_COMPONENTS.ASSISTANT,
-	},
-	panels: {
-		[WORKBENCH_COMPONENTS.ASSISTANT]: {
-			id: WORKBENCH_COMPONENTS.ASSISTANT,
-			type: WORKBENCH_COMPONENTS.ASSISTANT,
-			name: "Assistant",
-			helpText: "Vector workbench assistant",
-			canClose: false,
+const createVectorWorkbenchLayout = (
+	engineId: string,
+	permission: Role,
+): WorkbenchLayout => {
+	const readOnly = !(permission === "OWNER" || permission === "EDIT");
+	return {
+		tree: {
+			type: "tabset",
+			id: "main",
+			size: 1,
+			panelIds: [
+				WORKBENCH_COMPONENTS.ASSISTANT,
+				WORKBENCH_COMPONENTS.VECTOR_DOCUMENTS,
+			],
+			activeId: WORKBENCH_COMPONENTS.ASSISTANT,
 		},
-		[WORKBENCH_PANEL_RECORDS.VECTOR_DOCUMENTS.id]:
-			WORKBENCH_PANEL_RECORDS.VECTOR_DOCUMENTS,
-		[WORKBENCH_PANEL_RECORDS.ENGINE_FILE_EXPLORER.id]:
-			WORKBENCH_PANEL_RECORDS.ENGINE_FILE_EXPLORER,
-	},
-	borders: {
-		left: {
-			panelIds: [WORKBENCH_COMPONENTS.FILE_EXPLORER],
-			activeId: WORKBENCH_COMPONENTS.FILE_EXPLORER,
-			size: 300,
+		panels: {
+			[WORKBENCH_COMPONENTS.ASSISTANT]: {
+				id: WORKBENCH_COMPONENTS.ASSISTANT,
+				type: WORKBENCH_COMPONENTS.ASSISTANT,
+				name: "Assistant",
+				helpText: "Vector workbench assistant",
+				canClose: false,
+			},
+			[WORKBENCH_PANEL_RECORDS.VECTOR_DOCUMENTS.id]:
+				WORKBENCH_PANEL_RECORDS.VECTOR_DOCUMENTS,
+			[WORKBENCH_PANEL_RECORDS.FILE_EXPLORER.id]: {
+				...WORKBENCH_PANEL_RECORDS.FILE_EXPLORER,
+				config: { mode: { type: "ENGINE", engine: engineId } },
+			},
+			...(!readOnly
+				? {
+						[WORKBENCH_PANEL_RECORDS.GIT_VERSION.id]: {
+							...WORKBENCH_PANEL_RECORDS.GIT_VERSION,
+							config: { type: "ENGINE", id: engineId },
+						},
+					}
+				: {}),
 		},
-	},
+		borders: {
+			left: {
+				panelIds: [
+					WORKBENCH_COMPONENTS.FILE_EXPLORER,
+					...(!readOnly ? [WORKBENCH_COMPONENTS.GIT_VERSION] : []),
+				],
+				activeId: WORKBENCH_COMPONENTS.FILE_EXPLORER,
+				size: 300,
+			},
+		},
+	};
 };
 
 /** Blueprints, keyed by type. Module-scope so identities never churn. */
-const VECTOR_WORKBENCH_COMPONENTS: Record<string, WorkbenchPanelConfigAny> = {
-	[WORKBENCH_COMPONENTS.FILE_EXPLORER]: ENGINE_FILE_EXPLORER_PANEL,
+export const VECTOR_WORKBENCH_COMPONENTS: Record<
+	string,
+	WorkbenchPanelConfigAny
+> = {
+	...FILE_PANEL_COMPONENTS,
 	[WORKBENCH_COMPONENTS.VECTOR_DOCUMENTS]: VECTOR_DOCUMENTS_PANEL,
-	[WORKBENCH_COMPONENTS.FILE_CODE_EDITOR]: ENGINE_FILE_CODE_EDITOR_PANEL,
-	[WORKBENCH_COMPONENTS.FILE_DOWNLOAD_VIEWER]:
-		ENGINE_FILE_DOWNLOAD_VIEWER_PANEL,
-	[WORKBENCH_COMPONENTS.FILE_IMAGE_EDITOR]: ENGINE_FILE_IMAGE_EDITOR_PANEL,
-	[WORKBENCH_COMPONENTS.FILE_MARKDOWN_EDITOR]:
-		ENGINE_FILE_MARKDOWN_EDITOR_PANEL,
-	[WORKBENCH_COMPONENTS.FILE_NOTEBOOK_EDITOR]:
-		ENGINE_FILE_NOTEBOOK_EDITOR_PANEL,
-	[WORKBENCH_COMPONENTS.FILE_PDF_EDITOR]: ENGINE_FILE_PDF_EDITOR_PANEL,
-	[WORKBENCH_COMPONENTS.MCP_EDITOR]: ENGINE_MCP_EDITOR_PANEL,
-	[WORKBENCH_COMPONENTS.ENGINE_SETTINGS]: createEngineSettingsPanel([
-		{
-			name: "Overview",
-			component: "overview",
-			restrict: ["READ_ONLY", "EDIT", "OWNER", "DISCOVERABLE"],
-		},
-		{
-			name: "Usage",
-			component: "usage",
-			restrict: ["READ_ONLY", "EDIT", "OWNER"],
-		},
-		{
-			name: "MCP",
-			component: "mcp-usage",
-			restrict: ["READ_ONLY", "EDIT", "OWNER"],
-		},
-		{
-			name: "Activity Log",
-			component: "activity",
-			restrict: ["READ_ONLY", "EDIT", "OWNER"],
-		},
-		{
-			name: "Access Control",
-			component: "access-control",
-			restrict: ["EDIT", "OWNER"],
-		},
-		{
-			name: "SMSS",
-			component: "smss",
-			restrict: ["OWNER"],
-		},
-	]),
-	[WORKBENCH_COMPONENTS.ASSISTANT]: WORKBENCH_ASSISTANT_PANEL,
+	[WORKBENCH_COMPONENTS.GIT_VERSION]: GIT_VERSION_PANEL,
+	[WORKBENCH_COMPONENTS.GIT_DIFF]: GIT_DIFF_PANEL,
+	[WORKBENCH_COMPONENTS.ENGINE_SETTINGS]:
+		createEngineSettingsPanel(ENGINE_SETTINGS_TABS),
+	[WORKBENCH_COMPONENTS.ASSISTANT]: ASSISTANT_PANEL,
 };
 
 /**
@@ -118,82 +113,114 @@ const VECTOR_WORKBENCH_COMPONENTS: Record<string, WorkbenchPanelConfigAny> = {
  * page so its file operations share a single insight.
  */
 export const VectorWorkbench: React.FC = () => {
-	const { engine } = useEngine();
+	const { engine, permission } = useEngine();
+	const insight = useInsight();
+	const readOnly = !(permission === "OWNER" || permission === "EDIT");
+	const workbenchLayout = useMemo(
+		() => createVectorWorkbenchLayout(engine.engine_id, permission),
+		[engine.engine_id, permission],
+	);
 
-	const configureAssistant = useWorkbench((s) => s.assistant.configure);
+	// What this workbench is known by: its own cache entry, and — where there
+	// is an assistant — the workbench its conversations are tagged with,
+	// server-side. Read-only variants keep their own arrangement.
+	const workbenchId = readOnly
+		? `${engine.engine_id}--read-only`
+		: engine.engine_id;
 
-	// Keep the assistant prompt and room tools in sync with the active engine.
+	const [snapshot, onSnapshotChange] = useCacheData<WorkbenchSnapshot>(
+		`workbench-layout--${workbenchId}--1`,
+		workbenchLayout,
+	);
+
+	const syncPermission = useSession((s) => s.syncPermission);
+	const refreshPermission = useSession((s) => s.refreshPermission);
+
+	const assistantStore = useAssistantStore(workbenchId);
+
+	// Revalidate the engine's permission and keep the assistant prompt and
+	// room tools in sync with it.
+	const filesChanged = useAssistantFilesChanged({
+		type: "ENGINE",
+		engine: engine.engine_id,
+	});
+
 	useEffect(() => {
-		configureAssistant({
+		syncPermission("ENGINE", engine.engine_id, permission);
+		void refreshPermission("ENGINE", engine.engine_id).catch(
+			() => undefined,
+		);
+
+		assistantStore.getState().configure({
+			onRunCompleted: filesChanged,
 			systemPrompt: `You are the assistant for the ${engine.engine_display_name || engine.engine_name} vector workbench (${engine.engine_id}, subtype ${engine.engine_subtype || "unknown"}). Use only the tools provided in this room and decide whether a tool is needed for each request. For questions about indexed content, call VectorDatabaseQuery before answering, ground the answer only in its returned chunks, and cite the Source and Divider when available. Use ListDocumentsInVectorDatabase when the user asks what is indexed. For requests to add, download, or remove vector documents, or to inspect or change engine asset files, use the matching room tool; honor its approval requirement and the user's permissions. When the user attaches a file and asks to index it, use the available attachment path with the document embedding tool. Simple greetings or general guidance that do not require engine data can be answered without a tool. Do not invent unsupported parameters, and never claim an operation succeeded unless its tool result confirms success.`,
 			prepareRoom: (insightId) =>
 				makeEngineRoomMcp(insightId, engine.engine_id),
 		});
 	}, [
-		configureAssistant,
+		filesChanged,
+		assistantStore,
+		syncPermission,
+		refreshPermission,
 		engine.engine_display_name,
 		engine.engine_id,
 		engine.engine_name,
 		engine.engine_subtype,
+		permission,
 	]);
 
 	useWorkbenchCommands([
-		{
+		createReconnectCommand(insight),
+		...createFileCommands({ readOnly: readOnly }),
+		createOpenPanelCommand({
 			id: "workbench.file-explorer.open",
-			category: "View",
 			label: "Open File Explorer",
-			handler: (get) => {
-				get().layout.actions.selectPanel(
-					WORKBENCH_COMPONENTS.FILE_EXPLORER,
-				);
-			},
-		},
-		{
+			type: WORKBENCH_COMPONENTS.FILE_EXPLORER,
+			config: { mode: { type: "ENGINE", engine: engine.engine_id } },
+		}),
+		createOpenPanelCommand({
+			id: "workbench.version-control.open",
+			label: "Open Version Control",
+			type: WORKBENCH_COMPONENTS.GIT_VERSION,
+			config: { type: "ENGINE", id: engine.engine_id },
+			visible: !readOnly,
+		}),
+		createOpenPanelCommand({
 			id: "workbench.settings.open",
-			category: "View",
 			label: "Open Settings",
-			handler: (get) => {
-				get().layout.actions.selectPanel(
-					WORKBENCH_COMPONENTS.ENGINE_SETTINGS,
-				);
-			},
-		},
-		{
+			type: WORKBENCH_COMPONENTS.ENGINE_SETTINGS,
+		}),
+		createOpenPanelCommand({
 			id: "workbench.vector-documents.open",
-			category: "View",
 			label: "Open Documents",
-			handler: (get) => {
-				get().layout.actions.selectPanel(
-					WORKBENCH_COMPONENTS.VECTOR_DOCUMENTS,
-				);
-			},
-		},
-		{
+			type: WORKBENCH_COMPONENTS.VECTOR_DOCUMENTS,
+		}),
+		createOpenPanelCommand({
 			id: "workbench.vector-assistant.open",
-			category: "View",
 			label: "Open Assistant",
-			handler: (get) => {
-				get().layout.actions.selectPanel(
-					WORKBENCH_COMPONENTS.ASSISTANT,
-				);
-			},
-		},
+			type: WORKBENCH_COMPONENTS.ASSISTANT,
+		}),
 	]);
 
 	return (
-		<Workbench
-			layout={VECTOR_WORKBENCH_LAYOUT}
-			components={VECTOR_WORKBENCH_COMPONENTS}
-			borderSlots={{
-				left: {
-					after: (
-						<>
-							<WorkbenchCommandMenuButton />
-							<EngineSettingsToggle />
-						</>
-					),
-				},
-			}}
-		/>
+		<AssistantStoreProvider store={assistantStore}>
+			<Workbench
+				snapshot={snapshot}
+				onChange={onSnapshotChange}
+				borderSlots={{
+					left: {
+						after: (
+							<>
+								<WorkbenchCommandMenuButton />
+								<EngineSettingsToggle />
+								<WorkbenchResetButton
+									snapshot={workbenchLayout}
+								/>
+							</>
+						),
+					},
+				}}
+			/>
+		</AssistantStoreProvider>
 	);
 };

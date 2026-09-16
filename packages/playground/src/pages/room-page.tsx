@@ -1,6 +1,6 @@
 import { observer } from "mobx-react-lite";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router";
 import { useTranslation } from "@semoss/i18n";
 import { InsightProvider } from "@semoss/sdk/react";
 import {
@@ -167,7 +167,7 @@ export const RoomPage = observer(() => {
 						<>
 							<ResizableHandle />
 							<ResizablePanel
-								className={"relative p-2"}
+								className={"relative"}
 								defaultSize={50}
 								minSize={20}
 							>

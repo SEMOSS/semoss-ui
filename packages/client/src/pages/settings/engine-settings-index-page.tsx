@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useIteratorPixel } from "@semoss/sdk/react";
+import { runPixel, useIteratorPixel } from "@semoss/sdk/react";
 import type { Engine } from "@semoss/shared";
 import {
 	Muted,
@@ -10,7 +10,7 @@ import {
 import { CatalogGrid, CatalogSearchBar } from "@/components/catalog";
 import { EngineGridItem } from "@/components/engine";
 import { DeleteEntityDialog } from "@/components/shared/delete-entity-dialog";
-import { useRootStore, useSettings } from "@/hooks";
+import { useConfig, useSettings } from "@/hooks";
 import { getEngineLabel, isOwnerPermission } from "@/utility/catalog";
 
 /**
@@ -27,7 +27,9 @@ export const EngineSettingsIndexPage = (
 	const { type } = props;
 
 	const { adminMode } = useSettings();
-	const { configStore } = useRootStore();
+	const databaseMetaKeys = useConfig(
+		(state) => state.config.databaseMetaKeys,
+	);
 
 	const [search, setSearch] = useState("");
 	const debouncedSearch = useDebouncedValue(search);
@@ -37,7 +39,7 @@ export const EngineSettingsIndexPage = (
 	const [engineToDelete, setEngineToDelete] = useState<Engine | null>(null);
 
 	// get metakeys to the ones we want
-	const metaKeys = configStore.store.config.databaseMetaKeys
+	const metaKeys = databaseMetaKeys
 		.filter((k) => {
 			return (
 				k.display_options === "single-checklist" ||
@@ -115,7 +117,7 @@ export const EngineSettingsIndexPage = (
 		try {
 			setIsDeletingEngine(true);
 
-			const response = await configStore.runPixel(
+			const response = await runPixel(
 				`DeleteEngine(engine=['${engineToDelete.engine_id}']);`,
 			);
 

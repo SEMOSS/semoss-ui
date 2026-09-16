@@ -369,11 +369,6 @@ export const BlocksWorkspace: React.FC = observer(() => {
 							restrict: ["OWNER", "EDIT", "READ_ONLY"],
 						},
 						{
-							name: "Commits",
-							component: "commits",
-							restrict: ["OWNER", "EDIT"],
-						},
-						{
 							name: "GitHub",
 							component: "github",
 							restrict: ["OWNER"],

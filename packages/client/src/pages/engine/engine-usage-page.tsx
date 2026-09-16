@@ -1,5 +1,6 @@
 import { Info, Terminal } from "lucide-react";
 import { useMemo } from "react";
+import { usePixel } from "@semoss/sdk/react";
 import {
 	H4,
 	Markdown,
@@ -12,7 +13,7 @@ import {
 	TabsList,
 	TabsTrigger,
 } from "@semoss/ui/next";
-import { useEngine, usePixel } from "@/hooks";
+import { useEngine } from "@/hooks";
 
 /** One usage channel returned by `GetEngineUsage`. */
 interface UsageSection {

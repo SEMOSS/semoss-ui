@@ -3,6 +3,11 @@ import { useCallback, useEffect, useState } from "react";
 import { useInsight, usePixel } from "@semoss/sdk/react";
 import type { MCPConfig, SkillConfig } from "@semoss/shared";
 import { Spinner, toast } from "@semoss/ui/next";
+import type {
+	WorkbenchComponent,
+	WorkbenchPanelConfig,
+} from "@semoss/workbench";
+import { useWorkbenchControl, useWorkbenchPanel } from "@semoss/workbench";
 import {
 	type AgentDefaultTool,
 	AgentForm,
@@ -10,11 +15,7 @@ import {
 	buildEditWorkspacePixel,
 	getWorkspaceSaveWarning,
 } from "@/components/agent-workspace/agent-form";
-import { useProject, useWorkbenchControl } from "@/hooks";
-import type {
-	WorkbenchComponent,
-	WorkbenchPanelConfig,
-} from "@/stores/workbench";
+import { useProject } from "@/hooks";
 import { AgentEditorSaveControl } from "./agent-editor-save-control";
 
 type GetWorkspaceResponse = {
@@ -29,6 +30,8 @@ type GetWorkspaceResponse = {
 	config_json?: {
 		model_id?: string;
 		use_default_agent_tools?: boolean;
+		greeting?: string;
+		greeting_enabled?: boolean;
 		tool_policy?: {
 			default_tools?: {
 				disabled?: string[];
@@ -65,6 +68,8 @@ function toFormValues(response: GetWorkspaceResponse): AgentFormValues {
 		modelId: response.config_json?.model_id ?? "",
 		useDefaultAgentTools:
 			response.config_json?.use_default_agent_tools ?? true,
+		greeting: response.config_json?.greeting ?? "",
+		greetingEnabled: response.config_json?.greeting_enabled ?? false,
 		disabledDefaultTools:
 			response.config_json?.tool_policy?.default_tools?.disabled ?? [],
 		maxTurns: response.config_json?.budgets?.max_turns?.toString() ?? "",
@@ -97,6 +102,7 @@ export interface AgentEditorSaveValue {
 	onSave: () => void;
 	isLoading: boolean;
 	isFetching: boolean;
+	readOnly: boolean;
 }
 
 /**
@@ -104,9 +110,12 @@ export interface AgentEditorSaveValue {
  * `GetWorkspace`/`EditWorkspace` itself; `AgentForm` just renders the fields.
  * Save rides the panel's chrome control instead of an in-body toolbar.
  */
-const AgentEditorPanel: WorkbenchComponent = ({ id, setValue }) => {
-	const { project } = useProject();
+const AgentEditorPanel: WorkbenchComponent = ({ id }) => {
+	const { setValue } = useWorkbenchPanel(id);
+
+	const { project, permission } = useProject();
 	const insight = useInsight();
+	const readOnly = !(permission === "OWNER" || permission === "EDIT");
 	// The insight's id resolves asynchronously after mount - fetching before
 	// it's ready would run GetWorkspace a wasted first time against no insight.
 	const { data: response, status } = usePixel<GetWorkspaceResponse>(
@@ -128,7 +137,7 @@ const AgentEditorPanel: WorkbenchComponent = ({ id, setValue }) => {
 	}, [status, response]);
 
 	const onSave = useCallback(async () => {
-		if (!formValues) return;
+		if (readOnly || !formValues) return;
 		try {
 			setIsLoading(true);
 			const { pixelReturn } = await insight.actions.run<[unknown]>(
@@ -146,7 +155,7 @@ const AgentEditorPanel: WorkbenchComponent = ({ id, setValue }) => {
 		} finally {
 			setIsLoading(false);
 		}
-	}, [formValues, insight, project.project_id]);
+	}, [readOnly, formValues, insight, project.project_id]);
 
 	useWorkbenchControl(id, AgentEditorSaveControl);
 
@@ -154,8 +163,8 @@ const AgentEditorPanel: WorkbenchComponent = ({ id, setValue }) => {
 	// value changes) - depending on it here would loop forever.
 	// biome-ignore lint/correctness/useExhaustiveDependencies: see above
 	useEffect(() => {
-		setValue({ onSave, isLoading, isFetching });
-	}, [onSave, isLoading, isFetching]);
+		setValue({ onSave, isLoading, isFetching, readOnly });
+	}, [onSave, isLoading, isFetching, readOnly]);
 
 	return (
 		<div className="h-full w-full overflow-auto">
@@ -167,7 +176,7 @@ const AgentEditorPanel: WorkbenchComponent = ({ id, setValue }) => {
 				<AgentForm
 					data={formValues}
 					onChange={setFormValues}
-					readOnly={isLoading}
+					readOnly={readOnly || isLoading}
 					knownHookKinds={response.known_hook_kinds ?? []}
 					defaultTools={response.default_tools ?? []}
 				/>

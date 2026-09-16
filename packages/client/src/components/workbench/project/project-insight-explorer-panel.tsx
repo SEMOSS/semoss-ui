@@ -2,12 +2,12 @@ import { FlaskConicalIcon } from "lucide-react";
 import { InsightProvider } from "@semoss/sdk/react";
 import type { FileExplorerApi } from "@semoss/shared";
 import { Spinner } from "@semoss/ui/next";
-import { useWorkbench } from "@/hooks";
 import type {
 	WorkbenchComponent,
 	WorkbenchPanelConfig,
-} from "@/stores/workbench";
-import { WORKBENCH_COMPONENTS } from "../workbench.constants";
+} from "@semoss/workbench";
+import { useWorkbench } from "@semoss/workbench";
+import { WORKBENCH_COMPONENTS } from "@/stores/workbench";
 import { ProjectInsightExplorer } from "./project-insight-explorer";
 
 const terminalInsightId = (value: unknown): string | null =>
@@ -21,10 +21,7 @@ const terminalInsightId = (value: unknown): string | null =>
  * drops the insight the terminal owns. Shows a spinner until a terminal insight
  * is ready.
  */
-const ProjectInsightExplorerPanel: WorkbenchComponent<
-	Record<string, unknown>,
-	FileExplorerApi
-> = ({ id, setValue }) => {
+const ProjectInsightExplorerPanel: WorkbenchComponent = ({ id }) => {
 	// Each terminal publishes its insight on its own scratch value. Follow the
 	// most recently selected terminal, regardless of where that panel was moved.
 	const insightId = useWorkbench((state) => {
@@ -67,7 +64,7 @@ const ProjectInsightExplorerPanel: WorkbenchComponent<
 
 	return (
 		<InsightProvider options={{ insightId }} destroyOnUnmount={false}>
-			<ProjectInsightExplorer id={id} setValue={setValue} />
+			<ProjectInsightExplorer id={id} />
 		</InsightProvider>
 	);
 };

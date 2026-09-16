@@ -1,5 +1,6 @@
 import { Copy, EyeOff, LockKeyhole, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
+import { usePixel } from "@semoss/sdk/react";
 import {
 	Button,
 	Card,
@@ -19,7 +20,7 @@ import {
 	setProjectVisiblity,
 } from "@/api";
 import { DeleteEntityDialog } from "@/components/shared/delete-entity-dialog";
-import { usePixel, useRootStore, useSettings } from "@/hooks";
+import { useSession, useSettings } from "@/hooks";
 import type { ALL_TYPES, ApiResponse } from "@/types";
 import { formatToDataTestId } from "@/utility";
 
@@ -92,7 +93,10 @@ const AlertTile = ({
 export const SettingsTiles = (props: SettingsTilesProps) => {
 	const { id, type, name, condensed, onDelete, direction = "column" } = props;
 
-	const { monolithStore, configStore } = useRootStore();
+	const runPixel = useSession((state) => state.runPixel);
+	const isEngineOperationAvailable = useSession(
+		(state) => state.isEngineOperationAvailable,
+	);
 	const { adminMode, engineInfo: contextEngineInfo } = useSettings();
 
 	const [deleteModal, setDeleteModal] = useState(false);
@@ -230,7 +234,7 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 			}
 
 			// run the pixel
-			const response = await monolithStore.runQuery(deletePixel);
+			const response = await runPixel(deletePixel);
 
 			const operationType = response.pixelReturn[0].operationType;
 			const output = response.pixelReturn[0].output;
@@ -457,10 +461,7 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 								}
 								checked={!global}
 								disabled={
-									!configStore.isEngineOperationAvailable(
-										type,
-										"public",
-									)
+									!isEngineOperationAvailable(type, "public")
 								}
 								data-testid={formatToDataTestId(
 									`settingsTiles-make-${name}-public-private-switch`,
@@ -491,7 +492,7 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 												}
 												disabled={
 													global ||
-													!configStore.isEngineOperationAvailable(
+													!isEngineOperationAvailable(
 														type,
 														"discoverable",
 													)
@@ -536,7 +537,7 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 									)}
 									disabled={
 										global ||
-										!configStore.isEngineOperationAvailable(
+										!isEngineOperationAvailable(
 											type,
 											"discoverable",
 										)
@@ -559,10 +560,7 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 							<Button
 								variant="destructive"
 								disabled={
-									!configStore.isEngineOperationAvailable(
-										type,
-										"delete",
-									)
+									!isEngineOperationAvailable(type, "delete")
 								}
 								data-testid={formatToDataTestId(
 									`settingsTiles-${name}-delete-btn`,
@@ -615,10 +613,7 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 								}
 								checked={!global}
 								disabled={
-									!configStore.isEngineOperationAvailable(
-										type,
-										"public",
-									)
+									!isEngineOperationAvailable(type, "public")
 								}
 								data-testid={formatToDataTestId(
 									`settingsTiles-make-${name}-public-private-switch`,
@@ -645,7 +640,7 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 											<Switch
 												disabled={
 													global ||
-													!configStore.isEngineOperationAvailable(
+													!isEngineOperationAvailable(
 														type,
 														"discoverable",
 													)
@@ -682,7 +677,7 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 								<Switch
 									disabled={
 										global ||
-										!configStore.isEngineOperationAvailable(
+										!isEngineOperationAvailable(
 											type,
 											"discoverable",
 										)
@@ -721,7 +716,7 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 											`settingsTiles-${name}-delete-btn`,
 										)}
 										disabled={
-											!configStore.isEngineOperationAvailable(
+											!isEngineOperationAvailable(
 												type,
 												"delete",
 											)

@@ -1,5 +1,5 @@
 import { ChevronRightIcon } from "lucide-react";
-import { Link, Navigate } from "react-router-dom";
+import { Link, Navigate } from "react-router";
 import { InsightProvider } from "@semoss/sdk/react";
 import {
 	Breadcrumb,
@@ -10,7 +10,10 @@ import {
 	BreadcrumbSeparator,
 } from "@semoss/ui/next";
 import { NavbarHeader, NavbarLeft } from "@/components/shared";
-import { GuardrailWorkbench } from "@/components/workbench";
+import {
+	GUARDRAIL_WORKBENCH_COMPONENTS,
+	GuardrailWorkbench,
+} from "@/components/workbench";
 import { WorkbenchProvider } from "@/contexts";
 import { useEngine } from "@/hooks";
 
@@ -23,7 +26,7 @@ export const GuardrailWorkbenchPage = () => {
 
 	return (
 		<InsightProvider>
-			<WorkbenchProvider id={engine.engine_id}>
+			<WorkbenchProvider components={GUARDRAIL_WORKBENCH_COMPONENTS}>
 				<NavbarLeft>
 					<NavbarHeader logo={null} />
 					<Breadcrumb>

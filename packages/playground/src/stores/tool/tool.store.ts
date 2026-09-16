@@ -12,6 +12,9 @@ import type {
 } from "@/types";
 import { getToolAppId, getToolEngineId } from "@/utility/mcp-utils";
 import { decideAgentToolAction } from "../message/agent-harness";
+// direct, not through the barrel: these are plain constants, and the barrel
+// re-enters this module
+import { ROOM_PANEL_TYPES } from "../room/room-sidebar";
 
 /**
  * Build a synthetic toolCall payload for server tools (e.g. provider-side
@@ -57,10 +60,18 @@ export class ToolStore {
 	id: string;
 
 	/**
-	 * Id of the node
+	 * What identifies this tool's sidebar panel.
+	 *
+	 * The dock mints its own instance ids, so a tool is no longer found by
+	 * parsing a `tool--<id>` node id back apart: the panel's config *is* the
+	 * identity, and the blueprint's `matches` compares `toolId`.
 	 */
-	get nodeId() {
-		return `tool--${this.id}`;
+	get panelConfig() {
+		return {
+			app: getToolAppId(this.json._meta),
+			message: this.toolCall.message?.id,
+			toolId: this.json.id,
+		};
 	}
 
 	/**
@@ -373,17 +384,11 @@ export class ToolStore {
 			// noop. processed by component
 		} else if (this.display === "sidebar") {
 			// Default to sidebar
-			this.room.addSidebarNode(this.nodeId, {
-				type: "tab",
-				name: this.displayName,
-				component: "room-tool",
-				config: {
-					app: getToolAppId(this.json._meta),
-					message: this.toolCall.message?.id,
-					toolId: this.json.id,
-				},
-				enableClose: true,
-			});
+			this.room.openSidebarPanel(
+				ROOM_PANEL_TYPES.TOOL,
+				this.panelConfig,
+				this.displayName,
+			);
 		} else if (this.display === "hidden") {
 			// noop
 		}
@@ -401,7 +406,10 @@ export class ToolStore {
 		if (this.display === "inline") {
 			// noop. processed by component
 		} else if (this.display === "sidebar") {
-			this.room.removeSidebarNode(this.nodeId);
+			this.room.closeSidebarPanel(
+				ROOM_PANEL_TYPES.TOOL,
+				this.panelConfig,
+			);
 		} else if (this.display === "hidden") {
 			// noop
 		}
