@@ -4,6 +4,7 @@ import type {
 	AutomationRunDetail,
 } from "../domain/automation.types";
 import type { AutomationInspectorSnapshot } from "../domain/automation-inspector";
+import type { N8nImportConversionModel } from "../domain/n8n-import-adapter";
 import type { AutomationCanvasHandle } from "./canvas-editor/automation-canvas";
 import { AutomationCanvas } from "./canvas-editor/automation-canvas-loader";
 import { InspectorTab } from "./canvas-editor/tabs/inspector-tab";
@@ -15,6 +16,7 @@ import {
 export interface AutomationWorkbenchContextValue {
 	appId: string;
 	readOnly: boolean;
+	conversionModel?: N8nImportConversionModel;
 	canvasRef: React.RefObject<AutomationCanvasHandle | null>;
 	agentRunAutomationUpdate: AutomationRunDetail | null;
 	onAgentRunTrace: (trace: AutomationNodeTrace | null) => void;
@@ -49,6 +51,7 @@ export const AutomationEditorPanel = () => {
 			ref={context.canvasRef}
 			appId={context.appId}
 			readOnly={context.readOnly}
+			conversionModel={context.conversionModel}
 			onViewAgentRun={context.onAgentRunTrace}
 			externalRunUpdate={context.agentRunAutomationUpdate}
 			onTraceChange={context.onTraceChange}

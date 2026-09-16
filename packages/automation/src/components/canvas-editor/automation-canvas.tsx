@@ -82,7 +82,7 @@ import type {
 } from "../../domain/automation.types";
 import {
 	downloadAutomationExport,
-	parseAutomationImportFile,
+	parseAutomationImportFileAsync,
 } from "../../domain/automation-import-export";
 import type {
 	AutomationInspectorAction,
@@ -103,6 +103,7 @@ import {
 	getCanvasNodeSources,
 	validateCanvasWorkflowNode,
 } from "../../domain/automation-workflow-adapter";
+import type { N8nImportConversionModel } from "../../domain/n8n-import-adapter";
 import { OnboardingTour } from "../form-editor/onboarding-tour";
 import { AddNodeMenu } from "./add-node-menu";
 import { AutomationDockLayout } from "./automation-dock-layout";
@@ -267,6 +268,8 @@ export interface AutomationCanvasProps {
 	appId: string;
 	/** Prevents graph and configuration changes when true. */
 	readOnly?: boolean;
+	/** Optional host-owned LLM fallback for unsupported n8n import nodes. */
+	conversionModel?: N8nImportConversionModel;
 	/** Optional MCP host mode for the standalone Automation surface. */
 	mcpMode?: "edit" | "create" | "trigger" | null;
 	/** Tool context supplied when the canvas is hosted by Playground. */
@@ -522,6 +525,7 @@ export const AutomationCanvasContent = forwardRef<
 	{
 		appId,
 		readOnly = false,
+		conversionModel,
 		mcpMode,
 		mcpContext,
 		onViewAgentRun,
@@ -606,6 +610,7 @@ export const AutomationCanvasContent = forwardRef<
 		null,
 	);
 	const importFileInputRef = useRef<HTMLInputElement>(null);
+	const [isImporting, setIsImporting] = useState(false);
 	const [pendingImport, setPendingImport] = useState<{
 		steps: AutomationNode[];
 		edges: AutomationEdge[];
@@ -1522,38 +1527,45 @@ export const AutomationCanvasContent = forwardRef<
 
 	const handleImportFile = useCallback(
 		async (file: File) => {
-			let parsed: ReturnType<typeof parseAutomationImportFile>;
+			setIsImporting(true);
 			try {
-				parsed = parseAutomationImportFile(await file.text());
+				const parsed = await parseAutomationImportFileAsync(
+					await file.text(),
+					{
+						conversionModel,
+					},
+				);
+				const canvasDoc = canvasDocumentFromWorkflow(
+					parsed.document,
+					parsed.nodeSources,
+				);
+				const importPayload = {
+					steps: canvasDoc.steps,
+					edges: canvasDoc.edges,
+					description: canvasDoc.description,
+					triggerBindings: canvasDoc.triggerBindings,
+					warnings: parsed.warnings,
+				};
+				const isCurrentGraphEmpty =
+					steps.every(
+						(step) => step.workflowType === "trigger.start",
+					) && graphEdges.length === 0;
+				if (isCurrentGraphEmpty) {
+					applyImportedWorkflow(importPayload);
+				} else {
+					setPendingImport(importPayload);
+				}
 			} catch (error) {
 				toast.error(
 					error instanceof Error
 						? error.message
 						: "Unable to import this file.",
 				);
-				return;
-			}
-			const canvasDoc = canvasDocumentFromWorkflow(
-				parsed.document,
-				parsed.nodeSources,
-			);
-			const importPayload = {
-				steps: canvasDoc.steps,
-				edges: canvasDoc.edges,
-				description: canvasDoc.description,
-				triggerBindings: canvasDoc.triggerBindings,
-				warnings: parsed.warnings,
-			};
-			const isCurrentGraphEmpty =
-				steps.every((step) => step.workflowType === "trigger.start") &&
-				graphEdges.length === 0;
-			if (isCurrentGraphEmpty) {
-				applyImportedWorkflow(importPayload);
-			} else {
-				setPendingImport(importPayload);
+			} finally {
+				setIsImporting(false);
 			}
 		},
-		[applyImportedWorkflow, graphEdges, steps],
+		[applyImportedWorkflow, conversionModel, graphEdges, steps],
 	);
 
 	const handleExportWorkflow = useCallback(() => {
@@ -2638,6 +2650,19 @@ export const AutomationCanvasContent = forwardRef<
 									<div
 										className={`absolute top-4 right-4 z-30 items-center gap-2 ${(readOnly && mcpMode !== "trigger") || viewingHistory ? "hidden" : "flex"}`}
 									>
+										{isImporting && (
+											<div
+												className="flex items-center gap-1.5 rounded border bg-background px-2 py-1 text-muted-foreground text-xs shadow-sm"
+												aria-live="polite"
+												aria-busy="true"
+											>
+												<Loader2
+													className="size-3.5 animate-spin"
+													aria-hidden="true"
+												/>
+												Importing workflow...
+											</div>
+										)}
 										{!readOnly && mcpMode !== "trigger" && (
 											<div data-tour="import-export">
 												<input
@@ -2664,6 +2689,9 @@ export const AutomationCanvasContent = forwardRef<
 															size="sm"
 															variant="outline"
 															className="bg-background shadow-sm"
+															disabled={
+																isImporting
+															}
 															aria-label="Import or export this automation"
 														>
 															<MoreHorizontal className="h-3.5 w-3.5" />

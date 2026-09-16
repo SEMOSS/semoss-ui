@@ -2,16 +2,21 @@ import {
 	ActivityIcon,
 	BracesIcon,
 	ChevronRightIcon,
+	CopyIcon,
 	FileCode2Icon,
 	FolderTreeIcon,
+	Minus as MinusIcon,
 	PanelRightIcon,
+	Plus as PlusIcon,
 	SettingsIcon,
 	Share2,
 } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import {
+	createContext,
 	Suspense,
 	useCallback,
+	useContext,
 	useEffect,
 	useMemo,
 	useRef,
@@ -20,25 +25,25 @@ import {
 import { Link } from "react-router";
 import {
 	AgentRunDialog,
+	AutomationCanvas,
 	type AutomationCanvasHandle,
-	AutomationEditorPanel,
-	AutomationInspectorPanel,
 	type AutomationInspectorSnapshot,
 	type AutomationNodeTrace,
-	AutomationOutputModal,
 	type AutomationRunDetail,
-	AutomationTracePanel,
 	type AutomationTraceSnapshot,
-	AutomationWorkbenchContext,
-	type AutomationWorkbenchContextValue,
-	type N8nImportConversionInput,
-	type N8nImportConversionResult,
-} from "@semoss/automation";
+	InspectorTab,
+	RunsTab,
+} from "@semoss/automation-workspace";
 import { FILE_PANEL_COMPONENTS } from "@semoss/panels";
 import type { Role } from "@semoss/sdk";
-import { runPixel } from "@semoss/sdk";
 import { InsightProvider } from "@semoss/sdk/react";
-import { type MCPConfig, MonacoEditor } from "@semoss/shared";
+import {
+	JsonViewer,
+	type MCPConfig,
+	MonacoEditor,
+	PopoutModal,
+	SandpackHtmlPreview,
+} from "@semoss/shared";
 import {
 	Breadcrumb,
 	BreadcrumbItem,
@@ -52,6 +57,7 @@ import {
 	DialogFooter,
 	DialogHeader,
 	DialogTitle,
+	Markdown,
 	Tooltip,
 	TooltipContent,
 	TooltipTrigger,
@@ -64,12 +70,10 @@ import {
 	type WorkbenchPanelConfigAny,
 } from "@semoss/workbench";
 import { ASSISTANT_PANEL } from "@/components/assistant";
-import { stripMcpToolAlias } from "@/components/assistant/assistant-tools";
 import { ProjectDetailTabs } from "@/components/project";
 import { ShareOverlay } from "@/components/ui";
 import { AssistantStoreProvider, WorkbenchProvider } from "@/contexts";
 import { useAssistantStore, useProject } from "@/hooks";
-import type { BuildTool } from "@/stores/assistant";
 import { WORKBENCH_COMPONENTS } from "@/stores/workbench";
 import { NavbarHeader, NavbarLeft, NavbarRight } from "../../shared";
 import { AutomationSettingsToggle } from "./automation-settings-toggle";
@@ -80,10 +84,19 @@ const AUTOMATION_MUTATION_TOOLS = new Set([
 	"UpdateAutomationCustomStep",
 	"RemoveAutomationStep",
 ]);
+/** Defensive cap on a run-trace-supplied Assistant draft; the prompt itself is already
+ * bounded when built, this only guards against an unexpectedly large value. */
 const MAX_ASSISTANT_DRAFT_LENGTH = 8000;
+/** Keys that may hold a single changed step/node id in a completed tool's arguments. */
 const SINGLE_STEP_ID_KEYS = ["stepId", "nodeId", "step_id", "node_id", "id"];
+/** Keys that may hold a list of changed step/node ids in a completed tool's arguments. */
 const STEP_ID_LIST_KEYS = ["stepIds", "nodeIds", "step_ids", "node_ids", "ids"];
 
+/**
+ * Best-effort extraction of the step/node id(s) a completed Assistant tool call changed, read
+ * from the tool's arguments. The actual tool argument schema isn't guaranteed, so this only
+ * trusts a handful of common key names and never assumes an id is present.
+ */
 function extractChangedStepIds(
 	toolArguments: Record<string, unknown> | undefined,
 ): string[] {
@@ -91,13 +104,17 @@ function extractChangedStepIds(
 	const ids = new Set<string>();
 	for (const key of SINGLE_STEP_ID_KEYS) {
 		const value = toolArguments[key];
-		if (typeof value === "string" && value.length > 0) ids.add(value);
+		if (typeof value === "string" && value.length > 0) {
+			ids.add(value);
+		}
 	}
 	for (const key of STEP_ID_LIST_KEYS) {
 		const value = toolArguments[key];
 		if (Array.isArray(value)) {
 			for (const item of value) {
-				if (typeof item === "string" && item.length > 0) ids.add(item);
+				if (typeof item === "string" && item.length > 0) {
+					ids.add(item);
+				}
 			}
 		}
 	}
@@ -204,70 +221,131 @@ interface AutomationWorkbenchProps {
 	onShare: () => void;
 }
 
+/**
+ * Data for the Editor/Inspector/Trace dock panels, read via context instead of closures so
+ * `components[...].content` (rendered by Workbench as `<Content />`, i.e. as a component type)
+ * never changes identity when trace/inspector state ticks — an identity change there would
+ * unmount and remount the whole panel subtree every tick instead of just re-rendering it.
+ */
+interface AutomationWorkbenchContextValue {
+	appId: string;
+	readOnly: boolean;
+	canvasRef: React.RefObject<AutomationCanvasHandle | null>;
+	agentRunAutomationUpdate: AutomationRunDetail | null;
+	onAgentRunTrace: (trace: AutomationNodeTrace | null) => void;
+	onTraceChange: (snapshot: AutomationTraceSnapshot) => void;
+	onInspectorChange: (snapshot: AutomationInspectorSnapshot) => void;
+	onHistoryChanged: () => void;
+	inspectorSnapshot: AutomationInspectorSnapshot | null;
+	traceSnapshot: AutomationTraceSnapshot | null;
+	historyRefreshToken: number;
+	onOpenOutput: (output: string) => void;
+	onAskAssistant: (prompt: string) => void;
+	onOpenPythonEditor: (nodeId: string, source: string) => void;
+}
+
+const AutomationWorkbenchContext =
+	createContext<AutomationWorkbenchContextValue | null>(null);
+
+function useAutomationWorkbenchContext(): AutomationWorkbenchContextValue {
+	const context = useContext(AutomationWorkbenchContext);
+	if (!context) {
+		throw new Error(
+			"Automation dock panels must render within AutomationWorkbench.",
+		);
+	}
+	return context;
+}
+
+const AutomationEditorPanel: WorkbenchComponent = () => {
+	const ctx = useAutomationWorkbenchContext();
+	return (
+		<AutomationCanvas
+			ref={ctx.canvasRef}
+			appId={ctx.appId}
+			readOnly={ctx.readOnly}
+			onViewAgentRun={ctx.onAgentRunTrace}
+			externalRunUpdate={ctx.agentRunAutomationUpdate}
+			onTraceChange={ctx.onTraceChange}
+			onInspectorChange={ctx.onInspectorChange}
+			onHistoryChanged={ctx.onHistoryChanged}
+		/>
+	);
+};
+
+const AutomationInspectorPanel: WorkbenchComponent = () => {
+	const ctx = useAutomationWorkbenchContext();
+	const snapshot = ctx.inspectorSnapshot;
+	return (
+		<InspectorTab
+			appId={ctx.appId}
+			description={snapshot?.description ?? ""}
+			devMode={snapshot?.devMode ?? false}
+			editingStep={snapshot?.editingStep ?? null}
+			onPrepareSchedule={() =>
+				ctx.canvasRef.current?.prepareSchedule() ??
+				Promise.resolve(false)
+			}
+			upstreamVars={snapshot?.upstreamVars ?? []}
+			stepRunStatus={snapshot?.stepRunStatus}
+			stepRunError={snapshot?.stepRunError}
+			stepRunOutput={snapshot?.stepRunOutput}
+			stepRunTrace={snapshot?.stepRunTrace}
+			readOnly={ctx.readOnly || Boolean(snapshot?.readOnly)}
+			onDescriptionChange={(description) =>
+				ctx.canvasRef.current?.applyInspectorAction({
+					type: "update-description",
+					description,
+				})
+			}
+			onClose={() =>
+				ctx.canvasRef.current?.applyInspectorAction({ type: "close" })
+			}
+			onUpdate={(step) =>
+				ctx.canvasRef.current?.applyInspectorAction({
+					type: "update-step",
+					step,
+				})
+			}
+			onDelete={(stepId) =>
+				ctx.canvasRef.current?.applyInspectorAction({
+					type: "delete-step",
+					stepId,
+				})
+			}
+			onOpenPythonEditor={ctx.onOpenPythonEditor}
+		/>
+	);
+};
+
+const AutomationTracePanel: WorkbenchComponent = () => {
+	const ctx = useAutomationWorkbenchContext();
+	const snapshot = ctx.traceSnapshot;
+	return (
+		<RunsTab
+			appId={ctx.appId}
+			refreshToken={ctx.historyRefreshToken}
+			running={snapshot?.running ?? false}
+			latestRunStatus={snapshot?.latestRunStatus ?? null}
+			aiRunSummary={snapshot?.aiRunSummary ?? null}
+			generatingAiSummary={snapshot?.generatingAiSummary ?? false}
+			steps={snapshot?.steps ?? []}
+			results={snapshot?.results ?? []}
+			executedDefinition={snapshot?.executedDefinition ?? null}
+			onDismiss={() => undefined}
+			onOpenOutput={ctx.onOpenOutput}
+			onAskAssistant={ctx.onAskAssistant}
+			onViewRun={(run) => ctx.canvasRef.current?.viewHistoricalRun(run)}
+			onExitHistoricalView={() =>
+				ctx.canvasRef.current?.exitHistoricalView()
+			}
+		/>
+	);
+};
+
 const AutomationSettingsPanel: WorkbenchComponent = () => (
 	<ProjectDetailTabs tabs={SETTINGS_TABS} />
 );
-
-function parseConversionModelOutput(
-	output: unknown,
-): N8nImportConversionResult {
-	let candidate = output;
-	for (let depth = 0; depth < 3; depth += 1) {
-		if (typeof candidate === "string") {
-			const normalized = candidate
-				.trim()
-				.replace(/^```(?:json)?\s*/i, "")
-				.replace(/\s*```$/i, "")
-				.trim();
-			candidate = JSON.parse(normalized);
-			continue;
-		}
-		if (
-			candidate &&
-			typeof candidate === "object" &&
-			!Array.isArray(candidate)
-		) {
-			const object = candidate as Record<string, unknown>;
-			if (Array.isArray(object.conversions)) break;
-			const nested = object.response ?? object.output;
-			if (nested !== undefined) {
-				candidate = nested;
-				continue;
-			}
-		}
-		break;
-	}
-	if (
-		!candidate ||
-		typeof candidate !== "object" ||
-		!Array.isArray((candidate as { conversions?: unknown }).conversions)
-	) {
-		throw new Error("The conversion model returned an invalid response.");
-	}
-	return candidate as N8nImportConversionResult;
-}
-
-async function getFirstTextGenerationModelId(): Promise<string> {
-	const response = await runPixel(
-		'META | MyEngines(metaKeys=[], metaFilters=[{"tag":"text-generation"}], engineTypes=["MODEL"]);',
-	);
-	if (response.errors.length > 0) {
-		throw new Error(response.errors.join("\n"));
-	}
-	const output = response.pixelReturn?.[0]?.output;
-	if (Array.isArray(output)) {
-		const firstModel = output[0];
-		if (
-			firstModel &&
-			typeof firstModel === "object" &&
-			typeof (firstModel as { engine_id?: unknown }).engine_id ===
-				"string"
-		) {
-			return (firstModel as { engine_id: string }).engine_id;
-		}
-	}
-	throw new Error("No text-generation model is available for conversion.");
-}
 
 const AUTOMATION_COMPONENTS: Record<string, WorkbenchPanelConfigAny> = {
 	[EDITOR]: {
@@ -341,6 +419,239 @@ const AUTOMATION_COMPONENTS: Record<string, WorkbenchPanelConfigAny> = {
 	},
 };
 
+const AutomationOutputModal = ({
+	output,
+	onClose,
+}: {
+	output: string | null;
+	onClose: () => void;
+}) =>
+	output === null ? null : (
+		<AutomationOutputModalContent output={output} onClose={onClose} />
+	);
+
+const AutomationOutputModalContent = ({
+	output,
+	onClose,
+}: {
+	output: string | null;
+	onClose: () => void;
+}) => {
+	const [raw, setRaw] = useState(false);
+	const [expandVersion, setExpandVersion] = useState(0);
+	const [expandAll, setExpandAll] = useState<boolean | undefined>(undefined);
+	const value = output ?? "";
+	const parsed = useMemo(() => {
+		try {
+			return JSON.parse(value);
+		} catch {
+			return null;
+		}
+	}, [value]);
+	const formatted = parsed === null ? value : JSON.stringify(parsed, null, 2);
+	const isObjectOutput = parsed !== null && typeof parsed === "object";
+	const isTable = isObjectOutput && isTabularArray(parsed);
+	const isMarkdown = !isObjectOutput && !raw && looksLikeMarkdown(value);
+	const markdownText = isMarkdown ? normalizeForMarkdown(value) : "";
+	const htmlText = !isObjectOutput ? normalizeForMarkdown(value) : "";
+	const isHtml = !raw && looksLikeHtml(htmlText);
+
+	return (
+		<PopoutModal
+			title="Result"
+			meta={`${formatted.split("\n").length} lines`}
+			actions={
+				<div className="inline-flex items-center gap-1">
+					<div className="inline-flex overflow-hidden rounded border border-current/30 font-medium text-[10px]">
+						<button
+							type="button"
+							className={`px-1.5 py-0 ${!raw ? "bg-current/15" : "hover:bg-current/10"}`}
+							onClick={() => setRaw(false)}
+						>
+							FORMATTED
+						</button>
+						<button
+							type="button"
+							className={`border-current/30 border-l px-1.5 py-0 ${raw ? "bg-current/15" : "hover:bg-current/10"}`}
+							onClick={() => setRaw(true)}
+						>
+							RAW
+						</button>
+					</div>
+					{!raw && isObjectOutput && (
+						<div className="inline-flex overflow-hidden rounded border border-current/30">
+							<Tooltip>
+								<TooltipTrigger asChild>
+									<button
+										type="button"
+										className="flex items-center px-1 py-0.5"
+										onClick={() => {
+											setExpandAll(true);
+											setExpandVersion(
+												(version) => version + 1,
+											);
+										}}
+										aria-label="Expand all"
+									>
+										<PlusIcon className="size-3" />
+									</button>
+								</TooltipTrigger>
+								<TooltipContent>Expand all</TooltipContent>
+							</Tooltip>
+							<Tooltip>
+								<TooltipTrigger asChild>
+									<button
+										type="button"
+										className="flex items-center border-current/30 border-l px-1 py-0.5"
+										onClick={() => {
+											setExpandAll(false);
+											setExpandVersion(
+												(version) => version + 1,
+											);
+										}}
+										aria-label="Collapse all"
+									>
+										<MinusIcon className="size-3" />
+									</button>
+								</TooltipTrigger>
+								<TooltipContent>Collapse all</TooltipContent>
+							</Tooltip>
+						</div>
+					)}
+					<Tooltip>
+						<TooltipTrigger asChild>
+							<button
+								type="button"
+								className="rounded p-0.5 text-muted-foreground hover:bg-muted hover:text-foreground"
+								onClick={() =>
+									void navigator.clipboard.writeText(
+										raw ? value : formatted,
+									)
+								}
+								aria-label="Copy output"
+							>
+								<CopyIcon className="size-3.5" />
+							</button>
+						</TooltipTrigger>
+						<TooltipContent>Copy output</TooltipContent>
+					</Tooltip>
+				</div>
+			}
+			onClose={onClose}
+		>
+			{!raw && isTable ? (
+				<DataTable rows={parsed as Record<string, unknown>[]} />
+			) : !raw && isObjectOutput ? (
+				<JsonViewer
+					value={parsed}
+					forceVersion={expandVersion}
+					forceOpen={expandAll}
+				/>
+			) : !raw && isMarkdown ? (
+				<div className="prose prose-sm dark:prose-invert max-w-none">
+					<Markdown>{markdownText}</Markdown>
+				</div>
+			) : isHtml ? (
+				<div className="h-[70vh] min-h-0">
+					<SandpackHtmlPreview html={htmlText} forceFullHeight />
+				</div>
+			) : (
+				<pre className="whitespace-pre-wrap break-all font-mono text-foreground text-sm">
+					{raw ? value : formatted}
+				</pre>
+			)}
+		</PopoutModal>
+	);
+};
+
+const MARKDOWN_PATTERNS = [
+	/^#{1,6}\s/m,
+	/\|.+\|.+\|/m,
+	/^[-*+]\s/m,
+	/^\d+\.\s/m,
+	/```[\s\S]*?```/,
+	/\*\*.+?\*\*/,
+	/\[.+?\]\(.+?\)/,
+];
+
+function looksLikeMarkdown(text: string): boolean {
+	if (!text || text.length < 4) return false;
+	return MARKDOWN_PATTERNS.some((p) => p.test(text));
+}
+
+function looksLikeHtml(text: string): boolean {
+	return /^\s*(?:<!doctype\s+html\b|<html\b)/i.test(text);
+}
+
+function normalizeForMarkdown(text: string): string {
+	let s = text;
+	if (s.startsWith('"') && s.endsWith('"')) {
+		try {
+			const parsed = JSON.parse(s);
+			if (typeof parsed === "string") s = parsed;
+		} catch {
+			s = s.slice(1, -1);
+		}
+	}
+	if (s.includes("\\n")) {
+		s = s.replace(/\\n/g, "\n");
+	}
+	return s;
+}
+
+function isTabularArray(value: unknown): boolean {
+	if (!Array.isArray(value) || value.length === 0) return false;
+	if (typeof value[0] !== "object" || value[0] === null) return false;
+	return (
+		Object.keys(value[0]).length > 0 &&
+		value.every(
+			(item) =>
+				typeof item === "object" &&
+				item !== null &&
+				!Array.isArray(item),
+		)
+	);
+}
+
+function DataTable({ rows }: { rows: Record<string, unknown>[] }) {
+	const columns = Object.keys(rows[0]);
+	return (
+		<div className="overflow-auto">
+			<table className="w-full border-collapse text-xs">
+				<thead>
+					<tr className="border-b bg-muted/50">
+						{columns.map((col) => (
+							<th
+								key={col}
+								className="whitespace-nowrap px-2 py-1.5 text-left font-semibold text-muted-foreground"
+							>
+								{col}
+							</th>
+						))}
+					</tr>
+				</thead>
+				<tbody>
+					{rows.map((row, i) => (
+						<tr
+							key={`row-${i}-${String(row[columns[0]] ?? i)}`}
+							className="border-b last:border-0 hover:bg-muted/30"
+						>
+							{columns.map((col) => (
+								<td
+									key={col}
+									className="whitespace-nowrap px-2 py-1 text-foreground"
+								>
+									{String(row[col] ?? "")}
+								</td>
+							))}
+						</tr>
+					))}
+				</tbody>
+			</table>
+		</div>
+	);
+}
+
 export const AutomationWorkbench = observer(
 	({
 		appId,
@@ -357,47 +668,6 @@ export const AutomationWorkbench = observer(
 		);
 		const workbenchId = readOnly ? `${appId}--read-only` : appId;
 		const assistantStore = useAssistantStore(workbenchId);
-		const conversionModel = useCallback(
-			async (
-				input: N8nImportConversionInput,
-			): Promise<N8nImportConversionResult> => {
-				const engineId =
-					assistantStore.getState().model?.engine_id ??
-					(await getFirstTextGenerationModelId());
-				const prompt = JSON.stringify({
-					instruction:
-						"Convert the unsupported n8n nodes into SEMOSS automation nodes. Return JSON only. Do not change node IDs or connections. Omit a conversion when no safe mapping exists; the caller will retain a Python placeholder.",
-					nodes: input.nodes,
-					workflow: {
-						name: input.workflow.name,
-						connections: input.workflow.connections,
-					},
-					availableNodeTypes: input.availableNodeTypes,
-					responseShape: {
-						conversions: [
-							{
-								nodeId: "string",
-								type: "supported SEMOSS node type",
-								config: "object",
-								codeMode: "generated or custom",
-								pythonSource: "optional string",
-								label: "optional string",
-							},
-						],
-					},
-				});
-				const response = await runPixel(
-					`LLM(engine=${JSON.stringify(engineId)}, command=["<encode>${prompt}</encode>"]);`,
-				);
-				if (response.errors.length > 0) {
-					throw new Error(response.errors.join("\n"));
-				}
-				return parseConversionModelOutput(
-					response.pixelReturn?.[0]?.output,
-				);
-			},
-			[assistantStore],
-		);
 		const setAssistantDraft = assistantStore.getState().setDraft;
 		const canvasRef = useRef<AutomationCanvasHandle>(null);
 		const [traceSnapshot, setTraceSnapshot] =
@@ -469,11 +739,10 @@ export const AutomationWorkbench = observer(
 			[],
 		);
 		const handleAutomationToolCompleted = useCallback(
-			(tool: BuildTool) => {
-				const toolName = stripMcpToolAlias(tool.name, tool.metadata);
-				if (AUTOMATION_MUTATION_TOOLS.has(toolName)) {
+			(tool: { name: string; arguments?: Record<string, unknown> }) => {
+				if (AUTOMATION_MUTATION_TOOLS.has(tool.name)) {
 					notifyAutomationChanged({
-						toolName,
+						toolName: tool.name,
 						changedStepIds: extractChangedStepIds(tool.arguments),
 					});
 				}
@@ -529,7 +798,6 @@ export const AutomationWorkbench = observer(
 			() => ({
 				appId,
 				readOnly,
-				conversionModel,
 				canvasRef,
 				agentRunAutomationUpdate,
 				onAgentRunTrace: setAgentRunTrace,
@@ -546,7 +814,6 @@ export const AutomationWorkbench = observer(
 			[
 				appId,
 				agentRunAutomationUpdate,
-				conversionModel,
 				handleAskAssistant,
 				handleHistoryChanged,
 				handleInspectorChange,

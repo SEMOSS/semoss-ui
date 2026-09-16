@@ -26,7 +26,10 @@ import type {
 	AutomationWorkflowNodeType,
 	TriggerBinding,
 } from "./automation-workflow.types";
-import type { AutomationNodeSources } from "./automation-workflow-adapter";
+import {
+	type AutomationNodeSources,
+	validateAutomationOutputVariable,
+} from "./automation-workflow-adapter";
 
 export interface N8nConnectionTarget {
 	node: string;
@@ -65,6 +68,29 @@ export interface N8nImportResult {
 	warnings: string[];
 }
 
+export interface N8nImportConversionInput {
+	nodes: N8nNode[];
+	workflow: N8nWorkflow;
+	availableNodeTypes: readonly AutomationWorkflowNodeType[];
+}
+
+export interface N8nImportConversion {
+	nodeId: string;
+	type: AutomationWorkflowNodeType;
+	config: AutomationWorkflowNodeConfig;
+	codeMode: "generated" | "custom";
+	pythonSource?: string;
+	label?: string;
+}
+
+export interface N8nImportConversionResult {
+	conversions: N8nImportConversion[];
+}
+
+export type N8nImportConversionModel = (
+	input: N8nImportConversionInput,
+) => Promise<N8nImportConversionResult>;
+
 /** Non-step nodes dropped without a placeholder or warning: sticky notes, and sub-resource nodes wired via a non-"main" connection (e.g. a chat model feeding an agent). */
 const IGNORED_N8N_TYPES = new Set([
 	"n8n-nodes-base.stickyNote",
@@ -81,12 +107,14 @@ const OPERATOR_SYMBOLS: Record<string, string> = {
 };
 
 function sanitizeVarName(name: string): string {
-	return (
+	const sanitized =
 		name
 			.toLowerCase()
 			.replace(/[^a-z0-9]+/g, "_")
-			.replace(/^_+|_+$/g, "") || "value"
-	);
+			.replace(/^_+|_+$/g, "") || "value";
+	return validateAutomationOutputVariable(sanitized)
+		? `n8n_${sanitized}`
+		: sanitized;
 }
 
 /** Translates a subset of n8n's `{{ }}` expression syntax to Python; unknown expressions become `None`. */
@@ -311,20 +339,72 @@ function mapNode(
 			warnings.push(
 				`"${n8nNode.name}": no mapping for n8n node type "${n8nNode.type}" — added as a placeholder Python step, fill it in manually.`,
 			);
-			const pythonSource = [
-				"def run(scope):",
-				`    raise NotImplementedError(${JSON.stringify(`Port n8n node "${n8nNode.name}" (${n8nNode.type}) to Python`)})`,
-				"",
-			].join("\n");
-			return {
-				type: "developer.python",
-				config: { pythonSource },
-				codeMode: "custom",
-				pythonSource,
-				label: `\u26a0\ufe0f ${n8nNode.name}`,
-			};
+			return placeholderForNode(n8nNode);
 		}
 	}
+}
+
+const AUTOMATION_NODE_TYPES: readonly AutomationWorkflowNodeType[] = [
+	"trigger.start",
+	"database.query",
+	"database.insert",
+	"database.update",
+	"model.chat",
+	"model.embeddings",
+	"model.vision",
+	"model.ner",
+	"storage.list",
+	"storage.read",
+	"storage.upload",
+	"storage.download",
+	"storage.delete",
+	"vector.search",
+	"vector.add",
+	"vector.delete",
+	"function.execute",
+	"agent.run",
+	"app.pixel",
+	"control.wait",
+	"control.if",
+	"developer.python",
+];
+
+const DIRECTLY_MAPPED_N8N_TYPES = new Set([
+	"n8n-nodes-base.manualTrigger",
+	"n8n-nodes-base.wait",
+	"n8n-nodes-base.if",
+	"n8n-nodes-base.set",
+	"@n8n/n8n-nodes-langchain.agent",
+]);
+
+function isValidConversionResult(
+	result: N8nImportConversion,
+): result is N8nImportConversion {
+	return (
+		!!result &&
+		typeof result === "object" &&
+		AUTOMATION_NODE_TYPES.includes(result.type) &&
+		!!result.config &&
+		typeof result.config === "object" &&
+		(result.codeMode === "generated" || result.codeMode === "custom") &&
+		(result.pythonSource === undefined ||
+			typeof result.pythonSource === "string")
+	);
+}
+
+function placeholderForNode(node: N8nNode): MappedNode {
+	const pythonSource = [
+		"def run(scope):",
+		`    raise NotImplementedError(${JSON.stringify(`Port n8n node "${node.name}" (${node.type}) to Python`)})`,
+		"",
+	].join("\n");
+	return {
+		type: "developer.python",
+		config: { pythonSource },
+		codeMode: "custom",
+		pythonSource,
+		label: `\u26a0\ufe0f ${node.name}`,
+	};
 }
 
 function sourcePortFor(n8nNode: N8nNode, outputIndex: number): string {
@@ -440,6 +520,92 @@ export function n8nWorkflowToAutomationDocument(
 		nodeSources,
 		warnings,
 	};
+}
+
+/**
+ * Converts an n8n workflow with an optional model fallback for unsupported nodes.
+ * Deterministic mappings run first; the model can only replace placeholder nodes.
+ */
+export async function n8nWorkflowToAutomationDocumentWithModel(
+	workflow: N8nWorkflow,
+	model: N8nImportConversionModel,
+): Promise<N8nImportResult> {
+	const result = n8nWorkflowToAutomationDocument(workflow);
+	const unsupportedNodes = workflow.nodes.filter(
+		(node) =>
+			!DIRECTLY_MAPPED_N8N_TYPES.has(node.type) &&
+			!mergeNamesForWorkflow(workflow).has(node.name) &&
+			!IGNORED_N8N_TYPES.has(node.type),
+	);
+
+	if (unsupportedNodes.length === 0) return result;
+
+	let modelResult: N8nImportConversionResult;
+	try {
+		modelResult = await model({
+			nodes: unsupportedNodes,
+			workflow,
+			availableNodeTypes: AUTOMATION_NODE_TYPES,
+		});
+	} catch (error) {
+		result.warnings.push(
+			`Model conversion failed (${error instanceof Error ? error.message : "unknown error"}); kept placeholder Python steps for unsupported nodes.`,
+		);
+		return result;
+	}
+
+	if (!modelResult || !Array.isArray(modelResult.conversions)) {
+		result.warnings.push(
+			"Model conversion returned an invalid batch; kept placeholder Python steps for unsupported nodes.",
+		);
+		return result;
+	}
+
+	const nodesById = new Map(unsupportedNodes.map((node) => [node.id, node]));
+	for (const converted of modelResult.conversions) {
+		const node = nodesById.get(converted.nodeId);
+		if (!node || !isValidConversionResult(converted)) continue;
+		const importedNode = result.document.graph.nodes.find(
+			(candidate) => candidate.id === node.id,
+		);
+		if (!importedNode) continue;
+		const placeholderWarning = `"${node.name}": no mapping for n8n node type "${node.type}" — added as a placeholder Python step, fill it in manually.`;
+		const isPythonFallback = converted.type === "developer.python";
+		result.warnings = result.warnings.filter(
+			(warning) => warning !== placeholderWarning,
+		);
+		Object.assign(importedNode, {
+			type: converted.type,
+			config: converted.config,
+			codeMode: converted.codeMode,
+			label: isPythonFallback
+				? `\u26a0\ufe0f ${converted.label ?? node.name}`.replace(
+						"\u26a0\ufe0f \u26a0\ufe0f ",
+						"\u26a0\ufe0f ",
+					)
+				: (converted.label ?? node.name),
+		});
+		if (converted.pythonSource) {
+			result.nodeSources[node.id] = converted.pythonSource;
+		} else {
+			delete result.nodeSources[node.id];
+		}
+		result.warnings.push(
+			isPythonFallback
+				? `"${node.name}": n8n node type "${node.type}" is not currently supported and was converted to a Python node. Add an equivalent SEMOSS implementation or review and replace the generated Python code.`
+				: `"${node.name}": imported with model-assisted mapping to ${converted.type}.`,
+		);
+	}
+
+	return result;
+}
+
+function mergeNamesForWorkflow(workflow: N8nWorkflow): Set<string> {
+	return new Set(
+		workflow.nodes
+			.filter((node) => node.type === "n8n-nodes-base.merge")
+			.map((node) => node.name),
+	);
 }
 
 /** Parses and shape-validates a raw n8n export before conversion. */

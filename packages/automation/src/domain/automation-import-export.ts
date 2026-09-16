@@ -7,7 +7,9 @@
 import type { AutomationWorkflowDocument } from "./automation-workflow.types";
 import type { AutomationNodeSources } from "./automation-workflow-adapter";
 import {
+	type N8nImportConversionModel,
 	n8nWorkflowToAutomationDocument,
+	n8nWorkflowToAutomationDocumentWithModel,
 	parseN8nWorkflowJson,
 } from "./n8n-import-adapter";
 
@@ -19,6 +21,11 @@ export interface AutomationImportResult {
 	document: AutomationWorkflowDocument;
 	nodeSources: AutomationNodeSources;
 	warnings: string[];
+}
+
+export interface AutomationImportOptions {
+	/** Optional host-owned LLM fallback for unsupported n8n nodes. */
+	conversionModel?: N8nImportConversionModel;
 }
 
 function isNativeAutomationExport(
@@ -66,6 +73,40 @@ export function parseAutomationImportFile(raw: string): AutomationImportResult {
 	}
 	if (isN8nWorkflow(parsed)) {
 		return n8nWorkflowToAutomationDocument(parseN8nWorkflowJson(raw));
+	}
+	throw new Error("File doesn't look like a supported automation export.");
+}
+
+/**
+ * Async import variant. Native files and deterministic n8n mappings remain unchanged;
+ * the optional model is consulted only for unsupported n8n nodes.
+ */
+export async function parseAutomationImportFileAsync(
+	raw: string,
+	options: AutomationImportOptions = {},
+): Promise<AutomationImportResult> {
+	let parsed: unknown;
+	try {
+		parsed = JSON.parse(raw);
+	} catch {
+		throw new Error("File is not valid JSON.");
+	}
+	if (isNativeAutomationExport(parsed)) {
+		const { nodeSources, ...workflowDocument } = parsed;
+		return {
+			document: workflowDocument,
+			nodeSources: nodeSources ?? {},
+			warnings: [],
+		};
+	}
+	if (isN8nWorkflow(parsed)) {
+		const workflow = parseN8nWorkflowJson(raw);
+		return options.conversionModel
+			? n8nWorkflowToAutomationDocumentWithModel(
+					workflow,
+					options.conversionModel,
+				)
+			: n8nWorkflowToAutomationDocument(workflow);
 	}
 	throw new Error("File doesn't look like a supported automation export.");
 }

@@ -26,6 +26,20 @@ export type {
 	AutomationToolContext,
 } from "./domain/automation.types";
 export type {
+	AutomationImportOptions,
+	AutomationImportResult,
+} from "./domain/automation-import-export";
+export {
+	parseAutomationImportFile,
+	parseAutomationImportFileAsync,
+} from "./domain/automation-import-export";
+export type {
 	AutomationInspectorAction,
 	AutomationInspectorSnapshot,
 } from "./domain/automation-inspector";
+export type {
+	N8nImportConversion,
+	N8nImportConversionInput,
+	N8nImportConversionModel,
+	N8nImportConversionResult,
+} from "./domain/n8n-import-adapter";
