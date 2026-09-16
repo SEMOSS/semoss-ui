@@ -28,6 +28,18 @@ export type AutomationNodeSources = Record<string, string>;
 
 const MANUAL_TRIGGER: TriggerBinding = { id: "manual", type: "manual" };
 const PYTHON_IDENTIFIER_PATTERN = /^[A-Za-z_][A-Za-z0-9_]*$/;
+
+// Drops unfinished "Add input" rows so a blank name never reaches the backend save validator.
+function sanitizeTriggerGlobals(value: unknown): AutomationJsonValue {
+	if (!Array.isArray(value)) return value as AutomationJsonValue;
+	return value.filter(
+		(entry) =>
+			entry !== null &&
+			typeof entry === "object" &&
+			typeof (entry as { name?: unknown }).name === "string" &&
+			(entry as { name: string }).name.trim() !== "",
+	) as AutomationJsonValue;
+}
 const PYTHON_KEYWORDS = new Set(
 	"False None True and as assert async await break class continue def del elif else except finally for from global if import in is lambda nonlocal not or pass raise return try while with yield".split(
 		" ",
@@ -658,6 +670,11 @@ export function canvasDocumentToWorkflow({
 			step.workflowConfig ?? structuredClone(definition.defaultConfig),
 		);
 		const { pythonSource: _pythonSource, ...persistedConfig } = config;
+		if (type === "trigger.start") {
+			persistedConfig.globals = sanitizeTriggerGlobals(
+				persistedConfig.globals,
+			);
+		}
 		return {
 			id: step.id,
 			type,
