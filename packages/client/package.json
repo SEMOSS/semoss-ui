@@ -18,7 +18,7 @@
         "@hello-pangea/dnd": "^18.0.1",
         "@hookform/resolvers": "^3.9.0",
         "@mdi/js": "^6.9.96",
-        "@semoss/automation-workspace": "workspace:*",
+        "@semoss/automation": "workspace:*",
         "@semoss/i18n": "workspace:*",
         "@semoss/panels": "workspace:*",
         "@semoss/renderer": "workspace:*",

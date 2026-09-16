@@ -33,7 +33,7 @@ import {
 	type AutomationTraceSnapshot,
 	InspectorTab,
 	RunsTab,
-} from "@semoss/automation-workspace";
+} from "@semoss/automation";
 import { FILE_PANEL_COMPONENTS } from "@semoss/panels";
 import type { Role } from "@semoss/sdk";
 import { InsightProvider } from "@semoss/sdk/react";

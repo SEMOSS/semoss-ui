@@ -18,10 +18,7 @@ const i18nBuilder = new I18nBuilder(clientResources);
 const app = (
 	<React.StrictMode>
 		<InsightProvider>
-			<ThemeProvider
-				defaultTheme="light"
-				storageKey="automation-workspace-theme"
-			>
+			<ThemeProvider defaultTheme="light" storageKey="automation-theme">
 				<I18nextProvider i18n={i18nBuilder.i18n}>
 					<App />
 				</I18nextProvider>

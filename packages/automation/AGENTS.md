@@ -1,4 +1,4 @@
-# AGENTS.md - @semoss/automation-workspace
+# AGENTS.md - @semoss/automation
 
 This document provides context for AI coding assistants working with the SEMOSS Automation
 Workspace system app.
@@ -8,15 +8,15 @@ Workspace system app.
 
 ## Overview
 
-`@semoss/automation-workspace` is a Vite "system app" that renders an automation's steps,
+`@semoss/automation` is a Vite "system app" that renders an automation's steps,
 drives a live sequential run, and exposes a SEMOSS MCP surface for `TriggerAutomation`. It
 depends on `@semoss/sdk` and `@semoss/ui` only; it does **not** depend on `@semoss/client` or
 any of its MobX stores. Its `src/index.ts` barrel is also consumed directly as a normal package
 import — `@semoss/client`'s automation workbench imports `AutomationCanvas`, `InspectorTab`, and
-`RunsTab` straight from `@semoss/automation-workspace` and renders them as sibling dock panels
-(no iframe, no postMessage) — see `packages/client/src/components/automation-workspace/automation-workbench.tsx`.
+`RunsTab` straight from `@semoss/automation` and renders them as sibling dock panels
+(no iframe, no postMessage) — see `packages/client/src/components/automation/automation-workbench.tsx`.
 The same components are also iframed as the `TriggerAutomation` MCP tool's sidebar UI, resolved
-from `SMSS_MCP_UI.resourceURI = "system://automation-workspace/"` and fed context via the
+from `SMSS_MCP_UI.resourceURI = "system://automation/"` and fed context via the
 `SMSS_INIT_TOOL` postMessage handshake (see `src/semoss/client.ts`) — that's the one remaining
 legitimate use of `src/App.tsx`'s standalone iframe entry point and of postMessage in this
 package (theme sync and MCP tool-completion signaling to the playground parent).
@@ -80,6 +80,6 @@ package (theme sync and MCP tool-completion signaling to the playground parent).
 ### Testing Changes
 
 ```bash
-pnpm --filter @semoss/automation-workspace type-check
-pnpm --filter @semoss/automation-workspace build
+pnpm --filter @semoss/automation type-check
+pnpm --filter @semoss/automation build
 ```

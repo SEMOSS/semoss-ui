@@ -21,7 +21,7 @@ function useQueryParams(): URLSearchParams {
 
 /**
  * The Automation Workspace's single UI — iframed as the `TriggerAutomation` MCP tool's sidebar
- * UI (`system://automation-workspace/`, resolved by playground's ToolsView and fed context via
+ * UI (`system://automation/`, resolved by playground's ToolsView and fed context via
  * the `SMSS_INIT_TOOL` postMessage handshake). `@semoss/client` renders `AutomationCanvas` and
  * its companion tabs (`InspectorTab`, `RunsTab`) directly as a normal package import instead of
  * iframing this app — see that package's `automation-workbench.tsx`.

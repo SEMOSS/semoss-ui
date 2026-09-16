@@ -52,7 +52,7 @@ source barrel before adding a new public contract.
 | `@semoss/client` | Main SEMOSS web application | `packages/client/src/main.tsx`, `App.tsx` | Domain APIs for auth, projects, engines, databases, rooms, teams, themes, access, GitHub, and guardrails; `useRootStore`; feature contexts | Primary browser application | Application-internal |
 | `@semoss/playground` | Chat and room-oriented application | `packages/playground/src/main.tsx`, `App.tsx` | Chat/room stores, input and response message models, playground routes and views | Browser chat/playground experience | Application-internal |
 | `@semoss/terminal` | Embedded terminal and terminal panels | `packages/terminal/src/index.ts` | Terminal components, console/panel surfaces, provider and terminal hooks | Embedded by client or used as a standalone app | Embeddable application API |
-| `@semoss/automation-workspace` | Visual workflow editor and automation run UI | `packages/automation-workspace/src/index.ts` | `AutomationCanvas`, `InspectorTab`, `RunsTab`, `AgentRunDialog`, automation document/node/run types | Embedded by client or used through the standalone/MCP surface | Embeddable application API |
+| `@semoss/automation` | Visual workflow editor and automation run UI | `packages/automation/src/index.ts` | `AutomationCanvas`, `InspectorTab`, `RunsTab`, `AgentRunDialog`, automation document/node/run types | Embedded by client or used through the standalone/MCP surface | Embeddable application API |
 | `@semoss/auditlog-package` | Audit log dashboard | `packages/auditlog/src/main.tsx`, `App.tsx` | Audit log routes and dashboard UI | Standalone or embedded audit log view | Application-internal |
 | `@semoss/browser-automation` | Browser automation application and harness UI | `packages/browser-automation/src/main.tsx`, `App.tsx` | Browser automation views, MCP/browser integration, insight-backed application shell | Browser automation workflows | Application-internal |
 | `@semoss/cli` | Node command-line tooling | `@semoss/cli`, `bin/run.js` | oclif command runner; commands such as `init` and `deploy` | Terminal/Node users | Host-facing public API |
@@ -253,14 +253,14 @@ export default createViteConfig({
 Libraries use `createViteLibConfig` instead so their entry points, externals,
 CSS, and declaration output are configured consistently.
 
-### `@semoss/automation-workspace`: Embed the Canvas
+### `@semoss/automation`: Embed the Canvas
 
 ```tsx
 import { useRef } from "react";
 import {
   AutomationCanvas,
   type AutomationCanvasHandle,
-} from "@semoss/automation-workspace";
+} from "@semoss/automation";
 
 function WorkflowEditor({ appId }: { appId: string }) {
   const canvasRef = useRef<AutomationCanvasHandle>(null);
