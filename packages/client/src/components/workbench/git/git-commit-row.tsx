@@ -1,10 +1,11 @@
 import { useState } from "react";
+import { FILE_PANEL_EVENTS } from "@semoss/panels";
 import { useInsight, usePixel } from "@semoss/sdk/react";
+import { useWorkbench } from "@semoss/workbench";
 import type { GitCommit, GitCommitFile } from "@/components/git";
 import { GitCommitRow } from "@/components/git";
-import { useWorkbench } from "@/hooks";
 import { WORKBENCH_COMPONENTS } from "@/stores/workbench";
-import type { GitPanelScopeParams } from "./git-panel.types";
+import { type GitPanelScopeParams, gitFileScope } from "./git-panel.types";
 
 interface GitCommitRowAdapterProps {
 	type: GitPanelScopeParams["type"];
@@ -25,6 +26,7 @@ export const GitCommitRowAdapter = ({
 	const [isOpen, setIsOpen] = useState(false);
 	const insight = useInsight();
 	const layoutActions = useWorkbench((state) => state.layout.actions);
+	const emit = useWorkbench((state) => state.events.actions.emit);
 	const prefix = type === "ENGINE" ? "Engine" : "Project";
 	const resource =
 		type === "ENGINE"
@@ -60,6 +62,11 @@ export const GitCommitRowAdapter = ({
 		await insight.actions.run(
 			`${prefix}CommitRestore(${resource}, commitId=[${JSON.stringify(commit.commitId)}]);`,
 		);
+		// The files on disk are now the snapshot's, so anything showing them is
+		// stale — the same blast radius as a checkout.
+		emit(FILE_PANEL_EVENTS.FILES_CHANGED, {
+			scope: gitFileScope({ type, id }),
+		});
 	};
 
 	return (
