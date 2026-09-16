@@ -137,8 +137,8 @@ gets at most one chrome control, and this needed two.
 - **Attachments go to the insight space, gated permissively.** Files queue on the composer
   (drop, paperclip, or paste) and are uploaded with `uploadInsight(insightId, "", files)`
   only when the turn is sent, so a file the user queues and then removes never costs a
-  request. The returned `fileLocation`s ride out as AskRoom's `image` param — the same one
-  `AskPlayground` takes; `RunAgent` calls it `media`. The backend persists them as `MEDIA`
+  request. The returned `fileLocation`s ride out as AskRoom's `media` param — the same one
+  `AskPlayground` and `RunAgent` take. The backend persists them as `MEDIA`
   parts, which is what makes them survive a reload. The composer offers attachments unless
   `GetModelMetadata` reports `attachment: false`: a **missing** flag means the provider never
   reported one, not "no", so gating on `attachment === true` would silently disable uploads
