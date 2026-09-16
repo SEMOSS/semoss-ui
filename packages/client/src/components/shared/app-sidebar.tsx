@@ -149,7 +149,7 @@ export const Sidebar: React.FC = () => {
 					className="gap-0 p-0"
 					data-testid="sidebar-header"
 				>
-					<div className="relative z-0 flex w-full items-center px-4 pt-3 pb-3">
+					<div className="relative z-0 flex w-full items-center px-4 pt-2 pb-2">
 						<span
 							className="flex-1 font-bold text-lg leading-tight"
 							data-testid="sidebar-theme-name"

@@ -1,31 +1,20 @@
 import { ArrowRight } from "lucide-react";
-import { useState } from "react";
 import { Link } from "react-router";
-import type { Variable } from "@semoss/renderer";
-import { STATE_VERSION } from "@semoss/renderer/version";
-import { Button, H4, Muted } from "@semoss/ui/next";
-import BI from "@/assets/img/BI.png";
-import BIDark from "@/assets/img/BI-dark.png";
+import { Button } from "@semoss/ui/next";
 import DevBanner from "@/assets/img/DevBanner.png";
 import DevBannerDark from "@/assets/img/DevBanner-dark.png";
-import Playwright from "@/assets/img/Playwright.svg";
-import PlaywrightDark from "@/assets/img/Playwright-dark.svg";
-import Terminal from "@/assets/img/Terminal.png";
-import TerminalDark from "@/assets/img/Terminal-dark.png";
-import { NewAppModal } from "@/components/app";
+import GridMark from "@/assets/img/GridMark.svg";
+import OrbitMark from "@/assets/img/OrbitMark.svg";
 import {
-	BannerSection,
-	LandingHeader,
-	SystemAppCard,
+	AppShowcase,
+	LandingFooter,
+	PreviewFrame,
+	SectionHeading,
+	TemplateCatalog,
+	ToolCards,
 } from "@/components/landing";
+import { NavbarHeader, NavbarLeft } from "@/components/shared";
 import { usePage } from "@/hooks";
-import { useNavigate } from "@/hooks/useNavigate";
-import {
-	BASE_APP_QUERIES,
-	BASE_APP_VARIABLES,
-	BASE_PAGE_BLOCKS,
-} from "@/pages/app/app.constants";
-import { NavbarHeader, NavbarLeft } from "../components/shared";
 
 export const LandingPage: React.FC = () => {
 	// setup the page
@@ -33,142 +22,90 @@ export const LandingPage: React.FC = () => {
 		showNavbarSearch: true,
 	});
 
-	const navigate = useNavigate();
-
-	const [newAppOptions, setNewAppOptions] = useState<
-		React.ComponentProps<typeof NewAppModal>["options"] | null
-	>(null);
-
-	const isNameOpen = !!newAppOptions;
 	return (
 		<>
 			<NavbarLeft>
 				<NavbarHeader />
 			</NavbarLeft>
-			<div className="flex w-full flex-col gap-6 pb-8">
-				<BannerSection
-					imageUrl={DevBanner}
-					darkImageUrl={DevBannerDark}
-					tagline={"Experiment with AI in the Playground"}
-					description={
-						"Experience AI that goes beyond chat. Deploy multiple LLMs with powerful tool-calling abilities through MCP integration. Watch AI agents manipulate files, call APIs, and execute real workflows while tackling complex tasks. Turn conversations into actions and ideas into results."
-					}
-					link={{
-						label: "Launch Playground",
-						to: "../../playground/dist/",
-					}}
-				/>
-				<div className="flex w-full flex-col gap-6">
-					<div className="flex grow flex-row gap-6">
-						<div className="flex w-full flex-col items-start gap-2 sm:flex-row sm:items-center sm:justify-between">
-							<div className="flex flex-col gap-1">
-								<H4 className="font-bold text-foreground">
-									Get started with our tool
-								</H4>
-								<Muted>
-									Start building your app in the way that
-									works best for you.
-								</Muted>
-							</div>
-							<Button
-								asChild
-								variant="ghost"
-								size="default"
-								className="shrink-0 text-primary hover:bg-transparent hover:text-primary"
-							>
-								<Link to="templates">
-									Browse Templates
-									<ArrowRight className="size-4" />
-								</Link>
-							</Button>
-						</div>
-					</div>
-					{isNameOpen ? (
-						<NewAppModal
-							open={isNameOpen}
-							options={newAppOptions}
-							onClose={(appId) => {
-								if (appId) {
-									navigate(`/app/${appId}/edit`);
-								} else {
-									// close the modal
-									setNewAppOptions(null);
-								}
-							}}
+
+			<div className="mx-auto flex w-full max-w-7xl flex-col gap-16 pb-16 md:gap-24">
+				{/* Hero */}
+				<section className="grid grid-cols-1 items-center gap-10 lg:grid-cols-2">
+					<div className="flex flex-col items-start gap-6">
+						<SectionHeading
+							as="h1"
+							eyebrow="Build with AI"
+							title="Build your next app with AI"
+							description="Start from a ready-made template or a blank project, then shape it in code or an interactive notebook. Pick a starting point from the catalog, customize it to fit your use case, and share it with your team when it's ready."
 						/>
-					) : null}
-					<LandingHeader
-						onCreate={(type) => {
-							if (type === "blocks") {
-								setNewAppOptions({
-									type: "blocks",
-									state: {
-										version: STATE_VERSION,
-										variables: BASE_APP_VARIABLES as Record<
-											string,
-											Variable
-										>,
-										queries: BASE_APP_QUERIES,
-										blocks: BASE_PAGE_BLOCKS,
-										executionOrder: [],
-									},
-								});
-							} else if (type === "code") {
-								setNewAppOptions({
-									type: "code",
-								});
-							} else if (type === "agent") {
-								navigate("/app/new/prompt");
-							} else if (type === "notebook") {
-								navigate("/notebook");
-							}
-						}}
+						<Button asChild size="lg" className="rounded-full">
+							<Link to="templates">Start Building</Link>
+						</Button>
+					</div>
+					<PreviewFrame
+						src={DevBanner}
+						darkSrc={DevBannerDark}
+						alt="Building an app in the workspace"
+						className="aspect-4/3 w-full"
 					/>
-				</div>
+				</section>
 
-				<div className="flex w-full flex-col gap-3">
-					<div className="flex-col gap-1">
-						<H4 className="font-bold text-foreground">
-							Try these fan favorites
-						</H4>
-						<Muted>
-							Explore popular apps built by the community.
-						</Muted>
+				{/* Get started with our tools */}
+				<section className="flex flex-col gap-6">
+					<SectionHeading
+						title="Get started with our tools"
+						description="Start building your app in the way that works best for you."
+					/>
+					<ToolCards />
+				</section>
+
+				{/* Try these fan favorites */}
+				<section className="flex flex-col gap-6">
+					<SectionHeading
+						title="Try these fan favorites"
+						description="Explore popular apps built by the community."
+					/>
+					<AppShowcase />
+				</section>
+
+				{/* Browse our template catalog */}
+				<section>
+					<TemplateCatalog />
+				</section>
+
+				{/* Closing call to action */}
+				<section className="relative overflow-hidden rounded-3xl bg-primary/5 px-6 py-16 text-center">
+					<img
+						src={GridMark}
+						alt=""
+						aria-hidden="true"
+						className="-left-10 pointer-events-none absolute top-1/3 hidden size-48 sm:block"
+					/>
+					<img
+						src={OrbitMark}
+						alt=""
+						aria-hidden="true"
+						className="-right-10 pointer-events-none absolute bottom-0 hidden size-52 sm:block"
+					/>
+					<div className="relative mx-auto flex max-w-2xl flex-col items-center gap-6">
+						<h2 className="heading-xl text-foreground">
+							Turn conversations into actions.{" "}
+							<em>Ideas into results.</em>
+						</h2>
+						<p className="text-base text-muted-foreground">
+							Get started in minutes. Easily deploy production
+							ready applications.
+						</p>
+						<Button asChild size="lg" className="rounded-full">
+							<Link to="templates">
+								Start building
+								<ArrowRight aria-hidden="true" />
+							</Link>
+						</Button>
 					</div>
-					<div className="grid w-full grid-cols-1 gap-4 md:grid-cols-2">
-						<SystemAppCard
-							name="Playground"
-							description="Test your apps and skills"
-							href="../../playground/dist/"
-							img={DevBanner}
-							darkImg={DevBannerDark}
-						/>
+				</section>
 
-						<SystemAppCard
-							name="Terminal"
-							description="Execute commands and see a response"
-							href="../../terminal/dist/"
-							img={Terminal}
-							darkImg={TerminalDark}
-						/>
-
-						<SystemAppCard
-							name="BI"
-							description="Develop dashboards and visualizations to view data"
-							href="../../legacy/dist/"
-							img={BI}
-							darkImg={BIDark}
-						/>
-
-						<SystemAppCard
-							name="Browser Automation"
-							description="Drive a remote browser, record what you do, and replay it later"
-							href="../../browser-automation/dist/"
-							img={Playwright}
-							darkImg={PlaywrightDark}
-						/>
-					</div>
-				</div>
+				<LandingFooter />
 			</div>
 		</>
 	);

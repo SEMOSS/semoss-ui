@@ -67,7 +67,7 @@ export const Navbar: React.FC = () => {
 	return (
 		<div
 			ref={setNavbarElement}
-			className="absolute top-0 flex h-14 w-full flex-row items-center justify-between gap-4 border-border border-b bg-background px-8 text-foreground sm:gap-2 sm:px-2 md:gap-3 md:px-4"
+			className="absolute top-0 flex h-12 w-full flex-row items-center justify-between gap-4 bg-background px-8 text-foreground sm:gap-2 sm:px-2 md:gap-3 md:px-4"
 		>
 			{/* Left slot */}
 			<div

@@ -13,7 +13,7 @@ export const Page: React.FC<PageProps> = observer(({ children }) => {
 	return (
 		<div className="relative flex h-screen w-screen overflow-hidden">
 			<Sidebar />
-			<div className="relative h-full w-full flex-1 overflow-hidden pt-14">
+			<div className="relative h-full w-full flex-1 overflow-hidden pt-12">
 				<Navbar />
 				<div
 					className="relative h-full w-full overflow-y-auto overflow-x-hidden"
