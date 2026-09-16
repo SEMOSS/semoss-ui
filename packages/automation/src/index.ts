@@ -3,6 +3,14 @@
 // package as a standalone iframed app — see `src/App.tsx` and `src/main.tsx`.
 
 export { AgentRunDialog } from "./components/agent-run";
+export { AutomationOutputModal } from "./components/automation-output-modal";
+export type { AutomationWorkbenchContextValue } from "./components/automation-workbench-panels";
+export {
+	AutomationEditorPanel,
+	AutomationInspectorPanel,
+	AutomationTracePanel,
+	AutomationWorkbenchContext,
+} from "./components/automation-workbench-panels";
 export type { AutomationCanvasHandle } from "./components/canvas-editor/automation-canvas";
 export { AutomationCanvas } from "./components/canvas-editor/automation-canvas";
 export { InspectorTab } from "./components/canvas-editor/tabs/inspector-tab";

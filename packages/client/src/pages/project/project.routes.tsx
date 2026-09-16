@@ -1,6 +1,6 @@
 import { Outlet } from "react-router";
-import { AutomationWorkbenchPage } from "@/components/automation";
 import { ProjectAccessControl, ProjectCatalog } from "@/components/project";
+import { AutomationWorkbenchPage } from "@/components/workbench/automation";
 import {
 	AppGithubPage,
 	AppGithubSelectRepoPage,
