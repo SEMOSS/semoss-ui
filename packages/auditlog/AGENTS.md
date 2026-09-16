@@ -9,13 +9,13 @@ dashboard application.
 ## Overview
 
 `@semoss/auditlog-package` is a standalone dashboard application for viewing SEMOSS audit
-logs. It is a **private** package built with Vite, MobX, and `react-router-dom`.
+logs. It is a **private** package built with Vite, MobX, and `react-router`.
 
 ## Build System
 
 - **Bundler**: Vite 7
 - **State**: MobX (`mobx` + `mobx-react-lite`)
-- **Routing**: `react-router-dom` 6
+- **Routing**: `react-router` 7
 - **Styling**: Tailwind CSS v4
 
 ### Commands

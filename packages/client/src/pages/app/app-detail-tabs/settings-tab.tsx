@@ -1,7 +1,7 @@
 import { Copy, DownloadIcon, Link as LinkIcon, User } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
-import { download, usePixel } from "@semoss/sdk/react";
+import { download, runPixel, usePixel } from "@semoss/sdk/react";
 import type { Project } from "@semoss/shared";
 import {
 	Avatar,
@@ -26,9 +26,8 @@ import {
 	TableRow,
 	toast,
 } from "@semoss/ui/next";
-import { uploadFile as uploadFileAPI } from "@/api";
 import { Java } from "@/assets/img/Java";
-import { useRootStore, useSettings } from "@/hooks";
+import { useSession, useSettings } from "@/hooks";
 
 interface AppSettingsProps {
 	/** Project details */
@@ -41,7 +40,11 @@ type EditAppForm = {
 
 export const SettingsTab = (props: AppSettingsProps) => {
 	const { project } = props;
-	const { monolithStore, configStore } = useRootStore();
+	const sessionRunPixel = useSession((state) => state.runPixel);
+	const sessionUpload = useSession((state) => state.upload);
+	const isEngineOperationAvailable = useSession(
+		(state) => state.isEngineOperationAvailable,
+	);
 	const { adminMode } = useSettings();
 	const [isLoading, setIsLoading] = useState<boolean>(false);
 	const [isExporting, setIsExporting] = useState(false);
@@ -112,8 +115,7 @@ export const SettingsTab = (props: AppSettingsProps) => {
 			? `AdminGetProjectAvailableReactors(project=['${project.project_id}']);`
 			: `GetProjectAvailableReactors(project=['${project.project_id}']);`;
 
-		monolithStore
-			.runQuery(pixelString)
+		sessionRunPixel(pixelString)
 			.then((response) => {
 				const output = Array.isArray(response.pixelReturn[0].output)
 					? (response.pixelReturn[0].output as string[])
@@ -146,8 +148,7 @@ export const SettingsTab = (props: AppSettingsProps) => {
 			pixelString = `CompileAppReactors(project='${project.project_id}', release=true);`;
 		}
 
-		monolithStore
-			.runQuery(pixelString)
+		sessionRunPixel(pixelString)
 			.then((response) => {
 				const output: string = response.pixelReturn[0].output as string;
 				const type: string = response.pixelReturn[0].operationType[0];
@@ -174,8 +175,7 @@ export const SettingsTab = (props: AppSettingsProps) => {
 	 */
 	const publish = () => {
 		const pixelString = `PublishProject(project='${project.project_id}', release=true);`;
-		monolithStore
-			.runQuery(pixelString)
+		sessionRunPixel(pixelString)
 			.then((response) => {
 				const output: string = response.pixelReturn[0].output as string;
 				const type: string = response.pixelReturn[0].operationType[0];
@@ -213,30 +213,29 @@ export const SettingsTab = (props: AppSettingsProps) => {
 			const path = "version/assets/";
 
 			// unzip the file in the new app
-			await monolithStore.runQuery(
+			await sessionRunPixel(
 				`DeleteAsset(filePath=["${path}"], space=["${project.project_id}"]);`,
 			);
 
 			// upload the file
-			const upload = await uploadFileAPI(
+			const uploaded = await sessionUpload(
 				[data.PROJECT_UPLOAD],
-				configStore.store.insightID,
 				project.project_id,
 				path,
 			);
 
 			// upnzip the file in the new app
-			await monolithStore.runQuery(
-				`UnzipFile(filePath=["${`${path}${upload[0].fileName}`}"], space=["${project.project_id}"]);`,
+			await sessionRunPixel(
+				`UnzipFile(filePath=["${`${path}${uploaded[0].fileName}`}"], space=["${project.project_id}"]);`,
 			);
 
 			// Load the insight classes
-			await monolithStore.runQuery(
+			await sessionRunPixel(
 				`CompileAppReactors(project='${project.project_id}', release=true);`,
 			);
 
 			// Publish the app the insight classes
-			await monolithStore.runQuery(
+			await sessionRunPixel(
 				`PublishProject(project='${project.project_id}', release=true);`,
 			);
 			toast.success("Succesfully Updated Project");
@@ -275,7 +274,7 @@ export const SettingsTab = (props: AppSettingsProps) => {
 		try {
 			setIsExporting(true);
 
-			const response = await configStore.runPixel(
+			const response = await runPixel(
 				`ExportProjectApp(project=["${project.project_id}"]);`,
 			);
 
@@ -321,7 +320,7 @@ export const SettingsTab = (props: AppSettingsProps) => {
 							<Button
 								variant="outline"
 								disabled={
-									!configStore.isEngineOperationAvailable(
+									!isEngineOperationAvailable(
 										"PROJECT",
 										"access",
 									)
@@ -374,7 +373,7 @@ export const SettingsTab = (props: AppSettingsProps) => {
 						<div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
 							<Button
 								variant="outline"
-								className="w-full justify-start border-(--primary) sm:w-auto"
+								className="w-full justify-start border-primary sm:w-auto"
 								onClick={() => {
 									recompileReactors({ release: null });
 								}}
@@ -383,7 +382,7 @@ export const SettingsTab = (props: AppSettingsProps) => {
 							</Button>
 							<Button
 								variant="outline"
-								className="s w-full justify-start border-(--primary) sm:w-auto"
+								className="w-full justify-start border-primary sm:w-auto"
 								onClick={() => {
 									recompileReactors({ release: true });
 								}}
@@ -458,17 +457,15 @@ export const SettingsTab = (props: AppSettingsProps) => {
 						control={control}
 						rules={{}}
 						disabled={
-							!configStore.isEngineOperationAvailable(
-								"PROJECT",
-								"access",
-							) || isLoading
+							!isEngineOperationAvailable("PROJECT", "access") ||
+							isLoading
 						}
 						render={({ field }) => (
 							<FileDropzone
 								multiple={false}
 								value={field.value}
 								disabled={
-									!configStore.isEngineOperationAvailable(
+									!isEngineOperationAvailable(
 										"PROJECT",
 										"access",
 									) || isLoading

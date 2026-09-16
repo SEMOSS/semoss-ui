@@ -1,7 +1,15 @@
 import { useEffect, useId } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { MCPSelector, PromptSelector, SkillSelector } from "@semoss/shared";
-import { Field, FieldLabel, Input, Separator, Textarea } from "@semoss/ui/next";
+import {
+	Field,
+	FieldDescription,
+	FieldLabel,
+	Input,
+	Separator,
+	Switch,
+	Textarea,
+} from "@semoss/ui/next";
 import { useProject } from "@/hooks";
 import { mcpToPlatformUrl, promptToPlatformUrl } from "@/utility";
 import { AgentDefaultToolsField } from "./agent-default-tools-field";
@@ -11,6 +19,7 @@ import { AgentHooksField } from "./agent-hooks-field";
 import { AgentModelField } from "./agent-model-field";
 import { AgentSubagentsField } from "./agent-subagents-field";
 import type { AgentFormValues } from "./types";
+import { MAX_GREETING_LENGTH } from "./types";
 
 /** One entry of a deployment's built-in agent tool catalog (`GetWorkspace`'s `default_tools`). */
 export type AgentDefaultTool = {
@@ -19,7 +28,7 @@ export type AgentDefaultTool = {
 	description?: string;
 };
 
-export interface AgentFormProps {
+interface AgentFormProps {
 	/** Initial values - read once on mount; this component owns edits after that. */
 	data: AgentFormValues;
 	/** Called with the full form values on every field change. */
@@ -48,10 +57,13 @@ export const AgentForm = ({
 	const { project } = useProject();
 	const descId = useId();
 	const instructionsId = useId();
+	const greetingId = useId();
 
 	const { control, watch } = useForm<AgentFormValues>({
 		defaultValues: data,
 	});
+
+	const greetingEnabled = watch("greetingEnabled");
 
 	useEffect(() => {
 		const subscription = watch((value) =>
@@ -106,6 +118,44 @@ export const AgentForm = ({
 							</Field>
 						)}
 					/>
+					<Field>
+						<div className="flex items-center justify-between gap-2">
+							<FieldLabel htmlFor={greetingId}>
+								Greeting
+							</FieldLabel>
+							<Controller
+								name="greetingEnabled"
+								control={control}
+								render={({ field }) => (
+									<Switch
+										aria-label="Enable greeting"
+										checked={field.value}
+										onCheckedChange={field.onChange}
+									/>
+								)}
+							/>
+						</div>
+						<Controller
+							name="greeting"
+							control={control}
+							render={({ field }) => (
+								<Textarea
+									id={greetingId}
+									placeholder="Hi, I'm your IT support assistant. I can help you reset a password, check the status of an open ticket, or troubleshoot a common issue. What do you need help with?"
+									rows={3}
+									maxLength={MAX_GREETING_LENGTH}
+									disabled={!greetingEnabled}
+									{...field}
+								/>
+							)}
+						/>
+						<FieldDescription>
+							Shown as the agent's opening message when a room
+							starts. Costs no tokens - but the model cannot see
+							it, so repeat anything it needs to act on (the
+							options you offer here) in Instructions.
+						</FieldDescription>
+					</Field>
 					<AgentModelField control={control} />
 				</AgentFormSection>
 

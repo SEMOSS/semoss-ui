@@ -28,7 +28,6 @@ import {
 	Textarea,
 	toast,
 } from "@semoss/ui/next";
-import { uploadFile } from "@/api";
 import {
 	EngineBuiltinToolsField,
 	type ModelBuiltinTools,
@@ -37,7 +36,7 @@ import type {
 	BuiltinToolSelection,
 	ReasoningConfig,
 } from "@/components/engine/engine-metadata-display";
-import { useRootStore, useStepper } from "@/hooks";
+import { useSession, useStepper } from "@/hooks";
 import { useNavigate } from "@/hooks/useNavigate";
 import { formatToDataTestId } from "@/utility";
 import type { CatalogMatchState } from "./model-catalog-match";
@@ -157,7 +156,8 @@ export const ModelImportForm = (props: ModelImportFormProps) => {
 		onPickCatalogKey,
 	} = props;
 
-	const { monolithStore, configStore } = useRootStore();
+	const runPixel = useSession((state) => state.runPixel);
+	const upload = useSession((state) => state.upload);
 	const navigate = useNavigate();
 	const { isLoading, setIsLoading } = useStepper();
 
@@ -349,10 +349,7 @@ export const ModelImportForm = (props: ModelImportFormProps) => {
 
 		if (FILE !== "" && FILE !== undefined) {
 			try {
-				const uploadedFiles = await uploadFile(
-					FILE as File[],
-					configStore.store.insightID,
-				);
+				const uploadedFiles = await upload(FILE as File[]);
 
 				if (!uploadedFiles || !Array.isArray(uploadedFiles)) {
 					toast.error("Upload failed or returned invalid response.");
@@ -371,7 +368,7 @@ export const ModelImportForm = (props: ModelImportFormProps) => {
 		}
 
 		// debugger;
-		monolithStore.runQuery(pixel).then(async (response) => {
+		runPixel(pixel).then(async (response) => {
 			const output = response.pixelReturn[0].output,
 				operationType = response.pixelReturn[0].operationType;
 
@@ -391,7 +388,7 @@ export const ModelImportForm = (props: ModelImportFormProps) => {
 
 			if (engineId && description) {
 				try {
-					const metadataResponse = await configStore.runPixel(
+					const metadataResponse = await runPixel(
 						`SetEngineMetadata(engine=[${JSON.stringify(engineId)}], meta=[${JSON.stringify(
 							{ description },
 						)}]);`,
@@ -533,7 +530,7 @@ export const ModelImportForm = (props: ModelImportFormProps) => {
 				userInput,
 			);
 
-			const response = await monolithStore.runQuery(pixelToExecute);
+			const response = await runPixel(pixelToExecute);
 			const output = response.pixelReturn[0].output,
 				operationType = response.pixelReturn[0].operationType;
 
@@ -837,7 +834,7 @@ export const ModelImportForm = (props: ModelImportFormProps) => {
 																			field.value,
 																		);
 																	}}
-																	className="size-8 flex-shrink-0 hover:bg-destructive/10 hover:text-destructive"
+																	className="size-8 shrink-0 hover:bg-destructive/10 hover:text-destructive"
 																	data-testid={`remove-file-btn-${index}`}
 																>
 																	<X className="size-4" />
@@ -1300,7 +1297,7 @@ export const ModelImportForm = (props: ModelImportFormProps) => {
 						</div>
 
 						{/* Right: Fields under this category */}
-						<div className="flex flex-[2] flex-col gap-2">
+						<div className="flex flex-2 flex-col gap-2">
 							{grouped[category].map((f) => renderField(f))}
 						</div>
 					</div>
@@ -1342,7 +1339,7 @@ export const ModelImportForm = (props: ModelImportFormProps) => {
 									</div>
 
 									{/* Right: Fields under this category */}
-									<div className="flex flex-[2] flex-col gap-2">
+									<div className="flex flex-2 flex-col gap-2">
 										{advanced.map((f) => renderField(f))}
 									</div>
 								</div>

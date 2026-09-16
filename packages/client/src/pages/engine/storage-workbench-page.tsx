@@ -1,5 +1,5 @@
 import { ChevronRightIcon } from "lucide-react";
-import { Link, Navigate } from "react-router-dom";
+import { Link, Navigate } from "react-router";
 import { InsightProvider } from "@semoss/sdk/react";
 import {
 	Breadcrumb,
@@ -10,7 +10,10 @@ import {
 	BreadcrumbSeparator,
 } from "@semoss/ui/next";
 import { NavbarHeader, NavbarLeft } from "@/components/shared";
-import { StorageWorkbench } from "@/components/workbench";
+import {
+	STORAGE_WORKBENCH_COMPONENTS,
+	StorageWorkbench,
+} from "@/components/workbench";
 import { WorkbenchProvider } from "@/contexts";
 import { useEngine } from "@/hooks";
 
@@ -23,13 +26,7 @@ export const StorageWorkbenchPage = () => {
 
 	return (
 		<InsightProvider>
-			<WorkbenchProvider
-				cacheKey={
-					permission === "OWNER" || permission === "EDIT"
-						? engine.engine_id
-						: `${engine.engine_id}--read-only`
-				}
-			>
+			<WorkbenchProvider components={STORAGE_WORKBENCH_COMPONENTS}>
 				<NavbarLeft>
 					<NavbarHeader logo={null} />
 					<Breadcrumb>

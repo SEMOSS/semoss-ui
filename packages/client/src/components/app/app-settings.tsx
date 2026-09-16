@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
+import { usePixel } from "@semoss/sdk/react";
 import {
 	Avatar,
 	AvatarFallback,
@@ -25,9 +26,8 @@ import {
 	TableRow,
 	toast,
 } from "@semoss/ui/next";
-import { uploadFile as uploadFileAPI } from "@/api";
 import { Java } from "@/assets/img/Java";
-import { usePixel, useRootStore, useSettings } from "@/hooks";
+import { useSession, useSettings } from "@/hooks";
 import { McpUsage } from "../shared/mcp-usage";
 
 interface AppSettingsProps {
@@ -41,7 +41,11 @@ type EditAppForm = {
 
 export const AppSettings = (props: AppSettingsProps) => {
 	const { id, condensed = false } = props;
-	const { monolithStore, configStore } = useRootStore();
+	const runPixel = useSession((state) => state.runPixel);
+	const sessionUpload = useSession((state) => state.upload);
+	const isEngineOperationAvailable = useSession(
+		(state) => state.isEngineOperationAvailable,
+	);
 	const { adminMode } = useSettings();
 	const [isLoading, setIsLoading] = useState<boolean>(false);
 	const [openMcp, setOpenMcp] = useState(false);
@@ -95,8 +99,7 @@ export const AppSettings = (props: AppSettingsProps) => {
 			? `AdminGetProjectAvailableReactors(project=['${id}']);`
 			: `GetProjectAvailableReactors(project=['${id}']);`;
 
-		monolithStore
-			.runQuery(pixelString)
+		runPixel(pixelString)
 			.then((response) => {
 				const output = Array.isArray(response.pixelReturn[0].output)
 					? (response.pixelReturn[0].output as string[])
@@ -118,8 +121,7 @@ export const AppSettings = (props: AppSettingsProps) => {
 				? `CompileAppReactors(project='${id}');`
 				: `CompileAppReactors(project='${id}', release=true);`;
 
-		monolithStore
-			.runQuery(pixelString)
+		runPixel(pixelString)
 			.then((response) => {
 				const output: string = response.pixelReturn[0].output as string;
 				const type: string = response.pixelReturn[0].operationType[0];
@@ -137,8 +139,7 @@ export const AppSettings = (props: AppSettingsProps) => {
 	};
 
 	const publish = () => {
-		monolithStore
-			.runQuery(`PublishProject(project='${id}', release=true);`)
+		runPixel(`PublishProject(project='${id}', release=true);`)
 			.then((response) => {
 				const output: string = response.pixelReturn[0].output as string;
 				const type = response.pixelReturn[0].operationType[0];
@@ -160,24 +161,17 @@ export const AppSettings = (props: AppSettingsProps) => {
 		setIsLoading(true);
 		try {
 			const path = "version/assets/";
-			await monolithStore.runQuery(
+			await runPixel(
 				`DeleteAsset(filePath=["${path}"], space=["${id}"]);`,
 			);
-			const upload = await uploadFileAPI(
-				[data.PROJECT_UPLOAD],
-				configStore.store.insightID,
-				id,
-				path,
-			);
-			await monolithStore.runQuery(
+			const upload = await sessionUpload([data.PROJECT_UPLOAD], id, path);
+			await runPixel(
 				`UnzipFile(filePath=["${`${path}${upload[0].fileName}`}"], space=["${id}"]);`,
 			);
-			await monolithStore.runQuery(
+			await runPixel(
 				`CompileAppReactors(project='${id}', release=true);`,
 			);
-			await monolithStore.runQuery(
-				`PublishProject(project='${id}', release=true);`,
-			);
+			await runPixel(`PublishProject(project='${id}', release=true);`);
 			toast.success("Successfully Updated Project");
 			reset();
 		} catch (e) {
@@ -252,7 +246,7 @@ export const AppSettings = (props: AppSettingsProps) => {
 								variant="outline"
 								size="sm"
 								disabled={
-									!configStore.isEngineOperationAvailable(
+									!isEngineOperationAvailable(
 										"PROJECT",
 										"access",
 									)
@@ -394,10 +388,7 @@ export const AppSettings = (props: AppSettingsProps) => {
 							control={control}
 							rules={{}}
 							disabled={
-								!configStore.isEngineOperationAvailable(
-									"PROJECT",
-									"access",
-								)
+								!isEngineOperationAvailable("PROJECT", "access")
 							}
 							render={({ field }) => (
 								<FileDropzone

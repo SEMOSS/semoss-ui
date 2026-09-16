@@ -10,18 +10,25 @@ import {
 	TooltipTrigger,
 	toast,
 } from "@semoss/ui/next";
-import { useProject, useWorkbenchCommands } from "@/hooks";
-import { WORKBENCH_STYLES } from "../core/workbench.chrome";
+import {
+	useWorkbench,
+	useWorkbenchCommands,
+	WORKBENCH_STYLES,
+} from "@semoss/workbench";
+import { useProject } from "@/hooks";
+import { WORKBENCH_EVENTS } from "@/stores/workbench";
 
 /**
  * Compiles and publishes the project, and registers the matching command so the
  * same action is reachable from the command palette. Shared by the CODE, SKILL
  * and AGENT workbenches — for CODE the app preview iframe loads the *published*
- * portal, so this is the step that makes edits visible there.
+ * portal, so this is the step that makes edits visible there, which is why a
+ * successful publish announces itself on the event bus.
  */
 export const ProjectPublishButton: React.FC = () => {
 	const { project, permission } = useProject();
 	const insight = useInsight();
+	const emit = useWorkbench((s) => s.events.actions.emit);
 	const [isLoading, setIsLoading] = useState(false);
 	const readOnly = !(permission === "OWNER" || permission === "EDIT");
 
@@ -62,13 +69,18 @@ export const ProjectPublishButton: React.FC = () => {
 				`PublishProject(project='${project.project_id}', release=true);`,
 			);
 
+			// Before this, publishing from here left the preview showing the
+			// previous build until the user hit its own refresh button.
+			emit(WORKBENCH_EVENTS.APP_PUBLISHED, {
+				projectId: project.project_id,
+			});
 			toast.success("Successfully published");
 		} catch (e) {
 			toast.error(`Error: ${e}`);
 		} finally {
 			setIsLoading(false);
 		}
-	}, [readOnly, insight.actions, project.project_id]);
+	}, [readOnly, insight.actions, project.project_id, emit]);
 
 	useWorkbenchCommands([
 		{

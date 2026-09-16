@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
+import { usePixel } from "@semoss/sdk/react";
 import {
 	Button,
 	Checkbox,
@@ -31,8 +32,7 @@ import {
 	TableRow,
 	toast,
 } from "@semoss/ui/next";
-import { uploadFile } from "@/api";
-import { usePixel, useRootStore } from "@/hooks";
+import { useSession } from "@/hooks";
 
 interface FileTableProps {
 	/**
@@ -99,7 +99,9 @@ export const FileTable = (props: FileTableProps) => {
 	const fileSearchRef = useRef<HTMLInputElement>(null);
 	const fileInputRef = useRef<HTMLInputElement>(null);
 	const didMount = useRef<boolean>(false);
-	const { monolithStore, configStore } = useRootStore();
+	const runPixel = useSession((state) => state.runPixel);
+	const sessionUpload = useSession((state) => state.upload);
+	const download = useSession((state) => state.download);
 	const [exportLoading, setExportLoading] = useState(false);
 
 	// newly added state
@@ -292,7 +294,7 @@ export const FileTable = (props: FileTableProps) => {
 		query: string,
 	): Promise<PixelReturnLike> => {
 		try {
-			const response = await monolithStore.runQuery(query);
+			const response = await runPixel(query);
 			return response?.pixelReturn?.[0] ?? {};
 		} catch (queryError: unknown) {
 			const error = queryError as Record<string, unknown>;
@@ -411,13 +413,10 @@ export const FileTable = (props: FileTableProps) => {
 
 		try {
 			// Upload files to the server first
-			const upload = await uploadFile(
-				data.PROJECT_UPLOAD,
-				configStore.store.insightID,
-			);
+			const uploaded = await sessionUpload(data.PROJECT_UPLOAD);
 
 			const pixelReturn = await runEmbeddingQuery(
-				upload.map((file) => file.fileLocation),
+				uploaded.map((file) => file.fileLocation),
 			);
 
 			handleEmbeddingResponse(pixelReturn, "Successfully added document");
@@ -439,7 +438,7 @@ export const FileTable = (props: FileTableProps) => {
 		const { fileName } = file;
 		setIsLoading(true);
 		try {
-			const response = await monolithStore.runQuery(`
+			const response = await runPixel(`
             RemoveDocumentFromVectorDatabase(engine = "${id}", fileNames=["${fileName}"])
             `);
 
@@ -468,7 +467,7 @@ export const FileTable = (props: FileTableProps) => {
 		const fileArray = buildFileArrayString(files);
 
 		try {
-			const response = await monolithStore.runQuery(`
+			const response = await runPixel(`
                 RemoveDocumentFromVectorDatabase(engine = "${id}", fileNames=[${fileArray}])
             `);
 
@@ -499,10 +498,9 @@ export const FileTable = (props: FileTableProps) => {
 		const pixel = `META | VectorFileDownload(engine = "${id}", fileNames=[${fileArray}]);`;
 
 		try {
-			const response = await monolithStore.runQuery(pixel);
+			const response = await runPixel(pixel);
 			const { output } = response.pixelReturn[0];
-			const { insightId } = response;
-			monolithStore.download(insightId, String(output));
+			download(String(output));
 		} finally {
 			setExportLoading(false);
 		}
@@ -1115,7 +1113,7 @@ export const FileTable = (props: FileTableProps) => {
 														: ""}{" "}
 													selected
 												</P>
-												<P className="break-words text-center text-muted-foreground text-sm">
+												<P className="wrap-break-word text-center text-muted-foreground text-sm">
 													{field.value
 														.map((f) => f.name)
 														.join(", ")}

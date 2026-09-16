@@ -15,7 +15,7 @@ import {
 	CollapsibleTrigger,
 	Input,
 } from "@semoss/ui/next";
-import { useRootStore } from "@/hooks";
+import { useConfig } from "@/hooks";
 import {
 	formatToDataTestId,
 	getTagColorPalette,
@@ -45,7 +45,10 @@ const COLLAPSED_ITEM_LIMIT = 8;
 
 export const CatalogFilterBox = (props: CatalogFilterboxProps) => {
 	const { type, projectTypes, filters, onChange } = props;
-	const { configStore } = useRootStore();
+	const projectMetaKeys = useConfig((state) => state.config.projectMetaKeys);
+	const databaseMetaKeys = useConfig(
+		(state) => state.config.databaseMetaKeys,
+	);
 
 	const [filterSearch, setFilterSearch] = useState("");
 	const [showCollapsible, setShowCollapsible] = useState<
@@ -57,9 +60,7 @@ export const CatalogFilterBox = (props: CatalogFilterboxProps) => {
 	const [headerOpen, setHeaderOpen] = useState(false);
 	const [isDesktopFilterLayout, setIsDesktopFilterLayout] = useState(false);
 
-	const list = isProjectType(type)
-		? configStore.store.config.projectMetaKeys
-		: configStore.store.config.databaseMetaKeys;
+	const list = isProjectType(type) ? projectMetaKeys : databaseMetaKeys;
 
 	const fieldList = list.filter((k) => {
 		return (

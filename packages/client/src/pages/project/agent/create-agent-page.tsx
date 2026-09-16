@@ -1,7 +1,7 @@
 import { ChevronRight, UploadIcon } from "lucide-react";
 import { useId, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
-import { Link } from "react-router-dom";
+import { Link } from "react-router";
 import { MCPSelector, PromptSelector, SkillSelector } from "@semoss/shared";
 import {
 	Breadcrumb,
@@ -12,11 +12,13 @@ import {
 	BreadcrumbSeparator,
 	Button,
 	Field,
+	FieldDescription,
 	FieldLabel,
 	H4,
 	Input,
 	P,
 	Progress,
+	Switch,
 	Textarea,
 	toast,
 } from "@semoss/ui/next";
@@ -29,30 +31,35 @@ import {
 	AgentSubagentsField,
 	buildEditWorkspacePixel,
 	getWorkspaceSaveWarning,
+	MAX_GREETING_LENGTH,
 } from "@/components/agent-workspace/agent-form";
 import { UploadProjectDialog } from "@/components/project";
 import { NavbarHeader, NavbarLeft } from "@/components/shared";
-import { useRootStore } from "@/hooks";
+import { useSession } from "@/hooks";
 import { useNavigate } from "@/hooks/useNavigate";
 import { mcpToPlatformUrl, promptToPlatformUrl } from "@/utility";
 
 export const CreateAgentPage = () => {
 	const navigate = useNavigate();
-	const { monolithStore } = useRootStore();
+	const runPixel = useSession((state) => state.runPixel);
 	const [isUploadOpen, setIsUploadOpen] = useState(false);
 	const [isLoading, setIsLoading] = useState(false);
 	const nameId = useId();
 	const descId = useId();
 	const instructionsId = useId();
+	const greetingId = useId();
 
 	const {
 		control,
 		handleSubmit,
+		watch,
 		formState: { isValid },
 	} = useForm<AgentFormValues>({
 		mode: "onChange",
 		defaultValues: AGENT_FORM_DEFAULT_VALUES,
 	});
+
+	const greetingEnabled = watch("greetingEnabled");
 
 	const navigateAgent = (appId: string) => {
 		if (!appId) return;
@@ -68,9 +75,7 @@ export const CreateAgentPage = () => {
 
 			const skills = data.skills.map((s) => s.id);
 
-			const { errors, pixelReturn } = await monolithStore.runQuery<
-				[string]
-			>(
+			const { errors, pixelReturn } = await runPixel<[string]>(
 				`AddWorkspace(name=${JSON.stringify(data.name)}, description=${JSON.stringify(data.description)}, systemPrompt=${JSON.stringify(data.instructions)}, mcp=${JSON.stringify(mcp)}, skills=${JSON.stringify(skills)}, prompts=${JSON.stringify(data.prompts)});`,
 			);
 
@@ -94,12 +99,14 @@ export const CreateAgentPage = () => {
 				data.maxSubagentsPerRun ||
 				data.maxSpawnsPerTurn ||
 				data.subagents.some((s) => s.workspaceId) ||
-				data.disabledDefaultTools.length > 0;
+				data.disabledDefaultTools.length > 0 ||
+				data.greeting ||
+				data.greetingEnabled;
 			if (hasExecutionSettings) {
 				const {
 					errors: settingsErrors,
 					pixelReturn: settingsPixelReturn,
-				} = await monolithStore.runQuery<[unknown]>(
+				} = await runPixel<[unknown]>(
 					buildEditWorkspacePixel(agentId, data),
 				);
 				if (settingsErrors.length > 0) {
@@ -230,6 +237,45 @@ export const CreateAgentPage = () => {
 								</Field>
 							)}
 						/>
+
+						<Field>
+							<div className="flex items-center justify-between gap-2">
+								<FieldLabel htmlFor={greetingId}>
+									Greeting
+								</FieldLabel>
+								<Controller
+									name="greetingEnabled"
+									control={control}
+									render={({ field }) => (
+										<Switch
+											aria-label="Enable greeting"
+											checked={field.value}
+											onCheckedChange={field.onChange}
+										/>
+									)}
+								/>
+							</div>
+							<Controller
+								name="greeting"
+								control={control}
+								render={({ field }) => (
+									<Textarea
+										id={greetingId}
+										placeholder="Hi, I'm your IT support assistant. I can help you reset a password, check the status of an open ticket, or troubleshoot a common issue. What do you need help with?"
+										rows={3}
+										maxLength={MAX_GREETING_LENGTH}
+										disabled={!greetingEnabled}
+										{...field}
+									/>
+								)}
+							/>
+							<FieldDescription>
+								Shown as the agent's opening message when a room
+								starts. Costs no tokens - but the model cannot
+								see it, so repeat anything it needs to act on
+								(the options you offer here) in Instructions.
+							</FieldDescription>
+						</Field>
 
 						<AgentModelField control={control} />
 					</AgentFormSection>

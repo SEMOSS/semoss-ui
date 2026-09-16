@@ -1,7 +1,7 @@
 import { PencilIcon, PlusIcon, Trash2Icon } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router";
 import { useTranslation } from "@semoss/i18n";
 import { AppCatalogAvatar } from "@semoss/shared";
 import {
