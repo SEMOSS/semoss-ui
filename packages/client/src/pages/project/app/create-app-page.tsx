@@ -28,6 +28,7 @@ import { uploadImage } from "@/api";
 import { UploadProjectDialog } from "@/components/project";
 import { NavbarHeader, NavbarLeft } from "@/components/shared";
 import { TemplateGrid } from "@/components/templates";
+import { PROJECT_IMAGE_ACCEPT } from "@/constants";
 import { useSession } from "@/hooks";
 import { useNavigate } from "@/hooks/useNavigate";
 
@@ -163,7 +164,16 @@ export const CreateAppPage = () => {
 			if (!appId) throw new Error("Error creating app");
 
 			if (values.image) {
-				await uploadImage([values.image], appId, insightID);
+				try {
+					await uploadImage([values.image], appId, insightID);
+				} catch (e) {
+					console.error(e);
+					// the app exists either way, so a failed image must not
+					// abort the rest of the flow
+					toast.warning(
+						"App created, but the image failed to upload",
+					);
+				}
 			}
 
 			// A template already ships its own portal — only seed the
@@ -331,7 +341,7 @@ export const CreateAppPage = () => {
 								<FormFileDropzone
 									name="image"
 									label="Image"
-									extensions={["png", "jpg", "jpeg", "webp"]}
+									extensions={PROJECT_IMAGE_ACCEPT}
 									disabled={form.formState.isSubmitting}
 									data-testid="createAppPage-image-txt"
 								/>

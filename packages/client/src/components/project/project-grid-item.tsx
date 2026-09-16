@@ -14,6 +14,7 @@ import {
 	TooltipContent,
 	TooltipTrigger,
 } from "@semoss/ui/next";
+import { getProjectImageUrl } from "@/api";
 import { CatalogGridItem } from "@/components/catalog";
 import { normalizeTagArray } from "@/utility";
 
@@ -163,11 +164,24 @@ export const ProjectGridItem: React.FC<ProjectGridItemProps> = ({
 		</>
 	);
 
+	// The image request 404s when the project has no custom image, which
+	// uncovers the initials tile layered underneath it.
 	const icon = (
-		<AppCatalogAvatar
-			name={displayName || project.project_id}
-			className="h-full w-full rounded text-lg"
-		/>
+		<div className="relative size-full overflow-hidden rounded">
+			<AppCatalogAvatar
+				name={displayName || project.project_id}
+				className="absolute inset-0 size-full text-lg"
+			/>
+			<img
+				src={getProjectImageUrl(project.project_id)}
+				alt=""
+				loading="lazy"
+				className="absolute inset-0 size-full object-cover"
+				onError={(e) => {
+					e.currentTarget.style.display = "none";
+				}}
+			/>
+		</div>
 	);
 
 	return (

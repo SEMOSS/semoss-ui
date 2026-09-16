@@ -12,6 +12,7 @@ import {
 	Button,
 	Field,
 	FieldLabel,
+	FileDropzone,
 	H4,
 	Input,
 	Muted,
@@ -21,9 +22,11 @@ import {
 	Textarea,
 	toast,
 } from "@semoss/ui/next";
+import { uploadImage } from "@/api";
 import { MarkdownEditor } from "@/components/common/MarkdownEditor";
 import { UploadProjectDialog } from "@/components/project";
 import { NavbarHeader, NavbarLeft } from "@/components/shared";
+import { PROJECT_IMAGE_ACCEPT } from "@/constants";
 import { useSession } from "@/hooks";
 import { useNavigate } from "@/hooks/useNavigate";
 
@@ -33,6 +36,7 @@ type CreateSkillForm = {
 	tags: string[];
 	agentDescription: string;
 	skillContent: string;
+	image: File | null;
 };
 
 export const CreateSkillPage = () => {
@@ -47,6 +51,7 @@ export const CreateSkillPage = () => {
 		tags: [],
 		agentDescription: "",
 		skillContent: "",
+		image: null,
 	});
 
 	const nameId = useId();
@@ -81,6 +86,19 @@ export const CreateSkillPage = () => {
 
 			const appId = pixelReturn[0].output.project_id;
 			if (!appId) throw new Error("Error creating skill");
+
+			if (form.image) {
+				try {
+					await uploadImage([form.image], appId);
+				} catch (e) {
+					console.error(e);
+					// the skill exists either way, so a failed image must not
+					// abort the rest of the flow
+					toast.warning(
+						"Skill created, but the image failed to upload",
+					);
+				}
+			}
 
 			const hasMeta = form.tags.length > 0 || !!form.description;
 			if (hasMeta) {
@@ -263,6 +281,24 @@ export const CreateSkillPage = () => {
 											))}
 										</div>
 									)}
+								</Field>
+								<Field>
+									<FieldLabel>Image</FieldLabel>
+									<FileDropzone
+										value={form.image}
+										onChange={(value) => {
+											const next = Array.isArray(value)
+												? (value[0] ?? null)
+												: value;
+											setForm((prev) => ({
+												...prev,
+												image: next,
+											}));
+										}}
+										extensions={PROJECT_IMAGE_ACCEPT}
+										disabled={isLoading}
+										description="Click to browse or drop an image"
+									/>
 								</Field>
 							</div>
 						</div>

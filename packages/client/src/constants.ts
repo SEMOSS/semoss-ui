@@ -68,6 +68,13 @@ export const TYPE_TO_ROUTE = {
 	GUARDRAIL: "/guardrail",
 } as const;
 
+/**
+ * Image extensions the backend can store and find a project image under again.
+ * Anything else is rejected on upload, so keep this in sync with the server's
+ * allow list. Dotted so it is a valid `accept` attribute.
+ */
+export const PROJECT_IMAGE_ACCEPT = [".png", ".jpg", ".jpeg", ".gif", ".svg"];
+
 export const MCP = {
 	DRIVER_PATHS: ["/py/mcp_driver.py"],
 	JSON_PATHS: ["/mcp/py_mcp.json", "/mcp/pixel_mcp.json"],

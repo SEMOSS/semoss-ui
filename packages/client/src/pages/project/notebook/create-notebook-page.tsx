@@ -13,6 +13,7 @@ import {
 	BreadcrumbSeparator,
 	Button,
 	Form,
+	FormFileDropzone,
 	FormInput,
 	FormTextarea,
 	H4,
@@ -24,15 +25,18 @@ import {
 	z,
 	zodResolver,
 } from "@semoss/ui/next";
+import { uploadImage } from "@/api";
 import { UploadProjectDialog } from "@/components/project";
 import { NavbarHeader, NavbarLeft } from "@/components/shared";
 import { TemplateGrid } from "@/components/templates";
+import { PROJECT_IMAGE_ACCEPT } from "@/constants";
 
 const schema = z.object({
 	name: z.string().trim().min(1, "Name is required"),
 	description: z.string(),
 	tags: z.array(z.string()),
 	tagInput: z.string(),
+	image: z.instanceof(File).nullable(),
 });
 
 type FormValues = z.infer<typeof schema>;
@@ -49,6 +53,7 @@ export const CreateNotebookPage = () => {
 			description: "",
 			tags: [],
 			tagInput: "",
+			image: null,
 		},
 	});
 
@@ -82,6 +87,19 @@ export const CreateNotebookPage = () => {
 
 			const appId = pixelReturn[0]?.output?.project_id;
 			if (!appId) throw new Error("Error creating notebook");
+
+			if (values.image) {
+				try {
+					await uploadImage([values.image], appId);
+				} catch (e) {
+					console.error(e);
+					// the notebook exists either way, so a failed image must
+					// not abort the rest of the flow
+					toast.warning(
+						"Notebook created, but the image failed to upload",
+					);
+				}
+			}
 
 			const hasMeta = values.tags.length > 0 || !!values.description;
 			if (hasMeta) {
@@ -245,6 +263,13 @@ export const CreateNotebookPage = () => {
 										))}
 									</div>
 								)}
+								<FormFileDropzone
+									name="image"
+									label="Image"
+									extensions={PROJECT_IMAGE_ACCEPT}
+									disabled={form.formState.isSubmitting}
+									data-testid="createNotebookPage-image-txt"
+								/>
 							</div>
 						</div>
 						<Separator />

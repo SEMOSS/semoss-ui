@@ -1,15 +1,14 @@
 import { Check } from "lucide-react";
 import { AppCatalogAvatar } from "@semoss/shared";
 import { Card, cn, P } from "@semoss/ui/next";
+import { getProjectImageUrl } from "@/api";
 import { formatToDataTestId } from "@/utility";
 
 export interface TemplateCardProps extends React.ComponentProps<typeof Card> {
-	/** Unique template / project ID */
+	/** Unique template / project ID; also sources the custom image */
 	id?: string;
 	/** Display name */
 	name: string;
-	/** Image URL; falls back to a generated avatar */
-	image?: string;
 	/** Marks the tile as the caller's current selection */
 	isSelected?: boolean;
 }
@@ -21,7 +20,6 @@ export interface TemplateCardProps extends React.ComponentProps<typeof Card> {
 export const TemplateCard = ({
 	name,
 	id = "",
-	image,
 	isSelected = false,
 	className,
 	...cardProps
@@ -38,21 +36,26 @@ export const TemplateCard = ({
 		>
 			{/* Large visual header / cover banner */}
 			<div className="relative h-40 w-full overflow-hidden border-b bg-muted">
-				{image ? (
-					<img
-						src={image}
-						alt={name}
-						className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+				{/* The gradient and initials are the fallback layer: the
+					image request 404s when the template has no custom one. */}
+				<div className="relative flex h-full w-full items-center justify-center overflow-hidden bg-linear-to-br from-primary/10 via-background to-secondary/30">
+					<div className="absolute inset-0 bg-[radial-gradient(#e5e7eb_1px,transparent_1px)] bg-size-[16px_16px] opacity-40 dark:bg-[radial-gradient(#1f2937_1px,transparent_1px)]" />
+					<AppCatalogAvatar
+						name={name}
+						className="size-16 rounded-xl text-xl shadow-sm transition-transform duration-300 group-hover:scale-110"
 					/>
-				) : (
-					<div className="relative flex h-full w-full items-center justify-center overflow-hidden bg-linear-to-br from-primary/10 via-background to-secondary/30">
-						<div className="absolute inset-0 bg-[radial-gradient(#e5e7eb_1px,transparent_1px)] bg-size-[16px_16px] opacity-40 dark:bg-[radial-gradient(#1f2937_1px,transparent_1px)]" />
-						<AppCatalogAvatar
-							name={name}
-							className="size-16 rounded-xl text-xl shadow-sm transition-transform duration-300 group-hover:scale-110"
-						/>
-					</div>
-				)}
+				</div>
+				{id ? (
+					<img
+						src={getProjectImageUrl(id)}
+						alt={name}
+						loading="lazy"
+						className="absolute inset-0 h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+						onError={(e) => {
+							e.currentTarget.style.display = "none";
+						}}
+					/>
+				) : null}
 				{isSelected ? (
 					<span className="absolute top-2.5 right-2.5 flex size-6 items-center justify-center rounded-full bg-primary text-primary-foreground">
 						<Check aria-hidden="true" className="size-3.5" />

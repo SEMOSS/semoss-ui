@@ -1,6 +1,7 @@
 import type { Role } from "@semoss/sdk";
 import { runPixel, usePixel } from "@semoss/sdk/react";
 import type { Project } from "@semoss/shared";
+import { deleteProjectImage, getProjectImageUrl, uploadImage } from "@/api";
 import { CatalogOverview } from "@/components/catalog";
 import { useConfig } from "@/hooks";
 import { normalizeTagArray } from "@/utility";
@@ -45,6 +46,22 @@ export const ProjectOverview = ({
 		return <div className="text-muted-foreground">No details found</div>;
 	}
 
+	/**
+	 * Upload or remove the project image. It is not metadata, so it saves
+	 * through its own endpoints rather than SetProjectMetadata.
+	 *
+	 * @param file - image to upload, or null to reset to the default
+	 */
+	const onImageChange = async (file: File | null) => {
+		if (file) {
+			await uploadImage([file], project.project_id);
+		} else {
+			await deleteProjectImage(project.project_id);
+		}
+
+		refresh();
+	};
+
 	return (
 		<CatalogOverview
 			id={project.project_id}
@@ -68,6 +85,12 @@ export const ProjectOverview = ({
 			dateCreated={project.project_date_created || ""}
 			dateLastEdited={project.project_date_last_edited || ""}
 			onSave={onSave}
+			image={{
+				url: getProjectImageUrl(project.project_id),
+				fallbackName:
+					project.project_display_name || project.project_name,
+				onChange: onImageChange,
+			}}
 		/>
 	);
 };

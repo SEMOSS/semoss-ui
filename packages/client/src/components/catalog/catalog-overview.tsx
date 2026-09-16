@@ -1,12 +1,15 @@
 import { Pencil } from "lucide-react";
 import { useEffect, useState } from "react";
 import type { Role } from "@semoss/sdk";
+import { AppCatalogAvatar } from "@semoss/shared";
 import {
 	Badge,
 	Button,
 	Checkbox,
 	Field,
+	FieldDescription,
 	FieldLabel,
+	FileDropzone,
 	Input,
 	Markdown,
 	Spinner,
@@ -14,6 +17,7 @@ import {
 	toast,
 } from "@semoss/ui/next";
 import { MarkdownEditor, NoDetailsEmptyState } from "@/components/common";
+import { PROJECT_IMAGE_ACCEPT } from "@/constants";
 import { metakeyToLabel, normalizeTagArray } from "@/utility";
 import { formatDateToLocal } from "@/utility/date";
 import { CatalogTagInput } from "./catalog-tag-input";
@@ -136,6 +140,18 @@ interface CatalogOverviewProps {
 	dateLastEdited: string;
 	/** Save the data */
 	onSave: (id: string, metadata: Record<string, unknown>) => Promise<void>;
+	/**
+	 * Custom-image editing. An image is not metadata and saves through its own
+	 * endpoint, so catalogs that do not have one (engines) simply omit this.
+	 */
+	image?: {
+		/** Current image URL, already version-stamped by the caller. */
+		url: string;
+		/** Name driving the generated fallback avatar. */
+		fallbackName: string;
+		/** Persist a staged change - a File uploads, null resets to default. */
+		onChange: (file: File | null) => Promise<void>;
+	};
 }
 
 export const CatalogOverview = ({
@@ -153,9 +169,13 @@ export const CatalogOverview = ({
 	dateCreated,
 	dateLastEdited,
 	onSave,
+	image,
 }: CatalogOverviewProps) => {
 	const [isLoading, setIsLoading] = useState(false);
 	const [isEditMode, setIsEditMode] = useState(false);
+	const [imageFile, setImageFile] = useState<File | null>(null);
+	const [imageCleared, setImageCleared] = useState(false);
+	const [imagePreview, setImagePreview] = useState("");
 	const [form, setForm] = useState<CatalogOverviewForm>({
 		description: "",
 		markdown: "",
@@ -207,6 +227,8 @@ export const CatalogOverview = ({
 		setForm(nextForm);
 		setInitialForm(nextForm);
 		setIsEditMode(false);
+		setImageFile(null);
+		setImageCleared(false);
 	}, [
 		id,
 		description,
@@ -217,9 +239,26 @@ export const CatalogOverview = ({
 		metadata,
 	]);
 
+	// a staged file only exists in the browser, so previewing it needs an object
+	// URL that has to be revoked again once it is replaced or goes away
+	useEffect(() => {
+		if (!imageFile) {
+			setImagePreview("");
+			return;
+		}
+
+		const objectUrl = URL.createObjectURL(imageFile);
+		setImagePreview(objectUrl);
+
+		return () => URL.revokeObjectURL(objectUrl);
+	}, [imageFile]);
+
 	const isEditable = permission === "OWNER" || permission === "EDIT";
 	const isEditing = isEditable && isEditMode;
-	const isDirty = JSON.stringify(form) !== JSON.stringify(initialForm);
+	const isDirty =
+		JSON.stringify(form) !== JSON.stringify(initialForm) ||
+		Boolean(imageFile) ||
+		imageCleared;
 	const markdownClassName =
 		markdownVariant === "document"
 			? "w-full text-sm leading-relaxed"
@@ -279,6 +318,8 @@ export const CatalogOverview = ({
 	 */
 	const handleCancel = () => {
 		setForm(initialForm);
+		setImageFile(null);
+		setImageCleared(false);
 		setIsEditMode(false);
 	};
 
@@ -315,6 +356,13 @@ export const CatalogOverview = ({
 			// save it
 			await onSave(id, metadata);
 
+			// the image is not metadata, so it persists through its own endpoint
+			if (image && (imageFile || imageCleared)) {
+				await image.onChange(imageFile);
+				setImageFile(null);
+				setImageCleared(false);
+			}
+
 			setInitialForm(form);
 			setIsEditMode(false);
 			toast.success("Successfully updated details");
@@ -327,6 +375,102 @@ export const CatalogOverview = ({
 		} finally {
 			setIsLoading(false);
 		}
+	};
+
+	/**
+	 * Preview of the image as it will look once saved: the staged file, the
+	 * stored image, or the generated avatar when it is being reset or the
+	 * request 404s because the catalog has no custom image.
+	 *
+	 * @returns Sized preview tile, or null when images are not supported.
+	 */
+	const renderImagePreview = () => {
+		if (!image) {
+			return null;
+		}
+
+		const src = imagePreview || (imageCleared ? "" : image.url);
+
+		return (
+			<div className="relative size-16 shrink-0 overflow-hidden rounded-lg border">
+				<AppCatalogAvatar
+					name={image.fallbackName}
+					className="absolute inset-0 size-full text-xl"
+				/>
+				{src ? (
+					<img
+						// remount on a new src so a previous onError cannot
+						// leave this permanently hidden
+						key={src}
+						src={src}
+						alt=""
+						className="absolute inset-0 size-full object-cover"
+						onError={(e) => {
+							e.currentTarget.style.display = "none";
+						}}
+					/>
+				) : null}
+			</div>
+		);
+	};
+
+	/**
+	 * Image field for the edit form. Staged locally and saved by handleSubmit,
+	 * since the image does not travel with the metadata payload.
+	 *
+	 * @returns Editable image field, or null when images are not supported.
+	 */
+	const renderImageField = () => {
+		if (!image) {
+			return null;
+		}
+
+		return (
+			<Field>
+				<FieldLabel>Image</FieldLabel>
+				<div className="flex flex-row items-start gap-4">
+					{renderImagePreview()}
+					<div className="flex min-w-0 flex-1 flex-col items-start gap-2">
+						<FileDropzone
+							value={imageFile}
+							onChange={(value) => {
+								const next = Array.isArray(value)
+									? (value[0] ?? null)
+									: value;
+								setImageFile(next);
+								if (next) {
+									setImageCleared(false);
+								}
+							}}
+							extensions={PROJECT_IMAGE_ACCEPT}
+							disabled={isLoading}
+							description="Click to browse or drop an image"
+							className="w-full"
+						/>
+						<FieldDescription>
+							{imageCleared
+								? "The custom image will be removed when you save."
+								: `Supported types: ${PROJECT_IMAGE_ACCEPT.join(", ")}`}
+						</FieldDescription>
+						{!imageCleared && (
+							<Button
+								variant="ghost"
+								size="sm"
+								disabled={isLoading}
+								onClick={() => {
+									setImageFile(null);
+									setImageCleared(true);
+								}}
+								className="text-destructive hover:text-destructive"
+								data-testid="catalog-overview--image-reset-btn"
+							>
+								Reset to default
+							</Button>
+						)}
+					</div>
+				</div>
+			</Field>
+		);
 	};
 
 	/**
@@ -675,6 +819,7 @@ export const CatalogOverview = ({
 			<div className="my-1 border-border border-b pb-2 last:mb-0 last:border-b-0">
 				{isEditing ? (
 					<div className="space-y-6">
+						{renderImageField()}
 						<Field>
 							<FieldLabel>About</FieldLabel>
 							<MarkdownEditor
@@ -734,6 +879,12 @@ export const CatalogOverview = ({
 						)}
 						<div>
 							<div className="space-y-6 lg:rounded-xl lg:border lg:bg-card lg:p-4">
+								{image ? (
+									<Field>
+										<FieldLabel>Image</FieldLabel>
+										{renderImagePreview()}
+									</Field>
+								) : null}
 								{renderMetadataFields()}
 								{dateCreated && (
 									<Field>

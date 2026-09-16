@@ -15,6 +15,7 @@ import {
 	TabsList,
 	TabsTrigger,
 } from "@semoss/ui/next";
+import { getProjectImageUrl } from "@/api";
 import { ProjectAccessRequestButton } from "@/components/project";
 import { NavbarHeader, NavbarLeft } from "@/components/shared";
 import { useProject } from "@/hooks";
@@ -105,14 +106,26 @@ export const ProjectTabsLayout = ({ tabs }: ProjectTabsLayoutProps) => {
 				<div className={`mx-auto flex h-full w-full flex-col gap-3`}>
 					<EntityHeader
 						icon={
-							<AppCatalogAvatar
-								name={
-									project.project_display_name ||
-									project.project_name ||
-									""
-								}
-								className="h-full w-full rounded-lg text-xl"
-							/>
+							// A 404 means the project has no custom image, which
+							// uncovers the initials tile layered underneath.
+							<div className="relative size-full overflow-hidden rounded-lg">
+								<AppCatalogAvatar
+									name={
+										project.project_display_name ||
+										project.project_name ||
+										""
+									}
+									className="absolute inset-0 size-full text-xl"
+								/>
+								<img
+									src={getProjectImageUrl(project.project_id)}
+									alt=""
+									className="absolute inset-0 size-full object-cover"
+									onError={(e) => {
+										e.currentTarget.style.display = "none";
+									}}
+								/>
+							</div>
 						}
 						name={
 							project.project_display_name ||

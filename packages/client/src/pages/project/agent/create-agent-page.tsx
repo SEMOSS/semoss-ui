@@ -14,6 +14,7 @@ import {
 	Field,
 	FieldDescription,
 	FieldLabel,
+	FileDropzone,
 	H4,
 	Input,
 	P,
@@ -22,6 +23,7 @@ import {
 	Textarea,
 	toast,
 } from "@semoss/ui/next";
+import { uploadImage } from "@/api";
 import {
 	AGENT_FORM_DEFAULT_VALUES,
 	AgentExecutionLimitsFields,
@@ -35,6 +37,7 @@ import {
 } from "@/components/agent-workspace/agent-form";
 import { UploadProjectDialog } from "@/components/project";
 import { NavbarHeader, NavbarLeft } from "@/components/shared";
+import { PROJECT_IMAGE_ACCEPT } from "@/constants";
 import { useSession } from "@/hooks";
 import { useNavigate } from "@/hooks/useNavigate";
 import { mcpToPlatformUrl, promptToPlatformUrl } from "@/utility";
@@ -44,6 +47,9 @@ export const CreateAgentPage = () => {
 	const runPixel = useSession((state) => state.runPixel);
 	const [isUploadOpen, setIsUploadOpen] = useState(false);
 	const [isLoading, setIsLoading] = useState(false);
+	// deliberately not part of AgentFormValues: that type round-trips through
+	// buildEditWorkspacePixel, which cannot carry a File
+	const [image, setImage] = useState<File | null>(null);
 	const nameId = useId();
 	const descId = useId();
 	const instructionsId = useId();
@@ -83,6 +89,20 @@ export const CreateAgentPage = () => {
 
 			const agentId = pixelReturn[0].output;
 			if (!agentId) throw new Error("Error creating agent");
+
+			// the agent id is also its project id
+			if (image) {
+				try {
+					await uploadImage([image], agentId);
+				} catch (e) {
+					console.error(e);
+					// the agent exists either way, so a failed image must not
+					// abort the rest of the flow
+					toast.warning(
+						"Agent created, but the image failed to upload",
+					);
+				}
+			}
 
 			// AddWorkspace does not accept a default model, execution limits, or
 			// subagents, so set them with a follow-up edit call once the agent
@@ -278,6 +298,26 @@ export const CreateAgentPage = () => {
 						</Field>
 
 						<AgentModelField control={control} />
+
+						<Field>
+							<FieldLabel>Image</FieldLabel>
+							<FileDropzone
+								value={image}
+								onChange={(value) => {
+									setImage(
+										Array.isArray(value)
+											? (value[0] ?? null)
+											: value,
+									);
+								}}
+								extensions={PROJECT_IMAGE_ACCEPT}
+								disabled={isLoading}
+								description="Click to browse or drop an image"
+							/>
+							<FieldDescription>
+								How this agent appears in the catalog.
+							</FieldDescription>
+						</Field>
 					</AgentFormSection>
 
 					<AgentFormSection

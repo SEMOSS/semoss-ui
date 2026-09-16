@@ -200,6 +200,19 @@ export const setProjectVisiblity = async (admin, appId, visible) => {
 	return response;
 };
 
+/**
+ * URL of a project's custom image.
+ *
+ * `fallback=false` asks the backend to 404 rather than hand back a generated
+ * default image, so callers can render their own placeholder instead.
+ *
+ * @param projectId - project to load the image for
+ */
+export const getProjectImageUrl = (projectId: string) =>
+	`${Env.MODULE}/api/project-${encodeURIComponent(
+		projectId,
+	)}/projectImage/download?fallback=false`;
+
 export const uploadImage = async (
 	files: File[],
 	projectId: string | null,
@@ -232,6 +245,21 @@ export const uploadImage = async (
 			message: string;
 		}[]
 	>(url, fd, {});
+
+	return response.data;
+};
+
+/**
+ * Remove a project's custom image, reverting it to the platform default.
+ *
+ * @param projectId - project to remove the image from
+ */
+export const deleteProjectImage = async (projectId: string) => {
+	const response = await post<{
+		project_id: string;
+		project_name: string;
+		message: string;
+	}>(`${Env.MODULE}/api/images/projectImage/delete`, { projectId }, {});
 
 	return response.data;
 };
