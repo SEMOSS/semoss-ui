@@ -35,7 +35,6 @@ import {
 	type N8nImportConversionResult,
 } from "@semoss/automation";
 import { FILE_PANEL_COMPONENTS } from "@semoss/panels";
-import type { Role } from "@semoss/sdk";
 import { runPixel } from "@semoss/sdk";
 import { InsightProvider } from "@semoss/sdk/react";
 import { type MCPConfig, MonacoEditor } from "@semoss/shared";
@@ -80,6 +79,10 @@ const AUTOMATION_MUTATION_TOOLS = new Set([
 	"UpdateAutomationCustomStep",
 	"RemoveAutomationStep",
 ]);
+const AUTOMATION_BUILDER_AGENT = {
+	workspace_id: "automation-builder",
+	name: "Automation Building Agent",
+};
 const MAX_ASSISTANT_DRAFT_LENGTH = 8000;
 const SINGLE_STEP_ID_KEYS = ["stepId", "nodeId", "step_id", "node_id", "id"];
 const STEP_ID_LIST_KEYS = ["stepIds", "nodeIds", "step_ids", "node_ids", "ids"];
@@ -197,7 +200,6 @@ const createAutomationLayout = (appId: string): WorkbenchLayout => ({
 
 interface AutomationWorkbenchProps {
 	appId: string;
-	permission: Role;
 	readOnly: boolean;
 	projectName: string;
 	catalogPath?: string;
@@ -564,11 +566,9 @@ export const AutomationWorkbench = observer(
 
 		const configureAssistant = assistantStore.getState().configure;
 		useEffect(() => {
-			const accessInstructions = readOnly
-				? "You can answer questions but cannot modify this read-only automation."
-				: "Use the Automation Project Tools to inspect and make changes when needed.";
 			configureAssistant({
-				systemPrompt: `You are the assistant for the ${projectName} automation. Help users understand, build, and troubleshoot this automation. ${accessInstructions} Explain that each step result is available to later steps as \${variableName}; configuration values are available as \${config.SETTING_NAME}; and fields marked for Playground input can be supplied at run time, overriding their default value. Use the automation's current project configuration and available tools as the source of truth. Never invent an app, reactor, agent, engine, or output variable ID. Keep appId separate from pixel, ask the user when a required concrete value is unavailable, and never claim a change or run succeeded unless a tool result confirms it.`,
+				systemPrompt: "",
+				agent: AUTOMATION_BUILDER_AGENT,
 				mcp: automationMcp,
 				runParams: { project: appId },
 				onToolCompleted: handleAutomationToolCompleted,
@@ -580,8 +580,6 @@ export const AutomationWorkbench = observer(
 			configureAssistant,
 			handleAutomationToolCompleted,
 			notifyAutomationChanged,
-			projectName,
-			readOnly,
 		]);
 
 		return (
@@ -749,7 +747,6 @@ export const AutomationWorkbenchPage = observer(() => {
 			<WorkbenchProvider components={AUTOMATION_COMPONENTS}>
 				<AutomationWorkbench
 					appId={project.project_id}
-					permission={permission}
 					readOnly={readOnly}
 					projectName={
 						project.project_display_name || project.project_name
