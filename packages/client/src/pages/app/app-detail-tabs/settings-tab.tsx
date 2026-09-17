@@ -230,7 +230,7 @@ export const SettingsTab = (props: AppSettingsProps) => {
 			);
 
 			// Load the insight classes
-			await sessionRunPixel(
+			await monolithStore.runQuery(
 				`CompileAppReactors(project='${project.project_id}', release=true);`,
 			);
 

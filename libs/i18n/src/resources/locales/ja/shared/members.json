@@ -33,7 +33,9 @@
 		"weekly": "毎週",
 		"monthly": "毎月",
 		"yearly": "毎年",
-		"allTime": "常時"
+		"allTime": "常時",
+		"credit": "Credit",
+		"maxCredits": "Max Credits"
 	},
 	"footer": {
 		"add": "追加",
