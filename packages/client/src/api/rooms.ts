@@ -735,10 +735,8 @@ const buildAskRoomParams = (request: AskRoomRequest): string => {
 		`command=[${JSON.stringify(`<encode>${request.command}</encode>`)}]`,
 	];
 
-	// Always emitted, and ahead of parentMessageId, so the call is positionally
-	// identical to the playground's AskPlayground/AskRoom — the only caller
-	// known to attach files successfully. `image=[]` is how it says "none".
-	params.push(`image=${JSON.stringify(request.media ?? [])}`);
+	// AskRoom and AskPlayground read uploaded file paths from `media`.
+	params.push(`media=${JSON.stringify(request.media ?? [])}`);
 
 	if (request.parentMessageId) {
 		params.push(
