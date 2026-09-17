@@ -22,6 +22,7 @@ import {
 } from "../../../domain/automation-utils";
 import { getWorkflowNodeDefinition } from "../../../domain/automation-workflow-adapter";
 import { getWorkflowNodeDisplay } from "../../../domain/automation-workflow-display";
+import { useAutomationNode } from "../../../hooks/use-automation";
 import { StatusIcon } from "../../status-icon";
 import { getFlowBorderClass } from "../flow-colors";
 
@@ -39,10 +40,6 @@ export type AutomationNodeData = {
 	highlighted?: boolean;
 	/** True when this step sits on the path leading to the selected node. */
 	pathHighlighted?: boolean;
-	onEdit?: () => void;
-	onDelete?: () => void;
-	onAdd?: () => void;
-	onViewAgentRun?: () => void;
 };
 
 const STATUS_BORDER: Record<string, string> = {
@@ -52,6 +49,7 @@ const STATUS_BORDER: Record<string, string> = {
 
 export function AutomationNode({ data }: NodeProps) {
 	const d = data as AutomationNodeData;
+	const automationNode = useAutomationNode(d.step.id);
 	const {
 		step,
 		runStatus,
@@ -69,7 +67,7 @@ export function AutomationNode({ data }: NodeProps) {
 			d.runTrace?.agentRunId?.trim() &&
 			d.runTrace?.automationRunId?.trim() &&
 			d.runTrace?.nodeId?.trim() &&
-			d.onViewAgentRun,
+			d.runTrace,
 	);
 	// The agent paused itself waiting for a human decision (approve/reject/edit/respond).
 	// Distinguish this from "actively working" so it doesn't look like a stuck spinner.
@@ -123,7 +121,7 @@ export function AutomationNode({ data }: NodeProps) {
 							type="button"
 							onClick={(e) => {
 								e.stopPropagation();
-								d.onEdit?.();
+								automationNode.open();
 							}}
 							className="rounded p-0.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
 							aria-label="Edit step"
@@ -134,7 +132,7 @@ export function AutomationNode({ data }: NodeProps) {
 							type="button"
 							onClick={(e) => {
 								e.stopPropagation();
-								d.onDelete?.();
+								automationNode.delete();
 							}}
 							className="rounded p-0.5 text-destructive/70 transition-colors hover:bg-destructive/10 hover:text-destructive"
 							aria-label="Delete step"
@@ -198,7 +196,11 @@ export function AutomationNode({ data }: NodeProps) {
 										className={`nodrag size-7 shrink-0 ${isWaitingForInput ? "text-warning" : "text-primary"}`}
 										onClick={(event) => {
 											event.stopPropagation();
-											d.onViewAgentRun?.();
+											if (d.runTrace) {
+												automationNode.viewAgentRun(
+													d.runTrace,
+												);
+											}
 										}}
 										aria-label={
 											isWaitingForInput
@@ -275,7 +277,7 @@ export function AutomationNode({ data }: NodeProps) {
 						isConnectable
 						onClick={(event) => {
 							event.stopPropagation();
-							d.onAdd?.();
+							automationNode.addAfter();
 						}}
 						aria-label="Add node or drag to connect"
 						className="border! h-7! w-7! border-border! bg-background! shadow-sm transition-colors hover:border-primary!"

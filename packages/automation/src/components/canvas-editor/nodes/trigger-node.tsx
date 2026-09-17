@@ -1,5 +1,6 @@
 import { Handle, type NodeProps, Position } from "@xyflow/react";
 import { CalendarClock, Plus, Radio, Zap } from "lucide-react";
+import { useAutomationNode } from "../../../hooks/use-automation";
 import { getFlowBorderClass } from "../flow-colors";
 
 type OptionalTriggerMode = "schedule" | "event-based";
@@ -12,12 +13,11 @@ export type TriggerNodeData = {
 	/** True when this step sits on the path leading to the selected node. */
 	pathHighlighted?: boolean;
 	triggerModes?: OptionalTriggerMode[];
-	onEdit?: () => void;
-	onAdd?: () => void;
 };
 
 export function TriggerNode({ data, id }: NodeProps) {
 	const trigger = data as TriggerNodeData;
+	const automationNode = useAutomationNode(id);
 	const triggerModes = trigger.triggerModes ?? [];
 	const statusBorderClass = getFlowBorderClass(
 		trigger.runStatus,
@@ -32,8 +32,8 @@ export function TriggerNode({ data, id }: NodeProps) {
 			<button
 				type="button"
 				aria-label="Edit trigger"
-				disabled={!trigger.onEdit}
-				onClick={() => trigger.onEdit?.()}
+				disabled={automationNode.readOnly}
+				onClick={automationNode.open}
 				className={`relative flex h-18 w-18 rotate-45 appearance-none items-center justify-center rounded-lg border-2 ${statusBorderClass} ${runningClass} bg-card p-0 shadow-sm disabled:cursor-default`}
 			>
 				<span className="absolute inset-0.5 rounded-md bg-card" />
@@ -56,7 +56,7 @@ export function TriggerNode({ data, id }: NodeProps) {
 				isConnectable
 				onClick={(event) => {
 					event.stopPropagation();
-					trigger.onAdd?.();
+					automationNode.addAfter();
 				}}
 				aria-label="Add node or drag to connect"
 				className="border! right-[calc(50%-58px)]! h-7! w-7! border-emerald-500/40! bg-background! shadow-sm transition-colors hover:border-emerald-500!"

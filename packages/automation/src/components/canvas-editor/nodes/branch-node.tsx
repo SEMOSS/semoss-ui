@@ -7,6 +7,7 @@ import type {
 	StepRunStatus,
 } from "../../../domain/automation.types";
 import { formatDurationMs } from "../../../domain/automation-utils";
+import { useAutomationNode } from "../../../hooks/use-automation";
 import { StatusIcon } from "../../status-icon";
 import { getFlowBorderClass } from "../flow-colors";
 
@@ -24,10 +25,6 @@ export type BranchNodeData = {
 	pathHighlighted?: boolean;
 	/** Color for each output handle (keyed by handle id), matching its edge's current render color. */
 	handleColors?: Record<string, string>;
-	onEdit?: () => void;
-	onDelete?: () => void;
-	onAddClause?: (clauseId: string) => void;
-	onAddElse?: () => void;
 };
 
 const STATUS_BORDER: Record<string, string> = {
@@ -39,6 +36,7 @@ const DEFAULT_HANDLE_COLOR = "var(--muted-foreground)";
 
 export function BranchNode({ data }: NodeProps) {
 	const d = data as BranchNodeData;
+	const automationNode = useAutomationNode(d.step.id);
 	const {
 		step,
 		runStatus,
@@ -80,7 +78,7 @@ export function BranchNode({ data }: NodeProps) {
 							type="button"
 							onClick={(e) => {
 								e.stopPropagation();
-								d.onEdit?.();
+								automationNode.open();
 							}}
 							className="rounded p-0.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
 							aria-label="Edit branch"
@@ -91,7 +89,7 @@ export function BranchNode({ data }: NodeProps) {
 							type="button"
 							onClick={(e) => {
 								e.stopPropagation();
-								d.onDelete?.();
+								automationNode.delete();
 							}}
 							className="rounded p-0.5 text-destructive/70 transition-colors hover:bg-destructive/10 hover:text-destructive"
 							aria-label="Delete branch"
@@ -172,7 +170,9 @@ export function BranchNode({ data }: NodeProps) {
 					)}
 					locked={locked}
 					top={`${((index + 1) / (outputCount + 1)) * 100}%`}
-					onAdd={() => d.onAddClause?.(clause.id)}
+					onAdd={() =>
+						automationNode.addAfter(`case-${step.id}-${clause.id}`)
+					}
 					color={
 						d.handleColors?.[`case-${step.id}-${clause.id}`] ??
 						DEFAULT_HANDLE_COLOR
@@ -186,7 +186,7 @@ export function BranchNode({ data }: NodeProps) {
 				connected={elseConnected}
 				locked={locked}
 				top={`${(outputCount / (outputCount + 1)) * 100}%`}
-				onAdd={() => d.onAddElse?.()}
+				onAdd={() => automationNode.addAfter(`else-${step.id}`)}
 				color={
 					d.handleColors?.[`else-${step.id}`] ?? DEFAULT_HANDLE_COLOR
 				}

@@ -68,6 +68,7 @@ import {
 	useTheme,
 } from "@semoss/ui/next";
 import { getAutomationRun, listAutomationRuns } from "../../api";
+import { AutomationContext } from "../../contexts/automation.context";
 import type {
 	AutomationEdge,
 	AutomationExecutedDefinition,
@@ -2255,20 +2256,6 @@ export const AutomationCanvasContent = forwardRef<
 							displayStatuses[step.id] ??
 							(running ? "running" : undefined),
 						pathHighlighted: highlightedPathNodeIds.has(step.id),
-						onEdit: readOnly
-							? undefined
-							: () => {
-									setShowAddMenu(false);
-									setEditingStepId(step.id);
-								},
-						onAdd: viewingHistory
-							? undefined
-							: () => {
-									setEditingStepId(null);
-									setAddAfterStepId(step.id);
-									setAddAfterHandle(null);
-									setShowAddMenu(true);
-								},
 					},
 					draggable: true,
 					style: { width: NODE_WIDTH },
@@ -2313,31 +2300,6 @@ export const AutomationCanvasContent = forwardRef<
 						),
 						handleColors,
 						pathHighlighted: highlightedPathNodeIds.has(step.id),
-						onEdit: () => {
-							setShowAddMenu(false);
-							setEditingStepId(step.id);
-						},
-						onDelete: viewingHistory
-							? undefined
-							: () => deleteStep(step.id),
-						onAddClause: viewingHistory
-							? undefined
-							: (clauseId: string) => {
-									setEditingStepId(null);
-									setAddAfterStepId(step.id);
-									setAddAfterHandle(
-										`case-${step.id}-${clauseId}`,
-									);
-									setShowAddMenu(true);
-								},
-						onAddElse: viewingHistory
-							? undefined
-							: () => {
-									setEditingStepId(null);
-									setAddAfterStepId(step.id);
-									setAddAfterHandle(`else-${step.id}`);
-									setShowAddMenu(true);
-								},
 					},
 					style: { width: NODE_WIDTH },
 				});
@@ -2366,24 +2328,6 @@ export const AutomationCanvasContent = forwardRef<
 							step.id,
 						),
 						pathHighlighted: highlightedPathNodeIds.has(step.id),
-						onEdit: () => {
-							setShowAddMenu(false);
-							setEditingStepId(step.id);
-						},
-						onViewAgentRun: runTrace?.agentRunId
-							? () => onViewAgentRun(runTrace)
-							: undefined,
-						onDelete: viewingHistory
-							? undefined
-							: () => deleteStep(step.id),
-						onAdd: viewingHistory
-							? undefined
-							: () => {
-									setEditingStepId(null);
-									setAddAfterStepId(step.id);
-									setAddAfterHandle(null);
-									setShowAddMenu(true);
-								},
 					},
 					style: { width: NODE_WIDTH },
 				});
@@ -2433,14 +2377,12 @@ export const AutomationCanvasContent = forwardRef<
 		graphEdges,
 		stepDisplayOrder,
 		changeHighlight,
-		deleteStep,
 		deleteEdge,
 		edgeColor,
 		hoveredEdgeId,
 		highlightedPathEdgeIds,
 		highlightedPathNodeIds,
 		layoutNodes,
-		onViewAgentRun,
 		setRfNodes,
 		setRfEdges,
 	]);
@@ -2508,6 +2450,42 @@ export const AutomationCanvasContent = forwardRef<
 		setSteps((previous) => layoutNodes(previous, graphEdges));
 		setIsDirty(true);
 	}, [graphEdges, layoutNodes, readOnly, viewingHistory]);
+	const openNode = useCallback((nodeId: string) => {
+		setShowAddMenu(false);
+		setEditingStepId(nodeId);
+	}, []);
+	const addNodeAfter = useCallback(
+		(nodeId: string, sourceHandle?: string) => {
+			if (viewingHistory) return;
+			setEditingStepId(null);
+			setAddAfterStepId(nodeId);
+			setAddAfterHandle(sourceHandle ?? null);
+			setShowAddMenu(true);
+		},
+		[viewingHistory],
+	);
+	const automationContextValue = useMemo(
+		() => ({
+			nodes: displaySteps,
+			readOnly,
+			viewingHistory,
+			running,
+			openNode,
+			deleteNode: deleteStep,
+			addNodeAfter,
+			viewAgentRun: onViewAgentRun,
+		}),
+		[
+			addNodeAfter,
+			deleteStep,
+			displaySteps,
+			onViewAgentRun,
+			openNode,
+			readOnly,
+			running,
+			viewingHistory,
+		],
+	);
 
 	if (mcpDone) {
 		return (
@@ -2527,7 +2505,7 @@ export const AutomationCanvasContent = forwardRef<
 
 	// ---- Normal canvas view ----
 	return (
-		<>
+		<AutomationContext.Provider value={automationContextValue}>
 			<div className="flex h-full overflow-hidden">
 				<div className="flex min-w-0 flex-1 flex-col bg-background">
 					{/* ---- Content ---- */}
@@ -3094,6 +3072,6 @@ export const AutomationCanvasContent = forwardRef<
 					</DialogFooter>
 				</DialogContent>
 			</Dialog>
-		</>
+		</AutomationContext.Provider>
 	);
 });
