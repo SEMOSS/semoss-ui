@@ -3,6 +3,7 @@ import {
 	CheckIcon,
 	ImageIcon,
 	SquareArrowOutUpRightIcon,
+	StarIcon,
 	TriangleAlert,
 } from "lucide-react";
 import { useTranslation } from "@semoss/i18n";
@@ -61,6 +62,8 @@ export interface MCPCardProps {
 	 * for skills, which are projects but should read "Skill".
 	 */
 	typeLabel?: string;
+	/** When true, renders a filled star to indicate this item is favorited. */
+	favorite?: boolean;
 }
 
 export const MCPCard = ({
@@ -74,6 +77,7 @@ export const MCPCard = ({
 	fromWorkspace,
 	getPlatformUrl,
 	typeLabel,
+	favorite,
 }: MCPCardProps) => {
 	const { t } = useTranslation(["mcp", "common", "workspace"]);
 	const effectiveOnClick = fromWorkspace ? undefined : onClick;
@@ -189,6 +193,9 @@ export const MCPCard = ({
 							</Tooltip>
 						) : null}
 
+						{favorite ? (
+							<StarIcon className="size-3.5 shrink-0 fill-amber-400 text-amber-400" />
+						) : null}
 						{permissionLabel ? (
 							// Nudge text up 1px to optically align with the
 							// icons. flex items-center centers boxes, but

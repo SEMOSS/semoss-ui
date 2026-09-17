@@ -126,5 +126,8 @@
 		"searchPlaceholder": "Kennis en toolboxes zoeken",
 		"noResults": "Geen overeenkomende items gevonden",
 		"noItemsAvailable": "Geen kennis of toolboxes beschikbaar"
+	},
+	"defaultAgent": {
+		"toggle": "Standaard agentprofiel gebruiken"
 	}
 }
