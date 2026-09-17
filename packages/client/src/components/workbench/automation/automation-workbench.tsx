@@ -157,7 +157,7 @@ const createAutomationLayout = (appId: string): WorkbenchLayout => ({
 			type: FILES,
 			name: "Files",
 			canClose: false,
-			config: { type: "PROJECT", id: appId },
+			config: { mode: { type: "APP", app: appId } },
 		},
 		[TRACE]: {
 			id: TRACE,
@@ -314,6 +314,10 @@ const AUTOMATION_COMPONENTS: Record<string, WorkbenchPanelConfigAny> = {
 	},
 	[WORKBENCH_COMPONENTS.FILE_PDF_VIEWER]: {
 		...FILE_PANEL_COMPONENTS[WORKBENCH_COMPONENTS.FILE_PDF_VIEWER],
+		canRename: false,
+	},
+	[WORKBENCH_COMPONENTS.FILE_PPTX_VIEWER]: {
+		...FILE_PANEL_COMPONENTS[WORKBENCH_COMPONENTS.FILE_PPTX_VIEWER],
 		canRename: false,
 	},
 	[MCP_EDITOR]: {
