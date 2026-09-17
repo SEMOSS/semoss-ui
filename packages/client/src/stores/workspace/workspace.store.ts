@@ -1,6 +1,6 @@
 import { makeAutoObservable } from "mobx";
 import { FlexLayout } from "@semoss/shared";
-import type { RootStore, WorkspaceOptions } from "@/stores";
+import type { WorkspaceOptions } from "@/stores";
 
 interface WorkspaceStoreInterface {
 	/**
@@ -45,8 +45,6 @@ interface WorkspaceConfigInterface {
  * Store that manages instances of the insights and handles applicaiton level querying
  */
 export class WorkspaceStore {
-	// biome-ignore lint/correctness/noUnusedPrivateClassMembers: kept for future use
-	private _root: RootStore;
 	private _store: WorkspaceStoreInterface = {
 		insightId: "",
 		isLoading: false,
@@ -55,12 +53,8 @@ export class WorkspaceStore {
 		model: null,
 	};
 
-	constructor(root: RootStore, config: WorkspaceConfigInterface) {
-		// register the root
-		this._root = root;
-
+	constructor(config: WorkspaceConfigInterface) {
 		this._store.insightId = config.insightId;
-
 		this._store.projectId = config.projectId;
 
 		// make it observable

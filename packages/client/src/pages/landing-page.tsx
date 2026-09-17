@@ -1,7 +1,6 @@
 import { ArrowRight } from "lucide-react";
-import { observer } from "mobx-react-lite";
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link } from "react-router";
 import type { Variable } from "@semoss/renderer";
 import { STATE_VERSION } from "@semoss/renderer/version";
 import { Button, H4, Muted } from "@semoss/ui/next";
@@ -28,7 +27,7 @@ import {
 } from "@/pages/app/app.constants";
 import { NavbarHeader, NavbarLeft } from "../components/shared";
 
-export const LandingPage: React.FC = observer(() => {
+export const LandingPage: React.FC = () => {
 	// setup the page
 	usePage({
 		showNavbarSearch: true,
@@ -173,4 +172,4 @@ export const LandingPage: React.FC = observer(() => {
 			</div>
 		</>
 	);
-});
+};

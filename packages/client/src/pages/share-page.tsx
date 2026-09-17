@@ -1,10 +1,11 @@
 import { observer } from "mobx-react-lite";
 import { useEffect, useState } from "react";
+import { runPixel } from "@semoss/sdk/react";
 import type { Project } from "@semoss/shared";
 import { Spinner, toast } from "@semoss/ui/next";
 import { ProjectView } from "@/components/project";
 import { PlatformMessages } from "@/components/shared";
-import { useProject, useRootStore } from "@/hooks";
+import { useProject } from "@/hooks";
 import { useNavigate } from "@/hooks/useNavigate";
 
 /** Project types the share page can render a read-only view for. */
@@ -19,7 +20,6 @@ const SHAREABLE_TYPES = new Set<Project["project_type"]>([
  * Render a shared project's read-only view (navbar-free) for the `#/s/:appId` route.
  */
 export const SharePage = observer(() => {
-	const { configStore } = useRootStore();
 	const { project } = useProject();
 
 	const navigate = useNavigate();
@@ -30,15 +30,14 @@ export const SharePage = observer(() => {
 	useEffect(() => {
 		setInsightId(null);
 
-		configStore
-			.createProjectInsight(project)
-			.then((loadedInsightId) => {
+		runPixel(`SetContext("${project.project_id}")`, "new")
+			.then((response) => {
 				if (!SHAREABLE_TYPES.has(project.project_type)) {
 					toast.error("This project type cannot be shared.");
 					navigate("/");
 					return;
 				}
-				setInsightId(loadedInsightId);
+				setInsightId(response.insightId);
 			})
 			.catch((e) => {
 				toast.error(e.message);

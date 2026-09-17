@@ -73,6 +73,7 @@ export const useFileExplorer = (
 		onItemSelect,
 		onItemsMoved,
 		onItemsDeleted,
+		onItemsWritten,
 		onVisibleItemsChange,
 		onItemDragStart,
 	} = options;
@@ -348,10 +349,20 @@ export const useFileExplorer = (
 	/**
 	 * Reload the given directories. A search result is a flat list with no
 	 * per-directory reloaders, so it always falls back to a full reload.
+	 *
+	 * With no directories named, this means "everything on screen" — and that
+	 * is more than the root listing. Each expanded directory fetches its own
+	 * children and registers its own reloader, so reloading only the root left
+	 * every open folder showing the contents it already had: a file written
+	 * into one by an agent, a checkout, or another panel stayed invisible until
+	 * the user collapsed and re-expanded it.
 	 */
 	const refresh = (directoryPaths?: string[]) => {
 		if (debouncedSearch || !directoryPaths?.length) {
 			getFiles.refresh();
+			for (const reload of directoryRefreshRef.current.values()) {
+				reload();
+			}
 			return;
 		}
 
@@ -676,12 +687,14 @@ export const useFileExplorer = (
 			const normalizedTarget = ensureDirectoryPath(targetDirectory);
 			const affected = new Set<string>([normalizedTarget]);
 			const failed: string[] = [];
+			const written: string[] = [];
 			let copiedCount = 0;
 
 			for (const item of copyingItems) {
 				try {
 					const newPath = `${normalizedTarget}${getItemName(item)}`;
 					await insight.actions.run(adapter.copy(item.path, newPath));
+					written.push(newPath);
 					copiedCount += 1;
 				} catch (e) {
 					failed.push(getFileOperationErrorMessage(item.name, e));
@@ -692,6 +705,12 @@ export const useFileExplorer = (
 			clearSelection();
 			closeContextMenu();
 			refresh(Array.from(affected));
+
+			if (written.length > 0) {
+				// A copy onto an existing name replaces it, and nothing else
+				// in this flow tells a panel showing that file.
+				onItemsWritten?.(written);
+			}
 
 			if (copiedCount > 0) {
 				toast.success(
@@ -866,6 +885,9 @@ export const useFileExplorer = (
 		try {
 			await insight.actions.run(adapter.unzip(item.path));
 			refresh([getParentPath(item.path)]);
+			// An archive does not say what came out of it, so this cannot name
+			// the files it overwrote.
+			onItemsWritten?.();
 		} catch (e) {
 			toast.error(
 				getFileOperationErrorMessage(

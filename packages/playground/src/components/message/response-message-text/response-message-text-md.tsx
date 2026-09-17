@@ -4,7 +4,10 @@ import { Markdown } from "@semoss/ui/next";
 import { type ChunkStatus, useRoot } from "@/hooks";
 import { useMarkdownTypewriter } from "@/hooks/use-markdown-typewriter";
 import type { ResponseMessageStore } from "@/stores";
-import { createMarkdownComponents } from "./create-markdown-components";
+import {
+	createMarkdownComponents,
+	createMarkdownUrlTransform,
+} from "./create-markdown-components";
 
 interface ResponseMessageTextMdProps {
 	/** Full content of this markdown chunk (may grow during streaming). */
@@ -66,17 +69,10 @@ export const ResponseMessageTextMd: React.FC<ResponseMessageTextMdProps> =
 		);
 
 		// ── URL transform ─────────────────────────────────────────────────────────
-		const urlTransform = (url: string) => {
-			if (url.startsWith("room://")) return url;
-			if (
-				root.theme.allowedUrlPrefixes?.some((prefix) =>
-					url.startsWith(prefix),
-				)
-			)
-				return url;
-			if (/^(https?:|mailto:|#)/.test(url)) return url;
-			return "";
-		};
+		const urlTransform = useMemo(
+			() => createMarkdownUrlTransform(root.theme.allowedUrlPrefixes),
+			[root.theme.allowedUrlPrefixes],
+		);
 
 		// ── Effects ───────────────────────────────────────────────────────────────
 

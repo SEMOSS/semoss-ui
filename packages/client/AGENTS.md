@@ -17,7 +17,7 @@ main web application.
 - **Bundler**: Vite 7
 - **Framework**: React 18 + TypeScript
 - **State**: MobX (`mobx` + `mobx-react-lite`)
-- **Routing**: `react-router-dom` 6
+- **Routing**: `react-router` 7
 - **Styling**: Tailwind CSS v4
 - **Testing**: Vitest
 

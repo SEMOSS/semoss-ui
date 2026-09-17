@@ -1,0 +1,9 @@
+/*
+ * Tailwind has to scan this package's sources, or none of the dock's classes
+ * are generated in the host's stylesheet -- and a missing utility class fails
+ * silently, as an unstyled shell rather than a build error.
+ *
+ * Same shape as `@semoss/ui` and `@semoss/shared`: the package declares its own
+ * sources and every host imports this once.
+ */
+@source "../**/*.{ts,tsx}";

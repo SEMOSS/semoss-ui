@@ -1,28 +1,37 @@
-import { useEffect } from "react";
-import { useProject, useWorkbench, useWorkbenchCommands } from "@/hooks";
+import { useEffect, useMemo } from "react";
+import { FILE_PANEL_COMPONENTS } from "@semoss/panels";
+import type { Role } from "@semoss/sdk";
+import { useInsight } from "@semoss/sdk/react";
+import { useCacheData } from "@semoss/ui/next";
 import type {
 	WorkbenchLayout,
 	WorkbenchPanelConfigAny,
-} from "@/stores/workbench";
-import { WORKBENCH_ASSISTANT_PANEL } from "../../assistant";
-import { Workbench } from "../../core";
-import { WorkbenchCommandMenuButton } from "../../core/workbench-command-menu-button";
+	WorkbenchSnapshot,
+} from "@semoss/workbench";
+import {
+	useWorkbenchCommands,
+	Workbench,
+	WorkbenchCommandMenuButton,
+	WorkbenchResetButton,
+} from "@semoss/workbench";
+import { ASSISTANT_PANEL } from "@/components/assistant";
+import { AssistantStoreProvider } from "@/contexts";
+import { useAssistantStore, useProject, useSession } from "@/hooks";
 import {
 	WORKBENCH_COMPONENTS,
 	WORKBENCH_PANEL_RECORDS,
-} from "../../workbench.constants";
-import { PROJECT_FILE_CODE_EDITOR_PANEL } from "../project-file-code-editor-panel";
-import { PROJECT_FILE_DOWNLOAD_VIEWER_PANEL } from "../project-file-download-viewer-panel";
-import { PROJECT_FILE_EXPLORER_PANEL } from "../project-file-explorer-panel";
-import { PROJECT_FILE_IMAGE_EDITOR_PANEL } from "../project-file-image-editor-panel";
-import { PROJECT_FILE_MARKDOWN_EDITOR_PANEL } from "../project-file-markdown-editor-panel";
-import { PROJECT_FILE_NOTEBOOK_EDITOR_PANEL } from "../project-file-notebook-editor-panel";
-import { PROJECT_FILE_PDF_EDITOR_PANEL } from "../project-file-pdf-editor-panel";
+} from "@/stores/workbench";
+import { GIT_DIFF_PANEL, GIT_VERSION_PANEL } from "../../git";
+import { useAssistantFilesChanged } from "../../use-assistant-files-changed";
+import {
+	createFileCommands,
+	createOpenPanelCommand,
+	createReconnectCommand,
+} from "../../workbench.presets";
 import { PROJECT_INSIGHT_EXPLORER_PANEL } from "../project-insight-explorer-panel";
-import { PROJECT_MCP_EDITOR_PANEL } from "../project-mcp-editor-panel";
-import { ProjectPublishButton } from "../project-publish-button";
 import {
 	createProjectSettingsPanel,
+	PROJECT_SETTINGS_TABS,
 	ProjectSettingsToggle,
 } from "../project-settings-toggle";
 import { PROJECT_TERMINAL_PANEL } from "../project-terminal-panel";
@@ -35,102 +44,89 @@ const SKILL_NAME = "SKILL.md";
 const SKILL_EDITOR_ID = "skill-md";
 
 /** The default arrangement: SKILL.md open, files and insight on the left. */
-const SKILL_WORKBENCH_LAYOUT: WorkbenchLayout = {
-	version: 1,
-	tree: {
-		type: "tabset",
-		id: "main",
-		size: 1,
-		panelIds: [SKILL_EDITOR_ID],
-		activeId: SKILL_EDITOR_ID,
-	},
-	panels: {
-		[SKILL_EDITOR_ID]: {
-			id: SKILL_EDITOR_ID,
-			type: WORKBENCH_COMPONENTS.PROJECT_FILE_MARKDOWN_EDITOR,
-			name: SKILL_NAME,
-			canClose: false,
-			config: { name: SKILL_NAME, path: SKILL_PATH },
+const createSkillWorkbenchLayout = (
+	projectId: string,
+	permission: Role,
+): WorkbenchLayout => {
+	const readOnly = !(permission === "OWNER" || permission === "EDIT");
+	return {
+		tree: {
+			type: "tabset",
+			id: "main",
+			size: 1,
+			panelIds: [SKILL_EDITOR_ID],
+			activeId: SKILL_EDITOR_ID,
 		},
-		[WORKBENCH_PANEL_RECORDS.PROJECT_FILE_EXPLORER.id]:
-			WORKBENCH_PANEL_RECORDS.PROJECT_FILE_EXPLORER,
-		[WORKBENCH_PANEL_RECORDS.PROJECT_INSIGHT_EXPLORER.id]:
-			WORKBENCH_PANEL_RECORDS.PROJECT_INSIGHT_EXPLORER,
-		[WORKBENCH_PANEL_RECORDS.PROJECT_TERMINAL.id]:
-			WORKBENCH_PANEL_RECORDS.PROJECT_TERMINAL,
-		[WORKBENCH_PANEL_RECORDS.ASSISTANT.id]:
-			WORKBENCH_PANEL_RECORDS.ASSISTANT,
-	},
-	borders: {
-		left: {
-			panelIds: [
-				WORKBENCH_COMPONENTS.PROJECT_FILE_EXPLORER,
-				WORKBENCH_COMPONENTS.PROJECT_INSIGHT_EXPLORER,
-			],
-			activeId: WORKBENCH_COMPONENTS.PROJECT_FILE_EXPLORER,
-			size: 400,
+		panels: {
+			[SKILL_EDITOR_ID]: {
+				id: SKILL_EDITOR_ID,
+				type: WORKBENCH_COMPONENTS.FILE_MARKDOWN_EDITOR,
+				name: SKILL_NAME,
+				canClose: false,
+				config: {
+					mode: { type: "APP", app: projectId },
+					name: SKILL_NAME,
+					path: SKILL_PATH,
+				},
+			},
+			[WORKBENCH_PANEL_RECORDS.FILE_EXPLORER.id]: {
+				...WORKBENCH_PANEL_RECORDS.FILE_EXPLORER,
+				config: { mode: { type: "APP", app: projectId } },
+			},
+			...(!readOnly
+				? {
+						[WORKBENCH_PANEL_RECORDS.GIT_VERSION.id]: {
+							...WORKBENCH_PANEL_RECORDS.GIT_VERSION,
+							config: { type: "PROJECT", id: projectId },
+						},
+					}
+				: {}),
+			[WORKBENCH_PANEL_RECORDS.PROJECT_INSIGHT_EXPLORER.id]:
+				WORKBENCH_PANEL_RECORDS.PROJECT_INSIGHT_EXPLORER,
+			[WORKBENCH_PANEL_RECORDS.PROJECT_TERMINAL.id]:
+				WORKBENCH_PANEL_RECORDS.PROJECT_TERMINAL,
+			[WORKBENCH_PANEL_RECORDS.ASSISTANT.id]:
+				WORKBENCH_PANEL_RECORDS.ASSISTANT,
 		},
-		bottom: {
-			panelIds: [WORKBENCH_COMPONENTS.PROJECT_TERMINAL],
-			activeId: null,
-			size: 300,
+		borders: {
+			left: {
+				panelIds: [
+					WORKBENCH_COMPONENTS.FILE_EXPLORER,
+					...(!readOnly ? [WORKBENCH_COMPONENTS.GIT_VERSION] : []),
+					WORKBENCH_COMPONENTS.PROJECT_INSIGHT_EXPLORER,
+				],
+				activeId: WORKBENCH_COMPONENTS.FILE_EXPLORER,
+				size: 400,
+			},
+			bottom: {
+				panelIds: [WORKBENCH_COMPONENTS.PROJECT_TERMINAL],
+				activeId: null,
+				size: 300,
+			},
+			right: {
+				panelIds: [WORKBENCH_COMPONENTS.ASSISTANT],
+				activeId: null,
+				size: 400,
+			},
 		},
-		right: {
-			panelIds: [WORKBENCH_COMPONENTS.ASSISTANT],
-			activeId: null,
-			size: 400,
-		},
-	},
+	};
 };
 
 /** Blueprints, keyed by type. Module-scope so identities never churn. */
-const SKILL_WORKBENCH_COMPONENTS: Record<string, WorkbenchPanelConfigAny> = {
-	[WORKBENCH_COMPONENTS.PROJECT_FILE_EXPLORER]: PROJECT_FILE_EXPLORER_PANEL,
+export const SKILL_WORKBENCH_COMPONENTS: Record<
+	string,
+	WorkbenchPanelConfigAny
+> = {
+	...FILE_PANEL_COMPONENTS,
+	[WORKBENCH_COMPONENTS.GIT_VERSION]: GIT_VERSION_PANEL,
+	[WORKBENCH_COMPONENTS.GIT_DIFF]: GIT_DIFF_PANEL,
 	[WORKBENCH_COMPONENTS.PROJECT_INSIGHT_EXPLORER]:
 		PROJECT_INSIGHT_EXPLORER_PANEL,
-	[WORKBENCH_COMPONENTS.PROJECT_FILE_CODE_EDITOR]:
-		PROJECT_FILE_CODE_EDITOR_PANEL,
-	[WORKBENCH_COMPONENTS.PROJECT_FILE_DOWNLOAD_VIEWER]:
-		PROJECT_FILE_DOWNLOAD_VIEWER_PANEL,
-	[WORKBENCH_COMPONENTS.PROJECT_FILE_IMAGE_EDITOR]:
-		PROJECT_FILE_IMAGE_EDITOR_PANEL,
-	[WORKBENCH_COMPONENTS.PROJECT_FILE_MARKDOWN_EDITOR]:
-		PROJECT_FILE_MARKDOWN_EDITOR_PANEL,
-	[WORKBENCH_COMPONENTS.PROJECT_FILE_NOTEBOOK_EDITOR]:
-		PROJECT_FILE_NOTEBOOK_EDITOR_PANEL,
-	[WORKBENCH_COMPONENTS.PROJECT_FILE_PDF_EDITOR]:
-		PROJECT_FILE_PDF_EDITOR_PANEL,
-	[WORKBENCH_COMPONENTS.PROJECT_MCP_EDITOR]: PROJECT_MCP_EDITOR_PANEL,
 	[WORKBENCH_COMPONENTS.PROJECT_TERMINAL]: PROJECT_TERMINAL_PANEL,
-	[WORKBENCH_COMPONENTS.PROJECT_SETTINGS]: createProjectSettingsPanel([
-		{ name: "Overview", component: "project-overview" },
-		{
-			name: "MCP",
-			component: "mcp-usage",
-			restrict: ["OWNER", "EDIT", "READ_ONLY"],
-		},
-		{
-			name: "Commits",
-			component: "commits",
-			restrict: ["OWNER", "EDIT"],
-		},
-		{
-			name: "GitHub",
-			component: "github",
-			restrict: ["OWNER"],
-		},
-		{
-			name: "Access Control",
-			component: "access-control",
-			restrict: ["OWNER", "EDIT"],
-		},
-		{
-			name: "SMSS",
-			component: "smss",
-			restrict: ["OWNER"],
-		},
-	]),
-	[WORKBENCH_COMPONENTS.ASSISTANT]: WORKBENCH_ASSISTANT_PANEL,
+	[WORKBENCH_COMPONENTS.PROJECT_SETTINGS]: createProjectSettingsPanel(
+		PROJECT_SETTINGS_TABS,
+	),
+	[WORKBENCH_COMPONENTS.ASSISTANT]: ASSISTANT_PANEL,
 };
 
 /**
@@ -139,15 +135,47 @@ const SKILL_WORKBENCH_COMPONENTS: Record<string, WorkbenchPanelConfigAny> = {
  * insight explorer, a Pixel terminal, and the shared assistant panel.
  */
 export const SkillWorkbench: React.FC = () => {
-	const { project } = useProject();
+	const { project, permission } = useProject();
+	const insight = useInsight();
+	const readOnly = !(permission === "OWNER" || permission === "EDIT");
+	const workbenchLayout = useMemo(
+		() => createSkillWorkbenchLayout(project.project_id, permission),
+		[project.project_id, permission],
+	);
 
-	const configureAssistant = useWorkbench((s) => s.assistant.configure);
+	// What this workbench is known by: its own cache entry, and — where there
+	// is an assistant — the workbench its conversations are tagged with,
+	// server-side. Read-only variants keep their own arrangement.
+	const workbenchId = readOnly
+		? `${project.project_id}--read-only`
+		: project.project_id;
+
+	const [snapshot, onSnapshotChange] = useCacheData<WorkbenchSnapshot>(
+		`workbench-layout--${workbenchId}--1`,
+		workbenchLayout,
+	);
+
+	const syncPermission = useSession((s) => s.syncPermission);
+	const refreshPermission = useSession((s) => s.refreshPermission);
+
+	const assistantStore = useAssistantStore(workbenchId);
 
 	// keep the assistant's system prompt/tools in sync with the active skill
+	const filesChanged = useAssistantFilesChanged({
+		type: "APP",
+		app: project.project_id,
+	});
+
 	useEffect(() => {
 		const name = project.project_display_name || project.project_name;
 
-		configureAssistant({
+		syncPermission("PROJECT", project.project_id, permission);
+		void refreshPermission("PROJECT", project.project_id).catch(
+			() => undefined,
+		);
+
+		assistantStore.getState().configure({
+			onRunCompleted: filesChanged,
 			systemPrompt: `You are the assistant for the ${name} skill workbench (${project.project_id}). Your role is to help the user build and run this skill and the rest of the project's files. Use only the tools provided in this room. Never claim that an operation succeeded unless its tool result confirms success. Keep answers concise and grounded in the active project.`,
 			mcp: [
 				{
@@ -159,70 +187,63 @@ export const SkillWorkbench: React.FC = () => {
 			runParams: { project: project.project_id },
 		});
 	}, [
-		configureAssistant,
+		filesChanged,
+		assistantStore,
+		syncPermission,
+		refreshPermission,
+		permission,
 		project.project_display_name,
 		project.project_id,
 		project.project_name,
 	]);
 
 	useWorkbenchCommands([
-		{
+		createReconnectCommand(insight),
+		...createFileCommands({ readOnly: readOnly }),
+		createOpenPanelCommand({
 			id: "workbench.project-file-explorer.open",
-			category: "View",
 			label: "Open File Explorer",
-			handler: (get) => {
-				get().layout.actions.selectPanel(
-					WORKBENCH_COMPONENTS.PROJECT_FILE_EXPLORER,
-				);
+			type: WORKBENCH_COMPONENTS.FILE_EXPLORER,
+			config: {
+				mode: { type: "APP", app: project.project_id },
 			},
-		},
-		{
+		}),
+		createOpenPanelCommand({
 			id: "workbench.project-insight-explorer.open",
-			category: "View",
 			label: "Open Insight File Explorer",
-			handler: (get) => {
-				get().layout.actions.selectPanel(
-					WORKBENCH_COMPONENTS.PROJECT_INSIGHT_EXPLORER,
-				);
-			},
-		},
-		{
+			type: WORKBENCH_COMPONENTS.PROJECT_INSIGHT_EXPLORER,
+		}),
+		createOpenPanelCommand({
 			id: "workbench.project-terminal.open",
-			category: "View",
 			label: "Open Terminal",
-			handler: (get) => {
-				get().layout.actions.selectPanel(
-					WORKBENCH_COMPONENTS.PROJECT_TERMINAL,
-				);
-			},
-		},
-		{
+			type: WORKBENCH_COMPONENTS.PROJECT_TERMINAL,
+		}),
+		createOpenPanelCommand({
 			id: "workbench.project-settings.open",
-			category: "View",
 			label: "Open Settings",
-			handler: (get) => {
-				get().layout.actions.selectPanel(
-					WORKBENCH_COMPONENTS.PROJECT_SETTINGS,
-				);
-			},
-		},
+			type: WORKBENCH_COMPONENTS.PROJECT_SETTINGS,
+		}),
 	]);
 
 	return (
-		<Workbench
-			layout={SKILL_WORKBENCH_LAYOUT}
-			components={SKILL_WORKBENCH_COMPONENTS}
-			borderSlots={{
-				left: {
-					after: (
-						<>
-							<WorkbenchCommandMenuButton />
-							<ProjectPublishButton />
-							<ProjectSettingsToggle />
-						</>
-					),
-				},
-			}}
-		/>
+		<AssistantStoreProvider store={assistantStore}>
+			<Workbench
+				snapshot={snapshot}
+				onChange={onSnapshotChange}
+				borderSlots={{
+					left: {
+						after: (
+							<>
+								<WorkbenchCommandMenuButton />
+								<ProjectSettingsToggle />
+								<WorkbenchResetButton
+									snapshot={workbenchLayout}
+								/>
+							</>
+						),
+					},
+				}}
+			/>
+		</AssistantStoreProvider>
 	);
 };

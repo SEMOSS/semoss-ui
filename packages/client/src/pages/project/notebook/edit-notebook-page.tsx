@@ -1,5 +1,5 @@
 import { ChevronRightIcon, EyeIcon } from "lucide-react";
-import { Link, Navigate } from "react-router-dom";
+import { Link, Navigate } from "react-router";
 import { InsightProvider } from "@semoss/sdk/react";
 import {
 	Breadcrumb,
@@ -15,7 +15,10 @@ import {
 } from "@semoss/ui/next";
 import { ProjectShareButton } from "@/components/project";
 import { NavbarHeader, NavbarLeft, NavbarRight } from "@/components/shared";
-import { NotebookWorkbench } from "@/components/workbench";
+import {
+	NOTEBOOK_WORKBENCH_COMPONENTS,
+	NotebookWorkbench,
+} from "@/components/workbench";
 import { WorkbenchProvider } from "@/contexts";
 import { usePage, useProject } from "@/hooks";
 
@@ -39,7 +42,7 @@ export const EditNotebookPage = () => {
 
 	return (
 		<InsightProvider options={{ app: project.project_id }}>
-			<WorkbenchProvider id={project.project_id}>
+			<WorkbenchProvider components={NOTEBOOK_WORKBENCH_COMPONENTS}>
 				<NavbarLeft>
 					<NavbarHeader logo={null} />
 					<Breadcrumb>

@@ -1,43 +1,22 @@
 import { CloudIcon } from "lucide-react";
-import { useEffect, useMemo } from "react";
+import { useMemo } from "react";
 import { useTranslation } from "@semoss/i18n";
+import { FileExplorerPane, getFilePanelType } from "@semoss/panels";
 import { runPixel, useInsight } from "@semoss/sdk/react";
 import {
-	FileExplorer,
+	decorateExplorer,
 	type FileExplorerApi,
-	type FileExplorerCommands,
-	FileExplorerHeader,
 	type FileMode,
-	getFileEditorKind,
 	getFileOperationErrorMessage,
-	NewFileOverlay,
 	useFileExplorer,
 } from "@semoss/shared";
 import { toast } from "@semoss/ui/next";
-import { useEngine, useWorkbench, useWorkbenchControl } from "@/hooks";
 import type {
 	WorkbenchComponent,
 	WorkbenchPanelConfig,
-} from "@/stores/workbench";
-import { FileExplorerControl } from "../../file-explorer-control";
-import { WORKBENCH_COMPONENTS } from "../../workbench.constants";
-
-const getFilePanelType = (path: string) => {
-	switch (getFileEditorKind(path)) {
-		case "download":
-			return WORKBENCH_COMPONENTS.FILE_DOWNLOAD_VIEWER;
-		case "image":
-			return WORKBENCH_COMPONENTS.FILE_IMAGE_EDITOR;
-		case "markdown":
-			return WORKBENCH_COMPONENTS.FILE_MARKDOWN_EDITOR;
-		case "notebook":
-			return WORKBENCH_COMPONENTS.FILE_NOTEBOOK_EDITOR;
-		case "pdf":
-			return WORKBENCH_COMPONENTS.FILE_PDF_EDITOR;
-		default:
-			return WORKBENCH_COMPONENTS.FILE_CODE_EDITOR;
-	}
-};
+} from "@semoss/workbench";
+import { useWorkbench } from "@semoss/workbench";
+import { useEngine } from "@/hooks";
 
 /**
  * Storage-bucket explorer panel.
@@ -49,14 +28,12 @@ const getFilePanelType = (path: string) => {
  * against that insight rather than the bucket. Refresh additionally syncs the
  * current directory down into the paired engine's local file tree.
  */
-const StorageFileExplorerPanel: WorkbenchComponent<
-	Record<string, unknown>,
-	FileExplorerApi
-> = ({ id, setValue }) => {
-	const { engine } = useEngine();
+const StorageFileExplorerPanel: WorkbenchComponent = ({ id }) => {
+	const { engine, permission } = useEngine();
 	const insight = useInsight();
 	const { t } = useTranslation("common");
 	const layoutActions = useWorkbench((s) => s.layout.actions);
+	const readOnly = !(permission === "OWNER" || permission === "EDIT");
 	const mode = useMemo<FileMode>(
 		() => ({ type: "STORAGE", storage: engine.engine_id }),
 		[engine.engine_id],
@@ -64,6 +41,7 @@ const StorageFileExplorerPanel: WorkbenchComponent<
 
 	const explorer = useFileExplorer({
 		mode: mode,
+		readOnly,
 		onItemSelect: (item) => {
 			const fileName =
 				item.name.split("/").filter(Boolean).pop() || item.name;
@@ -81,10 +59,12 @@ const StorageFileExplorerPanel: WorkbenchComponent<
 					layoutActions.selectPanel(
 						getFilePanelType(insightFilePath),
 						{
+							mode: {
+								type: "INSIGHT",
+								insightId: response.insightId,
+							},
 							name: item.name,
 							path: insightFilePath,
-							fileMode: "INSIGHT",
-							insightId: response.insightId,
 						},
 						{ name: item.name },
 					);
@@ -95,87 +75,43 @@ const StorageFileExplorerPanel: WorkbenchComponent<
 		},
 	});
 
-	// `explorer`'s slices (header, tree, ...) are getters onto live state, kept
-	// behind one stable identity so a non-rendering holder still reads current
-	// data (see the big comment at the end of `useFileExplorer`). Wrapping it
-	// to layer sync-on-refresh has to preserve that — spreading `explorer`
-	// would snapshot every getter's *current value* once and freeze it, so the
-	// wrapper forwards each slice through its own getter instead, and only
-	// `commands` is a plain object (reading `explorer.header.path` at call
-	// time, not at wrap time, keeps it targeting the directory that's actually
-	// open when refresh fires).
-	//
 	// Pulling the bucket down to local is folded into refresh rather than a
 	// separate action — every refresh (chrome control, header) also asks the
 	// backend to mirror the current directory into the paired engine's local
 	// tree. Best-effort: a failed sync doesn't block the listing reload.
-	// `explorer`, `engine.engine_id`, and `insight.actions` are all stable for
-	// this panel's lifetime, so this builds once.
-	const wrappedExplorer = useMemo<FileExplorerApi>(() => {
-		const wrappedCommands: FileExplorerCommands = {
-			...explorer.commands,
-			refresh: (paths) => {
-				const target = paths?.[0] ?? explorer.header.path;
-				insight.actions
-					.run(
-						`Storage(storage = "${engine.engine_id}") | SyncStorageToLocal(storagePath='${target}', filePath='${target}');`,
-					)
-					.catch((e) => {
-						toast.error(
-							getFileOperationErrorMessage(
-								t("fileExplorer.toasts.syncFailed"),
-								e,
-							),
-						);
-					});
-				explorer.commands.refresh(paths);
-			},
-		};
-
-		return {
-			get instanceId() {
-				return explorer.instanceId;
-			},
-			get mode() {
-				return explorer.mode;
-			},
-			get adapter() {
-				return explorer.adapter;
-			},
-			get capabilities() {
-				return explorer.capabilities;
-			},
-			get header() {
-				return explorer.header;
-			},
-			get tree() {
-				return explorer.tree;
-			},
-			get dnd() {
-				return explorer.dnd;
-			},
-			get newFile() {
-				return explorer.newFile;
-			},
-			commands: wrappedCommands,
-		};
-	}, [explorer, engine.engine_id, insight.actions, t]);
-
-	// publish the explorer for the panel's chrome control. `wrappedExplorer`
-	// is identity-stable (built once above), so this runs once; `setValue` is
-	// intentionally not a dependency — it takes a new identity whenever the
-	// value it writes does, which would loop.
-	// biome-ignore lint/correctness/useExhaustiveDependencies: see above
-	useEffect(() => setValue(wrappedExplorer), [wrappedExplorer]);
-	useWorkbenchControl(id, FileExplorerControl);
-
-	return (
-		<FileExplorer
-			explorer={wrappedExplorer}
-			header={<FileExplorerHeader explorer={wrappedExplorer} />}
-			newFileOverlay={NewFileOverlay}
-		/>
+	//
+	// Read `explorer.header.path` at call time, not at wrap time, so it
+	// targets the directory that is actually open when refresh fires.
+	// `decorateExplorer` keeps the api live behind one stable identity;
+	// memoizing is required, not an optimization — an unmemoized decoration
+	// churns the identity every render and the pane would republish it in a
+	// loop.
+	const wrappedExplorer = useMemo(
+		() =>
+			decorateExplorer(explorer, {
+				refresh: (live) => (paths) => {
+					const target = paths?.[0] ?? live.header.path;
+					if (!readOnly) {
+						insight.actions
+							.run(
+								`Storage(storage = "${engine.engine_id}") | SyncStorageToLocal(storagePath='${target}', filePath='${target}');`,
+							)
+							.catch((e) => {
+								toast.error(
+									getFileOperationErrorMessage(
+										t("fileExplorer.toasts.syncFailed"),
+										e,
+									),
+								);
+							});
+					}
+					live.commands.refresh(paths);
+				},
+			}),
+		[engine.engine_id, explorer, insight.actions, readOnly, t],
 	);
+
+	return <FileExplorerPane id={id} explorer={wrappedExplorer} />;
 };
 
 /**

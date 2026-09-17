@@ -25,11 +25,12 @@ import {
 	TooltipTrigger,
 	toast,
 } from "@semoss/ui/next";
-import { useDatabaseWorkbench, useEngine, useRootStore } from "@/hooks";
 import type {
 	WorkbenchComponent,
 	WorkbenchPanelConfig,
-} from "@/stores/workbench";
+} from "@semoss/workbench";
+import { useWorkbenchPanel } from "@semoss/workbench";
+import { useDatabaseWorkbench, useEngine, useSession } from "@/hooks";
 import { DatabaseResultsHeader } from "./database-results-header";
 import { DatabaseStatementResultView } from "./database-statement-result-view";
 
@@ -39,11 +40,11 @@ export interface DatabaseQueryResultsConfig {
 	sourcePanel: string;
 }
 
-const DatabaseQueryResultsPanel: WorkbenchComponent<
-	DatabaseQueryResultsConfig
-> = ({ config }) => {
+const DatabaseQueryResultsPanel: WorkbenchComponent = ({ id }) => {
+	const { config } = useWorkbenchPanel<DatabaseQueryResultsConfig>(id);
+
 	const { engine } = useEngine();
-	const { configStore } = useRootStore();
+	const runPixel = useSession((state) => state.runPixel);
 
 	const sourcePanel = config.sourcePanel;
 
@@ -84,7 +85,7 @@ const DatabaseQueryResultsPanel: WorkbenchComponent<
 		try {
 			setExportingStatement(statement);
 
-			const response = await configStore.runPixel(pixel);
+			const response = await runPixel(pixel);
 
 			if (response.errors?.length) {
 				throw new Error(response.errors.join("\n"));

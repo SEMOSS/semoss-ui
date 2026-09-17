@@ -1,9 +1,8 @@
 import { Menu } from "lucide-react";
-import { observer } from "mobx-react-lite";
 import type React from "react";
 import { Button } from "@semoss/ui/next";
 import { THEME } from "@/constants";
-import { usePage, useRootStore, useThemeLogo } from "@/hooks";
+import { useConfig, usePage, useThemeLogo } from "@/hooks";
 
 interface NavbarHeaderProps {
 	/**
@@ -11,10 +10,10 @@ interface NavbarHeaderProps {
 	 */
 	logo?: React.ReactNode | null;
 }
-export const NavbarHeader = observer((props: NavbarHeaderProps) => {
+export const NavbarHeader = (props: NavbarHeaderProps) => {
 	const { logo } = props;
-	const { page } = usePage();
-	const { configStore } = useRootStore();
+	const page = usePage();
+	const themeConfig = useConfig((state) => state.config.theme);
 	const themeLogo = useThemeLogo();
 	// `logo` has three intentional states:
 	// - `undefined`: show default branding (theme logo + name)
@@ -23,9 +22,7 @@ export const NavbarHeader = observer((props: NavbarHeaderProps) => {
 	const showDefaultBranding = logo === undefined;
 	let customThemeMap: Record<string, unknown> = {};
 	try {
-		const rawThemeMap = (
-			configStore.store.config.theme as { THEME_MAP?: string }
-		)?.THEME_MAP;
+		const rawThemeMap = (themeConfig as { THEME_MAP?: string })?.THEME_MAP;
 		if (rawThemeMap) {
 			customThemeMap = JSON.parse(rawThemeMap) as Record<string, unknown>;
 		}
@@ -80,4 +77,4 @@ export const NavbarHeader = observer((props: NavbarHeaderProps) => {
 			)}
 		</div>
 	) : null;
-});
+};
