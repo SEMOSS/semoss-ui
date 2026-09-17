@@ -212,6 +212,11 @@ const applyAgentRunItem = (
 ) => {
 	const room = responseMessage.room;
 
+	if (event.type !== "item.updated" && event.item.kind === "progress") {
+		responseMessage.agentRunProgress = event.item;
+		return;
+	}
+
 	if (event.type === "item.started") {
 		const { item } = event;
 		// The sequential reveal queue (response-message.tsx) holds at the last
@@ -430,6 +435,10 @@ const watchAgentRun = (
 			},
 			onSnapshot: (snapshot) => {
 				runInAction(() => {
+					if (snapshot.progress)
+						responseMessage.agentRunProgress = snapshot.progress;
+					responseMessage.agentRunError =
+						snapshot.errorMessage || null;
 					syncPendingActions(
 						responseMessage,
 						snapshot.pendingActions,
@@ -438,6 +447,10 @@ const watchAgentRun = (
 			},
 			onReconcile: (snapshot) => {
 				runInAction(() => {
+					if (snapshot.progress)
+						responseMessage.agentRunProgress = snapshot.progress;
+					responseMessage.agentRunError =
+						snapshot.errorMessage || null;
 					if (inputMessage && snapshot.inputMessageId) {
 						inputMessage.id = snapshot.inputMessageId;
 					}
@@ -514,6 +527,8 @@ export const runAgentMessage = async (
 			},
 		} as ResponsePixelMessage);
 
+	let runStarted = false;
+
 	// This path doesn't go through streamJob, so it owns isLoading itself.
 	room.setIsLoading(true);
 
@@ -548,12 +563,18 @@ export const runAgentMessage = async (
 			},
 			room.insightId,
 		);
+		runStarted = true;
 		agentsByRunId.set(handle.runId, handle);
 
 		await watchAgentRun(handle, responseMessage, inputMessage);
 	} catch (e) {
-		// remove message if we failed
-		message.removeChild(inputMessage);
+		// A submitted run has useful persisted results even when execution fails.
+		if (!runStarted) message.removeChild(inputMessage);
+		else
+			runInAction(() => {
+				responseMessage.agentRunError =
+					e instanceof Error ? e.message : String(e);
+			});
 
 		throw e;
 	} finally {
