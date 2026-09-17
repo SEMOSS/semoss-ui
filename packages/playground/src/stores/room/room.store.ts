@@ -538,13 +538,10 @@ export class RoomStore {
 	 * (not context window - this is the actual sum of all input + output tokens)
 	 */
 	get totalTokensConsumed(): number {
-		let total = 0;
-		for (const message of this.history) {
-			if (message.tokens) {
-				total += message.tokens;
-			}
-		}
-		return total;
+		return this.history.reduce(
+			(total, message) => total + (message.tokens || 0),
+			0,
+		);
 	}
 
 	/**
@@ -663,7 +660,7 @@ export class RoomStore {
 			let activeModelId = this._store.model?.engine_id;
 
 			// This is done as seperate loops because of linking
-			for (const pixelMessage of messageOutput) {
+			messageOutput.forEach((pixelMessage) => {
 				if (pixelMessage.io === "INPUT") {
 					activeModelId = pixelMessage.modelId;
 				}
@@ -678,12 +675,10 @@ export class RoomStore {
 						pixelMessage.summaryLeafMessageId || "",
 					message: message,
 				};
-			}
+			});
 
 			// link the messages
-			for (const mId in messages) {
-				const m = messages[mId];
-
+			Object.values(messages).forEach((m) => {
 				const parent = messages[m.parentMessageId];
 				if (parent) {
 					parent.message.addChild(m.message);
@@ -692,14 +687,18 @@ export class RoomStore {
 					const pseudoParent = messages[m.summaryLeafMessageId];
 					if (pseudoParent) {
 						pseudoParent.message.addChild(m.message);
-						(
-							pseudoParent.message as ResponseMessageStore
-						).setConversationCompactedAbove?.(true);
+						if (
+							pseudoParent.message instanceof ResponseMessageStore
+						) {
+							pseudoParent.message.setConversationCompactedAbove(
+								true,
+							);
+						}
 					} else {
 						root.addChild(m.message);
 					}
 				}
-			}
+			});
 
 			// options
 			const newOptions = { ...optionsOutput.OPTIONS };
@@ -776,10 +775,10 @@ export class RoomStore {
 				) {
 					// Create a map of existing MCPs by composite key
 					const existingMCPs = new Map<string, MCPConfig>();
-					for (const mcp of newOptions.mcp || []) {
+					(newOptions.mcp || []).forEach((mcp) => {
 						const key = `${mcp.id}-${mcp.type}`;
 						existingMCPs.set(key, mcp);
-					}
+					});
 
 					// Add workspace MCPs with fromWorkspace flag
 					const workspaceMCPs = workspaceOutput.mcp.map((mcp) => ({
@@ -1216,7 +1215,7 @@ export class RoomStore {
 			platform_generated: true,
 			modelId: this.model.engine_id,
 			dateCreated: new Date().toISOString(),
-			parts: [{ type: "THINKING", thinking: "" }],
+			parts: [],
 			tokens: 0,
 			ornaments: {
 				modelName:
@@ -1282,7 +1281,7 @@ export class RoomStore {
 
 				// Append media parts to the already-visible input message
 				runInAction(() => {
-					for (const file of mediaInputs) {
+					mediaInputs.forEach((file) => {
 						inputMessage.parts.push({
 							type: "MEDIA",
 							mediaInfo: {
@@ -1294,7 +1293,7 @@ export class RoomStore {
 								mimeType: "",
 							},
 						});
-					}
+					});
 				});
 			}
 		} catch (e) {
