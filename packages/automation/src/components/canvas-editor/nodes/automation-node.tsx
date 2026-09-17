@@ -15,11 +15,7 @@ import {
 	getDisplayMeta,
 	getStepHeaderLabel,
 } from "../../../domain/automation-display";
-import {
-	buildPixelPreview,
-	extractVarRefs,
-	formatDurationMs,
-} from "../../../domain/automation-utils";
+import { formatDurationMs } from "../../../domain/automation-utils";
 import { getWorkflowNodeDefinition } from "../../../domain/automation-workflow-adapter";
 import { getWorkflowNodeDisplay } from "../../../domain/automation-workflow-display";
 import { useAutomationNode } from "../../../hooks/use-automation";
@@ -98,9 +94,6 @@ export function AutomationNode({ data }: NodeProps) {
 	const highlightClass = highlighted
 		? "animate-pulse ring-2 ring-primary ring-offset-2 ring-offset-background"
 		: "";
-	const pixelPreview = step.workflowType ? "" : buildPixelPreview(step);
-	const varRefs = extractVarRefs(pixelPreview);
-
 	const subtitle = (() => {
 		const c = step.config as unknown as Record<string, unknown>;
 		const parts: string[] = [];
@@ -223,30 +216,13 @@ export function AutomationNode({ data }: NodeProps) {
 						)}
 					</div>
 
-					{/* Run duration + variable refs */}
-					{(runDuration != null || varRefs.length > 0) && (
+					{/* Run duration */}
+					{runDuration != null && runStatus !== "running" && (
 						<div className="mt-1.5 flex flex-wrap items-center gap-1.5 pl-12">
-							{runDuration != null && runStatus !== "running" && (
-								<span className="text-[10px] text-muted-foreground/70">
-									{runStatus === "error" ? `failed · ` : ""}
-									{formatDurationMs(runDuration)}
-								</span>
-							)}
-							{varRefs.slice(0, 2).map((v) => (
-								<span
-									key={v}
-									className="rounded bg-blue-500/10 px-1 py-0.5 font-mono text-[9px] text-blue-600 dark:text-blue-400"
-								>
-									${"{"}
-									{v}
-									{"}"}
-								</span>
-							))}
-							{varRefs.length > 2 && (
-								<span className="text-[9px] text-muted-foreground/60">
-									+{varRefs.length - 2}
-								</span>
-							)}
+							<span className="text-[10px] text-muted-foreground/70">
+								{runStatus === "error" ? `failed · ` : ""}
+								{formatDurationMs(runDuration)}
+							</span>
 						</div>
 					)}
 

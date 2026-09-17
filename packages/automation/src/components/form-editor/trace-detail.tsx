@@ -29,8 +29,7 @@ export function TraceDetail({
 	const roomId = trace.roomId?.trim();
 	const modelMessageId = trace.modelMessageId?.trim();
 	const agentRunId = trace.agentRunId?.trim();
-	const workspaceId =
-		configString(step, "workspaceId") ?? configString(step, "agentId");
+	const workspaceId = configString(step, "workspaceId");
 	const modelRoomUrl =
 		roomId && modelMessageId
 			? systemAppUrl("playground", `/room/${encodeURIComponent(roomId)}`)

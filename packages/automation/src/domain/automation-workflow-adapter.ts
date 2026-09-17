@@ -264,10 +264,7 @@ function defaultCanvasConfig(
 		return {
 			engineId,
 			operation: type === "database.query" ? "query" : "write",
-			expression:
-				stringValue(config.query) ||
-				stringValue(config.values) ||
-				stringValue(config.table),
+			expression: stringValue(config.query),
 			limit: numberValue(config.limit, 50),
 			commit: config.commit !== false,
 		};
@@ -344,31 +341,19 @@ function defaultCanvasConfig(
 	}
 	if (type === "agent.run") {
 		return {
-			workspaceId:
-				stringValue(config.workspaceId) || stringValue(config.agentId),
+			workspaceId: stringValue(config.workspaceId),
 			engineId,
-			command: stringValue(config.command) || stringValue(config.prompt),
+			command: stringValue(config.command),
 		};
 	}
 	if (type === "control.wait") {
 		return { seconds: String(numberValue(config.durationSeconds, 5)) };
 	}
 	if (type === "control.if") {
-		const clauses = branchClauses(config.clauses);
-		return {
-			clauses:
-				clauses.length > 0
-					? clauses
-					: [
-							{
-								id: "legacy",
-								condition: stringValue(config.condition),
-							},
-						],
-		};
+		return { clauses: branchClauses(config.clauses) };
 	}
 	return {
-		pixel: stringValue(config.pixel) || stringValue(config.code),
+		pixel: stringValue(config.pixel),
 		appId: stringValue(config.appId),
 	};
 }
@@ -378,9 +363,7 @@ function withPythonSource(
 	config: AutomationWorkflowNodeConfig,
 ): AutomationWorkflowNodeConfig {
 	if (type === "trigger.start") return config;
-	const pythonSource =
-		stringValue(config.pythonSource) ||
-		(type === "developer.python" ? stringValue(config.code) : "");
+	const pythonSource = stringValue(config.pythonSource);
 	return pythonSource ? { ...config, pythonSource } : config;
 }
 
@@ -498,8 +481,6 @@ function mergeCanvasConfig(
 		if (typeof workspaceId === "string") next.workspaceId = workspaceId;
 		if (typeof command === "string") next.command = command;
 		next.wait = true;
-		delete next.agentId;
-		delete next.prompt;
 	}
 	if (type === "app.pixel") {
 		const pixel = getConfigValue(config, "pixel");
@@ -515,10 +496,9 @@ function mergeCanvasConfig(
 		}
 	}
 	if (type === "control.if") {
-		const clauses = (config as Extract<NodeConfig, { clauses: unknown }>)
-			.clauses;
-		next.clauses = clauses;
-		delete next.condition;
+		next.clauses = (
+			config as Extract<NodeConfig, { clauses: unknown }>
+		).clauses;
 	}
 	return next;
 }
@@ -612,15 +592,13 @@ export function canvasDocumentFromWorkflow(
 			source: edge.source,
 			target: edge.target,
 			sourceHandle:
-				edge.sourcePort === "out" || edge.sourcePort === "next"
+				edge.sourcePort === "out"
 					? `out-${edge.source}`
-					: edge.sourcePort === "then"
-						? `case-${edge.source}-legacy`
-						: edge.sourcePort.startsWith("case:")
-							? `case-${edge.source}-${edge.sourcePort.slice(5)}`
-							: edge.sourcePort === "else"
-								? `else-${edge.source}`
-								: edge.sourcePort,
+					: edge.sourcePort.startsWith("case:")
+						? `case-${edge.source}-${edge.sourcePort.slice(5)}`
+						: edge.sourcePort === "else"
+							? `else-${edge.source}`
+							: edge.sourcePort,
 			targetHandle:
 				edge.targetPort === "in"
 					? `in-${edge.target}`
@@ -714,15 +692,13 @@ export function canvasDocumentToWorkflow({
 						source: edge.source,
 						sourcePort: edge.sourceHandle?.startsWith("out-")
 							? "out"
-							: edge.sourceHandle?.startsWith("then-")
-								? "case:legacy"
-								: edge.sourceHandle?.startsWith("case-")
-									? `case:${edge.sourceHandle.slice(
-											`case-${edge.source}-`.length,
-										)}`
-									: edge.sourceHandle?.startsWith("else-")
-										? "else"
-										: (edge.sourceHandle ?? "out"),
+							: edge.sourceHandle?.startsWith("case-")
+								? `case:${edge.sourceHandle.slice(
+										`case-${edge.source}-`.length,
+									)}`
+								: edge.sourceHandle?.startsWith("else-")
+									? "else"
+									: (edge.sourceHandle ?? "out"),
 						target: edge.target,
 						targetPort: edge.targetHandle?.startsWith("in-")
 							? "in"

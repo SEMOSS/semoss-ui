@@ -38,8 +38,8 @@ function normalizeToolContext(rawTool: unknown): AutomationToolContext | null {
 			? (tool.parameters as Record<string, unknown>)
 			: {};
 
-	// Extract the app/project ID from _meta (SMSS_PROJECT_ID) or the tool's own
-	// arguments (parameters.project), covering both older and newer MCP shapes.
+	// Engine-scoped MCP tools carry the app/project ID in _meta as SMSS_PROJECT_ID;
+	// the generated Automation tools instead bind it as a `project` argument.
 	const meta =
 		tool._meta &&
 		typeof tool._meta === "object" &&
