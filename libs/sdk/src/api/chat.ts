@@ -1,5 +1,5 @@
 import type {
-	AddRoomToolExecutionParams,
+	AddToolExecutionParams,
 	AskRoomParams,
 	RoomMessage,
 	RoomOptions,
@@ -194,13 +194,13 @@ export const askRoom = async (
  * follow-up LLM turn. Returns a job ID for streaming the response.
  *
  * @param insightId - The active SEMOSS insight ID.
- * @param params - Tool execution details. See {@link AddRoomToolExecutionParams}.
+ * @param params - Tool execution details. See {@link AddToolExecutionParams}.
  * @returns `{ jobId }` to pass to {@link getPixelJobStreaming}.
  * @see sdk-chat skill for the full tool-execution call stack.
  */
-export const addRoomToolExecution = async (
+export const addToolExecution = async (
 	insightId: string,
-	params: AddRoomToolExecutionParams,
+	params: AddToolExecutionParams,
 ): Promise<{ jobId: string }> => {
 	const {
 		engine,
@@ -215,7 +215,7 @@ export const addRoomToolExecution = async (
 	} = params;
 
 	const lines: string[] = [
-		`AddRoomToolExecution(`,
+		`AddToolExecution(`,
 		`engine=["${engine}"],`,
 		`roomId=["${roomId}"],`,
 		...(parentMessageId ? [`parentMessageId=["${parentMessageId}"],`] : []),
@@ -259,7 +259,7 @@ export const getUserRooms = async (
 	}
 
 	const args = parts.length > 0 ? `(${parts.join(", ")})` : "()";
-	const pixel = `META | GetUserConversationRoomsReactor${args};`;
+	const pixel = `GetUserConversationRooms${args};`;
 	const { errors, pixelReturn } = await runPixel<[RoomRecord[]]>(
 		pixel,
 		insightId,
@@ -271,7 +271,7 @@ export const getUserRooms = async (
 
 	const output = pixelReturn[0]?.output;
 	if (!output) {
-		throw new Error("GetUserConversationRoomsReactor returned no data");
+		throw new Error("GetUserConversationRooms returned no data");
 	}
 
 	return output;

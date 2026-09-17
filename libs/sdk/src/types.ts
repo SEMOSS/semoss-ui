@@ -184,9 +184,9 @@ export interface RoomResponse {
 }
 
 /**
- * Params for the AddRoomToolExecution reactor
+ * Params for the AddToolExecution reactor
  */
-export interface AddRoomToolExecutionParams {
+export interface AddToolExecutionParams {
 	/** Engine (model app) ID */
 	engine: string;
 	/** Room ID the tool execution belongs to */
