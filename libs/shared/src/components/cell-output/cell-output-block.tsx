@@ -829,7 +829,7 @@ export const PopoutModal = ({
 			aria-modal="true"
 			aria-label={title}
 			tabIndex={-1}
-			className="fixed inset-0 z-[200] flex items-center justify-center bg-black/40"
+			className="fixed inset-0 z-200 flex items-center justify-center bg-black/40"
 			onClick={(e) => {
 				// only close when the click is on the backdrop itself, not on
 				// the modal content bubbling up

@@ -113,9 +113,9 @@ export function AutomationNode({ data }: NodeProps) {
 
 	return (
 		<div
-			className={`group relative w-[280px] rounded-2xl border-2 shadow-sm ${borderClass} ${runningClass} ${highlightClass} ${locked ? "opacity-75" : ""}`}
+			className={`group relative w-70 rounded-2xl border-2 shadow-sm ${borderClass} ${runningClass} ${highlightClass} ${locked ? "opacity-75" : ""}`}
 		>
-			<div className="relative z-[1] m-0.5 rounded-[14px] bg-card">
+			<div className="relative z-1 m-0.5 rounded-[14px] bg-card">
 				{/* Hover actions */}
 				{!locked && (
 					<div className="-top-2 absolute right-2 z-10 hidden items-center gap-0.5 rounded-full border bg-background px-1 py-0.5 shadow-sm group-hover:flex">
@@ -264,7 +264,7 @@ export function AutomationNode({ data }: NodeProps) {
 				type="target"
 				position={Position.Left}
 				isConnectable={!locked}
-				className="!h-2 !w-2 !border-2 !border-background !bg-muted-foreground/40"
+				className="h-2! w-2! border-2! border-background! bg-muted-foreground/40!"
 			/>
 			{!locked ? (
 				<>
@@ -278,7 +278,7 @@ export function AutomationNode({ data }: NodeProps) {
 							d.onAdd?.();
 						}}
 						aria-label="Add node or drag to connect"
-						className="!h-7 !w-7 !border !border-border !bg-background hover:!border-primary shadow-sm transition-colors"
+						className="border! h-7! w-7! border-border! bg-background! shadow-sm transition-colors hover:border-primary!"
 					/>
 					<span
 						data-tour="add-step"
@@ -293,7 +293,7 @@ export function AutomationNode({ data }: NodeProps) {
 					type="source"
 					position={Position.Right}
 					isConnectable={false}
-					className="!h-2 !w-2 !border-2 !border-background !bg-muted-foreground/40"
+					className="h-2! w-2! border-2! border-background! bg-muted-foreground/40!"
 				/>
 			)}
 		</div>

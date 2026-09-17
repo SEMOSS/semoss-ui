@@ -28,15 +28,15 @@ export function TriggerNode({ data, id }: NodeProps) {
 		trigger.runStatus === "running" ? "automation-trigger-running" : "";
 
 	return (
-		<div className="group relative flex h-[120px] w-full items-center justify-center">
+		<div className="group relative flex h-30 w-full items-center justify-center">
 			<button
 				type="button"
 				aria-label="Edit trigger"
 				disabled={!trigger.onEdit}
 				onClick={() => trigger.onEdit?.()}
-				className={`relative flex h-[72px] w-[72px] rotate-45 appearance-none items-center justify-center rounded-lg border-2 ${statusBorderClass} ${runningClass} bg-card p-0 shadow-sm disabled:cursor-default`}
+				className={`relative flex h-18 w-18 rotate-45 appearance-none items-center justify-center rounded-lg border-2 ${statusBorderClass} ${runningClass} bg-card p-0 shadow-sm disabled:cursor-default`}
 			>
-				<span className="absolute inset-[2px] rounded-md bg-card" />
+				<span className="absolute inset-0.5 rounded-md bg-card" />
 				<Zap className="-rotate-45 relative h-5 w-5 text-success" />
 				{triggerModes.includes("schedule") && (
 					<CalendarClock className="-top-1 -left-1 -rotate-45 absolute z-10 h-4 w-4 rounded-full bg-card p-0.5 text-success" />
@@ -59,11 +59,11 @@ export function TriggerNode({ data, id }: NodeProps) {
 					trigger.onAdd?.();
 				}}
 				aria-label="Add node or drag to connect"
-				className="!right-[calc(50%_-_58px)] !h-7 !w-7 !border !border-emerald-500/40 !bg-background hover:!border-emerald-500 shadow-sm transition-colors"
+				className="border! right-[calc(50%-58px)]! h-7! w-7! border-emerald-500/40! bg-background! shadow-sm transition-colors hover:border-emerald-500!"
 			/>
 			<span
 				data-tour="add-step"
-				className="-translate-y-1/2 pointer-events-none absolute top-1/2 right-[calc(50%_-_58px)] z-10 flex h-7 w-7 translate-x-1/2 items-center justify-center text-emerald-600"
+				className="-translate-y-1/2 pointer-events-none absolute top-1/2 right-[calc(50%-58px)] z-10 flex h-7 w-7 translate-x-1/2 items-center justify-center text-emerald-600"
 			>
 				<Plus className="h-4 w-4" />
 			</span>

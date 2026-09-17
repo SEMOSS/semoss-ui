@@ -348,7 +348,6 @@ const AUTOMATION_COMPONENTS: Record<string, WorkbenchPanelConfigAny> = {
 export const AutomationWorkbench = observer(
 	({
 		appId,
-		permission,
 		readOnly,
 		projectName,
 		catalogPath,
@@ -581,7 +580,6 @@ export const AutomationWorkbench = observer(
 			configureAssistant,
 			handleAutomationToolCompleted,
 			notifyAutomationChanged,
-			permission,
 			projectName,
 			readOnly,
 		]);

@@ -173,7 +173,7 @@ export function NodeEditDrawer({
 				<ChevronDown className="size-3" />
 			</Button>
 			{showPythonVariablePicker && (
-				<div className="absolute top-full right-0 z-50 mt-1 min-w-[180px] rounded-md border bg-popover py-1 shadow-md">
+				<div className="absolute top-full right-0 z-50 mt-1 min-w-45 rounded-md border bg-popover py-1 shadow-md">
 					{upstreamVars.map((variable) => (
 						<button
 							key={variable}
@@ -466,7 +466,7 @@ export function NodeEditDrawer({
 										)}
 									</div>
 								</div>
-								<div className="h-[300px] overflow-hidden rounded-lg border bg-muted/30">
+								<div className="h-75 overflow-hidden rounded-lg border bg-muted/30">
 									<Suspense
 										fallback={
 											<pre className="h-full overflow-auto p-3 font-mono text-xs">

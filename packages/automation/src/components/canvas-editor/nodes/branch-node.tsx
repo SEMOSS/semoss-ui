@@ -69,7 +69,7 @@ export function BranchNode({ data }: NodeProps) {
 
 	return (
 		<div
-			className={`group relative w-[280px] rounded-2xl border-2 shadow-sm ${borderClass} ${runningClass} ${highlightClass} ${locked ? "opacity-75" : ""}`}
+			className={`group relative w-70 rounded-2xl border-2 shadow-sm ${borderClass} ${runningClass} ${highlightClass} ${locked ? "opacity-75" : ""}`}
 			style={{ minHeight: `${88 + additionalConditions * 48}px` }}
 		>
 			<div className="relative z-1 m-0.5 rounded-[14px] bg-card">
