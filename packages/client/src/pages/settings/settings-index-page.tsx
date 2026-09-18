@@ -1,6 +1,7 @@
 import {
 	Archive,
 	Bolt,
+	Brain,
 	Briefcase,
 	ChartBar,
 	CircleUserRound,
@@ -134,6 +135,10 @@ const CardMapper: Record<string, CardConfig> = {
 	"LLM Feedback": {
 		icon: <ChartBar className={ICON_CLASS} />,
 		color: "#0471F0",
+	},
+	Memories: {
+		icon: <Brain className={ICON_CLASS} />,
+		color: "#7C3AED",
 	},
 };
 

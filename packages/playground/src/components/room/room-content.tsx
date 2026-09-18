@@ -1,4 +1,5 @@
 import {
+	BrainIcon,
 	MoveDownIcon,
 	MoveUpIcon,
 	ScrollTextIcon,
@@ -102,6 +103,13 @@ export const RoomContent = observer(({ room }: RoomContentProps) => {
 	 */
 	const handleOpenActivityLog = useCallback(() => {
 		room.openSidebarPanel(ROOM_PANEL_TYPES.AUDIT_LOG);
+	}, [room]);
+
+	/**
+	 * Open the memories captured in this room in the right side panel.
+	 */
+	const handleOpenMemories = useCallback(() => {
+		room.openSidebarPanel(ROOM_PANEL_TYPES.MEMORIES);
 	}, [room]);
 
 	/**
@@ -697,6 +705,16 @@ export const RoomContent = observer(({ room }: RoomContentProps) => {
 										</span>
 									</DropdownMenuItem>
 								)}
+								<DropdownMenuItem
+									onSelect={(e) => {
+										e.preventDefault();
+										handleOpenMemories();
+										onOpenChange(false);
+									}}
+								>
+									<BrainIcon />
+									<span className="flex-1">Memories</span>
+								</DropdownMenuItem>
 								<DropdownMenuItem
 									onSelect={(e) => {
 										e.preventDefault();

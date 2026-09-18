@@ -3,6 +3,7 @@ import type { WorkbenchPanelConfigAny } from "@semoss/workbench";
 import { ROOM_PANEL_TYPES } from "@/stores";
 import { ROOM_AUDIT_LOG_PANEL } from "./room-audit-log-panel";
 import { ROOM_CONFIGURATION_PANEL } from "./room-configuration-panel";
+import { ROOM_MEMORIES_PANEL } from "./room-memories-panel";
 import { ROOM_SUBAGENT_PANEL } from "./room-subagent-panel";
 import { ROOM_TOOL_PANEL } from "./room-tool-panel";
 
@@ -24,4 +25,5 @@ export const ROOM_PANEL_COMPONENTS: Record<string, WorkbenchPanelConfigAny> = {
 	[ROOM_PANEL_TYPES.SUBAGENT]: ROOM_SUBAGENT_PANEL,
 	[ROOM_PANEL_TYPES.CONFIGURATION]: ROOM_CONFIGURATION_PANEL,
 	[ROOM_PANEL_TYPES.AUDIT_LOG]: ROOM_AUDIT_LOG_PANEL,
+	[ROOM_PANEL_TYPES.MEMORIES]: ROOM_MEMORIES_PANEL,
 };

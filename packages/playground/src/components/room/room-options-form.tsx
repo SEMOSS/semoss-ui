@@ -1,7 +1,7 @@
 import { Bot, HammerIcon, PlusIcon, TrashIcon } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import type { MouseEvent } from "react";
-import { useState } from "react";
+import { useId, useState } from "react";
 import { useTranslation } from "@semoss/i18n";
 import { EngineSelect, type MCPConfig } from "@semoss/shared";
 import {
@@ -14,6 +14,7 @@ import {
 	FieldLegend,
 	FieldSet,
 	Slider,
+	Switch,
 	Textarea,
 	Tooltip,
 	TooltipContent,
@@ -23,6 +24,14 @@ import { MCPOverlay } from "@/components";
 import { useRoot } from "@/hooks";
 import type { RoomStore } from "@/stores";
 import { splitMcpByType } from "@/utility/mcp-utils";
+
+/**
+ * Id of the platform's system "Memory" MCP (see
+ * prerna.util.Constants.MCP_MEMORY on the backend). Kept separate from the
+ * generic toolbox list so it can be a dedicated switch instead of something
+ * the user has to find in the MCP picker.
+ */
+const MEMORY_MCP_ID = "memory";
 
 interface RoomOptionsFormProps {
 	/** Model of the room */
@@ -55,6 +64,7 @@ export const RoomOptionsForm: React.FC<RoomOptionsFormProps> = observer(
 	}) => {
 		const { t } = useTranslation(["room", "common"]);
 		const { root } = useRoot();
+		const memoryToggleId = useId();
 
 		/**
 		 * State
@@ -72,6 +82,11 @@ export const RoomOptionsForm: React.FC<RoomOptionsFormProps> = observer(
 		// inherits them, so removal happens in the workspace form instead.
 		const { knowledge, toolbox } = splitMcpByType(options?.mcp ?? []);
 
+		const memoryMcp = (options?.mcp ?? []).find(
+			(mcp) => mcp.id === MEMORY_MCP_ID,
+		);
+		const memoryEnabled = Boolean(memoryMcp);
+
 		/**
 		 * Functions
 		 */
@@ -87,6 +102,33 @@ export const RoomOptionsForm: React.FC<RoomOptionsFormProps> = observer(
 			onOptionsChange({
 				mcp: updatedMCPs,
 			});
+		};
+
+		/**
+		 * Toggles the platform Memory MCP for this room by adding/removing its
+		 * entry from options.mcp - the same list the generic toolbox picker
+		 * writes to, just surfaced as a dedicated switch instead of requiring a
+		 * trip through the MCP picker.
+		 */
+		const handleToggleMemory = (checked: boolean) => {
+			const existingMcps = options?.mcp ?? [];
+			if (checked) {
+				if (existingMcps.some((mcp) => mcp.id === MEMORY_MCP_ID)) {
+					return;
+				}
+				const memoryMcpConfig: MCPConfig = {
+					id: MEMORY_MCP_ID,
+					type: "PROJECT",
+					name: "Memory",
+				};
+				onOptionsChange({
+					mcp: [...existingMcps, memoryMcpConfig],
+				});
+			} else {
+				onOptionsChange({
+					mcp: existingMcps.filter((mcp) => mcp.id !== MEMORY_MCP_ID),
+				});
+			}
 		};
 
 		return (
@@ -125,6 +167,27 @@ export const RoomOptionsForm: React.FC<RoomOptionsFormProps> = observer(
 									/>
 								</Field>
 							)}
+							<Field
+								orientation="horizontal"
+								className="items-center justify-between"
+							>
+								<div className="flex flex-col gap-1">
+									<FieldLabel htmlFor={memoryToggleId}>
+										Memory
+									</FieldLabel>
+									<FieldDescription>
+										Let this room's agent remember and
+										recall facts, decisions, and lessons
+										across turns.
+									</FieldDescription>
+								</div>
+								<Switch
+									id={memoryToggleId}
+									checked={memoryEnabled}
+									onCheckedChange={handleToggleMemory}
+									aria-label="Toggle memory for this room"
+								/>
+							</Field>
 							<Field>
 								<FieldLabel>
 									{t("room:form.instructionsLabel")}
