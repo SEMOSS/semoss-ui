@@ -66,6 +66,7 @@ import { getDateBucket, normalizeTimestamp } from "@/utility";
 import { AppLogo } from "./app-logo";
 import { GlobalNavItem } from "./global-nav-item";
 import { NavUser } from "./nav-user";
+import { TypewriterText } from "./typewriter-text";
 
 let isIframed = false;
 try {
@@ -730,9 +731,11 @@ export const GlobalNav = observer(() => {
 																				dir="auto"
 																				className="truncate font-medium text-sm leading-tight"
 																			>
-																				{
-																					name
-																				}
+																				<TypewriterText
+																					text={
+																						name
+																					}
+																				/>
 																			</span>
 																			{date && (
 																				<span className="text-muted-foreground text-xs leading-none">

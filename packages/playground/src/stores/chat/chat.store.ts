@@ -363,16 +363,13 @@ export class ChatStore {
 	createRoom = async (
 		mode: "agent" | "chat",
 		prompt: string,
+		defaultName: string,
 		files: File[],
 		options: RoomStore["options"],
 		workspaceId?: string,
 		askOptions?: { visible?: boolean },
 	): Promise<RoomStore> => {
-		const room = await this.createRoomShell(
-			mode,
-			prompt.substring(0, 15),
-			workspaceId,
-		);
+		const room = await this.createRoomShell(mode, defaultName, workspaceId);
 		// Order matters: see the harnessType comment in RoomStore.initialize().
 		await room.initialize();
 		await room.updateRoomOptions(options);
@@ -386,7 +383,7 @@ export class ChatStore {
 			// won't return it until its first message has data
 			this._store.optimisticRooms[roomId] = {
 				ROOM_ID: roomId,
-				ROOM_NAME: prompt.substring(0, 100),
+				ROOM_NAME: defaultName,
 				DATE_CREATED: new Date().toISOString(),
 				WORKSPACE_ID: workspaceId,
 			};

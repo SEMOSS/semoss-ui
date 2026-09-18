@@ -270,6 +270,7 @@ paramValues=[${JSON.stringify(
 					{
 						inputMessage: InputPixelMessage;
 						responseMessage: ResponsePixelMessage;
+						roomName?: string;
 					},
 				]
 			>(`AskPlayground(${turnParams});`, {
@@ -296,6 +297,8 @@ paramValues=[${JSON.stringify(
 								toolStreamIndexToId,
 								chunk.data,
 							);
+						} else if (chunk.stream_type === "room_name") {
+							room.setMetadata({ name: chunk.data.roomName });
 						} else {
 							console.error(`Unknown stream type`, chunk);
 						}
@@ -307,6 +310,9 @@ paramValues=[${JSON.stringify(
 					// sync with the results
 					inputMessage.sync(output.inputMessage);
 					responseMessage.sync(output.responseMessage);
+					if (output.roomName) {
+						room.setMetadata({ name: output.roomName });
+					}
 
 					// start running tools if there are any
 					responseMessage.continueToolExecution();
