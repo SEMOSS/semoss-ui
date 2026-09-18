@@ -409,3 +409,51 @@ describe("AgentStore.watch", () => {
 		expect(mockGetAgentRun).not.toHaveBeenCalled();
 	});
 });
+
+it("coalesces progress snapshots without duplicating timeline items", () => {
+	const item: AgentRunItem = {
+		id: "run-1:progress",
+		kind: "progress",
+		phase: "editing",
+		activity: "model",
+		currentTool: null,
+		maxTurns: 40,
+		turnsCompleted: 36,
+		turnsRemaining: 4,
+		modelCalls: 37,
+		modelTimeMs: 200000,
+		toolTimeMs: 800,
+		toolWallTimeMs: 600,
+		elapsedMs: 210000,
+		toolCalls: 36,
+		toolFailures: 2,
+		repeatedFailures: [
+			{
+				tool: "EditFile",
+				target: "deck.js",
+				count: 2,
+				error: "Text missing",
+			},
+		],
+	};
+	let state = applyAgentRunItemEvent(
+		createAgentRunItemsState(),
+		completedEvent(1, item),
+	);
+	state = applyAgentRunItemEvent(
+		state,
+		completedEvent(2, {
+			...item,
+			phase: "failed",
+			activity: "idle",
+			modelTimeMs: 220000,
+		}),
+	);
+	expect(state.itemOrder).toEqual(["run-1:progress"]);
+	expect(state.itemsById["run-1:progress"]).toMatchObject({
+		phase: "failed",
+		modelTimeMs: 220000,
+		turnsRemaining: 4,
+		repeatedFailures: item.repeatedFailures,
+	});
+});
