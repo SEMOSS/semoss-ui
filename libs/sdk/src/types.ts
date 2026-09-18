@@ -133,6 +133,12 @@ export interface RoomOptions {
 	/** Set to "semoss" to run messages via the server-side RunAgent harness;
 	 *  omit (or leave undefined) for the standard streaming AskRoom flow */
 	harnessType?: string;
+	/**
+	 * The backend persists this as a free-form map, so callers may stash
+	 * additional caller-defined keys on it (e.g. a scoping token used to
+	 * filter a room list) alongside the recognized fields above.
+	 */
+	[key: string]: unknown;
 }
 
 /**
@@ -155,7 +161,9 @@ export interface RoomMessage {
 }
 
 /**
- * Params for the AskRoom reactor
+ * Params for the AskRoom reactor. Note there is no `context` field — AskRoom
+ * takes no system-prompt input, it reads the room's persisted `instructions`
+ * (see {@link RoomOptions.instructions}, written via `UpdateRoomOptions`).
  */
 export interface AskRoomParams {
 	/** Engine (model) ID to route the request to */
@@ -164,10 +172,8 @@ export interface AskRoomParams {
 	roomId: string;
 	/** The user message or command text (will be encoded) */
 	command: string;
-	/** System context / instructions (will be encoded) */
-	context: string;
-	/** Optional base64 image strings */
-	image?: string[];
+	/** File locations (from an upload) or base64 data URIs to attach */
+	media?: string[];
 	/** Parent message ID; use "ROOT_PLACEHOLDER_ID" for new threads */
 	parentMessageId: string;
 	/** Additional param values passed to the model */
@@ -184,9 +190,9 @@ export interface RoomResponse {
 }
 
 /**
- * Params for the AddRoomToolExecution reactor
+ * Params for the AddToolExecution reactor
  */
-export interface AddRoomToolExecutionParams {
+export interface AddToolExecutionParams {
 	/** Engine (model app) ID */
 	engine: string;
 	/** Room ID the tool execution belongs to */
@@ -238,13 +244,10 @@ export interface RoomAskOptions {
 	 * and no prior message has been sent on this RoomStore instance.
 	 */
 	parentMessageId?: string;
-	/** Base64-encoded image strings to attach to the message. */
-	image?: string[];
-	/**
-	 * System context / instructions for this request.
-	 * Defaults to the room's configured `instructions`.
-	 */
-	context?: string;
+	/** File locations (from an upload) or base64 data URIs to attach. */
+	media?: string[];
+	/** Additional model kwargs (e.g. `built_in_tools`) for this turn only. */
+	paramValues?: Record<string, unknown>;
 }
 
 /**
@@ -266,6 +269,14 @@ export interface RoomAskAgentOptions {
 	onPendingActions?: (pendingActions: PendingAgentAction[]) => void;
 }
 
+/** A persisted room message exactly as AskRoom/GetRoomMessages return it. */
+export interface RawRoomMessage {
+	messageId: string;
+	/** Ordered content parts (TEXT, THINKING, MEDIA, TOOL_CALL, TOOL_RESULT, ...). */
+	parts?: Array<{ type: string; [key: string]: unknown }>;
+	[key: string]: unknown;
+}
+
 /**
  * Settled result returned by {@link RoomStore.ask}
  */
@@ -274,6 +285,10 @@ export interface RoomAskResult {
 	inputMessageId: string;
 	/** Server-assigned ID of the persisted model response message */
 	responseMessageId: string;
+	/** The full persisted input message, exactly as the backend returned it. */
+	inputMessage: RawRoomMessage;
+	/** The full persisted response message, exactly as the backend returned it. */
+	responseMessage: RawRoomMessage;
 	/** Full response text extracted from all TEXT parts */
 	text: string;
 }
