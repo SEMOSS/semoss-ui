@@ -3,6 +3,7 @@ import {
 	type CSSProperties,
 	type FC,
 	Fragment,
+	type ReactNode,
 	useCallback,
 	useMemo,
 } from "react";
@@ -30,10 +31,15 @@ import { WorkbenchTabStrip } from "./workbench-tab-strip";
 
 interface WorkbenchTabsetProps {
 	node: WorkbenchTabsetNode;
+	/** Extra chrome drawn after this dock's own controls. Root tabset only. */
+	stageActions?: ReactNode;
 }
 
 /** One dock: its tab strip, controls, and the slot its bodies draw over. */
-export const WorkbenchTabset: FC<WorkbenchTabsetProps> = ({ node }) => {
+export const WorkbenchTabset: FC<WorkbenchTabsetProps> = ({
+	node,
+	stageActions,
+}) => {
 	const actions = useWorkbench((s) => s.layout.actions);
 	const maximized = useWorkbench(
 		(s) => s.layout.maximizedTabsetId === node.id,
@@ -202,6 +208,7 @@ export const WorkbenchTabset: FC<WorkbenchTabsetProps> = ({ node }) => {
 									</TooltipContent>
 								</Tooltip>
 							)}
+							{stageActions}
 						</div>
 					</div>
 				)}

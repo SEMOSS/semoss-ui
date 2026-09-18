@@ -246,13 +246,13 @@ export const WorkbenchTab: FC<WorkbenchTabProps> = memo(
 					) : (
 						<WorkbenchPanelHeaderContent pid={pid} />
 					)}
-					{/* the controls belong to the selected desktop tab. An
-				    unselected one is its icon and its name, and measures to
-				    just that — a hidden button still reserves its width, which
-				    on a rail is length. A compact tab carries none at all, so
-				    every mobile tab keeps one constant width; panel options
-				    live in the drawer and the long-press menu instead */}
-					{!active || compact ? null : record.pinned ? (
+					{/* every desktop tab reserves this width regardless of
+				    selection, so activating a tab never resizes it (or, on a
+				    rail, its length) and reflows its neighbors. A compact tab
+				    carries none at all, so every mobile tab keeps one
+				    constant width; panel options live in the drawer and the
+				    long-press menu instead */}
+					{compact ? null : record.pinned ? (
 						<Tooltip>
 							<TooltipTrigger asChild>
 								<button
@@ -263,7 +263,11 @@ export const WorkbenchTab: FC<WorkbenchTabProps> = memo(
 									}
 									data-testid={`workbench-tab-pin-${pid}`}
 									className={cn(
-										"ms-1 flex items-center justify-center rounded text-muted-foreground hover:bg-accent hover:text-foreground",
+										// chromeButtonSm is a bigger hit target
+										// than its icon; pull it in so the
+										// visible glyph, not the invisible
+										// rest of the button, sets the gap
+										"-ms-1 flex items-center justify-center rounded text-muted-foreground hover:bg-accent hover:text-foreground",
 										WORKBENCH_STYLES.chromeButtonSm,
 									)}
 									aria-label={`Unpin ${record.name}`}
@@ -286,9 +290,12 @@ export const WorkbenchTab: FC<WorkbenchTabProps> = memo(
 									onClick={() => actions.closePanel(pid)}
 									data-testid={`workbench-tab-close-${pid}`}
 									className={cn(
-										"ms-1 flex items-center justify-center rounded text-muted-foreground hover:bg-accent hover:text-foreground",
+										// see the pin button above: same fix
+										"-ms-1 flex items-center justify-center rounded text-muted-foreground hover:bg-accent hover:text-foreground",
 										WORKBENCH_STYLES.chromeButtonSm,
-										"opacity-60 group-hover:opacity-100",
+										active
+											? "opacity-100"
+											: "opacity-60 group-hover:opacity-100",
 									)}
 									aria-label={`Close ${record.name}`}
 								>
