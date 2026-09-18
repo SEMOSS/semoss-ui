@@ -10,6 +10,7 @@ import { EngineSettingsIndexPage } from "./engine-settings-index-page";
 import { GitHubAppPage } from "./github-app-page";
 import { LLMFeedbackPage } from "./llm-feedback-page";
 import { MemberSettingsPage } from "./member-settings-page";
+import { MemoriesSettingsPage } from "./memories-settings-page";
 import { MyFilesPage } from "./my-files-page";
 import { MyProfilePage } from "./my-profile-page";
 import { ProjectSettingsDetailsPage } from "./project-settings-details-page";
@@ -42,6 +43,7 @@ const SETTINGS_COMPONENTS: Record<string, ComponentType> = {
 	"team-permissions/:type/:id": TeamSettingsDetailPage,
 	"view-rdf-map": RDFMapPage,
 	"llm-feedback": LLMFeedbackPage,
+	memories: MemoriesSettingsPage,
 
 	// engine
 	database: () => <EngineSettingsIndexPage type="DATABASE" />,

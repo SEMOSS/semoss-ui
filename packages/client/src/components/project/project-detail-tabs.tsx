@@ -9,6 +9,7 @@ import { AppMcpUsagePage } from "@/pages/app/app-mcp-usage-page";
 import { AppSettingsPage } from "@/pages/app/app-settings-page";
 import { AppSmssPage } from "@/pages/app/app-smss-page";
 import { AgentActivityPage } from "@/pages/project/agent/agent-activity-page";
+import { AppMemoriesPage } from "@/pages/project/agent/app-memories-page";
 import { ProjectDependenciesPage } from "@/pages/project/project-dependencies-page";
 
 interface ProjectDetailTabsProps {
@@ -21,6 +22,7 @@ interface ProjectDetailTabsProps {
 			| "mcp-usage"
 			| "activity"
 			| "agent-activity"
+			| "memories"
 			| "github"
 			| "settings"
 			| "access-control"
@@ -100,6 +102,7 @@ export const ProjectDetailTabs = ({ tabs }: ProjectDetailTabsProps) => {
 				{activeTab?.component === "agent-activity" && (
 					<AgentActivityPage />
 				)}
+				{activeTab?.component === "memories" && <AppMemoriesPage />}
 				{activeTab?.component === "github" && <AppGithubPage />}
 				{activeTab?.component === "settings" && <AppSettingsPage />}
 				{activeTab?.component === "access-control" && (

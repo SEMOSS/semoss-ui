@@ -23,6 +23,11 @@ export const PROJECT_SETTINGS_TABS: ComponentProps<
 		restrict: ["OWNER", "EDIT", "READ_ONLY"],
 	},
 	{
+		name: "Memories",
+		component: "memories",
+		restrict: ["OWNER", "EDIT", "READ_ONLY"],
+	},
+	{
 		name: "GitHub",
 		component: "github",
 		restrict: ["OWNER"],
