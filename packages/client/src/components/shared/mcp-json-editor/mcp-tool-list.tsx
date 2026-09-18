@@ -19,6 +19,7 @@ import type { EditorTool } from "./types";
 const EXECUTION_LABELS: Record<string, string> = {
 	auto: "auto",
 	ask: "ask",
+	yesno: "yes/no",
 	disabled: "off",
 };
 

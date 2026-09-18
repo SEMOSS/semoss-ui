@@ -25,8 +25,8 @@ type MetaKeyDoc = {
 const META_TOP_LEVEL_KEYS: MetaKeyDoc[] = [
 	{
 		key: "SMSS_MCP_EXECUTION",
-		type: '"auto" | "ask" | "disabled"',
-		desc: "When the tool runs: auto runs it automatically, ask prompts for approval first, disabled prevents it from running. Defaults to ask.",
+		type: '"auto" | "ask" | "yesno" | "disabled"',
+		desc: "When the tool runs: auto runs it automatically, ask prompts for approval first, yesno prompts for a quick approve/reject decision, disabled prevents it from running. Defaults to ask.",
 	},
 	{
 		key: "SMSS_FUNCTION_NAME",
@@ -62,7 +62,7 @@ const META_UI_KEYS: MetaKeyDoc[] = [
 ];
 
 const METADATA_EXAMPLE = `{
-  "SMSS_MCP_EXECUTION": "ask",           // auto | ask | disabled
+  "SMSS_MCP_EXECUTION": "ask",           // auto | ask | yesno | disabled
   "SMSS_FUNCTION_NAME": "my_tool",
   "SMSS_MCP_UI": {
     "loadingMessage": "Loading...",
@@ -78,7 +78,7 @@ const METADATA_EXAMPLE = `{
 const METADATA_PYTHON_EXAMPLE = `import smssutil
 
 @smssutil.mcp_metadata({
-    "execution": "ask",              # auto | ask | disabled
+    "execution": "ask",              # auto | ask | yesno | disabled
     "displayLocation": "sidebar",    # inline | sidebar | hidden
     "loadingMessage": "Loading...",
     "resourceURI": "tools/my-tool/index.html"
@@ -94,7 +94,7 @@ const METADATA_JAVA_EXAMPLE = `import prerna.reactor.agent.mcp.MCPUtility;
 @Override
 public Map<String, String> getMcpToolMetadata() {
     Map<String, String> meta = new HashMap<>();
-    meta.put(MCPUtility.SMSS_MCP_EXECUTION, MCPUtility.MCPExecution.ASK.getValue()); // auto | ask | disabled
+    meta.put(MCPUtility.SMSS_MCP_EXECUTION, MCPUtility.MCPExecution.ASK.getValue()); // auto | ask | yesno | disabled
     meta.put(MCPUtility.UI_DISPLAY_LOCATION, MCPUtility.MCPDisplayOption.SIDEBAR.getValue()); // inline | sidebar | hidden
     meta.put(MCPUtility.UI_LOADING_MESSAGE, "Loading...");
     meta.put(MCPUtility.UI_RESOURCE_URI, "index.html");
