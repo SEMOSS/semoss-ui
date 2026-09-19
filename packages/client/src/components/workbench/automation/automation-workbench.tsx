@@ -80,7 +80,7 @@ const AUTOMATION_MUTATION_TOOLS = new Set([
 	"RemoveAutomationStep",
 ]);
 const AUTOMATION_BUILDER_AGENT = {
-	workspace_id: "automation-builder",
+	workspace_id: "workflow-automation-builder",
 	name: "Automation Building Agent",
 };
 const MAX_ASSISTANT_DRAFT_LENGTH = 8000;
