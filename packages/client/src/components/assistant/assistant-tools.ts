@@ -38,7 +38,7 @@ const metadataString = (
  * @param metadata - Tool metadata that may record the original name.
  * @return The original tool name, or the input when no alias is detected.
  */
-const stripMcpToolAlias = (
+export const stripMcpToolAlias = (
 	name: string,
 	metadata?: Record<string, unknown>,
 ): string => {

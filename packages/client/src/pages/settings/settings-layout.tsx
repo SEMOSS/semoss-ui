@@ -42,6 +42,10 @@ import { PrivacyPreferenceCenterModal } from "@/components/cookies/privacy-prefe
 import { AddTeamModal, TeamDeleteDialog } from "@/components/teams";
 import { SettingsContext } from "@/contexts";
 import { useAPI, useConfig, useSession } from "@/hooks";
+import {
+	ADMIN_MODE_STORAGE_KEY,
+	getStoredAdminMode,
+} from "@/hooks/useAdminMode";
 import { useNavigate } from "@/hooks/useNavigate";
 import { NavbarHeader, NavbarLeft } from "../../components/shared";
 import { SETTINGS_ROUTES } from "./settings.constants";
@@ -65,14 +69,6 @@ export const SettingsLayout = () => {
 	const { pathname, search } = useLocation();
 	const navigate = useNavigate();
 	const [privacyCenterOpen, setPrivacyCenterOpen] = useState(false);
-
-	const ADMIN_MODE_STORAGE_KEY = "semoss.adminMode";
-	const getStoredAdminMode = () => {
-		if (typeof window === "undefined") {
-			return false;
-		}
-		return window.localStorage.getItem(ADMIN_MODE_STORAGE_KEY) === "true";
-	};
 
 	// track the active breadcrumbs
 	const [adminMode, setAdminMode] = useState(getStoredAdminMode);
@@ -107,7 +103,7 @@ export const SettingsLayout = () => {
 	}, [matchedRoute, search]);
 
 	const hasPrivacyCenterThemeContent = useMemo(() => {
-		const theme = themeConfig as Record<string, unknown>;
+		const theme = themeConfig as unknown as Record<string, unknown>;
 		const order = Array.isArray(theme.cookiePolicyOrderReact)
 			? theme.cookiePolicyOrderReact
 			: [];
@@ -243,6 +239,9 @@ export const SettingsLayout = () => {
 			}
 			if (projectType === "NOTEBOOK") {
 				return `/notebook/${id}/edit`;
+			}
+			if (projectType === "AUTOMATION") {
+				return `/automation/${id}/edit`;
 			}
 			return `/app/${id}`;
 		}

@@ -95,7 +95,7 @@ export const EntityHeader = ({
 		<div className={wrapperClass}>
 			{icon && (
 				<div
-					className={`flex flex-shrink-0 items-center justify-center overflow-hidden bg-transparent ${iconWrapperSize}`}
+					className={`flex shrink-0 items-center justify-center overflow-hidden bg-transparent ${iconWrapperSize}`}
 				>
 					{icon}
 				</div>
