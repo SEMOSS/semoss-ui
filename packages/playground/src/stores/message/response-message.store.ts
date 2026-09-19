@@ -5,6 +5,7 @@ import {
 	observable,
 	runInAction,
 } from "mobx";
+import type { AgentRunProgress } from "@semoss/sdk";
 import { download } from "@semoss/sdk/react";
 import {
 	MCP_EXECUTION_AUTO,
@@ -26,6 +27,10 @@ import { type CancelCommitOutput, spliceHiddenMessages } from "./utility";
  */
 export class ResponseMessageStore extends AbstractMessageStore {
 	readonly type = "OUTPUT";
+
+	/** Run activity remains visible when the agent fails after creating an artifact. */
+	agentRunProgress: AgentRunProgress | null = null;
+	agentRunError: string | null = null;
 
 	/**
 	 * Parts associated with the message
@@ -94,6 +99,8 @@ export class ResponseMessageStore extends AbstractMessageStore {
 
 		makeObservable(this, {
 			isThinking: observable,
+			agentRunProgress: observable.ref,
+			agentRunError: observable,
 			parts: observable,
 			feedback: observable,
 			conversationCompactedAbove: observable,
@@ -131,13 +138,13 @@ export class ResponseMessageStore extends AbstractMessageStore {
 		// sync the tools — server tools (e.g. provider-side web_search) deliver
 		// both the call and result in the same response message, so we sync both
 		// part types here.
-		for (const part of message.parts) {
+		message.parts.forEach((part) => {
 			if (part.type === "TOOL_CALL") {
 				this.room.syncTool(part.toolCall.id, this, part);
 			} else if (part.type === "TOOL_RESULT") {
 				this.room.syncTool(part.toolResult.toolCallId, this, part);
 			}
-		}
+		});
 
 		// set tokens
 		this.tokens = message.tokens;
@@ -191,12 +198,7 @@ export class ResponseMessageStore extends AbstractMessageStore {
 				platform_generated: true,
 				modelId: room.model.engine_id,
 				dateCreated: new Date().toISOString(),
-				parts: [
-					{
-						type: "THINKING",
-						thinking: "",
-					},
-				],
+				parts: [],
 				tokens: 0,
 				ornaments: {
 					modelName:
@@ -234,8 +236,8 @@ export class ResponseMessageStore extends AbstractMessageStore {
 			}, "");
 
 			const media = inputMessage.parts.reduce((acc, part) => {
-				if (part.type === "MEDIA") {
-					acc.push(part.mediaInfo.fileLocation as string);
+				if (part.type === "MEDIA" && part.mediaInfo.fileLocation) {
+					acc.push(part.mediaInfo.fileLocation);
 				}
 
 				return acc;
@@ -391,10 +393,6 @@ paramValues=[${JSON.stringify(
 				lastPart.text += part.text;
 				lastPart.uiText += part.uiText;
 			} else {
-				// delete any existing empty thinking part, as we have new text coming in
-				if (lastPart?.type === "THINKING" && !lastPart.thinking) {
-					this.parts.pop();
-				}
 				this.parts.push(part);
 			}
 		} else if (part.type === "THINKING") {
@@ -571,23 +569,34 @@ paramValues=[${JSON.stringify(
 	}
 
 	/**
+	 * Whether this response should fold up into the one before it instead
+	 * of rendering as its own block — see room-content.tsx. True once it
+	 * has tool calls and nothing else worth showing on its own.
+	 */
+	get shouldFoldUp() {
+		return (
+			this.hasTools &&
+			!this.parts.some(
+				(part) =>
+					(part.type === "TEXT" && part.text.length > 0) ||
+					(part.type === "THINKING" && part.thinking.length > 0) ||
+					part.type === "MEDIA" ||
+					part.type === "SUBAGENT",
+			)
+		);
+	}
+
+	/**
 	 * Check if there are any unfinished tools
 	 */
 	get hasUnfinishedTools() {
-		for (const part of this.parts) {
-			if (part.type === "TOOL_CALL") {
-				const tool = this.room.getTool(part.toolCall.id);
-				if (tool) {
-					if (
-						tool.status === "LOADING" ||
-						tool.status === "INITIAL"
-					) {
-						return true;
-					}
-				}
+		return this.parts.some((part) => {
+			if (part.type !== "TOOL_CALL") {
+				return false;
 			}
-		}
-		return false;
+			const tool = this.room.getTool(part.toolCall.id);
+			return tool?.status === "LOADING" || tool?.status === "INITIAL";
+		});
 	}
 
 	/**
@@ -603,20 +612,20 @@ paramValues=[${JSON.stringify(
 		// Find the tools that can be run
 		let numRunningTools: number = 0;
 		const toolsToRun: ToolStore[] = [];
-		for (const part of this.parts) {
-			if (part.type === "TOOL_CALL") {
-				const tool = this.room.getTool(part.toolCall.id);
-				if (
-					tool.json._meta?.SMSS_MCP_EXECUTION === MCP_EXECUTION_AUTO
-				) {
-					if (tool.status === "INITIAL") {
-						toolsToRun.push(tool);
-					} else if (tool.status === "LOADING") {
-						numRunningTools++;
-					}
-				}
+		this.parts.forEach((part) => {
+			if (part.type !== "TOOL_CALL") {
+				return;
 			}
-		}
+			const tool = this.room.getTool(part.toolCall.id);
+			if (tool.json._meta?.SMSS_MCP_EXECUTION !== MCP_EXECUTION_AUTO) {
+				return;
+			}
+			if (tool.status === "INITIAL") {
+				toolsToRun.push(tool);
+			} else if (tool.status === "LOADING") {
+				numRunningTools++;
+			}
+		});
 
 		// Check how many tools can be run. If toolLimit is false-y, then limit to 5
 		const toolLimit = this.room.theme.toolAutoExecutionLimit || 5;
