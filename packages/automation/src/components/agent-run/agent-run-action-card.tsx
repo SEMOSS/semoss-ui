@@ -49,16 +49,19 @@ export function AgentRunActionCard({
 	const disabled =
 		!canResolve || resolving || resolved || action.status !== "PENDING";
 
+	const persistedArguments = formatAgentActionArguments({
+		toolArgs: action.editedArgs ?? action.toolArgs,
+	});
+	// Keyed on the action's identity and its stored arguments, not the object itself: the
+	// action is re-fetched on a poll interval, so depending on the object would discard an
+	// in-progress edit every couple of seconds.
+	// biome-ignore lint/correctness/useExhaustiveDependencies: actionId keys the reset to the action itself, so a different action carrying identical arguments still clears the draft.
 	useEffect(() => {
-		setArgumentDraft(
-			formatAgentActionArguments({
-				toolArgs: action.editedArgs ?? action.toolArgs,
-			}),
-		);
+		setArgumentDraft(persistedArguments);
 		setArgumentError(null);
 		setResolutionError(null);
 		setEditing(false);
-	}, [action]);
+	}, [action.actionId, persistedArguments]);
 
 	const submitResolution = async (
 		decision: AgentRunActionDecision,

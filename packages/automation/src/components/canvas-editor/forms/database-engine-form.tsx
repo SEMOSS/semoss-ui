@@ -24,8 +24,6 @@ export interface DatabaseEngineFormProps {
 	upstreamVars: string[];
 	/** Called with the updated config on every field change */
 	onChange: (c: DatabaseEngineConfig) => void;
-	/** When false (business mode), schema browser and advanced fields are hidden */
-	devMode?: boolean;
 	/** When true, all mutating controls are disabled; schema browsing stays usable */
 	readOnly?: boolean;
 }
@@ -34,7 +32,6 @@ export function DatabaseEngineForm({
 	config,
 	upstreamVars,
 	onChange,
-	devMode = false,
 	readOnly = false,
 }: DatabaseEngineFormProps) {
 	const [structure, setStructure] = useState<TableStructure[]>([]);
@@ -51,14 +48,24 @@ export function DatabaseEngineForm({
 			setSchemaError(false);
 			return;
 		}
+		// Switching engines leaves the previous fetch in flight. Without this
+		// guard a slow response for the engine just deselected would land on top
+		// of the one now selected, and its finally would clear the spinner while
+		// the current engine is still loading.
+		let cancelled = false;
 		setSchemaLoading(true);
 		setSchemaError(false);
 		runPixel(
 			`META|GetDatabaseTableStructure(database=["${config.engineId}"]);`,
 		)
 			.then((res) => {
+				if (cancelled) return;
 				const rows = res.pixelReturn?.[0]?.output as unknown[][] | null;
-				if (!Array.isArray(rows)) return;
+				if (!Array.isArray(rows)) {
+					setStructure([]);
+					setSchemaError(true);
+					return;
+				}
 				const byTable: Record<
 					string,
 					{ column: string; type: string }[]
@@ -81,10 +88,16 @@ export function DatabaseEngineForm({
 				);
 			})
 			.catch(() => {
+				if (cancelled) return;
 				setStructure([]);
 				setSchemaError(true);
 			})
-			.finally(() => setSchemaLoading(false));
+			.finally(() => {
+				if (!cancelled) setSchemaLoading(false);
+			});
+		return () => {
+			cancelled = true;
+		};
 	}, [config.engineId]);
 
 	const searchedStructure = useMemo(() => {
@@ -100,13 +113,18 @@ export function DatabaseEngineForm({
 	const toggleTable = (table: string) =>
 		setExpandedTables((prev) => ({ ...prev, [table]: !prev[table] }));
 
+	// Clicking replaces the whole expression with a SELECT, which only makes sense for a
+	// read node. On insert and update the tree stays as a reference for table and column
+	// names so a click cannot overwrite a half-written statement.
+	const canInsertQuery = !readOnly && config.operation === "query";
+
 	const insertTable = (table: string) => {
-		if (readOnly) return;
+		if (!canInsertQuery) return;
 		onChange({ ...config, expression: `SELECT * FROM ${table}` });
 	};
 
 	const insertColumn = (table: string, column: string) => {
-		if (readOnly) return;
+		if (!canInsertQuery) return;
 		onChange({ ...config, expression: `SELECT ${column} FROM ${table}` });
 	};
 
@@ -129,10 +147,9 @@ export function DatabaseEngineForm({
 			/>
 
 			<BoundInput
-				label="SQL Query"
+				label="Query"
 				required
 				value={config.expression}
-				placeholder="I want to find open claims from the last 7 days"
 				onChange={(v) => onChange({ ...config, expression: v })}
 				upstreamVars={upstreamVars}
 				mono
@@ -140,7 +157,7 @@ export function DatabaseEngineForm({
 				readOnly={readOnly}
 			/>
 
-			{devMode && config.engineId && (
+			{config.engineId && (
 				<div className="flex flex-col gap-2">
 					<div className="flex items-center gap-2">
 						<span className="font-medium text-muted-foreground text-xs">
@@ -150,7 +167,7 @@ export function DatabaseEngineForm({
 							<Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />
 						)}
 						<span className="ml-auto text-[10px] text-muted-foreground/60">
-							{readOnly ? "view only" : "click to insert"}
+							{canInsertQuery ? "click to insert" : "reference"}
 						</span>
 					</div>
 
@@ -159,7 +176,7 @@ export function DatabaseEngineForm({
 						<Input
 							value={searchTerm}
 							onChange={(e) => setSearchTerm(e.target.value)}
-							placeholder="Filter tables & columns…"
+							placeholder="Filter tables and columns"
 							className="h-7 pl-6 text-xs"
 						/>
 					</div>
@@ -201,12 +218,12 @@ export function DatabaseEngineForm({
 											onClick={() =>
 												insertTable(table.table)
 											}
-											disabled={readOnly}
+											disabled={!canInsertQuery}
 											className="flex flex-1 items-center gap-1.5 py-1.5 pr-2 text-left hover:bg-muted/50 disabled:cursor-default disabled:hover:bg-transparent"
 											title={
-												readOnly
-													? table.table
-													: `SELECT * FROM ${table.table}`
+												canInsertQuery
+													? `SELECT * FROM ${table.table}`
+													: table.table
 											}
 										>
 											<Database className="h-3 w-3 shrink-0 text-blue-500" />
@@ -228,12 +245,12 @@ export function DatabaseEngineForm({
 															col.column,
 														)
 													}
-													disabled={readOnly}
+													disabled={!canInsertQuery}
 													className="flex w-full items-center gap-1.5 py-1 pr-2 pl-7 text-left hover:bg-muted/50 disabled:cursor-default disabled:hover:bg-transparent"
 													title={
-														readOnly
-															? col.column
-															: `SELECT ${col.column} FROM ${table.table}`
+														canInsertQuery
+															? `SELECT ${col.column} FROM ${table.table}`
+															: col.column
 													}
 												>
 													<span className="flex-1 font-mono text-foreground/80">

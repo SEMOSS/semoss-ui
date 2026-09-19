@@ -96,6 +96,7 @@ import type {
 	AutomationWorkflowNodeType,
 	TriggerBinding,
 } from "../../domain/automation-workflow.types";
+import type { CanvasWorkflowDocument } from "../../domain/automation-workflow-adapter";
 import {
 	canvasDocumentFromWorkflow,
 	canvasDocumentToWorkflow,
@@ -187,6 +188,23 @@ function customSourceReferencesOutput(
 		source.includes(`scope.get("${outputVariable}"`) ||
 		source.includes(`scope.get('${outputVariable}'`)
 	);
+}
+
+/**
+ * First output variable of this shape that no step already owns.
+ *
+ * New nodes are numbered from the step count, so deleting a node makes the next
+ * one added reuse a number that is still taken. Two steps sharing an output
+ * variable overwrite each other in scope, and it is the same collision
+ * updateStep refuses when the user renames by hand.
+ */
+function uniqueOutputVar(preferred: string, steps: AutomationNode[]): string {
+	const taken = new Set(steps.map((step) => step.outputVar));
+	if (!taken.has(preferred)) return preferred;
+	const base = preferred.replace(/_\d+$/, "");
+	let suffix = 2;
+	while (taken.has(`${base}_${suffix}`)) suffix += 1;
+	return `${base}_${suffix}`;
 }
 
 const edgeTypes = {
@@ -466,6 +484,23 @@ function graphStructureSignature(
 	return JSON.stringify([nodeIds, edgeKeys]);
 }
 
+/**
+ * Parses the graph a past run executed from its snapshot, or null when the run did not record
+ * one or it cannot be read.
+ */
+function historicalDocumentFor(
+	run: AutomationRunDetail,
+): CanvasWorkflowDocument | null {
+	if (!run.DEFINITION_SNAPSHOT) return null;
+	try {
+		return canvasDocumentFromWorkflow(
+			JSON.parse(run.DEFINITION_SNAPSHOT) as AutomationWorkflowDocument,
+		);
+	} catch {
+		return null;
+	}
+}
+
 function upstreamVariablesFor(
 	steps: AutomationNode[],
 	edges: AutomationEdge[],
@@ -628,18 +663,10 @@ export const AutomationCanvasContent = forwardRef<
 	/** A historical run currently being viewed read-only on the canvas, in place of the live editable graph. */
 	const [historicalRun, setHistoricalRun] =
 		useState<AutomationRunDetail | null>(null);
-	const historicalDoc = useMemo(() => {
-		if (!historicalRun?.DEFINITION_SNAPSHOT) return null;
-		try {
-			return canvasDocumentFromWorkflow(
-				JSON.parse(
-					historicalRun.DEFINITION_SNAPSHOT,
-				) as AutomationWorkflowDocument,
-			);
-		} catch {
-			return null;
-		}
-	}, [historicalRun]);
+	const historicalDoc = useMemo(
+		() => (historicalRun ? historicalDocumentFor(historicalRun) : null),
+		[historicalRun],
+	);
 	const viewingHistory = historicalDoc !== null;
 	const displaySteps = useMemo(
 		() => (historicalDoc ? ensureTriggerNode(historicalDoc.steps) : steps),
@@ -691,6 +718,15 @@ export const AutomationCanvasContent = forwardRef<
 		};
 	}, [historicalRun, stepStatuses, stepErrors, stepDurations]);
 	const viewHistoricalRun = useCallback((run: AutomationRunDetail) => {
+		// Read-only history mode requires the graph the run executed. Without a usable
+		// snapshot the canvas would stay editable while painted with that run's node
+		// statuses, so refuse the mode rather than show a live graph as a past run.
+		if (!historicalDocumentFor(run)) {
+			toast.error(
+				"This run did not record the graph it executed, so it cannot be opened on the canvas.",
+			);
+			return;
+		}
 		setEditingStepId(null);
 		setHistoricalRun(run);
 	}, []);
@@ -764,7 +800,6 @@ export const AutomationCanvasContent = forwardRef<
 
 	const loadedRef = useRef(false);
 	const skipDraftPersistenceRef = useRef(true);
-	const skipNextDraftPersistenceRef = useRef(false);
 	const initialLayoutAppliedRef = useRef(false);
 	const [workflowLoaded, setWorkflowLoaded] = useState(false);
 
@@ -1079,11 +1114,11 @@ export const AutomationCanvasContent = forwardRef<
 
 			initialLayoutAppliedRef.current = true;
 			initialViewFittedRef.current = false;
+			// One flag for one state update: the draft effect consumes a single skip per
+			// run, so raising both here would leave the second set and swallow the
+			// user's first real edit.
 			skipDraftPersistenceRef.current = true;
-			setSteps((previous) => {
-				skipNextDraftPersistenceRef.current = true;
-				return layoutNodes(previous, graphEdges);
-			});
+			setSteps((previous) => layoutNodes(previous, graphEdges));
 		};
 
 		frame = requestAnimationFrame(applyInitialLayout);
@@ -1101,10 +1136,6 @@ export const AutomationCanvasContent = forwardRef<
 		if (!loadedRef.current || readOnly) return;
 		if (skipDraftPersistenceRef.current) {
 			skipDraftPersistenceRef.current = false;
-			return;
-		}
-		if (skipNextDraftPersistenceRef.current) {
-			skipNextDraftPersistenceRef.current = false;
 			return;
 		}
 		const draft = {
@@ -1174,6 +1205,7 @@ export const AutomationCanvasContent = forwardRef<
 				? steps.find((step) => step.id === addAfterStepId)
 				: undefined;
 			const newStep = createCanvasWorkflowNode(type, steps.length);
+			newStep.outputVar = uniqueOutputVar(newStep.outputVar, steps);
 			const id = newStep.id;
 			if (previousStep) {
 				const targetX =
@@ -1386,30 +1418,37 @@ export const AutomationCanvasContent = forwardRef<
 	const deleteStep = useCallback((id: string) => {
 		setSteps((prev) => prev.filter((s) => s.id !== id));
 		setGraphEdges((previous) => {
-			const predecessors = previous
-				.filter((edge) => edge.target === id)
-				.map((edge) => edge.source);
-			const successors = previous
-				.filter((edge) => edge.source === id)
-				.map((edge) => edge.target);
+			// Only control edges are bridged, and each bridge keeps the handles of the
+			// edges it replaces: the source handle carries a decision node's case/else
+			// routing, and an edge with no kind is invisible to the upstream-variable
+			// walk and is rejected by the server as a malformed branch port.
+			const incoming = previous.filter(
+				(edge) => edge.target === id && edge.kind !== "data",
+			);
+			const outgoing = previous.filter(
+				(edge) => edge.source === id && edge.kind !== "data",
+			);
 			const remaining = previous.filter(
 				(edge) => edge.source !== id && edge.target !== id,
 			);
 
-			for (const source of predecessors) {
-				for (const target of successors) {
+			for (const inbound of incoming) {
+				for (const outbound of outgoing) {
 					if (
-						source !== target &&
+						inbound.source !== outbound.target &&
 						!remaining.some(
 							(edge) =>
-								edge.source === source &&
-								edge.target === target,
+								edge.source === inbound.source &&
+								edge.target === outbound.target,
 						)
 					) {
 						remaining.push({
-							id: `e-${source}-${target}-${crypto.randomUUID()}`,
-							source,
-							target,
+							id: `e-${inbound.source}-${outbound.target}-${crypto.randomUUID()}`,
+							source: inbound.source,
+							target: outbound.target,
+							sourceHandle: inbound.sourceHandle,
+							targetHandle: outbound.targetHandle,
+							kind: "control",
 						});
 					}
 				}
@@ -1811,13 +1850,32 @@ export const AutomationCanvasContent = forwardRef<
 		};
 	}, [appId, applyRunData, workflowLoaded]);
 
+	// The host holds this update indefinitely and applyRunData is rebuilt whenever steps
+	// change, so without a guard every canvas edit would repaint the graph with an old run
+	// and refetch history. Apply only when the update itself has moved on.
+	const externalRunSignature = externalRunUpdate
+		? [
+				externalRunUpdate.RUN_ID,
+				externalRunUpdate.STATUS,
+				externalRunUpdate.COMPLETED_NODES ?? "",
+				externalRunUpdate.COMPLETED_AT ?? "",
+			].join(":")
+		: null;
+	const appliedExternalRunRef = useRef<string | null>(null);
 	useEffect(() => {
 		if (!externalRunUpdate) return;
+		if (appliedExternalRunRef.current === externalRunSignature) return;
+		appliedExternalRunRef.current = externalRunSignature;
 		applyRunData(externalRunUpdate);
 		setAiRunSummary(externalRunUpdate.RESULT_SUMMARY ?? null);
 		setLiveRunId(externalRunUpdate.RUN_ID);
 		notifyHistoryChanged();
-	}, [applyRunData, externalRunUpdate, notifyHistoryChanged]);
+	}, [
+		applyRunData,
+		externalRunUpdate,
+		externalRunSignature,
+		notifyHistoryChanged,
+	]);
 
 	const applyNodeProgress = useCallback(
 		(progress: AutomationNodeStreamData) => {

@@ -62,7 +62,7 @@ export function VectorEngineForm({
 									...config,
 									limit: e.target.value
 										? Number(e.target.value)
-										: 5,
+										: undefined,
 								})
 							}
 							placeholder="5"

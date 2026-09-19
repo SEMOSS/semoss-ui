@@ -29,6 +29,13 @@ export type AutomationNodeSources = Record<string, string>;
 const MANUAL_TRIGGER: TriggerBinding = { id: "manual", type: "manual" };
 const PYTHON_IDENTIFIER_PATTERN = /^[A-Za-z_][A-Za-z0-9_]*$/;
 
+/** DatabaseEngine method per write node. Reads go through execQuery instead. */
+const DATABASE_WRITE_METHODS: Record<string, string | undefined> = {
+	"database.insert": "insertData",
+	"database.update": "updateData",
+	"database.delete": "removeData",
+};
+
 // Drops unfinished "Add input" rows so a blank name never reaches the backend save validator.
 function sanitizeTriggerGlobals(value: unknown): AutomationJsonValue {
 	if (!Array.isArray(value)) return value as AutomationJsonValue;
@@ -140,15 +147,39 @@ export function getGeneratedPythonPreview(step: AutomationNode): string {
 	const category = type
 		? getWorkflowNodeDefinition(type)?.category
 		: undefined;
+	// Byte-for-byte the server's AutomationSourceRenderer.triggerSource. The save path
+	// compares the persisted trigger source against that template to decide whether the
+	// node is still generated, so drift here would mark every untouched trigger custom.
+	if (type === "trigger.start") {
+		return `# Declare globals in trigger.start config.globals.
+# Define optional setup here; return a map only for additional runtime values.
+def run(scope):
+    return {}
+`;
+	}
 	if (category === "database") {
+		// execQuery only runs reads. Each write operation has its own method, the same
+		// mapping AutomationSourceRenderer.databaseWriteSource applies server side.
+		const writeMethod = DATABASE_WRITE_METHODS[type ?? ""];
+		if (writeMethod) {
+			return `from ai_server import DatabaseEngine
+
+ENGINE_ID = ${pythonLiteral(config.engineId)}
+QUERY = ${pythonLiteral(config.query)}
+
+def run(scope):
+    database = DatabaseEngine(engine_id=scope.resolve(ENGINE_ID))
+    return database.${writeMethod}(query=scope.resolve(QUERY))
+`;
+		}
 		return `from ai_server import DatabaseEngine
 
 ENGINE_ID = ${pythonLiteral(config.engineId)}
 QUERY = ${pythonLiteral(config.query)}
 
 def run(scope):
-    database = DatabaseEngine(engine_id=resolve(ENGINE_ID, scope))
-    return database.execQuery(query=resolve(QUERY, scope), return_pandas=False)
+    database = DatabaseEngine(engine_id=scope.resolve(ENGINE_ID))
+    return database.execQuery(query=scope.resolve(QUERY), return_pandas=False)
 `;
 	}
 	if (category === "model") {
@@ -158,8 +189,8 @@ ENGINE_ID = ${pythonLiteral(config.engineId)}
 PROMPT = ${pythonLiteral(config.prompt ?? config.text)}
 
 def run(scope):
-    model = ModelEngine(engine_id=resolve(ENGINE_ID, scope))
-    return model.ask(command=resolve(PROMPT, scope))
+    model = ModelEngine(engine_id=scope.resolve(ENGINE_ID))
+    return model.ask(command=scope.resolve(PROMPT))
 `;
 	}
 	if (category === "storage") {
@@ -169,8 +200,8 @@ ENGINE_ID = ${pythonLiteral(config.engineId)}
 STORAGE_PATH = ${pythonLiteral(config.path)}
 
 def run(scope):
-    storage = StorageEngine(engine_id=resolve(ENGINE_ID, scope))
-    return storage.list(resolve(STORAGE_PATH, scope))
+    storage = StorageEngine(engine_id=scope.resolve(ENGINE_ID))
+    return storage.list(scope.resolve(STORAGE_PATH))
 `;
 	}
 	if (category === "vector") {
@@ -180,8 +211,8 @@ ENGINE_ID = ${pythonLiteral(config.engineId)}
 QUERY = ${pythonLiteral(config.value)}
 
 def run(scope):
-    vector = VectorEngine(engine_id=resolve(ENGINE_ID, scope))
-    return vector.nearestNeighbor(search_statement=resolve(QUERY, scope), limit=5)
+    vector = VectorEngine(engine_id=scope.resolve(ENGINE_ID))
+    return vector.nearestNeighbor(search_statement=scope.resolve(QUERY), limit=5)
 `;
 	}
 	if (type === "function.execute") {
@@ -192,8 +223,8 @@ ENGINE_ID = ${pythonLiteral(config.engineId)}
 ARGUMENTS = ${pythonLiteral(config.arguments)}
 
 def run(scope):
-    function = FunctionEngine(engine_id=resolve(ENGINE_ID, scope))
-    return function.execute(parameterMap=json.loads(resolve(ARGUMENTS, scope)))
+    function = FunctionEngine(engine_id=scope.resolve(ENGINE_ID))
+    return function.execute(parameterMap=json.loads(scope.resolve(ARGUMENTS)))
 `;
 	}
 	if (type === "app.pixel") {
@@ -204,8 +235,8 @@ APP_ID = ${pythonLiteral(config.appId)}
 PIXEL = ${pythonLiteral(config.pixel)}
 
 def run(scope):
-    app_id = resolve(APP_ID, scope)
-    pixel = resolve(PIXEL, scope)
+    app_id = scope.resolve(APP_ID)
+    pixel = scope.resolve(PIXEL)
     if app_id:
         pixel = "LoadApp(project=" + json.dumps(app_id) + "); " + pixel
     return Insight().run_pixel(pixel, raw=False)
@@ -228,14 +259,33 @@ def run(scope):
 
 def run(scope):
 	for clause in CLAUSES:
-		if bool(eval(resolve(clause["condition"], scope))):
+		if bool(eval(scope.resolve(clause["condition"]))):
 			return {"branch": "case:" + clause["id"], "value": True}
 	return {"branch": "else", "value": False}
 `;
 	}
-	return `def run(scope):
+	return `# Write arbitrary Python for this automation node here.
+# scope is a read-only, run-local mapping: inputs, globals, metadata, and prior outputs by outputVar.
+# Read required values with scope["outputVar"] and optional values with scope.get("outputVar").
+# Return a JSON-shaped value to pass data to the next node.
+def run(scope):
     return {}
 `;
+}
+
+/**
+ * Reports whether Python source binds a module-level `run`, the entry point the automation
+ * runtime calls. Only an unindented definition or assignment counts, matching the server's
+ * save-time check.
+ */
+export function definesRunEntryPoint(source: string): boolean {
+	return source
+		.split(/\r?\n/)
+		.some(
+			(line) =>
+				/^(?:async\s+)?def\s+run\s*\(/.test(line) ||
+				/^run\s*=/.test(line),
+		);
 }
 
 function canvasTypeForWorkflow(
@@ -310,26 +360,29 @@ function defaultCanvasConfig(
 		};
 	}
 	if (category === "vector") {
+		const operation =
+			type === "vector.search"
+				? "search"
+				: type === "vector.add"
+					? "add-file"
+					: type === "vector.delete"
+						? "delete"
+						: "list";
+		// The persisted `value` is shown in whichever field this operation's form renders.
+		const value = stringValue(config.value);
 		return {
 			engineId,
-			operation:
-				type === "vector.search"
-					? "search"
-					: type === "vector.add"
-						? "add-file"
-						: type === "vector.delete"
-							? "delete"
-							: "list",
-			command: stringValue(config.value),
+			operation,
+			command: operation === "search" ? value : "",
 			limit: numberValue(config.limit, 5),
-			filters: "",
+			filters: stringValue(config.filters),
 			metaFilters: "",
-			filePath: "",
-			source: "",
+			filePath: operation === "add-file" ? value : "",
+			source: stringValue(config.source),
 			space: stringValue(config.collection),
 			filePaths: "",
-			paramValues: "",
-			fileNames: "",
+			paramValues: stringValue(config.paramValues),
+			fileNames: operation === "delete" ? value : "",
 		};
 	}
 	if (type === "function.execute") {
@@ -462,11 +515,32 @@ function mergeCanvasConfig(
 		if (typeof filePath === "string") next.destination = filePath;
 	}
 	if (category === "vector") {
+		const operation = getConfigValue(config, "operation");
 		const command = getConfigValue(config, "command");
+		const filePath = getConfigValue(config, "filePath");
+		const filePaths = getConfigValue(config, "filePaths");
+		const fileNames = getConfigValue(config, "fileNames");
 		const collection = getConfigValue(config, "space");
+		const source = getConfigValue(config, "source");
+		const filters = getConfigValue(config, "filters");
+		const paramValues = getConfigValue(config, "paramValues");
 		const limit = getConfigValue(config, "limit");
-		if (typeof command === "string") next.value = command;
+		// Every vector node carries one `value`: the search text, the comma-separated paths to
+		// add, or the comma-separated names to remove. The form asks for it under a different
+		// label per operation, so map whichever field that operation shows.
+		const value =
+			operation === "add-file"
+				? filePath
+				: operation === "add-csv"
+					? filePaths
+					: operation === "delete" || operation === "download"
+						? fileNames
+						: command;
+		if (typeof value === "string") next.value = value;
 		if (typeof collection === "string") next.collection = collection;
+		if (typeof source === "string") next.source = source;
+		if (typeof filters === "string") next.filters = filters;
+		if (typeof paramValues === "string") next.paramValues = paramValues;
 		if (typeof limit === "number") next.limit = limit;
 	}
 	if (type === "function.execute") {
@@ -647,11 +721,21 @@ export function canvasDocumentToWorkflow({
 			step.config,
 			step.workflowConfig ?? structuredClone(definition.defaultConfig),
 		);
-		const { pythonSource: _pythonSource, ...persistedConfig } = config;
+		// Every other node's Python is persisted as its own file under automation-nodes/,
+		// so carrying a copy in the config would duplicate it. The trigger has no such
+		// file: AutomationRuntime.triggerSource reads its optional setup source straight
+		// out of this config, making this the only place it can live.
+		const { pythonSource, ...persistedConfig } = config;
 		if (type === "trigger.start") {
 			persistedConfig.globals = sanitizeTriggerGlobals(
 				persistedConfig.globals,
 			);
+			if (
+				typeof pythonSource === "string" &&
+				pythonSource.trim() !== ""
+			) {
+				persistedConfig.pythonSource = pythonSource;
+			}
 		}
 		return {
 			id: step.id,
@@ -768,6 +852,18 @@ export function validateCanvasWorkflowNode(
 			JSON.parse(config.arguments);
 		} catch {
 			errors.push("JSON arguments must be valid JSON");
+		}
+	}
+	// Source is only rejected once written: an untouched node saves with no source and the
+	// server persists its generated scaffold instead.
+	if (
+		type !== "trigger.start" &&
+		type !== "control.if" &&
+		node.workflowCodeMode === "custom"
+	) {
+		const source = stringValue(config.pythonSource);
+		if (source.trim() !== "" && !definesRunEntryPoint(source)) {
+			errors.push("a top-level run(scope) function");
 		}
 	}
 	if (type === "control.if") {

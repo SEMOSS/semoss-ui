@@ -65,7 +65,8 @@ export interface VectorEngineConfig {
 		| "delete"
 		| "download";
 	command: string;
-	limit: number;
+	/** Unset while the field is blank; the engine then applies its own default. */
+	limit?: number;
 	filters: string;
 	metaFilters: string;
 	filePath: string;

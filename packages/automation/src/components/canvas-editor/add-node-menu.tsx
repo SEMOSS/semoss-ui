@@ -36,6 +36,16 @@ const CATEGORY_ORDER: readonly AutomationNodeCategory[] = [
 	"developer",
 ];
 
+/**
+ * Extra search terms per node, for words a user reasonably types that the
+ * server-owned label and description do not contain. The decision node is
+ * labelled "Decision", so the keywords that describe what it actually does
+ * would otherwise match nothing.
+ */
+const SEARCH_ALIASES: Partial<Record<AutomationWorkflowNodeType, string>> = {
+	"control.if": "if elif else condition conditional branch",
+};
+
 const CATEGORY_META: Record<
 	AutomationNodeCategory,
 	{ label: string; icon: typeof Database }
@@ -60,15 +70,19 @@ export function AddNodeMenu({ onSelect }: AddNodeMenuProps) {
 		() =>
 			CATEGORY_ORDER.map((category) => ({
 				category,
-				entries: nodeDefinitions.filter(
-					(node) =>
-						node.category === category &&
-						node.type !== "trigger.start" &&
-						(!normalizedQuery ||
-							`${node.label} ${node.description}`
-								.toLowerCase()
-								.includes(normalizedQuery)),
-				),
+				entries: nodeDefinitions.filter((node) => {
+					if (
+						node.category !== category ||
+						node.type === "trigger.start"
+					) {
+						return false;
+					}
+					if (!normalizedQuery) return true;
+					const alias = SEARCH_ALIASES[node.type] ?? "";
+					return `${node.label} ${node.description} ${alias}`
+						.toLowerCase()
+						.includes(normalizedQuery);
+				}),
 			})),
 		[nodeDefinitions, normalizedQuery],
 	);

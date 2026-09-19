@@ -3,6 +3,7 @@ export type AutomationWorkflowNodeType =
 	| "database.query"
 	| "database.insert"
 	| "database.update"
+	| "database.delete"
 	| "model.chat"
 	| "model.embeddings"
 	| "model.vision"

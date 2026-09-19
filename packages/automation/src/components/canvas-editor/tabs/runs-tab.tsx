@@ -99,11 +99,23 @@ export function RunsTab({
 	const [detailLoading, setDetailLoading] = useState(false);
 	const detailsCache = useRef<Record<string, AutomationRunDetail>>({});
 	const requestRef = useRef(0);
+	const detailRequestRef = useRef(0);
 	const previousRefreshTokenRef = useRef(refreshToken);
 
-	// Auto-switch to live view when a run starts
+	// Auto-switch to live view when a run starts. The canvas is released from the historical
+	// run at the same time, so the new run's node statuses are not painted onto an old graph.
+	// Keyed on the running transition alone, through a ref: depending on the callback would
+	// re-run this on every parent render and keep forcing the view back to live, which would
+	// make the Run History breadcrumb unusable for the duration of a run.
+	const exitHistoricalViewRef = useRef(onExitHistoricalView);
 	useEffect(() => {
-		if (running) setView("live");
+		exitHistoricalViewRef.current = onExitHistoricalView;
+	}, [onExitHistoricalView]);
+	useEffect(() => {
+		if (!running) return;
+		setView("live");
+		setSelectedRun(null);
+		exitHistoricalViewRef.current?.();
 	}, [running]);
 
 	const refresh = useCallback(async () => {
@@ -139,6 +151,9 @@ export function RunsTab({
 
 	const openRun = useCallback(
 		async (runId: string) => {
+			// Opening a second run before the first detail request returns must not let the
+			// slower response win and pin the canvas to a run the user already moved off.
+			const requestId = ++detailRequestRef.current;
 			const cached = detailsCache.current[runId];
 			if (cached) {
 				setSelectedRun(cached);
@@ -151,9 +166,11 @@ export function RunsTab({
 			try {
 				const detail = await getAutomationRun(appId, runId);
 				detailsCache.current[runId] = detail;
+				if (requestId !== detailRequestRef.current) return;
 				setSelectedRun(detail);
 				onViewRun?.(detail);
 			} catch (error) {
+				if (requestId !== detailRequestRef.current) return;
 				toast.error(
 					error instanceof Error
 						? normalizeAutomationErrorMessage(error.message)
@@ -161,7 +178,9 @@ export function RunsTab({
 				);
 				setView("history");
 			} finally {
-				setDetailLoading(false);
+				if (requestId === detailRequestRef.current) {
+					setDetailLoading(false);
+				}
 			}
 		},
 		[appId, onViewRun],

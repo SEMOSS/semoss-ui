@@ -15,7 +15,7 @@ export interface PillInputProps {
 	placeholder?: string;
 	/** Description text shown below the input */
 	description?: string;
-	/** Monospace font and block layout (for SQL / multi-line content) */
+	/** Monospace font and block layout (for queries and other multi-line content) */
 	mono?: boolean;
 	/** Minimum rows height hint for mono mode (default 4) */
 	minRows?: number;
@@ -73,6 +73,18 @@ function readDOM(el: HTMLElement): string {
 		}
 	}
 	return result;
+}
+
+/**
+ * Returns the index where an unterminated `${` reference starts in the text before the caret,
+ * or -1 when the caret is not inside one.
+ */
+function partialVariableStart(textBeforeCaret: string): number {
+	const openIdx = textBeforeCaret.lastIndexOf("${");
+	if (openIdx === -1 || textBeforeCaret.slice(openIdx + 2).includes("}")) {
+		return -1;
+	}
+	return openIdx;
 }
 
 /** Creates a pill span for a known variable. */
@@ -178,7 +190,6 @@ export function PillInput({
 
 	// Autocomplete dropdown for `${` partial matches
 	const [acVars, setAcVars] = useState<string[]>([]);
-	const [acPartialStart, setAcPartialStart] = useState(-1);
 
 	// +Variable picker
 	const [showPicker, setShowPicker] = useState(false);
@@ -229,13 +240,12 @@ export function PillInput({
 				0,
 				range.startOffset,
 			);
-			const openIdx = textBefore.lastIndexOf("${");
-			if (openIdx === -1 || textBefore.slice(openIdx + 2).includes("}")) {
+			const openIdx = partialVariableStart(textBefore);
+			if (openIdx === -1) {
 				setAcVars([]);
 				return;
 			}
 			const filter = textBefore.slice(openIdx + 2).toLowerCase();
-			setAcPartialStart(openIdx);
 			setAcVars(
 				upstreamVars.filter((v) => v.toLowerCase().includes(filter)),
 			);
@@ -351,17 +361,26 @@ export function PillInput({
 				const range = sel.getRangeAt(0);
 				const anchor = range.startContainer;
 
-				// If we're in a partial `${` match, replace it with the pill
-				if (
+				// If we're in a partial `${` match, replace it with the pill. The start is
+				// recomputed from the text before the caret rather than read from
+				// autocomplete state, which survives the caret moving elsewhere and would
+				// otherwise slice away unrelated text.
+				const partialStart =
 					anchor.nodeType === Node.TEXT_NODE &&
-					anchor.parentElement === el &&
-					acPartialStart >= 0
-				) {
+					anchor.parentElement === el
+						? partialVariableStart(
+								(anchor.textContent ?? "").slice(
+									0,
+									range.startOffset,
+								),
+							)
+						: -1;
+				if (partialStart >= 0) {
 					const textNode = anchor as Text;
 					const textContent = textNode.textContent ?? "";
 					const caretOffset = range.startOffset;
 					const before = document.createTextNode(
-						textContent.slice(0, acPartialStart),
+						textContent.slice(0, partialStart),
 					);
 					const after = document.createTextNode(
 						textContent.slice(caretOffset),
@@ -391,11 +410,10 @@ export function PillInput({
 			}
 
 			setAcVars([]);
-			setAcPartialStart(-1);
 			setShowPicker(false);
 			emitChange(el);
 		},
-		[acPartialStart, emitChange, readOnly],
+		[emitChange, readOnly],
 	);
 
 	return (

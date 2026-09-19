@@ -14,9 +14,20 @@ import { WORKBENCH_COMPONENTS } from "@/stores/workbench";
  */
 export const AutomationSettingsToggle: React.FC = () => {
 	const actions = useWorkbench((state) => state.layout.actions);
-	const settingsId = WORKBENCH_COMPONENTS.PROJECT_SETTINGS;
-	const isShowing = useWorkbench(
-		(state) => state.layout.panelSlots[settingsId]?.active ?? false,
+	const settingsType = WORKBENCH_COMPONENTS.PROJECT_SETTINGS;
+
+	// panelSlots and closePanel are keyed by the runtime panel id, not the
+	// blueprint type, so the open instance has to be resolved first.
+	const existingId = useWorkbench(
+		(state) =>
+			Object.values(state.layout.panels).find(
+				(record) => record.type === settingsType,
+			)?.id,
+	);
+	const isShowing = useWorkbench((state) =>
+		existingId
+			? (state.layout.panelSlots[existingId]?.active ?? false)
+			: false,
 	);
 
 	return (
@@ -28,12 +39,12 @@ export const AutomationSettingsToggle: React.FC = () => {
 					aria-label="Settings"
 					data-testid="automation-workbench-settings-toggle"
 					onClick={() => {
-						if (isShowing) {
-							actions.closePanel(settingsId);
+						if (existingId && isShowing) {
+							actions.closePanel(existingId);
 							return;
 						}
 
-						actions.selectPanel(settingsId);
+						actions.selectPanel(settingsType);
 					}}
 					className={cn(
 						WORKBENCH_STYLES.chromeButton,

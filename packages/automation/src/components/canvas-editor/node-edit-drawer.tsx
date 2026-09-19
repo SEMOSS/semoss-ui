@@ -1,4 +1,11 @@
-import { ChevronDown, Code2, ExternalLink, Lock, Trash2 } from "lucide-react";
+import {
+	ChevronDown,
+	Code2,
+	ExternalLink,
+	HelpCircle,
+	Lock,
+	Trash2,
+} from "lucide-react";
 import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { MonacoEditor } from "@semoss/shared";
 import {
@@ -25,6 +32,9 @@ import {
 import { OutputPreview } from "../form-editor/output-preview";
 import { TraceDetail } from "../form-editor/trace-detail";
 import { StepForm } from "./step-form";
+
+/** Values the runtime seeds into every run's scope, regardless of the graph. */
+const RUN_SCOPE_VARIABLES = ["date", "triggered_at", "run_id"];
 
 export interface NodeEditDrawerProps {
 	step: AutomationNode;
@@ -97,9 +107,14 @@ export function NodeEditDrawer({
 		typeof step.workflowConfig?.pythonSource === "string"
 			? step.workflowConfig.pythonSource
 			: "";
+	// A Python node starts in custom mode with no source, so seed the editor with the
+	// runnable scaffold rather than a blank buffer: the runtime requires a top-level
+	// run(scope) and the save validator rejects source without one.
 	const pythonSource =
 		persistedPythonSource ||
-		(isCustomSource ? "" : getGeneratedPythonPreview(step));
+		(isCustomSource && !isDeveloperPython
+			? ""
+			: getGeneratedPythonPreview(step));
 	// Historical runs carry the executed graph shape but not saved node sources, so a
 	// custom-code node has nothing to show — hide the editor instead of rendering it empty.
 	const pythonSourceUnavailable =
@@ -111,6 +126,11 @@ export function NodeEditDrawer({
 	const pendingPythonUpdateRef = useRef<PendingPythonUpdate | null>(null);
 	const activePythonStepIdRef = useRef(step.id);
 	const onUpdateRef = useRef(onUpdate);
+	// Newest version of each node the drawer has rendered. The pending edit records which
+	// node it belongs to, and the flush merges onto that node's current state rather than
+	// the snapshot taken when typing started, so a label or output-variable change made
+	// inside the debounce window is not written back stale.
+	const latestStepsRef = useRef(new Map<string, AutomationNode>());
 	const { resolvedTheme } = useTheme();
 	const [showPythonVariablePicker, setShowPythonVariablePicker] =
 		useState(false);
@@ -118,6 +138,9 @@ export function NodeEditDrawer({
 	useEffect(() => {
 		onUpdateRef.current = onUpdate;
 	}, [onUpdate]);
+	useEffect(() => {
+		latestStepsRef.current.set(step.id, step);
+	}, [step]);
 	const flushPythonUpdate = useCallback(() => {
 		if (pythonUpdateTimeoutRef.current) {
 			clearTimeout(pythonUpdateTimeoutRef.current);
@@ -126,11 +149,14 @@ export function NodeEditDrawer({
 		const pendingUpdate = pendingPythonUpdateRef.current;
 		if (!pendingUpdate) return;
 		pendingPythonUpdateRef.current = null;
+		const target =
+			latestStepsRef.current.get(pendingUpdate.step.id) ??
+			pendingUpdate.step;
 		onUpdateRef.current({
-			...pendingUpdate.step,
+			...target,
 			workflowCodeMode: "custom",
 			workflowConfig: {
-				...pendingUpdate.step.workflowConfig,
+				...target.workflowConfig,
 				pythonSource: pendingUpdate.source,
 			},
 		});
@@ -156,10 +182,14 @@ export function NodeEditDrawer({
 		}
 		pythonUpdateTimeoutRef.current = setTimeout(flushPythonUpdate, 300);
 	};
+	// Custom source reads upstream values off the scope mapping. A ${...} reference is only
+	// resolved for generated nodes, and is not valid Python syntax on its own.
 	const insertPythonVariable = (variable: string) => {
 		const separator =
 			pythonDraft.length === 0 || pythonDraft.endsWith("\n") ? "" : "\n";
-		updatePythonSource(`${pythonDraft}${separator}\${${variable}}`);
+		updatePythonSource(
+			`${pythonDraft}${separator}scope[${JSON.stringify(variable)}]`,
+		);
 	};
 	const pythonVariablePicker = (
 		<div className="relative">
@@ -174,23 +204,25 @@ export function NodeEditDrawer({
 			</Button>
 			{showPythonVariablePicker && (
 				<div className="absolute top-full right-0 z-50 mt-1 min-w-45 rounded-md border bg-popover py-1 shadow-md">
-					{upstreamVars.map((variable) => (
-						<button
-							key={variable}
-							type="button"
-							onMouseDown={(event) => {
-								event.preventDefault();
-								insertPythonVariable(variable);
-								setShowPythonVariablePicker(false);
-							}}
-							className="flex w-full items-center gap-1.5 px-3 py-1.5 text-left font-mono text-xs hover:bg-accent hover:text-accent-foreground"
-						>
-							<span className="text-[10px] text-muted-foreground">
-								{`\${}`}
-							</span>
-							{variable}
-						</button>
-					))}
+					{[...upstreamVars, ...RUN_SCOPE_VARIABLES].map(
+						(variable) => (
+							<button
+								key={variable}
+								type="button"
+								onMouseDown={(event) => {
+									event.preventDefault();
+									insertPythonVariable(variable);
+									setShowPythonVariablePicker(false);
+								}}
+								className="flex w-full items-center gap-1.5 px-3 py-1.5 text-left font-mono text-xs hover:bg-accent hover:text-accent-foreground"
+							>
+								<span className="text-[10px] text-muted-foreground">
+									scope
+								</span>
+								{variable}
+							</button>
+						),
+					)}
 				</div>
 			)}
 		</div>
@@ -411,7 +443,12 @@ export function NodeEditDrawer({
 									)}
 								</div>
 							) : supportsBusinessForm(step) ? (
+								// Keyed by node so the form remounts when the drawer
+								// switches nodes. The engine forms seed local state
+								// from config in useState initializers, which only
+								// run on mount.
 								<StepForm
+									key={step.id}
 									step={step}
 									upstreamVars={upstreamVars}
 									onUpdate={onUpdate}
@@ -439,10 +476,44 @@ export function NodeEditDrawer({
 										<FieldLabel className="flex items-center gap-1.5 text-xs">
 											<Code2 className="h-3.5 w-3.5 text-primary" />
 											Python source
+											<Tooltip>
+												<TooltipTrigger asChild>
+													<HelpCircle
+														className="size-3 text-muted-foreground"
+														aria-label="How scope works"
+													/>
+												</TooltipTrigger>
+												<TooltipContent
+													side="right"
+													className="max-w-80"
+												>
+													<p className="font-medium">
+														run(scope)
+													</p>
+													<p className="mt-1">
+														scope is a read-only
+														dict of this run&apos;s
+														values: date,
+														triggered_at, run_id,
+														the trigger inputs, and
+														each earlier step&apos;s
+														output under its output
+														variable.
+													</p>
+													<p className="mt-1">
+														Read with
+														scope[&quot;name&quot;]
+														or
+														scope.get(&quot;name&quot;).
+														Assigning to scope
+														raises; return a
+														JSON-shaped value to
+														pass data on.
+													</p>
+												</TooltipContent>
+											</Tooltip>
 										</FieldLabel>
-										{!readOnly &&
-											upstreamVars.length > 0 &&
-											pythonVariablePicker}
+										{!readOnly && pythonVariablePicker}
 										{!readOnly && (
 											<Tooltip>
 												<TooltipTrigger asChild>

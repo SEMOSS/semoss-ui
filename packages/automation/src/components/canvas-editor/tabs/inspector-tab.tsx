@@ -58,6 +58,7 @@ export function InspectorTab({
 				onPrepareSchedule={onPrepareSchedule}
 				step={editingStep}
 				onUpdate={onUpdate}
+				devMode={devMode}
 				readOnly={readOnly}
 			/>
 		);

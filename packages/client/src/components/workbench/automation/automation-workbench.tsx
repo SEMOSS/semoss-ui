@@ -418,6 +418,8 @@ export const AutomationWorkbench = observer(
 		const [pythonEditor, setPythonEditor] = useState<{
 			nodeId: string;
 			source: string;
+			/** Source the dialog opened with, so dismissing without an edit changes nothing. */
+			openedWith: string;
 		} | null>(null);
 		const wasRunningRef = useRef(false);
 		const editingStepIdRef = useRef<string | null>(null);
@@ -526,7 +528,7 @@ export const AutomationWorkbench = observer(
 		);
 		const handleOpenPythonEditor = useCallback(
 			(nodeId: string, source: string) =>
-				setPythonEditor({ nodeId, source }),
+				setPythonEditor({ nodeId, source, openedWith: source }),
 			[],
 		);
 
@@ -640,10 +642,17 @@ export const AutomationWorkbench = observer(
 					open={pythonEditor !== null}
 					onOpenChange={(open) => {
 						if (!open && pythonEditor) {
-							sendPythonSource(
-								pythonEditor.source,
-								pythonEditor.nodeId,
-							);
+							// Escape and backdrop dismissals land here too. Writing
+							// unconditionally would flip an untouched generated node
+							// to custom just for opening and closing the editor.
+							if (
+								pythonEditor.source !== pythonEditor.openedWith
+							) {
+								sendPythonSource(
+									pythonEditor.source,
+									pythonEditor.nodeId,
+								);
+							}
 							setPythonEditor(null);
 						}
 					}}

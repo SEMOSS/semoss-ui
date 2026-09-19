@@ -132,7 +132,7 @@ export function SchedulePanel({
 			<div className="space-y-3 rounded-lg border bg-muted/20 p-3">
 				<div className="flex items-center justify-between gap-3">
 					<div>
-						<p className="font-medium text-sm">Current schedules</p>
+						<p className="font-medium text-sm">Current Schedules</p>
 						<p className="text-muted-foreground text-xs">
 							Only schedules owned by this automation are shown.
 						</p>
@@ -176,8 +176,8 @@ export function SchedulePanel({
 											{schedule.jobName}
 										</p>
 										<p className="truncate text-[11px] text-muted-foreground">
-											{schedule.cronExpression} ·{" "}
-											{schedule.cronTz}
+											{schedule.cronExpression} (
+											{schedule.cronTz})
 										</p>
 										<p className="text-[11px] text-muted-foreground">
 											{schedule.isActive
@@ -259,7 +259,7 @@ export function SchedulePanel({
 								setScheduleToRemove(null);
 							}}
 						>
-							Remove schedule
+							Remove Schedule
 						</Button>
 					</div>
 				</div>
@@ -267,7 +267,7 @@ export function SchedulePanel({
 
 			<div className="space-y-3 rounded-lg border p-3">
 				<div>
-					<p className="font-medium text-sm">Add schedule</p>
+					<p className="font-medium text-sm">Add Schedule</p>
 					<p className="text-muted-foreground text-xs">
 						Cron uses the Quartz format. Example:{" "}
 						<code>0 0 9 * * ?</code>
@@ -283,7 +283,7 @@ export function SchedulePanel({
 					/>
 				</div>
 				<div className="space-y-1.5">
-					<Label htmlFor={cronInputId}>Cron expression</Label>
+					<Label htmlFor={cronInputId}>Cron Expression</Label>
 					<Input
 						id={cronInputId}
 						value={cronExpression}
@@ -293,7 +293,7 @@ export function SchedulePanel({
 					/>
 				</div>
 				<div className="space-y-1.5">
-					<Label htmlFor={timezoneInputId}>Time zone</Label>
+					<Label htmlFor={timezoneInputId}>Time Zone</Label>
 					<Input
 						id={timezoneInputId}
 						value={timezone}
@@ -312,7 +312,7 @@ export function SchedulePanel({
 					) : (
 						<Plus className="mr-1.5 size-3.5" />
 					)}
-					Add schedule
+					Add Schedule
 				</Button>
 			</div>
 		</section>

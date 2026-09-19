@@ -62,7 +62,6 @@ export function StepForm({
 					config={step.config as DatabaseEngineConfig}
 					upstreamVars={upstreamVars}
 					onChange={update}
-					devMode={devMode}
 					readOnly={readOnly}
 				/>
 			);

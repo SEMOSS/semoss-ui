@@ -61,7 +61,6 @@ const EFFORT_OPTIONS: { value: AssistantEffort; label: string }[] = [
  */
 export const AssistantSettings = () => {
 	const model = useAssistant((state) => state.model);
-	const agent = useAssistant((state) => state.agent);
 	const roomId = useAssistant((state) => state.roomId);
 	const activeRunId = useAssistant((state) => state.activeRunId);
 	const compact = useAssistant((state) => state.compact);
@@ -70,7 +69,6 @@ export const AssistantSettings = () => {
 	const effort = useAssistant((state) => state.effort);
 	const thinking = useAssistant((state) => state.thinking);
 	const setModel = useAssistant((state) => state.setModel);
-	const setAgent = useAssistant((state) => state.setAgent);
 	const setMaxTurns = useAssistant((state) => state.setMaxTurns);
 	const setPermissionMode = useAssistant((state) => state.setPermissionMode);
 	const setEffort = useAssistant((state) => state.setEffort);
