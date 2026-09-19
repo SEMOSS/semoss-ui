@@ -13,4 +13,12 @@ export default createViteConfig({
 	define: (env) => ({
 		"import.meta.env.ENDPOINT": JSON.stringify(env.ENDPOINT),
 	}),
+	// The domain layer is plain TypeScript, so its tests need no DOM.
+	test: {
+		environment: "node",
+		coverage: {
+			reportsDirectory: "./coverage/packages/automation",
+			include: ["src/domain/**"],
+		},
+	},
 });
