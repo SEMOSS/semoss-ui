@@ -578,6 +578,7 @@ export const AutomationCanvasContent = forwardRef<
 	const dotColor = isDark ? "#334155" : "#94a3b8";
 
 	const [saving, setSaving] = useState(false);
+	const [confirmReload, setConfirmReload] = useState(false);
 	const [description, setDescription] = useState("");
 	const [devMode, setDevMode] = useState(
 		() => localStorage.getItem(`automation-devmode-${appId}`) === "true",
@@ -817,8 +818,14 @@ export const AutomationCanvasContent = forwardRef<
 	const restoredActiveRunForProjectRef = useRef<string | null>(null);
 
 	const refresh = useCallback(
-		(change?: { toolName: string; changedStepIds: string[] }) => {
-			if (isDirty) {
+		(
+			change?: { toolName: string; changedStepIds: string[] },
+			discardDraft = false,
+		) => {
+			// An automatic refresh must never destroy work in progress, so it backs
+			// off and says so. A refresh the user asked for confirms first and then
+			// arrives here with discardDraft set.
+			if (isDirty && !discardDraft) {
 				toast.error(
 					"The automation changed outside the editor. Your unsaved draft was preserved; save it before refreshing.",
 				);
@@ -849,6 +856,19 @@ export const AutomationCanvasContent = forwardRef<
 		},
 		[appId, isDirty],
 	);
+
+	/**
+	 * Re-reads the saved automation from the server, for when a person or an agent
+	 * has edited it outside this canvas. Reloading replaces the local draft, so a
+	 * dirty canvas confirms before discarding it.
+	 */
+	const reloadFromServer = useCallback(() => {
+		if (isDirty) {
+			setConfirmReload(true);
+			return;
+		}
+		refresh({ toolName: "reload", changedStepIds: [] });
+	}, [isDirty, refresh]);
 
 	const getNodeHeight = useCallback((nodeId: string): number => {
 		const nodeElements =
@@ -2807,6 +2827,29 @@ export const AutomationCanvasContent = forwardRef<
 											</div>
 										)}
 										{mcpMode !== "trigger" && (
+											<Tooltip>
+												<TooltipTrigger asChild>
+													<Button
+														size="sm"
+														variant="outline"
+														className="bg-background shadow-sm"
+														onClick={
+															reloadFromServer
+														}
+														disabled={
+															saving || running
+														}
+														aria-label="Reload workflow"
+													>
+														<RefreshCw className="h-3.5 w-3.5" />
+													</Button>
+												</TooltipTrigger>
+												<TooltipContent side="bottom">
+													Reload the saved workflow
+												</TooltipContent>
+											</Tooltip>
+										)}
+										{mcpMode !== "trigger" && (
 											<div
 												className="relative"
 												data-tour="save"
@@ -3047,6 +3090,41 @@ export const AutomationCanvasContent = forwardRef<
 					</div>
 				</div>
 			</div>
+
+			<Dialog open={confirmReload} onOpenChange={setConfirmReload}>
+				<DialogContent className="max-w-md">
+					<DialogHeader>
+						<DialogTitle>Discard unsaved changes?</DialogTitle>
+						<DialogDescription>
+							Reloading reads the saved workflow from the server
+							and replaces what is on this canvas. Your unsaved
+							edits will be lost.
+						</DialogDescription>
+					</DialogHeader>
+					<DialogFooter>
+						<Button
+							variant="outline"
+							size="sm"
+							onClick={() => setConfirmReload(false)}
+						>
+							Cancel
+						</Button>
+						<Button
+							variant="destructive"
+							size="sm"
+							onClick={() => {
+								setConfirmReload(false);
+								refresh(
+									{ toolName: "reload", changedStepIds: [] },
+									true,
+								);
+							}}
+						>
+							Discard and reload
+						</Button>
+					</DialogFooter>
+				</DialogContent>
+			</Dialog>
 
 			<Dialog
 				open={!readOnly && showAddMenu}

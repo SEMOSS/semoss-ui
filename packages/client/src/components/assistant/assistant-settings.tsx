@@ -1,4 +1,4 @@
-import { ChevronDownIcon, TriangleAlertIcon } from "lucide-react";
+import { BotIcon, ChevronDownIcon, TriangleAlertIcon } from "lucide-react";
 import { useEffect, useId, useState } from "react";
 import { EngineSelect } from "@semoss/shared";
 import {
@@ -61,6 +61,7 @@ const EFFORT_OPTIONS: { value: AssistantEffort; label: string }[] = [
  */
 export const AssistantSettings = () => {
 	const model = useAssistant((state) => state.model);
+	const agent = useAssistant((state) => state.agent);
 	const roomId = useAssistant((state) => state.roomId);
 	const activeRunId = useAssistant((state) => state.activeRunId);
 	const compact = useAssistant((state) => state.compact);
@@ -99,10 +100,30 @@ export const AssistantSettings = () => {
 
 	const modelName =
 		model?.engine_display_name || model?.engine_name || "Select model";
+	// The host workbench binds the agent, so this is read-only for now. It is
+	// shown because which agent answers changes the tools and skills available,
+	// and that is otherwise invisible from the conversation.
+	const agentName = agent?.name || agent?.workspace_id || "Default assistant";
 
 	return (
 		<ScrollArea className="min-h-0 flex-1">
 			<div className="flex flex-col gap-4 p-3">
+				<Field>
+					<FieldLabel>Agent</FieldLabel>
+					<div className="flex h-9 items-center gap-2 rounded-md border border-input px-3 shadow-xs">
+						<BotIcon
+							className="size-4 shrink-0 text-muted-foreground"
+							aria-hidden
+						/>
+						<span className="truncate text-sm">{agentName}</span>
+					</div>
+					<FieldDescription className="text-xs">
+						{agent
+							? "Set by this workbench. Its skills and tools define what the assistant can do here."
+							: "No agent is bound, so this room uses the default assistant."}
+					</FieldDescription>
+				</Field>
+
 				<Field>
 					<FieldLabel>Model</FieldLabel>
 					<EngineSelect
