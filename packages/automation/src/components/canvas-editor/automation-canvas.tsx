@@ -12,20 +12,16 @@ import {
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import {
-	AlertTriangle,
 	CheckCircle,
 	Code2,
-	Download,
 	Hand,
 	Loader2,
 	Lock,
-	MoreHorizontal,
 	MousePointer2,
 	Play,
 	RefreshCw,
 	Save,
 	Scan,
-	Upload,
 	Workflow,
 	ZoomIn,
 	ZoomOut,
@@ -53,14 +49,6 @@ import {
 	DialogFooter,
 	DialogHeader,
 	DialogTitle,
-	DropdownMenu,
-	DropdownMenuContent,
-	DropdownMenuItem,
-	DropdownMenuSeparator,
-	DropdownMenuSub,
-	DropdownMenuSubContent,
-	DropdownMenuSubTrigger,
-	DropdownMenuTrigger,
 	Tooltip,
 	TooltipContent,
 	TooltipTrigger,
@@ -81,15 +69,10 @@ import type {
 	RunStatus,
 	StepRunStatus,
 } from "../../domain/automation.types";
-import {
-	downloadAutomationExport,
-	parseAutomationImportFileAsync,
-} from "../../domain/automation-import-export";
 import type {
 	AutomationInspectorAction,
 	AutomationInspectorSnapshot,
 } from "../../domain/automation-inspector";
-import { downloadN8nExport } from "../../domain/automation-to-n8n-adapter";
 import { normalizeAutomationErrorMessage } from "../../domain/automation-utils";
 import type {
 	AutomationWorkflowDocument,
@@ -105,7 +88,6 @@ import {
 	getCanvasNodeSources,
 	validateCanvasWorkflowNode,
 } from "../../domain/automation-workflow-adapter";
-import type { N8nImportConversionModel } from "../../domain/n8n-import-adapter";
 import { OnboardingTour } from "../form-editor/onboarding-tour";
 import { AddNodeMenu } from "./add-node-menu";
 import { AutomationDockLayout } from "./automation-dock-layout";
@@ -117,21 +99,14 @@ import { TriggerNode } from "./nodes/trigger-node";
 import type { AutomationTraceSnapshot } from "./tabs/runs-tab";
 import { UndoBanner } from "./undo-banner";
 
-// ---- React Flow custom node registry (must be outside component) ----
 const nodeTypes = {
 	trigger: TriggerNode,
 	automation: AutomationNodeCard,
 	branch: BranchNode,
 } as const;
 
-/** How long a step's "recently changed by the Assistant" highlight stays visible. */
 const CHANGE_HIGHLIGHT_DURATION_MS = 2500;
 
-/**
- * Transient highlight state applied after an Assistant tool call changes the automation.
- * `all: true` is the best-effort fallback when the completed tool didn't report which step(s)
- * it touched — every card pulses briefly instead of guessing at a specific one.
- */
 type ChangeHighlight = { all: true } | { all: false; stepIds: Set<string> };
 
 function isStepHighlighted(
@@ -190,14 +165,6 @@ function customSourceReferencesOutput(
 	);
 }
 
-/**
- * First output variable of this shape that no step already owns.
- *
- * New nodes are numbered from the step count, so deleting a node makes the next
- * one added reuse a number that is still taken. Two steps sharing an output
- * variable overwrite each other in scope, and it is the same collision
- * updateStep refuses when the user renames by hand.
- */
 function uniqueOutputVar(preferred: string, steps: AutomationNode[]): string {
 	const taken = new Set(steps.map((step) => step.outputVar));
 	if (!taken.has(preferred)) return preferred;
@@ -287,8 +254,6 @@ export interface AutomationCanvasProps {
 	appId: string;
 	/** Prevents graph and configuration changes when true. */
 	readOnly?: boolean;
-	/** Optional host-owned LLM fallback for unsupported n8n import nodes. */
-	conversionModel?: N8nImportConversionModel;
 	/** Optional MCP host mode for the standalone Automation surface. */
 	mcpMode?: "edit" | "create" | "trigger" | null;
 	/** Tool context supplied when the canvas is hosted by Playground. */
@@ -561,7 +526,6 @@ export const AutomationCanvasContent = forwardRef<
 	{
 		appId,
 		readOnly = false,
-		conversionModel,
 		mcpMode,
 		mcpContext,
 		onViewAgentRun,
@@ -646,21 +610,6 @@ export const AutomationCanvasContent = forwardRef<
 	const [undoSnapshot, setUndoSnapshot] = useState<AutomationNode[] | null>(
 		null,
 	);
-	const importFileInputRef = useRef<HTMLInputElement>(null);
-	const [isImporting, setIsImporting] = useState(false);
-	const [pendingImport, setPendingImport] = useState<{
-		steps: AutomationNode[];
-		edges: AutomationEdge[];
-		description: string;
-		triggerBindings: TriggerBinding[];
-		warnings: string[];
-	} | null>(null);
-	/** Warnings from the last completed import/export — persists so the dialog can be reopened; `[]` means clean. */
-	const [importWarnings, setImportWarnings] = useState<string[] | null>(null);
-	const [showImportSummary, setShowImportSummary] = useState(false);
-	const [importSummaryKind, setImportSummaryKind] = useState<
-		"import" | "export-n8n"
-	>("import");
 	/** A historical run currently being viewed read-only on the canvas, in place of the live editable graph. */
 	const [historicalRun, setHistoricalRun] =
 		useState<AutomationRunDetail | null>(null);
@@ -1560,107 +1509,6 @@ export const AutomationCanvasContent = forwardRef<
 		},
 		[deleteStep, handleDevModeChange, readOnly, updateStep, viewingHistory],
 	);
-
-	const applyImportedWorkflow = useCallback(
-		(parsed: {
-			steps: AutomationNode[];
-			edges: AutomationEdge[];
-			description: string;
-			triggerBindings: TriggerBinding[];
-			warnings: string[];
-		}) => {
-			skipDraftPersistenceRef.current = true;
-			setSteps(
-				layoutNodes(ensureTriggerNode(parsed.steps), parsed.edges),
-			);
-			setGraphEdges(parsed.edges);
-			setDescription(parsed.description);
-			setTriggerBindings(parsed.triggerBindings);
-			setIsDirty(true);
-			setEditingStepId(null);
-			setImportSummaryKind("import");
-			setImportWarnings(parsed.warnings);
-			setShowImportSummary(true);
-			window.requestAnimationFrame(fitWorkflow);
-		},
-		[fitWorkflow, layoutNodes],
-	);
-
-	const handleImportFile = useCallback(
-		async (file: File) => {
-			setIsImporting(true);
-			try {
-				const parsed = await parseAutomationImportFileAsync(
-					await file.text(),
-					{
-						conversionModel,
-					},
-				);
-				const canvasDoc = canvasDocumentFromWorkflow(
-					parsed.document,
-					parsed.nodeSources,
-				);
-				const importPayload = {
-					steps: canvasDoc.steps,
-					edges: canvasDoc.edges,
-					description: canvasDoc.description,
-					triggerBindings: canvasDoc.triggerBindings,
-					warnings: parsed.warnings,
-				};
-				const isCurrentGraphEmpty =
-					steps.every(
-						(step) => step.workflowType === "trigger.start",
-					) && graphEdges.length === 0;
-				if (isCurrentGraphEmpty) {
-					applyImportedWorkflow(importPayload);
-				} else {
-					setPendingImport(importPayload);
-				}
-			} catch (error) {
-				toast.error(
-					error instanceof Error
-						? error.message
-						: "Unable to import this file.",
-				);
-			} finally {
-				setIsImporting(false);
-			}
-		},
-		[applyImportedWorkflow, conversionModel, graphEdges, steps],
-	);
-
-	const handleExportWorkflow = useCallback(() => {
-		const definition = canvasDocumentToWorkflow({
-			description,
-			triggerBindings,
-			steps,
-			edges: graphEdges,
-		});
-		const nodeSources = getCanvasNodeSources(steps);
-		downloadAutomationExport(
-			description.trim() || appId || "automation",
-			definition,
-			nodeSources,
-		);
-	}, [appId, description, graphEdges, steps, triggerBindings]);
-
-	const handleExportToN8n = useCallback(() => {
-		const definition = canvasDocumentToWorkflow({
-			description,
-			triggerBindings,
-			steps,
-			edges: graphEdges,
-		});
-		const nodeSources = getCanvasNodeSources(steps);
-		const warnings = downloadN8nExport(
-			description.trim() || appId || "automation",
-			definition,
-			nodeSources,
-		);
-		setImportSummaryKind("export-n8n");
-		setImportWarnings(warnings);
-		setShowImportSummary(true);
-	}, [appId, description, graphEdges, steps, triggerBindings]);
 
 	const save = useCallback(async (): Promise<boolean> => {
 		if (viewingHistory) {
@@ -2717,115 +2565,6 @@ export const AutomationCanvasContent = forwardRef<
 									<div
 										className={`absolute top-4 right-4 z-30 items-center gap-2 ${(readOnly && mcpMode !== "trigger") || viewingHistory ? "hidden" : "flex"}`}
 									>
-										{isImporting && (
-											<div
-												className="flex items-center gap-1.5 rounded border bg-background px-2 py-1 text-muted-foreground text-xs shadow-sm"
-												aria-live="polite"
-												aria-busy="true"
-											>
-												<Loader2
-													className="size-3.5 animate-spin"
-													aria-hidden="true"
-												/>
-												Importing workflow...
-											</div>
-										)}
-										{!readOnly && mcpMode !== "trigger" && (
-											<div data-tour="import-export">
-												<input
-													ref={importFileInputRef}
-													type="file"
-													accept=".json,application/json"
-													className="hidden"
-													onChange={(event) => {
-														const file =
-															event.target
-																.files?.[0];
-														event.target.value = "";
-														if (file)
-															void handleImportFile(
-																file,
-															);
-													}}
-												/>
-												<DropdownMenu>
-													<DropdownMenuTrigger
-														asChild
-													>
-														<Button
-															size="sm"
-															variant="outline"
-															className="bg-background shadow-sm"
-															disabled={
-																isImporting
-															}
-															aria-label="Import or export this automation"
-														>
-															<MoreHorizontal className="h-3.5 w-3.5" />
-														</Button>
-													</DropdownMenuTrigger>
-													<DropdownMenuContent align="end">
-														<DropdownMenuItem
-															onClick={() =>
-																importFileInputRef.current?.click()
-															}
-														>
-															<Upload className="mr-2 h-3.5 w-3.5" />
-															Import workflow
-														</DropdownMenuItem>
-														<DropdownMenuSub>
-															<DropdownMenuSubTrigger>
-																<Download className="mr-2 h-3.5 w-3.5" />
-																Export
-															</DropdownMenuSubTrigger>
-															<DropdownMenuSubContent>
-																<DropdownMenuItem
-																	onClick={
-																		handleExportWorkflow
-																	}
-																>
-																	SEMOSS
-																	format
-																</DropdownMenuItem>
-																<DropdownMenuItem
-																	onClick={
-																		handleExportToN8n
-																	}
-																>
-																	n8n format
-																</DropdownMenuItem>
-															</DropdownMenuSubContent>
-														</DropdownMenuSub>
-														{importWarnings &&
-															importWarnings.length >
-																0 && (
-																<>
-																	<DropdownMenuSeparator />
-																	<DropdownMenuItem
-																		onClick={() =>
-																			setShowImportSummary(
-																				true,
-																			)
-																		}
-																	>
-																		<AlertTriangle className="mr-2 h-3.5 w-3.5" />
-																		View
-																		{importSummaryKind ===
-																		"export-n8n"
-																			? " export"
-																			: " import"}{" "}
-																		notes (
-																		{
-																			importWarnings.length
-																		}
-																		)
-																	</DropdownMenuItem>
-																</>
-															)}
-													</DropdownMenuContent>
-												</DropdownMenu>
-											</div>
-										)}
 										{mcpMode !== "trigger" && (
 											<Tooltip>
 												<TooltipTrigger asChild>
@@ -3135,77 +2874,6 @@ export const AutomationCanvasContent = forwardRef<
 						<DialogTitle>Add workflow node</DialogTitle>
 					</DialogHeader>
 					<AddNodeMenu onSelect={addStep} />
-				</DialogContent>
-			</Dialog>
-
-			<Dialog
-				open={pendingImport !== null}
-				onOpenChange={(open) => {
-					if (!open) setPendingImport(null);
-				}}
-			>
-				<DialogContent className="max-w-md">
-					<DialogHeader>
-						<DialogTitle>Replace this automation?</DialogTitle>
-						<DialogDescription>
-							Importing will replace every step and connection in
-							this automation. This can&apos;t be undone once
-							saved.
-						</DialogDescription>
-					</DialogHeader>
-					<DialogFooter>
-						<Button
-							variant="outline"
-							onClick={() => setPendingImport(null)}
-						>
-							Cancel
-						</Button>
-						<Button
-							onClick={() => {
-								if (pendingImport)
-									applyImportedWorkflow(pendingImport);
-								setPendingImport(null);
-							}}
-						>
-							Replace automation
-						</Button>
-					</DialogFooter>
-				</DialogContent>
-			</Dialog>
-
-			<Dialog
-				open={showImportSummary}
-				onOpenChange={setShowImportSummary}
-			>
-				<DialogContent className="max-w-md">
-					<DialogHeader>
-						<DialogTitle>
-							{importWarnings && importWarnings.length > 0
-								? `${importSummaryKind === "export-n8n" ? "Exported" : "Imported"} with ${importWarnings.length} warning${importWarnings.length === 1 ? "" : "s"}`
-								: importSummaryKind === "export-n8n"
-									? "Exported to n8n"
-									: "Workflow imported"}
-						</DialogTitle>
-						<DialogDescription>
-							{importWarnings && importWarnings.length > 0
-								? "Review the items below — they weren't translated automatically and may need manual edits."
-								: importSummaryKind === "export-n8n"
-									? "Every step exported cleanly."
-									: "Every step imported cleanly."}
-						</DialogDescription>
-					</DialogHeader>
-					{importWarnings && importWarnings.length > 0 && (
-						<ul className="max-h-64 list-disc space-y-1 overflow-y-auto pl-5 text-sm">
-							{importWarnings.map((warning) => (
-								<li key={warning}>{warning}</li>
-							))}
-						</ul>
-					)}
-					<DialogFooter>
-						<Button onClick={() => setShowImportSummary(false)}>
-							Done
-						</Button>
-					</DialogFooter>
 				</DialogContent>
 			</Dialog>
 		</AutomationContext.Provider>
