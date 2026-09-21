@@ -2,7 +2,7 @@ import { Help } from "@/components/help";
 
 interface CatalogLayoutProps {
 	/** Main title for the catalog page */
-	title: string;
+	title?: string;
 	/** Optional description text */
 	description?: string;
 	/** Action to show in the header */

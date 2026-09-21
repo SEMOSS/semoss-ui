@@ -1,5 +1,5 @@
 import { ChevronDown, Combine, Pencil, Plus, Trash2 } from "lucide-react";
-import { useEffect, useId, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { runPixel, usePixel } from "@semoss/sdk/react";
 import type { Project } from "@semoss/shared";
 import {
@@ -18,8 +18,11 @@ import {
 	DialogFooter,
 	DialogHeader,
 	DialogTitle,
-	Field,
-	FieldLabel,
+	Form,
+	FormInput,
+	FormSelect,
+	FormSelectItem,
+	FormTextarea,
 	Input,
 	Select,
 	SelectContent,
@@ -30,6 +33,9 @@ import {
 	Spinner,
 	Textarea,
 	toast,
+	useForm,
+	z,
+	zodResolver,
 } from "@semoss/ui/next";
 import { CatalogLayout, CatalogSearchBar } from "@/components/catalog";
 import { MemoryFilterBox } from "@/components/settings/memory-filter-box";
@@ -165,42 +171,6 @@ export const MemoriesSettingsPage = () => {
 
 	return (
 		<CatalogLayout
-			title="Memories"
-			description="Review context captured on your behalf, preserve edits, and compact knowledge when it has earned a shorter shape."
-			headerActions={
-				<div className="flex items-center gap-2">
-					<div className="flex items-center rounded-md border p-0.5">
-						<button
-							type="button"
-							className={cn(
-								"rounded-sm px-3 py-1 text-sm transition-colors",
-								view === "memories"
-									? "bg-accent font-medium"
-									: "text-muted-foreground hover:text-foreground",
-							)}
-							onClick={() => setView("memories")}
-						>
-							Memories
-						</button>
-						<button
-							type="button"
-							className={cn(
-								"rounded-sm px-3 py-1 text-sm transition-colors",
-								view === "action_items"
-									? "bg-accent font-medium"
-									: "text-muted-foreground hover:text-foreground",
-							)}
-							onClick={() => setView("action_items")}
-						>
-							Action Items
-						</button>
-					</div>
-					<Button size="sm" onClick={() => setIsAddOpen(true)}>
-						<Plus className="mr-2 size-4" />
-						Add
-					</Button>
-				</div>
-			}
 			searchBar={
 				<div className="flex w-full flex-col gap-2">
 					<CatalogSearchBar
@@ -299,21 +269,29 @@ export const MemoriesSettingsPage = () => {
 		>
 			{view === "memories" ? (
 				<MemoriesView
+					key={`memories-${refreshToken}-${debouncedSearch}-${sortOrder}-${agentId}-${Array.from(eventTypes).join("-")}-${JSON.stringify(metaFilters)}`}
 					refreshToken={refreshToken}
 					onRefresh={bumpRefresh}
 					search={debouncedSearch}
 					sortOrder={sortOrder}
-					agentId={agentId}
 					eventTypes={eventTypes}
 					metaFilters={metaFilters}
+					agentId={agentId}
+					view={view}
+					onViewChange={setView}
+					onAdd={() => setIsAddOpen(true)}
 				/>
 			) : (
 				<ActionItemsView
+					key={`action-items-${refreshToken}`}
 					refreshToken={refreshToken}
 					onRefresh={bumpRefresh}
 					search={debouncedSearch}
 					sortOrder={sortOrder}
 					statuses={statuses}
+					view={view}
+					onViewChange={setView}
+					onAdd={() => setIsAddOpen(true)}
 				/>
 			)}
 
@@ -327,21 +305,26 @@ export const MemoriesSettingsPage = () => {
 };
 
 const MemoriesView = ({
-	refreshToken,
 	onRefresh,
 	search,
 	sortOrder,
-	agentId,
 	eventTypes,
 	metaFilters,
+	agentId,
+	view,
+	onViewChange,
+	onAdd,
 }: {
 	refreshToken: number;
 	onRefresh: () => void;
 	search: string;
 	sortOrder: "ASC" | "DESC";
-	agentId: string;
 	eventTypes: Set<string>;
 	metaFilters: Record<string, string[]>;
+	agentId: string;
+	view: View;
+	onViewChange: (view: View) => void;
+	onAdd: () => void;
 }) => {
 	const [offset, setOffset] = useState(0);
 	const [memories, setMemories] = useState<Memory[]>([]);
@@ -350,11 +333,6 @@ const MemoriesView = ({
 	const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 	const [isCompacting, setIsCompacting] = useState(false);
 	const [isBulkDeleting, setIsBulkDeleting] = useState(false);
-
-	useEffect(() => {
-		setOffset(0);
-		setSelectedIds(new Set());
-	}, [search, agentId, eventTypes, metaFilters]);
 
 	const eventTypeFilter = useMemo(() => Array.from(eventTypes), [eventTypes]);
 
@@ -366,7 +344,10 @@ const MemoriesView = ({
 	useEffect(() => {
 		if (listMemories.status === "SUCCESS") {
 			const rows = listMemories.data.memories ?? [];
-			setMemories(sortOrder === "ASC" ? [...rows].reverse() : rows);
+			const sortedRows = sortOrder === "ASC" ? [...rows].reverse() : rows;
+			setMemories((previous) =>
+				offset === 0 ? sortedRows : [...previous, ...sortedRows],
+			);
 			setTotalCount(listMemories.data.total_count ?? 0);
 			setHasMore(listMemories.data.has_more ?? false);
 		} else if (listMemories.status === "ERROR") {
@@ -376,8 +357,8 @@ const MemoriesView = ({
 		listMemories.status,
 		listMemories.data,
 		listMemories.error,
+		offset,
 		sortOrder,
-		refreshToken,
 	]);
 
 	const refresh = () => {
@@ -445,6 +426,7 @@ const MemoriesView = ({
 	};
 
 	const isLoading = listMemories.status === "LOADING";
+	const isLoadingMore = isLoading && offset > 0;
 
 	return (
 		<div className="flex flex-col gap-3">
@@ -455,13 +437,42 @@ const MemoriesView = ({
 				</span>
 				{selectedIds.size > 0 ? (
 					<span className="text-muted-foreground text-sm">
-						·{" "}
 						<strong className="text-foreground">
 							{selectedIds.size}
 						</strong>{" "}
 						selected
 					</span>
 				) : null}
+				<div className="flex items-center rounded-md border p-0.5">
+					<button
+						type="button"
+						className={cn(
+							"rounded-sm px-3 py-1 text-sm transition-colors",
+							view === "memories"
+								? "bg-accent font-medium"
+								: "text-muted-foreground hover:text-foreground",
+						)}
+						onClick={() => onViewChange("memories")}
+					>
+						Memories
+					</button>
+					<button
+						type="button"
+						className={cn(
+							"rounded-sm px-3 py-1 text-sm transition-colors",
+							view === "action_items"
+								? "bg-accent font-medium"
+								: "text-muted-foreground hover:text-foreground",
+						)}
+						onClick={() => onViewChange("action_items")}
+					>
+						Action Items
+					</button>
+				</div>
+				<Button size="sm" onClick={onAdd}>
+					<Plus className="mr-2 size-4" />
+					Add New
+				</Button>
 				<div className="ml-auto flex items-center gap-2">
 					{selectedIds.size >= 2 ? (
 						<Button
@@ -491,7 +502,7 @@ const MemoriesView = ({
 			</div>
 
 			<div className="flex flex-col gap-2">
-				{isLoading ? (
+				{isLoading && offset === 0 ? (
 					<div className="flex justify-center py-10">
 						<Spinner />
 					</div>
@@ -514,29 +525,18 @@ const MemoriesView = ({
 				)}
 			</div>
 
-			<div className="flex items-center justify-between border-t pt-2 text-muted-foreground text-sm">
-				<span>Page {Math.floor(offset / PAGE_SIZE) + 1}</span>
-				<div className="flex items-center gap-2">
+			{hasMore || isLoadingMore ? (
+				<div className="flex justify-center border-t pt-2">
 					<Button
 						variant="outline"
 						size="sm"
-						disabled={offset === 0}
-						onClick={() =>
-							setOffset((prev) => Math.max(0, prev - PAGE_SIZE))
-						}
+						disabled={isLoadingMore}
+						onClick={() => setOffset(memories.length)}
 					>
-						Previous
-					</Button>
-					<Button
-						variant="outline"
-						size="sm"
-						disabled={!hasMore}
-						onClick={() => setOffset((prev) => prev + PAGE_SIZE)}
-					>
-						Next
+						{isLoadingMore ? "Loading..." : "Load more"}
 					</Button>
 				</div>
-			</div>
+			) : null}
 		</div>
 	);
 };
@@ -859,17 +859,22 @@ const MemoryCard = ({
 };
 
 const ActionItemsView = ({
-	refreshToken,
 	onRefresh,
 	search,
 	sortOrder,
 	statuses,
+	view,
+	onViewChange,
+	onAdd,
 }: {
 	refreshToken: number;
 	onRefresh: () => void;
 	search: string;
 	sortOrder: "ASC" | "DESC";
 	statuses: Set<string>;
+	view: View;
+	onViewChange: (view: View) => void;
+	onAdd: () => void;
 }) => {
 	const [offset, setOffset] = useState(0);
 	const [actionItems, setActionItems] = useState<ActionItem[]>([]);
@@ -879,7 +884,7 @@ const ActionItemsView = ({
 
 	useEffect(() => {
 		setOffset(0);
-	}, [search, statuses]);
+	}, []);
 
 	const statusFilter = useMemo(() => Array.from(statuses), [statuses]);
 
@@ -891,7 +896,10 @@ const ActionItemsView = ({
 	useEffect(() => {
 		if (listActionItems.status === "SUCCESS") {
 			const rows = listActionItems.data.action_items ?? [];
-			setActionItems(sortOrder === "ASC" ? [...rows].reverse() : rows);
+			const sortedRows = sortOrder === "ASC" ? [...rows].reverse() : rows;
+			setActionItems((previous) =>
+				offset === 0 ? sortedRows : [...previous, ...sortedRows],
+			);
 			setTotalCount(listActionItems.data.total_count ?? 0);
 			setHasMore(listActionItems.data.has_more ?? false);
 		} else if (listActionItems.status === "ERROR") {
@@ -901,8 +909,8 @@ const ActionItemsView = ({
 		listActionItems.status,
 		listActionItems.data,
 		listActionItems.error,
+		offset,
 		sortOrder,
-		refreshToken,
 	]);
 
 	const handleStatusChange = async (
@@ -935,6 +943,7 @@ const ActionItemsView = ({
 	};
 
 	const isLoading = listActionItems.status === "LOADING";
+	const isLoadingMore = isLoading && offset > 0;
 
 	return (
 		<div className="flex flex-col gap-3">
@@ -943,10 +952,40 @@ const ActionItemsView = ({
 					<strong className="text-foreground">{totalCount}</strong>{" "}
 					visible
 				</span>
+				<div className="flex items-center rounded-md border p-0.5">
+					<button
+						type="button"
+						className={cn(
+							"rounded-sm px-3 py-1 text-sm transition-colors",
+							view === "memories"
+								? "bg-accent font-medium"
+								: "text-muted-foreground hover:text-foreground",
+						)}
+						onClick={() => onViewChange("memories")}
+					>
+						Memories
+					</button>
+					<button
+						type="button"
+						className={cn(
+							"rounded-sm px-3 py-1 text-sm transition-colors",
+							view === "action_items"
+								? "bg-accent font-medium"
+								: "text-muted-foreground hover:text-foreground",
+						)}
+						onClick={() => onViewChange("action_items")}
+					>
+						Action Items
+					</button>
+				</div>
+				<Button size="sm" onClick={onAdd}>
+					<Plus className="mr-2 size-4" />
+					Add New
+				</Button>
 			</div>
 
 			<div className="flex flex-col gap-2">
-				{isLoading ? (
+				{isLoading && offset === 0 ? (
 					<div className="flex justify-center py-10">
 						<Spinner />
 					</div>
@@ -1008,32 +1047,33 @@ const ActionItemsView = ({
 				)}
 			</div>
 
-			<div className="flex items-center justify-between border-t pt-2 text-muted-foreground text-sm">
-				<span>Page {Math.floor(offset / PAGE_SIZE) + 1}</span>
-				<div className="flex items-center gap-2">
+			{hasMore || isLoadingMore ? (
+				<div className="flex justify-center border-t pt-2">
 					<Button
 						variant="outline"
 						size="sm"
-						disabled={offset === 0}
-						onClick={() =>
-							setOffset((prev) => Math.max(0, prev - PAGE_SIZE))
-						}
+						disabled={isLoadingMore}
+						onClick={() => setOffset(actionItems.length)}
 					>
-						Previous
-					</Button>
-					<Button
-						variant="outline"
-						size="sm"
-						disabled={!hasMore}
-						onClick={() => setOffset((prev) => prev + PAGE_SIZE)}
-					>
-						Next
+						{isLoadingMore ? "Loading..." : "Load more"}
 					</Button>
 				</div>
-			</div>
+			) : null}
 		</div>
 	);
 };
+
+const addMemorySchema = z.object({
+	type: z.string(),
+	agentId: z.string(),
+	content: z.string().trim().min(1, "Memory text is required"),
+	owner: z.string(),
+	dueDate: z.string(),
+	status: z.string(),
+	parentMemoryId: z.string(),
+});
+
+type AddMemoryFormValues = z.infer<typeof addMemorySchema>;
 
 const AddDialog = ({
 	open,
@@ -1044,42 +1084,39 @@ const AddDialog = ({
 	onOpenChange: (open: boolean) => void;
 	onCreated: () => void;
 }) => {
-	const contentId = useId();
-	const ownerId = useId();
-	const dueDateId = useId();
-	const parentId = useId();
-	const [type, setType] = useState("memory");
-	const [content, setContent] = useState("");
-	const [owner, setOwner] = useState("");
-	const [dueDate, setDueDate] = useState("");
-	const [status, setStatus] = useState("open");
-	const [parentMemoryId, setParentMemoryId] = useState("");
-	const [isCreating, setIsCreating] = useState(false);
+	const form = useForm<AddMemoryFormValues>({
+		resolver: zodResolver(
+			addMemorySchema as unknown as Parameters<typeof zodResolver>[0],
+		),
+		defaultValues: {
+			type: "memory",
+			agentId: "personal",
+			content: "",
+			owner: "",
+			dueDate: "",
+			status: "open",
+			parentMemoryId: "",
+		},
+	});
+	const agentWorkspaces = usePixel<Project[]>(
+		`MyProjects(projectType=["WORKSPACE"]);`,
+		{ data: [] },
+	);
+	const isActionItem = form.watch("type") === "action_item";
 
-	const isActionItem = type === "action_item";
-
-	const resetForm = () => {
-		setType("memory");
-		setContent("");
-		setOwner("");
-		setDueDate("");
-		setStatus("open");
-		setParentMemoryId("");
+	const cancel = () => {
+		form.reset();
+		onOpenChange(false);
 	};
 
-	const handleCreate = async () => {
-		if (!content.trim()) {
-			toast.error("Content is required");
-			return;
-		}
-		setIsCreating(true);
+	const handleSubmit = async (values: AddMemoryFormValues) => {
 		try {
 			const response = isActionItem
 				? await runPixel(
-						`CreateActionItem(content=${JSON.stringify(content)}${owner ? `, owner=${JSON.stringify(owner)}` : ""}${dueDate ? `, dueDate=${JSON.stringify(`${dueDate} 00:00:00`)}` : ""}, status=${JSON.stringify(status)}${parentMemoryId ? `, memoryId=${JSON.stringify(parentMemoryId)}` : ""});`,
+						`CreateActionItem(content=${JSON.stringify(values.content)}${values.owner ? `, owner=${JSON.stringify(values.owner)}` : ""}${values.dueDate ? `, dueDate=${JSON.stringify(`${values.dueDate} 00:00:00`)}` : ""}, status=${JSON.stringify(values.status)}${values.parentMemoryId ? `, memoryId=${JSON.stringify(values.parentMemoryId)}` : ""});`,
 					)
 				: await runPixel(
-						`AddMemory(content=${JSON.stringify(content)}, eventType=${JSON.stringify(type)});`,
+						`AddMemory(content=${JSON.stringify(values.content)}, eventType=${JSON.stringify(values.type)}${values.agentId === "personal" ? "" : `, agentId=${JSON.stringify(values.agentId)}`});`,
 					);
 			const firstResult = response?.pixelReturn?.[0];
 			if (firstResult?.operationType?.includes("ERROR")) {
@@ -1088,13 +1125,11 @@ const AddDialog = ({
 			toast.success(
 				isActionItem ? "Action item created" : "Memory added",
 			);
-			resetForm();
+			form.reset();
 			onOpenChange(false);
 			onCreated();
 		} catch (error) {
 			toast.error(`Failed to save: ${error}`);
-		} finally {
-			setIsCreating(false);
 		}
 	};
 
@@ -1102,8 +1137,7 @@ const AddDialog = ({
 		<Dialog
 			open={open}
 			onOpenChange={(next) => {
-				if (!next) resetForm();
-				onOpenChange(next);
+				if (!next) cancel();
 			}}
 		>
 			<DialogContent>
@@ -1114,106 +1148,112 @@ const AddDialog = ({
 						the same scope is detected automatically.
 					</DialogDescription>
 				</DialogHeader>
-				<div className="flex flex-col gap-4">
-					<Field>
-						<FieldLabel>Type</FieldLabel>
-						<Select value={type} onValueChange={setType}>
-							<SelectTrigger>
-								<SelectValue />
-							</SelectTrigger>
-							<SelectContent>
-								{EVENT_TYPES.map((t) => (
-									<SelectItem key={t} value={t}>
-										{formatLabel(t)}
-									</SelectItem>
-								))}
-								<SelectItem value="action_item">
-									Action Item
-								</SelectItem>
-							</SelectContent>
-						</Select>
-					</Field>
+				<Form
+					form={form}
+					onSubmit={handleSubmit}
+					className="flex flex-col gap-4"
+				>
+					<FormSelect
+						name="type"
+						label="Type"
+						disabled={form.formState.isSubmitting}
+					>
+						{EVENT_TYPES.map((eventType) => (
+							<FormSelectItem key={eventType} value={eventType}>
+								{formatLabel(eventType)}
+							</FormSelectItem>
+						))}
+						<FormSelectItem value="action_item">
+							Action Item
+						</FormSelectItem>
+					</FormSelect>
+					{!isActionItem ? (
+						<FormSelect
+							name="agentId"
+							label="For"
+							disabled={form.formState.isSubmitting}
+						>
+							<FormSelectItem value="personal">
+								Personal
+							</FormSelectItem>
+							{(agentWorkspaces.data ?? []).map((project) => (
+								<FormSelectItem
+									key={project.project_id}
+									value={project.project_id}
+								>
+									{project.project_display_name ||
+										project.project_name}
+								</FormSelectItem>
+							))}
+						</FormSelect>
+					) : null}
 					{isActionItem ? (
 						<>
-							<Field>
-								<FieldLabel htmlFor={parentId}>
-									Parent memory ID
-								</FieldLabel>
-								<Input
-									id={parentId}
-									value={parentMemoryId}
-									onChange={(e) =>
-										setParentMemoryId(e.target.value)
-									}
-									placeholder="Optional (blank = standalone)"
-								/>
-							</Field>
-							<Field>
-								<FieldLabel htmlFor={ownerId}>Owner</FieldLabel>
-								<Input
-									id={ownerId}
-									value={owner}
-									onChange={(e) => setOwner(e.target.value)}
-									placeholder="Optional assignee"
-								/>
-							</Field>
+							<FormInput
+								name="parentMemoryId"
+								label="Parent memory ID"
+								placeholder="Optional (blank = standalone)"
+								disabled={form.formState.isSubmitting}
+							/>
+							<FormInput
+								name="owner"
+								label="Owner"
+								placeholder="Optional assignee"
+								disabled={form.formState.isSubmitting}
+							/>
 							<div className="grid grid-cols-2 gap-4">
-								<Field>
-									<FieldLabel htmlFor={dueDateId}>
-										Due date
-									</FieldLabel>
-									<Input
-										id={dueDateId}
-										type="date"
-										value={dueDate}
-										onChange={(e) =>
-											setDueDate(e.target.value)
-										}
-									/>
-								</Field>
-								<Field>
-									<FieldLabel>Status</FieldLabel>
-									<Select
-										value={status}
-										onValueChange={setStatus}
-									>
-										<SelectTrigger>
-											<SelectValue />
-										</SelectTrigger>
-										<SelectContent>
-											{ACTION_ITEM_STATUSES.map((s) => (
-												<SelectItem key={s} value={s}>
-													{formatLabel(s)}
-												</SelectItem>
-											))}
-										</SelectContent>
-									</Select>
-								</Field>
+								<FormInput
+									name="dueDate"
+									label="Due date"
+									type="date"
+									disabled={form.formState.isSubmitting}
+								/>
+								<FormSelect
+									name="status"
+									label="Status"
+									disabled={form.formState.isSubmitting}
+								>
+									{ACTION_ITEM_STATUSES.map(
+										(actionItemStatus) => (
+											<FormSelectItem
+												key={actionItemStatus}
+												value={actionItemStatus}
+											>
+												{formatLabel(actionItemStatus)}
+											</FormSelectItem>
+										),
+									)}
+								</FormSelect>
 							</div>
 						</>
 					) : null}
-					<Field>
-						<FieldLabel htmlFor={contentId}>Memory text</FieldLabel>
-						<Textarea
-							id={contentId}
-							value={content}
-							onChange={(e) => setContent(e.target.value)}
-							rows={8}
-							placeholder="Paste a decision, lesson, task, or other context..."
-						/>
-					</Field>
-				</div>
-				<DialogFooter>
-					<Button
-						variant="outline"
-						onClick={() => onOpenChange(false)}
-					>
-						Cancel
-					</Button>
-					<Button disabled={isCreating} onClick={handleCreate}>
-						{isCreating ? "Saving..." : "Add"}
-					</Button>
-				</DialogFooter>
+					<FormTextarea
+						name="content"
+						label="Memory text"
+						rows={8}
+						placeholder="Paste a decision, lesson, task, or other context..."
+						disabled={form.formState.isSubmitting}
+					/>
+					<DialogFooter>
+						<Button
+							type="button"
+							variant="outline"
+							disabled={form.formState.isSubmitting}
+							onClick={cancel}
+						>
+							Cancel
+						</Button>
+						<Button
+							type="submit"
+							disabled={form.formState.isSubmitting}
+						>
+							{form.formState.isSubmitting ? (
+								<Spinner className="size-4" />
+							) : null}
+							Add
+						</Button>
+					</DialogFooter>
+				</Form>
 			</DialogContent>
 		</Dialog>
 	);
