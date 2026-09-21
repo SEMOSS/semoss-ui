@@ -31,6 +31,7 @@ import {
 import type {
 	BuildAttachment,
 	BuildRun,
+	BuildTool,
 	RunStore,
 	WorkbenchRunRecord,
 } from "./assistant.runs";
@@ -63,11 +64,8 @@ const AUTO_NAME_MAX_LENGTH = 60;
 /** Delay between streaming polls while a run is in flight. */
 const POLL_INTERVAL_MS = 300;
 
-/**
- * Agent (workspace) every workbench assistant run executes under — the backend's
- * app-builder agent record. Sent as the RunAgent pixel's workspaceId.
- */
-const WORKBENCH_AGENT_ID = "app-builder";
+/** Fallback agent used by workbenches that do not configure a specialized one. */
+const DEFAULT_WORKBENCH_AGENT_ID = "app-builder";
 
 /** Permission mode forwarded to the agent harness for each run. */
 export type AssistantPermissionMode =
@@ -80,7 +78,7 @@ export type AssistantPermissionMode =
 export type AssistantEffort = "low" | "medium" | "high" | "max";
 
 /** Minimal reference to a backend agent workspace selected for assistant runs. */
-type AssistantAgent = {
+export type AssistantAgent = {
 	/** Workspace id passed to RunAgent. */
 	workspace_id: string;
 	/** Display name retained for the settings selector. */
@@ -102,6 +100,8 @@ const effortParamValue = (effort: AssistantEffort): string =>
 export interface AssistantConfig {
 	/** System prompt sent to the assistant. */
 	systemPrompt?: string;
+	/** Backend agent workspace that owns the assistant's prompt and skills. */
+	agent?: AssistantAgent | null;
 	/** Prepare the bound room's tools before an agent run starts. */
 	prepareRoom?: (insightId: string) => Promise<void>;
 	/**
@@ -124,6 +124,15 @@ export interface AssistantConfig {
 	 * scan subagent activity too — e.g. to refresh a preview after a publish).
 	 */
 	onRunCompleted?: (run: BuildRun, runs: Record<string, BuildRun>) => void;
+	/**
+	 * Called after a tool reaches a terminal successful state, allowing a
+	 * workbench to refresh a server-backed preview during an active run.
+	 */
+	onToolCompleted?: (
+		tool: BuildTool,
+		run: BuildRun,
+		runs: Record<string, BuildRun>,
+	) => void;
 	/**
 	 * Manually rebuild the artifact this workbench previews (e.g. compile and
 	 * publish the app). When set, the assistant header shows a rebuild button;
@@ -168,6 +177,14 @@ export interface AssistantState {
 	/** Called after a root run reaches a terminal status and reconciles. */
 	onRunCompleted:
 		| ((run: BuildRun, runs: Record<string, BuildRun>) => void)
+		| null;
+	/** Called after a tool completes successfully during an active run. */
+	onToolCompleted:
+		| ((
+				tool: BuildTool,
+				run: BuildRun,
+				runs: Record<string, BuildRun>,
+		  ) => void)
 		| null;
 	/** Rebuild action surfaced as a assistant-header button when set. */
 	onRebuild: (() => Promise<void>) | null;
@@ -224,8 +241,8 @@ export interface AssistantState {
 	 */
 	destroy: () => void;
 	/**
-	 * Update one or more assistant config fields (systemPrompt, prepareRoom,
-	 * mcp, runParams, permissionMode, onRunCompleted) for this workbench
+	 * Update one or more assistant config fields (systemPrompt, agent,
+	 * prepareRoom, mcp, runParams, permissionMode, onRunCompleted) for this workbench
 	 * instance; omitted fields keep their values.
 	 */
 	configure: (config: AssistantConfig) => void;
@@ -584,6 +601,36 @@ export const createAssistantStore = (
 								droppedEvents: meta.droppedEvents,
 							}),
 						);
+						const assistant = get();
+						const run = assistant.runs[runId];
+						if (run && assistant.onToolCompleted) {
+							for (const event of events) {
+								if (
+									event.type !== "item.completed" ||
+									event.item.kind !== "tool" ||
+									event.item.status !== "COMPLETED"
+								) {
+									continue;
+								}
+								const tool = run.tools.find(
+									(candidate) =>
+										candidate.id === event.item.id,
+								);
+								if (!tool) continue;
+								try {
+									assistant.onToolCompleted(
+										tool,
+										run,
+										assistant.runs,
+									);
+								} catch (error) {
+									console.warn(
+										"onToolCompleted handler failed:",
+										error,
+									);
+								}
+							}
+						}
 						for (const event of events) {
 							if (
 								event.type !== "item.updated" &&
@@ -718,6 +765,7 @@ export const createAssistantStore = (
 			mcp: [],
 			runParams: {},
 			onRunCompleted: null,
+			onToolCompleted: null,
 			onRebuild: null,
 
 			model: null,
@@ -945,7 +993,7 @@ export const createAssistantStore = (
 							// workspaceId.
 							agentId:
 								assistantNow.agent?.workspace_id ??
-								WORKBENCH_AGENT_ID,
+								DEFAULT_WORKBENCH_AGENT_ID,
 							maxTurns: get().maxTurns,
 							maxReflections: 0,
 							media: attachments

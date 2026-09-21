@@ -1,8 +1,9 @@
-import { ChevronDownIcon, PlusIcon } from "lucide-react";
+import { BotIcon, ChevronDownIcon, TriangleAlertIcon } from "lucide-react";
 import { useEffect, useId, useState } from "react";
-import { Link } from "react-router";
-import { EngineSelect, ProjectSelect } from "@semoss/shared";
+import { EngineSelect } from "@semoss/shared";
 import {
+	Alert,
+	AlertDescription,
 	Button,
 	Collapsible,
 	CollapsibleContent,
@@ -40,7 +41,7 @@ const PERMISSION_MODE_OPTIONS: {
 	{ value: "default", label: "Ask before edits" },
 	{ value: "acceptEdits", label: "Accept edits" },
 	{ value: "plan", label: "Plan first" },
-	{ value: "bypassPermissions", label: "Bypass permissions" },
+	{ value: "bypassPermissions", label: "Do not ask for approval" },
 ];
 
 /** Reasoning-effort levels, with display labels. */
@@ -69,7 +70,6 @@ export const AssistantSettings = () => {
 	const effort = useAssistant((state) => state.effort);
 	const thinking = useAssistant((state) => state.thinking);
 	const setModel = useAssistant((state) => state.setModel);
-	const setAgent = useAssistant((state) => state.setAgent);
 	const setMaxTurns = useAssistant((state) => state.setMaxTurns);
 	const setPermissionMode = useAssistant((state) => state.setPermissionMode);
 	const setEffort = useAssistant((state) => state.setEffort);
@@ -100,14 +100,34 @@ export const AssistantSettings = () => {
 
 	const modelName =
 		model?.engine_display_name || model?.engine_name || "Select model";
-	const agentName = agent?.name || "App Builder (default)";
+	// The host workbench binds the agent, so this is read-only for now. It is
+	// shown because which agent answers changes the tools and skills available,
+	// and that is otherwise invisible from the conversation.
+	const agentName = agent?.name || agent?.workspace_id || "Default assistant";
 
 	return (
 		<ScrollArea className="min-h-0 flex-1">
 			<div className="flex flex-col gap-4 p-3">
 				<Field>
-					<FieldLabel>Assistant Model</FieldLabel>
+					<FieldLabel>Agent</FieldLabel>
+					<div className="flex h-9 items-center gap-2 rounded-md border border-input px-3 shadow-xs">
+						<BotIcon
+							className="size-4 shrink-0 text-muted-foreground"
+							aria-hidden
+						/>
+						<span className="truncate text-sm">{agentName}</span>
+					</div>
+					<FieldDescription className="text-xs">
+						{agent
+							? "Set by this workbench. Its skills and tools define what the assistant can do here."
+							: "No agent is bound, so this room uses the default assistant."}
+					</FieldDescription>
+				</Field>
+
+				<Field>
+					<FieldLabel>Model</FieldLabel>
 					<EngineSelect
+						className="h-9 w-full max-w-none justify-start border border-input px-3 shadow-xs"
 						name={modelName}
 						value={model?.engine_id || ""}
 						engineTypes={["MODEL"]}
@@ -118,44 +138,9 @@ export const AssistantSettings = () => {
 							className: "w-72 max-w-72",
 						}}
 					/>
-				</Field>
-
-				<Field>
-					<div className="flex justify-between">
-						<FieldLabel>Assistant Agent</FieldLabel>
-						<Link to="/agent/new">
-							<PlusIcon className="size-4" />
-						</Link>
-					</div>
-					<div className="flex items-center gap-2">
-						<ProjectSelect
-							name={agentName}
-							value={agent?.workspace_id || ""}
-							projectTypes={["WORKSPACE"]}
-							onChange={(nextAgent) =>
-								setAgent({
-									workspace_id: nextAgent.project_id,
-									name:
-										nextAgent.project_display_name ||
-										nextAgent.project_name,
-								})
-							}
-							popoverContentProps={{
-								align: "start",
-								className: "w-72 max-w-72",
-							}}
-						/>
-						{agent ? (
-							<Button
-								type="button"
-								variant="outline"
-								size="sm"
-								onClick={() => setAgent(null)}
-							>
-								Use default
-							</Button>
-						) : null}
-					</div>
+					<FieldDescription className="text-xs">
+						Model used for every assistant run in this room.
+					</FieldDescription>
 				</Field>
 
 				<Field orientation="horizontal">
@@ -181,7 +166,7 @@ export const AssistantSettings = () => {
 						}}
 					>
 						{isCompacting ? <Spinner className="size-3.5" /> : null}
-						Compact
+						Summarize conversation
 					</Button>
 				</Field>
 
@@ -209,7 +194,7 @@ export const AssistantSettings = () => {
 						<div className="flex flex-col gap-4 pt-4">
 							<Field>
 								<FieldLabel htmlFor={maxTurnsId}>
-									Max turns
+									Maximum steps per request
 								</FieldLabel>
 								<Input
 									id={maxTurnsId}
@@ -245,7 +230,7 @@ export const AssistantSettings = () => {
 									</SelectTrigger>
 									<SelectContent>
 										<SelectItem value={INHERIT}>
-											Harness default
+											Use workspace default
 										</SelectItem>
 										{PERMISSION_MODE_OPTIONS.map(
 											(option) => (
@@ -264,6 +249,17 @@ export const AssistantSettings = () => {
 									pause for approval, auto-accept edits, plan
 									before acting, or skip the gates entirely.
 								</FieldDescription>
+								{permissionMode === "bypassPermissions" && (
+									<Alert className="border-warning/40 bg-warning/10 text-warning">
+										<TriangleAlertIcon className="size-4" />
+										<AlertDescription className="text-warning/90">
+											The assistant can make changes
+											without asking first. Only use this
+											if you trust every action it might
+											take.
+										</AlertDescription>
+									</Alert>
+								)}
 							</Field>
 
 							<Field>

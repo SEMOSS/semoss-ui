@@ -75,9 +75,10 @@ export const ToolsDefaultView = observer(
 		const getMCP = usePixel<{
 			tools: {
 				name: string;
+				title?: string;
 				inputSchema: {
-					properties: Record<string, FieldSchema>;
-					required: string[];
+					properties?: Record<string, FieldSchema>;
+					required?: string[];
 				};
 			}[];
 		}>(app ? `GetMCPTools(project=["${app}"]);` : "", {
@@ -116,9 +117,6 @@ export const ToolsDefaultView = observer(
 		);
 		const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 		const [showOptional, setShowOptional] = useState<boolean>(false);
-		const [required, setRequired] = useState<string[]>(
-			inlineSchema?.required ?? [],
-		);
 		const [tab, setTab] = useState<string>("inputs");
 		const [showOutputDialog, setShowOutputDialog] = useState(false);
 
@@ -130,10 +128,6 @@ export const ToolsDefaultView = observer(
 				return tool.response;
 			}
 		}, [tool.response]);
-
-		const [properties, setProperties] = useState<
-			Record<string, FieldSchema>
-		>(inlineSchema?.properties ?? {});
 		const [showExtensionDialog, setShowExtensionDialog] =
 			useState<boolean>(false);
 		const [extensionCheckRetrying, setExtensionCheckRetrying] =
@@ -172,6 +166,26 @@ export const ToolsDefaultView = observer(
 		const showResponse = tool.status === "SUCCESS";
 		const toolFailed =
 			tool.status === "ERROR" || tool.status === "CANCELLED";
+		const metadataOriginalName = tool.json._meta?.SMSS_ORIGINAL_TOOL_NAME as
+			| string
+			| undefined;
+		const foundTool =
+			getMCP.status === "SUCCESS"
+				? getMCP.data.tools.find(
+						(candidate) =>
+							candidate.name === metadataOriginalName ||
+							candidate.name === tool.json.original_name ||
+							(Boolean(tool.json.title) &&
+								candidate.title === tool.json.title),
+					)
+				: undefined;
+		const properties =
+			inlineSchema?.properties ?? foundTool?.inputSchema.properties ?? {};
+		const required =
+			inlineSchema?.required ?? foundTool?.inputSchema.required ?? [];
+		const schemaUnavailable =
+			schemaStatus === "ERROR" ||
+			(Boolean(app) && schemaStatus === "SUCCESS" && !foundTool);
 		const requiredFields = Object.entries(properties).filter(
 			([fieldName]) => required.includes(fieldName),
 		);
@@ -390,26 +404,6 @@ export const ToolsDefaultView = observer(
 		/*
 		 * Effects
 		 */
-
-		// Load tool schema
-		useEffect(() => {
-			if (inlineSchema) {
-				setProperties(inlineSchema.properties ?? {});
-				setRequired(inlineSchema.required ?? []);
-			} else if (
-				getMCP.status === "SUCCESS" &&
-				tool?.json.original_name
-			) {
-				const foundTool = getMCP.data.tools.find(
-					(t) => t.name === tool?.json.original_name,
-				);
-				if (foundTool) {
-					setProperties(foundTool.inputSchema.properties);
-					setRequired(foundTool.inputSchema.required);
-				}
-			}
-		}, [getMCP, inlineSchema, tool?.json.original_name]);
-
 		// Switch to output tab when execution completes
 		useEffect(() => {
 			if (
@@ -472,7 +466,7 @@ export const ToolsDefaultView = observer(
 										/>
 									)}
 								</div>
-							) : schemaStatus === "ERROR" ? (
+							) : schemaUnavailable ? (
 								<div className="flex flex-col items-center justify-center gap-2 py-12 text-center">
 									<p className="font-semibold text-destructive text-lg">
 										{t("form.schemaLoadFailed")}

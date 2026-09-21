@@ -142,10 +142,10 @@ export const DataImportFormModal = observer(
 		const watchedTables = dataImportwatch("tables");
 		const watchedJoins = dataImportwatch("joins");
 		const [userDatabases, setUserDatabases] = useState<Array<{
-			database_id: string;
-			app_name: string;
-			database_type?: string;
-			database_subtype?: string;
+			engine_id: string;
+			engine_name: string;
+			engine_type?: string;
+			engine_subtype?: string;
 		}> | null>(null);
 		const [databaseTableHeaders, setDatabaseTableHeaders] = useState([]);
 		const [selectedDatabaseId, setSelectedDatabaseId] = useState(
@@ -256,10 +256,10 @@ export const DataImportFormModal = observer(
 			}
 			setUserDatabases(
 				getDatabases.data as Array<{
-					database_id: string;
-					app_name: string;
-					database_type?: string;
-					database_subtype?: string;
+					engine_id: string;
+					engine_name: string;
+					engine_type?: string;
+					engine_subtype?: string;
 				}>,
 			);
 		}, [getDatabases.status, getDatabases.data]);
@@ -267,7 +267,7 @@ export const DataImportFormModal = observer(
 		const selectedDatabase = useMemo(
 			() =>
 				userDatabases?.find(
-					(db) => db.database_id === selectedDatabaseId,
+					(db) => db.engine_id === selectedDatabaseId,
 				) ?? null,
 			[userDatabases, selectedDatabaseId],
 		);
@@ -1290,24 +1290,24 @@ export const DataImportFormModal = observer(
 													<div className="flex items-center gap-2">
 														<EngineSubtypeIcon
 															engineType={
-																selectedDatabase.database_type ??
+																selectedDatabase.engine_type ??
 																"DATABASE"
 															}
 															engineSubtype={
-																selectedDatabase.database_subtype
+																selectedDatabase.engine_subtype
 															}
-															alt={`${selectedDatabase.app_name} icon`}
+															alt={`${selectedDatabase.engine_name} icon`}
 															className="size-5 shrink-0 object-contain"
 														/>
 														<div className="flex min-w-0 flex-col items-start text-left">
 															<span className="truncate text-sm">
 																{
-																	selectedDatabase.app_name
+																	selectedDatabase.engine_name
 																}
 															</span>
 															<span className="truncate text-muted-foreground text-xs">
 																{
-																	selectedDatabase.database_id
+																	selectedDatabase.engine_id
 																}
 															</span>
 														</div>
@@ -1319,31 +1319,31 @@ export const DataImportFormModal = observer(
 											{userDatabases?.map(
 												(ele, dbIndex) => (
 													<SelectItem
-														value={ele.database_id}
+														value={ele.engine_id}
 														// biome-ignore lint/suspicious/noArrayIndexKey: no stable key available
 														key={dbIndex}
 													>
 														<div className="flex items-center gap-2">
 															<EngineSubtypeIcon
 																engineType={
-																	ele.database_type ??
+																	ele.engine_type ??
 																	"DATABASE"
 																}
 																engineSubtype={
-																	ele.database_subtype
+																	ele.engine_subtype
 																}
-																alt={`${ele.app_name} icon`}
+																alt={`${ele.engine_name} icon`}
 																className="size-5 shrink-0 object-contain"
 															/>
 															<div className="flex min-w-0 flex-col items-start">
 																<span className="truncate text-sm">
 																	{
-																		ele.app_name
+																		ele.engine_name
 																	}
 																</span>
 																<span className="truncate text-muted-foreground text-xs">
 																	{
-																		ele.database_id
+																		ele.engine_id
 																	}
 																</span>
 															</div>
