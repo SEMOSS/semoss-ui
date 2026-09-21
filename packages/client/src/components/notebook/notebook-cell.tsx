@@ -33,7 +33,6 @@ import {
 	useBlocks,
 } from "@semoss/renderer";
 import { runPixel } from "@semoss/sdk";
-import { hasInlineImage } from "@semoss/shared";
 import {
 	Button,
 	ButtonGroup,
@@ -53,6 +52,7 @@ import {
 	TooltipTrigger,
 	toast,
 } from "@semoss/ui/next";
+import { hasInlineImage } from "@semoss/utility/file";
 import { useProject, useWorkspace } from "@/hooks";
 import { MCP_NOTEBOOK_NAME } from "@/pages/app/app.constants";
 // TODO: MOVE TO SDK or a seperate lib specifically for utilities @semoss/utility
