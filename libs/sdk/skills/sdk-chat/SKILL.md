@@ -295,7 +295,7 @@ validation to equal `"SUBMITTED"`.
 
 `AgentRunSnapshot` requires `runId`, `roomId`, `status`, and `pendingActions`;
 optional fields are `inputMessageId`, `finalOutputMessageId`, `finalText`,
-`errorMessage`, and `progress`. Status values are `SUBMITTED`, `RUNNING`,
+and `errorMessage`. Status values are `SUBMITTED`, `RUNNING`,
 `INPUT_REQUIRED`, `COMPLETED`, `FAILED`, and `CANCELLED`. `INPUT_REQUIRED` is a
 pause, not a terminal success. Do not infer durable success from streamed text.
 `getAgentRun` and `stopAgentRun` normalize missing `pendingActions` to `[]`;
@@ -313,7 +313,7 @@ subscription promise, or a resolved `null` before any watch.
 - Events are sorted by `sequence` per poll and deduplicated by `eventId`.
     `onEvent(event, items)` receives accumulated state. Render that state so full
     text arriving on `item.started` or `item.completed` is not lost. Kinds include
-    `message`, `reasoning`, `tool`, `subagent`, and `progress`.
+    `message`, `reasoning`, `tool`, and `subagent`.
 - Treat agent streaming as a destructive drain without replay: keep exactly one
     live watcher per run ID, including across separate store instances. Use durable
     reads to reconcile `droppedEvents`; the store reports gaps but does not itself
