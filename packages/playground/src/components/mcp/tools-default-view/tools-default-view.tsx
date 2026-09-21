@@ -60,6 +60,11 @@ interface FieldSchema {
 	description?: string;
 }
 
+interface ToolInputSchema {
+	properties?: Record<string, FieldSchema>;
+	required?: string[];
+}
+
 export const ToolsDefaultView = observer(
 	({ room, app, message, tool }: ToolsDefaultViewProps) => {
 		const { t } = useTranslation("tool");
@@ -75,7 +80,7 @@ export const ToolsDefaultView = observer(
 					required: string[];
 				};
 			}[];
-		}>(`GetMCPTools(project=["${app}"]);`, {
+		}>(app ? `GetMCPTools(project=["${app}"]);` : "", {
 			data: {
 				tools: [
 					{
@@ -88,6 +93,20 @@ export const ToolsDefaultView = observer(
 				],
 			},
 		});
+		const rawInlineSchema = !app
+			? (tool.pendingAction?.toolMeta?.SMSS_INPUT_SCHEMA ??
+				(tool.json._meta as Record<string, unknown> | undefined)
+					?.SMSS_INPUT_SCHEMA)
+			: undefined;
+		const inlineSchema =
+			rawInlineSchema && typeof rawInlineSchema === "object"
+				? (rawInlineSchema as ToolInputSchema)
+				: undefined;
+		const schemaStatus = inlineSchema
+			? "SUCCESS"
+			: app
+				? getMCP.status
+				: "ERROR";
 
 		/*
 		 * State
@@ -97,7 +116,9 @@ export const ToolsDefaultView = observer(
 		);
 		const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 		const [showOptional, setShowOptional] = useState<boolean>(false);
-		const [required, setRequired] = useState<string[]>([]);
+		const [required, setRequired] = useState<string[]>(
+			inlineSchema?.required ?? [],
+		);
 		const [tab, setTab] = useState<string>("inputs");
 		const [showOutputDialog, setShowOutputDialog] = useState(false);
 
@@ -112,7 +133,7 @@ export const ToolsDefaultView = observer(
 
 		const [properties, setProperties] = useState<
 			Record<string, FieldSchema>
-		>({});
+		>(inlineSchema?.properties ?? {});
 		const [showExtensionDialog, setShowExtensionDialog] =
 			useState<boolean>(false);
 		const [extensionCheckRetrying, setExtensionCheckRetrying] =
@@ -372,7 +393,13 @@ export const ToolsDefaultView = observer(
 
 		// Load tool schema
 		useEffect(() => {
-			if (getMCP.status === "SUCCESS" && tool?.json.original_name) {
+			if (inlineSchema) {
+				setProperties(inlineSchema.properties ?? {});
+				setRequired(inlineSchema.required ?? []);
+			} else if (
+				getMCP.status === "SUCCESS" &&
+				tool?.json.original_name
+			) {
 				const foundTool = getMCP.data.tools.find(
 					(t) => t.name === tool?.json.original_name,
 				);
@@ -381,7 +408,7 @@ export const ToolsDefaultView = observer(
 					setRequired(foundTool.inputSchema.required);
 				}
 			}
-		}, [getMCP, tool?.json.original_name]);
+		}, [getMCP, inlineSchema, tool?.json.original_name]);
 
 		// Switch to output tab when execution completes
 		useEffect(() => {
@@ -445,7 +472,7 @@ export const ToolsDefaultView = observer(
 										/>
 									)}
 								</div>
-							) : getMCP.status === "ERROR" ? (
+							) : schemaStatus === "ERROR" ? (
 								<div className="flex flex-col items-center justify-center gap-2 py-12 text-center">
 									<p className="font-semibold text-destructive text-lg">
 										{t("form.schemaLoadFailed")}
@@ -454,7 +481,7 @@ export const ToolsDefaultView = observer(
 										{t("form.schemaLoadFailedDescription")}
 									</p>
 								</div>
-							) : getMCP.status === "SUCCESS" ? (
+							) : schemaStatus === "SUCCESS" ? (
 								<div className="flex flex-1 flex-col">
 									<form
 										className="flex-1 space-y-4"

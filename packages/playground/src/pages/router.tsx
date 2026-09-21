@@ -13,6 +13,7 @@ import { MainLayout } from "./main-layout";
 import { NewRoomPage } from "./new-room-page";
 import { NewWorkspacePage } from "./new-workspace-page";
 import { RoomPage } from "./room-page";
+import { ScheduledTasksPage } from "./scheduled-tasks.page";
 import { WorkspaceDetailPage } from "./workspace-detail-page";
 import { WorkspacePage } from "./workspace-page";
 
@@ -44,6 +45,10 @@ const router = createHashRouter([
 									{
 										path: "chats",
 										element: <ChatsPage />,
+									},
+									{
+										path: "scheduled-tasks",
+										element: <ScheduledTasksPage />,
 									},
 									{
 										path: "embed/*",
