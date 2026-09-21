@@ -1,629 +1,444 @@
 ---
 name: sdk-chat
-description: "How to use the @semoss/sdk room API. Use for: creating or listing rooms, sending messages (AskRoom or RunAgent), fetching room messages or options, binding a room to an insight, updating room config, toggling between chat and agent-harness mode. Covers imports, typed parameters, error handling, and usage patterns for all chat pixel wrappers."
+description: "Use when working with @semoss/sdk rooms, AskRoom chat jobs, RunAgent runs, streaming, tool approvals, room options, or insight bindings. Covers public imports, parameters, return values, lifecycle cleanup, and known compatibility gaps."
 ---
 
-# @semoss/sdk — Room / Chat API
+# @semoss/sdk Room and Agent API
 
-All room functions are exported from `@semoss/sdk`. They wrap the underlying SEMOSS pixel
-reactors so consuming applications never need to write pixel strings directly.
+This self-contained guide ships with the SDK. Its signatures and lifecycle notes
+describe this package's implementation, not a guarantee about every SEMOSS server.
+Use an authenticated, configured SDK environment and a ready insight. Pass actual
+SEMOSS model engine IDs, not provider model names such as `gpt-4o`.
 
-Import from `@semoss/sdk` unless the file also needs a React hook/provider (`usePixel`,
-`useInsight`, `InsightProvider`, etc.) — those live under `@semoss/sdk/react`. Non-React code
-(stores, plain functions) should not import from `@semoss/sdk/react` just for consistency.
+Import core functions, `RoomStore`, `AgentStore`, and types from `@semoss/sdk`.
+React hooks/providers such as `useInsight` and `InsightProvider` live under
+`@semoss/sdk/react`. There is no core export named `Room`. Framework-independent
+state does not imply that all SDK entry points are safe in Node or SSR environments.
 
-## Imports
+## Choose the Transport Explicitly
 
-```ts
-import {
-    createRoom,
-    getUserRooms,
-    getRoomMessages,
-    getRoomOptions,
-    setRoomForInsight,
-    updateRoomOptions,
-    askRoom,
-    addRoomToolExecution,
-    getPixelJobStreaming,
-    getPixelAsyncResult,
-    // Agent-harness mode — a different wire protocol, not job-streaming (see below)
-    runAgent,
-    pollAgentRun,
-    getAgentRun,
-    decideAgentRunAction,
-    AgentStore,
-} from "@semoss/sdk";
+| Operation | Submission | Progress | Settled result |
+|---|---|---|---|
+| Chat | `askRoom(insightId, params)` or `addRoomToolExecution(insightId, params)` returns `Promise<{ jobId: string }>` | `getPixelJobStreaming(jobId)` | `getPixelAsyncResult(jobId)` |
+| Agent harness | `runAgent(params, insightId?)` returns `Promise<{ runId: string; roomId: string; status: AgentRunStatusValue }>` | `pollAgentRun(runId)` or `AgentStore.watch(...)` | `getAgentRun(runId, options?, insightId?)` |
 
-// Types (exported from @semoss/sdk)
-import type {
-    RoomRecord,
-    RoomMessage,
-    RoomOptions,
-    RoomWorkspace,
-    MCPToolConfig,
-    PredefinedPrompt,
-    AskRoomParams,
-    AddRoomToolExecutionParams,
-    PixelStreamMessage,
-    PixelJobStreamingStatus,
-    // Agent-harness mode
-    AgentRunSnapshot,
-    AgentRunItemEvent,
-    PendingAgentAction,
-} from "@semoss/sdk";
-```
+The function you call chooses the protocol. `runAgent` sends `wait=false`; it does
+not use the SDK's async pixel job APIs. Do not pass its `runId` to chat job polling,
+even when a subagent summary also labels that identifier `jobId`.
 
----
+`RoomOptions.harnessType?: string` is persisted configuration, not an enforced
+creation-time switch. `room.ask()` always uses AskRoom; `room.askAgent()` always
+uses RunAgent. The current `room.createAgent()` does not forward the room's
+`harnessType`. Use `runAgent` or `AgentStore.start` to select a harness explicitly.
+Omitted `engine` or `harnessType` values are omitted on the wire, not defaulted by
+the SDK; server defaults must be checked against the deployed backend.
 
-## Room construct (managed state)
+## Room Records and Options
 
-The `Room` class wraps all the low-level API functions and handles the streaming poll loop,
-conversation threading, and options state for you. Use it when you want to get up and running
-quickly without managing job IDs or polling yourself.
+All functions in this table are exported from `@semoss/sdk`.
 
-Both approaches are valid — pick whichever fits your app:
+| Call | Return type / behavior |
+|---|---|
+| `createRoomRecord(insightId, workspaceId?)` | `Promise<RoomRecord>`; creates a record, without binding it |
+| `createRoom(insightId, workspaceId?)` | `Promise<RoomStore>`; creates a record, binds it, and seeds local default options |
+| `getUserRooms(insightId, options?)` | `Promise<RoomRecord[]>`; options are `{ pinned?: boolean; sort?: "ASC" \| "DESC" }` |
+| `getRoomMessages(insightId, roomId)` | `Promise<RoomMessage[]>` |
+| `getRoomOptions(insightId, roomId)` | `Promise<RoomOptions>` |
+| `getRoomForInsight(insightId)` | `Promise<RoomRecord \| null>` |
+| `setRoomForInsight(insightId, roomId)` | `Promise<void>`; throws on returned pixel errors |
+| `updateRoomOptions(insightId, roomId, roomOptions)` | `Promise<void>`; serializes a `RoomOptions[]`, without merging or returning server options |
 
-| | **Raw API** (`askRoom`, `runAgent`, …) | **Room construct** (`createRoom`, `room.ask`, …) |
-|---|---|---|
-| State management | Caller manages job IDs, parentMessageId, options | Room handles it internally |
-| Control | Full — every parameter exposed | Opinionated defaults with optional overrides |
-| Good for | Custom UI, existing state layer (MobX, Redux, etc.) | Rapid integration, scripts, simple chat UIs |
+The raw update wrapper does not establish server-side replace/merge semantics.
+Fetch the current options before assembling an update when preservation matters.
+`RoomRecord` requires `roomId` and `name`; `RoomMessage` declares `messageId`,
+`content`, and `role`. Both allow extra fields. These types are not runtime
+validators for richer backend message parts.
 
-### Quick start
+Required `RoomOptions` fields are `predefinedPrompts: PredefinedPrompt[]`,
+`instructions: string`, `mcp: MCPToolConfig[]`, and `modelId: string`.
+Optional fields are `workspace: RoomWorkspace` and `harnessType: string`.
+
+- `PredefinedPrompt` requires `{ id, title, context }` strings, not plain strings;
+  optional fields are `tags?: string[]`, `version?: number`, and `intent?: string`.
+- `MCPToolConfig` requires `{ id, type, name }` strings; `fromWorkspace` and
+  `fromRoom` are optional booleans. The type does not restrict server entry kinds.
+- `RoomWorkspace` requires `{ workspace_id: string; name: string }`.
 
 ```ts
 import { createRoom } from "@semoss/sdk";
-import type { RoomStreamChunk } from "@semoss/sdk";
 
-// 1. Create a room (handles insight binding automatically)
-const room = await createRoom(insightId);
-
-// 2. Configure it
-await room.updateOptions({
-    modelId: "gpt-4o",
-    instructions: "You are a helpful assistant.",
-});
-
-// 3. Chat — threads automatically from the previous response
-const result = await room.ask("What is the capital of France?", {
-    onChunk: (chunk: RoomStreamChunk) => {
-        if (chunk.type === "content") process.stdout.write(chunk.content ?? "");
-        if (chunk.type === "thinking") process.stdout.write(chunk.thinking ?? "");
-    },
-});
-console.log(result.text);           // "Paris"
-console.log(result.responseMessageId); // server-assigned message ID
-
-// 4. Follow-up — parentMessageId is set automatically
-const followUp = await room.ask("And Germany?");
-console.log(followUp.text); // "Berlin"
-```
-
-### Agent-harness mode
-
-```ts
-// Enable agent harness by setting harnessType in options
-await room.updateOptions({
-    modelId: "gpt-4o",
-    instructions: "You are a research agent.",
-    harnessType: "semoss",
-});
-
-// Use askAgent instead of ask — server drives the full agentic loop.
-// Internally this submits via runAgent (agent.ts) and polls the run to
-// completion via AgentStore.watch — not job-streaming (see below).
-const result = await room.askAgent("Summarize the latest news on AI.", {
-    onChunk: (chunk) => {
-        if (chunk.type === "content") appendToUI(chunk.content ?? "");
-    },
-});
-
-console.log(result.text);   // full response
-console.log(result.status); // "COMPLETED"
-```
-
-If a tool call needs a human decision (status `INPUT_REQUIRED`), pass `onPendingActions` —
-otherwise `askAgent` rejects as soon as the run pauses, since there'd be no way to unpause it:
-
-```ts
-const result = await room.askAgent("Delete all rows where status is 'archived'.", {
-    onPendingActions: (pendingActions) => {
-        for (const action of pendingActions) {
-            // A paused subagent's action belongs to the subagent's own run
-            // (action.runId), not room.roomId — build an AgentStore around
-            // it if you need to decide from outside the room that started it.
-            room.agent?.decide(action, "submit"); // or "reject"
-        }
-    },
-});
-```
-
-### Getting messages
-
-```ts
-const messages = await room.getMessages();
-```
-
-### Room method reference
-
-| Method | Description |
-|--------|-------------|
-| `createRoom(insightId, workspaceId?)` | Factory — creates a room and binds it to the insight |
-| `room.updateOptions(partial)` | Merge-update room config; persists to backend |
-| `room.getMessages()` | Fetch full message history |
-| `room.ask(command, options?)` | Chat mode — client-driven via AskRoom |
-| `room.askAgent(command, options?)` | Agent-harness mode — server-driven via RunAgent |
-| `room.options` | Read-only getter for the current `RoomOptions` |
-| `room.roomId` | The room's server ID |
-| `room.insightId` | The insight the room is bound to |
-
-**`RoomAskOptions`** (second arg to `room.ask`):
-
-| Field | Default | Description |
-|-------|---------|-------------|
-| `onChunk` | — | Streaming callback; receives `RoomStreamChunk` |
-| `parentMessageId` | last response ID | Override to fork the thread |
-| `image` | `[]` | Base64 image attachments |
-| `context` | `room.options.instructions` | System instructions override for this request |
-
-**`RoomAskAgentOptions`** (second arg to `room.askAgent`):
-
-| Field | Default | Description |
-|-------|---------|-------------|
-| `onChunk` | — | Streaming callback; receives `RoomStreamChunk` |
-| `onPendingActions` | — | Called with the paused `PendingAgentAction[]` when the run hits `INPUT_REQUIRED`. Omit only if the room's tools never require approval — otherwise `askAgent` rejects the moment the run pauses, since without a handler there's no way to resume it. |
-
----
-
-## Functions
-
-### `createRoomRecord(insightId, workspaceId)`
-
-Creates a new room tied to a workspace. Returns the created `RoomRecord`.
-
-```ts
-const room = await createRoomRecord(insightId, "workspace-abc");
-console.log(room.roomId);
-```
-
----
-
-### `getUserRooms(insightId, options?)`
-
-Lists all rooms. Optionally filter by pinned status or sort direction.
-
-```ts
-// All rooms
-const rooms = await getUserRooms(insightId);
-
-// Pinned rooms, newest first
-const pinned = await getUserRooms(insightId, { pinned: true, sort: "DESC" });
-```
-
----
-
-### `getRoomMessages(insightId, roomId)`
-
-Returns all messages in a room as `RoomMessage[]`.
-
-```ts
-const messages = await getRoomMessages(insightId, room.roomId);
-```
-
----
-
-### `getRoomOptions(insightId, roomId)`
-
-Returns the current `RoomOptions` for a room (model, instructions, MCP tools, etc.).
-
-```ts
-const options = await getRoomOptions(insightId, room.roomId);
-console.log(options.modelId, options.instructions);
-```
-
----
-
-### `setRoomForInsight(insightId, roomId)`
-
-Associates a room with the active insight session. Returns `void`. Call this before sending
-messages if the backend requires a room binding on the insight.
-
-```ts
-await setRoomForInsight(insightId, room.roomId);
-```
-
----
-
-### `updateRoomOptions(insightId, roomId, roomOptions)`
-
-Replaces a room's configuration. Pass the full options array. Returns `void`.
-
-```ts
-const newOptions: RoomOptions[] = [
-    {
-        // PredefinedPrompt objects, not plain strings
-        predefinedPrompts: [
-            { id: "p1", title: "Summarize", context: "Summarize this for me" },
-            { id: "p2", title: "Explain",   context: "Explain this simply" },
-        ],
-        instructions: "You are a helpful assistant.",
-        // MCPToolConfig objects — empty array means no tools
-        mcp: [],
-        // workspace is optional; omit for a plain chat room
-        workspace: { workspace_id: "ws-123", name: "My Workspace" },
-        modelId: "gpt-4o",
-        // harnessType: "semoss"  ← set this to enable agent-harness mode
-    },
-];
-
-await updateRoomOptions(insightId, room.roomId, newOptions);
-```
-
-**Key `RoomOptions` fields:**
-
-| Field | Type | Description |
-|-------|------|-------------|
-| `predefinedPrompts` | `PredefinedPrompt[]` | Quick-start prompt chips shown in the chat input |
-| `instructions` | `string` | System persona / instructions injected into every turn |
-| `mcp` | `MCPToolConfig[]` | MCP tool servers and knowledge sources enabled for the room |
-| `workspace` | `RoomWorkspace?` | Agent workspace linked to the room (omit for plain chat) |
-| `modelId` | `string` | Engine ID of the model to use |
-| `harnessType` | `string?` | Set to `"semoss"` to run via the server-side RunAgent harness |
-
----
-
-### `askRoom(insightId, params)`
-
-Fires the `AskRoom` reactor asynchronously and returns `{ jobId }`. Use
-`getPixelJobStreaming` to stream tokens as they arrive, then `getPixelAsyncResult`
-to fetch the full structured result once the job completes.
-
-```ts
-const params: AskRoomParams = {
-    engine: "gpt-4o",
-    roomId: room.roomId,
-    command: "What is the capital of France?",
-    context: "You are a helpful assistant.",
-    parentMessageId: "ROOT_PLACEHOLDER_ID", // use for new threads
-};
-
-// 1. Start the async job
-const { jobId } = await askRoom(insightId, params);
-
-// 2. Stream tokens as they arrive
-const TERMINAL: PixelJobStreamingStatus[] = [
-    "Complete", "ProgressComplete", "Canceled", "Error", "UnknownJob",
-];
-
-while (true) {
-    const { message, status } = await getPixelJobStreaming(jobId);
-
-    for (const chunk of message) {
-        if (chunk.stream_type === "content" && chunk.data.content) {
-            // Plain text token from the model
-            setMessage(prev => prev + chunk.data.content);
-        } else if (chunk.stream_type === "thinking" && chunk.data.thinking) {
-            // Reasoning token (extended-thinking models only)
-            setThinking(prev => prev + chunk.data.thinking);
-        } else if (chunk.stream_type === "tool") {
-            // The model is streaming a tool call — name / arguments arrive
-            // incrementally. Track by chunk.data.index to correlate deltas.
-            // You typically buffer these and act once the job completes.
-        }
-    }
-
-    if (TERMINAL.includes(status)) break;
-}
-
-// 3. Fetch the full structured result
-const { errors, results } = await getPixelAsyncResult(jobId);
-```
-
-**Optional fields on `AskRoomParams`:**
-| Field | Default | Description |
-|-------|---------|-------------|
-| `image` | `[]` | Base64-encoded image strings |
-| `paramValues` | `[{}]` | Extra model parameters |
-| `parentMessageId` | — | Use `"ROOT_PLACEHOLDER_ID"` to start a new thread |
-
----
-
-## Error Handling
-
-All functions throw on pixel errors. Wrap calls in `try/catch`:
-
-```ts
-try {
-    const room = await createRoomRecord(insightId, workspaceId);
-} catch (error) {
-    // error.message contains the reactor error string
-    console.error("Failed to create room:", error);
+async function configureRoom(
+	insightId: string,
+	modelEngineId: string,
+	workspaceId?: string,
+) {
+	const room = await createRoom(insightId, workspaceId);
+	await room.updateOptions({
+		modelId: modelEngineId,
+		instructions: "Be concise.",
+		predefinedPrompts: [
+			{ id: "summary", title: "Summarize", context: "Summarize this." },
+		],
+	});
+	return room;
 }
 ```
 
-## Typical Workflow
+## Managed RoomStore
+
+`createRoom` seeds `{ predefinedPrompts: [], instructions: "", mcp: [], modelId: "" }`.
+It does not load existing server/workspace options; configure it before asking.
+For an existing room, fetch its options and use
+`new RoomStore(roomId, insightId, options)`. That constructor neither binds the
+insight nor restores the conversation's last response ID from history.
+
+| Member | Contract |
+|---|---|
+| `room.updateOptions(partial)` | `Promise<void>`; shallow-merges local options, persists `[merged]`, then updates local state |
+| `room.getMessages()` | `Promise<RoomMessage[]>` |
+| `room.ask(command, options?)` | `Promise<RoomAskResult>` containing `inputMessageId`, `responseMessageId`, `text` |
+| `room.createAgent(command, engine?)` | `Promise<AgentStore>`; caches it as `room.agent`, but does not start watching |
+| `room.askAgent(command, options?)` | `Promise<RoomAskAgentResult>`; same result fields plus `status: string`, checked for `"COMPLETED"` on success |
+| `room.options` | `Readonly<RoomOptions>` getter; not a deeply frozen copy |
+| `room.roomId`, `room.insightId`, `room.agent` | IDs and the latest `AgentStore \| null` |
+
+`RoomAskOptions` accepts `onChunk`, `parentMessageId`, `image`, and `context`.
+The parent defaults to the last successful response ID on this instance, initially
+`"ROOT_PLACEHOLDER_ID"`; `image` defaults to `[]`; `context` defaults to local
+instructions. It exposes no `paramValues`, timeout, or abort option. Serialize
+turns on one instance to avoid racing the mutable last-response ID.
+
+`RoomAskAgentOptions` accepts only `onChunk` and `onPendingActions`. Neither is an
+awaited async callback. Handle errors from async approval UI actions yourself.
+If durable reconciliation reports `INPUT_REQUIRED` without a handler, the method
+stops local observation and rejects; it does not cancel or reject backend actions.
+`RoomStreamChunk` has `type: "content" | "thinking" | "tool"` and optional
+`content`, `thinking`, or `toolData` respectively.
+
+**Current managed-method limitations:** `room.ask` has an unbounded poll loop with
+no delay, deadline, or cancellation and attempts result retrieval after any
+terminal status. `room.askAgent` waits for reconciliation callbacks, not
+`AgentStore.done`; local stop/abort, exhausted polling, or failed terminal
+reconciliation can leave its promise pending. Its chunk adapter also misses full
+message/reasoning text supplied only on item start/completion. Prefer the explicit
+lifecycles below when bounded observation and reliable completion matter. Merely
+racing a Room method against a timeout does not stop its internal work.
+
+## Bounded Local Observation
+
+The following helper is application code, not an SDK export. Subsequent examples
+use it to reject a local wait after 60 seconds and signal polling cleanup.
+Choose a deadline suitable for your workflow, especially human approvals.
 
 ```ts
-// 1. Create or load a room
-const room = await createRoomRecord(insightId, workspaceId);
-
-// 2. Bind the room to the insight
-await setRoomForInsight(insightId, room.roomId);
-
-// 3. Configure the room
-await updateRoomOptions(insightId, room.roomId, [{ ... }]);
-
-// 4. Send a message and get the job ID
-const { jobId } = await askRoom(insightId, {
-    engine: "gpt-4o",
-    roomId: room.roomId,
-    command: "Hello!",
-    context: "You are helpful.",
-    parentMessageId: "ROOT_PLACEHOLDER_ID",
-});
-
-// 5. Stream tokens
-const TERMINAL: PixelJobStreamingStatus[] = [
-    "Complete", "ProgressComplete", "Canceled", "Error", "UnknownJob",
-];
-while (true) {
-    const { message, status } = await getPixelJobStreaming(jobId);
-    for (const chunk of message) {
-        if (chunk.stream_type === "content" && chunk.data.content) {
-            setMessage(prev => prev + chunk.data.content);
-        }
-    }
-    if (TERMINAL.includes(status)) break;
-}
-
-// 6. Fetch the full structured result
-const { errors, results } = await getPixelAsyncResult(jobId);
-```
-
----
-
-### `addRoomToolExecution(insightId, params)`
-
-Submits a tool execution result back to the room and fires a follow-up LLM
-completion turn. Call this after your application has run an MCP tool and has its output.
-Returns `{ jobId }` — use `getPixelJobStreaming` and `getPixelAsyncResult` exactly as you
-would after `askRoom`.
-
-```ts
-import type { AddRoomToolExecutionParams } from "@semoss/sdk";
-
-const params: AddRoomToolExecutionParams = {
-    engine: "my-app-id",        // room.model.app_id — the engine that owns the room
-    roomId: room.roomId,
-    parentMessageId: responseMessage.id,  // the response message that contains the tool call
-    toolId: tool.id,            // tool call ID from the TOOL_CALL message part
-    toolName: tool.json.name,
-    toolExecutionResponse: toolOutput,    // raw string output from the tool
-    mcpToolStatus: "success",   // "success" | "error" | "cancelled" | "paused"
-    toolParameterValues: tool.parameters, // params actually passed to the tool
-    // paramValues defaults to [{}] — pass only if you need extra model params
-};
-
-const { jobId } = await addRoomToolExecution(insightId, params);
-
-// Stream tokens from the follow-up LLM response
-const TERMINAL: PixelJobStreamingStatus[] = [
-    "Complete", "ProgressComplete", "Canceled", "Error", "UnknownJob",
-];
-while (true) {
-    const { message, status } = await getPixelJobStreaming(jobId);
-    for (const chunk of message) {
-        if (chunk.stream_type === "content" && chunk.data.content) {
-            setContent(prev => prev + chunk.data.content);
-        } else if (chunk.stream_type === "thinking" && chunk.data.thinking) {
-            setThinking(prev => prev + chunk.data.thinking);
-        }
-    }
-    if (TERMINAL.includes(status)) break;
-}
-
-const { errors, results } = await getPixelAsyncResult(jobId);
-const output = results[0].output;
-
-if (typeof output.responseMessage === "string") {
-    // More tool calls are still pending in the same turn.
-    // Continue executing the next queued tool — do NOT create a new
-    // response bubble yet.
-    runNextTool();
-} else {
-    // All tools for this turn are complete. The backend has returned the
-    // final input + response message pair.
-    // Sync your local message state and begin executing any new tool calls
-    // that appear in the new responseMessage.
-    syncMessages(output.inputMessage, output.responseMessage);
-    continueToolExecution(output.responseMessage);
+async function withLocalDeadline<Result>(
+	work: (signal: AbortSignal) => Promise<Result>,
+	timeoutMs = 60_000,
+): Promise<Result> {
+	const controller = new AbortController();
+	let timer: ReturnType<typeof setTimeout> | undefined;
+	const timeout = new Promise<never>((_, reject) => {
+		timer = setTimeout(() => {
+			const error = new Error(
+				"Local observation timed out; backend work may continue",
+			);
+			reject(error);
+			controller.abort(error);
+		}, timeoutMs);
+	});
+	try {
+		return await Promise.race([work(controller.signal), timeout]);
+	} finally {
+		clearTimeout(timer);
+		controller.abort();
+	}
 }
 ```
 
-**`AddRoomToolExecutionParams` fields:**
+The wrappers below do not accept a request-level `AbortSignal`. This helper bounds
+the caller's wait, not the duration of an in-flight HTTP request. That request may
+still finish; check the signal before updating UI or starting more work. Retain
+the job/run ID for later reconciliation. Local timeout or stopping a watcher does
+not establish that backend execution was cancelled.
 
-| Field | Required | Description |
-|-------|----------|-------------|
-| `engine` | Yes | The engine/app ID (`room.model.app_id`) |
-| `roomId` | Yes | ID of the room the tool call belongs to |
-| `parentMessageId` | No | ID of the response message containing the tool call |
-| `toolId` | Yes | The tool call ID from the `TOOL_CALL` message part |
-| `toolName` | Yes | The tool's function name |
-| `toolExecutionResponse` | Yes | Raw string output of the tool (encoded automatically) |
-| `mcpToolStatus` | Yes | `"success"` \| `"error"` \| `"cancelled"` \| `"paused"` |
-| `toolParameterValues` | Yes | The parameters that were actually used when calling the tool |
-| `paramValues` | No | Extra model parameters; defaults to `[{}]` |
+## Chat Jobs
 
----
+`AskRoomParams` requires `engine`, `roomId`, `command`, `context`, and
+`parentMessageId`, all strings. Use `"ROOT_PLACEHOLDER_ID"` for a new thread.
+Optional `image: string[]` defaults to `[]`; optional
+`paramValues: Record<string, unknown>[]` defaults to `[{}]`.
 
-## Chat mode vs Agent-harness mode
+The wrapper places `command` and `context` inside Pixel `<encode>` markers; it
+does not call `encodeURIComponent`. Do not assume this is general-purpose input
+escaping. See the backend compatibility notes below.
 
-The SDK supports two ways to send a message. The choice is made **at room creation**
-by setting `harnessType` in `RoomOptions`, and is persisted with the room.
-
-These are two genuinely different wire protocols, not just two functions — agent-harness mode
-does **not** use job-streaming (`getPixelJobStreaming`/`getPixelAsyncResult`). The backend's
-`RunAgent` reactor has no pollable-job path at all: it either returns an immediate handle
-(`wait=false`, what `runAgent` uses) or blocks the request synchronously until the run finishes
-(`wait=true`, no partial progress). Streaming progress instead comes from a separate durable-run
-endpoint, polled via `pollAgentRun` or `AgentStore.watch`.
-
-| | **Chat mode** (`askRoom`) | **Agent-harness mode** (`runAgent`) |
-|---|---|---|
-| Who drives the tool loop | **Client** — browser executes each tool and submits results | **Server** — backend runs the full agentic cycle autonomously |
-| Tool calls | Client calls `RunMCPTool`, then `addRoomToolExecution` per tool | Server handles all tool calls internally; paused (HITL) calls surface via `pendingActions` |
-| Wire protocol | Job-streaming: `{ jobId }` polled via `getPixelJobStreaming` | Durable run: `{ runId }` polled via `pollAgentRun`/`AgentStore.watch` — no `jobId` |
-| Progress shape | Raw `content`/`thinking`/`tool` chunks | Typed `AgentRunItemEvent`s (`message`/`reasoning`/`tool`/`subagent`) |
-| Result shape | `{ inputMessage, responseMessage }` — full message objects | `AgentRunSnapshot` — `finalText`, `status`, message IDs, `pendingActions` |
-| Use when | Standard Q&A, simple tool use, full client control needed | Complex multi-step agents, subagent chains, audit logging, long-running jobs |
-| `harnessType` option | omit / `undefined` | `"semoss"` |
-
-### Creating a room in agent-harness mode
+This example consumes an already submitted job, spaces polls by 500 ms, and
+handles every declared status without treating cancellation or errors as success.
+Submit with `await askRoom(insightId, params)` using a complete `AskRoomParams`,
+then pass its `jobId` to this function.
 
 ```ts
-await updateRoomOptions(insightId, room.roomId, [{
-    predefinedPrompts: [],
-    instructions: "You are a research agent.",
-    mcp: [],
-    modelId: "gpt-4o",
-    harnessType: "semoss", // ← this is the toggle
-}]);
-```
+import { getPixelAsyncResult, getPixelJobStreaming } from "@semoss/sdk";
+import type { PixelStreamMessage } from "@semoss/sdk";
 
-Once `harnessType` is persisted on the room, send all messages via `runAgent`.
-To switch back to chat mode, update the room options with `harnessType: undefined`.
-
-### `runAgent(params, insightId?)`
-
-Submits a message to the server-side agent harness **without waiting** for it to finish
-(`wait=false`) and returns immediately with a `runId` — not a `jobId`, and not the settled
-result. Poll `runId` to completion with `pollAgentRun` directly, or prefer `AgentStore` (see
-`stores/agent/agent.store.ts`), which owns the poll loop, dedup, ordering, backoff, and
-`INPUT_REQUIRED`/terminal reconciliation for you.
-
-```ts
-const agent = await AgentStore.start(
-    {
-        roomId: room.roomId,
-        command: "Analyze this dataset and produce a summary report.",
-        engine: "my-model-engine-id", // room.model.engine_id; defaults to the room's model
-        // harnessType defaults to "semoss" — only override if targeting a different harness
-    },
-    insightId,
-);
-
-const finalSnapshot = await new Promise<AgentRunSnapshot>((resolve, reject) => {
-    agent.watch({
-        onEvent: (event: AgentRunItemEvent) => {
-            // Typed item events, not raw content/thinking/tool chunks
-            if (event.type === "item.updated" && event.kind === "message" && event.delta) {
-                setContent(prev => prev + event.delta);
-            }
-        },
-        onSnapshot: () => {}, // fires on every poll with the current durable snapshot
-        onReconcile: (snapshot) => {
-            if (["COMPLETED", "FAILED", "CANCELLED"].includes(snapshot.status)) {
-                resolve(snapshot);
-            }
-        },
-        onError: (error) => console.error("Agent run stream error", error),
-    });
-});
-
-if (finalSnapshot.status !== "COMPLETED") {
-    throw new Error(`Agent run did not complete: ${finalSnapshot.status}`);
+async function observeChatJob(
+	jobId: string,
+	onChunk: (chunk: PixelStreamMessage) => void,
+) {
+	return withLocalDeadline(async (signal) => {
+		for (let attempt = 0; attempt < 120; attempt += 1) {
+			signal.throwIfAborted();
+			const { message, status } = await getPixelJobStreaming(jobId);
+			signal.throwIfAborted();
+			for (const chunk of message) onChunk(chunk);
+			switch (status) {
+				case "Complete":
+				case "ProgressComplete": {
+					const { errors, results } =
+						await getPixelAsyncResult<[unknown]>(jobId);
+					signal.throwIfAborted();
+					if (errors.length) throw new Error(errors.join(", "));
+					const result = results[0];
+					if (!result) throw new Error("Chat job returned no result");
+					return result.output;
+				}
+				case "Canceled":
+				case "Error":
+				case "UnknownJob":
+					throw new Error(`Chat job ended with ${status}`);
+				case "Paused":
+					throw new Error(
+						"Chat job is paused; explicit application handling is required",
+					);
+				case "Created":
+				case "Submitted":
+				case "InProgress":
+				case "Streaming":
+					break;
+				default:
+					throw new Error(`Unexpected chat job status: ${status}`);
+			}
+			await new Promise<void>((resolve) => setTimeout(resolve, 500));
+		}
+		throw new Error("Chat polling limit reached");
+	});
 }
-
-// Adopt the server-assigned message IDs
-console.log(finalSnapshot.inputMessageId);       // persisted user message ID
-console.log(finalSnapshot.finalOutputMessageId); // persisted response message ID
-console.log(finalSnapshot.finalText);            // full response text
 ```
 
-**`runAgent` params:**
+`PixelStreamMessage` is discriminated by `stream_type`: `content` carries
+`data.content`, `thinking` carries `data.thinking`, and `tool` carries optional
+`data.index`, `id`, and `function` name/argument fragments. Do not execute tools
+from incomplete streamed arguments. Validate the settled `unknown` output before
+reading message parts or executing tool calls. A generic type argument is not
+runtime validation. Keep one consumer per job's incremental stream.
 
-| Field | Required | Description |
-|-------|----------|-------------|
-| `roomId` | Yes | ID of the room |
-| `command` | Yes | The user message (encoded automatically) |
-| `engine` | No | Engine (model) ID — defaults to the room's configured model |
-| `harnessType` | No | Which agent harness runs the loop; defaults to `"semoss"` |
-| `agentId` | No | The agent whose tools/config the run should use (sent as `workspaceId` on the wire) |
-| `maxTurns` / `maxReflections` | No | Caps on model round-trips / self-reflection turns |
-| `images` / `urls` | No | Attachments for the command |
+Room record/options wrappers throw on pixel errors. In contrast, `runPixel` and
+`getPixelAsyncResult` return an `errors` array for pixel failures; inspect it.
+Transport failures can reject. Successful `askRoom` submission only establishes
+receipt of a job handle, not a successful model turn.
 
-**`AgentRunSnapshot` key fields** (from `pollAgentRun`/`getAgentRun`, surfaced via `onReconcile`):
+## Chat Tool Results
 
-| Field | Description |
-|-------|-------------|
-| `status` | `"SUBMITTED"` \| `"RUNNING"` \| `"INPUT_REQUIRED"` \| `"COMPLETED"` \| `"FAILED"` \| `"CANCELLED"` |
-| `inputMessageId` | Server-assigned ID for the persisted user message, once written |
-| `finalOutputMessageId` | Server-assigned ID for the persisted response, once complete |
-| `finalText` | The agent's full response text, once it completes successfully |
-| `errorMessage` | Set when `status` is `"FAILED"` |
-| `pendingActions` | Paused tool calls awaiting a human decision; non-empty only while `"INPUT_REQUIRED"` — resolve with `AgentStore.decide()` (or `decideAgentRunAction` directly) |
+`addRoomToolExecution(insightId, params)` returns `Promise<{ jobId: string }>`.
+Observe that job with the same bounded chat lifecycle. Required
+`AddRoomToolExecutionParams` fields are:
 
----
+| Field | Type |
+|---|---|
+| `engine`, `roomId`, `toolId`, `toolName`, `toolExecutionResponse` | `string` |
+| `mcpToolStatus` | `"success" \| "error" \| "cancelled" \| "paused"` |
+| `toolParameterValues` | `Record<string, unknown>` |
+| `parentMessageId` (optional) | `string`; normally the response containing the tool call |
+| `paramValues` (optional) | `Record<string, unknown>[]`; defaults to `[{}]` |
 
-## Tool Execution Call Stack
+Use the model engine identifier for `engine`, not a project/workspace ID or an
+assumed `room.model.app_id` field. `RoomStore` has no `model` field. The wrapper
+passes this string through; verify the deployed reactor's identifier contract.
+It wraps tool output in `<encode>` markers and does not URL-encode it.
 
-This section documents how `addRoomToolExecution` fits into the full
-tool-call lifecycle so you can replicate the same flow outside the room app.
+The client owns chat tool execution, authorization, concurrency, and result
+submission. There is no SDK `toolAutoExecutionLimit` option or default of five.
+Report a genuine tool failure using `mcpToolStatus: "error"`; a failure to save a
+successful tool result is a separate transport/persistence failure. Do not relabel
+it as tool failure and automatically resubmit, or blindly rerun a side-effecting
+tool. Reconcile first and use an integration-verified retry policy.
 
+Do not assume every settled tool result is `{ inputMessage, responseMessage }`.
+Known server variants include a top-level string for intermediate/duplicate
+submissions. Check `typeof output === "string"` before accessing any fields;
+validate objects too. A string alone does not prove another tool should run.
+
+## Agent Runs
+
+`runAgent(params, insightId?)` requires `roomId` and `command` strings. Optional
+fields are `engine`, `harnessType`, `agentId` (strings), `maxTurns` and
+`maxReflections` (numbers), `media` and `urls` (`string[]`), and
+`paramValues` (`Record<string, unknown>`, not the chat array form).
+There is no `images` or separate `agentParams` parameter in this version.
+
+The wrapper JSON-serializes raw command text, maps `agentId` to `workspaceId`,
+`urls` to `url`, and `media` to `media`; nonempty `paramValues` is sent as a
+one-element array. It does not URL-encode commands or inject a harness default.
+The returned status is typed as `AgentRunStatusValue`, not guaranteed by local
+validation to equal `"SUBMITTED"`.
+
+| Call | Result |
+|---|---|
+| `pollAgentRun(runId)` | `{ run: AgentRunSnapshot; events: AgentRunItemEvent[]; droppedEvents: number }` |
+| `getAgentRun(runId, { includeMessages?: boolean }, insightId?)` | Snapshot with optional `messages`; the options argument itself defaults to `{}` |
+| `stopAgentRun(runId, insightId?)` | `Promise<AgentRunSnapshot>` from the StopAgentRun reactor |
+| `getSubagentRuns(runId, insightId?)` | `Promise<SubagentRunSummary[]>` |
+| `AgentStore.start(params, insightId)` | `Promise<AgentStore>`; insight ID is required here |
+| `new AgentStore(roomId, insightId, runId)` | Attaches locally without submitting or starting a watcher |
+| `agent.getSnapshot(options?)` | Durable fetch with this store's insight ID; return type is `Promise<AgentRunSnapshot>` |
+| `agent.cancel()` | Calls `stopAgentRun`; unlike `agent.stop()`, requests backend cancellation |
+
+`AgentRunSnapshot` requires `runId`, `roomId`, `status`, and `pendingActions`;
+optional fields are `inputMessageId`, `finalOutputMessageId`, `finalText`,
+`errorMessage`, and `progress`. Status values are `SUBMITTED`, `RUNNING`,
+`INPUT_REQUIRED`, `COMPLETED`, `FAILED`, and `CANCELLED`. `INPUT_REQUIRED` is a
+pause, not a terminal success. Do not infer durable success from streamed text.
+`getAgentRun` and `stopAgentRun` normalize missing `pendingActions` to `[]`;
+`pollAgentRun` returns the endpoint payload without that normalization.
+
+### Watch Lifecycle
+
+`agent.watch(handlers, options?)` requires `onEvent`, `onSnapshot`, and
+`onReconcile`; `onError` is optional. It returns an `AgentRunSubscription` with
+`stop()`, `pokeNow()`, `getItems()`, and `done`. `agent.done` also exposes the
+subscription promise, or a resolved `null` before any watch.
+
+- Defaults: `pollIntervalMs: 500`, `inputRequiredIntervalMultiplier: 3`,
+    `maxConsecutiveFailures: 8`. Optional `signal` stops local observation only.
+- Events are sorted by `sequence` per poll and deduplicated by `eventId`.
+    `onEvent(event, items)` receives accumulated state. Render that state so full
+    text arriving on `item.started` or `item.completed` is not lost. Kinds include
+    `message`, `reasoning`, `tool`, `subagent`, and `progress`.
+- Treat agent streaming as a destructive drain without replay: keep exactly one
+    live watcher per run ID, including across separate store instances. Use durable
+    reads to reconcile `droppedEvents`; the store reports gaps but does not itself
+    reconstruct missing item history.
+- Terminal observations drain remaining new events, then reconcile on an empty
+    drain. Failed polls back off, capped at 10 seconds; at the failure cap the store
+    attempts one durable read and ends observation. `done` never rejects and may
+    contain a nonterminal or stale snapshot, or `null`.
+
+This example watches an already-started store. Supply synchronous rendering
+callbacks; catch errors in any async work they launch. The snapshot callback runs
+on every successful poll, so an approval UI should compare pending action IDs and
+track in-flight decisions, not automatically resubmit approvals.
+
+```ts
+import type {
+	AgentRunItemsState,
+	AgentRunSnapshot,
+	AgentStore,
+} from "@semoss/sdk";
+
+async function observeAgent(
+	agent: AgentStore,
+	onItems: (items: AgentRunItemsState) => void,
+	onSnapshot: (snapshot: AgentRunSnapshot) => void,
+): Promise<AgentRunSnapshot> {
+	return withLocalDeadline(async (signal) => {
+		signal.throwIfAborted();
+		const subscription = agent.watch(
+			{
+				onEvent: (_event, items) => {
+					if (!signal.aborted) onItems(items);
+				},
+				onSnapshot: (snapshot, meta) => {
+					if (signal.aborted) return;
+					if (meta.droppedEvents > 0)
+						console.warn("Agent stream has gaps", meta);
+					onSnapshot(snapshot);
+				},
+				onReconcile: (snapshot) => {
+					if (!signal.aborted) onSnapshot(snapshot);
+				},
+				onError: (error) => {
+					if (!signal.aborted)
+						console.error("Agent observation error", error);
+				},
+			},
+			{ signal },
+		);
+		try {
+			await subscription.done;
+			signal.throwIfAborted();
+			const final = await agent.getSnapshot({ includeMessages: true });
+			signal.throwIfAborted();
+			if (final.status !== "COMPLETED") {
+				throw new Error(
+					final.errorMessage ??
+						`Observation ended with ${final.status}`,
+				);
+			}
+			return final;
+		} finally {
+			subscription.stop();
+		}
+	});
+}
 ```
-AskRoom → stream chunks → getPixelAsyncResult
-    │
-    └─ responseMessage.parts contains TOOL_CALL entries
-           │
-           ├─ For each TOOL_CALL with SMSS_MCP_EXECUTION === "AUTO":
-           │       │
-           │       ├─ RunMCPTool(project, roomId, function, paramValues)
-           │       │       └─ Returns raw tool output string
-           │       │
-           │       └─ addRoomToolExecution(insightId, {
-           │               engine,          ← room.model.app_id
-           │               roomId,
-           │               parentMessageId, ← the response message's ID
-           │               toolId,          ← part.toolCall.id
-           │               toolName,        ← tool.json.name
-           │               toolExecutionResponse, ← output from RunMCPTool
-           │               mcpToolStatus,   ← "success" | "error" | ...
-           │               toolParameterValues,
-           │           })
-           │               │
-           │               └─ stream chunks (content / thinking / tool)
-           │                       │
-           │                       ├─ Partial output { responseMessage: string }
-           │                       │       └─ More tools pending → run next tool
-           │                       │
-           │                       └─ Final output { inputMessage, responseMessage }
-           │                               └─ Sync messages, run continueToolExecution()
-           │                                  on the new responseMessage (may trigger
-           │                                  another round of tool calls)
-           │
-           └─ Repeat until responseMessage has no INITIAL/LOADING tool calls
-```
 
-### Key rules
+To start: `await AgentStore.start({ roomId, command, engine: modelEngineId }, insightId)`.
+Pass the resulting store to `observeAgent`. Submission itself is not bounded by
+this observation helper. To stop locally use `agent.stop()`; to request remote
+cancellation await `agent.cancel()`, inspect its returned status, and optionally
+call `agent.pokeNow()` for a live watcher. Do not assume descendants or external
+tool side effects are cancelled without backend verification.
 
-1. **`engine` vs `model.engine_id`**: `addRoomToolExecution` uses
-   `room.model.app_id` (the *app* engine ID), not `room.model.engine_id` (the
-   *LLM* engine ID) that `askRoom` uses. These are different IDs.
+### Approvals and Child Runs
 
-2. **Partial vs final output**: Check `typeof output.responseMessage === "string"`.
-   A string means the backend is still aggregating tool results and wants you to
-   keep running tools. An object means the turn is complete.
+Present every pending action to the user and submit only their chosen decision.
+`PendingAgentAction.actionId` identifies the decision; `runId` identifies its
+owning run, not a room ID. `toolArgs`, `editedArgs`, `toolMeta`, `toolCallId`,
+`parentMessageId`, `toolName`, and `uiUrl` may be null.
 
-3. **Error wrapping**: If the tool itself throws, set `mcpToolStatus: "error"` and
-   pass the error message as `toolExecutionResponse` so the model can reason about
-   the failure. If `addRoomToolExecution` itself throws while saving a
-   successful result, retry with `mcpToolStatus: "error"` and wrap the save-error
-   message in `toolExecutionResponse`.
+- `await agent.decide(action, "submit", editedParams?)` returns a string; it maps
+    omitted or JSON-equal parameters to `approve`, changed parameters to `edit`.
+- `await agent.decide(action, "reject")` rejects that action.
+- `await agent.decide(action, "respond", answers)` JSON-stringifies the answer
+    object as `mcpToolResult`, for tools such as RequestUserInput.
+- Raw `decideAgentRunAction({ actionId, decision, paramValues?, mcpToolResult? }, insightId?)`
+    returns `Promise<string>` and calls RunMCPTool. Raw decisions are `approve`,
+    `edit`, `reject`, or `respond`, not `submit`. Supply arguments for `edit` and a
+    result string for `respond`; omission is serialized as `{}` or `""` respectively.
 
-4. **Paused / cancelled tools**: Use `mcpToolStatus: "paused"` or `"cancelled"` to
-   tell the model the tool was skipped without executing. The model will receive a
-   standard prompt explaining why execution was halted.
+Await decisions and surface failures rather than discarding promises. Decide all
+actions in a paused batch; one decision may not resume the run. The helper does
+not validate that the action belongs to its store, so use the correct owner to
+wake the right watcher. Child runs have independent rooms and run IDs; use
+`getSubagentRuns`/`getAgentRun` and a separate owner per child when live observation
+is needed. Do not assume a parent's watcher resolves child approvals.
 
-5. **Concurrency limit**: A room has a `toolAutoExecutionLimit` (default 5). Track
-   how many tools are currently `LOADING` and only dispatch up to the limit at a
-   time. Re-check after each tool completes.
+## Known Gaps and Verification Boundary
+
+These are current limitations, not recommendations to change SDK/backend source
+while updating documentation:
+
+- The watcher retains its subscription after stopping. `isWatching` can remain
+    true, and another `watch()` on that instance returns the stopped subscription.
+    Wait for the previous `done` before attaching a new store; never overlap drains.
+- An already-aborted signal is not checked internally. Stop/abort does not abort
+    an in-flight request or suppress all callbacks from it. Guard UI delivery and
+    bound the outer wait as above.
+- Internal reconciliation omits the store's insight ID, records status before a
+    successful read, and does not retry that read for an unchanged status. It can
+    miss a new approval batch while status remains `INPUT_REQUIRED`. Inspect
+    `onSnapshot` pending action IDs and use `getSnapshot()` or
+    `getAgentRun(runId, { includeMessages: true }, insightId)` explicitly.
+- Legacy AskRoom `image`/`context` fields have a known compatibility gap with
+    servers expecting `media` and persisted room instructions. Configuring room
+    instructions does not prove the legacy request override is honored.
+- Command encoding, separate harness/provider parameters, model engine ID
+    interpretation, tool-result shapes, approval resumption, destructive drains,
+    and StopAgentRun/child cancellation require deployed-backend verification.
+    In particular, a server that URL-decodes RunAgent commands may not round-trip
+    all text from this version's raw JSON serialization. There is no verified
+    separate harness-parameter mapping here.
+
+Local types and mocked tests verify client behavior only. Check these integration
+contracts before promising compatibility, changing encodings, retrying tool
+execution, or claiming successful cancellation.
