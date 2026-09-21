@@ -27,7 +27,8 @@ const schema = z.object({
 	isGlobal: z.boolean().default(false),
 });
 
-type FormValues = z.infer<typeof schema>;
+type FormInputValues = z.input<typeof schema>;
+type FormValues = z.output<typeof schema>;
 
 export interface CloneProjectDialogProps {
 	/** Track if the dialog is open */
@@ -51,7 +52,7 @@ export const CloneProjectDialog = (props: CloneProjectDialogProps) => {
 					? "Notebook"
 					: "App";
 
-	const form = useForm<FormValues>({
+	const form = useForm<FormInputValues, unknown, FormValues>({
 		resolver: zodResolver(schema),
 		defaultValues: {
 			name: "",
