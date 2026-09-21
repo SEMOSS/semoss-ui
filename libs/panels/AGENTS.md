@@ -5,6 +5,8 @@ editor, and the resource-permission cache they read. Everything here is a `Workb
 or something one of them needs.
 
 > **Inherits from:** [../../AGENTS.md](../../AGENTS.md) (root).
+> Load the applicable [root skills](../../skills/README.md), including the
+> [React standard](../../skills/react-standard.skill.md), for general implementation rules.
 
 ## Why this is its own package
 
@@ -20,8 +22,9 @@ So the layering is one direction, three layers:
 @semoss/ui ← @semoss/workbench ← @semoss/panels → @semoss/shared → @semoss/sdk
 ```
 
-Nothing here may import from a host (`packages/*`). `zustand` is a **peer** dependency, matching
-the dock — two copies would mean two store instances and silently divergent state.
+Nothing here may import from a host (`packages/*`). `zustand` is a **peer** dependency,
+matching the dock. Hosts supply a compatible version and explicitly share the intended
+store instances; a peer declaration alone does not guarantee shared state.
 
 ## Layout
 
@@ -87,9 +90,9 @@ would invert the dependency this package exists to establish.
   nothing. `file-panel.components.test.ts` states the invariant, and the playground's
   `use-sidebar-panel-active.test.tsx` is what actually reproduces a cycle — it enters through
   the package specifier, the way a host does.
-- **`FILE_PANEL_TYPES` string values are a storage contract.** `applySnapshot` prunes records whose
-  type a host no longer registers, so changing one silently drops that panel out of every cached
-  layout. The client spreads these into its own `WORKBENCH_COMPONENTS`.
+- **`FILE_PANEL_TYPES` string values are a storage contract.** Changing one breaks cached
+  layouts that reference the old type; preserve compatibility when changing registrations.
+  The client spreads these into its own `WORKBENCH_COMPONENTS`.
 - **`FILE_PANEL_COMPONENTS` defines what "a file panel" *is* at runtime.** `useWorkbenchFilePanels`
   decides which open panels follow a rename by membership in it, never by the shape of a config —
   the Git panels carry the same `{ type, id, name, path }` fields and were being swept up.
@@ -102,8 +105,9 @@ would invert the dependency this package exists to establish.
 - **Never dereference `a.mode.type` in a blueprint `matches`.** It runs inside `selectPanel`, a
   store action outside any error boundary; a config it cannot read must return false, not throw.
   Use `matchesFilePanel`.
-- **`file-pptx-viewer-content` has its own export subpath** and must stay separately importable —
-  two call sites `lazy()` it, and folding it into the barrel silently loses the chunk split.
+- **Keep PPTX viewer content lazy-loaded internally.** The manifest exposes only the root,
+  `globals.css`, and `vite` entry points, not a `file-pptx-viewer-content` public subpath.
+  Do not turn the heavy viewer into an eager public-barrel import.
 - **Monaco needs the `monaco-editor` alias.** Every host that renders a file panel aliases the bare
   specifier at `libs/shared/node_modules/...`; `vite.config.ts` here does the same so the tests run.
 - Everything else about panels — blueprints, mount policy, chrome controls, the dirty `*` marker —
@@ -122,3 +126,14 @@ Three things, each of which fails quietly or late if it is missed:
 
 Plus the `monaco-editor` alias above. All of it lives here rather than in each host's
 `vite.config.ts`, so adding a third host is an import rather than an archaeology exercise.
+
+## Validation
+
+This package is source-only; it has no build script. From the repository root:
+
+```bash
+pnpm --filter @semoss/panels check-types
+pnpm --filter @semoss/panels test
+```
+
+Also exercise an affected host when changing its panel or Vite integration.
