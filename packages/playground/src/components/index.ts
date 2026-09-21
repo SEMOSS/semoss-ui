@@ -5,4 +5,5 @@ export * from "./mcp";
 export * from "./message";
 export * from "./prompts";
 export * from "./room";
+export * from "./schedules";
 export * from "./workspace";

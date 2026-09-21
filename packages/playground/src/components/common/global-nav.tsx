@@ -1,5 +1,6 @@
 import {
 	Bot,
+	CalendarClockIcon,
 	DownloadIcon,
 	FileIcon,
 	FileTextIcon,
@@ -515,6 +516,33 @@ export const GlobalNav = observer(() => {
 											>
 												<Bot />
 												{t("nav.agents.label")}
+											</Link>
+										</SidebarMenuButton>
+									</SidebarMenuItem>
+								)}
+
+								{root.theme.featureFlags?.enableAgent && (
+									<SidebarMenuItem>
+										<SidebarMenuButton
+											asChild
+											isActive={
+												!!matchPath(
+													"/scheduled-tasks",
+													pathname,
+												)
+											}
+											tooltip={{
+												children:
+													"Schedule RunAgent tasks",
+												hidden: false,
+											}}
+										>
+											<Link
+												to={"/scheduled-tasks"}
+												aria-label={"scheduled tasks"}
+											>
+												<CalendarClockIcon />
+												Scheduled Tasks
 											</Link>
 										</SidebarMenuButton>
 									</SidebarMenuItem>

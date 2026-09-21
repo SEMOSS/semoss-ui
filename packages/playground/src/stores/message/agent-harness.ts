@@ -325,11 +325,21 @@ const syncPendingActions = (
 	);
 
 	byToolCallId.forEach((action, toolCallId) => {
-		const hasPart = responseMessage.parts.some(
+		const existingPart = responseMessage.parts.find(
 			(part) =>
 				part.type === "TOOL_CALL" && part.toolCall.id === toolCallId,
 		);
-		if (hasPart) {
+		if (existingPart?.type === "TOOL_CALL") {
+			// The room message can arrive before the durable pending action is
+			// available. Merge the authoritative action metadata back into the
+			// existing tool call so native tools retain their inline input schema
+			// and the default form can render without an MCP project id.
+			existingPart.toolCall._meta = {
+				...existingPart.toolCall._meta,
+				...action.toolMeta,
+				SMSS_MCP_EXECUTION: MCP_EXECUTION_AGENT_ASK,
+			};
+			room.syncTool(toolCallId, responseMessage, existingPart);
 			return;
 		}
 		const part = buildPendingToolCallPart(action, toolCallId);

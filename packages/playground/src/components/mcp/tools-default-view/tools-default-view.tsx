@@ -60,6 +60,11 @@ interface FieldSchema {
 	description?: string;
 }
 
+interface ToolInputSchema {
+	properties?: Record<string, FieldSchema>;
+	required?: string[];
+}
+
 export const ToolsDefaultView = observer(
 	({ room, app, message, tool }: ToolsDefaultViewProps) => {
 		const { t } = useTranslation("tool");
@@ -76,7 +81,7 @@ export const ToolsDefaultView = observer(
 					required?: string[];
 				};
 			}[];
-		}>(`GetMCPTools(project=["${app}"]);`, {
+		}>(app ? `GetMCPTools(project=["${app}"]);` : "", {
 			data: {
 				tools: [
 					{
@@ -89,6 +94,20 @@ export const ToolsDefaultView = observer(
 				],
 			},
 		});
+		const rawInlineSchema = !app
+			? (tool.pendingAction?.toolMeta?.SMSS_INPUT_SCHEMA ??
+				(tool.json._meta as Record<string, unknown> | undefined)
+					?.SMSS_INPUT_SCHEMA)
+			: undefined;
+		const inlineSchema =
+			rawInlineSchema && typeof rawInlineSchema === "object"
+				? (rawInlineSchema as ToolInputSchema)
+				: undefined;
+		const schemaStatus = inlineSchema
+			? "SUCCESS"
+			: app
+				? getMCP.status
+				: "ERROR";
 
 		/*
 		 * State
@@ -109,7 +128,6 @@ export const ToolsDefaultView = observer(
 				return tool.response;
 			}
 		}, [tool.response]);
-
 		const [showExtensionDialog, setShowExtensionDialog] =
 			useState<boolean>(false);
 		const [extensionCheckRetrying, setExtensionCheckRetrying] =
@@ -161,8 +179,13 @@ export const ToolsDefaultView = observer(
 								candidate.title === tool.json.title),
 					)
 				: undefined;
-		const properties = foundTool?.inputSchema.properties ?? {};
-		const required = foundTool?.inputSchema.required ?? [];
+		const properties =
+			inlineSchema?.properties ?? foundTool?.inputSchema.properties ?? {};
+		const required =
+			inlineSchema?.required ?? foundTool?.inputSchema.required ?? [];
+		const schemaUnavailable =
+			schemaStatus === "ERROR" ||
+			(Boolean(app) && schemaStatus === "SUCCESS" && !foundTool);
 		const requiredFields = Object.entries(properties).filter(
 			([fieldName]) => required.includes(fieldName),
 		);
@@ -381,7 +404,6 @@ export const ToolsDefaultView = observer(
 		/*
 		 * Effects
 		 */
-
 		// Switch to output tab when execution completes
 		useEffect(() => {
 			if (
@@ -444,8 +466,7 @@ export const ToolsDefaultView = observer(
 										/>
 									)}
 								</div>
-							) : getMCP.status === "ERROR" ||
-								(getMCP.status === "SUCCESS" && !foundTool) ? (
+							) : schemaUnavailable ? (
 								<div className="flex flex-col items-center justify-center gap-2 py-12 text-center">
 									<p className="font-semibold text-destructive text-lg">
 										{t("form.schemaLoadFailed")}
@@ -454,7 +475,7 @@ export const ToolsDefaultView = observer(
 										{t("form.schemaLoadFailedDescription")}
 									</p>
 								</div>
-							) : getMCP.status === "SUCCESS" ? (
+							) : schemaStatus === "SUCCESS" ? (
 								<div className="flex flex-1 flex-col">
 									<form
 										className="flex-1 space-y-4"
