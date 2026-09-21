@@ -12,6 +12,7 @@ SEMOSS is a React-based analytics platform built as a pnpm monorepo with Turbore
 **Dependency Graph:**
 
 Libraries (`libs/*`, publishable):
+- `@semoss/utility` → Generic date, string, file, clipboard, and JSON helpers
 - `@semoss/sdk` → Core SDK (no internal dependencies)
 - `@semoss/ui` → Component library (no internal dependencies)
 - `@semoss/i18n` → Internationalization library (no internal dependencies)
@@ -29,6 +30,8 @@ Applications (`packages/*`, not published):
 - `@semoss/playground` → Chat (depends on i18n, panels, sdk, shared, ui, workbench)
 - `@semoss/terminal` → Embedded terminal (depends on i18n, panels, sdk, shared, ui, workbench)
 - `@semoss/auditlog-package` → Audit log dashboard (depends on i18n, sdk, shared, ui)
+- `@semoss/automation` → Automation workspace app (depends on sdk, ui only — no client/shared
+  MobX stores)
 - `@semoss/cli` → CLI tooling (depends on sdk)
 
 **Every host that mounts a dock or a file panel** imports
@@ -41,6 +44,7 @@ Applications (`packages/*`, not published):
 ```
 semoss/
 ├── libs/           # Shared libraries (publishable)
+│   ├── utility/    # Generic cross-package utility functions
 │   ├── sdk/        # @semoss/sdk - Core SDK
 │   ├── ui/         # @semoss/ui - Component library
 │   ├── i18n/       # @semoss/i18n - Internationalization library
@@ -53,6 +57,7 @@ semoss/
 │   ├── playground/                 # @semoss/playground - Chat
 │   ├── terminal/                   # @semoss/terminal - Embedded terminal app
 │   ├── auditlog/                   # @semoss/auditlog-package - Audit log dashboard
+│   ├── automation/                 # @semoss/automation - Automation workspace app
 │   ├── browser-automation/         # @semoss/browser-automation - Browser automation harness
 │   ├── chrome-extension/           # Chrome extension for browser automation
 │   ├── vscode-extension/           # semoss-vscode - VSCode extension
@@ -341,5 +346,6 @@ pnpm test           # Verify tests pass
 - [packages/playground/AGENTS.md](./packages/playground/AGENTS.md) - Playground (chat) app specifics
 - [packages/terminal/AGENTS.md](./packages/terminal/AGENTS.md) - Embedded terminal app specifics
 - [packages/auditlog/AGENTS.md](./packages/auditlog/AGENTS.md) - Audit log dashboard app specifics
+- [packages/automation/AGENTS.md](./packages/automation/AGENTS.md) - Automation workspace app specifics
 - [packages/browser-automation/AGENTS.md](./packages/browser-automation/AGENTS.md) - Browser automation harness specifics
 - [packages/cli/AGENTS.md](./packages/cli/AGENTS.md) - CLI tooling specifics

@@ -580,7 +580,7 @@ export const ResponseMessage = observer(
 											aria-label={`View ${p.mediaInfo.fileName}`}
 										>
 											<img
-												className="max-h-[480px] max-w-full object-contain"
+												className="max-h-120 max-w-full object-contain"
 												src={imgSrc}
 												alt={p.mediaInfo.fileName}
 											/>

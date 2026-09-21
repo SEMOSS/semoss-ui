@@ -1,0 +1,75 @@
+<svg width="406" height="179" viewBox="0 0 406 179" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g clip-path="url(#clip0_wf_dark)">
+<rect width="406" height="179" rx="10" fill="url(#paint0_linear_wf_dark)"/>
+<g filter="url(#filter0_wf_dark)">
+<rect x="28" y="22" width="371" height="183" rx="8" fill="#1F1D28"/>
+<rect x="27.5" y="21.5" width="372" height="184" rx="8.5" stroke="#C4C4C4"/>
+</g>
+<!-- Node 1: Trigger -->
+<rect x="52" y="55" width="88" height="36" rx="6" fill="#7C3AED" opacity="0.25"/>
+<rect x="52" y="55" width="88" height="36" rx="6" stroke="#7C3AED" stroke-width="1.5"/>
+<rect x="57" y="62" width="4" height="4" rx="1" fill="#A78BFA"/>
+<rect x="57" y="70" width="4" height="4" rx="1" fill="#A78BFA"/>
+<rect x="65" y="61" width="40" height="3" rx="1.5" fill="#A78BFA" opacity="0.6"/>
+<rect x="65" y="69" width="28" height="3" rx="1.5" fill="#A78BFA" opacity="0.4"/>
+<rect x="112" y="72" width="24" height="2" rx="1" fill="#A78BFA"/>
+<!-- Arrow 1→2 -->
+<path d="M140 73 L168 73" stroke="#A78BFA" stroke-width="1.5" stroke-dasharray="3 2"/>
+<polygon points="166,69 174,73 166,77" fill="#A78BFA"/>
+<!-- Node 2: Process -->
+<rect x="174" y="55" width="88" height="36" rx="6" fill="#6D28D9" opacity="0.22"/>
+<rect x="174" y="55" width="88" height="36" rx="6" stroke="#6D28D9" stroke-width="1.5"/>
+<rect x="179" y="62" width="4" height="4" rx="1" fill="#8B5CF6"/>
+<rect x="179" y="70" width="4" height="4" rx="1" fill="#8B5CF6"/>
+<rect x="187" y="61" width="44" height="3" rx="1.5" fill="#8B5CF6" opacity="0.6"/>
+<rect x="187" y="69" width="32" height="3" rx="1.5" fill="#8B5CF6" opacity="0.4"/>
+<!-- Fan-out lines from node 2 -->
+<path d="M262 66 L282 56" stroke="#8B5CF6" stroke-width="1.2" stroke-dasharray="3 2"/>
+<path d="M262 73 L282 73" stroke="#8B5CF6" stroke-width="1.2" stroke-dasharray="3 2"/>
+<path d="M262 80 L282 90" stroke="#8B5CF6" stroke-width="1.2" stroke-dasharray="3 2"/>
+<!-- Node 3a -->
+<rect x="282" y="44" width="80" height="24" rx="5" fill="#4C1D95" opacity="0.2"/>
+<rect x="282" y="44" width="80" height="24" rx="5" stroke="#4C1D95" stroke-width="1.2"/>
+<rect x="287" y="52" width="40" height="2.5" rx="1.25" fill="#7C3AED" opacity="0.5"/>
+<!-- Node 3b -->
+<rect x="282" y="62" width="80" height="24" rx="5" fill="#4C1D95" opacity="0.2"/>
+<rect x="282" y="62" width="80" height="24" rx="5" stroke="#4C1D95" stroke-width="1.2"/>
+<rect x="287" y="70" width="40" height="2.5" rx="1.25" fill="#7C3AED" opacity="0.5"/>
+<!-- Node 3c -->
+<rect x="282" y="80" width="80" height="24" rx="5" fill="#4C1D95" opacity="0.2"/>
+<rect x="282" y="80" width="80" height="24" rx="5" stroke="#4C1D95" stroke-width="1.2"/>
+<rect x="287" y="88" width="40" height="2.5" rx="1.25" fill="#7C3AED" opacity="0.5"/>
+<!-- Label row -->
+<rect x="52" y="110" width="50" height="3" rx="1.5" fill="#343343"/>
+<rect x="52" y="118" width="35" height="3" rx="1.5" fill="#343343"/>
+<rect x="174" y="110" width="50" height="3" rx="1.5" fill="#343343"/>
+<rect x="174" y="118" width="38" height="3" rx="1.5" fill="#343343"/>
+<!-- Bottom toolbar -->
+<rect x="28" y="163" width="371" height="42" rx="0" fill="#18181B"/>
+<rect x="28" y="163" width="371" height="1" fill="#2D2D2D"/>
+<rect x="40" y="174" width="48" height="8" rx="3" fill="#7C3AED" opacity="0.25"/>
+<rect x="96" y="174" width="48" height="8" rx="3" fill="#343343"/>
+<rect x="152" y="174" width="48" height="8" rx="3" fill="#343343"/>
+<rect x="330" y="172" width="56" height="12" rx="3" fill="#7C3AED"/>
+<rect x="337" y="176" width="42" height="3" rx="1.5" fill="white"/>
+</g>
+<defs>
+<filter id="filter0_wf_dark" x="19" y="18" width="389" height="201" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+<feFlood flood-opacity="0" result="BackgroundImageFix"/>
+<feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="hardAlpha"/>
+<feOffset dy="5"/>
+<feGaussianBlur stdDeviation="4"/>
+<feComposite in2="hardAlpha" operator="out"/>
+<feColorMatrix type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.08 0"/>
+<feBlend mode="normal" in2="BackgroundImageFix" result="effect1_dropShadow_wf_dark"/>
+<feBlend mode="normal" in="SourceGraphic" in2="effect1_dropShadow_wf_dark" result="shape"/>
+</filter>
+<linearGradient id="paint0_linear_wf_dark" x1="203" y1="-62" x2="203" y2="179" gradientUnits="userSpaceOnUse">
+<stop stop-color="#C4B5FD"/>
+<stop offset="1" stop-color="#5B21B6"/>
+</linearGradient>
+<clipPath id="clip0_wf_dark">
+<rect width="406" height="179" rx="10" fill="white"/>
+</clipPath>
+</defs>
+</svg>

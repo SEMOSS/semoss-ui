@@ -1,0 +1,31 @@
+{
+	"name": "@semoss/utility",
+	"version": "1.0.0-beta.1",
+	"description": "Shared browser-safe and runtime-independent utility functions for SEMOSS",
+	"type": "module",
+	"exports": {
+		".": "./src/index.ts",
+		"./clipboard": "./src/clipboard/index.ts",
+		"./date": "./src/date/index.ts",
+		"./file": "./src/file/index.ts",
+		"./file/image": "./src/file/image.ts",
+		"./json": "./src/json/index.ts",
+		"./string": "./src/string/index.ts",
+		"./string/markdown": "./src/string/markdown.ts"
+	},
+	"files": ["src"],
+	"scripts": {
+		"test": "vitest run --configLoader runner",
+		"test:watch": "vitest --watch --configLoader runner"
+	},
+	"dependencies": {
+		"dayjs": "^1.11.14"
+	},
+	"devDependencies": {
+		"@semoss/config": "workspace:*",
+		"@types/node": "^24.3.1",
+		"typescript": "~6.0.0",
+		"vite": "^8.2.1",
+		"vitest": "^4.1.11"
+	}
+}
