@@ -433,7 +433,7 @@ export const FileExplorerItem: React.FC<FileExplorerItemProps> = ({
 					{/* Column 2: Date */}
 					<div
 						data-testid={`${itemTestId}-date`}
-						className="w-[var(--date-col-width,170px)] shrink-0 overflow-hidden truncate px-2 text-end text-[11px] text-muted-foreground"
+						className="w-(--date-col-width,170px) shrink-0 overflow-hidden truncate px-2 text-end text-[11px] text-muted-foreground"
 					>
 						{macDate ?? ""}
 					</div>

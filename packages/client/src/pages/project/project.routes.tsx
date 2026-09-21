@@ -1,5 +1,6 @@
 import { Outlet } from "react-router";
 import { ProjectAccessControl, ProjectCatalog } from "@/components/project";
+import { AutomationWorkbenchPage } from "@/components/workbench/automation";
 import {
 	AppGithubPage,
 	AppGithubSelectRepoPage,
@@ -15,6 +16,7 @@ import { EditAgentPage } from "./agent/edit-agent-page";
 import { ViewAgentPage } from "./agent/view-agent-page";
 import { CreateAppPage } from "./app/create-app-page";
 import { EditAppPage } from "./app/edit-app-page";
+import { CreateAutomationPage } from "./automation/create-automation-page";
 import { CreateNotebookPage } from "./notebook/create-notebook-page";
 import { EditNotebookPage } from "./notebook/edit-notebook-page";
 import { ViewNotebookPage } from "./notebook/view-notebook-page";
@@ -317,6 +319,30 @@ export const PROJECT_ROUTES: {
 								element: <AppSmssPage />,
 							},
 						],
+					},
+				],
+			},
+		],
+	},
+	{
+		path: "automation",
+		element: <Outlet />,
+		children: [
+			{
+				path: "",
+				element: <ProjectCatalog type="AUTOMATION" />,
+			},
+			{
+				path: "new",
+				element: <CreateAutomationPage />,
+			},
+			{
+				path: ":appId",
+				element: <ProjectLayout />,
+				children: [
+					{
+						path: "edit",
+						element: <AutomationWorkbenchPage />,
 					},
 				],
 			},

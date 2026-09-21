@@ -5,7 +5,7 @@
  * into `@semoss/shared`.
  */
 
-import { IMAGE_MIME_TYPES, splitInlineImages } from "../../utility/image";
+import { IMAGE_MIME_TYPES, splitInlineImages } from "@semoss/utility/file";
 import type {
 	JupyterCell,
 	JupyterCellType,

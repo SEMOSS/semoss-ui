@@ -713,7 +713,7 @@ export const LayersPanel = observer(
 			};
 
 			return (
-				<div className="flex flex-row items-center gap-2 p-2 transition-colors duration-200 hover:[&_[data-onhover]]:block">
+				<div className="flex flex-row items-center gap-2 p-2 transition-colors duration-200 hover:**:data-onhover:block">
 					<span className="flex h-full items-center justify-center text-muted-foreground">
 						<WidgetIcon className="size-4" />
 					</span>
