@@ -34,6 +34,7 @@
     "devDependencies": {
         "@hello-pangea/dnd": "^18.0.1",
         "@semoss/config": "workspace:*",
+        "@semoss/utility": "workspace:*",
         "@testing-library/jest-dom": "^6.6.3",
         "@testing-library/react": "^16.2.0",
         "@testing-library/user-event": "^14.4.3",
@@ -60,6 +61,7 @@
         "@semoss/sdk": "workspace:*",
         "@semoss/shared": "workspace:*",
         "@semoss/ui": "workspace:*",
+        "@semoss/utility": "workspace:*",
         "mobx": "6.3.7",
         "mobx-react-lite": "^4.0.0",
         "react": "^18.3.1 || ^19.0.0",

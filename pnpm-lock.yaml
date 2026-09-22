@@ -204,6 +204,9 @@ importers:
       '@semoss/config':
         specifier: workspace:*
         version: link:../config
+      '@semoss/utility':
+        specifier: workspace:*
+        version: link:../utility
       '@testing-library/jest-dom':
         specifier: ^6.6.3
         version: 6.9.1
@@ -1024,6 +1027,9 @@ importers:
       '@semoss/ui':
         specifier: workspace:*
         version: link:../../libs/ui
+      '@semoss/utility':
+        specifier: workspace:*
+        version: link:../../libs/utility
       '@semoss/workbench':
         specifier: workspace:*
         version: link:../../libs/workbench

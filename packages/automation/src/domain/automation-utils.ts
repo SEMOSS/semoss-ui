@@ -1,4 +1,4 @@
-import { looksLikeHtmlDocument } from "@semoss/utility/string/markdown";
+import { looksLikeHtmlDocument } from "@semoss/utility/markdown";
 
 export function formatDurationMs(
 	ms?: number | null,

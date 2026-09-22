@@ -11,8 +11,8 @@ import {
 	TooltipContent,
 	TooltipTrigger,
 } from "@semoss/ui/next";
+import { formatDateToLocal } from "@semoss/utility";
 import { formatToDataTestId, getTagBadgeStyle } from "@/utility";
-import { formatDateToLocal } from "@/utility/date";
 
 export interface TemplateCardProps extends React.ComponentProps<typeof Card> {
 	/** Unique template / project ID */

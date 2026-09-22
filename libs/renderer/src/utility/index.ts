@@ -1,66 +1,34 @@
+import { copyTextToClipboard as copyText } from "@semoss/utility";
 import type { SerializedState } from "../store";
+
+export {
+	capitalizeFirstLetter,
+	isOutputJSON,
+	splitAtPeriod,
+} from "@semoss/utility";
 
 /**
  * @desc Checks if output and verify if its a JSON object
  */
-export const isOutputJSON = (output: unknown) => {
-	if (typeof output === "object" && output !== null) {
-		return output;
-	}
-	if (typeof output === "string") {
-		try {
-			return JSON.parse(output);
-		} catch (e) {
-			const validateJsonString = output.replace(/'/g, '"');
-			try {
-				return JSON.parse(validateJsonString);
-			} catch (InnerError) {
-				return null;
-			}
-		}
-	}
-	return null;
-};
-
 /**
  * @desc Copies string to clipboard
  */
-export const copyTextToClipboard = (text: string, notificationService) => {
+export const copyTextToClipboard = async (
+	text: string,
+	notificationService,
+): Promise<void> => {
 	try {
-		navigator.clipboard.writeText(text);
+		await copyText(text);
 
 		notificationService.add({
 			color: "success",
 			message: "Successfully copied to clipboard",
 		});
-	} catch (e) {
+	} catch (error) {
 		notificationService.add({
 			color: "error",
-			message: e.message,
+			message: error instanceof Error ? error.message : String(error),
 		});
-	}
-};
-
-export const capitalizeFirstLetter = (str) => {
-	return str.replace(/\w{1}/, (match) => match.toUpperCase());
-};
-
-/**
- * @desc splits a string at the period
- * Used in the UI Builder and notebook
- */
-export const splitAtPeriod = (str, side = "left") => {
-	const indexOfPeriod = str.indexOf(".");
-	if (indexOfPeriod === -1) {
-		return str; // No period found, return the entire string
-	}
-
-	if (side === "left") {
-		return str.substring(0, indexOfPeriod);
-	} else if (side === "right") {
-		return str.substring(indexOfPeriod + 1);
-	} else {
-		throw new Error("Invalid side argument. Choose 'left' or 'right'");
 	}
 };
 

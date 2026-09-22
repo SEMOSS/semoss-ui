@@ -15,7 +15,7 @@ import {
 	TooltipContent,
 	TooltipTrigger,
 } from "@semoss/ui/next";
-import { countInlineImages, hasInlineImage } from "@semoss/utility/file";
+import { countInlineImages, hasInlineImage } from "@semoss/utility/image";
 import { isTabularArray, parseStructuredOutput } from "@semoss/utility/json";
 import {
 	countLines,
@@ -24,7 +24,7 @@ import {
 	looksLikeMarkdown,
 	normalizeForMarkdown,
 	splitMessageLines,
-} from "@semoss/utility/string/markdown";
+} from "@semoss/utility/markdown";
 import { SandpackHtmlPreview } from "../html";
 import { InlineImageSegments } from "./inline-image";
 import { JsonViewer } from "./json-viewer";

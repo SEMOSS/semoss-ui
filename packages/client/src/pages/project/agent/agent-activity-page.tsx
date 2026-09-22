@@ -8,8 +8,8 @@ import {
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "react-router";
 import { Badge, Button, Skeleton, toast } from "@semoss/ui/next";
+import { formatDateToRelative } from "@semoss/utility";
 import { useProject, useSession } from "@/hooks";
-import { formatDateToRelative } from "@/utility/date";
 import type {
 	AgentActivityLogResponse,
 	AgentActivityRun,
