@@ -63,20 +63,10 @@ export const PlatformSearchEngine = ({
 				const engineId = engine.engine_id;
 				const engineName =
 					engine.engine_display_name || engine.engine_name;
-				const engineSubtype =
-					engine.engine_subtype ||
-					(
-						engine as Engine & {
-							database_subtype?: string;
-							app_subtype?: string;
-						}
-					).database_subtype ||
-					(
-						engine as Engine & {
-							database_subtype?: string;
-							app_subtype?: string;
-						}
-					).app_subtype;
+				// MyEngines returns engine_subtype; its database_subtype and
+				// app_subtype aliases select the same column, so a fallback to
+				// them could never produce a different value.
+				const engineSubtype = engine.engine_subtype;
 				return (
 					<CommandItem
 						key={engineId}

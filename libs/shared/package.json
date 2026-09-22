@@ -20,6 +20,7 @@
     "@monaco-editor/react": "^4.5.1",
     "@semoss/i18n": "workspace:*",
     "@semoss/sdk": "workspace:*",
+    "@semoss/utility": "workspace:*",
     "@semoss/ui": "workspace:*",
     "echarts": "^5.5.1",
     "flexlayout-react": "^0.8.1",

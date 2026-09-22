@@ -248,7 +248,7 @@ export const DatabaseUploadCsv = ({
 		>
 			<DialogContent className="sm:max-w-3xl">
 				<DialogHeader>
-					<DialogTitle>
+					<DialogTitle className="font-medium text-base leading-6">
 						{step === "upload"
 							? "Upload File"
 							: "Preview & Configure"}

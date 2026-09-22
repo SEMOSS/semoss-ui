@@ -9,7 +9,7 @@ import {
 	TooltipTrigger,
 	toast,
 } from "@semoss/ui/next";
-import { IMAGE_MIME_TYPES } from "../../utility/image";
+import { IMAGE_MIME_TYPES } from "@semoss/utility/file";
 import type { JupyterOutput } from "./notebook.types";
 import {
 	getMimeString,
@@ -131,7 +131,7 @@ export const NotebookCellOutput: React.FC<NotebookCellOutputProps> = ({
 		<div className="group/output relative">
 			{copyText !== null && (
 				<div className="absolute top-0 right-2 z-10 opacity-0 transition-opacity focus-within:opacity-100 group-hover/output:opacity-100">
-					<Tooltip>
+					<Tooltip disableHoverableContent={false}>
 						<TooltipTrigger asChild>
 							<Button
 								variant="ghost"

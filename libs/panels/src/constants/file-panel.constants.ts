@@ -3,9 +3,10 @@
  *
  * Split out of the client's `WORKBENCH_COMPONENTS` when the panels moved here.
  * The client spreads these into its own constant, so **the string values are a
- * storage contract** — `applySnapshot` prunes records whose type a host no
- * longer registers, so changing one silently drops that panel out of every
- * cached layout.
+ * storage contract**. A cached layout naming a type no host registers keeps its
+ * record through `applySnapshot`, which only drops records that sit in no
+ * tabset and no border: the tab comes back with an empty body. Changing one of
+ * these is a breaking change to every layout already in a browser.
  */
 export const FILE_PANEL_TYPES = {
 	FILE_EXPLORER: "file-explorer",

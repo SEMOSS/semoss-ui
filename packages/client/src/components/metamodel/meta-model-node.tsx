@@ -15,7 +15,16 @@ import {
 	Type as TypeIcon,
 } from "lucide-react";
 import React from "react";
-import { Button, Card, CardContent, cn, P } from "@semoss/ui/next";
+import {
+	Button,
+	Card,
+	CardContent,
+	cn,
+	P,
+	Tooltip,
+	TooltipContent,
+	TooltipTrigger,
+} from "@semoss/ui/next";
 import { useMetamodel } from "@/hooks";
 
 type MetamodelNodeProps = NodeProps<
@@ -266,23 +275,33 @@ const _MetamodelNode = (props: MetamodelNodeProps) => {
 				</div>
 
 				{data.isEditable && (
-					<Button
-						variant="ghost"
-						size="icon"
-						className="h-7 w-7 flex-shrink-0"
-						onClick={(e) => {
-							e.stopPropagation();
-							data?.openEditTable?.({
-								nodeId: id,
-								name: data.name,
-							});
-						}}
-						onMouseDown={(e) => e.stopPropagation()}
-						title="Edit table"
-						data-testid={`metamodel-node-${id}-edit-table-btn`}
-					>
-						<Edit className="size-4" />
-					</Button>
+					<Tooltip disableHoverableContent={false}>
+						<TooltipTrigger asChild>
+							<Button
+								aria-label={"Edit table"}
+								variant="ghost"
+								size="icon"
+								className="h-7 w-7 flex-shrink-0"
+								onClick={(e) => {
+									e.stopPropagation();
+									data?.openEditTable?.({
+										nodeId: id,
+										name: data.name,
+									});
+								}}
+								onMouseDown={(e) => e.stopPropagation()}
+								data-testid={`metamodel-node-${id}-edit-table-btn`}
+							>
+								<Edit className="size-4" />
+							</Button>
+						</TooltipTrigger>
+						<TooltipContent
+							sideOffset={4}
+							className="max-w-xs break-words"
+						>
+							{"Edit table"}
+						</TooltipContent>
+					</Tooltip>
 				)}
 			</div>
 
@@ -365,42 +384,71 @@ const _MetamodelNode = (props: MetamodelNodeProps) => {
 
 								{data.openViewColumnMetadata ? (
 									<div className="flex w-7 flex-shrink-0 items-center justify-center">
-										<Button
-											variant="ghost"
-											size="icon"
-											className="h-6 w-6"
-											onMouseDown={(e) =>
-												e.stopPropagation()
-											}
-											onClick={(e) =>
-												handleViewColumnMetadata(e, p)
-											}
-											title="View column metadata"
-											data-testid={`metamodel-node-${id}-property-${p.id}-metadata-btn`}
+										<Tooltip
+											disableHoverableContent={false}
 										>
-											<Pencil className="size-3.5" />
-										</Button>
+											<TooltipTrigger asChild>
+												<Button
+													aria-label={
+														"View column metadata"
+													}
+													variant="ghost"
+													size="icon"
+													className="h-6 w-6"
+													onMouseDown={(e) =>
+														e.stopPropagation()
+													}
+													onClick={(e) =>
+														handleViewColumnMetadata(
+															e,
+															p,
+														)
+													}
+													data-testid={`metamodel-node-${id}-property-${p.id}-metadata-btn`}
+												>
+													<Pencil className="size-3.5" />
+												</Button>
+											</TooltipTrigger>
+											<TooltipContent
+												sideOffset={4}
+												className="max-w-xs break-words"
+											>
+												{"View column metadata"}
+											</TooltipContent>
+										</Tooltip>
 									</div>
 								) : null}
 
 								{/* Edit Button - Fixed width */}
 								{data.isEditable && (
 									<div className="flex w-7 flex-shrink-0 items-center justify-center">
-										<Button
-											variant="ghost"
-											size="icon"
-											className="h-6 w-6"
-											onMouseDown={(e) =>
-												e.stopPropagation()
-											}
-											onClick={(e) =>
-												handleEditColumn(e, p)
-											}
-											title="Edit column"
-											data-testid={`metamodel-node-${id}-property-${p.id}-edit-btn`}
+										<Tooltip
+											disableHoverableContent={false}
 										>
-											<Edit className="size-3.5" />
-										</Button>
+											<TooltipTrigger asChild>
+												<Button
+													aria-label={"Edit column"}
+													variant="ghost"
+													size="icon"
+													className="h-6 w-6"
+													onMouseDown={(e) =>
+														e.stopPropagation()
+													}
+													onClick={(e) =>
+														handleEditColumn(e, p)
+													}
+													data-testid={`metamodel-node-${id}-property-${p.id}-edit-btn`}
+												>
+													<Edit className="size-3.5" />
+												</Button>
+											</TooltipTrigger>
+											<TooltipContent
+												sideOffset={4}
+												className="max-w-xs break-words"
+											>
+												{"Edit column"}
+											</TooltipContent>
+										</Tooltip>
 									</div>
 								)}
 							</div>

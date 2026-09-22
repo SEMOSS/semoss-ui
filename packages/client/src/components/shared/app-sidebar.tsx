@@ -13,6 +13,7 @@ import {
 	Settings,
 	ShieldCheck,
 	Sigma,
+	Workflow,
 } from "lucide-react";
 import type React from "react";
 import { useEffect, useState } from "react";
@@ -82,6 +83,11 @@ const CATALOG_ROUTES = [
 		text: "Notebooks",
 		icon: <NotebookText className="size-4" />,
 		route: "/notebook",
+	},
+	{
+		text: "Automations",
+		icon: <Workflow className="size-4" />,
+		route: "/automation",
 	},
 	{
 		text: "Guardrail",
@@ -252,6 +258,11 @@ export const Sidebar: React.FC = () => {
 												<span className="flex-1 truncate text-left">
 													{r.text}
 												</span>
+												{r.route === "/automation" && (
+													<span className="ms-1 self-center rounded border px-1 py-0.5 font-semibold text-[9px] leading-none">
+														BETA
+													</span>
+												)}
 											</Link>
 										</SidebarMenuButton>
 									</SidebarMenuItem>
@@ -307,7 +318,7 @@ export const Sidebar: React.FC = () => {
 								onOpenChange={setIsLogoutPopoverOpen}
 							>
 								<SidebarMenuButton
-									aria-label="Login"
+									aria-label="Account options"
 									className={NAV_BUTTON_CLASS}
 									data-testid={formatToDataTestId(
 										"sidebar-login-btn",
@@ -351,6 +362,7 @@ export const Sidebar: React.FC = () => {
 			}}
 		>
 			<SheetContent
+				aria-describedby={undefined}
 				side="left"
 				className="w-72 max-w-none gap-0 bg-sidebar p-0 [&>button]:hidden"
 				data-testid="sidebar-overlay"

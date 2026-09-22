@@ -93,7 +93,7 @@ export const Navbar: React.FC = () => {
 				{/* Notification bell */}
 				{notificationsEnabled && (
 					<>
-						<Tooltip>
+						<Tooltip disableHoverableContent={false}>
 							<TooltipTrigger asChild>
 								<Button
 									variant="ghost"

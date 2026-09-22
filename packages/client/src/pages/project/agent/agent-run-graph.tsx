@@ -37,6 +37,9 @@ import {
 	TabsContent,
 	TabsList,
 	TabsTrigger,
+	Tooltip,
+	TooltipContent,
+	TooltipTrigger,
 	TreeView,
 	TreeViewItem,
 	useTheme,
@@ -1121,38 +1124,62 @@ export const AgentRunGraph = ({
 					))}
 				</div>
 				<div className="absolute top-2 right-2 z-10 flex gap-1.5">
-					<Button
-						variant="outline"
-						size="icon-sm"
-						className="bg-card/95 shadow-sm backdrop-blur"
-						title={
-							isFullscreen ? "Exit full screen" : "Full screen"
-						}
-						onClick={() => setIsFullscreen((prev) => !prev)}
-					>
-						{isFullscreen ? (
-							<Minimize2 className="size-4" />
-						) : (
-							<Maximize2 className="size-4" />
-						)}
-					</Button>
-					<Button
-						variant="outline"
-						size="icon-sm"
-						className="bg-card/95 shadow-sm backdrop-blur"
-						title={
-							isPanelOpen
+					<Tooltip disableHoverableContent={false}>
+						<TooltipTrigger asChild>
+							<Button
+								aria-label={
+									isFullscreen
+										? "Exit full screen"
+										: "Full screen"
+								}
+								variant="outline"
+								size="icon-sm"
+								className="bg-card/95 shadow-sm backdrop-blur"
+								onClick={() => setIsFullscreen((prev) => !prev)}
+							>
+								{isFullscreen ? (
+									<Minimize2 className="size-4" />
+								) : (
+									<Maximize2 className="size-4" />
+								)}
+							</Button>
+						</TooltipTrigger>
+						<TooltipContent
+							sideOffset={4}
+							className="max-w-xs break-words"
+						>
+							{isFullscreen ? "Exit full screen" : "Full screen"}
+						</TooltipContent>
+					</Tooltip>
+					<Tooltip disableHoverableContent={false}>
+						<TooltipTrigger asChild>
+							<Button
+								aria-label={
+									isPanelOpen
+										? "Hide details panel"
+										: "Show details panel"
+								}
+								variant="outline"
+								size="icon-sm"
+								className="bg-card/95 shadow-sm backdrop-blur"
+								onClick={() => setIsPanelOpen((prev) => !prev)}
+							>
+								{isPanelOpen ? (
+									<PanelRightClose className="size-4" />
+								) : (
+									<PanelRightOpen className="size-4" />
+								)}
+							</Button>
+						</TooltipTrigger>
+						<TooltipContent
+							sideOffset={4}
+							className="max-w-xs break-words"
+						>
+							{isPanelOpen
 								? "Hide details panel"
-								: "Show details panel"
-						}
-						onClick={() => setIsPanelOpen((prev) => !prev)}
-					>
-						{isPanelOpen ? (
-							<PanelRightClose className="size-4" />
-						) : (
-							<PanelRightOpen className="size-4" />
-						)}
-					</Button>
+								: "Show details panel"}
+						</TooltipContent>
+					</Tooltip>
 				</div>
 			</div>
 			{isPanelOpen && (

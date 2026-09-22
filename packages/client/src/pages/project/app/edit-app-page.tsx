@@ -2,6 +2,7 @@ import { Navigate } from "react-router";
 import { InsightProvider } from "@semoss/sdk/react";
 import { ProjectNavbar, ProjectShareButton } from "@/components/project";
 import {
+	BLOCKS_WORKBENCH_COMPONENTS,
 	CODE_WORKBENCH_COMPONENTS,
 	CodeWorkbench,
 } from "@/components/workbench";
@@ -11,9 +12,10 @@ import { usePage, useProject } from "@/hooks";
 import { ProjectDependencyWarning } from "./project-dependency-warning";
 
 /**
- * Editable surface for the `/app` catalog. CODE projects render on the
- * workbench shell; BLOCKS and INSIGHT projects share this route and still
- * render on the legacy workspace shell.
+ * Editable surface for the `/app` catalog. CODE and BLOCKS projects each
+ * render on the workbench shell with their own panel set; BLOCKS goes through
+ * `Workspace`, which binds the project's insight and owns the store its panels
+ * read.
  */
 export const EditAppPage = () => {
 	const { project, permission, catalog, type } = useProject();
@@ -28,13 +30,16 @@ export const EditAppPage = () => {
 		);
 	}
 
-	// BLOCKS/INSIGHT have not been migrated to the workbench yet — `Workspace`
-	// creates the WorkspaceStore and dispatches on the project type.
+	// A plain InsightProvider, unlike CODE below: `Workspace` binds the
+	// project with its own `SetContext` call before building the store, and
+	// the blocks state is loaded through that same insight.
 	if (type !== "CODE") {
 		return (
 			<div className="absolute inset-0">
 				<InsightProvider>
-					<Workspace />
+					<WorkbenchProvider components={BLOCKS_WORKBENCH_COMPONENTS}>
+						<Workspace />
+					</WorkbenchProvider>
 				</InsightProvider>
 			</div>
 		);

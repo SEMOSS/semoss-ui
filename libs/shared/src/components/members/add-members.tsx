@@ -298,7 +298,9 @@ export const AddMembersOverlay = ({
 		>
 			<DialogContent className="flex max-h-[90vh] w-full max-w-2xl flex-col gap-4 overflow-hidden">
 				<DialogHeader>
-					<DialogTitle>{t("dialog.title")}</DialogTitle>
+					<DialogTitle className="font-medium text-base leading-6">
+						{t("dialog.title")}
+					</DialogTitle>
 					<DialogDescription>
 						{t("dialog.description")}
 					</DialogDescription>

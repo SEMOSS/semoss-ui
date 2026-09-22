@@ -17,6 +17,9 @@ import {
 	SelectItem,
 	SelectTrigger,
 	SelectValue,
+	Tooltip,
+	TooltipContent,
+	TooltipTrigger,
 } from "@semoss/ui/next";
 
 interface SortOption {
@@ -124,53 +127,97 @@ export const CatalogSearchBar = ({
 					</Select>
 				</div>
 				<div className="flex shrink-0 items-center gap-1">
-					<Button
-						variant={sortOrder === "ASC" ? "default" : "outline"}
-						size="icon-sm"
-						className="h-9 w-9"
-						title="Ascending Order"
-						aria-label="Ascending Order"
-						onClick={() => onSortChange(sortValue, "ASC")}
-					>
-						<ArrowUp className="size-4" />
-					</Button>
-					<Button
-						variant={sortOrder === "DESC" ? "default" : "outline"}
-						size="icon-sm"
-						className="h-9 w-9"
-						title="Descending Order"
-						aria-label="Descending Order"
-						onClick={() => onSortChange(sortValue, "DESC")}
-					>
-						<ArrowDown className="size-4" />
-					</Button>
+					<Tooltip disableHoverableContent={false}>
+						<TooltipTrigger asChild>
+							<Button
+								variant={
+									sortOrder === "ASC" ? "default" : "outline"
+								}
+								size="icon-sm"
+								className="h-9 w-9"
+								aria-label="Ascending Order"
+								onClick={() => onSortChange(sortValue, "ASC")}
+							>
+								<ArrowUp className="size-4" />
+							</Button>
+						</TooltipTrigger>
+						<TooltipContent
+							sideOffset={4}
+							className="max-w-xs break-words"
+						>
+							{"Ascending Order"}
+						</TooltipContent>
+					</Tooltip>
+					<Tooltip disableHoverableContent={false}>
+						<TooltipTrigger asChild>
+							<Button
+								variant={
+									sortOrder === "DESC" ? "default" : "outline"
+								}
+								size="icon-sm"
+								className="h-9 w-9"
+								aria-label="Descending Order"
+								onClick={() => onSortChange(sortValue, "DESC")}
+							>
+								<ArrowDown className="size-4" />
+							</Button>
+						</TooltipTrigger>
+						<TooltipContent
+							sideOffset={4}
+							className="max-w-xs break-words"
+						>
+							{"Descending Order"}
+						</TooltipContent>
+					</Tooltip>
 				</div>
 				{showGridStyle && (
 					<div className="flex shrink-0 items-center gap-1">
-						<Button
-							variant={
-								gridStyle === "LIST" ? "secondary" : "outline"
-							}
-							size="icon-sm"
-							className="h-9 w-9"
-							aria-label="List view"
-							title="List view"
-							onClick={() => onGridStyleChange("LIST")}
-						>
-							<List className="size-4" />
-						</Button>
-						<Button
-							variant={
-								gridStyle === "CARD" ? "secondary" : "outline"
-							}
-							size="icon-sm"
-							className="h-9 w-9"
-							aria-label="Grid view"
-							title="Grid view"
-							onClick={() => onGridStyleChange("CARD")}
-						>
-							<LayoutGrid className="size-4" />
-						</Button>
+						<Tooltip disableHoverableContent={false}>
+							<TooltipTrigger asChild>
+								<Button
+									variant={
+										gridStyle === "LIST"
+											? "secondary"
+											: "outline"
+									}
+									size="icon-sm"
+									className="h-9 w-9"
+									aria-label="List view"
+									onClick={() => onGridStyleChange("LIST")}
+								>
+									<List className="size-4" />
+								</Button>
+							</TooltipTrigger>
+							<TooltipContent
+								sideOffset={4}
+								className="max-w-xs break-words"
+							>
+								{"List view"}
+							</TooltipContent>
+						</Tooltip>
+						<Tooltip disableHoverableContent={false}>
+							<TooltipTrigger asChild>
+								<Button
+									variant={
+										gridStyle === "CARD"
+											? "secondary"
+											: "outline"
+									}
+									size="icon-sm"
+									className="h-9 w-9"
+									aria-label="Grid view"
+									onClick={() => onGridStyleChange("CARD")}
+								>
+									<LayoutGrid className="size-4" />
+								</Button>
+							</TooltipTrigger>
+							<TooltipContent
+								sideOffset={4}
+								className="max-w-xs break-words"
+							>
+								{"Grid view"}
+							</TooltipContent>
+						</Tooltip>
 					</div>
 				)}
 			</div>

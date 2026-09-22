@@ -1,4 +1,4 @@
-import { Copy, ExternalLink, X } from "lucide-react";
+import { Copy, ExternalLink } from "lucide-react";
 import { useState } from "react";
 import {
 	Button,
@@ -269,21 +269,15 @@ export const config: BlockSettingsConfig = {
 									open={open}
 									onOpenChange={(o) => setOpen(o)}
 								>
-									<DialogContent className="max-w-4xl">
+									<DialogContent
+										aria-describedby={undefined}
+										className="max-w-4xl"
+									>
 										<DialogHeader>
 											<div className="flex flex-row items-center justify-between">
-												<DialogTitle>
+												<DialogTitle className="font-medium text-base leading-6">
 													Edit Theme
 												</DialogTitle>
-												<Button
-													variant="ghost"
-													size="icon-sm"
-													onClick={() =>
-														setOpen(false)
-													}
-												>
-													<X className="size-4" />
-												</Button>
 											</div>
 										</DialogHeader>
 										<Separator />
