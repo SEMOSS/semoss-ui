@@ -15,6 +15,7 @@ function toAgentDraft(agent: Agent, skillIds?: string[]): AgentDraft {
 		name: agent.name,
 		description: agent.role,
 		systemPrompt: agent.instructions,
+		mcp: agent.mcp,
 		skillIds: skillIds ?? agent.skillIds,
 		subagents: agent.members.map((workspaceId) => ({ workspaceId })),
 		// Depth 0 disables all delegation; depth 1 allows only the lead to spawn.

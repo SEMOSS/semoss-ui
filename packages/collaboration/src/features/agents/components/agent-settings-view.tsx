@@ -1,12 +1,4 @@
-import {
-	ArrowLeft,
-	Clock3,
-	FileText,
-	Save,
-	Settings2,
-	Users,
-	Zap,
-} from "lucide-react";
+import { ArrowLeft, Clock3, Save, Settings2, Users, Zap } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import {
 	Alert,
@@ -24,11 +16,11 @@ import {
 	deleteAgentImage,
 	uploadAgentImage,
 } from "@/features/agents/api/agent-image";
+import { mcpConfigSchema } from "@/features/agents/api/agent-schemas";
 import { CapabilitiesSettingsView } from "@/features/agents/components/capabilities-settings-view";
 import { ProfileSettingsView } from "@/features/agents/components/profile-settings-view";
 import { StartsWorkSettingsView } from "@/features/agents/components/starts-work-settings-view";
 import { TeamSettingsView } from "@/features/agents/components/team-settings-view";
-import { WorkspaceSettingsView } from "@/features/agents/components/workspace-settings-view";
 import { toError } from "@/lib/pixel";
 import type { Agent } from "@/types/agent";
 import type { Origin } from "@/types/origin";
@@ -59,6 +51,7 @@ const agentSettingsSchema = z.object({
 	instructions: z.string().max(8000),
 	skills: z.array(z.string()),
 	skillIds: z.array(z.string()),
+	mcp: z.array(mcpConfigSchema),
 	databases: z.array(z.string()),
 	dataProducts: z.array(z.string()),
 	members: z.array(z.string()),
@@ -103,6 +96,7 @@ export function AgentSettings({
 			...agent,
 			avatar: agent.avatar ?? "",
 			skillIds: agent.skillIds ?? [],
+			mcp: agent.mcp ?? [],
 		}),
 	});
 	const draft = form.watch();
@@ -251,7 +245,6 @@ export function AgentSettings({
 		{ name: "Profile", icon: Settings2 },
 		{ name: "Capabilities", icon: Zap },
 		{ name: "Starts work when", icon: Clock3 },
-		{ name: "Workspace", icon: FileText },
 		{ name: "Team", icon: Users },
 	];
 
@@ -400,6 +393,7 @@ export function AgentSettings({
 						{tab === "Capabilities" && (
 							<CapabilitiesSettingsView
 								agent={draft}
+								disabled={isSubmitting}
 								skillOptions={skillOptions}
 								isLoadingSkills={isLoadingSkills}
 								skillsError={skillsError}
@@ -439,12 +433,6 @@ export function AgentSettings({
 									setAddingRule(true);
 								}}
 								onCancelRule={() => setAddingRule(false)}
-								onUpdate={update}
-							/>
-						)}
-						{tab === "Workspace" && (
-							<WorkspaceSettingsView
-								agent={draft}
 								onUpdate={update}
 							/>
 						)}

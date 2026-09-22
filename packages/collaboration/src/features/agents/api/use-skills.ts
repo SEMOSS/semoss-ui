@@ -1,7 +1,11 @@
 import { useMemo } from "react";
 import { usePixel } from "@semoss/sdk/react";
 import { pixel } from "@/lib/pixel";
-import { type SkillOption, skillProjectListSchema } from "./list-skills";
+import {
+	type SkillOption,
+	skillProjectListSchema,
+	toSkillOption,
+} from "./list-skills";
 
 interface SkillsQuery {
 	/** Validated, attachable skill projects. */
@@ -29,10 +33,7 @@ export function useSkills(): SkillsQuery {
 			};
 		}
 		return {
-			skills: result.data.map((row) => ({
-				id: row.project_id,
-				name: row.project_name,
-			})),
+			skills: result.data.map(toSkillOption),
 			error: null,
 		};
 	}, [data, status]);

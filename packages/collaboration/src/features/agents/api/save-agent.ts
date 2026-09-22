@@ -1,3 +1,4 @@
+import type { MCPConfig } from "@semoss/shared";
 import { z } from "@semoss/ui/next";
 import { callPixel, type InsightActions, PixelError, pixel } from "@/lib/pixel";
 import { getAgent } from "./get-agent";
@@ -28,6 +29,8 @@ export interface AgentDraft {
 	maxSubagentsPerRun?: number;
 	/** Skill ids the agent should end up with. Omit to keep the current set. */
 	skillIds?: string[];
+	/** Knowledge and toolboxes. Omit to preserve them; an empty list clears them. */
+	mcp?: Pick<MCPConfig, "type" | "id">[];
 	/** Workspace ids of the agents available for delegation. An empty list clears them. */
 	subagents?: { workspaceId: string }[];
 }
@@ -74,6 +77,7 @@ export async function createAgent(
 			name: draft.name,
 			description: draft.description,
 			systemPrompt: draft.systemPrompt,
+			mcp: draft.mcp?.map(({ type, id }) => ({ type, id })),
 			skills: draft.skillIds,
 			useDefaultAgentTools: draft.useDefaultAgentTools,
 		}),
@@ -129,7 +133,7 @@ export async function updateAgent(
 		description: draft.description ?? current.description,
 		systemPrompt: draft.systemPrompt ?? current.system_prompt,
 		// Re-sent in full because the reactor deletes and re-inserts resources.
-		mcp: current.mcp.map((entry) => ({ type: entry.type, id: entry.id })),
+		mcp: (draft.mcp ?? current.mcp).map(({ type, id }) => ({ type, id })),
 		skills: draft.skillIds ?? current.skills.map((skill) => skill.id),
 		prompts: current.prompts.map((prompt) => prompt.id),
 		useDefaultAgentTools: draft.useDefaultAgentTools,

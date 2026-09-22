@@ -104,6 +104,34 @@ describe("useSaveAgent", () => {
 		expect(run.mock.calls[0][0]).toMatch(/^GetWorkspace/);
 	});
 
+	it("round-trips existing knowledge and toolbox ids without sending display metadata", async () => {
+		const mcp = [
+			{ type: "VECTOR", id: "vector-1", name: "Knowledge" },
+			{ type: "PROJECT", id: "toolbox-1", name: "Toolbox" },
+		] satisfies NonNullable<Agent["mcp"]>;
+		const loaded = agentFromWorkspace({
+			workspace_id: "workspace-1",
+			name: agent.name,
+			description: agent.role,
+			system_prompt: agent.instructions,
+			mcp,
+			skills: [],
+			prompts: [],
+		});
+		expect(loaded.mcp).toEqual(mcp);
+		const { actions, run } = createActions();
+		const { result } = renderHook(() =>
+			useSaveAgent({ actions, agents: [], onSaved: vi.fn() }),
+		);
+		await act(async () => {
+			await result.current(loaded, [], "workspace-1");
+		});
+		expect(run.mock.lastCall?.[0]).toContain(
+			'mcp=[{"type":"VECTOR","id":"vector-1"},{"type":"PROJECT","id":"toolbox-1"}]',
+		);
+		expect(run.mock.lastCall?.[0]).not.toContain('"name":"Knowledge"');
+	});
+
 	it.each([
 		{ depth: 0, spawn: false, expectedDepth: 0 },
 		{ depth: 3, spawn: false, expectedDepth: 1 },

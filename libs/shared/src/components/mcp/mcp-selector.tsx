@@ -251,6 +251,7 @@ export const MCPSelector: React.FC<MCPSelectorProps> = ({
 					<InputGroup className="bg-background">
 						<InputGroupInput
 							autoFocus={autoFocus}
+							aria-label={t("selector.search")}
 							placeholder={t("selector.search")}
 							value={search}
 							disabled={disabled}
@@ -285,7 +286,7 @@ export const MCPSelector: React.FC<MCPSelectorProps> = ({
 
 			<ScrollArea
 				className="min-h-0 w-full flex-1"
-				viewportRef={(e) => setScroll(e)}
+				viewportRef={setScroll}
 			>
 				{isLoading && combinedData.length === 0 && (
 					<div className="flex h-64 w-full items-center justify-center">

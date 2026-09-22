@@ -33,6 +33,7 @@ export function AgentSettingsPage() {
 			"Be clear, concise, and ask before taking external actions.",
 		skills: [],
 		skillIds: [],
+		mcp: [],
 		databases: [],
 		dataProducts: [],
 		members: [],
@@ -54,7 +55,11 @@ export function AgentSettingsPage() {
 	const skillsQuery = useSkills();
 	// Keep existing attachments resolvable even when catalog access changes.
 	const skills = [
-		...(loaded?.skills ?? []),
+		...(loaded?.skills ?? []).map(
+			(skill) =>
+				skillsQuery.skills.find((current) => current.id === skill.id) ??
+				skill,
+		),
 		...skillsQuery.skills.filter(
 			(skill) =>
 				!loaded?.skills.some((current) => current.id === skill.id),

@@ -75,6 +75,41 @@ describe("agent workspace mutations", () => {
 		);
 	});
 
+	it("sends selected knowledge and toolboxes on creation and its follow-up edit", async () => {
+		const { actions, run } = actionsReturning(
+			"workspace-1",
+			workspace,
+			true,
+		);
+		await createAgent(actions, {
+			name: "Research agent",
+			mcp: [
+				{ type: "VECTOR", id: "vector-1" },
+				{ type: "PROJECT", id: "toolbox-1" },
+			],
+			maxSubagentDepth: 1,
+		});
+		const resources =
+			'mcp=[{"type":"VECTOR","id":"vector-1"},{"type":"PROJECT","id":"toolbox-1"}]';
+		expect(run.mock.calls[0][0]).toContain(resources);
+		expect(run.mock.calls[2][0]).toContain(resources);
+		expect(run.mock.calls[2][0]).not.toContain("database-1");
+		expect(run.mock.calls[2][0]).toContain(
+			'skills=["skill-1"], prompts=["prompt-1"]',
+		);
+	});
+
+	it("clears knowledge and toolboxes without removing other attachments", async () => {
+		const { actions, run } = actionsReturning(workspace, true);
+		await updateAgent(actions, "workspace-1", {
+			name: "Existing agent",
+			mcp: [],
+		});
+		expect(run.mock.calls[1][0]).toContain(
+			'mcp=[], skills=["skill-1"], prompts=["prompt-1"]',
+		);
+	});
+
 	it("allows explicit clearing of skills, subagents, and instructions", async () => {
 		const { actions, run } = actionsReturning(workspace, true);
 		await updateAgent(actions, "workspace-1", {

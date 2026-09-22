@@ -13,6 +13,13 @@ const MCP_TYPES = [
 	"ROOM",
 ] as const;
 
+/** Editable knowledge and toolbox selections use the same resource types. */
+export const mcpConfigSchema = z.object({
+	id: z.string().min(1),
+	name: z.string(),
+	type: z.enum(MCP_TYPES),
+});
+
 /**
  * `GetWorkspace` builds each entry from an engine or project lookup, so `name`
  * is null when the alias cannot be resolved.

@@ -64,6 +64,7 @@ export function agentFromWorkspace(agent: WorkspaceAgent): ShowcaseAgent {
 		instructions: agent.system_prompt,
 		skills: agent.skills.map((skill) => skill.name),
 		skillIds: agent.skills.map((skill) => skill.id),
+		mcp: agent.mcp.map(({ type, id, name }) => ({ type, id, name })),
 		databases: namesOfType(agent, "DATABASE"),
 		// TODO:: "data products" is approximated by PROJECT-type resources. Confirm the
 		// intended catalog type and narrow this.

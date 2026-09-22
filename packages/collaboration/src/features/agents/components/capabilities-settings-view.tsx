@@ -1,21 +1,19 @@
-import {
-	Alert,
-	AlertDescription,
-	Button,
-	H2,
-	P,
-	Spinner,
-} from "@semoss/ui/next";
-import { SelectionList } from "@/features/agents/components/selection-list";
+import { BookOpen, Sparkles, Wrench } from "lucide-react";
+import { type MCPConfig, splitMcpByType } from "@semoss/shared";
+import { H2, P } from "@semoss/ui/next";
 import type { Agent } from "@/types/agent";
+import { CapabilityPicker } from "./capability-picker";
+import { CapabilitySection } from "./capability-section";
 
 type UpdateAgent = <Key extends keyof Agent>(
 	key: Key,
 	value: Agent[Key],
 ) => void;
 
+/** Summarize the agent's capabilities and browse each catalog only when adding. */
 export function CapabilitiesSettingsView({
 	agent,
+	disabled,
 	skillOptions,
 	isLoadingSkills,
 	skillsError,
@@ -23,91 +21,118 @@ export function CapabilitiesSettingsView({
 	onUpdate,
 }: {
 	agent: Agent;
+	disabled?: boolean;
 	skillOptions: { name: string; detail: string; value: string }[];
 	isLoadingSkills: boolean;
 	skillsError: Error | null;
 	onRetrySkills?: () => void;
 	onUpdate: UpdateAgent;
 }) {
+	const { knowledge, toolbox } = splitMcpByType(agent.mcp ?? []);
+	const skills: MCPConfig[] = (agent.skillIds ?? []).map((id, index) => ({
+		id,
+		name:
+			skillOptions.find((option) => option.value === id)?.name ??
+			agent.skills[index] ??
+			id,
+		type: "PROJECT",
+	}));
+	function updateSkills(values: MCPConfig[]): void {
+		onUpdate(
+			"skillIds",
+			values.map((value) => value.id),
+		);
+		onUpdate(
+			"skills",
+			values.map((value) => value.name),
+		);
+	}
+
 	return (
-		<div className="space-y-7">
-			<div>
+		<div className="space-y-6">
+			<div className="pb-2">
 				<H2 className="font-medium text-base">
 					What {agent.name || "your agent"} can work with
 				</H2>
-				<P className="mt-1 text-muted-foreground">
-					Databases and data products are sample resources. Skills are
-					loaded from your catalog.
+				<P className="mt-1 text-muted-foreground text-sm">
+					Give your agent context, tools, and skills for the work
+					ahead.
 				</P>
 			</div>
-			<SelectionList
-				title="Databases"
-				options={[
-					{
-						name: "Business warehouse",
-						detail: "Sample financial and operational tables · Read only",
-					},
-					{
-						name: "Customer database",
-						detail: "Sample account records · Read only",
-					},
-				]}
-				selected={agent.databases}
-				onChange={(value) => onUpdate("databases", value)}
-			/>
-			<SelectionList
-				title="Data products"
-				options={[
-					{
-						name: "Quarterly performance",
-						detail: "Curated revenue and delivery measures",
-					},
-					{
-						name: "Market signals",
-						detail: "Sector and competitor updates",
-					},
-				]}
-				selected={agent.dataProducts}
-				onChange={(value) => onUpdate("dataProducts", value)}
-			/>
-			{isLoadingSkills && (
-				<Spinner aria-label="Loading available skills" />
-			)}
-			{skillsError && (
-				<Alert variant="destructive">
-					<AlertDescription>
-						Could not load available skills. {skillsError.message}
-					</AlertDescription>
-					{onRetrySkills && (
-						<Button
-							type="button"
-							variant="outline"
-							onClick={onRetrySkills}
-						>
-							Try again
-						</Button>
-					)}
-				</Alert>
-			)}
-			{!isLoadingSkills && !skillsError && skillOptions.length === 0 && (
-				<P className="text-muted-foreground">
-					No skills are available.
-				</P>
-			)}
-			<SelectionList
-				title="Skills"
-				options={skillOptions}
-				selected={agent.skillIds ?? []}
-				onChange={(ids) => {
-					onUpdate("skillIds", ids);
+			<CapabilitySection
+				title="Knowledge"
+				description="Sources your agent can reference."
+				emptyText="No knowledge added yet."
+				icon={BookOpen}
+				items={knowledge}
+				disabled={disabled}
+				onRemove={(id) =>
 					onUpdate(
-						"skills",
-						skillOptions
-							.filter((option) => ids.includes(option.value))
-							.map((option) => option.name),
-					);
-				}}
-			/>
+						"mcp",
+						(agent.mcp ?? []).filter(
+							(resource) => resource.id !== id,
+						),
+					)
+				}
+			>
+				<CapabilityPicker
+					kind="KNOWLEDGE"
+					values={knowledge}
+					disabled={disabled}
+					onChange={(value) =>
+						onUpdate("mcp", [...value, ...toolbox])
+					}
+				/>
+			</CapabilitySection>
+			<CapabilitySection
+				title="Toolboxes"
+				description="Tools your agent can use to take action."
+				emptyText="No toolboxes added yet."
+				icon={Wrench}
+				items={toolbox}
+				disabled={disabled}
+				onRemove={(id) =>
+					onUpdate(
+						"mcp",
+						(agent.mcp ?? []).filter(
+							(resource) => resource.id !== id,
+						),
+					)
+				}
+			>
+				<CapabilityPicker
+					kind="TOOLBOX"
+					values={toolbox}
+					disabled={disabled}
+					onChange={(value) =>
+						onUpdate("mcp", [...knowledge, ...value])
+					}
+				/>
+			</CapabilitySection>
+			<CapabilitySection
+				title="Skills"
+				description="Reusable instructions for familiar tasks."
+				emptyText="No skills added yet."
+				icon={Sparkles}
+				items={skills}
+				disabled={disabled}
+				onRemove={(id) =>
+					updateSkills(skills.filter((skill) => skill.id !== id))
+				}
+			>
+				<CapabilityPicker
+					kind="SKILL"
+					values={skills}
+					disabled={disabled}
+					onChange={updateSkills}
+					skills={{
+						options: skillOptions,
+						isLoading: isLoadingSkills,
+						error: skillsError,
+						refresh: onRetrySkills,
+					}}
+				/>
+			</CapabilitySection>
 		</div>
 	);
 }
