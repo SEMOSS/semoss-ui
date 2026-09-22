@@ -1,5 +1,5 @@
 import { useTranslation } from "@semoss/i18n";
-import { type ImageSegment, splitInlineImages } from "../../utility/image";
+import { type ImageSegment, splitInlineImages } from "@semoss/utility/file";
 
 export interface InlineImageSegmentsProps {
 	/** The raw output or log text, which may contain inline image elements. */

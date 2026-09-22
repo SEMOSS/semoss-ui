@@ -122,7 +122,7 @@ export const GitCommitRow = ({
 						<div className="min-w-0 flex-1">{trigger}</div>
 					)}
 					{onRestore ? (
-						<Tooltip>
+						<Tooltip disableHoverableContent={false}>
 							<TooltipTrigger asChild>
 								<Button
 									type="button"

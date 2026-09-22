@@ -80,11 +80,11 @@ export const ListenerSettings = observer(
 				const notebook = state.getNotebook(a.payload.queryId);
 				if (notebook?.isSuccessful) {
 					return (
-						<span className="inline-block h-2 w-2 rounded-full bg-green-500" />
+						<span className="inline-block h-2 w-2 rounded-full bg-success" />
 					);
 				} else if (notebook?.isError) {
 					return (
-						<span className="inline-block h-2 w-2 rounded-full bg-red-500" />
+						<span className="inline-block h-2 w-2 rounded-full bg-destructive" />
 					);
 				} else {
 					return;
@@ -345,7 +345,10 @@ export const ListenerSettings = observer(
 					</ToggleGroup>
 				</div>
 				<Dialog open={openModal} onOpenChange={(o) => setOpenModal(o)}>
-					<DialogContent className="max-w-sm">
+					<DialogContent
+						aria-describedby={undefined}
+						className="max-w-sm"
+					>
 						<ListenerActionOverlay
 							id={id}
 							type={type}

@@ -3,8 +3,9 @@
 This document provides context for AI coding assistants working with the SEMOSS renderer
 library.
 
-> **Inherits from:** [../../AGENTS.md](../../AGENTS.md) for code style, file-naming, package
-> structure, commit messages, Biome config, and Node/pnpm requirements.
+> **Inherits from:** [root AGENTS.md](../../AGENTS.md). Load the applicable
+> [root skills](../../skills/README.md); the [React standard](../../skills/react-standard.skill.md)
+> owns general implementation, naming, imports, and validation rules.
 
 ## Overview
 
@@ -32,10 +33,11 @@ Primary exports: `RendererEngine` and `Blocks` (the block runtime), `DefaultBloc
 | `pnpm test:ui` | Vitest UI |
 | `pnpm test:coverage` | Coverage report |
 
+Run these commands from `libs/renderer`, or use `pnpm --filter @semoss/renderer <command>`.
+
 ## Structure
 
-Follows the standard `src/` layout from the root AGENTS.md (a library, so no `pages/` or
-router):
+This library retains its package layout (no `pages/` or router):
 
 | Folder / file | Purpose |
 |---------------|---------|
@@ -56,6 +58,7 @@ router):
 - `mermaid` — diagram rendering
 - `echarts-wordcloud` — word-cloud charts (ECharts extension)
 - `dayjs`, `lucide-react`
+- `@semoss/sdk`, `@semoss/shared`, `@semoss/ui` — workspace peer dependencies
 
 ## Design-System Notes
 
@@ -86,8 +89,9 @@ Follow the root [Design System & Styling](../../AGENTS.md#design-system--styling
 ### When Adding a Block or Cell
 
 1. Add it under `components/block-defaults/` or `components/cell-defaults/` following the
-   existing block pattern and root naming rules.
-2. Export it from the relevant barrel and, if public, from `src/index.ts`.
+  existing block pattern and the [React standard](../../skills/react-standard.skill.md).
+2. Export it from `src/index.ts` only if consumers need it publicly, following the skill's
+  [export policy](../../skills/react-standard.skill.md#architecture-and-exports).
 3. Verify the build:
    ```bash
    pnpm --filter @semoss/renderer build

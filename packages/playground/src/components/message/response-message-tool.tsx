@@ -4,7 +4,7 @@ import { useEffect } from "react";
 import { useTranslation } from "@semoss/i18n";
 import { Button, cn, Spinner, useIsMobile } from "@semoss/ui/next";
 import { useLoadingMessage } from "@/hooks";
-import type { ResponseMessageStore, ToolStore } from "@/stores";
+import type { ToolStore } from "@/stores";
 import { isAskExecutionMode } from "@/utility/mcp-utils";
 import { RoomInlineTool } from "../room";
 import { ResponseMessageToolMenu } from "./response-message-tool-menu";
@@ -98,10 +98,7 @@ const getToolState = (
 	}
 };
 
-interface ResponseMessageToolProps {
-	/** Message to render */
-	message: ResponseMessageStore;
-
+export interface ResponseMessageToolProps {
 	/** Tool to render */
 	tool: ToolStore;
 
@@ -109,10 +106,10 @@ interface ResponseMessageToolProps {
 	isLarge?: boolean;
 }
 
-export const ResponseMessageTool: React.FC<ResponseMessageToolProps> = observer(
-	({ message, tool, isLarge }) => {
+export const ResponseMessageTool = observer(
+	({ tool, isLarge }: ResponseMessageToolProps) => {
 		const { t } = useTranslation("tool");
-		const { room } = message;
+		const { room } = tool;
 		const isMobile = useIsMobile();
 
 		const { loadingMessage: toolExecutionMessage } = useLoadingMessage(
@@ -153,6 +150,13 @@ export const ResponseMessageTool: React.FC<ResponseMessageToolProps> = observer(
 
 		// Don't render if hidden
 		if (tool.display === "hidden") {
+			return null;
+		}
+
+		// Set once the call resolves, which is guaranteed by tool.isResolved
+		// above — this only returns null defensively.
+		const message = tool.message;
+		if (!message) {
 			return null;
 		}
 

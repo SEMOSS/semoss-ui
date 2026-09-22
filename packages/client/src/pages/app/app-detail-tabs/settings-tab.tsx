@@ -28,6 +28,7 @@ import {
 } from "@semoss/ui/next";
 import { Java } from "@/assets/img/Java";
 import { useSession, useSettings } from "@/hooks";
+import { AutomationImportExportCard } from "./automation-import-export-card";
 
 interface AppSettingsProps {
 	/** Project details */
@@ -295,6 +296,9 @@ export const SettingsTab = (props: AppSettingsProps) => {
 
 	return (
 		<div className="flex w-full flex-col gap-6">
+			{project.project_type === "AUTOMATION" && (
+				<AutomationImportExportCard project={project} />
+			)}
 			{/* Portals Section */}
 			<Card className="gap-1 p-4">
 				<CardHeader className="px-0">
