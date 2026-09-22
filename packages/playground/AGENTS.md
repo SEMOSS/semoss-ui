@@ -2,23 +2,25 @@
 
 This document provides context for AI coding assistants working with the SEMOSS Playground application.
 
-> **Inherits from:** [../../AGENTS.md](../../AGENTS.md) for code style, file-naming, package
-> structure, commit messages, Biome config, and Node/pnpm requirements.
+> **Inherits from:** [root AGENTS.md](../../AGENTS.md). Load the applicable
+> [root skills](../../skills/README.md), including the [React standard](../../skills/react-standard.skill.md)
+> and [SDK chat skill](../../skills/sdk-chat.skill.md) for room work.
 
 ## Overview
 
-`@semoss/playground` is a development playground application for testing SEMOSS SDK features and components. It's a private package (not published) used for development and experimentation.
+`@semoss/playground` is the SEMOSS chat application. It is private (not published), with
+room, message, workspace, knowledge, and MCP surfaces.
 
 ## Structure & Conventions
 
-Follows the standard `src/` layout and file-naming rules from the root AGENTS.md. As an
-application it uses `contexts/`, `stores/`, `hooks/`, and a `pages/` router tree
-(`router.tsx` / `<name>.routes.tsx` / `<name>.layout.tsx` / `<name>.page.tsx`).
+The existing app uses `components/`, `contexts/`, `stores/`, `hooks/`, and `pages/`.
+Follow the React skill's [architecture policy](../../skills/react-standard.skill.md#architecture-and-exports)
+for new features and imports; existing feature folders are not an implicit migration task.
 
 ## Build System
 
-- **Bundler**: Vite 7
-- **Framework**: React 18 with TypeScript
+- **Bundler**: Vite 8
+- **Framework**: React 19 with TypeScript
 - **Styling**: Tailwind CSS v4
 - **Testing**: Vitest with jsdom
 
@@ -34,6 +36,8 @@ application it uses `contexts/`, `stores/`, `hooks/`, and a `pages/` router tree
 | `pnpm test:ui` | Run tests with Vitest UI |
 | `pnpm test:coverage` | Run tests with coverage report |
 | `pnpm type-check` | TypeScript type checking |
+
+Run these from `packages/playground`, or use `pnpm --filter @semoss/playground <command>`.
 
 ## Environment Variables
 
@@ -58,10 +62,9 @@ VITE_DEFAUlT_MODEL_NAME=""
 
 ### Environment File Precedence
 
-- `.env` - Checked into git, safe defaults
-- `.env.local` - Local overrides (gitignored)
-- `.env.development` - Development-specific
-- `.env.development.local` - Local dev overrides (gitignored)
+Highest to lowest priority for development: existing process environment,
+`.env.development.local`, `.env.development`, `.env.local`, then `.env`.
+Mode-specific files are optional; never edit local override files as part of repository work.
 
 ## Vite Configuration
 
@@ -107,20 +110,55 @@ Coverage reports output to `./coverage/packages/playground/` and include only `s
 
 ```json
 {
+  "@semoss/i18n": "workspace:*",
+  "@semoss/panels": "workspace:*",
   "@semoss/sdk": "workspace:*",
   "@semoss/shared": "workspace:*",
-  "@semoss/ui": "workspace:*"
+  "@semoss/ui": "workspace:*",
+  "@semoss/workbench": "workspace:*"
 }
 ```
 
-Changes to these libraries are immediately reflected in the playground during development.
+Source-only libraries are compiled by the app. Built libraries need their build/watch
+process running; use the root `pnpm dev:playground` command for dependency orchestration.
+
+## The room sidebar
+
+The right-hand panel is a `@semoss/workbench` dock. These details are not obvious from the
+code and are easy to undo by accident:
+
+- **The dock store belongs to `RoomStore`, not to `<Workbench>`.** Tools open panels from outside
+  React and while the sidebar is closed, and the arrangement has to survive closing it — which
+  unmounts the shell. `RoomStore` builds the store and restores its arrangement in its
+  constructor; `<WorkbenchProvider store={room.workbench}>` only hands it down.
+- **Blueprints are handed to `RoomStore`, not registered later.** They reach into `@/components`,
+  which imports `@/stores`, so the store cannot import them without closing a module cycle. The
+  composition root passes them instead: `MainLayout` → `ChatStore` → `RoomStore`, plus the two
+  places that build a room directly (`new-room-page`, the new-file-explorer menu item). They have
+  to be in place before the first `openSidebarPanel`, which for a streaming tool is long before
+  anything mounts — without them the dock falls back to a shallow compare of config, and since a
+  file panel's `mode` is a fresh object per call, every open would spawn another tab.
+- **`RoomSidebar` always starts from `ROOM_SIDEBAR_LAYOUT`.** The sidebar arrangement is owned by
+  the room instance and is not persisted between room sessions. Panels opened while the sidebar
+  is closed remain in that room's workbench store until the sidebar mounts.
+- **A restored file panel is re-pointed at the room's live insight.** A room binds to a fresh
+  insight on every load, and a file panel's `mode.insightId` is what its reads and saves run
+  against. `_syncSidebarFileMode` rewrites them once, before anything mounts.
+- **Close and maximize live in the sidebar's own header**, because they act on the container. The
+  only genuinely per-panel control — "open inline" — is registered by the tool panel with
+  `useWorkbenchControl`.
+- **The layout is not cached.** Each new `RoomStore` starts with the empty default arrangement,
+  so switching rooms cannot bleed panel state between room instances.
+
+Panel ids and the sidebar's default layout live in `stores/room/room-sidebar.ts`; the blueprints
+live in `components/room/panels/`. Changing a panel type string affects only the current room
+instance.
 
 ## Design-System Notes
 
 Follow the root [Design System & Styling](../../AGENTS.md#design-system--styling) rules and
-[DESIGN.md](../../DESIGN.md). The playground is an operational chat application, not a looser
-visual sandbox: new user-facing UI uses `@semoss/ui/next`, semantic tokens, the standard state
-set, and the responsive/accessibility definition of done.
+[DESIGN.md](../../DESIGN.md). The playground is an operational chat application, not a
+visual sandbox; use the [root skills](../../skills/README.md) for UI behavior and validation.
 
 ## Agent Guardrails
 
@@ -138,10 +176,8 @@ set, and the responsive/accessibility definition of done.
 
 ### When Adding Features
 
-1. Use workspace dependencies (`@semoss/sdk`, `@semoss/ui`, `@semoss/shared`)
-2. Add tests for new components in `__tests__/` or `*.test.tsx`
-3. Use the `@/` alias for imports within the package
-4. Follow existing patterns for page/component structure
+Follow the [React standard](../../skills/react-standard.skill.md) for new-feature layout,
+direct internal imports, state ownership, and tests. Preserve the room sidebar contracts above.
 
 ### Testing Changes
 

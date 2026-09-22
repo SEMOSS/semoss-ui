@@ -11,6 +11,7 @@ import {
 	Collapsible,
 	CollapsibleContent,
 	CollapsibleTrigger,
+	DialogTitle,
 	Field,
 	FieldDescription,
 	FieldLabel,
@@ -535,9 +536,9 @@ export const VectorForm = ({
 					case "file-upload":
 						return (
 							<div className="flex flex-col gap-2">
-								<P data-testid="vector-zip-upload-title">
+								<DialogTitle data-testid="vector-zip-upload-title">
 									{val.label}
-								</P>
+								</DialogTitle>
 								{/* Custom file upload - will need to replace FileDropzone */}
 								<div
 									className="flex min-h-[100px] cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-input border-dashed bg-secondary p-4 transition-colors hover:border-primary hover:bg-accent"

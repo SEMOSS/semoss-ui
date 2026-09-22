@@ -64,34 +64,43 @@ export const EngineExportButton: React.FC = () => {
 
 	return (
 		<>
-			<Tooltip>
+			<Tooltip disableHoverableContent={false}>
 				<TooltipTrigger asChild>
-					<Button
-						disabled={isExporting}
-						variant="outline"
-						size="icon"
-						aria-label="Export"
-						data-testid={formatToDataTestId(
-							`engineHeader-${catalog.name}-export-btn`,
-						)}
-						onClick={() => {
-							const engineType = engine.engine_subtype;
-							if (engineType === "H2_DB") {
-								setOpenExportModal(true);
-							} else {
-								exportEngine(false);
-							}
-						}}
+					<span
+						className="inline-flex"
+						tabIndex={isExporting ? 0 : undefined}
 					>
-						{isExporting ? <Spinner /> : <DownloadIcon />}
-					</Button>
+						<Button
+							disabled={isExporting}
+							variant="outline"
+							size="icon"
+							aria-label="Export"
+							data-testid={formatToDataTestId(
+								`engineHeader-${catalog.name}-export-btn`,
+							)}
+							onClick={() => {
+								const engineType = engine.engine_subtype;
+								if (engineType === "H2_DB") {
+									setOpenExportModal(true);
+								} else {
+									exportEngine(false);
+								}
+							}}
+						>
+							{isExporting ? <Spinner /> : <DownloadIcon />}
+						</Button>
+					</span>
 				</TooltipTrigger>
-				<TooltipContent>Export</TooltipContent>
+				<TooltipContent>
+					{isExporting ? "Exporting results…" : "Export"}
+				</TooltipContent>
 			</Tooltip>
 			<Dialog open={openExportModal} onOpenChange={setOpenExportModal}>
 				<DialogContent>
 					<DialogHeader>
-						<DialogTitle>Export {catalog.name}</DialogTitle>
+						<DialogTitle className="font-medium text-base leading-6">
+							Export {catalog.name}
+						</DialogTitle>
 						<DialogDescription>
 							Do you want to export data along with the engine?
 						</DialogDescription>

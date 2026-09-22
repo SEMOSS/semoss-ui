@@ -10,7 +10,10 @@ import {
 	BreadcrumbSeparator,
 } from "@semoss/ui/next";
 import { NavbarHeader, NavbarLeft } from "@/components/shared";
-import { ModelWorkbench } from "@/components/workbench";
+import {
+	MODEL_WORKBENCH_COMPONENTS,
+	ModelWorkbench,
+} from "@/components/workbench";
 import { WorkbenchProvider } from "@/contexts";
 import { useEngine } from "@/hooks";
 
@@ -23,13 +26,7 @@ export const ModelWorkbenchPage = () => {
 
 	return (
 		<InsightProvider>
-			<WorkbenchProvider
-				cacheKey={
-					permission === "OWNER" || permission === "EDIT"
-						? engine.engine_id
-						: `${engine.engine_id}--read-only`
-				}
-			>
+			<WorkbenchProvider components={MODEL_WORKBENCH_COMPONENTS}>
 				<NavbarLeft>
 					<NavbarHeader logo={null} />
 					<Breadcrumb>

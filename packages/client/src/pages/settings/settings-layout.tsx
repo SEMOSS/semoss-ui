@@ -35,6 +35,9 @@ import {
 	DropdownMenuTrigger,
 	P,
 	Spinner,
+	Tooltip,
+	TooltipContent,
+	TooltipTrigger,
 	toast,
 } from "@semoss/ui/next";
 import { deleteTeam, getGroupDetails } from "@/api";
@@ -42,6 +45,10 @@ import { PrivacyPreferenceCenterModal } from "@/components/cookies/privacy-prefe
 import { AddTeamModal, TeamDeleteDialog } from "@/components/teams";
 import { SettingsContext } from "@/contexts";
 import { useAPI, useConfig, useSession } from "@/hooks";
+import {
+	ADMIN_MODE_STORAGE_KEY,
+	getStoredAdminMode,
+} from "@/hooks/useAdminMode";
 import { useNavigate } from "@/hooks/useNavigate";
 import { NavbarHeader, NavbarLeft } from "../../components/shared";
 import { SETTINGS_ROUTES } from "./settings.constants";
@@ -65,14 +72,6 @@ export const SettingsLayout = () => {
 	const { pathname, search } = useLocation();
 	const navigate = useNavigate();
 	const [privacyCenterOpen, setPrivacyCenterOpen] = useState(false);
-
-	const ADMIN_MODE_STORAGE_KEY = "semoss.adminMode";
-	const getStoredAdminMode = () => {
-		if (typeof window === "undefined") {
-			return false;
-		}
-		return window.localStorage.getItem(ADMIN_MODE_STORAGE_KEY) === "true";
-	};
 
 	// track the active breadcrumbs
 	const [adminMode, setAdminMode] = useState(getStoredAdminMode);
@@ -107,7 +106,7 @@ export const SettingsLayout = () => {
 	}, [matchedRoute, search]);
 
 	const hasPrivacyCenterThemeContent = useMemo(() => {
-		const theme = themeConfig as Record<string, unknown>;
+		const theme = themeConfig as unknown as Record<string, unknown>;
 		const order = Array.isArray(theme.cookiePolicyOrderReact)
 			? theme.cookiePolicyOrderReact
 			: [];
@@ -243,6 +242,9 @@ export const SettingsLayout = () => {
 			}
 			if (projectType === "NOTEBOOK") {
 				return `/notebook/${id}/edit`;
+			}
+			if (projectType === "AUTOMATION") {
+				return `/automation/${id}/edit`;
 			}
 			return `/app/${id}`;
 		}
@@ -625,15 +627,31 @@ export const SettingsLayout = () => {
 									<P>{descriptionText}</P>
 									{teamId && teamType ? (
 										<DropdownMenu>
-											<DropdownMenuTrigger asChild>
-												<Button
-													variant="ghost"
-													size="icon-sm"
-													aria-label="Team actions"
+											<Tooltip
+												disableHoverableContent={false}
+											>
+												<TooltipTrigger asChild>
+													<DropdownMenuTrigger
+														asChild
+													>
+														<Button
+															variant="ghost"
+															size="icon-sm"
+															aria-label={
+																"Team actions"
+															}
+														>
+															<MoreVertical className="size-4" />
+														</Button>
+													</DropdownMenuTrigger>
+												</TooltipTrigger>
+												<TooltipContent
+													sideOffset={4}
+													className="max-w-xs break-words"
 												>
-													<MoreVertical className="size-4" />
-												</Button>
-											</DropdownMenuTrigger>
+													{"Team actions"}
+												</TooltipContent>
+											</Tooltip>
 											<DropdownMenuContent align="end">
 												<DropdownMenuItem
 													onClick={() =>

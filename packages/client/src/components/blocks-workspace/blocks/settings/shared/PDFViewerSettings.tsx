@@ -216,7 +216,7 @@ export const PDFViewerSettings = observer(
 								className="flex items-center gap-2"
 							>
 								<span>{key}</span>
-								<Tooltip>
+								<Tooltip disableHoverableContent={false}>
 									<TooltipTrigger asChild>
 										<Info className="size-4 cursor-pointer" />
 									</TooltipTrigger>

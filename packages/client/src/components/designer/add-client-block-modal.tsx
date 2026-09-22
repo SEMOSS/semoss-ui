@@ -343,10 +343,13 @@ export const AddClientBlockModal = (props: EditDetailsModalProps) => {
 				open={isOpen && !showPreviewModal}
 				onOpenChange={(open) => !open && handleCloseModals()}
 			>
-				<DialogContent showCloseButton={false}>
+				<DialogContent
+					aria-describedby={undefined}
+					showCloseButton={false}
+				>
 					<DialogHeader>
 						<div className="flex items-center justify-between">
-							<DialogTitle>
+							<DialogTitle className="font-medium text-base leading-6">
 								{isEdit ? "Edit Block" : "Add Block"}
 							</DialogTitle>
 							<button
@@ -468,7 +471,7 @@ export const AddClientBlockModal = (props: EditDetailsModalProps) => {
 						/>
 						{!isEdit && (
 							<TooltipProvider>
-								<Tooltip>
+								<Tooltip disableHoverableContent={false}>
 									<TooltipTrigger asChild>
 										<button
 											type="button"
@@ -508,7 +511,10 @@ export const AddClientBlockModal = (props: EditDetailsModalProps) => {
 				open={showPreviewModal}
 				onOpenChange={(open) => !open && handleArrowBack()}
 			>
-				<DialogContent showCloseButton={false}>
+				<DialogContent
+					aria-describedby={undefined}
+					showCloseButton={false}
+				>
 					<DialogHeader>
 						<div className="flex items-center justify-between">
 							<button
@@ -518,7 +524,9 @@ export const AddClientBlockModal = (props: EditDetailsModalProps) => {
 							>
 								<ArrowLeft className="size-4" />
 							</button>
-							<DialogTitle>Add Block</DialogTitle>
+							<DialogTitle className="font-medium text-base leading-6">
+								Add Block
+							</DialogTitle>
 							<button
 								type="button"
 								className="flex size-8 items-center justify-center rounded hover:bg-accent"
@@ -532,7 +540,7 @@ export const AddClientBlockModal = (props: EditDetailsModalProps) => {
 					<div className="flex flex-col gap-4 pt-2">
 						{imagePreview && (
 							<TooltipProvider>
-								<Tooltip>
+								<Tooltip disableHoverableContent={false}>
 									<TooltipTrigger asChild>
 										<img
 											src={imagePreview}

@@ -15,6 +15,8 @@ import {
 	Button,
 	Dialog,
 	DialogContent,
+	DialogTitle,
+	H3,
 	H4,
 	InputGroup,
 	InputGroupAddon,
@@ -75,6 +77,7 @@ import { ModelImportDetailsPage } from "./model-import-details-page";
 const MODEL_PROVIDER_SUBTYPE_BY_NAME: Record<string, string> = {
 	OpenAI: "OPEN_AI",
 	"Google Gemini": "VERTEX",
+	Jev: "TYPESAFE",
 	"Azure OpenAI": "AZURE_OPEN_AI",
 	Anthropic: "CLAUDE",
 	"AWS Bedrock": "BEDROCK",
@@ -105,16 +108,16 @@ const ProviderIcon: React.FC<{ provider: string }> = ({ provider }) => {
 			<EngineSubtypeIcon
 				engineType="MODEL"
 				engineSubtype={subtype}
-				alt={`${provider} logo`}
-				className="size-5 rounded-[4px] object-contain"
+				alt=""
+				className="size-5 rounded-sm object-contain"
 			/>
 		);
 	}
 
 	return (
 		<div
-			className="flex size-5 shrink-0 items-center justify-center rounded-[4px] font-semibold text-[10px] text-white"
-			style={{ backgroundColor: "var(--muted-foreground)" }}
+			aria-hidden="true"
+			className="flex size-5 shrink-0 items-center justify-center rounded-sm bg-muted font-medium text-muted-foreground text-xs"
 		>
 			{getInitials(provider)}
 		</div>
@@ -410,7 +413,7 @@ export const getStaticModelMetadataLookup = (
 ): StaticModelMetadataLookup | null => {
 	const modelId = model?.name.trim();
 
-	if (!modelId) {
+	if (!modelId || model?.skipCatalogMetadata) {
 		return null;
 	}
 
@@ -877,7 +880,9 @@ export const ModelImportPage: React.FC = () => {
 
 	// only an "other-" card leaves the Model ID to the user, and only then is there
 	// anything to match against the catalog
-	const isTypedModelId = !!selectedModelMetadata?.name.startsWith("other-");
+	const isTypedModelId =
+		!!selectedModelMetadata?.name.startsWith("other-") &&
+		!selectedModelMetadata.skipCatalogMetadata;
 
 	// Start over whenever the user backs out to a different card - a catalog entry
 	// picked for one model must not carry over to the next.
@@ -1118,6 +1123,7 @@ export const ModelImportPage: React.FC = () => {
 									<SearchIcon className="size-4 text-muted-foreground" />
 								</InputGroupAddon>
 								<InputGroupInput
+									aria-label="Search models"
 									placeholder="Search"
 									value={search}
 									onChange={(e) => {
@@ -1127,6 +1133,7 @@ export const ModelImportPage: React.FC = () => {
 								/>
 							</InputGroup>
 							<Button
+								aria-label="Upload model ZIP file"
 								size="sm"
 								variant="outline"
 								onClick={() => handleFileUpload(true)}
@@ -1244,18 +1251,18 @@ export const ModelImportPage: React.FC = () => {
 					(p) => p.name === selectedProvider,
 				);
 
-				// selectedModel is the model name from MODEL_VERSIONS; we need to map that to a model_types entry
-				// Find a type entry whose 'model_types' matches the model metadata (embedding vs llm)
+				// Match the selected card to its provider's form schema.
 				let fields: FieldDefinition[] = [];
 				let advanced: FieldDefinition[] = [];
 
 				if (providerDef) {
-					// Try to determine whether the selected model is an embedding or llm by checking MODEL_VERSIONS
-
-					// Default to 'llm' if not found
-					const targetType = selectedModelMetadata?.embedding
-						? "embedding"
-						: "llm";
+					// Evaluation engines have their own schema; older cards retain
+					// the embedding/LLM inference used before explicit model types.
+					const targetType =
+						selectedModelMetadata?.modelType ??
+						(selectedModelMetadata?.embedding
+							? "embedding"
+							: "llm");
 
 					const typeDef = providerDef.types.find((t) =>
 						t.model_types.includes(targetType),
@@ -1432,9 +1439,8 @@ export const ModelImportPage: React.FC = () => {
 								</BreadcrumbSeparator>
 								<BreadcrumbItem>
 									<BreadcrumbPage>
-										{selectedModel
-											? selectedModel.toUpperCase()
-											: `Custom ${selectedProvider} Model`}
+										{selectedModelMetadata?.display ||
+											selectedModel}
 									</BreadcrumbPage>
 								</BreadcrumbItem>
 							</>
@@ -1449,16 +1455,17 @@ export const ModelImportPage: React.FC = () => {
 					onOpenChange={setIsFileUploadModalOpen}
 				>
 					<DialogContent
-						className="w-[calc(100vw-2rem)] max-w-[600px] sm:w-[600px]"
+						aria-describedby={undefined}
+						className="sm:max-w-xl"
 						data-testid="model-zip-upload-modal"
 					>
 						<div className="flex h-full w-full flex-col gap-4">
-							<P
+							<DialogTitle
 								className="text-base"
 								data-testid="model-zip-upload-title"
 							>
 								Zip File
-							</P>
+							</DialogTitle>
 							<div
 								className="flex min-h-[200px] cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-input border-dashed bg-secondary p-6 transition-colors hover:border-primary hover:bg-accent"
 								onClick={() => fileInputRef.current?.click()}
@@ -1535,9 +1542,11 @@ export const ModelImportPage: React.FC = () => {
 							/>
 						</div>
 					)}
-					<H4 data-testid="model-import-title">
-						{selectedModel?.trim() || "Connect to Model Catalog"}
-					</H4>
+					<H3 data-testid="model-import-title">
+						{selectedModelMetadata?.display ||
+							selectedModel?.trim() ||
+							"Connect to Model Catalog"}
+					</H3>
 				</div>
 				<P
 					className="mb-3 text-muted-foreground"
@@ -1545,7 +1554,7 @@ export const ModelImportPage: React.FC = () => {
 				>
 					{selectedModel?.trim()
 						? "Fill out all the model details in order to add the model to the catalog."
-						: "In an era fueled by information, the seamless interlinking of various databases stands as a cornerstone for unlocking the untapped potential of LLM applications. Whether you're a seasoned AI practitioner, a language aficionado, or an industry visionary, this page serves as your guiding star to grasp the spectrum of database options available within the LLM landscape."}
+						: "Choose a provider and model to connect to your catalog, including chat, embedding, and evaluation models."}
 				</P>
 			</div>
 			{view}

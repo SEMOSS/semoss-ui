@@ -1,17 +1,26 @@
-/** Component IDs shared by workbench state, commands, and renderers. */
+import { FILE_PANEL_TYPES } from "@semoss/panels";
+import type { WorkbenchPanelRecord } from "@semoss/workbench";
+
+/**
+ * Component IDs shared by workbench state, commands, and renderers.
+ *
+ * The file panel ids live in `@semoss/panels` and are spread in, so this stays
+ * one complete list of every panel type the client can register. Only three of
+ * the nine are ever read back through `WORKBENCH_COMPONENTS`; hosts register
+ * the panels themselves through `FILE_PANEL_COMPONENTS`.
+ */
 export const WORKBENCH_COMPONENTS = {
+	...FILE_PANEL_TYPES,
 	AGENT_EDITOR: "project-agent-editor",
 	ASSISTANT: "workbench-assistant",
-	FILE_EXPLORER: "file-explorer",
-	FILE_CODE_EDITOR: "file-code-editor",
-	FILE_DOWNLOAD: "file-download",
-	FILE_HTML_EDITOR: "file-html-editor",
-	FILE_IMAGE_VIEWER: "file-image-viewer",
-	FILE_MARKDOWN_EDITOR: "file-markdown-editor",
-	FILE_NOTEBOOK_EDITOR: "file-notebook-editor",
-	FILE_PDF_VIEWER: "file-pdf-viewer",
-	FILE_PPTX_VIEWER: "file-pptx-viewer",
-	FILE_MCP_EDITOR: "file-mcp-editor",
+	BLOCKS_DESIGNER: "blocks-designer",
+	BLOCKS_EXPORT: "blocks-export",
+	BLOCKS_LAYERS: "blocks-layers",
+	BLOCKS_MENU: "blocks-menu",
+	BLOCKS_NOTEBOOK_EXPLORER: "blocks-notebook-explorer",
+	BLOCKS_NOTEBOOK_VIEWER: "blocks-notebook-viewer",
+	BLOCKS_SELECTED: "blocks-selected",
+	BLOCKS_VARIABLES: "blocks-variables",
 	DATABASE_COLUMNS: "database-columns",
 	DATABASE_QUERY: "database-query",
 	DATABASE_RESULTS: "database-results",
@@ -29,3 +38,191 @@ export const WORKBENCH_COMPONENTS = {
 	PROJECT_APP_RENDERER: "project-app-renderer",
 	PROJECT_ENGINES: "project-engines",
 } as const;
+
+/**
+ * Topics panels publish to each other on the workbench event bus.
+ *
+ * The dock never interprets a topic — it only routes — so the names and their
+ * payloads are ours, the same way `WORKBENCH_COMPONENTS` above owns the panel
+ * type strings. Unlike those, these are never persisted, so renaming one only
+ * has to be done on both sides of the same release.
+ */
+export const WORKBENCH_EVENTS = {
+	/**
+	 * The project's frontend was published, so anything showing it is stale.
+	 * Emitted by whoever did the publishing — the assistant's build run, the
+	 * Publish button, or a manual rebuild.
+	 */
+	APP_PUBLISHED: "app:published",
+	/**
+	 * A Git index changed — a file was staged or unstaged. The staged counts
+	 * live in the version panel's control, which is a different panel from the
+	 * diff that does the staging.
+	 */
+	GIT_STATUS_CHANGED: "git:status-changed",
+} as const;
+
+/** What each topic carries. */
+export interface WorkbenchEventPayloads {
+	[WORKBENCH_EVENTS.APP_PUBLISHED]: { projectId: string };
+	[WORKBENCH_EVENTS.GIT_STATUS_CHANGED]: { scope: string };
+}
+
+/**
+ * Shared panel instance records, keyed by role.
+ *
+ * A record is the *instance* a layout seeds (id, name, help text, capability
+ * overrides); `WORKBENCH_COMPONENTS` above names the blueprint it points at.
+ * Both live here so there is one constants file for the workbench, not two
+ * files with the same name in two folders.
+ */
+export const WORKBENCH_PANEL_RECORDS = {
+	AGENT_EDITOR: {
+		id: WORKBENCH_COMPONENTS.AGENT_EDITOR,
+		type: WORKBENCH_COMPONENTS.AGENT_EDITOR,
+		name: "Agent",
+		helpText: "Agent Editor",
+		canClose: false,
+	},
+	ASSISTANT: {
+		id: WORKBENCH_COMPONENTS.ASSISTANT,
+		type: WORKBENCH_COMPONENTS.ASSISTANT,
+		name: "Assistant",
+		helpText: "Assistant",
+		canClose: false,
+		minWidth: 320,
+	},
+	BLOCKS_EXPORT: {
+		id: WORKBENCH_COMPONENTS.BLOCKS_EXPORT,
+		type: WORKBENCH_COMPONENTS.BLOCKS_EXPORT,
+		name: "Export",
+		helpText: "Export Tool",
+		canClose: false,
+	},
+	BLOCKS_LAYERS: {
+		id: WORKBENCH_COMPONENTS.BLOCKS_LAYERS,
+		type: WORKBENCH_COMPONENTS.BLOCKS_LAYERS,
+		name: "Layers",
+		helpText: "Layers",
+		canClose: false,
+	},
+	BLOCKS_MENU: {
+		id: WORKBENCH_COMPONENTS.BLOCKS_MENU,
+		type: WORKBENCH_COMPONENTS.BLOCKS_MENU,
+		name: "Blocks",
+		helpText: "Blocks",
+		canClose: false,
+	},
+	BLOCKS_NOTEBOOK_EXPLORER: {
+		id: WORKBENCH_COMPONENTS.BLOCKS_NOTEBOOK_EXPLORER,
+		type: WORKBENCH_COMPONENTS.BLOCKS_NOTEBOOK_EXPLORER,
+		name: "Notebooks",
+		helpText: "Notebooks",
+		canClose: false,
+	},
+	BLOCKS_SELECTED: {
+		id: WORKBENCH_COMPONENTS.BLOCKS_SELECTED,
+		type: WORKBENCH_COMPONENTS.BLOCKS_SELECTED,
+		name: "Block Settings",
+		helpText: "Block Settings",
+		canClose: false,
+		// Its forms are the widest in the app, so the layout opens it at 450.
+		// This is only the floor on a resize drag, and holding that at the
+		// comfortable width made the panel the one thing on the rail a user
+		// could not narrow.
+		minWidth: 280,
+	},
+	BLOCKS_VARIABLES: {
+		id: WORKBENCH_COMPONENTS.BLOCKS_VARIABLES,
+		type: WORKBENCH_COMPONENTS.BLOCKS_VARIABLES,
+		name: "Variables",
+		helpText: "Variables",
+		canClose: false,
+	},
+	FILE_EXPLORER: {
+		id: WORKBENCH_COMPONENTS.FILE_EXPLORER,
+		type: WORKBENCH_COMPONENTS.FILE_EXPLORER,
+		name: "Files",
+		helpText: "File Explorer",
+		canClose: false,
+	},
+	GIT_VERSION: {
+		id: WORKBENCH_COMPONENTS.GIT_VERSION,
+		type: WORKBENCH_COMPONENTS.GIT_VERSION,
+		name: "Version Control",
+		helpText: "Version Control",
+		canClose: false,
+	},
+	MODEL_CHAT: {
+		id: WORKBENCH_COMPONENTS.MODEL_CHAT,
+		type: WORKBENCH_COMPONENTS.MODEL_CHAT,
+		name: "Chat",
+		helpText: "Chat with this model",
+		canClose: false,
+	},
+	MODEL_CHAT_SETTINGS: {
+		id: WORKBENCH_COMPONENTS.MODEL_CHAT_SETTINGS,
+		type: WORKBENCH_COMPONENTS.MODEL_CHAT_SETTINGS,
+		name: "Model",
+		helpText: "Model settings",
+		canClose: false,
+		minWidth: 300,
+	},
+	MODEL_CHAT_HISTORY: {
+		id: WORKBENCH_COMPONENTS.MODEL_CHAT_HISTORY,
+		type: WORKBENCH_COMPONENTS.MODEL_CHAT_HISTORY,
+		name: "History",
+		helpText: "Conversation history",
+		canClose: false,
+		minWidth: 280,
+	},
+	DATABASE_COLUMNS: {
+		id: WORKBENCH_COMPONENTS.DATABASE_COLUMNS,
+		type: WORKBENCH_COMPONENTS.DATABASE_COLUMNS,
+		name: "Columns",
+		helpText: "Database Structure",
+		canClose: false,
+	},
+	STORAGE_EXPLORER: {
+		id: WORKBENCH_COMPONENTS.STORAGE_EXPLORER,
+		type: WORKBENCH_COMPONENTS.STORAGE_EXPLORER,
+		name: "Storage",
+		helpText: "Storage Explorer",
+		canClose: false,
+	},
+	VECTOR_DOCUMENTS: {
+		id: WORKBENCH_COMPONENTS.VECTOR_DOCUMENTS,
+		type: WORKBENCH_COMPONENTS.VECTOR_DOCUMENTS,
+		name: "Documents",
+		helpText: "Documents",
+		canClose: false,
+	},
+	PROJECT_TERMINAL: {
+		id: WORKBENCH_COMPONENTS.PROJECT_TERMINAL,
+		type: WORKBENCH_COMPONENTS.PROJECT_TERMINAL,
+		name: "Terminal",
+		helpText: "Terminal",
+		canClose: false,
+	},
+	PROJECT_ENGINES: {
+		id: WORKBENCH_COMPONENTS.PROJECT_ENGINES,
+		type: WORKBENCH_COMPONENTS.PROJECT_ENGINES,
+		name: "Engines",
+		helpText: "Available engines",
+		canClose: false,
+	},
+	PROJECT_INSIGHT_EXPLORER: {
+		id: WORKBENCH_COMPONENTS.PROJECT_INSIGHT_EXPLORER,
+		type: WORKBENCH_COMPONENTS.PROJECT_INSIGHT_EXPLORER,
+		name: "Insight",
+		helpText: "Insight File Explorer",
+		canClose: false,
+	},
+	PROJECT_APP_RENDERER: {
+		id: WORKBENCH_COMPONENTS.PROJECT_APP_RENDERER,
+		type: WORKBENCH_COMPONENTS.PROJECT_APP_RENDERER,
+		name: "App",
+		helpText: "App Preview",
+		canClose: false,
+	},
+} as const satisfies Record<string, WorkbenchPanelRecord>;

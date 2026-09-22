@@ -299,14 +299,14 @@ export const createWorkbenchRoom = async (
 	insightId: string,
 ): Promise<string> => {
 	const response = await runPixel<[{ roomId: string }]>(
-		"CreatePlaygroundRoom();",
+		"CreateRoom();",
 		insightId,
 	);
 	assertPixelSuccess(response.errors);
 
 	const roomId = response.pixelReturn[0]?.output.roomId;
 	if (!roomId) {
-		throw new Error("CreatePlaygroundRoom did not return a room ID");
+		throw new Error("CreateRoom did not return a room ID");
 	}
 
 	await setRoomForInsight(insightId, roomId);
@@ -735,10 +735,8 @@ const buildAskRoomParams = (request: AskRoomRequest): string => {
 		`command=[${JSON.stringify(`<encode>${request.command}</encode>`)}]`,
 	];
 
-	// Always emitted, and ahead of parentMessageId, so the call is positionally
-	// identical to the playground's AskPlayground/AskRoom — the only caller
-	// known to attach files successfully. `image=[]` is how it says "none".
-	params.push(`image=${JSON.stringify(request.media ?? [])}`);
+	// AskRoom and AskPlayground read uploaded file paths from `media`.
+	params.push(`media=${JSON.stringify(request.media ?? [])}`);
 
 	if (request.parentMessageId) {
 		params.push(

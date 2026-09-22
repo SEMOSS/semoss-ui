@@ -6,4 +6,5 @@ export * from "./use-loading-message";
 export * from "./use-markdown-typewriter";
 export * from "./use-navbar";
 export * from "./use-root";
+export * from "./use-sidebar-panel-active";
 export * from "./use-tour";
