@@ -5,8 +5,21 @@ import { describe, expect, it } from "vitest";
 import {
 	FILE_PANEL_COMPONENTS,
 	FILE_PANEL_TYPES,
+	getFilePanelType,
 	isFilePanelType,
 } from "../index";
+
+/** One path per file kind, and the panel opening it must land on. */
+const ROUTES: [string, string][] = [
+	["/src/main.py", FILE_PANEL_TYPES.FILE_CODE_EDITOR],
+	["/notes/plan.md", FILE_PANEL_TYPES.FILE_MARKDOWN_EDITOR],
+	["/work/analysis.ipynb", FILE_PANEL_TYPES.FILE_NOTEBOOK_EDITOR],
+	["/assets/logo.png", FILE_PANEL_TYPES.FILE_IMAGE_VIEWER],
+	["/docs/Amtrak RVR to ALX.pdf", FILE_PANEL_TYPES.FILE_PDF_VIEWER],
+	["/docs/deck.pptx", FILE_PANEL_TYPES.FILE_PPTX_VIEWER],
+	["/docs/report.xlsx", FILE_PANEL_TYPES.FILE_DOWNLOAD],
+	["/LICENSE", FILE_PANEL_TYPES.FILE_CODE_EDITOR],
+];
 
 /**
  * `FILE_PANEL_COMPONENTS` is an object literal, so it captures each blueprint's
@@ -40,6 +53,14 @@ describe("FILE_PANEL_COMPONENTS", () => {
 		expect(Object.keys(FILE_PANEL_COMPONENTS).sort()).toEqual(
 			Object.values(FILE_PANEL_TYPES).sort(),
 		);
+	});
+
+	// Opening a file resolves its panel type from the path, through a string,
+	// so nothing type-checks the hop from an extension to a registered
+	// blueprint.
+	it.each(ROUTES)("opens %s in a registered panel", (path, type) => {
+		expect(getFilePanelType(path)).toBe(type);
+		expect(FILE_PANEL_COMPONENTS[type]).toBeDefined();
 	});
 
 	it("agrees with isFilePanelType", () => {

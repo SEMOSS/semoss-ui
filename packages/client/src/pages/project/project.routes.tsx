@@ -362,6 +362,89 @@ export const PROJECT_ROUTES: {
 						path: "edit",
 						element: <AutomationWorkbenchPage />,
 					},
+					{
+						path: "*",
+						element: (
+							<ProjectTabsLayout
+								tabs={[
+									{ name: "Overview", path: "" },
+									{
+										name: "Dependencies",
+										path: "dependencies",
+										restrict: [
+											"OWNER",
+											"EDIT",
+											"READ_ONLY",
+										],
+									},
+									{
+										name: "MCP",
+										path: "mcp-usage",
+										restrict: [
+											"OWNER",
+											"EDIT",
+											"READ_ONLY",
+										],
+									},
+									{
+										name: "GitHub",
+										path: "github",
+										restrict: ["OWNER"],
+									},
+									{
+										name: "Settings",
+										path: "settings",
+										restrict: ["OWNER"],
+									},
+									{
+										name: "Access Control",
+										path: "access-control",
+										restrict: ["OWNER", "EDIT"],
+									},
+									{
+										name: "SMSS",
+										path: "smss",
+										restrict: ["OWNER"],
+									},
+								]}
+							/>
+						),
+						children: [
+							{
+								path: "",
+								element: <ProjectOverviewPage />,
+							},
+							{
+								path: "dependencies",
+								element: <ProjectDependenciesPage />,
+							},
+							{
+								path: "mcp-usage",
+								element: <AppMcpUsagePage />,
+							},
+
+							{
+								path: "github",
+								element: <AppGithubPage />,
+							},
+							{
+								path: "github/select-repo",
+								element: <AppGithubSelectRepoPage />,
+							},
+							{
+								path: "settings",
+								element: <AppSettingsPage />,
+							},
+							{
+								path: "access-control",
+								element: <ProjectAccessControl />,
+							},
+							{
+								path: "smss",
+								element: <AppSmssPage />,
+							},
+						],
+					},
 				],
 			},
 		],

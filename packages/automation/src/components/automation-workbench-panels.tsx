@@ -51,7 +51,6 @@ export const AutomationEditorPanel = () => {
 			ref={context.canvasRef}
 			appId={context.appId}
 			readOnly={context.readOnly}
-			conversionModel={context.conversionModel}
 			onViewAgentRun={context.onAgentRunTrace}
 			externalRunUpdate={context.agentRunAutomationUpdate}
 			onTraceChange={context.onTraceChange}

@@ -34,7 +34,9 @@ export const ColumnMetadataModal: React.FC<ColumnMetadataModalProps> = ({
 		<Dialog open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
 			<DialogContent className="max-h-[85vh] overflow-hidden sm:max-w-xl">
 				<DialogHeader>
-					<DialogTitle>Column Metadata</DialogTitle>
+					<DialogTitle className="font-medium text-base leading-6">
+						Column Metadata
+					</DialogTitle>
 					<DialogDescription>
 						View logical names and description.
 					</DialogDescription>

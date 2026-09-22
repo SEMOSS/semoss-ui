@@ -35,6 +35,9 @@ import {
 	DropdownMenuTrigger,
 	P,
 	Spinner,
+	Tooltip,
+	TooltipContent,
+	TooltipTrigger,
 	toast,
 } from "@semoss/ui/next";
 import { deleteTeam, getGroupDetails } from "@/api";
@@ -624,15 +627,31 @@ export const SettingsLayout = () => {
 									<P>{descriptionText}</P>
 									{teamId && teamType ? (
 										<DropdownMenu>
-											<DropdownMenuTrigger asChild>
-												<Button
-													variant="ghost"
-													size="icon-sm"
-													aria-label="Team actions"
+											<Tooltip
+												disableHoverableContent={false}
+											>
+												<TooltipTrigger asChild>
+													<DropdownMenuTrigger
+														asChild
+													>
+														<Button
+															variant="ghost"
+															size="icon-sm"
+															aria-label={
+																"Team actions"
+															}
+														>
+															<MoreVertical className="size-4" />
+														</Button>
+													</DropdownMenuTrigger>
+												</TooltipTrigger>
+												<TooltipContent
+													sideOffset={4}
+													className="max-w-xs break-words"
 												>
-													<MoreVertical className="size-4" />
-												</Button>
-											</DropdownMenuTrigger>
+													{"Team actions"}
+												</TooltipContent>
+											</Tooltip>
 											<DropdownMenuContent align="end">
 												<DropdownMenuItem
 													onClick={() =>

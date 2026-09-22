@@ -15,6 +15,9 @@ import {
 	Tabs,
 	TabsList,
 	TabsTrigger,
+	Tooltip,
+	TooltipContent,
+	TooltipTrigger,
 } from "@semoss/ui/next";
 import { NavbarHeader } from "@/components/shared/navbar-header";
 import { NavbarLeft } from "@/components/shared/navbar-left";
@@ -258,34 +261,52 @@ export const PromptPage = () => {
 								</PopoverContent>
 							</Popover>
 							<div className="flex shrink-0 items-center gap-1">
-								<Button
-									variant={
-										view === "list"
-											? "secondary"
-											: "outline"
-									}
-									size="icon-sm"
-									className="h-9 w-9"
-									aria-label="List view"
-									title="List view"
-									onClick={() => setView("list")}
-								>
-									<List className="size-4" />
-								</Button>
-								<Button
-									variant={
-										view === "grid"
-											? "secondary"
-											: "outline"
-									}
-									size="icon-sm"
-									className="h-9 w-9"
-									aria-label="Grid view"
-									title="Grid view"
-									onClick={() => setView("grid")}
-								>
-									<LayoutGrid className="size-4" />
-								</Button>
+								<Tooltip disableHoverableContent={false}>
+									<TooltipTrigger asChild>
+										<Button
+											variant={
+												view === "list"
+													? "secondary"
+													: "outline"
+											}
+											size="icon-sm"
+											className="h-9 w-9"
+											aria-label="List view"
+											onClick={() => setView("list")}
+										>
+											<List className="size-4" />
+										</Button>
+									</TooltipTrigger>
+									<TooltipContent
+										sideOffset={4}
+										className="max-w-xs break-words"
+									>
+										{"List view"}
+									</TooltipContent>
+								</Tooltip>
+								<Tooltip disableHoverableContent={false}>
+									<TooltipTrigger asChild>
+										<Button
+											variant={
+												view === "grid"
+													? "secondary"
+													: "outline"
+											}
+											size="icon-sm"
+											className="h-9 w-9"
+											aria-label="Grid view"
+											onClick={() => setView("grid")}
+										>
+											<LayoutGrid className="size-4" />
+										</Button>
+									</TooltipTrigger>
+									<TooltipContent
+										sideOffset={4}
+										className="max-w-xs break-words"
+									>
+										{"Grid view"}
+									</TooltipContent>
+								</Tooltip>
 							</div>
 						</div>
 					</div>

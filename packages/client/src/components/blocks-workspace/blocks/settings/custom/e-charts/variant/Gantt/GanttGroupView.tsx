@@ -18,7 +18,6 @@ export const GanttGroupView = observer(
 		const timeoutRef = useRef<ReturnType<typeof setTimeout>>(null); //timeout ref for setting data
 		const groupViewId = useId();
 		//get the computed value of the block data
-		// biome-ignore lint/correctness/useExhaustiveDependencies: "option" is a literal string dependency
 		const computedValue = useMemo(() => {
 			return computed(() => {
 				if (!data) {
@@ -77,7 +76,7 @@ export const GanttGroupView = observer(
 			}, 300);
 		}
 		return (
-			<div className="border-[#E6E6E6] border-b p-2">
+			<div className="border-border border-b p-2">
 				<Switch
 					id={groupViewId}
 					checked={groupViewData}

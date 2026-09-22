@@ -34,7 +34,7 @@ export const NotebookMarkdownCell: React.FC<NotebookMarkdownCellProps> = ({
 	const source = normalizeSource(cell.source);
 
 	const primaryAction = readOnly ? undefined : (
-		<Tooltip>
+		<Tooltip disableHoverableContent={false}>
 			<TooltipTrigger asChild>
 				<Button
 					variant="ghost"

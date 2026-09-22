@@ -90,7 +90,7 @@ export const ProjectSettingsToggle: React.FC = () => {
 	);
 
 	return (
-		<Tooltip>
+		<Tooltip disableHoverableContent={false}>
 			<TooltipTrigger asChild>
 				<Button
 					variant="ghost"
