@@ -65,9 +65,11 @@ export const GitRestoreDialog = ({
 			open={open}
 			onOpenChange={(next) => !isRestoring && onOpenChange(next)}
 		>
-			<DialogContent>
+			<DialogContent aria-describedby={undefined}>
 				<DialogHeader>
-					<DialogTitle>Restore to this commit?</DialogTitle>
+					<DialogTitle className="font-medium text-base leading-6">
+						Restore to this commit?
+					</DialogTitle>
 				</DialogHeader>
 				<div className="flex flex-col gap-3 text-sm">
 					<p>

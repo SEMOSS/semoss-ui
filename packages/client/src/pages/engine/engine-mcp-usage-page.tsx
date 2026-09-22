@@ -173,7 +173,9 @@ export const EngineMcpUsagePage = () => {
 				>
 					<DialogContent>
 						<DialogHeader>
-							<DialogTitle>Generate MCP</DialogTitle>
+							<DialogTitle className="font-medium text-base leading-6">
+								Generate MCP
+							</DialogTitle>
 							<DialogDescription>
 								This will generate a default MCP for this
 								engine. Current MCP Tools will be replaced. Do

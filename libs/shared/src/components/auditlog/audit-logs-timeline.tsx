@@ -18,6 +18,9 @@ import {
 	Sheet,
 	SheetContent,
 	SheetTitle,
+	Tooltip,
+	TooltipContent,
+	TooltipTrigger,
 	useTheme,
 } from "@semoss/ui/next";
 import { AuditLogsDetailDrawer } from "./audit-logs-detail-drawer";
@@ -751,47 +754,128 @@ export const AuditLogsTimeline: React.FC<AuditLogsTimelineProps> = ({
 					className="inline-flex gap-1 rounded-md border border-border bg-background shadow-sm"
 					style={{ boxShadow: "0 1px 3px rgba(0, 0, 0, 0.1)" }}
 				>
-					<Button
-						variant={zoomSelectActive ? "secondary" : "ghost"}
-						className="rounded-[4px_0_0_4px] px-[4px] py-[4px]"
-						onClick={toggleHighlightZoom}
-						title={t("timeline.highlightZoom")}
-						aria-pressed={zoomSelectActive}
-					>
-						<CropIcon className="text-muted-foreground" />
-					</Button>
-					<Button
-						variant="ghost"
-						className="rounded-none px-[4px] py-[4px]"
-						onClick={handleZoomIn}
-						title={t("timeline.zoomIn")}
-						disabled={xZoom.end - xZoom.start <= 5}
-					>
-						<ZoomInIcon className="text-muted-foreground" />
-					</Button>
-					<Button
-						variant="ghost"
-						className="rounded-none px-[4px] py-[4px]"
-						onClick={handleZoomOut}
-						title={t("timeline.zoomOut")}
-						disabled={xZoom.start === 0 && xZoom.end === 100}
-					>
-						<ZoomOutIcon className="text-muted-foreground" />
-					</Button>
-					<Button
-						variant="ghost"
-						className="rounded-[0_4px_4px_0] px-[4px] py-[4px]"
-						onClick={resetZoom}
-						title={t("timeline.resetZoom")}
-						disabled={
-							xZoom.start === 0 &&
+					<Tooltip disableHoverableContent={false}>
+						<TooltipTrigger asChild>
+							<Button
+								aria-label={t("timeline.highlightZoom")}
+								variant={
+									zoomSelectActive ? "secondary" : "ghost"
+								}
+								className="rounded-[4px_0_0_4px] px-[4px] py-[4px]"
+								onClick={toggleHighlightZoom}
+								aria-pressed={zoomSelectActive}
+							>
+								<CropIcon className="text-muted-foreground" />
+							</Button>
+						</TooltipTrigger>
+						<TooltipContent
+							sideOffset={4}
+							className="max-w-xs break-words"
+						>
+							{t("timeline.highlightZoom")}
+						</TooltipContent>
+					</Tooltip>
+					<Tooltip disableHoverableContent={false}>
+						<TooltipTrigger asChild>
+							<span
+								className="inline-flex"
+								tabIndex={
+									xZoom.end - xZoom.start <= 5 ? 0 : undefined
+								}
+							>
+								<Button
+									aria-label={t("timeline.zoomIn")}
+									variant="ghost"
+									className="rounded-none px-[4px] py-[4px]"
+									onClick={handleZoomIn}
+									disabled={xZoom.end - xZoom.start <= 5}
+								>
+									<ZoomInIcon className="text-muted-foreground" />
+								</Button>
+							</span>
+						</TooltipTrigger>
+						<TooltipContent
+							sideOffset={4}
+							className="max-w-xs break-words"
+						>
+							{xZoom.end - xZoom.start <= 5
+								? "Maximum zoom reached"
+								: t("timeline.zoomIn")}
+						</TooltipContent>
+					</Tooltip>
+					<Tooltip disableHoverableContent={false}>
+						<TooltipTrigger asChild>
+							<span
+								className="inline-flex"
+								tabIndex={
+									xZoom.start === 0 && xZoom.end === 100
+										? 0
+										: undefined
+								}
+							>
+								<Button
+									aria-label={t("timeline.zoomOut")}
+									variant="ghost"
+									className="rounded-none px-[4px] py-[4px]"
+									onClick={handleZoomOut}
+									disabled={
+										xZoom.start === 0 && xZoom.end === 100
+									}
+								>
+									<ZoomOutIcon className="text-muted-foreground" />
+								</Button>
+							</span>
+						</TooltipTrigger>
+						<TooltipContent
+							sideOffset={4}
+							className="max-w-xs break-words"
+						>
+							{xZoom.start === 0 && xZoom.end === 100
+								? "The full time range is already visible"
+								: t("timeline.zoomOut")}
+						</TooltipContent>
+					</Tooltip>
+					<Tooltip disableHoverableContent={false}>
+						<TooltipTrigger asChild>
+							<span
+								className="inline-flex"
+								tabIndex={
+									xZoom.start === 0 &&
+									xZoom.end === 100 &&
+									yZoom.start === 0 &&
+									yZoom.end === 100
+										? 0
+										: undefined
+								}
+							>
+								<Button
+									aria-label={t("timeline.resetZoom")}
+									variant="ghost"
+									className="rounded-[0_4px_4px_0] px-[4px] py-[4px]"
+									onClick={resetZoom}
+									disabled={
+										xZoom.start === 0 &&
+										xZoom.end === 100 &&
+										yZoom.start === 0 &&
+										yZoom.end === 100
+									}
+								>
+									<ResetIcon className="text-muted-foreground" />
+								</Button>
+							</span>
+						</TooltipTrigger>
+						<TooltipContent
+							sideOffset={4}
+							className="max-w-xs break-words"
+						>
+							{xZoom.start === 0 &&
 							xZoom.end === 100 &&
 							yZoom.start === 0 &&
 							yZoom.end === 100
-						}
-					>
-						<ResetIcon className="text-muted-foreground" />
-					</Button>
+								? "Zoom is already reset"
+								: t("timeline.resetZoom")}
+						</TooltipContent>
+					</Tooltip>
 				</fieldset>
 			</div>
 		</div>
@@ -824,8 +908,9 @@ export const AuditLogsTimeline: React.FC<AuditLogsTimelineProps> = ({
 			</div>
 			<Sheet open={drawerOpen} onOpenChange={setDrawerOpen}>
 				<SheetContent
+					aria-describedby={undefined}
 					side="right"
-					className="min-w-[500px] transition-all duration-400 ease-[cubic-bezier(0.4,0,0.2,1)] data-[state=closed]:translate-x-full data-[state=open]:translate-x-0 data-[state=closed]:opacity-0 data-[state=open]:opacity-100"
+					className="w-full min-w-0 sm:max-w-xl"
 				>
 					<SheetTitle className="sr-only">
 						{t("detail.title")}

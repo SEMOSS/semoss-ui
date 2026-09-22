@@ -25,6 +25,11 @@ export {
 	type FilePanelMode,
 	getFilePanelScope,
 } from "./types/file-panel.types";
+export type {
+	FileViewControls,
+	FileViewMode,
+	FileViewProps,
+} from "./types/file-view.types";
 export {
 	getCodeEditorLanguage,
 	getFileCodeEditorMenuItems,

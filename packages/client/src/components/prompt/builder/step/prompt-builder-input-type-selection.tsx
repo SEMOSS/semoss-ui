@@ -184,7 +184,7 @@ export const PromptBuilderInputTypeSelection = (props: {
 						<div className="flex items-center gap-1.5">
 							<Label>{getMetaSelectorLabel()}</Label>
 							{INPUT_TYPE_HELP_TEXT[props.inputType] && (
-								<Tooltip>
+								<Tooltip disableHoverableContent={false}>
 									<TooltipTrigger asChild>
 										<Info className="h-3.5 w-3.5 cursor-pointer text-muted-foreground" />
 									</TooltipTrigger>

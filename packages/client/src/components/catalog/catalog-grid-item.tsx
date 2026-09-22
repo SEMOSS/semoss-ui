@@ -146,9 +146,12 @@ export const CatalogGridItem = ({
 											<span className="truncate">
 												{id}
 											</span>
-											<Tooltip>
+											<Tooltip
+												disableHoverableContent={false}
+											>
 												<TooltipTrigger asChild>
 													<Button
+														aria-label={"Copy ID"}
 														variant="ghost"
 														size="icon-sm"
 														className="h-5 w-5"
@@ -188,7 +191,11 @@ export const CatalogGridItem = ({
 												</Badge>
 											))}
 											{tags.length > 3 && (
-												<Tooltip>
+												<Tooltip
+													disableHoverableContent={
+														false
+													}
+												>
 													<TooltipTrigger asChild>
 														<Badge
 															variant="outline"
@@ -218,19 +225,37 @@ export const CatalogGridItem = ({
 								<div className="flex items-center gap-1">
 									{actions}
 									{menuItems.length > 0 && (
-										<DropdownMenu>
-											<DropdownMenuTrigger asChild>
-												<Button
-													variant="ghost"
-													size="icon-sm"
-													onClick={(event) => {
-														event.preventDefault();
-														event.stopPropagation();
-													}}
-												>
-													<MoreVertical className="size-4" />
-												</Button>
-											</DropdownMenuTrigger>
+										<DropdownMenu
+											open={menuOpen}
+											onOpenChange={setMenuOpen}
+										>
+											<Tooltip
+												disableHoverableContent={false}
+											>
+												<TooltipTrigger asChild>
+													<DropdownMenuTrigger
+														asChild
+													>
+														<Button
+															aria-label={`Actions for ${name}`}
+															variant="ghost"
+															size="icon-sm"
+															onClick={(
+																event,
+															) => {
+																event.preventDefault();
+																event.stopPropagation();
+															}}
+														>
+															<MoreVertical className="size-4" />
+														</Button>
+													</DropdownMenuTrigger>
+												</TooltipTrigger>
+												<TooltipContent
+													sideOffset={4}
+													className="max-w-xs break-words"
+												>{`Actions for ${name}`}</TooltipContent>
+											</Tooltip>
 											<DropdownMenuContent align="end">
 												{menuItems.map((item) => {
 													return (
@@ -244,6 +269,9 @@ export const CatalogGridItem = ({
 															) => {
 																event.preventDefault();
 																event.stopPropagation();
+																setMenuOpen(
+																	false,
+																);
 																item.onClick();
 															}}
 														>
@@ -355,7 +383,7 @@ export const CatalogGridItem = ({
 									</Badge>
 								))}
 								{tags.length > 2 && (
-									<Tooltip>
+									<Tooltip disableHoverableContent={false}>
 										<TooltipTrigger asChild>
 											<Badge
 												variant="outline"
@@ -389,18 +417,27 @@ export const CatalogGridItem = ({
 								open={menuOpen}
 								onOpenChange={setMenuOpen}
 							>
-								<DropdownMenuTrigger asChild>
-									<Button
-										variant="ghost"
-										size="icon-sm"
-										onClick={(event) => {
-											event.preventDefault();
-											event.stopPropagation();
-										}}
-									>
-										<MoreVertical className="size-4" />
-									</Button>
-								</DropdownMenuTrigger>
+								<Tooltip disableHoverableContent={false}>
+									<TooltipTrigger asChild>
+										<DropdownMenuTrigger asChild>
+											<Button
+												aria-label={`Actions for ${name}`}
+												variant="ghost"
+												size="icon-sm"
+												onClick={(event) => {
+													event.preventDefault();
+													event.stopPropagation();
+												}}
+											>
+												<MoreVertical className="size-4" />
+											</Button>
+										</DropdownMenuTrigger>
+									</TooltipTrigger>
+									<TooltipContent
+										sideOffset={4}
+										className="max-w-xs break-words"
+									>{`Actions for ${name}`}</TooltipContent>
+								</Tooltip>
 								<DropdownMenuContent align="end">
 									{menuItems.map((item) => {
 										return (

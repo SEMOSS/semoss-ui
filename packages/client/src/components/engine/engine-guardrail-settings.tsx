@@ -665,7 +665,9 @@ export const EngineGuardrailSettings = ({
 			>
 				<DialogContent>
 					<DialogHeader>
-						<DialogTitle>Remove this rule?</DialogTitle>
+						<DialogTitle className="font-medium text-base leading-6">
+							Remove this rule?
+						</DialogTitle>
 						<DialogDescription>{removalSummary}</DialogDescription>
 					</DialogHeader>
 					<DialogFooter>
