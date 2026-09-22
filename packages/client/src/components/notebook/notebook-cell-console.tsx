@@ -1,5 +1,6 @@
 import { useMemo } from "react";
-import { hasInlineImage, InlineImageSegments } from "@semoss/shared";
+import { InlineImageSegments } from "@semoss/shared";
+import { hasInlineImage } from "@semoss/utility/file";
 import {
 	countExpandedJsonLines,
 	JSON_VIEWER_LINE_HEIGHT_PX,
