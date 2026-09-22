@@ -20,6 +20,7 @@ import { EmptyView } from "@/components/common/empty-view";
 import { SidebarAgentsList } from "@/components/sidebar/sidebar-agents-list";
 import { SidebarFooter } from "@/components/sidebar/sidebar-footer";
 import { SidebarHeader } from "@/components/sidebar/sidebar-header";
+import { getAgent } from "@/features/agents/api/get-agent";
 import { useSaveAgent } from "@/features/agents/api/use-save-agent";
 import { useWorkspaceData } from "@/features/agents/api/use-workspace-data";
 import { NewSessionDialog } from "@/features/agents/components/new-session-dialog";
@@ -137,14 +138,13 @@ export function MainLayout() {
 
 	const startSession = useCallback(
 		async (draft: { agentId: string; title: string }) => {
-			const agent = agents.find(
-				(candidate) => candidate.id === draft.agentId,
-			);
+			const agent = await getAgent(actions, draft.agentId);
 
 			const roomId = await createRoom(actions, insightId, {
 				workspaceId: draft.agentId,
-				workspaceName: agent?.name ?? draft.agentId,
-				instructions: agent?.instructions,
+				workspaceName: agent.name,
+				instructions: agent.system_prompt,
+				modelId: agent.config_json?.model_id,
 				name: draft.title,
 			});
 
@@ -152,7 +152,7 @@ export function MainLayout() {
 			setSetup(undefined);
 			navigate(roomPath(draft.agentId, roomId));
 		},
-		[actions, addPendingRoom, agents, insightId, navigate],
+		[actions, addPendingRoom, insightId, navigate],
 	);
 
 	const refresh = useCallback((key: string) => {

@@ -1,10 +1,4 @@
-import type {
-	AgentRunItem,
-	AgentRunItemsState,
-	AgentRunProgress,
-	AgentRunStatusValue,
-	PendingAgentAction,
-} from "@semoss/sdk";
+import type { PendingToolApproval } from "@/features/rooms/types/room";
 import {
 	roomMessagePartSchema,
 	type ValidatedRoomMessage,
@@ -13,8 +7,8 @@ import {
 import type {
 	ConversationMessage,
 	ConversationMessagePart,
-	ConversationPartStates,
 	ConversationTool,
+	ConversationToolStates,
 	ConversationToolStatus,
 } from "../types/message";
 
@@ -23,14 +17,16 @@ type ToolResultPart = Extract<
 	{ type: "TOOL_RESULT" }
 >;
 
-function parseParts(message: ValidatedRoomMessage): ValidatedRoomMessagePart[] {
+export function parseMessageParts(
+	message: ValidatedRoomMessage,
+): ValidatedRoomMessagePart[] {
 	return (message.parts ?? []).flatMap((part) => {
 		const parsed = roomMessagePartSchema.safeParse(part);
 		return parsed.success ? [parsed.data] : [];
 	});
 }
 
-function isUserMessage(message: ValidatedRoomMessage): boolean {
+export function isUserMessage(message: ValidatedRoomMessage): boolean {
 	if (message.role) return message.role.toLowerCase() === "user";
 	if (message.io) return message.io.toUpperCase() === "INPUT";
 	return (message.type ?? "").toUpperCase().startsWith("INPUT");
@@ -40,8 +36,6 @@ function statusFromResult(
 	result: ToolResultPart["toolResult"] | undefined,
 ): ConversationToolStatus {
 	switch (result?.toolStatus) {
-		case "success":
-			return "COMPLETED";
 		case "error":
 			return "FAILED";
 		case "cancelled":
@@ -49,12 +43,13 @@ function statusFromResult(
 		case "paused":
 			return "INPUT_REQUIRED";
 		default:
-			return "QUEUED";
+			return result ? "COMPLETED" : "QUEUED";
 	}
 }
 
 function persistedPartToConversationPart(
 	part: ValidatedRoomMessagePart,
+	parentMessageId: string,
 	toolResults: Map<string, ToolResultPart["toolResult"]>,
 ): ConversationMessagePart | null {
 	switch (part.type) {
@@ -79,6 +74,7 @@ function persistedPartToConversationPart(
 				type: "tool",
 				tool: {
 					id: part.toolCall.id,
+					parentMessageId,
 					name: part.toolCall.name,
 					title:
 						part.toolCall.title ??
@@ -90,6 +86,7 @@ function persistedPartToConversationPart(
 						result?.toolParameterValues ??
 						{},
 					metadata: part.toolCall._meta ?? undefined,
+					serverTool: part.toolCall.server_tool ?? undefined,
 					status: statusFromResult(result),
 					output: result?.output ?? undefined,
 					error:
@@ -99,27 +96,48 @@ function persistedPartToConversationPart(
 				},
 			};
 		}
-		case "SUBAGENT":
-			return {
-				type: "subagent",
-				id: part.subagent.id,
-				label: part.subagent.alias ?? "Subagent",
-				status: part.subagent.status,
-				result: part.subagent.resultPreview ?? undefined,
-				error: part.subagent.error ?? undefined,
-			};
 		case "TOOL_RESULT":
 			return null;
 	}
+}
+
+/** Convert one validated playground message into its UI representation. */
+export function conversationMessageFromPersisted(
+	message: ValidatedRoomMessage,
+	toolResults: Map<string, ToolResultPart["toolResult"]> = new Map(),
+): ConversationMessage | null {
+	if (message.visible === false) return null;
+	const parts = parseMessageParts(message).flatMap((part) => {
+		const converted = persistedPartToConversationPart(
+			part,
+			message.messageId,
+			toolResults,
+		);
+		return converted ? [converted] : [];
+	});
+	const fallback = (
+		isUserMessage(message) ? message.inputPrompt : message.content
+	)?.trim();
+	if (parts.length === 0 && fallback)
+		parts.push({ type: "text", text: fallback });
+	if (parts.length === 0) return null;
+
+	return {
+		id: message.messageId,
+		role: isUserMessage(message) ? "user" : "assistant",
+		parts,
+		createdAt: message.dateCreated ?? undefined,
+		parentMessageId: message.parentMessageId ?? undefined,
+		visible: message.visible ?? true,
+	};
 }
 
 /** Convert persisted room messages into ordered Playground-style messages. */
 export function threadFromMessages(
 	messages: ValidatedRoomMessage[],
 ): ConversationMessage[] {
-	const parsedByMessage = messages.map(parseParts);
+	const parsedByMessage = messages.map(parseMessageParts);
 	const toolResults = new Map<string, ToolResultPart["toolResult"]>();
-
 	for (const parts of parsedByMessage) {
 		for (const part of parts) {
 			if (part.type === "TOOL_RESULT") {
@@ -128,164 +146,16 @@ export function threadFromMessages(
 		}
 	}
 
-	return messages.flatMap((message, index) => {
-		const parts = parsedByMessage[index].flatMap((part) => {
-			const converted = persistedPartToConversationPart(
-				part,
-				toolResults,
-			);
-			return converted ? [converted] : [];
-		});
-		const fallback = (
-			isUserMessage(message) ? message.inputPrompt : message.content
-		)?.trim();
-
-		if (parts.length === 0 && fallback) {
-			parts.push({ type: "text", text: fallback });
-		}
-		if (parts.length === 0) return [];
-
-		return [
-			{
-				id: message.messageId,
-				role: isUserMessage(message) ? "user" : "assistant",
-				parts,
-				createdAt: message.dateCreated ?? undefined,
-			} satisfies ConversationMessage,
-		];
+	return messages.flatMap((message) => {
+		const converted = conversationMessageFromPersisted(
+			message,
+			toolResults,
+		);
+		return converted ? [converted] : [];
 	});
 }
 
-function liveItemToPart(
-	item: AgentRunItem,
-	pendingActions: PendingAgentAction[],
-	itemPhases: ConversationPartStates,
-): ConversationMessagePart | null {
-	switch (item.kind) {
-		case "message":
-			return item.text.trim()
-				? {
-						type: "text",
-						text: item.text,
-						state: itemPhases[item.id] ?? "active",
-					}
-				: null;
-		case "reasoning":
-			return item.summary.trim()
-				? {
-						type: "thinking",
-						text: item.summary,
-						state: itemPhases[item.id] ?? "active",
-					}
-				: null;
-		case "tool": {
-			const isPending = pendingActions.some(
-				(action) => action.toolCallId === item.id,
-			);
-			const originalName = item.metadata?.SMSS_ORIGINAL_TOOL_NAME;
-			const displayName =
-				item.title ??
-				(typeof originalName === "string" ? originalName : undefined) ??
-				(item.status === "QUEUED" || item.status === "RUNNING"
-					? "Loading tool…"
-					: item.name);
-			return {
-				type: "tool",
-				tool: {
-					id: item.id,
-					name: item.name,
-					title: displayName,
-					arguments: item.arguments,
-					metadata: item.metadata,
-					status: isPending ? "INPUT_REQUIRED" : item.status,
-					output: item.output,
-					error: item.error,
-					durationMs: item.durationMs,
-				},
-			};
-		}
-		case "subagent":
-			return {
-				type: "subagent",
-				id: item.id,
-				label: item.alias ?? "Subagent",
-				status: item.status,
-				result: item.resultPreview,
-				error: item.error,
-			};
-		case "progress":
-			return null;
-	}
-}
-
-export interface LiveConversationRun {
-	items: AgentRunItemsState;
-	itemPhases: ConversationPartStates;
-	pendingActions: PendingAgentAction[];
-	status: AgentRunStatusValue | null;
-	progress: AgentRunProgress | null;
-	hasStreamGap: boolean;
-}
-
-function toolFromPendingAction(action: PendingAgentAction): ConversationTool {
-	const id = pendingActionToolId(action);
-	const metadataTitle = action.toolMeta?.title;
-	const originalName = action.toolMeta?.SMSS_ORIGINAL_TOOL_NAME;
-	return {
-		id,
-		name: action.toolName ?? "tool",
-		title:
-			typeof metadataTitle === "string"
-				? metadataTitle
-				: typeof originalName === "string"
-					? originalName
-					: (action.toolName ?? "Tool approval"),
-		arguments: action.editedArgs ?? action.toolArgs ?? {},
-		metadata: action.toolMeta ?? undefined,
-		status: "INPUT_REQUIRED",
-	};
-}
-
-/** Convert the current run's ordered items into one live assistant message. */
-export function messageFromRunItems({
-	items,
-	itemPhases,
-	pendingActions,
-	status,
-	progress,
-	hasStreamGap,
-}: LiveConversationRun): ConversationMessage | null {
-	if (!status) return null;
-
-	const parts = items.itemOrder.flatMap((id) => {
-		const item = items.itemsById[id];
-		if (!item) return [];
-		const part = liveItemToPart(item, pendingActions, itemPhases);
-		return part ? [part] : [];
-	});
-	const visibleToolIds = new Set(
-		parts.flatMap((part) => (part.type === "tool" ? [part.tool.id] : [])),
-	);
-	for (const action of pendingActions) {
-		const id = pendingActionToolId(action);
-		if (!visibleToolIds.has(id)) {
-			parts.push({ type: "tool", tool: toolFromPendingAction(action) });
-		}
-	}
-
-	return {
-		id: "live-agent-response",
-		role: "assistant",
-		parts,
-		live: {
-			status,
-			progress: progress ?? undefined,
-			hasStreamGap,
-		},
-	};
-}
-
-/** The user's own message, shown immediately while the run is submitted. */
+/** The user's own message, shown immediately while AskPlayground is submitted. */
 export function optimisticUserMessage(
 	text: string,
 	files: File[] = [],
@@ -305,36 +175,73 @@ export function optimisticUserMessage(
 	};
 }
 
-/** Stable panel identity even when a durable action has no streamed tool id. */
-export function pendingActionToolId(action: PendingAgentAction): string {
-	return action.toolCallId ?? `pending-action:${action.actionId}`;
+/** Apply controller-owned tool states over durable/live transcript tools. */
+export function mergeToolStates(
+	messages: ConversationMessage[],
+	states: ConversationToolStates,
+): ConversationMessage[] {
+	return messages.map((message) => ({
+		...message,
+		parts: message.parts.map((part) =>
+			part.type === "tool" && states[part.tool.id]
+				? {
+						type: "tool" as const,
+						tool: { ...part.tool, ...states[part.tool.id] },
+					}
+				: part,
+		),
+	}));
 }
 
-/** Index every tool currently visible in the transcript for the workbench. */
+function toolFromApproval(approval: PendingToolApproval): ConversationTool {
+	const originalName = approval.metadata?.SMSS_ORIGINAL_TOOL_NAME;
+	const title = approval.metadata?.title;
+	return {
+		id: approval.toolId,
+		parentMessageId: approval.parentMessageId,
+		name: approval.toolName,
+		title:
+			typeof title === "string"
+				? title
+				: typeof originalName === "string"
+					? originalName
+					: approval.toolName,
+		arguments: approval.arguments,
+		metadata: approval.metadata,
+		uiUrl: approval.uiUrl,
+		status: "INPUT_REQUIRED",
+	};
+}
+
+export function pendingActionToolId(action: PendingToolApproval): string {
+	return action.toolId;
+}
+
+/** Index every tool visible in the transcript for the workbench. */
 export function toolsFromMessages(
 	messages: ConversationMessage[],
-	pendingActions: PendingAgentAction[] = [],
+	pendingApprovals: PendingToolApproval[] = [],
+	states: ConversationToolStates = {},
 ): Record<string, ConversationTool> {
 	const tools: Record<string, ConversationTool> = {};
 	for (const message of messages) {
 		for (const part of message.parts) {
-			if (part.type === "tool") tools[part.tool.id] = part.tool;
+			if (part.type === "tool") {
+				tools[part.tool.id] = {
+					...part.tool,
+					...states[part.tool.id],
+				};
+			}
 		}
 	}
-	for (const action of pendingActions) {
-		const id = pendingActionToolId(action);
-		const existing = tools[id];
-		tools[id] = {
-			...toolFromPendingAction(action),
+	for (const approval of pendingApprovals) {
+		const existing = tools[approval.toolId];
+		tools[approval.toolId] = {
+			...toolFromApproval(approval),
 			...existing,
-			id,
-			name: action.toolName ?? existing?.name ?? "tool",
-			arguments:
-				action.editedArgs ??
-				action.toolArgs ??
-				existing?.arguments ??
-				{},
-			metadata: action.toolMeta ?? existing?.metadata ?? undefined,
+			arguments: approval.arguments,
+			metadata: approval.metadata ?? existing?.metadata,
+			uiUrl: approval.uiUrl ?? existing?.uiUrl,
 			status: "INPUT_REQUIRED",
 		};
 	}

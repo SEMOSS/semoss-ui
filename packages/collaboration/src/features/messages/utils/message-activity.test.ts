@@ -5,26 +5,17 @@ function liveMessage(
 	patch: Partial<ConversationMessage> = {},
 ): ConversationMessage {
 	return {
-		id: "live-agent-response",
+		id: "live-playground-response",
 		role: "assistant",
 		parts: [],
-		live: {
-			status: "RUNNING",
-			hasStreamGap: false,
-		},
+		live: { phase: "streaming", hasObservationIssue: false },
 		...patch,
 	};
 }
 
 describe("messageActivityLabel", () => {
-	it("covers starting, thinking, writing, code, and tool phases", () => {
-		expect(
-			messageActivityLabel(
-				liveMessage({
-					live: { status: "SUBMITTED", hasStreamGap: false },
-				}),
-			),
-		).toBe("Starting…");
+	it("covers thinking, writing, code, and tool phases", () => {
+		expect(messageActivityLabel(liveMessage())).toBe("Thinking…");
 		expect(
 			messageActivityLabel(
 				liveMessage({
@@ -62,6 +53,7 @@ describe("messageActivityLabel", () => {
 							type: "tool",
 							tool: {
 								id: "tool-1",
+								parentMessageId: "response-1",
 								name: "search",
 								title: "Search documents",
 								arguments: {},
@@ -74,18 +66,18 @@ describe("messageActivityLabel", () => {
 		).toBe("Using Search documents…");
 	});
 
-	it("announces reconciliation and removes terminal activity", () => {
+	it("announces observation recovery and removes terminal activity", () => {
 		expect(
 			messageActivityLabel(
 				liveMessage({
-					live: { status: "RUNNING", hasStreamGap: true },
+					live: { phase: "streaming", hasObservationIssue: true },
 				}),
 			),
-		).toBe("Catching up with the run…");
+		).toBe("Reconnecting to the response…");
 		expect(
 			messageActivityLabel(
 				liveMessage({
-					live: { status: "CANCELLED", hasStreamGap: false },
+					live: { phase: "completed", hasObservationIssue: false },
 				}),
 			),
 		).toBeNull();

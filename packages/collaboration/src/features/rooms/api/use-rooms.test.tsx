@@ -1,0 +1,89 @@
+import { act, renderHook, waitFor } from "@testing-library/react";
+import type { RoomRow } from "./room-schemas";
+import { useRooms } from "./use-rooms";
+
+const listRooms = vi.hoisted(() => vi.fn());
+const insight = vi.hoisted(() => ({ actions: { run: vi.fn() } }));
+
+vi.mock("@semoss/sdk/react", () => ({
+	useInsight: () => insight,
+}));
+
+vi.mock("./list-rooms", () => ({ listRooms }));
+
+interface Deferred<T> {
+	promise: Promise<T>;
+	resolve: (value: T) => void;
+}
+
+function deferred<T>(): Deferred<T> {
+	let resolve!: (value: T) => void;
+	const promise = new Promise<T>((accept) => {
+		resolve = accept;
+	});
+	return { promise, resolve };
+}
+
+describe("useRooms", () => {
+	beforeEach(() => listRooms.mockReset());
+
+	it("lists once, filters by workspace, and retains a room until it becomes durable", async () => {
+		const first = deferred<RoomRow[]>();
+		listRooms.mockReturnValueOnce(first.promise).mockResolvedValueOnce([
+			{
+				roomId: "pending-room",
+				roomName: "New research",
+				workspaceId: "workspace-1",
+				dateUpdated: "2026-09-22T12:00:00Z",
+			},
+		]);
+		const { result, rerender } = renderHook(
+			({ versions }) =>
+				useRooms(["workspace-1", "workspace-2"], versions),
+			{ initialProps: { versions: {} as Record<string, number> } },
+		);
+
+		act(() => {
+			result.current.addPendingRoom({
+				id: "pending-room",
+				agentId: "workspace-1",
+				title: "New research",
+				origin: "You",
+				status: "Ready",
+				updatedAt: "2026-09-22T11:00:00Z",
+				unread: false,
+				pinned: false,
+				preview: "",
+				thread: [],
+			});
+		});
+		expect(result.current.sessions.map((session) => session.id)).toEqual([
+			"pending-room",
+		]);
+
+		first.resolve([
+			{
+				roomId: "foreign-room",
+				workspaceId: "workspace-3",
+			},
+		]);
+		await waitFor(() => expect(result.current.isLoading).toBe(false));
+		expect(listRooms).toHaveBeenCalledOnce();
+		expect(result.current.sessions.map((session) => session.id)).toEqual([
+			"pending-room",
+		]);
+
+		rerender({ versions: { "workspace-1": 1 } });
+		await waitFor(() => expect(listRooms).toHaveBeenCalledTimes(2));
+		await waitFor(() =>
+			expect(result.current.sessions).toEqual([
+				expect.objectContaining({
+					id: "pending-room",
+					agentId: "workspace-1",
+					title: "New research",
+					updatedAt: "2026-09-22T12:00:00Z",
+				}),
+			]),
+		);
+	});
+});

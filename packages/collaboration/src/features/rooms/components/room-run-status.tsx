@@ -1,30 +1,47 @@
 import { ShieldCheck, TriangleAlert } from "lucide-react";
-import type { PendingAgentAction } from "@semoss/sdk";
 import { Button, Spinner, useIsMobile } from "@semoss/ui/next";
 import type { Agent } from "@/features/agents/types/agent";
-import { pendingActionToolId } from "@/features/messages/utils/thread-items";
+import type { PlaygroundTurnPhase } from "@/features/messages/types/message";
 import { useToolWorkbench } from "@/features/tools/tool-workbench.context";
+import type { PendingToolApproval } from "../types/room";
 
-/** Run/transport error banners, pending tool approvals, and the "is working" banner. */
+function phaseLabel(agentName: string, phase: PlaygroundTurnPhase): string {
+	switch (phase) {
+		case "streaming":
+			return `${agentName} is responding`;
+		case "executing_tools":
+			return `${agentName} is using tools`;
+		case "cancelling":
+			return "Cancelling this turn";
+		case "awaiting_approval":
+			return "Waiting for your approval";
+		case "completed":
+			return "Turn completed";
+		case "failed":
+			return "Turn failed";
+	}
+}
+
+/** Turn errors, approvals, and the current playground phase. */
 export function RoomRunStatus({
 	agent,
-	runError,
+	turnError,
 	transportError,
-	pendingActions,
-	isRunning,
+	pendingApprovals,
+	phase,
 }: {
 	agent: Agent;
-	runError: string | null;
+	turnError: string | null;
 	transportError: Error | null;
-	pendingActions: PendingAgentAction[];
-	isRunning: boolean;
+	pendingApprovals: PendingToolApproval[];
+	phase: PlaygroundTurnPhase | null;
 }) {
 	const isMobile = useIsMobile();
 	const { tools, openInline, openWorkbench } = useToolWorkbench();
 
 	return (
 		<>
-			{runError && (
+			{turnError && (
 				<div
 					className="flex shrink-0 items-start gap-3 border-t bg-destructive/5 px-5 py-3"
 					role="alert"
@@ -38,12 +55,12 @@ export function RoomRunStatus({
 							{agent.name} could not finish this turn
 						</span>
 						<span className="block text-muted-foreground text-xs">
-							{runError}
+							{turnError}
 						</span>
 					</span>
 				</div>
 			)}
-			{transportError && (
+			{transportError && !turnError && (
 				<output className="flex shrink-0 items-start gap-3 border-t bg-warning/5 px-5 py-3">
 					<TriangleAlert
 						aria-hidden="true"
@@ -54,68 +71,66 @@ export function RoomRunStatus({
 							Trouble reaching the server
 						</span>
 						<span className="block text-muted-foreground text-xs">
-							Any run keeps going on the server; this view will
-							catch up. {transportError.message}
+							The durable conversation will be reloaded.{" "}
+							{transportError.message}
 						</span>
 					</span>
 				</output>
 			)}
-			{pendingActions.length > 0 && (
+			{pendingApprovals.length > 0 && (
 				<section
 					className="shrink-0 space-y-3 border-t bg-warning/5 px-5 py-3"
-					aria-label="Actions awaiting your approval"
+					aria-label="Tools awaiting your approval"
 				>
-					{pendingActions.map((action) => {
-						const toolId = pendingActionToolId(action);
-						return (
-							<div
-								key={action.actionId}
-								className="flex flex-wrap items-center gap-3"
-							>
-								<ShieldCheck
-									aria-hidden="true"
-									className="size-4 shrink-0 text-warning"
-								/>
-								<span className="min-w-0 flex-1">
-									<span className="block font-medium text-xs">
-										{agent.name} wants to run{" "}
-										{action.toolName ?? "a tool"}
-									</span>
-									<span className="block text-muted-foreground text-xs">
-										Review its UI and arguments before
-										continuing.
-									</span>
+					{pendingApprovals.map((approval) => (
+						<div
+							key={approval.toolId}
+							className="flex flex-wrap items-center gap-3"
+						>
+							<ShieldCheck
+								aria-hidden="true"
+								className="size-4 shrink-0 text-warning"
+							/>
+							<span className="min-w-0 flex-1">
+								<span className="block font-medium text-xs">
+									{agent.name} wants to run{" "}
+									{approval.toolName}
 								</span>
-								<Button
-									type="button"
-									size="sm"
-									disabled={!tools[toolId]}
-									onClick={() =>
-										isMobile
-											? openInline(toolId)
-											: openWorkbench(toolId)
-									}
-								>
-									Review
-								</Button>
-							</div>
-						);
-					})}
+								<span className="block text-muted-foreground text-xs">
+									Review its UI and arguments before
+									continuing.
+								</span>
+							</span>
+							<Button
+								type="button"
+								size="sm"
+								disabled={!tools[approval.toolId]}
+								onClick={() =>
+									isMobile
+										? openInline(approval.toolId)
+										: openWorkbench(approval.toolId)
+								}
+							>
+								Review
+							</Button>
+						</div>
+					))}
 				</section>
 			)}
-			{isRunning && pendingActions.length === 0 && (
-				<div className="flex shrink-0 items-center gap-3 border-t bg-primary/5 px-5 py-3">
-					<Spinner
-						aria-hidden="true"
-						className="size-4 shrink-0 text-primary motion-reduce:animate-none"
-					/>
-					<span className="min-w-0 flex-1">
-						<span className="block font-medium text-xs">
-							{agent.name} is working
+			{phase &&
+				phase !== "completed" &&
+				phase !== "failed" &&
+				phase !== "awaiting_approval" && (
+					<output className="flex shrink-0 items-center gap-3 border-t bg-primary/5 px-5 py-3">
+						<Spinner
+							aria-hidden="true"
+							className="size-4 shrink-0 text-primary motion-reduce:animate-none"
+						/>
+						<span className="min-w-0 flex-1 font-medium text-xs">
+							{phaseLabel(agent.name, phase)}
 						</span>
-					</span>
-				</div>
-			)}
+					</output>
+				)}
 		</>
 	);
 }

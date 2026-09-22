@@ -10,6 +10,10 @@ import { cn, Spinner, useIsMobile } from "@semoss/ui/next";
 import type { ConversationTool } from "@/features/messages/types/message";
 import { toolCardTriggerId } from "../tool-workbench.constants";
 import { useToolWorkbench } from "../tool-workbench.context";
+import {
+	getToolDisplayLocation,
+	getToolLoadingMessage,
+} from "../utils/tool-metadata";
 import { ToolCallMenu } from "./tool-call-menu";
 import { ToolInline } from "./tool-inline";
 
@@ -61,6 +65,8 @@ export function ToolCallCard({ tool }: { tool: ConversationTool }) {
 	const isInline = isToolInline(tool.id);
 	const isInWorkbench = isOpen && activeToolId === tool.id;
 	const isActive = isInline || isInWorkbench;
+	const displayLocation = getToolDisplayLocation(tool);
+	if (displayLocation === "hidden") return null;
 
 	return (
 		<div
@@ -76,7 +82,8 @@ export function ToolCallCard({ tool }: { tool: ConversationTool }) {
 					className="flex min-w-0 flex-1 items-center gap-2 rounded-md p-1 text-start hover:bg-accent"
 					onClick={() => {
 						if (isInline) closeTool(tool.id);
-						else if (isMobile) openInline(tool.id);
+						else if (isMobile || displayLocation === "inline")
+							openInline(tool.id);
 						else openWorkbench(tool.id);
 					}}
 					aria-expanded={isInline}
@@ -105,7 +112,10 @@ export function ToolCallCard({ tool }: { tool: ConversationTool }) {
 							{tool.title}
 						</span>
 						<span className="block truncate text-muted-foreground text-xs">
-							{tool.description ?? details.label}
+							{tool.description ??
+								(tool.status === "RUNNING"
+									? getToolLoadingMessage(tool)
+									: details.label)}
 						</span>
 					</span>
 					{isInline ? (

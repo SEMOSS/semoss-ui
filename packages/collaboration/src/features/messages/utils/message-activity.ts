@@ -1,16 +1,15 @@
 import type { ConversationMessage } from "../types/message";
 import { findStreamingCodeFence } from "./streaming-code";
 
-const TERMINAL_STATUSES = new Set(["COMPLETED", "FAILED", "CANCELLED"]);
-
 /** Describe the assistant's current activity without announcing every text update. */
 export function messageActivityLabel(
 	message: ConversationMessage,
 ): string | null {
 	const live = message.live;
-	if (!live || TERMINAL_STATUSES.has(live.status)) return null;
-	if (live.hasStreamGap) return "Catching up with the run…";
-	if (live.status === "INPUT_REQUIRED") return null;
+	if (!live || live.phase === "completed" || live.phase === "failed")
+		return null;
+	if (live.hasObservationIssue) return "Reconnecting to the response…";
+	if (live.phase === "awaiting_approval") return null;
 
 	for (let index = message.parts.length - 1; index >= 0; index -= 1) {
 		const part = message.parts[index];
@@ -30,20 +29,8 @@ export function messageActivityLabel(
 				? "Loading tool…"
 				: `Using ${part.tool.title}…`;
 		}
-		if (
-			part.type === "subagent" &&
-			(part.status === "SUBMITTED" || part.status === "RUNNING")
-		) {
-			return `Waiting for ${part.label}…`;
-		}
 	}
-
-	if (live.progress?.activity === "tool") {
-		return live.progress.currentTool
-			? `Using ${live.progress.currentTool}…`
-			: "Using a tool…";
-	}
-	if (live.progress?.activity === "model") return "Thinking…";
-	if (live.status === "SUBMITTED") return "Starting…";
-	return "Working…";
+	if (live.phase === "executing_tools") return "Using tools…";
+	if (live.phase === "cancelling") return "Cancelling…";
+	return "Thinking…";
 }

@@ -150,6 +150,25 @@ describe("RoomComposer", () => {
 		expect(screen.getByRole("alert")).toHaveTextContent("Upload failed");
 	});
 
+	it("requires a selected model before enabling Send", async () => {
+		const user = userEvent.setup();
+		const onSend = vi.fn(async () => undefined);
+		renderComposer({ modelId: "", modelName: "Select model", onSend });
+		const editor = screen.getByRole("textbox", {
+			name: "Message Research agent",
+		});
+		await user.click(editor);
+		pasteText(editor, "Ready to send");
+
+		expect(
+			screen.getByRole("button", {
+				name: "Send message to Research agent",
+			}),
+		).toBeDisabled();
+		await user.keyboard("{Enter}");
+		expect(onSend).not.toHaveBeenCalled();
+	});
+
 	it("limits the editor to 8,000 characters", async () => {
 		const user = userEvent.setup();
 		renderComposer();
@@ -253,7 +272,7 @@ describe("RoomComposer", () => {
 		expect(
 			screen.getByRole("button", { name: "Choose model" }),
 		).toBeDisabled();
-		fireEvent.click(screen.getByRole("button", { name: "Stop run" }));
+		fireEvent.click(screen.getByRole("button", { name: "Stop response" }));
 		expect(onStop).toHaveBeenCalledTimes(1);
 
 		rerender(
@@ -267,7 +286,7 @@ describe("RoomComposer", () => {
 			</TooltipProvider>,
 		);
 		expect(
-			screen.getByRole("button", { name: "Cancelling run" }),
+			screen.getByRole("button", { name: "Cancelling turn" }),
 		).toBeDisabled();
 	});
 
