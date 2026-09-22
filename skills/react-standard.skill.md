@@ -99,66 +99,83 @@ tests. Non-React code follows applicable TypeScript rules, not React-only archit
   `use-<name>.ts` and export `useName`. Do not mass-rename legacy files or invent
   role suffixes for files without a defined role.
 
-## Selected Vercel Guidance
+## Tailwind and Styling
 
-The following original summaries adapt selected
-[Vercel React Best Practices](https://github.com/vercel-labs/agent-skills/tree/main/skills/react-best-practices)
-rules researched on 2026-09-21. Links track mutable upstream `main`; no source
-revision was recorded. No upstream implementation code is copied. SEMOSS SDK,
-design, architecture, and supported React versions take precedence over upstream examples.
+- Treat `DESIGN.md` and `@semoss/ui/next` as the styling authority. Reuse existing
+  components, semantic tokens, and local composites before adding utility classes.
+- Use semantic classes such as `bg-background`, `text-foreground`,
+  `text-muted-foreground`, `border-border`, and the approved status tokens. Do not
+  invent hex values, raw palette shades, or a second accent color in a component.
+- Prefer the existing type scale, spacing scale, radii, and control sizes. Avoid
+  arbitrary values such as `text-[13px]`, `p-[17px]`, `z-[999]`, or one-off pixel
+  dimensions unless the owning design rule explicitly requires them.
+- Keep utility composition readable. Extract a repeated or conditional class group
+  into a named component or local constant and use the repository's `cn()` helper
+  rather than concatenating classes or allowing conflicting utilities to accumulate.
+- Write the base layout for the narrowest supported viewport, then add responsive
+  utilities only where the content needs them. Do not hide essential actions,
+  reorder content away from DOM order, or create horizontal page overflow.
+- Use borders, spacing, and typography to establish hierarchy. Do not add gradients,
+  decorative blobs, excessive shadows, nested cards, or animation merely to make a
+  screen appear polished.
+- Give fixed-format controls, tables, grids, editors, and media stable dimensions so
+  loading, long labels, focus styles, and state changes do not shift the layout.
+- Prefer class-based styling over inline styles. Inline styles are appropriate only
+  for genuinely data-driven values that cannot be represented by the token or utility
+  system.
+
+## React Performance and Correctness Guidance
+
+The following guidance applies the React performance and correctness practices
+that are relevant to SEMOSS. SEMOSS SDK, design, architecture, and supported
+React versions take precedence over generic React guidance.
 
 ### Correctness Defaults
 
-- [Stable component types](https://github.com/vercel-labs/agent-skills/blob/main/skills/react-best-practices/rules/rerender-no-inline-components.md):
+- **Stable component types**:
   define component types outside parent render functions so parent rerenders do
   not reset child state/focus. Ordinary handlers and render callbacks are not
   automatically nested component types. Follow the one-component-per-file rule.
-- [Previous-state updates](https://github.com/vercel-labs/agent-skills/blob/main/skills/react-best-practices/rules/rerender-functional-setstate.md):
+- **Previous-state updates**:
   use pure functional updaters for dependent state; this does not itself stabilize
   callback identity or require `useCallback`.
-- [Lazy initialization](https://github.com/vercel-labs/agent-skills/blob/main/skills/react-best-practices/rules/rerender-lazy-state-init.md):
+- **Lazy initialization**:
   use a pure lazy initializer for expensive initial state. Strict Mode and
   remounts can rerun it. Do not freeze values that must track changing props.
-- [Dependencies](https://github.com/vercel-labs/agent-skills/blob/main/skills/react-best-practices/rules/rerender-dependencies.md),
-  [derived state](https://github.com/vercel-labs/agent-skills/blob/main/skills/react-best-practices/rules/rerender-derived-state-no-effect.md),
-  and [event-driven work](https://github.com/vercel-labs/agent-skills/blob/main/skills/react-best-practices/rules/rerender-move-effect-to-event.md):
+- **Dependencies, derived state, and event-driven work**:
   apply the effect rules above; dependency completeness takes priority over
   attempts to reduce effect executions.
-- [Conditional rendering](https://github.com/vercel-labs/agent-skills/blob/main/skills/react-best-practices/rules/rendering-conditional-render.md):
+- **Conditional rendering**:
   use explicit boolean checks or ternaries to avoid rendering numeric `0`/`NaN`.
   Boolean `&&` expressions remain valid.
-- [Immutable arrays](https://github.com/vercel-labs/agent-skills/blob/main/skills/react-best-practices/rules/js-tosorted-immutable.md):
+- **Immutable arrays**:
   never sort, reverse, or splice props/state in place. Copy first or use supported
   copying methods; check target-browser support before adopting newer methods.
 
 ### Apply Where Relevant, Measure Performance Claims
 
-- [Independent async work](https://github.com/vercel-labs/agent-skills/blob/main/skills/react-best-practices/rules/async-parallel.md)
-  and [deferred awaits](https://github.com/vercel-labs/agent-skills/blob/main/skills/react-best-practices/rules/async-defer-await.md):
+- **Independent async work and deferred awaits**:
   use existing API helpers to parallelize truly independent work and avoid work
   until needed. Preserve ordered Pixel/insight mutations, permissions, rate
   limits, cancellation, and error semantics. Do not add `better-all`.
-- [Heavy optional imports](https://github.com/vercel-labs/agent-skills/blob/main/skills/react-best-practices/rules/bundle-dynamic-imports.md)
-  and [conditional loading](https://github.com/vercel-labs/agent-skills/blob/main/skills/react-best-practices/rules/bundle-conditional.md):
+- **Heavy optional imports and conditional loading**:
   use existing router conventions, `React.lazy`/`Suspense`, or Vite-compatible
   `import()` for optional editors/viewers/charts. Adapt named exports in the lazy
   promise result, preserve accessible loading/error states and stable geometry,
   and inspect production chunks/network behavior. Do not use `next/dynamic`.
-- [Import boundaries](https://github.com/vercel-labs/agent-skills/blob/main/skills/react-best-practices/rules/bundle-barrel-imports.md):
+- **Import boundaries**:
   follow the public-entry/internal-definition policy above; do not use unsupported
   third-party deep imports or promise unmeasured build-time savings.
-- [Transitions](https://github.com/vercel-labs/agent-skills/blob/main/skills/react-best-practices/rules/rerender-transitions.md)
-  and [deferred rendering](https://github.com/vercel-labs/agent-skills/blob/main/skills/react-best-practices/rules/rerender-use-deferred-value.md):
+- **Transitions and deferred rendering**:
   keep controlled input updates urgent. After profiling, defer expensive results
   or non-urgent updates with boundaries that can actually skip urgent rerenders.
   These APIs neither debounce requests nor move CPU work off-thread; use existing
   request management or a worker when warranted.
-- [Shared subscriptions](https://github.com/vercel-labs/agent-skills/blob/main/skills/react-best-practices/rules/client-event-listeners.md)
-  and [passive listeners](https://github.com/vercel-labs/agent-skills/blob/main/skills/react-best-practices/rules/client-passive-event-listeners.md):
+- **Shared subscriptions and passive listeners**:
   reuse existing subscription abstractions where useful and clean up listeners.
   Make touch/wheel listeners passive only when they do not need `preventDefault`.
   Do not add SWR or an event bus just to satisfy this guidance.
-- [Owned persistence](https://github.com/vercel-labs/agent-skills/blob/main/skills/react-best-practices/rules/client-localstorage-schema.md):
+- **Owned persistence**:
   version/minimize data, validate parsed unknown values, handle corrupt or
   unavailable storage, and exclude secrets/sensitive records. Preserve existing
   storage contracts; optional preferences may fall back, required writes must
@@ -168,13 +185,87 @@ Profile before memoizing and follow established React/compiler tooling. Verify
 installed versions and library peers before newer APIs; do not assume React
 Compiler, Activity, or `useEffectEvent` is available. No blanket memoization,
 micro-optimization, unbounded module cache, universal preload, or routine DOM
-mutation is required. Next.js/RSC/SSR/server-action and hydration-specific rules
-do not apply to these Vite clients. Dependency or React peer changes require
-explicit scope and compatibility review.
+mutation is required. Dependency or React peer changes require explicit scope and
+compatibility review.
 
 Reserve media/loading dimensions and avoid long blocking tasks. INP <200ms and
 CLS <0.1 are measured targets, preferably at the field 75th percentile, not lint
 guarantees.
+
+### Rule Catalog
+
+Use this catalog when reviewing or implementing React code. Apply the highest
+impact applicable rule first, then verify the result with profiling or a focused
+behavior check. Do not introduce a dependency or framework API solely to satisfy
+a catalog entry.
+
+1. **Eliminating waterfalls (critical)**
+   - Check cheap synchronous conditions before awaiting flags or remote values.
+   - Defer awaits into the branches that need them.
+   - Start independent operations together with `Promise.all` or existing SDK
+     helpers, while preserving ordered Pixel/insight mutations and cancellation.
+   - Start independent work early in route or workflow handlers and use focused
+     Suspense boundaries when the host supports them.
+
+2. **Bundle size (critical)**
+   - Follow SEMOSS public-entry and internal-definition import boundaries.
+   - Load optional editors, viewers, charts, and feature modules conditionally.
+   - Defer non-critical analytics, logging, and monitoring until they cannot block
+     the initial interaction.
+   - Prefer statically analyzable import paths and preload only on clear user
+     intent such as hover, focus, or an enabled feature.
+
+3. **Client-side data fetching (medium-high)**
+   - Reuse shared subscription or SDK query abstractions to deduplicate global
+     event listeners and requests.
+   - Mark touch and wheel listeners passive only when they never call
+     `preventDefault`.
+   - Version and minimize persisted preference data, validate parsed values, handle
+     unavailable storage, and never persist secrets or sensitive records.
+
+4. **Re-render optimization (medium)**
+   - Derive values during render instead of mirroring them in state and effects.
+   - Read dynamic state at the point of use when a subscription is unnecessary.
+   - Keep primitive expressions simple; profile before adding `useMemo`, `memo`, or
+     `useCallback`.
+   - Define components outside parent renders, hoist stable default values, and
+     extract expensive work into memoized components only when measured.
+   - Narrow effect dependencies to values actually used, split independent hook
+     computations, and move interaction logic into event handlers.
+   - Subscribe to derived state where possible, use functional state updates for
+     previous-state changes, and use lazy initialization for expensive values.
+   - Keep controlled input updates urgent; use transitions or deferred values only
+     for measured expensive non-urgent rendering, and refs for transient values
+     that should not trigger renders.
+
+5. **Rendering performance (medium)**
+   - Animate a wrapper around SVG when that improves compositing, and use
+     `content-visibility` for genuinely long off-screen lists.
+   - Hoist static JSX when it is large or expensive to recreate; optimize SVG
+     precision in generated assets.
+   - Use explicit conditional rendering when a falsy value such as `0` or `NaN`
+     could otherwise render accidentally.
+   - Use resource hints and non-blocking script loading only when the host and
+     measured loading path justify them.
+
+6. **JavaScript performance (low-medium)**
+   - Avoid layout thrashing by batching DOM reads and writes; prefer CSS classes.
+   - Build `Map` or `Set` indexes for repeated lookups, and cache repeated work
+     only when the cache has bounded ownership and invalidation.
+   - Combine array passes in proven hot paths, defer non-critical work to idle time,
+     and return early when a result is known.
+   - Check collection lengths before expensive comparisons, hoist reusable regular
+     expressions, and use `flatMap` when it clearly removes an intermediate pass.
+   - Find min/max values with a loop instead of sorting, and use immutable sorting
+     (`toSorted` or a copied array) for props and state.
+
+7. **Advanced patterns (low)**
+   - Keep effect dependencies complete; do not add experimental effect-event APIs
+     unless the installed React version and lint tooling support them.
+   - Run app-wide initialization from an owned entry point or guarded initializer,
+     not from an effect that may rerun on remount.
+   - Use stable event-handler refs or the supported effect-event replacement when a
+     subscription must not be recreated for every callback change.
 
 ## Validation
 
