@@ -186,6 +186,8 @@ export function RoomComposer({
 			const trimmed = text.trim();
 			if (
 				!trimmed ||
+				!modelId ||
+				isModelSaving ||
 				isRunning ||
 				isSubmitting ||
 				submittingRef.current
@@ -222,6 +224,8 @@ export function RoomComposer({
 			focusEditor,
 			isRunning,
 			isSubmitting,
+			isModelSaving,
+			modelId,
 			onSend,
 			onSent,
 			setEditorText,
@@ -351,7 +355,8 @@ export function RoomComposer({
 	);
 
 	const alert = fileError || submissionError || modelError?.message;
-	const sendDisabled = !draft.trim() || isSubmitting;
+	const sendDisabled =
+		!draft.trim() || !modelId || isSubmitting || isModelSaving;
 
 	return (
 		<div className="shrink-0 border-t bg-background p-2 sm:p-3 lg:p-4">
@@ -551,8 +556,8 @@ export function RoomComposer({
 									aria-label={
 										isRunning
 											? isCancelling
-												? "Cancelling run"
-												: "Stop run"
+												? "Cancelling turn"
+												: "Stop response"
 											: `Send message to ${agentName}`
 									}
 									disabled={

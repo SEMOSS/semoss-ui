@@ -1,7 +1,7 @@
 import { act, renderHook } from "@testing-library/react";
-import type { RoomStore } from "@semoss/sdk";
 import type { Engine } from "@semoss/shared";
 import { useRoomModelSelection } from "./use-room-model-selection";
+import type { PlaygroundRoom } from "./use-room-store";
 
 const nextEngine: Engine = {
 	engine_id: "model-2",
@@ -10,12 +10,12 @@ const nextEngine: Engine = {
 	engine_type: "MODEL",
 };
 
-function roomWith(updateOptions: RoomStore["updateOptions"]) {
+function roomWith(updateOptions: PlaygroundRoom["updateOptions"]) {
 	return {
 		roomId: "room-1",
 		options: { modelId: "model-1" },
 		updateOptions,
-	} as RoomStore;
+	} as PlaygroundRoom;
 }
 
 describe("useRoomModelSelection", () => {

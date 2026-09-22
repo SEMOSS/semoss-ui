@@ -1,11 +1,16 @@
 import { useCallback, useRef, useState } from "react";
-import type { RoomStore } from "@semoss/sdk";
 import type { Engine } from "@semoss/shared";
+
+interface ModelSelectionRoom {
+	roomId: string;
+	options: { modelId: string };
+	updateOptions: (options: { modelId?: string }) => Promise<void>;
+}
 
 /** Persist and expose one room's model without optimistic selection drift. */
 export function useRoomModelSelection(
 	roomId: string,
-	room: RoomStore | null,
+	room: ModelSelectionRoom | null,
 	fallbackModelId = "",
 ) {
 	const [selection, setSelection] = useState<{

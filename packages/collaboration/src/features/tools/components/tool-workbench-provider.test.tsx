@@ -1,11 +1,14 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import type { ConversationTool } from "@/features/messages/types/message";
+import type { PendingToolApproval } from "@/features/rooms/types/room";
 import { toolCardTriggerId } from "../tool-workbench.constants";
 import { useToolWorkbench } from "../tool-workbench.context";
+import { ToolWorkbench } from "./tool-workbench";
 import { ToolWorkbenchProvider } from "./tool-workbench-provider";
 
 const tool: ConversationTool = {
 	id: "tool-1",
+	parentMessageId: "response-1",
 	name: "search",
 	title: "Search",
 	arguments: {},
@@ -43,50 +46,140 @@ function Harness() {
 			<button type="button" onClick={() => workbench.closeTool(tool.id)}>
 				Close tool
 			</button>
+			{workbench.isOpen && <ToolWorkbench />}
 		</>
 	);
 }
 
+function renderProvider(
+	pendingApprovals: PendingToolApproval[] = [],
+	callbacks: {
+		onApproveTool?: (
+			approval: PendingToolApproval,
+			argumentsValue: Record<string, unknown>,
+		) => Promise<void>;
+		onRejectTool?: (approval: PendingToolApproval) => Promise<void>;
+	} = {},
+) {
+	return render(
+		<ToolWorkbenchProvider
+			roomId="room-1"
+			tools={{ [tool.id]: tool }}
+			pendingApprovals={pendingApprovals}
+			onApproveTool={callbacks.onApproveTool ?? vi.fn()}
+			onRejectTool={callbacks.onRejectTool ?? vi.fn()}
+		>
+			<Harness />
+		</ToolWorkbenchProvider>,
+	);
+}
+
 describe("ToolWorkbenchProvider", () => {
-	it("moves a tool between hidden, inline, and workbench without duplication", async () => {
-		render(
-			<ToolWorkbenchProvider
-				roomId="room-1"
-				tools={{ [tool.id]: tool }}
-				pendingActions={[]}
-				onDecideAction={vi.fn()}
-			>
-				<Harness />
-			</ToolWorkbenchProvider>,
-		);
+	beforeEach(() => {
+		Object.defineProperty(window, "matchMedia", {
+			writable: true,
+			value: vi.fn().mockImplementation((query: string) => ({
+				matches: false,
+				media: query,
+				onchange: null,
+				addListener: vi.fn(),
+				removeListener: vi.fn(),
+				addEventListener: vi.fn(),
+				removeEventListener: vi.fn(),
+				dispatchEvent: vi.fn(),
+			})),
+		});
+	});
 
-		expect(screen.getByTestId("inline").textContent).toBe("false");
-		expect(screen.getByTestId("workbench").textContent).toBe("false");
-		expect(screen.getByTestId("mode").textContent).toBe("hidden");
-
-		fireEvent.click(screen.getByRole("button", { name: "Inline" }));
-		expect(screen.getByTestId("inline").textContent).toBe("true");
-		expect(screen.getByTestId("workbench").textContent).toBe("false");
-		expect(screen.getByTestId("mode").textContent).toBe("inline");
-		await waitFor(() =>
-			expect(document.activeElement?.textContent).toBe("Transcript tool"),
-		);
-
+	it("keeps the selected panel when the workbench shell mounts", async () => {
+		renderProvider();
 		fireEvent.click(screen.getByRole("button", { name: "Workbench" }));
-		expect(screen.getByTestId("inline").textContent).toBe("false");
-		expect(screen.getByTestId("workbench").textContent).toBe("true");
+		await waitFor(() =>
+			expect(screen.getByTestId("workbench").textContent).toBe("true"),
+		);
 		expect(screen.getByTestId("mode").textContent).toBe("workbench");
 
 		fireEvent.click(screen.getByRole("button", { name: "Hide workbench" }));
 		expect(screen.getByTestId("workbench").textContent).toBe("false");
-		// Hiding the dock keeps its tabs and their per-tool placement.
 		expect(screen.getByTestId("mode").textContent).toBe("workbench");
+		await waitFor(() =>
+			expect(document.activeElement?.textContent).toBe("Transcript tool"),
+		);
+	});
 
-		fireEvent.click(screen.getByRole("button", { name: "Workbench" }));
+	it("opens an approval in the desktop workbench automatically", async () => {
+		renderProvider([
+			{
+				toolId: tool.id,
+				parentMessageId: tool.parentMessageId,
+				toolName: tool.name,
+				arguments: {},
+			},
+		]);
+		await waitFor(() =>
+			expect(screen.getByTestId("workbench").textContent).toBe("true"),
+		);
+		expect(screen.getByTestId("mode").textContent).toBe("workbench");
+	});
+
+	it("submits edited approval parameters and announces approval errors", async () => {
+		const onApproveTool = vi.fn(async () => {
+			throw new Error("Approval could not be saved");
+		});
+		const approval: PendingToolApproval = {
+			toolId: tool.id,
+			parentMessageId: tool.parentMessageId,
+			toolName: tool.name,
+			arguments: { query: "first" },
+		};
+		renderProvider([approval], { onApproveTool });
+		const argumentsEditor = await screen.findByRole("textbox", {
+			name: "Tool arguments",
+		});
+		fireEvent.change(argumentsEditor, {
+			target: { value: '{"query":"edited"}' },
+		});
+		fireEvent.click(
+			screen.getByRole("button", { name: "Approve and run" }),
+		);
+
+		await waitFor(() =>
+			expect(onApproveTool).toHaveBeenCalledWith(approval, {
+				query: "edited",
+			}),
+		);
+		expect(await screen.findByRole("alert")).toHaveTextContent(
+			"Approval could not be saved",
+		);
+	});
+
+	it("keeps a rejected approval open when cancellation persistence fails", async () => {
+		const onRejectTool = vi.fn(async () => {
+			throw new Error("Rejection could not be saved");
+		});
+		const approval: PendingToolApproval = {
+			toolId: tool.id,
+			parentMessageId: tool.parentMessageId,
+			toolName: tool.name,
+			arguments: {},
+		};
+		renderProvider([approval], { onRejectTool });
+		fireEvent.click(await screen.findByRole("button", { name: "Reject" }));
+
+		expect(await screen.findByRole("alert")).toHaveTextContent(
+			"Rejection could not be saved",
+		);
 		expect(screen.getByTestId("workbench").textContent).toBe("true");
+	});
+
+	it("moves a tool inline and returns focus when it closes", async () => {
+		renderProvider();
+		fireEvent.click(screen.getByRole("button", { name: "Inline" }));
+		expect(screen.getByTestId("inline").textContent).toBe("true");
 		fireEvent.click(screen.getByRole("button", { name: "Close tool" }));
-		expect(screen.getByTestId("inline").textContent).toBe("false");
-		expect(screen.getByTestId("workbench").textContent).toBe("false");
+		await waitFor(() =>
+			expect(document.activeElement?.textContent).toBe("Transcript tool"),
+		);
 		expect(screen.getByTestId("mode").textContent).toBe("hidden");
 	});
 });

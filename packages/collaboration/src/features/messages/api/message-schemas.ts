@@ -32,6 +32,7 @@ const toolCallPartSchema = z.object({
 		original_name: z.string().nullish(),
 		arguments: unknownRecordSchema.nullish(),
 		_meta: unknownRecordSchema.nullish(),
+		server_tool: z.boolean().nullish(),
 	}),
 });
 
@@ -48,37 +49,18 @@ const toolResultPartSchema = z.object({
 	}),
 });
 
-const subagentPartSchema = z.object({
-	type: z.literal("SUBAGENT"),
-	subagent: z.object({
-		id: z.string(),
-		status: z.enum([
-			"SUBMITTED",
-			"RUNNING",
-			"INPUT_REQUIRED",
-			"COMPLETED",
-			"FAILED",
-			"CANCELLED",
-		]),
-		alias: z.string().nullish(),
-		resultPreview: z.string().nullish(),
-		error: z.string().nullish(),
-	}),
-});
-
-/** Canonical persisted message parts that collaboration can render. */
+/** Canonical persisted playground message parts collaboration can render. */
 export const roomMessagePartSchema = z.discriminatedUnion("type", [
 	textPartSchema,
 	thinkingPartSchema,
 	mediaPartSchema,
 	toolCallPartSchema,
 	toolResultPartSchema,
-	subagentPartSchema,
 ]);
 
 export type ValidatedRoomMessagePart = z.infer<typeof roomMessagePartSchema>;
 
-/** Normalize the reactor's uppercase row columns before validating the message. */
+/** Normalize reactor uppercase row columns before validating the message. */
 const normalizeRoomMessage = (value: unknown) => {
 	if (typeof value !== "object" || value === null || Array.isArray(value)) {
 		return value;
@@ -87,7 +69,7 @@ const normalizeRoomMessage = (value: unknown) => {
 	const raw = value as Record<string, unknown>;
 	const type = raw.type ?? raw.MESSAGE_TYPE_FORMAT;
 	const text = raw.content ?? raw.inputPrompt ?? raw.MESSAGE_DATA;
-	let parts = raw.parts;
+	let parts = raw.parts ?? raw.PARTS;
 	if (typeof parts === "string") {
 		try {
 			parts = JSON.parse(parts) as unknown;
@@ -100,6 +82,12 @@ const normalizeRoomMessage = (value: unknown) => {
 		messageId: raw.messageId ?? raw.MESSAGE_ID,
 		type,
 		dateCreated: raw.dateCreated ?? raw.DATE_CREATED,
+		parentMessageId: raw.parentMessageId ?? raw.PARENT_MESSAGE_ID,
+		summaryLeafMessageId:
+			raw.summaryLeafMessageId ?? raw.SUMMARY_LEAF_MESSAGE_ID,
+		visible: raw.visible ?? raw.VISIBLE,
+		io: raw.io ?? raw.IO,
+		modelId: raw.modelId ?? raw.MODEL_ID,
 		parts,
 	};
 
@@ -114,30 +102,43 @@ const normalizeRoomMessage = (value: unknown) => {
 	return normalized;
 };
 
-/**
- * A persisted room message, normalized from either SDK-style or reactor rows.
- *
- * `GetRoomMessages` returns uppercase columns such as `MESSAGE_DATA` and
- * `MESSAGE_TYPE_FORMAT`; the SDK's loose `RoomMessage` type uses camelCase.
- */
+/** A persisted message normalized from SDK-style or uppercase reactor rows. */
 export const roomMessageSchema = z.preprocess(
 	normalizeRoomMessage,
-	z.object({
-		messageId: z.string(),
-		// "INPUT_TEXT" | "INPUT_MEDIA" | "INPUT_TOOL_EXEC" | "RESPONSE_TEXT" | "RESPONSE_TOOL" | "RESPONSE_MEDIA"
-		type: z.string().nullish(),
-		parts: z.array(z.unknown()).nullish(),
-		/** Agent text (ResponseMessage). */
-		content: z.string().nullish(),
-		/** User text (InputMessage). */
-		inputPrompt: z.string().nullish(),
-		/** Accepted because the SDK's own type declares it, though the server omits it. */
-		role: z.string().nullish(),
-		io: z.string().nullish(),
-		// Some server variants omit this; the UI then deliberately omits the time.
-		dateCreated: z.string().nullish(),
-	}),
+	z
+		.object({
+			messageId: z.string(),
+			type: z.string().nullish(),
+			parts: z.array(z.unknown()).nullish(),
+			content: z.string().nullish(),
+			inputPrompt: z.string().nullish(),
+			role: z.string().nullish(),
+			io: z.string().nullish(),
+			dateCreated: z.string().nullish(),
+			parentMessageId: z.string().nullish(),
+			summaryLeafMessageId: z.string().nullish(),
+			visible: z.boolean().nullish(),
+			modelId: z.string().nullish(),
+		})
+		.catchall(z.unknown()),
 );
 
-/** A message that passed validation and is safe to render. */
 export type ValidatedRoomMessage = z.infer<typeof roomMessageSchema>;
+
+export const playgroundMessagesSchema = z.array(roomMessageSchema);
+
+/** Authoritative message pair returned after a playground model response. */
+export const playgroundTurnOutputSchema = z.object({
+	inputMessage: roomMessageSchema,
+	responseMessage: roomMessageSchema,
+	extraMessages: z
+		.array(
+			z.object({
+				inputMessage: roomMessageSchema,
+				responseMessage: roomMessageSchema,
+			}),
+		)
+		.optional(),
+});
+
+export type PlaygroundTurnOutput = z.infer<typeof playgroundTurnOutputSchema>;

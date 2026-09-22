@@ -1,19 +1,25 @@
 import { useEffect, useRef, useState } from "react";
-import { getRoomOptions, RoomStore } from "@semoss/sdk";
-import { toError } from "@/lib/pixel";
+import { useInsight } from "@semoss/sdk/react";
+import { callPixel, pixel, toError } from "@/lib/pixel";
+import {
+	type PlaygroundRoomOptions,
+	roomOptionsEnvelopeSchema,
+	roomWriteSchema,
+} from "./room-schemas";
 
-/**
- * Build the `RoomStore` backing an existing room.
- *
- * `RoomStore`'s constructor takes the room's current options rather than
- * fetching them itself, so this loads them once per `roomId` and recreates the
- * store whenever the room changes.
- *
- * @param insightId - The active insight.
- * @param roomId - The room to load, or empty when none is selected yet.
- */
+/** Collaboration-local room contract for playground transport. */
+export interface PlaygroundRoom {
+	roomId: string;
+	insightId: string;
+	name?: string;
+	options: PlaygroundRoomOptions;
+	updateOptions: (options: Partial<PlaygroundRoomOptions>) => Promise<void>;
+}
+
+/** Load the real `GetRoomOptions` envelope and bind the room to the insight. */
 export function useRoomStore(insightId: string, roomId: string) {
-	const [room, setRoom] = useState<RoomStore | null>(null);
+	const { actions } = useInsight();
+	const [room, setRoom] = useState<PlaygroundRoom | null>(null);
 	const [isLoading, setIsLoading] = useState(true);
 	const [error, setError] = useState<Error | null>(null);
 	const roomRef = useRef(roomId);
@@ -31,24 +37,67 @@ export function useRoomStore(insightId: string, roomId: string) {
 		setIsLoading(true);
 		setError(null);
 
-		getRoomOptions(insightId, roomId)
-			.then((options) => {
-				if (cancelled || roomRef.current !== roomId) return;
-				setRoom(new RoomStore(roomId, insightId, options));
-			})
+		(async () => {
+			const envelope = await callPixel(
+				actions,
+				pixel("GetRoomOptions", { roomId }),
+				roomOptionsEnvelopeSchema,
+			);
+			const bound = await callPixel(
+				actions,
+				pixel("SetRoomForInsight", { roomId }),
+				roomWriteSchema,
+			);
+			if (!bound) {
+				throw new Error(
+					"SEMOSS did not bind the room to this insight.",
+				);
+			}
+			if (cancelled || roomRef.current !== roomId) return;
+
+			let currentOptions = envelope.OPTIONS;
+			const loadedRoom: PlaygroundRoom = {
+				roomId,
+				insightId,
+				name: envelope.ROOM_NAME ?? undefined,
+				get options() {
+					return currentOptions;
+				},
+				updateOptions: async (changes) => {
+					const nextOptions = { ...currentOptions, ...changes };
+					const updated = await callPixel(
+						actions,
+						pixel("UpdateRoomOptions", {
+							roomId,
+							roomOptions: [nextOptions],
+						}),
+						roomWriteSchema,
+					);
+					if (!updated) {
+						throw new Error(
+							"SEMOSS did not save the room options.",
+						);
+					}
+					currentOptions = nextOptions;
+				},
+			};
+			setRoom(loadedRoom);
+		})()
 			.catch((cause: unknown) => {
-				if (cancelled || roomRef.current !== roomId) return;
-				setError(toError(cause));
+				if (!cancelled && roomRef.current === roomId) {
+					setError(toError(cause));
+				}
 			})
 			.finally(() => {
-				if (!cancelled && roomRef.current === roomId)
+				if (!cancelled && roomRef.current === roomId) {
 					setIsLoading(false);
+				}
 			});
 
 		return () => {
 			cancelled = true;
 		};
-	}, [insightId, roomId]);
+	}, [actions, insightId, roomId]);
 
 	return { room, isLoading, error };
 }

@@ -1,5 +1,4 @@
 import { useState } from "react";
-import type { PendingAgentAction } from "@semoss/sdk";
 import {
 	Alert,
 	AlertDescription,
@@ -16,6 +15,7 @@ import {
 	zodResolver,
 } from "@semoss/ui/next";
 import type { ConversationTool } from "@/features/messages/types/message";
+import type { PendingToolApproval } from "@/features/rooms/types/room";
 import { useToolWorkbench } from "../tool-workbench.context";
 import { ToolUiFrame } from "./tool-ui-frame";
 
@@ -42,17 +42,17 @@ type ApprovalValues = z.infer<typeof approvalSchema>;
 
 interface ToolApprovalPanelProps {
 	tool: ConversationTool;
-	action: PendingAgentAction;
+	action: PendingToolApproval;
 }
 
-/** Review, optionally edit, and resolve one paused agent tool call. */
+/** Review, optionally edit, and resolve one paused playground tool call. */
 export function ToolApprovalPanel({ tool, action }: ToolApprovalPanelProps) {
-	const { roomId, onDecideAction } = useToolWorkbench();
+	const { onApproveTool, onRejectTool, closeTool } = useToolWorkbench();
 	const form = useForm<ApprovalValues>({
 		resolver: zodResolver(approvalSchema),
 		defaultValues: {
 			arguments: JSON.stringify(
-				action.editedArgs ?? action.toolArgs ?? tool.arguments,
+				action.arguments ?? tool.arguments,
 				null,
 				2,
 			),
@@ -73,7 +73,8 @@ export function ToolApprovalPanel({ tool, action }: ToolApprovalPanelProps) {
 		}
 
 		try {
-			await onDecideAction(action, "submit", parameters);
+			await onApproveTool(action, parameters);
+			closeTool(tool.id);
 		} catch (error) {
 			form.setError("root.server", {
 				type: "server",
@@ -89,7 +90,8 @@ export function ToolApprovalPanel({ tool, action }: ToolApprovalPanelProps) {
 		if (isUpdating) return;
 		setIsRejecting(true);
 		try {
-			await onDecideAction(action, "reject");
+			await onRejectTool(action);
+			closeTool(tool.id);
 		} catch (error) {
 			form.setError("root.server", {
 				type: "server",
@@ -134,9 +136,7 @@ export function ToolApprovalPanel({ tool, action }: ToolApprovalPanelProps) {
 					>
 						<ToolUiFrame
 							key={action.uiUrl}
-							roomId={roomId}
 							tool={tool}
-							action={action}
 							url={action.uiUrl}
 						/>
 					</TabsContent>

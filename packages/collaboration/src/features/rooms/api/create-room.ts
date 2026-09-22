@@ -1,29 +1,10 @@
-import { RoomStore } from "@semoss/sdk";
-import { z } from "@semoss/ui/next";
 import { callPixel, type InsightActions, pixel } from "@/lib/pixel";
+import { createdPlaygroundRoomSchema, roomWriteSchema } from "./room-schemas";
 
-/** Runs the message through the server-side RunAgent harness. */
-const SEMOSS_HARNESS = "semoss";
-
-/**
- * Create a room for an agent and configure it for the agent harness.
- *
- * The room is bound to the workspace at creation so the backend associates the
- * two, and `harnessType` is persisted so every later turn runs through RunAgent
- * rather than the client-driven AskRoom flow.
- *
- * @param actions - `actions` from `useInsight()`, used only for the optional rename.
- * @param insightId - The active insight.
- * @param options.workspaceId - The agent the room belongs to.
- * @param options.workspaceName - Display name stored in the room's options.
- * @param options.instructions - System prompt for the room; defaults to the agent's.
- * @param options.modelId - Engine id; omit to let the server pick the default.
- * @param options.name - Optional room title.
- * @returns The new room's id.
- */
+/** Create and fully configure one workspace-backed playground room. */
 export async function createRoom(
 	actions: InsightActions,
-	insightId: string,
+	_insightId: string,
 	options: {
 		workspaceId: string;
 		workspaceName: string;
@@ -32,9 +13,12 @@ export async function createRoom(
 		name?: string;
 	},
 ): Promise<string> {
-	const room = await RoomStore.create(insightId, options.workspaceId);
-
-	await room.updateOptions({
+	const created = await callPixel(
+		actions,
+		pixel("CreatePlaygroundRoom", { workspaceId: options.workspaceId }),
+		createdPlaygroundRoomSchema,
+	);
+	const roomOptions = {
 		predefinedPrompts: [],
 		instructions: options.instructions ?? "",
 		mcp: [],
@@ -43,19 +27,37 @@ export async function createRoom(
 			name: options.workspaceName,
 		},
 		modelId: options.modelId ?? "",
-		harnessType: SEMOSS_HARNESS,
-	});
+	};
+
+	const updated = await callPixel(
+		actions,
+		pixel("UpdateRoomOptions", {
+			roomId: created.roomId,
+			roomOptions: [roomOptions],
+		}),
+		roomWriteSchema,
+	);
+	if (!updated) throw new Error("SEMOSS did not save the room options.");
 
 	if (options.name) {
-		await callPixel(
+		const renamed = await callPixel(
 			actions,
 			pixel("SetRoomName", {
-				roomId: room.roomId,
+				roomId: created.roomId,
 				roomName: options.name,
 			}),
-			z.unknown(),
+			roomWriteSchema,
 		);
+		if (!renamed) throw new Error("SEMOSS did not save the room name.");
 	}
 
-	return room.roomId;
+	const bound = await callPixel(
+		actions,
+		pixel("SetRoomForInsight", { roomId: created.roomId }),
+		roomWriteSchema,
+	);
+	if (!bound)
+		throw new Error("SEMOSS did not bind the room to this insight.");
+
+	return created.roomId;
 }

@@ -1,6 +1,6 @@
-import type { PendingAgentAction } from "@semoss/sdk";
 import type { createWorkbenchStore } from "@semoss/workbench";
 import type { ConversationTool } from "@/features/messages/types/message";
+import type { PendingToolApproval } from "@/features/rooms/types/room";
 
 export interface ToolPanelConfig {
 	toolId: string;
@@ -12,7 +12,7 @@ export interface ToolWorkbenchContextValue {
 	store: ReturnType<typeof createWorkbenchStore>;
 	roomId: string;
 	tools: Record<string, ConversationTool>;
-	pendingActions: PendingAgentAction[];
+	pendingApprovals: PendingToolApproval[];
 	isOpen: boolean;
 	activeToolId: string | null;
 	isToolInline: (toolId: string) => boolean;
@@ -21,9 +21,9 @@ export interface ToolWorkbenchContextValue {
 	openWorkbench: (toolId: string) => void;
 	closeTool: (toolId: string) => void;
 	closeWorkbench: () => void;
-	onDecideAction: (
-		action: PendingAgentAction,
-		decision: "submit" | "reject" | "respond",
-		paramValues?: Record<string, unknown>,
+	onApproveTool: (
+		approval: PendingToolApproval,
+		argumentsValue: Record<string, unknown>,
 	) => Promise<void>;
+	onRejectTool: (approval: PendingToolApproval) => Promise<void>;
 }

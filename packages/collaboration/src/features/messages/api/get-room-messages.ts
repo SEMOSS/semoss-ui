@@ -1,26 +1,35 @@
-import type { RoomStore } from "@semoss/sdk";
+import { callPixel, type InsightActions } from "@/lib/pixel";
 import {
-	roomMessageSchema,
+	playgroundMessagesSchema,
 	type ValidatedRoomMessage,
 } from "./message-schemas";
 
-/**
- * Load a room's persisted message history.
- *
- * The SDK types messages loosely (`[key: string]: unknown`), so each row is
- * validated here and rows that do not match are dropped rather than rendered.
- * Rich message parts are validated separately while building the transcript,
- * so one unsupported part cannot discard the rest of an otherwise valid row.
- *
- * @param room - The store for the room whose history to load.
- */
+/** Load and validate a playground room's complete durable history. */
 export async function getRoomMessages(
-	room: RoomStore,
+	actions: InsightActions,
+	roomId: string,
 ): Promise<ValidatedRoomMessage[]> {
-	const messages = await room.getMessages();
+	return callPixel(
+		actions,
+		`GetPlaygroundMessages(roomId=${JSON.stringify([roomId])});`,
+		playgroundMessagesSchema,
+	);
+}
 
-	return messages.flatMap((message) => {
-		const parsed = roomMessageSchema.safeParse(message);
-		return parsed.success ? [parsed.data] : [];
-	});
+/** Return the latest assistant tail, including invisible cancellation notes. */
+export function latestAssistantTail(messages: ValidatedRoomMessage[]): string {
+	for (let index = messages.length - 1; index >= 0; index -= 1) {
+		const message = messages[index];
+		const io = message.io?.toUpperCase();
+		const role = message.role?.toLowerCase();
+		const type = message.type?.toUpperCase() ?? "";
+		if (
+			io === "OUTPUT" ||
+			role === "assistant" ||
+			type.startsWith("RESPONSE")
+		) {
+			return message.messageId;
+		}
+	}
+	return "ROOT_PLACEHOLDER_ID";
 }

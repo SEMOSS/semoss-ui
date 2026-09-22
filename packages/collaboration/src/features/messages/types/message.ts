@@ -1,12 +1,7 @@
-import type { AgentRunProgress, AgentRunStatusValue } from "@semoss/sdk";
-
-/** Whether one live run item can still receive polling updates. */
+/** Whether one streaming message part can still receive chunks. */
 type ConversationPartState = "active" | "complete";
 
-/** Per-item phases keyed by the agent run item's stable id. */
-export type ConversationPartStates = Record<string, ConversationPartState>;
-
-/** Status shared by persisted and live tool calls in the conversation. */
+/** Status shared by persisted and live playground tool calls. */
 export type ConversationToolStatus =
 	| "QUEUED"
 	| "RUNNING"
@@ -19,16 +14,38 @@ export type ConversationToolStatus =
 /** One tool call rendered in a message and opened in the room workbench. */
 export interface ConversationTool {
 	id: string;
+	parentMessageId: string;
 	name: string;
 	title: string;
 	description?: string;
 	arguments: Record<string, unknown>;
 	metadata?: Record<string, unknown>;
+	serverTool?: boolean;
+	uiUrl?: string;
 	status: ConversationToolStatus;
 	output?: string;
 	error?: string;
 	durationMs?: number;
 }
+
+/** Controller-owned changes applied over durable tool calls. */
+export type ConversationToolStates = Record<
+	string,
+	Partial<
+		Pick<
+			ConversationTool,
+			"arguments" | "status" | "output" | "error" | "durationMs" | "uiUrl"
+		>
+	>
+>;
+
+export type PlaygroundTurnPhase =
+	| "streaming"
+	| "executing_tools"
+	| "awaiting_approval"
+	| "cancelling"
+	| "completed"
+	| "failed";
 
 export type ConversationMessagePart =
 	| {
@@ -50,14 +67,6 @@ export type ConversationMessagePart =
 			fileName: string;
 			fileLocation?: string;
 			mimeType?: string;
-	  }
-	| {
-			type: "subagent";
-			id: string;
-			label: string;
-			status: AgentRunStatusValue;
-			result?: string;
-			error?: string;
 	  };
 
 /** A Playground-style message with ordered, typed content parts. */
@@ -66,10 +75,10 @@ export interface ConversationMessage {
 	role: "user" | "assistant";
 	parts: ConversationMessagePart[];
 	createdAt?: string;
-	/** Present only for the temporary assistant entry driven by a live run. */
+	parentMessageId?: string;
+	visible?: boolean;
 	live?: {
-		status: AgentRunStatusValue;
-		progress?: AgentRunProgress;
-		hasStreamGap: boolean;
+		phase: PlaygroundTurnPhase;
+		hasObservationIssue: boolean;
 	};
 }

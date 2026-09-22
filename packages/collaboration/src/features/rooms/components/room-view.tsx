@@ -13,13 +13,15 @@ export function RoomView({
 	agentId,
 	sessionId,
 	thread,
+	toolStates,
 	isSending,
 	isRunning,
 	isCancelling,
 	isLoadingHistory,
-	runError,
+	turnError,
 	transportError,
-	pendingActions,
+	pendingApprovals,
+	phase,
 	modelId,
 	modelName,
 	isModelSaving,
@@ -28,16 +30,17 @@ export function RoomView({
 	onSendMessage,
 	onModelChange,
 	onOptimizePrompt,
-	onCancelRun,
-	onDecideAction,
+	onCancelTurn,
+	onApproveTool,
+	onRejectTool,
 	onConfigure,
 	onNewRoom,
 	onOpenRooms,
 }: RoomViewProps) {
 	const session = sessions.find((candidate) => candidate.id === sessionId);
 	const tools = useMemo(
-		() => toolsFromMessages(thread, pendingActions),
-		[thread, pendingActions],
+		() => toolsFromMessages(thread, pendingApprovals, toolStates),
+		[thread, pendingApprovals, toolStates],
 	);
 
 	return (
@@ -62,8 +65,9 @@ export function RoomView({
 						key={sessionId}
 						roomId={sessionId}
 						tools={tools}
-						pendingActions={pendingActions}
-						onDecideAction={onDecideAction}
+						pendingApprovals={pendingApprovals}
+						onApproveTool={onApproveTool}
+						onRejectTool={onRejectTool}
 					>
 						<RoomWorkspace
 							agent={agent}
@@ -74,9 +78,10 @@ export function RoomView({
 							isRunning={isRunning}
 							isCancelling={isCancelling}
 							isLoadingHistory={isLoadingHistory}
-							runError={runError}
+							turnError={turnError}
 							transportError={transportError}
-							pendingActions={pendingActions}
+							pendingApprovals={pendingApprovals}
+							phase={phase}
 							modelId={modelId}
 							modelName={modelName}
 							isModelSaving={isModelSaving}
@@ -85,7 +90,7 @@ export function RoomView({
 							onSendMessage={onSendMessage}
 							onModelChange={onModelChange}
 							onOptimizePrompt={onOptimizePrompt}
-							onCancelRun={onCancelRun}
+							onCancelTurn={onCancelTurn}
 							onConfigure={onConfigure}
 							onNewRoom={onNewRoom}
 						/>

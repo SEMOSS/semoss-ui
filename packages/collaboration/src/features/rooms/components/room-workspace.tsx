@@ -18,9 +18,10 @@ interface RoomWorkspaceProps {
 	isRunning: boolean;
 	isCancelling: RoomViewProps["isCancelling"];
 	isLoadingHistory: boolean;
-	runError: string | null;
+	turnError: string | null;
 	transportError: Error | null;
-	pendingActions: RoomViewProps["pendingActions"];
+	pendingApprovals: RoomViewProps["pendingApprovals"];
+	phase: RoomViewProps["phase"];
 	modelId: RoomViewProps["modelId"];
 	modelName: RoomViewProps["modelName"];
 	isModelSaving: RoomViewProps["isModelSaving"];
@@ -29,7 +30,7 @@ interface RoomWorkspaceProps {
 	onSendMessage: RoomViewProps["onSendMessage"];
 	onModelChange: RoomViewProps["onModelChange"];
 	onOptimizePrompt: RoomViewProps["onOptimizePrompt"];
-	onCancelRun: RoomViewProps["onCancelRun"];
+	onCancelTurn: RoomViewProps["onCancelTurn"];
 	onConfigure: RoomViewProps["onConfigure"];
 	onNewRoom: RoomViewProps["onNewRoom"];
 }
@@ -44,9 +45,10 @@ export function RoomWorkspace({
 	isRunning,
 	isCancelling,
 	isLoadingHistory,
-	runError,
+	turnError,
 	transportError,
-	pendingActions,
+	pendingApprovals,
+	phase,
 	modelId,
 	modelName,
 	isModelSaving,
@@ -55,7 +57,7 @@ export function RoomWorkspace({
 	onSendMessage,
 	onModelChange,
 	onOptimizePrompt,
-	onCancelRun,
+	onCancelTurn,
 	onConfigure,
 	onNewRoom,
 }: RoomWorkspaceProps) {
@@ -95,10 +97,10 @@ export function RoomWorkspace({
 				/>
 				<RoomRunStatus
 					agent={agent}
-					runError={runError}
+					turnError={turnError}
 					transportError={transportError}
-					pendingActions={pendingActions}
-					isRunning={isRunning}
+					pendingApprovals={pendingApprovals}
+					phase={phase}
 				/>
 				<RoomComposer
 					key={session.id}
@@ -114,14 +116,14 @@ export function RoomWorkspace({
 					onModelChange={onModelChange}
 					onOptimizePrompt={onOptimizePrompt}
 					onSend={onSendMessage}
-					onStop={onCancelRun}
+					onStop={onCancelTurn}
 					onSent={scrollToLatest}
 				/>
 			</section>
 			<aside
 				aria-label="Tool workbench"
 				className={cn(
-					"min-h-0 border-s bg-background md:w-2/5 md:shrink-0",
+					"relative min-h-0 border-s bg-background md:w-2/5 md:shrink-0",
 					isToolWorkbenchOpen
 						? "block flex-1 md:flex-none"
 						: "hidden",

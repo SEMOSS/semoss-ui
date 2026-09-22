@@ -15,7 +15,6 @@ import type { ConversationMessage } from "../types/message";
 import { MessageActivityPart } from "./message-activity-part";
 import { MessageMarkdown } from "./message-markdown";
 import { MessageMediaPart } from "./message-media-part";
-import { MessageSubagentPart } from "./message-subagent-part";
 import { MessageThinkingPart } from "./message-thinking-part";
 
 function formatMessageTime(value: string | undefined): string {
@@ -51,9 +50,8 @@ export function MessageTimelineEntry({
 	const time = formatMessageTime(message.createdAt);
 	const isLive =
 		message.live !== undefined &&
-		message.live.status !== "COMPLETED" &&
-		message.live.status !== "FAILED" &&
-		message.live.status !== "CANCELLED";
+		message.live.phase !== "completed" &&
+		message.live.phase !== "failed";
 
 	useEffect(() => {
 		if (!hasCopied) return;
@@ -134,10 +132,6 @@ export function MessageTimelineEntry({
 									fileName={part.fileName}
 									mimeType={part.mimeType}
 								/>
-							);
-						case "subagent":
-							return (
-								<MessageSubagentPart key={key} part={part} />
 							);
 					}
 					return null;

@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useState } from "react";
-import { isRequestUserInputAction } from "@semoss/sdk";
 import {
 	Badge,
 	H4,
@@ -15,8 +14,9 @@ import {
 } from "@semoss/ui/next";
 import { pendingActionToolId } from "@/features/messages/utils/thread-items";
 import { useToolWorkbench } from "../tool-workbench.context";
+import { getToolLoadingMessage } from "../utils/tool-metadata";
 import { ToolApprovalPanel } from "./tool-approval-panel";
-import { ToolUserInputPanel } from "./tool-user-input-panel";
+import { ToolUiFrame } from "./tool-ui-frame";
 
 function formatValue(value: unknown): string {
 	if (value === undefined || value === null || value === "") return "";
@@ -42,14 +42,14 @@ function badgeVariant(status: string): "outline" | "destructive" | "secondary" {
 
 /** Shared live tool details used by both inline and workbench locations. */
 export function ToolContent({ toolId }: { toolId: string }) {
-	const { tools, pendingActions } = useToolWorkbench();
+	const { tools, pendingApprovals } = useToolWorkbench();
 	const tool = tools[toolId];
-	const pendingAction = pendingActions.find(
+	const pendingAction = pendingApprovals.find(
 		(action) => pendingActionToolId(action) === toolId,
 	);
 	const inputs = useMemo(
-		() => formatValue(tool?.arguments ?? pendingAction?.toolArgs ?? {}),
-		[tool?.arguments, pendingAction?.toolArgs],
+		() => formatValue(tool?.arguments ?? pendingAction?.arguments ?? {}),
+		[tool?.arguments, pendingAction?.arguments],
 	);
 	const output = useMemo(
 		() => formatValue(tool?.error ?? tool?.output),
@@ -58,12 +58,12 @@ export function ToolContent({ toolId }: { toolId: string }) {
 	const toolIsActive =
 		tool?.status === "QUEUED" || tool?.status === "RUNNING";
 	const [tab, setTab] = useState(
-		output || toolIsActive ? "output" : "inputs",
+		tool?.uiUrl ? "tool" : output || toolIsActive ? "output" : "inputs",
 	);
 
 	useEffect(() => {
-		if (output || toolIsActive) setTab("output");
-	}, [output, toolIsActive]);
+		if (!tool?.uiUrl && (output || toolIsActive)) setTab("output");
+	}, [output, tool?.uiUrl, toolIsActive]);
 
 	if (!tool) {
 		return (
@@ -92,15 +92,11 @@ export function ToolContent({ toolId }: { toolId: string }) {
 			</header>
 
 			{pendingAction ? (
-				isRequestUserInputAction(pendingAction) ? (
-					<ToolUserInputPanel action={pendingAction} />
-				) : (
-					<ToolApprovalPanel
-						key={pendingAction.actionId}
-						tool={tool}
-						action={pendingAction}
-					/>
-				)
+				<ToolApprovalPanel
+					key={pendingAction.toolId}
+					tool={tool}
+					action={pendingAction}
+				/>
 			) : (
 				<Tabs
 					value={tab}
@@ -109,6 +105,11 @@ export function ToolContent({ toolId }: { toolId: string }) {
 				>
 					<div className="border-b px-3 py-2">
 						<TabsList>
+							{tool.uiUrl && (
+								<TabsTrigger value="tool" className="text-xs">
+									Tool UI
+								</TabsTrigger>
+							)}
 							<TabsTrigger value="inputs" className="text-xs">
 								Inputs
 							</TabsTrigger>
@@ -117,6 +118,14 @@ export function ToolContent({ toolId }: { toolId: string }) {
 							</TabsTrigger>
 						</TabsList>
 					</div>
+					{tool.uiUrl && (
+						<TabsContent
+							value="tool"
+							className="min-h-0 overflow-hidden"
+						>
+							<ToolUiFrame tool={tool} url={tool.uiUrl} />
+						</TabsContent>
+					)}
 					<TabsContent
 						value="inputs"
 						className="min-h-0 overflow-hidden"
@@ -155,7 +164,7 @@ export function ToolContent({ toolId }: { toolId: string }) {
 										/>
 										{tool.status === "QUEUED"
 											? "Waiting to start…"
-											: "Tool is running…"}
+											: getToolLoadingMessage(tool)}
 									</div>
 								) : (
 									<P className="mt-4 text-muted-foreground text-xs">

@@ -3,12 +3,13 @@ import {
 	useCallback,
 	useEffect,
 	useMemo,
+	useRef,
 	useState,
 	useSyncExternalStore,
 } from "react";
-import type { PendingAgentAction } from "@semoss/sdk";
 import { createWorkbenchStore } from "@semoss/workbench";
 import type { ConversationTool } from "@/features/messages/types/message";
+import type { PendingToolApproval } from "@/features/rooms/types/room";
 import { TOOL_WORKBENCH_COMPONENTS } from "../tool-workbench.components";
 import {
 	TOOL_PANEL_TYPE,
@@ -16,16 +17,20 @@ import {
 	toolCardTriggerId,
 } from "../tool-workbench.constants";
 import { ToolWorkbenchContext } from "../tool-workbench.context";
+import {
+	getToolDisplayLocation,
+	shouldAutoOpenTool,
+} from "../utils/tool-metadata";
 
 export interface ToolWorkbenchProviderProps {
 	roomId: string;
 	tools: Record<string, ConversationTool>;
-	pendingActions: PendingAgentAction[];
-	onDecideAction: (
-		action: PendingAgentAction,
-		decision: "submit" | "reject" | "respond",
-		paramValues?: Record<string, unknown>,
+	pendingApprovals: PendingToolApproval[];
+	onApproveTool: (
+		approval: PendingToolApproval,
+		argumentsValue: Record<string, unknown>,
 	) => Promise<void>;
+	onRejectTool: (approval: PendingToolApproval) => Promise<void>;
 	children: ReactNode;
 }
 
@@ -33,6 +38,9 @@ function createRoomToolWorkbench() {
 	const store = createWorkbenchStore({
 		components: TOOL_WORKBENCH_COMPONENTS,
 	});
+	// This store outlives the conditional Workbench shell. Restore exactly once
+	// here so opening a panel while the shell is hidden cannot be overwritten on
+	// the shell's next mount.
 	store.getState().layout.actions.loadSnapshot(TOOL_WORKBENCH_LAYOUT);
 	return store;
 }
@@ -41,8 +49,9 @@ function createRoomToolWorkbench() {
 export function ToolWorkbenchProvider({
 	roomId,
 	tools,
-	pendingActions,
-	onDecideAction,
+	pendingApprovals,
+	onApproveTool,
+	onRejectTool,
 	children,
 }: ToolWorkbenchProviderProps) {
 	const [store] = useState(createRoomToolWorkbench);
@@ -50,6 +59,7 @@ export function ToolWorkbenchProvider({
 	const [inlineToolIds, setInlineToolIds] = useState<Set<string>>(
 		() => new Set(),
 	);
+	const automaticallyOpened = useRef(new Set<string>());
 	const activeToolId = useSyncExternalStore(
 		store.subscribe,
 		() => {
@@ -101,6 +111,12 @@ export function ToolWorkbenchProvider({
 		}
 	}, [store, tools]);
 
+	const focusToolTrigger = useCallback((toolId: string) => {
+		window.requestAnimationFrame(() => {
+			document.getElementById(toolCardTriggerId(toolId))?.focus();
+		});
+	}, []);
+
 	const openWorkbench = useCallback(
 		(toolId: string) => {
 			setInlineToolIds((current) => {
@@ -113,9 +129,7 @@ export function ToolWorkbenchProvider({
 			const panelId = actions.selectPanel(
 				TOOL_PANEL_TYPE,
 				{ toolId },
-				{
-					name: tools[toolId]?.title ?? "Tool",
-				},
+				{ name: tools[toolId]?.title ?? "Tool" },
 			);
 			actions.updatePanel(panelId, {
 				name: tools[toolId]?.title ?? "Tool",
@@ -138,11 +152,9 @@ export function ToolWorkbenchProvider({
 				if (current.has(toolId)) return current;
 				return new Set(current).add(toolId);
 			});
-			window.requestAnimationFrame(() => {
-				document.getElementById(toolCardTriggerId(toolId))?.focus();
-			});
+			focusToolTrigger(toolId);
 		},
-		[store],
+		[focusToolTrigger, store],
 	);
 
 	const closeTool = useCallback(
@@ -159,9 +171,45 @@ export function ToolWorkbenchProvider({
 				next.delete(toolId);
 				return next;
 			});
+			focusToolTrigger(toolId);
 		},
-		[store],
+		[focusToolTrigger, store],
 	);
+
+	const closeWorkbench = useCallback(() => {
+		setIsOpen(false);
+		if (activeToolId) focusToolTrigger(activeToolId);
+	}, [activeToolId, focusToolTrigger]);
+
+	useEffect(() => {
+		const approval = pendingApprovals.find(
+			(item) =>
+				!automaticallyOpened.current.has(`approval:${item.toolId}`),
+		);
+		if (!approval || !tools[approval.toolId]) return;
+		automaticallyOpened.current.add(`approval:${approval.toolId}`);
+		openWorkbench(approval.toolId);
+	}, [openWorkbench, pendingApprovals, tools]);
+
+	useEffect(() => {
+		for (const tool of Object.values(tools)) {
+			const key = `tool:${tool.id}`;
+			if (
+				automaticallyOpened.current.has(key) ||
+				!shouldAutoOpenTool(tool) ||
+				getToolDisplayLocation(tool) === "hidden"
+			) {
+				continue;
+			}
+			automaticallyOpened.current.add(key);
+			if (getToolDisplayLocation(tool) === "inline") {
+				openInline(tool.id);
+			} else {
+				openWorkbench(tool.id);
+			}
+			break;
+		}
+	}, [openInline, openWorkbench, tools]);
 
 	const isToolInline = useCallback(
 		(toolId: string) => inlineToolIds.has(toolId),
@@ -176,14 +224,12 @@ export function ToolWorkbenchProvider({
 		[inlineToolIds, workbenchToolIds],
 	);
 
-	const closeWorkbench = useCallback(() => setIsOpen(false), []);
-
 	const value = useMemo(
 		() => ({
 			store,
 			roomId,
 			tools,
-			pendingActions,
+			pendingApprovals,
 			isOpen,
 			activeToolId,
 			isToolInline,
@@ -192,13 +238,14 @@ export function ToolWorkbenchProvider({
 			openWorkbench,
 			closeTool,
 			closeWorkbench,
-			onDecideAction,
+			onApproveTool,
+			onRejectTool,
 		}),
 		[
 			store,
 			roomId,
 			tools,
-			pendingActions,
+			pendingApprovals,
 			isOpen,
 			activeToolId,
 			isToolInline,
@@ -207,7 +254,8 @@ export function ToolWorkbenchProvider({
 			openWorkbench,
 			closeTool,
 			closeWorkbench,
-			onDecideAction,
+			onApproveTool,
+			onRejectTool,
 		],
 	);
 
