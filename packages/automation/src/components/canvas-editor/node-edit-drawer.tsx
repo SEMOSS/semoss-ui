@@ -7,6 +7,7 @@ import {
 	Trash2,
 } from "lucide-react";
 import { Suspense, useCallback, useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { MonacoEditor } from "@semoss/shared";
 import {
 	Button,
@@ -50,6 +51,9 @@ export interface NodeEditDrawerProps {
 	/** Pops the raw Python source out into a larger editor, for a host rendering this drawer
 	 * alongside the canvas instead of in a separate iframe. */
 	onOpenPythonEditor?: (nodeId: string, source: string) => void;
+	/** When true, this node's compiled Python source is open in a real file editor tab —
+	 * the inline editor is locked so the two copies can't diverge. */
+	pythonFileOpen?: boolean;
 	/** When true, renders the node's configuration as view-only: mutating fields, the
 	 * delete action, and raw Python editing (inline and the popout modal) are all disabled. */
 	readOnly?: boolean;
@@ -82,6 +86,7 @@ export function NodeEditDrawer({
 	onUpdate,
 	onDelete,
 	onOpenPythonEditor,
+	pythonFileOpen = false,
 	readOnly = false,
 }: NodeEditDrawerProps) {
 	const [outputExpanded, setOutputExpanded] = useState(false);
@@ -134,6 +139,12 @@ export function NodeEditDrawer({
 	const { resolvedTheme } = useTheme();
 	const [showPythonVariablePicker, setShowPythonVariablePicker] =
 		useState(false);
+	// Position (relative to the lock overlay) of the "can't edit" tooltip, so it
+	// follows the cursor instead of sitting fixed at one corner.
+	const [pythonLockPointer, setPythonLockPointer] = useState<{
+		x: number;
+		y: number;
+	} | null>(null);
 	const Icon = meta.icon;
 	useEffect(() => {
 		onUpdateRef.current = onUpdate;
@@ -174,7 +185,7 @@ export function NodeEditDrawer({
 	}, [flushPythonUpdate, pythonSource, step.id]);
 	useEffect(() => () => flushPythonUpdate(), [flushPythonUpdate]);
 	const updatePythonSource = (source: string) => {
-		if (readOnly) return;
+		if (readOnly || pythonFileOpen) return;
 		setPythonDraft(source);
 		pendingPythonUpdateRef.current = { source, step };
 		if (pythonUpdateTimeoutRef.current) {
@@ -513,7 +524,9 @@ export function NodeEditDrawer({
 												</TooltipContent>
 											</Tooltip>
 										</FieldLabel>
-										{!readOnly && pythonVariablePicker}
+										{!readOnly &&
+											!pythonFileOpen &&
+											pythonVariablePicker}
 										{!readOnly && (
 											<Tooltip>
 												<TooltipTrigger asChild>
@@ -537,52 +550,107 @@ export function NodeEditDrawer({
 										)}
 									</div>
 								</div>
-								<div className="h-75 overflow-hidden rounded-lg border bg-muted/30">
-									<Suspense
-										fallback={
-											<pre className="h-full overflow-auto p-3 font-mono text-xs">
-												{pythonDraft}
-											</pre>
+								<div className="relative h-75 overflow-hidden rounded-lg border bg-muted/30">
+									<div
+										className={
+											pythonFileOpen
+												? "h-full opacity-50"
+												: "h-full"
 										}
 									>
-										<MonacoEditor
-											height="100%"
-											width="100%"
-											language="python"
-											theme={
-												resolvedTheme === "dark"
-													? "vs-dark"
-													: "vs"
+										<Suspense
+											fallback={
+												<pre className="h-full overflow-auto p-3 font-mono text-xs">
+													{pythonDraft}
+												</pre>
 											}
-											value={pythonDraft}
-											onChange={(value) =>
-												updatePythonSource(value ?? "")
+										>
+											<MonacoEditor
+												height="100%"
+												width="100%"
+												language="python"
+												theme={
+													resolvedTheme === "dark"
+														? "vs-dark"
+														: "vs"
+												}
+												value={pythonDraft}
+												onChange={(value) =>
+													updatePythonSource(
+														value ?? "",
+													)
+												}
+												options={{
+													automaticLayout: true,
+													fontSize: 13,
+													lineNumbers: "on",
+													minimap: { enabled: false },
+													folding: true,
+													scrollBeyondLastLine: false,
+													wordWrap: "on",
+													readOnly:
+														readOnly ||
+														pythonFileOpen,
+													padding: {
+														top: 12,
+														bottom: 12,
+													},
+												}}
+											/>
+										</Suspense>
+									</div>
+									{pythonFileOpen && (
+										<div
+											role="note"
+											className="absolute inset-0 z-20 cursor-not-allowed"
+											aria-label="Can't edit here while the file is open"
+											onMouseMove={(event) =>
+												setPythonLockPointer({
+													x: event.clientX,
+													y: event.clientY,
+												})
 											}
-											options={{
-												automaticLayout: true,
-												fontSize: 13,
-												lineNumbers: "on",
-												minimap: { enabled: false },
-												folding: true,
-												scrollBeyondLastLine: false,
-												wordWrap: "on",
-												readOnly,
-												padding: {
-													top: 12,
-													bottom: 12,
-												},
-											}}
-										/>
-									</Suspense>
+											onMouseLeave={() =>
+												setPythonLockPointer(null)
+											}
+										>
+											{pythonLockPointer &&
+												createPortal(
+													// Portalled to <body> — position: fixed only
+													// resolves against the viewport when every
+													// ancestor is untransformed, and this panel sits
+													// inside dock/dialog wrappers that aren't
+													// guaranteed to be, which threw the tooltip out
+													// of alignment with the actual cursor.
+													<div
+														className="pointer-events-none fixed z-9999 whitespace-nowrap rounded-md border bg-popover px-2 py-1 text-popover-foreground text-xs shadow-md"
+														style={{
+															left:
+																pythonLockPointer.x +
+																12,
+															top:
+																pythonLockPointer.y +
+																12,
+														}}
+													>
+														Can&apos;t edit here
+														while the file is open
+													</div>,
+													document.body,
+												)}
+										</div>
+									)}
 								</div>
 								<p className="text-muted-foreground text-xs">
-									{readOnly
-										? "View only."
-										: isDecisionBranch
-											? "Decision branches use generated code."
-											: isCustomSource
-												? "This custom source is saved with the node."
-												: "Editing generated source creates a custom node."}
+									{pythonFileOpen
+										? "Can't edit here while the file is open."
+										: readOnly
+											? "View only."
+											: isDecisionBranch
+												? "Decision branches use generated code."
+												: isCustomSource
+													? "This custom source is saved with the node."
+													: "Editing generated source creates a custom node."}
 								</p>
 							</Field>
 						)}

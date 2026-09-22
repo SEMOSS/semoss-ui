@@ -3,6 +3,7 @@ export { FILE_PANEL_COMPONENTS } from "./components/file-panel.components";
 export {
 	FILE_PANEL_EVENTS,
 	FILE_PANEL_TYPES,
+	type FileSavedEvent,
 	type FilesChangedEvent,
 	isFilePanelType,
 } from "./constants/file-panel.constants";

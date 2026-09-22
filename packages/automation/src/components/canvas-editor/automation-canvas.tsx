@@ -281,6 +281,11 @@ export interface AutomationCanvasHandle {
 	viewHistoricalRun: (run: AutomationRunDetail) => void;
 	/** Returns the canvas to the live editable graph. */
 	exitHistoricalView: () => void;
+	/** Applies a saved file-editor tab's content onto its node's in-memory pythonSource, so a
+	 * later Save can't clobber it with the stale copy the canvas loaded with. Looks the step up
+	 * by id rather than going through `applyInspectorAction`, since the saved tab is not
+	 * necessarily the step currently open in the inspector. No-ops for an unknown/removed step. */
+	syncPythonSource: (stepId: string, source: string) => void;
 }
 
 type TriggerAutomationOutput = AutomationRunDetail;
@@ -1601,6 +1606,23 @@ export const AutomationCanvasContent = forwardRef<
 		[isDirty, save],
 	);
 
+	const syncPythonSource = useCallback(
+		(stepId: string, source: string) => {
+			if (readOnly || viewingHistory) return;
+			const step = steps.find((candidate) => candidate.id === stepId);
+			if (!step) return;
+			updateStep({
+				...step,
+				workflowCodeMode: "custom",
+				workflowConfig: {
+					...step.workflowConfig,
+					pythonSource: source,
+				},
+			});
+		},
+		[readOnly, steps, updateStep, viewingHistory],
+	);
+
 	useImperativeHandle(
 		ref,
 		() => ({
@@ -1609,6 +1631,7 @@ export const AutomationCanvasContent = forwardRef<
 			refresh,
 			viewHistoricalRun,
 			exitHistoricalView,
+			syncPythonSource,
 		}),
 		[
 			applyInspectorAction,
@@ -1616,6 +1639,7 @@ export const AutomationCanvasContent = forwardRef<
 			refresh,
 			viewHistoricalRun,
 			exitHistoricalView,
+			syncPythonSource,
 		],
 	);
 

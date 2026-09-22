@@ -25,6 +25,9 @@ interface InspectorTabProps {
 	/** Pops the raw Python source out into a larger editor, for a host rendering this tab
 	 * alongside the canvas instead of in a separate iframe. */
 	onOpenPythonEditor?: (nodeId: string, source: string) => void;
+	/** When true, the node's compiled Python source is open in a real file editor tab, so
+	 * the inline editor is locked to avoid two copies of the same source diverging. */
+	pythonFileOpen?: boolean;
 	/** When true, the trigger/node panels render view-only and all mutating controls
 	 * (including delete and raw Python editing) are disabled. */
 	readOnly?: boolean;
@@ -46,6 +49,7 @@ export function InspectorTab({
 	onUpdate,
 	onDelete,
 	onOpenPythonEditor,
+	pythonFileOpen = false,
 	readOnly = false,
 }: InspectorTabProps) {
 	if (editingStep?.type === "trigger") {
@@ -78,6 +82,7 @@ export function InspectorTab({
 				onUpdate={onUpdate}
 				onDelete={() => onDelete(editingStep.id)}
 				onOpenPythonEditor={onOpenPythonEditor}
+				pythonFileOpen={pythonFileOpen}
 				readOnly={readOnly}
 			/>
 		);

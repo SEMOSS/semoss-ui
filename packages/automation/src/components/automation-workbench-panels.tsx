@@ -29,6 +29,8 @@ export interface AutomationWorkbenchContextValue {
 	onOpenOutput: (output: string) => void;
 	onAskAssistant: (prompt: string) => void;
 	onOpenPythonEditor: (nodeId: string, source: string) => void;
+	/** Whether a node's compiled Python source is currently open in a real file editor tab. */
+	isPythonFileOpen: (nodeId: string) => boolean;
 }
 
 export const AutomationWorkbenchContext =
@@ -103,6 +105,11 @@ export const AutomationInspectorPanel = () => {
 				})
 			}
 			onOpenPythonEditor={context.onOpenPythonEditor}
+			pythonFileOpen={
+				snapshot?.editingStep
+					? context.isPythonFileOpen(snapshot.editingStep.id)
+					: false
+			}
 		/>
 	);
 };

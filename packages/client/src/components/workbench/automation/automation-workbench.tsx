@@ -34,7 +34,12 @@ import {
 	type N8nImportConversionInput,
 	type N8nImportConversionResult,
 } from "@semoss/automation";
-import { FILE_PANEL_COMPONENTS } from "@semoss/panels";
+import {
+	FILE_PANEL_COMPONENTS,
+	FILE_PANEL_EVENTS,
+	type FileSavedEvent,
+	getFilePanelScope,
+} from "@semoss/panels";
 import { runPixel } from "@semoss/sdk";
 import { InsightProvider } from "@semoss/sdk/react";
 import { type MCPConfig, MonacoEditor } from "@semoss/shared";
@@ -57,6 +62,7 @@ import {
 } from "@semoss/ui/next";
 import {
 	useWorkbench,
+	useWorkbenchEvent,
 	Workbench,
 	type WorkbenchComponent,
 	type WorkbenchLayout,
@@ -114,6 +120,41 @@ const FILES = WORKBENCH_COMPONENTS.FILE_EXPLORER;
 const FILE_EDITOR = WORKBENCH_COMPONENTS.FILE_CODE_EDITOR;
 const MCP_EDITOR = WORKBENCH_COMPONENTS.FILE_MCP_EDITOR;
 const SETTINGS = WORKBENCH_COMPONENTS.PROJECT_SETTINGS;
+// Backend writes each custom-Python node's compiled source here as a real
+// project asset (see SaveAutomation) — this is the same file the workflow
+// executes from.
+const AUTOMATION_NODES_ASSET_PATH = "/automation-nodes/";
+
+/**
+ * Find the on-disk asset for a node's Python source, so the "Open Editor"
+ * button can open the real file instead of an in-memory copy of it.
+ *
+ * @param appId - Project the automation lives in.
+ * @param nodeId - Node whose compiled source file we're looking for.
+ * @return The asset's name/path, or null if none was found (e.g. the node
+ * hasn't been saved yet).
+ */
+async function findAutomationNodeAsset(
+	appId: string,
+	nodeId: string,
+): Promise<{ name: string; path: string } | null> {
+	const response = await runPixel(
+		`BrowseAppAssets(filePath=${JSON.stringify([
+			AUTOMATION_NODES_ASSET_PATH,
+		])}, project=${JSON.stringify([appId])});`,
+	);
+	if (response.errors.length > 0) return null;
+	const entries = response.pixelReturn?.[0]?.output;
+	if (!Array.isArray(entries)) return null;
+	const match = entries.find(
+		(entry): entry is { name: string; path: string } =>
+			Boolean(entry) &&
+			typeof entry === "object" &&
+			typeof (entry as { name?: unknown }).name === "string" &&
+			(entry as { name: string }).name.includes(nodeId),
+	);
+	return match ? { name: match.name, path: match.path } : null;
+}
 
 const SETTINGS_TABS: React.ComponentProps<typeof ProjectDetailTabs>["tabs"] = [
 	{ name: "Overview", component: "project-overview" },
@@ -277,6 +318,11 @@ const AUTOMATION_COMPONENTS: Record<string, WorkbenchPanelConfigAny> = {
 		canClose: false,
 		canRename: false,
 		icon: ({ className }) => <FileCode2Icon className={className} />,
+		// Without this, switching the main tabset to a Python file tab unmounts
+		// the canvas (default "lazy"), wiping editingStep/inspector selection
+		// and every other in-memory canvas state — it only ever shared a
+		// tabset with itself before file tabs could open alongside it.
+		mount: "keepAlive",
 		content: AutomationEditorPanel,
 	},
 	[INSPECTOR]: {
@@ -360,6 +406,30 @@ export const AutomationWorkbench = observer(
 			() => createAutomationLayout(appId),
 			[appId],
 		);
+		// Paths of every open Python-node file tab, so the inline editor can lock
+		// itself while the same file is being edited in a real editor tab.
+		// Selects the stable `panels` record, not a derived array — an inline
+		// filter/map here would return a new array reference on every store
+		// notification, defeating useSyncExternalStore's snapshot check and
+		// spinning into "Maximum update depth exceeded".
+		const panels = useWorkbench((state) => state.layout.panels);
+		const openPythonNodeFilePaths = useMemo(
+			() =>
+				Object.values(panels)
+					.filter((record) => record.type === FILE_EDITOR)
+					.map(
+						(record) =>
+							(record.config as { path?: string } | undefined)
+								?.path,
+					)
+					.filter((path): path is string => Boolean(path)),
+			[panels],
+		);
+		const isPythonFileOpen = useCallback(
+			(nodeId: string) =>
+				openPythonNodeFilePaths.some((path) => path.includes(nodeId)),
+			[openPythonNodeFilePaths],
+		);
 		const workbenchId = readOnly ? `${appId}--read-only` : appId;
 		const assistantStore = useAssistantStore(workbenchId);
 		const conversionModel = useCallback(
@@ -423,6 +493,9 @@ export const AutomationWorkbench = observer(
 		} | null>(null);
 		const wasRunningRef = useRef(false);
 		const editingStepIdRef = useRef<string | null>(null);
+		// Which node a Python-node file tab's path belongs to, so a save of it
+		// can be mirrored onto that node's in-memory step (see syncPythonSource).
+		const pythonNodeAssetPathsRef = useRef(new Map<string, string>());
 
 		const selectPanel = useCallback(
 			(panelId: string) => {
@@ -527,9 +600,53 @@ export const AutomationWorkbench = observer(
 			[selectPanel, setAssistantDraft],
 		);
 		const handleOpenPythonEditor = useCallback(
-			(nodeId: string, source: string) =>
-				setPythonEditor({ nodeId, source, openedWith: source }),
-			[],
+			async (nodeId: string, source: string) => {
+				const asset = await findAutomationNodeAsset(appId, nodeId);
+				if (asset) {
+					pythonNodeAssetPathsRef.current.set(asset.path, nodeId);
+					layoutActions.selectPanel(
+						FILE_EDITOR,
+						{
+							mode: { type: "APP", app: appId },
+							name: asset.name,
+							path: asset.path,
+						},
+						{ name: asset.name },
+					);
+					return;
+				}
+				// No compiled asset yet (e.g. a brand-new node) — fall back to
+				// editing the in-memory draft in the modal.
+				setPythonEditor({ nodeId, source, openedWith: source });
+			},
+			[appId, layoutActions],
+		);
+
+		// A save from the file-editor tab writes straight to the asset, bypassing
+		// the canvas's in-memory step entirely — mirror it back in so a later
+		// canvas Save can't clobber the file with the stale copy it loaded with.
+		useWorkbenchEvent<FileSavedEvent>(
+			FILE_PANEL_EVENTS.FILE_SAVED,
+			(event) => {
+				const nodeId = pythonNodeAssetPathsRef.current.get(event.path);
+				if (
+					!nodeId ||
+					event.scope !==
+						getFilePanelScope({ type: "APP", app: appId })
+				) {
+					return;
+				}
+				void (async () => {
+					const response = await runPixel<[string]>(
+						`GetAppAssets(filePath=${JSON.stringify([event.path])}, project=${JSON.stringify([appId])});`,
+					);
+					if (response.errors.length > 0) return;
+					const content = response.pixelReturn?.[0]?.output;
+					if (typeof content === "string") {
+						canvasRef.current?.syncPythonSource(nodeId, content);
+					}
+				})();
+			},
 		);
 
 		const workbenchContextValue = useMemo<AutomationWorkbenchContextValue>(
@@ -549,6 +666,7 @@ export const AutomationWorkbench = observer(
 				onOpenOutput: setOutputModal,
 				onAskAssistant: handleAskAssistant,
 				onOpenPythonEditor: handleOpenPythonEditor,
+				isPythonFileOpen,
 			}),
 			[
 				appId,
@@ -561,6 +679,7 @@ export const AutomationWorkbench = observer(
 				handleTraceChange,
 				historyRefreshToken,
 				inspectorSnapshot,
+				isPythonFileOpen,
 				readOnly,
 				traceSnapshot,
 			],
