@@ -9,13 +9,13 @@ const skillProjectSchema = z.object({
 	project_name: z.string(),
 });
 
-const skillProjectListSchema = z.array(skillProjectSchema);
+export const skillProjectListSchema = z.array(skillProjectSchema);
 
 /** One attachable skill. */
 export interface SkillOption {
 	/** The skill's project id — what `EditWorkspace` and `AttachSkillToWorkspace` key on. */
 	id: string;
-	/** Display name, which is what the agent form works in. */
+	/** Display name shown alongside the stable id in the agent form. */
 	name: string;
 }
 

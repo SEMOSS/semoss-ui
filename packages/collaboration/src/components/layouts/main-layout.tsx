@@ -20,11 +20,7 @@ import { EmptyView } from "@/components/common/empty-view";
 import { SidebarAgentsList } from "@/components/sidebar/sidebar-agents-list";
 import { SidebarFooter } from "@/components/sidebar/sidebar-footer";
 import { SidebarHeader } from "@/components/sidebar/sidebar-header";
-import {
-	type AgentDraft,
-	createAgent,
-	updateAgent,
-} from "@/features/agents/api/save-agent";
+import { useSaveAgent } from "@/features/agents/api/use-save-agent";
 import { useWorkspaceData } from "@/features/agents/api/use-workspace-data";
 import { NewSessionDialog } from "@/features/agents/components/new-session-dialog";
 import { createRoom } from "@/features/rooms/api/create-room";
@@ -34,17 +30,6 @@ import { toError } from "@/lib/pixel";
 import { roomPath } from "@/lib/workspace-paths";
 import type { Agent } from "@/types/agent";
 import type { Session } from "@/types/session";
-
-/** Map the UI's agent shape onto the fields the workspace reactors accept. */
-function toAgentDraft(agent: Agent): AgentDraft {
-	return {
-		name: agent.name,
-		description: agent.role,
-		systemPrompt: agent.instructions,
-		maxSubagentDepth: agent.depth,
-		maxSubagentsPerRun: agent.concurrency,
-	};
-}
 
 function WorkspaceSidebarNavigation({
 	agents,
@@ -144,27 +129,11 @@ export function MainLayout() {
 		[navigate, sessions, updateRoom],
 	);
 
-	const saveAgent = useCallback(
-		async (agent: Agent, skillIds?: string[]) => {
-			const draft = { ...toAgentDraft(agent), skillIds };
-			const isExisting = agents.some(
-				(candidate) => candidate.id === agent.id,
-			);
-
-			// A new agent carries a client-generated draft id, which the server
-			// replaces with the id it assigns.
-			if (isExisting) {
-				await updateAgent(actions, agent.id, draft);
-				refreshAgents();
-				return agent.id;
-			}
-
-			const id = await createAgent(actions, draft);
-			refreshAgents();
-			return id;
-		},
-		[actions, agents, refreshAgents],
-	);
+	const saveAgent = useSaveAgent({
+		actions,
+		agents,
+		onSaved: refreshAgents,
+	});
 
 	const startSession = useCallback(
 		async (draft: { agentId: string; title: string }) => {

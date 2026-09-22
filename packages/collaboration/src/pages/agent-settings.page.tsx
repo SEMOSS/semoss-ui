@@ -1,14 +1,9 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useNavigate, useParams } from "react-router";
-import { useInsight } from "@semoss/sdk/react";
-import { Spinner, toast } from "@semoss/ui/next";
+import { Alert, AlertDescription, Button, Spinner } from "@semoss/ui/next";
 import { useMain } from "@/app/main.context";
-import {
-	listSkills,
-	resolveSkillIds,
-	type SkillOption,
-} from "@/features/agents/api/list-skills";
 import { useAgentDetail } from "@/features/agents/api/use-agent-detail";
+import { useSkills } from "@/features/agents/api/use-skills";
 import { AgentSettings } from "@/features/agents/components/agent-settings-view";
 import { agentFromWorkspace } from "@/features/agents/utils/agent-from-workspace";
 import { agentPath } from "@/lib/workspace-paths";
@@ -37,6 +32,7 @@ export function AgentSettingsPage() {
 		instructions:
 			"Be clear, concise, and ask before taking external actions.",
 		skills: [],
+		skillIds: [],
 		databases: [],
 		dataProducts: [],
 		members: [],
@@ -48,26 +44,22 @@ export function AgentSettingsPage() {
 	// The list row from MyProjects carries only an id and a name. Editing from it
 	// would send an empty description and system prompt to EditWorkspace, which
 	// overwrites both unconditionally — so the full record is loaded first.
-	const { agent: loaded, isLoading } = useAgentDetail(agentId ?? "");
-
-	// The skills a user can attach, so the picker offers real skills and the
-	// selection can be resolved back to the ids EditWorkspace expects.
-	const { actions } = useInsight();
-	const [skills, setSkills] = useState<SkillOption[]>([]);
-	useEffect(() => {
-		let cancelled = false;
-		listSkills(actions)
-			.then((available) => {
-				if (!cancelled) setSkills(available);
-			})
-			.catch(() => {
-				// A missing catalog must not block editing the rest of the agent.
-				if (!cancelled) setSkills([]);
-			});
-		return () => {
-			cancelled = true;
-		};
-	}, [actions]);
+	const {
+		agent: fetched,
+		isLoading,
+		error,
+		refresh,
+	} = useAgentDetail(agentId ?? "");
+	const loaded = fetched?.workspace_id === agentId ? fetched : null;
+	const skillsQuery = useSkills();
+	// Keep existing attachments resolvable even when catalog access changes.
+	const skills = [
+		...(loaded?.skills ?? []),
+		...skillsQuery.skills.filter(
+			(skill) =>
+				!loaded?.skills.some((current) => current.id === skill.id),
+		),
+	];
 
 	if (agentId && isLoading) {
 		return (
@@ -82,7 +74,18 @@ export function AgentSettingsPage() {
 			? agentFromWorkspace(loaded)
 			: undefined
 		: draft;
-	if (!agent) return null;
+	if (!agent) {
+		return (
+			<Alert variant="destructive">
+				<AlertDescription>
+					{error?.message ?? "The agent could not be loaded."}
+				</AlertDescription>
+				<Button type="button" variant="outline" onClick={refresh}>
+					Try again
+				</Button>
+			</Alert>
+		);
+	}
 	return (
 		<AgentSettings
 			key={agent.id}
@@ -91,20 +94,28 @@ export function AgentSettingsPage() {
 			onClose={() => navigate(agentPath(agentId))}
 			skillOptions={skills.map((skill) => ({
 				name: skill.name,
-				detail: "",
+				value: skill.id,
+				detail: skills.some(
+					(other) =>
+						other.id !== skill.id && other.name === skill.name,
+				)
+					? skill.id
+					: "",
 			}))}
+			isLoadingSkills={skillsQuery.isLoading}
+			skillsError={skillsQuery.error}
+			onRetrySkills={skillsQuery.refresh}
 			onSave={async (saved) => {
-				const { ids, unmatched } = resolveSkillIds(
-					saved.skills,
-					skills,
-				);
-				if (unmatched.length > 0) {
-					toast.warning(
-						`These skills are no longer available and were not attached: ${unmatched.join(", ")}`,
+				const ids = saved.skillIds ?? [];
+				if (
+					ids.some((id) => !skills.some((skill) => skill.id === id))
+				) {
+					throw new Error(
+						"A selected skill could not be found. Reload the skill catalog before saving.",
 					);
 				}
 				// A new agent's draft id is replaced by the id the server assigns.
-				const savedId = await saveAgent(saved, ids);
+				const savedId = await saveAgent(saved, ids, agentId);
 				navigate(agentPath(savedId));
 			}}
 		/>

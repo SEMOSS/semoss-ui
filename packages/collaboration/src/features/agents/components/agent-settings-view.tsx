@@ -9,6 +9,8 @@ import {
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import {
+	Alert,
+	AlertDescription,
 	Button,
 	cn,
 	Form,
@@ -36,47 +38,43 @@ type UpdateAgent = <Key extends keyof Agent>(
 	value: Agent[Key],
 ) => void;
 
-const agentSettingsSchema = z
-	.object({
-		id: z.string(),
-		name: z.string().trim().min(1, "Add a name before saving.").max(60),
-		role: z.string().trim().min(1, "Add a role before saving.").max(100),
-		type: z.enum(["Individual", "Team"]),
-		avatar: z.string(),
-		icon: z.enum(["compass", "briefcase", "chart", "pen", "users"]),
-		tone: z.enum(["green", "teal", "blue", "amber"]),
-		workspace: z.enum([
-			"Conversation",
-			"Travel itinerary",
-			"Executive brief",
-		]),
-		instructions: z.string().max(8000),
-		skills: z.array(z.string()),
-		databases: z.array(z.string()),
-		dataProducts: z.array(z.string()),
-		members: z.array(z.string()),
-		depth: z.number().min(0).max(5),
-		concurrency: z.number().min(1).max(8),
-		spawn: z.boolean(),
-		triggers: z.array(
-			z.object({
-				id: z.string(),
-				name: z.string(),
-				source: z.enum(["Email", "Scheduled", "Calendar", "Webhook"]),
-				condition: z.string(),
-				enabled: z.boolean(),
-			}),
+const agentSettingsSchema = z.object({
+	id: z.string(),
+	name: z
+		.string()
+		.trim()
+		.min(1, "Add a name before saving.")
+		.max(60)
+		.regex(
+			/^[a-zA-Z][a-zA-Z0-9 _-]*$/,
+			"Start the name with a letter and use only letters, numbers, spaces, underscores, or hyphens.",
 		),
-	})
-	.superRefine((value, context) => {
-		if (value.type === "Team" && value.members.length === 0) {
-			context.addIssue({
-				code: "custom",
-				path: ["members"],
-				message: "Select at least one team member.",
-			});
-		}
-	});
+	// Preserve the existing workspace description; it is not an editable field.
+	role: z.string(),
+	type: z.enum(["Individual", "Team"]),
+	avatar: z.string(),
+	icon: z.enum(["compass", "briefcase", "chart", "pen", "users"]),
+	tone: z.enum(["green", "teal", "blue", "amber"]),
+	workspace: z.enum(["Conversation", "Travel itinerary", "Executive brief"]),
+	instructions: z.string().max(8000),
+	skills: z.array(z.string()),
+	skillIds: z.array(z.string()),
+	databases: z.array(z.string()),
+	dataProducts: z.array(z.string()),
+	members: z.array(z.string()),
+	depth: z.number().int().min(0),
+	concurrency: z.number().int().min(0),
+	spawn: z.boolean(),
+	triggers: z.array(
+		z.object({
+			id: z.string(),
+			name: z.string(),
+			source: z.enum(["Email", "Scheduled", "Calendar", "Webhook"]),
+			condition: z.string(),
+			enabled: z.boolean(),
+		}),
+	),
+});
 
 type AgentSettingsValues = z.infer<typeof agentSettingsSchema>;
 
@@ -86,24 +84,32 @@ export function AgentSettings({
 	onClose,
 	onSave,
 	skillOptions,
+	isLoadingSkills = false,
+	skillsError = null,
+	onRetrySkills,
 }: {
 	agent: Agent;
 	agents: Agent[];
 	onClose: () => void;
 	onSave: (agent: Agent) => Promise<void>;
-	skillOptions: { name: string; detail: string }[];
+	skillOptions: { name: string; detail: string; value: string }[];
+	isLoadingSkills?: boolean;
+	skillsError?: Error | null;
+	onRetrySkills?: () => void;
 }) {
 	const form = useForm<AgentSettingsValues>({
 		resolver: zodResolver(agentSettingsSchema),
 		defaultValues: structuredClone({
 			...agent,
 			avatar: agent.avatar ?? "",
+			skillIds: agent.skillIds ?? [],
 		}),
 	});
 	const draft = form.watch();
-	const { isDirty: dirty, isSubmitting } = form.formState;
+	const { isDirty: dirty, isSubmitting, errors } = form.formState;
 	const [tab, setTab] = useState("Profile");
 	const [error, setError] = useState("");
+	const visibleError = errors.root?.server?.message ?? error;
 	const [discard, setDiscard] = useState(false);
 	const [ruleName, setRuleName] = useState("");
 	const [ruleSource, setRuleSource] =
@@ -183,10 +189,14 @@ export function AgentSettings({
 		try {
 			await onSave({
 				...values,
+				type: values.members.length > 0 ? "Team" : "Individual",
 				avatar: values.avatar || undefined,
 			});
 		} catch (cause) {
-			setError(`Could not save the agent. ${toError(cause).message}`);
+			form.setError("root.server", {
+				type: "server",
+				message: `Could not save the agent. ${toError(cause).message}`,
+			});
 		}
 	}
 
@@ -250,11 +260,10 @@ export function AgentSettings({
 			form={form}
 			onSubmit={handleSubmit}
 			onError={(errors) => {
-				if (errors.name || errors.role) setTab("Profile");
+				if (errors.name) setTab("Profile");
 				else if (errors.members) setTab("Team");
 				setError(
 					errors.name?.message ??
-						errors.role?.message ??
 						errors.members?.message ??
 						"Review the highlighted settings before saving.",
 				);
@@ -271,6 +280,7 @@ export function AgentSettings({
 						variant="ghost"
 						size="icon"
 						onClick={close}
+						disabled={isSubmitting}
 					>
 						<ArrowLeft />
 					</Button>
@@ -285,7 +295,12 @@ export function AgentSettings({
 							Unsaved changes
 						</span>
 					)}
-					<Button type="button" variant="outline" onClick={close}>
+					<Button
+						type="button"
+						variant="outline"
+						onClick={close}
+						disabled={isSubmitting}
+					>
 						Cancel
 					</Button>
 					<Button
@@ -301,13 +316,10 @@ export function AgentSettings({
 					</Button>
 				</div>
 			</header>
-			{error && (
-				<div
-					role="alert"
-					className="border-b bg-destructive/5 px-6 py-3 text-destructive text-sm"
-				>
-					{error}
-				</div>
+			{visibleError && (
+				<Alert variant="destructive">
+					<AlertDescription>{visibleError}</AlertDescription>
+				</Alert>
 			)}
 			{discard && (
 				<div
@@ -331,13 +343,14 @@ export function AgentSettings({
 							size="sm"
 							variant="destructive"
 							onClick={onClose}
+							disabled={isSubmitting}
 						>
 							Discard
 						</Button>
 					</span>
 				</div>
 			)}
-			<div className="flex min-h-0 flex-1 flex-col md:flex-row">
+			<div className="flex min-h-0 min-w-0 flex-1 flex-col md:flex-row">
 				<nav
 					aria-label="Agent settings"
 					className="flex shrink-0 gap-1 overflow-x-auto border-b bg-muted/40 p-3 md:w-48 md:flex-col md:overflow-x-visible md:border-r md:border-b-0 md:px-4 md:py-6"
@@ -357,7 +370,7 @@ export function AgentSettings({
 						>
 							<Icon className="size-4" />
 							{name}
-							{name === "Team" && draft.type === "Team" && (
+							{name === "Team" && draft.members.length > 0 && (
 								<span className="ml-auto text-xs">
 									{draft.members.length}
 								</span>
@@ -365,7 +378,11 @@ export function AgentSettings({
 						</button>
 					))}
 				</nav>
-				<div className="min-h-0 flex-1 overflow-y-auto px-5 py-7 lg:px-10">
+				<fieldset
+					disabled={isSubmitting}
+					aria-label="Agent configuration"
+					className="min-h-0 min-w-0 flex-1 overflow-y-auto px-5 py-7 lg:px-10"
+				>
 					<div className="max-w-2xl space-y-7">
 						{tab === "Profile" && (
 							<ProfileSettingsView
@@ -384,6 +401,9 @@ export function AgentSettings({
 							<CapabilitiesSettingsView
 								agent={draft}
 								skillOptions={skillOptions}
+								isLoadingSkills={isLoadingSkills}
+								skillsError={skillsError}
+								onRetrySkills={onRetrySkills}
 								onUpdate={update}
 							/>
 						)}
@@ -437,7 +457,7 @@ export function AgentSettings({
 							/>
 						)}
 					</div>
-				</div>
+				</fieldset>
 			</div>
 		</Form>
 	);

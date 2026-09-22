@@ -22,7 +22,12 @@ export interface MainContext {
 	setSessions: Dispatch<SetStateAction<Session[]>>;
 	updateRoom: (id: string, changes: Partial<Session>) => void;
 	pinRoom: (id: string, pinned: boolean) => Promise<void>;
-	saveAgent: (agent: Agent, skillIds?: string[]) => Promise<string>;
+	/** Save using the route's workspace id when editing, even before the list loads. */
+	saveAgent: (
+		agent: Agent,
+		skillIds?: string[],
+		workspaceId?: string,
+	) => Promise<string>;
 	openRoom: (id: string, itemId?: string) => void;
 	newRoom: (agentId?: string) => void;
 }

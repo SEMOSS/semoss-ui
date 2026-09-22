@@ -18,6 +18,8 @@ export interface Agent {
 	workspace: WorkspaceView;
 	instructions: string;
 	skills: string[];
+	/** Stable project ids for selected skills; `skills` contains display names. */
+	skillIds?: string[];
 	databases: string[];
 	dataProducts: string[];
 	members: string[];

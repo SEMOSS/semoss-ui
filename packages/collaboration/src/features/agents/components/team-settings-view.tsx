@@ -25,16 +25,8 @@ export function TeamSettingsView({
 	return (
 		<div className="space-y-7">
 			<FormSection
-				title={
-					agent.type === "Team"
-						? `${agent.name || "Your agent"}'s team`
-						: "Specialist helpers"
-				}
-				description={
-					agent.type === "Team"
-						? "One lead, a shared goal, and the right specialists."
-						: "Optional specialists this individual agent can delegate to."
-				}
+				title={`${agent.name || "Your agent"}'s team`}
+				description="Optional specialists this agent can delegate to."
 			>
 				<div className="mb-5 flex items-center gap-3 border-b pb-5">
 					<AgentAvatar agent={shownAgent} />
@@ -43,17 +35,13 @@ export function TeamSettingsView({
 							{agent.name || "Your agent"}
 						</strong>
 						<span className="text-muted-foreground text-xs">
-							{agent.type === "Team" ? "Team lead" : "Lead agent"}
+							Lead agent
 						</span>
 					</span>
 				</div>
 				<div>
 					{agents
-						.filter(
-							(person) =>
-								person.id !== agent.id &&
-								person.type !== "Team",
-						)
+						.filter((person) => person.id !== agent.id)
 						.map((person) => (
 							<label
 								key={person.id}
@@ -101,25 +89,19 @@ export function TeamSettingsView({
 							id={depthId}
 							type="number"
 							min={0}
-							max={5}
 							value={agent.depth}
-							onChange={(event) =>
-								onUpdate(
-									"depth",
-									Math.max(
-										0,
-										Math.min(
-											5,
-											Math.floor(
-												Number(event.target.value),
-											),
-										),
-									),
-								)
-							}
+							onChange={(event) => {
+								const depth = Math.max(
+									0,
+									Math.floor(Number(event.target.value)),
+								);
+								onUpdate("depth", depth);
+								onUpdate("spawn", depth > 1);
+							}}
 						/>
 						<p className="text-muted-foreground text-xs">
-							0 disables delegation. Preview range: 0-5.
+							0 disables delegation. 1 allows only the lead to
+							delegate.
 						</p>
 					</div>
 					<div className="space-y-2">
@@ -127,31 +109,26 @@ export function TeamSettingsView({
 							htmlFor={concurrencyId}
 							className="font-medium text-sm"
 						>
-							Concurrent helpers
+							Maximum helpers per run
 						</label>
 						<Input
 							id={concurrencyId}
 							type="number"
-							min={1}
-							max={8}
+							min={0}
 							value={agent.concurrency}
 							onChange={(event) =>
 								onUpdate(
 									"concurrency",
 									Math.max(
-										1,
-										Math.min(
-											8,
-											Math.floor(
-												Number(event.target.value),
-											),
-										),
+										0,
+										Math.floor(Number(event.target.value)),
 									),
 								)
 							}
 						/>
 						<p className="text-muted-foreground text-xs">
-							Preview range: 1-8.
+							Total helpers across the run, including nested
+							helpers.
 						</p>
 					</div>
 				</div>
@@ -164,15 +141,22 @@ export function TeamSettingsView({
 							Allow helpers to spawn subagents
 						</strong>
 						<span className="mt-1 block text-muted-foreground text-xs">
-							Within the delegation depth configured above.
+							Enables a spawn level of at least 2. Turning this
+							off caps the level at 1.
 						</span>
 					</span>
 					<Switch
 						id={spawnId}
 						checked={agent.spawn}
-						onCheckedChange={(checked) =>
-							onUpdate("spawn", checked)
-						}
+						onCheckedChange={(checked) => {
+							onUpdate("spawn", checked);
+							onUpdate(
+								"depth",
+								checked
+									? Math.max(agent.depth, 2)
+									: Math.min(agent.depth, 1),
+							);
+						}}
 					/>
 				</label>
 			</FormSection>

@@ -63,14 +63,15 @@ export function agentFromWorkspace(agent: WorkspaceAgent): ShowcaseAgent {
 		workspace: "Conversation",
 		instructions: agent.system_prompt,
 		skills: agent.skills.map((skill) => skill.name),
+		skillIds: agent.skills.map((skill) => skill.id),
 		databases: namesOfType(agent, "DATABASE"),
 		// TODO:: "data products" is approximated by PROJECT-type resources. Confirm the
 		// intended catalog type and narrow this.
 		dataProducts: namesOfType(agent, "PROJECT"),
 		members: subagents.map((subagent) => subagent.workspaceId),
 		depth: config?.spawn_policy?.max_subagent_depth ?? 1,
-		concurrency: config?.spawn_policy?.max_subagents_per_run ?? 1,
-		spawn: subagents.length > 0,
+		concurrency: config?.spawn_policy?.max_subagents_per_run ?? 10,
+		spawn: (config?.spawn_policy?.max_subagent_depth ?? 1) > 1,
 		// TODO:: CONFIG_JSON hooks use kinds like git_commit / pixel / log_tools, which
 		// do not map onto the UI's Email / Scheduled / Calendar / Webhook trigger
 		// sources. Left empty until a trigger contract exists server-side.
@@ -99,6 +100,7 @@ export function agentFromProjectRow(row: ProjectRow): ShowcaseAgent {
 		workspace: "Conversation",
 		instructions: "",
 		skills: [],
+		skillIds: [],
 		databases: [],
 		dataProducts: [],
 		members: [],

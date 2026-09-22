@@ -24,26 +24,41 @@ export interface AgentDraft {
 	maxReflections?: number;
 	/** How deep this agent may spawn subagents. */
 	maxSubagentDepth?: number;
-	/** How many subagents it may run at once. */
+	/** Total subagents it may spawn across one run, including nested helpers. */
 	maxSubagentsPerRun?: number;
 	/** Skill ids the agent should end up with. Omit to keep the current set. */
 	skillIds?: string[];
+	/** Workspace ids of the agents available for delegation. An empty list clears them. */
+	subagents?: { workspaceId: string }[];
 }
 
-// TODO:: AddWorkspace returns the new workspaceId as the success MESSAGE string
-// rather than a map, so it cannot be validated structurally. Change the reactor
-// to return a MAP of {workspace_id} and narrow this.
-const newWorkspaceIdSchema = z.string().min(1);
+// AddWorkspace returns the workspace id as a MESSAGE string.
+const newWorkspaceIdSchema = z.string().trim().min(1);
 
 // EditWorkspace answers `true` on success, but a MAP describing what failed when
 // only part of the update applied.
 const editResultSchema = z.union([
 	z.boolean(),
-	z.record(z.string(), z.unknown()),
+	z.object({ success: z.literal(true), warning: z.string() }),
 ]);
 
+/** A created workspace whose follow-up settings still need to be saved. */
+export class AgentCreatedError extends Error {
+	/** Retained so retry updates this workspace instead of creating another one. */
+	readonly workspaceId: string;
+
+	constructor(workspaceId: string, cause: unknown) {
+		super(
+			`The agent was created, but its settings could not be saved. Retry saving to finish configuring this agent. ${cause instanceof Error ? cause.message : String(cause)}`,
+			{ cause },
+		);
+		this.name = "AgentCreatedError";
+		this.workspaceId = workspaceId;
+	}
+}
+
 /**
- * Create an agent.
+ * Create an agent, then save settings only accepted by EditWorkspace.
  *
  * @param actions - `actions` from `useInsight()`.
  * @param draft - The agent's initial configuration.
@@ -53,7 +68,7 @@ export async function createAgent(
 	actions: InsightActions,
 	draft: AgentDraft,
 ): Promise<string> {
-	return callPixel(
+	const workspaceId = await callPixel(
 		actions,
 		pixel("AddWorkspace", {
 			name: draft.name,
@@ -64,6 +79,23 @@ export async function createAgent(
 		}),
 		newWorkspaceIdSchema,
 	);
+
+	const hasExecutionSettings =
+		draft.maxTurns !== undefined ||
+		draft.maxReflections !== undefined ||
+		draft.maxSubagentDepth !== undefined ||
+		draft.maxSubagentsPerRun !== undefined ||
+		draft.subagents !== undefined;
+	if (hasExecutionSettings) {
+		try {
+			// Reload and resend resources because EditWorkspace replaces them.
+			await updateAgent(actions, workspaceId, draft);
+		} catch (cause) {
+			throw new AgentCreatedError(workspaceId, cause);
+		}
+	}
+
+	return workspaceId;
 }
 
 /**
@@ -105,16 +137,16 @@ export async function updateAgent(
 		maxReflections: draft.maxReflections,
 		maxSubagentDepth: draft.maxSubagentDepth,
 		maxSubagentsPerRun: draft.maxSubagentsPerRun,
+		subagents: draft.subagents,
 	});
 
 	const result = await callPixel(actions, statement, editResultSchema);
 
-	// TODO:: EditWorkspace reports partial failure as a MAP instead of an error, so
-	// the detail is surfaced here rather than per field. Map these onto the
-	// individual form fields once the reactor's shape is documented.
 	if (result !== true) {
 		throw new PixelError(
-			`The agent was only partially updated: ${JSON.stringify(result)}`,
+			result === false
+				? "SEMOSS did not confirm the agent settings were saved."
+				: result.warning,
 			statement,
 		);
 	}

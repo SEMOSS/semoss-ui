@@ -1,0 +1,141 @@
+import { act, renderHook } from "@testing-library/react";
+import type { InsightActions } from "@/lib/pixel";
+import type { Agent } from "@/types/agent";
+import { agentFromWorkspace } from "../utils/agent-from-workspace";
+import { useSaveAgent } from "./use-save-agent";
+
+const agent: Agent = {
+	id: "draft-1",
+	name: "Research team",
+	role: "Research",
+	type: "Team",
+	icon: "users",
+	tone: "green",
+	workspace: "Conversation",
+	instructions: "Delegate research",
+	skills: ["Research"],
+	databases: [],
+	dataProducts: [],
+	members: ["specialist-1"],
+	depth: 3,
+	concurrency: 2,
+	spawn: true,
+	triggers: [],
+};
+
+function createActions() {
+	const run = vi.fn(async (statement: string) => ({
+		pixelReturn: [
+			{
+				output: statement.startsWith("AddWorkspace")
+					? "workspace-1"
+					: statement.startsWith("GetWorkspace")
+						? { workspace_id: "workspace-1", name: agent.name }
+						: true,
+				operationType: [],
+			},
+		],
+	}));
+	return { actions: { run } as unknown as InsightActions, run };
+}
+
+describe("useSaveAgent", () => {
+	it("retries settings on the created workspace and refreshes only on full success", async () => {
+		const { actions, run } = createActions();
+		run.mockResolvedValueOnce({
+			pixelReturn: [{ output: "workspace-1", operationType: [] }],
+		});
+		run.mockResolvedValueOnce({
+			pixelReturn: [
+				{
+					output: { workspace_id: "workspace-1", name: agent.name },
+					operationType: [],
+				},
+			],
+		});
+		run.mockRejectedValueOnce(new Error("Settings failed"));
+		const onSaved = vi.fn();
+		const { result, rerender } = renderHook(() =>
+			useSaveAgent({ actions, agents: [], onSaved }),
+		);
+
+		await act(async () => {
+			await expect(result.current(agent, ["skill-1"])).rejects.toThrow(
+				"The agent was created",
+			);
+		});
+		expect(onSaved).not.toHaveBeenCalled();
+		rerender();
+		await act(async () => {
+			await expect(
+				result.current(
+					{ ...agent, instructions: "Revised instructions" },
+					["skill-1"],
+				),
+			).resolves.toBe("workspace-1");
+		});
+		expect(
+			run.mock.calls.filter(([statement]) =>
+				statement.startsWith("AddWorkspace"),
+			),
+		).toHaveLength(1);
+		expect(run.mock.lastCall?.[0]).toContain('workspaceId=["workspace-1"]');
+		expect(run.mock.lastCall?.[0]).toContain(
+			'systemPrompt=["Revised instructions"]',
+		);
+		expect(run.mock.lastCall?.[0]).toContain('skills=["skill-1"]');
+		expect(run.mock.lastCall?.[0]).toContain(
+			'subagents=[{"workspaceId":"specialist-1"}]',
+		);
+		expect(onSaved).toHaveBeenCalledTimes(1);
+	});
+
+	it("uses the edit route id even when the agent is absent from the list", async () => {
+		const { actions, run } = createActions();
+		const { result } = renderHook(() =>
+			useSaveAgent({ actions, agents: [], onSaved: vi.fn() }),
+		);
+		await act(async () => {
+			await expect(
+				result.current(agent, [], "workspace-1"),
+			).resolves.toBe("workspace-1");
+		});
+		expect(run).toHaveBeenCalledTimes(2);
+		expect(run.mock.calls[0][0]).toMatch(/^GetWorkspace/);
+	});
+
+	it.each([
+		{ depth: 0, spawn: false, expectedDepth: 0 },
+		{ depth: 3, spawn: false, expectedDepth: 1 },
+		{ depth: 3, spawn: true, expectedDepth: 3 },
+	])(
+		"maps delegation depth and helper spawning: %j",
+		async ({ depth, spawn, expectedDepth }) => {
+			const { actions, run } = createActions();
+			const { result } = renderHook(() =>
+				useSaveAgent({ actions, agents: [], onSaved: vi.fn() }),
+			);
+			await act(async () => {
+				await result.current({ ...agent, depth, spawn });
+			});
+			expect(run.mock.lastCall?.[0]).toContain(
+				`maxSubagentDepth=[${expectedDepth}]`,
+			);
+			expect(run.mock.lastCall?.[0]).toContain("maxSubagentsPerRun=[2]");
+			const loaded = agentFromWorkspace({
+				workspace_id: "workspace-1",
+				name: agent.name,
+				description: agent.role,
+				system_prompt: agent.instructions,
+				mcp: [],
+				skills: [],
+				prompts: [],
+				config_json: {
+					spawn_policy: { max_subagent_depth: expectedDepth },
+					subagents: [{ workspaceId: "specialist-1" }],
+				},
+			});
+			expect(loaded.spawn).toBe(expectedDepth > 1);
+		},
+	);
+});

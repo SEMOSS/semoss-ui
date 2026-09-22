@@ -1,3 +1,11 @@
+import {
+	Alert,
+	AlertDescription,
+	Button,
+	H2,
+	P,
+	Spinner,
+} from "@semoss/ui/next";
 import { SelectionList } from "@/features/agents/components/selection-list";
 import type { Agent } from "@/types/agent";
 
@@ -9,21 +17,28 @@ type UpdateAgent = <Key extends keyof Agent>(
 export function CapabilitiesSettingsView({
 	agent,
 	skillOptions,
+	isLoadingSkills,
+	skillsError,
+	onRetrySkills,
 	onUpdate,
 }: {
 	agent: Agent;
-	skillOptions: { name: string; detail: string }[];
+	skillOptions: { name: string; detail: string; value: string }[];
+	isLoadingSkills: boolean;
+	skillsError: Error | null;
+	onRetrySkills?: () => void;
 	onUpdate: UpdateAgent;
 }) {
 	return (
 		<div className="space-y-7">
 			<div>
-				<h2 className="font-semibold text-base">
+				<H2 className="font-medium text-base">
 					What {agent.name || "your agent"} can work with
-				</h2>
-				<p className="mt-1 text-muted-foreground text-sm">
-					Sample resources · No live connections
-				</p>
+				</H2>
+				<P className="mt-1 text-muted-foreground">
+					Databases and data products are sample resources. Skills are
+					loaded from your catalog.
+				</P>
 			</div>
 			<SelectionList
 				title="Databases"
@@ -55,11 +70,43 @@ export function CapabilitiesSettingsView({
 				selected={agent.dataProducts}
 				onChange={(value) => onUpdate("dataProducts", value)}
 			/>
+			{isLoadingSkills && (
+				<Spinner aria-label="Loading available skills" />
+			)}
+			{skillsError && (
+				<Alert variant="destructive">
+					<AlertDescription>
+						Could not load available skills. {skillsError.message}
+					</AlertDescription>
+					{onRetrySkills && (
+						<Button
+							type="button"
+							variant="outline"
+							onClick={onRetrySkills}
+						>
+							Try again
+						</Button>
+					)}
+				</Alert>
+			)}
+			{!isLoadingSkills && !skillsError && skillOptions.length === 0 && (
+				<P className="text-muted-foreground">
+					No skills are available.
+				</P>
+			)}
 			<SelectionList
 				title="Skills"
 				options={skillOptions}
-				selected={agent.skills}
-				onChange={(value) => onUpdate("skills", value)}
+				selected={agent.skillIds ?? []}
+				onChange={(ids) => {
+					onUpdate("skillIds", ids);
+					onUpdate(
+						"skills",
+						skillOptions
+							.filter((option) => ids.includes(option.value))
+							.map((option) => option.name),
+					);
+				}}
 			/>
 		</div>
 	);

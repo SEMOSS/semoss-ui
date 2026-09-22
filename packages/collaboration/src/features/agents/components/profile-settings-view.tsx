@@ -1,14 +1,6 @@
 import { Check, ImagePlus } from "lucide-react";
 import type { RefObject } from "react";
-import {
-	Button,
-	cn,
-	FormInput,
-	FormTextarea,
-	Spinner,
-	ToggleGroup,
-	ToggleGroupItem,
-} from "@semoss/ui/next";
+import { Button, cn, FormInput, FormTextarea, Spinner } from "@semoss/ui/next";
 import { AgentAvatar } from "@/components/common/agent-avatar";
 import { agentIcons } from "@/components/common/agent-icons";
 import { FormSection } from "@/features/agents/components/form-section";
@@ -99,40 +91,13 @@ export function ProfileSettingsView({
 						/>
 					</div>
 				</div>
-				<div className="grid gap-5 sm:grid-cols-2">
-					<FormInput
-						name="name"
-						label="Name (required)"
-						placeholder="e.g. Priya"
-						maxLength={60}
-						required
-					/>
-					<FormInput
-						name="role"
-						label="Role (required)"
-						placeholder="e.g. Travel & experiences"
-						maxLength={100}
-						required
-					/>
-				</div>
-				<div className="mt-5 flex flex-wrap items-center justify-between gap-3">
-					<span className="font-medium text-sm">Agent type</span>
-					<ToggleGroup
-						type="single"
-						value={agent.type}
-						onValueChange={(value) =>
-							value && onUpdate("type", value as Agent["type"])
-						}
-						variant="outline"
-						size="sm"
-						aria-label="Agent type"
-					>
-						<ToggleGroupItem value="Individual">
-							Individual
-						</ToggleGroupItem>
-						<ToggleGroupItem value="Team">Team</ToggleGroupItem>
-					</ToggleGroup>
-				</div>
+				<FormInput
+					name="name"
+					label="Name (required)"
+					placeholder="e.g. Priya"
+					maxLength={60}
+					required
+				/>
 			</FormSection>
 			<FormSection title="Or choose an identity icon">
 				<div className="flex flex-wrap items-center gap-2">

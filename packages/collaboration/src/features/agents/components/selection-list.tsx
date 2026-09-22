@@ -5,7 +5,7 @@ export function SelectionList({
 	onChange,
 }: {
 	title: string;
-	options: { name: string; detail: string }[];
+	options: { name: string; detail: string; value?: string }[];
 	selected: string[];
 	onChange: (selected: string[]) => void;
 }) {
@@ -15,19 +15,27 @@ export function SelectionList({
 			<div>
 				{options.map((option) => (
 					<label
-						key={option.name}
+						key={option.value ?? option.name}
 						className="flex cursor-pointer items-start gap-3 border-b py-4 last:border-0"
 					>
 						<input
 							type="checkbox"
 							className="mt-0.5 size-4 shrink-0 accent-primary"
-							checked={selected.includes(option.name)}
+							checked={selected.includes(
+								option.value ?? option.name,
+							)}
 							onChange={(event) =>
 								onChange(
 									event.target.checked
-										? [...selected, option.name]
+										? [
+												...selected,
+												option.value ?? option.name,
+											]
 										: selected.filter(
-												(item) => item !== option.name,
+												(item) =>
+													item !==
+													(option.value ??
+														option.name),
 											),
 								)
 							}
