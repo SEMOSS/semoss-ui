@@ -1,0 +1,87 @@
+import { Field, FieldLabel } from "@semoss/ui/next";
+import type { AgentRunConfig } from "../../../domain/automation.types";
+import { EnginePickerField } from "./engine-picker-field";
+import { BoundInput } from "./pill-input";
+import { AutomationProjectSelect } from "./project-select";
+
+export interface AgentRunFormProps {
+	config: AgentRunConfig;
+	upstreamVars: string[];
+	onChange: (config: AgentRunConfig) => void;
+	/** When true, all fields are locked to their current values */
+	readOnly?: boolean;
+}
+
+/** Authors a RunAgent call against an agent workspace the current user can access. */
+export function AgentRunForm({
+	config,
+	upstreamVars,
+	onChange,
+	readOnly = false,
+}: AgentRunFormProps) {
+	return (
+		<div className="flex flex-col gap-4">
+			<Field>
+				<FieldLabel>
+					Agent
+					<span className="ml-1 text-destructive" aria-hidden>
+						*
+					</span>
+				</FieldLabel>
+				<AutomationProjectSelect
+					name={config.workspaceName ?? ""}
+					value={config.workspaceId}
+					projectTypes={["WORKSPACE"]}
+					placeholder="Select an agent…"
+					searchPlaceholder="Search agents…"
+					emptyText="No accessible agents found"
+					clearable={false}
+					disabled={readOnly}
+					onChange={(workspaceId, workspaceName) =>
+						onChange({
+							...config,
+							workspaceId,
+							workspaceName,
+						})
+					}
+				/>
+				<p className="mt-1 text-[11px] text-muted-foreground">
+					Only SEMOSS agents you can access are shown.
+				</p>
+			</Field>
+			<div>
+				<EnginePickerField
+					label="Execution model"
+					name={config.engineName ?? ""}
+					value={config.engineId}
+					engineTypes={["MODEL"]}
+					required
+					disabled={readOnly}
+					onChange={(engine) =>
+						onChange({
+							...config,
+							engineId: engine.engine_id,
+							engineName:
+								engine.engine_display_name ??
+								engine.engine_name,
+						})
+					}
+				/>
+				<p className="mt-1 text-[11px] text-muted-foreground">
+					The selected model runs this agent for every automation run.
+				</p>
+			</div>
+			<BoundInput
+				label="Instruction"
+				required
+				value={config.command}
+				placeholder="Create a prototype for: ${rfi}"
+				onChange={(command) => onChange({ ...config, command })}
+				upstreamVars={upstreamVars}
+				readOnly={readOnly}
+				mono
+				minRows={4}
+			/>
+		</div>
+	);
+}

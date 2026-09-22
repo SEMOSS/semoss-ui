@@ -9,7 +9,7 @@ import {
 	TooltipTrigger,
 	toast,
 } from "@semoss/ui/next";
-import { IMAGE_MIME_TYPES } from "../../utility/image";
+import { IMAGE_MIME_TYPES } from "@semoss/utility/file";
 import type { JupyterOutput } from "./notebook.types";
 import {
 	getMimeString,

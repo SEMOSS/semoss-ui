@@ -9,8 +9,23 @@ import {
 } from "lucide-react";
 import { type ReactNode, useEffect, useState } from "react";
 import { useTranslation } from "@semoss/i18n";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@semoss/ui/next";
-import { countInlineImages, hasInlineImage } from "../../utility/image";
+import {
+	Markdown,
+	Tooltip,
+	TooltipContent,
+	TooltipTrigger,
+} from "@semoss/ui/next";
+import { countInlineImages, hasInlineImage } from "@semoss/utility/file";
+import { isTabularArray, parseStructuredOutput } from "@semoss/utility/json";
+import {
+	countLines,
+	formatBytes,
+	looksLikeHtmlDocument,
+	looksLikeMarkdown,
+	normalizeForMarkdown,
+	splitMessageLines,
+} from "@semoss/utility/string/markdown";
+import { SandpackHtmlPreview } from "../html";
 import { InlineImageSegments } from "./inline-image";
 import { JsonViewer } from "./json-viewer";
 
@@ -41,6 +56,8 @@ export interface CellOutputBlockProps {
 
 	/** Marks the row as an error: red panel, red border, red text. */
 	error?: boolean;
+	/** Optional parent-owned popout for the result panel. */
+	onOutputPopout?: () => void;
 }
 
 /**
@@ -63,6 +80,7 @@ export const CellOutputBlock = ({
 	logs = [],
 	pending = false,
 	error = false,
+	onOutputPopout,
 }: CellOutputBlockProps) => {
 	// `common` is preloaded by every app's I18nBuilder (it's in each app's
 	// initial `ns`), so this works from libs/shared without coupling.
@@ -94,15 +112,32 @@ export const CellOutputBlock = ({
 	const hasStructuredLogs =
 		!rawLogsMode &&
 		messageLines.some((line) => {
-			const v = tryParseStructured(line);
+			const v = parseStructuredOutput(line);
 			return v !== null && typeof v === "object";
 		});
-	const outputValue = parseOutputValue(output);
+	const outputValue = parseStructuredOutput(output);
 	const isObjectOutput =
 		outputValue !== null &&
 		typeof outputValue === "object" &&
 		!error &&
 		!rawOutput;
+
+	const isTableOutput = isObjectOutput && isTabularArray(outputValue);
+
+	const htmlText = !isObjectOutput ? normalizeForMarkdown(output) : "";
+	const isHtmlOutput =
+		!isObjectOutput &&
+		!error &&
+		!rawOutput &&
+		looksLikeHtmlDocument(htmlText);
+	const isMarkdownOutput =
+		!isObjectOutput &&
+		!isHtmlOutput &&
+		!error &&
+		!rawOutput &&
+		looksLikeMarkdown(output);
+
+	const markdownText = isMarkdownOutput ? normalizeForMarkdown(output) : "";
 
 	// Python executions return rendered figures as inline base64 images. In
 	// FORMATTED mode we show the picture; RAW mode falls through to the plain
@@ -234,7 +269,8 @@ export const CellOutputBlock = ({
 						<>
 							{!error &&
 								(outputValue !== null ||
-									outputImageCount > 0) && (
+									outputImageCount > 0 ||
+									isHtmlOutput) && (
 									<RawToggle
 										raw={rawOutput}
 										onToggle={() => setRawOutput((v) => !v)}
@@ -257,17 +293,37 @@ export const CellOutputBlock = ({
 								label={t("cellOutput.copy.output")}
 							/>
 							<PopoutButton
-								onClick={() => setPopoutSection("result")}
+								onClick={() =>
+									onOutputPopout
+										? onOutputPopout()
+										: setPopoutSection("result")
+								}
 							/>
 						</>
 					}
 				>
-					{isObjectOutput ? (
+					{isTableOutput ? (
+						<DataTable
+							rows={outputValue as Record<string, unknown>[]}
+						/>
+					) : isObjectOutput ? (
 						<JsonViewer
 							value={outputValue}
 							forceVersion={expandRev}
 							forceOpen={expandAllTo}
 						/>
+					) : isHtmlOutput ? (
+						<div className="h-72">
+							<SandpackHtmlPreview
+								html={htmlText}
+								forceFullHeight
+								className="border-0"
+							/>
+						</div>
+					) : isMarkdownOutput ? (
+						<div className="prose prose-sm dark:prose-invert max-w-none">
+							<Markdown>{markdownText}</Markdown>
+						</div>
 					) : showOutputImages ? (
 						<InlineImageSegments
 							text={output}
@@ -359,12 +415,15 @@ export const CellOutputBlock = ({
 					})} · ${formatBytes(output)}`}
 					actions={
 						<>
-							{!error && outputValue !== null && (
-								<RawToggle
-									raw={rawOutput}
-									onToggle={() => setRawOutput((v) => !v)}
-								/>
-							)}
+							{!error &&
+								(outputValue !== null ||
+									outputImageCount > 0 ||
+									isHtmlOutput) && (
+									<RawToggle
+										raw={rawOutput}
+										onToggle={() => setRawOutput((v) => !v)}
+									/>
+								)}
 							{isObjectOutput && (
 								<ExpandAllToggle
 									onExpand={() => {
@@ -385,12 +444,28 @@ export const CellOutputBlock = ({
 					}
 					onClose={() => setPopoutSection(null)}
 				>
-					{isObjectOutput ? (
+					{isTableOutput ? (
+						<DataTable
+							rows={outputValue as Record<string, unknown>[]}
+						/>
+					) : isObjectOutput ? (
 						<JsonViewer
 							value={outputValue}
 							forceVersion={expandRev}
 							forceOpen={expandAllTo}
 						/>
+					) : isHtmlOutput ? (
+						<div className="h-full min-h-0">
+							<SandpackHtmlPreview
+								html={htmlText}
+								forceFullHeight
+								className="border-0"
+							/>
+						</div>
+					) : isMarkdownOutput ? (
+						<div className="prose prose-sm dark:prose-invert max-w-none">
+							<Markdown>{markdownText}</Markdown>
+						</div>
 					) : showOutputImages ? (
 						<InlineImageSegments
 							text={output}
@@ -450,7 +525,7 @@ const FormattedLines = ({
 					/>
 				);
 			}
-			const structured = tryParseStructured(line);
+			const structured = parseStructuredOutput(line);
 			return (
 				<div key={key}>
 					{structured !== null && typeof structured === "object" ? (
@@ -723,7 +798,7 @@ const ExpandAllToggle = ({
 // PopoutModal — viewport-sized modal that re-renders panel content bigger
 // ---------------------------------------------------------------------------
 
-const PopoutModal = ({
+export const PopoutModal = ({
 	title,
 	meta,
 	actions,
@@ -754,7 +829,7 @@ const PopoutModal = ({
 			aria-modal="true"
 			aria-label={title}
 			tabIndex={-1}
-			className="fixed inset-0 z-[200] flex items-center justify-center bg-black/40"
+			className="fixed inset-0 z-200 flex items-center justify-center bg-black/40"
 			onClick={(e) => {
 				// only close when the click is on the backdrop itself, not on
 				// the modal content bubbling up
@@ -803,73 +878,46 @@ const PopoutModal = ({
 // helpers
 // ---------------------------------------------------------------------------
 
-const splitMessageLines = (messages: string[]): string[] => {
-	const out: string[] = [];
-	for (const msg of messages) {
-		if (msg === undefined || msg === null) continue;
-		const trimmed = msg.replace(/\n$/, "");
-		const parts = trimmed.split("\n");
-		out.push(...parts);
-	}
-	return out;
-};
-
-const countLines = (text: string): number => {
-	if (!text) return 0;
-	const trimmed = text.endsWith("\n") ? text.slice(0, -1) : text;
-	if (!trimmed) return 0;
-	return trimmed.split("\n").length;
-};
-
-const formatBytes = (text: string): string => {
-	const n = new Blob([text || ""]).size;
-	if (n < 1024) return `${n} B`;
-	if (n < 1024 * 1024) return `${(n / 1024).toFixed(1)} KB`;
-	return `${(n / 1024 / 1024).toFixed(1)} MB`;
-};
-
-const parseOutputValue = (output: string): unknown | null => {
-	return tryParseStructured(output);
-};
-
-/**
- * Try to coerce a string into a JSON-ish value so we can render it via the
- * JsonViewer. Handles both real JSON and Python's dict/list repr (single
- * quotes + `True`/`False`/`None`) — which is what `print(some_dict)` emits.
- *
- * Returns `null` when the string doesn't look structured or can't be parsed.
- */
-const tryParseStructured = (raw: string): unknown | null => {
-	if (!raw) return null;
-	const trimmed = raw.trim();
-	if (
-		!(trimmed.startsWith("{") && trimmed.endsWith("}")) &&
-		!(trimmed.startsWith("[") && trimmed.endsWith("]"))
-	) {
-		return null;
-	}
-	// Pass 1 — straight JSON.
-	try {
-		return JSON.parse(trimmed);
-	} catch {
-		// fall through
-	}
-	// Pass 2 — best-effort Python repr → JSON. Swap single → double quotes
-	// for keys/strings and convert Python literals. We intentionally don't
-	// try to handle every edge case (escaped quotes inside strings) — if
-	// it doesn't round-trip, we just give up and render as plain text.
-	try {
-		const swapped = trimmed
-			.replace(/(^|[\s,{[(])'((?:\\.|[^'\\])*)'/g, '$1"$2"')
-			.replace(/\bTrue\b/g, "true")
-			.replace(/\bFalse\b/g, "false")
-			.replace(/\bNone\b/g, "null");
-		return JSON.parse(swapped);
-	} catch {
-		return null;
-	}
-};
-
 // Re-export so consumers can compose their own renderers if they want just
 // the JSON tree.
 export { JsonViewer } from "./json-viewer";
+
+/** Renders an array of objects as a simple table. */
+function DataTable({ rows }: { rows: Record<string, unknown>[] }) {
+	const columns = Object.keys(rows[0]);
+	return (
+		<div className="overflow-auto">
+			<table className="w-full border-collapse text-xs">
+				<thead>
+					<tr className="border-b bg-muted/50">
+						{columns.map((col) => (
+							<th
+								key={col}
+								className="whitespace-nowrap px-2 py-1.5 text-left font-semibold text-muted-foreground"
+							>
+								{col}
+							</th>
+						))}
+					</tr>
+				</thead>
+				<tbody>
+					{rows.map((row, i) => (
+						<tr
+							key={`row-${i}-${String(row[columns[0]] ?? i)}`}
+							className="border-b last:border-0 hover:bg-muted/30"
+						>
+							{columns.map((col) => (
+								<td
+									key={col}
+									className="whitespace-nowrap px-2 py-1 text-foreground"
+								>
+									{String(row[col] ?? "")}
+								</td>
+							))}
+						</tr>
+					))}
+				</tbody>
+			</table>
+		</div>
+	);
+}
