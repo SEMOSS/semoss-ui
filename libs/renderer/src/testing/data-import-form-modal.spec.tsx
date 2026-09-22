@@ -259,8 +259,9 @@ describe("Query Builder editing lifecycle", () => {
 		expect(screen.getByDisplayValue("RenamedOrder")).toBeInTheDocument();
 		expect(mocks.run).toHaveBeenCalledTimes(1);
 
-		fireEvent.click(
-			screen.getByRole("button", { name: "Preview", exact: true }),
+		fireEvent.keyDown(
+			screen.getByRole("tab", { name: "Preview", exact: true }),
+			{ key: "Enter" },
 		);
 		await screen.findByText("preview row");
 		expect(mocks.run).toHaveBeenCalledTimes(2);
@@ -290,7 +291,7 @@ describe("Query Builder editing lifecycle", () => {
 		await screen.findByDisplayValue("order_id");
 		expect(screen.queryByText("preview row")).not.toBeInTheDocument();
 		expect(
-			screen.getByRole("button", { name: "Preview", exact: true }),
+			screen.getByRole("tab", { name: "Preview", exact: true }),
 		).toBeDisabled();
 		expect(mocks.run).toHaveBeenCalledTimes(3);
 		expect(mocks.run).toHaveBeenLastCalledWith(
@@ -311,24 +312,27 @@ describe("Query Builder editing lifecycle", () => {
 		const customerRow = screen.getByRole("row", { name: /customer_id/ });
 		fireEvent.click(within(customerRow).getByRole("checkbox"));
 		expect(within(customerRow).getByRole("checkbox")).not.toBeChecked();
-		fireEvent.click(
-			screen.getByRole("button", { name: "Preview", exact: true }),
+		fireEvent.keyDown(
+			screen.getByRole("tab", { name: "Preview", exact: true }),
+			{ key: "Enter" },
 		);
 		await screen.findByText("preview row");
 		expect(mocks.run).toHaveBeenLastCalledWith(
 			expect.not.stringContaining("| Join"),
 		);
 
-		fireEvent.click(
-			screen.getByRole("button", { name: "Columns", exact: true }),
+		fireEvent.keyDown(
+			screen.getByRole("tab", { name: "Columns", exact: true }),
+			{ key: "Enter" },
 		);
 		fireEvent.click(
 			within(screen.getByRole("row", { name: /customer_id/ })).getByRole(
 				"checkbox",
 			),
 		);
-		fireEvent.click(
-			screen.getByRole("button", { name: "Preview", exact: true }),
+		fireEvent.keyDown(
+			screen.getByRole("tab", { name: "Preview", exact: true }),
+			{ key: "Enter" },
 		);
 		await screen.findByText("preview row");
 		expect(mocks.run).toHaveBeenLastCalledWith(
@@ -358,7 +362,7 @@ describe("Query Builder editing lifecycle", () => {
 		);
 		await screen.findByDisplayValue("order_id");
 		expect(
-			screen.getByRole("button", { name: "Preview", exact: true }),
+			screen.getByRole("tab", { name: "Preview", exact: true }),
 		).toBeDisabled();
 		fireEvent.click(
 			within(screen.getByRole("row", { name: /order_id/ })).getByRole(
@@ -378,5 +382,165 @@ describe("Query Builder editing lifecycle", () => {
 			),
 		).toBeChecked();
 		expect(mocks.run).toHaveBeenCalledTimes(1);
+	});
+
+	it("preserves aliases across table collapse and exposes validation beside the named input", async () => {
+		render(
+			<DataImportFormModal
+				editMode
+				cell={savedCell}
+				setIsDataImportModalOpen={vi.fn()}
+			/>,
+		);
+		const alias = await screen.findByRole("textbox", {
+			name: "Alias for Orders.order_id",
+		});
+		await waitFor(() => expect(alias).toHaveValue("OrderId"));
+		fireEvent.change(alias, { target: { value: "RenamedOrder" } });
+		const disclosure = screen.getByRole("button", {
+			name: "Orders",
+			exact: true,
+		});
+		fireEvent.click(disclosure);
+		expect(disclosure).toHaveAttribute("aria-expanded", "false");
+		expect(
+			screen.queryByRole("region", { name: "Orders columns" }),
+		).not.toBeInTheDocument();
+		fireEvent.click(disclosure);
+		const reopenedAlias = screen.getByRole("textbox", {
+			name: "Alias for Orders.order_id",
+		});
+		expect(reopenedAlias).toHaveValue("RenamedOrder");
+		expect(
+			within(
+				screen.getByRole("region", { name: "Orders columns" }),
+			).queryByRole("combobox"),
+		).not.toBeInTheDocument();
+
+		fireEvent.change(reopenedAlias, { target: { value: "CustomerId" } });
+		expect(reopenedAlias).toHaveAttribute("aria-invalid", "true");
+		expect(reopenedAlias).toHaveAccessibleDescription(
+			"Use a unique alias.",
+		);
+		expect(
+			screen.getByRole("button", { name: "Update Cell" }),
+		).toBeDisabled();
+		expect(screen.getByRole("tab", { name: "Preview" })).toBeDisabled();
+		expect(
+			screen.getByText("Give each selected column a unique alias."),
+		).toBeInTheDocument();
+		fireEvent.change(reopenedAlias, { target: { value: "" } });
+		expect(reopenedAlias).toHaveAccessibleDescription("Enter an alias.");
+		fireEvent.change(reopenedAlias, { target: { value: "OrderId" } });
+		expect(
+			screen.getByRole("button", { name: "Update Cell" }),
+		).toBeEnabled();
+	});
+
+	it("keeps selections and alias validation across tables when using Select all", async () => {
+		render(
+			<DataImportFormModal
+				editMode
+				cell={savedCell}
+				setIsDataImportModalOpen={vi.fn()}
+			/>,
+		);
+		await screen.findByDisplayValue("OrderId");
+		const selectCustomers = screen.getByRole("checkbox", {
+			name: "Select all columns in Customers",
+		});
+		fireEvent.click(selectCustomers);
+		expect(screen.getByText("1 column selected")).toBeInTheDocument();
+		expect(screen.getByRole("tab", { name: "Preview" })).toBeEnabled();
+		expect(
+			screen.queryByRole("region", { name: "Joins" }),
+		).not.toBeInTheDocument();
+		fireEvent.click(selectCustomers);
+		expect(screen.getByText("2 columns selected")).toBeInTheDocument();
+		fireEvent.keyDown(screen.getByRole("tab", { name: "Preview" }), {
+			key: "Enter",
+		});
+		await screen.findByText("preview row");
+		expect(mocks.run).toHaveBeenLastCalledWith(
+			expect.stringContaining(
+				"| Join ( ( Orders , inner.join , Customers ) )",
+			),
+		);
+		fireEvent.keyDown(screen.getByRole("tab", { name: "Columns" }), {
+			key: "Enter",
+		});
+		fireEvent.change(
+			screen.getByRole("textbox", {
+				name: "Alias for Customers.customer_id",
+			}),
+			{
+				target: { value: "OrderId" },
+			},
+		);
+		const selectOrders = screen.getByRole("checkbox", {
+			name: "Select all columns in Orders",
+		});
+		fireEvent.click(selectOrders);
+		expect(
+			screen.getByRole("button", { name: "Update Cell" }),
+		).toBeEnabled();
+		fireEvent.click(selectOrders);
+		expect(screen.getByText("2 columns selected")).toBeInTheDocument();
+		expect(
+			screen.getByRole("button", { name: "Update Cell" }),
+		).toBeDisabled();
+		expect(
+			screen.getByRole("textbox", {
+				name: "Alias for Customers.customer_id",
+			}),
+		).toHaveAccessibleDescription("Use a unique alias.");
+	});
+
+	it("uses the named join selector for keyboard changes and preserves the saved join keys", async () => {
+		render(
+			<DataImportFormModal
+				editMode
+				cell={savedCell}
+				setIsDataImportModalOpen={vi.fn()}
+			/>,
+		);
+		const join = await screen.findByRole("combobox", {
+			name: "Join type for Orders and Customers",
+		});
+		expect(join).toHaveTextContent("Left join");
+		join.focus();
+		fireEvent.keyDown(join, { key: "ArrowDown" });
+		fireEvent.keyDown(
+			await screen.findByRole("option", { name: "Right join" }),
+			{ key: "Enter" },
+		);
+		expect(join).toHaveTextContent("Right join");
+		fireEvent.keyDown(screen.getByRole("tab", { name: "Preview" }), {
+			key: "Enter",
+		});
+		await screen.findByText("preview row");
+		expect(mocks.run).toHaveBeenLastCalledWith(
+			expect.stringContaining("right.outer.join"),
+		);
+		fireEvent.click(screen.getByRole("button", { name: "Update Cell" }));
+		await waitFor(() =>
+			expect(mocks.dispatch).toHaveBeenCalledWith({
+				message: "UPDATE_CELL",
+				payload: {
+					queryId: "notebook",
+					cellId: "1",
+					path: "parameters.joins",
+					value: [
+						{
+							leftTable: "Orders",
+							rightTable: "Customers",
+							joinType: "right.outer",
+							leftKey: "order_id",
+							rightKey: "customer_id",
+						},
+					],
+				},
+			}),
+		);
 	});
 });

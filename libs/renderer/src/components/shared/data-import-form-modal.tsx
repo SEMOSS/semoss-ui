@@ -1,13 +1,4 @@
-import {
-	AlertTriangle,
-	ArrowLeftFromLine,
-	ArrowRightFromLine,
-	CalendarDays,
-	ChevronDown,
-	ChevronRight,
-	Filter,
-	Merge,
-} from "lucide-react";
+import { ChevronDown, ChevronRight } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import {
 	type JSX,
@@ -18,20 +9,22 @@ import {
 	useRef,
 	useState,
 } from "react";
-import { Controller, useFieldArray, useForm } from "react-hook-form";
 import { runPixel, usePixel } from "@semoss/sdk/react";
 import { EngineSubtypeIcon } from "@semoss/shared";
 import {
 	Button,
 	Checkbox,
+	Collapsible,
+	CollapsibleContent,
+	CollapsibleTrigger,
+	Controller,
 	Dialog,
 	DialogContent,
+	DialogFooter,
 	DialogHeader,
 	DialogTitle,
-	DropdownMenu,
-	DropdownMenuContent,
-	DropdownMenuItem,
-	DropdownMenuTrigger,
+	Form,
+	H3,
 	Input,
 	Label,
 	Select,
@@ -45,10 +38,16 @@ import {
 	TableHead,
 	TableHeader,
 	TableRow,
+	Tabs,
+	TabsContent,
+	TabsList,
+	TabsTrigger,
 	Tooltip,
 	TooltipContent,
 	TooltipTrigger,
 	toast,
+	useFieldArray,
+	useForm,
 } from "@semoss/ui/next";
 import { useBlocks } from "../../hooks";
 import {
@@ -62,14 +61,12 @@ import { CodeCellConfig } from "../cell-defaults/code-cell";
 import { DataImportCellConfig } from "../cell-defaults/data-import-cell";
 import { getDataImportDatabases } from "./data-import-databases";
 
-const JOIN_ICONS = {
-	inner: <Merge className="size-4" />,
-	"right.outer": <ArrowRightFromLine className="size-4" />,
-	"left.outer": <ArrowLeftFromLine className="size-4" />,
-	outer: <Merge className="size-4" />,
-};
-
-const SQL_COLUMN_TYPES = ["DATE", "NUMBER", "STRING", "TIMESTAMP"];
+const JOIN_TYPES = [
+	{ value: "inner", label: "Inner join" },
+	{ value: "left.outer", label: "Left join" },
+	{ value: "right.outer", label: "Right join" },
+	{ value: "outer", label: "Outer join" },
+];
 
 type JoinElement = {
 	leftTable: string;
@@ -188,17 +185,22 @@ export const DataImportFormModal = observer(
 			cell,
 		} = props;
 
-		const [joinTypeSelectIndex, setJoinTypeSelectIndex] = useState(-1);
 		const { state, notebook } = useBlocks();
 
+		const form = useForm<FormValues>({
+			defaultValues: {
+				databaseSelect: cell?.parameters.databaseId ?? "",
+				tables: [],
+				joins: [],
+			},
+		});
 		const {
 			control: formControl,
 			setValue: formSetValue,
 			reset: formReset,
 			getValues: formGetValues,
-			handleSubmit: formHandleSubmit,
 			watch: dataImportwatch,
-		} = useForm<FormValues>();
+		} = form;
 
 		const watchedTables = dataImportwatch("tables");
 		const watchedJoins = dataImportwatch("joins");
@@ -238,7 +240,6 @@ export const DataImportFormModal = observer(
 		const pixelStringRef = useRef<string>("");
 		const pixelPartialRef = useRef<string>("");
 		const [isInitLoadComplete, setIsInitLoadComplete] = useState(false);
-		const [isJoinSelectOpen, setIsJoinSelectOpen] = useState(false);
 		const [initEditPrepopulateComplete, setInitEditPrepopulateComplete] =
 			useState(!editMode);
 
@@ -403,7 +404,6 @@ export const DataImportFormModal = observer(
 		 */
 		const addAllTableColumnsHandler = (tableIndex: number) => {
 			setShownTables(new Set(tableNames));
-			setRootTable(watchedTables[tableIndex].name);
 			const allChecked = !isTableAllSelected(tableIndex);
 			const updatedColumns = watchedTables[tableIndex].columns.map(
 				(column) => ({
@@ -412,31 +412,30 @@ export const DataImportFormModal = observer(
 				}),
 			);
 
-			const freshAliasCountObj = {};
-			updatedColumns.forEach((column) => {
-				if (allChecked) {
-					const alias = column.userAlias;
-					if (alias in freshAliasCountObj) {
-						freshAliasCountObj[alias] += 1;
-					} else {
-						freshAliasCountObj[alias] = 1;
-					}
-				}
-			});
-
-			setAliasesCountObj(freshAliasCountObj);
-			aliasesCountObjRef.current = { ...freshAliasCountObj };
-
 			formSetValue(`tables.${tableIndex}.columns`, updatedColumns, {
 				shouldDirty: true,
 				shouldValidate: true,
 			});
 
-			setCheckedColumnsCount(allChecked ? updatedColumns.length : 0);
-			setJoinsStackHandler(
-				allChecked ? updatedColumns.length : 0,
-				watchedTables[tableIndex].name,
+			const selectedColumns = formGetValues("tables").flatMap((table) =>
+				table.columns.filter((column) => column.checked),
 			);
+			const freshAliasCountObj: Record<string, number> = {};
+			for (const column of selectedColumns) {
+				const alias = column.userAlias;
+				freshAliasCountObj[alias] =
+					(freshAliasCountObj[alias] ?? 0) + 1;
+			}
+			setAliasesCountObj(freshAliasCountObj);
+			aliasesCountObjRef.current = freshAliasCountObj;
+
+			const nextCount = selectedColumns.length;
+			const nextRoot = nextCount
+				? (rootTable ?? watchedTables[tableIndex].name)
+				: null;
+			setRootTable(nextRoot);
+			setCheckedColumnsCount(nextCount);
+			setJoinsStackHandler(nextCount, nextRoot);
 		};
 
 		const updateSubmitDispatches = () => {
@@ -1235,194 +1234,268 @@ export const DataImportFormModal = observer(
 			setJoinsSet(joinsSetCopy);
 		};
 
+		const hasDuplicateAliases = Object.values(aliasesCountObj).some(
+			(count: number) => count > 1,
+		);
+		const selectionHint = !selectedDatabaseId
+			? "Select a database to continue."
+			: !checkedColumnsCount
+				? "Select at least one column."
+				: hasDuplicateAliases
+					? "Give each selected column a unique alias."
+					: aliasesCountObj[""] > 0
+						? "Enter an alias for every selected column."
+						: null;
+		const disabledReason = isDatabaseLoading
+			? "Wait for the database to finish loading."
+			: selectionHint;
+
 		return (
 			<Dialog
-				open={true}
-				onOpenChange={(open) => {
-					if (!open) closeImportModalHandler();
-				}}
+				open
+				onOpenChange={(open) => !open && closeImportModalHandler()}
 			>
 				<DialogContent
 					aria-describedby={undefined}
-					className="flex max-h-[90dvh] flex-col gap-4 overflow-y-auto sm:max-w-6xl"
+					className="flex max-h-[min(90dvh,48rem)] flex-col gap-0 overflow-hidden p-0 sm:max-w-4xl"
 				>
-					<DialogHeader>
+					<DialogHeader className="shrink-0 border-border border-b px-4 py-3 pr-12 text-left">
 						<DialogTitle className="font-medium text-base leading-6">
 							Query Builder
 						</DialogTitle>
 					</DialogHeader>
-					<form
-						onSubmit={formHandleSubmit(onImportDataSubmit)}
-						className="flex flex-col gap-4"
+					<Form
+						form={form}
+						onSubmit={onImportDataSubmit}
+						className="flex min-h-0 flex-1 flex-col"
 					>
-						{/* Database selector */}
-						<div className="flex flex-col gap-1">
-							<Label htmlFor={databaseSelectId}>Database</Label>
-							<Controller
-								name={"databaseSelect"}
-								control={formControl}
-								render={({ field }) => (
-									<Select
-										value={field.value || ""}
-										disabled={
-											getDatabases.status !== "SUCCESS" ||
-											userDatabases.length === 0
-										}
-										onValueChange={(value) => {
-											if (value === selectedDatabaseId) {
-												return;
+						<div className="shrink-0 border-border border-b px-4 py-3">
+							<div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+								<Label
+									htmlFor={databaseSelectId}
+									className="shrink-0 text-sm sm:w-20"
+								>
+									Database
+								</Label>
+								<Controller
+									name="databaseSelect"
+									control={formControl}
+									render={({ field }) => (
+										<Select
+											value={field.value || ""}
+											disabled={
+												getDatabases.status !==
+													"SUCCESS" ||
+												userDatabases.length === 0
 											}
-											field.onChange(value);
-											setSelectedDatabaseId(value);
-											// Wipe any selection state tied to
-											// the previous database so the new
-											// one starts clean (otherwise
-											// rootTable / checkedColumnsCount /
-											// joins still point at concepts
-											// that don't exist in the new DB).
-											setRootTable(null);
-											setCheckedColumnsCount(0);
-											setAliasesCountObj({});
-											aliasesCountObjRef.current = {};
-											setJoinsSet(new Set());
-											removeJoinElement();
-											setInitEditPrepopulateComplete(
-												true,
-											);
-											retrieveDatabaseTablesAndEdges(
-												value,
-											);
-											setShowEditColumns(true);
-											setShowTablePreview(false);
-										}}
-									>
-										<SelectTrigger
-											id={databaseSelectId}
-											aria-describedby={`${databaseSelectId}-status`}
-											className="h-auto min-h-10 w-full py-1.5 sm:max-w-md"
+											onValueChange={(value) => {
+												if (
+													value === selectedDatabaseId
+												)
+													return;
+												field.onChange(value);
+												setSelectedDatabaseId(value);
+												// A new database starts with its own columns and joins.
+												setRootTable(null);
+												setCheckedColumnsCount(0);
+												setAliasesCountObj({});
+												aliasesCountObjRef.current = {};
+												setJoinsSet(new Set());
+												removeJoinElement();
+												setInitEditPrepopulateComplete(
+													true,
+												);
+												retrieveDatabaseTablesAndEdges(
+													value,
+												);
+												setShowEditColumns(true);
+												setShowTablePreview(false);
+											}}
 										>
-											<SelectValue placeholder="Select a database">
-												{selectedDatabase ? (
-													<div className="flex items-center gap-2">
-														<EngineSubtypeIcon
-															engineType={
-																selectedDatabase.engine_type ??
-																"DATABASE"
-															}
-															engineSubtype={
-																selectedDatabase.engine_subtype
-															}
-															alt={`${selectedDatabase.engine_name} icon`}
-															className="size-5 shrink-0 object-contain"
-														/>
-														<div className="flex min-w-0 flex-col items-start text-left">
-															<span className="truncate text-sm">
+											<SelectTrigger
+												id={databaseSelectId}
+												size="sm"
+												aria-describedby={`${databaseSelectId}-status`}
+												className="w-full min-w-0 shadow-none sm:max-w-sm"
+											>
+												<SelectValue placeholder="Select a database">
+													{selectedDatabase && (
+														<span className="flex min-w-0 items-center gap-2">
+															<EngineSubtypeIcon
+																engineType={
+																	selectedDatabase.engine_type ??
+																	"DATABASE"
+																}
+																engineSubtype={
+																	selectedDatabase.engine_subtype
+																}
+																alt=""
+																className="size-4 shrink-0 object-contain"
+															/>
+															<span className="truncate">
 																{
 																	selectedDatabase.engine_name
 																}
 															</span>
-															<span className="truncate text-muted-foreground text-xs">
-																{
-																	selectedDatabase.engine_id
-																}
+														</span>
+													)}
+												</SelectValue>
+											</SelectTrigger>
+											<SelectContent
+												align="start"
+												collisionPadding={8}
+												className="[&_[data-radix-select-viewport]::-webkit-scrollbar]:block! max-h-[min(20rem,var(--radix-select-content-available-height))] overflow-hidden [&_[data-radix-select-viewport]]:max-h-72 [&_[data-radix-select-viewport]]:min-h-0 [&_[data-radix-select-viewport]]:overflow-y-auto [&_[data-radix-select-viewport]]:overscroll-contain [&_[data-radix-select-viewport]]:[scrollbar-width:thin]!"
+											>
+												{userDatabases.map(
+													(database) => (
+														<SelectItem
+															value={
+																database.engine_id
+															}
+															textValue={
+																database.engine_name
+															}
+															key={
+																database.engine_id
+															}
+														>
+															<span className="flex min-w-0 items-center gap-2">
+																<EngineSubtypeIcon
+																	engineType={
+																		database.engine_type ??
+																		"DATABASE"
+																	}
+																	engineSubtype={
+																		database.engine_subtype
+																	}
+																	alt=""
+																	className="size-4 shrink-0 object-contain"
+																/>
+																<span className="flex min-w-0 flex-col text-left">
+																	<span className="break-all text-sm">
+																		{
+																			database.engine_name
+																		}
+																	</span>
+																	<span className="break-all text-[11px] text-muted-foreground">
+																		{
+																			database.engine_id
+																		}
+																	</span>
+																</span>
 															</span>
-														</div>
-													</div>
-												) : null}
-											</SelectValue>
-										</SelectTrigger>
-										<SelectContent
-											align="start"
-											collisionPadding={8}
-											className="max-h-[min(20rem,var(--radix-select-content-available-height))] overflow-hidden [&_[data-radix-select-viewport]]:max-h-72 [&_[data-radix-select-viewport]]:min-h-0 [&_[data-radix-select-viewport]]:overflow-y-auto [&_[data-radix-select-viewport]]:overscroll-contain"
+														</SelectItem>
+													),
+												)}
+											</SelectContent>
+										</Select>
+									)}
+								/>
+							</div>
+							<div
+								id={`${databaseSelectId}-status`}
+								className="text-muted-foreground text-xs empty:hidden sm:pl-22"
+								aria-live="polite"
+							>
+								{getDatabases.status === "ERROR" ? (
+									<span className="text-destructive">
+										Unable to load databases.{" "}
+										<Button
+											type="button"
+											variant="link"
+											size="sm"
+											onClick={getDatabases.refresh}
 										>
-											{userDatabases.map((ele) => (
-												<SelectItem
-													value={ele.engine_id}
-													textValue={ele.engine_name}
-													key={ele.engine_id}
-												>
-													<div className="flex items-center gap-2">
-														<EngineSubtypeIcon
-															engineType={
-																ele.engine_type ??
-																"DATABASE"
-															}
-															engineSubtype={
-																ele.engine_subtype
-															}
-															alt={`${ele.engine_name} icon`}
-															className="size-5 shrink-0 object-contain"
-														/>
-														<div className="flex min-w-0 flex-col items-start">
-															<span className="truncate text-sm">
-																{
-																	ele.engine_name
-																}
-															</span>
-															<span className="truncate text-muted-foreground text-xs">
-																{ele.engine_id}
-															</span>
-														</div>
-													</div>
-												</SelectItem>
-											))}
-										</SelectContent>
-									</Select>
-								)}
-							/>
+											Retry
+										</Button>
+									</span>
+								) : getDatabases.status !== "SUCCESS" ? (
+									"Loading databases…"
+								) : userDatabases.length === 0 ? (
+									"No databases are available for your account."
+								) : null}
+							</div>
 						</div>
-
-						<div
-							id={`${databaseSelectId}-status`}
-							className="text-muted-foreground text-sm"
-							aria-live="polite"
+						<section
+							aria-label="Query configuration"
+							// biome-ignore lint/a11y/noNoninteractiveTabindex: This region receives focus for keyboard scrolling through large metamodels.
+							tabIndex={0}
+							className="focus-visible:-outline-offset-2 min-h-0 overflow-y-auto overscroll-contain px-4 py-3 [scrollbar-gutter:stable] focus-visible:outline-2 focus-visible:outline-ring"
 						>
-							{getDatabases.status === "ERROR" ? (
-								<span className="text-destructive">
-									Unable to load databases.{" "}
-									<Button
-										type="button"
-										variant="link"
-										size="sm"
-										onClick={getDatabases.refresh}
-									>
-										Retry
-									</Button>
-								</span>
-							) : getDatabases.status !== "SUCCESS" ? (
-								"Loading databases…"
-							) : userDatabases.length === 0 ? (
-								"No databases are available for your account."
-							) : null}
-						</div>
-
-						{isDatabaseLoading && (
-							<div className="rounded-md border bg-muted/30 px-3 py-4 text-muted-foreground text-sm">
-								Loading database…
-							</div>
-						)}
-
-						{!selectedDatabaseId && (
-							<div className="rounded-md border bg-muted/30 px-3 py-4 text-muted-foreground text-sm">
-								Select a database to get started.
-							</div>
-						)}
-
-						{selectedDatabaseId && !isDatabaseLoading && (
-							<div className="flex flex-col gap-3 rounded-md border bg-muted/30 p-4">
-								<div className="flex items-center justify-between gap-3">
-									<h6 className="font-medium text-sm">
-										Data
-									</h6>
-									<div className="flex items-center gap-2">
+							{!selectedDatabaseId && (
+								<p className="py-6 text-center text-muted-foreground text-sm">
+									Select a database to choose its columns.
+								</p>
+							)}
+							{selectedDatabaseId && (
+								<Tabs
+									value={showPreview ? "preview" : "columns"}
+									onValueChange={(value) => {
+										setShowTablePreview(
+											value === "preview",
+										);
+										setShowEditColumns(value === "columns");
+									}}
+									className="gap-2"
+								>
+									<div className="flex flex-wrap items-center justify-between gap-2">
+										<div className="flex flex-wrap items-center gap-3">
+											<TabsList
+												aria-label="Query data"
+												className="h-8"
+											>
+												<TabsTrigger
+													value="columns"
+													className="px-3"
+												>
+													Columns
+												</TabsTrigger>
+												<Tooltip
+													disableHoverableContent={
+														false
+													}
+												>
+													<TooltipTrigger asChild>
+														<span
+															className="inline-flex h-full"
+															tabIndex={
+																disabledReason
+																	? 0
+																	: undefined
+															}
+														>
+															<TabsTrigger
+																value="preview"
+																disabled={Boolean(
+																	disabledReason,
+																)}
+																className="px-3"
+															>
+																Preview
+															</TabsTrigger>
+														</span>
+													</TooltipTrigger>
+													<TooltipContent>
+														{disabledReason ??
+															"Preview selected columns"}
+													</TooltipContent>
+												</Tooltip>
+											</TabsList>
+											<span className="text-muted-foreground text-xs tabular-nums">
+												{checkedColumnsCount}{" "}
+												{checkedColumnsCount === 1
+													? "column"
+													: "columns"}{" "}
+												selected
+											</span>
+										</div>
 										{showEditColumns &&
 											visibleTableNames().length > 1 && (
 												<Button
 													variant="ghost"
 													size="sm"
 													type="button"
-													className="h-7 px-2 text-xs"
+													className="h-8 px-2 text-xs"
 													onClick={
 														toggleAllTablesCollapse
 													}
@@ -1432,161 +1505,151 @@ export const DataImportFormModal = observer(
 														: "Collapse all"}
 												</Button>
 											)}
-										<div className="inline-flex rounded-md border bg-background p-0.5">
-											<Button
-												variant={
-													showEditColumns
-														? "secondary"
-														: "ghost"
-												}
-												size="sm"
-												type="button"
-												className="h-7 px-3 text-xs"
-												onClick={() => {
-													if (!showEditColumns) {
-														setShowEditColumns(
-															true,
-														);
-														setShowTablePreview(
-															false,
-														);
-													}
-												}}
-											>
-												Columns
-											</Button>
-											<Button
-												variant={
-													showPreview
-														? "secondary"
-														: "ghost"
-												}
-												size="sm"
-												type="button"
-												className="h-7 px-3 text-xs"
-												disabled={
-													!checkedColumnsCount ||
-													Object.values(
-														aliasesCountObj,
-													).some(
-														(key: number) =>
-															key > 1,
-													)
-												}
-												onClick={() => {
-													if (!showPreview) {
-														setShowTablePreview(
-															true,
-														);
-														setShowEditColumns(
-															false,
-														);
-													}
-												}}
-											>
-												Preview
-											</Button>
-										</div>
 									</div>
-								</div>
-
-								{showEditColumns && (
-									<div className="rounded-md border bg-background">
-										<div className="max-h-[350px] overflow-y-auto">
-											{newTableFields.map(
+									<TabsContent
+										value="columns"
+										className="space-y-2"
+									>
+										{isDatabaseLoading ? (
+											<output className="block py-8 text-center text-muted-foreground text-sm">
+												Loading database…
+											</output>
+										) : newTableFields.length === 0 ? (
+											<p className="block py-8 text-center text-muted-foreground text-sm">
+												No tables are available in this
+												database.
+											</p>
+										) : (
+											newTableFields.map(
 												(table, tableIndex) => {
 													if (
 														!shownTables.has(
 															table.name,
 														)
-													) {
+													)
 														return null;
-													}
+													const tableId = `${databaseSelectId}-table-${tableIndex}`;
+													const selectedCount =
+														watchedTables?.[
+															tableIndex
+														]?.columns.filter(
+															(column) =>
+																column.checked,
+														).length ?? 0;
 													return (
-														<div
-															key={`${table.name}-${tableIndex}`}
-															className="border-muted-foreground/30 border-b last:border-b-0"
-														>
-															<div className="flex items-center justify-between gap-2 px-3 py-2">
-																<button
-																	type="button"
-																	className="flex flex-1 items-center gap-1.5 rounded-md text-left hover:bg-muted/40"
-																	onClick={() =>
-																		toggleTableCollapse(
-																			table.name,
-																		)
-																	}
-																>
-																	{collapsedTables.has(
-																		table.name,
-																	) ? (
-																		<ChevronRight className="size-4 text-muted-foreground" />
-																	) : (
-																		<ChevronDown className="size-4 text-muted-foreground" />
-																	)}
-																	<Tooltip
-																		disableHoverableContent={
-																			false
-																		}
-																	>
-																		<TooltipTrigger
-																			asChild
-																		>
-																			<span className="inline-flex cursor-default items-center gap-1.5 rounded-md bg-primary/10 px-2.5 py-1 font-medium text-sm">
-																				<CalendarDays className="size-3.5 text-primary/60" />
-																				{
-																					table.name
-																				}
-																			</span>
-																		</TooltipTrigger>
-																		<TooltipContent>
-																			Table
-																		</TooltipContent>
-																	</Tooltip>
-																</button>
-																{collapsedTables.has(
+														<Collapsible
+															key={table.id}
+															open={
+																!collapsedTables.has(
 																	table.name,
-																) ? (
-																	<span className="text-muted-foreground text-xs">
-																		{
-																			table
-																				.columns
-																				.length
-																		}{" "}
-																		columns
-																	</span>
-																) : (
-																	/* biome-ignore lint/a11y/noLabelWithoutControl: label wraps its input */
-																	<label className="flex cursor-pointer items-center gap-1.5 text-muted-foreground text-xs">
-																		<Checkbox
-																			checked={isTableAllSelected(
-																				tableIndex,
-																			)}
-																			onCheckedChange={() =>
-																				addAllTableColumnsHandler(
-																					tableIndex,
-																				)
+																)
+															}
+															onOpenChange={() =>
+																toggleTableCollapse(
+																	table.name,
+																)
+															}
+															className="min-w-0 rounded-md border border-border"
+														>
+															<div className="flex items-center gap-2 rounded-t-md bg-muted/40 px-2 py-1">
+																<CollapsibleTrigger
+																	asChild
+																>
+																	<Button
+																		variant="ghost"
+																		size="sm"
+																		type="button"
+																		className="h-8 min-w-0 flex-1 justify-start gap-2 px-1 text-left"
+																	>
+																		{collapsedTables.has(
+																			table.name,
+																		) ? (
+																			<ChevronRight
+																				className="size-3.5 shrink-0 text-muted-foreground"
+																				aria-hidden="true"
+																			/>
+																		) : (
+																			<ChevronDown
+																				className="size-3.5 shrink-0 text-muted-foreground"
+																				aria-hidden="true"
+																			/>
+																		)}
+																		<span className="truncate">
+																			{
+																				table.name
 																			}
-																		/>
+																		</span>
+																	</Button>
+																</CollapsibleTrigger>
+																<span className="shrink-0 text-muted-foreground text-xs tabular-nums">
+																	{
+																		selectedCount
+																	}
+																	/
+																	{
+																		table
+																			.columns
+																			.length
+																	}
+																</span>
+																<div className="flex shrink-0 items-center gap-1.5 pl-1">
+																	<Checkbox
+																		id={`${tableId}-all`}
+																		checked={
+																			selectedCount >
+																				0 &&
+																			selectedCount <
+																				table
+																					.columns
+																					.length
+																				? "indeterminate"
+																				: isTableAllSelected(
+																						tableIndex,
+																					)
+																		}
+																		onCheckedChange={() =>
+																			addAllTableColumnsHandler(
+																				tableIndex,
+																			)
+																		}
+																	/>
+																	<Label
+																		htmlFor={`${tableId}-all`}
+																		className="py-2 font-normal text-xs"
+																	>
 																		Select
-																		All
-																	</label>
-																)}
+																		all
+																		<span className="sr-only">
+																			{" "}
+																			columns
+																			in{" "}
+																			{
+																				table.name
+																			}
+																		</span>
+																	</Label>
+																</div>
 															</div>
-															{!collapsedTables.has(
-																table.name,
-															) && (
-																<div className="mr-3 mb-3 ml-8 max-h-[280px] overflow-y-auto rounded-md border border-muted-foreground/20 bg-background">
-																	<Table className="table-fixed text-sm">
-																		<TableHeader className="sticky top-0 z-10 bg-background">
-																			<TableRow>
-																				<TableHead className="w-[40%]">
-																					Field
+															<CollapsibleContent>
+																<section
+																	aria-label={`${table.name} columns`}
+																	// biome-ignore lint/a11y/noNoninteractiveTabindex: This table region receives focus for keyboard scrolling.
+																	tabIndex={0}
+																	className="overflow-x-auto rounded-b-md focus-visible:outline-2 focus-visible:outline-ring"
+																>
+																	<Table
+																		wrapperClassName="overflow-visible"
+																		className="min-w-xl table-fixed"
+																	>
+																		<TableHeader>
+																			<TableRow className="hover:bg-transparent">
+																				<TableHead className="h-8 w-2/5 px-3 text-muted-foreground text-xs">
+																					Column
 																				</TableHead>
-																				<TableHead>
+																				<TableHead className="h-8 w-2/5 px-3 text-muted-foreground text-xs">
 																					Alias
 																				</TableHead>
-																				<TableHead className="w-[180px]">
+																				<TableHead className="h-8 w-1/5 px-3 text-muted-foreground text-xs">
 																					Type
 																				</TableHead>
 																			</TableRow>
@@ -1596,48 +1659,79 @@ export const DataImportFormModal = observer(
 																				(
 																					column,
 																					columnIndex,
-																				) => (
-																					<TableRow
-																						key={`${column.columnName}-${columnIndex}`}
-																					>
-																						<TableCell>
-																							<div className="flex items-center gap-2">
-																								<Controller
-																									name={`tables.${tableIndex}.columns.${columnIndex}.checked`}
-																									control={
-																										formControl
-																									}
-																									render={({
-																										field,
-																									}) => (
-																										<Checkbox
-																											checked={
-																												field.value
-																											}
-																											id={`checkbox-${column.columnName}-${columnIndex}`}
-																											onCheckedChange={(
-																												checked,
-																											) => {
-																												field.onChange(
+																				) => {
+																					const columnId = `${tableId}-column-${columnIndex}`;
+																					const currentColumn =
+																						watchedTables?.[
+																							tableIndex
+																						]
+																							?.columns[
+																							columnIndex
+																						] ??
+																						column;
+																					const aliasError =
+																						currentColumn.checked
+																							? aliasesCountObj[
+																									currentColumn
+																										.userAlias
+																								] >
+																								1
+																								? "Use a unique alias."
+																								: currentColumn.userAlias ===
+																										""
+																									? "Enter an alias."
+																									: null
+																							: null;
+																					return (
+																						<TableRow
+																							key={
+																								column.id
+																							}
+																						>
+																							<TableCell className="px-3 py-1">
+																								<div className="flex min-w-0 items-center gap-2">
+																									<Controller
+																										name={`tables.${tableIndex}.columns.${columnIndex}.checked`}
+																										control={
+																											formControl
+																										}
+																										render={({
+																											field,
+																										}) => (
+																											<Checkbox
+																												id={
+																													columnId
+																												}
+																												checked={
+																													field.value
+																												}
+																												onCheckedChange={(
 																													checked,
-																												);
-																												checkBoxHandler(
-																													tableIndex,
-																													columnIndex,
-																												);
-																											}}
-																										/>
-																									)}
-																								/>
-																								<span>
-																									{
-																										column.columnName
-																									}
-																								</span>
-																							</div>
-																						</TableCell>
-																						<TableCell>
-																							<div className="flex items-center">
+																												) => {
+																													field.onChange(
+																														checked,
+																													);
+																													checkBoxHandler(
+																														tableIndex,
+																														columnIndex,
+																													);
+																												}}
+																											/>
+																										)}
+																									/>
+																									<Label
+																										htmlFor={
+																											columnId
+																										}
+																										className="min-w-0 flex-1 whitespace-normal break-all py-1.5 font-normal text-sm leading-5"
+																									>
+																										{
+																											column.columnName
+																										}
+																									</Label>
+																								</div>
+																							</TableCell>
+																							<TableCell className="px-3 py-1">
 																								<Controller
 																									name={`tables.${tableIndex}.columns.${columnIndex}.userAlias`}
 																									control={
@@ -1647,33 +1741,33 @@ export const DataImportFormModal = observer(
 																										field,
 																									}) => (
 																										<Input
+																											{...field}
 																											type="text"
-																											className="h-8"
-																											value={
-																												field.value
+																											aria-label={`Alias for ${table.name}.${column.columnName}`}
+																											aria-invalid={Boolean(
+																												aliasError,
+																											)}
+																											aria-describedby={
+																												aliasError
+																													? `${columnId}-error`
+																													: undefined
 																											}
+																											className="h-8 px-2 shadow-none"
 																											onChange={(
-																												e,
+																												event,
 																											) => {
 																												if (
-																													watchedTables[
-																														tableIndex
-																													]
-																														.columns[
-																														columnIndex
-																													]
-																														.checked
-																												) {
+																													currentColumn.checked
+																												)
 																													updateAliasCountObj(
 																														true,
-																														e
+																														event
 																															.target
 																															.value,
 																														field.value,
 																													);
-																												}
 																												field.onChange(
-																													e
+																													event
 																														.target
 																														.value,
 																												);
@@ -1681,351 +1775,230 @@ export const DataImportFormModal = observer(
 																										/>
 																									)}
 																								/>
-																								{watchedTables[
-																									tableIndex
-																								]
-																									.columns[
-																									columnIndex
-																								]
-																									.checked &&
-																									aliasesCountObj[
-																										watchedTables[
-																											tableIndex
-																										]
-																											.columns[
-																											columnIndex
-																										]
-																											.userAlias
-																									] >
-																										1 && (
-																										<Tooltip
-																											disableHoverableContent={
-																												false
-																											}
-																										>
-																											<TooltipTrigger
-																												asChild
-																											>
-																												<AlertTriangle className="ml-2.5 size-4 text-warning" />
-																											</TooltipTrigger>
-																											<TooltipContent>
-																												Duplicate
-																												Alias
-																												Name
-																											</TooltipContent>
-																										</Tooltip>
-																									)}
-																							</div>
-																						</TableCell>
-
-																						<TableCell>
-																							<Controller
-																								name={`tables.${tableIndex}.columns.${columnIndex}.columnType`}
-																								control={
-																									formControl
-																								}
-																								render={({
-																									field,
-																								}) => (
-																									<Select
-																										disabled
-																										value={
-																											field.value ||
-																											""
-																										}
-																										onValueChange={(
-																											value,
-																										) => {
-																											field.onChange(
-																												value,
-																											);
-																										}}
+																								{aliasError && (
+																									<p
+																										id={`${columnId}-error`}
+																										className="mt-1 whitespace-normal text-destructive text-xs"
 																									>
-																										<SelectTrigger className="h-8 w-full">
-																											<SelectValue />
-																										</SelectTrigger>
-																										<SelectContent>
-																											{SQL_COLUMN_TYPES.map(
-																												(
-																													ele,
-																													eleIdx,
-																												) => (
-																													<SelectItem
-																														value={
-																															ele
-																														}
-																														key={
-																															// biome-ignore lint/suspicious/noArrayIndexKey: no stable key available
-																															eleIdx
-																														}
-																													>
-																														{
-																															ele
-																														}
-																													</SelectItem>
-																												),
-																											)}
-																										</SelectContent>
-																									</Select>
+																										{
+																											aliasError
+																										}
+																									</p>
 																								)}
-																							/>
-																						</TableCell>
-																					</TableRow>
-																				),
+																							</TableCell>
+																							<TableCell className="whitespace-normal break-all px-3 py-1 text-muted-foreground text-xs">
+																								{
+																									column.columnType
+																								}
+																							</TableCell>
+																						</TableRow>
+																					);
+																				},
 																			)}
 																		</TableBody>
 																	</Table>
-																</div>
-															)}
-														</div>
+																</section>
+															</CollapsibleContent>
+														</Collapsible>
 													);
 												},
-											)}
-										</div>
-									</div>
-								)}
-
-								{showPreview && (
-									<div className="rounded-md border bg-background">
-										<div className="max-h-[350px] overflow-y-auto">
-											<Table>
-												<TableHeader>
-													<TableRow>
-														{databaseTableHeaders.map(
-															(h, hIdx) => (
-																<TableHead
-																	// biome-ignore lint/suspicious/noArrayIndexKey: no stable key available
-																	key={hIdx}
+											)
+										)}
+									</TabsContent>
+									<TabsContent value="preview">
+										{isDatabaseLoading ? (
+											<output className="block py-8 text-center text-muted-foreground text-sm">
+												Loading preview…
+											</output>
+										) : databaseTableRows.length === 0 ? (
+											<p className="block py-8 text-center text-muted-foreground text-sm">
+												No rows returned for this
+												selection.
+											</p>
+										) : (
+											<section
+												aria-label="Query preview results"
+												// biome-ignore lint/a11y/noNoninteractiveTabindex: This table region receives focus for keyboard scrolling.
+												tabIndex={0}
+												className="overflow-x-auto rounded-md border border-border focus-visible:outline-2 focus-visible:outline-ring"
+											>
+												<Table wrapperClassName="overflow-visible">
+													<TableHeader className="bg-muted/40">
+														<TableRow>
+															{databaseTableHeaders.map(
+																(header) => (
+																	<TableHead
+																		key={
+																			header
+																		}
+																		className="h-8 px-3 text-xs"
+																	>
+																		{header}
+																	</TableHead>
+																),
+															)}
+														</TableRow>
+													</TableHeader>
+													<TableBody>
+														{databaseTableRows.map(
+															(row, rowIndex) => (
+																<TableRow
+																	key={
+																		// biome-ignore lint/suspicious/noArrayIndexKey: Preview rows have no unique record identifier.
+																		rowIndex
+																	}
 																>
-																	{h}
-																</TableHead>
+																	{row.map(
+																		(
+																			value,
+																			columnIndex,
+																		) => (
+																			<TableCell
+																				key={`${databaseTableHeaders[columnIndex]}-${columnIndex}`}
+																				className="px-3 py-1.5"
+																			>
+																				{
+																					value
+																				}
+																			</TableCell>
+																		),
+																	)}
+																</TableRow>
 															),
 														)}
-													</TableRow>
-												</TableHeader>
-												<TableBody>
-													{databaseTableRows.map(
-														(r, rIdx) => (
-															<TableRow
-																// biome-ignore lint/suspicious/noArrayIndexKey: no stable key available
-																key={rIdx}
-															>
-																{r.map(
-																	(
-																		v,
-																		vIdx,
-																	) => (
-																		<TableCell
-																			// biome-ignore lint/suspicious/noArrayIndexKey: no stable key available
-																			key={`${rIdx}-${vIdx}`}
-																		>
-																			{v}
-																		</TableCell>
-																	),
-																)}
-															</TableRow>
-														),
-													)}
-												</TableBody>
-											</Table>
-										</div>
-									</div>
-								)}
-							</div>
-						)}
+													</TableBody>
+												</Table>
+											</section>
+										)}
+									</TabsContent>
+								</Tabs>
+							)}
 
-						{joinElements.map((join, joinIndex) => (
-							<div
-								// biome-ignore lint/suspicious/noArrayIndexKey: no stable key available
-								key={joinIndex}
-								className="flex flex-col gap-3 rounded-md border bg-muted/30 p-4"
-							>
-								<div className="flex flex-wrap items-center gap-2">
-									<h6 className="font-medium text-sm">
-										Join
-									</h6>
-
-									<Tooltip disableHoverableContent={false}>
-										<TooltipTrigger asChild>
-											<div className="cursor-default rounded-md bg-primary/10 px-2.5 py-1 text-sm">
-												{join.leftTable}
-											</div>
-										</TooltipTrigger>
-										<TooltipContent>
-											Left Table
-										</TooltipContent>
-									</Tooltip>
-
-									<DropdownMenu
-										open={
-											isJoinSelectOpen &&
-											joinTypeSelectIndex === joinIndex
-										}
-										onOpenChange={(open) => {
-											if (!open) {
-												setIsJoinSelectOpen(false);
-												setJoinTypeSelectIndex(-1);
-											}
-										}}
+							{joinElements.length > 0 && (
+								<section
+									aria-labelledby={`${databaseSelectId}-joins`}
+									className="mt-4 space-y-2"
+								>
+									<H3
+										id={`${databaseSelectId}-joins`}
+										className="font-medium text-sm"
 									>
-										<DropdownMenuTrigger asChild>
-											<Button
-												variant="ghost"
-												size="icon-sm"
-												type="button"
-												onClick={() => {
-													setJoinTypeSelectIndex(
-														joinIndex,
-													);
-													setIsJoinSelectOpen(true);
-												}}
+										Joins
+									</H3>
+									<div className="divide-y divide-border rounded-md border border-border">
+										{joinElements.map((join, index) => (
+											<div
+												key={join.id}
+												className="grid gap-2 px-3 py-2 sm:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] sm:items-center"
 											>
-												{
-													JOIN_ICONS[
-														watchedJoins?.[
-															joinIndex
-														]?.joinType
-													]
-												}
-											</Button>
-										</DropdownMenuTrigger>
-										<DropdownMenuContent>
-											<DropdownMenuItem
-												onClick={() => {
-													setIsJoinSelectOpen(false);
-													formSetValue(
-														`joins.${joinIndex}.joinType`,
-														"inner",
-													);
-												}}
-											>
-												Inner Join
-											</DropdownMenuItem>
-											<DropdownMenuItem
-												onClick={() => {
-													setIsJoinSelectOpen(false);
-													formSetValue(
-														`joins.${joinIndex}.joinType`,
-														"left.outer",
-													);
-												}}
-											>
-												Left Join
-											</DropdownMenuItem>
-											<DropdownMenuItem
-												onClick={() => {
-													setIsJoinSelectOpen(false);
-													formSetValue(
-														`joins.${joinIndex}.joinType`,
-														"right.outer",
-													);
-												}}
-											>
-												Right Join
-											</DropdownMenuItem>
-											<DropdownMenuItem
-												onClick={() => {
-													setIsJoinSelectOpen(false);
-													formSetValue(
-														`joins.${joinIndex}.joinType`,
-														"outer",
-													);
-												}}
-											>
-												Outer Join
-											</DropdownMenuItem>
-										</DropdownMenuContent>
-									</DropdownMenu>
-
-									<Tooltip disableHoverableContent={false}>
-										<TooltipTrigger asChild>
-											<div className="cursor-default rounded-md bg-teal-100 px-2.5 py-1 text-sm">
-												{join.rightTable}
+												<div className="min-w-0">
+													<p className="break-all text-sm">
+														{join.leftTable}
+													</p>
+													{join.leftKey && (
+														<p className="break-all text-muted-foreground text-xs">
+															{join.leftKey}
+														</p>
+													)}
+												</div>
+												<Select
+													value={
+														watchedJoins?.[index]
+															?.joinType ??
+														join.joinType
+													}
+													onValueChange={(value) =>
+														formSetValue(
+															`joins.${index}.joinType`,
+															value,
+														)
+													}
+												>
+													<SelectTrigger
+														size="sm"
+														aria-label={`Join type for ${join.leftTable} and ${join.rightTable}`}
+														className="w-full gap-2 shadow-none sm:w-36"
+													>
+														<SelectValue />
+													</SelectTrigger>
+													<SelectContent>
+														{JOIN_TYPES.map(
+															({
+																value,
+																label,
+															}) => (
+																<SelectItem
+																	key={value}
+																	value={
+																		value
+																	}
+																>
+																	{label}
+																</SelectItem>
+															),
+														)}
+													</SelectContent>
+												</Select>
+												<div className="min-w-0">
+													<p className="break-all text-sm">
+														{join.rightTable}
+													</p>
+													{join.rightKey && (
+														<p className="break-all text-muted-foreground text-xs">
+															{join.rightKey}
+														</p>
+													)}
+												</div>
 											</div>
-										</TooltipTrigger>
-										<TooltipContent>
-											Right Table
-										</TooltipContent>
-									</Tooltip>
-
-									{join.leftKey && join.rightKey ? (
-										<>
-											<span className="cursor-default text-muted-foreground text-sm">
-												where
-											</span>
-											<Tooltip
-												disableHoverableContent={false}
+										))}
+									</div>
+								</section>
+							)}
+						</section>
+						<DialogFooter className="shrink-0 flex-col gap-2 border-border border-t px-4 py-3 sm:items-center sm:justify-between">
+							<p className="text-muted-foreground text-xs">
+								{selectionHint}
+							</p>
+							<div className="flex justify-end gap-2">
+								<Button
+									variant="outline"
+									size="sm"
+									type="button"
+									onClick={closeImportModalHandler}
+								>
+									Cancel
+								</Button>
+								<Tooltip disableHoverableContent={false}>
+									<TooltipTrigger asChild>
+										<span
+											className="inline-flex"
+											tabIndex={
+												disabledReason ? 0 : undefined
+											}
+										>
+											<Button
+												size="sm"
+												type="submit"
+												disabled={Boolean(
+													disabledReason,
+												)}
 											>
-												<TooltipTrigger asChild>
-													<div className="cursor-default rounded-md bg-primary/10 px-2.5 py-1 text-sm">
-														{join.leftKey}
-													</div>
-												</TooltipTrigger>
-												<TooltipContent>
-													Left Key
-												</TooltipContent>
-											</Tooltip>
-											<span className="cursor-default text-muted-foreground text-sm">
-												=
-											</span>
-											<Tooltip
-												disableHoverableContent={false}
-											>
-												<TooltipTrigger asChild>
-													<div className="cursor-default rounded-md bg-teal-100 px-2.5 py-1 text-sm">
-														{join.rightKey}
-													</div>
-												</TooltipTrigger>
-												<TooltipContent>
-													Right Key
-												</TooltipContent>
-											</Tooltip>
-										</>
-									) : null}
-								</div>
+												{editMode
+													? "Update Cell"
+													: "Import"}
+											</Button>
+										</span>
+									</TooltipTrigger>
+									<TooltipContent>
+										{disabledReason ??
+											(editMode
+												? "Update this cell"
+												: "Import selected columns")}
+									</TooltipContent>
+								</Tooltip>
 							</div>
-						))}
-
-						{/* Action buttons row */}
-						<div className="flex justify-start gap-2">
-							<Button
-								variant="outline"
-								size="sm"
-								type="button"
-								className="h-8"
-								disabled
-							>
-								<Filter className="mr-1 size-3.5" />
-								Add Filter
-							</Button>
-						</div>
-
-						{/* Footer actions */}
-						<div className="flex justify-end gap-2 border-t pt-3">
-							<Button
-								variant="ghost"
-								type="button"
-								onClick={() => {
-									closeImportModalHandler();
-								}}
-							>
-								Cancel
-							</Button>
-							<Button
-								type="submit"
-								disabled={
-									!selectedDatabaseId ||
-									!checkedColumnsCount ||
-									Object.values(aliasesCountObj).some(
-										(key: number) => key > 1,
-									) ||
-									aliasesCountObj[""] > 0
-								}
-							>
-								{editMode ? "Update Cell" : "Import"}
-							</Button>
-						</div>
-					</form>
+						</DialogFooter>
+					</Form>
 				</DialogContent>
 			</Dialog>
 		);

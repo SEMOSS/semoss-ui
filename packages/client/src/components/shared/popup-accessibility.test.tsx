@@ -17,21 +17,18 @@ import {
 	test,
 	vi,
 } from "vitest";
+import {
+	type FileExplorerApi,
+	FileExplorerContextMenu,
+	type FileExplorerContextMenuState,
+	PopoutModal,
+} from "@semoss/shared";
 import { Button, Dialog, DialogContent } from "@semoss/ui/next";
-import { PopoutModal } from "../../../../../libs/shared/src/components/cell-output/cell-output-block";
-import type {
-	FileExplorerApi,
-	FileExplorerContextMenuState,
-} from "../../../../../libs/shared/src/components/file/file-explorer.types";
-import { FileExplorerContextMenu } from "../../../../../libs/shared/src/components/file/file-explorer-context-menu";
 import { CatalogGridItem } from "../catalog/catalog-grid-item";
 import { LLMSelectDialog } from "../llms/llm-select-dialog";
 
 vi.mock("@semoss/i18n", () => ({
 	useTranslation: () => ({ t: (key: string) => key }),
-}));
-vi.mock("../../../../../libs/shared/src/components/html", () => ({
-	SandpackHtmlPreview: () => null,
 }));
 vi.mock("@/utility", () => ({
 	formatToDataTestId: (text: string) => text,
