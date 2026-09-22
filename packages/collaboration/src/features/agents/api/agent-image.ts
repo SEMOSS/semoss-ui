@@ -1,20 +1,10 @@
-import { Env, post } from "@semoss/sdk";
-
-/**
- * Agents are backed by SEMOSS WORKSPACE projects, so an agent's picture is just
- * its project image, served and stored by the Monolith exactly like any other
- * project icon (`ProjectResource.downloadProjectImage` /
- * `ImageUploader.uploadProjectImage`). These helpers build the same URLs the
- * SDK uses, `${Env.MODULE}/api/...`, and go through the SDK's `post` so the
- * shared auth/CSRF interceptor applies.
- */
+import { Env, post, uploadProjectImage } from "@semoss/sdk";
 
 /**
  * Direct URL to an agent's project image.
  *
- * `fallback=false` makes the endpoint return 404 when the agent has no custom
- * image, rather than a random default. That pairs with `AgentAvatar`, which
- * renders the agent's derived icon when the `<img>` errors.
+ * The server may supply a default image when no custom image exists. The
+ * avatar component falls back to a derived icon when the request fails.
  *
  * @param id - The agent id (its project id).
  */
@@ -30,19 +20,16 @@ export function agentImageUrl(id: string): string {
  * @param file - The image file to store.
  */
 export async function uploadAgentImage(id: string, file: File): Promise<void> {
-	const form = new FormData();
-	form.append("file", file);
-	form.append("projectId", id);
-	await post(`${Env.MODULE}/api/images/projectImage/upload`, form);
+	await uploadProjectImage(id, file);
 }
 
 /**
- * Remove an agent's project image, so its avatar falls back to the derived icon.
+ * Remove an agent's project image using the legacy deletion endpoint.
  *
  * @param id - The agent id (its project id).
  */
 export async function deleteAgentImage(id: string): Promise<void> {
-	const form = new FormData();
-	form.append("projectId", id);
-	await post(`${Env.MODULE}/api/images/projectImage/delete`, form);
+	await post(`${Env.MODULE}/api/images/projectImage/delete`, {
+		projectId: id,
+	});
 }

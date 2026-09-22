@@ -1,21 +1,21 @@
 import { ArrowLeft, Clock3, Save, Settings2, Users, Zap } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
+import { getCatalogImageValidationError } from "@semoss/sdk";
 import {
 	Alert,
 	AlertDescription,
 	Button,
 	cn,
 	Form,
+	H1,
+	Muted,
+	P,
 	Spinner,
 	useForm,
 	z,
 	zodResolver,
 } from "@semoss/ui/next";
 import { AgentAvatar } from "@/components/common/agent-avatar";
-import {
-	deleteAgentImage,
-	uploadAgentImage,
-} from "@/features/agents/api/agent-image";
 import { mcpConfigSchema } from "@/features/agents/api/agent-schemas";
 import { CapabilitiesSettingsView } from "@/features/agents/components/capabilities-settings-view";
 import { ProfileSettingsView } from "@/features/agents/components/profile-settings-view";
@@ -45,6 +45,15 @@ const agentSettingsSchema = z.object({
 	role: z.string(),
 	type: z.enum(["Individual", "Team"]),
 	avatar: z.string(),
+	image: z
+		.instanceof(File)
+		.nullable()
+		.superRefine((file, context) => {
+			if (!file) return;
+			const message = getCatalogImageValidationError(file);
+			if (message) context.addIssue({ code: "custom", message });
+		}),
+	removeImage: z.boolean(),
 	icon: z.enum(["compass", "briefcase", "chart", "pen", "users"]),
 	tone: z.enum(["green", "teal", "blue", "amber"]),
 	workspace: z.enum(["Conversation", "Travel itinerary", "Executive brief"]),
@@ -84,7 +93,8 @@ export function AgentSettings({
 	agent: Agent;
 	agents: Agent[];
 	onClose: () => void;
-	onSave: (agent: Agent) => Promise<void>;
+	/** Saves settings and an optional image change before closing the page. */
+	onSave: (agent: Agent, image?: File | null) => Promise<void>;
 	skillOptions: { name: string; detail: string; value: string }[];
 	isLoadingSkills?: boolean;
 	skillsError?: Error | null;
@@ -97,10 +107,15 @@ export function AgentSettings({
 			avatar: agent.avatar ?? "",
 			skillIds: agent.skillIds ?? [],
 			mcp: agent.mcp ?? [],
+			image: null,
+			removeImage: false,
 		}),
 	});
 	const draft = form.watch();
-	const { isDirty: dirty, isSubmitting, errors } = form.formState;
+	const { isDirty, isSubmitting, errors } = form.formState;
+	const hasImageChange = draft.image !== null || draft.removeImage;
+	// RHF does not compare File objects for dirty state.
+	const hasUnsavedChanges = isDirty || hasImageChange;
 	const [tab, setTab] = useState("Profile");
 	const [error, setError] = useState("");
 	const visibleError = errors.root?.server?.message ?? error;
@@ -114,55 +129,47 @@ export function AgentSettings({
 	const [ruleTime, setRuleTime] = useState("08:30");
 	const [ruleZone, setRuleZone] = useState("America/New_York");
 	const [ruleCadence, setRuleCadence] = useState("Weekdays");
-	const avatarInput = useRef<HTMLInputElement>(null);
-	const [readingPhoto, setReadingPhoto] = useState(false);
-	const [photo, setPhoto] = useState<string | null>(null);
-	const savedAgent = agents.some((item) => item.id === agent.id);
-	const shownAgent =
-		photo === null ? draft : { ...draft, avatar: photo || undefined };
+	const [imagePreview, setImagePreview] = useState("");
+	const shownAgent = {
+		...draft,
+		avatar: draft.removeImage
+			? undefined
+			: imagePreview || draft.avatar || undefined,
+	};
 
-	useEffect(
-		() => () => {
-			if (photo?.startsWith("blob:")) URL.revokeObjectURL(photo);
-		},
-		[photo],
-	);
-
-	async function choosePhoto(file: File) {
-		if (
-			!/^image\/(png|jpeg|gif|svg\+xml)$/.test(file.type) ||
-			file.size > 2 * 1024 * 1024
-		) {
-			setError("Choose a PNG, JPEG, GIF or SVG image smaller than 2 MB.");
+	useEffect(() => {
+		const file = draft.image;
+		if (!file || getCatalogImageValidationError(file)) {
+			setImagePreview("");
 			return;
 		}
-		setReadingPhoto(true);
+		const url = URL.createObjectURL(file);
+		setImagePreview(url);
+		return () => URL.revokeObjectURL(url);
+	}, [draft.image]);
+
+	/** Keep the file in the draft until the server has assigned the agent's ID. */
+	function choosePhoto(file: File): void {
+		form.setValue("image", file, {
+			shouldDirty: true,
+			shouldValidate: true,
+		});
+		form.setValue("removeImage", false, { shouldDirty: true });
+		form.clearErrors("root.server");
 		setError("");
-		try {
-			await uploadAgentImage(agent.id, file);
-			setPhoto(URL.createObjectURL(file));
-		} catch (cause) {
-			setError(
-				`That image could not be uploaded. ${toError(cause).message}`,
-			);
-		} finally {
-			setReadingPhoto(false);
-		}
 	}
 
-	async function removePhoto() {
-		setReadingPhoto(true);
+	/** Queue removal with the rest of the settings; cancel still discards the change. */
+	function removePhoto(): void {
+		form.setValue("image", null, {
+			shouldDirty: true,
+			shouldValidate: true,
+		});
+		form.setValue("removeImage", Boolean(agent.avatar), {
+			shouldDirty: true,
+		});
+		form.clearErrors("root.server");
 		setError("");
-		try {
-			await deleteAgentImage(agent.id);
-			setPhoto("");
-		} catch (cause) {
-			setError(
-				`That image could not be removed. ${toError(cause).message}`,
-			);
-		} finally {
-			setReadingPhoto(false);
-		}
 	}
 
 	const update: UpdateAgent = (key, value) => {
@@ -181,21 +188,24 @@ export function AgentSettings({
 	async function handleSubmit(values: AgentSettingsValues): Promise<void> {
 		setError("");
 		try {
-			await onSave({
-				...values,
+			const { image, removeImage, ...settings } = values;
+			const saved: Agent = {
+				...settings,
 				type: values.members.length > 0 ? "Team" : "Individual",
 				avatar: values.avatar || undefined,
-			});
+			};
+			if (image || removeImage) await onSave(saved, image);
+			else await onSave(saved);
 		} catch (cause) {
 			form.setError("root.server", {
 				type: "server",
-				message: `Could not save the agent. ${toError(cause).message}`,
+				message: `Could not finish saving the agent. ${toError(cause).message}`,
 			});
 		}
 	}
 
 	function close() {
-		if (dirty) setDiscard(true);
+		if (hasUnsavedChanges) setDiscard(true);
 		else onClose();
 	}
 
@@ -253,12 +263,13 @@ export function AgentSettings({
 			form={form}
 			onSubmit={handleSubmit}
 			onError={(errors) => {
-				if (errors.name) setTab("Profile");
+				if (errors.name || errors.image) setTab("Profile");
 				else if (errors.members) setTab("Subagents");
 				setError(
-					errors.name?.message ??
-						errors.members?.message ??
-						"Review the highlighted settings before saving.",
+					errors.name || errors.image
+						? ""
+						: (errors.members?.message ??
+								"Review the highlighted settings before saving."),
 				);
 			}}
 			noValidate
@@ -275,18 +286,16 @@ export function AgentSettings({
 						onClick={close}
 						disabled={isSubmitting}
 					>
-						<ArrowLeft />
+						<ArrowLeft aria-hidden="true" />
 					</Button>
 					<AgentAvatar agent={shownAgent} size="sm" />
-					<h1 className="truncate font-semibold text-xl">
+					<H1 className="truncate font-medium text-xl">
 						{draft.name || "New agent"}
-					</h1>
+					</H1>
 				</div>
-				<div className="flex items-center gap-2">
-					{dirty && (
-						<span className="mr-2 text-muted-foreground text-xs">
-							Unsaved changes
-						</span>
+				<div className="flex w-full flex-wrap items-center gap-2 sm:w-auto">
+					{hasUnsavedChanges && (
+						<Muted className="text-base">Unsaved changes</Muted>
 					)}
 					<Button
 						type="button"
@@ -296,10 +305,7 @@ export function AgentSettings({
 					>
 						Cancel
 					</Button>
-					<Button
-						type="submit"
-						disabled={readingPhoto || isSubmitting}
-					>
+					<Button type="submit" disabled={isSubmitting}>
 						{isSubmitting ? (
 							<Spinner className="size-4" />
 						) : (
@@ -317,9 +323,9 @@ export function AgentSettings({
 			{discard && (
 				<div
 					role="alert"
-					className="flex flex-wrap items-center justify-between gap-3 border-b bg-chart-4/5 px-6 py-3 text-sm"
+					className="flex flex-wrap items-center justify-between gap-3 border-b bg-warning/5 px-6 py-3 text-sm"
 				>
-					<span>Discard your unsaved changes?</span>
+					<P>Discard your unsaved changes?</P>
 					<span className="flex gap-2">
 						<Button
 							type="button"
@@ -349,19 +355,20 @@ export function AgentSettings({
 					className="flex shrink-0 gap-1 overflow-x-auto border-b bg-muted/40 p-3 md:w-48 md:flex-col md:overflow-x-visible md:border-r md:border-b-0 md:px-4 md:py-6"
 				>
 					{tabs.map(({ name, icon: Icon }) => (
-						<button
+						<Button
 							type="button"
 							key={name}
+							variant="ghost"
 							aria-current={tab === name ? "page" : undefined}
 							onClick={() => setTab(name)}
 							className={cn(
-								"flex shrink-0 items-center gap-2.5 rounded-md px-3 py-2.5 text-left text-xs",
+								"shrink-0 justify-start gap-2 text-left",
 								tab === name
 									? "bg-accent font-medium text-link"
 									: "text-muted-foreground hover:bg-secondary",
 							)}
 						>
-							<Icon className="size-4" />
+							<Icon aria-hidden="true" className="size-4" />
 							{name}
 							{name === "Subagents" &&
 								draft.members.length > 0 && (
@@ -369,7 +376,7 @@ export function AgentSettings({
 										{draft.members.length}
 									</span>
 								)}
-						</button>
+						</Button>
 					))}
 				</nav>
 				<fieldset
@@ -381,10 +388,8 @@ export function AgentSettings({
 						{tab === "Profile" && (
 							<ProfileSettingsView
 								shownAgent={shownAgent}
-								savedAgent={savedAgent}
-								readingPhoto={readingPhoto}
-								photo={photo}
-								avatarInput={avatarInput}
+								selectedImage={draft.image}
+								isRemovingImage={draft.removeImage}
 								onChoosePhoto={choosePhoto}
 								onRemovePhoto={removePhoto}
 							/>

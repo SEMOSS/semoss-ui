@@ -407,3 +407,26 @@ Or configure the output path once and just run `npm run skills:extract`:
 
 Skills are versioned with the SDK — upgrading `@semoss/sdk` and re-running extraction keeps
 your assistant's knowledge current.
+
+## Catalog images
+
+Use the server-assigned engine or project ID after the resource has been created:
+
+```ts
+import { uploadEngineImage, uploadProjectImage } from "@semoss/sdk";
+
+const image = await uploadProjectImage(projectId, file); // agents, skills, apps
+// image.imageUrl is a download path on the backend origin.
+await uploadEngineImage(engineId, file);
+```
+
+Both functions send one multipart `file` through the SDK's auth/CSRF transport and
+return `CatalogImageUploadResult` (`id`, `name`, `message`, `imageUrl`, `contentType`).
+They use `/api/project-{id}/image/upload` and `/api/e-{id}/image/upload`; the backend
+must provide these routes and the caller must have edit permission.
+
+`CATALOG_IMAGE_ACCEPT`, `CATALOG_IMAGE_MAX_BYTES`, and
+`getCatalogImageValidationError(file)` support client-side file pickers. PNG, JPEG,
+and GIF files up to 10 MiB are accepted. The backend also verifies image bytes and
+limits decoded images to 25 million pixels. Upload failures reject the promise;
+retain the created ID and retry the upload without creating another resource.

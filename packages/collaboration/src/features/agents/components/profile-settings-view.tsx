@@ -1,85 +1,132 @@
 import { ImagePlus } from "lucide-react";
-import type { RefObject } from "react";
-import { Button, FormInput, FormTextarea, Spinner } from "@semoss/ui/next";
+import { useId, useRef } from "react";
+import { CATALOG_IMAGE_ACCEPT } from "@semoss/sdk";
+import {
+	Button,
+	Field,
+	FieldDescription,
+	FieldError,
+	FormField,
+	FormInput,
+	FormTextarea,
+	Input,
+	Muted,
+} from "@semoss/ui/next";
 import { AgentAvatar } from "@/components/common/agent-avatar";
 import { FormSection } from "@/features/agents/components/form-section";
 import type { Agent } from "@/types/agent";
 
+interface ProfileSettingsViewProps {
+	/** Draft identity, including a temporary preview URL when a file is selected. */
+	shownAgent: Agent;
+	/** Image waiting to be uploaded when settings are saved. */
+	selectedImage: File | null;
+	/** Whether the saved photo will be removed on submission. */
+	isRemovingImage: boolean;
+	/** Stages a selected file in the form. */
+	onChoosePhoto: (file: File) => void;
+	/** Clears a selected file or stages removal of the saved photo. */
+	onRemovePhoto: () => void;
+}
+
+/** Edit the agent's identity and stage photo changes with the rest of its settings. */
 export function ProfileSettingsView({
 	shownAgent,
-	savedAgent,
-	readingPhoto,
-	photo,
-	avatarInput,
+	selectedImage,
+	isRemovingImage,
 	onChoosePhoto,
 	onRemovePhoto,
-}: {
-	shownAgent: Agent;
-	savedAgent: boolean;
-	readingPhoto: boolean;
-	photo: string | null;
-	avatarInput: RefObject<HTMLInputElement | null>;
-	onChoosePhoto: (file: File) => void;
-	onRemovePhoto: () => void;
-}) {
+}: ProfileSettingsViewProps) {
+	const avatarInput = useRef<HTMLInputElement>(null);
+	const chooseButton = useRef<HTMLButtonElement>(null);
+	const photoId = useId();
+	const descriptionId = `${photoId}-description`;
+	const errorId = `${photoId}-error`;
 	return (
-		<div className="space-y-7">
+		<div className="space-y-6">
 			<FormSection
 				title="Meet your agent"
 				description="A familiar identity for every conversation."
 			>
-				<div className="mb-6 flex items-center gap-4">
+				<div className="mb-6 flex min-w-0 items-start gap-4">
 					<AgentAvatar agent={shownAgent} size="lg" />
-					<div className="space-y-2">
-						<div className="flex flex-wrap gap-2">
-							<Button
-								type="button"
-								variant="outline"
-								size="sm"
-								disabled={readingPhoto || !savedAgent}
-								aria-busy={readingPhoto}
-								onClick={() => avatarInput.current?.click()}
+					<FormField
+						name="image"
+						render={({ field, fieldState }) => (
+							<Field
+								className="min-w-0 gap-2"
+								data-invalid={fieldState.invalid}
 							>
-								{readingPhoto ? (
-									<Spinner
-										aria-hidden="true"
-										className="motion-reduce:animate-none"
-									/>
-								) : (
-									<ImagePlus />
-								)}
-								{readingPhoto ? "Uploading..." : "Choose photo"}
-							</Button>
-							{savedAgent && photo !== "" && (
-								<Button
-									type="button"
-									variant="ghost"
-									size="sm"
-									disabled={readingPhoto}
-									onClick={onRemovePhoto}
+								<div className="flex flex-wrap gap-2">
+									<Button
+										ref={(element) => {
+											field.ref(element);
+											chooseButton.current = element;
+										}}
+										type="button"
+										variant="outline"
+										className="min-h-11"
+										aria-invalid={fieldState.invalid}
+										aria-describedby={`${descriptionId}${fieldState.error ? ` ${errorId}` : ""}`}
+										onBlur={field.onBlur}
+										onClick={() =>
+											avatarInput.current?.click()
+										}
+									>
+										<ImagePlus aria-hidden="true" />
+										Choose photo
+									</Button>
+									{(selectedImage || shownAgent.avatar) && (
+										<Button
+											type="button"
+											variant="ghost"
+											className="min-h-11"
+											onClick={() => {
+												onRemovePhoto();
+												chooseButton.current?.focus();
+											}}
+										>
+											Remove photo
+										</Button>
+									)}
+								</div>
+								<FieldDescription
+									id={descriptionId}
+									className="text-base"
 								>
-									Remove
-								</Button>
-							)}
-						</div>
-						<p className="text-muted-foreground text-xs">
-							{savedAgent
-								? "PNG, JPEG, GIF or SVG · Up to 2 MB"
-								: "Save this agent before adding a photo."}
-						</p>
-						<input
-							ref={avatarInput}
-							className="hidden"
-							type="file"
-							accept="image/png,image/jpeg,image/gif,image/svg+xml"
-							aria-label="Choose agent identity image"
-							onChange={(event) => {
-								const file = event.target.files?.[0];
-								event.target.value = "";
-								if (file) onChoosePhoto(file);
-							}}
-						/>
-					</div>
+									PNG, JPEG, or GIF · Up to 10 MiB. Your photo
+									is saved with the agent.
+								</FieldDescription>
+								<Input
+									ref={avatarInput}
+									className="hidden"
+									type="file"
+									name={field.name}
+									accept={CATALOG_IMAGE_ACCEPT}
+									aria-label="Choose agent identity image"
+									onChange={(event) => {
+										const file = event.target.files?.[0];
+										event.target.value = "";
+										if (file) onChoosePhoto(file);
+									}}
+								/>
+								<output>
+									<Muted className="break-all text-base">
+										{selectedImage && !fieldState.error
+											? `Selected: ${selectedImage.name}`
+											: isRemovingImage
+												? "The photo will be removed when you save."
+												: ""}
+									</Muted>
+								</output>
+								{fieldState.error && (
+									<FieldError id={errorId}>
+										{fieldState.error.message}
+									</FieldError>
+								)}
+							</Field>
+						)}
+					/>
 				</div>
 				<FormInput
 					name="name"

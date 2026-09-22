@@ -14,8 +14,9 @@ import {
 	TooltipContent,
 	TooltipTrigger,
 } from "@semoss/ui/next";
-import { CatalogGridItem } from "@/components/catalog";
-import { normalizeTagArray } from "@/utility";
+import { CatalogGridItem } from "@/components/catalog/catalog-grid-item";
+import { CatalogImage } from "@/features/catalog-images/catalog-image";
+import { normalizeTagArray } from "@/utility/tags";
 
 export interface ProjectGridItemProps {
 	/** Display style - list row or grid card */
@@ -78,14 +79,14 @@ export const ProjectGridItem: React.FC<ProjectGridItemProps> = ({
 	}[] = [];
 	if (showClone) {
 		menuItems.push({
-			icon: <Copy />,
+			icon: <Copy aria-hidden="true" />,
 			label: "Clone",
 			onClick: () => onClone(project),
 		});
 	}
 	if (showDelete) {
 		menuItems.push({
-			icon: <Trash2 className="text-destructive" />,
+			icon: <Trash2 aria-hidden="true" className="text-destructive" />,
 			label: "Delete",
 			onClick: () => onDelete(project),
 		});
@@ -99,13 +100,14 @@ export const ProjectGridItem: React.FC<ProjectGridItemProps> = ({
 						<Button
 							variant="ghost"
 							size="icon-sm"
+							aria-label={`Open details for ${displayName}`}
 							onClick={(e) => {
 								e.preventDefault();
 								e.stopPropagation();
 								onInfo(project);
 							}}
 						>
-							<Info className="size-4" />
+							<Info aria-hidden="true" className="size-4" />
 						</Button>
 					</TooltipTrigger>
 					<TooltipContent>Open Details in a New Tab</TooltipContent>
@@ -117,6 +119,7 @@ export const ProjectGridItem: React.FC<ProjectGridItemProps> = ({
 						<Button
 							variant="ghost"
 							size="icon-sm"
+							aria-label={`Make ${displayName} ${project.project_global ? "private" : "global"}`}
 							onClick={(e) => {
 								e.preventDefault();
 								e.stopPropagation();
@@ -127,9 +130,15 @@ export const ProjectGridItem: React.FC<ProjectGridItemProps> = ({
 							disabled={project.user_permission !== 1}
 						>
 							{project.project_global ? (
-								<LockKeyholeOpen className="size-4 text-muted-foreground" />
+								<LockKeyholeOpen
+									aria-hidden="true"
+									className="size-4 text-muted-foreground"
+								/>
 							) : (
-								<LockKeyhole className="size-4 text-muted-foreground" />
+								<LockKeyhole
+									aria-hidden="true"
+									className="size-4 text-muted-foreground"
+								/>
 							)}
 						</Button>
 					</TooltipTrigger>
@@ -142,6 +151,11 @@ export const ProjectGridItem: React.FC<ProjectGridItemProps> = ({
 				<Button
 					variant="ghost"
 					size="icon-sm"
+					aria-label={
+						isFavorited
+							? `Unbookmark ${displayName}`
+							: `Bookmark ${displayName}`
+					}
 					title={
 						isFavorited
 							? `Unbookmark ${displayName}`
@@ -154,9 +168,12 @@ export const ProjectGridItem: React.FC<ProjectGridItemProps> = ({
 					}}
 				>
 					{isFavorited ? (
-						<BookmarkCheck className="size-4 text-primary" />
+						<BookmarkCheck
+							aria-hidden="true"
+							className="size-4 text-primary"
+						/>
 					) : (
-						<Bookmark className="size-4" />
+						<Bookmark aria-hidden="true" className="size-4" />
 					)}
 				</Button>
 			)}
@@ -164,9 +181,15 @@ export const ProjectGridItem: React.FC<ProjectGridItemProps> = ({
 	);
 
 	const icon = (
-		<AppCatalogAvatar
-			name={displayName || project.project_id}
-			className="h-full w-full rounded text-lg"
+		<CatalogImage
+			resource="PROJECT"
+			id={project.project_id}
+			fallback={
+				<AppCatalogAvatar
+					name={displayName || project.project_id}
+					className="h-full w-full rounded text-lg"
+				/>
+			}
 		/>
 	);
 

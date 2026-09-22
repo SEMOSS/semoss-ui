@@ -27,6 +27,8 @@ export interface MainContext {
 		agent: Agent,
 		skillIds?: string[],
 		workspaceId?: string,
+		/** File to upload, null to remove the image, or undefined to keep it. */
+		image?: File | null,
 	) => Promise<string>;
 	openRoom: (id: string, itemId?: string) => void;
 	newRoom: (agentId?: string) => void;

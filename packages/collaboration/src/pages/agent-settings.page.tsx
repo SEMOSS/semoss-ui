@@ -110,7 +110,7 @@ export function AgentSettingsPage() {
 			isLoadingSkills={skillsQuery.isLoading}
 			skillsError={skillsQuery.error}
 			onRetrySkills={skillsQuery.refresh}
-			onSave={async (saved) => {
+			onSave={async (saved, image) => {
 				const ids = saved.skillIds ?? [];
 				if (
 					ids.some((id) => !skills.some((skill) => skill.id === id))
@@ -120,7 +120,7 @@ export function AgentSettingsPage() {
 					);
 				}
 				// A new agent's draft id is replaced by the id the server assigns.
-				const savedId = await saveAgent(saved, ids, agentId);
+				const savedId = await saveAgent(saved, ids, agentId, image);
 				navigate(agentPath(savedId));
 			}}
 		/>

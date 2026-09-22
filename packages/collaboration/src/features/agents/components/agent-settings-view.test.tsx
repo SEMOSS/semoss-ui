@@ -54,6 +54,9 @@ vi.mock("@semoss/sdk/react", async (importOriginal) => ({
 	},
 }));
 
+const createObjectURL = vi.fn((file: File) => `blob:preview-${file.name}`);
+const revokeObjectURL = vi.fn();
+
 const agent: Agent = {
 	id: "draft-1",
 	name: "Research agent",
@@ -76,6 +79,8 @@ const agent: Agent = {
 
 describe("AgentSettings submission", () => {
 	beforeEach(() => {
+		createObjectURL.mockClear();
+		revokeObjectURL.mockClear();
 		catalogState.error = null;
 		catalogState.isLoading = false;
 		catalogState.hasMore = false;
@@ -83,6 +88,13 @@ describe("AgentSettings submission", () => {
 		catalogState.reset.mockClear();
 	});
 	beforeAll(() => {
+		vi.stubGlobal(
+			"URL",
+			class extends URL {
+				static createObjectURL = createObjectURL;
+				static revokeObjectURL = revokeObjectURL;
+			},
+		);
 		vi.stubGlobal("matchMedia", (media: string) => ({
 			media,
 			matches: false,
@@ -92,6 +104,213 @@ describe("AgentSettings submission", () => {
 	});
 
 	afterAll(() => vi.unstubAllGlobals());
+
+	it("previews a new agent's photo and passes the file only on save", async () => {
+		const user = userEvent.setup();
+		const onSave = vi.fn().mockResolvedValue(undefined);
+		render(
+			<AgentSettings
+				agent={agent}
+				agents={[]}
+				skillOptions={[]}
+				onSave={onSave}
+				onClose={vi.fn()}
+			/>,
+		);
+		expect(
+			screen.getByRole("button", { name: "Choose photo" }),
+		).toBeEnabled();
+		const file = new File(["image"], "identity.png", { type: "image/png" });
+		await user.upload(
+			screen.getByLabelText("Choose agent identity image"),
+			file,
+		);
+		expect(screen.getByRole("status")).toHaveTextContent(
+			"Selected: identity.png",
+		);
+		expect(
+			screen
+				.getAllByAltText("")
+				.some(
+					(image) =>
+						image.getAttribute("src") ===
+						"blob:preview-identity.png",
+				),
+		).toBe(true);
+		expect(screen.getByText("Unsaved changes")).toBeInTheDocument();
+		expect(onSave).not.toHaveBeenCalled();
+		await user.click(screen.getByRole("button", { name: "Save agent" }));
+		await waitFor(() =>
+			expect(onSave).toHaveBeenCalledWith(
+				expect.objectContaining({ id: "draft-1" }),
+				file,
+			),
+		);
+		expect(onSave.mock.calls[0][0]).not.toHaveProperty("image");
+	});
+
+	it("includes photo-only changes in discard protection", async () => {
+		const user = userEvent.setup();
+		const onClose = vi.fn();
+		const onSave = vi.fn();
+		render(
+			<AgentSettings
+				agent={agent}
+				agents={[]}
+				skillOptions={[]}
+				onSave={onSave}
+				onClose={onClose}
+			/>,
+		);
+		await user.upload(
+			screen.getByLabelText("Choose agent identity image"),
+			new File(["image"], "identity.png", { type: "image/png" }),
+		);
+		await user.click(screen.getByRole("button", { name: "Cancel" }));
+		expect(screen.getByRole("alert")).toHaveTextContent(
+			"Discard your unsaved changes?",
+		);
+		expect(onClose).not.toHaveBeenCalled();
+		await user.click(screen.getByRole("button", { name: "Discard" }));
+		expect(onClose).toHaveBeenCalledOnce();
+		expect(onSave).not.toHaveBeenCalled();
+	});
+
+	it("cleans preview URLs on replacement, removal, and unmount", async () => {
+		const user = userEvent.setup();
+		const { unmount } = render(
+			<AgentSettings
+				agent={agent}
+				agents={[]}
+				skillOptions={[]}
+				onSave={vi.fn()}
+				onClose={vi.fn()}
+			/>,
+		);
+		const input = screen.getByLabelText("Choose agent identity image");
+		await user.upload(
+			input,
+			new File(["first"], "one.png", { type: "image/png" }),
+		);
+		await user.upload(
+			input,
+			new File(["second"], "two.png", { type: "image/png" }),
+		);
+		expect(revokeObjectURL).toHaveBeenCalledWith("blob:preview-one.png");
+		await user.click(screen.getByRole("button", { name: "Remove photo" }));
+		expect(revokeObjectURL).toHaveBeenCalledWith("blob:preview-two.png");
+		expect(
+			screen.getByRole("button", { name: "Choose photo" }),
+		).toHaveFocus();
+		expect(screen.queryByText("Unsaved changes")).not.toBeInTheDocument();
+		await user.upload(
+			input,
+			new File(["third"], "three.png", { type: "image/png" }),
+		);
+		unmount();
+		expect(revokeObjectURL).toHaveBeenCalledWith("blob:preview-three.png");
+	});
+
+	it.each([
+		[
+			new File(["svg"], "identity.svg", { type: "image/svg+xml" }),
+			"PNG, JPEG, or GIF",
+		],
+		[new File([], "empty.png", { type: "image/png" }), "not empty"],
+		[
+			new File([new Uint8Array(10 * 1024 * 1024 + 1)], "large.png", {
+				type: "image/png",
+			}),
+			"10 MiB",
+		],
+	] as const)(
+		"rejects invalid image selections: %s",
+		async (file, message) => {
+			const user = userEvent.setup({ applyAccept: false });
+			const onSave = vi.fn();
+			render(
+				<AgentSettings
+					agent={agent}
+					agents={[]}
+					skillOptions={[]}
+					onSave={onSave}
+					onClose={vi.fn()}
+				/>,
+			);
+			await user.upload(
+				screen.getByLabelText("Choose agent identity image"),
+				file,
+			);
+			expect(await screen.findByRole("alert")).toHaveTextContent(message);
+			expect(
+				screen.getByRole("button", { name: "Choose photo" }),
+			).toHaveAccessibleDescription(expect.stringContaining(message));
+			await user.click(
+				screen.getByRole("button", { name: "Save agent" }),
+			);
+			expect(onSave).not.toHaveBeenCalled();
+			expect(createObjectURL).not.toHaveBeenCalled();
+		},
+	);
+
+	it("retains the selected file after a save fails and retries it", async () => {
+		const user = userEvent.setup();
+		const onSave = vi
+			.fn()
+			.mockRejectedValueOnce(new Error("Photo upload failed"))
+			.mockResolvedValueOnce(undefined);
+		render(
+			<AgentSettings
+				agent={agent}
+				agents={[]}
+				skillOptions={[]}
+				onSave={onSave}
+				onClose={vi.fn()}
+			/>,
+		);
+		const file = new File(["image"], "identity.png", { type: "image/png" });
+		await user.upload(
+			screen.getByLabelText("Choose agent identity image"),
+			file,
+		);
+		await user.click(screen.getByRole("button", { name: "Save agent" }));
+		expect(await screen.findByRole("alert")).toHaveTextContent(
+			"Photo upload failed",
+		);
+		expect(screen.getByRole("status")).toHaveTextContent("identity.png");
+		await user.click(screen.getByRole("button", { name: "Save agent" }));
+		await waitFor(() => expect(onSave).toHaveBeenCalledTimes(2));
+		expect(onSave).toHaveBeenLastCalledWith(
+			expect.objectContaining({ id: agent.id }),
+			file,
+		);
+	});
+
+	it("stages an existing photo's removal until save", async () => {
+		const user = userEvent.setup();
+		const onSave = vi.fn().mockResolvedValue(undefined);
+		render(
+			<AgentSettings
+				agent={{ ...agent, avatar: "/current-photo.png" }}
+				agents={[]}
+				skillOptions={[]}
+				onSave={onSave}
+				onClose={vi.fn()}
+			/>,
+		);
+		await user.click(screen.getByRole("button", { name: "Remove photo" }));
+		expect(onSave).not.toHaveBeenCalled();
+		expect(screen.getByRole("status")).toHaveTextContent(
+			"removed when you save",
+		);
+		await user.click(screen.getByRole("button", { name: "Save agent" }));
+		await waitFor(() =>
+			expect(onSave).toHaveBeenCalledWith(
+				expect.objectContaining({ id: agent.id }),
+				null,
+			),
+		);
+	});
 
 	it("keeps the draft after a failed save and disables mutations while saving", async () => {
 		const user = userEvent.setup();

@@ -98,7 +98,7 @@ export const PROJECT_ROUTES: {
 									{
 										name: "Settings",
 										path: "settings",
-										restrict: ["OWNER"],
+										restrict: ["OWNER", "EDIT"],
 									},
 									{
 										name: "Access Control",
@@ -203,6 +203,11 @@ export const PROJECT_ROUTES: {
 										restrict: ["OWNER", "EDIT"],
 									},
 									{
+										name: "Settings",
+										path: "settings",
+										restrict: ["OWNER", "EDIT"],
+									},
+									{
 										name: "SMSS",
 										path: "smss",
 										restrict: ["OWNER"],
@@ -237,6 +242,10 @@ export const PROJECT_ROUTES: {
 							{
 								path: "access-control",
 								element: <ProjectAccessControl />,
+							},
+							{
+								path: "settings",
+								element: <AppSettingsPage />,
 							},
 							{
 								path: "smss",
@@ -289,6 +298,11 @@ export const PROJECT_ROUTES: {
 										restrict: ["OWNER", "EDIT"],
 									},
 									{
+										name: "Settings",
+										path: "settings",
+										restrict: ["OWNER", "EDIT"],
+									},
+									{
 										name: "SMSS",
 										path: "smss",
 										restrict: ["OWNER"],
@@ -313,6 +327,10 @@ export const PROJECT_ROUTES: {
 							{
 								path: "access-control",
 								element: <ProjectAccessControl />,
+							},
+							{
+								path: "settings",
+								element: <AppSettingsPage />,
 							},
 							{
 								path: "smss",
@@ -398,6 +416,11 @@ export const PROJECT_ROUTES: {
 										restrict: ["OWNER", "EDIT"],
 									},
 									{
+										name: "Settings",
+										path: "settings",
+										restrict: ["OWNER", "EDIT"],
+									},
+									{
 										name: "SMSS",
 										path: "smss",
 										restrict: ["OWNER"],
@@ -425,6 +448,10 @@ export const PROJECT_ROUTES: {
 							{
 								path: "access-control",
 								element: <ProjectAccessControl />,
+							},
+							{
+								path: "settings",
+								element: <AppSettingsPage />,
 							},
 							{
 								path: "smss",

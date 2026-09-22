@@ -2,6 +2,7 @@ import { useCallback, useRef } from "react";
 import type { MainContext } from "@/app/main.context";
 import type { InsightActions } from "@/lib/pixel";
 import type { Agent } from "@/types/agent";
+import { deleteAgentImage, uploadAgentImage } from "./agent-image";
 import {
 	AgentCreatedError,
 	type AgentDraft,
@@ -39,7 +40,7 @@ export function useSaveAgent({
 	const createdIds = useRef(new Map<string, string>());
 
 	return useCallback(
-		async (agent, skillIds, workspaceId) => {
+		async (agent, skillIds, workspaceId, image) => {
 			const draft = toAgentDraft(agent, skillIds);
 			const existingId =
 				workspaceId ??
@@ -69,6 +70,16 @@ export function useSaveAgent({
 					}
 					throw cause;
 				}
+			}
+
+			try {
+				if (image) await uploadAgentImage(savedId, image);
+				else if (image === null) await deleteAgentImage(savedId);
+			} catch (cause) {
+				throw new Error(
+					`The agent was saved, but its photo could not be ${image ? "uploaded" : "removed"}. Retry saving to finish. ${cause instanceof Error ? cause.message : "Please try again."}`,
+					{ cause },
+				);
 			}
 
 			onSaved();

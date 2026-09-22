@@ -2,7 +2,14 @@ import { act, renderHook } from "@testing-library/react";
 import type { InsightActions } from "@/lib/pixel";
 import type { Agent } from "@/types/agent";
 import { agentFromWorkspace } from "../utils/agent-from-workspace";
+import { deleteAgentImage, uploadAgentImage } from "./agent-image";
 import { useSaveAgent } from "./use-save-agent";
+
+vi.mock("./agent-image", async (importOriginal) => ({
+	...(await importOriginal<typeof import("./agent-image")>()),
+	uploadAgentImage: vi.fn().mockResolvedValue(undefined),
+	deleteAgentImage: vi.fn().mockResolvedValue(undefined),
+}));
 
 const agent: Agent = {
 	id: "draft-1",
@@ -40,6 +47,116 @@ function createActions() {
 }
 
 describe("useSaveAgent", () => {
+	beforeEach(() => {
+		vi.mocked(uploadAgentImage).mockReset().mockResolvedValue(undefined);
+		vi.mocked(deleteAgentImage).mockReset().mockResolvedValue(undefined);
+	});
+
+	it("uploads only after creation, and retries the photo without creating a second agent", async () => {
+		const { actions, run } = createActions();
+		const onSaved = vi.fn();
+		const file = new File(["image"], "photo.png", { type: "image/png" });
+		vi.mocked(uploadAgentImage).mockImplementationOnce(async (id) => {
+			expect(id).toBe("workspace-1");
+			expect(run.mock.lastCall?.[0]).toMatch(/^EditWorkspace/);
+			throw new Error("Upload unavailable");
+		});
+		const { result, rerender } = renderHook(() =>
+			useSaveAgent({ actions, agents: [], onSaved }),
+		);
+		await act(async () => {
+			await expect(
+				result.current(agent, [], undefined, file),
+			).rejects.toThrow("agent was saved, but its photo");
+		});
+		expect(onSaved).not.toHaveBeenCalled();
+		rerender();
+		await act(async () => {
+			await expect(
+				result.current(agent, [], undefined, file),
+			).resolves.toBe("workspace-1");
+		});
+		expect(uploadAgentImage).toHaveBeenNthCalledWith(
+			1,
+			"workspace-1",
+			file,
+		);
+		expect(uploadAgentImage).toHaveBeenNthCalledWith(
+			2,
+			"workspace-1",
+			file,
+		);
+		expect(
+			run.mock.calls.filter(([statement]) =>
+				statement.startsWith("AddWorkspace"),
+			),
+		).toHaveLength(1);
+		expect(onSaved).toHaveBeenCalledTimes(1);
+	});
+
+	it("waits for the photo upload before refreshing the agent catalog", async () => {
+		const { actions } = createActions();
+		const onSaved = vi.fn();
+		let resolveUpload: () => void = () => undefined;
+		vi.mocked(uploadAgentImage).mockReturnValue(
+			new Promise<void>((resolve) => {
+				resolveUpload = resolve;
+			}),
+		);
+		const { result } = renderHook(() =>
+			useSaveAgent({ actions, agents: [], onSaved }),
+		);
+		await act(async () => {
+			const pending = result.current(
+				agent,
+				[],
+				undefined,
+				new File(["image"], "photo.png", { type: "image/png" }),
+			);
+			await vi.waitFor(() =>
+				expect(uploadAgentImage).toHaveBeenCalledTimes(1),
+			);
+			expect(onSaved).not.toHaveBeenCalled();
+			resolveUpload();
+			await pending;
+		});
+		expect(onSaved).toHaveBeenCalledTimes(1);
+	});
+
+	it("does not upload if creating the agent fails", async () => {
+		const { actions, run } = createActions();
+		run.mockRejectedValueOnce(new Error("Create failed"));
+		const { result } = renderHook(() =>
+			useSaveAgent({ actions, agents: [], onSaved: vi.fn() }),
+		);
+		await act(async () => {
+			await expect(
+				result.current(
+					agent,
+					[],
+					undefined,
+					new File(["image"], "photo.png"),
+				),
+			).rejects.toThrow("Create failed");
+		});
+		expect(uploadAgentImage).not.toHaveBeenCalled();
+	});
+
+	it("removes a photo only when explicitly requested", async () => {
+		const { actions } = createActions();
+		const { result } = renderHook(() =>
+			useSaveAgent({ actions, agents: [], onSaved: vi.fn() }),
+		);
+		await act(async () => {
+			await result.current(agent, [], "workspace-1");
+		});
+		expect(deleteAgentImage).not.toHaveBeenCalled();
+		await act(async () => {
+			await result.current(agent, [], "workspace-1", null);
+		});
+		expect(deleteAgentImage).toHaveBeenCalledWith("workspace-1");
+		expect(uploadAgentImage).not.toHaveBeenCalled();
+	});
 	it("retries settings on the created workspace and refreshes only on full success", async () => {
 		const { actions, run } = createActions();
 		run.mockResolvedValueOnce({
