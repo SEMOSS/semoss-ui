@@ -48,20 +48,6 @@ export function RoomView({
 		<div className="flex min-h-0 flex-1 overflow-hidden">
 			{session ? (
 				<div className="flex min-w-0 flex-1 flex-col">
-					<div className="flex h-11 shrink-0 items-center gap-2 border-b px-3 md:hidden">
-						<Button
-							type="button"
-							aria-label="Choose agent or room"
-							variant="ghost"
-							size="icon-sm"
-							onClick={onOpenRooms}
-						>
-							<Menu aria-hidden="true" />
-						</Button>
-						<span className="text-muted-foreground text-xs">
-							Room workspace
-						</span>
-					</div>
 					<ToolWorkbenchProvider
 						key={sessionId}
 						roomId={sessionId}
@@ -94,7 +80,6 @@ export function RoomView({
 							onCancelTurn={onCancelTurn}
 							onReconnect={onReconnect}
 							onConfigure={onConfigure}
-							onNewRoom={onNewRoom}
 						/>
 					</ToolWorkbenchProvider>
 				</div>

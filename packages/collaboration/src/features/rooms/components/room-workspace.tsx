@@ -1,5 +1,10 @@
-import { useRef } from "react";
-import { cn } from "@semoss/ui/next";
+import { useId, useRef } from "react";
+import {
+	cn,
+	ResizableHandle,
+	ResizablePanel,
+	ResizablePanelGroup,
+} from "@semoss/ui/next";
 import { ToolWorkbench } from "@/features/tools/components/tool-workbench";
 import { useToolWorkbench } from "@/features/tools/tool-workbench.context";
 import type { Session } from "@/types/session";
@@ -33,7 +38,6 @@ interface RoomWorkspaceProps {
 	onCancelTurn: RoomViewProps["onCancelTurn"];
 	onReconnect: RoomViewProps["onReconnect"];
 	onConfigure: RoomViewProps["onConfigure"];
-	onNewRoom: RoomViewProps["onNewRoom"];
 }
 
 /** Conversation and its contextual tool dock. */
@@ -61,10 +65,23 @@ export function RoomWorkspace({
 	onCancelTurn,
 	onReconnect,
 	onConfigure,
-	onNewRoom,
 }: RoomWorkspaceProps) {
-	const { isOpen: isToolWorkbenchOpen } = useToolWorkbench();
+	const {
+		isOpen: isToolWorkbenchOpen,
+		activeToolId,
+		openWorkbench,
+		closeWorkbench,
+	} = useToolWorkbench();
+	const workspaceId = useId();
 	const threadBottom = useRef<HTMLDivElement>(null);
+
+	function toggleToolWorkbench() {
+		if (isToolWorkbenchOpen) {
+			closeWorkbench();
+			return;
+		}
+		if (activeToolId) openWorkbench(activeToolId);
+	}
 
 	function scrollToLatest() {
 		requestAnimationFrame(() =>
@@ -76,64 +93,88 @@ export function RoomWorkspace({
 	}
 
 	return (
-		<div className="flex min-h-0 flex-1">
-			<section
+		<ResizablePanelGroup
+			direction="horizontal"
+			keyboardResizeBy={5}
+			className="min-h-0 min-w-0 flex-1"
+		>
+			<ResizablePanel
+				id={`${workspaceId}-conversation`}
+				order={1}
+				minSize={40}
 				className={cn(
-					"min-w-0 flex-1 flex-col",
-					isToolWorkbenchOpen ? "hidden md:flex" : "flex",
-				)}
-				aria-label="Communication thread"
-			>
-				<RoomHeader
-					agent={agent}
-					agentId={agentId}
-					session={session}
-					onConfigure={onConfigure}
-					onNewRoom={onNewRoom}
-				/>
-				<RoomThread
-					agent={agent}
-					thread={thread}
-					isLoadingHistory={isLoadingHistory}
-					bottomRef={threadBottom}
-				/>
-				<RoomRunStatus
-					agent={agent}
-					turnError={turnError}
-					transportError={transportError}
-					pendingApprovals={pendingApprovals}
-					phase={phase}
-					onReconnect={onReconnect}
-				/>
-				<RoomComposer
-					key={session.id}
-					agentName={agent.name}
-					isSubmitting={isSending}
-					isRunning={isRunning}
-					isCancelling={isCancelling}
-					modelId={modelId}
-					modelName={modelName}
-					isModelSaving={isModelSaving}
-					modelError={modelError}
-					roomInstructions={roomInstructions}
-					onModelChange={onModelChange}
-					onOptimizePrompt={onOptimizePrompt}
-					onSend={onSendMessage}
-					onStop={onCancelTurn}
-					onSent={scrollToLatest}
-				/>
-			</section>
-			<aside
-				aria-label="Tool workbench"
-				className={cn(
-					"relative min-h-0 border-s bg-background md:w-2/5 md:shrink-0",
-					isToolWorkbenchOpen
-						? "block flex-1 md:flex-none"
-						: "hidden",
+					"min-h-0 min-w-0",
+					isToolWorkbenchOpen && "hidden md:block",
 				)}
 			>
-				<ToolWorkbench />
-			</aside>
-		</div>
+				<section
+					className="flex size-full min-h-0 min-w-0 flex-col"
+					aria-label="Communication thread"
+				>
+					<RoomHeader
+						agent={agent}
+						agentId={agentId}
+						session={session}
+						isToolWorkbenchOpen={isToolWorkbenchOpen}
+						canToggleToolWorkbench={activeToolId !== null}
+						onToggleToolWorkbench={toggleToolWorkbench}
+						onConfigure={onConfigure}
+					/>
+					<RoomThread
+						agent={agent}
+						thread={thread}
+						isLoadingHistory={isLoadingHistory}
+						bottomRef={threadBottom}
+					/>
+					<RoomRunStatus
+						agent={agent}
+						turnError={turnError}
+						transportError={transportError}
+						pendingApprovals={pendingApprovals}
+						phase={phase}
+					/>
+					<RoomComposer
+						key={session.id}
+						agentName={agent.name}
+						isSubmitting={isSending}
+						isRunning={isRunning}
+						isCancelling={isCancelling}
+						modelId={modelId}
+						modelName={modelName}
+						isModelSaving={isModelSaving}
+						modelError={modelError}
+						roomInstructions={roomInstructions}
+						onModelChange={onModelChange}
+						onOptimizePrompt={onOptimizePrompt}
+						onSend={onSendMessage}
+						onStop={onCancelTurn}
+						onSent={scrollToLatest}
+					/>
+				</section>
+			</ResizablePanel>
+			{isToolWorkbenchOpen && (
+				<>
+					<ResizableHandle
+						aria-label="Resize tool workbench"
+						className="hidden bg-transparent transition-colors focus-visible:bg-border data-[resize-handle-state=drag]:bg-border data-[resize-handle-state=hover]:bg-border md:flex"
+					/>
+					<ResizablePanel
+						id={`${workspaceId}-tool-workbench`}
+						order={2}
+						defaultSize={30}
+						minSize={20}
+						maxSize={60}
+						className="min-h-0 min-w-0"
+					>
+						<aside
+							aria-label="Tool workbench"
+							className="relative size-full min-h-0 bg-background"
+						>
+							<ToolWorkbench />
+						</aside>
+					</ResizablePanel>
+				</>
+			)}
+		</ResizablePanelGroup>
 	);
 }
