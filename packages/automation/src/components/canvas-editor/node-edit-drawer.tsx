@@ -21,7 +21,6 @@ import {
 } from "@semoss/ui/next";
 import type {
 	AutomationNode,
-	AutomationNodeTrace,
 	StepRunStatus,
 } from "../../domain/automation.types";
 import { getDisplayMeta } from "../../domain/automation-display";
@@ -30,12 +29,29 @@ import {
 	getWorkflowNodeDefinition,
 	validateAutomationOutputVariable,
 } from "../../domain/automation-workflow-adapter";
-import { OutputPreview } from "../form-editor/output-preview";
-import { TraceDetail } from "../form-editor/trace-detail";
+import { StatusIcon } from "../status-icon";
 import { StepForm } from "./step-form";
 
 /** Values the runtime seeds into every run's scope, regardless of the graph. */
 const RUN_SCOPE_VARIABLES = ["date", "triggered_at", "run_id"];
+
+const RUN_STATUS_LABELS: Record<StepRunStatus, string> = {
+	idle: "Idle",
+	running: "Running",
+	waiting: "Waiting for input",
+	success: "Success",
+	error: "Failed",
+};
+
+const RUN_STATUS_CLASSES: Record<StepRunStatus, string> = {
+	idle: "border-border text-muted-foreground",
+	running: "border-primary/30 bg-primary/5 text-primary",
+	waiting:
+		"border-amber-500/30 bg-amber-500/5 text-amber-700 dark:text-amber-400",
+	success:
+		"border-emerald-500/40 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400",
+	error: "border-destructive/30 bg-destructive/5 text-destructive",
+};
 
 export interface NodeEditDrawerProps {
 	step: AutomationNode;
@@ -43,14 +59,14 @@ export interface NodeEditDrawerProps {
 	upstreamVars: string[];
 	runStatus?: StepRunStatus;
 	runError?: string;
-	runOutput?: string | null;
-	runTrace?: AutomationNodeTrace;
 	devMode?: boolean;
 	onUpdate: (step: AutomationNode) => void;
 	onDelete: () => void;
 	/** Pops the raw Python source out into a larger editor, for a host rendering this drawer
 	 * alongside the canvas instead of in a separate iframe. */
 	onOpenPythonEditor?: (nodeId: string, source: string) => void;
+	/** Switches the trace/run-details panel to the latest run, selected on this node. */
+	onViewRunDetails?: (stepId: string) => void;
 	/** When true, this node's compiled Python source is open in a real file editor tab —
 	 * the inline editor is locked so the two copies can't diverge. */
 	pythonFileOpen?: boolean;
@@ -80,16 +96,14 @@ export function NodeEditDrawer({
 	upstreamVars,
 	runStatus,
 	runError,
-	runOutput,
-	runTrace,
 	devMode = false,
 	onUpdate,
 	onDelete,
 	onOpenPythonEditor,
+	onViewRunDetails,
 	pythonFileOpen = false,
 	readOnly = false,
 }: NodeEditDrawerProps) {
-	const [outputExpanded, setOutputExpanded] = useState(false);
 	const [editorMode, setEditorMode] = useState<"form" | "python">("form");
 	const meta = getDisplayMeta(step.type);
 	const workflowDefinition = step.workflowType
@@ -278,33 +292,36 @@ export function NodeEditDrawer({
 
 			<div className="flex-1 overflow-y-auto px-4 py-4">
 				<div className="space-y-4">
-					{runStatus === "success" && runOutput && (
-						<div className="rounded-lg border border-emerald-500/40 bg-emerald-500/10 px-3 py-2">
-							<p className="mb-1 font-medium text-[10px] text-emerald-700 uppercase tracking-wide dark:text-emerald-400">
-								Last run output
-							</p>
-							<OutputPreview
-								value={runOutput}
-								expanded={outputExpanded}
-								onToggle={() =>
-									setOutputExpanded((value) => !value)
-								}
-								nodeType={step.type}
-							/>
+					{runStatus && runStatus !== "idle" && (
+						<div
+							className={`flex items-start justify-between gap-2 rounded-lg border px-3 py-2 ${RUN_STATUS_CLASSES[runStatus]}`}
+						>
+							<div className="flex min-w-0 items-start gap-1.5 font-medium text-[11px]">
+								<StatusIcon
+									className="mt-0.5 size-3.5 shrink-0"
+									status={runStatus}
+								/>
+								<span className="line-clamp-2">
+									{RUN_STATUS_LABELS[runStatus]}
+									{runStatus === "error" && runError
+										? `: ${runError}`
+										: ""}
+								</span>
+							</div>
+							{onViewRunDetails && (
+								<Button
+									type="button"
+									size="sm"
+									variant="ghost"
+									className="h-6 shrink-0 gap-1 px-2 text-[11px]"
+									onClick={() => onViewRunDetails(step.id)}
+								>
+									View run details
+									<ExternalLink className="size-3" />
+								</Button>
+							)}
 						</div>
 					)}
-
-					{runStatus === "error" && runError && (
-						<div className="rounded-lg border border-destructive/30 bg-destructive/5 px-3 py-2">
-							<p className="mb-1 font-medium text-[10px] text-destructive uppercase tracking-wide">
-								Step failed
-							</p>
-							<pre className="max-h-20 overflow-y-auto whitespace-pre-wrap break-all font-sans text-[11px] text-destructive/80">
-								{runError}
-							</pre>
-						</div>
-					)}
-					{runTrace && <TraceDetail trace={runTrace} step={step} />}
 
 					<Field>
 						<FieldLabel className="text-xs">Label</FieldLabel>

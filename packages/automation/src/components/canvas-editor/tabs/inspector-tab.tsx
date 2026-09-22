@@ -1,6 +1,5 @@
 import type {
 	AutomationNode,
-	AutomationNodeTrace,
 	StepRunStatus,
 } from "../../../domain/automation.types";
 import { NodeEditDrawer } from "../node-edit-drawer";
@@ -16,8 +15,6 @@ interface InspectorTabProps {
 	upstreamVars: string[];
 	stepRunStatus?: StepRunStatus;
 	stepRunError?: string;
-	stepRunOutput?: string | null;
-	stepRunTrace?: AutomationNodeTrace;
 	onDescriptionChange: (value: string) => void;
 	onClose: () => void;
 	onUpdate: (step: AutomationNode) => void;
@@ -25,6 +22,8 @@ interface InspectorTabProps {
 	/** Pops the raw Python source out into a larger editor, for a host rendering this tab
 	 * alongside the canvas instead of in a separate iframe. */
 	onOpenPythonEditor?: (nodeId: string, source: string) => void;
+	/** Switches the trace/run-details panel to the latest run, selected on this node. */
+	onViewRunDetails?: (stepId: string) => void;
 	/** When true, the node's compiled Python source is open in a real file editor tab, so
 	 * the inline editor is locked to avoid two copies of the same source diverging. */
 	pythonFileOpen?: boolean;
@@ -42,13 +41,12 @@ export function InspectorTab({
 	upstreamVars,
 	stepRunStatus,
 	stepRunError,
-	stepRunOutput,
-	stepRunTrace,
 	onDescriptionChange,
 	onClose,
 	onUpdate,
 	onDelete,
 	onOpenPythonEditor,
+	onViewRunDetails,
 	pythonFileOpen = false,
 	readOnly = false,
 }: InspectorTabProps) {
@@ -76,12 +74,11 @@ export function InspectorTab({
 				upstreamVars={upstreamVars}
 				runStatus={stepRunStatus}
 				runError={stepRunError}
-				runOutput={stepRunOutput}
-				runTrace={stepRunTrace}
 				devMode={devMode}
 				onUpdate={onUpdate}
 				onDelete={() => onDelete(editingStep.id)}
 				onOpenPythonEditor={onOpenPythonEditor}
+				onViewRunDetails={onViewRunDetails}
 				pythonFileOpen={pythonFileOpen}
 				readOnly={readOnly}
 			/>

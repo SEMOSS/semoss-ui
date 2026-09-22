@@ -491,6 +491,12 @@ export const AutomationWorkbench = observer(
 			/** Source the dialog opened with, so dismissing without an edit changes nothing. */
 			openedWith: string;
 		} | null>(null);
+		// The node "View run details" last asked to be focused, and a token bumped on every
+		// call so re-focusing the same node (after navigating away) still takes effect.
+		const [runDetailsFocus, setRunDetailsFocus] = useState<{
+			nodeId: string;
+			token: number;
+		} | null>(null);
 		const wasRunningRef = useRef(false);
 		const editingStepIdRef = useRef<string | null>(null);
 		// Which node a Python-node file tab's path belongs to, so a save of it
@@ -599,6 +605,16 @@ export const AutomationWorkbench = observer(
 			},
 			[selectPanel, setAssistantDraft],
 		);
+		const handleViewRunDetails = useCallback(
+			(stepId: string) => {
+				setRunDetailsFocus((current) => ({
+					nodeId: stepId,
+					token: (current?.token ?? 0) + 1,
+				}));
+				selectPanel(TRACE);
+			},
+			[selectPanel],
+		);
 		const handleOpenPythonEditor = useCallback(
 			async (nodeId: string, source: string) => {
 				const asset = await findAutomationNodeAsset(appId, nodeId);
@@ -667,6 +683,9 @@ export const AutomationWorkbench = observer(
 				onAskAssistant: handleAskAssistant,
 				onOpenPythonEditor: handleOpenPythonEditor,
 				isPythonFileOpen,
+				onViewRunDetails: handleViewRunDetails,
+				runDetailsFocusNodeId: runDetailsFocus?.nodeId ?? null,
+				runDetailsFocusToken: runDetailsFocus?.token ?? 0,
 			}),
 			[
 				appId,
@@ -677,10 +696,12 @@ export const AutomationWorkbench = observer(
 				handleInspectorChange,
 				handleOpenPythonEditor,
 				handleTraceChange,
+				handleViewRunDetails,
 				historyRefreshToken,
 				inspectorSnapshot,
 				isPythonFileOpen,
 				readOnly,
+				runDetailsFocus,
 				traceSnapshot,
 			],
 		);
