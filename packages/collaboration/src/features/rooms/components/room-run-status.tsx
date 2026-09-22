@@ -29,12 +29,14 @@ export function RoomRunStatus({
 	transportError,
 	pendingApprovals,
 	phase,
+	onReconnect,
 }: {
 	agent: Agent;
 	turnError: string | null;
 	transportError: Error | null;
 	pendingApprovals: PendingToolApproval[];
 	phase: PlaygroundTurnPhase | null;
+	onReconnect?: () => Promise<void>;
 }) {
 	const isMobile = useIsMobile();
 	const { tools, openInline, openWorkbench } = useToolWorkbench();
@@ -71,10 +73,20 @@ export function RoomRunStatus({
 							Trouble reaching the server
 						</span>
 						<span className="block text-muted-foreground text-xs">
-							The durable conversation will be reloaded.{" "}
+							Reconnect to check the run's latest state.{" "}
 							{transportError.message}
 						</span>
 					</span>
+					{onReconnect && (
+						<Button
+							type="button"
+							size="sm"
+							variant="outline"
+							onClick={() => void onReconnect()}
+						>
+							Reconnect
+						</Button>
+					)}
 				</output>
 			)}
 			{pendingApprovals.length > 0 && (

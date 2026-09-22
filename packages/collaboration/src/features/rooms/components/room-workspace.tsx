@@ -31,6 +31,7 @@ interface RoomWorkspaceProps {
 	onModelChange: RoomViewProps["onModelChange"];
 	onOptimizePrompt: RoomViewProps["onOptimizePrompt"];
 	onCancelTurn: RoomViewProps["onCancelTurn"];
+	onReconnect: RoomViewProps["onReconnect"];
 	onConfigure: RoomViewProps["onConfigure"];
 	onNewRoom: RoomViewProps["onNewRoom"];
 }
@@ -58,6 +59,7 @@ export function RoomWorkspace({
 	onModelChange,
 	onOptimizePrompt,
 	onCancelTurn,
+	onReconnect,
 	onConfigure,
 	onNewRoom,
 }: RoomWorkspaceProps) {
@@ -101,6 +103,7 @@ export function RoomWorkspace({
 					transportError={transportError}
 					pendingApprovals={pendingApprovals}
 					phase={phase}
+					onReconnect={onReconnect}
 				/>
 				<RoomComposer
 					key={session.id}

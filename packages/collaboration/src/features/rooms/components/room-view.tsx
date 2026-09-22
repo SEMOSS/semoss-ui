@@ -31,6 +31,7 @@ export function RoomView({
 	onModelChange,
 	onOptimizePrompt,
 	onCancelTurn,
+	onReconnect,
 	onApproveTool,
 	onRejectTool,
 	onConfigure,
@@ -91,6 +92,7 @@ export function RoomView({
 							onModelChange={onModelChange}
 							onOptimizePrompt={onOptimizePrompt}
 							onCancelTurn={onCancelTurn}
+							onReconnect={onReconnect}
 							onConfigure={onConfigure}
 							onNewRoom={onNewRoom}
 						/>

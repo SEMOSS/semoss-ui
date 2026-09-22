@@ -13,8 +13,12 @@ export interface ComposerSubmission {
 	files: File[];
 }
 
-/** A client-driven playground tool awaiting a human decision. */
+/** A tool awaiting a human decision, with durable harness identity when available. */
 export interface PendingToolApproval {
+	actionId?: string;
+	runId?: string;
+	roomId?: string;
+	requiresResponse?: boolean;
 	toolId: string;
 	parentMessageId: string;
 	toolName: string;
@@ -48,6 +52,7 @@ export interface RoomViewProps {
 	onModelChange: (engine: Engine) => Promise<void>;
 	onOptimizePrompt: (draft: string, instructions: string) => Promise<string>;
 	onCancelTurn: () => Promise<void>;
+	onReconnect?: () => Promise<void>;
 	onApproveTool: (
 		approval: PendingToolApproval,
 		argumentsValue: Record<string, unknown>,

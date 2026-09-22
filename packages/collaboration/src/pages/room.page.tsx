@@ -16,7 +16,7 @@ import {
 	threadFromMessages,
 } from "@/features/messages/utils/thread-items";
 import { optimizePrompt } from "@/features/rooms/api/optimize-prompt";
-import { usePlaygroundTurn } from "@/features/rooms/api/use-playground-turn";
+import { useAgentTurn } from "@/features/rooms/api/use-agent-turn";
 import { useRoomModel } from "@/features/rooms/api/use-room-model";
 import { useRoomModelSelection } from "@/features/rooms/api/use-room-model-selection";
 import { useRoomStore } from "@/features/rooms/api/use-room-store";
@@ -32,7 +32,7 @@ import {
 import { toError } from "@/lib/pixel";
 import { agentSettingsPath } from "@/lib/workspace-paths";
 
-/** One playground room's durable transcript and persistent live controller. */
+/** One collaboration room's durable transcript and agent harness observer. */
 export function RoomPage() {
 	const { agent } = useAgent();
 	const { openRoomsList } = useRoom();
@@ -92,11 +92,13 @@ export function RoomPage() {
 		[agentId, loadHistory, refresh, roomId],
 	);
 
-	const turn = usePlaygroundTurn({
+	const turn = useAgentTurn({
 		insightId,
 		roomId: roomId ?? "",
+		agentId,
 		engine: modelId,
-		context: room?.options.instructions || agent.system_prompt || "",
+		maxTurns: agent.config_json?.budgets?.max_turns ?? 40,
+		maxReflections: agent.config_json?.budgets?.max_reflections,
 		onSettled: handleSettled,
 	});
 	reconcileRef.current = turn.reconcileHistory;
@@ -193,10 +195,12 @@ export function RoomPage() {
 			sessionId={roomId}
 			thread={thread}
 			toolStates={turn.toolStates}
-			isSending={turn.isSubmitting}
+			isSending={turn.isSubmitting || turn.isRestoring}
 			isRunning={turn.isRunning}
 			isCancelling={turn.isCancelling}
-			isLoadingHistory={isLoadingHistory || isLoadingRoom}
+			isLoadingHistory={
+				isLoadingHistory || isLoadingRoom || turn.isRestoring
+			}
 			turnError={turn.turnError}
 			transportError={historyError ?? roomError ?? turn.transportError}
 			pendingApprovals={turn.pendingApprovals}
@@ -212,6 +216,7 @@ export function RoomPage() {
 			onModelChange={handleModelChange}
 			onOptimizePrompt={handleOptimizePrompt}
 			onCancelTurn={turn.cancel}
+			onReconnect={turn.reconnect}
 			onApproveTool={handleApprove}
 			onRejectTool={handleReject}
 			onConfigure={(id) => navigate(agentSettingsPath(id))}

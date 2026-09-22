@@ -4,12 +4,6 @@ import {
 } from "@/features/messages/api/get-room-messages";
 import { createRoom } from "./create-room";
 import { listRooms } from "./list-rooms";
-import {
-	buildAddPlaygroundToolExecutionStatement,
-	buildAskPlaygroundStatement,
-	buildRunMcpToolStatement,
-	getToolEngineId,
-} from "./playground-chat";
 
 function pixelResponse(output: unknown) {
 	return {
@@ -18,7 +12,7 @@ function pixelResponse(output: unknown) {
 }
 
 describe("playground room APIs", () => {
-	it("creates, configures, names, and binds a room without a harness", async () => {
+	it("creates, configures, names, and binds a room for the SEMOSS harness", async () => {
 		const run = vi
 			.fn()
 			.mockResolvedValueOnce(pixelResponse({ roomId: "room-1" }))
@@ -43,7 +37,7 @@ describe("playground room APIs", () => {
 		const optionsStatement = String(run.mock.calls[1]?.[0]);
 		expect(optionsStatement).toContain('"workspace_id":"workspace-1"');
 		expect(optionsStatement).toContain('"modelId":"model-1"');
-		expect(optionsStatement).not.toContain("harnessType");
+		expect(optionsStatement).toContain('"harnessType":"semoss"');
 	});
 
 	it("lists playground rooms once and maps uppercase fields", async () => {
@@ -101,69 +95,6 @@ describe("playground room APIs", () => {
 		expect(latestAssistantTail(messages)).toBe("hidden-response");
 		expect(run).toHaveBeenCalledWith(
 			'GetPlaygroundMessages(roomId=["room-1"]);',
-		);
-	});
-});
-
-describe("playground turn statement builders", () => {
-	it("encodes AskPlayground content, media, and parent ids", () => {
-		const statement = buildAskPlaygroundStatement({
-			engine: "model-1",
-			roomId: "room-1",
-			command: 'Review "this"',
-			context: "Be concise.",
-			media: ["/uploads/brief.txt"],
-			parentMessageId: "response-0",
-		});
-		expect(statement).toContain('engine=["model-1"]');
-		expect(statement).toContain(
-			'command=["<encode>Review \\"this\\"</encode>"]',
-		);
-		expect(statement).toContain('media=["/uploads/brief.txt"]');
-		expect(statement).toContain('parentMessageId=["response-0"]');
-	});
-
-	it("builds tool execution and result statements", () => {
-		expect(
-			buildRunMcpToolStatement({
-				ownerId: "engine-1",
-				roomId: "room-1",
-				toolName: "send_email",
-				argumentsValue: { to: "person@example.com" },
-			}),
-		).toBe(
-			'RunMCPTool(project=["engine-1"], roomId="room-1", function=["send_email"], paramValues=[{"to":"person@example.com"}]);',
-		);
-
-		const result = buildAddPlaygroundToolExecutionStatement({
-			engine: "model-1",
-			roomId: "room-1",
-			parentMessageId: "response-1",
-			toolId: "tool-1",
-			toolName: "send_email",
-			toolExecutionResponse: "sent",
-			mcpToolStatus: "success",
-			toolParameterValues: { to: "person@example.com" },
-		});
-		expect(result).toContain("AddPlaygroundToolExecution(");
-		expect(result).toContain('mcpToolStatus="success"');
-		expect(result).toContain(
-			'toolParameterValues=[{"to":"person@example.com"}]',
-		);
-	});
-
-	it("prefers engine ownership, falls back to project, and retains room tools", () => {
-		expect(
-			getToolEngineId({
-				SMSS_ENGINE_ID: "engine-1",
-				SMSS_PROJECT_ID: "project-1",
-			}),
-		).toBe("engine-1");
-		expect(getToolEngineId({ SMSS_PROJECT_ID: "project-1" })).toBe(
-			"project-1",
-		);
-		expect(getToolEngineId({ SMSS_ENGINE_ID: "__room__" })).toBe(
-			"__room__",
 		);
 	});
 });

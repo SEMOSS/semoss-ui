@@ -172,6 +172,35 @@ describe("ToolWorkbenchProvider", () => {
 		expect(screen.getByTestId("workbench").textContent).toBe("true");
 	});
 
+	it("shows an agent's question and submits a response with its action identity", async () => {
+		const onApproveTool = vi.fn().mockResolvedValue(undefined);
+		const approval: PendingToolApproval = {
+			toolId: tool.id,
+			parentMessageId: tool.parentMessageId,
+			toolName: "RequestUserInput",
+			actionId: "action-1",
+			runId: "child-1",
+			requiresResponse: true,
+			arguments: { question: "Which report should I use?" },
+		};
+		renderProvider([approval], { onApproveTool });
+		const editor = await screen.findByRole("textbox", {
+			name: "Your response",
+		});
+		expect(
+			screen.getByText(/Which report should I use/),
+		).toBeInTheDocument();
+		fireEvent.change(editor, {
+			target: { value: '{"answer":"Quarterly report"}' },
+		});
+		fireEvent.click(screen.getByRole("button", { name: "Send response" }));
+		await waitFor(() =>
+			expect(onApproveTool).toHaveBeenCalledWith(approval, {
+				answer: "Quarterly report",
+			}),
+		);
+	});
+
 	it("moves a tool inline and returns focus when it closes", async () => {
 		renderProvider();
 		fireEvent.click(screen.getByRole("button", { name: "Inline" }));

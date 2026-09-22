@@ -10,7 +10,7 @@ const uploadedFilesSchema = z.array(uploadedFileSchema);
 
 export type UploadedRoomFile = z.infer<typeof uploadedFileSchema>;
 
-/** Upload composer files and return the media locations accepted by AskPlayground. */
+/** Upload composer files and return media locations accepted by RunAgent. */
 export async function uploadRoomFiles(
 	insightId: string,
 	files: File[],

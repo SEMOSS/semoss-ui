@@ -36,7 +36,7 @@ export function ToolUiFrame({ tool, url }: ToolUiFrameProps) {
 					id: tool.id,
 					name: tool.name,
 					parameters,
-					roomId,
+					roomId: tool.roomId ?? roomId,
 					original_name:
 						typeof originalName === "string"
 							? originalName

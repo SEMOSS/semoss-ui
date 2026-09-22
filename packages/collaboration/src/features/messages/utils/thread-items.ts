@@ -155,7 +155,7 @@ export function threadFromMessages(
 	});
 }
 
-/** The user's own message, shown immediately while AskPlayground is submitted. */
+/** The user's own message, shown immediately while its agent run is submitted. */
 export function optimisticUserMessage(
 	text: string,
 	files: File[] = [],
@@ -198,6 +198,7 @@ function toolFromApproval(approval: PendingToolApproval): ConversationTool {
 	const title = approval.metadata?.title;
 	return {
 		id: approval.toolId,
+		roomId: approval.roomId,
 		parentMessageId: approval.parentMessageId,
 		name: approval.toolName,
 		title:
@@ -242,6 +243,9 @@ export function toolsFromMessages(
 			arguments: approval.arguments,
 			metadata: approval.metadata ?? existing?.metadata,
 			uiUrl: approval.uiUrl ?? existing?.uiUrl,
+			roomId: approval.roomId ?? existing?.roomId,
+			parentMessageId:
+				approval.parentMessageId || existing?.parentMessageId || "",
 			status: "INPUT_REQUIRED",
 		};
 	}

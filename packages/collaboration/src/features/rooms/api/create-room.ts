@@ -27,6 +27,7 @@ export async function createRoom(
 			name: options.workspaceName,
 		},
 		modelId: options.modelId ?? "",
+		harnessType: "semoss",
 	};
 
 	const updated = await callPixel(

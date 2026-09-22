@@ -14,6 +14,8 @@ export type ConversationToolStatus =
 /** One tool call rendered in a message and opened in the room workbench. */
 export interface ConversationTool {
 	id: string;
+	/** Child-run tools can belong to a different room than the visible conversation. */
+	roomId?: string;
 	parentMessageId: string;
 	name: string;
 	title: string;

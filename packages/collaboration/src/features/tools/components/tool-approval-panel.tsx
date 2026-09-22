@@ -52,7 +52,9 @@ export function ToolApprovalPanel({ tool, action }: ToolApprovalPanelProps) {
 		resolver: zodResolver(approvalSchema),
 		defaultValues: {
 			arguments: JSON.stringify(
-				action.arguments ?? tool.arguments,
+				action.requiresResponse
+					? {}
+					: (action.arguments ?? tool.arguments),
 				null,
 				2,
 			),
@@ -145,10 +147,23 @@ export function ToolApprovalPanel({ tool, action }: ToolApprovalPanelProps) {
 					value="inputs"
 					className="min-h-0 overflow-auto p-3"
 				>
+					{action.requiresResponse && (
+						<pre className="mb-4 whitespace-pre-wrap break-words rounded-md bg-muted p-3 text-xs">
+							{JSON.stringify(action.arguments, null, 2)}
+						</pre>
+					)}
 					<FormTextarea
 						name="arguments"
-						label="Tool arguments"
-						description="Edit the JSON object before approving, or leave it unchanged."
+						label={
+							action.requiresResponse
+								? "Your response"
+								: "Tool arguments"
+						}
+						description={
+							action.requiresResponse
+								? "Enter your answers as a JSON object to continue."
+								: "Edit the JSON object before approving, or leave it unchanged."
+						}
 						rows={14}
 						spellCheck={false}
 						disabled={isUpdating}
@@ -179,7 +194,11 @@ export function ToolApprovalPanel({ tool, action }: ToolApprovalPanelProps) {
 					{isUpdating && (
 						<Spinner aria-hidden="true" className="size-4" />
 					)}
-					{isUpdating ? "Updating…" : "Approve and run"}
+					{isUpdating
+						? "Updating…"
+						: action.requiresResponse
+							? "Send response"
+							: "Approve and run"}
 				</Button>
 			</footer>
 		</Form>
