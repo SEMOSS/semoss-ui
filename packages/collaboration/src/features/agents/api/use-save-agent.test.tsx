@@ -84,6 +84,9 @@ describe("useSaveAgent", () => {
 			'systemPrompt=["Revised instructions"]',
 		);
 		expect(run.mock.lastCall?.[0]).toContain('skills=["skill-1"]');
+		expect(run.mock.lastCall?.[0]).toContain("maxSubagentDepth=[1]");
+		expect(run.mock.lastCall?.[0]).toContain("maxSpawnsPerTurn=[4]");
+		expect(run.mock.lastCall?.[0]).toContain("maxTurns=[40]");
 		expect(run.mock.lastCall?.[0]).toContain(
 			'subagents=[{"workspaceId":"specialist-1"}]',
 		);
@@ -132,38 +135,46 @@ describe("useSaveAgent", () => {
 		expect(run.mock.lastCall?.[0]).not.toContain('"name":"Knowledge"');
 	});
 
-	it.each([
-		{ depth: 0, spawn: false, expectedDepth: 0 },
-		{ depth: 3, spawn: false, expectedDepth: 1 },
-		{ depth: 3, spawn: true, expectedDepth: 3 },
-	])(
-		"maps delegation depth and helper spawning: %j",
-		async ({ depth, spawn, expectedDepth }) => {
+	it.each([{ members: [] }, { members: ["specialist-1"] }])(
+		"creates agents with default execution limits: %j",
+		async ({ members }) => {
 			const { actions, run } = createActions();
 			const { result } = renderHook(() =>
 				useSaveAgent({ actions, agents: [], onSaved: vi.fn() }),
 			);
 			await act(async () => {
-				await result.current({ ...agent, depth, spawn });
+				await result.current({ ...agent, members });
 			});
-			expect(run.mock.lastCall?.[0]).toContain(
-				`maxSubagentDepth=[${expectedDepth}]`,
+			expect(run.mock.lastCall?.[0]).toContain("maxSubagentDepth=[1]");
+			expect(run.mock.lastCall?.[0]).toContain("maxSpawnsPerTurn=[4]");
+			expect(run.mock.lastCall?.[0]).toContain("maxTurns=[40]");
+			expect(run.mock.lastCall?.[0]).not.toContain("maxSubagentsPerRun");
+		},
+	);
+
+	it.each(["route", "catalog"])(
+		"preserves hidden limits when editing an existing agent from the %s",
+		async (source) => {
+			const { actions, run } = createActions();
+			const { result } = renderHook(() =>
+				useSaveAgent({
+					actions,
+					agents: source === "catalog" ? [agent] : [],
+					onSaved: vi.fn(),
+				}),
 			);
-			expect(run.mock.lastCall?.[0]).toContain("maxSubagentsPerRun=[2]");
-			const loaded = agentFromWorkspace({
-				workspace_id: "workspace-1",
-				name: agent.name,
-				description: agent.role,
-				system_prompt: agent.instructions,
-				mcp: [],
-				skills: [],
-				prompts: [],
-				config_json: {
-					spawn_policy: { max_subagent_depth: expectedDepth },
-					subagents: [{ workspaceId: "specialist-1" }],
-				},
+			await act(async () => {
+				await result.current(
+					agent,
+					[],
+					source === "route" ? "workspace-1" : undefined,
+				);
 			});
-			expect(loaded.spawn).toBe(expectedDepth > 1);
+			expect(run).toHaveBeenCalledTimes(2);
+			expect(run.mock.lastCall?.[0]).toMatch(/^EditWorkspace\(/);
+			expect(run.mock.lastCall?.[0]).not.toMatch(
+				/maxTurns|maxSubagentDepth|maxSubagentsPerRun|maxSpawnsPerTurn/,
+			);
 		},
 	);
 });

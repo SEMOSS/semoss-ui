@@ -37,8 +37,8 @@ export function AgentSettingsPage() {
 		databases: [],
 		dataProducts: [],
 		members: [],
-		depth: 0,
-		concurrency: 2,
+		depth: 1,
+		concurrency: 10,
 		spawn: false,
 		triggers: [],
 	}));

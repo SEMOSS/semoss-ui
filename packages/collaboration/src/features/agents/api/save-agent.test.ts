@@ -75,6 +75,26 @@ describe("agent workspace mutations", () => {
 		);
 	});
 
+	it.each([0, 4])(
+		"saves a per-turn spawn limit of %i after creation",
+		async (limit) => {
+			const { actions, run } = actionsReturning(
+				"workspace-1",
+				workspace,
+				true,
+			);
+			await createAgent(actions, {
+				name: "Research agent",
+				maxSpawnsPerTurn: limit,
+			});
+			expect(run).toHaveBeenCalledTimes(3);
+			expect(run.mock.calls[0][0]).not.toContain("maxSpawnsPerTurn");
+			expect(run.mock.calls[2][0]).toContain(
+				`maxSpawnsPerTurn=[${limit}]`,
+			);
+		},
+	);
+
 	it("sends selected knowledge and toolboxes on creation and its follow-up edit", async () => {
 		const { actions, run } = actionsReturning(
 			"workspace-1",

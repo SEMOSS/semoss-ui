@@ -1,6 +1,8 @@
 import { act, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type { App, Engine } from "@semoss/shared";
+import { projectListSchema } from "@/features/agents/api/agent-schemas";
+import { agentFromProjectRow } from "@/features/agents/utils/agent-from-workspace";
 import type { Agent } from "@/types/agent";
 import { AgentSettings } from "./agent-settings-view";
 
@@ -106,7 +108,7 @@ describe("AgentSettings submission", () => {
 		render(
 			<AgentSettings
 				agent={{ ...agent, role: existingDescription }}
-				agents={[]}
+				agents={[{ ...agent, id: "helper-1", name: "Research helper" }]}
 				skillOptions={[]}
 				onSave={onSave}
 				onClose={onClose}
@@ -129,10 +131,10 @@ describe("AgentSettings submission", () => {
 		).toBeDisabled();
 		expect(screen.getByRole("button", { name: /Saving…/ })).toBeDisabled();
 		expect(screen.getByRole("button", { name: "Cancel" })).toBeDisabled();
-		expect(screen.getByRole("button", { name: "Team" })).toBeEnabled();
-		await user.click(screen.getByRole("button", { name: "Team" }));
+		expect(screen.getByRole("button", { name: "Subagents" })).toBeEnabled();
+		await user.click(screen.getByRole("button", { name: "Subagents" }));
 		expect(
-			screen.getByRole("spinbutton", { name: "Maximum spawn level" }),
+			screen.getByRole("checkbox", { name: "Research helper" }),
 		).toBeDisabled();
 		await user.click(screen.getByRole("button", { name: "Capabilities" }));
 		expect(
@@ -423,32 +425,85 @@ describe("AgentSettings submission", () => {
 		expect(onSave).not.toHaveBeenCalled();
 	});
 
+	it("shows subagent display names and saves the selected agent ID", async () => {
+		const user = userEvent.setup();
+		const onSave = vi.fn().mockResolvedValue(undefined);
+		const agents = projectListSchema
+			.parse([
+				{
+					project_id: "research-helper",
+					project_name: "platform",
+					project_display_name: " Research helper ",
+				},
+				{
+					project_id: "writing-helper",
+					project_name: "platform",
+					project_display_name: "Writing helper",
+				},
+				{
+					project_id: "unnamed-helper",
+					project_name: "platform",
+					project_display_name: " ",
+				},
+			])
+			.map(agentFromProjectRow);
+		render(
+			<AgentSettings
+				agent={agent}
+				agents={agents}
+				skillOptions={[]}
+				onSave={onSave}
+				onClose={vi.fn()}
+			/>,
+		);
+		await user.click(screen.getByRole("button", { name: "Subagents" }));
+		expect(screen.queryByText("platform")).not.toBeInTheDocument();
+		expect(
+			screen.getByRole("checkbox", { name: "Writing helper" }),
+		).not.toBeChecked();
+		expect(
+			screen.getByRole("checkbox", { name: "unnamed-helper" }),
+		).not.toBeChecked();
+		await user.click(
+			screen.getByRole("checkbox", { name: "Research helper" }),
+		);
+		expect(
+			screen.getByRole("button", { name: "Subagents 1" }),
+		).toHaveAttribute("aria-current", "page");
+		await user.click(screen.getByRole("button", { name: "Save agent" }));
+		await waitFor(() =>
+			expect(onSave).toHaveBeenCalledWith(
+				expect.objectContaining({ members: ["research-helper"] }),
+			),
+		);
+	});
+
 	it.each(["Individual", "Team"] as const)(
-		"allows optional team settings for an agent previously marked %s",
+		"keeps subagents optional and hides execution limits for an agent marked %s",
 		async (type) => {
 			const user = userEvent.setup();
 			const onSave = vi.fn().mockResolvedValue(undefined);
 			render(
 				<AgentSettings
-					agent={{ ...agent, type, concurrency: 10 }}
+					agent={{
+						...agent,
+						type,
+						depth: 3,
+						spawn: true,
+						concurrency: 10,
+					}}
 					agents={[]}
 					skillOptions={[]}
 					onSave={onSave}
 					onClose={vi.fn()}
 				/>,
 			);
-			await user.click(screen.getByRole("button", { name: "Team" }));
-			const depth = screen.getByRole("spinbutton", {
-				name: "Maximum spawn level",
-			});
-			await user.clear(depth);
-			await user.type(depth, "4");
-			const nesting = screen.getByRole("switch", {
-				name: /Allow helpers to spawn subagents/,
-			});
-			expect(nesting).toBeChecked();
-			await user.click(nesting);
-			expect(depth).toHaveValue(1);
+			await user.click(screen.getByRole("button", { name: "Subagents" }));
+			expect(
+				screen.queryByText("Delegation limits"),
+			).not.toBeInTheDocument();
+			expect(screen.queryByRole("spinbutton")).not.toBeInTheDocument();
+			expect(screen.queryByRole("switch")).not.toBeInTheDocument();
 			await user.click(
 				screen.getByRole("button", { name: "Save agent" }),
 			);
@@ -457,8 +512,8 @@ describe("AgentSettings submission", () => {
 					expect.objectContaining({
 						type: "Individual",
 						members: [],
-						depth: 1,
-						spawn: false,
+						depth: 3,
+						spawn: true,
 						concurrency: 10,
 					}),
 				),

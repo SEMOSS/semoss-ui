@@ -18,9 +18,6 @@ function toAgentDraft(agent: Agent, skillIds?: string[]): AgentDraft {
 		mcp: agent.mcp,
 		skillIds: skillIds ?? agent.skillIds,
 		subagents: agent.members.map((workspaceId) => ({ workspaceId })),
-		// Depth 0 disables all delegation; depth 1 allows only the lead to spawn.
-		maxSubagentDepth: agent.spawn ? agent.depth : Math.min(agent.depth, 1),
-		maxSubagentsPerRun: agent.concurrency,
 	};
 }
 
@@ -48,6 +45,16 @@ export function useSaveAgent({
 				workspaceId ??
 				createdIds.current.get(agent.id) ??
 				agents.find((candidate) => candidate.id === agent.id)?.id;
+			// Apply creation defaults on the first save and any partial-save retry.
+			// Omit hidden limits on existing agents so their saved config is preserved.
+			if (
+				!existingId ||
+				(!workspaceId && createdIds.current.has(agent.id))
+			) {
+				draft.maxSubagentDepth = 1;
+				draft.maxSpawnsPerTurn = 4;
+				draft.maxTurns = 40;
+			}
 			let savedId: string;
 			if (existingId) {
 				await updateAgent(actions, existingId, draft);

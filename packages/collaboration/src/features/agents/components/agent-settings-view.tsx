@@ -245,7 +245,7 @@ export function AgentSettings({
 		{ name: "Profile", icon: Settings2 },
 		{ name: "Capabilities", icon: Zap },
 		{ name: "Starts work when", icon: Clock3 },
-		{ name: "Team", icon: Users },
+		{ name: "Subagents", icon: Users },
 	];
 
 	return (
@@ -254,7 +254,7 @@ export function AgentSettings({
 			onSubmit={handleSubmit}
 			onError={(errors) => {
 				if (errors.name) setTab("Profile");
-				else if (errors.members) setTab("Team");
+				else if (errors.members) setTab("Subagents");
 				setError(
 					errors.name?.message ??
 						errors.members?.message ??
@@ -363,11 +363,12 @@ export function AgentSettings({
 						>
 							<Icon className="size-4" />
 							{name}
-							{name === "Team" && draft.members.length > 0 && (
-								<span className="ml-auto text-xs">
-									{draft.members.length}
-								</span>
-							)}
+							{name === "Subagents" &&
+								draft.members.length > 0 && (
+									<span className="ml-auto text-xs">
+										{draft.members.length}
+									</span>
+								)}
 						</button>
 					))}
 				</nav>
@@ -436,7 +437,7 @@ export function AgentSettings({
 								onUpdate={update}
 							/>
 						)}
-						{tab === "Team" && (
+						{tab === "Subagents" && (
 							<TeamSettingsView
 								agent={draft}
 								agents={agents}

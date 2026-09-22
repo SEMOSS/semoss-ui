@@ -27,6 +27,8 @@ export interface AgentDraft {
 	maxSubagentDepth?: number;
 	/** Total subagents it may spawn across one run, including nested helpers. */
 	maxSubagentsPerRun?: number;
+	/** Maximum subagents it may spawn during one model turn. */
+	maxSpawnsPerTurn?: number;
 	/** Skill ids the agent should end up with. Omit to keep the current set. */
 	skillIds?: string[];
 	/** Knowledge and toolboxes. Omit to preserve them; an empty list clears them. */
@@ -89,6 +91,7 @@ export async function createAgent(
 		draft.maxReflections !== undefined ||
 		draft.maxSubagentDepth !== undefined ||
 		draft.maxSubagentsPerRun !== undefined ||
+		draft.maxSpawnsPerTurn !== undefined ||
 		draft.subagents !== undefined;
 	if (hasExecutionSettings) {
 		try {
@@ -141,6 +144,7 @@ export async function updateAgent(
 		maxReflections: draft.maxReflections,
 		maxSubagentDepth: draft.maxSubagentDepth,
 		maxSubagentsPerRun: draft.maxSubagentsPerRun,
+		maxSpawnsPerTurn: draft.maxSpawnsPerTurn,
 		subagents: draft.subagents,
 	});
 

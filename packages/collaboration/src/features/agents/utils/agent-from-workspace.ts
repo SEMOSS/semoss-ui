@@ -92,7 +92,8 @@ export function agentFromProjectRow(row: ProjectRow): ShowcaseAgent {
 
 	return {
 		id,
-		name: row.project_name,
+		// project_name can be a namespace shared by many agents, such as "platform".
+		name: row.project_display_name?.trim() || id,
 		role: "",
 		type: "Individual",
 		avatar: agentImageUrl(id),

@@ -94,7 +94,7 @@ export function ProfileSettingsView({
 				<FormInput
 					name="name"
 					label="Name (required)"
-					placeholder="e.g. Priya"
+					placeholder="e.g. Ryan Agent"
 					maxLength={60}
 					required
 				/>

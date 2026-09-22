@@ -161,6 +161,7 @@ export function toWorkspaceAgent(payload: WorkspacePayload): WorkspaceAgent {
 const projectRowSchema = z.object({
 	project_id: z.string(),
 	project_name: z.string(),
+	project_display_name: z.string().nullish(),
 	project_type: z.string().nullish(),
 	project_date_created: z.string().nullish(),
 	project_date_last_edited: z.string().nullish(),
