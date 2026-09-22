@@ -9,7 +9,16 @@ export interface AutomationAgentRunMessage {
 	messageId?: string;
 	dateCreated?: string;
 	visible?: boolean;
+	agentRun?: {
+		runId: string;
+		role?: string;
+		originatingRunId?: string;
+		childRunId?: string;
+		completionMode?: "JOIN" | "NOTIFY" | "CONTINUE" | string;
+		childStatus?: string;
+	};
 	ornaments?: {
+		/** Legacy read fallback. */
 		agentRunRole?: string;
 	};
 	parts?: AutomationAgentRunMessagePart[];

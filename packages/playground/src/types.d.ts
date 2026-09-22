@@ -101,6 +101,15 @@ export type {
  */
 export type PixelMessage = InputPixelMessage | ResponsePixelMessage;
 
+export interface AgentRunMessageContext {
+	runId: string;
+	role?: string;
+	originatingRunId?: string;
+	childRunId?: string;
+	completionMode?: "JOIN" | "NOTIFY" | "CONTINUE" | string;
+	childStatus?: string;
+}
+
 export interface AbstractPixelMessage {
 	io: "INPUT" | "OUTPUT";
 	messageId: string;
@@ -120,10 +129,12 @@ export interface AbstractPixelMessage {
 		| PixelMessageSubagentPart
 	)[];
 	tokens: number;
+	agentRun?: AgentRunMessageContext;
 	ornaments: {
 		modelName?: string;
-		/** Set on messages tagged as part of an agent run — see agent-harness.ts. */
+		/** Legacy agent-run attribution; read-only fallback for existing rooms. */
 		agentRunId?: string;
+		agentRunRole?: string;
 	};
 	pruneToolsAbove: boolean;
 }
@@ -150,8 +161,9 @@ export interface ResponsePixelMessage extends AbstractPixelMessage {
 	)[];
 	ornaments: {
 		modelName?: string;
-		/** Set on messages tagged as part of an agent run — see agent-harness.ts. */
+		/** Legacy agent-run attribution; read-only fallback for existing rooms. */
 		agentRunId?: string;
+		agentRunRole?: string;
 	};
 	feedback?: {
 		rating: boolean;

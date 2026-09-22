@@ -116,10 +116,21 @@ export type PlaygroundMessage = {
 	thinkingTokens?: number;
 	/** When the message was persisted. */
 	dateCreated?: string;
+	/** Durable agent-run attribution for this message. */
+	agentRun?: {
+		runId: string;
+		role?: string;
+		originatingRunId?: string;
+		childRunId?: string;
+		completionMode?: "JOIN" | "NOTIFY" | "CONTINUE" | string;
+		childStatus?: string;
+	};
 	/** Auxiliary metadata attached to the message. */
 	ornaments?: {
 		modelName?: string;
+		/** Legacy agent-run attribution; read-only fallback for existing rooms. */
 		agentRunId?: string;
+		agentRunRole?: string;
 	};
 	/** Ordered content parts of the message. */
 	parts?: PlaygroundMessagePart[];
