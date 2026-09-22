@@ -1,4 +1,4 @@
-import { useId, useRef } from "react";
+import { useRef } from "react";
 import {
 	cn,
 	ResizableHandle,
@@ -13,6 +13,10 @@ import { RoomComposer } from "./room-composer";
 import { RoomHeader } from "./room-header";
 import { RoomRunStatus } from "./room-run-status";
 import { RoomThread } from "./room-thread";
+
+const ROOM_WORKSPACE_LAYOUT_ID = "collaboration-room-workspace-v1";
+const CONVERSATION_PANEL_ID = "collaboration-room-conversation";
+const TOOL_WORKBENCH_PANEL_ID = "collaboration-room-tool-workbench";
 
 interface RoomWorkspaceProps {
 	agent: RoomViewProps["agent"];
@@ -30,6 +34,8 @@ interface RoomWorkspaceProps {
 	modelId: RoomViewProps["modelId"];
 	modelName: RoomViewProps["modelName"];
 	isModelSaving: RoomViewProps["isModelSaving"];
+	isModelLocked?: RoomViewProps["isModelLocked"];
+	showToolWorkbench?: RoomViewProps["showToolWorkbench"];
 	modelError: RoomViewProps["modelError"];
 	roomInstructions: RoomViewProps["roomInstructions"];
 	onSendMessage: RoomViewProps["onSendMessage"];
@@ -57,13 +63,14 @@ export function RoomWorkspace({
 	modelId,
 	modelName,
 	isModelSaving,
+	isModelLocked = false,
+	showToolWorkbench = true,
 	modelError,
 	roomInstructions,
 	onSendMessage,
 	onModelChange,
 	onOptimizePrompt,
 	onCancelTurn,
-	onReconnect,
 	onConfigure,
 }: RoomWorkspaceProps) {
 	const {
@@ -72,7 +79,6 @@ export function RoomWorkspace({
 		openWorkbench,
 		closeWorkbench,
 	} = useToolWorkbench();
-	const workspaceId = useId();
 	const threadBottom = useRef<HTMLDivElement>(null);
 
 	function toggleToolWorkbench() {
@@ -80,7 +86,7 @@ export function RoomWorkspace({
 			closeWorkbench();
 			return;
 		}
-		if (activeToolId) openWorkbench(activeToolId);
+		openWorkbench(activeToolId ?? undefined);
 	}
 
 	function scrollToLatest() {
@@ -94,17 +100,22 @@ export function RoomWorkspace({
 
 	return (
 		<ResizablePanelGroup
+			id={ROOM_WORKSPACE_LAYOUT_ID}
+			autoSaveId={ROOM_WORKSPACE_LAYOUT_ID}
 			direction="horizontal"
 			keyboardResizeBy={5}
 			className="min-h-0 min-w-0 flex-1"
 		>
 			<ResizablePanel
-				id={`${workspaceId}-conversation`}
+				id={CONVERSATION_PANEL_ID}
 				order={1}
-				minSize={40}
+				defaultSize={35}
+				minSize={20}
 				className={cn(
 					"min-h-0 min-w-0",
-					isToolWorkbenchOpen && "hidden md:block",
+					showToolWorkbench &&
+						isToolWorkbenchOpen &&
+						"hidden md:block",
 				)}
 			>
 				<section
@@ -116,7 +127,7 @@ export function RoomWorkspace({
 						agentId={agentId}
 						session={session}
 						isToolWorkbenchOpen={isToolWorkbenchOpen}
-						canToggleToolWorkbench={activeToolId !== null}
+						showToolWorkbench={showToolWorkbench}
 						onToggleToolWorkbench={toggleToolWorkbench}
 						onConfigure={onConfigure}
 					/>
@@ -142,6 +153,7 @@ export function RoomWorkspace({
 						modelId={modelId}
 						modelName={modelName}
 						isModelSaving={isModelSaving}
+						isModelLocked={isModelLocked}
 						modelError={modelError}
 						roomInstructions={roomInstructions}
 						onModelChange={onModelChange}
@@ -152,18 +164,18 @@ export function RoomWorkspace({
 					/>
 				</section>
 			</ResizablePanel>
-			{isToolWorkbenchOpen && (
+			{showToolWorkbench && isToolWorkbenchOpen && (
 				<>
 					<ResizableHandle
 						aria-label="Resize tool workbench"
 						className="hidden bg-transparent transition-colors focus-visible:bg-border data-[resize-handle-state=drag]:bg-border data-[resize-handle-state=hover]:bg-border md:flex"
 					/>
 					<ResizablePanel
-						id={`${workspaceId}-tool-workbench`}
+						id={TOOL_WORKBENCH_PANEL_ID}
 						order={2}
-						defaultSize={30}
+						defaultSize={65}
 						minSize={20}
-						maxSize={60}
+						maxSize={80}
 						className="min-h-0 min-w-0"
 					>
 						<aside

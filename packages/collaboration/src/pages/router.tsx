@@ -12,6 +12,7 @@ import { AgentsOverviewPage } from "@/pages/agents-overview.page";
 import { ErrorPage } from "@/pages/error.page";
 import { HomePage } from "@/pages/home.page";
 import { LoginPage } from "@/pages/login.page";
+import { NewRoomPage } from "@/pages/new-room.page";
 import { NotFoundPage } from "@/pages/not-found.page";
 import { RoomPage } from "@/pages/room.page";
 import { SettingsPage } from "@/pages/settings.page";
@@ -61,12 +62,16 @@ const routes: RouteObject[] = [
 										Component: AgentSettingsPage,
 									},
 									{
-										path: ":roomId",
 										id: "agent-room-layout",
 										Component: AgentRoomLayout,
 										children: [
 											{
-												index: true,
+												path: "new/:draftId",
+												id: "room-new",
+												Component: NewRoomPage,
+											},
+											{
+												path: ":roomId",
 												id: "room",
 												Component: RoomPage,
 											},

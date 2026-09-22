@@ -7,13 +7,14 @@ import {
 	useState,
 	useSyncExternalStore,
 } from "react";
+import { type FilePanelMode, isFilePanelType } from "@semoss/panels";
 import { createWorkbenchStore } from "@semoss/workbench";
 import type { ConversationTool } from "@/features/messages/types/message";
 import type { PendingToolApproval } from "@/features/rooms/types/room";
 import { TOOL_WORKBENCH_COMPONENTS } from "../tool-workbench.components";
 import {
+	createToolWorkbenchLayout,
 	TOOL_PANEL_TYPE,
-	TOOL_WORKBENCH_LAYOUT,
 	toolCardTriggerId,
 } from "../tool-workbench.constants";
 import { ToolWorkbenchContext } from "../tool-workbench.context";
@@ -24,6 +25,7 @@ import {
 
 export interface ToolWorkbenchProviderProps {
 	roomId: string;
+	insightId: string;
 	tools: Record<string, ConversationTool>;
 	pendingApprovals: PendingToolApproval[];
 	onApproveTool: (
@@ -34,27 +36,37 @@ export interface ToolWorkbenchProviderProps {
 	children: ReactNode;
 }
 
-function createRoomToolWorkbench() {
+/** One room's persistent store and the snapshot identity used to hydrate it. */
+interface RoomToolWorkbench {
+	store: ReturnType<typeof createWorkbenchStore>;
+	snapshot: ReturnType<typeof createToolWorkbenchLayout>;
+}
+
+function createRoomToolWorkbench(insightId: string): RoomToolWorkbench {
+	const snapshot = createToolWorkbenchLayout(insightId);
 	const store = createWorkbenchStore({
 		components: TOOL_WORKBENCH_COMPONENTS,
 	});
 	// This store outlives the conditional Workbench shell. Restore exactly once
 	// here so opening a panel while the shell is hidden cannot be overwritten on
 	// the shell's next mount.
-	store.getState().layout.actions.loadSnapshot(TOOL_WORKBENCH_LAYOUT);
-	return store;
+	store.getState().layout.actions.loadSnapshot(snapshot);
+	return { store, snapshot };
 }
 
 /** Own one persistent tool dock for the current room. */
 export function ToolWorkbenchProvider({
 	roomId,
+	insightId,
 	tools,
 	pendingApprovals,
 	onApproveTool,
 	onRejectTool,
 	children,
 }: ToolWorkbenchProviderProps) {
-	const [store] = useState(createRoomToolWorkbench);
+	const [{ store, snapshot }] = useState(() =>
+		createRoomToolWorkbench(insightId),
+	);
 	const [isOpen, setIsOpen] = useState(false);
 	const [inlineToolIds, setInlineToolIds] = useState<Set<string>>(
 		() => new Set(),
@@ -64,18 +76,27 @@ export function ToolWorkbenchProvider({
 		store.subscribe,
 		() => {
 			const state = store.getState().layout;
-			const selected = state.selection.panel;
-			const toolId = selected
-				? state.panels[selected]?.config?.toolId
+			const selectedToolId = state.selection.panel
+				? state.panels[state.selection.panel]?.config?.toolId
 				: undefined;
-			return typeof toolId === "string" ? toolId : null;
+			if (typeof selectedToolId === "string") return selectedToolId;
+
+			// Selecting the file rail or an editor must not disable the workbench
+			// toggle. Keep the most recently selected tool as the focus return
+			// target while a file panel is active.
+			for (
+				let index = state.selection.history.length - 1;
+				index >= 0;
+				index -= 1
+			) {
+				const toolId =
+					state.panels[state.selection.history[index]]?.config
+						?.toolId;
+				if (typeof toolId === "string") return toolId;
+			}
+			return null;
 		},
 		() => null,
-	);
-	const panelCount = useSyncExternalStore(
-		store.subscribe,
-		() => Object.keys(store.getState().layout.panels).length,
-		() => 0,
 	);
 	const workbenchToolIdsKey = useSyncExternalStore(
 		store.subscribe,
@@ -83,6 +104,7 @@ export function ToolWorkbenchProvider({
 			JSON.stringify(
 				Object.values(store.getState().layout.panels)
 					.flatMap((panel) => {
+						if (panel.type !== TOOL_PANEL_TYPE) return [];
 						const toolId = panel.config?.toolId;
 						return typeof toolId === "string" ? [toolId] : [];
 					})
@@ -96,8 +118,25 @@ export function ToolWorkbenchProvider({
 	);
 
 	useEffect(() => {
-		if (panelCount === 0) setIsOpen(false);
-	}, [panelCount]);
+		const layout = store.getState().layout;
+		for (const panel of layout.actions.findPanels((candidate) => {
+			const mode = (
+				candidate.config as { mode?: FilePanelMode } | undefined
+			)?.mode;
+			return (
+				isFilePanelType(candidate.type) &&
+				mode?.type === "INSIGHT" &&
+				mode.insightId !== insightId
+			);
+		})) {
+			layout.actions.updatePanel(panel.id, {
+				config: {
+					...panel.config,
+					mode: { type: "INSIGHT", insightId },
+				},
+			});
+		}
+	}, [insightId, store]);
 
 	useEffect(() => {
 		const layout = store.getState().layout;
@@ -118,23 +157,25 @@ export function ToolWorkbenchProvider({
 	}, []);
 
 	const openWorkbench = useCallback(
-		(toolId: string) => {
-			setInlineToolIds((current) => {
-				if (!current.has(toolId)) return current;
-				const next = new Set(current);
-				next.delete(toolId);
-				return next;
-			});
-			const actions = store.getState().layout.actions;
-			const panelId = actions.selectPanel(
-				TOOL_PANEL_TYPE,
-				{ toolId },
-				{ name: tools[toolId]?.title ?? "Tool" },
-			);
-			actions.updatePanel(panelId, {
-				name: tools[toolId]?.title ?? "Tool",
-				config: { toolId },
-			});
+		(toolId?: string) => {
+			if (toolId) {
+				setInlineToolIds((current) => {
+					if (!current.has(toolId)) return current;
+					const next = new Set(current);
+					next.delete(toolId);
+					return next;
+				});
+				const actions = store.getState().layout.actions;
+				const panelId = actions.selectPanel(
+					TOOL_PANEL_TYPE,
+					{ toolId },
+					{ name: tools[toolId]?.title ?? "Tool" },
+				);
+				actions.updatePanel(panelId, {
+					name: tools[toolId]?.title ?? "Tool",
+					config: { toolId },
+				});
+			}
 			setIsOpen(true);
 		},
 		[store, tools],
@@ -227,6 +268,7 @@ export function ToolWorkbenchProvider({
 	const value = useMemo(
 		() => ({
 			store,
+			snapshot,
 			roomId,
 			tools,
 			pendingApprovals,
@@ -243,6 +285,7 @@ export function ToolWorkbenchProvider({
 		}),
 		[
 			store,
+			snapshot,
 			roomId,
 			tools,
 			pendingApprovals,

@@ -7,6 +7,7 @@ import {
 	CardContent,
 	CardHeader,
 	CardTitle,
+	useSidebar,
 } from "@semoss/ui/next";
 import { useMain } from "@/app/main.context";
 import { AgentAvatar } from "@/components/common/agent-avatar";
@@ -15,6 +16,12 @@ import { agentNewPath, agentPath } from "@/lib/workspace-paths";
 
 export function AgentsOverviewPage() {
 	const { agents, sessions } = useMain();
+	const { setOpen, setOpenMobile } = useSidebar();
+
+	function handleAgentSelect() {
+		setOpen(false);
+		setOpenMobile(false);
+	}
 
 	return (
 		<div className="min-h-0 min-w-0 flex-1 overflow-y-auto bg-background">
@@ -56,6 +63,7 @@ export function AgentsOverviewPage() {
 								<Link
 									key={agent.id}
 									to={agentPath(agent.id)}
+									onClick={handleAgentSelect}
 									aria-label={`Open ${agent.name}`}
 									className="rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
 								>

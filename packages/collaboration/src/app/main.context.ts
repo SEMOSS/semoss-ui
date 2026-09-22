@@ -20,7 +20,9 @@ export interface MainContext {
 	/** @deprecated Data ownership is being moved to feature-local queries. */
 	sessions: Session[];
 	setSessions: Dispatch<SetStateAction<Session[]>>;
+	addPendingRoom: (session: Session) => void;
 	updateRoom: (id: string, changes: Partial<Session>) => void;
+	trackGeneratedRoomName: (agentId: string, roomId: string) => void;
 	pinRoom: (id: string, pinned: boolean) => Promise<void>;
 	/** Save using the route's workspace id when editing, even before the list loads. */
 	saveAgent: (

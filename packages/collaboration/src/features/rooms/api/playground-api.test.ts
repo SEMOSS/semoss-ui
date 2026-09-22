@@ -40,6 +40,44 @@ describe("playground room APIs", () => {
 		expect(optionsStatement).toContain('"harnessType":"semoss"');
 	});
 
+	it("retains an allocated room id and resumes setup without creating another room", async () => {
+		const onCreated = vi.fn();
+		const firstRun = vi
+			.fn()
+			.mockResolvedValueOnce(pixelResponse({ roomId: "room-1" }))
+			.mockRejectedValueOnce(new Error("Options unavailable"));
+
+		await expect(
+			createRoom(
+				{ run: firstRun } as never,
+				"insight-1",
+				{
+					workspaceId: "workspace-1",
+					workspaceName: "Research",
+				},
+				{ onCreated },
+			),
+		).rejects.toThrow("Options unavailable");
+		expect(onCreated).toHaveBeenCalledWith("room-1");
+
+		const retryRun = vi.fn().mockResolvedValue(pixelResponse(true));
+		await expect(
+			createRoom(
+				{ run: retryRun } as never,
+				"insight-1",
+				{
+					workspaceId: "workspace-1",
+					workspaceName: "Research",
+				},
+				{ roomId: "room-1" },
+			),
+		).resolves.toBe("room-1");
+		expect(retryRun.mock.calls.map(([statement]) => statement)).toEqual([
+			expect.stringContaining("UpdateRoomOptions"),
+			'SetRoomForInsight(roomId=["room-1"]);',
+		]);
+	});
+
 	it("lists playground rooms once and maps uppercase fields", async () => {
 		const run = vi.fn().mockResolvedValue(
 			pixelResponse([

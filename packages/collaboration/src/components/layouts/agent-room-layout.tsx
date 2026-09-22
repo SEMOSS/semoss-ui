@@ -1,5 +1,5 @@
 import { type CSSProperties, useCallback, useId } from "react";
-import { Outlet, useParams } from "react-router";
+import { Outlet, useNavigate, useParams, useSearchParams } from "react-router";
 import {
 	Sidebar,
 	SidebarProvider,
@@ -9,6 +9,7 @@ import {
 import { useMain } from "@/app/main.context";
 import { RoomProvider } from "@/app/room.context";
 import { AgentRoomsList } from "@/features/agents/components/agent-rooms-list";
+import { draftRoomPath } from "@/lib/workspace-paths";
 
 function AgentRoomSidebar({
 	agentId,
@@ -18,6 +19,8 @@ function AgentRoomSidebar({
 	roomId?: string;
 }) {
 	const workspace = useMain();
+	const navigate = useNavigate();
+	const [searchParams] = useSearchParams();
 	const sidebarId = useId();
 	const { isMobile, setOpenMobile, state } = useSidebar();
 	const collapsed = state === "collapsed";
@@ -28,10 +31,13 @@ function AgentRoomSidebar({
 		},
 		[isMobile, setOpenMobile, workspace],
 	);
-	const newRoom = useCallback(
-		() => workspace.newRoom(agentId),
-		[agentId, workspace],
-	);
+	const currentModelId = roomId
+		? workspace.sessions.find((session) => session.id === roomId)?.modelId
+		: searchParams.get("model") || undefined;
+	const newRoom = useCallback(() => {
+		navigate(draftRoomPath(agentId, crypto.randomUUID(), currentModelId));
+		if (isMobile) setOpenMobile(false);
+	}, [agentId, currentModelId, isMobile, navigate, setOpenMobile]);
 
 	return (
 		<Sidebar
@@ -74,9 +80,11 @@ function AgentRoomSidebar({
 function AgentRoomContent({
 	agentId,
 	roomId,
+	draftId,
 }: {
 	agentId: string;
 	roomId?: string;
+	draftId?: string;
 }) {
 	const { toggleSidebar } = useSidebar();
 
@@ -84,7 +92,7 @@ function AgentRoomContent({
 		<>
 			<AgentRoomSidebar agentId={agentId} roomId={roomId} />
 			<RoomProvider value={{ openRoomsList: toggleSidebar }}>
-				<Outlet key={roomId} />
+				<Outlet key={roomId ?? draftId} />
 			</RoomProvider>
 		</>
 	);
@@ -96,7 +104,7 @@ function AgentRoomContent({
  * that drawer.
  */
 export function AgentRoomLayout() {
-	const { agentId = "", roomId } = useParams();
+	const { agentId = "", roomId, draftId } = useParams();
 
 	return (
 		<SidebarProvider
@@ -108,7 +116,11 @@ export function AgentRoomLayout() {
 				} as CSSProperties
 			}
 		>
-			<AgentRoomContent agentId={agentId} roomId={roomId} />
+			<AgentRoomContent
+				agentId={agentId}
+				roomId={roomId}
+				draftId={draftId}
+			/>
 		</SidebarProvider>
 	);
 }

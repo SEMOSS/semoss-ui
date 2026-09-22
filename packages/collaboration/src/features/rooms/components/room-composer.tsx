@@ -99,6 +99,7 @@ export function RoomComposer({
 	modelId,
 	modelName,
 	isModelSaving,
+	isModelLocked = false,
 	modelError,
 	roomInstructions,
 	onModelChange,
@@ -114,6 +115,7 @@ export function RoomComposer({
 	modelId: string;
 	modelName: string;
 	isModelSaving: boolean;
+	isModelLocked?: boolean;
 	modelError: Error | null;
 	roomInstructions: string;
 	onModelChange: (engine: Engine) => Promise<void>;
@@ -466,7 +468,10 @@ export function RoomComposer({
 								name={modelName}
 								value={modelId}
 								disabled={
-									isRunning || isSubmitting || isModelSaving
+									isRunning ||
+									isSubmitting ||
+									isModelSaving ||
+									isModelLocked
 								}
 								engineTypes={["MODEL"]}
 								metaFilters={[{ tag: "text-generation" }]}

@@ -17,7 +17,7 @@ export function RoomHeader({
 	agentId,
 	session,
 	isToolWorkbenchOpen,
-	canToggleToolWorkbench,
+	showToolWorkbench = true,
 	onToggleToolWorkbench,
 	onConfigure,
 }: {
@@ -25,7 +25,7 @@ export function RoomHeader({
 	agentId: string;
 	session: Session;
 	isToolWorkbenchOpen: boolean;
-	canToggleToolWorkbench: boolean;
+	showToolWorkbench?: boolean;
 	onToggleToolWorkbench: () => void;
 	onConfigure: (id: string) => void;
 }) {
@@ -67,26 +67,27 @@ export function RoomHeader({
 					</TooltipContent>
 				</Tooltip>
 
-				<Tooltip>
-					<TooltipTrigger asChild>
-						<Button
-							type="button"
-							variant="ghost"
-							size="icon-sm"
-							aria-label={toolWorkbenchLabel}
-							aria-expanded={isToolWorkbenchOpen}
-							disabled={!canToggleToolWorkbench}
-							onClick={onToggleToolWorkbench}
-						>
-							{isToolWorkbenchOpen ? (
-								<PanelRightClose aria-hidden="true" />
-							) : (
-								<PanelRightOpen aria-hidden="true" />
-							)}
-						</Button>
-					</TooltipTrigger>
-					<TooltipContent>{toolWorkbenchLabel}</TooltipContent>
-				</Tooltip>
+				{showToolWorkbench && (
+					<Tooltip>
+						<TooltipTrigger asChild>
+							<Button
+								type="button"
+								variant="ghost"
+								size="icon-sm"
+								aria-label={toolWorkbenchLabel}
+								aria-expanded={isToolWorkbenchOpen}
+								onClick={onToggleToolWorkbench}
+							>
+								{isToolWorkbenchOpen ? (
+									<PanelRightClose aria-hidden="true" />
+								) : (
+									<PanelRightOpen aria-hidden="true" />
+								)}
+							</Button>
+						</TooltipTrigger>
+						<TooltipContent>{toolWorkbenchLabel}</TooltipContent>
+					</Tooltip>
+				)}
 			</header>
 			<div className="flex shrink-0 flex-wrap items-center justify-between gap-2 border-b bg-muted/20 px-5 py-2.5">
 				<span

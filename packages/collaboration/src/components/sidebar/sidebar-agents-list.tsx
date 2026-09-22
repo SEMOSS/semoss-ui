@@ -1,7 +1,14 @@
 import { Pin, Plus, Search } from "lucide-react";
 import { useCallback, useState } from "react";
 import { Link } from "react-router";
-import { Button, cn, Input, Spinner, useInfiniteScroll } from "@semoss/ui/next";
+import {
+	Button,
+	cn,
+	Input,
+	Spinner,
+	useInfiniteScroll,
+	useSidebar,
+} from "@semoss/ui/next";
 import { AgentAvatar } from "@/components/common/agent-avatar";
 import type { Agent } from "@/types/agent";
 import type { Session } from "@/types/session";
@@ -23,6 +30,7 @@ export function SidebarAgentsList({
 	// session pin, which has the same gap for rooms).
 	const [pinnedIds, setPinnedIds] = useState<Set<string>>(new Set());
 	const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+	const { setOpen, setOpenMobile } = useSidebar();
 
 	const filtered = agents.filter((agent) =>
 		agent.name
@@ -55,6 +63,11 @@ export function SidebarAgentsList({
 			}
 			return next;
 		});
+	}
+
+	function handleAgentSelect() {
+		setOpen(false);
+		setOpenMobile(false);
 	}
 
 	return (
@@ -104,6 +117,7 @@ export function SidebarAgentsList({
 						>
 							<Link
 								to={`/agents/${encodeURIComponent(agent.id)}`}
+								onClick={handleAgentSelect}
 								aria-current={
 									agentId === agent.id ? "page" : undefined
 								}

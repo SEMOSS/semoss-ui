@@ -9,6 +9,7 @@ import { RoomWorkspace } from "./room-workspace";
 
 export function RoomView({
 	agent,
+	insightId,
 	sessions,
 	agentId,
 	sessionId,
@@ -25,6 +26,8 @@ export function RoomView({
 	modelId,
 	modelName,
 	isModelSaving,
+	isModelLocked = false,
+	showToolWorkbench = true,
 	modelError,
 	roomInstructions,
 	onSendMessage,
@@ -51,6 +54,7 @@ export function RoomView({
 					<ToolWorkbenchProvider
 						key={sessionId}
 						roomId={sessionId}
+						insightId={insightId}
 						tools={tools}
 						pendingApprovals={pendingApprovals}
 						onApproveTool={onApproveTool}
@@ -72,6 +76,8 @@ export function RoomView({
 							modelId={modelId}
 							modelName={modelName}
 							isModelSaving={isModelSaving}
+							isModelLocked={isModelLocked}
+							showToolWorkbench={showToolWorkbench}
 							modelError={modelError}
 							roomInstructions={roomInstructions}
 							onSendMessage={onSendMessage}

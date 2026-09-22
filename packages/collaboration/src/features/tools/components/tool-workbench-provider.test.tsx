@@ -1,6 +1,8 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { FILE_PANEL_TYPES } from "@semoss/panels";
 import type { ConversationTool } from "@/features/messages/types/message";
 import type { PendingToolApproval } from "@/features/rooms/types/room";
+import { TOOL_WORKBENCH_COMPONENTS } from "../tool-workbench.components";
 import { toolCardTriggerId } from "../tool-workbench.constants";
 import { useToolWorkbench } from "../tool-workbench.context";
 import { ToolWorkbench } from "./tool-workbench";
@@ -40,6 +42,9 @@ function Harness() {
 			>
 				Workbench
 			</button>
+			<button type="button" onClick={() => workbench.openWorkbench()}>
+				Open sidebar
+			</button>
 			<button type="button" onClick={workbench.closeWorkbench}>
 				Hide workbench
 			</button>
@@ -64,6 +69,7 @@ function renderProvider(
 	return render(
 		<ToolWorkbenchProvider
 			roomId="room-1"
+			insightId="insight-1"
 			tools={{ [tool.id]: tool }}
 			pendingApprovals={pendingApprovals}
 			onApproveTool={callbacks.onApproveTool ?? vi.fn()}
@@ -98,6 +104,7 @@ describe("ToolWorkbenchProvider", () => {
 			expect(screen.getByTestId("workbench").textContent).toBe("true"),
 		);
 		expect(screen.getByTestId("mode").textContent).toBe("workbench");
+		expect(screen.getByRole("tab", { name: "Files" })).toBeInTheDocument();
 
 		fireEvent.click(screen.getByRole("button", { name: "Hide workbench" }));
 		expect(screen.getByTestId("workbench").textContent).toBe("false");
@@ -105,6 +112,45 @@ describe("ToolWorkbenchProvider", () => {
 		await waitFor(() =>
 			expect(document.activeElement?.textContent).toBe("Transcript tool"),
 		);
+	});
+
+	it("registers editors for files opened from the left rail", () => {
+		expect(
+			TOOL_WORKBENCH_COMPONENTS[FILE_PANEL_TYPES.FILE_CODE_EDITOR],
+		).toBeDefined();
+		renderProvider();
+		const workbench = screen.getByTestId("mode");
+		expect(workbench).toHaveTextContent("hidden");
+
+		// The provider owns the store before the shell is visible, so its seeded
+		// explorer and editor registrations must already be present.
+		fireEvent.click(screen.getByRole("button", { name: "Workbench" }));
+		expect(
+			screen.getByTestId(
+				`workbench-tab-${FILE_PANEL_TYPES.FILE_EXPLORER}`,
+			),
+		).toBeInTheDocument();
+	});
+
+	it("stays open for files after its last tool closes", async () => {
+		renderProvider();
+		fireEvent.click(screen.getByRole("button", { name: "Workbench" }));
+		expect(screen.getByRole("tab", { name: "Files" })).toBeInTheDocument();
+
+		fireEvent.click(screen.getByRole("button", { name: "Close tool" }));
+		await waitFor(() =>
+			expect(screen.getByTestId("mode")).toHaveTextContent("hidden"),
+		);
+		expect(screen.getByRole("tab", { name: "Files" })).toBeInTheDocument();
+	});
+
+	it("opens the sidebar without an active tool", async () => {
+		renderProvider();
+		fireEvent.click(screen.getByRole("button", { name: "Open sidebar" }));
+
+		expect(
+			await screen.findByRole("tab", { name: "Files" }),
+		).toBeInTheDocument();
 	});
 
 	it("opens an approval in the desktop workbench automatically", async () => {

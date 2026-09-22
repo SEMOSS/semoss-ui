@@ -32,6 +32,7 @@ export function sessionFromRoom(row: RoomRow): Session {
 	return {
 		id: row.roomId,
 		agentId: row.workspaceId ?? "",
+		modelId: row.modelId,
 		title: row.roomName?.trim() || "Untitled room",
 		origin: "You",
 		status: "Ready",
@@ -49,10 +50,12 @@ export function pendingSession(
 	roomId: string,
 	agentId: string,
 	title: string,
+	modelId?: string,
 ): Session {
 	return {
 		id: roomId,
 		agentId,
+		modelId,
 		title,
 		origin: "You",
 		status: "Ready",

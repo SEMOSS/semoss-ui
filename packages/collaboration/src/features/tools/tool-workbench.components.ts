@@ -1,5 +1,6 @@
 import { Hammer } from "lucide-react";
 import { createElement } from "react";
+import { FILE_PANEL_COMPONENTS } from "@semoss/panels";
 import type { WorkbenchPanelConfigAny } from "@semoss/workbench";
 import { ToolPanel } from "./components/tool-panel";
 import { TOOL_PANEL_TYPE } from "./tool-workbench.constants";
@@ -19,5 +20,6 @@ export const TOOL_WORKBENCH_COMPONENTS: Record<
 	string,
 	WorkbenchPanelConfigAny
 > = {
+	...FILE_PANEL_COMPONENTS,
 	[TOOL_PANEL_TYPE]: TOOL_PANEL,
 };

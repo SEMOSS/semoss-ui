@@ -1,6 +1,13 @@
 import { callPixel, type InsightActions, pixel } from "@/lib/pixel";
 import { createdPlaygroundRoomSchema, roomWriteSchema } from "./room-schemas";
 
+interface CreateRoomAttempt {
+	/** Reconfigure a room allocated by an earlier, partially failed attempt. */
+	roomId?: string;
+	/** Retain the allocated id before the remaining setup calls can fail. */
+	onCreated?: (roomId: string) => void;
+}
+
 /** Create and fully configure one workspace-backed playground room. */
 export async function createRoom(
 	actions: InsightActions,
@@ -12,12 +19,18 @@ export async function createRoom(
 		modelId?: string;
 		name?: string;
 	},
+	attempt: CreateRoomAttempt = {},
 ): Promise<string> {
-	const created = await callPixel(
-		actions,
-		pixel("CreatePlaygroundRoom", { workspaceId: options.workspaceId }),
-		createdPlaygroundRoomSchema,
-	);
+	let roomId = attempt.roomId;
+	if (!roomId) {
+		const created = await callPixel(
+			actions,
+			pixel("CreatePlaygroundRoom", { workspaceId: options.workspaceId }),
+			createdPlaygroundRoomSchema,
+		);
+		roomId = created.roomId;
+		attempt.onCreated?.(roomId);
+	}
 	const roomOptions = {
 		predefinedPrompts: [],
 		instructions: options.instructions ?? "",
@@ -33,7 +46,7 @@ export async function createRoom(
 	const updated = await callPixel(
 		actions,
 		pixel("UpdateRoomOptions", {
-			roomId: created.roomId,
+			roomId,
 			roomOptions: [roomOptions],
 		}),
 		roomWriteSchema,
@@ -44,7 +57,7 @@ export async function createRoom(
 		const renamed = await callPixel(
 			actions,
 			pixel("SetRoomName", {
-				roomId: created.roomId,
+				roomId,
 				roomName: options.name,
 			}),
 			roomWriteSchema,
@@ -54,11 +67,11 @@ export async function createRoom(
 
 	const bound = await callPixel(
 		actions,
-		pixel("SetRoomForInsight", { roomId: created.roomId }),
+		pixel("SetRoomForInsight", { roomId }),
 		roomWriteSchema,
 	);
 	if (!bound)
 		throw new Error("SEMOSS did not bind the room to this insight.");
 
-	return created.roomId;
+	return roomId;
 }

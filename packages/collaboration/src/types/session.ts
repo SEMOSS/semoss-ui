@@ -14,6 +14,7 @@ interface ThreadItem {
 export interface Session {
 	id: string;
 	agentId: string;
+	modelId?: string;
 	title: string;
 	origin: Origin;
 	status: "Your review" | "Ready" | "In progress" | "Stopped";

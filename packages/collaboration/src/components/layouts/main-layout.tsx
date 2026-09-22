@@ -1,4 +1,10 @@
-import { type CSSProperties, useCallback, useState } from "react";
+import {
+	type CSSProperties,
+	useCallback,
+	useEffect,
+	useRef,
+	useState,
+} from "react";
 import { Link, Outlet, useNavigate, useParams } from "react-router";
 import { useInsight } from "@semoss/sdk/react";
 import {
@@ -21,11 +27,13 @@ import { SidebarAgentsList } from "@/components/sidebar/sidebar-agents-list";
 import { SidebarFooter } from "@/components/sidebar/sidebar-footer";
 import { SidebarHeader } from "@/components/sidebar/sidebar-header";
 import { getAgent } from "@/features/agents/api/get-agent";
+import { roomsKey } from "@/features/agents/api/refresh-keys";
 import { useSaveAgent } from "@/features/agents/api/use-save-agent";
 import { useWorkspaceData } from "@/features/agents/api/use-workspace-data";
 import { NewSessionDialog } from "@/features/agents/components/new-session-dialog";
 import { createRoom } from "@/features/rooms/api/create-room";
 import { pinRoom as persistRoomPin } from "@/features/rooms/api/pin-room";
+import { waitForGeneratedRoomName } from "@/features/rooms/api/wait-for-generated-room-name";
 import { pendingSession } from "@/features/rooms/utils/session-from-room";
 import { toError } from "@/lib/pixel";
 import { roomPath } from "@/lib/workspace-paths";
@@ -74,6 +82,7 @@ export function MainLayout() {
 	const workspaceData = useWorkspaceData(keys);
 	const { agents, sessions, setSessions, addPendingRoom, isLoading, error } =
 		workspaceData;
+	const roomNameWatchers = useRef(new Map<string, AbortController>());
 
 	const [setup, setSetup] = useState<{ agentId?: string }>();
 
@@ -92,6 +101,43 @@ export function MainLayout() {
 			);
 		},
 		[setSessions],
+	);
+
+	useEffect(
+		() => () => {
+			for (const controller of roomNameWatchers.current.values()) {
+				controller.abort();
+			}
+			roomNameWatchers.current.clear();
+		},
+		[],
+	);
+
+	const trackGeneratedRoomName = useCallback(
+		(roomAgentId: string, roomId: string) => {
+			if (roomNameWatchers.current.has(roomId)) return;
+			const controller = new AbortController();
+			roomNameWatchers.current.set(roomId, controller);
+			void waitForGeneratedRoomName(actions, roomId, {
+				signal: controller.signal,
+			})
+				.then((name) => {
+					if (!name || controller.signal.aborted) return;
+					updateRoom(roomId, { title: name });
+					setKeys((current) =>
+						refreshKey(current, roomsKey(roomAgentId)),
+					);
+				})
+				.catch(() => {
+					// Naming is best-effort and the settled-run refresh remains a fallback.
+				})
+				.finally(() => {
+					if (roomNameWatchers.current.get(roomId) === controller) {
+						roomNameWatchers.current.delete(roomId);
+					}
+				});
+		},
+		[actions, updateRoom],
 	);
 
 	const pinCurrentRoom = useCallback(
@@ -148,7 +194,14 @@ export function MainLayout() {
 				name: draft.title,
 			});
 
-			addPendingRoom(pendingSession(roomId, draft.agentId, draft.title));
+			addPendingRoom(
+				pendingSession(
+					roomId,
+					draft.agentId,
+					draft.title,
+					agent.config_json?.model_id,
+				),
+			);
 			setSetup(undefined);
 			navigate(roomPath(draft.agentId, roomId));
 		},
@@ -167,7 +220,9 @@ export function MainLayout() {
 		agents,
 		sessions,
 		setSessions,
+		addPendingRoom,
 		updateRoom,
+		trackGeneratedRoomName,
 		pinRoom: pinCurrentRoom,
 		saveAgent,
 		openRoom,

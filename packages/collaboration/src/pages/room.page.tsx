@@ -124,13 +124,14 @@ export function RoomPage() {
 			if (turn.isRunning) return;
 			try {
 				await modelSelection.selectModel(engine);
+				if (roomId) updateRoom(roomId, { modelId: engine.engine_id });
 			} catch (cause) {
 				toast.error(
 					`The model could not be changed. ${toError(cause).message}`,
 				);
 			}
 		},
-		[modelSelection.selectModel, turn.isRunning],
+		[modelSelection.selectModel, roomId, turn.isRunning, updateRoom],
 	);
 
 	const handleOptimizePrompt = useCallback(
@@ -185,11 +186,15 @@ export function RoomPage() {
 	);
 	const sessions = isListed
 		? workspace.sessions
-		: [pendingSession(roomId, agentId, "New room"), ...workspace.sessions];
+		: [
+				pendingSession(roomId, agentId, "New room", modelId),
+				...workspace.sessions,
+			];
 
 	return (
 		<RoomView
 			agent={agent}
+			insightId={insightId}
 			sessions={sessions}
 			agentId={agentId}
 			sessionId={roomId}

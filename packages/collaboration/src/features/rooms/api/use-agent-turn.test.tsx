@@ -1,7 +1,7 @@
 import { act, renderHook, waitFor } from "@testing-library/react";
 import type { AgentRun } from "./agent-run-api";
 import * as api from "./agent-run-api";
-import { useAgentTurn } from "./use-agent-turn";
+import { submitAgentTurn, useAgentTurn } from "./use-agent-turn";
 
 vi.mock("./agent-run-api", async (original) => ({
 	...(await original<typeof import("./agent-run-api")>()),
@@ -66,4 +66,43 @@ it("shares one run observer across subscribers and room navigation", async () =>
 	expect(onSettled).toHaveBeenCalledExactlyOnceWith("shared-room");
 	expect(api.startAgentRun).toHaveBeenCalledTimes(1);
 	reopened.unmount();
+});
+
+it("hands a draft submission to the room subscriber without starting it twice", async () => {
+	vi.mocked(api.startAgentRun).mockClear();
+	vi.mocked(api.pollRun).mockClear();
+	const snapshot: AgentRun = {
+		runId: "draft-run",
+		roomId: "draft-room",
+		status: "RUNNING",
+		pendingActions: [],
+	};
+	vi.mocked(api.startAgentRun).mockResolvedValue(snapshot);
+	vi.mocked(api.pollRun).mockReturnValue(new Promise(() => undefined));
+	const config = {
+		insightId: "draft-insight",
+		roomId: "draft-room",
+		agentId: "agent-1",
+		engine: "model-1",
+		maxTurns: 40,
+	};
+
+	await submitAgentTurn(config, { text: "Start from a draft", files: [] });
+	const room = renderHook(() => useAgentTurn(config));
+
+	expect(room.result.current.isRunning).toBe(true);
+	expect(
+		room.result.current.messages.some(
+			(message) =>
+				message.role === "user" &&
+				message.parts.some(
+					(part) =>
+						part.type === "text" &&
+						part.text === "Start from a draft",
+				),
+		),
+	).toBe(true);
+	expect(api.startAgentRun).toHaveBeenCalledTimes(1);
+	expect(api.pollRun).toHaveBeenCalledTimes(1);
+	room.unmount();
 });

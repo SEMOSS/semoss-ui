@@ -28,6 +28,14 @@ function roomController(config: AgentTurnConfig): AgentTurnController {
 	return controller;
 }
 
+/** Submit through the same controller instance that the durable room will observe. */
+export async function submitAgentTurn(
+	config: AgentTurnConfig,
+	submission: ComposerSubmission,
+): Promise<void> {
+	await roomController(config).send(submission);
+}
+
 interface UseAgentTurnOptions extends AgentTurnConfig {
 	onSettled?: (roomId: string) => void;
 }

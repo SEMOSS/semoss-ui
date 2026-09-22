@@ -33,6 +33,7 @@ describe("useRooms", () => {
 			{
 				roomId: "pending-room",
 				roomName: "New research",
+				modelId: "model-2",
 				workspaceId: "workspace-1",
 				dateUpdated: "2026-09-22T12:00:00Z",
 			},
@@ -47,6 +48,7 @@ describe("useRooms", () => {
 			result.current.addPendingRoom({
 				id: "pending-room",
 				agentId: "workspace-1",
+				modelId: "model-1",
 				title: "New research",
 				origin: "You",
 				status: "Ready",
@@ -80,6 +82,7 @@ describe("useRooms", () => {
 				expect.objectContaining({
 					id: "pending-room",
 					agentId: "workspace-1",
+					modelId: "model-2",
 					title: "New research",
 					updatedAt: "2026-09-22T12:00:00Z",
 				}),

@@ -1,4 +1,7 @@
-import type { createWorkbenchStore } from "@semoss/workbench";
+import type {
+	createWorkbenchStore,
+	WorkbenchSnapshot,
+} from "@semoss/workbench";
 import type { ConversationTool } from "@/features/messages/types/message";
 import type { PendingToolApproval } from "@/features/rooms/types/room";
 
@@ -10,6 +13,7 @@ type ToolDisplayMode = "hidden" | "inline" | "workbench";
 
 export interface ToolWorkbenchContextValue {
 	store: ReturnType<typeof createWorkbenchStore>;
+	snapshot: WorkbenchSnapshot;
 	roomId: string;
 	tools: Record<string, ConversationTool>;
 	pendingApprovals: PendingToolApproval[];
@@ -18,7 +22,7 @@ export interface ToolWorkbenchContextValue {
 	isToolInline: (toolId: string) => boolean;
 	getToolDisplayMode: (toolId: string) => ToolDisplayMode;
 	openInline: (toolId: string) => void;
-	openWorkbench: (toolId: string) => void;
+	openWorkbench: (toolId?: string) => void;
 	closeTool: (toolId: string) => void;
 	closeWorkbench: () => void;
 	onApproveTool: (

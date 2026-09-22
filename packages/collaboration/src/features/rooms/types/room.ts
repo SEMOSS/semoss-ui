@@ -30,6 +30,7 @@ export interface PendingToolApproval {
 /** Everything the room screen renders and every action it can raise. */
 export interface RoomViewProps {
 	agent: Agent;
+	insightId: string;
 	sessions: Session[];
 	agentId: string;
 	sessionId: string;
@@ -45,6 +46,8 @@ export interface RoomViewProps {
 	modelId: string;
 	modelName: string;
 	isModelSaving: boolean;
+	isModelLocked?: boolean;
+	showToolWorkbench?: boolean;
 	isCancelling: boolean;
 	modelError: Error | null;
 	roomInstructions: string;

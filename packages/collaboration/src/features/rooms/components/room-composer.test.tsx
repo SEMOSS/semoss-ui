@@ -79,6 +79,18 @@ describe("RoomComposer", () => {
 		window.webkitSpeechRecognition = undefined;
 	});
 
+	it("focuses the composer when a fresh room opens", async () => {
+		renderComposer();
+
+		await waitFor(() =>
+			expect(
+				screen.getByRole("textbox", {
+					name: "Message Research agent",
+				}),
+			).toHaveFocus(),
+		);
+	});
+
 	it("submits with Enter, keeps Shift+Enter as a newline, and ignores IME Enter", async () => {
 		const user = userEvent.setup();
 		const onSend = vi.fn(async () => undefined);
@@ -167,6 +179,30 @@ describe("RoomComposer", () => {
 		).toBeDisabled();
 		await user.keyboard("{Enter}");
 		expect(onSend).not.toHaveBeenCalled();
+	});
+
+	it("locks a created room's model without blocking a submission retry", async () => {
+		const user = userEvent.setup();
+		const onSend = vi.fn(async () => undefined);
+		renderComposer({ isModelLocked: true, onSend });
+		const editor = screen.getByRole("textbox", {
+			name: "Message Research agent",
+		});
+		await user.click(editor);
+		pasteText(editor, "Retry this submission");
+
+		expect(
+			screen.getByRole("button", { name: "Choose model" }),
+		).toBeDisabled();
+		await waitFor(() =>
+			expect(
+				screen.getByRole("button", {
+					name: "Send message to Research agent",
+				}),
+			).toBeEnabled(),
+		);
+		await user.keyboard("{Enter}");
+		await waitFor(() => expect(onSend).toHaveBeenCalledTimes(1));
 	});
 
 	it("limits the editor to 8,000 characters", async () => {
