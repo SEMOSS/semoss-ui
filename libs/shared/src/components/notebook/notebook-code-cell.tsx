@@ -99,7 +99,7 @@ export const NotebookCodeCell: React.FC<NotebookCodeCellProps> = ({
 	const hasVisibleOutput = hasOutputs || hasStreaming;
 
 	const gutterAction = isRunning ? (
-		<Tooltip>
+		<Tooltip disableHoverableContent={false}>
 			<TooltipTrigger asChild>
 				<Button
 					variant="ghost"
@@ -117,24 +117,33 @@ export const NotebookCodeCell: React.FC<NotebookCodeCellProps> = ({
 			<TooltipContent>Stop execution</TooltipContent>
 		</Tooltip>
 	) : (
-		<Tooltip>
+		<Tooltip disableHoverableContent={false}>
 			<TooltipTrigger asChild>
-				<Button
-					variant="ghost"
-					size="icon-sm"
-					className="sticky top-0 size-6 text-muted-foreground/60 hover:text-foreground"
-					disabled={disabled}
-					onClick={(e) => {
-						e.stopPropagation();
-						onClearOutput(index);
-						onRun(index);
-					}}
-					aria-label="Run cell"
+				<span
+					className="inline-flex"
+					tabIndex={disabled ? 0 : undefined}
 				>
-					<PlayIcon className="size-3.5" />
-				</Button>
+					<Button
+						variant="ghost"
+						size="icon-sm"
+						className="sticky top-0 size-6 text-muted-foreground/60 hover:text-foreground"
+						disabled={disabled}
+						onClick={(e) => {
+							e.stopPropagation();
+							onClearOutput(index);
+							onRun(index);
+						}}
+						aria-label="Run cell"
+					>
+						<PlayIcon className="size-3.5" />
+					</Button>
+				</span>
 			</TooltipTrigger>
-			<TooltipContent>Run cell</TooltipContent>
+			<TooltipContent>
+				{disabled
+					? "Wait for the notebook to finish its current operation"
+					: "Run cell"}
+			</TooltipContent>
 		</Tooltip>
 	);
 
@@ -269,7 +278,7 @@ export const NotebookCodeCell: React.FC<NotebookCodeCellProps> = ({
 							</span>
 						</button>
 						{!outputsCollapsed && (
-							<Tooltip>
+							<Tooltip disableHoverableContent={false}>
 								<TooltipTrigger asChild>
 									<Button
 										variant="ghost"

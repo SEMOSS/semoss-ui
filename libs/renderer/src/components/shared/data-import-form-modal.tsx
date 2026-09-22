@@ -9,7 +9,15 @@ import {
 	Merge,
 } from "lucide-react";
 import { observer } from "mobx-react-lite";
-import { type JSX, useEffect, useMemo, useRef, useState } from "react";
+import {
+	type JSX,
+	useCallback,
+	useEffect,
+	useId,
+	useMemo,
+	useRef,
+	useState,
+} from "react";
 import { Controller, useFieldArray, useForm } from "react-hook-form";
 import { runPixel, usePixel } from "@semoss/sdk/react";
 import { EngineSubtypeIcon } from "@semoss/shared";
@@ -25,6 +33,7 @@ import {
 	DropdownMenuItem,
 	DropdownMenuTrigger,
 	Input,
+	Label,
 	Select,
 	SelectContent,
 	SelectItem,
@@ -51,6 +60,7 @@ import {
 import { DefaultCells } from "../cell-defaults";
 import { CodeCellConfig } from "../cell-defaults/code-cell";
 import { DataImportCellConfig } from "../cell-defaults/data-import-cell";
+import { getDataImportDatabases } from "./data-import-databases";
 
 const JOIN_ICONS = {
 	inner: <Merge className="size-4" />,
@@ -112,6 +122,56 @@ type FormValues = {
 	tables: TableInterface[];
 };
 
+/** Build query strings from the latest form values; the strings remain stable across unrelated renders. */
+const buildPreviewQuery = (
+	databaseId: string | null,
+	tables: TableInterface[] | undefined,
+	joins: JoinElement[] | undefined,
+	dataLimit: number,
+): { previewPixel: string; previewSelectQuery: string } => {
+	const pixelColumnNames: string[] = [];
+	const pixelColumnAliases: string[] = [];
+	const pixelJoins: string[] = [];
+
+	tables?.forEach((tableObject) => {
+		const currTableColumns = tableObject.columns;
+		currTableColumns?.forEach((columnObject) => {
+			if (columnObject.checked) {
+				pixelColumnNames.push(getColumnRef(columnObject));
+				pixelColumnAliases.push(columnObject.userAlias);
+			}
+		});
+	});
+
+	joins?.forEach((joinEle) => {
+		pixelJoins.push(
+			`( ${joinEle.leftTable} , ${joinEle.joinType}.join , ${joinEle.rightTable} )`,
+		);
+	});
+
+	let pixelStringPart1 = `Database ( database = [ "${databaseId}" ] )`;
+	pixelStringPart1 += ` | Select ( ${pixelColumnNames.join(" , ")} )`;
+	pixelStringPart1 += `.as ( [ ${pixelColumnAliases.join(" , ")} ] )`;
+	if (pixelJoins.length > 0) {
+		pixelStringPart1 += ` | Join ( ${pixelJoins.join(" , ")} ) `;
+	}
+	pixelStringPart1 += ` | Distinct ( false ) | Limit ( ${dataLimit} )`;
+
+	const combinedJoinString =
+		pixelJoins.length > 0 ? `| Join ( ${pixelJoins.join(" , ")} ) ` : "";
+
+	const reactorPixel = `Database ( database = [ "${databaseId}" ] ) | Select ( ${pixelColumnNames.join(
+		" , ",
+	)} ) .as ( [ ${pixelColumnAliases.join(
+		" , ",
+	)} ] ) ${combinedJoinString}| Distinct ( false ) | Limit ( ${dataLimit} ) | Import ( frame = [ CreateFrame ( frameType = [ GRID ] , override = [ true ] ) .as ( [ "consolidated_settings_FRAME932867__Preview" ] ) ] ) ;  META | Frame() | QueryAll() | Limit(50) | Collect(500);`;
+
+	return {
+		previewPixel: reactorPixel,
+		previewSelectQuery: `${pixelStringPart1};`,
+	};
+};
+
 export const DataImportFormModal = observer(
 	(props: {
 		query?: NotebookState;
@@ -135,23 +195,26 @@ export const DataImportFormModal = observer(
 			control: formControl,
 			setValue: formSetValue,
 			reset: formReset,
+			getValues: formGetValues,
 			handleSubmit: formHandleSubmit,
 			watch: dataImportwatch,
 		} = useForm<FormValues>();
 
 		const watchedTables = dataImportwatch("tables");
 		const watchedJoins = dataImportwatch("joins");
-		const [userDatabases, setUserDatabases] = useState<Array<{
-			engine_id: string;
-			engine_name: string;
-			engine_type?: string;
-			engine_subtype?: string;
-		}> | null>(null);
+		const databaseSelectId = useId();
 		const [databaseTableHeaders, setDatabaseTableHeaders] = useState([]);
 		const [selectedDatabaseId, setSelectedDatabaseId] = useState(
 			cell ? cell.parameters.databaseId : null,
 		);
-		const getDatabases = usePixel("META | GetDatabaseList ( ) ;");
+		const getDatabases = usePixel<unknown>("META | GetDatabaseList ( ) ;");
+		const userDatabases = useMemo(
+			() =>
+				getDatabases.status === "SUCCESS"
+					? getDataImportDatabases(getDatabases.data)
+					: [],
+			[getDatabases.status, getDatabases.data],
+		);
 		const [databaseTableRows, setDatabaseTableRows] = useState([]);
 		const [tableNames, setTableNames] = useState<string[]>([]);
 		const [isDatabaseLoading, setIsDatabaseLoading] =
@@ -170,7 +233,6 @@ export const DataImportFormModal = observer(
 		);
 
 		const [checkedColumnsCount, setCheckedColumnsCount] = useState(0);
-		const [selectedTableNames, setSelectedTableNames] = useState(new Set());
 		const [shownTables, setShownTables] = useState(new Set());
 		const [joinsSet, setJoinsSet] = useState(new Set());
 		const pixelStringRef = useRef<string>("");
@@ -228,42 +290,6 @@ export const DataImportFormModal = observer(
 				setCollapsedTables(new Set(visibleTableNames()));
 			}
 		};
-		useEffect(() => {
-			if (editMode)
-				retrieveDatabaseTablesAndEdges(cell.parameters.databaseId);
-		}, []);
-
-		useEffect(() => {
-			setShowTablePreview(false);
-			setShowEditColumns(true);
-		}, [selectedDatabaseId]);
-
-		useEffect(() => {
-			if (
-				editMode &&
-				checkedColumnsCount === 0 &&
-				cell.parameters.databaseId === selectedDatabaseId &&
-				newTableFields.length &&
-				!initEditPrepopulateComplete
-			) {
-				prepoulateFormForEdit(cell);
-			}
-		}, [newTableFields]);
-
-		useEffect(() => {
-			if (getDatabases.status !== "SUCCESS") {
-				return;
-			}
-			setUserDatabases(
-				getDatabases.data as Array<{
-					engine_id: string;
-					engine_name: string;
-					engine_type?: string;
-					engine_subtype?: string;
-				}>,
-			);
-		}, [getDatabases.status, getDatabases.data]);
-
 		const selectedDatabase = useMemo(
 			() =>
 				userDatabases?.find(
@@ -271,24 +297,6 @@ export const DataImportFormModal = observer(
 				) ?? null,
 			[userDatabases, selectedDatabaseId],
 		);
-
-		useEffect(() => {
-			if (!editMode || initEditPrepopulateComplete) {
-				setJoinsStackHandler();
-				updateSelectedTables();
-			}
-		}, [checkedColumnsCount]);
-
-		useEffect(() => {
-			if (showPreview) {
-				retrievePreviewData();
-			}
-		}, [
-			aliasesCountObj,
-			checkedColumnsCount,
-			showPreview,
-			selectedDatabaseId,
-		]);
 
 		const getSelectedColumnNames = () => {
 			const pixelTables = new Set();
@@ -343,7 +351,7 @@ export const DataImportFormModal = observer(
 						databaseId: selectedDatabaseId,
 						joins: watchedJoins,
 						selectQuery: pixelPartialRef.current,
-						tableNames: Array.from(selectedTableNames),
+						tableNames: Array.from(retrieveSelectedTableNames()),
 						selectedColumns: getSelectedColumnNames(),
 						columnAliases: getColumnAliases(),
 						rootTable: rootTable,
@@ -425,7 +433,10 @@ export const DataImportFormModal = observer(
 			});
 
 			setCheckedColumnsCount(allChecked ? updatedColumns.length : 0);
-			setJoinsStackHandler();
+			setJoinsStackHandler(
+				allChecked ? updatedColumns.length : 0,
+				watchedTables[tableIndex].name,
+			);
 		};
 
 		const updateSubmitDispatches = () => {
@@ -536,215 +547,238 @@ export const DataImportFormModal = observer(
 		};
 
 		/** Get Database Information for Data Import Modal */
-		const retrieveDatabaseTablesAndEdges = async (databaseId) => {
-			if (!databaseId) {
-				// No database picked yet (fresh cell or edit before cell hydrates) —
-				// skip the pixel call to avoid a "Database does not exist" error.
-				return;
-			}
-			setIsDatabaseLoading(true);
-			const pixelString = `META|GetDatabaseTableStructure(database=[ "${databaseId}" ]);META|GetDatabaseMetamodel( database=[ "${databaseId}" ], options=["dataTypes","positions"]);`;
-
-			runPixel(pixelString).then((pixelResponse) => {
-				const responseTableStructure = pixelResponse.pixelReturn[0]
-					.output as string[][];
-				const isResponseTableStructureGood =
-					pixelResponse.pixelReturn[0].operationType.indexOf(
-						"ERROR",
-					) === -1;
-
-				const responseTableEdgesStructure = pixelResponse.pixelReturn[1]
-					.output as {
-					edges: {
-						relation: string;
-						source: string;
-						sourceColumn: string;
-						target: string;
-						targetColumn: string;
-					}[];
-				};
-				const isResponseTableEdgesStructureGood =
-					pixelResponse.pixelReturn[1].operationType.indexOf(
-						"ERROR",
-					) === -1;
-
-				let newTableNames = [];
-
-				if (isResponseTableStructureGood) {
-					newTableNames = responseTableStructure.reduce(
-						(acc, ele) => {
-							if (!acc.includes(ele[0])) {
-								acc.push(ele[0]);
-							}
-							return acc;
-						},
-						[],
-					);
-
-					const tableColumnsObject = responseTableStructure.reduce(
-						(acc, ele) => {
-							const tableName = ele[0];
-							const columnName = ele[1];
-							const columnType = ele[2];
-							const columnBoolean = ele[3];
-							const columnName2 = ele[4];
-							const tableName2 = ele[4];
-
-							if (!acc[tableName]) acc[tableName] = [];
-							acc[tableName].push({
-								tableName,
-								columnName,
-								columnType,
-								columnBoolean,
-								columnName2,
-								tableName2,
-								userAlias: columnName,
-								checked: true,
-							});
-
-							return acc;
-						},
-						{},
-					);
-
-					const newTableColumnsObject: TableInterface[] =
-						tableColumnsObject
-							? Object.keys(tableColumnsObject).map(
-									(tableName, tableIdx) => ({
-										id: tableIdx,
-										name: tableName,
-										columns: tableColumnsObject[
-											tableName
-										].map((colObj, colIdx) => ({
-											id: colIdx,
-											tableName: tableName,
-											columnName: colObj.columnName,
-											columnType: colObj.columnType,
-											userAlias: colObj.userAlias,
-											checked: false,
-											isConcept: Boolean(
-												colObj.columnBoolean,
-											),
-										})),
-									}),
-								)
-							: [];
-
-					formReset({
-						databaseSelect: databaseId,
-						tables: newTableColumnsObject,
-					});
-				} else {
-					console.error("Error retrieving database tables");
-					toast.error("Error retrieving database tables");
+		const retrieveDatabaseTablesAndEdges = useCallback(
+			async (databaseId: string) => {
+				if (!databaseId) {
+					// No database picked yet (fresh cell or edit before cell hydrates) —
+					// skip the pixel call to avoid a "Database does not exist" error.
+					return;
 				}
+				setIsDatabaseLoading(true);
+				const pixelString = `META|GetDatabaseTableStructure(database=[ "${databaseId}" ]);META|GetDatabaseMetamodel( database=[ "${databaseId}" ], options=["dataTypes","positions"]);`;
 
-				if (isResponseTableEdgesStructureGood) {
-					const newEdgesDict =
-						responseTableEdgesStructure.edges.reduce((acc, ele) => {
-							const source = ele.source;
-							const target = ele.target;
-							const sourceColumn = ele.sourceColumn;
-							const targetColumn = ele.targetColumn;
+				runPixel(pixelString).then((pixelResponse) => {
+					const responseTableStructure = pixelResponse.pixelReturn[0]
+						.output as string[][];
+					const isResponseTableStructureGood =
+						pixelResponse.pixelReturn[0].operationType.indexOf(
+							"ERROR",
+						) === -1;
 
-							if (!acc[source]) {
-								acc[source] = {
-									[target]: {
-										sourceColumn,
-										targetColumn,
-									},
-								};
-							} else {
-								acc[source][target] = {
-									sourceColumn,
-									targetColumn,
-								};
-							}
+					const responseTableEdgesStructure = pixelResponse
+						.pixelReturn[1].output as {
+						edges: {
+							relation: string;
+							source: string;
+							sourceColumn: string;
+							target: string;
+							targetColumn: string;
+						}[];
+					};
+					const isResponseTableEdgesStructureGood =
+						pixelResponse.pixelReturn[1].operationType.indexOf(
+							"ERROR",
+						) === -1;
 
-							if (!acc[target]) {
-								acc[target] = {
-									[source]: {
-										sourceColumn: targetColumn,
-										targetColumn: sourceColumn,
-									},
-								};
-							} else {
-								acc[target][source] = {
-									sourceColumn: targetColumn,
-									targetColumn: sourceColumn,
-								};
-							}
-							return acc;
-						}, {});
+					let newTableNames = [];
 
-					setTableEdgesObject(newEdgesDict);
-				} else {
-					console.error("Error retrieving database edges");
-					toast.error("Error retrieving database tables");
-				}
+					if (isResponseTableStructureGood) {
+						newTableNames = responseTableStructure.reduce(
+							(acc, ele) => {
+								if (!acc.includes(ele[0])) {
+									acc.push(ele[0]);
+								}
+								return acc;
+							},
+							[],
+						);
 
-				const o = pixelResponse.pixelReturn[1].output as {
-					edges: {
-						relation: string;
-						source: string;
-						sourceColumn: string;
-						target: string;
-						targetColumn: string;
-					}[];
-				};
-				const edges = o.edges;
+						const tableColumnsObject =
+							responseTableStructure.reduce((acc, ele) => {
+								const tableName = ele[0];
+								const columnName = ele[1];
+								const columnType = ele[2];
+								const columnBoolean = ele[3];
+								const columnName2 = ele[4];
+								const tableName2 = ele[4];
 
-				const newTableEdges = {};
-				edges.forEach((edge) => {
-					if (newTableEdges[edge.source]) {
-						newTableEdges[edge.source][edge.target] = edge.relation;
+								if (!acc[tableName]) acc[tableName] = [];
+								acc[tableName].push({
+									tableName,
+									columnName,
+									columnType,
+									columnBoolean,
+									columnName2,
+									tableName2,
+									userAlias: columnName,
+									checked: true,
+								});
+
+								return acc;
+							}, {});
+
+						const newTableColumnsObject: TableInterface[] =
+							tableColumnsObject
+								? Object.keys(tableColumnsObject).map(
+										(tableName, tableIdx) => ({
+											id: tableIdx,
+											name: tableName,
+											columns: tableColumnsObject[
+												tableName
+											].map((colObj, colIdx) => ({
+												id: colIdx,
+												tableName: tableName,
+												columnName: colObj.columnName,
+												columnType: colObj.columnType,
+												userAlias: colObj.userAlias,
+												checked: false,
+												isConcept: Boolean(
+													colObj.columnBoolean,
+												),
+											})),
+										}),
+									)
+								: [];
+
+						formReset({
+							databaseSelect: databaseId,
+							tables: newTableColumnsObject,
+						});
 					} else {
-						newTableEdges[edge.source] = {
-							[edge.target]: edge.relation,
-						};
+						console.error("Error retrieving database tables");
+						toast.error("Error retrieving database tables");
 					}
-					if (newTableEdges[edge.target]) {
-						newTableEdges[edge.target][edge.source] = edge.relation;
+
+					if (isResponseTableEdgesStructureGood) {
+						const newEdgesDict =
+							responseTableEdgesStructure.edges.reduce(
+								(acc, ele) => {
+									const source = ele.source;
+									const target = ele.target;
+									const sourceColumn = ele.sourceColumn;
+									const targetColumn = ele.targetColumn;
+
+									if (!acc[source]) {
+										acc[source] = {
+											[target]: {
+												sourceColumn,
+												targetColumn,
+											},
+										};
+									} else {
+										acc[source][target] = {
+											sourceColumn,
+											targetColumn,
+										};
+									}
+
+									if (!acc[target]) {
+										acc[target] = {
+											[source]: {
+												sourceColumn: targetColumn,
+												targetColumn: sourceColumn,
+											},
+										};
+									} else {
+										acc[target][source] = {
+											sourceColumn: targetColumn,
+											targetColumn: sourceColumn,
+										};
+									}
+									return acc;
+								},
+								{},
+							);
+
+						setTableEdgesObject(newEdgesDict);
 					} else {
-						newTableEdges[edge.target] = {
-							[edge.source]: edge.relation,
-						};
+						console.error("Error retrieving database edges");
+						toast.error("Error retrieving database tables");
+					}
+
+					const o = pixelResponse.pixelReturn[1].output as {
+						edges: {
+							relation: string;
+							source: string;
+							sourceColumn: string;
+							target: string;
+							targetColumn: string;
+						}[];
+					};
+					const edges = o.edges;
+
+					const newTableEdges = {};
+					edges.forEach((edge) => {
+						if (newTableEdges[edge.source]) {
+							newTableEdges[edge.source][edge.target] =
+								edge.relation;
+						} else {
+							newTableEdges[edge.source] = {
+								[edge.target]: edge.relation,
+							};
+						}
+						if (newTableEdges[edge.target]) {
+							newTableEdges[edge.target][edge.source] =
+								edge.relation;
+						} else {
+							newTableEdges[edge.target] = {
+								[edge.source]: edge.relation,
+							};
+						}
+					});
+					setTableEdges(newTableEdges);
+					setIsDatabaseLoading(false);
+
+					setTableNames(newTableNames);
+					if (editMode && !isInitLoadComplete && rootTable) {
+						// Restrict to root + its joinable neighbours only when we
+						// actually have a stored rootTable to anchor on.
+						// Without that guard, graph/RDF cells (or older cells
+						// missing rootTable) end up with `Set([""])` and nothing
+						// renders.
+						const newEdges = [
+							rootTable,
+							...(newTableEdges[rootTable]
+								? Object.keys(newTableEdges[rootTable])
+								: []),
+						];
+						setShownTables(new Set(newEdges));
+					} else {
+						setShownTables(new Set(newTableNames));
+					}
+
+					if (!editMode || isInitLoadComplete) {
+						setAliasesCountObj({});
+						aliasesCountObjRef.current = {};
+						removeJoinElement();
+						setJoinsSet(new Set());
 					}
 				});
-				setTableEdges(newTableEdges);
-				setIsDatabaseLoading(false);
 
-				setTableNames(newTableNames);
-				if (editMode && !isInitLoadComplete && rootTable) {
-					// Restrict to root + its joinable neighbours only when we
-					// actually have a stored rootTable to anchor on.
-					// Without that guard, graph/RDF cells (or older cells
-					// missing rootTable) end up with `Set([""])` and nothing
-					// renders.
-					const newEdges = [
-						rootTable,
-						...(newTableEdges[rootTable]
-							? Object.keys(newTableEdges[rootTable])
-							: []),
-					];
-					setShownTables(new Set(newEdges));
-				} else {
-					setShownTables(new Set(newTableNames));
-				}
+				setAliasesCountObj({});
+				aliasesCountObjRef.current = {};
+				removeJoinElement();
+				setIsInitLoadComplete(true);
+			},
+			[
+				editMode,
+				isInitLoadComplete,
+				rootTable,
+				formReset,
+				removeJoinElement,
+			],
+		);
 
-				if (!editMode || isInitLoadComplete) {
-					setAliasesCountObj({});
-					aliasesCountObjRef.current = {};
-					removeJoinElement();
-					setJoinsSet(new Set());
-				}
-			});
-
-			setAliasesCountObj({});
-			aliasesCountObjRef.current = {};
-			removeJoinElement();
-			setIsInitLoadComplete(true);
-		};
+		useEffect(() => {
+			if (editMode && !isInitLoadComplete) {
+				retrieveDatabaseTablesAndEdges(cell?.parameters.databaseId);
+			}
+		}, [
+			editMode,
+			isInitLoadComplete,
+			cell?.parameters.databaseId,
+			retrieveDatabaseTablesAndEdges,
+		]);
 
 		/**
 		 * Updates pixel without building preview.
@@ -847,80 +881,20 @@ export const DataImportFormModal = observer(
 			return pixelTables;
 		};
 
-		const updateSelectedTables = () => {
-			const pixelTables = new Set();
-			const pixelColumnNames = [];
-			const pixelColumnAliases = [];
+		const { previewPixel, previewSelectQuery } = buildPreviewQuery(
+			selectedDatabaseId,
+			watchedTables,
+			watchedJoins,
+			dataLimit,
+		);
 
-			watchedTables?.forEach((tableObject) => {
-				const currTableColumns = tableObject.columns;
-				currTableColumns.forEach((columnObject) => {
-					if (columnObject.checked) {
-						pixelTables.add(columnObject.tableName);
-						pixelColumnNames.push(getColumnRef(columnObject));
-						pixelColumnAliases.push(columnObject.userAlias);
-					}
-				});
-			});
-
-			setSelectedTableNames(pixelTables);
-		};
-
-		const retrievePreviewData = async () => {
+		const retrievePreviewData = useCallback(async () => {
 			setIsDatabaseLoading(true);
-			const databaseId = selectedDatabaseId;
-			const pixelTables = new Set();
-			const pixelColumnNames = [];
-			const pixelColumnAliases = [];
-			const pixelJoins = [];
-
 			try {
-				watchedTables?.forEach((tableObject) => {
-					const currTableColumns = tableObject.columns;
-					currTableColumns?.forEach((columnObject) => {
-						if (columnObject.checked) {
-							pixelTables.add(columnObject.tableName);
-							pixelColumnNames.push(getColumnRef(columnObject));
-							pixelColumnAliases.push(columnObject.userAlias);
-						}
-					});
-				});
+				pixelStringRef.current = previewPixel;
+				pixelPartialRef.current = previewSelectQuery;
 
-				watchedJoins?.forEach((joinEle) => {
-					pixelJoins.push(
-						`( ${joinEle.leftTable} , ${joinEle.joinType}.join , ${joinEle.rightTable} )`,
-					);
-				});
-
-				let pixelStringPart1 = `Database ( database = [ "${databaseId}" ] )`;
-				pixelStringPart1 += ` | Select ( ${pixelColumnNames.join(
-					" , ",
-				)} )`;
-				pixelStringPart1 += `.as ( [ ${pixelColumnAliases.join(
-					" , ",
-				)} ] )`;
-				if (pixelJoins.length > 0) {
-					pixelStringPart1 += ` | Join ( ${pixelJoins.join(
-						" , ",
-					)} ) `;
-				}
-				pixelStringPart1 += ` | Distinct ( false ) | Limit ( ${dataLimit} )`;
-
-				const combinedJoinString =
-					pixelJoins.length > 0
-						? `| Join ( ${pixelJoins.join(" , ")} ) `
-						: "";
-
-				const reactorPixel = `Database ( database = [ "${databaseId}" ] ) | Select ( ${pixelColumnNames.join(
-					" , ",
-				)} ) .as ( [ ${pixelColumnAliases.join(
-					" , ",
-				)} ] ) ${combinedJoinString}| Distinct ( false ) | Limit ( ${dataLimit} ) | Import ( frame = [ CreateFrame ( frameType = [ GRID ] , override = [ true ] ) .as ( [ "consolidated_settings_FRAME932867__Preview" ] ) ] ) ;  META | Frame() | QueryAll() | Limit(50) | Collect(500);`;
-
-				pixelStringRef.current = reactorPixel;
-				pixelPartialRef.current = `${pixelStringPart1};`;
-
-				runPixel(reactorPixel).then((response) => {
+				runPixel(previewPixel).then((response) => {
 					const type = response.pixelReturn[0]?.operationType;
 
 					const o = response.pixelReturn[1]?.output as {
@@ -952,7 +926,13 @@ export const DataImportFormModal = observer(
 
 				toast.error("Error retrieving database tables");
 			}
-		};
+		}, [previewPixel, previewSelectQuery]);
+
+		useEffect(() => {
+			if (showPreview) {
+				retrievePreviewData();
+			}
+		}, [showPreview, retrievePreviewData]);
 
 		/** Helper Function Update Alias Tracker Object */
 		const updateAliasCountObj = (
@@ -1045,94 +1025,123 @@ export const DataImportFormModal = observer(
 		};
 
 		/** Pre-Populate form For Edit */
-		const prepoulateFormForEdit = (cell) => {
-			const tablesWithCheckedBoxes = new Set();
-			const checkedColumns = new Set();
-			const columnAliasMap = {};
-			const newAliasesCountObj = {};
+		const prepopulateFormForEdit = useCallback(
+			(cell) => {
+				const tablesWithCheckedBoxes = new Set();
+				const checkedColumns = new Set();
+				const columnAliasMap = {};
+				const newAliasesCountObj = {};
 
-			setCheckedColumnsCount(cell.parameters.selectedColumns.length);
-			cell.parameters.selectedColumns?.forEach(
-				(selectedColumnTableCombinedString, idx) => {
-					// Concept columns (graph nodes / standalone tables) are
-					// stored as just "columnName"; properties are stored as
-					// "tableName__columnName".
-					const hasTablePrefix =
-						selectedColumnTableCombinedString.includes("__");
-					const [currTableName, currColumnName] = hasTablePrefix
-						? selectedColumnTableCombinedString.split("__")
-						: [
-								selectedColumnTableCombinedString,
-								selectedColumnTableCombinedString,
-							];
-					const currColumnAlias = cell.parameters.columnAliases[idx];
-					tablesWithCheckedBoxes.add(currTableName);
-					checkedColumns.add(selectedColumnTableCombinedString);
-					columnAliasMap[selectedColumnTableCombinedString] =
-						currColumnAlias;
-					newAliasesCountObj[currColumnAlias || currColumnName] = 1;
-				},
-			);
+				setCheckedColumnsCount(cell.parameters.selectedColumns.length);
+				cell.parameters.selectedColumns?.forEach(
+					(selectedColumnTableCombinedString, idx) => {
+						// Concept columns (graph nodes / standalone tables) are
+						// stored as just "columnName"; properties are stored as
+						// "tableName__columnName".
+						const hasTablePrefix =
+							selectedColumnTableCombinedString.includes("__");
+						const [currTableName, currColumnName] = hasTablePrefix
+							? selectedColumnTableCombinedString.split("__")
+							: [
+									selectedColumnTableCombinedString,
+									selectedColumnTableCombinedString,
+								];
+						const currColumnAlias =
+							cell.parameters.columnAliases[idx];
+						tablesWithCheckedBoxes.add(currTableName);
+						checkedColumns.add(selectedColumnTableCombinedString);
+						columnAliasMap[selectedColumnTableCombinedString] =
+							currColumnAlias;
+						newAliasesCountObj[currColumnAlias || currColumnName] =
+							1;
+					},
+				);
 
-			setAliasesCountObj({ ...newAliasesCountObj });
-			aliasesCountObjRef.current = { ...newAliasesCountObj };
+				setAliasesCountObj({ ...newAliasesCountObj });
+				aliasesCountObjRef.current = { ...newAliasesCountObj };
 
-			if (newTableFields) {
-				newTableFields?.forEach((newTableObj, tableIdx) => {
-					if (tablesWithCheckedBoxes.has(newTableObj.name)) {
-						const watchedTableColumns =
-							watchedTables[tableIdx].columns;
+				const tables = formGetValues("tables");
+				if (tables) {
+					tables.forEach((newTableObj, tableIdx) => {
+						if (tablesWithCheckedBoxes.has(newTableObj.name)) {
+							const watchedTableColumns =
+								tables[tableIdx].columns;
 
-						watchedTableColumns?.forEach(
-							(tableColumnObj, columnIdx) => {
-								const columnName = getColumnRef(tableColumnObj);
-								if (checkedColumns.has(columnName)) {
-									const columnAlias =
-										columnAliasMap[columnName];
-									formSetValue(
-										`tables.${tableIdx}.columns.${columnIdx}.checked`,
-										true,
-									);
-									formSetValue(
-										`tables.${tableIdx}.columns.${columnIdx}.userAlias`,
-										columnAlias,
-									);
-								}
-							},
-						);
-					}
+							watchedTableColumns?.forEach(
+								(tableColumnObj, columnIdx) => {
+									const columnName =
+										getColumnRef(tableColumnObj);
+									if (checkedColumns.has(columnName)) {
+										const columnAlias =
+											columnAliasMap[columnName];
+										formSetValue(
+											`tables.${tableIdx}.columns.${columnIdx}.checked`,
+											true,
+										);
+										formSetValue(
+											`tables.${tableIdx}.columns.${columnIdx}.userAlias`,
+											columnAlias,
+										);
+									}
+								},
+							);
+						}
+					});
+				}
+
+				// Edit mode: anchor rootTable from the loaded selections if the
+				// cell didn't persist one (e.g. graph/RDF cells). Without this
+				// the join auto-detection can't iterate `tableEdgesObject[root]`.
+				if (!rootTable && tablesWithCheckedBoxes.size > 0) {
+					const firstChecked = Array.from(
+						tablesWithCheckedBoxes,
+					)[0] as string;
+					setRootTable(firstChecked);
+				}
+
+				const newJoinsSet = new Set();
+				cell.parameters.joins?.forEach((joinObject) => {
+					appendJoinElement(joinObject);
+					const joinsSetString1 = `${joinObject.leftTable}:${joinObject.rightTable}`;
+					const joinsSetString2 = `${joinObject.rightTable}:${joinObject.leftTable}`;
+					newJoinsSet.add(joinsSetString1);
+					newJoinsSet.add(joinsSetString2);
 				});
+
+				setJoinsSet(newJoinsSet);
+				setCheckedColumnsCount(checkedColumns.size);
+
+				const loadedQueryString = cell.parameters.selectQuery;
+				pixelPartialRef.current = loadedQueryString;
+				setInitEditPrepopulateComplete(true);
+			},
+			[formGetValues, formSetValue, rootTable, appendJoinElement],
+		);
+
+		useEffect(() => {
+			if (
+				editMode &&
+				checkedColumnsCount === 0 &&
+				cell.parameters.databaseId === selectedDatabaseId &&
+				newTableFields.length &&
+				!initEditPrepopulateComplete
+			) {
+				prepopulateFormForEdit(cell);
 			}
-
-			// Edit mode: anchor rootTable from the loaded selections if the
-			// cell didn't persist one (e.g. graph/RDF cells). Without this
-			// the join auto-detection can't iterate `tableEdgesObject[root]`.
-			if (!rootTable && tablesWithCheckedBoxes.size > 0) {
-				const firstChecked = Array.from(
-					tablesWithCheckedBoxes,
-				)[0] as string;
-				setRootTable(firstChecked);
-			}
-
-			const newJoinsSet = new Set();
-			cell.parameters.joins?.forEach((joinObject) => {
-				appendJoinElement(joinObject);
-				const joinsSetString1 = `${joinObject.leftTable}:${joinObject.rightTable}`;
-				const joinsSetString2 = `${joinObject.rightTable}:${joinObject.leftTable}`;
-				newJoinsSet.add(joinsSetString1);
-				newJoinsSet.add(joinsSetString2);
-			});
-
-			setJoinsSet(newJoinsSet);
-			setCheckedColumnsCount(checkedColumns.size);
-
-			const loadedQueryString = cell.parameters.selectQuery;
-			pixelPartialRef.current = loadedQueryString;
-		};
+		}, [
+			editMode,
+			cell,
+			checkedColumnsCount,
+			selectedDatabaseId,
+			newTableFields,
+			initEditPrepopulateComplete,
+			prepopulateFormForEdit,
+		]);
 
 		const checkTableForSelectedColumns = (tableName) => {
-			for (let i = 0; i < watchedTables.length; i++) {
-				const currTable = watchedTables[i];
+			const tables = formGetValues("tables");
+			for (let i = 0; i < tables.length; i++) {
+				const currTable = tables[i];
 				if (currTable.name === tableName) {
 					const currTableColumns = currTable.columns;
 					for (let j = 0; j < currTableColumns.length; j++) {
@@ -1234,11 +1243,13 @@ export const DataImportFormModal = observer(
 				}}
 			>
 				<DialogContent
-					style={{ maxWidth: "70vw", width: "70vw" }}
-					className="flex max-h-[90vh] flex-col gap-4 overflow-y-auto"
+					aria-describedby={undefined}
+					className="flex max-h-[90dvh] flex-col gap-4 overflow-y-auto sm:max-w-6xl"
 				>
 					<DialogHeader>
-						<DialogTitle>Query Builder</DialogTitle>
+						<DialogTitle className="font-medium text-base leading-6">
+							Query Builder
+						</DialogTitle>
 					</DialogHeader>
 					<form
 						onSubmit={formHandleSubmit(onImportDataSubmit)}
@@ -1246,15 +1257,17 @@ export const DataImportFormModal = observer(
 					>
 						{/* Database selector */}
 						<div className="flex flex-col gap-1">
-							<span className="text-muted-foreground text-xs">
-								Database
-							</span>
+							<Label htmlFor={databaseSelectId}>Database</Label>
 							<Controller
 								name={"databaseSelect"}
 								control={formControl}
 								render={({ field }) => (
 									<Select
 										value={field.value || ""}
+										disabled={
+											getDatabases.status !== "SUCCESS" ||
+											userDatabases.length === 0
+										}
 										onValueChange={(value) => {
 											if (value === selectedDatabaseId) {
 												return;
@@ -1269,7 +1282,6 @@ export const DataImportFormModal = observer(
 											// that don't exist in the new DB).
 											setRootTable(null);
 											setCheckedColumnsCount(0);
-											setSelectedTableNames(new Set());
 											setAliasesCountObj({});
 											aliasesCountObjRef.current = {};
 											setJoinsSet(new Set());
@@ -1284,7 +1296,11 @@ export const DataImportFormModal = observer(
 											setShowTablePreview(false);
 										}}
 									>
-										<SelectTrigger className="h-auto min-h-10 w-[320px] py-1.5">
+										<SelectTrigger
+											id={databaseSelectId}
+											aria-describedby={`${databaseSelectId}-status`}
+											className="h-auto min-h-10 w-full py-1.5 sm:max-w-md"
+										>
 											<SelectValue placeholder="Select a database">
 												{selectedDatabase ? (
 													<div className="flex items-center gap-2">
@@ -1315,46 +1331,70 @@ export const DataImportFormModal = observer(
 												) : null}
 											</SelectValue>
 										</SelectTrigger>
-										<SelectContent>
-											{userDatabases?.map(
-												(ele, dbIndex) => (
-													<SelectItem
-														value={ele.engine_id}
-														// biome-ignore lint/suspicious/noArrayIndexKey: no stable key available
-														key={dbIndex}
-													>
-														<div className="flex items-center gap-2">
-															<EngineSubtypeIcon
-																engineType={
-																	ele.engine_type ??
-																	"DATABASE"
+										<SelectContent
+											align="start"
+											collisionPadding={8}
+											className="max-h-[min(20rem,var(--radix-select-content-available-height))] overflow-hidden [&_[data-radix-select-viewport]]:max-h-72 [&_[data-radix-select-viewport]]:min-h-0 [&_[data-radix-select-viewport]]:overflow-y-auto [&_[data-radix-select-viewport]]:overscroll-contain"
+										>
+											{userDatabases.map((ele) => (
+												<SelectItem
+													value={ele.engine_id}
+													textValue={ele.engine_name}
+													key={ele.engine_id}
+												>
+													<div className="flex items-center gap-2">
+														<EngineSubtypeIcon
+															engineType={
+																ele.engine_type ??
+																"DATABASE"
+															}
+															engineSubtype={
+																ele.engine_subtype
+															}
+															alt={`${ele.engine_name} icon`}
+															className="size-5 shrink-0 object-contain"
+														/>
+														<div className="flex min-w-0 flex-col items-start">
+															<span className="truncate text-sm">
+																{
+																	ele.engine_name
 																}
-																engineSubtype={
-																	ele.engine_subtype
-																}
-																alt={`${ele.engine_name} icon`}
-																className="size-5 shrink-0 object-contain"
-															/>
-															<div className="flex min-w-0 flex-col items-start">
-																<span className="truncate text-sm">
-																	{
-																		ele.engine_name
-																	}
-																</span>
-																<span className="truncate text-muted-foreground text-xs">
-																	{
-																		ele.engine_id
-																	}
-																</span>
-															</div>
+															</span>
+															<span className="truncate text-muted-foreground text-xs">
+																{ele.engine_id}
+															</span>
 														</div>
-													</SelectItem>
-												),
-											)}
+													</div>
+												</SelectItem>
+											))}
 										</SelectContent>
 									</Select>
 								)}
 							/>
+						</div>
+
+						<div
+							id={`${databaseSelectId}-status`}
+							className="text-muted-foreground text-sm"
+							aria-live="polite"
+						>
+							{getDatabases.status === "ERROR" ? (
+								<span className="text-destructive">
+									Unable to load databases.{" "}
+									<Button
+										type="button"
+										variant="link"
+										size="sm"
+										onClick={getDatabases.refresh}
+									>
+										Retry
+									</Button>
+								</span>
+							) : getDatabases.status !== "SUCCESS" ? (
+								"Loading databases…"
+							) : userDatabases.length === 0 ? (
+								"No databases are available for your account."
+							) : null}
 						</div>
 
 						{isDatabaseLoading && (
@@ -1372,7 +1412,7 @@ export const DataImportFormModal = observer(
 						{selectedDatabaseId && !isDatabaseLoading && (
 							<div className="flex flex-col gap-3 rounded-md border bg-muted/30 p-4">
 								<div className="flex items-center justify-between gap-3">
-									<h6 className="font-semibold text-sm">
+									<h6 className="font-medium text-sm">
 										Data
 									</h6>
 									<div className="flex items-center gap-2">
@@ -1484,7 +1524,11 @@ export const DataImportFormModal = observer(
 																	) : (
 																		<ChevronDown className="size-4 text-muted-foreground" />
 																	)}
-																	<Tooltip>
+																	<Tooltip
+																		disableHoverableContent={
+																			false
+																		}
+																	>
 																		<TooltipTrigger
 																			asChild
 																		>
@@ -1654,11 +1698,15 @@ export const DataImportFormModal = observer(
 																											.userAlias
 																									] >
 																										1 && (
-																										<Tooltip>
+																										<Tooltip
+																											disableHoverableContent={
+																												false
+																											}
+																										>
 																											<TooltipTrigger
 																												asChild
 																											>
-																												<AlertTriangle className="ml-2.5 size-4 text-yellow-600" />
+																												<AlertTriangle className="ml-2.5 size-4 text-warning" />
 																											</TooltipTrigger>
 																											<TooltipContent>
 																												Duplicate
@@ -1793,11 +1841,11 @@ export const DataImportFormModal = observer(
 								className="flex flex-col gap-3 rounded-md border bg-muted/30 p-4"
 							>
 								<div className="flex flex-wrap items-center gap-2">
-									<h6 className="font-semibold text-sm">
+									<h6 className="font-medium text-sm">
 										Join
 									</h6>
 
-									<Tooltip>
+									<Tooltip disableHoverableContent={false}>
 										<TooltipTrigger asChild>
 											<div className="cursor-default rounded-md bg-primary/10 px-2.5 py-1 text-sm">
 												{join.leftTable}
@@ -1889,7 +1937,7 @@ export const DataImportFormModal = observer(
 										</DropdownMenuContent>
 									</DropdownMenu>
 
-									<Tooltip>
+									<Tooltip disableHoverableContent={false}>
 										<TooltipTrigger asChild>
 											<div className="cursor-default rounded-md bg-teal-100 px-2.5 py-1 text-sm">
 												{join.rightTable}
@@ -1905,7 +1953,9 @@ export const DataImportFormModal = observer(
 											<span className="cursor-default text-muted-foreground text-sm">
 												where
 											</span>
-											<Tooltip>
+											<Tooltip
+												disableHoverableContent={false}
+											>
 												<TooltipTrigger asChild>
 													<div className="cursor-default rounded-md bg-primary/10 px-2.5 py-1 text-sm">
 														{join.leftKey}
@@ -1918,7 +1968,9 @@ export const DataImportFormModal = observer(
 											<span className="cursor-default text-muted-foreground text-sm">
 												=
 											</span>
-											<Tooltip>
+											<Tooltip
+												disableHoverableContent={false}
+											>
 												<TooltipTrigger asChild>
 													<div className="cursor-default rounded-md bg-teal-100 px-2.5 py-1 text-sm">
 														{join.rightKey}

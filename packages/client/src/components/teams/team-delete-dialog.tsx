@@ -23,7 +23,9 @@ export const TeamDeleteDialog = (props: TeamDeleteDialogProps) => {
 		<Dialog open={open} onOpenChange={onOpenChange}>
 			<DialogContent>
 				<DialogHeader>
-					<DialogTitle>Delete team</DialogTitle>
+					<DialogTitle className="font-medium text-base leading-6">
+						Delete team
+					</DialogTitle>
 					<DialogDescription>
 						{teamId ? (
 							<>

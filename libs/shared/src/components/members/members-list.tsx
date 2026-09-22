@@ -663,7 +663,7 @@ export const MembersList = ({
 				onOpenChange={resetSelectedMembers}
 			>
 				<DialogContent className="w-full max-w-md">
-					<DialogTitle>
+					<DialogTitle className="font-medium text-base leading-6">
 						{usersToDelete.length === 1
 							? "Delete Member"
 							: `Delete ${usersToDelete.length} Members`}

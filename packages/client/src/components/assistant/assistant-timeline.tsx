@@ -269,7 +269,7 @@ export const AssistantTimeline = () => {
 			</div>
 
 			{showScrollDown ? (
-				<Tooltip>
+				<Tooltip disableHoverableContent={false}>
 					<TooltipTrigger asChild>
 						<Button
 							type="button"

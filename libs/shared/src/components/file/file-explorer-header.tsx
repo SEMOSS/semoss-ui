@@ -166,7 +166,7 @@ export const FileExplorerHeader: React.FC<FileExplorerHeaderProps> = ({
 				</div>
 
 				<div className="flex shrink-0 flex-row items-center gap-1">
-					<Tooltip>
+					<Tooltip disableHoverableContent={false}>
 						<TooltipTrigger asChild>
 							<Button
 								ref={searchToggleRef}

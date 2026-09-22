@@ -1,6 +1,8 @@
 import { Shapes } from "lucide-react";
-import { InputSettings, QuerySelectionSettings } from "../../settings";
+import { QuerySelectionSettings } from "../../settings/custom/query-selection-settings";
+import { BooleanSettings } from "../../settings/shared/boolean-settings";
 import { InputModalSettings } from "../../settings/shared/InputModalSettings";
+import { InputSettings } from "../../settings/shared/InputSettings";
 import { SelectInputSettings } from "../../settings/shared/SelectInputSettings";
 import { BLOCK_TYPE_INPUT } from "../block-defaults.constants";
 import { buildListener, buildShowField } from "../block-defaults.shared";
@@ -70,13 +72,14 @@ export const config: BlockSettingsConfig = {
 							label="Loading"
 							path="loading"
 							queryPath="isLoading"
+							allowClear
 						/>
 					),
 				},
 				{
 					description: "Disabled",
 					render: ({ id }) => (
-						<InputSettings
+						<BooleanSettings
 							id={id}
 							label="Disabled"
 							path="disabled"
@@ -86,7 +89,7 @@ export const config: BlockSettingsConfig = {
 				{
 					description: "Required",
 					render: ({ id }) => (
-						<InputSettings
+						<BooleanSettings
 							id={id}
 							label="Required"
 							path="required"

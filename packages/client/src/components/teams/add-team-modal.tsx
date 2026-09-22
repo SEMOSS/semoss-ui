@@ -24,6 +24,9 @@ import {
 	SelectTrigger,
 	SelectValue,
 	Textarea,
+	Tooltip,
+	TooltipContent,
+	TooltipTrigger,
 	toast,
 } from "@semoss/ui/next";
 import { addTeam, editTeam } from "@/api/teams";
@@ -234,25 +237,32 @@ export const AddTeamModal = (props: AddTeamModalProps) => {
 	return (
 		<Dialog open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
 			<DialogContent
-				className="max-w-[550px] gap-6 rounded-xl"
+				aria-describedby={undefined}
+				className="gap-4 sm:max-w-xl"
 				showCloseButton={false}
 			>
 				<DialogHeader>
 					<div className="flex items-center justify-between">
-						<DialogTitle className="text-foreground">
+						<DialogTitle className="font-medium text-base text-foreground leading-6">
 							{isEdit ? "Edit Team" : "Create New Team"}
 						</DialogTitle>
-						<Button
-							variant="ghost"
-							size="icon-sm"
-							onClick={() => {
-								reset();
-								onClose();
-							}}
-							className="hover:bg-accent"
-						>
-							<X className="size-4" />
-						</Button>
+						<Tooltip disableHoverableContent={false}>
+							<TooltipTrigger asChild>
+								<Button
+									aria-label="Close"
+									variant="ghost"
+									size="icon-sm"
+									onClick={() => {
+										reset();
+										onClose();
+									}}
+									className="hover:bg-accent"
+								>
+									<X className="size-4" />
+								</Button>
+							</TooltipTrigger>
+							<TooltipContent>Close</TooltipContent>
+						</Tooltip>
 					</div>
 				</DialogHeader>
 				<form onSubmit={onSubmit}>
@@ -367,7 +377,7 @@ export const AddTeamModal = (props: AddTeamModalProps) => {
 																					decoding="async"
 																				/>
 																			) : (
-																				<div className="flex h-6 w-6 items-center justify-center rounded-md border border-border/70 bg-muted/60 font-semibold text-[9px] text-muted-foreground">
+																				<div className="flex h-6 w-6 items-center justify-center rounded-md border border-border/70 bg-muted/60 font-semibold text-muted-foreground text-xs">
 																					{
 																						providerInitials
 																					}
@@ -438,7 +448,7 @@ export const AddTeamModal = (props: AddTeamModalProps) => {
 											/>
 											{selectedTeamType !== "CUSTOM" &&
 											selectedTeamType !== "" ? (
-												<FieldDescription className="pl-3.5 text-[12px] text-muted-foreground leading-[20px] tracking-[0.4px]">
+												<FieldDescription className="pl-3.5 text-muted-foreground text-xs leading-[20px] tracking-[0.4px]">
 													Must be the name of the
 													group/team from your IdP
 												</FieldDescription>

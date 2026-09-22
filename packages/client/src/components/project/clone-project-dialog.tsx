@@ -140,7 +140,9 @@ export const CloneProjectDialog = (props: CloneProjectDialogProps) => {
 		>
 			<DialogContent className="sm:max-w-lg">
 				<DialogHeader>
-					<DialogTitle>Clone {label}</DialogTitle>
+					<DialogTitle className="font-medium text-base leading-6">
+						Clone {label}
+					</DialogTitle>
 					<DialogDescription>
 						Create a new {label.toLowerCase()} from this template.
 					</DialogDescription>

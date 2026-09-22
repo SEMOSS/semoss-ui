@@ -1304,7 +1304,7 @@ export const EngineModelSettings = ({
 			>
 				<DialogContent data-testid="engine-model-settings--catalog-apply-dialog">
 					<DialogHeader>
-						<DialogTitle>
+						<DialogTitle className="font-medium text-base leading-6">
 							{catalogApply?.kind === "reset"
 								? "Reset to catalog defaults"
 								: catalogApply?.kind === "clear"
