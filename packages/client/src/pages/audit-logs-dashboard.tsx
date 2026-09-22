@@ -26,6 +26,9 @@ import {
 	DropdownMenuItem,
 	DropdownMenuTrigger,
 	Skeleton,
+	Tooltip,
+	TooltipContent,
+	TooltipTrigger,
 	toast,
 } from "@semoss/ui/next";
 import { NavbarHeader, NavbarLeft } from "@/components/shared";
@@ -322,11 +325,25 @@ export const AuditLogsDashboard = ({
 	const headerActions = (
 		<div className="flex flex-row items-center gap-2">
 			<DropdownMenu>
-				<DropdownMenuTrigger asChild>
-					<Button variant="outline" size="icon-sm" title="Export">
-						<Download className="size-4" />
-					</Button>
-				</DropdownMenuTrigger>
+				<Tooltip disableHoverableContent={false}>
+					<TooltipTrigger asChild>
+						<DropdownMenuTrigger asChild>
+							<Button
+								aria-label={"Export"}
+								variant="outline"
+								size="icon-sm"
+							>
+								<Download className="size-4" />
+							</Button>
+						</DropdownMenuTrigger>
+					</TooltipTrigger>
+					<TooltipContent
+						sideOffset={4}
+						className="max-w-xs break-words"
+					>
+						{"Export"}
+					</TooltipContent>
+				</Tooltip>
 				<DropdownMenuContent>
 					<DropdownMenuItem onClick={() => handleExport(false)}>
 						Export as CSV
@@ -336,14 +353,23 @@ export const AuditLogsDashboard = ({
 					</DropdownMenuItem>
 				</DropdownMenuContent>
 			</DropdownMenu>
-			<Button
-				variant="outline"
-				size="icon-sm"
-				title="Refresh"
-				onClick={() => fetchLogs(rowsPerPage, page * rowsPerPage)}
-			>
-				<RefreshCw className="size-4" />
-			</Button>
+			<Tooltip disableHoverableContent={false}>
+				<TooltipTrigger asChild>
+					<Button
+						aria-label={"Refresh"}
+						variant="outline"
+						size="icon-sm"
+						onClick={() =>
+							fetchLogs(rowsPerPage, page * rowsPerPage)
+						}
+					>
+						<RefreshCw className="size-4" />
+					</Button>
+				</TooltipTrigger>
+				<TooltipContent sideOffset={4} className="max-w-xs break-words">
+					{"Refresh"}
+				</TooltipContent>
+			</Tooltip>
 		</div>
 	);
 

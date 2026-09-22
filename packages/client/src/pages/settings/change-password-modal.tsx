@@ -189,9 +189,11 @@ export const ChangePasswordModal = ({ open, onClose }) => {
 
 	return (
 		<Dialog open={open} onOpenChange={(val) => !val && onCancel()}>
-			<DialogContent className="max-w-md">
+			<DialogContent aria-describedby={undefined} className="max-w-md">
 				<DialogHeader>
-					<DialogTitle>Change Password</DialogTitle>
+					<DialogTitle className="font-medium text-base leading-6">
+						Change Password
+					</DialogTitle>
 				</DialogHeader>
 
 				<div className="flex flex-col gap-4">

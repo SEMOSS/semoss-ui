@@ -262,22 +262,32 @@ export const MCPSelector: React.FC<MCPSelectorProps> = ({
 					</InputGroup>
 				</div>
 				{type === "KNOWLEDGE" && onRequestCreateKnowledge && (
-					<Tooltip>
+					<Tooltip disableHoverableContent={false}>
 						<TooltipTrigger asChild>
-							<Button
-								variant="outline"
-								onClick={(event) => {
-									event.preventDefault();
-									event.stopPropagation();
-									onRequestCreateKnowledge();
-								}}
-								disabled={disabled}
+							<span
+								className="inline-flex"
+								tabIndex={disabled ? 0 : undefined}
 							>
-								<PlusIcon />
-							</Button>
+								<Button
+									aria-label={t(
+										"selector.createKnowledgeSource",
+									)}
+									variant="outline"
+									onClick={(event) => {
+										event.preventDefault();
+										event.stopPropagation();
+										onRequestCreateKnowledge();
+									}}
+									disabled={disabled}
+								>
+									<PlusIcon />
+								</Button>
+							</span>
 						</TooltipTrigger>
 						<TooltipContent>
-							{t("selector.createKnowledgeSource")}
+							{disabled
+								? "Knowledge sources cannot be added while this selector is disabled"
+								: t("selector.createKnowledgeSource")}
 						</TooltipContent>
 					</Tooltip>
 				)}
@@ -396,7 +406,7 @@ export const MCPSelector: React.FC<MCPSelectorProps> = ({
 					};
 
 					const workspaceSummary = workspaceCount > 0 && (
-						<Tooltip>
+						<Tooltip disableHoverableContent={false}>
 							<TooltipTrigger asChild>
 								<div
 									key="__workspace_summary"

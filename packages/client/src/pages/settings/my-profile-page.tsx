@@ -28,6 +28,9 @@ import {
 	SelectTrigger,
 	SelectValue,
 	Spinner,
+	Tooltip,
+	TooltipContent,
+	TooltipTrigger,
 	toast,
 } from "@semoss/ui/next";
 import {
@@ -733,40 +736,76 @@ export const MyProfilePage = () => {
 											</td>
 											<td className="px-3 py-2">
 												<div className="flex items-center gap-1">
-													<Button
-														variant="ghost"
-														size="icon"
-														className="size-6 shrink-0"
-														title="Copy"
-														onClick={() =>
-															copy(k.ACCESSKEY)
+													<Tooltip
+														disableHoverableContent={
+															false
 														}
-														data-testid="myProfilePage-access-key-copy-btn"
 													>
-														<Copy className="size-3.5" />
-													</Button>
+														<TooltipTrigger asChild>
+															<Button
+																aria-label={
+																	"Copy"
+																}
+																variant="ghost"
+																size="icon"
+																className="size-6 shrink-0"
+																onClick={() =>
+																	copy(
+																		k.ACCESSKEY,
+																	)
+																}
+																data-testid="myProfilePage-access-key-copy-btn"
+															>
+																<Copy className="size-3.5" />
+															</Button>
+														</TooltipTrigger>
+														<TooltipContent
+															sideOffset={4}
+															className="max-w-xs break-words"
+														>
+															{"Copy"}
+														</TooltipContent>
+													</Tooltip>
 													<span className="font-mono text-xs">
 														{k.ACCESSKEY}
 													</span>
 												</div>
 											</td>
 											<td className="px-3 py-2 text-right">
-												<Button
-													variant="ghost"
-													size="icon"
-													title="Delete"
-													onClick={() =>
-														setAccessKeyToDelete({
-															ACCESSKEY:
-																k.ACCESSKEY,
-															TOKENNAME:
-																k.TOKENNAME,
-														})
+												<Tooltip
+													disableHoverableContent={
+														false
 													}
-													data-testid="myProfilePage-access-key-delete-btn"
 												>
-													<Trash2 className="size-4" />
-												</Button>
+													<TooltipTrigger asChild>
+														<Button
+															aria-label={
+																"Delete"
+															}
+															variant="ghost"
+															size="icon"
+															onClick={() =>
+																setAccessKeyToDelete(
+																	{
+																		ACCESSKEY:
+																			k.ACCESSKEY,
+																		TOKENNAME:
+																			k.TOKENNAME,
+																	},
+																)
+															}
+															data-testid="myProfilePage-access-key-delete-btn"
+														>
+															<Trash2 className="size-4" />
+														</Button>
+													</TooltipTrigger>
+													<TooltipContent
+														sideOffset={4}
+														className="max-w-xs break-words"
+													>
+														{"Delete"}
+													</TooltipContent>
+												</Tooltip>
 											</td>
 										</tr>
 									))
@@ -791,7 +830,9 @@ export const MyProfilePage = () => {
 			>
 				<DialogContent className="flex max-h-[90vh] max-w-3xl flex-col">
 					<DialogHeader className="shrink-0">
-						<DialogTitle>Generate Key</DialogTitle>
+						<DialogTitle className="font-medium text-base leading-6">
+							Generate Key
+						</DialogTitle>
 						<DialogDescription>
 							Create a user key for API access. Do not share
 							tokens with other users.
@@ -848,7 +889,7 @@ export const MyProfilePage = () => {
 										</div>
 									)}
 								/>
-								<div className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-amber-900 text-sm">
+								<div className="rounded-md border border-warning/30 bg-warning/10 px-3 py-2 text-sm text-warning">
 									One-time credentials are shown only once
 									after creation. Copy and store them now.
 								</div>
@@ -979,7 +1020,9 @@ export const MyProfilePage = () => {
 			>
 				<DialogContent>
 					<DialogHeader>
-						<DialogTitle>Delete personal access token</DialogTitle>
+						<DialogTitle className="font-medium text-base leading-6">
+							Delete personal access token
+						</DialogTitle>
 						<DialogDescription>
 							{accessKeyToDelete?.TOKENNAME ? (
 								<>

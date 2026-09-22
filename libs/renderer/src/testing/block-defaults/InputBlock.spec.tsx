@@ -103,6 +103,46 @@ const blocks = {
 };
 
 describe("input block", () => {
+	test.each([1, 3])(
+		"associates the label and hint for an input with %i rows",
+		(rows) => {
+			const block = {
+				...blocks["string-input"],
+				data: {
+					...blocks["string-input"].data,
+					rows,
+					hint: "Enter your name",
+				},
+			};
+			render(<InputBlock id={block.id} />, {
+				blocks: { [block.id]: block },
+			});
+			const input = screen.getByRole("textbox", {
+				name: "Example Input",
+			});
+			expect(screen.getByLabelText("Example Input")).toBe(input);
+			expect(input).toHaveAccessibleDescription("Enter your name");
+		},
+	);
+
+	test("keeps a false boolean editable and optional", () => {
+		render(<InputBlock id={blocks["string-input"].id} />, { blocks });
+		const input = screen.getByRole("textbox", { name: "Example Input" });
+		expect(input).toBeEnabled();
+		expect(input).not.toBeRequired();
+	});
+
+	test("reserves space for the spinner on a loading multiline input", () => {
+		const block = {
+			...blocks["string-input"],
+			data: { ...blocks["string-input"].data, rows: 3, loading: true },
+		};
+		render(<InputBlock id={block.id} />, { blocks: { [block.id]: block } });
+		const input = screen.getByRole("textbox", { name: "Example Input" });
+		expect(input).toBeDisabled();
+		expect(input).toHaveClass("pl-9", "disabled:opacity-50");
+	});
+
 	test("renders correctly with mocked provider", async () => {
 		const { container } = render(
 			<InputBlock id={blocks["string-input"].id} />,

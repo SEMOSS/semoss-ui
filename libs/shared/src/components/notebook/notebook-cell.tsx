@@ -437,43 +437,65 @@ export const NotebookCell: React.FC<NotebookCellProps> = ({
 								</div>
 								{primaryAction}
 								{!readOnly && (
-									<Tooltip>
+									<Tooltip disableHoverableContent={false}>
 										<TooltipTrigger asChild>
-											<Button
-												variant="ghost"
-												size="icon-sm"
-												className="size-7 text-muted-foreground hover:text-destructive"
-												disabled={disabled}
-												onClick={(e) => {
-													e.stopPropagation();
-													onDelete(index);
-												}}
-												aria-label="Delete cell"
+											<span
+												className="inline-flex"
+												tabIndex={
+													disabled ? 0 : undefined
+												}
 											>
-												<Trash2Icon className="size-3.5" />
-											</Button>
+												<Button
+													variant="ghost"
+													size="icon-sm"
+													className="size-7 text-muted-foreground hover:text-destructive"
+													disabled={disabled}
+													onClick={(e) => {
+														e.stopPropagation();
+														onDelete(index);
+													}}
+													aria-label="Delete cell"
+												>
+													<Trash2Icon className="size-3.5" />
+												</Button>
+											</span>
 										</TooltipTrigger>
 										<TooltipContent>
-											Delete cell
+											{disabled
+												? "Wait for the notebook to finish its current operation"
+												: "Delete cell"}
 										</TooltipContent>
 									</Tooltip>
 								)}
 								{showEllipsis && (
 									<DropdownMenu>
-										<DropdownMenuTrigger asChild>
-											<Button
-												variant="ghost"
-												size="icon-sm"
-												className="size-7 text-muted-foreground hover:text-foreground"
-												title="More actions"
-												onClick={(e) =>
-													e.stopPropagation()
-												}
-												aria-label="More actions"
+										<Tooltip
+											disableHoverableContent={false}
+										>
+											<TooltipTrigger asChild>
+												<DropdownMenuTrigger asChild>
+													<Button
+														variant="ghost"
+														size="icon-sm"
+														className="size-7 text-muted-foreground hover:text-foreground"
+														onClick={(e) =>
+															e.stopPropagation()
+														}
+														aria-label={
+															"Cell actions"
+														}
+													>
+														<MoreHorizontalIcon className="size-3.5" />
+													</Button>
+												</DropdownMenuTrigger>
+											</TooltipTrigger>
+											<TooltipContent
+												sideOffset={4}
+												className="max-w-xs break-words"
 											>
-												<MoreHorizontalIcon className="size-3.5" />
-											</Button>
-										</DropdownMenuTrigger>
+												{"Cell actions"}
+											</TooltipContent>
+										</Tooltip>
 										<DropdownMenuContent
 											align="end"
 											className="w-52"

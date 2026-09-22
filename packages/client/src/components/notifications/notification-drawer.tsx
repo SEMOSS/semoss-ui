@@ -6,6 +6,7 @@ import {
 	Button,
 	Sheet,
 	SheetContent,
+	SheetTitle,
 	Tabs,
 	TabsList,
 	TabsTrigger,
@@ -289,12 +290,15 @@ export const NotificationDrawer: React.FC<NotificationDrawerProps> = (
 	return (
 		<Sheet open={open} onOpenChange={onClose}>
 			<SheetContent
+				aria-describedby={undefined}
 				side="right"
 				className="m-2 flex h-[calc(100%-16px)] flex-col overflow-hidden rounded-lg sm:max-w-lg"
 			>
 				{/* Header */}
 				<div className="flex items-center justify-between px-3 py-1">
-					<h2 className="font-bold text-base">Notifications</h2>
+					<SheetTitle className="pr-8 font-medium text-base leading-6">
+						Notifications
+					</SheetTitle>
 				</div>
 
 				{/* Tabs and Clear All */}

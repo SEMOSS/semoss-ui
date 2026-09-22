@@ -123,7 +123,7 @@ export const EntityHeader = ({
 							{id}
 						</span>
 						{copyable && (
-							<Tooltip>
+							<Tooltip disableHoverableContent={false}>
 								<TooltipTrigger asChild>
 									<Button
 										variant="ghost"

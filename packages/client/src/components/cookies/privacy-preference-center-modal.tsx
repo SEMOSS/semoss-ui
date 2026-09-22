@@ -112,9 +112,14 @@ export const PrivacyPreferenceCenterModal = (
 
 	return (
 		<Dialog open={isOpen} onOpenChange={onClose}>
-			<DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-3xl">
+			<DialogContent
+				aria-describedby={undefined}
+				className="max-h-[85vh] overflow-y-auto sm:max-w-3xl"
+			>
 				<DialogHeader>
-					<DialogTitle>{cookiePolicyModalHeader}</DialogTitle>
+					<DialogTitle className="font-medium text-base leading-6">
+						{cookiePolicyModalHeader}
+					</DialogTitle>
 				</DialogHeader>
 
 				<div className="w-full border-border border-y pb-4">

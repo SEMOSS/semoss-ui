@@ -28,6 +28,9 @@ import {
 	Tabs,
 	TabsList,
 	TabsTrigger,
+	Tooltip,
+	TooltipContent,
+	TooltipTrigger,
 	toast,
 } from "@semoss/ui/next";
 import { isProjectType } from "@/utility/catalog";
@@ -266,7 +269,9 @@ export const EditProjectDependenciesDialog = ({
 		>
 			<DialogContent className="flex max-h-[90vh] flex-col overflow-hidden sm:max-w-2xl">
 				<DialogHeader>
-					<DialogTitle>Edit Project Dependencies</DialogTitle>
+					<DialogTitle className="font-medium text-base leading-6">
+						Edit Project Dependencies
+					</DialogTitle>
 					<DialogDescription>
 						Add or remove engines and apps required by this project.
 					</DialogDescription>
@@ -368,25 +373,38 @@ export const EditProjectDependenciesDialog = ({
 													<p className="truncate text-muted-foreground text-xs">
 														ID: {dep.engine_id}
 													</p>
-													<Button
-														variant="ghost"
-														size="icon"
-														className="size-5 shrink-0"
-														onClick={() =>
-															handleCopyId(
-																dep.engine_id,
-															)
+													<Tooltip
+														disableHoverableContent={
+															false
 														}
-														title="Copy ID"
-														aria-label="Copy ID"
 													>
-														{copiedId ===
-														dep.engine_id ? (
-															<Check className="size-3 text-emerald-500" />
-														) : (
-															<Copy className="size-3" />
-														)}
-													</Button>
+														<TooltipTrigger asChild>
+															<Button
+																variant="ghost"
+																size="icon"
+																className="size-5 shrink-0"
+																onClick={() =>
+																	handleCopyId(
+																		dep.engine_id,
+																	)
+																}
+																aria-label="Copy ID"
+															>
+																{copiedId ===
+																dep.engine_id ? (
+																	<Check className="size-3 text-success" />
+																) : (
+																	<Copy className="size-3" />
+																)}
+															</Button>
+														</TooltipTrigger>
+														<TooltipContent
+															sideOffset={4}
+															className="max-w-xs break-words"
+														>
+															{"Copy ID"}
+														</TooltipContent>
+													</Tooltip>
 												</div>
 											</div>
 											<Button

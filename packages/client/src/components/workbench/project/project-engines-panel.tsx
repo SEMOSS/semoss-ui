@@ -254,7 +254,9 @@ const ManageEnginesDialog = ({
 		<Dialog open onOpenChange={(open) => !open && onClose(false)}>
 			<DialogContent className="flex max-h-[70vh] flex-col sm:max-w-md">
 				<DialogHeader>
-					<DialogTitle>Manage {meta.label.toLowerCase()}</DialogTitle>
+					<DialogTitle className="font-medium text-base leading-6">
+						Manage {meta.label.toLowerCase()}
+					</DialogTitle>
 					<DialogDescription>{meta.blurb}.</DialogDescription>
 				</DialogHeader>
 

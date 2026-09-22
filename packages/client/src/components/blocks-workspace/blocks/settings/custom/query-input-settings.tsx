@@ -1,7 +1,7 @@
 import { ExternalLink } from "lucide-react";
 import { computed } from "mobx";
 import { observer } from "mobx-react-lite";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 import {
 	ActionMessages,
 	type Block,
@@ -17,12 +17,29 @@ import {
 	type VariableType,
 } from "@semoss/renderer";
 import {
+	Alert,
+	AlertDescription,
 	Button,
 	Dialog,
 	DialogContent,
+	DialogDescription,
 	DialogHeader,
 	DialogTitle,
+	DialogTrigger,
+	Input,
+	Label,
+	Select,
+	SelectContent,
+	SelectGroup,
+	SelectItem,
+	SelectLabel,
+	SelectTrigger,
+	SelectValue,
 	Separator,
+	Textarea,
+	Tooltip,
+	TooltipContent,
+	TooltipTrigger,
 	toast,
 } from "@semoss/ui/next";
 import { useBlockSettings } from "@/hooks/useBlockSettings";
@@ -60,7 +77,7 @@ interface Option {
 	/**
 	 * node path
 	 */
-	path: string;
+	path?: string;
 	/**
 	 * node value type
 	 */
@@ -73,7 +90,7 @@ interface Option {
 	/**
 	 * type of block
 	 */
-	blockType: "block" | "query" | "cell" | "query-prop" | "cell-prop" | "cell";
+	blockType: string;
 
 	/**
 	 * whether the option is variabilized
@@ -117,6 +134,8 @@ const DISPLAY_PRIORITY_MAP: Record<string, number> = {
 	"cell-prop": 5,
 };
 
+const EMPTY_OPTIONS: Record<string, Option> = {};
+
 /**
  * Specifically for selecting a query for to associate with a UI block
  */
@@ -125,11 +144,12 @@ export const QueryInputSettings = observer(
 		id,
 		path,
 		label,
-		defaultPathMap = {},
+		defaultPathMap = EMPTY_OPTIONS,
 		spellCheck,
 	}: QueryInputSettingsProps<D>) => {
 		const { data, setData } = useBlockSettings(id);
-		const { state, notebook } = useBlocks();
+		const { state } = useBlocks();
+		const inputId = useId();
 
 		// track the value
 		const [value, setValue] = useState("");
@@ -138,9 +158,8 @@ export const QueryInputSettings = observer(
 		// track the modal
 		const [open, setOpen] = useState(false);
 		// Track the input ref to grab the cursor position
-		const inputRef = useRef(null);
-		const suggestionRef = useRef(null);
-		const measureRef = useRef(null);
+		const inputRef = useRef<HTMLInputElement>(null);
+		const suggestionRef = useRef<HTMLDivElement>(null);
 		// track the ref to debounce the input
 		const timeoutRef = useRef<ReturnType<typeof setTimeout>>(null);
 
@@ -175,6 +194,7 @@ export const QueryInputSettings = observer(
 		const onChange = (value: string) => {
 			// set the value
 			setValue(value);
+			setInputValue(value);
 
 			// clear out the old timeout
 			if (timeoutRef.current) {
@@ -191,192 +211,229 @@ export const QueryInputSettings = observer(
 			}, 300);
 		};
 
-		// biome-ignore lint/correctness/useExhaustiveDependencies: TODO
-		const optionMap = useMemo<Record<string, Option>>(() => {
-			const pathMap = {};
-			const variabilizedList = [];
+		// MobX tracks nested changes inside this computed, including removed cells.
+		const { optionMap, missingReferences } = useMemo(
+			() =>
+				computed(() => {
+					const pathMap: Record<string, Option> = {};
+					const variabilizedList: string[] = [];
+					const missingReferences: string[] = [];
 
-			// iterate over the variables
-			Object.entries(state.variables).forEach(
-				(keyValue: [string, Variable]) => {
-					const alias = keyValue[0];
-					const variable = keyValue[1];
+					// iterate over the variables
+					Object.entries(state.variables).forEach(
+						(keyValue: [string, Variable]) => {
+							const alias = keyValue[0];
+							const variable = keyValue[1];
 
-					const ref = state.getVariable(variable.to, variable.type);
-
-					// check if the variable is variabilized
-					if (
-						variable.type === "block" &&
-						!variabilizedList.includes(variable.to)
-					)
-						variabilizedList.push(variable.to);
-					else if (
-						variable.type === "cell" &&
-						!variabilizedList.includes(variable.cellId)
-					)
-						variabilizedList.push(variable.cellId);
-					else if (
-						variable.type === "query" &&
-						!variabilizedList.includes(variable.to)
-					)
-						variabilizedList.push(variable.to);
-
-					pathMap[alias] = {
-						id: alias,
-						path: alias,
-						type: typeof ref,
-						display: alias,
-						blockType: variable.type,
-						variabilized: true,
-						groupAlias: groupAliasMapper(variable.type),
-					};
-
-					if (variable.type === "query") {
-						const q = state.getNotebook(variable.to);
-						if (q) {
-							for (const f in q._exposed) {
-								pathMap[`${alias}.${f}`] = {
-									id: `${alias}.${f}`,
-									path: `${alias}.${f}`,
-									type: typeof q[f], // TODO: get value
-									display: `${alias}.${f}`,
-									blockType: "query-prop",
-									variabilized: true,
-									groupAlias: groupAliasMapper("query-prop"),
-								};
+							const query =
+								variable.type === "query" ||
+								variable.type === "cell"
+									? state.getNotebook(variable.to)
+									: undefined;
+							if (
+								(variable.type === "query" && !query) ||
+								(variable.type === "cell" &&
+									!query?.getCell(variable.cellId)) ||
+								(variable.type === "block" &&
+									!state.blocks[variable.to])
+							) {
+								missingReferences.push(alias);
+								return;
 							}
-						}
-					}
+							const ref = state.getVariable(
+								variable.to,
+								variable.type,
+								[alias],
+								variable.cellId,
+							);
 
-					if (variable.type === "cell") {
-						const q = state.getNotebook(variable.to);
+							// check if the variable is variabilized
+							if (
+								variable.type === "block" &&
+								!variabilizedList.includes(variable.to)
+							)
+								variabilizedList.push(variable.to);
+							else if (
+								variable.type === "cell" &&
+								!variabilizedList.includes(variable.cellId)
+							)
+								variabilizedList.push(variable.cellId);
+							else if (
+								variable.type === "query" &&
+								!variabilizedList.includes(variable.to)
+							)
+								variabilizedList.push(variable.to);
 
-						if (q) {
-							const c = q.getCell(variable.cellId);
-
-							for (const f in c._exposed) {
-								pathMap[`${alias}.${f}`] = {
-									id: `${alias}.${f}`,
-									path: `${alias}.${f}`,
-									type: typeof c[f], // TODO: get value
-									display: `${alias}.${f}`,
-									blockType: "cell-prop",
-									variabilized: true,
-									groupAlias: groupAliasMapper("cell-prop"),
-								};
-							}
-						}
-					}
-				},
-			);
-
-			// iterate over the blocks
-			Object.entries(state.blocks).forEach(
-				(keyValue: [string, Block]) => {
-					const alias = keyValue[0];
-					const block = keyValue[1];
-					//filter only valid(variabilizable) blocks
-					if (
-						INPUT_BLOCK_TYPES.indexOf(block.widget) > -1 &&
-						!variabilizedList.includes(alias)
-					) {
-						pathMap[alias] = {
-							id: alias,
-							path: alias,
-							type: typeof block,
-							display: alias,
-							blockType: "block",
-							variabilized: Object.keys(state.variables).includes(
-								alias,
-							),
-							groupAlias: groupAliasMapper("block"),
-						};
-					}
-				},
-			);
-
-			// iterate over the Queries
-			Object.entries(state.notebooks).forEach(
-				(keyValue: [string, NotebookState]) => {
-					const alias = keyValue[0];
-					const query = keyValue[1];
-
-					if (!variabilizedList.includes(alias)) {
-						pathMap[alias] = {
-							id: alias,
-							path: alias,
-							type: typeof query,
-							display: alias,
-							blockType: "query",
-							variabilized: Object.keys(state.variables).includes(
-								alias,
-							),
-							groupAlias: groupAliasMapper("query"),
-						};
-
-						const q = state.getNotebook(alias);
-						for (const f in q._exposed) {
-							pathMap[`${alias}.${f}`] = {
-								id: `${alias}.${f}`,
-								path: `${alias}.${f}`,
-								type: typeof q[f], // TODO: get value
-								display: `${alias}.${f}`,
-								blockType: "query-prop",
+							pathMap[alias] = {
+								id: alias,
+								path: alias,
+								type: typeof ref,
+								display: alias,
+								blockType: variable.type,
 								variabilized: true,
-								groupAlias: groupAliasMapper("query-prop"),
+								groupAlias: groupAliasMapper(variable.type),
 							};
-						}
-					}
-					// iterate over the un-variabilized cells
-					if (query.cellList.length > 0) {
-						Object.entries(query.cells).forEach(
-							(keyValue: [string, CellState]) => {
-								const cellAlias = keyValue[0];
-								const cell = keyValue[1];
 
-								if (!variabilizedList.includes(cell.id)) {
-									pathMap[`${alias}.${cellAlias}`] = {
-										id: `${alias}.${cellAlias}`,
-										path: `${alias}.${cellAlias}`,
-										type: typeof cell,
-										display: `${alias}.${cellAlias}`,
-										blockType: "cell",
-										variabilized: false,
-										groupAlias: groupAliasMapper("cell"),
-									};
-
-									const q = state.getNotebook(alias);
-									const c = q.getCell(cellAlias);
-
-									for (const f in c._exposed) {
-										pathMap[`${alias}.${cellAlias}.${f}`] =
-											{
-												id: `${alias}.${cellAlias}.${f}`,
-												path: `${alias}.${cellAlias}.${f}`,
-												type: typeof c[f], // TODO: get value
-												display: `${alias}.${cellAlias}.${f}`,
-												blockType: "cell-prop",
-												variabilized: true,
-												groupAlias:
-													groupAliasMapper(
-														"cell-prop",
-													),
-											};
+							if (variable.type === "query") {
+								const q = state.getNotebook(variable.to);
+								if (q) {
+									for (const f in q._exposed) {
+										pathMap[`${alias}.${f}`] = {
+											id: `${alias}.${f}`,
+											path: `${alias}.${f}`,
+											type: typeof q[f], // TODO: get value
+											display: `${alias}.${f}`,
+											blockType: "query-prop",
+											variabilized: true,
+											groupAlias:
+												groupAliasMapper("query-prop"),
+										};
 									}
 								}
-							},
-						);
+							}
+
+							if (variable.type === "cell") {
+								const q = state.getNotebook(variable.to);
+
+								if (q) {
+									const c = q.getCell(variable.cellId);
+									if (!c) return;
+
+									for (const f in c._exposed) {
+										pathMap[`${alias}.${f}`] = {
+											id: `${alias}.${f}`,
+											path: `${alias}.${f}`,
+											type: typeof c[f], // TODO: get value
+											display: `${alias}.${f}`,
+											blockType: "cell-prop",
+											variabilized: true,
+											groupAlias:
+												groupAliasMapper("cell-prop"),
+										};
+									}
+								}
+							}
+						},
+					);
+
+					// iterate over the blocks
+					Object.entries(state.blocks).forEach(
+						(keyValue: [string, Block]) => {
+							const alias = keyValue[0];
+							const block = keyValue[1];
+							//filter only valid(variabilizable) blocks
+							if (
+								INPUT_BLOCK_TYPES.indexOf(block.widget) > -1 &&
+								!variabilizedList.includes(alias)
+							) {
+								pathMap[alias] = {
+									id: alias,
+									path: alias,
+									type: typeof block,
+									display: alias,
+									blockType: "block",
+									variabilized: Object.keys(
+										state.variables,
+									).includes(alias),
+									groupAlias: groupAliasMapper("block"),
+								};
+							}
+						},
+					);
+
+					// iterate over the Queries
+					Object.entries(state.notebooks).forEach(
+						(keyValue: [string, NotebookState]) => {
+							const alias = keyValue[0];
+							const query = keyValue[1];
+							if (!query) return;
+
+							if (!variabilizedList.includes(alias)) {
+								pathMap[alias] = {
+									id: alias,
+									path: alias,
+									type: typeof query,
+									display: alias,
+									blockType: "query",
+									variabilized: Object.keys(
+										state.variables,
+									).includes(alias),
+									groupAlias: groupAliasMapper("query"),
+								};
+
+								const q = state.getNotebook(alias);
+								if (!q) return;
+								for (const f in q._exposed) {
+									pathMap[`${alias}.${f}`] = {
+										id: `${alias}.${f}`,
+										path: `${alias}.${f}`,
+										type: typeof q[f], // TODO: get value
+										display: `${alias}.${f}`,
+										blockType: "query-prop",
+										variabilized: true,
+										groupAlias:
+											groupAliasMapper("query-prop"),
+									};
+								}
+							}
+							// iterate over the un-variabilized cells
+							if (query.cellList.length > 0) {
+								Object.entries(query.cells).forEach(
+									(keyValue: [string, CellState]) => {
+										const cellAlias = keyValue[0];
+										const cell = keyValue[1];
+										if (!cell) return;
+
+										if (
+											!variabilizedList.includes(cell.id)
+										) {
+											pathMap[`${alias}.${cellAlias}`] = {
+												id: `${alias}.${cellAlias}`,
+												path: `${alias}.${cellAlias}`,
+												type: typeof cell,
+												display: `${alias}.${cellAlias}`,
+												blockType: "cell",
+												variabilized: false,
+												groupAlias:
+													groupAliasMapper("cell"),
+											};
+
+											const q = state.getNotebook(alias);
+											const c = q?.getCell(cellAlias);
+											if (!c) return;
+
+											for (const f in c._exposed) {
+												pathMap[
+													`${alias}.${cellAlias}.${f}`
+												] = {
+													id: `${alias}.${cellAlias}.${f}`,
+													path: `${alias}.${cellAlias}.${f}`,
+													type: typeof c[f], // TODO: get value
+													display: `${alias}.${cellAlias}.${f}`,
+													blockType: "cell-prop",
+													variabilized: true,
+													groupAlias:
+														groupAliasMapper(
+															"cell-prop",
+														),
+												};
+											}
+										}
+									},
+								);
+							}
+						},
+					);
+					//iterate over defaultPathMap if available
+					if (Object.keys(defaultPathMap).length > 0) {
+						Object.keys(defaultPathMap).forEach((key) => {
+							pathMap[key] = defaultPathMap[key];
+						});
 					}
-				},
-			);
-			//iterate over defaultPathMap if available
-			if (Object.keys(defaultPathMap).length > 0) {
-				Object.keys(defaultPathMap).forEach((key) => {
-					pathMap[key] = defaultPathMap[key];
-				});
-			}
-			return pathMap;
-		}, [state, notebook, value]);
+					return { optionMap: pathMap, missingReferences };
+				}),
+			[state, defaultPathMap],
+		).get();
 
 		/**
 		 * @name handleVariablize
@@ -420,10 +477,11 @@ export const QueryInputSettings = observer(
 			}
 			const cursorPosition = inputRef?.current
 				? inputRef.current?.selectionStart
-				: null;
+				: value.length;
 			const leftText = value.substring(0, cursorPosition);
 			const rightText = value.substring(cursorPosition);
 			const option = optionMap?.[val];
+			if (!option) return;
 			const valf =
 				option.blockType === "cell"
 					? (option?.path?.split(".")[1] ?? option?.path)
@@ -477,23 +535,9 @@ export const QueryInputSettings = observer(
 			? filteredSuggestions[0]
 			: "";
 
-		const cursorIndex = inputRef?.current?.selectionStart ?? null;
+		const cursorIndex = inputRef.current?.selectionStart ?? value.length;
 		const textBeforeCursor = value.substring(0, cursorIndex);
 		const textAfterCursor = value.substring(cursorIndex);
-
-		const calculateTextWidth = () => {
-			if (!measureRef.current) return 0;
-			(measureRef.current as HTMLElement).textContent = textBeforeCursor;
-			return (measureRef.current as HTMLElement).offsetWidth;
-		};
-
-		const textWidth = calculateTextWidth();
-		const containerWidth =
-			(inputRef.current as HTMLElement | null)?.offsetWidth || 0;
-		const suggestionScrollLeft = Math.max(
-			0,
-			textWidth - containerWidth + 20,
-		);
 
 		const incompleteWordArray = textBeforeCursor
 			.split(" ")
@@ -507,31 +551,46 @@ export const QueryInputSettings = observer(
 				: "";
 
 		return (
-			<>
+			<Dialog open={open} onOpenChange={setOpen}>
 				<div className="flex flex-col gap-2">
 					<div className="flex flex-row items-center justify-between">
-						<p className="text-sm">{label}</p>
+						<Label htmlFor={inputId}>{label}</Label>
 						<div className="flex flex-row items-center">
-							{/* Neel pointed this out 3/31 */}
-							{/* <p className="text-sm text-primary">Open text view</p> */}
-							<Button
-								variant="ghost"
-								size="icon-sm"
-								onClick={() => setOpen(true)}
-							>
-								<ExternalLink className="size-4" />
-							</Button>
+							<Tooltip disableHoverableContent={false}>
+								<TooltipTrigger asChild>
+									<DialogTrigger asChild>
+										<Button
+											type="button"
+											variant="ghost"
+											size="icon-sm"
+											aria-label={`Expand ${label.toLowerCase()} editor`}
+										>
+											<ExternalLink
+												className="size-4"
+												aria-hidden="true"
+											/>
+										</Button>
+									</DialogTrigger>
+								</TooltipTrigger>
+								<TooltipContent>{`Expand ${label.toLowerCase()} editor`}</TooltipContent>
+							</Tooltip>
 						</div>
 					</div>
-					<div style={{ position: "relative", overflow: "hidden" }}>
-						<input
+					{missingReferences.length > 0 && (
+						<Alert>
+							<AlertDescription>
+								Some references are unavailable:{" "}
+								{missingReferences.join(", ")}. Restore or
+								reconnect them in Variables. Your saved value
+								has been kept.
+							</AlertDescription>
+						</Alert>
+					)}
+					<div className="relative overflow-hidden">
+						<Input
+							id={inputId}
 							ref={inputRef}
-							className="w-full rounded-md border border-input bg-background px-3 py-1.5 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
-							style={{
-								whiteSpace: "nowrap",
-								overflowX: "auto",
-								scrollBehavior: "smooth",
-							}}
+							className="w-full overflow-x-auto whitespace-nowrap"
 							placeholder="Enter text or select query"
 							value={inputValue}
 							spellCheck={spellCheck ?? false}
@@ -542,12 +601,16 @@ export const QueryInputSettings = observer(
 							}}
 							onScroll={(e) => {
 								if (suggestionRef.current)
-									(
-										suggestionRef.current as HTMLElement
-									).scrollLeft = e.currentTarget.scrollLeft;
+									suggestionRef.current.scrollLeft =
+										e.currentTarget.scrollLeft;
 							}}
 							onKeyDown={(e) => {
-								if (e.key === "Tab" && suggestionToDisplay) {
+								if (
+									e.key === "Tab" &&
+									!e.shiftKey &&
+									suggestionToDisplay &&
+									!textAfterCursor
+								) {
 									e.preventDefault();
 									const textArr = textBeforeCursor.split(" ");
 									textArr.splice(-1, 1, `{{${suggestion}}}`);
@@ -560,100 +623,87 @@ export const QueryInputSettings = observer(
 						{suggestionToDisplay && !textAfterCursor && (
 							<div
 								ref={suggestionRef}
-								style={{
-									position: "absolute",
-									left: 0,
-									top: "37%",
-									transform: "translateY(-50%)",
-									pointerEvents: "none",
-									color: "#999",
-									padding: "14px",
-									height: "100%",
-									width: "100%",
-									overflow: "hidden",
-								}}
+								aria-hidden="true"
+								className="pointer-events-none absolute inset-0 flex items-center overflow-hidden px-3 text-base text-muted-foreground md:text-sm"
 							>
-								<div
-									style={{
-										position: "relative",
-										whiteSpace: "nowrap",
-										transform: `translateX(-${suggestionScrollLeft}px)`,
-									}}
-								>
-									<span style={{ visibility: "hidden" }}>
+								<div className="relative whitespace-nowrap">
+									<span className="invisible">
 										{textBeforeCursor}
 									</span>
-									<span style={{ color: "#999" }}>
-										{suggestionToDisplay}
-									</span>
+									<span>{suggestionToDisplay}</span>
 								</div>
 							</div>
 						)}
 					</div>
-					<select
-						className="w-full rounded-md border border-input bg-background px-3 py-1.5 text-muted-foreground text-sm focus:outline-none focus:ring-1 focus:ring-ring"
-						value=""
-						onChange={(e) => {
-							handleSelectOption(e.target.value);
-							e.target.value = "";
-						}}
-					>
-						<option value="" disabled>
-							Select option...
-						</option>
-						{Object.entries(groupedOptions).map(([group, keys]) => (
-							<optgroup key={group} label={group}>
-								{keys
-									.sort(
-										(a, b) =>
-											(DISPLAY_PRIORITY_MAP[
-												optionMap[a].blockType
-											] || Infinity) -
-											(DISPLAY_PRIORITY_MAP[
-												optionMap[b].blockType
-											] || Infinity),
-									)
-									.map((key) => (
-										<option key={key} value={key}>
-											{optionMap[key].display}
-										</option>
-									))}
-							</optgroup>
-						))}
-					</select>
+					<Select value="" onValueChange={handleSelectOption}>
+						<SelectTrigger
+							className="w-full"
+							aria-label={`Insert reference into ${label.toLowerCase()}`}
+						>
+							<SelectValue placeholder="Select option..." />
+						</SelectTrigger>
+						<SelectContent>
+							{Object.entries(groupedOptions).map(
+								([group, keys]) => (
+									<SelectGroup key={group}>
+										<SelectLabel>{group}</SelectLabel>
+										{[...keys]
+											.sort(
+												(a, b) =>
+													(DISPLAY_PRIORITY_MAP[
+														optionMap[a].blockType
+													] || Infinity) -
+													(DISPLAY_PRIORITY_MAP[
+														optionMap[b].blockType
+													] || Infinity),
+											)
+											.map((key) => (
+												<SelectItem
+													key={key}
+													value={key}
+												>
+													{optionMap[key].display}
+												</SelectItem>
+											))}
+									</SelectGroup>
+								),
+							)}
+						</SelectContent>
+					</Select>
 				</div>
-				<Dialog open={open} onOpenChange={(o) => setOpen(o)}>
-					<DialogContent
-						className={
+				<DialogContent
+					className={
+						Object.hasOwn(data, "type") && data.type === "date"
+							? "max-w-sm"
+							: "max-w-4xl"
+					}
+				>
+					<DialogHeader>
+						<DialogTitle className="font-medium text-base leading-6">{`Edit ${label}`}</DialogTitle>
+						<DialogDescription>
+							Changes are saved automatically.
+						</DialogDescription>
+					</DialogHeader>
+					<Separator />
+					<Textarea
+						aria-label={label}
+						className="field-sizing-fixed w-full resize-y"
+						rows={
 							Object.hasOwn(data, "type") && data.type === "date"
-								? "max-w-sm"
-								: "max-w-4xl"
+								? 1
+								: 15
 						}
-					>
-						<DialogHeader>
-							<DialogTitle>{`Edit ${label}`}</DialogTitle>
-						</DialogHeader>
-						<Separator />
-						<textarea
-							className="w-full resize-y rounded-md border border-input bg-background px-3 py-2 font-mono text-sm"
-							rows={
-								Object.hasOwn(data, "type") &&
-								data.type === "date"
-									? 1
-									: 15
-							}
-							placeholder="Enter Text..."
-							value={value}
-							onChange={(e) => {
-								// sync the data on change
-								onChange(e.target.value);
-							}}
-							autoComplete="off"
-							spellCheck={spellCheck ?? false}
-						/>
-					</DialogContent>
-				</Dialog>
-			</>
+						placeholder="Enter Text..."
+						value={value}
+						onChange={(e) => {
+							// sync the data on change
+							onChange(e.target.value);
+						}}
+						autoComplete="off"
+						spellCheck={spellCheck ?? false}
+					/>
+				</DialogContent>
+			</Dialog>
 		);
 	},
 );

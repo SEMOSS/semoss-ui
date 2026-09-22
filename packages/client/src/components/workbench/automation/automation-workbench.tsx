@@ -624,7 +624,7 @@ export const AutomationWorkbench = observer(
 					</Breadcrumb>
 				</NavbarLeft>
 				<NavbarRight>
-					<Tooltip>
+					<Tooltip disableHoverableContent={false}>
 						<TooltipTrigger asChild>
 							<Button
 								variant="ghost"
@@ -657,9 +657,14 @@ export const AutomationWorkbench = observer(
 						}
 					}}
 				>
-					<DialogContent className="flex h-[85vh] w-[min(92vw,80rem)] max-w-none flex-col p-0 sm:max-w-3xl">
+					<DialogContent
+						aria-describedby={undefined}
+						className="flex h-[85vh] w-[min(92vw,80rem)] max-w-none flex-col p-0 sm:max-w-3xl"
+					>
 						<DialogHeader className="border-b px-4 py-3">
-							<DialogTitle>Python source</DialogTitle>
+							<DialogTitle className="font-medium text-base leading-6">
+								Python source
+							</DialogTitle>
 						</DialogHeader>
 						<div className="min-h-0 flex-1 p-4">
 							<div className="h-full overflow-hidden rounded-lg border bg-muted/30">
