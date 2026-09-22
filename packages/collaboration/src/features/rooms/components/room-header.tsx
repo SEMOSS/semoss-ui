@@ -1,5 +1,10 @@
-import { Plus, Settings2 } from "lucide-react";
-import { Button } from "@semoss/ui/next";
+import { PanelRightClose, PanelRightOpen, Settings2 } from "lucide-react";
+import {
+	Button,
+	Tooltip,
+	TooltipContent,
+	TooltipTrigger,
+} from "@semoss/ui/next";
 import { SourceLabel } from "@/components/common/source-label";
 import { StatusLabel } from "@/components/common/status-label";
 import { RuntimeAgentAvatar } from "@/features/agents/components/runtime-agent-avatar";
@@ -11,15 +16,23 @@ export function RoomHeader({
 	agent,
 	agentId,
 	session,
+	isToolWorkbenchOpen,
+	canToggleToolWorkbench,
+	onToggleToolWorkbench,
 	onConfigure,
-	onNewRoom,
 }: {
 	agent: Agent;
 	agentId: string;
 	session: Session;
+	isToolWorkbenchOpen: boolean;
+	canToggleToolWorkbench: boolean;
+	onToggleToolWorkbench: () => void;
 	onConfigure: (id: string) => void;
-	onNewRoom: (agentId?: string) => void;
 }) {
+	const toolWorkbenchLabel = isToolWorkbenchOpen
+		? "Close workbench"
+		: "Open workbench";
+
 	return (
 		<>
 			<header className="flex min-h-17 shrink-0 items-center gap-3 border-b px-4 py-3 lg:px-5">
@@ -35,22 +48,45 @@ export function RoomHeader({
 						{session.title}
 					</p>
 				</div>
-				<Button
-					variant="ghost"
-					size="icon-sm"
-					aria-label={`Configure ${agent.name}`}
-					onClick={() => onConfigure(agentId)}
-				>
-					<Settings2 />
-				</Button>
-				<Button
-					variant="ghost"
-					size="icon-sm"
-					aria-label={`New room with ${agent.name}`}
-					onClick={() => onNewRoom(agentId)}
-				>
-					<Plus />
-				</Button>
+
+				<Tooltip>
+					<TooltipTrigger>
+						<Button
+							type="button"
+							variant="ghost"
+							size="icon-sm"
+							aria-label={`Configure ${agent.name}`}
+							onClick={() => onConfigure(agentId)}
+						>
+							<Settings2 />
+						</Button>
+					</TooltipTrigger>
+					<TooltipContent>
+						{" "}
+						{`Configure ${agent.name}`}{" "}
+					</TooltipContent>
+				</Tooltip>
+
+				<Tooltip>
+					<TooltipTrigger asChild>
+						<Button
+							type="button"
+							variant="ghost"
+							size="icon-sm"
+							aria-label={toolWorkbenchLabel}
+							aria-expanded={isToolWorkbenchOpen}
+							disabled={!canToggleToolWorkbench}
+							onClick={onToggleToolWorkbench}
+						>
+							{isToolWorkbenchOpen ? (
+								<PanelRightClose aria-hidden="true" />
+							) : (
+								<PanelRightOpen aria-hidden="true" />
+							)}
+						</Button>
+					</TooltipTrigger>
+					<TooltipContent>{toolWorkbenchLabel}</TooltipContent>
+				</Tooltip>
 			</header>
 			<div className="flex shrink-0 flex-wrap items-center justify-between gap-2 border-b bg-muted/20 px-5 py-2.5">
 				<span

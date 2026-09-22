@@ -180,7 +180,7 @@ export function MainLayout() {
 				open={sidebarOpen}
 				onOpenChange={setSidebarOpen}
 				data-slot="workspace-layout"
-				className="-m-4 h-dvh overflow-hidden bg-background text-foreground"
+				className="-m-4 h-dvh w-auto overflow-hidden bg-background text-foreground"
 				style={
 					{
 						"--sidebar-width": "16rem",
