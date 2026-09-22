@@ -59,7 +59,7 @@ function event(
 	sequence: number,
 	type: "item.started" | "item.completed",
 	text: string,
-): AgentEvent {
+): Extract<AgentEvent, { type: "item.started" | "item.completed" }> {
 	return {
 		eventId: `event-${sequence}`,
 		runId: "run-1",

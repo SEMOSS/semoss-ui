@@ -1,18 +1,11 @@
-import { Check, ImagePlus } from "lucide-react";
+import { ImagePlus } from "lucide-react";
 import type { RefObject } from "react";
-import { Button, cn, FormInput, FormTextarea, Spinner } from "@semoss/ui/next";
+import { Button, FormInput, FormTextarea, Spinner } from "@semoss/ui/next";
 import { AgentAvatar } from "@/components/common/agent-avatar";
-import { agentIcons } from "@/components/common/agent-icons";
 import { FormSection } from "@/features/agents/components/form-section";
-import type { Agent, AgentIcon, AgentTone } from "@/types/agent";
-
-type UpdateAgent = <Key extends keyof Agent>(
-	key: Key,
-	value: Agent[Key],
-) => void;
+import type { Agent } from "@/types/agent";
 
 export function ProfileSettingsView({
-	agent,
 	shownAgent,
 	savedAgent,
 	readingPhoto,
@@ -20,9 +13,7 @@ export function ProfileSettingsView({
 	avatarInput,
 	onChoosePhoto,
 	onRemovePhoto,
-	onUpdate,
 }: {
-	agent: Agent;
 	shownAgent: Agent;
 	savedAgent: boolean;
 	readingPhoto: boolean;
@@ -30,7 +21,6 @@ export function ProfileSettingsView({
 	avatarInput: RefObject<HTMLInputElement | null>;
 	onChoosePhoto: (file: File) => void;
 	onRemovePhoto: () => void;
-	onUpdate: UpdateAgent;
 }) {
 	return (
 		<div className="space-y-7">
@@ -98,61 +88,6 @@ export function ProfileSettingsView({
 					maxLength={60}
 					required
 				/>
-			</FormSection>
-			<FormSection title="Or choose an identity icon">
-				<div className="flex flex-wrap items-center gap-2">
-					{(Object.keys(agentIcons) as AgentIcon[]).map((icon) => {
-						const Icon = agentIcons[icon];
-						return (
-							<Button
-								type="button"
-								key={icon}
-								aria-label={`${icon} identity`}
-								variant={
-									agent.icon === icon && !agent.avatar
-										? "default"
-										: "outline"
-								}
-								size="icon-lg"
-								onClick={() => {
-									onUpdate("icon", icon);
-									onUpdate("avatar", "");
-								}}
-							>
-								<Icon />
-							</Button>
-						);
-					})}
-					<span className="mx-2 h-6 border-l" />
-					{(["green", "teal", "blue", "amber"] as AgentTone[]).map(
-						(tone) => (
-							<button
-								type="button"
-								key={tone}
-								aria-label={`${tone} identity color`}
-								aria-pressed={agent.tone === tone}
-								onClick={() => onUpdate("tone", tone)}
-								className={cn(
-									"flex size-6 items-center justify-center rounded-full border-2 border-background ring-1",
-									tone === "green"
-										? "bg-chart-1"
-										: tone === "teal"
-											? "bg-chart-2"
-											: tone === "blue"
-												? "bg-chart-3"
-												: "bg-chart-4",
-									agent.tone === tone
-										? "ring-ring"
-										: "ring-border",
-								)}
-							>
-								{agent.tone === tone && (
-									<Check className="size-3 text-background" />
-								)}
-							</button>
-						),
-					)}
-				</div>
 			</FormSection>
 			<FormSection title="Operating instructions">
 				<FormTextarea

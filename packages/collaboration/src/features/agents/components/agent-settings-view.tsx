@@ -380,7 +380,6 @@ export function AgentSettings({
 					<div className="max-w-2xl space-y-7">
 						{tab === "Profile" && (
 							<ProfileSettingsView
-								agent={draft}
 								shownAgent={shownAgent}
 								savedAgent={savedAgent}
 								readingPhoto={readingPhoto}
@@ -388,7 +387,6 @@ export function AgentSettings({
 								avatarInput={avatarInput}
 								onChoosePhoto={choosePhoto}
 								onRemovePhoto={removePhoto}
-								onUpdate={update}
 							/>
 						)}
 						{tab === "Capabilities" && (
