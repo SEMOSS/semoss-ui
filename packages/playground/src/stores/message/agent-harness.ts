@@ -80,10 +80,10 @@ const buildToolCallPart = (item: {
 	arguments: Record<string, unknown>;
 	metadata?: Record<string, unknown>;
 }): PixelMessageToolCallPart => {
-	const displayName =
-		item.title ||
+	const originalName =
 		(item.metadata?.SMSS_ORIGINAL_TOOL_NAME as string | undefined) ||
 		item.name;
+	const displayName = item.title || originalName;
 	return {
 		type: "TOOL_CALL",
 		toolCall: {
@@ -93,7 +93,7 @@ const buildToolCallPart = (item: {
 			title: displayName,
 			arguments: item.arguments,
 			_tool_found: true,
-			original_name: displayName,
+			original_name: originalName,
 			description: "",
 			_meta: {
 				SMSS_ENGINE_NAME: "",
@@ -111,11 +111,10 @@ const buildToolCallPart = (item: {
 };
 
 /**
- * The backend never emits a stream item for a tool call awaiting an ask
- * decision (HarnessToolExecutor throws AgentInputRequiredException before any
- * item.started for it) — it only exists as a PendingAgentAction on the
- * snapshot. Synthesize its TOOL_CALL part here so it renders without a page
- * refresh. Always agent-ask: only ask tools ever become pending actions.
+ * Synthesize a TOOL_CALL part when reconnecting to an ask tool whose queued
+ * stream item was missed. Live runs normally receive item.started before the
+ * PendingAgentAction snapshot, so syncPendingActions keeps the existing part.
+ * Always agent-ask: only ask tools ever become pending actions.
  */
 const buildPendingToolCallPart = (
 	action: PendingAgentAction,
@@ -174,11 +173,6 @@ const applyAgentRunItem = (
 	items: AgentRunItemsState,
 ) => {
 	const room = responseMessage.room;
-
-	if (event.type !== "item.updated" && event.item.kind === "progress") {
-		responseMessage.agentRunProgress = event.item;
-		return;
-	}
 
 	if (event.type === "item.started") {
 		const { item } = event;
@@ -395,10 +389,6 @@ const watchAgentRun = (
 			},
 			onSnapshot: (snapshot) => {
 				runInAction(() => {
-					if (snapshot.progress)
-						responseMessage.agentRunProgress = snapshot.progress;
-					responseMessage.agentRunError =
-						snapshot.errorMessage || null;
 					syncPendingActions(
 						responseMessage,
 						snapshot.pendingActions,
@@ -407,10 +397,6 @@ const watchAgentRun = (
 			},
 			onReconcile: (snapshot) => {
 				runInAction(() => {
-					if (snapshot.progress)
-						responseMessage.agentRunProgress = snapshot.progress;
-					responseMessage.agentRunError =
-						snapshot.errorMessage || null;
 					if (inputMessage && snapshot.inputMessageId) {
 						inputMessage.id = snapshot.inputMessageId;
 					}
@@ -478,8 +464,6 @@ export const runAgentMessage = async (
 			},
 		} as ResponsePixelMessage);
 
-	let runStarted = false;
-
 	// This path doesn't go through streamJob, so it owns isLoading itself.
 	room.setIsLoading(true);
 
@@ -514,17 +498,11 @@ export const runAgentMessage = async (
 			},
 			room.insightId,
 		);
-		runStarted = true;
 
 		await watchAgentRun(handle, responseMessage, inputMessage);
 	} catch (e) {
-		// A submitted run has useful persisted results even when execution fails.
-		if (!runStarted) message.removeChild(inputMessage);
-		else
-			runInAction(() => {
-				responseMessage.agentRunError =
-					e instanceof Error ? e.message : String(e);
-			});
+		// remove message if we failed
+		message.removeChild(inputMessage);
 
 		throw e;
 	} finally {
