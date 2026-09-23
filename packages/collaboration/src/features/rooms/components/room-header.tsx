@@ -32,62 +32,56 @@ export function RoomHeader({
 		: "Open workbench";
 
 	return (
-		<>
-			<header className="flex min-h-17 shrink-0 items-center gap-3 border-b px-4 py-3 lg:px-5">
-				<RuntimeAgentAvatar agent={agent} size="sm" />
-				<div className="min-w-0 flex-1">
-					<h2 className="truncate font-semibold text-sm">
-						{agent.name}
-						<span className="ml-2 font-normal text-muted-foreground text-xs">
-							AI agent
-						</span>
-					</h2>
-					<p className="mt-0.5 truncate text-muted-foreground text-xs">
-						{session.title}
-					</p>
-				</div>
+		<header className="flex min-h-17 shrink-0 items-center gap-3 border-b px-4 py-3 lg:px-5">
+			<RuntimeAgentAvatar agent={agent} size="sm" />
+			<div className="min-w-0 flex-1">
+				<h2 className="truncate font-semibold text-sm">
+					{agent.name}
+					<span className="ml-2 font-normal text-muted-foreground text-xs">
+						AI agent
+					</span>
+				</h2>
+				<p className="mt-0.5 truncate text-muted-foreground text-xs">
+					{session.title}
+				</p>
+			</div>
 
+			<Tooltip>
+				<TooltipTrigger>
+					<Button
+						type="button"
+						variant="ghost"
+						size="icon-sm"
+						aria-label={`Configure ${agent.name}`}
+						onClick={() => onConfigure(agentId)}
+					>
+						<Settings2 />
+					</Button>
+				</TooltipTrigger>
+				<TooltipContent> {`Configure ${agent.name}`} </TooltipContent>
+			</Tooltip>
+
+			{showToolWorkbench && (
 				<Tooltip>
-					<TooltipTrigger>
+					<TooltipTrigger asChild>
 						<Button
 							type="button"
 							variant="ghost"
 							size="icon-sm"
-							aria-label={`Configure ${agent.name}`}
-							onClick={() => onConfigure(agentId)}
+							aria-label={toolWorkbenchLabel}
+							aria-expanded={isToolWorkbenchOpen}
+							onClick={onToggleToolWorkbench}
 						>
-							<Settings2 />
+							{isToolWorkbenchOpen ? (
+								<PanelRightClose aria-hidden="true" />
+							) : (
+								<PanelRightOpen aria-hidden="true" />
+							)}
 						</Button>
 					</TooltipTrigger>
-					<TooltipContent>
-						{" "}
-						{`Configure ${agent.name}`}{" "}
-					</TooltipContent>
+					<TooltipContent>{toolWorkbenchLabel}</TooltipContent>
 				</Tooltip>
-
-				{showToolWorkbench && (
-					<Tooltip>
-						<TooltipTrigger asChild>
-							<Button
-								type="button"
-								variant="ghost"
-								size="icon-sm"
-								aria-label={toolWorkbenchLabel}
-								aria-expanded={isToolWorkbenchOpen}
-								onClick={onToggleToolWorkbench}
-							>
-								{isToolWorkbenchOpen ? (
-									<PanelRightClose aria-hidden="true" />
-								) : (
-									<PanelRightOpen aria-hidden="true" />
-								)}
-							</Button>
-						</TooltipTrigger>
-						<TooltipContent>{toolWorkbenchLabel}</TooltipContent>
-					</Tooltip>
-				)}
-			</header>
-			
-		</>
+			)}
+		</header>
 	);
 }
