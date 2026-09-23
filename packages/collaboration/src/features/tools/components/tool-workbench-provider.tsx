@@ -7,7 +7,11 @@ import {
 	useState,
 	useSyncExternalStore,
 } from "react";
-import { type FilePanelMode, isFilePanelType } from "@semoss/panels";
+import {
+	type FilePanelMode,
+	getFilePanelType,
+	isFilePanelType,
+} from "@semoss/panels";
 import { createWorkbenchStore } from "@semoss/workbench";
 import type { ConversationTool } from "@/features/messages/types/message";
 import type { PendingToolApproval } from "@/features/rooms/types/room";
@@ -181,6 +185,20 @@ export function ToolWorkbenchProvider({
 		[store, tools],
 	);
 
+	const openFile = useCallback(
+		(path: string, name: string) => {
+			store
+				.getState()
+				.layout.actions.selectPanel(
+					getFilePanelType(path),
+					{ mode: { type: "INSIGHT", insightId }, name, path },
+					{ name },
+				);
+			setIsOpen(true);
+		},
+		[insightId, store],
+	);
+
 	const openInline = useCallback(
 		(toolId: string) => {
 			const actions = store.getState().layout.actions;
@@ -281,6 +299,7 @@ export function ToolWorkbenchProvider({
 			getToolDisplayMode,
 			openInline,
 			openWorkbench,
+			openFile,
 			closeTool,
 			closeWorkbench,
 			onApproveTool,
@@ -298,6 +317,7 @@ export function ToolWorkbenchProvider({
 			getToolDisplayMode,
 			openInline,
 			openWorkbench,
+			openFile,
 			closeTool,
 			closeWorkbench,
 			onApproveTool,
