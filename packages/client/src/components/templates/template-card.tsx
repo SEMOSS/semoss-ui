@@ -110,7 +110,7 @@ export const TemplateCard = ({
 								</Badge>
 							))}
 							{tags.length > 2 && (
-								<Tooltip>
+								<Tooltip disableHoverableContent={false}>
 									<TooltipTrigger asChild>
 										<Badge
 											variant="outline"

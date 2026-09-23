@@ -128,8 +128,8 @@ export const LLMFeedbackPage = () => {
 						variant="outline"
 						className={
 							value === true
-								? "border-green-500 font-normal text-green-600"
-								: "border-red-500 font-normal text-red-600"
+								? "border-success/30 font-normal text-success"
+								: "border-destructive/30 font-normal text-destructive"
 						}
 					>
 						{value === true ? "Positive" : "Negative"}
@@ -470,7 +470,9 @@ export const LLMFeedbackPage = () => {
 			>
 				<SheetContent className="w-full overflow-y-auto sm:max-w-xl">
 					<SheetHeader>
-						<SheetTitle>Feedback Details</SheetTitle>
+						<SheetTitle className="font-medium text-base leading-6">
+							Feedback Details
+						</SheetTitle>
 						<SheetDescription>
 							{selectedRow?.DATE_CREATED ?? ""}
 						</SheetDescription>
@@ -485,8 +487,8 @@ export const LLMFeedbackPage = () => {
 									variant="outline"
 									className={
 										selectedRow.RATING === true
-											? "border-green-500 font-normal text-green-600"
-											: "border-red-500 font-normal text-red-600"
+											? "border-success/30 font-normal text-success"
+											: "border-destructive/30 font-normal text-destructive"
 									}
 								>
 									{selectedRow.RATING === true

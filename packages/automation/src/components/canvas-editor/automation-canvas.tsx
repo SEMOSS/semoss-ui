@@ -14,10 +14,8 @@ import "@xyflow/react/dist/style.css";
 import {
 	CheckCircle,
 	Code2,
-	Hand,
 	Loader2,
 	Lock,
-	MousePointer2,
 	Play,
 	RefreshCw,
 	Save,
@@ -283,6 +281,11 @@ export interface AutomationCanvasHandle {
 	viewHistoricalRun: (run: AutomationRunDetail) => void;
 	/** Returns the canvas to the live editable graph. */
 	exitHistoricalView: () => void;
+	/** Applies a saved file-editor tab's content onto its node's in-memory pythonSource, so a
+	 * later Save can't clobber it with the stale copy the canvas loaded with. Looks the step up
+	 * by id rather than going through `applyInspectorAction`, since the saved tab is not
+	 * necessarily the step currently open in the inspector. No-ops for an unknown/removed step. */
+	syncPythonSource: (stepId: string, source: string) => void;
 }
 
 type TriggerAutomationOutput = AutomationRunDetail;
@@ -588,9 +591,6 @@ export const AutomationCanvasContent = forwardRef<
 
 	// Drawer state — which step is being edited
 	const [editingStepId, setEditingStepId] = useState<string | null>(null);
-	const [canvasMode, setCanvasMode] = useState<"interact" | "pan">(
-		"interact",
-	);
 	const [latestRunStatus, setLatestRunStatus] = useState<RunStatus | null>(
 		null,
 	);
@@ -1606,6 +1606,23 @@ export const AutomationCanvasContent = forwardRef<
 		[isDirty, save],
 	);
 
+	const syncPythonSource = useCallback(
+		(stepId: string, source: string) => {
+			if (readOnly || viewingHistory) return;
+			const step = steps.find((candidate) => candidate.id === stepId);
+			if (!step) return;
+			updateStep({
+				...step,
+				workflowCodeMode: "custom",
+				workflowConfig: {
+					...step.workflowConfig,
+					pythonSource: source,
+				},
+			});
+		},
+		[readOnly, steps, updateStep, viewingHistory],
+	);
+
 	useImperativeHandle(
 		ref,
 		() => ({
@@ -1614,6 +1631,7 @@ export const AutomationCanvasContent = forwardRef<
 			refresh,
 			viewHistoricalRun,
 			exitHistoricalView,
+			syncPythonSource,
 		}),
 		[
 			applyInspectorAction,
@@ -1621,6 +1639,7 @@ export const AutomationCanvasContent = forwardRef<
 			refresh,
 			viewHistoricalRun,
 			exitHistoricalView,
+			syncPythonSource,
 		],
 	);
 
@@ -2496,22 +2515,17 @@ export const AutomationCanvasContent = forwardRef<
 										nodeTypes={nodeTypes as never}
 										edgeTypes={edgeTypes as never}
 										nodesDraggable={
-											!readOnly &&
-											!viewingHistory &&
-											canvasMode === "interact"
+											!readOnly && !viewingHistory
 										}
 										nodesConnectable={
 											!readOnly &&
 											!viewingHistory &&
-											canvasMode === "interact" &&
 											!running
 										}
-										panOnDrag={
-											canvasMode === "pan" ? true : [2]
-										}
-										panOnScroll={canvasMode !== "pan"}
+										panOnDrag
+										panOnScroll
 										zoomOnPinch
-										zoomOnScroll={canvasMode === "pan"}
+										zoomOnScroll={false}
 										minZoom={0.3}
 										maxZoom={1.5}
 										defaultEdgeOptions={{
@@ -2530,16 +2544,10 @@ export const AutomationCanvasContent = forwardRef<
 										onPaneContextMenu={(event) =>
 											event.preventDefault()
 										}
-										onNodeClick={
-											canvasMode === "interact"
-												? (_e, node) => {
-														setShowAddMenu(false);
-														setEditingStepId(
-															node.id,
-														);
-													}
-												: undefined
-										}
+										onNodeClick={(_event, node) => {
+											setShowAddMenu(false);
+											setEditingStepId(node.id);
+										}}
 										onNodesChange={onRfNodesChange}
 										onNodeDragStop={onNodeDragStop}
 										onPaneClick={() => {
@@ -2732,47 +2740,6 @@ export const AutomationCanvasContent = forwardRef<
 													Clean up layout
 												</TooltipContent>
 											</Tooltip>
-
-											<div className="flex items-center gap-0.5 rounded-md bg-muted/60 p-0.5">
-												<Tooltip>
-													<TooltipTrigger asChild>
-														<button
-															type="button"
-															aria-label="Interact mode"
-															onClick={() =>
-																setCanvasMode(
-																	"interact",
-																)
-															}
-															className={`flex items-center justify-center rounded p-1.5 transition-colors ${canvasMode === "interact" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
-														>
-															<MousePointer2 className="h-4 w-4" />
-														</button>
-													</TooltipTrigger>
-													<TooltipContent side="top">
-														Interact mode (V)
-													</TooltipContent>
-												</Tooltip>
-												<Tooltip>
-													<TooltipTrigger asChild>
-														<button
-															type="button"
-															aria-label="Pan mode"
-															onClick={() =>
-																setCanvasMode(
-																	"pan",
-																)
-															}
-															className={`flex items-center justify-center rounded p-1.5 transition-colors ${canvasMode === "pan" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
-														>
-															<Hand className="h-4 w-4" />
-														</button>
-													</TooltipTrigger>
-													<TooltipContent side="top">
-														Pan mode (H)
-													</TooltipContent>
-												</Tooltip>
-											</div>
 
 											<div className="flex items-center gap-0.5 rounded-md bg-muted/60 p-0.5">
 												<Tooltip>

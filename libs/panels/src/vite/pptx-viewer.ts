@@ -41,7 +41,7 @@ const scopePptxViewerCss = (code: string): string => {
 
 /**
  * Scope the pptx viewer's stylesheet. See `scopePptxViewerCss` — the scope
- * class is applied by `file-pptx-viewer-content.tsx` around the viewer mount.
+ * class is applied by `file-pptx-view-content.tsx` around the viewer mount.
  *
  * Every host that mounts the file panels needs this; it lives with them rather
  * than being copied into each app's vite config.

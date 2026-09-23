@@ -228,7 +228,7 @@ export const GanttFiscal = observer(
 		}
 
 		return (
-			<div className="flex flex-col border-[#E6E6E6] border-b p-3">
+			<div className="flex flex-col border-border border-b p-3">
 				<div className="flex flex-row items-center gap-2 py-2">
 					<Switch
 						checked={fiscalData.enableFiscalAxis}

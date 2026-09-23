@@ -49,12 +49,17 @@ interface ConnectionProps {
 	isRdf?: boolean;
 }
 
-const CreateConnection: React.FC<ConnectionProps> = ({
+const EMPTY_CONNECTIONS: Conn[] = [];
+
+const makeId = (c: Conn) =>
+	`${c.parentTable}_${c.childTable}`.replace(/\s+/g, "_");
+
+export const CreateConnection: React.FC<ConnectionProps> = ({
 	open,
 	onClose,
 	nodes,
 	onCreateConnection,
-	initialConnections = [],
+	initialConnections = EMPTY_CONNECTIONS,
 	onEditConnection,
 	onDeleteConnection,
 	isRdf = false,
@@ -70,12 +75,10 @@ const CreateConnection: React.FC<ConnectionProps> = ({
 
 	// Snapshot of connections at dialog open — used to diff on Save
 	const snapshotRef = useRef<Conn[]>([]);
-
-	const makeId = (c: Conn) =>
-		`${c.parentTable}_${c.childTable}`.replace(/\s+/g, "_");
+	const wasOpenRef = useRef(false);
 
 	useEffect(() => {
-		if (open) {
+		if (open && !wasOpenRef.current) {
 			const normalized = initialConnections.map((c) => {
 				const copy = { ...c };
 				if (!copy.id) copy.id = makeId(copy);
@@ -87,21 +90,21 @@ const CreateConnection: React.FC<ConnectionProps> = ({
 			setParentTable("");
 			setChildTable("");
 			setError("");
+			setSave(true);
 		}
+		wasOpenRef.current = open;
 	}, [open, initialConnections]);
 
 	useEffect(() => {
 		if (parentTable && !tableOptions.includes(parentTable)) {
 			setParentTable("");
+			setError("");
 		}
 		if (childTable && !tableOptions.includes(childTable)) {
 			setChildTable("");
+			setError("");
 		}
-	}, [nodes, parentTable, childTable, tableOptions]);
-
-	useEffect(() => {
-		setSave(true);
-	}, [open]);
+	}, [parentTable, childTable, tableOptions]);
 
 	const sanitizeForForm = (c: Conn) => {
 		const sanitized: Conn = { ...c };
@@ -252,15 +255,14 @@ const CreateConnection: React.FC<ConnectionProps> = ({
 		onClose();
 	};
 
-	useEffect(() => {
-		if (error) setError("");
-	}, [parentTable, childTable]);
-
 	return (
 		<Dialog open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
-			<DialogContent className="max-w-[600px] overflow-y-auto">
+			<DialogContent
+				aria-describedby={undefined}
+				className="max-w-[600px] overflow-y-auto"
+			>
 				<DialogHeader>
-					<DialogTitle className="pr-8">
+					<DialogTitle className="pr-8 font-medium text-base leading-6">
 						Create Connection
 					</DialogTitle>
 				</DialogHeader>
@@ -273,7 +275,10 @@ const CreateConnection: React.FC<ConnectionProps> = ({
 						</FieldLabel>
 						<Select
 							value={parentTable || ""}
-							onValueChange={(value) => setParentTable(value)}
+							onValueChange={(value) => {
+								setParentTable(value);
+								setError("");
+							}}
 						>
 							<SelectTrigger className="w-full">
 								<SelectValue
@@ -301,7 +306,10 @@ const CreateConnection: React.FC<ConnectionProps> = ({
 						</FieldLabel>
 						<Select
 							value={childTable || ""}
-							onValueChange={(value) => setChildTable(value)}
+							onValueChange={(value) => {
+								setChildTable(value);
+								setError("");
+							}}
 						>
 							<SelectTrigger className="w-full">
 								<SelectValue
@@ -426,5 +434,3 @@ const CreateConnection: React.FC<ConnectionProps> = ({
 		</Dialog>
 	);
 };
-
-export default CreateConnection;

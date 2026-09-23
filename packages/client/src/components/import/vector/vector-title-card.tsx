@@ -138,7 +138,7 @@ export const VectorTitleCard: React.FC<VectorTileCardProps> = ({
 	);
 
 	return isTruncated ? (
-		<Tooltip>
+		<Tooltip disableHoverableContent={false}>
 			<TooltipTrigger asChild>
 				<span className="block w-full sm:w-[215px]">{cardContent}</span>
 			</TooltipTrigger>

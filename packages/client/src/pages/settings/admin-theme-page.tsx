@@ -38,6 +38,9 @@ import {
 	TabsList,
 	TabsTrigger,
 	Textarea,
+	Tooltip,
+	TooltipContent,
+	TooltipTrigger,
 	toast,
 	useTheme,
 } from "@semoss/ui/next";
@@ -176,6 +179,8 @@ const EMPTY_PLAYGROUND: ThemeMap["playground"] = {
 		enableDarkMode: true,
 		hideToolsInIframe: false,
 		hideChatHistory: false,
+		showSystemSkills: true,
+		showSystemTools: true,
 	},
 };
 
@@ -281,6 +286,18 @@ const FEATURE_FLAGS: {
 		label: "Hide Chat History",
 		description:
 			'Hides the chat-history list in the sidebar and the "All Chats" page/nav link, so users cannot browse past conversations. New chats can still be started.',
+	},
+	{
+		key: "showSystemSkills",
+		label: "Show System Skills",
+		description:
+			"Shows MCP-tagged projects with the SYSTEM tag in the toolbox skills list.",
+	},
+	{
+		key: "showSystemTools",
+		label: "Show System Tools",
+		description:
+			"Shows engines with the SYSTEM tag in the toolbox tools list.",
 	},
 ];
 
@@ -791,26 +808,44 @@ export const AdminThemePage: React.FC = () => {
 									</TabsList>
 								</div>
 								<div className="ml-auto flex w-full flex-wrap items-center gap-2 sm:w-auto">
-									<Button
-										variant="ghost"
-										size="sm"
-										onClick={expandAll}
-										title="Expand all"
-										className="flex-1 sm:flex-none"
-									>
-										<Maximize2 className="size-4" />
-										Expand
-									</Button>
-									<Button
-										variant="ghost"
-										size="sm"
-										onClick={collapseAll}
-										title="Collapse all"
-										className="flex-1 sm:flex-none"
-									>
-										<Minimize2 className="size-4" />
-										Collapse
-									</Button>
+									<Tooltip disableHoverableContent={false}>
+										<TooltipTrigger asChild>
+											<Button
+												variant="ghost"
+												size="sm"
+												onClick={expandAll}
+												className="flex-1 sm:flex-none"
+											>
+												<Maximize2 className="size-4" />
+												Expand
+											</Button>
+										</TooltipTrigger>
+										<TooltipContent
+											sideOffset={4}
+											className="max-w-xs break-words"
+										>
+											{"Expand all"}
+										</TooltipContent>
+									</Tooltip>
+									<Tooltip disableHoverableContent={false}>
+										<TooltipTrigger asChild>
+											<Button
+												variant="ghost"
+												size="sm"
+												onClick={collapseAll}
+												className="flex-1 sm:flex-none"
+											>
+												<Minimize2 className="size-4" />
+												Collapse
+											</Button>
+										</TooltipTrigger>
+										<TooltipContent
+											sideOffset={4}
+											className="max-w-xs break-words"
+										>
+											{"Collapse all"}
+										</TooltipContent>
+									</Tooltip>
 									<Button
 										onClick={saveTheme}
 										disabled={saveDisabled}

@@ -358,7 +358,9 @@ export const NewFileOverlay: React.FC<FileExplorerNewFileOverlayProps> = ({
 				className="sm:max-w-2xl"
 			>
 				<DialogHeader>
-					<DialogTitle>{t("fileExplorer.overlay.title")}</DialogTitle>
+					<DialogTitle className="font-medium text-base leading-6">
+						{t("fileExplorer.overlay.title")}
+					</DialogTitle>
 					<DialogDescription>
 						{t("fileExplorer.overlay.description", {
 							path: destination,
