@@ -25,6 +25,8 @@ export interface ConversationTool {
 	serverTool?: boolean;
 	uiUrl?: string;
 	status: ConversationToolStatus;
+	/** Replaces the generic status wording, e.g. for a task waiting on a person. */
+	statusLabel?: string;
 	output?: string;
 	error?: string;
 	durationMs?: number;
@@ -71,6 +73,14 @@ export type ConversationMessagePart =
 			mimeType?: string;
 	  };
 
+/** A person's answer to a delegated request, from the message's `delegation` ornament. */
+export interface DelegationReply {
+	assignee: string;
+	outcome: "RESPONDED" | "DECLINED" | "CANCELLED" | "UNANSWERED";
+	question?: string;
+	text?: string;
+}
+
 /** A Playground-style message with ordered, typed content parts. */
 export interface ConversationMessage {
 	id: string;
@@ -79,6 +89,7 @@ export interface ConversationMessage {
 	createdAt?: string;
 	parentMessageId?: string;
 	visible?: boolean;
+	delegationReply?: DelegationReply;
 	live?: {
 		phase: PlaygroundTurnPhase;
 		hasObservationIssue: boolean;

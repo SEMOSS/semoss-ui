@@ -7,6 +7,10 @@ import {
 	Hourglass,
 } from "lucide-react";
 import { cn, Spinner, useIsMobile } from "@semoss/ui/next";
+import {
+	DelegationSubmitApproval,
+	isDelegationSubmit,
+} from "@/features/delegations/components/delegation-submit-approval";
 import type { ConversationTool } from "@/features/messages/types/message";
 import { toolCardTriggerId } from "../tool-workbench.constants";
 import { useToolWorkbench } from "../tool-workbench.context";
@@ -49,6 +53,12 @@ function statusDetails(status: ConversationTool["status"]) {
 	}
 }
 
+const SUBMIT_LABELS: Partial<Record<ConversationTool["status"], string>> = {
+	INPUT_REQUIRED: "Review before sending",
+	COMPLETED: "Sent",
+	REJECTED: "Not sent",
+};
+
 /** Playground-style tool card with one movable inline/workbench detail view. */
 export function ToolCallCard({ tool }: { tool: ConversationTool }) {
 	const isMobile = useIsMobile();
@@ -59,8 +69,19 @@ export function ToolCallCard({ tool }: { tool: ConversationTool }) {
 		isToolInline,
 		activeToolId,
 		isOpen,
+		pendingApprovals,
 	} = useToolWorkbench();
-	const details = statusDetails(tool.status);
+	const isSubmit = isDelegationSubmit(tool);
+	const statusLabel =
+		tool.statusLabel ?? (isSubmit ? SUBMIT_LABELS[tool.status] : undefined);
+	const details = {
+		...statusDetails(tool.status),
+		...(statusLabel && { label: statusLabel }),
+	};
+	const title = isSubmit ? "Answer to requester" : tool.title;
+	const submitApproval = isSubmit
+		? pendingApprovals.find((approval) => approval.toolId === tool.id)
+		: undefined;
 	const Icon = details.icon;
 	const isInline = isToolInline(tool.id);
 	const isInWorkbench = isOpen && activeToolId === tool.id;
@@ -87,7 +108,7 @@ export function ToolCallCard({ tool }: { tool: ConversationTool }) {
 						else openWorkbench(tool.id);
 					}}
 					aria-expanded={isInline}
-					aria-label={`${tool.title} details`}
+					aria-label={`${title} details`}
 				>
 					<span
 						className={cn(
@@ -109,7 +130,7 @@ export function ToolCallCard({ tool }: { tool: ConversationTool }) {
 					</span>
 					<span className="min-w-0 flex-1">
 						<span className="block truncate font-medium text-xs">
-							{tool.title}
+							{title}
 						</span>
 						<span className="block truncate text-muted-foreground text-xs">
 							{tool.description ??
@@ -132,7 +153,15 @@ export function ToolCallCard({ tool }: { tool: ConversationTool }) {
 				</button>
 				<ToolCallMenu toolId={tool.id} />
 			</div>
-			{isInline && <ToolInline toolId={tool.id} />}
+			{isInline &&
+				(submitApproval ? (
+					<DelegationSubmitApproval
+						tool={tool}
+						action={submitApproval}
+					/>
+				) : (
+					<ToolInline toolId={tool.id} />
+				))}
 		</div>
 	);
 }
