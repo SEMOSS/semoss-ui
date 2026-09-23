@@ -1,4 +1,10 @@
-import { useCallback, useEffect, useRef } from "react";
+import {
+	forwardRef,
+	useCallback,
+	useEffect,
+	useImperativeHandle,
+	useRef,
+} from "react";
 import { MonacoEditor, type monaco, type OnMount } from "@semoss/shared";
 import type { AutomationScopeEntry } from "../../domain/automation-inspector";
 
@@ -50,15 +56,18 @@ export interface AutomationPythonEditorProps {
 	fontSize?: number;
 }
 
+export interface AutomationPythonEditorHandle {
+	insertText: (text: string) => void;
+}
+
 /** Python editor with automation-scope completion, provenance hovers, and key validation. */
-export function AutomationPythonEditor({
-	value,
-	onChange,
-	scopeEntries,
-	theme,
-	readOnly = false,
-	fontSize = 13,
-}: AutomationPythonEditorProps) {
+export const AutomationPythonEditor = forwardRef<
+	AutomationPythonEditorHandle,
+	AutomationPythonEditorProps
+>(function AutomationPythonEditor(
+	{ value, onChange, scopeEntries, theme, readOnly = false, fontSize = 13 },
+	ref,
+) {
 	const entriesRef = useRef(scopeEntries);
 	const editorRef = useRef<monaco.editor.IStandaloneCodeEditor | null>(null);
 	const monacoRef = useRef<typeof monaco | null>(null);
@@ -111,6 +120,26 @@ export function AutomationPythonEditor({
 			providerDisposablesRef.current = [];
 		},
 		[],
+	);
+
+	useImperativeHandle(
+		ref,
+		() => ({
+			insertText(text: string) {
+				const editor = editorRef.current;
+				const selection = editor?.getSelection();
+				if (readOnly || !editor || !selection) return;
+				editor.executeEdits("automation-scope-insert", [
+					{
+						range: selection,
+						text,
+						forceMoveMarkers: true,
+					},
+				]);
+				editor.focus();
+			},
+		}),
+		[readOnly],
 	);
 
 	const handleMount = useCallback<OnMount>(
@@ -233,4 +262,4 @@ export function AutomationPythonEditor({
 			}}
 		/>
 	);
-}
+});

@@ -126,6 +126,7 @@ export interface JevDecisionConfig {
 	engineName?: string;
 	state: string;
 	question: string;
+	questionType: "choice" | "noul";
 	clauses: AutomationJevRoute[];
 	confidenceThreshold: number;
 	paramValues: string;

@@ -16,14 +16,20 @@ import type {
 	StepRunStatus,
 } from "../../domain/automation.types";
 import { getDisplayMeta } from "../../domain/automation-display";
-import type { AutomationScopeEntry } from "../../domain/automation-inspector";
+import {
+	type AutomationScopeEntry,
+	getAutomationScopeExpression,
+} from "../../domain/automation-inspector";
 import {
 	getGeneratedPythonPreview,
 	getWorkflowNodeDefinition,
 	validateAutomationOutputVariable,
 } from "../../domain/automation-workflow-adapter";
 import { StatusIcon } from "../status-icon";
-import { AutomationPythonEditor } from "./automation-python-editor";
+import {
+	AutomationPythonEditor,
+	type AutomationPythonEditorHandle,
+} from "./automation-python-editor";
 import { AutomationScopeExplorer } from "./automation-scope-explorer";
 import { StepForm } from "./step-form";
 
@@ -138,6 +144,7 @@ export function NodeEditDrawer({
 		null,
 	);
 	const pendingPythonUpdateRef = useRef<PendingPythonUpdate | null>(null);
+	const pythonEditorRef = useRef<AutomationPythonEditorHandle | null>(null);
 	const activePythonStepIdRef = useRef(step.id);
 	const onUpdateRef = useRef(onUpdate);
 	// Newest version of each node the drawer has rendered. The pending edit records which
@@ -203,6 +210,10 @@ export function NodeEditDrawer({
 	// Custom source reads upstream values off the scope mapping. A ${...} reference is only
 	// resolved for generated nodes, and is not valid Python syntax on its own.
 	const insertPythonExpression = (expression: string) => {
+		if (pythonEditorRef.current) {
+			pythonEditorRef.current.insertText(expression);
+			return;
+		}
 		const separator =
 			pythonDraft.length === 0 || pythonDraft.endsWith("\n") ? "" : "\n";
 		updatePythonSource(`${pythonDraft}${separator}${expression}`);
@@ -499,9 +510,12 @@ export function NodeEditDrawer({
 										{!readOnly && !pythonFileOpen && (
 											<AutomationScopeExplorer
 												entries={scopeEntries}
-												onSelect={(entry) =>
+												onSelect={(entry, access) =>
 													insertPythonExpression(
-														entry.pythonExpression,
+														getAutomationScopeExpression(
+															entry,
+															access,
+														),
 													)
 												}
 											/>
@@ -538,6 +552,7 @@ export function NodeEditDrawer({
 										}
 									>
 										<AutomationPythonEditor
+											ref={pythonEditorRef}
 											value={pythonDraft}
 											onChange={updatePythonSource}
 											scopeEntries={scopeEntries}

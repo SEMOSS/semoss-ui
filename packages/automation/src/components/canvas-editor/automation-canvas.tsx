@@ -113,7 +113,8 @@ function isStepHighlighted(
 	stepId: string,
 ): boolean {
 	if (!highlight) return false;
-	return highlight.all || highlight.stepIds.has(stepId);
+	if (highlight.all) return true;
+	return highlight.stepIds.has(stepId);
 }
 
 function replaceOutputVariableReferences<T>(

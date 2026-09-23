@@ -96,6 +96,8 @@ export interface AutomationBranchClause {
 export interface AutomationJevRoute {
 	id: string;
 	description: string;
+	/** Explicit outcome represented by this route for a Noul Yes/No question. */
+	answer?: boolean;
 }
 
 /** A trigger-owned input available to every downstream node at runtime. */

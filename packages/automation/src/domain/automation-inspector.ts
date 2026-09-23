@@ -12,9 +12,29 @@ export interface AutomationScopeEntry {
 	description: string;
 	availability: "guaranteed" | "conditional";
 	pythonExpression: string;
+	requiredPythonExpression?: string;
+	optionalPythonExpression?: string;
 	templateExpression: string;
 	sourceNodeId?: string;
 	defaultValue?: unknown;
+}
+
+export type AutomationScopeAccess = "required" | "optional";
+
+/** Returns real Python syntax for reading one run-scope value. */
+export function getAutomationScopeExpression(
+	entry: AutomationScopeEntry,
+	access: AutomationScopeAccess,
+): string {
+	if (access === "optional") {
+		return (
+			entry.optionalPythonExpression ??
+			`scope.get(${JSON.stringify(entry.name)})`
+		);
+	}
+	return (
+		entry.requiredPythonExpression ?? `scope[${JSON.stringify(entry.name)}]`
+	);
 }
 
 export interface AutomationInspectorSnapshot {

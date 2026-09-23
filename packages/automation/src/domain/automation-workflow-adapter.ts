@@ -143,7 +143,15 @@ function jevRoutes(value: unknown): AutomationJevRoute[] {
 		const candidate = route as Partial<AutomationJevRoute>;
 		return typeof candidate.id === "string" &&
 			typeof candidate.description === "string"
-			? [{ id: candidate.id, description: candidate.description }]
+			? [
+					{
+						id: candidate.id,
+						description: candidate.description,
+						...(typeof candidate.answer === "boolean"
+							? { answer: candidate.answer }
+							: {}),
+					},
+				]
 			: [];
 	});
 }
@@ -430,6 +438,7 @@ function defaultCanvasConfig(
 			engineId,
 			state: stringValue(config.state),
 			question: stringValue(config.question),
+			questionType: config.questionType === "noul" ? "noul" : "choice",
 			clauses: jevRoutes(config.clauses),
 			confidenceThreshold: numberValue(config.confidenceThreshold, 0),
 			paramValues: jsonObjectValue(config.paramValues),
@@ -607,6 +616,7 @@ function mergeCanvasConfig(
 	if (type === "control.jev") {
 		const state = getConfigValue(config, "state");
 		const question = getConfigValue(config, "question");
+		const questionType = getConfigValue(config, "questionType");
 		const confidenceThreshold = getConfigValue(
 			config,
 			"confidenceThreshold",
@@ -614,6 +624,9 @@ function mergeCanvasConfig(
 		const paramValues = getConfigValue(config, "paramValues");
 		if (typeof state === "string") next.state = state;
 		if (typeof question === "string") next.question = question;
+		if (questionType === "choice" || questionType === "noul") {
+			next.questionType = questionType;
+		}
 		if (typeof confidenceThreshold === "number") {
 			next.confidenceThreshold = confidenceThreshold;
 		}
@@ -927,17 +940,31 @@ export function validateCanvasWorkflowNode(
 	}
 	if (type === "control.jev") {
 		const routes = jevRoutes(config.clauses);
+		const questionType = config.questionType === "noul" ? "noul" : "choice";
 		if (routes.length === 0) {
 			errors.push("At least one route is required");
 		} else if (routes.some((route) => route.description.trim() === "")) {
 			errors.push("Each route description is required");
 		}
 		if (
+			questionType === "noul" &&
+			(routes.length !== 2 ||
+				routes.filter((route) => route.answer === true).length !== 1 ||
+				routes.filter((route) => route.answer === false).length !== 1)
+		) {
+			errors.push(
+				"Yes / No decisions require one Yes path and one No path",
+			);
+		}
+		const minimumConfidence = questionType === "noul" ? 0.5 : 0;
+		if (
 			typeof config.confidenceThreshold !== "number" ||
-			config.confidenceThreshold < 0 ||
+			config.confidenceThreshold < minimumConfidence ||
 			config.confidenceThreshold > 1
 		) {
-			errors.push("Minimum confidence must be from 0 through 1");
+			errors.push(
+				`Minimum confidence must be from ${minimumConfidence} through 1`,
+			);
 		}
 	}
 	return errors;

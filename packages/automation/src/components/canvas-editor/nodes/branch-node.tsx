@@ -44,7 +44,7 @@ export type BranchNodeData = {
 };
 
 const STATUS_BORDER: Record<string, string> = {
-	incomplete: "border-amber-500/60",
+	incomplete: "border-warning/60",
 	idle: "border-border",
 };
 
@@ -69,6 +69,10 @@ export function BranchNode({ data }: NodeProps) {
 			? firstClause.condition
 			: firstClause?.description;
 	const isJevDecision = step.workflowType === "control.jev";
+	const isNoulDecision =
+		isJevDecision &&
+		"questionType" in config &&
+		config.questionType === "noul";
 	const DecisionIcon = isJevDecision ? BrainCircuit : GitBranch;
 	const additionalConditions = config.clauses.length - 1;
 	const edges = useEdges();
@@ -90,6 +94,7 @@ export function BranchNode({ data }: NodeProps) {
 	return (
 		<ContextMenu>
 			<ContextMenuTrigger asChild>
+				{/* Route count controls canvas geometry, so this height is data-driven. */}
 				<div
 					className={`group relative w-70 rounded-2xl border-2 shadow-sm ${borderClass} ${runningClass} ${highlightClass} ${locked ? "opacity-75" : ""}`}
 					style={{ minHeight: `${88 + additionalConditions * 48}px` }}
@@ -107,7 +112,7 @@ export function BranchNode({ data }: NodeProps) {
 									className="rounded p-0.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
 									aria-label="Edit branch"
 								>
-									<Pencil className="h-3 w-3" />
+									<Pencil className="size-3" />
 								</button>
 								<button
 									type="button"
@@ -118,16 +123,16 @@ export function BranchNode({ data }: NodeProps) {
 									className="rounded p-0.5 text-destructive/70 transition-colors hover:bg-destructive/10 hover:text-destructive"
 									aria-label="Delete branch"
 								>
-									<Trash2 className="h-3 w-3" />
+									<Trash2 className="size-3" />
 								</button>
 							</div>
 						)}
 
 						<div className="cursor-pointer px-4 py-3">
 							<div className="flex items-center gap-3">
-								<span className="relative flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-orange-100 text-orange-600 dark:bg-orange-950">
-									<DecisionIcon className="h-4.5 w-4.5" />
-									<span className="-top-1.5 -left-1.5 absolute flex h-4 w-4 items-center justify-center rounded-full border border-border bg-muted font-medium text-[9px] text-muted-foreground">
+								<span className="relative flex size-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+									<DecisionIcon className="size-4" />
+									<span className="-top-1.5 -left-1.5 absolute flex size-4 items-center justify-center rounded-full border border-border bg-muted font-medium text-muted-foreground text-xs">
 										{d.index + 1}
 									</span>
 								</span>
@@ -142,7 +147,7 @@ export function BranchNode({ data }: NodeProps) {
 											{step.label || "Decision"}
 										</TooltipContent>
 									</Tooltip>
-									<p className="mt-0.5 truncate text-[11px] text-muted-foreground">
+									<p className="mt-0.5 truncate text-muted-foreground text-xs">
 										{firstDescription
 											? additionalConditions > 0
 												? `${additionalConditions + 1} ${isJevDecision ? "routes" : "conditions"}`
@@ -155,11 +160,11 @@ export function BranchNode({ data }: NodeProps) {
 								{runStatus && runStatus !== "idle" && (
 									<div className="ml-auto shrink-0">
 										{runStatus === "running" ? (
-											<Loader2 className="h-3.5 w-3.5 animate-spin text-primary" />
+											<Loader2 className="size-3.5 animate-spin text-primary" />
 										) : (
 											<StatusIcon
 												status={runStatus}
-												className={`h-3.5 w-3.5 ${runStatus === "success" ? "text-emerald-500" : runStatus === "error" ? "text-destructive" : ""}`}
+												className={`size-3.5 ${runStatus === "success" ? "text-success" : runStatus === "error" ? "text-destructive" : ""}`}
 											/>
 										)}
 									</div>
@@ -167,7 +172,7 @@ export function BranchNode({ data }: NodeProps) {
 							</div>
 							{runDuration != null && runStatus !== "running" && (
 								<div className="mt-1.5 pl-12">
-									<span className="text-[10px] text-muted-foreground/70">
+									<span className="text-muted-foreground/70 text-xs">
 										{formatDurationMs(runDuration)}
 									</span>
 								</div>
@@ -184,36 +189,53 @@ export function BranchNode({ data }: NodeProps) {
 						className="h-2! w-2! border-2! border-background! bg-muted-foreground/40!"
 					/>
 
-					{config.clauses.map((clause, index) => (
-						<BranchOutputHandle
-							key={clause.id}
-							id={`case-${step.id}-${clause.id}`}
-							label={String(index + 1)}
-							ariaLabel={`Condition ${index + 1}`}
-							connected={edges.some(
-								(edge) =>
-									edge.source === step.id &&
-									edge.sourceHandle ===
+					{config.clauses.map((clause, index) => {
+						const routeLabel = isNoulDecision
+							? "answer" in clause && clause.answer
+								? "Yes"
+								: "No"
+							: isJevDecision
+								? `R${index + 1}`
+								: String(index + 1);
+						const routeDescription =
+							"description" in clause
+								? clause.description
+								: clause.condition;
+						return (
+							<BranchOutputHandle
+								key={clause.id}
+								id={`case-${step.id}-${clause.id}`}
+								label={routeLabel}
+								ariaLabel={
+									isJevDecision
+										? `${isNoulDecision ? routeLabel : `Route ${index + 1}`}: ${routeDescription}`
+										: `Condition ${index + 1}: ${routeDescription}`
+								}
+								connected={edges.some(
+									(edge) =>
+										edge.source === step.id &&
+										edge.sourceHandle ===
+											`case-${step.id}-${clause.id}`,
+								)}
+								locked={locked}
+								top={`${((index + 1) / (outputCount + 1)) * 100}%`}
+								onAdd={() =>
+									automationNode.addAfter(
 										`case-${step.id}-${clause.id}`,
-							)}
-							locked={locked}
-							top={`${((index + 1) / (outputCount + 1)) * 100}%`}
-							onAdd={() =>
-								automationNode.addAfter(
-									`case-${step.id}-${clause.id}`,
-								)
-							}
-							color={
-								d.handleColors?.[
-									`case-${step.id}-${clause.id}`
-								] ?? DEFAULT_HANDLE_COLOR
-							}
-						/>
-					))}
+									)
+								}
+								color={
+									d.handleColors?.[
+										`case-${step.id}-${clause.id}`
+									] ?? DEFAULT_HANDLE_COLOR
+								}
+							/>
+						);
+					})}
 					<BranchOutputHandle
 						id={`else-${step.id}`}
-						label="Else"
-						ariaLabel="Else"
+						label={isJevDecision ? "Fallback" : "Else"}
+						ariaLabel={isJevDecision ? "Fallback" : "Else"}
 						connected={elseConnected}
 						locked={locked}
 						top={`${(outputCount / (outputCount + 1)) * 100}%`}
@@ -309,11 +331,11 @@ function BranchOutputHandle({
 						transform: "translateX(50%) translateY(-50%)",
 					}}
 				>
-					<Plus className="h-4 w-4" />
+					<Plus className="size-4" />
 				</span>
 			)}
 			<span
-				className="pointer-events-none absolute right-0 font-medium text-[9px]"
+				className="pointer-events-none absolute right-0 font-medium text-xs"
 				style={{
 					top: `calc(${top} - 10px)`,
 					color,

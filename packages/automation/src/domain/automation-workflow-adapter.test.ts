@@ -15,6 +15,7 @@ import {
 	getCanvasNodeSources,
 	getGeneratedPythonPreview,
 	validateAutomationOutputVariable,
+	validateCanvasWorkflowNode,
 } from "./automation-workflow-adapter";
 
 /**
@@ -98,6 +99,7 @@ const TEST_NODE_DEFINITIONS: readonly AutomationNodeDefinition[] = [
 			engineId: "",
 			state: "",
 			question: "Choose a route.",
+			questionType: "choice",
 			clauses: [{ id: "initial", description: "" }],
 			confidenceThreshold: 0,
 			paramValues: {},
@@ -217,6 +219,7 @@ describe("Jev decision mapping", () => {
 				engineId: "jev-engine",
 				state: ticketReference,
 				question: "Route this ticket.",
+				questionType: "choice",
 				clauses: [
 					{ id: "billing", description: "Payments and refunds" },
 					{ id: "technical", description: "Bugs and errors" },
@@ -234,6 +237,7 @@ describe("Jev decision mapping", () => {
 				engineId: "jev-engine",
 				state: ticketReference,
 				question: "Route this ticket.",
+				questionType: "choice",
 				clauses: [
 					{ id: "billing", description: "Payments and refunds" },
 					{ id: "technical", description: "Bugs and errors" },
@@ -251,8 +255,74 @@ describe("Jev decision mapping", () => {
 		expect(reloadedJev?.workflowConfig).toMatchObject({
 			engineId: "jev-engine",
 			state: ticketReference,
+			questionType: "choice",
 			confidenceThreshold: 0.8,
 		});
+	});
+
+	it("preserves explicit Yes and No route identities for Noul decisions", () => {
+		const step = node("control.jev", {
+			config: {
+				engineId: "jev-engine",
+				state: "$" + "{ticket}",
+				question: "Can this ticket be handled automatically?",
+				questionType: "noul",
+				clauses: [
+					{ id: "automatic", description: "Continue", answer: true },
+					{
+						id: "review",
+						description: "Human review",
+						answer: false,
+					},
+				],
+				confidenceThreshold: 0.75,
+				paramValues: "{}",
+			},
+		});
+
+		const saved = documentOf([step]);
+		expect(saved.graph.nodes[0]?.config).toMatchObject({
+			questionType: "noul",
+			clauses: [
+				{ id: "automatic", answer: true },
+				{ id: "review", answer: false },
+			],
+		});
+		const reloaded = canvasDocumentFromWorkflow(saved, {});
+		const reloadedJev = reloaded.steps.find(
+			(candidate) => candidate.workflowType === "control.jev",
+		);
+		expect(reloadedJev?.config).toMatchObject({
+			questionType: "noul",
+			clauses: [
+				{ id: "automatic", answer: true },
+				{ id: "review", answer: false },
+			],
+		});
+	});
+
+	it("rejects ambiguous Noul route mappings and confidence below one half", () => {
+		const step = node("control.jev", {
+			config: {
+				engineId: "jev-engine",
+				state: "$" + "{ticket}",
+				question: "Can this ticket be handled automatically?",
+				questionType: "noul",
+				clauses: [
+					{ id: "first", description: "First", answer: true },
+					{ id: "second", description: "Second", answer: true },
+				],
+				confidenceThreshold: 0.4,
+				paramValues: "{}",
+			},
+		});
+
+		expect(validateCanvasWorkflowNode(step, [step])).toEqual(
+			expect.arrayContaining([
+				"Yes / No decisions require one Yes path and one No path",
+				"Minimum confidence must be from 0.5 through 1",
+			]),
+		);
 	});
 });
 
