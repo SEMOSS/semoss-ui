@@ -29,6 +29,19 @@ export function listAssignedDelegations(
 	);
 }
 
+/** Decline a request without opening its room; the reason goes to the requester. */
+export function declineDelegation(
+	actions: InsightActions,
+	actionId: string,
+	reason?: string,
+): Promise<Delegation> {
+	return callPixel(
+		actions,
+		pixel("DeclineDelegation", { actionId, reason }),
+		delegationSchema,
+	);
+}
+
 /** File the delegation room under one of the user's agents so it opens there. */
 export function attachRoomToAgent(
 	actions: InsightActions,
