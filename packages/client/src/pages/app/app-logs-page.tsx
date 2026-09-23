@@ -1,7 +1,9 @@
 import { Search } from "lucide-react";
 import { useCallback, useState } from "react";
+import { useInsight } from "@semoss/sdk/react";
 import { Button, ToggleGroup, ToggleGroupItem } from "@semoss/ui/next";
-import { useProject, useRootStore } from "@/hooks";
+import { searchAppLogs } from "@/api";
+import { useProject } from "@/hooks";
 import {
 	APP_LOG_LEVEL_BADGE_CLASSES,
 	APP_LOG_LEVEL_CHIP_CLASSES,
@@ -10,12 +12,6 @@ import {
 } from "@/utility/parse-app-log-line";
 
 const PAGE_SIZE = 50;
-
-interface SearchAppLogsResult {
-	lines: string[];
-	totalMatches: number;
-	hasMore: boolean;
-}
 
 /**
  * Searches this project's app.log (and its rotated siblings) on disk via
@@ -26,7 +22,7 @@ interface SearchAppLogsResult {
 export const AppLogsPage = () => {
 	const { project } = useProject();
 	const appId = project.project_id;
-	const { monolithStore } = useRootStore();
+	const { insightId } = useInsight();
 
 	const [query, setQuery] = useState("");
 	const [levels, setLevels] = useState<string[]>([]);
@@ -42,31 +38,14 @@ export const AppLogsPage = () => {
 			setLoading(true);
 			setError(null);
 			try {
-				const params: Record<string, string> = {
+				const data = await searchAppLogs({
 					projectId: appId,
-					offset: String(searchOffset),
-					limit: String(PAGE_SIZE),
-				};
-				if (query.trim()) {
-					params.query = query.trim();
-				}
-				if (levels.length > 0) {
-					params.levels = levels.join(",");
-				}
-				const paramValues = Object.entries(params)
-					.map(
-						([key, value]) =>
-							`"${key}": "${value.replace(/"/g, '\\"')}"`,
-					)
-					.join(", ");
-				const res = await monolithStore.runQuery<[SearchAppLogsResult]>(
-					`SearchAppLogs(paramValues=[{${paramValues}}]);`,
-				);
-				const { operationType, output } = res.pixelReturn[0];
-				if (operationType.includes("ERROR")) {
-					throw new Error("Search failed");
-				}
-				const data = output as unknown as SearchAppLogsResult;
+					query: query.trim() || undefined,
+					levels,
+					offset: searchOffset,
+					limit: PAGE_SIZE,
+					insightId,
+				});
 				setLines(data.lines.map(parseAppLogLine));
 				setTotalMatches(data.totalMatches);
 				setHasMore(data.hasMore);
@@ -82,7 +61,7 @@ export const AppLogsPage = () => {
 				setLoading(false);
 			}
 		},
-		[appId, query, levels, monolithStore],
+		[appId, insightId, levels, query],
 	);
 
 	const rangeEnd = Math.min(offset + lines.length, totalMatches);
