@@ -1,4 +1,4 @@
-import { ArrowLeft, Clock3, Save, Settings2, Users, Zap } from "lucide-react";
+import { ArrowLeft, Save, Settings2, Users, Zap } from "lucide-react";
 import { useEffect, useState } from "react";
 import { getCatalogImageValidationError } from "@semoss/sdk";
 import {
@@ -19,11 +19,9 @@ import { AgentAvatar } from "@/components/common/agent-avatar";
 import { mcpConfigSchema } from "@/features/agents/api/agent-schemas";
 import { CapabilitiesSettingsView } from "@/features/agents/components/capabilities-settings-view";
 import { ProfileSettingsView } from "@/features/agents/components/profile-settings-view";
-import { StartsWorkSettingsView } from "@/features/agents/components/starts-work-settings-view";
 import { TeamSettingsView } from "@/features/agents/components/team-settings-view";
 import { toError } from "@/lib/pixel";
 import type { Agent } from "@/types/agent";
-import type { Origin } from "@/types/origin";
 
 type UpdateAgent = <Key extends keyof Agent>(
 	key: Key,
@@ -42,8 +40,7 @@ const agentSettingsSchema = z.object({
 			"Start the name with a letter and use only letters, numbers, spaces, underscores, or hyphens.",
 		),
 	// Preserve the existing workspace description; it is not an editable field.
-	role: z.string(),
-	type: z.enum(["Individual", "Team"]),
+	description: z.string(),
 	avatar: z.string(),
 	image: z
 		.instanceof(File)
@@ -56,26 +53,10 @@ const agentSettingsSchema = z.object({
 	removeImage: z.boolean(),
 	icon: z.enum(["compass", "briefcase", "chart", "pen", "users"]),
 	tone: z.enum(["green", "teal", "blue", "amber"]),
-	workspace: z.enum(["Conversation", "Travel itinerary", "Executive brief"]),
 	instructions: z.string().max(8000),
-	skills: z.array(z.string()),
-	skillIds: z.array(z.string()),
+	skills: z.array(z.object({ id: z.string(), name: z.string() })),
 	mcp: z.array(mcpConfigSchema),
-	databases: z.array(z.string()),
-	dataProducts: z.array(z.string()),
 	members: z.array(z.string()),
-	depth: z.number().int().min(0),
-	concurrency: z.number().int().min(0),
-	spawn: z.boolean(),
-	triggers: z.array(
-		z.object({
-			id: z.string(),
-			name: z.string(),
-			source: z.enum(["Email", "Scheduled", "Calendar", "Webhook"]),
-			condition: z.string(),
-			enabled: z.boolean(),
-		}),
-	),
 });
 
 type AgentSettingsValues = z.infer<typeof agentSettingsSchema>;
@@ -105,8 +86,6 @@ export function AgentSettings({
 		defaultValues: structuredClone({
 			...agent,
 			avatar: agent.avatar ?? "",
-			skillIds: agent.skillIds ?? [],
-			mcp: agent.mcp ?? [],
 			image: null,
 			removeImage: false,
 		}),
@@ -120,15 +99,6 @@ export function AgentSettings({
 	const [error, setError] = useState("");
 	const visibleError = errors.root?.server?.message ?? error;
 	const [discard, setDiscard] = useState(false);
-	const [ruleName, setRuleName] = useState("");
-	const [ruleSource, setRuleSource] =
-		useState<Exclude<Origin, "You">>("Scheduled");
-	const [condition, setCondition] = useState("");
-	const [addingRule, setAddingRule] = useState(false);
-	const [editingRule, setEditingRule] = useState("");
-	const [ruleTime, setRuleTime] = useState("08:30");
-	const [ruleZone, setRuleZone] = useState("America/New_York");
-	const [ruleCadence, setRuleCadence] = useState("Weekdays");
 	const [imagePreview, setImagePreview] = useState("");
 	const shownAgent = {
 		...draft,
@@ -191,7 +161,6 @@ export function AgentSettings({
 			const { image, removeImage, ...settings } = values;
 			const saved: Agent = {
 				...settings,
-				type: values.members.length > 0 ? "Team" : "Individual",
 				avatar: values.avatar || undefined,
 			};
 			if (image || removeImage) await onSave(saved, image);
@@ -209,52 +178,9 @@ export function AgentSettings({
 		else onClose();
 	}
 
-	function addRule() {
-		if (
-			!ruleName.trim() ||
-			(ruleSource !== "Scheduled" && !condition.trim())
-		) {
-			setError("Give the rule a name and an event condition.");
-			return;
-		}
-		if (ruleSource === "Scheduled") {
-			try {
-				new Intl.DateTimeFormat("en", { timeZone: ruleZone });
-			} catch {
-				setError("Enter a valid timezone, such as America/New_York.");
-				return;
-			}
-		}
-		const rule = {
-			id: editingRule || crypto.randomUUID(),
-			name: ruleName.trim(),
-			source: ruleSource,
-			condition:
-				ruleSource === "Scheduled"
-					? `${ruleCadence} at ${ruleTime} · ${ruleZone}`
-					: condition.trim(),
-			enabled:
-				draft.triggers.find((item) => item.id === editingRule)
-					?.enabled ?? true,
-		};
-		update(
-			"triggers",
-			editingRule
-				? draft.triggers.map((item) =>
-						item.id === editingRule ? rule : item,
-					)
-				: [...draft.triggers, rule],
-		);
-		setAddingRule(false);
-		setRuleName("");
-		setCondition("");
-		setEditingRule("");
-	}
-
 	const tabs = [
 		{ name: "Profile", icon: Settings2 },
 		{ name: "Capabilities", icon: Zap },
-		{ name: "Starts work when", icon: Clock3 },
 		{ name: "Subagents", icon: Users },
 	];
 
@@ -402,41 +328,6 @@ export function AgentSettings({
 								isLoadingSkills={isLoadingSkills}
 								skillsError={skillsError}
 								onRetrySkills={onRetrySkills}
-								onUpdate={update}
-							/>
-						)}
-						{tab === "Starts work when" && (
-							<StartsWorkSettingsView
-								agent={draft}
-								ruleName={ruleName}
-								ruleSource={ruleSource}
-								condition={condition}
-								addingRule={addingRule}
-								editingRule={editingRule}
-								ruleTime={ruleTime}
-								ruleZone={ruleZone}
-								ruleCadence={ruleCadence}
-								onRuleNameChange={setRuleName}
-								onRuleSourceChange={setRuleSource}
-								onConditionChange={setCondition}
-								onRuleTimeChange={setRuleTime}
-								onRuleZoneChange={setRuleZone}
-								onRuleCadenceChange={setRuleCadence}
-								onAddRule={addRule}
-								onEditRule={(rule) => {
-									setRuleName(rule.name);
-									setRuleSource(rule.source);
-									setCondition(rule.condition);
-									setEditingRule(rule.id);
-									setAddingRule(true);
-								}}
-								onStartNewRule={() => {
-									setEditingRule("");
-									setRuleName("");
-									setCondition("");
-									setAddingRule(true);
-								}}
-								onCancelRule={() => setAddingRule(false)}
 								onUpdate={update}
 							/>
 						)}

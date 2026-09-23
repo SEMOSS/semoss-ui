@@ -73,6 +73,11 @@ function pasteText(editor: HTMLElement, text: string) {
 }
 
 describe("RoomComposer", () => {
+	beforeAll(() => {
+		HTMLElement.prototype.hasPointerCapture = () => false;
+		HTMLElement.prototype.releasePointerCapture = vi.fn();
+	});
+
 	beforeEach(() => {
 		engineSelectSpy.mockClear();
 		window.SpeechRecognition = undefined;
@@ -89,6 +94,87 @@ describe("RoomComposer", () => {
 				}),
 			).toHaveFocus(),
 		);
+	});
+
+	it("renders the full composer in its larger landing layout", () => {
+		renderComposer({
+			variant: "landing",
+			agentId: "research-agent",
+			agentOptions: [
+				{ id: "research-agent", name: "Research agent" },
+				{ id: "writing-agent", name: "Writing agent" },
+			],
+			onAgentChange: vi.fn(),
+			onSent: undefined,
+		});
+
+		expect(
+			screen.getByRole("textbox", { name: "Message Research agent" }),
+		).toHaveClass("min-h-48");
+		expect(
+			screen
+				.getByRole("textbox", { name: "Message Research agent" })
+				.closest("fieldset"),
+		).toHaveClass("rounded-md", "border-input", "shadow-lg");
+		expect(
+			screen.getByRole("button", { name: "Attach files" }),
+		).toBeInTheDocument();
+		const agentSelect = screen.getByRole("combobox", {
+			name: "Choose agent",
+		});
+		const modelSelect = screen.getByRole("button", {
+			name: "Choose model",
+		});
+		expect(agentSelect).toHaveTextContent("Research agent");
+		expect(modelSelect).toHaveTextContent("Text model");
+		const toolbar = screen.getByRole("button", {
+			name: "Attach files",
+		}).parentElement;
+		expect(toolbar).not.toHaveClass("border-t");
+		expect(toolbar).toContainElement(agentSelect);
+		expect(toolbar).toContainElement(modelSelect);
+		expect(
+			screen.getByRole("button", { name: "Optimize prompt" }),
+		).toBeInTheDocument();
+		expect(
+			screen.getByRole("button", {
+				name: "Send message to Research agent",
+			}),
+		).toBeInTheDocument();
+	});
+
+	it("changes the landing agent from the composer toolbar", async () => {
+		const user = userEvent.setup();
+		const onAgentChange = vi.fn();
+		renderComposer({
+			variant: "landing",
+			agentId: "research-agent",
+			agentOptions: [
+				{ id: "research-agent", name: "Research agent" },
+				{ id: "writing-agent", name: "Writing agent" },
+			],
+			onAgentChange,
+		});
+
+		await user.click(
+			screen.getByRole("combobox", { name: "Choose agent" }),
+		);
+		await user.click(
+			await screen.findByRole("option", { name: "Writing agent" }),
+		);
+
+		expect(onAgentChange).toHaveBeenCalledWith("writing-agent");
+	});
+
+	it("can move the model selector outside the landing composer", () => {
+		renderComposer({ variant: "landing", showModelSelector: false });
+
+		expect(
+			screen.queryByRole("button", { name: "Choose model" }),
+		).not.toBeInTheDocument();
+		expect(
+			screen.getByRole("textbox", { name: "Message Research agent" }),
+		).toBeInTheDocument();
 	});
 
 	it("submits with Enter, keeps Shift+Enter as a newline, and ignores IME Enter", async () => {
@@ -181,6 +267,27 @@ describe("RoomComposer", () => {
 		expect(onSend).not.toHaveBeenCalled();
 	});
 
+	it("can disable Send while the selected agent is loading", async () => {
+		const user = userEvent.setup();
+		const onSend = vi.fn(async () => undefined);
+		renderComposer({ isSendDisabled: true, onSend });
+		const editor = screen.getByRole("textbox", {
+			name: "Message Research agent",
+		});
+		await user.click(editor);
+		pasteText(editor, "Wait for the agent");
+
+		await waitFor(() =>
+			expect(
+				screen.getByRole("button", {
+					name: "Send message to Research agent",
+				}),
+			).toBeDisabled(),
+		);
+		await user.keyboard("{Enter}");
+		expect(onSend).not.toHaveBeenCalled();
+	});
+
 	it("locks a created room's model without blocking a submission retry", async () => {
 		const user = userEvent.setup();
 		const onSend = vi.fn(async () => undefined);
@@ -236,7 +343,7 @@ describe("RoomComposer", () => {
 		const editor = screen.getByRole("textbox", {
 			name: "Message Research agent",
 		});
-		fireEvent.drop(editor.closest(".rounded-xl") as HTMLElement, {
+		fireEvent.drop(editor.closest("fieldset") as HTMLElement, {
 			dataTransfer: { files: [dropped] },
 		});
 		expect(

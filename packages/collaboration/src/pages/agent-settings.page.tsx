@@ -24,23 +24,14 @@ export function AgentSettingsPage() {
 	const [draft] = useState<Agent>(() => ({
 		id: crypto.randomUUID(),
 		name: "",
-		role: "",
-		type: "Individual",
+		description: "",
 		icon: "compass",
 		tone: "green",
-		workspace: "Conversation",
 		instructions:
 			"Be clear, concise, and ask before taking external actions.",
 		skills: [],
-		skillIds: [],
 		mcp: [],
-		databases: [],
-		dataProducts: [],
 		members: [],
-		depth: 1,
-		concurrency: 10,
-		spawn: false,
-		triggers: [],
 	}));
 	// The list row from MyProjects carries only an id and a name. Editing from it
 	// would send an empty description and system prompt to EditWorkspace, which
@@ -111,7 +102,7 @@ export function AgentSettingsPage() {
 			skillsError={skillsQuery.error}
 			onRetrySkills={skillsQuery.refresh}
 			onSave={async (saved, image) => {
-				const ids = saved.skillIds ?? [];
+				const ids = saved.skills.map((skill) => skill.id);
 				if (
 					ids.some((id) => !skills.some((skill) => skill.id === id))
 				) {
@@ -120,7 +111,7 @@ export function AgentSettingsPage() {
 					);
 				}
 				// A new agent's draft id is replaced by the id the server assigns.
-				const savedId = await saveAgent(saved, ids, agentId, image);
+				const savedId = await saveAgent(saved, agentId, image);
 				navigate(agentPath(savedId));
 			}}
 		/>

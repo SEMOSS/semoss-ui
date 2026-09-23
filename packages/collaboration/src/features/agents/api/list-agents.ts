@@ -10,7 +10,7 @@ const WORKSPACE_PROJECT_TYPE = "WORKSPACE";
  * Uses `MyProjects` rather than `ListWorkspaces`: the latter returns name and
  * description in a single call but is marked `@Deprecated` server-side.
  *
- * TODO:: MyProjects returns no workspace description, so Agent.role is empty in
+ * TODO:: MyProjects returns no workspace description, so Agent.description is empty in
  * list views. Either hydrate each row via GetWorkspace (N+1) or extend
  * MyProjects server-side to include it.
  *

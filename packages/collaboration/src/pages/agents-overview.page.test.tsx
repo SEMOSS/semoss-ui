@@ -18,20 +18,13 @@ vi.mock("@/app/main.context", () => ({
 const agent: Agent = {
 	id: "research-agent",
 	name: "Research agent",
-	role: "Analyst",
-	type: "Individual",
+	description: "Analyst",
 	icon: "compass",
 	tone: "blue",
-	workspace: "Conversation",
 	instructions: "Research the requested topic.",
 	skills: [],
-	databases: [],
-	dataProducts: [],
+	mcp: [],
 	members: [],
-	depth: 0,
-	concurrency: 1,
-	spawn: false,
-	triggers: [],
 };
 
 function SidebarState() {

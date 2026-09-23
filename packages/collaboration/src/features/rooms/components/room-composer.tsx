@@ -15,6 +15,7 @@ import {
 	type LexicalEditor,
 } from "lexical";
 import {
+	Bot,
 	Mic,
 	Paperclip,
 	Send,
@@ -30,6 +31,11 @@ import {
 	cn,
 	P,
 	ScrollArea,
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
 	Spinner,
 	Tooltip,
 	TooltipContent,
@@ -43,6 +49,31 @@ import {
 	RoomComposerSlashPlugin,
 	type RoomSlashCommand,
 } from "./room-composer-slash-plugin";
+
+interface RoomComposerProps {
+	agentId?: string;
+	agentName: string;
+	agentOptions?: { id: string; name: string }[];
+	isSubmitting: boolean;
+	isRunning: boolean;
+	isCancelling: boolean;
+	isAgentLocked?: boolean;
+	modelId: string;
+	modelName: string;
+	isModelSaving: boolean;
+	isModelLocked?: boolean;
+	showModelSelector?: boolean;
+	isSendDisabled?: boolean;
+	modelError: Error | null;
+	roomInstructions: string;
+	variant?: "room" | "landing";
+	onAgentChange?: (agentId: string) => void;
+	onModelChange: (engine: Engine) => Promise<void>;
+	onOptimizePrompt: (draft: string, instructions: string) => Promise<string>;
+	onSend: (submission: ComposerSubmission) => Promise<void>;
+	onStop: () => Promise<void>;
+	onSent?: () => void;
+}
 
 const MAX_CHARACTERS = 8_000;
 const MAX_FILES = 5;
@@ -90,40 +121,31 @@ function tooltipButton(
 	);
 }
 
-/** Collaboration-native Lexical composer for the room's fixed agent. */
+/** Collaboration-native Lexical composer for room and landing surfaces. */
 export function RoomComposer({
+	agentId,
 	agentName,
+	agentOptions,
 	isSubmitting,
 	isRunning,
 	isCancelling,
+	isAgentLocked = false,
 	modelId,
 	modelName,
 	isModelSaving,
 	isModelLocked = false,
+	showModelSelector = true,
+	isSendDisabled = false,
 	modelError,
 	roomInstructions,
+	onAgentChange,
 	onModelChange,
 	onOptimizePrompt,
 	onSend,
 	onStop,
 	onSent,
-}: {
-	agentName: string;
-	isSubmitting: boolean;
-	isRunning: boolean;
-	isCancelling: boolean;
-	modelId: string;
-	modelName: string;
-	isModelSaving: boolean;
-	isModelLocked?: boolean;
-	modelError: Error | null;
-	roomInstructions: string;
-	onModelChange: (engine: Engine) => Promise<void>;
-	onOptimizePrompt: (draft: string, instructions: string) => Promise<string>;
-	onSend: (submission: ComposerSubmission) => Promise<void>;
-	onStop: () => Promise<void>;
-	onSent: () => void;
-}) {
+	variant = "room",
+}: RoomComposerProps) {
 	const editorRef = useRef<LexicalEditor | null>(null);
 	const scrollViewportRef = useRef<HTMLDivElement | null>(null);
 	const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -192,6 +214,7 @@ export function RoomComposer({
 				isModelSaving ||
 				isRunning ||
 				isSubmitting ||
+				isSendDisabled ||
 				submittingRef.current
 			) {
 				return;
@@ -209,7 +232,7 @@ export function RoomComposer({
 
 			try {
 				await onSend({ text: trimmed, files: submittedFiles });
-				onSent();
+				onSent?.();
 			} catch (cause) {
 				if (clearDraft) {
 					setEditorText(previousDraft);
@@ -225,6 +248,7 @@ export function RoomComposer({
 			files,
 			focusEditor,
 			isRunning,
+			isSendDisabled,
 			isSubmitting,
 			isModelSaving,
 			modelId,
@@ -358,14 +382,24 @@ export function RoomComposer({
 
 	const alert = fileError || submissionError || modelError?.message;
 	const sendDisabled =
-		!draft.trim() || !modelId || isSubmitting || isModelSaving;
+		!draft.trim() ||
+		!modelId ||
+		isSubmitting ||
+		isModelSaving ||
+		isSendDisabled;
 
 	return (
-		<div className="shrink-0 border-t bg-background p-2 sm:p-3 lg:p-4">
+		<div
+			className={cn(
+				"shrink-0 bg-background",
+				variant === "room" && "border-t p-2 sm:p-3 lg:p-4",
+				variant === "landing" && "w-full",
+			)}
+		>
 			<fieldset
 				aria-label="Message composer drop area"
 				className={cn(
-					"relative m-0 min-w-0 overflow-hidden rounded-xl border bg-card p-0 shadow-sm transition-colors",
+					"relative m-0 min-w-0 overflow-hidden rounded-md border border-input bg-card p-0 shadow-lg transition-[color,box-shadow] focus-within:border-ring focus-within:ring-[3px] focus-within:ring-ring/50",
 					isDragging && "border-primary ring-2 ring-primary/20",
 				)}
 				onDragEnter={(event) => {
@@ -413,7 +447,10 @@ export function RoomComposer({
 				/>
 				<LexicalComposer initialConfig={initialConfig}>
 					<ScrollArea
-						className="max-h-52 min-h-20"
+						className={cn(
+							"max-h-52 min-h-20",
+							variant === "landing" && "max-h-64 min-h-48",
+						)}
 						viewportRef={(element) => {
 							scrollViewportRef.current = element;
 						}}
@@ -422,7 +459,11 @@ export function RoomComposer({
 							contentEditable={
 								<ContentEditable
 									aria-label={`Message ${agentName}`}
-									className="min-h-20 px-3 py-3 text-sm outline-none sm:px-4"
+									className={cn(
+										"min-h-20 px-3 py-3 text-sm outline-none sm:px-4",
+										variant === "landing" &&
+											"min-h-48 text-base",
+									)}
 									onPaste={(event) => {
 										const pastedFiles = Array.from(
 											event.clipboardData.items,
@@ -441,152 +482,198 @@ export function RoomComposer({
 								/>
 							}
 							placeholder={
-								<P className="pointer-events-none absolute top-3 left-3 text-muted-foreground text-sm sm:left-4">
+								<P
+									className={cn(
+										"pointer-events-none absolute top-3 left-3 text-muted-foreground text-sm sm:left-4",
+										variant === "landing" && "text-base",
+									)}
+								>
 									Message {agentName}…
 								</P>
 							}
 							ErrorBoundary={LexicalErrorBoundary}
 						/>
 					</ScrollArea>
-					<div className="flex min-w-0 flex-wrap items-center gap-1 border-t px-2 py-2 sm:flex-nowrap">
+					<div className="flex min-w-0 items-center gap-2 bg-card p-2">
 						{tooltipButton(
 							"Attach files",
 							<Button
 								type="button"
 								variant="ghost"
 								size="icon-sm"
-								className="min-h-11 min-w-11 sm:min-h-8 sm:min-w-8"
 								aria-label="Attach files"
 								onClick={() => fileInputRef.current?.click()}
 							>
 								<Paperclip aria-hidden="true" />
 							</Button>,
 						)}
-						<div className="min-w-0 flex-1 sm:max-w-52">
-							<EngineSelect
-								className="h-11 w-full border-0 bg-transparent px-2 text-xs shadow-none sm:h-8"
-								name={modelName}
-								value={modelId}
-								disabled={
-									isRunning ||
-									isSubmitting ||
-									isModelSaving ||
-									isModelLocked
-								}
-								engineTypes={["MODEL"]}
-								metaFilters={[{ tag: "text-generation" }]}
-								showEngineIcon={false}
-								onChange={(engine) =>
-									void onModelChange(engine)
-								}
-								popoverContentProps={{ align: "start" }}
-							/>
-						</div>
-						<div className="ms-auto flex shrink-0 items-center gap-1">
-							{tooltipButton(
-								isListening
-									? "Stop dictation"
-									: "Start dictation",
-								<Button
-									type="button"
-									variant="ghost"
-									size="icon-sm"
-									className="min-h-11 min-w-11 sm:min-h-8 sm:min-w-8"
-									aria-label={
-										isListening
-											? "Stop dictation"
-											: "Start dictation"
-									}
-									disabled={!canDictate}
-									onClick={toggleDictation}
-								>
-									<Mic
-										aria-hidden="true"
-										className={cn(
-											isListening &&
-												"animate-pulse text-destructive",
-										)}
-									/>
-								</Button>,
-								canDictate
-									? undefined
-									: "Dictation is unavailable in this browser",
-							)}
-							{originalDraft !== null
-								? tooltipButton(
-										"Revert optimized prompt",
-										<Button
-											type="button"
-											variant="ghost"
-											size="icon-sm"
-											className="min-h-11 min-w-11 sm:min-h-8 sm:min-w-8"
-											aria-label="Revert optimized prompt"
-											onClick={revertOptimization}
-										>
-											<Undo aria-hidden="true" />
-										</Button>,
-									)
-								: tooltipButton(
-										"Optimize prompt",
-										<Button
-											type="button"
-											variant="ghost"
-											size="icon-sm"
-											className="min-h-11 min-w-11 sm:min-h-8 sm:min-w-8"
-											aria-label="Optimize prompt"
+						<div className="flex min-w-0 flex-1 items-center gap-2">
+							{variant === "landing" &&
+								agentId &&
+								onAgentChange &&
+								agentOptions &&
+								agentOptions.length > 0 && (
+									<div className="min-w-0 flex-1 sm:max-w-40">
+										<Select
+											value={agentId}
 											disabled={
-												!draft.trim() ||
-												isOptimizing ||
-												isRunning
+												isRunning ||
+												isSubmitting ||
+												isAgentLocked
 											}
-											onClick={() => void optimize()}
+											onValueChange={onAgentChange}
 										>
-											{isOptimizing ? (
-												<Spinner />
-											) : (
-												<Sparkles aria-hidden="true" />
-											)}
-										</Button>,
-									)}
-							{tooltipButton(
-								isRunning
-									? isCancelling
-										? "Cancelling"
-										: "Stop"
-									: "Send",
-								<Button
-									type="button"
-									size="icon-sm"
-									className="min-h-11 min-w-11 sm:min-h-8 sm:min-w-8"
-									aria-label={
-										isRunning
-											? isCancelling
-												? "Cancelling turn"
-												: "Stop response"
-											: `Send message to ${agentName}`
-									}
-									disabled={
-										isRunning ? isCancelling : sendDisabled
-									}
-									onClick={() => {
-										if (isRunning) void onStop();
-										else void submit();
-									}}
-								>
-									{isCancelling || isSubmitting ? (
-										<Spinner />
-									) : isRunning ? (
-										<Square
-											aria-hidden="true"
-											className="size-3"
-											fill="currentColor"
+											<SelectTrigger
+												aria-label="Choose agent"
+												className="h-8 w-full min-w-0 overflow-hidden border-border bg-background px-2 text-xs shadow-none hover:bg-accent *:data-[slot=select-value]:min-w-0 dark:hover:bg-accent/50"
+											>
+												<Bot
+													aria-hidden="true"
+													className="size-3.5"
+												/>
+												<SelectValue placeholder="Select agent" />
+											</SelectTrigger>
+											<SelectContent align="start">
+												{agentOptions.map((option) => (
+													<SelectItem
+														key={option.id}
+														value={option.id}
+													>
+														{option.name}
+													</SelectItem>
+												))}
+											</SelectContent>
+										</Select>
+									</div>
+								)}
+							<div className="ms-auto flex min-w-0 flex-1 items-center justify-end gap-1 sm:max-w-72 sm:gap-2">
+								{showModelSelector && (
+									<div className="min-w-0 flex-1 sm:max-w-52">
+										<EngineSelect
+											className="h-8 w-full gap-0.5 border-none bg-transparent px-2 py-1 text-xs shadow-none hover:bg-accent dark:hover:bg-accent/50"
+											name={modelName}
+											value={modelId}
+											disabled={
+												isRunning ||
+												isSubmitting ||
+												isModelSaving ||
+												isModelLocked
+											}
+											engineTypes={["MODEL"]}
+											metaFilters={[
+												{ tag: "text-generation" },
+											]}
+											showEngineIcon={false}
+											onChange={(engine) =>
+												void onModelChange(engine)
+											}
+											popoverContentProps={{
+												align: "end",
+											}}
 										/>
-									) : (
-										<Send aria-hidden="true" />
-									)}
-								</Button>,
-							)}
+									</div>
+								)}
+								{tooltipButton(
+									isListening
+										? "Stop dictation"
+										: "Start dictation",
+									<Button
+										type="button"
+										variant="ghost"
+										size="icon-sm"
+										aria-label={
+											isListening
+												? "Stop dictation"
+												: "Start dictation"
+										}
+										disabled={!canDictate}
+										onClick={toggleDictation}
+									>
+										<Mic
+											aria-hidden="true"
+											className={cn(
+												isListening &&
+													"animate-pulse text-destructive",
+											)}
+										/>
+									</Button>,
+									canDictate
+										? undefined
+										: "Dictation is unavailable in this browser",
+								)}
+								{originalDraft !== null
+									? tooltipButton(
+											"Revert optimized prompt",
+											<Button
+												type="button"
+												variant="ghost"
+												size="icon-sm"
+												aria-label="Revert optimized prompt"
+												onClick={revertOptimization}
+											>
+												<Undo aria-hidden="true" />
+											</Button>,
+										)
+									: tooltipButton(
+											"Optimize prompt",
+											<Button
+												type="button"
+												variant="ghost"
+												size="icon-sm"
+												aria-label="Optimize prompt"
+												disabled={
+													!draft.trim() ||
+													isOptimizing ||
+													isRunning
+												}
+												onClick={() => void optimize()}
+											>
+												{isOptimizing ? (
+													<Spinner />
+												) : (
+													<Sparkles aria-hidden="true" />
+												)}
+											</Button>,
+										)}
+							</div>
 						</div>
+						{tooltipButton(
+							isRunning
+								? isCancelling
+									? "Cancelling"
+									: "Stop"
+								: "Send",
+							<Button
+								type="button"
+								size="icon-sm"
+								aria-label={
+									isRunning
+										? isCancelling
+											? "Cancelling turn"
+											: "Stop response"
+										: `Send message to ${agentName}`
+								}
+								disabled={
+									isRunning ? isCancelling : sendDisabled
+								}
+								onClick={() => {
+									if (isRunning) void onStop();
+									else void submit();
+								}}
+							>
+								{isCancelling || isSubmitting ? (
+									<Spinner />
+								) : isRunning ? (
+									<Square
+										aria-hidden="true"
+										className="size-3"
+										fill="currentColor"
+									/>
+								) : (
+									<Send aria-hidden="true" />
+								)}
+							</Button>,
+						)}
 					</div>
 					<OnChangePlugin
 						onChange={(editorState) => {

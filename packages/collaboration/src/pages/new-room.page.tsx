@@ -1,212 +1,108 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useNavigate, useParams, useSearchParams } from "react-router";
-import { useInsight } from "@semoss/sdk/react";
-import type { Engine } from "@semoss/shared";
-import { useAgent } from "@/app/agent.context";
+import { Plus } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Link, useSearchParams } from "react-router";
+import { Button, Spinner } from "@semoss/ui/next";
 import { useMain } from "@/app/main.context";
-import { useRoom } from "@/app/room.context";
-import type { ConversationToolStates } from "@/features/messages/types/message";
-import { createRoom } from "@/features/rooms/api/create-room";
-import { optimizePrompt } from "@/features/rooms/api/optimize-prompt";
-import { submitAgentTurn } from "@/features/rooms/api/use-agent-turn";
-import { useRoomModel } from "@/features/rooms/api/use-room-model";
-import { RoomView } from "@/features/rooms/components/room-view";
-import type {
-	ComposerSubmission,
-	PendingToolApproval,
-} from "@/features/rooms/types/room";
-import { pendingSession } from "@/features/rooms/utils/session-from-room";
-import {
-	agentSettingsPath,
-	draftRoomPath,
-	roomPath,
-} from "@/lib/workspace-paths";
+import { EmptyView } from "@/components/common/empty-view";
+import type { WorkspaceAgent } from "@/features/agents/api/agent-schemas";
+import { useAgentDetail } from "@/features/agents/api/use-agent-detail";
+import { NewRoomStart } from "@/features/rooms/components/new-room-start";
+import { agentNewPath, newRoomPath } from "@/lib/workspace-paths";
 
-const EMPTY_TOOL_STATES: ConversationToolStates = {};
-
-async function rejectDraftApproval(
-	_approval: PendingToolApproval,
-): Promise<void> {
-	throw new Error("A new conversation has no tool approvals yet.");
-}
-
-async function approveDraftTool(
-	_approval: PendingToolApproval,
-	_argumentsValue: Record<string, unknown>,
-): Promise<void> {
-	throw new Error("A new conversation has no tool approvals yet.");
-}
-
-async function cancelDraftTurn(): Promise<void> {
-	return undefined;
-}
-
-/** Unsaved room composer; the backend room is created by its first submission. */
+/** Selects an agent and hosts the focused first-message experience. */
 export function NewRoomPage() {
-	const { agent } = useAgent();
-	const workspace = useMain();
-	const { openRoomsList } = useRoom();
-	const { actions, insightId } = useInsight();
-	const navigate = useNavigate();
-	const { agentId = "", draftId = "" } = useParams();
+	const { agents } = useMain();
 	const [searchParams] = useSearchParams();
-	const [selectedEngine, setSelectedEngine] = useState<Engine | null>(null);
-	const [createdRoomId, setCreatedRoomId] = useState<string | null>(null);
-	const [isStarting, setIsStarting] = useState(false);
-	const createdRoomIdRef = useRef<string | null>(null);
-	const isRoomReadyRef = useRef(false);
-	const startingRef = useRef(false);
-	const mountedRef = useRef(true);
+	const [lastLoadedAgent, setLastLoadedAgent] =
+		useState<WorkspaceAgent | null>(null);
+	const requestedAgentId = searchParams.get("agentId") ?? "";
+	const agentId = requestedAgentId || agents[0]?.id || "";
+	const { agent, isLoading, error, refresh } = useAgentDetail(agentId);
+	const selectedAgent =
+		agent?.workspace_id === agentId ? agent : lastLoadedAgent;
+	const isAgentReady =
+		Boolean(agent && agent.workspace_id === agentId) &&
+		!isLoading &&
+		!error;
+	const agentLoadError =
+		error ??
+		(!isLoading && !agent
+			? new Error(
+					"The requested agent is unavailable or no longer exists.",
+				)
+			: null);
 
 	useEffect(() => {
-		mountedRef.current = true;
-		return () => {
-			mountedRef.current = false;
-		};
-	}, []);
+		if (agent?.workspace_id === agentId) setLastLoadedAgent(agent);
+	}, [agent, agentId]);
 
-	const modelId =
-		selectedEngine?.engine_id ||
-		searchParams.get("model") ||
-		agent.config_json?.model_id ||
-		"";
-	const modelLookup = useRoomModel(modelId);
-	const modelName =
-		selectedEngine?.engine_display_name ||
-		selectedEngine?.engine_name ||
-		modelLookup.engine?.engine_display_name ||
-		modelLookup.engine?.engine_name ||
-		(modelLookup.isLoading ? "Loading model…" : modelId || "Select model");
-	const session = useMemo(
-		() => pendingSession(draftId, agentId, "New session", modelId),
-		[agentId, draftId, modelId],
-	);
+	if (!agentId) {
+		return (
+			<main className="min-h-0 min-w-0 flex-1 overflow-y-auto bg-background">
+				<EmptyView
+					title="No agents yet"
+					action={
+						<Button asChild>
+							<Link to={agentNewPath()}>
+								<Plus aria-hidden="true" />
+								Add agent
+							</Link>
+						</Button>
+					}
+				>
+					Add an agent before starting a conversation.
+				</EmptyView>
+			</main>
+		);
+	}
 
-	const handleModelChange = useCallback(
-		async (engine: Engine) => {
-			if (createdRoomId || isStarting) return;
-			setSelectedEngine(engine);
-			navigate(draftRoomPath(agentId, draftId, engine.engine_id), {
-				replace: true,
-			});
-		},
-		[agentId, createdRoomId, draftId, isStarting, navigate],
-	);
+	if (isLoading && !selectedAgent) {
+		return (
+			<main className="flex min-h-0 min-w-0 flex-1 items-center justify-center bg-background p-4">
+				<Spinner aria-label="Loading agent" />
+			</main>
+		);
+	}
 
-	const handleOptimizePrompt = useCallback(
-		(draft: string, instructions: string) =>
-			optimizePrompt(actions, { modelId, draft, instructions }),
-		[actions, modelId],
-	);
+	if ((error || !agent) && !selectedAgent) {
+		return (
+			<main className="min-h-0 min-w-0 flex-1 overflow-y-auto bg-background">
+				<EmptyView
+					title={
+						error ? "Could not load this agent" : "Agent not found"
+					}
+					action={
+						<div className="flex flex-col gap-2 sm:flex-row">
+							{error && (
+								<Button type="button" onClick={refresh}>
+									Try again
+								</Button>
+							)}
+							<Button asChild variant="outline">
+								<Link to={newRoomPath()}>
+									Choose another agent
+								</Link>
+							</Button>
+						</div>
+					}
+				>
+					{error?.message ??
+						"The requested agent is unavailable or no longer exists."}
+				</EmptyView>
+			</main>
+		);
+	}
 
-	const handleSend = useCallback(
-		async (submission: ComposerSubmission) => {
-			if (startingRef.current) {
-				throw new Error("This conversation is already being started.");
-			}
-			startingRef.current = true;
-			setIsStarting(true);
-			try {
-				let roomId = createdRoomIdRef.current;
-				if (!isRoomReadyRef.current) {
-					roomId = await createRoom(
-						actions,
-						insightId,
-						{
-							workspaceId: agentId,
-							workspaceName: agent.name,
-							instructions: agent.system_prompt,
-							modelId,
-						},
-						{
-							roomId: roomId ?? undefined,
-							onCreated: (allocatedRoomId) => {
-								createdRoomIdRef.current = allocatedRoomId;
-								if (mountedRef.current) {
-									setCreatedRoomId(allocatedRoomId);
-								}
-							},
-						},
-					);
-					createdRoomIdRef.current = roomId;
-					if (mountedRef.current) setCreatedRoomId(roomId);
-					isRoomReadyRef.current = true;
-					workspace.addPendingRoom(
-						pendingSession(roomId, agentId, "New session", modelId),
-					);
-				}
-				if (!roomId) {
-					throw new Error("The conversation could not be created.");
-				}
-
-				await submitAgentTurn(
-					{
-						insightId,
-						roomId,
-						agentId,
-						engine: modelId,
-						maxTurns: agent.config_json?.budgets?.max_turns ?? 40,
-						maxReflections:
-							agent.config_json?.budgets?.max_reflections,
-					},
-					submission,
-				);
-				workspace.trackGeneratedRoomName(agentId, roomId);
-				if (mountedRef.current) {
-					navigate(roomPath(agentId, roomId), { replace: true });
-				}
-			} finally {
-				startingRef.current = false;
-				if (mountedRef.current) setIsStarting(false);
-			}
-		},
-		[
-			actions,
-			agent.config_json?.budgets?.max_reflections,
-			agent.config_json?.budgets?.max_turns,
-			agent.name,
-			agent.system_prompt,
-			agentId,
-			insightId,
-			modelId,
-			navigate,
-			workspace,
-		],
-	);
+	if (!selectedAgent) return null;
 
 	return (
-		<RoomView
-			agent={agent}
-			insightId={insightId}
-			sessions={[session]}
-			agentId={agentId}
-			sessionId={draftId}
-			thread={[]}
-			toolStates={EMPTY_TOOL_STATES}
-			isSending={isStarting}
-			isRunning={false}
-			isCancelling={false}
-			isLoadingHistory={false}
-			turnError={null}
-			transportError={null}
-			pendingApprovals={[]}
-			phase={null}
-			modelId={modelId}
-			modelName={modelName}
-			isModelSaving={false}
-			isModelLocked={Boolean(createdRoomId)}
-			showToolWorkbench={false}
-			modelError={modelLookup.error}
-			roomInstructions={agent.system_prompt || ""}
-			onSendMessage={handleSend}
-			onModelChange={handleModelChange}
-			onOptimizePrompt={handleOptimizePrompt}
-			onCancelTurn={cancelDraftTurn}
-			onApproveTool={approveDraftTool}
-			onRejectTool={rejectDraftApproval}
-			onConfigure={(id) => navigate(agentSettingsPath(id))}
-			onNewRoom={workspace.newRoom}
-			onOpenRooms={openRoomsList}
+		<NewRoomStart
+			agent={selectedAgent}
+			agents={agents}
+			selectedAgentId={agentId}
+			isAgentReady={isAgentReady}
+			agentError={agentLoadError}
+			onRetryAgent={refresh}
 		/>
 	);
 }

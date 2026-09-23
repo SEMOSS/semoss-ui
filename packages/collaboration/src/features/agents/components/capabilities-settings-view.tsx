@@ -28,23 +28,18 @@ export function CapabilitiesSettingsView({
 	onRetrySkills?: () => void;
 	onUpdate: UpdateAgent;
 }) {
-	const { knowledge, toolbox } = splitMcpByType(agent.mcp ?? []);
-	const skills: MCPConfig[] = (agent.skillIds ?? []).map((id, index) => ({
-		id,
+	const { knowledge, toolbox } = splitMcpByType(agent.mcp);
+	const skills: MCPConfig[] = agent.skills.map((skill) => ({
+		id: skill.id,
 		name:
-			skillOptions.find((option) => option.value === id)?.name ??
-			agent.skills[index] ??
-			id,
+			skillOptions.find((option) => option.value === skill.id)?.name ??
+			skill.name,
 		type: "PROJECT",
 	}));
 	function updateSkills(values: MCPConfig[]): void {
 		onUpdate(
-			"skillIds",
-			values.map((value) => value.id),
-		);
-		onUpdate(
 			"skills",
-			values.map((value) => value.name),
+			values.map(({ id, name }) => ({ id, name })),
 		);
 	}
 
@@ -69,9 +64,7 @@ export function CapabilitiesSettingsView({
 				onRemove={(id) =>
 					onUpdate(
 						"mcp",
-						(agent.mcp ?? []).filter(
-							(resource) => resource.id !== id,
-						),
+						agent.mcp.filter((resource) => resource.id !== id),
 					)
 				}
 			>
@@ -94,9 +87,7 @@ export function CapabilitiesSettingsView({
 				onRemove={(id) =>
 					onUpdate(
 						"mcp",
-						(agent.mcp ?? []).filter(
-							(resource) => resource.id !== id,
-						),
+						agent.mcp.filter((resource) => resource.id !== id),
 					)
 				}
 			>

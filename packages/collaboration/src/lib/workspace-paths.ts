@@ -7,16 +7,14 @@ export function roomPath(agentId: string, roomId: string, itemId?: string) {
 	return itemId ? `${path}?${new URLSearchParams({ item: itemId })}` : path;
 }
 
-/** A client-only room draft that has not created a backend room yet. */
-export function draftRoomPath(
-	agentId: string,
-	draftId: string,
-	modelId?: string,
-) {
-	const path = `${agentPath(agentId)}/new/${encodeURIComponent(draftId)}`;
-	return modelId
-		? `${path}?${new URLSearchParams({ model: modelId })}`
-		: path;
+/** Focused first-message route before a backend room exists. */
+export function newRoomPath(agentId?: string, modelId?: string) {
+	const search = new URLSearchParams();
+	if (agentId) search.set("agentId", agentId);
+	if (modelId) search.set("model", modelId);
+
+	const query = search.toString();
+	return query ? `/new?${query}` : "/new";
 }
 
 export function agentNewPath() {

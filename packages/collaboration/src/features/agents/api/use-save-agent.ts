@@ -11,13 +11,13 @@ import {
 } from "./save-agent";
 
 /** Map the supported settings to the workspace reactor's parameter names. */
-function toAgentDraft(agent: Agent, skillIds?: string[]): AgentDraft {
+function toAgentDraft(agent: Agent): AgentDraft {
 	return {
 		name: agent.name,
-		description: agent.role,
+		description: agent.description,
 		systemPrompt: agent.instructions,
 		mcp: agent.mcp,
-		skillIds: skillIds ?? agent.skillIds,
+		skillIds: agent.skills.map((skill) => skill.id),
 		subagents: agent.members.map((workspaceId) => ({ workspaceId })),
 	};
 }
@@ -40,8 +40,8 @@ export function useSaveAgent({
 	const createdIds = useRef(new Map<string, string>());
 
 	return useCallback(
-		async (agent, skillIds, workspaceId, image) => {
-			const draft = toAgentDraft(agent, skillIds);
+		async (agent, workspaceId, image) => {
+			const draft = toAgentDraft(agent);
 			const existingId =
 				workspaceId ??
 				createdIds.current.get(agent.id) ??

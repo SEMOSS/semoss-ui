@@ -60,21 +60,13 @@ const revokeObjectURL = vi.fn();
 const agent: Agent = {
 	id: "draft-1",
 	name: "Research agent",
-	role: "",
-	type: "Individual",
+	description: "",
 	icon: "compass",
 	tone: "green",
-	workspace: "Conversation",
 	instructions: "Research carefully",
 	skills: [],
-	skillIds: [],
-	databases: [],
-	dataProducts: [],
+	mcp: [],
 	members: [],
-	depth: 0,
-	concurrency: 2,
-	spawn: false,
-	triggers: [],
 };
 
 describe("AgentSettings submission", () => {
@@ -326,7 +318,7 @@ describe("AgentSettings submission", () => {
 		const existingDescription = `  ${"Existing description. ".repeat(6)} `;
 		render(
 			<AgentSettings
-				agent={{ ...agent, role: existingDescription }}
+				agent={{ ...agent, description: existingDescription }}
 				agents={[{ ...agent, id: "helper-1", name: "Research helper" }]}
 				skillOptions={[]}
 				onSave={onSave}
@@ -343,7 +335,7 @@ describe("AgentSettings submission", () => {
 		await user.click(screen.getByRole("button", { name: "Save agent" }));
 		await waitFor(() => expect(onSave).toHaveBeenCalledTimes(1));
 		expect(onSave).toHaveBeenCalledWith(
-			expect.objectContaining({ role: existingDescription }),
+			expect.objectContaining({ description: existingDescription }),
 		);
 		expect(
 			screen.getByRole("textbox", { name: "Name (required)" }),
@@ -406,8 +398,7 @@ describe("AgentSettings submission", () => {
 		await waitFor(() =>
 			expect(onSave).toHaveBeenCalledWith(
 				expect.objectContaining({
-					skillIds: ["skill-2"],
-					skills: ["Analysis"],
+					skills: [{ id: "skill-2", name: "Analysis" }],
 				}),
 			),
 		);
@@ -555,7 +546,12 @@ describe("AgentSettings submission", () => {
 		await user.click(screen.getByRole("button", { name: "Save agent" }));
 		await waitFor(() =>
 			expect(onSave).toHaveBeenCalledWith(
-				expect.objectContaining({ skillIds: ["run", "bootstrap"] }),
+				expect.objectContaining({
+					skills: [
+						{ id: "run", name: "agent-run" },
+						{ id: "bootstrap", name: "app-bootstrap" },
+					],
+				}),
 			),
 		);
 	});
@@ -697,46 +693,38 @@ describe("AgentSettings submission", () => {
 		);
 	});
 
-	it.each(["Individual", "Team"] as const)(
-		"keeps subagents optional and hides execution limits for an agent marked %s",
-		async (type) => {
-			const user = userEvent.setup();
-			const onSave = vi.fn().mockResolvedValue(undefined);
-			render(
-				<AgentSettings
-					agent={{
-						...agent,
-						type,
-						depth: 3,
-						spawn: true,
-						concurrency: 10,
-					}}
-					agents={[]}
-					skillOptions={[]}
-					onSave={onSave}
-					onClose={vi.fn()}
-				/>,
-			);
-			await user.click(screen.getByRole("button", { name: "Subagents" }));
-			expect(
-				screen.queryByText("Delegation limits"),
-			).not.toBeInTheDocument();
-			expect(screen.queryByRole("spinbutton")).not.toBeInTheDocument();
-			expect(screen.queryByRole("switch")).not.toBeInTheDocument();
-			await user.click(
-				screen.getByRole("button", { name: "Save agent" }),
-			);
-			await waitFor(() =>
-				expect(onSave).toHaveBeenCalledWith(
-					expect.objectContaining({
-						type: "Individual",
-						members: [],
-						depth: 3,
-						spawn: true,
-						concurrency: 10,
-					}),
-				),
-			);
-		},
-	);
+	it("shows only supported settings and keeps subagents optional", async () => {
+		const user = userEvent.setup();
+		const onSave = vi.fn().mockResolvedValue(undefined);
+		render(
+			<AgentSettings
+				agent={agent}
+				agents={[]}
+				skillOptions={[]}
+				onSave={onSave}
+				onClose={vi.fn()}
+			/>,
+		);
+
+		expect(
+			screen.queryByRole("button", { name: "Starts work when" }),
+		).not.toBeInTheDocument();
+		await user.click(screen.getByRole("button", { name: "Subagents" }));
+		expect(screen.queryByText("Delegation limits")).not.toBeInTheDocument();
+		expect(screen.queryByRole("spinbutton")).not.toBeInTheDocument();
+		expect(screen.queryByRole("switch")).not.toBeInTheDocument();
+
+		await user.click(screen.getByRole("button", { name: "Save agent" }));
+		await waitFor(() =>
+			expect(onSave).toHaveBeenCalledWith(
+				expect.objectContaining({ members: [] }),
+			),
+		);
+		const saved = onSave.mock.calls[0][0];
+		expect(saved).not.toHaveProperty("type");
+		expect(saved).not.toHaveProperty("depth");
+		expect(saved).not.toHaveProperty("spawn");
+		expect(saved).not.toHaveProperty("concurrency");
+		expect(saved).not.toHaveProperty("triggers");
+	});
 });
