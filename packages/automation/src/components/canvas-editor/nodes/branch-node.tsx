@@ -188,7 +188,7 @@ export function BranchNode({ data }: NodeProps) {
 						<BranchOutputHandle
 							key={clause.id}
 							id={`case-${step.id}-${clause.id}`}
-							label={String(index)}
+							label={String(index + 1)}
 							ariaLabel={`Condition ${index + 1}`}
 							connected={edges.some(
 								(edge) =>
@@ -212,8 +212,8 @@ export function BranchNode({ data }: NodeProps) {
 					))}
 					<BranchOutputHandle
 						id={`else-${step.id}`}
-						label={String(config.clauses.length)}
-						ariaLabel={`Path ${config.clauses.length + 1}`}
+						label="Else"
+						ariaLabel="Else"
 						connected={elseConnected}
 						locked={locked}
 						top={`${(outputCount / (outputCount + 1)) * 100}%`}
@@ -260,7 +260,7 @@ function BranchOutputHandle({
 	color,
 }: {
 	id: string;
-	/** Plain number shown next to the edge (e.g. "0", "1"). */
+	/** Text shown next to the edge — a 1-indexed condition number, or "Else". */
 	label: string;
 	/** Descriptive name used for the handle's accessible name. */
 	ariaLabel: string;

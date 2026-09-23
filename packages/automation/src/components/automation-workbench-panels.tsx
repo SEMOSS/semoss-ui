@@ -29,6 +29,14 @@ export interface AutomationWorkbenchContextValue {
 	onOpenOutput: (output: string) => void;
 	onAskAssistant: (prompt: string) => void;
 	onOpenPythonEditor: (nodeId: string, source: string) => void;
+	/** Whether a node's compiled Python source is currently open in a real file editor tab. */
+	isPythonFileOpen: (nodeId: string) => boolean;
+	/** Switches the trace/run-details panel to the latest run, selected on this node. */
+	onViewRunDetails: (stepId: string) => void;
+	/** The node `onViewRunDetails` last asked to be focused, and a token bumped on every call
+	 * so re-focusing the same node (after navigating away) still takes effect. */
+	runDetailsFocusNodeId: string | null;
+	runDetailsFocusToken: number;
 }
 
 export const AutomationWorkbenchContext =
@@ -77,8 +85,6 @@ export const AutomationInspectorPanel = () => {
 			scopeEntries={snapshot?.scopeEntries ?? []}
 			stepRunStatus={snapshot?.stepRunStatus}
 			stepRunError={snapshot?.stepRunError}
-			stepRunOutput={snapshot?.stepRunOutput}
-			stepRunTrace={snapshot?.stepRunTrace}
 			readOnly={context.readOnly || Boolean(snapshot?.readOnly)}
 			onDescriptionChange={(description) =>
 				context.canvasRef.current?.applyInspectorAction({
@@ -104,6 +110,12 @@ export const AutomationInspectorPanel = () => {
 				})
 			}
 			onOpenPythonEditor={context.onOpenPythonEditor}
+			pythonFileOpen={
+				snapshot?.editingStep
+					? context.isPythonFileOpen(snapshot.editingStep.id)
+					: false
+			}
+			onViewRunDetails={context.onViewRunDetails}
 		/>
 	);
 };
@@ -131,6 +143,8 @@ export const AutomationTracePanel = () => {
 			onExitHistoricalView={() =>
 				context.canvasRef.current?.exitHistoricalView()
 			}
+			focusNodeId={context.runDetailsFocusNodeId}
+			focusToken={context.runDetailsFocusToken}
 		/>
 	);
 };

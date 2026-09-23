@@ -108,7 +108,7 @@ export function BranchConditionBuilder({
 			)}
 			<p className="text-muted-foreground text-xs">
 				Conditions run in order. The first match runs its path;
-				otherwise <strong>Path {clauses.length + 1}</strong> runs.
+				otherwise the <strong>Else</strong> path runs.
 			</p>
 		</div>
 	);
