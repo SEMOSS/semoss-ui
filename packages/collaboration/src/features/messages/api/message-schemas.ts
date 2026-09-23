@@ -49,6 +49,14 @@ const toolResultPartSchema = z.object({
 	}),
 });
 
+/** Display ornament on a platform message carrying a person's delegated answer. */
+export const delegationReplySchema = z.object({
+	assignee: z.string(),
+	outcome: z.enum(["RESPONDED", "DECLINED", "CANCELLED", "UNANSWERED"]),
+	question: z.string().nullish(),
+	text: z.string().nullish(),
+});
+
 /** Canonical persisted playground message parts collaboration can render. */
 export const roomMessagePartSchema = z.discriminatedUnion("type", [
 	textPartSchema,

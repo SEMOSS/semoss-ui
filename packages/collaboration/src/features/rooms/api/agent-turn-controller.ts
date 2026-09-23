@@ -455,8 +455,11 @@ export class AgentTurnController {
 				this.config.insightId,
 				parent,
 			)) {
+				// A person's task has no tool approvals to load, and the full read
+				// would drop its executor fields.
 				const full =
-					child.status === "INPUT_REQUIRED"
+					child.status === "INPUT_REQUIRED" &&
+					child.executorType !== "HUMAN"
 						? await readRun(
 								this.config.insightId,
 								child.runId,
@@ -480,7 +483,10 @@ export class AgentTurnController {
 			terminal &&
 			this.terminalReconciled &&
 			this.lastChildrenRead > 0 &&
-			[...this.children.values()].every(isTerminalRun);
+			// A person may take days; the turn itself is done.
+			[...this.children.values()].every(
+				(child) => isTerminalRun(child) || isWaitingOnPerson(child),
+			);
 		this.actions.clear();
 		for (const owner of [run, ...this.children.values()]) {
 			if (isTerminalRun(owner)) continue;
@@ -545,6 +551,8 @@ export class AgentTurnController {
 			return part ? [part] : [];
 		});
 		for (const child of this.children.values()) {
+			// Delegations show on their DelegateToPerson tool card instead.
+			if (child.executorType === "HUMAN") continue;
 			parts.push({
 				type: "tool",
 				tool: {
@@ -715,4 +723,8 @@ export class AgentTurnController {
 		this.wake?.();
 		this.listeners.clear();
 	}
+}
+
+function isWaitingOnPerson(run: AgentRun): boolean {
+	return run.executorType === "HUMAN" && run.status === "INPUT_REQUIRED";
 }

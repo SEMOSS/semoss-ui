@@ -44,7 +44,8 @@ const actionSchema = z.object({
 /** Validate both stream snapshots and durable run records at the SDK boundary. */
 export const agentRunSchema = z.object({
 	runId: z.string().min(1),
-	roomId: z.string().min(1),
+	// A delegation to a person has no room of its own on the owner's side.
+	roomId: z.string().nullish(),
 	status: statusSchema,
 	inputMessageId: z.string().nullish(),
 	finalOutputMessageId: z.string().nullish(),
@@ -52,6 +53,8 @@ export const agentRunSchema = z.object({
 	errorMessage: z.string().nullish(),
 	input: z.string().nullish(),
 	workspaceName: z.string().nullish(),
+	executorType: z.enum(["AGENT", "HUMAN"]).nullish(),
+	executorLabel: z.string().nullish(),
 	pendingActions: z
 		.array(actionSchema)
 		.nullish()

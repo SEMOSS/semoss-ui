@@ -8,6 +8,8 @@ import { useMain } from "@/app/main.context";
 import { useRoom } from "@/app/room.context";
 import { EmptyView } from "@/components/common/empty-view";
 import { roomsKey } from "@/features/agents/api/refresh-keys";
+import { useDelegationStatus } from "@/features/delegations/api/use-delegation-status";
+import { DelegationResponsePanel } from "@/features/delegations/components/delegation-response-panel";
 import { getRoomMessages } from "@/features/messages/api/get-room-messages";
 import type { ValidatedRoomMessage } from "@/features/messages/api/message-schemas";
 import type { ConversationMessage } from "@/features/messages/types/message";
@@ -173,6 +175,21 @@ export function RoomPage() {
 		return mergeToolStates([...byId.values()], turn.toolStates);
 	}, [history, turn.messages, turn.toolStates]);
 
+	// A person's answer arrives as history plus, for CONTINUE, a new run.
+	const handleDelegationAnswered = useCallback(() => {
+		void loadHistory();
+		void turn.reconnect();
+	}, [loadHistory, turn.reconnect]);
+	const applyDelegations = useDelegationStatus(
+		insightId,
+		thread,
+		handleDelegationAnswered,
+	);
+	const displayThread = useMemo(
+		() => applyDelegations(thread),
+		[applyDelegations, thread],
+	);
+
 	if (!roomId) {
 		return (
 			<EmptyView title="Room not found">
@@ -191,14 +208,19 @@ export function RoomPage() {
 				...workspace.sessions,
 			];
 
-	return (
+	const delegationActionId =
+		typeof room?.options.delegation_action_id === "string"
+			? room.options.delegation_action_id
+			: undefined;
+
+	const view = (
 		<RoomView
 			agent={agent}
 			insightId={insightId}
 			sessions={sessions}
 			agentId={agentId}
 			sessionId={roomId}
-			thread={thread}
+			thread={displayThread}
 			toolStates={turn.toolStates}
 			isSending={turn.isSubmitting || turn.isRestoring}
 			isRunning={turn.isRunning}
@@ -228,5 +250,15 @@ export function RoomPage() {
 			onNewRoom={workspace.newRoom}
 			onOpenRooms={openRoomsList}
 		/>
+	);
+	if (!delegationActionId) return view;
+	return (
+		<div className="flex min-h-0 min-w-0 flex-1 flex-col">
+			<DelegationResponsePanel
+				actionId={delegationActionId}
+				refreshKey={thread.length}
+			/>
+			{view}
+		</div>
 	);
 }

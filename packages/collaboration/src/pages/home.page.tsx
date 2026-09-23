@@ -26,6 +26,7 @@ import {
 	selectAttention,
 	selectFilteredActivity,
 } from "@/features/activity/utils/activity-selectors";
+import { AssignedDelegations } from "@/features/delegations/components/assigned-delegations";
 
 export const HomePage = () => {
 	const attentionHeadingId = useId();
@@ -146,6 +147,8 @@ export const HomePage = () => {
 						</div>
 					</div>
 				</section>
+
+				<AssignedDelegations />
 
 				<section aria-labelledby={attentionHeadingId} className="mt-8">
 					<div className="mb-4 flex flex-wrap items-center justify-between gap-3">

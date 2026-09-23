@@ -227,10 +227,13 @@ export function ToolWorkbenchProvider({
 			(item) =>
 				!automaticallyOpened.current.has(`approval:${item.toolId}`),
 		);
-		if (!approval || !tools[approval.toolId]) return;
+		const tool = approval && tools[approval.toolId];
+		if (!approval || !tool) return;
 		automaticallyOpened.current.add(`approval:${approval.toolId}`);
-		openWorkbench(approval.toolId);
-	}, [openWorkbench, pendingApprovals, tools]);
+		// Honor tools that ask to be reviewed in the transcript.
+		if (getToolDisplayLocation(tool) === "inline") openInline(tool.id);
+		else openWorkbench(approval.toolId);
+	}, [openInline, openWorkbench, pendingApprovals, tools]);
 
 	useEffect(() => {
 		for (const tool of Object.values(tools)) {

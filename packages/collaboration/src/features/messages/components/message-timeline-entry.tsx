@@ -10,6 +10,7 @@ import {
 	toast,
 } from "@semoss/ui/next";
 import type { Agent } from "@/features/agents/types/agent";
+import { DelegationReplyCard } from "@/features/delegations/components/delegation-reply-card";
 import { ToolCallCard } from "@/features/tools/components/tool-call-card";
 import type { ConversationMessage } from "../types/message";
 import { MessageActivityPart } from "./message-activity-part";
@@ -28,6 +29,7 @@ function formatMessageTime(value: string | undefined): string {
 }
 
 function messageText(message: ConversationMessage): string {
+	if (message.delegationReply) return message.delegationReply.text ?? "";
 	return message.parts
 		.flatMap((part) => {
 			if (part.type === "text" || part.type === "thinking")
@@ -47,6 +49,7 @@ export function MessageTimelineEntry({
 }) {
 	const [hasCopied, setHasCopied] = useState(false);
 	const isUser = message.role === "user";
+	const reply = message.delegationReply;
 	const time = formatMessageTime(message.createdAt);
 	const isLive =
 		message.live !== undefined &&
@@ -79,9 +82,13 @@ export function MessageTimelineEntry({
 				"group flex min-w-0 flex-col gap-2",
 				isUser ? "ms-auto max-w-3xl items-end" : "w-full pe-0 sm:pe-10",
 			)}
-			aria-label={isUser ? "Your message" : `${agent.name}'s message`}
+			aria-label={
+				isUser
+					? "Your message"
+					: `${reply?.assignee ?? agent.name}'s message`
+			}
 		>
-			{!isUser && (
+			{!isUser && !reply && (
 				<span className="font-medium text-muted-foreground text-xs">
 					{agent.name}
 				</span>
@@ -92,50 +99,54 @@ export function MessageTimelineEntry({
 					isUser && "rounded-lg bg-accent px-3 py-2",
 				)}
 			>
-				{message.parts.map((part, index) => {
-					const key = `${message.id}-${part.type}-${index}`;
-					switch (part.type) {
-						case "text":
-							return isUser ? (
-								<P
-									key={key}
-									dir="auto"
-									className="whitespace-pre-wrap text-sm leading-6"
-								>
-									{part.text}
-								</P>
-							) : (
-								<MessageMarkdown
-									key={key}
-									text={part.text}
-									isStreaming={
-										isLive && part.state === "active"
-									}
-								/>
-							);
-						case "thinking":
-							return (
-								<MessageThinkingPart
-									key={key}
-									text={part.text}
-									isStreaming={
-										isLive && part.state === "active"
-									}
-								/>
-							);
-						case "tool":
-							return <ToolCallCard key={key} tool={part.tool} />;
-						case "media":
-							return (
-								<MessageMediaPart
-									key={key}
-									fileName={part.fileName}
-									mimeType={part.mimeType}
-								/>
-							);
-					}
-					return null;
-				})}
+				{reply && <DelegationReplyCard reply={reply} />}
+				{!reply &&
+					message.parts.map((part, index) => {
+						const key = `${message.id}-${part.type}-${index}`;
+						switch (part.type) {
+							case "text":
+								return isUser ? (
+									<P
+										key={key}
+										dir="auto"
+										className="whitespace-pre-wrap text-sm leading-6"
+									>
+										{part.text}
+									</P>
+								) : (
+									<MessageMarkdown
+										key={key}
+										text={part.text}
+										isStreaming={
+											isLive && part.state === "active"
+										}
+									/>
+								);
+							case "thinking":
+								return (
+									<MessageThinkingPart
+										key={key}
+										text={part.text}
+										isStreaming={
+											isLive && part.state === "active"
+										}
+									/>
+								);
+							case "tool":
+								return (
+									<ToolCallCard key={key} tool={part.tool} />
+								);
+							case "media":
+								return (
+									<MessageMediaPart
+										key={key}
+										fileName={part.fileName}
+										mimeType={part.mimeType}
+									/>
+								);
+						}
+						return null;
+					})}
 				<MessageActivityPart message={message} />
 			</div>
 			<div className="flex min-h-8 items-center gap-1 text-muted-foreground">
