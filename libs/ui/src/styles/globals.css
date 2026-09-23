@@ -21,6 +21,11 @@
  */
 @import "monaco-editor/min/vs/editor/editor.main.css";
 
+/* KaTeX's mathematical fonts and layout are required for its generated markup.
+ * Load from the shared CSS entry so both library builds and source consumers
+ * receive them; keep vendor metrics intact rather than applying UI font rules. */
+@import "katex/dist/katex.min.css";
+
 /** Add all of the component styles **/
 @source "../**/*.{ts,tsx}";
 

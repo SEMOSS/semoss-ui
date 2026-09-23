@@ -226,10 +226,10 @@ export const AddBlocksMenuCard = observer((props: AddBlocksMenuItemProps) => {
 				{item.name}
 				{item.recentChanges && (
 					<TooltipProvider>
-						<Tooltip>
+						<Tooltip disableHoverableContent={false}>
 							<TooltipTrigger asChild>
 								<span className="inline-flex items-center">
-									<Info className="size-4 text-blue-500" />
+									<Info className="size-4 text-primary" />
 								</span>
 							</TooltipTrigger>
 							<TooltipContent>
@@ -240,10 +240,10 @@ export const AddBlocksMenuCard = observer((props: AddBlocksMenuItemProps) => {
 				)}
 				{item.isBeta && (
 					<TooltipProvider>
-						<Tooltip>
+						<Tooltip disableHoverableContent={false}>
 							<TooltipTrigger asChild>
 								<span className="inline-flex items-center">
-									<AlertTriangle className="size-4 text-amber-500" />
+									<AlertTriangle className="size-4 text-warning" />
 								</span>
 							</TooltipTrigger>
 							<TooltipContent>
@@ -291,7 +291,7 @@ export const AddBlocksMenuCard = observer((props: AddBlocksMenuItemProps) => {
 					}}
 				>
 					<TooltipProvider>
-						<Tooltip>
+						<Tooltip disableHoverableContent={false}>
 							<TooltipTrigger asChild>
 								<div>
 									<BlockCardContent

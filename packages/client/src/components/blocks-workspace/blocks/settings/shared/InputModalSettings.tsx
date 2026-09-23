@@ -1,7 +1,7 @@
 import { ExternalLink } from "lucide-react";
 import { computed } from "mobx";
 import { observer } from "mobx-react-lite";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 import {
 	type Block,
 	type BlockDef,
@@ -13,9 +13,15 @@ import {
 	Button,
 	Dialog,
 	DialogContent,
+	DialogDescription,
 	DialogHeader,
 	DialogTitle,
+	DialogTrigger,
 	Input,
+	Textarea,
+	Tooltip,
+	TooltipContent,
+	TooltipTrigger,
 } from "@semoss/ui/next";
 import { useBlockSettings } from "@/hooks/useBlockSettings";
 import { BaseSettingSection } from "../BaseSettingSection";
@@ -50,6 +56,7 @@ export const InputModalSettings = observer(
 		placeholder = "",
 	}: InputModalSettingsProps<D>) => {
 		const { data, setData } = useBlockSettings<D>(id);
+		const inputId = useId();
 
 		// track the value
 		const [value, setValue] = useState("");
@@ -106,9 +113,10 @@ export const InputModalSettings = observer(
 		};
 
 		return (
-			<>
-				<BaseSettingSection label={label}>
+			<Dialog open={open} onOpenChange={setOpen}>
+				<BaseSettingSection label={label} htmlFor={inputId}>
 					<Input
+						id={inputId}
 						placeholder={placeholder}
 						value={value}
 						onChange={(e) => {
@@ -122,47 +130,60 @@ export const InputModalSettings = observer(
 						}
 						autoComplete="off"
 					/>
-					<Button
-						variant="ghost"
-						size="icon-sm"
-						onClick={() => setOpen(true)}
-					>
-						<ExternalLink />
-					</Button>
+					<Tooltip disableHoverableContent={false}>
+						<TooltipTrigger asChild>
+							<DialogTrigger asChild>
+								<Button
+									type="button"
+									variant="ghost"
+									size="icon-sm"
+									aria-label={`Expand ${label.toLowerCase()} editor`}
+								>
+									<ExternalLink
+										className="size-4"
+										aria-hidden="true"
+									/>
+								</Button>
+							</DialogTrigger>
+						</TooltipTrigger>
+						<TooltipContent>{`Expand ${label.toLowerCase()} editor`}</TooltipContent>
+					</Tooltip>
 				</BaseSettingSection>
-				<Dialog open={open} onOpenChange={setOpen}>
-					<DialogContent
-						className={
-							Object.hasOwn(data, "type") && data.type === "date"
-								? "max-w-sm"
-								: "max-w-4xl"
-						}
-					>
-						<DialogHeader>
-							<DialogTitle>{`Edit ${label}`}</DialogTitle>
-						</DialogHeader>
-						<div className="border-b" />
-						<div className="p-4">
-							<textarea
-								placeholder={placeholder}
-								rows={
-									Object.hasOwn(data, "type") &&
-									data.type === "date"
-										? 1
-										: 15
-								}
-								value={value}
-								onChange={(e) => {
-									// sync the data on change
-									onChange(e.target.value);
-								}}
-								className="w-full resize-none rounded border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-								autoComplete="off"
-							/>
-						</div>
-					</DialogContent>
-				</Dialog>
-			</>
+				<DialogContent
+					className={
+						Object.hasOwn(data, "type") && data.type === "date"
+							? "max-w-sm"
+							: "max-w-4xl"
+					}
+				>
+					<DialogHeader>
+						<DialogTitle className="font-medium text-base leading-6">{`Edit ${label}`}</DialogTitle>
+						<DialogDescription>
+							Changes are saved automatically.
+						</DialogDescription>
+					</DialogHeader>
+					<div className="border-b" />
+					<div className="p-4">
+						<Textarea
+							aria-label={label}
+							placeholder={placeholder}
+							rows={
+								Object.hasOwn(data, "type") &&
+								data.type === "date"
+									? 1
+									: 15
+							}
+							value={value}
+							onChange={(e) => {
+								// sync the data on change
+								onChange(e.target.value);
+							}}
+							className="field-sizing-fixed w-full resize-y"
+							autoComplete="off"
+						/>
+					</div>
+				</DialogContent>
+			</Dialog>
 		);
 	},
 );

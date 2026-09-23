@@ -11,6 +11,7 @@
             "types": "./dist/types/index.d.ts",
             "default": "./dist/index.mjs"
         },
+        "./globals.css": "./src/styles/globals.css",
         "./version": "./src/version.ts"
     },
     "scripts": {

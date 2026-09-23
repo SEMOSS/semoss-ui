@@ -52,6 +52,7 @@ import {
 	calculateRoomUsage,
 	findLatestCompactableResponseId,
 } from "./assistant.usage";
+import { APP_BUILDER_AGENT } from "./assistant-agents";
 import { parseSlashCommands } from "./assistant-commands";
 import { attachAssistantNotifications } from "./assistant-notifications";
 
@@ -63,9 +64,6 @@ const AUTO_NAME_MAX_LENGTH = 60;
 
 /** Delay between streaming polls while a run is in flight. */
 const POLL_INTERVAL_MS = 300;
-
-/** Fallback agent used by workbenches that do not configure a specialized one. */
-const DEFAULT_WORKBENCH_AGENT_ID = "app-builder";
 
 /** Permission mode forwarded to the agent harness for each run. */
 export type AssistantPermissionMode =
@@ -98,10 +96,14 @@ const effortParamValue = (effort: AssistantEffort): string =>
 
 /** Configuration each workbench injects for its ASSISTANT panel. */
 export interface AssistantConfig {
-	/** System prompt sent to the assistant. */
+	/** Additional instructions appended to the selected agent's system prompt. */
 	systemPrompt?: string;
-	/** Backend agent workspace that owns the assistant's prompt and skills. */
+	/** Replace the selected agent's prompt with systemPrompt; defaults to false. */
+	overrideSystemPrompt?: boolean;
+	/** Explicit agent override; null uses the workbench's default agent. */
 	agent?: AssistantAgent | null;
+	/** Default agent for this workbench, without replacing a user's selection. */
+	defaultAgent?: AssistantAgent;
 	/** Prepare the bound room's tools before an agent run starts. */
 	prepareRoom?: (insightId: string) => Promise<void>;
 	/**
@@ -166,8 +168,10 @@ export interface AssistantState {
 	/** Failure message when initialization did not complete. */
 	initError: string | null;
 
-	/** System prompt sent to the assistant for this workbench's ASSISTANT panel. */
+	/** Additional instructions appended to the selected agent's system prompt. */
 	systemPrompt: string;
+	/** Whether systemPrompt replaces the selected agent's authored prompt. */
+	overrideSystemPrompt: boolean;
 	/** Prepare the bound room's tools before an agent run starts. */
 	prepareRoom: ((insightId: string) => Promise<void>) | null;
 	/** MCP servers persisted onto the room's options before each run. */
@@ -191,8 +195,10 @@ export interface AssistantState {
 
 	/** Model engine used for new runs. */
 	model: Engine | null;
-	/** Optional backend agent workspace used for new runs. */
+	/** Explicit agent override for new runs; null uses defaultAgent. */
 	agent: AssistantAgent | null;
+	/** Built-in agent used when the user has not selected an override. */
+	defaultAgent: AssistantAgent;
 	/** Turn budget passed to RunAgent. */
 	maxTurns: number;
 	/** Permission mode for new runs; null defers to the harness default. */
@@ -241,7 +247,7 @@ export interface AssistantState {
 	 */
 	destroy: () => void;
 	/**
-	 * Update one or more assistant config fields (systemPrompt, agent,
+	 * Update one or more assistant config fields (systemPrompt, overrideSystemPrompt, agent,
 	 * prepareRoom, mcp, runParams, permissionMode, onRunCompleted) for this workbench
 	 * instance; omitted fields keep their values.
 	 */
@@ -761,6 +767,7 @@ export const createAssistantStore = (
 			initError: null,
 
 			systemPrompt: "",
+			overrideSystemPrompt: false,
 			prepareRoom: null,
 			mcp: [],
 			runParams: {},
@@ -770,6 +777,7 @@ export const createAssistantStore = (
 
 			model: null,
 			agent: null,
+			defaultAgent: APP_BUILDER_AGENT,
 			maxTurns: DEFAULT_MAX_TURNS,
 			permissionMode: null,
 			effort: null,
@@ -919,6 +927,13 @@ export const createAssistantStore = (
 				const insightId = assistant.insightId;
 				const roomId = assistant.roomId;
 				const model = assistant.model;
+				// One selection owns both writes, even if the user changes agents
+				// while uploads or room preparation are still in progress.
+				const runAgentSelection =
+					assistant.agent ?? assistant.defaultAgent;
+				const workbenchAgentMode = assistant.agent
+					? "custom"
+					: "default";
 				setAssistant({ isSending: true });
 
 				try {
@@ -941,13 +956,15 @@ export const createAssistantStore = (
 
 					await updateRoomOptions(insightId, roomId, {
 						instructions: get().systemPrompt,
+						overrideSystemPrompt: get().overrideSystemPrompt,
 						// Engine workbenches load tools from the room's MCP
 						// file (prepareRoom); project workbenches pass their
 						// MCP entries directly.
 						mcp: get().mcp,
 						predefinedPrompts: [],
 						modelId: model.engine_id,
-						workspace: get().agent,
+						workspace: runAgentSelection,
+						workbenchAgentMode,
 						harnessType: "semoss",
 						workbench: workbenchId,
 					});
@@ -991,9 +1008,7 @@ export const createAssistantStore = (
 							harnessType: "semoss",
 							// The SDK forwards agentId as the pixel's
 							// workspaceId.
-							agentId:
-								assistantNow.agent?.workspace_id ??
-								DEFAULT_WORKBENCH_AGENT_ID,
+							agentId: runAgentSelection.workspace_id,
 							maxTurns: get().maxTurns,
 							maxReflections: 0,
 							media: attachments
@@ -1254,6 +1269,7 @@ export const createAssistantStore = (
 					}
 					const workspace = options?.workspace;
 					if (
+						options?.workbenchAgentMode !== "default" &&
 						workspace &&
 						typeof workspace === "object" &&
 						"workspace_id" in workspace &&

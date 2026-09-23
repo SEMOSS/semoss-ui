@@ -302,9 +302,12 @@ export const ProjectAccessRequestDialog = ({
 				}
 			}}
 		>
-			<DialogContent className="max-h-[90vh] overflow-auto sm:max-w-2xl">
+			<DialogContent
+				aria-describedby={undefined}
+				className="max-h-[90vh] overflow-auto sm:max-w-2xl"
+			>
 				<DialogHeader>
-					<DialogTitle>
+					<DialogTitle className="font-medium text-base leading-6">
 						{permission === "DISCOVERABLE"
 							? "Request Access"
 							: "Change Access"}
