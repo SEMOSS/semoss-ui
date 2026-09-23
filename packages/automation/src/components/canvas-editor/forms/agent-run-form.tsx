@@ -55,6 +55,7 @@ export function AgentRunForm({
 					name={config.engineName ?? ""}
 					value={config.engineId}
 					engineTypes={["MODEL"]}
+					excludedEngineSubtypes={["TYPESAFE"]}
 					required
 					disabled={readOnly}
 					onChange={(engine) =>
