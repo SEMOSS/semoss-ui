@@ -75,6 +75,7 @@ import { ShareOverlay } from "@/components/ui";
 import { AssistantStoreProvider, WorkbenchProvider } from "@/contexts";
 import { useAssistantStore, useProject } from "@/hooks";
 import type { BuildTool } from "@/stores/assistant";
+import { AUTOMATION_BUILDER_AGENT } from "@/stores/assistant/assistant-agents";
 import { WORKBENCH_COMPONENTS } from "@/stores/workbench";
 import { NavbarHeader, NavbarLeft, NavbarRight } from "../../shared";
 import { AutomationSettingsToggle } from "./automation-settings-toggle";
@@ -85,10 +86,6 @@ const AUTOMATION_MUTATION_TOOLS = new Set([
 	"UpdateAutomationCustomStep",
 	"RemoveAutomationStep",
 ]);
-const AUTOMATION_BUILDER_AGENT = {
-	workspace_id: "workflow-automation-builder",
-	name: "Automation Building Agent",
-};
 const MAX_ASSISTANT_DRAFT_LENGTH = 8000;
 const SINGLE_STEP_ID_KEYS = ["stepId", "nodeId", "step_id", "node_id", "id"];
 const STEP_ID_LIST_KEYS = ["stepIds", "nodeIds", "step_ids", "node_ids", "ids"];
@@ -710,7 +707,7 @@ export const AutomationWorkbench = observer(
 		useEffect(() => {
 			configureAssistant({
 				systemPrompt: "",
-				agent: AUTOMATION_BUILDER_AGENT,
+				defaultAgent: AUTOMATION_BUILDER_AGENT,
 				mcp: automationMcp,
 				runParams: { project: appId },
 				onToolCompleted: handleAutomationToolCompleted,
@@ -764,7 +761,7 @@ export const AutomationWorkbench = observer(
 					</Breadcrumb>
 				</NavbarLeft>
 				<NavbarRight>
-					<Tooltip>
+					<Tooltip disableHoverableContent={false}>
 						<TooltipTrigger asChild>
 							<Button
 								variant="ghost"
@@ -797,9 +794,14 @@ export const AutomationWorkbench = observer(
 						}
 					}}
 				>
-					<DialogContent className="flex h-[85vh] w-[min(92vw,80rem)] max-w-none flex-col p-0 sm:max-w-3xl">
+					<DialogContent
+						aria-describedby={undefined}
+						className="flex h-[85vh] w-[min(92vw,80rem)] max-w-none flex-col p-0 sm:max-w-3xl"
+					>
 						<DialogHeader className="border-b px-4 py-3">
-							<DialogTitle>Python source</DialogTitle>
+							<DialogTitle className="font-medium text-base leading-6">
+								Python source
+							</DialogTitle>
 						</DialogHeader>
 						<div className="min-h-0 flex-1 p-4">
 							<div className="h-full overflow-hidden rounded-lg border bg-muted/30">

@@ -141,7 +141,7 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
 						<span className="overflow-hidden truncate font-medium">
 							{t("fileExplorer.name")}
 						</span>
-						<Tooltip>
+						<Tooltip disableHoverableContent={false}>
 							<TooltipTrigger asChild>
 								<Button
 									data-testid="file-explorer-bulk-shortcuts-button"

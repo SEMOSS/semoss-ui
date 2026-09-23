@@ -12,7 +12,7 @@ import {
 	buildShowField,
 } from "../block-defaults.shared";
 import type { BlockSettingsConfig } from "../settings.types";
-import GeneralSettings from "./GeneralSettings";
+import { GeneralSettings } from "./GeneralSettings";
 
 export const config: BlockSettingsConfig = {
 	type: BLOCK_TYPE_DISPLAY,

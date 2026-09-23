@@ -103,7 +103,7 @@ export interface NotebookHandle {
  * back to nbformat. Edits are surfaced through `onChange`; running and
  * serializing are also available imperatively via `ref` (`NotebookHandle`).
  * File I/O (load / save / download) is owned by the caller — the workbench's
- * `FILE_NOTEBOOK_EDITOR_PANEL`, or the terminal's notebook tab.
+ * `FileNotebookView`, or the terminal's notebook tab.
  */
 export const Notebook = forwardRef<NotebookHandle, NotebookProps>(
 	(

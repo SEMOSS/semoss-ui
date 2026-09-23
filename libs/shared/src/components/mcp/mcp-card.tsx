@@ -126,7 +126,7 @@ export const MCPCard = ({
 				<div className="flex items-center gap-2">
 					<div className="flex min-w-0 flex-1 items-center gap-1.5">
 						{platformUrl ? (
-							<Tooltip>
+							<Tooltip disableHoverableContent={false}>
 								<TooltipTrigger asChild>
 									<a
 										target="_blank"
@@ -149,7 +149,7 @@ export const MCPCard = ({
 						) : null}
 
 						{effectivePermission === "FULLY_PRIVATE" ? (
-							<Tooltip>
+							<Tooltip disableHoverableContent={false}>
 								<TooltipTrigger asChild>
 									<AlertCircle className="size-4 cursor-help text-destructive" />
 								</TooltipTrigger>
@@ -163,7 +163,7 @@ export const MCPCard = ({
 
 						{(missingSubDependencies || accessMissing) &&
 						effectivePermission !== "FULLY_PRIVATE" ? (
-							<Tooltip>
+							<Tooltip disableHoverableContent={false}>
 								<TooltipTrigger asChild>
 									<TriangleAlert
 										className={cn(

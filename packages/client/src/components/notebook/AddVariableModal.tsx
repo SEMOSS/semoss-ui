@@ -51,9 +51,11 @@ export const AddVariableModal = (props: AddVariableModalProps) => {
 
 	return (
 		<Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-			<DialogContent showCloseButton={false}>
+			<DialogContent aria-describedby={undefined} showCloseButton={false}>
 				<DialogHeader>
-					<DialogTitle>Add Variable</DialogTitle>
+					<DialogTitle className="font-medium text-base leading-6">
+						Add Variable
+					</DialogTitle>
 				</DialogHeader>
 				<div className="add-variable-modal__content flex flex-col gap-1.5 pt-1">
 					<Label htmlFor={aliasId}>Alias</Label>

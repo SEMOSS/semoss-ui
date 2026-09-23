@@ -72,7 +72,7 @@ export const ProjectDependenciesPage = () => {
 					<div className="flex items-center gap-2">
 						<H4 className="text-base">Dependencies</H4>
 						{canEdit && (
-							<Tooltip>
+							<Tooltip disableHoverableContent={false}>
 								<TooltipTrigger asChild>
 									<span>
 										<Info className="size-4 text-muted-foreground" />
@@ -177,7 +177,11 @@ export const ProjectDependenciesPage = () => {
 													)}
 												{d.can_view_dependencies ===
 													false && (
-													<Tooltip>
+													<Tooltip
+														disableHoverableContent={
+															false
+														}
+													>
 														<TooltipTrigger asChild>
 															<TriangleAlert className="size-4 shrink-0 text-warning" />
 														</TooltipTrigger>
@@ -249,7 +253,11 @@ export const ProjectDependenciesPage = () => {
 												)}
 											{d.can_view_dependencies ===
 												false && (
-												<Tooltip>
+												<Tooltip
+													disableHoverableContent={
+														false
+													}
+												>
 													<TooltipTrigger asChild>
 														<TriangleAlert className="size-4 shrink-0 text-warning" />
 													</TooltipTrigger>
