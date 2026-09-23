@@ -505,7 +505,7 @@ const buildTranscriptStepNodes = (run: AgentRunDetail): TreeNodeSpec[] => {
 		if (!message.visible) {
 			continue;
 		}
-		const role = message.ornaments?.agentRunRole;
+		const role = message.agentRun?.role ?? message.ornaments?.agentRunRole;
 
 		if (role === "input") {
 			const textPart = message.parts.find((part) => part.type === "TEXT");

@@ -26,8 +26,8 @@ import {
 	useSidebar,
 	useTheme,
 } from "@semoss/ui/next";
+import { buildInitials } from "@semoss/utility";
 import { useChat, useRoot } from "@/hooks";
-import { toInitials } from "@/utility";
 
 export const NavUser = () => {
 	const { t, i18n } = useTranslation("common");
@@ -52,7 +52,7 @@ export const NavUser = () => {
 					<Avatar className="h-8 w-8 shrink-0 rounded-lg">
 						<AvatarImage src={""} alt={userName} />
 						<AvatarFallback className="rounded-lg bg-primary/10">
-							{toInitials(userName)}
+							{buildInitials(userName, 2, true)}
 						</AvatarFallback>
 					</Avatar>
 					<span className="truncate text-sm group-data-[collapsible=icon]:hidden">

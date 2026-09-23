@@ -80,7 +80,7 @@ export const NotebookMarkdownCell: React.FC<NotebookMarkdownCellProps> = ({
 					}}
 				>
 					{source.trim() ? (
-						<Markdown>{source}</Markdown>
+						<Markdown math>{source}</Markdown>
 					) : (
 						<span className="text-muted-foreground text-xs italic">
 							Empty markdown cell — double-click to edit.

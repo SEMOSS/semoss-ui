@@ -16,7 +16,7 @@ import {
 	looksLikeHtmlDocument,
 	looksLikeMarkdown,
 	normalizeForMarkdown,
-} from "@semoss/utility/string/markdown";
+} from "@semoss/utility/markdown";
 
 interface AutomationOutputModalProps {
 	output: string | null;

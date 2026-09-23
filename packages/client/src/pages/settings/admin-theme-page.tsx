@@ -179,6 +179,8 @@ const EMPTY_PLAYGROUND: ThemeMap["playground"] = {
 		enableDarkMode: true,
 		hideToolsInIframe: false,
 		hideChatHistory: false,
+		showSystemSkills: true,
+		showSystemTools: true,
 	},
 };
 
@@ -284,6 +286,18 @@ const FEATURE_FLAGS: {
 		label: "Hide Chat History",
 		description:
 			'Hides the chat-history list in the sidebar and the "All Chats" page/nav link, so users cannot browse past conversations. New chats can still be started.',
+	},
+	{
+		key: "showSystemSkills",
+		label: "Show System Skills",
+		description:
+			"Shows MCP-tagged projects with the SYSTEM tag in the toolbox skills list.",
+	},
+	{
+		key: "showSystemTools",
+		label: "Show System Tools",
+		description:
+			"Shows engines with the SYSTEM tag in the toolbox tools list.",
 	},
 ];
 

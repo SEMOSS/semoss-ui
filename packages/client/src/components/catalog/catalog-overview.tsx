@@ -13,9 +13,9 @@ import {
 	Textarea,
 	toast,
 } from "@semoss/ui/next";
+import { formatDateToLocal } from "@semoss/utility";
 import { MarkdownEditor, NoDetailsEmptyState } from "@/components/common";
 import { metakeyToLabel, normalizeTagArray } from "@/utility";
-import { formatDateToLocal } from "@/utility/date";
 import { CatalogTagInput } from "./catalog-tag-input";
 import { CatalogTags } from "./catalog-tags";
 

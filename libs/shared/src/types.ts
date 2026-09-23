@@ -354,6 +354,10 @@ export interface ThemeMap {
 			enableTableExport?: boolean;
 			/** Whether to show the temperature slider in room settings. Defaults to false. */
 			enableTemperature?: boolean;
+			/** Whether to show items tagged SYSTEM in the MCP selector skills list (MyProjects). Defaults to true. */
+			showSystemSkills?: boolean;
+			/** Whether to show items tagged SYSTEM in the MCP selector tools list (MyEngines for TOOLBOX). Defaults to true. */
+			showSystemTools?: boolean;
 		};
 	};
 }
