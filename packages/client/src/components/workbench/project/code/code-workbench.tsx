@@ -19,6 +19,7 @@ import { ASSISTANT_PANEL } from "@/components/assistant";
 import { AssistantStoreProvider } from "@/contexts";
 import { useAssistantStore, useProject, useSession } from "@/hooks";
 import type { BuildRun } from "@/stores/assistant";
+import { APP_BUILDER_AGENT } from "@/stores/assistant/assistant-agents";
 import {
 	WORKBENCH_COMPONENTS,
 	WORKBENCH_EVENTS,
@@ -267,6 +268,7 @@ export const CodeWorkbench: React.FC = () => {
 		);
 
 		assistantStore.getState().configure({
+			defaultAgent: APP_BUILDER_AGENT,
 			systemPrompt: `You are the assistant for the ${name} code workbench (${project.project_id}). Your role is to help the user build and run this app and the rest of the project's files. Use only the tools provided in this room. Never claim that an operation succeeded unless its tool result confirms success. Keep answers concise and grounded in the active project.`,
 			mcp: [
 				{
