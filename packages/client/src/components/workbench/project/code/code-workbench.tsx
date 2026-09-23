@@ -167,6 +167,11 @@ export const CODE_WORKBENCH_COMPONENTS: Record<
 			restrict: ["OWNER"],
 		},
 		{
+			name: "Logs",
+			component: "logs",
+			restrict: ["OWNER"],
+		},
+		{
 			name: "Access Control",
 			component: "access-control",
 			restrict: ["OWNER", "EDIT"],

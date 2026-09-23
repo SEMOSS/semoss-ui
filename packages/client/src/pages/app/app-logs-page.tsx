@@ -1,5 +1,5 @@
 import { Search } from "lucide-react";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useInsight } from "@semoss/sdk/react";
 import {
 	Button,
@@ -41,14 +41,18 @@ export const AppLogsPage = () => {
 	const [error, setError] = useState<string | null>(null);
 
 	const runSearch = useCallback(
-		async (searchOffset: number) => {
+		async (
+			searchOffset: number,
+			searchQuery: string,
+			searchLevels: string[],
+		) => {
 			setLoading(true);
 			setError(null);
 			try {
 				const data = await searchAppLogs({
 					projectId: appId,
-					query: query.trim() || undefined,
-					levels,
+					query: searchQuery.trim() || undefined,
+					levels: searchLevels,
 					offset: searchOffset,
 					limit: PAGE_SIZE,
 					insightId,
@@ -64,8 +68,12 @@ export const AppLogsPage = () => {
 				setLoading(false);
 			}
 		},
-		[appId, insightId, levels, query],
+		[appId, insightId],
 	);
+
+	useEffect(() => {
+		void runSearch(0, "", []);
+	}, [runSearch]);
 
 	const rangeEnd = offset + lines.length;
 
@@ -75,10 +83,10 @@ export const AppLogsPage = () => {
 			data-testid="app-logs-page-container"
 		>
 			<div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
-				<H3>Logs</H3>
+				<H3>Application logs</H3>
 				<Muted>
-					Searches bounded application log history. Use Console for
-					live activity.
+					Searches bounded runtime history stored outside project
+					content. Use Console for live activity.
 				</Muted>
 			</div>
 
@@ -92,7 +100,9 @@ export const AppLogsPage = () => {
 						value={query}
 						onChange={(e) => setQuery(e.target.value)}
 						onKeyDown={(e) => {
-							if (e.key === "Enter") runSearch(0);
+							if (e.key === "Enter") {
+								void runSearch(0, query, levels);
+							}
 						}}
 						aria-label="Search application log text"
 						placeholder="Search log text"
@@ -157,7 +167,7 @@ export const AppLogsPage = () => {
 				</ToggleGroup>
 				<Button
 					size="sm"
-					onClick={() => runSearch(0)}
+					onClick={() => void runSearch(0, query, levels)}
 					disabled={loading}
 					data-testid="app-logs-page-search-button"
 				>
@@ -206,8 +216,8 @@ export const AppLogsPage = () => {
 									className="px-3 py-8 text-center text-muted-foreground text-sm"
 								>
 									{loading
-										? "Searching…"
-										: "No results yet — run a search above."}
+										? "Loading application logs..."
+										: "No application logs match the current filters."}
 								</td>
 							</tr>
 						) : (
@@ -257,7 +267,11 @@ export const AppLogsPage = () => {
 						disabled={offset === 0 || loading}
 						data-testid="app-logs-page-previous-button"
 						onClick={() =>
-							runSearch(Math.max(0, offset - PAGE_SIZE))
+							void runSearch(
+								Math.max(0, offset - PAGE_SIZE),
+								query,
+								levels,
+							)
 						}
 					>
 						Previous
@@ -267,7 +281,9 @@ export const AppLogsPage = () => {
 						size="sm"
 						disabled={!hasMore || loading}
 						data-testid="app-logs-page-next-button"
-						onClick={() => runSearch(offset + PAGE_SIZE)}
+						onClick={() =>
+							void runSearch(offset + PAGE_SIZE, query, levels)
+						}
 					>
 						Next
 					</Button>
