@@ -56,8 +56,6 @@ export const splitInlineImages = (text: string): ImageSegment[] => {
 		segments.push({
 			kind: "image",
 			mime: match[2],
-			// base64 can wrap across lines in hand-written html; strip any
-			// whitespace so the data URI is valid.
 			data: match[3].replace(/\s+/g, ""),
 		});
 		cursor = match.index + match[0].length;

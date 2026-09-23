@@ -16,8 +16,8 @@ import {
 	TooltipTrigger,
 	toast,
 } from "@semoss/ui/next";
+import { formatDateToRelative } from "@semoss/utility";
 import { useProject, useSession } from "@/hooks";
-import { formatDateToRelative } from "@/utility/date";
 import type {
 	AgentActivityLogResponse,
 	AgentActivityRun,

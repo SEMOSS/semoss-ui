@@ -4,7 +4,7 @@ import {
 	getImageMimeType,
 	hasInlineImage,
 	splitInlineImages,
-} from "./index";
+} from "./image";
 
 describe("file utilities", () => {
 	it("maps image extensions to MIME types", () => {

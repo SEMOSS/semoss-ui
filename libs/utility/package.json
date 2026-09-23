@@ -5,13 +5,13 @@
 	"type": "module",
 	"exports": {
 		".": "./src/index.ts",
-		"./clipboard": "./src/clipboard/index.ts",
-		"./date": "./src/date/index.ts",
-		"./file": "./src/file/index.ts",
-		"./file/image": "./src/file/image.ts",
-		"./json": "./src/json/index.ts",
-		"./string": "./src/string/index.ts",
-		"./string/markdown": "./src/string/markdown.ts"
+		"./clipboard": "./src/clipboard.ts",
+		"./date": "./src/date.ts",
+		"./file-extension": "./src/file-extension.ts",
+		"./image": "./src/image.ts",
+		"./json": "./src/json.ts",
+		"./string": "./src/string.ts",
+		"./markdown": "./src/markdown.ts"
 	},
 	"files": ["src"],
 	"scripts": {
