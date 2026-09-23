@@ -204,7 +204,7 @@ export const CodeWorkbench: React.FC = () => {
 		: project.project_id;
 
 	const [snapshot, onSnapshotChange] = useCacheData<WorkbenchSnapshot>(
-		`workbench-layout--${workbenchId}--1`,
+		`workbench-layout--${workbenchId}--2`,
 		workbenchLayout,
 	);
 

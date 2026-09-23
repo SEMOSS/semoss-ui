@@ -8,7 +8,13 @@ import {
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { InsightWebSocket } from "@semoss/sdk";
 import { useInsight } from "@semoss/sdk/react";
-import { Button, ToggleGroup, ToggleGroupItem } from "@semoss/ui/next";
+import {
+	Button,
+	cn,
+	Input,
+	ToggleGroup,
+	ToggleGroupItem,
+} from "@semoss/ui/next";
 import {
 	APP_LOG_LEVEL_CHIP_CLASSES,
 	APP_LOG_LEVEL_TEXT_CLASSES,
@@ -49,7 +55,7 @@ interface WorkspaceConsoleProps {
 export const WorkspaceConsole = ({ appId }: WorkspaceConsoleProps) => {
 	const insight = useInsight();
 	const [lines, setLines] = useState<ParsedLogLine[]>([]);
-	const [connected, setConnected] = useState(false);
+	const [isLive, setIsLive] = useState(false);
 	const [paused, setPaused] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 	const [search, setSearch] = useState("");
@@ -60,9 +66,6 @@ export const WorkspaceConsole = ({ appId }: WorkspaceConsoleProps) => {
 	]);
 	const [expandedIds, setExpandedIds] = useState<Set<number>>(new Set());
 
-	const wsRef = useRef<InsightWebSocket | null>(null);
-	const pausedRef = useRef(paused);
-	pausedRef.current = paused;
 	const lineIdRef = useRef(0);
 	const terminalRef = useRef<HTMLDivElement>(null);
 
@@ -100,11 +103,14 @@ export const WorkspaceConsole = ({ appId }: WorkspaceConsoleProps) => {
 		let watched = false;
 		let cancelled = false;
 		setError(null);
+		setIsLive(false);
 
 		const ws = new InsightWebSocket(insight.insightId, {
 			onStatusChange: (status) => {
 				if (cancelled) return;
-				setConnected(status === "connected");
+				if (status !== "connected") {
+					setIsLive(false);
+				}
 				if (status === "connected" && !watched) {
 					watched = true;
 					ws.watch("app_logs", { projectId: appId });
@@ -115,26 +121,24 @@ export const WorkspaceConsole = ({ appId }: WorkspaceConsoleProps) => {
 				if (!isAppLogsMessage(data)) return;
 				if (data.action === "error") {
 					setError(data.message ?? "Failed to watch app logs");
+					setIsLive(false);
 					return;
 				}
 				if (data.action === "watch_started") {
 					setError(null);
+					setIsLive(true);
 					return;
 				}
 				if (data.type === "app_logs" && typeof data.line === "string") {
-					if (!pausedRef.current) {
-						appendLine(data.line);
-					}
+					appendLine(data.line);
 				}
 			},
 		});
-		wsRef.current = ws;
 		ws.connect();
 
 		return () => {
 			cancelled = true;
 			ws.close();
-			wsRef.current = null;
 		};
 	}, [insight.insightId, appId, appendLine]);
 
@@ -171,23 +175,39 @@ export const WorkspaceConsole = ({ appId }: WorkspaceConsoleProps) => {
 			<div className="flex flex-wrap items-center justify-between gap-2 border-border border-b bg-muted/40 px-3 py-2">
 				<div className="flex items-center gap-2">
 					<CircleDot
-						className={`size-3 ${connected ? "text-success" : "text-destructive"}`}
+						aria-hidden="true"
+						className={cn(
+							"size-3",
+							error
+								? "text-destructive"
+								: isLive
+									? "text-success"
+									: "text-muted-foreground",
+						)}
 					/>
-					<span className="font-medium text-foreground text-sm">
-						{connected ? "Live" : "Connecting…"}
-					</span>
+					<output className="font-medium text-foreground text-sm">
+						{error
+							? "Unavailable"
+							: isLive
+								? "Live"
+								: "Connecting..."}
+					</output>
 					<span className="text-muted-foreground text-xs">
 						{visibleLines.length} lines
 					</span>
 				</div>
-				<div className="flex items-center gap-2">
-					<div className="flex items-center gap-1.5 rounded border border-border bg-background px-2 py-1">
-						<Search className="size-3 text-muted-foreground" />
-						<input
+				<div className="flex min-w-0 flex-1 flex-wrap items-center justify-end gap-2">
+					<div className="relative min-w-32 flex-1">
+						<Search
+							aria-hidden="true"
+							className="-translate-y-1/2 absolute start-2 top-1/2 size-3 text-muted-foreground"
+						/>
+						<Input
 							value={search}
 							onChange={(e) => setSearch(e.target.value)}
-							placeholder="Filter…"
-							className="w-28 bg-transparent text-foreground text-xs outline-none placeholder:text-muted-foreground"
+							aria-label="Filter live application logs"
+							placeholder="Filter logs"
+							className="h-8 ps-7 text-xs"
 							data-testid="workspace-console-search"
 						/>
 					</div>
@@ -205,7 +225,10 @@ export const WorkspaceConsole = ({ appId }: WorkspaceConsoleProps) => {
 							value="INFO"
 							aria-label="Toggle INFO"
 							data-testid="workspace-console-level-toggle-info"
-							className={`font-mono text-[10px] ${APP_LOG_LEVEL_CHIP_CLASSES.INFO}`}
+							className={cn(
+								"font-mono text-xs",
+								APP_LOG_LEVEL_CHIP_CLASSES.INFO,
+							)}
 						>
 							INFO
 						</ToggleGroupItem>
@@ -213,7 +236,10 @@ export const WorkspaceConsole = ({ appId }: WorkspaceConsoleProps) => {
 							value="WARN"
 							aria-label="Toggle WARN"
 							data-testid="workspace-console-level-toggle-warn"
-							className={`font-mono text-[10px] ${APP_LOG_LEVEL_CHIP_CLASSES.WARN}`}
+							className={cn(
+								"font-mono text-xs",
+								APP_LOG_LEVEL_CHIP_CLASSES.WARN,
+							)}
 						>
 							WARN
 						</ToggleGroupItem>
@@ -221,7 +247,10 @@ export const WorkspaceConsole = ({ appId }: WorkspaceConsoleProps) => {
 							value="ERROR"
 							aria-label="Toggle ERROR"
 							data-testid="workspace-console-level-toggle-error"
-							className={`font-mono text-[10px] ${APP_LOG_LEVEL_CHIP_CLASSES.ERROR}`}
+							className={cn(
+								"font-mono text-xs",
+								APP_LOG_LEVEL_CHIP_CLASSES.ERROR,
+							)}
 						>
 							ERROR
 						</ToggleGroupItem>
@@ -229,7 +258,10 @@ export const WorkspaceConsole = ({ appId }: WorkspaceConsoleProps) => {
 							value="DEBUG"
 							aria-label="Toggle DEBUG"
 							data-testid="workspace-console-level-toggle-debug"
-							className={`font-mono text-[10px] ${APP_LOG_LEVEL_CHIP_CLASSES.DEBUG}`}
+							className={cn(
+								"font-mono text-xs",
+								APP_LOG_LEVEL_CHIP_CLASSES.DEBUG,
+							)}
 						>
 							DEBUG
 						</ToggleGroupItem>
@@ -240,15 +272,16 @@ export const WorkspaceConsole = ({ appId }: WorkspaceConsoleProps) => {
 						onClick={() => setPaused((p) => !p)}
 						data-testid="workspace-console-pause-button"
 					>
-						{paused ? "Resume" : "Pause"}
+						{paused ? "Resume scroll" : "Pause scroll"}
 					</Button>
 					<Button
 						variant="ghost"
 						size="sm"
 						onClick={() => setLines([])}
+						aria-label="Clear live application logs"
 						data-testid="workspace-console-clear-button"
 					>
-						<Trash2 className="size-3" />
+						<Trash2 aria-hidden="true" className="size-3" />
 					</Button>
 				</div>
 			</div>
@@ -257,6 +290,7 @@ export const WorkspaceConsole = ({ appId }: WorkspaceConsoleProps) => {
 				<div
 					className="border-destructive/30 border-b bg-destructive/10 px-3 py-2 text-destructive text-xs"
 					data-testid="workspace-console-error"
+					role="alert"
 				>
 					{error}
 				</div>
@@ -264,14 +298,16 @@ export const WorkspaceConsole = ({ appId }: WorkspaceConsoleProps) => {
 
 			<div
 				ref={terminalRef}
-				className="min-h-0 flex-1 overflow-y-auto bg-muted/70 px-4 py-2 font-mono text-[11.5px] leading-[1.9] dark:bg-background"
+				className="min-h-0 flex-1 overflow-y-auto bg-muted/70 px-4 py-2 font-mono text-xs leading-relaxed dark:bg-background"
 				data-testid="workspace-console-log"
 			>
 				{visibleLines.length === 0 ? (
 					<span className="text-muted-foreground text-xs italic">
-						{connected
-							? "Waiting for activity on this app…"
-							: "Connecting…"}
+						{error
+							? "Application logs are unavailable."
+							: isLive
+								? "Waiting for activity on this app..."
+								: "Connecting..."}
 					</span>
 				) : (
 					visibleLines.map((line) => {

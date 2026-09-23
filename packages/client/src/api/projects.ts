@@ -3,7 +3,6 @@ import { Env, get, post } from "@semoss/sdk/react";
 
 export interface SearchAppLogsResult {
 	lines: string[];
-	totalMatches: number;
 	hasMore: boolean;
 }
 
@@ -27,7 +26,6 @@ const isSearchAppLogsResult = (
 	return (
 		Array.isArray(candidate.lines) &&
 		candidate.lines.every((line) => typeof line === "string") &&
-		typeof candidate.totalMatches === "number" &&
 		typeof candidate.hasMore === "boolean"
 	);
 };

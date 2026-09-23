@@ -1,7 +1,15 @@
 import { Search } from "lucide-react";
 import { useCallback, useState } from "react";
 import { useInsight } from "@semoss/sdk/react";
-import { Button, ToggleGroup, ToggleGroupItem } from "@semoss/ui/next";
+import {
+	Button,
+	cn,
+	H3,
+	Input,
+	Muted,
+	ToggleGroup,
+	ToggleGroupItem,
+} from "@semoss/ui/next";
 import { searchAppLogs } from "@/api";
 import { useProject } from "@/hooks";
 import {
@@ -28,7 +36,6 @@ export const AppLogsPage = () => {
 	const [levels, setLevels] = useState<string[]>([]);
 	const [offset, setOffset] = useState(0);
 	const [lines, setLines] = useState<ParsedAppLogLine[]>([]);
-	const [totalMatches, setTotalMatches] = useState(0);
 	const [hasMore, setHasMore] = useState(false);
 	const [loading, setLoading] = useState(false);
 	const [error, setError] = useState<string | null>(null);
@@ -47,15 +54,11 @@ export const AppLogsPage = () => {
 					insightId,
 				});
 				setLines(data.lines.map(parseAppLogLine));
-				setTotalMatches(data.totalMatches);
 				setHasMore(data.hasMore);
 				setOffset(searchOffset);
 			} catch {
-				setError(
-					"Only project owners can search app logs, or the search itself failed.",
-				);
+				setError("Unable to search application logs.");
 				setLines([]);
-				setTotalMatches(0);
 				setHasMore(false);
 			} finally {
 				setLoading(false);
@@ -64,32 +67,36 @@ export const AppLogsPage = () => {
 		[appId, insightId, levels, query],
 	);
 
-	const rangeEnd = Math.min(offset + lines.length, totalMatches);
+	const rangeEnd = offset + lines.length;
 
 	return (
 		<div
 			className="flex h-full flex-col gap-3 p-4"
 			data-testid="app-logs-page-container"
 		>
-			<div className="flex items-center justify-between gap-2">
-				<h3 className="font-semibold text-lg">Logs</h3>
-				<span className="text-muted-foreground text-xs">
-					Searches app.log and its rotated history on disk — not a
-					live view
-				</span>
+			<div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+				<H3>Logs</H3>
+				<Muted>
+					Searches bounded application log history. Use Console for
+					live activity.
+				</Muted>
 			</div>
 
 			<div className="flex flex-wrap items-center gap-2 border-border border-b pb-3">
-				<div className="flex flex-1 items-center gap-1.5 rounded border border-border bg-background px-2 py-1.5">
-					<Search className="size-3.5 text-muted-foreground" />
-					<input
+				<div className="relative min-w-48 flex-1">
+					<Search
+						aria-hidden="true"
+						className="-translate-y-1/2 absolute start-3 top-1/2 size-4 text-muted-foreground"
+					/>
+					<Input
 						value={query}
 						onChange={(e) => setQuery(e.target.value)}
 						onKeyDown={(e) => {
 							if (e.key === "Enter") runSearch(0);
 						}}
-						placeholder="Search log text…"
-						className="flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
+						aria-label="Search application log text"
+						placeholder="Search log text"
+						className="ps-9"
 						data-testid="app-logs-page-search"
 					/>
 				</div>
@@ -107,7 +114,10 @@ export const AppLogsPage = () => {
 						value="INFO"
 						aria-label="Toggle INFO"
 						data-testid="app-logs-page-level-toggle-info"
-						className={`font-mono text-[10px] ${APP_LOG_LEVEL_CHIP_CLASSES.INFO}`}
+						className={cn(
+							"font-mono text-xs",
+							APP_LOG_LEVEL_CHIP_CLASSES.INFO,
+						)}
 					>
 						INFO
 					</ToggleGroupItem>
@@ -115,7 +125,10 @@ export const AppLogsPage = () => {
 						value="WARN"
 						aria-label="Toggle WARN"
 						data-testid="app-logs-page-level-toggle-warn"
-						className={`font-mono text-[10px] ${APP_LOG_LEVEL_CHIP_CLASSES.WARN}`}
+						className={cn(
+							"font-mono text-xs",
+							APP_LOG_LEVEL_CHIP_CLASSES.WARN,
+						)}
 					>
 						WARN
 					</ToggleGroupItem>
@@ -123,7 +136,10 @@ export const AppLogsPage = () => {
 						value="ERROR"
 						aria-label="Toggle ERROR"
 						data-testid="app-logs-page-level-toggle-error"
-						className={`font-mono text-[10px] ${APP_LOG_LEVEL_CHIP_CLASSES.ERROR}`}
+						className={cn(
+							"font-mono text-xs",
+							APP_LOG_LEVEL_CHIP_CLASSES.ERROR,
+						)}
 					>
 						ERROR
 					</ToggleGroupItem>
@@ -131,7 +147,10 @@ export const AppLogsPage = () => {
 						value="DEBUG"
 						aria-label="Toggle DEBUG"
 						data-testid="app-logs-page-level-toggle-debug"
-						className={`font-mono text-[10px] ${APP_LOG_LEVEL_CHIP_CLASSES.DEBUG}`}
+						className={cn(
+							"font-mono text-xs",
+							APP_LOG_LEVEL_CHIP_CLASSES.DEBUG,
+						)}
 					>
 						DEBUG
 					</ToggleGroupItem>
@@ -150,13 +169,19 @@ export const AppLogsPage = () => {
 				<div
 					className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-destructive text-xs"
 					data-testid="app-logs-page-error"
+					role="alert"
 				>
 					{error}
 				</div>
 			) : null}
 
-			<div className="min-h-0 flex-1 overflow-y-auto rounded-md border border-border">
-				<table className="w-full text-sm">
+			<section
+				className="min-h-0 flex-1 overflow-auto rounded-md border border-border focus-visible:outline-2 focus-visible:outline-ring"
+				aria-label="Application log search results"
+				// biome-ignore lint/a11y/noNoninteractiveTabindex: keyboard users need to scroll the wide results table
+				tabIndex={0}
+			>
+				<table className="w-full min-w-max text-sm">
 					<thead className="sticky top-0 bg-muted/60">
 						<tr>
 							<th className="px-3 py-2 text-left font-medium text-muted-foreground text-xs">
@@ -186,9 +211,9 @@ export const AppLogsPage = () => {
 								</td>
 							</tr>
 						) : (
-							lines.map((line) => (
+							lines.map((line, index) => (
 								<tr
-									key={`${offset}-${line.raw}`}
+									key={`${offset + index}-${line.raw}`}
 									className="border-border border-t hover:bg-muted/30"
 								>
 									<td className="whitespace-nowrap px-3 py-2 font-mono text-muted-foreground text-xs">
@@ -196,7 +221,12 @@ export const AppLogsPage = () => {
 									</td>
 									<td className="whitespace-nowrap px-3 py-2">
 										<span
-											className={`inline-block rounded px-1.5 py-0.5 font-mono font-semibold text-[10px] ${APP_LOG_LEVEL_BADGE_CLASSES[line.level]}`}
+											className={cn(
+												"inline-block rounded px-1.5 py-0.5 font-mono font-semibold text-xs",
+												APP_LOG_LEVEL_BADGE_CLASSES[
+													line.level
+												],
+											)}
 										>
 											{line.level}
 										</span>
@@ -212,14 +242,14 @@ export const AppLogsPage = () => {
 						)}
 					</tbody>
 				</table>
-			</div>
+			</section>
 
 			<div className="flex items-center justify-between text-muted-foreground text-xs">
-				<span>
-					{totalMatches > 0
-						? `Showing ${offset + 1}–${rangeEnd} of ${totalMatches} matching lines`
+				<output>
+					{lines.length > 0
+						? `Showing ${offset + 1}-${rangeEnd}${hasMore ? ", with more results available" : ""}`
 						: null}
-				</span>
+				</output>
 				<div className="flex gap-2">
 					<Button
 						variant="outline"

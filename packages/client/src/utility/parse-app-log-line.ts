@@ -48,12 +48,12 @@ export function parseAppLogLine(raw: string): ParsedAppLogLine {
 	};
 }
 
-/** Text color classes per level — theme-adaptive (real tokens + Tailwind dark: pairs), not fixed hex. */
+/** Semantic text color classes for each parsed log level. */
 export const APP_LOG_LEVEL_TEXT_CLASSES: Record<AppLogLevel, string> = {
 	INFO: "text-foreground",
-	WARN: "text-amber-600 dark:text-amber-400",
+	WARN: "text-warning",
 	ERROR: "text-destructive",
-	DEBUG: "text-violet-600 dark:text-violet-400",
+	DEBUG: "text-muted-foreground",
 	TRACE: "text-muted-foreground",
 	OTHER: "text-muted-foreground",
 };
@@ -64,17 +64,17 @@ export const APP_LOG_LEVEL_CHIP_CLASSES: Record<
 	string
 > = {
 	INFO: "data-[state=on]:bg-muted data-[state=on]:text-foreground",
-	WARN: "data-[state=on]:bg-amber-100 data-[state=on]:text-amber-700 dark:data-[state=on]:bg-amber-900/30 dark:data-[state=on]:text-amber-400",
+	WARN: "data-[state=on]:bg-warning/10 data-[state=on]:text-warning",
 	ERROR: "data-[state=on]:bg-destructive/10 data-[state=on]:text-destructive",
-	DEBUG: "data-[state=on]:bg-violet-100 data-[state=on]:text-violet-700 dark:data-[state=on]:bg-violet-900/30 dark:data-[state=on]:text-violet-400",
+	DEBUG: "data-[state=on]:bg-muted data-[state=on]:text-muted-foreground",
 };
 
 /** Static (non-toggle) badge classes per level — for read-only display, e.g. a table cell. */
 export const APP_LOG_LEVEL_BADGE_CLASSES: Record<AppLogLevel, string> = {
 	INFO: "bg-muted text-foreground",
-	WARN: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",
+	WARN: "bg-warning/10 text-warning",
 	ERROR: "bg-destructive/10 text-destructive",
-	DEBUG: "bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-400",
+	DEBUG: "bg-muted text-muted-foreground",
 	TRACE: "bg-muted text-muted-foreground",
 	OTHER: "bg-muted text-muted-foreground",
 };
