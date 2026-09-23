@@ -98,7 +98,7 @@ describe("createAccessStore", () => {
 		).toBe("READ_ONLY");
 	});
 
-	it("ignores stale generations without deleting a newer same-key request", async () => {
+	it("ignores stale epochs without deleting a newer same-key request", async () => {
 		const oldResponse = deferred<Role>();
 		const newResponse = deferred<Role>();
 		enginePermission

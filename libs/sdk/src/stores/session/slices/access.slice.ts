@@ -41,16 +41,16 @@ export const createAccessSlice = ({
 	getAccess: () => SessionState["access"];
 	getSession?: () => Pick<SessionState, "config" | "user">;
 }): SessionState["access"] => {
-	let generation = 0;
+	let epoch = 0;
 	const inFlight = new Map<string, Promise<Role>>();
 
 	const write = (
 		type: ResourceType,
 		id: string,
 		entry: AccessEntry,
-		requestGeneration: number,
+		requestEpoch: number,
 	): void => {
-		if (requestGeneration !== generation) {
+		if (requestEpoch !== epoch) {
 			return;
 		}
 
@@ -79,22 +79,17 @@ export const createAccessSlice = ({
 			return pending;
 		}
 
-		const requestGeneration = generation;
+		const requestEpoch = epoch;
 		write(
 			type,
 			id,
 			{ status: "loading", permission: current?.permission },
-			requestGeneration,
+			requestEpoch,
 		);
 
 		const request = requestPermission(type, id)
 			.then((permission) => {
-				write(
-					type,
-					id,
-					{ status: "ready", permission },
-					requestGeneration,
-				);
+				write(type, id, { status: "ready", permission }, requestEpoch);
 				return permission;
 			})
 			.catch((error: unknown) => {
@@ -106,7 +101,7 @@ export const createAccessSlice = ({
 						permission: current?.permission,
 						error: toError(error),
 					},
-					requestGeneration,
+					requestEpoch,
 				);
 				throw error;
 			})
@@ -136,10 +131,10 @@ export const createAccessSlice = ({
 				) {
 					return;
 				}
-				write(type, id, { status: "ready", permission }, generation);
+				write(type, id, { status: "ready", permission }, epoch);
 			},
 			clearPermissions: () => {
-				generation += 1;
+				epoch += 1;
 				inFlight.clear();
 				setAccess((access) => ({ ...access, entries: emptyEntries() }));
 			},

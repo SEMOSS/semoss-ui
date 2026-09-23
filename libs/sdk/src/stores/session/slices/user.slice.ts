@@ -160,41 +160,45 @@ const identityOf = (user: SessionUser | null): string | null =>
 export const createUserSlice = ({
 	set,
 	get,
-	getGeneration,
-	bumpGeneration,
+	getEpoch,
+	incrementEpoch,
 }: {
 	set: SessionStore["setState"];
 	get: SessionStore["getState"];
-	getGeneration: () => number;
-	bumpGeneration: () => void;
+	getEpoch: () => number;
+	incrementEpoch: () => void;
 }): SessionState["user"] => ({
 	current: null,
 	actions: {
 		refresh: async () => {
-			const requestGeneration = getGeneration();
-			const [result, admin] = await Promise.all([
-				runPixelRequest<[Record<string, unknown>]>(
-					"GetUserInfo();",
-					get().insightId ?? "new",
-				),
-				isAdminUser(),
-			]);
+			const requestEpoch = getEpoch();
+			const result = await runPixelRequest<[Record<string, unknown>]>(
+				"GetUserInfo();",
+				get().insightId ?? "new",
+			);
 			if (result.errors.length > 0) {
 				throw new Error(result.errors.join(""));
 			}
-			if (requestGeneration !== getGeneration()) {
+			if (requestEpoch !== getEpoch()) {
 				return;
 			}
 
-			const nextUser = parseSessionUser(
+			let nextUser = parseSessionUser(
 				result.pixelReturn[0]?.output,
-				admin,
+				false,
 				get().config.data,
 			);
+			if (nextUser && nextUser.provider !== "ANONYMOUS") {
+				const admin = await isAdminUser();
+				if (requestEpoch !== getEpoch()) {
+					return;
+				}
+				nextUser = { ...nextUser, admin };
+			}
 			const previousIdentity = identityOf(get().user.current);
 			const nextIdentity = identityOf(nextUser);
 			if (previousIdentity !== nextIdentity) {
-				bumpGeneration();
+				incrementEpoch();
 				get().access.actions.clearPermissions();
 			}
 

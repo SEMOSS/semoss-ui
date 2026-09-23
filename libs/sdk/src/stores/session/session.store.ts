@@ -8,10 +8,10 @@ import { createUserSlice } from "./slices/user.slice";
 
 /** Create an isolated vanilla Zustand session store. */
 export const createSessionStore = (): SessionStore => {
-	let generation = 0;
-	const getGeneration = () => generation;
-	const bumpGeneration = () => {
-		generation += 1;
+	let epoch = 0;
+	const getEpoch = () => epoch;
+	const incrementEpoch = () => {
+		epoch += 1;
 	};
 
 	return createStore<SessionState>()((set, get) => {
@@ -27,16 +27,16 @@ export const createSessionStore = (): SessionStore => {
 			user: createUserSlice({
 				set,
 				get,
-				getGeneration,
-				bumpGeneration,
+				getEpoch,
+				incrementEpoch,
 			}),
 			insightId: null,
 			access,
 			actions: createSessionActionsSlice({
 				set,
 				get,
-				getGeneration,
-				bumpGeneration,
+				getEpoch,
+				incrementEpoch,
 			}),
 		};
 	});

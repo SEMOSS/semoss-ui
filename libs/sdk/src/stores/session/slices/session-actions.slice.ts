@@ -19,20 +19,20 @@ const toError = (error: unknown): Error =>
 export const createSessionActionsSlice = ({
 	set,
 	get,
-	getGeneration,
-	bumpGeneration,
+	getEpoch,
+	incrementEpoch,
 }: {
 	set: SessionStore["setState"];
 	get: SessionStore["getState"];
-	getGeneration: () => number;
-	bumpGeneration: () => void;
+	getEpoch: () => number;
+	incrementEpoch: () => void;
 }): SessionState["actions"] => {
 	let initializationPromise: Promise<void> | null = null;
 
 	const clearIdentity = (
 		authentication: SessionState["lifecycle"]["authentication"],
 	): void => {
-		bumpGeneration();
+		incrementEpoch();
 		get().access.actions.clearPermissions();
 		set((state) => ({
 			user: { ...state.user, current: null },
@@ -50,7 +50,7 @@ export const createSessionActionsSlice = ({
 			return initializationPromise;
 		}
 
-		const requestGeneration = getGeneration();
+		const requestEpoch = getEpoch();
 		set((state) => ({
 			lifecycle: {
 				...state.lifecycle,
@@ -62,15 +62,11 @@ export const createSessionActionsSlice = ({
 		const request = (async () => {
 			try {
 				await get().config.actions.refresh();
-				if (requestGeneration !== getGeneration()) {
+				if (requestEpoch !== getEpoch()) {
 					return;
 				}
 
-				if (Object.keys(get().config.data?.logins ?? {}).length === 0) {
-					clearIdentity("unauthenticated");
-				} else {
-					await get().user.actions.refresh();
-				}
+				await get().user.actions.refresh();
 				set((state) => ({
 					lifecycle: {
 						...state.lifecycle,
@@ -79,7 +75,7 @@ export const createSessionActionsSlice = ({
 					},
 				}));
 			} catch (error: unknown) {
-				if (requestGeneration === getGeneration()) {
+				if (requestEpoch === getEpoch()) {
 					set((state) => ({
 						lifecycle: {
 							...state.lifecycle,
@@ -165,12 +161,12 @@ export const createSessionActionsSlice = ({
 			}
 		},
 		runPixel: async <O extends unknown[] | []>(pixel: string) => {
-			const requestGeneration = getGeneration();
+			const requestEpoch = getEpoch();
 			const result = await runPixelRequest<O>(
 				pixel,
 				get().insightId ?? "new",
 			);
-			if (requestGeneration === getGeneration()) {
+			if (requestEpoch === getEpoch()) {
 				set({ insightId: result.insightId });
 			}
 			return result;

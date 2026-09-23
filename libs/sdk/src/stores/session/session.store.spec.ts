@@ -96,6 +96,21 @@ const userInfoResult = (
 	],
 });
 
+const unauthenticatedUserInfoResult = () => ({
+	errors: [],
+	insightId: "anonymous-insight",
+	pixelReturn: [
+		{
+			isMeta: false,
+			operationType: [],
+			output: {},
+			pixelExpression: "GetUserInfo();",
+			pixelId: "pixel-1",
+			timeToRun: 1,
+		},
+	],
+});
+
 const deferred = <Value>() => {
 	let resolve!: (value: Value) => void;
 	const promise = new Promise<Value>((resolvePromise) => {
@@ -117,6 +132,7 @@ describe("createSessionStore", () => {
 		registerUserMock.mockResolvedValue();
 		logoutMock.mockResolvedValue(true);
 		setUserMetadataMock.mockResolvedValue();
+		runPixelMock.mockResolvedValue(unauthenticatedUserInfoResult());
 		uploadMock.mockResolvedValue([]);
 		downloadMock.mockResolvedValue(new ArrayBuffer(0));
 	});
@@ -140,7 +156,20 @@ describe("createSessionStore", () => {
 			authentication: "unauthenticated",
 			error: null,
 		});
-		expect(runPixelMock).not.toHaveBeenCalled();
+		expect(runPixelMock).toHaveBeenCalledWith("GetUserInfo();", "new");
+		expect(isAdminUserMock).not.toHaveBeenCalled();
+	});
+
+	it("discovers an authenticated user when config login hints are empty", async () => {
+		runPixelMock.mockResolvedValue(userInfoResult());
+		const store = createSessionStore();
+
+		await store.getState().actions.initialize();
+
+		expect(runPixelMock).toHaveBeenCalledWith("GetUserInfo();", "new");
+		expect(isAdminUserMock).toHaveBeenCalledTimes(1);
+		expect(store.getState().lifecycle.authentication).toBe("authenticated");
+		expect(store.getState().user.current?.id).toBe("user-1");
 	});
 
 	it("stores raw metadata arrays and clears user-scoped state on identity change", async () => {
