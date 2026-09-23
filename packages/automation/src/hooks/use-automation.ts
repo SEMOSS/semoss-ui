@@ -20,6 +20,7 @@ export function useAutomationNode(nodeId: string) {
 		readOnly: automation.readOnly,
 		open: () => automation.openNode(nodeId),
 		delete: () => automation.deleteNode(nodeId),
+		deleteDownstream: () => automation.deleteNodeAndDownstream(nodeId),
 		addAfter: (sourceHandle?: string) =>
 			automation.addNodeAfter(nodeId, sourceHandle),
 		viewAgentRun: automation.viewAgentRun,

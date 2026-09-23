@@ -63,13 +63,14 @@ import type {
 	AutomationNodeTrace,
 	AutomationRunDetail,
 	AutomationToolContext,
-	BranchConfig,
+	RoutingConfig,
 	RunStatus,
 	StepRunStatus,
 } from "../../domain/automation.types";
 import type {
 	AutomationInspectorAction,
 	AutomationInspectorSnapshot,
+	AutomationScopeEntry,
 } from "../../domain/automation-inspector";
 import { normalizeAutomationErrorMessage } from "../../domain/automation-utils";
 import type {
@@ -112,7 +113,8 @@ function isStepHighlighted(
 	stepId: string,
 ): boolean {
 	if (!highlight) return false;
-	return highlight.all || highlight.stepIds.has(stepId);
+	if (highlight.all) return true;
+	return highlight.stepIds.has(stepId);
 }
 
 function replaceOutputVariableReferences<T>(
@@ -186,7 +188,7 @@ const FIRST_BRANCH_ROUTE_OFFSET = 24;
 function branchRouteIndex(step: AutomationNode, handle: string): number {
 	if (step.type !== "branch") return 0;
 	const clauses = (
-		step.config as import("../../domain/automation.types").BranchConfig
+		step.config as import("../../domain/automation.types").RoutingConfig
 	).clauses;
 	if (handle === `else-${step.id}`) return clauses.length;
 	const prefix = `case-${step.id}-`;
@@ -546,6 +548,9 @@ export const AutomationCanvasContent = forwardRef<
 
 	const [saving, setSaving] = useState(false);
 	const [confirmReload, setConfirmReload] = useState(false);
+	const [deleteDownstreamStepId, setDeleteDownstreamStepId] = useState<
+		string | null
+	>(null);
 	const [description, setDescription] = useState("");
 	const [devMode, setDevMode] = useState(
 		() => localStorage.getItem(`automation-devmode-${appId}`) === "true",
@@ -565,6 +570,9 @@ export const AutomationCanvasContent = forwardRef<
 		() => createInitialCanvasWorkflowDocument().steps,
 	);
 	const [graphEdges, setGraphEdges] = useState<AutomationEdge[]>([]);
+	const [scopeVariablesByNode, setScopeVariablesByNode] = useState<
+		Record<string, AutomationScopeEntry[]>
+	>({});
 	const [triggerBindings, setTriggerBindings] = useState<TriggerBinding[]>(
 		() => createInitialCanvasWorkflowDocument().triggerBindings,
 	);
@@ -986,8 +994,13 @@ export const AutomationCanvasContent = forwardRef<
 				const output = response.pixelReturn?.[0]?.output as
 					| (AutomationWorkflowDocument & {
 							nodeSources?: Record<string, string>;
+							scopeVariables?: Record<
+								string,
+								AutomationScopeEntry[]
+							>;
 					  })
 					| undefined;
+				setScopeVariablesByNode(output?.scopeVariables ?? {});
 				const saved = isWorkflowDocument(output)
 					? canvasDocumentFromWorkflow(output, output.nodeSources)
 					: createInitialCanvasWorkflowDocument();
@@ -1293,13 +1306,13 @@ export const AutomationCanvasContent = forwardRef<
 			const currentClauses =
 				currentStep?.type === "branch"
 					? (
-							currentStep.config as import("../../domain/automation.types").BranchConfig
+							currentStep.config as import("../../domain/automation.types").RoutingConfig
 						).clauses
 					: [];
 			const updatedClauses =
 				updated.type === "branch"
 					? (
-							updated.config as import("../../domain/automation.types").BranchConfig
+							updated.config as import("../../domain/automation.types").RoutingConfig
 						).clauses
 					: [];
 			const routeCountChange =
@@ -1353,7 +1366,7 @@ export const AutomationCanvasContent = forwardRef<
 				const validHandles = new Set([
 					`else-${updated.id}`,
 					...(
-						updated.config as import("../../domain/automation.types").BranchConfig
+						updated.config as import("../../domain/automation.types").RoutingConfig
 					).clauses.map(
 						(clause) => `case-${updated.id}-${clause.id}`,
 					),
@@ -1384,69 +1397,69 @@ export const AutomationCanvasContent = forwardRef<
 		[graphEdges, steps],
 	);
 
-	const deleteStep = useCallback((id: string) => {
-		setSteps((prev) => prev.filter((s) => s.id !== id));
-		setGraphEdges((previous) => {
-			// Only control edges are bridged, and each bridge keeps the handles of the
-			// edges it replaces: the source handle carries a decision node's case/else
-			// routing, and an edge with no kind is invisible to the upstream-variable
-			// walk and is rejected by the server as a malformed branch port.
-			const incoming = previous.filter(
-				(edge) => edge.target === id && edge.kind !== "data",
+	const deleteStep = useCallback(
+		(id: string, removeDownstream = false) => {
+			const removedIds = removeDownstream
+				? downstreamControlNodeIds([id], graphEdges)
+				: new Set([id]);
+			setSteps((prev) => prev.filter((step) => !removedIds.has(step.id)));
+			setGraphEdges((previous) =>
+				previous.filter(
+					(edge) =>
+						!removedIds.has(edge.source) &&
+						!removedIds.has(edge.target),
+				),
 			);
-			const outgoing = previous.filter(
-				(edge) => edge.source === id && edge.kind !== "data",
+			setEditingStepId((prev) =>
+				prev && removedIds.has(prev) ? null : prev,
 			);
-			const remaining = previous.filter(
-				(edge) => edge.source !== id && edge.target !== id,
+			setStepStatuses((prev) => {
+				const next = { ...prev };
+				for (const removedId of removedIds) delete next[removedId];
+				return next;
+			});
+			setStepErrors((prev) => {
+				const next = { ...prev };
+				for (const removedId of removedIds) delete next[removedId];
+				return next;
+			});
+			setStepDurations((prev) => {
+				const next = { ...prev };
+				for (const removedId of removedIds) delete next[removedId];
+				return next;
+			});
+			setLatestRunResults((prev) =>
+				prev.filter((result) => !removedIds.has(result.NODE_ID)),
 			);
-
-			for (const inbound of incoming) {
-				for (const outbound of outgoing) {
-					if (
-						inbound.source !== outbound.target &&
-						!remaining.some(
-							(edge) =>
-								edge.source === inbound.source &&
-								edge.target === outbound.target,
-						)
-					) {
-						remaining.push({
-							id: `e-${inbound.source}-${outbound.target}-${crypto.randomUUID()}`,
-							source: inbound.source,
-							target: outbound.target,
-							sourceHandle: inbound.sourceHandle,
-							targetHandle: outbound.targetHandle,
-							kind: "control",
-						});
-					}
-				}
-			}
-			return remaining;
-		});
-		setEditingStepId((prev) => (prev === id ? null : prev));
-		setStepStatuses((prev) => {
-			const next = { ...prev };
-			delete next[id];
-			return next;
-		});
-		setStepErrors((prev) => {
-			const next = { ...prev };
-			delete next[id];
-			return next;
-		});
-		setStepDurations((prev) => {
-			const next = { ...prev };
-			delete next[id];
-			return next;
-		});
-		setLatestRunResults((prev) => prev.filter((r) => r.NODE_ID !== id));
-	}, []);
+		},
+		[graphEdges],
+	);
 
 	const upstreamVarsFor = useCallback(
 		(stepId: string) =>
 			upstreamVariablesFor(displaySteps, displayEdges, stepId),
 		[displayEdges, displaySteps],
+	);
+	const scopeEntriesFor = useCallback(
+		(stepId: string): AutomationScopeEntry[] => {
+			const serverEntries = scopeVariablesByNode[stepId];
+			if (serverEntries) return serverEntries;
+			return [
+				"date",
+				"triggered_at",
+				"run_id",
+				...upstreamVarsFor(stepId),
+			].map((name) => ({
+				name,
+				source: "runtime" as const,
+				label: name,
+				description: "Available from this node's run scope.",
+				availability: "guaranteed" as const,
+				pythonExpression: `scope[${JSON.stringify(name)}]`,
+				templateExpression: `\${${name}}`,
+			}));
+		},
+		[scopeVariablesByNode, upstreamVarsFor],
 	);
 
 	useEffect(() => {
@@ -1456,6 +1469,7 @@ export const AutomationCanvasContent = forwardRef<
 			readOnly: readOnly || viewingHistory,
 			editingStep,
 			upstreamVars: editingStep ? upstreamVarsFor(editingStep.id) : [],
+			scopeEntries: editingStep ? scopeEntriesFor(editingStep.id) : [],
 			stepRunStatus: editingStep
 				? displayStatuses[editingStep.id]
 				: undefined,
@@ -1484,6 +1498,7 @@ export const AutomationCanvasContent = forwardRef<
 		displayStatuses,
 		displayResults,
 		upstreamVarsFor,
+		scopeEntriesFor,
 	]);
 
 	const applyInspectorAction = useCallback(
@@ -1556,8 +1571,12 @@ export const AutomationCanvasContent = forwardRef<
 				throw new Error(response.errors.join("\n"));
 			}
 			const output = response.pixelReturn?.[0]?.output as
-				| { nodeSources?: Record<string, string> }
+				| {
+						nodeSources?: Record<string, string>;
+						scopeVariables?: Record<string, AutomationScopeEntry[]>;
+				  }
 				| undefined;
+			setScopeVariablesByNode(output?.scopeVariables ?? {});
 			if (output?.nodeSources) {
 				skipDraftPersistenceRef.current = true;
 				setSteps((previous) =>
@@ -2206,7 +2225,7 @@ export const AutomationCanvasContent = forwardRef<
 					style: { width: NODE_WIDTH },
 				});
 			} else if (step.type === "branch") {
-				const branchConfig = step.config as BranchConfig;
+				const branchConfig = step.config as RoutingConfig;
 				const handleColors: Record<string, string> = {};
 				for (const clause of branchConfig.clauses) {
 					const handleId = `case-${step.id}-${clause.id}`;
@@ -2278,7 +2297,7 @@ export const AutomationCanvasContent = forwardRef<
 				});
 			}
 
-			for (const edge of outgoingEdges) {
+			outgoingEdges.forEach((edge, laneIndex) => {
 				const strokeColor = getEdgeStrokeColor(edge);
 				const isPathHighlighted = highlightedPathEdgeIds.has(edge.id);
 				newEdges.push({
@@ -2298,9 +2317,11 @@ export const AutomationCanvasContent = forwardRef<
 						onDelete: viewingHistory ? undefined : deleteEdge,
 						readOnly: readOnly || viewingHistory,
 						hovered: edge.id === hoveredEdgeId,
+						laneIndex,
+						laneCount: outgoingEdges.length,
 					},
 				});
-			}
+			});
 		});
 
 		setRfNodes(newNodes);
@@ -2417,6 +2438,8 @@ export const AutomationCanvasContent = forwardRef<
 			running,
 			openNode,
 			deleteNode: deleteStep,
+			deleteNodeAndDownstream: (nodeId: string) =>
+				setDeleteDownstreamStepId(nodeId),
 			addNodeAfter,
 			viewAgentRun: onViewAgentRun,
 		}),
@@ -2827,6 +2850,44 @@ export const AutomationCanvasContent = forwardRef<
 							}}
 						>
 							Discard and reload
+						</Button>
+					</DialogFooter>
+				</DialogContent>
+			</Dialog>
+
+			<Dialog
+				open={deleteDownstreamStepId !== null}
+				onOpenChange={(open) => {
+					if (!open) setDeleteDownstreamStepId(null);
+				}}
+			>
+				<DialogContent className="max-w-md">
+					<DialogHeader>
+						<DialogTitle>
+							Delete this step and everything after it?
+						</DialogTitle>
+						<DialogDescription>
+							This removes every step reachable from the selected
+							step. This action can be reviewed before saving.
+						</DialogDescription>
+					</DialogHeader>
+					<DialogFooter>
+						<Button
+							variant="outline"
+							onClick={() => setDeleteDownstreamStepId(null)}
+						>
+							Cancel
+						</Button>
+						<Button
+							variant="destructive"
+							onClick={() => {
+								if (deleteDownstreamStepId) {
+									deleteStep(deleteDownstreamStepId, true);
+								}
+								setDeleteDownstreamStepId(null);
+							}}
+						>
+							Delete all
 						</Button>
 					</DialogFooter>
 				</DialogContent>
