@@ -26,17 +26,13 @@ import { EmptyView } from "@/components/common/empty-view";
 import { SidebarAgentsList } from "@/components/sidebar/sidebar-agents-list";
 import { SidebarFooter } from "@/components/sidebar/sidebar-footer";
 import { SidebarHeader } from "@/components/sidebar/sidebar-header";
-import { getAgent } from "@/features/agents/api/get-agent";
 import { roomsKey } from "@/features/agents/api/refresh-keys";
 import { useSaveAgent } from "@/features/agents/api/use-save-agent";
 import { useWorkspaceData } from "@/features/agents/api/use-workspace-data";
-import { NewSessionDialog } from "@/features/agents/components/new-session-dialog";
-import { createRoom } from "@/features/rooms/api/create-room";
 import { pinRoom as persistRoomPin } from "@/features/rooms/api/pin-room";
 import { waitForGeneratedRoomName } from "@/features/rooms/api/wait-for-generated-room-name";
-import { pendingSession } from "@/features/rooms/utils/session-from-room";
 import { toError } from "@/lib/pixel";
-import { roomPath } from "@/lib/workspace-paths";
+import { agentPath, newRoomPath, roomPath } from "@/lib/workspace-paths";
 import type { Agent } from "@/types/agent";
 import type { Session } from "@/types/session";
 
@@ -46,6 +42,8 @@ function WorkspaceSidebarNavigation({
 	agentId,
 	roomId,
 	isLoading,
+	onNewSession,
+	onAgentVisited,
 	onRoomVisited,
 }: {
 	agents: Agent[];
@@ -53,25 +51,27 @@ function WorkspaceSidebarNavigation({
 	agentId?: string;
 	roomId?: string;
 	isLoading: boolean;
+	onNewSession: (agentId?: string) => void;
+	onAgentVisited: (agentId: string) => void;
 	onRoomVisited: (roomId: string) => void;
 }) {
-	const { state } = useSidebar();
-	const condensed = state === "collapsed";
+	const { isMobile, state } = useSidebar();
+	const condensed = !isMobile && state === "collapsed";
 
 	return (
 		<>
 			<SidebarHeader condensed={condensed} />
 			<SidebarContent className="px-3">
-				<div className="group-data-[collapsible=icon]:hidden">
-					<SidebarAgentsList
-						agents={agents}
-						sessions={sessions}
-						activeAgentId={agentId}
-						activeRoomId={roomId}
-						isLoading={isLoading}
-						onRoomVisited={onRoomVisited}
-					/>
-				</div>
+				<SidebarAgentsList
+					agents={agents}
+					sessions={sessions}
+					activeAgentId={agentId}
+					activeRoomId={roomId}
+					isLoading={isLoading}
+					onNewSession={onNewSession}
+					onAgentVisited={onAgentVisited}
+					onRoomVisited={onRoomVisited}
+				/>
 			</SidebarContent>
 			<SidebarFooter condensed={condensed} />
 			<SidebarRail />
@@ -86,14 +86,25 @@ function WorkspaceSidebarNavigation({
 export function MainLayout() {
 	const navigate = useNavigate();
 	const { agentId, roomId } = useParams();
-	const { actions, insightId } = useInsight();
+	const { actions } = useInsight();
 	const [keys, setKeys] = useState<MainContext["keys"]>({});
 	const workspaceData = useWorkspaceData(keys);
 	const { agents, sessions, setSessions, addPendingRoom, isLoading, error } =
 		workspaceData;
 	const roomNameWatchers = useRef(new Map<string, AbortController>());
 
-	const [setup, setSetup] = useState<{ agentId?: string }>();
+	const openNewSession = useCallback(
+		(newSessionAgentId?: string) => {
+			navigate(newRoomPath(newSessionAgentId));
+		},
+		[navigate],
+	);
+	const openAgent = useCallback(
+		(selectedAgentId: string) => {
+			navigate(agentPath(selectedAgentId));
+		},
+		[navigate],
+	);
 
 	const [sidebarOpen, setSidebarOpen] = useState(true);
 
@@ -191,32 +202,6 @@ export function MainLayout() {
 		onSaved: refreshAgents,
 	});
 
-	const startSession = useCallback(
-		async (draft: { agentId: string; title: string }) => {
-			const agent = await getAgent(actions, draft.agentId);
-
-			const roomId = await createRoom(actions, insightId, {
-				workspaceId: draft.agentId,
-				workspaceName: agent.name,
-				instructions: agent.system_prompt,
-				modelId: agent.config_json?.model_id,
-				name: draft.title,
-			});
-
-			addPendingRoom(
-				pendingSession(
-					roomId,
-					draft.agentId,
-					draft.title,
-					agent.config_json?.model_id,
-				),
-			);
-			setSetup(undefined);
-			navigate(roomPath(draft.agentId, roomId));
-		},
-		[actions, addPendingRoom, insightId, navigate],
-	);
-
 	const refresh = useCallback((key: string) => {
 		setKeys((current) => refreshKey(current, key));
 	}, []);
@@ -235,7 +220,7 @@ export function MainLayout() {
 		pinRoom: pinCurrentRoom,
 		saveAgent,
 		openRoom,
-		newRoom: (id) => setSetup({ agentId: id }),
+		newRoom: openNewSession,
 	};
 
 	return (
@@ -264,6 +249,8 @@ export function MainLayout() {
 						agentId={agentId}
 						roomId={roomId}
 						isLoading={isLoading}
+						onNewSession={openNewSession}
+						onAgentVisited={openAgent}
 						onRoomVisited={openRoom}
 					/>
 				</Sidebar>
@@ -295,14 +282,6 @@ export function MainLayout() {
 							</div>
 						) : (
 							<Outlet />
-						)}
-						{setup && (
-							<NewSessionDialog
-								agents={agents}
-								agentId={setup.agentId}
-								onClose={() => setSetup(undefined)}
-								onStart={startSession}
-							/>
 						)}
 					</div>
 				</SidebarInset>

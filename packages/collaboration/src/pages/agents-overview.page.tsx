@@ -1,7 +1,6 @@
 import { ArrowRight, Plus } from "lucide-react";
 import { Link } from "react-router";
 import {
-	Badge,
 	Button,
 	Card,
 	CardContent,
@@ -76,9 +75,11 @@ export function AgentsOverviewPage() {
 												<CardTitle className="truncate">
 													{agent.name}
 												</CardTitle>
-												<p className="truncate text-muted-foreground text-sm">
-													{agent.role}
-												</p>
+												{agent.description && (
+													<p className="truncate text-muted-foreground text-sm">
+														{agent.description}
+													</p>
+												)}
 											</div>
 											<ArrowRight
 												className="size-4 text-muted-foreground"
@@ -86,14 +87,6 @@ export function AgentsOverviewPage() {
 											/>
 										</CardHeader>
 										<CardContent className="flex flex-1 flex-col gap-4">
-											<div className="flex flex-wrap gap-1.5">
-												<Badge variant="secondary">
-													{agent.type}
-												</Badge>
-												<Badge variant="outline">
-													{agent.workspace}
-												</Badge>
-											</div>
 											<p className="line-clamp-3 text-muted-foreground text-sm leading-5">
 												{agent.instructions}
 											</p>
@@ -102,7 +95,12 @@ export function AgentsOverviewPage() {
 													<span className="font-medium text-foreground">
 														Skills:
 													</span>{" "}
-													{agent.skills.join(", ")}
+													{agent.skills
+														.map(
+															(skill) =>
+																skill.name,
+														)
+														.join(", ")}
 												</p>
 											)}
 											<div className="mt-auto flex flex-wrap gap-x-4 gap-y-1 border-t pt-3 text-muted-foreground text-xs">
@@ -141,8 +139,8 @@ export function AgentsOverviewPage() {
 							</Button>
 						}
 					>
-						Add an agent to define its role, capabilities, and
-						workspace.
+						Add an agent to define its capabilities and operating
+						instructions.
 					</EmptyView>
 				)}
 			</div>

@@ -20,9 +20,9 @@ export function AttentionCard({
 						<p className="truncate font-semibold text-sm">
 							{row.agentName}
 						</p>
-						{row.agent && (
+						{row.agent?.description && (
 							<p className="truncate text-muted-foreground text-xs">
-								{row.agent.role}
+								{row.agent.description}
 							</p>
 						)}
 					</div>

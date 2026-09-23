@@ -1,9 +1,10 @@
-import { draftRoomPath } from "./workspace-paths";
+import { newRoomPath } from "./workspace-paths";
 
-describe("draftRoomPath", () => {
-	it("keeps the client draft and selected model in the URL", () => {
-		expect(draftRoomPath("agent/one", "draft one", "model&two")).toBe(
-			"/agents/agent%2Fone/new/draft%20one?model=model%26two",
+describe("newRoomPath", () => {
+	it("builds bare and agent-scoped new-room URLs", () => {
+		expect(newRoomPath()).toBe("/new");
+		expect(newRoomPath("agent/one", "model&two")).toBe(
+			"/new?agentId=agent%2Fone&model=model%26two",
 		);
 	});
 });

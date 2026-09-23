@@ -52,11 +52,6 @@ export const HomePage = () => {
 	});
 	const chiefOfStaff =
 		agents.find((agent) => agent.id === "maya") ?? agents[0];
-	const activeTriggers = agents.reduce(
-		(total, agent) =>
-			total + agent.triggers.filter((trigger) => trigger.enabled).length,
-		0,
-	);
 	useEffect(() => {
 		function focusSearch(event: KeyboardEvent) {
 			if (
@@ -114,7 +109,9 @@ export const HomePage = () => {
 					<div className="min-w-0 flex-1">
 						<p className="font-medium text-link text-xs">
 							A note from {chiefOfStaff?.name ?? "your team"}
-							{chiefOfStaff && ` · ${chiefOfStaff.role}`}
+							{chiefOfStaff?.description
+								? ` · ${chiefOfStaff.description}`
+								: ""}
 						</p>
 						<h2 className="mt-1 font-semibold text-base">
 							{attention.length}{" "}
@@ -128,21 +125,13 @@ export const HomePage = () => {
 							in the session that started them.
 						</p>
 					</div>
-					<div className="flex shrink-0 gap-6 border-t pt-4 sm:border-t-0 sm:border-l sm:pt-0 sm:pl-6">
+					<div className="shrink-0 border-t pt-4 sm:border-t-0 sm:border-l sm:pt-0 sm:pl-6">
 						<div>
 							<strong className="block text-xl tabular-nums">
 								{attention.length.toString().padStart(2, "0")}
 							</strong>
 							<span className="text-muted-foreground text-xs">
 								need your call
-							</span>
-						</div>
-						<div>
-							<strong className="block text-xl tabular-nums">
-								{activeTriggers.toString().padStart(2, "0")}
-							</strong>
-							<span className="text-muted-foreground text-xs">
-								active triggers
 							</span>
 						</div>
 					</div>

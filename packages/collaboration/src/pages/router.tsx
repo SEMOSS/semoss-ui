@@ -37,6 +37,11 @@ const routes: RouteObject[] = [
 								Component: HomePage,
 							},
 							{
+								path: "new",
+								id: "room-new",
+								Component: NewRoomPage,
+							},
+							{
 								path: "agents",
 								id: "agents",
 								Component: AgentsOverviewPage,
@@ -65,11 +70,6 @@ const routes: RouteObject[] = [
 										id: "agent-room-layout",
 										Component: AgentRoomLayout,
 										children: [
-											{
-												path: "new/:draftId",
-												id: "room-new",
-												Component: NewRoomPage,
-											},
 											{
 												path: ":roomId",
 												id: "room",

@@ -63,9 +63,11 @@ export function TeamSettingsView({
 									<strong className="block font-medium text-sm">
 										{person.name}
 									</strong>
-									<span className="block text-muted-foreground text-xs">
-										{person.role}
-									</span>
+									{person.description && (
+										<span className="block text-muted-foreground text-xs">
+											{person.description}
+										</span>
+									)}
 								</span>
 							</label>
 						))}

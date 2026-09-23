@@ -153,7 +153,7 @@ export function toWorkspaceAgent(payload: WorkspacePayload): WorkspaceAgent {
 /**
  * A row from `MyProjects(projectType=["WORKSPACE"])`.
  *
- * TODO:: MyProjects does not return a workspace description, so Agent.role is
+ * TODO:: MyProjects does not return a workspace description, so Agent.description is
  * empty in list views. Either hydrate each row via GetWorkspace (N+1) or extend
  * MyProjects server-side. ListWorkspaces returns description in one call but is
  * marked @Deprecated.

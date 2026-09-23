@@ -27,7 +27,6 @@ export interface MainContext {
 	/** Save using the route's workspace id when editing, even before the list loads. */
 	saveAgent: (
 		agent: Agent,
-		skillIds?: string[],
 		workspaceId?: string,
 		/** File to upload, null to remove the image, or undefined to keep it. */
 		image?: File | null,

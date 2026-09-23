@@ -1,27 +1,44 @@
-import { ChevronDown, ChevronRight, MessageSquare, Plus } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
-import { Link, useNavigate, useSearchParams } from "react-router";
+import { MessageSquare, MoreHorizontal, Plus, Search } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Link } from "react-router";
 import {
 	Button,
-	Collapsible,
-	CollapsibleContent,
-	CollapsibleTrigger,
 	cn,
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuItem,
+	DropdownMenuTrigger,
+	HoverCard,
+	HoverCardContent,
+	HoverCardTrigger,
 	SidebarGroup,
 	SidebarGroupAction,
 	SidebarGroupContent,
 	SidebarGroupLabel,
 	Spinner,
+	Tooltip,
+	TooltipContent,
+	TooltipTrigger,
+	TreeView,
+	TreeViewItem,
 	useSidebar,
 } from "@semoss/ui/next";
 import { AgentAvatar } from "@/components/common/agent-avatar";
 import { StatusLabel } from "@/components/common/status-label";
-import { agentNewPath, draftRoomPath, roomPath } from "@/lib/workspace-paths";
+import { roomPath } from "@/lib/workspace-paths";
 import type { Agent } from "@/types/agent";
 import type { Session } from "@/types/session";
+import { getSidebarRoomStatus } from "./sidebar-room-status";
+import { SidebarSearchPalette } from "./sidebar-search-palette";
 
 const ROOMS_PER_PAGE = 5;
 const RECENT_ROOM_LIMIT = 10;
+
+type SidebarTreeItem =
+	| { kind: "agent"; agentId: string }
+	| { kind: "room"; roomId: string }
+	| { kind: "show-more"; agentId: string; roomCount: number }
+	| { kind: "show-less"; agentId: string };
 
 const timeFormatter = new Intl.DateTimeFormat(undefined, {
 	hour: "numeric",
@@ -42,6 +59,10 @@ function formatRoomTime(updatedAt: string) {
 	return Number.isNaN(date.getTime())
 		? updatedAt
 		: timeFormatter.format(date);
+}
+
+function agentTreeItemId(agentId: string) {
+	return `agent-${agentId}`;
 }
 
 function RoomLink({
@@ -67,7 +88,7 @@ function RoomLink({
 				}}
 				aria-current={active ? "page" : undefined}
 				className={cn(
-					"group/room flex min-h-11 min-w-0 rounded-md px-2 py-2 text-start outline-hidden ring-sidebar-ring transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2",
+					"group/room flex min-h-9 min-w-0 rounded-md px-2 py-1 text-start outline-hidden ring-sidebar-ring transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2",
 					!isRecent && "gap-2",
 					active &&
 						"bg-sidebar-accent font-medium text-sidebar-accent-foreground",
@@ -81,7 +102,7 @@ function RoomLink({
 				)}
 				<span className="min-w-0 flex-1">
 					<span className="flex min-w-0 items-center gap-1.5">
-						<span className="truncate text-xs">{room.title}</span>
+						<span className="truncate text-sm">{room.title}</span>
 						{room.unread && (
 							<>
 								<span
@@ -121,6 +142,8 @@ export function SidebarAgentsList({
 	activeAgentId,
 	activeRoomId,
 	isLoading = false,
+	onNewSession,
+	onAgentVisited,
 	onRoomVisited,
 }: {
 	agents: Agent[];
@@ -128,11 +151,14 @@ export function SidebarAgentsList({
 	activeAgentId?: string;
 	activeRoomId?: string;
 	isLoading?: boolean;
+	onNewSession: (agentId?: string) => void;
+	onAgentVisited: (agentId: string) => void;
 	onRoomVisited: (roomId: string) => void;
 }) {
-	const navigate = useNavigate();
-	const [searchParams] = useSearchParams();
-	const { isMobile, setOpenMobile } = useSidebar();
+	const { isMobile, setOpenMobile, state } = useSidebar();
+	const [isSearchOpen, setIsSearchOpen] = useState(false);
+	const searchTriggerRef = useRef<HTMLButtonElement>(null);
+	const shouldRestoreSearchFocus = useRef(false);
 	const [collapsedAgentIds, setCollapsedAgentIds] = useState<Set<string>>(
 		() => new Set(),
 	);
@@ -154,6 +180,9 @@ export function SidebarAgentsList({
 		return grouped;
 	}, [sortedSessions]);
 	const recentRooms = sortedSessions.slice(0, RECENT_ROOM_LIMIT);
+	const expandedAgentIds = agents
+		.filter((agent) => !collapsedAgentIds.has(agent.id))
+		.map((agent) => agentTreeItemId(agent.id));
 	const activeRouteKey = activeAgentId
 		? `${activeAgentId}:${activeRoomId ?? ""}`
 		: "";
@@ -168,6 +197,24 @@ export function SidebarAgentsList({
 		});
 	}, [activeAgentId, activeRouteKey]);
 
+	useEffect(() => {
+		if (isSearchOpen || !shouldRestoreSearchFocus.current) return;
+		let cancelled = false;
+		queueMicrotask(() => {
+			if (cancelled) return;
+			searchTriggerRef.current?.focus();
+			shouldRestoreSearchFocus.current = false;
+		});
+		return () => {
+			cancelled = true;
+		};
+	}, [isSearchOpen]);
+
+	function openSearch(): void {
+		shouldRestoreSearchFocus.current = true;
+		setIsSearchOpen(true);
+	}
+
 	function setAgentExpanded(agentId: string, expanded: boolean) {
 		setCollapsedAgentIds((current) => {
 			const next = new Set(current);
@@ -177,127 +224,205 @@ export function SidebarAgentsList({
 		});
 	}
 
+	function handleExpandedChange(expandedIds: string[]): void {
+		const expandedIdSet = new Set(expandedIds);
+		setCollapsedAgentIds(
+			new Set(
+				agents
+					.filter(
+						(agent) =>
+							!expandedIdSet.has(agentTreeItemId(agent.id)),
+					)
+					.map((agent) => agent.id),
+			),
+		);
+	}
+
 	function visitRoom(roomId: string) {
 		onRoomVisited(roomId);
 		if (isMobile) setOpenMobile(false);
 	}
 
-	function startRoom(agentId: string) {
-		const currentModelId =
-			agentId === activeAgentId
-				? activeRoomId
-					? sessions.find((session) => session.id === activeRoomId)
-							?.modelId
-					: searchParams.get("model") || undefined
-				: undefined;
-		navigate(draftRoomPath(agentId, crypto.randomUUID(), currentModelId));
+	function visitAgent(agentId: string) {
+		onAgentVisited(agentId);
 		if (isMobile) setOpenMobile(false);
 	}
 
-	return (
-		<div data-slot="unified-agent-room-navigation" className="w-full">
-			<SidebarGroup className="px-0 py-2">
-				<SidebarGroupLabel className="px-2">
-					Your agents
-				</SidebarGroupLabel>
-				<SidebarGroupAction asChild aria-label="Create agent">
-					<Link to={agentNewPath()}>
-						<Plus aria-hidden="true" />
-					</Link>
-				</SidebarGroupAction>
-				<SidebarGroupContent>
-					{isLoading && agents.length === 0 ? (
-						<div className="flex items-center gap-2 px-2 py-3 text-muted-foreground text-xs">
-							<Spinner aria-hidden="true" className="size-3.5" />
-							Loading agents
-						</div>
-					) : agents.length === 0 ? (
-						<p className="px-2 py-3 text-muted-foreground text-xs">
-							No agents yet
-						</p>
-					) : (
-						<ul className="space-y-1" aria-label="Your agents">
-							{agents.map((agent) => {
-								const rooms = roomsByAgent.get(agent.id) ?? [];
-								const expanded = !collapsedAgentIds.has(
-									agent.id,
-								);
-								const activeRoomIndex =
-									agent.id === activeAgentId && activeRoomId
-										? rooms.findIndex(
-												(room) =>
-													room.id === activeRoomId,
-											)
-										: -1;
-								const requestedCount =
-									visibleRoomCounts[agent.id] ??
-									ROOMS_PER_PAGE;
-								const activeRoomCount =
-									activeRoomIndex >= 0
-										? Math.ceil(
-												(activeRoomIndex + 1) /
-													ROOMS_PER_PAGE,
-											) * ROOMS_PER_PAGE
-										: 0;
-								const visibleCount = Math.max(
-									requestedCount,
-									activeRoomCount,
-								);
-								const visibleRooms = rooms.slice(
-									0,
-									visibleCount,
-								);
-								const remainingRooms = Math.max(
-									0,
-									rooms.length - visibleRooms.length,
-								);
-								const unreadCount = rooms.filter(
-									(room) => room.unread,
-								).length;
-								const isWorking = rooms.some(
-									(room) => room.status === "In progress",
-								);
+	function startNewSession(agentId?: string) {
+		if (agentId) onNewSession(agentId);
+		else onNewSession();
+		if (isMobile) setOpenMobile(false);
+	}
 
-								return (
-									<Collapsible
-										key={agent.id}
-										open={expanded}
-										onOpenChange={(open) =>
-											setAgentExpanded(agent.id, open)
-										}
-										asChild
-									>
-										<li>
-											<div
+	function handleTreeItemSelect(item: SidebarTreeItem): void {
+		if (item.kind === "room") {
+			visitRoom(item.roomId);
+			return;
+		}
+
+		if (item.kind === "agent") {
+			if ((roomsByAgent.get(item.agentId)?.length ?? 0) > 0) {
+				setAgentExpanded(
+					item.agentId,
+					collapsedAgentIds.has(item.agentId),
+				);
+			}
+			return;
+		}
+
+		setVisibleRoomCounts((current) => ({
+			...current,
+			[item.agentId]:
+				item.kind === "show-more"
+					? Math.min(
+							(current[item.agentId] ?? ROOMS_PER_PAGE) +
+								ROOMS_PER_PAGE,
+							item.roomCount,
+						)
+					: ROOMS_PER_PAGE,
+		}));
+	}
+
+	return (
+		<>
+			{state === "collapsed" && !isMobile ? (
+				<div
+					data-slot="collapsed-agent-room-navigation"
+					className="flex w-full justify-center py-1"
+				>
+					<Tooltip>
+						<TooltipTrigger asChild>
+							<Button
+								ref={searchTriggerRef}
+								type="button"
+								variant="ghost"
+								size="icon-lg"
+								aria-label="Search rooms and agents"
+								onClick={openSearch}
+							>
+								<Search aria-hidden="true" />
+							</Button>
+						</TooltipTrigger>
+						<TooltipContent side="right">Search</TooltipContent>
+					</Tooltip>
+				</div>
+			) : (
+				<div
+					data-slot="unified-agent-room-navigation"
+					className="w-full"
+				>
+					<SidebarGroup className="group/agents px-0 py-2">
+						<SidebarGroupLabel className="px-2">
+							Your agents
+						</SidebarGroupLabel>
+						<Tooltip>
+							<TooltipTrigger asChild>
+								<SidebarGroupAction
+									ref={searchTriggerRef}
+									type="button"
+									className="end-10 size-6 transition-opacity group-focus-within/agents:opacity-100 group-hover/agents:opacity-100 [@media(hover:hover)]:opacity-0"
+									aria-label="Search rooms and agents"
+									onClick={openSearch}
+								>
+									<Search aria-hidden="true" />
+								</SidebarGroupAction>
+							</TooltipTrigger>
+							<TooltipContent>Search</TooltipContent>
+						</Tooltip>
+						<SidebarGroupAction
+							type="button"
+							className="size-6 transition-opacity group-focus-within/agents:opacity-100 group-hover/agents:opacity-100 [@media(hover:hover)]:opacity-0"
+							aria-label="New session"
+							onClick={() => startNewSession()}
+						>
+							<Plus aria-hidden="true" />
+						</SidebarGroupAction>
+						<SidebarGroupContent>
+							{isLoading && agents.length === 0 ? (
+								<div className="flex items-center gap-2 px-2 py-2 text-muted-foreground text-xs">
+									<Spinner
+										aria-hidden="true"
+										className="size-3.5"
+									/>
+									Loading agents
+								</div>
+							) : agents.length === 0 ? (
+								<p className="px-2 py-2 text-muted-foreground text-xs">
+									No agents yet
+								</p>
+							) : (
+								<TreeView<SidebarTreeItem>
+									aria-label="Your agents"
+									className="space-y-0.5 [&>li>div>button]:size-6"
+									expanded={expandedAgentIds}
+									onExpandChange={handleExpandedChange}
+									onItemSelect={handleTreeItemSelect}
+								>
+									{agents.map((agent) => {
+										const rooms =
+											roomsByAgent.get(agent.id) ?? [];
+										const activeRoomIndex =
+											agent.id === activeAgentId &&
+											activeRoomId
+												? rooms.findIndex(
+														(room) =>
+															room.id ===
+															activeRoomId,
+													)
+												: -1;
+										const requestedCount =
+											visibleRoomCounts[agent.id] ??
+											ROOMS_PER_PAGE;
+										const activeRoomCount =
+											activeRoomIndex >= 0
+												? Math.ceil(
+														(activeRoomIndex + 1) /
+															ROOMS_PER_PAGE,
+													) * ROOMS_PER_PAGE
+												: 0;
+										const visibleCount = Math.max(
+											requestedCount,
+											activeRoomCount,
+										);
+										const visibleRooms = rooms.slice(
+											0,
+											visibleCount,
+										);
+										const remainingRooms = Math.max(
+											0,
+											rooms.length - visibleRooms.length,
+										);
+										const unreadCount = rooms.filter(
+											(room) => room.unread,
+										).length;
+										const isWorking = rooms.some(
+											(room) =>
+												room.status === "In progress",
+										);
+
+										return (
+											<TreeViewItem<SidebarTreeItem>
+												key={agent.id}
+												id={agentTreeItemId(agent.id)}
+												item={{
+													kind: "agent",
+													agentId: agent.id,
+												}}
+												aria-label={agent.name}
 												className={cn(
-													"group/agent flex min-h-11 min-w-0 items-center rounded-md hover:bg-sidebar-accent",
+													"group/agent pr-1 [&>div]:min-h-9 [&>div]:rounded-md [&>div]:py-0 [&>div]:hover:bg-sidebar-accent",
 													agent.id ===
 														activeAgentId &&
-														"bg-sidebar-accent text-sidebar-accent-foreground",
+														"[&>div]:bg-sidebar-accent [&>div]:text-sidebar-accent-foreground",
 												)}
-											>
-												<CollapsibleTrigger asChild>
-													<Button
-														variant="ghost"
-														className="h-auto min-h-11 min-w-0 flex-1 justify-start gap-2 px-2 text-start hover:bg-transparent"
-														aria-label={`${expanded ? "Collapse" : "Expand"} rooms for ${agent.name}`}
-													>
-														{expanded ? (
-															<ChevronDown className="size-3.5 shrink-0" />
-														) : (
-															<ChevronRight className="size-3.5 shrink-0" />
-														)}
+												label={
+													<div className="flex min-h-9 min-w-0 items-center gap-2">
 														<AgentAvatar
 															agent={agent}
-															size="sm"
+															size="xs"
 														/>
-														<span className="min-w-0 flex-1">
-															<span className="block truncate text-xs">
-																{agent.name}
-															</span>
-															<span className="block truncate text-muted-foreground text-xs">
-																{agent.role}
-															</span>
+														<span className="min-w-0 flex-1 truncate text-sm">
+															{agent.name}
 														</span>
 														{isWorking && (
 															<Spinner
@@ -310,132 +435,261 @@ export function SidebarAgentsList({
 																{unreadCount}
 															</span>
 														)}
-													</Button>
-												</CollapsibleTrigger>
-												<Button
-													variant="ghost"
-													size="icon-sm"
-													className="me-1 shrink-0"
-													aria-label={`New room with ${agent.name}`}
-													onClick={() =>
-														startRoom(agent.id)
-													}
-												>
-													<Plus aria-hidden="true" />
-												</Button>
-											</div>
-											<CollapsibleContent>
-												{rooms.length === 0 ? (
-													<p className="py-2 ps-9 text-muted-foreground text-xs">
-														No rooms yet
-													</p>
-												) : (
-													<ul
-														className="ms-4 space-y-1 border-s ps-2"
-														aria-label={`Rooms for ${agent.name}`}
-													>
+														<div className="hidden shrink-0 group-focus-within/agent:block group-hover/agent:block has-data-[state=open]:block [@media(hover:none)]:block">
+															<DropdownMenu>
+																<DropdownMenuTrigger
+																	asChild
+																>
+																	<Button
+																		type="button"
+																		variant="ghost"
+																		size="icon-sm"
+																		className="shrink-0"
+																		aria-label={`Actions for ${agent.name}`}
+																		onClick={(
+																			event,
+																		) =>
+																			event.stopPropagation()
+																		}
+																		onKeyDown={(
+																			event,
+																		) =>
+																			event.stopPropagation()
+																		}
+																	>
+																		<MoreHorizontal aria-hidden="true" />
+																	</Button>
+																</DropdownMenuTrigger>
+																<DropdownMenuContent align="end">
+																	<DropdownMenuItem
+																		onSelect={() =>
+																			startNewSession(
+																				agent.id,
+																			)
+																		}
+																	>
+																		New
+																		session
+																	</DropdownMenuItem>
+																</DropdownMenuContent>
+															</DropdownMenu>
+														</div>
+													</div>
+												}
+											>
+												{rooms.length > 0 ? (
+													<>
 														{visibleRooms.map(
-															(room) => (
-																<RoomLink
-																	key={
-																		room.id
-																	}
-																	room={room}
-																	active={
-																		room.id ===
-																		activeRoomId
-																	}
-																	onVisit={
-																		visitRoom
-																	}
-																/>
-															),
+															(room) => {
+																const status =
+																	getSidebarRoomStatus(
+																		room,
+																	);
+
+																return (
+																	<TreeViewItem<SidebarTreeItem>
+																		key={
+																			room.id
+																		}
+																		id={`room-${room.id}`}
+																		item={{
+																			kind: "room",
+																			roomId: room.id,
+																		}}
+																		aria-label={
+																			room.title
+																		}
+																		aria-current={
+																			room.id ===
+																			activeRoomId
+																				? "page"
+																				: undefined
+																		}
+																		leadingIcon={
+																			status ? (
+																				<Tooltip>
+																					<TooltipTrigger
+																						asChild
+																					>
+																						<Button
+																							type="button"
+																							variant="ghost"
+																							size="icon-sm"
+																							aria-label={
+																								status.label
+																							}
+																							className={cn(
+																								"-m-1 size-6 rounded-sm p-0",
+																								status.className,
+																							)}
+																						>
+																							{
+																								status.icon
+																							}
+																						</Button>
+																					</TooltipTrigger>
+																					<TooltipContent
+																						side="right"
+																						sideOffset={
+																							4
+																						}
+																					>
+																						{
+																							status.label
+																						}
+																					</TooltipContent>
+																				</Tooltip>
+																			) : undefined
+																		}
+																		className={cn(
+																			"[&>div]:min-h-9 [&>div]:rounded-md [&>div]:py-0 [&>div]:hover:bg-sidebar-accent",
+																			room.id ===
+																				activeRoomId &&
+																				"[&>div]:bg-sidebar-accent [&>div]:font-medium [&>div]:text-sidebar-accent-foreground",
+																		)}
+																		label={
+																			<HoverCard
+																				openDelay={
+																					300
+																				}
+																				closeDelay={
+																					150
+																				}
+																			>
+																				<HoverCardTrigger
+																					asChild
+																				>
+																					<span className="flex min-h-9 min-w-0 items-center py-1 text-start">
+																						<span className="truncate text-sm">
+																							{
+																								room.title
+																							}
+																						</span>
+																					</span>
+																				</HoverCardTrigger>
+																				<HoverCardContent
+																					side="right"
+																					align="start"
+																					sideOffset={
+																						8
+																					}
+																					avoidCollisions={
+																						false
+																					}
+																					className="space-y-2"
+																				>
+																					<p className="wrap-break-word text-sm">
+																						{room.preview.trim() ||
+																							"No recent message"}
+																					</p>
+																					<time
+																						dateTime={
+																							room.updatedAt
+																						}
+																						className="block text-muted-foreground text-xs"
+																					>
+																						{formatRoomTime(
+																							room.updatedAt,
+																						)}
+																					</time>
+																				</HoverCardContent>
+																			</HoverCard>
+																		}
+																	/>
+																);
+															},
 														)}
 														{remainingRooms > 0 && (
-															<li>
-																<Button
-																	variant="ghost"
-																	className="min-h-11 w-full justify-start px-2 text-link text-xs"
-																	onClick={() =>
-																		setVisibleRoomCounts(
-																			(
-																				current,
-																			) => ({
-																				...current,
-																				[agent.id]:
-																					Math.min(
-																						requestedCount +
-																							ROOMS_PER_PAGE,
-																						rooms.length,
-																					),
-																			}),
-																		)
-																	}
-																>
-																	Show 5 more
-																</Button>
-															</li>
+															<TreeViewItem<SidebarTreeItem>
+																id={`show-more-${agent.id}`}
+																item={{
+																	kind: "show-more",
+																	agentId:
+																		agent.id,
+																	roomCount:
+																		rooms.length,
+																}}
+																aria-label="Show 5 more rooms"
+																className="[&>div]:min-h-9 [&>div]:py-0"
+																label={
+																	<span className="flex min-h-9 items-center text-link text-xs">
+																		Show 5
+																		more
+																	</span>
+																}
+															/>
 														)}
 														{requestedCount >
 															ROOMS_PER_PAGE && (
-															<li>
-																<Button
-																	variant="ghost"
-																	className="min-h-11 w-full justify-start px-2 text-muted-foreground text-xs"
-																	onClick={() =>
-																		setVisibleRoomCounts(
-																			(
-																				current,
-																			) => ({
-																				...current,
-																				[agent.id]:
-																					ROOMS_PER_PAGE,
-																			}),
-																		)
-																	}
-																>
-																	Show less
-																</Button>
-															</li>
+															<TreeViewItem<SidebarTreeItem>
+																id={`show-less-${agent.id}`}
+																item={{
+																	kind: "show-less",
+																	agentId:
+																		agent.id,
+																}}
+																aria-label="Show fewer rooms"
+																className="[&>div]:min-h-9 [&>div]:py-0"
+																label={
+																	<span className="flex min-h-9 items-center text-muted-foreground text-xs">
+																		Show
+																		less
+																	</span>
+																}
+															/>
 														)}
-													</ul>
-												)}
-											</CollapsibleContent>
-										</li>
-									</Collapsible>
-								);
-							})}
-						</ul>
-					)}
-				</SidebarGroupContent>
-			</SidebarGroup>
+													</>
+												) : undefined}
+											</TreeViewItem>
+										);
+									})}
+								</TreeView>
+							)}
+						</SidebarGroupContent>
+					</SidebarGroup>
 
-			<SidebarGroup className="px-0 py-2">
-				<SidebarGroupLabel className="px-2">Recent</SidebarGroupLabel>
-				<SidebarGroupContent>
-					{isLoading && recentRooms.length === 0 ? (
-						<p className="px-2 py-3 text-muted-foreground text-xs">
-							Loading rooms
-						</p>
-					) : recentRooms.length === 0 ? (
-						<p className="px-2 py-3 text-muted-foreground text-xs">
-							No recent rooms
-						</p>
-					) : (
-						<ul className="space-y-1" aria-label="Recent rooms">
-							{recentRooms.map((room) => (
-								<RoomLink
-									key={room.id}
-									room={room}
-									active={room.id === activeRoomId}
-									variant="recent"
-									onVisit={visitRoom}
-								/>
-							))}
-						</ul>
-					)}
-				</SidebarGroupContent>
-			</SidebarGroup>
-		</div>
+					<SidebarGroup className="px-0 py-1">
+						<SidebarGroupLabel className="h-7 px-2">
+							Recent
+						</SidebarGroupLabel>
+						<SidebarGroupContent>
+							{isLoading && recentRooms.length === 0 ? (
+								<p className="px-2 py-2 text-muted-foreground text-xs">
+									Loading rooms
+								</p>
+							) : recentRooms.length === 0 ? (
+								<p className="px-2 py-2 text-muted-foreground text-xs">
+									No recent rooms
+								</p>
+							) : (
+								<ul
+									className="space-y-0.5"
+									aria-label="Recent rooms"
+								>
+									{recentRooms.map((room) => (
+										<RoomLink
+											key={room.id}
+											room={room}
+											active={room.id === activeRoomId}
+											variant="recent"
+											onVisit={visitRoom}
+										/>
+									))}
+								</ul>
+							)}
+						</SidebarGroupContent>
+					</SidebarGroup>
+				</div>
+			)}
+			<SidebarSearchPalette
+				open={isSearchOpen}
+				onOpenChange={setIsSearchOpen}
+				agents={agents}
+				sessions={sessions}
+				isLoading={isLoading}
+				onAgentVisited={visitAgent}
+				onRoomVisited={visitRoom}
+			/>
+		</>
 	);
 }
