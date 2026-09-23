@@ -2,6 +2,7 @@ import type {
 	AutomationNode,
 	StepRunStatus,
 } from "../../../domain/automation.types";
+import type { AutomationScopeEntry } from "../../../domain/automation-inspector";
 import { NodeEditDrawer } from "../node-edit-drawer";
 import { TriggerEditPanel } from "./trigger-edit-panel";
 
@@ -13,6 +14,7 @@ interface InspectorTabProps {
 	editingStep: AutomationNode | null;
 	onPrepareSchedule: () => Promise<boolean>;
 	upstreamVars: string[];
+	scopeEntries: AutomationScopeEntry[];
 	stepRunStatus?: StepRunStatus;
 	stepRunError?: string;
 	onDescriptionChange: (value: string) => void;
@@ -39,6 +41,7 @@ export function InspectorTab({
 	editingStep,
 	onPrepareSchedule,
 	upstreamVars,
+	scopeEntries,
 	stepRunStatus,
 	stepRunError,
 	onDescriptionChange,
@@ -72,6 +75,7 @@ export function InspectorTab({
 				step={editingStep}
 				appId={appId}
 				upstreamVars={upstreamVars}
+				scopeEntries={scopeEntries}
 				runStatus={stepRunStatus}
 				runError={stepRunError}
 				devMode={devMode}
