@@ -13,6 +13,7 @@ import type { PendingToolApproval } from "@/features/rooms/types/room";
 import { useToolWorkbench } from "@/features/tools/tool-workbench.context";
 import { filePaths } from "../utils/file-paths";
 import { AttachRoomFile } from "./attach-room-file";
+import { type Person, PersonPicker } from "./person-picker";
 
 const REQUEST_TOOL_KIND = "semoss_delegate_to_person";
 
@@ -61,7 +62,8 @@ export function DelegationRequestApproval({
 	const { onApproveTool, onRejectTool, closeTool } = useToolWorkbench();
 	const args = action.arguments;
 	const id = useId();
-	const [assignee, setAssignee] = useState(text(args.assignee));
+	// The agent passes a name or email hint; the user picks the exact account.
+	const [assignee, setAssignee] = useState<Person | null>(null);
 	const [question, setQuestion] = useState(text(args.question));
 	const [context, setContext] = useState(text(args.context));
 	const [dueAt, setDueAt] = useState(text(args.dueAt));
@@ -69,7 +71,7 @@ export function DelegationRequestApproval({
 	const [links, setLinks] = useState(() => linkList(args.links));
 	const [busy, setBusy] = useState<"send" | "cancel" | null>(null);
 	const [error, setError] = useState<string | null>(null);
-	const incomplete = !assignee.trim() || !question.trim();
+	const incomplete = !assignee || !question.trim();
 
 	const resolve = async (kind: "send" | "cancel") => {
 		setBusy(kind);
@@ -112,11 +114,12 @@ export function DelegationRequestApproval({
 				>
 					To
 				</label>
-				<Input
+				<PersonPicker
 					id={`${id}-assignee`}
+					hint={text(args.assignee)}
 					value={assignee}
 					disabled={busy !== null}
-					onChange={(event) => setAssignee(event.target.value)}
+					onChange={setAssignee}
 				/>
 			</div>
 			<div className="flex flex-col gap-1">
