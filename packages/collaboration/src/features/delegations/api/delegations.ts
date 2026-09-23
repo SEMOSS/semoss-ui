@@ -13,8 +13,6 @@ export const delegationSchema = z.object({
 	response: z.string().nullish(),
 	dateCreated: z.string().nullish(),
 	decidedAt: z.string().nullish(),
-	// Only returned by RespondToDelegation: the owner-side outcome.
-	taskStatus: z.string().nullish(),
 });
 
 export type Delegation = z.infer<typeof delegationSchema>;

@@ -175,7 +175,7 @@ export function RoomPage() {
 		return mergeToolStates([...byId.values()], turn.toolStates);
 	}, [history, turn.messages, turn.toolStates]);
 
-	// A person's answer arrives as history plus, for CONTINUE, a new run.
+	// A person's answer arrives as history plus, for POST_AND_CONTINUE, a new run.
 	const handleDelegationAnswered = useCallback(() => {
 		void loadHistory();
 		void turn.reconnect();
