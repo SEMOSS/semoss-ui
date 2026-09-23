@@ -39,6 +39,7 @@ import {
 	editMemberInfo,
 	setUserDefaultModel,
 } from "@/api/auth";
+import { MicrosoftSubscriptions } from "@/components/settings";
 import { SdkBlock } from "@/components/shared/sdk-block";
 import { useAPI, useConfig, useSession, useSettings } from "@/hooks";
 import { formatDate, getSDKSnippet } from "@/utility";
@@ -107,6 +108,10 @@ export const MyProfilePage = () => {
 	] = useState<string>("");
 
 	const nativeLogin = (logins as unknown as { NATIVE: string })?.NATIVE;
+	// the config keys logins by auth provider, so a Microsoft entry is the only
+	// sign that somebody has a Microsoft login to subscribe with
+	const microsoftLogin = (logins as unknown as { MICROSOFT?: string })
+		?.MICROSOFT;
 
 	const { control, reset, setValue, handleSubmit, watch } =
 		useForm<CreateAccessKeyForm>({
@@ -642,6 +647,10 @@ export const MyProfilePage = () => {
 					</div>
 				)}
 			</div>
+
+			<MicrosoftSubscriptions
+				signedIntoMicrosoft={microsoftLogin !== undefined}
+			/>
 
 			{/* JS SDK */}
 			<div className="rounded-lg border bg-card px-6 py-5">
