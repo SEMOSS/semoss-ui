@@ -27,7 +27,7 @@ function deferred<T>(): Deferred<T> {
 describe("useRooms", () => {
 	beforeEach(() => listRooms.mockReset());
 
-	it("lists once, filters by workspace, and retains a room until it becomes durable", async () => {
+	it("keeps listed-agent and unassigned rooms while excluding other workspaces", async () => {
 		const first = deferred<RoomRow[]>();
 		listRooms.mockReturnValueOnce(first.promise).mockResolvedValueOnce([
 			{
@@ -68,11 +68,17 @@ describe("useRooms", () => {
 				roomId: "foreign-room",
 				workspaceId: "workspace-3",
 			},
+			{
+				roomId: "unassigned-room",
+				roomName: "Personal notes",
+				dateUpdated: "2026-09-22T10:00:00Z",
+			},
 		]);
 		await waitFor(() => expect(result.current.isLoading).toBe(false));
 		expect(listRooms).toHaveBeenCalledOnce();
 		expect(result.current.sessions.map((session) => session.id)).toEqual([
 			"pending-room",
+			"unassigned-room",
 		]);
 
 		rerender({ versions: { "workspace-1": 1 } });
@@ -88,5 +94,23 @@ describe("useRooms", () => {
 				}),
 			]),
 		);
+	});
+
+	it("loads unassigned rooms when there are no agents", async () => {
+		listRooms.mockResolvedValue([
+			{ roomId: "unassigned-room", roomName: "Personal notes" },
+			{ roomId: "assigned-room", workspaceId: "workspace-1" },
+		]);
+
+		const { result } = renderHook(() => useRooms([]));
+
+		await waitFor(() => expect(result.current.isLoading).toBe(false));
+		expect(result.current.sessions).toEqual([
+			expect.objectContaining({
+				id: "unassigned-room",
+				agentId: "",
+				title: "Personal notes",
+			}),
+		]);
 	});
 });

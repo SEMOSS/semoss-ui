@@ -36,12 +36,12 @@ import { agentSettingsPath } from "@/lib/workspace-paths";
 
 /** One collaboration room's durable transcript and agent harness observer. */
 export function RoomPage() {
-	const { agent } = useAgent();
+	const { agent, agentId } = useAgent();
 	const { openRoomsList } = useRoom();
 	const workspace = useMain();
 	const { actions, insightId } = useInsight();
 	const navigate = useNavigate();
-	const { agentId = "", roomId } = useParams();
+	const { roomId } = useParams();
 	const { setSessions, updateRoom, refresh } = workspace;
 	const [history, setHistory] = useState<ConversationMessage[]>([]);
 	const [isLoadingHistory, setIsLoadingHistory] = useState(true);

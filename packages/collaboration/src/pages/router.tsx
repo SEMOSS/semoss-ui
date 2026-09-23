@@ -15,6 +15,7 @@ import { LoginPage } from "@/pages/login.page";
 import { NewRoomPage } from "@/pages/new-room.page";
 import { NotFoundPage } from "@/pages/not-found.page";
 import { RoomPage } from "@/pages/room.page";
+import { SessionsPage } from "@/pages/sessions.page";
 import { SettingsPage } from "@/pages/settings.page";
 
 const routes: RouteObject[] = [
@@ -42,6 +43,29 @@ const routes: RouteObject[] = [
 								Component: NewRoomPage,
 							},
 							{
+								path: "room",
+								id: "sessions",
+								Component: SessionsPage,
+							},
+							{
+								path: "room/:roomId",
+								id: "room-agent",
+								Component: AgentLayout,
+								children: [
+									{
+										id: "room-layout",
+										Component: AgentRoomLayout,
+										children: [
+											{
+												index: true,
+												id: "room",
+												Component: RoomPage,
+											},
+										],
+									},
+								],
+							},
+							{
 								path: "agents",
 								id: "agents",
 								Component: AgentsOverviewPage,
@@ -65,17 +89,6 @@ const routes: RouteObject[] = [
 										path: "settings",
 										id: "agent-settings",
 										Component: AgentSettingsPage,
-									},
-									{
-										id: "agent-room-layout",
-										Component: AgentRoomLayout,
-										children: [
-											{
-												path: ":roomId",
-												id: "room",
-												Component: RoomPage,
-											},
-										],
 									},
 								],
 							},

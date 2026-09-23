@@ -4,6 +4,7 @@ import type { Agent } from "@/features/agents/types/agent";
 
 export interface AgentContext {
 	agent: Agent;
+	agentId: string;
 	refresh: () => void;
 }
 

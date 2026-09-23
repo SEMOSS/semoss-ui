@@ -399,7 +399,7 @@ export function RoomComposer({
 			<fieldset
 				aria-label="Message composer drop area"
 				className={cn(
-					"relative m-0 min-w-0 overflow-hidden rounded-md border border-input bg-card p-0 shadow-lg transition-[color,box-shadow] focus-within:border-ring focus-within:ring-[3px] focus-within:ring-ring/50",
+					"relative m-0 min-w-0 overflow-hidden rounded-md border border-input bg-card p-0 transition-[color] focus-within:border-ring focus-within:ring-[3px] focus-within:ring-ring/50",
 					isDragging && "border-primary ring-2 ring-primary/20",
 				)}
 				onDragEnter={(event) => {

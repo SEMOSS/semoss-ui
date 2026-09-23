@@ -32,7 +32,7 @@ import { getSidebarRoomStatus } from "./sidebar-room-status";
 import { SidebarSearchPalette } from "./sidebar-search-palette";
 
 const ROOMS_PER_PAGE = 5;
-const RECENT_ROOM_LIMIT = 10;
+const RECENT_ROOM_PAGE_SIZE = 20;
 
 type SidebarTreeItem =
 	| { kind: "agent"; agentId: string }
@@ -81,7 +81,7 @@ function RoomLink({
 	return (
 		<li>
 			<Link
-				to={roomPath(room.agentId, room.id)}
+				to={roomPath(room.id)}
 				onClick={(event) => {
 					event.preventDefault();
 					onVisit(room.id);
@@ -165,6 +165,9 @@ export function SidebarAgentsList({
 	const [visibleRoomCounts, setVisibleRoomCounts] = useState<
 		Record<string, number>
 	>({});
+	const [visibleRecentRoomCount, setVisibleRecentRoomCount] = useState(
+		RECENT_ROOM_PAGE_SIZE,
+	);
 
 	const sortedSessions = useMemo(
 		() => [...sessions].sort(compareRoomsNewestFirst),
@@ -179,7 +182,10 @@ export function SidebarAgentsList({
 		}
 		return grouped;
 	}, [sortedSessions]);
-	const recentRooms = sortedSessions.slice(0, RECENT_ROOM_LIMIT);
+	const unassignedRooms = sortedSessions.filter((room) => !room.agentId);
+	const recentRooms = unassignedRooms.slice(0, visibleRecentRoomCount);
+	const hasMoreRecentRooms = recentRooms.length < unassignedRooms.length;
+	const canResizeRecentRooms = unassignedRooms.length > RECENT_ROOM_PAGE_SIZE;
 	const expandedAgentIds = agents
 		.filter((agent) => !collapsedAgentIds.has(agent.id))
 		.map((agent) => agentTreeItemId(agent.id));
@@ -213,6 +219,14 @@ export function SidebarAgentsList({
 	function openSearch(): void {
 		shouldRestoreSearchFocus.current = true;
 		setIsSearchOpen(true);
+	}
+
+	function handleResizeRecentRooms(): void {
+		setVisibleRecentRoomCount((current) =>
+			hasMoreRecentRooms
+				? current + RECENT_ROOM_PAGE_SIZE
+				: RECENT_ROOM_PAGE_SIZE,
+		);
 	}
 
 	function setAgentExpanded(agentId: string, expanded: boolean) {
@@ -361,15 +375,13 @@ export function SidebarAgentsList({
 									{agents.map((agent) => {
 										const rooms =
 											roomsByAgent.get(agent.id) ?? [];
-										const activeRoomIndex =
-											agent.id === activeAgentId &&
-											activeRoomId
-												? rooms.findIndex(
-														(room) =>
-															room.id ===
-															activeRoomId,
-													)
-												: -1;
+										const activeRoomIndex = activeRoomId
+											? rooms.findIndex(
+													(room) =>
+														room.id ===
+														activeRoomId,
+												)
+											: -1;
 										const requestedCount =
 											visibleRoomCounts[agent.id] ??
 											ROOMS_PER_PAGE;
@@ -662,20 +674,37 @@ export function SidebarAgentsList({
 									No recent rooms
 								</p>
 							) : (
-								<ul
-									className="space-y-0.5"
-									aria-label="Recent rooms"
-								>
-									{recentRooms.map((room) => (
-										<RoomLink
-											key={room.id}
-											room={room}
-											active={room.id === activeRoomId}
-											variant="recent"
-											onVisit={visitRoom}
-										/>
-									))}
-								</ul>
+								<>
+									<ul
+										className="space-y-0.5"
+										aria-label="Recent rooms"
+									>
+										{recentRooms.map((room) => (
+											<RoomLink
+												key={room.id}
+												room={room}
+												active={
+													room.id === activeRoomId
+												}
+												variant="recent"
+												onVisit={visitRoom}
+											/>
+										))}
+									</ul>
+									{canResizeRecentRooms && (
+										<Button
+											type="button"
+											variant="ghost"
+											size="sm"
+											className="mt-1 w-full justify-start px-2"
+											onClick={handleResizeRecentRooms}
+										>
+											{hasMoreRecentRooms
+												? "Load more rooms"
+												: "Show fewer rooms"}
+										</Button>
+									)}
+								</>
 							)}
 						</SidebarGroupContent>
 					</SidebarGroup>

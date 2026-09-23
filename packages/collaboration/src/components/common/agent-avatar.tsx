@@ -13,9 +13,12 @@ const avatarColors: Record<AgentTone, string> = {
 export function AgentAvatar({
 	agent,
 	size = "md",
+	shape = "circle",
 }: {
 	agent: Agent;
 	size?: "xs" | "sm" | "md" | "lg";
+	/** Keeps conversational avatars circular while allowing directory portraits. */
+	shape?: "circle" | "rounded";
 }) {
 	const [failed, setFailed] = useState("");
 	const Icon = agentIcons[agent.icon];
@@ -23,8 +26,9 @@ export function AgentAvatar({
 		<span
 			aria-hidden="true"
 			className={cn(
-				"inline-flex shrink-0 items-center justify-center overflow-hidden rounded-full border",
+				"inline-flex shrink-0 items-center justify-center overflow-hidden border",
 				avatarColors[agent.tone],
+				shape === "circle" ? "rounded-full" : "rounded-xl",
 				{
 					"size-6": size === "xs",
 					"size-8": size === "sm",

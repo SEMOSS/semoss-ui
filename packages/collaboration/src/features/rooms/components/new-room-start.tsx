@@ -185,7 +185,7 @@ export function NewRoomStart({
 				);
 				workspace.trackGeneratedRoomName(agentId, roomId);
 				if (mountedRef.current) {
-					navigate(roomPath(agentId, roomId), { replace: true });
+					navigate(roomPath(roomId), { replace: true });
 				}
 			} finally {
 				startingRef.current = false;

@@ -97,9 +97,7 @@ function renderSidebar({
 	return render(
 		<MemoryRouter
 			initialEntries={[
-				activeRoomId
-					? `/agents/research-agent/${activeRoomId}`
-					: "/agents",
+				activeRoomId ? `/room/${activeRoomId}` : "/agents",
 			]}
 		>
 			<SidebarProvider defaultOpen={defaultOpen}>
@@ -359,10 +357,9 @@ describe("SidebarAgentsList", () => {
 		await waitFor(() => expect(preview).not.toBeInTheDocument());
 	});
 
-	it("expands the active agent and keeps a deep active room visible", () => {
+	it("keeps a deep active room visible without marking its agent active", () => {
 		renderSidebar({
 			sessions: Array.from({ length: 7 }, (_, index) => room(index + 1)),
-			activeAgentId: researchAgent.id,
 			activeRoomId: "room-7",
 		});
 
@@ -377,25 +374,48 @@ describe("SidebarAgentsList", () => {
 		expect(
 			within(researchAgentItem).getByRole("treeitem", { name: "Room 7" }),
 		).toHaveAttribute("aria-current", "page");
+		expect(researchAgentItem.className).not.toContain(
+			"[&>div]:bg-sidebar-accent",
+		);
 	});
 
-	it("shows the ten newest rooms across agents in Recent", () => {
-		const sessions = Array.from({ length: 12 }, (_, index) =>
-			room(index + 1, index % 2 ? writingAgent.id : researchAgent.id),
-		);
+	it("shows 20 unassigned rooms at a time in Recent", async () => {
+		const user = userEvent.setup();
+		const sessions = [
+			room(0, researchAgent.id, { title: "Agent room" }),
+			...Array.from({ length: 45 }, (_, index) => room(index + 1, "")),
+		];
 		renderSidebar({ sessions });
 
 		const recent = screen.getByRole("list", { name: "Recent rooms" });
-		const recentLinks = within(recent).getAllByRole("link");
-		expect(recentLinks).toHaveLength(10);
-		expect(recentLinks[0]).toHaveTextContent("Room 1");
+		const recentLinks = () => within(recent).getAllByRole("link");
+		expect(recentLinks()).toHaveLength(20);
+		expect(recentLinks()[0]).toHaveAttribute("href", "/room/room-1");
+		expect(recentLinks()[0]).toHaveTextContent("Room 1");
+		expect(recent).not.toHaveTextContent("Agent room");
 		expect(recent).not.toHaveTextContent("Research agent");
 		expect(recent).not.toHaveTextContent("Writing agent");
 		expect(recent).not.toHaveTextContent("Latest room preview");
 		expect(recent).not.toHaveTextContent("Ready");
-		expect(
-			within(recent).queryByRole("link", { name: /Room 11/ }),
-		).toBeNull();
+		expect(within(recent).queryByText("Room 21")).toBeNull();
+
+		await user.click(
+			screen.getByRole("button", { name: "Load more rooms" }),
+		);
+		expect(recentLinks()).toHaveLength(40);
+		expect(within(recent).getByText("Room 40")).toBeVisible();
+		expect(within(recent).queryByText("Room 41")).toBeNull();
+
+		await user.click(
+			screen.getByRole("button", { name: "Load more rooms" }),
+		);
+		expect(recentLinks()).toHaveLength(45);
+		expect(within(recent).getByText("Room 45")).toBeVisible();
+
+		await user.click(
+			screen.getByRole("button", { name: "Show fewer rooms" }),
+		);
+		expect(recentLinks()).toHaveLength(20);
 	});
 
 	it("opens one centered palette with notifications, agents, and ready rooms", async () => {

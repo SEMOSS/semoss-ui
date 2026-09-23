@@ -5,8 +5,6 @@ import {
 	TooltipContent,
 	TooltipTrigger,
 } from "@semoss/ui/next";
-import { SourceLabel } from "@/components/common/source-label";
-import { StatusLabel } from "@/components/common/status-label";
 import { RuntimeAgentAvatar } from "@/features/agents/components/runtime-agent-avatar";
 import type { Agent } from "@/features/agents/types/agent";
 import type { Session } from "@/types/session";
@@ -89,16 +87,7 @@ export function RoomHeader({
 					</Tooltip>
 				)}
 			</header>
-			<div className="flex shrink-0 flex-wrap items-center justify-between gap-2 border-b bg-muted/20 px-5 py-2.5">
-				<span
-					className="flex items-center gap-2 text-xs"
-					aria-live="polite"
-				>
-					<SourceLabel origin={session.origin} />
-					<span className="text-muted-foreground">·</span>
-					<StatusLabel status={session.status} />
-				</span>
-			</div>
+			
 		</>
 	);
 }

@@ -2,8 +2,8 @@ export function agentPath(agentId?: string) {
 	return agentId ? `/agents/${encodeURIComponent(agentId)}` : "/agents";
 }
 
-export function roomPath(agentId: string, roomId: string, itemId?: string) {
-	const path = `${agentPath(agentId)}/${encodeURIComponent(roomId)}`;
+export function roomPath(roomId: string, itemId?: string) {
+	const path = `/room/${encodeURIComponent(roomId)}`;
 	return itemId ? `${path}?${new URLSearchParams({ item: itemId })}` : path;
 }
 
@@ -23,4 +23,10 @@ export function agentNewPath() {
 
 export function agentSettingsPath(agentId: string) {
 	return `${agentPath(agentId)}/settings`;
+}
+
+/** Lists all sessions, optionally filtered to one agent. */
+export function sessionsPath(agentId?: string) {
+	if (!agentId) return "/room";
+	return `/room?${new URLSearchParams({ agentId })}`;
 }

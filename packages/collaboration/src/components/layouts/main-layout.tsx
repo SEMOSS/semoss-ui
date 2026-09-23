@@ -191,7 +191,7 @@ export function MainLayout() {
 			const room = sessions.find((item) => item.id === id);
 			if (!room) return;
 			updateRoom(id, { unread: false });
-			navigate(roomPath(room.agentId, id, itemId));
+			navigate(roomPath(id, itemId));
 		},
 		[navigate, sessions, updateRoom],
 	);

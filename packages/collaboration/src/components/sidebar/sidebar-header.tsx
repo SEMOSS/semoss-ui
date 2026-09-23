@@ -1,4 +1,4 @@
-import { House, LayoutGrid, Users } from "lucide-react";
+import { House, LayoutGrid, MessagesSquare, Users } from "lucide-react";
 import { Link, useLocation } from "react-router";
 import {
 	SidebarHeader as SidebarHeaderPrimitive,
@@ -11,6 +11,8 @@ import {
 export function SidebarHeader({ condensed }: { condensed?: boolean }) {
 	const { pathname } = useLocation();
 	const overviewActive = pathname === "/";
+	const sessionsActive =
+		pathname === "/room" || pathname.startsWith("/room/");
 	const agentsActive = pathname.startsWith("/agents");
 
 	return (
@@ -49,6 +51,12 @@ export function SidebarHeader({ condensed }: { condensed?: boolean }) {
 							active: overviewActive,
 						},
 						{
+							to: "/room",
+							label: "Sessions",
+							icon: MessagesSquare,
+							active: sessionsActive,
+						},
+						{
 							to: "/agents",
 							label: "Agents",
 							icon: Users,
@@ -72,7 +80,7 @@ export function SidebarHeader({ condensed }: { condensed?: boolean }) {
 								}
 								asChild
 							>
-								<Link to={to}>
+								<Link to={to} aria-label={label}>
 									<Icon
 										className={
 											condensed ? "mx-0" : undefined

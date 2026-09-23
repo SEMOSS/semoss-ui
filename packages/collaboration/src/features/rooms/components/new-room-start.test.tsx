@@ -98,7 +98,7 @@ const routes: RouteObject[] = [
 		),
 	},
 	{
-		path: "/agents/:agentId/:roomId",
+		path: "/room/:roomId",
 		element: <div>Room opened</div>,
 	},
 ];
@@ -193,7 +193,7 @@ describe("NewRoomStart", () => {
 			"agent-1",
 			"room-1",
 		);
-		expect(router.state.location.pathname).toBe("/agents/agent-1/room-1");
+		expect(router.state.location.pathname).toBe("/room/room-1");
 		expect(router.state.historyAction).toBe("REPLACE");
 	});
 

@@ -14,6 +14,8 @@ import {
 import { useMain } from "@/app/main.context";
 import { AgentAvatar } from "@/components/common/agent-avatar";
 import { EmptyView } from "@/components/common/empty-view";
+import { PageContainer } from "@/components/common/page-container";
+import { PageHeader } from "@/components/common/page-header";
 import { ActivityList } from "@/features/activity/components/activity-list";
 import { AttentionCard } from "@/features/activity/components/attention-card";
 import type {
@@ -73,31 +75,25 @@ export const HomePage = () => {
 
 	return (
 		<div className="min-h-0 min-w-0 flex-1 overflow-y-auto bg-muted/40">
-			<main className="mx-auto max-w-7xl px-5 py-8 lg:px-8 lg:py-10">
-				<div className="flex flex-wrap items-start justify-between gap-4">
-					<div>
-						<h1 className="mt-3 flex items-center gap-2 font-semibold text-2xl leading-8">
+			<PageContainer>
+				<PageHeader
+					title={
+						<span className="flex items-center gap-2">
 							Good morning
 							<Sun
 								className="size-6 text-chart-4"
 								aria-hidden="true"
 							/>
-						</h1>
-						<p className="mt-2 text-muted-foreground text-sm">
-							Your agents have been working. Here&apos;s where you
-							come in.
-						</p>
-					</div>
-
-					<Button
-						size="sm"
-						variant="default"
-						onClick={() => newRoom()}
-					>
-						<Plus aria-hidden="true" />
-						New session
-					</Button>
-				</div>
+						</span>
+					}
+					description="Your agents have been working. Here's where you come in."
+					action={
+						<Button size="sm" onClick={() => newRoom()}>
+							<Plus aria-hidden="true" />
+							New session
+						</Button>
+					}
+				/>
 
 				<section
 					aria-label="Workspace brief"
@@ -300,7 +296,7 @@ export const HomePage = () => {
 						</div>
 					</div>
 				</section>
-			</main>
+			</PageContainer>
 		</div>
 	);
 };

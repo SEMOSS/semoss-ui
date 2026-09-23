@@ -39,7 +39,7 @@ export function SelectedAgent({ source }: { source: ShowcaseAgent }) {
 	}
 
 	return (
-		<AgentProvider value={{ agent, refresh }}>
+		<AgentProvider value={{ agent, agentId: source.id, refresh }}>
 			<Outlet />
 			{isLoading && (
 				<span className="sr-only">Refreshing {agent.name}</span>

@@ -29,12 +29,9 @@ function RoomContent() {
 
 const routes: RouteObject[] = [
 	{
-		path: "/agents/:agentId",
+		path: "/room",
 		Component: AgentRoomLayout,
-		children: [
-			{ path: "new/:draftId", Component: RoomContent },
-			{ path: ":roomId", Component: RoomContent },
-		],
+		children: [{ path: ":roomId", Component: RoomContent }],
 	},
 ];
 
@@ -51,7 +48,7 @@ describe("AgentRoomLayout", () => {
 	});
 
 	it("reopens the global desktop sidebar", () => {
-		renderRoute("/agents/agent-1/room-1");
+		renderRoute("/room/room-1");
 		fireEvent.click(screen.getByRole("button", { name: "Open rooms" }));
 
 		expect(harness.setOpen).toHaveBeenCalledWith(true);
@@ -60,7 +57,7 @@ describe("AgentRoomLayout", () => {
 
 	it("reopens the global mobile drawer", () => {
 		harness.isMobile = true;
-		renderRoute("/agents/agent-1/room-1");
+		renderRoute("/room/room-1");
 		fireEvent.click(screen.getByRole("button", { name: "Open rooms" }));
 
 		expect(harness.setOpenMobile).toHaveBeenCalledWith(true);

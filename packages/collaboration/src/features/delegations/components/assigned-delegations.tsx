@@ -49,10 +49,10 @@ export function AssignedDelegations() {
 		async (delegation: Delegation) => {
 			const roomId = delegation.roomId;
 			if (!roomId) return;
-			// Reopen under the agent it was already filed with.
+			// Reopen directly when the room is already attached to a workspace.
 			const filed = sessions.find((session) => session.id === roomId);
 			if (filed?.agentId) {
-				navigate(roomPath(filed.agentId, roomId));
+				navigate(roomPath(roomId));
 				return;
 			}
 			if (!agentId) {
@@ -63,7 +63,7 @@ export function AssignedDelegations() {
 			try {
 				await attachRoomToAgent(actions, roomId, agentId);
 				refresh(roomsKey(agentId));
-				navigate(roomPath(agentId, roomId));
+				navigate(roomPath(roomId));
 			} catch (cause) {
 				toast.error(toError(cause).message);
 			} finally {

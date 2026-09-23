@@ -5,7 +5,7 @@ import type { Session } from "@/types/session";
 import { sessionFromRoom } from "../utils/session-from-room";
 import { listRooms } from "./list-rooms";
 
-/** Load playground rooms once, then retain only rooms owned by listed agents. */
+/** Load playground rooms, retaining listed-agent rooms and unassigned rooms. */
 export function useRooms(
 	agentIds: string[],
 	versions: Record<string, number> = {},
@@ -28,12 +28,6 @@ export function useRooms(
 		const ids = agentKey ? agentKey.split(",") : [];
 		let cancelled = false;
 
-		if (ids.length === 0) {
-			setSessions([...pendingRooms.current.values()]);
-			setIsLoading(false);
-			return;
-		}
-
 		setIsLoading(true);
 		const workspaceIds = new Set(ids);
 		listRooms(actions)
@@ -42,7 +36,7 @@ export function useRooms(
 				const fetched = rooms
 					.filter(
 						(room) =>
-							room.workspaceId !== undefined &&
+							room.workspaceId === undefined ||
 							workspaceIds.has(room.workspaceId),
 					)
 					.map(sessionFromRoom);

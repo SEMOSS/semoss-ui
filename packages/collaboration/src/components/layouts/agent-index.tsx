@@ -18,7 +18,7 @@ export function AgentIndex() {
 	const latestRoom = selectMostRecentRoom(sessions, agentId);
 
 	if (latestRoom) {
-		return <Navigate replace to={roomPath(agentId, latestRoom.id)} />;
+		return <Navigate replace to={roomPath(latestRoom.id)} />;
 	}
 
 	return (
