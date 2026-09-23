@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import type React from "react";
 import { useState } from "react";
+import { useSession } from "@semoss/sdk/react";
 import {
 	Avatar,
 	AvatarFallback,
@@ -25,7 +26,7 @@ import {
 	TooltipTrigger,
 	useTheme,
 } from "@semoss/ui/next";
-import { useConfig, useSession } from "@/hooks";
+import { useSessionTheme } from "@/hooks";
 
 interface LogoutPopoverProps {
 	/** Content to popover */
@@ -37,10 +38,10 @@ interface LogoutPopoverProps {
 export const LogoutPopover: React.FC<LogoutPopoverProps> = (props) => {
 	const { children, onOpenChange } = props;
 
-	const appTheme = useConfig((state) => state.theme);
-	const version = useConfig((state) => state.config.version);
-	const user = useSession((state) => state.user);
-	const logout = useSession((state) => state.logout);
+	const appTheme = useSessionTheme((theme) => theme);
+	const version = useSession((state) => state.config.data?.version);
+	const user = useSession((state) => state.user.current);
+	const logout = useSession((state) => state.actions.logout);
 	const { theme, setTheme } = useTheme();
 	const [loggingOut, setLoggingOut] = useState(false);
 	const [open, setOpen] = useState(false);
@@ -106,16 +107,16 @@ export const LogoutPopover: React.FC<LogoutPopoverProps> = (props) => {
 				>
 					{/* User info row */}
 					<div className="flex items-center gap-3 border-border border-b px-4 py-3">
-						{user.name ? (
+						{user?.name ? (
 							<Avatar>
 								<AvatarFallback>{user.name[0]}</AvatarFallback>
 							</Avatar>
 						) : null}
 						<span className="max-w-[9rem] truncate font-medium text-foreground text-sm">
-							{user.name}
+							{user?.name}
 						</span>
 					</div>
-					{user.lastLogin && user.lastLogin !== "null" && (
+					{user?.lastLogin && (
 						<div className="flex items-center justify-center border-border border-b px-4 py-2">
 							<span className="text-muted-foreground text-xs">
 								Last login: {user.lastLogin} UTC
@@ -214,10 +215,10 @@ export const LogoutPopover: React.FC<LogoutPopoverProps> = (props) => {
 					{/* Version info row */}
 					<div className="flex flex-col items-center gap-0.5 px-4 py-3">
 						<span className="truncate text-muted-foreground text-xs">
-							{version.version}
+							{version?.version}
 						</span>
 						<span className="truncate text-muted-foreground text-xs">
-							{version.datetime}
+							{version?.datetime}
 						</span>
 					</div>
 				</PopoverContent>

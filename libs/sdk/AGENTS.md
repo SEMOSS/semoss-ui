@@ -48,7 +48,7 @@ router):
 | Folder / file | Purpose |
 |---------------|---------|
 | `api/` | API / pixel call implementations |
-| `stores/` | State (e.g. `InsightStore`, exported as `Insight`) |
+| `stores/` | Scoped state factories (for example `InsightStore` and the session/access stores) |
 | `utility/` | Utility functions |
 | `js-frameworks/react/` | React binding (published as `@semoss/sdk/react`) |
 | `constants.ts` | Shared constants |

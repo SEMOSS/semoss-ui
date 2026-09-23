@@ -3,6 +3,7 @@ import { useTranslation } from "@semoss/i18n";
 import {
 	download as downloadFile,
 	runPixel,
+	useAccess,
 	useInsight,
 	usePixel,
 } from "@semoss/sdk/react";
@@ -27,7 +28,6 @@ import {
 	getFileReadPixel,
 	getFileSavePixel,
 } from "../utility/file-panel.utility";
-import { useAccess } from "./use-access";
 
 /** The scope and file every file panel is opened with. */
 export interface FilePanelParams {

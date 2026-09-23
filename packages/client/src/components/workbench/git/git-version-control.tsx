@@ -1,7 +1,7 @@
 import type { FC } from "react";
 import { useState } from "react";
-import { FILE_PANEL_EVENTS, useAccess } from "@semoss/panels";
-import { useInsight, usePixel } from "@semoss/sdk/react";
+import { FILE_PANEL_EVENTS } from "@semoss/panels";
+import { useAccess, useInsight, usePixel } from "@semoss/sdk/react";
 import { Button, Spinner } from "@semoss/ui/next";
 import type { WorkbenchPanelProps } from "@semoss/workbench";
 import {

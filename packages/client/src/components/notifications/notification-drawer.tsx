@@ -2,6 +2,7 @@
 import type * as React from "react";
 import { useEffect, useId, useMemo, useState } from "react";
 import { runPixel } from "@semoss/sdk";
+import { useSession } from "@semoss/sdk/react";
 import {
 	Button,
 	Sheet,
@@ -12,7 +13,6 @@ import {
 	TabsTrigger,
 	toast,
 } from "@semoss/ui/next";
-import { useSession } from "@/hooks";
 import { NotificationItem } from "./notification-item";
 import type { NotificationRecord } from "./types";
 
@@ -25,7 +25,7 @@ export const NotificationDrawer: React.FC<NotificationDrawerProps> = (
 	props: NotificationDrawerProps,
 ) => {
 	const { open, onClose } = props;
-	const loggedInUser = useSession((state) => state.user.id);
+	const loggedInUser = useSession((state) => state.user.current?.id ?? "");
 	const LIMIT = 10;
 	const [offset, setOffset] = useState(0);
 	const [hasMore, setHasMore] = useState(true);

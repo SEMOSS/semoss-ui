@@ -10,6 +10,7 @@ import {
 	X,
 } from "lucide-react";
 import { useEffect, useState } from "react";
+import { useSession } from "@semoss/sdk/react";
 import { DataTypeIcon } from "@semoss/shared";
 import {
 	Button,
@@ -35,7 +36,6 @@ import {
 	TooltipProvider,
 	TooltipTrigger,
 } from "@semoss/ui/next";
-import { useSession } from "@/hooks";
 import { ColumnEditModal } from "./column-edit-modal";
 
 interface ParsedResult {
@@ -93,7 +93,7 @@ export const ExcelDataSelection = ({
 		{},
 	);
 
-	const runPixel = useSession((state) => state.runPixel);
+	const runPixel = useSession((state) => state.actions.runPixel);
 
 	const handlePreviewRange = async (
 		filePath: string,

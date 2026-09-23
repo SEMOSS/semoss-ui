@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import type { Role } from "@semoss/sdk";
+import { useSession } from "@semoss/sdk/react";
 import type { Engine } from "@semoss/shared";
 import {
 	Button,
@@ -19,7 +20,6 @@ import {
 	toast,
 } from "@semoss/ui/next";
 import { MarkdownEditor } from "@/components/common";
-import { useSession } from "@/hooks";
 import { EmptyValue, SettingsEntry } from "./engine-metadata-display";
 
 interface DescriptionForm {
@@ -55,7 +55,7 @@ export const EngineDescriptionSettings = ({
 	permission,
 	onUpdated,
 }: EngineDescriptionSettingsProps) => {
-	const runPixel = useSession((state) => state.runPixel);
+	const runPixel = useSession((state) => state.actions.runPixel);
 
 	const [isSaving, setIsSaving] = useState(false);
 	const [form, setForm] = useState<DescriptionForm>(() => toForm(engine));

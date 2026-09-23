@@ -1,5 +1,6 @@
 import { useEffect, useId, useState } from "react";
 import type { ColumnInterface } from "@semoss/sdk/react";
+import { useSession } from "@semoss/sdk/react";
 import {
 	Button,
 	Dialog,
@@ -30,7 +31,7 @@ import {
 	TableRow,
 	toast,
 } from "@semoss/ui/next";
-import { useEngine, useSession } from "@/hooks";
+import { useEngine } from "@/hooks";
 
 const NEW_DATABASE = "TABLE";
 
@@ -58,8 +59,8 @@ export const DatabaseUploadCsv = ({
 	onClose,
 }: DatabaseUploadFileProps) => {
 	const { engine } = useEngine();
-	const runPixel = useSession((state) => state.runPixel);
-	const upload = useSession((state) => state.upload);
+	const runPixel = useSession((state) => state.actions.runPixel);
+	const upload = useSession((state) => state.actions.upload);
 
 	const targetTableId = useId();
 	const appendModeId = useId();

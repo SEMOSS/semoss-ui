@@ -1,8 +1,7 @@
 import type { Role } from "@semoss/sdk";
-import { runPixel, usePixel } from "@semoss/sdk/react";
+import { runPixel, usePixel, useSession } from "@semoss/sdk/react";
 import type { Project } from "@semoss/shared";
 import { CatalogOverview } from "@/components/catalog";
-import { useConfig } from "@/hooks";
 import { normalizeTagArray } from "@/utility";
 
 interface ProjectOverviewProps {
@@ -16,7 +15,8 @@ export const ProjectOverview = ({
 	permission,
 	refresh,
 }: ProjectOverviewProps) => {
-	const projectMetaKeys = useConfig((state) => state.config.projectMetaKeys);
+	const projectMetaKeys =
+		useSession((state) => state.config.data?.projectMetaKeys) ?? [];
 
 	const getProjectMetaValues = usePixel<
 		{

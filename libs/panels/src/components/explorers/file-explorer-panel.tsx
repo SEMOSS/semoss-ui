@@ -1,6 +1,6 @@
 import { FolderTreeIcon, HammerIcon, PencilIcon } from "lucide-react";
 import { useCallback } from "react";
-import { useInsight } from "@semoss/sdk/react";
+import { useAccess, useInsight } from "@semoss/sdk/react";
 import {
 	type FileExplorerApi,
 	type FileExplorerItemActions,
@@ -26,7 +26,6 @@ import {
 	FILE_PANEL_TYPES,
 	MCP,
 } from "../../constants/file-panel.constants";
-import { useAccess } from "../../hooks/use-access";
 import { useWorkbenchFilePanels } from "../../hooks/use-workbench-file-panels";
 import {
 	type FilePanelMode,

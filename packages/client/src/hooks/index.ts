@@ -2,12 +2,11 @@ import { useAPI } from "./use-api";
 import { useAssistant } from "./use-assistant";
 import { useAssistantStore } from "./use-assistant-store";
 import { useAssistantStoreApi } from "./use-assistant-store-api";
-import { useConfig } from "./use-config";
 import { useDatabaseWorkbench } from "./use-database-workbench";
 import { useModelChat } from "./use-model-chat";
 import { usePage } from "./use-page";
 import { useProject } from "./use-project";
-import { useSession } from "./use-session";
+import { useSessionTheme } from "./use-session-theme";
 import { useTabBarScroll } from "./use-tab-bar-scroll";
 import { useAdminMode } from "./useAdminMode";
 import { useDesigner } from "./useDesigner";
@@ -29,7 +28,7 @@ export {
 	useAssistant,
 	useAssistantStore,
 	useAssistantStoreApi,
-	useConfig,
+	useSessionTheme,
 	useDatabaseWorkbench,
 	useDesigner,
 	useEngine,
@@ -37,7 +36,6 @@ export {
 	useModelChat,
 	usePage,
 	useServerPagination,
-	useSession,
 	useSettings,
 	useStepper,
 	useTabBarScroll,

@@ -5,7 +5,7 @@ import {
 	SlidersHorizontal,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { usePixel } from "@semoss/sdk/react";
+import { usePixel, useSession } from "@semoss/sdk/react";
 import type { Engine, Project } from "@semoss/shared";
 import {
 	Badge,
@@ -15,7 +15,6 @@ import {
 	CollapsibleTrigger,
 	Input,
 } from "@semoss/ui/next";
-import { useConfig } from "@/hooks";
 import {
 	formatToDataTestId,
 	getTagColorPalette,
@@ -45,10 +44,10 @@ const COLLAPSED_ITEM_LIMIT = 8;
 
 export const CatalogFilterBox = (props: CatalogFilterboxProps) => {
 	const { type, projectTypes, filters, onChange } = props;
-	const projectMetaKeys = useConfig((state) => state.config.projectMetaKeys);
-	const databaseMetaKeys = useConfig(
-		(state) => state.config.databaseMetaKeys,
-	);
+	const projectMetaKeys =
+		useSession((state) => state.config.data?.projectMetaKeys) ?? [];
+	const databaseMetaKeys =
+		useSession((state) => state.config.data?.databaseMetaKeys) ?? [];
 
 	const [filterSearch, setFilterSearch] = useState("");
 	const [showCollapsible, setShowCollapsible] = useState<

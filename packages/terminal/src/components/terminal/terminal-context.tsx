@@ -7,7 +7,8 @@ import {
 	useRef,
 	useState,
 } from "react";
-import { AccessStoreProvider, createAccessStore } from "@semoss/panels";
+import { createAccessStore } from "@semoss/sdk";
+import { AccessProvider } from "@semoss/sdk/react";
 import type {
 	AppRef,
 	ConsoleContext,
@@ -407,9 +408,7 @@ export const TerminalProvider = ({
 
 	return (
 		<TerminalContextInternal.Provider value={value}>
-			<AccessStoreProvider store={accessStore}>
-				{children}
-			</AccessStoreProvider>
+			<AccessProvider store={accessStore}>{children}</AccessProvider>
 		</TerminalContextInternal.Provider>
 	);
 };

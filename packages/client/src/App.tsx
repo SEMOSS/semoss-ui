@@ -1,10 +1,8 @@
 import { useEffect } from "react";
 import { clientResources, I18nBuilder, I18nextProvider } from "@semoss/i18n";
-import { AccessStoreProvider } from "@semoss/panels";
-import { Env } from "@semoss/sdk/react";
+import { createSessionStore, Env } from "@semoss/sdk";
+import { SessionProvider } from "@semoss/sdk/react";
 import { ThemeProvider, Toaster } from "@semoss/ui/next";
-import { ConfigStoreProvider, SessionStoreProvider } from "@/contexts";
-import { createConfigStore, createSessionStore } from "@/stores";
 import { AppWrapper } from "./app-wrapper";
 
 // use the environment variable to set the module
@@ -24,8 +22,7 @@ const i18n = i18nBuilder.i18n;
 // instead of raw keys.
 export const i18nReady = i18nBuilder.ready;
 
-const configStore = createConfigStore();
-const sessionStore = createSessionStore(configStore);
+const sessionStore = createSessionStore();
 
 export const App = () => {
 	useEffect(() => {
@@ -50,12 +47,11 @@ export const App = () => {
 			}
 		} catch (_e) {}
 
-		// initialize the platform config, then the user session
-		configStore
+		void sessionStore
 			.getState()
-			.initialize()
-			.then((loggedIn) => {
-				return sessionStore.getState().initialize(loggedIn);
+			.actions.initialize()
+			.catch((error) => {
+				console.error("Unable to initialize the session", error);
 			});
 	}, []);
 
@@ -68,22 +64,16 @@ export const App = () => {
 	}
 
 	return (
-		<ConfigStoreProvider store={configStore}>
-			<SessionStoreProvider store={sessionStore}>
-				{/* the session store carries the permission cache the file
-				    panels read, so it satisfies AccessStore directly */}
-				<AccessStoreProvider store={sessionStore}>
-					<I18nextProvider i18n={i18n}>
-						<ThemeProvider
-							defaultTheme="light"
-							storageKey="smss-ui-theme-client"
-						>
-							<AppWrapper />
-							<Toaster />
-						</ThemeProvider>
-					</I18nextProvider>
-				</AccessStoreProvider>
-			</SessionStoreProvider>
-		</ConfigStoreProvider>
+		<SessionProvider store={sessionStore}>
+			<I18nextProvider i18n={i18n}>
+				<ThemeProvider
+					defaultTheme="light"
+					storageKey="smss-ui-theme-client"
+				>
+					<AppWrapper />
+					<Toaster />
+				</ThemeProvider>
+			</I18nextProvider>
+		</SessionProvider>
 	);
 };

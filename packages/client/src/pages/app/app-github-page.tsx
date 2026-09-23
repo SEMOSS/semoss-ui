@@ -14,6 +14,7 @@ import {
 import { useCallback, useEffect, useState } from "react";
 import { useLocation } from "react-router";
 import { useTranslation } from "@semoss/i18n";
+import { useSession } from "@semoss/sdk/react";
 import {
 	Badge,
 	Button,
@@ -41,7 +42,7 @@ import {
 	selectRepo,
 	setProjectBranch,
 } from "@/api/github";
-import { useProject, useSession } from "@/hooks";
+import { useProject } from "@/hooks";
 import { GithubBranchSelect } from "./app-detail-tabs/github-branch-select";
 import { GithubInstallationPicker } from "./app-detail-tabs/github-installation-picker";
 import { GithubRepoPicker } from "./app-detail-tabs/github-repo-picker";
@@ -62,7 +63,7 @@ export const AppGithubPage = () => {
 	const { t } = useTranslation("githubApp");
 	const { project } = useProject();
 	const appId = project.project_id;
-	const runPixel = useSession((state) => state.runPixel);
+	const runPixel = useSession((state) => state.actions.runPixel);
 	const location = useLocation();
 
 	// Seed from router state (set when the select-repo page links a repo and

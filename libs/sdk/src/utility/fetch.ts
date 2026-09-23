@@ -1,5 +1,5 @@
 import { Env } from "../env";
-import { UnauthorizedError } from "./error";
+import { HttpError, UnauthorizedError } from "./error";
 
 export const CSRF = {
 	isEnabled: false,
@@ -200,13 +200,14 @@ export const get = async <O>(path: string, options: RequestInit = {}) => {
 	}
 
 	if (!response.ok) {
-		const errorData = await response.json();
+		const errorData = (await response.json()) as Record<string, unknown>;
 		const errorMessage =
-			errorData.message ||
-			errorData.error ||
-			errorData.errorMessage ||
+			(typeof errorData.message === "string" && errorData.message) ||
+			(typeof errorData.error === "string" && errorData.error) ||
+			(typeof errorData.errorMessage === "string" &&
+				errorData.errorMessage) ||
 			`Request failed with status ${response.status}`;
-		throw new Error(errorMessage);
+		throw new HttpError(errorMessage, response.status, errorData);
 	}
 
 	// get the data
@@ -280,18 +281,19 @@ export const post = async <O>(
 	}
 
 	if (!response.ok) {
-		let errorData: Record<string, string> = {};
+		let errorData: Record<string, unknown> = {};
 		try {
 			errorData = await response.json();
 		} catch {
 			errorData = {};
 		}
 		const errorMessage =
-			errorData.message ||
-			errorData.error ||
-			errorData.errorMessage ||
+			(typeof errorData.message === "string" && errorData.message) ||
+			(typeof errorData.error === "string" && errorData.error) ||
+			(typeof errorData.errorMessage === "string" &&
+				errorData.errorMessage) ||
 			`Request failed with status ${response.status}`;
-		throw new Error(errorMessage);
+		throw new HttpError(errorMessage, response.status, errorData);
 	}
 
 	// get the data

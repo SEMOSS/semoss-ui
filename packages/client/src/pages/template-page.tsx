@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
-import { useIteratorPixel } from "@semoss/sdk/react";
+import { useIteratorPixel, useSession } from "@semoss/sdk/react";
 import type { Project } from "@semoss/shared";
 import {
 	Muted,
@@ -19,7 +19,6 @@ import { CloneProjectDialog } from "@/components/project";
 import { NavbarHeader, NavbarLeft } from "@/components/shared";
 import { TemplateCard } from "@/components/templates";
 import { TYPE_TO_ROUTE } from "@/constants";
-import { useConfig } from "@/hooks";
 
 /**
  * Template Catalog Landing Page
@@ -27,7 +26,8 @@ import { useConfig } from "@/hooks";
  */
 export const TemplatePage: React.FC = (): React.JSX.Element => {
 	const navigate = useNavigate();
-	const projectMetaKeys = useConfig((state) => state.config.projectMetaKeys);
+	const projectMetaKeys =
+		useSession((state) => state.config.data?.projectMetaKeys) ?? [];
 
 	// get metakeys of the ones we want
 	const metaKeys = projectMetaKeys

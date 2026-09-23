@@ -1,9 +1,9 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
+import { createAccessStore } from "@semoss/sdk";
+import { AccessProvider } from "@semoss/sdk/react";
 import type { FileExplorerApi, FileMode } from "@semoss/shared";
 import { createWorkbenchStore, WorkbenchProvider } from "@semoss/workbench";
-import { AccessStoreProvider } from "../../contexts/access.context";
-import { createAccessStore } from "../../stores/access.store";
 import { FileExplorerControl } from "./file-explorer-control";
 
 /** The one panel id every case's dock holds. */
@@ -31,12 +31,20 @@ const renderControl = (
 	if (permission && explorer.mode.type === "APP") {
 		store
 			.getState()
-			.syncPermission("PROJECT", explorer.mode.app, permission);
+			.access.actions.primePermission(
+				"PROJECT",
+				explorer.mode.app,
+				permission,
+			);
 	}
 	if (permission && explorer.mode.type === "STORAGE") {
 		store
 			.getState()
-			.syncPermission("ENGINE", explorer.mode.storage, permission);
+			.access.actions.primePermission(
+				"ENGINE",
+				explorer.mode.storage,
+				permission,
+			);
 	}
 
 	// the control reads its panel out of the dock now, so it needs one: a
@@ -59,9 +67,9 @@ const renderControl = (
 
 	render(
 		<WorkbenchProvider store={workbench}>
-			<AccessStoreProvider store={store}>
+			<AccessProvider store={store}>
 				<FileExplorerControl id={PANEL_ID} />
-			</AccessStoreProvider>
+			</AccessProvider>
 		</WorkbenchProvider>,
 	);
 };

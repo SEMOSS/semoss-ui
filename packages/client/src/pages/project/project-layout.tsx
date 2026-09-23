@@ -1,11 +1,11 @@
 import { useCallback, useMemo } from "react";
 import { Outlet, useParams } from "react-router";
-import { usePixel } from "@semoss/sdk/react";
+import { usePixel, useSession } from "@semoss/sdk/react";
 import type { Project, ProjectDependency } from "@semoss/shared";
 import { Spinner } from "@semoss/ui/next";
 import { ResourceNotFound } from "@/components/common/resource-not-found";
 import { ProjectContext, type ProjectContextType } from "@/contexts";
-import { useAPI, useConfig } from "@/hooks";
+import { useAPI } from "@/hooks";
 
 const CATALOG: Record<Project["project_type"], ProjectContextType["catalog"]> =
 	{
@@ -24,7 +24,8 @@ const CATALOG: Record<Project["project_type"], ProjectContextType["catalog"]> =
 export const ProjectLayout = () => {
 	const { appId } = useParams();
 
-	const projectMetaKeys = useConfig((state) => state.config.projectMetaKeys);
+	const projectMetaKeys =
+		useSession((state) => state.config.data?.projectMetaKeys) ?? [];
 
 	// get a user's permission
 	const getUserProjectPermission = useAPI(

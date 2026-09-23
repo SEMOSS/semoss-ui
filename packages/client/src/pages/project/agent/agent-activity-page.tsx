@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "react-router";
+import { useSession } from "@semoss/sdk/react";
 import {
 	Badge,
 	Button,
@@ -17,7 +18,7 @@ import {
 	toast,
 } from "@semoss/ui/next";
 import { formatDateToRelative } from "@semoss/utility";
-import { useProject, useSession } from "@/hooks";
+import { useProject } from "@/hooks";
 import type {
 	AgentActivityLogResponse,
 	AgentActivityRun,
@@ -104,7 +105,7 @@ const summarizeRoom = (
  */
 export const AgentActivityPage = () => {
 	const { project } = useProject();
-	const runPixel = useSession((state) => state.runPixel);
+	const runPixel = useSession((state) => state.actions.runPixel);
 	const [searchParams] = useSearchParams();
 	const targetRoomId = searchParams.get("roomId")?.trim() || null;
 	const targetRunId = searchParams.get("runId")?.trim() || null;

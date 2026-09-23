@@ -1,7 +1,9 @@
 // biome-ignore-all lint/correctness/useUniqueElementIds: shared navbar slot IDs
+
 import { Bell } from "lucide-react";
 import { lazy, Suspense, useEffect, useState } from "react";
 import { runPixel } from "@semoss/sdk";
+import { useSession } from "@semoss/sdk/react";
 import {
 	Badge,
 	Button,
@@ -9,7 +11,7 @@ import {
 	TooltipContent,
 	TooltipTrigger,
 } from "@semoss/ui/next";
-import { useConfig, usePage } from "@/hooks";
+import { usePage } from "@/hooks";
 import { NotificationDrawer } from "../notifications/notification-drawer";
 
 const PlatformSearch = lazy(() =>
@@ -23,9 +25,8 @@ export const Navbar: React.FC = () => {
 	const setNavbarElement = usePage((state) => state.setNavbarElement);
 	const [drawerOpen, setDrawerOpen] = useState<boolean>(false);
 	const [hasUnread, setHasUnread] = useState<number>(0);
-	const notificationsEnabled = useConfig(
-		(state) => state.config.notificationEnabled,
-	);
+	const notificationsEnabled =
+		useSession((state) => state.config.data?.notificationEnabled) ?? false;
 
 	useEffect(() => {
 		if (!notificationsEnabled) {

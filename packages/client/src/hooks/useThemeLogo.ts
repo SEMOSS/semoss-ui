@@ -1,9 +1,9 @@
 import { useTheme } from "@semoss/ui/next";
 import { THEME } from "@/constants";
-import { useConfig } from "./use-config";
+import { useSessionTheme } from "./use-session-theme";
 
 export const useThemeLogo = () => {
-	const theme = useConfig((state) => state.theme);
+	const theme = useSessionTheme((theme) => theme);
 	const { resolvedTheme } = useTheme();
 
 	const hasDefaultLogo = theme.logo === THEME.logo;

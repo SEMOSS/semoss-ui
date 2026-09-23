@@ -9,7 +9,7 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from "@semoss/ui/next";
-import { useConfig } from "@/hooks";
+import { useSessionTheme } from "@/hooks";
 import { PrivacyPreferenceCenterModal } from "./privacy-preference-center-modal";
 
 interface CookieWrapperProps {
@@ -21,8 +21,8 @@ const cookieName = `smss-optional-cookie`;
 
 export const CookieWrapper = observer((props: CookieWrapperProps) => {
 	const { children } = props;
-	const cookiePolicyBannerReact = useConfig(
-		(state) => state.theme.cookiePolicyBannerReact,
+	const cookiePolicyBannerReact = useSessionTheme(
+		(theme) => theme.cookiePolicyBannerReact,
 	);
 
 	const [visible, setVisible] = useState(false);

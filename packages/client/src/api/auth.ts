@@ -1,31 +1,5 @@
 import { CSRF, Env, get, post } from "@semoss/sdk/react";
 
-export const config = async () => {
-	// get the response
-	const response = await get<{
-		logins: {
-			[key: string]: unknown;
-		};
-		/**
-		 * List of available providers (logins) that are available
-		 */
-		availableProviders: {
-			provider: string;
-			name: string;
-			isOauth: boolean;
-		}[];
-		[key: string]: unknown;
-	}>(`${Env.MODULE}/api/config`).catch((error) => {
-		throw Error(error);
-	});
-	// there was an error, no response
-	if (!response) {
-		throw Error("No Config Response");
-	}
-	// save the config data
-	return response.data;
-};
-
 export const fileDownload = async (insightID: string, fileKey: string) => {
 	return new Promise<void>((resolve) => {
 		// create the download url
@@ -44,94 +18,6 @@ export const fileDownload = async (insightID: string, fileKey: string) => {
 		// resolve the promise
 		resolve();
 	});
-};
-
-export const login = async (
-	username: string,
-	password: string,
-): Promise<boolean> => {
-	//not encoding these, because the post function has encode URI built in.
-	const postData = {
-		username: username,
-		password: password,
-		disableRedirect: true,
-	};
-
-	await post(`${Env.MODULE}/api/auth/login`, postData).catch((error) => {
-		throw Error(error);
-	});
-	return true;
-};
-
-export const loginOTP = async (
-	username: string,
-	password: string,
-): Promise<"success" | "change-password"> => {
-	const postData = {
-		username: username,
-		pin: password,
-		disableRedirect: true,
-	};
-
-	// track the status
-	let status: "success" | "change-password" = "success";
-	await post(`${Env.MODULE}/api/auth/loginLinOTP`, postData, {
-		headers: {
-			"content-type": "application/x-www-form-urlencoded",
-		},
-	}).catch((error) => {
-		if (
-			error.response &&
-			error.response.status === 401 &&
-			error.response.data &&
-			error.response.data.requirePwdChange
-		) {
-			status = "change-password";
-			return;
-		}
-		// throw the message
-		throw Error(error);
-	});
-	return status;
-};
-
-export const confirmOTP = async (otp: string): Promise<boolean> => {
-	const postData = {
-		otp: otp,
-		disableRedirect: true,
-	};
-	await post(`${Env.MODULE}/api/auth/loginLinOTP`, postData, {
-		headers: {
-			"content-type": "application/x-www-form-urlencoded",
-		},
-	}).catch((error) => {
-		// throw the message
-		throw Error(error.response.data.errorMessage);
-	});
-	return true;
-};
-
-export const loginLDAP = async (
-	username: string,
-	password: string,
-): Promise<boolean> => {
-	// loginLDAP reads username / password, pin is only for linotp
-	const postData = {
-		username: username,
-		password: password,
-		disableRedirect: true,
-	};
-
-	// an expired password comes back as a 401 with the error message,
-	// let it bubble up to the caller
-	await post(`${Env.MODULE}/api/auth/loginLDAP`, postData, {}).catch(
-		(error) => {
-			throw new Error(
-				error instanceof Error ? error.message : `${error}`,
-			);
-		},
-	);
-	return true;
 };
 
 export const setupResetPassword = async (
@@ -202,95 +88,6 @@ const ensureCsrfToken = async () => {
 	}
 };
 
-export const registerUser = async (
-	name: string,
-	username: string,
-	email: string,
-	password: string,
-	phone: string,
-	phoneextension: string,
-	countrycode: string,
-) => {
-	const create: Record<string, string> = {
-		name: name,
-		username: username,
-		email: email,
-		password: password,
-		phone: phone,
-		phoneextension: phoneextension,
-		countrycode: countrycode,
-	};
-	return await post(`${Env.MODULE}/api/auth/createUser`, create).catch(
-		(error) => {
-			if (
-				error.response &&
-				error.response.status === 401 &&
-				error.response.data &&
-				error.response.data.requirePwdChange
-			) {
-				return;
-			}
-			// throw the message
-			throw Error(error);
-		},
-	);
-};
-
-export const logout = async (): Promise<boolean> => {
-	await get(`${Env.MODULE}/api/auth/logout/all`).catch((err) => {
-		throw Error(err);
-	});
-	return true;
-};
-
-export const oauth = async (provider: string): Promise<boolean> => {
-	// check if the user is logged in
-	const response = await get<{
-		name: string;
-	}>(`${Env.MODULE}/api/auth/userinfo/${provider}`).catch((error) => {
-		throw Error(error);
-	});
-	//check if they are already logged in
-	if (response.data?.name) {
-		return true;
-	}
-	return new Promise((resolve) => {
-		const url = `${Env.MODULE}/api/auth/login/${provider}`;
-		const popUpWindow = window.top.open(
-			url,
-			"_blank",
-			`height=${600},width=${400},top=${300},left=${600}`,
-		);
-		// setup an interval to see if the popup window is closed or successful
-		const interval = setInterval(async () => {
-			try {
-				if (
-					!popUpWindow ||
-					popUpWindow.closed ||
-					popUpWindow.closed === undefined
-				) {
-					clearInterval(interval);
-				} else if (
-					popUpWindow.document.location.href.indexOf(
-						`${window.location.host}`,
-					) > -1
-				) {
-					clearInterval(interval);
-					// close it
-					popUpWindow.close();
-					// try to get the info again
-					const response = await oauth(provider);
-					// close it
-					resolve(response);
-				}
-			} catch (_err: unknown) {
-				// do nothing
-				// this is to work around the blocked frame error that comes up
-			}
-		}, 1000);
-	});
-};
-
 export const getLoginProperties = async () => {
 	const url = `${Env.MODULE}/api/auth/loginProperties`;
 	const response = await get(url).catch((error) => {
@@ -311,20 +108,6 @@ export const modifyLoginProperties = async (provider, properties) => {
 	}).catch((error) => {
 		throw Error(error);
 	});
-	return response.data;
-};
-
-export const isAdminUser = async (): Promise<boolean> => {
-	const response = await get<boolean>(
-		`${Env.MODULE}/api/auth/admin/user/isAdminUser`,
-	).catch((error) => {
-		throw Error(error);
-	});
-
-	if (!response) {
-		throw Error("No Response to isAdminUser");
-	}
-
 	return response.data;
 };
 
@@ -1014,24 +797,6 @@ export const deleteUserAccessKeys = async (accessKey: string) => {
 		throw Error(error);
 	});
 	return response.data;
-};
-
-export const setUserDefaultModel = async (
-	metaKey: string,
-	metaValue: string,
-) => {
-	const url = `${Env.MODULE}/api/auth/user/setUserMetadata`;
-	const response = await post<boolean>(
-		url,
-		{
-			metaKey,
-			metaValue,
-		},
-		{},
-	).catch((e) => {
-		throw Error(e);
-	});
-	return response;
 };
 
 const processPostData = (data: unknown) => {

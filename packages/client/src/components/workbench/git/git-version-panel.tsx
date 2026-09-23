@@ -1,7 +1,6 @@
 import { GitBranchIcon } from "lucide-react";
 import { useEffect } from "react";
-import { useAccess } from "@semoss/panels";
-import { useIteratorPixel } from "@semoss/sdk/react";
+import { useAccess, useIteratorPixel } from "@semoss/sdk/react";
 import type {
 	WorkbenchPanelConfig,
 	WorkbenchPanelProps,

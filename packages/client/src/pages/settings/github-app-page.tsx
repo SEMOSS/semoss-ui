@@ -14,7 +14,7 @@ import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { Navigate, useSearchParams } from "react-router";
 import { useTranslation } from "@semoss/i18n";
-import { Env } from "@semoss/sdk/react";
+import { Env, useSession } from "@semoss/sdk/react";
 import {
 	Badge,
 	Button,
@@ -38,7 +38,6 @@ import {
 	getAllProjectLinks,
 	repoHtmlUrl,
 } from "@/api/github";
-import { useSession } from "@/hooks";
 import { useNavigate } from "@/hooks/useNavigate";
 
 interface GitHubManifestApp {
@@ -72,7 +71,7 @@ const CREATE_FORM_DEFAULTS: CreateGitHubAppFormValues = {
 };
 
 export const GitHubAppPage = () => {
-	const isAdmin = useSession((state) => state.user.admin);
+	const isAdmin = useSession((state) => state.user.current?.admin ?? false);
 	const navigate = useNavigate();
 	const [searchParams, setSearchParams] = useSearchParams();
 	const { t } = useTranslation("githubApp");

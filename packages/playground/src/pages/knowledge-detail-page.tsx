@@ -1,6 +1,3 @@
-/* eslint-disable */
-/** biome-ignore-all lint/nursery/useSortedClasses: using existing Tailwind order in this file */
-
 import {
 	ArrowLeftIcon,
 	ChevronDownIcon,
@@ -419,12 +416,12 @@ export const KnowledgeDetailPage = observer(() => {
 					</Button>
 
 					<div className="flex-1 space-y-1">
-						<h1 className="text-2xl font-semibold leading-none">
+						<h1 className="font-semibold text-2xl leading-none">
 							{knowledge?.engine_display_name ||
 								knowledge?.engine_name ||
 								t("knowledge:detail.knowledge")}
 						</h1>
-						<p className="text-sm text-muted-foreground">
+						<p className="text-muted-foreground text-sm">
 							{knowledge?.description ||
 								t("knowledge:messages.noDescription")}
 						</p>
@@ -510,26 +507,26 @@ export const KnowledgeDetailPage = observer(() => {
 							</CardHeader>
 							<CardContent className="px-0 pb-0">
 								{getDocuments.status === "LOADING" ? (
-									<div className="px-6 pb-6 text-sm text-muted-foreground">
+									<div className="px-6 pb-6 text-muted-foreground text-sm">
 										{t(
 											"knowledge:messages.loadingDocuments",
 										)}
 									</div>
 								) : getDocuments.status === "ERROR" ? (
-									<div className="px-6 pb-6 text-sm text-destructive">
+									<div className="px-6 pb-6 text-destructive text-sm">
 										{t(
 											"knowledge:detail.failedToLoadDocuments",
 										)}
 									</div>
 								) : getDocuments.data.length === 0 ? (
-									<div className="px-6 pb-6 text-sm text-muted-foreground">
+									<div className="px-6 pb-6 text-muted-foreground text-sm">
 										{t("knowledge:messages.noDocuments")}
 									</div>
 								) : (
 									<ScrollArea className="h-[50vh]">
 										<table className="w-full table-fixed text-sm">
 											<thead>
-												<tr className="border-b text-xs text-muted-foreground">
+												<tr className="border-b text-muted-foreground text-xs">
 													<th className="px-6 pb-2 text-start font-medium">
 														<button
 															type="button"
@@ -554,7 +551,7 @@ export const KnowledgeDetailPage = observer(() => {
 															)}
 														</button>
 													</th>
-													<th className="px-4 pb-2 text-start font-medium w-44">
+													<th className="w-44 px-4 pb-2 text-start font-medium">
 														<button
 															type="button"
 															className="flex items-center gap-1 hover:text-foreground"
@@ -578,10 +575,10 @@ export const KnowledgeDetailPage = observer(() => {
 															)}
 														</button>
 													</th>
-													<th className="px-6 pb-2 text-end font-medium w-28">
+													<th className="w-28 px-6 pb-2 text-end font-medium">
 														<button
 															type="button"
-															className="flex items-center gap-1 hover:text-foreground justify-end"
+															className="flex items-center justify-end gap-1 hover:text-foreground"
 															onClick={() =>
 																toggleSort(
 																	"size",
@@ -609,7 +606,7 @@ export const KnowledgeDetailPage = observer(() => {
 												{sortedDocuments.map((d) => (
 													<tr
 														key={`${d.fileName}-${d.lastModified}`}
-														className="border-b last:border-0 transition hover:bg-muted/40"
+														className="border-b transition last:border-0 hover:bg-muted/40"
 													>
 														<td className="px-6 py-2">
 															<div className="flex min-w-0 items-center gap-2">
@@ -618,7 +615,7 @@ export const KnowledgeDetailPage = observer(() => {
 																)}
 																<button
 																	type="button"
-																	className="break-all text-start text-sm font-medium hover:underline cursor-pointer"
+																	className="cursor-pointer break-all text-start font-medium text-sm hover:underline"
 																	onClick={() =>
 																		setPreviewDoc(
 																			d,
@@ -629,17 +626,17 @@ export const KnowledgeDetailPage = observer(() => {
 																</button>
 															</div>
 														</td>
-														<td className="px-4 py-2 text-xs text-muted-foreground tabular-nums w-44">
+														<td className="w-44 px-4 py-2 text-muted-foreground text-xs tabular-nums">
 															{formatDateTime(
 																d.lastModified,
 															)}
 														</td>
-														<td className="px-6 py-2 text-end text-xs text-muted-foreground tabular-nums w-28">
+														<td className="w-28 px-6 py-2 text-end text-muted-foreground text-xs tabular-nums">
 															{formatFileSize(
 																d.fileSize,
 															)}
 														</td>
-														<td className="px-4 py-1 w-20">
+														<td className="w-20 px-4 py-1">
 															<div className="flex items-center justify-end gap-0.5">
 																<Button
 																	variant="ghost"
@@ -684,17 +681,17 @@ export const KnowledgeDetailPage = observer(() => {
 										<Spinner />
 									</div>
 								) : members.length === 0 ? (
-									<div className="px-6 py-4 text-sm text-muted-foreground">
+									<div className="px-6 py-4 text-muted-foreground text-sm">
 										No users found.
 									</div>
 								) : (
 									<table className="w-full text-sm">
 										<thead>
-											<tr className="border-b text-xs text-muted-foreground">
+											<tr className="border-b text-muted-foreground text-xs">
 												<th className="px-6 pb-2 text-start font-medium">
 													User
 												</th>
-												<th className="px-4 pb-2 text-start font-medium w-36">
+												<th className="w-36 px-4 pb-2 text-start font-medium">
 													Role
 												</th>
 												<th className="w-16 pb-2" />
@@ -704,17 +701,17 @@ export const KnowledgeDetailPage = observer(() => {
 											{members.map((m) => (
 												<tr
 													key={m.id}
-													className="border-b last:border-0 transition hover:bg-muted/40"
+													className="border-b transition last:border-0 hover:bg-muted/40"
 												>
 													<td className="px-6 py-2">
 														<p className="font-medium">
 															{m.name}
 														</p>
-														<p className="text-xs text-muted-foreground">
+														<p className="text-muted-foreground text-xs">
 															{m.email}
 														</p>
 													</td>
-													<td className="px-4 py-2 w-36">
+													<td className="w-36 px-4 py-2">
 														<Select
 															value={m.permission}
 															onValueChange={(
@@ -742,11 +739,11 @@ export const KnowledgeDetailPage = observer(() => {
 															</SelectContent>
 														</Select>
 													</td>
-													<td className="px-2 py-1 w-16 text-end">
+													<td className="w-16 px-2 py-1 text-end">
 														<Button
 															variant="ghost"
 															size="sm"
-															className="text-xs text-destructive hover:text-destructive"
+															className="text-destructive text-xs hover:text-destructive"
 															onClick={() =>
 																setRemoveTarget(
 																	m,
@@ -772,7 +769,7 @@ export const KnowledgeDetailPage = observer(() => {
 					}}
 				>
 					<DialogContent
-						className="flex flex-col gap-4 overflow-hidden p-0 max-h-[90vh]"
+						className="flex max-h-[90vh] flex-col gap-4 overflow-hidden p-0"
 						style={{ width: "80vw", maxWidth: "80vw" }}
 					>
 						<DialogHeader className="px-6 pt-6 pb-0">
@@ -816,7 +813,7 @@ export const KnowledgeDetailPage = observer(() => {
 									className="overflow-y-auto"
 									style={{ maxHeight: "70vh" }}
 								>
-									<pre className="p-6 text-xs whitespace-pre-wrap">
+									<pre className="whitespace-pre-wrap p-6 text-xs">
 										{previewText}
 									</pre>
 								</div>
@@ -828,7 +825,7 @@ export const KnowledgeDetailPage = observer(() => {
 								previewDoc &&
 								!isPreviewable(previewDoc.fileName))) && (
 							<div className="flex items-center justify-center py-16">
-								<p className="text-sm text-muted-foreground">
+								<p className="text-muted-foreground text-sm">
 									{previewError
 										? "Failed to load preview."
 										: "Preview not available for this file type."}
@@ -860,7 +857,7 @@ export const KnowledgeDetailPage = observer(() => {
 										<button
 											key={u.id}
 											type="button"
-											className={`w-full px-3 py-2 text-start text-sm hover:bg-muted transition-colors${selectedUser?.id === u.id ? " bg-muted font-medium" : ""}`}
+											className={`w-full px-3 py-2 text-start text-sm hover:bg-muted transition-colors${selectedUser?.id === u.id ? "bg-muted font-medium" : ""}`}
 											onClick={() => setSelectedUser(u)}
 										>
 											<span className="font-medium">
@@ -876,7 +873,7 @@ export const KnowledgeDetailPage = observer(() => {
 							{userSearch &&
 								!searchLoading &&
 								searchResults.length === 0 && (
-									<p className="text-sm text-muted-foreground text-center py-2">
+									<p className="py-2 text-center text-muted-foreground text-sm">
 										No users found.
 									</p>
 								)}

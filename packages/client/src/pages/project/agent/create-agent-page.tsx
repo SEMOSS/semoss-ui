@@ -2,6 +2,7 @@ import { ChevronRight, UploadIcon } from "lucide-react";
 import { useId, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { Link } from "react-router";
+import { useSession } from "@semoss/sdk/react";
 import { MCPSelector, PromptSelector, SkillSelector } from "@semoss/shared";
 import {
 	Breadcrumb,
@@ -35,13 +36,12 @@ import {
 } from "@/components/agent-workspace/agent-form";
 import { UploadProjectDialog } from "@/components/project";
 import { NavbarHeader, NavbarLeft } from "@/components/shared";
-import { useSession } from "@/hooks";
 import { useNavigate } from "@/hooks/useNavigate";
 import { mcpToPlatformUrl, promptToPlatformUrl } from "@/utility";
 
 export const CreateAgentPage = () => {
 	const navigate = useNavigate();
-	const runPixel = useSession((state) => state.runPixel);
+	const runPixel = useSession((state) => state.actions.runPixel);
 	const [isUploadOpen, setIsUploadOpen] = useState(false);
 	const [isLoading, setIsLoading] = useState(false);
 	const nameId = useId();

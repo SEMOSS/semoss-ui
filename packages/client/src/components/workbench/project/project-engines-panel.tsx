@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import type { ComponentType } from "react";
 import { useEffect, useMemo, useState } from "react";
+import { useSession } from "@semoss/sdk/react";
 import type { Engine, ProjectDependency } from "@semoss/shared";
 import { EngineSubtypeIcon } from "@semoss/shared";
 import {
@@ -32,7 +33,7 @@ import {
 	toast,
 } from "@semoss/ui/next";
 import type { WorkbenchPanelConfig } from "@semoss/workbench";
-import { useProject, useSession } from "@/hooks";
+import { useProject } from "@/hooks";
 import { isProjectType } from "@/utility/catalog";
 
 /** Display metadata for one engine category card. */
@@ -143,7 +144,7 @@ const ManageEnginesDialog = ({
 	dependencies,
 	onClose,
 }: ManageEnginesDialogProps) => {
-	const runPixel = useSession((state) => state.runPixel);
+	const runPixel = useSession((state) => state.actions.runPixel);
 	const meta = CATEGORY_META[category];
 
 	const [search, setSearch] = useState("");
@@ -470,7 +471,7 @@ const EngineCategoryCard = ({
  */
 const ProjectEnginesPanel = () => {
 	const { project, dependencies, permission, refresh } = useProject();
-	const runPixel = useSession((state) => state.runPixel);
+	const runPixel = useSession((state) => state.actions.runPixel);
 	const [manageCategory, setManageCategory] = useState<string | null>(null);
 	const [isRemoving, setIsRemoving] = useState(false);
 	const canEdit = permission === "OWNER" || permission === "EDIT";

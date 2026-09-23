@@ -2,6 +2,7 @@ import { AlertTriangle, Info, Trash2 } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useCallback, useEffect, useState } from "react";
 import { ActionMessages, INPUT_BLOCK_TYPES, useBlocks } from "@semoss/renderer";
+import { useSession } from "@semoss/sdk/react";
 import {
 	Tooltip,
 	TooltipContent,
@@ -9,7 +10,7 @@ import {
 	TooltipTrigger,
 	toast,
 } from "@semoss/ui/next";
-import { useDesigner, useSession } from "@/hooks";
+import { useDesigner } from "@/hooks";
 import type {
 	BlockLocalStorageData,
 	DesignerMenuItem,
@@ -37,7 +38,7 @@ export const AddBlocksMenuCard = observer((props: AddBlocksMenuItemProps) => {
 	const { item, isCommunity, handleOnTrashClick } = props;
 	const { state } = useBlocks();
 	const { designer } = useDesigner();
-	const isAdmin = useSession((state) => state.user.admin);
+	const isAdmin = useSession((state) => state.user.current?.admin ?? false);
 
 	const [_imageSrc, _setImageSrc] = useState(null);
 

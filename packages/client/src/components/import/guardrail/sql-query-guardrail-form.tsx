@@ -1,3 +1,4 @@
+import { useSession } from "@semoss/sdk/react";
 import {
 	FieldLegend,
 	FieldSet,
@@ -17,7 +18,6 @@ import {
 	zodResolver,
 } from "@semoss/ui/next";
 import { createGuardrailEngine } from "@/api";
-import { useSession } from "@/hooks";
 import { EngineFormHeader } from "../shared/engine-form-header";
 
 const REQUIREMENT_VALUES = [
@@ -297,7 +297,7 @@ export const SqlQueryGuardrailForm = ({
 	icon,
 	onSubmit,
 }: SqlQueryGuardrailFormProps) => {
-	const insightID = useSession((state) => state.insightID);
+	const insightID = useSession((state) => state.insightId);
 	const form = useForm<SqlQueryGuardrailFormValues>({
 		resolver: zodResolver(sqlQueryGuardrailSchema),
 		defaultValues: SQL_QUERY_GUARDRAIL_DEFAULTS,

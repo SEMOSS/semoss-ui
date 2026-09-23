@@ -2,6 +2,7 @@ import { Eye, EyeOff, Loader2 } from "lucide-react";
 import { useEffect, useId, useMemo, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { type Location, Navigate, useLocation } from "react-router";
+import { useSession } from "@semoss/sdk/react";
 import {
 	getLoginProviderInitials,
 	getLoginProviderKey,
@@ -29,7 +30,7 @@ import {
 import { setupResetPassword } from "@/api/auth";
 import loginDarkHero from "@/assets/img/login-dark-hero.gif";
 import loginHero from "@/assets/img/login-gif.gif";
-import { useConfig, useSession, useThemeLogo } from "@/hooks";
+import { useSessionTheme, useThemeLogo } from "@/hooks";
 
 interface TypeUserLogin {
 	USERNAME: string;
@@ -65,20 +66,17 @@ const LOGIN_TYPE_LABELS: Record<LoginPasswordResetType, string> = {
 };
 
 export const LoginPage = () => {
-	const theme = useConfig((state) => state.theme);
-	const availableProviders = useConfig(
-		(state) => state.config.availableProviders,
+	const theme = useSessionTheme((theme) => theme);
+	const availableProviders =
+		useSession((state) => state.config.data?.availableProviders) ?? [];
+	const nativeRegistration =
+		useSession((state) => state.config.data?.nativeRegistration) ?? false;
+	const authentication = useSession(
+		(state) => state.lifecycle.authentication,
 	);
-	const nativeRegistration = useConfig(
-		(state) => state.config.nativeRegistration,
-	);
-	const status = useSession((state) => state.status);
-	const sessionLogin = useSession((state) => state.login);
-	const sessionLoginLDAP = useSession((state) => state.loginLDAP);
-	const sessionLoginOTP = useSession((state) => state.loginOTP);
-	const sessionConfirmOTP = useSession((state) => state.confirmOTP);
-	const sessionRegister = useSession((state) => state.register);
-	const sessionOauth = useSession((state) => state.oauth);
+	const sessionLogin = useSession((state) => state.actions.login);
+	const sessionRequestOtp = useSession((state) => state.actions.requestOtp);
+	const sessionRegister = useSession((state) => state.actions.register);
 	const { resolvedTheme } = useTheme();
 	const themeLogo = useThemeLogo();
 	const location = useLocation();
@@ -269,7 +267,11 @@ export const LoginPage = () => {
 
 		if (!showOTPCodeField) {
 			if (loginType === "native") {
-				await sessionLogin(data.USERNAME, data.PASSWORD)
+				await sessionLogin({
+					method: "native",
+					username: data.USERNAME,
+					password: data.PASSWORD,
+				})
 					.catch((err) => {
 						setError(err.message);
 					})
@@ -278,7 +280,11 @@ export const LoginPage = () => {
 					});
 			}
 			if (loginType === "ldap") {
-				await sessionLoginLDAP(data.USERNAME, data.PASSWORD)
+				await sessionLogin({
+					method: "ldap",
+					username: data.USERNAME,
+					password: data.PASSWORD,
+				})
 					.catch((err) => {
 						setError(err.message);
 					})
@@ -287,8 +293,17 @@ export const LoginPage = () => {
 					});
 			}
 			if (loginType === "linotp") {
-				await sessionLoginOTP(data.USERNAME, data.PASSWORD)
-					.then(() => {
+				await sessionRequestOtp({
+					username: data.USERNAME,
+					pin: data.PASSWORD,
+				})
+					.then((result) => {
+						if (result === "password-change-required") {
+							setError(
+								"A password change is required before login.",
+							);
+							return;
+						}
 						setShowOTPCodeField(true);
 					})
 					.catch((err) => {
@@ -300,7 +315,7 @@ export const LoginPage = () => {
 			}
 		}
 		if (showOTPCodeField) {
-			await sessionConfirmOTP(data.OTP_CONFIRM)
+			await sessionLogin({ method: "otp", otp: data.OTP_CONFIRM })
 				.catch((err) => {
 					setError(err.message);
 				})
@@ -336,24 +351,22 @@ export const LoginPage = () => {
 				return;
 			}
 
-			await sessionRegister(
-				`${data.FIRST_NAME} ${data.LAST_NAME}`,
-				data.USERNAME,
-				data.EMAIL,
-				data.PASSWORD,
-				data.PHONE,
-				data.EXTENTION,
-				data.COUNTRY_CODE,
-			)
-				.then((res) => {
-					if (res) {
-						setError("");
-						setRegister(false);
-						setSuccess(
-							"Account registration successful. Log in below.",
-						);
-						reset();
-					}
+			await sessionRegister({
+				name: `${data.FIRST_NAME} ${data.LAST_NAME}`,
+				username: data.USERNAME,
+				email: data.EMAIL,
+				password: data.PASSWORD,
+				phone: data.PHONE,
+				phoneExtension: data.EXTENTION,
+				countryCode: data.COUNTRY_CODE,
+			})
+				.then(() => {
+					setError("");
+					setRegister(false);
+					setSuccess(
+						"Account registration successful. Log in below.",
+					);
+					reset();
 				})
 				.catch((err) => {
 					setIsLoading(false);
@@ -368,7 +381,7 @@ export const LoginPage = () => {
 	const oauth = async (provider: string) => {
 		setIsLoading(true);
 
-		await sessionOauth(provider)
+		await sessionLogin({ method: "oauth", provider })
 			.then(() => {
 				setIsLoading(false);
 				toast.success("Successfully logged in");
@@ -451,7 +464,7 @@ export const LoginPage = () => {
 
 	const path = (location.state as { from: Location })?.from?.pathname || "/";
 
-	if (status === "SUCCESS") {
+	if (authentication === "authenticated") {
 		return <Navigate to={path} replace />;
 	}
 

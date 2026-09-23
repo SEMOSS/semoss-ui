@@ -114,6 +114,8 @@ const buildConfig = (overrides: Record<string, unknown> = {}) => ({
 const CONFIG = vi.hoisted(() => ({ current: null as unknown }));
 
 vi.mock("@semoss/sdk/react", () => ({
+	useSession: (selector: (state: unknown) => unknown) =>
+		selector({ actions: { runPixel: async () => ({ errors: [] }) } }),
 	usePixel: (pixel: string) => {
 		if (pixel.startsWith("GetModelGuardrailConfig")) {
 			return {
@@ -181,12 +183,6 @@ vi.mock("@semoss/sdk/react", () => ({
 		isLoading: false,
 		hasMore: false,
 		next: () => {},
-	}),
-}));
-
-vi.mock("@/hooks", () => ({
-	useSession: () => ({
-		runPixel: async () => ({ errors: [] }),
 	}),
 }));
 

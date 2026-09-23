@@ -18,6 +18,7 @@ import {
 	INPUT_BLOCK_TYPES,
 	useBlocks,
 } from "@semoss/renderer";
+import { useSession } from "@semoss/sdk/react";
 import {
 	Tooltip,
 	TooltipContent,
@@ -26,7 +27,7 @@ import {
 	toast,
 } from "@semoss/ui/next";
 import DuplicateIcon from "@/assets/img/Duplicate.svg";
-import { useDesigner, useSession } from "@/hooks";
+import { useDesigner } from "@/hooks";
 import { getBlockElement, getRelativeSize } from "@/stores";
 import { getDependencyCells } from "@/utility/dependency-scanner";
 import { DependencyPromptModal } from "../blocks-workspace";
@@ -79,7 +80,9 @@ export const DeleteDuplicateMask = observer(
 
 		const { registry, state } = useBlocks();
 		const { designer } = useDesigner();
-		const isAdmin = useSession((state) => state.user.admin);
+		const isAdmin = useSession(
+			(state) => state.user.current?.admin ?? false,
+		);
 
 		const block = state.getBlock(designer.selected);
 

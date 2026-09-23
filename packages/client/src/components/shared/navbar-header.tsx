@@ -1,8 +1,9 @@
 import { Menu } from "lucide-react";
 import type React from "react";
+import { useSession } from "@semoss/sdk/react";
 import { Button } from "@semoss/ui/next";
 import { THEME } from "@/constants";
-import { useConfig, usePage, useThemeLogo } from "@/hooks";
+import { usePage, useThemeLogo } from "@/hooks";
 
 interface NavbarHeaderProps {
 	/**
@@ -13,7 +14,7 @@ interface NavbarHeaderProps {
 export const NavbarHeader = (props: NavbarHeaderProps) => {
 	const { logo } = props;
 	const page = usePage();
-	const themeConfig = useConfig((state) => state.config.theme);
+	const themeConfig = useSession((state) => state.config.data?.theme);
 	const themeLogo = useThemeLogo();
 	// `logo` has three intentional states:
 	// - `undefined`: show default branding (theme logo + name)

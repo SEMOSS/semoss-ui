@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
+import { useSession } from "@semoss/sdk/react";
 import {
 	Alert,
 	AlertDescription,
@@ -43,7 +44,6 @@ import {
 	toast,
 } from "@semoss/ui/next";
 import { createGuardrailEngine } from "@/api";
-import { useSession } from "@/hooks";
 import { useNavigate } from "@/hooks/useNavigate";
 import { EngineFormHeader } from "../shared/engine-form-header";
 import { computeVisibility } from "../shared/import-form.utils";
@@ -100,8 +100,8 @@ export const GuardrailForm = ({
 	});
 
 	const watchedFieldRef = useRef({});
-	const runPixel = useSession((state) => state.runPixel);
-	const insightID = useSession((state) => state.insightID);
+	const runPixel = useSession((state) => state.actions.runPixel);
+	const insightID = useSession((state) => state.insightId);
 	const navigate = useNavigate();
 	const defaultFields = resolvedFields;
 	const advancedFields = advanced;

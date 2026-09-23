@@ -1,5 +1,6 @@
 import { HelpCircleIcon } from "lucide-react";
 import type { JSX } from "react";
+import { useSession } from "@semoss/sdk/react";
 import {
 	Button,
 	DropdownMenu,
@@ -7,14 +8,9 @@ import {
 	DropdownMenuItem,
 	DropdownMenuTrigger,
 } from "@semoss/ui/next";
-import { useConfig } from "@/hooks";
 
 export const Help = (): JSX.Element => {
-	const raw = useConfig(
-		(state) =>
-			(state.config.theme as { THEME_MAP?: string } | undefined)
-				?.THEME_MAP,
-	);
+	const raw = useSession((state) => state.config.data?.theme?.THEME_MAP);
 	if (!raw) return null;
 
 	let themeMap: {

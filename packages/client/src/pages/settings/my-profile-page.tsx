@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import { useEffect, useId, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
+import { useSession } from "@semoss/sdk/react";
 import { EngineSubtypeIcon } from "@semoss/shared";
 import {
 	Button,
@@ -37,11 +38,10 @@ import {
 	createUserAccessKey,
 	deleteUserAccessKeys,
 	editMemberInfo,
-	setUserDefaultModel,
 } from "@/api/auth";
 import { MicrosoftSubscriptions } from "@/components/settings";
 import { SdkBlock } from "@/components/shared/sdk-block";
-import { useAPI, useConfig, useSession, useSettings } from "@/hooks";
+import { useAPI, useSettings } from "@/hooks";
 import { formatDate, getSDKSnippet } from "@/utility";
 import { ChangePasswordModal } from "./change-password-modal";
 
@@ -68,24 +68,28 @@ interface EditUserInfoForm {
 export const MyProfilePage = () => {
 	const modelSelectId = useId();
 	const generateKeyFormId = useId();
-	const nativeRegistration = useConfig(
-		(state) => state.config.nativeRegistration,
-	);
-	const logins = useConfig((state) => state.config.logins);
-	const loginDetails = useConfig((state) => state.config.loginDetails);
+	const nativeRegistration =
+		useSession((state) => state.config.data?.nativeRegistration) ?? false;
+	const logins = useSession((state) => state.config.data?.logins) ?? {};
+	const loginDetails =
+		useSession((state) => state.config.data?.loginDetails) ?? {};
 	const defaultTextGenerationModel = useSession(
-		(state) => state.defaultTextGenerationModel,
+		(state) => state.user.current?.meta["text-generation-model"]?.[0] ?? "",
 	);
 	const defaultCodeGenerationModel = useSession(
-		(state) => state.defaultCodeGenerationModel,
+		(state) => state.user.current?.meta["code-generation-model"]?.[0] ?? "",
 	);
-	const updateUserDefaultModel = useSession(
-		(state) => state.updateUserDefaultModel,
+	const updateUserMetadata = useSession(
+		(state) => state.user.actions.updateMetadata,
 	);
-	const { email, id, name, admin, lastLogin, groupInfo } = useSession(
-		(state) => state.user,
-	);
-	const isNative = useSession((state) => state.isNative);
+	const currentUser = useSession((state) => state.user.current);
+	const email = currentUser?.email ?? "";
+	const id = currentUser?.id ?? "";
+	const name = currentUser?.name ?? "";
+	const admin = currentUser?.admin ?? false;
+	const lastLogin = currentUser?.lastLogin ?? null;
+	const groupInfo = currentUser?.groupInfo;
+	const isNative = currentUser?.provider === "NATIVE";
 	const groups = groupInfo?.groups ?? [];
 	const { adminMode } = useSettings();
 
@@ -241,8 +245,7 @@ export const MyProfilePage = () => {
 			);
 			if (!selectedEngine) throw new Error("Selected model not found");
 
-			updateUserDefaultModel(modelType, selectedEngineId);
-			await setUserDefaultModel(modelType, selectedEngineId);
+			await updateUserMetadata(modelType, selectedEngineId);
 			toast.success(`Default ${modelType} saved successfully`);
 		} catch (e) {
 			if (e instanceof Error) {
