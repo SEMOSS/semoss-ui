@@ -40,7 +40,7 @@ const ColorPalette = ({
 		// biome-ignore lint/a11y/noStaticElementInteractions: visual item
 		// biome-ignore lint/a11y/useKeyWithClickEvents: visual item
 		<div
-			className="m-[5px] inline-block h-[60px] w-[120px] cursor-pointer rounded-[10px] border border-[#ddd] bg-white text-center shadow"
+			className="m-[5px] inline-block h-[60px] w-[120px] cursor-pointer rounded-[10px] border border-border bg-background text-center shadow"
 			onClick={() => onClick(label, colors)}
 		>
 			{/* Color palette row */}
@@ -557,7 +557,7 @@ export const ColorPalatteSettings = observer(
 						<div className="mb-2 flex items-center justify-between">
 							<button
 								type="button"
-								className="rounded p-1 font-bold text-black/50 text-xs hover:bg-accent"
+								className="rounded p-1 font-bold text-muted-foreground text-xs hover:bg-accent"
 								onClick={() => {
 									setToggleAddEdit("");
 									setShowCustomPopover(null);
@@ -608,7 +608,7 @@ export const ColorPalatteSettings = observer(
 				</div>
 				{/* show color palette when color palate button is pressed */}
 				{colorPalatteFlag && (
-					<div className="mx-5 inline-block rounded-[10px] border border-[#ddd] pr-[10px] shadow">
+					<div className="mx-5 inline-block rounded-[10px] border border-border pr-[10px] shadow">
 						<Input
 							className="h-8 w-full p-0.5"
 							type="color"
@@ -622,7 +622,7 @@ export const ColorPalatteSettings = observer(
 						<div className="flex justify-end px-4 py-2">
 							<button
 								type="button"
-								className="mr-[5px] cursor-pointer border-none bg-transparent text-[#666] text-sm"
+								className="mr-[5px] cursor-pointer border-none bg-transparent text-muted-foreground text-sm"
 								onClick={() => {
 									setColorPalatteFlag(false);
 								}}
@@ -631,7 +631,7 @@ export const ColorPalatteSettings = observer(
 							</button>
 							<button
 								type="button"
-								className="cursor-pointer rounded-lg border-none text-[20px]"
+								className="cursor-pointer rounded-lg border-none text-xl"
 								onClick={() => {
 									addColorRow(color);
 								}}
@@ -683,7 +683,7 @@ export const ColorPalatteSettings = observer(
 								</button>
 							</div>
 							{index === editIndex && (
-								<div className="mx-5 inline-block rounded-[10px] border border-[#ddd] pr-[10px] shadow">
+								<div className="mx-5 inline-block rounded-[10px] border border-border pr-[10px] shadow">
 									<Input
 										className="h-8 w-full p-0.5"
 										type="color"
@@ -702,7 +702,7 @@ export const ColorPalatteSettings = observer(
 									>
 										<button
 											type="button"
-											className="mr-[5px] cursor-pointer border-none bg-transparent text-[#666] text-sm"
+											className="mr-[5px] cursor-pointer border-none bg-transparent text-muted-foreground text-sm"
 											onClick={() => {
 												setColorPalatteFlag(false);
 												setEditIndex(-1);
@@ -712,7 +712,7 @@ export const ColorPalatteSettings = observer(
 										</button>
 										<button
 											type="button"
-											className="cursor-pointer rounded-lg border-none text-[20px]"
+											className="cursor-pointer rounded-lg border-none text-xl"
 											onClick={() => {
 												editColorRow(editColor, index);
 												setEditIndex(-1);
@@ -731,7 +731,7 @@ export const ColorPalatteSettings = observer(
 						<>
 							<button
 								type="button"
-								className="mr-[5px] cursor-pointer border-none bg-transparent text-[#666] text-sm"
+								className="mr-[5px] cursor-pointer border-none bg-transparent text-muted-foreground text-sm"
 								onClick={handleDelete}
 							>
 								Delete
@@ -745,7 +745,7 @@ export const ColorPalatteSettings = observer(
 						<>
 							<button
 								type="button"
-								className="mr-[5px] cursor-pointer border-none bg-transparent text-[#666] text-sm"
+								className="mr-[5px] cursor-pointer border-none bg-transparent text-muted-foreground text-sm"
 								onClick={handleClose}
 							>
 								Close

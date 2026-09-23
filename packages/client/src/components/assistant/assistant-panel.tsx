@@ -79,7 +79,7 @@ export const AssistantPanel = () => {
 			>
 				{view !== "assistant" ? (
 					<>
-						<Tooltip>
+						<Tooltip disableHoverableContent={false}>
 							<TooltipTrigger asChild>
 								<Button
 									type="button"
@@ -112,33 +112,44 @@ export const AssistantPanel = () => {
 					</h2>
 				)}
 				{onRebuild ? (
-					<Tooltip>
+					<Tooltip disableHoverableContent={false}>
 						<TooltipTrigger asChild>
-							<Button
-								type="button"
-								variant="ghost"
-								size="icon-sm"
-								aria-label="Rebuild the app"
-								disabled={isRebuilding}
-								className={cn(
-									WORKBENCH_STYLES.chromeButton,
-									WORKBENCH_STYLES.chromeButtonInactive,
-								)}
-								onClick={() => void handleRebuild()}
+							<span
+								className="inline-flex"
+								tabIndex={isRebuilding ? 0 : undefined}
 							>
-								{isRebuilding ? (
-									<Spinner className="size-3.5" />
-								) : (
-									<HammerIcon
-										className={WORKBENCH_STYLES.chromeIcon}
-									/>
-								)}
-							</Button>
+								<Button
+									type="button"
+									variant="ghost"
+									size="icon-sm"
+									aria-label="Rebuild the app"
+									disabled={isRebuilding}
+									className={cn(
+										WORKBENCH_STYLES.chromeButton,
+										WORKBENCH_STYLES.chromeButtonInactive,
+									)}
+									onClick={() => void handleRebuild()}
+								>
+									{isRebuilding ? (
+										<Spinner className="size-3.5" />
+									) : (
+										<HammerIcon
+											className={
+												WORKBENCH_STYLES.chromeIcon
+											}
+										/>
+									)}
+								</Button>
+							</span>
 						</TooltipTrigger>
-						<TooltipContent>Rebuild the app</TooltipContent>
+						<TooltipContent>
+							{isRebuilding
+								? "Rebuilding the app…"
+								: "Rebuild the app"}
+						</TooltipContent>
 					</Tooltip>
 				) : null}
-				<Tooltip>
+				<Tooltip disableHoverableContent={false}>
 					<TooltipTrigger asChild>
 						<Button
 							type="button"
@@ -160,7 +171,7 @@ export const AssistantPanel = () => {
 					</TooltipTrigger>
 					<TooltipContent>Conversation history</TooltipContent>
 				</Tooltip>
-				<Tooltip>
+				<Tooltip disableHoverableContent={false}>
 					<TooltipTrigger asChild>
 						<Button
 							type="button"
@@ -182,27 +193,42 @@ export const AssistantPanel = () => {
 					</TooltipTrigger>
 					<TooltipContent>Assistant settings</TooltipContent>
 				</Tooltip>
-				<Tooltip>
+				<Tooltip disableHoverableContent={false}>
 					<TooltipTrigger asChild>
-						<Button
-							type="button"
-							variant="ghost"
-							size="icon-sm"
-							aria-label="Start a new conversation"
-							disabled={isInitializing || isSending}
-							className={cn(
-								WORKBENCH_STYLES.chromeButton,
-								WORKBENCH_STYLES.chromeButtonInactive,
-							)}
-							onClick={() => {
-								void newRoom();
-								setView("assistant");
-							}}
+						<span
+							className="inline-flex"
+							tabIndex={
+								isInitializing || isSending ? 0 : undefined
+							}
 						>
-							<PlusIcon className={WORKBENCH_STYLES.chromeIcon} />
-						</Button>
+							<Button
+								type="button"
+								variant="ghost"
+								size="icon-sm"
+								aria-label="Start a new conversation"
+								disabled={isInitializing || isSending}
+								className={cn(
+									WORKBENCH_STYLES.chromeButton,
+									WORKBENCH_STYLES.chromeButtonInactive,
+								)}
+								onClick={() => {
+									void newRoom();
+									setView("assistant");
+								}}
+							>
+								<PlusIcon
+									className={WORKBENCH_STYLES.chromeIcon}
+								/>
+							</Button>
+						</span>
 					</TooltipTrigger>
-					<TooltipContent>Start a new conversation</TooltipContent>
+					<TooltipContent>
+						{isInitializing || isSending
+							? isInitializing
+								? "Initializing the conversation…"
+								: "Wait for the message to finish sending"
+							: "Start a new conversation"}
+					</TooltipContent>
 				</Tooltip>
 			</header>
 

@@ -2,11 +2,16 @@ import { X } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import {
 	Button,
+	DialogDescription,
+	DialogTitle,
 	Select,
 	SelectContent,
 	SelectItem,
 	SelectTrigger,
 	SelectValue,
+	Tooltip,
+	TooltipContent,
+	TooltipTrigger,
 } from "@semoss/ui/next";
 
 interface LLMSelectDialogProps {
@@ -34,16 +39,32 @@ export const LLMSelectDialog = observer((props: LLMSelectDialogProps) => {
 	return (
 		<>
 			<div className="flex flex-row items-center justify-between border-border border-b p-4">
-				<span>Select model to use across builder</span>
-				<Button
-					variant="ghost"
-					size="icon-sm"
-					title="close"
-					aria-label="close"
-					onClick={onClose}
-				>
-					<X className="size-4" />
-				</Button>
+				<div className="space-y-1">
+					<DialogTitle className="font-medium text-base leading-6">
+						Builder model
+					</DialogTitle>
+					<DialogDescription>
+						Choose the model used for builder assistance.
+					</DialogDescription>
+				</div>
+				<Tooltip disableHoverableContent={false}>
+					<TooltipTrigger asChild>
+						<Button
+							variant="ghost"
+							size="icon-sm"
+							aria-label="close"
+							onClick={onClose}
+						>
+							<X className="size-4" />
+						</Button>
+					</TooltipTrigger>
+					<TooltipContent
+						sideOffset={4}
+						className="max-w-xs break-words"
+					>
+						{"close"}
+					</TooltipContent>
+				</Tooltip>
 			</div>
 			<div className="p-4">
 				<Select

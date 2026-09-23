@@ -27,6 +27,8 @@ export type RoomMcpEntry = {
 export type RoomOptionsMap = {
 	/** System prompt applied to the room's agent runs. */
 	instructions?: string;
+	/** False appends instructions to the agent prompt; true or omitted replaces it. */
+	overrideSystemPrompt?: boolean;
 	/** MCP servers exposed to the room's agent runs. */
 	mcp?: RoomMcpEntry[];
 	/** Suggested prompts surfaced in the room's UI. */

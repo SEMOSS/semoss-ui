@@ -2,23 +2,25 @@
 
 This document provides context for AI coding assistants working with the SEMOSS Playground application.
 
-> **Inherits from:** [../../AGENTS.md](../../AGENTS.md) for code style, file-naming, package
-> structure, commit messages, Biome config, and Node/pnpm requirements.
+> **Inherits from:** [root AGENTS.md](../../AGENTS.md). Load the applicable
+> [root skills](../../skills/README.md), including the [React standard](../../skills/react-standard.skill.md)
+> and [SDK chat skill](../../skills/sdk-chat.skill.md) for room work.
 
 ## Overview
 
-`@semoss/playground` is a development playground application for testing SEMOSS SDK features and components. It's a private package (not published) used for development and experimentation.
+`@semoss/playground` is the SEMOSS chat application. It is private (not published), with
+room, message, workspace, knowledge, and MCP surfaces.
 
 ## Structure & Conventions
 
-Follows the standard `src/` layout and file-naming rules from the root AGENTS.md. As an
-application it uses `contexts/`, `stores/`, `hooks/`, and a `pages/` router tree
-(`router.tsx` / `<name>.routes.tsx` / `<name>.layout.tsx` / `<name>.page.tsx`).
+The existing app uses `components/`, `contexts/`, `stores/`, `hooks/`, and `pages/`.
+Follow the React skill's [architecture policy](../../skills/react-standard.skill.md#architecture-and-exports)
+for new features and imports; existing feature folders are not an implicit migration task.
 
 ## Build System
 
-- **Bundler**: Vite 7
-- **Framework**: React 18 with TypeScript
+- **Bundler**: Vite 8
+- **Framework**: React 19 with TypeScript
 - **Styling**: Tailwind CSS v4
 - **Testing**: Vitest with jsdom
 
@@ -34,6 +36,8 @@ application it uses `contexts/`, `stores/`, `hooks/`, and a `pages/` router tree
 | `pnpm test:ui` | Run tests with Vitest UI |
 | `pnpm test:coverage` | Run tests with coverage report |
 | `pnpm type-check` | TypeScript type checking |
+
+Run these from `packages/playground`, or use `pnpm --filter @semoss/playground <command>`.
 
 ## Environment Variables
 
@@ -58,10 +62,9 @@ VITE_DEFAUlT_MODEL_NAME=""
 
 ### Environment File Precedence
 
-- `.env` - Checked into git, safe defaults
-- `.env.local` - Local overrides (gitignored)
-- `.env.development` - Development-specific
-- `.env.development.local` - Local dev overrides (gitignored)
+Highest to lowest priority for development: existing process environment,
+`.env.development.local`, `.env.development`, `.env.local`, then `.env`.
+Mode-specific files are optional; never edit local override files as part of repository work.
 
 ## Vite Configuration
 
@@ -107,6 +110,7 @@ Coverage reports output to `./coverage/packages/playground/` and include only `s
 
 ```json
 {
+  "@semoss/i18n": "workspace:*",
   "@semoss/panels": "workspace:*",
   "@semoss/sdk": "workspace:*",
   "@semoss/shared": "workspace:*",
@@ -115,11 +119,12 @@ Coverage reports output to `./coverage/packages/playground/` and include only `s
 }
 ```
 
-Changes to these libraries are immediately reflected in the playground during development.
+Source-only libraries are compiled by the app. Built libraries need their build/watch
+process running; use the root `pnpm dev:playground` command for dependency orchestration.
 
 ## The room sidebar
 
-The right-hand panel is a `@semoss/workbench` dock. Five things about it are not obvious from the
+The right-hand panel is a `@semoss/workbench` dock. These details are not obvious from the
 code and are easy to undo by accident:
 
 - **The dock store belongs to `RoomStore`, not to `<Workbench>`.** Tools open panels from outside
@@ -152,9 +157,8 @@ instance.
 ## Design-System Notes
 
 Follow the root [Design System & Styling](../../AGENTS.md#design-system--styling) rules and
-[DESIGN.md](../../DESIGN.md). The playground is an operational chat application, not a looser
-visual sandbox: new user-facing UI uses `@semoss/ui/next`, semantic tokens, the standard state
-set, and the responsive/accessibility definition of done.
+[DESIGN.md](../../DESIGN.md). The playground is an operational chat application, not a
+visual sandbox; use the [root skills](../../skills/README.md) for UI behavior and validation.
 
 ## Agent Guardrails
 
@@ -172,10 +176,8 @@ set, and the responsive/accessibility definition of done.
 
 ### When Adding Features
 
-1. Use workspace dependencies (`@semoss/sdk`, `@semoss/ui`, `@semoss/shared`)
-2. Add tests for new components in `__tests__/` or `*.test.tsx`
-3. Use the `@/` alias for imports within the package
-4. Follow existing patterns for page/component structure
+Follow the [React standard](../../skills/react-standard.skill.md) for new-feature layout,
+direct internal imports, state ownership, and tests. Preserve the room sidebar contracts above.
 
 ### Testing Changes
 

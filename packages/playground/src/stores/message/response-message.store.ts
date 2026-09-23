@@ -5,7 +5,6 @@ import {
 	observable,
 	runInAction,
 } from "mobx";
-import type { AgentRunProgress } from "@semoss/sdk";
 import { download } from "@semoss/sdk/react";
 import {
 	MCP_EXECUTION_AUTO,
@@ -27,10 +26,6 @@ import { type CancelCommitOutput, spliceHiddenMessages } from "./utility";
  */
 export class ResponseMessageStore extends AbstractMessageStore {
 	readonly type = "OUTPUT";
-
-	/** Run activity remains visible when the agent fails after creating an artifact. */
-	agentRunProgress: AgentRunProgress | null = null;
-	agentRunError: string | null = null;
 
 	/**
 	 * Parts associated with the message
@@ -99,8 +94,6 @@ export class ResponseMessageStore extends AbstractMessageStore {
 
 		makeObservable(this, {
 			isThinking: observable,
-			agentRunProgress: observable.ref,
-			agentRunError: observable,
 			parts: observable,
 			feedback: observable,
 			conversationCompactedAbove: observable,

@@ -406,7 +406,7 @@ export const PromptDetailPage = () => {
 					{promptId && (
 						<div className="flex items-center gap-1 text-muted-foreground text-sm">
 							<span>{promptId}</span>
-							<Tooltip>
+							<Tooltip disableHoverableContent={false}>
 								<TooltipTrigger asChild>
 									<Button
 										variant="ghost"
@@ -794,7 +794,11 @@ export const PromptDetailPage = () => {
 															"Save Context"
 														)}
 													</Button>
-													<Tooltip>
+													<Tooltip
+														disableHoverableContent={
+															false
+														}
+													>
 														<TooltipTrigger asChild>
 															<Info className="size-4 text-muted-foreground" />
 														</TooltipTrigger>
@@ -892,7 +896,7 @@ export const PromptDetailPage = () => {
 									? "Setting..."
 									: "Set as Active"}
 							</Button>
-							<Tooltip>
+							<Tooltip disableHoverableContent={false}>
 								<TooltipTrigger asChild>
 									<Info className="size-4 text-muted-foreground" />
 								</TooltipTrigger>

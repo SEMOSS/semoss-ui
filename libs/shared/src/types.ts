@@ -110,6 +110,16 @@ export interface ThemeMap {
 		/** Styles of the app */
 		variables: {
 			backgroundColor: string;
+			/**
+			 * Base grayscale value for the dark mode surface palette.
+			 * Accepts a plain number ("20"), a hex color ("#141414"), or an
+			 * rgb()/rgba() string with matching R, G, B channels
+			 * ("rgb(20, 20, 20)"). All dark surface tokens are derived from
+			 * this single value via CSS calc() offsets — values set too high
+			 * will reduce contrast against the palette's fixed foreground
+			 * text colors.
+			 */
+			darkModeBaseColor?: string;
 			primaryColor: string;
 			secondaryColor: string;
 		};
@@ -354,6 +364,10 @@ export interface ThemeMap {
 			enableTableExport?: boolean;
 			/** Whether to show the temperature slider in room settings. Defaults to false. */
 			enableTemperature?: boolean;
+			/** Whether to show items tagged SYSTEM in the MCP selector skills list (MyProjects). Defaults to true. */
+			showSystemSkills?: boolean;
+			/** Whether to show items tagged SYSTEM in the MCP selector tools list (MyEngines for TOOLBOX). Defaults to true. */
+			showSystemTools?: boolean;
 		};
 	};
 }

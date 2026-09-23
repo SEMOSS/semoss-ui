@@ -576,7 +576,7 @@ export const AppGithubPage = () => {
 			>
 				<DialogContent className="sm:max-w-lg">
 					<DialogHeader>
-						<DialogTitle>
+						<DialogTitle className="font-medium text-base leading-6">
 							{t("project.connectDialog.title")}
 						</DialogTitle>
 						<DialogDescription>
@@ -603,7 +603,7 @@ export const AppGithubPage = () => {
 			>
 				<DialogContent className="sm:max-w-lg">
 					<DialogHeader>
-						<DialogTitle>
+						<DialogTitle className="font-medium text-base leading-6">
 							{t("project.changeDialog.title")}
 						</DialogTitle>
 						<DialogDescription>
@@ -635,7 +635,7 @@ export const AppGithubPage = () => {
 			>
 				<DialogContent className="sm:max-w-md">
 					<DialogHeader>
-						<DialogTitle>
+						<DialogTitle className="font-medium text-base leading-6">
 							{t("project.disconnectDialog.title")}
 						</DialogTitle>
 						<DialogDescription>
@@ -674,7 +674,7 @@ export const AppGithubPage = () => {
 			>
 				<DialogContent className="sm:max-w-md">
 					<DialogHeader>
-						<DialogTitle>
+						<DialogTitle className="font-medium text-base leading-6">
 							{t("project.branchDialog.title")}
 						</DialogTitle>
 						<DialogDescription>

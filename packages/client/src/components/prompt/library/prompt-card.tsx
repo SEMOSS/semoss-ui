@@ -15,6 +15,9 @@ import {
 	DropdownMenuItem,
 	DropdownMenuTrigger,
 	P,
+	Tooltip,
+	TooltipContent,
+	TooltipTrigger,
 	toast,
 } from "@semoss/ui/next";
 import { buildInitials } from "@semoss/utility";
@@ -208,16 +211,25 @@ export const PromptCard = (props: PromptCardProps) => {
 									<span className="truncate">
 										{prompt.id}
 									</span>
-									<Button
-										variant="ghost"
-										size="icon-sm"
-										className="h-6 w-6"
-										onClick={handleCopyId}
-										aria-label="Copy prompt ID"
-										title="Copy prompt ID"
-									>
-										<Copy className="size-3.5" />
-									</Button>
+									<Tooltip disableHoverableContent={false}>
+										<TooltipTrigger asChild>
+											<Button
+												variant="ghost"
+												size="icon-sm"
+												className="h-6 w-6"
+												onClick={handleCopyId}
+												aria-label="Copy prompt ID"
+											>
+												<Copy className="size-3.5" />
+											</Button>
+										</TooltipTrigger>
+										<TooltipContent
+											sideOffset={4}
+											className="max-w-xs break-words"
+										>
+											{"Copy prompt ID"}
+										</TooltipContent>
+									</Tooltip>
 								</div>
 								{prompt.intent ? (
 									<P className="mt-2 line-clamp-3 text-muted-foreground text-sm">
@@ -256,37 +268,61 @@ export const PromptCard = (props: PromptCardProps) => {
 									{updatedLine}
 								</div>
 								<div className="flex items-center gap-1">
-									<Button
-										variant="ghost"
-										size="icon-sm"
-										onClick={handleOpenNewTab}
-										aria-label="Open prompt in new tab"
-										title={`Open ${prompt.title || "prompt"} in new tab`}
-									>
-										<ExternalLink className="size-4" />
-									</Button>
-									<Button
-										variant="ghost"
-										size="icon-sm"
-										aria-label="View prompt info"
-										title={`View info for ${prompt.title || "prompt"}`}
-										onClick={handleInfoOpen}
-									>
-										<Info className="size-4" />
-									</Button>
-									<DropdownMenu>
-										<DropdownMenuTrigger asChild>
+									<Tooltip disableHoverableContent={false}>
+										<TooltipTrigger asChild>
 											<Button
 												variant="ghost"
 												size="icon-sm"
-												onClick={(e) =>
-													e.stopPropagation()
-												}
-												aria-label="More options"
+												onClick={handleOpenNewTab}
+												aria-label="Open prompt in new tab"
 											>
-												<MoreVertical className="size-4" />
+												<ExternalLink className="size-4" />
 											</Button>
-										</DropdownMenuTrigger>
+										</TooltipTrigger>
+										<TooltipContent
+											sideOffset={4}
+											className="max-w-xs break-words"
+										>{`Open ${prompt.title || "prompt"} in new tab`}</TooltipContent>
+									</Tooltip>
+									<Tooltip disableHoverableContent={false}>
+										<TooltipTrigger asChild>
+											<Button
+												variant="ghost"
+												size="icon-sm"
+												aria-label="View prompt info"
+												onClick={handleInfoOpen}
+											>
+												<Info className="size-4" />
+											</Button>
+										</TooltipTrigger>
+										<TooltipContent
+											sideOffset={4}
+											className="max-w-xs break-words"
+										>{`View info for ${prompt.title || "prompt"}`}</TooltipContent>
+									</Tooltip>
+									<DropdownMenu>
+										<Tooltip
+											disableHoverableContent={false}
+										>
+											<TooltipTrigger asChild>
+												<DropdownMenuTrigger asChild>
+													<Button
+														variant="ghost"
+														size="icon-sm"
+														onClick={(e) =>
+															e.stopPropagation()
+														}
+														aria-label={`Actions for ${prompt.title || "prompt"}`}
+													>
+														<MoreVertical className="size-4" />
+													</Button>
+												</DropdownMenuTrigger>
+											</TooltipTrigger>
+											<TooltipContent
+												sideOffset={4}
+												className="max-w-xs break-words"
+											>{`Actions for ${prompt.title || "prompt"}`}</TooltipContent>
+										</Tooltip>
 										<DropdownMenuContent align="end">
 											<DropdownMenuItem
 												onClick={handleCopyId}
@@ -323,11 +359,14 @@ export const PromptCard = (props: PromptCardProps) => {
 				{/* Info Modal */}
 				<Dialog open={isInfoOpen} onOpenChange={setIsInfoOpen}>
 					<DialogContent
+						aria-describedby={undefined}
 						className="sm:max-w-md"
 						onClick={(e) => e.stopPropagation()}
 					>
 						<DialogHeader>
-							<DialogTitle>{prompt.title}</DialogTitle>
+							<DialogTitle className="font-medium text-base leading-6">
+								{prompt.title}
+							</DialogTitle>
 						</DialogHeader>
 						<div className="flex flex-col gap-3 text-sm">
 							{prompt.created_by && (
@@ -446,17 +485,25 @@ export const PromptCard = (props: PromptCardProps) => {
 					</div>
 					<div className="-translate-y-1/2 absolute top-1/2 right-3 flex items-center gap-2">
 						<DropdownMenu>
-							<DropdownMenuTrigger asChild>
-								<Button
-									variant="ghost"
-									size="icon-sm"
-									className={headerActionClass}
-									onClick={(e) => e.stopPropagation()}
-									aria-label="More options"
-								>
-									<MoreVertical className="size-4" />
-								</Button>
-							</DropdownMenuTrigger>
+							<Tooltip disableHoverableContent={false}>
+								<TooltipTrigger asChild>
+									<DropdownMenuTrigger asChild>
+										<Button
+											variant="ghost"
+											size="icon-sm"
+											className={headerActionClass}
+											onClick={(e) => e.stopPropagation()}
+											aria-label={`Actions for ${prompt.title || "prompt"}`}
+										>
+											<MoreVertical className="size-4" />
+										</Button>
+									</DropdownMenuTrigger>
+								</TooltipTrigger>
+								<TooltipContent
+									sideOffset={4}
+									className="max-w-xs break-words"
+								>{`Actions for ${prompt.title || "prompt"}`}</TooltipContent>
+							</Tooltip>
 							<DropdownMenuContent align="end">
 								<DropdownMenuItem onClick={handleCopyId}>
 									Copy Prompt ID
@@ -527,27 +574,41 @@ export const PromptCard = (props: PromptCardProps) => {
 					<div className="border-t" />
 					<CardFooter className="px-3 pt-0.5 pb-3">
 						<div className="flex w-full items-center gap-2">
-							<Button
-								variant="outline"
-								size="sm"
-								className="h-auto w-1/2 px-0 py-1.5 text-xs"
-								onClick={handleOpenNewTab}
-								title={`Open ${prompt.title || "prompt"} in new tab`}
-							>
-								Open
-								<ExternalLink className="size-4" />
-							</Button>
-							<Button
-								variant="outline"
-								size="sm"
-								className="h-auto w-1/2 px-0 py-1.5 text-xs"
-								aria-label="View prompt info"
-								title={`View info for ${prompt.title || "prompt"}`}
-								onClick={handleInfoOpen}
-							>
-								Info
-								<Info className="size-4" />
-							</Button>
+							<Tooltip disableHoverableContent={false}>
+								<TooltipTrigger asChild>
+									<Button
+										variant="outline"
+										size="sm"
+										className="h-auto w-1/2 px-0 py-1.5 text-xs"
+										onClick={handleOpenNewTab}
+									>
+										Open
+										<ExternalLink className="size-4" />
+									</Button>
+								</TooltipTrigger>
+								<TooltipContent
+									sideOffset={4}
+									className="max-w-xs break-words"
+								>{`Open ${prompt.title || "prompt"} in new tab`}</TooltipContent>
+							</Tooltip>
+							<Tooltip disableHoverableContent={false}>
+								<TooltipTrigger asChild>
+									<Button
+										variant="outline"
+										size="sm"
+										className="h-auto w-1/2 px-0 py-1.5 text-xs"
+										aria-label="View prompt info"
+										onClick={handleInfoOpen}
+									>
+										Info
+										<Info className="size-4" />
+									</Button>
+								</TooltipTrigger>
+								<TooltipContent
+									sideOffset={4}
+									className="max-w-xs break-words"
+								>{`View info for ${prompt.title || "prompt"}`}</TooltipContent>
+							</Tooltip>
 						</div>
 					</CardFooter>
 				</div>
@@ -556,11 +617,14 @@ export const PromptCard = (props: PromptCardProps) => {
 			{/* Info Modal */}
 			<Dialog open={isInfoOpen} onOpenChange={setIsInfoOpen}>
 				<DialogContent
+					aria-describedby={undefined}
 					className="sm:max-w-md"
 					onClick={(e) => e.stopPropagation()}
 				>
 					<DialogHeader>
-						<DialogTitle>{prompt.title}</DialogTitle>
+						<DialogTitle className="font-medium text-base leading-6">
+							{prompt.title}
+						</DialogTitle>
 					</DialogHeader>
 					<div className="flex flex-col gap-3 text-sm">
 						{prompt.created_by && (

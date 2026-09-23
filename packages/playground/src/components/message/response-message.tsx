@@ -47,7 +47,6 @@ import {
 	type ToolStore,
 } from "@/stores";
 import { isAskExecutionMode } from "@/utility/mcp-utils";
-import { ResponseMessageProgress } from "./response-message-progress";
 import { ResponseMessageSubagent } from "./response-message-subagent";
 import { ResponseMessageText } from "./response-message-text";
 import { ResponseMessageThinking } from "./response-message-thinking";
@@ -471,10 +470,6 @@ export const ResponseMessage = observer(
 		return (
 			<div className="group">
 				<div className="mb-0 flex w-full flex-col gap-2 pe-3 sm:pe-10">
-					<ResponseMessageProgress
-						progress={message.agentRunProgress}
-						error={message.agentRunError}
-					/>
 					{allParts.map((p, pIdx) => {
 						const key = `message-part-${pIdx}`;
 						const status = getChunkStatus(pIdx);

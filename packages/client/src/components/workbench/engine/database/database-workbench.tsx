@@ -21,6 +21,7 @@ import { ASSISTANT_PANEL } from "@/components/assistant";
 import { AssistantStoreProvider } from "@/contexts";
 import { DatabaseWorkbenchStoreProvider } from "@/contexts/database-workbench.context";
 import { useAssistantStore, useEngine, useSession } from "@/hooks";
+import { DATABASE_EXPLORER_AGENT } from "@/stores/assistant/assistant-agents";
 import {
 	WORKBENCH_COMPONENTS,
 	WORKBENCH_PANEL_RECORDS,
@@ -198,8 +199,9 @@ export const DatabaseWorkbench: React.FC = () => {
 		);
 
 		assistantStore.getState().configure({
+			defaultAgent: DATABASE_EXPLORER_AGENT,
 			onRunCompleted: filesChanged,
-			systemPrompt: `You are the assistant for the ${engine.engine_display_name || engine.engine_name} workbench (${engine.engine_id}). Your role is to help the user understand and work with this database. Use only the tools provided in this room. Never claim that an operation succeeded unless its tool result confirms success. Keep answers concise and grounded in the active engine.`,
+			systemPrompt: `Active database workbench: ${engine.engine_display_name || engine.engine_name}. Engine ID: ${engine.engine_id}. Catalog subtype: ${engine.engine_subtype || "unknown"}. User permission: ${permission}. The backend-generated schema and query tool descriptions identify the loaded database implementation, query language or SQL dialect, and supported query route. Use this active engine as the context for the user's request. The editor language setting does not determine database capabilities.`,
 			prepareRoom: (insightId) =>
 				makeEngineRoomMcp(insightId, engine.engine_id),
 		});
@@ -211,6 +213,7 @@ export const DatabaseWorkbench: React.FC = () => {
 		engine.engine_display_name,
 		engine.engine_id,
 		engine.engine_name,
+		engine.engine_subtype,
 		permission,
 	]);
 

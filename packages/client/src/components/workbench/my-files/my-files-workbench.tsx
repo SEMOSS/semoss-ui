@@ -131,7 +131,7 @@ export const MyFilesWorkbench: React.FC = () => {
 							after: (
 								<>
 									<WorkbenchCommandMenuButton />
-									<Tooltip>
+									<Tooltip disableHoverableContent={false}>
 										<TooltipTrigger asChild>
 											<Button
 												variant="ghost"

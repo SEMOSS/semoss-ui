@@ -21,7 +21,9 @@ export const PreviewDialog = observer((props: PreviewDialogProps) => {
 	return (
 		<div className="flex w-full min-w-0 max-w-full flex-col gap-3 overflow-hidden p-6">
 			<DialogHeader>
-				<DialogTitle>Preview</DialogTitle>
+				<DialogTitle className="font-medium text-base leading-6">
+					Preview
+				</DialogTitle>
 			</DialogHeader>
 			<div className="relative h-[70vh] w-full min-w-0 max-w-full overflow-auto rounded-md border border-border bg-background">
 				<Renderer state={state} />

@@ -7,7 +7,15 @@ import {
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "react-router";
-import { Badge, Button, Skeleton, toast } from "@semoss/ui/next";
+import {
+	Badge,
+	Button,
+	Skeleton,
+	Tooltip,
+	TooltipContent,
+	TooltipTrigger,
+	toast,
+} from "@semoss/ui/next";
 import { formatDateToRelative } from "@semoss/utility";
 import { useProject, useSession } from "@/hooks";
 import type {
@@ -525,14 +533,24 @@ export const AgentActivityPage = () => {
 		return (
 			<div className="flex flex-col gap-4">
 				<div className="flex items-center gap-2">
-					<Button
-						variant="outline"
-						size="icon-sm"
-						title="Back to list"
-						onClick={handleBackToList}
-					>
-						<ArrowLeft className="size-4" />
-					</Button>
+					<Tooltip disableHoverableContent={false}>
+						<TooltipTrigger asChild>
+							<Button
+								aria-label={"Back to list"}
+								variant="outline"
+								size="icon-sm"
+								onClick={handleBackToList}
+							>
+								<ArrowLeft className="size-4" />
+							</Button>
+						</TooltipTrigger>
+						<TooltipContent
+							sideOffset={4}
+							className="max-w-xs break-words"
+						>
+							{"Back to list"}
+						</TooltipContent>
+					</Tooltip>
 					<div className="min-w-0 flex-1">
 						<h6
 							className={
@@ -549,21 +567,43 @@ export const AgentActivityPage = () => {
 							calls in this room.
 						</p>
 					</div>
-					<Button
-						variant="outline"
-						size="sm"
-						className="shrink-0"
-						title="Pull the latest runs for this room"
-						disabled={refreshing || loadingRunDetails}
-						onClick={handleRefresh}
-					>
-						<RefreshCw
-							className={
-								refreshing ? "size-4 animate-spin" : "size-4"
-							}
-						/>
-						Refresh
-					</Button>
+					<Tooltip disableHoverableContent={false}>
+						<TooltipTrigger asChild>
+							<span
+								className="inline-flex"
+								tabIndex={
+									refreshing || loadingRunDetails
+										? 0
+										: undefined
+								}
+							>
+								<Button
+									variant="outline"
+									size="sm"
+									className="shrink-0"
+									disabled={refreshing || loadingRunDetails}
+									onClick={handleRefresh}
+								>
+									<RefreshCw
+										className={
+											refreshing
+												? "size-4 animate-spin"
+												: "size-4"
+										}
+									/>
+									Refresh
+								</Button>
+							</span>
+						</TooltipTrigger>
+						<TooltipContent
+							sideOffset={4}
+							className="max-w-xs break-words"
+						>
+							{refreshing || loadingRunDetails
+								? "Loading run details…"
+								: "Pull the latest runs for this room"}
+						</TooltipContent>
+					</Tooltip>
 				</div>
 
 				{loadingRunDetails ? (
