@@ -8,19 +8,26 @@ This document provides context for AI coding assistants working with the SEMOSS 
 ## Overview
 
 `@semoss/sdk` is the core client SDK for talking to a SEMOSS backend (pixel/API calls, insight
-state, environment config). It is **framework-agnostic** at its core with an optional **React**
-binding exposed on a subpath. It has **no internal workspace dependencies** — everything else
-in the monorepo depends on it, so treat its public surface as stable and versioned.
+state, environment config). It has framework-independent stores and optional **React**
+bindings on a subpath; this is not a blanket Node/SSR compatibility guarantee.
+It has **no internal runtime workspace dependencies**. Treat its published public
+surface as stable and versioned.
 
 ## Build System
 
 - **Bundler**: Vite 8 library mode (Rolldown) → ES modules (`dist/index.mjs`) with types in `dist/types/` (via unplugin-dts).
 - Two entry points via `exports`:
 
-| Import | Resolves to |
-|--------|-------------|
-| `@semoss/sdk` | `src/index.ts` — core SDK |
-| `@semoss/sdk/react` | `src/js-frameworks/react` — React hooks/providers |
+| Import | Source entry | Published JavaScript |
+|--------|--------------|----------------------|
+| `@semoss/sdk` | `src/index.ts` | `dist/index.mjs` |
+| `@semoss/sdk/react` | `src/js-frameworks/react/index.ts` | `dist/js-frameworks/react/index.mjs` |
+
+The package also ships `skills/` via `files` and `npmSkills.publish.source` in
+[package.json](./package.json). Keep [the SDK chat guide](./skills/sdk-chat/SKILL.md)
+self-contained at that path for external consumers. The
+[flat repository skill](../../skills/sdk-chat.skill.md) routes to it; it is not a
+second API reference.
 
 ### Commands
 
@@ -75,66 +82,31 @@ router):
 
 ### Testing Changes
 
+For SDK source changes, run the relevant tests first, then the package gates:
+
 ```bash
 pnpm --filter @semoss/sdk test
 pnpm --filter @semoss/sdk build
 ```
 
-## Chat / Room API (`api/chat.ts`)
+For documentation-only edits, check local links, skill metadata, package inclusion,
+and examples against source exports/types. Run focused tests for lifecycle claims;
+do not present those checks as backend integration verification. Follow the
+[repository validation guidance](../../skills/react-standard.skill.md#validation),
+with [biome.json](../../biome.json) as lint/formatting authority.
 
-The chat API wraps the SEMOSS pixel reactors for creating rooms, sending messages, and
-handling tool execution. All functions are exported from `@semoss/sdk` (and re-exported by
-`@semoss/sdk/react`). Types live in `src/types.ts`.
+## Chat and Agent Ownership
 
-> **Full usage guide, streaming loops, and mode comparison:** see the
-> [sdk-chat skill](./skills/sdk-chat/SKILL.md).
+Load the [SDK chat guide](./skills/sdk-chat/SKILL.md) for API contracts, examples,
+transport selection, lifecycle cleanup, and known gaps. Maintain those details
+there instead of repeating them in AGENTS files.
 
-### Two messaging modes
+When changing an API, inspect its owning implementation and adjacent tests:
 
-| Mode | Function | When to use |
-|------|----------|-------------|
-| **Chat** (client-driven) | `askRoom` + `addRoomToolExecution` | Standard Q&A, simple tools, client owns the loop |
-| **Agent harness** (server-driven) | `runAgent` (`api/agent.ts`) | Complex agents, subagent chains, long-running jobs, audit logging |
+- [Chat wrappers](./src/api/chat.ts) and [pixel transport](./src/api/base.ts).
+- [Agent wrappers](./src/api/agent.ts) and [AgentStore](./src/stores/agent/agent.store.ts).
+- [RoomStore](./src/stores/room/room.store.ts) and [shared types](./src/types.ts).
+- [Core exports](./src/index.ts) and [React exports](./src/js-frameworks/react/index.ts).
 
-The mode is set at room creation via `harnessType` in `RoomOptions`:
-- omit / `undefined` → chat mode
-- `"semoss"` → agent-harness mode (`RunAgent` reactor, server drives all tool calls)
-
-Chat mode and agent-harness mode use **two different wire protocols** — they are not
-interchangeable and don't share a streaming loop. Don't reintroduce a job-streaming path for
-agent-harness mode; the backend's `RunAgent` reactor has no such path (see below).
-
-### Streaming pattern — chat mode
-
-`askRoom` returns `{ jobId }`. The caller then:
-1. Polls `getPixelJobStreaming(jobId)` in a loop, handling `content` / `thinking` / `tool` chunks
-2. Breaks when `status` reaches a terminal value (`"Complete"`, `"ProgressComplete"`, `"Canceled"`, `"Error"`, `"UnknownJob"`)
-3. Calls `getPixelAsyncResult(jobId)` to get the settled typed result
-
-### Streaming pattern — agent-harness mode
-
-`runAgent` (`api/agent.ts`) submits with `wait=false` and returns `{ runId, roomId, status }`
-immediately — there is no `jobId` and no job-streaming loop here. The backend's `RunAgent`
-reactor only supports an immediate handle (`wait=false`) or a server-side blocking wait
-(`wait=true`, which returns the full result in one shot with no partial progress) — never a
-pollable job. The caller then:
-1. Polls `pollAgentRun(runId)` (`api/agent.ts`) directly, or uses `AgentStore.watch(handlers)`
-   (`stores/agent/agent.store.ts`) to have polling, ordering, backoff, and INPUT_REQUIRED reconciliation
-   handled for you
-2. Item events (`message` / `reasoning` / `tool` / `subagent`) arrive as `AgentRunItemEvent`s, not
-   raw content/thinking/tool chunks
-3. `getAgentRun(runId, { includeMessages })` (`api/agent.ts`) fetches the durable `AgentRunSnapshot`
-   directly for reconciliation once the run reaches a terminal status or `INPUT_REQUIRED`
-
-### Key distinctions between modes
-
-- **`askRoom`** settled result: `{ inputMessage, responseMessage }` — full pixel message objects. The client then calls `addRoomToolExecution` for each `TOOL_CALL` part.
-- **`runAgent`** settled state: `AgentRunSnapshot` (`inputMessageId`, `finalOutputMessageId`, `finalText`, `status`, `pendingActions`) — reached by polling, not returned directly from `runAgent` itself. No tool loop on the client for auto-executed tools; paused (HITL) tool calls surface via `pendingActions` and are resolved with `AgentStore.decide()` (or `decideAgentRunAction` directly).
-- `addRoomToolExecution` uses `room.model.app_id` (the *app* engine ID), **not** `engine_id` (the LLM engine ID) that `askRoom` uses.
-
-### Adding new chat API functions
-
-1. Add the function to `src/api/chat.ts`.
-2. Add any new types to `src/types.ts` under the `// CHAT / ROOM TYPES` section.
-3. Keep TSDoc concise: one-line description, `@param` / `@returns`, and a `@see` pointing to the skill for deep detail.
-4. Update the [sdk-chat skill](./skills/sdk-chat/SKILL.md) with the full usage example and any behaviour notes.
+Update the packaged guide with signature/behavior changes. Comments and mocked
+tests are not backend authority; retain its compatibility caveats until verified.

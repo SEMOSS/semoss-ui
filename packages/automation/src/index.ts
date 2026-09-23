@@ -30,6 +30,7 @@ export type {
 	AutomationImportResult,
 } from "./domain/automation-import-export";
 export {
+	downloadAutomationExport,
 	parseAutomationImportFile,
 	parseAutomationImportFileAsync,
 } from "./domain/automation-import-export";
@@ -37,6 +38,9 @@ export type {
 	AutomationInspectorAction,
 	AutomationInspectorSnapshot,
 } from "./domain/automation-inspector";
+export { downloadN8nExport } from "./domain/automation-to-n8n-adapter";
+export type { AutomationWorkflowDocument } from "./domain/automation-workflow.types";
+export type { AutomationNodeSources } from "./domain/automation-workflow-adapter";
 export type {
 	N8nImportConversion,
 	N8nImportConversionInput,

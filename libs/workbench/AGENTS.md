@@ -4,6 +4,8 @@ The multi-panel dock shell: core, store, context, hooks. Nothing here may know a
 engines, projects, pixels, or auth.
 
 > **Inherits from:** [../../AGENTS.md](../../AGENTS.md) (root).
+> Load the applicable [root skills](../../skills/README.md), including the
+> [React standard](../../skills/react-standard.skill.md), for general implementation rules.
 
 ## What it is
 
@@ -24,13 +26,13 @@ measured slots, so moving a tab never unmounts its body.
 
 **The invariant, and the whole reason this package exists:** no import of `@semoss/sdk`,
 `@semoss/shared`, `@semoss/i18n`, or anything host-shaped. The only runtime dependencies are
-`react`, `@semoss/ui/next`, `lucide-react`, and `zustand` (a peer, so a host cannot end up with
-two store instances). Verify with:
+`react`, `react-dom`, `@semoss/ui` (consumed through `@semoss/ui/next`), `lucide-react`,
+and the `zustand` peer. The host supplies a compatible Zustand version and owns store
+instances; declaring a peer does not itself prevent duplicate stores. Verify boundaries with:
 
 ```sh
-# match import/export specifiers only -- a bare grep also hits prose in comments
-grep -rnE '^\s*(import|export)[^;]*from\s+"' src \
-  | grep -E '@semoss/(sdk|shared|i18n)|"@/'
+# From libs/workbench; inspect matches, including multiline imports and aliases
+rg -n '@semoss/(sdk|shared|i18n)|@/' src --glob '*.{ts,tsx}'
 ```
 
 Two things that used to live here and deliberately do not any more: the **assistant**, which is
@@ -61,11 +63,9 @@ src/
 └── index.ts           the curated public surface
 ```
 
-**A folder gets an `index.ts` only when several files import several of its members as a set.**
-That is true of `hooks/` and `stores/` (and `stores/slices/`), and of nothing else — so those
-barrels exist and the rest do not. Components import each other by direct path, which is what
-keeps the folder graph above honest: a barrel would make `mobile/` look like it depends on the
-whole of `dock/` when it needs one tab.
+Follow the [React import/export policy](../../skills/react-standard.skill.md#architecture-and-exports).
+Legacy barrels in `hooks/`, `stores/`, and `stores/slices/` remain compatibility structure
+for untouched consumers.
 
 **No barrel uses `export *`.** `src/index.ts` names the file that defines each symbol and does
 not hop through an internal barrel. Two wildcards used to sit there, and they leaked 28 symbols
@@ -74,10 +74,9 @@ that file is a deliberate act; a type with no consumer does not belong in it, an
 needs a missing shape should try deriving it first (`ComponentProps<typeof Workbench>`, or
 indexed access like `NonNullable<WorkbenchPanelConfig["menuItems"]>`).
 
-Type imports come from `../../types`, constants from `../../constants/workbench.constants`,
-store values from `../../stores`, hooks from `../../hooks`. Keep types and values as separate
-statements rather than a mixed `import { type X, y }`; the split is what stops a type file and
-a runtime barrel getting tangled.
+Type imports come from `../../types`, constants from `../../constants/workbench.constants`.
+New or touched store and hook imports likewise name their defining files, such as
+`../../stores/workbench.store` and `../../hooks/use-workbench`.
 
 The folder graph is acyclic and must stay that way: `shell → {dock, panel, command, mobile}`,
 `dock → {panel, menu}`, `mobile → dock`, and `chrome`/`menu`/`command`/`panel` point at nothing
@@ -131,7 +130,7 @@ helper the way the layout slice does. Reaching across namespaces is just another
    a raw string literal as a panel type.
 2. Co-export a module-scope blueprint const from the panel file
   (`export const MY_PANEL: WorkbenchPanelConfig<MyPanelConfig> = { name, icon, content, … }`) —
-  see the client's `FILE_CODE_EDITOR_PANEL` or `ASSISTANT_PANEL`. Module scope matters:
+  see the client's `ASSISTANT_PANEL`. Module scope matters:
    blueprint identity churn remounts panels.
 3. Reference it in a domain workbench's module-scope `COMPONENTS` map; if it should be open by
    default, add a `WorkbenchPanelRecord` to the layout literal (the client keeps its shared
@@ -344,7 +343,7 @@ the mobile shell renders no controls at all; it has no rails and no per-panel he
 **Publishing a whole api on `value`.** The four file-explorer panels show the pattern for a
 control that needs to *drive* its panel rather than just show a flag: `useFileExplorer` returns
 an identity-stable api object, so the panel publishes it once —
-`useEffect(() => setValue(explorer), [explorer])` — and `file-explorer-control.tsx` reads
+`useEffect(() => setValue(explorer), [explorer, setValue])` — and `file-explorer-control.tsx` reads
 `value` and calls `value.commands.*`. Two constraints come with it:
 
 - **The control still does not re-render with its panel.** It sees live *behaviour*, not live
@@ -502,8 +501,19 @@ and it would make the workbench the one surface whose scrim looks different.
 
 Neither site can adopt a lib overlay component: the stage backdrop is a click-catcher inside
 the dock, not a focus-trapping modal, and the busy scrim is a spinner over content. The real
-fix is a shared scrim token in `globals.css` that both `libs/ui` and this package read; until
-that exists, leave these alone rather than churning them.
+fix may require a shared scrim token in `globals.css` that both `libs/ui` and this package read.
+This is known debt, not a package-level exemption: follow [DESIGN.md](../../DESIGN.md)
+when touching these sites, and report a token migration that requires wider scope rather
+than silently expanding the change or claiming compliance.
+
+## Validation
+
+This package is source-only; it has no build script. From the repository root:
+
+```bash
+pnpm --filter @semoss/workbench check-types
+pnpm --filter @semoss/workbench test
+```
 
 ## Be cautious with
 

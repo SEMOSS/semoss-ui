@@ -1,10 +1,12 @@
 import { useState } from "react";
 import { FILE_PANEL_EVENTS } from "@semoss/panels";
 import { useInsight, usePixel } from "@semoss/sdk/react";
+import { toast } from "@semoss/ui/next";
 import { useWorkbench } from "@semoss/workbench";
+import { restoreGitCommit } from "@/api/git";
 import type { GitCommit, GitCommitFile } from "@/components/git";
 import { GitCommitRow } from "@/components/git";
-import { WORKBENCH_COMPONENTS } from "@/stores/workbench";
+import { WORKBENCH_COMPONENTS, WORKBENCH_EVENTS } from "@/stores/workbench";
 import { type GitPanelScopeParams, gitFileScope } from "./git-panel.types";
 
 interface GitCommitRowAdapterProps {
@@ -59,14 +61,24 @@ export const GitCommitRowAdapter = ({
 	/** Restore resource files to this snapshot while preserving Git history. */
 	const restore = async () => {
 		if (!canRestore) return;
-		await insight.actions.run(
-			`${prefix}CommitRestore(${resource}, commitId=[${JSON.stringify(commit.commitId)}]);`,
+		const { warning } = await restoreGitCommit(
+			insight.insightId,
+			type,
+			id,
+			commit.commitId,
 		);
 		// The files on disk are now the snapshot's, so anything showing them is
 		// stale — the same blast radius as a checkout.
 		emit(FILE_PANEL_EVENTS.FILES_CHANGED, {
 			scope: gitFileScope({ type, id }),
 		});
+		if (warning) {
+			toast.warning(warning);
+		} else if (type === "PROJECT") {
+			// ProjectCommitRestore already awaits build and publish. Reload the
+			// preview only after it finishes, without triggering a second build.
+			emit(WORKBENCH_EVENTS.APP_PUBLISHED, { projectId: id });
+		}
 	};
 
 	return (

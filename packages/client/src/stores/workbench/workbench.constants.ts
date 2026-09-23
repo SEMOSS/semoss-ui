@@ -13,6 +13,14 @@ export const WORKBENCH_COMPONENTS = {
 	...FILE_PANEL_TYPES,
 	AGENT_EDITOR: "project-agent-editor",
 	ASSISTANT: "workbench-assistant",
+	BLOCKS_DESIGNER: "blocks-designer",
+	BLOCKS_EXPORT: "blocks-export",
+	BLOCKS_LAYERS: "blocks-layers",
+	BLOCKS_MENU: "blocks-menu",
+	BLOCKS_NOTEBOOK_EXPLORER: "blocks-notebook-explorer",
+	BLOCKS_NOTEBOOK_VIEWER: "blocks-notebook-viewer",
+	BLOCKS_SELECTED: "blocks-selected",
+	BLOCKS_VARIABLES: "blocks-variables",
 	DATABASE_COLUMNS: "database-columns",
 	DATABASE_QUERY: "database-query",
 	DATABASE_RESULTS: "database-results",
@@ -83,6 +91,53 @@ export const WORKBENCH_PANEL_RECORDS = {
 		helpText: "Assistant",
 		canClose: false,
 		minWidth: 320,
+	},
+	BLOCKS_EXPORT: {
+		id: WORKBENCH_COMPONENTS.BLOCKS_EXPORT,
+		type: WORKBENCH_COMPONENTS.BLOCKS_EXPORT,
+		name: "Export",
+		helpText: "Export Tool",
+		canClose: false,
+	},
+	BLOCKS_LAYERS: {
+		id: WORKBENCH_COMPONENTS.BLOCKS_LAYERS,
+		type: WORKBENCH_COMPONENTS.BLOCKS_LAYERS,
+		name: "Layers",
+		helpText: "Layers",
+		canClose: false,
+	},
+	BLOCKS_MENU: {
+		id: WORKBENCH_COMPONENTS.BLOCKS_MENU,
+		type: WORKBENCH_COMPONENTS.BLOCKS_MENU,
+		name: "Blocks",
+		helpText: "Blocks",
+		canClose: false,
+	},
+	BLOCKS_NOTEBOOK_EXPLORER: {
+		id: WORKBENCH_COMPONENTS.BLOCKS_NOTEBOOK_EXPLORER,
+		type: WORKBENCH_COMPONENTS.BLOCKS_NOTEBOOK_EXPLORER,
+		name: "Notebooks",
+		helpText: "Notebooks",
+		canClose: false,
+	},
+	BLOCKS_SELECTED: {
+		id: WORKBENCH_COMPONENTS.BLOCKS_SELECTED,
+		type: WORKBENCH_COMPONENTS.BLOCKS_SELECTED,
+		name: "Block Settings",
+		helpText: "Block Settings",
+		canClose: false,
+		// Its forms are the widest in the app, so the layout opens it at 450.
+		// This is only the floor on a resize drag, and holding that at the
+		// comfortable width made the panel the one thing on the rail a user
+		// could not narrow.
+		minWidth: 280,
+	},
+	BLOCKS_VARIABLES: {
+		id: WORKBENCH_COMPONENTS.BLOCKS_VARIABLES,
+		type: WORKBENCH_COMPONENTS.BLOCKS_VARIABLES,
+		name: "Variables",
+		helpText: "Variables",
+		canClose: false,
 	},
 	FILE_EXPLORER: {
 		id: WORKBENCH_COMPONENTS.FILE_EXPLORER,

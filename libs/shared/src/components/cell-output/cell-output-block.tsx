@@ -7,9 +7,13 @@ import {
 	Maximize2 as PopoutIcon,
 	X as XIcon,
 } from "lucide-react";
-import { type ReactNode, useEffect, useState } from "react";
+import { type ReactNode, useEffect, useRef, useState } from "react";
 import { useTranslation } from "@semoss/i18n";
 import {
+	Button,
+	Dialog,
+	DialogContent,
+	DialogTitle,
 	Markdown,
 	Tooltip,
 	TooltipContent,
@@ -671,7 +675,7 @@ const CopyButton = ({ value, label }: { value: string; label: string }) => {
 		return () => clearTimeout(timer);
 	}, [copied]);
 	return (
-		<Tooltip>
+		<Tooltip disableHoverableContent={false}>
 			<TooltipTrigger asChild>
 				<button
 					type="button"
@@ -696,7 +700,7 @@ const CopyButton = ({ value, label }: { value: string; label: string }) => {
 const PopoutButton = ({ onClick }: { onClick: () => void }) => {
 	const { t } = useTranslation("common");
 	return (
-		<Tooltip>
+		<Tooltip disableHoverableContent={false}>
 			<TooltipTrigger asChild>
 				<button
 					type="button"
@@ -764,7 +768,7 @@ const ExpandAllToggle = ({
 	const { t } = useTranslation("common");
 	return (
 		<div className="inline-flex overflow-hidden rounded border border-current/30">
-			<Tooltip>
+			<Tooltip disableHoverableContent={false}>
 				<TooltipTrigger asChild>
 					<button
 						type="button"
@@ -777,7 +781,7 @@ const ExpandAllToggle = ({
 				</TooltipTrigger>
 				<TooltipContent>{t("cellOutput.expandAll")}</TooltipContent>
 			</Tooltip>
-			<Tooltip>
+			<Tooltip disableHoverableContent={false}>
 				<TooltipTrigger asChild>
 					<button
 						type="button"
@@ -815,62 +819,66 @@ export const PopoutModal = ({
 	onClose: () => void;
 }) => {
 	const { t } = useTranslation("common");
-	useEffect(() => {
-		const onKey = (e: KeyboardEvent) => {
-			if (e.key === "Escape") onClose();
-		};
-		window.addEventListener("keydown", onKey);
-		return () => window.removeEventListener("keydown", onKey);
-	}, [onClose]);
+	const contentRef = useRef<HTMLDivElement>(null);
+	const returnFocusRef = useRef<HTMLElement | null>(
+		typeof document !== "undefined" &&
+			document.activeElement instanceof HTMLElement
+			? document.activeElement
+			: null,
+	);
 
 	return (
-		<div
-			role="dialog"
-			aria-modal="true"
-			aria-label={title}
-			tabIndex={-1}
-			className="fixed inset-0 z-200 flex items-center justify-center bg-black/40"
-			onClick={(e) => {
-				// only close when the click is on the backdrop itself, not on
-				// the modal content bubbling up
-				if (e.target === e.currentTarget) onClose();
-			}}
-			onKeyDown={(e) => {
-				if (e.key === "Escape") onClose();
+		<Dialog
+			open
+			onOpenChange={(open) => {
+				if (!open) onClose();
 			}}
 		>
-			<div
-				className="flex max-h-[90vh] max-w-[90vw] flex-col overflow-hidden rounded-lg bg-background shadow-2xl"
-				style={{
-					width: "min(90vw, 1100px)",
-					height: "min(90vh, 800px)",
+			<DialogContent
+				ref={contentRef}
+				onOpenAutoFocus={(event) => {
+					event.preventDefault();
+					contentRef.current?.focus();
+				}}
+				showCloseButton={false}
+				aria-describedby={undefined}
+				className="h-4/5 gap-0 overflow-hidden p-0 sm:max-w-6xl"
+				onCloseAutoFocus={(event) => {
+					event.preventDefault();
+					returnFocusRef.current?.focus();
 				}}
 			>
-				<div className="flex select-none items-center gap-2 border-border border-b px-4 py-2">
-					<div className="font-semibold text-foreground text-sm">
+				<div className="flex shrink-0 flex-wrap items-center gap-2 border-border border-b px-4 py-2">
+					<DialogTitle className="font-medium text-base leading-6">
 						{title}
-					</div>
+					</DialogTitle>
 					{meta && (
-						<div className="text-muted-foreground text-xs">
+						<span className="text-muted-foreground text-xs">
 							{meta}
-						</div>
+						</span>
 					)}
 					<div className="flex-1" />
 					{actions}
-					<button
-						type="button"
-						className="ml-1 rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
-						onClick={onClose}
-						aria-label={t("cellOutput.close")}
-					>
-						<XIcon className="h-4 w-4" />
-					</button>
+					<Tooltip disableHoverableContent={false}>
+						<TooltipTrigger asChild>
+							<Button
+								type="button"
+								variant="ghost"
+								size="icon-sm"
+								onClick={onClose}
+								aria-label={t("cellOutput.close")}
+							>
+								<XIcon aria-hidden className="size-4" />
+							</Button>
+						</TooltipTrigger>
+						<TooltipContent>{t("cellOutput.close")}</TooltipContent>
+					</Tooltip>
 				</div>
 				<div className="min-h-0 flex-1 overflow-auto p-4">
 					{children}
 				</div>
-			</div>
-		</div>
+			</DialogContent>
+		</Dialog>
 	);
 };
 

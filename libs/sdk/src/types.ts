@@ -124,6 +124,11 @@ export interface RoomOptions {
 	predefinedPrompts: PredefinedPrompt[];
 	/** System-level instructions / persona injected into every conversation */
 	instructions: string;
+	/**
+	 * False appends nonempty instructions to the agent prompt. True or omitted
+	 * preserves the legacy replacement behavior. Requires backend support.
+	 */
+	overrideSystemPrompt?: boolean;
 	/** MCP tool and knowledge-source entries enabled for the room */
 	mcp: MCPToolConfig[];
 	/** Agent workspace linked to the room, if any */
@@ -336,37 +341,8 @@ export interface PendingAgentAction {
 	status: string;
 }
 
-/** Measured activity for one agent; child runs expose their own measurements. */
-export interface AgentRunProgress {
-	phase: string;
-	activity: "idle" | "model" | "tool";
-	currentTool: string | null;
-	maxTurns: number;
-	turnsCompleted: number;
-	turnsRemaining: number;
-	modelCalls: number;
-	/** Model requests only, excluding tool execution. */
-	modelTimeMs: number;
-	/** Sum of tool durations; parallel tool durations may overlap. */
-	toolTimeMs: number;
-	/** Wall time spent in tool batches, counting overlapping tools once. */
-	toolWallTimeMs: number;
-	/** Active execution time, excluding time paused for human input. */
-	elapsedMs: number;
-	toolCalls: number;
-	toolFailures: number;
-	repeatedFailures: {
-		tool: string;
-		target: string;
-		count: number;
-		error: string;
-	}[];
-}
-
 /** Durable, current state of an agent run — never inferred from stream events. */
 export interface AgentRunSnapshot {
-	/** Available on instrumented runs, including failures. */
-	progress?: AgentRunProgress;
 	/** The run's own id — also its jobId, the model-facing handle. */
 	runId: string;
 	/** The room this run's messages are written to. */
@@ -392,7 +368,6 @@ export interface AgentRunSnapshot {
  * in AgentRunItemEvent.
  */
 export type AgentRunItem =
-	| (AgentRunProgress & { id: string; kind: "progress" })
 	| {
 			/** Unique within the run. */
 			id: string;
