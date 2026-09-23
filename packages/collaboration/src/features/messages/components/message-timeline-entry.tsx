@@ -11,6 +11,7 @@ import {
 } from "@semoss/ui/next";
 import type { Agent } from "@/features/agents/types/agent";
 import { DelegationReplyCard } from "@/features/delegations/components/delegation-reply-card";
+import { DelegationRequestCard } from "@/features/delegations/components/delegation-request-card";
 import { ToolCallCard } from "@/features/tools/components/tool-call-card";
 import type { ConversationMessage } from "../types/message";
 import { MessageActivityPart } from "./message-activity-part";
@@ -30,6 +31,7 @@ function formatMessageTime(value: string | undefined): string {
 
 function messageText(message: ConversationMessage): string {
 	if (message.delegationReply) return message.delegationReply.text ?? "";
+	if (message.delegationRequest) return message.delegationRequest.question;
 	return message.parts
 		.flatMap((part) => {
 			if (part.type === "text" || part.type === "thinking")
@@ -50,6 +52,9 @@ export function MessageTimelineEntry({
 	const [hasCopied, setHasCopied] = useState(false);
 	const isUser = message.role === "user";
 	const reply = message.delegationReply;
+	const request = message.delegationRequest;
+	// Platform cards speak for a person, so they carry no agent label.
+	const card = reply !== undefined || request !== undefined;
 	const time = formatMessageTime(message.createdAt);
 	const isLive =
 		message.live !== undefined &&
@@ -85,10 +90,10 @@ export function MessageTimelineEntry({
 			aria-label={
 				isUser
 					? "Your message"
-					: `${reply?.assignee ?? agent.name}'s message`
+					: `${reply?.assignee ?? request?.requester ?? agent.name}'s message`
 			}
 		>
-			{!isUser && !reply && (
+			{!isUser && !card && (
 				<span className="font-medium text-muted-foreground text-xs">
 					{agent.name}
 				</span>
@@ -100,7 +105,8 @@ export function MessageTimelineEntry({
 				)}
 			>
 				{reply && <DelegationReplyCard reply={reply} />}
-				{!reply &&
+				{request && <DelegationRequestCard request={request} />}
+				{!card &&
 					message.parts.map((part, index) => {
 						const key = `${message.id}-${part.type}-${index}`;
 						switch (part.type) {

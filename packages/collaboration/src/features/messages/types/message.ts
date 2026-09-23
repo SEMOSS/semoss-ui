@@ -83,6 +83,18 @@ export interface DelegationReply {
 	files?: { path: string; name: string; size?: number }[];
 }
 
+/** What a person was asked, from the delegation room's `delegationRequest` ornament. */
+export interface DelegationRequest {
+	requester: string;
+	question: string;
+	context?: string;
+	responseFormat?: string;
+	dueAt?: string;
+	/** Their copies, as paths in this room's folder. */
+	files?: { path: string; name: string; size?: number }[];
+	links?: { url: string; title?: string }[];
+}
+
 /** A Playground-style message with ordered, typed content parts. */
 export interface ConversationMessage {
 	id: string;
@@ -92,6 +104,7 @@ export interface ConversationMessage {
 	parentMessageId?: string;
 	visible?: boolean;
 	delegationReply?: DelegationReply;
+	delegationRequest?: DelegationRequest;
 	live?: {
 		phase: PlaygroundTurnPhase;
 		hasObservationIssue: boolean;

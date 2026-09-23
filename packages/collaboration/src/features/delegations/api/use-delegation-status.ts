@@ -59,7 +59,11 @@ function delegationTool(
 		...tool,
 		title: declined ? `${who} declined` : `Request to ${who}`,
 		status: "CANCELLED",
-		statusLabel: declined ? "Declined" : "Cancelled",
+		statusLabel: declined
+			? "Declined"
+			: run.status === "CANCELLED"
+				? "Withdrawn"
+				: "Not answered",
 	};
 }
 

@@ -1,6 +1,7 @@
 import type { PendingToolApproval } from "@/features/rooms/types/room";
 import {
 	delegationReplySchema,
+	delegationRequestSchema,
 	roomMessagePartSchema,
 	type ValidatedRoomMessage,
 	type ValidatedRoomMessagePart,
@@ -12,6 +13,7 @@ import type {
 	ConversationToolStates,
 	ConversationToolStatus,
 	DelegationReply,
+	DelegationRequest,
 } from "../types/message";
 
 type ToolResultPart = Extract<
@@ -121,6 +123,34 @@ function delegationReply(
 	};
 }
 
+function delegationRequest(
+	message: ValidatedRoomMessage,
+): DelegationRequest | undefined {
+	const ornaments = message.ornaments as
+		| { delegationRequest?: unknown }
+		| undefined;
+	const parsed = delegationRequestSchema.safeParse(
+		ornaments?.delegationRequest,
+	);
+	if (!parsed.success) return undefined;
+	const { context, responseFormat, dueAt, files, links, ...rest } =
+		parsed.data;
+	return {
+		...rest,
+		context: context ?? undefined,
+		responseFormat: responseFormat ?? undefined,
+		dueAt: dueAt ?? undefined,
+		files: files?.map(({ size, ...file }) => ({
+			...file,
+			size: size ?? undefined,
+		})),
+		links: links?.map(({ title, ...link }) => ({
+			...link,
+			title: title ?? undefined,
+		})),
+	};
+}
+
 /** Convert one validated playground message into its UI representation. */
 export function conversationMessageFromPersisted(
 	message: ValidatedRoomMessage,
@@ -150,6 +180,7 @@ export function conversationMessageFromPersisted(
 		parentMessageId: message.parentMessageId ?? undefined,
 		visible: message.visible ?? true,
 		delegationReply: delegationReply(message),
+		delegationRequest: delegationRequest(message),
 	};
 }
 

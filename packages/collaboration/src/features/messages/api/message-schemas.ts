@@ -66,6 +66,27 @@ export const delegationReplySchema = z.object({
 		.nullish(),
 });
 
+/** Display ornament on the first message of a delegation room: what was asked. */
+export const delegationRequestSchema = z.object({
+	requester: z.string(),
+	question: z.string(),
+	context: z.string().nullish(),
+	responseFormat: z.string().nullish(),
+	dueAt: z.string().nullish(),
+	files: z
+		.array(
+			z.object({
+				path: z.string(),
+				name: z.string(),
+				size: z.number().nullish(),
+			}),
+		)
+		.nullish(),
+	links: z
+		.array(z.object({ url: z.string(), title: z.string().nullish() }))
+		.nullish(),
+});
+
 /** Canonical persisted playground message parts collaboration can render. */
 export const roomMessagePartSchema = z.discriminatedUnion("type", [
 	textPartSchema,
