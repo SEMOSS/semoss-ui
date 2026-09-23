@@ -56,7 +56,16 @@ validators for richer backend message parts.
 
 Required `RoomOptions` fields are `predefinedPrompts: PredefinedPrompt[]`,
 `instructions: string`, `mcp: MCPToolConfig[]`, and `modelId: string`.
-Optional fields are `workspace: RoomWorkspace` and `harnessType: string`.
+Optional fields are `workspace: RoomWorkspace`, `harnessType: string`, and
+`overrideSystemPrompt: boolean`.
+
+On backends supporting `overrideSystemPrompt`, set it to `false` to append
+`instructions` after the selected agent's authored system prompt. Set it to
+`true` to replace that prompt with nonempty `instructions`. Omitting the flag
+retains the legacy replacement behavior; blank instructions retain the agent
+prompt in either mode. Workbench assistants send `false` by default. Deploy the
+backend change together with clients using this option; older servers ignore
+the flag and continue replacing the agent prompt.
 
 - `PredefinedPrompt` requires `{ id, title, context }` strings, not plain strings;
   optional fields are `tags?: string[]`, `version?: number`, and `intent?: string`.
