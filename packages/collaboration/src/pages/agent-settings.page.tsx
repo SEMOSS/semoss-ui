@@ -25,8 +25,6 @@ export function AgentSettingsPage() {
 		id: crypto.randomUUID(),
 		name: "",
 		description: "",
-		icon: "compass",
-		tone: "green",
 		instructions:
 			"Be clear, concise, and ask before taking external actions.",
 		skills: [],

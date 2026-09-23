@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useInsight } from "@semoss/sdk/react";
-import { callPixel, pixel, toError } from "@/lib/pixel";
+import { toError } from "@semoss/utility";
+import { callPixel, pixel } from "@/lib/pixel";
 import {
 	type PlaygroundRoomOptions,
 	roomOptionsEnvelopeSchema,

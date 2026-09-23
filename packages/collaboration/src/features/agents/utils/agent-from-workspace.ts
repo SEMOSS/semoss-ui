@@ -1,34 +1,6 @@
-import type {
-	AgentIcon,
-	AgentTone,
-	Agent as ShowcaseAgent,
-} from "@/types/agent";
+import type { Agent as ShowcaseAgent } from "@/types/agent";
 import { agentImageUrl } from "../api/agent-image";
 import type { ProjectRow, WorkspaceAgent } from "../api/agent-schemas";
-
-const ICONS: AgentIcon[] = ["compass", "briefcase", "chart", "pen", "users"];
-const TONES: AgentTone[] = ["green", "teal", "blue", "amber"];
-
-/** Stable non-cryptographic hash, so an agent keeps the same look across reloads. */
-function hashId(id: string) {
-	let hash = 0;
-	for (let index = 0; index < id.length; index += 1) {
-		hash = (hash * 31 + id.charCodeAt(index)) | 0;
-	}
-	return Math.abs(hash);
-}
-
-// TODO:: icon and tone have no server source. They are derived from the
-// workspace id so they stay stable per agent. Persist a real choice in
-// CONFIG_JSON and read it here instead.
-function agentIconFor(id: string): AgentIcon {
-	return ICONS[hashId(id) % ICONS.length];
-}
-
-/** The colour that pairs with {@link agentIconFor}, derived the same way. */
-function agentToneFor(id: string): AgentTone {
-	return TONES[hashId(id) % TONES.length];
-}
 
 /**
  * Map a fetched workspace onto the showcase shape the screens render.
@@ -45,11 +17,9 @@ export function agentFromWorkspace(agent: WorkspaceAgent): ShowcaseAgent {
 		id,
 		name: agent.name,
 		description: agent.description,
-		// The project image endpoint 404s when no image is set, so AgentAvatar
-		// falls back to the derived icon below.
+		// The project image endpoint 404s when no image is set; AgentAvatar then
+		// falls back to initials.
 		avatar: agentImageUrl(id),
-		icon: agentIconFor(id),
-		tone: agentToneFor(id),
 		instructions: agent.system_prompt,
 		skills: agent.skills,
 		mcp: agent.mcp.map(({ type, id, name }) => ({ type, id, name })),
@@ -73,8 +43,6 @@ export function agentFromProjectRow(row: ProjectRow): ShowcaseAgent {
 		name: row.project_display_name?.trim() || id,
 		description: row.project_description?.trim() || "",
 		avatar: agentImageUrl(id),
-		icon: agentIconFor(id),
-		tone: agentToneFor(id),
 		instructions: "",
 		skills: [],
 		mcp: [],

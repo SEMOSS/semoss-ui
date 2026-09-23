@@ -1,16 +1,5 @@
 import type { Origin } from "./origin";
 
-interface ThreadItem {
-	id: string;
-	type: "message" | "email" | "document" | "update";
-	author?: "You" | string;
-	title: string;
-	body: string;
-	time: string;
-	day?: string;
-	from?: string;
-}
-
 export interface Session {
 	id: string;
 	agentId: string;
@@ -23,6 +12,4 @@ export interface Session {
 	pinned: boolean;
 	routine?: boolean;
 	preview: string;
-	instructions?: string;
-	thread: ThreadItem[];
 }

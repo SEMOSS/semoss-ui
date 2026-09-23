@@ -10,8 +10,6 @@ const researchAgent: Agent = {
 	id: "research-agent",
 	name: "Research agent",
 	description: "Analyst",
-	icon: "compass",
-	tone: "blue",
 	instructions: "Research the requested topic.",
 	skills: [],
 	mcp: [],
@@ -23,8 +21,6 @@ const writingAgent: Agent = {
 	id: "writing-agent",
 	name: "Writing agent",
 	description: "Editor",
-	icon: "pen",
-	tone: "amber",
 };
 
 function room(
@@ -43,7 +39,6 @@ function room(
 		unread: index === 3,
 		pinned: false,
 		preview: index === 1 ? "Latest room preview" : "",
-		thread: [],
 		...overrides,
 	};
 }

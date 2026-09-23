@@ -1,10 +1,10 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { createRef } from "react";
-import type { Agent } from "@/features/agents/types/agent";
+import type { AgentConfiguration } from "@/features/agents/types/agent";
 import type { ConversationMessage } from "@/features/messages/types/message";
 import { RoomThread } from "./room-thread";
 
-const agent: Agent = {
+const agent: AgentConfiguration = {
 	name: "Research agent",
 	description: "Research",
 	system_prompt: "Research carefully.",

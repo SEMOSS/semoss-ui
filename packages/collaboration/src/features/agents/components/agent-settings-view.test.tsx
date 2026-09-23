@@ -61,8 +61,6 @@ const agent: Agent = {
 	id: "draft-1",
 	name: "Research agent",
 	description: "",
-	icon: "compass",
-	tone: "green",
 	instructions: "Research carefully",
 	skills: [],
 	mcp: [],
@@ -342,12 +340,12 @@ describe("AgentSettings submission", () => {
 		).toBeDisabled();
 		expect(screen.getByRole("button", { name: /Saving…/ })).toBeDisabled();
 		expect(screen.getByRole("button", { name: "Cancel" })).toBeDisabled();
-		expect(screen.getByRole("button", { name: "Subagents" })).toBeEnabled();
-		await user.click(screen.getByRole("button", { name: "Subagents" }));
+		expect(screen.getByRole("tab", { name: "Subagents" })).toBeEnabled();
+		await user.click(screen.getByRole("tab", { name: "Subagents" }));
 		expect(
 			screen.getByRole("checkbox", { name: "Research helper" }),
 		).toBeDisabled();
-		await user.click(screen.getByRole("button", { name: "Capabilities" }));
+		await user.click(screen.getByRole("tab", { name: "Capabilities" }));
 		expect(
 			screen.getByRole("button", { name: "Add knowledge" }),
 		).toBeDisabled();
@@ -357,7 +355,7 @@ describe("AgentSettings submission", () => {
 		expect(
 			screen.getByRole("button", { name: "Add skills" }),
 		).toBeDisabled();
-		await user.click(screen.getByRole("button", { name: "Profile" }));
+		await user.click(screen.getByRole("tab", { name: "Profile" }));
 		await act(async () => rejectSave(new Error("Settings failed")));
 		expect(await screen.findByRole("alert")).toHaveTextContent(
 			"Settings failed",
@@ -388,7 +386,7 @@ describe("AgentSettings submission", () => {
 				onClose={vi.fn()}
 			/>,
 		);
-		await user.click(screen.getByRole("button", { name: "Capabilities" }));
+		await user.click(screen.getByRole("tab", { name: "Capabilities" }));
 		await user.click(screen.getByRole("button", { name: "Add skills" }));
 		await user.click(
 			screen.getByRole("checkbox", { name: "Analysis skill-2" }),
@@ -430,7 +428,7 @@ describe("AgentSettings submission", () => {
 				onClose={vi.fn()}
 			/>,
 		);
-		await user.click(screen.getByRole("button", { name: "Capabilities" }));
+		await user.click(screen.getByRole("tab", { name: "Capabilities" }));
 		expect(
 			screen.getByRole("heading", { name: "Knowledge" }),
 		).toBeInTheDocument();
@@ -477,8 +475,8 @@ describe("AgentSettings submission", () => {
 		await user.click(
 			screen.getByRole("button", { name: "Remove Research toolbox" }),
 		);
-		await user.click(screen.getByRole("button", { name: "Profile" }));
-		await user.click(screen.getByRole("button", { name: "Capabilities" }));
+		await user.click(screen.getByRole("tab", { name: "Profile" }));
+		await user.click(screen.getByRole("tab", { name: "Capabilities" }));
 		expect(screen.getByText("Research knowledge")).toBeInTheDocument();
 		expect(screen.getByText("Search tools")).toBeInTheDocument();
 		expect(screen.queryByText("Research toolbox")).not.toBeInTheDocument();
@@ -518,7 +516,7 @@ describe("AgentSettings submission", () => {
 				onClose={vi.fn()}
 			/>,
 		);
-		await user.click(screen.getByRole("button", { name: "Capabilities" }));
+		await user.click(screen.getByRole("tab", { name: "Capabilities" }));
 		await user.click(screen.getByRole("button", { name: "Add skills" }));
 		await user.click(screen.getByRole("checkbox", { name: "agent-run" }));
 		const search = screen.getByRole("textbox", { name: "Search skills" });
@@ -577,7 +575,7 @@ describe("AgentSettings submission", () => {
 				onClose={vi.fn()}
 			/>,
 		);
-		await user.click(screen.getByRole("button", { name: "Capabilities" }));
+		await user.click(screen.getByRole("tab", { name: "Capabilities" }));
 		await user.click(screen.getByRole("button", { name: "Add knowledge" }));
 		expect(screen.getByRole("alert")).toHaveTextContent(
 			"Could not load the catalog",
@@ -600,7 +598,7 @@ describe("AgentSettings submission", () => {
 				onClose={vi.fn()}
 			/>,
 		);
-		await user.click(screen.getByRole("button", { name: "Capabilities" }));
+		await user.click(screen.getByRole("tab", { name: "Capabilities" }));
 		await user.click(screen.getByRole("button", { name: "Add knowledge" }));
 		expect(screen.getByText("Loading…")).toBeInTheDocument();
 		expect(
@@ -671,7 +669,7 @@ describe("AgentSettings submission", () => {
 				onClose={vi.fn()}
 			/>,
 		);
-		await user.click(screen.getByRole("button", { name: "Subagents" }));
+		await user.click(screen.getByRole("tab", { name: "Subagents" }));
 		expect(screen.queryByText("platform")).not.toBeInTheDocument();
 		expect(
 			screen.getByRole("checkbox", { name: "Writing helper" }),
@@ -683,8 +681,8 @@ describe("AgentSettings submission", () => {
 			screen.getByRole("checkbox", { name: "Research helper" }),
 		);
 		expect(
-			screen.getByRole("button", { name: "Subagents 1" }),
-		).toHaveAttribute("aria-current", "page");
+			screen.getByRole("tab", { name: "Subagents 1" }),
+		).toHaveAttribute("aria-selected", "true");
 		await user.click(screen.getByRole("button", { name: "Save agent" }));
 		await waitFor(() =>
 			expect(onSave).toHaveBeenCalledWith(
@@ -709,7 +707,7 @@ describe("AgentSettings submission", () => {
 		expect(
 			screen.queryByRole("button", { name: "Starts work when" }),
 		).not.toBeInTheDocument();
-		await user.click(screen.getByRole("button", { name: "Subagents" }));
+		await user.click(screen.getByRole("tab", { name: "Subagents" }));
 		expect(screen.queryByText("Delegation limits")).not.toBeInTheDocument();
 		expect(screen.queryByRole("spinbutton")).not.toBeInTheDocument();
 		expect(screen.queryByRole("switch")).not.toBeInTheDocument();

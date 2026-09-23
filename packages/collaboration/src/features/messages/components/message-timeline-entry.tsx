@@ -9,7 +9,8 @@ import {
 	TooltipTrigger,
 	toast,
 } from "@semoss/ui/next";
-import type { Agent } from "@/features/agents/types/agent";
+import { copyTextToClipboard } from "@semoss/utility";
+import type { AgentConfiguration } from "@/features/agents/types/agent";
 import { DelegationReplyCard } from "@/features/delegations/components/delegation-reply-card";
 import { DelegationRequestCard } from "@/features/delegations/components/delegation-request-card";
 import { ToolCallCard } from "@/features/tools/components/tool-call-card";
@@ -47,7 +48,7 @@ export function MessageTimelineEntry({
 	agent,
 }: {
 	message: ConversationMessage;
-	agent: Agent;
+	agent: AgentConfiguration;
 }) {
 	const [hasCopied, setHasCopied] = useState(false);
 	const isUser = message.role === "user";
@@ -74,7 +75,7 @@ export function MessageTimelineEntry({
 			return;
 		}
 		try {
-			await navigator.clipboard.writeText(text);
+			await copyTextToClipboard(text);
 			setHasCopied(true);
 		} catch {
 			toast.error("Could not copy this message.");

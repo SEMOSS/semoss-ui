@@ -23,7 +23,7 @@ export function DelegationRequestCard({
 					</span>
 				</p>
 				{request.dueAt && (
-					<span className="shrink-0 rounded-sm bg-chart-4/10 px-2 py-0.5 font-medium text-chart-4 text-xs">
+					<span className="shrink-0 rounded-sm bg-warning/10 px-2 py-0.5 font-medium text-warning text-xs">
 						Due {request.dueAt}
 					</span>
 				)}
@@ -87,7 +87,7 @@ export function DelegationRequestCard({
 									target="_blank"
 									rel="noreferrer"
 									title={link.url}
-									className="inline-flex max-w-64 items-center gap-1.5 rounded-md border bg-background px-2 py-1 text-link text-xs hover:bg-accent"
+									className="inline-flex max-w-64 items-center gap-1.5 rounded-md border bg-background px-2 py-1 text-primary text-xs hover:bg-accent"
 								>
 									<Link2
 										aria-hidden="true"

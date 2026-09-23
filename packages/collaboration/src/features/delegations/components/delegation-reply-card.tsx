@@ -1,5 +1,6 @@
 import { CircleSlash, MessageSquareReply } from "lucide-react";
 import { cn } from "@semoss/ui/next";
+import { buildInitials } from "@semoss/utility";
 import { MessageMarkdown } from "@/features/messages/components/message-markdown";
 import type { DelegationReply } from "@/features/messages/types/message";
 import { FileChip } from "./file-chip";
@@ -10,16 +11,6 @@ const HEADLINE: Record<DelegationReply["outcome"], string> = {
 	CANCELLED: "was sent your request; you withdrew it",
 	UNANSWERED: "did not answer your request",
 };
-
-function initials(name: string): string {
-	return name
-		.split(/[\s@._-]+/)
-		.filter(Boolean)
-		.slice(0, 2)
-		.map((part) => part.charAt(0))
-		.join("")
-		.toUpperCase();
-}
 
 /** A person's answer to a delegated request, shown as their reply rather than agent text. */
 export function DelegationReplyCard({ reply }: { reply: DelegationReply }) {
@@ -36,9 +27,9 @@ export function DelegationReplyCard({ reply }: { reply: DelegationReply }) {
 			<header className="flex items-center gap-2.5 border-b bg-sidebar px-3 py-2">
 				<span
 					aria-hidden="true"
-					className="inline-flex size-7 shrink-0 items-center justify-center rounded-full border border-primary/20 bg-accent font-medium text-link text-xs"
+					className="inline-flex size-7 shrink-0 items-center justify-center rounded-full border border-primary/20 bg-accent font-medium text-primary text-xs"
 				>
-					{initials(reply.assignee) || "?"}
+					{buildInitials(reply.assignee) || "?"}
 				</span>
 				<p className="min-w-0 flex-1 truncate text-sm">
 					<span className="font-semibold">{reply.assignee}</span>{" "}

@@ -1,5 +1,5 @@
 import { Check, Copy, Expand } from "lucide-react";
-import { type ComponentProps, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import {
 	Button,
 	Code,
@@ -15,50 +15,8 @@ import {
 	TooltipTrigger,
 	toast,
 } from "@semoss/ui/next";
-
-type CodeLanguage = ComponentProps<typeof Code>["language"];
-
-const SUPPORTED_LANGUAGES = new Set<NonNullable<CodeLanguage>>([
-	"text",
-	"txt",
-	"jsx",
-	"tsx",
-	"javascript",
-	"js",
-	"typescript",
-	"ts",
-	"html",
-	"css",
-	"python",
-	"py",
-	"json",
-	"java",
-	"markdown",
-	"md",
-	"yaml",
-	"yml",
-	"xml",
-	"sh",
-	"bash",
-	"csv",
-	"tsv",
-]);
-
-/** Keep partial or unknown fence labels away from Shiki's finite language set. */
-export function normalizeCodeLanguage(language?: string | null): {
-	language: CodeLanguage;
-	label: string;
-} {
-	const normalized = language?.trim().toLowerCase() || "txt";
-	return {
-		language: SUPPORTED_LANGUAGES.has(
-			normalized as NonNullable<CodeLanguage>,
-		)
-			? (normalized as CodeLanguage)
-			: "txt",
-		label: normalized.toUpperCase(),
-	};
-}
+import { copyTextToClipboard } from "@semoss/utility";
+import { normalizeCodeLanguage } from "../utils/normalize-code-language";
 
 /** Inline generated code with a stable loading state and completed actions. */
 export function MessageCodeBlock({
@@ -82,7 +40,7 @@ export function MessageCodeBlock({
 
 	async function handleCopy(): Promise<void> {
 		try {
-			await navigator.clipboard.writeText(code);
+			await copyTextToClipboard(code);
 			setHasCopied(true);
 		} catch {
 			toast.error("Could not copy this code.");

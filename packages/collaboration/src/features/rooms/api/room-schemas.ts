@@ -1,7 +1,5 @@
 import { z } from "@semoss/ui/next";
 
-const unknownRecordSchema = z.record(z.string(), z.unknown());
-
 const roomRowSchema = z
 	.object({
 		ROOM_ID: z.string(),
@@ -68,7 +66,7 @@ const roomWorkspaceSchema = z
 	})
 	.catchall(z.unknown());
 
-export const playgroundRoomOptionsSchema = z
+const playgroundRoomOptionsSchema = z
 	.object({
 		predefinedPrompts: z.array(predefinedPromptSchema).default([]),
 		instructions: z.string().default(""),
@@ -89,4 +87,3 @@ export const roomOptionsEnvelopeSchema = z.object({
 
 export const createdPlaygroundRoomSchema = z.object({ roomId: z.string() });
 export const roomWriteSchema = z.boolean();
-export { unknownRecordSchema };

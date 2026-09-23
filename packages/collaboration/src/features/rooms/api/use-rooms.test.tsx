@@ -56,7 +56,6 @@ describe("useRooms", () => {
 				unread: false,
 				pinned: false,
 				preview: "",
-				thread: [],
 			});
 		});
 		expect(result.current.sessions.map((session) => session.id)).toEqual([

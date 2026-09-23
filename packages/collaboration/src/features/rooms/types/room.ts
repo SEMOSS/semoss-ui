@@ -1,5 +1,5 @@
 import type { Engine } from "@semoss/shared";
-import type { Agent } from "@/features/agents/types/agent";
+import type { AgentConfiguration } from "@/features/agents/types/agent";
 import type {
 	ConversationMessage,
 	ConversationToolStates,
@@ -29,7 +29,7 @@ export interface PendingToolApproval {
 
 /** Everything the room screen renders and every action it can raise. */
 export interface RoomViewProps {
-	agent: Agent;
+	agent: AgentConfiguration;
 	insightId: string;
 	sessions: Session[];
 	agentId: string;

@@ -15,8 +15,6 @@ const agent: Agent = {
 	id: "draft-1",
 	name: "Research team",
 	description: "Research",
-	icon: "users",
-	tone: "green",
 	instructions: "Delegate research",
 	skills: [{ id: "skill-1", name: "Research" }],
 	mcp: [],

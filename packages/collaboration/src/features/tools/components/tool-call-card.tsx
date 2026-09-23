@@ -7,6 +7,7 @@ import {
 	Hourglass,
 } from "lucide-react";
 import { cn, Spinner, useIsMobile } from "@semoss/ui/next";
+import { asString } from "@semoss/utility";
 import {
 	DelegationRequestApproval,
 	isDelegationRequest,
@@ -65,10 +66,6 @@ const SUBMIT_LABELS: Partial<Record<ConversationTool["status"], string>> = {
 	REJECTED: "Not sent",
 };
 
-function text(value: unknown): string {
-	return typeof value === "string" ? value : "";
-}
-
 /** One string field of a JSON tool result, if present. */
 function resultField(
 	output: string | undefined,
@@ -78,7 +75,7 @@ function resultField(
 	try {
 		const parsed: unknown = JSON.parse(output);
 		return parsed && typeof parsed === "object" && key in parsed
-			? text((parsed as Record<string, unknown>)[key]) || undefined
+			? asString((parsed as Record<string, unknown>)[key]) || undefined
 			: undefined;
 	} catch {
 		return undefined;
@@ -109,7 +106,7 @@ export function ToolCallCard({ tool }: { tool: ConversationTool }) {
 	const title = isSubmit
 		? `Answer to ${delegationRequester(tool) ?? "requester"}`
 		: isRequest
-			? `New request to ${resultField(tool.output, "assignee") ?? (text(tool.arguments.assignee) || "a person")}`
+			? `New request to ${resultField(tool.output, "assignee") ?? (asString(tool.arguments.assignee) || "a person")}`
 			: tool.title;
 	// Delegation tools return a plain-language summary of what happened; their
 	// description is written for the model, so it is never shown.

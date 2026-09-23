@@ -4,14 +4,7 @@
 	"description": "Shared browser-safe and runtime-independent utility functions for SEMOSS",
 	"type": "module",
 	"exports": {
-		".": "./src/index.ts",
-		"./clipboard": "./src/clipboard.ts",
-		"./date": "./src/date.ts",
-		"./file-extension": "./src/file-extension.ts",
-		"./image": "./src/image.ts",
-		"./json": "./src/json.ts",
-		"./string": "./src/string.ts",
-		"./markdown": "./src/markdown.ts"
+		".": "./src/index.ts"
 	},
 	"files": ["src"],
 	"scripts": {

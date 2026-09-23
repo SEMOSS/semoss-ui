@@ -41,7 +41,6 @@ export function sessionFromRoom(row: RoomRow): Session {
 		unread: false,
 		pinned: row.pinned ?? false,
 		preview: "",
-		thread: [],
 	};
 }
 
@@ -63,6 +62,5 @@ export function pendingSession(
 		unread: false,
 		pinned: false,
 		preview: "",
-		thread: [],
 	};
 }

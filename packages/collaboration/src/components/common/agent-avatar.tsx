@@ -1,33 +1,28 @@
 import { useState } from "react";
 import { cn } from "@semoss/ui/next";
-import { agentIcons } from "@/components/common/agent-icons";
-import type { Agent, AgentTone } from "@/types/agent";
+import { buildInitials } from "@semoss/utility";
 
-const avatarColors: Record<AgentTone, string> = {
-	green: "bg-accent text-link border-primary/20",
-	teal: "bg-chart-2/10 text-chart-2 border-chart-2/20",
-	blue: "bg-chart-3/10 text-chart-3 border-chart-3/20",
-	amber: "bg-chart-4/10 text-chart-4 border-chart-4/20",
-};
+interface AvatarAgent {
+	name: string;
+	avatar?: string;
+}
 
 export function AgentAvatar({
 	agent,
 	size = "md",
 	shape = "circle",
 }: {
-	agent: Agent;
+	agent: AvatarAgent;
 	size?: "xs" | "sm" | "md" | "lg";
 	/** Keeps conversational avatars circular while allowing directory portraits. */
 	shape?: "circle" | "rounded";
 }) {
 	const [failed, setFailed] = useState("");
-	const Icon = agentIcons[agent.icon];
 	return (
 		<span
 			aria-hidden="true"
 			className={cn(
-				"inline-flex shrink-0 items-center justify-center overflow-hidden border",
-				avatarColors[agent.tone],
+				"inline-flex shrink-0 items-center justify-center overflow-hidden border border-primary/20 bg-accent font-medium text-primary",
 				shape === "circle" ? "rounded-full" : "rounded-xl",
 				{
 					"size-6": size === "xs",
@@ -45,7 +40,9 @@ export function AgentAvatar({
 					onError={() => setFailed(agent.avatar ?? "")}
 				/>
 			) : (
-				<Icon className="size-1/2" />
+				<span className={size === "lg" ? "text-lg" : "text-xs"}>
+					{buildInitials(agent.name) || "?"}
+				</span>
 			)}
 		</span>
 	);

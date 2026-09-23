@@ -22,6 +22,7 @@ import {
 	useDebouncedValue,
 	useInfiniteScroll,
 } from "@semoss/ui/next";
+import { parseTimestamp } from "@semoss/utility";
 import { EmptyView } from "@/components/common/empty-view";
 import { PageContainer } from "@/components/common/page-container";
 import { PageHeader } from "@/components/common/page-header";
@@ -121,11 +122,10 @@ export function SessionsPage() {
 	const allRows = useMemo<ActivityRow[]>(
 		() =>
 			sessions.map((session) => {
-				const timestamp = Date.parse(session.updatedAt);
 				return {
 					agentName: session.agentId || "No workspace",
 					session,
-					updatedTime: Number.isFinite(timestamp) ? timestamp : null,
+					updatedTime: parseTimestamp(session.updatedAt),
 				};
 			}),
 		[sessions],

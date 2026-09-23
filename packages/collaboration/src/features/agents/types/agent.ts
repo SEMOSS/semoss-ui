@@ -6,7 +6,7 @@
  * showcase shape the screens render is derived from this by
  * `agent-from-workspace.ts`.
  */
-export interface Agent {
+export interface AgentConfiguration {
 	name: string;
 	description: string;
 	system_prompt: string;

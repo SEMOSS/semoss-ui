@@ -26,7 +26,7 @@ export interface Person {
 	email?: string | null;
 }
 
-export function personLabel(person: Person): string {
+function personLabel(person: Person): string {
 	const { name, email, userId } = person;
 	if (name && email && name.toLowerCase() !== email.toLowerCase())
 		return `${name} (${email})`;

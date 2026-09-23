@@ -5,8 +5,8 @@ import {
 	TooltipContent,
 	TooltipTrigger,
 } from "@semoss/ui/next";
-import { RuntimeAgentAvatar } from "@/features/agents/components/runtime-agent-avatar";
-import type { Agent } from "@/features/agents/types/agent";
+import { AgentAvatar } from "@/components/common/agent-avatar";
+import type { AgentConfiguration } from "@/features/agents/types/agent";
 import type { Session } from "@/types/session";
 
 /** The active session's title bar, actions, and source/status row. */
@@ -19,7 +19,7 @@ export function RoomHeader({
 	onToggleToolWorkbench,
 	onConfigure,
 }: {
-	agent: Agent;
+	agent: AgentConfiguration;
 	agentId: string;
 	session: Session;
 	isToolWorkbenchOpen: boolean;
@@ -33,7 +33,7 @@ export function RoomHeader({
 
 	return (
 		<header className="flex min-h-17 shrink-0 items-center gap-3 border-b px-4 py-3 lg:px-5">
-			<RuntimeAgentAvatar agent={agent} size="sm" />
+			<AgentAvatar agent={agent} size="sm" />
 			<div className="min-w-0 flex-1">
 				<h2 className="truncate font-semibold text-sm">
 					{agent.name}

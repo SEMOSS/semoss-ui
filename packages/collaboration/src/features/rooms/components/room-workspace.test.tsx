@@ -1,6 +1,6 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import type { ComponentProps } from "react";
-import type { Agent } from "@/features/agents/types/agent";
+import type { AgentConfiguration } from "@/features/agents/types/agent";
 import type { Session } from "@/types/session";
 import { RoomWorkspace } from "./room-workspace";
 
@@ -45,7 +45,7 @@ vi.mock("./room-composer", () => ({
 	),
 }));
 
-const agent: Agent = {
+const agent: AgentConfiguration = {
 	name: "Research agent",
 	description: "Research",
 	system_prompt: "Research carefully.",
@@ -64,7 +64,6 @@ const session: Session = {
 	unread: false,
 	pinned: false,
 	preview: "",
-	thread: [],
 };
 
 const defaultProps: ComponentProps<typeof RoomWorkspace> = {

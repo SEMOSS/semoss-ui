@@ -21,7 +21,7 @@ type ToolResultPart = Extract<
 	{ type: "TOOL_RESULT" }
 >;
 
-export function parseMessageParts(
+function parseMessageParts(
 	message: ValidatedRoomMessage,
 ): ValidatedRoomMessagePart[] {
 	return (message.parts ?? []).flatMap((part) => {
@@ -30,7 +30,7 @@ export function parseMessageParts(
 	});
 }
 
-export function isUserMessage(message: ValidatedRoomMessage): boolean {
+function isUserMessage(message: ValidatedRoomMessage): boolean {
 	if (message.role) return message.role.toLowerCase() === "user";
 	if (message.io) return message.io.toUpperCase() === "INPUT";
 	return (message.type ?? "").toUpperCase().startsWith("INPUT");
@@ -152,7 +152,7 @@ function delegationRequest(
 }
 
 /** Convert one validated playground message into its UI representation. */
-export function conversationMessageFromPersisted(
+function conversationMessageFromPersisted(
 	message: ValidatedRoomMessage,
 	toolResults: Map<string, ToolResultPart["toolResult"]> = new Map(),
 ): ConversationMessage | null {

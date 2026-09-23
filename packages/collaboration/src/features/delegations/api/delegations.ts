@@ -1,7 +1,7 @@
 import { z } from "@semoss/ui/next";
 import { callPixel, type InsightActions, pixel } from "@/lib/pixel";
 
-export const delegationSchema = z.object({
+const delegationSchema = z.object({
 	actionId: z.string(),
 	status: z.string(),
 	roomId: z.string().nullish(),

@@ -27,7 +27,7 @@ export function AttentionCard({
 						)}
 					</div>
 				</div>
-				<span className="shrink-0 rounded-sm bg-chart-4/10 px-2 py-1 font-medium text-chart-4 text-xs">
+				<span className="shrink-0 rounded-sm bg-warning/10 px-2 py-1 font-medium text-warning text-xs">
 					{row.session.status === "Your review"
 						? "Your turn"
 						: "New update"}

@@ -52,19 +52,19 @@ importers:
     dependencies:
       '@tailwindcss/vite':
         specifier: ^4.3.3
-        version: 4.3.3(vite@8.2.1(@types/node@24.12.2)(jiti@2.7.0)(terser@5.48.0))
+        version: 4.3.3(vite@8.2.1(@types/node@24.12.2)(jiti@2.7.0)(terser@5.48.0)(yaml@2.9.1))
       '@vitejs/plugin-react':
         specifier: ^6.0.5
-        version: 6.0.5(vite@8.2.1(@types/node@24.12.2)(jiti@2.7.0)(terser@5.48.0))
+        version: 6.0.5(vite@8.2.1(@types/node@24.12.2)(jiti@2.7.0)(terser@5.48.0)(yaml@2.9.1))
       rolldown:
         specifier: ~1.2.3
         version: 1.2.3
       unplugin-dts:
         specifier: ^1.0.3
-        version: 1.0.3(rolldown@1.2.3)(rollup@4.59.0)(typescript@6.0.3)(vite@8.2.1(@types/node@24.12.2)(jiti@2.7.0)(terser@5.48.0))
+        version: 1.0.3(rolldown@1.2.3)(rollup@4.59.0)(typescript@6.0.3)(vite@8.2.1(@types/node@24.12.2)(jiti@2.7.0)(terser@5.48.0)(yaml@2.9.1))
       vite-plugin-svgr:
         specifier: ^5.2.0
-        version: 5.2.0(rollup@4.59.0)(typescript@6.0.3)(vite@8.2.1(@types/node@24.12.2)(jiti@2.7.0)(terser@5.48.0))
+        version: 5.2.0(rollup@4.59.0)(typescript@6.0.3)(vite@8.2.1(@types/node@24.12.2)(jiti@2.7.0)(terser@5.48.0)(yaml@2.9.1))
     devDependencies:
       '@types/node':
         specifier: ^24.3.1
@@ -74,10 +74,10 @@ importers:
         version: 6.0.3
       vite:
         specifier: ^8.2.1
-        version: 8.2.1(@types/node@24.12.2)(jiti@2.7.0)(terser@5.48.0)
+        version: 8.2.1(@types/node@24.12.2)(jiti@2.7.0)(terser@5.48.0)(yaml@2.9.1)
       vitest:
         specifier: ^4.1.11
-        version: 4.1.11(@types/node@24.12.2)(@vitest/coverage-v8@4.1.11)(@vitest/ui@4.1.11)(jsdom@22.1.0)(vite@8.2.1(@types/node@24.12.2)(jiti@2.7.0)(terser@5.48.0))
+        version: 4.1.11(@types/node@24.12.2)(@vitest/coverage-v8@4.1.11)(@vitest/ui@4.1.11)(jsdom@22.1.0)(vite@8.2.1(@types/node@24.12.2)(jiti@2.7.0)(terser@5.48.0)(yaml@2.9.1))
 
   libs/i18n:
     dependencies:
@@ -160,10 +160,10 @@ importers:
         version: 6.0.3
       vite:
         specifier: ^8.2.1
-        version: 8.2.1(@types/node@25.9.3)(jiti@2.7.0)(terser@5.48.0)
+        version: 8.2.1(@types/node@25.9.3)(jiti@2.7.0)(terser@5.48.0)(yaml@2.9.1)
       vitest:
         specifier: ^4.1.11
-        version: 4.1.11(@types/node@25.9.3)(@vitest/coverage-v8@4.1.11)(@vitest/ui@4.1.11)(jsdom@22.1.0)(vite@8.2.1(@types/node@25.9.3)(jiti@2.7.0)(terser@5.48.0))
+        version: 4.1.11(@types/node@25.9.3)(@vitest/coverage-v8@4.1.11)(@vitest/ui@4.1.11)(jsdom@22.1.0)(vite@8.2.1(@types/node@25.9.3)(jiti@2.7.0)(terser@5.48.0)(yaml@2.9.1))
 
   libs/renderer:
     dependencies:
@@ -266,10 +266,10 @@ importers:
         version: 6.4.1(vega@6.2.0)
       vite:
         specifier: ^8.2.1
-        version: 8.2.1(@types/node@25.9.3)(jiti@2.7.0)(terser@5.48.0)
+        version: 8.2.1(@types/node@25.9.3)(jiti@2.7.0)(terser@5.48.0)(yaml@2.9.1)
       vitest:
         specifier: ^4.1.11
-        version: 4.1.11(@types/node@25.9.3)(@vitest/coverage-v8@4.1.11)(@vitest/ui@4.1.11)(jsdom@22.1.0)(vite@8.2.1(@types/node@25.9.3)(jiti@2.7.0)(terser@5.48.0))
+        version: 4.1.11(@types/node@25.9.3)(@vitest/coverage-v8@4.1.11)(@vitest/ui@4.1.11)(jsdom@22.1.0)(vite@8.2.1(@types/node@25.9.3)(jiti@2.7.0)(terser@5.48.0)(yaml@2.9.1))
 
   libs/sdk:
     devDependencies:
@@ -293,10 +293,10 @@ importers:
         version: 6.0.3
       vite:
         specifier: ^8.2.1
-        version: 8.2.1(@types/node@25.9.3)(jiti@2.7.0)(terser@5.48.0)
+        version: 8.2.1(@types/node@25.9.3)(jiti@2.7.0)(terser@5.48.0)(yaml@2.9.1)
       vitest:
         specifier: ^4.1.11
-        version: 4.1.11(@types/node@25.9.3)(@vitest/coverage-v8@4.1.11)(@vitest/ui@4.1.11)(jsdom@22.1.0)(vite@8.2.1(@types/node@25.9.3)(jiti@2.7.0)(terser@5.48.0))
+        version: 4.1.11(@types/node@25.9.3)(@vitest/coverage-v8@4.1.11)(@vitest/ui@4.1.11)(jsdom@22.1.0)(vite@8.2.1(@types/node@25.9.3)(jiti@2.7.0)(terser@5.48.0)(yaml@2.9.1))
 
   libs/shared:
     dependencies:
@@ -375,7 +375,7 @@ importers:
         version: 6.0.3
       vitest:
         specifier: ^4.1.11
-        version: 4.1.11(@types/node@25.9.3)(@vitest/coverage-v8@4.1.11)(@vitest/ui@4.1.11)(jsdom@22.1.0)(vite@8.2.1(@types/node@25.9.3)(jiti@2.7.0)(terser@5.48.0))
+        version: 4.1.11(@types/node@25.9.3)(@vitest/coverage-v8@4.1.11)(@vitest/ui@4.1.11)(jsdom@22.1.0)(vite@8.2.1(@types/node@25.9.3)(jiti@2.7.0)(terser@5.48.0)(yaml@2.9.1))
 
   libs/ui:
     dependencies:
@@ -565,10 +565,10 @@ importers:
         version: 11.0.5
       vite:
         specifier: ^8.2.1
-        version: 8.2.1(@types/node@25.9.3)(jiti@2.7.0)(terser@5.48.0)
+        version: 8.2.1(@types/node@25.9.3)(jiti@2.7.0)(terser@5.48.0)(yaml@2.9.1)
       vitest:
         specifier: ^4.1.11
-        version: 4.1.11(@types/node@25.9.3)(@vitest/coverage-v8@4.1.11)(@vitest/ui@4.1.11)(jsdom@22.1.0)(vite@8.2.1(@types/node@25.9.3)(jiti@2.7.0)(terser@5.48.0))
+        version: 4.1.11(@types/node@25.9.3)(@vitest/coverage-v8@4.1.11)(@vitest/ui@4.1.11)(jsdom@22.1.0)(vite@8.2.1(@types/node@25.9.3)(jiti@2.7.0)(terser@5.48.0)(yaml@2.9.1))
 
   libs/utility:
     dependencies:
@@ -587,10 +587,10 @@ importers:
         version: 6.0.3
       vite:
         specifier: ^8.2.1
-        version: 8.2.1(@types/node@24.12.2)(jiti@2.7.0)(terser@5.48.0)
+        version: 8.2.1(@types/node@24.12.2)(jiti@2.7.0)(terser@5.48.0)(yaml@2.9.1)
       vitest:
         specifier: ^4.1.11
-        version: 4.1.11(@types/node@24.12.2)(@vitest/coverage-v8@4.1.11)(@vitest/ui@4.1.11)(jsdom@22.1.0)(vite@8.2.1(@types/node@24.12.2)(jiti@2.7.0)(terser@5.48.0))
+        version: 4.1.11(@types/node@24.12.2)(@vitest/coverage-v8@4.1.11)(@vitest/ui@4.1.11)(jsdom@22.1.0)(vite@8.2.1(@types/node@24.12.2)(jiti@2.7.0)(terser@5.48.0)(yaml@2.9.1))
 
   libs/workbench:
     dependencies:
@@ -633,7 +633,7 @@ importers:
         version: 6.0.3
       vitest:
         specifier: ^4.1.11
-        version: 4.1.11(@types/node@25.9.3)(@vitest/coverage-v8@4.1.11)(@vitest/ui@4.1.11)(jsdom@22.1.0)(vite@8.2.1(@types/node@25.9.3)(jiti@2.7.0)(terser@5.48.0))
+        version: 4.1.11(@types/node@25.9.3)(@vitest/coverage-v8@4.1.11)(@vitest/ui@4.1.11)(jsdom@22.1.0)(vite@8.2.1(@types/node@25.9.3)(jiti@2.7.0)(terser@5.48.0)(yaml@2.9.1))
 
   packages/auditlog:
     dependencies:
@@ -694,10 +694,10 @@ importers:
         version: 0.4.26(eslint@9.39.4(jiti@2.7.0))
       vite:
         specifier: ^8.2.1
-        version: 8.2.1(@types/node@25.9.3)(jiti@2.7.0)(terser@5.48.0)
+        version: 8.2.1(@types/node@25.9.3)(jiti@2.7.0)(terser@5.48.0)(yaml@2.9.1)
       vitest:
         specifier: ^4.1.11
-        version: 4.1.11(@types/node@25.9.3)(@vitest/coverage-v8@4.1.11)(@vitest/ui@4.1.11)(jsdom@22.1.0)(vite@8.2.1(@types/node@25.9.3)(jiti@2.7.0)(terser@5.48.0))
+        version: 4.1.11(@types/node@25.9.3)(@vitest/coverage-v8@4.1.11)(@vitest/ui@4.1.11)(jsdom@22.1.0)(vite@8.2.1(@types/node@25.9.3)(jiti@2.7.0)(terser@5.48.0)(yaml@2.9.1))
 
   packages/automation:
     dependencies:
@@ -758,10 +758,10 @@ importers:
         version: 6.0.3
       vite:
         specifier: ^8.2.1
-        version: 8.2.1(@types/node@24.12.2)(jiti@2.7.0)(terser@5.48.0)
+        version: 8.2.1(@types/node@24.12.2)(jiti@2.7.0)(terser@5.48.0)(yaml@2.9.1)
       vitest:
         specifier: ^4.1.11
-        version: 4.1.11(@types/node@24.12.2)(@vitest/coverage-v8@4.1.11)(@vitest/ui@4.1.11)(jsdom@22.1.0)(vite@8.2.1(@types/node@24.12.2)(jiti@2.7.0)(terser@5.48.0))
+        version: 4.1.11(@types/node@24.12.2)(@vitest/coverage-v8@4.1.11)(@vitest/ui@4.1.11)(jsdom@22.1.0)(vite@8.2.1(@types/node@24.12.2)(jiti@2.7.0)(terser@5.48.0)(yaml@2.9.1))
 
   packages/browser-automation:
     dependencies:
@@ -816,10 +816,10 @@ importers:
         version: 6.0.3
       vite:
         specifier: ^8.2.1
-        version: 8.2.1(@types/node@24.12.2)(jiti@2.7.0)(terser@5.48.0)
+        version: 8.2.1(@types/node@24.12.2)(jiti@2.7.0)(terser@5.48.0)(yaml@2.9.1)
       vitest:
         specifier: ^4.1.11
-        version: 4.1.11(@types/node@24.12.2)(@vitest/coverage-v8@4.1.11)(@vitest/ui@4.1.11)(jsdom@22.1.0)(vite@8.2.1(@types/node@24.12.2)(jiti@2.7.0)(terser@5.48.0))
+        version: 4.1.11(@types/node@24.12.2)(@vitest/coverage-v8@4.1.11)(@vitest/ui@4.1.11)(jsdom@22.1.0)(vite@8.2.1(@types/node@24.12.2)(jiti@2.7.0)(terser@5.48.0)(yaml@2.9.1))
 
   packages/chrome-extension:
     dependencies:
@@ -838,7 +838,7 @@ importers:
     devDependencies:
       '@crxjs/vite-plugin':
         specifier: ^2.4.0
-        version: 2.4.0(vite@7.2.4(@types/node@25.9.3)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.48.0))
+        version: 2.4.0(vite@7.2.4(@types/node@25.9.3)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.48.0)(yaml@2.9.1))
       '@types/chrome':
         specifier: ^0.0.202
         version: 0.0.202
@@ -850,13 +850,13 @@ importers:
         version: 19.2.5(@types/react@19.2.18)
       '@vitejs/plugin-react':
         specifier: ^4.6.0
-        version: 4.7.0(vite@7.2.4(@types/node@25.9.3)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.48.0))
+        version: 4.7.0(vite@7.2.4(@types/node@25.9.3)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.48.0)(yaml@2.9.1))
       typescript:
         specifier: ~6.0.0
         version: 6.0.3
       vite:
         specifier: ^7.0.0
-        version: 7.2.4(@types/node@25.9.3)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.48.0)
+        version: 7.2.4(@types/node@25.9.3)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.48.0)(yaml@2.9.1)
 
   packages/cli:
     dependencies:
@@ -1041,10 +1041,10 @@ importers:
         version: 6.0.3
       vite:
         specifier: ^8.2.1
-        version: 8.2.1(@types/node@24.12.2)(jiti@2.7.0)(terser@5.48.0)
+        version: 8.2.1(@types/node@24.12.2)(jiti@2.7.0)(terser@5.48.0)(yaml@2.9.1)
       vitest:
         specifier: ^4.1.11
-        version: 4.1.11(@types/node@24.12.2)(@vitest/coverage-v8@4.1.11)(@vitest/ui@4.1.11)(jsdom@22.1.0)(vite@8.2.1(@types/node@24.12.2)(jiti@2.7.0)(terser@5.48.0))
+        version: 4.1.11(@types/node@24.12.2)(@vitest/coverage-v8@4.1.11)(@vitest/ui@4.1.11)(jsdom@22.1.0)(vite@8.2.1(@types/node@24.12.2)(jiti@2.7.0)(terser@5.48.0)(yaml@2.9.1))
 
   packages/collaboration:
     dependencies:
@@ -1069,6 +1069,9 @@ importers:
       '@semoss/ui':
         specifier: workspace:*
         version: link:../../libs/ui
+      '@semoss/utility':
+        specifier: workspace:*
+        version: link:../../libs/utility
       '@semoss/workbench':
         specifier: workspace:*
         version: link:../../libs/workbench
@@ -1087,9 +1090,6 @@ importers:
       react-router:
         specifier: 8.3.0
         version: 8.3.0(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
-      zustand:
-        specifier: ^5.0.0
-        version: 5.0.15(@types/react@19.2.18)(react@19.2.8)(use-sync-external-store@1.6.0(react@19.2.8))
     devDependencies:
       '@semoss/config':
         specifier: workspace:*
@@ -1114,10 +1114,10 @@ importers:
         version: 6.0.3
       vite:
         specifier: ^8.2.1
-        version: 8.2.1(@types/node@25.9.3)(jiti@2.7.0)(terser@5.48.0)
+        version: 8.2.1(@types/node@25.9.3)(jiti@2.7.0)(terser@5.48.0)(yaml@2.9.1)
       vitest:
         specifier: ^4.1.11
-        version: 4.1.11(@types/node@25.9.3)(@vitest/coverage-v8@4.1.11)(@vitest/ui@4.1.11)(jsdom@22.1.0)(vite@8.2.1(@types/node@25.9.3)(jiti@2.7.0)(terser@5.48.0))
+        version: 4.1.11(@types/node@25.9.3)(@vitest/coverage-v8@4.1.11)(@vitest/ui@4.1.11)(jsdom@22.1.0)(vite@8.2.1(@types/node@25.9.3)(jiti@2.7.0)(terser@5.48.0)(yaml@2.9.1))
 
   packages/playground:
     dependencies:
@@ -1205,10 +1205,10 @@ importers:
         version: 6.0.3
       vite:
         specifier: ^8.2.1
-        version: 8.2.1(@types/node@25.9.3)(jiti@2.7.0)(terser@5.48.0)
+        version: 8.2.1(@types/node@25.9.3)(jiti@2.7.0)(terser@5.48.0)(yaml@2.9.1)
       vitest:
         specifier: ^4.1.11
-        version: 4.1.11(@types/node@25.9.3)(@vitest/coverage-v8@4.1.11)(@vitest/ui@4.1.11)(jsdom@22.1.0)(vite@8.2.1(@types/node@25.9.3)(jiti@2.7.0)(terser@5.48.0))
+        version: 4.1.11(@types/node@25.9.3)(@vitest/coverage-v8@4.1.11)(@vitest/ui@4.1.11)(jsdom@22.1.0)(vite@8.2.1(@types/node@25.9.3)(jiti@2.7.0)(terser@5.48.0)(yaml@2.9.1))
 
   packages/terminal:
     dependencies:
@@ -1260,10 +1260,10 @@ importers:
         version: 6.0.3
       vite:
         specifier: ^8.2.1
-        version: 8.2.1(@types/node@25.9.3)(jiti@2.7.0)(terser@5.48.0)
+        version: 8.2.1(@types/node@25.9.3)(jiti@2.7.0)(terser@5.48.0)(yaml@2.9.1)
       vitest:
         specifier: ^4.1.11
-        version: 4.1.11(@types/node@25.9.3)(@vitest/coverage-v8@4.1.11)(@vitest/ui@4.1.11)(jsdom@22.1.0)(vite@8.2.1(@types/node@25.9.3)(jiti@2.7.0)(terser@5.48.0))
+        version: 4.1.11(@types/node@25.9.3)(@vitest/coverage-v8@4.1.11)(@vitest/ui@4.1.11)(jsdom@22.1.0)(vite@8.2.1(@types/node@25.9.3)(jiti@2.7.0)(terser@5.48.0)(yaml@2.9.1))
 
 packages:
 
@@ -6044,10 +6044,6 @@ packages:
       node-notifier:
         optional: true
 
-  jiti@2.6.1:
-    resolution: {integrity: sha512-ekilCSN1jwRvIbgeg/57YFh8qQDNbwDb9xT/qu2DAHbFFZUicIl4ygVaAvzveMhMVr3LnpSKTNnwt8PoOfmKhQ==}
-    hasBin: true
-
   jiti@2.7.0:
     resolution: {integrity: sha512-AC/7JofJvZGrrneWNaEnJeOLUx+JlGt7tNa0wZiRPT4MY1wmfKjt2+6O2p2uz2+skll8OZZmJMNqeke7kKbNgQ==}
     hasBin: true
@@ -8511,6 +8507,11 @@ packages:
     resolution: {integrity: sha512-vIYeF1u3CjlhAFekPPAk2h/Kv4T3mAkMox5OymRiJQB0spDP10LHvt+K7G9Ny6NuuMAb25/6n1qyUjAcGNf/AA==}
     engines: {node: '>= 6'}
 
+  yaml@2.9.1:
+    resolution: {integrity: sha512-3NxN8+78OdzbT7C/WjGsyfPAtJaN3FNDsWxv7Y7mcDsT/oOmgW8BpyQQFFBnvZE3j9Y2Sdz1ULFLezL7Eb2yFw==}
+    engines: {node: '>= 14.6'}
+    hasBin: true
+
   yargs-parser@21.1.1:
     resolution: {integrity: sha512-tVpsJW7DdjecAiFpbIB1e3qxIQsE6NoPc5/eTdrbbIC4h0LVsWhnoa3g+m2HclBIujHzsxZ4VJVA+GUuc2/LBw==}
     engines: {node: '>=12'}
@@ -9142,7 +9143,7 @@ snapshots:
       '@types/conventional-commits-parser': 5.0.2
       chalk: 5.6.2
 
-  '@crxjs/vite-plugin@2.4.0(vite@7.2.4(@types/node@25.9.3)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.48.0))':
+  '@crxjs/vite-plugin@2.4.0(vite@7.2.4(@types/node@25.9.3)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.48.0)(yaml@2.9.1))':
     dependencies:
       '@rollup/pluginutils': 4.2.1
       '@webcomponents/custom-elements': 1.6.0
@@ -9160,7 +9161,7 @@ snapshots:
       react-refresh: 0.13.0
       rollup: 2.80.0
       rxjs: 7.5.7
-      vite: 7.2.4(@types/node@25.9.3)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.48.0)
+      vite: 7.2.4(@types/node@25.9.3)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.48.0)(yaml@2.9.1)
     transitivePeerDependencies:
       - supports-color
 
@@ -11227,12 +11228,12 @@ snapshots:
       '@tailwindcss/oxide-win32-arm64-msvc': 4.3.3
       '@tailwindcss/oxide-win32-x64-msvc': 4.3.3
 
-  '@tailwindcss/vite@4.3.3(vite@8.2.1(@types/node@24.12.2)(jiti@2.7.0)(terser@5.48.0))':
+  '@tailwindcss/vite@4.3.3(vite@8.2.1(@types/node@24.12.2)(jiti@2.7.0)(terser@5.48.0)(yaml@2.9.1))':
     dependencies:
       '@tailwindcss/node': 4.3.3
       '@tailwindcss/oxide': 4.3.3
       tailwindcss: 4.3.3
-      vite: 8.2.1(@types/node@24.12.2)(jiti@2.7.0)(terser@5.48.0)
+      vite: 8.2.1(@types/node@24.12.2)(jiti@2.7.0)(terser@5.48.0)(yaml@2.9.1)
 
   '@testing-library/dom@10.4.1':
     dependencies:
@@ -11650,7 +11651,7 @@ snapshots:
       d3-selection: 3.0.0
       d3-transition: 3.0.1(d3-selection@3.0.0)
 
-  '@vitejs/plugin-react@4.7.0(vite@7.2.4(@types/node@25.9.3)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.48.0))':
+  '@vitejs/plugin-react@4.7.0(vite@7.2.4(@types/node@25.9.3)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.48.0)(yaml@2.9.1))':
     dependencies:
       '@babel/core': 7.28.5
       '@babel/plugin-transform-react-jsx-self': 7.27.1(@babel/core@7.28.5)
@@ -11658,14 +11659,14 @@ snapshots:
       '@rolldown/pluginutils': 1.0.0-beta.27
       '@types/babel__core': 7.20.5
       react-refresh: 0.17.0
-      vite: 7.2.4(@types/node@25.9.3)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.48.0)
+      vite: 7.2.4(@types/node@25.9.3)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.48.0)(yaml@2.9.1)
     transitivePeerDependencies:
       - supports-color
 
-  '@vitejs/plugin-react@6.0.5(vite@8.2.1(@types/node@24.12.2)(jiti@2.7.0)(terser@5.48.0))':
+  '@vitejs/plugin-react@6.0.5(vite@8.2.1(@types/node@24.12.2)(jiti@2.7.0)(terser@5.48.0)(yaml@2.9.1))':
     dependencies:
       '@rolldown/pluginutils': 1.0.1
-      vite: 8.2.1(@types/node@24.12.2)(jiti@2.7.0)(terser@5.48.0)
+      vite: 8.2.1(@types/node@24.12.2)(jiti@2.7.0)(terser@5.48.0)(yaml@2.9.1)
 
   '@vitest/coverage-v8@4.1.11(vitest@4.1.11)':
     dependencies:
@@ -11679,7 +11680,7 @@ snapshots:
       obug: 2.1.2
       std-env: 4.1.0
       tinyrainbow: 3.1.0
-      vitest: 4.1.11(@types/node@25.9.3)(@vitest/coverage-v8@4.1.11)(@vitest/ui@4.1.11)(jsdom@22.1.0)(vite@8.2.1(@types/node@25.9.3)(jiti@2.7.0)(terser@5.48.0))
+      vitest: 4.1.11(@types/node@24.12.2)(@vitest/coverage-v8@4.1.11)(@vitest/ui@4.1.11)(jsdom@22.1.0)(vite@8.2.1(@types/node@24.12.2)(jiti@2.7.0)(terser@5.48.0)(yaml@2.9.1))
 
   '@vitest/expect@4.1.11':
     dependencies:
@@ -11690,21 +11691,21 @@ snapshots:
       chai: 6.2.2
       tinyrainbow: 3.1.0
 
-  '@vitest/mocker@4.1.11(vite@8.2.1(@types/node@24.12.2)(jiti@2.7.0)(terser@5.48.0))':
+  '@vitest/mocker@4.1.11(vite@8.2.1(@types/node@24.12.2)(jiti@2.7.0)(terser@5.48.0)(yaml@2.9.1))':
     dependencies:
       '@vitest/spy': 4.1.11
       estree-walker: 3.0.3
       magic-string: 0.30.21
     optionalDependencies:
-      vite: 8.2.1(@types/node@24.12.2)(jiti@2.7.0)(terser@5.48.0)
+      vite: 8.2.1(@types/node@24.12.2)(jiti@2.7.0)(terser@5.48.0)(yaml@2.9.1)
 
-  '@vitest/mocker@4.1.11(vite@8.2.1(@types/node@25.9.3)(jiti@2.7.0)(terser@5.48.0))':
+  '@vitest/mocker@4.1.11(vite@8.2.1(@types/node@25.9.3)(jiti@2.7.0)(terser@5.48.0)(yaml@2.9.1))':
     dependencies:
       '@vitest/spy': 4.1.11
       estree-walker: 3.0.3
       magic-string: 0.30.21
     optionalDependencies:
-      vite: 8.2.1(@types/node@25.9.3)(jiti@2.7.0)(terser@5.48.0)
+      vite: 8.2.1(@types/node@25.9.3)(jiti@2.7.0)(terser@5.48.0)(yaml@2.9.1)
 
   '@vitest/pretty-format@4.1.11':
     dependencies:
@@ -11733,7 +11734,7 @@ snapshots:
       sirv: 3.0.2
       tinyglobby: 0.2.17
       tinyrainbow: 3.1.0
-      vitest: 4.1.11(@types/node@25.9.3)(@vitest/coverage-v8@4.1.11)(@vitest/ui@4.1.11)(jsdom@22.1.0)(vite@8.2.1(@types/node@25.9.3)(jiti@2.7.0)(terser@5.48.0))
+      vitest: 4.1.11(@types/node@24.12.2)(@vitest/coverage-v8@4.1.11)(@vitest/ui@4.1.11)(jsdom@22.1.0)(vite@8.2.1(@types/node@24.12.2)(jiti@2.7.0)(terser@5.48.0)(yaml@2.9.1))
 
   '@vitest/utils@4.1.11':
     dependencies:
@@ -12269,7 +12270,7 @@ snapshots:
     dependencies:
       '@types/node': 24.12.2
       cosmiconfig: 9.0.0(typescript@6.0.3)
-      jiti: 2.6.1
+      jiti: 2.7.0
       typescript: 6.0.3
 
   cosmiconfig@7.1.0:
@@ -13966,8 +13967,6 @@ snapshots:
       - esbuild-register
       - supports-color
       - ts-node
-
-  jiti@2.6.1: {}
 
   jiti@2.7.0: {}
 
@@ -16194,7 +16193,7 @@ snapshots:
 
   unpipe@1.0.0: {}
 
-  unplugin-dts@1.0.3(rolldown@1.2.3)(rollup@4.59.0)(typescript@6.0.3)(vite@8.2.1(@types/node@24.12.2)(jiti@2.7.0)(terser@5.48.0)):
+  unplugin-dts@1.0.3(rolldown@1.2.3)(rollup@4.59.0)(typescript@6.0.3)(vite@8.2.1(@types/node@24.12.2)(jiti@2.7.0)(terser@5.48.0)(yaml@2.9.1)):
     dependencies:
       '@rollup/pluginutils': 5.3.0(rollup@4.59.0)
       '@volar/typescript': 2.4.28
@@ -16208,7 +16207,7 @@ snapshots:
     optionalDependencies:
       rolldown: 1.2.3
       rollup: 4.59.0
-      vite: 8.2.1(@types/node@24.12.2)(jiti@2.7.0)(terser@5.48.0)
+      vite: 8.2.1(@types/node@24.12.2)(jiti@2.7.0)(terser@5.48.0)(yaml@2.9.1)
     transitivePeerDependencies:
       - supports-color
 
@@ -16588,18 +16587,18 @@ snapshots:
       '@types/unist': 3.0.3
       vfile-message: 4.0.3
 
-  vite-plugin-svgr@5.2.0(rollup@4.59.0)(typescript@6.0.3)(vite@8.2.1(@types/node@24.12.2)(jiti@2.7.0)(terser@5.48.0)):
+  vite-plugin-svgr@5.2.0(rollup@4.59.0)(typescript@6.0.3)(vite@8.2.1(@types/node@24.12.2)(jiti@2.7.0)(terser@5.48.0)(yaml@2.9.1)):
     dependencies:
       '@rollup/pluginutils': 5.3.0(rollup@4.59.0)
       '@svgr/core': 8.1.0(typescript@6.0.3)
       '@svgr/plugin-jsx': 8.1.0(@svgr/core@8.1.0(typescript@6.0.3))
-      vite: 8.2.1(@types/node@24.12.2)(jiti@2.7.0)(terser@5.48.0)
+      vite: 8.2.1(@types/node@24.12.2)(jiti@2.7.0)(terser@5.48.0)(yaml@2.9.1)
     transitivePeerDependencies:
       - rollup
       - supports-color
       - typescript
 
-  vite@7.2.4(@types/node@25.9.3)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.48.0):
+  vite@7.2.4(@types/node@25.9.3)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.48.0)(yaml@2.9.1):
     dependencies:
       esbuild: 0.25.12
       fdir: 6.5.0(picomatch@4.0.3)
@@ -16613,8 +16612,9 @@ snapshots:
       jiti: 2.7.0
       lightningcss: 1.33.0
       terser: 5.48.0
+      yaml: 2.9.1
 
-  vite@8.2.1(@types/node@24.12.2)(jiti@2.7.0)(terser@5.48.0):
+  vite@8.2.1(@types/node@24.12.2)(jiti@2.7.0)(terser@5.48.0)(yaml@2.9.1):
     dependencies:
       lightningcss: 1.33.0
       picomatch: 4.0.7
@@ -16626,8 +16626,9 @@ snapshots:
       fsevents: 2.3.3
       jiti: 2.7.0
       terser: 5.48.0
+      yaml: 2.9.1
 
-  vite@8.2.1(@types/node@25.9.3)(jiti@2.7.0)(terser@5.48.0):
+  vite@8.2.1(@types/node@25.9.3)(jiti@2.7.0)(terser@5.48.0)(yaml@2.9.1):
     dependencies:
       lightningcss: 1.33.0
       picomatch: 4.0.7
@@ -16639,11 +16640,12 @@ snapshots:
       fsevents: 2.3.3
       jiti: 2.7.0
       terser: 5.48.0
+      yaml: 2.9.1
 
-  vitest@4.1.11(@types/node@24.12.2)(@vitest/coverage-v8@4.1.11)(@vitest/ui@4.1.11)(jsdom@22.1.0)(vite@8.2.1(@types/node@24.12.2)(jiti@2.7.0)(terser@5.48.0)):
+  vitest@4.1.11(@types/node@24.12.2)(@vitest/coverage-v8@4.1.11)(@vitest/ui@4.1.11)(jsdom@22.1.0)(vite@8.2.1(@types/node@24.12.2)(jiti@2.7.0)(terser@5.48.0)(yaml@2.9.1)):
     dependencies:
       '@vitest/expect': 4.1.11
-      '@vitest/mocker': 4.1.11(vite@8.2.1(@types/node@24.12.2)(jiti@2.7.0)(terser@5.48.0))
+      '@vitest/mocker': 4.1.11(vite@8.2.1(@types/node@24.12.2)(jiti@2.7.0)(terser@5.48.0)(yaml@2.9.1))
       '@vitest/pretty-format': 4.1.11
       '@vitest/runner': 4.1.11
       '@vitest/snapshot': 4.1.11
@@ -16660,7 +16662,7 @@ snapshots:
       tinyexec: 1.2.4
       tinyglobby: 0.2.17
       tinyrainbow: 3.1.0
-      vite: 8.2.1(@types/node@24.12.2)(jiti@2.7.0)(terser@5.48.0)
+      vite: 8.2.1(@types/node@24.12.2)(jiti@2.7.0)(terser@5.48.0)(yaml@2.9.1)
       why-is-node-running: 2.3.0
     optionalDependencies:
       '@types/node': 24.12.2
@@ -16670,10 +16672,10 @@ snapshots:
     transitivePeerDependencies:
       - msw
 
-  vitest@4.1.11(@types/node@25.9.3)(@vitest/coverage-v8@4.1.11)(@vitest/ui@4.1.11)(jsdom@22.1.0)(vite@8.2.1(@types/node@25.9.3)(jiti@2.7.0)(terser@5.48.0)):
+  vitest@4.1.11(@types/node@25.9.3)(@vitest/coverage-v8@4.1.11)(@vitest/ui@4.1.11)(jsdom@22.1.0)(vite@8.2.1(@types/node@25.9.3)(jiti@2.7.0)(terser@5.48.0)(yaml@2.9.1)):
     dependencies:
       '@vitest/expect': 4.1.11
-      '@vitest/mocker': 4.1.11(vite@8.2.1(@types/node@25.9.3)(jiti@2.7.0)(terser@5.48.0))
+      '@vitest/mocker': 4.1.11(vite@8.2.1(@types/node@25.9.3)(jiti@2.7.0)(terser@5.48.0)(yaml@2.9.1))
       '@vitest/pretty-format': 4.1.11
       '@vitest/runner': 4.1.11
       '@vitest/snapshot': 4.1.11
@@ -16690,7 +16692,7 @@ snapshots:
       tinyexec: 1.2.4
       tinyglobby: 0.2.17
       tinyrainbow: 3.1.0
-      vite: 8.2.1(@types/node@25.9.3)(jiti@2.7.0)(terser@5.48.0)
+      vite: 8.2.1(@types/node@25.9.3)(jiti@2.7.0)(terser@5.48.0)(yaml@2.9.1)
       why-is-node-running: 2.3.0
     optionalDependencies:
       '@types/node': 25.9.3
@@ -16818,6 +16820,9 @@ snapshots:
   yallist@3.1.1: {}
 
   yaml@1.10.3:
+    optional: true
+
+  yaml@2.9.1:
     optional: true
 
   yargs-parser@21.1.1: {}

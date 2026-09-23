@@ -81,7 +81,7 @@ export const HomePage = () => {
 						<span className="flex items-center gap-2">
 							Good morning
 							<Sun
-								className="size-6 text-chart-4"
+								className="size-6 text-warning"
 								aria-hidden="true"
 							/>
 						</span>
@@ -97,7 +97,7 @@ export const HomePage = () => {
 						<AgentAvatar agent={chiefOfStaff} size="lg" />
 					)}
 					<div className="min-w-0 flex-1">
-						<p className="font-medium text-link text-xs">
+						<p className="font-medium text-primary text-xs">
 							A note from {chiefOfStaff?.name ?? "your team"}
 							{chiefOfStaff?.description
 								? ` · ${chiefOfStaff.description}`
@@ -136,7 +136,7 @@ export const HomePage = () => {
 							className="flex items-center gap-2 font-semibold text-lg"
 						>
 							Needs your attention
-							<span className="rounded-sm bg-chart-4/10 px-2 py-0.5 font-medium text-chart-4 text-xs">
+							<span className="rounded-sm bg-warning/10 px-2 py-0.5 font-medium text-warning text-xs">
 								{attention.length}
 							</span>
 						</h2>

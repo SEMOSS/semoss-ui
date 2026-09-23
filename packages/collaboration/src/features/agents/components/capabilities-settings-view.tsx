@@ -1,14 +1,9 @@
 import { BookOpen, Sparkles, Wrench } from "lucide-react";
 import { type MCPConfig, splitMcpByType } from "@semoss/shared";
 import { H2, P } from "@semoss/ui/next";
-import type { Agent } from "@/types/agent";
+import type { Agent, AgentFieldUpdater } from "@/types/agent";
 import { CapabilityPicker } from "./capability-picker";
 import { CapabilitySection } from "./capability-section";
-
-type UpdateAgent = <Key extends keyof Agent>(
-	key: Key,
-	value: Agent[Key],
-) => void;
 
 /** Summarize the agent's capabilities and browse each catalog only when adding. */
 export function CapabilitiesSettingsView({
@@ -26,7 +21,7 @@ export function CapabilitiesSettingsView({
 	isLoadingSkills: boolean;
 	skillsError: Error | null;
 	onRetrySkills?: () => void;
-	onUpdate: UpdateAgent;
+	onUpdate: AgentFieldUpdater;
 }) {
 	const { knowledge, toolbox } = splitMcpByType(agent.mcp);
 	const skills: MCPConfig[] = agent.skills.map((skill) => ({
@@ -37,10 +32,10 @@ export function CapabilitiesSettingsView({
 		type: "PROJECT",
 	}));
 	function updateSkills(values: MCPConfig[]): void {
-		onUpdate(
-			"skills",
-			values.map(({ id, name }) => ({ id, name })),
-		);
+		onUpdate({
+			key: "skills",
+			value: values.map(({ id, name }) => ({ id, name })),
+		});
 	}
 
 	return (
@@ -62,10 +57,12 @@ export function CapabilitiesSettingsView({
 				items={knowledge}
 				disabled={disabled}
 				onRemove={(id) =>
-					onUpdate(
-						"mcp",
-						agent.mcp.filter((resource) => resource.id !== id),
-					)
+					onUpdate({
+						key: "mcp",
+						value: agent.mcp.filter(
+							(resource) => resource.id !== id,
+						),
+					})
 				}
 			>
 				<CapabilityPicker
@@ -73,7 +70,7 @@ export function CapabilitiesSettingsView({
 					values={knowledge}
 					disabled={disabled}
 					onChange={(value) =>
-						onUpdate("mcp", [...value, ...toolbox])
+						onUpdate({ key: "mcp", value: [...value, ...toolbox] })
 					}
 				/>
 			</CapabilitySection>
@@ -85,10 +82,12 @@ export function CapabilitiesSettingsView({
 				items={toolbox}
 				disabled={disabled}
 				onRemove={(id) =>
-					onUpdate(
-						"mcp",
-						agent.mcp.filter((resource) => resource.id !== id),
-					)
+					onUpdate({
+						key: "mcp",
+						value: agent.mcp.filter(
+							(resource) => resource.id !== id,
+						),
+					})
 				}
 			>
 				<CapabilityPicker
@@ -96,7 +95,10 @@ export function CapabilitiesSettingsView({
 					values={toolbox}
 					disabled={disabled}
 					onChange={(value) =>
-						onUpdate("mcp", [...knowledge, ...value])
+						onUpdate({
+							key: "mcp",
+							value: [...knowledge, ...value],
+						})
 					}
 				/>
 			</CapabilitySection>

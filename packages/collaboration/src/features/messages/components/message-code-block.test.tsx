@@ -1,5 +1,6 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { MessageCodeBlock, normalizeCodeLanguage } from "./message-code-block";
+import { normalizeCodeLanguage } from "../utils/normalize-code-language";
+import { MessageCodeBlock } from "./message-code-block";
 
 describe("MessageCodeBlock", () => {
 	it("falls back safely for unknown syntax labels", () => {

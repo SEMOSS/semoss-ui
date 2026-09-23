@@ -8,6 +8,7 @@ import {
 	Spinner,
 	Textarea,
 } from "@semoss/ui/next";
+import { asString } from "@semoss/utility";
 import type { ConversationTool } from "@/features/messages/types/message";
 import type { PendingToolApproval } from "@/features/rooms/types/room";
 import { useToolWorkbench } from "@/features/tools/tool-workbench.context";
@@ -25,10 +26,6 @@ interface RequestLink {
 /** Whether a tool is an agent's request to hand work to a person. */
 export function isDelegationRequest(tool: ConversationTool): boolean {
 	return tool.metadata?.SMSS_TOOL_KIND === REQUEST_TOOL_KIND;
-}
-
-function text(value: unknown): string {
-	return typeof value === "string" ? value : "";
 }
 
 function linkList(value: unknown): RequestLink[] {
@@ -64,9 +61,9 @@ export function DelegationRequestApproval({
 	const id = useId();
 	// The agent passes a name or email hint; the user picks the exact account.
 	const [assignee, setAssignee] = useState<Person | null>(null);
-	const [question, setQuestion] = useState(text(args.question));
-	const [context, setContext] = useState(text(args.context));
-	const [dueAt, setDueAt] = useState(text(args.dueAt));
+	const [question, setQuestion] = useState(asString(args.question));
+	const [context, setContext] = useState(asString(args.context));
+	const [dueAt, setDueAt] = useState(asString(args.dueAt));
 	const [files, setFiles] = useState(() => filePaths(args.files));
 	const [links, setLinks] = useState(() => linkList(args.links));
 	const [busy, setBusy] = useState<"send" | "cancel" | null>(null);
@@ -116,7 +113,7 @@ export function DelegationRequestApproval({
 				</label>
 				<PersonPicker
 					id={`${id}-assignee`}
-					hint={text(args.assignee)}
+					hint={asString(args.assignee)}
 					value={assignee}
 					disabled={busy !== null}
 					onChange={setAssignee}
@@ -222,7 +219,7 @@ export function DelegationRequestApproval({
 									href={link.url}
 									target="_blank"
 									rel="noreferrer"
-									className="wrap-break-word min-w-0 flex-1 text-link underline"
+									className="wrap-break-word min-w-0 flex-1 text-primary underline"
 								>
 									{link.title || link.url}
 								</a>

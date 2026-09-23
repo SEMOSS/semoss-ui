@@ -1,3 +1,4 @@
+import { toError } from "@semoss/utility";
 import type { ValidatedRoomMessage } from "@/features/messages/api/message-schemas";
 import type {
 	ConversationMessage,
@@ -19,7 +20,6 @@ import {
 	runItemPart,
 	runItemTool,
 } from "@/features/rooms/utils/agent-run-items";
-import { toError } from "@/lib/pixel";
 import {
 	type AgentAction,
 	type AgentRun,

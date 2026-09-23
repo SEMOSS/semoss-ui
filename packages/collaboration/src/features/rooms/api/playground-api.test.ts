@@ -1,7 +1,4 @@
-import {
-	getRoomMessages,
-	latestAssistantTail,
-} from "@/features/messages/api/get-room-messages";
+import { getRoomMessages } from "@/features/messages/api/get-room-messages";
 import { createRoom } from "./create-room";
 import { listRooms } from "./list-rooms";
 
@@ -105,7 +102,7 @@ describe("playground room APIs", () => {
 		);
 	});
 
-	it("loads playground visibility and uses a hidden assistant as the durable tail", async () => {
+	it("loads playground message visibility", async () => {
 		const run = vi.fn().mockResolvedValue(
 			pixelResponse([
 				{
@@ -130,7 +127,6 @@ describe("playground room APIs", () => {
 			visible: true,
 			parentMessageId: "input-1",
 		});
-		expect(latestAssistantTail(messages)).toBe("hidden-response");
 		expect(run).toHaveBeenCalledWith(
 			'GetPlaygroundMessages(roomId=["room-1"]);',
 		);

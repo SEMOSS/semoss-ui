@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useInsight } from "@semoss/sdk/react";
-import { toError } from "@/lib/pixel";
+import { toError } from "@semoss/utility";
 import type { Session } from "@/types/session";
 import { sessionFromRoom } from "../utils/session-from-room";
 import { listRooms } from "./list-rooms";

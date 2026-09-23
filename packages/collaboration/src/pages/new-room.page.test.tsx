@@ -10,8 +10,6 @@ const researchAgent: Agent = {
 	id: "research-agent",
 	name: "Research agent",
 	description: "Analyst",
-	icon: "compass",
-	tone: "blue",
 	instructions: "Research the requested topic.",
 	skills: [],
 	mcp: [],

@@ -2,7 +2,7 @@ import { CircleCheck, CircleSlash, Inbox } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useInsight } from "@semoss/sdk/react";
 import { cn, toast } from "@semoss/ui/next";
-import { toError } from "@/lib/pixel";
+import { toError } from "@semoss/utility";
 import { type Delegation, listAssignedDelegations } from "../api/delegations";
 
 // The requester can withdraw at any time, so an open request is re-read.
@@ -82,7 +82,7 @@ export function DelegationResponsePanel({
 				aria-hidden="true"
 				className={cn(
 					"mt-0.5 size-4 shrink-0",
-					closed ? "text-muted-foreground" : "text-link",
+					closed ? "text-muted-foreground" : "text-primary",
 				)}
 			/>
 			<div className="min-w-0">
@@ -93,7 +93,7 @@ export function DelegationResponsePanel({
 				) : (
 					<>
 						<p className="wrap-break-word text-sm">
-							<span className="font-medium text-link">
+							<span className="font-medium text-primary">
 								Open request from{" "}
 								{delegation.requesterName ?? "a teammate"}
 								{delegation.dueAt &&

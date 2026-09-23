@@ -1,20 +1,21 @@
 import { Check, CircleAlert, Clock3 } from "lucide-react";
 import { cn, Spinner } from "@semoss/ui/next";
+import type { Session } from "@/types/session";
 
-export function StatusLabel({ status }: { status: string }) {
+export function StatusLabel({ status }: { status: Session["status"] }) {
 	const working = status === "In progress";
-	const complete = status === "Ready" || status === "Completed";
+	const complete = status === "Ready";
 	const needsReview = status === "Your review";
 	return (
 		<span
 			className={cn(
 				"inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap text-xs",
 				working
-					? "text-chart-3"
+					? "text-primary"
 					: needsReview
-						? "text-chart-4"
+						? "text-warning"
 						: complete
-							? "text-link"
+							? "text-success"
 							: "text-muted-foreground",
 			)}
 		>

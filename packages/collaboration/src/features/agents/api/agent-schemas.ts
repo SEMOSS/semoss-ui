@@ -1,5 +1,5 @@
 import { z } from "@semoss/ui/next";
-import type { Agent } from "../types/agent";
+import type { AgentConfiguration } from "../types/agent";
 
 /** Catalog types a workspace resource can have, per `IEngine.CATALOG_TYPE`. */
 const MCP_TYPES = [
@@ -80,7 +80,7 @@ export const workspacePayloadSchema = z.object({
 export type WorkspacePayload = z.infer<typeof workspacePayloadSchema>;
 
 /** A workspace as the client models it: the agent contract plus its id. */
-export type WorkspaceAgent = Agent & {
+export type WorkspaceAgent = AgentConfiguration & {
 	workspace_id: string;
 	permission?: string;
 	number_collaborators?: number;
@@ -91,7 +91,7 @@ export type WorkspaceAgent = Agent & {
  * Returns undefined when absent or unparseable rather than throwing, so a bad
  * config blob degrades the agent's settings instead of failing the whole fetch.
  */
-function parseConfigJson(value: unknown): Agent["config_json"] {
+function parseConfigJson(value: unknown): AgentConfiguration["config_json"] {
 	if (value === undefined || value === null) return undefined;
 
 	if (typeof value === "string") {
@@ -99,7 +99,7 @@ function parseConfigJson(value: unknown): Agent["config_json"] {
 		try {
 			const parsed: unknown = JSON.parse(value);
 			return typeof parsed === "object" && parsed !== null
-				? (parsed as Agent["config_json"])
+				? (parsed as AgentConfiguration["config_json"])
 				: undefined;
 		} catch {
 			return undefined;
@@ -107,11 +107,13 @@ function parseConfigJson(value: unknown): Agent["config_json"] {
 	}
 
 	return typeof value === "object"
-		? (value as Agent["config_json"])
+		? (value as AgentConfiguration["config_json"])
 		: undefined;
 }
 
-function isMcpType(value: string): value is Agent["mcp"][number]["type"] {
+function isMcpType(
+	value: string,
+): value is AgentConfiguration["mcp"][number]["type"] {
 	return (MCP_TYPES as readonly string[]).includes(value);
 }
 
@@ -127,7 +129,7 @@ export function toWorkspaceAgent(payload: WorkspacePayload): WorkspaceAgent {
 			.map((entry) => ({
 				id: entry.id,
 				name: entry.name ?? entry.id,
-				type: entry.type.toUpperCase() as Agent["mcp"][number]["type"],
+				type: entry.type.toUpperCase() as AgentConfiguration["mcp"][number]["type"],
 			})),
 		skills: (payload.skills ?? []).map((entry) => ({
 			id: entry.id,

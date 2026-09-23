@@ -1,6 +1,5 @@
-import { MessageSquare, MoreHorizontal, Search } from "lucide-react";
+import { MoreHorizontal, Search } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Link } from "react-router";
 import {
 	Button,
 	cn,
@@ -23,11 +22,11 @@ import {
 	TreeViewItem,
 	useSidebar,
 } from "@semoss/ui/next";
+import { parseTimestamp } from "@semoss/utility";
 import { AgentAvatar } from "@/components/common/agent-avatar";
-import { StatusLabel } from "@/components/common/status-label";
-import { roomPath } from "@/lib/workspace-paths";
 import type { Agent } from "@/types/agent";
 import type { Session } from "@/types/session";
+import { RecentRoomLink } from "./recent-room-link";
 import { getSidebarRoomStatus } from "./sidebar-room-status";
 import { SidebarSearchPalette } from "./sidebar-search-palette";
 
@@ -45,13 +44,10 @@ const timeFormatter = new Intl.DateTimeFormat(undefined, {
 	minute: "2-digit",
 });
 
-function roomTimestamp(room: Session) {
-	const timestamp = Date.parse(room.updatedAt);
-	return Number.isNaN(timestamp) ? 0 : timestamp;
-}
-
 function compareRoomsNewestFirst(a: Session, b: Session) {
-	return roomTimestamp(b) - roomTimestamp(a);
+	return (
+		(parseTimestamp(b.updatedAt) ?? 0) - (parseTimestamp(a.updatedAt) ?? 0)
+	);
 }
 
 function formatRoomTime(updatedAt: string) {
@@ -63,76 +59,6 @@ function formatRoomTime(updatedAt: string) {
 
 function agentTreeItemId(agentId: string) {
 	return `agent-${agentId}`;
-}
-
-function RoomLink({
-	room,
-	active,
-	variant = "room",
-	onVisit,
-}: {
-	room: Session;
-	active: boolean;
-	variant?: "room" | "recent";
-	onVisit: (roomId: string) => void;
-}) {
-	const isRecent = variant === "recent";
-
-	return (
-		<li>
-			<Link
-				to={roomPath(room.id)}
-				onClick={(event) => {
-					event.preventDefault();
-					onVisit(room.id);
-				}}
-				aria-current={active ? "page" : undefined}
-				className={cn(
-					"group/room flex min-h-9 min-w-0 rounded-md px-2 py-1 text-start outline-hidden ring-sidebar-ring transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2",
-					!isRecent && "gap-2",
-					active &&
-						"bg-sidebar-accent font-medium text-sidebar-accent-foreground",
-				)}
-			>
-				{!isRecent && (
-					<MessageSquare
-						className="mt-0.5 size-3.5 shrink-0 text-muted-foreground"
-						aria-hidden="true"
-					/>
-				)}
-				<span className="min-w-0 flex-1">
-					<span className="flex min-w-0 items-center gap-1.5">
-						<span className="truncate text-sm">{room.title}</span>
-						{room.unread && (
-							<>
-								<span
-									className="size-2 shrink-0 rounded-full bg-link"
-									aria-hidden="true"
-								/>
-								<span className="sr-only">Unread</span>
-							</>
-						)}
-					</span>
-					{!isRecent && room.preview.trim().length > 0 && (
-						<span className="block truncate text-muted-foreground text-xs">
-							{room.preview}
-						</span>
-					)}
-					{!isRecent && (
-						<span className="mt-1 flex items-center justify-between gap-2">
-							<StatusLabel status={room.status} />
-							<time
-								dateTime={room.updatedAt}
-								className="shrink-0 text-muted-foreground text-xs"
-							>
-								{formatRoomTime(room.updatedAt)}
-							</time>
-						</span>
-					)}
-				</span>
-			</Link>
-		</li>
-	);
 }
 
 /** The unified agent tree and recent room list in the workspace sidebar. */
@@ -434,7 +360,7 @@ export function SidebarAgentsList({
 														</span>
 														{isWorking && (
 															<Spinner
-																className="size-3.5 shrink-0 text-chart-3 motion-reduce:animate-none"
+																className="size-3.5 shrink-0 text-primary motion-reduce:animate-none"
 																aria-label={`${agent.name} is working`}
 															/>
 														)}
@@ -620,7 +546,7 @@ export function SidebarAgentsList({
 																aria-label="Show 5 more rooms"
 																className="[&>div]:min-h-9 [&>div]:py-0"
 																label={
-																	<span className="flex min-h-9 items-center text-link text-xs">
+																	<span className="flex min-h-9 items-center text-primary text-xs">
 																		Show 5
 																		more
 																	</span>
@@ -676,13 +602,12 @@ export function SidebarAgentsList({
 										aria-label="Recent rooms"
 									>
 										{recentRooms.map((room) => (
-											<RoomLink
+											<RecentRoomLink
 												key={room.id}
 												room={room}
 												active={
 													room.id === activeRoomId
 												}
-												variant="recent"
 												onVisit={visitRoom}
 											/>
 										))}

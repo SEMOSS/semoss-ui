@@ -32,7 +32,7 @@ export function ActivityList({
 						)}
 					</span>
 					<span className="min-w-0">
-						<span className="wrap-break-word block font-semibold text-sm group-hover:text-link">
+						<span className="wrap-break-word block font-semibold text-sm group-hover:text-primary">
 							{row.session.title}
 						</span>
 						<span className="wrap-break-word mt-1 line-clamp-2 text-muted-foreground text-xs leading-5">

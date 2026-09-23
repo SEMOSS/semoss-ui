@@ -48,8 +48,6 @@ const agent: Agent = {
 	id: "research-agent",
 	name: "Research agent",
 	description: "",
-	icon: "compass",
-	tone: "blue",
 	instructions: "",
 	skills: [],
 	mcp: [],
@@ -61,8 +59,6 @@ const writingAgent: Agent = {
 	id: "writing-agent",
 	name: "Writing agent",
 	description: "Editor",
-	icon: "pen",
-	tone: "amber",
 };
 
 describe("AgentsOverviewPage", () => {

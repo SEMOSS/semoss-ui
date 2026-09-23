@@ -7,6 +7,7 @@ import {
 	Spinner,
 	Textarea,
 } from "@semoss/ui/next";
+import { asString } from "@semoss/utility";
 import type { ConversationTool } from "@/features/messages/types/message";
 import type { PendingToolApproval } from "@/features/rooms/types/room";
 import { useToolWorkbench } from "@/features/tools/tool-workbench.context";
@@ -28,10 +29,6 @@ export function isDelegationSubmit(tool: ConversationTool): boolean {
 	return tool.metadata?.SMSS_TOOL_KIND === SUBMIT_TOOL_KIND;
 }
 
-function text(value: unknown): string {
-	return typeof value === "string" ? value : "";
-}
-
 /** Inline review of exactly what goes back to the requester before it is sent. */
 export function DelegationSubmitApproval({
 	tool,
@@ -45,7 +42,7 @@ export function DelegationSubmitApproval({
 	const declining = action.arguments.decline === true;
 	const requester = delegationRequester(tool) ?? "the requester";
 	const field = declining ? "reason" : "response";
-	const [value, setValue] = useState(text(action.arguments[field]));
+	const [value, setValue] = useState(asString(action.arguments[field]));
 	const [busy, setBusy] = useState<"send" | "keep" | null>(null);
 	const [error, setError] = useState<string | null>(null);
 	const empty = !declining && !value.trim();

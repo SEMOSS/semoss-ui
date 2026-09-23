@@ -1,6 +1,6 @@
 import { ShieldCheck, TriangleAlert } from "lucide-react";
 import { Button, Spinner, useIsMobile } from "@semoss/ui/next";
-import type { Agent } from "@/features/agents/types/agent";
+import type { AgentConfiguration } from "@/features/agents/types/agent";
 import type { PlaygroundTurnPhase } from "@/features/messages/types/message";
 import { useToolWorkbench } from "@/features/tools/tool-workbench.context";
 import type { PendingToolApproval } from "../types/room";
@@ -31,7 +31,7 @@ export function RoomRunStatus({
 	phase,
 	onReconnect,
 }: {
-	agent: Agent;
+	agent: AgentConfiguration;
 	turnError: string | null;
 	transportError: Error | null;
 	pendingApprovals: PendingToolApproval[];

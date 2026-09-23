@@ -8,6 +8,7 @@ import {
 import { Link, useLocation } from "react-router";
 import {
 	Button,
+	cn,
 	SidebarHeader as SidebarHeaderPrimitive,
 	SidebarMenu,
 	SidebarMenuButton,
@@ -53,7 +54,7 @@ export function SidebarHeader({ condensed }: { condensed?: boolean }) {
 				</span>
 				{!condensed && (
 					<span>
-						collaboration<span className="text-link">.</span>
+						collaboration<span className="text-primary">.</span>
 					</span>
 				)}
 			</Link>
@@ -62,7 +63,17 @@ export function SidebarHeader({ condensed }: { condensed?: boolean }) {
 					<SidebarMenuItem className="flex justify-center">
 						<Tooltip>
 							<TooltipTrigger asChild>
-								<Button asChild size="sm" className="mb-2">
+								<Button
+									asChild
+									size="sm"
+									className={cn(
+										"mx-auto mb-2 w-full justify-center",
+										condensed &&
+											"min-h-11 min-w-11 max-w-11 px-0",
+										newChatActive &&
+											"bg-primary text-primary-foreground hover:bg-primary/90",
+									)}
+								>
 									<Link
 										to="/new"
 										aria-label="New Chat"

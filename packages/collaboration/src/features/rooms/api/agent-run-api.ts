@@ -42,7 +42,7 @@ const actionSchema = z.object({
 });
 
 /** Validate both stream snapshots and durable run records at the SDK boundary. */
-export const agentRunSchema = z.object({
+const agentRunSchema = z.object({
 	runId: z.string().min(1),
 	// A delegation to a person has no room of its own on the owner's side.
 	roomId: z.string().nullish(),

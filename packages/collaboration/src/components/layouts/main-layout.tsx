@@ -10,74 +10,25 @@ import { useInsight } from "@semoss/sdk/react";
 import {
 	Button,
 	Sidebar,
-	SidebarContent,
 	SidebarInset,
 	SidebarProvider,
-	SidebarRail,
 	SidebarTrigger,
 	Spinner,
 	toast,
-	useSidebar,
 } from "@semoss/ui/next";
+import { toError } from "@semoss/utility";
 import type { MainContext } from "@/app/main.context";
 import { MainProvider } from "@/app/main.context";
 import { refreshKey } from "@/app/refresh-keys";
 import { EmptyView } from "@/components/common/empty-view";
-import { SidebarAgentsList } from "@/components/sidebar/sidebar-agents-list";
-import { SidebarFooter } from "@/components/sidebar/sidebar-footer";
-import { SidebarHeader } from "@/components/sidebar/sidebar-header";
+import { WorkspaceSidebarNavigation } from "@/components/sidebar/workspace-sidebar-navigation";
 import { roomsKey } from "@/features/agents/api/refresh-keys";
 import { useSaveAgent } from "@/features/agents/api/use-save-agent";
 import { useWorkspaceData } from "@/features/agents/api/use-workspace-data";
 import { pinRoom as persistRoomPin } from "@/features/rooms/api/pin-room";
 import { waitForGeneratedRoomName } from "@/features/rooms/api/wait-for-generated-room-name";
-import { toError } from "@/lib/pixel";
 import { newRoomPath, roomPath } from "@/lib/workspace-paths";
-import type { Agent } from "@/types/agent";
 import type { Session } from "@/types/session";
-
-function WorkspaceSidebarNavigation({
-	agents,
-	sessions,
-	agentId,
-	roomId,
-	isLoading,
-	onNewSession,
-	onRouteVisited,
-	onRoomVisited,
-}: {
-	agents: Agent[];
-	sessions: Session[];
-	agentId?: string;
-	roomId?: string;
-	isLoading: boolean;
-	onNewSession: (agentId?: string) => void;
-	onRouteVisited: (path: string) => void;
-	onRoomVisited: (roomId: string) => void;
-}) {
-	const { isMobile, state } = useSidebar();
-	const condensed = !isMobile && state === "collapsed";
-
-	return (
-		<>
-			<SidebarHeader condensed={condensed} />
-			<SidebarContent className="px-3">
-				<SidebarAgentsList
-					agents={agents}
-					sessions={sessions}
-					activeAgentId={agentId}
-					activeRoomId={roomId}
-					isLoading={isLoading}
-					onNewSession={onNewSession}
-					onRouteVisited={onRouteVisited}
-					onRoomVisited={onRoomVisited}
-				/>
-			</SidebarContent>
-			<SidebarFooter condensed={condensed} />
-			<SidebarRail />
-		</>
-	);
-}
 
 /**
  * Composes the agents and rooms features into the workspace shell, owns the
@@ -258,7 +209,7 @@ export function MainLayout() {
 					<header className="flex h-13 shrink-0 items-center gap-2 border-b px-3 md:hidden">
 						<SidebarTrigger aria-label="Open workspace navigation" />
 						<Link to="/" className="font-semibold text-lg">
-							collaboration<span className="text-link">.</span>
+							collaboration<span className="text-primary">.</span>
 						</Link>
 					</header>
 					<div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">

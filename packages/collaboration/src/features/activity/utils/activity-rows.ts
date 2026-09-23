@@ -1,3 +1,4 @@
+import { parseTimestamp } from "@semoss/utility";
 import type { Agent } from "@/types/agent";
 import type { Session } from "@/types/session";
 import type { ActivityRow } from "../types/activity";
@@ -9,12 +10,11 @@ export function createActivityRows(
 	const agentsById = new Map(agents.map((agent) => [agent.id, agent]));
 	return sessions.map((session) => {
 		const agent = agentsById.get(session.agentId);
-		const timestamp = Date.parse(session.updatedAt);
 		return {
 			agent,
 			agentName: agent?.name ?? "Unknown agent",
 			session,
-			updatedTime: Number.isFinite(timestamp) ? timestamp : null,
+			updatedTime: parseTimestamp(session.updatedAt),
 		};
 	});
 }

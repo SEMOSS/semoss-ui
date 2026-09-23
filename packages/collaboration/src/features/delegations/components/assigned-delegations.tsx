@@ -11,9 +11,9 @@ import {
 	Textarea,
 	toast,
 } from "@semoss/ui/next";
+import { toError } from "@semoss/utility";
 import { useMain } from "@/app/main.context";
 import { roomsKey } from "@/features/agents/api/refresh-keys";
-import { toError } from "@/lib/pixel";
 import { roomPath } from "@/lib/workspace-paths";
 import {
 	attachRoomToAgent,
@@ -113,7 +113,7 @@ export function AssignedDelegations() {
 					className="flex items-center gap-2 font-semibold text-lg"
 				>
 					Assigned to you
-					<span className="rounded-sm bg-chart-4/10 px-2 py-0.5 font-medium text-chart-4 text-xs">
+					<span className="rounded-sm bg-warning/10 px-2 py-0.5 font-medium text-warning text-xs">
 						{delegations.length}
 					</span>
 				</h2>
@@ -141,7 +141,7 @@ export function AssignedDelegations() {
 						key={delegation.actionId}
 						className="flex flex-col rounded-lg border bg-card p-4 text-card-foreground"
 					>
-						<p className="font-medium text-link text-xs">
+						<p className="font-medium text-primary text-xs">
 							From {delegation.requesterName ?? "a teammate"}
 							{delegation.dueAt && `, due ${delegation.dueAt}`}
 						</p>

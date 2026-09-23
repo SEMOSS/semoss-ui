@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { H3, P } from "@semoss/ui/next";
 
 export function FormSection({
 	title,
@@ -11,11 +12,11 @@ export function FormSection({
 }) {
 	return (
 		<section className="border-b pb-7 last:border-0">
-			<h2 className="font-semibold text-base">{title}</h2>
+			<H3 className="font-semibold text-base">{title}</H3>
 			{description && (
-				<p className="mt-1.5 text-muted-foreground text-sm">
+				<P className="mt-1.5 text-muted-foreground text-sm">
 					{description}
-				</p>
+				</P>
 			)}
 			<div className="mt-6">{children}</div>
 		</section>

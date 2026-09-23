@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { useInsight } from "@semoss/sdk/react";
 import { Button, Spinner, toast } from "@semoss/ui/next";
+import { toError } from "@semoss/utility";
 import { cancelRun } from "@/features/rooms/api/agent-run-api";
-import { toError } from "@/lib/pixel";
 
 /** Lets the requester take back a request the person has not answered yet. */
 export function WithdrawDelegation({

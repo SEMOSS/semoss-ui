@@ -8,6 +8,7 @@ import {
 	Muted,
 	Small,
 } from "@semoss/ui/next";
+import { buildInitials } from "@semoss/utility";
 import { useCurrentUser } from "@/features/account/api/use-current-user";
 
 /**
@@ -17,12 +18,7 @@ import { useCurrentUser } from "@/features/account/api/use-current-user";
 export function SidebarFooter({ condensed }: { condensed: boolean }) {
 	const { name, email, isLoading, error, refresh } = useCurrentUser();
 	const displayName = isLoading ? "Loading account…" : name || "Your account";
-	const initials = name
-		.split(/\s+/)
-		.slice(0, 2)
-		.map((part) => part.charAt(0))
-		.join("")
-		.toUpperCase();
+	const initials = buildInitials(name);
 
 	return (
 		<div

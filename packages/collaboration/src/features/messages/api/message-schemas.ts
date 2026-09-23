@@ -164,19 +164,3 @@ export const roomMessageSchema = z.preprocess(
 export type ValidatedRoomMessage = z.infer<typeof roomMessageSchema>;
 
 export const playgroundMessagesSchema = z.array(roomMessageSchema);
-
-/** Authoritative message pair returned after a playground model response. */
-export const playgroundTurnOutputSchema = z.object({
-	inputMessage: roomMessageSchema,
-	responseMessage: roomMessageSchema,
-	extraMessages: z
-		.array(
-			z.object({
-				inputMessage: roomMessageSchema,
-				responseMessage: roomMessageSchema,
-			}),
-		)
-		.optional(),
-});
-
-export type PlaygroundTurnOutput = z.infer<typeof playgroundTurnOutputSchema>;

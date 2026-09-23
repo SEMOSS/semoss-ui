@@ -3,7 +3,7 @@ import type { RefObject } from "react";
 import { useEffect, useState } from "react";
 import { Button, Spinner } from "@semoss/ui/next";
 import { EmptyView } from "@/components/common/empty-view";
-import type { Agent } from "@/features/agents/types/agent";
+import type { AgentConfiguration } from "@/features/agents/types/agent";
 import { MessageTimelineEntry } from "@/features/messages/components/message-timeline-entry";
 import type { ConversationMessage } from "@/features/messages/types/message";
 
@@ -14,7 +14,7 @@ export function RoomThread({
 	isLoadingHistory,
 	bottomRef,
 }: {
-	agent: Agent;
+	agent: AgentConfiguration;
 	thread: ConversationMessage[];
 	isLoadingHistory: boolean;
 	bottomRef: RefObject<HTMLDivElement | null>;

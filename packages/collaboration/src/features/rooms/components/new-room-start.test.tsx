@@ -27,8 +27,6 @@ const agentSummary: Agent = {
 	id: "agent-1",
 	name: "Research agent",
 	description: "Researches complex topics",
-	icon: "compass",
-	tone: "blue",
 	instructions: "Check sources.",
 	skills: [],
 	mcp: [],

@@ -3,6 +3,7 @@ import { useNavigate, useParams } from "react-router";
 import { useInsight } from "@semoss/sdk/react";
 import type { Engine } from "@semoss/shared";
 import { toast } from "@semoss/ui/next";
+import { toError } from "@semoss/utility";
 import { useAgent } from "@/app/agent.context";
 import { useMain } from "@/app/main.context";
 import { useRoom } from "@/app/room.context";
@@ -31,7 +32,6 @@ import {
 	pendingSession,
 	sessionStatusFromPhase,
 } from "@/features/rooms/utils/session-from-room";
-import { toError } from "@/lib/pixel";
 import { agentSettingsPath } from "@/lib/workspace-paths";
 
 /** One collaboration room's durable transcript and agent harness observer. */

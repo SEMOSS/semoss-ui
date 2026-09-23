@@ -21,8 +21,6 @@ const leadAgent: Agent = {
 	id: "research/agent",
 	name: "Research agent",
 	description: "",
-	icon: "compass",
-	tone: "blue",
 	instructions: "",
 	skills: [],
 	mcp: [],
@@ -34,15 +32,11 @@ const specialists: Agent[] = [
 		...leadAgent,
 		id: "writer",
 		name: "Writer",
-		icon: "pen",
-		tone: "amber",
 	},
 	{
 		...leadAgent,
 		id: "calendar",
 		name: "Calendar",
-		icon: "briefcase",
-		tone: "teal",
 	},
 ];
 
@@ -57,7 +51,6 @@ const sessions: Session[] = [
 		unread: false,
 		pinned: false,
 		preview: "Old notes preview",
-		thread: [],
 	},
 	{
 		id: "briefing-room",
@@ -69,7 +62,6 @@ const sessions: Session[] = [
 		unread: false,
 		pinned: false,
 		preview: "Briefing board preview",
-		thread: [],
 	},
 ];
 

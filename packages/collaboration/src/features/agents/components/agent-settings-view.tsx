@@ -5,28 +5,26 @@ import {
 	Alert,
 	AlertDescription,
 	Button,
-	cn,
 	Form,
 	H1,
 	Muted,
 	P,
 	Spinner,
+	Tabs,
+	TabsContent,
+	TabsList,
+	TabsTrigger,
 	useForm,
 	z,
 	zodResolver,
 } from "@semoss/ui/next";
+import { toError } from "@semoss/utility";
 import { AgentAvatar } from "@/components/common/agent-avatar";
 import { mcpConfigSchema } from "@/features/agents/api/agent-schemas";
 import { CapabilitiesSettingsView } from "@/features/agents/components/capabilities-settings-view";
 import { ProfileSettingsView } from "@/features/agents/components/profile-settings-view";
 import { TeamSettingsView } from "@/features/agents/components/team-settings-view";
-import { toError } from "@/lib/pixel";
-import type { Agent } from "@/types/agent";
-
-type UpdateAgent = <Key extends keyof Agent>(
-	key: Key,
-	value: Agent[Key],
-) => void;
+import type { Agent, AgentFieldUpdater } from "@/types/agent";
 
 const agentSettingsSchema = z.object({
 	id: z.string(),
@@ -51,8 +49,6 @@ const agentSettingsSchema = z.object({
 			if (message) context.addIssue({ code: "custom", message });
 		}),
 	removeImage: z.boolean(),
-	icon: z.enum(["compass", "briefcase", "chart", "pen", "users"]),
-	tone: z.enum(["green", "teal", "blue", "amber"]),
 	instructions: z.string().max(8000),
 	skills: z.array(z.object({ id: z.string(), name: z.string() })),
 	mcp: z.array(mcpConfigSchema),
@@ -142,16 +138,20 @@ export function AgentSettings({
 		setError("");
 	}
 
-	const update: UpdateAgent = (key, value) => {
-		form.reset(
-			{ ...form.getValues(), [key]: value },
-			{
-				keepDefaultValues: true,
-				keepErrors: true,
-				keepTouched: true,
-				keepSubmitCount: true,
-			},
-		);
+	const update: AgentFieldUpdater = (fieldUpdate) => {
+		const options = { shouldDirty: true, shouldValidate: true };
+		switch (fieldUpdate.key) {
+			case "skills":
+				form.setValue("skills", fieldUpdate.value, options);
+				break;
+			case "mcp":
+				form.setValue("mcp", fieldUpdate.value, options);
+				break;
+			case "members":
+				form.setValue("members", fieldUpdate.value, options);
+				break;
+		}
+		form.clearErrors("root.server");
 		setError("");
 	};
 
@@ -275,24 +275,20 @@ export function AgentSettings({
 					</span>
 				</div>
 			)}
-			<div className="flex min-h-0 min-w-0 flex-1 flex-col md:flex-row">
-				<nav
+			<Tabs
+				value={tab}
+				onValueChange={setTab}
+				className="flex min-h-0 min-w-0 flex-1 flex-col gap-0 md:flex-row"
+			>
+				<TabsList
 					aria-label="Agent settings"
-					className="flex shrink-0 gap-1 overflow-x-auto border-b bg-muted/40 p-3 md:w-48 md:flex-col md:overflow-x-visible md:border-r md:border-b-0 md:px-4 md:py-6"
+					className="h-auto w-full shrink-0 justify-start gap-1 overflow-x-auto rounded-none border-b bg-muted/40 p-3 md:w-48 md:flex-col md:overflow-x-visible md:border-r md:border-b-0 md:px-4 md:py-6"
 				>
 					{tabs.map(({ name, icon: Icon }) => (
-						<Button
-							type="button"
+						<TabsTrigger
 							key={name}
-							variant="ghost"
-							aria-current={tab === name ? "page" : undefined}
-							onClick={() => setTab(name)}
-							className={cn(
-								"shrink-0 justify-start gap-2 text-left",
-								tab === name
-									? "bg-accent font-medium text-link"
-									: "text-muted-foreground hover:bg-secondary",
-							)}
+							value={name}
+							className="w-full shrink-0 justify-start gap-2 text-left data-[state=active]:text-primary"
 						>
 							<Icon aria-hidden="true" className="size-4" />
 							{name}
@@ -302,16 +298,16 @@ export function AgentSettings({
 										{draft.members.length}
 									</span>
 								)}
-						</Button>
+						</TabsTrigger>
 					))}
-				</nav>
+				</TabsList>
 				<fieldset
 					disabled={isSubmitting}
 					aria-label="Agent configuration"
 					className="min-h-0 min-w-0 flex-1 overflow-y-auto px-5 py-7 lg:px-10"
 				>
 					<div className="max-w-2xl space-y-7">
-						{tab === "Profile" && (
+						<TabsContent value="Profile" className="mt-0">
 							<ProfileSettingsView
 								shownAgent={shownAgent}
 								selectedImage={draft.image}
@@ -319,8 +315,8 @@ export function AgentSettings({
 								onChoosePhoto={choosePhoto}
 								onRemovePhoto={removePhoto}
 							/>
-						)}
-						{tab === "Capabilities" && (
+						</TabsContent>
+						<TabsContent value="Capabilities" className="mt-0">
 							<CapabilitiesSettingsView
 								agent={draft}
 								disabled={isSubmitting}
@@ -330,18 +326,18 @@ export function AgentSettings({
 								onRetrySkills={onRetrySkills}
 								onUpdate={update}
 							/>
-						)}
-						{tab === "Subagents" && (
+						</TabsContent>
+						<TabsContent value="Subagents" className="mt-0">
 							<TeamSettingsView
 								agent={draft}
 								agents={agents}
 								shownAgent={shownAgent}
 								onUpdate={update}
 							/>
-						)}
+						</TabsContent>
 					</div>
 				</fieldset>
-			</div>
+			</Tabs>
 		</Form>
 	);
 }

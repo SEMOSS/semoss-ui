@@ -6,7 +6,7 @@ import {
 	UserPlus,
 	Users,
 } from "lucide-react";
-import { useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useState } from "react";
 import {
 	CommandDialog,
 	CommandEmpty,
@@ -17,9 +17,11 @@ import {
 	cn,
 	Spinner,
 } from "@semoss/ui/next";
+import { parseTimestamp } from "@semoss/utility";
 import { agentNewPath, agentPath, newRoomPath } from "@/lib/workspace-paths";
 import type { Agent } from "@/types/agent";
 import type { Session } from "@/types/session";
+import { AccessibleCommandLabel } from "./accessible-command-label";
 import {
 	getSidebarRoomStatus,
 	type SidebarRoomStatus,
@@ -87,24 +89,6 @@ interface SidebarSearchPaletteProps {
 	onRoomVisited: (roomId: string) => void;
 }
 
-function roomTimestamp(room: Session): number {
-	const timestamp = Date.parse(room.updatedAt);
-	return Number.isNaN(timestamp) ? 0 : timestamp;
-}
-
-function AccessibleCommandLabel() {
-	const anchorRef = useRef<HTMLSpanElement>(null);
-
-	useLayoutEffect(() => {
-		const commandLabel = anchorRef.current
-			?.closest('[data-slot="command"]')
-			?.querySelector("[cmdk-label]");
-		if (commandLabel) commandLabel.textContent = "Search routes and rooms";
-	}, []);
-
-	return <span ref={anchorRef} aria-hidden="true" className="sr-only" />;
-}
-
 /** Centered search across navigable collaboration routes and loaded rooms. */
 export function SidebarSearchPalette({
 	open,
@@ -123,7 +107,8 @@ export function SidebarSearchPalette({
 		return [...sessions]
 			.sort(
 				(first, second) =>
-					roomTimestamp(second) - roomTimestamp(first) ||
+					(parseTimestamp(second.updatedAt) ?? 0) -
+						(parseTimestamp(first.updatedAt) ?? 0) ||
 					first.title.localeCompare(second.title, undefined, {
 						sensitivity: "base",
 					}) ||
@@ -175,15 +160,15 @@ export function SidebarSearchPalette({
 		<CommandDialog
 			open={open}
 			onOpenChange={handleOpenChange}
-			title="Search routes and rooms"
+			title="Search"
 			description="Search collaboration pages, actions, and rooms."
 			showCloseButton={false}
 			className="border-input bg-card shadow-lg transition-[color,box-shadow] focus-within:border-ring focus-within:ring-2 focus-within:ring-ring/50 sm:max-w-lg [&_[data-slot=command-input-wrapper]]:h-10 [&_[data-slot=command-input]]:h-10 [&_[data-slot=command-item][cmdk-item]]:py-2 [&_[data-slot=command-item][cmdk-item]_svg]:size-3.5 [&_[data-slot=command]]:bg-card"
 		>
 			<AccessibleCommandLabel />
 			<CommandInput
-				aria-label="Search routes and rooms"
-				placeholder="Search routes and rooms…"
+				aria-label="Search"
+				placeholder="Search"
 				value={search}
 				onValueChange={setSearch}
 			/>

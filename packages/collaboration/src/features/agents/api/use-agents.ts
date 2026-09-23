@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useInsight } from "@semoss/sdk/react";
-import { toError } from "@/lib/pixel";
+import { toError } from "@semoss/utility";
 import type { Agent } from "@/types/agent";
 import { agentFromProjectRow } from "../utils/agent-from-workspace";
 import { listAgents } from "./list-agents";

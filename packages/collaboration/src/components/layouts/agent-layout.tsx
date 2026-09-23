@@ -4,12 +4,12 @@ import { AgentProvider } from "@/app/agent.context";
 import { useMain } from "@/app/main.context";
 import { EmptyView } from "@/components/common/empty-view";
 import { SelectedAgent } from "@/components/layouts/selected-agent";
-import type { Agent } from "@/features/agents/types/agent";
+import type { AgentConfiguration } from "@/features/agents/types/agent";
 import { agentFromProjectRow } from "@/features/agents/utils/agent-from-workspace";
 import { useRoomWorkspaceId } from "@/features/rooms/api/use-room-workspace-id";
 import { NotFoundPage } from "@/pages/not-found.page";
 
-const unassignedRoomAgent: Agent = {
+const unassignedRoomAgent: AgentConfiguration = {
 	name: "Assistant",
 	description: "",
 	system_prompt: "",
