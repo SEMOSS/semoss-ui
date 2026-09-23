@@ -25,7 +25,7 @@ export const WORKBENCH_SIDES: WorkbenchSide[] = [
 	"bottom",
 ];
 
-/** A measured rectangle, relative to the workbench root. */
+/** A measured rectangle. */
 export interface WorkbenchRect {
 	left: number;
 	top: number;
@@ -40,6 +40,8 @@ export interface WorkbenchRect {
  * corners it meets and the body carries them itself.
  */
 export interface WorkbenchSlotRect extends WorkbenchRect {
+	/** The containing block that `left` and `top` are measured against. */
+	coordinateMode: "root" | "viewport";
 	radius: string;
 }
 

@@ -98,7 +98,7 @@ interface WorkbenchLayoutSliceFields {
 	/** The panel whose name is being edited inline, if any. Ephemeral. */
 	editingPanelId: WorkbenchPanelId | undefined;
 
-	/** Measured slot geometry, relative to the workbench root. Ephemeral. */
+	/** Measured slot geometry and its coordinate mode. Ephemeral. */
 	slotRects: Record<string, WorkbenchSlotRect>;
 
 	/** Derived: flatten(tree), in visual order. */
@@ -488,6 +488,7 @@ const slotRectsEqual = (a: WorkbenchSlotRect, b: WorkbenchSlotRect): boolean =>
 	a.top === b.top &&
 	a.width === b.width &&
 	a.height === b.height &&
+	a.coordinateMode === b.coordinateMode &&
 	a.radius === b.radius;
 
 /**
@@ -796,7 +797,9 @@ export const createWorkbenchLayoutSlice = (
 						return;
 					}
 					const base = rootElement.getBoundingClientRect();
-					const prev = get().layout.slotRects;
+					const state = get().layout;
+					const maximizedTabsetId = state.maximizedTabsetId;
+					const prev = state.slotRects;
 					const next: Record<string, WorkbenchSlotRect> = {};
 					let changed = false;
 					for (const [key, el] of slotElements) {
@@ -808,18 +811,29 @@ export const createWorkbenchLayoutSlice = (
 							continue;
 						}
 						const bounds = el.getBoundingClientRect();
+						const coordinateMode =
+							maximizedTabsetId &&
+							(key === maximizedTabsetId ||
+								key === `${maximizedTabsetId}::b`)
+								? "viewport"
+								: "root";
+						const originLeft =
+							coordinateMode === "viewport" ? 0 : base.left;
+						const originTop =
+							coordinateMode === "viewport" ? 0 : base.top;
 						// Snap to whole pixels. Flex weights land slots on
 						// fractional offsets, and a body drawn at one renders
 						// every 1px rule inside it on a half pixel. Both edges
 						// are rounded from the same origin, so slots that abut
 						// still meet exactly.
-						const left = Math.round(bounds.left - base.left);
-						const top = Math.round(bounds.top - base.top);
+						const left = Math.round(bounds.left - originLeft);
+						const top = Math.round(bounds.top - originTop);
 						const rect: WorkbenchSlotRect = {
 							left,
 							top,
-							width: Math.round(bounds.right - base.left) - left,
-							height: Math.round(bounds.bottom - base.top) - top,
+							width: Math.round(bounds.right - originLeft) - left,
+							height: Math.round(bounds.bottom - originTop) - top,
+							coordinateMode,
 							// declared by the slot, read here so the body's
 							// corners follow it without a second channel
 							radius: el.dataset.radius ?? "0",
