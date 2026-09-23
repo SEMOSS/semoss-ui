@@ -22,11 +22,12 @@ import {
 	TooltipContent,
 	TooltipTrigger,
 } from "@semoss/ui/next";
+import { getFileExtension } from "@semoss/utility";
 
 const IMAGE_EXTENSIONS = ["png", "jpg", "jpeg", "gif", "webp", "svg", "img"];
 
 const isImageFile = (file: File): boolean => {
-	const ext = file.name.split(".").pop()?.toLowerCase() ?? "";
+	const ext = getFileExtension(file.name);
 	return IMAGE_EXTENSIONS.includes(ext);
 };
 
@@ -65,7 +66,7 @@ const getIconForExt = (ext: string) => {
 };
 
 const getFileIcon = (file: File) => {
-	const ext = file.name.split(".").pop()?.toLowerCase() ?? "";
+	const ext = getFileExtension(file.name);
 	const Icon = getIconForExt(ext);
 
 	return (

@@ -74,14 +74,19 @@ export interface TranscriptMessage {
 	io: "INPUT" | "OUTPUT";
 	type: "INPUT_TEXT" | "RESPONSE_TOOL" | "INPUT_TOOL_EXEC" | "RESPONSE_TEXT";
 	dateCreated: string;
-	ornaments: {
+	agentRun?: {
+		runId: string;
+		role?: string;
+	};
+	ornaments?: {
 		modelName: string;
-		agentRunRole:
+		/** Legacy read fallback. */
+		agentRunRole?:
 			| "input"
 			| "assistant_tool"
 			| "tool_result"
 			| "final_output";
-		agentRunId: string;
+		agentRunId?: string;
 	};
 	parts: TranscriptPart[];
 }

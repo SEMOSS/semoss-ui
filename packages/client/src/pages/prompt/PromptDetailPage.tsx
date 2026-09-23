@@ -37,6 +37,7 @@ import {
 	TooltipTrigger,
 	toast,
 } from "@semoss/ui/next";
+import { buildInitials } from "@semoss/utility";
 import { NavbarHeader, NavbarLeft } from "@/components/shared";
 import { useNavigate } from "@/hooks/useNavigate";
 import type { Prompt } from "../../components/prompt/prompt.types";
@@ -60,12 +61,6 @@ const generateGradient = (name: string): string => {
 const generateInitialsColor = (name: string): string => {
 	const base = hashString(name) % 360;
 	return `hsl(${base}, 28%, 28%)`;
-};
-
-const buildInitials = (label: string): string => {
-	const tokens = label.split(/[^A-Za-z0-9]+/).filter((t) => t.length > 0);
-	const chars = tokens.map((t) => t[0].toUpperCase());
-	return chars.slice(0, 3).join("");
 };
 
 /**
@@ -396,7 +391,7 @@ export const PromptDetailPage = () => {
 						className="font-semibold text-2xl"
 						style={{ color: initialsColor }}
 					>
-						{buildInitials(promptTitle)}
+						{buildInitials(promptTitle, 3)}
 					</span>
 				</div>
 
