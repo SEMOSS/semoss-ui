@@ -2296,7 +2296,7 @@ export const AutomationCanvasContent = forwardRef<
 				});
 			}
 
-			for (const edge of outgoingEdges) {
+			outgoingEdges.forEach((edge, laneIndex) => {
 				const strokeColor = getEdgeStrokeColor(edge);
 				const isPathHighlighted = highlightedPathEdgeIds.has(edge.id);
 				newEdges.push({
@@ -2316,9 +2316,11 @@ export const AutomationCanvasContent = forwardRef<
 						onDelete: viewingHistory ? undefined : deleteEdge,
 						readOnly: readOnly || viewingHistory,
 						hovered: edge.id === hoveredEdgeId,
+						laneIndex,
+						laneCount: outgoingEdges.length,
 					},
 				});
-			}
+			});
 		});
 
 		setRfNodes(newNodes);

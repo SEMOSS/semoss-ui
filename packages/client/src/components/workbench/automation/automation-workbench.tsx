@@ -122,6 +122,13 @@ const SETTINGS = WORKBENCH_COMPONENTS.PROJECT_SETTINGS;
 // executes from.
 const AUTOMATION_NODES_ASSET_PATH = "/automation-nodes/";
 
+// Node ids are minted as `${type}-${crypto.randomUUID()}` (see automation-workflow-adapter.ts),
+// but the backend names each compiled asset after the step's label slug, not its type — e.g.
+// imported n8n steps get saved as "prepare_incident_context__<uuid>.py" instead of
+// "developer-python-<uuid>.py". The uuid suffix is the only part guaranteed to match.
+const UUID_PATTERN =
+	/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i;
+
 /**
  * Find the on-disk asset for a node's Python source, so the "Open Editor"
  * button can open the real file instead of an in-memory copy of it.
@@ -143,12 +150,19 @@ async function findAutomationNodeAsset(
 	if (response.errors.length > 0) return null;
 	const entries = response.pixelReturn?.[0]?.output;
 	if (!Array.isArray(entries)) return null;
+	const nodeUuid = nodeId.match(UUID_PATTERN)?.[0];
 	const match = entries.find(
-		(entry): entry is { name: string; path: string } =>
-			Boolean(entry) &&
-			typeof entry === "object" &&
-			typeof (entry as { name?: unknown }).name === "string" &&
-			(entry as { name: string }).name.includes(nodeId),
+		(entry): entry is { name: string; path: string } => {
+			if (
+				!entry ||
+				typeof entry !== "object" ||
+				typeof (entry as { name?: unknown }).name !== "string"
+			) {
+				return false;
+			}
+			const name = (entry as { name: string }).name;
+			return nodeUuid ? name.includes(nodeUuid) : name.includes(nodeId);
+		},
 	);
 	return match ? { name: match.name, path: match.path } : null;
 }
@@ -423,8 +437,12 @@ export const AutomationWorkbench = observer(
 			[panels],
 		);
 		const isPythonFileOpen = useCallback(
-			(nodeId: string) =>
-				openPythonNodeFilePaths.some((path) => path.includes(nodeId)),
+			(nodeId: string) => {
+				const nodeUuid = nodeId.match(UUID_PATTERN)?.[0];
+				return openPythonNodeFilePaths.some((path) =>
+					nodeUuid ? path.includes(nodeUuid) : path.includes(nodeId),
+				);
+			},
 			[openPythonNodeFilePaths],
 		);
 		const workbenchId = readOnly ? `${appId}--read-only` : appId;
