@@ -687,7 +687,9 @@ export const GuardrailForm = ({
 												LOCAL_PYTHON_GUARDRAIL_RETURN_STRUCTURE
 											}
 										</pre>
-										<Tooltip>
+										<Tooltip
+											disableHoverableContent={false}
+										>
 											<TooltipTrigger asChild>
 												<Button
 													type="button"

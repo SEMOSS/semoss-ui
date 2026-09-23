@@ -1,7 +1,7 @@
 import { Check, ChevronsUpDown } from "lucide-react";
 import { computed } from "mobx";
 import { observer } from "mobx-react-lite";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useId, useMemo, useState } from "react";
 import {
 	type Block,
 	type BlockDef,
@@ -14,15 +14,14 @@ import {
 	type Variable,
 } from "@semoss/renderer";
 import {
-	Accordion,
-	AccordionContent,
-	AccordionItem,
-	AccordionTrigger,
 	Button,
 	Command,
 	CommandEmpty,
+	CommandGroup,
 	CommandInput,
+	CommandItem,
 	CommandList,
+	cn,
 	Popover,
 	PopoverContent,
 	PopoverTrigger,
@@ -81,6 +80,8 @@ interface QuerySelectionSettingsProps<D extends BlockDef = BlockDef> {
 	 * Callback
 	 */
 	__onChange?: () => void;
+	/** Allow removing this binding from the settings control. */
+	allowClear?: boolean;
 }
 
 /**
@@ -93,27 +94,26 @@ export const QuerySelectionSettings = observer(
 		label,
 		queryPath,
 		__onChange,
+		allowClear = false,
 	}: QuerySelectionSettingsProps<D>) => {
 		const { data, setData } = useBlockSettings(id);
 		const { state } = useBlocks();
 
-		// track the value
-		const [value, setValue] = useState("");
+		const controlId = useId();
 		const [open, setOpen] = useState(false);
-		const [search, setSearch] = useState("");
-
-		// track the ref to debounce the input
-		const timeoutRef = useRef<ReturnType<typeof setTimeout>>(null);
 
 		// get the value of the input (wrapped in usememo because of path prop)
-		const computedValue = useMemo(() => {
+		const value = useMemo(() => {
 			return computed(() => {
 				if (!data) {
 					return "";
 				}
 
-				const v = getValueByPath(data, path);
-				if (typeof v === "undefined") {
+				const v: unknown = getValueByPath(data, path);
+				if (
+					typeof v === "undefined" ||
+					(queryPath === "isLoading" && v === false)
+				) {
 					return "";
 				} else if (typeof v === "string") {
 					return v;
@@ -121,111 +121,118 @@ export const QuerySelectionSettings = observer(
 
 				return JSON.stringify(v);
 			});
-		}, [data, path]).get();
-
-		// update the value whenever the computed one changes
-		useEffect(() => {
-			setValue(computedValue);
-		}, [computedValue]);
+		}, [data, path, queryPath]).get();
 
 		// available options for autocomplete (categorized)
-		// biome-ignore lint/correctness/useExhaustiveDependencies: TODO
-		const optionMap = useMemo<Record<string, Option>>(() => {
-			const pathMap: Record<string, Option> = {};
+		const optionMap = useMemo(
+			() =>
+				computed(() => {
+					const pathMap: Record<string, Option> = {};
 
-			// Add variables (excluding cells as they're handled separately from queries)
-			Object.entries(state.variables).forEach(
-				([alias, variable]: [string, Variable]) => {
-					if (
-						variable.type === "query" ||
-						variable.type === "array" ||
-						variable.type === "block"
-					) {
-						// Map array type to variable for display purposes
-						const blockType =
-							variable.type === "array"
-								? "variable"
-								: variable.type;
-						// Use the original variable type for group mapping, not the blockType
-						const groupType =
-							variable.type === "array"
-								? "variable"
-								: variable.type;
-						pathMap[`{{${alias}.${queryPath}}}`] = {
-							id: `{{${alias}.${queryPath}}}`,
-							path: `{{${alias}.${queryPath}}}`,
-							display: `${alias}.${queryPath}`,
-							type: variable.type,
-							groupAlias: groupAliasMapper(groupType),
-							blockType: blockType as
-								| "query"
-								| "block"
-								| "cell"
-								| "variable",
-						};
-					}
-				},
-			);
-
-			// Add queries (notebooks)
-			Object.entries(state.notebooks).forEach(
-				([alias, query]: [string, NotebookState]) => {
-					const queryOption = `{{${alias}.${queryPath}}}`;
-					if (!pathMap[queryOption]) {
-						pathMap[queryOption] = {
-							id: queryOption,
-							path: queryOption,
-							display: `${alias}.${queryPath}`,
-							type: "query",
-							groupAlias: groupAliasMapper("query"),
-							blockType: "query",
-						};
-					}
-
-					// Add cells within queries
-					if (query.cellList.length > 0) {
-						Object.entries(query.cells).forEach(
-							([cellAlias, _cell]: [string, CellState]) => {
-								const cellOption = `{{${alias}.${cellAlias}.${queryPath}}}`;
-								pathMap[cellOption] = {
-									id: cellOption,
-									path: cellOption,
-									display: `${alias}.${cellAlias}.${queryPath}`,
-									type: "cell",
-									groupAlias: groupAliasMapper("cell"),
-									blockType: "cell",
+					// Add variables (excluding cells as they're handled separately from queries)
+					Object.entries(state.variables).forEach(
+						([alias, variable]: [string, Variable]) => {
+							if (
+								variable.type === "query" ||
+								variable.type === "array" ||
+								variable.type === "block"
+							) {
+								// Map array type to variable for display purposes
+								const blockType =
+									variable.type === "array"
+										? "variable"
+										: variable.type;
+								// Use the original variable type for group mapping, not the blockType
+								const groupType =
+									variable.type === "array"
+										? "variable"
+										: variable.type;
+								pathMap[`{{${alias}.${queryPath}}}`] = {
+									id: `{{${alias}.${queryPath}}}`,
+									path: `{{${alias}.${queryPath}}}`,
+									display: `${alias}.${queryPath}`,
+									type: variable.type,
+									groupAlias: groupAliasMapper(groupType),
+									blockType: blockType as
+										| "query"
+										| "block"
+										| "cell"
+										| "variable",
 								};
-							},
-						);
-					}
-				},
-			);
+							}
+						},
+					);
 
-			// Add placeholder entries for empty categories to ensure they're visible
-			const allCategories = ["Block", "Notebook", "Cell", "Variable"];
-			const existingGroups = new Set(
-				Object.values(pathMap).map(
-					(option: Option) => option.groupAlias,
-				),
-			);
+					// Add queries (notebooks)
+					Object.entries(state.notebooks).forEach(
+						([alias, query]: [string, NotebookState]) => {
+							const queryOption = `{{${alias}.${queryPath}}}`;
+							if (!pathMap[queryOption]) {
+								pathMap[queryOption] = {
+									id: queryOption,
+									path: queryOption,
+									display: `${alias}.${queryPath}`,
+									type: "query",
+									groupAlias: groupAliasMapper("query"),
+									blockType: "query",
+								};
+							}
 
-			allCategories.forEach((category) => {
-				if (!existingGroups.has(category)) {
-					// Add a placeholder entry that won't be selectable
-					pathMap[`__placeholder_${category}`] = {
-						id: `__placeholder_${category}`,
-						path: `__placeholder_${category}`,
-						display: "No options available",
-						type: "placeholder",
-						groupAlias: category,
-						blockType: "placeholder",
-						isPlaceholder: true,
-					};
-				}
-			});
+							// Add cells within queries
+							if (query.cellList.length > 0) {
+								Object.entries(query.cells).forEach(
+									([cellAlias, _cell]: [
+										string,
+										CellState,
+									]) => {
+										const cellOption = `{{${alias}.${cellAlias}.${queryPath}}}`;
+										pathMap[cellOption] = {
+											id: cellOption,
+											path: cellOption,
+											display: `${alias}.${cellAlias}.${queryPath}`,
+											type: "cell",
+											groupAlias:
+												groupAliasMapper("cell"),
+											blockType: "cell",
+										};
+									},
+								);
+							}
+						},
+					);
 
-			return pathMap;
-		}, [state.variables, state.blocks, state.notebooks, queryPath]);
+					// Add placeholder entries for empty categories to ensure they're visible
+					const allCategories = [
+						"Block",
+						"Notebook",
+						"Cell",
+						"Variable",
+					];
+					const existingGroups = new Set(
+						Object.values(pathMap).map(
+							(option: Option) => option.groupAlias,
+						),
+					);
+
+					allCategories.forEach((category) => {
+						if (!existingGroups.has(category)) {
+							// Add a placeholder entry that won't be selectable
+							pathMap[`__placeholder_${category}`] = {
+								id: `__placeholder_${category}`,
+								path: `__placeholder_${category}`,
+								display: "No options available",
+								type: "placeholder",
+								groupAlias: category,
+								blockType: "placeholder",
+								isPlaceholder: true,
+							};
+						}
+					});
+
+					return pathMap;
+				}),
+			[state, queryPath],
+		).get();
 
 		// Get options grouped by category
 		const groupedOptions = useMemo(() => {
@@ -256,47 +263,21 @@ export const QuerySelectionSettings = observer(
 		/**
 		 * Sync the data on change
 		 */
-		const onChange = (newValue: string) => {
-			// set the value
-			setValue(newValue);
+		const onChange = (newValue: string | false) => {
 			setOpen(false);
-			setSearch("");
-
-			// clear out the old timeout
-			if (timeoutRef.current) {
-				clearTimeout(timeoutRef.current);
-				timeoutRef.current = null;
-			}
-
-			timeoutRef.current = setTimeout(() => {
-				try {
-					setData(
-						path,
-						newValue as PathValue<D["data"], typeof path>,
-					);
-
-					// If the value is empty/null, clear the options array to show placeholder
-					if (!newValue || newValue.trim() === "") {
-						setData(
-							"options" as Paths<Block<D>["data"], 4>,
-							[] as PathValue<D["data"], typeof path>,
-						);
-					}
-
-					__onChange();
-				} catch (e) {
-					console.log(e);
-				}
-			}, 300);
+			setData(path, newValue as PathValue<D["data"], typeof path>);
+			__onChange?.();
 		};
 
 		const categories = ["Block", "Notebook", "Cell", "Variable"];
 
 		return (
-			<BaseSettingSection label={label}>
+			<BaseSettingSection label={label} htmlFor={controlId}>
 				<Popover open={open} onOpenChange={setOpen}>
 					<PopoverTrigger asChild>
 						<Button
+							id={controlId}
+							type="button"
 							variant="outline"
 							role="combobox"
 							aria-expanded={open}
@@ -305,102 +286,75 @@ export const QuerySelectionSettings = observer(
 							<span className="truncate text-left">
 								{value
 									? (optionMap[value]?.display ?? value)
-									: "Enter text or select option"}
+									: "Select option..."}
 							</span>
-							<ChevronsUpDown className="ml-2 size-4 shrink-0 opacity-50" />
+							<ChevronsUpDown
+								className="ml-2 size-4 shrink-0 opacity-50"
+								aria-hidden="true"
+							/>
 						</Button>
 					</PopoverTrigger>
 					<PopoverContent
 						className="w-[var(--radix-popover-trigger-width)] p-0"
 						align="start"
 					>
-						<Command>
-							<CommandInput
-								placeholder="Search..."
-								value={search}
-								onValueChange={setSearch}
-							/>
-							<CommandList className="max-h-[300px]">
-								<CommandEmpty>No options found.</CommandEmpty>
-								<Accordion
-									type="multiple"
-									defaultValue={categories}
-								>
-									{categories.map((category) => {
-										const items = (
-											groupedOptions[category] ?? []
-										).filter(
-											(opt) =>
-												!search ||
-												opt.display
-													.toLowerCase()
-													.includes(
-														search.toLowerCase(),
-													),
-										);
-										return (
-											<AccordionItem
-												key={category}
-												value={category}
-												className="border-0"
-											>
-												<AccordionTrigger className="px-3 py-2 font-medium text-sm hover:bg-accent/50 hover:no-underline">
-													{category}
-												</AccordionTrigger>
-												<AccordionContent className="pb-0">
-													{items.length === 0 ? (
-														<div className="px-3 py-2 text-muted-foreground text-sm">
-															No options available
-														</div>
-													) : (
-														items.map((option) => (
-															// biome-ignore lint/a11y/noStaticElementInteractions: list option div
-															// biome-ignore lint/a11y/useKeyWithClickEvents: list option div
-															<div
-																key={option.id}
-																className={`flex cursor-pointer items-center gap-2 px-6 py-1.5 text-sm hover:bg-accent ${
-																	option.isPlaceholder
-																		? "pointer-events-none opacity-50"
-																		: ""
-																}`}
-																onClick={() => {
-																	if (
-																		!option.isPlaceholder
-																	) {
-																		onChange(
-																			option.id,
-																		);
-																	}
-																}}
-															>
-																{value ===
-																	option.id && (
-																	<Check className="size-3.5 shrink-0" />
-																)}
-																<span
-																	className={
-																		value ===
-																		option.id
-																			? "ml-0"
-																			: "ml-5"
-																	}
-																>
-																	{
-																		option.display
-																	}
-																</span>
-															</div>
-														))
-													)}
-												</AccordionContent>
-											</AccordionItem>
-										);
-									})}
-								</Accordion>
+						<Command
+							label={`Search ${label.toLowerCase()} references`}
+						>
+							<CommandInput placeholder="Search references..." />
+							<CommandList>
+								<CommandEmpty>
+									No matching references.
+								</CommandEmpty>
+								{categories.map((category) => {
+									const items = (
+										groupedOptions[category] ?? []
+									).filter((option) => !option.isPlaceholder);
+									return items.length > 0 ? (
+										<CommandGroup
+											key={category}
+											heading={category}
+										>
+											{items.map((option) => (
+												<CommandItem
+													key={option.id}
+													value={option.id}
+													keywords={[option.display]}
+													onSelect={() =>
+														onChange(option.id)
+													}
+												>
+													<Check
+														aria-hidden="true"
+														className={cn(
+															"size-4",
+															value !==
+																option.id &&
+																"invisible",
+														)}
+													/>
+													{option.display}
+												</CommandItem>
+											))}
+										</CommandGroup>
+									) : null;
+								})}
 							</CommandList>
 						</Command>
 					</PopoverContent>
 				</Popover>
+				{allowClear && value && (
+					<Button
+						type="button"
+						variant="ghost"
+						aria-label={`Clear ${label.toLowerCase()}`}
+						onClick={() =>
+							onChange(queryPath === "isLoading" ? false : "")
+						}
+					>
+						Clear
+					</Button>
+				)}
 			</BaseSettingSection>
 		);
 	},

@@ -18,6 +18,7 @@ import {
 	Checkbox,
 	Dialog,
 	DialogContent,
+	DialogTitle,
 	H4,
 	Input,
 	P,
@@ -1072,11 +1073,14 @@ export const FileTable = (props: FileTableProps) => {
 				}}
 			>
 				<DialogContent
-					className="w-full max-w-[600px] border-border bg-background"
+					aria-describedby={undefined}
+					className="border-border bg-background sm:max-w-xl"
 					data-testid="file-upload-modal"
 				>
 					<div className="flex h-full w-full flex-col gap-4">
-						<H4>Upload Files</H4>
+						<DialogTitle className="font-medium text-base leading-6">
+							Upload files
+						</DialogTitle>
 						<Controller
 							name="PROJECT_UPLOAD"
 							control={control}
@@ -1179,9 +1183,14 @@ export const FileTable = (props: FileTableProps) => {
 
 			{/* Delete Single File Modal */}
 			<Dialog open={deleteFileModal} onOpenChange={setDeleteFileModal}>
-				<DialogContent className="max-w-md border-border bg-background">
+				<DialogContent
+					aria-describedby={undefined}
+					className="max-w-md border-border bg-background"
+				>
 					<div className="flex flex-col gap-4">
-						<H4>Are you sure?</H4>
+						<DialogTitle className="font-medium text-base leading-6">
+							Delete files?
+						</DialogTitle>
 						{fileToDelete && (
 							<P>
 								This will remove <b>{fileToDelete.fileName}</b>
@@ -1217,9 +1226,14 @@ export const FileTable = (props: FileTableProps) => {
 
 			{/* Delete Multiple Files Modal */}
 			<Dialog open={deleteFilesModal} onOpenChange={setDeleteFilesModal}>
-				<DialogContent className="max-w-md border-border bg-background">
+				<DialogContent
+					aria-describedby={undefined}
+					className="max-w-md border-border bg-background"
+				>
 					<div className="flex flex-col gap-4">
-						<H4>Are you sure?</H4>
+						<DialogTitle className="font-medium text-base leading-6">
+							Delete files?
+						</DialogTitle>
 						<P>Would you like to delete all selected files?</P>
 						<div className="flex justify-end gap-2">
 							<Button

@@ -11,7 +11,12 @@ import {
 	useFileEditorPathRef,
 } from "@semoss/shared";
 import { Muted, Spinner, toast } from "@semoss/ui/next";
-import { WorkbenchPanelError, WorkbenchPanelLoading } from "@semoss/workbench";
+import {
+	useWorkbench,
+	WorkbenchPanelError,
+	WorkbenchPanelLoading,
+} from "@semoss/workbench";
+import { FILE_PANEL_EVENTS } from "../constants/file-panel.constants";
 import {
 	type FilePanelMode,
 	getFilePanelResource,
@@ -119,6 +124,7 @@ export const useFilePanel = (
 	const [isDownloading, setIsDownloading] = useState(false);
 	const savingRef = useRef(false);
 	const downloadingRef = useRef(false);
+	const emit = useWorkbench((state) => state.events.actions.emit);
 
 	const read = usePixel<string>(
 		enabled && access.status === "ready"
@@ -155,6 +161,10 @@ export const useFilePanel = (
 					throw new Error(response.errors[0]);
 				}
 				toast.success(t("fileExplorer.toasts.saveSuccess"));
+				emit(FILE_PANEL_EVENTS.FILE_SAVED, {
+					scope: getFilePanelScope(config.mode),
+					path: currentPathRef.current,
+				});
 				return true;
 			} catch (error) {
 				toast.error(
@@ -170,7 +180,7 @@ export const useFilePanel = (
 				setIsSaving(false);
 			}
 		},
-		[base64, config, currentPathRef, readOnly, t, targetInsightId],
+		[base64, config, currentPathRef, emit, readOnly, t, targetInsightId],
 	);
 
 	const download = useCallback(async (): Promise<void> => {

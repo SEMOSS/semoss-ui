@@ -3,6 +3,7 @@ export { FILE_PANEL_COMPONENTS } from "./components/file-panel.components";
 export {
 	FILE_PANEL_EVENTS,
 	FILE_PANEL_TYPES,
+	type FileSavedEvent,
 	type FilesChangedEvent,
 	isFilePanelType,
 } from "./constants/file-panel.constants";
@@ -25,6 +26,11 @@ export {
 	type FilePanelMode,
 	getFilePanelScope,
 } from "./types/file-panel.types";
+export type {
+	FileViewControls,
+	FileViewMode,
+	FileViewProps,
+} from "./types/file-view.types";
 export {
 	getCodeEditorLanguage,
 	getFileCodeEditorMenuItems,

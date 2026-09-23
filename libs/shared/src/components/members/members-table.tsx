@@ -243,7 +243,9 @@ export const MembersTable = ({
 			{editUser && (
 				<Dialog open onOpenChange={() => setEditUser(null)}>
 					<DialogContent>
-						<DialogTitle>Edit Member</DialogTitle>
+						<DialogTitle className="font-medium text-base leading-6">
+							Edit Member
+						</DialogTitle>
 						<DialogDescription>
 							Update this member's permission level for the
 							resource.

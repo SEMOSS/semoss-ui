@@ -1,8 +1,12 @@
-/** biome-ignore-all lint/a11y/useKeyWithClickEvents: custom context menu keyboard handling is managed below */
-import type React from "react";
-import { useEffect, useRef } from "react";
+import { type FC, Fragment, useRef } from "react";
 import { useTranslation } from "@semoss/i18n";
-import { cn } from "@semoss/ui/next";
+import {
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuItem,
+	DropdownMenuSeparator,
+	DropdownMenuTrigger,
+} from "@semoss/ui/next";
 import type {
 	FileExplorerApi,
 	FileExplorerContextMenuState,
@@ -24,30 +28,21 @@ interface MenuEntry {
 	action: () => void | Promise<void>;
 }
 
-/** Approximate menu box, used only to flip it away from a viewport edge. */
-const MENU_WIDTH = 192;
-const MENU_ENTRY_HEIGHT = 32;
-const MENU_PADDING = 12;
-
-/**
- * The explorer's right-click menu.
- *
- * Hand-rolled rather than a Radix `ContextMenu` because it is opened
- * imperatively from a pointer position the explorer already tracks, over rows
- * that also handle drag and bulk selection. Every entry runs an
- * `explorer.commands.*` call; consumer-supplied `secondaryActions` are appended
- * after the built-ins.
- *
- * Entries are label-only, matching the workbench's own menus and command
- * palette — a consumer-supplied action has no icon to offer anyway, so guessing
- * one from its name only made the built-ins and the extensions look different.
+/** The explorer's action menu, anchored at the requested pointer position.
+ * A controlled DropdownMenu supports imperative opening while sharing the
+ * design system's keyboard navigation, dismissal, and viewport collision handling.
  */
-export const FileExplorerContextMenu: React.FC<
-	FileExplorerContextMenuProps
-> = ({ explorer, state }) => {
+export const FileExplorerContextMenu: FC<FileExplorerContextMenuProps> = ({
+	explorer,
+	state,
+}) => {
 	const { t } = useTranslation("common");
-	const menuRef = useRef<HTMLDivElement>(null);
-	const focusedIndexRef = useRef<number>(-1);
+	const returnFocusRef = useRef<HTMLElement | null>(
+		typeof document !== "undefined" &&
+			document.activeElement instanceof HTMLElement
+			? document.activeElement
+			: null,
+	);
 
 	const { commands, capabilities, tree } = explorer;
 	const { item, targetPath, x, y } = state;
@@ -210,113 +205,58 @@ export const FileExplorerContextMenu: React.FC<
 		});
 	}
 
-	// ── Keyboard navigation ─────────────────────────────────────────────────
-
-	useEffect(() => {
-		const handleKeyDown = (e: KeyboardEvent) => {
-			if (e.key === "Escape") {
-				onClose();
-				return;
-			}
-
-			const buttons =
-				menuRef.current?.querySelectorAll<HTMLButtonElement>(
-					"button:not([disabled])",
-				);
-			if (!buttons?.length) return;
-
-			if (e.key === "ArrowDown") {
-				e.preventDefault();
-				focusedIndexRef.current = Math.min(
-					focusedIndexRef.current + 1,
-					buttons.length - 1,
-				);
-				buttons[focusedIndexRef.current]?.focus();
-			} else if (e.key === "ArrowUp") {
-				e.preventDefault();
-				focusedIndexRef.current = Math.max(
-					focusedIndexRef.current - 1,
-					0,
-				);
-				buttons[focusedIndexRef.current]?.focus();
-			}
-		};
-
-		document.addEventListener("keydown", handleKeyDown);
-		return () => document.removeEventListener("keydown", handleKeyDown);
-	}, [onClose]);
-
-	// ── Outside click ───────────────────────────────────────────────────────
-
-	useEffect(() => {
-		const handlePointerDown = (e: PointerEvent) => {
-			if (
-				menuRef.current &&
-				!menuRef.current.contains(e.target as Node)
-			) {
-				onClose();
-			}
-		};
-		document.addEventListener("pointerdown", handlePointerDown);
-		return () =>
-			document.removeEventListener("pointerdown", handlePointerDown);
-	}, [onClose]);
-
-	// ── Position: flip menu if it would overflow the viewport ──────────────
-
-	const menuHeight = entries.length * MENU_ENTRY_HEIGHT + MENU_PADDING;
-	const vw = typeof window !== "undefined" ? window.innerWidth : 9999;
-	const vh = typeof window !== "undefined" ? window.innerHeight : 9999;
-
-	const left = x + MENU_WIDTH > vw ? Math.max(0, x - MENU_WIDTH) : x;
-	const top = y + menuHeight > vh ? Math.max(0, y - menuHeight) : y;
-
 	if (entries.length === 0) return null;
 
 	return (
-		<div
-			data-testid="file-explorer-context-menu"
-			ref={menuRef}
-			role="menu"
-			aria-label={t("fileExplorer.contextMenu.ariaLabel")}
-			// a pointer position, so it cannot be a utility class
-			style={{ left, top }}
-			className="fixed z-[9999] min-w-48 overflow-hidden rounded-md border border-border bg-popover py-1 shadow-lg"
-			onClick={(e) => e.stopPropagation()}
-			onContextMenu={(e) => {
-				e.preventDefault();
-				e.stopPropagation();
+		<DropdownMenu
+			open
+			modal={false}
+			onOpenChange={(open) => {
+				if (!open) onClose();
 			}}
 		>
-			{entries.map((entry) => (
-				<div key={entry.key}>
-					{entry.dividerBefore && (
-						<hr className="my-1 h-px border-0 bg-border" />
-					)}
-					<button
-						data-testid={`file-explorer-context-menu-${getFileExplorerTestIdSegment(entry.key)}-button`}
-						type="button"
-						role="menuitem"
-						disabled={entry.disabled}
-						className={cn(
-							"flex w-full items-center px-3 py-1.5 text-start text-sm transition-colors",
-							"focus:bg-accent focus:outline-none",
-							entry.disabled
-								? "cursor-not-allowed text-muted-foreground/50"
-								: entry.destructive
-									? "cursor-pointer text-destructive hover:bg-destructive/10 focus:bg-destructive/10 focus:text-destructive"
-									: "cursor-pointer text-popover-foreground hover:bg-accent hover:text-accent-foreground",
-						)}
-						onClick={(e) => {
-							e.stopPropagation();
-							if (entry.disabled) return;
-							entry.action();
-						}}
-					>
-						{entry.label}
-					</button>
-				</div>
-			))}
-		</div>
+			<DropdownMenuTrigger
+				aria-hidden
+				tabIndex={-1}
+				className="pointer-events-none fixed size-0"
+				// The explorer supplies viewport pointer coordinates.
+				style={{ left: x, top: y }}
+			/>
+			<DropdownMenuContent
+				data-testid="file-explorer-context-menu"
+				aria-label={t("fileExplorer.contextMenu.ariaLabel")}
+				align="start"
+				sideOffset={0}
+				collisionPadding={8}
+				className="min-w-48"
+				onCloseAutoFocus={(event) => {
+					event.preventDefault();
+					returnFocusRef.current?.focus();
+				}}
+				onClick={(event) => event.stopPropagation()}
+				onContextMenu={(event) => {
+					event.preventDefault();
+					event.stopPropagation();
+				}}
+			>
+				{entries.map((entry) => (
+					<Fragment key={entry.key}>
+						{entry.dividerBefore && <DropdownMenuSeparator />}
+						<DropdownMenuItem
+							data-testid={`file-explorer-context-menu-${getFileExplorerTestIdSegment(entry.key)}-button`}
+							disabled={entry.disabled}
+							variant={
+								entry.destructive ? "destructive" : "default"
+							}
+							onSelect={() => {
+								void entry.action();
+							}}
+						>
+							{entry.label}
+						</DropdownMenuItem>
+					</Fragment>
+				))}
+			</DropdownMenuContent>
+		</DropdownMenu>
 	);
 };

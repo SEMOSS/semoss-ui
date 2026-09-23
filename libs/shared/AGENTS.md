@@ -46,7 +46,7 @@ hooks the way `packages/terminal` does. Do not reintroduce a bespoke editor
 here.
 
 `components/notebook/` was never part of that island and stays:
-`FILE_NOTEBOOK_EDITOR_PANEL` renders `Notebook` directly.
+`FileNotebookView` renders `Notebook` directly.
 
 ## Build System
 

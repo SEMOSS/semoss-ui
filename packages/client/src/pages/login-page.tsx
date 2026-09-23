@@ -1067,7 +1067,11 @@ export const LoginPage = () => {
 																>
 																	Password *
 																</Label>
-																<Tooltip>
+																<Tooltip
+																	disableHoverableContent={
+																		false
+																	}
+																>
 																	<TooltipTrigger
 																		asChild
 																	>
@@ -1498,9 +1502,11 @@ export const LoginPage = () => {
 					setForgotPassword(true);
 				}}
 			>
-				<DialogContent>
+				<DialogContent aria-describedby={undefined}>
 					<DialogHeader>
-						<DialogTitle>Forgot your password?</DialogTitle>
+						<DialogTitle className="font-medium text-base leading-6">
+							Forgot your password?
+						</DialogTitle>
 					</DialogHeader>
 					<div className="flex flex-col gap-3">
 						<p className="text-muted-foreground text-sm">
@@ -1530,7 +1536,7 @@ export const LoginPage = () => {
 							</Alert>
 						) : null}
 						{resetPasswordSuccess ? (
-							<div className="rounded-md border border-green-500 bg-green-50 px-3 py-2 text-green-700 text-sm dark:bg-green-950/30 dark:text-green-400">
+							<div className="rounded-md border border-success/30 bg-success/10 px-3 py-2 text-sm text-success">
 								{resetPasswordSuccess}
 							</div>
 						) : null}
