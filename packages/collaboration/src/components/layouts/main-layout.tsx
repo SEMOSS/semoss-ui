@@ -44,10 +44,16 @@ function WorkspaceSidebarNavigation({
 	agents,
 	sessions,
 	agentId,
+	roomId,
+	isLoading,
+	onRoomVisited,
 }: {
 	agents: Agent[];
 	sessions: Session[];
 	agentId?: string;
+	roomId?: string;
+	isLoading: boolean;
+	onRoomVisited: (roomId: string) => void;
 }) {
 	const { state } = useSidebar();
 	const condensed = state === "collapsed";
@@ -60,7 +66,10 @@ function WorkspaceSidebarNavigation({
 					<SidebarAgentsList
 						agents={agents}
 						sessions={sessions}
-						agentId={agentId}
+						activeAgentId={agentId}
+						activeRoomId={roomId}
+						isLoading={isLoading}
+						onRoomVisited={onRoomVisited}
 					/>
 				</div>
 			</SidebarContent>
@@ -76,7 +85,7 @@ function WorkspaceSidebarNavigation({
  */
 export function MainLayout() {
 	const navigate = useNavigate();
-	const { agentId } = useParams();
+	const { agentId, roomId } = useParams();
 	const { actions, insightId } = useInsight();
 	const [keys, setKeys] = useState<MainContext["keys"]>({});
 	const workspaceData = useWorkspaceData(keys);
@@ -253,6 +262,9 @@ export function MainLayout() {
 						agents={agents}
 						sessions={sessions}
 						agentId={agentId}
+						roomId={roomId}
+						isLoading={isLoading}
+						onRoomVisited={openRoom}
 					/>
 				</Sidebar>
 				<SidebarInset className="h-dvh min-h-0 min-w-0 overflow-hidden rounded-none shadow-none">

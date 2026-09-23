@@ -56,7 +56,7 @@ describe("AgentsOverviewPage", () => {
 		mainState.sessions = [];
 	});
 
-	it("collapses the workspace sidebar when an agent is selected", async () => {
+	it("keeps the workspace sidebar open when an agent is selected", async () => {
 		const user = userEvent.setup();
 		render(
 			<MemoryRouter>
@@ -75,6 +75,6 @@ describe("AgentsOverviewPage", () => {
 		);
 		expect(
 			screen.getByRole("status", { name: "Workspace sidebar state" }),
-		).toHaveTextContent("collapsed");
+		).toHaveTextContent("expanded");
 	});
 });

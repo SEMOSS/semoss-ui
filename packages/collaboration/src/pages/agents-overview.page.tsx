@@ -16,11 +16,10 @@ import { agentNewPath, agentPath } from "@/lib/workspace-paths";
 
 export function AgentsOverviewPage() {
 	const { agents, sessions } = useMain();
-	const { setOpen, setOpenMobile } = useSidebar();
+	const { isMobile, setOpenMobile } = useSidebar();
 
 	function handleAgentSelect() {
-		setOpen(false);
-		setOpenMobile(false);
+		if (isMobile) setOpenMobile(false);
 	}
 
 	return (
