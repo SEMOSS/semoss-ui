@@ -15,10 +15,6 @@ vi.mock("@/hooks", () => ({
 	}),
 }));
 
-vi.mock("@semoss/sdk/react", () => ({
-	useInsight: () => ({ insightId: "insight-1" }),
-}));
-
 import { AppLogsPage } from "./app-logs-page";
 
 describe("AppLogsPage", () => {
@@ -43,7 +39,6 @@ describe("AppLogsPage", () => {
 				levels: [],
 				offset: 0,
 				limit: 50,
-				insightId: "insight-1",
 			});
 		});
 		expect(await screen.findByText("recent activity")).toBeInTheDocument();

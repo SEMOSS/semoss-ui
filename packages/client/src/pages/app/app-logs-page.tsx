@@ -1,6 +1,5 @@
 import { Search } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
-import { useInsight } from "@semoss/sdk/react";
 import {
 	Button,
 	cn,
@@ -30,7 +29,6 @@ const PAGE_SIZE = 50;
 export const AppLogsPage = () => {
 	const { project } = useProject();
 	const appId = project.project_id;
-	const { insightId } = useInsight();
 
 	const [query, setQuery] = useState("");
 	const [levels, setLevels] = useState<string[]>([]);
@@ -55,7 +53,6 @@ export const AppLogsPage = () => {
 					levels: searchLevels,
 					offset: searchOffset,
 					limit: PAGE_SIZE,
-					insightId,
 				});
 				setLines(data.lines.map(parseAppLogLine));
 				setHasMore(data.hasMore);
@@ -68,7 +65,7 @@ export const AppLogsPage = () => {
 				setLoading(false);
 			}
 		},
-		[appId, insightId],
+		[appId],
 	);
 
 	useEffect(() => {
