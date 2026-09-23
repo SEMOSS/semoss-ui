@@ -1,7 +1,7 @@
 import { Plus } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router";
-import { useIteratorPixel, usePixel } from "@semoss/sdk/react";
+import { useIteratorPixel, usePixel, useSession } from "@semoss/sdk/react";
 import type { Project } from "@semoss/shared";
 import {
 	Button,
@@ -22,7 +22,6 @@ import {
 import { CatalogFilterBox } from "@/components/catalog/catalog-filter-box";
 import { Help } from "@/components/help";
 import { DeleteEntityDialog } from "@/components/shared/delete-entity-dialog";
-import { useConfig, useSession } from "@/hooks";
 import { getProjectLabel, isOwnerPermission } from "@/utility/catalog";
 import { NavbarHeader, NavbarLeft } from "../shared";
 import { CloneProjectDialog } from "./clone-project-dialog";
@@ -135,13 +134,14 @@ interface ProjectCatalogProps {
 
 export const ProjectCatalog = ({ type }: ProjectCatalogProps) => {
 	const config = CATALOG_CONFIG[type as keyof typeof CATALOG_CONFIG];
-	const projectMetaKeys = useConfig((state) => state.config.projectMetaKeys);
-	const adminOnlyViewMenuBarFlag = useConfig(
-		(state) => state.config.adminOnlyViewMenuBarFlag,
-	);
-	const runPixel = useSession((state) => state.runPixel);
+	const projectMetaKeys =
+		useSession((state) => state.config.data?.projectMetaKeys) ?? [];
+	const adminOnlyViewMenuBarFlag =
+		useSession((state) => state.config.data?.adminOnlyViewMenuBarFlag) ??
+		false;
+	const runPixel = useSession((state) => state.actions.runPixel);
 	const isEngineOperationAvailable = useSession(
-		(state) => state.isEngineOperationAvailable,
+		(state) => state.access.actions.isOperationAvailable,
 	);
 
 	// get metakeys of the ones we want

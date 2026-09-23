@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import type { Role } from "@semoss/sdk";
-import { usePixel } from "@semoss/sdk/react";
+import { usePixel, useSession } from "@semoss/sdk/react";
 import type { Engine } from "@semoss/shared";
 import {
 	Button,
@@ -17,7 +17,6 @@ import {
 	toast,
 } from "@semoss/ui/next";
 import { CatalogTagInput } from "@/components/catalog";
-import { useConfig, useSession } from "@/hooks";
 import { normalizeTagArray } from "@/utility";
 import { BadgeList, SettingsEntry } from "./engine-metadata-display";
 
@@ -66,10 +65,9 @@ export const EngineTagsSettings = ({
 	permission,
 	onUpdated,
 }: EngineTagsSettingsProps) => {
-	const databaseMetaKeys = useConfig(
-		(state) => state.config.databaseMetaKeys,
-	);
-	const runPixel = useSession((state) => state.runPixel);
+	const databaseMetaKeys =
+		useSession((state) => state.config.data?.databaseMetaKeys) ?? [];
+	const runPixel = useSession((state) => state.actions.runPixel);
 
 	const [isSaving, setIsSaving] = useState(false);
 	const [form, setForm] = useState<TagsForm>(() => toForm(engine));

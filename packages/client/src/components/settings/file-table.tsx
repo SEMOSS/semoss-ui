@@ -12,7 +12,7 @@ import {
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
-import { usePixel } from "@semoss/sdk/react";
+import { usePixel, useSession } from "@semoss/sdk/react";
 import {
 	Button,
 	Checkbox,
@@ -33,7 +33,6 @@ import {
 	TableRow,
 	toast,
 } from "@semoss/ui/next";
-import { useSession } from "@/hooks";
 
 interface FileTableProps {
 	/**
@@ -100,9 +99,9 @@ export const FileTable = (props: FileTableProps) => {
 	const fileSearchRef = useRef<HTMLInputElement>(null);
 	const fileInputRef = useRef<HTMLInputElement>(null);
 	const didMount = useRef<boolean>(false);
-	const runPixel = useSession((state) => state.runPixel);
-	const sessionUpload = useSession((state) => state.upload);
-	const download = useSession((state) => state.download);
+	const runPixel = useSession((state) => state.actions.runPixel);
+	const sessionUpload = useSession((state) => state.actions.upload);
+	const download = useSession((state) => state.actions.download);
 	const [exportLoading, setExportLoading] = useState(false);
 
 	// newly added state

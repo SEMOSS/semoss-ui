@@ -1,5 +1,6 @@
 import type React from "react";
 import { useEffect, useState } from "react";
+import { useSession } from "@semoss/sdk/react";
 import {
 	Button,
 	Dialog,
@@ -8,7 +9,7 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from "@semoss/ui/next";
-import { useConfig, useSession } from "@/hooks/";
+import { useSessionTheme } from "@/hooks";
 
 const RawHtml = ({ html }: { html: string }) => {
 	return (
@@ -21,10 +22,12 @@ const RawHtml = ({ html }: { html: string }) => {
 };
 
 export const PlatformMessages: React.FC = () => {
-	const termsHeaderReact = useConfig((state) => state.theme.termsHeaderReact);
-	const termsReact = useConfig((state) => state.theme.termsReact);
-	const config = useConfig((state) => state.config);
-	const userEpoch = useSession((state) => state.userEpoch);
+	const termsHeaderReact = useSessionTheme((theme) => theme.termsHeaderReact);
+	const termsReact = useSessionTheme((theme) => theme.termsReact);
+	const config = useSession((state) => state.config.data);
+	const userEpoch = useSession(
+		(state) => state.user.current?.userEpoch ?? "",
+	);
 	const [acceptedTerms, setAcceptedTerms] = useState<boolean | null>(null);
 
 	const terms = {

@@ -1,6 +1,6 @@
 import { DownloadIcon } from "lucide-react";
 import { useState } from "react";
-import { download, runPixel } from "@semoss/sdk/react";
+import { download, runPixel, useSession } from "@semoss/sdk/react";
 import {
 	Button,
 	Dialog,
@@ -15,7 +15,7 @@ import {
 	TooltipTrigger,
 	toast,
 } from "@semoss/ui/next";
-import { useEngine, useSession } from "@/hooks";
+import { useEngine } from "@/hooks";
 import { formatToDataTestId } from "@/utility";
 
 /**
@@ -23,7 +23,7 @@ import { formatToDataTestId } from "@/utility";
  */
 export const EngineExportButton: React.FC = () => {
 	const { catalog, engine, permission } = useEngine();
-	const insightID = useSession((state) => state.insightID);
+	const insightID = useSession((state) => state.insightId);
 
 	const [openExportModal, setOpenExportModal] = useState(false);
 

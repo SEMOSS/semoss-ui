@@ -1,7 +1,7 @@
 import { AlertCircleIcon } from "lucide-react";
 import type React from "react";
 import { useMemo, useState } from "react";
-import { usePixel } from "@semoss/sdk/react";
+import { usePixel, useSession } from "@semoss/sdk/react";
 import {
 	Alert,
 	AlertDescription,
@@ -22,7 +22,6 @@ import {
 	ScrollArea,
 	Spinner,
 } from "@semoss/ui/next";
-import { useSession } from "@/hooks";
 
 interface SyncExternalDatabaseOverlayProps {
 	/** engine to load */
@@ -47,7 +46,7 @@ interface SyncExternalDatabaseOverlayProps {
 export const SyncExternalDatabaseOverlay: React.FC<
 	SyncExternalDatabaseOverlayProps
 > = ({ engine, tables = [], views = [], open, onClose }) => {
-	const insightID = useSession((state) => state.insightID);
+	const insightID = useSession((state) => state.insightId);
 
 	const [tableSearch, setTableSearch] = useState("");
 	const [viewSearch, setViewSearch] = useState("");

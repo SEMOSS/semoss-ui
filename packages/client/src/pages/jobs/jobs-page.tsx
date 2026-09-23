@@ -12,7 +12,7 @@ import {
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Navigate } from "react-router";
-import { runPixel, useDebouncedValue } from "@semoss/sdk/react";
+import { runPixel, useDebouncedValue, useSession } from "@semoss/sdk/react";
 import {
 	Alert,
 	AlertDescription,
@@ -30,7 +30,7 @@ import {
 	TooltipContent,
 	TooltipTrigger,
 } from "@semoss/ui/next";
-import { useSession, useSettings } from "@/hooks";
+import { useSettings } from "@/hooks";
 import { useNavigate } from "@/hooks/useNavigate";
 import { DeleteJobModal } from "./delete-job-modal";
 import type {
@@ -83,7 +83,7 @@ const formatNextRunIn = (iso: string | null | undefined): string | null => {
 };
 
 export function JobsPage() {
-	const sessionRunPixel = useSession((state) => state.runPixel);
+	const sessionRunPixel = useSession((state) => state.actions.runPixel);
 	const { adminMode } = useSettings();
 	const navigate = useNavigate();
 

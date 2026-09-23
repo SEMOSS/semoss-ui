@@ -1,6 +1,11 @@
 import { Plus } from "lucide-react";
 import { type JSX, useEffect, useState } from "react";
-import { runPixel, useIteratorPixel, usePixel } from "@semoss/sdk/react";
+import {
+	runPixel,
+	useIteratorPixel,
+	usePixel,
+	useSession,
+} from "@semoss/sdk/react";
 import type { Engine } from "@semoss/shared";
 import {
 	Button,
@@ -22,7 +27,6 @@ import {
 import { EngineGridItem } from "@/components/engine";
 import { NavbarHeader, NavbarLeft } from "@/components/shared";
 import { DeleteEntityDialog } from "@/components/shared/delete-entity-dialog";
-import { useConfig } from "@/hooks";
 import { useNavigate } from "@/hooks/useNavigate";
 import { formatToDataTestId } from "@/utility";
 import { getEngineLabel, isOwnerPermission } from "@/utility/catalog";
@@ -46,9 +50,8 @@ export const EngineIndexPage: React.FC<EngineIndexPageProps> = ({
 	description,
 }): JSX.Element => {
 	const route = { name, path, type, description };
-	const databaseMetaKeys = useConfig(
-		(state) => state.config.databaseMetaKeys,
-	);
+	const databaseMetaKeys =
+		useSession((state) => state.config.data?.databaseMetaKeys) ?? [];
 	const navigate = useNavigate();
 
 	// get metakeys of the ones we want

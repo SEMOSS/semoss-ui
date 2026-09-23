@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { runPixel, useIteratorPixel } from "@semoss/sdk/react";
+import { runPixel, useIteratorPixel, useSession } from "@semoss/sdk/react";
 import type { Engine } from "@semoss/shared";
 import {
 	Muted,
@@ -10,7 +10,7 @@ import {
 import { CatalogGrid, CatalogSearchBar } from "@/components/catalog";
 import { EngineGridItem } from "@/components/engine";
 import { DeleteEntityDialog } from "@/components/shared/delete-entity-dialog";
-import { useConfig, useSettings } from "@/hooks";
+import { useSettings } from "@/hooks";
 import { getEngineLabel, isOwnerPermission } from "@/utility/catalog";
 
 /**
@@ -27,9 +27,8 @@ export const EngineSettingsIndexPage = (
 	const { type } = props;
 
 	const { adminMode } = useSettings();
-	const databaseMetaKeys = useConfig(
-		(state) => state.config.databaseMetaKeys,
-	);
+	const databaseMetaKeys =
+		useSession((state) => state.config.data?.databaseMetaKeys) ?? [];
 
 	const [search, setSearch] = useState("");
 	const debouncedSearch = useDebouncedValue(search);

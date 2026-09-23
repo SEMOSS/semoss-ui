@@ -1,7 +1,7 @@
 import { useEffect, useMemo } from "react";
 import { FILE_PANEL_COMPONENTS } from "@semoss/panels";
 import type { Role } from "@semoss/sdk";
-import { useInsight } from "@semoss/sdk/react";
+import { useInsight, useSession } from "@semoss/sdk/react";
 import { useCacheData } from "@semoss/ui/next";
 import type {
 	WorkbenchLayout,
@@ -17,7 +17,7 @@ import {
 import { makeEngineRoomMcp } from "@/api/rooms";
 import { ASSISTANT_PANEL } from "@/components/assistant";
 import { AssistantStoreProvider } from "@/contexts";
-import { useAssistantStore, useEngine, useSession } from "@/hooks";
+import { useAssistantStore, useEngine } from "@/hooks";
 import {
 	WORKBENCH_COMPONENTS,
 	WORKBENCH_PANEL_RECORDS,
@@ -127,8 +127,10 @@ export const StorageWorkbench: React.FC = () => {
 		workbenchLayout,
 	);
 
-	const syncPermission = useSession((s) => s.syncPermission);
-	const refreshPermission = useSession((s) => s.refreshPermission);
+	const syncPermission = useSession((s) => s.access.actions.primePermission);
+	const refreshPermission = useSession(
+		(s) => s.access.actions.refreshPermission,
+	);
 
 	const assistantStore = useAssistantStore(workbenchId);
 

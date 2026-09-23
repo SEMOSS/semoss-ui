@@ -4,8 +4,8 @@ import {
 	type NotebookStateConfig,
 	type SerializedState,
 } from "@semoss/renderer";
+import type { SessionState } from "@semoss/sdk";
 import type { Project } from "@semoss/shared";
-import type { SessionStoreState } from "@/stores";
 import {
 	INPUT_TYPE_CUSTOM_QUERY,
 	INPUT_TYPE_DATABASE,
@@ -415,7 +415,7 @@ function getNotebookForPrompt(
 
 export async function setBlocksAndOpenUIBuilder(
 	builder: Builder,
-	sessionStore: SessionStoreState,
+	sessionStore: SessionState,
 	navigate: (route: string) => void,
 ) {
 	// create the state
@@ -722,7 +722,7 @@ export async function setBlocksAndOpenUIBuilder(
 
 	// create the app
 	const { errors, pixelReturn } =
-		await sessionStore.runPixel<[Project]>(pixel);
+		await sessionStore.actions.runPixel<[Project]>(pixel);
 
 	if (errors.length > 0) {
 		throw new Error(errors.join(","));
@@ -730,7 +730,7 @@ export async function setBlocksAndOpenUIBuilder(
 
 	const appId = pixelReturn[0].output.project_id;
 
-	await sessionStore.runPixel(
+	await sessionStore.actions.runPixel(
 		`SetProjectMetadata(project=["${appId}"], meta=[${JSON.stringify({
 			description: builder.context.value,
 		})}])`,

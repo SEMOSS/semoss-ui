@@ -19,3 +19,19 @@ export class UnauthorizedError extends AbstractError {
 		this.code = code;
 	}
 }
+
+/** HTTP failure with the backend's structured response retained for callers. */
+export class HttpError extends AbstractError {
+	status: number;
+	data: Record<string, unknown>;
+
+	constructor(
+		message: string,
+		status: number,
+		data: Record<string, unknown> = {},
+	) {
+		super(message);
+		this.status = status;
+		this.data = data;
+	}
+}

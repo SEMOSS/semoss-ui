@@ -4,6 +4,7 @@
 import { ChevronRight, SearchIcon, UploadIcon } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router";
+import { useSession } from "@semoss/sdk/react";
 import { EngineSubtypeIcon } from "@semoss/shared";
 import {
 	Breadcrumb,
@@ -61,7 +62,6 @@ import {
 	ModelTileCard,
 } from "@/components/import/model/model-tile-card";
 import { NavbarHeader, NavbarLeft } from "@/components/shared";
-import { useSession } from "@/hooks";
 import { useNavigate } from "@/hooks/useNavigate";
 import {
 	getOptionLabels,
@@ -722,8 +722,8 @@ export const mergeModelMetadataFields = (
 export const ModelImportPage: React.FC = () => {
 	const navigate = useNavigate();
 
-	const runPixel = useSession((state) => state.runPixel);
-	const upload = useSession((state) => state.upload);
+	const runPixel = useSession((state) => state.actions.runPixel);
+	const upload = useSession((state) => state.actions.upload);
 
 	const [search, setSearch] = useState("");
 	const [importableModels, setImportableModels] =

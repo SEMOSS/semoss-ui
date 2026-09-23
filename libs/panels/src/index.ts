@@ -7,8 +7,6 @@ export {
 	type FilesChangedEvent,
 	isFilePanelType,
 } from "./constants/file-panel.constants";
-export { AccessStoreProvider } from "./contexts/access.context";
-export { useAccess } from "./hooks/use-access";
 export { type FileBuffer, useFileBuffer } from "./hooks/use-file-buffer";
 export {
 	type FilePanelApi,
@@ -17,11 +15,6 @@ export {
 	useFilePanel,
 } from "./hooks/use-file-panel";
 export { useFilesChanged } from "./hooks/use-files-changed";
-export { createAccessStore } from "./stores/access.store";
-export {
-	createPermissionCache,
-	type PermissionCache,
-} from "./types/access.types";
 export {
 	type FilePanelMode,
 	getFilePanelScope,

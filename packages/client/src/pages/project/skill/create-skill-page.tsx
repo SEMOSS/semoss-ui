@@ -1,6 +1,7 @@
 import { ChevronRight, UploadIcon, X } from "lucide-react";
 import { useId, useState } from "react";
 import { Link } from "react-router";
+import { useSession } from "@semoss/sdk/react";
 import {
 	Badge,
 	Breadcrumb,
@@ -24,7 +25,6 @@ import {
 import { MarkdownEditor } from "@/components/common/MarkdownEditor";
 import { UploadProjectDialog } from "@/components/project";
 import { NavbarHeader, NavbarLeft } from "@/components/shared";
-import { useSession } from "@/hooks";
 import { useNavigate } from "@/hooks/useNavigate";
 
 type CreateSkillForm = {
@@ -37,7 +37,7 @@ type CreateSkillForm = {
 
 export const CreateSkillPage = () => {
 	const navigate = useNavigate();
-	const runPixel = useSession((state) => state.runPixel);
+	const runPixel = useSession((state) => state.actions.runPixel);
 	const [isUploadOpen, setIsUploadOpen] = useState(false);
 	const [isLoading, setIsLoading] = useState(false);
 	const [tagInput, setTagInput] = useState("");

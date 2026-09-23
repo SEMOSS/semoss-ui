@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import type { Role } from "@semoss/sdk";
-import { usePixel } from "@semoss/sdk/react";
+import { usePixel, useSession } from "@semoss/sdk/react";
 import { Button, Muted, Spinner, toast } from "@semoss/ui/next";
 import type { RouterConfigFormValue } from "@/components/import/model/model-import.constants";
 import {
@@ -9,7 +9,6 @@ import {
 	routerConfigToJson,
 	validateRouterConfig,
 } from "@/components/import/model/router-config-field";
-import { useSession } from "@/hooks";
 
 export interface EngineRouterSettingsProps {
 	/** Id of the model router engine */
@@ -33,7 +32,7 @@ export const EngineRouterSettings: React.FC<EngineRouterSettingsProps> = ({
 	permission,
 	onUpdated,
 }) => {
-	const runPixel = useSession((state) => state.runPixel);
+	const runPixel = useSession((state) => state.actions.runPixel);
 	const isEditable = permission === "OWNER" || permission === "EDIT";
 
 	const getConfig = usePixel<string>(

@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useSession } from "@semoss/sdk/react";
 import {
 	Button,
 	Dialog,
@@ -7,7 +8,6 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from "@semoss/ui/next";
-import { useSession } from "@/hooks";
 
 export const PromptBuilderContextTestDialog = (props: {
 	llm: string;
@@ -15,7 +15,7 @@ export const PromptBuilderContextTestDialog = (props: {
 	open: boolean;
 	close: () => void;
 }) => {
-	const runPixel = useSession((state) => state.runPixel);
+	const runPixel = useSession((state) => state.actions.runPixel);
 	const [loading, setLoading] = useState(false);
 	const [response, setResponse] = useState("");
 

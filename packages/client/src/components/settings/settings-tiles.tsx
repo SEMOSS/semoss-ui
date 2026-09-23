@@ -1,6 +1,6 @@
 import { Copy, EyeOff, LockKeyhole, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
-import { usePixel } from "@semoss/sdk/react";
+import { usePixel, useSession } from "@semoss/sdk/react";
 import {
 	Button,
 	Card,
@@ -20,7 +20,7 @@ import {
 	setProjectVisiblity,
 } from "@/api";
 import { DeleteEntityDialog } from "@/components/shared/delete-entity-dialog";
-import { useSession, useSettings } from "@/hooks";
+import { useSettings } from "@/hooks";
 import type { ALL_TYPES, ApiResponse } from "@/types";
 import { formatToDataTestId } from "@/utility";
 
@@ -93,9 +93,9 @@ const AlertTile = ({
 export const SettingsTiles = (props: SettingsTilesProps) => {
 	const { id, type, name, condensed, onDelete, direction = "column" } = props;
 
-	const runPixel = useSession((state) => state.runPixel);
+	const runPixel = useSession((state) => state.actions.runPixel);
 	const isEngineOperationAvailable = useSession(
-		(state) => state.isEngineOperationAvailable,
+		(state) => state.access.actions.isOperationAvailable,
 	);
 	const { adminMode, engineInfo: contextEngineInfo } = useSettings();
 

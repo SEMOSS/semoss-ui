@@ -1,41 +1,28 @@
 import { Env } from "../env";
 import { CSRF, get, post } from "../utility";
+import { parseSystemConfig } from "./system-config";
 /**
  * Get the System's configuration information
  */
-export const getSystemConfig = async (): Promise<{
-	logins: { [key: string]: unknown };
-	/**
-	 * List of available providers (logins) that are available
-	 */
-	availableProviders: {
-		provider: string;
-		name: string;
-		isOauth: boolean;
-	}[];
-	[key: string]: unknown;
-}> => {
+export const getSystemConfig = async () => {
 	// get the response
-	const response = await get<{
-		logins: { [key: string]: unknown };
-		availableProviders: {
-			provider: string;
-			name: string;
-			isOauth: boolean;
-		}[];
-		[key: string]: unknown;
-	}>(`${Env.MODULE}/api/config`);
+	const response = await get<unknown>(`${Env.MODULE}/api/config`);
+	const config = parseSystemConfig(response.data);
 
-	if (response.data?.csrf) {
-		const token = response.data["X-CSRF-Token"] as string;
-
-		// enable and store the token
-		CSRF.isEnabled = true;
-		CSRF.token = token;
+	CSRF.isEnabled = config.csrf;
+	if (
+		config.csrf &&
+		typeof response.data === "object" &&
+		response.data !== null &&
+		!Array.isArray(response.data) &&
+		typeof (response.data as Record<string, unknown>)["X-CSRF-Token"] ===
+			"string"
+	) {
+		CSRF.token = (response.data as Record<string, string>)["X-CSRF-Token"];
 	}
 
 	// save the config data
-	return response.data;
+	return config;
 };
 
 /**

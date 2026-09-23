@@ -3,6 +3,7 @@ import type React from "react";
 import { useId } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { ActionMessages, useBlocks } from "@semoss/renderer";
+import { useSession } from "@semoss/sdk/react";
 import {
 	Button,
 	DialogDescription,
@@ -10,7 +11,6 @@ import {
 	Input,
 	Label,
 } from "@semoss/ui/next";
-import { useConfig } from "@/hooks";
 
 type NewQueryForm = {
 	ID: string;
@@ -33,8 +33,8 @@ export const NewNotebookDialog = (
 	const { onClose = () => null } = props;
 
 	const { state } = useBlocks();
-	const python = useConfig((state) => state.config.python);
-	const r = useConfig((state) => state.config.r);
+	const python = useSession((state) => state.config.data?.python) ?? false;
+	const r = useSession((state) => state.config.data?.r) ?? false;
 	const fieldId = useId();
 
 	const {

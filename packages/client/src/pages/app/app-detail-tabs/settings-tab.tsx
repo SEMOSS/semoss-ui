@@ -1,7 +1,7 @@
 import { Copy, DownloadIcon, Link as LinkIcon, User } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
-import { download, runPixel, usePixel } from "@semoss/sdk/react";
+import { download, runPixel, usePixel, useSession } from "@semoss/sdk/react";
 import type { Project } from "@semoss/shared";
 import {
 	Avatar,
@@ -27,7 +27,7 @@ import {
 	toast,
 } from "@semoss/ui/next";
 import { Java } from "@/assets/img/Java";
-import { useSession, useSettings } from "@/hooks";
+import { useSettings } from "@/hooks";
 import { AutomationImportExportCard } from "./automation-import-export-card";
 
 interface AppSettingsProps {
@@ -41,10 +41,10 @@ type EditAppForm = {
 
 export const SettingsTab = (props: AppSettingsProps) => {
 	const { project } = props;
-	const sessionRunPixel = useSession((state) => state.runPixel);
-	const sessionUpload = useSession((state) => state.upload);
+	const sessionRunPixel = useSession((state) => state.actions.runPixel);
+	const sessionUpload = useSession((state) => state.actions.upload);
 	const isEngineOperationAvailable = useSession(
-		(state) => state.isEngineOperationAvailable,
+		(state) => state.access.actions.isOperationAvailable,
 	);
 	const { adminMode } = useSettings();
 	const [isLoading, setIsLoading] = useState<boolean>(false);

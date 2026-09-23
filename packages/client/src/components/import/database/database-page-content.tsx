@@ -5,6 +5,7 @@
 import { GitCompare, Search, Upload } from "lucide-react";
 import type React from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useSession } from "@semoss/sdk/react";
 import {
 	Breadcrumb,
 	BreadcrumbItem,
@@ -25,7 +26,6 @@ import {
 	toast,
 } from "@semoss/ui/next";
 import { NavbarHeader, NavbarLeft } from "@/components/shared";
-import { useSession } from "@/hooks";
 import { useNavigate } from "@/hooks/useNavigate";
 import {
 	CATEGORY_DESCRIPTIONS,
@@ -112,8 +112,8 @@ const DatabaseCard = ({
 
 export const DatabasePageContent: React.FC<{ name: string }> = ({ name }) => {
 	const navigate = useNavigate();
-	const runPixel = useSession((state) => state.runPixel);
-	const upload = useSession((state) => state.upload);
+	const runPixel = useSession((state) => state.actions.runPixel);
+	const upload = useSession((state) => state.actions.upload);
 	const [loading, setLoading] = useState(false);
 	const [search, setSearch] = useState("");
 	const [selectedTab, setSelectedTab] = useState(0);

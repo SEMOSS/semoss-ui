@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { runPixel, useIteratorPixel } from "@semoss/sdk/react";
+import { runPixel, useIteratorPixel, useSession } from "@semoss/sdk/react";
 import type { Project } from "@semoss/shared";
 import {
 	Muted,
@@ -10,12 +10,13 @@ import {
 import { CatalogGrid, CatalogSearchBar } from "@/components/catalog";
 import { ProjectGridItem } from "@/components/project";
 import { DeleteEntityDialog } from "@/components/shared/delete-entity-dialog";
-import { useConfig, useSettings } from "@/hooks";
+import { useSettings } from "@/hooks";
 import { getProjectLabel, isOwnerPermission } from "@/utility/catalog";
 
 export const ProjectSettingsIndexPage = () => {
 	const { adminMode } = useSettings();
-	const projectMetaKeys = useConfig((state) => state.config.projectMetaKeys);
+	const projectMetaKeys =
+		useSession((state) => state.config.data?.projectMetaKeys) ?? [];
 
 	const [search, setSearch] = useState("");
 	const debouncedSearch = useDebouncedValue(search);

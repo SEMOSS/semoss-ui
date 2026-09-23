@@ -1,5 +1,6 @@
 import { Hammer, Wrench } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
+import { useSession } from "@semoss/sdk/react";
 import {
 	Badge,
 	Button,
@@ -14,7 +15,7 @@ import {
 	toast,
 } from "@semoss/ui/next";
 import { McpUsage } from "@/components/shared/mcp-usage";
-import { useEngine, useSession } from "@/hooks";
+import { useEngine } from "@/hooks";
 
 interface MCPToolInputProperty {
 	title?: string;
@@ -60,7 +61,7 @@ const hasPixelError = (operationType?: string[] | string): boolean => {
  */
 export const EngineMcpUsagePage = () => {
 	const { engine, permission } = useEngine();
-	const runPixel = useSession((state) => state.runPixel);
+	const runPixel = useSession((state) => state.actions.runPixel);
 	const [mcpTools, setMcpTools] = useState<MCPToolDefinition[]>([]);
 	const [mcpToolsLoading, setMcpToolsLoading] = useState(false);
 	const [mcpToolsError, setMcpToolsError] = useState("");

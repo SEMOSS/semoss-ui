@@ -18,6 +18,7 @@ import {
 import type React from "react";
 import { useEffect, useState } from "react";
 import { Link, matchPath, useLocation } from "react-router";
+import { useSession } from "@semoss/sdk/react";
 import {
 	Sidebar as ShadcnSidebar,
 	SidebarContent as ShadcnSidebarContent,
@@ -34,7 +35,7 @@ import {
 	SidebarProvider,
 	SidebarSeparator,
 } from "@semoss/ui/next";
-import { useConfig, usePage, useSession } from "@/hooks";
+import { usePage, useSessionTheme } from "@/hooks";
 import { formatToDataTestId } from "@/utility";
 import { LogoutPopover } from "./LogoutPopover";
 
@@ -101,12 +102,12 @@ const NAV_BUTTON_CLASS =
 	"h-auto rounded-none px-4 py-2 text-sm data-[active=true]:rounded-md data-[active=true]:bg-primary/10 data-[active=true]:text-primary";
 
 export const Sidebar: React.FC = () => {
-	const themeName = useConfig((state) => state.theme.name);
-	const adminOnlyViewMenuBarFlag = useConfig(
-		(state) => state.config.adminOnlyViewMenuBarFlag,
-	);
-	const isAdmin = useSession((state) => state.user.admin);
-	const userName = useSession((state) => state.user.name);
+	const themeName = useSessionTheme((theme) => theme.name);
+	const adminOnlyViewMenuBarFlag =
+		useSession((state) => state.config.data?.adminOnlyViewMenuBarFlag) ??
+		false;
+	const isAdmin = useSession((state) => state.user.current?.admin ?? false);
+	const userName = useSession((state) => state.user.current?.name ?? "");
 	const page = usePage();
 
 	const { pathname } = useLocation();

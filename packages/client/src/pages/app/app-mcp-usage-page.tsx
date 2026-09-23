@@ -1,10 +1,11 @@
 import { Wrench } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
+import { useSession } from "@semoss/sdk/react";
 import { Badge, H4, Spinner, toast } from "@semoss/ui/next";
 import { McpUsage } from "@/components/shared/mcp-usage";
 import { RemoteMcpConnection } from "@/components/shared/remote-mcp-connection";
 import { SettingsContext } from "@/contexts";
-import { useProject, useSession } from "@/hooks";
+import { useProject } from "@/hooks";
 
 interface MCPToolInputProperty {
 	title?: string;
@@ -56,7 +57,7 @@ export const AppMcpUsagePage = ({
 	showRemoteConnection = true,
 }: AppMcpUsagePageProps = {}) => {
 	const { project, type } = useProject();
-	const runPixel = useSession((state) => state.runPixel);
+	const runPixel = useSession((state) => state.actions.runPixel);
 
 	// the same page serves the app and skill catalogs, so name what the reader
 	// is actually looking at

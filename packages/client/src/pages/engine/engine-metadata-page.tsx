@@ -16,6 +16,7 @@ import {
 	console as getPixelConsole,
 	runPixel,
 	usePixel,
+	useSession,
 } from "@semoss/sdk/react";
 import { ColumnMetadataModal, type LogicalDataType } from "@semoss/shared";
 import {
@@ -52,7 +53,7 @@ import {
 import { SyncExternalDatabaseOverlay } from "@/components/database";
 import { Metamodel, type MetamodelNodeType } from "@/components/metamodel";
 import { Section } from "@/components/ui";
-import { useEngine, useSession } from "@/hooks";
+import { useEngine } from "@/hooks";
 
 const normalizeSearchValue = (value: string) =>
 	value.toLowerCase().replace(/[\s_]+/g, "");
@@ -165,9 +166,9 @@ export const EngineMetadataPage = observer(() => {
 	};
 
 	const { engine } = useEngine();
-	const sessionRunPixel = useSession((state) => state.runPixel);
-	const insightID = useSession((state) => state.insightID);
-	const download = useSession((state) => state.download);
+	const sessionRunPixel = useSession((state) => state.actions.runPixel);
+	const insightID = useSession((state) => state.insightId);
+	const download = useSession((state) => state.actions.download);
 
 	const [isModified, setIsModified] = useState(false);
 	const [nodes, setNodes] = useState<

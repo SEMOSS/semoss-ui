@@ -4,7 +4,7 @@
 import { ChevronDown, ChevronUp, TriangleAlert, X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Controller, useForm, useWatch } from "react-hook-form";
-import { usePixel } from "@semoss/sdk/react";
+import { usePixel, useSession } from "@semoss/sdk/react";
 import {
 	Button,
 	Checkbox,
@@ -36,7 +36,7 @@ import type {
 	BuiltinToolSelection,
 	ReasoningConfig,
 } from "@/components/engine/engine-metadata-display";
-import { useSession, useStepper } from "@/hooks";
+import { useStepper } from "@/hooks";
 import { useNavigate } from "@/hooks/useNavigate";
 import { formatToDataTestId } from "@/utility";
 import type { CatalogMatchState } from "./model-catalog-match";
@@ -156,8 +156,8 @@ export const ModelImportForm = (props: ModelImportFormProps) => {
 		onPickCatalogKey,
 	} = props;
 
-	const runPixel = useSession((state) => state.runPixel);
-	const upload = useSession((state) => state.upload);
+	const runPixel = useSession((state) => state.actions.runPixel);
+	const upload = useSession((state) => state.actions.upload);
 	const navigate = useNavigate();
 	const { isLoading, setIsLoading } = useStepper();
 

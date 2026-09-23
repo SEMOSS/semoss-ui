@@ -4,7 +4,7 @@
 import { ChevronDown, ChevronUp, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
-import { console as getPixelConsole } from "@semoss/sdk/react";
+import { console as getPixelConsole, useSession } from "@semoss/sdk/react";
 import { PairedFileUpload, type PairedFileUploadRow } from "@semoss/shared";
 import {
 	Button,
@@ -32,7 +32,6 @@ import {
 	Separator,
 	toast,
 } from "@semoss/ui/next";
-import { useSession } from "@/hooks";
 import { useNavigate } from "@/hooks/useNavigate";
 import { EngineFormHeader } from "../shared/engine-form-header";
 import { computeOptions, computeVisibility } from "../shared/import-form.utils";
@@ -126,9 +125,9 @@ export const DatabaseForm = ({
 	const debounceTimeoutsRef = useRef<
 		Record<string, ReturnType<typeof setTimeout>>
 	>({});
-	const runPixel = useSession((state) => state.runPixel);
-	const upload = useSession((state) => state.upload);
-	const insightID = useSession((state) => state.insightID);
+	const runPixel = useSession((state) => state.actions.runPixel);
+	const upload = useSession((state) => state.actions.upload);
+	const insightID = useSession((state) => state.insightId);
 	const navigate = useNavigate();
 	const defaultFields = resolvedFields;
 	const advancedFields = advanced;

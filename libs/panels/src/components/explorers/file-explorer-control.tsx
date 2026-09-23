@@ -1,14 +1,12 @@
 import { FilePlus2Icon, RefreshCwIcon } from "lucide-react";
 import type { FC } from "react";
-import { useStore } from "zustand";
+import { useAccess } from "@semoss/sdk/react";
 import type { FileExplorerApi } from "@semoss/shared";
 import {
 	useWorkbenchPanel,
 	WorkbenchChromeButton,
 	type WorkbenchPanelProps,
 } from "@semoss/workbench";
-import { useAccessStore } from "../../hooks/use-access";
-import { getPermissionKey } from "../../types/access.types";
 import type { FileExplorerParams } from "./file-explorer-panel";
 
 /** File explorer refresh and create actions for the active panel. */
@@ -17,27 +15,21 @@ export const FileExplorerControl: FC<WorkbenchPanelProps> = ({ id }) => {
 		id,
 	);
 
-	const accessKey = value
+	const resource = value
 		? value.mode.type === "APP"
-			? getPermissionKey("PROJECT", value.mode.app)
+			? { type: "PROJECT" as const, id: value.mode.app }
 			: value.mode.type === "ENGINE"
-				? getPermissionKey("ENGINE", value.mode.engine)
+				? { type: "ENGINE" as const, id: value.mode.engine }
 				: value.mode.type === "STORAGE"
-					? getPermissionKey("ENGINE", value.mode.storage)
+					? { type: "ENGINE" as const, id: value.mode.storage }
 					: null
 		: null;
-	// read the cache directly rather than through `useAccess`: a chrome
-	// control renders outside its panel's subtree, so it cannot reuse the
-	// access the panel already resolved
-	const accessStore = useAccessStore();
-	const permission = useStore(accessStore, (state) =>
-		accessKey ? state.permissions[accessKey]?.permission : undefined,
-	);
+	const access = useAccess(resource?.type ?? "INSIGHT", resource?.id ?? "");
 
 	if (!value) return null;
 
-	const readOnlyResource = accessKey
-		? !(permission === "OWNER" || permission === "EDIT")
+	const readOnlyResource = resource
+		? access.status !== "ready" || access.readOnly
 		: false;
 	const canCreate =
 		!readOnlyResource &&

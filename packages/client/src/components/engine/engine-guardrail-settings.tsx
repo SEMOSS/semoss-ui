@@ -1,7 +1,7 @@
 import { Copy, Plus, Save, Trash2, Undo2 } from "lucide-react";
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import type { Role } from "@semoss/sdk";
-import { usePixel } from "@semoss/sdk/react";
+import { usePixel, useSession } from "@semoss/sdk/react";
 import {
 	Badge,
 	Button,
@@ -30,7 +30,6 @@ import {
 	useForm,
 	zodResolver,
 } from "@semoss/ui/next";
-import { useSession } from "@/hooks";
 import {
 	collectGuardrailConfigIssues,
 	createGuardrailPipeline,
@@ -77,7 +76,7 @@ export const EngineGuardrailSettings = ({
 	permission,
 	onUpdated,
 }: EngineGuardrailSettingsProps) => {
-	const runPixel = useSession((state) => state.runPixel);
+	const runPixel = useSession((state) => state.actions.runPixel);
 	const fieldId = useId();
 	const ruleSelectId = useId();
 	const isEditable = permission === "OWNER" || permission === "EDIT";

@@ -13,7 +13,7 @@ import {
 	useLocation,
 	useParams,
 } from "react-router";
-import { usePixel } from "@semoss/sdk/react";
+import { usePixel, useSession } from "@semoss/sdk/react";
 import {
 	AppCatalogAvatar,
 	EngineSubtypeIcon,
@@ -44,7 +44,7 @@ import { deleteTeam, getGroupDetails } from "@/api";
 import { PrivacyPreferenceCenterModal } from "@/components/cookies/privacy-preference-center-modal";
 import { AddTeamModal, TeamDeleteDialog } from "@/components/teams";
 import { SettingsContext } from "@/contexts";
-import { useAPI, useConfig, useSession } from "@/hooks";
+import { useAPI, useSessionTheme } from "@/hooks";
 import {
 	ADMIN_MODE_STORAGE_KEY,
 	getStoredAdminMode,
@@ -66,8 +66,8 @@ const ENGINE_CATALOG_SETTINGS_PATHS = new Set([
 ]);
 
 export const SettingsLayout = () => {
-	const themeConfig = useConfig((state) => state.theme);
-	const isAdmin = useSession((state) => state.user.admin);
+	const themeConfig = useSessionTheme((theme) => theme);
+	const isAdmin = useSession((state) => state.user.current?.admin ?? false);
 	const { id, type } = useParams();
 	const { pathname, search } = useLocation();
 	const navigate = useNavigate();

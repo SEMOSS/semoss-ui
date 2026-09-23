@@ -1,6 +1,6 @@
+import type { ResourceType } from "@semoss/sdk";
 import type { FileMode } from "@semoss/shared";
 import { getFileEditorPathScope } from "@semoss/shared";
-import type { ResourceType } from "./access.types";
 
 /**
  * The scopes a file panel can be opened for.

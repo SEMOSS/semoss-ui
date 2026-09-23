@@ -1,7 +1,6 @@
 import { FileDiffIcon } from "lucide-react";
 import { useEffect, useState } from "react";
-import { useAccess } from "@semoss/panels";
-import { useInsight, usePixel } from "@semoss/sdk/react";
+import { useAccess, useInsight, usePixel } from "@semoss/sdk/react";
 import { toast } from "@semoss/ui/next";
 import type {
 	WorkbenchPanelConfig,

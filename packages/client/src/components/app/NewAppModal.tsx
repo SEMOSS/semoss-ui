@@ -2,6 +2,7 @@ import { X } from "lucide-react";
 import { useId, useMemo, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import type { SerializedState } from "@semoss/renderer";
+import { useSession } from "@semoss/sdk/react";
 import type { Project } from "@semoss/shared";
 import {
 	Badge,
@@ -18,7 +19,6 @@ import {
 	toast,
 } from "@semoss/ui/next";
 import { uploadImage } from "@/api";
-import { useSession } from "@/hooks";
 
 type NewAppForm = {
 	APP_NAME: string;
@@ -38,8 +38,8 @@ interface NewAppModalProps {
 
 export const NewAppModal = (props: NewAppModalProps) => {
 	const { open, options, onClose = () => null } = props;
-	const runPixel = useSession((state) => state.runPixel);
-	const insightID = useSession((state) => state.insightID);
+	const runPixel = useSession((state) => state.actions.runPixel);
+	const insightID = useSession((state) => state.insightId);
 	const [isLoading, setIsLoading] = useState(false);
 	const [tagInput, setTagInput] = useState("");
 	const nameId = useId();

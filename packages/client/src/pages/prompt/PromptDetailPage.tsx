@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router";
+import { useSession } from "@semoss/sdk/react";
 import {
 	Alert,
 	AlertDescription,
@@ -37,7 +38,6 @@ import {
 	toast,
 } from "@semoss/ui/next";
 import { NavbarHeader, NavbarLeft } from "@/components/shared";
-import { useSession } from "@/hooks";
 import { useNavigate } from "@/hooks/useNavigate";
 import type { Prompt } from "../../components/prompt/prompt.types";
 import { PromptDeleteModal } from "../../components/prompt/prompt-delete-modal";
@@ -120,8 +120,8 @@ const normalizeModelOption = (value: unknown): LlmModelOption | null => {
 
 export const PromptDetailPage = () => {
 	const { promptId } = useParams<{ promptId: string }>();
-	const userId = useSession((state) => state.user.id);
-	const runPixel = useSession((state) => state.runPixel);
+	const userId = useSession((state) => state.user.current?.id ?? "");
+	const runPixel = useSession((state) => state.actions.runPixel);
 	const navigate = useNavigate();
 
 	const [versions, setVersions] = useState<Prompt[]>([]);

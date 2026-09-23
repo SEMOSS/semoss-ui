@@ -1,6 +1,7 @@
 import { Download, Shield, Upload } from "lucide-react";
 import { useEffect } from "react";
 import { Controller, useForm } from "react-hook-form";
+import { useSession } from "@semoss/sdk/react";
 import {
 	Button,
 	Dialog,
@@ -19,7 +20,7 @@ import {
 	toast,
 } from "@semoss/ui/next";
 import { createUser, editMemberInfo } from "@/api";
-import { useConfig, useSettings } from "@/hooks";
+import { useSettings } from "@/hooks";
 import type { ApiResponse } from "@/types";
 
 interface User {
@@ -133,9 +134,8 @@ interface UserAddOverlayProps {
 export const UserAddOverlay = (props: UserAddOverlayProps) => {
 	const { open = false, user = null, onClose = () => null } = props;
 
-	const availableProviders = useConfig(
-		(state) => state.config.availableProviders,
-	);
+	const availableProviders =
+		useSession((state) => state.config.data?.availableProviders) ?? [];
 	const { adminMode } = useSettings();
 
 	const isNewUser = user === null;

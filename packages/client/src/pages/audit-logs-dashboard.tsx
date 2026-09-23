@@ -3,6 +3,7 @@ import { Download, RefreshCw } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useParams } from "react-router";
 import { download } from "@semoss/sdk";
+import { useSession } from "@semoss/sdk/react";
 import {
 	AppCatalogAvatar,
 	AuditLogFilter,
@@ -32,7 +33,6 @@ import {
 	toast,
 } from "@semoss/ui/next";
 import { NavbarHeader, NavbarLeft } from "@/components/shared";
-import { useSession } from "@/hooks";
 
 interface AuditLogsDashboardProps {
 	catalogName: string;
@@ -80,8 +80,8 @@ export const AuditLogsDashboard = ({
 	catalogName,
 	embedded = false,
 }: AuditLogsDashboardProps) => {
-	const runPixel = useSession((state) => state.runPixel);
-	const insightID = useSession((state) => state.insightID);
+	const runPixel = useSession((state) => state.actions.runPixel);
+	const insightID = useSession((state) => state.insightId);
 	const { appId, engineId } = useParams();
 	const [logs, setLogs] = useState<EventData[]>([]);
 	const [page, setPage] = useState(0);

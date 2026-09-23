@@ -3,6 +3,7 @@ import { ArrowLeft, Eye, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { useBlocks } from "@semoss/renderer";
+import { useSession } from "@semoss/sdk/react";
 import {
 	Button,
 	Dialog,
@@ -22,7 +23,6 @@ import {
 	TooltipTrigger,
 	toast,
 } from "@semoss/ui/next";
-import { useSession } from "@/hooks";
 import { getBlockElement } from "@/stores";
 import { SECTION_ORDER } from "../blocks-workspace/menus/default-menu";
 import type { DesignerMenuItem } from "../blocks-workspace/menus/menu-types";
@@ -66,7 +66,7 @@ export const AddClientBlockModal = (props: EditDetailsModalProps) => {
 	const { isOpen, selected, onClose, isEdit, block_json } = props;
 	const { control, setValue, reset, handleSubmit } =
 		useForm<AddAsClientBlockTypes>({ defaultValues: AddAsClientBlock });
-	const runPixel = useSession((state) => state.runPixel);
+	const runPixel = useSession((state) => state.actions.runPixel);
 	const { state } = useBlocks();
 	const allowedKeys = ["widget", "data", "listeners", "slots", "id"];
 	const [showPreviewModal, setShowPreviewModal] = useState(false);

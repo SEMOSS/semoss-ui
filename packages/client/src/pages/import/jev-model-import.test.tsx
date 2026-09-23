@@ -10,14 +10,26 @@ import { MemoryRouter } from "react-router";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ModelImportPage } from "./model-import-page";
 
-const { runPixel, navigate } = vi.hoisted(() => ({
+const { runPixel, upload, navigate } = vi.hoisted(() => ({
 	runPixel: vi.fn(),
+	upload: vi.fn(),
 	navigate: vi.fn(),
 }));
 
+vi.mock("@semoss/sdk/react", async (importOriginal) => {
+	const sdk = await importOriginal<typeof import("@semoss/sdk/react")>();
+
+	return {
+		...sdk,
+		useSession: (
+			selector: (state: {
+				actions: { runPixel: typeof runPixel; upload: typeof upload };
+			}) => unknown,
+		) => selector({ actions: { runPixel, upload } }),
+	};
+});
+
 vi.mock("@/hooks", () => ({
-	useSession: (selector: (state: { runPixel: typeof runPixel }) => unknown) =>
-		selector({ runPixel }),
 	useStepper: () => {
 		const [isLoading, setIsLoading] = useState(false);
 		return { isLoading, setIsLoading };

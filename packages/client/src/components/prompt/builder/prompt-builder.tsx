@@ -1,6 +1,6 @@
-import { useContext, useState } from "react";
+import { useState } from "react";
+import { useSessionStore } from "@semoss/sdk/react";
 import { Button, toast } from "@semoss/ui/next";
-import { SessionStoreContext } from "@/contexts";
 import { useNavigate } from "@/hooks/useNavigate";
 import {
 	INPUT_TYPE_DATABASE,
@@ -63,7 +63,7 @@ const initialBuilder: Builder = {
 
 export const PromptBuilder = () => {
 	// imperative snapshot only, not a reactive read - avoids re-rendering on every session change
-	const sessionStoreApi = useContext(SessionStoreContext);
+	const sessionStoreApi = useSessionStore();
 	const [builder, setBuilder] = useState<Builder>(initialBuilder);
 	const [currentBuilderStep, changeBuilderStep] = useState<number>(1);
 	const [createAppLoading, setCreateAppLoading] = useState<boolean>(false);

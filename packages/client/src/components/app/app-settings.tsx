@@ -8,7 +8,7 @@ import {
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
-import { usePixel } from "@semoss/sdk/react";
+import { usePixel, useSession } from "@semoss/sdk/react";
 import {
 	Avatar,
 	AvatarFallback,
@@ -27,7 +27,7 @@ import {
 	toast,
 } from "@semoss/ui/next";
 import { Java } from "@/assets/img/Java";
-import { useSession, useSettings } from "@/hooks";
+import { useSettings } from "@/hooks";
 import { McpUsage } from "../shared/mcp-usage";
 
 interface AppSettingsProps {
@@ -41,10 +41,10 @@ type EditAppForm = {
 
 export const AppSettings = (props: AppSettingsProps) => {
 	const { id, condensed = false } = props;
-	const runPixel = useSession((state) => state.runPixel);
-	const sessionUpload = useSession((state) => state.upload);
+	const runPixel = useSession((state) => state.actions.runPixel);
+	const sessionUpload = useSession((state) => state.actions.upload);
 	const isEngineOperationAvailable = useSession(
-		(state) => state.isEngineOperationAvailable,
+		(state) => state.access.actions.isOperationAvailable,
 	);
 	const { adminMode } = useSettings();
 	const [isLoading, setIsLoading] = useState<boolean>(false);

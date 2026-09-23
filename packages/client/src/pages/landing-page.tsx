@@ -3,6 +3,7 @@ import { useState } from "react";
 import { Link } from "react-router";
 import type { Variable } from "@semoss/renderer";
 import { STATE_VERSION } from "@semoss/renderer/version";
+import { useSession } from "@semoss/sdk/react";
 import { Button, H4, Muted } from "@semoss/ui/next";
 import BI from "@/assets/img/BI.png";
 import BIDark from "@/assets/img/BI-dark.png";
@@ -18,7 +19,7 @@ import {
 	LandingHeader,
 	SystemAppCard,
 } from "@/components/landing";
-import { useAdminMode, usePage, useSession } from "@/hooks";
+import { useAdminMode, usePage } from "@/hooks";
 import { useNavigate } from "@/hooks/useNavigate";
 import {
 	BASE_APP_QUERIES,
@@ -33,9 +34,9 @@ export const LandingPage: React.FC = () => {
 		showNavbarSearch: true,
 	});
 
-	const isAdmin = useSession((state) => state.user.admin);
+	const isAdmin = useSession((state) => state.user.current?.admin ?? false);
 	const isEngineOperationAvailable = useSession(
-		(state) => state.isEngineOperationAvailable,
+		(state) => state.access.actions.isOperationAvailable,
 	);
 	const navigate = useNavigate();
 	const adminMode = useAdminMode();

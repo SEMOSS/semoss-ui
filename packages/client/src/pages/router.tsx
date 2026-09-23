@@ -1,7 +1,7 @@
 import { createHashRouter, Navigate } from "react-router";
 import { RouterProvider } from "react-router/dom";
+import { useSession } from "@semoss/sdk/react";
 import { Spinner } from "@semoss/ui/next";
-import { useSession } from "@/hooks";
 import { AuthenticatedLayout } from "./authenticated-layout";
 import { CookieNoticePage } from "./cookie-notice-page";
 import { ENGINE_ROUTES, EngineRedirect } from "./engine";
@@ -52,9 +52,11 @@ const router = createHashRouter([
 ]);
 
 export const Router = () => {
-	const status = useSession((state) => state.status);
+	const initialization = useSession(
+		(state) => state.lifecycle.initialization,
+	);
 
-	if (status === "INITIALIZING") {
+	if (initialization === "idle" || initialization === "loading") {
 		return (
 			<div className="flex h-screen w-screen items-center justify-center">
 				<Spinner />

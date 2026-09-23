@@ -3,8 +3,8 @@ import {
 	I18nextProvider,
 	playgroundResources,
 } from "@semoss/i18n";
-import { AccessStoreProvider, createAccessStore } from "@semoss/panels";
-import { Env, InsightProvider } from "@semoss/sdk/react";
+import { createAccessStore } from "@semoss/sdk";
+import { AccessProvider, Env, InsightProvider } from "@semoss/sdk/react";
 import { ThemeProvider, Toaster } from "@semoss/ui/next";
 import { LandscapeRestriction } from "@/components/common/landscape-restriction";
 import { Router } from "@/pages";
@@ -34,7 +34,7 @@ const accessStore = createAccessStore();
 export const App = () => {
 	return (
 		<I18nextProvider i18n={i18n}>
-			<AccessStoreProvider store={accessStore}>
+			<AccessProvider store={accessStore}>
 				<InsightProvider>
 					{/* TODO: read default theme from theme map somehow */}
 					<ThemeProvider
@@ -48,7 +48,7 @@ export const App = () => {
 						<Toaster position="top-center" />
 					</ThemeProvider>
 				</InsightProvider>
-			</AccessStoreProvider>
+			</AccessProvider>
 		</I18nextProvider>
 	);
 };

@@ -6,7 +6,7 @@ import {
 	downloadN8nExport,
 	parseAutomationImportFileAsync,
 } from "@semoss/automation";
-import { usePixel } from "@semoss/sdk/react";
+import { usePixel, useSession } from "@semoss/sdk/react";
 import type { Project } from "@semoss/shared";
 import {
 	Button,
@@ -31,7 +31,6 @@ import {
 	Spinner,
 	toast,
 } from "@semoss/ui/next";
-import { useSession } from "@/hooks";
 
 interface AutomationImportExportCardProps {
 	project: Project;
@@ -71,7 +70,7 @@ function encodeBase64(value: string): string {
 export const AutomationImportExportCard = ({
 	project,
 }: AutomationImportExportCardProps) => {
-	const runPixel = useSession((state) => state.runPixel);
+	const runPixel = useSession((state) => state.actions.runPixel);
 	const fileInputRef = useRef<HTMLInputElement>(null);
 	const [isExporting, setIsExporting] = useState(false);
 	const [isImporting, setIsImporting] = useState(false);

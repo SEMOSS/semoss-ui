@@ -4,6 +4,7 @@
 
 import { ChevronDown, ChevronUp, Info, X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useSession } from "@semoss/sdk/react";
 import {
 	Alert,
 	AlertDescription,
@@ -38,7 +39,6 @@ import {
 	z,
 	zodResolver,
 } from "@semoss/ui/next";
-import { useSession } from "@/hooks";
 import { useNavigate } from "@/hooks/useNavigate";
 import { EngineFormHeader } from "../shared/engine-form-header";
 import type { FormField as FormFieldConfig } from "../shared/import-form.types";
@@ -231,8 +231,8 @@ export const FunctionForm = ({
 			}
 		}
 	}, [watchedValues, allFormFields]);
-	const runPixel = useSession((state) => state.runPixel);
-	const upload = useSession((state) => state.upload);
+	const runPixel = useSession((state) => state.actions.runPixel);
+	const upload = useSession((state) => state.actions.upload);
 	const navigate = useNavigate();
 	const defaultFields = resolvedFields;
 	const advancedFields = advanced;

@@ -76,9 +76,9 @@ application features; this inventory does not require moving existing features.
 
 ## State Management
 
-- **Application state** is split among the existing stores, including session and config.
-  Use their owning hooks, such as `hooks/use-session.ts` and `hooks/use-config.ts`; there is
-  no `stores/root`, `stores/monolith`, or `useRootStore` entry to extend.
+- **Application state** is split among the existing stores. Use `@semoss/sdk/react` for session
+  and configuration state, and `hooks/use-session-theme.ts` for client presentation values;
+  there is no `stores/root`, `stores/monolith`, or `useRootStore` entry to extend.
 - **Domain state** uses its existing context/store contract. See the
   [client workbench guide](./src/components/workbench/AGENTS.md) for dock, assistant,
   permission, database, and model-chat state. General local-state and orchestration rules
@@ -107,7 +107,8 @@ Follow the root [Design System & Styling](../../AGENTS.md#design-system--styling
 ### Be Cautious With
 
 - **`vite.config.ts`** — dev server, build, and test configuration.
-- **`stores/session/`** — shared session state and permission ownership affect multiple surfaces.
+- **SDK session integration** — `SessionProvider`, authentication, configuration, and permission
+  ownership affect multiple surfaces even though the store is implemented in `@semoss/sdk`.
 
 ### Known Gotchas
 

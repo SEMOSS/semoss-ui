@@ -1,6 +1,7 @@
 import { Users, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
+import { useSession } from "@semoss/sdk/react";
 import {
 	getLoginProviderInitials,
 	getLoginProviderKey,
@@ -30,7 +31,6 @@ import {
 	toast,
 } from "@semoss/ui/next";
 import { addTeam, editTeam } from "@/api/teams";
-import { useConfig } from "@/hooks";
 import { useNavigate } from "@/hooks/useNavigate";
 
 type TeamReturn = {
@@ -69,9 +69,8 @@ export const AddTeamModal = (props: AddTeamModalProps) => {
 	const { open, onClose, isEdit, id, type, description } = props;
 
 	const navigate = useNavigate();
-	const availableProviders = useConfig(
-		(state) => state.config.availableProviders,
-	);
+	const availableProviders =
+		useSession((state) => state.config.data?.availableProviders) ?? [];
 	const [providerLogos, setProviderLogos] = useState<Record<string, string>>(
 		{},
 	);

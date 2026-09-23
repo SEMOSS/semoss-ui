@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import type { StoreApi } from "zustand";
 import { FILE_PANEL_COMPONENTS } from "@semoss/panels";
 import type { Role } from "@semoss/sdk";
-import { useInsight } from "@semoss/sdk/react";
+import { useInsight, useSession } from "@semoss/sdk/react";
 import { useCacheData } from "@semoss/ui/next";
 import type {
 	WorkbenchLayout,
@@ -16,7 +16,7 @@ import {
 	WorkbenchResetButton,
 } from "@semoss/workbench";
 import { ModelChatStoreProvider } from "@/contexts/model-chat.context";
-import { useEngine, useSession } from "@/hooks";
+import { useEngine } from "@/hooks";
 import {
 	WORKBENCH_COMPONENTS,
 	WORKBENCH_PANEL_RECORDS,
@@ -145,8 +145,12 @@ export const ModelWorkbench: React.FC = () => {
 		`workbench-layout--${workbenchId}--1`,
 		workbenchLayout,
 	);
-	const syncPermission = useSession((state) => state.syncPermission);
-	const refreshPermission = useSession((state) => state.refreshPermission);
+	const syncPermission = useSession(
+		(state) => state.access.actions.primePermission,
+	);
+	const refreshPermission = useSession(
+		(state) => state.access.actions.refreshPermission,
+	);
 
 	useEffect(() => {
 		syncPermission("ENGINE", engine.engine_id, permission);

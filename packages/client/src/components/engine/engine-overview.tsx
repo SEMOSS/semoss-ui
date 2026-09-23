@@ -1,10 +1,9 @@
 import { useMemo } from "react";
 import type { Role } from "@semoss/sdk";
-import { usePixel } from "@semoss/sdk/react";
+import { usePixel, useSession } from "@semoss/sdk/react";
 import type { Engine } from "@semoss/shared";
 import { Badge, Markdown, Separator, Spinner } from "@semoss/ui/next";
 import { CatalogOverview } from "@/components/catalog";
-import { useConfig, useSession } from "@/hooks";
 import { normalizeTagArray } from "@/utility";
 import { formatDateToLocal } from "@/utility/date";
 import {
@@ -38,10 +37,9 @@ export const EngineOverview = ({
 	permission,
 	refresh,
 }: EngineOverviewProps) => {
-	const databaseMetaKeys = useConfig(
-		(state) => state.config.databaseMetaKeys,
-	);
-	const runPixel = useSession((state) => state.runPixel);
+	const databaseMetaKeys =
+		useSession((state) => state.config.data?.databaseMetaKeys) ?? [];
+	const runPixel = useSession((state) => state.actions.runPixel);
 	const isModel = engine.engine_type === "MODEL";
 
 	// Only the editable (non-model) overview offers tag suggestions.

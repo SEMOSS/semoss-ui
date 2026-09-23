@@ -1,9 +1,10 @@
 // biome-ignore-all lint/correctness/useExhaustiveDependencies: TODO
+
 import { Bot, Eye, Save, Share2 } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useEffect, useState } from "react";
 import { type SerializedState, useBlocks } from "@semoss/renderer";
-import { runPixel } from "@semoss/sdk/react";
+import { runPixel, useSession } from "@semoss/sdk/react";
 import {
 	Button,
 	Dialog,
@@ -15,13 +16,13 @@ import {
 } from "@semoss/ui/next";
 import { ShareOverlay } from "@/components/ui";
 import { PreviewDialog } from "@/components/workspace";
-import { useProject, useSession, useWorkspace } from "@/hooks";
+import { useProject, useWorkspace } from "@/hooks";
 import { LLMSelectDialog } from "../llms";
 
 export const BlocksWorkspaceActions = observer(() => {
 	const { state } = useBlocks();
 
-	const sessionRunPixel = useSession((state) => state.runPixel);
+	const sessionRunPixel = useSession((state) => state.actions.runPixel);
 	const { workspace } = useWorkspace();
 	const { permission, project } = useProject();
 

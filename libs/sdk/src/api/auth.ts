@@ -80,6 +80,48 @@ export const confirmOTP = async (otp: string): Promise<boolean> => {
 };
 
 /**
+ * Register a native platform user. Registration does not create a session.
+ */
+export const registerUser = async (input: {
+	name: string;
+	username: string;
+	email: string;
+	password: string;
+	phone: string;
+	phoneExtension: string;
+	countryCode: string;
+}): Promise<void> => {
+	await post(`${Env.MODULE}/api/auth/createUser`, {
+		name: input.name,
+		username: input.username,
+		email: input.email,
+		password: input.password,
+		phone: input.phone,
+		phoneextension: input.phoneExtension,
+		countrycode: input.countryCode,
+	});
+};
+
+/** Return whether the current authenticated user is a platform administrator. */
+export const isAdminUser = async (): Promise<boolean> => {
+	const response = await get<boolean>(
+		`${Env.MODULE}/api/auth/admin/user/isAdminUser`,
+	);
+	return response.data;
+};
+
+/** Persist one metadata value for the current user. */
+export const setUserMetadata = async (
+	key: string,
+	value: string,
+): Promise<void> => {
+	await post(`${Env.MODULE}/api/auth/user/setUserMetadata`, {
+		metaKey: key,
+		metaValue: value,
+	});
+};
+
+/**
  * Allow the user to login with outh
  *
  * @param provider - provider to login with
@@ -119,7 +161,7 @@ export const oauth = async (
 		const popUpWindow = window.top.open(
 			url,
 			"_blank",
-			"height=600,width=400,top=300,left=" + 600,
+			"height=600,width=400,top=300,left=600",
 		);
 
 		// setup an interval to see if the popup window is closed or successful

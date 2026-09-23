@@ -32,9 +32,7 @@ src/
 ├── components/
 │   ├── views/  one component per file kind
 │   └── ...     the blueprint factory, the chrome control, explorers, `mcp/` editor UI
-├── contexts/   access provider context
-├── stores/     access store factory
-├── hooks/      access, file-panel, explorer, and MCP hooks
+├── hooks/      file-panel, explorer, and MCP hooks
 ├── utility/    file-panel and MCP utility functions
 ├── types/      access, file-panel, and MCP types
 ├── constants/  file-panel runtime constants
@@ -47,21 +45,16 @@ src/
 
 ## Access is provided by the host
 
-Panels call `useAccess(type, id)`, which reads whatever store the nearest `AccessStoreProvider`
-carries. The contract is structural (`StoreApi<PermissionCache>`) so a host can fold the cache into
-a bigger store:
-
-- **The client** folds `createPermissionCache` into its session store, so permissions sit beside
-  the user they belong to and are **cleared on logout** — without that, one user's `OWNER` survives
-  into the next user's session in the same tab.
-- **A host with no session** (the playground, a test) mounts `createAccessStore()`.
+Panels call `useAccess(type, id)` from `@semoss/sdk/react`. The client receives access from its
+scoped SDK `SessionProvider`, so permissions sit beside the user they belong to and are cleared on
+logout or identity change. A host without a session, such as playground or terminal, creates a
+standalone SDK `createAccessStore()` and mounts the SDK `AccessProvider`.
 
 Worth knowing when reasoning about cost: an `INSIGHT` permission resolves to `"EDIT"` with no
 network call at all.
 
-`file-explorer-control.tsx` reads `state.permissions[key]` directly rather than through
-`useAccess`. That is deliberate — a chrome control renders outside its panel's subtree, so it
-cannot reuse the access the panel already resolved.
+`file-explorer-control.tsx` also uses `useAccess`; chrome controls remain under the host-level SDK
+provider even though they render outside an individual panel subtree.
 
 ## A view renders a file; a host draws its actions
 
