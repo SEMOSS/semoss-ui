@@ -23,7 +23,10 @@ import { createRoom } from "@/features/rooms/api/create-room";
 import { optimizePrompt } from "@/features/rooms/api/optimize-prompt";
 import { submitAgentTurn } from "@/features/rooms/api/use-agent-turn";
 import { useRoomModel } from "@/features/rooms/api/use-room-model";
-import type { ComposerSubmission } from "@/features/rooms/types/room";
+import type {
+	ComposerSubmission,
+	RoomSettings,
+} from "@/features/rooms/types/room";
 import { pendingSession } from "@/features/rooms/utils/session-from-room";
 import { newRoomPath, roomPath } from "@/lib/workspace-paths";
 import type { Agent } from "@/types/agent";
@@ -64,6 +67,10 @@ export function NewRoomStart({
 	const [selectedEngine, setSelectedEngine] = useState<Engine | null>(null);
 	const [createdRoomId, setCreatedRoomId] = useState<string | null>(null);
 	const [isStarting, setIsStarting] = useState(false);
+	const [roomSettings, setRoomSettings] = useState<RoomSettings>({
+		instructions: "",
+		mcp: [],
+	});
 	const createdRoomIdRef = useRef<string | null>(null);
 	const isRoomReadyRef = useRef(false);
 	const startingRef = useRef(false);
@@ -138,6 +145,28 @@ export function NewRoomStart({
 		[actions, modelId],
 	);
 
+	const handleSaveRoomSettings = useCallback(
+		async (settings: RoomSettings) => {
+			const roomId = createdRoomIdRef.current;
+			if (roomId && isRoomReadyRef.current) {
+				await createRoom(
+					actions,
+					insightId,
+					{
+						workspaceId: agentId,
+						workspaceName: agent.name,
+						instructions: settings.instructions,
+						mcp: settings.mcp,
+						modelId,
+					},
+					{ roomId },
+				);
+			}
+			if (mountedRef.current) setRoomSettings(settings);
+		},
+		[actions, agent.name, agentId, insightId, modelId],
+	);
+
 	const handleSend = useCallback(
 		async (submission: ComposerSubmission) => {
 			if (!isAgentReady || agentId !== selectedAgentId) {
@@ -159,7 +188,8 @@ export function NewRoomStart({
 						{
 							workspaceId: agentId,
 							workspaceName: agent.name,
-							instructions: agent.system_prompt,
+							instructions: roomSettings.instructions,
+							mcp: roomSettings.mcp,
 							modelId,
 						},
 						{
@@ -209,12 +239,12 @@ export function NewRoomStart({
 			agent.config_json?.budgets?.max_reflections,
 			agent.config_json?.budgets?.max_turns,
 			agent.name,
-			agent.system_prompt,
 			agentId,
 			insightId,
 			isAgentReady,
 			modelId,
 			navigate,
+			roomSettings,
 			selectedAgentId,
 			workspace,
 		],
@@ -270,9 +300,15 @@ export function NewRoomStart({
 					isModelSaving={false}
 					isModelLocked={Boolean(createdRoomId) || !isAgentReady}
 					modelError={modelLookup.error}
-					roomInstructions={agent.system_prompt || ""}
+					roomInstructions={
+						roomSettings.instructions || agent.system_prompt || ""
+					}
+					roomSettings={roomSettings}
+					inheritedMcp={isAgentReady ? agent.mcp : []}
+					isSettingsDisabled={isStarting || !isAgentReady}
 					isSendDisabled={!isAgentReady}
 					onModelChange={handleModelChange}
+					onSaveRoomSettings={handleSaveRoomSettings}
 					onOptimizePrompt={handleOptimizePrompt}
 					onSend={handleSend}
 					onStop={cancelDraftTurn}

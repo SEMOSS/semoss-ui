@@ -1,3 +1,4 @@
+import type { MCPConfig } from "@semoss/shared";
 import { callPixel, type InsightActions, pixel } from "@/lib/pixel";
 import { createdPlaygroundRoomSchema, roomWriteSchema } from "./room-schemas";
 
@@ -16,6 +17,7 @@ export async function createRoom(
 		workspaceId: string;
 		workspaceName: string;
 		instructions?: string;
+		mcp?: MCPConfig[];
 		modelId?: string;
 		name?: string;
 	},
@@ -37,7 +39,9 @@ export async function createRoom(
 	const roomOptions = {
 		predefinedPrompts: [],
 		instructions: options.instructions ?? "",
-		mcp: [],
+		mcp: (options.mcp ?? [])
+			.filter((resource) => !resource.fromWorkspace && !resource.fromRoom)
+			.map(({ id, name, type }) => ({ id, name, type })),
 		workspace: {
 			workspace_id: options.workspaceId,
 			name: options.workspaceName,

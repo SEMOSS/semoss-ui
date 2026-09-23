@@ -24,9 +24,12 @@ import {
 } from "@semoss/ui/next";
 import { parseTimestamp } from "@semoss/utility";
 import { AgentAvatar } from "@/components/common/agent-avatar";
+import { DeleteRoomDialog } from "@/features/rooms/components/delete-room-dialog";
+import { RenameRoomDialog } from "@/features/rooms/components/rename-room-dialog";
 import type { Agent } from "@/types/agent";
 import type { Session } from "@/types/session";
 import { RecentRoomLink } from "./recent-room-link";
+import { SidebarRoomActions } from "./sidebar-room-actions";
 import { getSidebarRoomStatus } from "./sidebar-room-status";
 import { SidebarSearchPalette } from "./sidebar-search-palette";
 
@@ -69,7 +72,8 @@ export function SidebarAgentsList({
 	activeRoomId,
 	isLoading = false,
 	onNewSession,
-	onRouteVisited,
+	onRoomRename,
+	onRoomDelete,
 	onRoomVisited,
 }: {
 	agents: Agent[];
@@ -78,7 +82,8 @@ export function SidebarAgentsList({
 	activeRoomId?: string;
 	isLoading?: boolean;
 	onNewSession: (agentId?: string) => void;
-	onRouteVisited: (path: string) => void;
+	onRoomRename: (roomId: string, name: string) => Promise<void>;
+	onRoomDelete: (roomId: string) => Promise<void>;
 	onRoomVisited: (roomId: string) => void;
 }) {
 	const { isMobile, setOpenMobile, state } = useSidebar();
@@ -94,6 +99,12 @@ export function SidebarAgentsList({
 	const [visibleRecentRoomCount, setVisibleRecentRoomCount] = useState(
 		RECENT_ROOM_PAGE_SIZE,
 	);
+	const [renameTarget, setRenameTarget] = useState<Session | null>(null);
+	const [isRenameOpen, setIsRenameOpen] = useState(false);
+	const [deleteTarget, setDeleteTarget] = useState<Session | null>(null);
+	const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+	const dialogReturnFocusRef = useRef<HTMLButtonElement | null>(null);
+	const shouldCloseMobileAfterDeleteRef = useRef(false);
 
 	const sortedSessions = useMemo(
 		() => [...sessions].sort(compareRoomsNewestFirst),
@@ -183,15 +194,45 @@ export function SidebarAgentsList({
 		if (isMobile) setOpenMobile(false);
 	}
 
-	function visitRoute(path: string) {
-		onRouteVisited(path);
-		if (isMobile) setOpenMobile(false);
-	}
-
 	function startNewSession(agentId?: string) {
 		if (agentId) onNewSession(agentId);
 		else onNewSession();
 		if (isMobile) setOpenMobile(false);
+	}
+
+	function requestRoomRename(
+		room: Session,
+		trigger: HTMLButtonElement | null,
+	): void {
+		dialogReturnFocusRef.current = trigger;
+		setRenameTarget(room);
+		setIsRenameOpen(true);
+	}
+
+	function requestRoomDelete(
+		room: Session,
+		trigger: HTMLButtonElement | null,
+	): void {
+		dialogReturnFocusRef.current = trigger;
+		setDeleteTarget(room);
+		setIsDeleteOpen(true);
+	}
+
+	function isRoomDialogTarget(roomId: string): boolean {
+		return renameTarget?.id === roomId || deleteTarget?.id === roomId;
+	}
+
+	async function handleRoomDelete(roomId: string): Promise<void> {
+		const shouldCloseMobile = isMobile && activeRoomId === roomId;
+		await onRoomDelete(roomId);
+		shouldCloseMobileAfterDeleteRef.current = shouldCloseMobile;
+	}
+
+	function handleDeleteDialogClosed(): void {
+		setDeleteTarget(null);
+		if (!shouldCloseMobileAfterDeleteRef.current) return;
+		shouldCloseMobileAfterDeleteRef.current = false;
+		setOpenMobile(false);
 	}
 
 	function handleTreeItemSelect(item: SidebarTreeItem): void {
@@ -476,58 +517,74 @@ export function SidebarAgentsList({
 																			) : undefined
 																		}
 																		className={cn(
-																			"[&>div]:min-h-9 [&>div]:rounded-md [&>div]:py-0 [&>div]:hover:bg-sidebar-accent",
+																			"group/room [&>div]:min-h-9 [&>div]:rounded-md [&>div]:py-0 [&>div]:hover:bg-sidebar-accent",
 																			room.id ===
 																				activeRoomId &&
 																				"[&>div]:bg-sidebar-accent [&>div]:font-medium [&>div]:text-sidebar-accent-foreground",
 																		)}
 																		label={
-																			<HoverCard
-																				openDelay={
-																					300
-																				}
-																				closeDelay={
-																					150
-																				}
-																			>
-																				<HoverCardTrigger
-																					asChild
-																				>
-																					<span className="flex min-h-9 min-w-0 items-center py-1 text-start">
-																						<span className="truncate text-sm">
-																							{
-																								room.title
-																							}
-																						</span>
-																					</span>
-																				</HoverCardTrigger>
-																				<HoverCardContent
-																					side="right"
-																					align="start"
-																					sideOffset={
-																						8
+																			<div className="flex min-h-9 w-full min-w-0 items-center">
+																				<HoverCard
+																					openDelay={
+																						300
 																					}
-																					avoidCollisions={
-																						false
+																					closeDelay={
+																						150
 																					}
-																					className="space-y-2"
 																				>
-																					<p className="wrap-break-word text-sm">
-																						{room.preview.trim() ||
-																							"No recent message"}
-																					</p>
-																					<time
-																						dateTime={
-																							room.updatedAt
-																						}
-																						className="block text-muted-foreground text-xs"
+																					<HoverCardTrigger
+																						asChild
 																					>
-																						{formatRoomTime(
-																							room.updatedAt,
-																						)}
-																					</time>
-																				</HoverCardContent>
-																			</HoverCard>
+																						<span className="flex min-h-9 min-w-0 flex-1 items-center py-1 text-start">
+																							<span className="truncate text-sm">
+																								{
+																									room.title
+																								}
+																							</span>
+																						</span>
+																					</HoverCardTrigger>
+																					<HoverCardContent
+																						side="right"
+																						align="start"
+																						sideOffset={
+																							8
+																						}
+																						avoidCollisions={
+																							false
+																						}
+																						className="space-y-2"
+																					>
+																						<p className="wrap-break-word text-sm">
+																							{room.preview.trim() ||
+																								"No recent message"}
+																						</p>
+																						<time
+																							dateTime={
+																								room.updatedAt
+																							}
+																							className="block text-muted-foreground text-xs"
+																						>
+																							{formatRoomTime(
+																								room.updatedAt,
+																							)}
+																						</time>
+																					</HoverCardContent>
+																				</HoverCard>
+																				<SidebarRoomActions
+																					room={
+																						room
+																					}
+																					forceVisible={isRoomDialogTarget(
+																						room.id,
+																					)}
+																					onRename={
+																						requestRoomRename
+																					}
+																					onDelete={
+																						requestRoomDelete
+																					}
+																				/>
+																			</div>
 																		}
 																	/>
 																);
@@ -608,6 +665,21 @@ export function SidebarAgentsList({
 												active={
 													room.id === activeRoomId
 												}
+												trailingAction={
+													<SidebarRoomActions
+														room={room}
+														forceVisible={isRoomDialogTarget(
+															room.id,
+														)}
+														className="me-1"
+														onRename={
+															requestRoomRename
+														}
+														onDelete={
+															requestRoomDelete
+														}
+													/>
+												}
 												onVisit={visitRoom}
 											/>
 										))}
@@ -633,12 +705,25 @@ export function SidebarAgentsList({
 			)}
 			<SidebarSearchPalette
 				open={isSearchOpen}
-				onOpenChange={setIsSearchOpen}
-				agents={agents}
-				sessions={sessions}
-				isLoading={isLoading}
-				onRouteVisited={visitRoute}
-				onRoomVisited={visitRoom}
+				onClose={() => setIsSearchOpen(false)}
+			/>
+			<RenameRoomDialog
+				open={isRenameOpen}
+				room={renameTarget}
+				returnFocusRef={dialogReturnFocusRef}
+				fallbackFocusRef={searchTriggerRef}
+				onOpenChange={setIsRenameOpen}
+				onAfterClose={() => setRenameTarget(null)}
+				onRename={onRoomRename}
+			/>
+			<DeleteRoomDialog
+				open={isDeleteOpen}
+				room={deleteTarget}
+				returnFocusRef={dialogReturnFocusRef}
+				fallbackFocusRef={searchTriggerRef}
+				onOpenChange={setIsDeleteOpen}
+				onAfterClose={handleDeleteDialogClosed}
+				onDelete={handleRoomDelete}
 			/>
 		</>
 	);

@@ -17,7 +17,9 @@ import {
 import {
 	Mic,
 	Paperclip,
+	Plus,
 	Send,
+	Settings2,
 	Sparkles,
 	Square,
 	Undo,
@@ -31,18 +33,21 @@ import {
 	useRef,
 	useState,
 } from "react";
-import { type Engine, EngineSelect } from "@semoss/shared";
+import { type Engine, EngineSelect, type MCPConfig } from "@semoss/shared";
 import {
 	Button,
 	cn,
 	P,
+	Popover,
+	PopoverContent,
+	PopoverTrigger,
 	ScrollArea,
 	Spinner,
 	Tooltip,
 	TooltipContent,
 	TooltipTrigger,
 } from "@semoss/ui/next";
-import type { ComposerSubmission } from "../types/room";
+import type { ComposerSubmission, RoomSettings } from "../types/room";
 import { RoomComposerEnterPlugin } from "./room-composer-enter-plugin";
 import { RoomComposerFiles } from "./room-composer-files";
 import { RoomComposerPasteScrollPlugin } from "./room-composer-paste-scroll-plugin";
@@ -50,6 +55,7 @@ import {
 	RoomComposerSlashPlugin,
 	type RoomSlashCommand,
 } from "./room-composer-slash-plugin";
+import { RoomSettingsDialog } from "./room-settings-dialog";
 
 interface RoomComposerProps {
 	/** Optional caller-owned controls rendered in the composer toolbar. */
@@ -82,8 +88,16 @@ interface RoomComposerProps {
 	modelError: Error | null;
 	/** Agent instructions supplied to prompt optimization. */
 	roomInstructions: string;
+	/** Room-authored settings currently applied to this conversation. */
+	roomSettings: RoomSettings;
+	/** Agent resources that remain active but cannot be removed from the room. */
+	inheritedMcp: MCPConfig[];
+	/** Whether opening room settings is temporarily unavailable. */
+	isSettingsDisabled?: boolean;
 	/** Persists a newly selected model. */
 	onModelChange: (engine: Engine) => Promise<void>;
+	/** Persists room-only instructions and resources. */
+	onSaveRoomSettings: (settings: RoomSettings) => Promise<void>;
 	/** Optimizes the current draft. */
 	onOptimizePrompt: (draft: string, instructions: string) => Promise<string>;
 	/** Submits a message and any attachments. */
@@ -157,7 +171,11 @@ export function RoomComposer({
 	isSendDisabled = false,
 	modelError,
 	roomInstructions,
+	roomSettings,
+	inheritedMcp,
+	isSettingsDisabled = false,
 	onModelChange,
+	onSaveRoomSettings,
 	onOptimizePrompt,
 	onSend,
 	onStop,
@@ -166,6 +184,7 @@ export function RoomComposer({
 	const editorRef = useRef<LexicalEditor | null>(null);
 	const scrollViewportRef = useRef<HTMLDivElement | null>(null);
 	const fileInputRef = useRef<HTMLInputElement | null>(null);
+	const actionsTriggerRef = useRef<HTMLButtonElement | null>(null);
 	const recognitionRef = useRef<SpeechRecognition | null>(null);
 	const submittingRef = useRef(false);
 	const draftRef = useRef("");
@@ -178,6 +197,8 @@ export function RoomComposer({
 	const [isListening, setIsListening] = useState(false);
 	const [isOptimizing, setIsOptimizing] = useState(false);
 	const [originalDraft, setOriginalDraft] = useState<string | null>(null);
+	const [isActionsOpen, setIsActionsOpen] = useState(false);
+	const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
 	draftRef.current = draft;
 
@@ -376,6 +397,16 @@ export function RoomComposer({
 		}
 	}, [focusEditor, isListening]);
 
+	const openFilePicker = useCallback(() => {
+		setIsActionsOpen(false);
+		requestAnimationFrame(() => fileInputRef.current?.click());
+	}, []);
+
+	const openSettings = useCallback(() => {
+		setIsActionsOpen(false);
+		setIsSettingsOpen(true);
+	}, []);
+
 	const slashCommands = useMemo<RoomSlashCommand[]>(
 		() => [
 			{
@@ -383,7 +414,7 @@ export function RoomComposer({
 				label: "/document",
 				description: "Attach a document to this message",
 				icon: Paperclip,
-				onSelect: () => fileInputRef.current?.click(),
+				onSelect: openFilePicker,
 			},
 			{
 				id: "optimize",
@@ -394,7 +425,7 @@ export function RoomComposer({
 				onSelect: (text) => void optimize(text),
 			},
 		],
-		[draft, isOptimizing, optimize],
+		[draft, isOptimizing, openFilePicker, optimize],
 	);
 
 	const alert = fileError || submissionError || modelError?.message;
@@ -500,18 +531,48 @@ export function RoomComposer({
 						/>
 					</ScrollArea>
 					<div className="flex min-w-0 items-center gap-2 bg-card p-2">
-						{tooltipButton(
-							"Attach files",
-							<Button
-								type="button"
-								variant="ghost"
-								size="icon-sm"
-								aria-label="Attach files"
-								onClick={() => fileInputRef.current?.click()}
-							>
-								<Paperclip aria-hidden="true" />
-							</Button>,
-						)}
+						<Popover
+							open={isActionsOpen}
+							onOpenChange={setIsActionsOpen}
+						>
+							<Tooltip>
+								<TooltipTrigger asChild>
+									<PopoverTrigger asChild>
+										<Button
+											ref={actionsTriggerRef}
+											type="button"
+											variant="ghost"
+											size="icon-sm"
+											aria-label="Open composer actions"
+										>
+											<Plus aria-hidden="true" />
+										</Button>
+									</PopoverTrigger>
+								</TooltipTrigger>
+								<TooltipContent>Add</TooltipContent>
+							</Tooltip>
+							<PopoverContent align="start" className="w-48 p-1">
+								<Button
+									type="button"
+									variant="ghost"
+									className="min-h-10 w-full justify-start"
+									onClick={openFilePicker}
+								>
+									<Paperclip aria-hidden="true" />
+									Attach files
+								</Button>
+								<Button
+									type="button"
+									variant="ghost"
+									className="min-h-10 w-full justify-start"
+									disabled={isSettingsDisabled}
+									onClick={openSettings}
+								>
+									<Settings2 aria-hidden="true" />
+									Open settings
+								</Button>
+							</PopoverContent>
+						</Popover>
 						<div className="flex min-w-0 flex-1 items-center gap-2">
 							{children}
 							<div className="ms-auto flex min-w-0 flex-1 items-center justify-end gap-1 sm:max-w-72 sm:gap-2">
@@ -684,6 +745,15 @@ export function RoomComposer({
 					<RoomComposerSlashPlugin commands={slashCommands} />
 				</LexicalComposer>
 			</fieldset>
+			<RoomSettingsDialog
+				open={isSettingsOpen}
+				agentName={agentName}
+				settings={roomSettings}
+				inheritedMcp={inheritedMcp}
+				returnFocusRef={actionsTriggerRef}
+				onOpenChange={setIsSettingsOpen}
+				onSave={onSaveRoomSettings}
+			/>
 			{alert && (
 				<P className="mt-1.5 text-destructive text-xs" role="alert">
 					{alert}

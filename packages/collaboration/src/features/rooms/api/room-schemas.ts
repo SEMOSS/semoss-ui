@@ -49,10 +49,21 @@ const predefinedPromptSchema = z
 	})
 	.catchall(z.unknown());
 
+const mcpTypeSchema = z.enum([
+	"PROJECT",
+	"STORAGE",
+	"DATABASE",
+	"FUNCTION",
+	"MODEL",
+	"VECTOR",
+	"GUARDRAIL",
+	"ROOM",
+]);
+
 const mcpToolSchema = z
 	.object({
 		id: z.string(),
-		type: z.string(),
+		type: mcpTypeSchema,
 		name: z.string(),
 		fromWorkspace: z.boolean().optional(),
 		fromRoom: z.boolean().optional(),

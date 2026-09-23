@@ -22,7 +22,19 @@ describe("useRoomStore", () => {
 				OPTIONS: {
 					predefinedPrompts: [],
 					instructions: "Check sources.",
-					mcp: [],
+					mcp: [
+						{
+							id: "room-knowledge",
+							name: "Room knowledge",
+							type: "VECTOR",
+						},
+						{
+							id: "room-toolbox",
+							name: "Room toolbox",
+							type: "ROOM",
+							fromRoom: true,
+						},
+					],
 					modelId: "model-1",
 					workspace: {
 						workspace_id: "workspace-1",
@@ -58,7 +70,51 @@ describe("useRoomStore", () => {
 		expect(updateStatement).toContain("UpdateRoomOptions");
 		expect(updateStatement).toContain('"instructions":"Check sources."');
 		expect(updateStatement).toContain('"modelId":"model-2"');
+		expect(updateStatement).toContain('"id":"room-knowledge"');
+		expect(updateStatement).not.toContain('"id":"room-toolbox"');
+		expect(updateStatement).not.toContain("fromRoom");
 		expect(result.current.room?.options.modelId).toBe("model-2");
+		expect(result.current.room?.options.mcp).toEqual(
+			expect.arrayContaining([
+				expect.objectContaining({
+					id: "room-toolbox",
+					fromRoom: true,
+				}),
+			]),
+		);
+	});
+
+	it("keeps the published options unchanged when an update fails", async () => {
+		run.mockResolvedValueOnce(
+			pixelResponse({
+				ROOM_NAME: "Research",
+				OPTIONS: {
+					predefinedPrompts: [],
+					instructions: "Original prompt",
+					mcp: [],
+					modelId: "model-1",
+				},
+			}),
+		)
+			.mockResolvedValueOnce(pixelResponse(true))
+			.mockRejectedValueOnce(new Error("Write failed"));
+
+		const { result } = renderHook(() =>
+			useRoomStore("insight-1", "room-1"),
+		);
+		await waitFor(() => expect(result.current.room).not.toBeNull());
+
+		await expect(
+			act(() =>
+				result.current.room?.updateOptions({
+					instructions: "Unsaved prompt",
+				}),
+			),
+		).rejects.toThrow("Write failed");
+
+		expect(result.current.room?.options.instructions).toBe(
+			"Original prompt",
+		);
 	});
 
 	it("rejects a raw options object instead of silently accepting the wrong envelope", async () => {

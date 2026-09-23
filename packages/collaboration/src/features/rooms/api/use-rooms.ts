@@ -76,5 +76,38 @@ export function useRooms(
 		]);
 	}, []);
 
-	return { sessions, setSessions, isLoading, error, refresh, addPendingRoom };
+	/** Update both the visible list and any locally retained pending room. */
+	const updateRoom = useCallback(
+		(id: string, changes: Partial<Session>): void => {
+			const pendingRoom = pendingRooms.current.get(id);
+			if (pendingRoom) {
+				pendingRooms.current.set(id, { ...pendingRoom, ...changes });
+			}
+			setSessions((current) =>
+				current.map((session) =>
+					session.id === id ? { ...session, ...changes } : session,
+				),
+			);
+		},
+		[],
+	);
+
+	/** Remove a room from both the visible list and the pending-room cache. */
+	const removeRoom = useCallback((id: string): void => {
+		pendingRooms.current.delete(id);
+		setSessions((current) =>
+			current.filter((session) => session.id !== id),
+		);
+	}, []);
+
+	return {
+		sessions,
+		setSessions,
+		isLoading,
+		error,
+		refresh,
+		addPendingRoom,
+		updateRoom,
+		removeRoom,
+	};
 }

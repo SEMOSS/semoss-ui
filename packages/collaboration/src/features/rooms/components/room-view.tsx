@@ -30,8 +30,10 @@ export function RoomView({
 	showToolWorkbench = true,
 	modelError,
 	roomInstructions,
+	roomSettings,
 	onSendMessage,
 	onModelChange,
+	onSaveRoomSettings,
 	onOptimizePrompt,
 	onCancelTurn,
 	onReconnect,
@@ -80,8 +82,10 @@ export function RoomView({
 							showToolWorkbench={showToolWorkbench}
 							modelError={modelError}
 							roomInstructions={roomInstructions}
+							roomSettings={roomSettings}
 							onSendMessage={onSendMessage}
 							onModelChange={onModelChange}
+							onSaveRoomSettings={onSaveRoomSettings}
 							onOptimizePrompt={onOptimizePrompt}
 							onCancelTurn={onCancelTurn}
 							onReconnect={onReconnect}

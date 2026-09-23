@@ -160,7 +160,8 @@ describe("NewRoomStart", () => {
 			{
 				workspaceId: "agent-1",
 				workspaceName: "Research agent",
-				instructions: "Check sources.",
+				instructions: "",
+				mcp: [],
 				modelId: "model-2",
 			},
 			expect.objectContaining({
@@ -212,6 +213,31 @@ describe("NewRoomStart", () => {
 		expect(harness.submitAgentTurn).toHaveBeenCalledTimes(2);
 	});
 
+	it("includes the independent room settings in first-room creation", async () => {
+		renderDraft();
+		const settings = {
+			instructions: "Focus on SEC filings.",
+			mcp: [
+				{
+					id: "filings",
+					name: "SEC filings",
+					type: "VECTOR" as const,
+				},
+			],
+		};
+
+		await act(() => composerProps().onSaveRoomSettings(settings));
+		expect(composerProps().roomSettings).toEqual(settings);
+
+		await act(() =>
+			composerProps().onSend({ text: "Review the quarter", files: [] }),
+		);
+
+		expect(harness.createRoom.mock.calls[0]?.[2]).toEqual(
+			expect.objectContaining(settings),
+		);
+	});
+
 	it("resumes setup for a room allocated by a failed creation attempt", async () => {
 		harness.createRoom
 			.mockImplementationOnce(
@@ -227,6 +253,17 @@ describe("NewRoomStart", () => {
 			)
 			.mockResolvedValueOnce("room-1");
 		renderDraft();
+		const settings = {
+			instructions: "Keep this draft.",
+			mcp: [
+				{
+					id: "draft-knowledge",
+					name: "Draft knowledge",
+					type: "VECTOR" as const,
+				},
+			],
+		};
+		await act(() => composerProps().onSaveRoomSettings(settings));
 
 		await expect(
 			act(() => composerProps().onSend({ text: "Retry me", files: [] })),
@@ -238,6 +275,12 @@ describe("NewRoomStart", () => {
 		expect(harness.createRoom).toHaveBeenCalledTimes(2);
 		expect(harness.createRoom.mock.calls[1]?.[3]).toEqual(
 			expect.objectContaining({ roomId: "room-1" }),
+		);
+		expect(harness.createRoom.mock.calls[0]?.[2]).toEqual(
+			expect.objectContaining(settings),
+		);
+		expect(harness.createRoom.mock.calls[1]?.[2]).toEqual(
+			expect.objectContaining(settings),
 		);
 		expect(harness.addPendingRoom).toHaveBeenCalledTimes(1);
 		expect(harness.submitAgentTurn).toHaveBeenCalledTimes(1);
@@ -277,6 +320,17 @@ describe("NewRoomStart", () => {
 	it("switches agents on the same new-room page", async () => {
 		const user = userEvent.setup();
 		const router = renderDraft();
+		const settings = {
+			instructions: "Independent room prompt",
+			mcp: [
+				{
+					id: "room-only",
+					name: "Room only",
+					type: "VECTOR" as const,
+				},
+			],
+		};
+		await act(() => composerProps().onSaveRoomSettings(settings));
 
 		await user.click(
 			screen.getByRole("combobox", { name: "Choose agent" }),
@@ -290,6 +344,7 @@ describe("NewRoomStart", () => {
 			"?agentId=agent-2&model=model-2",
 		);
 		expect(router.state.historyAction).toBe("REPLACE");
+		expect(composerProps().roomSettings).toEqual(settings);
 		expect(harness.createRoom).not.toHaveBeenCalled();
 	});
 });

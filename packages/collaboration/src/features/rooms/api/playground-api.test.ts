@@ -1,6 +1,8 @@
 import { getRoomMessages } from "@/features/messages/api/get-room-messages";
 import { createRoom } from "./create-room";
+import { deleteRoom } from "./delete-room";
 import { listRooms } from "./list-rooms";
+import { renameRoom } from "./rename-room";
 
 function pixelResponse(output: unknown) {
 	return {
@@ -20,6 +22,25 @@ describe("playground room APIs", () => {
 				workspaceId: "workspace-1",
 				workspaceName: "Research",
 				instructions: "Check sources.",
+				mcp: [
+					{
+						id: "room-knowledge",
+						name: "Room knowledge",
+						type: "VECTOR",
+					},
+					{
+						id: "agent-knowledge",
+						name: "Agent knowledge",
+						type: "VECTOR",
+						fromWorkspace: true,
+					},
+					{
+						id: "room-toolbox",
+						name: "Room toolbox",
+						type: "ROOM",
+						fromRoom: true,
+					},
+				],
 				modelId: "model-1",
 				name: "Quarterly review",
 			}),
@@ -35,6 +56,11 @@ describe("playground room APIs", () => {
 		expect(optionsStatement).toContain('"workspace_id":"workspace-1"');
 		expect(optionsStatement).toContain('"modelId":"model-1"');
 		expect(optionsStatement).toContain('"harnessType":"semoss"');
+		expect(optionsStatement).toContain('"id":"room-knowledge"');
+		expect(optionsStatement).not.toContain("agent-knowledge");
+		expect(optionsStatement).not.toContain("room-toolbox");
+		expect(optionsStatement).not.toContain("fromWorkspace");
+		expect(optionsStatement).not.toContain("fromRoom");
 	});
 
 	it("retains an allocated room id and resumes setup without creating another room", async () => {
@@ -99,6 +125,51 @@ describe("playground room APIs", () => {
 		expect(run).toHaveBeenCalledOnce();
 		expect(run).toHaveBeenCalledWith(
 			'META | GetPlaygroundRooms(sort=["DESC"], mode=["collaboration"]);',
+		);
+	});
+
+	it("renames and deletes rooms with validated write responses", async () => {
+		const run = vi.fn().mockResolvedValue(pixelResponse(true));
+
+		await expect(
+			renameRoom({ run } as never, "room-1", 'Quarterly "review"'),
+		).resolves.toBeUndefined();
+		await expect(
+			deleteRoom({ run } as never, "room-1"),
+		).resolves.toBeUndefined();
+
+		expect(run.mock.calls.map(([statement]) => statement)).toEqual([
+			'SetRoomName(roomId=["room-1"], roomName=["Quarterly \\"review\\""]);',
+			'RemoveUserRoom(roomId=["room-1"]);',
+		]);
+	});
+
+	it("rejects unconfirmed and malformed room writes", async () => {
+		const rejectedRun = vi.fn().mockResolvedValue(pixelResponse(false));
+		await expect(
+			renameRoom({ run: rejectedRun } as never, "room-1", "Review"),
+		).rejects.toThrow("SEMOSS did not rename the room.");
+		await expect(
+			deleteRoom({ run: rejectedRun } as never, "room-1"),
+		).rejects.toThrow("SEMOSS did not delete the room.");
+
+		const malformedRun = vi.fn().mockResolvedValue(pixelResponse({}));
+		await expect(
+			renameRoom({ run: malformedRun } as never, "room-1", "Review"),
+		).rejects.toThrow("SEMOSS returned an unexpected shape");
+		await expect(
+			deleteRoom({ run: malformedRun } as never, "room-1"),
+		).rejects.toThrow("SEMOSS returned an unexpected shape");
+	});
+
+	it("preserves room write transport failures", async () => {
+		const run = vi.fn().mockRejectedValue(new Error("Network unavailable"));
+
+		await expect(
+			renameRoom({ run } as never, "room-1", "Review"),
+		).rejects.toThrow("Network unavailable");
+		await expect(deleteRoom({ run } as never, "room-1")).rejects.toThrow(
+			"Network unavailable",
 		);
 	});
 

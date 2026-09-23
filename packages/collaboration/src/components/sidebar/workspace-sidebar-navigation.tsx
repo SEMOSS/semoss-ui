@@ -12,7 +12,8 @@ interface WorkspaceSidebarNavigationProps {
 	roomId?: string;
 	isLoading: boolean;
 	onNewSession: (agentId?: string) => void;
-	onRouteVisited: (path: string) => void;
+	onRoomRename: (roomId: string, name: string) => Promise<void>;
+	onRoomDelete: (roomId: string) => Promise<void>;
 	onRoomVisited: (roomId: string) => void;
 }
 
@@ -24,7 +25,8 @@ export function WorkspaceSidebarNavigation({
 	roomId,
 	isLoading,
 	onNewSession,
-	onRouteVisited,
+	onRoomRename,
+	onRoomDelete,
 	onRoomVisited,
 }: WorkspaceSidebarNavigationProps) {
 	const { isMobile, state } = useSidebar();
@@ -41,7 +43,8 @@ export function WorkspaceSidebarNavigation({
 					activeRoomId={roomId}
 					isLoading={isLoading}
 					onNewSession={onNewSession}
-					onRouteVisited={onRouteVisited}
+					onRoomRename={onRoomRename}
+					onRoomDelete={onRoomDelete}
 					onRoomVisited={onRoomVisited}
 				/>
 			</SidebarContent>

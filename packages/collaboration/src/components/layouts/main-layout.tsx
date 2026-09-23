@@ -25,10 +25,11 @@ import { WorkspaceSidebarNavigation } from "@/components/sidebar/workspace-sideb
 import { roomsKey } from "@/features/agents/api/refresh-keys";
 import { useSaveAgent } from "@/features/agents/api/use-save-agent";
 import { useWorkspaceData } from "@/features/agents/api/use-workspace-data";
+import { deleteRoom as persistRoomDelete } from "@/features/rooms/api/delete-room";
 import { pinRoom as persistRoomPin } from "@/features/rooms/api/pin-room";
+import { renameRoom as persistRoomRename } from "@/features/rooms/api/rename-room";
 import { waitForGeneratedRoomName } from "@/features/rooms/api/wait-for-generated-room-name";
 import { newRoomPath, roomPath } from "@/lib/workspace-paths";
-import type { Session } from "@/types/session";
 
 /**
  * Composes the agents and rooms features into the workspace shell, owns the
@@ -40,8 +41,16 @@ export function MainLayout() {
 	const { actions } = useInsight();
 	const [keys, setKeys] = useState<MainContext["keys"]>({});
 	const workspaceData = useWorkspaceData(keys);
-	const { agents, sessions, setSessions, addPendingRoom, isLoading, error } =
-		workspaceData;
+	const {
+		agents,
+		sessions,
+		setSessions,
+		addPendingRoom,
+		updateRoom,
+		removeRoom,
+		isLoading,
+		error,
+	} = workspaceData;
 	const roomNameWatchers = useRef(new Map<string, AbortController>());
 
 	const openNewSession = useCallback(
@@ -50,29 +59,16 @@ export function MainLayout() {
 		},
 		[navigate],
 	);
-	const openRoute = useCallback(
-		(path: string) => {
-			navigate(path);
-		},
-		[navigate],
-	);
-
 	const [sidebarOpen, setSidebarOpen] = useState(true);
 
 	const refreshAgents = useCallback(() => {
 		setKeys((current) => refreshKey(current, "agents"));
 	}, []);
 
-	const updateRoom = useCallback(
-		(id: string, changes: Partial<Session>) => {
-			setSessions((items) =>
-				items.map((item) =>
-					item.id === id ? { ...item, ...changes } : item,
-				),
-			);
-		},
-		[setSessions],
-	);
+	const stopRoomNameWatcher = useCallback((id: string): void => {
+		roomNameWatchers.current.get(id)?.abort();
+		roomNameWatchers.current.delete(id);
+	}, []);
 
 	useEffect(
 		() => () => {
@@ -135,6 +131,25 @@ export function MainLayout() {
 			}
 		},
 		[actions, setSessions],
+	);
+
+	const renameSidebarRoom = useCallback(
+		async (id: string, name: string): Promise<void> => {
+			await persistRoomRename(actions, id, name);
+			stopRoomNameWatcher(id);
+			updateRoom(id, { title: name });
+		},
+		[actions, stopRoomNameWatcher, updateRoom],
+	);
+
+	const deleteSidebarRoom = useCallback(
+		async (id: string): Promise<void> => {
+			await persistRoomDelete(actions, id);
+			stopRoomNameWatcher(id);
+			removeRoom(id);
+			if (roomId === id) openNewSession();
+		},
+		[actions, openNewSession, removeRoom, roomId, stopRoomNameWatcher],
 	);
 
 	const openRoom = useCallback(
@@ -201,7 +216,8 @@ export function MainLayout() {
 						roomId={roomId}
 						isLoading={isLoading}
 						onNewSession={openNewSession}
-						onRouteVisited={openRoute}
+						onRoomRename={renameSidebarRoom}
+						onRoomDelete={deleteSidebarRoom}
 						onRoomVisited={openRoom}
 					/>
 				</Sidebar>

@@ -1,4 +1,4 @@
-import type { Engine } from "@semoss/shared";
+import type { Engine, MCPConfig } from "@semoss/shared";
 import type { AgentConfiguration } from "@/features/agents/types/agent";
 import type {
 	ConversationMessage,
@@ -11,6 +11,12 @@ import type { Session } from "@/types/session";
 export interface ComposerSubmission {
 	text: string;
 	files: File[];
+}
+
+/** Room-authored configuration layered on top of the selected agent. */
+export interface RoomSettings {
+	instructions: string;
+	mcp: MCPConfig[];
 }
 
 /** A tool awaiting a human decision, with durable harness identity when available. */
@@ -51,8 +57,10 @@ export interface RoomViewProps {
 	isCancelling: boolean;
 	modelError: Error | null;
 	roomInstructions: string;
+	roomSettings: RoomSettings;
 	onSendMessage: (submission: ComposerSubmission) => Promise<void>;
 	onModelChange: (engine: Engine) => Promise<void>;
+	onSaveRoomSettings: (settings: RoomSettings) => Promise<void>;
 	onOptimizePrompt: (draft: string, instructions: string) => Promise<string>;
 	onCancelTurn: () => Promise<void>;
 	onReconnect?: () => Promise<void>;

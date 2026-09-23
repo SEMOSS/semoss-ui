@@ -28,6 +28,8 @@ export function useWorkspaceData(keys: RefreshKeys) {
 		sessions: roomsQuery.sessions,
 		setSessions: roomsQuery.setSessions,
 		addPendingRoom: roomsQuery.addPendingRoom,
+		updateRoom: roomsQuery.updateRoom,
+		removeRoom: roomsQuery.removeRoom,
 		isLoading: agentsQuery.isLoading || roomsQuery.isLoading,
 		error: agentsQuery.error ?? roomsQuery.error,
 	};

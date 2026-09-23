@@ -1,31 +1,38 @@
 import {
 	House,
-	MessageSquare,
 	MessageSquarePlus,
 	Settings,
 	UserPlus,
 	Users,
 } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router";
+import { useInsight } from "@semoss/sdk/react";
 import {
+	Alert,
+	AlertDescription,
+	Button,
 	CommandDialog,
-	CommandEmpty,
 	CommandGroup,
 	CommandInput,
 	CommandItem,
 	CommandList,
-	cn,
 	Spinner,
+	useDebouncedValue,
+	useSidebar,
 } from "@semoss/ui/next";
-import { parseTimestamp } from "@semoss/utility";
-import { agentNewPath, agentPath, newRoomPath } from "@/lib/workspace-paths";
-import type { Agent } from "@/types/agent";
-import type { Session } from "@/types/session";
-import { AccessibleCommandLabel } from "./accessible-command-label";
+import { toError } from "@semoss/utility";
 import {
-	getSidebarRoomStatus,
-	type SidebarRoomStatus,
-} from "./sidebar-room-status";
+	type RoomContentMatch,
+	searchRoomMessages,
+} from "@/features/rooms/api/search-room-messages";
+import {
+	agentNewPath,
+	agentPath,
+	newRoomPath,
+	roomPath,
+} from "@/lib/workspace-paths";
+import { AccessibleCommandLabel } from "./accessible-command-label";
 
 const SEARCH_ROUTES = [
 	{
@@ -65,103 +72,133 @@ const SEARCH_ROUTES = [
 	},
 ] as const;
 
-interface RoomPaletteItem {
-	room: Session;
-	description: string;
-	status: SidebarRoomStatus | null;
-	searchValue: string;
-}
-
 interface SidebarSearchPaletteProps {
 	/** Whether the search palette is visible. */
 	open: boolean;
-	/** Updates the palette's controlled visibility. */
-	onOpenChange: (open: boolean) => void;
-	/** Agents used to identify the owner of each room. */
-	agents: Agent[];
-	/** All rooms currently loaded for the workspace. */
-	sessions: Session[];
-	/** Whether workspace navigation data is still loading. */
-	isLoading: boolean;
-	/** Opens the selected application route. */
-	onRouteVisited: (path: string) => void;
-	/** Opens the selected room. */
-	onRoomVisited: (roomId: string) => void;
+	/** Closes the controlled search palette. */
+	onClose: () => void;
 }
 
-/** Centered search across navigable collaboration routes and loaded rooms. */
+type RoomSearchState =
+	| { status: "idle" }
+	| { status: "loading"; query: string }
+	| { status: "success"; query: string; rooms: RoomContentMatch[] }
+	| { status: "error"; query: string; error: Error };
+
+const IDLE_ROOM_SEARCH: RoomSearchState = { status: "idle" };
+
+/** Centered search across collaboration routes and backend room content. */
 export function SidebarSearchPalette({
 	open,
-	onOpenChange,
-	agents,
-	sessions,
-	isLoading,
-	onRouteVisited,
-	onRoomVisited,
+	onClose,
 }: SidebarSearchPaletteProps) {
+	const navigate = useNavigate();
+	const { actions } = useInsight();
+	const { isMobile, setOpenMobile } = useSidebar();
 	const [search, setSearch] = useState("");
 	const query = search.trim();
-	const roomResults = useMemo((): RoomPaletteItem[] => {
-		const agentsById = new Map(agents.map((agent) => [agent.id, agent]));
+	const debouncedQuery = useDebouncedValue(query);
+	const [retryToken, setRetryToken] = useState(0);
+	const [roomSearch, setRoomSearch] =
+		useState<RoomSearchState>(IDLE_ROOM_SEARCH);
+	const routeResults = useMemo(() => {
+		const terms = query.toLocaleLowerCase().split(/\s+/).filter(Boolean);
+		if (terms.length === 0) return SEARCH_ROUTES;
 
-		return [...sessions]
-			.sort(
-				(first, second) =>
-					(parseTimestamp(second.updatedAt) ?? 0) -
-						(parseTimestamp(first.updatedAt) ?? 0) ||
-					first.title.localeCompare(second.title, undefined, {
-						sensitivity: "base",
-					}) ||
-					first.id.localeCompare(second.id),
-			)
-			.map((room): RoomPaletteItem => {
-				const agentName = agentsById.get(room.agentId)?.name ?? null;
-				const preview = room.preview.trim();
-				const status = getSidebarRoomStatus(room);
-				const description = [agentName, preview]
-					.filter((value): value is string => Boolean(value))
-					.join(" · ");
+		return SEARCH_ROUTES.filter((route) => {
+			const routeText = [
+				route.name,
+				route.description,
+				route.path,
+				route.aliases,
+			]
+				.join(" ")
+				.toLocaleLowerCase();
+			return terms.every((term) => routeText.includes(term));
+		});
+	}, [query]);
 
-				return {
-					room,
-					description,
-					status,
-					searchValue: [
-						room.id,
-						room.title,
-						preview,
-						agentName,
-						room.status,
-						status?.label,
-						status?.keywords,
-					]
-						.filter((value): value is string => Boolean(value))
-						.join(" "),
-				};
+	useEffect(() => {
+		if (open) return;
+		setSearch("");
+		setRoomSearch(IDLE_ROOM_SEARCH);
+	}, [open]);
+
+	useEffect(() => {
+		void retryToken;
+		if (!open || !debouncedQuery) return;
+
+		let cancelled = false;
+		setRoomSearch({ status: "loading", query: debouncedQuery });
+		void searchRoomMessages(actions, debouncedQuery)
+			.then((rooms) => {
+				if (cancelled) return;
+				setRoomSearch({
+					status: "success",
+					query: debouncedQuery,
+					rooms,
+				});
+			})
+			.catch((cause: unknown) => {
+				if (cancelled) return;
+				setRoomSearch({
+					status: "error",
+					query: debouncedQuery,
+					error: toError(cause),
+				});
 			});
-	}, [agents, sessions]);
 
-	function handleOpenChange(nextOpen: boolean): void {
-		onOpenChange(nextOpen);
-		if (!nextOpen) setSearch("");
+		return () => {
+			cancelled = true;
+		};
+	}, [actions, debouncedQuery, open, retryToken]);
+
+	const activeRoomSearch =
+		roomSearch.status !== "idle" && roomSearch.query === query
+			? roomSearch
+			: null;
+	const isSearchingRooms =
+		query.length > 0 &&
+		(query !== debouncedQuery ||
+			activeRoomSearch === null ||
+			activeRoomSearch.status === "loading");
+	const roomResults =
+		activeRoomSearch?.status === "success" ? activeRoomSearch.rooms : [];
+	const roomSearchError =
+		activeRoomSearch?.status === "error" ? activeRoomSearch.error : null;
+
+	function handleClose(): void {
+		setSearch("");
+		setRoomSearch(IDLE_ROOM_SEARCH);
+		onClose();
 	}
 
 	function handleRouteSelect(path: string): void {
-		handleOpenChange(false);
-		onRouteVisited(path);
+		handleClose();
+		if (isMobile) setOpenMobile(false);
+		navigate(path);
 	}
 
 	function handleRoomSelect(roomId: string): void {
-		handleOpenChange(false);
-		onRoomVisited(roomId);
+		handleClose();
+		if (isMobile) setOpenMobile(false);
+		navigate(roomPath(roomId));
+	}
+
+	function handleRetry(): void {
+		if (!query) return;
+		setRoomSearch({ status: "loading", query });
+		setRetryToken((current) => current + 1);
 	}
 
 	return (
 		<CommandDialog
 			open={open}
-			onOpenChange={handleOpenChange}
+			onOpenChange={(nextOpen) => {
+				if (!nextOpen) handleClose();
+			}}
 			title="Search"
-			description="Search collaboration pages, actions, and rooms."
+			description="Search collaboration pages, actions, and room content."
 			showCloseButton={false}
 			className="border-input bg-card shadow-lg transition-[color,box-shadow] focus-within:border-ring focus-within:ring-2 focus-within:ring-ring/50 sm:max-w-lg [&_[data-slot=command-input-wrapper]]:h-10 [&_[data-slot=command-input]]:h-10 [&_[data-slot=command-item][cmdk-item]]:py-2 [&_[data-slot=command-item][cmdk-item]_svg]:size-3.5 [&_[data-slot=command]]:bg-card"
 		>
@@ -173,104 +210,98 @@ export function SidebarSearchPalette({
 				onValueChange={setSearch}
 			/>
 			<CommandList className="max-h-80 p-1">
-				<CommandEmpty>
-					{isLoading && sessions.length === 0
-						? "Loading rooms…"
-						: "No routes or rooms found."}
-				</CommandEmpty>
-				<CommandGroup heading="Routes">
-					{SEARCH_ROUTES.map((route) => {
-						const Icon = route.icon;
-						return (
-							<CommandItem
-								key={route.path}
-								value={`${route.name} ${route.description} ${route.path} ${route.aliases}`}
-								onSelect={() => handleRouteSelect(route.path)}
-							>
-								<span className="flex size-6 shrink-0 items-center justify-center rounded-sm bg-muted text-muted-foreground">
-									<Icon
-										className="size-3.5"
-										aria-hidden="true"
-									/>
-								</span>
-								<span className="min-w-0 flex-1 truncate text-sm">
-									<span className="font-medium">
-										{route.name}
-									</span>
-									<span className="text-muted-foreground">
-										{" · "}
-										{route.description}
-									</span>
-								</span>
-							</CommandItem>
-						);
-					})}
-				</CommandGroup>
-				{roomResults.length > 0 ? (
-					<CommandGroup heading="Rooms">
-						{roomResults.map((item) => (
-							<CommandItem
-								key={item.room.id}
-								value={`room ${item.searchValue}`}
-								onSelect={() => handleRoomSelect(item.room.id)}
-							>
-								<span
-									className={cn(
-										"flex size-6 shrink-0 items-center justify-center rounded-sm bg-muted text-muted-foreground",
-										item.status?.className,
-									)}
+				{routeResults.length > 0 ? (
+					<CommandGroup heading="Routes" forceMount>
+						{routeResults.map((route) => {
+							const Icon = route.icon;
+							return (
+								<CommandItem
+									key={route.path}
+									forceMount
+									value={`${route.name} ${route.description} ${route.path} ${route.aliases}`}
+									onSelect={() =>
+										handleRouteSelect(route.path)
+									}
 								>
-									{item.status?.icon ?? (
-										<MessageSquare
+									<span className="flex size-6 shrink-0 items-center justify-center rounded-sm bg-muted text-muted-foreground">
+										<Icon
 											className="size-3.5"
 											aria-hidden="true"
 										/>
-									)}
-								</span>
-								<span className="min-w-0 flex-1 truncate text-sm">
-									<span className="font-medium">
-										{item.room.title}
 									</span>
-									{item.description ? (
-										<span className="text-muted-foreground">
-											{" · "}
-											{item.description}
+									<span className="min-w-0 flex-1 truncate">
+										<span className="text-sm">
+											{route.name}
 										</span>
-									) : null}
-								</span>
-								{item.status ? (
-									<span
-										className={cn(
-											"shrink-0 text-xs",
-											item.status.className,
-										)}
-									>
-										{item.status.label}
+										<span className="text-muted-foreground text-xs">
+											{" · "}
+											{route.description}
+										</span>
 									</span>
-								) : null}
-							</CommandItem>
-						))}
+								</CommandItem>
+							);
+						})}
 					</CommandGroup>
-				) : query ? null : (
+				) : null}
+				{query ? (
 					<CommandGroup heading="Rooms" forceMount>
-						<div
-							className="flex items-center gap-2 px-3 py-3 text-muted-foreground text-sm"
-							role={isLoading ? "status" : undefined}
-						>
-							{isLoading ? (
-								<>
-									<Spinner
-										className="size-4"
-										aria-hidden="true"
-									/>
-									Loading rooms…
-								</>
-							) : (
-								"No rooms yet."
-							)}
-						</div>
+						{isSearchingRooms ? (
+							<output className="flex items-center gap-2 px-3 py-3 text-muted-foreground text-sm">
+								<Spinner
+									className="size-4"
+									aria-hidden="true"
+								/>
+								Searching room content…
+							</output>
+						) : roomSearchError ? (
+							<Alert variant="destructive" className="mx-2 my-1">
+								<AlertDescription className="flex w-full items-center justify-between gap-2">
+									<span>Could not search room content.</span>
+									<Button
+										type="button"
+										variant="outline"
+										size="sm"
+										onClick={handleRetry}
+									>
+										Try again
+									</Button>
+								</AlertDescription>
+							</Alert>
+						) : roomResults.length > 0 ? (
+							<>
+								<output className="sr-only">
+									{roomResults.length} matching rooms found.
+								</output>
+								{roomResults.map((item) => (
+									<CommandItem
+										key={item.roomId}
+										forceMount
+										value={`room-content ${item.roomId}`}
+										onSelect={() =>
+											handleRoomSelect(item.roomId)
+										}
+									>
+										<span className="min-w-0 flex-1 truncate">
+											<span className="text-sm">
+												{item.roomName}
+											</span>
+											<span className="text-muted-foreground text-xs">
+												{" · "}
+												Room content match
+											</span>
+										</span>
+									</CommandItem>
+								))}
+							</>
+						) : (
+							<output className="px-3 py-3 text-muted-foreground text-sm">
+								{routeResults.length > 0
+									? "No rooms with matching content."
+									: "No routes or rooms found."}
+							</output>
+						)}
 					</CommandGroup>
-				)}
+				) : null}
 			</CommandList>
 		</CommandDialog>
 	);

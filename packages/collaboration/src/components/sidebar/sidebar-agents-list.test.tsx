@@ -6,6 +6,21 @@ import type { Agent } from "@/types/agent";
 import type { Session } from "@/types/session";
 import { SidebarAgentsList } from "./sidebar-agents-list";
 
+const { insightActions, insightRun } = vi.hoisted(() => {
+	const run = vi.fn();
+	return { insightActions: { run }, insightRun: run };
+});
+
+vi.mock("@semoss/sdk/react", () => ({
+	useInsight: () => ({ actions: insightActions }),
+}));
+
+function pixelResponse(output: unknown) {
+	return {
+		pixelReturn: [{ output, operationType: [] }],
+	};
+}
+
 const researchAgent: Agent = {
 	id: "research-agent",
 	name: "Research agent",
@@ -76,7 +91,8 @@ function renderSidebar({
 	isLoading,
 	defaultOpen = true,
 	onNewSession = vi.fn(),
-	onRouteVisited = vi.fn(),
+	onRoomRename = vi.fn().mockResolvedValue(undefined),
+	onRoomDelete = vi.fn().mockResolvedValue(undefined),
 	onRoomVisited = vi.fn(),
 }: {
 	sessions: Session[];
@@ -86,7 +102,8 @@ function renderSidebar({
 	isLoading?: boolean;
 	defaultOpen?: boolean;
 	onNewSession?: (agentId?: string) => void;
-	onRouteVisited?: (path: string) => void;
+	onRoomRename?: (roomId: string, name: string) => Promise<void>;
+	onRoomDelete?: (roomId: string) => Promise<void>;
 	onRoomVisited?: (roomId: string) => void;
 }) {
 	return render(
@@ -105,7 +122,8 @@ function renderSidebar({
 					activeRoomId={activeRoomId}
 					isLoading={isLoading}
 					onNewSession={onNewSession}
-					onRouteVisited={onRouteVisited}
+					onRoomRename={onRoomRename}
+					onRoomDelete={onRoomDelete}
 					onRoomVisited={onRoomVisited}
 				/>
 			</SidebarProvider>
@@ -114,6 +132,11 @@ function renderSidebar({
 }
 
 describe("SidebarAgentsList", () => {
+	beforeEach(() => {
+		insightRun.mockReset();
+		insightRun.mockResolvedValue(pixelResponse([]));
+	});
+
 	beforeAll(() => {
 		vi.stubGlobal("matchMedia", (media: string) => ({
 			media,
@@ -410,7 +433,168 @@ describe("SidebarAgentsList", () => {
 		expect(recentLinks()).toHaveLength(20);
 	});
 
-	it("opens one centered palette with routes and every room", async () => {
+	it("shows display-based room action popovers without visiting rooms", async () => {
+		const user = userEvent.setup();
+		const onRoomVisited = vi.fn();
+		renderSidebar({
+			sessions: [room(1), room(2, "")],
+			onRoomVisited,
+		});
+
+		const agentTrigger = within(
+			screen.getByRole("treeitem", { name: "Room 1" }),
+		).getByRole("button", { name: "Actions for Room 1" });
+		const recentTrigger = within(
+			screen.getByRole("list", { name: "Recent rooms" }),
+		).getByRole("button", { name: "Actions for Room 2" });
+		expect(agentTrigger).toBeInTheDocument();
+		expect(recentTrigger).toBeInTheDocument();
+
+		const visibilityWrapper = agentTrigger.closest("div.hidden");
+		expect(visibilityWrapper).toHaveClass("group-hover/room:block");
+		expect(visibilityWrapper?.className).not.toContain("opacity");
+
+		await user.hover(agentTrigger);
+		const actionsTooltip = await screen.findByRole("tooltip");
+		expect(actionsTooltip).toHaveTextContent("Room actions");
+		await user.unhover(agentTrigger);
+		await waitFor(() => expect(actionsTooltip).not.toBeInTheDocument());
+
+		await user.click(agentTrigger);
+		expect(visibilityWrapper).toHaveClass("block");
+		expect(visibilityWrapper?.className).not.toContain(
+			"has-data-[state=open]",
+		);
+		const renameAction = screen.getByRole("button", { name: "Rename" });
+		const deleteAction = screen.getByRole("button", { name: "Delete" });
+		expect(renameAction).toHaveClass("w-full");
+		expect(deleteAction).toHaveClass("w-full");
+		expect(onRoomVisited).not.toHaveBeenCalled();
+
+		await user.click(screen.getByText("Recent"));
+		await waitFor(() =>
+			expect(
+				screen.queryByRole("button", { name: "Rename" }),
+			).not.toBeInTheDocument(),
+		);
+		expect(onRoomVisited).not.toHaveBeenCalled();
+
+		await user.click(agentTrigger);
+		await user.keyboard("{Escape}");
+		await waitFor(() => expect(agentTrigger).toHaveFocus());
+		expect(onRoomVisited).not.toHaveBeenCalled();
+	});
+
+	it("renames a room with validation, retryable errors, and focus return", async () => {
+		const user = userEvent.setup();
+		const onRoomRename = vi
+			.fn()
+			.mockRejectedValueOnce(new Error("Rename unavailable"))
+			.mockResolvedValueOnce(undefined);
+		renderSidebar({ sessions: [room(1)], onRoomRename });
+		const trigger = screen.getByRole("button", {
+			name: "Actions for Room 1",
+		});
+
+		await user.click(trigger);
+		await user.click(screen.getByRole("button", { name: "Rename" }));
+		const dialog = screen.getByRole("dialog", { name: "Rename room" });
+		const input = within(dialog).getByRole("textbox", {
+			name: "Room name",
+		});
+		expect(input).toHaveValue("Room 1");
+
+		await user.clear(input);
+		await user.click(
+			within(dialog).getByRole("button", { name: "Rename" }),
+		);
+		expect(
+			await within(dialog).findByText("Room name is required."),
+		).toBeVisible();
+		expect(onRoomRename).not.toHaveBeenCalled();
+
+		await user.type(input, "  Updated room  ");
+		await user.click(
+			within(dialog).getByRole("button", { name: "Rename" }),
+		);
+		expect(await within(dialog).findByRole("alert")).toHaveTextContent(
+			"Rename unavailable",
+		);
+		expect(input).toHaveValue("  Updated room  ");
+
+		await user.click(
+			within(dialog).getByRole("button", { name: "Rename" }),
+		);
+		await waitFor(() =>
+			expect(onRoomRename).toHaveBeenLastCalledWith(
+				"room-1",
+				"Updated room",
+			),
+		);
+		await waitFor(() =>
+			expect(
+				screen.queryByRole("dialog", { name: "Rename room" }),
+			).not.toBeInTheDocument(),
+		);
+		await waitFor(() => expect(trigger).toHaveFocus());
+	});
+
+	it("confirms room deletion and retains failures for retry", async () => {
+		const user = userEvent.setup();
+		const onRoomDelete = vi
+			.fn()
+			.mockRejectedValueOnce(new Error("Delete unavailable"))
+			.mockResolvedValueOnce(undefined);
+		renderSidebar({ sessions: [room(1)], onRoomDelete });
+		const trigger = screen.getByRole("button", {
+			name: "Actions for Room 1",
+		});
+
+		await user.click(trigger);
+		await user.click(screen.getByRole("button", { name: "Delete" }));
+		const dialog = screen.getByRole("dialog", { name: "Delete room" });
+		expect(dialog).toHaveTextContent("Delete “Room 1”?");
+
+		await user.click(
+			within(dialog).getByRole("button", { name: "Delete" }),
+		);
+		expect(await within(dialog).findByRole("alert")).toHaveTextContent(
+			"Delete unavailable",
+		);
+		expect(onRoomDelete).toHaveBeenCalledWith("room-1");
+
+		await user.click(
+			within(dialog).getByRole("button", { name: "Delete" }),
+		);
+		await waitFor(() => expect(onRoomDelete).toHaveBeenCalledTimes(2));
+		await waitFor(() =>
+			expect(
+				screen.queryByRole("dialog", { name: "Delete room" }),
+			).not.toBeInTheDocument(),
+		);
+		await waitFor(() => expect(trigger).toHaveFocus());
+	});
+
+	it("cancels room deletion without mutating the room", async () => {
+		const user = userEvent.setup();
+		const onRoomDelete = vi.fn().mockResolvedValue(undefined);
+		renderSidebar({ sessions: [room(1)], onRoomDelete });
+		const trigger = screen.getByRole("button", {
+			name: "Actions for Room 1",
+		});
+
+		await user.click(trigger);
+		await user.click(screen.getByRole("button", { name: "Delete" }));
+		const dialog = screen.getByRole("dialog", { name: "Delete room" });
+		await user.click(
+			within(dialog).getByRole("button", { name: "Cancel" }),
+		);
+
+		expect(onRoomDelete).not.toHaveBeenCalled();
+		await waitFor(() => expect(trigger).toHaveFocus());
+	});
+
+	it("opens one centered palette with routes without preloading rooms", async () => {
 		const user = userEvent.setup();
 		renderSidebar({
 			sessions: Array.from({ length: 12 }, (_, index) =>
@@ -432,13 +616,10 @@ describe("SidebarAgentsList", () => {
 		await user.click(searchTrigger);
 
 		let dialog = screen.getByRole("dialog", {
-			name: "Search routes and rooms",
+			name: "Search",
 		});
 		const routeGroup = within(dialog).getByRole("group", {
 			name: "Routes",
-		});
-		const roomsGroup = within(dialog).getByRole("group", {
-			name: "Rooms",
 		});
 		expect(
 			within(routeGroup)
@@ -451,16 +632,10 @@ describe("SidebarAgentsList", () => {
 			"New Agent · Create an agent",
 			"Settings · Open workspace settings",
 		]);
-		const roomOptions = within(roomsGroup).getAllByRole("option");
-		expect(roomOptions).toHaveLength(12);
-		expect(roomOptions[0]).toHaveTextContent(
-			"Room 1 · Research agent · Latest room preview",
-		);
-		expect(roomOptions[11]).toHaveTextContent("Room 12 · Writing agent");
 		expect(
-			routeGroup.compareDocumentPosition(roomsGroup) &
-				Node.DOCUMENT_POSITION_FOLLOWING,
-		).toBeTruthy();
+			within(dialog).queryByRole("group", { name: "Rooms" }),
+		).toBeNull();
+		expect(insightRun).not.toHaveBeenCalled();
 
 		await user.keyboard("{Escape}");
 		expect(dialog).not.toBeInTheDocument();
@@ -468,7 +643,7 @@ describe("SidebarAgentsList", () => {
 
 		await user.keyboard("{Enter}");
 		dialog = screen.getByRole("dialog", {
-			name: "Search routes and rooms",
+			name: "Search",
 		});
 		expect(
 			within(dialog).getByRole("combobox", {
@@ -477,10 +652,17 @@ describe("SidebarAgentsList", () => {
 		).toHaveFocus();
 	});
 
-	it("filters routes and room metadata, opens selections, and resets", async () => {
+	it("filters routes locally and opens backend content matches", async () => {
 		const user = userEvent.setup();
-		const onRouteVisited = vi.fn();
-		const onRoomVisited = vi.fn();
+		insightRun.mockResolvedValue(
+			pixelResponse([
+				{
+					room_id: "backend-room",
+					room_name: "Quarterly planning",
+					date_created: "2026-09-22T10:00:00Z",
+				},
+			]),
+		);
 		renderSidebar({
 			sessions: [
 				room(1, writingAgent.id, {
@@ -489,8 +671,6 @@ describe("SidebarAgentsList", () => {
 					status: "In progress",
 				}),
 			],
-			onRouteVisited,
-			onRoomVisited,
 		});
 
 		const searchTrigger = screen.getByRole("button", {
@@ -498,48 +678,56 @@ describe("SidebarAgentsList", () => {
 		});
 		await user.click(searchTrigger);
 		let dialog = screen.getByRole("dialog", {
-			name: "Search routes and rooms",
+			name: "Search",
 		});
 		const input = within(dialog).getByRole("combobox", {
 			name: "Search routes and rooms",
 		});
 		await user.type(input, "create an agent");
 		await user.keyboard("{Enter}");
-		expect(onRouteVisited).toHaveBeenCalledWith("/agents/new");
+		expect(
+			screen.getByRole("status", { name: "Current location" }),
+		).toHaveTextContent("/agents/new");
 		expect(
 			screen.queryByRole("dialog", {
-				name: "Search routes and rooms",
+				name: "Search",
 			}),
 		).not.toBeInTheDocument();
 
 		await user.click(searchTrigger);
 		dialog = screen.getByRole("dialog", {
-			name: "Search routes and rooms",
+			name: "Search",
 		});
 		const resetInput = within(dialog).getByRole("combobox", {
 			name: "Search routes and rooms",
 		});
 		expect(resetInput).toHaveValue("");
 
-		for (const query of [
-			"Buried launch",
-			"Writing agent",
-			"working",
-			"room-1",
-		]) {
-			await user.clear(resetInput);
-			await user.type(resetInput, query);
-			expect(
-				within(dialog).getByText("Quarterly planning"),
-			).toBeVisible();
-		}
-
+		await user.type(resetInput, "Buried launch");
+		expect(
+			await within(dialog).findByText("Quarterly planning"),
+		).toBeVisible();
 		await user.click(within(dialog).getByText("Quarterly planning"));
-		expect(onRoomVisited).toHaveBeenCalledWith("room-1");
+		expect(
+			screen.getByRole("status", { name: "Current location" }),
+		).toHaveTextContent("/room/backend-room");
+		expect(
+			insightRun.mock.calls.every(([statement]) =>
+				String(statement).includes("SearchRoomMessages"),
+			),
+		).toBe(true);
+		expect(
+			insightRun.mock.calls.some(([statement]) =>
+				/GetPlaygroundRooms|GetPlaygroundMessages/.test(
+					String(statement),
+				),
+			),
+		).toBe(false);
 
+		insightRun.mockResolvedValue(pixelResponse([]));
 		await user.click(searchTrigger);
 		dialog = screen.getByRole("dialog", {
-			name: "Search routes and rooms",
+			name: "Search",
 		});
 		const emptyInput = within(dialog).getByRole("combobox", {
 			name: "Search routes and rooms",
@@ -547,38 +735,136 @@ describe("SidebarAgentsList", () => {
 		expect(emptyInput).toHaveValue("");
 		await user.type(emptyInput, "missing destination");
 		expect(
-			within(dialog).getByText("No routes or rooms found."),
+			await within(dialog).findByText("No routes or rooms found."),
 		).toBeVisible();
 	});
 
-	it("shows room loading and empty states without hiding routes", async () => {
+	it("shows backend loading and empty states without hiding routes", async () => {
 		const user = userEvent.setup();
-		const loadingView = renderSidebar({
-			agents: [],
+		let resolveSearch: ((value: unknown) => void) | undefined;
+		insightRun.mockReturnValueOnce(
+			new Promise((resolve) => {
+				resolveSearch = resolve;
+			}),
+		);
+		renderSidebar({
 			sessions: [],
-			isLoading: true,
 		});
 
 		await user.click(
 			screen.getByRole("button", { name: "Search routes and rooms" }),
 		);
-		let dialog = screen.getByRole("dialog", {
-			name: "Search routes and rooms",
+		const dialog = screen.getByRole("dialog", {
+			name: "Search",
 		});
-		expect(within(dialog).getByText("Loading rooms…")).toBeVisible();
 		expect(
 			within(dialog).getByRole("group", { name: "Routes" }),
 		).toBeVisible();
+		expect(insightRun).not.toHaveBeenCalled();
 
-		loadingView.unmount();
-		renderSidebar({ agents: [], sessions: [] });
+		await user.type(
+			within(dialog).getByRole("combobox", {
+				name: "Search routes and rooms",
+			}),
+			"missing destination",
+		);
+		expect(
+			await within(dialog).findByText("Searching room content…"),
+		).toBeVisible();
+		await act(async () => {
+			resolveSearch?.(pixelResponse([]));
+		});
+		expect(
+			await within(dialog).findByText("No routes or rooms found."),
+		).toBeVisible();
+	});
+
+	it("retries failed content searches", async () => {
+		const user = userEvent.setup();
+		insightRun
+			.mockRejectedValueOnce(new Error("Search unavailable"))
+			.mockResolvedValueOnce(pixelResponse([]));
+		renderSidebar({ sessions: [] });
+
 		await user.click(
 			screen.getByRole("button", { name: "Search routes and rooms" }),
 		);
-		dialog = screen.getByRole("dialog", {
+		const dialog = screen.getByRole("dialog", { name: "Search" });
+		await user.type(
+			within(dialog).getByRole("combobox", {
+				name: "Search routes and rooms",
+			}),
+			"failed content",
+		);
+		expect(await within(dialog).findByRole("alert")).toHaveTextContent(
+			"Could not search room content.",
+		);
+
+		await user.click(
+			within(dialog).getByRole("button", { name: "Try again" }),
+		);
+		expect(
+			await within(dialog).findByText("No routes or rooms found."),
+		).toBeVisible();
+		expect(insightRun).toHaveBeenCalledTimes(2);
+	});
+
+	it("ignores a stale content-search response", async () => {
+		const user = userEvent.setup();
+		let resolveFirst: ((value: unknown) => void) | undefined;
+		let resolveSecond: ((value: unknown) => void) | undefined;
+		insightRun
+			.mockReturnValueOnce(
+				new Promise((resolve) => {
+					resolveFirst = resolve;
+				}),
+			)
+			.mockReturnValueOnce(
+				new Promise((resolve) => {
+					resolveSecond = resolve;
+				}),
+			);
+		renderSidebar({ sessions: [] });
+
+		await user.click(
+			screen.getByRole("button", { name: "Search routes and rooms" }),
+		);
+		const dialog = screen.getByRole("dialog", { name: "Search" });
+		const input = within(dialog).getByRole("combobox", {
 			name: "Search routes and rooms",
 		});
-		expect(within(dialog).getByText("No rooms yet.")).toBeVisible();
+		await user.type(input, "first query");
+		await waitFor(() => expect(insightRun).toHaveBeenCalledTimes(1));
+		await user.clear(input);
+		await user.type(input, "second query");
+		await waitFor(() => expect(insightRun).toHaveBeenCalledTimes(2));
+
+		await act(async () => {
+			resolveSecond?.(
+				pixelResponse([
+					{
+						room_id: "second-room",
+						room_name: "Second result",
+						date_created: "2026-09-22T10:00:00Z",
+					},
+				]),
+			);
+		});
+		expect(await within(dialog).findByText("Second result")).toBeVisible();
+
+		await act(async () => {
+			resolveFirst?.(
+				pixelResponse([
+					{
+						room_id: "first-room",
+						room_name: "Stale result",
+						date_created: "2026-09-21T10:00:00Z",
+					},
+				]),
+			);
+		});
+		expect(within(dialog).queryByText("Stale result")).toBeNull();
+		expect(within(dialog).getByText("Second result")).toBeVisible();
 	});
 
 	it("keeps only the search action visible in the collapsed rail", async () => {
@@ -604,7 +890,7 @@ describe("SidebarAgentsList", () => {
 		await user.keyboard("{Enter}");
 		expect(
 			screen.getByRole("dialog", {
-				name: "Search routes and rooms",
+				name: "Search",
 			}),
 		).toBeVisible();
 		await user.keyboard("{Escape}");
@@ -629,7 +915,7 @@ describe("SidebarAgentsList", () => {
 
 		const roomItem = screen.getByRole("treeitem", { name: "Room 1" });
 		await user.click(
-			within(roomItem).getByRole("button", { name: /Room 1/ }),
+			within(roomItem).getByRole("button", { name: "Room 1" }),
 		);
 
 		expect(onRoomVisited).toHaveBeenCalledWith("room-1");
@@ -662,7 +948,7 @@ describe("SidebarAgentsList", () => {
 		).toHaveTextContent("mobile:open");
 		const roomItem = screen.getByRole("treeitem", { name: "Room 1" });
 		await user.click(
-			within(roomItem).getByRole("button", { name: /Room 1/ }),
+			within(roomItem).getByRole("button", { name: "Room 1" }),
 		);
 		expect(
 			screen.getByRole("status", { name: "Mobile sidebar state" }),
@@ -675,12 +961,17 @@ describe("SidebarAgentsList", () => {
 			value: 360,
 		});
 		const user = userEvent.setup();
-		const onRouteVisited = vi.fn();
-		const onRoomVisited = vi.fn();
+		insightRun.mockResolvedValue(
+			pixelResponse([
+				{
+					room_id: "room-1",
+					room_name: "Room 1",
+					date_created: "2026-09-22T10:00:00Z",
+				},
+			]),
+		);
 		renderSidebar({
 			sessions: [room(1)],
-			onRouteVisited,
-			onRoomVisited,
 		});
 		await waitFor(() =>
 			expect(
@@ -695,10 +986,12 @@ describe("SidebarAgentsList", () => {
 			screen.getByRole("button", { name: "Search routes and rooms" }),
 		);
 		let dialog = screen.getByRole("dialog", {
-			name: "Search routes and rooms",
+			name: "Search",
 		});
 		await user.click(within(dialog).getByText("New Room"));
-		expect(onRouteVisited).toHaveBeenCalledWith("/new");
+		expect(
+			screen.getByRole("status", { name: "Current location" }),
+		).toHaveTextContent("/new");
 		expect(
 			screen.getByRole("status", { name: "Mobile sidebar state" }),
 		).toHaveTextContent("mobile:closed");
@@ -710,16 +1003,18 @@ describe("SidebarAgentsList", () => {
 			screen.getByRole("button", { name: "Search routes and rooms" }),
 		);
 		dialog = screen.getByRole("dialog", {
-			name: "Search routes and rooms",
+			name: "Search",
 		});
 		await user.type(
 			within(dialog).getByRole("combobox", {
 				name: "Search routes and rooms",
 			}),
-			"Room 1",
+			"matching content",
 		);
-		await user.click(within(dialog).getByText("Room 1"));
-		expect(onRoomVisited).toHaveBeenCalledWith("room-1");
+		await user.click(await within(dialog).findByText("Room 1"));
+		expect(
+			screen.getByRole("status", { name: "Current location" }),
+		).toHaveTextContent("/room/room-1");
 		expect(
 			screen.getByRole("status", { name: "Mobile sidebar state" }),
 		).toHaveTextContent("mobile:closed");

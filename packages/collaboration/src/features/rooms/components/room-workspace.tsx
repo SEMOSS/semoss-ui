@@ -38,8 +38,10 @@ interface RoomWorkspaceProps {
 	showToolWorkbench?: RoomViewProps["showToolWorkbench"];
 	modelError: RoomViewProps["modelError"];
 	roomInstructions: RoomViewProps["roomInstructions"];
+	roomSettings: RoomViewProps["roomSettings"];
 	onSendMessage: RoomViewProps["onSendMessage"];
 	onModelChange: RoomViewProps["onModelChange"];
+	onSaveRoomSettings: RoomViewProps["onSaveRoomSettings"];
 	onOptimizePrompt: RoomViewProps["onOptimizePrompt"];
 	onCancelTurn: RoomViewProps["onCancelTurn"];
 	onReconnect: RoomViewProps["onReconnect"];
@@ -67,8 +69,10 @@ export function RoomWorkspace({
 	showToolWorkbench = true,
 	modelError,
 	roomInstructions,
+	roomSettings,
 	onSendMessage,
 	onModelChange,
+	onSaveRoomSettings,
 	onOptimizePrompt,
 	onCancelTurn,
 	onConfigure,
@@ -158,7 +162,11 @@ export function RoomWorkspace({
 							isModelLocked={isModelLocked}
 							modelError={modelError}
 							roomInstructions={roomInstructions}
+							roomSettings={roomSettings}
+							inheritedMcp={agent.mcp}
+							isSettingsDisabled={isModelSaving}
 							onModelChange={onModelChange}
+							onSaveRoomSettings={onSaveRoomSettings}
 							onOptimizePrompt={onOptimizePrompt}
 							onSend={onSendMessage}
 							onStop={onCancelTurn}

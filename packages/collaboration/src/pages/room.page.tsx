@@ -27,6 +27,7 @@ import { RoomView } from "@/features/rooms/components/room-view";
 import type {
 	ComposerSubmission,
 	PendingToolApproval,
+	RoomSettings,
 } from "@/features/rooms/types/room";
 import {
 	pendingSession,
@@ -136,6 +137,22 @@ export function RoomPage() {
 		[modelSelection.selectModel, roomId, turn.isRunning, updateRoom],
 	);
 
+	const handleSaveRoomSettings = useCallback(
+		async (settings: RoomSettings) => {
+			if (!room) {
+				throw new Error("Room settings are still loading.");
+			}
+			const roomDerivedMcp = room.options.mcp.filter(
+				(resource) => resource.fromRoom,
+			);
+			await room.updateOptions({
+				instructions: settings.instructions,
+				mcp: [...roomDerivedMcp, ...settings.mcp],
+			});
+		},
+		[room],
+	);
+
 	const handleOptimizePrompt = useCallback(
 		(draft: string, instructions: string) =>
 			optimizePrompt(actions, { modelId, draft, instructions }),
@@ -239,8 +256,13 @@ export function RoomPage() {
 			roomInstructions={
 				room?.options.instructions || agent.system_prompt || ""
 			}
+			roomSettings={{
+				instructions: room?.options.instructions ?? "",
+				mcp: room?.options.mcp ?? [],
+			}}
 			onSendMessage={handleSend}
 			onModelChange={handleModelChange}
+			onSaveRoomSettings={handleSaveRoomSettings}
 			onOptimizePrompt={handleOptimizePrompt}
 			onCancelTurn={turn.cancel}
 			onReconnect={turn.reconnect}

@@ -4,6 +4,7 @@ import type { MCPConfig } from "@semoss/shared";
 import {
 	Alert,
 	AlertDescription,
+	Badge,
 	Button,
 	Checkbox,
 	cn,
@@ -22,9 +23,11 @@ import {
 } from "@semoss/ui/next";
 import { useAgentResources } from "../api/use-agent-resources";
 
-interface CapabilityPickerProps {
+interface CapabilityPickerBaseProps {
 	kind: "KNOWLEDGE" | "TOOLBOX" | "SKILL";
 	values: MCPConfig[];
+	/** Active resources inherited from the agent or derived from the room. */
+	lockedValues?: MCPConfig[];
 	onChange: (values: MCPConfig[]) => void;
 	disabled?: boolean;
 	/** Skills use the existing catalog query, with display names already resolved. */
@@ -35,6 +38,20 @@ interface CapabilityPickerProps {
 		refresh?: () => void;
 	};
 }
+
+type CapabilityPickerProps = CapabilityPickerBaseProps &
+	(
+		| {
+				presentation?: "dialog";
+				onDone?: never;
+				autoFocusSearch?: never;
+		  }
+		| {
+				presentation: "embedded";
+				onDone: () => void;
+				autoFocusSearch?: boolean;
+		  }
+	);
 
 const pickerLabels = {
 	KNOWLEDGE: {
@@ -61,13 +78,17 @@ const pickerLabels = {
 	},
 } as const;
 
-/** Searchable, keyboard-accessible resource rows; changes stay in the agent draft. */
+/** Searchable, keyboard-accessible resource rows for a caller-owned draft. */
 export function CapabilityPicker({
 	kind,
 	values,
+	lockedValues = [],
 	onChange,
 	disabled,
 	skills,
+	presentation = "dialog",
+	onDone,
+	autoFocusSearch,
 }: CapabilityPickerProps) {
 	const [search, setSearch] = useState("");
 	const pickerId = useId();
@@ -98,20 +119,36 @@ export function CapabilityPicker({
 			: query.resources;
 	const hasMore = kind !== "SKILL" && query.hasMore;
 	const refresh = kind === "SKILL" ? skills?.refresh : query.refresh;
+	const lockedById = new Map(lockedValues.map((value) => [value.id, value]));
+	const selectedCount = new Set([
+		...values.map((value) => value.id),
+		...lockedValues.map((value) => value.id),
+	]).size;
+	const PickerContainer = presentation === "dialog" ? DialogContent : "div";
 
 	return (
-		<DialogContent className="gap-0 p-0 sm:max-w-xl">
-			<DialogHeader className="px-6 pt-6 pb-4 text-left">
-				<DialogTitle>{labels.title}</DialogTitle>
-				<DialogDescription>{labels.description}</DialogDescription>
-			</DialogHeader>
-			<div className="px-6 pb-4">
+		<PickerContainer
+			className={cn(
+				"gap-0",
+				presentation === "dialog"
+					? "p-0 sm:max-w-xl"
+					: "flex min-h-0 flex-1 flex-col",
+			)}
+		>
+			{presentation === "dialog" && (
+				<DialogHeader className="px-6 pt-6 pb-4 text-left">
+					<DialogTitle>{labels.title}</DialogTitle>
+					<DialogDescription>{labels.description}</DialogDescription>
+				</DialogHeader>
+			)}
+			<div className={cn(presentation === "dialog" && "px-6 pb-4")}>
 				<InputGroup>
 					<InputGroupAddon>
 						<Search aria-hidden="true" />
 					</InputGroupAddon>
 					<InputGroupInput
 						ref={searchInput}
+						autoFocus={autoFocusSearch}
 						aria-label={labels.search}
 						placeholder={labels.search}
 						value={search}
@@ -121,7 +158,12 @@ export function CapabilityPicker({
 				</InputGroup>
 			</div>
 			<div
-				className="min-h-40 overflow-y-auto border-y px-3 py-2 sm:max-h-80"
+				className={cn(
+					"min-h-40 overflow-y-auto px-3 py-2 sm:max-h-80",
+					presentation === "dialog"
+						? "border-y"
+						: "mt-4 rounded-md border",
+				)}
 				aria-busy={isLoading}
 			>
 				{error && (
@@ -165,9 +207,11 @@ export function CapabilityPicker({
 					</div>
 				)}
 				{options.map((option) => {
-					const isSelected = values.some(
-						(value) => value.id === option.id,
-					);
+					const lockedValue = lockedById.get(option.id);
+					const isLocked = lockedValue !== undefined;
+					const isSelected =
+						isLocked ||
+						values.some((value) => value.id === option.id);
 					return (
 						<label
 							key={option.id}
@@ -175,20 +219,27 @@ export function CapabilityPicker({
 							className={cn(
 								"flex min-h-16 cursor-pointer items-center gap-3 rounded-md px-3 py-3 hover:bg-muted/60 has-focus-visible:ring-2 has-focus-visible:ring-ring",
 								isSelected && "bg-primary/5",
-								disabled && "cursor-default opacity-50",
+								(isLocked || disabled) && "cursor-default",
+								disabled && "opacity-50",
 							)}
 						>
 							<Checkbox
 								id={`${pickerId}-${option.id}`}
 								checked={isSelected}
-								disabled={disabled}
+								disabled={disabled || isLocked}
 								aria-label={[
 									option.name,
 									kind === "SKILL" ? option.description : "",
+									isLocked
+										? lockedValue.fromRoom
+											? "Included by room"
+											: "Included by agent"
+										: "",
 								]
 									.filter(Boolean)
 									.join(" ")}
-								onCheckedChange={(checked) =>
+								onCheckedChange={(checked) => {
+									if (isLocked) return;
 									onChange(
 										checked
 											? [...values, option]
@@ -196,8 +247,8 @@ export function CapabilityPicker({
 													(value) =>
 														value.id !== option.id,
 												),
-									)
-								}
+									);
+								}}
 							/>
 							<Icon
 								className="size-4 shrink-0 text-muted-foreground"
@@ -213,6 +264,13 @@ export function CapabilityPicker({
 									</span>
 								)}
 							</span>
+							{isLocked && (
+								<Badge variant="outline">
+									{lockedValue.fromRoom
+										? "From room"
+										: "From agent"}
+								</Badge>
+							)}
 						</label>
 					);
 				})}
@@ -233,14 +291,25 @@ export function CapabilityPicker({
 					</Button>
 				)}
 			</div>
-			<DialogFooter className="flex-row items-center justify-between gap-3 px-6 py-4 sm:justify-between">
+			<DialogFooter
+				className={cn(
+					"flex-row items-center justify-between gap-3 sm:justify-between",
+					presentation === "dialog" ? "px-6 py-4" : "pt-4",
+				)}
+			>
 				<output className="text-muted-foreground text-sm">
-					{values.length} selected
+					{selectedCount} selected
 				</output>
-				<DialogClose asChild>
-					<Button type="button">Done</Button>
-				</DialogClose>
+				{presentation === "dialog" ? (
+					<DialogClose asChild>
+						<Button type="button">Done</Button>
+					</DialogClose>
+				) : (
+					<Button type="button" onClick={onDone}>
+						Done
+					</Button>
+				)}
 			</DialogFooter>
-		</DialogContent>
+		</PickerContainer>
 	);
 }

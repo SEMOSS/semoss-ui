@@ -17,6 +17,17 @@ export interface PlaygroundRoom {
 	updateOptions: (options: Partial<PlaygroundRoomOptions>) => Promise<void>;
 }
 
+function optionsForPersistence(
+	options: PlaygroundRoomOptions,
+): PlaygroundRoomOptions {
+	return {
+		...options,
+		mcp: options.mcp.filter(
+			(resource) => !resource.fromWorkspace && !resource.fromRoom,
+		),
+	};
+}
+
 /** Load the real `GetRoomOptions` envelope and bind the room to the insight. */
 export function useRoomStore(insightId: string, roomId: string) {
 	const { actions } = useInsight();
@@ -57,20 +68,26 @@ export function useRoomStore(insightId: string, roomId: string) {
 			if (cancelled || roomRef.current !== roomId) return;
 
 			let currentOptions = envelope.OPTIONS;
-			const loadedRoom: PlaygroundRoom = {
+			let updateQueue = Promise.resolve();
+			const buildRoom = (
+				updateOptions: PlaygroundRoom["updateOptions"],
+			): PlaygroundRoom => ({
 				roomId,
 				insightId,
 				name: envelope.ROOM_NAME ?? undefined,
-				get options() {
-					return currentOptions;
-				},
-				updateOptions: async (changes) => {
+				options: currentOptions,
+				updateOptions,
+			});
+			const updateOptions: PlaygroundRoom["updateOptions"] = (
+				changes,
+			) => {
+				const save = updateQueue.then(async () => {
 					const nextOptions = { ...currentOptions, ...changes };
 					const updated = await callPixel(
 						actions,
 						pixel("UpdateRoomOptions", {
 							roomId,
-							roomOptions: [nextOptions],
+							roomOptions: [optionsForPersistence(nextOptions)],
 						}),
 						roomWriteSchema,
 					);
@@ -80,9 +97,14 @@ export function useRoomStore(insightId: string, roomId: string) {
 						);
 					}
 					currentOptions = nextOptions;
-				},
+					if (!cancelled && roomRef.current === roomId) {
+						setRoom(buildRoom(updateOptions));
+					}
+				});
+				updateQueue = save.catch(() => undefined);
+				return save;
 			};
-			setRoom(loadedRoom);
+			setRoom(buildRoom(updateOptions));
 		})()
 			.catch((cause: unknown) => {
 				if (!cancelled && roomRef.current === roomId) {

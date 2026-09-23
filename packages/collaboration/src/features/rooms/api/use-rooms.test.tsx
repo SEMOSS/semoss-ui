@@ -112,4 +112,44 @@ describe("useRooms", () => {
 			}),
 		]);
 	});
+
+	it("updates and removes pending rooms without letting them reappear", async () => {
+		const first = deferred<RoomRow[]>();
+		listRooms.mockReturnValueOnce(first.promise).mockResolvedValueOnce([]);
+		const { result, rerender } = renderHook(
+			({ version }) =>
+				useRooms(["workspace-1"], { "workspace-1": version }),
+			{ initialProps: { version: 0 } },
+		);
+
+		act(() => {
+			result.current.addPendingRoom({
+				id: "pending-room",
+				agentId: "workspace-1",
+				title: "Draft room",
+				origin: "You",
+				status: "Ready",
+				updatedAt: "2026-09-22T11:00:00Z",
+				unread: false,
+				pinned: false,
+				preview: "",
+			});
+			result.current.updateRoom("pending-room", {
+				title: "Renamed room",
+			});
+		});
+		expect(result.current.sessions[0]?.title).toBe("Renamed room");
+
+		first.resolve([]);
+		await waitFor(() => expect(result.current.isLoading).toBe(false));
+		expect(result.current.sessions[0]?.title).toBe("Renamed room");
+
+		act(() => result.current.removeRoom("pending-room"));
+		expect(result.current.sessions).toEqual([]);
+
+		rerender({ version: 1 });
+		await waitFor(() => expect(listRooms).toHaveBeenCalledTimes(2));
+		await waitFor(() => expect(result.current.isLoading).toBe(false));
+		expect(result.current.sessions).toEqual([]);
+	});
 });
