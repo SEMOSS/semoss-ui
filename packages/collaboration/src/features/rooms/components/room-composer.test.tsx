@@ -96,18 +96,17 @@ describe("RoomComposer", () => {
 		);
 	});
 
-	it("renders the full composer in its larger landing layout", () => {
-		renderComposer({
-			variant: "landing",
-			agentId: "research-agent",
-			agentOptions: [
-				{ id: "research-agent", name: "Research agent" },
-				{ id: "writing-agent", name: "Writing agent" },
-			],
-			onAgentChange: vi.fn(),
+	it("accepts caller-owned layout classes and toolbar controls", () => {
+		const { container } = renderComposer({
+			className: "w-full",
+			inputClassName: "min-h-48",
+			children: <button type="button">Custom control</button>,
 			onSent: undefined,
 		});
 
+		expect(
+			container.querySelector('[data-slot="room-composer"]'),
+		).toHaveClass("w-full");
 		expect(
 			screen.getByRole("textbox", { name: "Message Research agent" }),
 		).toHaveClass("min-h-48");
@@ -115,23 +114,22 @@ describe("RoomComposer", () => {
 			screen
 				.getByRole("textbox", { name: "Message Research agent" })
 				.closest("fieldset"),
-		).toHaveClass("rounded-md", "border-input", "shadow-lg");
+		).toHaveClass("rounded-md", "border-input");
 		expect(
 			screen.getByRole("button", { name: "Attach files" }),
 		).toBeInTheDocument();
-		const agentSelect = screen.getByRole("combobox", {
-			name: "Choose agent",
+		const customControl = screen.getByRole("button", {
+			name: "Custom control",
 		});
 		const modelSelect = screen.getByRole("button", {
 			name: "Choose model",
 		});
-		expect(agentSelect).toHaveTextContent("Research agent");
 		expect(modelSelect).toHaveTextContent("Text model");
 		const toolbar = screen.getByRole("button", {
 			name: "Attach files",
 		}).parentElement;
 		expect(toolbar).not.toHaveClass("border-t");
-		expect(toolbar).toContainElement(agentSelect);
+		expect(toolbar).toContainElement(customControl);
 		expect(toolbar).toContainElement(modelSelect);
 		expect(
 			screen.getByRole("button", { name: "Optimize prompt" }),
@@ -143,31 +141,8 @@ describe("RoomComposer", () => {
 		).toBeInTheDocument();
 	});
 
-	it("changes the landing agent from the composer toolbar", async () => {
-		const user = userEvent.setup();
-		const onAgentChange = vi.fn();
-		renderComposer({
-			variant: "landing",
-			agentId: "research-agent",
-			agentOptions: [
-				{ id: "research-agent", name: "Research agent" },
-				{ id: "writing-agent", name: "Writing agent" },
-			],
-			onAgentChange,
-		});
-
-		await user.click(
-			screen.getByRole("combobox", { name: "Choose agent" }),
-		);
-		await user.click(
-			await screen.findByRole("option", { name: "Writing agent" }),
-		);
-
-		expect(onAgentChange).toHaveBeenCalledWith("writing-agent");
-	});
-
-	it("can move the model selector outside the landing composer", () => {
-		renderComposer({ variant: "landing", showModelSelector: false });
+	it("can omit the built-in model selector", () => {
+		renderComposer({ showModelSelector: false });
 
 		expect(
 			screen.queryByRole("button", { name: "Choose model" }),

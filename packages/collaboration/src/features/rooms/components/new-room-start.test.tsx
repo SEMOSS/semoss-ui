@@ -1,4 +1,5 @@
 import { act, render, screen, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import type { ComponentProps } from "react";
 import { createMemoryRouter, type RouteObject } from "react-router";
 import { RouterProvider } from "react-router/dom";
@@ -79,7 +80,7 @@ vi.mock("@/features/rooms/api/optimize-prompt", () => ({
 vi.mock("@/features/rooms/components/room-composer", () => ({
 	RoomComposer: (props: ComponentProps<typeof RoomComposer>) => {
 		harness.props = props;
-		return <div>Landing composer</div>;
+		return <div>Landing composer{props.children}</div>;
 	},
 }));
 
@@ -140,12 +141,11 @@ describe("NewRoomStart", () => {
 			}),
 		).toBeVisible();
 		expect(composerProps().modelId).toBe("model-2");
-		expect(composerProps().variant).toBe("landing");
-		expect(composerProps().agentId).toBe("agent-1");
-		expect(composerProps().agentOptions).toEqual([
-			{ id: "agent-1", name: "Research agent" },
-			{ id: "agent-2", name: "Writing agent" },
-		]);
+		expect(composerProps().className).toBe("w-full");
+		expect(composerProps().inputClassName).toBe("min-h-48");
+		expect(
+			screen.getByRole("combobox", { name: "Choose agent" }),
+		).toHaveTextContent("Research agent");
 		expect(composerProps().modelName).toBe("Name model-2");
 		expect(harness.createRoom).not.toHaveBeenCalled();
 
@@ -276,10 +276,16 @@ describe("NewRoomStart", () => {
 		expect(router.state.historyAction).toBe("REPLACE");
 	});
 
-	it("switches agents on the same new-room page", () => {
+	it("switches agents on the same new-room page", async () => {
+		const user = userEvent.setup();
 		const router = renderDraft();
 
-		act(() => composerProps().onAgentChange?.("agent-2"));
+		await user.click(
+			screen.getByRole("combobox", { name: "Choose agent" }),
+		);
+		await user.click(
+			await screen.findByRole("option", { name: "Writing agent" }),
+		);
 
 		expect(router.state.location.pathname).toBe("/new");
 		expect(router.state.location.search).toBe(

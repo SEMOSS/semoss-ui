@@ -40,7 +40,9 @@ vi.mock("./room-run-status", () => ({
 }));
 
 vi.mock("./room-composer", () => ({
-	RoomComposer: () => <div>Composer</div>,
+	RoomComposer: ({ className }: { className?: string }) => (
+		<div className={className}>Composer</div>
+	),
 }));
 
 const agent: Agent = {
@@ -115,6 +117,18 @@ describe("RoomWorkspace", () => {
 			screen.getByRole("button", { name: "Toggle workbench" }),
 		);
 		expect(workbenchState.openWorkbench).toHaveBeenCalledWith(undefined);
+	});
+
+	it("aligns the composer with the message column", () => {
+		render(<RoomWorkspace {...defaultProps} />);
+
+		const composer = screen.getByText("Composer");
+		expect(composer).toHaveClass("mx-auto", "w-full", "max-w-5xl");
+		expect(composer.parentElement).toHaveClass(
+			"border-t",
+			"px-5",
+			"lg:px-7",
+		);
 	});
 
 	it("defaults to 65 percent and restores a resized width after reopening", async () => {

@@ -1,8 +1,20 @@
+import { Bot } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router";
 import { useInsight } from "@semoss/sdk/react";
 import type { Engine } from "@semoss/shared";
-import { Alert, AlertDescription, Button, H3, P } from "@semoss/ui/next";
+import {
+	Alert,
+	AlertDescription,
+	Button,
+	H3,
+	P,
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@semoss/ui/next";
 import { useMain } from "@/app/main.context";
 import { AgentAvatar } from "@/components/common/agent-avatar";
 import type { WorkspaceAgent } from "@/features/agents/api/agent-schemas";
@@ -247,16 +259,12 @@ export function NewRoomStart({
 					</Alert>
 				)}
 				<RoomComposer
-					agentId={selectedAgentId}
+					className="w-full"
+					inputClassName="min-h-48"
 					agentName={agent.name}
-					agentOptions={selectableAgents.map((candidate) => ({
-						id: candidate.id,
-						name: candidate.name,
-					}))}
 					isSubmitting={isStarting}
 					isRunning={false}
 					isCancelling={false}
-					isAgentLocked={Boolean(createdRoomId)}
 					modelId={modelId}
 					modelName={modelName}
 					isModelSaving={false}
@@ -264,13 +272,37 @@ export function NewRoomStart({
 					modelError={modelLookup.error}
 					roomInstructions={agent.system_prompt || ""}
 					isSendDisabled={!isAgentReady}
-					variant="landing"
-					onAgentChange={handleAgentChange}
 					onModelChange={handleModelChange}
 					onOptimizePrompt={handleOptimizePrompt}
 					onSend={handleSend}
 					onStop={cancelDraftTurn}
-				/>
+				>
+					<div className="min-w-0 flex-1 sm:max-w-40">
+						<Select
+							value={selectedAgentId}
+							disabled={isStarting || Boolean(createdRoomId)}
+							onValueChange={handleAgentChange}
+						>
+							<SelectTrigger
+								aria-label="Choose agent"
+								className="h-8 w-full min-w-0 overflow-hidden border-border bg-background px-2 text-xs shadow-none hover:bg-accent *:data-[slot=select-value]:min-w-0 dark:hover:bg-accent/50"
+							>
+								<Bot aria-hidden="true" className="size-3.5" />
+								<SelectValue placeholder="Select agent" />
+							</SelectTrigger>
+							<SelectContent align="start">
+								{selectableAgents.map((candidate) => (
+									<SelectItem
+										key={candidate.id}
+										value={candidate.id}
+									>
+										{candidate.name}
+									</SelectItem>
+								))}
+							</SelectContent>
+						</Select>
+					</div>
+				</RoomComposer>
 			</div>
 		</main>
 	);

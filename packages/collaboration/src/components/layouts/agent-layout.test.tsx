@@ -2,6 +2,7 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { createMemoryRouter, type RouteObject } from "react-router";
 import { RouterProvider } from "react-router/dom";
+import { useAgent } from "@/app/agent.context";
 
 const harness = vi.hoisted(() => ({
 	agents: [] as { id: string; name: string }[],
@@ -40,9 +41,22 @@ vi.mock("@/components/layouts/selected-agent", () => ({
 
 import { AgentLayout } from "./agent-layout";
 
+function RoomAgentProbe() {
+	const { agent, agentId } = useAgent();
+	return (
+		<div>
+			Room agent: {agent.name}; id: {agentId || "none"}
+		</div>
+	);
+}
+
 function renderRoute(path: string) {
 	const routes: RouteObject[] = [
-		{ path: "/room/:roomId", Component: AgentLayout },
+		{
+			path: "/room/:roomId",
+			Component: AgentLayout,
+			children: [{ index: true, Component: RoomAgentProbe }],
+		},
 		{ path: "/agents/:agentId", Component: AgentLayout },
 	];
 	const router = createMemoryRouter(routes, { initialEntries: [path] });
@@ -84,6 +98,23 @@ describe("AgentLayout", () => {
 		expect(screen.getByText("Selected agent: workspace/two")).toBeVisible();
 		expect(harness.statement).toBe(
 			'GetRoomOptions(roomId=["direct-room"]);',
+		);
+	});
+
+	it("opens a room without an assigned agent", () => {
+		harness.status = "SUCCESS";
+		harness.data = {
+			OPTIONS: {},
+			ROOM_NAME: "Unassigned room",
+		};
+
+		renderRoute("/room/unassigned-room");
+
+		expect(
+			screen.getByText("Room agent: Assistant; id: none"),
+		).toBeVisible();
+		expect(harness.statement).toBe(
+			'GetRoomOptions(roomId=["unassigned-room"]);',
 		);
 	});
 

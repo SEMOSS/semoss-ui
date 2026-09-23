@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { createHashRouter, type RouteObject } from "react-router";
 import { RouterProvider } from "react-router/dom";
-import { AgentIndex } from "@/components/layouts/agent-index";
 import { AgentLayout } from "@/components/layouts/agent-layout";
 import { AgentRoomLayout } from "@/components/layouts/agent-room-layout";
 import { AuthorizedLayout } from "@/components/layouts/authorized-layout";
@@ -18,7 +17,7 @@ import { RoomPage } from "@/pages/room.page";
 import { SessionsPage } from "@/pages/sessions.page";
 import { SettingsPage } from "@/pages/settings.page";
 
-const routes: RouteObject[] = [
+export const routes: RouteObject[] = [
 	{
 		Component: RootLayout,
 		ErrorBoundary: ErrorPage,
@@ -63,6 +62,11 @@ const routes: RouteObject[] = [
 											},
 										],
 									},
+									{
+										path: "*",
+										id: "room-not-found",
+										Component: NotFoundPage,
+									},
 								],
 							},
 							{
@@ -82,13 +86,18 @@ const routes: RouteObject[] = [
 								children: [
 									{
 										index: true,
-										id: "agent-index",
-										Component: AgentIndex,
+										id: "agent-not-found",
+										Component: NotFoundPage,
 									},
 									{
 										path: "settings",
 										id: "agent-settings",
 										Component: AgentSettingsPage,
+									},
+									{
+										path: "*",
+										id: "agent-path-not-found",
+										Component: NotFoundPage,
 									},
 								],
 							},

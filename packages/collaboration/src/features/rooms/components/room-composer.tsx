@@ -15,7 +15,6 @@ import {
 	type LexicalEditor,
 } from "lexical";
 import {
-	Bot,
 	Mic,
 	Paperclip,
 	Send,
@@ -24,18 +23,20 @@ import {
 	Undo,
 	WandSparkles,
 } from "lucide-react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+	type ReactNode,
+	useCallback,
+	useEffect,
+	useMemo,
+	useRef,
+	useState,
+} from "react";
 import { type Engine, EngineSelect } from "@semoss/shared";
 import {
 	Button,
 	cn,
 	P,
 	ScrollArea,
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
 	Spinner,
 	Tooltip,
 	TooltipContent,
@@ -51,27 +52,45 @@ import {
 } from "./room-composer-slash-plugin";
 
 interface RoomComposerProps {
-	agentId?: string;
+	/** Optional caller-owned controls rendered in the composer toolbar. */
+	children?: ReactNode;
+	/** Classes applied to the composer root. */
+	className?: string;
+	/** Classes applied to the editable message surface. */
+	inputClassName?: string;
+	/** Name used to label the message input and send action. */
 	agentName: string;
-	agentOptions?: { id: string; name: string }[];
+	/** Whether a message submission is in progress. */
 	isSubmitting: boolean;
+	/** Whether the agent is currently producing a response. */
 	isRunning: boolean;
+	/** Whether cancellation is in progress. */
 	isCancelling: boolean;
-	isAgentLocked?: boolean;
+	/** Selected model identifier; an empty value disables sending. */
 	modelId: string;
+	/** Selected model display name. */
 	modelName: string;
+	/** Whether the selected model is being persisted. */
 	isModelSaving: boolean;
+	/** Whether the model selector is locked. */
 	isModelLocked?: boolean;
+	/** Whether the model selector is rendered in the toolbar. */
 	showModelSelector?: boolean;
+	/** Additional caller-owned reason that sending is unavailable. */
 	isSendDisabled?: boolean;
+	/** Model selection error displayed with the composer. */
 	modelError: Error | null;
+	/** Agent instructions supplied to prompt optimization. */
 	roomInstructions: string;
-	variant?: "room" | "landing";
-	onAgentChange?: (agentId: string) => void;
+	/** Persists a newly selected model. */
 	onModelChange: (engine: Engine) => Promise<void>;
+	/** Optimizes the current draft. */
 	onOptimizePrompt: (draft: string, instructions: string) => Promise<string>;
+	/** Submits a message and any attachments. */
 	onSend: (submission: ComposerSubmission) => Promise<void>;
+	/** Stops the active response. */
 	onStop: () => Promise<void>;
+	/** Called after a message is sent successfully. */
 	onSent?: () => void;
 }
 
@@ -123,13 +142,13 @@ function tooltipButton(
 
 /** Collaboration-native Lexical composer for room and landing surfaces. */
 export function RoomComposer({
-	agentId,
+	children,
+	className,
+	inputClassName,
 	agentName,
-	agentOptions,
 	isSubmitting,
 	isRunning,
 	isCancelling,
-	isAgentLocked = false,
 	modelId,
 	modelName,
 	isModelSaving,
@@ -138,13 +157,11 @@ export function RoomComposer({
 	isSendDisabled = false,
 	modelError,
 	roomInstructions,
-	onAgentChange,
 	onModelChange,
 	onOptimizePrompt,
 	onSend,
 	onStop,
 	onSent,
-	variant = "room",
 }: RoomComposerProps) {
 	const editorRef = useRef<LexicalEditor | null>(null);
 	const scrollViewportRef = useRef<HTMLDivElement | null>(null);
@@ -390,11 +407,8 @@ export function RoomComposer({
 
 	return (
 		<div
-			className={cn(
-				"shrink-0 bg-background",
-				variant === "room" && "border-t p-2 sm:p-3 lg:p-4",
-				variant === "landing" && "w-full",
-			)}
+			data-slot="room-composer"
+			className={cn("shrink-0 bg-background", className)}
 		>
 			<fieldset
 				aria-label="Message composer drop area"
@@ -447,10 +461,7 @@ export function RoomComposer({
 				/>
 				<LexicalComposer initialConfig={initialConfig}>
 					<ScrollArea
-						className={cn(
-							"max-h-52 min-h-20",
-							variant === "landing" && "max-h-64 min-h-48",
-						)}
+						className="max-h-64 min-h-20"
 						viewportRef={(element) => {
 							scrollViewportRef.current = element;
 						}}
@@ -460,9 +471,8 @@ export function RoomComposer({
 								<ContentEditable
 									aria-label={`Message ${agentName}`}
 									className={cn(
-										"min-h-20 px-3 py-3 text-sm outline-none sm:px-4",
-										variant === "landing" &&
-											"min-h-48 text-base",
+										"min-h-20 px-3 py-3 text-base outline-none sm:px-4",
+										inputClassName,
 									)}
 									onPaste={(event) => {
 										const pastedFiles = Array.from(
@@ -482,12 +492,7 @@ export function RoomComposer({
 								/>
 							}
 							placeholder={
-								<P
-									className={cn(
-										"pointer-events-none absolute top-3 left-3 text-muted-foreground text-sm sm:left-4",
-										variant === "landing" && "text-base",
-									)}
-								>
+								<P className="pointer-events-none absolute top-3 left-3 text-muted-foreground sm:left-4">
 									Message {agentName}…
 								</P>
 							}
@@ -508,44 +513,7 @@ export function RoomComposer({
 							</Button>,
 						)}
 						<div className="flex min-w-0 flex-1 items-center gap-2">
-							{variant === "landing" &&
-								agentId &&
-								onAgentChange &&
-								agentOptions &&
-								agentOptions.length > 0 && (
-									<div className="min-w-0 flex-1 sm:max-w-40">
-										<Select
-											value={agentId}
-											disabled={
-												isRunning ||
-												isSubmitting ||
-												isAgentLocked
-											}
-											onValueChange={onAgentChange}
-										>
-											<SelectTrigger
-												aria-label="Choose agent"
-												className="h-8 w-full min-w-0 overflow-hidden border-border bg-background px-2 text-xs shadow-none hover:bg-accent *:data-[slot=select-value]:min-w-0 dark:hover:bg-accent/50"
-											>
-												<Bot
-													aria-hidden="true"
-													className="size-3.5"
-												/>
-												<SelectValue placeholder="Select agent" />
-											</SelectTrigger>
-											<SelectContent align="start">
-												{agentOptions.map((option) => (
-													<SelectItem
-														key={option.id}
-														value={option.id}
-													>
-														{option.name}
-													</SelectItem>
-												))}
-											</SelectContent>
-										</Select>
-									</div>
-								)}
+							{children}
 							<div className="ms-auto flex min-w-0 flex-1 items-center justify-end gap-1 sm:max-w-72 sm:gap-2">
 								{showModelSelector && (
 									<div className="min-w-0 flex-1 sm:max-w-52">

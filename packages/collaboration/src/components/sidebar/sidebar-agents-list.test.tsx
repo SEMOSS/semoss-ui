@@ -81,7 +81,7 @@ function renderSidebar({
 	isLoading,
 	defaultOpen = true,
 	onNewSession = vi.fn(),
-	onAgentVisited = vi.fn(),
+	onRouteVisited = vi.fn(),
 	onRoomVisited = vi.fn(),
 }: {
 	sessions: Session[];
@@ -91,7 +91,7 @@ function renderSidebar({
 	isLoading?: boolean;
 	defaultOpen?: boolean;
 	onNewSession?: (agentId?: string) => void;
-	onAgentVisited?: (agentId: string) => void;
+	onRouteVisited?: (path: string) => void;
 	onRoomVisited?: (roomId: string) => void;
 }) {
 	return render(
@@ -110,7 +110,7 @@ function renderSidebar({
 					activeRoomId={activeRoomId}
 					isLoading={isLoading}
 					onNewSession={onNewSession}
-					onAgentVisited={onAgentVisited}
+					onRouteVisited={onRouteVisited}
 					onRoomVisited={onRoomVisited}
 				/>
 			</SidebarProvider>
@@ -151,15 +151,12 @@ describe("SidebarAgentsList", () => {
 		expect(screen.getByText("No recent rooms")).toBeVisible();
 	});
 
-	it("opens an unscoped new session from the agents group action", async () => {
-		const user = userEvent.setup();
-		const onNewSession = vi.fn();
-		renderSidebar({ sessions: [], onNewSession });
+	it("does not show a new-session action beside the agents group", () => {
+		renderSidebar({ sessions: [] });
 
-		await user.click(screen.getByRole("button", { name: "New session" }));
-
-		expect(onNewSession).toHaveBeenCalledOnce();
-		expect(onNewSession).toHaveBeenCalledWith();
+		expect(
+			screen.queryByRole("button", { name: "New session" }),
+		).not.toBeInTheDocument();
 	});
 
 	it("opens a new session for an agent from its actions menu", async () => {
@@ -418,75 +415,57 @@ describe("SidebarAgentsList", () => {
 		expect(recentLinks()).toHaveLength(20);
 	});
 
-	it("opens one centered palette with notifications, agents, and ready rooms", async () => {
+	it("opens one centered palette with routes and every room", async () => {
 		const user = userEvent.setup();
 		renderSidebar({
-			sessions: [
-				room(1, researchAgent.id, {
-					title: "Stopped room",
-					status: "Stopped",
-					unread: true,
-				}),
-				room(2, researchAgent.id, {
-					title: "Review room",
-					status: "Your review",
-					unread: true,
-				}),
-				room(3, writingAgent.id, {
-					title: "Working room",
-					status: "In progress",
-					unread: true,
-				}),
-				room(4, writingAgent.id, {
-					title: "Unread room",
-					status: "Ready",
-					unread: true,
-				}),
-				room(5, researchAgent.id, {
-					title: "Ready room",
-					status: "Ready",
-					unread: false,
-				}),
-			],
+			sessions: Array.from({ length: 12 }, (_, index) =>
+				room(
+					index + 1,
+					index % 2 === 0 ? researchAgent.id : writingAgent.id,
+					{
+						status: "Ready",
+						unread: false,
+						preview: index === 0 ? "Latest room preview" : "",
+					},
+				),
+			),
 		});
 
 		const searchTrigger = screen.getByRole("button", {
-			name: "Search rooms and agents",
+			name: "Search routes and rooms",
 		});
 		await user.click(searchTrigger);
 
 		let dialog = screen.getByRole("dialog", {
-			name: "Search rooms and agents",
+			name: "Search routes and rooms",
 		});
-		expect(within(dialog).getByText("Notifications")).toBeVisible();
-		expect(within(dialog).getByText("Agents")).toBeVisible();
-		expect(within(dialog).getByText("Recent rooms")).toBeVisible();
-		const notificationGroup = within(dialog).getByRole("group", {
-			name: "Notifications",
+		const routeGroup = within(dialog).getByRole("group", {
+			name: "Routes",
+		});
+		const roomsGroup = within(dialog).getByRole("group", {
+			name: "Rooms",
 		});
 		expect(
-			within(notificationGroup)
+			within(routeGroup)
 				.getAllByRole("option")
 				.map((option) => option.textContent),
 		).toEqual([
-			"Stopped roomResearch agentError",
-			"Review roomResearch agentNeeds your review",
-			"Working roomWriting agentWorking",
-			"Unread roomWriting agentUnread",
+			"Home · Open the workspace home page",
+			"New Room · Start a new room",
+			"Agents · Browse all agents",
+			"New Agent · Create an agent",
+			"Settings · Open workspace settings",
 		]);
-		for (const label of [
-			"Error",
-			"Needs your review",
-			"Working",
-			"Unread",
-		]) {
-			expect(within(dialog).getByText(label)).toBeVisible();
-		}
-		const readyItem = within(dialog)
-			.getByText("Ready room")
-			.closest('[data-slot="command-item"]');
-		expect(readyItem).not.toBeNull();
-		expect(readyItem?.querySelector("svg")).toBeNull();
+		const roomOptions = within(roomsGroup).getAllByRole("option");
+		expect(roomOptions).toHaveLength(12);
+		expect(roomOptions[0]).toHaveTextContent(
+			"Room 1 · Research agent · Latest room preview",
+		);
+		expect(roomOptions[11]).toHaveTextContent("Room 12 · Writing agent");
+		expect(
+			routeGroup.compareDocumentPosition(roomsGroup) &
+				Node.DOCUMENT_POSITION_FOLLOWING,
+		).toBeTruthy();
 
 		await user.keyboard("{Escape}");
 		expect(dialog).not.toBeInTheDocument();
@@ -494,16 +473,90 @@ describe("SidebarAgentsList", () => {
 
 		await user.keyboard("{Enter}");
 		dialog = screen.getByRole("dialog", {
-			name: "Search rooms and agents",
+			name: "Search routes and rooms",
 		});
 		expect(
 			within(dialog).getByRole("combobox", {
-				name: "Search rooms and agents",
+				name: "Search routes and rooms",
 			}),
 		).toHaveFocus();
 	});
 
-	it("shows palette loading and no-results states without an Agents group", async () => {
+	it("filters routes and room metadata, opens selections, and resets", async () => {
+		const user = userEvent.setup();
+		const onRouteVisited = vi.fn();
+		const onRoomVisited = vi.fn();
+		renderSidebar({
+			sessions: [
+				room(1, writingAgent.id, {
+					title: "Quarterly planning",
+					preview: "Buried launch notes",
+					status: "In progress",
+				}),
+			],
+			onRouteVisited,
+			onRoomVisited,
+		});
+
+		const searchTrigger = screen.getByRole("button", {
+			name: "Search routes and rooms",
+		});
+		await user.click(searchTrigger);
+		let dialog = screen.getByRole("dialog", {
+			name: "Search routes and rooms",
+		});
+		const input = within(dialog).getByRole("combobox", {
+			name: "Search routes and rooms",
+		});
+		await user.type(input, "create an agent");
+		await user.keyboard("{Enter}");
+		expect(onRouteVisited).toHaveBeenCalledWith("/agents/new");
+		expect(
+			screen.queryByRole("dialog", {
+				name: "Search routes and rooms",
+			}),
+		).not.toBeInTheDocument();
+
+		await user.click(searchTrigger);
+		dialog = screen.getByRole("dialog", {
+			name: "Search routes and rooms",
+		});
+		const resetInput = within(dialog).getByRole("combobox", {
+			name: "Search routes and rooms",
+		});
+		expect(resetInput).toHaveValue("");
+
+		for (const query of [
+			"Buried launch",
+			"Writing agent",
+			"working",
+			"room-1",
+		]) {
+			await user.clear(resetInput);
+			await user.type(resetInput, query);
+			expect(
+				within(dialog).getByText("Quarterly planning"),
+			).toBeVisible();
+		}
+
+		await user.click(within(dialog).getByText("Quarterly planning"));
+		expect(onRoomVisited).toHaveBeenCalledWith("room-1");
+
+		await user.click(searchTrigger);
+		dialog = screen.getByRole("dialog", {
+			name: "Search routes and rooms",
+		});
+		const emptyInput = within(dialog).getByRole("combobox", {
+			name: "Search routes and rooms",
+		});
+		expect(emptyInput).toHaveValue("");
+		await user.type(emptyInput, "missing destination");
+		expect(
+			within(dialog).getByText("No routes or rooms found."),
+		).toBeVisible();
+	});
+
+	it("shows room loading and empty states without hiding routes", async () => {
 		const user = userEvent.setup();
 		const loadingView = renderSidebar({
 			agents: [],
@@ -512,83 +565,25 @@ describe("SidebarAgentsList", () => {
 		});
 
 		await user.click(
-			screen.getByRole("button", { name: "Search rooms and agents" }),
+			screen.getByRole("button", { name: "Search routes and rooms" }),
 		);
 		let dialog = screen.getByRole("dialog", {
-			name: "Search rooms and agents",
+			name: "Search routes and rooms",
 		});
+		expect(within(dialog).getByText("Loading rooms…")).toBeVisible();
 		expect(
-			within(dialog).getByText("Loading rooms and agents…"),
+			within(dialog).getByRole("group", { name: "Routes" }),
 		).toBeVisible();
-		expect(
-			within(dialog).queryByRole("group", { name: "Agents" }),
-		).toBeNull();
 
 		loadingView.unmount();
 		renderSidebar({ agents: [], sessions: [] });
 		await user.click(
-			screen.getByRole("button", { name: "Search rooms and agents" }),
+			screen.getByRole("button", { name: "Search routes and rooms" }),
 		);
 		dialog = screen.getByRole("dialog", {
-			name: "Search rooms and agents",
+			name: "Search routes and rooms",
 		});
-		expect(
-			within(dialog).getByText("No rooms or agents found."),
-		).toBeVisible();
-	});
-
-	it("searches every room and resets after agent and room selection", async () => {
-		const user = userEvent.setup();
-		const onAgentVisited = vi.fn();
-		const onRoomVisited = vi.fn();
-		const sessions = Array.from({ length: 12 }, (_, index) =>
-			room(index + 1, researchAgent.id, {
-				status: "Ready",
-				unread: false,
-				preview: index === 11 ? "Buried launch notes" : "",
-			}),
-		);
-		renderSidebar({ sessions, onAgentVisited, onRoomVisited });
-
-		const searchTrigger = screen.getByRole("button", {
-			name: "Search rooms and agents",
-		});
-		await user.click(searchTrigger);
-		let dialog = screen.getByRole("dialog", {
-			name: "Search rooms and agents",
-		});
-		expect(
-			within(
-				within(dialog).getByRole("group", { name: "Recent rooms" }),
-			).getAllByRole("option"),
-		).toHaveLength(10);
-		expect(within(dialog).queryByText("Room 12")).not.toBeInTheDocument();
-
-		const input = within(dialog).getByRole("combobox", {
-			name: "Search rooms and agents",
-		});
-		await user.type(input, "Buried launch");
-		expect(within(dialog).getByText("Room 12")).toBeVisible();
-
-		await user.clear(input);
-		await user.type(input, "Editor");
-		await user.click(within(dialog).getByText("Writing agent"));
-		expect(onAgentVisited).toHaveBeenCalledWith(writingAgent.id);
-		expect(
-			screen.queryByRole("dialog", { name: "Search rooms and agents" }),
-		).not.toBeInTheDocument();
-
-		await user.click(searchTrigger);
-		dialog = screen.getByRole("dialog", {
-			name: "Search rooms and agents",
-		});
-		expect(
-			within(dialog).getByRole("combobox", {
-				name: "Search rooms and agents",
-			}),
-		).toHaveValue("");
-		await user.click(within(dialog).getByText("Room 1"));
-		expect(onRoomVisited).toHaveBeenCalledWith("room-1");
+		expect(within(dialog).getByText("No rooms yet.")).toBeVisible();
 	});
 
 	it("keeps only the search action visible in the collapsed rail", async () => {
@@ -598,11 +593,13 @@ describe("SidebarAgentsList", () => {
 		expect(screen.queryByRole("tree", { name: "Your agents" })).toBeNull();
 		expect(screen.queryByText("Recent")).toBeNull();
 		const searchTrigger = screen.getByRole("button", {
-			name: "Search rooms and agents",
+			name: "Search routes and rooms",
 		});
 
 		await user.hover(searchTrigger);
-		expect(await screen.findByRole("tooltip")).toHaveTextContent("Search");
+		expect(await screen.findByRole("tooltip")).toHaveTextContent(
+			"Search routes and rooms",
+		);
 		await user.unhover(searchTrigger);
 		await waitFor(() =>
 			expect(screen.queryByRole("tooltip")).not.toBeInTheDocument(),
@@ -611,11 +608,15 @@ describe("SidebarAgentsList", () => {
 		act(() => searchTrigger.focus());
 		await user.keyboard("{Enter}");
 		expect(
-			screen.getByRole("dialog", { name: "Search rooms and agents" }),
+			screen.getByRole("dialog", {
+				name: "Search routes and rooms",
+			}),
 		).toBeVisible();
 		await user.keyboard("{Escape}");
 		await waitFor(() => expect(searchTrigger).toHaveFocus());
-		expect(await screen.findByRole("tooltip")).toHaveTextContent("Search");
+		expect(await screen.findByRole("tooltip")).toHaveTextContent(
+			"Search routes and rooms",
+		);
 		act(() => searchTrigger.blur());
 		await waitFor(() =>
 			expect(screen.queryByRole("tooltip")).not.toBeInTheDocument(),
@@ -673,14 +674,19 @@ describe("SidebarAgentsList", () => {
 		).toHaveTextContent("mobile:closed");
 	});
 
-	it("closes the mobile drawer when a new session is started", async () => {
+	it("closes the mobile drawer after palette route and room selections", async () => {
 		Object.defineProperty(window, "innerWidth", {
 			configurable: true,
 			value: 360,
 		});
 		const user = userEvent.setup();
-		const onNewSession = vi.fn();
-		renderSidebar({ sessions: [], onNewSession });
+		const onRouteVisited = vi.fn();
+		const onRoomVisited = vi.fn();
+		renderSidebar({
+			sessions: [room(1)],
+			onRouteVisited,
+			onRoomVisited,
+		});
 		await waitFor(() =>
 			expect(
 				screen.getByRole("status", { name: "Mobile sidebar state" }),
@@ -690,9 +696,35 @@ describe("SidebarAgentsList", () => {
 		await user.click(
 			screen.getByRole("button", { name: "Open mobile drawer" }),
 		);
-		await user.click(screen.getByRole("button", { name: "New session" }));
+		await user.click(
+			screen.getByRole("button", { name: "Search routes and rooms" }),
+		);
+		let dialog = screen.getByRole("dialog", {
+			name: "Search routes and rooms",
+		});
+		await user.click(within(dialog).getByText("New Room"));
+		expect(onRouteVisited).toHaveBeenCalledWith("/new");
+		expect(
+			screen.getByRole("status", { name: "Mobile sidebar state" }),
+		).toHaveTextContent("mobile:closed");
 
-		expect(onNewSession).toHaveBeenCalledWith();
+		await user.click(
+			screen.getByRole("button", { name: "Open mobile drawer" }),
+		);
+		await user.click(
+			screen.getByRole("button", { name: "Search routes and rooms" }),
+		);
+		dialog = screen.getByRole("dialog", {
+			name: "Search routes and rooms",
+		});
+		await user.type(
+			within(dialog).getByRole("combobox", {
+				name: "Search routes and rooms",
+			}),
+			"Room 1",
+		);
+		await user.click(within(dialog).getByText("Room 1"));
+		expect(onRoomVisited).toHaveBeenCalledWith("room-1");
 		expect(
 			screen.getByRole("status", { name: "Mobile sidebar state" }),
 		).toHaveTextContent("mobile:closed");

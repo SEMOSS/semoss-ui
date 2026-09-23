@@ -37,18 +37,18 @@ vi.mock("@/components/sidebar/sidebar-footer", () => ({
 }));
 vi.mock("@/components/sidebar/sidebar-agents-list", () => ({
 	SidebarAgentsList: ({
-		onAgentVisited,
+		onRouteVisited,
 		activeAgentId,
 		activeRoomId,
 	}: {
-		onAgentVisited: (agentId: string) => void;
+		onRouteVisited: (path: string) => void;
 		activeAgentId?: string;
 		activeRoomId?: string;
 	}) => {
 		mainLayoutHarness.sidebarProps = { activeAgentId, activeRoomId };
 		return (
-			<button type="button" onClick={() => onAgentVisited("agent/one")}>
-				Open agent
+			<button type="button" onClick={() => onRouteVisited("/settings")}>
+				Open settings
 			</button>
 		);
 	},
@@ -105,7 +105,7 @@ describe("MainLayout", () => {
 		expect(screen.getByText("New session page")).toBeVisible();
 	});
 
-	it("navigates palette agent selections to the agent route", async () => {
+	it("navigates palette route selections", async () => {
 		const user = userEvent.setup();
 		const routes: RouteObject[] = [
 			{
@@ -113,20 +113,17 @@ describe("MainLayout", () => {
 				Component: MainLayout,
 				children: [
 					{ index: true, element: <div>Workspace</div> },
-					{
-						path: "agents/:agentId",
-						element: <div>Agent page</div>,
-					},
+					{ path: "settings", element: <div>Settings page</div> },
 				],
 			},
 		];
 		const router = createMemoryRouter(routes);
 		render(<RouterProvider router={router} />);
 
-		await user.click(screen.getByRole("button", { name: "Open agent" }));
+		await user.click(screen.getByRole("button", { name: "Open settings" }));
 
-		expect(router.state.location.pathname).toBe("/agents/agent%2Fone");
-		expect(screen.getByText("Agent page")).toBeVisible();
+		expect(router.state.location.pathname).toBe("/settings");
+		expect(screen.getByText("Settings page")).toBeVisible();
 	});
 
 	it("marks only the room active on a direct room route", () => {

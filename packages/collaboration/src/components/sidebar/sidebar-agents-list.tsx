@@ -1,4 +1,4 @@
-import { MessageSquare, MoreHorizontal, Plus, Search } from "lucide-react";
+import { MessageSquare, MoreHorizontal, Search } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router";
 import {
@@ -143,7 +143,7 @@ export function SidebarAgentsList({
 	activeRoomId,
 	isLoading = false,
 	onNewSession,
-	onAgentVisited,
+	onRouteVisited,
 	onRoomVisited,
 }: {
 	agents: Agent[];
@@ -152,7 +152,7 @@ export function SidebarAgentsList({
 	activeRoomId?: string;
 	isLoading?: boolean;
 	onNewSession: (agentId?: string) => void;
-	onAgentVisited: (agentId: string) => void;
+	onRouteVisited: (path: string) => void;
 	onRoomVisited: (roomId: string) => void;
 }) {
 	const { isMobile, setOpenMobile, state } = useSidebar();
@@ -257,8 +257,8 @@ export function SidebarAgentsList({
 		if (isMobile) setOpenMobile(false);
 	}
 
-	function visitAgent(agentId: string) {
-		onAgentVisited(agentId);
+	function visitRoute(path: string) {
+		onRouteVisited(path);
 		if (isMobile) setOpenMobile(false);
 	}
 
@@ -311,13 +311,15 @@ export function SidebarAgentsList({
 								type="button"
 								variant="ghost"
 								size="icon-lg"
-								aria-label="Search rooms and agents"
+								aria-label="Search routes and rooms"
 								onClick={openSearch}
 							>
 								<Search aria-hidden="true" />
 							</Button>
 						</TooltipTrigger>
-						<TooltipContent side="right">Search</TooltipContent>
+						<TooltipContent side="right">
+							Search routes and rooms
+						</TooltipContent>
 					</Tooltip>
 				</div>
 			) : (
@@ -334,23 +336,17 @@ export function SidebarAgentsList({
 								<SidebarGroupAction
 									ref={searchTriggerRef}
 									type="button"
-									className="end-10 size-6 transition-opacity group-focus-within/agents:opacity-100 group-hover/agents:opacity-100 [@media(hover:hover)]:opacity-0"
-									aria-label="Search rooms and agents"
+									className="end-2 top-3 size-6 transition-opacity group-focus-within/agents:opacity-100 group-hover/agents:opacity-100 [@media(hover:hover)]:opacity-0"
+									aria-label="Search routes and rooms"
 									onClick={openSearch}
 								>
 									<Search aria-hidden="true" />
 								</SidebarGroupAction>
 							</TooltipTrigger>
-							<TooltipContent>Search</TooltipContent>
+							<TooltipContent>
+								Search routes and rooms
+							</TooltipContent>
 						</Tooltip>
-						<SidebarGroupAction
-							type="button"
-							className="size-6 transition-opacity group-focus-within/agents:opacity-100 group-hover/agents:opacity-100 [@media(hover:hover)]:opacity-0"
-							aria-label="New session"
-							onClick={() => startNewSession()}
-						>
-							<Plus aria-hidden="true" />
-						</SidebarGroupAction>
 						<SidebarGroupContent>
 							{isLoading && agents.length === 0 ? (
 								<div className="flex items-center gap-2 px-2 py-2 text-muted-foreground text-xs">
@@ -716,7 +712,7 @@ export function SidebarAgentsList({
 				agents={agents}
 				sessions={sessions}
 				isLoading={isLoading}
-				onAgentVisited={visitAgent}
+				onRouteVisited={visitRoute}
 				onRoomVisited={visitRoom}
 			/>
 		</>

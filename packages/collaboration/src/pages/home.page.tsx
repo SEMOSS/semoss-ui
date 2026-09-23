@@ -1,4 +1,4 @@
-import { Plus, Sun, X } from "lucide-react";
+import { Sun, X } from "lucide-react";
 import { useEffect, useId, useRef, useState } from "react";
 import {
 	Button,
@@ -36,7 +36,7 @@ export const HomePage = () => {
 	const sourceId = useId();
 	const periodId = useId();
 	const quietRunsId = useId();
-	const { agents, sessions, openRoom, newRoom } = useMain();
+	const { agents, sessions, openRoom } = useMain();
 	const [query, setQuery] = useState("");
 	const [group, setGroup] = useState<ActivityGroup>("recent");
 	const [source, setSource] = useState<ActivitySource>("all");
@@ -87,12 +87,6 @@ export const HomePage = () => {
 						</span>
 					}
 					description="Your agents have been working. Here's where you come in."
-					action={
-						<Button size="sm" onClick={() => newRoom()}>
-							<Plus aria-hidden="true" />
-							New session
-						</Button>
-					}
 				/>
 
 				<section

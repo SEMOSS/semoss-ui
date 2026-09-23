@@ -16,8 +16,7 @@ export function NotFoundPage({ title = "Page not found" }: { title?: string }) {
 				</Button>
 			}
 		>
-			This link is unavailable in the current workspace. Local preview
-			edits reset on refresh.
+			Not Found.
 		</EmptyView>
 	);
 }

@@ -144,24 +144,27 @@ export function RoomWorkspace({
 						pendingApprovals={pendingApprovals}
 						phase={phase}
 					/>
-					<RoomComposer
-						key={session.id}
-						agentName={agent.name}
-						isSubmitting={isSending}
-						isRunning={isRunning}
-						isCancelling={isCancelling}
-						modelId={modelId}
-						modelName={modelName}
-						isModelSaving={isModelSaving}
-						isModelLocked={isModelLocked}
-						modelError={modelError}
-						roomInstructions={roomInstructions}
-						onModelChange={onModelChange}
-						onOptimizePrompt={onOptimizePrompt}
-						onSend={onSendMessage}
-						onStop={onCancelTurn}
-						onSent={scrollToLatest}
-					/>
+					<div className="shrink-0 border-t bg-background px-5 py-4 lg:px-7">
+						<RoomComposer
+							key={session.id}
+							className="mx-auto w-full max-w-5xl"
+							agentName={agent.name}
+							isSubmitting={isSending}
+							isRunning={isRunning}
+							isCancelling={isCancelling}
+							modelId={modelId}
+							modelName={modelName}
+							isModelSaving={isModelSaving}
+							isModelLocked={isModelLocked}
+							modelError={modelError}
+							roomInstructions={roomInstructions}
+							onModelChange={onModelChange}
+							onOptimizePrompt={onOptimizePrompt}
+							onSend={onSendMessage}
+							onStop={onCancelTurn}
+							onSent={scrollToLatest}
+						/>
+					</div>
 				</section>
 			</ResizablePanel>
 			{showToolWorkbench && isToolWorkbenchOpen && (

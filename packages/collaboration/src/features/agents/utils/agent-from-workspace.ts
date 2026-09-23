@@ -61,8 +61,8 @@ export function agentFromWorkspace(agent: WorkspaceAgent): ShowcaseAgent {
  * Map a `MyProjects` row onto the showcase shape, for list views rendered before
  * the full workspace is fetched.
  *
- * TODO:: MyProjects carries no description, system prompt, skills or resources,
- * so those stay empty until GetWorkspace loads for the selected agent.
+ * MyProjects carries no system prompt, skills, or resources, so those stay empty
+ * until GetWorkspace loads for the selected agent.
  */
 export function agentFromProjectRow(row: ProjectRow): ShowcaseAgent {
 	const id = row.project_id;
@@ -71,7 +71,7 @@ export function agentFromProjectRow(row: ProjectRow): ShowcaseAgent {
 		id,
 		// project_name can be a namespace shared by many agents, such as "platform".
 		name: row.project_display_name?.trim() || id,
-		description: "",
+		description: row.project_description?.trim() || "",
 		avatar: agentImageUrl(id),
 		icon: agentIconFor(id),
 		tone: agentToneFor(id),

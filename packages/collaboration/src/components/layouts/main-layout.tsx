@@ -32,7 +32,7 @@ import { useWorkspaceData } from "@/features/agents/api/use-workspace-data";
 import { pinRoom as persistRoomPin } from "@/features/rooms/api/pin-room";
 import { waitForGeneratedRoomName } from "@/features/rooms/api/wait-for-generated-room-name";
 import { toError } from "@/lib/pixel";
-import { agentPath, newRoomPath, roomPath } from "@/lib/workspace-paths";
+import { newRoomPath, roomPath } from "@/lib/workspace-paths";
 import type { Agent } from "@/types/agent";
 import type { Session } from "@/types/session";
 
@@ -43,7 +43,7 @@ function WorkspaceSidebarNavigation({
 	roomId,
 	isLoading,
 	onNewSession,
-	onAgentVisited,
+	onRouteVisited,
 	onRoomVisited,
 }: {
 	agents: Agent[];
@@ -52,7 +52,7 @@ function WorkspaceSidebarNavigation({
 	roomId?: string;
 	isLoading: boolean;
 	onNewSession: (agentId?: string) => void;
-	onAgentVisited: (agentId: string) => void;
+	onRouteVisited: (path: string) => void;
 	onRoomVisited: (roomId: string) => void;
 }) {
 	const { isMobile, state } = useSidebar();
@@ -69,7 +69,7 @@ function WorkspaceSidebarNavigation({
 					activeRoomId={roomId}
 					isLoading={isLoading}
 					onNewSession={onNewSession}
-					onAgentVisited={onAgentVisited}
+					onRouteVisited={onRouteVisited}
 					onRoomVisited={onRoomVisited}
 				/>
 			</SidebarContent>
@@ -99,9 +99,9 @@ export function MainLayout() {
 		},
 		[navigate],
 	);
-	const openAgent = useCallback(
-		(selectedAgentId: string) => {
-			navigate(agentPath(selectedAgentId));
+	const openRoute = useCallback(
+		(path: string) => {
+			navigate(path);
 		},
 		[navigate],
 	);
@@ -250,7 +250,7 @@ export function MainLayout() {
 						roomId={roomId}
 						isLoading={isLoading}
 						onNewSession={openNewSession}
-						onAgentVisited={openAgent}
+						onRouteVisited={openRoute}
 						onRoomVisited={openRoom}
 					/>
 				</Sidebar>

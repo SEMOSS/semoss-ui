@@ -8,8 +8,8 @@ interface PageHeaderProps {
 	title: ReactNode;
 	/** Concise supporting copy for the page. */
 	description: ReactNode;
-	/** The page's primary action. */
-	action: ReactNode;
+	/** The page's optional primary action. */
+	action?: ReactNode;
 }
 
 /** Standard title, description, and primary-action row for collection pages. */
@@ -32,9 +32,11 @@ export function PageHeader({
 					{description}
 				</P>
 			</div>
-			<div className="w-full shrink-0 sm:w-auto [&>*]:min-h-11 [&>*]:w-full sm:[&>*]:min-h-0 sm:[&>*]:w-auto">
-				{action}
-			</div>
+			{action ? (
+				<div className="w-full shrink-0 sm:w-auto [&>*]:min-h-11 [&>*]:w-full sm:[&>*]:min-h-0 sm:[&>*]:w-auto">
+					{action}
+				</div>
+			) : null}
 		</header>
 	);
 }

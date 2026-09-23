@@ -1,11 +1,22 @@
-import { useParams } from "react-router";
+import { Outlet, useParams } from "react-router";
 import { Button, Spinner } from "@semoss/ui/next";
+import { AgentProvider } from "@/app/agent.context";
 import { useMain } from "@/app/main.context";
 import { EmptyView } from "@/components/common/empty-view";
 import { SelectedAgent } from "@/components/layouts/selected-agent";
+import type { Agent } from "@/features/agents/types/agent";
 import { agentFromProjectRow } from "@/features/agents/utils/agent-from-workspace";
 import { useRoomWorkspaceId } from "@/features/rooms/api/use-room-workspace-id";
 import { NotFoundPage } from "@/pages/not-found.page";
+
+const unassignedRoomAgent: Agent = {
+	name: "Assistant",
+	description: "",
+	system_prompt: "",
+	mcp: [],
+	skills: [],
+	prompts: [],
+};
 
 /**
  * Resolves the agent from either an agent route or a room's persisted workspace
@@ -48,11 +59,21 @@ export function AgentLayout() {
 	}
 
 	if (!agentId) {
-		return (
-			<NotFoundPage
-				title={roomId ? "Room not found" : "Agent not found"}
-			/>
-		);
+		if (roomId) {
+			return (
+				<AgentProvider
+					value={{
+						agent: unassignedRoomAgent,
+						agentId: "",
+						refresh: roomWorkspace.refresh,
+					}}
+				>
+					<Outlet />
+				</AgentProvider>
+			);
+		}
+
+		return <NotFoundPage />;
 	}
 
 	// Membership of the loaded list is not required. A just-created agent, or a

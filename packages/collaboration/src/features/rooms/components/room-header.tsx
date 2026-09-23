@@ -46,20 +46,22 @@ export function RoomHeader({
 				</p>
 			</div>
 
-			<Tooltip>
-				<TooltipTrigger>
-					<Button
-						type="button"
-						variant="ghost"
-						size="icon-sm"
-						aria-label={`Configure ${agent.name}`}
-						onClick={() => onConfigure(agentId)}
-					>
-						<Settings2 />
-					</Button>
-				</TooltipTrigger>
-				<TooltipContent> {`Configure ${agent.name}`} </TooltipContent>
-			</Tooltip>
+			{agentId.length > 0 && (
+				<Tooltip>
+					<TooltipTrigger>
+						<Button
+							type="button"
+							variant="ghost"
+							size="icon-sm"
+							aria-label={`Configure ${agent.name}`}
+							onClick={() => onConfigure(agentId)}
+						>
+							<Settings2 />
+						</Button>
+					</TooltipTrigger>
+					<TooltipContent>{`Configure ${agent.name}`}</TooltipContent>
+				</Tooltip>
+			)}
 
 			{showToolWorkbench && (
 				<Tooltip>

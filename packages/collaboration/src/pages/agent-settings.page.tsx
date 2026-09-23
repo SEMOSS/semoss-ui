@@ -87,7 +87,7 @@ export function AgentSettingsPage() {
 			key={agent.id}
 			agent={agent}
 			agents={agents}
-			onClose={() => navigate(agentPath(agentId))}
+			onClose={() => navigate(agentPath())}
 			skillOptions={skills.map((skill) => ({
 				name: skill.name,
 				value: skill.id,
@@ -110,9 +110,8 @@ export function AgentSettingsPage() {
 						"A selected skill could not be found. Reload the skill catalog before saving.",
 					);
 				}
-				// A new agent's draft id is replaced by the id the server assigns.
-				const savedId = await saveAgent(saved, agentId, image);
-				navigate(agentPath(savedId));
+				await saveAgent(saved, agentId, image);
+				navigate(agentPath());
 			}}
 		/>
 	);

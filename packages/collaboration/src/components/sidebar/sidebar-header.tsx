@@ -1,19 +1,35 @@
-import { House, LayoutGrid, MessagesSquare, Users } from "lucide-react";
+import {
+	House,
+	LayoutGrid,
+	MessagesSquare,
+	SquarePen,
+	Users,
+} from "lucide-react";
 import { Link, useLocation } from "react-router";
 import {
+	Button,
 	SidebarHeader as SidebarHeaderPrimitive,
 	SidebarMenu,
 	SidebarMenuButton,
 	SidebarMenuItem,
+	Tooltip,
+	TooltipContent,
+	TooltipTrigger,
+	useSidebar,
 } from "@semoss/ui/next";
 
 /** The sidebar's brand wordmark and primary navigation. */
 export function SidebarHeader({ condensed }: { condensed?: boolean }) {
 	const { pathname } = useLocation();
+	const { isMobile, setOpenMobile } = useSidebar();
+	const newChatActive = pathname === "/new";
 	const overviewActive = pathname === "/";
 	const sessionsActive =
 		pathname === "/room" || pathname.startsWith("/room/");
 	const agentsActive = pathname.startsWith("/agents");
+	const handleNavigation = () => {
+		if (isMobile) setOpenMobile(false);
+	};
 
 	return (
 		<SidebarHeaderPrimitive
@@ -33,7 +49,7 @@ export function SidebarHeader({ condensed }: { condensed?: boolean }) {
 				}
 			>
 				<span className="flex size-8 shrink-0 items-center justify-center rounded-lg border border-primary bg-primary text-primary-foreground">
-					<LayoutGrid className="size-4.5" />
+					<LayoutGrid className="size-4.5" aria-hidden="true" />
 				</span>
 				{!condensed && (
 					<span>
@@ -43,6 +59,31 @@ export function SidebarHeader({ condensed }: { condensed?: boolean }) {
 			</Link>
 			<nav className="w-full" aria-label="Main navigation">
 				<SidebarMenu>
+					<SidebarMenuItem className="flex justify-center">
+						<Tooltip>
+							<TooltipTrigger asChild>
+								<Button asChild size="sm" className="mb-2">
+									<Link
+										to="/new"
+										aria-label="New Chat"
+										aria-current={
+											newChatActive ? "page" : undefined
+										}
+										onClick={handleNavigation}
+									>
+										<SquarePen aria-hidden="true" />
+										{!condensed && <span>New Chat</span>}
+									</Link>
+								</Button>
+							</TooltipTrigger>
+							<TooltipContent
+								side="right"
+								hidden={!condensed || isMobile}
+							>
+								New Chat
+							</TooltipContent>
+						</Tooltip>
+					</SidebarMenuItem>
 					{[
 						{
 							to: "/",
@@ -80,11 +121,16 @@ export function SidebarHeader({ condensed }: { condensed?: boolean }) {
 								}
 								asChild
 							>
-								<Link to={to} aria-label={label}>
+								<Link
+									to={to}
+									aria-label={label}
+									onClick={handleNavigation}
+								>
 									<Icon
 										className={
 											condensed ? "mx-0" : undefined
 										}
+										aria-hidden="true"
 									/>
 									{!condensed && <span>{label}</span>}
 								</Link>
