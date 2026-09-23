@@ -4,6 +4,19 @@ import type {
 	StepRunStatus,
 } from "./automation.types";
 
+/** Server-derived description of one value visible to a node at runtime. */
+export interface AutomationScopeEntry {
+	name: string;
+	source: "runtime" | "global" | "node";
+	label: string;
+	description: string;
+	availability: "guaranteed" | "conditional";
+	pythonExpression: string;
+	templateExpression: string;
+	sourceNodeId?: string;
+	defaultValue?: unknown;
+}
+
 export interface AutomationInspectorSnapshot {
 	description: string;
 	devMode: boolean;
@@ -13,6 +26,7 @@ export interface AutomationInspectorSnapshot {
 	readOnly: boolean;
 	editingStep: AutomationNode | null;
 	upstreamVars: string[];
+	scopeEntries: AutomationScopeEntry[];
 	stepRunStatus?: StepRunStatus;
 	stepRunError?: string;
 	stepRunOutput?: string | null;

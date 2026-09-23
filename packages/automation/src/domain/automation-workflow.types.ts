@@ -21,6 +21,7 @@ export type AutomationWorkflowNodeType =
 	| "app.pixel"
 	| "control.wait"
 	| "control.if"
+	| "control.jev"
 	| "developer.python";
 
 export type AutomationPortKind = "control" | "data";
@@ -68,6 +69,7 @@ export interface AutomationWorkflowNodeConfig
 		string,
 		| AutomationJsonValue
 		| AutomationBranchClause[]
+		| AutomationJevRoute[]
 		| AutomationGlobalVariable[]
 		| undefined
 	> {
@@ -88,6 +90,12 @@ export type AutomationJsonValue =
 export interface AutomationBranchClause {
 	id: string;
 	condition: string;
+}
+
+/** A named route exposed by a `control.jev` decision node. */
+export interface AutomationJevRoute {
+	id: string;
+	description: string;
 }
 
 /** A trigger-owned input available to every downstream node at runtime. */

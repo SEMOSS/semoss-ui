@@ -1,13 +1,5 @@
-import {
-	ChevronDown,
-	Code2,
-	ExternalLink,
-	HelpCircle,
-	Lock,
-	Trash2,
-} from "lucide-react";
-import { Suspense, useCallback, useEffect, useRef, useState } from "react";
-import { MonacoEditor } from "@semoss/shared";
+import { Code2, ExternalLink, HelpCircle, Lock, Trash2 } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
 	Button,
 	Field,
@@ -24,6 +16,7 @@ import type {
 	StepRunStatus,
 } from "../../domain/automation.types";
 import { getDisplayMeta } from "../../domain/automation-display";
+import type { AutomationScopeEntry } from "../../domain/automation-inspector";
 import {
 	getGeneratedPythonPreview,
 	getWorkflowNodeDefinition,
@@ -31,15 +24,15 @@ import {
 } from "../../domain/automation-workflow-adapter";
 import { OutputPreview } from "../form-editor/output-preview";
 import { TraceDetail } from "../form-editor/trace-detail";
+import { AutomationPythonEditor } from "./automation-python-editor";
+import { AutomationScopeExplorer } from "./automation-scope-explorer";
 import { StepForm } from "./step-form";
-
-/** Values the runtime seeds into every run's scope, regardless of the graph. */
-const RUN_SCOPE_VARIABLES = ["date", "triggered_at", "run_id"];
 
 export interface NodeEditDrawerProps {
 	step: AutomationNode;
 	appId: string;
 	upstreamVars: string[];
+	scopeEntries: AutomationScopeEntry[];
 	runStatus?: StepRunStatus;
 	runError?: string;
 	runOutput?: string | null;
@@ -74,6 +67,7 @@ export function NodeEditDrawer({
 	step,
 	appId,
 	upstreamVars,
+	scopeEntries,
 	runStatus,
 	runError,
 	runOutput,
@@ -92,7 +86,9 @@ export function NodeEditDrawer({
 		: undefined;
 	const isCustomSource = step.workflowCodeMode === "custom";
 	const isDeveloperPython = step.workflowType === "developer.python";
-	const isDecisionBranch = step.workflowType === "control.if";
+	const isDecisionBranch =
+		step.workflowType === "control.if" ||
+		step.workflowType === "control.jev";
 	const hasOutputVariable =
 		step.workflowType !== "trigger.start" && !isDecisionBranch;
 	const outputVariableError = hasOutputVariable
@@ -132,8 +128,6 @@ export function NodeEditDrawer({
 	// inside the debounce window is not written back stale.
 	const latestStepsRef = useRef(new Map<string, AutomationNode>());
 	const { resolvedTheme } = useTheme();
-	const [showPythonVariablePicker, setShowPythonVariablePicker] =
-		useState(false);
 	const Icon = meta.icon;
 	useEffect(() => {
 		onUpdateRef.current = onUpdate;
@@ -184,49 +178,11 @@ export function NodeEditDrawer({
 	};
 	// Custom source reads upstream values off the scope mapping. A ${...} reference is only
 	// resolved for generated nodes, and is not valid Python syntax on its own.
-	const insertPythonVariable = (variable: string) => {
+	const insertPythonExpression = (expression: string) => {
 		const separator =
 			pythonDraft.length === 0 || pythonDraft.endsWith("\n") ? "" : "\n";
-		updatePythonSource(
-			`${pythonDraft}${separator}scope[${JSON.stringify(variable)}]`,
-		);
+		updatePythonSource(`${pythonDraft}${separator}${expression}`);
 	};
-	const pythonVariablePicker = (
-		<div className="relative">
-			<Button
-				size="sm"
-				variant="ghost"
-				className="h-6 gap-0.5 px-1.5 text-[10px] text-primary"
-				onClick={() => setShowPythonVariablePicker((isOpen) => !isOpen)}
-			>
-				+ Variable
-				<ChevronDown className="size-3" />
-			</Button>
-			{showPythonVariablePicker && (
-				<div className="absolute top-full right-0 z-50 mt-1 min-w-45 rounded-md border bg-popover py-1 shadow-md">
-					{[...upstreamVars, ...RUN_SCOPE_VARIABLES].map(
-						(variable) => (
-							<button
-								key={variable}
-								type="button"
-								onMouseDown={(event) => {
-									event.preventDefault();
-									insertPythonVariable(variable);
-									setShowPythonVariablePicker(false);
-								}}
-								className="flex w-full items-center gap-1.5 px-3 py-1.5 text-left font-mono text-xs hover:bg-accent hover:text-accent-foreground"
-							>
-								<span className="text-[10px] text-muted-foreground">
-									scope
-								</span>
-								{variable}
-							</button>
-						),
-					)}
-				</div>
-			)}
-		</div>
-	);
 	const openPythonModal = () => {
 		if (readOnly) return;
 		flushPythonUpdate();
@@ -513,7 +469,16 @@ export function NodeEditDrawer({
 												</TooltipContent>
 											</Tooltip>
 										</FieldLabel>
-										{!readOnly && pythonVariablePicker}
+										{!readOnly && (
+											<AutomationScopeExplorer
+												entries={scopeEntries}
+												onSelect={(entry) =>
+													insertPythonExpression(
+														entry.pythonExpression,
+													)
+												}
+											/>
+										)}
 										{!readOnly && (
 											<Tooltip>
 												<TooltipTrigger asChild>
@@ -538,42 +503,17 @@ export function NodeEditDrawer({
 									</div>
 								</div>
 								<div className="h-75 overflow-hidden rounded-lg border bg-muted/30">
-									<Suspense
-										fallback={
-											<pre className="h-full overflow-auto p-3 font-mono text-xs">
-												{pythonDraft}
-											</pre>
+									<AutomationPythonEditor
+										value={pythonDraft}
+										onChange={updatePythonSource}
+										scopeEntries={scopeEntries}
+										theme={
+											resolvedTheme === "dark"
+												? "vs-dark"
+												: "vs"
 										}
-									>
-										<MonacoEditor
-											height="100%"
-											width="100%"
-											language="python"
-											theme={
-												resolvedTheme === "dark"
-													? "vs-dark"
-													: "vs"
-											}
-											value={pythonDraft}
-											onChange={(value) =>
-												updatePythonSource(value ?? "")
-											}
-											options={{
-												automaticLayout: true,
-												fontSize: 13,
-												lineNumbers: "on",
-												minimap: { enabled: false },
-												folding: true,
-												scrollBeyondLastLine: false,
-												wordWrap: "on",
-												readOnly,
-												padding: {
-													top: 12,
-													bottom: 12,
-												},
-											}}
-										/>
-									</Suspense>
+										readOnly={readOnly}
+									/>
 								</div>
 								<p className="text-muted-foreground text-xs">
 									{readOnly

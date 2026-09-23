@@ -90,6 +90,20 @@ const TEST_NODE_DEFINITIONS: readonly AutomationNodeDefinition[] = [
 	definition("control.if", "control", "Decision", {
 		clauses: [{ id: "initial", condition: "" }],
 	}),
+	definition(
+		"control.jev",
+		"control",
+		"Jev decision",
+		{
+			engineId: "",
+			state: "",
+			question: "Choose a route.",
+			clauses: [{ id: "initial", description: "" }],
+			confidenceThreshold: 0,
+			paramValues: {},
+		},
+		false,
+	),
 	definition("developer.python", "developer", "Python", {}),
 ];
 
@@ -121,6 +135,9 @@ describe("getGeneratedPythonPreview", () => {
 	 */
 	it("resolves through scope for every node type", () => {
 		for (const definition of TEST_NODE_DEFINITIONS) {
+			if (["control.if", "control.jev"].includes(definition.type)) {
+				continue;
+			}
 			const source = getGeneratedPythonPreview(node(definition.type));
 			const total = source.match(/resolve\(/g)?.length ?? 0;
 			const qualified = source.match(/scope\.resolve\(/g)?.length ?? 0;
@@ -179,6 +196,9 @@ describe("getGeneratedPythonPreview", () => {
 
 	it("always emits a run entry point", () => {
 		for (const definition of TEST_NODE_DEFINITIONS) {
+			if (["control.if", "control.jev"].includes(definition.type)) {
+				continue;
+			}
 			expect(
 				definesRunEntryPoint(
 					getGeneratedPythonPreview(node(definition.type)),
@@ -186,6 +206,53 @@ describe("getGeneratedPythonPreview", () => {
 				`${definition.type} must define run(scope)`,
 			).toBe(true);
 		}
+	});
+});
+
+describe("Jev decision mapping", () => {
+	it("preserves typed routing configuration without a Python source", () => {
+		const ticketReference = "$" + "{ticket}";
+		const step = node("control.jev", {
+			config: {
+				engineId: "jev-engine",
+				state: ticketReference,
+				question: "Route this ticket.",
+				clauses: [
+					{ id: "billing", description: "Payments and refunds" },
+					{ id: "technical", description: "Bugs and errors" },
+				],
+				confidenceThreshold: 0.8,
+				paramValues: '{"timeout":5}',
+			},
+		});
+
+		const saved = documentOf([step]);
+		expect(saved.graph.nodes[0]).toMatchObject({
+			type: "control.jev",
+			codeMode: "generated",
+			config: {
+				engineId: "jev-engine",
+				state: ticketReference,
+				question: "Route this ticket.",
+				clauses: [
+					{ id: "billing", description: "Payments and refunds" },
+					{ id: "technical", description: "Bugs and errors" },
+				],
+				confidenceThreshold: 0.8,
+				paramValues: { timeout: 5 },
+			},
+		});
+		expect(getCanvasNodeSources([step])).toEqual({});
+
+		const reloaded = canvasDocumentFromWorkflow(saved, {});
+		const reloadedJev = reloaded.steps.find(
+			(candidate) => candidate.workflowType === "control.jev",
+		);
+		expect(reloadedJev?.workflowConfig).toMatchObject({
+			engineId: "jev-engine",
+			state: ticketReference,
+			confidenceThreshold: 0.8,
+		});
 	});
 });
 

@@ -1,6 +1,7 @@
 import type {
 	AutomationBranchClause,
 	AutomationDataType,
+	AutomationJevRoute,
 	AutomationNodeCodeMode,
 	AutomationWorkflowNodeConfig,
 	AutomationWorkflowNodeType,
@@ -120,6 +121,18 @@ export interface BranchConfig {
 	clauses: AutomationBranchClause[];
 }
 
+export interface JevDecisionConfig {
+	engineId: string;
+	engineName?: string;
+	state: string;
+	question: string;
+	clauses: AutomationJevRoute[];
+	confidenceThreshold: number;
+	paramValues: string;
+}
+
+export type RoutingConfig = BranchConfig | JevDecisionConfig;
+
 export type NodeConfig =
 	| TriggerConfig
 	| DatabaseEngineConfig
@@ -130,6 +143,7 @@ export type NodeConfig =
 	| AppConfig
 	| AgentRunConfig
 	| BranchConfig
+	| JevDecisionConfig
 	| WaitConfig;
 
 export interface AutomationNode {
