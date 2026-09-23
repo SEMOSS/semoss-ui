@@ -79,6 +79,8 @@ export interface DelegationReply {
 	outcome: "RESPONDED" | "DECLINED" | "CANCELLED" | "UNANSWERED";
 	question?: string;
 	text?: string;
+	/** Files sent back, as paths in the requester's room folder. */
+	files?: { path: string; name: string; size?: number }[];
 }
 
 /** A Playground-style message with ordered, typed content parts. */

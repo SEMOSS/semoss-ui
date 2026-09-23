@@ -109,11 +109,15 @@ function delegationReply(
 	const ornaments = message.ornaments as { delegation?: unknown } | undefined;
 	const parsed = delegationReplySchema.safeParse(ornaments?.delegation);
 	if (!parsed.success) return undefined;
-	const { question, text, ...rest } = parsed.data;
+	const { question, text, files, ...rest } = parsed.data;
 	return {
 		...rest,
 		question: question ?? undefined,
 		text: text ?? undefined,
+		files: files?.map(({ size, ...file }) => ({
+			...file,
+			size: size ?? undefined,
+		})),
 	};
 }
 

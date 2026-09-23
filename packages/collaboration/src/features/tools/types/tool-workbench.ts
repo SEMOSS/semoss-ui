@@ -23,6 +23,8 @@ export interface ToolWorkbenchContextValue {
 	getToolDisplayMode: (toolId: string) => ToolDisplayMode;
 	openInline: (toolId: string) => void;
 	openWorkbench: (toolId?: string) => void;
+	/** Open a file from the room folder in the dock. */
+	openFile: (path: string, name: string) => void;
 	closeTool: (toolId: string) => void;
 	closeWorkbench: () => void;
 	onApproveTool: (

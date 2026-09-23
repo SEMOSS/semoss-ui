@@ -55,6 +55,15 @@ export const delegationReplySchema = z.object({
 	outcome: z.enum(["RESPONDED", "DECLINED", "CANCELLED", "UNANSWERED"]),
 	question: z.string().nullish(),
 	text: z.string().nullish(),
+	files: z
+		.array(
+			z.object({
+				path: z.string(),
+				name: z.string(),
+				size: z.number().nullish(),
+			}),
+		)
+		.nullish(),
 });
 
 /** Canonical persisted playground message parts collaboration can render. */

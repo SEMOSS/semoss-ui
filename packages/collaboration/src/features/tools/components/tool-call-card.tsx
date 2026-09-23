@@ -8,7 +8,12 @@ import {
 } from "lucide-react";
 import { cn, Spinner, useIsMobile } from "@semoss/ui/next";
 import {
+	DelegationRequestApproval,
+	isDelegationRequest,
+} from "@/features/delegations/components/delegation-request-approval";
+import {
 	DelegationSubmitApproval,
+	delegationRequester,
 	isDelegationSubmit,
 } from "@/features/delegations/components/delegation-submit-approval";
 import type { ConversationTool } from "@/features/messages/types/message";
@@ -59,6 +64,26 @@ const SUBMIT_LABELS: Partial<Record<ConversationTool["status"], string>> = {
 	REJECTED: "Not sent",
 };
 
+function text(value: unknown): string {
+	return typeof value === "string" ? value : "";
+}
+
+/** One string field of a JSON tool result, if present. */
+function resultField(
+	output: string | undefined,
+	key: string,
+): string | undefined {
+	if (!output) return undefined;
+	try {
+		const parsed: unknown = JSON.parse(output);
+		return parsed && typeof parsed === "object" && key in parsed
+			? text((parsed as Record<string, unknown>)[key]) || undefined
+			: undefined;
+	} catch {
+		return undefined;
+	}
+}
+
 /** Playground-style tool card with one movable inline/workbench detail view. */
 export function ToolCallCard({ tool }: { tool: ConversationTool }) {
 	const isMobile = useIsMobile();
@@ -72,16 +97,27 @@ export function ToolCallCard({ tool }: { tool: ConversationTool }) {
 		pendingApprovals,
 	} = useToolWorkbench();
 	const isSubmit = isDelegationSubmit(tool);
+	const isRequest = isDelegationRequest(tool);
 	const statusLabel =
-		tool.statusLabel ?? (isSubmit ? SUBMIT_LABELS[tool.status] : undefined);
+		tool.statusLabel ??
+		(isSubmit || isRequest ? SUBMIT_LABELS[tool.status] : undefined);
 	const details = {
 		...statusDetails(tool.status),
 		...(statusLabel && { label: statusLabel }),
 	};
-	const title = isSubmit ? "Answer to requester" : tool.title;
-	const submitApproval = isSubmit
-		? pendingApprovals.find((approval) => approval.toolId === tool.id)
-		: undefined;
+	const title = isSubmit
+		? `Answer to ${delegationRequester(tool) ?? "requester"}`
+		: isRequest
+			? `New request to ${resultField(tool.output, "assignee") ?? (text(tool.arguments.assignee) || "a person")}`
+			: tool.title;
+	// Delegation tools return a plain-language summary of what happened.
+	const outcome =
+		isSubmit || isRequest ? resultField(tool.output, "message") : undefined;
+	// Delegation steps are confirmed in the card rather than the generic panel.
+	const approval =
+		isSubmit || isRequest
+			? pendingApprovals.find((item) => item.toolId === tool.id)
+			: undefined;
 	const Icon = details.icon;
 	const isInline = isToolInline(tool.id);
 	const isInWorkbench = isOpen && activeToolId === tool.id;
@@ -134,6 +170,7 @@ export function ToolCallCard({ tool }: { tool: ConversationTool }) {
 						</span>
 						<span className="block truncate text-muted-foreground text-xs">
 							{tool.description ??
+								outcome ??
 								(tool.status === "RUNNING"
 									? getToolLoadingMessage(tool)
 									: details.label)}
@@ -154,11 +191,10 @@ export function ToolCallCard({ tool }: { tool: ConversationTool }) {
 				<ToolCallMenu toolId={tool.id} />
 			</div>
 			{isInline &&
-				(submitApproval ? (
-					<DelegationSubmitApproval
-						tool={tool}
-						action={submitApproval}
-					/>
+				(approval && isRequest ? (
+					<DelegationRequestApproval tool={tool} action={approval} />
+				) : approval ? (
+					<DelegationSubmitApproval tool={tool} action={approval} />
 				) : (
 					<ToolInline toolId={tool.id} />
 				))}

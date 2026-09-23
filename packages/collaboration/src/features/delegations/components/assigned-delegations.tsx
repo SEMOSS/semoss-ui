@@ -8,6 +8,7 @@ import {
 	SelectItem,
 	SelectTrigger,
 	SelectValue,
+	Textarea,
 	toast,
 } from "@semoss/ui/next";
 import { useMain } from "@/app/main.context";
@@ -17,6 +18,7 @@ import { roomPath } from "@/lib/workspace-paths";
 import {
 	attachRoomToAgent,
 	type Delegation,
+	declineDelegation,
 	listAssignedDelegations,
 } from "../api/delegations";
 
@@ -29,6 +31,9 @@ export function AssignedDelegations() {
 	const [delegations, setDelegations] = useState<Delegation[]>([]);
 	const [agentId, setAgentId] = useState("");
 	const [openingId, setOpeningId] = useState<string | null>(null);
+	const [decliningId, setDecliningId] = useState<string | null>(null);
+	const [reason, setReason] = useState("");
+	const [sendingDecline, setSendingDecline] = useState(false);
 
 	useEffect(() => {
 		let cancelled = false;
@@ -71,6 +76,31 @@ export function AssignedDelegations() {
 			}
 		},
 		[actions, agentId, navigate, refresh, sessions],
+	);
+
+	const decline = useCallback(
+		async (delegation: Delegation) => {
+			setSendingDecline(true);
+			try {
+				await declineDelegation(
+					actions,
+					delegation.actionId,
+					reason.trim() || undefined,
+				);
+				setDelegations((rows) =>
+					rows.filter((row) => row.actionId !== delegation.actionId),
+				);
+				setDecliningId(null);
+				toast.success(
+					`Declined. ${delegation.requesterName ?? "The requester"} has been told.`,
+				);
+			} catch (cause) {
+				toast.error(toError(cause).message);
+			} finally {
+				setSendingDecline(false);
+			}
+		},
+		[actions, reason],
 	);
 
 	if (!delegations.length) return null;
@@ -123,15 +153,58 @@ export function AssignedDelegations() {
 								{delegation.context}
 							</p>
 						)}
-						<div className="mt-auto pt-4">
-							<Button
-								size="sm"
-								disabled={openingId === delegation.actionId}
-								onClick={() => void open(delegation)}
-							>
-								Open request
-							</Button>
-						</div>
+						{decliningId === delegation.actionId ? (
+							<div className="mt-auto flex flex-col gap-2 pt-4">
+								<Textarea
+									aria-label="Decline reason"
+									placeholder={`Reason for ${delegation.requesterName ?? "the requester"} (optional)`}
+									className="min-h-16 text-sm"
+									value={reason}
+									disabled={sendingDecline}
+									onChange={(event) =>
+										setReason(event.target.value)
+									}
+								/>
+								<div className="flex flex-wrap gap-2">
+									<Button
+										size="sm"
+										variant="destructive"
+										disabled={sendingDecline}
+										onClick={() => void decline(delegation)}
+									>
+										Send decline
+									</Button>
+									<Button
+										size="sm"
+										variant="ghost"
+										disabled={sendingDecline}
+										onClick={() => setDecliningId(null)}
+									>
+										Cancel
+									</Button>
+								</div>
+							</div>
+						) : (
+							<div className="mt-auto flex flex-wrap gap-2 pt-4">
+								<Button
+									size="sm"
+									disabled={openingId === delegation.actionId}
+									onClick={() => void open(delegation)}
+								>
+									Open request
+								</Button>
+								<Button
+									size="sm"
+									variant="outline"
+									onClick={() => {
+										setReason("");
+										setDecliningId(delegation.actionId);
+									}}
+								>
+									Decline
+								</Button>
+							</div>
+						)}
 					</article>
 				))}
 			</div>

@@ -1,7 +1,8 @@
-import { CircleSlash, MessageSquareReply } from "lucide-react";
+import { CircleSlash, FileText, MessageSquareReply } from "lucide-react";
 import { cn } from "@semoss/ui/next";
 import { MessageMarkdown } from "@/features/messages/components/message-markdown";
 import type { DelegationReply } from "@/features/messages/types/message";
+import { useToolWorkbench } from "@/features/tools/tool-workbench.context";
 
 const HEADLINE: Record<DelegationReply["outcome"], string> = {
 	RESPONDED: "replied to your request",
@@ -20,8 +21,16 @@ function initials(name: string): string {
 		.toUpperCase();
 }
 
+function formatSize(bytes?: number): string {
+	if (bytes === undefined) return "";
+	if (bytes < 1024) return `${bytes} B`;
+	if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`;
+	return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
+}
+
 /** A person's answer to a delegated request, shown as their reply rather than agent text. */
 export function DelegationReplyCard({ reply }: { reply: DelegationReply }) {
+	const { openFile } = useToolWorkbench();
 	const answered = reply.outcome === "RESPONDED";
 	const Icon = answered ? MessageSquareReply : CircleSlash;
 
@@ -63,6 +72,34 @@ export function DelegationReplyCard({ reply }: { reply: DelegationReply }) {
 				<div className="px-3 py-3">
 					<MessageMarkdown text={reply.text} isStreaming={false} />
 				</div>
+			)}
+			{reply.files && reply.files.length > 0 && (
+				<ul
+					aria-label="Files sent back"
+					className="flex flex-wrap gap-2 border-t px-3 py-2"
+				>
+					{reply.files.map((file) => (
+						<li key={file.path}>
+							<button
+								type="button"
+								title={file.path}
+								className="inline-flex max-w-64 items-center gap-1.5 rounded-md border bg-background px-2 py-1 text-xs hover:bg-accent"
+								onClick={() => openFile(file.path, file.name)}
+							>
+								<FileText
+									aria-hidden="true"
+									className="size-3.5 shrink-0"
+								/>
+								<span className="truncate">{file.name}</span>
+								{file.size !== undefined && (
+									<span className="shrink-0 text-muted-foreground">
+										{formatSize(file.size)}
+									</span>
+								)}
+							</button>
+						</li>
+					))}
+				</ul>
 			)}
 		</div>
 	);
