@@ -442,9 +442,13 @@ export const FileExplorerItem: React.FC<FileExplorerItemProps> = ({
 					{actions.length > 0 && (
 						<div className="flex w-9 shrink-0 items-center justify-end">
 							{actions.map((action) => (
-								<Tooltip key={action.name}>
+								<Tooltip
+									disableHoverableContent={false}
+									key={action.name}
+								>
 									<TooltipTrigger asChild>
 										<Button
+											aria-label={action.name}
 											data-testid={`${itemTestId}-action-${getFileExplorerTestIdSegment(action.name)}`}
 											variant="ghost"
 											size="icon-sm"

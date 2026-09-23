@@ -19,7 +19,7 @@ export const SuccessOperation = observer(
 		if (value != null) {
 			return <JsonValueViewer value={value} />;
 		} else {
-			return <span className="text-green-600 text-xs">{output}</span>;
+			return <span className="text-success text-xs">{output}</span>;
 		}
 	},
 );

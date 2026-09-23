@@ -26,6 +26,9 @@ import {
 	Tabs,
 	TabsList,
 	TabsTrigger,
+	Tooltip,
+	TooltipContent,
+	TooltipTrigger,
 } from "@semoss/ui/next";
 import { useSession, useSettings } from "@/hooks";
 import { useNavigate } from "@/hooks/useNavigate";
@@ -618,20 +621,35 @@ export function JobsPage() {
 							<TabsTrigger value="30d">30d</TabsTrigger>
 						</TabsList>
 					</Tabs>
-					<Button
-						type="button"
-						variant="ghost"
-						size="icon-sm"
-						title="Refresh stats"
-						onClick={() => getStats(statsWindow)}
-						disabled={statsLoading}
-					>
-						<RefreshCw
-							className={`size-3.5 ${
-								statsLoading ? "animate-spin" : ""
-							}`}
-						/>
-					</Button>
+					<Tooltip disableHoverableContent={false}>
+						<TooltipTrigger asChild>
+							<span
+								className="inline-flex"
+								tabIndex={statsLoading ? 0 : undefined}
+							>
+								<Button
+									aria-label={"Refresh stats"}
+									type="button"
+									variant="ghost"
+									size="icon-sm"
+									onClick={() => getStats(statsWindow)}
+									disabled={statsLoading}
+								>
+									<RefreshCw
+										className={`size-3.5 ${
+											statsLoading ? "animate-spin" : ""
+										}`}
+									/>
+								</Button>
+							</span>
+						</TooltipTrigger>
+						<TooltipContent
+							sideOffset={4}
+							className="max-w-xs break-words"
+						>
+							{statsLoading ? "Refreshing…" : "Refresh stats"}
+						</TooltipContent>
+					</Tooltip>
 				</div>
 
 				<div className="grid w-full grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -862,22 +880,41 @@ export function JobsPage() {
 									</>
 								)}
 							</Button>
-							<Button
-								type="button"
-								variant="ghost"
-								size="icon-sm"
-								title="Refresh"
-								onClick={handleRefreshTable}
-								disabled={tableRefreshLoading}
-							>
-								<RefreshCw
-									className={`size-3.5 ${
-										tableRefreshLoading
-											? "animate-spin"
-											: ""
-									}`}
-								/>
-							</Button>
+							<Tooltip disableHoverableContent={false}>
+								<TooltipTrigger asChild>
+									<span
+										className="inline-flex"
+										tabIndex={
+											tableRefreshLoading ? 0 : undefined
+										}
+									>
+										<Button
+											aria-label={"Refresh"}
+											type="button"
+											variant="ghost"
+											size="icon-sm"
+											onClick={handleRefreshTable}
+											disabled={tableRefreshLoading}
+										>
+											<RefreshCw
+												className={`size-3.5 ${
+													tableRefreshLoading
+														? "animate-spin"
+														: ""
+												}`}
+											/>
+										</Button>
+									</span>
+								</TooltipTrigger>
+								<TooltipContent
+									sideOffset={4}
+									className="max-w-xs break-words"
+								>
+									{tableRefreshLoading
+										? "Refreshing…"
+										: "Refresh"}
+								</TooltipContent>
+							</Tooltip>
 						</div>
 					</div>
 

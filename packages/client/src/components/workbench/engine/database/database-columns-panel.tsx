@@ -236,7 +236,7 @@ const DatabaseColumnsPanel: WorkbenchComponent = ({ id }) => {
 						)}
 					</InputGroup>
 					<div className="flex flex-row items-center gap-1">
-						<Tooltip>
+						<Tooltip disableHoverableContent={false}>
 							<TooltipTrigger asChild>
 								<Button
 									variant="ghost"
@@ -303,40 +303,62 @@ const DatabaseColumnsPanel: WorkbenchComponent = ({ id }) => {
 														<CollapsibleTrigger
 															asChild
 														>
-															<Button
-																variant="secondary"
-																className="w-full justify-between rounded-none has-[>svg]:px-3"
-																title="Right-click for table actions"
-																data-testid={`database-columns--table-header-${table.table}`}
+															<Tooltip
+																disableHoverableContent={
+																	false
+																}
 															>
-																<span className="flex min-w-0 items-center gap-2">
-																	<Table className="size-4 text-muted-foreground" />
-																	<span className="truncate font-medium text-sm">
-																		{
-																			table.table
+																<TooltipTrigger
+																	asChild
+																>
+																	<Button
+																		aria-label={
+																			"Right-click for table actions"
 																		}
-																	</span>
-																</span>
-																<span className="flex items-center gap-2">
-																	<Small className="text-muted-foreground text-xs">
-																		{
-																			table
-																				.columns
-																				.length
-																		}
-																	</Small>
-																	<ChevronDown
-																		className={cn(
-																			"size-4 text-muted-foreground transition-transform",
-																			expandedTables[
-																				table
-																					.table
-																			] &&
-																				"rotate-180",
-																		)}
-																	/>
-																</span>
-															</Button>
+																		variant="secondary"
+																		className="w-full justify-between rounded-none has-[>svg]:px-3"
+																		data-testid={`database-columns--table-header-${table.table}`}
+																	>
+																		<span className="flex min-w-0 items-center gap-2">
+																			<Table className="size-4 text-muted-foreground" />
+																			<span className="truncate font-medium text-sm">
+																				{
+																					table.table
+																				}
+																			</span>
+																		</span>
+																		<span className="flex items-center gap-2">
+																			<Small className="text-muted-foreground text-xs">
+																				{
+																					table
+																						.columns
+																						.length
+																				}
+																			</Small>
+																			<ChevronDown
+																				className={cn(
+																					"size-4 text-muted-foreground transition-transform",
+																					expandedTables[
+																						table
+																							.table
+																					] &&
+																						"rotate-180",
+																				)}
+																			/>
+																		</span>
+																	</Button>
+																</TooltipTrigger>
+																<TooltipContent
+																	sideOffset={
+																		4
+																	}
+																	className="max-w-xs break-words"
+																>
+																	{
+																		"Right-click for table actions"
+																	}
+																</TooltipContent>
+															</Tooltip>
 														</CollapsibleTrigger>
 													</ContextMenuTrigger>
 													<ContextMenuContent

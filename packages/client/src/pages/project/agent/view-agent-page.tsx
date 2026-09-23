@@ -87,9 +87,10 @@ export const ViewAgentPage = observer(() => {
 				</Breadcrumb>
 			</NavbarLeft>
 			<NavbarRight>
-				<Tooltip>
+				<Tooltip disableHoverableContent={false}>
 					<TooltipTrigger asChild>
 						<Button
+							aria-label={"Settings"}
 							variant="ghost"
 							size="icon"
 							data-testid={"settings"}

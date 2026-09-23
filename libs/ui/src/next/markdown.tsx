@@ -19,6 +19,12 @@ import { H1, H2, H3, H4, List, P, Quote } from "./typography";
 
 const FRONTMATTER_PATTERN = /^\uFEFF?---\r?\n([\s\S]*?)\r?\n---(?:\r?\n|$)/;
 
+const MathMarkdown = React.lazy(() =>
+	import("./markdown-math").then((module) => ({
+		default: module.MathMarkdown,
+	})),
+);
+
 /**
  * Heading treatment shared by the `document` variant's `h1` and by
  * {@link MarkdownDocumentTitle}, so a panel title rendered above a document body
@@ -295,6 +301,8 @@ interface MarkdownProps extends React.HTMLAttributes<HTMLDivElement> {
 	 * override a single element without restating the rest.
 	 */
 	variant?: "default" | "document";
+	/** Render LaTeX math ($, $$, \\(…\\), \\[…\\]); opt in for mathematical content. */
+	math?: boolean;
 	/** Override URL transformation (e.g. to allow custom protocols through sanitization) */
 	urlTransform?: (url: string) => string | null | undefined;
 }
@@ -303,6 +311,7 @@ function Markdown({
 	children,
 	components,
 	variant = "default",
+	math = false,
 	className,
 	urlTransform,
 	...props
@@ -544,11 +553,23 @@ function Markdown({
 		return null;
 	}
 
+	const plainContent = (
+		<ReactMarkdown
+			remarkPlugins={[remarkGfm]}
+			rehypePlugins={[rehypeRaw]}
+			components={mergedComponents}
+			urlTransform={urlTransform}
+		>
+			{content}
+		</ReactMarkdown>
+	);
+
 	return (
 		<div
 			data-slot="markdown"
 			className={cn(
 				"[&>*:first-child]:mt-0 [&>*:last-child]:mb-0",
+				math && "min-w-0 max-w-full",
 				className,
 			)}
 			{...props}
@@ -593,16 +614,19 @@ function Markdown({
 					</section>
 				)}
 
-			{content && (
-				<ReactMarkdown
-					remarkPlugins={[remarkGfm]}
-					rehypePlugins={[rehypeRaw]}
-					components={mergedComponents}
-					urlTransform={urlTransform}
-				>
-					{content}
-				</ReactMarkdown>
-			)}
+			{content &&
+				(math ? (
+					<React.Suspense fallback={plainContent}>
+						<MathMarkdown
+							components={mergedComponents}
+							urlTransform={urlTransform}
+						>
+							{content}
+						</MathMarkdown>
+					</React.Suspense>
+				) : (
+					plainContent
+				))}
 		</div>
 	);
 }

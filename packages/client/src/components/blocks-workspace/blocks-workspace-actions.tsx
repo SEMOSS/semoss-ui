@@ -195,9 +195,10 @@ export const BlocksWorkspaceActions = observer(() => {
 
 	return (
 		<div className="flex flex-row items-center gap-1">
-			<Tooltip>
+			<Tooltip disableHoverableContent={false}>
 				<TooltipTrigger asChild>
 					<Button
+						aria-label={"Modal Selection"}
 						variant="ghost"
 						size="icon-sm"
 						onClick={() => {
@@ -211,9 +212,10 @@ export const BlocksWorkspaceActions = observer(() => {
 				</TooltipTrigger>
 				<TooltipContent>Modal Selection</TooltipContent>
 			</Tooltip>
-			<Tooltip>
+			<Tooltip disableHoverableContent={false}>
 				<TooltipTrigger asChild>
 					<Button
+						aria-label={"Preview App"}
 						variant="ghost"
 						size="icon-sm"
 						onClick={() => {
@@ -225,9 +227,10 @@ export const BlocksWorkspaceActions = observer(() => {
 				</TooltipTrigger>
 				<TooltipContent>Preview App</TooltipContent>
 			</Tooltip>
-			<Tooltip>
+			<Tooltip disableHoverableContent={false}>
 				<TooltipTrigger asChild>
 					<Button
+						aria-label={"Share App"}
 						variant="ghost"
 						size="icon-sm"
 						onClick={() => {
@@ -239,9 +242,10 @@ export const BlocksWorkspaceActions = observer(() => {
 				</TooltipTrigger>
 				<TooltipContent>Share App</TooltipContent>
 			</Tooltip>
-			<Tooltip>
+			<Tooltip disableHoverableContent={false}>
 				<TooltipTrigger asChild>
 					<Button
+						aria-label={"Save App (ctrl/command + s)"}
 						variant="ghost"
 						size="icon-sm"
 						onClick={() => {
@@ -271,7 +275,7 @@ export const BlocksWorkspaceActions = observer(() => {
 				open={modelDialogOpen}
 				onOpenChange={(o) => !o && setModelDialogOpen(false)}
 			>
-				<DialogContent className="max-w-sm p-0">
+				<DialogContent showCloseButton={false} className="max-w-sm p-0">
 					<LLMSelectDialog
 						llmList={modelList}
 						selectedLLM={workspace.agentModelEngine || ""}
@@ -287,7 +291,10 @@ export const BlocksWorkspaceActions = observer(() => {
 				open={previewDialogOpen}
 				onOpenChange={(o) => !o && setPreviewDialogOpen(false)}
 			>
-				<DialogContent className="max-w-3xl p-0">
+				<DialogContent
+					aria-describedby={undefined}
+					className="max-w-3xl p-0"
+				>
 					{previewState ? (
 						<PreviewDialog
 							state={previewState}

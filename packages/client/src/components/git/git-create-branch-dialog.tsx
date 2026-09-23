@@ -81,9 +81,11 @@ export const GitCreateBranchDialog = ({
 
 	return (
 		<Dialog open={open} onOpenChange={(next) => !next && cancel()}>
-			<DialogContent className="sm:max-w-lg">
+			<DialogContent aria-describedby={undefined} className="sm:max-w-lg">
 				<DialogHeader>
-					<DialogTitle>Create branch</DialogTitle>
+					<DialogTitle className="font-medium text-base leading-6">
+						Create branch
+					</DialogTitle>
 				</DialogHeader>
 				<Form
 					form={form}

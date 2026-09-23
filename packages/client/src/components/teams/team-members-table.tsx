@@ -250,15 +250,7 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 		return () => {
 			isMounted = false;
 		};
-	}, [
-		groupId,
-		count,
-		membersPage,
-		searchFilter,
-		rowsPerPage,
-		memberCount,
-		pageOffset,
-	]);
+	}, [groupId, count, searchFilter, rowsPerPage, memberCount, pageOffset]);
 
 	useEffect(() => {
 		const refreshToken = count;
@@ -835,7 +827,9 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 			>
 				<DialogContent className="max-h-[90vh] max-w-3xl overflow-y-auto">
 					<DialogHeader>
-						<DialogTitle>Add Members</DialogTitle>
+						<DialogTitle className="font-medium text-base leading-6">
+							Add Members
+						</DialogTitle>
 						<DialogDescription>
 							Search and select users to add to this team.
 						</DialogDescription>
@@ -967,7 +961,9 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 			>
 				<DialogContent>
 					<DialogHeader>
-						<DialogTitle>Are you sure?</DialogTitle>
+						<DialogTitle className="font-medium text-base leading-6">
+							Are you sure?
+						</DialogTitle>
 						<DialogDescription>
 							{userToDelete ? (
 								<>
@@ -1011,7 +1007,9 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 			>
 				<DialogContent>
 					<DialogHeader>
-						<DialogTitle>Are you sure?</DialogTitle>
+						<DialogTitle className="font-medium text-base leading-6">
+							Are you sure?
+						</DialogTitle>
 						<DialogDescription>
 							Would you like to delete all selected members?
 						</DialogDescription>

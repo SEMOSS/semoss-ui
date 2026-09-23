@@ -278,7 +278,9 @@ export const AutomationImportExportCard = ({
 			>
 				<DialogContent>
 					<DialogHeader>
-						<DialogTitle>Replace this automation?</DialogTitle>
+						<DialogTitle className="font-medium text-base leading-6">
+							Replace this automation?
+						</DialogTitle>
 						<DialogDescription>
 							Importing replaces every step and connection in this
 							automation.

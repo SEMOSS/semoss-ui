@@ -175,9 +175,11 @@ export const NewAppModal = (props: NewAppModalProps) => {
 
 	return (
 		<Dialog open={open} onOpenChange={() => !isLoading && onClose()}>
-			<DialogContent className="sm:max-w-md">
+			<DialogContent aria-describedby={undefined} className="sm:max-w-md">
 				<DialogHeader>
-					<DialogTitle>New App</DialogTitle>
+					<DialogTitle className="font-medium text-base leading-6">
+						New App
+					</DialogTitle>
 				</DialogHeader>
 				<form onSubmit={onSubmit}>
 					<div className="flex flex-col gap-3 py-2">

@@ -272,7 +272,7 @@ const ModelChatConversations: WorkbenchComponent = ({ id }) => {
 				</InputGroup>
 
 				<DropdownMenu>
-					<Tooltip>
+					<Tooltip disableHoverableContent={false}>
 						<TooltipTrigger asChild>
 							<DropdownMenuTrigger asChild>
 								<Button

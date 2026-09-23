@@ -473,7 +473,7 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 						}
 					/>
 					{global ? (
-						<Tooltip>
+						<Tooltip disableHoverableContent={false}>
 							<TooltipTrigger asChild>
 								<div>
 									<AlertTile
@@ -625,7 +625,7 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 						}
 					/>
 					{global ? (
-						<Tooltip>
+						<Tooltip disableHoverableContent={false}>
 							<TooltipTrigger asChild>
 								<div>
 									<AlertTile
