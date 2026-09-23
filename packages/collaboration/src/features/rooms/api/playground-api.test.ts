@@ -29,7 +29,7 @@ describe("playground room APIs", () => {
 		).resolves.toBe("room-1");
 
 		expect(run.mock.calls.map(([statement]) => statement)).toEqual([
-			'CreatePlaygroundRoom(workspaceId=["workspace-1"]);',
+			'CreatePlaygroundRoom(workspaceId=["workspace-1"], mode=["collaboration"]);',
 			expect.stringContaining("UpdateRoomOptions"),
 			'SetRoomName(roomId=["room-1"], roomName=["Quarterly review"]);',
 			'SetRoomForInsight(roomId=["room-1"]);',
@@ -101,7 +101,7 @@ describe("playground room APIs", () => {
 		]);
 		expect(run).toHaveBeenCalledOnce();
 		expect(run).toHaveBeenCalledWith(
-			'META | GetPlaygroundRooms(sort=["DESC"]);',
+			'META | GetPlaygroundRooms(sort=["DESC"], mode=["collaboration"]);',
 		);
 	});
 

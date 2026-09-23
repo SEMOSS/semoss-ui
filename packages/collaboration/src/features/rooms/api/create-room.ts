@@ -8,7 +8,7 @@ interface CreateRoomAttempt {
 	onCreated?: (roomId: string) => void;
 }
 
-/** Create and fully configure one workspace-backed playground room. */
+/** Create and fully configure one workspace-backed playground room in collaboration mode. */
 export async function createRoom(
 	actions: InsightActions,
 	_insightId: string,
@@ -25,7 +25,10 @@ export async function createRoom(
 	if (!roomId) {
 		const created = await callPixel(
 			actions,
-			pixel("CreatePlaygroundRoom", { workspaceId: options.workspaceId }),
+			pixel("CreatePlaygroundRoom", {
+				workspaceId: options.workspaceId,
+				mode: "collaboration",
+			}),
 			createdPlaygroundRoomSchema,
 		);
 		roomId = created.roomId;

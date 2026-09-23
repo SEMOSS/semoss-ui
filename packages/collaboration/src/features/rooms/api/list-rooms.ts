@@ -1,15 +1,15 @@
-import { callPixel, type InsightActions } from "@/lib/pixel";
+import { callPixel, type InsightActions, pixel } from "@/lib/pixel";
 import {
 	mapPlaygroundRoom,
 	playgroundRoomsSchema,
 	type RoomRow,
 } from "./room-schemas";
 
-/** List all playground rooms once, newest first. */
+/** List collaboration-mode playground rooms once, newest first. */
 export async function listRooms(actions: InsightActions): Promise<RoomRow[]> {
 	const rows = await callPixel(
 		actions,
-		'META | GetPlaygroundRooms(sort=["DESC"]);',
+		`META | ${pixel("GetPlaygroundRooms", { sort: ["DESC"], mode: "collaboration" })}`,
 		playgroundRoomsSchema,
 	);
 

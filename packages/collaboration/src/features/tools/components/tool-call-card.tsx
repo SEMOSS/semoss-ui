@@ -16,6 +16,7 @@ import {
 	delegationRequester,
 	isDelegationSubmit,
 } from "@/features/delegations/components/delegation-submit-approval";
+import { WithdrawDelegation } from "@/features/delegations/components/withdraw-delegation";
 import type { ConversationTool } from "@/features/messages/types/message";
 import { toolCardTriggerId } from "../tool-workbench.constants";
 import { useToolWorkbench } from "../tool-workbench.context";
@@ -110,13 +111,19 @@ export function ToolCallCard({ tool }: { tool: ConversationTool }) {
 		: isRequest
 			? `New request to ${resultField(tool.output, "assignee") ?? (text(tool.arguments.assignee) || "a person")}`
 			: tool.title;
-	// Delegation tools return a plain-language summary of what happened.
+	// Delegation tools return a plain-language summary of what happened; their
+	// description is written for the model, so it is never shown.
 	const outcome =
 		isSubmit || isRequest ? resultField(tool.output, "message") : undefined;
 	// Delegation steps are confirmed in the card rather than the generic panel.
 	const approval =
 		isSubmit || isRequest
 			? pendingApprovals.find((item) => item.toolId === tool.id)
+			: undefined;
+	// Sent and not answered yet: the requester can take it back.
+	const waitingRunId =
+		isRequest && !approval && tool.status === "INPUT_REQUIRED"
+			? resultField(tool.output, "runId")
 			: undefined;
 	const Icon = details.icon;
 	const isInline = isToolInline(tool.id);
@@ -169,11 +176,12 @@ export function ToolCallCard({ tool }: { tool: ConversationTool }) {
 							{title}
 						</span>
 						<span className="block truncate text-muted-foreground text-xs">
-							{tool.description ??
-								outcome ??
-								(tool.status === "RUNNING"
-									? getToolLoadingMessage(tool)
-									: details.label)}
+							{isSubmit || isRequest
+								? (tool.statusLabel ?? outcome ?? details.label)
+								: (tool.description ??
+									(tool.status === "RUNNING"
+										? getToolLoadingMessage(tool)
+										: details.label))}
 						</span>
 					</span>
 					{isInline ? (
@@ -188,6 +196,14 @@ export function ToolCallCard({ tool }: { tool: ConversationTool }) {
 						/>
 					)}
 				</button>
+				{waitingRunId && (
+					<WithdrawDelegation
+						runId={waitingRunId}
+						assignee={
+							resultField(tool.output, "assignee") ?? "They"
+						}
+					/>
+				)}
 				<ToolCallMenu toolId={tool.id} />
 			</div>
 			{isInline &&
