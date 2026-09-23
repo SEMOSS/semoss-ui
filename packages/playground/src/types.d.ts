@@ -106,7 +106,7 @@ export interface AgentRunMessageContext {
 	role?: string;
 	originatingRunId?: string;
 	childRunId?: string;
-	completionMode?: "JOIN" | "NOTIFY" | "CONTINUE" | string;
+	completionMode?: "WAIT" | "POST" | "POST_AND_CONTINUE" | string;
 	childStatus?: string;
 }
 
