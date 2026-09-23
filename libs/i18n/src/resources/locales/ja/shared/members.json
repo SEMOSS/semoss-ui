@@ -1,0 +1,49 @@
+{
+	"dialog": {
+		"title": "メンバーを追加",
+		"description": "ユーザーを検索して、このリソースに招待します。"
+	},
+	"search": {
+		"placeholder": "名前またはメールアドレスで検索...",
+		"searching": "ユーザーを検索しています...",
+		"empty": "ユーザーが見つかりません",
+		"added": "追加済み"
+	},
+	"selected": {
+		"count_other": "{{count}} 人のユーザーを選択中",
+		"empty": "ユーザーが選択されていません"
+	},
+	"permission": {
+		"viewer": "閲覧者",
+		"editor": "編集者",
+		"owner": "オーナー"
+	},
+	"restrictions": {
+		"title": "モデル使用制限(選択したすべてのユーザーに適用)",
+		"usageLimitType": "使用制限の種類",
+		"none": "なし",
+		"token": "トークン",
+		"computeTime": "計算時間",
+		"maxTokens": "最大トークン数",
+		"maxResponseTime": "最大応答時間",
+		"unit": "単位",
+		"milliseconds": "ミリ秒",
+		"frequency": "頻度",
+		"daily": "毎日",
+		"weekly": "毎週",
+		"monthly": "毎月",
+		"yearly": "毎年",
+		"allTime": "常時"
+	},
+	"footer": {
+		"add": "追加",
+		"addWithCount": "追加 ({{count}})"
+	},
+	"errors": {
+		"loadUsersFailed": "ユーザーの読み込みに失敗しました。",
+		"addMembersFailed": "選択したメンバーの追加中にエラーが発生しました。"
+	},
+	"success": {
+		"membersAdded": "選択したメンバーが正常に追加されました。"
+	}
+}

@@ -146,25 +146,100 @@ export const canMoveItemToDirectory = (
 	);
 };
 
+/**
+ * What a row drag carries. The originating explorer is stamped on it so two
+ * explorers on the same page cannot drop into each other.
+ */
+export interface FileExplorerDragPayload {
+	instanceId: string;
+	items: FileItem[];
+}
+
+/**
+ * Serialize the payload for a row drag.
+ *
+ * @param instanceId - The explorer the drag started in.
+ * @param items - The items being dragged.
+ * @return The JSON to write to the drag's custom data type.
+ */
+export const serializeExplorerDragPayload = (
+	instanceId: string,
+	items: FileItem[],
+) => JSON.stringify({ instanceId: instanceId, items: items });
+
+const isFileItem = (value: unknown): value is FileItem =>
+	Boolean(
+		value &&
+			typeof (value as FileItem).name === "string" &&
+			typeof (value as FileItem).path === "string",
+	);
+
+/**
+ * Read the items out of a row drag.
+ *
+ * @param dataTransfer - The drag's data transfer.
+ * @param instanceId - When given, drags from another explorer resolve to `[]`.
+ * @return The dragged items, or `[]` if the payload is absent or foreign.
+ */
 export const parseExplorerDragItems = (
 	dataTransfer: DataTransfer,
+	instanceId?: string,
 ): FileItem[] => {
 	const payload = dataTransfer.getData(FILE_EXPLORER_DRAG_DATA_TYPE);
 	if (!payload) return [];
 
 	try {
-		const parsed = JSON.parse(payload) as FileItem[];
-		if (!Array.isArray(parsed)) return [];
-		return parsed.filter((draggedItem): draggedItem is FileItem =>
-			Boolean(
-				draggedItem &&
-					typeof draggedItem.name === "string" &&
-					typeof draggedItem.path === "string",
-			),
-		);
+		const parsed = JSON.parse(payload) as
+			| FileExplorerDragPayload
+			| FileItem[];
+
+		if (Array.isArray(parsed)) {
+			return parsed.filter(isFileItem);
+		}
+
+		if (!parsed || !Array.isArray(parsed.items)) {
+			return [];
+		}
+
+		if (instanceId && parsed.instanceId !== instanceId) {
+			return [];
+		}
+
+		return parsed.items.filter(isFileItem);
 	} catch (_e) {
 		return [];
 	}
+};
+
+/**
+ * Where a path ends up after an item moved, if the move affects it at all.
+ *
+ * Handles both the moved item itself and anything nested under it when a
+ * directory moved, which is what keeps open editors pointing at the right
+ * file.
+ *
+ * @param path - The path to migrate.
+ * @param movedItem - The move that happened.
+ * @return The new path, or null when the move does not affect `path`.
+ */
+export const resolveMovedPath = (
+	path: string,
+	movedItem: { item: FileItem; oldPath: string; newPath: string },
+): string | null => {
+	if (path === movedItem.oldPath) {
+		return movedItem.newPath;
+	}
+
+	if (movedItem.item.type !== "directory") {
+		return null;
+	}
+
+	const oldDirectory = ensureDirectoryPath(movedItem.oldPath);
+	if (!path.startsWith(oldDirectory)) {
+		return null;
+	}
+
+	return `${ensureDirectoryPath(movedItem.newPath)}${path.slice(oldDirectory.length)}`;
 };
 
 export const isExplorerDrag = (dataTransfer: DataTransfer) =>
@@ -272,4 +347,33 @@ export const getFileOperationErrorMessage = (
 	}
 
 	return `${fallbackMessage}: ${detail}`;
+};
+
+/** Decode a base64 asset payload (e.g. from a `Get*AssetsBase64` Pixel) into raw bytes. */
+export const decodeBase64Asset = (data: string): Uint8Array | null => {
+	if (!data) return null;
+	try {
+		const binary = atob(data.replace(/\s/g, ""));
+		const bytes = new Uint8Array(binary.length);
+		for (let i = 0; i < binary.length; i++) {
+			bytes[i] = binary.charCodeAt(i);
+		}
+		return bytes;
+	} catch (error) {
+		console.error("Failed to decode asset bytes", error);
+		return null;
+	}
+};
+
+/**
+ * Encode raw bytes as base64 (e.g. for a `Save*AssetsBase64` Pixel), chunked
+ * so a large file does not overflow `String.fromCharCode`'s argument limit.
+ */
+export const encodeBase64Asset = (bytes: Uint8Array): string => {
+	const CHUNK = 0x8000;
+	let binary = "";
+	for (let i = 0; i < bytes.length; i += CHUNK) {
+		binary += String.fromCharCode(...bytes.subarray(i, i + CHUNK));
+	}
+	return btoa(binary);
 };

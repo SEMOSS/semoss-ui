@@ -1,49 +1,29 @@
 import { lazy, Suspense, useEffect, useState } from "react";
-import { useInsight, usePixel } from "@semoss/sdk/react";
+import { runPixel, useInsight, usePixel } from "@semoss/sdk/react";
 import { Spinner, toast } from "@semoss/ui/next";
 import { WorkspaceContext } from "@/contexts";
 import { useNavigate } from "@/hooks/useNavigate";
 
-const BlocksWorkspace = lazy(() =>
-	import("@/components/blocks-workspace").then((m) => ({
-		default: m.BlocksWorkspace,
-	})),
-);
-const CodeWorkspace = lazy(() =>
-	import("@/components/code-workspace").then((m) => ({
-		default: m.CodeWorkspace,
-	})),
-);
-const SkillWorkspace = lazy(() =>
-	import("@/components/skill").then((m) => ({
-		default: m.SkillWorkspace,
-	})),
-);
-const AgentWorkspace = lazy(() =>
-	import("@/components/agent-workspace").then((m) => ({
-		default: m.AgentWorkspace,
-	})),
+const BlocksWorkbench = lazy(() =>
+	import("@/components/workbench/project/blocks/blocks-workbench").then(
+		(m) => ({ default: m.BlocksWorkbench }),
+	),
 );
 
-import { useRootStore } from "@/hooks";
-import type { WorkspaceStore } from "@/stores";
-
-interface WorkspaceProps {
-	/** App to load */
-	app: string;
-}
+import { useProject } from "@/hooks";
+import { WorkspaceStore } from "@/stores";
 
 const WorkspaceLoadingState = () => {
 	return (
-		<div className="absolute inset-0 z-[1501] flex items-center justify-center bg-background/50">
+		<div className="absolute inset-0 z-1501 flex items-center justify-center bg-background/50">
 			<Spinner />
 		</div>
 	);
 };
 
-export const Workspace: React.FC<WorkspaceProps> = ({ app }) => {
+export const Workspace: React.FC = () => {
 	const insight = useInsight();
-	const { configStore } = useRootStore();
+	const { project, type } = useProject();
 
 	const navigate = useNavigate();
 
@@ -57,28 +37,25 @@ export const Workspace: React.FC<WorkspaceProps> = ({ app }) => {
 			return;
 		}
 
-		configStore
-			.createWorkspace(app, insight.insightId)
-			.then((loadedWorkspace) => {
-				setWorkspace(loadedWorkspace);
+		runPixel(`SetContext("${project.project_id}")`, insight.insightId)
+			.then(() => {
+				const w = new WorkspaceStore({
+					insightId: insight.insightId,
+					projectId: project.project_id,
+				});
+
+				setWorkspace(w);
 			})
 			.catch((_e) => {
 				toast.error("Failed to load app, returning to home page.");
-
 				navigate("/");
 			});
-	}, [
-		app,
-		insight.isReady,
-		insight.insightId,
-		configStore.createWorkspace,
-		navigate,
-	]);
+	}, [project.project_id, insight.isReady, insight.insightId, navigate]);
 
 	// check the dependencies
 	usePixel(
-		insight.isReady && app
-			? `ValidateUserProjectDependencies(project="${app}");`
+		insight.isReady && project.project_id
+			? `ValidateUserProjectDependencies(project="${project.project_id}");`
 			: "",
 		{
 			onSuccess: (data: Record<string, boolean>) => {
@@ -113,10 +90,9 @@ export const Workspace: React.FC<WorkspaceProps> = ({ app }) => {
 			}}
 		>
 			<Suspense fallback={<WorkspaceLoadingState />}>
-				{workspace.type === "CODE" && <CodeWorkspace />}
-				{workspace.type === "BLOCKS" && <BlocksWorkspace />}
-				{workspace.type === "SKILL" && <SkillWorkspace />}
-				{workspace.type === "WORKSPACE" && <AgentWorkspace />}
+				{/* What this still owns is the store, not a shell: every
+				    project type renders on the workbench now. */}
+				{type === "BLOCKS" && <BlocksWorkbench />}
 			</Suspense>
 		</WorkspaceContext.Provider>
 	);

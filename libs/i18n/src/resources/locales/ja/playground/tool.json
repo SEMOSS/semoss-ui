@@ -3,10 +3,11 @@
 		"failed": "失敗",
 		"cancelled": "キャンセル済み",
 		"completed": "完了",
-		"ready": "準備完了",
-		"autoExecute": "自動実行中",
-		"paused": "一時停止中",
-		"queued": "自動実行のキュー待ち"
+		"queued": "自動実行のキュー待ち",
+		"loadingTool": "ツールを読み込み中…",
+		"waitingForArguments": "引数を待っています…",
+		"running": "実行中",
+		"waitingForInput": "入力待ち"
 	},
 	"actions": {
 		"cancel": "キャンセル",
@@ -16,31 +17,47 @@
 		"closeInSidebar": "サイドバーを閉じる",
 		"openInline": "インラインで開く"
 	},
+	"tabs": {
+		"output": "出力",
+		"inputs": "入力",
+		"description": "説明"
+	},
 	"group": {
 		"labelClosed": "{{toolName}} 他 {{count}} 件",
 		"labelOpen": "実行済みツール ({{count}})",
+		"labelStreaming_one": "{{count}} 個のツールを読み込み中…",
+		"labelStreaming_other": "{{count}} 個のツールを読み込み中…",
+		"labelPartial_one": "{{count}} 件完了、{{loadingCount}} 件読み込み中…",
+		"labelPartial_other": "{{count}} 件完了、{{loadingCount}} 件読み込み中…",
 		"summaryCompleted": "{{count}} 件完了",
+		"summaryLoading": "{{count}} 件読み込み中",
 		"summaryError": "{{count}} 件失敗",
-		"summaryCancelled": "{{count}} 件キャンセル",
-		"summaryPaused": "{{count}} 件一時停止"
+		"summaryCancelled": "{{count}} 件キャンセル"
 	},
 	"form": {
 		"result": "結果",
+		"parameters": "パラメーター",
 		"schemaLoadFailed": "ツールスキーマの読み込みに失敗しました",
 		"schemaLoadFailedDescription": "ツールの設定を取得できませんでした。後でもう一度お試しください。",
 		"schemaLoading": "ツールスキーマを読み込んでいます...",
 		"noParameters": "パラメーターは不要です",
-		"showParameters": "パラメーターを表示 ({{count}})",
-		"hideParameters": "パラメーターを非表示 ({{count}})",
 		"showOptionalFields": "任意フィールドを表示 ({{count}})",
 		"hideOptionalFields": "任意フィールドを非表示 ({{count}})",
 		"execute": "ツールを実行",
-		"executing": "実行中..."
+		"executing": "実行中...",
+		"noOutput": "まだ出力がありません。",
+		"noDescription": "説明はありません。",
+		"outputDialogTitle": "{{title}} — 出力"
 	},
 	"playwright": {
 		"details": "Playwright スクリプトの詳細",
 		"projectId": "プロジェクト ID",
 		"recordedFile": "記録済みファイル"
+	},
+	"subagent": {
+		"title": "サブエージェント",
+		"notFound": "サブエージェントが見つかりません",
+		"noResult": "まだ応答がありません"
 	},
 	"extension": {
 		"required": "ブラウザー拡張機能が必要です",

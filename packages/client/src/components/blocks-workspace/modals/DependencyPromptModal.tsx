@@ -26,6 +26,9 @@ import {
 	TableHead,
 	TableHeader,
 	TableRow,
+	Tooltip,
+	TooltipContent,
+	TooltipTrigger,
 } from "@semoss/ui/next";
 
 interface DependencyPromptModalProps {
@@ -135,12 +138,13 @@ export const DependencyPromptModal = (props: DependencyPromptModalProps) => {
 	return (
 		<Dialog open={open} onOpenChange={handleClose}>
 			<DialogContent
+				aria-describedby={undefined}
 				className={`gap-0 p-0 ${showReplaceOptions ? "sm:max-w-3xl" : "sm:max-w-2xl"}`}
 				data-testid={`delete-${type.toLowerCase()}-modal`}
 			>
 				<DialogHeader className="space-y-0 border-b px-6 py-4">
 					<div className="flex items-center justify-between">
-						<DialogTitle className="font-semibold text-base">
+						<DialogTitle className="font-medium text-base leading-6">
 							{cosmetics.title}
 						</DialogTitle>
 					</div>
@@ -148,8 +152,8 @@ export const DependencyPromptModal = (props: DependencyPromptModalProps) => {
 
 				<div className="px-6 py-4">
 					{/* Warning Alert */}
-					<div className="mb-4 flex items-start gap-2 rounded border border-orange-300 bg-orange-50 p-3">
-						<AlertTriangle className="mt-0.5 h-4 w-4 flex-shrink-0 text-orange-600" />
+					<div className="mb-4 flex items-start gap-2 rounded border border-warning/30 bg-warning/10 p-3">
+						<AlertTriangle className="mt-0.5 h-4 w-4 flex-shrink-0 text-warning" />
 						<p className="text-foreground text-sm leading-relaxed">
 							{cosmetics.desc}
 						</p>
@@ -407,15 +411,35 @@ export const DependencyPromptModal = (props: DependencyPromptModalProps) => {
 					</Button>
 					<div className="flex gap-2">
 						{showReplaceOptions && onReplace && (
-							<Button
-								onClick={handleReplaceAndDelete}
-								disabled={isReplaceAndDeleteDisabled()}
-								className="bg-primary text-primary-foreground hover:bg-primary/90"
-								data-testid={`delete-${type.toLocaleLowerCase()}-modal-replace-and-delete`}
-								title={`This will replace the selected instances and delete the ${type.toLocaleLowerCase()}`}
-							>
-								Replace and Delete
-							</Button>
+							<Tooltip disableHoverableContent={false}>
+								<TooltipTrigger asChild>
+									<span
+										className="inline-flex"
+										tabIndex={
+											isReplaceAndDeleteDisabled()
+												? 0
+												: undefined
+										}
+									>
+										<Button
+											onClick={handleReplaceAndDelete}
+											disabled={isReplaceAndDeleteDisabled()}
+											className="bg-primary text-primary-foreground hover:bg-primary/90"
+											data-testid={`delete-${type.toLocaleLowerCase()}-modal-replace-and-delete`}
+										>
+											Replace and Delete
+										</Button>
+									</span>
+								</TooltipTrigger>
+								<TooltipContent
+									sideOffset={4}
+									className="max-w-xs break-words"
+								>
+									{isReplaceAndDeleteDisabled()
+										? "Choose a replacement for every affected instance"
+										: `This will replace the selected instances and delete the ${type.toLocaleLowerCase()}`}
+								</TooltipContent>
+							</Tooltip>
 						)}
 						<Button
 							variant="destructive"

@@ -1,0 +1,6 @@
+{
+	"messages": {
+		"rotateDevice": "Please Rotate Your Device",
+		"noLandscapeMode": "We don't support landscape mode yet. Please go back to portrait mode for the best experience."
+	}
+}

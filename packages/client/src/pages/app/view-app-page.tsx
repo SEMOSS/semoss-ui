@@ -9,7 +9,8 @@ import {
 } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { lazy, Suspense, useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link } from "react-router";
+import { runPixel } from "@semoss/sdk/react";
 import {
 	Breadcrumb,
 	BreadcrumbItem,
@@ -34,13 +35,12 @@ const Renderer = lazy(() =>
 	import("@semoss/renderer").then((m) => ({ default: m.Renderer })),
 );
 const CodeRenderer = lazy(() =>
-	import("@/components/code-workspace").then((m) => ({
+	import("@/components/project").then((m) => ({
 		default: m.CodeRenderer,
 	})),
 );
 
-import { usePage, useProject, useRootStore } from "@/hooks";
-import type { WorkspaceStore } from "@/stores";
+import { usePage, useProject } from "@/hooks";
 import { NavbarHeader, NavbarLeft, NavbarRight } from "../../components/shared";
 
 const AppViewLoadingState = () => {
@@ -52,13 +52,11 @@ const AppViewLoadingState = () => {
 };
 
 export const ViewAppPage = observer(() => {
-	// App ID Needed for pixel calls
-	const { configStore } = useRootStore();
-	const { project, permission, catalog } = useProject();
+	const { project, permission, catalog, type } = useProject();
 
 	const navigate = useNavigate();
 
-	const [workspace, setWorkspace] = useState<WorkspaceStore>(undefined);
+	const [insightId, setInsightId] = useState<string | undefined>(undefined);
 	const [isShareOpen, setIsShareOpen] = useState<boolean>(false);
 	const [bookmarked, setBookmarked] = useState<boolean>(false);
 
@@ -83,15 +81,12 @@ export const ViewAppPage = observer(() => {
 
 	useEffect(() => {
 		// clear out the old app
-		setWorkspace(undefined);
+		setInsightId(undefined);
 
-		configStore
-			.createWorkspace(project.project_id)
-			.then((loadedWorkspace) => {
-				setWorkspace(loadedWorkspace);
-				setBookmarked(
-					Boolean(loadedWorkspace.metadata.project_favorite),
-				);
+		runPixel(`SetContext("${project.project_id}")`, "new")
+			.then((response) => {
+				setInsightId(response.insightId);
+				setBookmarked(Boolean(project.project_favorite));
 			})
 			.catch((e) => {
 				toast.error(e.message);
@@ -100,7 +95,7 @@ export const ViewAppPage = observer(() => {
 	}, [project.project_id]);
 
 	// hide the screen while it loads
-	if (!workspace) {
+	if (!insightId) {
 		return <AppViewLoadingState />;
 	}
 
@@ -135,9 +130,10 @@ export const ViewAppPage = observer(() => {
 				</Breadcrumb>
 			</NavbarLeft>
 			<NavbarRight>
-				<Tooltip>
+				<Tooltip disableHoverableContent={false}>
 					<TooltipTrigger asChild>
 						<Button
+							aria-label={"Details"}
 							variant="ghost"
 							size="icon"
 							data-testid={"settings"}
@@ -150,9 +146,10 @@ export const ViewAppPage = observer(() => {
 					</TooltipTrigger>
 					<TooltipContent>Details</TooltipContent>
 				</Tooltip>
-				<Tooltip>
+				<Tooltip disableHoverableContent={false}>
 					<TooltipTrigger asChild>
 						<Button
+							aria-label={"Bookmark App"}
 							variant="ghost"
 							size="icon"
 							onClick={() => handleBookmark(!bookmarked)}
@@ -165,9 +162,10 @@ export const ViewAppPage = observer(() => {
 					</TooltipTrigger>
 					<TooltipContent>Bookmark App</TooltipContent>
 				</Tooltip>
-				<Tooltip>
+				<Tooltip disableHoverableContent={false}>
 					<TooltipTrigger asChild>
 						<Button
+							aria-label={"Share App"}
 							variant="ghost"
 							size="icon"
 							onClick={() => setIsShareOpen(true)}
@@ -194,13 +192,13 @@ export const ViewAppPage = observer(() => {
 			</NavbarRight>
 			<div className="absolute inset-0">
 				<Suspense fallback={<AppViewLoadingState />}>
-					{workspace.type === "BLOCKS" ? (
+					{type === "BLOCKS" ? (
 						<Renderer
 							appId={project.project_id}
-							insightId={workspace.insightId}
+							insightId={insightId}
 						/>
 					) : null}
-					{workspace.type === "CODE" ? (
+					{type === "CODE" ? (
 						<CodeRenderer appId={project.project_id} />
 					) : null}
 				</Suspense>

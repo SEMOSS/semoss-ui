@@ -3,21 +3,22 @@
 This document provides context for AI coding assistants working with the SEMOSS client — the
 main web application.
 
-> **Inherits from:** [../../AGENTS.md](../../AGENTS.md) for code style, file-naming, package
-> structure, commit messages, Biome config, and Node/pnpm requirements.
+> **Inherits from:** [root AGENTS.md](../../AGENTS.md). Load the applicable
+> [root skills](../../skills/README.md), including the [React standard](../../skills/react-standard.skill.md).
 
 ## Overview
 
-`@semoss/client` is the primary SEMOSS web application. It depends on every workspace lib
-(`@semoss/renderer`, `@semoss/sdk`, `@semoss/shared`, `@semoss/ui`, `@semoss/i18n`,
-`@semoss/terminal`) — reuse those before adding local code.
+`@semoss/client` is the primary SEMOSS web application. Its workspace runtime dependencies
+are `@semoss/automation`, `@semoss/i18n`, `@semoss/panels`, `@semoss/renderer`, `@semoss/sdk`,
+`@semoss/shared`, `@semoss/terminal`, `@semoss/utility`, `@semoss/ui`, and `@semoss/workbench`.
+Reuse their supported public APIs before adding local code.
 
 ## Build System
 
-- **Bundler**: Vite 7
-- **Framework**: React 18 + TypeScript
-- **State**: MobX (`mobx` + `mobx-react-lite`)
-- **Routing**: `react-router-dom` 6
+- **Bundler**: Vite 8
+- **Framework**: React 19 + TypeScript
+- **State**: MobX and Zustand; preserve the owning store's contract
+- **Routing**: `react-router` 8
 - **Styling**: Tailwind CSS v4
 - **Testing**: Vitest
 
@@ -34,13 +35,17 @@ main web application.
 | `pnpm test:watch` | Tests in watch mode |
 | `pnpm test:coverage` | Coverage report |
 
+Run these from `packages/client`, or use `pnpm --filter @semoss/client <command>`.
+
 ### Path Alias
 
-- `@/` → `./src/` (e.g. `import { useRootStore } from "@/hooks"`)
+- `@/` → `./src/` (e.g. `import { useSession } from "@/hooks/use-session"`)
 
 ## Structure
 
-An application, so it uses the full `src/` layout from the root AGENTS.md including `pages/`:
+The existing layout is below. Follow the React skill's
+[architecture policy](../../skills/react-standard.skill.md#architecture-and-exports) for new
+application features; this inventory does not require moving existing features.
 
 | Folder / file | Purpose |
 |---------------|---------|
@@ -50,7 +55,7 @@ An application, so it uses the full `src/` layout from the root AGENTS.md includ
 | `contexts/` | React contexts (`<name>.context.tsx`) |
 | `hooks/` | React hooks (`use-<name>.ts`) |
 | `pages/` | Routing tree (see below) |
-| `stores/` | MobX stores, one folder per store (`root/`, `config/`, `monolith/`, `workspace/`, …) |
+| `stores/` | State owners (`assistant/`, `config/`, `designer/`, `page/`, `session/`, `workbench/`, `workspace/`) |
 | `types/` | TypeScript types (`<name>.types.ts`) |
 | `utility/` | Utility functions grouped by type |
 | `main.tsx`, `App.tsx`, `index.css` | App entry files |
@@ -65,44 +70,52 @@ An application, so it uses the full `src/` layout from the root AGENTS.md includ
 - `<name>.page.tsx` — a page component.
 - Feature areas live in subfolders (`pages/project/`, `pages/engine/`, `pages/settings/`, …).
 
-> Older route files use the legacy dash form (`login-page.tsx`, `authenticated-layout.tsx`).
-> Migrate to the dot role-suffix (`login.page.tsx`, `authenticated.layout.tsx`) as you touch
-> them — do not mass-rename.
+> Older route files may use legacy naming. Follow the React skill's
+> [naming policy](../../skills/react-standard.skill.md#types-and-naming); do not turn an
+> unrelated edit into a route-file migration.
 
 ## State Management
 
-- **Application state — MobX central store.** A single root store composes the others
-  (`configStore`, `monolithStore`, …). Access it with the `useRootStore` hook:
-  ```typescript
-  import { useRootStore } from "@/hooks";
-
-  const { configStore, monolithStore } = useRootStore();
-  ```
-  Wrap components that read observable state in `observer` from `mobx-react-lite`.
-- **Feature state — React context + hook.** Each feature encapsulates its state in a context
-  (`<feature>.context.tsx`) exposed through a custom hook (e.g. `EngineContext` → `useEngine`,
-  `WorkspaceContext` → `useWorkspace`), keeping feature state isolated from the global store.
+- **Application state** is split among the existing stores, including session and config.
+  Use their owning hooks, such as `hooks/use-session.ts` and `hooks/use-config.ts`; there is
+  no `stores/root`, `stores/monolith`, or `useRootStore` entry to extend.
+- **Domain state** uses its existing context/store contract. See the
+  [client workbench guide](./src/components/workbench/AGENTS.md) for dock, assistant,
+  permission, database, and model-chat state. General local-state and orchestration rules
+  belong to the [React skill](../../skills/react-standard.skill.md#logic-state-and-effects).
 
 ## Styling
 
-- Tailwind utility classes; prefer `@semoss/ui/next` components and merge classes with `cn()`.
-- Use theme variables from `globals.css`; no inline styles; no direct MUI/Emotion imports.
+Follow the root [Design System & Styling](../../AGENTS.md#design-system--styling) rules and
+[DESIGN.md](../../DESIGN.md). Client-specific notes:
+
+- **Priority boy-scout targets** (highest violation density — migrate to tokens/components as
+  you touch them): `src/components/blocks-workspace/blocks/settings/**` (especially
+  `custom/e-charts/**` and `shared/ColorPalatteSettings.tsx` — hex classes, inline colors,
+  arbitrary sizes).
+- **Ad-hoc status color maps to fold into tokens when touched**:
+  `components/engine/engine-metadata-display.tsx` (`BADGE_TONES`),
+  `pages/app/app-detail-tabs/commits-tab.tsx`, `pages/project/agent/agent-run-graph.tsx`.
+  Use `Badge` variants + `destructive`/`success`/`warning`/`chart-*` tokens instead.
+- Overlay migration and the ECharts exception follow [DESIGN.md](../../DESIGN.md).
+- **Scoped reference**: `src/components/ui/section/section.tsx` demonstrates a small local
+  composite using `cn()` and token classes. Do not treat an entire application file as a
+  blanket design exemplar; audit the specific pattern before reusing it.
 
 ## Agent Guardrails
 
 ### Be Cautious With
 
 - **`vite.config.ts`** — dev server, build, and test configuration.
-- **`stores/root`** — the root store wires everything together.
+- **`stores/session/`** — shared session state and permission ownership affect multiple surfaces.
 
 ### Known Gotchas
 
-- **Biome forbids TypeScript non-null assertions** (`!`) — guard nullable values explicitly.
-- **No explicit `any`** — Biome errors on it.
+- TypeScript and lint rules follow the [React standard](../../skills/react-standard.skill.md).
 - `usePixel` results expose `error` and `refresh`, but **not** `isError` / `isLoading` or
   iterator methods like `reset`.
-- The package currently has many **pre-existing `tsc` errors** in unrelated files. After a
-  change, grep the type-check output for *your* files rather than assuming a clean baseline:
+- Record the actual type-check result and distinguish introduced failures from unrelated
+  baseline errors; filtering to touched paths alone can miss broken consumers:
   ```bash
   pnpm --filter @semoss/client type-check
   ```

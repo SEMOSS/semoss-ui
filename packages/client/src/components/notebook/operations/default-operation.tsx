@@ -1,5 +1,7 @@
 import { observer } from "mobx-react-lite";
-import { hasInlineImage, InlineImageSegments } from "@semoss/shared";
+import type { JSX } from "react";
+import { InlineImageSegments } from "@semoss/shared";
+import { hasInlineImage } from "@semoss/utility/file";
 import { JsonValueViewer } from "@/components/common/json-value-viewer";
 import { isOutputJSON } from "@/utility";
 

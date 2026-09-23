@@ -11,7 +11,7 @@ export const BASE_PAGE_BLOCKS: Record<string, Block> = {
 				flexDirection: "column",
 				padding: "24px",
 				gap: "8px",
-				fontFamily: "roboto",
+				fontFamily: "var(--font-sans)",
 			},
 			route: "",
 		},

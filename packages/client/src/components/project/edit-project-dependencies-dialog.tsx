@@ -1,6 +1,10 @@
 import { Check, Copy, Search, X } from "lucide-react";
 import { type UIEvent, useEffect, useState } from "react";
-import { useDebouncedValue, useIteratorPixel } from "@semoss/sdk/react";
+import {
+	runPixel,
+	useDebouncedValue,
+	useIteratorPixel,
+} from "@semoss/sdk/react";
 import {
 	AppCatalogAvatar,
 	type Engine,
@@ -24,9 +28,11 @@ import {
 	Tabs,
 	TabsList,
 	TabsTrigger,
+	Tooltip,
+	TooltipContent,
+	TooltipTrigger,
 	toast,
 } from "@semoss/ui/next";
-import { useRootStore } from "@/hooks";
 import { isProjectType } from "@/utility/catalog";
 
 interface EditProjectDependenciesDialogProps {
@@ -97,15 +103,6 @@ export const EditProjectDependenciesDialog = ({
 			});
 	};
 
-	/**
-	 * Library Hooks
-	 *
-	 * Engines and projects are fetched from their own paginated reactors
-	 * (MyEngines / MyProjects), each with its own iterator so they paginate
-	 * independently and stably. Only the active source runs — the inactive one
-	 * is passed an empty pixel.
-	 */
-	const { configStore } = useRootStore();
 	// Coalesce to "" so the initial undefined -> "" debounce transition doesn't
 	// reset the iterator (which clears its data but can't refetch an unchanged
 	// query), which would blank the list until the source is toggled.
@@ -172,7 +169,7 @@ export const EditProjectDependenciesDialog = ({
 		try {
 			setIsSaving(true);
 
-			const response = await configStore.runPixel<string[]>(
+			const response = await runPixel<string[]>(
 				`SetProjectDependencies(project="${appId}", dependencies=${JSON.stringify(
 					selectedDeps.map((dep) => ({
 						id: dep.engine_id,
@@ -272,7 +269,9 @@ export const EditProjectDependenciesDialog = ({
 		>
 			<DialogContent className="flex max-h-[90vh] flex-col overflow-hidden sm:max-w-2xl">
 				<DialogHeader>
-					<DialogTitle>Edit Project Dependencies</DialogTitle>
+					<DialogTitle className="font-medium text-base leading-6">
+						Edit Project Dependencies
+					</DialogTitle>
 					<DialogDescription>
 						Add or remove engines and apps required by this project.
 					</DialogDescription>
@@ -374,25 +373,38 @@ export const EditProjectDependenciesDialog = ({
 													<p className="truncate text-muted-foreground text-xs">
 														ID: {dep.engine_id}
 													</p>
-													<Button
-														variant="ghost"
-														size="icon"
-														className="size-5 shrink-0"
-														onClick={() =>
-															handleCopyId(
-																dep.engine_id,
-															)
+													<Tooltip
+														disableHoverableContent={
+															false
 														}
-														title="Copy ID"
-														aria-label="Copy ID"
 													>
-														{copiedId ===
-														dep.engine_id ? (
-															<Check className="size-3 text-emerald-500" />
-														) : (
-															<Copy className="size-3" />
-														)}
-													</Button>
+														<TooltipTrigger asChild>
+															<Button
+																variant="ghost"
+																size="icon"
+																className="size-5 shrink-0"
+																onClick={() =>
+																	handleCopyId(
+																		dep.engine_id,
+																	)
+																}
+																aria-label="Copy ID"
+															>
+																{copiedId ===
+																dep.engine_id ? (
+																	<Check className="size-3 text-success" />
+																) : (
+																	<Copy className="size-3" />
+																)}
+															</Button>
+														</TooltipTrigger>
+														<TooltipContent
+															sideOffset={4}
+															className="max-w-xs break-words"
+														>
+															{"Copy ID"}
+														</TooltipContent>
+													</Tooltip>
 												</div>
 											</div>
 											<Button

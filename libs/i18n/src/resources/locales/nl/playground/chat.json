@@ -17,14 +17,18 @@
 		"poorResponse": "Slecht antwoord",
 		"copyResponse": "Antwoord kopiëren",
 		"copyCode": "Code kopiëren",
+		"copy": "Kopiëren",
+		"saveInRoom": "Opslaan in kamer",
+		"savingToRoom": "Bezig met opslaan...",
+		"fullView": "Volledige weergave",
+		"raw": "Ruw",
+		"diagram": "Diagram",
 		"feedbackPlaceholder": "Voeg een opmerking toe (optioneel)",
 		"feedbackCancel": "Annuleren",
 		"feedbackSubmit": "Verzenden",
 		"fastForwardToEnd": "Snel doorspoelen naar het einde",
 		"completeToolsAsk_one": "Voltooi de tool om door te gaan.",
 		"completeToolsAsk_other": "Voltooi de tools om door te gaan.",
-		"completeToolsAuto_one": "Wacht tot de tool is voltooid.",
-		"completeToolsAuto_other": "Wacht tot de tools zijn voltooid.",
 		"emptyResponse": "Leeg antwoord."
 	},
 	"input": {
@@ -43,6 +47,7 @@
 		"rewriteSuccess": "Bericht succesvol herschreven",
 		"copySuccess": "Succesvol gekopieerd naar klembord",
 		"noCopyContent": "Geen inhoud om te kopiëren",
+		"savedInRoom": "Opgeslagen in kamer als {{filePath}}",
 		"planStepRemoved": "Stap {{stepNumber}} succesvol uit plan verwijderd"
 	},
 	"gracefulErrors": {

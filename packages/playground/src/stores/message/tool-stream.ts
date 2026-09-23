@@ -39,12 +39,12 @@ export const applyToolStreamChunk = (
 	// The terminal chunk has no index — flip the streaming flag off for every
 	// tool we've been tracking in this turn.
 	if (data.finish_reason) {
-		for (const toolId of Object.values(indexToToolId)) {
+		Object.values(indexToToolId).forEach((toolId) => {
 			const tool = message.room.getTool(toolId);
 			if (tool) {
 				tool.endStreaming();
 			}
-		}
+		});
 		return;
 	}
 
@@ -66,7 +66,6 @@ export const applyToolStreamChunk = (
 				arguments: {},
 				_tool_found: false,
 				original_name: "",
-				title: "",
 				description: "",
 				_meta: {
 					SMSS_ENGINE_NAME: "",
@@ -80,10 +79,13 @@ export const applyToolStreamChunk = (
 		};
 		message.parts.push(placeholderPart);
 
-		// ToolStore.syncMessage will store the placeholder as toolCall.part, but
-		// the `json` getter sees the empty title and falls back to `streamingName`
-		// until the real part arrives.
-		message.room.syncTool(data.id, message, placeholderPart);
+		// ToolStore.syncMessage stores the placeholder as toolCall.part, but the
+		// `placeholder` flag keeps the `json` getter falling back to
+		// `streamingName` (and to a non-executable `_meta`) until the real part
+		// arrives with the tool's actual metadata.
+		message.room.syncTool(data.id, message, placeholderPart, {
+			placeholder: true,
+		});
 		const tool = message.room.getTool(data.id);
 		if (tool) {
 			tool.beginStreaming();

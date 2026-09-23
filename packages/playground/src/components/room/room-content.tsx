@@ -11,6 +11,7 @@ import { useTranslation } from "@semoss/i18n";
 import type { MCPToolResponse } from "@semoss/sdk";
 import {
 	Button,
+	cn,
 	DropdownMenuItem,
 	DropdownMenuSeparator,
 	ScrollArea,
@@ -27,16 +28,26 @@ import {
 	RoomInputMenuFileExplorer,
 	RoomInputMenuMCP,
 	RoomInputMenuUpload,
+	type SendButtonState,
 } from "@/components";
+import { useFileDrag } from "@/contexts";
 import { useChat, useGracefulErrors } from "@/hooks";
-import { ResponseMessageStore, type RoomStore } from "@/stores";
+import {
+	type InputMessageStore,
+	ResponseMessageStore,
+	ROOM_PANEL_TYPES,
+	type RoomStore,
+} from "@/stores";
+import { decideAgentToolAction } from "@/stores/message/agent-harness";
+import { isAskExecutionMode } from "@/utility/mcp-utils";
 import { RoomCompactionIndicator } from "./room-compaction-indicator";
+import { RoomGeneratingIndicator } from "./room-generating-indicator";
+import { RoomGreeting } from "./room-greeting";
 import { RoomSuggestions } from "./room-suggestions";
 
-const ROOM_CONFIGURATION_ID = "CONFIGURATION";
 const SCROLL_THRESHOLD = 150;
 
-interface RoomContentProps {
+export interface RoomContentProps {
 	/** Room to load */
 	room: RoomStore;
 }
@@ -44,10 +55,12 @@ interface RoomContentProps {
 /**
  * The page for a room
  */
-export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
+export const RoomContent = observer(({ room }: RoomContentProps) => {
 	const { chat } = useChat();
 	const { t } = useTranslation("room");
+	const { t: tChat } = useTranslation("chat");
 	const { getGracefulErrorMessage } = useGracefulErrors();
+	const { isDragging } = useFileDrag();
 	const [scrollEle, setScrollEle] = useState<HTMLDivElement | null>(null);
 	const [contentEle, setContentEle] = useState<HTMLDivElement | null>(null);
 	const [contentHeight, setContentHeight] = useState(0);
@@ -62,12 +75,17 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 		// update the options
 		await room.updateRoomOptions(room.options);
 
-		// ask the room
+		// ask the room — let errors propagate so room-input can restore files
 		await room.askMessage(prompt, files);
 
 		// re-sync room options from backend after message completes,
-		// preserving workspace MCPs that are only held in memory
-		await room.syncRoomOptions();
+		// preserving workspace MCPs that are only held in memory. Skipped when
+		// the turn just errored (e.g. a cancel that failed to persist) — a
+		// successful sync clears the room's error state, which would otherwise
+		// wipe the message the user just needs to see.
+		if (!room.error) {
+			await room.syncRoomOptions();
+		}
 
 		return true;
 	};
@@ -76,34 +94,24 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 	 * Open the room configuration sidebar tab
 	 */
 	const handleOpenSettings = useCallback(() => {
-		room.addSidebarNode(ROOM_CONFIGURATION_ID, {
-			type: "tab",
-			name: "Configuration",
-			component: "room-configuration",
-			config: {},
-			enableClose: true,
-		});
+		room.openSidebarPanel(ROOM_PANEL_TYPES.CONFIGURATION);
 	}, [room]);
 
 	/**
 	 * Open the audit logs dashboard for this room in the right side panel.
 	 */
 	const handleOpenActivityLog = useCallback(() => {
-		room.addSidebarNode("room-activity-log", {
-			type: "tab",
-			name: "Activity Log",
-			component: "audit-log-report",
-			config: {},
-			enableClose: true,
-		});
+		room.openSidebarPanel(ROOM_PANEL_TYPES.AUDIT_LOG);
 	}, [room]);
 
 	/**
 	 * Compact messages in the room
 	 */
-	const handleCompactMessages = async () => {
+	const handleCompactMessages = async (
+		strategy?: "TOOL_PRUNE" | "SUMMARY" | "AUTO",
+	) => {
 		try {
-			const result = await room.compactMessages();
+			const result = await room.compactMessages(strategy);
 			if (result === "skipped") {
 				toast.info(t("settings.compactSkipped"));
 			} else {
@@ -186,11 +194,30 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 
 				const tool = event.data.tool;
 
+				// An agent-run tool paused on a decision must resume through
+				// the AGENT_RUN_ACTION row, not room.processTool's legacy
+				// room-write path — see decideAgentToolAction.
+				const liveTool = room.getTool(tool.id);
+				if (liveTool?.pendingAction) {
+					const isCancelled =
+						tool.tool_status === "cancelled" ||
+						tool.tool_status === "paused";
+					await decideAgentToolAction(
+						liveTool,
+						isCancelled ? "reject" : "submit",
+						tool.executedParameters ?? {},
+					);
+					return;
+				}
+
 				room.processTool(
 					tool.message,
 					tool.id,
 					tool.response,
-					tool.tool_status,
+					// "paused" is retired — fold any legacy iframe status into cancelled
+					tool.tool_status === "paused"
+						? "cancelled"
+						: tool.tool_status,
 					tool.executedParameters ?? {},
 				);
 			} catch {
@@ -342,21 +369,41 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 			return false;
 		}
 
-		for (const part of room.latestResponseMessage.parts) {
+		return room.latestResponseMessage.parts.some((part) => {
 			if (
-				part.type === "TOOL_CALL" &&
-				part.toolCall._meta?.SMSS_MCP_EXECUTION === "auto"
+				part.type !== "TOOL_CALL" ||
+				part.toolCall._meta?.SMSS_MCP_EXECUTION !== "auto"
 			) {
-				const tool = room.getTool(part.toolCall.id);
-				if (
-					tool &&
-					(tool.status === "INITIAL" || tool.status === "LOADING")
-				) {
-					return true;
-				}
+				return false;
 			}
+			const tool = room.getTool(part.toolCall.id);
+			return (
+				!!tool &&
+				(tool.status === "INITIAL" || tool.status === "LOADING")
+			);
+		});
+	})();
+
+	// Count of ask-mode tools on the latest response genuinely waiting on the
+	// user to click into them — not auto tools (they don't need a click), and
+	// not ask tools that already resolved (SUCCESS/ERROR/CANCELLED) or are
+	// already running (LOADING) after being clicked.
+	const waitingAskToolCount = (() => {
+		if (!room.latestResponseMessage) {
+			return 0;
 		}
-		return false;
+
+		return room.latestResponseMessage.parts.filter((part) => {
+			if (part.type !== "TOOL_CALL") {
+				return false;
+			}
+			const tool = room.getTool(part.toolCall.id);
+			return (
+				!!tool &&
+				tool.status === "INITIAL" &&
+				isAskExecutionMode(tool.json._meta?.SMSS_MCP_EXECUTION)
+			);
+		}).length;
 	})();
 
 	const showLoadingState =
@@ -364,8 +411,84 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 		room.latestResponseMessage.isThinking ||
 		isAutoExecutingTools;
 
+	// Agent-run turns can't actually be interrupted server-side yet, so show a
+	// plain spinner instead of a Stop button that would look actionable but do
+	// nothing.
+	const sendState: SendButtonState = room.isCancelling
+		? "loading"
+		: room.mode === "agent" && showLoadingState
+			? "loading"
+			: room.canCancel || showLoadingState
+				? "stop"
+				: "send";
+
+	// A response that's actively generating with nothing to show yet — no
+	// text, tool calls, media, or even real thinking content — renders as
+	// no entry at all; RoomGeneratingIndicator covers that window instead,
+	// so it never mounts as its own block only to fold away again the
+	// moment it gets its first tool call. The instant any real content
+	// exists (including thinking) it gets its own entry immediately.
+	const isPendingResponse = (
+		m: InputMessageStore | ResponseMessageStore,
+	): boolean =>
+		m.type === "OUTPUT" &&
+		m.isThinking &&
+		!m.hasVisibleContent &&
+		!m.parts.some(
+			(part) => part.type === "THINKING" && part.thinking.length > 0,
+		);
+
+	// Folds a run of tool-only responses up into the response preceding them.
+	const roomHistoryEntries = (() => {
+		interface Entry {
+			message: InputMessageStore | ResponseMessageStore;
+			subsequentTools: ResponseMessageStore[];
+		}
+		let anchor: Entry | null = null;
+
+		return room.history.reduce<Entry[]>((entries, m) => {
+			if (!m.visible) {
+				return entries;
+			}
+
+			if (isPendingResponse(m)) {
+				return entries;
+			}
+
+			// A settled empty response is only meaningful as a direct reply
+			// to a user turn. When its nearest non-hidden ancestor is
+			// another response — e.g. the empty assistant message the
+			// backend commits after a stopped tool phase — it's just
+			// noise, so skip it. (Still-thinking placeholders are left
+			// alone so a streaming post-tool reply isn't hidden.)
+			if (
+				m.type === "OUTPUT" &&
+				!m.hasVisibleContent &&
+				!m.isThinking &&
+				m.findAncestor((a) => a.visible)?.type === "OUTPUT"
+			) {
+				return entries;
+			}
+
+			if (m.type === "OUTPUT" && m.shouldFoldUp && anchor) {
+				anchor.subsequentTools.push(m);
+				return entries;
+			}
+
+			const entry: Entry = { message: m, subsequentTools: [] };
+			anchor = m.type === "OUTPUT" ? entry : null;
+			entries.push(entry);
+			return entries;
+		}, []);
+	})();
+
 	return (
-		<div className="flex h-full w-full flex-col bg-background transition-all duration-200 ease-in-out">
+		<div
+			className={cn(
+				"flex h-full w-full flex-col border-2 border-transparent bg-background transition-all duration-200 ease-in-out",
+				isDragging && "border-primary",
+			)}
+		>
 			<div className="relative w-full flex-1 overflow-hidden">
 				<ScrollArea
 					// Force Radix's table-display viewport wrapper to block so wide content can't push the column past the viewport width
@@ -380,55 +503,78 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 						}}
 					>
 						<div className="mx-auto flex w-full max-w-[1120px] flex-col gap-2 px-4 py-6 sm:px-8 lg:px-16">
-							{room.history.map((m) => {
-								if (!m.visible) {
-									return null;
-								}
+							{room.agentGreeting && (
+								<RoomGreeting
+									room={room}
+									greeting={room.agentGreeting}
+								/>
+							)}
+							{roomHistoryEntries.map(
+								({ message: m, subsequentTools }) => {
+									const showModelName = (() => {
+										// find the most recent ancestor that actually has a model
+										const ancestor = m.findAncestor(
+											(a) => !!a.modelId,
+										);
+										// If no ancestor has a model, show the model name for this message
+										if (!ancestor) return true;
+										// Only show the model name if it's different from the ancestor's model to reduce clutter
+										return m.modelId !== ancestor.modelId;
+									})();
 
-								const showModelName = (() => {
-									// find the most recent ancestor that actually has a model
-									let ancestor = m.parent;
-									while (ancestor) {
-										if (ancestor.modelId) break;
-										ancestor = ancestor.parent;
-									}
-									// If no ancestor has a model, show the model name for this message
-									if (!ancestor) return true;
-									// Only show the model name if it's different from the ancestor's model to reduce clutter
-									return m.modelId !== ancestor.modelId;
-								})();
-
-								return (
-									<React.Fragment key={m.key}>
-										{showModelName && (
-											<div className="relative mb-4 flex flex-col items-center justify-center">
-												<div className="z-10 bg-background px-2 text-muted-foreground text-xs leading-normal">
-													{m.ornaments.modelName}
+									return (
+										<React.Fragment key={m.key}>
+											{showModelName && (
+												<div className="relative mb-4 flex flex-col items-center justify-center">
+													<div className="z-10 bg-background px-2 text-muted-foreground text-xs leading-normal">
+														{m.ornaments.modelName}
+													</div>
+													<Separator className="absolute top-1/2" />
 												</div>
-												<Separator className="absolute top-1/2" />
-											</div>
-										)}
-										{m.type === "INPUT" && (
-											<InputMessage
-												room={room}
-												message={m}
-											/>
-										)}
-										{m.type === "OUTPUT" && (
-											<ResponseMessage
-												room={room}
-												message={m}
-											/>
-										)}
+											)}
+											{m.type === "INPUT" && (
+												<InputMessage
+													room={room}
+													message={m}
+												/>
+											)}
+											{m.type === "OUTPUT" && (
+												<ResponseMessage
+													room={room}
+													message={m}
+													subsequentTools={
+														subsequentTools
+													}
+												/>
+											)}
 
-										{m.type === "OUTPUT" && (
-											<RoomCompactionIndicator
-												message={m}
-											/>
-										)}
-									</React.Fragment>
-								);
-							})}
+											{m.type === "OUTPUT" && (
+												<RoomCompactionIndicator
+													message={m}
+												/>
+											)}
+										</React.Fragment>
+									);
+								},
+							)}
+							<div className="-mt-4">
+								<RoomGeneratingIndicator
+									active={
+										showLoadingState ||
+										waitingAskToolCount > 0
+									}
+									overrideMessage={
+										waitingAskToolCount > 0
+											? tChat(
+													"response.completeToolsAsk",
+													{
+														count: waitingAskToolCount,
+													},
+												)
+											: undefined
+									}
+								/>
+							</div>
 							{room.theme.featureFlags?.enableSuggestions && (
 								<RoomSuggestions room={room} />
 							)}
@@ -495,7 +641,6 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 					predefinedPrompts={room.options.predefinedPrompts}
 					className="max-h-56 min-h-24"
 					isLoading={showLoadingState}
-					hidePauseButton={!room.numberOfTools}
 					model={room.model}
 					room={room}
 					setModel={(model) => {
@@ -571,16 +716,18 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 					hasOutstandingTools={
 						room.latestResponseMessage.hasUnfinishedTools
 					}
-					hasToolsPaused={room.latestResponseMessage.isPaused}
-					toggleToolsPaused={
-						room.latestResponseMessage.toggleIsPaused
-					}
-					tokensUsed={room.tokensUsed}
-					tokensMax={chat.models.contextWindow}
-					totalTokens={room.totalTokensConsumed}
+					sendState={sendState}
+					onStop={room.cancelActiveJob}
 					onCompact={handleCompactMessages}
 					onOpenSettings={handleOpenSettings}
-					excludeCommandIds={["agent", "workspace"]}
+					excludeCommandIds={[
+						"agent",
+						"workspace",
+						// A room's mode is fixed at creation — never let an
+						// existing room switch into agent-harness mid-chat.
+						"agent-harness",
+						"harness",
+					]}
 				/>
 			</div>
 		</div>

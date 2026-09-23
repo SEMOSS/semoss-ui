@@ -17,14 +17,18 @@
 		"poorResponse": "Mala respuesta",
 		"copyResponse": "Copiar respuesta",
 		"copyCode": "Copiar código",
+		"copy": "Copiar",
+		"saveInRoom": "Guardar en la sala",
+		"savingToRoom": "Guardando...",
+		"fullView": "Vista completa",
+		"raw": "Bruto",
+		"diagram": "Diagrama",
 		"feedbackPlaceholder": "Agregar un comentario (opcional)",
 		"feedbackCancel": "Cancelar",
 		"feedbackSubmit": "Enviar",
 		"fastForwardToEnd": "Avanzar al final",
 		"completeToolsAsk_one": "Por favor, completa la herramienta para continuar.",
 		"completeToolsAsk_other": "Por favor, completa las herramientas para continuar.",
-		"completeToolsAuto_one": "Por favor, espera a que la herramienta se complete.",
-		"completeToolsAuto_other": "Por favor, espera a que las herramientas se completen.",
 		"emptyResponse": "Respuesta vacía."
 	},
 	"input": {
@@ -43,6 +47,7 @@
 		"rewriteSuccess": "Mensaje reescrito con éxito",
 		"copySuccess": "Copiado al portapapeles con éxito",
 		"noCopyContent": "No hay contenido para copiar",
+		"savedInRoom": "Guardado en la sala como {{filePath}}",
 		"planStepRemoved": "Paso {{stepNumber}} eliminado del plan con éxito"
 	},
 	"gracefulErrors": {

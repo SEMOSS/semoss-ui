@@ -8,7 +8,7 @@ import {
 	type PostUser,
 	type Role,
 	type User,
-} from "@semoss/shared";
+} from "@semoss/sdk";
 import {
 	Button,
 	Command,

@@ -1,5 +1,6 @@
 import { createContext } from "react";
-import type { Engine, Role } from "@semoss/shared";
+import type { Role } from "@semoss/sdk";
+import type { Engine } from "@semoss/shared";
 import type { ENGINE_TYPES } from "@/types";
 
 /**

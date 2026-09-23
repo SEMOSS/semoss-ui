@@ -1,13 +1,23 @@
 import { createMcpPlatformUrl, createPromptPlatformUrl } from "@semoss/shared";
+import { MCP_EXECUTION_AGENT_ASK, MCP_EXECUTION_ASK } from "@/constants";
 
 export { isKnowledgeMcp, splitMcpByType } from "@semoss/shared";
+
+/**
+ * Whether a tool's execution mode means "needs an interactive decision",
+ * covering both the legacy ask flow and an agent-run tool awaiting approval
+ * (which carries agent-ask instead of ask, since agent-run tools are never
+ * client-dispatched — see MCP_EXECUTION_AGENT_ASK).
+ */
+export const isAskExecutionMode = (execution: string | undefined): boolean =>
+	execution === MCP_EXECUTION_ASK || execution === MCP_EXECUTION_AGENT_ASK;
 
 /**
  * Reserved id the backend puts on SMSS_ENGINE_ID for room scoped tools. There is
  * no catalog entry behind it: it tells the backend to read the tools from the
  * room's own asset folder, so it must never be used as a project or engine id.
  */
-export const ROOM_MCP_ID = "__room__";
+const ROOM_MCP_ID = "__room__";
 
 /** The subset of a tool's `_meta` that carries its owning app. */
 type ToolOwnerMeta = {

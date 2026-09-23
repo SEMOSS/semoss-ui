@@ -1,9 +1,12 @@
 import { toJS } from "mobx";
 import { observer } from "mobx-react-lite";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { isRequestUserInputAction, parseUserInputRequest } from "@semoss/sdk";
 import { Env, type MCPToolRequest, usePixel } from "@semoss/sdk/react";
-import { Skeleton } from "@semoss/ui/next";
+import { AgentUserInputCard, Skeleton, toast } from "@semoss/ui/next";
 import type { RoomStore } from "@/stores";
+import { decideAgentToolAction } from "@/stores/message/agent-harness";
+import { isAskExecutionMode } from "@/utility/mcp-utils";
 import { ToolsDefaultView } from "./tools-default-view";
 import { ToolsServerView } from "./tools-server-view";
 
@@ -145,7 +148,10 @@ export const ToolsView = observer(
 				}
 
 				// Auto-executing tool that hasn't completed yet — show default view
-				if (tool._meta.SMSS_MCP_EXECUTION !== "ask" && !toolResponse) {
+				if (
+					!isAskExecutionMode(tool._meta?.SMSS_MCP_EXECUTION) &&
+					!toolResponse
+				) {
 					setUrl("");
 					setIsLoading(false);
 					return;
@@ -160,6 +166,17 @@ export const ToolsView = observer(
 					return;
 				}
 
+				// No app to resolve (e.g. platform-synthesized tools like the
+				// subagent control tools, which aren't backed by any MCP
+				// project/engine) -- usePixel never leaves "INITIAL" for an
+				// empty pixel string, so this must be checked before the
+				// loading gate below or it waits forever.
+				if (!app) {
+					setUrl("");
+					setIsLoading(false);
+					return;
+				}
+
 				// Finish loading
 				if (
 					getAppInfo.status === "INITIAL" ||
@@ -169,7 +186,7 @@ export const ToolsView = observer(
 				}
 
 				// Ignore if the app metadata could not be resolved
-				if (!app || getAppInfo.status === "ERROR") {
+				if (getAppInfo.status === "ERROR") {
 					setUrl("");
 					setIsLoading(false);
 					return;
@@ -177,7 +194,7 @@ export const ToolsView = observer(
 
 				setIsLoading(true);
 
-				if (!tool._meta.SMSS_MCP_UI) {
+				if (!tool._meta?.SMSS_MCP_UI) {
 					// Legacy, check for portals
 
 					if (getAppInfo.data.project_type === "BLOCKS") {
@@ -209,7 +226,7 @@ export const ToolsView = observer(
 					);
 				} else {
 					// Modern
-					const resourceURI = tool._meta.SMSS_MCP_UI?.resourceURI;
+					const resourceURI = tool._meta?.SMSS_MCP_UI?.resourceURI;
 					if (!resourceURI) {
 						// No UI defined, show form
 						setUrl("");
@@ -268,14 +285,54 @@ export const ToolsView = observer(
 						onLoad={() => handleOnLoad()}
 					/>
 				)}
-				{!url && !isLoading && liveTool && (
-					<ToolsDefaultView
-						room={room}
-						app={app}
-						message={message}
-						tool={liveTool}
-					/>
-				)}
+				{!url &&
+					!isLoading &&
+					liveTool &&
+					(isRequestUserInputAction({
+						toolName: liveTool.json.name,
+						toolMeta: liveTool.json._meta,
+					}) ? (
+						(() => {
+							const request = parseUserInputRequest({
+								toolArgs: liveTool.json.arguments,
+							});
+							return request ? (
+								<div className="p-3">
+									<AgentUserInputCard
+										request={request}
+										disabled={!liveTool.pendingAction}
+										onSubmit={async (answers) => {
+											try {
+												await decideAgentToolAction(
+													liveTool,
+													"respond",
+													answers,
+												);
+											} catch (error) {
+												toast.error(
+													error instanceof Error
+														? error.message
+														: "Unable to submit these answers.",
+												);
+											}
+										}}
+									/>
+								</div>
+							) : (
+								<div className="p-3 text-destructive text-sm">
+									The assistant sent an invalid input request
+									and it cannot be displayed.
+								</div>
+							);
+						})()
+					) : (
+						<ToolsDefaultView
+							room={room}
+							app={app}
+							message={message}
+							tool={liveTool}
+						/>
+					))}
 			</div>
 		);
 	},

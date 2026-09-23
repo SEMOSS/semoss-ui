@@ -3,12 +3,11 @@
 		"failed": "Mislukt",
 		"cancelled": "Geannuleerd",
 		"completed": "Voltooid",
-		"ready": "Gereed",
-		"autoExecute": "Automatisch uitvoeren",
-		"paused": "Gepauzeerd",
 		"queued": "In wachtrij voor automatische uitvoering",
 		"loadingTool": "Tool laden…",
-		"waitingForArguments": "Wachten op argumenten…"
+		"waitingForArguments": "Wachten op argumenten…",
+		"running": "Bezig",
+		"waitingForInput": "Wachten op invoer"
 	},
 	"actions": {
 		"cancel": "Annuleren",
@@ -18,31 +17,47 @@
 		"closeInSidebar": "Zijbalk sluiten",
 		"openInline": "Inline openen"
 	},
+	"tabs": {
+		"output": "Uitvoer",
+		"inputs": "Invoer",
+		"description": "Beschrijving"
+	},
 	"group": {
 		"labelClosed": "{{toolName}} + nog {{count}}",
 		"labelOpen": "Uitgevoerde tools ({{count}})",
+		"labelStreaming_one": "{{count}} tool laden…",
+		"labelStreaming_other": "{{count}} tools laden…",
+		"labelPartial_one": "{{count}} tool voltooid, {{loadingCount}} aan het laden…",
+		"labelPartial_other": "{{count}} tools voltooid, {{loadingCount}} aan het laden…",
 		"summaryCompleted": "{{count}} voltooid",
+		"summaryLoading": "{{count}} aan het laden",
 		"summaryError": "{{count}} mislukt",
-		"summaryCancelled": "{{count}} geannuleerd",
-		"summaryPaused": "{{count}} gepauzeerd"
+		"summaryCancelled": "{{count}} geannuleerd"
 	},
 	"form": {
 		"result": "Resultaat",
+		"parameters": "Parameters",
 		"schemaLoadFailed": "Laden van toolschema mislukt",
 		"schemaLoadFailedDescription": "Kan toolconfiguratie niet ophalen. Probeer het later opnieuw.",
 		"schemaLoading": "Toolschema laden...",
 		"noParameters": "Geen parameters vereist",
-		"showParameters": "Parameters tonen ({{count}})",
-		"hideParameters": "Parameters verbergen ({{count}})",
 		"showOptionalFields": "Optionele velden tonen ({{count}})",
 		"hideOptionalFields": "Optionele velden verbergen ({{count}})",
 		"execute": "Tool uitvoeren",
-		"executing": "Uitvoeren..."
+		"executing": "Uitvoeren...",
+		"noOutput": "Nog geen uitvoer.",
+		"noDescription": "Geen beschrijving opgegeven.",
+		"outputDialogTitle": "{{title}} — Uitvoer"
 	},
 	"playwright": {
 		"details": "Details van Playwright-script",
 		"projectId": "Project-ID",
 		"recordedFile": "Opgenomen bestand"
+	},
+	"subagent": {
+		"title": "Subagent",
+		"notFound": "Subagent niet gevonden",
+		"noResult": "Nog geen antwoord"
 	},
 	"extension": {
 		"required": "Browserextensie vereist",

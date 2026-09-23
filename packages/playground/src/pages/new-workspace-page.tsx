@@ -7,7 +7,7 @@ import {
 } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useId, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router";
 import { useTranslation } from "@semoss/i18n";
 import {
 	MCPSelector,
@@ -248,6 +248,9 @@ export const NewWorkspacePage = observer(() => {
 							enableKnowledgeMCP={
 								root.theme.featureFlags?.enableKnowledgeMCP
 							}
+							showSystemTools={
+								root.theme.featureFlags?.showSystemTools
+							}
 							getPlatformUrl={
 								root.theme.featureFlags?.showPlatformLinks
 									? mcpToPlatformUrl
@@ -267,6 +270,9 @@ export const NewWorkspacePage = observer(() => {
 							disabled={isSaving}
 							onChange={(next) => setSkills(next)}
 							className="h-112"
+							showSystemSkills={
+								root.theme.featureFlags?.showSystemSkills
+							}
 						/>
 					</section>
 

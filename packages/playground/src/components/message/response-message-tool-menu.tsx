@@ -15,9 +15,11 @@ import {
 	DropdownMenuItem,
 	DropdownMenuSeparator,
 	DropdownMenuTrigger,
+	toast,
 	useIsMobile,
 } from "@semoss/ui/next";
 import type { ResponseMessageStore, ToolStore } from "@/stores";
+import { decideAgentToolAction } from "@/stores/message/agent-harness";
 
 export interface ResponseMessageToolMenuProps {
 	message: ResponseMessageStore;
@@ -124,13 +126,26 @@ export const ResponseMessageToolMenu = ({
 						<DropdownMenuSeparator />
 						<DropdownMenuItem
 							variant="destructive"
-							onClick={() => {
-								message.saveToolExecution(
-									tool,
-									"",
-									"cancelled",
-									{},
-								);
+							onClick={async () => {
+								if (tool.pendingAction) {
+									try {
+										await decideAgentToolAction(
+											tool,
+											"reject",
+										);
+									} catch (e: unknown) {
+										const error = e as { message: string };
+										toast.error(error.message);
+										return;
+									}
+								} else {
+									message.saveToolExecution(
+										tool,
+										"",
+										"cancelled",
+										{},
+									);
+								}
 								tool.closeTool();
 							}}
 						>

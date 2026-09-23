@@ -18,7 +18,7 @@ import {
 	TooltipTrigger,
 	toast,
 } from "@semoss/ui/next";
-import { useRootStore } from "@/hooks";
+import { useSession } from "@/hooks";
 
 interface PromptModalProps {
 	isOpen: boolean;
@@ -36,7 +36,7 @@ interface PromptModalProps {
 }
 
 export const PromptModal = (props: PromptModalProps) => {
-	const { monolithStore } = useRootStore();
+	const runPixel = useSession((state) => state.runPixel);
 	const { isOpen, onClose, mode, prompt, initialData } = props;
 	const [context, setContext] = useState("");
 	const [title, setTitle] = useState("");
@@ -55,8 +55,7 @@ export const PromptModal = (props: PromptModalProps) => {
 			global: global,
 		};
 		const stringified = `AddPrompt ( map = [${JSON.stringify(promptMap)} ])`;
-		monolithStore
-			.runQuery(stringified)
+		runPixel(stringified)
 			.then(() => {
 				toast.success("Prompt added successfully");
 				onClose(true);
@@ -76,8 +75,7 @@ export const PromptModal = (props: PromptModalProps) => {
 			id: prompt,
 		};
 		const stringified = `UpdatePrompt ( map = [${JSON.stringify(promptMap)} ])`;
-		monolithStore
-			.runQuery(stringified)
+		runPixel(stringified)
 			.then(() => {
 				toast.success("Prompt updated successfully");
 				onClose(true);
@@ -139,7 +137,9 @@ export const PromptModal = (props: PromptModalProps) => {
 		>
 			<DialogContent className="sm:max-w-[600px]">
 				<DialogHeader>
-					<DialogTitle>{mode} Prompt</DialogTitle>
+					<DialogTitle className="font-medium text-base leading-6">
+						{mode} Prompt
+					</DialogTitle>
 					{mode === "Edit" && initialData?.version != null && (
 						<DialogDescription>
 							Editing version {initialData.version + 1}. Saving
@@ -217,7 +217,7 @@ export const PromptModal = (props: PromptModalProps) => {
 					<div className="flex items-center justify-between">
 						<div className="flex items-center gap-2">
 							<Label htmlFor={`${id}-global`}>Global</Label>
-							<Tooltip>
+							<Tooltip disableHoverableContent={false}>
 								<TooltipTrigger asChild>
 									<Info className="size-4 cursor-help text-muted-foreground" />
 								</TooltipTrigger>

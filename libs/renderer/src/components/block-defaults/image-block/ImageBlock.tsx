@@ -1,6 +1,6 @@
 import { observer } from "mobx-react-lite";
 import { type CSSProperties, useEffect, useMemo, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams } from "react-router";
 import { usePixel } from "@semoss/sdk/react";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@semoss/ui/next";
 import ImageSkeleton from "../../../assets/img/Image-placeholder.svg";

@@ -3,10 +3,11 @@
 		"failed": "Échoué",
 		"cancelled": "Annulé",
 		"completed": "Terminé",
-		"ready": "Prêt",
-		"autoExecute": "Exécution automatique en cours",
-		"paused": "En pause",
-		"queued": "En file d'attente pour l'exécution automatique"
+		"queued": "En file d'attente pour l'exécution automatique",
+		"loadingTool": "Chargement de l'outil…",
+		"waitingForArguments": "En attente des arguments…",
+		"running": "En cours d'exécution",
+		"waitingForInput": "En attente d'une saisie"
 	},
 	"actions": {
 		"cancel": "Annuler",
@@ -16,31 +17,47 @@
 		"closeInSidebar": "Fermer le panneau latéral",
 		"openInline": "Ouvrir en ligne"
 	},
+	"tabs": {
+		"output": "Sortie",
+		"inputs": "Entrées",
+		"description": "Description"
+	},
 	"group": {
 		"labelClosed": "{{toolName}} + {{count}} de plus",
 		"labelOpen": "Outils exécutés ({{count}})",
+		"labelStreaming_one": "Chargement de {{count}} outil…",
+		"labelStreaming_other": "Chargement de {{count}} outils…",
+		"labelPartial_one": "{{count}} outil terminé, {{loadingCount}} en chargement…",
+		"labelPartial_other": "{{count}} outils terminés, {{loadingCount}} en chargement…",
 		"summaryCompleted": "{{count}} terminé",
+		"summaryLoading": "{{count}} en chargement",
 		"summaryError": "{{count}} échoué",
-		"summaryCancelled": "{{count}} annulé",
-		"summaryPaused": "{{count}} en pause"
+		"summaryCancelled": "{{count}} annulé"
 	},
 	"form": {
 		"result": "Résultat",
+		"parameters": "Paramètres",
 		"schemaLoadFailed": "Échec du chargement du schéma de l'outil",
 		"schemaLoadFailedDescription": "Impossible de récupérer la configuration de l'outil. Veuillez réessayer ultérieurement.",
 		"schemaLoading": "Chargement du schéma de l'outil...",
 		"noParameters": "Aucun paramètre requis",
-		"showParameters": "Afficher les paramètres ({{count}})",
-		"hideParameters": "Masquer les paramètres ({{count}})",
 		"showOptionalFields": "Afficher les champs optionnels ({{count}})",
 		"hideOptionalFields": "Masquer les champs optionnels ({{count}})",
 		"execute": "Exécuter l'outil",
-		"executing": "Exécution en cours..."
+		"executing": "Exécution en cours...",
+		"noOutput": "Pas encore de résultat.",
+		"noDescription": "Aucune description fournie.",
+		"outputDialogTitle": "{{title}} — Sortie"
 	},
 	"playwright": {
 		"details": "Détails du script Playwright",
 		"projectId": "ID du projet",
 		"recordedFile": "Fichier enregistré"
+	},
+	"subagent": {
+		"title": "Sous-agent",
+		"notFound": "Sous-agent introuvable",
+		"noResult": "Pas encore de réponse"
 	},
 	"extension": {
 		"required": "Extension de navigateur requise",

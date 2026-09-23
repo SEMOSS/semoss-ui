@@ -1,8 +1,7 @@
-export * from "./admin";
-export * from "./engine-model-test-sidebar";
 export * from "./file-table";
 export { MemberAccessPanel } from "./member-access-panel";
 export { MemberList } from "./member-list";
+export { MicrosoftSubscriptions } from "./microsoft-subscriptions";
 export * from "./pending-members-table";
 export * from "./service-accounts-table";
 export * from "./settings.types";

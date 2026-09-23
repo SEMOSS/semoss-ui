@@ -1,5 +1,6 @@
-import { EyeOff, LockKeyhole, Trash2 } from "lucide-react";
+import { Copy, EyeOff, LockKeyhole, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
+import { usePixel } from "@semoss/sdk/react";
 import {
 	Button,
 	Card,
@@ -15,10 +16,11 @@ import {
 	setEngineGlobal,
 	setEngineVisiblity,
 	setProjectGlobal,
+	setProjectTemplate,
 	setProjectVisiblity,
 } from "@/api";
 import { DeleteEntityDialog } from "@/components/shared/delete-entity-dialog";
-import { usePixel, useRootStore, useSettings } from "@/hooks";
+import { useSession, useSettings } from "@/hooks";
 import type { ALL_TYPES, ApiResponse } from "@/types";
 import { formatToDataTestId } from "@/utility";
 
@@ -91,12 +93,16 @@ const AlertTile = ({
 export const SettingsTiles = (props: SettingsTilesProps) => {
 	const { id, type, name, condensed, onDelete, direction = "column" } = props;
 
-	const { monolithStore, configStore } = useRootStore();
+	const runPixel = useSession((state) => state.runPixel);
+	const isEngineOperationAvailable = useSession(
+		(state) => state.isEngineOperationAvailable,
+	);
 	const { adminMode, engineInfo: contextEngineInfo } = useSettings();
 
 	const [deleteModal, setDeleteModal] = useState(false);
 	const [discoverable, setDiscoverable] = useState(true);
 	const [global, setGlobal] = useState(true);
+	const [isTemplate, setIsTemplate] = useState(false);
 	const [loading, setLoading] = useState(false);
 
 	const isEngineType =
@@ -151,10 +157,12 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 			const data = engineInfo.data as {
 				project_global: boolean;
 				project_discoverable: boolean;
+				project_is_template: boolean;
 			};
 
 			setDiscoverable(data.project_discoverable);
 			setGlobal(data.project_global);
+			setIsTemplate(data.project_is_template === true);
 		}
 	}, [engineInfo.status, engineInfo.data, type]);
 
@@ -208,6 +216,7 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 				};
 				const isWorkspace = projectData?.project_type === "WORKSPACE";
 				const isSkill = projectData?.project_type === "SKILL";
+				const isNotebook = projectData?.project_type === "NOTEBOOK";
 
 				if (isWorkspace) {
 					deletePixel = `DeleteWorkspace(workspaceId=['${id}']);`;
@@ -215,6 +224,9 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 				} else if (isSkill) {
 					deletePixel = `DeleteSkill(skillId=['${id}']);`;
 					entityLabel = "skill";
+				} else if (isNotebook) {
+					deletePixel = `DeleteProject(project=['${id}']);`;
+					entityLabel = "notebook";
 				} else {
 					deletePixel = `DeleteProject(project=['${id}']);`;
 					entityLabel = "app";
@@ -222,7 +234,7 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 			}
 
 			// run the pixel
-			const response = await monolithStore.runQuery(deletePixel);
+			const response = await runPixel(deletePixel);
 
 			const operationType = response.pixelReturn[0].operationType;
 			const output = response.pixelReturn[0].output;
@@ -364,6 +376,61 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 		}
 	};
 
+	/**
+	 * Toggle whether viewers may clone this project as a template.
+	 */
+	const changeTemplate = async () => {
+		try {
+			setLoading(true);
+			const response = await setProjectTemplate(
+				adminMode,
+				id,
+				!isTemplate,
+			);
+			if (response.data.success) {
+				setIsTemplate(!isTemplate);
+				toast.success(
+					isTemplate
+						? `Successfully removed ${name} as a template`
+						: `Successfully enabled ${name} as a template`,
+				);
+			} else {
+				toast.error(`Error updating template status for ${name}`);
+			}
+		} catch (e) {
+			toast.error(String(e));
+		} finally {
+			setLoading(false);
+		}
+	};
+
+	const templateTile =
+		type === "PROJECT" ? (
+			<AlertTile
+				setBounds={direction === "column"}
+				icon={<Copy aria-hidden />}
+				title="Use as template"
+				description="Allow users who can view this project to create their own independent copy. This does not make the project public."
+				action={
+					<Switch
+						aria-label={`Use ${name} as a template`}
+						title={
+							isTemplate
+								? `Stop using ${name} as a template`
+								: `Use ${name} as a template`
+						}
+						checked={isTemplate}
+						data-testid={formatToDataTestId(
+							`settingsTiles-${name}-use-as-template-switch`,
+						)}
+						onCheckedChange={() => {
+							changeTemplate();
+						}}
+					/>
+				}
+			/>
+		) : null;
+
 	/** LOADING */
 	if (loading) {
 		return (
@@ -394,10 +461,7 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 								}
 								checked={!global}
 								disabled={
-									!configStore.isEngineOperationAvailable(
-										type,
-										"public",
-									)
+									!isEngineOperationAvailable(type, "public")
 								}
 								data-testid={formatToDataTestId(
 									`settingsTiles-make-${name}-public-private-switch`,
@@ -409,7 +473,7 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 						}
 					/>
 					{global ? (
-						<Tooltip>
+						<Tooltip disableHoverableContent={false}>
 							<TooltipTrigger asChild>
 								<div>
 									<AlertTile
@@ -428,7 +492,7 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 												}
 												disabled={
 													global ||
-													!configStore.isEngineOperationAvailable(
+													!isEngineOperationAvailable(
 														type,
 														"discoverable",
 													)
@@ -473,7 +537,7 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 									)}
 									disabled={
 										global ||
-										!configStore.isEngineOperationAvailable(
+										!isEngineOperationAvailable(
 											type,
 											"discoverable",
 										)
@@ -486,6 +550,7 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 							}
 						/>
 					)}
+					{templateTile}
 					<AlertTile
 						setBounds={direction === "column"}
 						icon={<Trash2 className="mt-0.5 h-[22px] w-[22px]" />}
@@ -495,10 +560,7 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 							<Button
 								variant="destructive"
 								disabled={
-									!configStore.isEngineOperationAvailable(
-										type,
-										"delete",
-									)
+									!isEngineOperationAvailable(type, "delete")
 								}
 								data-testid={formatToDataTestId(
 									`settingsTiles-${name}-delete-btn`,
@@ -528,11 +590,11 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 		);
 	} else {
 		return (
-			<div className="flex-1">
+			<div className="@container flex-1">
 				<div
 					className={`grid gap-6 ${
 						direction === "row"
-							? "grid-cols-1 md:grid-cols-3"
+							? "@6xl:grid-cols-4 @xl:grid-cols-2 grid-cols-1"
 							: "grid-cols-1"
 					}`}
 				>
@@ -551,10 +613,7 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 								}
 								checked={!global}
 								disabled={
-									!configStore.isEngineOperationAvailable(
-										type,
-										"public",
-									)
+									!isEngineOperationAvailable(type, "public")
 								}
 								data-testid={formatToDataTestId(
 									`settingsTiles-make-${name}-public-private-switch`,
@@ -566,7 +625,7 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 						}
 					/>
 					{global ? (
-						<Tooltip>
+						<Tooltip disableHoverableContent={false}>
 							<TooltipTrigger asChild>
 								<div>
 									<AlertTile
@@ -581,7 +640,7 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 											<Switch
 												disabled={
 													global ||
-													!configStore.isEngineOperationAvailable(
+													!isEngineOperationAvailable(
 														type,
 														"discoverable",
 													)
@@ -618,7 +677,7 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 								<Switch
 									disabled={
 										global ||
-										!configStore.isEngineOperationAvailable(
+										!isEngineOperationAvailable(
 											type,
 											"discoverable",
 										)
@@ -639,6 +698,7 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 							}
 						/>
 					)}
+					{templateTile}
 					{onDelete ? (
 						<>
 							<AlertTile
@@ -656,7 +716,7 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 											`settingsTiles-${name}-delete-btn`,
 										)}
 										disabled={
-											!configStore.isEngineOperationAvailable(
+											!isEngineOperationAvailable(
 												type,
 												"delete",
 											)

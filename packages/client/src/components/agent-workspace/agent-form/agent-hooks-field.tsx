@@ -18,7 +18,7 @@ import {
 	PIXEL_HOOK_KIND,
 } from "./types";
 
-export interface AgentHooksFieldProps {
+interface AgentHooksFieldProps {
 	control: Control<AgentFormValues>;
 	/** Hook kinds the server recognizes (GetWorkspace's `known_hook_kinds`). */
 	knownKinds: string[];

@@ -1,15 +1,14 @@
 import { useMemo, useState } from "react";
-import type { Role } from "@semoss/shared";
+import type { Role } from "@semoss/sdk";
 import { Tabs, TabsList, TabsTrigger } from "@semoss/ui/next";
 import { ProjectAccessControl, ProjectOverview } from "@/components/project";
 import { useProject } from "@/hooks";
 import { AppActivityPage } from "@/pages/app/app-activity-page";
-import { AppCommitsPage } from "@/pages/app/app-commits-page";
-import { AppFilesPage } from "@/pages/app/app-files-page";
 import { AppGithubPage } from "@/pages/app/app-github-page";
 import { AppMcpUsagePage } from "@/pages/app/app-mcp-usage-page";
 import { AppSettingsPage } from "@/pages/app/app-settings-page";
 import { AppSmssPage } from "@/pages/app/app-smss-page";
+import { AgentActivityPage } from "@/pages/project/agent/agent-activity-page";
 import { ProjectDependenciesPage } from "@/pages/project/project-dependencies-page";
 
 interface ProjectDetailTabsProps {
@@ -21,18 +20,17 @@ interface ProjectDetailTabsProps {
 			| "project-dependencies"
 			| "mcp-usage"
 			| "activity"
-			| "commits"
+			| "agent-activity"
 			| "github"
 			| "settings"
 			| "access-control"
-			| "files"
 			| "smss";
 		restrict?: Role[];
 	}[];
 }
 
 export const ProjectDetailTabs = ({ tabs }: ProjectDetailTabsProps) => {
-	const { project, permission, refresh } = useProject();
+	const { project, type, permission, refresh } = useProject();
 
 	const [selectedTabName, setSelectedTabName] = useState<string>("Overview");
 
@@ -93,15 +91,20 @@ export const ProjectDetailTabs = ({ tabs }: ProjectDetailTabsProps) => {
 				{activeTab?.component === "project-dependencies" && (
 					<ProjectDependenciesPage />
 				)}
-				{activeTab?.component === "mcp-usage" && <AppMcpUsagePage />}
+				{activeTab?.component === "mcp-usage" && (
+					// a skill serves its own tools, so there is no remote
+					// endpoint to repoint it at
+					<AppMcpUsagePage showRemoteConnection={type !== "SKILL"} />
+				)}
 				{activeTab?.component === "activity" && <AppActivityPage />}
-				{activeTab?.component === "commits" && <AppCommitsPage />}
+				{activeTab?.component === "agent-activity" && (
+					<AgentActivityPage />
+				)}
 				{activeTab?.component === "github" && <AppGithubPage />}
 				{activeTab?.component === "settings" && <AppSettingsPage />}
 				{activeTab?.component === "access-control" && (
 					<ProjectAccessControl />
 				)}
-				{activeTab?.component === "files" && <AppFilesPage />}
 				{activeTab?.component === "smss" && <AppSmssPage />}
 			</div>
 		</div>

@@ -8,7 +8,7 @@ import {
 } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useEffect, useId, useMemo, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router";
 import { useTranslation } from "@semoss/i18n";
 import { usePixel } from "@semoss/sdk/react";
 import {
@@ -355,6 +355,9 @@ export const EditWorkspacePage = observer(() => {
 							enableKnowledgeMCP={
 								root.theme.featureFlags?.enableKnowledgeMCP
 							}
+							showSystemTools={
+								root.theme.featureFlags?.showSystemTools
+							}
 							getPlatformUrl={
 								root.theme.featureFlags?.showPlatformLinks
 									? mcpToPlatformUrl
@@ -374,6 +377,9 @@ export const EditWorkspacePage = observer(() => {
 							disabled={isSaving}
 							onChange={(next) => setSkills(next)}
 							className="h-112"
+							showSystemSkills={
+								root.theme.featureFlags?.showSystemSkills
+							}
 						/>
 					</section>
 

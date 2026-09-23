@@ -64,12 +64,6 @@
 	"images": {
 		"logoAlt": "logo"
 	},
-	"fileDrag": {
-		"title": "Déposez des fichiers ici pour les joindre au message",
-		"modalTitle": "Ajouter des documents",
-		"browse": "Parcourir",
-		"done": "Terminé"
-	},
 	"fileExplorer": {
 		"search": "Rechercher",
 		"name": "Nom",
@@ -136,7 +130,6 @@
 		"searchAllAria": "Rechercher partout",
 		"searchCurrentAria": "Rechercher uniquement dans le répertoire actuel",
 		"searchCurrentTitle": "Rechercher uniquement dans {{path}}",
-		"moveDropHint": "Déposer pour déplacer {{label}} dans {{path}}",
 		"contextMenu": {
 			"copyPath": "Copier le chemin",
 			"copy": "Copier",

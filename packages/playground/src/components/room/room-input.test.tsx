@@ -40,15 +40,11 @@ vi.mock("@/contexts", async (importOriginal) => {
 		...actual,
 		useFileDrag: () => ({
 			isDragging: false,
-			setIsDragging: vi.fn(),
-			shouldStayOpen: false,
-			setShouldStayOpen: vi.fn(),
 			files: [],
 			addFiles: vi.fn(),
 			removeFile: vi.fn(),
 			clearFiles: vi.fn(),
-			fileInputRef: { current: null },
-			containerRef: { current: null },
+			openFilePicker: vi.fn(),
 		}),
 	};
 });
@@ -57,10 +53,17 @@ vi.mock("@/hooks", async (importOriginal) => {
 	const actual = await importOriginal<typeof import("@/hooks")>();
 	return {
 		...actual,
-		useRoot: () => ({ root: { theme: { featureFlags: {} } } }),
+		useRoot: () => ({
+			root: {
+				theme: { featureFlags: {}, defaultCompactionStrategy: "AUTO" },
+			},
+		}),
 		useGracefulErrors: () => ({
 			getGracefulErrorMessage: vi.fn((msg: string) => msg),
 		}),
+		// RoomContextUsageIndicator reads chat.models.contextWindow; a zero
+		// context window keeps its usage indicator from rendering.
+		useChat: () => ({ chat: { models: { contextWindow: 0 } } }),
 	};
 });
 

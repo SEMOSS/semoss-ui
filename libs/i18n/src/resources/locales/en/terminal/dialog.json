@@ -2,6 +2,7 @@
 	"help": {
 		"title": "Terminal Help",
 		"emptyMessage": "No structured usage examples were returned for {{type}}.",
+		"pendingMessage": "Usage examples for {{type}} engines have not been documented yet.",
 		"rawResponse": "Raw response",
 		"copy": "Copy",
 		"copied": "Copied",

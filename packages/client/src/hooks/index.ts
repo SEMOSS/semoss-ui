@@ -1,13 +1,18 @@
 import { useAPI } from "./use-api";
-import { useIteratorApi } from "./use-iterator-api";
-import { usePixel } from "./use-pixel";
+import { useAssistant } from "./use-assistant";
+import { useAssistantStore } from "./use-assistant-store";
+import { useAssistantStoreApi } from "./use-assistant-store-api";
+import { useConfig } from "./use-config";
+import { useDatabaseWorkbench } from "./use-database-workbench";
+import { useModelChat } from "./use-model-chat";
+import { usePage } from "./use-page";
 import { useProject } from "./use-project";
+import { useSession } from "./use-session";
 import { useTabBarScroll } from "./use-tab-bar-scroll";
+import { useAdminMode } from "./useAdminMode";
 import { useDesigner } from "./useDesigner";
 import { useEngine } from "./useEngine";
 import { useMetamodel } from "./useMetamodel";
-import { usePage } from "./usePage";
-import { useRootStore } from "./useRootStore";
 import { useServerPagination } from "./useServerPagination";
 import { useSettings } from "./useSettings";
 import { useStepper } from "./useStepper";
@@ -19,15 +24,20 @@ import { useWorkspace } from "./useWorkspace";
 // block/renderer dependencies into the broad `@/hooks` import graph, which
 // increases production bundle size.
 export {
+	useAdminMode,
 	useAPI,
+	useAssistant,
+	useAssistantStore,
+	useAssistantStoreApi,
+	useConfig,
+	useDatabaseWorkbench,
 	useDesigner,
 	useEngine,
-	useIteratorApi,
 	useMetamodel,
+	useModelChat,
 	usePage,
-	usePixel,
-	useRootStore,
 	useServerPagination,
+	useSession,
 	useSettings,
 	useStepper,
 	useTabBarScroll,

@@ -20,9 +20,12 @@ import {
 	PopoverContent,
 	PopoverTrigger,
 	Spinner,
+	Tooltip,
+	TooltipContent,
+	TooltipTrigger,
 	useTheme,
 } from "@semoss/ui/next";
-import { useRootStore } from "@/hooks";
+import { useConfig, useSession } from "@/hooks";
 
 interface LogoutPopoverProps {
 	/** Content to popover */
@@ -34,13 +37,16 @@ interface LogoutPopoverProps {
 export const LogoutPopover: React.FC<LogoutPopoverProps> = (props) => {
 	const { children, onOpenChange } = props;
 
-	const { configStore } = useRootStore();
+	const appTheme = useConfig((state) => state.theme);
+	const version = useConfig((state) => state.config.version);
+	const user = useSession((state) => state.user);
+	const logout = useSession((state) => state.logout);
 	const { theme, setTheme } = useTheme();
 	const [loggingOut, setLoggingOut] = useState(false);
 	const [open, setOpen] = useState(false);
 	const darkModeEnabled =
 		(
-			configStore.theme as {
+			appTheme as {
 				featureFlags?: { enableDarkMode?: boolean };
 			}
 		).featureFlags?.enableDarkMode ?? true;
@@ -55,7 +61,7 @@ export const LogoutPopover: React.FC<LogoutPopoverProps> = (props) => {
 		handleOpenChange(false);
 		try {
 			setLoggingOut(true);
-			await configStore.logout();
+			await logout();
 		} catch (error) {
 			console.error(error);
 			throw error;
@@ -74,51 +80,54 @@ export const LogoutPopover: React.FC<LogoutPopoverProps> = (props) => {
 			)}
 
 			<Popover open={open} onOpenChange={handleOpenChange}>
-				<PopoverTrigger asChild>
-					{children ? (
-						<span className="flex w-full cursor-pointer items-center">
-							{children}
-						</span>
-					) : (
-						<Button variant="ghost" size="icon-sm">
-							<CircleUserRound className="size-4" />
-						</Button>
-					)}
-				</PopoverTrigger>
+				<Tooltip disableHoverableContent={false}>
+					<TooltipTrigger asChild>
+						<PopoverTrigger asChild>
+							{children || (
+								<Button
+									variant="ghost"
+									size="icon-sm"
+									aria-label="Account options"
+								>
+									<CircleUserRound className="size-4" />
+								</Button>
+							)}
+						</PopoverTrigger>
+					</TooltipTrigger>
+					<TooltipContent>Account options</TooltipContent>
+				</Tooltip>
 
 				<PopoverContent
 					side="right"
 					align="end"
 					sideOffset={8}
+					aria-label="Account options"
 					className="w-60 p-0"
 				>
 					{/* User info row */}
 					<div className="flex items-center gap-3 border-border border-b px-4 py-3">
-						{configStore.store.user.name ? (
+						{user.name ? (
 							<Avatar>
-								<AvatarFallback>
-									{configStore.store.user.name[0]}
-								</AvatarFallback>
+								<AvatarFallback>{user.name[0]}</AvatarFallback>
 							</Avatar>
 						) : null}
 						<span className="max-w-[9rem] truncate font-medium text-foreground text-sm">
-							{configStore.store.user.name}
+							{user.name}
 						</span>
 					</div>
-					{configStore.store.user.lastLogin &&
-						configStore.store.user.lastLogin !== "null" && (
-							<div className="flex items-center justify-center border-border border-b px-4 py-2">
-								<span className="text-muted-foreground text-xs">
-									Last login:{" "}
-									{configStore.store.user.lastLogin} UTC
-								</span>
-							</div>
-						)}
+					{user.lastLogin && user.lastLogin !== "null" && (
+						<div className="flex items-center justify-center border-border border-b px-4 py-2">
+							<span className="text-muted-foreground text-xs">
+								Last login: {user.lastLogin} UTC
+							</span>
+						</div>
+					)}
 					{darkModeEnabled && (
 						<div className="border-border border-b px-4 py-2">
 							<DropdownMenu>
 								<DropdownMenuTrigger asChild>
-									<button
+									<Button
+										variant="ghost"
 										type="button"
 										className="flex w-full items-center rounded-md px-2 py-2 text-sm hover:bg-accent"
 									>
@@ -138,12 +147,12 @@ export const LogoutPopover: React.FC<LogoutPopoverProps> = (props) => {
 										</span>
 										{(theme === "dark" ||
 											theme === "system") && (
-											<span className="ms-1 self-center rounded border px-1 py-0.5 font-semibold text-[9px] leading-none">
+											<span className="ms-1 self-center rounded border px-1 py-0.5 font-medium text-xs leading-none">
 												BETA
 											</span>
 										)}
 										<ChevronRight className="ml-auto size-4 opacity-70" />
-									</button>
+									</Button>
 								</DropdownMenuTrigger>
 								<DropdownMenuContent
 									side="right"
@@ -165,7 +174,7 @@ export const LogoutPopover: React.FC<LogoutPopoverProps> = (props) => {
 									>
 										<Moon className="size-4" />
 										Dark
-										<span className="ms-auto self-center rounded border px-1 py-0.5 font-semibold text-[9px] leading-none">
+										<span className="ms-auto self-center rounded border px-1 py-0.5 font-medium text-xs leading-none">
 											BETA
 										</span>
 									</DropdownMenuCheckboxItem>
@@ -177,7 +186,7 @@ export const LogoutPopover: React.FC<LogoutPopoverProps> = (props) => {
 									>
 										<Monitor className="size-4" />
 										System
-										<span className="ms-auto self-center rounded border px-1 py-0.5 font-semibold text-[9px] leading-none">
+										<span className="ms-auto self-center rounded border px-1 py-0.5 font-medium text-xs leading-none">
 											BETA
 										</span>
 									</DropdownMenuCheckboxItem>
@@ -205,10 +214,10 @@ export const LogoutPopover: React.FC<LogoutPopoverProps> = (props) => {
 					{/* Version info row */}
 					<div className="flex flex-col items-center gap-0.5 px-4 py-3">
 						<span className="truncate text-muted-foreground text-xs">
-							{configStore.store.config.version.version}
+							{version.version}
 						</span>
 						<span className="truncate text-muted-foreground text-xs">
-							{configStore.store.config.version.datetime}
+							{version.datetime}
 						</span>
 					</div>
 				</PopoverContent>

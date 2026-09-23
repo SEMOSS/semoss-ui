@@ -130,7 +130,6 @@
 		"searchAllAria": "بحث في الكل",
 		"searchCurrentAria": "البحث في المجلد الحالي فقط",
 		"searchCurrentTitle": "البحث فقط في {{path}}",
-		"moveDropHint": "إفلات لنقل {{label}} إلى {{path}}",
 		"contextMenu": {
 			"copyPath": "نسخ المسار",
 			"copy": "نسخ",
@@ -219,11 +218,5 @@
 		"lines_other": "{{count}} أسطر",
 		"images_one": "{{count}} صورة",
 		"images_other": "{{count}} صور"
-	},
-	"fileDrag": {
-		"title": "أفلت الملفات هنا لإرفاقها بالرسالة",
-		"modalTitle": "إضافة مستندات",
-		"browse": "تصفح",
-		"done": "تم"
 	}
 }

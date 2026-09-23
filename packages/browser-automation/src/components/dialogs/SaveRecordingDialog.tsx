@@ -9,6 +9,8 @@ import {
 	Input,
 	Label,
 	Progress,
+	RadioGroup,
+	RadioGroupItem,
 	Select,
 	SelectContent,
 	SelectItem,
@@ -21,6 +23,8 @@ import type {
 	RecordingMetadataModelOption,
 	RecordingProjectOption,
 } from "../../types/browserEvents";
+
+export type RecordingSaveDestination = "playground" | "playground-and-app";
 
 interface SaveRecordingDialogProps {
 	open: boolean;
@@ -37,6 +41,8 @@ interface SaveRecordingDialogProps {
 	isGeneratingMetadata: boolean;
 	isSaving: boolean;
 	canSave: boolean;
+	showPlaygroundDestinations: boolean;
+	destination: RecordingSaveDestination;
 	onClose: () => void;
 	onProjectChange: (project: RecordingProjectOption | null) => void;
 	onModelChange: (model: RecordingMetadataModelOption | null) => void;
@@ -44,6 +50,7 @@ interface SaveRecordingDialogProps {
 	onDescriptionChange: (value: string) => void;
 	onIntentChange: (value: string) => void;
 	onGenerateMetadata: () => void;
+	onDestinationChange: (destination: RecordingSaveDestination) => void;
 	onSave: () => void;
 }
 
@@ -56,6 +63,9 @@ export function SaveRecordingDialog(props: SaveRecordingDialogProps) {
 		!!props.title.trim() &&
 		!!props.description.trim() &&
 		!!props.intent.trim();
+	const requiresProject =
+		!props.showPlaygroundDestinations ||
+		props.destination === "playground-and-app";
 	const selectProject = (value: string) =>
 		props.onProjectChange(
 			props.projects.find((item) => item.value === value) ?? null,
@@ -77,38 +87,85 @@ export function SaveRecordingDialog(props: SaveRecordingDialogProps) {
 					<DialogTitle>Save recording</DialogTitle>
 				</DialogHeader>
 				<div className="flex flex-col gap-4">
-					<div className="grid gap-2">
-						<Label>Project</Label>
-						<Select
-							value={props.project?.value ?? ""}
-							onValueChange={selectProject}
-							disabled={props.isLoadingProjects}
-						>
-							<SelectTrigger className="w-full">
-								<SelectValue
-									placeholder={
-										props.isLoadingProjects
-											? "Loading projects..."
-											: "Select a project"
-									}
-								/>
-							</SelectTrigger>
-							<SelectContent>
-								{props.projects.map((item) => (
-									<SelectItem
-										key={item.value}
-										value={item.value}
-									>
-										{item.label}
-									</SelectItem>
-								))}
-							</SelectContent>
-						</Select>
-						<p className="text-muted-foreground text-xs">
-							Apps you can edit are shown. Agents and skills are
-							excluded.
-						</p>
-					</div>
+					{props.showPlaygroundDestinations && (
+						<div className="grid gap-2">
+							<Label>Save destination</Label>
+							<RadioGroup
+								value={props.destination}
+								onValueChange={(value) =>
+									props.onDestinationChange(
+										value as RecordingSaveDestination,
+									)
+								}
+								className="gap-2"
+							>
+								<Label className="flex cursor-pointer items-start gap-3 rounded-md border border-border p-3">
+									<RadioGroupItem
+										value="playground"
+										className="mt-0.5"
+									/>
+									<div>
+										<p className="font-semibold">
+											Playground only
+										</p>
+										<p className="text-muted-foreground text-sm">
+											Save the recording and playback tool
+											in this Playground.
+										</p>
+									</div>
+								</Label>
+								<Label className="flex cursor-pointer items-start gap-3 rounded-md border border-border p-3">
+									<RadioGroupItem
+										value="playground-and-app"
+										className="mt-0.5"
+									/>
+									<div>
+										<p className="font-semibold">
+											Playground and app
+										</p>
+										<p className="text-muted-foreground text-sm">
+											Also sync the recording and playback
+											tool to the selected app.
+										</p>
+									</div>
+								</Label>
+							</RadioGroup>
+						</div>
+					)}
+					{requiresProject && (
+						<div className="grid gap-2">
+							<Label>Project</Label>
+							<Select
+								value={props.project?.value ?? ""}
+								onValueChange={selectProject}
+								disabled={props.isLoadingProjects}
+							>
+								<SelectTrigger className="w-full">
+									<SelectValue
+										placeholder={
+											props.isLoadingProjects
+												? "Loading projects..."
+												: "Select a project"
+										}
+									/>
+								</SelectTrigger>
+								<SelectContent>
+									{props.projects.map((item) => (
+										<SelectItem
+											key={item.value}
+											value={item.value}
+										>
+											{item.label}
+										</SelectItem>
+									))}
+								</SelectContent>
+							</Select>
+							<p className="text-muted-foreground text-xs">
+								Apps you can edit are shown. Agents and skills
+								are excluded.
+							</p>
+						</div>
+					)}
 					<div className="grid gap-2">
 						<Label>AI model</Label>
 						<Select
@@ -234,7 +291,7 @@ export function SaveRecordingDialog(props: SaveRecordingDialogProps) {
 							props.isSaving ||
 							props.isGeneratingMetadata ||
 							!props.canSave ||
-							!props.project ||
+							(requiresProject && !props.project) ||
 							!hasRequiredMetadata
 						}
 					>

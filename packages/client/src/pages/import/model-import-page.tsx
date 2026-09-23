@@ -3,7 +3,7 @@
 
 import { ChevronRight, SearchIcon, UploadIcon } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link } from "react-router";
 import { EngineSubtypeIcon } from "@semoss/shared";
 import {
 	Breadcrumb,
@@ -15,6 +15,8 @@ import {
 	Button,
 	Dialog,
 	DialogContent,
+	DialogTitle,
+	H3,
 	H4,
 	InputGroup,
 	InputGroupAddon,
@@ -27,7 +29,14 @@ import {
 	TabsTrigger,
 	toast,
 } from "@semoss/ui/next";
-import { uploadFile } from "@/api";
+import {
+	CATALOG_MODALITIES,
+	toReasoningConfig,
+} from "@/components/engine/engine-metadata-display";
+import type {
+	CatalogMatchState,
+	CatalogMatchSuggestion,
+} from "@/components/import/model/model-catalog-match";
 import type {
 	AppendedModelField,
 	CategoryTexts,
@@ -35,6 +44,7 @@ import type {
 	ImportableModels,
 	ModelFieldOverride,
 	ModelVersionDefinition,
+	ModelVersionsByProvider,
 } from "@/components/import/model/model-import.constants";
 import {
 	IMPORTABLE_MODELS,
@@ -42,11 +52,16 @@ import {
 	UNKNOWN_MODEL_BRAND,
 } from "@/components/import/model/model-import.constants";
 import {
+	fetchCatalogModels,
+	mergeCatalogModels,
+} from "@/components/import/model/model-import-catalog";
+import { hasConfigurableReasoning } from "@/components/import/model/model-reasoning-config-field";
+import {
 	ModelEngineIcon,
 	ModelTileCard,
 } from "@/components/import/model/model-tile-card";
 import { NavbarHeader, NavbarLeft } from "@/components/shared";
-import { useRootStore } from "@/hooks";
+import { useSession } from "@/hooks";
 import { useNavigate } from "@/hooks/useNavigate";
 import {
 	getOptionLabels,
@@ -62,6 +77,7 @@ import { ModelImportDetailsPage } from "./model-import-details-page";
 const MODEL_PROVIDER_SUBTYPE_BY_NAME: Record<string, string> = {
 	OpenAI: "OPEN_AI",
 	"Google Gemini": "VERTEX",
+	Jev: "TYPESAFE",
 	"Azure OpenAI": "AZURE_OPEN_AI",
 	Anthropic: "CLAUDE",
 	"AWS Bedrock": "BEDROCK",
@@ -69,6 +85,7 @@ const MODEL_PROVIDER_SUBTYPE_BY_NAME: Record<string, string> = {
 	"Self Hosted": "HUGGINGFACE",
 	Perplexity: "PERPLEXITY",
 	Embedded: "BRAIN",
+	"Model Router": "MODEL_ROUTER",
 };
 
 /**
@@ -91,16 +108,16 @@ const ProviderIcon: React.FC<{ provider: string }> = ({ provider }) => {
 			<EngineSubtypeIcon
 				engineType="MODEL"
 				engineSubtype={subtype}
-				alt={`${provider} logo`}
-				className="size-5 rounded-[4px] object-contain"
+				alt=""
+				className="size-5 rounded-sm object-contain"
 			/>
 		);
 	}
 
 	return (
 		<div
-			className="flex size-5 shrink-0 items-center justify-center rounded-[4px] font-semibold text-[10px] text-white"
-			style={{ backgroundColor: "var(--muted-foreground)" }}
+			aria-hidden="true"
+			className="flex size-5 shrink-0 items-center justify-center rounded-sm bg-muted font-medium text-muted-foreground text-xs"
 		>
 			{getInitials(provider)}
 		</div>
@@ -331,6 +348,28 @@ const normalizeStaticModalities = (
 	];
 };
 
+/**
+ * Modalities the catalog entry does not list for one direction.
+ *
+ * Advisory only - the model settings tab warns on the same mismatch rather than
+ * blocking it, and the catalog is hand-maintained, so a deployment can serve a
+ * modality the entry omits. Returns undefined when the entry lists nothing for
+ * the direction, since silence there is not a claim about anything.
+ */
+const getUnlistedModalityOptions = (
+	staticModalities: ModelModality[],
+): string[] | undefined => {
+	if (staticModalities.length === 0) {
+		return undefined;
+	}
+
+	const unlisted = CATALOG_MODALITIES.filter(
+		(modality) => !staticModalities.includes(modality as ModelModality),
+	);
+
+	return unlisted.length > 0 ? unlisted : undefined;
+};
+
 const inferStaticCapability = (
 	metadata: StaticModelMetadata | null,
 	model: ModelVersionDefinition | null,
@@ -360,13 +399,27 @@ const inferStaticCapability = (
 	return inferCapability(model);
 };
 
+/**
+ * Which catalog entry to pull metadata from for the model being imported.
+ *
+ * A card that names a specific model looks itself up. An "other-" card carries
+ * no model ID of its own, so it resolves to whatever the user typed - by way of
+ * the entry they picked, or the one their ID matched on its own. Returning null
+ * means there is nothing to look up and the metadata fields stay unpopulated.
+ */
 export const getStaticModelMetadataLookup = (
 	model: ModelVersionDefinition | null,
+	resolvedCatalogKey?: string | null,
 ): StaticModelMetadataLookup | null => {
 	const modelId = model?.name.trim();
 
-	if (!modelId || modelId.startsWith("other-")) {
+	if (!modelId || model?.skipCatalogMetadata) {
 		return null;
+	}
+
+	if (modelId.startsWith("other-")) {
+		const catalogKey = resolvedCatalogKey?.trim();
+		return catalogKey ? { key: catalogKey, modelId: catalogKey } : null;
 	}
 
 	return {
@@ -388,18 +441,12 @@ export const buildModelMetadataFields = (
 	const staticOutputModalities = normalizeStaticModalities(
 		staticMetadata?.output_modalities,
 	);
-	const disabledInputModalities =
-		staticInputModalities.length > 0
-			? MODEL_MODALITIES.filter(
-					(modality) => !staticInputModalities.includes(modality),
-				)
-			: undefined;
-	const disabledOutputModalities =
-		staticOutputModalities.length > 0
-			? MODEL_MODALITIES.filter(
-					(modality) => !staticOutputModalities.includes(modality),
-				)
-			: undefined;
+	const unlistedInputModalities = getUnlistedModalityOptions(
+		staticInputModalities,
+	);
+	const unlistedOutputModalities = getUnlistedModalityOptions(
+		staticOutputModalities,
+	);
 	const metadataFields: FieldDefinition[] = [
 		{
 			key: "DESCRIPTION",
@@ -466,7 +513,7 @@ export const buildModelMetadataFields = (
 					? staticInputModalities
 					: inferredModalities.input,
 			options: [...MODEL_MODALITIES],
-			disabledOptions: disabledInputModalities,
+			warningOptions: unlistedInputModalities,
 		},
 		{
 			key: "OUTPUT_MODALITIES",
@@ -479,17 +526,15 @@ export const buildModelMetadataFields = (
 					? staticOutputModalities
 					: inferredModalities.output,
 			options: [...MODEL_MODALITIES],
-			disabledOptions: disabledOutputModalities,
+			warningOptions: unlistedOutputModalities,
 		},
 		{
 			key: "BUILTIN_TOOLS",
 			label: "Built-in Tools",
-			type: "text",
+			type: "builtin-tools",
 			required: false,
 			category: "Settings",
-			default: "",
-			helperText:
-				"Optional comma-separated canonical names, such as web_search, image_generation.",
+			helperText: "Provider-hosted tools the model can call natively.",
 		},
 	];
 
@@ -594,16 +639,35 @@ export const buildModelMetadataFields = (
 		);
 	}
 
-	if (
-		staticMetadata?.reasoning_config &&
-		typeof staticMetadata.reasoning_config === "object" &&
-		!Array.isArray(staticMetadata.reasoning_config) &&
-		Object.keys(staticMetadata.reasoning_config).length > 0
-	) {
+	const reasoningConfig = toReasoningConfig(staticMetadata?.reasoning_config);
+
+	if (hasConfigurableReasoning(reasoningConfig)) {
+		if (typeof staticMetadata?.reasoning !== "boolean") {
+			addHiddenMetadataField("REASONING", "Reasoning Support", true);
+		}
+
+		const builtinToolsIndex = metadataFields.findIndex(
+			(field) => field.key === "BUILTIN_TOOLS",
+		);
+		metadataFields.splice(
+			builtinToolsIndex === -1
+				? metadataFields.length
+				: builtinToolsIndex,
+			0,
+			{
+				key: "REASONING_CONFIG",
+				label: "Reasoning",
+				type: "reasoning-config",
+				required: false,
+				category: "Settings",
+				default: reasoningConfig,
+			},
+		);
+	} else if (reasoningConfig !== null) {
 		addHiddenMetadataField(
 			"REASONING_CONFIG",
 			"Reasoning Configuration",
-			JSON.stringify(staticMetadata.reasoning_config),
+			JSON.stringify(reasoningConfig),
 		);
 	}
 
@@ -634,7 +698,7 @@ export const mergeModelMetadataFields = (
 			fields[fieldIndex] = {
 				...fields[fieldIndex],
 				default: metadataField.default,
-				disabledOptions: metadataField.disabledOptions,
+				warningOptions: metadataField.warningOptions,
 			};
 			continue;
 		}
@@ -646,7 +710,7 @@ export const mergeModelMetadataFields = (
 			advanced[advancedIndex] = {
 				...advanced[advancedIndex],
 				default: metadataField.default,
-				disabledOptions: metadataField.disabledOptions,
+				warningOptions: metadataField.warningOptions,
 			};
 			continue;
 		}
@@ -658,7 +722,8 @@ export const mergeModelMetadataFields = (
 export const ModelImportPage: React.FC = () => {
 	const navigate = useNavigate();
 
-	const { monolithStore, configStore } = useRootStore();
+	const runPixel = useSession((state) => state.runPixel);
+	const upload = useSession((state) => state.upload);
 
 	const [search, setSearch] = useState("");
 	const [importableModels, setImportableModels] =
@@ -666,6 +731,10 @@ export const ModelImportPage: React.FC = () => {
 	const [importableModelsCategory, setimportableModelsCategory] =
 		useState<CategoryTexts | null>(null);
 	const [selectedProvider, setSelectedProvider] = useState("");
+	// hardcoded cards enriched with meta/model.json catalog models once the
+	// ListStaticModelCatalog pixel resolves; stays hardcoded-only on failure
+	const [modelVersions, setModelVersions] =
+		useState<ModelVersionsByProvider>(MODEL_VERSIONS);
 	const [providerFilter, setProviderFilter] =
 		useState<string>(ALL_PROVIDERS_FILTER);
 	const [selectedModel, setSelectedModel] = useState<string | null>(null);
@@ -675,6 +744,14 @@ export const ModelImportPage: React.FC = () => {
 			status: "INITIAL",
 			data: null,
 		});
+	// the Model ID as typed on an "other-" card, debounced by the form
+	const [typedModelId, setTypedModelId] = useState("");
+	const [catalogMatch, setCatalogMatch] = useState<CatalogMatchState | null>(
+		null,
+	);
+	const [pickedCatalogKey, setPickedCatalogKey] = useState<string | null>(
+		null,
+	);
 	const [isFileUploadModalOpen, setIsFileUploadModalOpen] = useState(false);
 	const [formLoading, setFormLoading] = useState(false);
 	const [filedata, setFiledata] = useState(null);
@@ -684,6 +761,7 @@ export const ModelImportPage: React.FC = () => {
 	/**
 	 * Any initialization logic for the model import flow - fetch importable models
 	 */
+	// biome-ignore lint/correctness/useExhaustiveDependencies: run-once init; runPixel is a stable reference
 	useEffect(() => {
 		const fetch = async () => {
 			setImportableModels(IMPORTABLE_MODELS as ImportableModels);
@@ -700,6 +778,17 @@ export const ModelImportPage: React.FC = () => {
 		};
 
 		fetch();
+
+		// enrich the hardcoded cards with whatever the server's catalog knows;
+		// on any failure the hardcoded cards simply stay as they are
+		let cancelled = false;
+		fetchCatalogModels((pixel) => runPixel(pixel)).then((catalog) => {
+			if (cancelled || !catalog) return;
+			setModelVersions(mergeCatalogModels(MODEL_VERSIONS, catalog));
+		});
+		return () => {
+			cancelled = true;
+		};
 	}, []);
 
 	useEffect(() => {
@@ -745,7 +834,7 @@ export const ModelImportPage: React.FC = () => {
 		const normalizedSearch = search.trim().toLowerCase();
 
 		return sortedProviders.map((provider) => {
-			const models = (MODEL_VERSIONS[provider.name] || []).filter(
+			const models = (modelVersions[provider.name] || []).filter(
 				(model) => {
 					if (!normalizedSearch) return true;
 
@@ -766,7 +855,7 @@ export const ModelImportPage: React.FC = () => {
 				models,
 			};
 		});
-	}, [sortedProviders, search]);
+	}, [sortedProviders, search, modelVersions]);
 
 	const visibleProviderSections = useMemo(() => {
 		if (providerFilter === ALL_PROVIDERS_FILTER) {
@@ -781,17 +870,111 @@ export const ModelImportPage: React.FC = () => {
 	const selectedModelMetadata = useMemo(() => {
 		if (!selectedProvider || selectedModel === null) return null;
 
-		const providerModels = MODEL_VERSIONS[selectedProvider] || [];
+		const providerModels = modelVersions[selectedProvider] || [];
 		return (
 			providerModels.find(
 				(m) => m.name === selectedModel || m.display === selectedModel,
 			) || null
 		);
-	}, [selectedProvider, selectedModel]);
+	}, [selectedProvider, selectedModel, modelVersions]);
+
+	// only an "other-" card leaves the Model ID to the user, and only then is there
+	// anything to match against the catalog
+	const isTypedModelId =
+		!!selectedModelMetadata?.name.startsWith("other-") &&
+		!selectedModelMetadata.skipCatalogMetadata;
+
+	// Start over whenever the user backs out to a different card - a catalog entry
+	// picked for one model must not carry over to the next.
+	// biome-ignore lint/correctness/useExhaustiveDependencies: the deps are the reset trigger, not values the body reads
+	useEffect(() => {
+		setTypedModelId("");
+		setCatalogMatch(null);
+		setPickedCatalogKey(null);
+	}, [selectedModel, selectedProvider]);
+
+	useEffect(() => {
+		const modelId = typedModelId.trim();
+		if (!isTypedModelId || !modelId) {
+			setCatalogMatch(null);
+			return;
+		}
+
+		let isCancelled = false;
+		setCatalogMatch({
+			modelId,
+			status: "LOADING",
+			exactMatch: null,
+			suggestions: [],
+			allKeys: [],
+		});
+
+		const pixel = `MatchStaticModelMetadata(modelId=${JSON.stringify(
+			modelId,
+		)});`;
+
+		runPixel(pixel)
+			.then((response) => {
+				if (isCancelled) return;
+
+				const result = response.pixelReturn?.[0];
+				if (!result || result.operationType.indexOf("ERROR") > -1) {
+					throw new Error(
+						String(result?.output || "Unable to match model ID."),
+					);
+				}
+
+				const output = result.output as {
+					exactMatch?: string;
+					matches?: CatalogMatchSuggestion[];
+					allKeys?: string[];
+				};
+				const exactMatch = output?.exactMatch?.trim() || null;
+
+				setCatalogMatch({
+					modelId,
+					status: exactMatch ? "MATCHED" : "UNMATCHED",
+					exactMatch,
+					suggestions: Array.isArray(output?.matches)
+						? output.matches
+						: [],
+					allKeys: Array.isArray(output?.allKeys)
+						? output.allKeys
+						: [],
+				});
+			})
+			.catch(() => {
+				if (isCancelled) return;
+				setCatalogMatch({
+					modelId,
+					status: "ERROR",
+					exactMatch: null,
+					suggestions: [],
+					allKeys: [],
+				});
+			});
+
+		return () => {
+			isCancelled = true;
+		};
+	}, [runPixel, typedModelId, isTypedModelId]);
+
+	// a hand-picked entry wins; otherwise a typed ID that resolved on its own is
+	// just as good a source of metadata, it simply is not worth storing
+	const resolvedCatalogKey =
+		pickedCatalogKey ||
+		(catalogMatch?.modelId === typedModelId.trim()
+			? catalogMatch?.exactMatch
+			: null) ||
+		null;
 
 	const staticMetadataLookup = useMemo(
-		() => getStaticModelMetadataLookup(selectedModelMetadata),
-		[selectedModelMetadata],
+		() =>
+			getStaticModelMetadataLookup(
+				selectedModelMetadata,
+				resolvedCatalogKey,
+			),
+		[selectedModelMetadata, resolvedCatalogKey],
 	);
 
 	useEffect(() => {
@@ -815,8 +998,7 @@ export const ModelImportPage: React.FC = () => {
 			staticMetadataLookup.modelId,
 		)});`;
 
-		monolithStore
-			.runQuery(pixel)
+		runPixel(pixel)
 			.then((response) => {
 				if (isCancelled) return;
 
@@ -857,9 +1039,13 @@ export const ModelImportPage: React.FC = () => {
 		return () => {
 			isCancelled = true;
 		};
-	}, [monolithStore, staticMetadataLookup]);
+	}, [runPixel, staticMetadataLookup]);
 
+	// A typed Model ID is looked up while the form is already on screen, so blocking
+	// on it would tear the form down and lose whatever has been filled in. Only the
+	// card flow, which resolves before the form is ever rendered, waits on a spinner.
 	const isStaticMetadataLoading =
+		!isTypedModelId &&
 		staticMetadataLookup !== null &&
 		(staticModelMetadata.lookupKey !== staticMetadataLookup.key ||
 			staticModelMetadata.status === "LOADING");
@@ -903,11 +1089,11 @@ export const ModelImportPage: React.FC = () => {
 
 	const onSubmit = async (data) => {
 		setFormLoading(true);
-		const upload = await uploadFile([data], configStore.store.insightID);
+		const uploaded = await upload([data]);
 
-		const pixelString = `UploadEngine(filePath=["${upload[0].fileLocation}"], engineTypes=["MODEL"])`;
+		const pixelString = `UploadEngine(filePath=["${uploaded[0].fileLocation}"], engineTypes=["MODEL"])`;
 
-		const response = await monolithStore.runQuery(pixelString);
+		const response = await runPixel(pixelString);
 		const output = response.pixelReturn[0].output,
 			operationType = response.pixelReturn[0].operationType;
 
@@ -937,6 +1123,7 @@ export const ModelImportPage: React.FC = () => {
 									<SearchIcon className="size-4 text-muted-foreground" />
 								</InputGroupAddon>
 								<InputGroupInput
+									aria-label="Search models"
 									placeholder="Search"
 									value={search}
 									onChange={(e) => {
@@ -946,6 +1133,7 @@ export const ModelImportPage: React.FC = () => {
 								/>
 							</InputGroup>
 							<Button
+								aria-label="Upload model ZIP file"
 								size="sm"
 								variant="outline"
 								onClick={() => handleFileUpload(true)}
@@ -1063,18 +1251,18 @@ export const ModelImportPage: React.FC = () => {
 					(p) => p.name === selectedProvider,
 				);
 
-				// selectedModel is the model name from MODEL_VERSIONS; we need to map that to a model_types entry
-				// Find a type entry whose 'model_types' matches the model metadata (embedding vs llm)
+				// Match the selected card to its provider's form schema.
 				let fields: FieldDefinition[] = [];
 				let advanced: FieldDefinition[] = [];
 
 				if (providerDef) {
-					// Try to determine whether the selected model is an embedding or llm by checking MODEL_VERSIONS
-
-					// Default to 'llm' if not found
-					const targetType = selectedModelMetadata?.embedding
-						? "embedding"
-						: "llm";
+					// Evaluation engines have their own schema; older cards retain
+					// the embedding/LLM inference used before explicit model types.
+					const targetType =
+						selectedModelMetadata?.modelType ??
+						(selectedModelMetadata?.embedding
+							? "embedding"
+							: "llm");
 
 					const typeDef = providerDef.types.find((t) =>
 						t.model_types.includes(targetType),
@@ -1151,15 +1339,32 @@ export const ModelImportPage: React.FC = () => {
 							};
 						}
 
-						mergeModelMetadataFields(
-							fields,
-							advanced,
-							buildModelMetadataFields(
-								selectedProvider,
-								selectedModelMetadata,
-								selectedStaticMetadata,
-							),
-						);
+						if (!selectedModelMetadata?.skipCatalogMetadata) {
+							mergeModelMetadataFields(
+								fields,
+								advanced,
+								buildModelMetadataFields(
+									selectedProvider,
+									selectedModelMetadata,
+									selectedStaticMetadata,
+								),
+							);
+						}
+
+						// Only a hand-picked entry is saved. An ID that resolved on
+						// its own can be resolved again from the ID, so storing it
+						// would just be another value to keep in sync.
+						if (pickedCatalogKey) {
+							fields.push({
+								key: "CATALOG_MODEL_KEY",
+								label: "Catalog Model Key",
+								type: "hidden",
+								required: false,
+								category: "Settings",
+								default: pickedCatalogKey,
+								value: pickedCatalogKey,
+							});
+						}
 					}
 				}
 
@@ -1169,6 +1374,12 @@ export const ModelImportPage: React.FC = () => {
 						advanced={advanced}
 						selectedProvider={selectedProvider}
 						importableModelsCategory={importableModelsCategory}
+						onModelIdChange={
+							isTypedModelId ? setTypedModelId : undefined
+						}
+						catalogMatch={catalogMatch}
+						pickedCatalogKey={pickedCatalogKey}
+						onPickCatalogKey={setPickedCatalogKey}
 					/>
 				);
 			}
@@ -1184,6 +1395,9 @@ export const ModelImportPage: React.FC = () => {
 		selectedModelMetadata,
 		isStaticMetadataLoading,
 		selectedStaticMetadata,
+		isTypedModelId,
+		catalogMatch,
+		pickedCatalogKey,
 	]);
 
 	return (
@@ -1225,9 +1439,8 @@ export const ModelImportPage: React.FC = () => {
 								</BreadcrumbSeparator>
 								<BreadcrumbItem>
 									<BreadcrumbPage>
-										{selectedModel
-											? selectedModel.toUpperCase()
-											: `Custom ${selectedProvider} Model`}
+										{selectedModelMetadata?.display ||
+											selectedModel}
 									</BreadcrumbPage>
 								</BreadcrumbItem>
 							</>
@@ -1242,16 +1455,17 @@ export const ModelImportPage: React.FC = () => {
 					onOpenChange={setIsFileUploadModalOpen}
 				>
 					<DialogContent
-						className="w-[calc(100vw-2rem)] max-w-[600px] sm:w-[600px]"
+						aria-describedby={undefined}
+						className="sm:max-w-xl"
 						data-testid="model-zip-upload-modal"
 					>
 						<div className="flex h-full w-full flex-col gap-4">
-							<P
+							<DialogTitle
 								className="text-base"
 								data-testid="model-zip-upload-title"
 							>
 								Zip File
-							</P>
+							</DialogTitle>
 							<div
 								className="flex min-h-[200px] cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-input border-dashed bg-secondary p-6 transition-colors hover:border-primary hover:bg-accent"
 								onClick={() => fileInputRef.current?.click()}
@@ -1328,9 +1542,11 @@ export const ModelImportPage: React.FC = () => {
 							/>
 						</div>
 					)}
-					<H4 data-testid="model-import-title">
-						{selectedModel?.trim() || "Connect to Model Catalog"}
-					</H4>
+					<H3 data-testid="model-import-title">
+						{selectedModelMetadata?.display ||
+							selectedModel?.trim() ||
+							"Connect to Model Catalog"}
+					</H3>
 				</div>
 				<P
 					className="mb-3 text-muted-foreground"
@@ -1338,7 +1554,7 @@ export const ModelImportPage: React.FC = () => {
 				>
 					{selectedModel?.trim()
 						? "Fill out all the model details in order to add the model to the catalog."
-						: "In an era fueled by information, the seamless interlinking of various databases stands as a cornerstone for unlocking the untapped potential of LLM applications. Whether you're a seasoned AI practitioner, a language aficionado, or an industry visionary, this page serves as your guiding star to grasp the spectrum of database options available within the LLM landscape."}
+						: "Choose a provider and model to connect to your catalog, including chat, embedding, and evaluation models."}
 				</P>
 			</div>
 			{view}

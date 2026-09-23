@@ -5,6 +5,7 @@ import {
 	HammerIcon,
 	PaperclipIcon,
 	Settings2Icon,
+	SparklesIcon,
 } from "lucide-react";
 import type React from "react";
 import { createContext, useContext } from "react";
@@ -43,6 +44,7 @@ const buildSlashCommands = (
 	onCompact: () => void,
 	onAttachDocument: () => void,
 	onOpenSettings: () => void,
+	onSwitchToAgentHarness: () => void,
 ): SlashCommand[] => [
 	{
 		id: "knowledge",
@@ -81,6 +83,22 @@ const buildSlashCommands = (
 		label: "/workspace",
 		icon: BotIcon,
 		onExecute: () => onOpenMcpOverlay("AGENT"),
+		hiddenInMenu: true,
+		noChip: true,
+	},
+	{
+		id: "agent-harness",
+		label: "/agent-harness",
+		description: "Switch this conversation to agent harness mode",
+		icon: SparklesIcon,
+		onExecute: onSwitchToAgentHarness,
+		noChip: true,
+	},
+	{
+		id: "harness",
+		label: "/harness",
+		icon: SparklesIcon,
+		onExecute: onSwitchToAgentHarness,
 		hiddenInMenu: true,
 		noChip: true,
 	},
@@ -136,6 +154,7 @@ export interface SlashCommandProviderProps {
 	onCompact: () => void;
 	onAttachDocument: () => void;
 	onOpenSettings: () => void;
+	onSwitchToAgentHarness: () => void;
 	/** Command IDs to suppress */
 	excludeCommandIds?: string[];
 	children: React.ReactNode;
@@ -151,6 +170,7 @@ export const SlashCommandProvider: React.FC<SlashCommandProviderProps> = ({
 	onCompact,
 	onAttachDocument,
 	onOpenSettings,
+	onSwitchToAgentHarness,
 	excludeCommandIds,
 	children,
 }) => {
@@ -159,6 +179,7 @@ export const SlashCommandProvider: React.FC<SlashCommandProviderProps> = ({
 		onCompact,
 		onAttachDocument,
 		onOpenSettings,
+		onSwitchToAgentHarness,
 	);
 	const commands = excludeCommandIds?.length
 		? all.filter((cmd) => !excludeCommandIds.includes(cmd.id))

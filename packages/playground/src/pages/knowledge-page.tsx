@@ -3,7 +3,7 @@
 
 import { Bookmark, ChevronDown, Info, Search } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router";
 import { useTranslation } from "@semoss/i18n";
 import { Env, post, useInsight } from "@semoss/sdk/react";
 import {

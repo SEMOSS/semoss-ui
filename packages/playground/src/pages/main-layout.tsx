@@ -6,7 +6,7 @@ import React, {
 	useRef,
 	useState,
 } from "react";
-import { Link, matchPath, Outlet, useLocation } from "react-router-dom";
+import { Link, matchPath, Outlet, useLocation } from "react-router";
 import { useInsight } from "@semoss/sdk/react";
 import {
 	Breadcrumb,
@@ -25,6 +25,7 @@ import {
 import { GlobalFooter, GlobalNav } from "@/components";
 import { GlobalDialog } from "@/components/common/global-dialog";
 import { LandingTour } from "@/components/common/landing-tour";
+import { ROOM_PANEL_COMPONENTS } from "@/components/room/panels";
 import { ChatContext, NavbarContext, TourContext } from "@/contexts";
 import { useRoot } from "@/hooks";
 import { useThemeTitle } from "@/hooks/use-theme-title";
@@ -54,7 +55,7 @@ export const MainLayout = observer(() => {
 
 	// set up the chat store
 	const chatStore = useMemo(() => {
-		const store = new ChatStore(root.theme, actions);
+		const store = new ChatStore(root.theme, actions, ROOM_PANEL_COMPONENTS);
 
 		// initialize it
 		store.initialize();
@@ -197,7 +198,7 @@ export const MainLayout = observer(() => {
 							/>
 							<div
 								data-testid="main-layout"
-								className="flex h-screen w-full flex-col overflow-hidden bg-background"
+								className="flex h-dvh w-full flex-col overflow-hidden bg-background"
 								style={{
 									...(!isDark && {
 										background:
@@ -308,7 +309,13 @@ export const MainLayout = observer(() => {
 												// @ts-expect-error fetchpriority is not yet in React's typings
 												fetchpriority="high"
 												style={{
-													opacity: isActive ? 1 : 0,
+													// visibility:hidden removes the iframe from
+													// the browser touch hit-test pipeline on
+													// mobile (opacity:0 alone does not), so
+													// inactive iframes no longer intercept swipe
+													visibility: isActive
+														? "visible"
+														: "hidden",
 													pointerEvents: isActive
 														? "auto"
 														: "none",

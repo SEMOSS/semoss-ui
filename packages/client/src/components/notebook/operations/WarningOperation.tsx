@@ -1,4 +1,5 @@
 import { observer } from "mobx-react-lite";
+import type { JSX } from "react";
 
 interface WarningOperationProps {
 	/** Message returned when there is an error */
@@ -12,6 +13,6 @@ export const WarningOperation = observer(
 	(props: WarningOperationProps): JSX.Element => {
 		const { output } = props;
 
-		return <span className="text-xs text-yellow-600">{output}</span>;
+		return <span className="text-warning text-xs">{output}</span>;
 	},
 );

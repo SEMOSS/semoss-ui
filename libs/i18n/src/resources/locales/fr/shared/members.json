@@ -1,0 +1,51 @@
+{
+	"dialog": {
+		"title": "Ajouter des membres",
+		"description": "Recherchez des utilisateurs et invitez-les pour cette ressource."
+	},
+	"search": {
+		"placeholder": "Rechercher par nom ou e-mail...",
+		"searching": "Recherche d'utilisateurs...",
+		"empty": "Aucun utilisateur trouvé",
+		"added": "Ajouté"
+	},
+	"selected": {
+		"count_one": "{{count}} utilisateur sélectionné",
+		"count_many": "{{count}} utilisateurs sélectionnés",
+		"count_other": "{{count}} utilisateurs sélectionnés",
+		"empty": "Aucun utilisateur sélectionné"
+	},
+	"permission": {
+		"viewer": "Lecteur",
+		"editor": "Éditeur",
+		"owner": "Propriétaire"
+	},
+	"restrictions": {
+		"title": "Limites d'utilisation du modèle (pour tous les utilisateurs sélectionnés)",
+		"usageLimitType": "Type de limite d'utilisation",
+		"none": "Aucune",
+		"token": "Jetons",
+		"computeTime": "Temps de calcul",
+		"maxTokens": "Nombre maximal de jetons",
+		"maxResponseTime": "Temps de réponse maximal",
+		"unit": "Unité",
+		"milliseconds": "millisecondes",
+		"frequency": "Fréquence",
+		"daily": "Quotidienne",
+		"weekly": "Hebdomadaire",
+		"monthly": "Mensuelle",
+		"yearly": "Annuelle",
+		"allTime": "Depuis toujours"
+	},
+	"footer": {
+		"add": "Ajouter",
+		"addWithCount": "Ajouter ({{count}})"
+	},
+	"errors": {
+		"loadUsersFailed": "Échec du chargement des utilisateurs.",
+		"addMembersFailed": "Une erreur s'est produite lors de l'ajout des membres sélectionnés."
+	},
+	"success": {
+		"membersAdded": "Les membres sélectionnés ont été ajoutés avec succès."
+	}
+}

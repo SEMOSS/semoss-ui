@@ -12,10 +12,18 @@ export interface BrowserTabInfo {
 	url: string;
 }
 
+export interface BrowserScrollMetrics {
+	scrollTop: number;
+	scrollHeight: number;
+	viewportHeight: number;
+}
+
 type ReplayMetadata = {
 	requestId?: string;
 	waitAfterMs?: number;
 	selector?: BrowserSelector;
+	expectedUrl?: string;
+	expectedTabId?: string;
 	recordedViewportWidth?: number;
 	recordedViewportHeight?: number;
 	replayTriggerTabId?: string;
@@ -27,6 +35,8 @@ export type ClientToServerEvent =
 			x: number;
 			y: number;
 			button: "left" | "right" | "middle";
+			label?: string;
+			tag?: string;
 			record?: boolean;
 	  } & ReplayMetadata)
 	| ({
@@ -65,6 +75,17 @@ export type ClientToServerEvent =
 			record?: boolean;
 	  } & ReplayMetadata)
 	| ({
+			/** Atomically fills an editable element or selects a dropdown option. */
+			type: "fill-element";
+			text: string;
+			selector: BrowserSelector;
+			label?: string;
+			tag?: string;
+			isPassword?: boolean;
+			storeValue?: boolean;
+			record?: boolean;
+	  } & ReplayMetadata)
+	| ({
 			type: "key";
 			key: string;
 			code?: string;
@@ -94,9 +115,13 @@ export type ClientToServerEvent =
 			y: number;
 			endX: number;
 			endY: number;
+			expectedTabId?: string;
+			record?: boolean;
+			label?: string;
 	  }
 	| { type: "switch-tab"; targetTabId: string; requestId?: string }
 	| { type: "switch-replay-tab"; targetTabId: string; requestId?: string }
+	| { type: "new-tab"; targetTabId?: string; requestId?: string }
 	| { type: "prepare-replay"; requestId?: string; reuseActiveTab?: boolean }
 	| { type: "close-tab"; targetTabId: string; requestId?: string }
 	| { type: "close-session" };
@@ -111,6 +136,9 @@ export type ServerToClientEvent =
 				width: number;
 				height: number;
 				pageScaleFactor?: number;
+				scrollTop?: number;
+				scrollHeight?: number;
+				viewportHeight?: number;
 			};
 	  }
 	| { type: "loading"; isLoading: boolean }
@@ -295,6 +323,8 @@ export interface RemoteBrowserRecordedStep {
 	url?: string;
 	selector?: string;
 	text?: string;
+	key?: string;
+	deltaY?: number;
 	role?: string;
 	coordinates?: { x: number; y: number };
 	viewport?: { width: number; height: number; deviceScaleFactor?: number };

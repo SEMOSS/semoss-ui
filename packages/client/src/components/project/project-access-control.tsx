@@ -59,7 +59,6 @@ export const ProjectAccessControl = () => {
 								id={project.project_id}
 							/>
 						</div>
-						pn
 					</div>
 				</section>
 			</div>

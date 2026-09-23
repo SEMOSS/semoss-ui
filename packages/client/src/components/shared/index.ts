@@ -1,17 +1,5 @@
-import { MCPJsonEditor, MetadataHelpDialog } from "./mcp-json-editor";
-import { NavbarLeft } from "./NavbarLeft";
-import { NavbarRight } from "./NavbarRight";
 import { NavbarHeader } from "./navbar-header";
+import { NavbarLeft } from "./navbar-left";
+import { NavbarRight } from "./navbar-right";
 import { PlatformMessages } from "./platform-messages";
-export {
-	PlatformMessages,
-	NavbarLeft,
-	NavbarRight,
-	NavbarHeader,
-	MCPJsonEditor,
-	MetadataHelpDialog,
-};
-export {
-	RemoteMcpConnection,
-	type RemoteMcpConnectionProps,
-} from "./remote-mcp-connection";
+export { PlatformMessages, NavbarLeft, NavbarRight, NavbarHeader };

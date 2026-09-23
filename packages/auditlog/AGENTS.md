@@ -3,19 +3,19 @@
 This document provides context for AI coding assistants working with the SEMOSS audit log
 dashboard application.
 
-> **Inherits from:** [../../AGENTS.md](../../AGENTS.md) for code style, file-naming, package
-> structure, commit messages, Biome config, and Node/pnpm requirements.
+> **Inherits from:** [root AGENTS.md](../../AGENTS.md). Load the applicable
+> [root skills](../../skills/README.md), including the [React standard](../../skills/react-standard.skill.md).
 
 ## Overview
 
 `@semoss/auditlog-package` is a standalone dashboard application for viewing SEMOSS audit
-logs. It is a **private** package built with Vite, MobX, and `react-router-dom`.
+logs. It is a **private** package built with Vite, MobX, and `react-router`.
 
 ## Build System
 
-- **Bundler**: Vite 7
+- **Bundler**: Vite 8
 - **State**: MobX (`mobx` + `mobx-react-lite`)
-- **Routing**: `react-router-dom` 6
+- **Routing**: `react-router` 8
 - **Styling**: Tailwind CSS v4
 
 ### Commands
@@ -24,14 +24,17 @@ logs. It is a **private** package built with Vite, MobX, and `react-router-dom`.
 |---------|-------------|
 | `pnpm dev` | Start dev server |
 | `pnpm build` | Production build |
+| `pnpm test` | Vitest (`--passWithNoTests`; success may mean no tests ran) |
 | `pnpm lint` | **ESLint** (see Linting below) |
 | `pnpm preview` | Preview the production build |
 
+Run these from `packages/auditlog`, or use `pnpm --filter @semoss/auditlog-package <command>`.
+
 ### Linting
 
-Repo-wide **Biome** (`pnpm check` at the root) applies here like everywhere else. This package
-**additionally** ships a local **ESLint** config (`eslint.config.js`,
-`eslint-plugin-react-hooks` + `eslint-plugin-react-refresh`). Run **both**:
+Follow the [React validation guidance](../../skills/react-standard.skill.md#validation).
+This package additionally ships `eslint.config.js` with React hooks/refresh plugins; run
+its local check alongside the applicable root check:
 
 ```bash
 pnpm check                          # Biome (repo-wide)
@@ -40,7 +43,9 @@ pnpm --filter @semoss/auditlog-package lint   # ESLint (react hooks/refresh)
 
 ## Structure
 
-An application, so it uses the `src/` layout from the root AGENTS.md including `pages/`:
+The existing layout is below. New application features follow the
+[React architecture policy](../../skills/react-standard.skill.md#architecture-and-exports);
+do not relocate existing features without explicit migration scope.
 
 | Folder / file | Purpose |
 |---------------|---------|
@@ -53,9 +58,14 @@ An application, so it uses the `src/` layout from the root AGENTS.md including `
 | `types.d.ts` | Ambient TypeScript types |
 | `app.tsx`, `main.tsx`, `index.css` | App entry files |
 
-> Some page files use the legacy PascalCase form (`AuthenticatedLayout.tsx`, `LoginPage.tsx`,
-> `MainLayout.tsx`) alongside newer kebab files (`root-layout.tsx`). Migrate to the dot
-> role-suffix (`authenticated.layout.tsx`, `login.page.tsx`) as you touch them.
+> Some page files retain legacy names. Apply the React skill's
+> [naming policy](../../skills/react-standard.skill.md#types-and-naming) without unrelated renames.
+
+## Design-System Notes
+
+Follow the root [Design System & Styling](../../AGENTS.md#design-system--styling) rules and
+[DESIGN.md](../../DESIGN.md). Preserve the audit dashboard's dense list/filter/table
+composition; responsive and accessible behavior follow the [root skills](../../skills/README.md).
 
 ## Agent Guardrails
 

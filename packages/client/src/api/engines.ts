@@ -1,4 +1,4 @@
-import { Env, get, post } from "@semoss/sdk/react";
+import { Env, get, post, runPixel } from "@semoss/sdk/react";
 
 export const getEngines = async (
 	admin: boolean,
@@ -27,125 +27,6 @@ export const getEngines = async (
 		throw Error("No Response to get Apps");
 	}
 	return response.data;
-};
-
-export const getEngineUsers = async (
-	admin: boolean,
-	databaseId: string,
-	user: string,
-	permission: string,
-	offset?: number,
-	limit?: number,
-	projectId?,
-) => {
-	let url = `${Env.MODULE}/api/auth/`;
-	if (admin) {
-		url += "admin/";
-	}
-
-	url += "engine/getEngineUsers?";
-	url += `engineId=${databaseId}`;
-	url += user ? `&searchTerm=${user}` : "";
-	url += permission ? `&permission=${permission}` : "";
-	url += offset ? `&offset=${offset}` : "";
-	url += limit ? `&limit=${limit}` : "";
-
-	// get the response
-	const response = await get<{
-		members: {
-			id: string;
-			name: string;
-			permission: string;
-		}[];
-		totalMembers: number;
-	}>(url).catch((error) => {
-		throw Error(error);
-	});
-	// there was no response, that is an error
-	if (!response) {
-		throw Error("No Response to get users associated with app");
-	}
-	console.warn(
-		"Project Id is not a necessary param, optional due to the similarity of usage for getInsightUsers",
-		projectId,
-	);
-	return response.data;
-};
-
-export const getEngineUsersNoCredentials = async (
-	admin: boolean,
-	engineId: string,
-	limit: number,
-	offset: number,
-	searchTerm: string,
-) => {
-	let url = `${Env.MODULE}/api/auth/`;
-	// Currently no admin ENDPOINT;
-	if (admin) {
-		url += "admin/";
-	}
-	url += `engine/getEngineUsersNoCredentials?engineId=${engineId}&limit=${limit}&offset=${offset}&searchTerm=${searchTerm}`;
-	// get the response
-	const response = await get<
-		{
-			id: string;
-			email: string;
-			name: string;
-			type: string;
-			username: string;
-		}[]
-	>(url).catch((error) => {
-		throw Error(error);
-	});
-	// there was no response, that is an error
-	if (!response) {
-		throw Error("No Response to get non credentialed users");
-	}
-	return response;
-};
-
-export const addEngineUserPermissions = async (
-	admin: boolean,
-	appId: string,
-	users: unknown[],
-) => {
-	let url = `${Env.MODULE}/api/auth/`;
-	// No Admin endpoint currently
-	if (admin) {
-		url += "admin/";
-	}
-	url += "engine/addEngineUserPermissions";
-	const postData: Record<string, unknown> = {
-		engineId: appId,
-		userpermissions: users,
-	};
-
-	const response = await post<{
-		success: boolean;
-	}>(url, processPostData(postData), {});
-	return response;
-	// figure out whether we want to do .catch here
-};
-
-export const removeEngineUserPermissions = async (
-	admin: boolean,
-	appId: string,
-	users: unknown[],
-) => {
-	let url = `${Env.MODULE}/api/auth/`;
-	if (admin) {
-		url += "admin/";
-	}
-	url += "engine/removeEngineUserPermissions";
-	const postData: Record<string, unknown> = {
-		engineId: appId,
-		ids: users,
-	};
-
-	const response = await post<{
-		success: boolean;
-	}>(url, processPostData(postData), {});
-	return response;
 };
 
 export const setEngineGlobal = async (
@@ -335,42 +216,123 @@ export const deleteEnginePermission = async (
 };
 
 /**
- * @name editEngineUserPermissions
- * @param admin
- * @param appId
- * @param users
- * @returns
+ * Throw when a pixel response contains an operation error. No-op when the
+ * error list is empty.
+ *
+ * @name assertPixelSuccess
+ * @param errors - Operation errors collected from a runPixel response.
  */
-
-export const editEngineUserPermissions = async (
-	admin: boolean,
-	appId: string,
-	// biome-ignore lint/suspicious/noExplicitAny: TODO: type
-	users: any[],
-) => {
-	let url = `${Env.MODULE}/api/auth/`,
-		postData: Record<string, unknown> = {};
-
-	if (admin) {
-		url += "admin/";
+const assertPixelSuccess = (errors: string[]): void => {
+	if (errors.length > 0) {
+		throw new Error(errors.join(""));
 	}
+};
 
-	url += "engine/editEngineUserPermissions";
+/**
+ * One configurable parameter of a provider built-in tool, as written in the
+ * meta/builtin-tools.json catalog. Unknown keys pass through untouched.
+ */
+export interface BuiltinToolParam {
+	alias: string;
+	display_name?: string;
+	type?: "required" | "optional";
+	input?: "string" | "number" | "boolean" | "list" | "map";
+	options?: (string | number | boolean)[];
+	default?: unknown;
+	show_in_ui?: boolean;
+	/** The user's chosen value; the catalog `default` applies when absent. */
+	value?: unknown;
+	[key: string]: unknown;
+}
 
-	postData = {
-		engineId: appId,
-		userpermissions: users,
-	};
+/**
+ * One provider built-in tool from the meta/builtin-tools.json catalog.
+ * Unknown keys pass through untouched, which also makes a definition
+ * directly storable as a {@link BuiltinToolSelection}.
+ */
+export interface BuiltinToolDefinition {
+	alias: string;
+	display_name?: string;
+	description?: string;
+	params?: BuiltinToolParam[];
+	constraints?: { api?: string; models?: string[]; regions?: string[] };
+	[key: string]: unknown;
+}
 
-	const response = await post<{ success: boolean }>(
-		url,
-		processPostData(postData),
-		{},
+/**
+ * Stored selection for one provider built-in tool: the catalog definition
+ * copied as-is, with a `value` on any parameter the user changed from its
+ * default. Kept catalog-shaped on purpose, so whatever reads the stored
+ * JSON can render the tool's options without a second catalog lookup.
+ */
+export interface BuiltinToolSelection {
+	alias?: string;
+	display_name?: string;
+	description?: string;
+	params?: BuiltinToolParam[];
+	[key: string]: unknown;
+}
+
+/** Shape returned by the GetModelBuiltinTools pixel. */
+export interface ModelBuiltinTools {
+	engineId?: string;
+	modelId?: string;
+	modelProvider?: string;
+	servingProvider?: string;
+	tools?: Record<string, BuiltinToolDefinition>;
+	selected?: Record<string, BuiltinToolSelection>;
+}
+
+/**
+ * The provider-hosted built-in tools a model engine can use, plus the
+ * selection already saved on it. Returns empty maps when the install ships no
+ * catalog or the engine's providers are unknown to it — that is not an error.
+ *
+ * @name getModelBuiltinTools
+ * @param insightId - Insight the pixel executes against.
+ * @param engineId - Model engine to resolve the catalog for.
+ * @return The catalog and the engine's saved selection.
+ */
+export const getModelBuiltinTools = async (
+	insightId: string,
+	engineId: string,
+): Promise<ModelBuiltinTools> => {
+	const response = await runPixel<[ModelBuiltinTools]>(
+		`GetModelBuiltinTools(engine=[${JSON.stringify(engineId)}]);`,
+		insightId,
 	);
+	assertPixelSuccess(response.errors);
 
-	return response;
+	return response.pixelReturn[0]?.output ?? {};
+};
 
-	// figure out whether we want to do .catch here
+/**
+ * What a model engine accepts as input. GetModelMetadata returns far more than
+ * this; only the attachment-related fields are read, so only they are typed.
+ *
+ * Both fields are tri-state on purpose — a missing one means the provider
+ * never reported it, not "no".
+ *
+ * @name getModelInputSupport
+ * @param insightId - Insight the pixel executes against.
+ * @param engineId - Model engine to describe.
+ * @return The attachment flag and the input modalities, either possibly absent.
+ */
+export const getModelInputSupport = async (
+	insightId: string,
+	engineId: string,
+): Promise<{
+	/** Whether the model accepts file attachments. */
+	attachment?: boolean | null;
+	/** Input modalities the model accepts (TEXT, IMAGE, PDF, ...). */
+	inputModalities?: string[] | null;
+}> => {
+	const response = await runPixel<
+		[Awaited<ReturnType<typeof getModelInputSupport>>]
+	>(`GetModelMetadata(engine=[${JSON.stringify(engineId)}]);`, insightId);
+	assertPixelSuccess(response.errors);
+
+	return response.pixelReturn[0]?.output ?? {};
 };
 
 const processPostData = (data: Record<string, unknown>) => {

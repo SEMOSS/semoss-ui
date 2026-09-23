@@ -1,5 +1,6 @@
 import { createContext } from "react";
-import type { Project, ProjectDependency, Role } from "@semoss/shared";
+import type { Role } from "@semoss/sdk";
+import type { Project, ProjectDependency } from "@semoss/shared";
 
 export type ProjectContextType = {
 	/** Type of the project */

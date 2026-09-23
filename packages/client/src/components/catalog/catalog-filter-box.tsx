@@ -15,7 +15,7 @@ import {
 	CollapsibleTrigger,
 	Input,
 } from "@semoss/ui/next";
-import { useRootStore } from "@/hooks";
+import { useConfig } from "@/hooks";
 import {
 	formatToDataTestId,
 	getTagColorPalette,
@@ -27,6 +27,14 @@ import { isProjectType } from "@/utility/catalog";
 export interface CatalogFilterboxProps {
 	/** Determined to get filter keys for Engines/App */
 	type: Engine["engine_type"] | Project["project_type"];
+	/**
+	 * Every project type the parent view lists, so the filter option counts are
+	 * scoped to the same projects the view can show. Pass the same types the
+	 * view's MyProjects call filters on - a view listing more than one type (for
+	 * example App, which lists CODE and BLOCKS) would otherwise count metadata
+	 * over the wrong set. Defaults to `[type]`. Ignored for engine types.
+	 */
+	projectTypes?: readonly Project["project_type"][];
 	/** Currently selected filters (controlled from parent) */
 	filters: Record<string, string[]>;
 	/** Filters to hold in state at parent */
@@ -36,8 +44,11 @@ export interface CatalogFilterboxProps {
 const COLLAPSED_ITEM_LIMIT = 8;
 
 export const CatalogFilterBox = (props: CatalogFilterboxProps) => {
-	const { type, filters, onChange } = props;
-	const { configStore } = useRootStore();
+	const { type, projectTypes, filters, onChange } = props;
+	const projectMetaKeys = useConfig((state) => state.config.projectMetaKeys);
+	const databaseMetaKeys = useConfig(
+		(state) => state.config.databaseMetaKeys,
+	);
 
 	const [filterSearch, setFilterSearch] = useState("");
 	const [showCollapsible, setShowCollapsible] = useState<
@@ -49,9 +60,7 @@ export const CatalogFilterBox = (props: CatalogFilterboxProps) => {
 	const [headerOpen, setHeaderOpen] = useState(false);
 	const [isDesktopFilterLayout, setIsDesktopFilterLayout] = useState(false);
 
-	const list = isProjectType(type)
-		? configStore.store.config.projectMetaKeys
-		: configStore.store.config.databaseMetaKeys;
+	const list = isProjectType(type) ? projectMetaKeys : databaseMetaKeys;
 
 	const fieldList = list.filter((k) => {
 		return (
@@ -138,7 +147,9 @@ export const CatalogFilterBox = (props: CatalogFilterboxProps) => {
 	>(
 		fieldKeys.length > 0
 			? isProjectType(type)
-				? `GetProjectMetaValues(metaKeys=${JSON.stringify(
+				? `GetProjectMetaValues(projectType=${JSON.stringify(
+						projectTypes?.length ? [...projectTypes] : [type],
+					)}, metaKeys=${JSON.stringify(
 						fieldKeys.filter((mk) => mk),
 					)});`
 				: `GetEngineMetaValues( engineTypes=["${type}"], metaKeys = ${JSON.stringify(

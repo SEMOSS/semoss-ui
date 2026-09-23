@@ -2,7 +2,7 @@
 import { Info, Trash2 } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useEffect, useMemo, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams } from "react-router";
 import {
 	type Block,
 	type BlockDef,
@@ -216,7 +216,7 @@ export const PDFViewerSettings = observer(
 								className="flex items-center gap-2"
 							>
 								<span>{key}</span>
-								<Tooltip>
+								<Tooltip disableHoverableContent={false}>
 									<TooltipTrigger asChild>
 										<Info className="size-4 cursor-pointer" />
 									</TooltipTrigger>

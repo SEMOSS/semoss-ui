@@ -150,7 +150,7 @@ export const ColorPickerSettingsNew = observer<ColorPickerSettingProps>(
 							className="-translate-y-1/2 absolute top-1/2 right-2 cursor-pointer border-none bg-transparent p-0"
 						>
 							<span
-								className="mr-3 block h-[23px] w-[23px] rounded-[20%] border border-black"
+								className="mr-3 block h-[23px] w-[23px] rounded-[20%] border border-border"
 								style={{ backgroundColor: value ?? "#000000" }}
 							/>
 						</button>

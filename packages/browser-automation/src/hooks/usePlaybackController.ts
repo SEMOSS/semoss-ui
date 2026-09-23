@@ -6,6 +6,7 @@ import {
 	getStepSelector,
 	wait,
 } from "../domain/replay-step";
+import { scrollDeltaForViewport } from "../domain/scroll";
 import type {
 	ClientToServerEvent,
 	LoadedRecording,
@@ -67,6 +68,7 @@ interface UsePlaybackControllerOptions {
 	sendTabControlEvent: (
 		event: ClientToServerEvent & { requestId: string },
 	) => Promise<void>;
+	replayContextStep: (step: LoadedRecordingStep) => Promise<void>;
 	onError: (message: string) => void;
 	onMessage: (message: string) => void;
 }
@@ -127,6 +129,7 @@ export function usePlaybackController({
 	replaySingleStep,
 	sendReplayEvent,
 	sendTabControlEvent,
+	replayContextStep,
 	onError,
 	onMessage,
 }: UsePlaybackControllerOptions) {
@@ -194,7 +197,28 @@ export function usePlaybackController({
 					rows.push({ tabId, step, index });
 				});
 		});
-		return rows;
+		// Recorder step IDs are session-global. Sort across tab buckets so a
+		// workflow that switches tabs replays in its original chronology.
+		return rows.sort((left, right) => {
+			const leftId =
+				typeof left.step.id === "number"
+					? left.step.id
+					: Number.POSITIVE_INFINITY;
+			const rightId =
+				typeof right.step.id === "number"
+					? right.step.id
+					: Number.POSITIVE_INFINITY;
+			if (leftId !== rightId) return leftId - rightId;
+			const leftTimestamp =
+				typeof left.step.timestamp === "number"
+					? left.step.timestamp
+					: Number.POSITIVE_INFINITY;
+			const rightTimestamp =
+				typeof right.step.timestamp === "number"
+					? right.step.timestamp
+					: Number.POSITIVE_INFINITY;
+			return leftTimestamp - rightTimestamp;
+		});
 	}, [loadedRecording]);
 
 	const typeStepCount = useMemo(
@@ -555,12 +579,24 @@ export function usePlaybackController({
 					}
 					case "SCROLL": {
 						const deltaY = Number(step.deltaY);
+						const viewport =
+							step.viewport && typeof step.viewport === "object"
+								? (step.viewport as Record<string, unknown>)
+								: null;
+						const viewportHeight =
+							typeof viewport?.height === "number"
+								? viewport.height
+								: 768;
+						const fallbackDeltaY =
+							scrollDeltaForViewport(viewportHeight);
 						await replay({
 							type: "wheel",
 							x: coords?.x ?? 0,
 							y: coords?.y ?? 0,
 							deltaX: 0,
-							deltaY: Number.isFinite(deltaY) ? deltaY : 600,
+							deltaY: Number.isFinite(deltaY)
+								? deltaY
+								: fallbackDeltaY,
 							record: false,
 							waitAfterMs: getReplayWaitAfterMs(step, 300),
 						});
@@ -674,6 +710,10 @@ export function usePlaybackController({
 
 	const runStep = useCallback(
 		async (tabId: string, step: LoadedRecordingStep) => {
+			const isContextStep =
+				String(step.type || "")
+					.trim()
+					.toUpperCase() === "CONTEXT";
 			// Room recordings replay through replayRoomStep below, which never
 			// touches project, so only project-sourced recordings require one.
 			if (
@@ -720,19 +760,66 @@ export function usePlaybackController({
 					});
 					replayPreparedRef.current = true;
 				}
-				await sendTabControlEvent({
-					type: "switch-replay-tab",
-					targetTabId: tabId,
-					requestId: crypto.randomUUID(),
-				});
+				try {
+					await sendTabControlEvent({
+						type: "switch-replay-tab",
+						targetTabId: tabId,
+						requestId: crypto.randomUUID(),
+					});
+				} catch (error) {
+					const message =
+						error instanceof Error ? error.message : String(error);
+					const isUnopenedManualTab =
+						String(step.type || "").toUpperCase() === "NAVIGATE" &&
+						message.includes("has not been opened by playback yet");
+					if (!isUnopenedManualTab) throw error;
+					await sendTabControlEvent({
+						type: "new-tab",
+						targetTabId: tabId,
+						requestId: crypto.randomUUID(),
+					});
+				}
 			} catch (error) {
 				setRunningStepId(null);
+				if (isContextStep) {
+					setExecutedStepIds((current) =>
+						new Set(current).add(step.id as number),
+					);
+					onError(
+						`Optional context step ${step.id} failed: ${
+							error instanceof Error
+								? error.message
+								: `Could not prepare ${tabId} for context extraction`
+						}. Continuing playback.`,
+					);
+					return true;
+				}
 				onError(
 					error instanceof Error
 						? error.message
 						: `Could not prepare ${tabId} for playback`,
 				);
 				return false;
+			}
+
+			if (isContextStep) {
+				try {
+					await replayContextStep(step);
+					onMessage(`Extracted context at optional step ${step.id}`);
+				} catch (error) {
+					onError(
+						`Optional context step ${step.id} failed: ${
+							error instanceof Error
+								? error.message
+								: "Could not extract selected website text"
+						}. Continuing playback.`,
+					);
+				}
+				setRunningStepId(null);
+				setExecutedStepIds((current) =>
+					new Set(current).add(step.id as number),
+				);
+				return true;
 			}
 
 			if (source === "room") {
@@ -801,6 +888,7 @@ export function usePlaybackController({
 			onMessage,
 			project,
 			replayRoomStep,
+			replayContextStep,
 			replaySingleStep,
 			selectedRecording,
 			sendTabControlEvent,

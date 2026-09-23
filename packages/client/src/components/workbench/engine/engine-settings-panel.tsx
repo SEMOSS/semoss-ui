@@ -1,6 +1,8 @@
+import { SettingsIcon } from "lucide-react";
 import { useMemo, useState } from "react";
-import type { Role } from "@semoss/shared";
+import type { Role } from "@semoss/sdk";
 import { Tabs, TabsList, TabsTrigger } from "@semoss/ui/next";
+import type { WorkbenchPanelConfig } from "@semoss/workbench";
 import { useEngine } from "@/hooks";
 import { EngineActivityPage } from "@/pages/engine/engine-activity-page";
 import { EngineMcpUsagePage } from "@/pages/engine/engine-mcp-usage-page";
@@ -10,7 +12,7 @@ import { EngineSettingsPage } from "@/pages/engine/engine-settings-page";
 import { EngineSmssPage } from "@/pages/engine/engine-smss-page";
 import { EngineUsagePage } from "@/pages/engine/engine-usage-page";
 
-interface EngineSettingsPanelProps {
+export interface EngineSettingsPanelProps {
 	/** Settings tabs to display; differs by engine type */
 	tabs: {
 		/** Label shown on the tab trigger */
@@ -38,9 +40,7 @@ interface EngineSettingsPanelProps {
  * then provides the EngineContext so the embedded pages behave the same as
  * their standalone route counterparts.
  */
-export const EngineSettingsPanel: React.FC<EngineSettingsPanelProps> = ({
-	tabs,
-}) => {
+const EngineSettingsPanel: React.FC<EngineSettingsPanelProps> = ({ tabs }) => {
 	const { permission } = useEngine();
 
 	const [selectedComponent, setSelectedComponent] =
@@ -105,3 +105,65 @@ export const EngineSettingsPanel: React.FC<EngineSettingsPanelProps> = ({
 		</div>
 	);
 };
+
+/**
+ * The tabs every engine workbench shows.
+ *
+ * Five of the six passed this exact array literal — thirty-one lines each. The
+ * sixth, database, adds Metadata; see `withTab`.
+ */
+export const ENGINE_SETTINGS_TABS: EngineSettingsPanelProps["tabs"] = [
+	{
+		name: "Overview",
+		component: "overview",
+		restrict: ["READ_ONLY", "EDIT", "OWNER", "DISCOVERABLE"],
+	},
+	{
+		name: "Usage",
+		component: "usage",
+		restrict: ["READ_ONLY", "EDIT", "OWNER"],
+	},
+	{
+		name: "MCP",
+		component: "mcp-usage",
+		restrict: ["READ_ONLY", "EDIT", "OWNER"],
+	},
+	{
+		name: "Activity Log",
+		component: "activity",
+		restrict: ["READ_ONLY", "EDIT", "OWNER"],
+	},
+	{
+		name: "Access Control",
+		component: "access-control",
+		restrict: ["EDIT", "OWNER"],
+	},
+	{
+		name: "SMSS",
+		component: "smss",
+		restrict: ["OWNER"],
+	},
+];
+
+/**
+ * Builds the settings blueprint for one engine domain. Each domain calls
+ * this at module scope with its static tab list, so the blueprint identity
+ * stays stable and the panel never remounts from map churn.
+ *
+ * @name createEngineSettingsPanel
+ * @param tabs - Settings tabs the domain exposes.
+ * @return The blueprint registered under ENGINE_SETTINGS.
+ */
+export const createEngineSettingsPanel = (
+	tabs: EngineSettingsPanelProps["tabs"],
+): WorkbenchPanelConfig => ({
+	name: "Settings",
+	helpText: "Settings",
+	icon: ({ className }) => <SettingsIcon className={className} />,
+	canClose: true,
+	canRename: false,
+	mount: "keepAlive",
+	content: function EngineSettingsContent() {
+		return <EngineSettingsPanel tabs={tabs} />;
+	},
+});

@@ -1,0 +1,51 @@
+{
+	"dialog": {
+		"title": "Agregar miembros",
+		"description": "Busca usuarios e invítalos a este recurso."
+	},
+	"search": {
+		"placeholder": "Buscar por nombre o correo electrónico...",
+		"searching": "Buscando usuarios...",
+		"empty": "No se encontraron usuarios",
+		"added": "Agregado"
+	},
+	"selected": {
+		"count_one": "{{count}} usuario seleccionado",
+		"count_many": "{{count}} usuarios seleccionados",
+		"count_other": "{{count}} usuarios seleccionados",
+		"empty": "No hay usuarios seleccionados"
+	},
+	"permission": {
+		"viewer": "Lector",
+		"editor": "Editor",
+		"owner": "Propietario"
+	},
+	"restrictions": {
+		"title": "Límites de uso del modelo (para todos los usuarios seleccionados)",
+		"usageLimitType": "Tipo de límite de uso",
+		"none": "Ninguno",
+		"token": "Tokens",
+		"computeTime": "Tiempo de cómputo",
+		"maxTokens": "Máximo de tokens",
+		"maxResponseTime": "Tiempo máximo de respuesta",
+		"unit": "Unidad",
+		"milliseconds": "milisegundos",
+		"frequency": "Frecuencia",
+		"daily": "Diaria",
+		"weekly": "Semanal",
+		"monthly": "Mensual",
+		"yearly": "Anual",
+		"allTime": "Todo el tiempo"
+	},
+	"footer": {
+		"add": "Agregar",
+		"addWithCount": "Agregar ({{count}})"
+	},
+	"errors": {
+		"loadUsersFailed": "No se pudieron cargar los usuarios.",
+		"addMembersFailed": "Se produjo un error al agregar los miembros seleccionados."
+	},
+	"success": {
+		"membersAdded": "Los miembros seleccionados se agregaron correctamente."
+	}
+}

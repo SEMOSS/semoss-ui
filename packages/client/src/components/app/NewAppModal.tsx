@@ -2,6 +2,7 @@ import { X } from "lucide-react";
 import { useId, useMemo, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import type { SerializedState } from "@semoss/renderer";
+import type { Project } from "@semoss/shared";
 import {
 	Badge,
 	Button,
@@ -17,8 +18,7 @@ import {
 	toast,
 } from "@semoss/ui/next";
 import { uploadImage } from "@/api";
-import { useRootStore } from "@/hooks";
-import type { AppMetadata } from "./app.types";
+import { useSession } from "@/hooks";
 
 type NewAppForm = {
 	APP_NAME: string;
@@ -29,13 +29,17 @@ type NewAppForm = {
 
 interface NewAppModalProps {
 	open: boolean;
-	options: { type: "blocks"; state: SerializedState } | { type: "code" };
+	options:
+		| { type: "automation" }
+		| { type: "blocks"; state: SerializedState }
+		| { type: "code" };
 	onClose: (appId?: string) => void;
 }
 
 export const NewAppModal = (props: NewAppModalProps) => {
 	const { open, options, onClose = () => null } = props;
-	const { monolithStore, configStore } = useRootStore();
+	const runPixel = useSession((state) => state.runPixel);
+	const insightID = useSession((state) => state.insightID);
 	const [isLoading, setIsLoading] = useState(false);
 	const [tagInput, setTagInput] = useState("");
 	const nameId = useId();
@@ -58,6 +62,26 @@ export const NewAppModal = (props: NewAppModalProps) => {
 
 	const onSubmit = handleSubmit(async (data: NewAppForm) => {
 		let appId = "";
+
+		const saveMetadata = async (
+			resolvedAppId: string,
+			extraTags: string[] = [],
+		): Promise<boolean> => {
+			const tags = Array.from(new Set([...data.APP_TAGS, ...extraTags]));
+			if (!tags.length && !data.APP_DESCRIPTION) return true;
+			const { pixelReturn } = await runPixel(
+				`SetProjectMetadata(project=["${resolvedAppId}"], meta=[${JSON.stringify(
+					{ tag: tags, description: data.APP_DESCRIPTION },
+				)}])`,
+			);
+			const operationType = pixelReturn[0].operationType[0];
+			if (operationType.indexOf("ERROR") > -1) {
+				toast.error(String(pixelReturn[0].output));
+				return false;
+			}
+			return true;
+		};
+
 		try {
 			setIsLoading(true);
 			const { type } = options;
@@ -67,9 +91,7 @@ export const NewAppModal = (props: NewAppModalProps) => {
 				if (!state)
 					throw new Error("State is missing from the blocks app");
 
-				const { errors, pixelReturn } = await monolithStore.runQuery<
-					[AppMetadata]
-				>(
+				const { errors, pixelReturn } = await runPixel<[Project]>(
 					`CreateAppFromBlocks ( project = [ "${
 						data.APP_NAME
 					}" ] , json =[${JSON.stringify(state)}]  ) ;`,
@@ -80,50 +102,35 @@ export const NewAppModal = (props: NewAppModalProps) => {
 				appId = pixelReturn[0].output.project_id;
 
 				if (data.APP_IMG && appId) {
-					await uploadImage(
-						data.APP_IMG,
-						appId,
-						configStore.store.insightID,
-					);
+					await uploadImage(data.APP_IMG, appId, insightID);
 				}
 
-				if (data.APP_TAGS.length || data.APP_DESCRIPTION) {
-					const setProjectMetadataResponse =
-						await monolithStore.runQuery(
-							`SetProjectMetadata(project=["${appId}"], meta=[${JSON.stringify(
-								{
-									tag: data.APP_TAGS,
-									description: data.APP_DESCRIPTION,
-								},
-							)}])`,
-						);
-
-					const output =
-						setProjectMetadataResponse.pixelReturn[0].output;
-					const operationType =
-						setProjectMetadataResponse.pixelReturn[0]
-							.operationType[0];
-
-					if (operationType.indexOf("ERROR") > -1) {
-						toast.error(output);
-						return;
-					}
-				}
-			} else if (type === "code") {
-				const pixel = `CreateProject(project=["${data.APP_NAME}"], portal=[true], projectType=["CODE"]);`;
+				if (!(await saveMetadata(appId))) return;
+			} else if (type === "automation") {
+				const pixel = `CreateAutomation(projectName=${JSON.stringify([data.APP_NAME])});`;
 				const { errors, pixelReturn } =
-					await monolithStore.runQuery<[AppMetadata]>(pixel);
+					await runPixel<[Project]>(pixel);
 
 				if (errors.length > 0) throw new Error(errors.join(","));
 
 				appId = pixelReturn[0].output.project_id;
 
 				if (data.APP_IMG && appId) {
-					await uploadImage(
-						data.APP_IMG,
-						appId,
-						configStore.store.insightID,
-					);
+					await uploadImage(data.APP_IMG, appId, insightID);
+				}
+
+				if (!(await saveMetadata(appId, ["AUTOMATION"]))) return;
+			} else if (type === "code") {
+				const pixel = `CreateProject(project=["${data.APP_NAME}"], portal=[true], projectType=["CODE"]);`;
+				const { errors, pixelReturn } =
+					await runPixel<[Project]>(pixel);
+
+				if (errors.length > 0) throw new Error(errors.join(","));
+
+				appId = pixelReturn[0].output.project_id;
+
+				if (data.APP_IMG && appId) {
+					await uploadImage(data.APP_IMG, appId, insightID);
 				}
 
 				const newIndexFilePath = "version/assets/portals/index.html";
@@ -134,43 +141,25 @@ export const NewAppModal = (props: NewAppModalProps) => {
                     CommitAsset(filePath=["${newIndexFilePath}"], comment=["Hardcoded comment from the App Page editor"], space=["${appId}"])
                 `;
 
-				const response =
-					await monolithStore.runQuery(saveIndexFilePixel);
+				const response = await runPixel(saveIndexFilePixel);
 
 				let output = response.pixelReturn[0].output;
 				let operationType = response.pixelReturn[0].operationType;
 
 				if (operationType.indexOf("ERROR") > -1) {
-					toast.error(output);
-					return false;
+					toast.error(String(output));
+					return;
 				}
 
 				output = response.pixelReturn[1].output;
 				operationType = response.pixelReturn[1].operationType;
 
 				if (operationType.indexOf("ERROR") > -1) {
-					toast.error(output);
+					toast.error(String(output));
+					return;
 				}
 
-				if (data.APP_TAGS.length || data.APP_DESCRIPTION) {
-					const setProjectMetadataResponse =
-						await monolithStore.runQuery(
-							`SetProjectMetadata(project=["${appId}"], meta=[${JSON.stringify(
-								{
-									tag: data.APP_TAGS,
-									description: data.APP_DESCRIPTION,
-								},
-							)}])`,
-						);
-
-					output = setProjectMetadataResponse.pixelReturn[0].output;
-					operationType =
-						setProjectMetadataResponse.pixelReturn[0].operationType;
-
-					if (operationType.indexOf("ERROR") > -1) {
-						toast.error(output);
-					}
-				}
+				if (!(await saveMetadata(appId))) return;
 			} else {
 				return;
 			}
@@ -178,7 +167,6 @@ export const NewAppModal = (props: NewAppModalProps) => {
 			if (!appId) throw new Error("Error creating app");
 			onClose(appId);
 		} catch (e) {
-			console.error(e);
 			toast.error(e.message);
 		} finally {
 			setIsLoading(false);
@@ -187,9 +175,11 @@ export const NewAppModal = (props: NewAppModalProps) => {
 
 	return (
 		<Dialog open={open} onOpenChange={() => !isLoading && onClose()}>
-			<DialogContent className="sm:max-w-md">
+			<DialogContent aria-describedby={undefined} className="sm:max-w-md">
 				<DialogHeader>
-					<DialogTitle>New App</DialogTitle>
+					<DialogTitle className="font-medium text-base leading-6">
+						New App
+					</DialogTitle>
 				</DialogHeader>
 				<form onSubmit={onSubmit}>
 					<div className="flex flex-col gap-3 py-2">

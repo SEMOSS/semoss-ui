@@ -20,6 +20,7 @@ import { BlockHeader } from "./block-header";
 import { CodePreviewBlock } from "./code-preview-block";
 import { KNOWN_SHIKI_LANGS } from "./constants";
 import { MermaidBlock } from "./mermaid-block";
+import { NotebookPreviewBlock } from "./notebook-preview-block";
 
 type MarkdownComponents = NonNullable<
 	ComponentProps<typeof Markdown>["components"]
@@ -35,6 +36,20 @@ type BlockQuoteProps = ComponentProps<"blockquote"> & {
 	children?: ReactNode;
 	node?: unknown;
 };
+
+/**
+ * Builds the `urlTransform` for anything rendered as assistant content.
+ * Unmatched urls are rewritten to "", leaving the link inert.
+ */
+export const createMarkdownUrlTransform =
+	(allowedUrlPrefixes?: string[]) =>
+	(url: string): string => {
+		if (url.startsWith("room://")) return url;
+		if (allowedUrlPrefixes?.some((prefix) => url.startsWith(prefix)))
+			return url;
+		if (/^(https?:|mailto:|#)/.test(url)) return url;
+		return "";
+	};
 
 export const createMarkdownComponents = (
 	room?: RoomStore,
@@ -93,13 +108,7 @@ export const createMarkdownComponents = (
 						type="button"
 						className="cursor-pointer font-medium text-base text-primary underline underline-offset-1"
 						onClick={() => {
-							room.addSidebarNode(`FILE_EXPLORER--${path}`, {
-								type: "tab",
-								name: "Files",
-								component: "room-file-explorer",
-								config: { initialPath: path },
-								enableClose: true,
-							});
+							room.openSidebarFileExplorer(path);
 						}}
 					>
 						{children}
@@ -114,20 +123,8 @@ export const createMarkdownComponents = (
 					type="button"
 					className="cursor-pointer font-medium text-base text-primary underline underline-offset-1"
 					onClick={() => {
-						room.addSidebarNode("FILE_EXPLORER", {
-							type: "tab",
-							name: "Files",
-							component: "room-file-explorer",
-							config: {},
-							enableClose: true,
-						});
-						room.addSidebarNode(`FILE--${path}`, {
-							type: "tab",
-							name: filename,
-							component: "room-file-editor",
-							config: { name: filename, path },
-							enableClose: true,
-						});
+						room.openSidebarFileExplorer();
+						room.openFileSidebarPanel(path, filename);
 					}}
 				>
 					{children}
@@ -233,6 +230,16 @@ export const createMarkdownComponents = (
 			return (
 				<MermaidBlock
 					code={code}
+					isLoading={isHtmlPreviewLoading}
+					room={room}
+				/>
+			);
+		}
+
+		if (rawLang === "ipynb" || rawLang === "notebook") {
+			return (
+				<NotebookPreviewBlock
+					content={code}
 					isLoading={isHtmlPreviewLoading}
 					room={room}
 				/>

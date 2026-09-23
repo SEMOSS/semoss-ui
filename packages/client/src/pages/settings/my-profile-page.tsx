@@ -28,6 +28,9 @@ import {
 	SelectTrigger,
 	SelectValue,
 	Spinner,
+	Tooltip,
+	TooltipContent,
+	TooltipTrigger,
 	toast,
 } from "@semoss/ui/next";
 import {
@@ -36,8 +39,9 @@ import {
 	editMemberInfo,
 	setUserDefaultModel,
 } from "@/api/auth";
+import { MicrosoftSubscriptions } from "@/components/settings";
 import { SdkBlock } from "@/components/shared/sdk-block";
-import { useAPI, useRootStore, useSettings } from "@/hooks";
+import { useAPI, useConfig, useSession, useSettings } from "@/hooks";
 import { formatDate, getSDKSnippet } from "@/utility";
 import { ChangePasswordModal } from "./change-password-modal";
 
@@ -64,11 +68,25 @@ interface EditUserInfoForm {
 export const MyProfilePage = () => {
 	const modelSelectId = useId();
 	const generateKeyFormId = useId();
-	const { configStore, insightStore } = useRootStore();
-	const { email, id, name } = configStore.store.user;
-	const { isNative } = configStore.store;
-	const lastLogin = configStore.store.user.lastLogin;
-	const groups = configStore.store.user.groupInfo?.groups ?? [];
+	const nativeRegistration = useConfig(
+		(state) => state.config.nativeRegistration,
+	);
+	const logins = useConfig((state) => state.config.logins);
+	const loginDetails = useConfig((state) => state.config.loginDetails);
+	const defaultTextGenerationModel = useSession(
+		(state) => state.defaultTextGenerationModel,
+	);
+	const defaultCodeGenerationModel = useSession(
+		(state) => state.defaultCodeGenerationModel,
+	);
+	const updateUserDefaultModel = useSession(
+		(state) => state.updateUserDefaultModel,
+	);
+	const { email, id, name, admin, lastLogin, groupInfo } = useSession(
+		(state) => state.user,
+	);
+	const isNative = useSession((state) => state.isNative);
+	const groups = groupInfo?.groups ?? [];
 	const { adminMode } = useSettings();
 
 	const [addModal, setAddModal] = useState(false);
@@ -89,8 +107,11 @@ export const MyProfilePage = () => {
 		setSelectedCodeGenerationDefaultModel,
 	] = useState<string>("");
 
-	const logins = configStore.store.config.logins;
 	const nativeLogin = (logins as unknown as { NATIVE: string })?.NATIVE;
+	// the config keys logins by auth provider, so a Microsoft entry is the only
+	// sign that somebody has a Microsoft login to subscribe with
+	const microsoftLogin = (logins as unknown as { MICROSOFT?: string })
+		?.MICROSOFT;
 
 	const { control, reset, setValue, handleSubmit, watch } =
 		useForm<CreateAccessKeyForm>({
@@ -152,17 +173,17 @@ export const MyProfilePage = () => {
 			: [];
 
 	useEffect(() => {
-		if (insightStore.defaultTextGenerationModel && modals.length > 0) {
+		if (defaultTextGenerationModel && modals.length > 0) {
 			const matchingEngine = modals.find(
-				(e) => e.engine_id === insightStore.defaultTextGenerationModel,
+				(e) => e.engine_id === defaultTextGenerationModel,
 			);
 			if (matchingEngine) {
 				setSelectedTextGenerationDefaultModel(matchingEngine.engine_id);
 			}
 		}
-		if (insightStore.defaultCodeGenerationModel && modals.length > 0) {
+		if (defaultCodeGenerationModel && modals.length > 0) {
 			const matchingCodeEngine = modals.find(
-				(e) => e.engine_id === insightStore.defaultCodeGenerationModel,
+				(e) => e.engine_id === defaultCodeGenerationModel,
 			);
 			if (matchingCodeEngine) {
 				setSelectedCodeGenerationDefaultModel(
@@ -170,11 +191,7 @@ export const MyProfilePage = () => {
 				);
 			}
 		}
-	}, [
-		insightStore.defaultTextGenerationModel,
-		insightStore.defaultCodeGenerationModel,
-		modals,
-	]);
+	}, [defaultTextGenerationModel, defaultCodeGenerationModel, modals]);
 
 	const profileEditSubmit = async (data: EditUserInfoForm) => {
 		try {
@@ -185,10 +202,8 @@ export const MyProfilePage = () => {
 				email: email,
 				username: id,
 				name: data.NAME,
-				type: configStore.store.config.nativeRegistration
-					? "NATIVE"
-					: "CUSTOM",
-				admin: configStore.store.user?.admin || false,
+				type: nativeRegistration ? "NATIVE" : "CUSTOM",
+				admin: admin || false,
 			};
 			userObj.id =
 				data.USERID !== nativeLogin ? data.USERID : nativeLogin;
@@ -226,7 +241,7 @@ export const MyProfilePage = () => {
 			);
 			if (!selectedEngine) throw new Error("Selected model not found");
 
-			insightStore.updateUserDefaultModel(modelType, selectedEngineId);
+			updateUserDefaultModel(modelType, selectedEngineId);
 			await setUserDefaultModel(modelType, selectedEngineId);
 			toast.success(`Default ${modelType} saved successfully`);
 		} catch (e) {
@@ -469,8 +484,7 @@ export const MyProfilePage = () => {
 									<Input
 										value={
 											Object.keys(
-												configStore.store.config
-													.loginDetails as object,
+												loginDetails as object,
 											)[0]
 										}
 										maxLength={500}
@@ -634,6 +648,10 @@ export const MyProfilePage = () => {
 				)}
 			</div>
 
+			<MicrosoftSubscriptions
+				signedIntoMicrosoft={microsoftLogin !== undefined}
+			/>
+
 			{/* JS SDK */}
 			<div className="rounded-lg border bg-card px-6 py-5">
 				<h3 className="mb-3 font-semibold text-base">Javascript SDK</h3>
@@ -727,40 +745,76 @@ export const MyProfilePage = () => {
 											</td>
 											<td className="px-3 py-2">
 												<div className="flex items-center gap-1">
-													<Button
-														variant="ghost"
-														size="icon"
-														className="size-6 shrink-0"
-														title="Copy"
-														onClick={() =>
-															copy(k.ACCESSKEY)
+													<Tooltip
+														disableHoverableContent={
+															false
 														}
-														data-testid="myProfilePage-access-key-copy-btn"
 													>
-														<Copy className="size-3.5" />
-													</Button>
+														<TooltipTrigger asChild>
+															<Button
+																aria-label={
+																	"Copy"
+																}
+																variant="ghost"
+																size="icon"
+																className="size-6 shrink-0"
+																onClick={() =>
+																	copy(
+																		k.ACCESSKEY,
+																	)
+																}
+																data-testid="myProfilePage-access-key-copy-btn"
+															>
+																<Copy className="size-3.5" />
+															</Button>
+														</TooltipTrigger>
+														<TooltipContent
+															sideOffset={4}
+															className="max-w-xs break-words"
+														>
+															{"Copy"}
+														</TooltipContent>
+													</Tooltip>
 													<span className="font-mono text-xs">
 														{k.ACCESSKEY}
 													</span>
 												</div>
 											</td>
 											<td className="px-3 py-2 text-right">
-												<Button
-													variant="ghost"
-													size="icon"
-													title="Delete"
-													onClick={() =>
-														setAccessKeyToDelete({
-															ACCESSKEY:
-																k.ACCESSKEY,
-															TOKENNAME:
-																k.TOKENNAME,
-														})
+												<Tooltip
+													disableHoverableContent={
+														false
 													}
-													data-testid="myProfilePage-access-key-delete-btn"
 												>
-													<Trash2 className="size-4" />
-												</Button>
+													<TooltipTrigger asChild>
+														<Button
+															aria-label={
+																"Delete"
+															}
+															variant="ghost"
+															size="icon"
+															onClick={() =>
+																setAccessKeyToDelete(
+																	{
+																		ACCESSKEY:
+																			k.ACCESSKEY,
+																		TOKENNAME:
+																			k.TOKENNAME,
+																	},
+																)
+															}
+															data-testid="myProfilePage-access-key-delete-btn"
+														>
+															<Trash2 className="size-4" />
+														</Button>
+													</TooltipTrigger>
+													<TooltipContent
+														sideOffset={4}
+														className="max-w-xs break-words"
+													>
+														{"Delete"}
+													</TooltipContent>
+												</Tooltip>
 											</td>
 										</tr>
 									))
@@ -785,7 +839,9 @@ export const MyProfilePage = () => {
 			>
 				<DialogContent className="flex max-h-[90vh] max-w-3xl flex-col">
 					<DialogHeader className="shrink-0">
-						<DialogTitle>Generate Key</DialogTitle>
+						<DialogTitle className="font-medium text-base leading-6">
+							Generate Key
+						</DialogTitle>
 						<DialogDescription>
 							Create a user key for API access. Do not share
 							tokens with other users.
@@ -842,7 +898,7 @@ export const MyProfilePage = () => {
 										</div>
 									)}
 								/>
-								<div className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-amber-900 text-sm">
+								<div className="rounded-md border border-warning/30 bg-warning/10 px-3 py-2 text-sm text-warning">
 									One-time credentials are shown only once
 									after creation. Copy and store them now.
 								</div>
@@ -973,7 +1029,9 @@ export const MyProfilePage = () => {
 			>
 				<DialogContent>
 					<DialogHeader>
-						<DialogTitle>Delete personal access token</DialogTitle>
+						<DialogTitle className="font-medium text-base leading-6">
+							Delete personal access token
+						</DialogTitle>
 						<DialogDescription>
 							{accessKeyToDelete?.TOKENNAME ? (
 								<>

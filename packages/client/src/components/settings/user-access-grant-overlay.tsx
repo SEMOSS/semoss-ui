@@ -1,5 +1,6 @@
 import { Search } from "lucide-react";
 import { type ReactNode, useEffect, useMemo, useState } from "react";
+import type { Role } from "@semoss/sdk";
 import {
 	Button,
 	Checkbox,
@@ -19,8 +20,10 @@ import {
 	SelectTrigger,
 	SelectValue,
 	Spinner,
+	Tooltip,
+	TooltipContent,
+	TooltipTrigger,
 } from "@semoss/ui/next";
-import type { Role } from "@/types";
 import { ACCESS_PERMISSIONS } from "./user-access-table";
 
 export interface GrantCandidate {
@@ -129,7 +132,9 @@ export const UserAccessGrantOverlay = ({
 		<Dialog open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
 			<DialogContent className="flex max-h-[85vh] w-full max-w-2xl flex-col gap-4 overflow-hidden">
 				<DialogHeader>
-					<DialogTitle>{title}</DialogTitle>
+					<DialogTitle className="font-medium text-base leading-6">
+						{title}
+					</DialogTitle>
 					{description ? (
 						<DialogDescription>{description}</DialogDescription>
 					) : null}
@@ -150,26 +155,46 @@ export const UserAccessGrantOverlay = ({
 				</div>
 
 				<div className="flex items-center justify-between px-1">
-					<button
-						type="button"
-						className="flex items-center gap-2 text-sm disabled:opacity-50"
-						disabled={candidates.length === 0}
-						title="Selects the results loaded so far — scroll to load more"
-						onClick={toggleAll}
-					>
-						<Checkbox
-							checked={
-								allSelected
-									? true
-									: someSelected
-										? "indeterminate"
-										: false
-							}
-							aria-label="Select all loaded"
-							onClick={(e) => e.preventDefault()}
-						/>
-						Select all loaded
-					</button>
+					<Tooltip disableHoverableContent={false}>
+						<TooltipTrigger asChild>
+							<span
+								className="inline-flex"
+								tabIndex={
+									candidates.length === 0 ? 0 : undefined
+								}
+							>
+								<Button
+									variant="ghost"
+									size="sm"
+									type="button"
+									className="flex items-center gap-2 text-sm disabled:opacity-50"
+									disabled={candidates.length === 0}
+									onClick={toggleAll}
+								>
+									<Checkbox
+										checked={
+											allSelected
+												? true
+												: someSelected
+													? "indeterminate"
+													: false
+										}
+										aria-label="Select all loaded"
+										onClick={(e) => e.preventDefault()}
+									/>
+									Select all loaded
+								</Button>
+							</span>
+						</TooltipTrigger>
+						<TooltipContent
+							sideOffset={4}
+							className="max-w-xs break-words"
+						>
+							{candidates.length === 0
+								? "No users have been loaded to select"
+								: "Selects the results loaded so far — scroll to load more"}
+						</TooltipContent>
+					</Tooltip>
 					<span className="text-muted-foreground text-xs">
 						{selectedCandidates.length} selected
 					</span>

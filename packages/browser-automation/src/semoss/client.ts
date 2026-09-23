@@ -17,7 +17,7 @@ type EnvWithTool = typeof Env & { TOOL?: unknown };
 type McpToolStatus = "success" | "error" | "cancelled" | "paused";
 type InsightWithMcpResponse = typeof insight & {
 	actions: typeof insight.actions & {
-		sendMCPResponseToPlayground?: (
+		sendMCPResponseToRoom?: (
 			response: string,
 			status: McpToolStatus,
 			executedParameters: Record<string, unknown>,
@@ -49,20 +49,15 @@ type McpToolResponse = {
 // Setting APP would make the SDK prepend SetContext("browser-automation") to
 // initialize(), which hard-fails the whole app whenever that project is missing
 // or not yet readable by the user.
-Env.update({
-	MODULE: import.meta.env.MODULE || "/Monolith",
-});
-
-// Still honored so the app keeps working if it is ever deployed the old way, as
-// a published project portal with an injected semoss-env payload.
-const semossEnvScript = document.getElementById("semoss-env");
-
-if (semossEnvScript?.textContent) {
-	try {
-		Env.update(JSON.parse(semossEnvScript.textContent));
-	} catch (error) {
-		console.warn("Unable to parse SEMOSS environment payload", error);
-	}
+//
+// Only fills MODULE when nothing else has. Importing the SDK already applied any
+// semoss-env tag on the page, so this stays a fallback for the normal case where
+// the app is served from the web app and there is no tag -- and a tag still wins
+// if this is ever deployed the old way, as a published project portal.
+if (!Env.MODULE) {
+	Env.update({
+		MODULE: import.meta.env.MODULE || "/Monolith",
+	});
 }
 
 export const insight = new Insight();
@@ -352,7 +347,7 @@ export function subscribeToMcpToolContext(
 	return () => subscribers.delete(listener);
 }
 
-export function sendMcpResponseToPlayground(
+export function sendMcpResponseToRoom(
 	response: unknown,
 	toolStatus: McpToolStatus = "success",
 	executedParameters: Record<string, unknown> = {},
@@ -360,7 +355,7 @@ export function sendMcpResponseToPlayground(
 	const payload =
 		typeof response === "string" ? response : JSON.stringify(response);
 	const action = (insight as InsightWithMcpResponse).actions
-		.sendMCPResponseToPlayground;
+		.sendMCPResponseToRoom;
 	if (action) {
 		action(payload, toolStatus, executedParameters);
 		return;
