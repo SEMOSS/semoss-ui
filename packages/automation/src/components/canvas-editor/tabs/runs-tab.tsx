@@ -58,6 +58,12 @@ interface RunsTabProps extends AutomationTraceSnapshot {
 	onViewRun?: (run: AutomationRunDetail) => void;
 	/** Returns the canvas to the live editable graph — fired whenever the run detail view is left. */
 	onExitHistoricalView?: () => void;
+	/** A node to jump straight to in the latest run's results, e.g. from the inspector's
+	 * "View run details" button. */
+	focusNodeId?: string | null;
+	/** Bumped on every request so re-focusing the same node (after navigating away) still
+	 * takes effect. */
+	focusToken?: number;
 }
 
 type View = "history" | "live" | "detail";
@@ -88,6 +94,8 @@ export function RunsTab({
 	onAskAssistant,
 	onViewRun,
 	onExitHistoricalView,
+	focusNodeId,
+	focusToken,
 }: RunsTabProps) {
 	const [view, setView] = useState<View>("history");
 	const [runs, setRuns] = useState<AutomationRunSummary[]>([]);
@@ -117,6 +125,15 @@ export function RunsTab({
 		setSelectedRun(null);
 		exitHistoricalViewRef.current?.();
 	}, [running]);
+
+	// A "View run details" click from the inspector jumps to the latest run's results,
+	// selected on whichever node it was asked for.
+	useEffect(() => {
+		if (!focusNodeId || !focusToken) return;
+		setView("live");
+		setSelectedRun(null);
+		exitHistoricalViewRef.current?.();
+	}, [focusNodeId, focusToken]);
 
 	const refresh = useCallback(async () => {
 		const requestId = ++requestRef.current;
@@ -222,6 +239,8 @@ export function RunsTab({
 				onAskAssistant={handleAskAssistant}
 				onDismiss={onDismiss}
 				onBack={goBack}
+				focusNodeId={focusNodeId}
+				focusToken={focusToken}
 			/>
 		);
 	}
@@ -394,14 +413,24 @@ function LiveRunView({
 	onAskAssistant,
 	onDismiss,
 	onBack,
+	focusNodeId,
+	focusToken,
 }: AutomationTraceSnapshot & {
 	onOutputPopout: (output: string) => void;
 	onAskAssistant: () => void;
 	onDismiss: () => void;
 	onBack: () => void;
+	focusNodeId?: string | null;
+	focusToken?: number;
 }) {
 	const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
 	const previousRunningNodeIdRef = useRef<string | null>(null);
+	// `onDismiss` only notifies the host — nothing upstream tracks whether this run's banner
+	// was dismissed, so without local state it would never actually disappear. Reset whenever
+	// the run this banner is about changes, so dismissing one run's banner doesn't also hide
+	// the next run's.
+	const [bannerDismissed, setBannerDismissed] = useState(false);
+	const previousRunStatusRef = useRef(latestRunStatus);
 
 	const stepMap = new Map(steps.map((step) => [step.id, step]));
 	const runningResult =
@@ -432,6 +461,17 @@ function LiveRunView({
 		);
 	}, [results, runningResult?.NODE_ID]);
 
+	// biome-ignore lint/correctness/useExhaustiveDependencies: focusToken forces re-focusing the same node id after navigating away and back; it's not read in the body.
+	useEffect(() => {
+		if (focusNodeId) setSelectedNodeId(focusNodeId);
+	}, [focusNodeId, focusToken]);
+
+	useEffect(() => {
+		if (previousRunStatusRef.current === latestRunStatus) return;
+		previousRunStatusRef.current = latestRunStatus;
+		setBannerDismissed(false);
+	}, [latestRunStatus]);
+
 	return (
 		<div className="flex h-full min-h-0 flex-col">
 			<div className="border-b px-3 py-2">
@@ -440,17 +480,23 @@ function LiveRunView({
 					onHistoryClick={onBack}
 				/>
 			</div>
-			{!running && latestRunStatus && latestRunStatus !== "RUNNING" && (
-				<div className="px-3 pt-2">
-					<RunBanner
-						status={latestRunStatus}
-						aiSummary={aiRunSummary}
-						generatingAiSummary={generatingAiSummary}
-						onDismiss={onDismiss}
-						onAskAssistant={onAskAssistant}
-					/>
-				</div>
-			)}
+			{!running &&
+				!bannerDismissed &&
+				latestRunStatus &&
+				latestRunStatus !== "RUNNING" && (
+					<div className="px-3 pt-2">
+						<RunBanner
+							status={latestRunStatus}
+							aiSummary={aiRunSummary}
+							generatingAiSummary={generatingAiSummary}
+							onDismiss={() => {
+								setBannerDismissed(true);
+								onDismiss();
+							}}
+							onAskAssistant={onAskAssistant}
+						/>
+					</div>
+				)}
 			<ResultsPanel
 				results={results}
 				executedDefinition={executedDefinition}
