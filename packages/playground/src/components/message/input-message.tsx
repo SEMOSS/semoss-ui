@@ -26,10 +26,11 @@ import {
 	TooltipTrigger,
 	toast,
 } from "@semoss/ui/next";
+import { getFileExtension, getImageMimeType } from "@semoss/utility";
 import type { InputMessageStore, RoomStore } from "@/stores";
 
 const getExtIcon = (fileName: string) => {
-	const ext = fileName.split(".").pop()?.toLowerCase() ?? "";
+	const ext = getFileExtension(fileName);
 	if (["xls", "xlsx", "csv"].includes(ext))
 		return { Icon: FileSpreadsheetIcon, ext };
 	if (
@@ -226,7 +227,7 @@ export const InputMessage: React.FC<InputMessageProps> = observer(
 														)) ? (
 														<img
 															className="h-full w-full object-cover"
-															src={`data:${p.mediaInfo.mimeType?.startsWith("image/") ? p.mediaInfo.mimeType : ({ jpg: "image/jpeg", jpeg: "image/jpeg", gif: "image/gif", webp: "image/webp", svg: "image/svg+xml", bmp: "image/bmp" } as Record<string, string>)[p.mediaInfo.fileName?.split(".").pop()?.toLowerCase() ?? ""] || "image/png"};base64,${p.mediaInfo.base64Data}`}
+															src={`data:${p.mediaInfo.mimeType?.startsWith("image/") ? p.mediaInfo.mimeType : getImageMimeType(getFileExtension(p.mediaInfo.fileName))};base64,${p.mediaInfo.base64Data}`}
 															alt={
 																p.mediaInfo
 																	.fileName

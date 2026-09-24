@@ -7,6 +7,7 @@ import type {
 import { getAutomationNodeDefinition } from "./automation-node-catalog";
 import type {
 	AutomationBranchClause,
+	AutomationJevRoute,
 	AutomationJsonValue,
 	AutomationNodeDefinition,
 	AutomationWorkflowDocument,
@@ -133,6 +134,30 @@ function branchClauses(value: unknown): AutomationBranchClause[] {
 			? [{ id: candidate.id, condition: candidate.condition }]
 			: [];
 	});
+}
+
+function jevRoutes(value: unknown): AutomationJevRoute[] {
+	if (!Array.isArray(value)) return [];
+	return value.flatMap((route) => {
+		if (!route || typeof route !== "object") return [];
+		const candidate = route as Partial<AutomationJevRoute>;
+		return typeof candidate.id === "string" &&
+			typeof candidate.description === "string"
+			? [
+					{
+						id: candidate.id,
+						description: candidate.description,
+						...(typeof candidate.answer === "boolean"
+							? { answer: candidate.answer }
+							: {}),
+					},
+				]
+			: [];
+	});
+}
+
+function isRoutingWorkflowType(type: AutomationWorkflowNodeType): boolean {
+	return type === "control.if" || type === "control.jev";
 }
 
 /**
@@ -264,6 +289,9 @@ def run(scope):
 	return {"branch": "else", "value": False}
 `;
 	}
+	if (type === "control.jev") {
+		return "# Jev decisions execute through the server-owned TypeSafe engine.\n";
+	}
 	return `# Write arbitrary Python for this automation node here.
 # scope is a read-only, run-local mapping: inputs, globals, metadata, and prior outputs by outputVar.
 # Read required values with scope["outputVar"] and optional values with scope.get("outputVar").
@@ -299,7 +327,7 @@ function canvasTypeForWorkflow(
 	if (category === "vector") return "vector-engine";
 	if (type === "function.execute") return "function-engine";
 	if (type === "control.wait") return "wait";
-	if (type === "control.if") return "branch";
+	if (isRoutingWorkflowType(type)) return "branch";
 	return "app";
 }
 
@@ -404,6 +432,17 @@ function defaultCanvasConfig(
 	}
 	if (type === "control.if") {
 		return { clauses: branchClauses(config.clauses) };
+	}
+	if (type === "control.jev") {
+		return {
+			engineId,
+			state: stringValue(config.state),
+			question: stringValue(config.question),
+			questionType: config.questionType === "noul" ? "noul" : "choice",
+			clauses: jevRoutes(config.clauses),
+			confidenceThreshold: numberValue(config.confidenceThreshold, 0),
+			paramValues: jsonObjectValue(config.paramValues),
+		};
 	}
 	return {
 		pixel: stringValue(config.pixel),
@@ -574,6 +613,32 @@ function mergeCanvasConfig(
 			config as Extract<NodeConfig, { clauses: unknown }>
 		).clauses;
 	}
+	if (type === "control.jev") {
+		const state = getConfigValue(config, "state");
+		const question = getConfigValue(config, "question");
+		const questionType = getConfigValue(config, "questionType");
+		const confidenceThreshold = getConfigValue(
+			config,
+			"confidenceThreshold",
+		);
+		const paramValues = getConfigValue(config, "paramValues");
+		if (typeof state === "string") next.state = state;
+		if (typeof question === "string") next.question = question;
+		if (questionType === "choice" || questionType === "noul") {
+			next.questionType = questionType;
+		}
+		if (typeof confidenceThreshold === "number") {
+			next.confidenceThreshold = confidenceThreshold;
+		}
+		if (typeof paramValues === "string") {
+			next.paramValues = paramValues.trim()
+				? (parsedJsonValue(paramValues) ?? paramValues)
+				: {};
+		}
+		next.clauses = (
+			config as Extract<NodeConfig, { clauses: unknown }>
+		).clauses;
+	}
 	return next;
 }
 
@@ -691,7 +756,7 @@ export function getCanvasNodeSources(
 			const type = step.workflowType ?? canvasTypeToWorkflow(step.type);
 			if (
 				type === "trigger.start" ||
-				type === "control.if" ||
+				isRoutingWorkflowType(type) ||
 				step.workflowCodeMode !== "custom"
 			) {
 				return [];
@@ -741,15 +806,14 @@ export function canvasDocumentToWorkflow({
 			id: step.id,
 			type,
 			label: step.label || definition.label,
-			...(type === "trigger.start" || type === "control.if"
+			...(type === "trigger.start" || isRoutingWorkflowType(type)
 				? {}
 				: { outputVar: step.outputVar }),
 			position: step.position,
 			config: persistedConfig,
-			codeMode:
-				type === "control.if"
-					? "generated"
-					: (step.workflowCodeMode ?? definition.defaultCodeMode),
+			codeMode: isRoutingWorkflowType(type)
+				? "generated"
+				: (step.workflowCodeMode ?? definition.defaultCodeMode),
 		};
 	});
 	const nodeIds = new Set(nodes.map((node) => node.id));
@@ -831,7 +895,7 @@ export function validateCanvasWorkflowNode(
 			return [];
 		},
 	);
-	if (type !== "trigger.start" && type !== "control.if") {
+	if (type !== "trigger.start" && !isRoutingWorkflowType(type)) {
 		const outputVariableError = validateAutomationOutputVariable(
 			node.outputVar,
 		);
@@ -858,7 +922,7 @@ export function validateCanvasWorkflowNode(
 	// server persists its generated scaffold instead.
 	if (
 		type !== "trigger.start" &&
-		type !== "control.if" &&
+		!isRoutingWorkflowType(type) &&
 		node.workflowCodeMode === "custom"
 	) {
 		const source = stringValue(config.pythonSource);
@@ -872,6 +936,35 @@ export function validateCanvasWorkflowNode(
 			errors.push("A condition is required");
 		} else if (clauses.some((clause) => clause.condition.trim() === "")) {
 			errors.push("Each condition is required");
+		}
+	}
+	if (type === "control.jev") {
+		const routes = jevRoutes(config.clauses);
+		const questionType = config.questionType === "noul" ? "noul" : "choice";
+		if (routes.length === 0) {
+			errors.push("At least one route is required");
+		} else if (routes.some((route) => route.description.trim() === "")) {
+			errors.push("Each route description is required");
+		}
+		if (
+			questionType === "noul" &&
+			(routes.length !== 2 ||
+				routes.filter((route) => route.answer === true).length !== 1 ||
+				routes.filter((route) => route.answer === false).length !== 1)
+		) {
+			errors.push(
+				"Yes / No decisions require one Yes path and one No path",
+			);
+		}
+		const minimumConfidence = questionType === "noul" ? 0.5 : 0;
+		if (
+			typeof config.confidenceThreshold !== "number" ||
+			config.confidenceThreshold < minimumConfidence ||
+			config.confidenceThreshold > 1
+		) {
+			errors.push(
+				`Minimum confidence must be from ${minimumConfidence} through 1`,
+			);
 		}
 	}
 	return errors;

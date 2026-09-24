@@ -31,7 +31,7 @@ source barrel before adding a new public contract.
 | `@semoss/i18n` | Translation setup, resources, namespaces, and lazy locale loading | `@semoss/i18n` | `I18nBuilder`, `I18nBuilderOptions`, `preloadNamespaces`, resource configs, `useTranslation` | Client, playground, terminal, audit log, shared UI | Public library API |
 | `@semoss/shared` | Reusable product components, editors, file explorer, workbench pieces, and shared styles | `@semoss/shared` | `FileExplorer`, `useFileExplorer`, Monaco/editor wrappers, FlexLayout, MCP/prompt/skill/engine UI, upload and metadata components | Client, playground, terminal, audit log, automation workspace | Public library API |
 | `@semoss/shared` styles | Shared CSS required by consumers of shared components | `@semoss/shared/globals.css`, `@semoss/shared/flexlayout.css` | Global and FlexLayout styles | Applications embedding shared components | Public package asset |
-| `@semoss/utility` | Small cross-package helpers kept separate from shared product components | `@semoss/utility`, `@semoss/utility/date`, `@semoss/utility/file`, `@semoss/utility/json`, `@semoss/utility/string`, `@semoss/utility/clipboard` | Date formatting, string/identifier transforms, clipboard access, image/file helpers, JSON parsing/copying | Any library or application that needs generic helpers | Public library API |
+| `@semoss/utility` | Small cross-package helpers kept separate from shared product components | `@semoss/utility`, `@semoss/utility/date`, `@semoss/utility/image`, `@semoss/utility/json`, `@semoss/utility/string`, `@semoss/utility/clipboard` | Date formatting, string/identifier transforms, clipboard access, image helpers, JSON parsing/copying | Any library or application that needs generic helpers | Public library API |
 | `@semoss/renderer` | Notebook/block rendering, cells, visualization, and persistence migrations | `@semoss/renderer` | `RendererEngine`, `Blocks`, `DefaultBlocks`, `DefaultCells`, `useBlock`, `useBlocks`, `useBlocksPixel`, `useFrame`, `useFrameHeaders` | Client and notebook/visualization consumers | Public library API |
 | `@semoss/renderer/version` | Renderer version information | `@semoss/renderer/version` | Version export | Build and compatibility tooling | Public package subpath |
 
@@ -204,7 +204,7 @@ import {
 import {
   getImageMimeType,
   hasInlineImage,
-} from "@semoss/utility/file/image";
+} from "@semoss/utility/image";
 
 const label = formatDateToRelative("2026-09-15T12:00:00Z");
 const timestamp = normalizeTimestamp("2026-09-15 12:00:00");
