@@ -83,6 +83,7 @@ const playgroundRoomOptionsSchema = z
 		instructions: z.string().default(""),
 		mcp: z.array(mcpToolSchema).default([]),
 		modelId: z.string().default(""),
+		temperature: z.number().min(0).max(1).nullish(),
 		workspace: roomWorkspaceSchema.optional(),
 	})
 	.catchall(z.unknown());

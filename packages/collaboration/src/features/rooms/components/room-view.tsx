@@ -2,6 +2,7 @@ import { Menu, Plus } from "lucide-react";
 import { useMemo } from "react";
 import { Button } from "@semoss/ui/next";
 import { EmptyView } from "@/components/common/empty-view";
+import { toolMessageTimestamps } from "@/features/messages/utils/message-metadata";
 import { toolsFromMessages } from "@/features/messages/utils/thread-items";
 import type { RoomViewProps } from "@/features/rooms/types/room";
 import { ToolWorkbenchProvider } from "@/features/tools/components/tool-workbench-provider";
@@ -44,8 +45,11 @@ export function RoomView({
 	onOpenRooms,
 }: RoomViewProps) {
 	const session = sessions.find((candidate) => candidate.id === sessionId);
-	const tools = useMemo(
-		() => toolsFromMessages(thread, pendingApprovals, toolStates),
+	const { tools, toolCreatedAt } = useMemo(
+		() => ({
+			tools: toolsFromMessages(thread, pendingApprovals, toolStates),
+			toolCreatedAt: toolMessageTimestamps(thread),
+		}),
 		[thread, pendingApprovals, toolStates],
 	);
 
@@ -58,6 +62,7 @@ export function RoomView({
 						roomId={sessionId}
 						insightId={insightId}
 						tools={tools}
+						toolCreatedAt={toolCreatedAt}
 						pendingApprovals={pendingApprovals}
 						onApproveTool={onApproveTool}
 						onRejectTool={onRejectTool}

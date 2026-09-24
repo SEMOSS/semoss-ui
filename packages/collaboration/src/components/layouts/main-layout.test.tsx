@@ -7,17 +7,19 @@ import { MainLayout } from "./main-layout";
 
 const mainLayoutHarness = vi.hoisted(() => ({
 	sessions: [] as { id: string; agentId: string }[],
+	setSessions: vi.fn(),
 	updateRoom: vi.fn(),
 	removeRoom: vi.fn(),
 	sidebarProps: null as {
-		activeAgentId?: string;
 		activeRoomId?: string;
+		onRoomPin: (roomId: string, pinned: boolean) => Promise<void>;
 		onRoomRename: (roomId: string, name: string) => Promise<void>;
 		onRoomDelete: (roomId: string) => Promise<void>;
 	} | null,
 }));
 
 const roomMutations = vi.hoisted(() => ({
+	pinRoom: vi.fn(),
 	renameRoom: vi.fn(),
 	deleteRoom: vi.fn(),
 }));
@@ -29,10 +31,13 @@ vi.mock("@/features/agents/api/use-workspace-data", () => ({
 	useWorkspaceData: () => ({
 		agents: [],
 		sessions: mainLayoutHarness.sessions,
-		setSessions: vi.fn(),
+		setSessions: mainLayoutHarness.setSessions,
 		addPendingRoom: vi.fn(),
 		updateRoom: mainLayoutHarness.updateRoom,
 		removeRoom: mainLayoutHarness.removeRoom,
+		refreshRooms: vi.fn(),
+		agentsIsLoading: false,
+		roomsIsLoading: false,
 		isLoading: false,
 		error: null,
 	}),
@@ -43,6 +48,9 @@ vi.mock("@/features/agents/api/use-save-agent", () => ({
 vi.mock("@/features/rooms/api/rename-room", () => ({
 	renameRoom: roomMutations.renameRoom,
 }));
+vi.mock("@/features/rooms/api/pin-room", () => ({
+	pinRoom: roomMutations.pinRoom,
+}));
 vi.mock("@/features/rooms/api/delete-room", () => ({
 	deleteRoom: roomMutations.deleteRoom,
 }));
@@ -52,21 +60,21 @@ vi.mock("@/components/sidebar/sidebar-header", () => ({
 vi.mock("@/components/sidebar/sidebar-footer", () => ({
 	SidebarFooter: () => null,
 }));
-vi.mock("@/components/sidebar/sidebar-agents-list", () => ({
-	SidebarAgentsList: ({
-		activeAgentId,
+vi.mock("@/components/sidebar/sidebar-rooms-list", () => ({
+	SidebarRoomsList: ({
+		onRoomPin,
 		activeRoomId,
 		onRoomRename,
 		onRoomDelete,
 	}: {
-		activeAgentId?: string;
 		activeRoomId?: string;
+		onRoomPin: (roomId: string, pinned: boolean) => Promise<void>;
 		onRoomRename: (roomId: string, name: string) => Promise<void>;
 		onRoomDelete: (roomId: string) => Promise<void>;
 	}) => {
 		mainLayoutHarness.sidebarProps = {
-			activeAgentId,
 			activeRoomId,
+			onRoomPin,
 			onRoomRename,
 			onRoomDelete,
 		};
@@ -100,9 +108,12 @@ describe("MainLayout", () => {
 
 	beforeEach(() => {
 		mainLayoutHarness.sessions = [];
+		mainLayoutHarness.setSessions.mockReset();
 		mainLayoutHarness.updateRoom.mockReset();
 		mainLayoutHarness.removeRoom.mockReset();
 		mainLayoutHarness.sidebarProps = null;
+		roomMutations.pinRoom.mockReset();
+		roomMutations.pinRoom.mockResolvedValue(true);
 		roomMutations.renameRoom.mockReset();
 		roomMutations.renameRoom.mockResolvedValue(undefined);
 		roomMutations.deleteRoom.mockReset();
@@ -151,9 +162,61 @@ describe("MainLayout", () => {
 		render(<RouterProvider router={router} />);
 
 		expect(mainLayoutHarness.sidebarProps).toMatchObject({
-			activeAgentId: undefined,
 			activeRoomId: "room-one",
 		});
+	});
+
+	it("pins rooms optimistically through the sidebar", async () => {
+		const routes: RouteObject[] = [
+			{
+				path: "/",
+				Component: MainLayout,
+				children: [{ index: true, element: <div>Home page</div> }],
+			},
+		];
+		const router = createMemoryRouter(routes);
+		render(<RouterProvider router={router} />);
+
+		await act(async () => {
+			await mainLayoutHarness.sidebarProps?.onRoomPin("room-one", true);
+		});
+
+		expect(roomMutations.pinRoom).toHaveBeenCalledWith(
+			expect.anything(),
+			"room-one",
+			true,
+		);
+		const update = mainLayoutHarness.setSessions.mock.calls[0]?.[0] as (
+			items: { id: string; pinned: boolean }[],
+		) => { id: string; pinned: boolean }[];
+		expect(update([{ id: "room-one", pinned: false }])).toEqual([
+			{ id: "room-one", pinned: true },
+		]);
+	});
+
+	it("restores room pin state when persistence fails", async () => {
+		roomMutations.pinRoom.mockRejectedValue(new Error("Pin unavailable"));
+		const routes: RouteObject[] = [
+			{
+				path: "/",
+				Component: MainLayout,
+				children: [{ index: true, element: <div>Home page</div> }],
+			},
+		];
+		const router = createMemoryRouter(routes);
+		render(<RouterProvider router={router} />);
+
+		await act(async () => {
+			await mainLayoutHarness.sidebarProps?.onRoomPin("room-one", true);
+		});
+
+		expect(mainLayoutHarness.setSessions).toHaveBeenCalledTimes(2);
+		const restore = mainLayoutHarness.setSessions.mock.calls[1]?.[0] as (
+			items: { id: string; pinned: boolean }[],
+		) => { id: string; pinned: boolean }[];
+		expect(restore([{ id: "room-one", pinned: true }])).toEqual([
+			{ id: "room-one", pinned: false },
+		]);
 	});
 
 	it("renames rooms through the sidebar and updates local room state", async () => {

@@ -19,6 +19,7 @@ export async function createRoom(
 		instructions?: string;
 		mcp?: MCPConfig[];
 		modelId?: string;
+		temperature?: number | null;
 		name?: string;
 	},
 	attempt: CreateRoomAttempt = {},
@@ -47,6 +48,9 @@ export async function createRoom(
 			name: options.workspaceName,
 		},
 		modelId: options.modelId ?? "",
+		...(options.temperature !== undefined && {
+			temperature: options.temperature,
+		}),
 		harnessType: "semoss",
 	};
 

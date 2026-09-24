@@ -102,3 +102,48 @@ describe("threadFromMessages", () => {
 		});
 	});
 });
+
+it("restores the arguments actually executed and the declared tool UI", () => {
+	const messages = threadFromMessages([
+		{
+			messageId: "call",
+			role: "assistant",
+			parts: [
+				{
+					type: "TOOL_CALL",
+					toolCall: {
+						id: "t",
+						name: "search",
+						arguments: { query: "proposed" },
+						_meta: {
+							SMSS_MCP_UI: {
+								resourceURI: "system://forms/search",
+							},
+						},
+					},
+				},
+			],
+		},
+		{
+			messageId: "result",
+			role: "assistant",
+			parts: [
+				{
+					type: "TOOL_RESULT",
+					toolResult: {
+						toolCallId: "t",
+						toolStatus: "success",
+						toolParameterValues: { query: "approved" },
+						output: "done",
+					},
+				},
+			],
+		},
+	]);
+	expect(toolsFromMessages(messages).t).toMatchObject({
+		arguments: { query: "approved" },
+		output: "done",
+		status: "COMPLETED",
+		uiUrl: "../../forms/dist/search",
+	});
+});

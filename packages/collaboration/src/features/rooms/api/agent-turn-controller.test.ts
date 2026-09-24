@@ -144,7 +144,7 @@ it("renders full text and ordered deltas, ignoring duplicate events", async () =
 	await instance.send({ text: "Hello", files: [] });
 	await vi.advanceTimersByTimeAsync(0);
 	expect(instance.getSnapshot().messages.at(-1)?.parts).toEqual([
-		{ type: "text", text: "Hello!", state: "active" },
+		{ type: "text", text: "Hello!", state: "active", renderKey: "text-1" },
 	]);
 });
 
@@ -236,6 +236,15 @@ it("recovers an active run and child approvals when a room is reopened", async (
 	expect(instance.getSnapshot().pendingApprovals[0]?.roomId).toBe(
 		"child-room",
 	);
+	expect(
+		instance
+			.getSnapshot()
+			.messages.flatMap((message) =>
+				message.parts.flatMap((part) =>
+					part.type === "run" ? [part.run.runId] : [],
+				),
+			),
+	).toEqual(["child-1"]);
 	await instance.reject(instance.getSnapshot().pendingApprovals[0]);
 	expect(api.decideRunAction).toHaveBeenCalledWith(
 		"insight-1",
@@ -308,7 +317,13 @@ it("keeps a failed run's saved output and reports its failure", async () => {
 		phase: "failed",
 		turnError: "Turn budget exceeded",
 	});
-	expect(instance.getSnapshot().messages).toHaveLength(2);
+	expect(
+		instance
+			.getSnapshot()
+			.messages.filter((message) =>
+				message.parts.some((part) => part.type !== "run"),
+			),
+	).toHaveLength(2);
 });
 
 it("reconciles dropped stream events from durable messages", async () => {
@@ -318,7 +333,12 @@ it("reconciles dropped stream events from durable messages", async () => {
 	await instance.send({ text: "Hello", files: [] });
 	await vi.advanceTimersByTimeAsync(0);
 	expect(
-		instance.getSnapshot().messages.map((message) => message.id),
+		instance
+			.getSnapshot()
+			.messages.filter((message) =>
+				message.parts.some((part) => part.type !== "run"),
+			)
+			.map((message) => message.id),
 	).toEqual(["input-1", "output-1"]);
 });
 
@@ -345,8 +365,18 @@ it("keeps streaming text that temporarily matches an earlier saved response", as
 	const instance = controller();
 	await instance.send({ text: "Hello", files: [] });
 	await vi.advanceTimersByTimeAsync(500);
-	expect(instance.getSnapshot().messages.at(-1)?.parts).toEqual([
-		{ type: "text", text: "Done with the next step", state: "active" },
+	expect(
+		instance
+			.getSnapshot()
+			.messages.at(-1)
+			?.parts.filter((part) => part.type !== "run"),
+	).toEqual([
+		{
+			type: "text",
+			text: "Done with the next step",
+			state: "active",
+			renderKey: "text-2",
+		},
 	]);
 });
 
@@ -425,8 +455,18 @@ it("retains partial streamed text when a failed run has no persisted response", 
 	const instance = controller();
 	await instance.send({ text: "Hello", files: [] });
 	await vi.advanceTimersByTimeAsync(100);
-	expect(instance.getSnapshot().messages.at(-1)?.parts).toEqual([
-		{ type: "text", text: "Partial answer", state: "active" },
+	expect(
+		instance
+			.getSnapshot()
+			.messages.at(-1)
+			?.parts.filter((part) => part.type !== "run"),
+	).toEqual([
+		{
+			type: "text",
+			text: "Partial answer",
+			state: "active",
+			renderKey: "text-1",
+		},
 	]);
 	expect(instance.getSnapshot()).toMatchObject({
 		isRunning: false,
@@ -457,4 +497,149 @@ it("keeps observing a child that is paused after its parent completes", async ()
 		phase: "awaiting_approval",
 	});
 	expect(api.pollRun).toHaveBeenCalledOnce();
+});
+
+it("reconciles an ambiguous decision before retrying and does not resubmit an accepted action", async () => {
+	const paused = run({ status: "INPUT_REQUIRED", pendingActions: [action] });
+	vi.mocked(api.listRoomRuns).mockResolvedValue([paused]);
+	vi.mocked(api.readRun).mockResolvedValue(paused);
+	const instance = controller();
+	await instance.reconnect();
+	const approval = instance.getSnapshot().pendingApprovals[0];
+	vi.mocked(api.decideRunAction).mockRejectedValueOnce(
+		new Error("Connection lost after submission"),
+	);
+	await expect(instance.approve(approval, action.toolArgs)).rejects.toThrow(
+		"Connection lost",
+	);
+	vi.mocked(api.readRun).mockResolvedValue(run({ pendingActions: [] }));
+	await instance.approve(approval, action.toolArgs);
+	expect(api.decideRunAction).toHaveBeenCalledTimes(1);
+	expect(instance.getSnapshot().pendingApprovals).toEqual([]);
+});
+
+it("exposes in-flight decisions and refuses a duplicate submission", async () => {
+	const paused = run({ status: "INPUT_REQUIRED", pendingActions: [action] });
+	vi.mocked(api.listRoomRuns).mockResolvedValue([paused]);
+	vi.mocked(api.readRun).mockResolvedValue(paused);
+	const instance = controller();
+	await instance.reconnect();
+	const approval = instance.getSnapshot().pendingApprovals[0];
+	const saving = deferred<void>();
+	vi.mocked(api.decideRunAction).mockReturnValueOnce(saving.promise);
+	const first = instance.approve(approval, action.toolArgs);
+	expect(instance.getSnapshot().pendingApprovals[0]?.isDeciding).toBe(true);
+	await expect(instance.reject(approval)).rejects.toThrow(
+		"already being saved",
+	);
+	saving.resolve();
+	await first;
+	expect(api.decideRunAction).toHaveBeenCalledTimes(1);
+});
+
+it("restores prior child runs with their parent identity", async () => {
+	const previous = run({
+		runId: "old-run",
+		status: "COMPLETED",
+		finalOutputMessageId: "output-1",
+	});
+	const latest = run({ status: "COMPLETED" });
+	const child = run({
+		runId: "old-child",
+		roomId: "child-room",
+		status: "COMPLETED",
+		input: "Check the numbers",
+		finalText: "Verified",
+	});
+	vi.mocked(api.listRoomRuns).mockResolvedValue([previous, latest]);
+	vi.mocked(api.readRun).mockResolvedValue({ ...latest, messages });
+	vi.mocked(api.listChildRuns).mockImplementation(async (_insight, id) =>
+		id === "old-run" ? [child] : [],
+	);
+	const instance = controller();
+	await instance.reconnect();
+	expect(
+		instance
+			.getSnapshot()
+			.messages.flatMap((message) => message.parts)
+			.filter((part) => part.type === "run"),
+	).toEqual([
+		expect.objectContaining({
+			type: "run",
+			run: expect.objectContaining({
+				runId: "old-child",
+				parentRunId: "old-run",
+				input: "Check the numbers",
+			}),
+		}),
+	]);
+	expect(api.startAgentRun).not.toHaveBeenCalled();
+});
+
+it("distinguishes durable cancellation from execution failure", async () => {
+	const cancelled = run({ status: "CANCELLED" });
+	vi.mocked(api.listRoomRuns).mockResolvedValue([cancelled]);
+	vi.mocked(api.readRun).mockResolvedValue(cancelled);
+	const instance = controller();
+	await instance.reconnect();
+	expect(instance.getSnapshot()).toMatchObject({
+		phase: "cancelled",
+		isRunning: false,
+		turnError: null,
+	});
+});
+
+it("replaces streamed proposals with the arguments actually executed in saved results", async () => {
+	const completed = run({ status: "COMPLETED" });
+	vi.mocked(api.pollRun).mockResolvedValue(
+		stream(completed, [
+			{
+				eventId: "tool-finished",
+				runId: "run-1",
+				sequence: 1,
+				type: "item.completed",
+				item: {
+					id: "tool-1",
+					kind: "tool",
+					name: "lookup",
+					arguments: { query: "proposed" },
+					status: "COMPLETED",
+				},
+			},
+		]),
+	);
+	vi.mocked(api.readRun).mockResolvedValue({
+		...completed,
+		messages: [
+			{
+				messageId: "output-1",
+				type: "RESPONSE_TEXT",
+				parts: [
+					{
+						type: "TOOL_CALL",
+						toolCall: {
+							id: "tool-1",
+							name: "lookup",
+							arguments: { query: "proposed" },
+						},
+					},
+					{
+						type: "TOOL_RESULT",
+						toolResult: {
+							toolCallId: "tool-1",
+							toolParameterValues: { query: "executed" },
+							toolStatus: "success",
+							output: "Found",
+						},
+					},
+				],
+			},
+		],
+	});
+	const instance = controller();
+	await instance.send({ text: "Lookup", files: [] });
+	await vi.advanceTimersByTimeAsync(100);
+	expect(instance.getSnapshot().toolStates["tool-1"]?.arguments).toEqual({
+		query: "executed",
+	});
 });

@@ -12,12 +12,14 @@ import {
 	getFilePanelType,
 	isFilePanelType,
 } from "@semoss/panels";
+import { useIsMobile } from "@semoss/ui/next";
 import { createWorkbenchStore } from "@semoss/workbench";
 import type { ConversationTool } from "@/features/messages/types/message";
 import type { PendingToolApproval } from "@/features/rooms/types/room";
 import { TOOL_WORKBENCH_COMPONENTS } from "../tool-workbench.components";
 import {
 	createToolWorkbenchLayout,
+	RUN_PANEL_TYPE,
 	TOOL_PANEL_TYPE,
 	toolCardTriggerId,
 } from "../tool-workbench.constants";
@@ -31,6 +33,7 @@ export interface ToolWorkbenchProviderProps {
 	roomId: string;
 	insightId: string;
 	tools: Record<string, ConversationTool>;
+	toolCreatedAt?: Record<string, string>;
 	pendingApprovals: PendingToolApproval[];
 	onApproveTool: (
 		approval: PendingToolApproval,
@@ -63,6 +66,7 @@ export function ToolWorkbenchProvider({
 	roomId,
 	insightId,
 	tools,
+	toolCreatedAt,
 	pendingApprovals,
 	onApproveTool,
 	onRejectTool,
@@ -71,11 +75,13 @@ export function ToolWorkbenchProvider({
 	const [{ store, snapshot }] = useState(() =>
 		createRoomToolWorkbench(insightId),
 	);
+	const isMobile = useIsMobile();
 	const [isOpen, setIsOpen] = useState(false);
 	const [inlineToolIds, setInlineToolIds] = useState<Set<string>>(
 		() => new Set(),
 	);
 	const automaticallyOpened = useRef(new Set<string>());
+	const runTriggerId = useRef<string | null>(null);
 	const activeToolId = useSyncExternalStore(
 		store.subscribe,
 		() => {
@@ -185,6 +191,21 @@ export function ToolWorkbenchProvider({
 		[store, tools],
 	);
 
+	const openRun = useCallback(
+		(runId: string) => {
+			if (!isOpen) runTriggerId.current = `run-${runId}`;
+			store
+				.getState()
+				.layout.actions.selectPanel(
+					RUN_PANEL_TYPE,
+					{ runId },
+					{ name: "Agent run" },
+				);
+			setIsOpen(true);
+		},
+		[isOpen, store],
+	);
+
 	const openFile = useCallback(
 		(path: string, name: string) => {
 			store
@@ -201,6 +222,7 @@ export function ToolWorkbenchProvider({
 
 	const openInline = useCallback(
 		(toolId: string) => {
+			if (isMobile) setIsOpen(false);
 			const actions = store.getState().layout.actions;
 			for (const panel of actions.matchPanels(TOOL_PANEL_TYPE, {
 				toolId,
@@ -213,7 +235,7 @@ export function ToolWorkbenchProvider({
 			});
 			focusToolTrigger(toolId);
 		},
-		[focusToolTrigger, store],
+		[focusToolTrigger, isMobile, store],
 	);
 
 	const closeTool = useCallback(
@@ -237,21 +259,36 @@ export function ToolWorkbenchProvider({
 
 	const closeWorkbench = useCallback(() => {
 		setIsOpen(false);
-		if (activeToolId) focusToolTrigger(activeToolId);
+		if (runTriggerId.current) {
+			const triggerId = runTriggerId.current;
+			window.requestAnimationFrame(() =>
+				document.getElementById(triggerId)?.focus(),
+			);
+			runTriggerId.current = null;
+		} else if (activeToolId) focusToolTrigger(activeToolId);
 	}, [activeToolId, focusToolTrigger]);
 
 	useEffect(() => {
 		const approval = pendingApprovals.find(
 			(item) =>
-				!automaticallyOpened.current.has(`approval:${item.toolId}`),
+				!automaticallyOpened.current.has(
+					`approval:${item.actionId ?? item.toolId}`,
+				),
 		);
 		const tool = approval && tools[approval.toolId];
 		if (!approval || !tool) return;
-		automaticallyOpened.current.add(`approval:${approval.toolId}`);
+		automaticallyOpened.current.add(
+			`approval:${approval.actionId ?? approval.toolId}`,
+		);
 		// Honor tools that ask to be reviewed in the transcript.
-		if (getToolDisplayLocation(tool) === "inline") openInline(tool.id);
+		if (
+			isMobile ||
+			getToolDisplayLocation(tool) === "inline" ||
+			getToolDisplayLocation(tool) === "hidden"
+		)
+			openInline(tool.id);
 		else openWorkbench(approval.toolId);
-	}, [openInline, openWorkbench, pendingApprovals, tools]);
+	}, [isMobile, openInline, openWorkbench, pendingApprovals, tools]);
 
 	useEffect(() => {
 		for (const tool of Object.values(tools)) {
@@ -291,7 +328,10 @@ export function ToolWorkbenchProvider({
 			store,
 			snapshot,
 			roomId,
+			insightId,
+			openRun,
 			tools,
+			toolCreatedAt,
 			pendingApprovals,
 			isOpen,
 			activeToolId,
@@ -309,7 +349,10 @@ export function ToolWorkbenchProvider({
 			store,
 			snapshot,
 			roomId,
+			insightId,
+			openRun,
 			tools,
+			toolCreatedAt,
 			pendingApprovals,
 			isOpen,
 			activeToolId,

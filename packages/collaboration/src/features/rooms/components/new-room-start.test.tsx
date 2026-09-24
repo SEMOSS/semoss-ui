@@ -1,5 +1,4 @@
 import { act, render, screen, waitFor } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
 import type { ComponentProps } from "react";
 import { createMemoryRouter, type RouteObject } from "react-router";
 import { RouterProvider } from "react-router/dom";
@@ -50,6 +49,8 @@ const harness = vi.hoisted(() => ({
 
 vi.mock("@/app/main.context", () => ({
 	useMain: () => ({
+		sessions: [],
+		openRoom: vi.fn(),
 		addPendingRoom: harness.addPendingRoom,
 		trackGeneratedRoomName: harness.trackGeneratedRoomName,
 	}),
@@ -135,15 +136,22 @@ describe("NewRoomStart", () => {
 		expect(screen.getByText("Landing composer")).toBeInTheDocument();
 		expect(
 			screen.getByRole("heading", {
-				name: "Start a conversation with Research agent",
+				name: "What should we work on?",
 			}),
 		).toBeVisible();
 		expect(composerProps().modelId).toBe("model-2");
 		expect(composerProps().className).toBe("w-full");
-		expect(composerProps().inputClassName).toBe("min-h-48");
+		expect(composerProps().inputClassName).toBe("min-h-28");
 		expect(
-			screen.getByRole("combobox", { name: "Choose agent" }),
-		).toHaveTextContent("Research agent");
+			screen.getByRole("combobox", {
+				name: "Choose agent: Research agent",
+			}),
+		).toBeEnabled();
+		expect(composerProps().settingsPresentation).toBe("drawer");
+		expect(screen.getByText("Research agent")).toBeVisible();
+		expect(
+			screen.queryByText("Researches complex topics"),
+		).not.toBeInTheDocument();
 		expect(composerProps().modelName).toBe("Name model-2");
 		expect(harness.createRoom).not.toHaveBeenCalled();
 
@@ -227,7 +235,10 @@ describe("NewRoomStart", () => {
 		};
 
 		await act(() => composerProps().onSaveRoomSettings(settings));
-		expect(composerProps().roomSettings).toEqual(settings);
+		expect(composerProps().roomSettings).toEqual({
+			...settings,
+			modelId: "model-2",
+		});
 
 		await act(() =>
 			composerProps().onSend({ text: "Review the quarter", files: [] }),
@@ -317,34 +328,33 @@ describe("NewRoomStart", () => {
 		expect(router.state.historyAction).toBe("REPLACE");
 	});
 
-	it("switches agents on the same new-room page", async () => {
-		const user = userEvent.setup();
+	it("keeps the selected agent below the composer while room settings change", async () => {
 		const router = renderDraft();
 		const settings = {
 			instructions: "Independent room prompt",
-			mcp: [
-				{
-					id: "room-only",
-					name: "Room only",
-					type: "VECTOR" as const,
-				},
-			],
+			mcp: [],
 		};
 		await act(() => composerProps().onSaveRoomSettings(settings));
 
-		await user.click(
-			screen.getByRole("combobox", { name: "Choose agent" }),
-		);
-		await user.click(
-			await screen.findByRole("option", { name: "Writing agent" }),
-		);
-
-		expect(router.state.location.pathname).toBe("/new");
 		expect(router.state.location.search).toBe(
-			"?agentId=agent-2&model=model-2",
+			"?agentId=agent-1&model=model-2",
 		);
-		expect(router.state.historyAction).toBe("REPLACE");
-		expect(composerProps().roomSettings).toEqual(settings);
+		expect(
+			screen.getByRole("combobox", {
+				name: "Choose agent: Research agent",
+			}),
+		).toBeEnabled();
+		expect(
+			screen
+				.getByText("Landing composer")
+				.compareDocumentPosition(screen.getByText("Research agent")) &
+				Node.DOCUMENT_POSITION_FOLLOWING,
+		).toBeTruthy();
+		expect(composerProps().roomSettings).toEqual({
+			...settings,
+			modelId: "model-2",
+		});
+		expect(composerProps().onConfigureAgent).toBeUndefined();
 		expect(harness.createRoom).not.toHaveBeenCalled();
 	});
 });

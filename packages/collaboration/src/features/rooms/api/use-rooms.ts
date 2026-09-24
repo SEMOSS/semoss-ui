@@ -5,7 +5,7 @@ import type { Session } from "@/types/session";
 import { sessionFromRoom } from "../utils/session-from-room";
 import { listRooms } from "./list-rooms";
 
-/** Load playground rooms, retaining listed-agent rooms and unassigned rooms. */
+/** Load every collaboration-mode room owned by the current user. */
 export function useRooms(
 	agentIds: string[],
 	versions: Record<string, number> = {},
@@ -17,7 +17,6 @@ export function useRooms(
 	const [reloadToken, setReloadToken] = useState(0);
 	const pendingRooms = useRef<Map<string, Session>>(new Map());
 
-	const agentKey = agentIds.join(",");
 	const versionKey = agentIds
 		.map((agentId) => `${agentId}:${versions[agentId] ?? 0}`)
 		.join(",");
@@ -25,21 +24,13 @@ export function useRooms(
 	useEffect(() => {
 		void reloadToken;
 		void versionKey;
-		const ids = agentKey ? agentKey.split(",") : [];
 		let cancelled = false;
 
 		setIsLoading(true);
-		const workspaceIds = new Set(ids);
 		listRooms(actions)
 			.then((rooms) => {
 				if (cancelled) return;
-				const fetched = rooms
-					.filter(
-						(room) =>
-							room.workspaceId === undefined ||
-							workspaceIds.has(room.workspaceId),
-					)
-					.map(sessionFromRoom);
+				const fetched = rooms.map(sessionFromRoom);
 				const fetchedIds = new Set(
 					fetched.map((session) => session.id),
 				);
@@ -63,7 +54,7 @@ export function useRooms(
 		return () => {
 			cancelled = true;
 		};
-	}, [actions, agentKey, reloadToken, versionKey]);
+	}, [actions, reloadToken, versionKey]);
 
 	const refresh = useCallback(() => setReloadToken((token) => token + 1), []);
 

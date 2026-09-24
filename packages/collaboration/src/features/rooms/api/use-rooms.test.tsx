@@ -27,7 +27,7 @@ function deferred<T>(): Deferred<T> {
 describe("useRooms", () => {
 	beforeEach(() => listRooms.mockReset());
 
-	it("keeps listed-agent and unassigned rooms while excluding other workspaces", async () => {
+	it("keeps rooms from every workspace together with unassigned rooms", async () => {
 		const first = deferred<RoomRow[]>();
 		listRooms.mockReturnValueOnce(first.promise).mockResolvedValueOnce([
 			{
@@ -66,6 +66,7 @@ describe("useRooms", () => {
 			{
 				roomId: "foreign-room",
 				workspaceId: "workspace-3",
+				dateUpdated: "2026-09-22T09:00:00Z",
 			},
 			{
 				roomId: "unassigned-room",
@@ -78,6 +79,7 @@ describe("useRooms", () => {
 		expect(result.current.sessions.map((session) => session.id)).toEqual([
 			"pending-room",
 			"unassigned-room",
+			"foreign-room",
 		]);
 
 		rerender({ versions: { "workspace-1": 1 } });
@@ -95,10 +97,18 @@ describe("useRooms", () => {
 		);
 	});
 
-	it("loads unassigned rooms when there are no agents", async () => {
+	it("loads assigned and unassigned rooms when there are no agents", async () => {
 		listRooms.mockResolvedValue([
-			{ roomId: "unassigned-room", roomName: "Personal notes" },
-			{ roomId: "assigned-room", workspaceId: "workspace-1" },
+			{
+				roomId: "unassigned-room",
+				roomName: "Personal notes",
+				dateUpdated: "2026-09-22T10:00:00Z",
+			},
+			{
+				roomId: "assigned-room",
+				workspaceId: "workspace-1",
+				dateUpdated: "2026-09-22T09:00:00Z",
+			},
 		]);
 
 		const { result } = renderHook(() => useRooms([]));
@@ -109,6 +119,10 @@ describe("useRooms", () => {
 				id: "unassigned-room",
 				agentId: "",
 				title: "Personal notes",
+			}),
+			expect.objectContaining({
+				id: "assigned-room",
+				agentId: "workspace-1",
 			}),
 		]);
 	});

@@ -20,9 +20,11 @@ export function useRoomModelSelection(
 	const [isSaving, setIsSaving] = useState(false);
 	const savingRef = useRef(false);
 	const selectedEngine =
-		selection?.roomId === roomId ? selection.engine : null;
-	const modelId =
-		selectedEngine?.engine_id || room?.options.modelId || fallbackModelId;
+		selection?.roomId === roomId &&
+		selection.engine.engine_id === room?.options.modelId
+			? selection.engine
+			: null;
+	const modelId = room?.options.modelId || fallbackModelId;
 
 	const selectModel = useCallback(
 		async (engine: Engine) => {

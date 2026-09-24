@@ -1,3 +1,4 @@
+import { isRequestUserInputAction } from "@semoss/sdk";
 import type {
 	ConversationMessagePart,
 	ConversationTool,
@@ -70,11 +71,20 @@ export function runItemPart({
 	const state = complete ? "complete" : "active";
 	switch (item.kind) {
 		case "message":
-			return { type: "text", text: item.text, state };
+			return { type: "text", text: item.text, state, renderKey: item.id };
 		case "reasoning":
-			return { type: "thinking", text: item.summary, state };
+			return {
+				type: "thinking",
+				text: item.summary,
+				state,
+				renderKey: item.id,
+			};
 		case "tool":
-			return { type: "tool", tool: runItemTool(item) };
+			return {
+				type: "tool",
+				tool: runItemTool(item),
+				renderKey: item.id,
+			};
 		default:
 			return null;
 	}
@@ -83,15 +93,10 @@ export function runItemPart({
 /** Preserve action/run identity, including approvals raised by a child run. */
 export function runActionApproval(action: AgentAction): PendingToolApproval {
 	const name = action.toolName ?? "Tool";
-	const originalName = action.toolMeta?.SMSS_ORIGINAL_TOOL_NAME;
-	const requiresResponse = [name, originalName].some(
-		(value) =>
-			typeof value === "string" &&
-			value
-				.replace(/[^a-z]/gi, "")
-				.toLowerCase()
-				.endsWith("requestuserinput"),
-	);
+	const requiresResponse = isRequestUserInputAction({
+		toolName: action.toolName ?? null,
+		toolMeta: action.toolMeta,
+	});
 	const tool = runItemTool({
 		id: action.toolCallId || action.actionId,
 		kind: "tool",

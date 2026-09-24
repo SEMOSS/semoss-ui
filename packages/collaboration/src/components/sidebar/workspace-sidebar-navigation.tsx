@@ -1,17 +1,14 @@
 import { SidebarContent, SidebarRail, useSidebar } from "@semoss/ui/next";
-import type { Agent } from "@/types/agent";
 import type { Session } from "@/types/session";
-import { SidebarAgentsList } from "./sidebar-agents-list";
 import { SidebarFooter } from "./sidebar-footer";
 import { SidebarHeader } from "./sidebar-header";
+import { SidebarRoomsList } from "./sidebar-rooms-list";
 
 interface WorkspaceSidebarNavigationProps {
-	agents: Agent[];
 	sessions: Session[];
-	agentId?: string;
 	roomId?: string;
 	isLoading: boolean;
-	onNewSession: (agentId?: string) => void;
+	onRoomPin: (roomId: string, pinned: boolean) => Promise<void>;
 	onRoomRename: (roomId: string, name: string) => Promise<void>;
 	onRoomDelete: (roomId: string) => Promise<void>;
 	onRoomVisited: (roomId: string) => void;
@@ -19,12 +16,10 @@ interface WorkspaceSidebarNavigationProps {
 
 /** Workspace navigation content shared by expanded and collapsed sidebars. */
 export function WorkspaceSidebarNavigation({
-	agents,
 	sessions,
-	agentId,
 	roomId,
 	isLoading,
-	onNewSession,
+	onRoomPin,
 	onRoomRename,
 	onRoomDelete,
 	onRoomVisited,
@@ -36,13 +31,13 @@ export function WorkspaceSidebarNavigation({
 		<>
 			<SidebarHeader condensed={condensed} />
 			<SidebarContent className="px-3">
-				<SidebarAgentsList
-					agents={agents}
+				<SidebarRoomsList
 					sessions={sessions}
-					activeAgentId={agentId}
 					activeRoomId={roomId}
 					isLoading={isLoading}
-					onNewSession={onNewSession}
+					onRoomPin={(selectedRoomId, pinned) => {
+						void onRoomPin(selectedRoomId, pinned);
+					}}
 					onRoomRename={onRoomRename}
 					onRoomDelete={onRoomDelete}
 					onRoomVisited={onRoomVisited}

@@ -7,11 +7,12 @@ import {
 	useRef,
 	useState,
 } from "react";
-import { type MCPConfig, splitMcpByType } from "@semoss/shared";
+import { EngineSelect, type MCPConfig, splitMcpByType } from "@semoss/shared";
 import {
 	Alert,
 	AlertDescription,
 	Button,
+	cn,
 	Dialog,
 	DialogContent,
 	DialogDescription,
@@ -23,6 +24,14 @@ import {
 	FieldLabel,
 	Form,
 	FormField,
+	Input,
+	Muted,
+	Sheet,
+	SheetContent,
+	SheetDescription,
+	SheetFooter,
+	SheetHeader,
+	SheetTitle,
 	Spinner,
 	Textarea,
 	useForm,
@@ -33,11 +42,24 @@ import { toError } from "@semoss/utility";
 import { mcpConfigSchema } from "@/features/agents/api/agent-schemas";
 import { CapabilityPicker } from "@/features/agents/components/capability-picker";
 import { CapabilitySection } from "@/features/agents/components/capability-section";
+import type { AgentConfiguration } from "@/features/agents/types/agent";
+import { useRoomModel } from "../api/use-room-model";
 import type { RoomSettings } from "../types/room";
 
 const MAX_INSTRUCTIONS_LENGTH = 8_000;
 
 const roomSettingsSchema = z.object({
+	modelId: z.string(),
+	temperature: z
+		.string()
+		.refine(
+			(value) =>
+				value === "" ||
+				(Number.isFinite(Number(value)) &&
+					Number(value) >= 0 &&
+					Number(value) <= 1),
+			"Enter a temperature from 0 to 1.",
+		),
 	instructions: z
 		.string()
 		.max(
@@ -52,7 +74,15 @@ type RoomSettingsView = "settings" | "knowledge" | "toolboxes";
 
 interface RoomSettingsDialogProps {
 	open: boolean;
+	/** Use a right-side overlay drawer for new-room settings. */
+	presentation?: "dialog" | "drawer";
 	agentName: string;
+	agent?: AgentConfiguration;
+	modelId?: string;
+	modelName?: string;
+	isReadOnly?: boolean;
+	isModelLocked?: boolean;
+	onConfigure?: () => void;
 	settings: RoomSettings;
 	inheritedMcp: MCPConfig[];
 	returnFocusRef: RefObject<HTMLButtonElement | null>;
@@ -71,9 +101,13 @@ function dedupeMcp(values: MCPConfig[]): MCPConfig[] {
 function editableSettings(
 	settings: RoomSettings,
 	lockedMcp: MCPConfig[],
+	modelId = "",
 ): RoomSettingsFormValues {
 	const lockedIds = new Set(lockedMcp.map((value) => value.id));
 	return {
+		modelId: settings.modelId ?? modelId,
+		temperature:
+			settings.temperature == null ? "" : String(settings.temperature),
 		instructions: settings.instructions,
 		mcp: dedupeMcp(
 			settings.mcp.filter(
@@ -89,6 +123,14 @@ function editableSettings(
 /** Edit room-only instructions and resources without changing the selected agent. */
 export function RoomSettingsDialog({
 	open,
+	presentation = "dialog",
+	agentName,
+	agent,
+	modelId = "",
+	modelName = "",
+	isReadOnly = false,
+	isModelLocked = false,
+	onConfigure,
 	settings,
 	inheritedMcp,
 	returnFocusRef,
@@ -96,7 +138,9 @@ export function RoomSettingsDialog({
 	onSave,
 }: RoomSettingsDialogProps) {
 	const promptId = useId();
+	const temperatureId = useId();
 	const promptErrorId = useId();
+	const descriptionId = useId();
 	const wasOpenRef = useRef(false);
 	const knowledgeAddButtonRef = useRef<HTMLButtonElement>(null);
 	const toolboxAddButtonRef = useRef<HTMLButtonElement>(null);
@@ -116,9 +160,12 @@ export function RoomSettingsDialog({
 	);
 	const form = useForm<RoomSettingsFormValues>({
 		resolver: zodResolver(roomSettingsSchema),
-		defaultValues: editableSettings(settings, lockedMcp),
+		defaultValues: editableSettings(settings, lockedMcp, modelId),
 	});
 	const { errors, isSubmitting } = form.formState;
+	const selectedModel = form.watch("modelId");
+	const model = useRoomModel(open ? selectedModel : "");
+	const isDisabled = isSubmitting || isReadOnly;
 	const localMcp = form.watch("mcp");
 	const { knowledge: localKnowledge, toolbox: localToolbox } =
 		splitMcpByType(localMcp);
@@ -127,11 +174,11 @@ export function RoomSettingsDialog({
 
 	useEffect(() => {
 		if (open && !wasOpenRef.current) {
-			form.reset(editableSettings(settings, lockedMcp));
+			form.reset(editableSettings(settings, lockedMcp, modelId));
 			setActiveView("settings");
 		}
 		wasOpenRef.current = open;
-	}, [form, lockedMcp, open, settings]);
+	}, [form, lockedMcp, modelId, open, settings]);
 
 	function setMcp(values: MCPConfig[]): void {
 		form.setValue("mcp", dedupeMcp(values), {
@@ -142,8 +189,14 @@ export function RoomSettingsDialog({
 	}
 
 	async function handleSubmit(values: RoomSettingsFormValues): Promise<void> {
+		if (isReadOnly) return;
 		try {
 			await onSave({
+				modelId: isModelLocked ? modelId : values.modelId,
+				temperature:
+					values.temperature === ""
+						? null
+						: Number(values.temperature),
 				instructions: values.instructions,
 				mcp: dedupeMcp(values.mcp),
 			});
@@ -154,7 +207,8 @@ export function RoomSettingsDialog({
 			});
 			return;
 		}
-		handleOpenChange(false);
+		setActiveView("settings");
+		onOpenChange(false);
 	}
 
 	function handleOpenChange(nextOpen: boolean): void {
@@ -175,11 +229,23 @@ export function RoomSettingsDialog({
 	const isSettingsView = activeView === "settings";
 	const activePickerKind =
 		activeView === "knowledge" ? "KNOWLEDGE" : "TOOLBOX";
+	const isDrawer = presentation === "drawer";
+	const SettingsRoot = isDrawer ? Sheet : Dialog;
+	const SettingsContent = isDrawer ? SheetContent : DialogContent;
+	const SettingsHeader = isDrawer ? SheetHeader : DialogHeader;
+	const SettingsTitle = isDrawer ? SheetTitle : DialogTitle;
+	const SettingsDescription = isDrawer ? SheetDescription : DialogDescription;
+	const SettingsFooter = isDrawer ? SheetFooter : DialogFooter;
 
 	return (
-		<Dialog open={open} onOpenChange={handleOpenChange}>
-			<DialogContent
-				className="max-h-[calc(100dvh-2rem)] overflow-hidden sm:max-w-2xl"
+		<SettingsRoot open={open} onOpenChange={handleOpenChange}>
+			<SettingsContent
+				aria-describedby={descriptionId}
+				className={
+					isDrawer
+						? "h-dvh w-full overflow-hidden p-6 motion-reduce:animate-none sm:max-w-xl"
+						: "overflow-hidden sm:max-w-2xl"
+				}
 				showCloseButton={!isSubmitting}
 				onEscapeKeyDown={(event) => {
 					if (isSubmitting) event.preventDefault();
@@ -193,15 +259,17 @@ export function RoomSettingsDialog({
 				}}
 			>
 				{isSettingsView ? (
-					<DialogHeader>
-						<DialogTitle>Room settings</DialogTitle>
-						<DialogDescription>
-							Configure instructions and resources for this room
-							only.
-						</DialogDescription>
-					</DialogHeader>
+					<SettingsHeader className="shrink-0 p-0 pr-10">
+						<SettingsTitle>Room settings</SettingsTitle>
+						<SettingsDescription>
+							<span id={descriptionId}>
+								Configure the model, instructions and resources
+								for this room only.
+							</span>
+						</SettingsDescription>
+					</SettingsHeader>
 				) : (
-					<DialogHeader className="flex-row items-start gap-3 text-left">
+					<SettingsHeader className="shrink-0 flex-row items-start gap-3 p-0 pr-10 text-left">
 						<Button
 							type="button"
 							variant="ghost"
@@ -212,32 +280,191 @@ export function RoomSettingsDialog({
 							<ArrowLeft aria-hidden="true" />
 						</Button>
 						<div className="min-w-0 flex-1">
-							<DialogTitle>
+							<SettingsTitle>
 								{activeView === "knowledge"
 									? "Add knowledge"
 									: "Add toolboxes"}
-							</DialogTitle>
-							<DialogDescription className="mt-2">
-								{activeView === "knowledge"
-									? "Choose sources available to this room."
-									: "Choose tools available to this room."}
-							</DialogDescription>
+							</SettingsTitle>
+							<SettingsDescription className="mt-2">
+								<span id={descriptionId}>
+									{activeView === "knowledge"
+										? "Choose sources available to this room."
+										: "Choose tools available to this room."}
+								</span>
+							</SettingsDescription>
 						</div>
-					</DialogHeader>
+					</SettingsHeader>
 				)}
 				<Form
 					form={form}
 					onSubmit={handleSubmit}
 					noValidate
 					aria-busy={isSubmitting}
-					className="flex min-h-0 flex-col gap-6 overflow-hidden"
+					className={cn(
+						"flex min-h-0 flex-col gap-6 overflow-hidden",
+						isDrawer && "flex-1",
+					)}
 				>
 					{isSettingsView ? (
 						<>
 							<fieldset
-								disabled={isSubmitting}
+								disabled={isDisabled}
 								className="flex min-h-0 min-w-0 flex-1 flex-col gap-6 overflow-y-auto pr-1"
 							>
+								<section
+									className="space-y-2"
+									aria-label="Agent configuration"
+								>
+									<div className="flex flex-wrap items-center justify-between gap-2">
+										<span className="font-medium text-sm">
+											Agent: {agentName}
+										</span>
+										{onConfigure && (
+											<Button
+												type="button"
+												variant="outline"
+												size="sm"
+												onClick={onConfigure}
+											>
+												Agent settings
+											</Button>
+										)}
+									</div>
+									{agent && (
+										<>
+											<Muted className="block text-xs">
+												Skills:{" "}
+												{agent.skills
+													.map((skill) => skill.name)
+													.join(", ") ||
+													"None configured"}
+											</Muted>
+											<Muted className="block text-xs">
+												Agent limits:{" "}
+												{agent.config_json?.budgets
+													?.max_turns ?? 40}{" "}
+												turns;{" "}
+												{agent.config_json?.budgets
+													?.max_reflections ??
+													"backend default"}{" "}
+												reflections
+												{agent.config_json?.budgets
+													?.max_seconds !== undefined
+													? `; ${agent.config_json.budgets.max_seconds} seconds`
+													: ""}
+												.
+											</Muted>
+										</>
+									)}
+								</section>
+								{isReadOnly && (
+									<Muted>
+										Settings are read-only while this run is
+										active, including while waiting for
+										approval.
+									</Muted>
+								)}
+								<FormField
+									control={form.control}
+									name="modelId"
+									render={({ field }) => (
+										<fieldset className="space-y-2">
+											<legend className="font-medium text-sm">
+												Model
+											</legend>
+											<EngineSelect
+												value={field.value}
+												name={
+													model.engine
+														?.engine_display_name ||
+													model.engine?.engine_name ||
+													(field.value === modelId
+														? modelName
+														: field.value)
+												}
+												engineTypes={["MODEL"]}
+												metaFilters={[
+													{ tag: "text-generation" },
+												]}
+												disabled={
+													isDisabled || isModelLocked
+												}
+												onChange={(engine) =>
+													field.onChange(
+														engine.engine_id,
+													)
+												}
+											/>
+										</fieldset>
+									)}
+								/>
+								<div className="space-y-2">
+									<FormField
+										control={form.control}
+										name="temperature"
+										render={({ field, fieldState }) => (
+											<Field
+												data-invalid={
+													fieldState.invalid
+												}
+											>
+												<FieldLabel
+													htmlFor={temperatureId}
+												>
+													Temperature
+												</FieldLabel>
+												<Input
+													{...field}
+													id={temperatureId}
+													type="number"
+													min={0}
+													max={1}
+													step={0.01}
+													placeholder="Backend default"
+													disabled={isDisabled}
+													aria-invalid={
+														fieldState.invalid
+													}
+													aria-describedby={`${temperatureId}-help${fieldState.error ? ` ${temperatureId}-error` : ""}`}
+												/>
+												<Muted
+													id={`${temperatureId}-help`}
+													className="text-xs"
+												>
+													Optional. Leave empty to use
+													the backend default.
+												</Muted>
+												{fieldState.error && (
+													<FieldError
+														id={`${temperatureId}-error`}
+													>
+														{
+															fieldState.error
+																.message
+														}
+													</FieldError>
+												)}
+											</Field>
+										)}
+									/>
+									<Button
+										type="button"
+										size="sm"
+										variant="outline"
+										disabled={
+											isDisabled ||
+											form.watch("temperature") === ""
+										}
+										onClick={() =>
+											form.setValue("temperature", "", {
+												shouldDirty: true,
+												shouldValidate: true,
+											})
+										}
+									>
+										Reset temperature
+									</Button>
+								</div>
 								<FormField
 									control={form.control}
 									name="instructions"
@@ -288,7 +515,7 @@ export function RoomSettingsDialog({
 										})),
 										...localKnowledge,
 									]}
-									disabled={isSubmitting}
+									disabled={isDisabled}
 									addButtonRef={knowledgeAddButtonRef}
 									onAdd={() => setActiveView("knowledge")}
 									onRemove={(id) =>
@@ -314,7 +541,7 @@ export function RoomSettingsDialog({
 										})),
 										...localToolbox,
 									]}
-									disabled={isSubmitting}
+									disabled={isDisabled}
 									addButtonRef={toolboxAddButtonRef}
 									onAdd={() => setActiveView("toolboxes")}
 									onRemove={(id) =>
@@ -333,7 +560,7 @@ export function RoomSettingsDialog({
 									</AlertDescription>
 								</Alert>
 							)}
-							<DialogFooter>
+							<SettingsFooter className="shrink-0 flex-col gap-2 p-0 sm:flex-row sm:justify-end">
 								<Button
 									type="button"
 									variant="outline"
@@ -342,13 +569,13 @@ export function RoomSettingsDialog({
 								>
 									Cancel
 								</Button>
-								<Button type="submit" disabled={isSubmitting}>
+								<Button type="submit" disabled={isDisabled}>
 									{isSubmitting && (
 										<Spinner className="size-4" />
 									)}
 									{isSubmitting ? "Saving…" : "Save settings"}
 								</Button>
-							</DialogFooter>
+							</SettingsFooter>
 						</>
 					) : (
 						<CapabilityPicker
@@ -365,7 +592,7 @@ export function RoomSettingsDialog({
 									? lockedKnowledge
 									: lockedToolbox
 							}
-							disabled={isSubmitting}
+							disabled={isDisabled}
 							onChange={(values) =>
 								setMcp(
 									activeView === "knowledge"
@@ -377,7 +604,7 @@ export function RoomSettingsDialog({
 						/>
 					)}
 				</Form>
-			</DialogContent>
-		</Dialog>
+			</SettingsContent>
+		</SettingsRoot>
 	);
 }

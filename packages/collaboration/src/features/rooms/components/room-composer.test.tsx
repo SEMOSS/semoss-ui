@@ -248,96 +248,133 @@ describe("RoomComposer", () => {
 		expect(actions).toHaveFocus();
 	});
 
-	it("discards an unsaved settings draft when the modal is reopened", async () => {
-		const user = userEvent.setup();
-		renderComposer();
-		const actions = screen.getByRole("button", {
-			name: "Open composer actions",
-		});
+	it.each(["dialog", "drawer"] as const)(
+		"discards an unsaved settings draft when the %s is reopened",
+		async (settingsPresentation) => {
+			const user = userEvent.setup();
+			renderComposer({ settingsPresentation });
+			const actions = screen.getByRole("button", {
+				name: "Open composer actions",
+			});
 
-		await user.click(actions);
-		await user.click(screen.getByRole("button", { name: "Open settings" }));
-		await user.type(
-			screen.getByRole("textbox", { name: "Instructions" }),
-			"Unsaved prompt",
-		);
-		await user.click(screen.getByRole("button", { name: "Cancel" }));
+			await user.click(actions);
+			await user.click(
+				screen.getByRole("button", { name: "Open settings" }),
+			);
+			await user.type(
+				screen.getByRole("textbox", { name: "Instructions" }),
+				"Unsaved prompt",
+			);
+			await user.click(screen.getByRole("button", { name: "Cancel" }));
 
-		await user.click(actions);
-		await user.click(screen.getByRole("button", { name: "Open settings" }));
-		expect(
-			screen.getByRole("textbox", { name: "Instructions" }),
-		).toHaveValue("");
-	});
-
-	it("closes the single dialog from a picker view and discards its draft", async () => {
-		const user = userEvent.setup();
-		renderComposer();
-		const actions = screen.getByRole("button", {
-			name: "Open composer actions",
-		});
-
-		await user.click(actions);
-		await user.click(screen.getByRole("button", { name: "Open settings" }));
-		await user.type(
-			screen.getByRole("textbox", { name: "Instructions" }),
-			"Discard this prompt",
-		);
-		await user.click(screen.getByRole("button", { name: "Add knowledge" }));
-		await user.click(
-			screen.getByRole("checkbox", { name: /Room knowledge/ }),
-		);
-		expect(screen.getAllByRole("dialog")).toHaveLength(1);
-
-		await user.keyboard("{Escape}");
-		await waitFor(() =>
+			await user.click(actions);
+			await user.click(
+				screen.getByRole("button", { name: "Open settings" }),
+			);
 			expect(
-				screen.queryByRole("dialog", { name: "Add knowledge" }),
-			).not.toBeInTheDocument(),
-		);
-		expect(actions).toHaveFocus();
+				screen.getByRole("textbox", { name: "Instructions" }),
+			).toHaveValue("");
+		},
+	);
 
-		await user.click(actions);
-		await user.click(screen.getByRole("button", { name: "Open settings" }));
-		expect(
-			screen.getByRole("textbox", { name: "Instructions" }),
-		).toHaveValue("");
-		expect(screen.queryByText("Room knowledge")).not.toBeInTheDocument();
-	});
+	it.each(["dialog", "drawer"] as const)(
+		"closes the single %s from a picker view and discards its draft",
+		async (settingsPresentation) => {
+			const user = userEvent.setup();
+			renderComposer({ settingsPresentation });
+			const actions = screen.getByRole("button", {
+				name: "Open composer actions",
+			});
 
-	it("prevents settings dismissal while a save is pending", async () => {
-		const user = userEvent.setup();
-		let finishSave: (() => void) | undefined;
-		const onSaveRoomSettings = vi.fn(
-			() =>
-				new Promise<void>((resolve) => {
-					finishSave = resolve;
-				}),
-		);
-		renderComposer({ onSaveRoomSettings });
-		const actions = screen.getByRole("button", {
-			name: "Open composer actions",
-		});
+			await user.click(actions);
+			await user.click(
+				screen.getByRole("button", { name: "Open settings" }),
+			);
+			await user.type(
+				screen.getByRole("textbox", { name: "Instructions" }),
+				"Discard this prompt",
+			);
+			await user.click(
+				screen.getByRole("button", { name: "Add knowledge" }),
+			);
+			await user.click(
+				screen.getByRole("checkbox", { name: /Room knowledge/ }),
+			);
+			expect(screen.getAllByRole("dialog")).toHaveLength(1);
 
-		await user.click(actions);
-		await user.click(screen.getByRole("button", { name: "Open settings" }));
-		await user.click(screen.getByRole("button", { name: "Save settings" }));
-		expect(screen.getByRole("button", { name: /Saving…/ })).toBeDisabled();
-		expect(screen.getByRole("button", { name: "Cancel" })).toBeDisabled();
+			await user.keyboard("{Escape}");
+			await waitFor(() =>
+				expect(
+					screen.queryByRole("dialog", { name: "Add knowledge" }),
+				).not.toBeInTheDocument(),
+			);
+			expect(actions).toHaveFocus();
 
-		await user.keyboard("{Escape}");
-		expect(
-			screen.getByRole("dialog", { name: "Room settings" }),
-		).toBeVisible();
-
-		await act(async () => finishSave?.());
-		await waitFor(() =>
+			await user.click(actions);
+			await user.click(
+				screen.getByRole("button", { name: "Open settings" }),
+			);
 			expect(
-				screen.queryByRole("dialog", { name: "Room settings" }),
-			).not.toBeInTheDocument(),
-		);
-		expect(actions).toHaveFocus();
-	});
+				screen.getByRole("textbox", { name: "Instructions" }),
+			).toHaveValue("");
+			expect(
+				screen.queryByText("Room knowledge"),
+			).not.toBeInTheDocument();
+		},
+	);
+
+	it.each(["dialog", "drawer"] as const)(
+		"prevents %s dismissal while a save is pending",
+		async (settingsPresentation) => {
+			const user = userEvent.setup();
+			let finishSave: (() => void) | undefined;
+			const onSaveRoomSettings = vi.fn(
+				() =>
+					new Promise<void>((resolve) => {
+						finishSave = resolve;
+					}),
+			);
+			renderComposer({ onSaveRoomSettings, settingsPresentation });
+			const actions = screen.getByRole("button", {
+				name: "Open composer actions",
+			});
+
+			await user.click(actions);
+			await user.click(
+				screen.getByRole("button", { name: "Open settings" }),
+			);
+			await user.click(
+				screen.getByRole("button", { name: "Save settings" }),
+			);
+			expect(
+				screen.getByRole("button", { name: /Saving…/ }),
+			).toBeDisabled();
+			expect(
+				screen.getByRole("button", { name: "Cancel" }),
+			).toBeDisabled();
+			expect(
+				screen.queryByRole("button", { name: "Close" }),
+			).not.toBeInTheDocument();
+			const overlay = document.querySelector(
+				`[data-slot="${settingsPresentation === "drawer" ? "sheet" : "dialog"}-overlay"]`,
+			);
+			if (!overlay) throw new Error("Settings overlay is missing");
+			fireEvent.pointerDown(overlay, { button: 0, ctrlKey: false });
+
+			await user.keyboard("{Escape}");
+			expect(
+				screen.getByRole("dialog", { name: "Room settings" }),
+			).toBeVisible();
+
+			await act(async () => finishSave?.());
+			await waitFor(() =>
+				expect(
+					screen.queryByRole("dialog", { name: "Room settings" }),
+				).not.toBeInTheDocument(),
+			);
+			expect(actions).toHaveFocus();
+		},
+	);
 
 	it("validates the room system prompt limit before saving", async () => {
 		const user = userEvent.setup();
@@ -366,100 +403,114 @@ describe("RoomComposer", () => {
 		expect(onSaveRoomSettings).not.toHaveBeenCalled();
 	});
 
-	it("saves a room prompt and room-only resources while locking inherited resources", async () => {
-		const user = userEvent.setup();
-		const onSaveRoomSettings = vi.fn(async () => undefined);
-		renderComposer({
-			onSaveRoomSettings,
-			inheritedMcp: [
-				{
-					id: "agent-knowledge",
-					name: "Agent handbook",
-					type: "VECTOR",
-				},
-			],
-		});
-
-		await user.click(
-			screen.getByRole("button", { name: "Open composer actions" }),
-		);
-		await user.click(screen.getByRole("button", { name: "Open settings" }));
-		expect(screen.getAllByRole("dialog")).toHaveLength(1);
-		expect(screen.getByText("Agent handbook")).toBeVisible();
-		expect(screen.getByText("From agent")).toBeVisible();
-		expect(
-			screen.queryByRole("button", { name: "Remove Agent handbook" }),
-		).not.toBeInTheDocument();
-
-		await user.type(
-			screen.getByRole("textbox", { name: "Instructions" }),
-			"Answer for this room.",
-		);
-		await user.click(screen.getByRole("button", { name: "Add knowledge" }));
-		expect(screen.getAllByRole("dialog")).toHaveLength(1);
-		expect(
-			screen.getByRole("dialog", { name: "Add knowledge" }),
-		).toBeVisible();
-		await waitFor(() =>
-			expect(
-				screen.getByRole("textbox", { name: "Search knowledge" }),
-			).toHaveFocus(),
-		);
-		const inheritedKnowledge = screen.getByRole("checkbox", {
-			name: /Agent handbook Included by agent/,
-		});
-		expect(inheritedKnowledge).toBeChecked();
-		expect(inheritedKnowledge).toBeDisabled();
-		await user.click(
-			await screen.findByRole("checkbox", { name: /Room knowledge/ }),
-		);
-		await user.click(screen.getByRole("button", { name: "Done" }));
-		await waitFor(() =>
-			expect(
-				screen.getByRole("button", { name: "Add knowledge" }),
-			).toHaveFocus(),
-		);
-		expect(screen.getByText("Room knowledge")).toBeVisible();
-		await user.click(screen.getByRole("button", { name: "Add toolboxes" }));
-		expect(screen.getAllByRole("dialog")).toHaveLength(1);
-		expect(
-			screen.getByRole("dialog", { name: "Add toolboxes" }),
-		).toBeVisible();
-		await user.click(
-			await screen.findByRole("checkbox", { name: /Room toolbox/ }),
-		);
-		await user.click(
-			screen.getByRole("button", { name: "Back to room settings" }),
-		);
-		await waitFor(() =>
-			expect(
-				screen.getByRole("button", { name: "Add toolboxes" }),
-			).toHaveFocus(),
-		);
-		expect(screen.getByText("Room toolbox")).toBeVisible();
-		await user.click(screen.getByRole("button", { name: "Save settings" }));
-
-		await waitFor(() =>
-			expect(onSaveRoomSettings).toHaveBeenCalledWith({
-				instructions: "Answer for this room.",
-				mcp: [
+	it.each(["dialog", "drawer"] as const)(
+		"saves %s settings with room-only resources while locking inherited resources",
+		async (settingsPresentation) => {
+			const user = userEvent.setup();
+			const onSaveRoomSettings = vi.fn(async () => undefined);
+			renderComposer({
+				settingsPresentation,
+				onSaveRoomSettings,
+				inheritedMcp: [
 					{
-						id: "knowledge-1",
-						name: "Room knowledge",
+						id: "agent-knowledge",
+						name: "Agent handbook",
 						type: "VECTOR",
 					},
-					{
-						id: "toolbox-1",
-						name: "Room toolbox",
-						type: "PROJECT",
-					},
 				],
-			}),
-		);
-		expect(
-			screen.queryByRole("dialog", { name: "Room settings" }),
-		).not.toBeInTheDocument();
-	});
+			});
+
+			await user.click(
+				screen.getByRole("button", { name: "Open composer actions" }),
+			);
+			await user.click(
+				screen.getByRole("button", { name: "Open settings" }),
+			);
+			expect(screen.getAllByRole("dialog")).toHaveLength(1);
+			expect(screen.getByText("Agent handbook")).toBeVisible();
+			expect(screen.getByText("From agent")).toBeVisible();
+			expect(
+				screen.queryByRole("button", { name: "Remove Agent handbook" }),
+			).not.toBeInTheDocument();
+
+			await user.type(
+				screen.getByRole("textbox", { name: "Instructions" }),
+				"Answer for this room.",
+			);
+			await user.click(
+				screen.getByRole("button", { name: "Add knowledge" }),
+			);
+			expect(screen.getAllByRole("dialog")).toHaveLength(1);
+			expect(
+				screen.getByRole("dialog", { name: "Add knowledge" }),
+			).toBeVisible();
+			await waitFor(() =>
+				expect(
+					screen.getByRole("textbox", { name: "Search knowledge" }),
+				).toHaveFocus(),
+			);
+			const inheritedKnowledge = screen.getByRole("checkbox", {
+				name: /Agent handbook Included by agent/,
+			});
+			expect(inheritedKnowledge).toBeChecked();
+			expect(inheritedKnowledge).toBeDisabled();
+			await user.click(
+				await screen.findByRole("checkbox", { name: /Room knowledge/ }),
+			);
+			await user.click(screen.getByRole("button", { name: "Done" }));
+			await waitFor(() =>
+				expect(
+					screen.getByRole("button", { name: "Add knowledge" }),
+				).toHaveFocus(),
+			);
+			expect(screen.getByText("Room knowledge")).toBeVisible();
+			await user.click(
+				screen.getByRole("button", { name: "Add toolboxes" }),
+			);
+			expect(screen.getAllByRole("dialog")).toHaveLength(1);
+			expect(
+				screen.getByRole("dialog", { name: "Add toolboxes" }),
+			).toBeVisible();
+			await user.click(
+				await screen.findByRole("checkbox", { name: /Room toolbox/ }),
+			);
+			await user.click(
+				screen.getByRole("button", { name: "Back to room settings" }),
+			);
+			await waitFor(() =>
+				expect(
+					screen.getByRole("button", { name: "Add toolboxes" }),
+				).toHaveFocus(),
+			);
+			expect(screen.getByText("Room toolbox")).toBeVisible();
+			await user.click(
+				screen.getByRole("button", { name: "Save settings" }),
+			);
+
+			await waitFor(() =>
+				expect(onSaveRoomSettings).toHaveBeenCalledWith({
+					modelId: "model-1",
+					temperature: null,
+					instructions: "Answer for this room.",
+					mcp: [
+						{
+							id: "knowledge-1",
+							name: "Room knowledge",
+							type: "VECTOR",
+						},
+						{
+							id: "toolbox-1",
+							name: "Room toolbox",
+							type: "PROJECT",
+						},
+					],
+				}),
+			);
+			expect(
+				screen.queryByRole("dialog", { name: "Room settings" }),
+			).not.toBeInTheDocument();
+		},
+	);
 
 	it("lets room resources be removed and gives inherited duplicates precedence", async () => {
 		const user = userEvent.setup();
@@ -503,34 +554,44 @@ describe("RoomComposer", () => {
 
 		await waitFor(() =>
 			expect(onSaveRoomSettings).toHaveBeenCalledWith({
+				modelId: "model-1",
+				temperature: null,
 				instructions: "",
 				mcp: [],
 			}),
 		);
 	});
 
-	it("keeps the settings draft open when saving fails", async () => {
-		const user = userEvent.setup();
-		renderComposer({
-			onSaveRoomSettings: vi.fn(async () => {
-				throw new Error("Options unavailable");
-			}),
-		});
-		await user.click(
-			screen.getByRole("button", { name: "Open composer actions" }),
-		);
-		await user.click(screen.getByRole("button", { name: "Open settings" }));
-		const prompt = screen.getByRole("textbox", {
-			name: "Instructions",
-		});
-		await user.type(prompt, "Keep this prompt");
-		await user.click(screen.getByRole("button", { name: "Save settings" }));
+	it.each(["dialog", "drawer"] as const)(
+		"keeps the %s draft open when saving fails",
+		async (settingsPresentation) => {
+			const user = userEvent.setup();
+			renderComposer({
+				settingsPresentation,
+				onSaveRoomSettings: vi.fn(async () => {
+					throw new Error("Options unavailable");
+				}),
+			});
+			await user.click(
+				screen.getByRole("button", { name: "Open composer actions" }),
+			);
+			await user.click(
+				screen.getByRole("button", { name: "Open settings" }),
+			);
+			const prompt = screen.getByRole("textbox", {
+				name: "Instructions",
+			});
+			await user.type(prompt, "Keep this prompt");
+			await user.click(
+				screen.getByRole("button", { name: "Save settings" }),
+			);
 
-		expect(await screen.findByRole("alert")).toHaveTextContent(
-			"Room settings could not be saved. Options unavailable",
-		);
-		expect(prompt).toHaveValue("Keep this prompt");
-	});
+			expect(await screen.findByRole("alert")).toHaveTextContent(
+				"Room settings could not be saved. Options unavailable",
+			);
+			expect(prompt).toHaveValue("Keep this prompt");
+		},
+	);
 
 	it("submits with Enter, keeps Shift+Enter as a newline, and ignores IME Enter", async () => {
 		const user = userEvent.setup();

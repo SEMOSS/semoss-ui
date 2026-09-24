@@ -30,6 +30,9 @@ export function useWorkspaceData(keys: RefreshKeys) {
 		addPendingRoom: roomsQuery.addPendingRoom,
 		updateRoom: roomsQuery.updateRoom,
 		removeRoom: roomsQuery.removeRoom,
+		refreshRooms: roomsQuery.refresh,
+		agentsIsLoading: agentsQuery.isLoading,
+		roomsIsLoading: roomsQuery.isLoading,
 		isLoading: agentsQuery.isLoading || roomsQuery.isLoading,
 		error: agentsQuery.error ?? roomsQuery.error,
 	};

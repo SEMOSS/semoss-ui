@@ -15,7 +15,11 @@ export interface ToolWorkbenchContextValue {
 	store: ReturnType<typeof createWorkbenchStore>;
 	snapshot: WorkbenchSnapshot;
 	roomId: string;
+	insightId: string;
+	openRun: (runId: string) => void;
 	tools: Record<string, ConversationTool>;
+	/** Presentation metadata from each tool's original message. */
+	toolCreatedAt?: Record<string, string>;
 	pendingApprovals: PendingToolApproval[];
 	isOpen: boolean;
 	activeToolId: string | null;

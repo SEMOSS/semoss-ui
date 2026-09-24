@@ -22,33 +22,26 @@ describe("MessageCodeBlock", () => {
 		await waitFor(() =>
 			expect(writeText).toHaveBeenCalledWith("const value = 1;"),
 		);
-		fireEvent.click(screen.getByRole("button", { name: "Expand code" }));
+		const expand = screen.getByRole("button", { name: "Expand code" });
+		fireEvent.click(expand);
 
 		expect(screen.getByText("Read-only generated code.")).toBeTruthy();
 		expect(
 			screen.getByRole("region", { name: "Expanded TS code" }),
 		).toBeTruthy();
+		fireEvent.keyDown(screen.getByRole("dialog"), { key: "Escape" });
+		await waitFor(() => expect(expand).toHaveFocus());
 	});
 
-	it("keeps completion actions disabled while code is growing", () => {
+	it("reserves action space without disabled buttons while code is growing", () => {
 		render(
 			<MessageCodeBlock code="const value" language="ts" isStreaming />,
 		);
 
 		expect(screen.getByText("Generating TS…")).toBeTruthy();
+		expect(screen.queryByRole("button", { name: "Copy code" })).toBeNull();
 		expect(
-			(
-				screen.getByRole("button", {
-					name: "Copy code",
-				}) as HTMLButtonElement
-			).disabled,
-		).toBe(true);
-		expect(
-			(
-				screen.getByRole("button", {
-					name: "Expand code",
-				}) as HTMLButtonElement
-			).disabled,
-		).toBe(true);
+			screen.queryByRole("button", { name: "Expand code" }),
+		).toBeNull();
 	});
 });

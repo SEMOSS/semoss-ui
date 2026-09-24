@@ -37,7 +37,7 @@ import { newRoomPath, roomPath } from "@/lib/workspace-paths";
  */
 export function MainLayout() {
 	const navigate = useNavigate();
-	const { agentId, roomId } = useParams();
+	const { roomId } = useParams();
 	const { actions } = useInsight();
 	const [keys, setKeys] = useState<MainContext["keys"]>({});
 	const workspaceData = useWorkspaceData(keys);
@@ -48,7 +48,9 @@ export function MainLayout() {
 		addPendingRoom,
 		updateRoom,
 		removeRoom,
-		isLoading,
+		refreshRooms,
+		agentsIsLoading,
+		roomsIsLoading,
 		error,
 	} = workspaceData;
 	const roomNameWatchers = useRef(new Map<string, AbortController>());
@@ -172,7 +174,7 @@ export function MainLayout() {
 		setKeys((current) => refreshKey(current, key));
 	}, []);
 
-	const isEmptyLoad = isLoading && agents.length === 0;
+	const isEmptyLoad = agentsIsLoading && agents.length === 0;
 
 	const context: MainContext = {
 		keys,
@@ -210,12 +212,10 @@ export function MainLayout() {
 					className="motion-safe:transition-[left,right,width] motion-safe:duration-300 motion-safe:ease-in-out"
 				>
 					<WorkspaceSidebarNavigation
-						agents={agents}
 						sessions={sessions}
-						agentId={agentId}
 						roomId={roomId}
-						isLoading={isLoading}
-						onNewSession={openNewSession}
+						isLoading={roomsIsLoading}
+						onRoomPin={pinCurrentRoom}
 						onRoomRename={renameSidebarRoom}
 						onRoomDelete={deleteSidebarRoom}
 						onRoomVisited={openRoom}
@@ -231,10 +231,13 @@ export function MainLayout() {
 					<div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
 						{error ? (
 							<EmptyView
-								title="Could not load your agents"
+								title="Could not load workspace data"
 								action={
 									<Button
-										onClick={() => refresh("agents")}
+										onClick={() => {
+											refresh("agents");
+											refreshRooms();
+										}}
 										type="button"
 									>
 										Try again

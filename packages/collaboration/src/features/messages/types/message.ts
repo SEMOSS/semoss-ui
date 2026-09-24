@@ -1,3 +1,5 @@
+import type { AgentRun } from "@/features/rooms/api/agent-run-api";
+
 /** Whether one streaming message part can still receive chunks. */
 type ConversationPartState = "active" | "complete";
 
@@ -47,11 +49,15 @@ export type PlaygroundTurnPhase =
 	| "streaming"
 	| "executing_tools"
 	| "awaiting_approval"
+	| "cancelled"
 	| "cancelling"
 	| "completed"
 	| "failed";
 
-export type ConversationMessagePart =
+export type ConversationMessagePart = {
+	/** Stable run-item identity, used only for presentation. */
+	renderKey?: string;
+} & (
 	| {
 			type: "text";
 			text: string;
@@ -66,12 +72,14 @@ export type ConversationMessagePart =
 			type: "tool";
 			tool: ConversationTool;
 	  }
+	| { type: "run"; run: AgentRun }
 	| {
 			type: "media";
 			fileName: string;
 			fileLocation?: string;
 			mimeType?: string;
-	  };
+	  }
+);
 
 /** A person's answer to a delegated request, from the message's `delegation` ornament. */
 export interface DelegationReply {

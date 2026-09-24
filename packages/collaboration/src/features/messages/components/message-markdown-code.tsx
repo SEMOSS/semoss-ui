@@ -1,8 +1,26 @@
-import { Children, type ComponentProps, isValidElement } from "react";
+import {
+	Children,
+	type ComponentProps,
+	isValidElement,
+	useContext,
+} from "react";
+import { StreamingMarkdownContext } from "../streaming-markdown.context";
 import { MessageCodeBlock } from "./message-code-block";
 
-/** Adapt Markdown's fenced-code child into Collaboration's completed code UI. */
-export function MessageMarkdownCode({ children }: ComponentProps<"pre">) {
+/** Adapt both incomplete and complete fences without moving their DOM subtree. */
+export function MessageMarkdownCode({
+	children,
+	node,
+}: ComponentProps<"pre"> & {
+	node?: { position?: { start: { offset?: number } } };
+}) {
+	const fence = useContext(StreamingMarkdownContext);
+	const start = node?.position?.start.offset;
+	const isStreaming =
+		fence !== null &&
+		start !== undefined &&
+		start >= fence.before.length &&
+		start <= fence.before.length + 3;
 	let code = "";
 	let language: string | undefined;
 
@@ -22,5 +40,11 @@ export function MessageMarkdownCode({ children }: ComponentProps<"pre">) {
 		}
 	});
 
-	return <MessageCodeBlock code={code} language={language} />;
+	return (
+		<MessageCodeBlock
+			code={isStreaming ? fence.code : code}
+			language={language}
+			isStreaming={isStreaming}
+		/>
+	);
 }

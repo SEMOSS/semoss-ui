@@ -47,6 +47,8 @@ export function RoomPage() {
 	const [history, setHistory] = useState<ConversationMessage[]>([]);
 	const [isLoadingHistory, setIsLoadingHistory] = useState(true);
 	const [historyError, setHistoryError] = useState<Error | null>(null);
+	const [isSettingsSaving, setIsSettingsSaving] = useState(false);
+	const configurationSavingRef = useRef(false);
 	const reconcileRef = useRef<(messages: ValidatedRoomMessage[]) => void>(
 		() => undefined,
 	);
@@ -118,13 +120,22 @@ export function RoomPage() {
 	}, [roomId, turn.phase, updateRoom]);
 
 	const handleSend = useCallback(
-		(submission: ComposerSubmission) => turn.send(submission),
-		[turn.send],
+		async (submission: ComposerSubmission) => {
+			if (configurationSavingRef.current || modelSelection.isSaving)
+				throw new Error("Wait for room settings to finish saving.");
+			await turn.send(submission);
+		},
+		[modelSelection.isSaving, turn.send],
 	);
 
 	const handleModelChange = useCallback(
 		async (engine: Engine) => {
-			if (turn.isRunning) return;
+			if (
+				turn.isRunning ||
+				turn.isSubmitting ||
+				configurationSavingRef.current
+			)
+				return;
 			try {
 				await modelSelection.selectModel(engine);
 				if (roomId) updateRoom(roomId, { modelId: engine.engine_id });
@@ -134,7 +145,13 @@ export function RoomPage() {
 				);
 			}
 		},
-		[modelSelection.selectModel, roomId, turn.isRunning, updateRoom],
+		[
+			modelSelection.selectModel,
+			roomId,
+			turn.isRunning,
+			turn.isSubmitting,
+			updateRoom,
+		],
 	);
 
 	const handleSaveRoomSettings = useCallback(
@@ -142,15 +159,45 @@ export function RoomPage() {
 			if (!room) {
 				throw new Error("Room settings are still loading.");
 			}
-			const roomDerivedMcp = room.options.mcp.filter(
-				(resource) => resource.fromRoom,
-			);
-			await room.updateOptions({
-				instructions: settings.instructions,
-				mcp: [...roomDerivedMcp, ...settings.mcp],
-			});
+			if (
+				turn.isRunning ||
+				turn.isSubmitting ||
+				modelSelection.isSaving ||
+				configurationSavingRef.current
+			) {
+				throw new Error(
+					"Wait for the active run or settings update to finish.",
+				);
+			}
+			configurationSavingRef.current = true;
+			setIsSettingsSaving(true);
+			try {
+				await room.updateOptions({
+					...settings,
+					modelId: settings.modelId ?? room.options.modelId,
+					mcp: [
+						...room.options.mcp.filter(
+							(resource) =>
+								resource.fromRoom || resource.fromWorkspace,
+						),
+						...settings.mcp,
+					],
+				});
+				if (roomId && settings.modelId)
+					updateRoom(roomId, { modelId: settings.modelId });
+			} finally {
+				configurationSavingRef.current = false;
+				setIsSettingsSaving(false);
+			}
 		},
-		[room],
+		[
+			modelSelection.isSaving,
+			room,
+			roomId,
+			turn.isRunning,
+			turn.isSubmitting,
+			updateRoom,
+		],
 	);
 
 	const handleOptimizePrompt = useCallback(
@@ -251,12 +298,14 @@ export function RoomPage() {
 			phase={turn.phase}
 			modelId={modelId}
 			modelName={modelName}
-			isModelSaving={modelSelection.isSaving || !room}
+			isModelSaving={modelSelection.isSaving || isSettingsSaving || !room}
 			modelError={modelLookup.error}
 			roomInstructions={
 				room?.options.instructions || agent.system_prompt || ""
 			}
 			roomSettings={{
+				modelId,
+				temperature: room?.options.temperature,
 				instructions: room?.options.instructions ?? "",
 				mcp: room?.options.mcp ?? [],
 			}}

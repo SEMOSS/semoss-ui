@@ -48,7 +48,7 @@ export function RoomHeader({
 
 			{agentId.length > 0 && (
 				<Tooltip>
-					<TooltipTrigger>
+					<TooltipTrigger asChild>
 						<Button
 							type="button"
 							variant="ghost"
@@ -56,7 +56,7 @@ export function RoomHeader({
 							aria-label={`Configure ${agent.name}`}
 							onClick={() => onConfigure(agentId)}
 						>
-							<Settings2 />
+							<Settings2 aria-hidden="true" />
 						</Button>
 					</TooltipTrigger>
 					<TooltipContent>{`Configure ${agent.name}`}</TooltipContent>

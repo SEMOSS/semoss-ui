@@ -1,4 +1,4 @@
-import { useRef } from "react";
+import { useState } from "react";
 import {
 	cn,
 	ResizableHandle,
@@ -8,7 +8,7 @@ import {
 import { ToolWorkbench } from "@/features/tools/components/tool-workbench";
 import { useToolWorkbench } from "@/features/tools/tool-workbench.context";
 import type { Session } from "@/types/session";
-import type { RoomViewProps } from "../types/room";
+import type { ComposerSubmission, RoomViewProps } from "../types/room";
 import { RoomComposer } from "./room-composer";
 import { RoomHeader } from "./room-header";
 import { RoomRunStatus } from "./room-run-status";
@@ -76,6 +76,7 @@ export function RoomWorkspace({
 	onOptimizePrompt,
 	onCancelTurn,
 	onConfigure,
+	onReconnect,
 }: RoomWorkspaceProps) {
 	const {
 		isOpen: isToolWorkbenchOpen,
@@ -83,7 +84,7 @@ export function RoomWorkspace({
 		openWorkbench,
 		closeWorkbench,
 	} = useToolWorkbench();
-	const threadBottom = useRef<HTMLDivElement>(null);
+	const [resumeSignal, setResumeSignal] = useState(0);
 
 	function toggleToolWorkbench() {
 		if (isToolWorkbenchOpen) {
@@ -93,13 +94,9 @@ export function RoomWorkspace({
 		openWorkbench(activeToolId ?? undefined);
 	}
 
-	function scrollToLatest() {
-		requestAnimationFrame(() =>
-			threadBottom.current?.scrollIntoView({
-				block: "end",
-				behavior: "smooth",
-			}),
-		);
+	function handleSend(submission: ComposerSubmission): Promise<void> {
+		setResumeSignal((value) => value + 1);
+		return onSendMessage(submission);
 	}
 
 	return (
@@ -139,20 +136,25 @@ export function RoomWorkspace({
 						agent={agent}
 						thread={thread}
 						isLoadingHistory={isLoadingHistory}
-						bottomRef={threadBottom}
+						roomId={session.id}
+						resumeSignal={resumeSignal}
+						phase={phase}
+						hasObservationIssue={!!transportError}
 					/>
 					<RoomRunStatus
 						agent={agent}
 						turnError={turnError}
 						transportError={transportError}
 						pendingApprovals={pendingApprovals}
-						phase={phase}
+						onReconnect={onReconnect}
 					/>
-					<div className="shrink-0 border-t bg-background px-5 py-4 lg:px-7">
+					<div className="shrink-0 bg-background px-4 pt-2 pb-4 sm:px-5 lg:px-7">
 						<RoomComposer
 							key={session.id}
-							className="mx-auto w-full max-w-5xl"
+							className="mx-auto w-full max-w-3xl"
 							agentName={agent.name}
+							agent={agent}
+							onConfigureAgent={() => onConfigure(agentId)}
 							isSubmitting={isSending}
 							isRunning={isRunning}
 							isCancelling={isCancelling}
@@ -168,9 +170,8 @@ export function RoomWorkspace({
 							onModelChange={onModelChange}
 							onSaveRoomSettings={onSaveRoomSettings}
 							onOptimizePrompt={onOptimizePrompt}
-							onSend={onSendMessage}
+							onSend={handleSend}
 							onStop={onCancelTurn}
-							onSent={scrollToLatest}
 						/>
 					</div>
 				</section>

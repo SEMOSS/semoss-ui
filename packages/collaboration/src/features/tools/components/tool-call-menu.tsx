@@ -4,19 +4,30 @@ import {
 	DropdownMenu,
 	DropdownMenuContent,
 	DropdownMenuItem,
+	DropdownMenuLabel,
 	DropdownMenuSeparator,
 	DropdownMenuTrigger,
 } from "@semoss/ui/next";
+import { formatMessageTime } from "@/features/messages/utils/message-metadata";
 import { useToolWorkbench } from "../tool-workbench.context";
 
 /** Explicit location actions for a tool message card. */
-export function ToolCallMenu({ toolId }: { toolId: string }) {
+export function ToolCallMenu({
+	toolId,
+	createdAt,
+	onOpenChange,
+}: {
+	toolId: string;
+	createdAt?: string;
+	onOpenChange?: (isOpen: boolean) => void;
+}) {
 	const { getToolDisplayMode, openInline, openWorkbench, closeTool } =
 		useToolWorkbench();
 	const displayMode = getToolDisplayMode(toolId);
+	const time = formatMessageTime(createdAt, true);
 
 	return (
-		<DropdownMenu>
+		<DropdownMenu onOpenChange={onOpenChange}>
 			<DropdownMenuTrigger asChild>
 				<Button
 					type="button"
@@ -30,6 +41,11 @@ export function ToolCallMenu({ toolId }: { toolId: string }) {
 				</Button>
 			</DropdownMenuTrigger>
 			<DropdownMenuContent align="end">
+				{time && (
+					<DropdownMenuLabel className="font-normal text-muted-foreground text-xs">
+						<time dateTime={createdAt}>{time}</time>
+					</DropdownMenuLabel>
+				)}
 				<DropdownMenuItem onSelect={() => openInline(toolId)}>
 					<PanelBottom aria-hidden="true" />
 					Open inline

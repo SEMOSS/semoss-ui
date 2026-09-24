@@ -17,6 +17,10 @@ export interface ComposerSubmission {
 export interface RoomSettings {
 	instructions: string;
 	mcp: MCPConfig[];
+	/** An omitted value preserves the currently selected model. */
+	modelId?: string;
+	/** Null explicitly restores the backend default. */
+	temperature?: number | null;
 }
 
 /** A tool awaiting a human decision, with durable harness identity when available. */
@@ -25,6 +29,9 @@ export interface PendingToolApproval {
 	runId?: string;
 	roomId?: string;
 	requiresResponse?: boolean;
+	ownerName?: string;
+	task?: string;
+	isDeciding?: boolean;
 	toolId: string;
 	parentMessageId: string;
 	toolName: string;

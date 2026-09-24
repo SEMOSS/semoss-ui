@@ -1,4 +1,5 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { useId } from "react";
 import { FILE_PANEL_TYPES } from "@semoss/panels";
 import type { ConversationTool } from "@/features/messages/types/message";
 import type { PendingToolApproval } from "@/features/rooms/types/room";
@@ -56,6 +57,25 @@ function Harness() {
 	);
 }
 
+function RunFocusHarness() {
+	const { isOpen, openRun, closeWorkbench } = useToolWorkbench();
+	const runId = useId();
+	return isOpen ? (
+		<button key="back" type="button" onClick={closeWorkbench}>
+			Back to conversation
+		</button>
+	) : (
+		<button
+			key="run"
+			id={`run-${runId}`}
+			type="button"
+			onClick={() => openRun(runId)}
+		>
+			Inspect child
+		</button>
+	);
+}
+
 function renderProvider(
 	pendingApprovals: PendingToolApproval[] = [],
 	callbacks: {
@@ -95,6 +115,33 @@ describe("ToolWorkbenchProvider", () => {
 				dispatchEvent: vi.fn(),
 			})),
 		});
+	});
+
+	it("returns focus to a remounted run card after closing the mobile inspector", async () => {
+		render(
+			<ToolWorkbenchProvider
+				roomId="room-1"
+				insightId="insight-1"
+				tools={{}}
+				pendingApprovals={[]}
+				onApproveTool={vi.fn()}
+				onRejectTool={vi.fn()}
+			>
+				<RunFocusHarness />
+			</ToolWorkbenchProvider>,
+		);
+		fireEvent.click(screen.getByRole("button", { name: "Inspect child" }));
+		expect(
+			screen.queryByRole("button", { name: "Inspect child" }),
+		).not.toBeInTheDocument();
+		fireEvent.click(
+			screen.getByRole("button", { name: "Back to conversation" }),
+		);
+		await waitFor(() =>
+			expect(
+				screen.getByRole("button", { name: "Inspect child" }),
+			).toHaveFocus(),
+		);
 	});
 
 	it("keeps the selected panel when the workbench shell mounts", async () => {
@@ -227,19 +274,25 @@ describe("ToolWorkbenchProvider", () => {
 			actionId: "action-1",
 			runId: "child-1",
 			requiresResponse: true,
-			arguments: { question: "Which report should I use?" },
+			arguments: {
+				questions: [
+					{
+						id: "answer",
+						question: "Which report should I use?",
+						type: "text",
+					},
+				],
+			},
 		};
 		renderProvider([approval], { onApproveTool });
-		const editor = await screen.findByRole("textbox", {
-			name: "Your response",
-		});
+		const editor = await screen.findByRole("textbox");
 		expect(
 			screen.getByText(/Which report should I use/),
 		).toBeInTheDocument();
 		fireEvent.change(editor, {
-			target: { value: '{"answer":"Quarterly report"}' },
+			target: { value: "Quarterly report" },
 		});
-		fireEvent.click(screen.getByRole("button", { name: "Send response" }));
+		fireEvent.click(screen.getByRole("button", { name: "Submit answers" }));
 		await waitFor(() =>
 			expect(onApproveTool).toHaveBeenCalledWith(approval, {
 				answer: "Quarterly report",

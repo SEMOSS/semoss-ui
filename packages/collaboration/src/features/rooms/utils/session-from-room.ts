@@ -7,6 +7,7 @@ export function sessionStatusFromPhase(
 		| "streaming"
 		| "executing_tools"
 		| "awaiting_approval"
+		| "cancelled"
 		| "cancelling"
 		| "completed"
 		| "failed"
@@ -20,6 +21,7 @@ export function sessionStatusFromPhase(
 		case "executing_tools":
 		case "cancelling":
 			return "In progress";
+		case "cancelled":
 		case "failed":
 			return "Stopped";
 		default:

@@ -1,4 +1,5 @@
 import type { PendingToolApproval } from "@/features/rooms/types/room";
+import { resolveToolUiUrl } from "@/features/tools/utils/tool-metadata";
 import {
 	delegationReplySchema,
 	delegationRequestSchema,
@@ -86,8 +87,8 @@ function persistedPartToConversationPart(
 						part.toolCall.name,
 					description: part.toolCall.description ?? undefined,
 					arguments:
-						part.toolCall.arguments ??
 						result?.toolParameterValues ??
+						part.toolCall.arguments ??
 						{},
 					metadata: part.toolCall._meta ?? undefined,
 					serverTool: part.toolCall.server_tool ?? undefined,
@@ -237,6 +238,7 @@ export function mergeToolStates(
 		parts: message.parts.map((part) =>
 			part.type === "tool" && states[part.tool.id]
 				? {
+						...part,
 						type: "tool" as const,
 						tool: { ...part.tool, ...states[part.tool.id] },
 					}
@@ -282,6 +284,7 @@ export function toolsFromMessages(
 			if (part.type === "tool") {
 				tools[part.tool.id] = {
 					...part.tool,
+					uiUrl: part.tool.uiUrl ?? resolveToolUiUrl(part.tool),
 					...states[part.tool.id],
 				};
 			}

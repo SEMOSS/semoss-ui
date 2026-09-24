@@ -4,7 +4,9 @@ import {
 	AlertDescription,
 	Button,
 	Form,
+	FormField,
 	FormTextarea,
+	Muted,
 	Spinner,
 	Tabs,
 	TabsContent,
@@ -16,7 +18,13 @@ import {
 } from "@semoss/ui/next";
 import type { ConversationTool } from "@/features/messages/types/message";
 import type { PendingToolApproval } from "@/features/rooms/types/room";
+import {
+	supportsToolFields,
+	useToolDefinition,
+	validateToolArguments,
+} from "../api/use-tool-definition";
 import { useToolWorkbench } from "../tool-workbench.context";
+import { ToolArgumentField } from "./tool-argument-field";
 import { ToolUiFrame } from "./tool-ui-frame";
 
 function parseArguments(value: string): Record<string, unknown> | null {
@@ -48,6 +56,8 @@ interface ToolApprovalPanelProps {
 /** Review, optionally edit, and resolve one paused playground tool call. */
 export function ToolApprovalPanel({ tool, action }: ToolApprovalPanelProps) {
 	const { onApproveTool, onRejectTool, closeTool } = useToolWorkbench();
+	const definition = useToolDefinition(tool);
+	const [isJsonEditor, setIsJsonEditor] = useState(false);
 	const form = useForm<ApprovalValues>({
 		resolver: zodResolver(approvalSchema),
 		defaultValues: {
@@ -62,9 +72,16 @@ export function ToolApprovalPanel({ tool, action }: ToolApprovalPanelProps) {
 	});
 	const { errors, isSubmitting } = form.formState;
 	const [isRejecting, setIsRejecting] = useState(false);
-	const isUpdating = isSubmitting || isRejecting;
+	const isUpdating =
+		isSubmitting || isRejecting || action.isDeciding === true;
+	const parameters = parseArguments(form.watch("arguments"));
+	const hasFields =
+		!!definition.schema &&
+		parameters !== null &&
+		supportsToolFields(definition.schema, parameters);
 
 	const handleSubmit = async (values: ApprovalValues): Promise<void> => {
+		if (action.isDeciding || isRejecting) return;
 		const parameters = parseArguments(values.arguments);
 		if (!parameters) {
 			form.setError("arguments", {
@@ -74,6 +91,14 @@ export function ToolApprovalPanel({ tool, action }: ToolApprovalPanelProps) {
 			return;
 		}
 
+		const validationError =
+			definition.schema && hasFields
+				? validateToolArguments(definition.schema, parameters)
+				: null;
+		if (validationError) {
+			form.setError("arguments", { message: validationError });
+			return;
+		}
 		try {
 			await onApproveTool(action, parameters);
 			closeTool(tool.id);
@@ -147,28 +172,92 @@ export function ToolApprovalPanel({ tool, action }: ToolApprovalPanelProps) {
 					value="inputs"
 					className="min-h-0 overflow-auto p-3"
 				>
-					{action.requiresResponse && (
-						<pre className="mb-4 whitespace-pre-wrap break-words rounded-md bg-muted p-3 text-xs">
-							{JSON.stringify(action.arguments, null, 2)}
-						</pre>
+					{definition.error && (
+						<Muted className="mb-3 text-xs">
+							{definition.error}
+						</Muted>
 					)}
-					<FormTextarea
-						name="arguments"
-						label={
-							action.requiresResponse
-								? "Your response"
-								: "Tool arguments"
-						}
-						description={
-							action.requiresResponse
-								? "Enter your answers as a JSON object to continue."
-								: "Edit the JSON object before approving, or leave it unchanged."
-						}
-						rows={14}
-						spellCheck={false}
-						disabled={isUpdating}
-						className="[&_[data-slot=field-description]]:text-xs [&_[data-slot=field-error]]:text-xs [&_[data-slot=field-label]]:text-xs [&_textarea]:font-mono [&_textarea]:text-xs"
-					/>
+					{definition.isLoading && (
+						<Muted className="mb-3 text-xs">
+							Loading tool fields… JSON arguments remain
+							available.
+						</Muted>
+					)}
+					{definition.description && (
+						<Muted className="mb-3 text-xs">
+							{definition.description}
+						</Muted>
+					)}
+					{hasFields && (
+						<Button
+							type="button"
+							variant="outline"
+							size="sm"
+							className="mb-3"
+							disabled={isUpdating}
+							onClick={() =>
+								setIsJsonEditor((current) => !current)
+							}
+						>
+							{isJsonEditor ? "Use form fields" : "Edit JSON"}
+						</Button>
+					)}
+					{hasFields && !isJsonEditor && definition.schema ? (
+						<FormField
+							control={form.control}
+							name="arguments"
+							render={({ field, fieldState }) => (
+								<div className="space-y-4">
+									{Object.entries(
+										definition.schema?.properties ?? {},
+									).map(([name, property]) => (
+										<ToolArgumentField
+											key={name}
+											name={name}
+											property={property}
+											value={parameters?.[name]}
+											required={
+												definition.schema?.required.includes(
+													name,
+												) ?? false
+											}
+											disabled={isUpdating}
+											onChange={(value) => {
+												const next = { ...parameters };
+												if (value === undefined)
+													delete next[name];
+												else next[name] = value;
+												field.onChange(
+													JSON.stringify(
+														next,
+														null,
+														2,
+													),
+												);
+											}}
+										/>
+									))}
+									{fieldState.error && (
+										<Alert variant="destructive">
+											<AlertDescription>
+												{fieldState.error.message}
+											</AlertDescription>
+										</Alert>
+									)}
+								</div>
+							)}
+						/>
+					) : (
+						<FormTextarea
+							name="arguments"
+							label="Tool arguments"
+							description="Review or edit the JSON object before approving."
+							rows={14}
+							spellCheck={false}
+							disabled={isUpdating}
+							className="[&_textarea]:font-mono [&_textarea]:text-xs"
+						/>
+					)}
 				</TabsContent>
 			</Tabs>
 

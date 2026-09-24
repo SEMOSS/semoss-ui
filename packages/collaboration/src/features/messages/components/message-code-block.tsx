@@ -1,5 +1,5 @@
 import { Check, Copy, Expand } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
 	Button,
 	Code,
@@ -31,6 +31,7 @@ export function MessageCodeBlock({
 	const normalized = normalizeCodeLanguage(language);
 	const [isExpanded, setIsExpanded] = useState(false);
 	const [hasCopied, setHasCopied] = useState(false);
+	const expandButton = useRef<HTMLButtonElement>(null);
 
 	useEffect(() => {
 		if (!hasCopied) return;
@@ -50,10 +51,10 @@ export function MessageCodeBlock({
 	return (
 		<>
 			<div
-				className="my-2 overflow-hidden rounded-md border bg-background"
+				className="group/code my-2 overflow-hidden rounded-xl border border-border/60 bg-background"
 				aria-busy={isStreaming}
 			>
-				<div className="flex min-h-8 items-center gap-2 border-b bg-muted px-2 py-1">
+				<div className="flex min-h-8 items-center gap-2 border-border/50 border-b bg-muted/30 px-3 py-1">
 					{isStreaming && (
 						<Spinner
 							aria-hidden="true"
@@ -65,44 +66,54 @@ export function MessageCodeBlock({
 							? `Generating ${normalized.label}…`
 							: normalized.label}
 					</span>
-					<Tooltip>
-						<TooltipTrigger asChild>
-							<Button
-								type="button"
-								variant="ghost"
-								size="icon-sm"
-								aria-label={
-									hasCopied ? "Code copied" : "Copy code"
-								}
-								disabled={isStreaming || !code}
-								onClick={handleCopy}
-							>
-								{hasCopied ? (
-									<Check aria-hidden="true" />
-								) : (
-									<Copy aria-hidden="true" />
-								)}
-							</Button>
-						</TooltipTrigger>
-						<TooltipContent>
-							{hasCopied ? "Copied" : "Copy code"}
-						</TooltipContent>
-					</Tooltip>
-					<Tooltip>
-						<TooltipTrigger asChild>
-							<Button
-								type="button"
-								variant="ghost"
-								size="icon-sm"
-								aria-label="Expand code"
-								disabled={isStreaming || !code}
-								onClick={() => setIsExpanded(true)}
-							>
-								<Expand aria-hidden="true" />
-							</Button>
-						</TooltipTrigger>
-						<TooltipContent>Expand code</TooltipContent>
-					</Tooltip>
+					<div
+						className="flex h-8 w-16 shrink-0 items-center opacity-0 transition-opacity duration-150 ease-out group-focus-within/code:opacity-100 group-focus-within/code:duration-0 group-hover/code:opacity-100 data-[active=true]:opacity-100 motion-reduce:transition-none [@media(hover:none)]:opacity-100 [@media(pointer:coarse)]:opacity-100"
+						data-active={isExpanded || hasCopied}
+					>
+						{!isStreaming && code && (
+							<>
+								<Tooltip disableHoverableContent={false}>
+									<TooltipTrigger asChild>
+										<Button
+											type="button"
+											variant="ghost"
+											size="icon-sm"
+											aria-label={
+												hasCopied
+													? "Code copied"
+													: "Copy code"
+											}
+											onClick={handleCopy}
+										>
+											{hasCopied ? (
+												<Check aria-hidden="true" />
+											) : (
+												<Copy aria-hidden="true" />
+											)}
+										</Button>
+									</TooltipTrigger>
+									<TooltipContent>
+										{hasCopied ? "Copied" : "Copy code"}
+									</TooltipContent>
+								</Tooltip>
+								<Tooltip disableHoverableContent={false}>
+									<TooltipTrigger asChild>
+										<Button
+											ref={expandButton}
+											type="button"
+											variant="ghost"
+											size="icon-sm"
+											aria-label="Expand code"
+											onClick={() => setIsExpanded(true)}
+										>
+											<Expand aria-hidden="true" />
+										</Button>
+									</TooltipTrigger>
+									<TooltipContent>Expand code</TooltipContent>
+								</Tooltip>
+							</>
+						)}
+					</div>
 				</div>
 				<section
 					className="focus-visible:-outline-offset-2 max-h-96 overflow-auto bg-muted/30 p-3 focus-visible:outline-2 focus-visible:outline-ring"
@@ -125,7 +136,13 @@ export function MessageCodeBlock({
 			</div>
 
 			<Dialog open={isExpanded} onOpenChange={setIsExpanded}>
-				<DialogContent className="flex max-h-dvh flex-col overflow-hidden sm:max-w-5xl">
+				<DialogContent
+					className="flex max-h-dvh flex-col overflow-hidden sm:max-w-5xl"
+					onCloseAutoFocus={(event) => {
+						event.preventDefault();
+						expandButton.current?.focus({ preventScroll: true });
+					}}
+				>
 					<DialogHeader>
 						<DialogTitle>{normalized.label} code</DialogTitle>
 						<DialogDescription>
@@ -133,7 +150,7 @@ export function MessageCodeBlock({
 						</DialogDescription>
 					</DialogHeader>
 					<section
-						className="focus-visible:-outline-offset-2 min-h-0 flex-1 overflow-auto rounded-md border bg-muted/30 p-3 focus-visible:outline-2 focus-visible:outline-ring"
+						className="focus-visible:-outline-offset-2 min-h-0 flex-1 overflow-auto rounded-xl border border-border/60 bg-muted/20 p-3 focus-visible:outline-2 focus-visible:outline-ring"
 						aria-label={`Expanded ${normalized.label} code`}
 						// biome-ignore lint/a11y/noNoninteractiveTabindex: the expanded code scroller must be keyboard reachable
 						tabIndex={0}

@@ -80,6 +80,9 @@ export class AgentTurnController {
 	private archivedItems = new Set<string>();
 	private actions = new Map<string, AgentAction>();
 	private decidedActions = new Set<string>();
+	private uncertainActions = new Set<string>();
+	private historyRuns: AgentRun[] = [];
+	private historicalChildren = new Map<string, AgentRun>();
 	private decidingActions = new Set<string>();
 	private children = new Map<string, AgentRun>();
 	private durable: ConversationMessage[] = [];
@@ -147,6 +150,7 @@ export class AgentTurnController {
 				this.config.roomId,
 			);
 			if (this.disposed) return;
+			this.historyRuns = runs;
 			const active = [...runs]
 				.reverse()
 				.find((run) => !isTerminalRun(run));
@@ -165,6 +169,21 @@ export class AgentTurnController {
 				this.run = latest;
 				await this.reconcileRun();
 				await this.refreshChildren();
+				// Restore prior run relationships without consuming their event streams.
+				this.historicalChildren.clear();
+				for (const previous of runs) {
+					if (previous.runId === latest.runId) continue;
+					for (const child of await listChildRuns(
+						this.config.insightId,
+						previous.runId,
+					)) {
+						this.historicalChildren.set(child.runId, {
+							...child,
+							parentRunId: previous.runId,
+						});
+					}
+				}
+				this.render();
 			}
 			this.restored = true;
 			this.update({ isRestoring: false });
@@ -204,6 +223,11 @@ export class AgentTurnController {
 		this.actions.clear();
 		this.decidedActions.clear();
 		this.children.clear();
+		if (
+			this.run &&
+			!this.historyRuns.some((entry) => entry.runId === this.run?.runId)
+		)
+			this.historyRuns.push(this.run);
 		this.run = null;
 		this.lastReconcileKey = "";
 		this.lastChildrenRead = 0;
@@ -230,7 +254,7 @@ export class AgentTurnController {
 				this.optimistic = null;
 				this.update({
 					messages: this.previous,
-					phase: "completed",
+					phase: "cancelled",
 					isRunning: false,
 				});
 				return;
@@ -245,6 +269,7 @@ export class AgentTurnController {
 				maxReflections: config.maxReflections,
 			});
 			if (this.disposed) return;
+			this.run = { ...this.run, input: command };
 			this.observe();
 			if (this.cancelRequested) {
 				try {
@@ -291,7 +316,7 @@ export class AgentTurnController {
 					throw new Error(
 						"Received progress for a different conversation.",
 					);
-				this.run = result.run;
+				this.run = { ...this.run, ...result.run };
 				let received = 0;
 				for (const event of [...result.events].sort(
 					(a, b) => a.sequence - b.sequence,
@@ -413,6 +438,8 @@ export class AgentTurnController {
 						...entry,
 						item: {
 							...item,
+							arguments: saved.tool.arguments,
+							metadata: saved.tool.metadata ?? item.metadata,
 							status: saved.tool.status,
 							output: saved.tool.output,
 							error: saved.tool.error,
@@ -466,7 +493,11 @@ export class AgentTurnController {
 								false,
 							)
 						: child;
-				children.set(child.runId, full);
+				children.set(child.runId, {
+					...child,
+					...full,
+					parentRunId: parent,
+				});
 				pending.push(child.runId);
 			}
 		}
@@ -500,6 +531,17 @@ export class AgentTurnController {
 		}
 		const approvals = [...this.actions.values()].map((action) => ({
 			...runActionApproval(action),
+			ownerName:
+				action.runId === run.runId
+					? undefined
+					: this.children.get(action.runId)?.workspaceName ||
+						this.children.get(action.runId)?.executorLabel ||
+						"Child agent",
+			task:
+				action.runId === run.runId
+					? (run.input ?? undefined)
+					: (this.children.get(action.runId)?.input ?? undefined),
+			isDeciding: this.decidingActions.has(action.actionId),
 			roomId:
 				action.runId === run.runId
 					? run.roomId
@@ -512,7 +554,9 @@ export class AgentTurnController {
 				: finished
 					? run.status === "COMPLETED"
 						? "completed"
-						: "failed"
+						: run.status === "CANCELLED"
+							? "cancelled"
+							: "failed"
 					: run.status === "INPUT_REQUIRED"
 						? "awaiting_approval"
 						: terminal || run.progress?.activity === "tool"
@@ -550,25 +594,96 @@ export class AgentTurnController {
 			const part = runItemPart(entry);
 			return part ? [part] : [];
 		});
-		for (const child of this.children.values()) {
-			// Delegations show on their DelegateToPerson tool card instead.
-			if (child.executorType === "HUMAN") continue;
+		for (const action of this.actions.values()) {
+			const toolId = action.toolCallId || action.actionId;
+			if (
+				persistedTools.has(toolId) ||
+				parts.some(
+					(part) => part.type === "tool" && part.tool.id === toolId,
+				)
+			)
+				continue;
+			const approval = runActionApproval(action);
 			parts.push({
 				type: "tool",
 				tool: {
-					id: `subagent:${child.runId}`,
-					parentMessageId: "",
-					name: "Subagent",
-					title: child.workspaceName || "Subagent",
-					arguments: {},
-					status:
-						child.status === "SUBMITTED" ? "QUEUED" : child.status,
-					output: child.finalText ?? undefined,
-					error: child.errorMessage ?? undefined,
+					...runItemTool({
+						id: toolId,
+						kind: "tool",
+						name: approval.toolName,
+						arguments: approval.arguments,
+						metadata: approval.metadata,
+						status: "INPUT_REQUIRED",
+					}),
+					parentMessageId: approval.parentMessageId,
+					roomId:
+						action.runId === run.runId
+							? (run.roomId ?? undefined)
+							: (this.children.get(action.runId)?.roomId ??
+								undefined),
+				},
+			});
+		}
+		for (const child of this.children.values()) {
+			if (child.executorType === "HUMAN") continue;
+			const event = [...this.items.values()].find(
+				(entry) =>
+					entry.item.kind === "subagent" &&
+					entry.item.childRunId === child.runId,
+			)?.item;
+			parts.push({
+				type: "run",
+				renderKey: `run:${child.runId}`,
+				run: {
+					...child,
+					workspaceName:
+						child.workspaceName ||
+						(event?.kind === "subagent" ? event.alias : undefined),
 				},
 			});
 		}
 		const messages = [...this.previous, ...this.durable];
+		// The conversation already shows its own runs; only children need an inspector card.
+		for (const child of this.historicalChildren.values()) {
+			if (
+				child.executorType === "HUMAN" ||
+				this.children.has(child.runId)
+			)
+				continue;
+			const parent = this.historyRuns.find(
+				(entry) => entry.runId === child.parentRunId,
+			);
+			const parentIndex = messages.findIndex(
+				(message) =>
+					message.id === parent?.finalOutputMessageId ||
+					message.id === parent?.inputMessageId,
+			);
+			const card: ConversationMessage = {
+				id: `child-run:${child.runId}`,
+				role: "assistant",
+				parts: [
+					{
+						type: "run",
+						run: child,
+						renderKey: `run:${child.runId}`,
+					},
+				],
+			};
+			if (
+				!messages.some((message) =>
+					message.parts.some(
+						(part) =>
+							part.type === "run" &&
+							part.run.runId === child.runId,
+					),
+				)
+			)
+				messages.splice(
+					parentIndex >= 0 ? parentIndex + 1 : messages.length,
+					0,
+					card,
+				);
+		}
 		if (
 			this.optimistic &&
 			!this.durable.some((message) => message.role === "user")
@@ -661,9 +776,31 @@ export class AgentTurnController {
 			throw new Error(
 				"This approval is no longer pending. Reconnect to refresh the run.",
 			);
-		if (this.decidingActions.has(action.actionId)) return;
+		if (this.decidingActions.has(action.actionId))
+			throw new Error("This decision is already being saved.");
 		this.decidingActions.add(action.actionId);
+		this.render();
 		try {
+			if (this.uncertainActions.has(action.actionId)) {
+				const owner = await readRun(
+					this.config.insightId,
+					action.runId,
+					false,
+				);
+				if (
+					!owner.pendingActions.some(
+						(pending) => pending.actionId === action.actionId,
+					)
+				) {
+					this.decidedActions.add(action.actionId);
+					this.uncertainActions.delete(action.actionId);
+					this.lastChildrenRead = 0;
+					this.lastReconcileKey = "";
+					this.wake?.();
+					this.observe();
+					return;
+				}
+			}
 			await decideRunAction(
 				this.config.insightId,
 				action,
@@ -671,13 +808,18 @@ export class AgentTurnController {
 				parameters,
 			);
 			this.decidedActions.add(action.actionId);
+			this.uncertainActions.delete(action.actionId);
 			this.lastReconcileKey = "";
 			this.lastChildrenRead = 0;
 			this.render();
 			this.wake?.();
 			this.observe();
+		} catch (cause) {
+			this.uncertainActions.add(action.actionId);
+			throw cause;
 		} finally {
 			this.decidingActions.delete(action.actionId);
+			this.render();
 		}
 	}
 

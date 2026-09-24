@@ -47,6 +47,7 @@ import {
 	TooltipContent,
 	TooltipTrigger,
 } from "@semoss/ui/next";
+import type { AgentConfiguration } from "@/features/agents/types/agent";
 import type { ComposerSubmission, RoomSettings } from "../types/room";
 import { RoomComposerEnterPlugin } from "./room-composer-enter-plugin";
 import { RoomComposerFiles } from "./room-composer-files";
@@ -66,6 +67,8 @@ interface RoomComposerProps {
 	inputClassName?: string;
 	/** Name used to label the message input and send action. */
 	agentName: string;
+	agent?: AgentConfiguration;
+	onConfigureAgent?: () => void;
 	/** Whether a message submission is in progress. */
 	isSubmitting: boolean;
 	/** Whether the agent is currently producing a response. */
@@ -90,6 +93,8 @@ interface RoomComposerProps {
 	roomInstructions: string;
 	/** Room-authored settings currently applied to this conversation. */
 	roomSettings: RoomSettings;
+	/** Settings overlay style; existing room consumers retain the dialog. */
+	settingsPresentation?: "dialog" | "drawer";
 	/** Agent resources that remain active but cannot be removed from the room. */
 	inheritedMcp: MCPConfig[];
 	/** Whether opening room settings is temporarily unavailable. */
@@ -160,6 +165,8 @@ export function RoomComposer({
 	className,
 	inputClassName,
 	agentName,
+	agent,
+	onConfigureAgent,
 	isSubmitting,
 	isRunning,
 	isCancelling,
@@ -172,6 +179,7 @@ export function RoomComposer({
 	modelError,
 	roomInstructions,
 	roomSettings,
+	settingsPresentation = "dialog",
 	inheritedMcp,
 	isSettingsDisabled = false,
 	onModelChange,
@@ -575,9 +583,9 @@ export function RoomComposer({
 						</Popover>
 						<div className="flex min-w-0 flex-1 items-center gap-2">
 							{children}
-							<div className="ms-auto flex min-w-0 flex-1 items-center justify-end gap-1 sm:max-w-72 sm:gap-2">
+							<div className="ms-auto flex min-w-0 flex-1 flex-wrap items-center justify-end gap-1 sm:flex-nowrap sm:gap-2">
 								{showModelSelector && (
-									<div className="min-w-0 flex-1 sm:max-w-52">
+									<div className="min-w-24 flex-1 sm:max-w-52">
 										<EngineSelect
 											className="h-8 w-full gap-0.5 border-none bg-transparent px-2 py-1 text-xs shadow-none hover:bg-accent dark:hover:bg-accent/50"
 											name={modelName}
@@ -597,7 +605,7 @@ export function RoomComposer({
 												void onModelChange(engine)
 											}
 											popoverContentProps={{
-												align: "end",
+												align: "start",
 											}}
 										/>
 									</div>
@@ -747,7 +755,14 @@ export function RoomComposer({
 			</fieldset>
 			<RoomSettingsDialog
 				open={isSettingsOpen}
+				presentation={settingsPresentation}
 				agentName={agentName}
+				agent={agent}
+				modelId={modelId}
+				modelName={modelName}
+				isModelLocked={isModelLocked}
+				isReadOnly={isRunning || isSubmitting || isSettingsDisabled}
+				onConfigure={onConfigureAgent}
 				settings={roomSettings}
 				inheritedMcp={inheritedMcp}
 				returnFocusRef={actionsTriggerRef}

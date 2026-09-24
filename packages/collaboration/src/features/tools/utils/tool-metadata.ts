@@ -42,12 +42,20 @@ export function getToolLoadingMessage(tool: ConversationTool): string {
 }
 
 /** Resolve a declared MCP UI resource, falling back to the JSON tool view. */
-export function resolveToolUiUrl(tool: ConversationTool): string | undefined {
+export function resolveToolUiUrl(
+	tool: ConversationTool,
+	isBlocks = false,
+): string | undefined {
 	const resource = uiMetadata(tool)?.resourceURI;
 	if (typeof resource !== "string" || !resource) return undefined;
 
 	const system = SYSTEM_APP_URI.exec(resource);
 	if (system) return `../../${system[1]}/dist${system[2] ?? "/"}`;
+	if (
+		resource.startsWith("system://") ||
+		(/^[a-z][a-z0-9+.-]*:/i.test(resource) && !/^https?:/i.test(resource))
+	)
+		return undefined;
 	if (/^https?:\/\//.test(resource)) return resource;
 
 	const engineId = tool.metadata?.SMSS_ENGINE_ID;
@@ -61,5 +69,7 @@ export function resolveToolUiUrl(tool: ConversationTool): string | undefined {
 	if (!ownerId || ownerId === ROOM_MCP_ID) return undefined;
 
 	const path = resource.startsWith("/") ? resource : `/${resource}`;
+	if (isBlocks)
+		return `${import.meta.env.VITE_PLATFORM_URL || "../../client/dist"}/#/s/${ownerId}${path}`;
 	return `${Env.MODULE}/public_home/${ownerId}/portals${path}`;
 }

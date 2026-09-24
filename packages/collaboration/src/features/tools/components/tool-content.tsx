@@ -12,11 +12,14 @@ import {
 	TabsTrigger,
 	Textarea,
 } from "@semoss/ui/next";
+import { formatMessageTime } from "@/features/messages/utils/message-metadata";
 import { pendingActionToolId } from "@/features/messages/utils/thread-items";
+import { useToolUiUrl } from "../api/use-tool-ui-url";
 import { useToolWorkbench } from "../tool-workbench.context";
 import { getToolLoadingMessage } from "../utils/tool-metadata";
 import { ToolApprovalPanel } from "./tool-approval-panel";
 import { ToolUiFrame } from "./tool-ui-frame";
+import { ToolUserInput } from "./tool-user-input";
 
 function formatValue(value: unknown): string {
 	if (value === undefined || value === null || value === "") return "";
@@ -42,8 +45,12 @@ function badgeVariant(status: string): "outline" | "destructive" | "secondary" {
 
 /** Shared live tool details used by both inline and workbench locations. */
 export function ToolContent({ toolId }: { toolId: string }) {
-	const { tools, pendingApprovals } = useToolWorkbench();
-	const tool = tools[toolId];
+	const { tools, pendingApprovals, toolCreatedAt } = useToolWorkbench();
+	const createdAt = toolCreatedAt?.[toolId];
+	const timestamp = formatMessageTime(createdAt, true);
+	const storedTool = tools[toolId];
+	const uiUrl = useToolUiUrl(storedTool);
+	const tool = storedTool ? { ...storedTool, uiUrl } : undefined;
 	const pendingAction = pendingApprovals.find(
 		(action) => pendingActionToolId(action) === toolId,
 	);
@@ -80,6 +87,14 @@ export function ToolContent({ toolId }: { toolId: string }) {
 			<header className="flex flex-wrap items-start justify-between gap-2 border-b p-3">
 				<div className="min-w-0">
 					<H4 className="break-words text-sm">{tool.title}</H4>
+					{timestamp && (
+						<time
+							dateTime={createdAt}
+							className="mt-1 block text-muted-foreground text-xs"
+						>
+							{timestamp}
+						</time>
+					)}
 					{tool.description && (
 						<P className="mt-1 text-muted-foreground text-xs">
 							{tool.description}
@@ -91,11 +106,16 @@ export function ToolContent({ toolId }: { toolId: string }) {
 				</Badge>
 			</header>
 
-			{pendingAction ? (
-				<ToolApprovalPanel
-					key={pendingAction.toolId}
-					tool={tool}
+			{pendingAction?.requiresResponse ? (
+				<ToolUserInput
+					key={pendingAction.actionId ?? pendingAction.toolId}
 					action={pendingAction}
+				/>
+			) : pendingAction ? (
+				<ToolApprovalPanel
+					key={pendingAction.actionId ?? pendingAction.toolId}
+					tool={tool}
+					action={{ ...pendingAction, uiUrl }}
 				/>
 			) : (
 				<Tabs

@@ -1,6 +1,8 @@
 import { FILE_PANEL_TYPES } from "@semoss/panels";
 import type { WorkbenchLayout } from "@semoss/workbench";
 
+export const RUN_PANEL_TYPE = "collaboration-run";
+
 export const TOOL_PANEL_TYPE = "collaboration-tool";
 
 /** Stable focus target when a docked tool moves back into the transcript. */

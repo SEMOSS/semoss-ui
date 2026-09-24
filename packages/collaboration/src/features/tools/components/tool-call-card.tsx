@@ -1,12 +1,20 @@
 import {
 	Check,
 	ChevronDown,
-	ChevronRight,
 	CircleX,
-	Hammer,
 	Hourglass,
+	PanelRightOpen,
 } from "lucide-react";
-import { cn, Spinner, useIsMobile } from "@semoss/ui/next";
+import { useId, useState } from "react";
+import {
+	Button,
+	Collapsible,
+	CollapsibleContent,
+	cn,
+	Muted,
+	Spinner,
+	useIsMobile,
+} from "@semoss/ui/next";
 import { asString } from "@semoss/utility";
 import {
 	DelegationRequestApproval,
@@ -26,6 +34,7 @@ import {
 	getToolLoadingMessage,
 } from "../utils/tool-metadata";
 import { ToolCallMenu } from "./tool-call-menu";
+import { ToolFailureTooltip } from "./tool-failure-tooltip";
 import { ToolInline } from "./tool-inline";
 
 function statusDetails(status: ConversationTool["status"]) {
@@ -34,28 +43,33 @@ function statusDetails(status: ConversationTool["status"]) {
 			return {
 				icon: Check,
 				label: "Completed",
-				iconClassName: "bg-primary/10 text-primary",
+				iconClassName: "text-muted-foreground",
 			};
 		case "FAILED":
+			return {
+				icon: CircleX,
+				label: "Failed",
+				iconClassName: "text-destructive",
+			};
 		case "REJECTED":
 		case "CANCELLED":
 			return {
 				icon: CircleX,
-				label: status.toLowerCase(),
-				iconClassName: "bg-muted text-muted-foreground",
+				label: status === "REJECTED" ? "Rejected" : "Cancelled",
+				iconClassName: "text-muted-foreground",
 			};
 		case "INPUT_REQUIRED":
 			return {
 				icon: Hourglass,
 				label: "Waiting for approval",
-				iconClassName: "bg-warning/10 text-warning",
+				iconClassName: "text-warning",
 			};
 		case "RUNNING":
 		case "QUEUED":
 			return {
 				icon: null,
 				label: status === "RUNNING" ? "Running" : "Queued",
-				iconClassName: "bg-muted text-muted-foreground",
+				iconClassName: "text-muted-foreground",
 			};
 	}
 }
@@ -83,7 +97,20 @@ function resultField(
 }
 
 /** Playground-style tool card with one movable inline/workbench detail view. */
-export function ToolCallCard({ tool }: { tool: ConversationTool }) {
+export function ToolCallCard({
+	tool,
+	createdAt,
+	onMenuOpenChange,
+}: {
+	tool: ConversationTool;
+	/** Timestamp of the source message, including folded continuations. */
+	createdAt?: string;
+	/** Keep contextual controls mounted and visible while their portal is open. */
+	onMenuOpenChange?: (isOpen: boolean) => void;
+}) {
+	const [isMenuOpen, setIsMenuOpen] = useState(false);
+	const detailId = useId();
+	const statusId = useId();
 	const isMobile = useIsMobile();
 	const {
 		openInline,
@@ -96,9 +123,13 @@ export function ToolCallCard({ tool }: { tool: ConversationTool }) {
 	} = useToolWorkbench();
 	const isSubmit = isDelegationSubmit(tool);
 	const isRequest = isDelegationRequest(tool);
+	const pendingApproval = pendingApprovals.find(
+		(item) => item.toolId === tool.id,
+	);
 	const statusLabel =
 		tool.statusLabel ??
-		(isSubmit || isRequest ? SUBMIT_LABELS[tool.status] : undefined);
+		(isSubmit || isRequest ? SUBMIT_LABELS[tool.status] : undefined) ??
+		(pendingApproval?.requiresResponse ? "Needs your input" : undefined);
 	const details = {
 		...statusDetails(tool.status),
 		...(statusLabel && { label: statusLabel }),
@@ -127,72 +158,101 @@ export function ToolCallCard({ tool }: { tool: ConversationTool }) {
 	const isInWorkbench = isOpen && activeToolId === tool.id;
 	const isActive = isInline || isInWorkbench;
 	const displayLocation = getToolDisplayLocation(tool);
-	if (displayLocation === "hidden") return null;
+	const opensInline =
+		isInline ||
+		isMobile ||
+		displayLocation === "inline" ||
+		displayLocation === "hidden";
+	if (
+		displayLocation === "hidden" &&
+		!pendingApprovals.some((action) => action.toolId === tool.id)
+	)
+		return null;
+
+	const status =
+		isSubmit || isRequest
+			? (tool.statusLabel ?? outcome ?? details.label)
+			: tool.status === "RUNNING"
+				? getToolLoadingMessage(tool)
+				: details.label;
 
 	return (
-		<div
+		<Collapsible
+			open={isInline}
+			data-tool-id={tool.id}
 			className={cn(
-				"overflow-hidden rounded-lg border bg-sidebar transition-colors",
-				isActive && "border-primary",
+				"group/tool min-w-0 rounded-xl border border-border/60 bg-muted/20 transition-colors duration-150 motion-reduce:transition-none",
+				isActive && "border-primary/50 bg-background",
 			)}
 		>
-			<div className="flex items-center gap-1 p-1">
-				<button
-					id={toolCardTriggerId(tool.id)}
-					type="button"
-					className="flex min-w-0 flex-1 items-center gap-2 rounded-md p-1 text-start hover:bg-accent"
-					onClick={() => {
-						if (isInline) closeTool(tool.id);
-						else if (isMobile || displayLocation === "inline")
-							openInline(tool.id);
-						else openWorkbench(tool.id);
-					}}
-					aria-expanded={isInline}
-					aria-label={`${title} details`}
-				>
-					<span
-						className={cn(
-							"flex size-8 shrink-0 items-center justify-center rounded-sm",
-							details.iconClassName,
-						)}
+			<div className="flex min-h-10 items-center gap-1 pe-1">
+				<ToolFailureTooltip tools={[tool]}>
+					<Button
+						id={toolCardTriggerId(tool.id)}
+						data-preserve-reading-position
+						type="button"
+						variant="ghost"
+						className="h-auto min-h-10 min-w-0 flex-1 justify-start gap-2 whitespace-normal rounded-xl px-3 py-2 text-start"
+						onClick={() => {
+							if (isInline) closeTool(tool.id);
+							else if (opensInline) openInline(tool.id);
+							else openWorkbench(tool.id);
+						}}
+						aria-expanded={opensInline ? isInline : undefined}
+						aria-controls={isInline ? detailId : undefined}
+						aria-label={`${title} details${opensInline ? "" : " in workbench"}${tool.status === "FAILED" ? " — failed" : ""}`}
+						{...(tool.status !== "FAILED"
+							? { "aria-describedby": statusId }
+							: {})}
 					>
-						{Icon ? (
-							<Icon aria-hidden="true" className="size-4" />
-						) : tool.status === "RUNNING" ||
-							tool.status === "QUEUED" ? (
-							<Spinner
+						<span
+							className={cn(
+								"flex size-4 shrink-0 items-center justify-center",
+								details.iconClassName,
+							)}
+						>
+							{Icon ? (
+								<Icon aria-hidden="true" className="size-4" />
+							) : (
+								<Spinner
+									aria-hidden="true"
+									className="size-4 motion-reduce:animate-none"
+								/>
+							)}
+						</span>
+						<span className="flex min-w-0 flex-1 flex-wrap items-baseline gap-x-2 gap-y-1">
+							<Muted className="wrap-anywhere font-medium text-foreground text-sm">
+								{title}
+							</Muted>
+							<Muted
+								id={statusId}
+								className={cn(
+									"wrap-anywhere text-xs",
+									tool.status === "FAILED" &&
+										"text-destructive",
+									tool.status === "INPUT_REQUIRED" &&
+										"text-warning",
+								)}
+							>
+								{status}
+							</Muted>
+						</span>
+						{opensInline ? (
+							<ChevronDown
 								aria-hidden="true"
-								className="size-4 motion-reduce:animate-none"
+								className={cn(
+									"size-4 shrink-0 text-muted-foreground transition-transform duration-200 motion-reduce:transition-none",
+									isInline && "rotate-180",
+								)}
 							/>
 						) : (
-							<Hammer aria-hidden="true" className="size-4" />
+							<PanelRightOpen
+								aria-hidden="true"
+								className="size-4 shrink-0 text-muted-foreground"
+							/>
 						)}
-					</span>
-					<span className="min-w-0 flex-1">
-						<span className="block truncate font-medium text-xs">
-							{title}
-						</span>
-						<span className="block truncate text-muted-foreground text-xs">
-							{isSubmit || isRequest
-								? (tool.statusLabel ?? outcome ?? details.label)
-								: (tool.description ??
-									(tool.status === "RUNNING"
-										? getToolLoadingMessage(tool)
-										: details.label))}
-						</span>
-					</span>
-					{isInline ? (
-						<ChevronDown
-							aria-hidden="true"
-							className="size-4 shrink-0 text-muted-foreground"
-						/>
-					) : (
-						<ChevronRight
-							aria-hidden="true"
-							className="size-4 shrink-0 text-muted-foreground"
-						/>
-					)}
-				</button>
+					</Button>
+				</ToolFailureTooltip>
 				{waitingRunId && (
 					<WithdrawDelegation
 						runId={waitingRunId}
@@ -201,16 +261,32 @@ export function ToolCallCard({ tool }: { tool: ConversationTool }) {
 						}
 					/>
 				)}
-				<ToolCallMenu toolId={tool.id} />
+				<div
+					className="pointer-events-none flex shrink-0 items-center gap-1 opacity-0 transition-opacity duration-150 ease-out group-focus-within/tool:pointer-events-auto group-focus-within/tool:opacity-100 group-focus-within/tool:duration-0 group-hover/tool:pointer-events-auto group-hover/tool:opacity-100 data-[menu-open=true]:pointer-events-auto data-[menu-open=true]:opacity-100 motion-reduce:transition-none [@media(hover:none)]:pointer-events-auto [@media(hover:none)]:opacity-100 [@media(pointer:coarse)]:pointer-events-auto [@media(pointer:coarse)]:opacity-100"
+					data-menu-open={isMenuOpen}
+				>
+					<ToolCallMenu
+						toolId={tool.id}
+						createdAt={createdAt}
+						onOpenChange={(open) => {
+							setIsMenuOpen(open);
+							onMenuOpenChange?.(open);
+						}}
+					/>
+				</div>
 			</div>
-			{isInline &&
-				(approval && isRequest ? (
+			<CollapsibleContent
+				id={detailId}
+				className="overflow-hidden duration-200 ease-out data-[state=closed]:animate-collapsible-up data-[state=open]:animate-collapsible-down motion-reduce:animate-none"
+			>
+				{approval && isRequest ? (
 					<DelegationRequestApproval tool={tool} action={approval} />
 				) : approval ? (
 					<DelegationSubmitApproval tool={tool} action={approval} />
 				) : (
 					<ToolInline toolId={tool.id} />
-				))}
-		</div>
+				)}
+			</CollapsibleContent>
+		</Collapsible>
 	);
 }

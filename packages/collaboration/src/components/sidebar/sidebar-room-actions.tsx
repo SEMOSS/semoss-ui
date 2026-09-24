@@ -1,4 +1,4 @@
-import { MoreHorizontal, Pencil, Trash2 } from "lucide-react";
+import { MoreHorizontal, Pencil, Pin, PinOff, Trash2 } from "lucide-react";
 import { useRef, useState } from "react";
 import {
 	Button,
@@ -16,15 +16,17 @@ interface SidebarRoomActionsProps {
 	room: Session;
 	forceVisible?: boolean;
 	className?: string;
+	onPin: (roomId: string, pinned: boolean) => void;
 	onRename: (room: Session, trigger: HTMLButtonElement | null) => void;
 	onDelete: (room: Session, trigger: HTMLButtonElement | null) => void;
 }
 
-/** Compact room actions shared by agent-tree and recent-room rows. */
+/** Compact actions for a room in the sidebar history. */
 export function SidebarRoomActions({
 	room,
 	forceVisible = false,
 	className,
+	onPin,
 	onRename,
 	onDelete,
 }: SidebarRoomActionsProps) {
@@ -34,6 +36,11 @@ export function SidebarRoomActions({
 	function handleRename(): void {
 		setOpen(false);
 		onRename(room, triggerRef.current);
+	}
+
+	function handlePin(): void {
+		setOpen(false);
+		onPin(room.id, !room.pinned);
 	}
 
 	function handleDelete(): void {
@@ -71,6 +78,19 @@ export function SidebarRoomActions({
 					</TooltipContent>
 				</Tooltip>
 				<PopoverContent align="end" className="w-44 p-1">
+					<Button
+						type="button"
+						variant="ghost"
+						className="min-h-10 w-full justify-start"
+						onClick={handlePin}
+					>
+						{room.pinned ? (
+							<PinOff aria-hidden="true" />
+						) : (
+							<Pin aria-hidden="true" />
+						)}
+						{room.pinned ? "Unpin" : "Pin"}
+					</Button>
 					<Button
 						type="button"
 						variant="ghost"

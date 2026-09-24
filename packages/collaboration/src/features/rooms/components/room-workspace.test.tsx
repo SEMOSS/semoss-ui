@@ -124,12 +124,8 @@ describe("RoomWorkspace", () => {
 		render(<RoomWorkspace {...defaultProps} />);
 
 		const composer = screen.getByText("Composer");
-		expect(composer).toHaveClass("mx-auto", "w-full", "max-w-5xl");
-		expect(composer.parentElement).toHaveClass(
-			"border-t",
-			"px-5",
-			"lg:px-7",
-		);
+		expect(composer).toHaveClass("mx-auto", "w-full", "max-w-3xl");
+		expect(composer.parentElement).toHaveClass("px-4", "lg:px-7");
 	});
 
 	it("defaults to 65 percent and restores a resized width after reopening", async () => {

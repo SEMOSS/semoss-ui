@@ -1,92 +1,43 @@
-import { Check, Copy } from "lucide-react";
-import { useEffect, useState } from "react";
-import {
-	Button,
-	cn,
-	P,
-	Tooltip,
-	TooltipContent,
-	TooltipTrigger,
-	toast,
-} from "@semoss/ui/next";
-import { copyTextToClipboard } from "@semoss/utility";
+import { cn, Muted } from "@semoss/ui/next";
+import { AgentAvatar } from "@/components/common/agent-avatar";
 import type { AgentConfiguration } from "@/features/agents/types/agent";
 import { DelegationReplyCard } from "@/features/delegations/components/delegation-reply-card";
 import { DelegationRequestCard } from "@/features/delegations/components/delegation-request-card";
-import { ToolCallCard } from "@/features/tools/components/tool-call-card";
 import type { ConversationMessage } from "../types/message";
-import { MessageActivityPart } from "./message-activity-part";
-import { MessageMarkdown } from "./message-markdown";
-import { MessageMediaPart } from "./message-media-part";
-import { MessageThinkingPart } from "./message-thinking-part";
+import { messageText } from "../utils/message-metadata";
+import {
+	messagePartBlocks,
+	type OwnedMessagePart,
+	ownedMessageParts,
+} from "../utils/message-presentation";
+import { MessagePart } from "./message-part";
+import { MessagePartActions } from "./message-part-actions";
+import { MessageTimestamp } from "./message-timestamp";
+import { MessageToolActivity } from "./message-tool-activity";
 
-function formatMessageTime(value: string | undefined): string {
-	if (!value) return "";
-	const date = new Date(value);
-	if (Number.isNaN(date.getTime())) return "";
-	return new Intl.DateTimeFormat(undefined, {
-		hour: "numeric",
-		minute: "2-digit",
-	}).format(date);
-}
-
-function messageText(message: ConversationMessage): string {
-	if (message.delegationReply) return message.delegationReply.text ?? "";
-	if (message.delegationRequest) return message.delegationRequest.question;
-	return message.parts
-		.flatMap((part) => {
-			if (part.type === "text" || part.type === "thinking")
-				return [part.text];
-			return [];
-		})
-		.join("\n\n");
-}
-
-/** One user or assistant message, styled and composed like Playground. */
+/** One response shell, with original ownership retained for every part. */
 export function MessageTimelineEntry({
 	message,
 	agent,
+	parts = ownedMessageParts(message),
+	createdAt = message.createdAt,
 }: {
 	message: ConversationMessage;
 	agent: AgentConfiguration;
+	/** Presentation parts may span several consecutive assistant messages. */
+	parts?: OwnedMessagePart[];
+	createdAt?: string;
 }) {
-	const [hasCopied, setHasCopied] = useState(false);
 	const isUser = message.role === "user";
 	const reply = message.delegationReply;
 	const request = message.delegationRequest;
-	// Platform cards speak for a person, so they carry no agent label.
-	const card = reply !== undefined || request !== undefined;
-	const time = formatMessageTime(message.createdAt);
-	const isLive =
-		message.live !== undefined &&
-		message.live.phase !== "completed" &&
-		message.live.phase !== "failed";
-
-	useEffect(() => {
-		if (!hasCopied) return;
-		const timer = window.setTimeout(() => setHasCopied(false), 1500);
-		return () => window.clearTimeout(timer);
-	}, [hasCopied]);
-
-	async function handleCopy() {
-		const text = messageText(message);
-		if (!text) {
-			toast.warning("This message has no text to copy.");
-			return;
-		}
-		try {
-			await copyTextToClipboard(text);
-			setHasCopied(true);
-		} catch {
-			toast.error("Could not copy this message.");
-		}
-	}
+	const isDelegation = !!(reply || request);
 
 	return (
 		<article
 			className={cn(
-				"group flex min-w-0 flex-col gap-2",
-				isUser ? "ms-auto max-w-3xl items-end" : "w-full pe-0 sm:pe-10",
+				"group/message relative mt-6 flex min-w-0 flex-col gap-3 first:mt-0",
+				isUser ? "ms-auto max-w-prose items-end" : "w-full",
 			)}
 			aria-label={
 				isUser
@@ -94,98 +45,59 @@ export function MessageTimelineEntry({
 					: `${reply?.assignee ?? request?.requester ?? agent.name}'s message`
 			}
 		>
-			{!isUser && !card && (
-				<span className="font-medium text-muted-foreground text-xs">
-					{agent.name}
-				</span>
+			{!isUser && !isDelegation && (
+				<div className="flex min-h-6 min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
+					<AgentAvatar agent={agent} size="xs" />
+					<Muted className="wrap-anywhere font-medium text-foreground text-sm">
+						{agent.name}
+					</Muted>
+					<MessageTimestamp createdAt={createdAt} />
+				</div>
 			)}
 			<div
 				className={cn(
-					"flex min-w-0 flex-col gap-2",
-					isUser && "rounded-lg bg-accent px-3 py-2",
+					"flex min-w-0 max-w-full flex-col gap-3",
+					isUser &&
+						"rounded-2xl bg-primary/5 px-4 py-3 text-foreground",
 				)}
 			>
-				{reply && <DelegationReplyCard reply={reply} />}
-				{request && <DelegationRequestCard request={request} />}
-				{!card &&
-					message.parts.map((part, index) => {
-						const key = `${message.id}-${part.type}-${index}`;
-						switch (part.type) {
-							case "text":
-								return isUser ? (
-									<P
-										key={key}
-										dir="auto"
-										className="whitespace-pre-wrap text-sm leading-6"
-									>
-										{part.text}
-									</P>
-								) : (
-									<MessageMarkdown
-										key={key}
-										text={part.text}
-										isStreaming={
-											isLive && part.state === "active"
-										}
-									/>
-								);
-							case "thinking":
-								return (
-									<MessageThinkingPart
-										key={key}
-										text={part.text}
-										isStreaming={
-											isLive && part.state === "active"
-										}
-									/>
-								);
-							case "tool":
-								return (
-									<ToolCallCard key={key} tool={part.tool} />
-								);
-							case "media":
-								return (
-									<MessageMediaPart
-										key={key}
-										fileName={part.fileName}
-										mimeType={part.mimeType}
-									/>
-								);
-						}
-						return null;
-					})}
-				<MessageActivityPart message={message} />
-			</div>
-			<div className="flex min-h-8 items-center gap-1 text-muted-foreground">
-				{time && (
-					<time dateTime={message.createdAt} className="px-2 text-xs">
-						{time}
-					</time>
-				)}
-				<Tooltip>
-					<TooltipTrigger asChild>
-						<Button
-							type="button"
-							variant="ghost"
-							size="icon-sm"
-							aria-label={
-								hasCopied ? "Message copied" : "Copy message"
-							}
-							disabled={!messageText(message)}
-							onClick={handleCopy}
-						>
-							{hasCopied ? (
-								<Check aria-hidden="true" />
-							) : (
-								<Copy aria-hidden="true" />
+				{isDelegation && (
+					<div className="group/part flex min-w-0 items-start gap-2">
+						<div className="min-w-0 flex-1">
+							{reply && <DelegationReplyCard reply={reply} />}
+							{request && (
+								<DelegationRequestCard request={request} />
 							)}
-						</Button>
-					</TooltipTrigger>
-					<TooltipContent>
-						{hasCopied ? "Copied" : "Copy message"}
-					</TooltipContent>
-				</Tooltip>
+						</div>
+						<MessagePartActions text={messageText(message)} />
+					</div>
+				)}
+				{!isDelegation &&
+					messagePartBlocks(parts).map((block) =>
+						block.type === "tools" ? (
+							<MessageToolActivity
+								key={block.key}
+								items={block.items}
+							/>
+						) : (
+							<div key={block.key} data-scroll-anchor={block.key}>
+								<MessagePart
+									part={block.item.part}
+									role={block.item.message.role}
+									phase={block.item.message.live?.phase}
+									createdAt={block.item.message.createdAt}
+									agentName={agent.name}
+								/>
+							</div>
+						),
+					)}
 			</div>
+			{(isUser || isDelegation) && (
+				<MessageTimestamp
+					createdAt={createdAt}
+					className="absolute end-2 top-full pt-1"
+				/>
+			)}
 		</article>
 	);
 }

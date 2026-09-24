@@ -137,3 +137,40 @@ describe("useRoomStore", () => {
 		expect(run).toHaveBeenCalledOnce();
 	});
 });
+
+it("saves the complete configuration while preserving backend-owned options", async () => {
+	run.mockReset();
+	run.mockResolvedValueOnce(
+		pixelResponse({
+			OPTIONS: {
+				instructions: "Original",
+				mcp: [],
+				modelId: "model-1",
+				temperature: 0.7,
+				predefinedPrompts: [
+					{ id: "p", title: "Prompt", context: "Keep" },
+				],
+				harnessType: "semoss",
+				customBackendOption: { retain: true },
+			},
+		}),
+	).mockResolvedValue(pixelResponse(true));
+	const { result } = renderHook(() => useRoomStore("insight-1", "room-1"));
+	await waitFor(() => expect(result.current.room).not.toBeNull());
+	await act(() =>
+		result.current.room?.updateOptions({
+			modelId: "model-2",
+			temperature: null,
+			instructions: "Room addition",
+		}),
+	);
+	expect(String(run.mock.lastCall?.[0])).toContain('"temperature":null');
+	expect(result.current.room?.options).toMatchObject({
+		modelId: "model-2",
+		temperature: null,
+		instructions: "Room addition",
+		harnessType: "semoss",
+		customBackendOption: { retain: true },
+		predefinedPrompts: [{ id: "p", title: "Prompt", context: "Keep" }],
+	});
+});

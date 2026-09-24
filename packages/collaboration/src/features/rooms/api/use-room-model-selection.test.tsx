@@ -21,17 +21,33 @@ function roomWith(updateOptions: PlaygroundRoom["updateOptions"]) {
 describe("useRoomModelSelection", () => {
 	it("commits a model only after room persistence succeeds", async () => {
 		const updateOptions = vi.fn(async () => undefined);
-		const { result } = renderHook(() =>
-			useRoomModelSelection("room-1", roomWith(updateOptions)),
+		const initialRoom = roomWith(updateOptions);
+		const { result, rerender } = renderHook(
+			({ room }) => useRoomModelSelection("room-1", room),
+			{ initialProps: { room: initialRoom } },
 		);
 
 		await act(() => result.current.selectModel(nextEngine));
+		rerender({
+			room: {
+				...initialRoom,
+				options: { ...initialRoom.options, modelId: "model-2" },
+			},
+		});
 
 		expect(updateOptions).toHaveBeenCalledWith({ modelId: "model-2" });
 		expect(result.current.modelId).toBe("model-2");
 		expect(result.current.selectedEngine?.engine_display_name).toBe(
 			"Model Two",
 		);
+		rerender({
+			room: {
+				...initialRoom,
+				options: { ...initialRoom.options, modelId: "model-3" },
+			},
+		});
+		expect(result.current.modelId).toBe("model-3");
+		expect(result.current.selectedEngine).toBeNull();
 	});
 
 	it("rolls back to the persisted model when saving fails", async () => {

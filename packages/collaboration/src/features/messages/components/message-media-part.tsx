@@ -10,16 +10,18 @@ export function MessageMediaPart({
 	mimeType?: string;
 }) {
 	return (
-		<div className="flex items-center gap-2 rounded-lg border bg-muted/50 p-2">
+		<div className="flex items-start gap-3 rounded-xl border border-border/50 bg-muted/20 p-3">
 			<span className="flex size-8 shrink-0 items-center justify-center rounded-md bg-background text-primary">
 				<FileText aria-hidden="true" className="size-4" />
 			</span>
 			<span className="min-w-0">
-				<span className="block truncate font-medium text-xs">
+				<span className="wrap-anywhere block font-medium text-sm">
 					{fileName}
 				</span>
 				{mimeType && (
-					<Muted className="block truncate text-xs">{mimeType}</Muted>
+					<Muted className="wrap-anywhere block text-xs">
+						{mimeType}
+					</Muted>
 				)}
 			</span>
 		</div>
