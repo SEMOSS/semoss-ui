@@ -1,5 +1,5 @@
 import { Search } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
 	Button,
 	cn,
@@ -20,6 +20,11 @@ import {
 
 const PAGE_SIZE = 50;
 
+interface SearchCriteria {
+	query: string;
+	levels: string[];
+}
+
 /**
  * Searches this project's app.log (and its rotated siblings) on disk via
  * SearchAppLogsReactor — historical, durable-enough (bounded by rotation),
@@ -32,47 +37,61 @@ export const AppLogsPage = () => {
 
 	const [query, setQuery] = useState("");
 	const [levels, setLevels] = useState<string[]>([]);
+	const [appliedCriteria, setAppliedCriteria] = useState<SearchCriteria>({
+		query: "",
+		levels: [],
+	});
 	const [offset, setOffset] = useState(0);
 	const [lines, setLines] = useState<ParsedAppLogLine[]>([]);
 	const [hasMore, setHasMore] = useState(false);
 	const [loading, setLoading] = useState(false);
 	const [error, setError] = useState<string | null>(null);
+	const requestIdRef = useRef(0);
 
 	const runSearch = useCallback(
-		async (
-			searchOffset: number,
-			searchQuery: string,
-			searchLevels: string[],
-		) => {
+		async (searchOffset: number, criteria: SearchCriteria) => {
+			const requestId = ++requestIdRef.current;
 			setLoading(true);
 			setError(null);
+			setAppliedCriteria(criteria);
 			try {
 				const data = await searchAppLogs({
 					projectId: appId,
-					query: searchQuery.trim() || undefined,
-					levels: searchLevels,
+					query: criteria.query.trim() || undefined,
+					levels: criteria.levels,
 					offset: searchOffset,
 					limit: PAGE_SIZE,
 				});
+				if (requestId !== requestIdRef.current) {
+					return;
+				}
 				setLines(data.lines.map(parseAppLogLine));
 				setHasMore(data.hasMore);
 				setOffset(searchOffset);
 			} catch {
+				if (requestId !== requestIdRef.current) {
+					return;
+				}
 				setError("Unable to search application logs.");
 				setLines([]);
 				setHasMore(false);
 			} finally {
-				setLoading(false);
+				if (requestId === requestIdRef.current) {
+					setLoading(false);
+				}
 			}
 		},
 		[appId],
 	);
 
 	useEffect(() => {
-		void runSearch(0, "", []);
+		void runSearch(0, { query: "", levels: [] });
 	}, [runSearch]);
 
 	const rangeEnd = offset + lines.length;
+	const hasAppliedFilters =
+		appliedCriteria.query.trim().length > 0 ||
+		appliedCriteria.levels.length > 0;
 
 	return (
 		<div
@@ -164,7 +183,7 @@ export const AppLogsPage = () => {
 				</ToggleGroup>
 				<Button
 					size="sm"
-					onClick={() => void runSearch(0, query, levels)}
+					onClick={() => void runSearch(0, { query, levels })}
 					disabled={loading}
 					data-testid="app-logs-page-search-button"
 				>
@@ -185,6 +204,7 @@ export const AppLogsPage = () => {
 			<section
 				className="min-h-0 flex-1 overflow-auto rounded-md border border-border focus-visible:outline-2 focus-visible:outline-ring"
 				aria-label="Application log search results"
+				aria-busy={loading}
 				// biome-ignore lint/a11y/noNoninteractiveTabindex: keyboard users need to scroll the wide results table
 				tabIndex={0}
 			>
@@ -214,7 +234,9 @@ export const AppLogsPage = () => {
 								>
 									{loading
 										? "Loading application logs..."
-										: "No application logs match the current filters."}
+										: hasAppliedFilters
+											? "No application logs match the current filters."
+											: "No application logs are available yet."}
 								</td>
 							</tr>
 						) : (
@@ -252,10 +274,12 @@ export const AppLogsPage = () => {
 			</section>
 
 			<div className="flex items-center justify-between text-muted-foreground text-xs">
-				<output>
-					{lines.length > 0
-						? `Showing ${offset + 1}-${rangeEnd}${hasMore ? ", with more results available" : ""}`
-						: null}
+				<output aria-live="polite">
+					{loading
+						? "Searching application logs..."
+						: lines.length > 0
+							? `Showing ${offset + 1}-${rangeEnd}${hasMore ? ", with more results available" : ""}`
+							: null}
 				</output>
 				<div className="flex gap-2">
 					<Button
@@ -266,8 +290,7 @@ export const AppLogsPage = () => {
 						onClick={() =>
 							void runSearch(
 								Math.max(0, offset - PAGE_SIZE),
-								query,
-								levels,
+								appliedCriteria,
 							)
 						}
 					>
@@ -279,7 +302,7 @@ export const AppLogsPage = () => {
 						disabled={!hasMore || loading}
 						data-testid="app-logs-page-next-button"
 						onClick={() =>
-							void runSearch(offset + PAGE_SIZE, query, levels)
+							void runSearch(offset + PAGE_SIZE, appliedCriteria)
 						}
 					>
 						Next

@@ -14,6 +14,9 @@ import {
 	Input,
 	ToggleGroup,
 	ToggleGroupItem,
+	Tooltip,
+	TooltipContent,
+	TooltipTrigger,
 } from "@semoss/ui/next";
 import {
 	APP_LOG_LEVEL_CHIP_CLASSES,
@@ -185,7 +188,10 @@ export const WorkspaceConsole = ({ appId }: WorkspaceConsoleProps) => {
 									: "text-muted-foreground",
 						)}
 					/>
-					<output className="font-medium text-foreground text-sm">
+					<output
+						aria-live="polite"
+						className="font-medium text-foreground text-sm"
+					>
 						{error
 							? "Unavailable"
 							: isLive
@@ -270,19 +276,28 @@ export const WorkspaceConsole = ({ appId }: WorkspaceConsoleProps) => {
 						variant="ghost"
 						size="sm"
 						onClick={() => setPaused((p) => !p)}
+						aria-pressed={paused}
 						data-testid="workspace-console-pause-button"
 					>
 						{paused ? "Resume scroll" : "Pause scroll"}
 					</Button>
-					<Button
-						variant="ghost"
-						size="sm"
-						onClick={() => setLines([])}
-						aria-label="Clear live application logs"
-						data-testid="workspace-console-clear-button"
-					>
-						<Trash2 aria-hidden="true" className="size-3" />
-					</Button>
+					<Tooltip disableHoverableContent={false}>
+						<TooltipTrigger asChild>
+							<Button
+								variant="ghost"
+								size="sm"
+								onClick={() => {
+									setLines([]);
+									setExpandedIds(new Set());
+								}}
+								aria-label="Clear live application logs"
+								data-testid="workspace-console-clear-button"
+							>
+								<Trash2 aria-hidden="true" className="size-3" />
+							</Button>
+						</TooltipTrigger>
+						<TooltipContent>Clear logs</TooltipContent>
+					</Tooltip>
 				</div>
 			</div>
 
@@ -296,10 +311,13 @@ export const WorkspaceConsole = ({ appId }: WorkspaceConsoleProps) => {
 				</div>
 			) : null}
 
-			<div
+			<section
 				ref={terminalRef}
 				className="min-h-0 flex-1 overflow-y-auto bg-muted/70 px-4 py-2 font-mono text-xs leading-relaxed dark:bg-background"
 				data-testid="workspace-console-log"
+				aria-label="Live application log output"
+				// biome-ignore lint/a11y/noNoninteractiveTabindex: keyboard users need to scroll the live log output
+				tabIndex={0}
 			>
 				{visibleLines.length === 0 ? (
 					<span className="text-muted-foreground text-xs italic">
@@ -354,16 +372,24 @@ export const WorkspaceConsole = ({ appId }: WorkspaceConsoleProps) => {
 								key={line.id}
 								type="button"
 								onClick={() => toggleExpanded(line.id)}
-								className={`flex w-full items-start gap-1 text-left hover:bg-muted/50 ${
+								aria-expanded={isExpanded}
+								className={cn(
+									"flex w-full items-start gap-1 text-left hover:bg-muted/50",
 									isExpanded
 										? "whitespace-pre-wrap break-all"
-										: "overflow-hidden"
-								}`}
+										: "overflow-hidden",
+								)}
 							>
 								{isExpanded ? (
-									<ChevronDown className="mt-0.5 size-3 shrink-0 text-muted-foreground" />
+									<ChevronDown
+										aria-hidden="true"
+										className="mt-0.5 size-3 shrink-0 text-muted-foreground"
+									/>
 								) : (
-									<ChevronRight className="mt-0.5 size-3 shrink-0 text-muted-foreground" />
+									<ChevronRight
+										aria-hidden="true"
+										className="mt-0.5 size-3 shrink-0 text-muted-foreground"
+									/>
 								)}
 								<span className={isExpanded ? "" : "truncate"}>
 									{content}
@@ -372,7 +398,7 @@ export const WorkspaceConsole = ({ appId }: WorkspaceConsoleProps) => {
 						);
 					})
 				)}
-			</div>
+			</section>
 		</div>
 	);
 };
