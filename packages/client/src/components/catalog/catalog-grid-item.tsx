@@ -21,8 +21,12 @@ import {
 	TooltipTrigger,
 	toast,
 } from "@semoss/ui/next";
+import {
+	copyTextToClipboard,
+	formatDateToLocal,
+	formatDateToRelative,
+} from "@semoss/utility";
 import { formatToDataTestId, getTagBadgeStyle } from "@/utility";
-import { formatDateToLocal, formatDateToRelative } from "@/utility/date";
 
 export interface CatalogGridItemProps
 	extends React.ComponentProps<typeof Card> {
@@ -61,15 +65,6 @@ export interface CatalogGridItemProps
 		className?: string;
 	}[];
 }
-
-const copyToClipboard = (text: string) => {
-	try {
-		navigator.clipboard.writeText(text);
-		toast.success("Copied to clipboard");
-	} catch {
-		toast.error("Failed to copy");
-	}
-};
 
 const hashString = (str: string): number => {
 	let h = 0;
@@ -158,7 +153,21 @@ export const CatalogGridItem = ({
 														onClick={(event) => {
 															event.preventDefault();
 															event.stopPropagation();
-															copyToClipboard(id);
+															void copyTextToClipboard(
+																id,
+																{
+																	onSuccess:
+																		() =>
+																			toast.success(
+																				"Copied to clipboard",
+																			),
+																	onError:
+																		() =>
+																			toast.error(
+																				"Failed to copy",
+																			),
+																},
+															);
 														}}
 													>
 														<Copy className="size-3.5" />

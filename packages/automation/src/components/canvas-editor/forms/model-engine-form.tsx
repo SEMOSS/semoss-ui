@@ -29,6 +29,7 @@ export function ModelEngineForm({
 				name={config.engineName || ""}
 				value={config.engineId}
 				engineTypes={["MODEL"]}
+				excludedEngineSubtypes={["TYPESAFE"]}
 				required
 				disabled={readOnly}
 				onChange={(e) =>

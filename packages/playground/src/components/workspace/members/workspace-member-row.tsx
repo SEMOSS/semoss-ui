@@ -1,7 +1,7 @@
 import { useTranslation } from "@semoss/i18n";
 import type { User } from "@semoss/sdk";
 import { Avatar, AvatarFallback } from "@semoss/ui/next";
-import { toInitials } from "@/utility";
+import { buildInitials } from "@semoss/utility";
 import {
 	type PermissionChange,
 	PermissionDropdown,
@@ -44,7 +44,7 @@ export const WorkspaceMemberRow = ({
 		<div className="flex items-center gap-3 rounded px-4 py-2 hover:bg-accent">
 			<Avatar className="h-12 w-12 rounded-md">
 				<AvatarFallback className="rounded-md bg-primary/10">
-					{toInitials(member.name)}
+					{buildInitials(member.name, 2, true)}
 				</AvatarFallback>
 			</Avatar>
 			<div className="flex flex-1 flex-col">

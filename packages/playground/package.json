@@ -18,6 +18,7 @@
         "@semoss/sdk": "workspace:*",
         "@semoss/shared": "workspace:*",
         "@semoss/ui": "workspace:*",
+        "@semoss/utility": "workspace:*",
         "@semoss/workbench": "workspace:*",
         "dayjs": "1.11.8",
         "lexical": "^0.39.0",
