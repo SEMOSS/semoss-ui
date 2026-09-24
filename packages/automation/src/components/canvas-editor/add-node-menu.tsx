@@ -44,6 +44,7 @@ const CATEGORY_ORDER: readonly AutomationNodeCategory[] = [
  */
 const SEARCH_ALIASES: Partial<Record<AutomationWorkflowNodeType, string>> = {
 	"control.if": "if elif else condition conditional branch",
+	"control.jev": "jev typesafe ai decision route branch classify",
 };
 
 const CATEGORY_META: Record<

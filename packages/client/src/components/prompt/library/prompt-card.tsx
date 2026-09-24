@@ -20,6 +20,7 @@ import {
 	TooltipTrigger,
 	toast,
 } from "@semoss/ui/next";
+import { buildInitials } from "@semoss/utility";
 import { PromptModal } from "../../../pages/prompt/PromptModal";
 import type { Prompt } from "../prompt.types";
 import { PromptDeleteModal } from "../prompt-delete-modal";
@@ -80,15 +81,6 @@ const formatUpdatedAgo = (dateString?: string | null): string | null => {
 	return `Updated ${years} year${years === 1 ? "" : "s"} ago`;
 };
 
-/**
- * Build initials from prompt title
- */
-const buildInitials = (label: string): string => {
-	const tokens = label.split(/[^A-Za-z0-9]+/).filter((t) => t.length > 0);
-	const chars = tokens.map((t) => t[0].toUpperCase());
-	return chars.slice(0, 3).join("");
-};
-
 interface PromptCardProps {
 	prompt: Prompt;
 	onClick: (p: Prompt) => void;
@@ -123,7 +115,7 @@ export const PromptCard = (props: PromptCardProps) => {
 	);
 
 	const initials = useMemo(
-		() => buildInitials(prompt.title || "Prompt"),
+		() => buildInitials(prompt.title || "Prompt", 3),
 		[prompt.title],
 	);
 

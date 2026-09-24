@@ -43,11 +43,32 @@ export const metakeyToLabel = (value: string): string => {
 export const capitalizeFirstLetter = (value: string): string =>
 	value.replace(/\w{1}/, (match) => match.toUpperCase());
 
-/** Build initials from the first character of each word. */
-export const buildInitials = (value: string): string =>
-	value
+/**
+ * Build initials with optional count and first/last-word constraints.
+ *
+ * @example
+ * buildInitials("John Doe") // "JD"
+ * buildInitials("Jane Mary Smith", 2, true) // "JS"
+ * buildInitials("One Two Three Four", 3) // "OTT"
+ * buildInitials("Jane-Mary Smith", 2, false, false) // "JS"
+ */
+export const buildInitials = (
+	value: string,
+	maxInitials = Number.POSITIVE_INFINITY,
+	firstAndLast = false,
+	alphanumeric = true,
+): string => {
+	const words = value
 		.trim()
-		.split(/\s+/)
-		.filter(Boolean)
+		.split(alphanumeric ? /[^A-Za-z0-9]+/ : /\s+/)
+		.filter(Boolean);
+	const selectedWords =
+		firstAndLast && words.length > 1
+			? [words[0], words[words.length - 1]]
+			: words;
+
+	return selectedWords
+		.slice(0, Math.max(0, maxInitials))
 		.map((word) => word.charAt(0).toUpperCase())
 		.join("");
+};

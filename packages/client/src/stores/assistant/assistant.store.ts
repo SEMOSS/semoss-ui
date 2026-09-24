@@ -1294,11 +1294,13 @@ export const createAssistantStore = (
 					);
 
 					// There is no list-runs-for-room API; root runs are
-					// recovered from the agentRunId ornament the backend
-					// stamps onto each run's persisted messages.
+					// recovered from the agentRun context the backend stamps
+					// onto each run's persisted messages.
 					const rootRunIds: string[] = [];
 					for (const message of messages) {
-						const runId = message.ornaments?.agentRunId;
+						const runId =
+							message.agentRun?.runId ??
+							message.ornaments?.agentRunId;
 						if (runId && !rootRunIds.includes(runId)) {
 							rootRunIds.push(runId);
 						}
@@ -1338,8 +1340,9 @@ export const createAssistantStore = (
 									messages.find(
 										(message) =>
 											message.io === "INPUT" &&
-											message.ornaments?.agentRunId ===
-												runId,
+											(message.agentRun?.runId ??
+												message.ornaments
+													?.agentRunId) === runId,
 									);
 								const inputText = inputMessage?.parts?.find(
 									(part) => part.type === "TEXT" && part.text,

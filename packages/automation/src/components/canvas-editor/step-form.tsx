@@ -5,6 +5,7 @@ import type {
 	BranchConfig,
 	DatabaseEngineConfig,
 	FunctionEngineConfig,
+	JevDecisionConfig,
 	ModelEngineConfig,
 	StorageEngineConfig,
 	VectorEngineConfig,
@@ -15,6 +16,7 @@ import { AppEngineForm } from "./forms/app-engine-form";
 import { BranchConditionBuilder } from "./forms/branch-condition-builder";
 import { DatabaseEngineForm } from "./forms/database-engine-form";
 import { FunctionEngineForm } from "./forms/function-engine-form";
+import { JevDecisionForm } from "./forms/jev-decision-form";
 import { ModelEngineForm } from "./forms/model-engine-form";
 import { PillInput } from "./forms/pill-input";
 import { StorageEngineForm } from "./forms/storage-engine-form";
@@ -46,6 +48,16 @@ export function StepForm({
 		return (
 			<AgentRunForm
 				config={step.config as AgentRunConfig}
+				upstreamVars={upstreamVars}
+				onChange={update}
+				readOnly={readOnly}
+			/>
+		);
+	}
+	if (step.workflowType === "control.jev") {
+		return (
+			<JevDecisionForm
+				config={step.config as JevDecisionConfig}
 				upstreamVars={upstreamVars}
 				onChange={update}
 				readOnly={readOnly}

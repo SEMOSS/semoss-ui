@@ -20,8 +20,8 @@ import {
 	TooltipTrigger,
 	toast,
 } from "@semoss/ui/next";
+import { copyTextToClipboard } from "@semoss/utility";
 import type { RoomStore } from "@/stores";
-import { copyToClipboard } from "@/utility/clipboard";
 import { BlockHeader } from "./block-header";
 import {
 	RESPONSE_BLOCK_MAX_HEIGHT,
@@ -269,11 +269,12 @@ export const HtmlPreviewBlock = ({
 								size="sm"
 								disabled={!html || isLoading}
 								onClick={() =>
-									void copyToClipboard(
-										html,
-										() => toast.success(copySuccessMessage),
-										(message) => toast.error(message),
-									)
+									void copyTextToClipboard(html, {
+										onSuccess: () =>
+											toast.success(copySuccessMessage),
+										onError: (message) =>
+											toast.error(message),
+									})
 								}
 							>
 								<CopyIcon className="size-3" />

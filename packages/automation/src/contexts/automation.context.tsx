@@ -11,6 +11,7 @@ export interface AutomationContextValue {
 	running: boolean;
 	openNode: (nodeId: string) => void;
 	deleteNode: (nodeId: string) => void;
+	deleteNodeAndDownstream: (nodeId: string) => void;
 	addNodeAfter: (nodeId: string, sourceHandle?: string) => void;
 	viewAgentRun: (trace: AutomationNodeTrace) => void;
 }

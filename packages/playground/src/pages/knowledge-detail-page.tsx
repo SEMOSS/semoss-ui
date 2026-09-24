@@ -52,6 +52,7 @@ import {
 	TabsTrigger,
 	toast,
 } from "@semoss/ui/next";
+import { getFileExtension, getImageMimeType } from "@semoss/utility";
 import { EmbedDocumentsOverlay } from "@/components/knowledge/embed-documents-overlay";
 import { NewKnowledgeOverlay } from "@/components/knowledge/new-knowledge-mcp-overlay";
 import { useGlobalBreadcrumbs } from "@/hooks";
@@ -86,7 +87,7 @@ type SearchUser = {
 };
 
 const getFileIcon = (fileName: string) => {
-	const ext = fileName.split(".").pop()?.toLowerCase() ?? "";
+	const ext = getFileExtension(fileName);
 	if (ext === "pdf")
 		return <FileTextIcon className="h-4 w-4 shrink-0 text-red-500" />;
 	if (ext === "doc" || ext === "docx")
@@ -140,29 +141,17 @@ const formatDateTime = (dateStr: string): string => {
 };
 
 const isPdf = (name: string) =>
-	["pdf", "doc", "docx"].includes(name.split(".").pop()?.toLowerCase() ?? "");
+	["pdf", "doc", "docx"].includes(getFileExtension(name));
 const isImage = (name: string) =>
 	["png", "jpg", "jpeg", "gif", "webp", "svg"].includes(
-		name.split(".").pop()?.toLowerCase() ?? "",
+		getFileExtension(name),
 	);
 const isText = (name: string) =>
 	["txt", "md", "csv", "log", "json", "xml", "yaml", "yml"].includes(
-		name.split(".").pop()?.toLowerCase() ?? "",
+		getFileExtension(name),
 	);
 const isPreviewable = (name?: string) =>
 	!!name && (isPdf(name) || isImage(name) || isText(name));
-const getMimeType = (name: string): string => {
-	const mimeTypes: Record<string, string> = {
-		png: "image/png",
-		jpg: "image/jpeg",
-		jpeg: "image/jpeg",
-		gif: "image/gif",
-		webp: "image/webp",
-		svg: "image/svg+xml",
-	};
-	return mimeTypes[name.split(".").pop()?.toLowerCase() ?? ""] ?? "image/png";
-};
-
 /**
  * Knowledge detail page
  */
@@ -269,7 +258,9 @@ export const KnowledgeDetailPage = observer(() => {
 					const b64 = pixelReturn[0].output;
 					if (!cancelled) {
 						const mimeType = isImage(previewDoc.fileName)
-							? getMimeType(previewDoc.fileName)
+							? getImageMimeType(
+									getFileExtension(previewDoc.fileName),
+								)
 							: "application/pdf";
 						const raw = atob(b64);
 						const arr = new Uint8Array(raw.length);
