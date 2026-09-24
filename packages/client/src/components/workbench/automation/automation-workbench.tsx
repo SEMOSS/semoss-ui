@@ -67,6 +67,7 @@ import {
 	type WorkbenchComponent,
 	type WorkbenchLayout,
 	type WorkbenchPanelConfigAny,
+	WorkbenchResetButton,
 } from "@semoss/workbench";
 import { ASSISTANT_PANEL } from "@/components/assistant";
 import { stripMcpToolAlias } from "@/components/assistant/assistant-tools";
@@ -922,7 +923,16 @@ export const AutomationWorkbench = observer(
 						<Workbench
 							snapshot={workbenchLayout}
 							borderSlots={{
-								left: { after: <AutomationSettingsToggle /> },
+								left: {
+									after: (
+										<>
+											<AutomationSettingsToggle />
+											<WorkbenchResetButton
+												snapshot={workbenchLayout}
+											/>
+										</>
+									),
+								},
 							}}
 						/>
 					</AutomationWorkbenchContext.Provider>

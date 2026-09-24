@@ -71,8 +71,12 @@ export function AutomationScopeExplorer({
 					</span>
 				</Button>
 			</PopoverTrigger>
-			<PopoverContent align="end" className="w-80 p-0">
-				<div>
+			<PopoverContent
+				align="end"
+				collisionPadding={8}
+				className="flex max-h-(--radix-popover-content-available-height) w-80 flex-col overflow-hidden p-0"
+			>
+				<div className="flex min-h-0 flex-1 flex-col">
 					{onSelect && (
 						<div className="space-y-2 border-b p-2">
 							<p className="font-medium text-xs">Insert as</p>
@@ -110,9 +114,9 @@ export function AutomationScopeExplorer({
 							</p>
 						</div>
 					)}
-					<Command>
+					<Command className="min-h-0 flex-1">
 						<CommandInput placeholder="Find a scope value…" />
-						<CommandList>
+						<CommandList className="max-h-none flex-1">
 							<CommandEmpty>
 								No scope values available.
 							</CommandEmpty>
@@ -144,17 +148,33 @@ export function AutomationScopeExplorer({
 													<code className="text-xs">
 														{entry.name}
 													</code>
-													<p className="truncate text-muted-foreground text-xs">
-														{entry.label} ·{" "}
-														{entry.valueType
-															? `${entry.valueType} · `
-															: ""}
-														{entry.availability}
-													</p>
-													{entry.description && (
-														<p className="mt-1 line-clamp-2 break-all text-muted-foreground text-xs">
-															{entry.description}
+													{entry.source === "node" ? (
+														// Step labels can run long and wrap; the
+														// step number keeps this to one line.
+														<p className="truncate text-muted-foreground text-xs">
+															{entry.description}{" "}
+															·{" "}
+															{entry.availability}
 														</p>
+													) : (
+														<>
+															<p className="truncate text-muted-foreground text-xs">
+																{entry.label} ·{" "}
+																{entry.valueType
+																	? `${entry.valueType} · `
+																	: ""}
+																{
+																	entry.availability
+																}
+															</p>
+															{entry.description && (
+																<p className="mt-1 line-clamp-2 break-all text-muted-foreground text-xs">
+																	{
+																		entry.description
+																	}
+																</p>
+															)}
+														</>
 													)}
 												</div>
 											</CommandItem>

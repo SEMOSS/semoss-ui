@@ -1489,11 +1489,16 @@ export const AutomationCanvasContent = forwardRef<
 					const sourceStep = displaySteps.find(
 						(step) => step.outputVar === name,
 					);
+					const stepNumber = sourceStep
+						? (stepDisplayOrder.get(sourceStep.id) ?? 0) + 1
+						: undefined;
 					baseEntries.push({
 						name,
 						source: "node",
 						label: sourceStep?.label ?? name,
-						description: "Output from an earlier step.",
+						description: stepNumber
+							? `Output from step ${stepNumber}.`
+							: "Output from an earlier step.",
 						availability: "guaranteed",
 						pythonExpression: `scope[${JSON.stringify(name)}]`,
 						templateExpression: `\${${name}}`,
@@ -1537,7 +1542,13 @@ export const AutomationCanvasContent = forwardRef<
 			});
 			return [...baseEntries, ...nestedEntries];
 		},
-		[displaySteps, scopeResults, scopeVariablesByNode, upstreamVarsFor],
+		[
+			displaySteps,
+			scopeResults,
+			scopeVariablesByNode,
+			stepDisplayOrder,
+			upstreamVarsFor,
+		],
 	);
 	const templateVariablesFor = useCallback(
 		(stepId: string): string[] =>

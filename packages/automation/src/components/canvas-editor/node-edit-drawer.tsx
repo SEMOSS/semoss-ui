@@ -543,7 +543,7 @@ export function NodeEditDrawer({
 										)}
 									</div>
 								</div>
-								<div className="relative h-75 overflow-hidden rounded-lg border bg-muted/30">
+								<div className="relative h-75 overflow-visible rounded-lg border bg-muted/30">
 									<div
 										className={
 											pythonFileOpen

@@ -10,6 +10,7 @@ import {
 	type AutomationScopeEntry,
 	getAutomationScopeExpression,
 } from "../../domain/automation-inspector";
+import "./automation-python-editor.css";
 
 const SCOPE_REFERENCE_PATTERN = /scope\s*(?:\[\s*|\.get\(\s*)(["'])([^"']+)\1/g;
 
@@ -188,6 +189,21 @@ export const AutomationPythonEditor = forwardRef<
 				disposable.dispose();
 			}
 
+			// Suggest/parameter-hint widgets are sized off the page body
+			// rather than the editor, so a CSS max-width clamps them (see
+			// automation-python-editor.css); expose the editor's own width
+			// as a CSS variable for that clamp to use.
+			const domNode = editor.getDomNode();
+			const updateEditorWidthVar = () => {
+				domNode?.style.setProperty(
+					"--automation-editor-width",
+					`${editor.getLayoutInfo().width}px`,
+				);
+			};
+			updateEditorWidthVar();
+			const layoutListener =
+				editor.onDidLayoutChange(updateEditorWidthVar);
+
 			const completionProvider =
 				monacoApi.languages.registerCompletionItemProvider("python", {
 					triggerCharacters: ["[", "(", '"', "'"],
@@ -209,11 +225,24 @@ export const AutomationPythonEditor = forwardRef<
 						if (!quoted && !unquoted) return { suggestions: [] };
 
 						const typed = quoted?.[3] ?? "";
+						// Our insertText already supplies the closing "]"/")",
+						// so when the editor auto-closed the opening bracket
+						// or paren, consume that auto-inserted closer instead
+						// of leaving it behind as a duplicate.
+						const closerChar = unquoted?.[1] === "[" ? "]" : ")";
+						const hasAutoClosedCloser =
+							!quoted &&
+							candidateModel.getValueInRange({
+								startLineNumber: position.lineNumber,
+								startColumn: position.column,
+								endLineNumber: position.lineNumber,
+								endColumn: position.column + 1,
+							}) === closerChar;
 						const range = new monacoApi.Range(
 							position.lineNumber,
 							position.column - typed.length,
 							position.lineNumber,
-							position.column,
+							position.column + (hasAutoClosedCloser ? 1 : 0),
 						);
 						return {
 							suggestions: entriesRef.current.map((entry) => ({
@@ -236,7 +265,7 @@ export const AutomationPythonEditor = forwardRef<
 										? getAutomationScopeExpression(
 												entry,
 												"required",
-											).slice("scope".length)
+											).slice("scope[".length)
 										: getAutomationScopeExpression(
 												entry,
 												"optional",
@@ -280,6 +309,7 @@ export const AutomationPythonEditor = forwardRef<
 				completionProvider,
 				hoverProvider,
 				contentListener,
+				layoutListener,
 			];
 			updateMarkers();
 		},
