@@ -28,10 +28,7 @@ import { useEngine } from "@/hooks";
  * against that insight rather than the bucket. Refresh additionally syncs the
  * current directory down into the paired engine's local file tree.
  */
-const StorageFileExplorerPanel: WorkbenchComponent<
-	Record<string, unknown>,
-	FileExplorerApi
-> = ({ id, setValue }) => {
+const StorageFileExplorerPanel: WorkbenchComponent = ({ id }) => {
 	const { engine, permission } = useEngine();
 	const insight = useInsight();
 	const { t } = useTranslation("common");
@@ -87,7 +84,8 @@ const StorageFileExplorerPanel: WorkbenchComponent<
 	// targets the directory that is actually open when refresh fires.
 	// `decorateExplorer` keeps the api live behind one stable identity;
 	// memoizing is required, not an optimization — an unmemoized decoration
-	// churns the identity every render and `setValue` would loop.
+	// churns the identity every render and the pane would republish it in a
+	// loop.
 	const wrappedExplorer = useMemo(
 		() =>
 			decorateExplorer(explorer, {
@@ -113,13 +111,7 @@ const StorageFileExplorerPanel: WorkbenchComponent<
 		[engine.engine_id, explorer, insight.actions, readOnly, t],
 	);
 
-	return (
-		<FileExplorerPane
-			id={id}
-			explorer={wrappedExplorer}
-			setValue={setValue}
-		/>
-	);
+	return <FileExplorerPane id={id} explorer={wrappedExplorer} />;
 };
 
 /**

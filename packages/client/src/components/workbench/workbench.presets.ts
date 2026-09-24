@@ -1,4 +1,5 @@
 import type { FileExplorerApi } from "@semoss/shared";
+import { toast } from "@semoss/ui/next";
 import type {
 	WorkbenchCommand,
 	WorkbenchPanelParams,
@@ -103,6 +104,11 @@ export const createFileCommands = ({
 /**
  * Reconnect the Pixel server. Verbatim in every domain workbench.
  *
+ * The dock's busy scrim covers the whole shell while the pixel is in flight:
+ * a reconnect invalidates the session every panel is reading through, so
+ * nothing on screen is safe to interact with until it settles. The toast is
+ * what tells the user it worked — the shell looks identical either way.
+ *
  * @param insight - The workbench's insight, for running the pixel.
  * @return One command.
  */
@@ -111,8 +117,22 @@ export const createReconnectCommand = (insight: {
 }): WorkbenchCommand => ({
 	id: "workbench.server.reconnect",
 	label: "Reconnect Server",
-	handler: () => {
-		void insight.actions.run("ReconnectServer();").catch(console.error);
+	handler: (get) => {
+		const { setLoading } = get().loading.actions;
+
+		setLoading(true);
+		void insight.actions
+			.run("ReconnectServer();")
+			.then(() => {
+				toast.success("Server reconnected");
+			})
+			.catch((error) => {
+				console.error(error);
+				toast.error("Could not reconnect the server");
+			})
+			.finally(() => {
+				setLoading(false);
+			});
 	},
 });
 

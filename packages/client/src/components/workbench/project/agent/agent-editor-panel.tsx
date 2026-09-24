@@ -7,7 +7,7 @@ import type {
 	WorkbenchComponent,
 	WorkbenchPanelConfig,
 } from "@semoss/workbench";
-import { useWorkbenchControl } from "@semoss/workbench";
+import { useWorkbenchControl, useWorkbenchPanel } from "@semoss/workbench";
 import {
 	type AgentDefaultTool,
 	AgentForm,
@@ -16,7 +16,7 @@ import {
 	getWorkspaceSaveWarning,
 } from "@/components/agent-workspace/agent-form";
 import { useProject } from "@/hooks";
-import { WORKBENCH_AGENT_ID } from "@/stores/assistant";
+import { APP_BUILDER_AGENT } from "@/stores/assistant/assistant-agents";
 import { AgentEditorSaveControl } from "./agent-editor-save-control";
 
 /**
@@ -117,7 +117,9 @@ export interface AgentEditorSaveValue {
  * `GetWorkspace`/`EditWorkspace` itself; `AgentForm` just renders the fields.
  * Save rides the panel's chrome control instead of an in-body toolbar.
  */
-const AgentEditorPanel: WorkbenchComponent = ({ id, setValue }) => {
+const AgentEditorPanel: WorkbenchComponent = ({ id }) => {
+	const { setValue } = useWorkbenchPanel(id);
+
 	const { project, permission } = useProject();
 	const insight = useInsight();
 	const readOnly = !(permission === "OWNER" || permission === "EDIT");
@@ -132,7 +134,8 @@ const AgentEditorPanel: WorkbenchComponent = ({ id, setValue }) => {
 
 	// The app-builder agent should always have Reporting Insights' dashboard
 	// tools available — best-effort lookup, only needed for that one agent.
-	const isAppBuilderAgent = project.project_id === WORKBENCH_AGENT_ID;
+	const isAppBuilderAgent =
+		project.project_id === APP_BUILDER_AGENT.workspace_id;
 	const { data: reportingInsightsHosts } = usePixel<Project[]>(
 		isAppBuilderAgent
 			? `MyProjects(metaKeys=["tag"], metaFilters=[${JSON.stringify({

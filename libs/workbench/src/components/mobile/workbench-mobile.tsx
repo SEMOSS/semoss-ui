@@ -14,7 +14,7 @@ import type { WorkbenchBorderSlot } from "../../types";
 import { WorkbenchTab } from "../dock/workbench-tab";
 import { WorkbenchMobileDrawer } from "./workbench-mobile-drawer";
 
-export interface WorkbenchMobileProps {
+interface WorkbenchMobileProps {
 	/**
 	 * The left rail's `after` slot. The mobile shell draws no rails, so it
 	 * hands this to the drawer, which is the only place it can surface.

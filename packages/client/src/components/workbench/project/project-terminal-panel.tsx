@@ -6,7 +6,7 @@ import type {
 	WorkbenchComponent,
 	WorkbenchPanelConfig,
 } from "@semoss/workbench";
-import { useWorkbenchControl } from "@semoss/workbench";
+import { useWorkbenchControl, useWorkbenchPanel } from "@semoss/workbench";
 import { useProject } from "@/hooks";
 import { ProjectNewTerminalControl } from "./project-new-terminal-control";
 
@@ -37,10 +37,12 @@ const ProjectTerminalInsightReporter = ({
 };
 
 /** One Pixel REPL session, owned by a single workbench terminal panel. */
-const ProjectTerminalPanelContent: WorkbenchComponent<
-	ProjectTerminalConfig,
-	string | null
-> = ({ id, setValue }) => {
+const ProjectTerminalPanelContent: WorkbenchComponent = ({ id }) => {
+	const { setValue } = useWorkbenchPanel<
+		ProjectTerminalConfig,
+		string | null
+	>(id);
+
 	const { project } = useProject();
 	const setValueRef = useRef(setValue);
 	setValueRef.current = setValue;

@@ -11,7 +11,6 @@ import { cn, Tooltip, TooltipContent, TooltipTrigger } from "@semoss/ui/next";
 import { WORKBENCH_STYLES } from "../../constants/workbench.constants";
 import { useWorkbench } from "../../hooks";
 import type {
-	WorkbenchHeaderLocation,
 	WorkbenchPanelId,
 	WorkbenchSide,
 	WorkbenchStack,
@@ -19,16 +18,13 @@ import type {
 import { WorkbenchPanelContextMenu } from "../menu/workbench-context-menu";
 import { WorkbenchPanelHeaderContent } from "../panel/workbench-panel-header";
 
-export interface WorkbenchTabProps {
+interface WorkbenchTabProps {
 	pid: WorkbenchPanelId;
 	/** The stack (dock or border) activating this tab targets. */
 	stack: Pick<WorkbenchStack, "kind" | "id">;
 	active: boolean;
-	/**
-	 * Where this tab is drawn. `"rail-vertical"` turns it on its side for a
-	 * left/right border; the blueprint's own header sees this too.
-	 */
-	location?: WorkbenchHeaderLocation;
+	/** Turns the tab on its side, for a left/right border rail. */
+	vertical?: boolean;
 	/** Taller touch targets and no trailing controls, for the mobile strip. */
 	compact?: boolean;
 }
@@ -95,7 +91,7 @@ const RAIL_TAB_TURN =
  * is handled by the drag layer through the `data-tab` attribute.
  */
 export const WorkbenchTab: FC<WorkbenchTabProps> = memo(
-	({ pid, stack, active, location = "tab", compact = false }) => {
+	({ pid, stack, active, vertical = false, compact = false }) => {
 		const actions = useWorkbench((s) => s.layout.actions);
 		const record = useWorkbench((s) => s.layout.panels[pid]);
 		const isEditing = useWorkbench((s) => s.layout.editingPanelId === pid);
@@ -106,7 +102,6 @@ export const WorkbenchTab: FC<WorkbenchTabProps> = memo(
 		const closable = useWorkbench((s) => s.layout.actions.canClose(pid));
 		const renamable = useWorkbench((s) => s.layout.actions.canRename(pid));
 
-		const vertical = location === "rail-vertical";
 		const lastPress = useRef(0);
 		const watcher = useRef<ResizeObserver | null>(null);
 		/** the turned tab's own width, which is the cell's height */
@@ -249,10 +244,7 @@ export const WorkbenchTab: FC<WorkbenchTabProps> = memo(
 					{isEditing ? (
 						<WorkbenchTabRenameInput pid={pid} />
 					) : (
-						<WorkbenchPanelHeaderContent
-							pid={pid}
-							location={location}
-						/>
+						<WorkbenchPanelHeaderContent pid={pid} />
 					)}
 					{/* the controls belong to the selected desktop tab. An
 				    unselected one is its icon and its name, and measures to

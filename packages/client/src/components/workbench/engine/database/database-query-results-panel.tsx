@@ -29,6 +29,7 @@ import type {
 	WorkbenchComponent,
 	WorkbenchPanelConfig,
 } from "@semoss/workbench";
+import { useWorkbenchPanel } from "@semoss/workbench";
 import { useDatabaseWorkbench, useEngine, useSession } from "@/hooks";
 import { DatabaseResultsHeader } from "./database-results-header";
 import { DatabaseStatementResultView } from "./database-statement-result-view";
@@ -39,9 +40,9 @@ export interface DatabaseQueryResultsConfig {
 	sourcePanel: string;
 }
 
-const DatabaseQueryResultsPanel: WorkbenchComponent<
-	DatabaseQueryResultsConfig
-> = ({ config }) => {
+const DatabaseQueryResultsPanel: WorkbenchComponent = ({ id }) => {
+	const { config } = useWorkbenchPanel<DatabaseQueryResultsConfig>(id);
+
 	const { engine } = useEngine();
 	const runPixel = useSession((state) => state.runPixel);
 
@@ -224,30 +225,41 @@ const DatabaseQueryResultsPanel: WorkbenchComponent<
 				data-testid="query-results-footer"
 			>
 				{result && result.type === "TABLE" && canExport && (
-					<Tooltip>
+					<Tooltip disableHoverableContent={false}>
 						<TooltipTrigger asChild>
-							<Button
-								disabled={exportingStatement !== null}
-								variant="outline"
-								size="icon-sm"
-								onClick={() =>
-									handleExportToCsvClick(
-										result.query,
-										result.raw,
-										0,
-									)
+							<span
+								className="inline-flex"
+								tabIndex={
+									exportingStatement !== null ? 0 : undefined
 								}
-								aria-label="Export query results"
-								data-testid="query-results-export-btn"
 							>
-								{exportingStatement === 0 ? (
-									<Spinner />
-								) : (
-									<Download aria-hidden />
-								)}
-							</Button>
+								<Button
+									disabled={exportingStatement !== null}
+									variant="outline"
+									size="icon-sm"
+									onClick={() =>
+										handleExportToCsvClick(
+											result.query,
+											result.raw,
+											0,
+										)
+									}
+									aria-label="Export query results"
+									data-testid="query-results-export-btn"
+								>
+									{exportingStatement === 0 ? (
+										<Spinner />
+									) : (
+										<Download aria-hidden />
+									)}
+								</Button>
+							</span>
 						</TooltipTrigger>
-						<TooltipContent>Export Results</TooltipContent>
+						<TooltipContent>
+							{exportingStatement !== null
+								? "Exporting results…"
+								: "Export Results"}
+						</TooltipContent>
 					</Tooltip>
 				)}
 				<div className="flex flex-1">&nbsp;</div>

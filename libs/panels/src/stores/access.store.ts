@@ -16,10 +16,10 @@ import {
  * @return A store satisfying `PermissionCache`.
  */
 export const createAccessStore = (): AccessStore =>
-	createStore<PermissionCache>()((set, get) => ({
-		...createPermissionCache(
+	createStore<PermissionCache>()((set, get) =>
+		createPermissionCache(
 			(update) =>
 				set((state) => ({ permissions: update(state.permissions) })),
 			() => get().permissions,
 		),
-	}));
+	);

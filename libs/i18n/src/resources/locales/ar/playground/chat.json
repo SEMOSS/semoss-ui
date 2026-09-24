@@ -29,8 +29,6 @@
 		"fastForwardToEnd": "التقدم السريع إلى النهاية",
 		"completeToolsAsk_one": "يرجى إكمال الأداة للمتابعة.",
 		"completeToolsAsk_other": "يرجى إكمال الأدوات للمتابعة.",
-		"completeToolsAuto_one": "يرجى الانتظار حتى تكتمل الأداة.",
-		"completeToolsAuto_other": "يرجى الانتظار حتى تكتمل الأدوات.",
 		"emptyResponse": "استجابة فارغة."
 	},
 	"input": {

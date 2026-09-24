@@ -2,14 +2,13 @@ import { useEffect, useMemo } from "react";
 import { FILE_PANEL_COMPONENTS } from "@semoss/panels";
 import type { Role } from "@semoss/sdk";
 import { useInsight } from "@semoss/sdk/react";
-import { useCacheState } from "@semoss/ui/next";
+import { useCacheData } from "@semoss/ui/next";
 import type {
 	WorkbenchLayout,
 	WorkbenchPanelConfigAny,
 	WorkbenchSnapshot,
 } from "@semoss/workbench";
 import {
-	parseWorkbenchSnapshot,
 	useWorkbenchCommands,
 	Workbench,
 	WorkbenchCommandMenuButton,
@@ -18,11 +17,13 @@ import {
 import { ASSISTANT_PANEL } from "@/components/assistant";
 import { AssistantStoreProvider } from "@/contexts";
 import { useAssistantStore, useProject, useSession } from "@/hooks";
+import { NOTEBOOK_ANALYST_AGENT } from "@/stores/assistant/assistant-agents";
 import {
 	WORKBENCH_COMPONENTS,
 	WORKBENCH_PANEL_RECORDS,
 } from "@/stores/workbench";
 import { GIT_DIFF_PANEL, GIT_VERSION_PANEL } from "../../git";
+import { useAssistantFilesChanged } from "../../use-assistant-files-changed";
 import {
 	createFileCommands,
 	createOpenPanelCommand,
@@ -144,10 +145,9 @@ export const NotebookWorkbench: React.FC = () => {
 		? `${project.project_id}--read-only`
 		: project.project_id;
 
-	const [snapshot, onSnapshotChange] = useCacheState<WorkbenchSnapshot>(
-		workbenchLayout,
+	const [snapshot, onSnapshotChange] = useCacheData<WorkbenchSnapshot>(
 		`workbench-layout--${workbenchId}--1`,
-		parseWorkbenchSnapshot,
+		workbenchLayout,
 	);
 
 	const syncPermission = useSession((s) => s.syncPermission);
@@ -155,7 +155,12 @@ export const NotebookWorkbench: React.FC = () => {
 
 	const assistantStore = useAssistantStore(workbenchId);
 
-	// keep the assistant's system prompt/tools in sync with the active notebook
+	// Keep project context and tools in sync; the agent defines notebook behavior.
+	const filesChanged = useAssistantFilesChanged({
+		type: "APP",
+		app: project.project_id,
+	});
+
 	useEffect(() => {
 		const name = project.project_display_name || project.project_name;
 
@@ -165,7 +170,9 @@ export const NotebookWorkbench: React.FC = () => {
 		);
 
 		assistantStore.getState().configure({
-			systemPrompt: `You are the assistant for the ${name} notebook workbench (${project.project_id}). Your role is to help the user build and run this notebook and the rest of the project's files. Use only the tools provided in this room. Never claim that an operation succeeded unless its tool result confirms success. Keep answers concise and grounded in the active notebook.`,
+			defaultAgent: NOTEBOOK_ANALYST_AGENT,
+			onRunCompleted: filesChanged,
+			systemPrompt: `Active notebook workbench: ${name}. Project ID: ${project.project_id}. User permission: ${permission}. This project's default notebook is ${NOTEBOOK_PATH}, a project-relative path. Notebook files live under public. This default path does not identify the currently selected editor tab; use supplied context, the conversation, and the existing files to determine the destination.`,
 			mcp: [
 				{
 					type: "PROJECT",
@@ -176,6 +183,7 @@ export const NotebookWorkbench: React.FC = () => {
 			runParams: { project: project.project_id },
 		});
 	}, [
+		filesChanged,
 		assistantStore,
 		syncPermission,
 		refreshPermission,
@@ -212,14 +220,16 @@ export const NotebookWorkbench: React.FC = () => {
 		<AssistantStoreProvider store={assistantStore}>
 			<Workbench
 				snapshot={snapshot}
-				onUnmount={onSnapshotChange}
+				onChange={onSnapshotChange}
 				borderSlots={{
 					left: {
 						after: (
 							<>
 								<WorkbenchCommandMenuButton />
 								<ProjectSettingsToggle />
-								<WorkbenchResetButton />
+								<WorkbenchResetButton
+									snapshot={workbenchLayout}
+								/>
 							</>
 						),
 					},

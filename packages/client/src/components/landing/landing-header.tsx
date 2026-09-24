@@ -9,6 +9,8 @@ import {
 } from "@semoss/ui/next";
 import Appagent from "@/assets/img/Appagent.svg";
 import AppagentDark from "@/assets/img/Appagent-dark.svg";
+import Appautomation from "@/assets/img/Appautomation.svg";
+import AppautomationDark from "@/assets/img/Appautomation-dark.svg";
 import Appcode from "@/assets/img/Appcode.svg";
 import AppcodeDark from "@/assets/img/Appcode-dark.svg";
 import Appdragdrop from "@/assets/img/Appdragdrop.svg";
@@ -16,20 +18,7 @@ import AppdragdropDark from "@/assets/img/Appdragdrop-dark.svg";
 import AppNotebook from "@/assets/img/Appnotebook.svg";
 import AppNotebookDark from "@/assets/img/Appnotebook-dark.svg";
 
-interface LandingCard {
-	title: string;
-	description: string;
-	image: string;
-	testId: string;
-	/** App-creation flow (mutually exclusive with `href`). */
-	type?: "blocks" | "code" | "agent" | "notebook";
-	/** External link (e.g. a bundled app served by SemossWeb). Opens in a new tab. */
-	href?: string;
-	/** Button label (defaults to "Get Started"). */
-	cta?: string;
-}
-
-const CARDS: LandingCard[] = [
+const BASE_CARDS = [
 	{
 		title: "Develop in code",
 		description:
@@ -38,6 +27,7 @@ const CARDS: LandingCard[] = [
 		darkImage: AppcodeDark,
 		type: "code",
 		testId: "new-app-code-btn",
+		adminOnly: false,
 	},
 	{
 		title: "Drag and drop blocks",
@@ -47,6 +37,7 @@ const CARDS: LandingCard[] = [
 		darkImage: AppdragdropDark,
 		type: "blocks",
 		testId: "new-app-drag-btn",
+		adminOnly: false,
 	},
 	{
 		title: "Construct an agent",
@@ -56,15 +47,17 @@ const CARDS: LandingCard[] = [
 		darkImage: AppagentDark,
 		type: "agent",
 		testId: "new-app-agent-btn",
+		adminOnly: false,
 	},
 	{
-		title: "Build a dashboard",
+		title: "Build an automation",
 		description:
-			"Design interactive dashboards from your databases—charts, KPIs, filters and exports—or let the AI Dashboard Builder generate them from a description.",
-		image: Appdragdrop,
-		href: "../../reporting-insights/dist/",
-		cta: "Launch Reporting Insights",
-		testId: "launch-reporting-insights-btn",
+			"Connect engines, models, and data sources into repeatable automated workflows, triggered manually.",
+		image: Appautomation,
+		darkImage: AppautomationDark,
+		type: "automation",
+		testId: "new-app-automation-btn",
+		adminOnly: true,
 	},
 	{
 		title: "Run interactive notebooks",
@@ -74,68 +67,63 @@ const CARDS: LandingCard[] = [
 		darkImage: AppNotebookDark,
 		type: "notebook",
 		testId: "new-notebook-btn",
+		adminOnly: false,
 	},
 ] as const;
 
 interface LandingHeaderProps {
 	/** Trigger creation of a new app */
-	onCreate: (type: "blocks" | "code" | "agent" | "notebook") => void;
+	onCreate: (
+		type: "blocks" | "code" | "agent" | "automation" | "notebook",
+	) => void;
+	/** Whether the current user is an admin — gates admin-only cards */
+	isAdmin: boolean;
 }
 
 export const LandingHeader: React.FC<LandingHeaderProps> = ({
 	onCreate = () => null,
+	isAdmin,
 }) => {
+	const CARDS = BASE_CARDS.filter((card) => !card.adminOnly || isAdmin);
+
 	return (
-		<div className="grid w-full grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
+		<div
+			className={`grid w-full grid-cols-1 gap-4 md:grid-cols-2 ${CARDS.length === 3 ? "lg:grid-cols-3" : "lg:grid-cols-4"}`}
+		>
 			{CARDS.map((card) => (
 				<Card
 					key={card.title}
 					className="relative h-full w-full gap-2 overflow-hidden rounded-xl border-border bg-card py-4"
 				>
 					<CardHeader className="px-4">
-						<CardTitle>{card.title}</CardTitle>
+						<CardTitle className="flex items-center gap-2">
+							{card.title}
+							{card.type === "automation" && (
+								<span className="ms-1 self-center rounded border px-1 py-0.5 font-semibold text-[9px] leading-none">
+									BETA
+								</span>
+							)}
+						</CardTitle>
 						<CardDescription className="line-clamp-3 h-15">
 							{card.description}
 						</CardDescription>
 					</CardHeader>
 					<CardFooter className="flex flex-row items-center justify-start gap-1 px-4">
-						{card.href ? (
-							<Button
-								asChild
-								variant="ghost"
-								size="default"
-								data-testid={card.testId}
-								className="p-0 text-primary hover:bg-transparent hover:text-primary"
-							>
-								<a
-									href={card.href}
-									target="_blank"
-									rel="noopener noreferrer"
-								>
-									<span className="flex items-center gap-1">
-										{card.cta ?? "Get Started"}
-										<ArrowUpRight />
-									</span>
-								</a>
-							</Button>
-						) : (
-							<Button
-								variant="ghost"
-								size="default"
-								data-testid={card.testId}
-								onClick={(e) => {
-									e.stopPropagation();
+						<Button
+							variant="ghost"
+							size="default"
+							onClick={(e) => {
+								e.stopPropagation();
 
-									if (card.type) onCreate(card.type);
-								}}
-								className="p-0 text-primary hover:bg-transparent hover:text-primary"
-							>
-								<span className="flex items-center gap-1">
-									{card.cta ?? "Get Started"}
-									<ArrowUpRight />
-								</span>
-							</Button>
-						)}
+								onCreate(card.type);
+							}}
+							className="p-0 text-primary hover:bg-transparent hover:text-primary"
+						>
+							<span className="flex items-center gap-1">
+								Get Started
+								<ArrowUpRight />
+							</span>
+						</Button>
 					</CardFooter>
 					<div className="relative w-full px-4">
 						<img

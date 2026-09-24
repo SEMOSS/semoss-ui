@@ -938,7 +938,7 @@ const upsertDurableTool = (tools: BuildTool[], next: BuildTool): void => {
  *
  * @name attachDurableMessages
  * @param runs - Run projections keyed by run id; parts are attached to the
- * run tagged in each message's ornaments (or inferred via tool call ids).
+ * run tagged in each message's agentRun context (or inferred via tool call ids).
  * @param messages - Durable playground messages to project.
  */
 export const attachDurableMessages = (
@@ -948,7 +948,8 @@ export const attachDurableMessages = (
 	for (const message of messages) {
 		const timestamp = normalizeTimestamp(message.dateCreated);
 		for (const [partIndex, part] of (message.parts ?? []).entries()) {
-			const taggedRunId = message.ornaments?.agentRunId;
+			const taggedRunId =
+				message.agentRun?.runId ?? message.ornaments?.agentRunId;
 			const inferredRun =
 				part.type === "TOOL_RESULT" && part.toolResult?.toolCallId
 					? Object.values(runs).find((candidate) =>

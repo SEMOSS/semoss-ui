@@ -9,6 +9,7 @@ import { usePage } from "./use-page";
 import { useProject } from "./use-project";
 import { useSession } from "./use-session";
 import { useTabBarScroll } from "./use-tab-bar-scroll";
+import { useAdminMode } from "./useAdminMode";
 import { useDesigner } from "./useDesigner";
 import { useEngine } from "./useEngine";
 import { useMetamodel } from "./useMetamodel";
@@ -23,6 +24,7 @@ import { useWorkspace } from "./useWorkspace";
 // block/renderer dependencies into the broad `@/hooks` import graph, which
 // increases production bundle size.
 export {
+	useAdminMode,
 	useAPI,
 	useAssistant,
 	useAssistantStore,

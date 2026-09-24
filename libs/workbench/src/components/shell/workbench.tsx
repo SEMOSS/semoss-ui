@@ -1,6 +1,6 @@
 import { type FC, useEffect, useLayoutEffect, useMemo, useRef } from "react";
 import { Spinner, useIsMobile } from "@semoss/ui/next";
-import { useWorkbench, useWorkbenchEvents } from "../../hooks";
+import { useWorkbench, useWorkbenchLifeCycle } from "../../hooks";
 import type {
 	WorkbenchBorderSlotCtx,
 	WorkbenchBorderSlots,
@@ -52,26 +52,12 @@ interface WorkbenchProps {
 	snapshot: WorkbenchSnapshot;
 
 	/**
-	 * Handed a fresh snapshot whenever the arrangement moves, for a host that
-	 * persists continuously.
+	 * Called when the workbench snapshot changes.
 	 *
-	 * Fires while this shell is mounted and only then, so a dock that is also
-	 * written to while unmounted — a panel opened by something outside React —
-	 * sees those writes at its next change or at `onUnmount`.
-	 *
-	 * Don't pass this alongside a `snapshot` that changes identity: the
-	 * re-apply would be reported back as a change and overwrite whatever the
-	 * host just switched to.
+	 * The snapshot contains the current panel arrangement, selection,
+	 * maximized state, borders, and recent commands.
 	 */
 	onChange?: (snapshot: WorkbenchSnapshot) => void;
-
-	/**
-	 * Handed this workbench's snapshot when the shell unmounts.
-	 *
-	 * Named for when it fires, because that is the whole of it: React runs
-	 * cleanups on navigation, **not** on a refresh or a closed tab.
-	 */
-	onUnmount?: (snapshot: WorkbenchSnapshot) => void;
 
 	/**
 	 * Rail add-ons per side (before/after the icon list). A rail carrying slot
@@ -102,7 +88,6 @@ interface WorkbenchProps {
 export const Workbench: FC<WorkbenchProps> = ({
 	snapshot,
 	onChange,
-	onUnmount,
 	borderSlots,
 	onPanelOpen,
 	onPanelClose,
@@ -119,7 +104,7 @@ export const Workbench: FC<WorkbenchProps> = ({
 	const rootRef = useRef<HTMLDivElement | null>(null);
 	const stageRef = useRef<HTMLDivElement | null>(null);
 
-	useWorkbenchEvents({
+	useWorkbenchLifeCycle({
 		onPanelOpen,
 		onPanelClose,
 		onSelectionChange,
@@ -156,16 +141,6 @@ export const Workbench: FC<WorkbenchProps> = ({
 		observer.observe(root);
 		return () => observer.disconnect();
 	}, [actions]);
-
-	// hand the host its snapshot on the way out
-	const onUnmountRef = useRef(onUnmount);
-	onUnmountRef.current = onUnmount;
-	useEffect(
-		() => () => {
-			onUnmountRef.current?.(actions.getSnapshot());
-		},
-		[actions],
-	);
 
 	// ⌘/Ctrl+M toggles maximize on the dock last worked in; Escape restores
 	useEffect(() => {
@@ -254,8 +229,12 @@ export const Workbench: FC<WorkbenchProps> = ({
 					</div>
 				)}
 
+				{/* Above the maximized tabset and the panel layer (both z-50):
+				    panel bodies live in a flat overlay rendered after this, so
+				    a scrim below them covers nothing while a panel is
+				    maximized — which is exactly when it has to be seen. */}
 				{isLoading ? (
-					<div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center bg-black/50">
+					<div className="pointer-events-none absolute inset-0 z-60 flex items-center justify-center bg-black/50">
 						<Spinner />
 					</div>
 				) : null}

@@ -3,10 +3,10 @@ import type { Role } from "@semoss/sdk";
 import { usePixel } from "@semoss/sdk/react";
 import type { Engine } from "@semoss/shared";
 import { Badge, Markdown, Separator, Spinner } from "@semoss/ui/next";
+import { formatDateToLocal } from "@semoss/utility";
 import { CatalogOverview } from "@/components/catalog";
 import { useConfig, useSession } from "@/hooks";
 import { normalizeTagArray } from "@/utility";
-import { formatDateToLocal } from "@/utility/date";
 import {
 	formatServingProviderLabel,
 	type ModelMetadata,

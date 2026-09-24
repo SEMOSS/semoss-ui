@@ -5,7 +5,11 @@ import type {
 	WorkbenchPanelConfig,
 	WorkbenchPanelProps,
 } from "@semoss/workbench";
-import { WorkbenchPanelError, WorkbenchPanelLoading } from "@semoss/workbench";
+import {
+	useWorkbenchPanel,
+	WorkbenchPanelError,
+	WorkbenchPanelLoading,
+} from "@semoss/workbench";
 import { useFilePanel } from "../../hooks/use-file-panel";
 import {
 	type FilePanelMode,
@@ -28,9 +32,9 @@ export interface FileMcpEditorParams {
 }
 
 /** Edit an MCP toolbox JSON file in a project or engine resource. */
-const FileMcpEditorPanel = ({
-	config,
-}: WorkbenchPanelProps<FileMcpEditorParams>) => {
+const FileMcpEditorPanel = ({ id }: WorkbenchPanelProps) => {
+	const { config } = useWorkbenchPanel<FileMcpEditorParams>(id);
+
 	const insight = useInsight();
 	const panel = useFilePanel(config);
 	const { access, readOnly, read } = panel;

@@ -34,7 +34,7 @@ import type {
 	WorkbenchComponent,
 	WorkbenchPanelConfig,
 } from "@semoss/workbench";
-import { useWorkbenchControl } from "@semoss/workbench";
+import { useWorkbenchControl, useWorkbenchPanel } from "@semoss/workbench";
 import type { ConversationRoom } from "@/api/rooms";
 import { getUserConversationRooms } from "@/api/rooms";
 import { formatSessionDate } from "@/components/assistant/assistant-format";
@@ -81,10 +81,12 @@ export interface ModelChatHistoryApi {
  * @name ModelChatConversations
  * @return The conversation history panel body.
  */
-const ModelChatConversations: WorkbenchComponent<
-	Record<string, unknown>,
-	ModelChatHistoryApi
-> = ({ id, setValue }) => {
+const ModelChatConversations: WorkbenchComponent = ({ id }) => {
+	const { setValue } = useWorkbenchPanel<
+		Record<string, unknown>,
+		ModelChatHistoryApi
+	>(id);
+
 	const insightId = useModelChat((state) => state.insightId);
 	const engineId = useModelChat((state) => state.engineId);
 	const activeRoomId = useModelChat((state) => state.roomId);
@@ -270,7 +272,7 @@ const ModelChatConversations: WorkbenchComponent<
 				</InputGroup>
 
 				<DropdownMenu>
-					<Tooltip>
+					<Tooltip disableHoverableContent={false}>
 						<TooltipTrigger asChild>
 							<DropdownMenuTrigger asChild>
 								<Button

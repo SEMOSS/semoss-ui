@@ -16,7 +16,7 @@ import {
 	TooltipContent,
 	TooltipTrigger,
 } from "@semoss/ui/next";
-import { formatDateToLocal } from "@/utility/date";
+import { formatDateToLocal } from "@semoss/utility";
 import type { GitCommit, GitCommitFile } from "./git.types";
 import { GitRestoreDialog } from "./git-restore-dialog";
 
@@ -122,7 +122,7 @@ export const GitCommitRow = ({
 						<div className="min-w-0 flex-1">{trigger}</div>
 					)}
 					{onRestore ? (
-						<Tooltip>
+						<Tooltip disableHoverableContent={false}>
 							<TooltipTrigger asChild>
 								<Button
 									type="button"

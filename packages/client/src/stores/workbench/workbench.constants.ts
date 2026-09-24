@@ -13,6 +13,14 @@ export const WORKBENCH_COMPONENTS = {
 	...FILE_PANEL_TYPES,
 	AGENT_EDITOR: "project-agent-editor",
 	ASSISTANT: "workbench-assistant",
+	BLOCKS_DESIGNER: "blocks-designer",
+	BLOCKS_EXPORT: "blocks-export",
+	BLOCKS_LAYERS: "blocks-layers",
+	BLOCKS_MENU: "blocks-menu",
+	BLOCKS_NOTEBOOK_EXPLORER: "blocks-notebook-explorer",
+	BLOCKS_NOTEBOOK_VIEWER: "blocks-notebook-viewer",
+	BLOCKS_SELECTED: "blocks-selected",
+	BLOCKS_VARIABLES: "blocks-variables",
 	DATABASE_COLUMNS: "database-columns",
 	DATABASE_QUERY: "database-query",
 	DATABASE_RESULTS: "database-results",
@@ -30,6 +38,35 @@ export const WORKBENCH_COMPONENTS = {
 	PROJECT_APP_RENDERER: "project-app-renderer",
 	PROJECT_ENGINES: "project-engines",
 } as const;
+
+/**
+ * Topics panels publish to each other on the workbench event bus.
+ *
+ * The dock never interprets a topic — it only routes — so the names and their
+ * payloads are ours, the same way `WORKBENCH_COMPONENTS` above owns the panel
+ * type strings. Unlike those, these are never persisted, so renaming one only
+ * has to be done on both sides of the same release.
+ */
+export const WORKBENCH_EVENTS = {
+	/**
+	 * The project's frontend was published, so anything showing it is stale.
+	 * Emitted by whoever did the publishing — the assistant's build run, the
+	 * Publish button, or a manual rebuild.
+	 */
+	APP_PUBLISHED: "app:published",
+	/**
+	 * A Git index changed — a file was staged or unstaged. The staged counts
+	 * live in the version panel's control, which is a different panel from the
+	 * diff that does the staging.
+	 */
+	GIT_STATUS_CHANGED: "git:status-changed",
+} as const;
+
+/** What each topic carries. */
+export interface WorkbenchEventPayloads {
+	[WORKBENCH_EVENTS.APP_PUBLISHED]: { projectId: string };
+	[WORKBENCH_EVENTS.GIT_STATUS_CHANGED]: { scope: string };
+}
 
 /**
  * Shared panel instance records, keyed by role.
@@ -54,6 +91,53 @@ export const WORKBENCH_PANEL_RECORDS = {
 		helpText: "Assistant",
 		canClose: false,
 		minWidth: 320,
+	},
+	BLOCKS_EXPORT: {
+		id: WORKBENCH_COMPONENTS.BLOCKS_EXPORT,
+		type: WORKBENCH_COMPONENTS.BLOCKS_EXPORT,
+		name: "Export",
+		helpText: "Export Tool",
+		canClose: false,
+	},
+	BLOCKS_LAYERS: {
+		id: WORKBENCH_COMPONENTS.BLOCKS_LAYERS,
+		type: WORKBENCH_COMPONENTS.BLOCKS_LAYERS,
+		name: "Layers",
+		helpText: "Layers",
+		canClose: false,
+	},
+	BLOCKS_MENU: {
+		id: WORKBENCH_COMPONENTS.BLOCKS_MENU,
+		type: WORKBENCH_COMPONENTS.BLOCKS_MENU,
+		name: "Blocks",
+		helpText: "Blocks",
+		canClose: false,
+	},
+	BLOCKS_NOTEBOOK_EXPLORER: {
+		id: WORKBENCH_COMPONENTS.BLOCKS_NOTEBOOK_EXPLORER,
+		type: WORKBENCH_COMPONENTS.BLOCKS_NOTEBOOK_EXPLORER,
+		name: "Notebooks",
+		helpText: "Notebooks",
+		canClose: false,
+	},
+	BLOCKS_SELECTED: {
+		id: WORKBENCH_COMPONENTS.BLOCKS_SELECTED,
+		type: WORKBENCH_COMPONENTS.BLOCKS_SELECTED,
+		name: "Block Settings",
+		helpText: "Block Settings",
+		canClose: false,
+		// Its forms are the widest in the app, so the layout opens it at 450.
+		// This is only the floor on a resize drag, and holding that at the
+		// comfortable width made the panel the one thing on the rail a user
+		// could not narrow.
+		minWidth: 280,
+	},
+	BLOCKS_VARIABLES: {
+		id: WORKBENCH_COMPONENTS.BLOCKS_VARIABLES,
+		type: WORKBENCH_COMPONENTS.BLOCKS_VARIABLES,
+		name: "Variables",
+		helpText: "Variables",
+		canClose: false,
 	},
 	FILE_EXPLORER: {
 		id: WORKBENCH_COMPONENTS.FILE_EXPLORER,

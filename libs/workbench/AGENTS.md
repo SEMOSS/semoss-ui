@@ -4,6 +4,8 @@ The multi-panel dock shell: core, store, context, hooks. Nothing here may know a
 engines, projects, pixels, or auth.
 
 > **Inherits from:** [../../AGENTS.md](../../AGENTS.md) (root).
+> Load the applicable [root skills](../../skills/README.md), including the
+> [React standard](../../skills/react-standard.skill.md), for general implementation rules.
 
 ## What it is
 
@@ -24,19 +26,19 @@ measured slots, so moving a tab never unmounts its body.
 
 **The invariant, and the whole reason this package exists:** no import of `@semoss/sdk`,
 `@semoss/shared`, `@semoss/i18n`, or anything host-shaped. The only runtime dependencies are
-`react`, `@semoss/ui/next`, `lucide-react`, and `zustand` (a peer, so a host cannot end up with
-two store instances). Verify with:
+`react`, `react-dom`, `@semoss/ui` (consumed through `@semoss/ui/next`), `lucide-react`,
+and the `zustand` peer. The host supplies a compatible Zustand version and owns store
+instances; declaring a peer does not itself prevent duplicate stores. Verify boundaries with:
 
 ```sh
-# match import/export specifiers only -- a bare grep also hits prose in comments
-grep -rnE '^\s*(import|export)[^;]*from\s+"' src \
-  | grep -E '@semoss/(sdk|shared|i18n)|"@/'
+# From libs/workbench; inspect matches, including multiline imports and aliases
+rg -n '@semoss/(sdk|shared|i18n)|@/' src --glob '*.{ts,tsx}'
 ```
 
 Two things that used to live here and deliberately do not any more: the **assistant**, which is
 an agent harness and owns its own store in the host, and **resource permissions**, which are a
 fact about (user, resource) and belong to the host's session. `WorkbenchState` is exactly
-`{ layout, loading, command, control }`.
+`{ layout, loading, command, control, events }`.
 
 ## Layout
 
@@ -61,11 +63,9 @@ src/
 └── index.ts           the curated public surface
 ```
 
-**A folder gets an `index.ts` only when several files import several of its members as a set.**
-That is true of `hooks/` and `stores/` (and `stores/slices/`), and of nothing else — so those
-barrels exist and the rest do not. Components import each other by direct path, which is what
-keeps the folder graph above honest: a barrel would make `mobile/` look like it depends on the
-whole of `dock/` when it needs one tab.
+Follow the [React import/export policy](../../skills/react-standard.skill.md#architecture-and-exports).
+Legacy barrels in `hooks/`, `stores/`, and `stores/slices/` remain compatibility structure
+for untouched consumers.
 
 **No barrel uses `export *`.** `src/index.ts` names the file that defines each symbol and does
 not hop through an internal barrel. Two wildcards used to sit there, and they leaked 28 symbols
@@ -74,10 +74,9 @@ that file is a deliberate act; a type with no consumer does not belong in it, an
 needs a missing shape should try deriving it first (`ComponentProps<typeof Workbench>`, or
 indexed access like `NonNullable<WorkbenchPanelConfig["menuItems"]>`).
 
-Type imports come from `../../types`, constants from `../../constants/workbench.constants`,
-store values from `../../stores`, hooks from `../../hooks`. Keep types and values as separate
-statements rather than a mixed `import { type X, y }`; the split is what stops a type file and
-a runtime barrel getting tangled.
+Type imports come from `../../types`, constants from `../../constants/workbench.constants`.
+New or touched store and hook imports likewise name their defining files, such as
+`../../stores/workbench.store` and `../../hooks/use-workbench`.
 
 The folder graph is acyclic and must stay that way: `shell → {dock, panel, command, mobile}`,
 `dock → {panel, menu}`, `mobile → dock`, and `chrome`/`menu`/`command`/`panel` point at nothing
@@ -86,8 +85,8 @@ in `components/` above them.
 ## One context, one hook, one namespace per domain
 
 Everything reaches the per-mount store through `useWorkbench(selector)`. State is grouped by
-domain — `layout`, `loading`, `command`, `control` — and each namespace carries its own fields
-and its own `actions`:
+domain — `layout`, `loading`, `command`, `control`, `events` — and each namespace carries its own
+fields and its own `actions`:
 
 ```ts
 const actions = useWorkbench((s) => s.layout.actions); // stable object — never re-renders
@@ -106,7 +105,7 @@ import or assume any of them.
 `useWorkbenchStoreApi()` returns the raw `StoreApi` (same context). Reach for it only in the
 three cases that a selector genuinely cannot serve, and that are the only ones left in the tree:
 
-- a vanilla `subscribe` that must not re-render (`hooks/use-workbench-events.ts`)
+- a vanilla `subscribe` that must not re-render (`hooks/use-workbench-life-cycle.ts`)
 - wiring one store into another (a domain workbench wiring one store into another)
 - reading live state per animation frame (`components/shell/workbench-drag-layer.tsx`'s hit-test)
 
@@ -131,37 +130,56 @@ helper the way the layout slice does. Reaching across namespaces is just another
    a raw string literal as a panel type.
 2. Co-export a module-scope blueprint const from the panel file
   (`export const MY_PANEL: WorkbenchPanelConfig<MyPanelConfig> = { name, icon, content, … }`) —
-  see the client's `FILE_CODE_EDITOR_PANEL` or `ASSISTANT_PANEL`. Module scope matters:
+  see the client's `ASSISTANT_PANEL`. Module scope matters:
    blueprint identity churn remounts panels.
 3. Reference it in a domain workbench's module-scope `COMPONENTS` map; if it should be open by
    default, add a `WorkbenchPanelRecord` to the layout literal (the client keeps its shared
    singletons in `WORKBENCH_PANEL_RECORDS`).
 
-**Typing a panel.** `WorkbenchPanelConfig<P, V>` is generic: `P` is the shape of the `config`
-its instances are opened with, `V` its scratch value. Annotate the blueprint once and every
-renderer's props follow — `content`, `icon`, `header`, `matches`, `commands`, and
-`menuItems` all get a typed `config` with no casts:
+**Typing a panel.** Every renderer — `content`, `header`, `icon`, and a control — is handed
+`WorkbenchPanelProps`, which is **one prop: `id`** (`icon` also gets the `className` its caller
+has room for). Everything else comes from `useWorkbenchPanel<P, V>(id)`, where `P` is the shape
+of the `config` its instances are opened with and `V` its scratch value:
 
 ```tsx
 export interface MyPanelConfig { path: string }
 
-export const MyPanel: WorkbenchComponent<MyPanelConfig> = ({ config, rename }) => …;
+export const MyPanel = ({ id }: WorkbenchPanelProps) => {
+	const { config, rename } = useWorkbenchPanel<MyPanelConfig>(id);
+	…
+};
 
 export const MY_PANEL: WorkbenchPanelConfig<MyPanelConfig> = {
 	matches: (a, b) => a.path === b.path,   // a.path is `string`, not `unknown`
-	icon: ({ name, className }) => …,       // flat props, no `ctx`/`api` wrapper
+	icon: MyPanelIcon,                      // ({ id, className }) — reads its own panel
 	content: MyPanel,
 };
 ```
 
-Panel renderers receive `WorkbenchPanelProps` **flat** — `id`, `type`, `name`, `config`,
-`value`, `isVisible`, `rename`, `close`, `moveTo`, `setConfig`, `setValue`,
-`select`. Chrome slots (`icon`/`header`) get the same object plus `location` and
-`status`. Wrapping another panel is a spread: `<Other {...props} config={{ ...props.config,
-initialPath: "/public" }} />`. `useWorkbenchPanel(pid, location?)` (`hooks/use-workbench-panel.ts`) is
-the one hook that builds these; `workbenchPanelProps(layout, pid)`
-(`stores/workbench-panel-props.ts`) is its pure, React-free twin for the vanilla
-derivations.
+`WorkbenchPanelConfig<P, V>` stays generic for `matches`, `commands` and `menuItems`; the
+renderer slots are not, because a renderer names `P`/`V` itself at its `useWorkbenchPanel`
+call. Declare them the same way the blueprint does — nothing checks that the two agree.
+
+**There is no chrome contract.** A body, a header, an icon and a control all read the same
+`WorkbenchPanel<P, V>`: `id`, `type`, `name`, `config`, `value`, `isVisible`, `status`, plus
+`rename`, `close`, `moveTo`, `setConfig`, `setValue`, `select`. Wrapping another panel is
+passing the id on: `<Other id={id} />`. `useWorkbenchPanel(pid)`
+(`hooks/use-workbench-panel.ts`) is the only place one is assembled — there is no second,
+React-free builder, and nothing outside that file should grow one.
+
+`WorkbenchHeaderLocation` ("tab" | "header" | "rail" | "rail-vertical") is deliberately *not*
+on it. The same panel is drawn in two of them at once — a border's rail and the header row over
+its body — so it is a fact about a render site, not about a panel, and it cannot live in the
+store. It is internal to the shell's chrome. A blueprint that genuinely needs to draw itself
+differently on a vertical rail gets it from a context the chrome publishes; don't add it back
+as a renderer prop, which is the thing this API removed.
+
+**What is identity-stable** (`hooks/use-workbench-panel.test.tsx` pins all of it): the methods
+are built once per `pid` — the store's actions are created once — so `setValue` and friends are
+safe effect dependencies; `config` and `value` are the store's own objects and change only when
+written (a panel with no config gets one shared `EMPTY_CONFIG`, not a fresh `{}`); and the
+returned object itself changes when any field does, which is what re-renders the renderer.
+Destructure it — never put the whole object in a dependency array.
 
 **Panel type is not panel id.** `type` selects a blueprint; `id` identifies one instance of
 that blueprint. Static layouts may deliberately seed a singleton whose `id` equals its `type`,
@@ -273,7 +291,7 @@ alphabetically. Don't bake the prefix into `label`.
 **Controls**: a panel contributes at most one chrome control with
 `useWorkbenchControl(id, content)` (`hooks/use-workbench-control.tsx`) from inside its body —
 there is no blueprint slot for this, precisely so `content` can reach the panel's own refs and
-state. `content` receives `WorkbenchChromeProps` and owns its label, disabled state, and
+state. `content` receives the panel's `id` and owns its label, disabled state, and
 click handling; the core only places it — in the **header row of the panel's stack**, and only
 for that stack's **active** tab. A dock's header row is its tab strip (the control lands beside
 the maximize button); a border has no strip, so the shell draws one over the open body and the
@@ -284,8 +302,9 @@ churns only when a control appears or disappears, and a keepAlive panel's regist
 waits, hidden, until its tab is front again.
 
 **A control does not re-render with its panel — read this twice.** It draws inside
-`WorkbenchPanelControls` (`components/panel/workbench-panel-header.tsx`), a separate subtree subscribed only
-to `s.control.controls[pid]` and to `useWorkbenchPanel(pid, location)`. Refreshing the ref
+`WorkbenchPanelControls` (`components/panel/workbench-panel-header.tsx`), a separate subtree
+subscribed only to `s.control.controls[pid]` — and, through its own `useWorkbenchPanel(id)`
+call, to that panel's store state. Refreshing the ref
 schedules nothing, so a fresh closure sits unread until the *chrome* re-renders for its own
 reasons — a control closed over a panel's `useState` silently never updates.
 
@@ -297,20 +316,20 @@ never-persisted scratch `value` is for — the panel gets `value`, the control g
 
 ```tsx
 // database-columns-refresh-control.tsx — live state off the domain store
-export const DatabaseColumnsRefreshControl: FC<WorkbenchChromeProps> = () => {
+export const DatabaseColumnsRefreshControl: FC<WorkbenchPanelProps> = () => {
 	const isLoading = useDatabaseWorkbench((s) => s.structure.status === "LOADING");
 	…
 };
 
 // code-app-renderer-refresh-control.tsx — the panel's own state, via `value`
-export const CodeAppRendererRefreshControl: FC<
-	WorkbenchChromeProps<WorkbenchPanelParams, number>
-> = ({ setValue }) => <Button onClick={() => setValue((count = 0) => count + 1)}>…</Button>;
+export const CodeAppRendererRefreshControl: FC<WorkbenchPanelProps> = ({ id }) => {
+	const { setValue } = useWorkbenchPanel<WorkbenchPanelParams, number>(id);
+	return <Button onClick={() => setValue((count = 0) => count + 1)}>…</Button>;
+};
 ```
 
-`useWorkbenchControl` infers `P`/`V` from the component's annotation, so a typed control needs
-no cast (the registry erases them behind `WorkbenchControlAny`, same as `WorkbenchPanelConfigAny`).
-The three live controls — `engine/database/database-columns-refresh-control.tsx`,
+A control that needs neither — it drives a domain store only — simply ignores the `id` it is
+handed. The three live controls — `engine/database/database-columns-refresh-control.tsx`,
 `engine/database/database-new-query-control.tsx`, `project/code/code-app-renderer-refresh-control.tsx`
 — are the exemplars. An inline arrow is a second cost on top of the staleness: it takes a new
 identity every render, so whenever the chrome *does* re-render, React sees a new element type at
@@ -324,12 +343,9 @@ the mobile shell renders no controls at all; it has no rails and no per-panel he
 **Publishing a whole api on `value`.** The four file-explorer panels show the pattern for a
 control that needs to *drive* its panel rather than just show a flag: `useFileExplorer` returns
 an identity-stable api object, so the panel publishes it once —
-`useEffect(() => setValue(explorer), [explorer])` — and `file-explorer-control.tsx` reads
+`useEffect(() => setValue(explorer), [explorer, setValue])` — and `file-explorer-control.tsx` reads
 `value` and calls `value.commands.*`. Two constraints come with it:
 
-- **`setValue` is not identity-stable.** `useWorkbenchPanel` rebuilds a panel's methods whenever
-  its `value` changes, so listing `setValue` in that effect's dependencies loops forever. Omit
-  it (with a `biome-ignore` naming the reason) and depend only on the stable payload.
 - **The control still does not re-render with its panel.** It sees live *behaviour*, not live
   *state*, so it must draw only fixed content. That is why `FileExplorerRefreshAction` has no
   loading spinner: a status-driven glyph in the chrome would freeze mid-animation.
@@ -390,22 +406,32 @@ Two more constraints worth knowing before touching this:
 | `components/mobile/workbench-mobile-drawer.tsx` / `components/chrome/workbench-reset-button.tsx` | On desktop the reset control rides at the end of the left rail, appended to `borderSlots.left.after`. The mobile layout has no rails, so `WorkbenchMobile` passes that slot to its **drawer** instead: the pager bar's ☰ opens a bottom drawer leading with that slot content + reset as an actions row, then every open panel as one full-width row that switches to it. Reset restores the default layout (hidden when `readOnly`) |
 | `constants/workbench.constants.ts` | `WORKBENCH_STYLES` — the one size scale the chrome draws itself at |
 | `contexts/workbench.context.tsx` | `WorkbenchProvider` — one store per mount |
-| `hooks/` | `use-workbench` / `-store-api` (store access), `-commands`, `-control`, `-panel` (a panel's flat props), `-events` (vanilla subscribe bridge), `-hit-test` (drop resolution shared by tab drags and spawn drags) |
-| `stores/workbench.store.ts` | Composes the four slices; `WorkbenchState` is exactly `{ layout, loading, command, control }` |
-| `stores/workbench-panel-props.ts` | Pure builders for a panel's flat props (no React) — used by the hook and the vanilla command/menu derivations |
+| `hooks/` | `use-workbench` / `-store-api` (store access), `-commands`, `-control`, `-panel` (everything about one panel), `-event` (subscribe to the bus), `-life-cycle` (vanilla store→host bridge), `-hit-test` (drop resolution shared by tab drags and spawn drags) |
+| `stores/workbench.store.ts` | Composes the five slices; `WorkbenchState` is exactly `{ layout, loading, command, control, events }` |
 | `stores/slices/workbench-layout.slice.ts` | The dock state + `actions` (registry, slots, persistence, ephemeral UI) |
 | `stores/slices/workbench-layout.tree.ts` | Pure, DOM-free tree ops |
 | `stores/slices/workbench-layout.commands.ts` | Layout-derived palette entries |
 | `stores/slices/workbench-controls.slice.ts` | Panel-contributed chrome controls, keyed by panel id; each control is its own `*-control.tsx` file beside its panel |
+| `stores/slices/workbench-events.slice.ts` | The panel-to-panel bus. Fire-and-forget, nothing retained, subscribers held in the slice closure rather than in state |
 | `utility/workbench-spawn-drag.ts` | The `dataTransfer` protocol for "dropping me should open a panel" |
 | `utility/workbench-drop.ts` | The ordered geometric drop resolution |
 | `utility/workbench-border-slot.ts` | `resolveBorderSlot` — a slot is a node or a function of the border's state. Out here because three shells resolve slots, including the mobile drawer, which has no rails |
-| `types.ts` | Every *shared* workbench type: `WorkbenchLayout`, `WorkbenchPanelConfig`, `WorkbenchPanelProps`, `WorkbenchComponent`, `WorkbenchBorderSlot`, `WorkbenchCommand`, `WorkbenchSlice`. One file — don't start a second. This is the package's **internal** contract; `index.ts` re-exports only the slice of it a consumer imports. The shell's own `WorkbenchProps` is *not* here — it is declared unexported in `components/shell/workbench.tsx`, because nothing but the shell needs it |
+| `types.ts` | Every *shared* workbench type: `WorkbenchLayout`, `WorkbenchPanelConfig`, `WorkbenchPanel`, `WorkbenchPanelProps`, `WorkbenchComponent`, `WorkbenchBorderSlot`, `WorkbenchCommand`, `WorkbenchSlice`. One file — don't start a second. This is the package's **internal** contract; `index.ts` re-exports only the slice of it a consumer imports. The shell's own `WorkbenchProps` is *not* here — it is declared unexported in `components/shell/workbench.tsx`, because nothing but the shell needs it |
 | `index.ts` | The public surface — every export names its defining file, and there is no `export *` anywhere. Shell internals (tabset, tab, stage, border, drag layer, panel hosts, resizers, the mobile shell, the context menu, the error boundary) stay private; the `WorkbenchTabset` **component** would also collide with the `WorkbenchTabset` layout-node type. `types.ts` stays the internal contract — only the types a consumer actually imports are re-exported here. Add to it when a consumer needs a symbol, not before |
 
 ## Rules
 
 - **Keep it domain-agnostic.** This is the package's reason to exist; see the grep above.
+- **Three channels, three jobs — pick by what you are saying.** An **event**
+  (`events.actions.emit` / `useWorkbenchEvent`) says *"this just happened"* to whoever is
+  listening: fire-and-forget, nothing retained, only mounted panels hear it. **`setValue`** says
+  *"here is my current state, or my api"* — for a value a late-mounting panel still needs, or a
+  handle something else calls methods on. **`selectPanel`** says *"open this now"*. Reaching into
+  another panel's `values` by a well-known id to poke a counter is none of these and is already
+  forbidden two sections up; emit instead.
+- **Events are temporal, and that is what makes them safe.** A panel that was not mounted for one
+  reads fresh when it mounts, so `emit` after `selectPanel` covers both the panel that was
+  already open and the one just spawned — no second config write for the not-yet-mounted case.
 - **The mobile drawer is mobile-only, and its state is local.** `WorkbenchMobile` owns one
   `useState` boolean and renders `WorkbenchMobileDrawer` itself; the shell does not. Nothing
   outside that view can open it, so it has no representation in the layout store — don't add
@@ -420,12 +446,12 @@ Two more constraints worth knowing before touching this:
   Both are shell-scoped: a dock written to while its shell is unmounted sees those changes at the
   next one that fires. **Don't pass `onChange` alongside a `snapshot` whose identity changes** —
   the re-apply is reported back as a change and overwrites what the host just switched to.
-- **The `onChange` gate is field identity, in `use-workbench-events.ts`.** `commit` spreads the
+- **The `onChange` gate is field identity, in `use-workbench-life-cycle.ts`.** `commit` spreads the
   previous slice before its patch, and every transient write (`measureSlots`, `setPanelValue`,
   `setDragging`, `setEditingPanel`, `markComponentReady`) is a plain `set` touching one field no
   snapshot holds — so comparing `tree`/`borders`/`panels`/`selection.panel`/`maximizedTabsetId`/
   `recentCommands` by reference is exact. Route a transient write through `commit` to "tidy up"
-  and you start persisting it sixty times a second; `use-workbench-events.test.tsx` pins that.
+  and you start persisting it sixty times a second; `use-workbench-life-cycle.test.tsx` pins that.
 - **`loadSnapshot` applies once per `snapshot` identity**, so keep it a module-scope (or
   memoized) constant: a host whose store outlives its shell would otherwise re-apply a restored
   arrangement on every remount, dropping panels opened in between.
@@ -448,9 +474,11 @@ Two more constraints worth knowing before touching this:
   it has scanned, and this package sits outside a host's own `@source` globs — without that import
   the dock renders unstyled, with no build error anywhere.
 - **Chrome buttons come from `WorkbenchChromeButton`.** The Tooltip-around-a-ghost-Button at
-  `chromeButton`/`chromeIcon` size, muted until hovered, was hand-written in twenty-seven files
-  and drifted on `aria-label` and `disabled` in most of them. A control that is not a button —
-  a select, a dialog trigger — still composes its own.
+  `chromeButton`/`chromeIcon` size, muted until hovered, was hand-written in every control and
+  drifted on `aria-label` and `disabled` in most of them. Every panel control now uses it; a
+  new one that writes its own `Tooltip` is a regression. A control that is not a button — a
+  select, a dialog trigger, or one that needs the click event itself — still composes its own,
+  and so does the shell's own chrome (tabs, rails, border slots), which is not a panel control.
 - **The dock has no identity field.** It used to carry one, which quietly meant two things at
   once: where a layout was stored, and which workbench the server thought a conversation belonged
   to. Both are the host's to name now — a client shell builds one id and uses it for its cache
@@ -473,8 +501,19 @@ and it would make the workbench the one surface whose scrim looks different.
 
 Neither site can adopt a lib overlay component: the stage backdrop is a click-catcher inside
 the dock, not a focus-trapping modal, and the busy scrim is a spinner over content. The real
-fix is a shared scrim token in `globals.css` that both `libs/ui` and this package read; until
-that exists, leave these alone rather than churning them.
+fix may require a shared scrim token in `globals.css` that both `libs/ui` and this package read.
+This is known debt, not a package-level exemption: follow [DESIGN.md](../../DESIGN.md)
+when touching these sites, and report a token migration that requires wider scope rather
+than silently expanding the change or claiming compliance.
+
+## Validation
+
+This package is source-only; it has no build script. From the repository root:
+
+```bash
+pnpm --filter @semoss/workbench check-types
+pnpm --filter @semoss/workbench test
+```
 
 ## Be cautious with
 

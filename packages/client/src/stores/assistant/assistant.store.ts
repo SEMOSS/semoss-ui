@@ -31,6 +31,7 @@ import {
 import type {
 	BuildAttachment,
 	BuildRun,
+	BuildTool,
 	RunStore,
 	WorkbenchRunRecord,
 } from "./assistant.runs";
@@ -51,6 +52,7 @@ import {
 	calculateRoomUsage,
 	findLatestCompactableResponseId,
 } from "./assistant.usage";
+import { APP_BUILDER_AGENT } from "./assistant-agents";
 import { parseSlashCommands } from "./assistant-commands";
 import { attachAssistantNotifications } from "./assistant-notifications";
 
@@ -63,12 +65,6 @@ const AUTO_NAME_MAX_LENGTH = 60;
 /** Delay between streaming polls while a run is in flight. */
 const POLL_INTERVAL_MS = 300;
 
-/**
- * Agent (workspace) every workbench assistant run executes under — the backend's
- * app-builder agent record. Sent as the RunAgent pixel's workspaceId.
- */
-export const WORKBENCH_AGENT_ID = "app-builder";
-
 /** Permission mode forwarded to the agent harness for each run. */
 export type AssistantPermissionMode =
 	| "default"
@@ -80,7 +76,7 @@ export type AssistantPermissionMode =
 export type AssistantEffort = "low" | "medium" | "high" | "max";
 
 /** Minimal reference to a backend agent workspace selected for assistant runs. */
-type AssistantAgent = {
+export type AssistantAgent = {
 	/** Workspace id passed to RunAgent. */
 	workspace_id: string;
 	/** Display name retained for the settings selector. */
@@ -100,8 +96,14 @@ const effortParamValue = (effort: AssistantEffort): string =>
 
 /** Configuration each workbench injects for its ASSISTANT panel. */
 export interface AssistantConfig {
-	/** System prompt sent to the assistant. */
+	/** Additional instructions appended to the selected agent's system prompt. */
 	systemPrompt?: string;
+	/** Replace the selected agent's prompt with systemPrompt; defaults to false. */
+	overrideSystemPrompt?: boolean;
+	/** Explicit agent override; null uses the workbench's default agent. */
+	agent?: AssistantAgent | null;
+	/** Default agent for this workbench, without replacing a user's selection. */
+	defaultAgent?: AssistantAgent;
 	/** Prepare the bound room's tools before an agent run starts. */
 	prepareRoom?: (insightId: string) => Promise<void>;
 	/**
@@ -124,6 +126,15 @@ export interface AssistantConfig {
 	 * scan subagent activity too — e.g. to refresh a preview after a publish).
 	 */
 	onRunCompleted?: (run: BuildRun, runs: Record<string, BuildRun>) => void;
+	/**
+	 * Called after a tool reaches a terminal successful state, allowing a
+	 * workbench to refresh a server-backed preview during an active run.
+	 */
+	onToolCompleted?: (
+		tool: BuildTool,
+		run: BuildRun,
+		runs: Record<string, BuildRun>,
+	) => void;
 	/**
 	 * Manually rebuild the artifact this workbench previews (e.g. compile and
 	 * publish the app). When set, the assistant header shows a rebuild button;
@@ -157,8 +168,10 @@ export interface AssistantState {
 	/** Failure message when initialization did not complete. */
 	initError: string | null;
 
-	/** System prompt sent to the assistant for this workbench's ASSISTANT panel. */
+	/** Additional instructions appended to the selected agent's system prompt. */
 	systemPrompt: string;
+	/** Whether systemPrompt replaces the selected agent's authored prompt. */
+	overrideSystemPrompt: boolean;
 	/** Prepare the bound room's tools before an agent run starts. */
 	prepareRoom: ((insightId: string) => Promise<void>) | null;
 	/** MCP servers persisted onto the room's options before each run. */
@@ -169,13 +182,23 @@ export interface AssistantState {
 	onRunCompleted:
 		| ((run: BuildRun, runs: Record<string, BuildRun>) => void)
 		| null;
+	/** Called after a tool completes successfully during an active run. */
+	onToolCompleted:
+		| ((
+				tool: BuildTool,
+				run: BuildRun,
+				runs: Record<string, BuildRun>,
+		  ) => void)
+		| null;
 	/** Rebuild action surfaced as a assistant-header button when set. */
 	onRebuild: (() => Promise<void>) | null;
 
 	/** Model engine used for new runs. */
 	model: Engine | null;
-	/** Optional backend agent workspace used for new runs. */
+	/** Explicit agent override for new runs; null uses defaultAgent. */
 	agent: AssistantAgent | null;
+	/** Built-in agent used when the user has not selected an override. */
+	defaultAgent: AssistantAgent;
 	/** Turn budget passed to RunAgent. */
 	maxTurns: number;
 	/** Permission mode for new runs; null defers to the harness default. */
@@ -224,8 +247,8 @@ export interface AssistantState {
 	 */
 	destroy: () => void;
 	/**
-	 * Update one or more assistant config fields (systemPrompt, prepareRoom,
-	 * mcp, runParams, permissionMode, onRunCompleted) for this workbench
+	 * Update one or more assistant config fields (systemPrompt, overrideSystemPrompt, agent,
+	 * prepareRoom, mcp, runParams, permissionMode, onRunCompleted) for this workbench
 	 * instance; omitted fields keep their values.
 	 */
 	configure: (config: AssistantConfig) => void;
@@ -584,6 +607,36 @@ export const createAssistantStore = (
 								droppedEvents: meta.droppedEvents,
 							}),
 						);
+						const assistant = get();
+						const run = assistant.runs[runId];
+						if (run && assistant.onToolCompleted) {
+							for (const event of events) {
+								if (
+									event.type !== "item.completed" ||
+									event.item.kind !== "tool" ||
+									event.item.status !== "COMPLETED"
+								) {
+									continue;
+								}
+								const tool = run.tools.find(
+									(candidate) =>
+										candidate.id === event.item.id,
+								);
+								if (!tool) continue;
+								try {
+									assistant.onToolCompleted(
+										tool,
+										run,
+										assistant.runs,
+									);
+								} catch (error) {
+									console.warn(
+										"onToolCompleted handler failed:",
+										error,
+									);
+								}
+							}
+						}
 						for (const event of events) {
 							if (
 								event.type !== "item.updated" &&
@@ -714,14 +767,17 @@ export const createAssistantStore = (
 			initError: null,
 
 			systemPrompt: "",
+			overrideSystemPrompt: false,
 			prepareRoom: null,
 			mcp: [],
 			runParams: {},
 			onRunCompleted: null,
+			onToolCompleted: null,
 			onRebuild: null,
 
 			model: null,
 			agent: null,
+			defaultAgent: APP_BUILDER_AGENT,
 			maxTurns: DEFAULT_MAX_TURNS,
 			permissionMode: null,
 			effort: null,
@@ -871,6 +927,13 @@ export const createAssistantStore = (
 				const insightId = assistant.insightId;
 				const roomId = assistant.roomId;
 				const model = assistant.model;
+				// One selection owns both writes, even if the user changes agents
+				// while uploads or room preparation are still in progress.
+				const runAgentSelection =
+					assistant.agent ?? assistant.defaultAgent;
+				const workbenchAgentMode = assistant.agent
+					? "custom"
+					: "default";
 				setAssistant({ isSending: true });
 
 				try {
@@ -893,13 +956,15 @@ export const createAssistantStore = (
 
 					await updateRoomOptions(insightId, roomId, {
 						instructions: get().systemPrompt,
+						overrideSystemPrompt: get().overrideSystemPrompt,
 						// Engine workbenches load tools from the room's MCP
 						// file (prepareRoom); project workbenches pass their
 						// MCP entries directly.
 						mcp: get().mcp,
 						predefinedPrompts: [],
 						modelId: model.engine_id,
-						workspace: get().agent,
+						workspace: runAgentSelection,
+						workbenchAgentMode,
 						harnessType: "semoss",
 						workbench: workbenchId,
 					});
@@ -943,9 +1008,7 @@ export const createAssistantStore = (
 							harnessType: "semoss",
 							// The SDK forwards agentId as the pixel's
 							// workspaceId.
-							agentId:
-								assistantNow.agent?.workspace_id ??
-								WORKBENCH_AGENT_ID,
+							agentId: runAgentSelection.workspace_id,
 							maxTurns: get().maxTurns,
 							maxReflections: 0,
 							media: attachments
@@ -1206,6 +1269,7 @@ export const createAssistantStore = (
 					}
 					const workspace = options?.workspace;
 					if (
+						options?.workbenchAgentMode !== "default" &&
 						workspace &&
 						typeof workspace === "object" &&
 						"workspace_id" in workspace &&
@@ -1230,11 +1294,13 @@ export const createAssistantStore = (
 					);
 
 					// There is no list-runs-for-room API; root runs are
-					// recovered from the agentRunId ornament the backend
-					// stamps onto each run's persisted messages.
+					// recovered from the agentRun context the backend stamps
+					// onto each run's persisted messages.
 					const rootRunIds: string[] = [];
 					for (const message of messages) {
-						const runId = message.ornaments?.agentRunId;
+						const runId =
+							message.agentRun?.runId ??
+							message.ornaments?.agentRunId;
 						if (runId && !rootRunIds.includes(runId)) {
 							rootRunIds.push(runId);
 						}
@@ -1274,8 +1340,9 @@ export const createAssistantStore = (
 									messages.find(
 										(message) =>
 											message.io === "INPUT" &&
-											message.ornaments?.agentRunId ===
-												runId,
+											(message.agentRun?.runId ??
+												message.ornaments
+													?.agentRunId) === runId,
 									);
 								const inputText = inputMessage?.parts?.find(
 									(part) => part.type === "TEXT" && part.text,

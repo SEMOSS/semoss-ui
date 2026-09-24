@@ -2,20 +2,35 @@
 
 This document provides context for AI coding assistants working with the SEMOSS monorepo.
 
-> **Design rules:** [DESIGN.md](./DESIGN.md) is the repo-wide design rulebook — `@semoss/ui`
-> is the single source of truth for tokens and components. Read it before writing any UI.
+## Required Skill Routing (All Agents)
+
+Load the relevant skills before implementation or review. The
+[skill index](./skills/README.md) applies to all agents, regardless of provider:
+
+- [React standard](./skills/react-standard.skill.md): React/TypeScript implementation and review.
+- [Accessibility](./skills/accessibility.skill.md): interactive UI and accessible behavior.
+- [Mobile development](./skills/mobile-development.skill.md): responsive and touch interfaces.
+- [React form builder](./skills/react-form-builder.skill.md): form fields, validation, and submission.
+- [SDK chat](./skills/sdk-chat.skill.md): rooms, messages, agent runs, approvals, and polling lifecycle.
+- [Design rulebook](./DESIGN.md): UI composition and styling.
+
+Lint and formatting configuration lives in [biome.json](./biome.json).
 
 ## Overview
 
 SEMOSS is a React-based analytics platform built as a pnpm monorepo with Turborepo orchestration.
 
-**Dependency Graph:**
+**Workspace Dependencies:**
+
+These summaries include declared internal dependencies and peers. Package manifests
+and the owning guides define the exact public entry points and architectural boundaries.
 
 Libraries (`libs/*`, publishable):
+- `@semoss/utility` → Generic date, string, file, clipboard, and JSON helpers
 - `@semoss/sdk` → Core SDK (no internal dependencies)
 - `@semoss/ui` → Component library (no internal dependencies)
 - `@semoss/i18n` → Internationalization library (no internal dependencies)
-- `@semoss/shared` → Shared utilities (depends on i18n, sdk, ui)
+- `@semoss/shared` → Shared utilities (depends on i18n, sdk, ui, utility)
 - `@semoss/renderer` → Visualization components (depends on sdk, shared, ui)
 - `@semoss/workbench` → Multi-panel dock shell (depends on ui only — deliberately
   domain-agnostic, so it can never import sdk, shared or i18n)
@@ -25,10 +40,12 @@ The dock and the panels are two layers, in one direction:
 `@semoss/ui ← @semoss/workbench ← @semoss/panels → @semoss/shared → @semoss/sdk`.
 
 Applications (`packages/*`, not published):
-- `@semoss/client` → Main web application (depends on i18n, panels, renderer, sdk, shared, terminal, ui, workbench)
+- `@semoss/client` → Main web application (depends on automation, i18n, panels, renderer, sdk, shared, terminal, ui, utility, workbench)
 - `@semoss/playground` → Chat (depends on i18n, panels, sdk, shared, ui, workbench)
 - `@semoss/terminal` → Embedded terminal (depends on i18n, panels, sdk, shared, ui, workbench)
 - `@semoss/auditlog-package` → Audit log dashboard (depends on i18n, sdk, shared, ui)
+- `@semoss/automation` → Automation workspace app (depends on i18n, sdk, shared, ui, utility;
+  no client-store dependency)
 - `@semoss/cli` → CLI tooling (depends on sdk)
 
 **Every host that mounts a dock or a file panel** imports
@@ -41,6 +58,7 @@ Applications (`packages/*`, not published):
 ```
 semoss/
 ├── libs/           # Shared libraries (publishable)
+│   ├── utility/    # Generic cross-package utility functions
 │   ├── sdk/        # @semoss/sdk - Core SDK
 │   ├── ui/         # @semoss/ui - Component library
 │   ├── i18n/       # @semoss/i18n - Internationalization library
@@ -53,10 +71,12 @@ semoss/
 │   ├── playground/                 # @semoss/playground - Chat
 │   ├── terminal/                   # @semoss/terminal - Embedded terminal app
 │   ├── auditlog/                   # @semoss/auditlog-package - Audit log dashboard
+│   ├── automation/                 # @semoss/automation - Automation workspace app
 │   ├── browser-automation/         # @semoss/browser-automation - Browser automation harness
 │   ├── chrome-extension/           # Chrome extension for browser automation
 │   ├── vscode-extension/           # semoss-vscode - VSCode extension
 │   └── cli/                        # @semoss/cli - CLI tooling
+├── skills/         # Provider-neutral *.skill.md guidance
 ├── pnpm-workspace.yaml
 ├── turbo.json
 └── biome.json
@@ -83,209 +103,20 @@ semoss/
 | `pnpm check` | Run Biome linting/formatting check |
 | `pnpm fix` | Auto-fix Biome issues |
 
-## Code Quality
+## Design System & Styling
 
-### Biome Configuration
+See [DESIGN.md](./DESIGN.md) and the [UI component catalog](./libs/ui/AGENTS.md).
 
-Biome handles linting and formatting. Key rules:
-- **No unused variables/imports**: `error`
-- **No explicit `any`**: `error`
-- **Use `const`** / no `var`: `error`
-- **No `debugger`**: `error`
-- **Semicolons**: required
-- **Trailing commas**: all
-- **Quote style**: double quotes
-- **Indent**: 4 spaces
-- **Line width**: 80
-- **Sorted Tailwind classes**: `warn` (safe autofix)
+## Incremental Migration
 
-Import organization groups (in order):
-1. External packages (excluding `@semoss/**`)
-2. `@semoss/**` packages
-3. Aliases
-4. Relative paths
-
-### Git Hooks
-
-Git hooks are managed by **lefthook** and installed automatically on `pnpm install`
-(via the `prepare` script):
-- **pre-commit**: runs `biome check --write` on staged files (auto-fixes and re-stages).
-- **commit-msg**: runs commitlint to validate the message.
-
-### Commit Messages
-
-Uses Conventional Commits enforced by commitlint (`@commitlint/config-conventional`):
-- Format: `type(scope): message`
-- Types: `build`, `chore`, `ci`, `docs`, `feat`, `fix`, `perf`, `refactor`, `revert`, `style`, `test`
-- Scope is optional and free-form — use the affected package (e.g. `ui`, `client`, `sdk`).
-- Subject: imperative, present tense, lowercase, no trailing period.
-- Example: `feat(ui): add new Button variant`
-
-## Code Style & Conventions
-
-These rules apply to **all** packages. They are adopted incrementally — see
-[Incremental Migration](#incremental-migration) below.
-
-### General
-
-- Write clear, concise code. Favor readability over cleverness.
-- Do not add unnecessary abstractions. Follow DRY and KISS, but a little duplication is fine
-  when it keeps the code simpler.
-- Reuse existing types and common code before writing new ones. Check `@semoss/shared` first
-  (it holds most shared components, utilities, and types), then the other libs.
-- Comment non-obvious code. Add TSDoc (`/** ... */`) to all functions and document component
-  props on their type/interface.
-- Do not use files, components, hooks, or APIs marked `@deprecated` in their TSDoc. Use the
-  replacement named in the deprecation notice instead — e.g. `@semoss/ui/next` components over
-  the legacy `@semoss/ui` exports, and `@semoss/sdk` primitives over the deprecated client
-  `monolithStore`. Migrate any deprecated usage you touch.
-
-### TypeScript
-
-- **No explicit `any`** — Biome errors on it. Prefer precise types, generics, or `unknown`
-  with narrowing.
-- **No non-null assertions (`!`)** — Biome forbids them. Guard nullable values explicitly
-  instead (early return, optional chaining, or a runtime check).
-- Reuse shared types before writing new ones (check `@semoss/shared` first). A type used
-  only internally is not public until it is re-exported from the package barrel.
-- Back stores and config objects with an explicit `interface` (e.g.
-  `<Name>StoreInterface`) rather than an inferred ad-hoc shape.
-- Don't create a `types.ts` / `types/` file for every type. Type things inline (prop
-  interfaces next to their component, function param/return types next to the function,
-  etc.) by default. Only pull a type into a dedicated types file when it's actually shared
-  across multiple files — a single-use type living next to its one usage is preferred over
-  a types file with one export.
-
-### Components & Exports
-
-- One component per file. **Exception:** `@semoss/ui` colocates related components.
-- Use **named exports** only — never `export default`.
-- Expose every folder's public surface through an `index.ts` **barrel** that re-exports its
-  members (`export * from "./file";`). A symbol is not importable from the package until it is
-  re-exported up the barrel chain (folder `index.ts` → package `src/index.ts`).
-
-### Forms
-
-- Any time a form is created or touched (new form, added/changed field, altered submit or
-  validation logic), use the
-  [react-form-builder skill](./.github/skills/react-form-builder/SKILL.md). It defines the
-  required react-hook-form + zod pattern — `useForm`, `zodResolver`, and `z` imported from
-  `@semoss/ui/next`, fields composed from the `Form`/`Form*` wrappers, reads via `usePixel`,
-  and the `onSubmit(id?)` completion callback convention.
-
-### Design System & Styling
-
-**`@semoss/ui` (`libs/ui`) is the single source of truth for design.** Full rules, decision
-trees, and carve-outs: **[DESIGN.md](./DESIGN.md)**. Token/component catalog:
-[libs/ui/AGENTS.md](./libs/ui/AGENTS.md).
-
-- For every user-facing UI task, follow the required workflow and choose a surface archetype
-  from `DESIGN.md` before styling individual elements.
-- Style with **Tailwind CSS** utility classes using the **semantic tokens** defined in
-  [libs/ui/src/styles/globals.css](libs/ui/src/styles/globals.css) — `bg-primary`,
-  `text-muted-foreground`, `border-border`, etc. Status colors are exactly `destructive`,
-  `success`, and `warning`.
-- Import components, hooks, and `cn()` from **`@semoss/ui/next`** only; compose new UI from
-  those primitives instead of raw elements. Use the Typography components (`H1`–`H4`, `P`,
-  `Small`, `Muted`, …) for text; overlays via `Dialog`/`Sheet`/`Popover`/`Tooltip`.
-- **Never**: hex classes (`bg-[#f0f0f0]`), raw palette classes (`text-green-600` — use
-  `text-success`), pixel font sizes (`text-[11px]`), arbitrary z-index (`z-[1300]`), opacity
-  on raw colors (`text-black/50` — use `text-muted-foreground`), inline style colors/fonts,
-  MUI/Emotion imports, or `libs/ui/src/next/theme.ts` (dead code).
-- Tint with token + slash opacity (`bg-primary/10`, `ring-ring/50`); merge class names with
-  `cn()` from `@semoss/ui/next`.
-- Spacing/sizing on the Tailwind scale (8px rhythm, `size-4` for icons); arbitrary values
-  only for a commented external constraint.
-- **Boy-scout rule**: design lint checks each staged frontend file in full. Migrate that file's
-  violations or apply an enumerated, reason-bearing carve-out from `DESIGN.md`; do not
-  drive-by rewrite unrelated files.
-
-### Data & API Calls
-
-- Keep API / pixel calls in `api/`, split by domain (`auth.ts`, `engines.ts`, `projects.ts`,
-  …), and re-export them from the `api/` barrel.
-- Talk to the backend through `@semoss/sdk` primitives (`get`, `post`, `runPixel`, `Env`,
-  `CSRF`) — do not call `fetch` directly.
-- On failure, surface a real error: `.catch((error) => { throw Error(error); })`, and guard an
-  empty/missing payload (e.g. `throw Error("No Config Response")`) so callers never receive
-  `undefined`.
-- Keep API functions `async` and return the parsed data, not the raw response.
-
-### Accessibility
-
-- Give every interactive element an accessible name. Visible text or a programmatic label is
-  preferred; use `aria-label` only when no visible label exists, such as an icon-only button.
-- Prefer native semantics. Elements such as `<button>` and `<a>` already carry a role — do not
-  override it with a redundant `role`.
-- Mark purely decorative elements `aria-hidden`.
-- `role` doubles as a stable test selector (see [Testing](#testing)) — prefer it over adding a
-  separate hook where a semantic role already fits.
-
-### File Naming
-
-Files are **kebab-case** with a **dot role-suffix** marking their role:
-
-| Role | Pattern | Example |
-|------|---------|---------|
-| Page | `<name>.page.tsx` | `login.page.tsx` |
-| Layout | `<name>.layout.tsx` | `authenticated.layout.tsx` |
-| Routes | `<name>.routes.tsx` | `project.routes.tsx` |
-| Router entry | `router.tsx` | `router.tsx` |
-| Store | `<name>.store.ts` | `config.store.ts` |
-| Context | `<name>.context.tsx` | `workspace.context.tsx` |
-| Types | `<name>.types.ts` | `file.types.ts` |
-| Constants | `<name>.constants.ts` | `workbench.constants.ts` |
-| Hook | `use-<name>.ts` | `use-root-store.ts` |
-
-> **Hooks are the exception** to the dot-suffix rule — keep the React `use-<name>.ts` idiom
-> (the exported symbol stays `useName`).
-
-### Testing
-
-- Give elements stable selectors for tests: `id`, `role` (also used for accessibility), or
-  `data-testid`.
-- Name test ids `fileName-component-uniqueIdentifier`.
-
-### Incremental Migration
-
-Adopting these standards is **incremental and ongoing** — treat every task as a chance to move
-the codebase toward them. When you touch a file, consider the surrounding code and bring it up
-to these rules (naming, exports, styling, structure, TypeScript, API, and accessibility) as you
-go, making the small in-scope updates that align it with the conventions above.
-
-Stay in scope: do **not** mass-rename or refactor files you are not otherwise changing. Files
-that predate these rules (e.g. PascalCase or `*-page.tsx` names) are not automatically wrong —
-migrate them as you work on them.
+See the React skill's [scope](./skills/react-standard.skill.md#authorities-and-scope) and
+[full-file review workflow](./skills/react-standard.skill.md#full-file-review-and-handoff).
 
 ## Package Structure Conventions
 
-**Libraries** (`libs/*`) are publishable and consumed via their `index.ts` barrel — they have
-no `pages/` or router. **Applications** (`packages/*`) are not published and add app entry
-files (`main.tsx`, `index.css`) and a `pages/` router tree.
-
-Standard `src/` layout (use only the folders a package needs):
-
-| Folder / file | Purpose |
-|---------------|---------|
-| `assets/` | Images and static files |
-| `api/` | API / pixel calls (where applicable) |
-| `components/` | Components (one per file) |
-| `constants.ts` or `constants/` | Shared constant values |
-| `contexts/` | React contexts (`<name>.context.tsx`) |
-| `hooks/` | React hooks (`use-<name>.ts`) |
-| `pages/` | Routing — applications only (see below) |
-| `stores/` | stores (`<name>.store.ts`) |
-| `styles/` | Global CSS (libraries) |
-| `types.ts` or `types/` | TypeScript types (use a folder when many, grouped logically) |
-| `utility/` | Utility functions (`.ts`, grouped logically by type) |
-
-### Routing (`pages/`, applications only)
-
-- `router.tsx` — router entry point.
-- `<name>.routes.tsx` — route definitions (e.g. an exported `ROUTES` array).
-- `<name>.layout.tsx` — layout for a route subtree.
-- `<name>.page.tsx` — a page component.
-- Group larger feature areas into subfolders (e.g. `pages/project/`).
+See the React skill's [architecture](./skills/react-standard.skill.md#architecture-and-exports)
+and [naming conventions](./skills/react-standard.skill.md#types-and-naming), plus the owning
+package guide below.
 
 ## Agent Guardrails
 
@@ -300,30 +131,8 @@ Standard `src/` layout (use only the folders a package needs):
 - **`biome.json`** - Changes affect all packages
 - **Root `package.json`** - Engine constraints affect all developers
 
-### Mandatory Audit Before Handoff
-
-Before marking work complete, always perform and report a quick audit for touched files:
-- **Standards audit**: confirm naming, exports, Tailwind/style rules, TypeScript safety,
-  API-call patterns, and accessibility requirements from this guide.
-- **Design audit**: run `pnpm lint:design -- <touched-files>`. It audits each supplied
-  frontend file in full. Every diagnostic must be migrated or covered by an enumerated,
-  reason-bearing [DESIGN.md](./DESIGN.md) carve-out.
-- **Deprecation audit**: confirm no new usage of `@deprecated` files/components/hooks/APIs
-  was introduced; migrate touched deprecated usage when in scope.
-- **Risk audit**: call out possible regressions, edge cases, and missing tests.
-- **Validation audit**: run relevant checks/tests for the scope and summarize outcomes.
-
-Do not skip this audit, even for small changes.
-
-### Testing Changes
-
-Always run after making changes:
-```bash
-pnpm lint:design   # Verify staged frontend files against DESIGN.md
-pnpm check          # Verify linting
-pnpm build          # Verify builds pass
-pnpm test           # Verify tests pass
-```
+For validation and handoff, follow the React skill's
+[review checklist](./skills/react-standard.skill.md#full-file-review-and-handoff).
 
 ## Nested AGENTS.md Files
 
@@ -341,5 +150,6 @@ pnpm test           # Verify tests pass
 - [packages/playground/AGENTS.md](./packages/playground/AGENTS.md) - Playground (chat) app specifics
 - [packages/terminal/AGENTS.md](./packages/terminal/AGENTS.md) - Embedded terminal app specifics
 - [packages/auditlog/AGENTS.md](./packages/auditlog/AGENTS.md) - Audit log dashboard app specifics
+- [packages/automation/AGENTS.md](./packages/automation/AGENTS.md) - Automation workspace app specifics
 - [packages/browser-automation/AGENTS.md](./packages/browser-automation/AGENTS.md) - Browser automation harness specifics
 - [packages/cli/AGENTS.md](./packages/cli/AGENTS.md) - CLI tooling specifics

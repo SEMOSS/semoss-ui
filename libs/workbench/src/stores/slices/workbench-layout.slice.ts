@@ -27,6 +27,7 @@ import {
 	flatten,
 	joinTabset,
 	movePanelInTree,
+	parseWorkbenchSnapshot,
 	removePanel,
 	resizeChildren,
 	resolvePinDrop,
@@ -97,7 +98,7 @@ interface WorkbenchLayoutSliceFields {
 	/** The panel whose name is being edited inline, if any. Ephemeral. */
 	editingPanelId: WorkbenchPanelId | undefined;
 
-	/** Measured slot geometry, relative to the workbench root. Ephemeral. */
+	/** Measured slot geometry and its coordinate mode. Ephemeral. */
 	slotRects: Record<string, WorkbenchSlotRect>;
 
 	/** Derived: flatten(tree), in visual order. */
@@ -141,19 +142,22 @@ export interface WorkbenchLayoutActions {
 	 * restored nothing. Anything a snapshot carries beyond the tree — the
 	 * palette's recents — is applied here too.
 	 *
+	 * Validated here, because a restored arrangement is the one input the dock
+	 * gets that nothing in this codebase wrote: a half-written entry, one from
+	 * an older build, or one a user edited by hand would otherwise reach the
+	 * renderer. Anything that fails leaves the current arrangement alone — on
+	 * mount that is the empty dock, which the reset button puts right.
+	 *
 	 * @param snapshot - What to open with.
 	 */
 	loadSnapshot: (snapshot: WorkbenchSnapshot) => void;
-
-	/** Back to the snapshot `loadSnapshot` was given. */
-	resetLayout: () => void;
 
 	/**
 	 * What this workbench would have persisted, right now.
 	 *
 	 * The read half of the host's persistence: the shell hands it to
-	 * `onChange` as the arrangement moves and to `onUnmount` on the way out,
-	 * and a host driving the dock itself can call it whenever.
+	 * `onChange` as the arrangement moves, and a host driving the dock itself
+	 * can call it whenever.
 	 */
 	getSnapshot: () => WorkbenchSnapshot;
 
@@ -484,6 +488,7 @@ const slotRectsEqual = (a: WorkbenchSlotRect, b: WorkbenchSlotRect): boolean =>
 	a.top === b.top &&
 	a.width === b.width &&
 	a.height === b.height &&
+	a.coordinateMode === b.coordinateMode &&
 	a.radius === b.radius;
 
 /**
@@ -499,7 +504,6 @@ export const createWorkbenchLayoutSlice = (
 	const { components } = options;
 
 	// Closure-scoped, never in state: none of these should notify subscribers.
-	let defaultSnapshot: WorkbenchSnapshot | null = null;
 	// The exact `layout` object hydration last ran for. Identity, not a
 	// boolean flag, so a host that genuinely swaps arrangements still
 	// re-applies -- see `loadSnapshot`.
@@ -793,7 +797,9 @@ export const createWorkbenchLayoutSlice = (
 						return;
 					}
 					const base = rootElement.getBoundingClientRect();
-					const prev = get().layout.slotRects;
+					const state = get().layout;
+					const maximizedTabsetId = state.maximizedTabsetId;
+					const prev = state.slotRects;
 					const next: Record<string, WorkbenchSlotRect> = {};
 					let changed = false;
 					for (const [key, el] of slotElements) {
@@ -805,18 +811,29 @@ export const createWorkbenchLayoutSlice = (
 							continue;
 						}
 						const bounds = el.getBoundingClientRect();
+						const coordinateMode =
+							maximizedTabsetId &&
+							(key === maximizedTabsetId ||
+								key === `${maximizedTabsetId}::b`)
+								? "viewport"
+								: "root";
+						const originLeft =
+							coordinateMode === "viewport" ? 0 : base.left;
+						const originTop =
+							coordinateMode === "viewport" ? 0 : base.top;
 						// Snap to whole pixels. Flex weights land slots on
 						// fractional offsets, and a body drawn at one renders
 						// every 1px rule inside it on a half pixel. Both edges
 						// are rounded from the same origin, so slots that abut
 						// still meet exactly.
-						const left = Math.round(bounds.left - base.left);
-						const top = Math.round(bounds.top - base.top);
+						const left = Math.round(bounds.left - originLeft);
+						const top = Math.round(bounds.top - originTop);
 						const rect: WorkbenchSlotRect = {
 							left,
 							top,
-							width: Math.round(bounds.right - base.left) - left,
-							height: Math.round(bounds.bottom - base.top) - top,
+							width: Math.round(bounds.right - originLeft) - left,
+							height: Math.round(bounds.bottom - originTop) - top,
+							coordinateMode,
 							// declared by the slot, read here so the body's
 							// corners follow it without a second channel
 							radius: el.dataset.radius ?? "0",
@@ -858,23 +875,26 @@ export const createWorkbenchLayoutSlice = (
 						return;
 					}
 					loadedSnapshot = snapshot;
-					defaultSnapshot = deepCopy(snapshot);
 
-					applySnapshot(deepCopy(snapshot));
-					if (snapshot.recentCommands) {
-						get().command.actions.loadRecentCommands(
-							snapshot.recentCommands,
+					// Hydrated either way: a rejected arrangement is not a
+					// reason to leave the shell on its loading state forever.
+					const valid = parseWorkbenchSnapshot(snapshot);
+					if (valid) {
+						applySnapshot(deepCopy(valid));
+						if (valid.recentCommands) {
+							get().command.actions.loadRecentCommands(
+								valid.recentCommands,
+							);
+						}
+					} else {
+						console.error(
+							"workbench: ignoring an unreadable arrangement",
+							snapshot,
 						);
 					}
 					set((root) => ({
 						layout: { ...root.layout, hydrated: true },
 					}));
-				},
-				resetLayout: () => {
-					if (!defaultSnapshot) {
-						return;
-					}
-					applySnapshot(deepCopy(defaultSnapshot));
 				},
 				getSnapshot: buildSnapshot,
 

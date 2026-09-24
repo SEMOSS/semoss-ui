@@ -3,10 +3,12 @@ import type { WorkbenchLayoutSliceOptions } from "./slices";
 import {
 	createWorkbenchCommandSlice,
 	createWorkbenchControlsSlice,
+	createWorkbenchEventsSlice,
 	createWorkbenchLayoutSlice,
 	createWorkbenchLoadingSlice,
 	type WorkbenchCommandSliceState,
 	type WorkbenchControlsSliceState,
+	type WorkbenchEventsSliceState,
 	type WorkbenchLayoutSliceState,
 	type WorkbenchLoadingSliceState,
 } from "./slices";
@@ -22,6 +24,7 @@ export interface WorkbenchState {
 	loading: WorkbenchLoadingSliceState;
 	command: WorkbenchCommandSliceState;
 	control: WorkbenchControlsSliceState;
+	events: WorkbenchEventsSliceState;
 }
 
 /** What one workbench store is built with. */
@@ -37,9 +40,9 @@ export type WorkbenchStoreOptions = WorkbenchLayoutSliceOptions;
  * identity rule from the map, and a host that opens a panel before its shell
  * has ever mounted would otherwise dedupe against a shallow compare.
  *
- * Persistence is the host's: the shell's `onChange` and `onUnmount` props hand
- * back a snapshot, and `layout.actions.getSnapshot()` is that same read for a
- * host driving the dock itself. Nothing here touches storage.
+ * Persistence is the host's: the shell's `onChange` prop hands back a
+ * snapshot, and `layout.actions.getSnapshot()` is that same read for a host
+ * driving the dock itself. Nothing here touches storage.
  *
  * Neither the assistant nor resource access is a slice here. The assistant
  * owns its own store (`stores/assistant`), created by the domain workbench;
@@ -50,7 +53,7 @@ export type WorkbenchStoreOptions = WorkbenchLayoutSliceOptions;
  * @name createWorkbenchStore
  * @param options - The blueprints this dock can open.
  * @return Scoped workbench store composed from the layout, loading, command,
- * and control slices.
+ * control, and events slices.
  */
 export const createWorkbenchStore = (
 	options: WorkbenchStoreOptions,
@@ -62,12 +65,14 @@ export const createWorkbenchStore = (
 		const loading = createWorkbenchLoadingSlice()(set, get, api);
 		const command = createWorkbenchCommandSlice()(set, get, api);
 		const control = createWorkbenchControlsSlice()(set, get, api);
+		const events = createWorkbenchEventsSlice()(set, get, api);
 
 		return {
 			layout,
 			loading,
 			command,
 			control,
+			events,
 		};
 	});
 };

@@ -11,7 +11,12 @@ import {
 	useFileEditorPathRef,
 } from "@semoss/shared";
 import { Muted, Spinner, toast } from "@semoss/ui/next";
-import { WorkbenchPanelError, WorkbenchPanelLoading } from "@semoss/workbench";
+import {
+	useWorkbench,
+	WorkbenchPanelError,
+	WorkbenchPanelLoading,
+} from "@semoss/workbench";
+import { FILE_PANEL_EVENTS } from "../constants/file-panel.constants";
 import {
 	type FilePanelMode,
 	getFilePanelResource,
@@ -61,12 +66,6 @@ export interface FilePanelApi {
 	readOnly: boolean;
 	/** The insight every Pixel for this file runs through. */
 	targetInsightId: string | undefined;
-	/**
-	 * The file's *current* path — it follows a rename while the panel stays
-	 * mounted, which `config.path` does not. Always save and download through
-	 * this, never through `config.path`.
-	 */
-	currentPathRef: { current: string };
 	read: {
 		status: string;
 		data: string;
@@ -78,7 +77,6 @@ export interface FilePanelApi {
 	/** Writes in the panel's declared encoding — see the `base64` option. */
 	save: (content: string) => Promise<boolean>;
 	download: () => Promise<void>;
-	isSaving: boolean;
 	isDownloading: boolean;
 	isBusy: boolean;
 	/** Blocking access state, or null once resolved. Return it before anything else. */
@@ -126,6 +124,7 @@ export const useFilePanel = (
 	const [isDownloading, setIsDownloading] = useState(false);
 	const savingRef = useRef(false);
 	const downloadingRef = useRef(false);
+	const emit = useWorkbench((state) => state.events.actions.emit);
 
 	const read = usePixel<string>(
 		enabled && access.status === "ready"
@@ -162,6 +161,10 @@ export const useFilePanel = (
 					throw new Error(response.errors[0]);
 				}
 				toast.success(t("fileExplorer.toasts.saveSuccess"));
+				emit(FILE_PANEL_EVENTS.FILE_SAVED, {
+					scope: getFilePanelScope(config.mode),
+					path: currentPathRef.current,
+				});
 				return true;
 			} catch (error) {
 				toast.error(
@@ -177,7 +180,7 @@ export const useFilePanel = (
 				setIsSaving(false);
 			}
 		},
-		[base64, config, currentPathRef, readOnly, t, targetInsightId],
+		[base64, config, currentPathRef, emit, readOnly, t, targetInsightId],
 	);
 
 	const download = useCallback(async (): Promise<void> => {
@@ -242,11 +245,9 @@ export const useFilePanel = (
 		access,
 		readOnly,
 		targetInsightId,
-		currentPathRef,
 		read: { ...read, revision },
 		save,
 		download,
-		isSaving,
 		isDownloading,
 		isBusy:
 			isSaving || isDownloading || extraBusy || read.status === "LOADING",

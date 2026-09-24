@@ -12,7 +12,7 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from "@semoss/ui/next";
-import { useWorkbench } from "../../hooks";
+import { useWorkbench, useWorkbenchStoreApi } from "../../hooks";
 import { buildWorkbenchLayoutCommands } from "../../stores/slices/workbench-layout.commands";
 
 interface WorkbenchPaletteItem {
@@ -25,7 +25,12 @@ interface WorkbenchPaletteItem {
 
 /** Render and control the command palette for the nearest workbench. */
 export const WorkbenchCommandPalette: FC = () => {
-	const layout = useWorkbench((state) => state.layout);
+	// Read through the store api, not a selector: `commit` returns a fresh
+	// `layout` object on every write, so subscribing to the slice re-rendered
+	// this dialog — mounted unconditionally, open or closed — on every store
+	// write, including ~120 times a second during a splitter drag. The layout
+	// is only ever read to build the commands below, and only while open.
+	const store = useWorkbenchStoreApi();
 
 	// list of all the currently registered commands in the workbench
 	const commands = useWorkbench((state) => state.command.commands);
@@ -54,10 +59,14 @@ export const WorkbenchCommandPalette: FC = () => {
 			return;
 		}
 
-		const layoutCommands = buildWorkbenchLayoutCommands(layout);
+		// Built once per open. The dock is behind a modal while the palette is
+		// up, so its layout cannot change under the user.
+		const layoutCommands = buildWorkbenchLayoutCommands(
+			store.getState().layout,
+		);
 
 		return registerCommand(layoutCommands);
-	}, [isCommandOpen, layout, registerCommand]);
+	}, [isCommandOpen, registerCommand, store]);
 
 	const commandSections = useMemo(() => {
 		const query = search.trim().toLowerCase();

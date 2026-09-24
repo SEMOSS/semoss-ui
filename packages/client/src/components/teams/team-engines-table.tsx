@@ -231,14 +231,7 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
 			setEngines(data as Engine[]);
 			setHasEngines(data.length > 0);
 		});
-	}, [
-		groupId,
-		groupType,
-		enginesPage,
-		debouncedSearch,
-		rowsPerPage,
-		pageOffset,
-	]);
+	}, [groupId, groupType, debouncedSearch, rowsPerPage, pageOffset]);
 
 	useEffect(() => {
 		if (count >= 0) {
@@ -844,7 +837,9 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
 			>
 				<DialogContent className="max-h-[90vh] max-w-4xl overflow-y-auto">
 					<DialogHeader>
-						<DialogTitle>Add Engines</DialogTitle>
+						<DialogTitle className="font-medium text-base leading-6">
+							Add Engines
+						</DialogTitle>
 						<DialogDescription>
 							Select engines and assign an access level.
 						</DialogDescription>
@@ -1026,7 +1021,9 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
 			>
 				<DialogContent>
 					<DialogHeader>
-						<DialogTitle>Are you sure?</DialogTitle>
+						<DialogTitle className="font-medium text-base leading-6">
+							Are you sure?
+						</DialogTitle>
 						<DialogDescription>
 							{engineToDelete ? (
 								<>
@@ -1070,7 +1067,9 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
 			>
 				<DialogContent>
 					<DialogHeader>
-						<DialogTitle>Are you sure?</DialogTitle>
+						<DialogTitle className="font-medium text-base leading-6">
+							Are you sure?
+						</DialogTitle>
 						<DialogDescription>
 							Would you like to delete all selected engines?
 						</DialogDescription>

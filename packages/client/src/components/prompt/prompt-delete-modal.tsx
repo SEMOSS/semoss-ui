@@ -59,7 +59,9 @@ export const PromptDeleteModal = (props: PromptDeleteModalProps) => {
 		>
 			<DialogContent className="sm:max-w-[425px]" showCloseButton={false}>
 				<DialogHeader>
-					<DialogTitle>Are you sure?</DialogTitle>
+					<DialogTitle className="font-medium text-base leading-6">
+						Are you sure?
+					</DialogTitle>
 					<DialogDescription>
 						This action is irreversible. This will permanently
 						delete this prompt.

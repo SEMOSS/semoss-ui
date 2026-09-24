@@ -36,6 +36,7 @@ import {
 	TooltipTrigger,
 	toast,
 } from "@semoss/ui/next";
+import { buildInitials } from "@semoss/utility";
 import { NavbarHeader, NavbarLeft } from "@/components/shared";
 import { useSession } from "@/hooks";
 import { useNavigate } from "@/hooks/useNavigate";
@@ -60,12 +61,6 @@ const generateGradient = (name: string): string => {
 const generateInitialsColor = (name: string): string => {
 	const base = hashString(name) % 360;
 	return `hsl(${base}, 28%, 28%)`;
-};
-
-const buildInitials = (label: string): string => {
-	const tokens = label.split(/[^A-Za-z0-9]+/).filter((t) => t.length > 0);
-	const chars = tokens.map((t) => t[0].toUpperCase());
-	return chars.slice(0, 3).join("");
 };
 
 /**
@@ -396,7 +391,7 @@ export const PromptDetailPage = () => {
 						className="font-semibold text-2xl"
 						style={{ color: initialsColor }}
 					>
-						{buildInitials(promptTitle)}
+						{buildInitials(promptTitle, 3)}
 					</span>
 				</div>
 
@@ -411,7 +406,7 @@ export const PromptDetailPage = () => {
 					{promptId && (
 						<div className="flex items-center gap-1 text-muted-foreground text-sm">
 							<span>{promptId}</span>
-							<Tooltip>
+							<Tooltip disableHoverableContent={false}>
 								<TooltipTrigger asChild>
 									<Button
 										variant="ghost"
@@ -799,7 +794,11 @@ export const PromptDetailPage = () => {
 															"Save Context"
 														)}
 													</Button>
-													<Tooltip>
+													<Tooltip
+														disableHoverableContent={
+															false
+														}
+													>
 														<TooltipTrigger asChild>
 															<Info className="size-4 text-muted-foreground" />
 														</TooltipTrigger>
@@ -897,7 +896,7 @@ export const PromptDetailPage = () => {
 									? "Setting..."
 									: "Set as Active"}
 							</Button>
-							<Tooltip>
+							<Tooltip disableHoverableContent={false}>
 								<TooltipTrigger asChild>
 									<Info className="size-4 text-muted-foreground" />
 								</TooltipTrigger>

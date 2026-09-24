@@ -49,6 +49,7 @@ export const ENGINE_IMAGES: Record<string, EngineImageEntry[]> = {
 		{ name: "PERPLEXITY", icon: "PERPLEXITY.svg" },
 		{ name: "TEXT_EMBEDDINGS", icon: "HUGGINGFACE_COLOR.svg" },
 		{ name: "TEXT_GENERATION", icon: "HUGGINGFACE_COLOR.svg" },
+		{ name: "TYPESAFE", icon: "TYPESAFE.png" },
 		{ name: "VERTEX", icon: "GEMINI_COLOR.svg" },
 		// Self-hosted / long-tail brand keys (keep alphabetical)
 		{ name: "FALCON", icon: "FALCON_AI.png" },

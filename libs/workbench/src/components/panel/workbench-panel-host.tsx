@@ -1,10 +1,10 @@
 import { type FC, memo, useCallback } from "react";
 import { cn } from "@semoss/ui/next";
-import { useWorkbench, useWorkbenchPanel } from "../../hooks";
+import { useWorkbench } from "../../hooks";
 import type { WorkbenchPanelId } from "../../types";
 import { WorkbenchPanelBody } from "./workbench-panel-body";
 
-export interface WorkbenchPanelHostProps {
+interface WorkbenchPanelHostProps {
 	pid: WorkbenchPanelId;
 	/**
 	 * Draw over this slot instead of the panel's own — used by split-in-tab
@@ -16,10 +16,10 @@ export interface WorkbenchPanelHostProps {
 }
 
 /**
- * One absolutely-positioned panel body, drawn over its measured slot. Bodies
- * live in the flat panel layer rather than inside the docks, so moving a tab
- * between docks only changes where a body is drawn — React never unmounts
- * it, and editors, terminals, and scroll positions survive the move.
+ * One positioned panel body, drawn over its measured slot. Bodies live in the
+ * flat panel layer rather than inside the docks, so moving a tab between docks
+ * only changes where a body is drawn — React never unmounts it, and editors,
+ * terminals, and scroll positions survive the move.
  */
 export const WorkbenchPanelHost: FC<WorkbenchPanelHostProps> = memo(
 	({ pid, slotKeyOverride, secondary = false }) => {
@@ -45,7 +45,6 @@ export const WorkbenchPanelHost: FC<WorkbenchPanelHostProps> = memo(
 		const lifted =
 			Boolean(maximizedId) &&
 			(slotKey === maximizedId || slotKey === `${maximizedId}::b`);
-		const panel = useWorkbenchPanel(pid);
 
 		const type = record?.type ?? "";
 		const handleReady = useCallback(
@@ -83,7 +82,10 @@ export const WorkbenchPanelHost: FC<WorkbenchPanelHostProps> = memo(
 				style={
 					rect
 						? {
-								position: "absolute",
+								position:
+									rect.coordinateMode === "viewport"
+										? "fixed"
+										: "absolute",
 								left: rect.left,
 								top: rect.top,
 								width: rect.width,
@@ -111,7 +113,7 @@ export const WorkbenchPanelHost: FC<WorkbenchPanelHostProps> = memo(
 				<WorkbenchPanelBody
 					record={record}
 					component={component}
-					panel={panel}
+					pid={pid}
 					onReady={handleReady}
 					onError={handleError}
 				/>

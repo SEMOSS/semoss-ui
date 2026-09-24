@@ -2,14 +2,13 @@ import { useEffect, useMemo } from "react";
 import { FILE_PANEL_COMPONENTS } from "@semoss/panels";
 import type { Role } from "@semoss/sdk";
 import { useInsight } from "@semoss/sdk/react";
-import { useCacheState } from "@semoss/ui/next";
+import { useCacheData } from "@semoss/ui/next";
 import type {
 	WorkbenchLayout,
 	WorkbenchPanelConfigAny,
 	WorkbenchSnapshot,
 } from "@semoss/workbench";
 import {
-	parseWorkbenchSnapshot,
 	useWorkbenchCommands,
 	Workbench,
 	WorkbenchCommandMenuButton,
@@ -24,6 +23,7 @@ import {
 	WORKBENCH_PANEL_RECORDS,
 } from "@/stores/workbench";
 import { GIT_DIFF_PANEL, GIT_VERSION_PANEL } from "../../git";
+import { useAssistantFilesChanged } from "../../use-assistant-files-changed";
 import {
 	createFileCommands,
 	createOpenPanelCommand,
@@ -117,10 +117,9 @@ export const FunctionWorkbench: React.FC = () => {
 		? `${engine.engine_id}--read-only`
 		: engine.engine_id;
 
-	const [snapshot, onSnapshotChange] = useCacheState<WorkbenchSnapshot>(
-		workbenchLayout,
+	const [snapshot, onSnapshotChange] = useCacheData<WorkbenchSnapshot>(
 		`workbench-layout--${workbenchId}--1`,
-		parseWorkbenchSnapshot,
+		workbenchLayout,
 	);
 
 	const syncPermission = useSession((s) => s.syncPermission);
@@ -130,6 +129,11 @@ export const FunctionWorkbench: React.FC = () => {
 
 	// Revalidate the engine's permission and keep the assistant prompt and
 	// room tools in sync with it.
+	const filesChanged = useAssistantFilesChanged({
+		type: "ENGINE",
+		engine: engine.engine_id,
+	});
+
 	useEffect(() => {
 		syncPermission("ENGINE", engine.engine_id, permission);
 		void refreshPermission("ENGINE", engine.engine_id).catch(
@@ -137,11 +141,13 @@ export const FunctionWorkbench: React.FC = () => {
 		);
 
 		assistantStore.getState().configure({
+			onRunCompleted: filesChanged,
 			systemPrompt: `You are the assistant for the ${engine.engine_display_name || engine.engine_name} workbench (${engine.engine_id}). Your role is to help the user understand, test, and maintain this function. Use only the tools provided in this room. Never claim that an operation succeeded unless its tool result confirms success. Keep answers concise and grounded in the active engine.`,
 			prepareRoom: (insightId) =>
 				makeEngineRoomMcp(insightId, engine.engine_id),
 		});
 	}, [
+		filesChanged,
 		assistantStore,
 		syncPermission,
 		refreshPermission,
@@ -178,14 +184,16 @@ export const FunctionWorkbench: React.FC = () => {
 		<AssistantStoreProvider store={assistantStore}>
 			<Workbench
 				snapshot={snapshot}
-				onUnmount={onSnapshotChange}
+				onChange={onSnapshotChange}
 				borderSlots={{
 					left: {
 						after: (
 							<>
 								<WorkbenchCommandMenuButton />
 								<EngineSettingsToggle />
-								<WorkbenchResetButton />
+								<WorkbenchResetButton
+									snapshot={workbenchLayout}
+								/>
 							</>
 						),
 					},

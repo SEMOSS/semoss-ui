@@ -34,6 +34,7 @@ import {
 	Spinner,
 	toast,
 } from "@semoss/ui/next";
+import { copyTextToClipboard } from "@semoss/utility";
 
 interface LLMFeedback {
 	AGENT_ID: string;
@@ -128,8 +129,8 @@ export const LLMFeedbackPage = () => {
 						variant="outline"
 						className={
 							value === true
-								? "border-green-500 font-normal text-green-600"
-								: "border-red-500 font-normal text-red-600"
+								? "border-success/30 font-normal text-success"
+								: "border-destructive/30 font-normal text-destructive"
 						}
 					>
 						{value === true ? "Positive" : "Negative"}
@@ -155,19 +156,6 @@ export const LLMFeedbackPage = () => {
 			return JSON.stringify(JSON.parse(str), null, 2);
 		} catch {
 			return str;
-		}
-	}, []);
-
-	const copyToClipboard = useCallback(async (text: string, label: string) => {
-		if (!text) {
-			toast.error(`${label} is empty`);
-			return;
-		}
-		try {
-			await navigator.clipboard.writeText(text);
-			toast.success(`Copied ${label}`);
-		} catch {
-			toast.error(`Failed to copy ${label}`);
 		}
 	}, []);
 
@@ -470,7 +458,9 @@ export const LLMFeedbackPage = () => {
 			>
 				<SheetContent className="w-full overflow-y-auto sm:max-w-xl">
 					<SheetHeader>
-						<SheetTitle>Feedback Details</SheetTitle>
+						<SheetTitle className="font-medium text-base leading-6">
+							Feedback Details
+						</SheetTitle>
 						<SheetDescription>
 							{selectedRow?.DATE_CREATED ?? ""}
 						</SheetDescription>
@@ -485,8 +475,8 @@ export const LLMFeedbackPage = () => {
 									variant="outline"
 									className={
 										selectedRow.RATING === true
-											? "border-green-500 font-normal text-green-600"
-											: "border-red-500 font-normal text-red-600"
+											? "border-success/30 font-normal text-success"
+											: "border-destructive/30 font-normal text-destructive"
 									}
 								>
 									{selectedRow.RATING === true
@@ -522,12 +512,27 @@ export const LLMFeedbackPage = () => {
 													variant="ghost"
 													size="icon"
 													className="size-5 opacity-0 transition-opacity focus-visible:opacity-100 group-hover:opacity-100"
-													onClick={() =>
-														copyToClipboard(
+													onClick={() => {
+														if (!display) {
+															toast.error(
+																`${label} is empty`,
+															);
+															return;
+														}
+														void copyTextToClipboard(
 															display,
-															label,
-														)
-													}
+															{
+																onSuccess: () =>
+																	toast.success(
+																		`Copied ${label}`,
+																	),
+																onError: () =>
+																	toast.error(
+																		`Failed to copy ${label}`,
+																	),
+															},
+														);
+													}}
 													aria-label={`Copy ${label}`}
 												>
 													<Copy className="size-3" />

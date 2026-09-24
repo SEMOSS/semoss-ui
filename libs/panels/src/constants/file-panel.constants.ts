@@ -3,9 +3,10 @@
  *
  * Split out of the client's `WORKBENCH_COMPONENTS` when the panels moved here.
  * The client spreads these into its own constant, so **the string values are a
- * storage contract** — `applySnapshot` prunes records whose type a host no
- * longer registers, so changing one silently drops that panel out of every
- * cached layout.
+ * storage contract**. A cached layout naming a type no host registers keeps its
+ * record through `applySnapshot`, which only drops records that sit in no
+ * tabset and no border: the tab comes back with an empty body. Changing one of
+ * these is a breaking change to every layout already in a browser.
  */
 export const FILE_PANEL_TYPES = {
 	FILE_EXPLORER: "file-explorer",
@@ -47,3 +48,50 @@ export const MCP = {
  */
 export const isFilePanelType = (type: string): boolean =>
 	(Object.values(FILE_PANEL_TYPES) as string[]).includes(type);
+
+/**
+ * The workbench events the file panels speak.
+ *
+ * Here rather than in the client because both hosts produce and consume them,
+ * and in this file for the same import-cycle reason as `isFilePanelType` above:
+ * it imports nothing, so a panel importing an event name cannot close a loop
+ * back through `file-panel.components.ts`.
+ */
+export const FILE_PANEL_EVENTS = {
+	/**
+	 * Files changed on the server, by something other than the panel showing
+	 * them: an agent wrote them, a branch was checked out, a commit was
+	 * restored, a terminal saved one.
+	 */
+	FILES_CHANGED: "files:changed",
+	/**
+	 * A file panel just saved its own buffer. Unlike `FILES_CHANGED` (which a
+	 * panel showing the same path treats as "you are stale, re-read"), this
+	 * fires for every save including the panel's own — it's for a listener
+	 * that isn't a file panel at all and has no buffer of its own to keep in
+	 * sync, e.g. the automation canvas mirroring a node's compiled Python
+	 * source file into its in-memory step.
+	 */
+	FILE_SAVED: "files:saved",
+} as const;
+
+/**
+ * What `FILES_CHANGED` carries.
+ *
+ * `paths` omitted means "assume everything in this scope changed" — a branch
+ * switch rewrites the whole working tree and cannot enumerate it.
+ */
+export interface FilesChangedEvent {
+	/** `getFilePanelScope(mode)` of whatever changed. */
+	scope: string;
+	/** The specific files, when the producer knows them. */
+	paths?: string[];
+}
+
+/** What `FILE_SAVED` carries. */
+export interface FileSavedEvent {
+	/** `getFilePanelScope(mode)` of the file that was saved. */
+	scope: string;
+	/** The path that was saved. */
+	path: string;
+}

@@ -3,14 +3,13 @@ import type { StoreApi } from "zustand";
 import { FILE_PANEL_COMPONENTS } from "@semoss/panels";
 import type { Role } from "@semoss/sdk";
 import { useInsight } from "@semoss/sdk/react";
-import { useCacheState } from "@semoss/ui/next";
+import { useCacheData } from "@semoss/ui/next";
 import type {
 	WorkbenchLayout,
 	WorkbenchPanelConfigAny,
 	WorkbenchSnapshot,
 } from "@semoss/workbench";
 import {
-	parseWorkbenchSnapshot,
 	useWorkbenchCommands,
 	useWorkbenchStoreApi,
 	Workbench,
@@ -22,6 +21,7 @@ import { ASSISTANT_PANEL } from "@/components/assistant";
 import { AssistantStoreProvider } from "@/contexts";
 import { DatabaseWorkbenchStoreProvider } from "@/contexts/database-workbench.context";
 import { useAssistantStore, useEngine, useSession } from "@/hooks";
+import { DATABASE_EXPLORER_AGENT } from "@/stores/assistant/assistant-agents";
 import {
 	WORKBENCH_COMPONENTS,
 	WORKBENCH_PANEL_RECORDS,
@@ -31,6 +31,7 @@ import {
 	type DatabaseWorkbenchState,
 } from "@/stores/workbench/database";
 import { GIT_DIFF_PANEL, GIT_VERSION_PANEL } from "../../git";
+import { useAssistantFilesChanged } from "../../use-assistant-files-changed";
 import {
 	createFileCommands,
 	createOpenPanelCommand,
@@ -164,10 +165,9 @@ export const DatabaseWorkbench: React.FC = () => {
 		? `${engine.engine_id}--read-only`
 		: engine.engine_id;
 
-	const [snapshot, onSnapshotChange] = useCacheState<WorkbenchSnapshot>(
-		workbenchLayout,
+	const [snapshot, onSnapshotChange] = useCacheData<WorkbenchSnapshot>(
 		`workbench-layout--${workbenchId}--1`,
-		parseWorkbenchSnapshot,
+		workbenchLayout,
 	);
 
 	// Created once per workbench instance before its panels render.
@@ -187,6 +187,11 @@ export const DatabaseWorkbench: React.FC = () => {
 
 	// Revalidate the engine's permission and keep the assistant prompt and
 	// room tools in sync with it.
+	const filesChanged = useAssistantFilesChanged({
+		type: "ENGINE",
+		engine: engine.engine_id,
+	});
+
 	useEffect(() => {
 		syncPermission("ENGINE", engine.engine_id, permission);
 		void refreshPermission("ENGINE", engine.engine_id).catch(
@@ -194,17 +199,21 @@ export const DatabaseWorkbench: React.FC = () => {
 		);
 
 		assistantStore.getState().configure({
-			systemPrompt: `You are the assistant for the ${engine.engine_display_name || engine.engine_name} workbench (${engine.engine_id}). Your role is to help the user understand and work with this database. Use only the tools provided in this room. Never claim that an operation succeeded unless its tool result confirms success. Keep answers concise and grounded in the active engine.`,
+			defaultAgent: DATABASE_EXPLORER_AGENT,
+			onRunCompleted: filesChanged,
+			systemPrompt: `Active database workbench: ${engine.engine_display_name || engine.engine_name}. Engine ID: ${engine.engine_id}. Catalog subtype: ${engine.engine_subtype || "unknown"}. User permission: ${permission}. The backend-generated schema and query tool descriptions identify the loaded database implementation, query language or SQL dialect, and supported query route. Use this active engine as the context for the user's request. The editor language setting does not determine database capabilities.`,
 			prepareRoom: (insightId) =>
 				makeEngineRoomMcp(insightId, engine.engine_id),
 		});
 	}, [
+		filesChanged,
 		assistantStore,
 		syncPermission,
 		refreshPermission,
 		engine.engine_display_name,
 		engine.engine_id,
 		engine.engine_name,
+		engine.engine_subtype,
 		permission,
 	]);
 
@@ -263,7 +272,7 @@ export const DatabaseWorkbench: React.FC = () => {
 			<DatabaseWorkbenchStoreProvider store={databaseStore}>
 				<Workbench
 					snapshot={snapshot}
-					onUnmount={onSnapshotChange}
+					onChange={onSnapshotChange}
 					onPanelClose={(pid, record) =>
 						databaseStore.getState().handlePanelClosed(pid, record)
 					}
@@ -273,7 +282,9 @@ export const DatabaseWorkbench: React.FC = () => {
 								<>
 									<WorkbenchCommandMenuButton />
 									<EngineSettingsToggle />
-									<WorkbenchResetButton />
+									<WorkbenchResetButton
+										snapshot={workbenchLayout}
+									/>
 								</>
 							),
 						},

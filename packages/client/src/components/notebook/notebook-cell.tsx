@@ -33,7 +33,6 @@ import {
 	useBlocks,
 } from "@semoss/renderer";
 import { runPixel } from "@semoss/sdk";
-import { hasInlineImage } from "@semoss/shared";
 import {
 	Button,
 	ButtonGroup,
@@ -53,6 +52,7 @@ import {
 	TooltipTrigger,
 	toast,
 } from "@semoss/ui/next";
+import { hasInlineImage } from "@semoss/utility/image";
 import { useProject, useWorkspace } from "@/hooks";
 import { MCP_NOTEBOOK_NAME } from "@/pages/app/app.constants";
 // TODO: MOVE TO SDK or a seperate lib specifically for utilities @semoss/utility
@@ -500,16 +500,19 @@ export const NotebookCell = observer(
 			return { lines, bytes };
 		}, [rawOutput]);
 
+		// cell.messages is a MobX-observable array mutated in place via .push,
+		// so its reference never changes and `cell.messages` alone would never
+		// re-run this. The .length dep is what makes a new message land.
+		// biome-ignore lint/correctness/useExhaustiveDependencies: see above
 		const loggingStats = useMemo(() => {
 			const joined = cell.messages.join("\n");
 			const lines = joined ? joined.split("\n").length : 0;
 			const bytes = joined ? new TextEncoder().encode(joined).length : 0;
 			return { lines, bytes };
-			// cell.messages is a MobX-observable array mutated in place via
-			// .push, so its reference is stable — depend on .length so this
-			// re-runs whenever a new message arrives.
 		}, [cell.messages, cell.messages.length]);
 
+		// Same as loggingStats: .length is the only dep that changes on push.
+		// biome-ignore lint/correctness/useExhaustiveDependencies: see above
 		const loggingHasJson = useMemo(
 			() => cell.messages.some((m) => isOutputJSON(m) != null),
 			[cell.messages, cell.messages.length],
@@ -523,51 +526,83 @@ export const NotebookCell = observer(
 
 		const renderOutputHeader = (onExpand?: () => void) => (
 			<div className="flex w-full flex-row items-center justify-between gap-2 px-1">
-				<div className="flex min-w-0 items-center gap-2">
+				<div className="flex min-w-0 flex-1 items-center gap-2">
 					<Braces className="size-3.5 text-muted-foreground" />
 					<span className="font-medium text-foreground text-xs">
 						Output
 					</span>
 					{outputIsJson && (
-						<span className="inline-flex items-center rounded bg-muted px-1.5 py-0.5 font-medium text-[10px] text-muted-foreground uppercase tracking-wider">
+						<span className="inline-flex items-center rounded bg-muted px-1.5 py-0.5 font-medium text-[11px] text-muted-foreground uppercase tracking-wider">
 							JSON
 						</span>
 					)}
 					{outputHasImage && (
-						<span className="inline-flex items-center rounded bg-muted px-1.5 py-0.5 font-medium text-[10px] text-muted-foreground uppercase tracking-wider">
+						<span className="inline-flex items-center rounded bg-muted px-1.5 py-0.5 font-medium text-[11px] text-muted-foreground uppercase tracking-wider">
 							Image
 						</span>
 					)}
 				</div>
 				<div className="flex items-center gap-1">
-					<Button
-						title={showRaw ? "Show formatted" : "Show raw"}
-						variant={showRaw ? "secondary" : "ghost"}
-						size="sm"
-						className="h-7 px-2 text-xs"
-						onClick={() => setShowRaw((v) => !v)}
-					>
-						{showRaw ? "Formatted" : "Raw"}
-					</Button>
-					<Button
-						title="Copy output"
-						variant="ghost"
-						size="sm"
-						className="h-7 px-2 text-muted-foreground"
-						onClick={() => copyTextToClipboard(rawOutput)}
-					>
-						<Copy className="size-3" />
-					</Button>
-					{onExpand && (
-						<Button
-							title="Expand"
-							variant="ghost"
-							size="sm"
-							className="h-7 px-2 text-muted-foreground"
-							onClick={onExpand}
+					<Tooltip disableHoverableContent={false}>
+						<TooltipTrigger asChild>
+							<Button
+								aria-label={
+									showRaw ? "Show formatted" : "Show raw"
+								}
+								variant={showRaw ? "secondary" : "ghost"}
+								size="sm"
+								className="h-7 px-2 text-xs"
+								onClick={() => setShowRaw((v) => !v)}
+							>
+								{showRaw ? "Formatted" : "Raw"}
+							</Button>
+						</TooltipTrigger>
+						<TooltipContent
+							sideOffset={4}
+							className="max-w-xs break-words"
 						>
-							<Maximize2 className="size-3" />
-						</Button>
+							{showRaw ? "Show formatted" : "Show raw"}
+						</TooltipContent>
+					</Tooltip>
+					<Tooltip disableHoverableContent={false}>
+						<TooltipTrigger asChild>
+							<Button
+								aria-label={"Copy output"}
+								variant="ghost"
+								size="sm"
+								className="h-7 px-2 text-muted-foreground"
+								onClick={() => copyTextToClipboard(rawOutput)}
+							>
+								<Copy className="size-3" />
+							</Button>
+						</TooltipTrigger>
+						<TooltipContent
+							sideOffset={4}
+							className="max-w-xs break-words"
+						>
+							{"Copy output"}
+						</TooltipContent>
+					</Tooltip>
+					{onExpand && (
+						<Tooltip disableHoverableContent={false}>
+							<TooltipTrigger asChild>
+								<Button
+									aria-label={"Expand"}
+									variant="ghost"
+									size="sm"
+									className="h-7 px-2 text-muted-foreground"
+									onClick={onExpand}
+								>
+									<Maximize2 className="size-3" />
+								</Button>
+							</TooltipTrigger>
+							<TooltipContent
+								sideOffset={4}
+								className="max-w-xs break-words"
+							>
+								{"Expand"}
+							</TooltipContent>
+						</Tooltip>
 					)}
 				</div>
 			</div>
@@ -624,43 +659,83 @@ export const NotebookCell = observer(
 						</Button>
 						{showConsole && (
 							<div className="flex items-center gap-1">
-								<Button
-									title={
-										showRawLogging
+								<Tooltip disableHoverableContent={false}>
+									<TooltipTrigger asChild>
+										<Button
+											aria-label={
+												showRawLogging
+													? "Show formatted"
+													: "Show raw"
+											}
+											variant={
+												showRawLogging
+													? "secondary"
+													: "ghost"
+											}
+											size="sm"
+											className="h-7 px-2 text-xs"
+											onClick={() =>
+												setShowRawLogging((v) => !v)
+											}
+										>
+											{showRawLogging
+												? "Formatted"
+												: "Raw"}
+										</Button>
+									</TooltipTrigger>
+									<TooltipContent
+										sideOffset={4}
+										className="max-w-xs break-words"
+									>
+										{showRawLogging
 											? "Show formatted"
-											: "Show raw"
-									}
-									variant={
-										showRawLogging ? "secondary" : "ghost"
-									}
-									size="sm"
-									className="h-7 px-2 text-xs"
-									onClick={() => setShowRawLogging((v) => !v)}
-								>
-									{showRawLogging ? "Formatted" : "Raw"}
-								</Button>
-								<Button
-									title="Copy logs"
-									variant="ghost"
-									size="sm"
-									className="h-7 px-2 text-muted-foreground"
-									onClick={() =>
-										copyTextToClipboard(
-											cell.messages.join("\n"),
-										)
-									}
-								>
-									<Copy className="size-3" />
-								</Button>
-								<Button
-									title="Expand"
-									variant="ghost"
-									size="sm"
-									className="h-7 px-2 text-muted-foreground"
-									onClick={() => setShowLoggingModal(true)}
-								>
-									<Maximize2 className="size-3" />
-								</Button>
+											: "Show raw"}
+									</TooltipContent>
+								</Tooltip>
+								<Tooltip disableHoverableContent={false}>
+									<TooltipTrigger asChild>
+										<Button
+											aria-label={"Copy logs"}
+											variant="ghost"
+											size="sm"
+											className="h-7 px-2 text-muted-foreground"
+											onClick={() =>
+												copyTextToClipboard(
+													cell.messages.join("\n"),
+												)
+											}
+										>
+											<Copy className="size-3" />
+										</Button>
+									</TooltipTrigger>
+									<TooltipContent
+										sideOffset={4}
+										className="max-w-xs break-words"
+									>
+										{"Copy logs"}
+									</TooltipContent>
+								</Tooltip>
+								<Tooltip disableHoverableContent={false}>
+									<TooltipTrigger asChild>
+										<Button
+											aria-label={"Expand"}
+											variant="ghost"
+											size="sm"
+											className="h-7 px-2 text-muted-foreground"
+											onClick={() =>
+												setShowLoggingModal(true)
+											}
+										>
+											<Maximize2 className="size-3" />
+										</Button>
+									</TooltipTrigger>
+									<TooltipContent
+										sideOffset={4}
+										className="max-w-xs break-words"
+									>
+										{"Expand"}
+									</TooltipContent>
+								</Tooltip>
 							</div>
 						)}
 					</div>
@@ -803,7 +878,6 @@ export const NotebookCell = observer(
 				<div className="flex w-full flex-row items-start gap-1">
 					{/* Left rail: drag handle, play, [n] */}
 					<div className="flex w-10 shrink-0 flex-col items-center gap-2 pt-2">
-						{/* biome-ignore lint/a11y/noStaticElementInteractions: drag handle, drag attrs come from dnd-kit */}
 						<div
 							{...dragHandleProps}
 							title="Drag to reorder"
@@ -811,47 +885,70 @@ export const NotebookCell = observer(
 						>
 							<GripVertical className="size-4" />
 						</div>
-						<button
-							type="button"
-							title="Run cell"
-							disabled={cell.isLoading}
-							className="group/run flex flex-col items-center gap-1 disabled:opacity-70"
-							onMouseDown={() => {
-								notebook.selectCell(cell.query.id, cell.id);
-								state.dispatch({
-									message: ActionMessages.RUN_CELL,
-									payload: {
-										queryId: cell.query.id,
-										cellId: cell.id,
-									},
-								});
-							}}
-						>
-							<span
-								className={`inline-flex size-7 items-center justify-center rounded-full border transition-colors ${
-									cell.isLoading
-										? "border-muted-foreground/40 text-muted-foreground"
-										: cell.isSuccessful
-											? "border-green-600/50 text-green-600 group-hover/run:border-green-700 group-hover/run:text-green-700"
-											: cell.isError
-												? "border-destructive/50 text-destructive group-hover/run:border-destructive group-hover/run:text-destructive/80"
-												: "border-muted-foreground/40 text-muted-foreground group-hover/run:border-primary group-hover/run:text-primary"
-								}`}
+						<Tooltip disableHoverableContent={false}>
+							<TooltipTrigger asChild>
+								<span
+									className="inline-flex"
+									tabIndex={cell.isLoading ? 0 : undefined}
+								>
+									<Button
+										variant="ghost"
+										size="icon-sm"
+										aria-label={"Run cell"}
+										type="button"
+										disabled={cell.isLoading}
+										className="group/run h-auto w-auto flex-col items-center gap-1 p-0 hover:bg-transparent disabled:opacity-70"
+										onClick={() => {
+											notebook.selectCell(
+												cell.query.id,
+												cell.id,
+											);
+											state.dispatch({
+												message:
+													ActionMessages.RUN_CELL,
+												payload: {
+													queryId: cell.query.id,
+													cellId: cell.id,
+												},
+											});
+										}}
+									>
+										<span
+											className={`inline-flex size-7 items-center justify-center rounded-full border transition-colors ${
+												cell.isLoading
+													? "border-muted-foreground/40 text-muted-foreground"
+													: cell.isSuccessful
+														? "border-success/50 text-success group-hover/run:border-success group-hover/run:text-success"
+														: cell.isError
+															? "border-destructive/50 text-destructive group-hover/run:border-destructive group-hover/run:text-destructive/80"
+															: "border-muted-foreground/40 text-muted-foreground group-hover/run:border-primary group-hover/run:text-primary"
+											}`}
+										>
+											{cell.isLoading ? (
+												<Spinner className="size-3.5" />
+											) : (
+												<Play className="size-3.5" />
+											)}
+										</span>
+										<span className="font-mono text-muted-foreground text-xs leading-none">
+											{cell.isLoading
+												? "[*]"
+												: localCellPlayNumber
+													? `[${localCellPlayNumber}]`
+													: "[ ]"}
+										</span>
+									</Button>
+								</span>
+							</TooltipTrigger>
+							<TooltipContent
+								sideOffset={4}
+								className="max-w-xs break-words"
 							>
-								{cell.isLoading ? (
-									<Spinner className="size-3.5" />
-								) : (
-									<Play className="size-3.5" />
-								)}
-							</span>
-							<span className="font-mono text-muted-foreground text-xs leading-none">
 								{cell.isLoading
-									? "[*]"
-									: localCellPlayNumber
-										? `[${localCellPlayNumber}]`
-										: "[ ]"}
-							</span>
-						</button>
+									? "Wait for the cell to finish running"
+									: "Run cell"}
+							</TooltipContent>
+						</Tooltip>
 					</div>
 
 					{/* Card */}
@@ -869,64 +966,125 @@ export const NotebookCell = observer(
 					>
 						{/* Header row */}
 						<div className="flex items-center justify-between gap-2 border-border/40 border-b px-3 py-1.5">
-							<div className="flex min-w-0 items-center gap-2">
+							<div className="flex min-w-0 flex-1 items-center gap-2">
 								{variableName ? (
-									<div className="inline-flex min-w-0 items-center gap-1">
-										<button
-											type="button"
-											title={`Copy {{${variableName}}}`}
-											className="inline-flex min-w-0 cursor-pointer items-center gap-1 border-none bg-transparent p-0 text-foreground text-sm outline-none transition-colors hover:text-primary focus:outline-none focus-visible:outline-none"
-											onClick={(e) => {
-												e.stopPropagation();
-												copyTextToClipboard(
-													`{{${variableName}}}`,
-												);
-											}}
+									<div className="inline-flex min-w-0 flex-1 items-center gap-1">
+										<Tooltip
+											disableHoverableContent={false}
 										>
-											<span
-												className="block min-w-0 max-w-[16ch] truncate font-mono"
-												style={noLigatureStyle}
+											<TooltipTrigger asChild>
+												<Button
+													variant="ghost"
+													size="sm"
+													aria-label={`Copy {{${variableName}}}`}
+													type="button"
+													className="h-7 w-auto min-w-0 flex-1 justify-start gap-1 px-1 py-0 font-normal text-foreground text-sm hover:text-primary"
+													onClick={(e) => {
+														e.stopPropagation();
+														copyTextToClipboard(
+															`{{${variableName}}}`,
+														);
+													}}
+												>
+													<span
+														className="block min-w-0 truncate font-mono"
+														style={noLigatureStyle}
+													>
+														{variableName}
+													</span>
+													<Copy className="@md:inline-block hidden size-3 shrink-0" />
+												</Button>
+											</TooltipTrigger>
+											<TooltipContent
+												sideOffset={4}
+												className="max-w-xs break-words"
+											>{`Copy {{${variableName}}}`}</TooltipContent>
+										</Tooltip>
+										<Tooltip
+											disableHoverableContent={false}
+										>
+											<TooltipTrigger asChild>
+												<span
+													className="inline-flex"
+													tabIndex={
+														cell.isLoading
+															? 0
+															: undefined
+													}
+												>
+													<Button
+														variant="ghost"
+														size="icon-sm"
+														aria-label={
+															"Rename variable"
+														}
+														type="button"
+														className="@md:inline-flex hidden cursor-pointer items-center rounded-sm border-none bg-transparent p-0.5 text-muted-foreground outline-none transition-colors hover:text-primary focus:outline-none focus-visible:outline-none"
+														disabled={
+															cell.isLoading
+														}
+														onClick={(e) => {
+															e.stopPropagation();
+															setRenameOpen(true);
+														}}
+													>
+														<Pencil className="size-3" />
+													</Button>
+												</span>
+											</TooltipTrigger>
+											<TooltipContent
+												sideOffset={4}
+												className="max-w-xs break-words"
 											>
-												{variableName}
-											</span>
-											<Copy className="@md:inline-block hidden size-3 shrink-0" />
-										</button>
-										<button
-											type="button"
-											title="Rename variable"
-											className="@md:inline-flex hidden cursor-pointer items-center rounded-sm border-none bg-transparent p-0.5 text-muted-foreground outline-none transition-colors hover:text-primary focus:outline-none focus-visible:outline-none"
-											disabled={cell.isLoading}
-											onClick={(e) => {
-												e.stopPropagation();
-												setRenameOpen(true);
-											}}
-										>
-											<Pencil className="size-3" />
-										</button>
+												{cell.isLoading
+													? "Wait for the cell to finish running"
+													: "Rename variable"}
+											</TooltipContent>
+										</Tooltip>
 									</div>
 								) : (
-									<Button
-										title="Use as variable"
-										variant="ghost"
-										size="sm"
-										className="h-7 gap-1 px-2 text-muted-foreground text-xs"
-										disabled={cell.isLoading}
-										onClick={(e) => {
-											e.stopPropagation();
-											setVariableModal(true);
-										}}
-									>
-										<BookPlus className="size-3" />
-										Name
-									</Button>
+									<Tooltip disableHoverableContent={false}>
+										<TooltipTrigger asChild>
+											<span
+												className="inline-flex"
+												tabIndex={
+													cell.isLoading
+														? 0
+														: undefined
+												}
+											>
+												<Button
+													variant="ghost"
+													size="sm"
+													className="h-7 gap-1 px-2 text-muted-foreground text-xs"
+													disabled={cell.isLoading}
+													onClick={(e) => {
+														e.stopPropagation();
+														setVariableModal(true);
+													}}
+												>
+													<BookPlus className="size-3" />
+													Name
+												</Button>
+											</span>
+										</TooltipTrigger>
+										<TooltipContent
+											sideOffset={4}
+											className="max-w-xs break-words"
+										>
+											{cell.isLoading
+												? "Wait for the cell to finish running"
+												: "Use as variable"}
+										</TooltipContent>
+									</Tooltip>
 								)}
-								<span className="@lg:inline-flex hidden @lg:items-center whitespace-nowrap rounded bg-muted px-1.5 py-0.5 font-medium text-[10px] text-muted-foreground uppercase tracking-wider">
+								<span className="@lg:inline-flex hidden @lg:items-center whitespace-nowrap rounded bg-muted px-1.5 py-0.5 font-medium text-[11px] text-muted-foreground uppercase tracking-wider">
 									{cellTypeLabel}
 								</span>
 							</div>
-							<div className="flex items-center gap-2">
+							<div className="flex shrink-0 items-center gap-2">
 								{(cell.isSuccessful || cell.isError) && (
-									<Tooltip>
+									<Tooltip disableHoverableContent={false}>
 										<TooltipTrigger asChild>
 											<span className="font-mono text-muted-foreground text-xs">
 												{getCompactExecutionTime(
@@ -942,113 +1100,264 @@ export const NotebookCell = observer(
 									</Tooltip>
 								)}
 								<ButtonGroup>
-									<Button
-										title="Run the cells above and this cell"
-										variant="ghost"
-										size="sm"
-										className="relative h-7 px-2"
-										disabled={cell.isLoading}
-										onClick={(e) => {
-											e.stopPropagation();
-											runCellsAboveHandler();
-										}}
-									>
-										<Play className="size-4" />
-										<ArrowUp className="absolute right-0.5 bottom-0.5 size-2.5" />
-									</Button>
-									<Button
-										title="Run this cell and below"
-										variant="ghost"
-										size="sm"
-										className="relative h-7 px-2"
-										disabled={cell.isLoading}
-										onClick={(e) => {
-											e.stopPropagation();
-											runCellAndBelowHandler();
-										}}
-									>
-										<Play className="size-4" />
-										<ArrowDown className="absolute right-0.5 bottom-0.5 size-2.5" />
-									</Button>
+									<Tooltip disableHoverableContent={false}>
+										<TooltipTrigger asChild>
+											<span
+												className="inline-flex"
+												tabIndex={
+													cell.isLoading
+														? 0
+														: undefined
+												}
+											>
+												<Button
+													aria-label={
+														"Run the cells above and this cell"
+													}
+													variant="ghost"
+													size="sm"
+													className="relative h-7 px-2"
+													disabled={cell.isLoading}
+													onClick={(e) => {
+														e.stopPropagation();
+														runCellsAboveHandler();
+													}}
+												>
+													<Play className="size-4" />
+													<ArrowUp className="absolute right-0.5 bottom-0.5 size-2.5" />
+												</Button>
+											</span>
+										</TooltipTrigger>
+										<TooltipContent
+											sideOffset={4}
+											className="max-w-xs break-words"
+										>
+											{cell.isLoading
+												? "Wait for the cell to finish running"
+												: "Run the cells above and this cell"}
+										</TooltipContent>
+									</Tooltip>
+									<Tooltip disableHoverableContent={false}>
+										<TooltipTrigger asChild>
+											<span
+												className="inline-flex"
+												tabIndex={
+													cell.isLoading
+														? 0
+														: undefined
+												}
+											>
+												<Button
+													aria-label={
+														"Run this cell and below"
+													}
+													variant="ghost"
+													size="sm"
+													className="relative h-7 px-2"
+													disabled={cell.isLoading}
+													onClick={(e) => {
+														e.stopPropagation();
+														runCellAndBelowHandler();
+													}}
+												>
+													<Play className="size-4" />
+													<ArrowDown className="absolute right-0.5 bottom-0.5 size-2.5" />
+												</Button>
+											</span>
+										</TooltipTrigger>
+										<TooltipContent
+											sideOffset={4}
+											className="max-w-xs break-words"
+										>
+											{cell.isLoading
+												? "Wait for the cell to finish running"
+												: "Run this cell and below"}
+										</TooltipContent>
+									</Tooltip>
 									{/* Inline secondary actions — visible when there's room */}
 									{cell.query.id === MCP_NOTEBOOK_NAME && (
-										<Button
-											title={
-												cell.widget === "mcp-tool"
-													? "Revert to Code"
-													: "Make Available through MCP"
-											}
-											variant="ghost"
-											size="sm"
-											className="@sm:inline-flex hidden h-7 px-2"
-											disabled={
-												cell.isLoading ||
-												cell.widget === "mcp-tool"
-													? false
-													: !workspace.agentModelEngine
-											}
-											onClick={(e) => {
-												e.stopPropagation();
-												if (
-													cell.widget !== "mcp-tool"
-												) {
-													makeCellMCP();
-												} else {
-													revertMCPToCell();
-												}
-											}}
+										<Tooltip
+											disableHoverableContent={false}
 										>
-											{cell.widget === "mcp-tool" ? (
-												<ArrowLeftRight className="size-4" />
-											) : (
-												<HammerIcon size={14} />
-											)}
-										</Button>
+											<TooltipTrigger asChild>
+												<span
+													className="@2xl:inline-flex hidden"
+													tabIndex={
+														cell.isLoading ||
+														(cell.widget !==
+															"mcp-tool" &&
+															!workspace.agentModelEngine)
+															? 0
+															: undefined
+													}
+												>
+													<Button
+														aria-label={
+															cell.widget ===
+															"mcp-tool"
+																? "Revert to Code"
+																: "Make Available through MCP"
+														}
+														variant="ghost"
+														size="sm"
+														className="@2xl:inline-flex hidden h-7 px-2"
+														disabled={
+															cell.isLoading ||
+															(cell.widget !==
+																"mcp-tool" &&
+																!workspace.agentModelEngine)
+														}
+														onClick={(e) => {
+															e.stopPropagation();
+															if (
+																cell.widget !==
+																"mcp-tool"
+															) {
+																makeCellMCP();
+															} else {
+																revertMCPToCell();
+															}
+														}}
+													>
+														{cell.widget ===
+														"mcp-tool" ? (
+															<ArrowLeftRight className="size-4" />
+														) : (
+															<HammerIcon
+																size={14}
+															/>
+														)}
+													</Button>
+												</span>
+											</TooltipTrigger>
+											<TooltipContent
+												sideOffset={4}
+												className="max-w-xs break-words"
+											>
+												{cell.isLoading ||
+												(cell.widget !== "mcp-tool" &&
+													!workspace.agentModelEngine)
+													? cell.isLoading
+														? "Wait for the cell to finish running"
+														: "Select a builder model to make this cell available through MCP"
+													: cell.widget === "mcp-tool"
+														? "Revert to Code"
+														: "Make Available through MCP"}
+											</TooltipContent>
+										</Tooltip>
 									)}
-									<Button
-										title="Duplicate cell"
-										variant="ghost"
-										size="sm"
-										className="@sm:inline-flex hidden h-7 px-2"
-										disabled={cell.isLoading}
-										onClick={(e) => {
-											e.stopPropagation();
-											duplicateCell();
-										}}
-									>
-										<CopyPlus className="size-4" />
-									</Button>
-									<Button
-										title="Delete cell"
-										variant="ghost"
-										size="sm"
-										className="@sm:inline-flex hidden h-7 px-2"
-										disabled={
-											cell.isLoading ||
-											(query?.list.length ?? 0) <= 1
-										}
-										onClick={(e) => {
-											e.stopPropagation();
-											deleteCell();
-										}}
-									>
-										<Trash2 className="size-4" />
-									</Button>
+									<Tooltip disableHoverableContent={false}>
+										<TooltipTrigger asChild>
+											<span
+												className="@2xl:inline-flex hidden"
+												tabIndex={
+													cell.isLoading
+														? 0
+														: undefined
+												}
+											>
+												<Button
+													aria-label={
+														"Duplicate cell"
+													}
+													variant="ghost"
+													size="sm"
+													className="@2xl:inline-flex hidden h-7 px-2"
+													disabled={cell.isLoading}
+													onClick={(e) => {
+														e.stopPropagation();
+														duplicateCell();
+													}}
+												>
+													<CopyPlus className="size-4" />
+												</Button>
+											</span>
+										</TooltipTrigger>
+										<TooltipContent
+											sideOffset={4}
+											className="max-w-xs break-words"
+										>
+											{cell.isLoading
+												? "Wait for the cell to finish running"
+												: "Duplicate cell"}
+										</TooltipContent>
+									</Tooltip>
+									<Tooltip disableHoverableContent={false}>
+										<TooltipTrigger asChild>
+											<span
+												className="@2xl:inline-flex hidden"
+												tabIndex={
+													cell.isLoading
+														? 0
+														: undefined
+												}
+											>
+												<Button
+													aria-label={"Delete cell"}
+													variant="ghost"
+													size="sm"
+													className="@2xl:inline-flex hidden h-7 px-2"
+													disabled={cell.isLoading}
+													onClick={(e) => {
+														e.stopPropagation();
+														deleteCell();
+													}}
+												>
+													<Trash2 className="size-4" />
+												</Button>
+											</span>
+										</TooltipTrigger>
+										<TooltipContent
+											sideOffset={4}
+											className="max-w-xs break-words"
+										>
+											{cell.isLoading
+												? "Wait for the cell to finish running"
+												: "Delete cell"}
+										</TooltipContent>
+									</Tooltip>
 								</ButtonGroup>
 								{/* Kebab fallback — only when too narrow for inline actions */}
 								<DropdownMenu>
-									<DropdownMenuTrigger asChild>
-										<Button
-											title="More actions"
-											variant="ghost"
-											size="sm"
-											className="@sm:hidden h-7 px-1.5"
-											disabled={cell.isLoading}
-											onClick={(e) => e.stopPropagation()}
+									<Tooltip disableHoverableContent={false}>
+										<TooltipTrigger asChild>
+											<span
+												className="inline-flex @2xl:hidden"
+												tabIndex={
+													cell.isLoading
+														? 0
+														: undefined
+												}
+											>
+												<DropdownMenuTrigger asChild>
+													<Button
+														aria-label={
+															"Cell actions"
+														}
+														variant="ghost"
+														size="sm"
+														className="@2xl:hidden h-7 px-1.5"
+														disabled={
+															cell.isLoading
+														}
+														onClick={(e) =>
+															e.stopPropagation()
+														}
+													>
+														<MoreVertical className="size-4" />
+													</Button>
+												</DropdownMenuTrigger>
+											</span>
+										</TooltipTrigger>
+										<TooltipContent
+											sideOffset={4}
+											className="max-w-xs break-words"
 										>
-											<MoreVertical className="size-4" />
-										</Button>
-									</DropdownMenuTrigger>
+											{cell.isLoading
+												? "Wait for the cell to finish running"
+												: "Cell actions"}
+										</TooltipContent>
+									</Tooltip>
 									<DropdownMenuContent align="end">
 										<DropdownMenuItem
 											onSelect={() => duplicateCell()}
@@ -1061,9 +1370,9 @@ export const NotebookCell = observer(
 											<DropdownMenuItem
 												disabled={
 													cell.isLoading ||
-													cell.widget === "mcp-tool"
-														? false
-														: !workspace.agentModelEngine
+													(cell.widget !==
+														"mcp-tool" &&
+														!workspace.agentModelEngine)
 												}
 												onSelect={() => {
 													if (
@@ -1091,9 +1400,7 @@ export const NotebookCell = observer(
 											</DropdownMenuItem>
 										)}
 										<DropdownMenuItem
-											disabled={
-												(query?.list.length ?? 0) <= 1
-											}
+											disabled={cell.isLoading}
 											onSelect={() => deleteCell()}
 										>
 											<Trash2 className="size-4" />
@@ -1191,6 +1498,7 @@ export const NotebookCell = observer(
 					onOpenChange={(o) => !o && setShowLoggingModal(false)}
 				>
 					<DialogContent
+						aria-describedby={undefined}
 						showCloseButton={false}
 						className="flex max-h-[85vh] w-[80vw] max-w-[80vw] flex-col sm:max-w-[80vw]"
 					>
@@ -1205,48 +1513,84 @@ export const NotebookCell = observer(
 									</span>
 								</div>
 								<div className="flex items-center gap-1">
-									<Button
-										title={
-											showRawLogging
-												? "Show formatted"
-												: "Show raw"
-										}
-										variant={
-											showRawLogging
-												? "secondary"
-												: "ghost"
-										}
-										size="sm"
-										className="h-7 px-2 text-xs"
-										onClick={() =>
-											setShowRawLogging((v) => !v)
-										}
-									>
-										{showRawLogging ? "Formatted" : "Raw"}
-									</Button>
-									<Button
-										title="Copy logs"
-										variant="ghost"
-										size="sm"
-										className="h-7 px-2 text-muted-foreground"
-										onClick={() =>
-											copyTextToClipboard(
-												cell.messages.join("\n"),
-											)
-										}
-									>
-										<Copy className="size-3" />
-									</Button>
-									<DialogClose asChild>
-										<Button
-											title="Close"
-											variant="ghost"
-											size="sm"
-											className="h-7 px-2 text-muted-foreground"
+									<Tooltip disableHoverableContent={false}>
+										<TooltipTrigger asChild>
+											<Button
+												aria-label={
+													showRawLogging
+														? "Show formatted"
+														: "Show raw"
+												}
+												variant={
+													showRawLogging
+														? "secondary"
+														: "ghost"
+												}
+												size="sm"
+												className="h-7 px-2 text-xs"
+												onClick={() =>
+													setShowRawLogging((v) => !v)
+												}
+											>
+												{showRawLogging
+													? "Formatted"
+													: "Raw"}
+											</Button>
+										</TooltipTrigger>
+										<TooltipContent
+											sideOffset={4}
+											className="max-w-xs break-words"
 										>
-											<X className="size-3" />
-										</Button>
-									</DialogClose>
+											{showRawLogging
+												? "Show formatted"
+												: "Show raw"}
+										</TooltipContent>
+									</Tooltip>
+									<Tooltip disableHoverableContent={false}>
+										<TooltipTrigger asChild>
+											<Button
+												aria-label={"Copy logs"}
+												variant="ghost"
+												size="sm"
+												className="h-7 px-2 text-muted-foreground"
+												onClick={() =>
+													copyTextToClipboard(
+														cell.messages.join(
+															"\n",
+														),
+													)
+												}
+											>
+												<Copy className="size-3" />
+											</Button>
+										</TooltipTrigger>
+										<TooltipContent
+											sideOffset={4}
+											className="max-w-xs break-words"
+										>
+											{"Copy logs"}
+										</TooltipContent>
+									</Tooltip>
+									<Tooltip disableHoverableContent={false}>
+										<TooltipTrigger asChild>
+											<DialogClose asChild>
+												<Button
+													aria-label={"Close"}
+													variant="ghost"
+													size="sm"
+													className="h-7 px-2 text-muted-foreground"
+												>
+													<X className="size-3" />
+												</Button>
+											</DialogClose>
+										</TooltipTrigger>
+										<TooltipContent
+											sideOffset={4}
+											className="max-w-xs break-words"
+										>
+											{"Close"}
+										</TooltipContent>
+									</Tooltip>
 								</div>
 							</div>
 						</DialogHeader>
@@ -1308,6 +1652,7 @@ export const NotebookCell = observer(
 					onOpenChange={(o) => !o && setShowOutputModal(false)}
 				>
 					<DialogContent
+						aria-describedby={undefined}
 						showCloseButton={false}
 						className="flex max-h-[85vh] w-[80vw] max-w-[80vw] flex-col sm:max-w-[80vw]"
 					>
@@ -1322,48 +1667,86 @@ export const NotebookCell = observer(
 										Output
 									</span>
 									{outputIsJson && (
-										<span className="inline-flex items-center rounded bg-muted px-1.5 py-0.5 font-medium text-[10px] text-muted-foreground uppercase tracking-wider">
+										<span className="inline-flex items-center rounded bg-muted px-1.5 py-0.5 font-medium text-[11px] text-muted-foreground uppercase tracking-wider">
 											JSON
 										</span>
 									)}
 								</div>
 								<div className="flex items-center gap-1">
-									<Button
-										title={
-											showRaw
-												? "Show formatted"
-												: "Show raw"
-										}
-										variant={
-											showRaw ? "secondary" : "ghost"
-										}
-										size="sm"
-										className="h-7 px-2 text-xs"
-										onClick={() => setShowRaw((v) => !v)}
-									>
-										{showRaw ? "Formatted" : "Raw"}
-									</Button>
-									<Button
-										title="Copy output"
-										variant="ghost"
-										size="sm"
-										className="h-7 px-2 text-muted-foreground"
-										onClick={() =>
-											copyTextToClipboard(rawOutput)
-										}
-									>
-										<Copy className="size-3" />
-									</Button>
-									<DialogClose asChild>
-										<Button
-											title="Close"
-											variant="ghost"
-											size="sm"
-											className="h-7 px-2 text-muted-foreground"
+									<Tooltip disableHoverableContent={false}>
+										<TooltipTrigger asChild>
+											<Button
+												aria-label={
+													showRaw
+														? "Show formatted"
+														: "Show raw"
+												}
+												variant={
+													showRaw
+														? "secondary"
+														: "ghost"
+												}
+												size="sm"
+												className="h-7 px-2 text-xs"
+												onClick={() =>
+													setShowRaw((v) => !v)
+												}
+											>
+												{showRaw ? "Formatted" : "Raw"}
+											</Button>
+										</TooltipTrigger>
+										<TooltipContent
+											sideOffset={4}
+											className="max-w-xs break-words"
 										>
-											<X className="size-3" />
-										</Button>
-									</DialogClose>
+											{showRaw
+												? "Show formatted"
+												: "Show raw"}
+										</TooltipContent>
+									</Tooltip>
+									<Tooltip disableHoverableContent={false}>
+										<TooltipTrigger asChild>
+											<Button
+												aria-label={"Copy output"}
+												variant="ghost"
+												size="sm"
+												className="h-7 px-2 text-muted-foreground"
+												onClick={() =>
+													copyTextToClipboard(
+														rawOutput,
+													)
+												}
+											>
+												<Copy className="size-3" />
+											</Button>
+										</TooltipTrigger>
+										<TooltipContent
+											sideOffset={4}
+											className="max-w-xs break-words"
+										>
+											{"Copy output"}
+										</TooltipContent>
+									</Tooltip>
+									<Tooltip disableHoverableContent={false}>
+										<TooltipTrigger asChild>
+											<DialogClose asChild>
+												<Button
+													aria-label={"Close"}
+													variant="ghost"
+													size="sm"
+													className="h-7 px-2 text-muted-foreground"
+												>
+													<X className="size-3" />
+												</Button>
+											</DialogClose>
+										</TooltipTrigger>
+										<TooltipContent
+											sideOffset={4}
+											className="max-w-xs break-words"
+										>
+											{"Close"}
+										</TooltipContent>
+									</Tooltip>
 								</div>
 							</div>
 						</DialogHeader>

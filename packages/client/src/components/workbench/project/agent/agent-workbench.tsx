@@ -2,14 +2,13 @@ import { useEffect, useMemo } from "react";
 import { FILE_PANEL_COMPONENTS } from "@semoss/panels";
 import type { Role } from "@semoss/sdk";
 import { useInsight } from "@semoss/sdk/react";
-import { useCacheState } from "@semoss/ui/next";
+import { useCacheData } from "@semoss/ui/next";
 import type {
 	WorkbenchLayout,
 	WorkbenchPanelConfigAny,
 	WorkbenchSnapshot,
 } from "@semoss/workbench";
 import {
-	parseWorkbenchSnapshot,
 	useWorkbenchCommands,
 	Workbench,
 	WorkbenchCommandMenuButton,
@@ -23,6 +22,7 @@ import {
 	WORKBENCH_PANEL_RECORDS,
 } from "@/stores/workbench";
 import { GIT_DIFF_PANEL, GIT_VERSION_PANEL } from "../../git";
+import { useAssistantFilesChanged } from "../../use-assistant-files-changed";
 import {
 	createFileCommands,
 	createOpenPanelCommand,
@@ -140,10 +140,9 @@ export const AgentWorkbench: React.FC = () => {
 		? `${project.project_id}--read-only`
 		: project.project_id;
 
-	const [snapshot, onSnapshotChange] = useCacheState<WorkbenchSnapshot>(
-		workbenchLayout,
+	const [snapshot, onSnapshotChange] = useCacheData<WorkbenchSnapshot>(
 		`workbench-layout--${workbenchId}--1`,
-		parseWorkbenchSnapshot,
+		workbenchLayout,
 	);
 
 	const syncPermission = useSession((s) => s.syncPermission);
@@ -152,6 +151,11 @@ export const AgentWorkbench: React.FC = () => {
 	const assistantStore = useAssistantStore(workbenchId);
 
 	// keep the assistant's system prompt/tools in sync with the active skill
+	const filesChanged = useAssistantFilesChanged({
+		type: "APP",
+		app: project.project_id,
+	});
+
 	useEffect(() => {
 		const name = project.project_display_name || project.project_name;
 
@@ -161,6 +165,7 @@ export const AgentWorkbench: React.FC = () => {
 		);
 
 		assistantStore.getState().configure({
+			onRunCompleted: filesChanged,
 			systemPrompt: `You are the assistant for the ${name} agent workbench (${project.project_id}). Your role is to help the user configure this agent and work with the rest of the project's files. Use only the tools provided in this room. Never claim that an operation succeeded unless its tool result confirms success. Keep answers concise and grounded in the active project.`,
 			mcp: [
 				{
@@ -172,6 +177,7 @@ export const AgentWorkbench: React.FC = () => {
 			runParams: { project: project.project_id },
 		});
 	}, [
+		filesChanged,
 		assistantStore,
 		syncPermission,
 		refreshPermission,
@@ -195,14 +201,16 @@ export const AgentWorkbench: React.FC = () => {
 		<AssistantStoreProvider store={assistantStore}>
 			<Workbench
 				snapshot={snapshot}
-				onUnmount={onSnapshotChange}
+				onChange={onSnapshotChange}
 				borderSlots={{
 					left: {
 						after: (
 							<>
 								<WorkbenchCommandMenuButton />
 								<ProjectSettingsToggle />
-								<WorkbenchResetButton />
+								<WorkbenchResetButton
+									snapshot={workbenchLayout}
+								/>
 							</>
 						),
 					},

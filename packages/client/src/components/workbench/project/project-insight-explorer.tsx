@@ -1,9 +1,5 @@
 import { FileExplorerPane } from "@semoss/panels";
-import {
-	type FileExplorerApi,
-	type FileMode,
-	useFileExplorer,
-} from "@semoss/shared";
+import { type FileMode, useFileExplorer } from "@semoss/shared";
 import type { WorkbenchPanelId } from "@semoss/workbench";
 
 /** Module scope: the insight scope carries no parameters of its own. */
@@ -12,8 +8,6 @@ const INSIGHT_MODE: FileMode = { type: "INSIGHT" };
 export interface ProjectInsightExplorerProps {
 	/** The panel instance the chrome control belongs to. */
 	id: WorkbenchPanelId;
-	/** The panel's `setValue`, for publishing the explorer to its control. */
-	setValue: (value: FileExplorerApi) => void;
 }
 
 /**
@@ -29,9 +23,8 @@ export interface ProjectInsightExplorerProps {
  */
 export const ProjectInsightExplorer: React.FC<ProjectInsightExplorerProps> = ({
 	id,
-	setValue,
 }) => {
 	const explorer = useFileExplorer({ mode: INSIGHT_MODE });
 
-	return <FileExplorerPane id={id} explorer={explorer} setValue={setValue} />;
+	return <FileExplorerPane id={id} explorer={explorer} />;
 };

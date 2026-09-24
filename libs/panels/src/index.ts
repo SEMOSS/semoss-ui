@@ -1,17 +1,14 @@
 export { FileExplorerPane } from "./components/explorers/file-explorer-pane";
 export { FILE_PANEL_COMPONENTS } from "./components/file-panel.components";
-export { MCPJsonEditor, MetadataHelpDialog } from "./components/mcp";
 export {
+	FILE_PANEL_EVENTS,
 	FILE_PANEL_TYPES,
+	type FileSavedEvent,
+	type FilesChangedEvent,
 	isFilePanelType,
-	MCP,
 } from "./constants/file-panel.constants";
 export { AccessStoreProvider } from "./contexts/access.context";
-export {
-	type AccessState,
-	useAccess,
-	useAccessStore,
-} from "./hooks/use-access";
+export { useAccess } from "./hooks/use-access";
 export { type FileBuffer, useFileBuffer } from "./hooks/use-file-buffer";
 export {
 	type FilePanelApi,
@@ -19,23 +16,23 @@ export {
 	type FilePanelValue,
 	useFilePanel,
 } from "./hooks/use-file-panel";
+export { useFilesChanged } from "./hooks/use-files-changed";
 export { createAccessStore } from "./stores/access.store";
 export {
-	type AccessEntry,
 	createPermissionCache,
-	getPermissionKey,
 	type PermissionCache,
-	type ResourceType,
 } from "./types/access.types";
-export type { FilePanelMode } from "./types/file-panel.types";
-export type { MCPJsonData } from "./types/mcp.types";
+export {
+	type FilePanelMode,
+	getFilePanelScope,
+} from "./types/file-panel.types";
+export type {
+	FileViewControls,
+	FileViewMode,
+	FileViewProps,
+} from "./types/file-view.types";
 export {
 	getCodeEditorLanguage,
 	getFileCodeEditorMenuItems,
 	getFilePanelType,
 } from "./utility/file-editor.utility";
-export {
-	type LoadedMCPFile,
-	readMCPFile,
-	toFileText,
-} from "./utility/mcp-json-utils";
