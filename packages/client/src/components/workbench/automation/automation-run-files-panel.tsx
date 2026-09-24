@@ -50,9 +50,8 @@ const EmptyRunFiles = ({ children }: { children: React.ReactNode }) => (
 );
 
 /**
- * Read-only view of the temporary Insight workspace owned by the selected run.
- * The execution service retains completed workspaces briefly for inspection and
- * remains solely responsible for destroying them.
+ * Read-only view of the execution Insight owned by the selected run. The
+ * platform Insight store and session cleanup own its availability and teardown.
  */
 const AutomationRunFilesPanel: WorkbenchComponent = ({ id }) => {
 	const { selectedRun, traceSnapshot } = useAutomationWorkbenchContext();
@@ -90,16 +89,16 @@ const AutomationRunFilesPanel: WorkbenchComponent = ({ id }) => {
 	if (run) {
 		return (
 			<EmptyRunFiles>
-				Run files are temporary and are no longer available. Node
-				results remain available in Run details.
+				The run workspace is no longer open. Node results remain
+				available in Run details.
 			</EmptyRunFiles>
 		);
 	}
 
 	return (
 		<EmptyRunFiles>
-			Select an active or recently completed run to browse its temporary
-			files.
+			Select a run to browse files while its execution workspace remains
+			open.
 		</EmptyRunFiles>
 	);
 };
@@ -107,7 +106,7 @@ const AutomationRunFilesPanel: WorkbenchComponent = ({ id }) => {
 /** Automation-owned panel blueprint; shared file panels remain unchanged. */
 export const AUTOMATION_RUN_FILES_PANEL: WorkbenchPanelConfig = {
 	name: "Run files",
-	helpText: "Files in the selected active or recently completed run",
+	helpText: "Files in the selected run's open execution workspace",
 	icon: ({ className }) => <FolderClockIcon className={className} />,
 	canClose: false,
 	canRename: false,
