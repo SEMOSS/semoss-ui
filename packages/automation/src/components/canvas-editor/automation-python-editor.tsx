@@ -6,14 +6,17 @@ import {
 	useRef,
 } from "react";
 import { MonacoEditor, type monaco, type OnMount } from "@semoss/shared";
-import type { AutomationScopeEntry } from "../../domain/automation-inspector";
+import {
+	type AutomationScopeEntry,
+	getAutomationScopeExpression,
+} from "../../domain/automation-inspector";
 
 const SCOPE_REFERENCE_PATTERN = /scope\s*(?:\[\s*|\.get\(\s*)(["'])([^"']+)\1/g;
 
 function entryDocumentation(entry: AutomationScopeEntry): string {
 	const lines = [
 		`**${entry.name}**`,
-		`${entry.label} · ${entry.availability}`,
+		`${entry.label} · ${entry.valueType ? `${entry.valueType} · ` : ""}${entry.availability}`,
 		entry.description,
 	];
 	if (entry.defaultValue !== undefined) {
@@ -33,18 +36,50 @@ function entryDocumentation(entry: AutomationScopeEntry): string {
 function findScopeReference(
 	line: string,
 	column: number,
-): { name: string; startColumn: number; endColumn: number } | null {
-	SCOPE_REFERENCE_PATTERN.lastIndex = 0;
-	for (const match of line.matchAll(SCOPE_REFERENCE_PATTERN)) {
-		const fullStart = match.index;
-		const keyOffset = match[0].lastIndexOf(match[2]);
-		const startColumn = fullStart + keyOffset + 1;
-		const endColumn = startColumn + match[2].length;
-		if (column >= startColumn && column <= endColumn) {
-			return { name: match[2], startColumn, endColumn };
+	entries: AutomationScopeEntry[],
+): {
+	entry: AutomationScopeEntry;
+	startColumn: number;
+	endColumn: number;
+} | null {
+	const candidates = entries.flatMap((entry) => [
+		{
+			entry,
+			expression: getAutomationScopeExpression(entry, "required"),
+		},
+		{
+			entry,
+			expression: getAutomationScopeExpression(entry, "optional"),
+		},
+	]);
+	candidates.sort(
+		(left, right) => right.expression.length - left.expression.length,
+	);
+
+	for (const candidate of candidates) {
+		let startIndex = line.indexOf(candidate.expression);
+		while (startIndex >= 0) {
+			const startColumn = startIndex + 1;
+			const endColumn = startColumn + candidate.expression.length;
+			if (column >= startColumn && column <= endColumn) {
+				return { entry: candidate.entry, startColumn, endColumn };
+			}
+			startIndex = line.indexOf(candidate.expression, startIndex + 1);
 		}
 	}
 	return null;
+}
+
+function quotedCompletionText(
+	entry: AutomationScopeEntry,
+	access: "required" | "optional",
+	quote: string,
+): string {
+	const parts = entry.name.split(".");
+	if (access === "required") {
+		return parts.join(`${quote}][${quote}`);
+	}
+	return parts.join(`${quote}, {}).get(${quote}`);
 }
 
 export interface AutomationPythonEditorProps {
@@ -166,14 +201,14 @@ export const AutomationPythonEditor = forwardRef<
 							endColumn: position.column,
 						});
 						const quoted = prefix.match(
-							/scope\s*(?:\[\s*|\.get\(\s*)(["'])([^"']*)$/,
+							/scope\s*(\[|\.get\()\s*(["'])([^"']*)$/,
 						);
 						const unquoted = quoted
 							? null
 							: prefix.match(/scope\s*(\[|\.get\()\s*$/);
 						if (!quoted && !unquoted) return { suggestions: [] };
 
-						const typed = quoted?.[2] ?? "";
+						const typed = quoted?.[3] ?? "";
 						const range = new monacoApi.Range(
 							position.lineNumber,
 							position.column - typed.length,
@@ -190,10 +225,22 @@ export const AutomationPythonEditor = forwardRef<
 									value: entryDocumentation(entry),
 								},
 								insertText: quoted
-									? entry.name
+									? quotedCompletionText(
+											entry,
+											quoted[1] === "["
+												? "required"
+												: "optional",
+											quoted[2],
+										)
 									: unquoted?.[1] === "["
-										? `["${entry.name}"]`
-										: `"${entry.name}")`,
+										? getAutomationScopeExpression(
+												entry,
+												"required",
+											).slice("scope".length)
+										: getAutomationScopeExpression(
+												entry,
+												"optional",
+											).slice("scope.get(".length),
 								range,
 							})),
 						};
@@ -210,12 +257,9 @@ export const AutomationPythonEditor = forwardRef<
 						const reference = findScopeReference(
 							line,
 							position.column,
+							entriesRef.current,
 						);
 						if (!reference) return null;
-						const entry = entriesRef.current.find(
-							(item) => item.name === reference.name,
-						);
-						if (!entry) return null;
 						return {
 							range: new monacoApi.Range(
 								position.lineNumber,
@@ -223,7 +267,9 @@ export const AutomationPythonEditor = forwardRef<
 								position.lineNumber,
 								reference.endColumn,
 							),
-							contents: [{ value: entryDocumentation(entry) }],
+							contents: [
+								{ value: entryDocumentation(reference.entry) },
+							],
 						};
 					},
 				},

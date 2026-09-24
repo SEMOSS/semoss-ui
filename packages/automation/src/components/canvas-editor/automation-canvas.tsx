@@ -67,11 +67,14 @@ import type {
 	RunStatus,
 	StepRunStatus,
 } from "../../domain/automation.types";
-import type {
-	AutomationInspectorAction,
-	AutomationInspectorSnapshot,
-	AutomationScopeEntry,
+import {
+	type AutomationInspectorAction,
+	type AutomationInspectorSnapshot,
+	type AutomationScopeEntry,
+	declaredAutomationScopeEntries,
+	inferNestedAutomationScopeEntries,
 } from "../../domain/automation-inspector";
+import { getAutomationNodeDefinition } from "../../domain/automation-node-catalog";
 import { normalizeAutomationErrorMessage } from "../../domain/automation-utils";
 import type {
 	AutomationWorkflowDocument,
@@ -271,6 +274,8 @@ export interface AutomationCanvasProps {
 	/** Fired after a run completes/refreshes, so a host's separately-rendered run history view
 	 * knows to refetch. */
 	onHistoryChanged?: () => void;
+	/** Keeps host-owned run panels in sync when the canvas leaves historical mode. */
+	onExitHistoricalView?: () => void;
 }
 
 /** Imperative surface for hosts that render the inspector/schedule UI outside this canvas
@@ -538,6 +543,7 @@ export const AutomationCanvasContent = forwardRef<
 		onTraceChange,
 		onInspectorChange,
 		onHistoryChanged,
+		onExitHistoricalView,
 	},
 	ref,
 ) {
@@ -605,8 +611,14 @@ export const AutomationCanvasContent = forwardRef<
 	const [latestRunResults, setLatestRunResults] = useState<
 		AutomationNodeResult[]
 	>([]);
+	const [scopeSampleResults, setScopeSampleResults] = useState<
+		AutomationNodeResult[]
+	>([]);
 	const [latestRunDefinition, setLatestRunDefinition] =
 		useState<AutomationExecutedDefinition | null>(null);
+	const [activeRun, setActiveRun] = useState<AutomationRunDetail | null>(
+		null,
+	);
 	// DB-backed run id for the in-progress run, used to poll GetAutomationRun as a
 	// fallback in case the live progress stream drops an update (see the periodic
 	// reconciliation effect below).
@@ -637,6 +649,18 @@ export const AutomationCanvasContent = forwardRef<
 				? (historicalRun.nodeResults ?? [])
 				: latestRunResults,
 		[historicalRun, latestRunResults],
+	);
+	const scopeResults = useMemo(
+		() =>
+			historicalRun || latestRunResults.length > 0
+				? displayResults
+				: scopeSampleResults,
+		[
+			displayResults,
+			historicalRun,
+			latestRunResults.length,
+			scopeSampleResults,
+		],
 	);
 	const { displayStatuses, displayErrors, displayDurations } = useMemo(() => {
 		if (!historicalRun) {
@@ -689,6 +713,10 @@ export const AutomationCanvasContent = forwardRef<
 		setHistoricalRun(run);
 	}, []);
 	const exitHistoricalView = useCallback(() => setHistoricalRun(null), []);
+	const handleExitHistoricalView = useCallback(() => {
+		exitHistoricalView();
+		onExitHistoricalView?.();
+	}, [exitHistoricalView, onExitHistoricalView]);
 	const hasRunnableSteps = steps.some(
 		(step) => step.workflowType !== "trigger.start",
 	);
@@ -729,8 +757,10 @@ export const AutomationCanvasContent = forwardRef<
 			steps,
 			results: latestRunResults,
 			executedDefinition: latestRunDefinition,
+			activeRun,
 		});
 	}, [
+		activeRun,
 		aiRunSummary,
 		generatingAiSummary,
 		latestRunResults,
@@ -1443,23 +1473,76 @@ export const AutomationCanvasContent = forwardRef<
 	const scopeEntriesFor = useCallback(
 		(stepId: string): AutomationScopeEntry[] => {
 			const serverEntries = scopeVariablesByNode[stepId];
-			if (serverEntries) return serverEntries;
-			return [
-				"date",
-				"triggered_at",
-				"run_id",
-				...upstreamVarsFor(stepId),
-			].map((name) => ({
-				name,
-				source: "runtime" as const,
-				label: name,
-				description: "Available from this node's run scope.",
-				availability: "guaranteed" as const,
-				pythonExpression: `scope[${JSON.stringify(name)}]`,
-				templateExpression: `\${${name}}`,
-			}));
+			const baseEntries: AutomationScopeEntry[] =
+				serverEntries ??
+				["date", "triggered_at", "run_id"].map((name) => ({
+					name,
+					source: "runtime" as const,
+					label: name,
+					description: "Available from this node's run scope.",
+					availability: "guaranteed" as const,
+					pythonExpression: `scope[${JSON.stringify(name)}]`,
+					templateExpression: `\${${name}}`,
+				}));
+			if (!serverEntries) {
+				for (const name of upstreamVarsFor(stepId)) {
+					const sourceStep = displaySteps.find(
+						(step) => step.outputVar === name,
+					);
+					baseEntries.push({
+						name,
+						source: "node",
+						label: sourceStep?.label ?? name,
+						description: "Output from an earlier step.",
+						availability: "guaranteed",
+						pythonExpression: `scope[${JSON.stringify(name)}]`,
+						templateExpression: `\${${name}}`,
+						sourceNodeId: sourceStep?.id,
+					});
+				}
+			}
+			const nestedEntries = baseEntries.flatMap((entry) => {
+				if (entry.source !== "node" || !entry.sourceNodeId) return [];
+				const sourceStep = displaySteps.find(
+					(step) => step.id === entry.sourceNodeId,
+				);
+				const definition = sourceStep?.workflowType
+					? getAutomationNodeDefinition(sourceStep.workflowType)
+					: undefined;
+				const declared = definition
+					? declaredAutomationScopeEntries(
+							entry,
+							definition.outputSchema,
+						)
+					: [];
+				const output = scopeResults.find(
+					(result) => result.NODE_ID === entry.sourceNodeId,
+				);
+				const observed = inferNestedAutomationScopeEntries(
+					entry,
+					output?.OUTPUT_VALUE ?? output?.OUTPUT_PREVIEW,
+				);
+				const merged = new Map(
+					declared.map((declaredEntry) => [
+						declaredEntry.name,
+						declaredEntry,
+					]),
+				);
+				for (const observedEntry of observed) {
+					if (!merged.has(observedEntry.name)) {
+						merged.set(observedEntry.name, observedEntry);
+					}
+				}
+				return [...merged.values()];
+			});
+			return [...baseEntries, ...nestedEntries];
 		},
-		[scopeVariablesByNode, upstreamVarsFor],
+		[displaySteps, scopeResults, scopeVariablesByNode, upstreamVarsFor],
+	);
+	const templateVariablesFor = useCallback(
+		(stepId: string): string[] =>
+			scopeEntriesFor(stepId).map((entry) => entry.name),
+		[scopeEntriesFor],
 	);
 
 	useEffect(() => {
@@ -1468,7 +1551,9 @@ export const AutomationCanvasContent = forwardRef<
 			devMode,
 			readOnly: readOnly || viewingHistory,
 			editingStep,
-			upstreamVars: editingStep ? upstreamVarsFor(editingStep.id) : [],
+			upstreamVars: editingStep
+				? templateVariablesFor(editingStep.id)
+				: [],
 			scopeEntries: editingStep ? scopeEntriesFor(editingStep.id) : [],
 			stepRunStatus: editingStep
 				? displayStatuses[editingStep.id]
@@ -1497,7 +1582,7 @@ export const AutomationCanvasContent = forwardRef<
 		stepOutputPreviews,
 		displayStatuses,
 		displayResults,
-		upstreamVarsFor,
+		templateVariablesFor,
 		scopeEntriesFor,
 	]);
 
@@ -1712,11 +1797,13 @@ export const AutomationCanvasContent = forwardRef<
 			setLatestRunStatus(runData.STATUS);
 			setRunning(runData.STATUS === "RUNNING");
 			setLatestRunResults(nodeResults);
+			setScopeSampleResults(nodeResults);
 			setLatestRunDefinition({
 				version: runData.DEFINITION_VERSION,
 				hash: runData.DEFINITION_HASH,
 				snapshot: runData.DEFINITION_SNAPSHOT,
 			});
+			setActiveRun(runData);
 		},
 		[steps],
 	);
@@ -1729,27 +1816,39 @@ export const AutomationCanvasContent = forwardRef<
 			return;
 		}
 		restoredActiveRunForProjectRef.current = appId;
+		setScopeSampleResults([]);
 		let cancelled = false;
 		void listAutomationRuns(appId, 20)
-			.then((runs) =>
-				runs.find(
+			.then((runs) => {
+				const activeRun = runs.find(
 					(run) =>
 						run.STATUS === "WAITING_FOR_INPUT" ||
 						run.STATUS === "RUNNING",
-				),
-			)
-			.then((activeRun) =>
-				activeRun ? getAutomationRun(appId, activeRun.RUN_ID) : null,
-			)
-			.then((activeRun) => {
-				if (!cancelled && activeRun) {
-					applyRunData(activeRun);
-					setAiRunSummary(activeRun.RESULT_SUMMARY ?? null);
-					setLiveRunId(activeRun.RUN_ID);
+				);
+				const scopeSampleRun =
+					activeRun ??
+					runs.find((run) => run.STATUS === "SUCCESS") ??
+					runs[0];
+				return scopeSampleRun
+					? getAutomationRun(appId, scopeSampleRun.RUN_ID)
+					: null;
+			})
+			.then((run) => {
+				if (!cancelled && run) {
+					if (
+						run.STATUS === "WAITING_FOR_INPUT" ||
+						run.STATUS === "RUNNING"
+					) {
+						applyRunData(run);
+						setAiRunSummary(run.RESULT_SUMMARY ?? null);
+						setLiveRunId(run.RUN_ID);
+					} else {
+						setScopeSampleResults(run.nodeResults ?? []);
+					}
 				}
 			})
 			.catch(() => {
-				// Run history remains available if best-effort active-run restoration fails.
+				// Run history remains available if best-effort scope restoration fails.
 			});
 		return () => {
 			cancelled = true;
@@ -1934,6 +2033,7 @@ export const AutomationCanvasContent = forwardRef<
 		setLatestRunStatus("RUNNING");
 		setLatestRunResults([]);
 		setLatestRunDefinition(null);
+		setActiveRun(null);
 		setLiveRunId(null);
 		try {
 			const { jobId } = await runPixelAsync(
@@ -2503,7 +2603,9 @@ export const AutomationCanvasContent = forwardRef<
 											<Button
 												size="sm"
 												variant="outline"
-												onClick={exitHistoricalView}
+												onClick={
+													handleExitHistoricalView
+												}
 											>
 												Return to editor
 											</Button>

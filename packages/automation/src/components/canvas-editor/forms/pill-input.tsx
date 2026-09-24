@@ -1,6 +1,14 @@
 import { ChevronDown } from "lucide-react";
-import { useCallback, useEffect, useRef, useState } from "react";
-import { FieldLabel } from "@semoss/ui/next";
+import { useCallback, useEffect, useId, useRef, useState } from "react";
+import {
+	Button,
+	FieldLabel,
+	Input,
+	Popover,
+	PopoverContent,
+	PopoverTrigger,
+	Small,
+} from "@semoss/ui/next";
 
 export interface PillInputProps {
 	/** Field label */
@@ -28,6 +36,16 @@ export interface PillInputProps {
 }
 
 const VAR_REGEX = /\$\{([^}]+)\}/g;
+const VARIABLE_PATH_REGEX =
+	/^[A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*)+$/;
+
+function isSupportedVariablePath(path: string, knownVars: string[]): boolean {
+	if (!VARIABLE_PATH_REGEX.test(path)) return false;
+	const [root] = path.split(".");
+	return knownVars.some(
+		(variable) => variable === root || variable.startsWith(`${root}.`),
+	);
+}
 
 /** Splits a value string into text segments and known-variable segments. */
 function parseSegments(
@@ -193,7 +211,15 @@ export function PillInput({
 
 	// +Variable picker
 	const [showPicker, setShowPicker] = useState(false);
-	const pickerRef = useRef<HTMLDivElement>(null);
+	const [variableQuery, setVariableQuery] = useState("");
+	const variablePathInputId = useId();
+	const normalizedVariableQuery = variableQuery.trim();
+	const filteredPickerVars = upstreamVars.filter((variable) =>
+		variable.toLowerCase().includes(normalizedVariableQuery.toLowerCase()),
+	);
+	const canInsertCustomPath =
+		!upstreamVars.includes(normalizedVariableQuery) &&
+		isSupportedVariablePath(normalizedVariableQuery, upstreamVars);
 
 	// Sync external value → DOM only when it differs from what we last wrote
 	useEffect(() => {
@@ -204,21 +230,6 @@ export function PillInput({
 			lastValueRef.current = value;
 		}
 	}, [value, upstreamVars]);
-
-	// Close picker on outside click
-	useEffect(() => {
-		if (!showPicker) return;
-		const handler = (e: MouseEvent) => {
-			if (
-				pickerRef.current &&
-				!pickerRef.current.contains(e.target as Node)
-			) {
-				setShowPicker(false);
-			}
-		};
-		document.addEventListener("mousedown", handler);
-		return () => document.removeEventListener("mousedown", handler);
-	}, [showPicker]);
 
 	const detectAutocomplete = useCallback(
 		(el: HTMLElement) => {
@@ -256,14 +267,15 @@ export function PillInput({
 	const emitChange = useCallback(
 		(el: HTMLElement) => {
 			skipSyncRef.current = true;
-			const str = readDOM(el);
+			const rawValue = readDOM(el);
+			const str = mono ? rawValue : rawValue.replaceAll("\n", "");
 			lastValueRef.current = str;
 			onChange(str);
 			requestAnimationFrame(() => {
 				skipSyncRef.current = false;
 			});
 		},
-		[onChange],
+		[mono, onChange],
 	);
 
 	const handleInput = useCallback(() => {
@@ -411,6 +423,7 @@ export function PillInput({
 
 			setAcVars([]);
 			setShowPicker(false);
+			setVariableQuery("");
 			emitChange(el);
 		},
 		[emitChange, readOnly],
@@ -428,37 +441,108 @@ export function PillInput({
 					)}
 				</FieldLabel>
 				{!readOnly && upstreamVars.length > 0 && (
-					<div ref={pickerRef} className="relative">
-						<button
-							type="button"
-							onClick={() => setShowPicker((p) => !p)}
-							className="flex items-center gap-0.5 rounded px-1.5 py-0.5 text-[10px] text-primary hover:bg-primary/10"
-						>
-							+ Variable
-							<ChevronDown className="h-2.5 w-2.5" />
-						</button>
-						{showPicker && (
-							<div className="absolute top-full right-0 z-50 mt-1 min-w-[160px] rounded-md border bg-popover shadow-md">
-								{upstreamVars.map((v) => (
-									<button
+					<Popover
+						open={showPicker}
+						onOpenChange={(isOpen) => {
+							setShowPicker(isOpen);
+							if (!isOpen) {
+								setVariableQuery("");
+							}
+						}}
+					>
+						<PopoverTrigger asChild>
+							<Button
+								type="button"
+								size="sm"
+								variant="ghost"
+								className="gap-1 text-xs"
+							>
+								+ Variable
+								<ChevronDown
+									aria-hidden="true"
+									className="size-3"
+								/>
+							</Button>
+						</PopoverTrigger>
+						<PopoverContent align="end" className="w-72 p-0">
+							<div className="border-b p-2">
+								<label
+									htmlFor={variablePathInputId}
+									className="sr-only"
+								>
+									Search variables or enter a field path
+								</label>
+								<Input
+									id={variablePathInputId}
+									value={variableQuery}
+									onChange={(event) =>
+										setVariableQuery(event.target.value)
+									}
+									onKeyDown={(event) => {
+										if (
+											event.key === "Enter" &&
+											canInsertCustomPath
+										) {
+											event.preventDefault();
+											insertVar(normalizedVariableQuery);
+										}
+									}}
+									placeholder="Search or enter output.field"
+									className="font-mono text-xs"
+								/>
+								<Small className="mt-1 text-muted-foreground">
+									Known field paths can be entered even when
+									they were not observed in a prior run.
+								</Small>
+							</div>
+							{canInsertCustomPath && (
+								<Button
+									type="button"
+									size="sm"
+									variant="ghost"
+									onMouseDown={(event) => {
+										event.preventDefault();
+										insertVar(normalizedVariableQuery);
+									}}
+									className="h-auto w-full justify-start gap-2 whitespace-normal rounded-none border-b px-3 py-2 text-left font-mono text-xs"
+								>
+									<span className="text-muted-foreground text-xs">
+										Use
+									</span>
+									{`\${${normalizedVariableQuery}}`}
+								</Button>
+							)}
+							<div className="max-h-56 overflow-y-auto">
+								{filteredPickerVars.map((v) => (
+									<Button
 										key={v}
 										type="button"
+										size="sm"
+										variant="ghost"
 										onMouseDown={(e) => {
 											e.preventDefault();
 											insertVar(v);
 										}}
-										className="flex w-full items-center gap-1.5 px-3 py-1.5 text-left font-mono text-xs hover:bg-accent hover:text-accent-foreground"
+										className="h-auto w-full justify-start gap-2 whitespace-normal rounded-none px-3 py-2 text-left font-mono text-xs"
 									>
-										<span className="text-[10px] text-muted-foreground">
+										<span className="text-muted-foreground text-xs">
 											{/* biome-ignore lint/suspicious/noTemplateCurlyInString: intentional literal display of ${} syntax */}
 											{"${}"}
 										</span>
 										{v}
-									</button>
+									</Button>
 								))}
+								{filteredPickerVars.length === 0 &&
+									!canInsertCustomPath && (
+										<Small className="block px-3 py-2 text-muted-foreground">
+											No matching variables. Enter a field
+											path using an available root
+											variable.
+										</Small>
+									)}
 							</div>
-						)}
-					</div>
+						</PopoverContent>
+					</Popover>
 				)}
 			</div>
 			<div className="relative">

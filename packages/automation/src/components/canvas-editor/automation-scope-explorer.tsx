@@ -146,6 +146,9 @@ export function AutomationScopeExplorer({
 													</code>
 													<p className="truncate text-muted-foreground text-xs">
 														{entry.label} ·{" "}
+														{entry.valueType
+															? `${entry.valueType} · `
+															: ""}
 														{entry.availability}
 													</p>
 													{entry.description && (

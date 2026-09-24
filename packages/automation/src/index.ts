@@ -10,6 +10,7 @@ export {
 	AutomationInspectorPanel,
 	AutomationTracePanel,
 	AutomationWorkbenchContext,
+	useAutomationWorkbenchContext,
 } from "./components/automation-workbench-panels";
 export type {
 	AutomationCanvasHandle,
