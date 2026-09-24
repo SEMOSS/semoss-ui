@@ -104,18 +104,44 @@ export function McpCreatePage() {
 						"No dashboard description was provided by the tool.",
 					);
 
-				// 0. Idempotency: the playground re-mounts this page (with the same URL
-				//    params) every time the chat is reloaded, which would otherwise deploy
-				//    a NEW duplicate dashboard each reload. Check the SERVER for a dashboard
-				//    already deployed for this exact request signature and reopen it. This
-				//    is durable — unlike client storage, which is blocked/partitioned in a
-				//    cross-origin tool iframe (why reloads still rebuilt before).
-				// Skipped entirely when target_project is set: the destination is already
-				// fixed to that one project, so there's no duplicate to detect or reopen.
+				// 0. Idempotency: the playground/assistant re-mounts this page (with the
+				//    same URL params) every time the chat is reloaded, which would otherwise
+				//    rebuild the dashboard on every reload. Check the SERVER for a dashboard
+				//    already deployed for this exact request signature and reopen it instead
+				//    of rebuilding. This is durable — unlike client storage, which is
+				//    blocked/partitioned in a cross-origin tool iframe.
 				const signature = `${databaseParam.toLowerCase()}|${description.toLowerCase()}|${visibility}`;
 				const sigTag = ProjectStore.sigTag(signature);
 
-				if (!targetProject) {
+				if (targetProject) {
+					// Same request already deployed into THIS app? Check the target
+					// project's own tags rather than searching every project.
+					setStatus("Checking for an existing dashboard…");
+					try {
+						const info = asRecord(
+							await runPixel(
+								`ProjectInfo(project=["${targetProject}"]);`,
+							),
+						);
+						const rawTag = info.tag ?? info.tags;
+						const tags = Array.isArray(rawTag)
+							? rawTag.map((t) => str(t).trim())
+							: typeof rawTag === "string"
+								? rawTag
+										.split(/[,;]/)
+										.map((t: string) => t.trim())
+								: [];
+						if (tags.includes(sigTag)) {
+							setStatus("Opening your dashboard…");
+							navigate(`/dashboard/${targetProject}`, {
+								replace: true,
+							});
+							return;
+						}
+					} catch {
+						/* fall through to build if the lookup fails */
+					}
+				} else {
 					setStatus("Checking for an existing dashboard…");
 
 					// Look for a dashboard already deployed for this exact request (tagged with
@@ -236,13 +262,16 @@ export function McpCreatePage() {
 				const newId = targetProject
 					? await createDashboardInProject(targetProject, dashboard, {
 							published: visibility !== "private",
-							tags: [],
+							// Tag with the request signature so a reload of this same
+							// request shows the existing dashboard instead of rebuilding
+							// (see step 0). Hidden from folders.
+							tags: [sigTag],
 						})
 					: await createDashboard(dashboard, {
 							published: visibility !== "private",
 							// Tag with the request signature so a reload finds + reopens this
 							// dashboard instead of rebuilding (see step 0). Hidden from folders.
-							tags: [ProjectStore.sigTag(signature)],
+							tags: [sigTag],
 						});
 
 				setStatus("Opening your dashboard…");
