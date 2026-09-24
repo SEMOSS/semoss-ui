@@ -131,7 +131,9 @@ export const collectAgentRunActivities = ({
 			if (part.type === "TEXT") {
 				const text = textPart(part);
 				if (!text) continue;
-				const input = message.ornaments?.agentRunRole === "input";
+				const input =
+					(message.agentRun?.role ??
+						message.ornaments?.agentRunRole) === "input";
 				add({
 					id,
 					kind: input ? "input" : "message",

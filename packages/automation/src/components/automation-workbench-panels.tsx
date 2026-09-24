@@ -82,6 +82,7 @@ export const AutomationInspectorPanel = () => {
 				Promise.resolve(false)
 			}
 			upstreamVars={snapshot?.upstreamVars ?? []}
+			scopeEntries={snapshot?.scopeEntries ?? []}
 			stepRunStatus={snapshot?.stepRunStatus}
 			stepRunError={snapshot?.stepRunError}
 			readOnly={context.readOnly || Boolean(snapshot?.readOnly)}

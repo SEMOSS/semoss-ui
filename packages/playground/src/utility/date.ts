@@ -1,7 +1,6 @@
 import dayjs from "dayjs";
-import relativeTime from "dayjs/plugin/relativeTime";
 
-dayjs.extend(relativeTime);
+export { normalizeTimestamp } from "@semoss/utility";
 
 /**
  * Parse a Semoss timestamp into a dayjs instance, normalizing to UTC.
@@ -12,13 +11,6 @@ dayjs.extend(relativeTime);
  * only when no zone is already present, so values that already carry a
  * `Z` or numeric offset are left untouched.
  */
-export const normalizeTimestamp = (raw: string): dayjs.Dayjs => {
-	const normalized = /Z|[+-]\d{2}:?\d{2}$/.test(raw)
-		? raw
-		: `${raw.replace(" ", "T")}Z`;
-	return dayjs(normalized);
-};
-
 /**
  * Date buckets used to group chat lists. Values double as the `buckets.*`
  * i18n keys in the `sidebar` namespace, so callers can label a bucket with

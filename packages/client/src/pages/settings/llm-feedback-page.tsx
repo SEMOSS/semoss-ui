@@ -34,6 +34,7 @@ import {
 	Spinner,
 	toast,
 } from "@semoss/ui/next";
+import { copyTextToClipboard } from "@semoss/utility";
 
 interface LLMFeedback {
 	AGENT_ID: string;
@@ -155,19 +156,6 @@ export const LLMFeedbackPage = () => {
 			return JSON.stringify(JSON.parse(str), null, 2);
 		} catch {
 			return str;
-		}
-	}, []);
-
-	const copyToClipboard = useCallback(async (text: string, label: string) => {
-		if (!text) {
-			toast.error(`${label} is empty`);
-			return;
-		}
-		try {
-			await navigator.clipboard.writeText(text);
-			toast.success(`Copied ${label}`);
-		} catch {
-			toast.error(`Failed to copy ${label}`);
 		}
 	}, []);
 
@@ -524,12 +512,27 @@ export const LLMFeedbackPage = () => {
 													variant="ghost"
 													size="icon"
 													className="size-5 opacity-0 transition-opacity focus-visible:opacity-100 group-hover:opacity-100"
-													onClick={() =>
-														copyToClipboard(
+													onClick={() => {
+														if (!display) {
+															toast.error(
+																`${label} is empty`,
+															);
+															return;
+														}
+														void copyTextToClipboard(
 															display,
-															label,
-														)
-													}
+															{
+																onSuccess: () =>
+																	toast.success(
+																		`Copied ${label}`,
+																	),
+																onError: () =>
+																	toast.error(
+																		`Failed to copy ${label}`,
+																	),
+															},
+														);
+													}}
 													aria-label={`Copy ${label}`}
 												>
 													<Copy className="size-3" />

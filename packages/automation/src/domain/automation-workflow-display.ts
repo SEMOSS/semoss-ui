@@ -1,6 +1,7 @@
 import {
 	Bot,
 	Braces,
+	BrainCircuit,
 	Database,
 	FolderOpen,
 	FunctionSquare,
@@ -53,6 +54,9 @@ export function getWorkflowNodeDisplay(
 	}
 	if (type === "control.if") {
 		return { icon: GitBranch, color: "text-orange-600" };
+	}
+	if (type === "control.jev") {
+		return { icon: BrainCircuit, color: "text-violet-600" };
 	}
 	return { icon: Braces, color: "text-primary" };
 }

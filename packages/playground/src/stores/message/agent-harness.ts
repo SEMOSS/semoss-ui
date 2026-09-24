@@ -608,7 +608,7 @@ export const reconstructAllSubagents = async (room: RoomStore) => {
 		(InputMessageStore | ResponseMessageStore)[]
 	>();
 	room.history.forEach((message) => {
-		const runId = message.ornaments.agentRunId;
+		const runId = message.agentRun?.runId;
 		if (!runId) return;
 		const messages = messagesByRunId.get(runId) ?? [];
 		messages.push(message);
@@ -654,7 +654,7 @@ export const reconstructAllSubagents = async (room: RoomStore) => {
  * never part of an agent run, or if it already settled.
  */
 export const reconnectAgentRun = (responseMessage: ResponseMessageStore) => {
-	const runId = responseMessage.ornaments.agentRunId;
+	const runId = responseMessage.agentRun?.runId;
 	if (!runId) {
 		return;
 	}

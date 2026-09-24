@@ -37,6 +37,7 @@ import {
 	TooltipTrigger,
 	toast,
 } from "@semoss/ui/next";
+import { getFileExtension, getImageMimeType } from "@semoss/utility";
 import { STREAMING_PLACEHOLDER_ID } from "@/constants";
 import { useActiveIndex, useRoot } from "@/hooks";
 import {
@@ -53,7 +54,7 @@ import { ResponseMessageTool } from "./response-message-tool";
 import { ResponseMessageToolGroup } from "./response-message-tool-group";
 
 const getExtIcon = (fileName: string) => {
-	const ext = fileName.split(".").pop()?.toLowerCase() ?? "";
+	const ext = getFileExtension(fileName);
 	if (["xls", "xlsx", "csv"].includes(ext))
 		return { Icon: FileSpreadsheetIcon, ext };
 	if (
@@ -518,17 +519,9 @@ export const ResponseMessage = observer(
 										.pop()
 										?.toLowerCase() ?? "",
 								);
-							const extToMimeType: Record<string, string> = {
-								jpg: "image/jpeg",
-								jpeg: "image/jpeg",
-								gif: "image/gif",
-								webp: "image/webp",
-								svg: "image/svg+xml",
-								bmp: "image/bmp",
-							};
 							const imgSrc =
 								isImage && p.mediaInfo.base64Data
-									? `data:${p.mediaInfo.mimeType?.startsWith("image/") ? p.mediaInfo.mimeType : extToMimeType[p.mediaInfo.fileName?.split(".").pop()?.toLowerCase() ?? ""] || "image/png"};base64,${p.mediaInfo.base64Data}`
+									? `data:${p.mediaInfo.mimeType?.startsWith("image/") ? p.mediaInfo.mimeType : getImageMimeType(getFileExtension(p.mediaInfo.fileName))};base64,${p.mediaInfo.base64Data}`
 									: "";
 							const handleClick = () => {
 								if (isImage && p.mediaInfo.base64Data) {
