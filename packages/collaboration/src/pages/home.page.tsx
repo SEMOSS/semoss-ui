@@ -1,4 +1,4 @@
-import { Sun, X } from "lucide-react";
+import { X } from "lucide-react";
 import { useEffect, useId, useRef, useState } from "react";
 import {
 	Button,
@@ -16,6 +16,7 @@ import { AgentAvatar } from "@/components/common/agent-avatar";
 import { EmptyView } from "@/components/common/empty-view";
 import { PageContainer } from "@/components/common/page-container";
 import { PageHeader } from "@/components/common/page-header";
+import { TimeOfDayGreeting } from "@/components/common/time-of-day-greeting";
 import { ActivityList } from "@/features/activity/components/activity-list";
 import { AttentionCard } from "@/features/activity/components/attention-card";
 import type {
@@ -77,15 +78,7 @@ export const HomePage = () => {
 		<div className="min-h-0 min-w-0 flex-1 overflow-y-auto bg-muted/40">
 			<PageContainer>
 				<PageHeader
-					title={
-						<span className="flex items-center gap-2">
-							Good morning
-							<Sun
-								className="size-6 text-warning"
-								aria-hidden="true"
-							/>
-						</span>
-					}
+					title={<TimeOfDayGreeting />}
 					description="Your agents have been working. Here's where you come in."
 				/>
 
