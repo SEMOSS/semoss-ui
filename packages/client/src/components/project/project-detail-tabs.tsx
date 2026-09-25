@@ -5,6 +5,7 @@ import { ProjectAccessControl, ProjectOverview } from "@/components/project";
 import { useProject } from "@/hooks";
 import { AppActivityPage } from "@/pages/app/app-activity-page";
 import { AppGithubPage } from "@/pages/app/app-github-page";
+import { AppLogsPage } from "@/pages/app/app-logs-page";
 import { AppMcpUsagePage } from "@/pages/app/app-mcp-usage-page";
 import { AppSettingsPage } from "@/pages/app/app-settings-page";
 import { AppSmssPage } from "@/pages/app/app-smss-page";
@@ -22,6 +23,7 @@ interface ProjectDetailTabsProps {
 			| "activity"
 			| "agent-activity"
 			| "github"
+			| "logs"
 			| "settings"
 			| "access-control"
 			| "smss";
@@ -101,6 +103,7 @@ export const ProjectDetailTabs = ({ tabs }: ProjectDetailTabsProps) => {
 					<AgentActivityPage />
 				)}
 				{activeTab?.component === "github" && <AppGithubPage />}
+				{activeTab?.component === "logs" && <AppLogsPage />}
 				{activeTab?.component === "settings" && <AppSettingsPage />}
 				{activeTab?.component === "access-control" && (
 					<ProjectAccessControl />

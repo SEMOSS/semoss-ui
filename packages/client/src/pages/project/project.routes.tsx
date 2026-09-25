@@ -4,6 +4,7 @@ import { AutomationWorkbenchPage } from "@/components/workbench/automation";
 import {
 	AppGithubPage,
 	AppGithubSelectRepoPage,
+	AppLogsPage,
 	AppMcpUsagePage,
 	AppSettingsPage,
 	AppSmssPage,
@@ -106,6 +107,11 @@ export const PROJECT_ROUTES: {
 										restrict: ["OWNER", "EDIT"],
 									},
 									{
+										name: "Logs",
+										path: "logs",
+										restrict: ["OWNER"],
+									},
+									{
 										name: "SMSS",
 										path: "smss",
 										restrict: ["OWNER"],
@@ -142,6 +148,10 @@ export const PROJECT_ROUTES: {
 							{
 								path: "access-control",
 								element: <ProjectAccessControl />,
+							},
+							{
+								path: "logs",
+								element: <AppLogsPage />,
 							},
 							{
 								path: "smss",

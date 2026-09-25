@@ -36,6 +36,7 @@ export const WORKBENCH_COMPONENTS = {
 	PROJECT_SETTINGS: "project-settings",
 	PROJECT_INSIGHT_EXPLORER: "project-insight-explorer",
 	PROJECT_APP_RENDERER: "project-app-renderer",
+	PROJECT_APP_CONSOLE: "project-app-console",
 	PROJECT_ENGINES: "project-engines",
 } as const;
 
@@ -223,6 +224,13 @@ export const WORKBENCH_PANEL_RECORDS = {
 		type: WORKBENCH_COMPONENTS.PROJECT_APP_RENDERER,
 		name: "App",
 		helpText: "App Preview",
+		canClose: false,
+	},
+	PROJECT_APP_CONSOLE: {
+		id: WORKBENCH_COMPONENTS.PROJECT_APP_CONSOLE,
+		type: WORKBENCH_COMPONENTS.PROJECT_APP_CONSOLE,
+		name: "Console",
+		helpText: "Application Logs",
 		canClose: false,
 	},
 } as const satisfies Record<string, WorkbenchPanelRecord>;

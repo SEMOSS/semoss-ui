@@ -43,6 +43,7 @@ import {
 	ProjectSettingsToggle,
 } from "../project-settings-toggle";
 import { PROJECT_TERMINAL_PANEL } from "../project-terminal-panel";
+import { PROJECT_APP_CONSOLE_PANEL } from "./code-app-console-panel";
 import { PROJECT_APP_RENDERER_PANEL } from "./code-app-renderer-panel";
 
 /**
@@ -89,6 +90,8 @@ const createCodeWorkbenchLayout = (
 				WORKBENCH_PANEL_RECORDS.PROJECT_INSIGHT_EXPLORER,
 			[WORKBENCH_PANEL_RECORDS.PROJECT_TERMINAL.id]:
 				WORKBENCH_PANEL_RECORDS.PROJECT_TERMINAL,
+			[WORKBENCH_PANEL_RECORDS.PROJECT_APP_CONSOLE.id]:
+				WORKBENCH_PANEL_RECORDS.PROJECT_APP_CONSOLE,
 			[WORKBENCH_PANEL_RECORDS.PROJECT_ENGINES.id]:
 				WORKBENCH_PANEL_RECORDS.PROJECT_ENGINES,
 			[WORKBENCH_PANEL_RECORDS.ASSISTANT.id]:
@@ -105,7 +108,10 @@ const createCodeWorkbenchLayout = (
 				size: 400,
 			},
 			bottom: {
-				panelIds: [WORKBENCH_COMPONENTS.PROJECT_TERMINAL],
+				panelIds: [
+					WORKBENCH_COMPONENTS.PROJECT_TERMINAL,
+					WORKBENCH_COMPONENTS.PROJECT_APP_CONSOLE,
+				],
 				activeId: null,
 				size: 300,
 			},
@@ -134,6 +140,7 @@ export const CODE_WORKBENCH_COMPONENTS: Record<
 		PROJECT_INSIGHT_EXPLORER_PANEL,
 	[WORKBENCH_COMPONENTS.PROJECT_ENGINES]: PROJECT_ENGINES_PANEL,
 	[WORKBENCH_COMPONENTS.PROJECT_TERMINAL]: PROJECT_TERMINAL_PANEL,
+	[WORKBENCH_COMPONENTS.PROJECT_APP_CONSOLE]: PROJECT_APP_CONSOLE_PANEL,
 	// PROJECT_SETTINGS_TABS plus Dependencies and Settings, inserted at two
 	// different points — written out rather than nested `withTab` calls, where
 	// the second index would have to account for the first insertion
@@ -157,6 +164,11 @@ export const CODE_WORKBENCH_COMPONENTS: Record<
 		{
 			name: "Settings",
 			component: "settings",
+			restrict: ["OWNER"],
+		},
+		{
+			name: "Logs",
+			component: "logs",
 			restrict: ["OWNER"],
 		},
 		{
@@ -197,7 +209,7 @@ export const CodeWorkbench: React.FC = () => {
 		: project.project_id;
 
 	const [snapshot, onSnapshotChange] = useCacheData<WorkbenchSnapshot>(
-		`workbench-layout--${workbenchId}--1`,
+		`workbench-layout--${workbenchId}--2`,
 		workbenchLayout,
 	);
 
@@ -320,6 +332,11 @@ export const CodeWorkbench: React.FC = () => {
 			id: "workbench.project-terminal.open",
 			label: "Open Terminal",
 			type: WORKBENCH_COMPONENTS.PROJECT_TERMINAL,
+		}),
+		createOpenPanelCommand({
+			id: "workbench.project-app-console.open",
+			label: "Open Console",
+			type: WORKBENCH_COMPONENTS.PROJECT_APP_CONSOLE,
 		}),
 		createOpenPanelCommand({
 			id: "workbench.project-engines.open",
