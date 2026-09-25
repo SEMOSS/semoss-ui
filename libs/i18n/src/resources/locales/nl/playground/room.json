@@ -1,5 +1,6 @@
 {
 	"welcome": "Welkom, {{name}}",
+	"defaultName": "Nieuwe chat",
 	"settings": {
 		"title": "Kamerinstellingen",
 		"description": "Werk de kamerinstellingen bij en pas het gedrag van de chat aan",
