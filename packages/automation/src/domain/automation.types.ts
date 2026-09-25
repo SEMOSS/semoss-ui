@@ -252,12 +252,15 @@ export interface AutomationNodeResult {
 	STATUS: NodeStatus;
 	DURATION_MS: number;
 	OUTPUT_PREVIEW: string | null;
+	OUTPUT_VALUE?: string | null;
 	ERROR_MESSAGE: string | null;
 	trace?: AutomationNodeTrace;
 }
 
 export interface AutomationRunDetail extends AutomationRunSummary {
 	DEFINITION_SNAPSHOT?: string;
+	/** Temporary workspace for an active or recently completed run on this server. */
+	executionInsightId?: string;
 	nodeResults: AutomationNodeResult[];
 }
 
