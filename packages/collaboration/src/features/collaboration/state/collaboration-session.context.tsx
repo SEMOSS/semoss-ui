@@ -5,6 +5,7 @@ import {
 	useContext,
 	useEffect,
 	useReducer,
+	useRef,
 } from "react";
 import { createInitialCollaborationState } from "./collaboration.fixtures";
 import {
@@ -23,6 +24,14 @@ interface CollaborationSession {
 	canUndo: boolean;
 }
 
+/** One settled state change: the commands behind it, or none for an undo. */
+export interface CollaborationChange {
+	previous: CollaborationState;
+	next: CollaborationState;
+	commands: CollaborationCommand[];
+	undo: boolean;
+}
+
 const CollaborationSessionContext = createContext<CollaborationSession | null>(
 	null,
 );
@@ -32,12 +41,15 @@ interface CollaborationSessionProviderProps {
 	children: ReactNode;
 	/** Optional isolated fixture for tests. */
 	initialState?: CollaborationState;
+	/** Optional observer, e.g. to save changes to a backend. */
+	onChange?: (change: CollaborationChange) => void;
 }
 
 /** Shared Work/Brain state exists only for the lifetime of this application session. */
 export function CollaborationSessionProvider({
 	children,
 	initialState,
+	onChange,
 }: CollaborationSessionProviderProps) {
 	const [history, dispatchHistory] = useReducer(
 		collaborationHistoryReducer,
@@ -49,12 +61,32 @@ export function CollaborationSessionProvider({
 			past: [],
 		}),
 	);
-	const dispatch = useCallback(
-		(command: CollaborationCommand) =>
-			dispatchHistory({ command, now: new Date().toISOString() }),
-		[],
+	const pending = useRef<{ commands: CollaborationCommand[]; undo: boolean }>(
+		{
+			commands: [],
+			undo: false,
+		},
 	);
-	const undo = useCallback(() => dispatchHistory({ type: "undo" }), []);
+	const settled = useRef(history.state);
+	const dispatch = useCallback((command: CollaborationCommand) => {
+		pending.current.commands.push(command);
+		dispatchHistory({ command, now: new Date().toISOString() });
+	}, []);
+	const undo = useCallback(() => {
+		pending.current.undo = true;
+		dispatchHistory({ type: "undo" });
+	}, []);
+	useEffect(() => {
+		if (history.state === settled.current) return;
+		const change = {
+			previous: settled.current,
+			next: history.state,
+			...pending.current,
+		};
+		settled.current = history.state;
+		pending.current = { commands: [], undo: false };
+		onChange?.(change);
+	}, [history.state, onChange]);
 	useEffect(() => {
 		const expire = () => dispatch({ type: "snooze.expire" });
 		const interval = window.setInterval(expire, 30_000);
