@@ -36,6 +36,8 @@ import { uploadRoomFiles } from "./upload-room-files";
 
 export interface AgentTurnConfig {
 	insightId: string;
+	/** Parent insight scope when multiple views bind separate insights to one room. */
+	controllerScopeId?: string;
 	roomId: string;
 	agentId: string;
 	engine: string;
@@ -194,7 +196,15 @@ export class AgentTurnController {
 	}
 
 	/** Submit once; subsequent progress uses run polling rather than pixel jobs. */
-	send = async (submission: ComposerSubmission): Promise<void> => {
+	send = async (
+		submission: ComposerSubmission,
+		transportConfig?: AgentTurnConfig,
+	): Promise<void> => {
+		// Navigation can reconfigure the shared observer while restoration awaits.
+		// Keep this submitted request's files and run bound to its originating insight.
+		const config = { ...(transportConfig ?? this.config) };
+		if (config.roomId !== this.config.roomId)
+			throw new Error("The request belongs to a different conversation.");
 		if (!this.restored) await this.reconnect();
 		if (!this.restored)
 			throw new Error(
@@ -207,11 +217,21 @@ export class AgentTurnController {
 		if (this.observing) await this.observing;
 		if (this.snapshot.isSubmitting)
 			throw new Error("A message is already being submitted.");
-		const config = { ...this.config };
 		if (!config.engine) throw new Error("Select a model before sending.");
+		const existingMedia = submission.existingMedia ?? [];
+		if (
+			existingMedia.some(
+				(file) =>
+					file.insightId !== config.insightId ||
+					!file.fileLocation.trim(),
+			)
+		)
+			throw new Error(
+				"An attachment belongs to a different conversation. Attach it again before sending.",
+			);
 		const command =
 			submission.text.trim() ||
-			(submission.files.length
+			(submission.files.length || existingMedia.length
 				? "Please review the attached files."
 				: "");
 		if (!command) return;
@@ -234,6 +254,13 @@ export class AgentTurnController {
 		this.cancelRequested = false;
 		this.terminalReconciled = false;
 		this.optimistic = optimisticUserMessage(command, submission.files);
+		this.optimistic.parts.push(
+			...existingMedia.map((file) => ({
+				type: "media" as const,
+				fileName: file.fileName,
+				fileLocation: file.fileLocation,
+			})),
+		);
 		this.update({
 			messages: [...this.previous, this.optimistic],
 			toolStates: {},
@@ -264,7 +291,10 @@ export class AgentTurnController {
 				agentId: config.agentId,
 				engine: config.engine,
 				command,
-				media: files.map((file) => file.fileLocation),
+				media: [
+					...files.map((file) => file.fileLocation),
+					...existingMedia.map((file) => file.fileLocation),
+				],
 				maxTurns: config.maxTurns,
 				maxReflections: config.maxReflections,
 			});

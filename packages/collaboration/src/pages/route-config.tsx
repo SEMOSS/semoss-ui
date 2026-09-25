@@ -1,13 +1,13 @@
-import type { RouteObject } from "react-router";
+import { Navigate, type RouteObject } from "react-router";
 import { AgentLayout } from "@/components/layouts/agent-layout";
-import { AgentRoomLayout } from "@/components/layouts/agent-room-layout";
 import { AuthorizedLayout } from "@/components/layouts/authorized-layout";
-import { MainLayout } from "@/components/layouts/main-layout";
 import { RootLayout } from "@/components/layouts/root-layout";
+import { CollaborationLayout } from "@/features/collaboration/components/collaboration-layout";
+import { LegacyRoomLayout } from "@/features/collaboration/components/legacy-room-layout";
 import { ErrorPage } from "@/pages/error.page";
 import { NotFoundPage } from "@/pages/not-found.page";
 
-/** Collaboration route hierarchy with leaf pages loaded on demand. */
+/** Work and Brain own the product routes; existing room links remain valid. */
 export const routes: RouteObject[] = [
 	{
 		Component: RootLayout,
@@ -19,44 +19,61 @@ export const routes: RouteObject[] = [
 				ErrorBoundary: ErrorPage,
 				children: [
 					{
-						id: "main",
-						Component: MainLayout,
+						id: "collaboration",
+						Component: CollaborationLayout,
 						children: [
 							{
 								index: true,
 								id: "home",
+								element: <Navigate to="/work" replace />,
+							},
+							...[
+								"work",
+								"work/waiting",
+								"work/done",
+								"work/topic/:topicId",
+							].map((path) => ({
+								path,
+								id: path,
 								lazy: async () => ({
 									Component: (
-										await import("@/pages/home.page")
-									).HomePage,
+										await import("@/pages/work.page")
+									).WorkPage,
 								}),
-							},
+							})),
 							{
-								path: "new",
-								id: "room-new",
+								path: "work/thread/:threadId",
+								id: "work-thread",
 								lazy: async () => ({
 									Component: (
-										await import("@/pages/new-room.page")
-									).NewRoomPage,
+										await import("@/pages/work-thread.page")
+									).WorkThreadPage,
 								}),
 							},
-							{
-								path: "room",
-								id: "sessions",
+							...[
+								"brain",
+								"brain/profile",
+								"brain/sources",
+								"brain/people",
+								"brain/people/:personId",
+								"brain/threads",
+								"brain/threads/:threadId",
+								"brain/topics/:topicId",
+							].map((path) => ({
+								path,
+								id: path,
 								lazy: async () => ({
 									Component: (
-										await import("@/pages/sessions.page")
-									).SessionsPage,
+										await import("@/pages/brain.page")
+									).BrainPage,
 								}),
-							},
+							})),
 							{
-								path: "room/:roomId",
-								id: "room-agent",
-								Component: AgentLayout,
+								Component: LegacyRoomLayout,
 								children: [
 									{
-										id: "room-layout",
-										Component: AgentRoomLayout,
+										path: "room/:roomId",
+										Component: AgentLayout,
 										children: [
 											{
 												index: true,
@@ -69,73 +86,29 @@ export const routes: RouteObject[] = [
 													).RoomPage,
 												}),
 											},
+											{
+												path: "*",
+												id: "room-not-found",
+												Component: NotFoundPage,
+											},
 										],
 									},
-									{
-										path: "*",
-										id: "room-not-found",
-										Component: NotFoundPage,
-									},
 								],
 							},
+							...["room", "new"].map((path) => ({
+								path,
+								element: <Navigate to="/work" replace />,
+							})),
 							{
-								path: "agents",
-								id: "agents",
-								lazy: async () => ({
-									Component: (
-										await import(
-											"@/pages/agents-overview.page"
-										)
-									).AgentsOverviewPage,
-								}),
-							},
-							{
-								path: "agents/new",
-								id: "agent-new",
-								lazy: async () => ({
-									Component: (
-										await import(
-											"@/pages/agent-settings.page"
-										)
-									).AgentSettingsPage,
-								}),
-							},
-							{
-								path: "agents/:agentId",
-								id: "agent",
-								Component: AgentLayout,
-								children: [
-									{
-										index: true,
-										id: "agent-not-found",
-										Component: NotFoundPage,
-									},
-									{
-										path: "settings",
-										id: "agent-settings",
-										lazy: async () => ({
-											Component: (
-												await import(
-													"@/pages/agent-settings.page"
-												)
-											).AgentSettingsPage,
-										}),
-									},
-									{
-										path: "*",
-										id: "agent-path-not-found",
-										Component: NotFoundPage,
-									},
-								],
+								path: "agents/*",
+								id: "legacy-agents",
+								element: <Navigate to="/brain" replace />,
 							},
 							{
 								path: "settings",
-								id: "settings",
-								lazy: async () => ({
-									Component: (
-										await import("@/pages/settings.page")
-									).SettingsPage,
-								}),
+								element: (
+									<Navigate to="/brain/sources" replace />
+								),
 							},
 							{
 								path: "*",

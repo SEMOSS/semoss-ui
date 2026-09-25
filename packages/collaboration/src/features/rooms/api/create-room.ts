@@ -1,6 +1,11 @@
 import type { MCPConfig } from "@semoss/shared";
 import { callPixel, type InsightActions, pixel } from "@/lib/pixel";
-import { createdPlaygroundRoomSchema, roomWriteSchema } from "./room-schemas";
+import {
+	createdPlaygroundRoomSchema,
+	type PlaygroundRoomOptions,
+	roomOptionsEnvelopeSchema,
+	roomWriteSchema,
+} from "./room-schemas";
 
 interface CreateRoomAttempt {
 	/** Reconfigure a room allocated by an earlier, partially failed attempt. */
@@ -9,13 +14,14 @@ interface CreateRoomAttempt {
 	onCreated?: (roomId: string) => void;
 }
 
-/** Create and fully configure one workspace-backed playground room in collaboration mode. */
+/** Create and fully configure a playground room in collaboration mode. */
 export async function createRoom(
 	actions: InsightActions,
 	_insightId: string,
 	options: {
-		workspaceId: string;
-		workspaceName: string;
+		/** Omitted preserves a retry's workspace; null or blank explicitly clears it. */
+		workspaceId?: string | null;
+		workspaceName?: string;
 		instructions?: string;
 		mcp?: MCPConfig[];
 		modelId?: string;
@@ -24,12 +30,13 @@ export async function createRoom(
 	},
 	attempt: CreateRoomAttempt = {},
 ): Promise<string> {
+	const workspaceId = options.workspaceId?.trim() || undefined;
 	let roomId = attempt.roomId;
 	if (!roomId) {
 		const created = await callPixel(
 			actions,
 			pixel("CreatePlaygroundRoom", {
-				workspaceId: options.workspaceId,
+				workspaceId,
 				mode: "collaboration",
 			}),
 			createdPlaygroundRoomSchema,
@@ -37,22 +44,39 @@ export async function createRoom(
 		roomId = created.roomId;
 		attempt.onCreated?.(roomId);
 	}
-	const roomOptions = {
+	const { OPTIONS: previousOptions } = await callPixel(
+		actions,
+		pixel("GetRoomOptions", { roomId }),
+		roomOptionsEnvelopeSchema,
+	);
+	// UpdateRoomOptions replaces ordinary keys, so retain values outside this setup's control.
+	const roomOptions: PlaygroundRoomOptions = {
+		...previousOptions,
 		predefinedPrompts: [],
 		instructions: options.instructions ?? "",
 		mcp: (options.mcp ?? [])
 			.filter((resource) => !resource.fromWorkspace && !resource.fromRoom)
 			.map(({ id, name, type }) => ({ id, name, type })),
-		workspace: {
-			workspace_id: options.workspaceId,
-			name: options.workspaceName,
-		},
 		modelId: options.modelId ?? "",
 		...(options.temperature !== undefined && {
 			temperature: options.temperature,
 		}),
 		harnessType: "semoss",
 	};
+	if (workspaceId) {
+		const previousWorkspace =
+			previousOptions.workspace?.workspace_id === workspaceId
+				? previousOptions.workspace
+				: undefined;
+		roomOptions.workspace = {
+			...previousWorkspace,
+			workspace_id: workspaceId,
+			name:
+				options.workspaceName ?? previousWorkspace?.name ?? "Assistant",
+		};
+	} else if (options.workspaceId !== undefined) {
+		delete roomOptions.workspace;
+	}
 
 	const updated = await callPixel(
 		actions,

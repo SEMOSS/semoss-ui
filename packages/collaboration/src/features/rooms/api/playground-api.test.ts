@@ -11,10 +11,31 @@ function pixelResponse(output: unknown) {
 }
 
 describe("playground room APIs", () => {
+	it.each([undefined, null, "", "  "])(
+		"omits an absent workspace when creating a standalone assistant (%s)",
+		async (workspaceId) => {
+			const run = vi
+				.fn()
+				.mockResolvedValueOnce(pixelResponse({ roomId: "standalone" }))
+				.mockResolvedValueOnce(pixelResponse({ OPTIONS: {} }))
+				.mockResolvedValue(pixelResponse(true));
+			await createRoom({ run } as never, "insight-1", {
+				workspaceId,
+				modelId: "model-1",
+			});
+			expect(run.mock.calls[0]?.[0]).toBe(
+				'CreatePlaygroundRoom(mode=["collaboration"]);',
+			);
+			expect(run.mock.calls[2]?.[0]).not.toContain('"workspace"');
+			expect(run.mock.calls[2]?.[0]).toContain('"modelId":"model-1"');
+		},
+	);
+
 	it("creates, configures, names, and binds a room for the SEMOSS harness", async () => {
 		const run = vi
 			.fn()
 			.mockResolvedValueOnce(pixelResponse({ roomId: "room-1" }))
+			.mockResolvedValueOnce(pixelResponse({ OPTIONS: {} }))
 			.mockResolvedValue(pixelResponse(true));
 
 		await expect(
@@ -48,11 +69,12 @@ describe("playground room APIs", () => {
 
 		expect(run.mock.calls.map(([statement]) => statement)).toEqual([
 			'CreatePlaygroundRoom(workspaceId=["workspace-1"], mode=["collaboration"]);',
+			'GetRoomOptions(roomId=["room-1"]);',
 			expect.stringContaining("UpdateRoomOptions"),
 			'SetRoomName(roomId=["room-1"], roomName=["Quarterly review"]);',
 			'SetRoomForInsight(roomId=["room-1"]);',
 		]);
-		const optionsStatement = String(run.mock.calls[1]?.[0]);
+		const optionsStatement = String(run.mock.calls[2]?.[0]);
 		expect(optionsStatement).toContain('"workspace_id":"workspace-1"');
 		expect(optionsStatement).toContain('"modelId":"model-1"');
 		expect(optionsStatement).toContain('"harnessType":"semoss"');
@@ -62,6 +84,43 @@ describe("playground room APIs", () => {
 		expect(optionsStatement).not.toContain("fromWorkspace");
 		expect(optionsStatement).not.toContain("fromRoom");
 	});
+
+	it.each([
+		{ workspaceId: undefined, retained: true },
+		{ workspaceId: null, retained: false },
+		{ workspaceId: "  ", retained: false },
+		{ workspaceId: "workspace-1", retained: true },
+	])(
+		"only clears a retry's workspace when explicitly requested ($workspaceId)",
+		async ({ workspaceId, retained }) => {
+			const workspace = {
+				workspace_id: "workspace-1",
+				name: "Original name",
+				customConfiguration: { keep: true },
+			};
+			const run = vi
+				.fn()
+				.mockResolvedValueOnce(
+					pixelResponse({ OPTIONS: { workspace } }),
+				)
+				.mockResolvedValue(pixelResponse(true));
+			await createRoom(
+				{ run } as never,
+				"insight-1",
+				{ workspaceId },
+				{ roomId: "room-1" },
+			);
+			expect(run.mock.calls[0]?.[0]).toBe(
+				'GetRoomOptions(roomId=["room-1"]);',
+			);
+			const statement = String(run.mock.calls[1]?.[0]);
+			if (retained) {
+				expect(statement).toContain(JSON.stringify(workspace));
+			} else {
+				expect(statement).not.toContain('"workspace"');
+			}
+		},
+	);
 
 	it("retains an allocated room id and resumes setup without creating another room", async () => {
 		const onCreated = vi.fn();
@@ -82,8 +141,15 @@ describe("playground room APIs", () => {
 			),
 		).rejects.toThrow("Options unavailable");
 		expect(onCreated).toHaveBeenCalledWith("room-1");
+		expect(firstRun.mock.calls.map(([statement]) => statement)).toEqual([
+			'CreatePlaygroundRoom(workspaceId=["workspace-1"], mode=["collaboration"]);',
+			'GetRoomOptions(roomId=["room-1"]);',
+		]);
 
-		const retryRun = vi.fn().mockResolvedValue(pixelResponse(true));
+		const retryRun = vi
+			.fn()
+			.mockResolvedValueOnce(pixelResponse({ OPTIONS: {} }))
+			.mockResolvedValue(pixelResponse(true));
 		await expect(
 			createRoom(
 				{ run: retryRun } as never,
@@ -96,6 +162,7 @@ describe("playground room APIs", () => {
 			),
 		).resolves.toBe("room-1");
 		expect(retryRun.mock.calls.map(([statement]) => statement)).toEqual([
+			'GetRoomOptions(roomId=["room-1"]);',
 			expect.stringContaining("UpdateRoomOptions"),
 			'SetRoomForInsight(roomId=["room-1"]);',
 		]);

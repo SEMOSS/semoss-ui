@@ -7,33 +7,21 @@ import {
 } from "react";
 import type { ValidatedRoomMessage } from "@/features/messages/api/message-schemas";
 import type { ComposerSubmission, PendingToolApproval } from "../types/room";
-import {
-	type AgentTurnConfig,
-	AgentTurnController,
-	type AgentTurnSnapshot,
+import type {
+	AgentTurnConfig,
+	AgentTurnSnapshot,
 } from "./agent-turn-controller";
-
-// Active runs survive route changes. Evict idle rooms to bound retained transcripts.
-const controllers = new Map<string, AgentTurnController>();
-const MAX_IDLE_ROOMS = 20;
-
-function roomController(config: AgentTurnConfig): AgentTurnController {
-	const key = `${config.insightId}:${config.roomId}`;
-	let controller = controllers.get(key);
-	if (!controller) {
-		controller = new AgentTurnController(config);
-		controllers.set(key, controller);
-	}
-	controller.configure(config);
-	return controller;
-}
+import {
+	evictIdleAgentTurnControllers,
+	getAgentTurnController,
+} from "./agent-turn-registry";
 
 /** Submit through the same controller instance that the durable room will observe. */
 export async function submitAgentTurn(
 	config: AgentTurnConfig,
 	submission: ComposerSubmission,
 ): Promise<void> {
-	await roomController(config).send(submission);
+	await getAgentTurnController(config).send(submission, config);
 }
 
 interface UseAgentTurnOptions extends AgentTurnConfig {
@@ -54,19 +42,35 @@ interface AgentTurn extends AgentTurnSnapshot {
 
 /** Attach the room UI to its single durable agent-run observer. */
 export function useAgentTurn(options: UseAgentTurnOptions): AgentTurn {
-	const { insightId, roomId, agentId, engine, maxTurns, maxReflections } =
-		options;
+	const {
+		insightId,
+		controllerScopeId,
+		roomId,
+		agentId,
+		engine,
+		maxTurns,
+		maxReflections,
+	} = options;
 	const controller = useMemo(
 		() =>
-			roomController({
+			getAgentTurnController({
 				insightId,
+				controllerScopeId,
 				roomId,
 				agentId,
 				engine,
 				maxTurns,
 				maxReflections,
 			}),
-		[insightId, roomId, agentId, engine, maxTurns, maxReflections],
+		[
+			insightId,
+			controllerScopeId,
+			roomId,
+			agentId,
+			engine,
+			maxTurns,
+			maxReflections,
+		],
 	);
 	controller.configure(options);
 	const snapshot = useSyncExternalStore(
@@ -84,17 +88,7 @@ export function useAgentTurn(options: UseAgentTurnOptions): AgentTurn {
 	useEffect(() => {
 		if (roomId) void controller.reconnect();
 		return () => {
-			for (const [key, idle] of controllers) {
-				if (controllers.size <= MAX_IDLE_ROOMS) break;
-				if (
-					idle === controller ||
-					!idle.canEvict() ||
-					idle.getSnapshot().isRunning
-				)
-					continue;
-				idle.dispose();
-				controllers.delete(key);
-			}
+			evictIdleAgentTurnControllers(controller);
 		};
 	}, [controller, roomId]);
 

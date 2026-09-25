@@ -1,0 +1,17 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta http-equiv="Content-Security-Policy" content="connect-src 'self'; form-action 'none'" />
+    <title>Collaboration — isolated fixture preview</title>
+    <script>
+      window.fetch = async function () { throw new Error("Fixture preview: network actions are unavailable."); };
+      window.open = function () { throw new Error("Fixture preview: external actions are unavailable."); };
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/main.tsx"></script>
+  </body>
+</html>

@@ -127,6 +127,77 @@ it("submits the selected agent, model, attachments, and configured turn budget o
 	expect(instance.getSnapshot().isRunning).toBe(true);
 });
 
+it("combines explicitly staged source files with browser uploads in the same insight", async () => {
+	const instance = controller();
+	vi.mocked(uploadRoomFiles).mockResolvedValue([
+		{ fileName: "upload.txt", fileLocation: "upload.txt" },
+	]);
+	await instance.send({
+		text: "Read both",
+		files: [new File(["uploaded"], "upload.txt")],
+		existingMedia: [
+			{
+				insightId: "insight-1",
+				fileLocation: "outlook/brief.pdf",
+				fileName: "brief.pdf",
+			},
+		],
+	});
+	expect(api.startAgentRun).toHaveBeenCalledWith(
+		"insight-1",
+		expect.objectContaining({ media: ["upload.txt", "outlook/brief.pdf"] }),
+	);
+	expect(instance.getSnapshot().messages[0]?.parts).toContainEqual({
+		type: "media",
+		fileName: "brief.pdf",
+		fileLocation: "outlook/brief.pdf",
+	});
+});
+
+it("rejects native attachment paths staged in a different insight before submitting", async () => {
+	const instance = controller();
+	await expect(
+		instance.send({
+			text: "Review",
+			files: [],
+			existingMedia: [
+				{
+					insightId: "another-insight",
+					fileLocation: "brief.pdf",
+					fileName: "brief.pdf",
+				},
+			],
+		}),
+	).rejects.toThrow("different conversation");
+	expect(uploadRoomFiles).not.toHaveBeenCalled();
+	expect(api.startAgentRun).not.toHaveBeenCalled();
+});
+
+it("keeps a submitted request on its originating insight when another view attaches during restoration", async () => {
+	const restoration = deferred<AgentRun[]>();
+	vi.mocked(api.listRoomRuns).mockReturnValueOnce(restoration.promise);
+	const instance = controller();
+	const pending = instance.send({
+		text: "Review",
+		files: [],
+		existingMedia: [
+			{
+				insightId: "insight-1",
+				fileLocation: "brief.pdf",
+				fileName: "brief.pdf",
+			},
+		],
+	});
+	instance.configure({ ...config, insightId: "legacy-view-insight" });
+	restoration.resolve([]);
+	await pending;
+	expect(uploadRoomFiles).toHaveBeenCalledWith("insight-1", []);
+	expect(api.startAgentRun).toHaveBeenCalledWith(
+		"insight-1",
+		expect.objectContaining({ media: ["brief.pdf"] }),
+	);
+});
+
 it("renders full text and ordered deltas, ignoring duplicate events", async () => {
 	const started = event(1, "item.started", "Hello");
 	const updated: AgentEvent = {

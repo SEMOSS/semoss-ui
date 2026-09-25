@@ -1,6 +1,7 @@
 import { act, renderHook, waitFor } from "@testing-library/react";
 import type { AgentRun } from "./agent-run-api";
 import * as api from "./agent-run-api";
+import { getAgentTurnController } from "./agent-turn-registry";
 import { submitAgentTurn, useAgentTurn } from "./use-agent-turn";
 
 vi.mock("./agent-run-api", async (original) => ({
@@ -105,4 +106,43 @@ it("hands a draft submission to the room subscriber without starting it twice", 
 	expect(api.startAgentRun).toHaveBeenCalledTimes(1);
 	expect(api.pollRun).toHaveBeenCalledTimes(1);
 	room.unmount();
+});
+
+it("shares Work and legacy room observers within one parent insight scope", async () => {
+	vi.mocked(api.pollRun).mockClear();
+	const config = {
+		insightId: "work-isolated-insight",
+		controllerScopeId: "parent-insight",
+		roomId: "work-and-legacy-room",
+		agentId: "",
+		engine: "model-1",
+		maxTurns: 40,
+	};
+	vi.mocked(api.startAgentRun).mockResolvedValue({
+		runId: "work-run",
+		roomId: config.roomId,
+		status: "RUNNING",
+		pendingActions: [],
+	});
+	vi.mocked(api.pollRun).mockReturnValue(new Promise(() => undefined));
+	const work = getAgentTurnController(config);
+	await work.send({ text: "Started from Work", files: [] }, config);
+	const legacy = renderHook(() =>
+		useAgentTurn({
+			...config,
+			insightId: "parent-insight",
+			controllerScopeId: undefined,
+		}),
+	);
+	expect(legacy.result.current.isRunning).toBe(true);
+	expect(api.pollRun).toHaveBeenCalledTimes(1);
+	expect(
+		getAgentTurnController({
+			...config,
+			insightId: "different-owner",
+			controllerScopeId: undefined,
+		}),
+	).not.toBe(work);
+	legacy.unmount();
+	work.dispose();
 });

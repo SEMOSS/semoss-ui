@@ -11,6 +11,12 @@ import type { Session } from "@/types/session";
 export interface ComposerSubmission {
 	text: string;
 	files: File[];
+	/** Explicitly selected native files staged in this exact room insight. */
+	existingMedia?: {
+		insightId: string;
+		fileLocation: string;
+		fileName: string;
+	}[];
 }
 
 /** Room-authored configuration layered on top of the selected agent. */
