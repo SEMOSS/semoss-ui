@@ -2,6 +2,7 @@
 export function dateLabel(
 	value: string | null | undefined,
 	timeZone?: string,
+	format: "date" | "date-time" = "date-time",
 ): string {
 	if (!value) return "Date unavailable";
 	const date = new Date(value);
@@ -10,8 +11,9 @@ export function dateLabel(
 		: new Intl.DateTimeFormat(undefined, {
 				month: "short",
 				day: "numeric",
-				hour: "numeric",
-				minute: "2-digit",
+				...(format === "date-time"
+					? { hour: "numeric" as const, minute: "2-digit" as const }
+					: {}),
 				...(timeZone
 					? { timeZone, timeZoneName: "short" as const }
 					: {}),

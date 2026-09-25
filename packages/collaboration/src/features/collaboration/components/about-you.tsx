@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router";
 import {
-	Badge,
 	Button,
 	H1,
 	H2,
@@ -14,6 +13,8 @@ import {
 } from "@semoss/ui/next";
 import { useCollaborationSession } from "../state/collaboration-session.context";
 import { CollaborationSurface } from "./collaboration-surface";
+import { collaborationTabsStyles } from "./collaboration-tabs.styles";
+import { PersonAvatar } from "./person-avatar";
 import { ProfileForm } from "./profile-form";
 import { Section } from "./section";
 
@@ -23,45 +24,84 @@ export function AboutYou() {
 	const [target, setTarget] = useState("live");
 	const profile = target === "sample" ? state.profile : state.liveProfile;
 	return (
-		<CollaborationSurface>
-			<div className="mx-auto max-w-3xl space-y-6 p-4 md:p-6">
-				<header className="space-y-2">
+		<CollaborationSurface
+			asideTitle="Profile context"
+			aside={
+				<Section title="Your context" variant="widget">
+					<P className="text-muted-foreground text-xs leading-5">
+						Confirmed profile and writing preferences can guide the
+						assistant. Profile edits apply to this session.
+					</P>
+					<Button asChild variant="outline" size="sm">
+						<Link to="/brain/sources">Sources and rules</Link>
+					</Button>
+				</Section>
+			}
+		>
+			<div>
+				<header className="space-y-1.5 px-4 pt-5 pb-3 md:px-6">
 					<H1 className="font-semibold text-xl">About you</H1>
-					<P className="text-muted-foreground">
+					<P className="text-muted-foreground text-sm">
 						The profile and writing preferences you choose for
 						assistant context.
 					</P>
 				</header>
-				<Tabs value={target} onValueChange={setTarget}>
-					<TabsList>
-						<TabsTrigger value="live">Your profile</TabsTrigger>
-						<TabsTrigger value="sample">Sample profile</TabsTrigger>
-					</TabsList>
-					<TabsContent value={target} className="space-y-6 pt-4">
+				<Tabs
+					value={target}
+					onValueChange={setTarget}
+					className="gap-0"
+				>
+					<div className="border-b px-4 md:px-6">
+						<TabsList className={collaborationTabsStyles.list}>
+							<TabsTrigger
+								value="live"
+								className={collaborationTabsStyles.trigger}
+							>
+								Your profile
+							</TabsTrigger>
+							<TabsTrigger
+								value="sample"
+								className={collaborationTabsStyles.trigger}
+							>
+								Workspace profile
+							</TabsTrigger>
+						</TabsList>
+					</div>
+					<TabsContent value={target} className="mt-0">
 						{profile ? (
 							<>
-								<div className="space-y-2">
-									<H2 className="font-semibold text-lg">
-										{profile.name}
-									</H2>
-									<Small className="break-words text-muted-foreground">
-										{profile.email}
-										{profile.org ? ` · ${profile.org}` : ""}
-									</Small>
-									{target === "sample" && (
-										<Badge variant="outline">
-											Fictional sample identity
-										</Badge>
-									)}
+								<div className="flex items-start gap-3 border-b px-4 py-5 md:px-6">
+									<PersonAvatar
+										name={profile.name}
+										initials={profile.initials}
+									/>
+									<div className="min-w-0 space-y-1">
+										<H2 className="font-semibold text-lg">
+											{profile.name}
+										</H2>
+										<Small className="break-words font-normal text-muted-foreground text-xs leading-5">
+											{profile.email}
+											{profile.org
+												? ` · ${profile.org}`
+												: ""}
+										</Small>
+									</div>
 								</div>
-								<ProfileForm
-									key={`${target}-${profile.id}`}
-									profile={profile}
-									target={
-										target === "sample" ? "sample" : "live"
-									}
-								/>
-								<Section title="VIPs">
+								<div className="border-b px-4 py-4 md:px-6">
+									<ProfileForm
+										key={`${target}-${profile.id}`}
+										profile={profile}
+										target={
+											target === "sample"
+												? "sample"
+												: "live"
+										}
+									/>
+								</div>
+								<Section
+									title="VIPs"
+									className="space-y-3 px-4 py-4 md:px-6"
+								>
 									{state.people
 										.filter(
 											(person) =>
@@ -72,14 +112,24 @@ export function AboutYou() {
 										.map((person) => (
 											<div
 												key={person.id}
-												className="flex items-center justify-between gap-3"
+												className="flex items-center justify-between gap-3 border-b pb-3"
 											>
-												<Link
-													className="hover:underline"
-													to={`/brain/people/${encodeURIComponent(person.id)}`}
-												>
-													{person.name}
-												</Link>
+												<PersonAvatar
+													name={person.name}
+													initials={person.initials}
+												/>
+												<div className="min-w-0 flex-1">
+													<Link
+														className="break-words font-medium text-sm hover:underline"
+														to={`/brain/people/${encodeURIComponent(person.id)}`}
+													>
+														{person.name}
+													</Link>
+													<Small className="mt-0.5 font-normal text-muted-foreground text-xs">
+														{person.title ||
+															person.relationship}
+													</Small>
+												</div>
 												<Button
 													variant="ghost"
 													size="sm"
@@ -97,7 +147,7 @@ export function AboutYou() {
 												</Button>
 											</div>
 										))}
-									<Button asChild variant="outline">
+									<Button asChild variant="outline" size="sm">
 										<Link to="/brain/people">
 											Choose VIPs from People
 										</Link>
@@ -105,11 +155,9 @@ export function AboutYou() {
 								</Section>
 							</>
 						) : (
-							<P className="text-muted-foreground">
+							<P className="p-4 text-muted-foreground text-sm leading-6 md:p-6">
 								Your account profile is unavailable. You can
-								continue browsing the sample scenario and
-								sources; no sample identity will be used for
-								your connected messages.
+								browse sources or view the workspace profile.
 							</P>
 						)}
 					</TabsContent>

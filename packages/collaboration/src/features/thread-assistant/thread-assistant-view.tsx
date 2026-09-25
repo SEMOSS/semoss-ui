@@ -5,6 +5,7 @@ import {
 	AlertDescription,
 	Button,
 	Checkbox,
+	H2,
 	Label,
 	P,
 	Sheet,
@@ -12,6 +13,7 @@ import {
 	SheetDescription,
 	SheetHeader,
 	SheetTitle,
+	Small,
 } from "@semoss/ui/next";
 import type { AgentConfiguration } from "@/features/agents/types/agent";
 import { optimizePrompt } from "@/features/rooms/api/optimize-prompt";
@@ -122,35 +124,46 @@ export function ThreadAssistantView({
 	return (
 		<section
 			aria-label="Thread assistant"
-			className="flex min-w-0 flex-col overflow-hidden rounded-xl border border-border bg-card"
+			className="flex min-w-0 flex-col"
 		>
-			<header className="flex flex-wrap items-center justify-between gap-3 border-border border-b px-4 py-3">
-				<div className="flex items-center gap-2">
+			<header className="flex items-center gap-3 py-4">
+				<span
+					aria-hidden="true"
+					className="h-px min-w-3 flex-1 bg-border"
+				/>
+				<H2 className="font-medium text-muted-foreground text-xs uppercase tracking-wider">
+					You and the assistant
+				</H2>
+				<span
+					aria-hidden="true"
+					className="h-px min-w-3 flex-1 bg-border"
+				/>
+			</header>
+			<div className="flex flex-wrap items-center justify-between gap-2 pb-2">
+				<div className="flex min-w-0 items-center gap-2">
 					<Sparkles
 						aria-hidden="true"
 						className="size-4 text-primary"
 					/>
-					<h2 className="font-semibold text-base">Assistant</h2>
-					<span className="text-muted-foreground text-xs">
-						{isConnected
-							? "Using this thread’s context"
-							: "Using the sample context"}
-					</span>
+					<Small className="text-muted-foreground text-xs">
+						Using this thread’s context
+					</Small>
 				</div>
 				<Button
 					type="button"
 					variant="ghost"
 					size="sm"
+					className="-mr-2 h-8 text-muted-foreground"
 					onClick={() => workbench.openWorkbench()}
 					disabled={!roomId || isBusy}
 				>
 					<PanelsTopLeft aria-hidden="true" />
 					Tools & files
 				</Button>
-			</header>
-			<div className="space-y-3 px-4 pt-3">
-				<details className="rounded-lg border border-border px-3 py-2">
-					<summary className="cursor-pointer text-sm focus-visible:outline-2 focus-visible:outline-ring">
+			</div>
+			<div className="space-y-3">
+				<details className="rounded-lg bg-muted/30 px-3 py-2">
+					<summary className="min-h-6 cursor-pointer text-muted-foreground text-sm focus-visible:outline-2 focus-visible:outline-ring">
 						Review assistant context
 					</summary>
 					<P className="mt-3 font-medium text-sm">
@@ -234,19 +247,26 @@ export function ThreadAssistantView({
 					</output>
 				)}
 			</div>
-			<div className="flex h-96 min-h-0 flex-col">
-				<RoomThread
-					agent={ASSISTANT}
-					thread={messages}
-					isLoadingHistory={turn.isRestoring}
-					roomId={roomId || threadId}
-					resumeSignal={resumeSignal}
-					phase={turn.phase}
-					hasObservationIssue={Boolean(turn.transportError)}
-				/>
-			</div>
+			{messages.length > 0 || turn.isRestoring || turn.phase ? (
+				<div className="my-2 flex h-96 min-h-0 flex-col">
+					<RoomThread
+						agent={ASSISTANT}
+						thread={messages}
+						isLoadingHistory={turn.isRestoring}
+						roomId={roomId || threadId}
+						resumeSignal={resumeSignal}
+						phase={turn.phase}
+						hasObservationIssue={Boolean(turn.transportError)}
+					/>
+				</div>
+			) : (
+				<P className="py-4 text-muted-foreground">
+					Ask about this thread, prepare a reply, or plan your next
+					step.
+				</P>
+			)}
 			{onDraft && latestAnswer && !isBusy && (
-				<div className="px-4 pb-3">
+				<div className="pb-3">
 					<Button
 						type="button"
 						variant="outline"
@@ -265,7 +285,7 @@ export function ThreadAssistantView({
 				pendingApprovals={turn.pendingApprovals}
 				onReconnect={session.reconnect}
 			/>
-			<div className="space-y-3 border-border border-t bg-background p-3">
+			<div className="space-y-3 pt-2">
 				{shouldShowNotice && (
 					<div className="space-y-3 rounded-lg bg-muted/50 p-3">
 						<P className="text-sm">
@@ -333,6 +353,7 @@ export function ThreadAssistantView({
 					)}
 				<RoomComposer
 					key={snapshot.composerResetKey}
+					className="bg-transparent [&>fieldset]:rounded-2xl [&>fieldset]:shadow-sm"
 					agentName="Assistant"
 					isSubmitting={snapshot.isPreparing || turn.isSubmitting}
 					isRunning={turn.isRunning}

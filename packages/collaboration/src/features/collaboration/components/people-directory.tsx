@@ -14,6 +14,7 @@ import {
 	Small,
 } from "@semoss/ui/next";
 import { useCollaborationSession } from "../state/collaboration-session.context";
+import { BrainOverview } from "./brain-overview";
 import { CollaborationSurface } from "./collaboration-surface";
 import { PersonAvatar } from "./person-avatar";
 import { TopicChip } from "./topic-chip";
@@ -36,29 +37,44 @@ export function PeopleDirectory() {
 		)
 		.sort((left, right) => (right.strength ?? 0) - (left.strength ?? 0));
 	return (
-		<CollaborationSurface>
-			<header className="space-y-2 border-b p-4 md:p-6">
+		<CollaborationSurface
+			aside={<BrainOverview />}
+			asideTitle="Brain overview"
+		>
+			<header className="space-y-1.5 px-4 pt-5 pb-4 md:px-6">
 				<H1 className="font-semibold text-xl">People</H1>
-				<P className="text-muted-foreground">
-					People in the sample scenario and your selected sources.
+				<P className="text-muted-foreground text-sm">
+					The people in your topics and selected sources.
 				</P>
 			</header>
-			<div className="flex flex-wrap items-end gap-4 border-b p-4 md:px-6">
-				<div className="min-w-0 flex-1 space-y-2">
-					<Label htmlFor={`${fieldId}-people-filter`}>
+			<div className="flex flex-wrap items-center gap-2 border-b px-4 pb-3 md:px-6">
+				<div className="min-w-40 flex-1">
+					<Label
+						htmlFor={`${fieldId}-people-filter`}
+						className="sr-only"
+					>
 						Name or email
 					</Label>
 					<Input
 						id={`${fieldId}-people-filter`}
 						value={query}
 						onChange={(event) => setQuery(event.target.value)}
-						placeholder="Find someone"
+						placeholder="Filter by name or email"
+						className="h-9 text-sm"
 					/>
 				</div>
-				<div className="space-y-2">
-					<Label htmlFor={`${fieldId}-people-account`}>Account</Label>
+				<div>
+					<Label
+						htmlFor={`${fieldId}-people-account`}
+						className="sr-only"
+					>
+						Account
+					</Label>
 					<Select value={account} onValueChange={setAccount}>
-						<SelectTrigger id={`${fieldId}-people-account`}>
+						<SelectTrigger
+							id={`${fieldId}-people-account`}
+							className="h-9"
+						>
 							<SelectValue />
 						</SelectTrigger>
 						<SelectContent>
@@ -75,14 +91,14 @@ export function PeopleDirectory() {
 					</Select>
 				</div>
 			</div>
-			<output className="block px-4 py-3 text-muted-foreground text-sm md:px-6">
+			<output className="block px-4 pt-3 pb-2 font-medium text-muted-foreground text-xs md:px-6">
 				{people.length} people
 			</output>
 			<ul>
 				{people.map((person) => (
 					<li
 						key={person.id}
-						className="flex flex-wrap items-center gap-3 border-b p-4 md:px-6"
+						className="flex flex-wrap items-center gap-3 border-b px-4 py-3 transition-colors hover:bg-muted/30 md:px-6"
 					>
 						<PersonAvatar
 							name={person.name}
@@ -90,12 +106,12 @@ export function PeopleDirectory() {
 						/>
 						<div className="min-w-0 flex-1">
 							<Link
-								className="break-words font-medium hover:underline"
+								className="break-words font-medium text-sm hover:underline"
 								to={`/brain/people/${encodeURIComponent(person.id)}`}
 							>
 								{person.name}
 							</Link>
-							<Small className="break-words text-muted-foreground">
+							<Small className="mt-0.5 break-words font-normal text-muted-foreground text-xs leading-5">
 								{person.title ||
 									person.email ||
 									"Contact details unavailable"}
@@ -104,16 +120,13 @@ export function PeopleDirectory() {
 									: ""}
 							</Small>
 						</div>
-						<div className="flex flex-wrap gap-2">
+						<div className="flex flex-wrap items-center gap-1.5">
 							{person.vip && (
 								<Badge variant="secondary">VIP</Badge>
 							)}
 							{person.neverIngest && (
 								<Badge variant="outline">Excluded</Badge>
 							)}
-							<Badge variant="outline">
-								{person.isSample ? "Sample" : "Connected"}
-							</Badge>
 							{person.topics.slice(0, 2).map((id) => {
 								const topic = state.topics.find(
 									(item) => item.id === id,
@@ -124,6 +137,11 @@ export function PeopleDirectory() {
 									)
 								);
 							})}
+							{person.topics.length > 2 && (
+								<Small className="font-normal text-muted-foreground text-xs">
+									+{person.topics.length - 2}
+								</Small>
+							)}
 						</div>
 					</li>
 				))}

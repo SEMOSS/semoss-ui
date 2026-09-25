@@ -1513,7 +1513,7 @@ const SAMPLE_STATE: CollaborationState = {
 			id: "r5",
 			kind: "unassigned",
 			text: "One loaded thread has no topic",
-			detail: "Review the sample newsletter and decide whether to file it.",
+			detail: "Review the newsletter and decide whether to file it.",
 			refId: null,
 			actions: ["Review"],
 			status: "open",

@@ -24,7 +24,7 @@ export function CollaborationSurface({
 }) {
 	return (
 		<div className="flex min-h-0 min-w-0 flex-1">
-			<div className="flex min-h-0 min-w-0 flex-1 flex-col">
+			<div className="my-2 flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-2xl bg-card shadow-sm ring-1 ring-border/50 sm:my-3 sm:mr-2 sm:ml-1">
 				{aside && (
 					<div className="flex justify-end border-b px-4 py-2 xl:hidden">
 						<Sheet>
@@ -38,7 +38,7 @@ export function CollaborationSurface({
 								<SheetHeader>
 									<SheetTitle>{asideTitle}</SheetTitle>
 								</SheetHeader>
-								<div className="space-y-6 px-4 pb-6">
+								<div className="space-y-3 px-4 pb-6">
 									{aside}
 								</div>
 							</SheetContent>
@@ -52,7 +52,7 @@ export function CollaborationSurface({
 			{aside && (
 				<aside
 					aria-label={asideTitle}
-					className="hidden w-80 shrink-0 space-y-6 overflow-y-auto border-l bg-muted/30 p-4 xl:block"
+					className="hidden w-80 shrink-0 space-y-3 overflow-y-auto py-4 pr-4 pl-2 xl:block"
 				>
 					{aside}
 				</aside>

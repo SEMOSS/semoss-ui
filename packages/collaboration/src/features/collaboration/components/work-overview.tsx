@@ -21,12 +21,12 @@ export function WorkOverview() {
 	);
 	return (
 		<>
-			<Section title="Coming up">
+			<Section title="Coming up" variant="widget">
 				{coming.length ? (
 					coming.map((thread) => (
 						<div
 							key={thread.id}
-							className="space-y-1 border-b pb-3 last:border-0"
+							className="space-y-1 border-border/50 border-b pb-2 last:border-0 last:pb-0"
 						>
 							<Link
 								className="font-medium text-sm hover:underline"
@@ -42,11 +42,6 @@ export function WorkOverview() {
 									{thread.conflict}
 								</Small>
 							)}
-							{thread.isSample && (
-								<Small className="text-muted-foreground">
-									Sample event
-								</Small>
-							)}
 						</div>
 					))
 				) : (
@@ -55,6 +50,7 @@ export function WorkOverview() {
 			</Section>
 			<Section
 				title="Brain wants to check"
+				variant="widget"
 				action={
 					<Button asChild variant="ghost" size="sm">
 						<Link to="/brain">All</Link>
@@ -62,15 +58,21 @@ export function WorkOverview() {
 				}
 			>
 				{reviews.length ? (
-					reviews.map((review) => (
-						<ReviewCard key={review.id} review={review} compact />
-					))
+					<div>
+						{reviews.map((review) => (
+							<ReviewCard
+								key={review.id}
+								review={review}
+								compact
+							/>
+						))}
+					</div>
 				) : (
 					<P className="text-muted-foreground">All caught up.</P>
 				)}
 			</Section>
 			{waiting.length > 0 && (
-				<Section title="Waiting on others">
+				<Section title="Waiting on others" variant="widget">
 					{waiting.map((item) => (
 						<div
 							key={item.id}
@@ -91,8 +93,8 @@ export function WorkOverview() {
 					))}
 				</Section>
 			)}
-			<Section title="Your connected sources">
-				<P className="text-muted-foreground">
+			<Section title="Your connected sources" variant="widget">
+				<P className="text-muted-foreground text-sm">
 					Bring selected emails, chats, and events into Work.
 				</P>
 				<Button asChild variant="outline" className="w-full">

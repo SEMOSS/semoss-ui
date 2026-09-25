@@ -29,6 +29,13 @@ export function CollaborationNavigation({
 	const newTopicRef = useRef<HTMLButtonElement>(null);
 	const [isCreatingTopic, setIsCreatingTopic] = useState(false);
 	const isBrain = pathname.startsWith("/brain");
+	const topicTones = [
+		"bg-chart-1",
+		"bg-chart-2",
+		"bg-chart-3",
+		"bg-chart-4",
+		"bg-chart-5",
+	];
 	const links = isBrain
 		? [
 				{
@@ -88,8 +95,11 @@ export function CollaborationNavigation({
 				},
 			];
 	return (
-		<div className="flex min-h-full flex-col gap-6 p-3">
-			<nav aria-label={isBrain ? "Brain" : "Work"} className="space-y-1">
+		<div className="flex min-h-full flex-col gap-5 px-3 py-4">
+			<nav
+				aria-label={isBrain ? "Brain" : "Work"}
+				className="space-y-0.5"
+			>
 				{links.map(({ to, label, icon: Icon, count }) => (
 					<NavLink
 						end={to === "/work" || to === "/brain"}
@@ -98,9 +108,9 @@ export function CollaborationNavigation({
 						onClick={onNavigate}
 						className={({ isActive }) =>
 							cn(
-								"flex min-h-11 items-center gap-2 rounded-md px-3 py-2 font-medium text-sm hover:bg-accent",
+								"flex min-h-11 pointer-coarse:min-h-11 items-center gap-2.5 rounded-lg px-3 py-2 font-medium text-sm hover:bg-accent lg:min-h-9 lg:py-1.5",
 								isActive
-									? "bg-background text-foreground shadow-sm"
+									? "bg-card text-foreground shadow-sm [&>svg]:text-primary"
 									: "text-muted-foreground",
 							)
 						}
@@ -108,7 +118,14 @@ export function CollaborationNavigation({
 						<Icon aria-hidden="true" className="size-4 shrink-0" />
 						<span>{label}</span>
 						{count !== undefined && (
-							<span className="ml-auto text-xs tabular-nums">
+							<span
+								className={cn(
+									"ml-auto text-muted-foreground text-xs tabular-nums",
+									to === "/brain" &&
+										count > 0 &&
+										"rounded-full bg-primary px-1.5 py-0.5 text-primary-foreground",
+								)}
+							>
 								{count}
 							</span>
 						)}
@@ -117,7 +134,7 @@ export function CollaborationNavigation({
 			</nav>
 			<div>
 				<div className="mb-2 flex items-center justify-between px-3">
-					<Small className="font-medium text-muted-foreground">
+					<Small className="font-medium text-muted-foreground text-xs uppercase tracking-wider">
 						Topics
 					</Small>
 					<Button
@@ -130,7 +147,7 @@ export function CollaborationNavigation({
 						<Plus aria-hidden="true" />
 					</Button>
 				</div>
-				<nav aria-label="Topics" className="space-y-1">
+				<nav aria-label="Topics" className="space-y-0.5">
 					{state.topics
 						.filter((topic) => topic.status !== "archived")
 						.map((topic) => (
@@ -140,17 +157,34 @@ export function CollaborationNavigation({
 								onClick={onNavigate}
 								className={({ isActive }) =>
 									cn(
-										"flex min-h-10 items-center gap-2 rounded-md px-3 py-2 text-sm hover:bg-accent",
+										"flex min-h-11 pointer-coarse:min-h-11 items-center gap-2.5 rounded-lg px-3 py-2 text-sm hover:bg-accent lg:min-h-9 lg:py-1.5",
 										isActive &&
-											"bg-background font-medium shadow-sm",
+											"bg-card font-medium shadow-sm",
 									)
 								}
 							>
 								<span
-									className="size-2 shrink-0 rounded-full bg-primary"
+									className={cn(
+										"size-2 shrink-0 rounded-full",
+										topicTones[
+											[...topic.id].reduce(
+												(value, letter) =>
+													value +
+													letter.charCodeAt(0),
+												0,
+											) % topicTones.length
+										],
+									)}
 									aria-hidden="true"
 								/>
 								<span className="truncate">{topic.short}</span>
+								{!isBrain && (
+									<span className="ml-auto text-muted-foreground text-xs tabular-nums">
+										{selectWorkItems(state, {
+											topicId: topic.id,
+										}).total || ""}
+									</span>
+								)}
 								{topic.status !== "active" && (
 									<Small className="ml-auto text-muted-foreground text-xs">
 										{topic.status}
@@ -162,7 +196,7 @@ export function CollaborationNavigation({
 			</div>
 			{state.openThreadIds.length > 0 && (
 				<div>
-					<Small className="mb-2 px-3 font-medium text-muted-foreground">
+					<Small className="mb-2 px-3 font-medium text-muted-foreground text-xs uppercase tracking-wider">
 						Open rooms
 					</Small>
 					<nav aria-label="Open rooms">
@@ -174,16 +208,16 @@ export function CollaborationNavigation({
 								thread && (
 									<div
 										key={id}
-										className="flex items-center gap-1"
+										className="group flex items-center gap-1"
 									>
 										<NavLink
 											to={`/work/thread/${encodeURIComponent(id)}`}
 											onClick={onNavigate}
 											className={({ isActive }) =>
 												cn(
-													"min-w-0 flex-1 truncate rounded-md px-3 py-2 text-sm hover:bg-accent",
+													"min-w-0 flex-1 truncate rounded-lg px-3 py-2 text-sm before:mr-2 before:inline-block before:size-1.5 before:rounded-sm before:bg-muted-foreground hover:bg-accent lg:py-1.5",
 													isActive &&
-														"bg-background font-medium",
+														"bg-card font-medium before:bg-primary",
 												)
 											}
 										>
@@ -193,6 +227,7 @@ export function CollaborationNavigation({
 											variant="ghost"
 											size="icon-sm"
 											aria-label={`Close ${thread.subject}`}
+											className="pointer-coarse:opacity-100 lg:opacity-0 lg:group-hover:opacity-100 lg:focus-visible:opacity-100"
 											onClick={() => {
 												dispatch({
 													type: "workspace.close",
@@ -216,9 +251,7 @@ export function CollaborationNavigation({
 					</nav>
 				</div>
 			)}
-			<Small className="mt-auto px-3 text-muted-foreground">
-				Sample scenario · Sep 24, 2026
-				<br />
+			<Small className="mt-auto px-3 text-muted-foreground text-xs leading-relaxed">
 				Brain and Work edits last for this session. Conversations and
 				Outlook drafts are saved separately.
 			</Small>

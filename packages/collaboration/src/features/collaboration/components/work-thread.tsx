@@ -1,7 +1,7 @@
-import { ArrowLeft, FilePenLine } from "lucide-react";
+import { ArrowLeft, FilePenLine, MoreHorizontal, Sparkles } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router";
-import { Badge, Button, H1, P, Small } from "@semoss/ui/next";
+import { Badge, Button, cn, H1, H2, P, Small } from "@semoss/ui/next";
 import { EmailDraftDialog } from "@/features/connectors/components/email-draft-dialog";
 import type { SourceAttachment } from "@/features/connectors/types";
 import { ThreadAssistant } from "@/features/thread-assistant/thread-assistant";
@@ -10,7 +10,6 @@ import { selectThreadContext } from "../state/collaboration.selectors";
 import { useCollaborationSession } from "../state/collaboration-session.context";
 import { CollaborationSurface } from "./collaboration-surface";
 import { PersonAvatar } from "./person-avatar";
-import { Section } from "./section";
 import { TextEntryForm } from "./text-entry-form";
 import { ThreadInspector } from "./thread-inspector";
 import { TopicChip } from "./topic-chip";
@@ -87,27 +86,38 @@ export function WorkThread() {
 			}
 			asideTitle="Thread details"
 		>
-			<div className="space-y-6 p-4 md:px-6">
-				<header className="space-y-3">
-					<Button asChild variant="ghost" size="sm">
+			<div className="space-y-4 px-4 pt-5 pb-3 sm:px-7">
+				<header className="space-y-2">
+					<Button
+						asChild
+						variant="ghost"
+						size="sm"
+						className="-ml-2 h-8 text-muted-foreground"
+					>
 						<Link to="/work">
 							<ArrowLeft aria-hidden="true" />
 							Back to feed
 						</Link>
 					</Button>
-					<H1 className="font-semibold text-xl">{thread.subject}</H1>
-					<div className="flex flex-wrap items-center gap-2">
-						<Badge variant="outline">
-							{thread.isSample
-								? "Sample scenario"
-								: "Connected source"}
-						</Badge>
+					<H1 className="break-words font-medium text-2xl leading-tight tracking-tight">
+						{thread.subject}
+					</H1>
+					<div className="flex flex-wrap items-center gap-x-2 gap-y-1">
 						<Small className="text-muted-foreground">
-							{thread.channel} · {thread.messageCount} messages ·{" "}
+							<span className="capitalize">{thread.channel}</span>{" "}
+							· {thread.messageCount} messages · last{" "}
 							{dateLabel(thread.lastAt)}
 						</Small>
+						{!thread.isSample && (
+							<Badge
+								variant="secondary"
+								className="rounded-full font-normal"
+							>
+								Connected source
+							</Badge>
+						)}
 					</div>
-					<div className="flex flex-wrap gap-2">
+					<div className="flex flex-wrap gap-2 pt-1">
 						{thread.topicLinks.map((link) => {
 							const topic = state.topics.find(
 								(candidate) => candidate.id === link.topicId,
@@ -125,7 +135,7 @@ export function WorkThread() {
 					</div>
 				</header>
 				<section
-					className="space-y-3 rounded-lg border bg-muted/30 p-4"
+					className="rounded-xl bg-muted/40 px-4 py-3 ring-1 ring-border/60"
 					aria-label="Thread goal"
 				>
 					{isEditingGoal ? (
@@ -143,16 +153,17 @@ export function WorkThread() {
 							}}
 						/>
 					) : (
-						<div className="flex flex-wrap items-center justify-between gap-2">
-							<div className="min-w-0">
-								<Small className="font-medium text-muted-foreground">
-									Goal
-								</Small>
-								<P>{workspace.goal}</P>
-							</div>
+						<div className="flex items-start gap-3">
+							<Small className="pt-1 font-medium text-primary text-xs uppercase tracking-wider">
+								Goal
+							</Small>
+							<P className="min-w-0 flex-1 break-words leading-relaxed">
+								{workspace.goal}
+							</P>
 							<Button
 								variant="ghost"
 								size="sm"
+								className="-mr-2 -mt-1 shrink-0 text-muted-foreground"
 								onClick={() => setIsEditingGoal(true)}
 							>
 								Edit
@@ -160,30 +171,43 @@ export function WorkThread() {
 						</div>
 					)}
 				</section>
-				<Section title="Where it stands">
-					<P className="text-muted-foreground">{thread.summary}</P>
-				</Section>
-				<Section title="Source conversation">
+				<P className="text-muted-foreground leading-relaxed">
+					<strong className="font-medium text-foreground">
+						Where it stands.
+					</strong>{" "}
+					{thread.summary}
+				</P>
+				<section aria-label="Source conversation">
+					<H2 className="sr-only">Source conversation</H2>
 					{context.hiddenCount > 0 && (
-						<div className="space-y-2 rounded-md border p-3">
-							<Small>
-								{context.hiddenCount} source messages excluded
-								from future assistant context.
-							</Small>
-							<Button
-								variant="outline"
-								size="sm"
-								onClick={() =>
-									setShowExcluded((value) => !value)
-								}
-							>
-								{showExcluded
-									? "Hide excluded text"
-									: "Show source text anyway"}
-							</Button>
+						<div className="mb-4 flex items-start gap-3">
+							<div className="flex size-9 shrink-0 items-center justify-center text-muted-foreground">
+								<MoreHorizontal
+									aria-hidden="true"
+									className="size-4"
+								/>
+							</div>
+							<div className="min-w-0 flex-1">
+								<Small className="text-muted-foreground">
+									{context.hiddenCount} source messages
+									excluded from future assistant context.
+								</Small>
+								<Button
+									variant="ghost"
+									size="sm"
+									className="-ml-2 text-primary"
+									onClick={() =>
+										setShowExcluded((value) => !value)
+									}
+								>
+									{showExcluded
+										? "Hide excluded text"
+										: "Show source text anyway"}
+								</Button>
+							</div>
 						</div>
 					)}
-					<div className="space-y-5">
+					<div>
 						{workspace.messages
 							.filter(
 								(message) =>
@@ -202,19 +226,25 @@ export function WorkThread() {
 								return (
 									<article
 										key={message.id}
-										className="flex gap-3"
+										className="group flex gap-3"
 									>
-										<PersonAvatar
-											name={name}
-											initials={person?.initials}
-										/>
-										<div className="min-w-0 flex-1 space-y-2">
-											<div className="flex flex-wrap items-center gap-2">
+										<div className="flex shrink-0 flex-col items-center gap-1">
+											<PersonAvatar
+												name={name}
+												initials={person?.initials}
+											/>
+											<span
+												aria-hidden="true"
+												className="min-h-3 w-px flex-1 bg-border group-last:hidden"
+											/>
+										</div>
+										<div className="min-w-0 flex-1 space-y-1 pb-5">
+											<div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
 												<Small className="font-medium">
 													{name}
 												</Small>
-												<Small className="text-muted-foreground">
-													{dateLabel(message.at)}
+												<Small className="text-muted-foreground text-xs">
+													· {dateLabel(message.at)}
 												</Small>
 												{!includedIds.has(
 													message.id,
@@ -224,7 +254,15 @@ export function WorkThread() {
 													</Badge>
 												)}
 											</div>
-											<P className="whitespace-pre-wrap break-words">
+											<P
+												className={cn(
+													"whitespace-pre-wrap break-words leading-relaxed",
+													!includedIds.has(
+														message.id,
+													) &&
+														"text-muted-foreground",
+												)}
+											>
 												{message.text}
 											</P>
 											{message.isTruncated && (
@@ -239,15 +277,16 @@ export function WorkThread() {
 						{!workspace.messages.length && (
 							<P className="text-muted-foreground">
 								No source message text is available for this
-								sample thread.
+								thread.
 							</P>
 						)}
 					</div>
-				</Section>
+				</section>
 				{sourceUid && (
 					<div className="flex flex-wrap gap-2">
 						<Button
 							variant="outline"
+							size="sm"
 							onClick={() => openDraft("", "reply")}
 						>
 							<FilePenLine aria-hidden="true" />
@@ -255,12 +294,14 @@ export function WorkThread() {
 						</Button>
 						<Button
 							variant="outline"
+							size="sm"
 							onClick={() => openDraft("", "forward")}
 						>
 							Draft forward
 						</Button>
 						<Button
 							variant="ghost"
+							size="sm"
 							onClick={() => openDraft("", "new", "")}
 						>
 							New email draft
@@ -270,16 +311,38 @@ export function WorkThread() {
 				{thread.isSample &&
 					(workspace.sampleChat.length > 0 ||
 						workspace.drafts.length > 0) && (
-						<details className="space-y-4 rounded-lg border p-4">
-							<summary className="cursor-pointer font-medium">
-								Sample assistant conversation
+						<details open className="space-y-4">
+							<summary className="cursor-pointer border-border border-t pt-4 font-medium text-muted-foreground text-xs uppercase tracking-wider focus-visible:outline-2 focus-visible:outline-ring">
+								Conversation
 							</summary>
 							{workspace.sampleChat.map((message) => (
-								<div key={message.id} className="space-y-2">
-									<Small className="font-medium">
+								<div
+									key={message.id}
+									className={cn(
+										"space-y-2",
+										message.role === "user"
+											? "ml-auto max-w-96 rounded-2xl rounded-br-md bg-muted/70 px-4 py-3"
+											: "relative pl-11",
+									)}
+								>
+									{message.role !== "user" && (
+										<span className="absolute top-0 left-0 flex size-8 items-center justify-center rounded-xl bg-primary/10 text-primary">
+											<Sparkles
+												aria-hidden="true"
+												className="size-4"
+											/>
+										</span>
+									)}
+									<Small
+										className={cn(
+											"font-medium",
+											message.role !== "user" &&
+												"text-primary",
+										)}
+									>
 										{message.role === "user"
-											? "Sample user"
-											: "Sample assistant"}
+											? "You"
+											: "Assistant"}
 									</Small>
 									<P className="whitespace-pre-wrap">
 										{message.text}
@@ -312,17 +375,18 @@ export function WorkThread() {
 							{workspace.drafts.map((sample) => (
 								<div
 									key={sample.id}
-									className="space-y-3 rounded-md border p-4"
+									className="overflow-hidden rounded-xl border border-border/70 bg-card shadow-sm"
 								>
-									<Small className="font-medium">
-										Sample draft · not sent
+									<Small className="block border-b bg-muted/40 px-4 py-2 font-medium">
+										Draft · not sent
 									</Small>
-									<P className="whitespace-pre-wrap">
+									<P className="whitespace-pre-wrap px-4 py-3">
 										{sample.body}
 									</P>
 									<Button
 										variant="outline"
 										size="sm"
+										className="mx-4 mb-3"
 										onClick={() =>
 											openDraft(
 												sample.body,
@@ -338,7 +402,7 @@ export function WorkThread() {
 						</details>
 					)}
 			</div>
-			<section className="border-t" aria-label="Thread assistant">
+			<div className="px-4 pb-5 sm:px-7">
 				<ThreadAssistant
 					threadId={thread.id}
 					threadTitle={thread.subject}
@@ -349,7 +413,7 @@ export function WorkThread() {
 					sourceAttachments={attachments}
 					onDraft={(body) => openDraft(body)}
 				/>
-			</section>
+			</div>
 			{draft && (
 				<EmailDraftDialog
 					key={draft.id}

@@ -9,7 +9,7 @@ import {
 	Sparkles,
 } from "lucide-react";
 import { Link } from "react-router";
-import { Badge, Button, P, Small } from "@semoss/ui/next";
+import { Badge, Button, cn, P, Small } from "@semoss/ui/next";
 import { dateLabel } from "../date-label";
 import { selectThreadContext } from "../state/collaboration.selectors";
 import type { WorkItem } from "../state/collaboration.types";
@@ -41,39 +41,64 @@ export function WorkItemCard({ item }: { item: WorkItem }) {
 				: MessageSquare;
 	const path = `/work/thread/${encodeURIComponent(thread.id)}`;
 	return (
-		<article className="flex gap-3 border-b px-4 py-4 transition-colors hover:bg-muted/30 md:px-6">
+		<article
+			className={cn(
+				"flex gap-3 border-border/60 border-b px-4 pt-4 pb-3 transition-colors hover:bg-muted/30 md:gap-4 md:px-6",
+				item.suggested && "bg-primary/5",
+			)}
+		>
 			<PersonAvatar name={author} initials={person?.initials} />
-			<div className="min-w-0 flex-1 space-y-2">
+			<div className="min-w-0 flex-1">
 				<div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-					<Small className="font-medium">{author}</Small>
-					<Small className="inline-flex items-center gap-1 text-muted-foreground">
+					<Small className="font-medium text-xs">{author}</Small>
+					<Small className="inline-flex items-center gap-1 text-muted-foreground text-xs capitalize">
 						<Icon aria-hidden="true" className="size-3" />
 						{item.channel}
 					</Small>
-					<Small className="text-muted-foreground">
+					<Small className="text-muted-foreground text-xs">
 						{dateLabel(item.received)}
 					</Small>
 					{item.suggested ? (
-						<Badge variant="secondary">
+						<Badge
+							variant="secondary"
+							className="rounded-full bg-primary/10 px-2 py-0 text-primary text-xs"
+						>
 							<Sparkles aria-hidden="true" />
 							Suggestion
 						</Badge>
 					) : (
 						item.priority === "P0" && (
-							<Badge variant="destructive">Urgent</Badge>
+							<Badge
+								variant="outline"
+								className="rounded-full border-transparent bg-destructive/10 px-2 py-0 text-destructive text-xs"
+							>
+								Urgent
+							</Badge>
 						)
+					)}
+					{item.due && (
+						<Small
+							className={cn(
+								"ml-auto text-xs",
+								item.priority === "P0"
+									? "text-destructive"
+									: "text-muted-foreground",
+							)}
+						>
+							Due {dateLabel(item.due, undefined, "date")}
+						</Small>
 					)}
 				</div>
 				<Link
 					to={path}
-					className="block break-words font-medium text-sm hover:underline focus-visible:outline-2 focus-visible:outline-ring"
+					className="mt-1 block break-words font-medium text-base leading-snug hover:underline focus-visible:outline-2 focus-visible:outline-ring"
 				>
 					{item.title}
 				</Link>
-				<P className="line-clamp-2 break-words text-muted-foreground text-sm">
+				<P className="mt-1 line-clamp-2 break-words text-foreground/80 text-sm leading-relaxed">
 					{thread.summary}
 				</P>
-				<div className="flex flex-wrap items-center gap-2">
+				<div className="mt-2 flex flex-wrap items-center gap-2">
 					{thread.topicLinks.map((link) => {
 						const topic = state.topics.find(
 							(candidate) => candidate.id === link.topicId,
@@ -128,16 +153,11 @@ export function WorkItemCard({ item }: { item: WorkItem }) {
 					})}
 				</div>
 				{item.reasons.length > 0 && (
-					<Small className="text-muted-foreground">
+					<Small className="mt-2 text-muted-foreground text-xs leading-normal">
 						{item.reasons.join(" · ")}
 					</Small>
 				)}
-				{item.due && (
-					<Small className="text-muted-foreground">
-						Due {dateLabel(item.due)}
-					</Small>
-				)}
-				<div className="flex flex-wrap items-center gap-1">
+				<div className="-ml-2 mt-1 flex flex-wrap items-center gap-0.5 text-muted-foreground [&_a[data-slot=button]]:px-2 [&_a[data-slot=button]]:text-xs [&_button]:px-2 [&_button]:text-xs">
 					{item.suggested ? (
 						<>
 							<Button
@@ -235,9 +255,10 @@ export function WorkItemCard({ item }: { item: WorkItem }) {
 							</Button>
 						</>
 					)}
-					<Small className="ml-auto text-muted-foreground">
-						{thread.messageCount} messages · {excludedCount}{" "}
-						excluded
+					<Small className="ml-auto text-muted-foreground text-xs">
+						{thread.messageCount}{" "}
+						{thread.messageCount === 1 ? "message" : "messages"}
+						{excludedCount > 0 && ` · ${excludedCount} excluded`}
 					</Small>
 				</div>
 			</div>

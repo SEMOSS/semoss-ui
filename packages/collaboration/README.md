@@ -7,8 +7,8 @@ queue, and source rules used alongside that work.
 
 ## State and backend boundaries
 
-Work and Brain share an in-memory session with undo. Sample scenarios are labeled;
-explicitly imported Microsoft items appear as connected items. Profile edits,
+Work and Brain share an in-memory session with undo. Initial in-memory records stay
+separate from explicitly imported Microsoft items, which appear as connected items. Profile edits,
 topics, review decisions, notes, thread exclusions, and Work status changes reset
 when the application reloads. They do not call the proposed `Brain*` or `Work*`
 reactors in [reactor-contract.md](../../mockups/reactor-contract.md), which are not
@@ -100,3 +100,11 @@ pnpm --filter @semoss/collaboration type-check
 pnpm --filter @semoss/collaboration test
 pnpm --filter @semoss/collaboration build
 ```
+
+The Work/Brain interface was checked against the supplied mockup source and
+previewed at 320–1440 CSS pixels in light and dark themes. Checks covered keyboard
+navigation, focus return, review/undo, collapsed navigation and contextual panels,
+empty lists, source failures, and draft validation. An isolated preview was used
+because the configured backend at `localhost:9090` was unavailable; live Microsoft
+and agent requests were not exercised. Reflow was checked at a 640-pixel viewport;
+native 200% browser zoom was not available in the preview browser.

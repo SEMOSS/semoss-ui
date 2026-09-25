@@ -1,7 +1,6 @@
 import { useId, useState } from "react";
 import { Link, useParams } from "react-router";
 import {
-	Badge,
 	Button,
 	H1,
 	Label,
@@ -47,32 +46,105 @@ export function PersonDetail() {
 			(participant) => participant.personId === person.id,
 		),
 	);
+	const openItems = state.items.filter(
+		(item) =>
+			item.actorId === person.id &&
+			(item.status === "open" || item.status === "waiting") &&
+			!state.threads.find((thread) => thread.id === item.threadId)?.muted,
+	);
 	return (
-		<CollaborationSurface>
-			<div className="mx-auto max-w-3xl space-y-6 p-4 md:p-6">
-				<header className="space-y-3">
-					<Button asChild variant="ghost" size="sm">
-						<Link to="/brain/people">Back to people</Link>
-					</Button>
-					<div className="flex items-center gap-3">
+		<CollaborationSurface
+			asideTitle="Person context"
+			aside={
+				<>
+					<Section title="How you work together" variant="widget">
+						<div className="grid grid-cols-2 gap-2">
+							{[
+								["Threads", threads.length],
+								["Topics", topics.length],
+							].map(([label, count]) => (
+								<div
+									key={label}
+									className="rounded-lg bg-muted/60 px-3 py-2"
+								>
+									<P className="font-semibold text-lg tabular-nums">
+										{count}
+									</P>
+									<Small className="font-normal text-muted-foreground text-xs">
+										{label}
+									</Small>
+								</div>
+							))}
+						</div>
+						<Small className="font-normal text-muted-foreground text-xs leading-5">
+							Topics and threads linked to this person.
+						</Small>
+					</Section>
+					<Section
+						title={`Open with ${person.name.split(" ")[0]}`}
+						variant="widget"
+					>
+						{openItems.map((item) => (
+							<div
+								key={item.id}
+								className="space-y-1 border-b pb-3 last:border-0 last:pb-0"
+							>
+								<Link
+									className="break-words text-sm hover:underline"
+									to={`/work/thread/${encodeURIComponent(item.threadId)}`}
+								>
+									{item.title}
+								</Link>
+								<Small className="font-normal text-muted-foreground text-xs">
+									{item.due
+										? `Due ${dateLabel(item.due)}`
+										: dateLabel(item.received)}
+								</Small>
+							</div>
+						))}
+						{!openItems.length && (
+							<Small className="font-normal text-muted-foreground text-xs">
+								Nothing open with this person.
+							</Small>
+						)}
+					</Section>
+				</>
+			}
+		>
+			<div>
+				<header className="space-y-3 border-b px-4 py-5 md:px-6">
+					<div className="flex items-start gap-3">
 						<PersonAvatar
 							name={person.name}
 							initials={person.initials}
 						/>
-						<H1 className="font-semibold text-xl">{person.name}</H1>
-						<Badge variant="outline">
-							{person.isSample ? "Sample" : "Connected"}
-						</Badge>
+						<div className="min-w-0 flex-1 space-y-1">
+							<div className="flex flex-wrap items-center gap-2">
+								<H1 className="break-words font-semibold text-xl">
+									{person.name}
+								</H1>
+							</div>
+							<P className="break-words text-muted-foreground text-xs leading-5">
+								{person.title}
+								{person.title ? " · " : ""}
+								{state.accounts.find(
+									(account) =>
+										account.id === person.accountId,
+								)?.name || "No account"}
+							</P>
+							<P className="break-words text-muted-foreground text-xs leading-5">
+								{person.email || "Email unavailable"}
+							</P>
+							<Small className="font-normal text-muted-foreground text-xs">
+								Last contact {dateLabel(person.lastContact)}
+							</Small>
+						</div>
 					</div>
-					<P className="break-words text-muted-foreground">
-						{person.email || "Email unavailable"}
-						{person.title ? ` · ${person.title}` : ""}
-					</P>
-					<Small className="text-muted-foreground">
-						Last contact {dateLabel(person.lastContact)}
-					</Small>
 				</header>
-				<Section title="Relationship">
+				<Section
+					title="Relationship"
+					className="space-y-3 border-b px-4 py-4 md:px-6"
+				>
 					<TextEntryForm
 						key={person.id}
 						label="Relationship"
@@ -86,7 +158,7 @@ export function PersonDetail() {
 							})
 						}
 					/>
-					<div className="flex items-center justify-between gap-4">
+					<div className="flex items-center justify-between gap-4 py-1">
 						<Label htmlFor={`${fieldId}-person-vip`}>VIP</Label>
 						<Switch
 							id={`${fieldId}-person-vip`}
@@ -100,7 +172,7 @@ export function PersonDetail() {
 							}
 						/>
 					</div>
-					<div className="flex items-center justify-between gap-4">
+					<div className="flex items-center justify-between gap-4 py-1">
 						<Label htmlFor={`${fieldId}-person-excluded`}>
 							Exclude from future assistant context
 						</Label>
@@ -116,12 +188,15 @@ export function PersonDetail() {
 							}
 						/>
 					</div>
-					<Small className="text-muted-foreground">
+					<Small className="font-normal text-muted-foreground text-xs leading-5">
 						This session preference does not delete provider
 						messages or existing conversations.
 					</Small>
 				</Section>
-				<Section title="Topics">
+				<Section
+					title="Topics"
+					className="space-y-3 border-b px-4 py-4 md:px-6"
+				>
 					<div className="flex flex-wrap gap-2">
 						{topics.map((topic) => (
 							<div
@@ -148,8 +223,11 @@ export function PersonDetail() {
 						))}
 					</div>
 					{available.length > 0 && (
-						<div className="space-y-2">
-							<Label htmlFor={`${fieldId}-person-add-topic`}>
+						<div className="flex flex-wrap items-center gap-2">
+							<Label
+								htmlFor={`${fieldId}-person-add-topic`}
+								className="sr-only"
+							>
 								Add topic
 							</Label>
 							<Select
@@ -158,6 +236,7 @@ export function PersonDetail() {
 							>
 								<SelectTrigger
 									id={`${fieldId}-person-add-topic`}
+									className="h-9 w-full sm:w-auto"
 								>
 									<SelectValue placeholder="Choose a topic" />
 								</SelectTrigger>
@@ -174,6 +253,7 @@ export function PersonDetail() {
 							</Select>
 							<Button
 								variant="outline"
+								size="sm"
 								disabled={
 									!available.some(
 										(topic) => topic.id === topicToAdd,
@@ -194,7 +274,15 @@ export function PersonDetail() {
 						</div>
 					)}
 				</Section>
-				<Section title={`Threads with ${person.name}`}>
+				<Section
+					title={`Threads with ${person.name}`}
+					className="space-y-3 px-4 py-4 md:px-6"
+					action={
+						<Small className="font-normal text-muted-foreground text-xs">
+							{threads.length}
+						</Small>
+					}
+				>
 					{threads.map((thread) => {
 						const participant = thread.participants.find(
 							(candidate) => candidate.personId === person.id,
@@ -202,14 +290,23 @@ export function PersonDetail() {
 						return (
 							<div
 								key={thread.id}
-								className="flex items-center justify-between gap-3 border-b pb-3"
+								className="flex items-center justify-between gap-3 border-b pb-3 last:border-0"
 							>
-								<Link
-									className="break-words hover:underline"
-									to={`/brain/threads/${encodeURIComponent(thread.id)}`}
-								>
-									{thread.subject}
-								</Link>
+								<div className="min-w-0 flex-1">
+									<Link
+										className="break-words font-medium text-sm hover:underline"
+										to={`/brain/threads/${encodeURIComponent(thread.id)}`}
+									>
+										{thread.subject}
+									</Link>
+									<Small className="mt-1 font-normal text-muted-foreground text-xs">
+										{thread.channel} · {participant?.role}
+										{participant?.included &&
+										!person.neverIngest
+											? ""
+											: " · Excluded"}
+									</Small>
+								</div>
 								<Switch
 									checked={
 										Boolean(participant?.included) &&
@@ -229,6 +326,11 @@ export function PersonDetail() {
 							</div>
 						);
 					})}
+					{!threads.length && (
+						<P className="text-muted-foreground text-sm">
+							No threads with this person.
+						</P>
+					)}
 				</Section>
 			</div>
 		</CollaborationSurface>

@@ -3,6 +3,7 @@ import { Link, useLocation, useParams } from "react-router";
 import {
 	Badge,
 	Button,
+	cn,
 	H1,
 	P,
 	Small,
@@ -15,6 +16,8 @@ import { dateLabel } from "../date-label";
 import { selectWorkItems } from "../state/collaboration.selectors";
 import { useCollaborationSession } from "../state/collaboration-session.context";
 import { CollaborationSurface } from "./collaboration-surface";
+import { collaborationTabsStyles } from "./collaboration-tabs.styles";
+import { PersonAvatar } from "./person-avatar";
 import { WorkItemCard } from "./work-item-card";
 import { WorkOverview } from "./work-overview";
 
@@ -47,6 +50,7 @@ export function WorkFeed() {
 			: view === "done"
 				? "Done"
 				: "For you");
+	const hasConnectedItems = items.some((item) => !item.isSample);
 	const snoozed = state.items.filter(
 		(item) =>
 			item.status === "snoozed" &&
@@ -54,40 +58,83 @@ export function WorkFeed() {
 	);
 	return (
 		<CollaborationSurface aside={<WorkOverview />} asideTitle="Overview">
-			<header className="space-y-3 border-b px-4 py-5 md:px-6">
+			<header className="space-y-1 px-4 pt-5 pb-2 md:px-6">
+				{topic && (
+					<div
+						className="mb-3 h-1 w-12 rounded-full bg-primary"
+						aria-hidden="true"
+					/>
+				)}
 				<div className="flex flex-wrap items-center gap-2">
 					<H1 className="font-semibold text-xl">{title}</H1>
-					{topic?.isSample && (
-						<Badge variant="outline">Sample topic</Badge>
-					)}
 				</div>
-				<P className="text-muted-foreground">
+				<P className="text-muted-foreground text-sm">
 					{topic?.description ||
 						(view === "waiting"
 							? "Things you asked for that have not come back."
 							: view === "done"
 								? "Completed in this session."
-								: "A clear place for the conversations and next steps that need you.")}
+								: "What needs your attention, across your topics.")}
 				</P>
 				{topic && (
 					<>
-						<Button asChild variant="outline" size="sm">
+						<div className="flex flex-wrap items-center gap-3 pt-3 text-muted-foreground text-xs">
+							<div className="-space-x-2 flex" aria-hidden="true">
+								{topic.people
+									.filter(
+										(member) => member.state === "member",
+									)
+									.slice(0, 4)
+									.map((member) => {
+										const person = state.people.find(
+											(candidate) =>
+												candidate.id ===
+												member.personId,
+										);
+										return person ? (
+											<PersonAvatar
+												key={person.id}
+												name={person.name}
+												initials={person.initials}
+												className="size-6 ring-2 ring-card"
+											/>
+										) : null;
+									})}
+							</div>
+							<span>
+								{
+									topic.people.filter(
+										(member) => member.state === "member",
+									).length
+								}{" "}
+								people
+							</span>
+							<span>{topic.stats.threads} threads</span>
 							<Link
+								className="text-primary hover:underline"
 								to={`/brain/topics/${encodeURIComponent(topic.id)}`}
 							>
 								Edit in Brain
 							</Link>
-						</Button>
-						<ul className="space-y-1">
+						</div>
+						<ul className="space-y-1 pt-3">
 							{topic.goals.map((goal) => (
 								<li
 									key={goal.noteId}
-									className={
-										goal.status === "done"
-											? "text-muted-foreground line-through"
-											: "text-muted-foreground"
-									}
+									className={cn(
+										"flex items-center gap-2 text-muted-foreground text-sm",
+										goal.status === "done" &&
+											"line-through",
+									)}
 								>
+									<span
+										aria-hidden="true"
+										className={cn(
+											"size-3 shrink-0 rounded-full border border-border",
+											goal.status === "done" &&
+												"border-success bg-success",
+										)}
+									/>
 									{goal.text}
 								</li>
 							))}
@@ -95,69 +142,85 @@ export function WorkFeed() {
 					</>
 				)}
 			</header>
-			<Tabs value={sort} onValueChange={setSort}>
-				<div className="border-b px-4 py-2 md:px-6">
-					<TabsList aria-label="Sort work">
-						<TabsTrigger value="top">Top</TabsTrigger>
-						<TabsTrigger value="latest">Latest</TabsTrigger>
+			<Tabs value={sort} onValueChange={setSort} className="gap-0">
+				<div className="border-b px-4 md:px-6">
+					<TabsList
+						aria-label="Sort work"
+						className={collaborationTabsStyles.list}
+					>
+						<TabsTrigger
+							value="top"
+							className={collaborationTabsStyles.trigger}
+						>
+							Top
+						</TabsTrigger>
+						<TabsTrigger
+							value="latest"
+							className={collaborationTabsStyles.trigger}
+						>
+							Latest
+						</TabsTrigger>
 					</TabsList>
 				</div>
 				<TabsContent value={sort} className="mt-0">
-					{[false, true].map((isSample) => {
-						const group = items.filter(
-							(item) => item.isSample === isSample,
-						);
-						return (
-							<section
-								key={String(isSample)}
-								aria-label={
-									isSample
-										? "Sample scenario"
-										: "Connected items"
-								}
-							>
-								<div className="flex flex-wrap items-center gap-2 border-b bg-muted/30 px-4 py-3 md:px-6">
-									<Small className="font-medium">
-										{isSample
-											? "Sample scenario"
-											: "Connected items"}
-									</Small>
-									<Badge variant="outline">
-										{group.length}
-									</Badge>
-									{isSample && (
-										<Small className="text-muted-foreground">
-											Fictional data · Sep 24, 2026
-										</Small>
-									)}
-								</div>
-								{group.length ? (
-									group.map((item) => (
-										<WorkItemCard
-											key={item.id}
-											item={item}
-										/>
-									))
-								) : (
-									<div className="flex flex-wrap items-center gap-x-4 gap-y-2 px-4 py-4 md:px-6">
-										<P className="text-muted-foreground text-sm">
-											{isSample
-												? "No sample items in this view."
-												: "No connected items in this view."}
-										</P>
-										{!isSample && (
-											<Link
-												to="/brain/sources"
-												className="text-primary text-sm underline underline-offset-4"
+					{(hasConnectedItems ? [false, true] : [true, false]).map(
+						(isSample) => {
+							const group = items.filter(
+								(item) => item.isSample === isSample,
+							);
+							return (
+								<section
+									key={String(isSample)}
+									aria-label={
+										isSample
+											? "Work items"
+											: "Connected items"
+									}
+								>
+									{(!isSample || hasConnectedItems) && (
+										<div className="flex flex-wrap items-center gap-2 border-border/50 border-b px-4 py-2 md:px-6">
+											<Small className="font-medium text-muted-foreground text-xs">
+												{isSample
+													? "Work items"
+													: "Connected items"}
+											</Small>
+											<Badge
+												variant="secondary"
+												className="px-1.5 py-0 text-xs"
 											>
-												Browse your email and sources
-											</Link>
-										)}
-									</div>
-								)}
-							</section>
-						);
-					})}
+												{group.length}
+											</Badge>
+										</div>
+									)}
+									{group.length ? (
+										group.map((item) => (
+											<WorkItemCard
+												key={item.id}
+												item={item}
+											/>
+										))
+									) : (
+										<div className="flex flex-wrap items-center gap-x-4 gap-y-2 px-4 py-4 md:px-6">
+											<P className="text-muted-foreground text-sm">
+												{isSample
+													? "No items in this view."
+													: "No connected items in this view."}
+											</P>
+											{!isSample && (
+												<Link
+													to="/brain/sources"
+													className="text-primary text-sm underline underline-offset-4"
+												>
+													Browse your email and
+													sources
+												</Link>
+											)}
+										</div>
+									)}
+								</section>
+							);
+						},
+					)}
 				</TabsContent>
 			</Tabs>
 			{snoozed.length > 0 && view === "open" && (

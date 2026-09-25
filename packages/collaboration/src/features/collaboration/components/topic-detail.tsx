@@ -18,11 +18,14 @@ import {
 	TabsList,
 	TabsTrigger,
 } from "@semoss/ui/next";
+import { dateLabel } from "../date-label";
 import { useCollaborationSession } from "../state/collaboration-session.context";
 import { CollaborationSurface } from "./collaboration-surface";
+import { collaborationTabsStyles } from "./collaboration-tabs.styles";
 import { PersonAvatar } from "./person-avatar";
 import { Section } from "./section";
 import { TextEntryForm } from "./text-entry-form";
+import { TopicChip } from "./topic-chip";
 import { TopicEditor } from "./topic-editor";
 
 /** Topic threads, people, notes, and signals share one coherent local record. */
@@ -46,31 +49,108 @@ export function TopicDetail() {
 					member.personId === person.id && member.state === "member",
 			),
 	);
+	const members = topic.people.filter((person) => person.state === "member");
+	const workItems = state.items.filter(
+		(item) =>
+			(item.status === "open" || item.status === "waiting") &&
+			threads.some(
+				(thread) => thread.id === item.threadId && !thread.muted,
+			),
+	);
 	return (
 		<CollaborationSurface
 			aside={
 				<>
-					<Section title="Topic context">
-						<P className="text-muted-foreground">
+					<Section
+						title="In Work now"
+						variant="widget"
+						action={
+							<Link
+								className="inline-flex min-h-6 items-center text-primary text-xs hover:underline"
+								to={`/work/topic/${encodeURIComponent(topic.id)}`}
+							>
+								Open feed
+							</Link>
+						}
+					>
+						{workItems.slice(0, 5).map((item) => (
+							<div
+								key={item.id}
+								className="space-y-1 border-b pb-3 last:border-0 last:pb-0"
+							>
+								<Link
+									className="break-words text-sm hover:underline"
+									to={`/work/thread/${encodeURIComponent(item.threadId)}`}
+								>
+									{item.title}
+								</Link>
+								<Small className="font-normal text-muted-foreground text-xs">
+									{item.status === "waiting"
+										? "Waiting on others"
+										: "For you"}
+									{item.due
+										? ` · due ${dateLabel(item.due)}`
+										: ""}
+								</Small>
+							</div>
+						))}
+						{!workItems.length && (
+							<Small className="font-normal text-muted-foreground text-xs">
+								Nothing open for this topic.
+							</Small>
+						)}
+					</Section>
+					<Section title="People in this topic" variant="widget">
+						{members.slice(0, 4).map((member) => {
+							const person = state.people.find(
+								(candidate) => candidate.id === member.personId,
+							);
+							return (
+								person && (
+									<div
+										key={person.id}
+										className="flex items-center gap-3"
+									>
+										<PersonAvatar
+											name={person.name}
+											initials={person.initials}
+										/>
+										<div className="min-w-0">
+											<Link
+												className="break-words font-medium text-sm hover:underline"
+												to={`/brain/people/${encodeURIComponent(person.id)}`}
+											>
+												{person.name}
+											</Link>
+											<Small className="font-normal text-muted-foreground text-xs">
+												{member.role}
+											</Small>
+										</div>
+									</div>
+								)
+							);
+						})}
+						{!members.length && (
+							<Small className="font-normal text-muted-foreground text-xs">
+								No confirmed members yet.
+							</Small>
+						)}
+					</Section>
+					<Section title="Topic context" variant="widget">
+						<P className="text-muted-foreground text-xs leading-5">
 							Confirmed goals and notes are available to the
 							assistant when this topic is confirmed on a thread.
 						</P>
-						<Badge variant="outline">
-							{topic.isSample ? "Sample topic" : "Session topic"}
-						</Badge>
 					</Section>
-					<Button asChild variant="outline">
-						<Link
-							to={`/work/topic/${encodeURIComponent(topic.id)}`}
-						>
-							View work for this topic
-						</Link>
-					</Button>
 				</>
 			}
 			asideTitle="Topic context"
 		>
-			<header className="space-y-3 border-b p-4 md:p-6">
+			<header className="space-y-3 px-4 pt-5 pb-4 md:px-6">
+				<div
+					className="h-1 w-11 rounded-full bg-primary"
+					aria-hidden="true"
+				/>
 				<div className="flex flex-wrap items-start justify-between gap-3">
 					<H1 className="font-semibold text-xl">{topic.name}</H1>
 					<Button
@@ -82,17 +162,15 @@ export function TopicDetail() {
 						Edit topic
 					</Button>
 				</div>
-				<P className="text-muted-foreground">
-					{topic.description ||
-						"Add a description to explain this topic."}
-				</P>
 				<div className="flex flex-wrap items-center gap-3">
-					<Small className="text-muted-foreground">
+					<Small className="font-normal text-muted-foreground text-xs">
 						{state.accounts.find(
 							(account) => account.id === topic.accountId,
 						)?.name || "No account"}{" "}
-						· {topic.kind} · {threads.length} threads
+						· {topic.kind} · {threads.length} threads ·{" "}
+						{members.length} people
 					</Small>
+					<TopicChip topic={topic} />
 					<Label
 						htmlFor={`${fieldId}-topic-status`}
 						className="sr-only"
@@ -113,7 +191,10 @@ export function TopicDetail() {
 								});
 						}}
 					>
-						<SelectTrigger id={`${fieldId}-topic-status`}>
+						<SelectTrigger
+							id={`${fieldId}-topic-status`}
+							className="h-8 w-auto text-xs"
+						>
 							<SelectValue />
 						</SelectTrigger>
 						<SelectContent>
@@ -128,29 +209,66 @@ export function TopicDetail() {
 						</SelectContent>
 					</Select>
 				</div>
+				<P className="text-muted-foreground text-sm leading-6">
+					{topic.description ||
+						"Add a description to explain this topic."}
+				</P>
 			</header>
-			<Tabs defaultValue="threads" key={topic.id}>
-				<div className="overflow-x-auto border-b px-4 py-3 md:px-6">
-					<TabsList>
-						<TabsTrigger value="threads">Threads</TabsTrigger>
-						<TabsTrigger value="people">People</TabsTrigger>
-						<TabsTrigger value="notes">Goals and notes</TabsTrigger>
-						<TabsTrigger value="signals">Signals</TabsTrigger>
+			<Tabs defaultValue="threads" key={topic.id} className="gap-0">
+				<div className="overflow-x-auto border-b px-4 md:px-6">
+					<TabsList className={collaborationTabsStyles.list}>
+						<TabsTrigger
+							value="threads"
+							className={collaborationTabsStyles.trigger}
+						>
+							Threads
+						</TabsTrigger>
+						<TabsTrigger
+							value="people"
+							className={collaborationTabsStyles.trigger}
+						>
+							People
+						</TabsTrigger>
+						<TabsTrigger
+							value="notes"
+							className={collaborationTabsStyles.trigger}
+						>
+							Goals and notes
+						</TabsTrigger>
+						<TabsTrigger
+							value="signals"
+							className={collaborationTabsStyles.trigger}
+						>
+							Signals
+						</TabsTrigger>
 					</TabsList>
 				</div>
 				<TabsContent value="threads" className="mt-0">
 					{threads.map((thread) => (
 						<div
 							key={thread.id}
-							className="flex flex-wrap items-center gap-3 border-b p-4 md:px-6"
+							className="flex flex-wrap items-center gap-3 border-b px-4 py-3 hover:bg-muted/30 md:px-6"
 						>
 							<Badge variant="outline">{thread.channel}</Badge>
-							<Link
-								className="min-w-0 flex-1 break-words font-medium hover:underline"
-								to={`/brain/threads/${encodeURIComponent(thread.id)}`}
-							>
-								{thread.subject}
-							</Link>
+							<div className="min-w-0 flex-1">
+								<Link
+									className="break-words font-medium text-sm hover:underline"
+									to={`/brain/threads/${encodeURIComponent(thread.id)}`}
+								>
+									{thread.subject}
+								</Link>
+								<Small className="mt-0.5 font-normal text-muted-foreground text-xs">
+									{dateLabel(thread.lastAt)} ·{" "}
+									{thread.messageCount} messages
+									{thread.topicLinks.some(
+										(link) =>
+											link.topicId === topic.id &&
+											link.primary,
+									)
+										? " · main topic"
+										: ""}
+								</Small>
+							</div>
 							<Button
 								variant="ghost"
 								size="sm"
@@ -174,9 +292,12 @@ export function TopicDetail() {
 						</P>
 					)}
 				</TabsContent>
-				<TabsContent value="people" className="space-y-6 p-4 md:p-6">
-					<div className="space-y-2">
-						<Label htmlFor={`${fieldId}-topic-person`}>
+				<TabsContent value="people" className="mt-0">
+					<div className="flex flex-wrap items-center gap-2 border-b px-4 py-3 md:px-6">
+						<Label
+							htmlFor={`${fieldId}-topic-person`}
+							className="sr-only"
+						>
 							Add someone
 						</Label>
 						<Select
@@ -185,9 +306,9 @@ export function TopicDetail() {
 						>
 							<SelectTrigger
 								id={`${fieldId}-topic-person`}
-								className="w-full"
+								className="h-9 w-full sm:w-auto"
 							>
-								<SelectValue placeholder="Choose a person" />
+								<SelectValue placeholder="Add someone to this topic" />
 							</SelectTrigger>
 							<SelectContent>
 								{availablePeople.map((person) => (
@@ -202,6 +323,7 @@ export function TopicDetail() {
 						</Select>
 						<Button
 							variant="outline"
+							size="sm"
 							disabled={
 								!availablePeople.some(
 									(person) => person.id === personToAdd,
@@ -224,6 +346,7 @@ export function TopicDetail() {
 						(membership) => (
 							<Section
 								key={membership}
+								className="space-y-3 border-b px-4 py-4 md:px-6"
 								title={
 									membership === "member"
 										? "In this topic"
@@ -246,7 +369,7 @@ export function TopicDetail() {
 											person && (
 												<div
 													key={person.id}
-													className="flex items-center gap-3"
+													className="flex items-center gap-3 py-1"
 												>
 													<PersonAvatar
 														name={person.name}
@@ -256,12 +379,12 @@ export function TopicDetail() {
 													/>
 													<div className="min-w-0 flex-1">
 														<Link
-															className="font-medium hover:underline"
+															className="break-words font-medium text-sm hover:underline"
 															to={`/brain/people/${encodeURIComponent(person.id)}`}
 														>
 															{person.name}
 														</Link>
-														<Small className="text-muted-foreground">
+														<Small className="mt-0.5 font-normal text-muted-foreground text-xs leading-5">
 															{member.role}
 															{member.reason
 																? ` · ${member.reason}`
@@ -300,17 +423,30 @@ export function TopicDetail() {
 							</Section>
 						),
 					)}
-					<P className="text-muted-foreground">
+					<P className="px-4 py-4 text-muted-foreground text-xs leading-5 md:px-6">
 						Membership is separate from including a person's
 						messages in assistant context.
 					</P>
 				</TabsContent>
-				<TabsContent value="notes" className="space-y-6 p-4 md:p-6">
-					<Section title="Goals">
+				<TabsContent value="notes" className="mt-0">
+					<Section
+						title="Goals"
+						className="space-y-3 border-b px-4 py-4 md:px-6"
+						action={
+							<Small className="font-normal text-muted-foreground text-xs">
+								{
+									topic.goals.filter(
+										(goal) => goal.status !== "done",
+									).length
+								}{" "}
+								open
+							</Small>
+						}
+					>
 						{topic.goals.map((goal) => (
 							<div
 								key={goal.noteId}
-								className="flex items-start gap-3"
+								className="flex items-start gap-3 py-1"
 							>
 								<Checkbox
 									id={`${fieldId}-${goal.noteId}`}
@@ -355,14 +491,17 @@ export function TopicDetail() {
 							}
 						/>
 					</Section>
-					<Section title="Notes for the assistant">
+					<Section
+						title="Notes for the assistant"
+						className="space-y-3 border-b px-4 py-4 md:px-6"
+					>
 						{topic.notes.map((note) => (
 							<div
 								key={note.noteId}
-								className="space-y-2 border-b pb-4"
+								className="space-y-2 border-b pb-3"
 							>
-								<P>{note.text}</P>
-								<Small className="text-muted-foreground">
+								<P className="text-sm leading-6">{note.text}</P>
+								<Small className="font-normal text-muted-foreground text-xs">
 									{note.by} · {note.status}
 									{note.source ? ` · ${note.source}` : ""}
 								</Small>
@@ -419,8 +558,11 @@ export function TopicDetail() {
 						/>
 					</Section>
 				</TabsContent>
-				<TabsContent value="signals" className="space-y-6 p-4 md:p-6">
-					<Section title="Keywords">
+				<TabsContent value="signals" className="mt-0">
+					<Section
+						title="Keywords"
+						className="space-y-3 border-b px-4 py-4 md:px-6"
+					>
 						<div className="flex flex-wrap gap-2">
 							{topic.keywords.map((word) => (
 								<Button
@@ -461,18 +603,23 @@ export function TopicDetail() {
 								})
 							}
 						/>
-						<Small className="text-muted-foreground">
+						<Small className="font-normal text-muted-foreground text-xs leading-5">
 							Signals are stored in this session. Automatic
 							classification is not connected.
 						</Small>
 					</Section>
-					<Section title="Calendar series">
+					<Section
+						title="Calendar series"
+						className="space-y-3 border-b px-4 py-4 md:px-6"
+					>
 						{topic.calendarSeries.length ? (
 							topic.calendarSeries.map((series) => (
-								<P key={series}>{series}</P>
+								<P key={series} className="text-sm">
+									{series}
+								</P>
 							))
 						) : (
-							<P className="text-muted-foreground">
+							<P className="text-muted-foreground text-sm">
 								No linked series.
 							</P>
 						)}

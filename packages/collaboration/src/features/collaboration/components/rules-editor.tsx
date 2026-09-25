@@ -80,7 +80,6 @@ export function RulesEditor() {
 							</Small>
 							<Small className="min-w-0 flex-1 break-words">
 								{rule.value}
-								{rule.isSample ? " · sample" : ""}
 							</Small>
 							<Button
 								variant="ghost"

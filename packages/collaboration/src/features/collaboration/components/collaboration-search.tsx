@@ -10,6 +10,7 @@ import {
 	DialogTitle,
 	DialogTrigger,
 	Input,
+	Kbd,
 	Label,
 	P,
 	Small,
@@ -49,7 +50,7 @@ export function CollaborationSearch() {
 		...state.threads.map((thread) => ({
 			id: `thread-${thread.id}`,
 			name: thread.subject,
-			kind: thread.isSample ? "Sample thread" : "Connected thread",
+			kind: thread.isSample ? "Thread" : "Connected thread",
 			path: `/work/thread/${encodeURIComponent(thread.id)}`,
 		})),
 	]
@@ -60,21 +61,24 @@ export function CollaborationSearch() {
 			<DialogTrigger asChild>
 				<Button
 					variant="outline"
-					className="min-w-0 justify-start text-muted-foreground sm:w-72"
+					size="sm"
+					className="min-w-8 justify-start rounded-lg bg-sidebar text-muted-foreground sm:min-w-0 sm:max-w-120 sm:flex-1"
 					aria-label="Search threads, people and topics"
 				>
 					<Search aria-hidden="true" />
 					<span className="hidden truncate sm:inline">
 						Search threads, people, topics…
 					</span>
+					<Kbd className="ml-auto hidden border border-border bg-transparent text-muted-foreground md:inline-flex">
+						⌘ K
+					</Kbd>
 				</Button>
 			</DialogTrigger>
 			<DialogContent>
 				<DialogHeader>
 					<DialogTitle>Search your workspace</DialogTitle>
 					<DialogDescription>
-						Search sample and connected items already loaded in this
-						session.
+						Search items already loaded in this session.
 					</DialogDescription>
 				</DialogHeader>
 				<Label htmlFor={searchId}>Search</Label>

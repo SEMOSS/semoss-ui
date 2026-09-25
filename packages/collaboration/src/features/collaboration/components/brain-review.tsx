@@ -1,3 +1,4 @@
+import { Folder, StickyNote } from "lucide-react";
 import { useState } from "react";
 import { Link } from "react-router";
 import {
@@ -12,7 +13,9 @@ import {
 	TabsTrigger,
 } from "@semoss/ui/next";
 import { useCollaborationSession } from "../state/collaboration-session.context";
+import { BrainOverview } from "./brain-overview";
 import { CollaborationSurface } from "./collaboration-surface";
+import { collaborationTabsStyles } from "./collaboration-tabs.styles";
 import { ReviewCard } from "./review-card";
 import { Section } from "./section";
 
@@ -40,33 +43,15 @@ export function BrainReview() {
 		<CollaborationSurface
 			aside={
 				<>
-					<Section title="Your Brain">
-						<P className="text-muted-foreground">
-							Topics, people, and context you choose to keep.
-							Changes apply across Work and Brain.
-						</P>
-						<div className="grid grid-cols-2 gap-4">
-							<div>
-								<P className="font-semibold text-2xl">
-									{state.topics.length}
-								</P>
-								<Small>Topics</Small>
-							</div>
-							<div>
-								<P className="font-semibold text-2xl">
-									{state.people.length}
-								</P>
-								<Small>People</Small>
-							</div>
-						</div>
-					</Section>
-					<Section title="Session history">
-						<P className="text-muted-foreground">
+					<BrainOverview />
+					<Section title="Session history" variant="widget">
+						<P className="text-muted-foreground text-xs leading-5">
 							Undo reverses the latest local change. It never
 							deletes saved conversations or Outlook drafts.
 						</P>
 						<Button
 							variant="outline"
+							size="sm"
 							disabled={!canUndo}
 							onClick={undo}
 						>
@@ -80,22 +65,25 @@ export function BrainReview() {
 			}
 			asideTitle="Brain overview"
 		>
-			<header className="space-y-2 border-b px-4 py-5 md:px-6">
+			<header className="space-y-1.5 px-4 pt-5 pb-3 md:px-6">
 				<H1 className="font-semibold text-xl">Review</H1>
-				<P className="text-muted-foreground">
+				<P className="text-muted-foreground text-sm">
 					Suggestions to check before using them as confirmed context.
 				</P>
-				<Badge variant="outline">
-					Sample suggestions and session changes
-				</Badge>
 			</header>
-			<Tabs value={tab} onValueChange={setTab}>
-				<div className="border-b px-4 py-3 md:px-6">
-					<TabsList>
-						<TabsTrigger value="needs">
+			<Tabs value={tab} onValueChange={setTab} className="gap-0">
+				<div className="border-b px-4 md:px-6">
+					<TabsList className={collaborationTabsStyles.list}>
+						<TabsTrigger
+							value="needs"
+							className={collaborationTabsStyles.trigger}
+						>
 							Needs you ({open.length + notes.length})
 						</TabsTrigger>
-						<TabsTrigger value="learned">
+						<TabsTrigger
+							value="learned"
+							className={collaborationTabsStyles.trigger}
+						>
 							Learned recently
 						</TabsTrigger>
 					</TabsList>
@@ -107,48 +95,67 @@ export function BrainReview() {
 					{notes.map(({ topic, note }) => (
 						<article
 							key={note.noteId}
-							className="space-y-3 border-b p-4 md:px-6"
+							className="flex items-start gap-3 border-b px-4 py-4 hover:bg-muted/30 md:gap-4 md:px-6"
 						>
-							<Small className="font-medium">
-								Note for {topic.short}
-							</Small>
-							<P>{note.text}</P>
-							<Small className="text-muted-foreground">
-								{note.source || "Assistant suggestion"} · not
-								yet used as fact
-							</Small>
-							<div className="flex gap-2">
-								<Button
-									variant="outline"
-									size="sm"
-									onClick={() =>
-										dispatch({
-											type: "topic.note",
-											topicId: topic.id,
-											kind: "note",
-											operation: "save",
-											noteId: note.noteId,
-											status: "confirmed",
-										})
-									}
-								>
-									Confirm note
-								</Button>
-								<Button
-									variant="ghost"
-									size="sm"
-									onClick={() =>
-										dispatch({
-											type: "topic.note",
-											topicId: topic.id,
-											kind: "note",
-											operation: "remove",
-											noteId: note.noteId,
-										})
-									}
-								>
-									Remove
-								</Button>
+							<div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+								<StickyNote
+									className="size-4"
+									aria-hidden="true"
+								/>
+							</div>
+							<div className="min-w-0 flex-1 space-y-2">
+								<div className="flex flex-wrap items-center gap-2 text-xs">
+									<span className="font-semibold">Brain</span>
+									<Badge
+										variant="secondary"
+										className="font-normal text-xs"
+									>
+										Note
+									</Badge>
+								</div>
+								<Small className="font-semibold text-sm">
+									Note for {topic.short}
+								</Small>
+								<P className="rounded-r-lg border-primary/40 border-l-2 bg-muted/50 px-3 py-2 text-sm leading-6">
+									{note.text}
+								</P>
+								<Small className="font-normal text-muted-foreground text-xs leading-5">
+									{note.source || "Assistant suggestion"} ·
+									not yet used as fact
+								</Small>
+								<div className="-ml-2 flex flex-wrap gap-1">
+									<Button
+										variant="ghost"
+										size="sm"
+										onClick={() =>
+											dispatch({
+												type: "topic.note",
+												topicId: topic.id,
+												kind: "note",
+												operation: "save",
+												noteId: note.noteId,
+												status: "confirmed",
+											})
+										}
+									>
+										Confirm note
+									</Button>
+									<Button
+										variant="ghost"
+										size="sm"
+										onClick={() =>
+											dispatch({
+												type: "topic.note",
+												topicId: topic.id,
+												kind: "note",
+												operation: "remove",
+												noteId: note.noteId,
+											})
+										}
+									>
+										Remove
+									</Button>
+								</div>
 							</div>
 						</article>
 					))}
@@ -159,9 +166,8 @@ export function BrainReview() {
 					)}
 				</TabsContent>
 				<TabsContent value="learned" className="mt-0">
-					<P className="border-b px-4 py-3 text-muted-foreground md:px-6">
-						The supplied scenario and decisions made this session.
-						Automatic classification is not connected.
+					<P className="border-b px-4 py-3 text-muted-foreground text-xs leading-5 md:px-6">
+						Confirmed topics and your recent review decisions.
 					</P>
 					{resolved.map((review) => (
 						<ReviewCard key={review.id} review={review} />
@@ -169,24 +175,24 @@ export function BrainReview() {
 					{learned.map(({ thread, link, topic }) => (
 						<article
 							key={`${thread.id}-${link.topicId}`}
-							className="flex flex-wrap items-center gap-3 border-b p-4 md:px-6"
+							className="flex flex-wrap items-center gap-3 border-b px-4 py-3 hover:bg-muted/30 md:px-6"
 						>
+							<div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+								<Folder className="size-4" aria-hidden="true" />
+							</div>
 							<div className="min-w-0 flex-1">
 								<Link
 									to={`/brain/threads/${encodeURIComponent(thread.id)}`}
-									className="font-medium hover:underline"
+									className="break-words font-medium text-sm hover:underline"
 								>
 									{thread.subject}
 								</Link>
-								<Small className="text-muted-foreground">
+								<Small className="mt-1 font-normal text-muted-foreground text-xs">
 									Filed under {topic?.short || "Topic"}
-									{thread.isSample
-										? " · sample"
-										: " · confirmed locally"}
 								</Small>
 							</div>
 							<Button
-								variant="outline"
+								variant="ghost"
 								size="sm"
 								onClick={() =>
 									dispatch({

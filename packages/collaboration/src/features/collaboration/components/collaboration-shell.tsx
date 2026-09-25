@@ -1,4 +1,4 @@
-import { Brain, Menu, Moon, Sun, Undo2 } from "lucide-react";
+import { Menu, Moon, Sun, Undo2 } from "lucide-react";
 import { useEffect, useId, useRef, useState } from "react";
 import { NavLink, Outlet } from "react-router";
 import {
@@ -52,7 +52,7 @@ export function CollaborationShell() {
 		});
 	}, [dispatch, user.name, user.email]);
 	return (
-		<div className="-m-4 flex h-dvh flex-col overflow-hidden bg-background text-foreground">
+		<div className="-m-4 flex h-dvh flex-col overflow-hidden bg-muted/50 text-foreground dark:bg-background">
 			<a
 				href={`#${mainId}`}
 				onClick={(event) => {
@@ -63,7 +63,7 @@ export function CollaborationShell() {
 			>
 				Skip to content
 			</a>
-			<header className="flex min-h-14 shrink-0 flex-wrap items-center gap-2 border-b px-3 py-2 md:gap-4 md:px-5">
+			<header className="dark flex min-h-13 shrink-0 items-center gap-1 border-border border-b bg-background px-2 py-1.5 text-foreground sm:gap-3 sm:px-4">
 				<Sheet open={isNavOpen} onOpenChange={setIsNavOpen}>
 					<SheetTrigger asChild>
 						<Button
@@ -89,14 +89,15 @@ export function CollaborationShell() {
 				</Sheet>
 				<NavLink
 					to="/work"
-					className="mr-2 hidden items-center gap-2 font-medium md:flex"
+					className="mr-1 hidden shrink-0 items-center gap-3 font-medium lg:flex"
 				>
-					<Brain className="size-5 text-primary" aria-hidden="true" />
-					collaboration<span className="text-primary">.</span>
+					<span className="font-bold text-lg tracking-tight">
+						collaboration<span className="text-primary">.</span>
+					</span>
 				</NavLink>
 				<nav
 					aria-label="Workspace area"
-					className="flex rounded-lg bg-muted p-1"
+					className="flex shrink-0 rounded-lg border border-border bg-sidebar p-0.5"
 				>
 					{["Work", "Brain"].map((area) => (
 						<NavLink
@@ -104,9 +105,9 @@ export function CollaborationShell() {
 							to={`/${area.toLowerCase()}`}
 							className={({ isActive }) =>
 								cn(
-									"rounded-md px-3 py-1.5 font-medium text-sm",
+									"inline-flex items-center gap-1.5 rounded-md px-2 py-1.5 font-medium text-sm sm:px-3",
 									isActive
-										? "bg-background text-foreground shadow-sm"
+										? "bg-muted text-foreground before:size-1.5 before:rounded-full before:bg-primary"
 										: "text-muted-foreground hover:text-foreground",
 								)
 							}
@@ -121,7 +122,7 @@ export function CollaborationShell() {
 						<TooltipTrigger asChild>
 							<Button
 								variant="ghost"
-								size="icon"
+								size="icon-sm"
 								disabled={!canUndo}
 								aria-label="Undo last session change"
 								onClick={undo}
@@ -133,7 +134,8 @@ export function CollaborationShell() {
 					</Tooltip>
 					<Button
 						variant="ghost"
-						size="icon"
+						size="icon-sm"
+						className="rounded-full border border-border"
 						aria-label={
 							theme === "dark"
 								? "Use light theme"
@@ -153,13 +155,16 @@ export function CollaborationShell() {
 						title={user.name || "Signed-in account"}
 						className="hidden sm:block"
 					>
-						<PersonAvatar name={user.name || "You"} />
+						<PersonAvatar
+							name={user.name || "You"}
+							className="size-8 ring-1 ring-border"
+						/>
 					</span>
 				</div>
 			</header>
-			<div className="flex min-h-0 flex-1">
+			<div className="mx-auto flex min-h-0 w-full max-w-350 flex-1 px-2 lg:px-0">
 				<aside
-					className="hidden w-56 shrink-0 overflow-y-auto border-r bg-muted/30 lg:block"
+					className="hidden w-60 shrink-0 overflow-y-auto lg:block"
 					aria-label="Workspace navigation"
 				>
 					<CollaborationNavigation />

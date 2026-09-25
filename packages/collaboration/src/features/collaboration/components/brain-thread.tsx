@@ -1,7 +1,8 @@
 import { Link, useParams } from "react-router";
-import { Badge, Button, H1, P, Small } from "@semoss/ui/next";
+import { Button, H1, P, Small } from "@semoss/ui/next";
 import { dateLabel } from "../date-label";
 import { useCollaborationSession } from "../state/collaboration-session.context";
+import { BrainOverview } from "./brain-overview";
 import { CollaborationSurface } from "./collaboration-surface";
 import { ThreadSettings } from "./thread-settings";
 
@@ -13,32 +14,40 @@ export function BrainThread() {
 	if (!thread)
 		return <P className="p-6">Thread not found in this session.</P>;
 	return (
-		<CollaborationSurface>
-			<div className="mx-auto max-w-3xl space-y-6 p-4 md:p-6">
-				<header className="space-y-3">
-					<Button asChild variant="ghost" size="sm">
-						<Link to="/brain/threads">Back to threads</Link>
-					</Button>
-					<H1 className="font-semibold text-xl">{thread.subject}</H1>
+		<CollaborationSurface
+			aside={<BrainOverview />}
+			asideTitle="Brain overview"
+		>
+			<div>
+				<header className="space-y-3 border-b px-4 py-5 md:px-6">
+					<H1 className="break-words font-semibold text-xl">
+						{thread.subject}
+					</H1>
 					<div className="flex flex-wrap items-center gap-2">
-						<Badge variant="outline">
-							{thread.isSample ? "Sample" : "Connected"}
-						</Badge>
-						<Small className="text-muted-foreground">
+						<Small className="font-normal text-muted-foreground text-xs">
 							{thread.channel} · {thread.messageCount} messages ·{" "}
 							{dateLabel(thread.lastAt)}
 						</Small>
-					</div>
-					<P className="text-muted-foreground">{thread.summary}</P>
-					<Button asChild>
-						<Link
-							to={`/work/thread/${encodeURIComponent(thread.id)}`}
+						<Button
+							asChild
+							variant="link"
+							size="sm"
+							className="h-8 px-2 text-xs"
 						>
-							Open in Work
-						</Link>
-					</Button>
+							<Link
+								to={`/work/thread/${encodeURIComponent(thread.id)}`}
+							>
+								Open in Work
+							</Link>
+						</Button>
+					</div>
+					<P className="text-muted-foreground text-sm leading-6">
+						{thread.summary}
+					</P>
 				</header>
-				<ThreadSettings thread={thread} />
+				<div className="px-4 py-4 md:px-6">
+					<ThreadSettings thread={thread} />
+				</div>
 			</div>
 		</CollaborationSurface>
 	);

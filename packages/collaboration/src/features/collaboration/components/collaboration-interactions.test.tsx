@@ -325,12 +325,12 @@ describe("collaboration Work and Brain integration", () => {
 	it("removes a rule from the visible active rules list", async () => {
 		const user = userEvent.setup();
 		renderSession("/rules");
-		const value = screen.getByText("benefits@deloitte.com · sample", {});
+		const value = screen.getByText("benefits@deloitte.com", {});
 		const row = value.parentElement;
 		if (!row) throw new Error("Missing rule row");
 		await user.click(within(row).getByRole("button", { name: "Remove" }));
 		expect(
-			screen.queryByText("benefits@deloitte.com · sample", {}),
+			screen.queryByText("benefits@deloitte.com", {}),
 		).not.toBeInTheDocument();
 	});
 
