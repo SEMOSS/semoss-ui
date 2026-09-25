@@ -2,6 +2,7 @@ import {
 	mdiAccountGroup,
 	// mdiTextBoxMultipleOutline,
 	mdiArchive,
+	mdiBrain,
 	// mdiClock,
 	mdiChatProcessingOutline,
 	mdiClipboardTextOutline,
@@ -254,6 +255,15 @@ export const SETTINGS_ROUTES: {
 		icon: mdiChatProcessingOutline,
 		history: ["settings/"],
 		admin: true,
+	},
+	{
+		title: "Memories",
+		path: "memories",
+		description:
+			"Review and delete memories captured across your conversations.",
+		icon: mdiBrain,
+		history: ["settings/"],
+		admin: false,
 	},
 	{
 		title: "Add Jobs",

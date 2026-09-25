@@ -108,7 +108,7 @@ export const AGENT_WORKBENCH_COMPONENTS: Record<
 				restrict: ["OWNER", "EDIT", "READ_ONLY"],
 			},
 			// before Access Control
-			3,
+			4,
 		),
 	),
 	[WORKBENCH_COMPONENTS.ASSISTANT]: ASSISTANT_PANEL,

@@ -20,6 +20,7 @@ export const ROOM_PANEL_TYPES = {
 	SUBAGENT: "room-subagent",
 	CONFIGURATION: "room-configuration",
 	AUDIT_LOG: "room-audit-log",
+	MEMORIES: "room-memories",
 } as const;
 
 /**
