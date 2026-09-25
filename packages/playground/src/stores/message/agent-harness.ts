@@ -29,33 +29,6 @@ import { ResponseMessageStore } from "./response-message.store";
 export const AGENT_HARNESS_TYPE = "semoss";
 
 /**
- * Live AgentStores keyed by runId, so a decision made from the tool UI (which
- * only has the pendingAction, not the run's watcher) can poke the SAME
- * instance that's polling it, and reconnectAgentRun never mounts a second,
- * destructive poller on a run runAgentMessage (or an earlier reconnect) is
- * already watching.
- */
-const agentsByRunId = new Map<string, AgentStore>();
-
-/**
- * Get the live AgentStore for a run if one is already being watched,
- * otherwise create (and register) a fresh, not-yet-watched one.
- */
-const getOrCreateAgent = (
-	roomId: string,
-	insightId: string,
-	runId: string,
-): AgentStore => {
-	const existing = agentsByRunId.get(runId);
-	if (existing) {
-		return existing;
-	}
-	const agent = new AgentStore(roomId, insightId, runId);
-	agentsByRunId.set(runId, agent);
-	return agent;
-};
-
-/**
  * QUEUED and INPUT_REQUIRED have no branch — they leave the tool at
  * ToolStore's own default "INITIAL" status, which renders as the ask/awaiting
  * card (see getShouldGroupTool/getToolState, keyed off execution mode via
@@ -352,7 +325,9 @@ const syncPendingActions = (
 /**
  * Resolve a tool call paused on a human decision. The legacy ask-tool paths
  * write straight into room history and never touch the AGENT_RUN_ACTION row,
- * so this is the only call that actually resumes the run. Thin wrapper over AgentStore.decide.
+ * so this is the only call that actually resumes the run. Thin wrapper over
+ * AgentStore.decide (the static one — this UI only ever has the
+ * pendingAction, not the AgentStore watching its run).
  */
 export const decideAgentToolAction = async (
 	tool: ToolStore,
@@ -363,12 +338,12 @@ export const decideAgentToolAction = async (
 	if (!pendingAction) {
 		return;
 	}
-	const agent = getOrCreateAgent(
-		tool.room.roomId,
+	await AgentStore.decide(
+		pendingAction,
+		decision,
+		paramValues,
 		tool.room.insightId,
-		pendingAction.runId,
 	);
-	await agent.decide(pendingAction, decision, paramValues);
 };
 
 /**
@@ -452,10 +427,6 @@ const watchAgentRun = (
 				console.error("Agent run stream error", e);
 			},
 		});
-	}).finally(() => {
-		if (agentsByRunId.get(agent.runId) === agent) {
-			agentsByRunId.delete(agent.runId);
-		}
 	});
 
 /**
@@ -527,7 +498,6 @@ export const runAgentMessage = async (
 			},
 			room.insightId,
 		);
-		agentsByRunId.set(handle.runId, handle);
 
 		await watchAgentRun(handle, responseMessage, inputMessage);
 	} catch (e) {
@@ -665,7 +635,7 @@ export const reconnectAgentRun = (responseMessage: ResponseMessageStore) => {
 
 	(async () => {
 		try {
-			const agent = getOrCreateAgent(room.roomId, room.insightId, runId);
+			const agent = AgentStore.attach(room.roomId, room.insightId, runId);
 			await watchAgentRun(agent, responseMessage, inputMessage);
 		} catch (e) {
 			console.error("Failed to reconnect to agent run", e);

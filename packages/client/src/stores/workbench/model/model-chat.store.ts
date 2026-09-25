@@ -1,24 +1,20 @@
 import { createStore, type StoreApi } from "zustand";
-import { uploadInsight } from "@semoss/sdk/react";
+import {
+	isRoomAskAborted,
+	type RoomOptions,
+	RoomStore,
+	type RoomStreamChunk,
+	uploadInsight,
+} from "@semoss/sdk/react";
 import type { BuiltinToolSelection, ModelBuiltinTools } from "@/api/engines";
 import { getModelBuiltinTools, getModelInputSupport } from "@/api/engines";
-import type {
-	AskRoomRequest,
-	PlaygroundMessagePart,
-	RoomStreamChunk,
-} from "@/api/rooms";
+import type { PlaygroundMessage } from "@/api/rooms";
 import {
-	askRoom,
-	commitCancelledTurn,
-	createRoom,
 	getPlaygroundMessages,
 	getRoomOptions,
-	isAskRoomAborted,
 	removeUserRoom,
 	renameRoom as renameRoomPixel,
 	setRoomForInsight,
-	stopPixelJob,
-	updateRoomOptions,
 } from "@/api/rooms";
 import type {
 	ModelChatAttachment,
@@ -56,10 +52,16 @@ const TURN_CANCELLATION_NOTE =
 export const roomScopeToken = (engineId: string): string =>
 	`model-chat:${engineId}`;
 
+/** The default configuration a brand-new RoomStore is seeded with. */
+const defaultRoomOptions = (): RoomOptions => ({
+	predefinedPrompts: [],
+	instructions: "",
+	mcp: [],
+	modelId: "",
+});
+
 /** The partial assistant turn currently streaming in. */
 interface ModelChatStream {
-	/** Pixel job backing the turn, used to stop it. */
-	jobId: string | null;
 	/** Text streamed so far. */
 	text: string;
 	/** Extended-thinking content streamed so far. */
@@ -116,7 +118,7 @@ export interface ModelChatStoreInterface {
 	 * land in `initError`.
 	 */
 	initialize: (insightId: string, engineId: string) => Promise<void>;
-	/** Abort any in-flight turn (panel unmount / insight change). */
+	/** Abandon any in-flight turn locally (panel unmount / insight change). */
 	dispose: () => void;
 	/**
 	 * Send `prompt` as the next turn: uploads any queued files into the
@@ -181,7 +183,6 @@ const toErrorMessage = (error: unknown): string =>
 
 /** An empty stream accumulator. */
 const emptyStream = (): ModelChatStream => ({
-	jobId: null,
 	text: "",
 	thinking: "",
 	toolCalls: {},
@@ -196,27 +197,30 @@ const emptyStream = (): ModelChatStream => ({
  *
  * @name applyStreamChunk
  * @param stream - The accumulator to fold into (mutated).
- * @param chunk - The chunk to apply.
+ * @param chunk - The chunk to apply, in RoomStore's normalized shape.
  */
 const applyStreamChunk = (
 	stream: ModelChatStream,
 	chunk: RoomStreamChunk,
 ): void => {
-	if (chunk.stream_type === "content") {
-		stream.text += chunk.data.content ?? "";
+	if (chunk.type === "content") {
+		stream.text += chunk.content ?? "";
 		return;
 	}
 
-	if (chunk.stream_type === "thinking") {
-		stream.thinking += chunk.data.thinking ?? "";
+	if (chunk.type === "thinking") {
+		stream.thinking += chunk.thinking ?? "";
 		return;
 	}
 
-	const index = chunk.data.index ?? 0;
+	const toolData = chunk.toolData as
+		| { index?: number; id?: string; function?: { name?: string } }
+		| undefined;
+	const index = toolData?.index ?? 0;
 	const existing = stream.toolCalls[index];
 	stream.toolCalls[index] = {
-		id: chunk.data.id ?? existing?.id ?? `tool-${index}`,
-		name: chunk.data.function?.name ?? existing?.name ?? "Tool",
+		id: toolData?.id ?? existing?.id ?? `tool-${index}`,
+		name: toolData?.function?.name ?? existing?.name ?? "Tool",
 	};
 };
 
@@ -240,50 +244,34 @@ const streamingMessage = (stream: ModelChatStream): ModelChatMessage => {
 };
 
 /**
- * The parts to persist for a turn the user stopped, in the order the backend
- * expects them (reasoning before the answer it produced).
- *
- * @name streamToResponseParts
- * @param stream - The accumulator at the moment of the stop.
- * @return The parts to commit, or an empty array when nothing streamed.
- */
-const streamToResponseParts = (
-	stream: ModelChatStream,
-): PlaygroundMessagePart[] => {
-	const parts: PlaygroundMessagePart[] = [];
-	if (stream.thinking) {
-		parts.push({ type: "THINKING", thinking: stream.thinking });
-	}
-	if (stream.text) {
-		parts.push({ type: "TEXT", text: stream.text, uiText: stream.text });
-	}
-	return parts;
-};
-
-/**
  * Creates the dedicated store for one model workbench's chat panel. Owns the
  * room lifecycle, the streaming turn, and the per-conversation model
  * configuration, so the transcript, composer, history, and settings views can
  * share them.
+ *
+ * The room lifecycle (create/bind, ask/stream, stop-and-commit) is delegated
+ * to `@semoss/sdk`'s `RoomStore` rather than hand-rolled here — this store
+ * owns only what is specific to the model-chat panel: the live stream
+ * accumulator for rendering, the composer/attachment state, and persisting
+ * this panel's own options shape onto the room.
  *
  * @name createModelChatStore
  * @return A vanilla zustand store provided by the model workbench.
  */
 export const createModelChatStore = (): StoreApi<ModelChatStoreInterface> => {
 	// Runtime owned by this store instance, deliberately outside reactive
-	// state: the live stream accumulator, the request it belongs to (replayed
-	// verbatim by a cancel-commit), the controller that ends its poll loop, and
+	// state: the bound room, the live stream accumulator for rendering, and
 	// the guard that makes initialize idempotent per insight.
 	//
-	// `turnAborted` is separate from the reactive `isStopping` flag on purpose.
-	// `isStopping` describes the button, and clears as soon as the stop
-	// finishes; this says "the turn in flight was abandoned" and survives until
-	// the next turn starts, which is what stops a poll that was already in
-	// flight when the user clicked from being reported as a failure.
+	// `turnStopped` is separate from the reactive `isStopping` flag on
+	// purpose. `isStopping` describes the button, and clears as soon as the
+	// stop finishes; this says "the turn in flight was abandoned" and
+	// survives until the next turn starts, which is what stops a poll that
+	// was already resolving when the user clicked from being reported (or
+	// double-applied) as a successful result.
+	let room: RoomStore | null = null;
 	let stream = emptyStream();
-	let activeRequest: AskRoomRequest | null = null;
-	let turnController: AbortController | null = null;
-	let turnAborted = false;
+	let turnStopped = false;
 	let initialization: { insightId: string; promise: Promise<void> } | null =
 		null;
 
@@ -294,15 +282,11 @@ export const createModelChatStore = (): StoreApi<ModelChatStoreInterface> => {
 		 * has to land before the turn.
 		 *
 		 * @name persistRoomOptions
-		 * @param insightId - Insight the pixel executes against.
-		 * @param roomId - Room to write to.
 		 */
-		const persistRoomOptions = async (
-			insightId: string,
-			roomId: string,
-		): Promise<void> => {
+		const persistRoomOptions = async (): Promise<void> => {
+			if (!room) return;
 			const { config, engineId } = get();
-			await updateRoomOptions(insightId, roomId, {
+			await room.updateOptions({
 				instructions: config.instructions,
 				// Deliberately empty: MCP tools would make AskRoom return turns
 				// that need a client-side execution loop this panel does not run.
@@ -336,11 +320,9 @@ export const createModelChatStore = (): StoreApi<ModelChatStoreInterface> => {
 		 * @name resetConversation
 		 */
 		const resetConversation = (): void => {
-			turnController?.abort();
-			turnController = null;
-			turnAborted = false;
+			room?.abandon();
+			turnStopped = false;
 			stream = emptyStream();
-			activeRequest = null;
 			set({
 				messages: [],
 				isSending: false,
@@ -377,6 +359,7 @@ export const createModelChatStore = (): StoreApi<ModelChatStoreInterface> => {
 				}
 
 				resetConversation();
+				room = null;
 				set({
 					insightId,
 					engineId,
@@ -392,9 +375,9 @@ export const createModelChatStore = (): StoreApi<ModelChatStoreInterface> => {
 						// or a provider it does not know, simply offers no tools,
 						// and unreadable metadata leaves attachments on. Only the
 						// room is load-bearing.
-						const [roomId, builtinTools, inputSupport] =
+						const [createdRoom, builtinTools, inputSupport] =
 							await Promise.all([
-								createRoom(insightId),
+								RoomStore.create(insightId),
 								getModelBuiltinTools(insightId, engineId).catch(
 									(error): ModelBuiltinTools => {
 										console.warn(
@@ -418,8 +401,9 @@ export const createModelChatStore = (): StoreApi<ModelChatStoreInterface> => {
 									},
 								),
 							]);
+						room = createdRoom;
 						set((state) => ({
-							roomId,
+							roomId: createdRoom.roomId,
 							builtinTools,
 							supportsAttachments:
 								inputSupport.attachment !== false,
@@ -447,26 +431,18 @@ export const createModelChatStore = (): StoreApi<ModelChatStoreInterface> => {
 			// a remount against the same insight reuses the room it already
 			// created instead of orphaning it and making another.
 			dispose: () => {
-				turnController?.abort();
-				turnController = null;
+				room?.abandon();
 				stream = emptyStream();
-				activeRequest = null;
 			},
 
 			send: async (prompt, attachments) => {
-				const {
-					insightId,
-					roomId,
-					engineId,
-					isSending,
-					isInitializing,
-					pendingFiles,
-				} = get();
+				const { insightId, isSending, isInitializing, pendingFiles } =
+					get();
 				const command = prompt.trim();
 				if (
 					!command ||
 					!insightId ||
-					!roomId ||
+					!room ||
 					isSending ||
 					isInitializing
 				) {
@@ -485,8 +461,7 @@ export const createModelChatStore = (): StoreApi<ModelChatStoreInterface> => {
 
 				const isFirstTurn = get().messages.length === 0;
 				stream = emptyStream();
-				turnController = new AbortController();
-				turnAborted = false;
+				turnStopped = false;
 				set((state) => ({
 					isSending: true,
 					error: null,
@@ -529,22 +504,14 @@ export const createModelChatStore = (): StoreApi<ModelChatStoreInterface> => {
 						);
 					}
 
-					const request: AskRoomRequest = {
-						engineId,
-						roomId,
-						command,
-						parentMessageId: findParentMessageId(get().messages),
+					const parentMessageId = findParentMessageId(get().messages);
+
+					await persistRoomOptions();
+
+					const result = await room.ask(command, {
+						parentMessageId,
 						media: media.length > 0 ? media : undefined,
 						paramValues: buildParamValues(),
-					};
-					activeRequest = request;
-
-					await persistRoomOptions(insightId, roomId);
-
-					const result = await askRoom(insightId, request, {
-						onJobStarted: (jobId) => {
-							stream.jobId = jobId;
-						},
 						onChunk: (chunk) => {
 							applyStreamChunk(stream, chunk);
 							set((state) => ({
@@ -555,13 +522,12 @@ export const createModelChatStore = (): StoreApi<ModelChatStoreInterface> => {
 								),
 							}));
 						},
-						signal: turnController.signal,
 					});
 
 					// The turn landed and the user stopped it in the same beat:
 					// stop() is already committing what they saw, so applying
 					// this result too would double the pair.
-					if (turnAborted) {
+					if (turnStopped) {
 						return false;
 					}
 
@@ -576,11 +542,11 @@ export const createModelChatStore = (): StoreApi<ModelChatStoreInterface> => {
 									message.id !== "pending-response",
 							),
 							toModelChatMessage(
-								result.inputMessage,
+								result.inputMessage as PlaygroundMessage,
 								"pending-input",
 							),
 							toModelChatMessage(
-								result.responseMessage,
+								result.responseMessage as PlaygroundMessage,
 								"pending-response",
 							),
 						],
@@ -589,11 +555,11 @@ export const createModelChatStore = (): StoreApi<ModelChatStoreInterface> => {
 					if (isFirstTurn) {
 						const name = deriveRoomName(command);
 						if (name) {
-							void renameRoomPixel(insightId, roomId, name)
+							void renameRoomPixel(insightId, room.roomId, name)
 								.then(() => {
 									set((state) => ({
 										roomName:
-											state.roomId === roomId
+											state.roomId === room?.roomId
 												? name
 												: state.roomName,
 									}));
@@ -609,7 +575,7 @@ export const createModelChatStore = (): StoreApi<ModelChatStoreInterface> => {
 					// A stop unwinds through here — either as the abort itself
 					// or as whatever request was in flight when the job died.
 					// stop() owns persisting that turn, so say nothing.
-					if (turnAborted || isAskRoomAborted(error)) {
+					if (turnStopped || isRoomAskAborted(error)) {
 						return false;
 					}
 
@@ -635,39 +601,27 @@ export const createModelChatStore = (): StoreApi<ModelChatStoreInterface> => {
 					return false;
 				} finally {
 					set({ isSending: false });
-					turnController = null;
-					activeRequest = null;
 				}
 			},
 
 			stop: async () => {
-				const { insightId, isSending, isStopping } = get();
-				const jobId = stream.jobId;
-				const request = activeRequest;
-				if (
-					!insightId ||
-					!isSending ||
-					isStopping ||
-					!jobId ||
-					!request
-				) {
+				const { isSending, isStopping } = get();
+				if (!room || !isSending || isStopping) {
 					return;
 				}
 
-				// Flag and abort before any await, so send()'s poll loop
-				// unwinds on its next tick instead of racing this commit, and
-				// so a poll already in flight is not reported as a failure.
-				turnAborted = true;
-				turnController?.abort();
+				// Flag before any await, so send()'s poll unwinds on its next
+				// tick instead of racing this commit, and so a poll already in
+				// flight is not reported as a failure.
+				turnStopped = true;
 				set({ isStopping: true });
 
-				const parts = streamToResponseParts(stream);
 				try {
-					await stopPixelJob(insightId, jobId);
+					const result = await room.stop(TURN_CANCELLATION_NOTE);
 
 					// Nothing streamed before the stop, so there is no turn
 					// worth persisting — drop the optimistic pair instead.
-					if (parts.length === 0) {
+					if (!result) {
 						set((state) => ({
 							messages: state.messages.filter(
 								(message) =>
@@ -678,12 +632,6 @@ export const createModelChatStore = (): StoreApi<ModelChatStoreInterface> => {
 						return;
 					}
 
-					const result = await commitCancelledTurn(
-						insightId,
-						request,
-						parts,
-						TURN_CANCELLATION_NOTE,
-					);
 					set((state) => ({
 						messages: [
 							...state.messages.filter(
@@ -692,11 +640,11 @@ export const createModelChatStore = (): StoreApi<ModelChatStoreInterface> => {
 									message.id !== "pending-response",
 							),
 							toModelChatMessage(
-								result.inputMessage,
+								result.inputMessage as PlaygroundMessage,
 								"pending-input",
 							),
 							toModelChatMessage(
-								result.responseMessage,
+								result.responseMessage as PlaygroundMessage,
 								"pending-response",
 							),
 						],
@@ -706,14 +654,12 @@ export const createModelChatStore = (): StoreApi<ModelChatStoreInterface> => {
 					// the user gets that the stopped turn was not recorded.
 					set({ error: toErrorMessage(error) });
 				} finally {
-					// `turnAborted` deliberately stays set: send()'s poll may
+					// `turnStopped` deliberately stays set: send()'s poll may
 					// still be unwinding, and it reads the flag to know the
 					// turn was abandoned rather than broken. The next send()
 					// clears it.
 					set({ isStopping: false, isSending: false });
-					turnController = null;
 					stream = emptyStream();
-					activeRequest = null;
 				}
 			},
 
@@ -722,11 +668,12 @@ export const createModelChatStore = (): StoreApi<ModelChatStoreInterface> => {
 				if (!insightId) return;
 
 				resetConversation();
+				room = null;
 				set({ roomId: null, roomName: null });
 
 				try {
-					const roomId = await createRoom(insightId);
-					set({ roomId });
+					room = await RoomStore.create(insightId);
+					set({ roomId: room.roomId });
 				} catch (error) {
 					set({ error: toErrorMessage(error) });
 				}
@@ -750,6 +697,7 @@ export const createModelChatStore = (): StoreApi<ModelChatStoreInterface> => {
 				if (!insightId || get().roomId === roomId) return;
 
 				resetConversation();
+				room = null;
 				// The name comes from the caller (the history row that was
 				// clicked); the store does not hold the conversation list.
 				set({ roomId, roomName });
@@ -763,6 +711,11 @@ export const createModelChatStore = (): StoreApi<ModelChatStoreInterface> => {
 						insightId,
 						roomId,
 					).catch(() => null);
+					room = new RoomStore(roomId, insightId, {
+						...defaultRoomOptions(),
+						...options,
+					});
+
 					if (options) {
 						set((state) => ({
 							config: {
