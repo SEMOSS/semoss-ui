@@ -27,6 +27,7 @@ import {
 	compareColorRule,
 	GRID_STYLE,
 } from "@/components/visualizations/shared/chartShared";
+import { finiteAggregationNumbers } from "@/lib/aggregation";
 import { formatValue } from "@/lib/formatValue";
 import type {
 	ColorPalette as ColorPaletteType,
@@ -714,10 +715,10 @@ export function BoxPlotChart({
 		const grouped = new Map<string, number[]>();
 		for (const row of data) {
 			const cat = String(row[xKey] ?? "");
-			const val = Number(row[yKey]);
-			if (!Number.isNaN(val)) {
+			const [value] = finiteAggregationNumbers([row[yKey]]);
+			if (value !== undefined) {
 				if (!grouped.has(cat)) grouped.set(cat, []);
-				grouped.get(cat)?.push(val);
+				grouped.get(cat)?.push(value);
 			}
 		}
 		return Array.from(grouped.entries()).map(([category, values], i) => {

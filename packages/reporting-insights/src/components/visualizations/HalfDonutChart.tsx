@@ -13,6 +13,7 @@
 
 import { useState } from "react";
 import { createPortal } from "react-dom";
+import { aggregateNumericValues } from "@/lib/aggregation";
 import { formatValue } from "@/lib/formatValue";
 import type { VisualizationConfig, VizTriggerPayload } from "@/types/dashboard";
 
@@ -148,38 +149,18 @@ export function HalfDonutChart({ data, config, onTrigger }: Props) {
 
 	// ── Aggregate data by xKey, respecting configured aggregation ─────────────
 	const valueAggType = config?.columnAggregations?.[yKey] ?? "sum";
-	const catSum = new Map<string, number>();
-	const catCount = new Map<string, number>();
-	const catMin = new Map<string, number>();
-	const catMax = new Map<string, number>();
+	const catValues = new Map<string, unknown[]>();
 	for (const row of data) {
 		const cat = String(row[xKey] ?? "");
-		const v = Number(row[yKey]);
-		if (!Number.isNaN(v)) {
-			catSum.set(cat, (catSum.get(cat) ?? 0) + v);
-			catCount.set(cat, (catCount.get(cat) ?? 0) + 1);
-			catMin.set(cat, Math.min(catMin.get(cat) ?? Infinity, v));
-			catMax.set(cat, Math.max(catMax.get(cat) ?? -Infinity, v));
-		}
+		const values = catValues.get(cat) ?? [];
+		values.push(row[yKey]);
+		catValues.set(cat, values);
 	}
 
-	const categories = Array.from(catSum.keys());
-	const values = categories.map((c) => {
-		const sum = catSum.get(c) ?? 0;
-		const count = catCount.get(c) ?? 0;
-		switch (valueAggType) {
-			case "avg":
-				return count > 0 ? sum / count : 0;
-			case "count":
-				return count;
-			case "min":
-				return catMin.get(c) ?? 0;
-			case "max":
-				return catMax.get(c) ?? 0;
-			default:
-				return sum;
-		}
-	});
+	const categories = Array.from(catValues.keys());
+	const values = categories.map((category) =>
+		aggregateNumericValues(catValues.get(category) ?? [], valueAggType, 0),
+	);
 	const total = values.reduce((a, b) => a + b, 0);
 
 	if (total === 0 || categories.length === 0) {
@@ -193,80 +174,28 @@ export function HalfDonutChart({ data, config, onTrigger }: Props) {
 	// ── Aggregate target value ────────────────────────────────────────────────
 	let targetValue: number | null = null;
 	if (targetKey) {
-		let tSum = 0,
-			tCount = 0,
-			tMin = Infinity,
-			tMax = -Infinity;
-		for (const row of data) {
-			const v = Number(row[targetKey]);
-			if (!Number.isNaN(v)) {
-				tSum += v;
-				tCount++;
-				tMin = Math.min(tMin, v);
-				tMax = Math.max(tMax, v);
-			}
-		}
 		const tAgg = config?.columnAggregations?.[targetKey] ?? "sum";
-		switch (tAgg) {
-			case "avg":
-				targetValue = tCount > 0 ? tSum / tCount : 0;
-				break;
-			case "count":
-				targetValue = tCount;
-				break;
-			case "min":
-				targetValue = tMin === Infinity ? 0 : tMin;
-				break;
-			case "max":
-				targetValue = tMax === -Infinity ? 0 : tMax;
-				break;
-			default:
-				targetValue = tSum;
-		}
+		targetValue = aggregateNumericValues(
+			data.map((row) => row[targetKey]),
+			tAgg,
+			0,
+		);
 	}
 
 	// ── Aggregate tooltip extra columns per category (respecting each column's agg type) ──
-	type ColAcc = { sum: number; count: number; min: number; max: number };
-	const catTooltipAggs = new Map<string, Record<string, ColAcc>>();
+	const catTooltipValues = new Map<string, Record<string, unknown[]>>();
 	if (tooltipCols.length) {
 		for (const row of data) {
 			const cat = String(row[xKey] ?? "");
-			if (!catTooltipAggs.has(cat)) catTooltipAggs.set(cat, {});
-			const acc = catTooltipAggs.get(cat)!;
+			const valuesByColumn = catTooltipValues.get(cat) ?? {};
+			catTooltipValues.set(cat, valuesByColumn);
 			for (const t of tooltipCols) {
 				const col = (t as any).column;
-				const v = Number(row[col]);
-				if (!Number.isNaN(v)) {
-					if (!acc[col])
-						acc[col] = {
-							sum: 0,
-							count: 0,
-							min: Infinity,
-							max: -Infinity,
-						};
-					acc[col].sum += v;
-					acc[col].count += 1;
-					acc[col].min = Math.min(acc[col].min, v);
-					acc[col].max = Math.max(acc[col].max, v);
-				}
+				if (!valuesByColumn[col]) valuesByColumn[col] = [];
+				valuesByColumn[col].push(row[col]);
 			}
 		}
 	}
-
-	const resolveAgg = (acc: ColAcc, aggType: string): number => {
-		switch (aggType) {
-			case "avg":
-				return acc.count > 0 ? acc.sum / acc.count : 0;
-			case "count":
-				return acc.count;
-			case "min":
-				return acc.min === Infinity ? 0 : acc.min;
-			case "max":
-				return acc.max === -Infinity ? 0 : acc.max;
-			default:
-				return acc.sum;
-		}
-	};
 
 	const aggLabel = (aggType: string, col: string) => {
 		const prefix: Record<string, string> = {
@@ -576,11 +505,15 @@ export function HalfDonutChart({ data, config, onTrigger }: Props) {
 							total
 						</p>
 						{tooltipCols.map((t: any) => {
-							const acc = catTooltipAggs.get(hovered.slice.cat)?.[
-								t.column
-							];
-							if (!acc) return null;
-							const v = resolveAgg(acc, t.aggregation ?? "sum");
+							const rawValues = catTooltipValues.get(
+								hovered.slice.cat,
+							)?.[t.column];
+							if (!rawValues) return null;
+							const v = aggregateNumericValues(
+								rawValues,
+								t.aggregation ?? "sum",
+								0,
+							);
 							return (
 								<p
 									key={t.column}

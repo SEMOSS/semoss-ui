@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import { aggregateNumericValues } from "@/lib/aggregation";
 import type { VisualizationConfig } from "@/types/dashboard";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -55,36 +56,9 @@ export interface PivotResult {
 // ── Aggregation ───────────────────────────────────────────────────────────────
 
 /** Apply an aggregation to a list of raw values. Returns null for empty input. */
-function aggregate(values: any[], aggType: string): number | null {
+function aggregate(values: unknown[], aggType: string): number | null {
 	if (!values.length) return null;
-
-	if (aggType === "count") return values.length;
-	if (aggType === "countUnique") return new Set(values).size;
-
-	const numVals = values
-		.map((v) => Number(v))
-		.filter((v) => !Number.isNaN(v));
-	if (!numVals.length) return null;
-
-	switch (aggType) {
-		case "avg":
-			return numVals.reduce((a, b) => a + b, 0) / numVals.length;
-		case "sum":
-			return numVals.reduce((a, b) => a + b, 0);
-		case "min":
-			return Math.min(...numVals);
-		case "max":
-			return Math.max(...numVals);
-		case "median": {
-			const sorted = [...numVals].sort((a, b) => a - b);
-			const mid = Math.floor(sorted.length / 2);
-			return sorted.length % 2 === 0
-				? (sorted[mid - 1] + sorted[mid]) / 2
-				: sorted[mid];
-		}
-		default:
-			return numVals.reduce((a, b) => a + b, 0); // fallback to sum
-	}
+	return aggregateNumericValues(values, aggType, null);
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────

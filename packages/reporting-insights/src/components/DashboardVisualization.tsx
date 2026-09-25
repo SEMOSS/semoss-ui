@@ -61,6 +61,7 @@ import { CsvExportButton } from "@/components/widgets/CsvExportButton";
 import { FilterWidget } from "@/components/widgets/FilterWidget";
 import { usePivotTransform } from "@/hooks/usePivotTransform";
 import { useVizEvents } from "@/hooks/useVizEvents";
+import { aggregateNumericValues } from "@/lib/aggregation";
 import { buildReportingCsvFilename, downloadCsvFile } from "@/lib/csvExport";
 import {
 	applyFilters,
@@ -70,7 +71,10 @@ import {
 import { useEventParamState, useEventParamStore } from "@/lib/eventParamStore";
 import { formatValue } from "@/lib/formatValue";
 import { escapeSqlForPixel } from "@/lib/pixel";
-import { type QuerySource, resolveParamDefault } from "@/lib/resolveQuery";
+import {
+	type QuerySource,
+	resolveRuntimeParamValues,
+} from "@/lib/resolveQuery";
 import { aggregateTableRows } from "@/lib/tableAggregate";
 import { applyVizFilter, type VizFilterGroup } from "@/lib/vizFilter";
 import { contentSizeStyles, hasContentSize } from "@/lib/vizSize";
@@ -123,40 +127,7 @@ type ScatterShapeProps = {
 
 /** Generic aggregation helper (for all chart types). */
 function aggregateValue(values: unknown[], aggType: string): number {
-	if (aggType === "count") {
-		return values.length;
-	}
-	if (aggType === "countUnique") {
-		return new Set(values).size;
-	}
-
-	// For numeric aggregations, filter to valid numbers
-	const numVals = values
-		.map((v) => Number(v))
-		.filter((v) => !Number.isNaN(v));
-	if (!numVals.length) return 0;
-
-	switch (aggType) {
-		case "avg":
-			return numVals.reduce((a, b) => a + b, 0) / numVals.length;
-		case "sum":
-			return numVals.reduce((a, b) => a + b, 0);
-		case "max":
-			return Math.max(...numVals);
-		case "min":
-			return Math.min(...numVals);
-		case "median": {
-			const sorted = [...numVals].sort((a, b) => a - b);
-			const mid = Math.floor(sorted.length / 2);
-			return sorted.length % 2 === 0
-				? (sorted[mid - 1] + sorted[mid]) / 2
-				: sorted[mid];
-		}
-		case "last":
-			return numVals[numVals.length - 1];
-		default:
-			return numVals.reduce((a, b) => a + b, 0); // sum
-	}
+	return aggregateNumericValues(values, aggType, 0);
 }
 
 interface Props {
@@ -397,6 +368,7 @@ export function DashboardVisualization({
 	const [rawData, setRawData] = useState<DashboardRow[]>(
 		() => (preloadedData ?? []) as DashboardRow[],
 	);
+	const [loadedQuery, setLoadedQuery] = useState<string | null>(null);
 	const [showPhiModal, setShowPhiModal] = useState(false);
 	const [phiExportTarget, setPhiExportTarget] = useState<"table" | "overlay">(
 		"overlay",
@@ -615,6 +587,7 @@ export function DashboardVisualization({
 	useEffect(() => {
 		if (preloadedData) {
 			setRawData(preloadedData);
+			setLoadedQuery(null);
 			setLoading(false);
 			setWaiting(false);
 			setError(null);
@@ -708,17 +681,11 @@ export function DashboardVisualization({
 
 	const interpolateQuery = (q: string) => {
 		let r = q;
-		const m: Record<string, string> = {};
-		src.parameters?.forEach((p) => {
-			m[p.name] = resolveParamDefault(p);
-		});
-		Object.assign(m, parameterValues);
-		// Event param values override everything else (they come from the triggering click event).
-		Object.assign(m, eventParamValues);
-		// useCurrentDate always wins — override any stale stored value that crept in via parameterValues.
-		src.parameters?.forEach((p) => {
-			if (p.useCurrentDate) m[p.name] = resolveParamDefault(p);
-		});
+		const m = resolveRuntimeParamValues(
+			src.parameters,
+			parameterValues,
+			eventParamValues,
+		);
 		// Empty multiselect = "all options" → substitute every known option so
 		// IN ({{param}}) matches all rows instead of generating invalid IN ().
 		src.parameters?.forEach((p) => {
@@ -784,6 +751,7 @@ export function DashboardVisualization({
 		if (bust) refreshNonce.current += 1;
 		setLoading(true);
 		setError(null);
+		setLoadedQuery(null);
 		tableTaskId.current = null;
 		setDbHasMore(false);
 		try {
@@ -823,6 +791,7 @@ export function DashboardVisualization({
 				);
 				tableTaskId.current = taskId;
 				setRawData(toRows(headers, values));
+				setLoadedQuery(q);
 				// END SIGNAL: a page returning FEWER rows than requested is the last page.
 				// (We use rows-returned-this-page, NOT `numCollected`, which is cumulative
 				// across the task and so would never look "short".) No total cap → a full
@@ -884,8 +853,10 @@ export function DashboardVisualization({
 				Array.isArray(headers)
 			) {
 				setRawData(toRows(headers, values));
+				setLoadedQuery(q);
 			} else if (Array.isArray(raw) && raw.length > 0) {
 				setRawData(raw as DashboardRow[]);
+				setLoadedQuery(q);
 			} else {
 				setError("Unexpected data format returned from query.");
 			}
@@ -1046,8 +1017,15 @@ export function DashboardVisualization({
 	const performTableExport = () => {
 		// Editor previews contain only their Collect(10) sample. Batch-loaded saved
 		// tables can also be incomplete while the task has more rows. Those two cases
-		// need a separate all-row query; ordinary saved tables already hold Collect(-1).
-		if (preloadedData || dbHasMore) {
+		// need a separate all-row query. Saved tables can reuse Collect(-1) only when
+		// those rows were produced by the currently resolved parameter values.
+		const currentQuery = src.query ? interpolateQuery(src.query) : null;
+		if (
+			preloadedData ||
+			dbHasMore ||
+			!currentQuery ||
+			loadedQuery !== currentQuery
+		) {
 			void exportFullTableQuery();
 			return;
 		}
@@ -1083,8 +1061,10 @@ export function DashboardVisualization({
 	}, [pendingExport, facetData]);
 
 	const handleExportClick = () => {
+		setRawData([]);
+		setLoadedQuery(null);
 		setPendingExport(true);
-		void loadData(0);
+		void loadData(0, true);
 	};
 
 	// Axis derivation
@@ -1342,9 +1322,7 @@ export function DashboardVisualization({
 					label={visualization.config?.csvExportLabel}
 					config={visualization.config}
 					phi={visualization.phi}
-					onExportClick={
-						facetData.length === 0 ? handleExportClick : undefined
-					}
+					onExportClick={handleExportClick}
 					downloadKey={exportDownloadKey}
 				/>
 			);

@@ -1130,10 +1130,27 @@ export function ToolsPanel({
 				/>
 			</ToolAccordion>
 
+			<ToolAccordion title="Color by Value">
+				<ColorByValue
+					columns={columns}
+					valueColumns={columns}
+					visualizationType="worldmap"
+					fixedTargetColumn="marker"
+					columnValues={columnValues}
+					value={styling.worldmap?.colorRules || []}
+					onChange={(colorRules) =>
+						updateWorldmapStyling({
+							colorRules: colorRules as ColorRule[],
+						})
+					}
+					onReset={() => updateWorldmapStyling({ colorRules: [] })}
+				/>
+			</ToolAccordion>
+
 			<ToolAccordion title="Legend">
 				<ShowLegendToggle
 					value={styling.worldmap?.showLegend}
-					description="Displays a color-category legend at the bottom of the map (only visible when a Color column is configured)."
+					description="Displays color rules or configured Color categories at the bottom of the map."
 					onChange={(showLegend) =>
 						updateWorldmapStyling({ showLegend })
 					}

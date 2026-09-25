@@ -19,7 +19,11 @@ import {
 	hasDynamicOptionsCycle,
 	interpolateParameterTokens,
 } from "@/lib/parameterTokens";
-import { type ParamGroup, resolveParamDefault } from "@/lib/resolveQuery";
+import {
+	type ParamGroup,
+	resolveParamDefault,
+	resolveRuntimeParamValues,
+} from "@/lib/resolveQuery";
 import type { ParamSheetConfig } from "@/types/dashboard";
 
 /** Distinct first-column values from a SEMOSS query result (for dropdown options). */
@@ -281,10 +285,10 @@ export function ParamSheet({
 						waitingForDependency = true;
 						break;
 					}
-					let value = dependency.param.useCurrentDate
-						? resolveParamDefault(dependency.param)
-						: (values[name] ??
-							resolveParamDefault(dependency.param));
+					let value = resolveRuntimeParamValues(
+						[dependency.param],
+						values,
+					)[name];
 					if (
 						dependency.param.inputType === "multiselect" &&
 						!value.trim()

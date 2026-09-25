@@ -1049,6 +1049,12 @@ function reRenderAs(vizId, newType, xKey, yKeys) {
 }
 
 // ── KPI tiles ────────────────────────────────────────────────────────────────
+function isAggregationValuePresent(value) {
+  return value !== null && value !== undefined && (typeof value !== 'string' || value.trim() !== '');
+}
+function finiteAggregationNumbers(values) {
+  return values.filter(isAggregationValuePresent).map(function(value){ return Number(value); }).filter(function(value){ return isFinite(value); });
+}
 function renderKpi(container, headers, values, config) {
   config = config || {};
   var agg     = config.kpiAggregation || 'sum';
@@ -1061,11 +1067,13 @@ function renderKpi(container, headers, values, config) {
   function aggregate(col) {
     var idx = headers.indexOf(col);
     if (idx < 0) return 0;
-    var vals = values.map(function(r){ return parseFloat(r[idx]); }).filter(function(v){ return !isNaN(v); });
+    var rawVals = values.map(function(r){ return r[idx]; }).filter(isAggregationValuePresent);
+    if (agg === 'count') return rawVals.length;
+    if (agg === 'countUnique') return new Set(rawVals).size;
+    var vals = finiteAggregationNumbers(rawVals);
     if (!vals.length) return 0;
     switch(agg) {
       case 'avg':   return vals.reduce(function(a,b){return a+b;},0)/vals.length;
-      case 'count': return vals.length;
       case 'max':   return Math.max.apply(null,vals);
       case 'min':   return Math.min.apply(null,vals);
       case 'last':  return vals[vals.length-1];
@@ -1185,9 +1193,10 @@ function renderPivot(container, headers, values, vizId, config) {
   function fmtH(v) { return (v == null || v === '') ? '(blank)' : String(v); }
   function aggregate(vals, type) {
     if (!vals.length) return null;
-    if (type === 'count') return vals.length;
-    if (type === 'countUnique') { var s = {}; vals.forEach(function(v){ s[v]=1; }); return Object.keys(s).length; }
-    var nums = vals.map(function(v){ return Number(v); }).filter(function(v){ return !isNaN(v); });
+    var presentVals = vals.filter(isAggregationValuePresent);
+    if (type === 'count') return presentVals.length;
+    if (type === 'countUnique') return new Set(presentVals).size;
+    var nums = finiteAggregationNumbers(presentVals);
     if (!nums.length) return null;
     if (type === 'avg') return nums.reduce(function(a,b){return a+b;},0) / nums.length;
     if (type === 'min') return Math.min.apply(null, nums);

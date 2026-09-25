@@ -29,7 +29,8 @@ interface ColorByValueProps {
 		| "area"
 		| "treemap"
 		| "sunburst"
-		| "cluster";
+		| "cluster"
+		| "worldmap";
 	value: ColorRule[] | KpiColorRule[];
 	onChange: (rules: ColorRule[] | KpiColorRule[]) => void;
 	onReset: () => void;
@@ -47,6 +48,8 @@ interface ColorByValueProps {
 	 * KPI's color rules are scoped to a single card (mirrors the title tool).
 	 */
 	fixedMetricColumn?: string;
+	/** Fixed logical target for visualizations that color an entire rendered item. */
+	fixedTargetColumn?: string;
 }
 
 export function ColorByValue({
@@ -60,6 +63,7 @@ export function ColorByValue({
 	columnValues,
 	columnLabels = {},
 	fixedMetricColumn,
+	fixedTargetColumn,
 }: ColorByValueProps) {
 	const effectiveValueColumns = valueColumns ?? columns;
 	const effectiveValueLabels = { ...columnLabels, ...valueColumnLabels };
@@ -83,7 +87,7 @@ export function ColorByValue({
 		if (isTableShape) {
 			const newRule: ColorRule = {
 				id: `rule-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-				targetColumn: columns[0] || "",
+				targetColumn: fixedTargetColumn || columns[0] || "",
 				color: "#fef3c7",
 				colorEntireRow: false,
 				valueColumn: columns[0] || "",
@@ -149,7 +153,10 @@ export function ColorByValue({
 						{/* Column to Color — hidden for KPI per-card mode (metric is fixed) */}
 						<div
 							className={
-								!isTable && fixedMetricColumn ? "hidden" : ""
+								(!isTable && fixedMetricColumn) ||
+								(isTable && fixedTargetColumn)
+									? "hidden"
+									: ""
 							}
 						>
 							<label className="mb-1.5 block font-semibold text-stone-600 text-xs">
@@ -364,7 +371,8 @@ export function ColorByValue({
 						</div>
 
 						{/* Apply Color To (visualization-specific) */}
-						{visualizationType !== "pivot" &&
+						{!fixedTargetColumn &&
+							visualizationType !== "pivot" &&
 							visualizationType !== "wordcloud" &&
 							visualizationType !== "bubble" &&
 							visualizationType !== "bar" &&

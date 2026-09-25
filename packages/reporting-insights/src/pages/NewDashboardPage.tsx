@@ -814,6 +814,7 @@ export function NewDashboardPage() {
 			databaseName: "",
 			query: "",
 			parameters: [],
+			phi: src.phi,
 		};
 		if (target === "new") {
 			const color = SHEET_COLORS[sheets.length % SHEET_COLORS.length];
@@ -1027,13 +1028,25 @@ export function NewDashboardPage() {
 		vizId: string,
 		updates: Partial<Visualization>,
 	) => {
+		// PHI/PII toggled on a viz must apply to every visualization sharing its query.
+		let effectiveUpdates = updates;
+		if (updates.queryId && !("phi" in updates)) {
+			const groupPhi = sheets
+				.flatMap((s) => s.visualizations)
+				.find(
+					(v) => v.id !== vizId && v.queryId === updates.queryId,
+				)?.phi;
+			if (groupPhi !== undefined)
+				effectiveUpdates = { ...updates, phi: groupPhi };
+		}
+
 		setVisualizations((prev) =>
 			prev.map((v) => {
 				if (v.id !== vizId) return v;
-				const merged = { ...v, ...updates };
+				const merged = { ...v, ...effectiveUpdates };
 				// When switching to filter type for the first time, pre-select all same-sheet non-filter vizzes.
 				if (
-					updates.visualizationType === "filter" &&
+					effectiveUpdates.visualizationType === "filter" &&
 					!v.config?.filterTargets?.length
 				) {
 					const sheetIds = prev
@@ -1051,6 +1064,26 @@ export function NewDashboardPage() {
 				return merged;
 			}),
 		);
+
+		// PHI/PII toggled data must propagate to shared visualizations.
+		if ("phi" in effectiveUpdates) {
+			const queryId =
+				effectiveUpdates.queryId ??
+				visualizations.find((v) => v.id === vizId)?.queryId;
+			if (queryId) {
+				setSheets((prev) =>
+					prev.map((s) => ({
+						...s,
+						visualizations: s.visualizations.map((v) =>
+							v.queryId === queryId && v.id !== vizId
+								? { ...v, phi: effectiveUpdates.phi }
+								: v,
+						),
+					})),
+				);
+			}
+		}
+
 		// Keep the flexlayout panel header in sync live when the Title changes, so the
 		// rename shows immediately (the cached model isn't rebuilt on every edit).
 		if (updates.title !== undefined) {

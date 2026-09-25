@@ -61,6 +61,7 @@ import {
 import { FilterWidget } from "@/components/widgets/FilterWidget";
 import { pivotTransform, usePivotTransform } from "@/hooks/usePivotTransform";
 import { useVizEvents } from "@/hooks/useVizEvents";
+import { aggregateNumericValues } from "@/lib/aggregation";
 import { buildReportingCsvFilename, downloadCsvFile } from "@/lib/csvExport";
 import {
 	type AppliedFilter,
@@ -77,6 +78,7 @@ import {
 	type QuerySource,
 	resolveParamDefault,
 	resolveQuery,
+	resolveRuntimeParamValues,
 } from "@/lib/resolveQuery";
 import { useTabColors } from "@/lib/tabColors";
 import { aggregateTableRows } from "@/lib/tableAggregate";
@@ -273,6 +275,7 @@ type ScatterGroup = {
 interface VizState {
 	paramValues: Record<string, string>;
 	result: QueryResult | null;
+	loadedQuery: string | null;
 	error: string | null;
 	running: boolean;
 }
@@ -280,6 +283,7 @@ interface VizState {
 type BatchTableState = {
 	headers: string[];
 	rows: Record<string, unknown>[];
+	loadedQuery: string | null;
 	taskId: string | null;
 	pageSize: number;
 	hasMore: boolean;
@@ -462,18 +466,20 @@ function ViewModeInner() {
 				const qKey = qKeyOf(viz);
 				setQueryStates((p) => ({
 					...p,
-					[qKey]: { ...p[qKey], running: true, error: null },
+					[qKey]: {
+						...p[qKey],
+						loadedQuery: null,
+						running: true,
+						error: null,
+					},
 				}));
 				const baseValues =
 					queryStatesRef.current[qKey]?.paramValues ?? {};
-				const mergedValues: Record<string, string> = {
-					...baseValues,
-					...eventParams,
-				};
-				src.parameters?.forEach((p) => {
-					if (p.useCurrentDate)
-						mergedValues[p.name] = resolveParamDefault(p);
-				});
+				const mergedValues = resolveRuntimeParamValues(
+					src.parameters,
+					baseValues,
+					eventParams,
+				);
 				const q = substituteParams(
 					src.query,
 					mergedValues,
@@ -485,7 +491,12 @@ function ViewModeInner() {
 					.then((r) =>
 						setQueryStates((p) => ({
 							...p,
-							[qKey]: { ...p[qKey], result: r, running: false },
+							[qKey]: {
+								...p[qKey],
+								result: r,
+								loadedQuery: q,
+								running: false,
+							},
 						})),
 					)
 					.catch((e: unknown) =>
@@ -521,6 +532,7 @@ function ViewModeInner() {
 			initial[key] = {
 				paramValues,
 				result: null,
+				loadedQuery: null,
 				error: null,
 				running: false,
 			};
@@ -645,6 +657,7 @@ function ViewModeInner() {
 				...(prev[key] ?? {
 					paramValues: {},
 					result: null,
+					loadedQuery: null,
 					error: null,
 					running: false,
 				}),
@@ -669,6 +682,7 @@ function ViewModeInner() {
 			[key]: {
 				headers: [],
 				rows: [],
+				loadedQuery: null,
 				taskId: null,
 				pageSize: 0,
 				hasMore: false,
@@ -678,11 +692,10 @@ function ViewModeInner() {
 			},
 		}));
 		try {
-			const resolvedValues = { ...state.paramValues };
-			src.parameters?.forEach((p) => {
-				if (p.useCurrentDate)
-					resolvedValues[p.name] = resolveParamDefault(p);
-			});
+			const resolvedValues = resolveRuntimeParamValues(
+				src.parameters,
+				state.paramValues,
+			);
 			const q = substituteParams(
 				src.query,
 				resolvedValues,
@@ -696,6 +709,7 @@ function ViewModeInner() {
 				[key]: {
 					headers: page.headers,
 					rows: page.rows,
+					loadedQuery: q,
 					taskId: page.taskId,
 					pageSize: page.pageSize,
 					hasMore: page.hasMore,
@@ -759,14 +773,11 @@ function ViewModeInner() {
 		}));
 		try {
 			const qKey = qKeyOf(viz);
-			const values: Record<string, string> = {
-				...(queryStates[qKey]?.paramValues ?? {}),
-				...(eventParamStore?.getParamValues(viz.id) ?? {}),
-			};
-			src.parameters?.forEach((param) => {
-				if (param.useCurrentDate)
-					values[param.name] = resolveParamDefault(param);
-			});
+			const values = resolveRuntimeParamValues(
+				src.parameters,
+				queryStates[qKey]?.paramValues,
+				eventParamStore?.getParamValues(viz.id),
+			);
 			const query = substituteParams(
 				src.query,
 				values,
@@ -845,16 +856,18 @@ function ViewModeInner() {
 		if (!state) return;
 		setQueryStates((prev) => ({
 			...prev,
-			[key]: { ...prev[key], running: true, error: null },
+			[key]: {
+				...prev[key],
+				loadedQuery: null,
+				running: true,
+				error: null,
+			},
 		}));
 		try {
-			// Re-resolve useCurrentDate params so they always use today's date at run
-			// time, not the date when the page was first loaded.
-			const resolvedValues = { ...state.paramValues };
-			src.parameters?.forEach((p) => {
-				if (p.useCurrentDate)
-					resolvedValues[p.name] = resolveParamDefault(p);
-			});
+			const resolvedValues = resolveRuntimeParamValues(
+				src.parameters,
+				state.paramValues,
+			);
 			const q = substituteParams(
 				src.query,
 				resolvedValues,
@@ -865,7 +878,12 @@ function ViewModeInner() {
 			const r = await cachedQuery(src.databaseId, q, true);
 			setQueryStates((prev) => ({
 				...prev,
-				[key]: { ...prev[key], result: r, running: false },
+				[key]: {
+					...prev[key],
+					result: r,
+					loadedQuery: q,
+					running: false,
+				},
 			}));
 		} catch (e: unknown) {
 			setQueryStates((prev) => ({
@@ -1031,9 +1049,22 @@ function ViewModeInner() {
 			const state = queryStates[qKey] ?? {
 				paramValues: {},
 				result: null,
+				loadedQuery: null,
 				error: null,
 				running: false,
 			};
+			const currentValues = resolveRuntimeParamValues(
+				src.parameters,
+				state.paramValues,
+				eventParamStore?.getParamValues(viz.id),
+			);
+			const currentQuery = substituteParams(
+				src.query,
+				currentValues,
+				src.parameters,
+				paramOptions,
+				sheetParamOptions,
+			);
 			const hasParams = (src.parameters ?? []).length > 0;
 			const hasEventParams = (src.parameters ?? []).some(
 				(p) => p.inputType === "event",
@@ -1228,6 +1259,19 @@ function ViewModeInner() {
 														pendingExportKeysRef.current.add(
 															qKey,
 														);
+														setQueryStates(
+															(prev) => ({
+																...prev,
+																[qKey]: {
+																	...prev[
+																		qKey
+																	],
+																	result: null,
+																	loadedQuery:
+																		null,
+																},
+															}),
+														);
 														void runQuery(
 															src,
 															qKey,
@@ -1293,13 +1337,24 @@ function ViewModeInner() {
 										result={state.result}
 										onTableExport={
 											showTableExport
-												? (filters) =>
+												? (filters) => {
+														if (
+															state.loadedQuery !==
+															currentQuery
+														) {
+															void runFullTableExport(
+																viz,
+																filters,
+															);
+															return;
+														}
 														exportLoadedTable(
 															state.result as QueryResult,
 															viz,
 															src,
 															filters,
-														)
+														);
+													}
 												: undefined
 										}
 										tableExportState={
@@ -1327,7 +1382,9 @@ function ViewModeInner() {
 																	qKey
 																];
 															if (
-																batchState?.hasMore
+																batchState?.hasMore ||
+																batchState?.loadedQuery !==
+																	currentQuery
 															) {
 																void runFullTableExport(
 																	viz,
@@ -2254,22 +2311,8 @@ function ChartOrTable({
 					]
 				: [];
 
-		const aggVal = (vals: unknown[], type: string): number => {
-			const nums = vals.map(Number).filter((n) => !Number.isNaN(n));
-			if (!nums.length) return 0;
-			switch (type) {
-				case "avg":
-					return nums.reduce((a, b) => a + b, 0) / nums.length;
-				case "count":
-					return nums.length;
-				case "max":
-					return Math.max(...nums);
-				case "min":
-					return Math.min(...nums);
-				default:
-					return nums.reduce((a, b) => a + b, 0);
-			}
-		};
+		const aggVal = (vals: unknown[], type: string): number =>
+			aggregateNumericValues(vals, type, 0);
 
 		let scatterData: Record<string, unknown>[] = [];
 

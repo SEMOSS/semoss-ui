@@ -4,6 +4,7 @@ import {
 	CHART_COLORS,
 	compareColorRule,
 } from "@/components/visualizations/shared/chartShared";
+import { aggregateNumericValues } from "@/lib/aggregation";
 import { formatValue } from "@/lib/formatValue";
 import type {
 	ColorRule,
@@ -22,21 +23,8 @@ const SEP = "\x00";
 const HEADER_SENTINEL = "__HEADER__";
 const HEADER_H = 20;
 
-const aggregate = (vals: number[], aggType: string): number => {
-	if (!vals.length) return 0;
-	switch (aggType) {
-		case "avg":
-			return vals.reduce((a, b) => a + b, 0) / vals.length;
-		case "count":
-			return vals.length;
-		case "max":
-			return Math.max(...vals);
-		case "min":
-			return Math.min(...vals);
-		default:
-			return vals.reduce((a, b) => a + b, 0);
-	}
-};
+const aggregate = (values: unknown[], aggType: string): number =>
+	aggregateNumericValues(values, aggType, 0);
 
 type DrillState =
 	| { level: "root" }
@@ -115,20 +103,19 @@ export function TreemapChart({
 			return { treeData: [], lookupMap, totalSize: 0 };
 
 		if (seriesKey) {
-			const seriesMap = new Map<string, Map<string, number[]>>();
+			const seriesMap = new Map<string, Map<string, unknown[]>>();
 			const rowMap = new Map<string, Record<string, any>>();
 
 			for (const row of data) {
 				const sv = String(row[seriesKey] ?? "");
 				const lv = String(row[labelKey] ?? "");
-				const num = Number(row[sizeKey]) || 0;
 				if (!seriesMap.has(sv)) seriesMap.set(sv, new Map());
 				const inner = seriesMap.get(sv)!;
 				if (!inner.has(lv)) {
 					inner.set(lv, []);
 					rowMap.set(`${sv}${SEP}${lv}`, row);
 				}
-				inner.get(lv)?.push(num);
+				inner.get(lv)?.push(row[sizeKey]);
 			}
 
 			const seriesRule = sortValues.find((r) => r.column === seriesKey);
@@ -267,7 +254,7 @@ export function TreemapChart({
 					}
 				}
 				const name = String(r[labelKey] ?? "");
-				const sz = aggregate([Number(r[sizeKey]) || 0], aggType);
+				const sz = aggregate([r[sizeKey]], aggType);
 				lookupMap.set(name, {
 					fill,
 					seriesFill: palette[0],

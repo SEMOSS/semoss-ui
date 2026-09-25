@@ -2,6 +2,10 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { CHART_COLORS } from "@/components/visualizations/shared/chartShared";
+import {
+	aggregateNumericValues,
+	validAggregationValues,
+} from "@/lib/aggregation";
 import { formatValue } from "@/lib/formatValue";
 import type {
 	ColorPalette as ColorPaletteType,
@@ -410,21 +414,15 @@ export function HeatmapChart({
 
 		// Aggregate the heat/value column per (x, y) pair
 		const aggType = config.columnAggregations?.[valueKey] ?? "avg";
-		const groups: Record<string, number[]> = {};
+		const groups: Record<string, unknown[]> = {};
 		activeData.forEach((r) => {
 			const k = `${r[xKey]}||${r[yKey]}`;
 			if (!groups[k]) groups[k] = [];
-			const v = Number(r[valueKey]);
-			if (!Number.isNaN(v)) groups[k].push(v);
+			groups[k].push(r[valueKey]);
 		});
 		const vm: Record<string, number> = {};
 		for (const [k, vals] of Object.entries(groups)) {
-			if (!vals.length) continue;
-			if (aggType === "sum") vm[k] = vals.reduce((a, b) => a + b, 0);
-			else if (aggType === "max") vm[k] = Math.max(...vals);
-			else if (aggType === "min") vm[k] = Math.min(...vals);
-			else if (aggType === "count") vm[k] = vals.length;
-			else vm[k] = vals.reduce((a, b) => a + b, 0) / vals.length;
+			vm[k] = aggregateNumericValues(vals, aggType, 0);
 		}
 
 		return { allXCats: xs, allYCats: ys, valueMap: vm };
@@ -449,22 +447,12 @@ export function HeatmapChart({
 			result[k] = {};
 			for (const { column, aggregation } of tooltipCols) {
 				const vals = cols[column] ?? [];
-				const numVals = vals.map(Number).filter(Number.isFinite);
 				const agg = aggregation || "avg";
-				if (numVals.length > 0) {
-					if (agg === "sum")
-						result[k][column] = numVals.reduce((a, b) => a + b, 0);
-					else if (agg === "max")
-						result[k][column] = Math.max(...numVals);
-					else if (agg === "min")
-						result[k][column] = Math.min(...numVals);
-					else if (agg === "count") result[k][column] = vals.length;
-					else
-						result[k][column] =
-							numVals.reduce((a, b) => a + b, 0) / numVals.length;
-				} else {
-					result[k][column] = vals[vals.length - 1] ?? "";
-				}
+				const presentValues = validAggregationValues(vals);
+				result[k][column] =
+					agg === "raw"
+						? (presentValues[presentValues.length - 1] ?? "")
+						: aggregateNumericValues(presentValues, agg, 0);
 			}
 		}
 		return result;

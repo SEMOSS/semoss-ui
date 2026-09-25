@@ -1,5 +1,6 @@
 import { Activity, TrendingDown, TrendingUp } from "lucide-react";
 import type React from "react";
+import { aggregateNumericValues } from "@/lib/aggregation";
 import { formatValue } from "@/lib/formatValue";
 import { applyVizFilter } from "@/lib/vizFilter";
 import type { ChartTitleConfig, VisualizationConfig } from "@/types/dashboard";
@@ -26,37 +27,11 @@ export function aggregateKpiValue(
 ): number {
 	const agg =
 		config?.columnAggregations?.[col] ?? config?.kpiAggregation ?? "sum";
-
-	if (agg === "count") return data.length;
-	if (agg === "countUnique") {
-		const uniqueVals = new Set(data.map((r) => r[col]));
-		return uniqueVals.size;
-	}
-
-	const vals = data
-		.map((r) => Number(r[col]))
-		.filter((v) => !Number.isNaN(v));
-	if (!vals.length) return 0;
-
-	switch (agg) {
-		case "avg":
-			return vals.reduce((a, b) => a + b, 0) / vals.length;
-		case "max":
-			return Math.max(...vals);
-		case "min":
-			return Math.min(...vals);
-		case "median": {
-			const sorted = [...vals].sort((a, b) => a - b);
-			const mid = Math.floor(sorted.length / 2);
-			return sorted.length % 2 === 0
-				? (sorted[mid - 1] + sorted[mid]) / 2
-				: sorted[mid];
-		}
-		case "last":
-			return vals[vals.length - 1];
-		default:
-			return vals.reduce((a, b) => a + b, 0); // sum
-	}
+	return aggregateNumericValues(
+		data.map((row) => row[col]),
+		agg,
+		0,
+	);
 }
 
 // Renders one KPI card per configured metric column

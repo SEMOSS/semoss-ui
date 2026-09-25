@@ -13,6 +13,7 @@
 import React, { useMemo } from "react";
 import { createPortal } from "react-dom";
 import { compareColorRule } from "@/components/visualizations/shared/chartShared";
+import { aggregateNumericValues } from "@/lib/aggregation";
 import { formatValue } from "@/lib/formatValue";
 import type {
 	ColorRule,
@@ -77,22 +78,6 @@ function buildTree(
 	if (!levels.length || !valueCol)
 		return { name: "root", value: 0, children: [], depth: 0 };
 
-	const aggregate = (vals: number[]): number => {
-		if (!vals.length) return 0;
-		switch (aggType) {
-			case "avg":
-				return vals.reduce((a, b) => a + b, 0) / vals.length;
-			case "count":
-				return vals.length;
-			case "max":
-				return Math.max(...vals);
-			case "min":
-				return Math.min(...vals);
-			default:
-				return vals.reduce((a, b) => a + b, 0);
-		}
-	};
-
 	function recurse(subset: any[], depth: number): TreeNode[] {
 		if (depth >= levels.length) return [];
 		const col = levels[depth];
@@ -107,7 +92,11 @@ function buildTree(
 			const value =
 				children.length > 0
 					? children.reduce((s, c) => s + c.value, 0)
-					: aggregate(items.map((r) => Number(r[valueCol]) || 0));
+					: aggregateNumericValues(
+							items.map((r) => r[valueCol]),
+							aggType,
+							0,
+						);
 			return { name, value, children, depth };
 		});
 	}

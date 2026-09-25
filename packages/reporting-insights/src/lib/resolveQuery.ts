@@ -22,6 +22,8 @@ import type {
  *   value (editor inline queries, DashboardVisualization inline seed). The
  *   runtime viewer overrides this back to '' in DashboardPage seeding so the
  *   ParamSheet input starts blank and forces the user to type.
+ * - Multiselect defaults are normalized into a SQL list literal (`'a','b'`) so
+ *   an `IN ({{param}})` substitution works the same as a user-picked default.
  */
 export function resolveParamDefault(
 	p: Pick<
@@ -41,7 +43,52 @@ export function resolveParamDefault(
 	) {
 		return p.placeholder;
 	}
+	if (p.inputType === "multiselect" && p.defaultValue) {
+		const value = p.defaultValue.trim();
+		const isSqlList = /^'(?:[^']|'')*'(?:\s*,\s*'(?:[^']|'')*')*$/.test(
+			value,
+		);
+		return isSqlList ? value : `'${value.replace(/'/g, "''")}'`;
+	}
 	return p.defaultValue;
+}
+
+type RuntimeParameter = Pick<
+	Parameter,
+	| "name"
+	| "defaultValue"
+	| "useCurrentDate"
+	| "placeholder"
+	| "required"
+	| "inputType"
+>;
+
+/**
+ * Resolve a query's runtime param values: seed every parameter with its
+ * default (re-resolving `useCurrentDate` to today), then let the viewer's
+ * current values win, then let event-driven params take the triggering
+ * event's value. Centralizes what was previously a per-caller
+ * `useCurrentDate` re-resolution loop scattered across the viewer/editor.
+ */
+export function resolveRuntimeParamValues(
+	parameters: RuntimeParameter[] | undefined,
+	currentValues: Record<string, string> = {},
+	eventValues: Record<string, string> = {},
+): Record<string, string> {
+	const values: Record<string, string> = {};
+	for (const parameter of parameters ?? []) {
+		values[parameter.name] = resolveParamDefault(parameter);
+		if (Object.hasOwn(currentValues, parameter.name)) {
+			values[parameter.name] = currentValues[parameter.name];
+		}
+		if (
+			parameter.inputType === "event" &&
+			Object.hasOwn(eventValues, parameter.name)
+		) {
+			values[parameter.name] = eventValues[parameter.name];
+		}
+	}
+	return values;
 }
 
 /** The data-source fields a visualization needs to run, wherever they come from. */

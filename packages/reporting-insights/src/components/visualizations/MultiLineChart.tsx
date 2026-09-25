@@ -26,6 +26,7 @@ import {
 	strokeDashFor,
 } from "@/components/visualizations/shared/chartShared";
 import { PaginatedLegend } from "@/components/visualizations/shared/PaginatedLegend";
+import { aggregateNumericValues } from "@/lib/aggregation";
 import { formatValue } from "@/lib/formatValue";
 import {
 	type ColorRule,
@@ -338,21 +339,9 @@ function linearRegression(yValues: number[]): number[] {
 	return yValues.map((_, i) => slope * i + intercept);
 }
 
-/** Apply the configured aggregation over a set of numeric values. Missing combos return 0. */
-function aggregateValues(values: number[], aggFn: string): number {
-	if (!values.length) return 0;
-	switch (aggFn) {
-		case "avg":
-			return values.reduce((a, b) => a + b, 0) / values.length;
-		case "count":
-			return values.length;
-		case "min":
-			return Math.min(...values);
-		case "max":
-			return Math.max(...values);
-		default:
-			return values.reduce((a, b) => a + b, 0);
-	}
+/** Apply the configured aggregation over raw values. Missing combinations return 0. */
+function aggregateValues(values: unknown[], aggFn: string): number {
+	return aggregateNumericValues(values, aggFn, 0);
 }
 
 export function MultiLineChart({
@@ -402,15 +391,14 @@ export function MultiLineChart({
 					]
 				: [];
 
-	const bucketMap: Record<string, Record<string, number[]>> = {};
+	const bucketMap: Record<string, Record<string, unknown[]>> = {};
 	const tooltipBuckets: Record<string, Record<string, unknown[]>> = {};
 	for (const r of data) {
 		const x = String(r[xKey]);
 		const cat = String(r[categoryKey]);
-		const y = Number(r[yKey]);
 		if (!bucketMap[x]) bucketMap[x] = {};
 		if (!bucketMap[x][cat]) bucketMap[x][cat] = [];
-		if (!Number.isNaN(y)) bucketMap[x][cat].push(y);
+		bucketMap[x][cat].push(r[yKey]);
 		if (tooltipEntries.length) {
 			if (!tooltipBuckets[x]) tooltipBuckets[x] = {};
 			for (const { column } of tooltipEntries) {
@@ -425,7 +413,7 @@ export function MultiLineChart({
 		for (const cat of categories)
 			row[cat] = aggregateValues(bucketMap[x]?.[cat] ?? [], aggFn);
 		for (const { column, aggregation } of tooltipEntries) {
-			const vals = (tooltipBuckets[x]?.[column] ?? []) as number[];
+			const vals = tooltipBuckets[x]?.[column] ?? [];
 			if (vals.length)
 				row[`_tooltip_${column}`] = aggregateValues(vals, aggregation);
 		}

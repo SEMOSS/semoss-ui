@@ -779,6 +779,8 @@ export interface WorldMapStyling {
 	showTooltip?: boolean;
 	/** Whether to render a color-category legend (default true) */
 	showLegend?: boolean;
+	/** Conditional color rules evaluated against each marker's source row */
+	colorRules?: ColorRule[];
 	/** Baseline marker radius (px) when no Size column is configured.
 	 *  Also acts as the upper bound when Size is provided. Default 8. */
 	markerSize?: number;

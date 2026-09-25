@@ -6,6 +6,7 @@ import {
 	useRef,
 	useState,
 } from "react";
+import { aggregateNumericValues } from "@/lib/aggregation";
 import { formatValue } from "@/lib/formatValue";
 import {
 	type ColorPalette as ColorPaletteType,
@@ -30,23 +31,7 @@ const PACK_GAP = 3;
 
 // ── Aggregation ───────────────────────────────────────────────────────────────
 function aggregate(values: unknown[], aggType: string): number {
-	const nums = values.map((v) => Number(v)).filter((v) => !Number.isNaN(v));
-	switch (aggType) {
-		case "count":
-			return values.length;
-		case "countUnique":
-			return new Set(values).size;
-		case "avg":
-			return nums.length
-				? nums.reduce((s, v) => s + v, 0) / nums.length
-				: 0;
-		case "min":
-			return nums.length ? Math.min(...nums) : 0;
-		case "max":
-			return nums.length ? Math.max(...nums) : 0;
-		default:
-			return nums.reduce((s, v) => s + v, 0);
-	}
+	return aggregateNumericValues(values, aggType, 0);
 }
 
 // ── Color rule matching ────────────────────────────────────────────────────────

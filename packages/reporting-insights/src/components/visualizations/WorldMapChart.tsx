@@ -14,6 +14,8 @@ import {
 	Tooltip,
 	useMap,
 } from "react-leaflet";
+import { compareColorRule } from "@/components/visualizations/shared/chartShared";
+import { aggregateNumericValues } from "@/lib/aggregation";
 import { formatValue } from "@/lib/formatValue";
 import {
 	type ColorPalette as ColorPaletteType,
@@ -103,24 +105,7 @@ const TILE_LAYERS: Record<WorldMapLayer, TileLayerConfig | null> = {
 
 //  Aggregation helper (mirrors KPI/Pivot semantics)
 function aggregate(values: unknown[], aggregation: string): number {
-	const nums = values.map((v) => Number(v)).filter((v) => !Number.isNaN(v));
-	if (!nums.length) return 0;
-	switch (aggregation) {
-		case "sum":
-			return nums.reduce((s, v) => s + v, 0);
-		case "avg":
-			return nums.reduce((s, v) => s + v, 0) / nums.length;
-		case "min":
-			return Math.min(...nums);
-		case "max":
-			return Math.max(...nums);
-		case "count":
-			return values.length;
-		case "countUnique":
-			return new Set(values).size;
-		default:
-			return nums.reduce((s, v) => s + v, 0);
-	}
+	return aggregateNumericValues(values, aggregation, 0);
 }
 
 // Aggregated marker shape (one per unique label)
@@ -416,6 +401,7 @@ export function WorldMapChart({
 	const maxSize =
 		styling.markerSizeMax ?? DEFAULT_WORLDMAP_STYLING.markerSizeMax;
 	const mapLayer = styling.mapLayer ?? DEFAULT_WORLDMAP_STYLING.mapLayer;
+	const colorRules = styling.colorRules ?? [];
 
 	// Resolve palette from config.styling.colorPalette → fall back to default
 	const resolvedPalette = useMemo(() => {
@@ -445,6 +431,30 @@ export function WorldMapChart({
 		);
 		return map;
 	}, [points, colorKey, resolvedPalette]);
+
+	const resolveMarkerColor = (point: WorldMapPoint): string => {
+		for (const rule of colorRules) {
+			const candidate = point.rawRow?.[rule.valueColumn];
+			if (compareColorRule(rule.comparator, candidate, rule.value))
+				return rule.color;
+		}
+		if (colorKey && point.colorCategory) {
+			return colorIndex.get(point.colorCategory) ?? resolvedPalette[0];
+		}
+		return resolvedPalette[0];
+	};
+
+	const legendEntries = colorRules.length
+		? colorRules.map((rule) => ({
+				key: rule.id,
+				label: `${String(rule.value)}`,
+				color: rule.color,
+			}))
+		: Array.from(colorIndex.entries()).map(([category, color]) => ({
+				key: category,
+				label: category,
+				color,
+			}));
 
 	// Linear scale of size values to [minSize, maxSize]
 	const sizeScale = useMemo(() => {
@@ -510,11 +520,7 @@ export function WorldMapChart({
 
 					{points.map((p) => {
 						const radius = sizeScale(p.sizeValue);
-						const fill =
-							colorKey && p.colorCategory
-								? (colorIndex.get(p.colorCategory) ??
-									resolvedPalette[0])
-								: resolvedPalette[0];
+						const fill = resolveMarkerColor(p);
 						// Use the original raw data row so filter matching compares exact
 						// column values (aggregated tooltipValues are transformed numbers
 						// that won't match the raw strings in target visualizations).
@@ -648,8 +654,7 @@ export function WorldMapChart({
 											sizeKey={sizeKey}
 											colorKey={colorKey}
 											tooltipEntries={tooltipEntries}
-											colorIndex={colorIndex}
-											resolvedPalette={resolvedPalette}
+											markerColor={fill}
 											columnAggregations={
 												config?.columnAggregations
 											}
@@ -663,19 +668,18 @@ export function WorldMapChart({
 				</MapContainer>
 			</div>
 
-			{/* Legend (only meaningful when Color column is set) */}
-			{showLegend && colorKey && colorIndex.size > 0 && (
+			{showLegend && legendEntries.length > 0 && (
 				<div className="flex flex-shrink-0 flex-wrap gap-x-4 gap-y-1 border-slate-100 border-t px-3 py-2 text-[11px] text-slate-600">
-					{Array.from(colorIndex.entries()).map(([cat, color]) => (
+					{legendEntries.map((entry) => (
 						<span
-							key={cat}
+							key={entry.key}
 							className="inline-flex items-center gap-1.5"
 						>
 							<span
 								className="inline-block h-2.5 w-2.5 rounded-full"
-								style={{ background: color }}
+								style={{ background: entry.color }}
 							/>
-							{cat}
+							{entry.label}
 						</span>
 					))}
 				</div>
@@ -693,8 +697,7 @@ interface TooltipContentProps {
 	sizeKey: string | undefined;
 	colorKey: string | undefined;
 	tooltipEntries: Array<{ column: string; aggregation: string }>;
-	colorIndex: Map<string, string>;
-	resolvedPalette: string[];
+	markerColor: string;
 	columnAggregations: Record<string, string> | undefined;
 	formatRules: FormatRule[];
 }
@@ -707,16 +710,10 @@ function TooltipContent({
 	sizeKey,
 	colorKey,
 	tooltipEntries,
-	colorIndex,
-	resolvedPalette,
+	markerColor,
 	columnAggregations,
 	formatRules,
 }: TooltipContentProps) {
-	const fill =
-		colorKey && point.colorCategory
-			? (colorIndex.get(point.colorCategory) ?? resolvedPalette[0])
-			: resolvedPalette[0];
-
 	return (
 		<div
 			className="min-w-[180px] text-xs"
@@ -725,7 +722,7 @@ function TooltipContent({
 			<div className="mb-1 flex items-center gap-2 font-semibold text-slate-800">
 				<span
 					className="inline-block h-2 w-2 flex-shrink-0 rounded-full"
-					style={{ background: fill }}
+					style={{ background: markerColor }}
 				/>
 				{formatValue(point.label, labelKey, formatRules)}
 			</div>

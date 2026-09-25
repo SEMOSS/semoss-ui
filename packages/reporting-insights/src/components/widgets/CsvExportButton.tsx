@@ -3,8 +3,9 @@
  * its own SQL query as a CSV file. Used by both the main app and the portal.
  */
 import type { CSSProperties } from "react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { PhiExportWarningModal } from "@/components/PhiExportWarningModal";
+import { aggregateNumericValues } from "@/lib/aggregation";
 import { buildReportingCsvFilename, downloadCsvFile } from "@/lib/csvExport";
 import { csvColDisplayName } from "@/lib/tableAggregate";
 
@@ -66,27 +67,26 @@ function processRows(
 		const result: Record<string, unknown> = {};
 		for (const c of groupByCols) result[c] = grp[0][c];
 		for (const c of aggCols) {
-			const nums = grp
-				.map((r) => Number(r[c]))
-				.filter((n) => !Number.isNaN(n));
+			const values = grp.map((r) => r[c]);
 			const displayKey = csvColDisplayName(c, activeAggs[c]);
 			switch (activeAggs[c]) {
 				case "sum":
-					result[displayKey] = nums.reduce((a, b) => a + b, 0);
-					break;
 				case "count":
-					result[displayKey] = grp.length;
-					break;
 				case "avg":
-					result[displayKey] = nums.length
-						? nums.reduce((a, b) => a + b, 0) / nums.length
-						: 0;
+				case "countUnique":
+					result[displayKey] = aggregateNumericValues(
+						values,
+						activeAggs[c],
+						0,
+					);
 					break;
 				case "min":
-					result[displayKey] = nums.length ? Math.min(...nums) : null;
-					break;
 				case "max":
-					result[displayKey] = nums.length ? Math.max(...nums) : null;
+					result[displayKey] = aggregateNumericValues(
+						values,
+						activeAggs[c],
+						null,
+					);
 					break;
 				default:
 					result[displayKey] = grp[0][c];
@@ -146,9 +146,19 @@ export function CsvExportButton({
 		);
 
 	// When the parent fetches data on click, it bumps downloadKey to signal that we
-	// should trigger the download now (respecting the PHI gate).
+	// should trigger the download now (respecting the PHI gate). Ignore the current
+	// key on mount because the button remounts after each fetch and that key belongs
+	// to the preceding download.
+	const previousDownloadKey = useRef(downloadKey);
 	useEffect(() => {
-		if (!downloadKey || !processedRows.length) return;
+		const previousKey = previousDownloadKey.current;
+		previousDownloadKey.current = downloadKey;
+		if (
+			!downloadKey ||
+			downloadKey === previousKey ||
+			!processedRows.length
+		)
+			return;
 		if (phi) {
 			setShowPhiModal(true);
 		} else {

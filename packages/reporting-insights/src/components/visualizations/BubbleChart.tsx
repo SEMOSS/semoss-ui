@@ -6,6 +6,7 @@ import {
 	useRef,
 	useState,
 } from "react";
+import { aggregateNumericValues } from "@/lib/aggregation";
 import { formatValue } from "@/lib/formatValue";
 import {
 	type ColorPalette as ColorPaletteType,
@@ -30,25 +31,7 @@ const DEFAULT_PALETTE = [
 
 // Aggregation helper (mirrors WorldMap / WordCloud semantics)
 function aggregate(values: unknown[], aggregation: string): number {
-	const nums = values.map((v) => Number(v)).filter((v) => !Number.isNaN(v));
-	switch (aggregation) {
-		case "count":
-			return values.length;
-		case "countUnique":
-			return new Set(values).size;
-		case "sum":
-			return nums.reduce((s, v) => s + v, 0);
-		case "avg":
-			return nums.length
-				? nums.reduce((s, v) => s + v, 0) / nums.length
-				: 0;
-		case "min":
-			return nums.length ? Math.min(...nums) : 0;
-		case "max":
-			return nums.length ? Math.max(...nums) : 0;
-		default:
-			return nums.reduce((s, v) => s + v, 0);
-	}
+	return aggregateNumericValues(values, aggregation, 0);
 }
 
 /** Compare a candidate value against a ColorRule. Mirrors the table evaluator. */

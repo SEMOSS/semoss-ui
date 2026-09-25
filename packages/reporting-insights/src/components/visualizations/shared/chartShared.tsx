@@ -5,6 +5,7 @@
  * importing back from their parent (which would create a circular dep).
  */
 
+import { aggregateNumericValues } from "@/lib/aggregation";
 import { formatValue } from "@/lib/formatValue";
 import type {
 	AxisConfig,
@@ -32,35 +33,7 @@ export const GRID_STYLE = { stroke: "#f1f5f9", strokeDasharray: "0" } as const;
 
 /** Aggregate a list of raw values using the supplied aggregation type. */
 export function aggregateValue(values: unknown[], aggType: string): number {
-	if (aggType === "count") return values.length;
-	if (aggType === "countUnique") return new Set(values).size;
-
-	const numVals = values
-		.map((v) => Number(v))
-		.filter((v) => !Number.isNaN(v));
-	if (!numVals.length) return 0;
-
-	switch (aggType) {
-		case "avg":
-			return numVals.reduce((a, b) => a + b, 0) / numVals.length;
-		case "sum":
-			return numVals.reduce((a, b) => a + b, 0);
-		case "max":
-			return Math.max(...numVals);
-		case "min":
-			return Math.min(...numVals);
-		case "median": {
-			const sorted = [...numVals].sort((a, b) => a - b);
-			const mid = Math.floor(sorted.length / 2);
-			return sorted.length % 2 === 0
-				? (sorted[mid - 1] + sorted[mid]) / 2
-				: sorted[mid];
-		}
-		case "last":
-			return numVals[numVals.length - 1];
-		default:
-			return numVals.reduce((a, b) => a + b, 0); // sum
-	}
+	return aggregateNumericValues(values, aggType, 0);
 }
 
 /**

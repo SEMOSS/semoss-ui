@@ -25,6 +25,7 @@ import {
 	compareColorRule,
 } from "@/components/visualizations/shared/chartShared";
 import { PaginatedLegend } from "@/components/visualizations/shared/PaginatedLegend";
+import { aggregateNumericValues } from "@/lib/aggregation";
 import { formatValue } from "@/lib/formatValue";
 import {
 	type ColorPalette as ColorPaletteType,
@@ -78,21 +79,8 @@ function arcPath(
 	].join(" ");
 }
 
-function aggregateNums(vals: number[], type: string): number {
-	if (!vals.length) return 0;
-	switch (type) {
-		case "avg":
-			return vals.reduce((a, b) => a + b, 0) / vals.length;
-		case "count":
-			return vals.length;
-		case "max":
-			return Math.max(...vals);
-		case "min":
-			return Math.min(...vals);
-		default:
-			return vals.reduce((a, b) => a + b, 0);
-	}
-}
+const aggregateNums = (values: unknown[], type: string): number =>
+	aggregateNumericValues(values, type, 0);
 
 const ANIMATION_EASE: Record<string, string> = {
 	elastic: "spring",
@@ -154,12 +142,11 @@ export function Pie_Chart({
 	const heatByName = useMemo(() => {
 		if (!heatKey || !xKey) return null;
 		const aggType = config?.columnAggregations?.[heatKey] ?? "avg";
-		const grouped = new Map<string, number[]>();
+		const grouped = new Map<string, unknown[]>();
 		data.forEach((row) => {
 			const name = String(row[xKey] ?? "");
 			if (!grouped.has(name)) grouped.set(name, []);
-			const v = Number(row[heatKey]);
-			if (!Number.isNaN(v)) grouped.get(name)?.push(v);
+			grouped.get(name)?.push(row[heatKey]);
 		});
 		const result: Record<string, number> = {};
 		grouped.forEach((vals, name) => {
@@ -173,12 +160,11 @@ export function Pie_Chart({
 		if (!heatKey || !xKey) return { minHeat: 0, maxHeat: 1 };
 		const source = rawData ?? data;
 		const aggType = config?.columnAggregations?.[heatKey] ?? "avg";
-		const grouped = new Map<string, number[]>();
+		const grouped = new Map<string, unknown[]>();
 		source.forEach((row) => {
 			const name = String(row[xKey] ?? "");
 			if (!grouped.has(name)) grouped.set(name, []);
-			const v = Number(row[heatKey]);
-			if (!Number.isNaN(v)) grouped.get(name)?.push(v);
+			grouped.get(name)?.push(row[heatKey]);
 		});
 		const vals = Array.from(grouped.values()).map((arr) =>
 			aggregateNums(arr, aggType),
