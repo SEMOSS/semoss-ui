@@ -34,7 +34,7 @@ export interface SessionStoreState extends PermissionCache {
 	user: User;
 	defaultTextGenerationModel: string;
 	defaultCodeGenerationModel: string;
-	/** Fetch the logged-in user via GetUserInfo(); loggedIn comes from ConfigStore.initialize(). */
+	/** Fetch the user after ConfigStore.initialize() refreshes login metadata. */
 	initialize: (loggedIn: boolean) => Promise<void>;
 	login: (username: string, password: string) => Promise<boolean>;
 	loginLDAP: (username: string, password: string) => Promise<boolean>;
@@ -188,13 +188,13 @@ export const createSessionStore = (
 		login: async (username, password) => {
 			await authenticate(username, password);
 			set({ user: resetUser(true) });
-			await get().initialize(true);
+			await get().initialize(await configStore.getState().initialize());
 			return true;
 		},
 		loginLDAP: async (username, password) => {
 			await loginLDAP(username, password);
 			set({ user: resetUser(true) });
-			await get().initialize(true);
+			await get().initialize(await configStore.getState().initialize());
 			return true;
 		},
 		loginOTP: async (username, password) => {
@@ -204,7 +204,7 @@ export const createSessionStore = (
 		confirmOTP: async (otp) => {
 			await confirmOTP(otp);
 			set({ user: resetUser(true) });
-			await get().initialize(true);
+			await get().initialize(await configStore.getState().initialize());
 			return true;
 		},
 		register: async (
@@ -231,7 +231,7 @@ export const createSessionStore = (
 		oauth: async (provider) => {
 			await oauth(provider);
 			set({ user: resetUser(true) });
-			await get().initialize(true);
+			await get().initialize(await configStore.getState().initialize());
 			return true;
 		},
 		logout: async () => {
