@@ -20,15 +20,16 @@ interface RoomSidebarProps {
  * The room's right-hand panel: a workbench dock holding tools, subagents, the
  * room's configuration and activity log, and the shared file panels.
  *
- * Close and maximize sit in the dock's top rail rather than in a panel's tab
- * strip — they act on the sidebar container, not on any panel. The one
- * control that genuinely belongs to a panel, "open inline", is registered by
- * the tool panel itself.
+ * Close and maximize ride in via `stageActions` since they act on the
+ * sidebar container, not any panel — a border would need panels to avoid a
+ * second header row. The dock's own native maximize is disabled to match
+ * (see `ROOM_SIDEBAR_LAYOUT`). "Open inline" is the one control that's
+ * genuinely per-panel, so the tool panel registers it itself.
  *
  * The dock store belongs to the room, not to this component: panels are opened
  * while the sidebar is closed, and this whole subtree unmounts when it is.
  */
-export const RoomSidebar: React.FC<RoomSidebarProps> = observer(({ room }) => {
+export const RoomSidebar = observer(({ room }: RoomSidebarProps) => {
 	const { t } = useTranslation("sidebar");
 	const isMaximized = room.sidebar.isMaximized;
 
@@ -48,70 +49,62 @@ export const RoomSidebar: React.FC<RoomSidebarProps> = observer(({ room }) => {
 					<WorkbenchProvider store={room.workbench}>
 						<Workbench
 							snapshot={ROOM_SIDEBAR_LAYOUT}
-							borderSlots={{
-								top: {
-									after: (
-										<>
-											<Tooltip>
-												<TooltipTrigger asChild>
-													<Button
-														variant="ghost"
-														size="icon-sm"
-														className="flex-none text-muted-foreground"
-														aria-label={
-															isMaximized
-																? t(
-																		"actions.minimize",
-																	)
-																: t(
-																		"actions.maximize",
-																	)
-														}
-														onClick={() =>
-															room.setSidebarMaximized(
-																!isMaximized,
-															)
-														}
-													>
-														{isMaximized ? (
-															<MonitorXIcon className="size-3.5" />
-														) : (
-															<TvMinimalIcon className="size-3.5" />
-														)}
-													</Button>
-												</TooltipTrigger>
-												<TooltipContent>
-													{isMaximized
+							stageActions={
+								<>
+									<Tooltip>
+										<TooltipTrigger asChild>
+											<Button
+												variant="ghost"
+												size="icon-sm"
+												className="flex-none text-muted-foreground"
+												aria-label={
+													isMaximized
 														? t("actions.minimize")
-														: t("actions.maximize")}
-												</TooltipContent>
-											</Tooltip>
-											{isMaximized ? null : (
-												<Tooltip>
-													<TooltipTrigger asChild>
-														<Button
-															variant="ghost"
-															size="icon-sm"
-															className="flex-none text-muted-foreground"
-															aria-label={t(
-																"actions.close",
-															)}
-															onClick={() =>
-																room.closeSidebar()
-															}
-														>
-															<XIcon className="size-3.5" />
-														</Button>
-													</TooltipTrigger>
-													<TooltipContent>
-														{t("actions.close")}
-													</TooltipContent>
-												</Tooltip>
-											)}
-										</>
-									),
-								},
-							}}
+														: t("actions.maximize")
+												}
+												onClick={() =>
+													room.setSidebarMaximized(
+														!isMaximized,
+													)
+												}
+											>
+												{isMaximized ? (
+													<MonitorXIcon className="size-3.5" />
+												) : (
+													<TvMinimalIcon className="size-3.5" />
+												)}
+											</Button>
+										</TooltipTrigger>
+										<TooltipContent>
+											{isMaximized
+												? t("actions.minimize")
+												: t("actions.maximize")}
+										</TooltipContent>
+									</Tooltip>
+									{isMaximized ? null : (
+										<Tooltip>
+											<TooltipTrigger asChild>
+												<Button
+													variant="ghost"
+													size="icon-sm"
+													className="flex-none text-muted-foreground"
+													aria-label={t(
+														"actions.close",
+													)}
+													onClick={() =>
+														room.closeSidebar()
+													}
+												>
+													<XIcon className="size-3.5" />
+												</Button>
+											</TooltipTrigger>
+											<TooltipContent>
+												{t("actions.close")}
+											</TooltipContent>
+										</Tooltip>
+									)}
+								</>
+							}
 						/>
 					</WorkbenchProvider>
 				</RoomProvider>

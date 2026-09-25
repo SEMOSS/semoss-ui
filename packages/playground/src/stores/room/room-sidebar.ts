@@ -40,6 +40,8 @@ export const ROOM_SIDEBAR_LAYOUT: WorkbenchLayout = {
 		panelIds: [],
 		activeId: null,
 		enableDeleteWhenEmpty: false,
+		// RoomSidebar's own maximize button acts on the whole container
+		enableMaximize: false,
 	},
 	panels: {},
 };
