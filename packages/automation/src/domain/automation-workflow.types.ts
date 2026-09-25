@@ -178,6 +178,21 @@ export interface ConfigFieldSchema {
 	engineType?: string;
 }
 
+export type AutomationOutputFieldType =
+	| "boolean"
+	| "number"
+	| "object"
+	| "string"
+	| "string[]";
+
+/** One known field in a node's successful structured result. */
+export interface AutomationOutputFieldSchema {
+	type: AutomationOutputFieldType;
+	label: string;
+	description: string;
+	required: boolean;
+}
+
 export interface AutomationNodeDefinition {
 	type: AutomationWorkflowNodeType;
 	label: string;
@@ -185,6 +200,7 @@ export interface AutomationNodeDefinition {
 	category: AutomationNodeCategory;
 	defaultConfig: AutomationWorkflowNodeConfig;
 	configSchema: Record<string, ConfigFieldSchema>;
+	outputSchema: Record<string, AutomationOutputFieldSchema>;
 	inputs: readonly AutomationPort[];
 	outputs: readonly AutomationPort[];
 	defaultCodeMode: AutomationNodeCodeMode;

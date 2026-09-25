@@ -67,6 +67,7 @@ import {
 	type WorkbenchComponent,
 	type WorkbenchLayout,
 	type WorkbenchPanelConfigAny,
+	WorkbenchResetButton,
 } from "@semoss/workbench";
 import { ASSISTANT_PANEL } from "@/components/assistant";
 import { stripMcpToolAlias } from "@/components/assistant/assistant-tools";
@@ -78,6 +79,7 @@ import type { BuildTool } from "@/stores/assistant";
 import { AUTOMATION_BUILDER_AGENT } from "@/stores/assistant/assistant-agents";
 import { WORKBENCH_COMPONENTS } from "@/stores/workbench";
 import { NavbarHeader, NavbarLeft, NavbarRight } from "../../shared";
+import { AUTOMATION_RUN_FILES_PANEL } from "./automation-run-files-panel";
 import { AutomationSettingsToggle } from "./automation-settings-toggle";
 
 const AUTOMATION_MUTATION_TOOLS = new Set([
@@ -113,6 +115,7 @@ function extractChangedStepIds(
 const EDITOR = "automation-editor";
 const INSPECTOR = "automation-inspector";
 const TRACE = "automation-trace";
+const RUN_FILES = "automation-run-files";
 const FILES = WORKBENCH_COMPONENTS.FILE_EXPLORER;
 const FILE_EDITOR = WORKBENCH_COMPONENTS.FILE_CODE_EDITOR;
 const MCP_EDITOR = WORKBENCH_COMPONENTS.FILE_MCP_EDITOR;
@@ -220,6 +223,12 @@ const createAutomationLayout = (appId: string): WorkbenchLayout => ({
 			name: "Run details",
 			canClose: false,
 		},
+		[RUN_FILES]: {
+			id: RUN_FILES,
+			type: RUN_FILES,
+			name: "Run files",
+			canClose: false,
+		},
 		[SETTINGS]: {
 			id: SETTINGS,
 			type: SETTINGS,
@@ -240,7 +249,7 @@ const createAutomationLayout = (appId: string): WorkbenchLayout => ({
 		},
 	},
 	borders: {
-		left: { panelIds: [FILES], activeId: null, size: 320 },
+		left: { panelIds: [FILES, RUN_FILES], activeId: null, size: 320 },
 		bottom: { panelIds: [TRACE], activeId: null, size: 300 },
 		right: {
 			panelIds: [INSPECTOR, WORKBENCH_COMPONENTS.ASSISTANT],
@@ -393,6 +402,7 @@ const AUTOMATION_COMPONENTS: Record<string, WorkbenchPanelConfigAny> = {
 		mount: "keepAlive",
 		content: AutomationTracePanel,
 	},
+	[RUN_FILES]: AUTOMATION_RUN_FILES_PANEL,
 	[SETTINGS]: {
 		name: "Settings",
 		canRename: false,
@@ -492,6 +502,8 @@ export const AutomationWorkbench = observer(
 		const canvasRef = useRef<AutomationCanvasHandle>(null);
 		const [traceSnapshot, setTraceSnapshot] =
 			useState<AutomationTraceSnapshot | null>(null);
+		const [selectedRun, setSelectedRun] =
+			useState<AutomationRunDetail | null>(null);
 		const [outputModal, setOutputModal] = useState<string | null>(null);
 		const [inspectorSnapshot, setInspectorSnapshot] =
 			useState<AutomationInspectorSnapshot | null>(null);
@@ -613,6 +625,14 @@ export const AutomationWorkbench = observer(
 		const handleHistoryChanged = useCallback(() => {
 			setHistoryRefreshToken((token) => token + 1);
 		}, []);
+		const handleViewRun = useCallback((run: AutomationRunDetail) => {
+			setSelectedRun(run);
+			canvasRef.current?.viewHistoricalRun(run);
+		}, []);
+		const handleExitHistoricalView = useCallback(() => {
+			setSelectedRun(null);
+			canvasRef.current?.exitHistoricalView();
+		}, []);
 		const handleAskAssistant = useCallback(
 			(prompt: string) => {
 				setAssistantDraft(prompt.slice(0, MAX_ASSISTANT_DRAFT_LENGTH));
@@ -693,6 +713,9 @@ export const AutomationWorkbench = observer(
 				onHistoryChanged: handleHistoryChanged,
 				inspectorSnapshot,
 				traceSnapshot,
+				selectedRun,
+				onViewRun: handleViewRun,
+				onExitHistoricalView: handleExitHistoricalView,
 				historyRefreshToken,
 				onOpenOutput: setOutputModal,
 				onAskAssistant: handleAskAssistant,
@@ -708,15 +731,18 @@ export const AutomationWorkbench = observer(
 				conversionModel,
 				handleAskAssistant,
 				handleHistoryChanged,
+				handleExitHistoricalView,
 				handleInspectorChange,
 				handleOpenPythonEditor,
 				handleTraceChange,
 				handleViewRunDetails,
+				handleViewRun,
 				historyRefreshToken,
 				inspectorSnapshot,
 				isPythonFileOpen,
 				readOnly,
 				runDetailsFocus,
+				selectedRun,
 				traceSnapshot,
 			],
 		);
@@ -897,7 +923,16 @@ export const AutomationWorkbench = observer(
 						<Workbench
 							snapshot={workbenchLayout}
 							borderSlots={{
-								left: { after: <AutomationSettingsToggle /> },
+								left: {
+									after: (
+										<>
+											<AutomationSettingsToggle />
+											<WorkbenchResetButton
+												snapshot={workbenchLayout}
+											/>
+										</>
+									),
+								},
 							}}
 						/>
 					</AutomationWorkbenchContext.Provider>
