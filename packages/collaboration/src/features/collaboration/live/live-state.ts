@@ -2,6 +2,7 @@ import type { InsightActions } from "@/lib/pixel";
 import { PixelError, pixel } from "@/lib/pixel";
 import type {
 	Account,
+	CollaborationCommand,
 	CollaborationState,
 	Person,
 	Profile,
@@ -12,6 +13,7 @@ import type {
 	Thread,
 	Topic,
 	WorkItem,
+	WorkspaceMessage,
 } from "../state/collaboration.types";
 
 // Live data: Brain and Work state loaded from the Collaboration reactors instead of the sample fixtures.
@@ -205,10 +207,22 @@ function mapPerson(row: Row): Person {
 	};
 }
 
+const SOURCE_KINDS: Record<string, NonNullable<Thread["source"]>["kind"]> = {
+	email: "outlook",
+	teams: "teams",
+	calendar: "calendar",
+};
+
 function mapThread(row: Row): Thread {
+	const channel = (row.channel as Thread["channel"]) ?? "email";
 	return {
 		id: str(row.id),
-		channel: (row.channel as Thread["channel"]) ?? "email",
+		channel,
+		// the thread view replies to source.nativeId; source also lets loaded messages attach to the thread
+		source: {
+			kind: SOURCE_KINDS[channel] ?? "outlook",
+			nativeId: str(row.latestMessageId, str(row.id)),
+		},
 		subject: str(row.subject, "(no subject)"),
 		topicLinks: list<Row>(row.topicLinks).map((link) => ({
 			topicId: str(link.topicId),
@@ -378,4 +392,30 @@ export async function loadLiveState(
 		openThreadIds: roomsPage.items.map((room) => str(room.threadId)),
 		sequence: 1,
 	};
+}
+
+/** Reads a thread's messages; the command attaches them to the thread as it is when they arrive. */
+export async function loadThreadMessages(
+	actions: InsightActions,
+	threadId: string,
+): Promise<(thread: Thread) => CollaborationCommand> {
+	const [out] = (await runBatch(actions, [
+		pixel("BrainGetThreadMessages", { threadId, limit: 100 }),
+	])) as [Row];
+	const messages: WorkspaceMessage[] = list<Row>(out.messages).map(
+		(message) => ({
+			id: str(message.id),
+			fromId: str(message.fromId),
+			at: str(message.at),
+			text: str(message.text),
+			excluded: message.excluded === true ? true : undefined,
+		}),
+	);
+	// source.import is not undone and keeps the owner's links, mute, and exclusions
+	return (thread) => ({
+		type: "source.import",
+		thread,
+		people: [],
+		workspace: { messages },
+	});
 }
