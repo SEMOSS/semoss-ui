@@ -1,0 +1,46 @@
+import { useCallback, useRef, useState } from "react";
+import type { Engine } from "@semoss/shared";
+
+interface ModelSelectionRoom {
+	roomId: string;
+	options: { modelId: string };
+	updateOptions: (options: { modelId?: string }) => Promise<void>;
+}
+
+/** Persist and expose one room's model without optimistic selection drift. */
+export function useRoomModelSelection(
+	roomId: string,
+	room: ModelSelectionRoom | null,
+	fallbackModelId = "",
+) {
+	const [selection, setSelection] = useState<{
+		roomId: string;
+		engine: Engine;
+	} | null>(null);
+	const [isSaving, setIsSaving] = useState(false);
+	const savingRef = useRef(false);
+	const selectedEngine =
+		selection?.roomId === roomId &&
+		selection.engine.engine_id === room?.options.modelId
+			? selection.engine
+			: null;
+	const modelId = room?.options.modelId || fallbackModelId;
+
+	const selectModel = useCallback(
+		async (engine: Engine) => {
+			if (!room || savingRef.current) return;
+			savingRef.current = true;
+			setIsSaving(true);
+			try {
+				await room.updateOptions({ modelId: engine.engine_id });
+				setSelection({ roomId: room.roomId, engine });
+			} finally {
+				savingRef.current = false;
+				setIsSaving(false);
+			}
+		},
+		[room],
+	);
+
+	return { modelId, selectedEngine, isSaving, selectModel };
+}

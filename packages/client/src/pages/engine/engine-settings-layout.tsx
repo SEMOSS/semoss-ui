@@ -1,5 +1,6 @@
 import {
 	AlignLeftIcon,
+	ImageIcon,
 	ShieldCheckIcon,
 	SlidersHorizontalIcon,
 	TagsIcon,
@@ -7,6 +8,12 @@ import {
 import { NavLink, Outlet } from "react-router";
 
 const SETTINGS_SECTIONS = [
+	{
+		name: "Image",
+		path: "image",
+		icon: ImageIcon,
+		description: "Catalog image",
+	},
 	{
 		name: "Model Settings",
 		path: "model",
@@ -58,7 +65,10 @@ export const EngineSettingsLayout = () => {
 							].join(" ")
 						}
 					>
-						<item.icon className="mt-0.5 size-4 shrink-0" />
+						<item.icon
+							aria-hidden="true"
+							className="mt-0.5 size-4 shrink-0"
+						/>
 						<span className="flex min-w-0 flex-col">
 							<span className="truncate font-medium text-sm">
 								{item.name}

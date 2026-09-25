@@ -788,7 +788,9 @@ export const Notebook = forwardRef<NotebookHandle, NotebookProps>(
 																	1,
 														};
 
-													let cellBody: React.ReactElement;
+													let cellBody: React.ReactElement<{
+														dragHandleProps?: React.HTMLAttributes<HTMLElement>;
+													}>;
 													if (
 														cell.cell_type ===
 														"code"

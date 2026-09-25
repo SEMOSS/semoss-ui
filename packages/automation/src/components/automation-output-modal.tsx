@@ -11,12 +11,12 @@ import {
 	TooltipContent,
 	TooltipTrigger,
 } from "@semoss/ui/next";
-import { isTabularArray } from "@semoss/utility/json";
 import {
+	isTabularArray,
 	looksLikeHtmlDocument,
 	looksLikeMarkdown,
 	normalizeForMarkdown,
-} from "@semoss/utility/markdown";
+} from "@semoss/utility";
 
 interface AutomationOutputModalProps {
 	output: string | null;

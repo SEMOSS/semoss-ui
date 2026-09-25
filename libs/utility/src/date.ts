@@ -53,3 +53,10 @@ export const parseDuration = (milliseconds: number): string => {
 	const remainingSeconds = Math.round(seconds % 60);
 	return `${minutes}m ${remainingSeconds}s`;
 };
+
+/** Parse a timestamp into epoch milliseconds, returning null when invalid. */
+export const parseTimestamp = (value?: string): number | null => {
+	if (!value) return null;
+	const timestamp = Date.parse(value);
+	return Number.isNaN(timestamp) ? null : timestamp;
+};

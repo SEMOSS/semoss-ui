@@ -1,0 +1,16 @@
+{
+	"extends": "@semoss/config/tsconfig.base.json",
+	"compilerOptions": {
+		"types": ["vitest/globals"],
+		"paths": {
+			"@/*": ["./src/*"]
+		}
+	},
+	"include": [
+		"vite-env.d.ts",
+		"vitest.setup.ts",
+		"src",
+		"../../libs/shared/src"
+	],
+	"exclude": ["dist", "node_modules"]
+}

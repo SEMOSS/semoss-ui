@@ -1,3 +1,5 @@
+import { formatByteSize } from "./file-size";
+
 const MARKDOWN_PATTERNS = [
 	/^#{1,6}\s/m,
 	/\|.+\|.+\|/m,
@@ -48,7 +50,5 @@ export const countLines = (text: string): number => {
 /** Format UTF-8 text size for compact output metadata. */
 export const formatBytes = (text: string): string => {
 	const bytes = new Blob([text || ""]).size;
-	if (bytes < 1024) return `${bytes} B`;
-	if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-	return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
+	return formatByteSize(bytes);
 };
