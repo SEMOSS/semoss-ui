@@ -1,4 +1,4 @@
-import { Star, X } from "lucide-react";
+import { Star } from "lucide-react";
 import { useId, useState } from "react";
 import { Link } from "react-router";
 import {
@@ -86,6 +86,14 @@ export function ThreadSettings({
 									<TopicChip
 										topic={topic}
 										suggested={link.source === "suggested"}
+										onRemove={() =>
+											dispatch({
+												type: "thread.link",
+												threadId: thread.id,
+												topicId: topic.id,
+												operation: "remove",
+											})
+										}
 									/>
 									{link.source === "suggested" && (
 										<Button
@@ -103,21 +111,6 @@ export function ThreadSettings({
 											Confirm
 										</Button>
 									)}
-									<Button
-										variant="ghost"
-										size="icon-sm"
-										aria-label={`Remove ${topic.short}`}
-										onClick={() =>
-											dispatch({
-												type: "thread.link",
-												threadId: thread.id,
-												topicId: topic.id,
-												operation: "remove",
-											})
-										}
-									>
-										<X aria-hidden="true" />
-									</Button>
 								</div>
 							)
 						);

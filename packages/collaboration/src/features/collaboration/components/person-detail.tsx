@@ -199,27 +199,19 @@ export function PersonDetail() {
 				>
 					<div className="flex flex-wrap gap-2">
 						{topics.map((topic) => (
-							<div
+							<TopicChip
 								key={topic.id}
-								className="flex items-center gap-1"
-							>
-								<TopicChip topic={topic} />
-								<Button
-									variant="ghost"
-									size="sm"
-									aria-label={`Remove ${person.name} from ${topic.short}`}
-									onClick={() =>
-										dispatch({
-											type: "topic.person",
-											topicId: topic.id,
-											personId: person.id,
-											state: "removed",
-										})
-									}
-								>
-									Remove
-								</Button>
-							</div>
+								topic={topic}
+								removeLabel={`Remove ${person.name} from ${topic.short}`}
+								onRemove={() =>
+									dispatch({
+										type: "topic.person",
+										topicId: topic.id,
+										personId: person.id,
+										state: "removed",
+									})
+								}
+							/>
 						))}
 					</div>
 					{available.length > 0 && (
