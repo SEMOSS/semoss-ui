@@ -8,6 +8,7 @@ import {
 	LayoutGrid,
 	type LucideIcon,
 	Play,
+	Repeat2,
 	Sigma,
 } from "lucide-react";
 import type { AutomationNode, AutomationNodeType } from "./automation.types";
@@ -115,6 +116,12 @@ export const TYPE_DISPLAY_META: Record<
 	"function-engine": STEP_TYPES[4],
 	app: STEP_TYPES[5],
 	wait: STEP_TYPES[6],
+	loop: {
+		label: "Loop over items",
+		description: "Repeat a nested sequence for every item or batch",
+		icon: Repeat2,
+		color: "text-primary",
+	},
 	branch: {
 		label: "Decision",
 		description: "Evaluate a condition and route to the matching path",

@@ -41,6 +41,10 @@ export type AutomationNodeData = {
 	highlighted?: boolean;
 	/** True when this step sits on the path leading to the selected node. */
 	pathHighlighted?: boolean;
+	/** Transient canvas-only expansion state for compound nodes such as loops. */
+	expanded?: boolean;
+	/** Updates transient compound-node expansion without changing the saved graph. */
+	onExpandedChange?: (expanded: boolean) => void;
 };
 
 const STATUS_BORDER: Record<string, string> = {

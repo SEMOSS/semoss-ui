@@ -21,6 +21,10 @@ import { getWorkflowNodeDisplay } from "../../domain/automation-workflow-display
 
 interface AddNodeMenuProps {
 	onSelect: (type: AutomationWorkflowNodeType) => void;
+	/** Restricts the catalog for a nested surface such as a loop body. */
+	nodeFilter?: (type: AutomationWorkflowNodeType) => boolean;
+	title?: string;
+	description?: string;
 }
 
 const CATEGORY_ORDER: readonly AutomationNodeCategory[] = [
@@ -45,6 +49,7 @@ const CATEGORY_ORDER: readonly AutomationNodeCategory[] = [
 const SEARCH_ALIASES: Partial<Record<AutomationWorkflowNodeType, string>> = {
 	"control.if": "if elif else condition conditional branch",
 	"control.jev": "jev typesafe ai decision route branch classify",
+	"control.loop": "loop for each batch repeat iterate iterator",
 };
 
 const CATEGORY_META: Record<
@@ -63,7 +68,12 @@ const CATEGORY_META: Record<
 	developer: { label: "Developer", icon: Braces },
 };
 
-export function AddNodeMenu({ onSelect }: AddNodeMenuProps) {
+export function AddNodeMenu({
+	onSelect,
+	nodeFilter,
+	title = "Add a workflow node",
+	description = "Choose a step for this automation.",
+}: AddNodeMenuProps) {
 	const [query, setQuery] = useState("");
 	const normalizedQuery = query.trim().toLowerCase();
 	const nodeDefinitions = getAutomationNodeDefinitions();
@@ -74,7 +84,8 @@ export function AddNodeMenu({ onSelect }: AddNodeMenuProps) {
 				entries: nodeDefinitions.filter((node) => {
 					if (
 						node.category !== category ||
-						node.type === "trigger.start"
+						node.type === "trigger.start" ||
+						(nodeFilter && !nodeFilter(node.type))
 					) {
 						return false;
 					}
@@ -85,16 +96,16 @@ export function AddNodeMenu({ onSelect }: AddNodeMenuProps) {
 						.includes(normalizedQuery);
 				}),
 			})),
-		[nodeDefinitions, normalizedQuery],
+		[nodeDefinitions, nodeFilter, normalizedQuery],
 	);
 
 	return (
 		<div className="flex h-full min-h-0 flex-col p-5">
 			<div className="mb-4">
 				<div>
-					<p className="font-medium text-sm">Add a workflow node</p>
-					<p className="text-[11px] text-muted-foreground">
-						Choose a step for this automation.
+					<p className="font-medium text-sm">{title}</p>
+					<p className="text-muted-foreground text-xs">
+						{description}
 					</p>
 				</div>
 				<div className="relative mt-4">
@@ -115,8 +126,8 @@ export function AddNodeMenu({ onSelect }: AddNodeMenuProps) {
 					return (
 						<section key={category}>
 							<div className="mb-2 flex items-center gap-2 text-muted-foreground">
-								<Icon className="size-3.5" />
-								<p className="font-medium text-[11px] uppercase tracking-wide">
+								<Icon className="size-3.5" aria-hidden />
+								<p className="font-medium text-xs uppercase tracking-wide">
 									{CATEGORY_META[category].label}
 								</p>
 							</div>
@@ -133,13 +144,16 @@ export function AddNodeMenu({ onSelect }: AddNodeMenuProps) {
 											className="flex w-full items-start gap-3 rounded-lg border p-3 text-left transition-colors hover:border-primary hover:bg-muted/40"
 										>
 											<span className="flex size-8 shrink-0 items-center justify-center rounded-md bg-muted text-primary">
-												<NodeIcon className="size-4" />
+												<NodeIcon
+													className="size-4"
+													aria-hidden
+												/>
 											</span>
 											<span className="min-w-0 space-y-1">
 												<span className="block font-medium text-sm">
 													{node.label}
 												</span>
-												<span className="block text-[11px] text-muted-foreground">
+												<span className="block text-muted-foreground text-xs">
 													{node.description}
 												</span>
 											</span>

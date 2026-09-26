@@ -327,6 +327,7 @@ function canvasTypeForWorkflow(
 	if (category === "vector") return "vector-engine";
 	if (type === "function.execute") return "function-engine";
 	if (type === "control.wait") return "wait";
+	if (type === "control.loop") return "loop";
 	if (isRoutingWorkflowType(type)) return "branch";
 	return "app";
 }
@@ -430,6 +431,22 @@ function defaultCanvasConfig(
 	if (type === "control.wait") {
 		return { seconds: String(numberValue(config.durationSeconds, 5)) };
 	}
+	if (type === "control.loop") {
+		const items = config.items;
+		return {
+			mode: "forEach",
+			items:
+				typeof items === "string"
+					? items
+					: JSON.stringify(
+							Array.isArray(items) ? items : [],
+							null,
+							2,
+						),
+			batchSize: numberValue(config.batchSize, 1),
+			maxIterations: numberValue(config.maxIterations, 100),
+		};
+	}
 	if (type === "control.if") {
 		return { clauses: branchClauses(config.clauses) };
 	}
@@ -485,6 +502,8 @@ function canvasTypeToWorkflow(
 			return "function.execute";
 		case "wait":
 			return "control.wait";
+		case "loop":
+			return "control.loop";
 		case "branch":
 			return "control.if";
 		case "app":
@@ -608,6 +627,22 @@ function mergeCanvasConfig(
 			if (Number.isFinite(duration)) next.durationSeconds = duration;
 		}
 	}
+	if (type === "control.loop") {
+		const items = getConfigValue(config, "items");
+		const batchSize = getConfigValue(config, "batchSize");
+		const maxIterations = getConfigValue(config, "maxIterations");
+		next.mode = "forEach";
+		if (typeof items === "string") {
+			const trimmedItems = items.trim();
+			next.items = trimmedItems.startsWith("${")
+				? trimmedItems
+				: (parsedJsonValue(trimmedItems) ?? trimmedItems);
+		}
+		if (typeof batchSize === "number") next.batchSize = batchSize;
+		if (typeof maxIterations === "number") {
+			next.maxIterations = maxIterations;
+		}
+	}
 	if (type === "control.if") {
 		next.clauses = (
 			config as Extract<NodeConfig, { clauses: unknown }>
@@ -668,6 +703,7 @@ export function createCanvasWorkflowNode(
 		workflowType: type,
 		workflowConfig,
 		workflowCodeMode: definition.defaultCodeMode,
+		...(type === "control.loop" ? { body: { nodes: [], edges: [] } } : {}),
 	};
 }
 
@@ -696,6 +732,38 @@ function canvasNodeFromWorkflow(
 		workflowType: node.type,
 		workflowConfig,
 		workflowCodeMode: node.codeMode,
+		...(node.body
+			? {
+					body: {
+						nodes: node.body.nodes.map((bodyNode) =>
+							canvasNodeFromWorkflow(bodyNode, nodeSources),
+						),
+						edges: node.body.edges.map(workflowEdgeToCanvasEdge),
+					},
+				}
+			: {}),
+	};
+}
+
+function workflowEdgeToCanvasEdge(
+	edge: AutomationWorkflowEdge,
+): AutomationEdge {
+	return {
+		id: edge.id,
+		source: edge.source,
+		target: edge.target,
+		sourceHandle:
+			edge.sourcePort === "out"
+				? `out-${edge.source}`
+				: edge.sourcePort.startsWith("case:")
+					? `case-${edge.source}-${edge.sourcePort.slice(5)}`
+					: edge.sourcePort === "else"
+						? `else-${edge.source}`
+						: edge.sourcePort,
+		targetHandle:
+			edge.targetPort === "in" ? `in-${edge.target}` : edge.targetPort,
+		kind: edge.kind,
+		...(edge.kind === "data" ? { dataType: edge.dataType } : {}),
 	};
 }
 
@@ -726,25 +794,7 @@ export function canvasDocumentFromWorkflow(
 				? document.triggerBindings
 				: [MANUAL_TRIGGER],
 		steps,
-		edges: document.graph.edges.map((edge) => ({
-			id: edge.id,
-			source: edge.source,
-			target: edge.target,
-			sourceHandle:
-				edge.sourcePort === "out"
-					? `out-${edge.source}`
-					: edge.sourcePort.startsWith("case:")
-						? `case-${edge.source}-${edge.sourcePort.slice(5)}`
-						: edge.sourcePort === "else"
-							? `else-${edge.source}`
-							: edge.sourcePort,
-			targetHandle:
-				edge.targetPort === "in"
-					? `in-${edge.target}`
-					: edge.targetPort,
-			kind: edge.kind,
-			...(edge.kind === "data" ? { dataType: edge.dataType } : {}),
-		})),
+		edges: document.graph.edges.map(workflowEdgeToCanvasEdge),
 	};
 }
 
@@ -753,21 +803,116 @@ export function getCanvasNodeSources(
 ): AutomationNodeSources {
 	return Object.fromEntries(
 		steps.flatMap((step) => {
+			const bodySources = step.body
+				? Object.entries(getCanvasNodeSources(step.body.nodes))
+				: [];
 			const type = step.workflowType ?? canvasTypeToWorkflow(step.type);
 			if (
 				type === "trigger.start" ||
 				isRoutingWorkflowType(type) ||
 				step.workflowCodeMode !== "custom"
 			) {
-				return [];
+				return bodySources;
 			}
 			const source = step.workflowConfig?.pythonSource;
 			if (typeof source !== "string" || source.trim() === "") {
-				return [];
+				return bodySources;
 			}
-			return [[step.id, source]];
+			return [[step.id, source], ...bodySources];
 		}),
 	);
+}
+
+function canvasNodeToWorkflow(step: AutomationNode): AutomationWorkflowNode {
+	const type = step.workflowType ?? canvasTypeToWorkflow(step.type);
+	const definition = getWorkflowNodeDefinition(type);
+	if (!definition) throw new Error(`Unknown automation node type: ${type}`);
+	const config = mergeCanvasConfig(
+		type,
+		step.config,
+		step.workflowConfig ?? structuredClone(definition.defaultConfig),
+	);
+	// Every other node's Python is persisted as its own file under automation-nodes/,
+	// so carrying a copy in the config would duplicate it. The trigger has no such
+	// file: AutomationRuntime.triggerSource reads its optional setup source straight
+	// out of this config, making this the only place it can live.
+	const { pythonSource, ...persistedConfig } = config;
+	if (type === "trigger.start") {
+		persistedConfig.globals = sanitizeTriggerGlobals(
+			persistedConfig.globals,
+		);
+		if (typeof pythonSource === "string" && pythonSource.trim() !== "") {
+			persistedConfig.pythonSource = pythonSource;
+		}
+	}
+	return {
+		id: step.id,
+		type,
+		label: step.label || definition.label,
+		...(type === "trigger.start" || isRoutingWorkflowType(type)
+			? {}
+			: { outputVar: step.outputVar }),
+		position: step.position,
+		config: persistedConfig,
+		codeMode: isRoutingWorkflowType(type)
+			? "generated"
+			: (step.workflowCodeMode ?? definition.defaultCodeMode),
+		...(step.body
+			? {
+					body: canvasGraphToWorkflow(
+						step.body.nodes,
+						step.body.edges,
+					),
+				}
+			: {}),
+	};
+}
+
+function canvasEdgeToWorkflow(edge: AutomationEdge): AutomationWorkflowEdge {
+	return edge.kind === "data"
+		? {
+				id: edge.id,
+				kind: "data",
+				dataType: edge.dataType ?? "unknown",
+				source: edge.source,
+				sourcePort: edge.sourceHandle?.startsWith("out-")
+					? "out"
+					: (edge.sourceHandle ?? "result"),
+				target: edge.target,
+				targetPort: edge.targetHandle?.startsWith("in-")
+					? "in"
+					: (edge.targetHandle ?? "in"),
+			}
+		: {
+				id: edge.id,
+				kind: "control",
+				source: edge.source,
+				sourcePort: edge.sourceHandle?.startsWith("out-")
+					? "out"
+					: edge.sourceHandle?.startsWith("case-")
+						? `case:${edge.sourceHandle.slice(
+								`case-${edge.source}-`.length,
+							)}`
+						: edge.sourceHandle?.startsWith("else-")
+							? "else"
+							: (edge.sourceHandle ?? "out"),
+				target: edge.target,
+				targetPort: edge.targetHandle?.startsWith("in-")
+					? "in"
+					: (edge.targetHandle ?? "in"),
+			};
+}
+
+function canvasGraphToWorkflow(
+	steps: AutomationNode[],
+	edges: AutomationEdge[],
+): AutomationWorkflowDocument["graph"] {
+	const nodes = steps.map(canvasNodeToWorkflow);
+	const nodeIds = new Set(nodes.map((node) => node.id));
+	const graphEdges: AutomationWorkflowEdge[] = edges
+		.filter((edge) => nodeIds.has(edge.source) && nodeIds.has(edge.target))
+		.map(canvasEdgeToWorkflow);
+	return { nodes, edges: graphEdges };
 }
 
 export function canvasDocumentToWorkflow({
@@ -776,89 +921,12 @@ export function canvasDocumentToWorkflow({
 	steps,
 	edges,
 }: CanvasWorkflowDocument): AutomationWorkflowDocument {
-	const nodes = steps.map((step): AutomationWorkflowNode => {
-		const type = step.workflowType ?? canvasTypeToWorkflow(step.type);
-		const definition = getWorkflowNodeDefinition(type);
-		if (!definition)
-			throw new Error(`Unknown automation node type: ${type}`);
-		const config = mergeCanvasConfig(
-			type,
-			step.config,
-			step.workflowConfig ?? structuredClone(definition.defaultConfig),
-		);
-		// Every other node's Python is persisted as its own file under automation-nodes/,
-		// so carrying a copy in the config would duplicate it. The trigger has no such
-		// file: AutomationRuntime.triggerSource reads its optional setup source straight
-		// out of this config, making this the only place it can live.
-		const { pythonSource, ...persistedConfig } = config;
-		if (type === "trigger.start") {
-			persistedConfig.globals = sanitizeTriggerGlobals(
-				persistedConfig.globals,
-			);
-			if (
-				typeof pythonSource === "string" &&
-				pythonSource.trim() !== ""
-			) {
-				persistedConfig.pythonSource = pythonSource;
-			}
-		}
-		return {
-			id: step.id,
-			type,
-			label: step.label || definition.label,
-			...(type === "trigger.start" || isRoutingWorkflowType(type)
-				? {}
-				: { outputVar: step.outputVar }),
-			position: step.position,
-			config: persistedConfig,
-			codeMode: isRoutingWorkflowType(type)
-				? "generated"
-				: (step.workflowCodeMode ?? definition.defaultCodeMode),
-		};
-	});
-	const nodeIds = new Set(nodes.map((node) => node.id));
-	const graphEdges: AutomationWorkflowEdge[] = edges
-		.filter((edge) => nodeIds.has(edge.source) && nodeIds.has(edge.target))
-		.map((edge) =>
-			edge.kind === "data"
-				? {
-						id: edge.id,
-						kind: "data",
-						dataType: edge.dataType ?? "unknown",
-						source: edge.source,
-						sourcePort: edge.sourceHandle?.startsWith("out-")
-							? "out"
-							: (edge.sourceHandle ?? "result"),
-						target: edge.target,
-						targetPort: edge.targetHandle?.startsWith("in-")
-							? "in"
-							: (edge.targetHandle ?? "in"),
-					}
-				: {
-						id: edge.id,
-						kind: "control",
-						source: edge.source,
-						sourcePort: edge.sourceHandle?.startsWith("out-")
-							? "out"
-							: edge.sourceHandle?.startsWith("case-")
-								? `case:${edge.sourceHandle.slice(
-										`case-${edge.source}-`.length,
-									)}`
-								: edge.sourceHandle?.startsWith("else-")
-									? "else"
-									: (edge.sourceHandle ?? "out"),
-						target: edge.target,
-						targetPort: edge.targetHandle?.startsWith("in-")
-							? "in"
-							: (edge.targetHandle ?? "in"),
-					},
-		);
 	return {
 		formatVersion: 2,
 		...(description.trim() ? { description: description.trim() } : {}),
 		triggerBindings:
 			triggerBindings.length > 0 ? triggerBindings : [MANUAL_TRIGGER],
-		graph: { nodes, edges: graphEdges },
+		graph: canvasGraphToWorkflow(steps, edges),
 	};
 }
 
@@ -965,6 +1033,39 @@ export function validateCanvasWorkflowNode(
 			errors.push(
 				`Minimum confidence must be from ${minimumConfidence} through 1`,
 			);
+		}
+	}
+	if (type === "control.loop") {
+		const items = config.items;
+		const validReference =
+			typeof items === "string" &&
+			/^\$\{[A-Za-z_][A-Za-z0-9_]*}$/.test(items.trim());
+		let validArray = Array.isArray(items);
+		if (!validArray && typeof items === "string" && !validReference) {
+			try {
+				validArray = Array.isArray(JSON.parse(items));
+			} catch {
+				validArray = false;
+			}
+		}
+		if (!validReference && !validArray) {
+			errors.push(
+				"Items must be a JSON array or an exact $" +
+					"{variable} reference",
+			);
+		}
+		if (!node.body || node.body.nodes.length === 0) {
+			errors.push("Add at least one step inside the loop");
+		} else {
+			const bodyValidationNodes = [...allNodes, ...node.body.nodes];
+			for (const bodyNode of node.body.nodes) {
+				errors.push(
+					...validateCanvasWorkflowNode(
+						bodyNode,
+						bodyValidationNodes,
+					),
+				);
+			}
 		}
 	}
 	return errors;

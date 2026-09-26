@@ -23,6 +23,7 @@ export function useAutomationNode(nodeId: string) {
 		deleteDownstream: () => automation.deleteNodeAndDownstream(nodeId),
 		addAfter: (sourceHandle?: string) =>
 			automation.addNodeAfter(nodeId, sourceHandle),
+		update: automation.updateNode,
 		viewAgentRun: automation.viewAgentRun,
 	};
 }

@@ -8,6 +8,7 @@ import {
 	GitBranch,
 	type LucideIcon,
 	Network,
+	Repeat2,
 	SlidersHorizontal,
 	Sparkles,
 	Variable,
@@ -57,6 +58,9 @@ export function getWorkflowNodeDisplay(
 	}
 	if (type === "control.jev") {
 		return { icon: BrainCircuit, color: "text-violet-600" };
+	}
+	if (type === "control.loop") {
+		return { icon: Repeat2, color: "text-primary" };
 	}
 	return { icon: Braces, color: "text-primary" };
 }

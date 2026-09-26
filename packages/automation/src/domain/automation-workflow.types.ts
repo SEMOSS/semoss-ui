@@ -22,6 +22,7 @@ export type AutomationWorkflowNodeType =
 	| "control.wait"
 	| "control.if"
 	| "control.jev"
+	| "control.loop"
 	| "developer.python";
 
 export type AutomationPortKind = "control" | "data";
@@ -117,6 +118,8 @@ export interface AutomationWorkflowNode<
 	position: { x: number; y: number };
 	config: AutomationWorkflowNodeConfig;
 	codeMode: AutomationNodeCodeMode;
+	/** Nested acyclic graph executed by a container node such as control.loop. */
+	body?: AutomationWorkflowGraph;
 }
 
 export type AutomationWorkflowGraphNode = AutomationWorkflowNode;

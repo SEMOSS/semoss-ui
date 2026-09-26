@@ -18,6 +18,7 @@ export type AutomationNodeType =
 	| "function-engine"
 	| "app"
 	| "branch"
+	| "loop"
 	| "wait";
 
 // ─── shared form types ────────────────────────────────────────────────────────
@@ -117,6 +118,15 @@ export interface WaitConfig {
 	seconds: string;
 }
 
+/** Authoring configuration for a bounded for-each loop. */
+export interface LoopConfig {
+	mode: "forEach";
+	/** A JSON array or an exact ${scope_variable} reference. */
+	items: string;
+	batchSize: number;
+	maxIterations: number;
+}
+
 export interface BranchConfig {
 	clauses: AutomationBranchClause[];
 }
@@ -145,7 +155,14 @@ export type NodeConfig =
 	| AgentRunConfig
 	| BranchConfig
 	| JevDecisionConfig
+	| LoopConfig
 	| WaitConfig;
+
+/** Canvas projection of the nested graph owned by a container node. */
+export interface AutomationNodeBody {
+	nodes: AutomationNode[];
+	edges: AutomationEdge[];
+}
 
 export interface AutomationNode {
 	id: string;
@@ -161,6 +178,7 @@ export interface AutomationNode {
 	workflowType?: AutomationWorkflowNodeType;
 	workflowConfig?: AutomationWorkflowNodeConfig;
 	workflowCodeMode?: AutomationNodeCodeMode;
+	body?: AutomationNodeBody;
 }
 
 export interface AutomationEdge {

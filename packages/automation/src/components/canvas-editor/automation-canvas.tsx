@@ -97,6 +97,7 @@ import { DeletableEdge } from "./deletable-edge";
 import { getFlowStrokeColor } from "./flow-colors";
 import { AutomationNode as AutomationNodeCard } from "./nodes/automation-node";
 import { BranchNode } from "./nodes/branch-node";
+import { LoopNode } from "./nodes/loop-node";
 import { TriggerNode } from "./nodes/trigger-node";
 import type { AutomationTraceSnapshot } from "./tabs/runs-tab";
 import { UndoBanner } from "./undo-banner";
@@ -105,6 +106,7 @@ const nodeTypes = {
 	trigger: TriggerNode,
 	automation: AutomationNodeCard,
 	branch: BranchNode,
+	loop: LoopNode,
 } as const;
 
 const CHANGE_HIGHLIGHT_DURATION_MS = 2500;
@@ -183,6 +185,7 @@ const edgeTypes = {
 
 // ---- Layout constants ----
 const NODE_WIDTH = 280;
+const LOOP_EXPANDED_WIDTH = 640;
 const DEFAULT_NODE_HEIGHT = 120;
 const NODE_COLUMN_GAP = 100;
 const NODE_LANE_GAP = 40;
@@ -576,6 +579,9 @@ export const AutomationCanvasContent = forwardRef<
 		() => createInitialCanvasWorkflowDocument().steps,
 	);
 	const [graphEdges, setGraphEdges] = useState<AutomationEdge[]>([]);
+	const [expandedLoopIds, setExpandedLoopIds] = useState<Set<string>>(
+		() => new Set(),
+	);
 	const [scopeVariablesByNode, setScopeVariablesByNode] = useState<
 		Record<string, AutomationScopeEntry[]>
 	>({});
@@ -643,6 +649,32 @@ export const AutomationCanvasContent = forwardRef<
 		[historicalDoc, steps],
 	);
 	const displayEdges = historicalDoc ? historicalDoc.edges : graphEdges;
+	const expandedNodeOffsets = useMemo(() => {
+		const offsets = new Map<string, number>();
+		for (const loopId of expandedLoopIds) {
+			const downstreamIds = downstreamControlNodeIds(
+				[loopId],
+				displayEdges,
+			);
+			for (const nodeId of downstreamIds) {
+				if (nodeId === loopId) continue;
+				offsets.set(
+					nodeId,
+					(offsets.get(nodeId) ?? 0) +
+						(LOOP_EXPANDED_WIDTH - NODE_WIDTH),
+				);
+			}
+		}
+		return offsets;
+	}, [displayEdges, expandedLoopIds]);
+	const setLoopExpanded = useCallback((nodeId: string, expanded: boolean) => {
+		setExpandedLoopIds((current) => {
+			const next = new Set(current);
+			if (expanded) next.add(nodeId);
+			else next.delete(nodeId);
+			return next;
+		});
+	}, []);
 	const displayResults = useMemo(
 		() =>
 			historicalRun
@@ -2300,6 +2332,11 @@ export const AutomationCanvasContent = forwardRef<
 			);
 
 		displaySteps.forEach((step) => {
+			const expansionOffset = expandedNodeOffsets.get(step.id) ?? 0;
+			const displayPosition = {
+				x: step.position.x + expansionOffset,
+				y: step.position.y,
+			};
 			const outgoingEdges = displayEdges.filter(
 				(item) => item.source === step.id,
 			);
@@ -2308,7 +2345,7 @@ export const AutomationCanvasContent = forwardRef<
 				newNodes.push({
 					id: step.id,
 					type: "trigger",
-					position: step.position,
+					position: displayPosition,
 					data: {
 						label: description.trim() || "Start",
 						devMode,
@@ -2358,7 +2395,7 @@ export const AutomationCanvasContent = forwardRef<
 				newNodes.push({
 					id: step.id,
 					type: "branch",
-					position: step.position,
+					position: displayPosition,
 					data: {
 						step,
 						index: stepDisplayOrder.get(step.id) ?? 0,
@@ -2378,6 +2415,34 @@ export const AutomationCanvasContent = forwardRef<
 					},
 					style: { width: NODE_WIDTH },
 				});
+			} else if (step.type === "loop") {
+				newNodes.push({
+					id: step.id,
+					type: "loop",
+					position: displayPosition,
+					zIndex: expandedLoopIds.has(step.id) ? 10 : 0,
+					data: {
+						step,
+						index: stepDisplayOrder.get(step.id) ?? 0,
+						runStatus: displayStatuses[step.id],
+						runError: displayErrors[step.id],
+						runDuration: displayDurations[step.id],
+						runOutput: stepOutputPreviews[step.id] ?? null,
+						isIncomplete:
+							validateCanvasWorkflowNode(step, steps).length >
+								0 && !displayStatuses[step.id],
+						locked: running || readOnly || viewingHistory,
+						highlighted: isStepHighlighted(
+							changeHighlight,
+							step.id,
+						),
+						pathHighlighted: highlightedPathNodeIds.has(step.id),
+						expanded: expandedLoopIds.has(step.id),
+						onExpandedChange: (expanded: boolean) =>
+							setLoopExpanded(step.id, expanded),
+					},
+					style: { width: "auto" },
+				});
 			} else {
 				const runTrace = displayResults.find(
 					(result) => result.NODE_ID === step.id,
@@ -2385,7 +2450,7 @@ export const AutomationCanvasContent = forwardRef<
 				newNodes.push({
 					id: step.id,
 					type: "automation",
-					position: step.position,
+					position: displayPosition,
 					data: {
 						step,
 						index: stepDisplayOrder.get(step.id) ?? 0,
@@ -2441,6 +2506,8 @@ export const AutomationCanvasContent = forwardRef<
 		steps,
 		displaySteps,
 		displayEdges,
+		expandedLoopIds,
+		expandedNodeOffsets,
 		displayStatuses,
 		displayErrors,
 		displayDurations,
@@ -2462,6 +2529,7 @@ export const AutomationCanvasContent = forwardRef<
 		layoutNodes,
 		setRfNodes,
 		setRfEdges,
+		setLoopExpanded,
 	]);
 
 	useEffect(() => {
@@ -2512,13 +2580,21 @@ export const AutomationCanvasContent = forwardRef<
 			setSteps((previousSteps) =>
 				previousSteps.map((step) =>
 					step.id === draggedNode.id
-						? { ...step, position: { ...draggedNode.position } }
+						? {
+								...step,
+								position: {
+									x:
+										draggedNode.position.x -
+										(expandedNodeOffsets.get(step.id) ?? 0),
+									y: draggedNode.position.y,
+								},
+							}
 						: step,
 				),
 			);
 			setIsDirty(true);
 		},
-		[readOnly, viewingHistory],
+		[expandedNodeOffsets, readOnly, viewingHistory],
 	);
 
 	const cleanUpLayout = useCallback(() => {
@@ -2552,6 +2628,7 @@ export const AutomationCanvasContent = forwardRef<
 			deleteNodeAndDownstream: (nodeId: string) =>
 				setDeleteDownstreamStepId(nodeId),
 			addNodeAfter,
+			updateNode: updateStep,
 			viewAgentRun: onViewAgentRun,
 		}),
 		[
@@ -2562,6 +2639,7 @@ export const AutomationCanvasContent = forwardRef<
 			openNode,
 			readOnly,
 			running,
+			updateStep,
 			viewingHistory,
 		],
 	);

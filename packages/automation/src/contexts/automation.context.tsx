@@ -13,6 +13,7 @@ export interface AutomationContextValue {
 	deleteNode: (nodeId: string) => void;
 	deleteNodeAndDownstream: (nodeId: string) => void;
 	addNodeAfter: (nodeId: string, sourceHandle?: string) => void;
+	updateNode: (node: AutomationNode) => void;
 	viewAgentRun: (trace: AutomationNodeTrace) => void;
 }
 

@@ -6,6 +6,7 @@ import type {
 	DatabaseEngineConfig,
 	FunctionEngineConfig,
 	JevDecisionConfig,
+	LoopConfig,
 	ModelEngineConfig,
 	StorageEngineConfig,
 	VectorEngineConfig,
@@ -17,6 +18,7 @@ import { BranchConditionBuilder } from "./forms/branch-condition-builder";
 import { DatabaseEngineForm } from "./forms/database-engine-form";
 import { FunctionEngineForm } from "./forms/function-engine-form";
 import { JevDecisionForm } from "./forms/jev-decision-form";
+import { LoopForm } from "./forms/loop-form";
 import { ModelEngineForm } from "./forms/model-engine-form";
 import { PillInput } from "./forms/pill-input";
 import { StorageEngineForm } from "./forms/storage-engine-form";
@@ -145,6 +147,37 @@ export function StepForm({
 						<span className="font-mono">${"{variableName}"}</span>.
 					</p>
 				</div>
+			);
+		}
+		case "loop": {
+			const c = step.config as LoopConfig;
+			return (
+				<LoopForm
+					step={step}
+					config={c}
+					upstreamVars={upstreamVars}
+					onChange={update}
+					onBodyChange={(body) => {
+						if (readOnly) return;
+						onUpdate({ ...step, body });
+					}}
+					renderBodyNode={(
+						bodyNode,
+						bodyUpstreamVars,
+						onBodyUpdate,
+					) => (
+						<StepForm
+							key={bodyNode.id}
+							step={bodyNode}
+							upstreamVars={bodyUpstreamVars}
+							onUpdate={onBodyUpdate}
+							devMode={devMode}
+							appId={appId}
+							readOnly={readOnly}
+						/>
+					)}
+					readOnly={readOnly}
+				/>
 			);
 		}
 		case "branch": {
