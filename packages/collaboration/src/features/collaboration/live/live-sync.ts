@@ -16,8 +16,6 @@ import { runBatch } from "./live-state";
 
 // commands with no backend yet; their effects stay in this browser session
 const SESSION_ONLY = new Set<CollaborationCommand["type"]>([
-	"workspace.step",
-	"workspace.fact",
 	"source.import",
 	"source.status",
 	"live-profile.set",
@@ -59,6 +57,10 @@ export function createLiveSync(
 	// topics this session deleted or merged away, so an undo that brings one back is known up front
 	const removedTopics = new Set<string>();
 	let queue = Promise.resolve();
+	const withServerIds = (statement: string) =>
+		statement.replace(/"(local-[^"]+)"/g, (match, local) =>
+			ids.has(local) ? JSON.stringify(ids.get(local)) : match,
+		);
 
 	return (settled) => {
 		// an undo can carry commands that changed nothing (the 30 s snooze check); it is saved by diff alone
@@ -106,20 +108,17 @@ export function createLiveSync(
 		queue = queue
 			.then(async () => {
 				for (const create of plan.creates) {
-					const [out] = await runBatch(actions, [create.statement]);
+					// a step can point at an item created earlier in this change
+					const [out] = await runBatch(actions, [
+						withServerIds(create.statement),
+					]);
 					const serverId = create.idOf(out);
 					if (serverId) ids.set(create.localId, serverId);
 				}
 				// statements built before the creates ran still hold local ids
 				const outputs = await runBatch(
 					actions,
-					plan.statements.map((statement) =>
-						statement.replace(/"(local-[^"]+)"/g, (match, local) =>
-							ids.has(local)
-								? JSON.stringify(ids.get(local))
-								: match,
-						),
-					),
+					plan.statements.map(withServerIds),
 				);
 				outputs.forEach((out, index) => {
 					const { topicId, changeId } = (out ?? {}) as {
@@ -188,6 +187,7 @@ export function planChange(
 	planTopics(plan, prev, next, id);
 	planThreads(plan, prev, next, id);
 	planItems(plan, prev, next, id);
+	planWorkspaces(plan, prev, next, id);
 	planPeople(plan, prev, next, id);
 	planRules(plan, prev, next, id);
 	planReviews(plan, prev, next, change.commands, id);
@@ -633,6 +633,107 @@ function planProfile(
 				settings: pick(next.settings, changed),
 			}),
 		);
+}
+
+const STEP_FIELDS = [
+	"text",
+	"kind",
+	"status",
+	"ownerId",
+	"due",
+	"itemId",
+	"linkTopicId",
+] as const;
+const FACT_FIELDS = ["text", "from", "status", "sourcePersonId"] as const;
+
+// steps and facts are saved one row at a time; a cleared field goes out as "" since pixel drops nulls
+function planWorkspaces(
+	plan: Plan,
+	prev: CollaborationState,
+	next: CollaborationState,
+	id: (v: string) => string,
+) {
+	const threadIds = new Set([
+		...Object.keys(prev.workspaces),
+		...Object.keys(next.workspaces),
+	]);
+	for (const threadId of threadIds) {
+		if (imported(threadId)) continue;
+		const before = prev.workspaces[threadId];
+		const after = next.workspaces[threadId];
+		if (before === after) continue;
+		planRows(plan, threadId, before?.steps ?? [], after?.steps ?? [], {
+			fields: STEP_FIELDS,
+			save: "WorkSaveStep",
+			remove: "WorkDeleteStep",
+			key: "step",
+			idKey: "stepId",
+			id,
+		});
+		planRows(plan, threadId, before?.facts ?? [], after?.facts ?? [], {
+			fields: FACT_FIELDS,
+			save: "WorkSaveFact",
+			remove: "WorkDeleteFact",
+			key: "fact",
+			idKey: "factId",
+			id,
+		});
+	}
+}
+
+function planRows<T extends { id: string }>(
+	plan: Plan,
+	threadId: string,
+	oldRows: T[],
+	newRows: T[],
+	how: {
+		fields: readonly (keyof T & string)[];
+		save: string;
+		remove: string;
+		key: string;
+		idKey: string;
+		id: (v: string) => string;
+	},
+) {
+	const before = byId(oldRows);
+	const after = byId(newRows);
+	for (const row of newRows) {
+		const old = before.get(row.id);
+		if (!old) {
+			const fields = Object.fromEntries(
+				how.fields
+					.filter((field) => row[field] != null && row[field] !== "")
+					.map((field) => [field, row[field]]),
+			);
+			if (LOCAL.test(row.id))
+				plan.creates.push({
+					localId: row.id,
+					statement: pixel(how.save, { threadId, [how.key]: fields }),
+					idOf: (out) => (out as { id?: string })?.id,
+				});
+			continue;
+		}
+		const changed = how.fields.filter(
+			(field) => !same(old[field], row[field]),
+		);
+		if (changed.length)
+			plan.statements.push(
+				pixel(how.save, {
+					threadId,
+					[how.key]: {
+						id: how.id(row.id),
+						...Object.fromEntries(
+							changed.map((field) => [field, row[field] ?? ""]),
+						),
+					},
+				}),
+			);
+	}
+	for (const row of oldRows)
+		if (!after.has(row.id) && !LOCAL.test(how.id(row.id)))
+			plan.statements.push(
+				pixel(how.remove, { threadId, [how.idKey]: how.id(row.id) }),
+			);
 }
 
 function planRooms(

@@ -17,7 +17,13 @@ function fakeActions() {
 				operationType: ["OPERATION"],
 				output: /^Brain(MergeTopics|DeleteTopic)\(/.test(statement)
 					? { topicId: "t-geng", changeId: "change-1" }
-					: true,
+					: /^WorkCreateItem\(/.test(statement)
+						? { id: "wi-new" }
+						: /^WorkSave(Step|Fact)\(/.test(statement)
+							? {
+									id: `server-${statement.slice(8, 12).toLowerCase()}`,
+								}
+							: true,
 			})),
 		};
 	});
@@ -107,4 +113,65 @@ it("an undo carrying a no-op snooze check is still saved", async () => {
 	});
 	await vi.waitFor(() => expect(sent).toHaveLength(2));
 	expect(sent[1]).toBe('BrainUndoTopicChange(changeId=["change-1"]);');
+});
+
+it("a new item's step is saved after the item, with the item's server id", async () => {
+	const { actions, sent } = fakeActions();
+	const sync = createLiveSync(actions, vi.fn());
+	const created = step({
+		type: "item.create",
+		threadId: "th-geng-review",
+		text: "Call the vendor",
+	});
+	sync({ ...created, undo: false });
+	await vi.waitFor(() => expect(sent).toHaveLength(2));
+	expect(sent[0]).toMatch(/^WorkCreateItem\(/);
+	expect(sent[1]).toMatch(/^WorkSaveStep\(threadId=\["th-geng-review"\]/);
+	expect(sent[1]).toContain('"itemId":"wi-new"');
+	expect(sent[1]).toContain('"text":"Call the vendor"');
+});
+
+it("step and fact edits and removals go out as saves and deletes", async () => {
+	const { actions, sent } = fakeActions();
+	const sync = createLiveSync(actions, vi.fn());
+	let state = createInitialCollaborationState();
+	const apply = (command: CollaborationCommand) => {
+		const next = collaborationReducer(state, command, NOW);
+		sync({ previous: state, next, commands: [command], undo: false });
+		state = next;
+	};
+	apply({
+		type: "workspace.step",
+		threadId: "th-geng-review",
+		operation: "save",
+		step: { text: "Draft the reply", kind: "reply" },
+	});
+	apply({
+		type: "workspace.fact",
+		threadId: "th-geng-review",
+		operation: "save",
+		fact: { text: "Budget is approved" },
+	});
+	await vi.waitFor(() => expect(sent).toHaveLength(2));
+	const stepId = state.workspaces["th-geng-review"].steps.at(-1)?.id ?? "";
+	const factId = state.workspaces["th-geng-review"].facts.at(-1)?.id ?? "";
+	apply({
+		type: "workspace.step",
+		threadId: "th-geng-review",
+		operation: "save",
+		step: { id: stepId, status: "done", due: null },
+	});
+	apply({
+		type: "workspace.fact",
+		threadId: "th-geng-review",
+		operation: "remove",
+		fact: { id: factId },
+	});
+	await vi.waitFor(() => expect(sent).toHaveLength(4));
+	expect(sent[2]).toMatch(/^WorkSaveStep\(/);
+	expect(sent[2]).toContain('"id":"server-step"');
+	expect(sent[2]).toContain('"status":"done"');
+	expect(sent[3]).toBe(
+		'WorkDeleteFact(threadId=["th-geng-review"], factId=["server-fact"]);',
+	);
 });

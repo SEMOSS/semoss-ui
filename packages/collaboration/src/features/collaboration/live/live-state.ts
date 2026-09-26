@@ -1,5 +1,6 @@
 import type { InsightActions } from "@/lib/pixel";
 import { PixelError, pixel } from "@/lib/pixel";
+import { createEmptyWorkspace } from "../state/collaboration.reducer";
 import type {
 	Account,
 	CollaborationCommand,
@@ -11,9 +12,12 @@ import type {
 	Settings,
 	SourceStatus,
 	Thread,
+	ThreadWorkspace,
 	Topic,
 	WorkItem,
+	WorkspaceFact,
 	WorkspaceMessage,
+	WorkspaceStep,
 } from "../state/collaboration.types";
 
 // Live data: Brain and Work state loaded from the Collaboration reactors instead of the sample fixtures.
@@ -328,6 +332,7 @@ export async function loadLiveState(
 		dismissedReviews,
 		rulesPage,
 		roomsPage,
+		workspacesPage,
 	] = (await runBatch(actions, [
 		pixel("BrainGetProfile"),
 		pixel("BrainGetSettings"),
@@ -341,9 +346,11 @@ export async function loadLiveState(
 		pixel("BrainListReview", { status: "dismissed", limit: 1000 }),
 		pixel("BrainListRules"),
 		pixel("WorkListOpenRooms"),
+		pixel("WorkListWorkspaces"),
 	])) as [
 		Row,
 		Row,
+		Page,
 		Page,
 		Page,
 		Page,
@@ -388,10 +395,50 @@ export async function loadLiveState(
 			(row) => ({ ...row, isSample: false }) as unknown as Rule,
 		),
 		sources: mapSources(settings),
-		workspaces: {},
+		workspaces: mapWorkspaces(workspacesPage),
 		openThreadIds: roomsPage.items.map((room) => str(room.threadId)),
 		sequence: 1,
 	};
+}
+
+// saved goal, steps, and facts; messages load when the thread opens
+function mapWorkspaces(page: Page): Record<string, ThreadWorkspace> {
+	return Object.fromEntries(
+		page.items.map((row) => [
+			str(row.threadId),
+			{
+				...createEmptyWorkspace(),
+				goal: str(row.goal),
+				steps: list<Row>(row.steps).map(
+					(step): WorkspaceStep => ({
+						id: str(step.id),
+						text: str(step.text),
+						ownerId: str(step.ownerId, "me"),
+						due: opt(step.due) ?? null,
+						status: str(
+							step.status,
+							"open",
+						) as WorkspaceStep["status"],
+						kind: str(step.kind, "task") as WorkspaceStep["kind"],
+						itemId: opt(step.itemId),
+						linkTopicId: opt(step.linkTopicId),
+					}),
+				),
+				facts: list<Row>(row.facts).map(
+					(fact): WorkspaceFact => ({
+						id: str(fact.id),
+						text: str(fact.text),
+						from: str(fact.from),
+						status: str(
+							fact.status,
+							"confirmed",
+						) as WorkspaceFact["status"],
+						sourcePersonId: opt(fact.sourcePersonId),
+					}),
+				),
+			},
+		]),
+	);
 }
 
 /** Reads a thread's messages; the command attaches them to the thread as it is when they arrive. */
