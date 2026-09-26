@@ -18,6 +18,10 @@ import {
 	mergeToolStates,
 	threadFromMessages,
 } from "@/features/messages/utils/thread-items";
+import {
+	readLastModel,
+	rememberLastModel,
+} from "@/features/rooms/api/last-model";
 import { optimizePrompt } from "@/features/rooms/api/optimize-prompt";
 import { useAgentTurn } from "@/features/rooms/api/use-agent-turn";
 import { useRoomModel } from "@/features/rooms/api/use-room-model";
@@ -61,7 +65,7 @@ export function RoomPage() {
 	const modelSelection = useRoomModelSelection(
 		roomId ?? "",
 		room,
-		agent.config_json?.model_id,
+		agent.config_json?.model_id || readLastModel()?.modelId,
 	);
 	const { modelId } = modelSelection;
 	const modelLookup = useRoomModel(modelId);
@@ -138,6 +142,10 @@ export function RoomPage() {
 				return;
 			try {
 				await modelSelection.selectModel(engine);
+				rememberLastModel(
+					engine.engine_id,
+					engine.engine_display_name || engine.engine_name,
+				);
 				if (roomId) updateRoom(roomId, { modelId: engine.engine_id });
 			} catch (cause) {
 				toast.error(

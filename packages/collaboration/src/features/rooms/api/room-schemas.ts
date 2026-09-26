@@ -92,10 +92,20 @@ const playgroundRoomOptionsSchema = z
 export type PlaygroundRoomOptions = z.infer<typeof playgroundRoomOptionsSchema>;
 
 /** `GetRoomOptions` returns an envelope, not a raw options object. */
-export const roomOptionsEnvelopeSchema = z.object({
-	OPTIONS: playgroundRoomOptionsSchema,
-	ROOM_NAME: z.string().nullish(),
-});
+export const roomOptionsEnvelopeSchema = z.preprocess(
+	// a room made without a workspace has no stored options, so SEMOSS leaves OPTIONS out
+	(value) =>
+		value !== null &&
+		typeof value === "object" &&
+		!Array.isArray(value) &&
+		Object.keys(value).every((key) => key === "ROOM_NAME")
+			? { ...value, OPTIONS: {} }
+			: value,
+	z.object({
+		OPTIONS: playgroundRoomOptionsSchema,
+		ROOM_NAME: z.string().nullish(),
+	}),
+);
 
 export const createdPlaygroundRoomSchema = z.object({ roomId: z.string() });
 export const roomWriteSchema = z.boolean();

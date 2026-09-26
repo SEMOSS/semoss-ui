@@ -106,17 +106,13 @@ beforeEach(() => {
 	mocks.send.mockResolvedValue(undefined);
 });
 
-it("requires the source retention acknowledgement and sends only the supplied snapshot", async () => {
-	const input = props();
-	const view = render(<ThreadAssistantView {...input} />);
+it("sends the thread context without asking first and only the supplied snapshot", async () => {
+	render(<ThreadAssistantView {...props()} />);
 	expect(
-		screen.getByRole("button", { name: "Ask Assistant" }),
-	).toBeDisabled();
-	fireEvent.click(
-		screen.getByRole("checkbox", {
+		screen.queryByRole("checkbox", {
 			name: "Include this context in my saved conversation",
 		}),
-	);
+	).toBeNull();
 	fireEvent.click(screen.getByRole("button", { name: "Ask Assistant" }));
 	await waitFor(() =>
 		expect(mocks.send).toHaveBeenCalledWith(
@@ -131,16 +127,6 @@ it("requires the source retention acknowledgement and sends only the supplied sn
 			[],
 		),
 	);
-	view.rerender(
-		<ThreadAssistantView
-			{...input}
-			contextRevision="revision-2"
-			contextText="Newly selected context"
-		/>,
-	);
-	expect(
-		screen.getByRole("button", { name: "Ask Assistant" }),
-	).toBeDisabled();
 });
 
 it("allows live model queries on samples and queues native attachment IDs without staging on selection", async () => {

@@ -17,6 +17,10 @@ import {
 	evictIdleAgentTurnControllers,
 	getAgentTurnController,
 } from "@/features/rooms/api/agent-turn-registry";
+import {
+	readLastModel,
+	rememberLastModel,
+} from "@/features/rooms/api/last-model";
 import type {
 	ComposerSubmission,
 	PendingToolApproval,
@@ -71,8 +75,9 @@ export class ThreadSession {
 		isPreparing: false,
 		error: null,
 		association: null,
-		modelId: "",
-		modelName: "",
+		// a thread without a conversation yet starts on the last model picked in this browser
+		modelId: readLastModel()?.modelId ?? "",
+		modelName: readLastModel()?.modelName ?? "",
 		turn: EMPTY_TURN,
 		hasUnconfirmedSubmission: false,
 		submissionNotice: null,
@@ -236,6 +241,7 @@ export class ThreadSession {
 			this.snapshot.hasUnconfirmedSubmission
 		)
 			return;
+		rememberLastModel(modelId, modelName);
 		this.update({ modelId, modelName });
 	}
 

@@ -1,12 +1,10 @@
 import { FileText, PanelsTopLeft, Sparkles } from "lucide-react";
-import { useEffect, useId, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
 	Alert,
 	AlertDescription,
 	Button,
-	Checkbox,
 	H2,
-	Label,
 	P,
 	Sheet,
 	SheetContent,
@@ -53,16 +51,12 @@ export function ThreadAssistantView({
 	threadTitle,
 	contextText,
 	contextRevision,
-	isConnected,
 	onDraft,
 	sourceUid,
 	sourceAttachments = [],
 	session,
 	snapshot,
 }: ThreadAssistantViewProps) {
-	const [acknowledgedRevision, setAcknowledgedRevision] = useState<
-		string | null
-	>(null);
 	const attachmentSelectionKey = `${contextRevision}:${snapshot.composerResetKey}`;
 	const [attachmentSelection, setAttachmentSelection] = useState({
 		key: attachmentSelectionKey,
@@ -75,7 +69,6 @@ export function ThreadAssistantView({
 	const [resumeSignal, setResumeSignal] = useState(0);
 	const [isAttachmentDownloading, setIsAttachmentDownloading] =
 		useState(false);
-	const noticeId = useId();
 	const workbench = useToolWorkbench();
 	const { store } = workbench;
 	const { turn, association } = snapshot;
@@ -104,10 +97,6 @@ export function ThreadAssistantView({
 		turn.isRunning ||
 		turn.isSubmitting ||
 		turn.isRestoring;
-	const shouldShowNotice =
-		isConnected &&
-		acknowledgedRevision !== contextRevision &&
-		submitted?.contextRevision !== contextRevision;
 	const shouldStartFresh = Boolean(
 		association &&
 			(!canContinueThreadRoom(association) ||
@@ -286,37 +275,6 @@ export function ThreadAssistantView({
 				onReconnect={session.reconnect}
 			/>
 			<div className="space-y-3 pt-2">
-				{shouldShowNotice && (
-					<div className="space-y-3 rounded-lg bg-muted/50 p-3">
-						<P className="text-sm">
-							Selected source content will be saved in this
-							assistant conversation when you send. Excluding it
-							later affects future questions; it does not remove
-							content already saved in earlier conversations.
-						</P>
-						<div className="flex items-start gap-2">
-							<Checkbox
-								id={noticeId}
-								checked={
-									acknowledgedRevision === contextRevision
-								}
-								onCheckedChange={(checked) =>
-									setAcknowledgedRevision(
-										checked === true
-											? contextRevision
-											: null,
-									)
-								}
-							/>
-							<Label
-								htmlFor={noticeId}
-								className="text-sm leading-5"
-							>
-								Include this context in my saved conversation
-							</Label>
-						</div>
-					</div>
-				)}
 				{sourceUid &&
 					sourceAttachments.some(
 						(attachment) => attachment.isFile,
@@ -368,7 +326,6 @@ export function ThreadAssistantView({
 					isModelLocked={isBusy || snapshot.hasUnconfirmedSubmission}
 					modelError={modelError}
 					isSendDisabled={
-						shouldShowNotice ||
 						isAttachmentDownloading ||
 						Boolean(snapshot.error) ||
 						snapshot.hasUnconfirmedSubmission ||
