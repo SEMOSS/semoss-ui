@@ -15,7 +15,7 @@ function fakeActions() {
 		return {
 			pixelReturn: statements.map((statement) => ({
 				operationType: ["OPERATION"],
-				output: statement.startsWith("BrainMergeTopics(")
+				output: /^Brain(MergeTopics|DeleteTopic)\(/.test(statement)
 					? { topicId: "t-geng", changeId: "change-1" }
 					: true,
 			})),
@@ -72,4 +72,20 @@ it("an undo that brings back no removed topic is saved as a normal change", asyn
 	await vi.waitFor(() => expect(sent).toHaveLength(2));
 	expect(sent.some((s) => s.startsWith("BrainUndoTopicChange"))).toBe(false);
 	expect(sent[1]).toMatch(/^BrainSaveTopic\(/);
+});
+
+it("a delete sends one BrainDeleteTopic, and its undo puts the topic back", async () => {
+	const { actions, sent } = fakeActions();
+	const sync = createLiveSync(actions, vi.fn());
+	const deleted = step({ type: "topic.delete", topicId: "t-geng" });
+	sync({ ...deleted, undo: false });
+	sync({
+		previous: deleted.next,
+		next: deleted.previous,
+		commands: [],
+		undo: true,
+	});
+	await vi.waitFor(() => expect(sent).toHaveLength(2));
+	expect(sent[0]).toBe('BrainDeleteTopic(topicId=["t-geng"]);');
+	expect(sent[1]).toBe('BrainUndoTopicChange(changeId=["change-1"]);');
 });

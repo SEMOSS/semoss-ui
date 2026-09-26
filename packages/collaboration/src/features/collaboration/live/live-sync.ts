@@ -169,6 +169,20 @@ export function planChange(
 			);
 		return plan;
 	}
+	// a delete drops the topic's links, people, notes, and rules on the server in one call
+	const deletes = change.commands.filter(
+		(
+			command,
+		): command is Extract<CollaborationCommand, { type: "topic.delete" }> =>
+			command.type === "topic.delete",
+	);
+	if (deletes.length) {
+		for (const deleted of deletes)
+			plan.statements.push(
+				pixel("BrainDeleteTopic", { topicId: id(deleted.topicId) }),
+			);
+		return plan;
+	}
 	planTopics(plan, prev, next, id);
 	planThreads(plan, prev, next, id);
 	planItems(plan, prev, next, id);
