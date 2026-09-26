@@ -243,6 +243,35 @@ function mergeTopics(
 	state.topics = state.topics.filter((topic) => topic.id !== sourceId);
 }
 
+/** Mirrors BrainDeleteTopic: links, rules, and open reviews about the topic go with it. */
+function deleteTopic(
+	state: CollaborationState,
+	topicId: string,
+	now: string,
+): void {
+	if (!state.topics.some((topic) => topic.id === topicId)) return;
+	for (const thread of state.threads) {
+		if (!thread.topicLinks.some((link) => link.topicId === topicId))
+			continue;
+		// a thread that loses its primary gets its next most confident link
+		thread.topicLinks = normalizeTopicLinks(
+			thread.topicLinks.filter((link) => link.topicId !== topicId),
+		);
+	}
+	for (const item of state.items)
+		item.topicIds = item.topicIds.filter((id) => id !== topicId);
+	state.rules = state.rules.filter((rule) => rule.topicId !== topicId);
+	for (const review of state.reviews)
+		if (review.refId === topicId && review.status === "open") {
+			review.status = "dismissed";
+			review.resolvedAt = now;
+		}
+	for (const workspace of Object.values(state.workspaces))
+		for (const step of workspace.steps)
+			if (step.linkTopicId === topicId) step.linkTopicId = undefined;
+	state.topics = state.topics.filter((topic) => topic.id !== topicId);
+}
+
 function syncThreadItems(state: CollaborationState, threadId: string): void {
 	const thread = state.threads.find((candidate) => candidate.id === threadId);
 	if (!thread) return;
@@ -294,6 +323,9 @@ export function collaborationReducer(
 		}
 		case "topic.merge":
 			mergeTopics(state, command.sourceId, command.targetId);
+			break;
+		case "topic.delete":
+			deleteTopic(state, command.topicId, now);
 			break;
 		case "topic.person": {
 			const topic = state.topics.find(

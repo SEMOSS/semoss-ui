@@ -319,6 +319,7 @@ export interface CollaborationState {
 export type CollaborationCommand =
 	| { type: "topic.save"; topic: Partial<Topic> & { name?: string } }
 	| { type: "topic.merge"; sourceId: string; targetId: string }
+	| { type: "topic.delete"; topicId: string }
 	| {
 			type: "topic.person";
 			topicId: string;
