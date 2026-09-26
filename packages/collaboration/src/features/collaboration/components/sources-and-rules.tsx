@@ -26,6 +26,9 @@ export function SourcesAndRules() {
 					<Button asChild variant="outline">
 						<Link to="/work">Go to Work</Link>
 					</Button>
+					<Button asChild variant="outline">
+						<Link to="/onboarding">Import mail again</Link>
+					</Button>
 				</Section>
 			}
 			asideTitle="Source information"

@@ -117,6 +117,14 @@ export const routes: RouteObject[] = [
 							},
 						],
 					},
+					{
+						path: "onboarding",
+						id: "onboarding",
+						lazy: async () => ({
+							Component: (await import("@/pages/onboarding.page"))
+								.OnboardingPage,
+						}),
+					},
 				],
 			},
 			{

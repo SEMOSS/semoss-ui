@@ -1,6 +1,6 @@
 import { Menu, Moon, Sun, Undo2 } from "lucide-react";
 import { useEffect, useId, useRef, useState } from "react";
-import { NavLink, Outlet } from "react-router";
+import { Link, NavLink, Outlet } from "react-router";
 import {
 	Button,
 	cn,
@@ -15,6 +15,7 @@ import {
 	useTheme,
 } from "@semoss/ui/next";
 import { useCurrentUser } from "@/features/account/api/use-current-user";
+import { isLiveData } from "../live/live-state";
 import { useCollaborationSession } from "../state/collaboration-session.context";
 import { CollaborationNavigation } from "./collaboration-navigation";
 import { CollaborationSearch } from "./collaboration-search";
@@ -22,7 +23,9 @@ import { PersonAvatar } from "./person-avatar";
 
 /** Shell implementation is exported separately for focused navigation tests. */
 export function CollaborationShell() {
-	const { undo, canUndo, dispatch } = useCollaborationSession();
+	const { undo, canUndo, dispatch, state } = useCollaborationSession();
+	// a live owner with no mail yet starts with onboarding
+	const needsSetup = isLiveData() && state.threads.length === 0;
 	const { theme, setTheme } = useTheme();
 	const user = useCurrentUser();
 	const mainId = useId();
@@ -175,6 +178,17 @@ export function CollaborationShell() {
 					tabIndex={-1}
 					className="flex min-h-0 min-w-0 flex-1 flex-col outline-none"
 				>
+					{needsSetup && (
+						<div className="m-2 flex flex-wrap items-center justify-between gap-2 rounded-xl bg-card p-3 text-sm shadow-sm ring-1 ring-border/50 sm:mt-3 sm:mr-2 sm:ml-1">
+							<span>
+								No mail yet. Set up with your mailbox to fill
+								Work and Brain.
+							</span>
+							<Button asChild size="sm">
+								<Link to="/onboarding">Set up</Link>
+							</Button>
+						</div>
+					)}
 					<Outlet />
 				</main>
 			</div>
