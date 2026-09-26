@@ -60,7 +60,9 @@ export function createLiveSync(
 	const removedTopics = new Set<string>();
 	let queue = Promise.resolve();
 
-	return (change) => {
+	return (settled) => {
+		// an undo can carry commands that changed nothing (the 30 s snooze check); it is saved by diff alone
+		const change = settled.undo ? { ...settled, commands: [] } : settled;
 		const unsaved = change.commands.filter((command) =>
 			SESSION_ONLY.has(command.type),
 		);

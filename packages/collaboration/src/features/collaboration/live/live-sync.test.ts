@@ -89,3 +89,22 @@ it("a delete sends one BrainDeleteTopic, and its undo puts the topic back", asyn
 	expect(sent[0]).toBe('BrainDeleteTopic(topicId=["t-geng"]);');
 	expect(sent[1]).toBe('BrainUndoTopicChange(changeId=["change-1"]);');
 });
+
+it("an undo carrying a no-op snooze check is still saved", async () => {
+	const { actions, sent } = fakeActions();
+	const sync = createLiveSync(actions, vi.fn());
+	const merge = step({
+		type: "topic.merge",
+		sourceId: "t-geng",
+		targetId: "t-gsales",
+	});
+	sync({ ...merge, undo: false });
+	sync({
+		previous: merge.next,
+		next: merge.previous,
+		commands: [{ type: "snooze.expire" }],
+		undo: true,
+	});
+	await vi.waitFor(() => expect(sent).toHaveLength(2));
+	expect(sent[1]).toBe('BrainUndoTopicChange(changeId=["change-1"]);');
+});
