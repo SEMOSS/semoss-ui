@@ -268,6 +268,39 @@ describe("shared collaboration session", () => {
 		);
 	});
 
+	it("deletes a topic with its links and rules; threads keep one primary topic", () => {
+		let state = createInitialCollaborationState();
+		state = apply(state, {
+			type: "rule.add",
+			rule: {
+				kind: "exclude_topic",
+				topicId: "t-geng",
+				value: "t-geng",
+				isSample: true,
+			},
+		});
+		const linked = state.threads.filter((thread) =>
+			thread.topicLinks.some((link) => link.topicId === "t-geng"),
+		);
+		expect(linked.length).toBeGreaterThan(0);
+		state = apply(state, { type: "topic.delete", topicId: "t-geng" });
+		expect(state.topics.some((topic) => topic.id === "t-geng")).toBe(false);
+		expect(state.rules.some((rule) => rule.topicId === "t-geng")).toBe(
+			false,
+		);
+		expect(
+			state.items.some((item) => item.topicIds.includes("t-geng")),
+		).toBe(false);
+		for (const { id } of linked) {
+			const links =
+				state.threads.find((thread) => thread.id === id)?.topicLinks ??
+				[];
+			expect(links.some((link) => link.topicId === "t-geng")).toBe(false);
+			if (links.length)
+				expect(links.filter((link) => link.primary)).toHaveLength(1);
+		}
+	});
+
 	it("merges topic links, notes, members, rules and Work associations atomically", () => {
 		let state = createInitialCollaborationState();
 		state = apply(state, {

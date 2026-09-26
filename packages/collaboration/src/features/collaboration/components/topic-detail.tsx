@@ -25,6 +25,7 @@ import { collaborationTabsStyles } from "./collaboration-tabs.styles";
 import { PersonAvatar } from "./person-avatar";
 import { Section } from "./section";
 import { TextEntryForm } from "./text-entry-form";
+import { TopicActions } from "./topic-actions";
 import { TopicChip } from "./topic-chip";
 import { TopicEditor } from "./topic-editor";
 
@@ -153,14 +154,20 @@ export function TopicDetail() {
 				/>
 				<div className="flex flex-wrap items-start justify-between gap-3">
 					<H1 className="font-semibold text-xl">{topic.name}</H1>
-					<Button
-						ref={editButtonRef}
-						variant="outline"
-						size="sm"
-						onClick={() => setIsEditing(true)}
-					>
-						Edit topic
-					</Button>
+					<div className="flex items-center gap-2">
+						<Button
+							ref={editButtonRef}
+							variant="outline"
+							size="sm"
+							onClick={() => setIsEditing(true)}
+						>
+							Edit topic
+						</Button>
+						<TopicActions
+							topic={topic}
+							threadCount={threads.length}
+						/>
+					</div>
 				</div>
 				<div className="flex flex-wrap items-center gap-3">
 					<Small className="font-normal text-muted-foreground text-xs">
