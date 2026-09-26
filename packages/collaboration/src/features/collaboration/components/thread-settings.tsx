@@ -177,7 +177,8 @@ export function ThreadSettings({
 						.filter(
 							(participant) =>
 								participant.personId !== "me" &&
-								participant.personId !== "live-me",
+								participant.personId !== "live-me" &&
+								participant.personId !== state.liveProfile?.id,
 						)
 						.map((participant) => {
 							const person = state.people.find(

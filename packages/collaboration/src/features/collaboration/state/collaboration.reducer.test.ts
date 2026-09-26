@@ -268,6 +268,33 @@ describe("shared collaboration session", () => {
 		);
 	});
 
+	it("keeps a loaded live profile when the signed-in placeholder arrives", () => {
+		const base = createInitialCollaborationState();
+		const placeholder = {
+			...base.profile,
+			id: "live-me",
+			name: "Signed In",
+			role: { value: "", source: "you" as const },
+		};
+		const loaded = {
+			...base.profile,
+			id: "p-kunal",
+			role: { value: "Backend lead", source: "you" as const },
+		};
+		let state = apply(base, { type: "live-profile.set", profile: loaded });
+		state = apply(state, {
+			type: "live-profile.set",
+			profile: placeholder,
+		});
+		expect(state.liveProfile?.id).toBe("p-kunal");
+		expect(state.liveProfile?.role.value).toBe("Backend lead");
+		state = apply(
+			{ ...state, liveProfile: null },
+			{ type: "live-profile.set", profile: placeholder },
+		);
+		expect(state.liveProfile?.id).toBe("live-me");
+	});
+
 	it("deletes a topic with its links and rules; threads keep one primary topic", () => {
 		let state = createInitialCollaborationState();
 		state = apply(state, {

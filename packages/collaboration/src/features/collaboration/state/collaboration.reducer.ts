@@ -883,7 +883,13 @@ export function collaborationReducer(
 			];
 			break;
 		case "live-profile.set":
-			state.liveProfile = command.profile;
+			// a profile loaded from the server (its own id) outranks the signed-in placeholder
+			if (
+				!command.profile ||
+				!state.liveProfile ||
+				state.liveProfile.id === command.profile.id
+			)
+				state.liveProfile = command.profile;
 			break;
 		case "snooze.expire": {
 			for (const item of state.items) {
