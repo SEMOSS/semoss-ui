@@ -218,11 +218,15 @@ export function WorkThread() {
 									(candidate) =>
 										candidate.id === message.fromId,
 								);
+								const profile = thread.isSample
+									? state.profile
+									: state.liveProfile;
 								const name =
 									person?.name ||
-									(message.fromId === "me"
-										? state.profile.name
-										: "You");
+									(message.fromId === "me" ||
+									message.fromId === profile?.id
+										? (profile?.name ?? "You")
+										: "Unknown sender");
 								return (
 									<article
 										key={message.id}

@@ -51,6 +51,14 @@ export function WorkFeed() {
 				? "Done"
 				: "For you");
 	const hasConnectedItems = items.some((item) => !item.isSample);
+	// live data has no sample items, so the sample section only shows when it has something to add
+	const hasSampleData = state.items.some((item) => item.isSample);
+	const groups = (hasConnectedItems ? [false, true] : [true, false]).filter(
+		(isSample) =>
+			!isSample ||
+			(hasSampleData &&
+				!(hasConnectedItems && !items.some((item) => item.isSample))),
+	);
 	const snoozed = state.items.filter(
 		(item) =>
 			item.status === "snoozed" &&
@@ -163,64 +171,59 @@ export function WorkFeed() {
 					</TabsList>
 				</div>
 				<TabsContent value={sort} className="mt-0">
-					{(hasConnectedItems ? [false, true] : [true, false]).map(
-						(isSample) => {
-							const group = items.filter(
-								(item) => item.isSample === isSample,
-							);
-							return (
-								<section
-									key={String(isSample)}
-									aria-label={
-										isSample
-											? "Work items"
-											: "Connected items"
-									}
-								>
-									{(!isSample || hasConnectedItems) && (
-										<div className="flex flex-wrap items-center gap-2 border-border/50 border-b px-4 py-2 md:px-6">
-											<Small className="font-medium text-muted-foreground text-xs">
-												{isSample
-													? "Work items"
-													: "Connected items"}
-											</Small>
-											<Badge
-												variant="secondary"
-												className="px-1.5 py-0 text-xs"
+					{groups.map((isSample) => {
+						const group = items.filter(
+							(item) => item.isSample === isSample,
+						);
+						return (
+							<section
+								key={String(isSample)}
+								aria-label={
+									isSample ? "Work items" : "Connected items"
+								}
+							>
+								{(!isSample || hasConnectedItems) && (
+									<div className="flex flex-wrap items-center gap-2 border-border/50 border-b px-4 py-2 md:px-6">
+										<Small className="font-medium text-muted-foreground text-xs">
+											{isSample
+												? "Work items"
+												: "Connected items"}
+										</Small>
+										<Badge
+											variant="secondary"
+											className="px-1.5 py-0 text-xs"
+										>
+											{group.length}
+										</Badge>
+									</div>
+								)}
+								{group.length ? (
+									group.map((item) => (
+										<WorkItemCard
+											key={item.id}
+											item={item}
+										/>
+									))
+								) : (
+									<div className="flex flex-wrap items-center gap-x-4 gap-y-2 px-4 py-4 md:px-6">
+										<P className="text-muted-foreground text-sm">
+											{isSample
+												? "No items in this view."
+												: "No connected items in this view."}
+										</P>
+										{!isSample && (
+											<Link
+												to="/brain/sources"
+												className="text-primary text-sm underline underline-offset-4"
 											>
-												{group.length}
-											</Badge>
-										</div>
-									)}
-									{group.length ? (
-										group.map((item) => (
-											<WorkItemCard
-												key={item.id}
-												item={item}
-											/>
-										))
-									) : (
-										<div className="flex flex-wrap items-center gap-x-4 gap-y-2 px-4 py-4 md:px-6">
-											<P className="text-muted-foreground text-sm">
-												{isSample
-													? "No items in this view."
-													: "No connected items in this view."}
-											</P>
-											{!isSample && (
-												<Link
-													to="/brain/sources"
-													className="text-primary text-sm underline underline-offset-4"
-												>
-													Browse your email and
-													sources
-												</Link>
-											)}
-										</div>
-									)}
-								</section>
-							);
-						},
-					)}
+												Browse your email and sources
+											</Link>
+										)}
+									</div>
+								)}
+							</section>
+						);
+					})}
 				</TabsContent>
 			</Tabs>
 			{snoozed.length > 0 && view === "open" && (

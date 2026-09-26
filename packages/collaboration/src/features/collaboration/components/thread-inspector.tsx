@@ -25,6 +25,11 @@ export function ThreadInspector({
 }) {
 	const fieldId = useId();
 	const { state, dispatch } = useCollaborationSession();
+	// the owner is "me" in sample data and the signed-in person's id in live data
+	const isMe = (personId: string) =>
+		personId === "me" ||
+		personId === "live-me" ||
+		personId === state.liveProfile?.id;
 	const [showDone, setShowDone] = useState(false);
 	const [showContext, setShowContext] = useState(false);
 	const steps = workspace.steps.filter(
@@ -42,8 +47,7 @@ export function ThreadInspector({
 								(step) =>
 									step.status !== "done" &&
 									step.status !== "suggested" &&
-									(step.ownerId === "me" ||
-										step.ownerId === "live-me"),
+									isMe(step.ownerId),
 							).length
 						}{" "}
 						on you
@@ -74,9 +78,7 @@ export function ThreadInspector({
 										status:
 											checked === true
 												? "done"
-												: step.ownerId === "me" ||
-														step.ownerId ===
-															"live-me"
+												: isMe(step.ownerId)
 													? "open"
 													: "waiting",
 									},
@@ -96,8 +98,7 @@ export function ThreadInspector({
 								{step.text}
 							</Label>
 							<Small className="text-muted-foreground text-xs leading-relaxed">
-								{step.ownerId === "me" ||
-								step.ownerId === "live-me"
+								{isMe(step.ownerId)
 									? "On you"
 									: `Waiting on ${state.people.find((person) => person.id === step.ownerId)?.name || "someone else"}`}
 								{step.due ? ` · ${dateLabel(step.due)}` : ""}
@@ -117,12 +118,9 @@ export function ThreadInspector({
 												operation: "save",
 												step: {
 													id: step.id,
-													status:
-														step.ownerId === "me" ||
-														step.ownerId ===
-															"live-me"
-															? "open"
-															: "waiting",
+													status: isMe(step.ownerId)
+														? "open"
+														: "waiting",
 												},
 											})
 										}
