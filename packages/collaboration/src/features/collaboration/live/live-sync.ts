@@ -37,6 +37,7 @@ interface Plan {
 }
 
 const LOCAL = /^local-/;
+const TOPIC_REMOVAL = /^(BrainDeleteTopic|BrainMergeTopics)\(/;
 // records imported in the browser from "Load your sources" have no server row yet
 const imported = (value: string) => value.startsWith("connected");
 const same = (a: unknown, b: unknown) =>
@@ -53,6 +54,10 @@ export function createLiveSync(
 ): LiveSync {
 	const ids = new Map<string, string>();
 	const id = (value: string) => ids.get(value) ?? value;
+	// server topic id -> changeId from its delete or merge, for undo
+	const topicChanges = new Map<string, string>();
+	// topics this session deleted or merged away, so an undo that brings one back is known up front
+	const removedTopics = new Set<string>();
 	let queue = Promise.resolve();
 
 	return (change) => {
@@ -60,8 +65,42 @@ export function createLiveSync(
 			SESSION_ONLY.has(command.type),
 		);
 		if (unsaved.length && unsaved.length === change.commands.length) return;
+		// undoing a delete or merge brings a topic back; the server puts back its rows in one call
+		const restored = change.undo
+			? restoredTopics(change).filter((topicId) =>
+					removedTopics.delete(topicId),
+				)
+			: [];
+		if (restored.length) {
+			queue = queue
+				.then(async () => {
+					const changeIds = restored.flatMap((topicId) => {
+						const changeId = topicChanges.get(id(topicId));
+						topicChanges.delete(id(topicId));
+						return changeId ? [changeId] : [];
+					});
+					await runBatch(
+						actions,
+						changeIds.map((changeId) =>
+							pixel("BrainUndoTopicChange", { changeId }),
+						),
+					);
+				})
+				.catch((cause: unknown) =>
+					onError(
+						cause instanceof Error ? cause.message : String(cause),
+					),
+				);
+			return;
+		}
 		const plan = planChange(change, id);
 		if (!plan.creates.length && !plan.statements.length) return;
+		for (const topicId of restoredTopics({
+			...change,
+			previous: change.next,
+			next: change.previous,
+		}))
+			removedTopics.add(topicId);
 		queue = queue
 			.then(async () => {
 				for (const create of plan.creates) {
@@ -70,7 +109,7 @@ export function createLiveSync(
 					if (serverId) ids.set(create.localId, serverId);
 				}
 				// statements built before the creates ran still hold local ids
-				await runBatch(
+				const outputs = await runBatch(
 					actions,
 					plan.statements.map((statement) =>
 						statement.replace(/"(local-[^"]+)"/g, (match, local) =>
@@ -80,11 +119,31 @@ export function createLiveSync(
 						),
 					),
 				);
+				outputs.forEach((out, index) => {
+					const { topicId, changeId } = (out ?? {}) as {
+						topicId?: string;
+						changeId?: string;
+					};
+					if (
+						TOPIC_REMOVAL.test(plan.statements[index]) &&
+						topicId &&
+						changeId
+					)
+						topicChanges.set(topicId, changeId);
+				});
 			})
 			.catch((cause: unknown) =>
 				onError(cause instanceof Error ? cause.message : String(cause)),
 			);
 	};
+}
+
+// topics in the new state that the previous one did not have
+function restoredTopics(change: CollaborationChange): string[] {
+	const before = byId(change.previous.topics);
+	return change.next.topics
+		.filter((topic) => !before.has(topic.id))
+		.map((topic) => topic.id);
 }
 
 export function planChange(
