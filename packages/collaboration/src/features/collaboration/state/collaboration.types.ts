@@ -251,6 +251,11 @@ export interface WorkspaceMessage {
 	isTruncated?: boolean;
 	/** Holds forwarded or earlier mail the thread has no copy of; not trimmed as a quoted reply. */
 	history?: boolean;
+	/** Names on To and Cc, as the source reported them. */
+	to?: string[];
+	cc?: string[];
+	/** Opens the message in Outlook or Teams. */
+	webLink?: string;
 }
 
 export interface WorkspaceStep {

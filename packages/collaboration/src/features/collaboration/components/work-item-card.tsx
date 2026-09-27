@@ -1,15 +1,7 @@
-import {
-	Calendar,
-	Check,
-	Clock,
-	Mail,
-	MessageSquare,
-	Reply,
-	RotateCcw,
-	Sparkles,
-} from "lucide-react";
+import { Check, Clock, Reply, RotateCcw, Sparkles } from "lucide-react";
 import { Link } from "react-router";
 import { Badge, Button, cn, P, Small } from "@semoss/ui/next";
+import { channelMeta } from "../channel-meta";
 import { dateLabel } from "../date-label";
 import { selectThreadContext } from "../state/collaboration.selectors";
 import type { WorkItem } from "../state/collaboration.types";
@@ -33,12 +25,7 @@ export function WorkItemCard({ item }: { item: WorkItem }) {
 	);
 	const author =
 		person?.name || (item.actorId === "assistant" ? "Assistant" : "You");
-	const Icon =
-		item.channel === "email"
-			? Mail
-			: item.channel === "calendar"
-				? Calendar
-				: MessageSquare;
+	const { label: channelLabel, icon: Icon } = channelMeta(item.channel);
 	const path = `/work/thread/${encodeURIComponent(thread.id)}`;
 	return (
 		<article
@@ -51,9 +38,9 @@ export function WorkItemCard({ item }: { item: WorkItem }) {
 			<div className="min-w-0 flex-1">
 				<div className="flex flex-wrap items-center gap-x-2 gap-y-1">
 					<Small className="font-medium text-xs">{author}</Small>
-					<Small className="inline-flex items-center gap-1 text-muted-foreground text-xs capitalize">
+					<Small className="inline-flex items-center gap-1 text-muted-foreground text-xs">
 						<Icon aria-hidden="true" className="size-3" />
-						{item.channel}
+						{channelLabel}
 					</Small>
 					<Small className="text-muted-foreground text-xs">
 						{dateLabel(item.received)}
