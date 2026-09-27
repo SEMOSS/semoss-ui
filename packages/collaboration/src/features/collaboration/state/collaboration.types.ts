@@ -81,7 +81,20 @@ export interface Person {
 	channels: { email: number; teams: number; meetings: number };
 	topics: string[];
 	automated?: boolean;
+	/** Your people: following (VIPs always), suggested by Brain, declined. Unset in sample data. */
+	follow?: "following" | "suggested" | "declined" | null;
+	followReason?: string;
+	department?: string;
 	isSample: boolean;
+}
+
+/** Your people: VIPs, the people you follow, and every sample contact (sample data has no follow state). */
+export function isFollowed(person: Person): boolean {
+	return (
+		person.vip ||
+		person.follow === "following" ||
+		person.follow === undefined
+	);
 }
 
 export interface ThreadTopicLink {
