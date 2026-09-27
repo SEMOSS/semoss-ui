@@ -466,6 +466,14 @@ function mapWorkspaces(page: Page): Record<string, ThreadWorkspace> {
 	);
 }
 
+// To or Cc as names, the address when the source gave no name; undefined when empty
+function recipientNames(value: unknown): string[] | undefined {
+	const names = list<Row>(value)
+		.map((recipient) => str(recipient.name) || str(recipient.address))
+		.filter(Boolean);
+	return names.length ? names : undefined;
+}
+
 /** Reads a thread's messages; the command attaches them to the thread as it is when they arrive. */
 export async function loadThreadMessages(
 	actions: InsightActions,
@@ -482,6 +490,13 @@ export async function loadThreadMessages(
 			text: str(message.text),
 			excluded: message.excluded === true ? true : undefined,
 			history: message.history === true ? true : undefined,
+			to: recipientNames(message.to),
+			cc: recipientNames(message.cc),
+			webLink:
+				typeof message.webLink === "string" &&
+				message.webLink.startsWith("https://")
+					? message.webLink
+					: undefined,
 		}),
 	);
 	// source.import is not undone and keeps the owner's links, mute, and exclusions

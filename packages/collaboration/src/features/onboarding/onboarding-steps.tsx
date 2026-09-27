@@ -17,8 +17,8 @@ import {
 	X,
 	Zap,
 } from "lucide-react";
-import { type ReactNode, useEffect, useMemo, useState } from "react";
-import { Badge, Button, cn, Input } from "@semoss/ui/next";
+import { type ReactNode, useEffect, useId, useMemo, useState } from "react";
+import { Badge, Button, cn, Input, Label, Switch } from "@semoss/ui/next";
 import type { InsightActions } from "@/lib/pixel";
 import { PersonAvatar } from "../collaboration/components/person-avatar";
 import { setLiveData } from "../collaboration/live/live-state";
@@ -573,6 +573,7 @@ const IMPORT_PHASES = [
 	{ steps: ["queued", "mailbox"], label: "Connecting to your mailbox" },
 	{ steps: ["reading inbox"], label: "Reading Inbox headers" },
 	{ steps: ["reading sentitems"], label: "Reading Sent headers" },
+	{ steps: ["reading Teams chats"], label: "Reading Teams chats" },
 	{ steps: ["importing"], label: "Building threads and people" },
 	{ steps: ["threads", "people"], label: "Ranking who matters" },
 ];
@@ -595,6 +596,8 @@ export function ImportStep({
 	const [starting, setStarting] = useState(false);
 	const [startError, setStartError] = useState<string | null>(null);
 	const [startedHere, setStartedHere] = useState(false);
+	const [teams, setTeams] = useState(true);
+	const teamsId = useId();
 	const manager = String(job?.counts.managerPersonId ?? "");
 	useEffect(() => {
 		if (manager) onManager(manager);
@@ -610,7 +613,7 @@ export function ImportStep({
 		setStarting(true);
 		setStartError(null);
 		try {
-			follow(await startImport(actions, days));
+			follow(await startImport(actions, days, teams));
 			setStartedHere(true);
 		} catch (cause) {
 			setStartError(message(cause));
@@ -628,8 +631,8 @@ export function ImportStep({
 				eyebrow={eyebrow}
 				title={`Bring in the last ${days} days`}
 			>
-				Inbox and Sent headers: who, when, and subject. One thread per
-				conversation, no message bodies.
+				Inbox and Sent headers, and your Teams chats: who, when, and
+				subject. One thread per conversation or chat, no message bodies.
 			</StepHeader>
 			{active ? (
 				<div className="grid items-center gap-8 md:grid-cols-[auto_minmax(0,1fr)]">
@@ -667,6 +670,19 @@ export function ImportStep({
 							? "You imported before. Importing again picks up anything new and skips what is already here."
 							: "Takes under a minute for most mailboxes. You can watch it happen."}
 					</p>
+					<div className="flex items-center gap-3 rounded-xl bg-card px-4 py-3 text-left ring-1 ring-border/70">
+						<Switch
+							id={teamsId}
+							checked={teams}
+							onCheckedChange={setTeams}
+						/>
+						<Label htmlFor={teamsId} className="text-sm">
+							Include Teams chats
+							<span className="block font-normal text-muted-foreground text-xs">
+								1:1, group and meeting chats from the same days
+							</span>
+						</Label>
+					</div>
 					<div className="flex flex-wrap justify-center gap-2">
 						{[
 							"Inbox and Sent",
@@ -717,6 +733,13 @@ export function ImportStep({
 						tone="muted"
 					/>
 				</div>
+			)}
+			{active && typeof counts.teamsError === "string" && (
+				<p className="rounded-xl bg-warning/10 px-4 py-3 text-sm">
+					Teams chats could not be read, so only mail came in. Sign
+					out of SEMOSS and back in, then import again. (
+					{counts.teamsError})
+				</p>
 			)}
 			{job?.status === "failed" && (
 				<Failure

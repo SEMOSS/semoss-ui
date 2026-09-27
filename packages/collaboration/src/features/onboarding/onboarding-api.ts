@@ -135,8 +135,15 @@ export async function getJob(actions: InsightActions, kind: JobKind) {
 	return mapJob(await run(actions, pixel("BrainGetJob", { kind })));
 }
 
-export async function startImport(actions: InsightActions, days: number) {
-	return mapJob(await run(actions, pixel("BrainImportMail", { days })));
+/** teams turns Teams chats on or off for this and later imports. */
+export async function startImport(
+	actions: InsightActions,
+	days: number,
+	teams: boolean,
+) {
+	return mapJob(
+		await run(actions, pixel("BrainImportMail", { days, teams })),
+	);
 }
 
 export async function startClassify(actions: InsightActions) {
