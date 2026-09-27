@@ -721,6 +721,25 @@ describe("assistant context selection", () => {
 		);
 	});
 
+	it("keeps forwarded mail the server marked as history", () => {
+		const command = importCommand();
+		command.workspace = {
+			messages: [
+				{
+					id: "msg",
+					fromId: command.people[0].id,
+					at: NOW,
+					text: "Did you see this?\n\nForwarded from Ops, Aug 28:\nFrom: Ops\nDue September 15.",
+					history: true,
+				},
+			],
+		};
+		const state = apply(createInitialCollaborationState(), command);
+		expect(
+			selectThreadContext(state, command.thread.id)?.messages[0].text,
+		).toContain("Due September 15.");
+	});
+
 	it("applies a person-scoped topic rule only on that topic", () => {
 		const state = apply(createInitialCollaborationState(), {
 			type: "rule.add",

@@ -189,7 +189,9 @@ export function selectThreadContext(
 			id: message.id,
 			fromId: message.fromId,
 			at: message.at,
-			text: removeQuotedReplies(message.text),
+			text: message.history
+				? message.text
+				: removeQuotedReplies(message.text),
 			...(message.isTruncated ? { isTruncated: true } : {}),
 		}));
 	const emptyIds = allowedMessages

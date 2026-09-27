@@ -249,6 +249,8 @@ export interface WorkspaceMessage {
 	text: string;
 	excluded?: boolean;
 	isTruncated?: boolean;
+	/** Holds forwarded or earlier mail the thread has no copy of; not trimmed as a quoted reply. */
+	history?: boolean;
 }
 
 export interface WorkspaceStep {
