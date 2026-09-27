@@ -481,6 +481,7 @@ export async function loadThreadMessages(
 			at: str(message.at),
 			text: str(message.text),
 			excluded: message.excluded === true ? true : undefined,
+			history: message.history === true ? true : undefined,
 		}),
 	);
 	// source.import is not undone and keeps the owner's links, mute, and exclusions
