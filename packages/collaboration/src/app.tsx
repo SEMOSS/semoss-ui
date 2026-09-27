@@ -8,8 +8,9 @@ import { Env, InsightProvider } from "@semoss/sdk/react";
 import { ThemeProvider, Toaster } from "@semoss/ui/next";
 import { Router } from "./pages/router";
 
+// the server writes MODULE into index.html (semoss-env tag, read when the SDK loads); .env is for local dev
 Env.update({
-	MODULE: import.meta.env.MODULE || "/Monolith",
+	MODULE: Env.MODULE || import.meta.env.MODULE || "/Monolith",
 	ACCESS_KEY: import.meta.env.ACCESS_KEY,
 	SECRET_KEY: import.meta.env.SECRET_KEY,
 });
