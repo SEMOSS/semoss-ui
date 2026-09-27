@@ -14,6 +14,7 @@ import {
 	Switch,
 } from "@semoss/ui/next";
 import { dateLabel } from "../date-label";
+import { isFollowed } from "../state/collaboration.types";
 import { useCollaborationSession } from "../state/collaboration-session.context";
 import { CollaborationSurface } from "./collaboration-surface";
 import { PersonAvatar } from "./person-avatar";
@@ -159,6 +160,25 @@ export function PersonDetail() {
 						}
 					/>
 					<div className="flex items-center justify-between gap-4 py-1">
+						<Label htmlFor={`${fieldId}-person-follow`}>
+							Follow
+						</Label>
+						<Switch
+							id={`${fieldId}-person-follow`}
+							checked={isFollowed(person)}
+							disabled={person.vip}
+							onCheckedChange={(on) =>
+								dispatch({
+									type: "person.save",
+									personId: person.id,
+									changes: {
+										follow: on ? "following" : "declined",
+									},
+								})
+							}
+						/>
+					</div>
+					<div className="flex items-center justify-between gap-4 py-1">
 						<Label htmlFor={`${fieldId}-person-vip`}>VIP</Label>
 						<Switch
 							id={`${fieldId}-person-vip`}
@@ -167,7 +187,9 @@ export function PersonDetail() {
 								dispatch({
 									type: "person.save",
 									personId: person.id,
-									changes: { vip },
+									changes: vip
+										? { vip, follow: "following" }
+										: { vip },
 								})
 							}
 						/>
