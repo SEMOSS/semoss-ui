@@ -2,8 +2,10 @@ import { Link } from "react-router";
 import { Button, H1, P, toast } from "@semoss/ui/next";
 import { SourcesView } from "@/features/connectors/components/sources-view";
 import { importSourceCommand } from "../import-source";
+import { isLiveData } from "../live/live-state";
 import { useCollaborationSession } from "../state/collaboration-session.context";
 import { CollaborationSurface } from "./collaboration-surface";
+import { ResetMyData } from "./reset-my-data";
 import { RulesEditor } from "./rules-editor";
 import { Section } from "./section";
 
@@ -29,6 +31,7 @@ export function SourcesAndRules() {
 					<Button asChild variant="outline">
 						<Link to="/onboarding">Import mail again</Link>
 					</Button>
+					{isLiveData() && <ResetMyData />}
 				</Section>
 			}
 			asideTitle="Source information"

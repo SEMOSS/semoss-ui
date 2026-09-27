@@ -251,3 +251,12 @@ export async function saveTopics(
 	for (const id of skipped)
 		await run(actions, pixel("BrainDeleteTopic", { topicId: id }));
 }
+
+// deletes everything this owner has in Collaboration except the Microsoft link
+export async function resetMyData(actions: InsightActions): Promise<number> {
+	const out = await run(
+		actions,
+		pixel("BrainResetMyData", { confirm: "reset" }),
+	);
+	return num(out.rows);
+}
