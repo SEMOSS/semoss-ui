@@ -34,7 +34,11 @@ import {
 	type ThreadRoomAssociation,
 	type ThreadRoomMetadata,
 } from "./api/thread-room";
-import { type SubmittedThreadContext, threadCommand } from "./thread-context";
+import {
+	getThreadAgent,
+	type SubmittedThreadContext,
+	threadCommand,
+} from "./thread-context";
 
 const EMPTY_TURN: AgentTurnSnapshot = {
 	messages: [],
@@ -75,9 +79,10 @@ export class ThreadSession {
 		isPreparing: false,
 		error: null,
 		association: null,
-		// a thread without a conversation yet starts on the last model picked in this browser
-		modelId: readLastModel()?.modelId ?? "",
-		modelName: readLastModel()?.modelName ?? "",
+		// a thread without a conversation yet starts on the last model picked in this browser, else the agent's
+		modelId: readLastModel()?.modelId ?? getThreadAgent()?.modelId ?? "",
+		modelName:
+			readLastModel()?.modelName ?? getThreadAgent()?.modelId ?? "",
 		turn: EMPTY_TURN,
 		hasUnconfirmedSubmission: false,
 		submissionNotice: null,
@@ -190,7 +195,7 @@ export class ThreadSession {
 			insightId: this.insight.insightId,
 			controllerScopeId: this.controllerScopeId,
 			roomId: association.roomId,
-			agentId: "",
+			agentId: association.metadata.agentId ?? "",
 			engine: association.metadata.modelId,
 			maxTurns: 40,
 		});
@@ -294,18 +299,21 @@ export class ThreadSession {
 			throw new Error("Attach up to 5 files per message.");
 		this.update({ isPreparing: true, error: null, submissionNotice: null });
 		try {
+			const agentId = getThreadAgent()?.id;
 			const metadata: ThreadRoomMetadata = {
 				version: 1,
 				threadId: this.threadId,
 				contextRevision: context.contextRevision,
 				modelId: this.snapshot.modelId,
+				...(agentId && { agentId }),
 			};
 			const current = this.snapshot.association;
 			if (
 				!current ||
 				!canContinueThreadRoom(current) ||
 				current.metadata.contextRevision !== metadata.contextRevision ||
-				current.metadata.modelId !== metadata.modelId
+				current.metadata.modelId !== metadata.modelId ||
+				current.metadata.agentId !== metadata.agentId
 			) {
 				if (
 					!this.pending ||
@@ -381,7 +389,7 @@ export class ThreadSession {
 						insightId: this.insight.insightId,
 						controllerScopeId: this.controllerScopeId,
 						roomId: this.snapshot.association?.roomId ?? "",
-						agentId: "",
+						agentId: metadata.agentId ?? "",
 						engine: metadata.modelId,
 						maxTurns: 40,
 					},

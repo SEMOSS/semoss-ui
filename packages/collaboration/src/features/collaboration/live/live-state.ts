@@ -1,5 +1,9 @@
 import type { InsightActions } from "@/lib/pixel";
 import { PixelError, pixel } from "@/lib/pixel";
+import {
+	setThreadAgent,
+	type ThreadAgent,
+} from "../../thread-assistant/thread-context";
 import { createEmptyWorkspace } from "../state/collaboration.reducer";
 import type {
 	Account,
@@ -125,6 +129,15 @@ function mapSettings(row: Row): Settings {
 		sourcesJson: (row.sourcesJson ?? {}) as Record<string, boolean>,
 		version: Number(row.version ?? 0),
 	};
+}
+
+// the platform agent behind each thread's assistant; absent when unset or not shared with this user
+function mapThreadAgent(value: unknown): ThreadAgent | null {
+	const row = (value ?? {}) as Row;
+	const id = str(row.id);
+	return id
+		? { id, name: str(row.name) || "Assistant", modelId: str(row.modelId) }
+		: null;
 }
 
 // no source-connection reactor yet (SRC-06): show what settings turns on
@@ -386,6 +399,7 @@ export async function loadLiveState(
 	const self = people.find((person) => person.relationship === "self");
 	const profile = mapProfile(profileRow, self?.id);
 	const settings = mapSettings(settingsRow);
+	setThreadAgent(mapThreadAgent(settingsRow.assistantAgent));
 
 	return {
 		today: new Date().toISOString().slice(0, 10),

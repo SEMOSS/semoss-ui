@@ -7,13 +7,14 @@ import {
 	roomWriteSchema,
 } from "@/features/rooms/api/room-schemas";
 import { callPixel, type InsightActions, pixel } from "@/lib/pixel";
-import { THREAD_ASSISTANT_INSTRUCTIONS } from "../thread-context";
+import { threadInstructions } from "../thread-context";
 
 const associationSchema = z.object({
 	version: z.literal(1),
 	threadId: z.string().min(1),
 	contextRevision: z.string(),
 	modelId: z.string().min(1),
+	agentId: z.string().min(1).optional(),
 });
 
 export type ThreadRoomMetadata = z.infer<typeof associationSchema>;
@@ -27,7 +28,8 @@ export interface ThreadRoomAssociation {
 /** Work owns this configuration, even if a room was edited from a legacy link. */
 export function canContinueThreadRoom(room: ThreadRoomAssociation): boolean {
 	return (
-		room.options.instructions === THREAD_ASSISTANT_INSTRUCTIONS &&
+		room.options.instructions ===
+			threadInstructions(room.metadata.agentId) &&
 		room.options.mcp.length === 0 &&
 		!room.options.workspace
 	);
@@ -96,7 +98,7 @@ export async function prepareThreadRoom(
 		{
 			name: title,
 			workspaceId: null,
-			instructions: THREAD_ASSISTANT_INSTRUCTIONS,
+			instructions: threadInstructions(metadata.agentId),
 			modelId: metadata.modelId,
 			mcp: [],
 		},

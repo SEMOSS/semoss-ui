@@ -1,6 +1,10 @@
 import { roomOptionsEnvelopeSchema } from "@/features/rooms/api/room-schemas";
 import { THREAD_ASSISTANT_INSTRUCTIONS } from "../thread-context";
-import { findThreadRoom, prepareThreadRoom } from "./thread-room";
+import {
+	canContinueThreadRoom,
+	findThreadRoom,
+	prepareThreadRoom,
+} from "./thread-room";
 
 const response = (output: unknown) => ({
 	pixelReturn: [{ output, operationType: [] }],
@@ -184,4 +188,33 @@ it("does not turn a failed room lookup into permission to create a duplicate", a
 	await expect(findThreadRoom({ run } as never, "thread-1")).rejects.toThrow(
 		"Connection lost",
 	);
+});
+
+it("leaves room instructions blank for the thread agent so its own prompt applies", async () => {
+	const backend = replacementBackend({});
+	const withAgent = { ...metadata, agentId: "agent-1" };
+	const room = await prepareThreadRoom(
+		{ run: backend.run } as never,
+		"insight-1",
+		"Review",
+		withAgent,
+		{ onCreated: vi.fn() },
+	);
+	expect(backend.read()).toMatchObject({
+		instructions: "",
+		mcp: [],
+		workThread: withAgent,
+	});
+	expect(backend.read()).not.toHaveProperty("workspace");
+	expect(canContinueThreadRoom(room)).toBe(true);
+	// a room made before the agent was set keeps the built-in instructions and is not reused for it
+	expect(
+		canContinueThreadRoom({
+			...room,
+			options: {
+				...room.options,
+				instructions: THREAD_ASSISTANT_INSTRUCTIONS,
+			},
+		}),
+	).toBe(false);
 });

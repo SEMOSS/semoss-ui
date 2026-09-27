@@ -18,6 +18,28 @@ export const THREAD_ASSISTANT_INSTRUCTIONS = [
 	"Offer suggested facts, next steps, and email drafts as text for the user to review. Do not claim to have changed their Work or Brain, saved a draft, or sent email.",
 ].join("\n");
 
+/** The platform agent behind every thread's assistant; Work reads it with the Brain settings. */
+export interface ThreadAgent {
+	id: string;
+	name: string;
+	modelId: string;
+}
+
+let threadAgent: ThreadAgent | null = null;
+
+export function setThreadAgent(agent: ThreadAgent | null): void {
+	threadAgent = agent;
+}
+
+export function getThreadAgent(): ThreadAgent | null {
+	return threadAgent;
+}
+
+/** A room with instructions of its own would replace the agent's prompt. */
+export function threadInstructions(agentId?: string): string {
+	return agentId ? "" : THREAD_ASSISTANT_INSTRUCTIONS;
+}
+
 /** The exact source snapshot is persisted alongside the user's request. */
 export function threadCommand(
 	context: SubmittedThreadContext,

@@ -25,21 +25,27 @@ import { useToolWorkbench } from "@/features/tools/tool-workbench.context";
 import { canContinueThreadRoom } from "./api/thread-room";
 import type { ThreadAssistantProps } from "./thread-assistant.types";
 import {
+	getThreadAgent,
 	lastSubmittedContext,
 	presentThreadMessages,
 	THREAD_ASSISTANT_INSTRUCTIONS,
+	threadInstructions,
 } from "./thread-context";
 import type { ThreadSession } from "./thread-session";
 import { ThreadSourceAttachments } from "./thread-source-attachments";
 
-const ASSISTANT: AgentConfiguration = {
-	name: "Assistant",
-	description: "",
-	system_prompt: THREAD_ASSISTANT_INSTRUCTIONS,
-	mcp: [],
-	skills: [],
-	prompts: [],
-};
+function assistantFor(agentName?: string): AgentConfiguration {
+	return {
+		name: agentName ?? "Assistant",
+		description: "",
+		system_prompt: agentName
+			? `${agentName} answers with its own instructions, tools, and skills. It can look things up and save drafts; it cannot send or change anything.`
+			: THREAD_ASSISTANT_INSTRUCTIONS,
+		mcp: [],
+		skills: [],
+		prompts: [],
+	};
+}
 
 interface ThreadAssistantViewProps extends ThreadAssistantProps {
 	session: ThreadSession;
@@ -97,11 +103,14 @@ export function ThreadAssistantView({
 		turn.isRunning ||
 		turn.isSubmitting ||
 		turn.isRestoring;
+	const agent = getThreadAgent();
+	const assistant = assistantFor(agent?.name);
 	const shouldStartFresh = Boolean(
 		association &&
 			(!canContinueThreadRoom(association) ||
 				association.metadata.contextRevision !== contextRevision ||
-				association.metadata.modelId !== snapshot.modelId),
+				association.metadata.modelId !== snapshot.modelId ||
+				association.metadata.agentId !== agent?.id),
 	);
 	useEffect(() => {
 		if (!roomId) return;
@@ -239,7 +248,7 @@ export function ThreadAssistantView({
 			{messages.length > 0 || turn.isRestoring || turn.phase ? (
 				<div className="my-2 flex h-96 min-h-0 flex-col">
 					<RoomThread
-						agent={ASSISTANT}
+						agent={assistant}
 						thread={messages}
 						isLoadingHistory={turn.isRestoring}
 						roomId={roomId || threadId}
@@ -268,7 +277,7 @@ export function ThreadAssistantView({
 				</div>
 			)}
 			<RoomRunStatus
-				agent={ASSISTANT}
+				agent={assistant}
 				turnError={turn.turnError}
 				transportError={turn.transportError}
 				pendingApprovals={turn.pendingApprovals}
@@ -332,9 +341,9 @@ export function ThreadAssistantView({
 						snapshot.isCreationUncertain ||
 						turn.isRestoring
 					}
-					roomInstructions={THREAD_ASSISTANT_INSTRUCTIONS}
+					roomInstructions={threadInstructions(agent?.id)}
 					roomSettings={{
-						instructions: THREAD_ASSISTANT_INSTRUCTIONS,
+						instructions: threadInstructions(agent?.id),
 						mcp: [],
 					}}
 					inheritedMcp={[]}
