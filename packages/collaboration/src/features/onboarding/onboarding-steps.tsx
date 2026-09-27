@@ -26,6 +26,7 @@ import {
 	type AccountSuggestion,
 	type Job,
 	type KeepOutSuggestion,
+	LOOK_DAYS,
 	listPeople,
 	type MailboxOverview,
 	mailboxOverview,
@@ -65,7 +66,6 @@ interface StepProps {
 const WINDOWS = [
 	{ days: 7, label: "Last week", hint: "A quick look" },
 	{ days: 30, label: "Last month", hint: "Recommended" },
-	{ days: 90, label: "Last quarter", hint: "The fullest picture" },
 ];
 
 const plural = (n: number, word: string) => (n === 1 ? word : `${word}s`);
@@ -162,8 +162,10 @@ export function MailboxStep({
 					</div>
 					<div className="grid gap-3 sm:grid-cols-3">
 						<StatTile
-							label="Inbox, 90 days"
-							value={formatCount(overview.counts.inbox["90"])}
+							label={`Inbox, ${LOOK_DAYS} days`}
+							value={formatCount(
+								overview.counts.inbox[String(LOOK_DAYS)],
+							)}
 							hint={`${formatCount(overview.counts.inbox["7"])} this week`}
 							icon={
 								<Inbox className="size-4" aria-hidden="true" />
@@ -171,8 +173,10 @@ export function MailboxStep({
 							tone="primary"
 						/>
 						<StatTile
-							label="Sent, 90 days"
-							value={formatCount(overview.counts.sent["90"])}
+							label={`Sent, ${LOOK_DAYS} days`}
+							value={formatCount(
+								overview.counts.sent[String(LOOK_DAYS)],
+							)}
 							hint={`${formatCount(overview.counts.sent["7"])} this week`}
 							icon={
 								<Send className="size-4" aria-hidden="true" />

@@ -24,6 +24,9 @@ async function run(actions: InsightActions, statement: string): Promise<Row> {
 	return (entry.output ?? {}) as Row;
 }
 
+// the first look reads headers page by page; 90 days was too slow on a real mailbox
+export const LOOK_DAYS = 30;
+
 export interface KeepOutSuggestion {
 	kind: "never_sender" | "never_domain";
 	value: string;
@@ -49,7 +52,10 @@ export interface MailboxOverview {
 export async function mailboxOverview(
 	actions: InsightActions,
 ): Promise<MailboxOverview> {
-	const out = await run(actions, pixel("BrainMailboxOverview", { days: 90 }));
+	const out = await run(
+		actions,
+		pixel("BrainMailboxOverview", { days: LOOK_DAYS }),
+	);
 	const mailbox = (out.mailbox ?? {}) as Row;
 	const counts = (out.counts ?? {}) as Row;
 	const window = (value: unknown) =>
