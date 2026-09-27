@@ -1,27 +1,7 @@
-import { Navigate, useLocation, useNavigate } from "react-router";
+import { Navigate, useLocation } from "react-router";
 import { useInsight } from "@semoss/sdk/react";
-import {
-	Alert,
-	AlertDescription,
-	Button,
-	Card,
-	CardContent,
-	CardHeader,
-	CardTitle,
-	Form,
-	FormInput,
-	Spinner,
-	useForm,
-	z,
-	zodResolver,
-} from "@semoss/ui/next";
-
-const loginSchema = z.object({
-	username: z.string().trim().min(1, "Enter your username."),
-	password: z.string().min(1, "Enter your password."),
-});
-
-type LoginValues = z.infer<typeof loginSchema>;
+import { LoginForm } from "@semoss/shared";
+import { Spinner } from "@semoss/ui/next";
 
 function getReturnTarget(state: unknown): string {
 	if (
@@ -37,93 +17,35 @@ function getReturnTarget(state: unknown): string {
 }
 
 /**
- * Renders a the login page if the user is not already logged in, otherwise sends them to the home page.
- *
- * @component
+ * The platform login: offers whatever the server's config turns on (native, LDAP, OAuth such as
+ * Microsoft), then sends the user back to where they were going.
  */
 export const LoginPage = () => {
-	const { isAuthorized, actions } = useInsight();
+	const { isInitialized, isAuthorized } = useInsight();
 	const { state } = useLocation();
-	const navigate = useNavigate();
 	const target = getReturnTarget(state);
-	const form = useForm<LoginValues>({
-		resolver: zodResolver(loginSchema),
-		defaultValues: { username: "", password: "" },
-	});
-	const { errors, isSubmitting } = form.formState;
 
-	const handleSubmit = async (values: LoginValues): Promise<void> => {
-		try {
-			const success = await actions.login({
-				type: "native",
-				username: values.username,
-				password: values.password,
-			});
+	// the providers come from the config call; wait for it so the form does not flash empty
+	if (!isInitialized) {
+		return (
+			<main className="flex min-h-svh items-center justify-center">
+				<Spinner />
+			</main>
+		);
+	}
 
-			if (!success) throw new Error("Unable to log in.");
-
-			navigate(target);
-		} catch (cause: unknown) {
-			form.setError("root.server", {
-				type: "server",
-				message:
-					cause instanceof Error
-						? cause.message
-						: "An error occurred while attempting to log in.",
-			});
-		}
-	};
-
-	// If the user is already authorized, we can route them off of this page. If the user was routed here, attempt to send them back to their target
 	if (isAuthorized) {
-		return <Navigate to={target} />;
+		return <Navigate to={target} replace />;
 	}
 
 	return (
-		<main className="flex min-h-full items-center justify-center">
-			<Card className="w-full max-w-sm">
-				<CardHeader>
-					<CardTitle>Login</CardTitle>
-				</CardHeader>
-				<CardContent>
-					<Form
-						form={form}
-						onSubmit={handleSubmit}
-						noValidate
-						aria-busy={isSubmitting}
-						className="space-y-4"
-					>
-						<FormInput
-							name="username"
-							label="Username (required)"
-							autoComplete="username"
-							required
-							disabled={isSubmitting}
-						/>
-						<FormInput
-							name="password"
-							label="Password (required)"
-							type="password"
-							autoComplete="current-password"
-							required
-							disabled={isSubmitting}
-						/>
-						{errors.root?.server?.message && (
-							<Alert variant="destructive">
-								<AlertDescription>
-									{errors.root.server.message}
-								</AlertDescription>
-							</Alert>
-						)}
-						<div className="flex justify-end">
-							<Button type="submit" disabled={isSubmitting}>
-								{isSubmitting && <Spinner className="size-4" />}
-								{isSubmitting ? "Logging in…" : "Log in"}
-							</Button>
-						</div>
-					</Form>
-				</CardContent>
-			</Card>
+		<main className="flex min-h-svh items-center justify-center p-6">
+			<div className="w-full max-w-xs space-y-6">
+				<h1 className="text-center font-semibold text-xl">
+					Collaboration
+				</h1>
+				<LoginForm />
+			</div>
 		</main>
 	);
 };
