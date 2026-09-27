@@ -1,4 +1,3 @@
-import { CalendarDays, Mail, MessagesSquare } from "lucide-react";
 import { useId, useState } from "react";
 import { Link, useSearchParams } from "react-router";
 import {
@@ -13,6 +12,7 @@ import {
 	SelectValue,
 	Small,
 } from "@semoss/ui/next";
+import { channelMeta } from "../channel-meta";
 import { dateLabel } from "../date-label";
 import { useCollaborationSession } from "../state/collaboration-session.context";
 import { BrainOverview } from "./brain-overview";
@@ -113,20 +113,10 @@ export function ThreadsDirectory() {
 						className="flex flex-wrap items-center gap-3 border-b px-4 py-3 transition-colors hover:bg-muted/30 md:px-6"
 					>
 						<span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground">
-							{thread.channel === "email" ? (
-								<Mail className="size-4" aria-hidden="true" />
-							) : thread.channel === "calendar" ? (
-								<CalendarDays
-									className="size-4"
-									aria-hidden="true"
-								/>
-							) : (
-								<MessagesSquare
-									className="size-4"
-									aria-hidden="true"
-								/>
-							)}
-							<span className="sr-only">{thread.channel}</span>
+							<ChannelIcon channel={thread.channel} />
+							<span className="sr-only">
+								{channelMeta(thread.channel).label}
+							</span>
 						</span>
 						<div className="min-w-0 flex-1">
 							<Link
@@ -173,4 +163,9 @@ export function ThreadsDirectory() {
 			)}
 		</CollaborationSurface>
 	);
+}
+
+function ChannelIcon({ channel }: { channel: string }) {
+	const Icon = channelMeta(channel).icon;
+	return <Icon className="size-4" aria-hidden="true" />;
 }

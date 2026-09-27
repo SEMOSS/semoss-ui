@@ -1,17 +1,18 @@
 import { ArrowLeft, FilePenLine, MoreHorizontal, Sparkles } from "lucide-react";
-import { useEffect, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
 import { Link, useParams } from "react-router";
 import { Badge, Button, cn, H1, H2, P, Small } from "@semoss/ui/next";
 import { EmailDraftDialog } from "@/features/connectors/components/email-draft-dialog";
 import type { SourceAttachment } from "@/features/connectors/types";
 import { ThreadAssistant } from "@/features/thread-assistant/thread-assistant";
 import { dateLabel } from "../date-label";
+import { foldedRange } from "../message-text";
 import { selectThreadContext } from "../state/collaboration.selectors";
 import { useCollaborationSession } from "../state/collaboration-session.context";
 import { CollaborationSurface } from "./collaboration-surface";
-import { PersonAvatar } from "./person-avatar";
 import { TextEntryForm } from "./text-entry-form";
 import { ThreadInspector } from "./thread-inspector";
+import { ThreadMessage } from "./thread-message";
 import { TopicChip } from "./topic-chip";
 
 interface DraftSelection {
@@ -26,6 +27,7 @@ export function WorkThread() {
 	const { threadId = "" } = useParams();
 	const { state, dispatch } = useCollaborationSession();
 	const [showExcluded, setShowExcluded] = useState(false);
+	const [showAll, setShowAll] = useState(false);
 	const [isEditingGoal, setIsEditingGoal] = useState(false);
 	const [draft, setDraft] = useState<DraftSelection | null>(null);
 	const [isDraftOpen, setIsDraftOpen] = useState(false);
@@ -36,6 +38,7 @@ export function WorkThread() {
 	useEffect(() => {
 		if (currentThreadId)
 			dispatch({ type: "workspace.open", threadId: currentThreadId });
+		setShowAll(false);
 	}, [dispatch, currentThreadId]);
 	if (!thread || !workspace || !context)
 		return (
@@ -77,6 +80,22 @@ export function WorkThread() {
 	const includedIds = new Set(context.messages.map((message) => message.id));
 	// allowed, but nothing to read: shown with its own label, not as excluded
 	const emptyIds = new Set(context.emptyIds);
+	const visible = workspace.messages.filter(
+		(message) =>
+			showExcluded ||
+			includedIds.has(message.id) ||
+			emptyIds.has(message.id),
+	);
+	// a long thread shows its first message and the newest few until opened
+	const fold = foldedRange(visible.length);
+	const folded = fold ? visible.length - fold.head - fold.tail : 0;
+	const shown =
+		fold && !showAll
+			? [
+					...visible.slice(0, fold.head),
+					...visible.slice(visible.length - fold.tail),
+				]
+			: visible;
 	return (
 		<CollaborationSurface
 			aside={
@@ -210,86 +229,55 @@ export function WorkThread() {
 						</div>
 					)}
 					<div>
-						{workspace.messages
-							.filter(
-								(message) =>
-									showExcluded ||
-									includedIds.has(message.id) ||
-									emptyIds.has(message.id),
-							)
-							.map((message) => {
-								const person = state.people.find(
-									(candidate) =>
-										candidate.id === message.fromId,
-								);
-								const profile = thread.isSample
-									? state.profile
-									: state.liveProfile;
-								const name =
-									person?.name ||
-									(message.fromId === "me" ||
-									message.fromId === profile?.id
-										? (profile?.name ?? "You")
-										: "Unknown sender");
-								return (
-									<article
-										key={message.id}
-										className="group flex gap-3"
-									>
-										<div className="flex shrink-0 flex-col items-center gap-1">
-											<PersonAvatar
-												name={name}
-												initials={person?.initials}
-											/>
-											<span
-												aria-hidden="true"
-												className="min-h-3 w-px flex-1 bg-border group-last:hidden"
-											/>
-										</div>
-										<div className="min-w-0 flex-1 space-y-1 pb-5">
-											<div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
-												<Small className="font-medium">
-													{name}
-												</Small>
-												<Small className="text-muted-foreground text-xs">
-													· {dateLabel(message.at)}
-												</Small>
-												{emptyIds.has(message.id) ? (
-													<Badge variant="secondary">
-														No text
-													</Badge>
-												) : (
-													!includedIds.has(
-														message.id,
-													) && (
-														<Badge variant="outline">
-															Excluded
-														</Badge>
-													)
-												)}
+						{shown.map((message, index) => {
+							const person = state.people.find(
+								(candidate) => candidate.id === message.fromId,
+							);
+							const profile = thread.isSample
+								? state.profile
+								: state.liveProfile;
+							const name =
+								person?.name ||
+								(message.fromId === "me" ||
+								message.fromId === profile?.id
+									? (profile?.name ?? "You")
+									: "Unknown sender");
+							return (
+								<Fragment key={message.id}>
+									{fold &&
+										!showAll &&
+										index === fold.head && (
+											<div className="mb-5 flex items-center gap-3">
+												<div className="flex size-10 shrink-0 items-center justify-center text-muted-foreground">
+													<MoreHorizontal
+														aria-hidden="true"
+														className="size-4"
+													/>
+												</div>
+												<Button
+													variant="outline"
+													size="sm"
+													className="rounded-full"
+													onClick={() =>
+														setShowAll(true)
+													}
+												>
+													Show {folded} earlier
+													messages
+												</Button>
 											</div>
-											<P
-												className={cn(
-													"whitespace-pre-wrap break-words leading-relaxed",
-													!includedIds.has(
-														message.id,
-													) &&
-														"text-muted-foreground",
-												)}
-											>
-												{emptyIds.has(message.id)
-													? "Nothing to read here: an invite, an image, or only a quoted reply."
-													: message.text}
-											</P>
-											{message.isTruncated && (
-												<Small className="text-warning">
-													Source text was truncated.
-												</Small>
-											)}
-										</div>
-									</article>
-								);
-							})}
+										)}
+									<ThreadMessage
+										message={message}
+										name={name}
+										initials={person?.initials}
+										channel={thread.channel}
+										isIncluded={includedIds.has(message.id)}
+										isEmpty={emptyIds.has(message.id)}
+									/>
+								</Fragment>
+							);
+						})}
 						{!workspace.messages.length && (
 							<P className="text-muted-foreground">
 								No source message text is available for this
