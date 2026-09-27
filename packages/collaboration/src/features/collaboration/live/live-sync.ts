@@ -479,6 +479,7 @@ const PERSON_FIELDS = [
 	"relationship",
 	"accountId",
 	"neverIngest",
+	"follow",
 ] as const;
 
 function planPeople(

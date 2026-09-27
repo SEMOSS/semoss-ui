@@ -154,19 +154,25 @@ export interface OnboardingPerson {
 	strength: number;
 	vip: boolean;
 	automated: boolean;
+	follow: "following" | "suggested" | "declined" | null;
+	followReason: string;
 }
 
-/** Strongest first; with relationship "automated", only the automated and list senders. */
+/** Strongest first, filtered by relationship ("automated"), follow state, or a name/email search. */
 export async function listPeople(
 	actions: InsightActions,
-	relationship?: string,
+	filter: { relationship?: string; follow?: string; query?: string } = {},
 ): Promise<OnboardingPerson[]> {
 	const out = await run(
 		actions,
-		pixel(
-			"BrainListPeople",
-			relationship ? { relationship, limit: 200 } : { limit: 60 },
-		),
+		pixel("BrainListPeople", {
+			...filter,
+			limit: filter.query
+				? 8
+				: filter.relationship || filter.follow
+					? 200
+					: 60,
+		}),
 	);
 	return rows(out.items).map((p) => ({
 		id: str(p.id),
@@ -177,7 +183,23 @@ export async function listPeople(
 		strength: num(p.strength),
 		vip: p.vip === true,
 		automated: p.automated === true,
+		follow:
+			p.follow === "following" ||
+			p.follow === "suggested" ||
+			p.follow === "declined"
+				? p.follow
+				: null,
+		followReason: str(p.followReason),
 	}));
+}
+
+/** VIP and follow changes; a VIP is always followed. */
+export async function savePeople(
+	actions: InsightActions,
+	changes: { id: string; vip?: boolean; follow?: string | null }[],
+) {
+	for (const change of changes)
+		await run(actions, pixel("BrainSavePerson", { person: change }));
 }
 
 /** The owner says this is a person after all. */
@@ -190,14 +212,6 @@ export async function markPerson(
 		actions,
 		pixel("BrainSavePerson", { person: { id, relationship } }),
 	);
-}
-
-export async function saveVips(
-	actions: InsightActions,
-	changes: { id: string; vip: boolean }[],
-) {
-	for (const change of changes)
-		await run(actions, pixel("BrainSavePerson", { person: change }));
 }
 
 export interface AccountSuggestion {

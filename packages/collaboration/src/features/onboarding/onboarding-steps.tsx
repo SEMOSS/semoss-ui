@@ -35,9 +35,9 @@ import {
 	type OnboardingPerson,
 	type RuleKind,
 	saveAccounts,
+	savePeople,
 	saveRules,
 	saveTopics,
-	saveVips,
 	startClassify,
 	startImport,
 	suggestAccounts,
@@ -761,14 +761,18 @@ function StrengthMeter({ value }: { value: number }) {
 function PersonCard({
 	person,
 	vip,
+	followed,
 	manager,
-	onToggle,
+	onVip,
+	onFollow,
 	featured,
 }: {
 	person: OnboardingPerson;
 	vip: boolean;
+	followed: boolean;
 	manager: boolean;
-	onToggle: () => void;
+	onVip: () => void;
+	onFollow: () => void;
 	featured?: boolean;
 }) {
 	const org = person.email.split("@")[1]?.split(".")[0] ?? "";
@@ -784,6 +788,7 @@ function PersonCard({
 				"relative flex h-full items-center gap-3 rounded-2xl ring-1 ring-border/70 transition-all",
 				featured ? "flex-col p-4 pt-5 text-center" : "p-2.5",
 				vip && "bg-chart-4/[0.07] ring-chart-4/40",
+				!followed && "opacity-55",
 			)}
 		>
 			<PersonAvatar
@@ -797,34 +802,56 @@ function PersonCard({
 				<div className="truncate text-muted-foreground text-xs">
 					{subtitle}
 				</div>
+				{person.follow === "suggested" && person.followReason && (
+					<div className="truncate text-muted-foreground text-xs">
+						{person.followReason}
+					</div>
+				)}
 				<div
 					className={cn("mt-1.5 flex", featured && "justify-center")}
 				>
 					<StrengthMeter value={person.strength} />
 				</div>
 			</div>
-			<button
-				type="button"
-				aria-pressed={vip}
-				aria-label={`${person.name} is a VIP`}
-				onClick={onToggle}
+			<div
 				className={cn(
-					"rounded-full p-2 transition-all hover:scale-110",
+					"flex items-center gap-1",
 					featured && "absolute top-2 right-2",
-					vip
-						? "text-chart-4"
-						: "text-muted-foreground/40 hover:text-chart-4",
 				)}
 			>
-				<Star
-					className={cn("size-5", vip && "fill-chart-4")}
-					aria-hidden="true"
-				/>
-			</button>
+				<button
+					type="button"
+					aria-pressed={vip}
+					aria-label={`${person.name} is a VIP`}
+					onClick={onVip}
+					className={cn(
+						"rounded-full p-2 transition-all hover:scale-110",
+						vip
+							? "text-chart-4"
+							: "text-muted-foreground/40 hover:text-chart-4",
+					)}
+				>
+					<Star
+						className={cn("size-5", vip && "fill-chart-4")}
+						aria-hidden="true"
+					/>
+				</button>
+			</div>
+			<Button
+				variant={followed ? "secondary" : "outline"}
+				size="sm"
+				aria-pressed={followed}
+				disabled={vip}
+				onClick={onFollow}
+				className={featured ? "w-full" : undefined}
+			>
+				{followed ? "Following" : "Follow"}
+			</Button>
 		</div>
 	);
 }
 
+/** Who you follow: Brain's suggestions from the org chart and two-way mail, VIPs starred among them. */
 export function PeopleStep({
 	actions,
 	eyebrow,
@@ -834,26 +861,45 @@ export function PeopleStep({
 	managerId,
 }: StepProps & { selfEmail: string; managerId: string }) {
 	const [people, setPeople] = useState<OnboardingPerson[] | null>(null);
+	const [followed, setFollowed] = useState<Set<string>>(new Set());
 	const [vips, setVips] = useState<Set<string>>(new Set());
 	const [error, setError] = useState<string | null>(null);
 	const [saving, setSaving] = useState(false);
 	const [showAll, setShowAll] = useState(false);
-	// automated and list senders: never ranked or starred, one tap makes one a person
+	// automated and list senders: never followed or starred, one tap makes one a person
 	const [automated, setAutomated] = useState<OnboardingPerson[]>([]);
 	const [showAutomated, setShowAutomated] = useState(false);
+	// follow someone Brain did not suggest
+	const [query, setQuery] = useState("");
+	const [found, setFound] = useState<OnboardingPerson[]>([]);
 	useEffect(() => {
-		Promise.all([listPeople(actions), listPeople(actions, "automated")])
-			.then(([all, bots]) => {
-				const self = selfEmail.toLowerCase();
-				const list = all
-					.filter(
-						(p) => p.email.toLowerCase() !== self && !p.automated,
-					)
-					.slice(0, 24);
+		const self = selfEmail.toLowerCase();
+		const mine = (p: OnboardingPerson) =>
+			p.email.toLowerCase() !== self && !p.automated;
+		Promise.all([
+			listPeople(actions, { follow: "following" }),
+			listPeople(actions, { follow: "suggested" }),
+			listPeople(actions, { relationship: "automated" }),
+		])
+			.then(async ([following, suggested, bots]) => {
+				let list = [...following, ...suggested].filter(mine);
+				// data from before follow suggestions: the strongest contacts instead
+				if (!list.length)
+					list = (await listPeople(actions))
+						.filter(mine)
+						.slice(0, 24);
+				list.sort((a, b) => b.strength - a.strength);
 				setPeople(list);
 				setAutomated(bots);
+				setFollowed(
+					new Set(
+						list
+							.filter((p) => p.follow !== "declined")
+							.map((p) => p.id),
+					),
+				);
 				const chosen = list.filter((p) => p.vip).map((p) => p.id);
-				// nobody marked yet: suggest the manager and the strongest contacts
+				// nobody starred yet: suggest the manager and the strongest contacts
 				if (!chosen.length) {
 					if (managerId && list.some((p) => p.id === managerId))
 						chosen.push(managerId);
@@ -870,6 +916,36 @@ export function PeopleStep({
 			.catch((cause: unknown) => setError(message(cause)));
 	}, [actions, selfEmail, managerId]);
 
+	useEffect(() => {
+		const q = query.trim();
+		if (q.length < 2) {
+			setFound([]);
+			return;
+		}
+		const timer = setTimeout(() => {
+			listPeople(actions, { query: q })
+				.then((list) =>
+					setFound(
+						list.filter(
+							(p) =>
+								!p.automated &&
+								p.email.toLowerCase() !==
+									selfEmail.toLowerCase() &&
+								!people?.some((known) => known.id === p.id),
+						),
+					),
+				)
+				.catch(() => setFound([]));
+		}, 250);
+		return () => clearTimeout(timer);
+	}, [actions, query, people, selfEmail]);
+
+	const add = (person: OnboardingPerson) => {
+		setPeople((prev) => [...(prev ?? []), person]);
+		setFollowed((prev) => new Set(prev).add(person.id));
+		setFound((prev) => prev.filter((p) => p.id !== person.id));
+	};
+
 	const rescue = async (person: OnboardingPerson) => {
 		setError(null);
 		try {
@@ -882,10 +958,7 @@ export function PeopleStep({
 					: "external",
 			);
 			setAutomated((prev) => prev.filter((p) => p.id !== person.id));
-			setPeople((prev) => [
-				...(prev ?? []),
-				{ ...person, automated: false },
-			]);
+			add({ ...person, automated: false });
 		} catch (cause) {
 			setError(message(cause));
 		}
@@ -896,12 +969,30 @@ export function PeopleStep({
 		setSaving(true);
 		setError(null);
 		try {
-			await saveVips(
-				actions,
-				people
-					.filter((p) => p.vip !== vips.has(p.id))
-					.map((p) => ({ id: p.id, vip: vips.has(p.id) })),
-			);
+			const changes: {
+				id: string;
+				vip?: boolean;
+				follow?: string | null;
+			}[] = [];
+			for (const p of people) {
+				const vip = vips.has(p.id);
+				// unfollowing a suggestion declines it, so Brain does not suggest it again
+				const follow =
+					vip || followed.has(p.id)
+						? "following"
+						: p.follow === "suggested" || p.follow === "following"
+							? "declined"
+							: p.follow;
+				const change: {
+					id: string;
+					vip?: boolean;
+					follow?: string | null;
+				} = { id: p.id };
+				if (vip !== p.vip) change.vip = vip;
+				if (follow !== p.follow) change.follow = follow;
+				if (Object.keys(change).length > 1) changes.push(change);
+			}
+			await savePeople(actions, changes);
 			onNext();
 		} catch (cause) {
 			setError(message(cause));
@@ -910,30 +1001,47 @@ export function PeopleStep({
 		}
 	};
 
+	const card = (p: OnboardingPerson, featured?: boolean) => (
+		<PersonCard
+			person={p}
+			vip={vips.has(p.id)}
+			followed={followed.has(p.id) || vips.has(p.id)}
+			manager={p.id === managerId}
+			onVip={() => {
+				setVips((prev) => toggled(prev, p.id));
+				setFollowed((prev) => new Set(prev).add(p.id));
+			}}
+			onFollow={() => setFollowed((prev) => toggled(prev, p.id))}
+			featured={featured}
+		/>
+	);
+	const following = new Set([...followed, ...vips]).size;
+
 	return (
 		<>
 			<StepHeader
 				eyebrow={eyebrow}
-				title="The people you work with"
+				title="Who you follow"
 				aside={
 					<div className="flex items-center gap-2 rounded-full bg-chart-4/15 px-3 py-1.5 font-medium text-sm">
 						<Star
 							className="size-4 fill-chart-4 text-chart-4"
 							aria-hidden="true"
 						/>
-						{vips.size} VIPs
+						{following} following - {vips.size} VIPs
 					</div>
 				}
 			>
-				Ranked by how much you write to each other. Star your VIPs:
-				their asks rise to the top of Work.
+				Your people, from your org chart and the mail you trade both
+				ways. Keep who matters and star your VIPs: their asks rise to
+				the top of Work. Everyone else stays out of your list.
 			</StepHeader>
 			{!people && !error && (
-				<LoadingCards label="Ranking people..." count={6} />
+				<LoadingCards label="Finding your people..." count={6} />
 			)}
 			{people && people.length === 0 && (
 				<p className="text-muted-foreground text-sm">
-					No people yet; import first.
+					No one yet; import first, or search below.
 				</p>
 			)}
 			{people && people.length > 0 && (
@@ -944,58 +1052,75 @@ export function PeopleStep({
 						</h2>
 						<ul className="grid grid-cols-2 gap-3 lg:grid-cols-4">
 							{people.slice(0, 4).map((p) => (
-								<li key={p.id}>
-									<PersonCard
-										person={p}
-										vip={vips.has(p.id)}
-										manager={p.id === managerId}
-										onToggle={() =>
-											setVips((prev) =>
-												toggled(prev, p.id),
-											)
-										}
-										featured
-									/>
-								</li>
+								<li key={p.id}>{card(p, true)}</li>
 							))}
 						</ul>
 					</section>
 					{people.length > 4 && (
 						<section className="space-y-3">
 							<h2 className="font-medium text-sm">
-								Also in your mail
+								Also suggested
 							</h2>
-							<ul className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+							<ul className="grid gap-2 sm:grid-cols-2">
 								{people
-									.slice(4, showAll ? undefined : 13)
+									.slice(4, showAll ? undefined : 14)
 									.map((p) => (
-										<li key={p.id}>
-											<PersonCard
-												person={p}
-												vip={vips.has(p.id)}
-												manager={p.id === managerId}
-												onToggle={() =>
-													setVips((prev) =>
-														toggled(prev, p.id),
-													)
-												}
-											/>
-										</li>
+										<li key={p.id}>{card(p)}</li>
 									))}
 							</ul>
-							{!showAll && people.length > 13 && (
+							{!showAll && people.length > 14 && (
 								<Button
 									variant="ghost"
 									size="sm"
 									onClick={() => setShowAll(true)}
 								>
-									Show {people.length - 13} more
+									Show {people.length - 14} more
 								</Button>
 							)}
 						</section>
 					)}
 				</>
 			)}
+			<section className="space-y-2">
+				<h2 className="font-medium text-sm">Follow someone else</h2>
+				<Input
+					value={query}
+					onChange={(event) => setQuery(event.target.value)}
+					placeholder="Search by name or email"
+					aria-label="Search people to follow"
+					className="max-w-sm"
+				/>
+				{found.length > 0 && (
+					<ul className="grid gap-2 sm:grid-cols-2">
+						{found.map((p) => (
+							<li
+								key={p.id}
+								className="flex items-center gap-3 rounded-2xl p-2.5 ring-1 ring-border/70"
+							>
+								<PersonAvatar
+									name={p.name}
+									className="size-9"
+								/>
+								<div className="min-w-0 flex-1">
+									<div className="truncate font-medium text-sm">
+										{p.name}
+									</div>
+									<div className="truncate text-muted-foreground text-xs">
+										{p.title || p.email}
+									</div>
+								</div>
+								<Button
+									variant="outline"
+									size="sm"
+									onClick={() => add(p)}
+								>
+									Follow
+								</Button>
+							</li>
+						))}
+					</ul>
+				)}
+			</section>
 			{automated.length > 0 && (
 				<section className="space-y-3">
 					<Button
@@ -1011,7 +1136,8 @@ export function PeopleStep({
 					{showAutomated && (
 						<>
 							<p className="text-muted-foreground text-xs">
-								Left out of ranking, VIPs, topics, and Work.
+								Shared mailboxes, lists, and system senders.
+								Never followed, and left out of topics and Work.
 								Mark anyone who is really a person.
 							</p>
 							<ul className="grid gap-2 sm:grid-cols-2">
@@ -1029,7 +1155,7 @@ export function PeopleStep({
 												{p.name}
 											</div>
 											<div className="truncate text-muted-foreground text-xs">
-												{p.email}
+												{p.title || p.email}
 											</div>
 										</div>
 										<Button

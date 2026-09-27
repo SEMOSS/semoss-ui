@@ -207,6 +207,15 @@ function mapPerson(row: Row): Person {
 		},
 		topics: list<string>(row.topics),
 		automated: row.automated === true ? true : undefined,
+		// live people always carry a follow state; null means not followed
+		follow:
+			row.follow === "following" ||
+			row.follow === "suggested" ||
+			row.follow === "declined"
+				? row.follow
+				: null,
+		followReason: opt(row.followReason),
+		department: opt(row.department),
 		isSample: false,
 	};
 }
