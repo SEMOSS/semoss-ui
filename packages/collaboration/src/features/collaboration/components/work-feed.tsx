@@ -39,7 +39,9 @@ export function WorkFeed() {
 				? "waiting"
 				: view === "done"
 					? "done_today"
-					: "needs_me",
+					: topicId
+						? undefined
+						: "needs_me",
 		topicId,
 		sort: sort === "latest" ? "latest" : "top",
 	});
