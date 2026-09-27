@@ -193,6 +193,8 @@ export function ThreadSettings({
 									<PersonAvatar
 										name={
 											person?.name ||
+											participant.name ||
+											participant.email ||
 											"Unknown participant"
 										}
 									/>
@@ -207,6 +209,8 @@ export function ThreadSettings({
 											to={`/brain/people/${encodeURIComponent(participant.personId)}`}
 										>
 											{person?.name ||
+												participant.name ||
+												participant.email ||
 												"Unknown participant"}
 										</Link>
 										<Small className="mt-1 text-muted-foreground text-xs leading-relaxed">

@@ -42,6 +42,8 @@ export function selectWorkItems(
 					.includes(search)
 			)
 				return false;
+			// automated mail (by the classifier or sender typing) is not work
+			if (thread?.automated && item.status !== "done") return false;
 			if (options.view === "waiting") return item.status === "waiting";
 			if (options.view === "done_today") return item.status === "done";
 			if (options.view === "suggested")
@@ -155,7 +157,10 @@ export function selectThreadContext(
 			personId: participant.personId,
 			name: isOwner
 				? (profile?.name ?? "You")
-				: (person?.name ?? "Unknown participant"),
+				: (person?.name ??
+					participant.name ??
+					participant.email ??
+					"Unknown participant"),
 			included:
 				participant.included &&
 				!isThreadExcluded &&
@@ -168,7 +173,7 @@ export function selectThreadContext(
 			.filter((participant) => participant.included)
 			.map((participant) => participant.personId),
 	);
-	const messages = (workspace?.messages ?? [])
+	const allowedMessages = (workspace?.messages ?? [])
 		.filter(
 			(message) =>
 				allowed.has(message.fromId) &&
@@ -186,8 +191,13 @@ export function selectThreadContext(
 			at: message.at,
 			text: removeQuotedReplies(message.text),
 			...(message.isTruncated ? { isTruncated: true } : {}),
-		}))
-		.filter((message) => message.text.length > 0);
+		}));
+	const emptyIds = allowedMessages
+		.filter((message) => message.text.length === 0)
+		.map((message) => message.id);
+	const messages = allowedMessages.filter(
+		(message) => message.text.length > 0,
+	);
 	const topics = thread.topicLinks
 		.filter((link) => link.source !== "suggested")
 		.sort((a, b) => Number(b.primary) - Number(a.primary))
@@ -246,8 +256,9 @@ export function selectThreadContext(
 		facts,
 		hiddenCount: Math.max(
 			0,
-			(workspace?.messages.length ?? 0) - messages.length,
+			(workspace?.messages.length ?? 0) - allowedMessages.length,
 		),
+		emptyIds,
 	};
 	return { ...snapshot, revision: revisionOf(JSON.stringify(snapshot)) };
 }
