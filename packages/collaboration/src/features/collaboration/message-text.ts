@@ -11,7 +11,7 @@ export type TextPart =
 // the server writes these label lines where a forward's or earlier message's header block was
 const HISTORY_LABEL =
 	/^(Forwarded from .+:|Earlier message from .+:|On .{5,250} wrote:)\s*$/i;
-const URL = /https?:\/\/[^\s<>"')\]]+[^\s<>"')\].,;:!?]/g;
+const LINK = /https?:\/\/[^\s<>"')\]]+[^\s<>"')\].,;:!?]/g;
 
 /** Splits kept history into its own segments; text without history stays one segment. */
 export function messageSegments(
@@ -37,7 +37,7 @@ export function messageSegments(
 export function textParts(text: string): TextPart[] {
 	const parts: TextPart[] = [];
 	let last = 0;
-	for (const match of text.matchAll(URL)) {
+	for (const match of text.matchAll(LINK)) {
 		const at = match.index ?? 0;
 		if (at > last) parts.push({ kind: "text", text: text.slice(last, at) });
 		parts.push({ kind: "link", href: match[0] });
@@ -46,6 +46,17 @@ export function textParts(text: string): TextPart[] {
 	if (last < text.length)
 		parts.push({ kind: "text", text: text.slice(last) });
 	return parts;
+}
+
+/** A link as its host and path, cut short; the full address stays on the anchor. */
+export function linkLabel(href: string, max = 48): string {
+	try {
+		const url = new URL(href);
+		const label = `${url.host}${url.pathname === "/" ? "" : url.pathname}`;
+		return label.length > max ? `${label.slice(0, max - 3)}...` : label;
+	} catch {
+		return href;
+	}
 }
 
 /** Long enough that it opens clamped. */
