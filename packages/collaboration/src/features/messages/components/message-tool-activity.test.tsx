@@ -158,7 +158,7 @@ it("keeps inspected tools visible while grouping neighboring successes and failu
 	).toBeInTheDocument();
 	expect(
 		screen.queryByRole("button", {
-			name: "Tool 3 details in workbench — failed",
+			name: "Tool 3 details in workbench - failed",
 		}),
 	).toBeNull();
 });
@@ -183,7 +183,7 @@ it("includes failures in the summary and reveals the specific errors on focus", 
 	expect(summary).toHaveAttribute("aria-describedby", tooltip.id);
 	fireEvent.click(summary);
 	const failedTool = screen.getByRole("button", {
-		name: "Tool 1 details in workbench — failed",
+		name: "Tool 1 details in workbench - failed",
 	});
 	expect(failedTool).toBeVisible();
 	fireEvent.click(failedTool);
@@ -208,7 +208,7 @@ it("keeps the summary and expansion state stable when a finished tool reports a 
 	expect(summary).toHaveAttribute("aria-expanded", "true");
 	expect(
 		screen.getByRole("button", {
-			name: "Tool 1 details in workbench — failed",
+			name: "Tool 1 details in workbench - failed",
 		}),
 	).toBe(row);
 });
@@ -253,7 +253,7 @@ it("shows a bounded preview on hover while keeping every failed step accessible 
 	await user.click(summary);
 	expect(
 		screen.getByRole("button", {
-			name: "Tool 3 details in workbench — failed",
+			name: "Tool 3 details in workbench - failed",
 		}),
 	).toBeVisible();
 });
