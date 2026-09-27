@@ -33,6 +33,7 @@ import {
 	getToolDisplayLocation,
 	getToolLoadingMessage,
 } from "../utils/tool-metadata";
+import { EmailDraftCard, isEmailDraftTool } from "./email-draft-card";
 import { ToolCallMenu } from "./tool-call-menu";
 import { ToolFailureTooltip } from "./tool-failure-tooltip";
 import { ToolInline } from "./tool-inline";
@@ -123,6 +124,7 @@ export function ToolCallCard({
 	} = useToolWorkbench();
 	const isSubmit = isDelegationSubmit(tool);
 	const isRequest = isDelegationRequest(tool);
+	const isEmailDraft = isEmailDraftTool(tool);
 	const pendingApproval = pendingApprovals.find(
 		(item) => item.toolId === tool.id,
 	);
@@ -178,7 +180,7 @@ export function ToolCallCard({
 
 	return (
 		<Collapsible
-			open={isInline}
+			open={isInline || isEmailDraft}
 			data-tool-id={tool.id}
 			className={cn(
 				"group/tool min-w-0 rounded-xl border border-border/60 bg-muted/20 transition-colors duration-150 motion-reduce:transition-none",
@@ -200,7 +202,7 @@ export function ToolCallCard({
 						}}
 						aria-expanded={opensInline ? isInline : undefined}
 						aria-controls={isInline ? detailId : undefined}
-						aria-label={`${title} details${opensInline ? "" : " in workbench"}${tool.status === "FAILED" ? " — failed" : ""}`}
+						aria-label={`${title} details${opensInline ? "" : " in workbench"}${tool.status === "FAILED" ? " - failed" : ""}`}
 						{...(tool.status !== "FAILED"
 							? { "aria-describedby": statusId }
 							: {})}
@@ -283,6 +285,8 @@ export function ToolCallCard({
 					<DelegationRequestApproval tool={tool} action={approval} />
 				) : approval ? (
 					<DelegationSubmitApproval tool={tool} action={approval} />
+				) : isEmailDraft ? (
+					<EmailDraftCard tool={tool} />
 				) : (
 					<ToolInline toolId={tool.id} />
 				)}

@@ -2,7 +2,12 @@ import { ExternalLink } from "lucide-react";
 import { useState } from "react";
 import { Badge, Button, cn, P, Small } from "@semoss/ui/next";
 import { dateLabel } from "../date-label";
-import { isLongText, messageSegments, textParts } from "../message-text";
+import {
+	isLongText,
+	linkLabel,
+	messageSegments,
+	textParts,
+} from "../message-text";
 import type { Channel, WorkspaceMessage } from "../state/collaboration.types";
 import { PersonAvatar } from "./person-avatar";
 
@@ -140,9 +145,10 @@ function MessageText({ text }: { text: string }) {
 						href={part.href}
 						target="_blank"
 						rel="noreferrer"
+						title={part.href}
 						className="break-all text-primary underline underline-offset-2"
 					>
-						{part.href}
+						{linkLabel(part.href)}
 					</a>
 				) : (
 					part.text

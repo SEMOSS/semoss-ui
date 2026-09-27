@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
 	foldedRange,
 	isLongText,
+	linkLabel,
 	messageSegments,
 	textParts,
 } from "./message-text";
@@ -53,6 +54,20 @@ describe("textParts", () => {
 		expect(textParts("javascript:alert(1) mailto:a@b.c")).toEqual([
 			{ kind: "text", text: "javascript:alert(1) mailto:a@b.c" },
 		]);
+	});
+});
+
+describe("linkLabel", () => {
+	it("shows host and path, cut short", () => {
+		expect(linkLabel("https://example.com/")).toBe("example.com");
+		expect(linkLabel("https://example.com/a/b?c=1")).toBe(
+			"example.com/a/b",
+		);
+		expect(
+			linkLabel(
+				`https://contoso.sharepoint.example/sites/${"x".repeat(60)}`,
+			),
+		).toHaveLength(48);
 	});
 });
 
