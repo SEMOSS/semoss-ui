@@ -79,7 +79,7 @@ export function CollaborationNavigation({
 					to: "/work",
 					label: "For you",
 					icon: Inbox,
-					count: selectWorkItems(state).total,
+					count: selectWorkItems(state, { view: "needs_me" }).total,
 				},
 				{
 					to: "/work/waiting",

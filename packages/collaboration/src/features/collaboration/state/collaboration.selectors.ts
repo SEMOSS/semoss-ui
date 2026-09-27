@@ -46,6 +46,9 @@ export function selectWorkItems(
 			if (options.view === "done_today") return item.status === "done";
 			if (options.view === "suggested")
 				return item.status === "open" && item.suggested === true;
+			// For you: FYI updates stay on their topic pages, not in the queue
+			if (options.view === "needs_me")
+				return item.status === "open" && item.askType !== "fyi";
 			return item.status === "open";
 		})
 		.sort((a, b) =>
