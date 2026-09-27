@@ -93,6 +93,9 @@ export interface ThreadTopicLink {
 
 export interface Participant {
 	personId: string;
+	/** From the thread itself, for when the person is not loaded. */
+	name?: string;
+	email?: string;
 	role: string;
 	included: boolean;
 	excludedBy?: "you" | "rule";
@@ -423,6 +426,9 @@ export interface ThreadContext {
 	participants: { personId: string; name: string; included: boolean }[];
 	messages: WorkspaceMessage[];
 	facts: WorkspaceFact[];
+	/** Left out by an exclusion or a rule. */
 	hiddenCount: number;
+	/** Allowed, but no text once quoted replies are removed (an invite or an image, say). */
+	emptyIds: string[];
 	revision: string;
 }

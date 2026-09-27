@@ -75,6 +75,8 @@ export function WorkThread() {
 		setIsDraftOpen(true);
 	};
 	const includedIds = new Set(context.messages.map((message) => message.id));
+	// allowed, but nothing to read: shown with its own label, not as excluded
+	const emptyIds = new Set(context.emptyIds);
 	return (
 		<CollaborationSurface
 			aside={
@@ -211,7 +213,9 @@ export function WorkThread() {
 						{workspace.messages
 							.filter(
 								(message) =>
-									showExcluded || includedIds.has(message.id),
+									showExcluded ||
+									includedIds.has(message.id) ||
+									emptyIds.has(message.id),
 							)
 							.map((message) => {
 								const person = state.people.find(
@@ -250,12 +254,18 @@ export function WorkThread() {
 												<Small className="text-muted-foreground text-xs">
 													· {dateLabel(message.at)}
 												</Small>
-												{!includedIds.has(
-													message.id,
-												) && (
-													<Badge variant="outline">
-														Excluded
+												{emptyIds.has(message.id) ? (
+													<Badge variant="secondary">
+														No text
 													</Badge>
+												) : (
+													!includedIds.has(
+														message.id,
+													) && (
+														<Badge variant="outline">
+															Excluded
+														</Badge>
+													)
 												)}
 											</div>
 											<P
@@ -267,7 +277,9 @@ export function WorkThread() {
 														"text-muted-foreground",
 												)}
 											>
-												{message.text}
+												{emptyIds.has(message.id)
+													? "Nothing to read here: an invite, an image, or only a quoted reply."
+													: message.text}
 											</P>
 											{message.isTruncated && (
 												<Small className="text-warning">
