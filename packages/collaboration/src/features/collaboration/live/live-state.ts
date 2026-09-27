@@ -239,6 +239,8 @@ function mapThread(row: Row): Thread {
 		})),
 		participants: list<Row>(row.participants).map((participant) => ({
 			personId: str(participant.personId),
+			name: opt(participant.name),
+			email: opt(participant.email),
 			role: str(participant.role),
 			included: participant.included !== false,
 			excludedBy:

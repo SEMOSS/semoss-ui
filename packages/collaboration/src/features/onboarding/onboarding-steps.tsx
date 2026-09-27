@@ -27,9 +27,11 @@ import {
 	type Job,
 	type KeepOutSuggestion,
 	LOOK_DAYS,
+	listAccounts,
 	listPeople,
 	type MailboxOverview,
 	mailboxOverview,
+	markPerson,
 	type OnboardingPerson,
 	type RuleKind,
 	saveAccounts,
@@ -41,6 +43,7 @@ import {
 	suggestAccounts,
 	suggestTopics,
 	type TopicSuggestion,
+	type TopicSuggestions,
 } from "./onboarding-api";
 import {
 	dotColor,
@@ -61,6 +64,8 @@ interface StepProps {
 	actions: InsightActions;
 	onNext: () => void;
 	onBack?: () => void;
+	/** "Step 4 of 7", from the shell */
+	eyebrow: string;
 }
 
 const WINDOWS = [
@@ -68,7 +73,8 @@ const WINDOWS = [
 	{ days: 30, label: "Last month", hint: "Recommended" },
 ];
 
-const plural = (n: number, word: string) => (n === 1 ? word : `${word}s`);
+const plural = (n: number, word: string) =>
+	n === 1 ? word : word === "person" ? "people" : `${word}s`;
 const capitalize = (text: string) =>
 	text.charAt(0).toUpperCase() + text.slice(1);
 const hostOf = (s: KeepOutSuggestion) =>
@@ -95,6 +101,7 @@ function Next({
 
 export function MailboxStep({
 	actions,
+	eyebrow,
 	onNext,
 	days,
 	onDays,
@@ -125,7 +132,7 @@ export function MailboxStep({
 
 	return (
 		<>
-			<StepHeader eyebrow="Step 1 of 6" title="Here is your mailbox">
+			<StepHeader eyebrow={eyebrow} title="Here is your mailbox">
 				Counted from message headers only. Nothing is stored until you
 				import.
 			</StepHeader>
@@ -333,6 +340,7 @@ const KINDS: { kind: RuleKind; label: string; hint: string }[] = [
 
 export function KeepOutStep({
 	actions,
+	eyebrow,
 	onNext,
 	onBack,
 	suggestions,
@@ -400,7 +408,7 @@ export function KeepOutStep({
 	return (
 		<>
 			<StepHeader
-				eyebrow="Step 2 of 6"
+				eyebrow={eyebrow}
 				title="Keep the noise out"
 				aside={
 					<div className="rounded-2xl bg-primary/[0.07] px-4 py-3 text-right ring-1 ring-primary/20">
@@ -577,6 +585,7 @@ function phaseOf(job: Job, phases: { steps: string[] }[]) {
 
 export function ImportStep({
 	actions,
+	eyebrow,
 	onNext,
 	onBack,
 	days,
@@ -616,7 +625,7 @@ export function ImportStep({
 	return (
 		<>
 			<StepHeader
-				eyebrow="Step 3 of 6"
+				eyebrow={eyebrow}
 				title={`Bring in the last ${days} days`}
 			>
 				Inbox and Sent headers: who, when, and subject. One thread per
@@ -818,6 +827,7 @@ function PersonCard({
 
 export function PeopleStep({
 	actions,
+	eyebrow,
 	onNext,
 	onBack,
 	selfEmail,
@@ -828,14 +838,20 @@ export function PeopleStep({
 	const [error, setError] = useState<string | null>(null);
 	const [saving, setSaving] = useState(false);
 	const [showAll, setShowAll] = useState(false);
+	// automated and list senders: never ranked or starred, one tap makes one a person
+	const [automated, setAutomated] = useState<OnboardingPerson[]>([]);
+	const [showAutomated, setShowAutomated] = useState(false);
 	useEffect(() => {
-		listPeople(actions)
-			.then((all) => {
+		Promise.all([listPeople(actions), listPeople(actions, "automated")])
+			.then(([all, bots]) => {
 				const self = selfEmail.toLowerCase();
 				const list = all
-					.filter((p) => p.email.toLowerCase() !== self)
+					.filter(
+						(p) => p.email.toLowerCase() !== self && !p.automated,
+					)
 					.slice(0, 24);
 				setPeople(list);
+				setAutomated(bots);
 				const chosen = list.filter((p) => p.vip).map((p) => p.id);
 				// nobody marked yet: suggest the manager and the strongest contacts
 				if (!chosen.length) {
@@ -853,6 +869,27 @@ export function PeopleStep({
 			})
 			.catch((cause: unknown) => setError(message(cause)));
 	}, [actions, selfEmail, managerId]);
+
+	const rescue = async (person: OnboardingPerson) => {
+		setError(null);
+		try {
+			const mine = selfEmail.split("@")[1]?.toLowerCase();
+			await markPerson(
+				actions,
+				person.id,
+				mine && person.email.toLowerCase().endsWith(`@${mine}`)
+					? "colleague"
+					: "external",
+			);
+			setAutomated((prev) => prev.filter((p) => p.id !== person.id));
+			setPeople((prev) => [
+				...(prev ?? []),
+				{ ...person, automated: false },
+			]);
+		} catch (cause) {
+			setError(message(cause));
+		}
+	};
 
 	const save = async () => {
 		if (!people) return;
@@ -876,7 +913,7 @@ export function PeopleStep({
 	return (
 		<>
 			<StepHeader
-				eyebrow="Step 4 of 6"
+				eyebrow={eyebrow}
 				title="The people you work with"
 				aside={
 					<div className="flex items-center gap-2 rounded-full bg-chart-4/15 px-3 py-1.5 font-medium text-sm">
@@ -959,6 +996,56 @@ export function PeopleStep({
 					)}
 				</>
 			)}
+			{automated.length > 0 && (
+				<section className="space-y-3">
+					<Button
+						variant="ghost"
+						size="sm"
+						className="-ml-3 text-muted-foreground"
+						aria-expanded={showAutomated}
+						onClick={() => setShowAutomated((value) => !value)}
+					>
+						<Bot className="size-4" aria-hidden="true" />
+						Automated and list senders ({automated.length})
+					</Button>
+					{showAutomated && (
+						<>
+							<p className="text-muted-foreground text-xs">
+								Left out of ranking, VIPs, topics, and Work.
+								Mark anyone who is really a person.
+							</p>
+							<ul className="grid gap-2 sm:grid-cols-2">
+								{automated.map((p) => (
+									<li
+										key={p.id}
+										className="flex items-center gap-3 rounded-2xl p-2.5 ring-1 ring-border/70"
+									>
+										<PersonAvatar
+											name={p.name}
+											className="size-9"
+										/>
+										<div className="min-w-0 flex-1">
+											<div className="truncate font-medium text-sm">
+												{p.name}
+											</div>
+											<div className="truncate text-muted-foreground text-xs">
+												{p.email}
+											</div>
+										</div>
+										<Button
+											variant="ghost"
+											size="sm"
+											onClick={() => void rescue(p)}
+										>
+											A person
+										</Button>
+									</li>
+								))}
+							</ul>
+						</>
+					)}
+				</section>
+			)}
 			{error && <Failure error={error} />}
 			<StepActions onBack={onBack}>
 				<Next onClick={save} disabled={saving || !people}>
@@ -969,44 +1056,284 @@ export function PeopleStep({
 	);
 }
 
-export function TopicsStep({ actions, onNext, onBack }: StepProps) {
-	const [accounts, setAccounts] = useState<AccountSuggestion[] | null>(null);
-	const [pickedAccounts, setPickedAccounts] = useState<Set<string>>(
-		new Set(),
+function AccountCard({
+	account,
+	index,
+	selected,
+	onToggle,
+}: {
+	account: AccountSuggestion;
+	index: number;
+	selected: boolean;
+	onToggle: () => void;
+}) {
+	return (
+		<SelectCard
+			label={`Keep ${account.name}`}
+			selected={selected}
+			onToggle={onToggle}
+		>
+			<span
+				className={cn(
+					"flex size-10 shrink-0 items-center justify-center rounded-xl font-semibold text-sm text-white",
+					dotColor(index),
+				)}
+			>
+				{account.name.slice(0, 1).toUpperCase() || (
+					<Building2 className="size-4" aria-hidden="true" />
+				)}
+			</span>
+			<span className="min-w-0">
+				<span className="block truncate font-medium">
+					{account.name}
+				</span>
+				<span className="block truncate text-muted-foreground text-xs">
+					{account.domain}
+				</span>
+				<span className="mt-1 block text-muted-foreground text-xs">
+					{account.people} {plural(account.people, "person")} -{" "}
+					{account.threads} {plural(account.threads, "thread")}
+					{account.twoWayThreads > 0 &&
+						` - you wrote on ${account.twoWayThreads}`}
+				</span>
+			</span>
+		</SelectCard>
 	);
-	const [topics, setTopics] = useState<TopicSuggestion[] | null>(null);
+}
+
+/** Outside organisations by email domain; your own organisation's domains are left out by the server. */
+export function OutsideStep({ actions, onNext, onBack, eyebrow }: StepProps) {
+	const [accounts, setAccounts] = useState<AccountSuggestion[] | null>(null);
 	const [picked, setPicked] = useState<Set<string>>(new Set());
-	const [names, setNames] = useState<Record<string, string>>({});
 	const [busy, setBusy] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 	useEffect(() => {
 		suggestAccounts(actions)
 			.then((list) => {
 				setAccounts(list);
-				setPickedAccounts(new Set(list.map((a) => a.domain)));
+				setPicked(
+					new Set(
+						list.filter((a) => a.suggested).map((a) => a.domain),
+					),
+				);
 			})
 			.catch((cause: unknown) => setError(message(cause)));
 	}, [actions]);
 
-	const toTopics = async () => {
+	const save = async () => {
 		if (!accounts) return;
 		setBusy(true);
 		setError(null);
 		try {
 			await saveAccounts(
 				actions,
-				accounts.filter((a) => pickedAccounts.has(a.domain)),
+				accounts.filter((a) => picked.has(a.domain)),
 			);
-			const list = await suggestTopics(actions);
-			setTopics(list);
-			setPicked(new Set(list.map((t) => t.id)));
-			setNames(Object.fromEntries(list.map((t) => [t.id, t.name])));
+			onNext();
 		} catch (cause) {
 			setError(message(cause));
 		} finally {
 			setBusy(false);
 		}
 	};
+
+	const strong = accounts?.filter((a) => a.suggested) ?? [];
+	const weak = accounts?.filter((a) => !a.suggested) ?? [];
+	const card = (a: AccountSuggestion, index: number) => (
+		<AccountCard
+			key={a.domain}
+			account={a}
+			index={index}
+			selected={picked.has(a.domain)}
+			onToggle={() => setPicked((prev) => toggled(prev, a.domain))}
+		/>
+	);
+	return (
+		<>
+			<StepHeader eyebrow={eyebrow} title="Who you work with outside">
+				Clients and partners, found by email domain. The ones you keep
+				get their own topics next.
+			</StepHeader>
+			{!accounts && !error && (
+				<LoadingCards label="Finding organisations..." />
+			)}
+			{accounts && accounts.length === 0 && (
+				<p className="text-muted-foreground text-sm">
+					No outside organisations found.
+				</p>
+			)}
+			{strong.length > 0 && (
+				<div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+					{strong.map(card)}
+				</div>
+			)}
+			{weak.length > 0 && (
+				<section className="space-y-3">
+					<h2 className="font-medium text-sm">Also seen</h2>
+					<p className="text-muted-foreground text-xs">
+						You have not written to anyone here. Keep any that are
+						real work.
+					</p>
+					<div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+						{weak.map((a, i) => card(a, strong.length + i))}
+					</div>
+				</section>
+			)}
+			{error && <Failure error={error} />}
+			<StepActions onBack={onBack}>
+				<Next onClick={save} disabled={busy || !accounts}>
+					{busy ? "Saving..." : `Keep ${picked.size} and continue`}
+				</Next>
+			</StepActions>
+		</>
+	);
+}
+
+function TopicCard({
+	topic,
+	index,
+	keep,
+	name,
+	onName,
+	onToggle,
+}: {
+	topic: TopicSuggestion;
+	index: number;
+	keep: boolean;
+	name: string;
+	onName: (value: string) => void;
+	onToggle: () => void;
+}) {
+	return (
+		<div
+			className={cn(
+				"group relative overflow-hidden rounded-2xl py-4 pr-4 pl-5 ring-1 transition-all",
+				keep
+					? "bg-card ring-border/70 hover:shadow-md"
+					: "bg-muted/40 opacity-55 ring-border/40",
+			)}
+		>
+			<span
+				aria-hidden="true"
+				className={cn(
+					"absolute inset-y-0 left-0 w-1.5",
+					dotColor(index),
+				)}
+			/>
+			<div className="flex items-start gap-2">
+				<div className="relative min-w-0 flex-1">
+					<Input
+						className="-ml-2 h-9 border-transparent bg-transparent px-2 pr-8 font-semibold shadow-none hover:border-border focus-visible:border-ring disabled:opacity-100"
+						value={name}
+						aria-label="Topic name"
+						disabled={!keep}
+						onChange={(event) => onName(event.target.value)}
+					/>
+					{keep && (
+						<Pencil
+							aria-hidden="true"
+							className="pointer-events-none absolute top-2.5 right-2 size-3.5 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100"
+						/>
+					)}
+				</div>
+				<button
+					type="button"
+					aria-pressed={keep}
+					aria-label={`Keep ${topic.name}`}
+					onClick={onToggle}
+					className={cn(
+						"mt-1.5 flex size-6 shrink-0 items-center justify-center rounded-full border transition-colors",
+						keep
+							? "border-primary bg-primary text-primary-foreground"
+							: "border-border bg-background text-transparent hover:border-primary/50",
+					)}
+				>
+					<Check className="size-3.5" strokeWidth={3} />
+				</button>
+			</div>
+			<p className="text-muted-foreground text-xs">{topic.reason}</p>
+			{topic.sampleSubjects.length > 0 && (
+				<ul className="mt-2 space-y-0.5 text-xs">
+					{topic.sampleSubjects.map((subject) => (
+						<li key={subject} className="truncate">
+							{subject}
+						</li>
+					))}
+				</ul>
+			)}
+			<div className="mt-3 flex flex-wrap gap-1.5">
+				<Badge variant="secondary">
+					{topic.threads} {plural(topic.threads, "thread")}
+				</Badge>
+				{topic.members > 0 && (
+					<Badge variant="secondary">
+						{topic.members} {plural(topic.members, "person")}
+					</Badge>
+				)}
+				{topic.youWrote > 0 && (
+					<Badge variant="secondary">
+						you wrote on {topic.youWrote}
+					</Badge>
+				)}
+				{topic.vipThreads > 0 && (
+					<Badge variant="secondary">
+						VIPs on {topic.vipThreads}
+					</Badge>
+				)}
+			</div>
+		</div>
+	);
+}
+
+/** Topics grouped by organisation; the ones you took part in, or with a VIP, are kept by default. */
+export function TopicsStep({ actions, onNext, onBack, eyebrow }: StepProps) {
+	const [result, setResult] = useState<TopicSuggestions | null>(null);
+	const [accountNames, setAccountNames] = useState<Record<string, string>>(
+		{},
+	);
+	const [picked, setPicked] = useState<Set<string>>(new Set());
+	const [names, setNames] = useState<Record<string, string>>({});
+	const [busy, setBusy] = useState(false);
+	const [error, setError] = useState<string | null>(null);
+	useEffect(() => {
+		Promise.all([suggestTopics(actions), listAccounts(actions)])
+			.then(([suggestions, accounts]) => {
+				setResult(suggestions);
+				setAccountNames(
+					Object.fromEntries(accounts.map((a) => [a.id, a.name])),
+				);
+				setPicked(
+					new Set(
+						suggestions.topics
+							.filter((t) => t.suggested)
+							.map((t) => t.id),
+					),
+				);
+				setNames(
+					Object.fromEntries(
+						suggestions.topics.map((t) => [t.id, t.name]),
+					),
+				);
+			})
+			.catch((cause: unknown) => setError(message(cause)));
+	}, [actions]);
+	const topics = result?.topics ?? null;
+
+	// kept-by-default topics under their organisation, in the server's order; the rest under Maybe
+	const groups = useMemo(() => {
+		const out: { label: string; topics: TopicSuggestion[] }[] = [];
+		for (const t of topics ?? []) {
+			const label = !t.suggested
+				? "Maybe"
+				: (accountNames[t.accountId] ?? "Internal");
+			const group = out.find((g) => g.label === label);
+			if (group) group.topics.push(t);
+			else out.push({ label, topics: [t] });
+		}
+		return out.sort(
+			(a, b) => Number(a.label === "Maybe") - Number(b.label === "Maybe"),
+		);
+	}, [topics, accountNames]);
 
 	const save = async () => {
 		if (!topics) return;
@@ -1031,76 +1358,11 @@ export function TopicsStep({ actions, onNext, onBack }: StepProps) {
 		}
 	};
 
-	if (!topics)
-		return (
-			<>
-				<StepHeader
-					eyebrow="Step 5 of 6"
-					title="Who you work with outside"
-				>
-					Organisations found by email domain. Each one you keep gets
-					its own topic suggestions next.
-				</StepHeader>
-				{!accounts && !error && (
-					<LoadingCards label="Finding organisations..." />
-				)}
-				{accounts && accounts.length === 0 && (
-					<p className="text-muted-foreground text-sm">
-						No outside organisations found.
-					</p>
-				)}
-				<div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-					{accounts?.map((a, index) => (
-						<SelectCard
-							key={a.domain}
-							label={`Keep ${a.name}`}
-							selected={pickedAccounts.has(a.domain)}
-							onToggle={() =>
-								setPickedAccounts((prev) =>
-									toggled(prev, a.domain),
-								)
-							}
-						>
-							<span
-								className={cn(
-									"flex size-10 shrink-0 items-center justify-center rounded-xl font-semibold text-sm text-white",
-									dotColor(index),
-								)}
-							>
-								{a.name.slice(0, 1).toUpperCase() || (
-									<Building2
-										className="size-4"
-										aria-hidden="true"
-									/>
-								)}
-							</span>
-							<span className="min-w-0">
-								<span className="block truncate font-medium">
-									{a.name}
-								</span>
-								<span className="block truncate text-muted-foreground text-xs">
-									{a.domain}
-								</span>
-								<span className="mt-1 block text-muted-foreground text-xs">
-									{a.people} people - {a.threads} threads
-								</span>
-							</span>
-						</SelectCard>
-					))}
-				</div>
-				{error && <Failure error={error} />}
-				<StepActions onBack={onBack}>
-					<Next onClick={toTopics} disabled={busy || !accounts}>
-						{busy ? "Finding topics..." : "Suggest topics"}
-					</Next>
-				</StepActions>
-			</>
-		);
-
+	let index = 0;
 	return (
 		<>
 			<StepHeader
-				eyebrow="Step 5 of 6"
+				eyebrow={eyebrow}
 				title="What your work is about"
 				aside={
 					<div className="rounded-2xl bg-primary/[0.07] px-4 py-3 text-right ring-1 ring-primary/20">
@@ -1113,99 +1375,60 @@ export function TopicsStep({ actions, onNext, onBack }: StepProps) {
 					</div>
 				}
 			>
-				Found in your recurring subjects. Only the topics you keep sort
-				your mail. Click a name to rename it.
+				{result?.source === "model"
+					? "Grouped from your subjects by the topic model, headers only."
+					: "Found in your recurring subjects."}{" "}
+				Only the topics you keep sort your mail. Click a name to rename
+				it.
 			</StepHeader>
-			{topics.length === 0 && (
+			{!topics && !error && (
+				<LoadingCards label="Finding topics in your mail..." />
+			)}
+			{result?.modelError && (
+				<p className="text-muted-foreground text-xs">
+					The topic model was not available ({result.modelError}), so
+					these come from rules.
+				</p>
+			)}
+			{topics && topics.length === 0 && (
 				<p className="text-muted-foreground text-sm">
 					No topics found; add them in Brain later.
 				</p>
 			)}
-			<div className="grid gap-3 sm:grid-cols-2">
-				{topics.map((t, index) => {
-					const keep = picked.has(t.id);
-					return (
-						<div
-							key={t.id}
-							className={cn(
-								"group relative overflow-hidden rounded-2xl py-4 pr-4 pl-5 ring-1 transition-all",
-								keep
-									? "bg-card ring-border/70 hover:shadow-md"
-									: "bg-muted/40 opacity-55 ring-border/40",
-							)}
-						>
-							<span
-								aria-hidden="true"
-								className={cn(
-									"absolute inset-y-0 left-0 w-1.5",
-									dotColor(index),
-								)}
+			{groups.map((group) => (
+				<section key={group.label} className="space-y-3">
+					<h2 className="font-medium text-sm">{group.label}</h2>
+					{group.label === "Maybe" && (
+						<p className="text-muted-foreground text-xs">
+							You have not written on these. Keep any that are
+							real work.
+						</p>
+					)}
+					<div className="grid gap-3 sm:grid-cols-2">
+						{group.topics.map((t) => (
+							<TopicCard
+								key={t.id}
+								topic={t}
+								index={index++}
+								keep={picked.has(t.id)}
+								name={names[t.id] ?? t.name}
+								onName={(value) =>
+									setNames((prev) => ({
+										...prev,
+										[t.id]: value,
+									}))
+								}
+								onToggle={() =>
+									setPicked((prev) => toggled(prev, t.id))
+								}
 							/>
-							<div className="flex items-start gap-2">
-								<div className="relative min-w-0 flex-1">
-									<Input
-										className="-ml-2 h-9 border-transparent bg-transparent px-2 pr-8 font-semibold shadow-none hover:border-border focus-visible:border-ring disabled:opacity-100"
-										value={names[t.id] ?? t.name}
-										aria-label="Topic name"
-										disabled={!keep}
-										onChange={(event) =>
-											setNames((prev) => ({
-												...prev,
-												[t.id]: event.target.value,
-											}))
-										}
-									/>
-									{keep && (
-										<Pencil
-											aria-hidden="true"
-											className="pointer-events-none absolute top-2.5 right-2 size-3.5 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100"
-										/>
-									)}
-								</div>
-								<button
-									type="button"
-									aria-pressed={keep}
-									aria-label={`Keep ${t.name}`}
-									onClick={() =>
-										setPicked((prev) => toggled(prev, t.id))
-									}
-									className={cn(
-										"mt-1.5 flex size-6 shrink-0 items-center justify-center rounded-full border transition-colors",
-										keep
-											? "border-primary bg-primary text-primary-foreground"
-											: "border-border bg-background text-transparent hover:border-primary/50",
-									)}
-								>
-									<Check
-										className="size-3.5"
-										strokeWidth={3}
-									/>
-								</button>
-							</div>
-							<p className="text-muted-foreground text-xs">
-								{t.reason}
-							</p>
-							<div className="mt-3 flex flex-wrap gap-1.5">
-								<Badge variant="secondary">
-									{t.threads} {plural(t.threads, "thread")}
-								</Badge>
-								{t.members > 0 && (
-									<Badge variant="secondary">
-										{t.members}{" "}
-										{plural(t.members, "person").replace(
-											"persons",
-											"people",
-										)}
-									</Badge>
-								)}
-							</div>
-						</div>
-					);
-				})}
-			</div>
+						))}
+					</div>
+				</section>
+			))}
 			{error && <Failure error={error} />}
-			<StepActions onBack={() => setTopics(null)}>
-				<Next onClick={save} disabled={busy}>
+			<StepActions onBack={onBack}>
+				<Next onClick={save} disabled={busy || !topics}>
 					{busy ? "Saving..." : `Keep ${picked.size} topics`}
 				</Next>
 			</StepActions>
@@ -1248,7 +1471,7 @@ const LANES = [
 	},
 ] as const;
 
-export function WorkStep({ actions, onBack }: StepProps) {
+export function WorkStep({ actions, onBack, eyebrow }: StepProps) {
 	const { job, error, follow } = useJob(actions, "classify");
 	const [startedHere, setStartedHere] = useState(false);
 	const [startError, setStartError] = useState<string | null>(null);
@@ -1310,7 +1533,7 @@ export function WorkStep({ actions, onBack }: StepProps) {
 					</p>
 				</div>
 			) : (
-				<StepHeader eyebrow="Step 6 of 6" title="Sort your threads">
+				<StepHeader eyebrow={eyebrow} title="Sort your threads">
 					Our classifier files every thread under a topic and works
 					out whose turn it is. Anything it is unsure about comes to
 					you.

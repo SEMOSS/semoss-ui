@@ -153,12 +153,21 @@ export interface OnboardingPerson {
 	relationship: string;
 	strength: number;
 	vip: boolean;
+	automated: boolean;
 }
 
+/** Strongest first; with relationship "automated", only the automated and list senders. */
 export async function listPeople(
 	actions: InsightActions,
+	relationship?: string,
 ): Promise<OnboardingPerson[]> {
-	const out = await run(actions, pixel("BrainListPeople", { limit: 60 }));
+	const out = await run(
+		actions,
+		pixel(
+			"BrainListPeople",
+			relationship ? { relationship, limit: 200 } : { limit: 60 },
+		),
+	);
 	return rows(out.items).map((p) => ({
 		id: str(p.id),
 		name: str(p.name) || str(p.email),
@@ -167,7 +176,20 @@ export async function listPeople(
 		relationship: str(p.relationship),
 		strength: num(p.strength),
 		vip: p.vip === true,
+		automated: p.automated === true,
 	}));
+}
+
+/** The owner says this is a person after all. */
+export async function markPerson(
+	actions: InsightActions,
+	id: string,
+	relationship: "colleague" | "external",
+) {
+	await run(
+		actions,
+		pixel("BrainSavePerson", { person: { id, relationship } }),
+	);
 }
 
 export async function saveVips(
@@ -184,6 +206,11 @@ export interface AccountSuggestion {
 	kind: string;
 	people: number;
 	threads: number;
+	/** Threads the owner wrote on. */
+	twoWayThreads: number;
+	vips: number;
+	/** Pre-checked: the owner writes to them, a VIP is there, or several people. */
+	suggested: boolean;
 }
 
 export async function suggestAccounts(
@@ -196,7 +223,17 @@ export async function suggestAccounts(
 		kind: str(a.kind) || "client",
 		people: num(a.people),
 		threads: num(a.threads),
+		twoWayThreads: num(a.twoWayThreads),
+		vips: num(a.vips),
+		suggested: a.suggested === true,
 	}));
+}
+
+export async function listAccounts(
+	actions: InsightActions,
+): Promise<{ id: string; name: string }[]> {
+	const out = await run(actions, pixel("BrainListAccounts", { limit: 1000 }));
+	return rows(out.items).map((a) => ({ id: str(a.id), name: str(a.name) }));
 }
 
 export async function saveAccounts(
@@ -216,23 +253,46 @@ export interface TopicSuggestion {
 	id: string;
 	name: string;
 	kind: string;
+	accountId: string;
 	reason: string;
 	threads: number;
 	members: number;
+	sampleSubjects: string[];
+	/** Threads the owner wrote on, and threads with a VIP. */
+	youWrote: number;
+	vipThreads: number;
+	/** Pre-checked: the owner took part, or a VIP is on it. */
+	suggested: boolean;
+}
+
+export interface TopicSuggestions {
+	topics: TopicSuggestion[];
+	/** "model" when the text model grouped them, "rules" otherwise. */
+	source: string;
+	modelError?: string;
 }
 
 export async function suggestTopics(
 	actions: InsightActions,
-): Promise<TopicSuggestion[]> {
+): Promise<TopicSuggestions> {
 	const out = await run(actions, pixel("BrainSuggestTopics"));
-	return rows(out.topics).map((t) => ({
-		id: str(t.id),
-		name: str(t.name),
-		kind: str(t.kind),
-		reason: str(t.reason),
-		threads: rows(t.threadIds).length,
-		members: rows(t.memberIds).length,
-	}));
+	return {
+		source: str(out.source) || "rules",
+		modelError: out.modelError ? str(out.modelError) : undefined,
+		topics: rows(out.topics).map((t) => ({
+			id: str(t.id),
+			name: str(t.name),
+			kind: str(t.kind),
+			accountId: str(t.accountId),
+			reason: str(t.reason),
+			threads: rows(t.threadIds).length,
+			members: rows(t.memberIds).length,
+			sampleSubjects: rows(t.sampleSubjects).map((x) => str(x)),
+			youWrote: num(t.youWrote),
+			vipThreads: num(t.vipThreads),
+			suggested: t.suggested === true,
+		})),
+	};
 }
 
 /** Accepted topics go active under the owner's name; skipped ones are deleted. */

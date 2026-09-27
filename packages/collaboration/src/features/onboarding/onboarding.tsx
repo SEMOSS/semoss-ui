@@ -1,4 +1,5 @@
 import {
+	Building2,
 	Check,
 	Download,
 	Lock,
@@ -16,6 +17,7 @@ import {
 	ImportStep,
 	KeepOutStep,
 	MailboxStep,
+	OutsideStep,
 	PeopleStep,
 	TopicsStep,
 	WorkStep,
@@ -30,6 +32,7 @@ const STEPS = [
 	},
 	{ label: "Import", caption: "Headers only", icon: Download },
 	{ label: "People", caption: "Who matters most", icon: Users },
+	{ label: "Outside", caption: "Clients and partners", icon: Building2 },
 	{ label: "Topics", caption: "What your work is about", icon: Tags },
 	{ label: "Work", caption: "Sorted for you", icon: Sparkles },
 ];
@@ -53,6 +56,7 @@ export function Onboarding({
 		actions,
 		onNext: next,
 		onBack: step > 0 ? back : undefined,
+		eyebrow: `Step ${step + 1} of ${STEPS.length}`,
 	};
 	// each step starts at the top
 	// biome-ignore lint/correctness/useExhaustiveDependencies: runs on each step change
@@ -197,8 +201,9 @@ export function Onboarding({
 							managerId={managerId}
 						/>
 					)}
-					{step === 4 && <TopicsStep {...common} />}
-					{step === 5 && <WorkStep {...common} />}
+					{step === 4 && <OutsideStep {...common} />}
+					{step === 5 && <TopicsStep {...common} />}
+					{step === 6 && <WorkStep {...common} />}
 				</main>
 			</div>
 		</div>
