@@ -1523,9 +1523,7 @@ export function TopicsStep({ actions, onNext, onBack, eyebrow }: StepProps) {
 					</div>
 				}
 			>
-				{result?.source === "model"
-					? "Grouped from your subjects by the topic model, headers only."
-					: "Found in your recurring subjects."}{" "}
+				Grouped from your subjects by the topic model, headers only.
 				Only the topics you keep sort your mail. Click a name to rename
 				it.
 			</StepHeader>
@@ -1533,12 +1531,13 @@ export function TopicsStep({ actions, onNext, onBack, eyebrow }: StepProps) {
 				<LoadingCards label="Finding topics in your mail..." />
 			)}
 			{result?.modelError && (
-				<p className="text-muted-foreground text-xs">
-					The topic model was not available ({result.modelError}), so
-					these come from rules.
+				<p className="text-muted-foreground text-sm">
+					No topics were suggested because the topic model is not
+					available ({result.modelError}). You can add topics in Brain
+					later.
 				</p>
 			)}
-			{topics && topics.length === 0 && (
+			{topics && topics.length === 0 && !result?.modelError && (
 				<p className="text-muted-foreground text-sm">
 					No topics found; add them in Brain later.
 				</p>

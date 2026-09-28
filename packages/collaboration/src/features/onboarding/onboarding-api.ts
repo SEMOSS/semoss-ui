@@ -288,8 +288,7 @@ export interface TopicSuggestion {
 
 export interface TopicSuggestions {
 	topics: TopicSuggestion[];
-	/** "model" when the text model grouped them, "rules" otherwise. */
-	source: string;
+	/** Set when no topic model is configured or it failed; topics is then empty. */
 	modelError?: string;
 }
 
@@ -298,7 +297,6 @@ export async function suggestTopics(
 ): Promise<TopicSuggestions> {
 	const out = await run(actions, pixel("BrainSuggestTopics"));
 	return {
-		source: str(out.source) || "rules",
 		modelError: out.modelError ? str(out.modelError) : undefined,
 		topics: rows(out.topics).map((t) => ({
 			id: str(t.id),
