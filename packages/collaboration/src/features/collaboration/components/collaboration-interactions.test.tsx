@@ -113,7 +113,7 @@ describe("collaboration Work and Brain integration", () => {
 		).not.toContain("t-trip");
 		await user.click(
 			screen.getByRole("button", {
-				name: "Confirm Google onsite for Agent architecture at our Oct 15 eng review?",
+				name: "Confirm Northwind onsite for Agent architecture at our Oct 15 eng review?",
 			}),
 		);
 		expect(submittedContext().topics.map((topic) => topic.id)).toContain(
@@ -130,7 +130,8 @@ describe("collaboration Work and Brain integration", () => {
 				(row) =>
 					row.textContent?.includes(
 						"Agent architecture at our Oct 15 eng review?",
-					) && row.textContent.includes("Filed under Google onsite"),
+					) &&
+					row.textContent.includes("Filed under Northwind onsite"),
 			),
 		).toBe(true);
 	});
@@ -138,7 +139,7 @@ describe("collaboration Work and Brain integration", () => {
 	it("shows completed Work items in Done and restores them with shared undo", async () => {
 		const user = userEvent.setup();
 		const router = renderSession("/work");
-		const title = "Confirm Oct 15 architecture review slot with Priya";
+		const title = "Confirm Oct 15 architecture review slot with Ava";
 		await user.click(
 			within(articleFor(title)).getByRole("button", {
 				name: "Done",
@@ -185,27 +186,27 @@ describe("collaboration Work and Brain integration", () => {
 		const router = renderSession("/brain");
 		await user.click(
 			within(
-				articleFor("Add Ken Watanabe to Google - Sales / GTM?"),
+				articleFor("Add Gia Moreno to Northwind - Sales / GTM?"),
 			).getByRole("button", { name: "Add person" }),
 		);
 		await act(() => router.navigate("/brain/topics/t-gsales"));
 		await user.click(screen.getByRole("tab", { name: "People" }));
 		const memberSection = sectionFor("In this topic");
 		const personLink = within(memberSection).getByRole("link", {
-			name: "Ken Watanabe",
+			name: "Gia Moreno",
 		});
 		const row = personLink.parentElement?.parentElement;
 		if (!row) throw new Error("Missing membership row");
 		await user.click(within(row).getByRole("button", { name: "Remove" }));
 		expect(
 			within(sectionFor("Removed")).getByRole("link", {
-				name: "Ken Watanabe",
+				name: "Gia Moreno",
 			}),
 		).toBeInTheDocument();
-		await act(() => router.navigate("/brain/people/p-ken"));
+		await act(() => router.navigate("/brain/people/p-gia"));
 		expect(
 			within(sectionFor("Topics")).queryByRole("link", {
-				name: "Google Sales",
+				name: "Northwind Sales",
 			}),
 		).not.toBeInTheDocument();
 	});
@@ -215,7 +216,7 @@ describe("collaboration Work and Brain integration", () => {
 		const router = renderSession("/brain/topics/t-geng");
 		await user.click(screen.getByRole("tab", { name: "Goals and notes" }));
 		const title =
-			"Present agent architecture at Google eng review (Oct 15)";
+			"Present agent architecture at Northwind eng review (Oct 15)";
 		const checkbox = screen.getByRole("checkbox", { name: title });
 		await user.click(checkbox);
 		expect(checkbox).toBeChecked();
@@ -302,22 +303,22 @@ describe("collaboration Work and Brain integration", () => {
 		renderSession("/brain/threads/th-geng-review");
 		expect(
 			submittedContext().messages.some(
-				(message) => message.fromId === "p-marcus",
+				(message) => message.fromId === "p-ben",
 			),
 		).toBe(true);
 		await user.click(
 			screen.getByRole("switch", {
-				name: "Include Marcus Chen in assistant context",
+				name: "Include Ben Carter in assistant context",
 			}),
 		);
 		expect(
 			submittedContext().messages.some(
-				(message) => message.fromId === "p-marcus",
+				(message) => message.fromId === "p-ben",
 			),
 		).toBe(false);
 		expect(
 			screen.getByRole("switch", {
-				name: "Include Marcus Chen in assistant context",
+				name: "Include Ben Carter in assistant context",
 			}),
 		).not.toBeChecked();
 	});
@@ -325,12 +326,12 @@ describe("collaboration Work and Brain integration", () => {
 	it("removes a rule from the visible active rules list", async () => {
 		const user = userEvent.setup();
 		renderSession("/rules");
-		const value = screen.getByText("benefits@deloitte.com", {});
+		const value = screen.getByText("benefits@contoso.example", {});
 		const row = value.parentElement;
 		if (!row) throw new Error("Missing rule row");
 		await user.click(within(row).getByRole("button", { name: "Remove" }));
 		expect(
-			screen.queryByText("benefits@deloitte.com", {}),
+			screen.queryByText("benefits@contoso.example", {}),
 		).not.toBeInTheDocument();
 	});
 
@@ -400,16 +401,16 @@ describe("collaboration Work and Brain integration", () => {
 			within(dialog).getByRole("textbox", {
 				name: "Search",
 			}),
-			"Priya",
+			"Ava",
 		);
 		const result = within(dialog).getByRole("link", {
-			name: "Priya Raman Person",
+			name: "Ava Reed Person",
 		});
-		expect(result).toHaveAttribute("href", "/brain/people/p-priya");
+		expect(result).toHaveAttribute("href", "/brain/people/p-ava");
 		await user.click(result);
 		expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
 		expect(
-			screen.getByRole("heading", { name: "Priya Raman" }),
+			screen.getByRole("heading", { name: "Ava Reed" }),
 		).toBeInTheDocument();
 	});
 

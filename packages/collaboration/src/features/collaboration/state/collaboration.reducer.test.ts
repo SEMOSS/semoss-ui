@@ -144,7 +144,7 @@ describe("shared collaboration session", () => {
 		expect(topic?.notes[1]).toMatchObject({
 			status: "confirmed",
 			text: "Pilot scope is limited to 2 use cases (claims triage, contract Q&A).",
-			source: "Email from Raj Mehta, Sep 20",
+			source: "Email from Hugo Lane, Sep 20",
 		});
 		state = apply(state, {
 			type: "topic.note",
@@ -245,19 +245,19 @@ describe("shared collaboration session", () => {
 		expect(
 			state.topics
 				.find((topic) => topic.id === "t-gsales")
-				?.people.find((person) => person.personId === "p-ken"),
+				?.people.find((person) => person.personId === "p-gia"),
 		).toMatchObject({ state: "member", origin: "brain" });
 		expect(
-			state.people.find((person) => person.id === "p-ken")?.topics,
+			state.people.find((person) => person.id === "p-gia")?.topics,
 		).toContain("t-gsales");
 		const removed = apply(state, {
 			type: "topic.person",
 			topicId: "t-gsales",
-			personId: "p-ken",
+			personId: "p-gia",
 			state: "removed",
 		});
 		expect(
-			removed.people.find((person) => person.id === "p-ken")?.topics,
+			removed.people.find((person) => person.id === "p-gia")?.topics,
 		).not.toContain("t-gsales");
 		expect(
 			removed.threads.find((thread) => thread.id === "th-procurement")
@@ -278,7 +278,7 @@ describe("shared collaboration session", () => {
 		};
 		const loaded = {
 			...base.profile,
-			id: "p-kunal",
+			id: "p-robin",
 			role: { value: "Backend lead", source: "you" as const },
 		};
 		let state = apply(base, { type: "live-profile.set", profile: loaded });
@@ -286,7 +286,7 @@ describe("shared collaboration session", () => {
 			type: "live-profile.set",
 			profile: placeholder,
 		});
-		expect(state.liveProfile?.id).toBe("p-kunal");
+		expect(state.liveProfile?.id).toBe("p-robin");
 		expect(state.liveProfile?.role.value).toBe("Backend lead");
 		state = apply(
 			{ ...state, liveProfile: null },
@@ -355,7 +355,7 @@ describe("shared collaboration session", () => {
 		).toContain("t-gsales");
 		expect(state.rules.at(-1)?.topicId).toBe("t-gsales");
 		expect(
-			state.people.find((person) => person.id === "p-priya")?.topics,
+			state.people.find((person) => person.id === "p-ava")?.topics,
 		).toContain("t-gsales");
 		expect(
 			state.threads.every(
@@ -368,7 +368,7 @@ describe("shared collaboration session", () => {
 		expect(
 			state.topics
 				.find((topic) => topic.id === "t-gsales")
-				?.people.filter((person) => person.personId === "p-raj"),
+				?.people.filter((person) => person.personId === "p-hugo"),
 		).toHaveLength(1);
 	});
 
@@ -380,7 +380,7 @@ describe("shared collaboration session", () => {
 			targetTopicId: "t-gsales",
 		});
 		expect(
-			state.threads.find((thread) => thread.id === "th-raj-chat"),
+			state.threads.find((thread) => thread.id === "th-hugo-chat"),
 		).toMatchObject({
 			needsTopicChoice: false,
 			topicLinks: [
@@ -401,7 +401,7 @@ describe("shared collaboration session", () => {
 		expect(
 			state.topics.find((topic) => topic.id === "st-gsec"),
 		).toMatchObject({
-			name: "Google - Security review",
+			name: "Northwind - Security review",
 			status: "active",
 			isSample: true,
 		});
@@ -630,9 +630,9 @@ describe("assistant context selection", () => {
 		const state = createInitialCollaborationState();
 		const context = selectThreadContext(state, "th-geng-review");
 		expect(context?.messages.map((message) => message.fromId)).toEqual([
-			"p-priya",
-			"p-raj",
-			"p-marcus",
+			"p-ava",
+			"p-hugo",
+			"p-ben",
 		]);
 		expect(context?.topics.map((topic) => topic.id)).toEqual(["t-geng"]);
 		expect(
@@ -645,7 +645,7 @@ describe("assistant context selection", () => {
 		).toBe(true);
 		expect(context?.hiddenCount).toBe(2);
 		expect(JSON.stringify(context)).not.toContain(
-			"registration for the Google Cloud Partner Summit",
+			"registration for the Northwind Cloud Partner Summit",
 		);
 	});
 
@@ -655,7 +655,7 @@ describe("assistant context selection", () => {
 		const changed = apply(state, {
 			type: "thread.participant",
 			threadId: "th-geng-review",
-			personId: "p-tom",
+			personId: "p-dan",
 			included: true,
 		});
 		const after = selectThreadContext(changed, "th-geng-review");
@@ -675,7 +675,7 @@ describe("assistant context selection", () => {
 		expect(context?.profile).toBeNull();
 		expect(context?.topics).toEqual([]);
 		expect(context?.messages).toHaveLength(1);
-		expect(JSON.stringify(context)).not.toContain("Kunal");
+		expect(JSON.stringify(context)).not.toContain("Robin");
 		expect(
 			state.items.find((item) => item.id === "outlook-item-1"),
 		).toMatchObject({ score: null, priority: null });
@@ -747,23 +747,23 @@ describe("assistant context selection", () => {
 				kind: "exclude_topic",
 				value: "t-gsales",
 				topicId: "t-gsales",
-				personId: "p-raj",
+				personId: "p-hugo",
 				isSample: true,
 			},
 		});
 		expect(
 			selectThreadContext(state, "th-geng-review")?.participants.find(
-				(person) => person.personId === "p-raj",
+				(person) => person.personId === "p-hugo",
 			)?.included,
 		).toBe(true);
 		expect(
-			selectThreadContext(state, "th-raj-chat")?.participants.find(
-				(person) => person.personId === "p-raj",
+			selectThreadContext(state, "th-hugo-chat")?.participants.find(
+				(person) => person.personId === "p-hugo",
 			)?.included,
 		).toBe(false);
 		expect(
 			selectThreadContext(state, "th-procurement")?.participants.find(
-				(person) => person.personId === "p-ken",
+				(person) => person.personId === "p-gia",
 			)?.included,
 		).toBe(true);
 	});

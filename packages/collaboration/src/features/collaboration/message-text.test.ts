@@ -9,20 +9,20 @@ import {
 
 describe("messageSegments", () => {
 	it("keeps text without history whole", () => {
-		const text = "Hi\nForwarded from Priya Raman:\nnot a forward";
+		const text = "Hi\nForwarded from Ava Reed:\nnot a forward";
 		expect(messageSegments(text)).toEqual([{ text }]);
 	});
 
 	it("splits a forward under its label", () => {
 		expect(
 			messageSegments(
-				"Can you take this?\n\nForwarded from Priya Raman, Monday, August 25, 2026 3:02 PM:\nThe vendor needs sign-off by Friday.",
+				"Can you take this?\n\nForwarded from Ava Reed, Monday, August 25, 2026 3:02 PM:\nThe vendor needs sign-off by Friday.",
 				true,
 			),
 		).toEqual([
 			{ text: "Can you take this?" },
 			{
-				label: "Forwarded from Priya Raman, Monday, August 25, 2026 3:02 PM:",
+				label: "Forwarded from Ava Reed, Monday, August 25, 2026 3:02 PM:",
 				text: "The vendor needs sign-off by Friday.",
 			},
 		]);
