@@ -17,6 +17,7 @@ import {
 } from "@semoss/ui/next";
 import { EngineAccessButton, EngineExportButton } from "@/components/engine";
 import { NavbarHeader, NavbarLeft } from "@/components/shared";
+import { CatalogImage } from "@/features/catalog-images/catalog-image";
 import { useEngine } from "@/hooks";
 import { useNavigate } from "@/hooks/useNavigate";
 
@@ -126,11 +127,18 @@ export const EngineTabsLayout: React.FC<EngineTabsLayoutProps> = ({ tabs }) => {
 				<div className="flex w-full flex-col items-start gap-4 p-0">
 					<EntityHeader
 						icon={
-							<EngineSubtypeIcon
-								engineType={type}
-								engineSubtype={engine.engine_subtype}
-								alt={catalog.name}
-								className="size-full object-contain drop-shadow-[0_1px_1px_rgba(0,0,0,0.08)]"
+							<CatalogImage
+								resource="ENGINE"
+								id={engine.engine_id}
+								className="size-full rounded-lg"
+								fallback={
+									<EngineSubtypeIcon
+										engineType={type}
+										engineSubtype={engine.engine_subtype}
+										alt=""
+										className="size-full object-contain"
+									/>
+								}
 							/>
 						}
 						name={engine.engine_display_name || engine.engine_name}

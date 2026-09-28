@@ -86,7 +86,8 @@ export const AgentSubagentsField = ({
 														key={p.project_id}
 														value={p.project_id}
 													>
-														{p.project_name}
+														{p.project_display_name ||
+															p.project_name}
 													</SelectItem>
 												),
 											)}

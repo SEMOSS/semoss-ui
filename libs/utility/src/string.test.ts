@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { buildInitials, metakeyToLabel, slugifyIdentifier } from "./string";
+import {
+	asString,
+	buildInitials,
+	metakeyToLabel,
+	slugifyIdentifier,
+} from "./string";
 
 describe("string utilities", () => {
 	it("formats labels and identifiers", () => {
@@ -13,5 +18,11 @@ describe("string utilities", () => {
 		expect(buildInitials("One Two Three Four", 3)).toBe("OTT");
 		expect(buildInitials("Jane-Mary Smith", 2, false, true)).toBe("JM");
 		expect(buildInitials("Jane-Mary Smith", 2, false, false)).toBe("JS");
+	});
+
+	it("returns only string values", () => {
+		expect(asString("SEMOSS")).toBe("SEMOSS");
+		expect(asString(42)).toBe("");
+		expect(asString(null)).toBe("");
 	});
 });

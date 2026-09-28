@@ -17,6 +17,7 @@ import {
 } from "@semoss/ui/next";
 import { ProjectAccessRequestButton } from "@/components/project";
 import { NavbarHeader, NavbarLeft } from "@/components/shared";
+import { CatalogImage } from "@/features/catalog-images/catalog-image";
 import { useProject } from "@/hooks";
 import { useNavigate } from "@/hooks/useNavigate";
 
@@ -109,13 +110,20 @@ export const ProjectTabsLayout = ({ tabs }: ProjectTabsLayoutProps) => {
 				<div className={`mx-auto flex h-full w-full flex-col gap-3`}>
 					<EntityHeader
 						icon={
-							<AppCatalogAvatar
-								name={
-									project.project_display_name ||
-									project.project_name ||
-									""
+							<CatalogImage
+								resource="PROJECT"
+								id={project.project_id}
+								className="size-full rounded-lg"
+								fallback={
+									<AppCatalogAvatar
+										name={
+											project.project_display_name ||
+											project.project_name ||
+											""
+										}
+										className="h-full w-full rounded-lg text-xl"
+									/>
 								}
-								className="h-full w-full rounded-lg text-xl"
 							/>
 						}
 						name={

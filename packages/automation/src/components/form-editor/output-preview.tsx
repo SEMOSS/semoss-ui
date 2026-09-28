@@ -1,7 +1,7 @@
 import { ChevronDown, ChevronRight, ClipboardCopy } from "lucide-react";
 import { Fragment, useMemo, useState } from "react";
 import { toast } from "@semoss/ui/next";
-import { looksLikeMarkdown, splitMessageLines } from "@semoss/utility/markdown";
+import { looksLikeMarkdown, splitMessageLines } from "@semoss/utility";
 import { extractDataset } from "../../domain/automation-utils";
 
 export interface OutputPreviewProps {
@@ -44,7 +44,7 @@ export function OutputPreview({
 			return "vector-results";
 		if (dbDataset) return "table";
 		return "text";
-	}, [nodeType, parsed, dbDataset]);
+	}, [nodeType, parsed, dbDataset, value]);
 
 	const renderExpanded = () => {
 		if (renderMode === "markdown") {

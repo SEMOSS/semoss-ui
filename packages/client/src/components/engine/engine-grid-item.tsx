@@ -13,8 +13,9 @@ import {
 	TooltipContent,
 	TooltipTrigger,
 } from "@semoss/ui/next";
-import { CatalogGridItem } from "@/components/catalog";
-import { normalizeTagArray } from "@/utility";
+import { CatalogGridItem } from "@/components/catalog/catalog-grid-item";
+import { CatalogImage } from "@/features/catalog-images/catalog-image";
+import { normalizeTagArray } from "@/utility/tags";
 
 export interface EngineGridItemProps {
 	/** Display style - list row or grid card */
@@ -175,11 +176,17 @@ export const EngineGridItem: React.FC<EngineGridItemProps> = ({
 	);
 
 	const icon = (
-		<EngineSubtypeIcon
-			engineType={engine.engine_type || ""}
-			engineSubtype={engine.engine_subtype}
-			alt={engineName}
-			className="size-full object-contain drop-shadow-[0_1px_1px_rgba(0,0,0,0.08)]"
+		<CatalogImage
+			resource="ENGINE"
+			id={engine.engine_id}
+			fallback={
+				<EngineSubtypeIcon
+					engineType={engine.engine_type || ""}
+					engineSubtype={engine.engine_subtype}
+					alt=""
+					className="size-full object-contain"
+				/>
+			}
 		/>
 	);
 
