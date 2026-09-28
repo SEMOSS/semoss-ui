@@ -21,7 +21,6 @@ import { type ReactNode, useEffect, useId, useMemo, useState } from "react";
 import { Badge, Button, cn, Input, Label, Switch } from "@semoss/ui/next";
 import type { InsightActions } from "@/lib/pixel";
 import { PersonAvatar } from "../collaboration/components/person-avatar";
-import { setLiveData } from "../collaboration/live/live-state";
 import {
 	type AccountSuggestion,
 	type Job,
@@ -1655,7 +1654,6 @@ export function WorkStep({ actions, onBack, eyebrow }: StepProps) {
 	};
 
 	const finish = () => {
-		setLiveData(true);
 		window.location.hash = "#/work";
 		window.location.reload();
 	};

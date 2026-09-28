@@ -15,7 +15,6 @@ import {
 	useTheme,
 } from "@semoss/ui/next";
 import { useCurrentUser } from "@/features/account/api/use-current-user";
-import { isLiveData } from "../live/live-state";
 import { useCollaborationSession } from "../state/collaboration-session.context";
 import { CollaborationNavigation } from "./collaboration-navigation";
 import { CollaborationSearch } from "./collaboration-search";
@@ -24,8 +23,8 @@ import { PersonAvatar } from "./person-avatar";
 /** Shell implementation is exported separately for focused navigation tests. */
 export function CollaborationShell() {
 	const { undo, canUndo, dispatch, state } = useCollaborationSession();
-	// a live owner with no mail yet starts with onboarding
-	const needsSetup = isLiveData() && state.threads.length === 0;
+	// an owner with no mail yet starts with onboarding
+	const needsSetup = state.threads.length === 0;
 	const { theme, setTheme } = useTheme();
 	const user = useCurrentUser();
 	const mainId = useId();

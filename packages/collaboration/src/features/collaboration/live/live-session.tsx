@@ -14,26 +14,15 @@ import {
 	CollaborationSessionProvider,
 	useCollaborationSession,
 } from "../state/collaboration-session.context";
-import {
-	isLiveData,
-	loadLiveState,
-	loadThreadMessages,
-	setLiveData,
-} from "./live-state";
+import { loadLiveState, loadThreadMessages } from "./live-state";
 import { createLiveSync } from "./live-sync";
 
-/** Sample fixtures by default; with live data on, loads the owner's Collaboration data first. */
+/** Loads the owner's Collaboration data before rendering the app. */
 export function CollaborationDataProvider({
 	children,
 }: {
 	children: ReactNode;
 }) {
-	if (!isLiveData())
-		return (
-			<CollaborationSessionProvider>
-				{children}
-			</CollaborationSessionProvider>
-		);
 	return <LiveSessionProvider>{children}</LiveSessionProvider>;
 }
 
@@ -78,16 +67,6 @@ function LiveSessionProvider({ children }: { children: ReactNode }) {
 				<div className="flex gap-2">
 					<Button size="sm" onClick={load}>
 						Retry
-					</Button>
-					<Button
-						size="sm"
-						variant="outline"
-						onClick={() => {
-							setLiveData(false);
-							window.location.reload();
-						}}
-					>
-						Use sample data
 					</Button>
 				</div>
 			</div>

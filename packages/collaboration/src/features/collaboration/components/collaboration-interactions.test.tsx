@@ -471,7 +471,9 @@ describe("new topic form", () => {
 	it("creates a navigable session topic when the optional existing ID is absent", async () => {
 		const user = userEvent.setup();
 		render(
-			<CollaborationSessionProvider>
+			<CollaborationSessionProvider
+				initialState={createInitialCollaborationState()}
+			>
 				<TopicCreationFixture />
 			</CollaborationSessionProvider>,
 		);

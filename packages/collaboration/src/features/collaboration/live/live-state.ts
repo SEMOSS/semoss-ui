@@ -24,24 +24,8 @@ import type {
 	WorkspaceStep,
 } from "../state/collaboration.types";
 
-// Live data: Brain and Work state loaded from the Collaboration reactors instead of the sample fixtures.
+// Brain and Work state loaded from the Collaboration reactors.
 // Every record loads as connected (isSample false).
-
-const LIVE_KEY = "collaboration.data";
-
-/** Live when the build says so or this browser opted in (localStorage collaboration.data = live). */
-export function isLiveData(): boolean {
-	const stored =
-		typeof window === "undefined"
-			? null
-			: window.localStorage.getItem(LIVE_KEY);
-	if (stored === "live" || stored === "sample") return stored === "live";
-	return import.meta.env.VITE_COLLABORATION_DATA === "live";
-}
-
-export function setLiveData(live: boolean) {
-	window.localStorage.setItem(LIVE_KEY, live ? "live" : "sample");
-}
 
 /** Run several statements in one request; throws on the first reactor error. */
 export async function runBatch(

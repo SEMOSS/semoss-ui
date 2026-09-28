@@ -7,7 +7,6 @@ import {
 	useReducer,
 	useRef,
 } from "react";
-import { createInitialCollaborationState } from "./collaboration.fixtures";
 import {
 	collaborationHistoryReducer,
 	reconcileCollaborationState,
@@ -39,8 +38,8 @@ const CollaborationSessionContext = createContext<CollaborationSession | null>(
 interface CollaborationSessionProviderProps {
 	/** Application routes sharing one session. */
 	children: ReactNode;
-	/** Optional isolated fixture for tests. */
-	initialState?: CollaborationState;
+	/** Starting state: the owner's loaded data, or a fixture in tests. */
+	initialState: CollaborationState;
 	/** Optional observer, e.g. to save changes to a backend. */
 	onChange?: (change: CollaborationChange) => void;
 }
@@ -55,9 +54,7 @@ export function CollaborationSessionProvider({
 		collaborationHistoryReducer,
 		initialState,
 		(value) => ({
-			state: reconcileCollaborationState(
-				value ?? createInitialCollaborationState(),
-			),
+			state: reconcileCollaborationState(value),
 			past: [],
 		}),
 	);
