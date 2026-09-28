@@ -39,6 +39,7 @@ function definition(
 		category,
 		defaultConfig,
 		configSchema: {},
+		outputSchema: {},
 		inputs: [],
 		outputs: [],
 		defaultCodeMode: "generated",

@@ -25,6 +25,9 @@ export interface AutomationWorkbenchContextValue {
 	onHistoryChanged: () => void;
 	inspectorSnapshot: AutomationInspectorSnapshot | null;
 	traceSnapshot: AutomationTraceSnapshot | null;
+	selectedRun: AutomationRunDetail | null;
+	onViewRun: (run: AutomationRunDetail) => void;
+	onExitHistoricalView: () => void;
 	historyRefreshToken: number;
 	onOpenOutput: (output: string) => void;
 	onAskAssistant: (prompt: string) => void;
@@ -42,7 +45,7 @@ export interface AutomationWorkbenchContextValue {
 export const AutomationWorkbenchContext =
 	createContext<AutomationWorkbenchContextValue | null>(null);
 
-function useAutomationWorkbenchContext(): AutomationWorkbenchContextValue {
+export function useAutomationWorkbenchContext(): AutomationWorkbenchContextValue {
 	const context = useContext(AutomationWorkbenchContext);
 	if (!context) {
 		throw new Error(
@@ -64,6 +67,7 @@ export const AutomationEditorPanel = () => {
 			onTraceChange={context.onTraceChange}
 			onInspectorChange={context.onInspectorChange}
 			onHistoryChanged={context.onHistoryChanged}
+			onExitHistoricalView={context.onExitHistoricalView}
 		/>
 	);
 };
@@ -137,12 +141,8 @@ export const AutomationTracePanel = () => {
 			onDismiss={() => undefined}
 			onOpenOutput={context.onOpenOutput}
 			onAskAssistant={context.onAskAssistant}
-			onViewRun={(run) =>
-				context.canvasRef.current?.viewHistoricalRun(run)
-			}
-			onExitHistoricalView={() =>
-				context.canvasRef.current?.exitHistoricalView()
-			}
+			onViewRun={context.onViewRun}
+			onExitHistoricalView={context.onExitHistoricalView}
 			focusNodeId={context.runDetailsFocusNodeId}
 			focusToken={context.runDetailsFocusToken}
 		/>

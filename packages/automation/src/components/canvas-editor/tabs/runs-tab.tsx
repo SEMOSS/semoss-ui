@@ -43,6 +43,8 @@ export interface RunsTabSnapshot {
 /** Live trace state shared with a host rendering `RunsTab` alongside `AutomationCanvas`. */
 export interface AutomationTraceSnapshot extends RunsTabSnapshot {
 	executedDefinition: AutomationExecutedDefinition | null;
+	/** Latest detail returned for the live run, including its temporary workspace. */
+	activeRun?: AutomationRunDetail | null;
 }
 
 interface RunsTabProps extends AutomationTraceSnapshot {
@@ -165,6 +167,29 @@ export function RunsTab({
 		previousRefreshTokenRef.current = refreshToken;
 		void refresh();
 	}, [refresh, refreshToken]);
+
+	// A run opened from history can still be active. Keep its detail current so
+	// status and temporary workspace metadata follow the live execution.
+	useEffect(() => {
+		if (selectedRun?.STATUS !== "RUNNING") return;
+		let cancelled = false;
+		const interval = window.setInterval(() => {
+			getAutomationRun(appId, selectedRun.RUN_ID)
+				.then((detail) => {
+					if (cancelled) return;
+					detailsCache.current[detail.RUN_ID] = detail;
+					setSelectedRun(detail);
+					onViewRun?.(detail);
+				})
+				.catch(() => {
+					// The manual refresh remains available if reconciliation fails.
+				});
+		}, 2500);
+		return () => {
+			cancelled = true;
+			window.clearInterval(interval);
+		};
+	}, [appId, onViewRun, selectedRun?.RUN_ID, selectedRun?.STATUS]);
 
 	const openRun = useCallback(
 		async (runId: string) => {
