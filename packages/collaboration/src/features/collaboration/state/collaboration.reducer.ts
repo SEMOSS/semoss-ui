@@ -597,7 +597,11 @@ export function collaborationReducer(
 								name: review.candidate.name,
 								accountId: review.candidate.accountId,
 								kind:
-									review.candidate.accountId === "deloitte"
+									state.accounts.find(
+										(account) =>
+											account.id ===
+											review.candidate.accountId,
+									)?.kind === "internal"
 										? "internal"
 										: "client",
 								isSample: true,
