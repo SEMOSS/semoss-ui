@@ -50,14 +50,14 @@ export function StorageEngineForm({
 				<BoundInput
 					label={
 						config.operation === "download"
-							? "Workspace Folder"
+							? "Save to Folder (optional)"
 							: "Workspace File or Folder"
 					}
-					required
+					required={config.operation === "upload"}
 					value={config.filePath}
 					placeholder={
 						config.operation === "download"
-							? "downloads"
+							? "/ (run workspace root)"
 							: "input/report.csv"
 					}
 					onChange={(v) => onChange({ ...config, filePath: v })}
