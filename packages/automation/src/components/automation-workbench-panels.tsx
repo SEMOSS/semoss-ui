@@ -138,6 +138,7 @@ export const AutomationTracePanel = () => {
 			steps={snapshot?.steps ?? []}
 			results={snapshot?.results ?? []}
 			executedDefinition={snapshot?.executedDefinition ?? null}
+			activeRun={snapshot?.activeRun ?? null}
 			onDismiss={() => undefined}
 			onOpenOutput={context.onOpenOutput}
 			onAskAssistant={context.onAskAssistant}

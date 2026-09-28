@@ -253,8 +253,26 @@ export interface AutomationNodeResult {
 	DURATION_MS: number;
 	OUTPUT_PREVIEW: string | null;
 	OUTPUT_VALUE?: string | null;
+	/** True when the run workspace can provide this node's output in bounded pages. */
+	dataAvailable?: boolean;
+	/** Provider-independent category assigned by the node contract. */
+	dataValueType?: AutomationDataType;
 	ERROR_MESSAGE: string | null;
 	trace?: AutomationNodeTrace;
+}
+
+export interface AutomationRunNodeDataPage {
+	available: boolean;
+	kind: "table" | "json" | "text";
+	valueType: AutomationDataType;
+	offset: number;
+	limit: number;
+	count: number;
+	total: number;
+	hasMore: boolean;
+	headers?: string[];
+	rows?: unknown[][];
+	value?: unknown;
 }
 
 export interface AutomationRunDetail extends AutomationRunSummary {

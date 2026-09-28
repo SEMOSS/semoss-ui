@@ -30,6 +30,7 @@ import { ExecutedDefinitionDetail } from "../../form-editor/executed-definition-
 import { TraceDetail } from "../../form-editor/trace-detail";
 import { StatusBadge } from "../../status-badge";
 import { RunBanner } from "../run-banner";
+import { RunNodeDataViewer } from "../run-node-data-viewer";
 
 export interface RunsTabSnapshot {
 	running: boolean;
@@ -91,6 +92,7 @@ export function RunsTab({
 	steps,
 	results,
 	executedDefinition,
+	activeRun,
 	onDismiss,
 	onOpenOutput,
 	onAskAssistant,
@@ -253,6 +255,8 @@ export function RunsTab({
 	if (view === "live" || (view === "history" && running)) {
 		return (
 			<LiveRunView
+				appId={appId}
+				runId={activeRun?.RUN_ID ?? null}
 				running={running}
 				latestRunStatus={latestRunStatus}
 				aiRunSummary={aiRunSummary}
@@ -287,6 +291,7 @@ export function RunsTab({
 		if (selectedRun) {
 			return (
 				<HistoryRunView
+					appId={appId}
 					run={selectedRun}
 					onBack={goBack}
 					onOutputPopout={handleOutputPopout}
@@ -427,6 +432,8 @@ function RunHistoryBreadcrumb({
 
 /** Live run detail with navigation back to the history list. */
 function LiveRunView({
+	appId,
+	runId,
 	running,
 	latestRunStatus,
 	aiRunSummary,
@@ -441,6 +448,8 @@ function LiveRunView({
 	focusNodeId,
 	focusToken,
 }: AutomationTraceSnapshot & {
+	appId: string;
+	runId: string | null;
 	onOutputPopout: (output: string) => void;
 	onAskAssistant: () => void;
 	onDismiss: () => void;
@@ -523,6 +532,8 @@ function LiveRunView({
 					</div>
 				)}
 			<ResultsPanel
+				appId={appId}
+				runId={runId}
 				results={results}
 				executedDefinition={executedDefinition}
 				onOutputPopout={onOutputPopout}
@@ -536,11 +547,13 @@ function LiveRunView({
 
 /** Historical run detail with back button and run metadata. */
 function HistoryRunView({
+	appId,
 	run,
 	onBack,
 	onOutputPopout,
 	onViewRun,
 }: {
+	appId: string;
 	run: AutomationRunDetail;
 	onBack: () => void;
 	onOutputPopout: (output: string) => void;
@@ -588,6 +601,8 @@ function HistoryRunView({
 
 			<div className="mt-3 min-h-0 flex-1 overflow-y-auto rounded-lg border bg-card">
 				<ResultsPanel
+					appId={appId}
+					runId={run.RUN_ID}
 					results={results}
 					executedDefinition={{
 						version: run.DEFINITION_VERSION,
@@ -606,6 +621,8 @@ function HistoryRunView({
 
 /** Shared results panel: left nav + right output. */
 function ResultsPanel({
+	appId,
+	runId,
 	results,
 	executedDefinition,
 	selectedResult,
@@ -613,6 +630,8 @@ function ResultsPanel({
 	onOutputPopout,
 	onSelectNode,
 }: {
+	appId: string;
+	runId: string | null;
 	results: AutomationNodeResult[];
 	executedDefinition: AutomationExecutedDefinition | null;
 	selectedResult: AutomationNodeResult | null;
@@ -729,6 +748,14 @@ function ResultsPanel({
 									)
 								}
 							/>
+							{selectedResult.dataAvailable && runId && (
+								<RunNodeDataViewer
+									key={`${runId}-${selectedResult.NODE_ID}`}
+									appId={appId}
+									runId={runId}
+									nodeId={selectedResult.NODE_ID}
+								/>
+							)}
 							{selectedStep?.workflowType === "trigger.start" &&
 								executedDefinition && (
 									<ExecutedDefinitionDetail

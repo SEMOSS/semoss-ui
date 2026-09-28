@@ -26,13 +26,10 @@ export type AutomationWorkflowNodeType =
 
 export type AutomationPortKind = "control" | "data";
 export type AutomationDataType =
-	| "boolean"
-	| "number"
-	| "string"
-	| "object"
-	| "array"
-	| "record"
-	| "table"
+	| "value"
+	| "collection"
+	| "dataset"
+	| "file"
 	| "unknown";
 
 export interface AutomationPort {
