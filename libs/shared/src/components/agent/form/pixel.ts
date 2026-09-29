@@ -1,5 +1,5 @@
+import { PIXEL_HOOK_KIND } from "../agent.types";
 import type { AgentFormValues } from "./types";
-import { PIXEL_HOOK_KIND } from "./types";
 
 const buildSubagentsPayload = (subagents: AgentFormValues["subagents"]) =>
 	subagents

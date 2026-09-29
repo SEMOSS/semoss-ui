@@ -12,6 +12,7 @@ export const playgroundResources: LazyResources = {
 		"prompts",
 		"auditlog",
 		"members",
+		"agent",
 		"mcp",
 		"chat",
 		"knowledge",
@@ -33,6 +34,7 @@ export const playgroundResources: LazyResources = {
 		prompts: (l) => import(`./locales/${l}/shared/prompts.json`),
 		auditlog: (l) => import(`./locales/${l}/shared/auditlog.json`),
 		members: (l) => import(`./locales/${l}/shared/members.json`),
+		agent: (l) => import(`./locales/${l}/shared/agent.json`),
 		// connectors: the Microsoft 365 and Google Workspace viewers
 		connectors: (l) => import(`./locales/${l}/connectors/connectors.json`),
 		// playground (note: playground/mcp.json overrides shared/mcp.json)

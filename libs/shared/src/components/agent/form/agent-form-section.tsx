@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { H4, Muted, Separator } from "@semoss/ui/next";
+import { AgentSection } from "../agent-section";
 
 export interface AgentFormSectionProps {
 	title: string;
@@ -40,16 +41,8 @@ export const AgentFormSection = ({
 	}
 
 	return (
-		<div className="flex flex-col gap-3">
-			<div>
-				<H4 className="font-semibold text-base tracking-tight">
-					{title}
-				</H4>
-				<Muted className="text-muted-foreground text-sm leading-6">
-					{description}
-				</Muted>
-			</div>
+		<AgentSection title={title} description={description}>
 			{children}
-		</div>
+		</AgentSection>
 	);
 };

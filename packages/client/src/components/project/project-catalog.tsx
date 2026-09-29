@@ -28,6 +28,15 @@ import { NavbarHeader, NavbarLeft } from "../shared";
 import { CloneProjectDialog } from "./clone-project-dialog";
 import { ProjectGridItem } from "./project-grid-item";
 
+/** Catalog item link; an empty `itemSubPath` lands on the item's overview. */
+const getItemPath = (
+	config: { basePath: string; itemSubPath: string },
+	projectId: string,
+) =>
+	config.itemSubPath
+		? `${config.basePath}/${projectId}/${config.itemSubPath}`
+		: `${config.basePath}/${projectId}`;
+
 const CATALOG_CONFIG = {
 	CODE: {
 		name: "App",
@@ -65,7 +74,8 @@ const CATALOG_CONFIG = {
 			"Agents are autonomous AI assistants configured with specific skills, knowledge bases, and behavioral guidelines to accomplish complex tasks. Create agents tailored to your workflows, from customer support and data analysis to content generation and research. Manage and deploy intelligent agents that can reason, plan, and execute multi-step processes.",
 		createPath: "/agent/new",
 		basePath: "/agent",
-		itemSubPath: "edit",
+		// Agents open on their overview; view/edit are reachable from there
+		itemSubPath: "",
 		projectTypes: ["WORKSPACE"],
 		showSystemTab: false,
 	},
@@ -527,7 +537,10 @@ export const ProjectCatalog = ({ type }: ProjectCatalogProps) => {
 										<ProjectGridItem
 											key={project.project_id}
 											variant={gridStyle}
-											path={`${config.basePath}/${project.project_id}/${config.itemSubPath}`}
+											path={getItemPath(
+												config,
+												project.project_id,
+											)}
 											project={project}
 											isFavorited={true}
 											showFavorite={true}
@@ -567,7 +580,10 @@ export const ProjectCatalog = ({ type }: ProjectCatalogProps) => {
 									<ProjectGridItem
 										key={project.project_id}
 										variant={gridStyle}
-										path={`${config.basePath}/${project.project_id}/${config.itemSubPath}`}
+										path={getItemPath(
+											config,
+											project.project_id,
+										)}
 										project={project}
 										isFavorited={
 											project.project_favorite === 1
