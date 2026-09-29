@@ -201,6 +201,32 @@ export const reconcileDurableSubagent = (
 	part.subagent.error = summary.errorMessage ?? undefined;
 };
 
+const isActiveSubagent = (part: PixelMessageSubagentPart): boolean =>
+	part.subagent.status !== "COMPLETED" &&
+	part.subagent.status !== "FAILED" &&
+	part.subagent.status !== "CANCELLED";
+
+/**
+ * Apply a durable parent-run snapshot to its visible cards. Returns whether
+ * any card still needs live updates, allowing a lost terminal stream event to
+ * stop the deferred watcher as soon as the database reports the child done.
+ */
+export const reconcileDurableSubagents = (
+	parts: PixelMessageSubagentPart[],
+	summaries: SubagentRunSummary[],
+): boolean => {
+	const summariesByRunId = new Map(
+		summaries.map((summary) => [summary.runId, summary]),
+	);
+	parts.forEach((part) => {
+		const summary = summariesByRunId.get(part.subagent.id);
+		if (summary) {
+			reconcileDurableSubagent(part, summary);
+		}
+	});
+	return parts.some(isActiveSubagent);
+};
+
 /**
  * Apply one agent-run item event onto the response message. Must already be
  * inside a mobx action. Tool status reads from `items` (the SDK's
@@ -490,19 +516,17 @@ const watchDeferredSubagentEvents = (
 	parentRunId: string,
 	responseMessage: ResponseMessageStore,
 ): void => {
-	const hasActiveCard = () =>
-		responseMessage.parts.some(
-			(part) =>
-				part.type === "SUBAGENT" &&
-				part.subagent.status !== "COMPLETED" &&
-				part.subagent.status !== "FAILED" &&
-				part.subagent.status !== "CANCELLED",
+	const subagentParts = () =>
+		responseMessage.parts.filter(
+			(part): part is PixelMessageSubagentPart =>
+				part.type === "SUBAGENT",
 		);
+	const hasActiveCard = () => subagentParts().some(isActiveSubagent);
 	if (!hasActiveCard()) {
 		return;
 	}
 
-	const agent = new AgentStore(room.roomId, room.insightId, parentRunId);
+	const agent = getOrCreateAgent(room.roomId, room.insightId, parentRunId);
 	const subscription = agent.watch(
 		{
 			onEvent: (event, items) => {
@@ -520,7 +544,46 @@ const watchDeferredSubagentEvents = (
 			keepPollingAfterTerminal: hasActiveCard,
 		},
 	);
-	void subscription.done;
+	let reconciling = false;
+	const reconcileFromDurableState = async () => {
+		if (reconciling || !hasActiveCard()) {
+			return;
+		}
+		reconciling = true;
+		try {
+			const summaries = await getSubagentRuns(
+				parentRunId,
+				room.insightId,
+			);
+			let stillActive = true;
+			runInAction(() => {
+				stillActive = reconcileDurableSubagents(
+					subagentParts(),
+					summaries,
+				);
+			});
+			if (!stillActive) {
+				subscription.stop();
+			}
+		} catch (e) {
+			console.error("Deferred subagent reconciliation error", e);
+		} finally {
+			reconciling = false;
+		}
+	};
+
+	// The canonical stream is the fast path. Durable reconciliation prevents a
+	// lost event, backend restart, or expired stream session from polling forever.
+	const reconcileTimer = setInterval(() => {
+		void reconcileFromDurableState();
+	}, 5_000);
+	void reconcileFromDurableState();
+	void subscription.done.finally(() => {
+		clearInterval(reconcileTimer);
+		if (agentsByRunId.get(parentRunId) === agent) {
+			agentsByRunId.delete(parentRunId);
+		}
+	});
 };
 
 /**

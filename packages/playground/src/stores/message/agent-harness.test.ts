@@ -1,7 +1,10 @@
 import { expect, test } from "vitest";
 import type { SubagentRunSummary } from "@semoss/sdk";
 import type { PixelMessageSubagentPart } from "@/types";
-import { reconcileDurableSubagent } from "./agent-harness";
+import {
+	reconcileDurableSubagent,
+	reconcileDurableSubagents,
+} from "./agent-harness";
 
 test("durable reconciliation updates an existing stale subagent card", () => {
 	const part: PixelMessageSubagentPart = {
@@ -31,4 +34,26 @@ test("durable reconciliation updates an existing stale subagent card", () => {
 		resultPreview: undefined,
 		error: "Build failed",
 	});
+});
+
+test("durable reconciliation settles a card after its terminal stream event is lost", () => {
+	const part: PixelMessageSubagentPart = {
+		type: "SUBAGENT",
+		subagent: {
+			id: "child-run",
+			status: "RUNNING",
+			displayName: "PPTX Agent",
+		},
+	};
+	const summary = {
+		runId: "child-run",
+		status: "COMPLETED",
+		finalText: "Saved deck.pptx",
+	} as SubagentRunSummary;
+
+	const stillActive = reconcileDurableSubagents([part], [summary]);
+
+	expect(stillActive).toBe(false);
+	expect(part.subagent.status).toBe("COMPLETED");
+	expect(part.subagent.resultPreview).toBe("Saved deck.pptx");
 });
