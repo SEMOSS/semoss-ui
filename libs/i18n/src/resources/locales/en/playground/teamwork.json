@@ -1,8 +1,4 @@
 {
-	"nav": {
-		"label": "Connections",
-		"tooltip": "Connect Microsoft 365 and Google Workspace"
-	},
 	"common": {
 		"retry": "Try Again",
 		"refresh": "Refresh"
@@ -72,7 +68,6 @@
 		},
 		"connected": "Connected",
 		"connectedAs": "Connected as {{name}}",
-		"connectedBadge": "Connected",
 		"notConnected": "Not Connected",
 		"unavailable": "Not Offered on This Server",
 		"connect": "Connect",
@@ -82,7 +77,12 @@
 		"connectIncomplete": "{{name}} was not connected. The sign in window closed before it finished.",
 		"connectError": "Could not connect {{name}}. {{message}}",
 		"popupBlocked": "Your browser blocked the sign in window. Allow pop-ups for this site and try again.",
-		"loadErrorTitle": "Could not check your connected accounts"
+		"loadErrorTitle": "Could not check your connected accounts",
+		"disconnect": "Disconnect",
+		"disconnecting": "Disconnecting...",
+		"disconnectSuccess": "{{name}} is disconnected",
+		"disconnectError": "Could not disconnect {{name}}. {{message}}",
+		"sessionLoginNote": "You signed in with this account, so it stays connected until you log out."
 	},
 	"services": {
 		"toolCounts_one": "{{count}} tool, {{ask}} ask first",
@@ -124,7 +124,7 @@
 		"dialogTitle": "Connectors",
 		"dialogDescription": "Choose which apps the assistant can use in your chats. It acts with your account, and sending, deleting, sharing, and invites always ask you first.",
 		"allChatsNote": "Switching an app on or off changes it in all your chats, new and existing.",
-		"manage": "Manage Connections",
+		"manage": "Manage Connectors",
 		"cancel": "Cancel",
 		"save": "Save",
 		"saving": "Saving...",
@@ -134,10 +134,7 @@
 		"adoptError": "The chat started, but its connectors could not be switched on. {{message}}"
 	},
 	"connections": {
-		"title": "Connections",
-		"description": "Connect the accounts the assistant can work with on your behalf.",
-		"appsTitle": "Apps",
-		"appsDescription": "Signing in links the account to your SEMOSS session. The assistant only sees what that account can see.",
+		"appsDescription": "Signing in links the account to your session. The assistant only sees what that account can see.",
 		"appsHint": "Switching an app on or off here changes it in all your chats, new and existing. A chat's plus menu opens the same settings.",
 		"settingsError": "Could not read your connector settings."
 	},

@@ -23,6 +23,25 @@ export interface UseUserConnectorsResult {
 	 * @throws Error when the change cannot be saved.
 	 */
 	setService: (serviceId: ConnectorServiceId, isOn: boolean) => Promise<void>;
+	/**
+	 * Switch several services on at once, keeping the ones already on. Does
+	 * nothing until the user's connectors have been read, so a write never
+	 * replaces settings it has not seen.
+	 *
+	 * @throws Error when the change cannot be saved.
+	 */
+	enableServices: (
+		serviceIds: readonly ConnectorServiceId[],
+	) => Promise<void>;
+	/**
+	 * Switch several services off at once, keeping the others as they are.
+	 * Like `enableServices`, does nothing until the connectors have been read.
+	 *
+	 * @throws Error when the change cannot be saved.
+	 */
+	disableServices: (
+		serviceIds: readonly ConnectorServiceId[],
+	) => Promise<void>;
 	/** Read them again. */
 	reload: () => void;
 }
@@ -36,7 +55,15 @@ export interface UseUserConnectorsResult {
 export const useUserConnectors = (): UseUserConnectorsResult => {
 	const [status, setStatus] =
 		useState<UseUserConnectorsResult["status"]>("loading");
-	const [services, setServices] = useState<ConnectorServiceId[]>([]);
+	const [services, setServicesState] = useState<ConnectorServiceId[]>([]);
+	// read by saves that start after an await, such as the one a sign in
+	// makes once its popup closes, when the render's values may be stale
+	const servicesRef = useRef<ConnectorServiceId[]>([]);
+	const isReadRef = useRef(false);
+	const setServices = useCallback((next: ConnectorServiceId[]) => {
+		servicesRef.current = next;
+		setServicesState(next);
+	}, []);
 	const [isSaving, setIsSaving] = useState(false);
 	const [reloadCount, setReloadCount] = useState(0);
 
@@ -52,6 +79,7 @@ export const useUserConnectors = (): UseUserConnectorsResult => {
 	// biome-ignore lint/correctness/useExhaustiveDependencies: reloadCount only asks for a new read
 	useEffect(() => {
 		let isCancelled = false;
+		isReadRef.current = false;
 		setStatus("loading");
 		readUserConnectorTools().then(
 			(tools) => {
@@ -59,6 +87,7 @@ export const useUserConnectors = (): UseUserConnectorsResult => {
 					setServices(
 						tools === null ? [] : getConnectorServices(tools),
 					);
+					isReadRef.current = true;
 					setStatus("ready");
 				}
 			},
@@ -73,13 +102,7 @@ export const useUserConnectors = (): UseUserConnectorsResult => {
 		};
 	}, [reloadCount]);
 
-	const setService = async (
-		serviceId: ConnectorServiceId,
-		isOn: boolean,
-	): Promise<void> => {
-		const next = isOn
-			? sanitizeConnectorServices([...services, serviceId])
-			: services.filter((id) => id !== serviceId);
+	const save = async (next: ConnectorServiceId[]): Promise<void> => {
 		setIsSaving(true);
 		try {
 			const tools = await writeUserConnectorTools(next);
@@ -93,6 +116,44 @@ export const useUserConnectors = (): UseUserConnectorsResult => {
 		}
 	};
 
+	const setService = (
+		serviceId: ConnectorServiceId,
+		isOn: boolean,
+	): Promise<void> => {
+		const current = servicesRef.current;
+		return save(
+			isOn
+				? sanitizeConnectorServices([...current, serviceId])
+				: current.filter((id) => id !== serviceId),
+		);
+	};
+
+	const enableServices = async (
+		serviceIds: readonly ConnectorServiceId[],
+	): Promise<void> => {
+		const current = servicesRef.current;
+		if (
+			!isReadRef.current ||
+			serviceIds.every((id) => current.includes(id))
+		) {
+			return;
+		}
+		await save(sanitizeConnectorServices([...current, ...serviceIds]));
+	};
+
+	const disableServices = async (
+		serviceIds: readonly ConnectorServiceId[],
+	): Promise<void> => {
+		const current = servicesRef.current;
+		if (
+			!isReadRef.current ||
+			!serviceIds.some((id) => current.includes(id))
+		) {
+			return;
+		}
+		await save(current.filter((id) => !serviceIds.includes(id)));
+	};
+
 	const reload = useCallback(() => {
 		setReloadCount((count) => count + 1);
 	}, []);
@@ -102,6 +163,8 @@ export const useUserConnectors = (): UseUserConnectorsResult => {
 		services: services,
 		isSaving: isSaving,
 		setService: setService,
+		enableServices: enableServices,
+		disableServices: disableServices,
 		reload: reload,
 	};
 };

@@ -3,7 +3,6 @@ import { RouterProvider } from "react-router/dom";
 import { DocumentLibrary } from "@/pages/knowledge-page";
 import { AuthenticatedLayout } from "./authenticated-layout";
 import { ChatsPage } from "./chats-page";
-import { ConnectionsPage } from "./connections-page";
 import { EditWorkspacePage } from "./edit-workspace-page";
 import { EmbedPage } from "./embed-page";
 import { ErrorPage } from "./error-page";
@@ -74,10 +73,6 @@ const router = createHashRouter([
 									{
 										path: "knowledge/:knowledgeId",
 										element: <KnowledgeDetailPage />,
-									},
-									{
-										path: "connections",
-										element: <ConnectionsPage />,
 									},
 									{
 										path: "*",

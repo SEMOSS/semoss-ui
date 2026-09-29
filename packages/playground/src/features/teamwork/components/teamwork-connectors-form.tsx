@@ -1,7 +1,6 @@
 import { TriangleAlertIcon } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useState } from "react";
-import { Link } from "react-router";
 import { useTranslation } from "@semoss/i18n";
 import {
 	Alert,
@@ -16,6 +15,7 @@ import {
 	Skeleton,
 	toast,
 } from "@semoss/ui/next";
+import { useSettingsDialog } from "@/features/settings/settings-dialog.context";
 import {
 	type ConnectorServiceId,
 	getConnectorService,
@@ -47,6 +47,7 @@ export const TeamworkConnectorsForm = observer(
 		const { t } = useTranslation("teamwork");
 		const connections = useConnections();
 		const handleConnect = useConnectProvider(connections.connect);
+		const { openSettings } = useSettingsDialog();
 		const [selected, setSelected] = useState<ConnectorServiceId[]>(() => [
 			...teamwork.connectors,
 		]);
@@ -202,10 +203,15 @@ export const TeamworkConnectorsForm = observer(
 				</div>
 
 				<DialogFooter>
-					<Button variant="ghost" className="sm:me-auto" asChild>
-						<Link to="/connections" onClick={onDone}>
-							{t("connectors.manage")}
-						</Link>
+					<Button
+						variant="ghost"
+						className="sm:me-auto"
+						onClick={() => {
+							onDone();
+							openSettings("connectors");
+						}}
+					>
+						{t("connectors.manage")}
 					</Button>
 					<Button
 						variant="outline"

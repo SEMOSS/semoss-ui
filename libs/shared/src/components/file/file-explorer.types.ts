@@ -30,6 +30,12 @@ export interface FileExplorerPrimaryAction {
 export interface FileExplorerSecondaryAction {
 	name: string;
 	action: (item: FileItem) => Promise<void>;
+	/**
+	 * Where the right-click menu lists it: among the item's own actions, before
+	 * Delete (the default), or after every standard entry, set apart by a
+	 * divider.
+	 */
+	placement?: "item" | "end";
 }
 
 /**

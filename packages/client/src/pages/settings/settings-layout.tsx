@@ -660,7 +660,7 @@ export const SettingsLayout = () => {
 												>
 													<span className="flex items-center gap-2">
 														<Pencil className="size-4" />
-														Edit team
+														Edit Team
 													</span>
 												</DropdownMenuItem>
 												<DropdownMenuItem
@@ -670,7 +670,7 @@ export const SettingsLayout = () => {
 												>
 													<span className="flex items-center gap-2 text-destructive">
 														<Trash2 className="size-4" />
-														Delete team
+														Delete Team
 													</span>
 												</DropdownMenuItem>
 											</DropdownMenuContent>

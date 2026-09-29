@@ -1363,7 +1363,7 @@ export const NotebookCell = observer(
 											onSelect={() => duplicateCell()}
 										>
 											<CopyPlus className="size-4" />
-											Duplicate cell
+											Duplicate Cell
 										</DropdownMenuItem>
 										{cell.query.id ===
 											MCP_NOTEBOOK_NAME && (
@@ -1393,7 +1393,7 @@ export const NotebookCell = observer(
 												) : (
 													<>
 														<HammerIcon size={14} />
-														Make Available through
+														Make Available Through
 														MCP
 													</>
 												)}
@@ -1404,7 +1404,7 @@ export const NotebookCell = observer(
 											onSelect={() => deleteCell()}
 										>
 											<Trash2 className="size-4" />
-											Delete cell
+											Delete Cell
 										</DropdownMenuItem>
 									</DropdownMenuContent>
 								</DropdownMenu>
