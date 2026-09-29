@@ -70,6 +70,10 @@ export interface Workspace {
 		greeting?: string;
 		/** Whether `greeting` is shown. Toggling this off keeps the authored text. */
 		greeting_enabled?: boolean;
+		/** Specialists this agent is allowed to delegate work to. */
+		subagents?: {
+			workspaceId: string;
+		}[];
 	};
 }
 
@@ -274,6 +278,8 @@ export interface PixelMessageSubagentPart {
 		status: AgentRunStatusValue;
 		/** Named-subagent alias, when spawned via a named tool. Live only — never persisted, so absent after a reload. */
 		alias?: string;
+		/** Human-readable specialist name resolved by the backend. */
+		displayName?: string;
 		/** Set once status is COMPLETED. */
 		resultPreview?: string;
 		/** Set once status is FAILED. */

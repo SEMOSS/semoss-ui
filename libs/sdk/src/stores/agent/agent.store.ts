@@ -43,6 +43,12 @@ export interface AgentWatchOptions {
 	signal?: AbortSignal;
 	/** Consecutive poll failures tolerated before the subscription attempts one durable reconcile and stops. Defaults to 8. */
 	maxConsecutiveFailures?: number;
+	/** Keep draining a terminal run while related asynchronous work can still
+	 * publish item events to its grace-period stream. Defaults to false. */
+	keepPollingAfterTerminal?: (
+		snapshot: AgentRunSnapshot,
+		items: AgentRunItemsState,
+	) => boolean;
 }
 
 const TERMINAL_RUN_STATUSES: ReadonlySet<AgentRunStatusValue> = new Set([
@@ -192,6 +198,7 @@ export class AgentStore {
 			inputRequiredIntervalMultiplier = 3,
 			signal,
 			maxConsecutiveFailures = 8,
+			keepPollingAfterTerminal,
 		} = options;
 		const { onEvent, onSnapshot, onReconcile, onError } = handlers;
 
@@ -278,7 +285,10 @@ export class AgentStore {
 						waitMs =
 							pollIntervalMs * inputRequiredIntervalMultiplier;
 					} else if (TERMINAL_RUN_STATUSES.has(run.status)) {
-						if (deliveredEvents > 0) {
+						const keepPolling =
+							keepPollingAfterTerminal?.(run, itemsState) ??
+							false;
+						if (deliveredEvents > 0 || keepPolling) {
 							// The backend can still be flushing final item
 							// events when the status first reads terminal —
 							// keep draining on a short interval until a drain

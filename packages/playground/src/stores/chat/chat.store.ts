@@ -817,6 +817,22 @@ export class ChatStore {
 		}
 	};
 
+	/** Replaces the built-in Orchestrator's specialist allowlist. */
+	editOrchestratorRoster = async (
+		workspaceId: string,
+		name: string,
+		subagents: { workspaceId: string }[],
+	): Promise<string> => {
+		const pixel = `EditWorkspace(workspaceId=${JSON.stringify(workspaceId)}, name=${JSON.stringify(name)}, subagents=${JSON.stringify(subagents)})`;
+		const { pixelReturn } = await this._actions.run<[boolean]>(pixel);
+
+		if (!pixelReturn[0].output) {
+			throw new Error("Unable to update the Orchestrator roster");
+		}
+
+		return workspaceId;
+	};
+
 	deleteWorkspace = async (workspaceId: string) => {
 		try {
 			await this._actions.run(
