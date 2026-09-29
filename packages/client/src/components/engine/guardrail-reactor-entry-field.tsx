@@ -19,6 +19,7 @@ import type {
 	GuardrailFailureAction,
 	GuardrailPhase,
 	GuardrailReactorFormValue,
+	GuardrailToolContinuationSkip,
 	InterceptableMethodArgument,
 } from "./engine-guardrail-settings.constants";
 import { GuardrailDirectParametersField } from "./guardrail-direct-parameters-field";
@@ -64,6 +65,10 @@ export interface GuardrailReactorEntryFieldProps {
 	/** Arguments the rule's method exposes in this phase. */
 	argumentOptions: InterceptableMethodArgument[];
 
+	/** The argument that can hold tool results, when the rule's method carries
+	 * them at all. Undefined hides the tool-result setting. */
+	toolResultArgument?: InterceptableMethodArgument;
+
 	/** Problems that belong to this check. */
 	issues: GuardrailConfigIssue[];
 
@@ -103,6 +108,31 @@ const FAILURE_ACTION_OPTIONS: Array<{
 	},
 ];
 
+const TOOL_CONTINUATION_OPTIONS: Array<{
+	value: GuardrailToolContinuationSkip;
+	label: string;
+	description: string;
+}> = [
+	{
+		value: "none",
+		label: "Screen every turn",
+		description:
+			"Check the results tools return the same way user messages are checked.",
+	},
+	{
+		value: "listed",
+		label: "Skip listed tools",
+		description:
+			"Leave the results of the tools named below unchecked, and screen everything else.",
+	},
+	{
+		value: "all",
+		label: "Skip all tool results",
+		description:
+			"Leave every tool result unchecked. Only this check stops screening them.",
+	},
+];
+
 const FAILURE_ACTION_BADGES: Record<GuardrailFailureAction, string> = {
 	block: "Blocks",
 	mask: "Masks",
@@ -130,6 +160,7 @@ export const GuardrailReactorEntryField = ({
 	engineNames,
 	onEngineResolved,
 	argumentOptions,
+	toolResultArgument,
 	issues,
 	disabled,
 	idPrefix,
@@ -371,6 +402,60 @@ export const GuardrailReactorEntryField = ({
 									description="Optional message returned when this guardrail blocks the call."
 									disabled={disabled}
 								/>
+							</div>
+						)}
+
+						{phase === "input" && toolResultArgument && (
+							<div className="space-y-3">
+								<Separator />
+								<FormRadioGroup
+									name={`${namePrefix}.toolContinuationSkip`}
+									label="Tool results"
+									description="An agent turn that returns a tool's output reaches this check as input. Skipping applies to this check only."
+									className="gap-3"
+									disabled={disabled}
+								>
+									<div className="grid gap-3">
+										{TOOL_CONTINUATION_OPTIONS.map(
+											(option) => {
+												const optionId = `${idPrefix}-tool-continuation-${option.value}`;
+												return (
+													<Label
+														key={option.value}
+														htmlFor={optionId}
+														className="flex cursor-pointer items-start gap-3 rounded-md border p-3 has-data-[state=checked]:border-primary has-data-[state=checked]:bg-primary/5"
+													>
+														<RadioGroupItem
+															id={optionId}
+															value={option.value}
+															className="mt-0.5"
+														/>
+														<span className="space-y-1">
+															<span className="block font-medium text-sm">
+																{option.label}
+															</span>
+															<span className="block font-normal text-muted-foreground text-xs">
+																{
+																	option.description
+																}
+															</span>
+														</span>
+													</Label>
+												);
+											},
+										)}
+									</div>
+								</FormRadioGroup>
+								{value.toolContinuationSkip === "listed" && (
+									<FormInput
+										name={`${namePrefix}.toolContinuationTools`}
+										label="Tools to skip"
+										placeholder="a1234_search, a1234_read_file"
+										description="Comma separated, each named as the model sees it. A turn that mixes a listed tool with any other tool is still screened."
+										disabled={disabled}
+										data-testid={`${testIdPrefix}-tool-continuation-tools`}
+									/>
+								)}
 							</div>
 						)}
 					</div>

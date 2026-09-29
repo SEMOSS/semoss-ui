@@ -2,15 +2,14 @@ import {
 	BotIcon,
 	CheckIcon,
 	MessageCircleIcon,
-	Settings2Icon,
 	SparklesIcon,
-	XIcon,
 } from "lucide-react";
 import { runInAction } from "mobx";
 import { observer } from "mobx-react-lite";
 import type { ReactNode } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router";
+import type { ConnectorViewerService } from "@semoss/connectors";
 import { useTranslation } from "@semoss/i18n";
 import { InsightProvider, usePixel } from "@semoss/sdk/react";
 import {
@@ -21,16 +20,13 @@ import {
 	ResizableHandle,
 	ResizablePanel,
 	ResizablePanelGroup,
-	ScrollArea,
-	Tooltip,
-	TooltipContent,
-	TooltipTrigger,
 	toast,
 	useTheme,
 } from "@semoss/ui/next";
 import landingImage from "@/assets/img/landing.png";
 import landingDarkImage from "@/assets/img/landing-darkmode.png";
 import {
+	RoomGreeting,
 	RoomInput,
 	RoomInputMenuFileExplorer,
 	RoomInputMenuMCP,
@@ -38,10 +34,18 @@ import {
 	RoomInputMenuUpload,
 	RoomSidebar,
 } from "@/components";
-import { RoomOptionsForm } from "@/components/room/room-options-form";
+import { createEarlyRoom } from "@/components/room/create-early-room";
+import { ROOM_PANEL_COMPONENTS } from "@/components/room/panels";
+import { RoomSettingsFormProvider } from "@/components/room/panels/room-configuration-panel";
+import { RoomInputMenuSettings } from "@/components/room/room-input-menu-settings";
+import type { RoomOptionsFormProps } from "@/components/room/room-options-form";
 import { FileDragProvider, useFileDrag } from "@/contexts";
+import { TeamworkConnectorsMenuItem } from "@/features/teamwork/components/teamwork-connectors-menu-item";
+import { TeamworkDialogs } from "@/features/teamwork/components/teamwork-dialogs";
+import { TeamworkSourcesMenuItem } from "@/features/teamwork/components/teamwork-sources-menu-item";
+import { NextMessageRoomProvider } from "@/features/teamwork/sources/next-message-room";
 import { useChat, useGlobalBreadcrumbs, useRoot } from "@/hooks";
-import { RoomStore } from "@/stores";
+import { ROOM_PANEL_TYPES, RoomStore } from "@/stores";
 import type { MCPConfig, Prompt, Workspace } from "@/types";
 
 /**
@@ -78,7 +82,13 @@ const DropHighlight = ({
  * @component
  */
 export const NewRoomPage = observer(() => {
-	const { t } = useTranslation(["room", "workspace", "common", "chat"]);
+	const { t } = useTranslation([
+		"room",
+		"workspace",
+		"common",
+		"chat",
+		"teamwork",
+	]);
 	const { root } = useRoot();
 	const { theme: colorMode } = useTheme();
 
@@ -120,7 +130,12 @@ export const NewRoomPage = observer(() => {
 	// Create a temporary RoomStore instance to handle options mutations
 	// This prevents re-renders on tool selection since MobX handles the mutations
 	const tempRoomStore = useMemo(
-		() => new RoomStore(root.theme, "temp"),
+		() =>
+			new RoomStore({
+				theme: root.theme,
+				roomId: "temp",
+				panelComponents: ROOM_PANEL_COMPONENTS,
+			}),
 		[root.theme],
 	);
 	const bannerRef = useRef<HTMLDivElement>(null);
@@ -140,12 +155,13 @@ export const NewRoomPage = observer(() => {
 	}, [root.theme.banner]);
 
 	const [isLoading, setIsLoading] = useState(false);
-	const [isConfigurationOpen, setIsConfgurationOpen] = useState(false);
 	const [preCreatedRoom, setPreCreatedRoom] = useState<RoomStore | null>(
 		null,
 	);
+	// the pre-created room's sidebar is opened before it is ever rendered, so
+	// its blueprints are registered from here rather than from RoomContent
 	const submittedRef = useRef(false);
-	const autoGreetedRef = useRef(false);
+	const greetingRoomStartedForRef = useRef<string>("");
 	const [mode, setMode] = useState<"chat" | "agent">("chat");
 
 	// tempRoomStore is only created once (createRoom below builds the real,
@@ -171,6 +187,19 @@ export const NewRoomPage = observer(() => {
 		},
 	);
 
+	// Direct/shared agent link, rather than the in-room "+" modal.
+	const isWorkspaceFromUrl =
+		!!workspaceIdSearchParams &&
+		workspaceIdSearchParams === selectedWorkspaceId;
+
+	// Only visible for the moment the greeting room below is being created.
+	const agentGreeting =
+		isWorkspaceFromUrl &&
+		getWorkspace.data?.workspace_id === selectedWorkspaceId &&
+		getWorkspace.data?.config_json?.greeting_enabled
+			? (getWorkspace.data?.config_json?.greeting ?? "")
+			: "";
+
 	// Fetch knowledge vector engine if knowledgeId is provided
 	const getKnowledge = usePixel<
 		| {
@@ -194,6 +223,11 @@ export const NewRoomPage = observer(() => {
 			data: [],
 		},
 	);
+	// the new chat shows the user's connectors, which every chat of theirs has
+	useEffect(() => {
+		void tempRoomStore.teamwork.loadUserConnectors();
+	}, [tempRoomStore]);
+
 	// On initial load, set the default options from the theme using the temporary RoomStore
 	useEffect(() => {
 		tempRoomStore.setOptions({
@@ -206,6 +240,158 @@ export const NewRoomPage = observer(() => {
 				: undefined,
 		});
 	}, [tempRoomStore, root.theme]);
+
+	/**
+	 * Options shared by every room-creation path: current MCPs, the agent
+	 * harness selection, and the selected workspace (if any).
+	 */
+	const buildRoomOptions = (): RoomStore["options"] => {
+		const options = {
+			...tempRoomStore.options,
+			mcp: tempRoomStore.options.mcp,
+			// Persisted so agent mode survives a reload.
+			harnessType: mode === "agent" ? "semoss" : undefined,
+		};
+
+		// add workspace id and name
+		if (selectedWorkspaceId) {
+			options.workspace = {
+				workspace_id: getWorkspace.data?.workspace_id || "",
+				name: getWorkspace.data?.name,
+			};
+		}
+
+		return options;
+	};
+
+	/**
+	 * The room whose sidebar the page shows on the right: the one created
+	 * early for Chat Files, or until then the draft itself, so the settings
+	 * always open as a tab in a sidebar.
+	 */
+	const sidebarRoom = preCreatedRoom ?? tempRoomStore;
+
+	/**
+	 * Take over the room created early for a sidebar panel. The sidebar moves
+	 * to it, and settings the draft's sidebar was showing come along as a tab;
+	 * the panel the user asked for stays the tab in front.
+	 *
+	 * @param room - The room just created.
+	 * @param showPanel - Opens, or brings to the front, the panel asked for.
+	 */
+	const adoptEarlyRoom = (
+		room: RoomStore,
+		showPanel: (room: RoomStore) => void,
+	) => {
+		const hadSettings =
+			tempRoomStore.sidebar.isOpen &&
+			tempRoomStore.workbench
+				.getState()
+				.layout.actions.findPanels(
+					(panel) => panel.type === ROOM_PANEL_TYPES.CONFIGURATION,
+				).length > 0;
+		if (hadSettings) {
+			room.openSidebarPanel(ROOM_PANEL_TYPES.CONFIGURATION);
+		}
+		showPanel(room);
+		void tempRoomStore.closeSidebar();
+		setPreCreatedRoom(room);
+	};
+
+	/**
+	 * Show a connector viewer before the chat starts. Viewers save into the
+	 * chat's files and add to its first message, so they open in the room
+	 * created early, as Chat Files does, which is created now if needed.
+	 *
+	 * @param service - The viewer.
+	 */
+	const handleOpenSource = async (service: ConnectorViewerService) => {
+		if (preCreatedRoom) {
+			preCreatedRoom.teamwork.openSourcePanel(service);
+			return;
+		}
+		try {
+			const room = await createEarlyRoom({
+				theme: root.theme,
+				chat: chat,
+				mode: mode,
+				options: tempRoomStore.options,
+			});
+			adoptEarlyRoom(room, (early) =>
+				early.teamwork.openSourcePanel(service),
+			);
+		} catch (error) {
+			toast.error(
+				t("room:errors.createRoom", {
+					message: error instanceof Error ? error.message : "",
+				}),
+			);
+		}
+	};
+
+	/**
+	 * The new chat's settings, shown as a tab in the right-hand sidebar. The
+	 * room created early for Chat Files takes these options only when the
+	 * first message is sent, so its settings tab edits them too.
+	 */
+	const settingsFormProps: RoomOptionsFormProps = {
+		model: chat.models.selected,
+		options: tempRoomStore.options,
+		onModelChange: (model) => {
+			if (model) {
+				chat.setSelectedModel(model);
+			}
+		},
+		agentEditable: true,
+		isAgentMode: mode === "agent",
+		onOptionsChange: (opts) => {
+			if (!opts) return;
+			if ("workspace" in opts) {
+				if (opts.workspace) {
+					setSelectedWorkspaceId(opts.workspace.workspace_id);
+				} else {
+					setSelectedWorkspaceId("");
+				}
+			}
+			tempRoomStore.setOptions({
+				...tempRoomStore.options,
+				...opts,
+			});
+		},
+	};
+
+	/**
+	 * Hand the drafted connectors to the room just created, before its first
+	 * message. The drafted default tools travel in the room's options.
+	 * A connector write that fails is reported without failing the room: the
+	 * chat still works, and the connectors can be switched on from inside it.
+	 */
+	const prepareRoom = async (room: RoomStore): Promise<void> => {
+		try {
+			await room.teamwork.adopt(tempRoomStore.teamwork);
+		} catch (error) {
+			toast.error(
+				t("teamwork:connectors.adoptError", {
+					message: error instanceof Error ? error.message : "",
+				}),
+			);
+		}
+	};
+
+	/** Shared error handling for every room-creation path below. */
+	const handleCreateRoomError = (error: unknown) => {
+		const sdkError = error as { message: string; code?: number };
+		if (
+			sdkError.code !== undefined &&
+			(sdkError.code === 403 || sdkError.code === 302)
+		) {
+			// User is unauthorized, likely due to expired session. Prompt them to log in again.
+			toast.error(t("chat:gracefulErrors.inactivity"));
+			return;
+		}
+
+		toast.error(t("room:errors.createRoom", { message: sdkError.message }));
+	};
 
 	/**
 	 * Create a new room and ask the model
@@ -228,21 +414,7 @@ export const NewRoomPage = observer(() => {
 			// turn the loading screen
 			setIsLoading(true);
 
-			const options = {
-				...tempRoomStore.options,
-				mcp: tempRoomStore.options.mcp,
-				// Persist the agent harness selection so the room stays in agent
-				// mode across reloads.
-				harnessType: mode === "agent" ? "semoss" : undefined,
-			};
-
-			// add workspace id and name
-			if (selectedWorkspaceId) {
-				options.workspace = {
-					workspace_id: getWorkspace.data?.workspace_id || "",
-					name: getWorkspace.data?.name,
-				};
-			}
+			const options = buildRoomOptions();
 
 			if (preCreatedRoom) {
 				// Room was pre-created so files could be uploaded to its insight.
@@ -252,6 +424,7 @@ export const NewRoomPage = observer(() => {
 				preCreatedRoom.setMode(mode === "agent" ? "agent" : "chat");
 				preCreatedRoom.setMetadata({ name: prompt.substring(0, 15) });
 				await preCreatedRoom.updateRoomOptions(options);
+				await prepareRoom(preCreatedRoom);
 				// Optimistically surface the room in the nav — GetPlaygroundRooms
 				// won't return it until its first message has data.
 				chat.addOptimisticRoom({
@@ -271,7 +444,10 @@ export const NewRoomPage = observer(() => {
 						runInAction(() => {
 							chat.keys.roomCounter++;
 						});
-					} catch {
+					} catch (e) {
+						if ((e as Error)?.name === "UploadError") {
+							toast.error(t("room:errors.fileInUse"));
+						}
 						chat.removeOptimisticRoom(preCreatedRoom.roomId);
 					}
 				})();
@@ -286,24 +462,49 @@ export const NewRoomPage = observer(() => {
 					options,
 					getWorkspace.data?.workspace_id,
 					askOptions,
+					prepareRoom,
 				);
 				submittedRef.current = true;
 				navigate(`/room/${room.roomId}`);
 			}
 		} catch (error: unknown) {
-			const sdkError = error as { message: string; code?: number };
-			if (
-				sdkError.code !== undefined &&
-				(sdkError.code === 403 || sdkError.code === 302)
-			) {
-				// User is unauthorized, likely due to expired session. Prompt them to log in again.
-				toast.error(t("chat:gracefulErrors.inactivity"));
-				return;
-			}
+			handleCreateRoomError(error);
+		} finally {
+			setIsLoading(false);
+		}
+	};
 
-			toast.error(
-				t("room:errors.createRoom", { message: sdkError.message }),
+	/**
+	 * Start a message-less room for an agent's scripted greeting. No pixel
+	 * ever writes a message, so the greeting never reaches the model as
+	 * context. URL-routed workspaces only.
+	 */
+	const startAgentGreetingRoom = async (
+		workspaceId: string,
+		name: string,
+	) => {
+		if (isLoading) {
+			return;
+		}
+
+		// Claimed here, not in the effect, so bailing above stays retryable.
+		greetingRoomStartedForRef.current = workspaceId;
+
+		try {
+			setIsLoading(true);
+
+			const options = buildRoomOptions();
+			const room = await chat.createEmptyRoom(
+				mode === "agent" ? "agent" : "chat",
+				name,
+				options,
+				workspaceId,
+				prepareRoom,
 			);
+			submittedRef.current = true;
+			navigate(`/room/${room.roomId}`);
+		} catch (error: unknown) {
+			handleCreateRoomError(error);
 		} finally {
 			setIsLoading(false);
 		}
@@ -320,12 +521,14 @@ export const NewRoomPage = observer(() => {
 	}, [workspaceIdSearchParams]);
 
 	// Handle workspace data loading from RoomWorkspace component selection
-	// biome-ignore lint/correctness/useExhaustiveDependencies: autoGreetedRef guards re-fires
 	useEffect(() => {
 		if (!selectedWorkspaceId) {
 			// clearing the agent clears the guard below, so picking the same
 			// agent again applies its default model again
 			appliedAgentModelRef.current = "";
+			if (chat.profileDefaultModelId) {
+				void chat.selectModelById(chat.profileDefaultModelId);
+			}
 			return;
 		}
 		if (getWorkspace.status !== "SUCCESS" || !getWorkspace.data) {
@@ -392,21 +595,50 @@ export const NewRoomPage = observer(() => {
 				name: getWorkspace.data.name,
 			},
 		});
-
-		// Kick off the workspace's greeting once, silently — only the reply shows.
-		if (
-			root.theme.featureFlags?.enableAutoGreeting &&
-			!autoGreetedRef.current
-		) {
-			autoGreetedRef.current = true;
-			createRoom("Hello", [], { visible: false });
-		}
 	}, [
 		selectedWorkspaceId,
 		getWorkspace.status,
 		getWorkspace.data,
 		tempRoomStore,
 		chat,
+	]);
+
+	// A URL-routed agent with a greeting drops straight into a room with it
+	// already rendered, instead of the landing page.
+	// biome-ignore lint/correctness/useExhaustiveDependencies: greetingRoomStartedForRef guards re-fires; re-listing the rest would re-run this every render
+	useEffect(() => {
+		if (!isWorkspaceFromUrl) {
+			return;
+		}
+		if (
+			!selectedWorkspaceId ||
+			getWorkspace.status !== "SUCCESS" ||
+			!getWorkspace.data
+		) {
+			return;
+		}
+		// Same outgoing-agent-data guard as the effect above.
+		if (getWorkspace.data.workspace_id !== selectedWorkspaceId) {
+			return;
+		}
+		if (greetingRoomStartedForRef.current === selectedWorkspaceId) {
+			return;
+		}
+
+		const cfg = getWorkspace.data.config_json;
+		if (!cfg?.greeting_enabled || !cfg.greeting) {
+			return;
+		}
+
+		void startAgentGreetingRoom(
+			selectedWorkspaceId,
+			getWorkspace.data.name,
+		);
+	}, [
+		isWorkspaceFromUrl,
+		selectedWorkspaceId,
+		getWorkspace.status,
+		getWorkspace.data,
 	]);
 
 	// Handle knowledge vector engine from URL parameter
@@ -483,13 +715,6 @@ export const NewRoomPage = observer(() => {
 		}
 	}, [selectedWorkspaceId, root.theme.defaultTools, tempRoomStore]);
 
-	// Close the configuration panel when the file-explorer sidebar opens.
-	useEffect(() => {
-		if (preCreatedRoom?.sidebar.isOpen) {
-			setIsConfgurationOpen(false);
-		}
-	}, [preCreatedRoom?.sidebar.isOpen]);
-
 	// Discard a pre-created room if the user navigates away without submitting.
 	useEffect(() => {
 		return () => {
@@ -549,6 +774,12 @@ export const NewRoomPage = observer(() => {
 										) : null}
 									</div>
 								)}
+								{agentGreeting && (
+									<RoomGreeting
+										room={tempRoomStore}
+										greeting={agentGreeting}
+									/>
+								)}
 								<RoomInput
 									predefinedPrompts={
 										tempRoomStore.options.predefinedPrompts
@@ -605,7 +836,9 @@ export const NewRoomPage = observer(() => {
 									// it's only ever busy (spinner) or idle (send).
 									sendState={isLoading ? "loading" : "send"}
 									onOpenSettings={() =>
-										setIsConfgurationOpen(true)
+										sidebarRoom.openSidebarPanel(
+											ROOM_PANEL_TYPES.CONFIGURATION,
+										)
 									}
 									MenuComponent={observer(
 										({
@@ -714,6 +947,27 @@ export const NewRoomPage = observer(() => {
 														onOpenChange(false);
 													}}
 												/>
+												<TeamworkConnectorsMenuItem
+													teamwork={
+														tempRoomStore.teamwork
+													}
+													onSelect={() =>
+														onOpenChange(false)
+													}
+												/>
+												<TeamworkSourcesMenuItem
+													teamwork={
+														tempRoomStore.teamwork
+													}
+													onOpenSource={(service) =>
+														void handleOpenSource(
+															service,
+														)
+													}
+													onSelect={() =>
+														onOpenChange(false)
+													}
+												/>
 												<DropdownMenuSeparator />
 												{preCreatedRoom ? (
 													<RoomInputMenuFileExplorer
@@ -729,8 +983,15 @@ export const NewRoomPage = observer(() => {
 															tempRoomStore.options
 														}
 														onRoomCreated={(room) =>
-															setPreCreatedRoom(
+															adoptEarlyRoom(
 																room,
+																(early) =>
+																	early.openSidebarFileExplorer(
+																		undefined,
+																		t(
+																			"room:menuFileExplorer.name",
+																		),
+																	),
 															)
 														}
 														onSelect={() =>
@@ -738,28 +999,18 @@ export const NewRoomPage = observer(() => {
 														}
 													/>
 												)}
-												<DropdownMenuItem
-													onSelect={(e) => {
-														e.preventDefault();
-														setIsConfgurationOpen(
-															!isConfigurationOpen,
-														);
-													}}
-												>
-													<Settings2Icon />
-													<span className="flex-1">
-														{isConfigurationOpen
-															? t(
-																	"room:settings.close",
-																)
-															: t(
-																	"room:settings.open",
-																)}
-													</span>
-												</DropdownMenuItem>
+												<RoomInputMenuSettings
+													room={sidebarRoom}
+													onSelect={() =>
+														onOpenChange(false)
+													}
+												/>
 											</>
 										),
 									)}
+								/>
+								<TeamworkDialogs
+									teamwork={tempRoomStore.teamwork}
 								/>
 								{tempRoomStore.options.predefinedPrompts
 									.length > 0 ? (
@@ -790,91 +1041,33 @@ export const NewRoomPage = observer(() => {
 						</DropHighlight>
 					</FileDragProvider>
 				</ResizablePanel>
-				{isConfigurationOpen && (
-					<>
-						<ResizableHandle />
-						<ResizablePanel
-							className="relative h-full w-full p-2"
-							defaultSize={25}
-						>
-							<div
-								className={`relative h-full w-full overflow-hidden rounded-lg border border-input bg-background shadow-xs`}
-							>
-								{isConfigurationOpen && (
-									<>
-										<Tooltip>
-											<TooltipTrigger asChild>
-												<Button
-													className="absolute end-2 top-2 z-10"
-													variant="ghost"
-													size="icon-sm"
-													onClick={() => {
-														// close it
-														setIsConfgurationOpen(
-															false,
-														);
-													}}
-												>
-													<XIcon />
-												</Button>
-											</TooltipTrigger>
-											<TooltipContent>
-												{t("room:settings.close")}
-											</TooltipContent>
-										</Tooltip>
-
-										<ScrollArea className="h-full w-full px-2">
-											<RoomOptionsForm
-												model={chat.models.selected}
-												options={tempRoomStore.options}
-												onModelChange={(model) => {
-													if (model) {
-														chat.setSelectedModel(
-															model,
-														);
-													}
-												}}
-												agentEditable
-												onOptionsChange={(opts) => {
-													if (!opts) return;
-													if ("workspace" in opts) {
-														if (opts.workspace) {
-															setSelectedWorkspaceId(
-																opts.workspace
-																	.workspace_id,
-															);
-														} else {
-															setSelectedWorkspaceId(
-																"",
-															);
-														}
-													}
-													tempRoomStore.setOptions({
-														...tempRoomStore.options,
-														...opts,
-													});
-												}}
-											/>
-										</ScrollArea>
-									</>
-								)}
-							</div>
-						</ResizablePanel>
-					</>
-				)}
-				{preCreatedRoom?.sidebar.isOpen && (
+				{sidebarRoom.sidebar.isOpen && (
 					<>
 						<ResizableHandle />
 						<ResizablePanel defaultSize={50} minSize={20}>
-							<InsightProvider
-								key={preCreatedRoom.roomId}
-								options={{
-									insightId: preCreatedRoom.insightId,
-								}}
-								destroyOnUnmount={false}
-							>
-								<RoomSidebar room={preCreatedRoom} />
-							</InsightProvider>
+							<RoomSettingsFormProvider value={settingsFormProps}>
+								{/* viewers queue on the draft, whose input shows it */}
+								<NextMessageRoomProvider room={tempRoomStore}>
+									{preCreatedRoom ? (
+										<InsightProvider
+											key={preCreatedRoom.roomId}
+											options={{
+												insightId:
+													preCreatedRoom.insightId,
+											}}
+											destroyOnUnmount={false}
+										>
+											<RoomSidebar
+												room={preCreatedRoom}
+											/>
+										</InsightProvider>
+									) : (
+										// the draft has no insight of its own; its
+										// sidebar only holds panels that need none
+										<RoomSidebar room={tempRoomStore} />
+									)}
+								</NextMessageRoomProvider>
+							</RoomSettingsFormProvider>
 						</ResizablePanel>
 					</>
 				)}

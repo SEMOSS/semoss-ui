@@ -21,6 +21,10 @@ import {
 import type { Project } from "../../types";
 
 interface ProjectSelectProps {
+	/** Connect the trigger to its visible field label. */
+	id?: string;
+	/** Field description announced when the trigger receives focus. */
+	"aria-describedby"?: string;
 	/** CSS classes for styling customization. */
 	className?: string;
 	/** Whether the select is disabled. */
@@ -48,6 +52,8 @@ interface ProjectSelectProps {
  * @return A project selector with filtering and infinite scrolling.
  */
 export const ProjectSelect = ({
+	id,
+	"aria-describedby": ariaDescribedBy,
 	className,
 	disabled,
 	name,
@@ -112,6 +118,8 @@ export const ProjectSelect = ({
 		<Popover open={open && !disabled} onOpenChange={setOpen}>
 			<PopoverTrigger asChild>
 				<Button
+					id={id}
+					aria-describedby={ariaDescribedBy}
 					variant="outline"
 					role="combobox"
 					aria-expanded={open}

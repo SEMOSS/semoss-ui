@@ -1,0 +1,349 @@
+import { Handle, type NodeProps, Position, useEdges } from "@xyflow/react";
+import {
+	BrainCircuit,
+	GitBranch,
+	Loader2,
+	Pencil,
+	Plus,
+	Trash2,
+} from "lucide-react";
+import {
+	ContextMenu,
+	ContextMenuContent,
+	ContextMenuItem,
+	ContextMenuSeparator,
+	ContextMenuTrigger,
+	Tooltip,
+	TooltipContent,
+	TooltipTrigger,
+} from "@semoss/ui/next";
+import type {
+	AutomationNode as AutomationGraphNode,
+	RoutingConfig,
+	StepRunStatus,
+} from "../../../domain/automation.types";
+import { formatDurationMs } from "../../../domain/automation-utils";
+import { useAutomationNode } from "../../../hooks/use-automation";
+import { StatusIcon } from "../../status-icon";
+import { getFlowBorderClass } from "../flow-colors";
+
+export type BranchNodeData = {
+	step: AutomationGraphNode;
+	index: number;
+	runStatus?: StepRunStatus;
+	runError?: string;
+	runDuration?: number;
+	isIncomplete?: boolean;
+	locked?: boolean;
+	/** True for a few seconds right after an Assistant tool call changes this step. */
+	highlighted?: boolean;
+	/** True when this step sits on the path leading to the selected node. */
+	pathHighlighted?: boolean;
+	/** Color for each output handle (keyed by handle id), matching its edge's current render color. */
+	handleColors?: Record<string, string>;
+};
+
+const STATUS_BORDER: Record<string, string> = {
+	incomplete: "border-warning/60",
+	idle: "border-border",
+};
+
+const DEFAULT_HANDLE_COLOR = "var(--muted-foreground)";
+
+export function BranchNode({ data }: NodeProps) {
+	const d = data as BranchNodeData;
+	const automationNode = useAutomationNode(d.step.id);
+	const {
+		step,
+		runStatus,
+		runDuration,
+		isIncomplete,
+		locked,
+		highlighted,
+		pathHighlighted,
+	} = d;
+	const config = step.config as RoutingConfig;
+	const firstClause = config.clauses[0];
+	const firstDescription =
+		firstClause && "condition" in firstClause
+			? firstClause.condition
+			: firstClause?.description;
+	const isJevDecision = step.workflowType === "control.jev";
+	const isNoulDecision =
+		isJevDecision &&
+		"questionType" in config &&
+		config.questionType === "noul";
+	const DecisionIcon = isJevDecision ? BrainCircuit : GitBranch;
+	const additionalConditions = config.clauses.length - 1;
+	const edges = useEdges();
+	const outputCount = config.clauses.length + 1;
+	const elseConnected = edges.some(
+		(e) => e.source === step.id && e.sourceHandle === `else-${step.id}`,
+	);
+	const borderClass = getFlowBorderClass(
+		runStatus,
+		Boolean(pathHighlighted),
+		STATUS_BORDER[isIncomplete ? "incomplete" : "idle"],
+	);
+	const runningClass =
+		runStatus === "running" ? "automation-node-running" : "";
+	const highlightClass = highlighted
+		? "animate-pulse ring-2 ring-primary ring-offset-2 ring-offset-background"
+		: "";
+
+	return (
+		<ContextMenu>
+			<ContextMenuTrigger asChild>
+				{/* Route count controls canvas geometry, so this height is data-driven. */}
+				<div
+					className={`group relative w-70 rounded-2xl border-2 shadow-sm ${borderClass} ${runningClass} ${highlightClass} ${locked ? "opacity-75" : ""}`}
+					style={{ minHeight: `${88 + additionalConditions * 48}px` }}
+				>
+					<div className="relative z-1 m-0.5 rounded-[14px] bg-card">
+						{/* Hover actions */}
+						{!locked && (
+							<div className="-top-2 absolute right-2 z-10 hidden items-center gap-0.5 rounded-full border bg-background px-1 py-0.5 shadow-sm group-hover:flex">
+								<button
+									type="button"
+									onClick={(e) => {
+										e.stopPropagation();
+										automationNode.open();
+									}}
+									className="rounded p-0.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+									aria-label="Edit branch"
+								>
+									<Pencil className="size-3" />
+								</button>
+								<button
+									type="button"
+									onClick={(e) => {
+										e.stopPropagation();
+										automationNode.delete();
+									}}
+									className="rounded p-0.5 text-destructive/70 transition-colors hover:bg-destructive/10 hover:text-destructive"
+									aria-label="Delete branch"
+								>
+									<Trash2 className="size-3" />
+								</button>
+							</div>
+						)}
+
+						<div className="cursor-pointer px-4 py-3">
+							<div className="flex items-center gap-3">
+								<span className="relative flex size-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+									<DecisionIcon className="size-4" />
+									<span className="-top-1.5 -left-1.5 absolute flex size-4 items-center justify-center rounded-full border border-border bg-muted font-medium text-muted-foreground text-xs">
+										{d.index + 1}
+									</span>
+								</span>
+								<div className="min-w-0 flex-1">
+									<Tooltip>
+										<TooltipTrigger asChild>
+											<p className="truncate font-semibold text-sm leading-snug">
+												{step.label || "Decision"}
+											</p>
+										</TooltipTrigger>
+										<TooltipContent side="top">
+											{step.label || "Decision"}
+										</TooltipContent>
+									</Tooltip>
+									<p className="mt-0.5 truncate text-muted-foreground text-xs">
+										{firstDescription
+											? additionalConditions > 0
+												? `${additionalConditions + 1} ${isJevDecision ? "routes" : "conditions"}`
+												: isJevDecision
+													? firstDescription
+													: `if ${firstDescription}`
+											: "No route configured"}
+									</p>
+								</div>
+								{runStatus && runStatus !== "idle" && (
+									<div className="ml-auto shrink-0">
+										{runStatus === "running" ? (
+											<Loader2 className="size-3.5 animate-spin text-primary" />
+										) : (
+											<StatusIcon
+												status={runStatus}
+												className={`size-3.5 ${runStatus === "success" ? "text-success" : runStatus === "error" ? "text-destructive" : ""}`}
+											/>
+										)}
+									</div>
+								)}
+							</div>
+							{runDuration != null && runStatus !== "running" && (
+								<div className="mt-1.5 pl-12">
+									<span className="text-muted-foreground/70 text-xs">
+										{formatDurationMs(runDuration)}
+									</span>
+								</div>
+							)}
+						</div>
+					</div>
+
+					{/* Input handle */}
+					<Handle
+						id={`in-${step.id}`}
+						type="target"
+						position={Position.Left}
+						isConnectable={!locked}
+						className="h-2! w-2! border-2! border-background! bg-muted-foreground/40!"
+					/>
+
+					{config.clauses.map((clause, index) => {
+						const routeLabel = isNoulDecision
+							? "answer" in clause && clause.answer
+								? "Yes"
+								: "No"
+							: isJevDecision
+								? `R${index + 1}`
+								: String(index + 1);
+						const routeDescription =
+							"description" in clause
+								? clause.description
+								: clause.condition;
+						return (
+							<BranchOutputHandle
+								key={clause.id}
+								id={`case-${step.id}-${clause.id}`}
+								label={routeLabel}
+								ariaLabel={
+									isJevDecision
+										? `${isNoulDecision ? routeLabel : `Route ${index + 1}`}: ${routeDescription}`
+										: `Condition ${index + 1}: ${routeDescription}`
+								}
+								connected={edges.some(
+									(edge) =>
+										edge.source === step.id &&
+										edge.sourceHandle ===
+											`case-${step.id}-${clause.id}`,
+								)}
+								locked={locked}
+								top={`${((index + 1) / (outputCount + 1)) * 100}%`}
+								onAdd={() =>
+									automationNode.addAfter(
+										`case-${step.id}-${clause.id}`,
+									)
+								}
+								color={
+									d.handleColors?.[
+										`case-${step.id}-${clause.id}`
+									] ?? DEFAULT_HANDLE_COLOR
+								}
+							/>
+						);
+					})}
+					<BranchOutputHandle
+						id={`else-${step.id}`}
+						label={isJevDecision ? "Fallback" : "Else"}
+						ariaLabel={isJevDecision ? "Fallback" : "Else"}
+						connected={elseConnected}
+						locked={locked}
+						top={`${(outputCount / (outputCount + 1)) * 100}%`}
+						onAdd={() => automationNode.addAfter(`else-${step.id}`)}
+						color={
+							d.handleColors?.[`else-${step.id}`] ??
+							DEFAULT_HANDLE_COLOR
+						}
+					/>
+				</div>
+			</ContextMenuTrigger>
+			{!locked && (
+				<ContextMenuContent>
+					<ContextMenuItem onSelect={() => automationNode.open()}>
+						Edit
+					</ContextMenuItem>
+					<ContextMenuSeparator />
+					<ContextMenuItem
+						className="text-destructive focus:text-destructive"
+						onSelect={() => automationNode.delete()}
+					>
+						Delete and detach
+					</ContextMenuItem>
+					<ContextMenuItem
+						className="text-destructive focus:text-destructive"
+						onSelect={() => automationNode.deleteDownstream()}
+					>
+						Delete and remove all after
+					</ContextMenuItem>
+				</ContextMenuContent>
+			)}
+		</ContextMenu>
+	);
+}
+
+function BranchOutputHandle({
+	id,
+	label,
+	ariaLabel,
+	connected,
+	locked,
+	top,
+	onAdd,
+	color,
+}: {
+	id: string;
+	/** Text shown next to the edge — a 1-indexed condition number, or "Else". */
+	label: string;
+	/** Descriptive name used for the handle's accessible name. */
+	ariaLabel: string;
+	connected: boolean;
+	locked?: boolean;
+	top: string;
+	onAdd: () => void;
+	/** Matches the color the connected edge is currently drawn with. */
+	color: string;
+}) {
+	const handleClass =
+		connected || locked
+			? "h-2! w-2! border-2! border-background!"
+			: "h-7! w-7! border! bg-background! shadow-sm transition-colors hover:opacity-70";
+	return (
+		<>
+			<Handle
+				id={id}
+				type="source"
+				position={Position.Right}
+				isConnectable={!locked}
+				onClick={(event) => {
+					event.stopPropagation();
+					if (!locked && !connected) onAdd();
+				}}
+				style={{
+					top,
+					...(connected || locked
+						? { backgroundColor: color }
+						: { borderColor: color }),
+				}}
+				aria-label={
+					connected
+						? `${ariaLabel} branch`
+						: `Add node to ${ariaLabel} branch`
+				}
+				className={handleClass}
+			/>
+			{!connected && !locked && (
+				<span
+					className="pointer-events-none absolute z-10 flex h-7 w-7 items-center justify-center"
+					style={{
+						top,
+						right: 0,
+						color,
+						transform: "translateX(50%) translateY(-50%)",
+					}}
+				>
+					<Plus className="size-4" />
+				</span>
+			)}
+			<span
+				className="pointer-events-none absolute right-0 font-medium text-xs"
+				style={{
+					top: `calc(${top} - 10px)`,
+					color,
+					transform: `translateX(calc(100% + ${connected || locked ? 6 : 20}px)) translateY(-50%)`,
+				}}
+			>
+				{label}
+			</span>
+		</>
+	);
+}

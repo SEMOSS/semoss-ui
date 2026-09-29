@@ -69,8 +69,9 @@ export interface FileExplorerContextMenuState {
 export interface FileExplorerCommands {
 	/**
 	 * Reload listings. Passing directory paths refreshes only those (falling
-	 * back to a full reload while a search is active); passing nothing
-	 * reloads the current directory.
+	 * back to a full reload while a search is active); passing nothing reloads
+	 * everything on screen — the current directory *and* every expanded one,
+	 * each of which fetches its own children.
 	 */
 	refresh(directoryPaths?: string[]): void;
 	/** Navigate the tree root to a directory. */
@@ -254,8 +255,17 @@ export interface FileExplorerActionProps {
 
 /** Options for `useFileExplorer`. */
 export interface FileExplorerOptions {
-	/** Which asset tree to browse. */
+	/**
+	 * Which asset tree to browse. With a custom `adapter`, the mode only says
+	 * which insight its Pixels run in.
+	 */
 	mode: FileMode;
+	/**
+	 * A source of the host's own, such as a connector's drive, in place of the
+	 * mode's asset tree. Keep its identity stable: a new adapter reloads the
+	 * listing.
+	 */
+	adapter?: FileExplorerAdapter;
 	/** Directory to open at. Defaults to `"/"`. */
 	initialPath?: string;
 	/**
@@ -269,6 +279,15 @@ export interface FileExplorerOptions {
 	onItemsMoved?: (items: FileExplorerMovedItem[]) => void;
 	/** Fired after a successful delete. */
 	onItemsDeleted?: (items: FileItem[]) => void;
+	/**
+	 * Fired after an operation wrote files in place — an extract, or a copy
+	 * landing on an existing name. Unlike a move, nothing here changes a
+	 * panel's path, so a host that does not listen simply shows stale content.
+	 *
+	 * `paths` when the operation knows what it wrote; omitted when it cannot —
+	 * an archive does not report its own contents.
+	 */
+	onItemsWritten?: (paths?: string[]) => void;
 	/** Fired whenever the set of rendered rows changes. */
 	onVisibleItemsChange?: (payload: {
 		path: string;

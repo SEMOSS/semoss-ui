@@ -6,6 +6,9 @@ import {
 	DropdownMenuContent,
 	DropdownMenuItem,
 	DropdownMenuTrigger,
+	Tooltip,
+	TooltipContent,
+	TooltipTrigger,
 	toast,
 } from "@semoss/ui/next";
 import { deleteTeam } from "@/api/teams";
@@ -117,8 +120,16 @@ export const TeamTileCard = (props: TeamCardProps) => {
 				className="max-h-[200px] w-full min-w-[288px] cursor-pointer rounded-xl border bg-background p-2 shadow-sm transition-shadow hover:shadow-md"
 				role="button"
 				tabIndex={0}
-				onClick={() => onClick(id)}
-				onKeyDown={(e) => e.key === "Enter" && onClick(id)}
+				onClick={() => onClick?.(id)}
+				onKeyDown={(event) => {
+					if (
+						event.target === event.currentTarget &&
+						(event.key === "Enter" || event.key === " ")
+					) {
+						event.preventDefault();
+						onClick?.(id);
+					}
+				}}
 			>
 				<div className="flex items-center justify-between">
 					<div className="flex items-center gap-2 overflow-hidden">
@@ -136,15 +147,24 @@ export const TeamTileCard = (props: TeamCardProps) => {
 						</span>
 					</div>
 					<DropdownMenu>
-						<DropdownMenuTrigger asChild>
-							<Button
-								variant="ghost"
-								size="icon"
-								onClick={(e) => e.stopPropagation()}
-							>
-								<MoreHorizontal className="size-4" />
-							</Button>
-						</DropdownMenuTrigger>
+						<Tooltip disableHoverableContent={false}>
+							<TooltipTrigger asChild>
+								<DropdownMenuTrigger asChild>
+									<Button
+										aria-label={`Actions for team ${id}`}
+										variant="ghost"
+										size="icon"
+										onClick={(e) => e.stopPropagation()}
+									>
+										<MoreHorizontal className="size-4" />
+									</Button>
+								</DropdownMenuTrigger>
+							</TooltipTrigger>
+							<TooltipContent
+								sideOffset={4}
+								className="max-w-xs break-words"
+							>{`Actions for team ${id}`}</TooltipContent>
+						</Tooltip>
 						<DropdownMenuContent align="end">
 							<DropdownMenuItem
 								onClick={(e) => {

@@ -13,8 +13,8 @@ import {
 	TooltipTrigger,
 	toast,
 } from "@semoss/ui/next";
+import { copyTextToClipboard } from "@semoss/utility";
 import type { RoomStore } from "@/stores";
-import { copyToClipboard } from "@/utility/clipboard";
 import { BlockHeader } from "./block-header";
 
 /**
@@ -146,14 +146,13 @@ export const MermaidBlock = ({ code, isLoading, room }: MermaidBlockProps) => {
 								size="sm"
 								disabled={!code}
 								onClick={() =>
-									void copyToClipboard(
-										code,
-										() =>
+									void copyTextToClipboard(code, {
+										onSuccess: () =>
 											toast.success(
 												t("notifications.copySuccess"),
 											),
-										(msg) => toast.error(msg),
-									)
+										onError: (msg) => toast.error(msg),
+									})
 								}
 							>
 								<CopyIcon className="size-3.5" />

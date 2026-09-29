@@ -124,6 +124,11 @@ export interface RoomOptions {
 	predefinedPrompts: PredefinedPrompt[];
 	/** System-level instructions / persona injected into every conversation */
 	instructions: string;
+	/**
+	 * False appends nonempty instructions to the agent prompt. True or omitted
+	 * preserves the legacy replacement behavior. Requires backend support.
+	 */
+	overrideSystemPrompt?: boolean;
 	/** MCP tool and knowledge-source entries enabled for the room */
 	mcp: MCPToolConfig[];
 	/** Agent workspace linked to the room, if any */

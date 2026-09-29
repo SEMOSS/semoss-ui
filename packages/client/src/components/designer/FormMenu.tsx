@@ -54,10 +54,10 @@ const FormMenuBlockCard: React.FC<FormMenuCardProps> = ({
 					{item.name}
 					{item.recentChanges && (
 						<TooltipProvider>
-							<Tooltip>
+							<Tooltip disableHoverableContent={false}>
 								<TooltipTrigger asChild>
 									<span>
-										<Info className="size-4 text-blue-500" />
+										<Info className="size-4 text-primary" />
 									</span>
 								</TooltipTrigger>
 								<TooltipContent>
@@ -68,10 +68,10 @@ const FormMenuBlockCard: React.FC<FormMenuCardProps> = ({
 					)}
 					{item.isBeta && (
 						<TooltipProvider>
-							<Tooltip>
+							<Tooltip disableHoverableContent={false}>
 								<TooltipTrigger asChild>
 									<span>
-										<AlertTriangle className="size-4 text-amber-500" />
+										<AlertTriangle className="size-4 text-warning" />
 									</span>
 								</TooltipTrigger>
 								<TooltipContent>
@@ -98,7 +98,7 @@ const FormMenuBlockCard: React.FC<FormMenuCardProps> = ({
 					}}
 				>
 					<TooltipProvider>
-						<Tooltip>
+						<Tooltip disableHoverableContent={false}>
 							<TooltipTrigger asChild>
 								<div>
 									<BlockCardContent
@@ -226,7 +226,7 @@ export const FormMenu: React.FC<FormMenuProps> = ({
 						}}
 					>
 						<span
-							className="text-[13px] leading-[18px] tracking-[0.16px]"
+							className="text-sm"
 							style={{ color: "var(--primary)" }}
 						>
 							{title}

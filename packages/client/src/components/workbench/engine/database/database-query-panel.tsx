@@ -9,11 +9,12 @@ import {
 	SPARQL_THEME_LIGHT,
 } from "@semoss/shared";
 import { Button, Spinner, useTheme } from "@semoss/ui/next";
-import { useDatabaseWorkbench, useWorkbenchControl } from "@/hooks";
 import type {
 	WorkbenchComponent,
 	WorkbenchPanelConfig,
-} from "@/stores/workbench";
+} from "@semoss/workbench";
+import { useWorkbenchControl, useWorkbenchPanel } from "@semoss/workbench";
+import { useDatabaseWorkbench } from "@/hooks";
 import { DatabaseNewQueryControl } from "./database-new-query-control";
 
 const SQL_KEYWORDS = [
@@ -61,10 +62,9 @@ export interface DatabaseQueryConfig {
  * owns its own query text and (for SPARQL) raw toggle, seeded from its
  * config, so multiple panels can coexist without sharing editor state.
  */
-const DatabaseQueryPanel: WorkbenchComponent<DatabaseQueryConfig> = ({
-	id,
-	config,
-}) => {
+const DatabaseQueryPanel: WorkbenchComponent = ({ id }) => {
+	const { config } = useWorkbenchPanel<DatabaseQueryConfig>(id);
+
 	const mode = useDatabaseWorkbench((state) => state.mode);
 	const structure = useDatabaseWorkbench((state) => state.structure.data);
 	const onQuery = useDatabaseWorkbench((state) => state.onQuery);

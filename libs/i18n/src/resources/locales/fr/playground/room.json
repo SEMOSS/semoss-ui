@@ -71,7 +71,8 @@
 		"errorProcessing": "Erreur de traitement du chat",
 		"stopLabel": "Arrêter la réponse",
 		"stopTooltip": "Arrêter",
-		"stoppingTooltip": "Arrêt en cours"
+		"stoppingTooltip": "Arrêt en cours",
+		"removeFile": "Retirer {{name}}"
 	},
 	"content": {
 		"scrollToTop": "Défiler vers le haut",
@@ -104,12 +105,13 @@
 		"attachDocument": "Ajouter des documents"
 	},
 	"menuFileExplorer": {
-		"name": "Explorateur de fichiers",
-		"open": "Ouvrir l'explorateur de fichiers",
-		"close": "Fermer l'explorateur de fichiers"
+		"name": "Fichiers du chat",
+		"open": "Afficher les fichiers du chat",
+		"close": "Masquer les fichiers du chat"
 	},
 	"errors": {
-		"createRoom": "Une erreur s'est produite lors de la création de la salle. Erreur : {{message}}"
+		"createRoom": "Une erreur s'est produite lors de la création de la salle. Erreur : {{message}}",
+		"fileInUse": "Le(s) fichier(s) téléversé(s) est/sont actuellement utilisé(s) par un autre programme. Fermez le programme et retéléversez le(s) fichier(s) dans un nouveau chat."
 	},
 	"contextWindow": {
 		"descriptionLow": "Toutes les conversations ont une limite. Les conversations très longues finiront par faire oublier les messages précédents au modèle.",

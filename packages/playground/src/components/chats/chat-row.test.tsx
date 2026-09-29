@@ -34,7 +34,7 @@ vi.mock("@/utility", () => ({
 	}),
 }));
 
-vi.mock("react-router-dom", () => ({
+vi.mock("react-router", () => ({
 	Link: ({
 		to,
 		children,

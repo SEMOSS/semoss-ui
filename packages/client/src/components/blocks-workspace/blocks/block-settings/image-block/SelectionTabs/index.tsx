@@ -58,7 +58,7 @@ const tabConfig = [
 	},
 ];
 
-const TabsComponent = observer(
+export const TabsComponent = observer(
 	({ data, setData, insightId, appId, id }: TabRenderProps) => {
 		const [value, setValue] = useState("insight");
 
@@ -95,7 +95,7 @@ const TabsComponent = observer(
 							className="flex-1"
 						>
 							{tab.label}
-							<Tooltip>
+							<Tooltip disableHoverableContent={false}>
 								<TooltipTrigger asChild>
 									<InfoOutlinedIcon className="ml-1 size-3" />
 								</TooltipTrigger>
@@ -109,5 +109,3 @@ const TabsComponent = observer(
 		);
 	},
 );
-
-export default TabsComponent;

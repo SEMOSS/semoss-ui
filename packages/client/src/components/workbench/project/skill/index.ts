@@ -1,1 +1,1 @@
-export { SkillWorkbench } from "./skill-workbench";
+export { SKILL_WORKBENCH_COMPONENTS, SkillWorkbench } from "./skill-workbench";

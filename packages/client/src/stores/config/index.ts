@@ -1,1 +1,5 @@
-export { ConfigStore } from "./config.store";
+export {
+	type ConfigStore,
+	type ConfigStoreState,
+	createConfigStore,
+} from "./config.store";

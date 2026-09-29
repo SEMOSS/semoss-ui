@@ -40,20 +40,25 @@ type McpToolResponse = {
 	};
 };
 
-// Baked in at build time; APP stays unset so the SDK never emits a failing SetContext().
-Env.update({
-	MODULE: import.meta.env.MODULE || "/Monolith",
-});
-
-// Still honored if the app is ever deployed as a published project portal.
-const semossEnvScript = document.getElementById("semoss-env");
-
-if (semossEnvScript?.textContent) {
-	try {
-		Env.update(JSON.parse(semossEnvScript.textContent));
-	} catch (error) {
-		console.warn("Unable to parse SEMOSS environment payload", error);
-	}
+// Baked in at build time. This app is served from the web app, so unlike a
+// published project portal there is no semoss-env script to read these from.
+//
+// APP is deliberately NOT set. The MCP logic for this app lives in the
+// `platform__browser-automation` project, but only the backend and the
+// Playground need to know that: tool definitions resolve through _meta on the
+// Playground side, and everything this app runs is room or insight scoped.
+// Setting APP would make the SDK prepend SetContext("browser-automation") to
+// initialize(), which hard-fails the whole app whenever that project is missing
+// or not yet readable by the user.
+//
+// Only fills MODULE when nothing else has. Importing the SDK already applied any
+// semoss-env tag on the page, so this stays a fallback for the normal case where
+// the app is served from the web app and there is no tag -- and a tag still wins
+// if this is ever deployed the old way, as a published project portal.
+if (!Env.MODULE) {
+	Env.update({
+		MODULE: import.meta.env.MODULE || "/Monolith",
+	});
 }
 
 export const insight = new Insight();

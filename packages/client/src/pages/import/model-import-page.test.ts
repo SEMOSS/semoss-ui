@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { JEV_MODEL_VERSIONS } from "@/components/import/model/jev-model-import.constants";
 import type {
 	FieldDefinition,
 	ModelVersionDefinition,
@@ -54,6 +55,14 @@ const getField = (fields: FieldDefinition[], key: string) => {
 };
 
 describe("static model metadata defaults", () => {
+	it.each(JEV_MODEL_VERSIONS)(
+		"does not apply generative-model catalog metadata to $name",
+		(model) => {
+			expect(getStaticModelMetadataLookup(model)).toBeNull();
+			expect(getStaticModelMetadataLookup(model, "gpt-5")).toBeNull();
+		},
+	);
+
 	it("looks up models using the catalog model key", () => {
 		expect(getStaticModelMetadataLookup(GPT_5)).toEqual({
 			key: "gpt-5",

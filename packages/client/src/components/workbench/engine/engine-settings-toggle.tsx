@@ -6,9 +6,8 @@ import {
 	TooltipContent,
 	TooltipTrigger,
 } from "@semoss/ui/next";
-import { useWorkbench } from "@/hooks";
-import { WORKBENCH_STYLES } from "../core/workbench.chrome";
-import { WORKBENCH_COMPONENTS } from "../workbench.constants";
+import { useWorkbench, WORKBENCH_STYLES } from "@semoss/workbench";
+import { WORKBENCH_COMPONENTS } from "@/stores/workbench";
 
 /**
  * Toggles the shared engine settings panel within a workbench — opening,
@@ -31,7 +30,7 @@ export const EngineSettingsToggle: React.FC = () => {
 	);
 
 	return (
-		<Tooltip>
+		<Tooltip disableHoverableContent={false}>
 			<TooltipTrigger asChild>
 				<Button
 					variant="ghost"

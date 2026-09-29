@@ -20,11 +20,13 @@ import {
 	TooltipTrigger,
 } from "@semoss/ui/next";
 import { MCPOverlay } from "@/components";
+import { TeamworkDefaultToolsField } from "@/features/teamwork/components/teamwork-default-tools-field";
 import { useRoot } from "@/hooks";
 import type { RoomStore } from "@/stores";
 import { splitMcpByType } from "@/utility/mcp-utils";
 
-interface RoomOptionsFormProps {
+/** Props for {@link RoomOptionsForm}. */
+export interface RoomOptionsFormProps {
 	/** Model of the room */
 	model: RoomStore["model"];
 
@@ -43,6 +45,12 @@ interface RoomOptionsFormProps {
 	 * settings panel is read-only. Pass `true` from new-room contexts.
 	 */
 	agentEditable?: boolean;
+
+	/**
+	 * Whether the room runs through the agent harness, whose runs bring their
+	 * own file tools, so the chat's default tools are not offered.
+	 */
+	isAgentMode?: boolean;
 }
 
 export const RoomOptionsForm: React.FC<RoomOptionsFormProps> = observer(
@@ -52,6 +60,7 @@ export const RoomOptionsForm: React.FC<RoomOptionsFormProps> = observer(
 		options,
 		onOptionsChange = () => null,
 		agentEditable = false,
+		isAgentMode = false,
 	}) => {
 		const { t } = useTranslation(["room", "common"]);
 		const { root } = useRoot();
@@ -480,6 +489,16 @@ export const RoomOptionsForm: React.FC<RoomOptionsFormProps> = observer(
 									});
 								}}
 							/>
+							{isAgentMode ? null : (
+								<TeamworkDefaultToolsField
+									defaultTools={options.defaultTools}
+									onChange={(defaultTools) =>
+										onOptionsChange({
+											defaultTools: defaultTools,
+										})
+									}
+								/>
+							)}
 							{root.theme.featureFlags?.enableTemperature && (
 								<Field>
 									<FieldLabel>

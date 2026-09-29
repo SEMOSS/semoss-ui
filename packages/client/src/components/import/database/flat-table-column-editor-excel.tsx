@@ -35,8 +35,8 @@ import {
 	TooltipProvider,
 	TooltipTrigger,
 } from "@semoss/ui/next";
-import { useRootStore } from "@/hooks";
-import ColumnEditModal from "./column-edit-modal";
+import { useSession } from "@/hooks";
+import { ColumnEditModal } from "./column-edit-modal";
 
 interface ParsedResult {
 	headers: string[];
@@ -58,7 +58,7 @@ interface ColumnMetadata {
 	logicalName?: string[];
 }
 
-const ExcelDataSelection = ({
+export const ExcelDataSelection = ({
 	files,
 	fileName,
 	onImport,
@@ -93,7 +93,7 @@ const ExcelDataSelection = ({
 		{},
 	);
 
-	const { monolithStore } = useRootStore();
+	const runPixel = useSession((state) => state.runPixel);
 
 	const handlePreviewRange = async (
 		filePath: string,
@@ -112,7 +112,7 @@ const ExcelDataSelection = ({
 
 		try {
 			const pixelExpression = `META|PredictExcelRangeMetadata(filePath=["${filePath}"], sheetName=["${sheetName}"], sheetRange=["${customRangeValues}"]);`;
-			const response = await monolithStore.runQuery(pixelExpression);
+			const response = await runPixel(pixelExpression);
 
 			const result: ParsedResult = response.pixelReturn[0]
 				.output as ParsedResult;
@@ -727,7 +727,11 @@ const ExcelDataSelection = ({
 																	/>
 
 																	{!enablePreview ? (
-																		<Tooltip>
+																		<Tooltip
+																			disableHoverableContent={
+																				false
+																			}
+																		>
 																			<TooltipTrigger
 																				asChild
 																			>
@@ -857,7 +861,11 @@ const ExcelDataSelection = ({
 																		{/* Data Type */}
 																		<TableCell className="py-2 pr-6 pl-4 text-center">
 																			<TooltipProvider>
-																				<Tooltip>
+																				<Tooltip
+																					disableHoverableContent={
+																						false
+																					}
+																				>
 																					<TooltipTrigger
 																						asChild
 																					>
@@ -993,5 +1001,3 @@ const ExcelDataSelection = ({
 		</TooltipProvider>
 	);
 };
-
-export default ExcelDataSelection;

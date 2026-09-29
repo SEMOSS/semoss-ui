@@ -30,7 +30,7 @@ import {
 	useForm,
 	zodResolver,
 } from "@semoss/ui/next";
-import { useRootStore } from "@/hooks";
+import { useSession } from "@/hooks";
 import {
 	collectGuardrailConfigIssues,
 	createGuardrailPipeline,
@@ -77,7 +77,7 @@ export const EngineGuardrailSettings = ({
 	permission,
 	onUpdated,
 }: EngineGuardrailSettingsProps) => {
-	const { configStore } = useRootStore();
+	const runPixel = useSession((state) => state.runPixel);
 	const fieldId = useId();
 	const ruleSelectId = useId();
 	const isEditable = permission === "OWNER" || permission === "EDIT";
@@ -299,7 +299,7 @@ export const EngineGuardrailSettings = ({
 
 	const handleSubmit = async (values: GuardrailConfigFormValue) => {
 		try {
-			const response = await configStore.runPixel(
+			const response = await runPixel(
 				`UpdateModelGuardrailConfig(engine=["${engineId}"], map=[${guardrailConfigToJson(values)}]);`,
 			);
 			const result = response.pixelReturn?.[0];
@@ -665,7 +665,9 @@ export const EngineGuardrailSettings = ({
 			>
 				<DialogContent>
 					<DialogHeader>
-						<DialogTitle>Remove this rule?</DialogTitle>
+						<DialogTitle className="font-medium text-base leading-6">
+							Remove this rule?
+						</DialogTitle>
 						<DialogDescription>{removalSummary}</DialogDescription>
 					</DialogHeader>
 					<DialogFooter>

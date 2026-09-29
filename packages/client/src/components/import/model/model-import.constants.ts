@@ -1,6 +1,11 @@
 // Removed unused import (was: import { link } from "fs");
 // biome-ignore-all lint/suspicious/noTemplateCurlyInString: TODO
 import type { ReasoningConfig } from "@/components/engine/engine-metadata-display";
+import {
+	JEV_CATEGORY_TEXT,
+	JEV_MODEL_VERSIONS,
+	JEV_PROVIDER,
+} from "./jev-model-import.constants";
 
 type FieldType =
 	| "text"
@@ -117,11 +122,11 @@ export interface ModelVersionDefinition {
 	disable?: boolean;
 	audio?: boolean;
 	image?: boolean;
+	/** Selects the provider's form schema; older cards infer it from embedding. */
+	modelType?: "llm" | "embedding" | "evaluation";
 	/**
-	 * Meta-engines (e.g. the Model Router) only point at engines that already
-	 * exist, so the catalog metadata questions (model/serving provider,
-	 * capability, modalities, built-in tools) do not apply and are not added
-	 * to the import form.
+	 * Skip generative-model metadata lookups and fields for engines such as
+	 * model routers and TypeSafe evaluations, where they do not apply.
 	 */
 	skipCatalogMetadata?: boolean;
 	formConfig?: ModelFormConfig;
@@ -308,6 +313,7 @@ export const createDefaultRouterConfigValue = (): RouterConfigFormValue => ({
 
 export const IMPORTABLE_MODELS = {
 	categoryTexts: {
+		Jev: JEV_CATEGORY_TEXT,
 		Anthropic: {
 			General:
 				"Connect directly to Anthropic-hosted Claude models for native provider configuration and branding.",
@@ -383,6 +389,7 @@ export const IMPORTABLE_MODELS = {
 	},
 
 	providers: [
+		JEV_PROVIDER,
 		{
 			name: "Anthropic",
 			types: [
@@ -517,7 +524,7 @@ export const IMPORTABLE_MODELS = {
 							required: true,
 							disabled: true,
 							default:
-								"import genai_client;${VAR_NAME} = genai_client.AnthropicClient(model_name = '${MODEL}', api_key = '${API_KEY}', provider = '${PROVIDER}', context_window = ${CONTEXT_WINDOW}, max_tokens = ${MAX_TOKENS})",
+								"import genai_client;${VAR_NAME} = genai_client.AnthropicClient(model_name = '${MODEL}', api_key = '${API_KEY}', provider = '${PROVIDER}')",
 							category: "Settings",
 						},
 					],
@@ -659,7 +666,7 @@ export const IMPORTABLE_MODELS = {
 							required: true,
 							disabled: true,
 							default:
-								"import genai_client;${VAR_NAME} = genai_client.BedrockClient(modelId = '${MODEL}', region='${AWS_REGION}', access_key = '${AWS_ACCESS_KEY}', secret_key = '${AWS_SECRET_KEY}', context_window = ${CONTEXT_WINDOW}, max_tokens = ${MAX_TOKENS})",
+								"import genai_client;${VAR_NAME} = genai_client.BedrockClient(modelId = '${MODEL}', region='${AWS_REGION}', access_key = '${AWS_ACCESS_KEY}', secret_key = '${AWS_SECRET_KEY}')",
 							category: "Settings",
 						},
 					],
@@ -931,7 +938,7 @@ export const IMPORTABLE_MODELS = {
 							required: true,
 							disabled: true,
 							default:
-								"import genai_client;${VAR_NAME} = genai_client.AzureOpenAiClient(api_key = '${OPEN_AI_KEY}', endpoint = '${ENDPOINT}', model_name = '${MODEL}', chat_type = '${CHAT_TYPE}', api_version = '${API_VERSION}', context_window = ${CONTEXT_WINDOW}, max_tokens = ${MAX_TOKENS})",
+								"import genai_client;${VAR_NAME} = genai_client.AzureOpenAiClient(api_key = '${OPEN_AI_KEY}', endpoint = '${ENDPOINT}', model_name = '${MODEL}', chat_type = '${CHAT_TYPE}', api_version = '${API_VERSION}')",
 							category: "Settings",
 						},
 					],
@@ -1155,7 +1162,7 @@ export const IMPORTABLE_MODELS = {
 							type: "text",
 							category: "Settings",
 							default:
-								"import genai_client;${VAR_NAME} = genai_client.OpenAiClient(endpoint = 'https://integrate.api.nvidia.com/v1', model_name='${MODEL_TYPE}', chat_type = '${CHAT_TYPE}', api_key='${OPEN_AI_KEY}', template={ \"mixtral.default.nocontext\":\"[INST] $question [/INST]\"}, template_name='mixtral.default.nocontext', context_window = ${CONTEXT_WINDOW}, max_tokens = ${MAX_TOKENS})",
+								"import genai_client;${VAR_NAME} = genai_client.OpenAiClient(endpoint = 'https://integrate.api.nvidia.com/v1', model_name='${MODEL_TYPE}', chat_type = '${CHAT_TYPE}', api_key='${OPEN_AI_KEY}', template={ \"mixtral.default.nocontext\":\"[INST] $question [/INST]\"}, template_name='mixtral.default.nocontext')",
 							required: true,
 							disabled: true,
 						},
@@ -1373,7 +1380,7 @@ export const IMPORTABLE_MODELS = {
 							required: true,
 							disabled: true,
 							default:
-								"import genai_client;${VAR_NAME} = genai_client.GoogleGenAiTextClient(model_name = '${MODEL}', region='${GCP_REGION}', project='${PROJECT}', service_account_credentials = ${SERVICE_ACCOUNT_CREDENTIALS}, context_window = ${CONTEXT_WINDOW}, max_tokens = ${MAX_TOKENS})",
+								"import genai_client;${VAR_NAME} = genai_client.GoogleGenAiTextClient(model_name = '${MODEL}', region='${GCP_REGION}', project='${PROJECT}', service_account_credentials = ${SERVICE_ACCOUNT_CREDENTIALS})",
 							category: "Settings",
 						},
 					],
@@ -1624,7 +1631,7 @@ export const IMPORTABLE_MODELS = {
 							type: "text",
 							category: "Settings",
 							default:
-								"import genai_client;${VAR_NAME} = genai_client.OpenAiClient(endpoint = 'https://integrate.api.nvidia.com/v1', model_name='${MODEL_TYPE}', chat_type = '${CHAT_TYPE}', api_key='${OPEN_AI_KEY}', template={ \"mixtral.default.nocontext\":\"[INST] $question [/INST]\"}, template_name='mixtral.default.nocontext', context_window = ${CONTEXT_WINDOW}, max_tokens = ${MAX_TOKENS})",
+								"import genai_client;${VAR_NAME} = genai_client.OpenAiClient(endpoint = 'https://integrate.api.nvidia.com/v1', model_name='${MODEL_TYPE}', chat_type = '${CHAT_TYPE}', api_key='${OPEN_AI_KEY}', template={ \"mixtral.default.nocontext\":\"[INST] $question [/INST]\"}, template_name='mixtral.default.nocontext')",
 							required: true,
 							disabled: true,
 						},
@@ -1846,7 +1853,7 @@ export const IMPORTABLE_MODELS = {
 							required: true,
 							disabled: true,
 							default:
-								"import genai_client;${VAR_NAME} = genai_client.OpenAiClient(model_name = '${MODEL}', api_key = '${OPEN_AI_KEY}', chat_type = '${CHAT_TYPE}', context_window = ${CONTEXT_WINDOW}, max_tokens = ${MAX_TOKENS})",
+								"import genai_client;${VAR_NAME} = genai_client.OpenAiClient(model_name = '${MODEL}', api_key = '${OPEN_AI_KEY}', chat_type = '${CHAT_TYPE}')",
 							category: "Settings",
 						},
 					],
@@ -2090,7 +2097,7 @@ export const IMPORTABLE_MODELS = {
 							helperText:
 								"Note: Self Hosted is connected using the OpenAI specification.",
 							default:
-								"import genai_client;${VAR_NAME} = genai_client.OpenAiClient(endpoint = '${ENDPOINT}', model_name = '${MODEL}', api_key = '${OPEN_AI_KEY}', context_window = ${CONTEXT_WINDOW}, max_tokens = ${MAX_TOKENS})",
+								"import genai_client;${VAR_NAME} = genai_client.OpenAiClient(endpoint = '${ENDPOINT}', model_name = '${MODEL}', api_key = '${OPEN_AI_KEY}')",
 							category: "Settings",
 						},
 					],
@@ -2306,7 +2313,7 @@ export const IMPORTABLE_MODELS = {
 							helperText:
 								"Note: Perplexity is connected using the OpenAI specification.",
 							default:
-								"import genai_client;${VAR_NAME} = genai_client.OpenAiClient(endpoint = '${ENDPOINT}', model_name='${MODEL}', chat_type = 'chat-completion', api_key='${OPEN_AI_KEY}', context_window = ${CONTEXT_WINDOW}, max_tokens = ${MAX_TOKENS})",
+								"import genai_client;${VAR_NAME} = genai_client.OpenAiClient(endpoint = '${ENDPOINT}', model_name='${MODEL}', chat_type = 'chat-completion', api_key='${OPEN_AI_KEY}')",
 							category: "Settings",
 						},
 					],
@@ -2479,13 +2486,13 @@ const buildAnthropicProviderFormConfig = ({
 });
 
 const AWS_BEDROCK_ANTHROPIC_INIT_MODEL_ENGINE =
-	"import genai_client;${VAR_NAME} = genai_client.AnthropicClient(model_name = '${MODEL}', provider = '${PROVIDER}', aws_region='${AWS_REGION}', aws_access_key='${AWS_ACCESS_KEY}', aws_secret_key='${AWS_SECRET_KEY}', context_window = ${CONTEXT_WINDOW}, max_tokens = ${MAX_TOKENS})";
+	"import genai_client;${VAR_NAME} = genai_client.AnthropicClient(model_name = '${MODEL}', provider = '${PROVIDER}', aws_region='${AWS_REGION}', aws_access_key='${AWS_ACCESS_KEY}', aws_secret_key='${AWS_SECRET_KEY}')";
 
 const AZURE_ANTHROPIC_INIT_MODEL_ENGINE =
-	"import genai_client;${VAR_NAME} = genai_client.AnthropicClient(model_name = '${MODEL}', provider = '${PROVIDER}', endpoint = '${ENDPOINT}', api_key = '${API_KEY}', context_window = ${CONTEXT_WINDOW}, max_tokens = ${MAX_TOKENS})";
+	"import genai_client;${VAR_NAME} = genai_client.AnthropicClient(model_name = '${MODEL}', provider = '${PROVIDER}', endpoint = '${ENDPOINT}', api_key = '${API_KEY}')";
 
 const GOOGLE_ANTHROPIC_INIT_MODEL_ENGINE =
-	"import genai_client;${VAR_NAME} = genai_client.AnthropicClient(model_name = '${MODEL}', provider = '${PROVIDER}', region='${GCP_REGION}', project='${PROJECT}', service_account_credentials = ${SERVICE_ACCOUNT_CREDENTIALS}, context_window = ${CONTEXT_WINDOW}, max_tokens = ${MAX_TOKENS})";
+	"import genai_client;${VAR_NAME} = genai_client.AnthropicClient(model_name = '${MODEL}', provider = '${PROVIDER}', region='${GCP_REGION}', project='${PROJECT}', service_account_credentials = ${SERVICE_ACCOUNT_CREDENTIALS})";
 
 export const AWS_BEDROCK_ANTHROPIC_FORM_CONFIG =
 	buildAnthropicProviderFormConfig({
@@ -2538,6 +2545,7 @@ export const withModelTokenLimits = (
 	};
 };
 export const MODEL_VERSIONS: ModelVersionsByProvider = {
+	Jev: JEV_MODEL_VERSIONS,
 	"Model Router": [
 		{
 			name: "model-router",

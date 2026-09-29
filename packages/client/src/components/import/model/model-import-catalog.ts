@@ -75,10 +75,10 @@ interface PixelResponse {
  * file, a network error - so the caller can fall back to the hardcoded cards.
  */
 export const fetchCatalogModels = async (
-	runQuery: (pixel: string) => Promise<PixelResponse>,
+	runModelCatalogPixel: (pixel: string) => Promise<PixelResponse>,
 ): Promise<CatalogModelsByHost | null> => {
 	try {
-		const response = await runQuery("ListStaticModelCatalog()");
+		const response = await runModelCatalogPixel("ListStaticModelCatalog()");
 		const { output, operationType } = response.pixelReturn[0];
 		if (operationType.indexOf("ERROR") > -1) {
 			return null;

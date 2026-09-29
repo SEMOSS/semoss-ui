@@ -67,7 +67,8 @@
 		"errorProcessing": "Error al procesar el chat",
 		"stopLabel": "Detener la respuesta",
 		"stopTooltip": "Detener",
-		"stoppingTooltip": "Deteniendo"
+		"stoppingTooltip": "Deteniendo",
+		"removeFile": "Quitar {{name}}"
 	},
 	"content": {
 		"scrollToTop": "Ir al inicio",
@@ -100,12 +101,13 @@
 		"attachDocument": "Agregar Documentos"
 	},
 	"menuFileExplorer": {
-		"name": "Explorador de Archivos",
-		"open": "Abrir Explorador de Archivos",
-		"close": "Cerrar Explorador de Archivos"
+		"name": "Archivos del chat",
+		"open": "Mostrar archivos del chat",
+		"close": "Ocultar archivos del chat"
 	},
 	"errors": {
-		"createRoom": "Ocurrió un error al crear la sala. Error: {{message}}"
+		"createRoom": "Ocurrió un error al crear la sala. Error: {{message}}",
+		"fileInUse": "El/los archivo(s) cargado(s) está(n) siendo usados por otro programa. Cierre el programa y vuelva a cargarlos en un nuevo chat."
 	},
 	"contextWindow": {
 		"descriptionLow": "Todas las conversaciones tienen un límite. Las conversaciones muy largas eventualmente harán que el modelo olvide mensajes anteriores.",

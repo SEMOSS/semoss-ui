@@ -30,6 +30,8 @@ interface NotebookCodeCellProps extends NotebookCellBaseProps {
 	cell: JupyterCodeCell;
 	/** True while this cell is executing. */
 	isRunning: boolean;
+	/** Duration of the last execution in milliseconds. */
+	executionDurationMs?: number;
 	/** Whether at least one code cell exists above this one. */
 	canRunAbove: boolean;
 	/** Whether at least one code cell exists below this one. */
@@ -61,6 +63,7 @@ interface NotebookCodeCellProps extends NotebookCellBaseProps {
 export const NotebookCodeCell: React.FC<NotebookCodeCellProps> = ({
 	cell,
 	isRunning,
+	executionDurationMs,
 	canRunAbove,
 	canRunBelow,
 	onRun,
@@ -93,14 +96,15 @@ export const NotebookCodeCell: React.FC<NotebookCodeCellProps> = ({
 
 	const hasOutputs = cell.outputs.length > 0;
 	const hasStreaming = Boolean(streamingLogs && streamingLogs.length > 0);
+	const hasVisibleOutput = hasOutputs || hasStreaming;
 
-	const primaryAction = isRunning ? (
-		<Tooltip>
+	const gutterAction = isRunning ? (
+		<Tooltip disableHoverableContent={false}>
 			<TooltipTrigger asChild>
 				<Button
 					variant="ghost"
 					size="icon-sm"
-					className="size-7 text-destructive hover:text-destructive"
+					className="size-6 text-destructive hover:text-destructive"
 					onClick={(e) => {
 						e.stopPropagation();
 						onInterrupt(index);
@@ -113,24 +117,33 @@ export const NotebookCodeCell: React.FC<NotebookCodeCellProps> = ({
 			<TooltipContent>Stop execution</TooltipContent>
 		</Tooltip>
 	) : (
-		<Tooltip>
+		<Tooltip disableHoverableContent={false}>
 			<TooltipTrigger asChild>
-				<Button
-					variant="ghost"
-					size="icon-sm"
-					className="size-7"
-					disabled={disabled}
-					onClick={(e) => {
-						e.stopPropagation();
-						onClearOutput(index);
-						onRun(index);
-					}}
-					aria-label="Run cell"
+				<span
+					className="inline-flex"
+					tabIndex={disabled ? 0 : undefined}
 				>
-					<PlayIcon className="size-3.5" />
-				</Button>
+					<Button
+						variant="ghost"
+						size="icon-sm"
+						className="sticky top-0 size-6 text-muted-foreground/60 hover:text-foreground"
+						disabled={disabled}
+						onClick={(e) => {
+							e.stopPropagation();
+							onClearOutput(index);
+							onRun(index);
+						}}
+						aria-label="Run cell"
+					>
+						<PlayIcon className="size-3.5" />
+					</Button>
+				</span>
 			</TooltipTrigger>
-			<TooltipContent>Run cell</TooltipContent>
+			<TooltipContent>
+				{disabled
+					? "Wait for the notebook to finish its current operation"
+					: "Run cell"}
+			</TooltipContent>
 		</Tooltip>
 	);
 
@@ -166,7 +179,7 @@ export const NotebookCodeCell: React.FC<NotebookCodeCellProps> = ({
 			disabled: disabled || !canRunBelow,
 		},
 	];
-	if (!readOnly && (hasOutputs || hasStreaming)) {
+	if (!readOnly && hasVisibleOutput) {
 		actions.push({
 			id: "clear-output",
 			label: "Clear Output",
@@ -189,9 +202,10 @@ export const NotebookCodeCell: React.FC<NotebookCodeCellProps> = ({
 		<NotebookCell
 			cell={cell}
 			{...otherProps}
-			primaryAction={primaryAction}
+			gutterAction={gutterAction}
 			actions={actions}
 			executionStatus={executionStatus}
+			executionDurationMs={executionDurationMs}
 		>
 			<NotebookCellInputCode
 				value={normalizeSource(cell.source)}
@@ -243,25 +257,46 @@ export const NotebookCodeCell: React.FC<NotebookCodeCellProps> = ({
 
 			{hasOutputs && (
 				<div className="border-border border-t">
-					<button
-						type="button"
-						onClick={(e) => {
-							e.stopPropagation();
-							setOutputsCollapsed((prev) => !prev);
-						}}
-						className="flex h-auto w-full items-center justify-start gap-1 rounded-none px-1 py-1.5 font-normal text-muted-foreground text-xs hover:text-foreground"
-					>
-						{outputsCollapsed ? (
-							<ChevronRightIcon className="size-3" />
-						) : (
-							<ChevronDownIcon className="size-3" />
+					<div className="flex w-full items-center justify-between">
+						<button
+							type="button"
+							onClick={(e) => {
+								e.stopPropagation();
+								setOutputsCollapsed((prev) => !prev);
+							}}
+							className="flex items-center justify-start gap-1 rounded-none px-1 py-1.5 font-normal text-muted-foreground text-xs hover:text-foreground"
+						>
+							{outputsCollapsed ? (
+								<ChevronRightIcon className="size-3" />
+							) : (
+								<ChevronDownIcon className="size-3" />
+							)}
+							<span>
+								{outputsCollapsed
+									? `Output (${cell.outputs.length} hidden)`
+									: "Output"}
+							</span>
+						</button>
+						{!outputsCollapsed && (
+							<Tooltip disableHoverableContent={false}>
+								<TooltipTrigger asChild>
+									<Button
+										variant="ghost"
+										size="icon-sm"
+										className="mr-2 size-4 text-muted-foreground text-xs hover:text-foreground"
+										onClick={(e) => {
+											e.stopPropagation();
+											onClearOutput(index);
+										}}
+										aria-label="Clear output"
+									>
+										<EraserIcon className="size-3.5" />
+									</Button>
+								</TooltipTrigger>
+								<TooltipContent>Clear output</TooltipContent>
+							</Tooltip>
 						)}
-						<span>
-							{outputsCollapsed
-								? `Output (${cell.outputs.length} hidden)`
-								: "Output"}
-						</span>
-					</button>
+					</div>
 					{!outputsCollapsed && (
 						<div className="flex flex-col gap-1">
 							{cell.outputs.map((output, outputIndex) => (

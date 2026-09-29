@@ -521,13 +521,13 @@ export const AddVariablePopover = observer((props: AddVariablePopoverProps) => {
 						);
 					} else {
 						return (
-							<div className="flex items-center gap-3 rounded-md border border-yellow-200 bg-yellow-50 px-3 py-2.5">
-								<AlertTriangle className="size-5 shrink-0 text-yellow-600" />
+							<div className="flex items-center gap-3 rounded-md border border-warning/40 bg-warning/10 px-3 py-2.5">
+								<AlertTriangle className="size-5 shrink-0 text-warning" />
 								<div className="flex flex-col">
-									<span className="font-medium text-sm text-yellow-900">
+									<span className="font-medium text-sm text-warning">
 										Not yet executed
 									</span>
-									<span className="text-xs text-yellow-800/80">
+									<span className="text-warning/80 text-xs">
 										Notebook {variablePointer} has no output
 										yet.
 									</span>
@@ -559,13 +559,13 @@ export const AddVariablePopover = observer((props: AddVariablePopoverProps) => {
 						);
 					} else {
 						return (
-							<div className="flex items-center gap-3 rounded-md border border-yellow-200 bg-yellow-50 px-3 py-2.5">
-								<AlertTriangle className="size-5 shrink-0 text-yellow-600" />
+							<div className="flex items-center gap-3 rounded-md border border-warning/40 bg-warning/10 px-3 py-2.5">
+								<AlertTriangle className="size-5 shrink-0 text-warning" />
 								<div className="flex flex-col">
-									<span className="font-medium text-sm text-yellow-900">
+									<span className="font-medium text-sm text-warning">
 										Not yet executed
 									</span>
-									<span className="text-xs text-yellow-800/80">
+									<span className="text-warning/80 text-xs">
 										Cell{" "}
 										{splitAtPeriod(
 											variablePointer,
@@ -701,9 +701,12 @@ export const AddVariablePopover = observer((props: AddVariablePopoverProps) => {
 
 	return (
 		<Dialog open={open} onOpenChange={(o) => !o && handleClose()}>
-			<DialogContent className="w-[calc(100vw-2rem)] max-w-md overflow-hidden sm:max-w-2xl">
+			<DialogContent
+				aria-describedby={undefined}
+				className="w-[calc(100vw-2rem)] max-w-md overflow-hidden sm:max-w-2xl"
+			>
 				<DialogHeader>
-					<DialogTitle className="font-medium text-xl">
+					<DialogTitle className="font-medium text-base leading-6">
 						{variable ? "Edit" : "Create"} Variable
 					</DialogTitle>
 				</DialogHeader>
@@ -738,7 +741,7 @@ export const AddVariablePopover = observer((props: AddVariablePopoverProps) => {
 										className="flex flex-col gap-0.5 rounded border border-border/60 bg-background px-2 py-1.5"
 									>
 										<div className="flex items-center gap-1.5">
-											<span className="inline-flex items-center rounded bg-primary/10 px-1 py-0.5 font-medium text-[9px] text-primary uppercase tracking-wider">
+											<span className="inline-flex items-center rounded bg-primary/10 px-1 py-0.5 font-medium text-[11px] text-primary uppercase tracking-wider">
 												{hit.kind}
 											</span>
 											<span
@@ -747,11 +750,11 @@ export const AddVariablePopover = observer((props: AddVariablePopoverProps) => {
 											>
 												{hit.sourceLabel}
 											</span>
-											<span className="inline-flex items-center rounded bg-muted px-1 py-0.5 font-medium text-[9px] text-muted-foreground uppercase tracking-wider">
+											<span className="inline-flex items-center rounded bg-muted px-1 py-0.5 font-medium text-[11px] text-muted-foreground uppercase tracking-wider">
 												{hit.widget}
 											</span>
 											<span
-												className="truncate font-mono text-[10px] text-muted-foreground"
+												className="truncate font-mono text-[11px] text-muted-foreground"
 												style={noLigatureStyle}
 											>
 												{hit.pathLabel}

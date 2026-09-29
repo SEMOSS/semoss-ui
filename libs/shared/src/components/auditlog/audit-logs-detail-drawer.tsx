@@ -10,7 +10,13 @@ import {
 import type { ReactNode } from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "@semoss/i18n";
-import { Button, toast } from "@semoss/ui/next";
+import {
+	Button,
+	Tooltip,
+	TooltipContent,
+	TooltipTrigger,
+	toast,
+} from "@semoss/ui/next";
 import { TimeDateFormatter } from "./common";
 
 interface JSONTreeViewProps {
@@ -291,15 +297,25 @@ export const AuditLogsDetailDrawer = (props) => {
 				<span className="font-normal text-base text-primary leading-normal">
 					{t("detail.title")}
 				</span>
-				<Button
-					size="sm"
-					variant="outline"
-					onClick={handleCopyJson}
-					title={t("detail.copyJsonTooltip")}
-				>
-					<CopyIcon className="h-4 w-4" />
-					{t("detail.copyJson")}
-				</Button>
+				<Tooltip disableHoverableContent={false}>
+					<TooltipTrigger asChild>
+						<Button
+							aria-label={t("detail.copyJsonTooltip")}
+							size="sm"
+							variant="outline"
+							onClick={handleCopyJson}
+						>
+							<CopyIcon className="h-4 w-4" />
+							{t("detail.copyJson")}
+						</Button>
+					</TooltipTrigger>
+					<TooltipContent
+						sideOffset={4}
+						className="max-w-xs break-words"
+					>
+						{t("detail.copyJsonTooltip")}
+					</TooltipContent>
+				</Tooltip>
 			</div>
 
 			{logDetails && (

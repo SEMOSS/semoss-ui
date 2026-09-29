@@ -3,8 +3,8 @@
 This document provides context for AI coding assistants working with the SEMOSS Playwright
 browser sockets harness.
 
-> **Inherits from:** [../../AGENTS.md](../../AGENTS.md) for code style, file-naming, package
-> structure, commit messages, Biome config, and Node/pnpm requirements.
+> **Inherits from:** [root AGENTS.md](../../AGENTS.md). Load the applicable
+> [root skills](../../skills/README.md), including the [React standard](../../skills/react-standard.skill.md).
 
 ## Overview
 
@@ -14,7 +14,7 @@ sockets for Playwright/automation scenarios and exposes a SEMOSS MCP surface. It
 
 ## Build System
 
-- **Bundler**: Vite 7 + React
+- **Bundler**: Vite 8 + React 19
 - **Styling**: Tailwind CSS v4
 
 ### Commands
@@ -25,20 +25,25 @@ sockets for Playwright/automation scenarios and exposes a SEMOSS MCP surface. It
 | `pnpm build` | Production build |
 | `pnpm build:dev` | Development build |
 | `pnpm type-check` | `tsc --noEmit` type check |
-| `pnpm lint` | **ESLint** (see Linting below) |
+| `pnpm lint` | Declared ESLint command; missing configuration (see below) |
+| `pnpm test` | Vitest (`--passWithNoTests`; success may mean no tests ran) |
 | `pnpm preview` | Preview the production build |
+
+Run these from `packages/browser-automation`, or use
+`pnpm --filter @semoss/browser-automation <command>`.
 
 ### Linting
 
-Repo-wide **Biome** (`pnpm check` at the root) applies here. This package **additionally**
-ships a local **ESLint** config (`eslint.config.js`). Run both:
-
-```bash
-pnpm check
-pnpm --filter @semoss/browser-automation lint
-```
+Follow the [React validation guidance](../../skills/react-standard.skill.md#validation).
+The manifest declares `lint: eslint .`, but this package has no `eslint.config.js` and no
+repository-root config to inherit. Treat ESLint validation as blocked until the package
+configuration is repaired in a separately authorized change; do not report it as passing.
 
 ## Structure
+
+The existing layout is below. New application features follow the
+[React architecture policy](../../skills/react-standard.skill.md#architecture-and-exports);
+existing folders are not an implicit migration task.
 
 | Folder / file | Purpose |
 |---------------|---------|
@@ -69,12 +74,13 @@ Follow the root [Design System & Styling](../../AGENTS.md#design-system--styling
 
 - **`vite.config.ts`** — dev server and build configuration.
 - **`mcp/pixel_mcp.json`** — the MCP surface definition.
-- **`eslint.config.js`** — local lint rules for this package.
+- **The declared `lint` script** — its missing configuration is a known validation gap.
 
 ### Testing Changes
 
 ```bash
-pnpm --filter @semoss/browser-automation lint
 pnpm --filter @semoss/browser-automation type-check
 pnpm --filter @semoss/browser-automation build
 ```
+
+Report the ESLint gap above separately from the checks that can run.

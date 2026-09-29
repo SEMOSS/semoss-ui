@@ -27,7 +27,10 @@
 		"labelOpen": "الأدوات المنفذة ({{count}})",
 		"labelStreaming_one": "جارٍ تحميل {{count}} أداة…",
 		"labelStreaming_other": "جارٍ تحميل {{count}} أدوات…",
+		"labelPartial_one": "{{count}} أداة مكتملة، {{loadingCount}} قيد التحميل…",
+		"labelPartial_other": "{{count}} أدوات مكتملة، {{loadingCount}} قيد التحميل…",
 		"summaryCompleted": "{{count}} مكتمل",
+		"summaryLoading": "{{count}} قيد التحميل",
 		"summaryError": "{{count}} فشل",
 		"summaryCancelled": "{{count}} ملغى"
 	},

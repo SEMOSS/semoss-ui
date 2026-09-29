@@ -324,7 +324,7 @@ export const ResponseMessageThinking: React.FC<ResponseMessageThinkingProps> =
 						<div className="relative">
 							<div
 								ref={contentRef}
-								className="-mt-1 max-h-11.5 overflow-hidden"
+								className="-mt-1 max-h-6 overflow-hidden"
 							>
 								{/* don't need loadingMessage check here because loadingMessage only shows before streaming, so effectiveExpanded is true */}
 								<Markdown
@@ -335,7 +335,7 @@ export const ResponseMessageThinking: React.FC<ResponseMessageThinkingProps> =
 								</Markdown>
 							</div>
 							{isOverflowing && (
-								<div className="pointer-events-none absolute start-0 end-0 bottom-0 h-5 bg-linear-to-t from-background to-transparent" />
+								<div className="pointer-events-none absolute start-0 end-0 bottom-0 h-2 bg-linear-to-t from-background to-transparent" />
 							)}
 						</div>
 					)}

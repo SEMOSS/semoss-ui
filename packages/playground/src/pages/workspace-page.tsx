@@ -1,7 +1,7 @@
 import { SearchIcon } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router";
 import { useTranslation } from "@semoss/i18n";
 import { useIteratorPixel } from "@semoss/sdk/react";
 import {

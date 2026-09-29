@@ -57,7 +57,7 @@ interface ColumnEditModalProps {
 	>;
 }
 
-const ColumnEditModal = ({
+export const ColumnEditModal = ({
 	open,
 	onClose,
 	selectedColumn,
@@ -149,11 +149,15 @@ const ColumnEditModal = ({
 	return (
 		<Dialog open={open} onOpenChange={onClose}>
 			<DialogContent
+				aria-describedby={undefined}
 				className="flex max-h-[90vh] max-w-2xl flex-col"
 				data-testid="column-edit-modal"
 			>
 				<DialogHeader>
-					<DialogTitle data-testid="column-edit-modal-title">
+					<DialogTitle
+						className="font-medium text-base leading-6"
+						data-testid="column-edit-modal-title"
+					>
 						Edit {selectedColumn}
 					</DialogTitle>
 				</DialogHeader>
@@ -427,5 +431,3 @@ const ColumnEditModal = ({
 		</Dialog>
 	);
 };
-
-export default ColumnEditModal;

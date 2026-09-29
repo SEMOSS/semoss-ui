@@ -76,9 +76,10 @@ export const EngineGridItem: React.FC<EngineGridItemProps> = ({
 	const actions = (
 		<>
 			{showInfo && onInfo && (
-				<Tooltip>
+				<Tooltip disableHoverableContent={false}>
 					<TooltipTrigger asChild>
 						<Button
+							aria-label={"Open Details in a New Tab"}
 							variant="ghost"
 							size="icon-sm"
 							onClick={(e) => {
@@ -94,53 +95,81 @@ export const EngineGridItem: React.FC<EngineGridItemProps> = ({
 				</Tooltip>
 			)}
 			{typeof engine.engine_global === "boolean" && showGlobal && (
-				<Tooltip>
+				<Tooltip disableHoverableContent={false}>
+					<TooltipTrigger asChild>
+						<span
+							className="inline-flex"
+							tabIndex={
+								engine.engine_user_permission !== 1
+									? 0
+									: undefined
+							}
+						>
+							<Button
+								aria-label={
+									engine.engine_global ? "Global" : "Private"
+								}
+								variant="ghost"
+								size="icon-sm"
+								onClick={(e) => {
+									e.preventDefault();
+									e.stopPropagation();
+									if (engine.engine_user_permission === 1) {
+										onGlobalToggle(engine);
+									}
+								}}
+								disabled={engine.engine_user_permission !== 1}
+							>
+								{engine.engine_global ? (
+									<LockKeyholeOpen className="size-4 text-muted-foreground" />
+								) : (
+									<LockKeyhole className="size-4 text-muted-foreground" />
+								)}
+							</Button>
+						</span>
+					</TooltipTrigger>
+					<TooltipContent>
+						{engine.engine_user_permission !== 1
+							? "Only an owner can change visibility"
+							: engine.engine_global
+								? "Global"
+								: "Private"}
+					</TooltipContent>
+				</Tooltip>
+			)}
+			{showFavorite && (
+				<Tooltip disableHoverableContent={false}>
 					<TooltipTrigger asChild>
 						<Button
+							aria-label={
+								isFavorited
+									? `Unbookmark ${engineName}`
+									: `Bookmark ${engineName}`
+							}
 							variant="ghost"
 							size="icon-sm"
 							onClick={(e) => {
 								e.preventDefault();
 								e.stopPropagation();
-								if (engine.engine_user_permission === 1) {
-									onGlobalToggle(engine);
-								}
+								onFavorite(engine);
 							}}
-							disabled={engine.engine_user_permission !== 1}
 						>
-							{engine.engine_global ? (
-								<LockKeyholeOpen className="size-4 text-muted-foreground" />
+							{isFavorited ? (
+								<BookmarkCheck className="size-4 text-primary" />
 							) : (
-								<LockKeyhole className="size-4 text-muted-foreground" />
+								<Bookmark className="size-4" />
 							)}
 						</Button>
 					</TooltipTrigger>
-					<TooltipContent>
-						{engine.engine_global ? "Global" : "Private"}
+					<TooltipContent
+						sideOffset={4}
+						className="max-w-xs break-words"
+					>
+						{isFavorited
+							? `Unbookmark ${engineName}`
+							: `Bookmark ${engineName}`}
 					</TooltipContent>
 				</Tooltip>
-			)}
-			{showFavorite && (
-				<Button
-					variant="ghost"
-					size="icon-sm"
-					title={
-						isFavorited
-							? `Unbookmark ${engineName}`
-							: `Bookmark ${engineName}`
-					}
-					onClick={(e) => {
-						e.preventDefault();
-						e.stopPropagation();
-						onFavorite(engine);
-					}}
-				>
-					{isFavorited ? (
-						<BookmarkCheck className="size-4 text-primary" />
-					) : (
-						<Bookmark className="size-4" />
-					)}
-				</Button>
 			)}
 		</>
 	);

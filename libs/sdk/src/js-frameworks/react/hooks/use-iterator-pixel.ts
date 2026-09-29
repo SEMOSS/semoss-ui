@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { usePixel } from "./usePixel";
 
-export interface UseIteratorPixelOptions<T> {
+interface UseIteratorPixelOptions<T> {
 	/** Number of items to fetch per page */
 	limit?: number;
 
@@ -15,7 +15,7 @@ export interface UseIteratorPixelOptions<T> {
 	onError?: (error: Error) => void;
 }
 
-export interface UseIteratorPixelReturn<T> {
+interface UseIteratorPixelReturn<T> {
 	/** Current accumulated data */
 	data: T[];
 

@@ -125,9 +125,10 @@ settings page is not a dashboard and should not wrap every field group in a card
   page or form error.
 - **Success and warning:** pair color and iconography with text. Status must never be conveyed
   by color alone.
-- **Forms:** use `Field`, `FieldLabel`, `FieldDescription`, and `FieldError` with the matching
-  `Input`, `Textarea`, `Select`, `Checkbox`, `RadioGroup`, `Switch`, or other primitive. Show
-  validation next to its field and preserve entered values after a recoverable submit error.
+- **Forms:** follow the [form skill](./skills/react-form-builder.skill.md).
+  Use `Form` and its `Form*` wrappers, which compose the matching controls and Field
+  labels, descriptions, and errors. Show validation next to its field and preserve
+  entered values after a recoverable submit error.
 - **Destructive actions:** explain the consequence, require deliberate confirmation for
   difficult-to-reverse changes, and return focus to a logical control after completion.
 
@@ -185,8 +186,10 @@ Before handing off a UI change, review the affected surface at:
 | Input | Keyboard-only operation and visible focus |
 | Magnification | 200% browser zoom without lost content or controls |
 
-Also run the relevant behavior tests, `pnpm lint:design` for touched frontend files, and the
-package's type-check/build commands. Record anything that could not be exercised manually.
+Also run the relevant behavior tests and package type-check/build commands, and manually
+audit full touched frontend files against this rulebook. `pnpm lint:design` is currently
+missing from root scripts; do not report an automated design audit as passing. Record
+anything that could not be exercised manually.
 
 ## Decision Trees
 
@@ -229,8 +232,9 @@ with four different backdrop opacities and five different z-indexes — do not a
 → Tailwind scale on an 8px rhythm: `gap-2`, `p-4`, `px-6`; icons via `size-4`/`size-5`
 (not `h-[18px] w-[18px]`).
 → Arbitrary values (`w-[347px]`, `min-h-[639px]`, `ml-[84%]`) are allowed **only** to match an
-external constraint (a third-party widget, a fixed asset). Add a design-lint suppression on
-the preceding line with the rule ID and a concrete reason; never use an unexplained disable.
+external constraint (a third-party widget, a fixed asset). Add a reason-bearing exception
+annotation on the preceding line using the format below; it is reviewed manually, not
+currently processed by a design linter. Never use an unexplained disable.
 
 ## MUST / NEVER
 
@@ -241,7 +245,7 @@ the preceding line with the rule ID and a concrete reason; never use an unexplai
 - Tint with the **token + slash-opacity idiom**: `bg-primary/10`, `ring-ring/50`,
   `bg-destructive/20`, `hover:bg-accent`. `disabled:opacity-50` on a whole element is fine.
 - Use Typography components (or `.heading-*`) for headings and body text.
-- **Boy-scout rule**: the staged-file design lint checks each touched frontend file in full.
+- **Boy-scout rule**: manually review each touched/staged frontend file in full.
   Migrate its violations to tokens/components or apply an enumerated, reason-bearing carve-out.
   Do not expand cleanup into unrelated files. (Extends the root
   [Incremental Migration](./AGENTS.md#incremental-migration) policy.)
@@ -284,14 +288,15 @@ the preceding line with the rule ID and a concrete reason; never use an unexplai
   package directly; new literals must match a current `globals.css` token and carry a
   line-level suppression naming that token.
 
-Suppression format:
+Exception annotation format (manual review; no current automated suppression processor):
 
 ```typescript
 // design-lint-disable-next-line arbitrary-size -- fixed dimensions of vendor canvas
 ```
 
 Markdown fences that intentionally demonstrate invalid code must include
-`design-lint-ignore` in the fence info string. Do not suppress positive examples.
+`design-lint-ignore` in the fence info string. This documents intent for reviewers,
+not a currently enforced directive. Do not suppress positive examples.
 
 ## Deprecated Styling Systems
 
@@ -314,12 +319,19 @@ Markdown fences that intentionally demonstrate invalid code must include
 
 ## Self-Audit
 
-Run `pnpm lint:design -- <touched-files>` before marking work complete. The pre-commit hook
-runs the same audit on every staged frontend file. Every diagnostic must be migrated in scope
-or covered by an enumerated, reason-bearing carve-out above.
+Manually audit complete touched/staged frontend files before marking work complete.
+Every violation must be migrated in scope or covered by an enumerated, reason-bearing
+carve-out above. Include responsive, accessibility, state, and theme checks from the
+definition of done, and report unavailable verification.
+
+`pnpm lint:design` is currently missing from root scripts. The explicit Biome checks
+described in [the React standard](./skills/react-standard.skill.md) do not enforce this
+design rulebook; neither a successful lint check nor a build replaces manual design review.
 
 ## Future Work (tracked, not yet done)
 
+- Implement a scoped design checker and its command/hook integration; do not claim
+  automated design enforcement or working suppression directives until verified.
 - `--info` token, if a real need appears (propose before styling).
 - A z-index scale token set; today, rely on lib overlay components.
 - Delete `libs/ui/src/next/theme.ts`.

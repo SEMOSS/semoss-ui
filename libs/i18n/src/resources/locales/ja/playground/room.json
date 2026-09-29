@@ -71,7 +71,8 @@
 		"errorProcessing": "チャットの処理中にエラーが発生しました",
 		"stopLabel": "応答を停止",
 		"stopTooltip": "停止",
-		"stoppingTooltip": "停止中"
+		"stoppingTooltip": "停止中",
+		"removeFile": "{{name}} を削除"
 	},
 	"content": {
 		"scrollToTop": "一番上にスクロール",
@@ -104,12 +105,13 @@
 		"attachDocument": "ドキュメントを追加"
 	},
 	"menuFileExplorer": {
-		"name": "ファイルエクスプローラー",
-		"open": "ファイルエクスプローラーを開く",
-		"close": "ファイルエクスプローラーを閉じる"
+		"name": "チャットのファイル",
+		"open": "チャットのファイルを表示",
+		"close": "チャットのファイルを非表示"
 	},
 	"errors": {
-		"createRoom": "ルームの作成中にエラーが発生しました。エラー: {{message}}"
+		"createRoom": "ルームの作成中にエラーが発生しました。エラー: {{message}}",
+		"fileInUse": "アップロードされたファイルは別のプログラムで使用中です。そのプログラムを閉じて、新しいチャットでファイルを再アップロードしてください。"
 	},
 	"contextWindow": {
 		"descriptionLow": "すべての会話には上限があります。非常に長い会話は、最終的にモデルが以前のメッセージを忘れる原因になります。",

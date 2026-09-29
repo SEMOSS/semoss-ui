@@ -20,7 +20,6 @@ import {
 	stopPixelJob,
 	updateRoomOptions,
 } from "@/api/rooms";
-import type { WorkbenchState } from "../workbench.store";
 import type {
 	ModelChatAttachment,
 	ModelChatConfig,
@@ -171,21 +170,6 @@ export interface ModelChatStoreInterface {
 }
 
 /**
- * The model chat store a `ModelWorkbench` attached, for paths that can't use
- * `useModelChat` — a blueprint's `commands` factory runs outside React. This
- * cast and the hook's are the only two points where the untyped `domainStore`
- * attachment is narrowed back to its concrete shape.
- *
- * @name getModelChatStore
- * @param state - The scoped workbench store's state.
- * @return The attached store, or undefined outside a `ModelWorkbench`.
- */
-export const getModelChatStore = (
-	state: WorkbenchState,
-): StoreApi<ModelChatStoreInterface> | undefined =>
-	state.layout.domainStore as StoreApi<ModelChatStoreInterface> | undefined;
-
-/**
  * Extract a display message from a thrown value.
  *
  * @name toErrorMessage
@@ -283,7 +267,7 @@ const streamToResponseParts = (
  * share them.
  *
  * @name createModelChatStore
- * @return A vanilla zustand store attached via `actions.attachDomainStore`.
+ * @return A vanilla zustand store provided by the model workbench.
  */
 export const createModelChatStore = (): StoreApi<ModelChatStoreInterface> => {
 	// Runtime owned by this store instance, deliberately outside reactive

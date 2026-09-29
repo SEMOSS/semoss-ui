@@ -277,7 +277,7 @@ export const GithubInstallationPicker = ({
 							</label>
 						);
 						return disabled ? (
-							<Tooltip key={id}>
+							<Tooltip disableHoverableContent={false} key={id}>
 								<TooltipTrigger asChild>{row}</TooltipTrigger>
 								<TooltipContent>
 									{t(

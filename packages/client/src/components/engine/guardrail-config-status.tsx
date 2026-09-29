@@ -7,6 +7,7 @@ import {
 	cn,
 	toast,
 } from "@semoss/ui/next";
+import { copyTextToClipboard } from "@semoss/utility";
 import type { GuardrailFileStatus } from "./engine-guardrail-settings.constants";
 
 export interface GuardrailConfigStatusProps {
@@ -47,15 +48,6 @@ const GuardrailNotice = ({
 		<div className="min-w-0 flex-1">{children}</div>
 	</div>
 );
-
-const copyToClipboard = async (content: string) => {
-	try {
-		await navigator.clipboard.writeText(content);
-		toast.success("Copied the stored configuration");
-	} catch {
-		toast.error("Unable to copy the stored configuration");
-	}
-};
 
 /**
  * Reports whether the engine actually loads a guardrail file. A rule set that
@@ -155,7 +147,19 @@ export const GuardrailConfigStatus = ({
 									variant="outline"
 									size="sm"
 									onClick={() =>
-										copyToClipboard(status.rawContent ?? "")
+										copyTextToClipboard(
+											status.rawContent ?? "",
+											{
+												onSuccess: () =>
+													toast.success(
+														"Copied the stored configuration",
+													),
+												onError: () =>
+													toast.error(
+														"Unable to copy the stored configuration",
+													),
+											},
+										)
 									}
 								>
 									<Copy className="size-4" aria-hidden />

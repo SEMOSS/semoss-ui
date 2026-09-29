@@ -1,5 +1,4 @@
-// import custom styling
-import "flexlayout-react/style/light.css";
+// import the version-matched base styles and SEMOSS theme
 import "./flexlayout.css";
 
 // export from lib

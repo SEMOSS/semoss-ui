@@ -1,14 +1,7 @@
 import { RefreshCwIcon } from "lucide-react";
 import type { FC } from "react";
-import {
-	Button,
-	cn,
-	Tooltip,
-	TooltipContent,
-	TooltipTrigger,
-} from "@semoss/ui/next";
-import type { WorkbenchChromeProps } from "@/stores/workbench";
-import { WORKBENCH_STYLES } from "../../core/workbench.chrome";
+import type { WorkbenchPanelProps } from "@semoss/workbench";
+import { useWorkbenchPanel, WorkbenchChromeButton } from "@semoss/workbench";
 import type { ModelChatHistoryApi } from "./model-chat-conversations";
 
 /**
@@ -25,26 +18,21 @@ import type { ModelChatHistoryApi } from "./model-chat-conversations";
  * @name ModelChatHistoryRefreshControl
  * @return The refresh chrome button.
  */
-export const ModelChatHistoryRefreshControl: FC<
-	WorkbenchChromeProps<Record<string, unknown>, ModelChatHistoryApi>
-> = ({ value }) => (
-	<Tooltip>
-		<TooltipTrigger asChild>
-			<Button
-				variant="ghost"
-				size="icon-sm"
-				onClick={() => value?.refresh()}
-				disabled={!value}
-				aria-label="Refresh conversation history"
-				data-testid="model-chat-history--refresh-btn"
-				className={cn(
-					"flex-none text-muted-foreground",
-					WORKBENCH_STYLES.chromeButton,
-				)}
-			>
-				<RefreshCwIcon className={WORKBENCH_STYLES.chromeIcon} />
-			</Button>
-		</TooltipTrigger>
-		<TooltipContent>Refresh conversation history</TooltipContent>
-	</Tooltip>
-);
+export const ModelChatHistoryRefreshControl: FC<WorkbenchPanelProps> = ({
+	id,
+}) => {
+	const { value } = useWorkbenchPanel<
+		Record<string, unknown>,
+		ModelChatHistoryApi
+	>(id);
+
+	return (
+		<WorkbenchChromeButton
+			icon={RefreshCwIcon}
+			label="Refresh conversation history"
+			onClick={() => value?.refresh()}
+			disabled={!value}
+			data-testid="model-chat-history--refresh-btn"
+		/>
+	);
+};

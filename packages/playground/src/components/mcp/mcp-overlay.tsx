@@ -29,7 +29,7 @@ type Tab = "AGENT" | "TOOLBOX" | "KNOWLEDGE";
 type WorkspaceRef = Pick<Workspace, "workspace_id"> &
 	Partial<Pick<Workspace, "name">>;
 
-export interface MCPOverlaySave {
+interface MCPOverlaySave {
 	mcp: MCPConfig[];
 	/** Only present when the overlay was opened with an `workspace` prop. */
 	workspace?: WorkspaceRef | null;
@@ -347,6 +347,10 @@ export const MCPOverlay: React.FC<MCPOverlayProps> = ({
 										enableKnowledgeMCP={
 											root.theme.featureFlags
 												?.enableKnowledgeMCP
+										}
+										showSystemTools={
+											root.theme.featureFlags
+												?.showSystemTools
 										}
 										getPlatformUrl={
 											root.theme.featureFlags

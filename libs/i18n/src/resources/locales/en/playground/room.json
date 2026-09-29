@@ -71,7 +71,8 @@
 		"errorProcessing": "Error processing chat",
 		"stopLabel": "Stop the response",
 		"stopTooltip": "Stop",
-		"stoppingTooltip": "Stopping"
+		"stoppingTooltip": "Stopping",
+		"removeFile": "Remove {{name}}"
 	},
 	"content": {
 		"scrollToTop": "Scroll to top",
@@ -104,12 +105,13 @@
 		"attachDocument": "Add Documents"
 	},
 	"menuFileExplorer": {
-		"name": "File Explorer",
-		"open": "Open File Explorer",
-		"close": "Close File Explorer"
+		"name": "Chat Files",
+		"open": "Show Chat Files",
+		"close": "Hide Chat Files"
 	},
 	"errors": {
-		"createRoom": "An error occurred while creating the room. Error: {{message}}"
+		"createRoom": "An error occurred while creating the room. Error: {{message}}",
+		"fileInUse": "At least one uploaded file is currently in use by another program. Close the program and re-upload."
 	},
 	"contextWindow": {
 		"descriptionLow": "All conversations have a limit. Very long conversations will eventually cause the model to forget earlier messages.",

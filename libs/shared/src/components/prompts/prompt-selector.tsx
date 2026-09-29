@@ -201,7 +201,9 @@ export const PromptSelector: React.FC<PromptSelectorProps> = ({
 									</Field>
 									{getPlatformUrl && (
 										<div className="flex w-full flex-row justify-end px-4 pb-4">
-											<Tooltip>
+											<Tooltip
+												disableHoverableContent={false}
+											>
 												<TooltipTrigger asChild>
 													<a
 														target="_blank"

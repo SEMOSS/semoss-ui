@@ -1,6 +1,6 @@
 import { observer } from "mobx-react-lite";
 import { useEffect, useState } from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation } from "react-router";
 import { Env, runPixel } from "@semoss/sdk/react";
 import { Spinner, Toaster } from "@semoss/ui/next";
 import { DefaultBlocks } from "./components/block-defaults";

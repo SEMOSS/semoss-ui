@@ -102,7 +102,8 @@ export interface NotebookHandle {
  * run server-side (Python via the `Py()` reactor) with their outputs mapped
  * back to nbformat. Edits are surfaced through `onChange`; running and
  * serializing are also available imperatively via `ref` (`NotebookHandle`).
- * File I/O (load / save / download) is owned by the `FileNotebook` wrapper.
+ * File I/O (load / save / download) is owned by the caller — the workbench's
+ * `FileNotebookView`, or the terminal's notebook tab.
  */
 export const Notebook = forwardRef<NotebookHandle, NotebookProps>(
 	(
@@ -133,6 +134,9 @@ export const Notebook = forwardRef<NotebookHandle, NotebookProps>(
 		// Live console output per cell id while running; shown but never persisted.
 		const [streamingLogs, setStreamingLogs] = useState<
 			Record<string, string[]>
+		>({});
+		const [executionDurations, setExecutionDurations] = useState<
+			Record<string, number>
 		>({});
 
 		// Per-cell DOM refs for scroll-to-cell.
@@ -206,6 +210,15 @@ export const Notebook = forwardRef<NotebookHandle, NotebookProps>(
 
 			setRunningCellIndex(index);
 			setStreamingLogs((prev) => ({ ...prev, [cell.id]: [] }));
+			setExecutionDurations((previous) => {
+				if (!(cell.id in previous)) {
+					return previous;
+				}
+
+				const next = { ...previous };
+				delete next[cell.id];
+				return next;
+			});
 			const executionCount = nextExecutionCount(current);
 
 			let outputs: JupyterOutput[] = [];
@@ -219,6 +232,7 @@ export const Notebook = forwardRef<NotebookHandle, NotebookProps>(
 				let value: unknown;
 				let isError = false;
 				let wasInterrupted = false;
+				let executionDurationMs: number | undefined;
 
 				if (pixel) {
 					const { jobId } = await runPixelAsync(pixel, execInsightId);
@@ -269,6 +283,7 @@ export const Notebook = forwardRef<NotebookHandle, NotebookProps>(
 							await getPixelAsyncResult<[unknown]>(jobId);
 
 						const last = results[results.length - 1];
+						executionDurationMs = last?.timeToRun;
 						isError =
 							errors.length > 0 ||
 							(last?.operationType ?? []).includes("ERROR");
@@ -288,6 +303,12 @@ export const Notebook = forwardRef<NotebookHandle, NotebookProps>(
 				outputs = wasInterrupted
 					? toCellOutputs([], "Interrupted", true, executionCount)
 					: toCellOutputs([], value, isError, executionCount);
+				if (executionDurationMs !== undefined) {
+					setExecutionDurations((previous) => ({
+						...previous,
+						[cell.id]: executionDurationMs,
+					}));
+				}
 			} catch (e) {
 				const message = e instanceof Error ? e.message : String(e);
 				outputs = toCellOutputs([], message, true, executionCount);
@@ -594,6 +615,7 @@ export const Notebook = forwardRef<NotebookHandle, NotebookProps>(
 				...notebook,
 				cells,
 			});
+			setActiveCellIndex(at);
 		};
 
 		/** Switch a cell to a different type, preserving its source. */
@@ -659,8 +681,9 @@ export const Notebook = forwardRef<NotebookHandle, NotebookProps>(
 			});
 		};
 
-		// Expose running + serialization so a wrapper (e.g. FileNotebook) can drive
-		// the notebook from its own toolbar and persist the current state.
+		// Expose running + serialization so a wrapper (e.g. the workbench's
+		// notebook panel) can drive the notebook from its own toolbar and
+		// persist the current state.
 		useImperativeHandle(ref, () => ({
 			runAll: runAllCells,
 			interrupt: interruptExecution,
@@ -709,7 +732,7 @@ export const Notebook = forwardRef<NotebookHandle, NotebookProps>(
 										items={notebook.cells.map((c) => c.id)}
 										strategy={verticalListSortingStrategy}
 									>
-										<div className="container mx-auto flex w-full flex-col pt-4 pr-12 pb-20 pl-2">
+										<div className="container mx-auto flex w-full flex-col pt-4 pr-15 pb-20 pl-1">
 											{notebook.cells.map(
 												(cell, index) => {
 													const commonCellProps: NotebookCellBaseProps =
@@ -777,6 +800,11 @@ export const Notebook = forwardRef<NotebookHandle, NotebookProps>(
 																isRunning={
 																	runningCellIndex ===
 																	index
+																}
+																executionDurationMs={
+																	executionDurations[
+																		cell.id
+																	]
 																}
 																canRunAbove={notebook.cells
 																	.slice(

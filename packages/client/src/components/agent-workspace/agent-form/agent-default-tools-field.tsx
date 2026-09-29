@@ -17,7 +17,7 @@ import {
 } from "@semoss/ui/next";
 import type { AgentFormValues } from "./types";
 
-export interface AgentDefaultToolsFieldProps {
+interface AgentDefaultToolsFieldProps {
 	/** React Hook Form control for the shared agent form. */
 	control: Control<AgentFormValues>;
 	/** Backend-authoritative tool catalog returned by GetWorkspace. */

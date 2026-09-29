@@ -13,8 +13,11 @@ interface PanelSearchProps {
 }
 
 /**
- * Shared search input for left-side panels (Variables, Notebooks, Layers,
- * Blocks). Keeps spacing + visual treatment consistent across all four.
+ * Shared search input for the left-side panels (Variables, Notebooks, Layers,
+ * Blocks).
+ *
+ * Grows to fill its row so it can sit beside a panel's buttons rather than
+ * above them. The row owns the padding; this owns only the field.
  */
 export const PanelSearch = ({
 	value,
@@ -25,22 +28,20 @@ export const PanelSearch = ({
 	"data-testid": dataTestId,
 }: PanelSearchProps) => {
 	return (
-		<div className={cn("px-3 pb-2", className)}>
-			<div className="relative">
-				<Search className="-translate-y-1/2 pointer-events-none absolute top-1/2 left-3 size-4 text-muted-foreground" />
-				<Input
-					placeholder={placeholder}
-					className={cn("w-full pl-9", trailing && "pr-10")}
-					value={value}
-					onChange={(e) => onChange(e.target.value)}
-					data-testid={dataTestId}
-				/>
-				{trailing && (
-					<div className="-translate-y-1/2 absolute top-1/2 right-2 flex items-center">
-						{trailing}
-					</div>
-				)}
-			</div>
+		<div className={cn("relative min-w-0 flex-1", className)}>
+			<Search className="-translate-y-1/2 pointer-events-none absolute top-1/2 left-3 size-4 text-muted-foreground" />
+			<Input
+				placeholder={placeholder}
+				className={cn("w-full pl-9", trailing && "pr-10")}
+				value={value}
+				onChange={(e) => onChange(e.target.value)}
+				data-testid={dataTestId}
+			/>
+			{trailing && (
+				<div className="-translate-y-1/2 absolute top-1/2 right-2 flex items-center">
+					{trailing}
+				</div>
+			)}
 		</div>
 	);
 };

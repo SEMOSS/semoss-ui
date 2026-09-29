@@ -1,6 +1,6 @@
 import { observer } from "mobx-react-lite";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router";
 import { useTranslation } from "@semoss/i18n";
 import { InsightProvider } from "@semoss/sdk/react";
 import {
@@ -9,6 +9,7 @@ import {
 	ResizablePanelGroup,
 	Spinner,
 	toast,
+	useIsMobile,
 } from "@semoss/ui/next";
 import { RoomContent, RoomSidebar, SaveWorkspaceDialog } from "@/components";
 import { FileDragProvider } from "@/contexts";
@@ -27,6 +28,7 @@ export const RoomPage = observer(() => {
 	const { chat } = useChat();
 	const { root } = useRoot();
 	const navigate = useNavigate();
+	const isMobile = useIsMobile();
 
 	const platformLinksDisabled = !root.theme.featureFlags?.showPlatformLinks;
 
@@ -163,11 +165,11 @@ export const RoomPage = observer(() => {
 							<RoomContent room={room} />
 						</FileDragProvider>
 					</ResizablePanel>
-					{room.sidebar.isOpen && (
+					{room.sidebar.isOpen && !isMobile && (
 						<>
 							<ResizableHandle />
 							<ResizablePanel
-								className={"relative p-2"}
+								className={"relative"}
 								defaultSize={50}
 								minSize={20}
 							>
@@ -176,6 +178,11 @@ export const RoomPage = observer(() => {
 						</>
 					)}
 				</ResizablePanelGroup>
+				{room.sidebar.isOpen && isMobile && (
+					<div className="fixed inset-0 z-50 bg-background p-2">
+						<RoomSidebar room={room} />
+					</div>
+				)}
 			</div>
 		</InsightProvider>
 	);

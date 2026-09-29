@@ -15,6 +15,9 @@ import {
 	DialogTitle,
 	TableCell,
 	TableRow,
+	Tooltip,
+	TooltipContent,
+	TooltipTrigger,
 } from "@semoss/ui/next";
 import { copyTextToClipboard } from "@/utility";
 
@@ -91,18 +94,31 @@ export const HistoryRow = (props: {
 						<div className="flex min-w-0 flex-col">
 							<div className="group flex min-w-0 items-center gap-1">
 								<span className="truncate">{row.jobName}</span>
-								<button
-									type="button"
-									onClick={(e) => {
-										e.stopPropagation();
-										copyTextToClipboard(row.jobName);
-									}}
-									className="shrink-0 opacity-0 transition-opacity hover:text-foreground group-hover:opacity-100"
-									title="Copy name"
-									aria-label="Copy name"
-								>
-									<Copy className="size-3 text-muted-foreground" />
-								</button>
+								<Tooltip disableHoverableContent={false}>
+									<TooltipTrigger asChild>
+										<Button
+											variant="ghost"
+											size="icon-sm"
+											type="button"
+											onClick={(e) => {
+												e.stopPropagation();
+												copyTextToClipboard(
+													row.jobName,
+												);
+											}}
+											className="shrink-0 opacity-0 transition-opacity hover:text-foreground group-hover:opacity-100"
+											aria-label="Copy name"
+										>
+											<Copy className="size-3 text-muted-foreground" />
+										</Button>
+									</TooltipTrigger>
+									<TooltipContent
+										sideOffset={4}
+										className="max-w-xs break-words"
+									>
+										{"Copy name"}
+									</TooltipContent>
+								</Tooltip>
 							</div>
 							<div className="group flex min-w-0 items-center gap-1">
 								<span
@@ -111,18 +127,29 @@ export const HistoryRow = (props: {
 								>
 									jobId: {row.jobId}
 								</span>
-								<button
-									type="button"
-									onClick={(e) => {
-										e.stopPropagation();
-										copyTextToClipboard(row.jobId);
-									}}
-									className="shrink-0 opacity-0 transition-opacity hover:text-foreground group-hover:opacity-100"
-									title="Copy job ID"
-									aria-label="Copy job ID"
-								>
-									<Copy className="size-3 text-muted-foreground" />
-								</button>
+								<Tooltip disableHoverableContent={false}>
+									<TooltipTrigger asChild>
+										<Button
+											variant="ghost"
+											size="icon-sm"
+											type="button"
+											onClick={(e) => {
+												e.stopPropagation();
+												copyTextToClipboard(row.jobId);
+											}}
+											className="shrink-0 opacity-0 transition-opacity hover:text-foreground group-hover:opacity-100"
+											aria-label="Copy job ID"
+										>
+											<Copy className="size-3 text-muted-foreground" />
+										</Button>
+									</TooltipTrigger>
+									<TooltipContent
+										sideOffset={4}
+										className="max-w-xs break-words"
+									>
+										{"Copy job ID"}
+									</TooltipContent>
+								</Tooltip>
 							</div>
 						</div>
 					</div>
@@ -144,16 +171,28 @@ export const HistoryRow = (props: {
 									Output
 								</span>
 								<div className="flex items-center gap-1">
-									<Button
-										type="button"
-										variant="ghost"
-										size="sm"
-										className="h-7 px-2 text-muted-foreground text-xs"
-										onClick={() => setFullscreenOpen(true)}
-										title="Expand"
-									>
-										<Maximize2 className="size-3" /> Expand
-									</Button>
+									<Tooltip disableHoverableContent={false}>
+										<TooltipTrigger asChild>
+											<Button
+												type="button"
+												variant="ghost"
+												size="sm"
+												className="h-7 px-2 text-muted-foreground text-xs"
+												onClick={() =>
+													setFullscreenOpen(true)
+												}
+											>
+												<Maximize2 className="size-3" />{" "}
+												Expand
+											</Button>
+										</TooltipTrigger>
+										<TooltipContent
+											sideOffset={4}
+											className="max-w-xs break-words"
+										>
+											{"Expand"}
+										</TooltipContent>
+									</Tooltip>
 									<Button
 										type="button"
 										variant="ghost"
@@ -176,9 +215,12 @@ export const HistoryRow = (props: {
 			)}
 
 			<Dialog open={fullscreenOpen} onOpenChange={setFullscreenOpen}>
-				<DialogContent className="flex h-[85vh] w-[90vw] max-w-[90vw] flex-col gap-3 p-6 sm:max-w-[90vw]">
+				<DialogContent
+					aria-describedby={undefined}
+					className="flex h-[85vh] w-[90vw] max-w-[90vw] flex-col gap-3 p-6 sm:max-w-[90vw]"
+				>
 					<DialogHeader className="shrink-0">
-						<DialogTitle className="flex items-center gap-2 pr-8">
+						<DialogTitle className="flex items-center gap-2 pr-8 font-medium text-base leading-6">
 							<span className="truncate">{row.jobName}</span>
 							<span className="font-normal text-muted-foreground text-xs">
 								{row.execStart}

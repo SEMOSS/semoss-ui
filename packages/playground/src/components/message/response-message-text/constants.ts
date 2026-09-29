@@ -196,11 +196,6 @@ export const CODE_LANG_LABELS: Record<string, string> = {
 	pixel: "Pixel",
 };
 
-/** Build a timestamped file path for saving an HTML response to the asset store. */
-export const createHtmlResponseFilePath = (): string => {
-	return `save-html-response-${Date.now()}.html`;
-};
-
 /**
  * Build a runnable pixel expression for a code block, or null when the
  * language is not something we can execute server-side. Python runs through

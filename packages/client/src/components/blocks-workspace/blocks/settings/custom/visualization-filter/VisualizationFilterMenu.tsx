@@ -25,6 +25,9 @@ import {
 	TabsContent,
 	TabsList,
 	TabsTrigger,
+	Tooltip,
+	TooltipContent,
+	TooltipTrigger,
 	toast,
 } from "@semoss/ui/next";
 import { useBlockSettings } from "@/hooks/useBlockSettings";
@@ -287,34 +290,43 @@ export const VisualizationFilterMenu: BlockComponent = ({ id }) => {
 									open={dropdownOpen}
 									onOpenChange={setDropdownOpen}
 								>
-									<PopoverTrigger asChild>
-										{/* biome-ignore lint/a11y/noStaticElementInteractions: visual item */}
-										{/* biome-ignore lint/a11y/useKeyWithClickEvents: visual item */}
-										<div
-											className="flex min-h-[40px] w-full cursor-pointer items-center justify-between rounded border border-gray-300 px-3 py-2"
-											onClick={() =>
-												setDropdownOpen((prev) => !prev)
-											}
-										>
-											<span className="text-sm">
+									<div className="flex items-center gap-1">
+										<PopoverTrigger asChild>
+											<Button
+												variant="outline"
+												className="min-w-0 flex-1 justify-between font-normal"
+											>
 												Frames
-											</span>
-											<div className="flex items-center gap-2">
-												<ChevronDown className="size-4" />
-												<CloseIcon
+												<ChevronDown
+													aria-hidden
 													className="size-4"
-													onClick={(e) => {
-														e.stopPropagation();
+												/>
+											</Button>
+										</PopoverTrigger>
+										<Tooltip
+											disableHoverableContent={false}
+										>
+											<TooltipTrigger asChild>
+												<Button
+													variant="ghost"
+													size="icon-sm"
+													aria-label="Clear selected frames"
+													onClick={() => {
 														setChecked([]);
 														closeDropdown();
 													}}
-													style={{
-														cursor: "pointer",
-													}}
-												/>
-											</div>
-										</div>
-									</PopoverTrigger>
+												>
+													<CloseIcon
+														aria-hidden
+														className="size-4"
+													/>
+												</Button>
+											</TooltipTrigger>
+											<TooltipContent>
+												Clear selected frames
+											</TooltipContent>
+										</Tooltip>
+									</div>
 									<PopoverContent
 										className="w-[var(--radix-popover-trigger-width)] p-0"
 										align="start"
@@ -491,14 +503,14 @@ export const VisualizationFilterMenu: BlockComponent = ({ id }) => {
 					</TabsContent>
 					<TabsContent value="Tools" className="w-full">
 						<div className="flex flex-col">
-							<div className="w-full px-4 py-2 text-[#666666]">
+							<div className="w-full px-4 py-2 text-muted-foreground">
 								<SizeSettings
 									id={id}
 									label="Height"
 									path="style.height"
 								/>
 							</div>
-							<div className="w-full px-4 py-2 text-[#666666]">
+							<div className="w-full px-4 py-2 text-muted-foreground">
 								<SizeSettings
 									id={id}
 									label="Width"

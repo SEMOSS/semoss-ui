@@ -1,8 +1,8 @@
 import { observer } from "mobx-react-lite";
-import { type CSSProperties, useEffect } from "react";
+import { type CSSProperties, useEffect, useId } from "react";
 import { debounced } from "@semoss/sdk/react";
-import { Input, Spinner } from "@semoss/ui/next";
-import { useBlock } from "../../../hooks";
+import { cn, Input, Spinner } from "@semoss/ui/next";
+import { useBlock } from "../../../hooks/useBlock";
 import type { BlockComponent, BlockDef, ListenerActions } from "../../../store";
 
 export interface InputBlockDef extends BlockDef<"input"> {
@@ -34,6 +34,8 @@ export interface InputBlockDef extends BlockDef<"input"> {
 
 export const InputBlock: BlockComponent = observer(({ id }) => {
 	const { attrs, data, setData, listeners } = useBlock<InputBlockDef>(id);
+	const inputId = useId();
+	const hintId = `${inputId}-hint`;
 
 	// biome-ignore lint/correctness/useExhaustiveDependencies: intentional mount-only effect
 	useEffect(() => {
@@ -49,10 +51,10 @@ export const InputBlock: BlockComponent = observer(({ id }) => {
 	const isMultiline = data.rows > 1 && data.type === "text";
 
 	return (
+		// design-lint-disable-next-line inline-visual-style -- user-configured block appearance
 		<div className="flex flex-col gap-1.5" {...attrs} style={data.style}>
 			{data.label && (
-				// biome-ignore lint/a11y/noLabelWithoutControl: label is associated via context
-				<label className="font-medium text-sm">
+				<label htmlFor={inputId} className="font-medium text-sm">
 					{typeof data.label !== "string"
 						? JSON.stringify(data.label)
 						: data.label}
@@ -67,6 +69,8 @@ export const InputBlock: BlockComponent = observer(({ id }) => {
 				)}
 				{isMultiline ? (
 					<textarea
+						id={inputId}
+						aria-describedby={data.hint ? hintId : undefined}
 						rows={data.rows}
 						value={
 							data.value !== null && data.value !== undefined
@@ -75,7 +79,10 @@ export const InputBlock: BlockComponent = observer(({ id }) => {
 						}
 						required={Boolean(data.required)}
 						disabled={Boolean(data?.disabled || data?.loading)}
-						className={`flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50${data?.loading ? "pl-9" : ""}`}
+						className={cn(
+							"flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
+							data.loading && "pl-9",
+						)}
 						onChange={(e) => {
 							setData("value", e.target.value);
 							debouncedCallback();
@@ -83,6 +90,8 @@ export const InputBlock: BlockComponent = observer(({ id }) => {
 					/>
 				) : (
 					<Input
+						id={inputId}
+						aria-describedby={data.hint ? hintId : undefined}
 						type={data.type}
 						value={
 							data.value !== null && data.value !== undefined
@@ -100,7 +109,7 @@ export const InputBlock: BlockComponent = observer(({ id }) => {
 				)}
 			</div>
 			{data?.hint && (
-				<span className="text-muted-foreground text-xs">
+				<span id={hintId} className="text-muted-foreground text-xs">
 					{data.hint}
 				</span>
 			)}

@@ -239,14 +239,7 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
 			setProjects(data as TeamProjects[]);
 			setHasProject(data.length > 0);
 		});
-	}, [
-		groupId,
-		groupType,
-		projectsPage,
-		debouncedSearch,
-		rowsPerPage,
-		pageOffset,
-	]);
+	}, [groupId, groupType, debouncedSearch, rowsPerPage, pageOffset]);
 
 	useEffect(() => {
 		if (count >= 0) {
@@ -873,7 +866,9 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
 			>
 				<DialogContent className="max-h-[90vh] max-w-4xl overflow-y-auto">
 					<DialogHeader>
-						<DialogTitle>Add Apps</DialogTitle>
+						<DialogTitle className="font-medium text-base leading-6">
+							Add Apps
+						</DialogTitle>
 						<DialogDescription>
 							Select apps and assign an access level.
 						</DialogDescription>
@@ -1050,7 +1045,9 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
 			>
 				<DialogContent>
 					<DialogHeader>
-						<DialogTitle>Are you sure?</DialogTitle>
+						<DialogTitle className="font-medium text-base leading-6">
+							Are you sure?
+						</DialogTitle>
 						<DialogDescription>
 							{projectToDelete ? (
 								<>
@@ -1094,7 +1091,9 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
 			>
 				<DialogContent>
 					<DialogHeader>
-						<DialogTitle>Are you sure?</DialogTitle>
+						<DialogTitle className="font-medium text-base leading-6">
+							Are you sure?
+						</DialogTitle>
 						<DialogDescription>
 							Would you like to delete all selected apps?
 						</DialogDescription>

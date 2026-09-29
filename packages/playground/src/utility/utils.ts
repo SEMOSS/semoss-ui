@@ -1,29 +1,3 @@
-/**
- * Extracts the first and last initials from a name string`
- *
- * Splits the name by whitespace and takes the first letter of the first word
- * and the first letter of the last word. Apostrophes and hyphens are treated
- * as part of the word.
- *
- * @param str - The name string to extract initials from
- * @returns The initials in uppercase (1-2 characters), or undefined if input is undefined
- *
- * @example
- * toInitials("John Doe") // "JD"
- * toInitials("Jane Mary Smith") // "JS" (first and last only)
- * toInitials("Bob") // "B" (single name)
- */
-export const toInitials = (str: string | undefined) => {
-	if (!str) return undefined;
-	const words = str.trim().split(/\s+/);
-	if (words.length === 1) {
-		return words[0].charAt(0).toUpperCase();
-	}
-	return (
-		words[0].charAt(0) + words[words.length - 1].charAt(0)
-	).toUpperCase();
-};
-
 export const setFavicon = (href: string) => {
 	// Remove existing icon links
 	document

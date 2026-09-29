@@ -1,74 +1,34 @@
-/// <reference types="vitest" />
-
-import react from "@vitejs/plugin-react";
-import { playwright } from "@vitest/browser-playwright";
-import { defineConfig } from "vitest/config";
 import { resolve } from "node:path";
+import { createViteConfig } from "@semoss/config";
 
-const isProduction = process.env.NODE_ENV === "production";
+const uiSrc = resolve(import.meta.dirname, "../ui/src");
+const monacoApi = resolve(
+	import.meta.dirname,
+	"../shared/node_modules/monaco-editor/esm/vs/editor/editor.api",
+);
 
-export default defineConfig({
-	base: "./",
-	plugins: [react({ include: /\.(js|jsx|ts|tsx)$/ })],
-	resolve: {
-		alias: [
-			{
-				find: "@/lib/utils",
-				replacement: resolve(__dirname, "../ui/src/lib/utils.ts"),
-			},
-			{
-				find: "@/next",
-				replacement: resolve(__dirname, "../ui/src/next"),
-			},
-			{
-				find: "@/hooks/use-mobile",
-				replacement: resolve(__dirname, "../ui/src/hooks"),
-			},
-			{
-				find: "@",
-				replacement: resolve(__dirname, "./src"),
-			},
-			{
-				find: "@semoss/ui/next",
-				replacement: resolve(__dirname, "../ui/src/next/index.ts"),
-			},
-			{
-				find: /^monaco-editor$/,
-				replacement: resolve(
-					__dirname,
-					"../shared/node_modules/monaco-editor/esm/vs/editor/editor.api",
-				),
-			},
-		],
-	},
-	build: {
-		minify: isProduction,
-		commonjsOptions: { transformMixedEsModules: true },
-	},
+export default createViteConfig({
+	rootDir: import.meta.dirname,
+	enableTailwind: false,
+	alias: [
+		{ find: "@/lib/utils", replacement: resolve(uiSrc, "lib/utils.ts") },
+		{ find: "@/next", replacement: resolve(uiSrc, "next") },
+		{ find: "@/hooks/use-mobile", replacement: resolve(uiSrc, "hooks") },
+		{
+			find: "@semoss/ui/next",
+			replacement: resolve(uiSrc, "next/index.ts"),
+		},
+		{ find: /^monaco-editor$/, replacement: monacoApi },
+	],
 	optimizeDeps: {
 		// Pre-bundle these packages to avoid runtime issues
 		include: ["vega", "vega-lite", "vega-embed", "react-vega"],
-		esbuildOptions: {
-			target: "es2020",
-		},
 	},
 	test: {
-		name: "renderer",
-		environment: "jsdom",
-		globals: true,
 		setupFiles: ["./vitest.setup.ts"],
-		reporters: ["default"],
-		pool: "vmForks",
-		testTimeout: 10000, // Set global timeout to 10 seconds
-		hookTimeout: 10000,
 		coverage: {
-			enabled: false,
-			provider: "v8",
-			reporter: ["text"],
-			reportOnFailure: true,
 			reportsDirectory: "./coverage/packages/renderer",
 			include: ["**/src/components"],
-			exclude: ["**/node_modules", "**/dist"],
 		},
 		deps: {
 			// Force these packages to be processed by Vite instead of Node
@@ -80,18 +40,16 @@ export default defineConfig({
 						"vega-lite",
 						"vega-embed",
 						"react-vega",
-						/^vega-/, // This catches any vega-* packages
 					],
 				},
 			},
-			external: ["@semoss/ui/next", "@semoss/sdk"],
 			//helps Vitest handle CommonJS/ES module interoperability
 			interopDefault: true,
 		},
-		browser: {
-			enabled: false,
-			instances: [{ browser: "chromium" }],
-			provider: playwright(),
+		server: {
+			deps: {
+				external: ["@semoss/ui/next", "@semoss/sdk"],
+			},
 		},
 	},
 });

@@ -63,7 +63,7 @@ export const NewEngineInput = ({
 				{checkEngineName.status === "SUCCESS" &&
 					debouncedEngineName.length > 0 &&
 					checkEngineName.data.exists && (
-						<Tooltip>
+						<Tooltip disableHoverableContent={false}>
 							<TooltipTrigger asChild>
 								<CircleAlertIcon className="text-destructive" />
 							</TooltipTrigger>
@@ -71,7 +71,7 @@ export const NewEngineInput = ({
 						</Tooltip>
 					)}
 				{checkEngineName.status === "ERROR" && (
-					<Tooltip>
+					<Tooltip disableHoverableContent={false}>
 						<TooltipTrigger asChild>
 							<CircleAlertIcon className="text-destructive" />
 						</TooltipTrigger>
