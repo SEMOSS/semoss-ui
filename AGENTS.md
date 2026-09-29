@@ -31,6 +31,8 @@ Libraries (`libs/*`, publishable):
 - `@semoss/ui` → Component library (no internal dependencies)
 - `@semoss/i18n` → Internationalization library (no internal dependencies)
 - `@semoss/shared` → Shared utilities (depends on i18n, sdk, ui, utility)
+- `@semoss/connectors` → Microsoft 365 and Google Workspace viewers (depends on i18n, sdk,
+  shared, ui)
 - `@semoss/renderer` → Visualization components (depends on sdk, shared, ui)
 - `@semoss/workbench` → Multi-panel dock shell (depends on ui only — deliberately
   domain-agnostic, so it can never import sdk, shared or i18n)
@@ -41,7 +43,7 @@ The dock and the panels are two layers, in one direction:
 
 Applications (`packages/*`, not published):
 - `@semoss/client` → Main web application (depends on automation, i18n, panels, renderer, sdk, shared, terminal, ui, utility, workbench)
-- `@semoss/playground` → Chat (depends on i18n, panels, sdk, shared, ui, workbench)
+- `@semoss/playground` → Chat (depends on connectors, i18n, panels, sdk, shared, ui, workbench)
 - `@semoss/terminal` → Embedded terminal (depends on i18n, panels, sdk, shared, ui, workbench)
 - `@semoss/auditlog-package` → Audit log dashboard (depends on i18n, sdk, shared, ui)
 - `@semoss/automation` → Automation workspace app (depends on i18n, sdk, shared, ui, utility;
@@ -53,6 +55,10 @@ Applications (`packages/*`, not published):
 `aiSdkStubAlias` + `scopePptxViewerCssPlugin` from `@semoss/panels/vite`. See
 [libs/panels/AGENTS.md](./libs/panels/AGENTS.md#what-a-host-has-to-wire-up).
 
+**Every host that mounts a connector viewer** imports `@semoss/connectors/globals.css` and loads
+the `connectors` i18n namespace. See
+[libs/connectors/AGENTS.md](./libs/connectors/AGENTS.md#what-a-host-has-to-wire-up).
+
 ## Workspace Structure
 
 ```
@@ -63,6 +69,7 @@ semoss/
 │   ├── ui/         # @semoss/ui - Component library
 │   ├── i18n/       # @semoss/i18n - Internationalization library
 │   ├── shared/     # @semoss/shared - Shared utilities
+│   ├── connectors/ # @semoss/connectors - Microsoft 365 and Google Workspace viewers
 │   ├── renderer/   # @semoss/renderer - Visualization components
 │   ├── workbench/  # @semoss/workbench - Multi-panel dock shell
 │   └── panels/     # @semoss/panels - File panels for the dock
@@ -140,6 +147,7 @@ For validation and handoff, follow the React skill's
 - [libs/sdk/AGENTS.md](./libs/sdk/AGENTS.md) - Core SDK specifics
 - [libs/ui/AGENTS.md](./libs/ui/AGENTS.md) - Component library specifics
 - [libs/shared/AGENTS.md](./libs/shared/AGENTS.md) - Shared utilities/components specifics
+- [libs/connectors/AGENTS.md](./libs/connectors/AGENTS.md) - Microsoft 365 and Google Workspace viewers
 - [libs/renderer/AGENTS.md](./libs/renderer/AGENTS.md) - Visualization components specifics
 - [libs/i18n/AGENTS.md](./libs/i18n/AGENTS.md) - Internationalization library specifics
 - [libs/workbench/AGENTS.md](./libs/workbench/AGENTS.md) - Workbench dock shell specifics

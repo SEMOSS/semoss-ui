@@ -359,6 +359,10 @@ export class ChatStore {
 
 	/**
 	 * Create a new room
+	 *
+	 * @param prepareRoom - Runs once the room exists and before its first
+	 * message, for setup the message depends on, such as the connectors the
+	 * new-chat page drafted.
 	 */
 	createRoom = async (
 		mode: "agent" | "chat",
@@ -367,6 +371,7 @@ export class ChatStore {
 		options: RoomStore["options"],
 		workspaceId?: string,
 		askOptions?: { visible?: boolean },
+		prepareRoom?: (room: RoomStore) => Promise<void>,
 	): Promise<RoomStore> => {
 		const room = await this.createRoomShell(
 			mode,
@@ -374,8 +379,9 @@ export class ChatStore {
 			workspaceId,
 		);
 		// Order matters: see the harnessType comment in RoomStore.initialize().
-		await room.initialize();
+		await room.initialize({ isNew: true });
 		await room.updateRoomOptions(options);
+		await prepareRoom?.(room);
 		const roomId = room.roomId;
 
 		runInAction(() => {
@@ -430,12 +436,14 @@ export class ChatStore {
 		name: string,
 		options: RoomStore["options"],
 		workspaceId?: string,
+		prepareRoom?: (room: RoomStore) => Promise<void>,
 	): Promise<RoomStore> => {
 		const room = await this.createRoomShell(mode, name, workspaceId);
 		// Reversed vs createRoom: the workspace must be persisted before
 		// initialize() reads it back to derive agentGreeting.
 		await room.updateRoomOptions(options);
-		await room.initialize();
+		await room.initialize({ isNew: true });
+		await prepareRoom?.(room);
 		this.registerRoom(room);
 		return room;
 	};

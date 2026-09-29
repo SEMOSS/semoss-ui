@@ -28,6 +28,9 @@ export const clientResources: LazyResources = {
 		members: (l) => import(`./locales/${l}/shared/members.json`),
 		// client
 		githubApp: (l) => import(`./locales/${l}/client/githubApp.json`),
+		// Microsoft 365 and Google Workspace viewers, fetched when a viewer
+		// first mounts
+		connectors: (l) => import(`./locales/${l}/connectors/connectors.json`),
 		// embedded terminal — fetched on demand when the terminal panel mounts
 		console: (l) => import(`./locales/${l}/terminal/console.json`),
 		file: (l) => import(`./locales/${l}/terminal/file.json`),

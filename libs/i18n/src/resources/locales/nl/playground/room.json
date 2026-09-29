@@ -71,7 +71,8 @@
 		"errorProcessing": "Fout bij het verwerken van de chat",
 		"stopLabel": "Het antwoord stoppen",
 		"stopTooltip": "Stoppen",
-		"stoppingTooltip": "Bezig met stoppen"
+		"stoppingTooltip": "Bezig met stoppen",
+		"removeFile": "{{name}} verwijderen"
 	},
 	"content": {
 		"scrollToTop": "Scroll naar boven",
@@ -104,9 +105,9 @@
 		"attachDocument": "Documenten toevoegen"
 	},
 	"menuFileExplorer": {
-		"name": "Bestandsverkenner",
-		"open": "Bestandsverkenner openen",
-		"close": "Bestandsverkenner sluiten"
+		"name": "Chatbestanden",
+		"open": "Chatbestanden tonen",
+		"close": "Chatbestanden verbergen"
 	},
 	"errors": {
 		"createRoom": "Er is een fout opgetreden bij het aanmaken van de kamer. Fout: {{message}}",

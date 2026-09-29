@@ -110,6 +110,7 @@ Coverage reports output to `./coverage/packages/playground/` and include only `s
 
 ```json
 {
+  "@semoss/connectors": "workspace:*",
   "@semoss/i18n": "workspace:*",
   "@semoss/panels": "workspace:*",
   "@semoss/sdk": "workspace:*",
@@ -147,12 +148,97 @@ code and are easy to undo by accident:
 - **Close and maximize live in the sidebar's own header**, because they act on the container. The
   only genuinely per-panel control — "open inline" — is registered by the tool panel with
   `useWorkbenchControl`.
+- **The new-chat page has one sidebar too.** Until Chat Files creates a room early, the page
+  shows the draft room's own sidebar, so Room Settings always opens as a tab; once that room
+  exists its sidebar takes over and an open settings tab moves with it. Both show the draft's
+  settings through `RoomSettingsFormProvider`, because the early room only takes the draft's
+  options when the first message is sent.
 - **The layout is not cached.** Each new `RoomStore` starts with the empty default arrangement,
   so switching rooms cannot bleed panel state between room instances.
 
 Panel ids and the sidebar's default layout live in `stores/room/room-sidebar.ts`; the blueprints
 live in `components/room/panels/`. Changing a panel type string affects only the current room
 instance.
+
+## Teamwork: default tools and connectors
+
+`src/features/teamwork/` gives a chat its default file tools and connects Microsoft 365 and
+Google Workspace.
+`RoomStore.teamwork` (`TeamworkStore`) owns it per room. The Connections page (`#/connections`) connects
+accounts and switches the user's apps on or off for all their chats. These details are easy to break:
+
+- **Chat Files is the only file space.** It is the room's own folder: uploads, connector
+  downloads, and everything the room's apps (MCP tools) and the default tools read and write. Show
+  Chat Files in the plus menu opens the file explorer on it.
+- **A chat gets default tools; an agent brings its own.** In chat mode every message carries the
+  default tools, the `folder_*` tools the browser runs in Chat Files (`tools/default-tools.ts`).
+  Room Settings sets each to Auto, Ask, or Disabled (room option `defaultTools`; reads are Auto
+  and changes Ask unless set); a disabled tool is not sent. The option is saved with the room's
+  other options before each message; the backend only stores it. Agent runs bring the harness's
+  own file, shell, and code tools and work in Chat Files, so no folder tools go with them.
+- **Default tools run in the browser.** `TeamworkStore.runChatTool` runs each call against Chat
+  Files through the insight asset pixels (`folders/room-folder.provider.ts`), so the mode the user
+  picked holds however the model asks.
+- **Chat turns send the tools in `paramValues.tools`, twice.** `AskPlayground` carries them, and so
+  does every `AddPlaygroundToolExecution` (`tool-save-controller.ts`): the model's follow up call
+  only re-adds the room's own tools, so leaving them off drops them mid-task. The model's calls
+  come back with no `_meta`; `ToolStore.json` gets it from `TeamworkStore.decorateToolCall`, and
+  `runToolExecution` hands folder calls to `TeamworkStore.runChatTool` instead of `RunMCPTool`.
+- **Chat Tools shows what the assistant has.** The default tools are not in any toolbox, so
+  `TeamworkToolsPanel` (Show Chat Tools in the plus menu) lists them from
+  `TeamworkStore.chatToolDefinitions`, the exact definitions sent, or notes that an agent room's
+  runs bring their own, beside the room toolbox's tools read from `mcp/pixel_mcp.json` and the
+  toolboxes the user added. Each tool says whether it runs on its own or asks first, and opens to show its
+  description and arguments.
+- **Never send `DeleteInsightAssets` an empty path.** With no path it clears the whole space.
+  `AssetFolderProvider` refuses to address its root for writes, moves, and deletes. The room
+  folder also hides and refuses its `mcp` folder, where the room's tools are kept: rewriting it
+  would switch the chat's tools and connectors off.
+- **Connectors are the user's, copied into each room.** The user's connector tools live in their
+  own asset folder, `mcp/playground_connector_mcp.json`, written with `MakeUserPixelMCP` and
+  stamped `SMSS_MCP_GENERATOR: PlaygroundConnectors`. The Connections page and every chat's
+  Connectors dialog edit that one file, so a change reaches all the user's chats, new and existing,
+  and the UI says so. Each room holds a copy in its own `mcp/pixel_mcp.json`
+  (`syncRoomConnectorTools`): `TeamworkStore.adopt` makes it before a new room's first message,
+  `restore` brings it up to date whenever a room loads, and `setConnectors` updates the open room
+  straight away. The copy replaces only the room's connector tools (the stamped ones, and legacy
+  ones found by reactor) and keeps every other tool. A user with no file yet has chosen nothing, so
+  their rooms keep the connectors they have; only a file that is missing counts as empty, never a
+  read that failed. The catalog and each tool's approval policy live in
+  `connectors/connector.catalog.ts`; sending, deleting, sharing, and invites always ask.
+- **Room tools that ask need the teamwork card.** `GetMCPTools` cannot resolve the room toolbox, so
+  the default tool form has no schema for them. `ToolsView` and the inline tool area render
+  `TeamworkToolCard` for folder and connector calls instead.
+- **The connector viewers come from `@semoss/connectors`.** OneDrive, Outlook Mail and Calendar,
+  Teams channels, files, and chats, and Google Drive, Gmail, Calendar, and Docs are its viewers
+  (`libs/connectors/`). The room mounts each as a sidebar panel
+  (`components/connector-viewer-panels.tsx`) and wires it with `sources/use-room-connector-host.ts`:
+  saves land at the top of chat files, and Add to context also queues the file in
+  `TeamworkStore.contextItems`. `RoomStore.askMessage` sends queued files as `media` with the next
+  message the user sends, and puts them back on the queue when the send fails.
+- **A viewer shows once its connector is on.** The plus menu's Microsoft 365 and Google
+  Workspace submenus list `TeamworkStore.availableSources`: a viewer needs its connector switched
+  on for the chat (`requires` in `sources/connector-sources.ts`) and its account signed in.
+- **A chat says when its connectors cannot run.** Inside the input box, `TeamworkSignInNotice`
+  lists every account the chat's switched on connectors need but the session is not signed in to
+  (`TeamworkStore.missingSignIns`, read again whenever the window regains focus), with a Sign In
+  button. It also names accounts this server does not offer (`unofferedProviders`) and
+  connectors this server's sign in cannot cover (`uncoveredConnectors`). Coverage comes from
+  `connectorAccess` in `/api/config`: the server judges it from the scopes each sign in asks for
+  (`ConnectorScopeAccess` in Semoss) and sends only whether each app can work, and only to a user
+  signed in to the platform, so the scopes never reach the page. `connectors/connector-access.ts`
+  reads it by each service's `accessKey`, and a service the sign in cannot cover cannot be
+  switched on. The session can also list an account whose token has lapsed, so a connector call
+  that fails with the login required error offers a sign in in its own card (`isSignInFailure`).
+- **The session's logins are one shared read.** Many views show sign in state, so
+  `getSessionLogins` joins a read in flight and reuses one younger than 30 seconds; a sign in or a
+  retry reads again. The login settings in `/api/config` are read once per page. Views may ask
+  whenever they mount or the window regains focus without calling the backend each time.
+- **Signing in always starts fresh.** The session keeps listing a provider whose token expired,
+  so `connectProvider` signs a listed provider out first and waits for it to be listed again,
+  checking the popup every second and the logins every five. It never signs out the session's own
+  login (`primaryLogin` in `/api/config`), which would end the session or change whose it is; for
+  that one it waits for the popup instead.
 
 ## Design-System Notes
 

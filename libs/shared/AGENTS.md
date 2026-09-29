@@ -31,6 +31,15 @@ Three props are required with no fallback, so every consumer states its intent: 
 mode-specific — capabilities and one Pixel per operation — lives in
 `file-explorer.adapters.ts`; nothing else branches on `mode.type`.
 
+**A host can bring its own source.** Pass `adapter` to `useFileExplorer` to browse something
+other than an asset tree, such as a connector's drive: the adapter builds each listing's Pixel,
+maps the output to `FileItem`s (`mapEntries(raw, path)` is handed the folder it listed, for a
+source whose entries carry no path), and says what the source can do. A source keeps anything
+its rows need in `FileItem.data`; `itemActions` adds the host's row button and context-menu
+entries, `renderError` draws a failed listing the host's way, and `searchScope: false` hides the
+scope choice for a search that always covers everything. `@semoss/connectors`' drive views are
+built this way.
+
 `FileExplorer` is **not** deprecated — it is the shell `@semoss/panels`'
 `FileExplorerPane` renders, and `libs/panels` is its main consumer.
 

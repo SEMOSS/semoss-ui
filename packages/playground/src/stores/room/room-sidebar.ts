@@ -20,6 +20,28 @@ export const ROOM_PANEL_TYPES = {
 	SUBAGENT: "room-subagent",
 	CONFIGURATION: "room-configuration",
 	AUDIT_LOG: "room-audit-log",
+	/** The tools the assistant has for the next message. */
+	TEAMWORK_TOOLS: "room-teamwork-tools",
+	/** The user's OneDrive. */
+	ONEDRIVE: "room-onedrive",
+	/** The user's Outlook mail. */
+	OUTLOOK_MAIL: "room-outlook-mail",
+	/** The user's Outlook calendar. */
+	OUTLOOK_CALENDAR: "room-outlook-calendar",
+	/** The user's Teams channels and their threads. */
+	TEAMS_CHANNELS: "room-teams-channels",
+	/** The files shared in the user's Teams channels. */
+	TEAMS_FILES: "room-teams-files",
+	/** The user's Teams chats. */
+	TEAMS_CHATS: "room-teams-chats",
+	/** The user's Google Drive. */
+	GOOGLE_DRIVE: "room-google-drive",
+	/** The user's Gmail. */
+	GMAIL: "room-gmail",
+	/** The user's Google Calendar. */
+	GOOGLE_CALENDAR: "room-google-calendar",
+	/** The user's Google Docs. */
+	GOOGLE_DOCS: "room-google-docs",
 } as const;
 
 /**
