@@ -31,14 +31,11 @@ import {
 	TooltipTrigger,
 	toast,
 } from "@semoss/ui/next";
-import {
-	InstructionsModal,
-	WorkspaceChatList,
-	WorkspaceMCPList,
-	WorkspacePromptList,
-	WorkspaceSkillList,
-} from "@/components";
-import { useGlobalBreadcrumbs } from "@/hooks";
+import { InstructionsModal } from "@/components/workspace/instructions-modal";
+import { WorkspaceChatList } from "@/components/workspace/workspace-chat-list";
+import { WorkspaceMCPList } from "@/components/workspace/workspace-mcp-list";
+import { WorkspacePromptList } from "@/components/workspace/workspace-prompt-list";
+import { WorkspaceSkillList } from "@/components/workspace/workspace-skill-list";
 import { useChat } from "@/hooks/use-chat";
 import type { Workspace } from "@/types";
 
@@ -64,6 +61,7 @@ export const WorkspaceDetailPage = observer(() => {
 	const [userPermission, setUserPermission] = useState<Role | null>(null);
 
 	useEffect(() => {
+		setUserPermission(null);
 		if (!workspaceId) return;
 		let cancelled = false;
 		(async () => {
@@ -97,20 +95,6 @@ export const WorkspaceDetailPage = observer(() => {
 		},
 	);
 
-	useGlobalBreadcrumbs({
-		breadcrumbs: [
-			{ name: t("workspace:breadcrumbs.home"), path: "/" },
-			{ name: t("workspace:breadcrumbs.agent"), path: "/agent" },
-			{
-				name:
-					getWorkspace.status === "SUCCESS"
-						? getWorkspace.data.name
-						: t("workspace:breadcrumbs.loading"),
-				path: `/agent/${workspaceId}`,
-			},
-		],
-	});
-
 	if (
 		getWorkspace.status === "LOADING" ||
 		(getWorkspace.status === "SUCCESS" && !getWorkspace.data)
@@ -141,15 +125,15 @@ export const WorkspaceDetailPage = observer(() => {
 
 	return (
 		<div className="@container h-full w-full overflow-y-auto">
-			<div className="mx-auto flex w-full max-w-5xl flex-col gap-6 @3xl:px-12 @md:px-6 px-4 pt-8 pb-4">
+			<div className="mx-auto flex w-full max-w-5xl flex-col gap-6 px-4 py-6 sm:px-6">
 				{/* Sticky header so New Chat / Edit / Delete stay reachable while scrolling */}
-				<div className="-mx-4 -mt-8 @md:-mx-6 @3xl:-mx-12 sticky top-0 z-20 flex flex-row items-center gap-3 border-border border-b bg-background/95 @3xl:px-12 @md:px-6 px-4 py-4 backdrop-blur supports-[backdrop-filter]:bg-background/80">
+				<div className="-mx-4 -mt-6 sm:-mx-6 sticky top-0 z-20 flex flex-wrap items-center gap-3 border-b bg-background px-4 py-4 sm:px-6">
 					<AppCatalogAvatar
 						name={workspace.name}
 						className="size-10 shrink-0 rounded-md text-base"
 					/>
 					<div className="min-w-0 flex-1">
-						<div className="truncate font-semibold text-2xl text-foreground leading-tight">
+						<div className="break-words font-semibold text-2xl text-foreground leading-tight">
 							{workspace.name}
 						</div>
 					</div>
@@ -211,7 +195,7 @@ export const WorkspaceDetailPage = observer(() => {
 				{/* Body — flows naturally; outer container scrolls */}
 				<div className="flex flex-col gap-8">
 					{/* Recent chats — timeline grouped by day */}
-					<section className="flex flex-col gap-4">
+					<section className="flex min-w-0 flex-col gap-4 rounded-xl border bg-card p-4 sm:p-6">
 						<h2 className="flex items-center gap-2 font-semibold text-foreground text-lg">
 							<MessagesSquareIcon className="size-5" />
 							{t("workspace:detail.recentChats.title")}
@@ -220,7 +204,7 @@ export const WorkspaceDetailPage = observer(() => {
 					</section>
 
 					{/* About */}
-					<section className="flex flex-col gap-4">
+					<section className="flex min-w-0 flex-col gap-4 rounded-xl border bg-card p-4 sm:p-6">
 						<h2 className="font-semibold text-foreground text-lg">
 							{t("workspace:detail.about.title")}
 						</h2>
@@ -251,7 +235,7 @@ export const WorkspaceDetailPage = observer(() => {
 								</Button>
 							</div>
 							{hasInstructions ? (
-								<div className="max-h-56 overflow-y-auto whitespace-pre-wrap rounded-md border border-border bg-muted/30 p-3 font-mono text-foreground text-xs">
+								<div className="max-h-56 overflow-y-auto whitespace-pre-wrap rounded-md border border-border bg-muted/30 p-3 text-foreground text-sm leading-relaxed">
 									{instructions}
 								</div>
 							) : (
@@ -263,12 +247,12 @@ export const WorkspaceDetailPage = observer(() => {
 					</section>
 
 					{/* Knowledge */}
-					<section className="flex flex-col gap-3">
+					<section className="flex min-w-0 flex-col gap-3 rounded-xl border bg-card p-4 sm:p-6">
 						<h2 className="flex items-center gap-2 font-semibold text-foreground text-lg">
 							<BookOpenIcon className="size-5" />
 							{t("workspace:detail.tabs.knowledge")}
 						</h2>
-						<div className="min-h-32 rounded-xl border border-border bg-card">
+						<div className="min-h-32">
 							<WorkspaceMCPList
 								type="KNOWLEDGE"
 								workspaceId={workspaceId}
@@ -278,12 +262,12 @@ export const WorkspaceDetailPage = observer(() => {
 					</section>
 
 					{/* Toolboxes */}
-					<section className="flex flex-col gap-3">
+					<section className="flex min-w-0 flex-col gap-3 rounded-xl border bg-card p-4 sm:p-6">
 						<h2 className="flex items-center gap-2 font-semibold text-foreground text-lg">
 							<HammerIcon className="size-5" />
 							{t("workspace:detail.tabs.toolbox")}
 						</h2>
-						<div className="min-h-32 rounded-xl border border-border bg-card">
+						<div className="min-h-32">
 							<WorkspaceMCPList
 								type="TOOLBOX"
 								workspaceId={workspaceId}
@@ -293,12 +277,12 @@ export const WorkspaceDetailPage = observer(() => {
 					</section>
 
 					{/* Skills */}
-					<section className="flex flex-col gap-3">
+					<section className="flex min-w-0 flex-col gap-3 rounded-xl border bg-card p-4 sm:p-6">
 						<h2 className="flex items-center gap-2 font-semibold text-foreground text-lg">
 							<BlocksIcon className="size-5" />
 							{t("workspace:detail.tabs.skills")}
 						</h2>
-						<div className="min-h-32 rounded-xl border border-border bg-card">
+						<div className="min-h-32">
 							<WorkspaceSkillList
 								skills={workspace.skills ?? []}
 							/>
@@ -306,12 +290,12 @@ export const WorkspaceDetailPage = observer(() => {
 					</section>
 
 					{/* Prompts */}
-					<section className="flex flex-col gap-3">
+					<section className="flex min-w-0 flex-col gap-3 rounded-xl border bg-card p-4 sm:p-6">
 						<h2 className="flex items-center gap-2 font-semibold text-foreground text-lg">
 							<SparklesIcon className="size-5" />
 							{t("workspace:detail.tabs.prompts")}
 						</h2>
-						<div className="min-h-32 rounded-xl border border-border bg-card">
+						<div className="min-h-32">
 							<WorkspacePromptList
 								promptIds={workspace.prompts ?? []}
 							/>
@@ -319,7 +303,7 @@ export const WorkspaceDetailPage = observer(() => {
 					</section>
 
 					{/* Members */}
-					<section className="flex flex-col gap-3">
+					<section className="flex min-w-0 flex-col gap-3 rounded-xl border bg-card p-4 sm:p-6">
 						<h2 className="flex items-center gap-2 font-semibold text-foreground text-lg">
 							<UsersRound className="size-5" />
 							{t("workspace:detail.tabs.members")}

@@ -70,5 +70,11 @@
 		"cancel": "Cancel",
 		"retry": "Retry",
 		"checking": "Checking..."
+	},
+	"activity": {
+		"steps": "Tool activity ({{count}})",
+		"needsInput": "Your input is needed",
+		"cancelError": "Unable to cancel this tool.",
+		"actions": "Tool actions"
 	}
 }

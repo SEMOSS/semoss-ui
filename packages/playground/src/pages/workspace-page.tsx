@@ -16,10 +16,9 @@ import {
 	useInfiniteScroll,
 	useTheme,
 } from "@semoss/ui/next";
-import workspaceImage from "@/assets/img/workspace.png";
-import workspaceImageDark from "@/assets/img/workspace-darkmode.png";
-import { WorkspaceCard } from "@/components";
-import { useChat, useGlobalBreadcrumbs, useRoot } from "@/hooks";
+import { WorkspaceCard } from "@/components/workspace/workspace-card";
+import { useChat } from "@/hooks/use-chat";
+import { useRoot } from "@/hooks/use-root";
 import type { App } from "@/types";
 
 /**
@@ -32,19 +31,6 @@ export const WorkspacePage = observer(() => {
 	const navigate = useNavigate();
 	const { root } = useRoot();
 	const { theme: colorMode } = useTheme();
-	// set the breadcrumbs
-	useGlobalBreadcrumbs({
-		breadcrumbs: [
-			{
-				name: t("workspace:breadcrumbs.home"),
-				path: "/",
-			},
-			{
-				name: t("workspace:breadcrumbs.agent"),
-				path: "/agent",
-			},
-		],
-	});
 
 	const [search, setSearch] = useState("");
 	const debouncedSearch = useDebouncedValue(search);
@@ -90,8 +76,8 @@ export const WorkspacePage = observer(() => {
 			window.matchMedia("(prefers-color-scheme: dark)").matches);
 
 	const src = isDark
-		? root.theme.images.workspaceDark || workspaceImageDark
-		: root.theme.images.workspace || workspaceImage;
+		? root.theme.images.workspaceDark
+		: root.theme.images.workspace;
 
 	return (
 		<div
@@ -100,35 +86,32 @@ export const WorkspacePage = observer(() => {
 			}}
 			className="@container h-full w-full overflow-y-auto"
 		>
-			<div className="mx-auto flex w-full max-w-5xl flex-col gap-12 @3xl:px-12 @md:px-6 px-4 pt-8 pb-4">
-				<div className="flex w-full rounded-lg bg-primary/10">
-					<div className="flex flex-1 flex-col gap-4 p-6 font-sans">
-						<div className="font-medium text-primary text-xl leading-normal dark:text-white">
-							{t("workspace:welcomeTitle")}
-						</div>
-						<div className="font-normal text-base text-primary leading-normal dark:text-white">
+			<div className="mx-auto flex w-full max-w-5xl flex-col gap-6 px-4 py-6 sm:px-6">
+				<div className="flex flex-wrap items-start justify-between gap-4 border-b pb-6">
+					<div className="min-w-0 flex-1">
+						<h1 className="font-semibold text-2xl tracking-tight">
+							{t("workspace:breadcrumbs.agent")}
+						</h1>
+						<p className="mt-2 max-w-2xl text-muted-foreground text-sm">
 							{t("workspace:welcomeDescription")}
-						</div>
-						<Button
-							onClick={() => navigate("/agent/new")}
-							className="w-auto"
-						>
-							{t("workspace:actions.createAgent")}
-						</Button>
+						</p>
 					</div>
-					{/* Image appears only on large screens and above */}
-					<div className="relative @3xl:block hidden w-[351px] overflow-hidden rounded-e-lg">
+					<Button onClick={() => navigate("/agent/new")}>
+						{t("workspace:actions.createAgent")}
+					</Button>
+					{src && (
 						<img
 							src={src}
 							alt={t("workspace:images.agentIllustration")}
-							className="-translate-y-1/2 absolute start-0 top-1/2 h-[351px] w-full select-none object-cover"
+							className="max-h-32 w-full rounded-xl object-cover"
 						/>
-					</div>
+					)}
 				</div>
 
 				<div className="flex flex-col gap-4">
 					<InputGroup className="bg-background">
 						<InputGroupInput
+							aria-label={t("common:buttons.search")}
 							placeholder={t("common:buttons.search")}
 							value={search}
 							onChange={(e) => setSearch(e.target.value)}
@@ -148,7 +131,7 @@ export const WorkspacePage = observer(() => {
 							<Muted>{t("workspace:messages.noResults")}</Muted>
 						</div>
 					) : (
-						<div className="grid @2xl:grid-cols-2 @3xl:grid-cols-3 grid-cols-1 gap-4 @4xl:gap-x-8">
+						<div className="grid @2xl:grid-cols-2 @3xl:grid-cols-3 grid-cols-1 gap-4">
 							{getWorkspaces.data.map((w) => (
 								<WorkspaceCard
 									key={w.project_id}

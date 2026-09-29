@@ -70,5 +70,11 @@
 		"cancel": "Annuler",
 		"retry": "Réessayer",
 		"checking": "Vérification..."
+	},
+	"activity": {
+		"steps": "Activité des outils ({{count}})",
+		"needsInput": "Votre réponse est attendue",
+		"cancelError": "Impossible d’annuler cet outil.",
+		"actions": "Actions de l’outil"
 	}
 }

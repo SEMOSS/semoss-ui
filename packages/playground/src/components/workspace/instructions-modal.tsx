@@ -48,7 +48,7 @@ export const InstructionsModal = ({
 
 	return (
 		<Dialog open={open} onOpenChange={onOpenChange}>
-			<DialogContent className="flex h-[85vh] w-full flex-col gap-4 sm:max-w-[60rem]">
+			<DialogContent className="flex h-[85dvh] flex-col gap-4 sm:max-w-4xl">
 				<DialogHeader>
 					<DialogTitle>
 						{readOnly
@@ -65,7 +65,7 @@ export const InstructionsModal = ({
 				<div className="min-h-0 flex-1 overflow-hidden">
 					{readOnly ? (
 						hasContent ? (
-							<div className="h-full overflow-y-auto whitespace-pre-wrap rounded-md border border-border bg-muted/30 p-4 font-mono text-foreground text-sm">
+							<div className="h-full overflow-y-auto whitespace-pre-wrap rounded-md border border-border bg-muted/30 p-4 text-foreground text-sm leading-relaxed">
 								{normalized}
 							</div>
 						) : (
@@ -75,13 +75,14 @@ export const InstructionsModal = ({
 						)
 					) : (
 						<Textarea
+							aria-label={t("workspace:form.instructionsLabel")}
 							value={normalized}
 							disabled={disabled}
 							onChange={(e) => onChange?.(e.target.value)}
 							placeholder={t(
 								"common:placeholders.enterInstructions",
 							)}
-							className="h-full max-h-full resize-none font-mono text-sm"
+							className="h-full max-h-full resize-none text-base leading-relaxed"
 							data-testid="instructions-modal--textarea"
 						/>
 					)}

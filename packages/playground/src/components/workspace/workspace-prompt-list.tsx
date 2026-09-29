@@ -58,13 +58,10 @@ export const WorkspacePromptList = ({
 
 	return (
 		<ScrollArea className="h-full w-full">
-			<div className="flex flex-col gap-3 p-4">
+			<div className="flex flex-col divide-y">
 				{prompts.map((p) => (
-					<div
-						key={p.id}
-						className="flex flex-col gap-1 rounded-lg border border-border bg-card px-4 py-3"
-					>
-						<div className="font-semibold text-foreground text-sm">
+					<div key={p.id} className="flex flex-col gap-1 px-2 py-3">
+						<div className="break-words font-medium text-foreground text-sm">
 							{p.title}
 						</div>
 						{p.context ? (

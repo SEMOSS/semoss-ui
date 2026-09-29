@@ -7,7 +7,7 @@ import {
 	UsersRound,
 } from "lucide-react";
 import { observer } from "mobx-react-lite";
-import { useEffect, useId, useMemo, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router";
 import { useTranslation } from "@semoss/i18n";
 import { usePixel } from "@semoss/sdk/react";
@@ -18,17 +18,26 @@ import {
 	SkillSelector,
 } from "@semoss/shared";
 import {
+	Alert,
+	AlertDescription,
 	Button,
-	Field,
-	FieldLabel,
-	Input,
+	Form,
+	FormInput,
+	FormTextarea,
 	Spinner,
-	Textarea,
 	toast,
+	useForm,
+	zodResolver,
 } from "@semoss/ui/next";
-import { InstructionsModal } from "@/components";
-import { useChat, useGlobalBreadcrumbs, useRoot } from "@/hooks";
-import type { MCPConfig, SkillConfig, Workspace } from "@/types";
+import { InstructionsModal } from "@/components/workspace/instructions-modal";
+import {
+	createWorkspaceFormSchema,
+	emptyWorkspaceForm,
+	type WorkspaceFormValues,
+} from "@/features/agents/workspace-form.schema";
+import { useChat } from "@/hooks/use-chat";
+import { useRoot } from "@/hooks/use-root";
+import type { Workspace } from "@/types";
 import {
 	mcpToPlatformUrl,
 	promptToPlatformUrl,
@@ -51,18 +60,17 @@ export const EditWorkspacePage = observer(() => {
 	const { chat } = useChat();
 	const { root } = useRoot();
 
-	const nameId = useId();
-	const descriptionId = useId();
-	const instructionId = useId();
-
-	const [name, setName] = useState("");
-	const [description, setDescription] = useState("");
-	const [instructions, setInstructions] = useState("");
-	const [knowledge, setKnowledge] = useState<MCPConfig[]>([]);
-	const [toolbox, setToolbox] = useState<MCPConfig[]>([]);
-	const [skills, setSkills] = useState<SkillConfig[]>([]);
-	const [prompts, setPrompts] = useState<string[]>([]);
-	const [isSaving, setIsSaving] = useState(false);
+	const form = useForm<WorkspaceFormValues>({
+		resolver: zodResolver(
+			createWorkspaceFormSchema(t("common:placeholders.enterName")),
+		),
+		defaultValues: emptyWorkspaceForm,
+	});
+	const { name, instructions, knowledge, toolbox, skills, prompts } =
+		form.watch();
+	const isSaving = form.formState.isSubmitting;
+	const hydratedWorkspace = useRef<string | null>(null);
+	const isDirty = form.formState.isDirty;
 	const [instructionsModal, setInstructionsModal] = useState(false);
 
 	const getWorkspace = usePixel<Workspace>(
@@ -79,76 +87,33 @@ export const EditWorkspacePage = observer(() => {
 		},
 	);
 
-	useGlobalBreadcrumbs({
-		breadcrumbs: [
-			{ name: t("workspace:breadcrumbs.home"), path: "/" },
-			{ name: t("workspace:breadcrumbs.agent"), path: "/agent" },
-			{
-				name:
-					getWorkspace.status === "SUCCESS"
-						? getWorkspace.data.name
-						: t("workspace:breadcrumbs.loading"),
-				path: `/agent/${workspaceId}`,
-			},
-			{
-				name: t("workspace:breadcrumbs.edit"),
-				path: `/agent/${workspaceId}/edit`,
-			},
-		],
-	});
-
-	// Hydrate from workspace data
+	// Refetches must not overwrite unsaved changes. A different agent gets fresh defaults.
 	useEffect(() => {
-		if (getWorkspace.status !== "SUCCESS" || !getWorkspace.data) return;
+		if (
+			getWorkspace.status !== "SUCCESS" ||
+			!getWorkspace.data ||
+			getWorkspace.data.workspace_id !== workspaceId ||
+			hydratedWorkspace.current === workspaceId
+		)
+			return;
 		const w = getWorkspace.data;
-		setName(w.name || "");
-		setDescription(w.description || "");
-		setInstructions((w.system_prompt || "").replace(/\\n/g, "\n"));
-		setPrompts(w.prompts ?? []);
-		const { knowledge: nextKnowledge, toolbox: nextToolbox } =
-			splitMcpByType(w.mcp ?? []);
-		setKnowledge(nextKnowledge);
-		setToolbox(nextToolbox);
-		setSkills(w.skills ?? []);
-	}, [getWorkspace.status, getWorkspace.data]);
+		const { knowledge, toolbox } = splitMcpByType(w.mcp ?? []);
+		form.reset({
+			name: w.name || "",
+			description: w.description || "",
+			instructions: (w.system_prompt || "").replace(/\\n/g, "\n"),
+			knowledge,
+			toolbox,
+			skills: w.skills ?? [],
+			prompts: w.prompts ?? [],
+		});
+		hydratedWorkspace.current = workspaceId;
+	}, [form, workspaceId, getWorkspace.status, getWorkspace.data]);
 
-	// Track whether form differs from the loaded workspace
-	const isDirty = useMemo(() => {
-		if (!getWorkspace.data) return false;
-		const w = getWorkspace.data;
-		const initialInstructions = (w.system_prompt || "").replace(
-			/\\n/g,
-			"\n",
-		);
-		const { knowledge: initKnowledge, toolbox: initToolbox } =
-			splitMcpByType(w.mcp ?? []);
-		const idsKey = (arr: { id: string }[]) =>
-			arr
-				.map((a) => a.id)
-				.sort()
-				.join("|");
-		const stringIdsKey = (arr: string[]) => [...arr].sort().join("|");
-		return (
-			name !== (w.name || "") ||
-			description !== (w.description || "") ||
-			instructions !== initialInstructions ||
-			stringIdsKey(prompts) !== stringIdsKey(w.prompts ?? []) ||
-			idsKey(knowledge) !== idsKey(initKnowledge) ||
-			idsKey(toolbox) !== idsKey(initToolbox) ||
-			idsKey(skills) !== idsKey(w.skills ?? [])
-		);
-	}, [
-		name,
-		description,
-		instructions,
-		prompts,
-		knowledge,
-		toolbox,
-		skills,
-		getWorkspace.data,
-	]);
-
-	if (getWorkspace.status === "LOADING") {
+	if (
+		getWorkspace.status === "INITIAL" ||
+		getWorkspace.status === "LOADING"
+	) {
 		return (
 			<div className="flex h-full w-full items-center justify-center">
 				<Spinner />
@@ -156,7 +121,12 @@ export const EditWorkspacePage = observer(() => {
 		);
 	}
 
-	if (getWorkspace.status === "ERROR" || !workspaceId) {
+	if (
+		getWorkspace.status === "ERROR" ||
+		!workspaceId ||
+		!getWorkspace.data ||
+		getWorkspace.data.workspace_id !== workspaceId
+	) {
 		return (
 			<div className="@container relative h-full w-full overflow-hidden">
 				<div className="mx-auto flex h-full w-full max-w-5xl flex-col gap-8 @3xl:px-12 @md:px-6 px-4 pt-8 pb-4">
@@ -175,11 +145,16 @@ export const EditWorkspacePage = observer(() => {
 		navigate(`/agent/${workspaceId}`);
 	};
 
-	const handleSubmit = async (e: React.FormEvent) => {
-		e.preventDefault();
-		if (isSaving) return;
-
-		setIsSaving(true);
+	const handleSubmit = async ({
+		name,
+		description,
+		instructions,
+		knowledge,
+		toolbox,
+		skills,
+		prompts,
+	}: WorkspaceFormValues) => {
+		form.clearErrors("root.server");
 		try {
 			await chat.editWorkspace(workspaceId, {
 				name,
@@ -189,25 +164,25 @@ export const EditWorkspacePage = observer(() => {
 				mcp: [...knowledge, ...toolbox],
 				skills,
 			});
-			navigate(`/agent/${workspaceId}`);
 		} catch (err) {
-			toast.error(
-				err instanceof Error
-					? err.message
-					: t("notifications:workspace.saveError"),
-			);
-		} finally {
-			setIsSaving(false);
+			form.setError("root.server", {
+				message:
+					err instanceof Error
+						? err.message
+						: t("notifications:workspace.saveError"),
+			});
+			return;
 		}
+		navigate(`/agent/${workspaceId}`);
 	};
 
 	return (
 		<div className="@container h-full w-full overflow-y-auto">
-			<div className="mx-auto flex w-full max-w-5xl flex-col gap-6 @3xl:px-12 @md:px-6 px-4 pt-8 pb-4">
+			<div className="mx-auto flex w-full max-w-5xl flex-col gap-6 px-4 py-6 sm:px-6">
 				{/* Sticky header so Save/Cancel stay reachable while scrolling */}
-				<div className="-mx-4 -mt-8 @md:-mx-6 @3xl:-mx-12 sticky top-0 z-20 flex flex-row items-center gap-3 border-border border-b bg-background/95 @3xl:px-12 @md:px-6 px-4 py-4 backdrop-blur supports-[backdrop-filter]:bg-background/80">
+				<div className="-mx-4 -mt-6 sm:-mx-6 sticky top-0 z-20 flex flex-wrap items-center gap-3 border-b bg-background px-4 py-4 sm:px-6">
 					<div className="min-w-0 flex-1">
-						<div className="truncate font-semibold text-2xl text-foreground leading-tight">
+						<div className="font-semibold text-2xl text-foreground leading-tight">
 							{t("workspace:edit.title")}
 						</div>
 						<div className="text-muted-foreground text-sm">
@@ -238,94 +213,89 @@ export const EditWorkspacePage = observer(() => {
 				{/* Members section is OUTSIDE the form because member changes
 				    are saved per-action by MembersTable, not as part of the
 				    workspace save payload. */}
-				<form
+				<Form
+					form={form}
 					id={FORM_ID}
 					onSubmit={handleSubmit}
+					noValidate
+					aria-busy={isSaving}
 					className="flex flex-col gap-8"
 				>
+					{form.formState.errors.root?.server?.message && (
+						<Alert variant="destructive">
+							<AlertDescription>
+								{form.formState.errors.root.server.message}
+							</AlertDescription>
+						</Alert>
+					)}
 					{/* About */}
-					<section className="flex flex-col gap-4">
+					<section className="flex flex-col gap-4 rounded-xl border bg-card p-4 sm:p-6">
 						<h2 className="font-semibold text-foreground text-lg">
 							{t("workspace:detail.about.title")}
 						</h2>
-						<Field>
-							<FieldLabel htmlFor={nameId}>
-								{t("workspace:form.nameLabel")}
-							</FieldLabel>
-							<Input
-								id={nameId}
-								placeholder={t("common:placeholders.enterName")}
-								value={name}
-								disabled={isSaving}
-								onChange={(e) => setName(e.target.value)}
-								data-testid="workspace-edit-page--name"
-							/>
-						</Field>
-						<Field>
-							<FieldLabel htmlFor={descriptionId}>
-								{t("workspace:form.descriptionLabel")}
-							</FieldLabel>
-							<Input
-								id={descriptionId}
-								placeholder={t(
-									"common:placeholders.enterDescription",
-								)}
-								value={description}
-								disabled={isSaving}
-								onChange={(e) => setDescription(e.target.value)}
-								data-testid="workspace-edit-page--description"
-							/>
-						</Field>
-						<Field>
-							<div className="flex items-center justify-between">
-								<FieldLabel htmlFor={instructionId}>
-									{t("workspace:form.instructionsLabel")}
-								</FieldLabel>
-								<Button
-									type="button"
-									variant="ghost"
-									size="sm"
-									onClick={() => setInstructionsModal(true)}
-									disabled={isSaving}
-									data-testid="workspace-edit-page--expand-instructions-btn"
-								>
-									<Maximize2Icon />
-									{t("workspace:instructions.expand")}
-								</Button>
-							</div>
-							<Textarea
-								id={instructionId}
+						<FormInput
+							name="name"
+							label={t("workspace:form.nameLabel")}
+							placeholder={t("common:placeholders.enterName")}
+							disabled={isSaving}
+							required
+							data-testid="workspace-edit-page--name"
+						/>
+						<FormInput
+							name="description"
+							label={t("workspace:form.descriptionLabel")}
+							placeholder={t(
+								"common:placeholders.enterDescription",
+							)}
+							disabled={isSaving}
+							data-testid="workspace-edit-page--description"
+						/>
+						<div className="flex flex-col gap-2">
+							<FormTextarea
+								name="instructions"
+								label={t("workspace:form.instructionsLabel")}
 								placeholder={t(
 									"common:placeholders.enterInstructions",
 								)}
-								value={instructions}
-								disabled={isSaving}
-								onChange={(e) =>
-									setInstructions(e.target.value)
-								}
 								rows={6}
-								className="max-h-96 overflow-y-auto"
+								disabled={isSaving}
+								description={t(
+									"workspace:instructions.charCount",
+									{ count: instructions.length },
+								)}
 								data-testid="workspace-edit-page--instructions"
 							/>
-							<div className="text-muted-foreground text-xs">
-								{t("workspace:instructions.charCount", {
-									count: instructions.length,
-								})}
-							</div>
-						</Field>
+							<Button
+								type="button"
+								variant="ghost"
+								size="sm"
+								className="self-end"
+								onClick={() => setInstructionsModal(true)}
+								disabled={isSaving}
+								data-testid="workspace-edit-page--expand-instructions-btn"
+							>
+								<Maximize2Icon />
+								{t("workspace:instructions.expand")}
+							</Button>
+						</div>
 					</section>
 
 					{/* Knowledge */}
-					<section className="flex flex-col gap-3">
+					<section className="flex min-w-0 flex-col gap-3 rounded-xl border bg-card p-4 sm:p-6">
 						<h2 className="flex items-center gap-2 font-semibold text-foreground text-lg">
 							<BookOpenIcon className="size-5" />
 							{t("workspace:detail.tabs.knowledge")}
 						</h2>
 						<MCPSelector
+							presentation="list"
 							type="KNOWLEDGE"
 							values={knowledge}
 							disabled={isSaving}
-							onChange={(next) => setKnowledge(next)}
+							onChange={(next) =>
+								form.setValue("knowledge", next, {
+									shouldDirty: true,
+								})
+							}
 							className="h-112"
 							workspaceId={workspaceId}
 							enableKnowledgeMCP={
@@ -340,16 +310,21 @@ export const EditWorkspacePage = observer(() => {
 					</section>
 
 					{/* Toolboxes */}
-					<section className="flex flex-col gap-3">
+					<section className="flex min-w-0 flex-col gap-3 rounded-xl border bg-card p-4 sm:p-6">
 						<h2 className="flex items-center gap-2 font-semibold text-foreground text-lg">
 							<HammerIcon className="size-5" />
 							{t("workspace:detail.tabs.toolbox")}
 						</h2>
 						<MCPSelector
+							presentation="list"
 							type="TOOLBOX"
 							values={toolbox}
 							disabled={isSaving}
-							onChange={(next) => setToolbox(next)}
+							onChange={(next) =>
+								form.setValue("toolbox", next, {
+									shouldDirty: true,
+								})
+							}
 							className="h-112"
 							workspaceId={workspaceId}
 							enableKnowledgeMCP={
@@ -367,7 +342,7 @@ export const EditWorkspacePage = observer(() => {
 					</section>
 
 					{/* Skills */}
-					<section className="flex flex-col gap-3">
+					<section className="flex min-w-0 flex-col gap-3 rounded-xl border bg-card p-4 sm:p-6">
 						<h2 className="flex items-center gap-2 font-semibold text-foreground text-lg">
 							<BlocksIcon className="size-5" />
 							{t("workspace:detail.tabs.skills")}
@@ -375,7 +350,11 @@ export const EditWorkspacePage = observer(() => {
 						<SkillSelector
 							values={skills}
 							disabled={isSaving}
-							onChange={(next) => setSkills(next)}
+							onChange={(next) =>
+								form.setValue("skills", next, {
+									shouldDirty: true,
+								})
+							}
 							className="h-112"
 							showSystemSkills={
 								root.theme.featureFlags?.showSystemSkills
@@ -384,7 +363,7 @@ export const EditWorkspacePage = observer(() => {
 					</section>
 
 					{/* Prompts */}
-					<section className="flex flex-col gap-3">
+					<section className="flex min-w-0 flex-col gap-3 rounded-xl border bg-card p-4 sm:p-6">
 						<h2 className="flex items-center gap-2 font-semibold text-foreground text-lg">
 							<SparklesIcon className="size-5" />
 							{t("workspace:detail.tabs.prompts")}
@@ -392,7 +371,11 @@ export const EditWorkspacePage = observer(() => {
 						<PromptSelector
 							values={prompts}
 							disabled={isSaving}
-							onChange={(next) => setPrompts(next)}
+							onChange={(next) =>
+								form.setValue("prompts", next, {
+									shouldDirty: true,
+								})
+							}
 							className="h-112"
 							getPlatformUrl={
 								root.theme.featureFlags?.showPlatformLinks
@@ -401,10 +384,10 @@ export const EditWorkspacePage = observer(() => {
 							}
 						/>
 					</section>
-				</form>
+				</Form>
 
 				{/* Members (outside the form — saved per-action) */}
-				<section className="flex flex-col gap-3">
+				<section className="flex min-w-0 flex-col gap-3 rounded-xl border bg-card p-4 sm:p-6">
 					<h2 className="flex items-center gap-2 font-semibold text-foreground text-lg">
 						<UsersRound className="size-5" />
 						{t("workspace:detail.tabs.members")}
@@ -423,7 +406,9 @@ export const EditWorkspacePage = observer(() => {
 				open={instructionsModal}
 				onOpenChange={setInstructionsModal}
 				value={instructions}
-				onChange={setInstructions}
+				onChange={(value) =>
+					form.setValue("instructions", value, { shouldDirty: true })
+				}
 				disabled={isSaving}
 			/>
 		</div>

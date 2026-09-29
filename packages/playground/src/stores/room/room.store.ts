@@ -1,4 +1,4 @@
-import { makeAutoObservable, runInAction } from "mobx";
+import { makeAutoObservable, observable, runInAction } from "mobx";
 import type { StoreApi } from "zustand";
 import {
 	FILE_PANEL_TYPES,
@@ -21,20 +21,19 @@ import {
 	type WorkbenchPanelId,
 	type WorkbenchPanelParams,
 	type WorkbenchPanelType,
+	type WorkbenchSnapshot,
 	type WorkbenchState,
 } from "@semoss/workbench";
 import { STREAMING_PLACEHOLDER_ID } from "@/constants";
-import {
-	type AbstractMessageStore,
-	createMessageStore,
-	InputMessageStore,
-	ResponseMessageStore,
-	ToolStore,
-} from "@/stores";
+import type { AbstractMessageStore } from "@/stores/message/abstract-message.store";
 import {
 	reconnectAgentRun,
 	reconstructAllSubagents,
 } from "@/stores/message/agent-harness";
+import { InputMessageStore } from "@/stores/message/input-message.store";
+import { ResponseMessageStore } from "@/stores/message/response-message.store";
+import { createMessageStore } from "@/stores/message/utility";
+import { ToolStore } from "@/stores/tool/tool.store";
 import type {
 	Engine,
 	InputPixelMessage,
@@ -175,15 +174,6 @@ interface RoomStoreInterface {
 		 * room's workbench store, which outlives every open/close.
 		 */
 		isOpen: boolean;
-
-		/**
-		 * Track if the sidebar is blown up over the page.
-		 *
-		 * Here rather than in the sidebar's own React state because a panel's
-		 * chrome has to put it back — opening a tool inline while the sidebar
-		 * covers the page would otherwise reveal nothing.
-		 */
-		isMaximized: boolean;
 	};
 }
 
@@ -221,7 +211,6 @@ export class RoomStore {
 		},
 		sidebar: {
 			isOpen: false,
-			isMaximized: false,
 		},
 	};
 
@@ -237,6 +226,9 @@ export class RoomStore {
 	 * the `openSidebarPanel` family covers everything the room itself needs.
 	 */
 	readonly workbench: StoreApi<WorkbenchState>;
+
+	/** Stable initialization reference shared by the store and every sidebar mount. */
+	sidebarSnapshot: WorkbenchSnapshot = ROOM_SIDEBAR_LAYOUT;
 
 	constructor(options: {
 		theme: ThemeMap["playground"];
@@ -259,12 +251,15 @@ export class RoomStore {
 		this.workbench = createWorkbenchStore({ components: panelComponents });
 		this.workbench
 			.getState()
-			.layout.actions.loadSnapshot(ROOM_SIDEBAR_LAYOUT);
+			.layout.actions.loadSnapshot(this.sidebarSnapshot);
 		this._syncSidebarFileMode();
 
 		// make it observable -- the dock is a zustand store with its own
 		// subscription model, and deep-observing it would be nonsense
-		makeAutoObservable(this, { workbench: false });
+		makeAutoObservable(this, {
+			workbench: false,
+			sidebarSnapshot: observable.ref,
+		});
 
 		this._watchSidebar();
 	}
@@ -1013,6 +1008,22 @@ export class RoomStore {
 			.layout.actions.selectPanel(type, config, name ? { name } : {});
 	};
 
+	/** Adopt a draft's arrangement before mounting this room's first sidebar. */
+	restoreSidebarLayout = (snapshot: WorkbenchSnapshot): void => {
+		this.sidebarSnapshot = snapshot;
+		this.workbench.getState().layout.actions.loadSnapshot(snapshot);
+	};
+
+	/** Restore the existing work area, or open Room settings when it is empty. */
+	openSidebar = (): void => {
+		if (this.workbench.getState().layout.openPanelIds.length === 0) {
+			this.openSidebarPanel(ROOM_PANEL_TYPES.CONFIGURATION);
+			return;
+		}
+
+		this._store.sidebar.isOpen = true;
+	};
+
 	/**
 	 * Reveal the sidebar's editor for a file, opening it if it is not there.
 	 *
@@ -1129,18 +1140,10 @@ export class RoomStore {
 	};
 
 	/**
-	 * Blow the sidebar up over the page, or put it back.
-	 */
-	setSidebarMaximized = (isMaximized: boolean): void => {
-		this._store.sidebar.isMaximized = isMaximized;
-	};
-
-	/**
 	 * Close the sidebar
 	 */
 	closeSidebar = async (): Promise<void> => {
 		this._store.sidebar.isOpen = false;
-		this._store.sidebar.isMaximized = false;
 	};
 
 	/**

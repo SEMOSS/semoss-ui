@@ -4,11 +4,11 @@ import { useInsight, usePixel } from "@semoss/sdk/react";
 import {
 	getDepEffectivePermission,
 	MCPCard,
+	type ProjectDependency,
 	projectDependencyToMCP,
 } from "@semoss/shared";
-import { Muted, ScrollArea, toast } from "@semoss/ui/next";
+import { Muted, ScrollArea, Spinner, toast } from "@semoss/ui/next";
 import { useRoot } from "@/hooks";
-import type { ProjectDependency } from "@/types";
 import { mcpToPlatformUrl } from "@/utility/mcp-utils";
 
 export interface WorkspaceMCPListProps {
@@ -81,6 +81,12 @@ export const WorkspaceMCPList = ({
 		);
 	}, [getDependencies.data, search, type]);
 
+	if (getDependencies.status === "LOADING")
+		return (
+			<div className="flex min-h-32 items-center justify-center">
+				<Spinner />
+			</div>
+		);
 	if (searchedMCP.length === 0) {
 		return (
 			<div className="flex min-h-32 w-full items-center justify-center p-6">
@@ -118,7 +124,7 @@ export const WorkspaceMCPList = ({
 
 	return (
 		<ScrollArea className="h-full w-full">
-			<div className="grid grid-cols-1 gap-4 p-4 md:grid-cols-2 lg:grid-cols-3">
+			<div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
 				{searchedMCP.map((m) => {
 					return (
 						<MCPCard

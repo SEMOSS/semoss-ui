@@ -54,15 +54,19 @@ import {
 	SidebarMenu,
 	SidebarMenuButton,
 	SidebarMenuItem,
-	SidebarRail,
 	Spinner,
 	toast,
 	useDebouncedValue,
 	useInfiniteScroll,
 	useSidebar,
 } from "@semoss/ui/next";
-import { useChat, useRoot, useTour } from "@/hooks";
-import { getDateBucket, normalizeTimestamp } from "@/utility";
+import { MobileNavigationClose } from "@/features/navigation/mobile-navigation-close";
+import { NavigationRail } from "@/features/navigation/navigation-rail";
+import { useChat } from "@/hooks/use-chat";
+import { useRoot } from "@/hooks/use-root";
+import { useTour } from "@/hooks/use-tour";
+import { normalizeTimestamp } from "@/utility";
+import { getDateBucket } from "@/utility/date";
 import { AppLogo } from "./app-logo";
 import { GlobalNavItem } from "./global-nav-item";
 import { NavUser } from "./nav-user";
@@ -455,6 +459,7 @@ export const GlobalNav = observer(() => {
 									<AppLogo full={open} />
 								</Link>
 							</SidebarMenuButton>
+							<MobileNavigationClose />
 						</SidebarMenuItem>
 					</SidebarMenu>
 
@@ -987,7 +992,7 @@ export const GlobalNav = observer(() => {
 						</SidebarMenuItem>
 					</SidebarMenu>
 				</SidebarFooter>
-				<SidebarRail />
+				<NavigationRail />
 			</Sidebar>
 
 			{/* Download Conversation Dialog */}

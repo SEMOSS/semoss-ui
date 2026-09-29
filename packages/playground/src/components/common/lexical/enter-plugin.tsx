@@ -13,7 +13,7 @@ export const EnterPlugin: React.FC<EnterPluginProps> = ({ onEnter }) => {
 		return editor.registerCommand(
 			KEY_ENTER_COMMAND,
 			(event) => {
-				if (!event) {
+				if (!event || event.isComposing || editor.isComposing()) {
 					return false;
 				}
 

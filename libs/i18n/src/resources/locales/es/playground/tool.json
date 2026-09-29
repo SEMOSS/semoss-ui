@@ -70,5 +70,11 @@
 		"cancel": "Cancelar",
 		"retry": "Reintentar",
 		"checking": "Verificando..."
+	},
+	"activity": {
+		"steps": "Actividad de herramientas ({{count}})",
+		"needsInput": "Se necesita tu respuesta",
+		"cancelError": "No se pudo cancelar esta herramienta.",
+		"actions": "Acciones de herramienta"
 	}
 }

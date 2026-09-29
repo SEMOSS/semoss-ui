@@ -25,14 +25,14 @@ export const WorkspaceSkillList = ({ skills }: WorkspaceSkillListProps) => {
 
 	return (
 		<ScrollArea className="h-full w-full">
-			<div className="flex flex-col gap-3 p-4">
+			<div className="flex flex-col divide-y">
 				{skills.map((s) => (
 					<div
 						key={s.id}
-						className="flex items-center gap-3 rounded-lg border border-border bg-card px-4 py-3"
+						className="flex items-center gap-3 px-2 py-3"
 					>
 						<BlocksIcon className="size-4 shrink-0 text-muted-foreground" />
-						<div className="font-semibold text-foreground text-sm">
+						<div className="break-words font-medium text-foreground text-sm">
 							{s.name}
 						</div>
 					</div>

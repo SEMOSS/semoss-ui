@@ -6,19 +6,19 @@
 		},
 		"input": {
 			"title": "Iniciar una conversación",
-			"content": "Escribe tu pregunta aquí y presiona Enter."
+			"content": "Escribe tu pregunta y pulsa Intro. En la primera línea, pulsa Arriba para reutilizar un mensaje anterior; Abajo avanza y Esc restaura el borrador."
 		},
 		"inputMenu": {
-			"title": "Adjuntar y configurar",
-			"content": "Añade archivos, agentes, bibliotecas de conocimiento y herramientas para enriquecer tu conversación."
+			"title": "Añadir a tu chat",
+			"content": "Usa + para adjuntar archivos, añadir conocimiento o herramientas, elegir un agente o abrir el espacio de trabajo."
 		},
 		"model": {
 			"title": "Modelo",
 			"content": "Selecciona qué modelo de IA impulsa tu conversación."
 		},
 		"record": {
-			"title": "Grabar",
-			"content": "Haz clic para hablar; tu voz se convertirá en texto."
+			"title": "Acciones de entrada",
+			"content": "Usa el micrófono para dictar, el libro para explorar mensajes o el indicador de contexto para consultar el uso."
 		},
 		"newChat": {
 			"title": "Nuevo chat",

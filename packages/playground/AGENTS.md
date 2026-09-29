@@ -122,9 +122,9 @@ Coverage reports output to `./coverage/packages/playground/` and include only `s
 Source-only libraries are compiled by the app. Built libraries need their build/watch
 process running; use the root `pnpm dev:playground` command for dependency orchestration.
 
-## The room sidebar
+## The room Workspace
 
-The right-hand panel is a `@semoss/workbench` dock. These details are not obvious from the
+The right-hand panel is called **Workspace** in user-facing copy and is a `@semoss/workbench` dock. These details are not obvious from the
 code and are easy to undo by accident:
 
 - **The dock store belongs to `RoomStore`, not to `<Workbench>`.** Tools open panels from outside
@@ -138,17 +138,30 @@ code and are easy to undo by accident:
   to be in place before the first `openSidebarPanel`, which for a streaming tool is long before
   anything mounts — without them the dock falls back to a shallow compare of config, and since a
   file panel's `mode` is a fresh object per call, every open would spawn another tab.
-- **`RoomSidebar` always starts from `ROOM_SIDEBAR_LAYOUT`.** The sidebar arrangement is owned by
-  the room instance and is not persisted between room sessions. Panels opened while the sidebar
-  is closed remain in that room's workbench store until the sidebar mounts.
+- **`RoomSidebar` uses the room's stable `sidebarSnapshot`.** New rooms start from
+  `ROOM_SIDEBAR_LAYOUT`; a prepared room adopts the draft's arrangement through
+  `restoreSidebarLayout` before its first sidebar mount. The shell must use the same snapshot
+  reference so mounting it does not reset tabs opened since initialization. The arrangement is
+  owned by the room instance and is not persisted between room sessions.
 - **A restored file panel is re-pointed at the room's live insight.** A room binds to a fresh
   insight on every load, and a file panel's `mode.insightId` is what its reads and saves run
   against. `_syncSidebarFileMode` rewrites them once, before anything mounts.
-- **Close and maximize live in the sidebar's own header**, because they act on the container. The
-  only genuinely per-panel control — "open inline" — is registered by the tool panel with
-  `useWorkbenchControl`.
+- **Publish and close live in the workbench's top border end slot**, because they act on the work
+  area. On mobile, the workbench places these controls in its actions drawer. The per-panel
+  control — "open inline" — is registered by the tool panel with `useWorkbenchControl`.
+- **File lives in the top border start slot.** `features/workbench/room-workbench-menus.tsx`
+  translates the generic `WorkbenchMenus` labels from `sidebar.workbench` and uses `textSize="xs"`. Arrange Panels remains a submenu; a flat Workspace section offers Open File Explorer, View Activity Log,
+  and Edit Settings. Playground disables the generic Navigate submenu. Forward the slot's `onNavigate` callback for mobile drawer dismissal.
 - **The layout is not cached.** Each new `RoomStore` starts with the empty default arrangement,
   so switching rooms cannot bleed panel state between room instances.
+
+New chats keep draft settings in their temporary room store. Opening Workspace restores its
+last active tab, or opens a Settings tab when empty, without creating a server room. Settings
+uses the same workbench shell as Files. File Explorer prepares a room lazily and transfers the
+draft's arrangement before opening Files. `DraftSettingsContext` keeps Settings and publishing
+bound to the current draft until submission, including after preparation. Draft menu overrides
+keep room-only actions unavailable until preparation succeeds. Selecting Chat clears agent
+inheritance but preserves locally added Knowledge and Tools.
 
 Panel ids and the sidebar's default layout live in `stores/room/room-sidebar.ts`; the blueprints
 live in `components/room/panels/`. Changing a panel type string affects only the current room

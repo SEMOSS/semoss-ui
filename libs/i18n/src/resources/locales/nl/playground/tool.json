@@ -70,5 +70,11 @@
 		"cancel": "Annuleren",
 		"retry": "Opnieuw proberen",
 		"checking": "Controleren..."
+	},
+	"activity": {
+		"steps": "Toolactiviteit ({{count}})",
+		"needsInput": "Je invoer is nodig",
+		"cancelError": "Deze tool kon niet worden geannuleerd.",
+		"actions": "Toolacties"
 	}
 }

@@ -70,5 +70,11 @@
 		"cancel": "キャンセル",
 		"retry": "再試行",
 		"checking": "確認中..."
+	},
+	"activity": {
+		"steps": "ツールの実行状況（{{count}}）",
+		"needsInput": "入力が必要です",
+		"cancelError": "このツールをキャンセルできませんでした。",
+		"actions": "ツールの操作"
 	}
 }
