@@ -12,9 +12,9 @@ import {
 	Textarea,
 } from "@semoss/ui/next";
 import type { AgentDefaultTool, AgentLinks } from "../agent.types";
+import { AgentSection } from "../agent-section";
 import { AgentDefaultToolsField } from "./agent-default-tools-field";
 import { AgentExecutionLimitsFields } from "./agent-execution-limits-fields";
-import { AgentFormSection } from "./agent-form-section";
 import { AgentHooksField } from "./agent-hooks-field";
 import { AgentMcpField } from "./agent-mcp-field";
 import { AgentModelField } from "./agent-model-field";
@@ -106,7 +106,7 @@ export const AgentForm = ({
 			    input/textarea/select/button, rather than threading a prop
 			    through every field. `contents` keeps it out of the layout. */}
 			<fieldset disabled={disabled} className="contents">
-				<AgentFormSection
+				<AgentSection
 					title={t("sections.about.title")}
 					description={t("sections.about.description")}
 				>
@@ -203,11 +203,11 @@ export const AgentForm = ({
 						</FieldDescription>
 					</Field>
 					<AgentModelField control={control} />
-				</AgentFormSection>
+				</AgentSection>
 
 				<Separator />
 
-				<AgentFormSection
+				<AgentSection
 					title={t("sections.builtInTools.title")}
 					description={t("sections.builtInTools.description")}
 				>
@@ -216,11 +216,11 @@ export const AgentForm = ({
 						tools={defaultTools}
 						disabled={disabled}
 					/>
-				</AgentFormSection>
+				</AgentSection>
 
 				<Separator />
 
-				<AgentFormSection
+				<AgentSection
 					title={t("sections.knowledge.title")}
 					description={t("sections.knowledge.description")}
 				>
@@ -231,11 +231,11 @@ export const AgentForm = ({
 						getMcpUrl={links?.getMcpUrl}
 						enableKnowledgeMCP={enableKnowledgeMCP}
 					/>
-				</AgentFormSection>
+				</AgentSection>
 
 				<Separator />
 
-				<AgentFormSection
+				<AgentSection
 					title={t("sections.toolboxes.title")}
 					description={t("sections.toolboxes.description")}
 				>
@@ -247,11 +247,11 @@ export const AgentForm = ({
 						enableKnowledgeMCP={enableKnowledgeMCP}
 						showSystemTools={showSystemTools}
 					/>
-				</AgentFormSection>
+				</AgentSection>
 
 				<Separator />
 
-				<AgentFormSection
+				<AgentSection
 					title={t("sections.skills.title")}
 					description={t("sections.skills.description")}
 				>
@@ -260,11 +260,11 @@ export const AgentForm = ({
 						getSkillUrl={links?.getSkillUrl}
 						showSystemSkills={showSystemSkills}
 					/>
-				</AgentFormSection>
+				</AgentSection>
 
 				<Separator />
 
-				<AgentFormSection
+				<AgentSection
 					title={t("sections.prompts.title")}
 					description={t("sections.prompts.description")}
 				>
@@ -273,11 +273,11 @@ export const AgentForm = ({
 						initialTitles={promptTitles}
 						getPromptUrl={links?.getPromptUrl}
 					/>
-				</AgentFormSection>
+				</AgentSection>
 
 				<Separator />
 
-				<AgentFormSection
+				<AgentSection
 					title={t("sections.subagents.title")}
 					description={t("sections.subagents.description")}
 				>
@@ -286,11 +286,11 @@ export const AgentForm = ({
 						excludeWorkspaceId={workspaceId}
 						getAgentUrl={links?.getAgentUrl}
 					/>
-				</AgentFormSection>
+				</AgentSection>
 
 				<Separator />
 
-				<AgentFormSection
+				<AgentSection
 					title={t("sections.executionLimits.title")}
 					description={t("sections.executionLimits.description")}
 				>
@@ -298,11 +298,11 @@ export const AgentForm = ({
 						control={control}
 						showDefaultToolsToggle={false}
 					/>
-				</AgentFormSection>
+				</AgentSection>
 
 				<Separator />
 
-				<AgentFormSection
+				<AgentSection
 					title={t("sections.hooks.title")}
 					description={t("sections.hooks.description")}
 				>
@@ -310,7 +310,7 @@ export const AgentForm = ({
 						control={control}
 						knownKinds={knownHookKinds}
 					/>
-				</AgentFormSection>
+				</AgentSection>
 			</fieldset>
 		</div>
 	);
