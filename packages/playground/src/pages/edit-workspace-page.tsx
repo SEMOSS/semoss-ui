@@ -12,10 +12,13 @@ import { useNavigate, useParams } from "react-router";
 import { useTranslation } from "@semoss/i18n";
 import { usePixel } from "@semoss/sdk/react";
 import {
+	AGENT_FORM_DEFAULT_VALUES,
+	type AgentWorkspace,
 	MCPSelector,
 	MembersTable,
 	PromptSelector,
 	SkillSelector,
+	toAgentFormValues,
 } from "@semoss/shared";
 import {
 	Alert,
@@ -31,27 +34,21 @@ import {
 } from "@semoss/ui/next";
 import { InstructionsModal } from "@/components/workspace/instructions-modal";
 import {
-	createWorkspaceFormSchema,
-	emptyWorkspaceForm,
-	type WorkspaceFormValues,
-} from "@/features/agents/workspace-form.schema";
+	createEditWorkspaceFormSchema,
+	type EditWorkspaceFormValues,
+} from "@/features/agents/edit-workspace-form.schema";
+import { WorkspaceAgentFields } from "@/features/agents/workspace-agent-fields";
 import { useChat } from "@/hooks/use-chat";
 import { useRoot } from "@/hooks/use-root";
-import type { Workspace } from "@/types";
-import {
-	mcpToPlatformUrl,
-	promptToPlatformUrl,
-	splitMcpByType,
-} from "@/utility/mcp-utils";
+import { mcpToPlatformUrl, promptToPlatformUrl } from "@/utility/mcp-utils";
 
 const FORM_ID = "workspace-edit-form";
 
 /**
  * Renders the EditWorkspacePage for editing existing agents.
  *
- * Mirrors the detail page layout (About → Knowledge → Toolboxes →
- * Prompts → Members) with editable controls and an editable
- * MembersTable in place of the read-only view.
+ * Keeps the Playground layout and validation, composing the shared agent
+ * settings into the same form. Members are saved separately per action.
  */
 export const EditWorkspacePage = observer(() => {
 	const { t } = useTranslation(["workspace", "common", "notifications"]);
@@ -60,20 +57,20 @@ export const EditWorkspacePage = observer(() => {
 	const { chat } = useChat();
 	const { root } = useRoot();
 
-	const form = useForm<WorkspaceFormValues>({
+	const form = useForm<EditWorkspaceFormValues>({
 		resolver: zodResolver(
-			createWorkspaceFormSchema(t("common:placeholders.enterName")),
+			createEditWorkspaceFormSchema(t("common:placeholders.enterName")),
 		),
-		defaultValues: emptyWorkspaceForm,
+		defaultValues: AGENT_FORM_DEFAULT_VALUES,
 	});
-	const { name, instructions, knowledge, toolbox, skills, prompts } =
+	const { name, instructions, knowledge, toolboxes, skills, prompts } =
 		form.watch();
 	const isSaving = form.formState.isSubmitting;
 	const hydratedWorkspace = useRef<string | null>(null);
 	const isDirty = form.formState.isDirty;
 	const [instructionsModal, setInstructionsModal] = useState(false);
 
-	const getWorkspace = usePixel<Workspace>(
+	const getWorkspace = usePixel<AgentWorkspace & { workspace_id: string }>(
 		workspaceId ? `GetWorkspace(workspaceId=["${workspaceId}"]);` : "",
 		{
 			data: null,
@@ -97,15 +94,9 @@ export const EditWorkspacePage = observer(() => {
 		)
 			return;
 		const w = getWorkspace.data;
-		const { knowledge, toolbox } = splitMcpByType(w.mcp ?? []);
 		form.reset({
-			name: w.name || "",
-			description: w.description || "",
+			...toAgentFormValues(w),
 			instructions: (w.system_prompt || "").replace(/\\n/g, "\n"),
-			knowledge,
-			toolbox,
-			skills: w.skills ?? [],
-			prompts: w.prompts ?? [],
 		});
 		hydratedWorkspace.current = workspaceId;
 	}, [form, workspaceId, getWorkspace.status, getWorkspace.data]);
@@ -145,25 +136,11 @@ export const EditWorkspacePage = observer(() => {
 		navigate(`/agent/${workspaceId}`);
 	};
 
-	const handleSubmit = async ({
-		name,
-		description,
-		instructions,
-		knowledge,
-		toolbox,
-		skills,
-		prompts,
-	}: WorkspaceFormValues) => {
+	const handleSubmit = async (values: EditWorkspaceFormValues) => {
 		form.clearErrors("root.server");
 		try {
-			await chat.editWorkspace(workspaceId, {
-				name,
-				description,
-				system_prompt: instructions,
-				prompts,
-				mcp: [...knowledge, ...toolbox],
-				skills,
-			});
+			const warning = await chat.editWorkspace(workspaceId, values);
+			if (warning) toast.warning(warning);
 		} catch (err) {
 			form.setError("root.server", {
 				message:
@@ -318,10 +295,10 @@ export const EditWorkspacePage = observer(() => {
 						<MCPSelector
 							presentation="list"
 							type="TOOLBOX"
-							values={toolbox}
+							values={toolboxes}
 							disabled={isSaving}
 							onChange={(next) =>
-								form.setValue("toolbox", next, {
+								form.setValue("toolboxes", next, {
 									shouldDirty: true,
 								})
 							}
@@ -384,6 +361,12 @@ export const EditWorkspacePage = observer(() => {
 							}
 						/>
 					</section>
+					<WorkspaceAgentFields
+						control={form.control}
+						workspace={getWorkspace.data}
+						workspaceId={workspaceId}
+						disabled={isSaving}
+					/>
 				</Form>
 
 				{/* Members (outside the form — saved per-action) */}

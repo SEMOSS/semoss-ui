@@ -1,4 +1,8 @@
-import { createMcpPlatformUrl, createPromptPlatformUrl } from "@semoss/shared";
+import {
+	type AgentLinks,
+	createMcpPlatformUrl,
+	createPromptPlatformUrl,
+} from "@semoss/shared";
 import { MCP_EXECUTION_AGENT_ASK, MCP_EXECUTION_ASK } from "@/constants";
 
 export { isKnowledgeMcp, splitMcpByType } from "@semoss/shared";
@@ -50,3 +54,24 @@ const PLATFORM_URL = import.meta.env.VITE_PLATFORM_URL ?? "";
 
 export const mcpToPlatformUrl = createMcpPlatformUrl(PLATFORM_URL);
 export const promptToPlatformUrl = createPromptPlatformUrl(PLATFORM_URL);
+export const skillToPlatformUrl = (skillId: string): string =>
+	`${PLATFORM_URL}/#/skill/${skillId}/view`;
+
+/**
+ * The playground's links for an agent's attached resources, used by the
+ * shared agent views. Catalog links point at the platform and only appear
+ * when the theme turns platform links on; subagents link to the playground's
+ * own agent page.
+ */
+export const getPlaygroundAgentLinks = (
+	showPlatformLinks?: boolean,
+): AgentLinks => ({
+	...(showPlatformLinks
+		? {
+				getMcpUrl: mcpToPlatformUrl,
+				getSkillUrl: skillToPlatformUrl,
+				getPromptUrl: (id: string) => promptToPlatformUrl({ id }),
+			}
+		: {}),
+	getAgentUrl: (id) => `#/agent/${id}`,
+});

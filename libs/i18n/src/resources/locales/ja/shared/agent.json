@@ -1,0 +1,226 @@
+{
+	"sections": {
+		"about": {
+			"title": "概要",
+			"description": "このエージェントの説明、動作、使用するモデル。"
+		},
+		"builtInTools": {
+			"title": "組み込みツール",
+			"description": "このエージェントで使えるデプロイ既定のツール。"
+		},
+		"knowledge": {
+			"title": "ナレッジ",
+			"description": "このエージェントが検索できるナレッジソース。"
+		},
+		"toolboxes": {
+			"title": "ツールボックス",
+			"description": "このエージェントが呼び出せるツールと機能。"
+		},
+		"skills": {
+			"title": "スキル",
+			"description": "このエージェントが読み込める再利用可能なスキル。"
+		},
+		"prompts": {
+			"title": "プロンプト",
+			"description": "このエージェントが提供する設定済みのプロンプト。"
+		},
+		"subagents": {
+			"title": "サブエージェント",
+			"description": "このエージェントが作業を委任できる他のエージェント。ツール名と説明は自動で生成されます。"
+		},
+		"executionLimits": {
+			"title": "実行制限",
+			"description": "エージェントのツールループとサブエージェントへの委任に対する実行時の上限。"
+		},
+		"hooks": {
+			"title": "フック",
+			"description": "エージェントのライフサイクルの各時点で実行されるカスタム動作。"
+		}
+	},
+	"about": {
+		"description": "説明",
+		"noDescription": "説明なし",
+		"instructions": "指示",
+		"noInstructions": "指示なし",
+		"greeting": "あいさつ",
+		"greetingOff": "オフ",
+		"greetingHelp": "ルーム開始時にエージェントの最初のメッセージとして表示されます。",
+		"defaultModel": "既定のモデル",
+		"roomModel": "ルームのモデル",
+		"loading": "読み込み中..."
+	},
+	"builtInTools": {
+		"label": "エージェントの組み込みツール",
+		"help": "選択したツールボックスに加えて、デプロイ既定のツールを含めます。",
+		"on": "オン",
+		"off": "オフ",
+		"individual": "個別のツール",
+		"enabledCount": "{{total}} 件中 {{enabled}} 件が有効",
+		"allOff": "すべてオフ",
+		"searchLabel": "組み込みツールを検索",
+		"searchPlaceholder": "ツールを検索...",
+		"noneAvailable": "このデプロイでは組み込みツールを利用できません。",
+		"noMatch": "「{{query}}」に一致するツールはありません。"
+	},
+	"empty": {
+		"knowledge": "ナレッジソースはありません。",
+		"toolboxes": "ツールボックスはありません。",
+		"skills": "スキルはありません。",
+		"prompts": "プロンプトはありません。",
+		"subagents": "サブエージェントはありません。",
+		"hooks": "フックはありません。"
+	},
+	"resource": {
+		"open": "{{name}} を開く",
+		"openTooltip": "カタログで開く",
+		"remove": "{{name}} を削除",
+		"removeTooltip": "削除",
+		"unavailableAgent": "利用できないエージェント"
+	},
+	"mcpType": {
+		"PROJECT": "プロジェクト",
+		"STORAGE": "ストレージ",
+		"DATABASE": "データベース",
+		"FUNCTION": "関数",
+		"MODEL": "モデル",
+		"VECTOR": "ナレッジ",
+		"GUARDRAIL": "ガードレール",
+		"ROOM": "ルーム"
+	},
+	"limits": {
+		"runBudget": {
+			"title": "実行予算",
+			"description": "1 回の実行の上限です。実行はこれより少なく要求できますが、多くは要求できません。"
+		},
+		"delegation": {
+			"title": "サブエージェントへの委任",
+			"description": "このエージェントがサブエージェントに任せられる作業量。"
+		},
+		"isDefault": "{{value}}(既定)",
+		"noLimit": "制限なし",
+		"defaultPlaceholder": "既定 {{value}}",
+		"currently": "現在 {{duration}}。",
+		"errors": {
+			"wholeNumber": "整数を入力してください。",
+			"min": "{{min}} 以上を入力してください。"
+		},
+		"units": {
+			"turns": "ターン",
+			"rounds": "ラウンド",
+			"seconds": "秒",
+			"levels": "階層",
+			"subagents": "サブエージェント"
+		},
+		"duration": {
+			"hours": "{{count}} 時間",
+			"minutes": "{{count}} 分",
+			"seconds": "{{count}} 秒"
+		},
+		"maxTurns": {
+			"label": "最大ターン数",
+			"description": "1 回の実行がツールループ内でモデルを呼び出せる回数。上限に達してもツールを呼び出している実行はエラーで停止します。実行は既定で 30 を要求するため、それより大きい値は実行がより多くを要求した場合にのみ適用されます。"
+		},
+		"maxReflections": {
+			"label": "最大リフレクション数",
+			"description": "エージェントが回答した後の見直しのラウンド。作業を確認し、さらにツールを呼び出すことがあります。実行は既定で要求しないため、リフレクションを要求する実行だけが制限されます。"
+		},
+		"maxSeconds": {
+			"label": "最大実行時間",
+			"description": "1 回の実行の実時間の上限。空欄または 0 は制限なしを意味します。"
+		},
+		"maxSubagentDepth": {
+			"label": "委任の最大深さ",
+			"description": "委任できる階層の深さ。1 ではこのエージェントは委任できますが、そのサブエージェントはできません。0 で委任をオフにします。"
+		},
+		"maxSubagentsPerRun": {
+			"label": "実行あたりの最大サブエージェント数",
+			"description": "1 回の実行で開始できるサブエージェントの合計数。"
+		},
+		"maxSpawnsPerTurn": {
+			"label": "ターンあたりの最大サブエージェント数",
+			"description": "モデルの 1 ターンから開始できるサブエージェントの数(並列作業など)。"
+		},
+		"count": {
+			"turns_other": "{{count}} ターン",
+			"rounds_other": "{{count}} ラウンド",
+			"seconds_other": "{{count}} 秒",
+			"levels_other": "{{count}} 階層",
+			"subagents_other": "{{count}} 個のサブエージェント"
+		}
+	},
+	"hooks": {
+		"kinds": {
+			"pixel": {
+				"label": "Pixel",
+				"description": "選択したライフサイクルイベントで pixel 式を実行します。"
+			},
+			"git_commit": {
+				"label": "Git コミット",
+				"description": "エージェントの各実行後に git add . && git commit を実行します。"
+			},
+			"log_tools": {
+				"label": "ツール呼び出しを記録",
+				"description": "各ツール呼び出しの名前、パラメーター、所要時間を記録します。"
+			},
+			"ppt_to_pdf": {
+				"label": "PowerPoint を PDF に変換",
+				"description": "実行後に出力ファイルを PDF に変換します。"
+			}
+		},
+		"runsOn": "実行タイミング",
+		"everyEvent": "すべてのイベント",
+		"noPixel": "pixel 式なし",
+		"remove": "{{label}} フックを削除",
+		"removeTooltip": "削除"
+	},
+	"form": {
+		"name": "名前",
+		"namePlaceholder": "名前を入力",
+		"descriptionPlaceholder": "説明を入力",
+		"instructionsPlaceholder": "エージェントの動作、役割、指示を定義します",
+		"greetingToggle": "あいさつを有効にする",
+		"greetingPlaceholder": "こんにちは、IT サポートアシスタントです。パスワードのリセット、未解決チケットの状況確認、よくある問題のトラブルシューティングをお手伝いします。何にお困りですか?",
+		"greetingOffNote": "あいさつはオフです。このメッセージを使うにはオンにしてください。",
+		"greetingHelp": "ルーム開始時にエージェントの最初のメッセージとして表示されます。トークンは消費しませんが、モデルからは見えないため、対応に必要な内容(ここで示す選択肢など)は指示にも記載してください。",
+		"useRoomModel": "ルームのモデルを使用",
+		"modelHelp": "未設定のままにするとルームのモデルを使用します。",
+		"picker": {
+			"cancel": "キャンセル",
+			"done": "完了"
+		},
+		"knowledge": {
+			"add": "ナレッジを追加",
+			"description": "このエージェントが検索できるナレッジソースを選択します。ソースをクリックして追加または削除します。"
+		},
+		"toolboxes": {
+			"add": "ツールボックスを追加",
+			"description": "このエージェントが呼び出せるツールボックスを選択します。クリックして追加または削除します。"
+		},
+		"skills": {
+			"add": "スキルを追加",
+			"description": "このエージェントが読み込める再利用可能なスキルを選択します。スキルをクリックして追加または削除します。"
+		},
+		"prompts": {
+			"add": "プロンプトを追加",
+			"description": "このエージェントが提供する設定済みのプロンプトを選択します。プロンプトにチェックを入れて追加します。"
+		},
+		"subagents": {
+			"add": "サブエージェントを追加",
+			"searchPlaceholder": "エージェントを検索...",
+			"noneToAdd": "追加できる他のエージェントはありません。",
+			"noMatch": "検索に一致するエージェントはありません。"
+		},
+		"builtInTools": {
+			"enable": "エージェントの組み込みツールを有効にする",
+			"enableAll": "すべて有効",
+			"disableAll": "すべて無効",
+			"offNote": "このエージェントの組み込みツールはオフです。個別の選択は再びオンにしたときのために保持されます。"
+		},
+		"hooks": {
+			"pixelLabel": "Pixel 式",
+			"eventsLabel": "ライフサイクルイベント",
+			"eventsHelp": "何も選択しない場合はすべてのイベントで実行されます。",
+			"add": "フックを追加"
+		}
+	}
+}

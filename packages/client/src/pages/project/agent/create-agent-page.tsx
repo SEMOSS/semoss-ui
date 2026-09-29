@@ -2,7 +2,20 @@ import { ChevronRight, UploadIcon } from "lucide-react";
 import { useId, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { Link } from "react-router";
-import { MCPSelector, PromptSelector, SkillSelector } from "@semoss/shared";
+import {
+	AGENT_FORM_DEFAULT_VALUES,
+	AGENT_MAX_GREETING_LENGTH,
+	AgentExecutionLimitsFields,
+	AgentFormSection,
+	type AgentFormValues,
+	AgentModelField,
+	AgentSubagentsField,
+	buildEditWorkspacePixel,
+	getWorkspaceSaveWarning,
+	MCPSelector,
+	PromptSelector,
+	SkillSelector,
+} from "@semoss/shared";
 import {
 	Breadcrumb,
 	BreadcrumbItem,
@@ -22,22 +35,15 @@ import {
 	Textarea,
 	toast,
 } from "@semoss/ui/next";
-import {
-	AGENT_FORM_DEFAULT_VALUES,
-	AgentExecutionLimitsFields,
-	AgentFormSection,
-	type AgentFormValues,
-	AgentModelField,
-	AgentSubagentsField,
-	buildEditWorkspacePixel,
-	getWorkspaceSaveWarning,
-	MAX_GREETING_LENGTH,
-} from "@/components/agent-workspace/agent-form";
 import { UploadProjectDialog } from "@/components/project";
 import { NavbarHeader, NavbarLeft } from "@/components/shared";
 import { useSession } from "@/hooks";
 import { useNavigate } from "@/hooks/useNavigate";
-import { mcpToPlatformUrl, promptToPlatformUrl } from "@/utility";
+import {
+	CLIENT_AGENT_LINKS,
+	mcpToPlatformUrl,
+	promptToPlatformUrl,
+} from "@/utility";
 
 export const CreateAgentPage = () => {
 	const navigate = useNavigate();
@@ -263,7 +269,7 @@ export const CreateAgentPage = () => {
 										id={greetingId}
 										placeholder="Hi, I'm your IT support assistant. I can help you reset a password, check the status of an open ticket, or troubleshoot a common issue. What do you need help with?"
 										rows={3}
-										maxLength={MAX_GREETING_LENGTH}
+										maxLength={AGENT_MAX_GREETING_LENGTH}
 										disabled={!greetingEnabled}
 										{...field}
 									/>
@@ -364,7 +370,10 @@ export const CreateAgentPage = () => {
 						title="Subagents"
 						description="Select other agents this agent can delegate work to. Tool names and descriptions are generated automatically."
 					>
-						<AgentSubagentsField control={control} />
+						<AgentSubagentsField
+							control={control}
+							getAgentUrl={CLIENT_AGENT_LINKS.getAgentUrl}
+						/>
 					</AgentFormSection>
 
 					<AgentFormSection
