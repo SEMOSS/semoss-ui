@@ -84,7 +84,8 @@
 		"stoppingTooltip": "Stopping",
 		"recordUnavailable": "Dictation is unavailable in this browser",
 		"historyHint": "Earlier prompt {{index}} of {{total}} · ↑/↓ browse · Esc to restore draft",
-		"draftRestored": "Draft restored"
+		"draftRestored": "Draft restored",
+		"removeFile": "Remove {{name}}"
 	},
 	"content": {
 		"scrollToTop": "Scroll to top",
@@ -117,9 +118,9 @@
 		"attachDocument": "Attach Files"
 	},
 	"menuFileExplorer": {
-		"name": "File Explorer",
-		"open": "Open File Explorer",
-		"close": "Close File Explorer"
+		"name": "Chat Files",
+		"open": "Show Chat Files",
+		"close": "Hide Chat Files"
 	},
 	"errors": {
 		"createRoom": "An error occurred while creating the room. Error: {{message}}",

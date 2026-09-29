@@ -466,8 +466,12 @@ function Markdown({
 					{children}
 				</ul>
 			),
-			ol: ({ children }) => (
-				<ol className="my-3 list-decimal ps-6 text-foreground marker:text-muted-foreground">
+			// start carries on the numbering of a list that a paragraph split
+			ol: ({ children, start }) => (
+				<ol
+					start={start}
+					className="my-3 list-decimal ps-6 text-foreground marker:text-muted-foreground"
+				>
 					{children}
 				</ol>
 			),

@@ -61,6 +61,14 @@ vi.mock("react-router", () => ({
 }));
 vi.mock("@semoss/i18n", () => ({
 	useTranslation: () => ({ t: (key: string) => key }),
+	getI18n: () => ({ t: (key: string) => key }),
+}));
+vi.mock("@/features/teamwork/connectors/connectors.api", async (original) => ({
+	...(await original<
+		typeof import("@/features/teamwork/connectors/connectors.api")
+	>()),
+	readUserConnectorTools: vi.fn().mockResolvedValue(null),
+	syncRoomConnectorTools: vi.fn().mockResolvedValue(undefined),
 }));
 vi.mock("@semoss/sdk/react", async (original) => ({
 	...(await original<typeof import("@semoss/sdk/react")>()),
@@ -85,8 +93,33 @@ vi.mock("@/components/room/panels/room-panel.components", async () => {
 		"@/components/room/panels/room-configuration-panel"
 	);
 	const { FILE_PANEL_TYPES } = await import("@semoss/panels");
+	const { useNextMessageRoom } = await import(
+		"@/features/teamwork/sources/next-message-room"
+	);
+	const Source = () => {
+		const draft = useNextMessageRoom();
+		return (
+			<button
+				type="button"
+				onClick={() =>
+					draft?.teamwork.addContextItem({
+						name: "email.md",
+						path: "email.md",
+						service: "gmail",
+					})
+				}
+			>
+				Add email to context
+			</button>
+		);
+	};
 	return {
 		ROOM_PANEL_COMPONENTS: {
+			[ROOM_PANEL_TYPES.GMAIL]: {
+				name: "Gmail",
+				mount: "keepAlive",
+				content: Source,
+			},
 			[ROOM_PANEL_TYPES.CONFIGURATION]: ROOM_CONFIGURATION_PANEL,
 			[FILE_PANEL_TYPES.FILE_EXPLORER]: {
 				name: "Files",
@@ -166,6 +199,7 @@ vi.mock("@/components/room/room-input", () => ({
 			onWorkspaceChange,
 			onExitAgentHarness,
 			onPrompt,
+			onOpenSource,
 		}: ComponentProps<typeof RoomInput>) => (
 			<>
 				<input
@@ -173,6 +207,14 @@ vi.mock("@/components/room/room-input", () => ({
 					defaultValue="Keep this draft"
 				/>
 				<output aria-label="Mode">{room.mode}</output>
+				<output aria-label="Queued context">
+					{room.teamwork.contextItems
+						.map((item) => item.name)
+						.join(",")}
+				</output>
+				<button type="button" onClick={() => onOpenSource?.("gmail")}>
+					Open Gmail
+				</button>
 				<output aria-label="Selected agent">
 					{options.workspace?.name ?? "Default"}
 				</output>
@@ -315,6 +357,7 @@ test("default Agent works without a saved agent and normal submission uses curre
 			}),
 			undefined,
 			undefined,
+			expect.any(Function),
 		),
 	);
 });
@@ -464,4 +507,66 @@ test("failed file preparation keeps draft settings usable and supports retry", a
 		"Keep after retry",
 	);
 	expect(mocks.createEmptyRoom).toHaveBeenCalledTimes(2);
+});
+
+test("connector viewers share the prepared room and transfer draft context before sending", async () => {
+	const room = createPreparedRoom();
+	let resolvePreparation: (room: RoomStore) => void = () => {};
+	mocks.createEmptyRoom.mockImplementationOnce(
+		() =>
+			new Promise<RoomStore>((resolve) => {
+				resolvePreparation = resolve;
+			}),
+	);
+	const askMessage = vi.fn<RoomStore["askMessage"]>().mockResolvedValue();
+	runInAction(() => {
+		room.updateRoomOptions = vi
+			.fn<RoomStore["updateRoomOptions"]>()
+			.mockResolvedValue();
+		room.askMessage = askMessage;
+	});
+	renderWorkspace();
+	fireEvent.change(screen.getByLabelText("Instructions"), {
+		target: { value: "Keep draft settings" },
+	});
+	fireEvent.click(screen.getByRole("button", { name: "Open Gmail" }));
+	fireEvent.click(screen.getByRole("button", { name: "Open Gmail" }));
+	expect(mocks.createEmptyRoom).toHaveBeenCalledTimes(1);
+	resolvePreparation(room);
+	await screen.findByRole("tab", { name: "connectors:services.gmail" });
+	expect(screen.getAllByRole("tab")).toHaveLength(2);
+	fireEvent.click(
+		screen.getByRole("button", { name: "Add email to context" }),
+	);
+	expect(screen.getByLabelText("Queued context")).toHaveTextContent(
+		"email.md",
+	);
+	expect(room.teamwork.contextItems).toHaveLength(0);
+	selectWorkspaceItem("menuFileExplorer.open");
+	await screen.findByRole("tab", { name: "room:menuFileExplorer.name" });
+	expect(mocks.createEmptyRoom).toHaveBeenCalledTimes(1);
+	selectWorkspaceItem("settings.edit");
+	expect(screen.getByLabelText("Instructions")).toHaveValue(
+		"Keep draft settings",
+	);
+	fireEvent.click(screen.getByRole("button", { name: "Send" }));
+	await waitFor(() => expect(askMessage).toHaveBeenCalledTimes(1));
+	expect(room.teamwork.contextItems.map((item) => item.name)).toEqual([
+		"email.md",
+	]);
+	expect(screen.getByLabelText("Queued context")).toBeEmptyDOMElement();
+});
+
+test("retrying failed source preparation reopens the requested viewer", async () => {
+	mocks.createEmptyRoom
+		.mockRejectedValueOnce(new Error("Offline"))
+		.mockResolvedValueOnce(createPreparedRoom());
+	renderWorkspace();
+	fireEvent.click(screen.getByRole("button", { name: "Open Gmail" }));
+	await screen.findByRole("alert");
+	fireEvent.click(screen.getByRole("button", { name: "room:studio.retry" }));
+	await screen.findByRole("tab", { name: "connectors:services.gmail" });
+	expect(
+		screen.queryByRole("tab", { name: "room:menuFileExplorer.name" }),
+	).toBeNull();
 });

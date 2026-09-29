@@ -80,7 +80,8 @@
 		"stoppingTooltip": "Deteniendo",
 		"recordUnavailable": "El dictado no está disponible en este navegador",
 		"historyHint": "Mensaje anterior {{index}} de {{total}} · ↑/↓ explorar · Esc para restaurar el borrador",
-		"draftRestored": "Borrador restaurado"
+		"draftRestored": "Borrador restaurado",
+		"removeFile": "Quitar {{name}}"
 	},
 	"content": {
 		"scrollToTop": "Ir al inicio",
@@ -113,9 +114,9 @@
 		"attachDocument": "Adjuntar archivos"
 	},
 	"menuFileExplorer": {
-		"name": "Explorador de Archivos",
-		"open": "Abrir Explorador de Archivos",
-		"close": "Cerrar Explorador de Archivos"
+		"name": "Archivos del chat",
+		"open": "Mostrar archivos del chat",
+		"close": "Ocultar archivos del chat"
 	},
 	"errors": {
 		"createRoom": "Ocurrió un error al crear la sala. Error: {{message}}",

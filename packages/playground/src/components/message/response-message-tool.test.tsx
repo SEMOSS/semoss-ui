@@ -207,3 +207,25 @@ test("keeps approval parameters visible and rejects through the existing agent d
 		"Edited request",
 	);
 });
+
+test("inline folder tools retain their approval card inside the compact activity row", async () => {
+	const base = createTool("chat", false, { display: "inline", isOpen: true });
+	const approveChatTool = vi.fn().mockResolvedValue(undefined);
+	const tool = {
+		...base,
+		status: "INITIAL",
+		json: {
+			...base.json,
+			name: "folder_write",
+			_meta: { SMSS_CLIENT_TOOL: true, SMSS_MCP_EXECUTION: "ask" },
+		},
+		parameters: { path: "draft.md", content: "Draft content" },
+		room: { ...base.room, teamwork: { signIn: vi.fn(), approveChatTool } },
+	} as unknown as ToolStore;
+	render(<ResponseMessageTool tool={tool} />);
+	expect(screen.getByRole("button", { name: "card.deny" })).toBeVisible();
+	expect(approveChatTool).not.toHaveBeenCalled();
+	fireEvent.click(screen.getByRole("button", { name: "card.allow" }));
+	await waitFor(() => expect(approveChatTool).toHaveBeenCalledWith(tool));
+	expect(tool.closeTool).toHaveBeenCalledTimes(1);
+});

@@ -84,7 +84,8 @@
 		"stoppingTooltip": "جارٍ الإيقاف",
 		"recordUnavailable": "الإملاء غير متاح في هذا المتصفح",
 		"historyHint": "الرسالة السابقة {{index}} من {{total}} · ↑/↓ للتصفح · Esc لاستعادة المسودة",
-		"draftRestored": "تمت استعادة المسودة"
+		"draftRestored": "تمت استعادة المسودة",
+		"removeFile": "إزالة {{name}}"
 	},
 	"content": {
 		"scrollToTop": "انتقل إلى الأعلى",
@@ -117,9 +118,9 @@
 		"attachDocument": "إرفاق ملفات"
 	},
 	"menuFileExplorer": {
-		"name": "مستكشف الملفات",
-		"open": "فتح مستكشف الملفات",
-		"close": "إغلاق مستكشف الملفات"
+		"name": "ملفات الدردشة",
+		"open": "إظهار ملفات الدردشة",
+		"close": "إخفاء ملفات الدردشة"
 	},
 	"errors": {
 		"createRoom": "حدث خطأ أثناء إنشاء الغرفة. الخطأ: {{message}}",

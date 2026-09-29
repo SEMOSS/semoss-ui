@@ -1,7 +1,6 @@
-import { FileIcon, XIcon } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useTranslation } from "@semoss/i18n";
-import { Button, Muted, Small } from "@semoss/ui/next";
+import { FilePreviewTile } from "./file-preview-tile";
 
 interface FilePreviewChipProps {
 	/** File waiting to be submitted. */
@@ -21,36 +20,12 @@ export function FilePreviewChip({ file, onRemove }: FilePreviewChipProps) {
 		return () => URL.revokeObjectURL(url);
 	}, [file]);
 	return (
-		<div className="flex max-w-full items-center gap-2 rounded-xl border bg-background p-2">
-			{preview ? (
-				<img
-					src={preview}
-					alt=""
-					className="size-9 shrink-0 rounded-md object-cover"
-				/>
-			) : (
-				<FileIcon
-					aria-hidden="true"
-					className="size-5 shrink-0 text-muted-foreground"
-				/>
-			)}
-			<div className="min-w-0 flex-1">
-				<Small className="max-w-48 break-words font-medium text-xs">
-					{file.name}
-				</Small>
-				<Muted className="text-xs">
-					{(file.size / 1024).toFixed(1)} KB
-				</Muted>
-			</div>
-			<Button
-				type="button"
-				variant="ghost"
-				size="icon-sm"
-				aria-label={t("studio.removeFile", { name: file.name })}
-				onClick={onRemove}
-			>
-				<XIcon aria-hidden="true" />
-			</Button>
-		</div>
+		<FilePreviewTile
+			name={file.name}
+			detail={`${(file.size / 1024).toFixed(1)} KB`}
+			previewUrl={preview}
+			removeLabel={t("studio.removeFile", { name: file.name })}
+			onRemove={onRemove}
+		/>
 	);
 }

@@ -84,7 +84,8 @@
 		"stoppingTooltip": "Arrêt en cours",
 		"recordUnavailable": "La dictée est indisponible dans ce navigateur",
 		"historyHint": "Message précédent {{index}} sur {{total}} · ↑/↓ parcourir · Échap pour restaurer le brouillon",
-		"draftRestored": "Brouillon restauré"
+		"draftRestored": "Brouillon restauré",
+		"removeFile": "Retirer {{name}}"
 	},
 	"content": {
 		"scrollToTop": "Défiler vers le haut",
@@ -117,9 +118,9 @@
 		"attachDocument": "Joindre des fichiers"
 	},
 	"menuFileExplorer": {
-		"name": "Explorateur de fichiers",
-		"open": "Ouvrir l'explorateur de fichiers",
-		"close": "Fermer l'explorateur de fichiers"
+		"name": "Fichiers du chat",
+		"open": "Afficher les fichiers du chat",
+		"close": "Masquer les fichiers du chat"
 	},
 	"errors": {
 		"createRoom": "Une erreur s'est produite lors de la création de la salle. Erreur : {{message}}",

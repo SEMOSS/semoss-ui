@@ -84,7 +84,8 @@
 		"stoppingTooltip": "Bezig met stoppen",
 		"recordUnavailable": "Dicteren is niet beschikbaar in deze browser",
 		"historyHint": "Eerdere prompt {{index}} van {{total}} · ↑/↓ bladeren · Esc om concept te herstellen",
-		"draftRestored": "Concept hersteld"
+		"draftRestored": "Concept hersteld",
+		"removeFile": "{{name}} verwijderen"
 	},
 	"content": {
 		"scrollToTop": "Scroll naar boven",
@@ -117,9 +118,9 @@
 		"attachDocument": "Bestanden bijvoegen"
 	},
 	"menuFileExplorer": {
-		"name": "Bestandsverkenner",
-		"open": "Bestandsverkenner openen",
-		"close": "Bestandsverkenner sluiten"
+		"name": "Chatbestanden",
+		"open": "Chatbestanden tonen",
+		"close": "Chatbestanden verbergen"
 	},
 	"errors": {
 		"createRoom": "Er is een fout opgetreden bij het aanmaken van de kamer. Fout: {{message}}",

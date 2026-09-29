@@ -51,7 +51,13 @@ const options: RoomStore["options"] = {
 		{ id: "room", name: "Room files", type: "ROOM", fromRoom: true },
 	],
 };
-function Settings({ disabled = false }: { disabled?: boolean }) {
+function Settings({
+	disabled = false,
+	isAgentMode = false,
+}: {
+	disabled?: boolean;
+	isAgentMode?: boolean;
+}) {
 	const [value, setValue] = useState(options);
 	return (
 		<RoomOptionsForm
@@ -62,6 +68,7 @@ function Settings({ disabled = false }: { disabled?: boolean }) {
 				setValue((previous) => ({ ...previous, ...next }))
 			}
 			disabled={disabled}
+			isAgentMode={isAgentMode}
 		/>
 	);
 }
@@ -124,4 +131,15 @@ test("running chats keep selections visible and disable all edits", () => {
 		screen.getByRole("button", { name: "room:menuKnowledge.addKnowledge" }),
 	).toBeDisabled();
 	expect(screen.getByLabelText("room:form.instructionsLabel")).toBeDisabled();
+	for (const select of screen.getAllByRole("combobox"))
+		expect(select).toBeDisabled();
+});
+
+test("agent mode hides default chat tools and chat mode restores them", () => {
+	const { rerender } = render(<Settings />);
+	expect(screen.getByText("defaultTools.label")).toBeVisible();
+	rerender(<Settings isAgentMode />);
+	expect(screen.queryByText("defaultTools.label")).toBeNull();
+	rerender(<Settings />);
+	expect(screen.getByText("defaultTools.label")).toBeVisible();
 });

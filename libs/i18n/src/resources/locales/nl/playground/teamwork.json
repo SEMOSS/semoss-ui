@@ -1,0 +1,199 @@
+{
+	"nav": {
+		"label": "Verbindingen",
+		"tooltip": "Verbind Microsoft 365 en Google Workspace"
+	},
+	"common": {
+		"retry": "Opnieuw proberen",
+		"refresh": "Vernieuwen"
+	},
+	"menu": {
+		"connectors": "Connectors",
+		"showTools": "Chattools tonen",
+		"hideTools": "Chattools verbergen"
+	},
+	"chip": {
+		"connectors_one": "{{count}} connector aan",
+		"connectors_other": "{{count}} connectors aan"
+	},
+	"tools": {
+		"rootFolder": "Hoofdniveau van de map",
+		"moveSummary": "{{from}} naar {{to}}",
+		"titles": {
+			"folder_list": "Map weergeven",
+			"folder_read": "Bestand lezen",
+			"folder_search": "Map doorzoeken",
+			"folder_write": "Bestand schrijven",
+			"folder_edit": "Bestand bewerken",
+			"folder_create_directory": "Map maken",
+			"folder_move": "Verplaatsen of hernoemen",
+			"folder_delete": "Verwijderen"
+		}
+	},
+	"card": {
+		"status": {
+			"waiting": "Goedkeuring nodig",
+			"queued": "In wachtrij",
+			"running": "Bezig",
+			"done": "Voltooid",
+			"failed": "Mislukt",
+			"notRun": "Niet uitgevoerd"
+		},
+		"folderApproval": "De assistent wil een bestand in Chatbestanden wijzigen. Bekijk de wijziging en sta deze toe of weiger deze.",
+		"connectorApproval": "De assistent wil een actie uitvoeren met je account. Bekijk de details en sta de actie toe of weiger deze.",
+		"file": "Bestand",
+		"path": "Pad",
+		"rootFolder": "Hoofdniveau van de map",
+		"query": "Zoekterm",
+		"newContents": "Nieuwe inhoud",
+		"replace": "Vervangen",
+		"with": "Door",
+		"replaceAll": "Elke overeenkomst wordt vervangen.",
+		"from": "Van",
+		"to": "Naar",
+		"deleteRecursive": "Alles in deze map wordt ook verwijderd.",
+		"noArguments": "Geen details",
+		"result": "Resultaat",
+		"error": "Fout",
+		"allow": "Toestaan",
+		"allowing": "Bezig met toestaan...",
+		"deny": "Weigeren",
+		"denying": "Bezig met weigeren...",
+		"decisionError": "Kan dit niet voltooien. {{message}}",
+		"chatFiles": "Chatbestanden"
+	},
+	"providers": {
+		"MICROSOFT": {
+			"name": "Microsoft 365"
+		},
+		"GOOGLE": {
+			"name": "Google Workspace",
+			"scopesNote": "Voor Gmail, Calendar, Drive en Docs moet je beheerder die Google-machtigingen voor deze server toestaan."
+		},
+		"connected": "Verbonden",
+		"connectedAs": "Verbonden als {{name}}",
+		"connectedBadge": "Verbonden",
+		"notConnected": "Niet verbonden",
+		"unavailable": "Niet beschikbaar op deze server",
+		"connect": "Verbinden",
+		"reconnect": "Opnieuw verbinden",
+		"connecting": "Wachten op aanmelding...",
+		"connectSuccess": "{{name}} is verbonden",
+		"connectIncomplete": "{{name}} is niet verbonden. Het aanmeldvenster is gesloten voordat het aanmelden klaar was.",
+		"connectError": "Kan {{name}} niet verbinden. {{message}}",
+		"popupBlocked": "Je browser heeft het aanmeldvenster geblokkeerd. Sta pop-ups toe voor deze site en probeer het opnieuw.",
+		"loadErrorTitle": "Kan je verbonden accounts niet controleren"
+	},
+	"services": {
+		"toolCounts_one": "{{count}} tool, waarvan {{ask}} met goedkeuring vooraf",
+		"toolCounts_other": "{{count}} tools, waarvan {{ask}} met goedkeuring vooraf",
+		"outlook": {
+			"name": "Outlook-mail",
+			"description": "Leest en doorzoekt e-mail en maakt concepten. Vraagt eerst om goedkeuring bij verzenden, beantwoorden en verwijderen."
+		},
+		"outlook-calendar": {
+			"name": "Outlook-agenda",
+			"description": "Bekijkt je agenda en zoekt vrije tijd. Vraagt eerst om goedkeuring bij nieuwe uitnodigingen en wijzigingen."
+		},
+		"onedrive": {
+			"name": "OneDrive",
+			"description": "Zoekt, leest en downloadt je bestanden. Vraagt eerst om goedkeuring bij uploaden, delen en verwijderen."
+		},
+		"teams": {
+			"name": "Microsoft Teams",
+			"description": "Leest chats, kanalen en gedeelde bestanden. Vraagt eerst om goedkeuring voordat berichten worden verzonden."
+		},
+		"gmail": {
+			"name": "Gmail",
+			"description": "Leest en doorzoekt e-mail. Vraagt eerst om goedkeuring bij verzenden en verwijderen."
+		},
+		"google-calendar": {
+			"name": "Google Calendar",
+			"description": "Bekijkt je afspraken. Vraagt eerst om goedkeuring bij nieuwe afspraken en wijzigingen."
+		},
+		"google-drive": {
+			"name": "Google Drive",
+			"description": "Geeft je Drive-bestanden weer en zoekt ze op. Vraagt eerst om goedkeuring bij verwijderen."
+		},
+		"google-docs": {
+			"name": "Google Docs",
+			"description": "Leest je documenten. Vraagt eerst om goedkeuring bij maken, bewerken en verwijderen."
+		}
+	},
+	"connectors": {
+		"dialogTitle": "Connectors",
+		"dialogDescription": "Kies welke apps de assistent in je chats mag gebruiken. De assistent handelt met je account en vraagt altijd eerst om goedkeuring bij verzenden, verwijderen, delen en uitnodigen.",
+		"allChatsNote": "Een app in- of uitschakelen wijzigt hem in al je chats, nieuwe en bestaande.",
+		"manage": "Verbindingen beheren",
+		"cancel": "Annuleren",
+		"save": "Opslaan",
+		"saving": "Bezig met opslaan...",
+		"saved_one": "{{count}} connector staat aan in al je chats",
+		"saved_other": "{{count}} connectors staan aan in al je chats",
+		"saveError": "Kan de connectors niet bijwerken. {{message}}",
+		"adoptError": "De chat is gestart, maar de connectors konden niet worden ingeschakeld. {{message}}"
+	},
+	"connections": {
+		"title": "Verbindingen",
+		"description": "Verbind de accounts waarmee de assistent namens jou kan werken.",
+		"appsTitle": "Apps",
+		"appsDescription": "Door je aan te melden wordt het account gekoppeld aan je SEMOSS-sessie. De assistent ziet alleen wat dat account kan zien.",
+		"appsHint": "Een app hier in- of uitschakelen wijzigt hem in al je chats, nieuwe en bestaande. Het plusmenu van een chat opent dezelfde instellingen.",
+		"settingsError": "Je connectorinstellingen konden niet worden gelezen."
+	},
+	"sources": {
+		"saved": "{{name}} is opgeslagen in {{target}}",
+		"show": "Tonen",
+		"added": "{{name}} gaat mee met je volgende bericht",
+		"notAccepted": "{{name}} is opgeslagen in {{target}}, maar deze chat accepteert dat soort bestand niet in een bericht."
+	},
+	"context": {
+		"label": "Toegevoegd aan je volgende bericht",
+		"remove": "{{name}} uit je volgende bericht verwijderen"
+	},
+	"signIn": {
+		"notice": "{{account}} is niet aangemeld, dus {{services}} kunnen niet werken in deze chat.",
+		"action": "Aanmelden",
+		"dismiss": "De aanmeldmelding voor {{account}} verbergen",
+		"toolFailed": "Deze aanroep kon niet worden uitgevoerd omdat {{account}} niet is aangemeld. Meld je aan en vraag het daarna opnieuw.",
+		"toolAction": "Aanmelden bij {{account}}",
+		"notOffered": "Deze server biedt geen aanmelding met {{account}}, dus {{services}} kunnen niet werken in deze chat."
+	},
+	"scopes": {
+		"notice": "De {{account}}-aanmelding van deze server staat {{services}} niet toe, dus die kunnen niet werken in deze chat. Vraag je beheerder om de benodigde toestemming toe te voegen.",
+		"dismiss": "De toestemmingsmelding voor {{account}} verbergen",
+		"serviceBlocked": "Niet beschikbaar: de aanmelding van deze server bevat de benodigde toestemming niet. Vraag je beheerder om die toe te voegen."
+	},
+	"chatTools": {
+		"panelTitle": "Chattools",
+		"description": "Wat de assistent in je volgende bericht kan gebruiken.",
+		"toolboxTitle": "Toolbox van deze chat",
+		"toolboxDescription": "De connectors die voor deze chat aan staan, uit mcp/pixel_mcp.json in Chatbestanden.",
+		"toolboxEmpty": "Er staan geen connectors aan.",
+		"toolboxError": "De toolbox van deze chat kon niet worden gelezen.",
+		"otherTools": "Andere tools",
+		"addedTitle": "Toegevoegde toolboxes",
+		"addedDescription": "Elke toolbox brengt zijn eigen tools mee.",
+		"addedEmpty": "Geen toolboxes toegevoegd.",
+		"runsOnItsOwn": "Werkt zelfstandig",
+		"asksFirst": "Vraagt eerst",
+		"parameters": "Parameters",
+		"required": "Verplicht",
+		"noParameters": "Geen parameters.",
+		"defaultTitle": "Standaardtools",
+		"defaultDescription": "Aan elk bericht toegevoegd en in deze browser uitgevoerd, in Chatbestanden.",
+		"defaultEmpty": "Alle standaardtools zijn uitgeschakeld in de ruimte-instellingen.",
+		"openSettings": "Ruimte-instellingen",
+		"agentTitle": "Tools van de agent",
+		"agentDescription": "Agentruns hebben hun eigen tools voor bestanden, shell en code, en werken in Chatbestanden."
+	},
+	"defaultTools": {
+		"label": "Standaardtools",
+		"description": "Tools die deze browser aan elk bericht toevoegt en uitvoert in Chatbestanden. Automatisch voert een tool zelfstandig uit, Vragen wacht bij elke aanroep op je goedkeuring en Uitgeschakeld laat hem weg.",
+		"modes": {
+			"auto": "Automatisch",
+			"ask": "Vragen",
+			"disabled": "Uitgeschakeld"
+		}
+	}
+}

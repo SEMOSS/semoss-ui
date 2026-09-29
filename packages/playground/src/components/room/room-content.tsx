@@ -335,15 +335,13 @@ export const RoomContent = observer(({ room }: RoomContentProps) => {
 		}
 
 		return room.latestResponseMessage.parts.some((part) => {
-			if (
-				part.type !== "TOOL_CALL" ||
-				part.toolCall._meta?.SMSS_MCP_EXECUTION !== "auto"
-			) {
+			if (part.type !== "TOOL_CALL") {
 				return false;
 			}
 			const tool = room.getTool(part.toolCall.id);
 			return (
 				!!tool &&
+				tool.json._meta?.SMSS_MCP_EXECUTION === "auto" &&
 				(tool.status === "INITIAL" || tool.status === "LOADING")
 			);
 		});

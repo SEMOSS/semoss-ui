@@ -23,6 +23,7 @@ const RoomConfigurationPanel = observer(() => {
 				}
 				model={room.model}
 				options={room.options}
+				isAgentMode={room.mode === "agent"}
 				onModelChange={(model) => {
 					if (model) {
 						room.setModel(model);

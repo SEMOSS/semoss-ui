@@ -1,6 +1,8 @@
 import { act, fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { observable, runInAction } from "mobx";
 import React from "react";
+import { MemoryRouter } from "react-router";
 import { beforeEach, expect, test, vi } from "vitest";
 import { toast } from "@semoss/ui/next";
 import { ConversationWorkspaceActionsContext } from "@/features/conversation/conversation-workspace-actions.context";
@@ -72,6 +74,12 @@ vi.mock("@/hooks/use-graceful-errors", () => ({
 }));
 vi.mock("@/hooks/use-chat", () => ({
 	useChat: () => ({ chat: { models: { contextWindow: 0 } } }),
+}));
+vi.mock("@/hooks/use-sidebar-panel-active", () => ({
+	useSidebarPanelActive: () => false,
+}));
+vi.mock("@/features/teamwork/connectors/use-connections", () => ({
+	useConnections: () => ({ status: "loading" }),
 }));
 // Unchanged child components still use the package's hook barrel.
 vi.mock("@/hooks", async (importOriginal) => ({
@@ -226,6 +234,21 @@ const defaultProps = {
 	},
 	// Only these room fields are consumed by the composer in this test.
 	room: {
+		teamwork: {
+			isAgentMode: false,
+			isConnectorsDialogOpen: false,
+			connectors: [],
+			availableSources: [],
+			openConnectorsDialog: vi.fn(),
+			openSourcePanel: vi.fn(),
+			openToolsPanel: vi.fn(),
+			contextItems: [],
+			missingSignIns: [],
+			uncoveredConnectors: [],
+			unofferedProviders: [],
+			refreshConnectedProviders: async () => undefined,
+			refreshLoginConfig: async () => undefined,
+		},
 		roomId: "room",
 		history: [],
 		options: {},
@@ -241,6 +264,7 @@ function setEditorText(text: string) {
 
 beforeEach(() => {
 	openFilePicker.mockClear();
+	vi.mocked(defaultProps.room.teamwork.openConnectorsDialog).mockClear();
 	fakeEditorText = "";
 	triggerOnChange = null;
 	for (const flag of Object.keys(featureFlags)) delete featureFlags[flag];
@@ -537,4 +561,80 @@ test("new-chat Agent opens the picker without changing mode on cancel", async ()
 	expect(screen.getByRole("dialog", { name: "AGENT" })).toBeVisible();
 	await user.click(screen.getByRole("button", { name: "Close picker" }));
 	expect(onWorkspaceChange).not.toHaveBeenCalled();
+});
+
+test("connector attachments stay visible and removable without an uploaded file", () => {
+	const removeContextItem = vi.fn();
+	const room = {
+		...defaultProps.room,
+		teamwork: {
+			...defaultProps.room.teamwork,
+			contextItems: [
+				{
+					id: "email",
+					name: "Email summary.md",
+					path: "email.md",
+					service: "gmail",
+				},
+			],
+			removeContextItem,
+		},
+	} as unknown as RoomStore;
+	render(<RoomInput {...defaultProps} room={room} />);
+	expect(screen.getByText("Email summary.md")).toBeVisible();
+	fireEvent.click(screen.getByRole("button", { name: "context.remove" }));
+	expect(removeContextItem).toHaveBeenCalledWith("email");
+});
+
+test("the connector action runs after the composer menu releases focus", async () => {
+	const user = userEvent.setup();
+	const open = vi.mocked(defaultProps.room.teamwork.openConnectorsDialog);
+	open.mockImplementation(() => {
+		expect(screen.queryByRole("menu")).toBeNull();
+	});
+	render(<RoomInput {...defaultProps} MenuComponent={undefined} />);
+	await user.click(
+		screen.getByRole("button", { name: "input.openSettings" }),
+	);
+	await user.click(
+		screen.getByRole("menuitem", { name: "menu.connectors 0" }),
+	);
+	expect(open).toHaveBeenCalledTimes(1);
+});
+
+test("closing connectors returns keyboard focus to the composer menu button", async () => {
+	const user = userEvent.setup();
+	const teamwork = observable({
+		...defaultProps.room.teamwork,
+		openConnectorsDialog: () => {
+			runInAction(() => {
+				teamwork.isConnectorsDialogOpen = true;
+			});
+		},
+		closeConnectorsDialog: () => {
+			runInAction(() => {
+				teamwork.isConnectorsDialogOpen = false;
+			});
+		},
+	});
+	render(
+		<MemoryRouter>
+			<RoomInput
+				{...defaultProps}
+				room={{ ...defaultProps.room, teamwork } as RoomStore}
+				MenuComponent={undefined}
+			/>
+		</MemoryRouter>,
+	);
+	const trigger = screen.getByRole("button", { name: "input.openSettings" });
+	await user.click(trigger);
+	await user.click(
+		screen.getByRole("menuitem", { name: "menu.connectors 0" }),
+	);
+	expect(
+		screen.getByRole("dialog", { name: "connectors.dialogTitle" }),
+	).toBeVisible();
+	await user.keyboard("{Escape}");
+	expect(screen.queryByRole("dialog")).toBeNull();
+	expect(trigger).toHaveFocus();
 });

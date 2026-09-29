@@ -19,11 +19,12 @@ import {
 } from "@semoss/ui/next";
 import { MCPOverlay } from "@/components/mcp/mcp-overlay";
 import { RoomSelectedResources } from "@/features/conversation/room-selected-resources";
+import { TeamworkDefaultToolsField } from "@/features/teamwork/components/teamwork-default-tools-field";
 import { useRoot } from "@/hooks/use-root";
 import type { RoomStore } from "@/stores/room/room.store";
 import { splitMcpByType } from "@/utility/mcp-utils";
 
-interface RoomOptionsFormProps {
+export interface RoomOptionsFormProps {
 	model: RoomStore["model"];
 	onModelChange: (model: RoomStore["model"]) => void;
 	options: RoomStore["options"];
@@ -32,6 +33,8 @@ interface RoomOptionsFormProps {
 	/** Commit Agent mode only after a picker Save. */
 	onAgentModeSelected?: () => void;
 	disabled?: boolean;
+	/** Agent runs supply their own tools instead of the chat's default tools. */
+	isAgentMode?: boolean;
 }
 
 export const RoomOptionsForm = observer(
@@ -43,6 +46,7 @@ export const RoomOptionsForm = observer(
 		agentEditable = false,
 		onAgentModeSelected,
 		disabled = false,
+		isAgentMode = false,
 	}: RoomOptionsFormProps) => {
 		const { t } = useTranslation(["room", "common"]);
 		const { root } = useRoot();
@@ -177,6 +181,16 @@ export const RoomOptionsForm = observer(
 							}}
 						/>
 					))}
+					{!isAgentMode && (
+						<TeamworkDefaultToolsField
+							defaultTools={options.defaultTools}
+							disabled={disabled}
+							onChange={(defaultTools) => {
+								if (!disabled)
+									onOptionsChange({ defaultTools });
+							}}
+						/>
+					)}
 					{root.theme.featureFlags?.enableTemperature && (
 						<Field>
 							<FieldLabel htmlFor={`${id}-temperature`}>

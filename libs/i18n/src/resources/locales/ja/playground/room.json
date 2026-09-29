@@ -84,7 +84,8 @@
 		"stoppingTooltip": "停止中",
 		"recordUnavailable": "このブラウザーでは音声入力を利用できません",
 		"historyHint": "過去のプロンプト {{index}} / {{total}} · ↑/↓で移動 · Escで下書きを復元",
-		"draftRestored": "下書きを復元しました"
+		"draftRestored": "下書きを復元しました",
+		"removeFile": "{{name}} を削除"
 	},
 	"content": {
 		"scrollToTop": "一番上にスクロール",
@@ -117,9 +118,9 @@
 		"attachDocument": "ファイルを添付"
 	},
 	"menuFileExplorer": {
-		"name": "ファイルエクスプローラー",
-		"open": "ファイルエクスプローラーを開く",
-		"close": "ファイルエクスプローラーを閉じる"
+		"name": "チャットのファイル",
+		"open": "チャットのファイルを表示",
+		"close": "チャットのファイルを非表示"
 	},
 	"errors": {
 		"createRoom": "ルームの作成中にエラーが発生しました。エラー: {{message}}",

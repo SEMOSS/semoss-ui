@@ -1,5 +1,6 @@
 import { makeAutoObservable, observable, runInAction } from "mobx";
 import type { StoreApi } from "zustand";
+import { getI18n } from "@semoss/i18n";
 import {
 	FILE_PANEL_TYPES,
 	type FilePanelMode,
@@ -25,6 +26,7 @@ import {
 	type WorkbenchState,
 } from "@semoss/workbench";
 import { STREAMING_PLACEHOLDER_ID } from "@/constants";
+import { TeamworkStore } from "@/features/teamwork/teamwork.store";
 import type { AbstractMessageStore } from "@/stores/message/abstract-message.store";
 import {
 	reconnectAgentRun,
@@ -161,6 +163,14 @@ interface RoomStoreInterface {
 		 * Temperature of the model (0–1). Only used when enableTemperature is true.
 		 */
 		temperature?: number;
+
+		/**
+		 * How this chat runs each default tool: `auto`, `ask`, or `disabled`,
+		 * by tool name, for the tools set apart from their usual way. The
+		 * browser sends the tools that are not disabled with every chat
+		 * message; the backend only stores the setting.
+		 */
+		defaultTools?: Record<string, "auto" | "ask" | "disabled">;
 	};
 
 	/**
@@ -229,6 +239,11 @@ export class RoomStore {
 
 	/** Stable initialization reference shared by the store and every sidebar mount. */
 	sidebarSnapshot: WorkbenchSnapshot = ROOM_SIDEBAR_LAYOUT;
+	/**
+	 * The folder the assistant works in and the connectors switched on for
+	 * the room. Its own store with its own observability, like the dock.
+	 */
+	readonly teamwork: TeamworkStore;
 
 	constructor(options: {
 		theme: ThemeMap["playground"];
@@ -254,10 +269,13 @@ export class RoomStore {
 			.layout.actions.loadSnapshot(this.sidebarSnapshot);
 		this._syncSidebarFileMode();
 
+		this.teamwork = new TeamworkStore(this);
+
 		// make it observable -- the dock is a zustand store with its own
 		// subscription model, and deep-observing it would be nonsense
 		makeAutoObservable(this, {
 			workbench: false,
+			teamwork: false,
 			sidebarSnapshot: observable.ref,
 		});
 
@@ -595,8 +613,11 @@ export class RoomStore {
 	/** Actions */
 	/**
 	 * Initialize the room and load messages and options if they are there
+	 *
+	 * @param options - `isNew`: the room was just created, so it has no tool
+	 * file for its connectors to be read from.
 	 */
-	initialize = async () => {
+	initialize = async ({ isNew = false }: { isNew?: boolean } = {}) => {
 		try {
 			// get all of the messages, get all the options
 			const response = await this.runRoomPixel<
@@ -621,6 +642,10 @@ export class RoomStore {
 				this._store.insightId = response.insightId;
 			});
 			this._syncSidebarFileMode();
+
+			// the insight is bound to the room now, so the room's tool file can
+			// be read, unless the room was only just created
+			void this.teamwork.restore({ isNew: isNew });
 
 			// create the root
 			const root = new ResponseMessageStore(this, {
@@ -1095,7 +1120,9 @@ export class RoomStore {
 	 * convention did.
 	 *
 	 * @param initialPath - Directory to show. Defaults to wherever it was.
-	 * @param name - Tab label for a newly created instance.
+	 * @param name - Tab label for a newly created instance. Defaults to the
+	 * chat files label, which keeps the room's own files apart from a
+	 * teamwork work folder.
 	 * @return The revealed or created panel id.
 	 */
 	openSidebarFileExplorer = (
@@ -1105,7 +1132,8 @@ export class RoomStore {
 		const pid = this.openSidebarPanel(
 			FILE_PANEL_TYPES.FILE_EXPLORER,
 			{ mode: this.fileMode },
-			name,
+			// no translations outside the app, as in tests; the blueprint names it
+			name ?? getI18n()?.t("room:menuFileExplorer.name"),
 		);
 
 		if (initialPath) {
@@ -1121,6 +1149,22 @@ export class RoomStore {
 		}
 
 		return pid;
+	};
+
+	/**
+	 * Reload the chat files explorer, if it is open, after a file was saved
+	 * into the room's folder from outside it.
+	 */
+	refreshSidebarFileExplorer = (): void => {
+		const { actions, values } = this.workbench.getState().layout;
+		for (const record of actions.matchPanels(
+			FILE_PANEL_TYPES.FILE_EXPLORER,
+			{ mode: this.fileMode },
+		)) {
+			(
+				values[record.id] as FileExplorerApi | undefined
+			)?.commands.refresh();
+		}
 	};
 
 	/**
@@ -1157,6 +1201,28 @@ export class RoomStore {
 	 */
 	setIsLoading = (isLoading: boolean): void => {
 		this._store.isLoading = isLoading;
+	};
+
+	/**
+	 * Whether the room takes a file of this name as an attachment. The theme
+	 * may limit attachments to some extensions; without a limit, every file
+	 * is taken, and with one, a file needs an allowed extension.
+	 *
+	 * @param fileName - The file's name.
+	 * @return True when the file may be attached.
+	 */
+	acceptsAttachment = (fileName: string): boolean => {
+		const allowed = this._theme.allowedFileTypes;
+		if (!allowed || allowed.length === 0) {
+			return true;
+		}
+		const normalize = (value: string) =>
+			value.trim().toLowerCase().replace(/^\./, "");
+		const extension = normalize(fileName.split(".").pop() ?? "");
+		return (
+			extension !== "" &&
+			allowed.some((type) => normalize(type) === extension)
+		);
 	};
 
 	/**
@@ -1234,6 +1300,10 @@ export class RoomStore {
 			uploadPlaceholder.isThinking = true;
 		});
 
+		// files queued from the sidebar are already in the room's folder, so
+		// they go with the message as they are; a silent turn leaves them queued
+		const contextItems = visible ? this.teamwork.takeContextItems() : [];
+
 		// upload the files
 		let mediaInputs: {
 			fileName: string;
@@ -1262,44 +1332,39 @@ export class RoomStore {
 					throw uploadError;
 				}
 
-				const normalizeExt = (value: string) =>
-					value.trim().toLowerCase().replace(/^\./, "");
+				mediaInputs = uploaded.filter((f) =>
+					this.acceptsAttachment(f.fileName),
+				);
+			}
 
-				mediaInputs = uploaded.filter((f) => {
-					const allowed = this._theme.allowedFileTypes;
+			mediaInputs = [
+				...mediaInputs,
+				...contextItems.map((item) => ({
+					fileName: item.name,
+					fileLocation: item.path,
+				})),
+			];
 
-					// If not configured (or empty), allow all
-					if (!allowed || allowed.length === 0) return true;
-
-					const allowedSet = new Set(allowed.map(normalizeExt));
-
-					const rawExt = f.fileName.split(".").pop() ?? "";
-					const ext = normalizeExt(rawExt);
-
-					// If there's no extension, it's not allowed (when allow-list is configured)
-					if (!ext) return false;
-
-					return allowedSet.has(ext);
-				});
-
-				// Append media parts to the already-visible input message
-				runInAction(() => {
-					mediaInputs.forEach((file) => {
-						inputMessage.parts.push({
-							type: "MEDIA",
-							mediaInfo: {
-								base64Data: "",
-								fileFormat: "",
-								fileName: file.fileName,
-								fileLocation: file.fileLocation,
-								mediaInputType: "FILE",
-								mimeType: "",
-							},
-						});
+			// Append media parts to the already-visible input message
+			runInAction(() => {
+				mediaInputs.forEach((file) => {
+					inputMessage.parts.push({
+						type: "MEDIA",
+						mediaInfo: {
+							base64Data: "",
+							fileFormat: "",
+							fileName: file.fileName,
+							fileLocation: file.fileLocation,
+							mediaInputType: "FILE",
+							mimeType: "",
+						},
 					});
 				});
-			}
+			});
 		} catch (e) {
+			// the queued files were not sent, so they wait for the next try
+			this.teamwork.restoreContextItems(contextItems);
+
 			// remove the placeholder messages and stop the room spinner
 			runInAction(() => {
 				uploadPlaceholder.isThinking = false;
@@ -1321,7 +1386,14 @@ export class RoomStore {
 		}
 
 		// run the message, reusing the upload placeholder as the streaming response
-		await parentMessage.runMessage(inputMessage, uploadPlaceholder);
+		try {
+			await parentMessage.runMessage(inputMessage, uploadPlaceholder);
+		} catch (e) {
+			// the message is withdrawn and its text restored, so its queued files
+			// wait with it
+			this.teamwork.restoreContextItems(contextItems);
+			throw e;
+		}
 	};
 
 	/**

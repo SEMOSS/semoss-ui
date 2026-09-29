@@ -2,6 +2,7 @@ import { runInAction } from "mobx";
 import { observer } from "mobx-react-lite";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router";
+import type { ConnectorViewerService } from "@semoss/connectors";
 import { useTranslation } from "@semoss/i18n";
 import { InsightProvider, usePixel } from "@semoss/sdk/react";
 import {
@@ -22,6 +23,7 @@ import { clearAgentOptions } from "@/features/conversation/clear-agent-options";
 import { ConversationWorkspace } from "@/features/conversation/conversation-workspace";
 import { DropHighlight } from "@/features/conversation/drop-highlight";
 import { usePreparedRoom } from "@/features/conversation/use-prepared-room";
+import { NextMessageRoomProvider } from "@/features/teamwork/sources/next-message-room";
 import { DraftSettingsContext } from "@/features/workbench/draft-settings.context";
 import { useChat } from "@/hooks/use-chat";
 import { useRoot } from "@/hooks/use-root";
@@ -35,7 +37,13 @@ import type { MCPConfig, Prompt, Workspace } from "@/types";
  * @component
  */
 export const NewRoomPage = observer(() => {
-	const { t } = useTranslation(["room", "workspace", "common", "chat"]);
+	const { t } = useTranslation([
+		"room",
+		"workspace",
+		"common",
+		"chat",
+		"teamwork",
+	]);
 	const { root } = useRoot();
 	const { theme: colorMode } = useTheme();
 
@@ -122,6 +130,7 @@ export const NewRoomPage = observer(() => {
 		prepare,
 	} = usePreparedRoom(tempRoomStore, mode, submittedRef);
 	const workspaceRoom = preCreatedRoom ?? tempRoomStore;
+	const pendingSourceRef = useRef<ConnectorViewerService | null>(null);
 
 	// tempRoomStore is only created once (createRoom below builds the real,
 	// separate room), so RoomInput's agent-harness chip — keyed off
@@ -194,6 +203,10 @@ export const NewRoomPage = observer(() => {
 			data: [],
 		},
 	);
+	useEffect(() => {
+		void tempRoomStore.teamwork.loadUserConnectors();
+	}, [tempRoomStore]);
+
 	// On initial load, set the default options from the theme using the temporary RoomStore
 	useEffect(() => {
 		tempRoomStore.setOptions({
@@ -220,6 +233,19 @@ export const NewRoomPage = observer(() => {
 		};
 
 		return options;
+	};
+
+	/** Transfer queued context and copy connectors before the first message. */
+	const prepareRoom = async (room: RoomStore): Promise<void> => {
+		try {
+			await room.teamwork.adopt(tempRoomStore.teamwork);
+		} catch (error) {
+			toast.error(
+				t("teamwork:connectors.adoptError", {
+					message: error instanceof Error ? error.message : "",
+				}),
+			);
+		}
 	};
 
 	/** Shared error handling for every room-creation path below. */
@@ -269,6 +295,7 @@ export const NewRoomPage = observer(() => {
 				preCreatedRoom.setMode(mode === "agent" ? "agent" : "chat");
 				preCreatedRoom.setMetadata({ name: prompt.substring(0, 15) });
 				await preCreatedRoom.updateRoomOptions(options);
+				await prepareRoom(preCreatedRoom);
 				// Optimistically surface the room in the nav — GetPlaygroundRooms
 				// won't return it until its first message has data.
 				chat.addOptimisticRoom({
@@ -306,6 +333,7 @@ export const NewRoomPage = observer(() => {
 					options,
 					options.workspace?.workspace_id,
 					askOptions,
+					prepareRoom,
 				);
 				submittedRef.current = true;
 				navigate(`/room/${room.roomId}`);
@@ -344,6 +372,7 @@ export const NewRoomPage = observer(() => {
 				name,
 				options,
 				workspaceId,
+				prepareRoom,
 			);
 			submittedRef.current = true;
 			navigate(`/room/${room.roomId}`);
@@ -602,12 +631,23 @@ export const NewRoomPage = observer(() => {
 		);
 	};
 	const handleOpenFiles = async () => {
+		pendingSourceRef.current = null;
 		const room = await prepare();
 		if (!room) return;
 		room.openSidebarFileExplorer(
 			undefined,
 			t("room:menuFileExplorer.name"),
 		);
+	};
+	const handleOpenSource = async (
+		service: ConnectorViewerService,
+	): Promise<void> => {
+		if (isLoading) return;
+		pendingSourceRef.current = service;
+		// Sources and Files share preparation, layout transfer, and abandoned-draft cleanup.
+		const room = await prepare();
+		if (room) room.teamwork.openSourcePanel(service);
+		else handleOpenWorkArea();
 	};
 	const handleOpenActivity = preCreatedRoom
 		? () => {
@@ -678,6 +718,7 @@ export const NewRoomPage = observer(() => {
 										setMode("agent");
 								},
 								agentEditable: true,
+								isAgentMode: mode === "agent",
 								onOptionsChange: (opts) => {
 									if ("workspace" in opts)
 										handleAgentChange(
@@ -703,7 +744,11 @@ export const NewRoomPage = observer(() => {
 												variant="outline"
 												size="sm"
 												onClick={() =>
-													void handleOpenFiles()
+													void (pendingSourceRef.current
+														? handleOpenSource(
+																pendingSourceRef.current,
+															)
+														: handleOpenFiles())
 												}
 											>
 												{t("room:studio.retry")}
@@ -721,7 +766,11 @@ export const NewRoomPage = observer(() => {
 											}}
 											destroyOnUnmount={false}
 										>
-											{workbench}
+											<NextMessageRoomProvider
+												room={tempRoomStore}
+											>
+												{workbench}
+											</NextMessageRoomProvider>
 										</InsightProvider>
 									) : (
 										workbench
@@ -832,6 +881,10 @@ export const NewRoomPage = observer(() => {
 											: "send"
 									}
 									onOpenSettings={handleOpenSettings}
+									showChatTools={false}
+									onOpenSource={(service) =>
+										void handleOpenSource(service)
+									}
 								/>
 								{tempRoomStore.options.predefinedPrompts
 									.length > 0 ? (
