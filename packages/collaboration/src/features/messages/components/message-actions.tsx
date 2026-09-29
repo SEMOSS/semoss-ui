@@ -1,35 +1,23 @@
 import { Check, Copy } from "lucide-react";
-import { type ReactElement, useEffect, useId, useState } from "react";
-import {
-	Button,
-	Popover,
-	PopoverAnchor,
-	PopoverContent,
-	toast,
-} from "@semoss/ui/next";
+import { useEffect, useState } from "react";
+import { Button, toast } from "@semoss/ui/next";
 import { copyTextToClipboard } from "@semoss/utility";
-import { useMessageActionsPopover } from "../hooks/use-message-actions-popover";
 import type { ConversationMessage } from "../types/message";
 import {
 	type OwnedMessagePart,
 	ownedMessageParts,
 } from "../utils/message-presentation";
 
-/** Floating response actions anchored to the response itself, with no action row. */
+/** Persistent actions below a response, in the normal document and focus order. */
 export function MessageActions({
 	message,
 	parts = ownedMessageParts(message),
-	children,
 }: {
+	/** The response that owns these actions. */
 	message: ConversationMessage;
 	/** Includes visible continuations grouped into this response. */
 	parts?: OwnedMessagePart[];
-	/** The response article acts as the hover, focus, and touch target. */
-	children: ReactElement;
 }) {
-	const popover = useMessageActionsPopover();
-	const instructionsId = useId();
-	const contentId = useId();
 	const [hasCopied, setHasCopied] = useState(false);
 	const text =
 		message.delegationReply?.text ??
@@ -54,60 +42,34 @@ export function MessageActions({
 			await copyTextToClipboard(text);
 			setHasCopied(true);
 		} catch {
+			setHasCopied(false);
 			toast.error("Could not copy this response.");
 		}
 	}
 
 	const hasActions = message.role === "assistant" && !!text.trim();
+	if (!hasActions) return null;
+
 	return (
-		<Popover
-			open={hasActions && popover.isOpen}
-			onOpenChange={popover.setIsOpen}
-		>
-			<PopoverAnchor
-				asChild
-				{...(hasActions ? popover.anchorProps : {})}
-				aria-describedby={hasActions ? instructionsId : undefined}
-				aria-details={
-					hasActions && popover.isOpen ? contentId : undefined
-				}
+		<div className="flex items-center gap-2">
+			<Button
+				type="button"
+				variant="ghost"
+				size="sm"
+				className="pointer-coarse:min-h-11 min-w-24 justify-start text-muted-foreground text-xs"
+				onClick={handleCopy}
 			>
-				{children}
-			</PopoverAnchor>
-			<PopoverContent
-				{...popover.contentProps}
-				id={contentId}
-				align="end"
-				side="top"
-				className="w-36 p-1"
-				aria-label="Response actions"
-			>
-				<Button
-					ref={popover.actionRef}
-					type="button"
-					variant="ghost"
-					size="sm"
-					className="w-full justify-start text-xs"
-					onClick={handleCopy}
-				>
-					{hasCopied ? (
-						<Check aria-hidden="true" />
-					) : (
-						<Copy aria-hidden="true" />
-					)}
-					{hasCopied ? "Copied" : "Copy response"}
-				</Button>
-			</PopoverContent>
-			{hasActions && (
-				<span id={instructionsId} className="sr-only">
-					Response actions available. Press Enter to access them.
-				</span>
-			)}
-			{hasActions && (
-				<output className="sr-only">
-					{hasCopied ? "Response copied" : ""}
-				</output>
-			)}
-		</Popover>
+				{hasCopied ? (
+					<Check aria-hidden="true" />
+				) : (
+					<Copy aria-hidden="true" />
+				)}
+				{hasCopied ? "Copied" : "Copy"}
+				{!hasCopied && <span className="sr-only"> response</span>}
+			</Button>
+			<output className="sr-only">
+				{hasCopied ? "Response copied" : ""}
+			</output>
+		</div>
 	);
 }

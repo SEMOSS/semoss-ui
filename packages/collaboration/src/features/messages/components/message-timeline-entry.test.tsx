@@ -38,7 +38,7 @@ const sources: ConversationMessage[] = [
 	},
 ];
 
-it("shows one response timestamp and one actions popover for all visible answer parts", async () => {
+it("keeps one copy action inside the response after all visible answer parts", async () => {
 	const [entry] = presentMessages(sources);
 	const { container } = render(
 		<MessageTimelineEntry {...entry} agent={agent} />,
@@ -52,11 +52,19 @@ it("shows one response timestamp and one actions popover for all visible answer 
 	expect(
 		screen.queryByRole("button", { name: "Response actions" }),
 	).toBeNull();
-	expect(screen.queryByRole("button", { name: "Copy response" })).toBeNull();
+	const copy = screen.getByRole("button", { name: "Copy response" });
+	expect(copy).toBeVisible();
+	expect(screen.getByRole("article")).toContainElement(copy);
+	expect(screen.getByRole("article")).not.toHaveAttribute("tabindex");
+	expect(
+		screen.getByText("Second answer").compareDocumentPosition(copy) &
+			Node.DOCUMENT_POSITION_FOLLOWING,
+	).toBeTruthy();
 	fireEvent.pointerEnter(screen.getByRole("article"), {
 		pointerType: "mouse",
 	});
-	fireEvent.click(screen.getByRole("button", { name: "Copy response" }));
+	expect(screen.queryByRole("dialog")).toBeNull();
+	fireEvent.click(copy);
 	await waitFor(() =>
 		expect(copyTextToClipboard).toHaveBeenLastCalledWith(
 			"First answer\n\nSecond answer",

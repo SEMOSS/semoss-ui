@@ -523,7 +523,7 @@ describe("RoomThread", () => {
 		expect(layout.pending()).toBe(0);
 	});
 
-	it("groups assistant continuations into one actions popover while keeping delegation cards separate", () => {
+	it("groups assistant continuations into one copy action while keeping delegation cards separate", () => {
 		observeLayout();
 		const thread: ConversationMessage[] = [
 			message("one", "First", "assistant"),
@@ -552,9 +552,7 @@ describe("RoomThread", () => {
 			screen.queryByRole("button", { name: "Response actions" }),
 		).toBeNull();
 		expect(
-			screen
-				.getAllByRole("article")
-				.filter((article) => article.tabIndex === 0),
+			screen.getAllByRole("button", { name: "Copy response" }),
 		).toHaveLength(4);
 		expect(screen.getByText("Second").closest("article")).toBe(
 			screen.getByText("First").closest("article"),
