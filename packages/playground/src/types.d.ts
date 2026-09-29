@@ -239,6 +239,12 @@ export interface PixelMessageToolCallPart {
 			// reversible (short engine-id prefix plus truncation), so this is the
 			// only way back to the real name.
 			SMSS_ORIGINAL_TOOL_NAME?: string;
+			// The reactor a pixel tool runs, set by MakePixelMCP and
+			// MakeRoomPixelMCP. Identifies the connector tools in a room.
+			SMSS_FUNCTION_NAME?: string;
+			// Set on the work folder tools, which the browser runs itself
+			// rather than the backend. See features/teamwork.
+			SMSS_CLIENT_TOOL?: boolean;
 			SMSS_MCP_UI?: {
 				loadingMessage?: string;
 				displayLocation?: "inline" | "sidebar" | "hidden";

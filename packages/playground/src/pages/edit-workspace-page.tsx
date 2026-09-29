@@ -1,50 +1,30 @@
-import {
-	BlocksIcon,
-	BookOpenIcon,
-	HammerIcon,
-	Maximize2Icon,
-	SparklesIcon,
-	UsersRound,
-} from "lucide-react";
+import { UsersRound } from "lucide-react";
 import { observer } from "mobx-react-lite";
-import { useEffect, useId, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router";
 import { useTranslation } from "@semoss/i18n";
 import { usePixel } from "@semoss/sdk/react";
 import {
-	MCPSelector,
+	AgentForm,
+	type AgentFormValues,
+	type AgentWorkspace,
 	MembersTable,
-	PromptSelector,
-	SkillSelector,
+	toAgentFormValues,
+	toAgentPromptTitles,
 } from "@semoss/shared";
-import {
-	Button,
-	Field,
-	FieldLabel,
-	Input,
-	Spinner,
-	Textarea,
-	toast,
-} from "@semoss/ui/next";
-import { InstructionsModal } from "@/components";
+import { Button, Spinner, toast } from "@semoss/ui/next";
 import { OrchestratorRosterField } from "@/features/orchestrator/orchestrator-roster-field";
 import { useChat, useGlobalBreadcrumbs, useRoot } from "@/hooks";
-import type { MCPConfig, SkillConfig, Workspace } from "@/types";
-import {
-	mcpToPlatformUrl,
-	promptToPlatformUrl,
-	splitMcpByType,
-} from "@/utility/mcp-utils";
+import { getPlaygroundAgentLinks } from "@/utility/mcp-utils";
 
-const FORM_ID = "workspace-edit-form";
 const ORCHESTRATOR_WORKSPACE_ID = "orchestrator-agent";
 
 /**
  * Renders the EditWorkspacePage for editing existing agents.
  *
- * Mirrors the detail page layout (About → Knowledge → Toolboxes →
- * Prompts → Members) with editable controls and an editable
- * MembersTable in place of the read-only view.
+ * The shared agent form (the same one the platform's agent editor uses)
+ * followed by the members table, which saves per action rather than with
+ * the form.
  */
 export const EditWorkspacePage = observer(() => {
 	const { t } = useTranslation(["workspace", "common", "notifications"]);
@@ -52,23 +32,13 @@ export const EditWorkspacePage = observer(() => {
 	const navigate = useNavigate();
 	const { chat } = useChat();
 	const { root } = useRoot();
+	const featureFlags = root.theme.featureFlags;
 
-	const nameId = useId();
-	const descriptionId = useId();
-	const instructionId = useId();
-
-	const [name, setName] = useState("");
-	const [description, setDescription] = useState("");
-	const [instructions, setInstructions] = useState("");
-	const [knowledge, setKnowledge] = useState<MCPConfig[]>([]);
-	const [toolbox, setToolbox] = useState<MCPConfig[]>([]);
-	const [skills, setSkills] = useState<SkillConfig[]>([]);
-	const [prompts, setPrompts] = useState<string[]>([]);
+	const [formValues, setFormValues] = useState<AgentFormValues | null>(null);
 	const [subagents, setSubagents] = useState<{ workspaceId: string }[]>([]);
 	const [isSaving, setIsSaving] = useState(false);
-	const [instructionsModal, setInstructionsModal] = useState(false);
 
-	const getWorkspace = usePixel<Workspace>(
+	const getWorkspace = usePixel<AgentWorkspace>(
 		workspaceId ? `GetWorkspace(workspaceId=["${workspaceId}"]);` : "",
 		{
 			data: null,
@@ -100,69 +70,37 @@ export const EditWorkspacePage = observer(() => {
 		],
 	});
 
-	// Hydrate from workspace data
-	useEffect(() => {
-		if (getWorkspace.status !== "SUCCESS" || !getWorkspace.data) return;
-		const w = getWorkspace.data;
-		setName(w.name || "");
-		setDescription(w.description || "");
-		setInstructions((w.system_prompt || "").replace(/\\n/g, "\n"));
-		setPrompts(w.prompts ?? []);
-		const { knowledge: nextKnowledge, toolbox: nextToolbox } =
-			splitMcpByType(w.mcp ?? []);
-		setKnowledge(nextKnowledge);
-		setToolbox(nextToolbox);
-		setSkills(w.skills ?? []);
-		setSubagents(w.config_json?.subagents ?? []);
-	}, [getWorkspace.status, getWorkspace.data]);
+	// The values the form was seeded with; the form owns edits after that
+	const initialValues = useMemo(
+		() =>
+			getWorkspace.status === "SUCCESS" && getWorkspace.data
+				? toAgentFormValues(getWorkspace.data)
+				: null,
+		[getWorkspace.status, getWorkspace.data],
+	);
 
-	// Track whether form differs from the loaded workspace
+	useEffect(() => {
+		setFormValues(initialValues);
+		setSubagents(getWorkspace.data?.config_json?.subagents ?? []);
+	}, [initialValues, getWorkspace.data]);
+
 	const isDirty = useMemo(() => {
-		if (!getWorkspace.data) return false;
-		const w = getWorkspace.data;
+		if (!formValues || !initialValues) return false;
 		if (workspaceId === ORCHESTRATOR_WORKSPACE_ID) {
 			return (
 				subagents.map((entry) => entry.workspaceId).join("|") !==
-				(w.config_json?.subagents ?? [])
+				(getWorkspace.data?.config_json?.subagents ?? [])
 					.map((entry) => entry.workspaceId)
 					.join("|")
 			);
 		}
-		const initialInstructions = (w.system_prompt || "").replace(
-			/\\n/g,
-			"\n",
-		);
-		const { knowledge: initKnowledge, toolbox: initToolbox } =
-			splitMcpByType(w.mcp ?? []);
-		const idsKey = (arr: { id: string }[]) =>
-			arr
-				.map((a) => a.id)
-				.sort()
-				.join("|");
-		const stringIdsKey = (arr: string[]) => [...arr].sort().join("|");
-		return (
-			name !== (w.name || "") ||
-			description !== (w.description || "") ||
-			instructions !== initialInstructions ||
-			stringIdsKey(prompts) !== stringIdsKey(w.prompts ?? []) ||
-			idsKey(knowledge) !== idsKey(initKnowledge) ||
-			idsKey(toolbox) !== idsKey(initToolbox) ||
-			idsKey(skills) !== idsKey(w.skills ?? [])
-		);
-	}, [
-		name,
-		description,
-		instructions,
-		prompts,
-		knowledge,
-		toolbox,
-		skills,
-		subagents,
-		workspaceId,
-		getWorkspace.data,
-	]);
+		return JSON.stringify(formValues) !== JSON.stringify(initialValues);
+	}, [formValues, initialValues, subagents, workspaceId, getWorkspace.data]);
 
-	if (getWorkspace.status === "LOADING") {
+	if (
+		workspaceId &&
+		(getWorkspace.status === "INITIAL" || getWorkspace.status === "LOADING")
+	) {
 		return (
 			<div className="flex h-full w-full items-center justify-center">
 				<Spinner />
@@ -170,7 +108,7 @@ export const EditWorkspacePage = observer(() => {
 		);
 	}
 
-	if (getWorkspace.status === "ERROR" || !workspaceId) {
+	if (getWorkspace.status === "ERROR" || !workspaceId || !initialValues) {
 		return (
 			<div className="@container relative h-full w-full overflow-hidden">
 				<div className="mx-auto flex h-full w-full max-w-5xl flex-col gap-8 @3xl:px-12 @md:px-6 px-4 pt-8 pb-4">
@@ -189,28 +127,30 @@ export const EditWorkspacePage = observer(() => {
 		navigate(`/agent/${workspaceId}`);
 	};
 
-	const handleSubmit = async (e: React.FormEvent) => {
-		e.preventDefault();
-		if (isSaving) return;
+	const handleSave = async () => {
+		if (isSaving || !formValues) return;
 
 		setIsSaving(true);
 		try {
 			if (workspaceId === ORCHESTRATOR_WORKSPACE_ID) {
-				await chat.editOrchestratorRoster(workspaceId, name, subagents);
+				await chat.editOrchestratorRoster(
+					workspaceId,
+					formValues.name,
+					subagents,
+				);
 			} else {
-				await chat.editWorkspace(workspaceId, {
-					name,
-					description,
-					system_prompt: instructions,
-					prompts,
-					mcp: [...knowledge, ...toolbox],
-					skills,
-				});
+				const warning = await chat.editWorkspace(
+					workspaceId,
+					formValues,
+				);
+				if (warning) {
+					toast.warning(warning);
+				}
 			}
 			navigate(`/agent/${workspaceId}`);
 		} catch (err) {
 			toast.error(
-				err instanceof Error
+				err instanceof Error && err.message
 					? err.message
 					: t("notifications:workspace.saveError"),
 			);
@@ -243,225 +183,65 @@ export const EditWorkspacePage = observer(() => {
 							{t("common:buttons.cancel")}
 						</Button>
 						<Button
-							type="submit"
-							form={FORM_ID}
-							disabled={isSaving || !name.trim() || !isDirty}
+							type="button"
+							onClick={handleSave}
+							disabled={
+								isSaving || !formValues?.name.trim() || !isDirty
+							}
 							data-testid="workspace-edit-page--save-btn"
 						>
-							{t("workspace:actions.save")}
+							{isSaving ? (
+								<Spinner className="size-4" />
+							) : (
+								t("workspace:actions.save")
+							)}
 						</Button>
 					</div>
 				</div>
 
-				{/* Members section is OUTSIDE the form because member changes
-				    are saved per-action by MembersTable, not as part of the
-				    workspace save payload. */}
-				<form
-					id={FORM_ID}
-					onSubmit={handleSubmit}
-					className="flex flex-col gap-8"
-				>
-					{workspaceId === ORCHESTRATOR_WORKSPACE_ID ? (
-						<section className="flex flex-col gap-4">
-							<h2 className="font-semibold text-foreground text-lg">
-								{t("workspace:orchestrator.rosterTitle", {
-									defaultValue: "Specialist agents",
-								})}
-							</h2>
-							<p className="text-muted-foreground text-sm">
-								{t("workspace:orchestrator.rosterDescription", {
-									defaultValue:
-										"Choose the agents the Orchestrator may delegate work to.",
-								})}
-							</p>
-							<OrchestratorRosterField
-								workspaceId={workspaceId}
-								value={subagents}
-								disabled={isSaving}
-								onChange={setSubagents}
-							/>
-						</section>
-					) : (
-						<>
-							{/* About */}
-							<section className="flex flex-col gap-4">
-								<h2 className="font-semibold text-foreground text-lg">
-									{t("workspace:detail.about.title")}
-								</h2>
-								<Field>
-									<FieldLabel htmlFor={nameId}>
-										{t("workspace:form.nameLabel")}
-									</FieldLabel>
-									<Input
-										id={nameId}
-										placeholder={t(
-											"common:placeholders.enterName",
-										)}
-										value={name}
-										disabled={isSaving}
-										onChange={(e) =>
-											setName(e.target.value)
-										}
-										data-testid="workspace-edit-page--name"
-									/>
-								</Field>
-								<Field>
-									<FieldLabel htmlFor={descriptionId}>
-										{t("workspace:form.descriptionLabel")}
-									</FieldLabel>
-									<Input
-										id={descriptionId}
-										placeholder={t(
-											"common:placeholders.enterDescription",
-										)}
-										value={description}
-										disabled={isSaving}
-										onChange={(e) =>
-											setDescription(e.target.value)
-										}
-										data-testid="workspace-edit-page--description"
-									/>
-								</Field>
-								<Field>
-									<div className="flex items-center justify-between">
-										<FieldLabel htmlFor={instructionId}>
-											{t(
-												"workspace:form.instructionsLabel",
-											)}
-										</FieldLabel>
-										<Button
-											type="button"
-											variant="ghost"
-											size="sm"
-											onClick={() =>
-												setInstructionsModal(true)
-											}
-											disabled={isSaving}
-											data-testid="workspace-edit-page--expand-instructions-btn"
-										>
-											<Maximize2Icon />
-											{t("workspace:instructions.expand")}
-										</Button>
-									</div>
-									<Textarea
-										id={instructionId}
-										placeholder={t(
-											"common:placeholders.enterInstructions",
-										)}
-										value={instructions}
-										disabled={isSaving}
-										onChange={(e) =>
-											setInstructions(e.target.value)
-										}
-										rows={6}
-										className="max-h-96 overflow-y-auto"
-										data-testid="workspace-edit-page--instructions"
-									/>
-									<div className="text-muted-foreground text-xs">
-										{t("workspace:instructions.charCount", {
-											count: instructions.length,
-										})}
-									</div>
-								</Field>
-							</section>
+				{workspaceId === ORCHESTRATOR_WORKSPACE_ID ? (
+					<section className="flex flex-col gap-4">
+						<h2 className="font-semibold text-foreground text-lg">
+							{t("workspace:orchestrator.rosterTitle", {
+								defaultValue: "Specialist agents",
+							})}
+						</h2>
+						<p className="text-muted-foreground text-sm">
+							{t("workspace:orchestrator.rosterDescription", {
+								defaultValue:
+									"Choose the agents the Orchestrator may delegate work to.",
+							})}
+						</p>
+						<OrchestratorRosterField
+							workspaceId={workspaceId}
+							value={subagents}
+							disabled={isSaving}
+							onChange={setSubagents}
+						/>
+					</section>
+				) : (
+					<AgentForm
+						data={initialValues}
+						onChange={setFormValues}
+						disabled={isSaving}
+						promptTitles={toAgentPromptTitles(getWorkspace.data)}
+						knownHookKinds={
+							getWorkspace.data.known_hook_kinds ?? []
+						}
+						defaultTools={getWorkspace.data.default_tools ?? []}
+						workspaceId={workspaceId}
+						links={getPlaygroundAgentLinks(
+							featureFlags?.showPlatformLinks,
+						)}
+						showName
+						enableKnowledgeMCP={featureFlags?.enableKnowledgeMCP}
+						showSystemTools={featureFlags?.showSystemTools}
+						showSystemSkills={featureFlags?.showSystemSkills}
+						className="p-0"
+					/>
+				)}
 
-							{/* Knowledge */}
-							<section className="flex flex-col gap-3">
-								<h2 className="flex items-center gap-2 font-semibold text-foreground text-lg">
-									<BookOpenIcon className="size-5" />
-									{t("workspace:detail.tabs.knowledge")}
-								</h2>
-								<MCPSelector
-									type="KNOWLEDGE"
-									values={knowledge}
-									disabled={isSaving}
-									onChange={(next) => setKnowledge(next)}
-									className="h-112"
-									workspaceId={workspaceId}
-									enableKnowledgeMCP={
-										root.theme.featureFlags
-											?.enableKnowledgeMCP
-									}
-									getPlatformUrl={
-										root.theme.featureFlags
-											?.showPlatformLinks
-											? mcpToPlatformUrl
-											: undefined
-									}
-								/>
-							</section>
-
-							{/* Toolboxes */}
-							<section className="flex flex-col gap-3">
-								<h2 className="flex items-center gap-2 font-semibold text-foreground text-lg">
-									<HammerIcon className="size-5" />
-									{t("workspace:detail.tabs.toolbox")}
-								</h2>
-								<MCPSelector
-									type="TOOLBOX"
-									values={toolbox}
-									disabled={isSaving}
-									onChange={(next) => setToolbox(next)}
-									className="h-112"
-									workspaceId={workspaceId}
-									enableKnowledgeMCP={
-										root.theme.featureFlags
-											?.enableKnowledgeMCP
-									}
-									showSystemTools={
-										root.theme.featureFlags?.showSystemTools
-									}
-									getPlatformUrl={
-										root.theme.featureFlags
-											?.showPlatformLinks
-											? mcpToPlatformUrl
-											: undefined
-									}
-								/>
-							</section>
-
-							{/* Skills */}
-							<section className="flex flex-col gap-3">
-								<h2 className="flex items-center gap-2 font-semibold text-foreground text-lg">
-									<BlocksIcon className="size-5" />
-									{t("workspace:detail.tabs.skills")}
-								</h2>
-								<SkillSelector
-									values={skills}
-									disabled={isSaving}
-									onChange={(next) => setSkills(next)}
-									className="h-112"
-									showSystemSkills={
-										root.theme.featureFlags
-											?.showSystemSkills
-									}
-								/>
-							</section>
-
-							{/* Prompts */}
-							<section className="flex flex-col gap-3">
-								<h2 className="flex items-center gap-2 font-semibold text-foreground text-lg">
-									<SparklesIcon className="size-5" />
-									{t("workspace:detail.tabs.prompts")}
-								</h2>
-								<PromptSelector
-									values={prompts}
-									disabled={isSaving}
-									onChange={(next) => setPrompts(next)}
-									className="h-112"
-									getPlatformUrl={
-										root.theme.featureFlags
-											?.showPlatformLinks
-											? promptToPlatformUrl
-											: undefined
-									}
-								/>
-							</section>
-						</>
-					)}
-				</form>
-
-				{/* Members (outside the form — saved per-action) */}
+				{/* Members (saved per-action, not with the form) */}
 				{workspaceId !== ORCHESTRATOR_WORKSPACE_ID ? (
 					<section className="flex flex-col gap-3">
 						<h2 className="flex items-center gap-2 font-semibold text-foreground text-lg">
@@ -477,15 +257,6 @@ export const EditWorkspacePage = observer(() => {
 					</section>
 				) : null}
 			</div>
-
-			{/* Instructions modal (editable, live-bound to local state) */}
-			<InstructionsModal
-				open={instructionsModal}
-				onOpenChange={setInstructionsModal}
-				value={instructions}
-				onChange={setInstructions}
-				disabled={isSaving}
-			/>
 		</div>
 	);
 });

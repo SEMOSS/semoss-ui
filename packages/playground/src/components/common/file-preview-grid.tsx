@@ -13,7 +13,8 @@ import {
 	FileVideoIcon,
 	XIcon,
 } from "lucide-react";
-import { useEffect, useMemo } from "react";
+import { type ReactNode, useEffect, useMemo } from "react";
+import { useTranslation } from "@semoss/i18n";
 import {
 	Button,
 	ScrollArea,
@@ -65,29 +66,101 @@ const getIconForExt = (ext: string) => {
 	return FileIcon;
 };
 
-const getFileIcon = (file: File) => {
-	const ext = getFileExtension(file.name);
+const getFileIcon = (name: string) => {
+	const ext = getFileExtension(name);
 	const Icon = getIconForExt(ext);
 
 	return (
 		<div className="flex flex-col items-center gap-1">
-			<Icon className={ICON_CLASS} strokeWidth={1.25} />
-			<span className="max-w-16 truncate font-medium text-[10px] text-muted-foreground uppercase">
+			<Icon aria-hidden className={ICON_CLASS} strokeWidth={1.25} />
+			<span className="max-w-14 truncate font-medium text-muted-foreground text-xs uppercase">
 				{ext}
 			</span>
 		</div>
 	);
 };
 
+/** Props for {@link FilePreviewTile}. */
+export interface FilePreviewTileProps {
+	/** The file's name, which picks its icon and shows on hover. */
+	name: string;
+	/** A second line on hover, such as the file's size. */
+	detail?: string;
+	/** An image to show in place of the icon. */
+	previewUrl?: string;
+	/** A small mark in the corner, such as where the file came from. */
+	badge?: ReactNode;
+	/** The remove button's accessible name. */
+	removeLabel: string;
+	/** Takes the file off the next message. */
+	onRemove: () => void;
+}
+
+/**
+ * One file going with the next message: its picture or its type's icon, its
+ * name and detail on hover, and a button to take it off.
+ */
+export const FilePreviewTile = ({
+	name,
+	detail,
+	previewUrl,
+	badge,
+	removeLabel,
+	onRemove,
+}: FilePreviewTileProps) => (
+	<Tooltip>
+		<TooltipTrigger asChild>
+			<div className="group relative flex size-16 shrink-0 items-center justify-center overflow-hidden rounded-md border border-border bg-muted">
+				{previewUrl ? (
+					<img
+						src={previewUrl}
+						alt={name}
+						className="size-full object-cover"
+					/>
+				) : (
+					getFileIcon(name)
+				)}
+				{badge ? (
+					<span className="absolute bottom-1 left-1 flex rounded-sm bg-background p-0.5 text-muted-foreground">
+						{badge}
+					</span>
+				) : null}
+				<Button
+					variant="destructive"
+					size="icon"
+					className="absolute top-1 right-1 size-5 opacity-0 transition-opacity focus-visible:opacity-100 group-hover:opacity-100"
+					aria-label={removeLabel}
+					onClick={onRemove}
+				>
+					<XIcon aria-hidden className="size-3" />
+				</Button>
+			</div>
+		</TooltipTrigger>
+		<TooltipContent>
+			<p className="max-w-48 truncate text-xs">{name}</p>
+			{detail ? (
+				<p className="text-muted-foreground text-xs">{detail}</p>
+			) : null}
+		</TooltipContent>
+	</Tooltip>
+);
+
 interface FilePreviewGridProps {
 	files: File[];
 	onRemoveFile: (index: number) => void;
+	/**
+	 * Tiles to show before the files, in the same row, such as files already
+	 * in the chat that go with the next message.
+	 */
+	leading?: ReactNode;
 }
 
 export const FilePreviewGrid = ({
 	files,
 	onRemoveFile,
+	leading,
 }: FilePreviewGridProps) => {
+	const { t } = useTranslation("room");
 	const previewUrls = useMemo(() => {
 		const map = new Map<string, string>();
 		for (const f of files) {
@@ -104,50 +177,28 @@ export const FilePreviewGrid = ({
 		};
 	}, [previewUrls]);
 
-	if (files.length === 0) return null;
+	if (files.length === 0 && !leading) return null;
 
 	return (
 		<ScrollArea type="always">
 			{/* pb-3 is for scroll bar, it's up to the caller to make this look decent */}
 			<div className="flex w-max gap-2 pb-3">
+				{leading}
 				{files.map((file, idx) => {
 					const key = `${file.name}-${file.size}-${file.lastModified}-${idx}`;
-					const previewUrl = previewUrls.get(
-						`${file.name}-${file.size}-${file.lastModified}`,
-					);
-
 					return (
-						<Tooltip key={key}>
-							<TooltipTrigger asChild>
-								<div className="group relative flex size-16 shrink-0 items-center justify-center overflow-hidden rounded-md border border-border bg-muted">
-									{previewUrl ? (
-										<img
-											src={previewUrl}
-											alt={file.name}
-											className="size-full object-cover"
-										/>
-									) : (
-										getFileIcon(file)
-									)}
-									<Button
-										variant="destructive"
-										size="icon"
-										className="absolute top-1 right-1 size-5 opacity-0 transition-opacity group-hover:opacity-100"
-										onClick={() => onRemoveFile(idx)}
-									>
-										<XIcon className="size-3" />
-									</Button>
-								</div>
-							</TooltipTrigger>
-							<TooltipContent>
-								<p className="max-w-48 truncate text-xs">
-									{file.name}
-								</p>
-								<p className="text-muted-foreground text-xs">
-									{(file.size / 1024).toFixed(1)} KB
-								</p>
-							</TooltipContent>
-						</Tooltip>
+						<FilePreviewTile
+							key={key}
+							name={file.name}
+							detail={`${(file.size / 1024).toFixed(1)} KB`}
+							previewUrl={previewUrls.get(
+								`${file.name}-${file.size}-${file.lastModified}`,
+							)}
+							removeLabel={t("input.removeFile", {
+								name: file.name,
+							})}
+							onRemove={() => onRemoveFile(idx)}
+						/>
 					);
 				})}
 			</div>
