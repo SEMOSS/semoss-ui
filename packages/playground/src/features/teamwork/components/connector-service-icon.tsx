@@ -1,24 +1,5 @@
-import {
-	CalendarDaysIcon,
-	CloudIcon,
-	FileTextIcon,
-	HardDriveIcon,
-	type LucideIcon,
-	MailIcon,
-	MessagesSquareIcon,
-} from "lucide-react";
+import { ConnectorBrandIcon } from "@semoss/connectors";
 import type { ConnectorServiceId } from "../connectors/connector.catalog";
-
-const SERVICE_ICONS: Record<ConnectorServiceId, LucideIcon> = {
-	outlook: MailIcon,
-	"outlook-calendar": CalendarDaysIcon,
-	onedrive: CloudIcon,
-	teams: MessagesSquareIcon,
-	gmail: MailIcon,
-	"google-calendar": CalendarDaysIcon,
-	"google-drive": HardDriveIcon,
-	"google-docs": FileTextIcon,
-};
 
 /** Props for {@link ConnectorServiceIcon}. */
 export interface ConnectorServiceIconProps {
@@ -29,13 +10,12 @@ export interface ConnectorServiceIconProps {
 }
 
 /**
- * The icon for a connector service. Decorative: the service's name is always
- * written next to it.
+ * The logo of a connector service, in the app's own colors. Decorative: the
+ * service's name is always written next to it.
  */
 export const ConnectorServiceIcon = ({
 	serviceId,
 	className,
-}: ConnectorServiceIconProps) => {
-	const Icon = SERVICE_ICONS[serviceId];
-	return <Icon aria-hidden className={className} />;
-};
+}: ConnectorServiceIconProps) => (
+	<ConnectorBrandIcon brand={serviceId} className={className} />
+);

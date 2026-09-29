@@ -10,11 +10,13 @@ import type { UseConnectionsResult } from "./use-connections";
  * connected, closed before finishing, or blocked by the browser.
  *
  * @param connect - `connect` from {@link useConnections}.
+ * @param onConnected - Called once a provider is connected, after the toast.
  * @return The handler. It starts the popup synchronously, so call it from the
  * click itself.
  */
 export const useConnectProvider = (
 	connect: UseConnectionsResult["connect"],
+	onConnected?: (providerId: ConnectorProviderId) => void,
 ): ((providerId: ConnectorProviderId) => void) => {
 	const { t } = useTranslation("teamwork");
 
@@ -27,6 +29,7 @@ export const useConnectProvider = (
 						toast.success(
 							t("providers.connectSuccess", { name: name }),
 						);
+						onConnected?.(providerId);
 					} else {
 						toast.info(
 							t("providers.connectIncomplete", { name: name }),
@@ -48,6 +51,6 @@ export const useConnectProvider = (
 				},
 			);
 		},
-		[connect, t],
+		[connect, onConnected, t],
 	);
 };

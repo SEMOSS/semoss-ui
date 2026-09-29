@@ -59,5 +59,29 @@
 		"roomRenamedSuccess": "تمت إعادة تسمية الغرفة بنجاح",
 		"failedToRename": "فشل إعادة تسمية الغرفة",
 		"roomDeletedSuccess": "تم حذف الغرفة بنجاح"
+	},
+	"userMenu": {
+		"settings": "الإعدادات",
+		"language": "اللغة"
+	},
+	"settings": {
+		"title": "الإعدادات",
+		"description": "تفضيلاتك والتطبيقات التي يمكن للمساعد استخدامها.",
+		"sections": {
+			"general": "عام",
+			"connectors": "الموصلات"
+		},
+		"general": {
+			"appearance": "المظهر",
+			"theme": "السمة",
+			"themeDescription": "السمة الداكنة وسمة النظام في مرحلة تجريبية.",
+			"themes": {
+				"system": "النظام",
+				"light": "فاتح",
+				"dark": "داكن"
+			},
+			"language": "اللغة",
+			"languageDescription": "اللغة التي يُعرض بها التطبيق."
+		}
 	}
 }
