@@ -48,6 +48,9 @@ import { useChat, useGlobalBreadcrumbs, useRoot } from "@/hooks";
 import { ROOM_PANEL_TYPES, RoomStore } from "@/stores";
 import type { MCPConfig, Prompt, Workspace } from "@/types";
 
+const ORCHESTRATOR_WORKSPACE_ID = "orchestrator-agent";
+const ORCHESTRATOR_WORKSPACE_NAME = "Orchestrator Agent";
+
 /**
  * Highlights its border while a file is being dragged over it. Must render
  * inside a FileDragProvider.
@@ -172,6 +175,18 @@ export const NewRoomPage = observer(() => {
 		tempRoomStore.setMode(mode);
 	}, [mode, tempRoomStore]);
 	const [selectedWorkspaceId, setSelectedWorkspaceId] = useState<string>("");
+	const switchToAgentHarness = () => {
+		setMode("agent");
+		if (selectedWorkspaceId) return;
+		setSelectedWorkspaceId(ORCHESTRATOR_WORKSPACE_ID);
+		tempRoomStore.setOptions({
+			...tempRoomStore.options,
+			workspace: {
+				workspace_id: ORCHESTRATOR_WORKSPACE_ID,
+				name: ORCHESTRATOR_WORKSPACE_NAME,
+			},
+		});
+	};
 	// The agent whose default model has already been applied to the picker
 	const appliedAgentModelRef = useRef<string>("");
 	const [prompts, setPrompts] = useState<string[]>([]);
@@ -316,6 +331,7 @@ export const NewRoomPage = observer(() => {
 				chat: chat,
 				mode: mode,
 				options: tempRoomStore.options,
+				workspaceId: selectedWorkspaceId || undefined,
 			});
 			adoptEarlyRoom(room, (early) =>
 				early.teamwork.openSourcePanel(service),
@@ -423,6 +439,11 @@ export const NewRoomPage = observer(() => {
 				// only RoomInput drag/drop/paste attachments are passed here.
 				preCreatedRoom.setMode(mode === "agent" ? "agent" : "chat");
 				preCreatedRoom.setMetadata({ name: prompt.substring(0, 15) });
+				if (selectedWorkspaceId) {
+					await preCreatedRoom.runRoomPixel(
+						`SetRoomWorkspace(roomId=${JSON.stringify(preCreatedRoom.roomId)}, workspaceId=${JSON.stringify(selectedWorkspaceId)});`,
+					);
+				}
 				await preCreatedRoom.updateRoomOptions(options);
 				await prepareRoom(preCreatedRoom);
 				// Optimistically surface the room in the nav — GetPlaygroundRooms
@@ -460,7 +481,7 @@ export const NewRoomPage = observer(() => {
 					prompt,
 					files,
 					options,
-					getWorkspace.data?.workspace_id,
+					selectedWorkspaceId || undefined,
 					askOptions,
 					prepareRoom,
 				);
@@ -828,8 +849,8 @@ export const NewRoomPage = observer(() => {
 											? []
 											: ["agent-harness", "harness"]),
 									]}
-									onSwitchToAgentHarness={() =>
-										setMode("agent")
+									onSwitchToAgentHarness={
+										switchToAgentHarness
 									}
 									onExitAgentHarness={() => setMode("chat")}
 									// The new-room flow has no cancellable turn, so
@@ -877,9 +898,7 @@ export const NewRoomPage = observer(() => {
 														</DropdownMenuItem>
 														<DropdownMenuItem
 															onSelect={() => {
-																setMode(
-																	"agent",
-																);
+																switchToAgentHarness();
 																onOpenChange(
 																	false,
 																);

@@ -13,6 +13,8 @@ export interface CreateEarlyRoomOptions {
 	mode: "chat" | "agent" | "workspace";
 	/** The new chat's settings so far. */
 	options: RoomStore["options"];
+	/** Agent workspace selected before the first message, if any. */
+	workspaceId?: string;
 }
 
 /**
@@ -31,10 +33,14 @@ export const createEarlyRoom = async ({
 	chat,
 	mode,
 	options,
+	workspaceId,
 }: CreateEarlyRoomOptions): Promise<RoomStore> => {
 	const { errors, pixelReturn, insightId } = await runPixel<
 		[{ roomId: string }]
-	>("CreatePlaygroundRoom()", "new");
+	>(
+		`CreatePlaygroundRoom(${workspaceId ? `workspaceId=${JSON.stringify(workspaceId)}` : ""})`,
+		"new",
+	);
 	if (errors.length > 0) {
 		throw new Error(errors.join(""));
 	}
