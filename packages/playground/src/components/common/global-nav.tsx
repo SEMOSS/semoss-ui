@@ -9,6 +9,7 @@ import {
 	MessagesSquareIcon,
 	MoreVertical,
 	PencilIcon,
+	PlugIcon,
 	Search,
 	SquarePenIcon,
 	StarIcon,
@@ -81,6 +82,7 @@ try {
  */
 export const GlobalNav = observer(() => {
 	const { t } = useTranslation("sidebar");
+	const { t: tTeamwork } = useTranslation("teamwork");
 
 	const BUCKETS = [
 		t("buckets.favorites"),
@@ -519,6 +521,30 @@ export const GlobalNav = observer(() => {
 										</SidebarMenuButton>
 									</SidebarMenuItem>
 								)}
+
+								<SidebarMenuItem>
+									<SidebarMenuButton
+										asChild
+										isActive={
+											!!matchPath(
+												"/connections",
+												pathname,
+											)
+										}
+										tooltip={{
+											children: tTeamwork("nav.tooltip"),
+											hidden: false,
+										}}
+									>
+										<Link
+											to={"/connections"}
+											aria-label={tTeamwork("nav.label")}
+										>
+											<PlugIcon />
+											{tTeamwork("nav.label")}
+										</Link>
+									</SidebarMenuButton>
+								</SidebarMenuItem>
 
 								{!hideChatHistory && (
 									<SidebarMenuItem>

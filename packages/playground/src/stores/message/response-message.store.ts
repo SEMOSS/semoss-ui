@@ -11,6 +11,7 @@ import {
 	STREAMING_PLACEHOLDER_ID,
 	TURN_CANCELLATION_PROMPT,
 } from "@/constants";
+import { isFolderToolCall } from "@/features/teamwork/tools/teamwork-tool-kind";
 import type { ToolStore } from "@/stores";
 import type { InputPixelMessage, ResponsePixelMessage } from "@/types";
 import { getToolEngineId } from "@/utility/mcp-utils";
@@ -244,18 +245,21 @@ export class ResponseMessageStore extends AbstractMessageStore {
 			// must replay the exact same params, so both the live AskPlayground
 			// call and the cancel-commit call are built from this single string —
 			// the cancel call just adds responseParts + hiddenMessage.
+			// The work folder's tools ride along in paramValues: the backend
+			// merges them with the room's own and the browser runs them.
 			const turnParams = `engine=["${room.model.engine_id}"],
 roomId=["${room.roomId}"],
 command=["<encode>${text}</encode>"],
 ${context ? `context=["<encode>${context}</encode>"],` : `context=[],`}
 ${media.length ? `media=${JSON.stringify(media)},` : "media=[],"}
 ${this.id ? `parentMessageId=["${this.id}"],` : ""}
-paramValues=[${JSON.stringify(
-				room.theme.featureFlags?.enableTemperature &&
-					room.options.temperature !== undefined
+paramValues=[${JSON.stringify({
+				...(room.theme.featureFlags?.enableTemperature &&
+				room.options.temperature !== undefined
 					? { temperature: room.options.temperature }
-					: {},
-			)}]`;
+					: {}),
+				...room.teamwork.chatParamValues,
+			})}]`;
 
 			// wait for the pixel to run with streaming
 			await room.runRoomPixelStreaming<
@@ -640,6 +644,13 @@ paramValues=[${JSON.stringify(
 			tool.json._meta?.SMSS_MCP_EXECUTION !== MCP_EXECUTION_AUTO
 		) {
 			// skip
+			return;
+		}
+
+		// work folder tools run in the browser, against the room's folder, and
+		// record their own result
+		if (isFolderToolCall(tool.json)) {
+			await this.room.teamwork.runChatTool(tool);
 			return;
 		}
 
