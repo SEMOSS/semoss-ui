@@ -67,7 +67,8 @@
 		"errorProcessing": "Error al procesar el chat",
 		"stopLabel": "Detener la respuesta",
 		"stopTooltip": "Detener",
-		"stoppingTooltip": "Deteniendo"
+		"stoppingTooltip": "Deteniendo",
+		"removeFile": "Quitar {{name}}"
 	},
 	"content": {
 		"scrollToTop": "Ir al inicio",
@@ -100,9 +101,9 @@
 		"attachDocument": "Agregar Documentos"
 	},
 	"menuFileExplorer": {
-		"name": "Explorador de Archivos",
-		"open": "Abrir Explorador de Archivos",
-		"close": "Cerrar Explorador de Archivos"
+		"name": "Archivos del chat",
+		"open": "Mostrar archivos del chat",
+		"close": "Ocultar archivos del chat"
 	},
 	"errors": {
 		"createRoom": "Ocurrió un error al crear la sala. Error: {{message}}",

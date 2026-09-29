@@ -68,6 +68,7 @@ export const useFileExplorer = (
 ): FileExplorerApi => {
 	const {
 		mode,
+		adapter: customAdapter,
 		initialPath,
 		readOnly = false,
 		onItemSelect,
@@ -84,10 +85,14 @@ export const useFileExplorer = (
 	const { t } = useTranslation("common");
 	const instanceId = useId();
 
-	const adapter = useMemo(() => getFileExplorerAdapter(mode), [mode]);
+	const adapter = useMemo(
+		() => customAdapter ?? getFileExplorerAdapter(mode),
+		[customAdapter, mode],
+	);
 	const capabilities = useMemo(
 		() => ({
 			search: adapter.capabilities.search,
+			searchScope: adapter.capabilities.searchScope !== false,
 			download: adapter.capabilities.download,
 			mutate: adapter.capabilities.mutate && !readOnly,
 			upload: adapter.capabilities.upload && !readOnly,
@@ -173,7 +178,12 @@ export const useFileExplorer = (
 	);
 
 	const items = useMemo(() => {
-		const mapped = adapter.mapEntries(getFiles.data);
+		const mapped = adapter.mapEntries(
+			getFiles.data,
+			debouncedSearch && capabilities.search && searchType === "all"
+				? ""
+				: path,
+		);
 
 		// modes without server-side search still filter what they have, so a
 		// programmatic search term is never silently ignored
@@ -185,7 +195,14 @@ export const useFileExplorer = (
 		return mapped.filter((item) =>
 			item.name.toLowerCase().includes(needle),
 		);
-	}, [adapter, capabilities.search, debouncedSearch, getFiles.data]);
+	}, [
+		adapter,
+		capabilities.search,
+		debouncedSearch,
+		getFiles.data,
+		path,
+		searchType,
+	]);
 
 	/**
 	 * The last settled listing for the current directory.

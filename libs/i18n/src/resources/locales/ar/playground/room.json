@@ -71,7 +71,8 @@
 		"errorProcessing": "خطأ في معالجة الدردشة",
 		"stopLabel": "إيقاف الرد",
 		"stopTooltip": "إيقاف",
-		"stoppingTooltip": "جارٍ الإيقاف"
+		"stoppingTooltip": "جارٍ الإيقاف",
+		"removeFile": "إزالة {{name}}"
 	},
 	"content": {
 		"scrollToTop": "انتقل إلى الأعلى",
@@ -104,9 +105,9 @@
 		"attachDocument": "إضافة مستندات"
 	},
 	"menuFileExplorer": {
-		"name": "مستكشف الملفات",
-		"open": "فتح مستكشف الملفات",
-		"close": "إغلاق مستكشف الملفات"
+		"name": "ملفات الدردشة",
+		"open": "إظهار ملفات الدردشة",
+		"close": "إخفاء ملفات الدردشة"
 	},
 	"errors": {
 		"createRoom": "حدث خطأ أثناء إنشاء الغرفة. الخطأ: {{message}}",

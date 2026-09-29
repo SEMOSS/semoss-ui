@@ -48,6 +48,12 @@ export interface FileExplorerCapabilities {
 	download: boolean;
 	/** Independent of `mutate` — STORAGE supports delete but not the rest. */
 	delete: boolean;
+	/**
+	 * Whether a search can be kept to the current folder. Defaults to true; a
+	 * source whose search always covers everything sets false, which hides the
+	 * choice.
+	 */
+	searchScope?: boolean;
 }
 
 /**
@@ -92,8 +98,14 @@ export interface FileExplorerAdapter {
 		path: string,
 		files: File[],
 	): Promise<FileUploadResponse>;
-	/** Normalize a raw list response into `FileItem`s. */
-	mapEntries(raw: unknown): FileItem[];
+	/**
+	 * Normalize a raw list response into `FileItem`s.
+	 *
+	 * @param raw - The listing or search Pixel's output.
+	 * @param path - The directory that was listed, or the search's scope; a
+	 * source whose entries carry no path of their own builds theirs from it.
+	 */
+	mapEntries(raw: unknown, path: string): FileItem[];
 }
 
 /**
