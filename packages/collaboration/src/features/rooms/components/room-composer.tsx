@@ -583,13 +583,16 @@ export function RoomComposer({
 	return (
 		<div
 			data-slot="room-composer"
-			className={cn("shrink-0 bg-background", className)}
+			className={cn(
+				"@container/composer shrink-0 bg-background",
+				className,
+			)}
 		>
 			<fieldset
 				aria-label="Message composer drop area"
 				disabled={retainUntilSent && isSubmitting}
 				className={cn(
-					"relative m-0 min-w-0 overflow-hidden rounded-md border border-input bg-card p-0 transition-[color] focus-within:border-ring focus-within:ring-[3px] focus-within:ring-ring/50",
+					"relative m-0 min-w-0 overflow-hidden rounded-2xl border border-border bg-card p-0 shadow-sm transition-colors focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20 motion-reduce:transition-none",
 					isDragging && "border-primary ring-2 ring-primary/20",
 				)}
 				onDragEnter={(event) => {
@@ -677,7 +680,7 @@ export function RoomComposer({
 								<ContentEditable
 									aria-label={`Message ${agentName}`}
 									className={cn(
-										"min-h-20 px-3 py-3 text-base outline-none sm:px-4",
+										"min-h-20 px-4 py-3 text-base leading-relaxed outline-none",
 										inputClassName,
 									)}
 									onPaste={(event) => {
@@ -698,14 +701,14 @@ export function RoomComposer({
 								/>
 							}
 							placeholder={
-								<P className="pointer-events-none absolute top-3 left-3 text-muted-foreground sm:left-4">
+								<P className="pointer-events-none absolute top-3 right-4 left-4 text-muted-foreground leading-relaxed">
 									{placeholder ?? `Message ${agentName}…`}
 								</P>
 							}
 							ErrorBoundary={LexicalErrorBoundary}
 						/>
 					</div>
-					<div className="flex min-w-0 items-center gap-2 bg-card p-2">
+					<div className="flex min-w-0 flex-wrap items-center gap-2 bg-card p-2">
 						<Popover
 							open={isActionsOpen}
 							onOpenChange={setIsActionsOpen}
@@ -719,6 +722,7 @@ export function RoomComposer({
 											type="button"
 											variant="ghost"
 											size="icon"
+											className="pointer-coarse:size-11 rounded-full text-muted-foreground"
 											aria-label="Open composer actions"
 										>
 											<Plus aria-hidden="true" />
@@ -802,11 +806,11 @@ export function RoomComposer({
 						</Popover>
 						<div className="flex min-w-0 flex-1 items-center gap-2">
 							{children}
-							<div className="ms-auto flex min-w-0 flex-1 flex-wrap items-center justify-end gap-1 sm:flex-nowrap sm:gap-2">
+							<div className="ms-auto flex min-w-0 flex-1 flex-wrap @md/composer:flex-nowrap items-center justify-end gap-2">
 								{showModelSelector && (
 									<div className="min-w-24 flex-1 sm:max-w-52">
 										<EngineSelect
-											className="h-8 w-full gap-0.5 border-none bg-transparent px-2 py-1 text-xs shadow-none hover:bg-accent dark:hover:bg-accent/50"
+											className="h-8 pointer-coarse:min-h-11 w-full gap-1 rounded-full border-none bg-transparent px-3 py-1 text-xs shadow-none hover:bg-primary/5 dark:hover:bg-primary/10"
 											name={modelName}
 											value={modelId}
 											disabled={
@@ -837,6 +841,7 @@ export function RoomComposer({
 										type="button"
 										variant="ghost"
 										size="icon-sm"
+										className="pointer-coarse:size-11 rounded-full text-muted-foreground"
 										aria-label={
 											isListening
 												? "Stop dictation"
@@ -864,6 +869,7 @@ export function RoomComposer({
 												type="button"
 												variant="ghost"
 												size="icon-sm"
+												className="pointer-coarse:size-11 rounded-full text-muted-foreground"
 												aria-label="Revert optimized prompt"
 												disabled={
 													isEmail || isSubmitting
@@ -879,6 +885,7 @@ export function RoomComposer({
 												type="button"
 												variant="ghost"
 												size="icon-sm"
+												className="pointer-coarse:size-11 rounded-full text-muted-foreground"
 												aria-label="Optimize prompt"
 												disabled={
 													isEmail ||
@@ -912,11 +919,10 @@ export function RoomComposer({
 										? "sm"
 										: "icon-sm"
 								}
-								className={
-									isEmail
-										? "pointer-coarse:size-11 size-11 sm:size-8"
-										: undefined
-								}
+								className={cn(
+									"ms-auto pointer-coarse:min-h-11 pointer-coarse:min-w-11 rounded-full",
+									isEmail && "size-11 sm:size-8",
+								)}
 								aria-label={
 									isRunning
 										? isCancelling

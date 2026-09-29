@@ -63,7 +63,7 @@ export function CollaborationShell() {
 	}, [dispatch, user.name, user.email]);
 	return (
 		<CollaborationSidebarProvider>
-			<div className="-m-4 flex h-dvh flex-col overflow-hidden bg-muted text-foreground dark:bg-background">
+			<div className="-m-4 flex h-dvh flex-col overflow-hidden bg-background text-foreground">
 				<a
 					href={`#${mainId}`}
 					onClick={(event) => {
@@ -84,7 +84,10 @@ export function CollaborationShell() {
 					>
 						<SheetTrigger asChild>
 							<Button
-								className={cn(!isWorkThread && "lg:hidden")}
+								className={cn(
+									"pointer-coarse:size-11",
+									!isWorkThread && "lg:hidden",
+								)}
 								variant="ghost"
 								size="icon"
 								aria-label="Open navigation"
@@ -99,7 +102,7 @@ export function CollaborationShell() {
 									event.preventDefault();
 								isNavigating.current = false;
 							}}
-							className="w-full overflow-y-auto sm:max-w-xs"
+							className="w-full overflow-y-auto bg-sidebar sm:max-w-xs"
 						>
 							<SheetHeader>
 								<SheetTitle>Workspace navigation</SheetTitle>
@@ -130,7 +133,7 @@ export function CollaborationShell() {
 								to={`/${area.toLowerCase()}`}
 								className={({ isActive }) =>
 									cn(
-										"inline-flex items-center gap-1.5 rounded-md px-2 py-1.5 font-medium text-sm sm:px-3",
+										"inline-flex min-h-8 pointer-coarse:min-h-11 items-center gap-2 rounded-md px-3 py-2 font-medium text-sm focus-visible:outline-2 focus-visible:outline-ring",
 										isActive
 											? "bg-muted text-foreground before:size-1.5 before:rounded-full before:bg-primary"
 											: "text-muted-foreground hover:text-foreground",
@@ -143,11 +146,12 @@ export function CollaborationShell() {
 					</nav>
 					<CollaborationSearch />
 					<div className="ml-auto flex items-center gap-1">
-						<Tooltip>
+						<Tooltip disableHoverableContent={false}>
 							<TooltipTrigger asChild>
 								<Button
 									variant="ghost"
 									size="icon-sm"
+									className="pointer-coarse:size-11"
 									disabled={!canUndo}
 									aria-label="Undo last session change"
 									onClick={undo}
@@ -160,7 +164,7 @@ export function CollaborationShell() {
 						<Button
 							variant="ghost"
 							size="icon-sm"
-							className="rounded-full border border-border"
+							className="pointer-coarse:size-11 rounded-full border border-border"
 							aria-label={
 								theme === "dark"
 									? "Use light theme"
@@ -189,13 +193,13 @@ export function CollaborationShell() {
 				</header>
 				<div
 					className={cn(
-						"mx-auto flex min-h-0 w-full flex-1 px-2 lg:px-0",
+						"mx-auto flex min-h-0 w-full flex-1",
 						!isWorkThread && "max-w-350",
 					)}
 				>
 					<aside
 						className={cn(
-							"hidden w-60 shrink-0 overflow-y-auto",
+							"hidden w-60 shrink-0 overflow-y-auto border-border border-e bg-sidebar",
 							!isWorkThread && "lg:block",
 						)}
 						aria-label="Workspace navigation"
@@ -209,7 +213,7 @@ export function CollaborationShell() {
 						className="flex min-h-0 min-w-0 flex-1 flex-col outline-none"
 					>
 						{needsSetup && (
-							<div className="m-2 flex flex-wrap items-center justify-between gap-2 rounded-xl bg-card p-3 text-sm shadow-sm ring-1 ring-border/50 sm:mt-3 sm:mr-2 sm:ml-1">
+							<div className="m-4 flex flex-wrap items-center justify-between gap-4 rounded-xl border border-border bg-muted/30 p-4 text-base">
 								<span>
 									No mail yet. Set up with your mailbox to
 									fill Work and Brain.

@@ -38,7 +38,7 @@ export const MessagePart = memo(function MessagePart({
 					{role === "user" ? (
 						<P
 							dir="auto"
-							className="wrap-anywhere whitespace-pre-wrap text-sm leading-6"
+							className="wrap-anywhere whitespace-pre-wrap text-sm leading-6 group-data-[layout=bubbles]/message:text-base"
 						>
 							{part.text}
 						</P>

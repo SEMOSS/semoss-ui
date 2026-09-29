@@ -9,9 +9,11 @@ import {
 	$getRoot,
 	$isTextNode,
 	CLEAR_HISTORY_COMMAND,
+	HISTORY_PUSH_TAG,
 	type HTMLConfig,
 	type LexicalEditor,
 	ParagraphNode,
+	SKIP_DOM_SELECTION_TAG,
 	TextNode,
 } from "lexical";
 import { sanitizeDraftHtml } from "./email-html";
@@ -128,6 +130,7 @@ export function writeEmailEditor(
 	editor: LexicalEditor,
 	content: string,
 	format: "text" | "html",
+	preserveHistory = false,
 ): void {
 	editor.update(
 		() => {
@@ -154,9 +157,15 @@ export function writeEmailEditor(
 			if (root.getChildrenSize() === 0)
 				root.append($createParagraphNode());
 		},
-		{ tag: "email-reset", discrete: true },
+		{
+			tag: preserveHistory
+				? ["email-reset", HISTORY_PUSH_TAG, SKIP_DOM_SELECTION_TAG]
+				: "email-reset",
+			discrete: true,
+		},
 	);
-	editor.dispatchCommand(CLEAR_HISTORY_COMMAND, undefined);
+	if (!preserveHistory)
+		editor.dispatchCommand(CLEAR_HISTORY_COMMAND, undefined);
 }
 
 /** Export self-contained HTML, including table presentation outside the editor theme. */

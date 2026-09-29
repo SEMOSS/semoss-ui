@@ -2,6 +2,7 @@ import {
 	createContext,
 	type ReactNode,
 	useContext,
+	useEffect,
 	useMemo,
 	useState,
 } from "react";
@@ -23,6 +24,12 @@ export function WorkComposerStateProvider({
 	const owner = useMemo(
 		() => ({ insightId, sessions: new Map<string, WorkComposerSession>() }),
 		[insightId],
+	);
+	useEffect(
+		() => () => {
+			for (const session of owner.sessions.values()) session.dispose();
+		},
+		[owner],
 	);
 	return (
 		<WorkComposerStateContext.Provider value={owner.sessions}>

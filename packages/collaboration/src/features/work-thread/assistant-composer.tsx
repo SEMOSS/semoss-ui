@@ -1,4 +1,4 @@
-import { BookOpen, ChevronsDownUp, MailPlus, Wrench, X } from "lucide-react";
+import { BookOpen, ChevronsDownUp, Wrench, X } from "lucide-react";
 import {
 	useCallback,
 	useLayoutEffect,
@@ -7,8 +7,6 @@ import {
 } from "react";
 import type { Engine } from "@semoss/shared";
 import { Alert, AlertDescription, Button, Small } from "@semoss/ui/next";
-import { safeSourceUrl } from "@/features/connectors/api/microsoft";
-import { OutlookDraftLink } from "@/features/connectors/components/outlook-draft-link";
 import type { SourceAttachment } from "@/features/connectors/types";
 import { optimizePrompt } from "@/features/rooms/api/optimize-prompt";
 import { useRoomModel } from "@/features/rooms/api/use-room-model";
@@ -19,7 +17,6 @@ import type { ThreadSession } from "@/features/thread-assistant/thread-session";
 import { workInstructions } from "@/features/thread-assistant/thread-settings";
 import { ThreadSourceAttachments } from "@/features/thread-assistant/thread-source-attachments";
 import { ThreadComposerControls } from "./thread-composer-controls";
-import { useOutlookReplyDraft } from "./use-outlook-reply-draft";
 import { useWorkPanelActions } from "./use-work-panel-actions";
 import { WorkComposerSession } from "./work-composer-session";
 
@@ -33,7 +30,6 @@ export function AssistantComposer({
 	snapshot,
 	title,
 	sourceUid,
-	sourceUrl,
 	attachments,
 	context,
 	onSent,
@@ -64,17 +60,8 @@ export function AssistantComposer({
 		composer.getSnapshot,
 	);
 	const selected = memory.selected;
-	const mode =
-		sourceUid && memory.mode && memory.mode !== "assistant"
-			? "draft"
-			: "assistant";
 	const [downloading, setDownloading] = useState(false);
 	const preparing = memory.isSubmitting;
-	const draft = useOutlookReplyDraft(
-		session.insight.actions,
-		sourceUid,
-		composer.getReply(sourceUid),
-	);
 	const handleDraftChange = useCallback(
 		(value: ComposerDraft) => composer.setDraft(memory.revision, value),
 		[composer, memory.revision],
@@ -82,8 +69,6 @@ export function AssistantComposer({
 	useLayoutEffect(() => {
 		composer.reconcile(session, snapshot.composerResetKey);
 	}, [composer, session, snapshot.composerResetKey]);
-	const isDraft = mode !== "assistant";
-	const originalEmailUrl = safeSourceUrl(sourceUrl);
 	const { turn } = snapshot;
 	const busy =
 		preparing ||
@@ -145,7 +130,7 @@ export function AssistantComposer({
 					Opening conversation…
 				</output>
 			)}
-			{isOpen && !isDraft && snapshot.modelError && (
+			{isOpen && snapshot.modelError && (
 				<Alert variant="destructive">
 					<AlertDescription>
 						<span>{snapshot.modelError}</span>
@@ -206,47 +191,21 @@ export function AssistantComposer({
 			{snapshot.submissionNotice && (
 				<output>{snapshot.submissionNotice}</output>
 			)}
-			{draft.isSent && <output>Reply submitted to Outlook.</output>}
-			{draft.saved && (
-				<output className="flex flex-wrap items-center gap-2 text-muted-foreground text-sm">
-					Saved to Outlook drafts.
-					<OutlookDraftLink webLink={draft.saved.webLink} />
-				</output>
-			)}
-			{isDraft && draft.isUncertain && (
-				<Alert>
-					<AlertDescription>
-						{draft.uncertainAction === "send"
-							? "Check Outlook to confirm whether your reply was sent."
-							: "Check Outlook to confirm whether your draft was saved."}
-						<Button
-							variant="outline"
-							size="sm"
-							onClick={draft.allowRetry}
-						>
-							I checked Outlook — allow another{" "}
-							{draft.uncertainAction === "send" ? "send" : "save"}
-						</Button>
-					</AlertDescription>
-				</Alert>
-			)}
-			{isDraft && originalEmailUrl && (
-				<Button
-					asChild
-					variant="link"
-					size="sm"
-					className="h-auto min-h-8 max-w-full whitespace-normal text-left"
-				>
-					<a
-						href={originalEmailUrl}
-						target="_blank"
-						rel="noopener noreferrer"
-					>
-						Open original email in Outlook
-					</a>
-				</Button>
-			)}
 			<div hidden={!isOpen}>
+				{memory.sourceMessageId && (
+					<div className="mb-3 flex flex-wrap items-center justify-between gap-2 rounded-lg border border-primary/20 bg-primary/5 px-3 py-2">
+						<Small>About the selected email</Small>
+						<Button
+							type="button"
+							variant="ghost"
+							size="sm"
+							className="pointer-coarse:min-h-11 text-muted-foreground"
+							onClick={() => composer.setSourceMessage(undefined)}
+						>
+							Clear email selection
+						</Button>
+					</div>
+				)}
 				<RoomComposer
 					key={memory.revision}
 					initialDraft={memory.draft}
@@ -255,14 +214,14 @@ export function AssistantComposer({
 					focusRequest={focusRequest}
 					retainUntilSent
 					submissionError={memory.error}
-					emailMode={sourceUid ? mode : undefined}
 					className="bg-transparent"
 					header={
 						<ThreadComposerControls
-							mode={mode}
+							mode="assistant"
 							onModeChange={composer.setMode}
-							hasSourceEmail={Boolean(sourceUid)}
-							isModeLocked={busy || draft.isSaving}
+							hasSourceEmail={false}
+							isModeLocked={busy}
+							assistantOnly
 							modelId={snapshot.modelId}
 							modelName={modelName}
 							isModelLocked={
@@ -295,7 +254,7 @@ export function AssistantComposer({
 											: [...selected, id],
 									)
 								}
-								isDisabled={busy || draft.isSaving}
+								isDisabled={busy}
 								onPendingChange={setDownloading}
 								onDownload={(attachment) =>
 									session.downloadAttachment(
@@ -309,7 +268,7 @@ export function AssistantComposer({
 					attachmentSummary={
 						selected.length > 0 ? (
 							<section
-								className="flex flex-wrap gap-2 px-3 pt-3"
+								className="flex flex-wrap gap-2 px-4 pt-3"
 								aria-label="Selected source attachments"
 							>
 								{attachments
@@ -323,7 +282,7 @@ export function AssistantComposer({
 											size="sm"
 											variant="secondary"
 											className="max-w-full"
-											disabled={busy || draft.isSaving}
+											disabled={busy}
 											onClick={() =>
 												composer.setSelected(
 													selected.filter(
@@ -344,27 +303,15 @@ export function AssistantComposer({
 							</section>
 						) : null
 					}
-					agentName={
-						isDraft ? "Outlook reply" : agent?.name || "Assistant"
-					}
-					placeholder={
-						isDraft
-							? "Write a reply to the original sender…"
-							: "Ask Assistant…"
-					}
+					agentName={agent?.name || "Assistant"}
+					placeholder="Ask Assistant…"
 					showModelSelector={false}
 					hideSettingsAction
-					submitLabel={isDraft ? "Save draft" : "Ask Assistant"}
-					submitIcon={
-						isDraft ? <MailPlus aria-hidden="true" /> : undefined
-					}
-					requiresModel={!isDraft}
-					submitOnEnter={!isDraft}
+					submitLabel="Ask Assistant"
+					requiresModel
+					submitOnEnter
 					isSubmitting={
-						draft.isSaving ||
-						preparing ||
-						snapshot.isPreparing ||
-						turn.isSubmitting
+						preparing || snapshot.isPreparing || turn.isSubmitting
 					}
 					isRunning={turn.isRunning}
 					isCancelling={turn.isCancelling}
@@ -372,21 +319,19 @@ export function AssistantComposer({
 					modelName={modelName}
 					isModelSaving={false}
 					isModelLocked={busy || snapshot.hasUnconfirmedSubmission}
-					modelError={isDraft ? null : error}
+					modelError={error}
 					isSendDisabled={
-						isDraft
-							? draft.isUncertain || downloading
-							: snapshot.isCompacting ||
-								snapshot.isSavingSettings ||
-								Boolean(snapshot.settingsError) ||
-								snapshot.isLoadingModel ||
-								Boolean(snapshot.modelError) ||
-								downloading ||
-								!snapshot.isReady ||
-								Boolean(snapshot.error) ||
-								snapshot.hasUnconfirmedSubmission ||
-								snapshot.isCreationUncertain ||
-								turn.isRestoring
+						snapshot.isCompacting ||
+						snapshot.isSavingSettings ||
+						Boolean(snapshot.settingsError) ||
+						snapshot.isLoadingModel ||
+						Boolean(snapshot.modelError) ||
+						downloading ||
+						!snapshot.isReady ||
+						Boolean(snapshot.error) ||
+						snapshot.hasUnconfirmedSubmission ||
+						snapshot.isCreationUncertain ||
+						turn.isRestoring
 					}
 					roomInstructions={[
 						agent?.system_prompt,
@@ -415,43 +360,30 @@ export function AssistantComposer({
 						await composer.submit(async () => {
 							const release = session.retain();
 							try {
-								if (isDraft) {
-									if (
-										submission.files.length ||
-										selected.length
-									) {
-										throw new Error(
-											"Remove the queued attachments before saving a draft. You can add them in Outlook after saving.",
-										);
-									}
-									const body =
-										submission.html ?? submission.text;
-									const format = submission.html
-										? "html"
-										: "text";
-									await draft.save(body, format);
-								} else {
-									await session.send(
-										title,
-										context,
-										submission,
-										sourceUid,
-										attachments.filter(
-											(attachment) =>
-												attachment.isFile &&
-												selected.includes(
-													attachment.id,
-												),
-										),
-									);
-								}
+								await session.send(
+									title,
+									memory.sourceMessageId
+										? {
+												...context,
+												selectedSourceMessageId:
+													memory.sourceMessageId,
+											}
+										: context,
+									submission,
+									sourceUid,
+									attachments.filter(
+										(attachment) =>
+											attachment.isFile &&
+											selected.includes(attachment.id),
+									),
+								);
 							} finally {
 								release();
 							}
 						});
 					}}
 					onStop={session.cancel}
-					onSent={isDraft ? undefined : onSent}
+					onSent={onSent}
 				/>
 			</div>
 		</div>

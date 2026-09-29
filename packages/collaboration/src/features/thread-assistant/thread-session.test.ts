@@ -5,6 +5,7 @@ import {
 import { getRoomMessages } from "@/features/messages/api/get-room-messages";
 import * as runApi from "@/features/rooms/api/agent-run-api";
 import { uploadRoomFiles } from "@/features/rooms/api/upload-room-files";
+import { requireDraftReviewSupport } from "./api/draft-review-policy";
 import { compactThreadMessages } from "./api/thread-compaction";
 import {
 	bindThreadRoom,
@@ -16,6 +17,10 @@ import {
 	THREAD_ASSISTANT_INSTRUCTIONS,
 } from "./thread-context";
 import { ThreadSession } from "./thread-session";
+
+vi.mock("./api/draft-review-policy", () => ({
+	requireDraftReviewSupport: vi.fn(),
+}));
 
 vi.mock("./api/thread-compaction", () => ({ compactThreadMessages: vi.fn() }));
 
@@ -93,6 +98,7 @@ async function session(): Promise<ThreadSession> {
 }
 
 beforeEach(() => {
+	vi.mocked(requireDraftReviewSupport).mockResolvedValue(undefined);
 	vi.resetAllMocks();
 	vi.mocked(findThreadRoom).mockResolvedValue(null);
 	vi.mocked(bindThreadRoom).mockResolvedValue(undefined);
@@ -474,4 +480,17 @@ it("does not compact an active run or an unanswered message", async () => {
 	await instance.send("Thread", context, { text: "Continue", files: [] });
 	await expect(instance.compact()).rejects.toThrow("finish or reconnect");
 	expect(compactThreadMessages).not.toHaveBeenCalled();
+});
+
+it("does not start a run or upload attachments when the review policy is unavailable", async () => {
+	const instance = await session();
+	vi.mocked(requireDraftReviewSupport).mockRejectedValueOnce(
+		new Error("Server update required"),
+	);
+	await expect(
+		instance.send("Thread", context, { text: "Draft a reply", files: [] }),
+	).rejects.toThrow("Server update required");
+	expect(runApi.startAgentRun).not.toHaveBeenCalled();
+	expect(prepareThreadRoom).not.toHaveBeenCalled();
+	expect(uploadRoomFiles).not.toHaveBeenCalled();
 });

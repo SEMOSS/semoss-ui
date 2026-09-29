@@ -10,7 +10,7 @@ import {
 } from "@semoss/ui/next";
 import { useCollaborationSidebar } from "./use-collaboration-sidebar";
 
-/** Keeps the mockup's content and inspector together at every viewport. */
+/** Keeps the main content and contextual inspector together at every viewport. */
 export function CollaborationSurface({
 	children,
 	aside,
@@ -26,7 +26,7 @@ export function CollaborationSurface({
 	const sidebar = useCollaborationSidebar(Boolean(aside), asideTitle);
 	return (
 		<div className="flex min-h-0 min-w-0 flex-1">
-			<div className="my-2 flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-2xl bg-card shadow-sm ring-1 ring-border/50 sm:my-3 sm:mr-2 sm:ml-1">
+			<div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-background">
 				{aside && (
 					<div className="flex justify-end border-b px-4 py-2 xl:hidden">
 						<Sheet
@@ -51,7 +51,7 @@ export function CollaborationSurface({
 								<SheetHeader>
 									<SheetTitle>{asideTitle}</SheetTitle>
 								</SheetHeader>
-								<div className="space-y-3 px-4 pb-6">
+								<div className="space-y-6 px-4 pb-6">
 									{aside}
 								</div>
 							</SheetContent>
@@ -67,7 +67,7 @@ export function CollaborationSurface({
 					ref={sidebar.desktopRef}
 					tabIndex={-1}
 					aria-label={asideTitle}
-					className="hidden w-80 shrink-0 space-y-3 overflow-y-auto py-4 pr-4 pl-2 focus-visible:outline-2 focus-visible:outline-ring xl:block"
+					className="hidden w-80 shrink-0 space-y-6 overflow-y-auto border-border border-s bg-muted/20 p-6 focus-visible:outline-2 focus-visible:outline-ring xl:block"
 				>
 					{aside}
 				</aside>

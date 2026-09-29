@@ -1,15 +1,18 @@
 import { ArrowDown } from "lucide-react";
 import type { ReactNode } from "react";
-import { Button, P, Small } from "@semoss/ui/next";
+import { Button, cn, P } from "@semoss/ui/next";
 import { ThreadMessage } from "@/features/collaboration/components/thread-message";
 import type { Thread } from "@/features/collaboration/state/collaboration.types";
 import { useCollaborationSession } from "@/features/collaboration/state/collaboration-session.context";
+import type { EmailDraftEditor } from "@/features/connectors/api/email-draft-editor";
 import { MessageActivityPart } from "@/features/messages/components/message-activity-part";
 import { MessageTimelineEntry } from "@/features/messages/components/message-timeline-entry";
 import { useFollowScroll } from "@/features/messages/hooks/use-follow-scroll";
 import type { ThreadSession } from "@/features/thread-assistant/thread-session";
-import { WorkConversationGroup } from "./work-conversation-group";
-import { groupWorkTimeline, type WorkTimelineEntry } from "./work-timeline";
+import { WorkDraftCard } from "./work-draft-card";
+import { WorkEmailCard } from "./work-email-card";
+import { WorkMessageAvatar } from "./work-message-avatar";
+import type { WorkTimelineEntry } from "./work-timeline";
 
 export const WORK_ASSISTANT = {
 	name: "Assistant",
@@ -29,7 +32,11 @@ export function WorkConversation({
 	turn,
 	actions,
 	showAssistant = true,
+	onOpenEmail,
+	emailDrafts = [],
 }: {
+	onOpenEmail: (messageId: string, trigger: HTMLElement) => void;
+	emailDrafts?: EmailDraftEditor[];
 	actions?: ReactNode;
 	showAssistant?: boolean;
 	thread: Thread;
@@ -40,10 +47,6 @@ export function WorkConversation({
 }) {
 	const { state } = useCollaborationSession();
 	const scroll = useFollowScroll({ resetKey: thread.id, resumeSignal });
-	const groups = groupWorkTimeline(entries);
-	const lastAssistantGroup = groups
-		.filter((group) => group.kind === "assistant")
-		.at(-1);
 	const hasSources = entries.some((entry) => entry.kind === "source");
 	const hasConversation = entries.some((entry) => entry.kind === "assistant");
 	const hasAssistant =
@@ -75,107 +78,125 @@ export function WorkConversation({
 			<section
 				ref={scroll.viewportRef}
 				aria-label="Conversation messages"
-				className="min-h-0 flex-1 overflow-y-auto p-4 focus-visible:outline-2 focus-visible:outline-ring"
+				className="min-h-0 flex-1 overflow-y-auto focus-visible:outline-2 focus-visible:outline-ring"
 				// biome-ignore lint/a11y/noNoninteractiveTabindex: the transcript supports keyboard scrolling
 				tabIndex={0}
 			>
 				<div
 					ref={scroll.contentRef}
-					className="mx-auto flex w-full max-w-3xl flex-col gap-4"
+					className="mx-auto flex w-full max-w-3xl flex-col gap-6 @md/conversation:px-6 px-4 py-6"
 				>
 					{!hasSources && (
-						<WorkConversationGroup
-							kind="source"
-							channel={thread.channel}
-							count={0}
-						>
-							<P className="p-4 text-muted-foreground text-sm leading-6">
-								No source messages are available.
-							</P>
-						</WorkConversationGroup>
+						<P className="text-muted-foreground">
+							No source messages are available.
+						</P>
 					)}
-					{groups.map((group) => (
-						<WorkConversationGroup
-							key={`${thread.id}:${group.id}`}
-							anchorId={group.id}
-							kind={group.kind}
-							channel={thread.channel}
-							count={group.entries.length}
-						>
-							{group.entries.map((entry) => {
-								if (entry.kind === "assistant") {
-									return (
-										<div
-											key={entry.id}
-											data-scroll-anchor={entry.id}
-											className="min-w-0"
-										>
-											{entry.presentation.message.role ===
-												"user" && (
-												<Small className="mb-2 block text-end text-muted-foreground">
-													You
-												</Small>
-											)}
-											<MessageTimelineEntry
-												message={
+					{entries.map((entry) => {
+						if (entry.kind === "assistant")
+							return (
+								<div
+									key={entry.id}
+									data-scroll-anchor={entry.id}
+									className="min-w-0"
+								>
+									<MessageTimelineEntry
+										message={entry.presentation.message}
+										parts={entry.presentation.parts}
+										createdAt={entry.presentation.createdAt}
+										agent={WORK_ASSISTANT}
+										layout="bubbles"
+										leadingVisual={
+											<WorkMessageAvatar
+												isUser={
 													entry.presentation.message
+														.role === "user"
 												}
-												parts={entry.presentation.parts}
-												createdAt={
-													entry.presentation.createdAt
-												}
-												agent={WORK_ASSISTANT}
-												userMessageTone="muted"
 											/>
-										</div>
-									);
-								}
-								const person = state.people.find(
-									(candidate) =>
-										candidate.id === entry.message.fromId,
-								);
-								return (
-									<div
-										key={entry.id}
-										data-scroll-anchor={entry.id}
-										className="min-w-0 p-4"
-									>
-										<ThreadMessage
-											message={entry.message}
-											name={
-												person?.name ??
-												thread.participants.find(
-													(participant) =>
-														participant.personId ===
-														entry.message.fromId,
-												)?.name ??
-												"Participant"
-											}
-											initials={person?.initials}
-											channel={thread.channel}
-											isIncluded={allowedSources.has(
-												entry.message.id,
-											)}
-											isEmpty={!entry.message.text}
-										/>
-									</div>
-								);
-							})}
-							{group.id === lastAssistantGroup?.id && activity}
-						</WorkConversationGroup>
-					))}
+										}
+									/>
+									{emailDrafts
+										.filter(
+											(draft) =>
+												draft.seed.assistantMessageId &&
+												[
+													entry.presentation.message,
+													...entry.presentation.parts.map(
+														(part) => part.message,
+													),
+												].some(
+													(message) =>
+														(message.runId ||
+															message.id) ===
+														draft.seed
+															.assistantMessageId,
+												),
+										)
+										.map((draft) => (
+											<div
+												key={draft.seed.id}
+												className="mt-3"
+											>
+												<WorkDraftCard draft={draft} />
+											</div>
+										))}
+								</div>
+							);
+						const person = state.people.find(
+							(candidate) =>
+								candidate.id === entry.message.fromId,
+						);
+						const name =
+							person?.name ??
+							thread.participants.find(
+								(participant) =>
+									participant.personId ===
+									entry.message.fromId,
+							)?.name ??
+							"Participant";
+						return (
+							<div
+								key={entry.id}
+								data-scroll-anchor={entry.id}
+								className={cn(
+									"min-w-0",
+									thread.channel !== "email" &&
+										"rounded-xl border border-border bg-card @md/conversation:p-6 p-4",
+								)}
+							>
+								{thread.channel === "email" ? (
+									<WorkEmailCard
+										thread={thread}
+										message={entry.message}
+										name={name}
+										initials={person?.initials}
+										subject={thread.subject}
+										isIncluded={allowedSources.has(
+											entry.message.id,
+										)}
+										onOpen={onOpenEmail}
+									/>
+								) : (
+									<ThreadMessage
+										message={entry.message}
+										name={name}
+										initials={person?.initials}
+										channel={thread.channel}
+										isIncluded={allowedSources.has(
+											entry.message.id,
+										)}
+										isEmpty={!entry.message.text}
+										isFlat
+									/>
+								)}
+							</div>
+						);
+					})}
+					{hasAssistant && activity}
 					{actions}
 					{hasAssistant && !hasConversation && (
-						<WorkConversationGroup
-							kind="assistant"
-							channel={thread.channel}
-							count={0}
-						>
-							<P className="text-muted-foreground text-sm leading-6">
-								Ask a question or work on a reply.
-							</P>
-							{activity}
-						</WorkConversationGroup>
+						<P className="text-muted-foreground">
+							Ask a question or work on a reply.
+						</P>
 					)}
 				</div>
 			</section>

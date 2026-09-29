@@ -5,7 +5,7 @@ import {
 	screen,
 	waitFor,
 } from "@testing-library/react";
-import type { ComponentProps, ReactNode } from "react";
+import { type ComponentProps, type ReactNode, StrictMode } from "react";
 import { createMemoryRouter, MemoryRouter } from "react-router";
 import { RouterProvider } from "react-router/dom";
 import { TooltipProvider } from "@semoss/ui/next";
@@ -15,6 +15,10 @@ import { createInitialCollaborationState } from "@/features/collaboration/state/
 import { selectThreadContext } from "@/features/collaboration/state/collaboration.selectors";
 import type { ThreadSession } from "@/features/thread-assistant/thread-session";
 import type { AssistantComposer } from "./assistant-composer";
+import {
+	draftTransport,
+	pendingDraftInitialization,
+} from "./reply-draft.test-fixtures";
 import { UnifiedThread } from "./unified-thread";
 import type { WorkConversation } from "./work-conversation";
 import { workSnapshot } from "./work-thread.test-fixtures";
@@ -22,7 +26,17 @@ import { workSnapshot } from "./work-thread.test-fixtures";
 const dock = vi.hoisted(() => ({
 	isOpen: false,
 	tools: [],
-	store: {},
+	selectPanel: vi.fn(),
+	store: {
+		getState: () => ({
+			layout: {
+				actions: {
+					selectPanel: (...args: unknown[]) =>
+						dock.selectPanel(...args),
+				},
+			},
+		}),
+	},
 	snapshot: {},
 	closeWorkbench: vi.fn(),
 	openWorkbench: vi.fn(),
@@ -56,12 +70,7 @@ vi.mock("@semoss/workbench", () => ({
 	},
 }));
 vi.mock("./work-panel-menu", () => ({
-	WorkPanelMenu: () => (
-		<>
-			<button type="button">File</button>
-			<button type="button">View</button>
-		</>
-	),
+	WorkPanelMenu: () => <button type="button">Workspace</button>,
 }));
 vi.mock("./work-conversation", () => ({
 	WORK_ASSISTANT: {},
@@ -99,6 +108,7 @@ let width = 1440;
 beforeEach(() => {
 	dock.isOpen = false;
 	dock.closeWorkbench.mockClear();
+	dock.selectPanel.mockClear();
 	dock.openWorkbench.mockImplementation(() => {
 		dock.isOpen = true;
 	});
@@ -210,7 +220,7 @@ it("shrinks chat to 60/40, restores a resized split, and retains drafts and atta
 		"toolbar",
 	);
 	expect(screen.getByTestId("dock-top")).toContainElement(
-		screen.getByRole("button", { name: "File" }),
+		screen.getByRole("button", { name: "Workspace" }),
 	);
 	expect(screen.getByTestId("dock-top")).toContainElement(
 		screen.getByRole("button", { name: "Close workbench" }),
@@ -222,6 +232,59 @@ it("shrinks chat to 60/40, restores a resized split, and retains drafts and atta
 	);
 });
 
+it.each([
+	{ availableWidth: 360, expectedSizes: [0, 100] },
+	{ availableWidth: 1440, expectedSizes: [30, 70] },
+])(
+	"opens an email draft with the larger editing canvas at $availableWidth px",
+	async ({ availableWidth, expectedSizes }) => {
+		width = availableWidth;
+		const input = props();
+		const transport = draftTransport();
+		input.session = transport.session;
+		const source = input.workspace.messages[0];
+		const router = createMemoryRouter(
+			[
+				{
+					path: "*",
+					element: (
+						<TooltipProvider>
+							<UnifiedThread {...input} />
+						</TooltipProvider>
+					),
+				},
+			],
+			{
+				initialEntries: [
+					{
+						pathname: `/work/thread/${input.thread.id}`,
+						state: {
+							threadAction: {
+								id: "reply-from-feed",
+								threadId: input.thread.id,
+								action: "reply",
+								sourceMessageId: source.id,
+							},
+						},
+					},
+				],
+			},
+		);
+		const { container } = render(<RouterProvider router={router} />);
+		await waitFor(() =>
+			expect(dock.selectPanel).toHaveBeenCalledWith(
+				"work-email-draft",
+				{ draftId: `reply:${source.id}` },
+				{ name: "Reply draft" },
+			),
+		);
+		await frame();
+		expect(dock.openWorkbench).toHaveBeenCalled();
+		expect(sizes(container)).toEqual(expectedSizes);
+		expect(transport.send).not.toHaveBeenCalled();
+	},
+);
+
 it.each([360, 767, 768, 900, 1440])(
 	"uses available content width %i to choose phone or split view",
 	async (availableWidth) => {
@@ -229,6 +292,10 @@ it.each([360, 767, 768, 900, 1440])(
 		dock.isOpen = true;
 		const { container } = render(view(props()));
 		await frame();
+		if (availableWidth < 768)
+			expect(screen.getByText("Thread title")).not.toBeVisible();
+		else expect(screen.getByText("Thread title")).toBeVisible();
+		expect(screen.getByRole("button", { name: "Workspace" })).toBeVisible();
 		expect(sizes(container)).toEqual(
 			availableWidth < 768 ? [0, 100] : [60, 40],
 		);
@@ -237,7 +304,7 @@ it.each([360, 767, 768, 900, 1440])(
 		).toHaveValue("");
 		if (availableWidth < 768)
 			expect(
-				screen.getByRole("button", { name: "Close workbench" }),
+				screen.getByRole("button", { name: "Back to conversation" }),
 			).toHaveFocus();
 		else
 			expect(
@@ -246,37 +313,218 @@ it.each([360, 767, 768, 900, 1440])(
 	},
 );
 
-it.each(["Ask Assistant", "Draft"])(
-	"reveals the selected destination through %s without a request",
-	(action) => {
-		const input = { ...props(), sourceUid: "email-1" };
+it.each([360, 1440])(
+	"generates and revises the selected reply once at %i px",
+	async (availableWidth) => {
+		width = availableWidth;
+		const input = props();
+		const transport = draftTransport();
+		const source = input.workspace.messages[0];
+		input.sourceUid = source.id;
+		input.context = {
+			...input.context,
+			emptyIds: [...input.context.emptyIds, source.id],
+		};
+		input.session = transport.session;
 		render(view(input));
-		expect(screen.queryByRole("textbox")).not.toBeInTheDocument();
-		expect(
-			screen.queryByRole("region", { name: "Assistant conversation" }),
-		).not.toBeInTheDocument();
-		expect(screen.getByRole("button", { name: "Draft" })).toBeVisible();
-		fireEvent.click(screen.getByRole("button", { name: action }));
-		expect(screen.getByRole("textbox", { name: "Draft" })).toBeVisible();
-		expect(
-			screen.getByText(
-				action === "Ask Assistant" ? "assistant" : "draft",
+		fireEvent.click(
+			screen.getByRole("button", { name: "Draft with assistant" }),
+		);
+		await waitFor(() =>
+			expect(dock.selectPanel).toHaveBeenCalledWith(
+				"work-email-draft",
+				{ draftId: `reply:${source.id}` },
+				{ name: "Reply draft" },
 			),
-		).toBeVisible();
-		expect(
-			screen.queryByRole("group", { name: "Thread quick actions" }),
-		).not.toBeInTheDocument();
-		expect(input.session.reconnect).not.toHaveBeenCalled();
+		);
+		await waitFor(() => expect(transport.send).toHaveBeenCalledOnce());
+		expect(transport.send.mock.calls[0][1]).toMatchObject({
+			threadId: input.thread.id,
+			selectedSourceMessageId: source.id,
+			emailDraft: { draftId: `reply:${source.id}`, body: "" },
+		});
+		expect(transport.send.mock.calls[0][2].text).toContain(
+			"Draft a reply to this email",
+		);
+		// The conversation is concealed in the mobile layout; repeat the same action programmatically.
+		fireEvent.click(
+			screen.getByRole("button", {
+				name: "Draft with assistant",
+				hidden: true,
+			}),
+		);
+		expect(transport.send).toHaveBeenCalledOnce();
+		await act(async () =>
+			transport.complete(
+				`\`\`\`semoss-email-draft\n${JSON.stringify({ sourceMessageId: source.id, body: "Friday works." })}\n\`\`\``,
+			),
+		);
+		expect(screen.getByText("Friday works.")).toBeInTheDocument();
+		fireEvent.click(
+			screen.getByRole("button", {
+				name: "Draft with assistant",
+				hidden: true,
+			}),
+		);
+		await waitFor(() => expect(transport.send).toHaveBeenCalledTimes(2));
+		expect(transport.send.mock.calls[1][1].emailDraft?.body).toBe(
+			"Friday works.",
+		);
+		expect(transport.send.mock.calls[1][2].text).toContain(
+			"Revise the current email reply",
+		);
+		await act(async () =>
+			transport.complete(
+				`\`\`\`semoss-email-draft\n${JSON.stringify({ sourceMessageId: source.id, body: "Friday is confirmed." })}\n\`\`\``,
+			),
+		);
+		expect(screen.getByText("Friday is confirmed.")).toBeInTheDocument();
+		// Reopening the local draft card never sends a message.
+		fireEvent.click(screen.getByText("Friday is confirmed."));
+		expect(transport.send).toHaveBeenCalledTimes(2);
 	},
 );
+
+it("consumes a menu draft request once while initialization is pending", async () => {
+	const input = props();
+	const transport = draftTransport();
+	const ready = pendingDraftInitialization();
+	transport.initialize.mockReturnValueOnce(ready.promise);
+	input.session = transport.session;
+	input.snapshot = { ...input.snapshot, isLoading: true, isReady: false };
+	const source = input.workspace.messages.at(-1);
+	if (!source) throw new Error("Missing source fixture");
+	input.context = {
+		...input.context,
+		emptyIds: [...input.context.emptyIds, source.id],
+	};
+	const request = {
+		id: "draft-from-email-menu",
+		threadId: input.thread.id,
+		action: "draft",
+		sourceMessageId: source.id,
+	};
+	const router = createMemoryRouter(
+		[
+			{
+				path: "*",
+				element: (
+					<TooltipProvider>
+						<UnifiedThread {...input} />
+					</TooltipProvider>
+				),
+			},
+		],
+		{
+			initialEntries: [
+				{
+					pathname: `/work/thread/${input.thread.id}`,
+					state: { threadAction: request },
+				},
+			],
+		},
+	);
+	render(
+		<StrictMode>
+			<RouterProvider router={router} />
+		</StrictMode>,
+	);
+	await waitFor(() =>
+		expect(dock.selectPanel).toHaveBeenCalledWith(
+			"work-email-draft",
+			{ draftId: `reply:${source.id}` },
+			{ name: "Reply draft" },
+		),
+	);
+	expect(transport.send).not.toHaveBeenCalled();
+	expect(router.state.location.state).toEqual({});
+	await act(async () => ready.resolve());
+	await waitFor(() => expect(transport.send).toHaveBeenCalledOnce());
+	expect(transport.send.mock.calls[0][1].selectedSourceMessageId).toBe(
+		source.id,
+	);
+	await act(async () =>
+		transport.complete(
+			`\`\`\`semoss-email-draft\n${JSON.stringify({ sourceMessageId: source.id, body: "Reply to selected email." })}\n\`\`\``,
+		),
+	);
+	await act(() =>
+		router.navigate(`/work/thread/${input.thread.id}`, {
+			state: { threadAction: request },
+		}),
+	);
+	expect(transport.send).toHaveBeenCalledOnce();
+});
+
+it("opens the assistant independently while keeping reply actions available", () => {
+	render(view({ ...props(), sourceUid: "email-1" }));
+	fireEvent.click(screen.getByRole("button", { name: "Ask Assistant" }));
+	expect(screen.getByRole("textbox", { name: "Draft" })).toBeVisible();
+	expect(
+		screen.getByRole("button", { name: "Draft with assistant" }),
+	).toBeVisible();
+	expect(dock.openWorkbench).not.toHaveBeenCalled();
+});
 
 it("offers only Assistant without an Outlook source", () => {
 	render(view(props()));
 	expect(screen.getByRole("button", { name: "Ask Assistant" })).toBeVisible();
 	expect(
-		screen.queryByRole("button", { name: "Draft" }),
+		screen.queryByRole("button", { name: "Draft with assistant" }),
 	).not.toBeInTheDocument();
 });
+
+it("introduces a confirmed fresh thread until the assistant is explicitly opened", () => {
+	const input = props();
+	input.snapshot.isLoading = true;
+	const { rerender } = render(view(input));
+	expect(
+		screen.queryByRole("heading", { name: "Move this thread forward" }),
+	).toBeNull();
+	input.snapshot = { ...input.snapshot, isLoading: false };
+	rerender(view(input));
+	expect(
+		screen.getByRole("heading", { name: "Move this thread forward" }),
+	).toBeVisible();
+	expect(screen.queryByRole("textbox")).toBeNull();
+	fireEvent.click(screen.getByRole("button", { name: "Ask Assistant" }));
+	expect(
+		screen.queryByRole("heading", { name: "Move this thread forward" }),
+	).toBeNull();
+	expect(screen.getByRole("textbox", { name: "Draft" })).toBeVisible();
+});
+
+it.each([
+	"loading",
+	"restoring",
+	"failed",
+	"running",
+	"submitting",
+	"restored",
+] as const)(
+	"does not show the welcome illustration for %s conversations",
+	(state) => {
+		const input = props();
+		if (state === "loading") input.snapshot.isLoading = true;
+		if (state === "restoring") input.snapshot.turn.isRestoring = true;
+		if (state === "failed")
+			input.snapshot.error = new Error("History unavailable");
+		if (state === "running") input.snapshot.turn.isRunning = true;
+		if (state === "submitting") input.snapshot.turn.isSubmitting = true;
+		if (state === "restored")
+			input.snapshot.turn.messages = [
+				{
+					id: "previous",
+					role: "assistant",
+					parts: [{ type: "text", text: "Existing answer" }],
+				},
+			];
+		render(view(input));
+		expect(
+			screen.queryByRole("heading", { name: "Move this thread forward" }),
+		).toBeNull();
+	},
+);
 
 it("waits for history and resumes an existing conversation without flashing actions", () => {
 	const input = props();
@@ -358,7 +606,7 @@ it("opens the requested workbench without opening the composer, and returns to t
 		).toHaveFocus(),
 	);
 	expect(
-		screen.queryByRole("textbox", { name: "Draft" }),
+		screen.queryByRole("textbox", { name: "Draft with assistant" }),
 	).not.toBeInTheDocument();
 	expect(router.state.location.state).toEqual({});
 	fireEvent.click(screen.getByRole("button", { name: "Close workbench" }));
@@ -382,4 +630,34 @@ it("opens the requested workbench without opening the composer, and returns to t
 		).toHaveFocus(),
 	);
 	expect(dock.openWorkbench).toHaveBeenCalledTimes(2);
+});
+
+it("keeps Workspace inside the workbench and out of the conversation header", async () => {
+	const input = props();
+	const { rerender } = render(view(input));
+	const header = screen.getByText("Thread title").closest("header");
+	expect(
+		screen.queryByRole("button", { name: "Workspace" }),
+	).not.toBeInTheDocument();
+	expect(
+		screen.queryByRole("button", { name: "Open workbench" }),
+	).not.toBeInTheDocument();
+	dock.isOpen = true;
+	rerender(view(input));
+	await frame();
+	const menu = screen.getByRole("button", { name: "Workspace" });
+	const workbench = screen.getByRole("complementary", {
+		name: "Thread workbench",
+	});
+	expect(workbench).toContainElement(menu);
+	expect(header).not.toContainElement(menu);
+	dock.isOpen = false;
+	rerender(view(input));
+	await frame();
+	expect(menu).not.toBeVisible();
+	expect(screen.getByText("Thread title")).toBeVisible();
+	dock.isOpen = true;
+	rerender(view(input));
+	await frame();
+	expect(screen.getByRole("button", { name: "Workspace" })).toBe(menu);
 });

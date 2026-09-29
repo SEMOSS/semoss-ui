@@ -1,58 +1,32 @@
-import { MailPlus } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useInsight } from "@semoss/sdk/react";
 import {
-	Alert,
-	AlertDescription,
-	Button,
 	Dialog,
 	DialogContent,
 	DialogDescription,
-	DialogFooter,
 	DialogHeader,
 	DialogTitle,
-	Form,
-	FormCheckbox,
-	P,
-	Spinner,
-	Tooltip,
-	TooltipContent,
-	TooltipTrigger,
 	useForm,
-	z,
 	zodResolver,
 } from "@semoss/ui/next";
 import { draftText, plainTextEmail } from "@/features/email/email-html";
 import { EmailDraftSession } from "../api/email-draft-session";
+import {
+	type EmailDraftValues,
+	emailDraftSchema,
+} from "../api/email-draft-values";
 import {
 	parseAddresses,
 	saveEmailDraft,
 	UncertainDraftError,
 } from "../api/microsoft";
 import type { EmailDraftInput, SavedEmailDraft } from "../types";
-import { ConnectorFormInput } from "./connector-form-input";
-import { DraftAttachmentField } from "./draft-attachment-field";
-import { EmailBodyField } from "./email-body-field";
-import { OutlookDraftLink } from "./outlook-draft-link";
-
-const addresses = z.string().refine((value) => {
-	try {
-		parseAddresses(value);
-		return true;
-	} catch {
-		return false;
-	}
-}, "Enter email addresses separated by commas.");
-const formSchema = z.object({
-	to: addresses,
-	cc: addresses,
-	bcc: addresses,
-	subject: z.string(),
-	body: z.string(),
-	replyAll: z.boolean(),
-	files: z.array(z.object({ id: z.string(), file: z.instanceof(File) })),
-});
-type DraftValues = z.infer<typeof formSchema>;
+import {
+	showEmailDraftFailureToast,
+	showEmailDraftSavedToast,
+} from "./email-draft-feedback";
+import { EmailDraftForm } from "./email-draft-form";
+import type { EmailReplyContext } from "./email-reply-field";
 
 export interface EmailDraftDialogProps {
 	/** Controlled visibility; closing retains unsaved content while the component remains mounted. */
@@ -64,6 +38,8 @@ export interface EmailDraftDialogProps {
 	initialBody?: string;
 	initialSubject?: string;
 	initialTo?: string;
+	/** Known source sender for the native reply envelope. */
+	replyContext?: EmailReplyContext;
 	onSaved?: (draft: SavedEmailDraft) => void;
 }
 
@@ -76,11 +52,12 @@ export function EmailDraftDialog({
 	initialBody = "",
 	initialSubject = "",
 	initialTo = "",
+	replyContext,
 	onSaved,
 }: EmailDraftDialogProps) {
 	const { actions, insightId } = useInsight();
-	const form = useForm<DraftValues>({
-		resolver: zodResolver(formSchema),
+	const form = useForm<EmailDraftValues>({
+		resolver: zodResolver(emailDraftSchema),
 		defaultValues: {
 			to: initialTo,
 			cc: "",
@@ -98,7 +75,7 @@ export function EmailDraftDialog({
 	const mounted = useRef(true);
 	const writing = useRef(false);
 	const draftSession = useRef<EmailDraftSession | null>(null);
-	const { isSubmitting, errors } = form.formState;
+	const { isDirty, isSubmitting } = form.formState;
 	const identity = JSON.stringify([insightId, mode, sourceUid ?? "new"]);
 	useEffect(() => {
 		mounted.current = true;
@@ -128,12 +105,15 @@ export function EmailDraftDialog({
 		setIsUncertain(false);
 	}, [form, identity, initialBody, initialSubject, initialTo, isOpen]);
 
-	async function handleSubmit(values: DraftValues): Promise<void> {
+	async function handleSubmit(values: EmailDraftValues): Promise<void> {
 		if (isUncertain || writing.current) return;
 		if (mode !== "new" && !sourceUid) {
+			const message =
+				"Select the source email before creating this draft.";
 			form.setError("root.server", {
-				message: "Select the source email before creating this draft.",
+				message,
 			});
+			showEmailDraftFailureToast(message, { isUncertain: false });
 			return;
 		}
 		if (mode === "reply" && !draftText(values.body, "html")) {
@@ -193,13 +173,32 @@ export function EmailDraftDialog({
 			}
 		} catch (cause: unknown) {
 			if (!mounted.current || initialized.current !== identity) return;
-			setIsUncertain(cause instanceof UncertainDraftError);
+			const uncertain = cause instanceof UncertainDraftError;
+			const message =
+				cause instanceof Error
+					? cause.message
+					: "The draft could not be saved.";
+			setIsUncertain(uncertain);
 			form.setError("root.server", {
-				message:
-					cause instanceof Error
-						? cause.message
-						: "The draft could not be saved.",
+				message,
 			});
+			showEmailDraftFailureToast(
+				message,
+				uncertain
+					? {
+							isUncertain: true,
+							onConfirmRetry: () => {
+								if (
+									!mounted.current ||
+									initialized.current !== identity
+								)
+									return;
+								setIsUncertain(false);
+								form.clearErrors("root.server");
+							},
+						}
+					: { isUncertain: false },
+			);
 			return;
 		} finally {
 			writing.current = false;
@@ -207,6 +206,7 @@ export function EmailDraftDialog({
 		if (!mounted.current || initialized.current !== identity) return;
 		setSaved(result);
 		form.reset(values);
+		showEmailDraftSavedToast(result);
 		onSaved?.(result);
 	}
 
@@ -214,15 +214,10 @@ export function EmailDraftDialog({
 		if (!isSubmitting) onOpenChange(open);
 	}
 
-	const saveLabel = isSubmitting
-		? "Saving draft…"
-		: saved
-			? "Save a new copy"
-			: "Save to Outlook drafts";
 	return (
 		<Dialog open={isOpen} onOpenChange={handleOpenChange}>
 			<DialogContent
-				className="max-h-dvh overflow-y-auto sm:max-w-2xl"
+				className="flex max-h-dvh flex-col gap-0 overflow-hidden p-0 sm:max-h-dvh sm:max-w-3xl"
 				showCloseButton={!isSubmitting}
 				onOpenAutoFocus={() => {
 					returnFocus.current =
@@ -243,154 +238,29 @@ export function EmailDraftDialog({
 					}
 				}}
 			>
-				<DialogHeader>
-					<DialogTitle>
+				<DialogHeader className="shrink-0 border-border border-b px-4 py-3 pr-12">
+					<DialogTitle className="text-base">
 						{mode === "new"
 							? "New email draft"
 							: mode === "reply"
 								? "Reply draft"
 								: "Forward draft"}
 					</DialogTitle>
-					<DialogDescription>
+					<DialogDescription className="sr-only">
 						Review your draft, then save it to Outlook. Nothing is
 						sent.
 					</DialogDescription>
 				</DialogHeader>
-				<Form
+				<EmailDraftForm
 					form={form}
-					onSubmit={handleSubmit}
-					noValidate
-					className="flex flex-col gap-4"
-					aria-busy={isSubmitting}
-				>
-					{mode !== "reply" && (
-						<ConnectorFormInput
-							name="to"
-							label={mode === "forward" ? "To (required)" : "To"}
-							required={mode === "forward"}
-							disabled={isSubmitting}
-						/>
-					)}
-					{mode === "new" && (
-						<>
-							<div className="grid gap-4 sm:grid-cols-2">
-								<ConnectorFormInput
-									name="cc"
-									label="Cc"
-									disabled={isSubmitting}
-								/>
-								<ConnectorFormInput
-									name="bcc"
-									label="Bcc"
-									disabled={isSubmitting}
-								/>
-							</div>
-							<ConnectorFormInput
-								name="subject"
-								label="Subject"
-								disabled={isSubmitting}
-							/>
-						</>
-					)}
-					{mode === "reply" && (
-						<>
-							<P className="text-muted-foreground">
-								Outlook keeps the original subject and addresses
-								the sender. Review the final recipients in
-								Outlook.
-							</P>
-							<FormCheckbox
-								name="replyAll"
-								label="Reply to everyone on the original email"
-								disabled={isSubmitting}
-							/>
-							<P className="text-muted-foreground">
-								Reply all includes original recipients,
-								including people excluded from assistant
-								context.
-							</P>
-						</>
-					)}
-					{mode === "forward" && (
-						<P className="text-muted-foreground">
-							Outlook includes the original message and its
-							attachments below your note.
-						</P>
-					)}
-					<EmailBodyField
-						label={
-							mode === "reply"
-								? "Reply text (required)"
-								: mode === "forward"
-									? "Note above forwarded message"
-									: "Message"
-						}
-						required={mode === "reply"}
-						disabled={isSubmitting}
-					/>
-					{mode === "new" && (
-						<DraftAttachmentField disabled={isSubmitting} />
-					)}
-					{saved && (
-						<div className="rounded-md border border-border p-4">
-							<output className="block">
-								Saved to Outlook drafts. Nothing was sent.
-							</output>
-							<OutlookDraftLink webLink={saved.webLink} />
-							<P className="text-muted-foreground">
-								Further changes here create a new copy. Edit the
-								saved draft in Outlook to update it.
-							</P>
-						</div>
-					)}
-					{errors.root?.server?.message && (
-						<Alert variant="destructive">
-							<AlertDescription>
-								{errors.root.server.message}
-							</AlertDescription>
-						</Alert>
-					)}
-					{isUncertain && (
-						<Button
-							type="button"
-							variant="outline"
-							onClick={() => {
-								setIsUncertain(false);
-								form.clearErrors("root.server");
-							}}
-						>
-							I checked Outlook — allow another save
-						</Button>
-					)}
-					<DialogFooter>
-						<Button
-							type="button"
-							variant="outline"
-							disabled={isSubmitting}
-							onClick={() => handleOpenChange(false)}
-						>
-							Close
-						</Button>
-						<Tooltip disableHoverableContent={false}>
-							<TooltipTrigger asChild>
-								<Button
-									type="submit"
-									size="icon-sm"
-									className="pointer-coarse:size-11 size-11 sm:size-8"
-									aria-label={saveLabel}
-									disabled={isSubmitting || isUncertain}
-								>
-									{isSubmitting ? (
-										<Spinner aria-label="Saving draft" />
-									) : (
-										<MailPlus aria-hidden="true" />
-									)}
-								</Button>
-							</TooltipTrigger>
-							<TooltipContent>{saveLabel}</TooltipContent>
-						</Tooltip>
-					</DialogFooter>
-				</Form>
+					mode={mode}
+					sourceSubject={initialSubject}
+					replyContext={replyContext}
+					hasSavedDraft={Boolean(saved)}
+					canSave={!saved || isDirty}
+					isUncertain={isUncertain}
+					onSave={handleSubmit}
+				/>
 			</DialogContent>
 		</Dialog>
 	);

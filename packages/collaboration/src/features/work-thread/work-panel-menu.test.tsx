@@ -1,4 +1,4 @@
-import { act, render, screen, waitFor, within } from "@testing-library/react";
+import { act, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type { ComponentProps } from "react";
 import {
@@ -18,11 +18,12 @@ import { WorkPanelMenu } from "./work-panel-menu";
 
 let store: ReturnType<typeof createWorkbenchStore>;
 let isReady = true;
+let insightId = "thread-insight";
 const openWorkbench = vi.fn();
 vi.mock("@/features/tools/tool-workbench.context", () => ({
 	useToolWorkbench: () => ({
 		store,
-		insightId: "thread-insight",
+		insightId,
 		isOpen: true,
 		openWorkbench,
 	}),
@@ -33,13 +34,17 @@ vi.mock("./work-thread-context", () => ({
 vi.mock("@semoss/shared", () => ({
 	getFileEditorPathScope: (_mode: unknown, insightId: string) =>
 		`INSIGHT:${insightId}`,
-	getParentPath: (path: string) =>
-		path.slice(0, path.lastIndexOf("/")) || "/",
 	NewFileOverlay: vi.fn(
-		({ action, path, onClose }: ComponentProps<typeof NewFileOverlay>) => (
+		({
+			action,
+			path,
+			mode,
+			onClose,
+		}: ComponentProps<typeof NewFileOverlay>) => (
 			<div role="dialog" aria-label="Create file">
 				<span>{action}</span>
 				<span data-testid="destination">{path}</span>
+				<span data-testid="mode">{JSON.stringify(mode)}</span>
 				<button type="button" onClick={() => onClose(false)}>
 					Cancel creation
 				</button>
@@ -127,7 +132,7 @@ function setup() {
 	);
 }
 async function openMenu() {
-	await userEvent.click(screen.getByRole("button", { name: "File" }));
+	await userEvent.click(screen.getByRole("button", { name: "Workspace" }));
 }
 function select(id: string) {
 	act(() =>
@@ -136,35 +141,68 @@ function select(id: string) {
 			.layout.actions.activatePanel({ kind: "tabset", id: "main" }, id),
 	);
 }
-async function openViewMenu() {
-	await userEvent.click(screen.getByRole("button", { name: "View" }));
-}
 beforeEach(() => {
 	vi.clearAllMocks();
 	isReady = true;
+	insightId = "thread-insight";
 });
 
-it("groups fixed actions in order and explains unavailable file actions", async () => {
+const MENU_LABELS = [
+	"Browse files…",
+	"New file…",
+	"New folder…",
+	"Upload files…",
+	"Context",
+	"Tools",
+	"Activity",
+	"Settings",
+	"Commands…",
+];
+
+it("keeps one fixed menu across selected panels, dirty files, emails, drafts, and results", async () => {
 	setup();
 	await openMenu();
-	expect(
-		screen.getAllByRole("menuitem").map((item) => item.textContent),
-	).toEqual([
-		"Browse files…",
-		"New file…",
-		"New folder…",
-		"Upload files…",
-		"Save file",
-		"Download file",
-		"Refresh file",
-	]);
-	expect(screen.getByRole("menuitem", { name: "Save file" })).toHaveAttribute(
-		"aria-disabled",
-		"true",
+	const expectStaticMenu = () => {
+		expect(
+			screen.getAllByRole("menuitem").map((item) => item.textContent),
+		).toEqual(MENU_LABELS);
+		expect(screen.queryByRole("menuitemradio")).toBeNull();
+		expect(screen.queryByRole("button", { name: "File" })).toBeNull();
+		expect(screen.queryByRole("button", { name: "View" })).toBeNull();
+	};
+	expectStaticMenu();
+	for (const id of ["file-a", "explorer", "tools", "result"]) {
+		select(id);
+		expectStaticMenu();
+	}
+	act(() =>
+		store.getState().layout.actions.setPanelValue("file-a", {
+			...controls,
+			isBusy: true,
+		}),
 	);
-	expect(
-		screen.getByText("Select an open file to use these actions."),
-	).toBeVisible();
+	select("file-a");
+	expectStaticMenu();
+	for (const type of [WORK_PANEL_TYPES.EMAIL, WORK_PANEL_TYPES.DRAFT]) {
+		act(() =>
+			store.getState().layout.actions.selectPanel(
+				type,
+				{},
+				{
+					name: "Message-specific title",
+				},
+			),
+		);
+		expectStaticMenu();
+	}
+	for (const label of MENU_LABELS) {
+		expect(
+			screen.getByRole("menuitem", { name: label }),
+		).not.toHaveAttribute("aria-disabled");
+	}
+	expect(save).not.toHaveBeenCalled();
+	expect(download).not.toHaveBeenCalled();
+	expect(refresh).not.toHaveBeenCalled();
 });
 
 it("browses the existing Files panel and reuses fixed panels", async () => {
@@ -174,86 +212,46 @@ it("browses the existing Files panel and reuses fixed panels", async () => {
 		screen.getByRole("menuitem", { name: "Browse files…" }),
 	);
 	expect(store.getState().layout.selection.panel).toBe("explorer");
-	await openViewMenu();
-	await userEvent.click(
-		await screen.findByRole("menuitemradio", { name: "Context" }),
-	);
+	await openMenu();
+	await userEvent.click(screen.getByRole("menuitem", { name: "Context" }));
 	expect(store.getState().layout.selection.panel).toBe("context");
 	expect(Object.keys(store.getState().layout.panels)).toHaveLength(5);
 });
 
-it("lists static panels before dynamic files and results and switches by instance", async () => {
-	setup();
-	await openViewMenu();
-	const items = await screen.findAllByRole("menuitemradio");
-	expect(items.map((item) => item.textContent)).toEqual([
-		"Context",
-		"Settings",
-		"Tools",
-		"Activity",
-		"Files",
-		"notes.md*",
-		"Research result",
-	]);
-	expect(items[0]).toHaveAttribute("aria-checked", "true");
-	await userEvent.click(items[5]);
-	expect(store.getState().layout.selection.panel).toBe("file-a");
-	act(() => store.getState().layout.actions.closePanel("file-a"));
-	await openViewMenu();
-	expect(
-		screen.queryByRole("menuitemradio", { name: "notes.md*" }),
-	).toBeNull();
-});
-
-it("offers both menus on mobile with fixed panels followed by dynamic files", async () => {
+it("keeps the same menu on mobile and restores trigger focus after navigation", async () => {
 	setup();
 	act(() => store.getState().layout.actions.setMobileLayout(true));
-	expect(screen.getByRole("button", { name: "File" })).toBeVisible();
-	await openViewMenu();
+	await openMenu();
 	expect(screen.getAllByRole("menu")).toHaveLength(1);
-	const items = screen.getAllByRole("menuitemradio");
-	expect(items.map((item) => item.textContent)).toEqual([
-		"Context",
-		"Settings",
-		"Tools",
-		"Activity",
-		"Files",
-		"notes.md*",
-		"Research result",
-	]);
-	await userEvent.click(items[5]);
-	expect(store.getState().layout.mobileActivePanelId).toBe("file-a");
+	expect(
+		screen.getAllByRole("menuitem").map((item) => item.textContent),
+	).toEqual(MENU_LABELS);
+	await userEvent.click(screen.getByRole("menuitem", { name: "Tools" }));
+	expect(store.getState().layout.mobileActivePanelId).toBe("tools");
 	expect(screen.queryByRole("menu")).toBeNull();
 	await waitFor(() =>
-		expect(screen.getByRole("button", { name: "View" })).toHaveFocus(),
+		expect(screen.getByRole("button", { name: "Workspace" })).toHaveFocus(),
 	);
 });
 
-it("opens a fixed panel directly from View and reuses it on subsequent selections", async () => {
+it("opens a fixed panel and reuses it on subsequent selections", async () => {
 	setup();
-	await openViewMenu();
-	await userEvent.click(
-		screen.getByRole("menuitemradio", { name: "Settings" }),
-	);
+	await openMenu();
+	await userEvent.click(screen.getByRole("menuitem", { name: "Settings" }));
 	const firstId = store.getState().layout.selection.panel;
-	await openViewMenu();
-	expect(
-		screen.getByRole("menuitemradio", { name: "Settings" }),
-	).toHaveAttribute("aria-checked", "true");
-	await userEvent.click(
-		screen.getByRole("menuitemradio", { name: "Settings" }),
-	);
+	await openMenu();
+	await userEvent.click(screen.getByRole("menuitem", { name: "Settings" }));
 	expect(store.getState().layout.selection.panel).toBe(firstId);
 	expect(Object.keys(store.getState().layout.panels)).toHaveLength(6);
 });
 
 it.each([
-	["context", "New file…", "add_file", "/"],
-	["file-a", "New folder…", "add_directory", "/reports"],
-	["explorer", "Upload files…", "upload", "/working/"],
+	["context", "New file…", "add_file"],
+	["file-a", "New folder…", "add_directory"],
+	["explorer", "Upload files…", "upload"],
 ])(
-	"captures the destination for %s / %s and refreshes only after success",
-	async (id, label, action, path) => {
+	"creates at the thread root for %s / %s and notifies only after success",
+	async (id, label, action) => {
 		setup();
 		act(() =>
 			store.getState().layout.actions.setPanelValue("explorer", {
@@ -267,101 +265,102 @@ it.each([
 		const emitted = vi.spyOn(store.getState().events.actions, "emit");
 		await openMenu();
 		await userEvent.click(screen.getByRole("menuitem", { name: label }));
-		expect(screen.getByTestId("destination")).toHaveTextContent(path);
+		expect(screen.getByTestId("destination").textContent).toBe("/");
+		expect(screen.getByTestId("mode").textContent).toBe(
+			JSON.stringify(mode),
+		);
 		expect(screen.getByText(action)).toBeVisible();
+		expect(screen.queryByRole("menu")).toBeNull();
 		select("context");
-		expect(screen.getByTestId("destination")).toHaveTextContent(path);
+		expect(screen.getByTestId("destination").textContent).toBe("/");
 		await userEvent.click(
 			screen.getByRole("button", { name: "Cancel creation" }),
 		);
 		expect(emitted).not.toHaveBeenCalled();
 		await waitFor(() =>
-			expect(screen.getByRole("button", { name: "File" })).toHaveFocus(),
+			expect(
+				screen.getByRole("button", { name: "Workspace" }),
+			).toHaveFocus(),
 		);
 		await openMenu();
 		await userEvent.click(screen.getByRole("menuitem", { name: label }));
 		await userEvent.click(
 			screen.getByRole("button", { name: "Complete creation" }),
 		);
-		expect(emitted).toHaveBeenCalledWith(FILE_PANEL_EVENTS.FILES_CHANGED, {
-			scope: expect.stringContaining("thread-insight"),
-		});
+		expect(emitted).toHaveBeenCalledExactlyOnceWith(
+			FILE_PANEL_EVENTS.FILES_CHANGED,
+			{
+				scope: expect.stringContaining("thread-insight"),
+			},
+		);
+		await waitFor(() =>
+			expect(
+				screen.getByRole("button", { name: "Workspace" }),
+			).toHaveFocus(),
+		);
 	},
 );
 
-it("saves and downloads the active file, and confirms before discarding edits", async () => {
-	setup();
-	select("file-a");
-	await openMenu();
-	await userEvent.click(screen.getByRole("menuitem", { name: "Save file" }));
-	expect(save).toHaveBeenCalledOnce();
-	await openMenu();
-	await userEvent.click(
-		screen.getByRole("menuitem", { name: "Download saved version" }),
-	);
-	expect(download).toHaveBeenCalledOnce();
-	await openMenu();
-	await userEvent.click(
-		screen.getByRole("menuitem", { name: "Refresh file" }),
-	);
-	const dialog = await screen.findByRole("dialog", {
-		name: "Discard edits and refresh?",
-	});
-	expect(refresh).not.toHaveBeenCalled();
-	await userEvent.click(
-		within(dialog).getByRole("button", { name: "Cancel" }),
-	);
-	expect(refresh).not.toHaveBeenCalled();
-	await openMenu();
-	await userEvent.click(
-		screen.getByRole("menuitem", { name: "Refresh file" }),
-	);
-	await userEvent.click(
-		screen.getByRole("button", { name: "Discard and refresh" }),
-	);
-	expect(refresh).toHaveBeenCalledOnce();
-});
-
-it("keeps downloads available for read-only files and disables busy actions", async () => {
-	setup();
-	select("file-a");
-	act(() =>
-		store.getState().layout.actions.setPanelValue("file-a", {
-			...controls,
-			canSave: false,
-		}),
-	);
-	await openMenu();
-	expect(screen.getByRole("menuitem", { name: "Save file" })).toHaveAttribute(
-		"aria-disabled",
-		"true",
-	);
-	expect(
-		screen.getByRole("menuitem", { name: "Download saved version" }),
-	).not.toHaveAttribute("aria-disabled");
-	act(() =>
-		store.getState().layout.actions.setPanelValue("file-a", {
-			...controls,
-			isBusy: true,
-		}),
-	);
-	for (const name of ["Save file", "Download saved version", "Refresh file"])
-		expect(screen.getByRole("menuitem", { name })).toHaveAttribute(
-			"aria-disabled",
-			"true",
+it.each(["connecting", "missing insight"])(
+	"disables only file actions when %s without changing menu contents",
+	async (state) => {
+		isReady = state !== "connecting";
+		insightId = state === "missing insight" ? "" : "thread-insight";
+		setup();
+		await openMenu();
+		expect(
+			screen.getAllByRole("menuitem").map((item) => item.textContent),
+		).toEqual(MENU_LABELS);
+		for (const name of MENU_LABELS.slice(0, 4)) {
+			expect(screen.getByRole("menuitem", { name })).toHaveAttribute(
+				"aria-disabled",
+				"true",
+			);
+		}
+		for (const name of MENU_LABELS.slice(4)) {
+			expect(screen.getByRole("menuitem", { name })).not.toHaveAttribute(
+				"aria-disabled",
+			);
+		}
+		await userEvent.click(
+			screen.getByRole("menuitem", { name: "New file…" }),
 		);
+		expect(screen.queryByRole("dialog")).toBeNull();
+		expect(openWorkbench).not.toHaveBeenCalled();
+		await userEvent.click(
+			screen.getByRole("menuitem", { name: "Commands…" }),
+		);
+		expect(store.getState().command.isCommandOpen).toBe(true);
+		expect(screen.queryByRole("menu")).toBeNull();
+	},
+);
+
+it("supports keyboard opening, arrow navigation, activation, and Escape focus return", async () => {
+	setup();
+	const trigger = screen.getByRole("button", { name: "Workspace" });
+	trigger.focus();
+	await userEvent.keyboard("{Enter}");
+	expect(
+		screen.getByRole("menuitem", { name: "Browse files…" }),
+	).toHaveFocus();
+	await userEvent.keyboard(
+		"{ArrowDown}{ArrowDown}{ArrowDown}{ArrowDown}{Enter}",
+	);
+	expect(store.getState().layout.selection.panel).toBe("context");
+	await waitFor(() => expect(trigger).toHaveFocus());
+	await userEvent.keyboard("{ArrowDown}{Escape}");
+	expect(screen.queryByRole("menu")).toBeNull();
+	await waitFor(() => expect(trigger).toHaveFocus());
 });
 
-it("disables file creation until the thread is ready and opens the existing command palette", async () => {
-	isReady = false;
+it("returns focus after closing Commands opened from Workspace", async () => {
 	setup();
 	await openMenu();
-	expect(screen.getByRole("menuitem", { name: "New file…" })).toHaveAttribute(
-		"aria-disabled",
-		"true",
-	);
-	await userEvent.keyboard("{Escape}");
-	await openViewMenu();
 	await userEvent.click(screen.getByRole("menuitem", { name: "Commands…" }));
 	expect(store.getState().command.isCommandOpen).toBe(true);
+	act(() => store.getState().command.actions.setCommandOpen(false));
+	await waitFor(() =>
+		expect(screen.getByRole("button", { name: "Workspace" })).toHaveFocus(),
+	);
+	expect(openWorkbench).not.toHaveBeenCalled();
 });

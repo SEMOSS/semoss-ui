@@ -99,6 +99,7 @@ export const WorkbenchMobile: FC<WorkbenchMobileProps> = ({
 			{before || after ? (
 				<div
 					data-testid="workbench-mobile-toolbar"
+					data-slot="workbench-mobile-toolbar"
 					className="mb-2 flex shrink-0 items-center gap-2 rounded-lg border border-border bg-card p-1"
 				>
 					<div className="flex min-w-0 flex-1 items-center gap-1">

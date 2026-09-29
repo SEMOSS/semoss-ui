@@ -28,6 +28,7 @@ import type {
 	PendingToolApproval,
 } from "@/features/rooms/types/room";
 import type { InsightActions } from "@/lib/pixel";
+import { requireDraftReviewSupport } from "./api/draft-review-policy";
 import {
 	compactThreadMessages,
 	type ThreadCompactionStrategy,
@@ -44,6 +45,7 @@ import {
 import {
 	getThreadAgent,
 	type SubmittedThreadContext,
+	THREAD_ASSISTANT_INSTRUCTIONS,
 	threadCommand,
 } from "./thread-context";
 import {
@@ -245,6 +247,7 @@ export class ThreadSession {
 			agentId: association.metadata.agentId ?? "",
 			engine: association.metadata.modelId,
 			maxTurns: 40,
+			requireEmailDraftReview: true,
 		});
 		this.controller = controller;
 		this.history = [];
@@ -494,6 +497,7 @@ export class ThreadSession {
 			throw new Error("Attach up to 5 files per message.");
 		this.update({ isPreparing: true, error: null, submissionNotice: null });
 		try {
+			await requireDraftReviewSupport(this.insight.actions);
 			const agentId = this.snapshot.settings.agentId;
 			const metadata: ThreadRoomMetadata = {
 				version: 1,
@@ -506,6 +510,9 @@ export class ThreadSession {
 			if (
 				!current ||
 				!canContinueThreadRoom(current) ||
+				!current.options.instructions.startsWith(
+					THREAD_ASSISTANT_INSTRUCTIONS,
+				) ||
 				current.metadata.contextRevision !== metadata.contextRevision ||
 				current.metadata.modelId !== metadata.modelId ||
 				current.metadata.agentId !== metadata.agentId
@@ -597,6 +604,7 @@ export class ThreadSession {
 						agentId: metadata.agentId ?? "",
 						engine: metadata.modelId,
 						maxTurns: 40,
+						requireEmailDraftReview: true,
 					},
 				);
 			} catch (cause) {

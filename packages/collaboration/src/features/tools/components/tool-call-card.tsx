@@ -1,5 +1,12 @@
-import { Check, ChevronDown, CircleX, Hourglass } from "lucide-react";
-import { useId, useState } from "react";
+import {
+	ArrowUpRight,
+	Check,
+	ChevronDown,
+	CircleX,
+	Hourglass,
+	Mail,
+} from "lucide-react";
+import { useContext, useId, useState } from "react";
 import {
 	Button,
 	Collapsible,
@@ -21,13 +28,21 @@ import {
 } from "@/features/delegations/components/delegation-submit-approval";
 import { WithdrawDelegation } from "@/features/delegations/components/withdraw-delegation";
 import type { ConversationTool } from "@/features/messages/types/message";
+import { WorkEmailContext } from "@/features/work-thread/work-email.context";
 import { toolCardTriggerId } from "../tool-workbench.constants";
 import { useToolWorkbench } from "../tool-workbench.context";
+import {
+	emailDraftToolPreview,
+	isEmailDraftTool,
+} from "../utils/email-draft-tool";
 import {
 	getToolDisplayLocation,
 	getToolLoadingMessage,
 } from "../utils/tool-metadata";
-import { EmailDraftCard, isEmailDraftTool } from "./email-draft-card";
+import {
+	EmailDraftCard,
+	isEmailDraftTool as isLegacyEmailDraftTool,
+} from "./email-draft-card";
 import { ToolCallMenu } from "./tool-call-menu";
 import { ToolFailureTooltip } from "./tool-failure-tooltip";
 import { ToolInline } from "./tool-inline";
@@ -118,7 +133,12 @@ export function ToolCallCard({
 	} = useToolWorkbench();
 	const isSubmit = isDelegationSubmit(tool);
 	const isRequest = isDelegationRequest(tool);
-	const isEmailDraft = isEmailDraftTool(tool);
+	const workEmail = useContext(WorkEmailContext);
+	const isEmailDraft = workEmail
+		? isEmailDraftTool(tool)
+		: isLegacyEmailDraftTool(tool);
+	const isWorkDraft = isEmailDraft && Boolean(workEmail);
+	const draftPreview = isWorkDraft ? emailDraftToolPreview(tool) : null;
 	const pendingApproval = pendingApprovals.find(
 		(item) => item.toolId === tool.id,
 	);
@@ -134,7 +154,9 @@ export function ToolCallCard({
 		? `Answer to ${delegationRequester(tool) ?? "requester"}`
 		: isRequest
 			? `New request to ${resultField(tool.output, "assignee") ?? (asString(tool.arguments.assignee) || "a person")}`
-			: tool.title;
+			: draftPreview
+				? draftPreview.subject || "Email draft"
+				: tool.title;
 	// Delegation tools return a plain-language summary of what happened; their
 	// description is written for the model, so it is never shown.
 	const outcome =
@@ -149,7 +171,7 @@ export function ToolCallCard({
 		isRequest && !approval && tool.status === "INPUT_REQUIRED"
 			? resultField(tool.output, "runId")
 			: undefined;
-	const Icon = details.icon;
+	const Icon = isWorkDraft ? Mail : details.icon;
 	const isInline = isToolInline(tool.id);
 	const isInWorkbench = isOpen && activeToolId === tool.id;
 	const isActive = isInline || isInWorkbench;
@@ -166,18 +188,20 @@ export function ToolCallCard({
 		return null;
 
 	const status =
-		isSubmit || isRequest
+		draftPreview?.status ??
+		(isSubmit || isRequest
 			? (tool.statusLabel ?? outcome ?? details.label)
 			: tool.status === "RUNNING"
 				? getToolLoadingMessage(tool)
-				: details.label;
+				: details.label);
 
 	return (
 		<Collapsible
-			open={isInline || isEmailDraft}
+			open={!isWorkDraft && (isInline || isEmailDraft)}
 			data-tool-id={tool.id}
 			className={cn(
-				"group/tool min-w-0 rounded-xl border border-border/60 bg-muted/20 transition-colors duration-150 motion-reduce:transition-none",
+				"group/tool min-w-0 rounded-xl border border-border/60 transition-colors duration-150 motion-reduce:transition-none",
+				workEmail ? "bg-background" : "bg-muted/20",
 				isActive && "border-primary/50 bg-background",
 			)}
 		>
@@ -189,14 +213,28 @@ export function ToolCallCard({
 						type="button"
 						variant="ghost"
 						className="h-auto min-h-10 min-w-0 flex-1 justify-start gap-2 whitespace-normal rounded-xl px-3 py-2 text-start"
-						onClick={() => {
+						onClick={(event) => {
+							if (isWorkDraft && workEmail) {
+								workEmail.openEmail(
+									tool.id,
+									"tool",
+									event.currentTarget,
+								);
+								return;
+							}
 							if (isInline) closeTool(tool.id);
 							else if (opensInline) openInline(tool.id);
 							else openWorkbench(tool.id);
 						}}
-						aria-expanded={opensInline ? isInline : undefined}
+						aria-expanded={
+							!isWorkDraft && opensInline ? isInline : undefined
+						}
 						aria-controls={isInline ? detailId : undefined}
-						aria-label={`${title} details${opensInline ? "" : " in workbench"}${tool.status === "FAILED" ? " - failed" : ""}`}
+						aria-label={
+							isWorkDraft
+								? `Open email draft: ${title}`
+								: `${title} details${opensInline ? "" : " in workbench"}${tool.status === "FAILED" ? " - failed" : ""}`
+						}
 						{...(tool.status !== "FAILED"
 							? { "aria-describedby": statusId }
 							: {})}
@@ -205,6 +243,16 @@ export function ToolCallCard({
 							className={cn(
 								"flex size-4 shrink-0 items-center justify-center",
 								details.iconClassName,
+								workEmail && "size-8 rounded-lg bg-muted",
+								workEmail &&
+									tool.status === "COMPLETED" &&
+									"bg-success/10 text-success",
+								workEmail &&
+									tool.status === "FAILED" &&
+									"bg-destructive/10 text-destructive",
+								workEmail &&
+									tool.status === "INPUT_REQUIRED" &&
+									"bg-warning/10 text-warning",
 							)}
 						>
 							{Icon ? (
@@ -218,12 +266,20 @@ export function ToolCallCard({
 						</span>
 						<span className="flex min-w-0 flex-1 flex-wrap items-baseline gap-x-2 gap-y-1">
 							<Muted className="wrap-anywhere font-medium text-foreground text-sm">
-								{title}
+								{isWorkDraft ? `Email draft · ${title}` : title}
 							</Muted>
+							{draftPreview?.to && (
+								<Muted className="w-full truncate text-xs">
+									To {draftPreview.to}
+								</Muted>
+							)}
 							<Muted
 								id={statusId}
 								className={cn(
 									"wrap-anywhere text-xs",
+									workEmail &&
+										tool.status === "COMPLETED" &&
+										"text-success",
 									tool.status === "FAILED" &&
 										"text-destructive",
 									tool.status === "INPUT_REQUIRED" &&
@@ -233,7 +289,12 @@ export function ToolCallCard({
 								{status}
 							</Muted>
 						</span>
-						{opensInline ? (
+						{isWorkDraft ? (
+							<ArrowUpRight
+								aria-hidden="true"
+								className="size-4 shrink-0 text-muted-foreground"
+							/>
+						) : opensInline ? (
 							<ChevronDown
 								aria-hidden="true"
 								className={cn(
@@ -254,19 +315,21 @@ export function ToolCallCard({
 						}
 					/>
 				)}
-				<div
-					className="pointer-events-none flex shrink-0 items-center gap-1 opacity-0 transition-opacity duration-150 ease-out group-focus-within/tool:pointer-events-auto group-focus-within/tool:opacity-100 group-focus-within/tool:duration-0 group-hover/tool:pointer-events-auto group-hover/tool:opacity-100 data-[menu-open=true]:pointer-events-auto data-[menu-open=true]:opacity-100 motion-reduce:transition-none [@media(hover:none)]:pointer-events-auto [@media(hover:none)]:opacity-100 [@media(pointer:coarse)]:pointer-events-auto [@media(pointer:coarse)]:opacity-100"
-					data-menu-open={isMenuOpen}
-				>
-					<ToolCallMenu
-						toolId={tool.id}
-						createdAt={createdAt}
-						onOpenChange={(open) => {
-							setIsMenuOpen(open);
-							onMenuOpenChange?.(open);
-						}}
-					/>
-				</div>
+				{!isWorkDraft && (
+					<div
+						className="pointer-events-none flex shrink-0 items-center gap-1 opacity-0 transition-opacity duration-150 ease-out group-focus-within/tool:pointer-events-auto group-focus-within/tool:opacity-100 group-focus-within/tool:duration-0 group-hover/tool:pointer-events-auto group-hover/tool:opacity-100 data-[menu-open=true]:pointer-events-auto data-[menu-open=true]:opacity-100 motion-reduce:transition-none [@media(hover:none)]:pointer-events-auto [@media(hover:none)]:opacity-100 [@media(pointer:coarse)]:pointer-events-auto [@media(pointer:coarse)]:opacity-100"
+						data-menu-open={isMenuOpen}
+					>
+						<ToolCallMenu
+							toolId={tool.id}
+							createdAt={createdAt}
+							onOpenChange={(open) => {
+								setIsMenuOpen(open);
+								onMenuOpenChange?.(open);
+							}}
+						/>
+					</div>
+				)}
 			</div>
 			<CollapsibleContent
 				id={detailId}

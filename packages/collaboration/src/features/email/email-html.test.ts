@@ -114,3 +114,16 @@ it("round trips rich editor formatting as self-contained email HTML", () => {
 	expect(html).toContain("color: rgb(0, 0, 255)");
 	expect(html).not.toContain("class=");
 });
+
+it("preserves paragraph boundaries and link destinations when preparing a draft for revision", () => {
+	expect(
+		draftText(
+			'<p>Hello Alex,</p><p><br></p><p>Read the <a href="https://example.com/agenda">agenda</a>.</p><ul><li>Friday</li><li>Noon</li></ul>',
+			"html",
+			true,
+		),
+	).toBe(
+		"Hello Alex,\n\nRead the agenda (https://example.com/agenda).\nFriday\nNoon",
+	);
+	expect(draftText("<p><br></p>", "html", true)).toBe("");
+});

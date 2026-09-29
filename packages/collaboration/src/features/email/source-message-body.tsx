@@ -1,4 +1,5 @@
-import { P, Small } from "@semoss/ui/next";
+import { cn, P, Small } from "@semoss/ui/next";
+import { EmailAttachmentReferences } from "./email-attachment-references";
 import { EmailBody } from "./email-body";
 import { teamsHtml } from "./email-html";
 import type { DisplayBody } from "./message-body";
@@ -8,13 +9,23 @@ export function SourceMessageBody({
 	body,
 	channel,
 	title,
+	presentation,
+	showAttachments = true,
 }: {
 	body: DisplayBody;
 	channel: string;
 	title: string;
+	presentation?: "inline" | "reader";
+	/** Native attachment lists supplied by a host replace display-only references. */
+	showAttachments?: boolean;
 }) {
 	return (
-		<div className="min-w-0 space-y-2">
+		<div
+			className={cn(
+				"min-w-0",
+				channel === "teams" ? "space-y-2" : "space-y-6",
+			)}
+		>
 			{body.contentType === "html" ? (
 				channel === "teams" ? (
 					<div
@@ -25,22 +36,36 @@ export function SourceMessageBody({
 						}}
 					/>
 				) : (
-					<EmailBody html={body.content} title={title} />
+					<EmailBody
+						html={body.content}
+						title={title}
+						presentation={presentation}
+					/>
 				)
 			) : (
-				<P className="whitespace-pre-wrap break-words">
+				<P
+					className={cn(
+						"whitespace-pre-wrap break-words",
+						channel !== "teams" && "max-w-prose leading-relaxed",
+					)}
+				>
 					{body.content}
 				</P>
 			)}
-			{body.attachments?.map((attachment, index) => (
-				<Small
-					key={`${index}:${attachment.name}`}
-					className="block text-muted-foreground"
-				>
-					{attachment.name} — open in{" "}
-					{channel === "teams" ? "Teams" : "Outlook"}
-				</Small>
-			))}
+			{showAttachments && body.attachments?.length ? (
+				channel === "teams" ? (
+					body.attachments.map((attachment, index) => (
+						<Small
+							key={`${index}:${attachment.name}`}
+							className="block text-muted-foreground"
+						>
+							{attachment.name} — open in Teams
+						</Small>
+					))
+				) : (
+					<EmailAttachmentReferences attachments={body.attachments} />
+				)
+			) : null}
 			{body.isTruncated && (
 				<Small className="block text-warning">
 					Original formatting is too large to display. Showing source

@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import type { ConversationTool } from "@/features/messages/types/message";
 import { EmailDraftCard, isEmailDraftTool } from "./email-draft-card";
 
@@ -63,9 +63,10 @@ describe("isEmailDraftTool", () => {
 describe("EmailDraftCard", () => {
 	it("renders recipients, subject, body, and the Outlook link from the tool output", () => {
 		render(<EmailDraftCard tool={draftTool()} />);
-		expect(screen.getByText("Email draft")).toBeVisible();
+		expect(screen.getByText("Your Outlook account")).toBeVisible();
 		expect(screen.getByText("Saved to Outlook drafts")).toBeVisible();
-		expect(screen.getByText("a@example.com, b@example.com")).toBeVisible();
+		fireEvent.click(screen.getByText("Recipients"));
+		expect(screen.getByText("b@example.com")).toBeVisible();
 		expect(screen.getByText("c@example.com")).toBeVisible();
 		expect(screen.getByText("Quarterly update")).toBeVisible();
 		expect(screen.getByText("Hi team,", { exact: false })).toBeVisible();
@@ -96,4 +97,23 @@ describe("EmailDraftCard", () => {
 			screen.queryByRole("link", { name: /open in outlook/i }),
 		).not.toBeInTheDocument();
 	});
+});
+
+it("preserves formatted HTML in an isolated draft preview", () => {
+	render(
+		<EmailDraftCard
+			tool={draftTool({
+				arguments: {
+					subject: "Rich draft",
+					message: "<p><strong>Formatted</strong></p>",
+					html: true,
+				},
+			})}
+		/>,
+	);
+	const frame = screen.getByTitle("Rich draft");
+	expect(frame.getAttribute("srcdoc")).toContain(
+		"<strong>Formatted</strong>",
+	);
+	expect(frame.getAttribute("sandbox")).not.toContain("allow-scripts");
 });

@@ -110,6 +110,8 @@ export interface ConversationMessage {
 	parts: ConversationMessagePart[];
 	createdAt?: string;
 	runId?: string;
+	/** Durable run outcome, when supplied by the run controller. */
+	runStatus?: AgentRun["status"];
 	parentMessageId?: string;
 	visible?: boolean;
 	delegationReply?: DelegationReply;

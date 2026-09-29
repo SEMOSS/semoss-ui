@@ -12,6 +12,7 @@ import {
 export type ThreadComposerMode = "assistant" | "draft";
 
 interface ThreadComposerControlsProps {
+	assistantOnly?: boolean;
 	mode: ThreadComposerMode;
 	onModeChange: (mode: ThreadComposerMode) => void;
 	hasSourceEmail: boolean;
@@ -25,6 +26,7 @@ interface ThreadComposerControlsProps {
 /** Compact destination and model controls belonging to the message being composed. */
 export function ThreadComposerControls({
 	mode,
+	assistantOnly = false,
 	onModeChange,
 	hasSourceEmail,
 	isModeLocked,
@@ -35,38 +37,40 @@ export function ThreadComposerControls({
 }: ThreadComposerControlsProps) {
 	return (
 		<div className="flex min-w-0 flex-wrap items-center gap-1 px-2 pt-2">
-			<Select
-				value={mode}
-				disabled={isModeLocked}
-				onValueChange={(value) => {
-					if (value === "assistant" || value === "draft")
-						onModeChange(value);
-				}}
-			>
-				<SelectTrigger
-					aria-label="Message mode"
-					className="min-h-11 w-auto gap-2 border-0 bg-transparent px-2 text-xs shadow-none hover:bg-accent sm:min-h-8"
+			{!assistantOnly && (
+				<Select
+					value={mode}
+					disabled={isModeLocked}
+					onValueChange={(value) => {
+						if (value === "assistant" || value === "draft")
+							onModeChange(value);
+					}}
 				>
-					<SelectValue />
-				</SelectTrigger>
-				<SelectContent align="start">
-					<SelectItem value="assistant">
-						<Sparkles className="size-4" aria-hidden="true" />
-						Ask Assistant
-					</SelectItem>
-					<SelectItem value="draft" disabled={!hasSourceEmail}>
-						<MailPlus className="size-4" aria-hidden="true" />
-						Draft
-					</SelectItem>
-				</SelectContent>
-			</Select>
+					<SelectTrigger
+						aria-label="Message mode"
+						className="min-h-11 pointer-coarse:min-h-11 w-auto gap-2 rounded-full border-0 bg-transparent px-3 text-xs shadow-none hover:bg-primary/5 sm:min-h-8"
+					>
+						<SelectValue />
+					</SelectTrigger>
+					<SelectContent align="start">
+						<SelectItem value="assistant">
+							<Sparkles className="size-4" aria-hidden="true" />
+							Ask Assistant
+						</SelectItem>
+						<SelectItem value="draft" disabled={!hasSourceEmail}>
+							<MailPlus className="size-4" aria-hidden="true" />
+							Draft
+						</SelectItem>
+					</SelectContent>
+				</Select>
+			)}
 			{mode === "assistant" ? (
 				<fieldset
 					className="m-0 min-w-0 max-w-52 flex-1 border-0 p-0"
 					aria-label="Assistant model"
 				>
 					<EngineSelect
-						className="h-auto min-h-11 w-full gap-1 border-0 bg-transparent px-2 py-1 text-xs shadow-none hover:bg-accent sm:min-h-8"
+						className="h-auto min-h-11 pointer-coarse:min-h-11 w-full gap-1 rounded-full border-0 bg-transparent px-3 py-1 text-xs shadow-none hover:bg-primary/5 sm:min-h-8"
 						value={modelId}
 						name={modelName || "Choose model"}
 						disabled={isModelLocked}

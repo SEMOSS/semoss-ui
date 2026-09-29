@@ -43,6 +43,8 @@ export interface AgentTurnConfig {
 	engine: string;
 	maxTurns: number;
 	maxReflections?: number;
+	/** Passed per run; never changes room settings. */
+	requireEmailDraftReview?: boolean;
 }
 
 export interface AgentTurnSnapshot {
@@ -297,6 +299,7 @@ export class AgentTurnController {
 				],
 				maxTurns: config.maxTurns,
 				maxReflections: config.maxReflections,
+				requireEmailDraftReview: config.requireEmailDraftReview,
 			});
 			if (this.disposed) return;
 			this.run = { ...this.run, input: command };
@@ -726,6 +729,7 @@ export class AgentTurnController {
 		if (parts.length)
 			messages.push({
 				id: `agent-run:${run.runId}`,
+				runId: run.runId,
 				role: "assistant",
 				parts,
 				live: {
@@ -745,14 +749,27 @@ export class AgentTurnController {
 		) {
 			messages.push({
 				id: run.finalOutputMessageId || `agent-final:${run.runId}`,
+				runId: run.runId,
 				role: "assistant",
 				parts: [{ type: "text", text: run.finalText }],
 			});
 		}
 		const settled = finished && this.settledRunId !== run.runId;
 		if (settled) this.settledRunId = run.runId;
+		const runStates = new Map(
+			[
+				...this.historyRuns,
+				...this.historicalChildren.values(),
+				...this.children.values(),
+				run,
+			].map((entry) => [entry.runId, entry.status]),
+		);
 		this.update({
-			messages,
+			messages: messages.map((message) =>
+				message.runId
+					? { ...message, runStatus: runStates.get(message.runId) }
+					: message,
+			),
 			toolStates,
 			pendingApprovals: approvals,
 			phase,

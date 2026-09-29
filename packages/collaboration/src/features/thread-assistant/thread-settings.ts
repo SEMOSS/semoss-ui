@@ -1,7 +1,10 @@
 import { z } from "@semoss/ui/next";
 import { mcpConfigSchema } from "@/features/agents/api/agent-schemas";
 import type { PlaygroundRoomOptions } from "@/features/rooms/api/room-schemas";
-import { THREAD_ASSISTANT_INSTRUCTIONS } from "./thread-context";
+import {
+	LEGACY_THREAD_ASSISTANT_INSTRUCTIONS,
+	THREAD_ASSISTANT_INSTRUCTIONS,
+} from "./thread-context";
 
 /** User-authored settings, kept separate from the agent's inherited resources. */
 export const threadSettingsSchema = z.object({
@@ -20,13 +23,14 @@ export function settingsFromRoom(
 	agentId = "",
 ): ThreadChatSettings {
 	const instructions = options.instructions;
+	const prefix = instructions.startsWith(THREAD_ASSISTANT_INSTRUCTIONS)
+		? THREAD_ASSISTANT_INSTRUCTIONS
+		: LEGACY_THREAD_ASSISTANT_INSTRUCTIONS;
 	return {
 		modelId: options.modelId,
 		agentId,
-		instructions: instructions.startsWith(THREAD_ASSISTANT_INSTRUCTIONS)
-			? instructions
-					.slice(THREAD_ASSISTANT_INSTRUCTIONS.length)
-					.trimStart()
+		instructions: instructions.startsWith(prefix)
+			? instructions.slice(prefix.length).trimStart()
 			: instructions,
 		temperature: options.temperature ?? null,
 		mcp: options.mcp.filter(

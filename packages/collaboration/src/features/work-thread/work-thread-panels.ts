@@ -5,6 +5,8 @@ import type {
 import { TOOL_WORKBENCH_COMPONENTS } from "@/features/tools/tool-workbench.components";
 import { WORK_ACTIVITY_PANEL } from "./work-activity-panel";
 import { WORK_CONTEXT_PANEL } from "./work-context-dock-panel";
+import { WORK_DRAFT_PANEL } from "./work-draft-panel";
+import { WORK_EMAIL_PANEL } from "./work-email-panel";
 import { WORK_PANEL_TYPES } from "./work-panel.constants";
 import { WORK_SETTINGS_PANEL } from "./work-settings-panel";
 import { WORK_TOOLS_PANEL } from "./work-tools-panel";
@@ -12,6 +14,8 @@ import { WORK_TOOLS_PANEL } from "./work-tools-panel";
 export { WORK_PANEL_TYPES } from "./work-panel.constants";
 export const WORK_THREAD_COMPONENTS: Record<string, WorkbenchPanelConfigAny> = {
 	...TOOL_WORKBENCH_COMPONENTS,
+	[WORK_PANEL_TYPES.EMAIL]: WORK_EMAIL_PANEL,
+	[WORK_PANEL_TYPES.DRAFT]: WORK_DRAFT_PANEL,
 	[WORK_PANEL_TYPES.TOOLS]: WORK_TOOLS_PANEL,
 	[WORK_PANEL_TYPES.ACTIVITY]: WORK_ACTIVITY_PANEL,
 	[WORK_PANEL_TYPES.CONTEXT]: WORK_CONTEXT_PANEL,

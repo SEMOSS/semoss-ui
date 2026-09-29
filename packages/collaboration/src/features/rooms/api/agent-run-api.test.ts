@@ -150,3 +150,25 @@ it("rejects invalid run statuses instead of reporting a successful turn", async 
 	} as never);
 	await expect(pollRun("run-1")).rejects.toThrow();
 });
+
+it("passes the optional review policy only for Work runs", async () => {
+	vi.mocked(runAgent).mockResolvedValue({ ...run, status: "SUBMITTED" });
+	await startAgentRun("insight", {
+		roomId: "room",
+		agentId: "",
+		engine: "model",
+		command: "Draft a reply",
+		media: [],
+		maxTurns: 40,
+		requireEmailDraftReview: true,
+	});
+	expect(runAgent).toHaveBeenCalledWith(
+		expect.objectContaining({
+			paramValues: { requireEmailDraftReview: true },
+		}),
+		"insight",
+	);
+	expect(vi.mocked(runAgent).mock.calls[0][0]).not.toHaveProperty(
+		"requireEmailDraftReview",
+	);
+});

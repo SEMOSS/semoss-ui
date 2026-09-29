@@ -157,15 +157,21 @@ export async function startAgentRun(
 		media: string[];
 		maxTurns: number;
 		maxReflections?: number;
+		/** Work requires local review before email writes. */
+		requireEmailDraftReview?: boolean;
 	},
 ): Promise<AgentRun> {
+	const { requireEmailDraftReview, ...runParams } = params;
 	// RunAgentReactor URL-decodes command. Encoding once also preserves literal % and +.
 	return agentRunSchema.parse(
 		await runAgent(
 			{
-				...params,
+				...runParams,
 				command: encodeURIComponent(params.command),
 				harnessType: "semoss",
+				...(requireEmailDraftReview
+					? { paramValues: { requireEmailDraftReview: true } }
+					: {}),
 			},
 			insightId,
 		),

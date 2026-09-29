@@ -128,14 +128,30 @@ export function sanitizeDraftHtml(html: string): string {
 export function draftText(
 	body: string,
 	format: "text" | "html" = "text",
+	preserveLines = false,
 ): string {
 	if (format === "text") return body.trim();
 	const doc = documentFrom(body, {
 		ALLOWED_TAGS: BODY_TAGS,
-		ALLOWED_ATTR: [],
+		ALLOWED_ATTR: preserveLines ? ["href"] : [],
 	});
+	if (preserveLines) {
+		for (const link of doc.body.querySelectorAll("a")) {
+			const href = emailLink(link.getAttribute("href") ?? "");
+			if (href && href !== link.textContent) link.append(` (${href})`);
+		}
+		for (const line of doc.body.querySelectorAll("br"))
+			line.replaceWith("\n");
+		for (const cell of doc.body.querySelectorAll("td,th"))
+			cell.append("\t");
+		for (const block of doc.body.querySelectorAll(
+			"p,div,li,blockquote,pre,h1,h2,h3,h4,h5,h6,tr",
+		))
+			block.append("\n");
+	}
 	return (doc.body.textContent ?? "")
 		.replace(/(?:\u200b|\u200c|\u200d|\ufeff)/g, "")
+		.replace(/\n{3,}/g, "\n\n")
 		.trim();
 }
 
@@ -179,9 +195,10 @@ export function emailDocument(
 		link.setAttribute("rel", "noopener noreferrer");
 	}
 	// Email-authored colors and layout are source data confined to this document.
+	// design-lint-disable-next-line inline-visual-style -- isolated HTML email document requires self-contained CSS; source rules override the low-specificity typography defaults.
 	const baseStyle = doc.createElement("style");
 	baseStyle.textContent =
-		"html{color-scheme:light}body{margin:0;padding:8px;background:white;color:black;overflow-wrap:anywhere}img{max-width:100%;height:auto}a:focus-visible{outline:2px solid currentColor;outline-offset:2px}";
+		"html{color-scheme:light}body{margin:0;padding:16px;background:white;color:black;overflow-wrap:anywhere}:where(body){font-family:Arial,Helvetica,sans-serif;font-size:16px;line-height:1.6}:where(p){margin-block:0 1em}:where(blockquote){margin-inline:0;padding-inline-start:1em;border-inline-start:2px solid currentColor}img{max-width:100%;height:auto}a:focus-visible{outline:2px solid currentColor;outline-offset:2px}";
 	doc.head.prepend(baseStyle);
 	const clean = DOMPurify.sanitize(doc.documentElement.outerHTML, {
 		...config,

@@ -1,5 +1,6 @@
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import type { ComponentProps } from "react";
+import { MemoryRouter } from "react-router";
 import { TooltipProvider } from "@semoss/ui/next";
 import { createInitialCollaborationState } from "@/features/collaboration/state/collaboration.fixtures";
 import type { WorkspaceMessage } from "@/features/collaboration/state/collaboration.types";
@@ -47,24 +48,27 @@ function view(
 	props: Partial<ComponentProps<typeof WorkConversation>> = {},
 ) {
 	return (
-		<TooltipProvider>
-			<CollaborationSessionProvider initialState={state}>
-				<WorkConversation
-					thread={{ ...state.threads[0], channel: "email" }}
-					entries={entries}
-					allowedSources={
-						new Set(sources.map((message) => message.id))
-					}
-					resumeSignal={0}
-					turn={workSnapshot().turn}
-					{...props}
-				/>
-			</CollaborationSessionProvider>
-		</TooltipProvider>
+		<MemoryRouter>
+			<TooltipProvider>
+				<CollaborationSessionProvider initialState={state}>
+					<WorkConversation
+						thread={{ ...state.threads[0], channel: "email" }}
+						entries={entries}
+						allowedSources={
+							new Set(sources.map((message) => message.id))
+						}
+						resumeSignal={0}
+						onOpenEmail={vi.fn()}
+						turn={workSnapshot().turn}
+						{...props}
+					/>
+				</CollaborationSessionProvider>
+			</TooltipProvider>
+		</MemoryRouter>
 	);
 }
 
-it("renders separate email and assistant sections in chronological order", () => {
+it("renders compact email cards and assistant bubbles in chronological order", () => {
 	render(view(workTimeline(sources, answers, "room")));
 	const transcript = screen.getByRole("region", {
 		name: "Conversation messages",
@@ -79,22 +83,13 @@ it("renders separate email and assistant sections in chronological order", () =>
 	].entries()) {
 		expect(articles[index]).toHaveTextContent(text);
 	}
-	const groups = within(transcript).getAllByRole("region", {
-		name: /^(Email|Assistant) conversation$/,
-	});
-	expect(groups.map((group) => group.getAttribute("aria-label"))).toEqual([
-		"Email conversation",
-		"Assistant conversation",
-		"Email conversation",
-		"Assistant conversation",
-	]);
 	expect(
-		screen.getAllByRole("button", { name: "Collapse email conversation" }),
-	).toHaveLength(2);
-	expect(
-		screen.getAllByRole("button", {
-			name: "Collapse assistant conversation",
+		within(transcript).queryByRole("region", {
+			name: /^(Email|Assistant) conversation$/,
 		}),
+	).toBeNull();
+	expect(
+		screen.getAllByRole("button", { name: /^Open email:/ }),
 	).toHaveLength(2);
 	expect(
 		screen.getAllByRole("region", { name: "Conversation messages" }),
@@ -164,52 +159,12 @@ it("preserves source and assistant empty-state messages in their sections", () =
 	).toBeVisible();
 });
 
-it("collapses each section independently and retains its state as messages append", () => {
-	const { rerender } = render(view(workTimeline(sources, answers, "room")));
-	const firstEmail = screen.getByText("First email");
-	const toggle = screen.getAllByRole("button", {
-		name: "Collapse email conversation",
-	})[0];
-	fireEvent.click(toggle);
-	expect(toggle).toHaveAttribute("aria-expanded", "false");
-	expect(firstEmail).not.toBeVisible();
-	expect(firstEmail.isConnected).toBe(true);
-	expect(screen.getByText("Later email")).toBeVisible();
+it("opens the selected source without expanding its body or changing context", () => {
+	const onOpenEmail = vi.fn();
+	render(view(workTimeline(sources, answers, "room"), { onOpenEmail }));
+	const card = screen.getAllByRole("button", { name: /^Open email:/ })[1];
+	fireEvent.click(card);
+	expect(onOpenEmail).toHaveBeenCalledWith("after", card);
+	expect(screen.queryByTitle(/^Email from/)).toBeNull();
 	expect(screen.getByText("First answer")).toBeVisible();
-	const added: WorkspaceMessage = {
-		...sources[0],
-		id: "added",
-		at: "2026-09-28T10:00:30Z",
-		text: "Another early email",
-	};
-	rerender(view(workTimeline([...sources, added], answers, "room")));
-	expect(
-		screen.getByRole("button", { name: "Expand email conversation" }),
-	).toBe(toggle);
-	expect(screen.getByText("Another early email")).not.toBeVisible();
-	fireEvent.click(toggle);
-	expect(screen.getByText("First email")).toBe(firstEmail);
-	expect(firstEmail).toBeVisible();
-	expect(screen.getByText("Another early email")).toBeVisible();
-	expect(
-		screen.getAllByRole("region", { name: "Email conversation" }),
-	).toHaveLength(2);
-});
-
-it("retains expanded thinking when its assistant section is collapsed and reopened", () => {
-	render(view(workTimeline(sources, answers, "room")));
-	const thinking = screen.getByRole("button", { name: "Thinking" });
-	fireEvent.click(thinking);
-	const reasoning = screen.getByText("More reasoning");
-	const toggle = screen.getAllByRole("button", {
-		name: "Collapse assistant conversation",
-	})[0];
-	fireEvent.click(toggle);
-	expect(reasoning).not.toBeVisible();
-	expect(reasoning.isConnected).toBe(true);
-	expect(screen.getByText("Second answer")).toBeVisible();
-	fireEvent.click(toggle);
-	expect(screen.getByRole("button", { name: "Thinking" })).toBe(thinking);
-	expect(thinking).toHaveAttribute("aria-expanded", "true");
-	expect(reasoning).toBeVisible();
 });

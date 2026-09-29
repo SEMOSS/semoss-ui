@@ -28,6 +28,8 @@ interface EmailEditorProps {
 	errorId?: string;
 	disabled?: boolean;
 	required?: boolean;
+	/** Only an explicit same-document revision belongs in existing Undo history. */
+	bodyReplacement?: number;
 }
 
 /** Form-compatible HTML editor sharing the inline composer's nodes, toolbar and serialization. */
@@ -41,9 +43,10 @@ export function EmailEditor({
 	errorId,
 	disabled,
 	required,
+	bodyReplacement,
 }: EmailEditorProps) {
 	return (
-		<div className="min-w-0 rounded-md border focus-within:ring-2 focus-within:ring-ring">
+		<div className="flex min-h-72 min-w-0 flex-1 flex-col bg-background">
 			<LexicalComposer
 				initialConfig={{
 					namespace: "EmailDraft",
@@ -66,13 +69,18 @@ export function EmailEditor({
 							aria-invalid={Boolean(errorId)}
 							aria-required={required}
 							onBlur={onBlur}
-							className="max-h-80 min-h-40 overflow-auto p-3 outline-none"
+							aria-multiline="true"
+							className="min-h-64 min-w-0 flex-1 break-words @min-lg/compose:px-6 px-4 py-5 text-base leading-relaxed outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-inset"
 						/>
 					}
 					ErrorBoundary={LexicalErrorBoundary}
 				/>
 				<EmailEditorPlugin disabled={disabled} />
-				<EmailEditorValuePlugin value={value} onChange={onChange} />
+				<EmailEditorValuePlugin
+					value={value}
+					onChange={onChange}
+					bodyReplacement={bodyReplacement}
+				/>
 				<HistoryPlugin />
 				<ListPlugin />
 				<LinkPlugin validateUrl={(url) => Boolean(emailLink(url))} />

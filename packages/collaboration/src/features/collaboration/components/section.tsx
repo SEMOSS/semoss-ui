@@ -15,7 +15,7 @@ export function Section({
 	/** Optional supporting action. */
 	action?: ReactNode;
 	className?: string;
-	/** Compact framed summaries in the contextual rail. */
+	/** Compact summaries separated by rules in the contextual rail. */
 	variant?: "plain" | "widget";
 }) {
 	return (
@@ -23,19 +23,12 @@ export function Section({
 			className={cn(
 				"space-y-4",
 				variant === "widget" &&
-					"space-y-3 rounded-xl bg-card p-4 shadow-sm ring-1 ring-border/50",
+					"space-y-4 border-border border-b pb-6 last:border-0 last:pb-0",
 				className,
 			)}
 		>
 			<div className="flex items-center justify-between gap-2">
-				<H2
-					className={cn(
-						"font-medium text-base",
-						variant === "widget" && "text-sm",
-					)}
-				>
-					{title}
-				</H2>
+				<H2 className="font-medium text-base">{title}</H2>
 				{action}
 			</div>
 			{children}

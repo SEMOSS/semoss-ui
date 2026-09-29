@@ -16,7 +16,7 @@ export class EmailDraftSession {
 	private disposed = false;
 	private hasUncertainSave = false;
 
-	/** Retain successful uploads across an explicit retry or Save a new copy. */
+	/** Retain successful uploads across an explicit retry or later edited save. */
 	async save(input: NewDraftInput, files: File[]): Promise<SavedEmailDraft> {
 		if (this.disposed) throw new Error("Reopen this draft before saving.");
 		if (this.pending) throw new Error("This draft is already being saved.");

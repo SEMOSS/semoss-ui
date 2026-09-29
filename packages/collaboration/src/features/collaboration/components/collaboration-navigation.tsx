@@ -96,7 +96,7 @@ export function CollaborationNavigation({
 				},
 			];
 	return (
-		<div className="flex min-h-full flex-col gap-5 px-3 py-4">
+		<div className="flex min-h-full flex-col gap-6 px-3 py-4">
 			<nav
 				aria-label={isBrain ? "Brain" : "Work"}
 				className="space-y-0.5"
@@ -109,9 +109,9 @@ export function CollaborationNavigation({
 						onClick={onNavigate}
 						className={({ isActive }) =>
 							cn(
-								"flex min-h-11 pointer-coarse:min-h-11 items-center gap-2.5 rounded-lg px-3 py-2 font-medium text-sm hover:bg-accent lg:min-h-9 lg:py-1.5",
+								"flex min-h-11 pointer-coarse:min-h-11 items-center gap-2 rounded-lg px-3 py-2 font-medium text-sm hover:bg-primary/5 focus-visible:outline-2 focus-visible:outline-ring lg:min-h-9",
 								isActive
-									? "bg-card text-foreground shadow-sm [&>svg]:text-primary"
+									? "bg-primary/10 text-foreground [&>svg]:text-primary"
 									: "text-muted-foreground",
 							)
 						}
@@ -135,12 +135,13 @@ export function CollaborationNavigation({
 			</nav>
 			<div>
 				<div className="mb-2 flex items-center justify-between pl-3">
-					<Small className="font-medium text-muted-foreground text-xs uppercase tracking-wider">
+					<Small className="font-medium text-muted-foreground text-xs">
 						Topics
 					</Small>
 					<Button
 						variant="ghost"
 						size="icon-sm"
+						className="pointer-coarse:size-11 text-muted-foreground"
 						ref={newTopicRef}
 						aria-label="New topic"
 						onClick={() => setIsCreatingTopic(true)}
@@ -158,9 +159,8 @@ export function CollaborationNavigation({
 								onClick={onNavigate}
 								className={({ isActive }) =>
 									cn(
-										"flex min-h-11 pointer-coarse:min-h-11 items-center gap-2.5 rounded-lg px-3 py-2 text-sm hover:bg-accent lg:min-h-9 lg:py-1.5",
-										isActive &&
-											"bg-card font-medium shadow-sm",
+										"flex min-h-11 pointer-coarse:min-h-11 items-center gap-2 rounded-lg px-3 py-2 text-sm hover:bg-primary/5 focus-visible:outline-2 focus-visible:outline-ring lg:min-h-9",
+										isActive && "bg-primary/10 font-medium",
 									)
 								}
 							>
@@ -197,7 +197,7 @@ export function CollaborationNavigation({
 			</div>
 			{state.openThreadIds.length > 0 && (
 				<div>
-					<Small className="mb-2 px-3 font-medium text-muted-foreground text-xs uppercase tracking-wider">
+					<Small className="mb-2 px-3 font-medium text-muted-foreground text-xs">
 						Open rooms
 					</Small>
 					<nav aria-label="Open rooms">
@@ -219,9 +219,9 @@ export function CollaborationNavigation({
 													onClick={onNavigate}
 													className={({ isActive }) =>
 														cn(
-															"min-w-0 flex-1 truncate rounded-lg px-3 py-2 text-sm before:mr-2 before:inline-block before:size-1.5 before:rounded-sm before:bg-muted-foreground hover:bg-accent lg:py-1.5",
+															"min-h-9 pointer-coarse:min-h-11 min-w-0 flex-1 truncate rounded-lg px-3 py-2 text-sm before:mr-2 before:inline-block before:size-1.5 before:rounded-sm before:bg-muted-foreground hover:bg-primary/5 focus-visible:outline-2 focus-visible:outline-ring",
 															isActive &&
-																"bg-card font-medium before:bg-primary",
+																"bg-primary/10 font-medium before:bg-primary",
 														)
 													}
 												>

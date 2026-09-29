@@ -1,13 +1,14 @@
 import { FilePenLine } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Link, useParams } from "react-router";
-import { Badge, Button, H1, H3, P, Small, toast } from "@semoss/ui/next";
+import { Button, H3, P, Small, toast } from "@semoss/ui/next";
 import { getMail } from "@/features/connectors/api/microsoft";
 import { importOutlookMail } from "@/features/connectors/api/source-mapping";
-import { EmailDraftDialog } from "@/features/connectors/components/email-draft-dialog";
 import type { SourceAttachment } from "@/features/connectors/types";
 import { ThreadAssistant } from "@/features/thread-assistant/thread-assistant";
 import { UnifiedThread } from "@/features/work-thread/unified-thread";
+import { useWorkComposerSession } from "@/features/work-thread/work-composer-state.context";
+import { WorkThreadHeading } from "@/features/work-thread/work-thread-heading";
 import { WORK_THREAD_WORKBENCH } from "@/features/work-thread/work-thread-panels";
 import { importSourceCommand } from "../import-source";
 import { loadThreadMessages } from "../live/live-state";
@@ -19,14 +20,6 @@ import { ThreadMenu } from "./thread-menu";
 import { threadMenuTriggerId } from "./thread-menu.utils";
 import { TopicChip } from "./topic-chip";
 
-interface DraftSelection {
-	id: number;
-	threadId: string;
-	body: string;
-	subject: string;
-	mode: "new" | "reply" | "forward";
-}
-
 /** Work owns one unified conversation and reveals details/files only when requested. */
 export function WorkThread() {
 	const { threadId = "" } = useParams();
@@ -34,8 +27,7 @@ export function WorkThread() {
 	const latestState = useRef(state);
 	latestState.current = state;
 	const [editingGoal, setEditingGoal] = useState(false);
-	const [draft, setDraft] = useState<DraftSelection | null>(null);
-	const [draftOpen, setDraftOpen] = useState(false);
+	const composer = useWorkComposerSession(threadId);
 	const thread = state.threads.find((candidate) => candidate.id === threadId);
 	const workspace = state.workspaces[threadId];
 	const context = selectThreadContext(state, threadId);
@@ -75,27 +67,33 @@ export function WorkThread() {
 		}));
 	const openDraft = (
 		body: string,
-		mode: DraftSelection["mode"] = sourceUid ? "reply" : "new",
+		mode: "new" | "reply" | "forward" = sourceUid ? "reply" : "new",
 		subject = thread.subject,
+		originId?: string,
+		to?: string,
+		cc?: string,
+		bcc?: string,
 	) => {
-		if (
-			!draft ||
-			draft.threadId !== thread.id ||
-			draft.mode !== mode ||
-			body
-		) {
-			setDraft({
-				id: Date.now(),
-				threadId: thread.id,
-				body,
-				mode,
-				subject,
-			});
+		if (mode === "reply" && sourceUid && !body && !originId) {
+			composer.openReply(sourceUid, subject, false);
+			return;
 		}
-		setDraftOpen(true);
+		composer.requestEmailDraft({
+			id:
+				originId ??
+				(body ? crypto.randomUUID() : `${mode}:${sourceUid ?? "new"}`),
+			mode,
+			sourceUid,
+			body,
+			subject,
+			to,
+			cc,
+			bcc,
+		});
 	};
+
 	return (
-		<div className="flex min-h-0 min-w-0 flex-1 flex-col py-2">
+		<div className="flex min-h-0 min-w-0 flex-1 flex-col">
 			<ThreadAssistant
 				workbench={WORK_THREAD_WORKBENCH}
 				threadId={thread.id}
@@ -166,29 +164,12 @@ export function WorkThread() {
 								triggerId={threadMenuTriggerId(thread.id)}
 							>
 								{(menu) => (
-									<div className="flex min-w-0 flex-1 items-start gap-3">
-										<div className="min-w-0 flex-1">
-											<H1 className="break-words text-lg">
-												{thread.subject}
-											</H1>
-											<Small className="text-muted-foreground">
-												{thread.channel === "email"
-													? "Outlook"
-													: thread.channel}{" "}
-												· {thread.messageCount} source
-												messages
-											</Small>
-											{thread.isSample && (
-												<Badge
-													variant="secondary"
-													className="ml-2"
-												>
-													Sample
-												</Badge>
-											)}
-										</div>
+									<WorkThreadHeading
+										thread={thread}
+										topics={state.topics}
+									>
 										{menu}
-									</div>
+									</WorkThreadHeading>
 								)}
 							</ThreadMenu>
 						}
@@ -276,7 +257,7 @@ export function WorkThread() {
 												}
 											>
 												<FilePenLine aria-hidden="true" />
-												Draft reply
+												Write reply yourself
 											</Button>
 											<Button
 												variant="outline"
@@ -285,7 +266,7 @@ export function WorkThread() {
 													openDraft("", "forward")
 												}
 											>
-												Draft forward
+												Write forward yourself
 											</Button>
 											<Button
 												variant="outline"
@@ -302,8 +283,8 @@ export function WorkThread() {
 								{workspace.drafts.map((item) => (
 									<div key={item.id} className="space-y-2">
 										<Small>Draft · not sent</Small>
-										<P className="whitespace-pre-wrap break-words">
-											{item.body}
+										<P className="line-clamp-1 break-words">
+											{item.subject || "Email draft"}
 										</P>
 										<Button
 											variant="outline"
@@ -312,6 +293,10 @@ export function WorkThread() {
 													item.body,
 													"new",
 													item.subject,
+													`workspace:${item.id}`,
+													item.to,
+													item.cc,
+													item.bcc,
 												)
 											}
 										>
@@ -324,17 +309,6 @@ export function WorkThread() {
 					/>
 				)}
 			/>
-			{draft && draft.threadId === thread.id && (
-				<EmailDraftDialog
-					key={draft.id}
-					isOpen={draftOpen}
-					onOpenChange={setDraftOpen}
-					mode={draft.mode}
-					sourceUid={sourceUid}
-					initialBody={draft.body}
-					initialSubject={draft.subject}
-				/>
-			)}
 		</div>
 	);
 }

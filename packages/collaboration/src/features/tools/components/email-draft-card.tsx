@@ -1,7 +1,10 @@
-import { Check, Copy, ExternalLink, Mail } from "lucide-react";
-import { useMemo, useState } from "react";
-import { Button, cn, Muted, toast } from "@semoss/ui/next";
+import { Check, Copy, ExternalLink } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Badge, Button, P, toast } from "@semoss/ui/next";
 import { copyTextToClipboard } from "@semoss/utility";
+import { EmailBody } from "@/features/email/email-body";
+import { draftText } from "@/features/email/email-html";
+import { EmailMessageHeader } from "@/features/email/email-message-header";
 import type { ConversationTool } from "@/features/messages/types/message";
 
 // Reactor/MCP tool names both end in this, e.g. "MicrosoftOutlookSaveDraft"
@@ -34,16 +37,6 @@ function addressList(value: unknown): string[] {
 
 function textArg(value: unknown): string {
 	return typeof value === "string" ? value : "";
-}
-
-/** Strip tags from an HTML draft body down to readable plain text. */
-function htmlToText(html: string): string {
-	try {
-		const doc = new DOMParser().parseFromString(html, "text/html");
-		return doc.body.textContent ?? "";
-	} catch {
-		return html.replace(/<[^>]*>/g, "");
-	}
 }
 
 /** First matching string field of a JSON tool result, if present. */
@@ -83,6 +76,10 @@ const BODY_CLAMP_LINES = 12;
 export function EmailDraftCard({ tool }: { tool: ConversationTool }) {
 	const [expanded, setExpanded] = useState(false);
 	const [copied, setCopied] = useState(false);
+	const copyTimer = useRef<ReturnType<typeof setTimeout> | undefined>(
+		undefined,
+	);
+	useEffect(() => () => clearTimeout(copyTimer.current), []);
 
 	const to = addressList(tool.arguments.to);
 	const cc = addressList(tool.arguments.cc);
@@ -91,7 +88,7 @@ export function EmailDraftCard({ tool }: { tool: ConversationTool }) {
 	const isHtml =
 		tool.arguments.html === true || tool.arguments.html === "true";
 	const body = useMemo(
-		() => (isHtml ? htmlToText(rawBody) : rawBody),
+		() => (isHtml ? draftText(rawBody, "html") : rawBody),
 		[isHtml, rawBody],
 	);
 
@@ -113,89 +110,98 @@ export function EmailDraftCard({ tool }: { tool: ConversationTool }) {
 	const displayBody =
 		isLong && !expanded ? clamped.slice(0, BODY_CLAMP_CHARS) : body;
 
-	async function handleCopy() {
+	async function handleCopy(): Promise<void> {
 		try {
 			await copyTextToClipboard(body);
 			setCopied(true);
-			window.setTimeout(() => setCopied(false), 1500);
+			clearTimeout(copyTimer.current);
+			copyTimer.current = setTimeout(() => setCopied(false), 1500);
 		} catch {
 			toast.error("Could not copy the draft body.");
 		}
 	}
 
 	return (
-		<div className="flex flex-col gap-2 border-t p-3 text-sm">
-			<div className="flex items-center gap-2">
-				<Mail
-					aria-hidden="true"
-					className="size-4 shrink-0 text-muted-foreground"
-				/>
-				<span className="font-medium">Email draft</span>
-				<Muted
-					className={cn(
-						"text-xs",
-						tool.status === "FAILED" && "text-destructive",
-					)}
-				>
-					{statusText}
-				</Muted>
-			</div>
-			<div className="flex flex-col gap-1 text-muted-foreground text-xs">
-				{to.length > 0 && (
-					<p>
-						<span className="font-medium text-foreground">To </span>
-						{to.join(", ")}
-					</p>
-				)}
-				{cc.length > 0 && (
-					<p>
-						<span className="font-medium text-foreground">Cc </span>
-						{cc.join(", ")}
-					</p>
-				)}
-			</div>
-			{subject && <p className="font-semibold">{subject}</p>}
-			<p className="wrap-break-word whitespace-pre-wrap leading-6">
-				{displayBody}
-				{isLong && !expanded ? "..." : ""}
-			</p>
-			{isLong && (
-				<Button
-					type="button"
-					variant="ghost"
-					size="sm"
-					className="w-fit px-2"
-					onClick={() => setExpanded((value) => !value)}
-				>
-					{expanded ? "Show less" : "Show more"}
-				</Button>
-			)}
-			<div className="flex items-center gap-2 pt-1">
-				<Button
-					type="button"
-					variant="outline"
-					size="sm"
-					onClick={() => void handleCopy()}
-				>
-					{copied ? (
-						<Check aria-hidden="true" className="size-3.5" />
-					) : (
-						<Copy aria-hidden="true" className="size-3.5" />
-					)}
-					Copy
-				</Button>
-				{webLink && (
-					<a
-						href={webLink}
-						target="_blank"
-						rel="noreferrer"
-						className="inline-flex items-center gap-1 text-primary text-xs underline"
+		<section
+			aria-label="Email draft"
+			className="min-w-0 space-y-4 border-border border-t p-4"
+		>
+			<EmailMessageHeader
+				subject={subject || "Email draft"}
+				to={to}
+				cc={cc}
+				status={
+					<Badge
+						variant={
+							tool.status === "FAILED"
+								? "destructive"
+								: "secondary"
+						}
 					>
-						<ExternalLink aria-hidden="true" className="size-3.5" />
-						Open in Outlook
-					</a>
-				)}
-			</div>
-		</div>
+						{statusText}
+					</Badge>
+				}
+				actions={
+					<>
+						<Button
+							type="button"
+							variant="outline"
+							size="sm"
+							className="min-h-9 pointer-coarse:min-h-11"
+							onClick={() => void handleCopy()}
+						>
+							{copied ? (
+								<Check aria-hidden="true" />
+							) : (
+								<Copy aria-hidden="true" />
+							)}
+							Copy
+						</Button>
+						{webLink && tool.status === "COMPLETED" && (
+							<Button
+								variant="ghost"
+								size="sm"
+								className="min-h-9 pointer-coarse:min-h-11"
+								asChild
+							>
+								<a
+									href={webLink}
+									target="_blank"
+									rel="noreferrer"
+								>
+									<ExternalLink aria-hidden="true" />
+									Open in Outlook
+								</a>
+							</Button>
+						)}
+					</>
+				}
+			/>
+			{isHtml ? (
+				<EmailBody
+					key={tool.id}
+					html={rawBody}
+					title={subject || "Email draft"}
+				/>
+			) : (
+				<>
+					<P className="max-w-prose whitespace-pre-wrap break-words leading-relaxed">
+						{displayBody}
+						{isLong && !expanded ? "…" : ""}
+					</P>
+					{isLong && (
+						<Button
+							type="button"
+							variant="ghost"
+							size="sm"
+							aria-expanded={expanded}
+							onClick={() => setExpanded((value) => !value)}
+						>
+							{expanded ? "Show less" : "Show more"}
+						</Button>
+					)}
+				</>
+			)}
+		</section>
 	);
 }

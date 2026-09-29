@@ -91,6 +91,7 @@ beforeAll(() => {
 it("formats the saved selection through dropdowns and keeps undo/redo available", async () => {
 	const { editor, user } = setup();
 	await selectText(editor);
+	await user.click(screen.getByRole("button", { name: "More formatting" }));
 	await user.click(screen.getByRole("button", { name: "Bold" }));
 	expect(screen.getByRole("button", { name: "Bold" })).toHaveAttribute(
 		"aria-pressed",
@@ -139,6 +140,7 @@ it("formats the saved selection through dropdowns and keeps undo/redo available"
 it("applies links and colors to the selection and returns focus after dismissing a popover", async () => {
 	const { editor, user } = setup();
 	await selectText(editor);
+	await user.click(screen.getByRole("button", { name: "More formatting" }));
 	await user.click(screen.getByRole("button", { name: "Link" }));
 	expect(screen.getByRole("button", { name: "Apply link" })).toBeDisabled();
 	await user.type(
@@ -178,6 +180,7 @@ it("applies links and colors to the selection and returns focus after dismissing
 it("reflects paragraph and alignment changes and toggles lists off", async () => {
 	const { editor, user } = setup();
 	await selectText(editor);
+	await user.click(screen.getByRole("button", { name: "More formatting" }));
 	await user.click(screen.getByRole("combobox", { name: "Paragraph style" }));
 	await user.click(screen.getByRole("option", { name: "Heading 2" }));
 	expect(screen.getByRole("textbox").querySelector("h2")).toHaveTextContent(
@@ -205,8 +208,10 @@ it("reflects paragraph and alignment changes and toggles lists off", async () =>
 it("edits a table through its contextual menu without losing the selected cell", async () => {
 	const { editor, user } = setup();
 	await selectText(editor);
+	await user.click(screen.getByRole("button", { name: "More formatting" }));
 	await user.click(screen.getByRole("button", { name: "Insert table" }));
 	expect(screen.getByRole("textbox").querySelectorAll("tr")).toHaveLength(3);
+	await user.click(screen.getByRole("button", { name: "More formatting" }));
 	await user.click(screen.getByRole("button", { name: "Table options" }));
 	await user.click(screen.getByRole("menuitem", { name: "Add row" }));
 	expect(screen.getByRole("textbox").querySelectorAll("tr")).toHaveLength(4);
@@ -223,6 +228,7 @@ it("edits a table through its contextual menu without losing the selected cell",
 it("disables controls in an already open popover", async () => {
 	const { editor, user, disable } = setup();
 	await selectText(editor);
+	await user.click(screen.getByRole("button", { name: "More formatting" }));
 	await user.click(screen.getByRole("button", { name: "Link" }));
 	await user.type(
 		screen.getByRole("textbox", { name: "Link address" }),
@@ -243,4 +249,27 @@ it("shows a tooltip on keyboard focus and dismisses it with Escape", async () =>
 	await user.keyboard("{Escape}");
 	expect(screen.queryByRole("tooltip")).not.toBeInTheDocument();
 	expect(bold).toHaveFocus();
+});
+
+it("starts with essential controls and preserves formatting and selection through disclosure", async () => {
+	const { editor, user } = setup();
+	await selectText(editor);
+	expect(screen.queryByRole("combobox", { name: "Font size" })).toBeNull();
+	expect(screen.getByRole("button", { name: "Link" })).toBeVisible();
+	const disclosure = screen.getByRole("button", { name: "More formatting" });
+	await user.click(disclosure);
+	expect(disclosure).toHaveAttribute("aria-expanded", "true");
+	await user.click(screen.getByRole("combobox", { name: "Font size" }));
+	await user.click(screen.getByRole("option", { name: "18px" }));
+	await user.click(disclosure);
+	expect(disclosure).toHaveAttribute("aria-expanded", "false");
+	await user.click(screen.getByRole("button", { name: "Bold" }));
+	expect(
+		screen.getByRole("textbox").querySelector("strong"),
+	).toHaveTextContent("Alpha");
+	expect(screen.getByRole("textbox").querySelector("strong")).toHaveStyle({
+		fontSize: "18px",
+	});
+	await user.click(screen.getByRole("button", { name: "Undo" }));
+	expect(screen.getByRole("textbox").querySelector("strong")).toBeNull();
 });

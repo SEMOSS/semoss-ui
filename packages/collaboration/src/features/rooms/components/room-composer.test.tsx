@@ -152,7 +152,7 @@ describe("RoomComposer", () => {
 			screen
 				.getByRole("textbox", { name: "Message Research agent" })
 				.closest("fieldset"),
-		).toHaveClass("rounded-md", "border-input");
+		).toHaveClass("rounded-2xl", "border-border");
 		expect(
 			screen.getByRole("button", { name: "Open composer actions" }),
 		).toBeInTheDocument();

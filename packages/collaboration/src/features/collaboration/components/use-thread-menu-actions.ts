@@ -4,18 +4,26 @@ import {
 	BookOpen,
 	Check,
 	Clock,
+	ExternalLink,
+	FilePenLine,
+	Forward,
 	Link2,
 	type LucideIcon,
+	Mail,
 	MessageSquare,
 	PanelRightOpen,
 	Plus,
+	Reply,
 	RotateCcw,
+	Sparkles,
 	X,
 } from "lucide-react";
 import { type RefObject, useContext } from "react";
 import { useLocation, useNavigate } from "react-router";
 import { toast } from "@semoss/ui/next";
 import { copyTextToClipboard } from "@semoss/utility";
+import { safeSourceUrl } from "@/features/connectors/api/microsoft";
+import type { ThreadActionRequest } from "@/features/work-thread/thread-action-request";
 import type { ThreadWorkbenchRequest } from "@/features/work-thread/thread-workbench-request";
 import type { Thread, WorkItem } from "../state/collaboration.types";
 import { useCollaborationSession } from "../state/collaboration-session.context";
@@ -29,6 +37,7 @@ export interface ThreadMenuAction {
 	onSelect: () => void;
 	/** Let navigation or the destination dialog own focus. */
 	movesFocus?: boolean;
+	disabled?: boolean;
 }
 
 export interface ThreadMenuGroup {
@@ -43,11 +52,15 @@ export function useThreadMenuActions({
 	item,
 	triggerRef,
 	onNavigate,
+	sourceMessageId,
+	isSourceIncluded = true,
 }: {
 	thread: Thread;
 	item?: WorkItem;
 	triggerRef: RefObject<HTMLButtonElement | null>;
 	onNavigate?: () => void;
+	sourceMessageId?: string;
+	isSourceIncluded?: boolean;
 }): ThreadMenuGroup[] {
 	const { state, dispatch } = useCollaborationSession();
 	const location = useLocation();
@@ -86,7 +99,92 @@ export function useThreadMenuActions({
 		);
 		onNavigate?.();
 	};
+	const sourceUid =
+		thread.source?.kind === "outlook"
+			? (sourceMessageId ?? thread.source.nativeId)
+			: undefined;
+	const requestAction = (action: ThreadActionRequest["action"]) => {
+		const current: unknown = location.state;
+		const isCurrentThread = pathname === workPath;
+		const request: ThreadActionRequest = {
+			id: crypto.randomUUID(),
+			threadId: thread.id,
+			action,
+			...((action === "ask" ? sourceMessageId : sourceUid)
+				? {
+						sourceMessageId:
+							action === "ask" ? sourceMessageId : sourceUid,
+					}
+				: {}),
+		};
+		void navigate(
+			isCurrentThread
+				? { pathname, search: location.search, hash: location.hash }
+				: workPath,
+			{
+				replace: isCurrentThread,
+				state: {
+					...(isCurrentThread &&
+					current &&
+					typeof current === "object"
+						? current
+						: {}),
+					threadAction: request,
+				},
+			},
+		);
+		onNavigate?.();
+	};
 	const groups: ThreadMenuGroup[] = [
+		{
+			id: "assistant",
+			label: "Assistant",
+			actions: [
+				{
+					id: "ask",
+					label: "Ask assistant",
+					icon: Sparkles,
+					movesFocus: true,
+					disabled: Boolean(sourceMessageId) && !isSourceIncluded,
+					onSelect: () => requestAction("ask"),
+				},
+				...(sourceUid
+					? [
+							{
+								id: "draft",
+								label: "Draft with assistant",
+								icon: FilePenLine,
+								movesFocus: true,
+								onSelect: () => requestAction("draft"),
+							},
+						]
+					: []),
+			],
+		},
+		...(sourceUid
+			? [
+					{
+						id: "email",
+						label: "Email",
+						actions: [
+							{
+								id: "reply",
+								label: "Write reply yourself",
+								icon: Reply,
+								movesFocus: true,
+								onSelect: () => requestAction("reply"),
+							},
+							{
+								id: "forward",
+								label: "Write forward yourself",
+								icon: Forward,
+								movesFocus: true,
+								onSelect: () => requestAction("forward"),
+							},
+						],
+					},
+				]
+			: []),
 		{
 			id: "navigate",
 			actions: [
@@ -174,6 +272,66 @@ export function useThreadMenuActions({
 			],
 		},
 	];
+	if (sourceMessageId) {
+		const message = state.workspaces[thread.id]?.messages.find(
+			(candidate) => candidate.id === sourceMessageId,
+		);
+		const webLink = safeSourceUrl(
+			message?.webLink ||
+				(sourceMessageId === thread.source?.nativeId
+					? thread.source?.webLink
+					: undefined),
+		);
+		return [
+			...groups.filter(
+				(group) => group.id === "assistant" || group.id === "email",
+			),
+			{
+				id: "message",
+				label: "This email",
+				actions: [
+					{
+						id: "read",
+						label: "Open email",
+						icon: Mail,
+						movesFocus: true,
+						onSelect: () => requestAction("read"),
+					},
+					...(webLink
+						? [
+								{
+									id: "outlook",
+									label: "Open in Outlook",
+									icon: ExternalLink,
+									onSelect: () => {
+										window.open(
+											webLink,
+											"_blank",
+											"noopener,noreferrer",
+										);
+									},
+								},
+								{
+									id: "copy-message",
+									label: "Copy email link",
+									icon: Link2,
+									onSelect: () => {
+										void copyTextToClipboard(webLink, {
+											onSuccess: () =>
+												toast.success(
+													"Email link copied",
+												),
+											onError: (message) =>
+												toast.error(message),
+										});
+									},
+								},
+							]
+						: []),
+				],
+			},
+		];
+	}
 	if (!isBrain && item?.threadId === thread.id) {
 		const update = (
 			changes: Partial<Pick<WorkItem, "status" | "suggested">>,

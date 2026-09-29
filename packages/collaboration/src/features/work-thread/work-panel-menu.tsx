@@ -1,14 +1,12 @@
 import {
 	ChevronDown,
-	Download,
+	Command,
 	FilePlus2,
 	FolderOpen,
 	FolderPlus,
-	RefreshCw,
-	Save,
 	Upload,
 } from "lucide-react";
-import { type ComponentProps, useId, useRef, useState } from "react";
+import { type ComponentProps, useEffect, useRef, useState } from "react";
 import {
 	FILE_PANEL_EVENTS,
 	type FilePanelMode,
@@ -17,60 +15,64 @@ import {
 import { NewFileOverlay } from "@semoss/shared";
 import {
 	Button,
-	Dialog,
-	DialogContent,
-	DialogDescription,
-	DialogFooter,
-	DialogHeader,
-	DialogTitle,
 	DropdownMenu,
 	DropdownMenuContent,
 	DropdownMenuGroup,
 	DropdownMenuItem,
-	DropdownMenuLabel,
 	DropdownMenuSeparator,
 	DropdownMenuTrigger,
-	Small,
 } from "@semoss/ui/next";
 import { useWorkbench } from "@semoss/workbench";
 import { useToolWorkbench } from "@/features/tools/tool-workbench.context";
-import { useWorkFileActions } from "./use-work-file-actions";
 import { useWorkPanelActions } from "./use-work-panel-actions";
-import { WorkViewMenu } from "./work-view-menu";
+import { useWorkThread } from "./work-thread-context";
 
 interface CreationRequest
 	extends Pick<ComponentProps<typeof NewFileOverlay>, "path" | "action"> {
 	mode: FilePanelMode;
 }
-interface RefreshRequest {
-	id: string;
-	name: string;
-	path?: string;
-	refresh: () => void;
-}
 
-/** Thread file actions and panel navigation, kept reachable when the conversation is concealed. */
+const FIXED_PANELS = [
+	{ id: "context", label: "Context" },
+	{ id: "tools", label: "Tools" },
+	{ id: "activity", label: "Activity" },
+	{ id: "settings", label: "Settings" },
+];
+const MENU_ITEM_CLASS = "min-h-11 py-1 text-xs md:min-h-7";
+
+/** Fixed workspace actions, independent of the selected file or panel. */
 export function WorkPanelMenu() {
 	const panelActions = useWorkPanelActions();
 	const workbench = useToolWorkbench();
-	const file = useWorkFileActions();
-	const layoutActions = useWorkbench((state) => state.layout.actions);
+	const { snapshot } = useWorkThread();
 	const emit = useWorkbench((state) => state.events.actions.emit);
+	const setCommandOpen = useWorkbench(
+		(state) => state.command.actions.setCommandOpen,
+	);
+	const isCommandOpen = useWorkbench((state) => state.command.isCommandOpen);
 	const [isOpen, setIsOpen] = useState(false);
 	const [creation, setCreation] = useState<CreationRequest | null>(null);
-	const [refreshRequest, setRefreshRequest] = useState<RefreshRequest | null>(
-		null,
-	);
 	const trigger = useRef<HTMLButtonElement>(null);
 	const isOpeningOverlay = useRef(false);
-	const descriptionId = useId();
+	const commandsFromMenu = useRef(false);
+	// The shared palette has no trigger of its own; restore this menu’s focus only when it opened it.
+	useEffect(() => {
+		if (isCommandOpen || !commandsFromMenu.current) return;
+		commandsFromMenu.current = false;
+		if (!workbench.isOpen) return;
+		const frame = requestAnimationFrame(() => trigger.current?.focus());
+		return () => cancelAnimationFrame(frame);
+	}, [isCommandOpen, workbench.isOpen]);
+	const isReady = snapshot.isReady && Boolean(workbench.insightId);
 	const browse = panelActions.find((action) => action.id === "files");
-	const returnFocus = () =>
-		requestAnimationFrame(() => trigger.current?.focus());
 	const openCreation = (action: CreationRequest["action"]) => {
-		if (!file.isReady) return;
+		if (!isReady) return;
 		isOpeningOverlay.current = true;
-		setCreation({ action, mode: file.mode, path: file.destination });
+		setCreation({
+			action,
+			mode: { type: "INSIGHT", insightId: workbench.insightId },
+			path: "/",
+		});
 	};
 	const closeCreation = (success: boolean) => {
 		if (success && creation)
@@ -78,11 +80,7 @@ export function WorkPanelMenu() {
 				scope: getFilePanelScope(creation.mode),
 			});
 		setCreation(null);
-		returnFocus();
-	};
-	const closeRefresh = () => {
-		setRefreshRequest(null);
-		returnFocus();
+		requestAnimationFrame(() => trigger.current?.focus());
 	};
 	return (
 		<>
@@ -96,10 +94,10 @@ export function WorkPanelMenu() {
 						type="button"
 						variant="ghost"
 						size="sm"
-						className="h-11 gap-1 px-2 text-xs md:h-6"
+						className="h-11 min-w-11 gap-1 px-2 text-muted-foreground text-xs data-[state=open]:bg-accent data-[state=open]:text-foreground md:h-7"
 					>
-						File{" "}
-						<ChevronDown aria-hidden="true" className="size-3" />
+						File
+						<ChevronDown aria-hidden="true" className="size-3.5" />
 					</Button>
 				</DropdownMenuTrigger>
 				<DropdownMenuContent
@@ -111,138 +109,88 @@ export function WorkPanelMenu() {
 					}}
 				>
 					<DropdownMenuGroup>
-						<DropdownMenuLabel className="py-1 text-muted-foreground text-xs">
-							Browse and create
-						</DropdownMenuLabel>
 						<DropdownMenuItem
-							className="min-h-8 py-1 text-xs md:min-h-7"
-							disabled={browse?.disabled || !file.isReady}
+							className={MENU_ITEM_CLASS}
+							disabled={browse?.disabled || !isReady}
 							onSelect={browse?.onSelect}
 						>
-							<FolderOpen aria-hidden="true" />
+							<FolderOpen
+								aria-hidden="true"
+								className="size-3.5"
+							/>
 							Browse files…
 						</DropdownMenuItem>
 						<DropdownMenuItem
-							className="min-h-8 py-1 text-xs md:min-h-7"
-							disabled={!file.isReady}
+							className={MENU_ITEM_CLASS}
+							disabled={!isReady}
 							onSelect={() => openCreation("add_file")}
 						>
-							<FilePlus2 aria-hidden="true" />
+							<FilePlus2
+								aria-hidden="true"
+								className="size-3.5"
+							/>
 							New file…
 						</DropdownMenuItem>
 						<DropdownMenuItem
-							className="min-h-8 py-1 text-xs md:min-h-7"
-							disabled={!file.isReady}
+							className={MENU_ITEM_CLASS}
+							disabled={!isReady}
 							onSelect={() => openCreation("add_directory")}
 						>
-							<FolderPlus aria-hidden="true" />
+							<FolderPlus
+								aria-hidden="true"
+								className="size-3.5"
+							/>
 							New folder…
 						</DropdownMenuItem>
 						<DropdownMenuItem
-							className="min-h-8 py-1 text-xs md:min-h-7"
-							disabled={!file.isReady}
+							className={MENU_ITEM_CLASS}
+							disabled={!isReady}
 							onSelect={() => openCreation("upload")}
 						>
-							<Upload aria-hidden="true" />
+							<Upload aria-hidden="true" className="size-3.5" />
 							Upload files…
 						</DropdownMenuItem>
 					</DropdownMenuGroup>
 					<DropdownMenuSeparator />
-					<DropdownMenuGroup aria-describedby={descriptionId}>
-						<DropdownMenuLabel className="py-1 text-muted-foreground text-xs">
-							Current file
-						</DropdownMenuLabel>
-						<DropdownMenuItem
-							className="min-h-8 py-1 text-xs md:min-h-7"
-							disabled={!file.canSave}
-							onSelect={file.save}
-							aria-describedby={descriptionId}
-						>
-							<Save aria-hidden="true" />
-							Save file
-						</DropdownMenuItem>
-						<DropdownMenuItem
-							className="min-h-8 py-1 text-xs md:min-h-7"
-							disabled={!file.canDownload}
-							onSelect={file.download}
-							aria-describedby={descriptionId}
-						>
-							<Download aria-hidden="true" />
-							{file.isDirty
-								? "Download saved version"
-								: "Download file"}
-						</DropdownMenuItem>
-						<DropdownMenuItem
-							className="min-h-8 py-1 text-xs md:min-h-7"
-							disabled={!file.canRefresh}
-							aria-describedby={descriptionId}
-							onSelect={() => {
-								if (file.isDirty) {
-									isOpeningOverlay.current = true;
-									setRefreshRequest({
-										id: file.selectedId,
-										name: file.name,
-										path: file.path,
-										refresh: file.refresh,
-									});
-								} else file.refresh();
-							}}
-						>
-							<RefreshCw aria-hidden="true" />
-							{file.refreshLabel}
-						</DropdownMenuItem>
-						<Small
-							id={descriptionId}
-							className="block px-2 py-1 text-muted-foreground text-xs"
-						>
-							{file.description}
-						</Small>
+					<DropdownMenuGroup>
+						{FIXED_PANELS.map((panel) => {
+							const action = panelActions.find(
+								(candidate) => candidate.id === panel.id,
+							);
+							if (!action) return null;
+							return (
+								<DropdownMenuItem
+									key={panel.id}
+									className={MENU_ITEM_CLASS}
+									disabled={action.disabled}
+									onSelect={action.onSelect}
+								>
+									<action.icon
+										aria-hidden="true"
+										className="size-3.5"
+									/>
+									{panel.label}
+								</DropdownMenuItem>
+							);
+						})}
 					</DropdownMenuGroup>
+					<DropdownMenuSeparator />
+					<DropdownMenuItem
+						className={MENU_ITEM_CLASS}
+						onSelect={() => {
+							isOpeningOverlay.current = true;
+							commandsFromMenu.current = true;
+							setCommandOpen(true);
+						}}
+					>
+						<Command aria-hidden="true" className="size-3.5" />
+						Commands…
+					</DropdownMenuItem>
 				</DropdownMenuContent>
 			</DropdownMenu>
-			<WorkViewMenu />
 			{creation && workbench.isOpen && (
 				<NewFileOverlay {...creation} open onClose={closeCreation} />
 			)}
-			<Dialog
-				open={Boolean(refreshRequest && workbench.isOpen)}
-				onOpenChange={(open) => {
-					if (!open) closeRefresh();
-				}}
-			>
-				<DialogContent>
-					<DialogHeader>
-						<DialogTitle>Discard edits and refresh?</DialogTitle>
-						<DialogDescription>
-							Your unsaved changes to {refreshRequest?.name} will
-							be replaced with the saved file.
-						</DialogDescription>
-					</DialogHeader>
-					<DialogFooter>
-						<Button variant="outline" onClick={closeRefresh}>
-							Cancel
-						</Button>
-						<Button
-							variant="destructive"
-							onClick={() => {
-								if (
-									refreshRequest &&
-									layoutActions.findPanels(
-										(panel) =>
-											panel.id === refreshRequest.id &&
-											panel.config?.path ===
-												refreshRequest.path,
-									).length
-								)
-									refreshRequest.refresh();
-								closeRefresh();
-							}}
-						>
-							Discard and refresh
-						</Button>
-					</DialogFooter>
-				</DialogContent>
-			</Dialog>
 		</>
 	);
 }

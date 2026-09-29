@@ -1,5 +1,7 @@
 /** Stable, thread-local panel identities. */
 export const WORK_PANEL_TYPES = {
+	EMAIL: "work-email",
+	DRAFT: "work-email-draft",
 	CONTEXT: "work-context",
 	SETTINGS: "work-settings",
 	TOOLS: "work-tools",

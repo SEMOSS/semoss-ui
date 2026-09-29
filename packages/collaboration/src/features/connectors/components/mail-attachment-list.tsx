@@ -1,3 +1,4 @@
+import { Download, FileText } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useInsight } from "@semoss/sdk/react";
 import { Alert, AlertDescription, Button, P } from "@semoss/ui/next";
@@ -101,11 +102,17 @@ export function MailAttachmentList({
 			{attachments.map((attachment) => (
 				<div
 					key={attachment.id}
-					className="flex flex-wrap items-center gap-2 rounded-md border border-border p-3"
+					className="flex min-w-0 flex-wrap items-center gap-3 rounded-lg border border-border p-3"
 				>
+					<FileText
+						className="size-5 shrink-0 text-muted-foreground"
+						aria-hidden="true"
+					/>
 					<div className="min-w-0 flex-1">
-						<P className="break-words">{attachment.name}</P>
-						<P className="text-muted-foreground">
+						<P className="break-words font-medium text-sm">
+							{attachment.name}
+						</P>
+						<P className="text-muted-foreground text-sm">
 							{attachment.size === undefined
 								? ""
 								: `${Math.ceil(attachment.size / 1024)} KB · `}
@@ -119,10 +126,12 @@ export function MailAttachmentList({
 							type="button"
 							variant="outline"
 							size="sm"
+							className="min-h-9 pointer-coarse:min-h-11"
 							disabled={pending !== null}
 							aria-label={`Download ${attachment.name}`}
 							onClick={() => void handleFile(attachment, false)}
 						>
+							<Download className="size-4" aria-hidden="true" />
 							{pending === attachment.id
 								? "Preparing…"
 								: "Download"}
@@ -133,6 +142,7 @@ export function MailAttachmentList({
 							type="button"
 							variant="outline"
 							size="sm"
+							className="min-h-9 pointer-coarse:min-h-11"
 							disabled={pending !== null}
 							onClick={() => void handleFile(attachment, true)}
 						>

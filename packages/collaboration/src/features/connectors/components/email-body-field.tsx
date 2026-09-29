@@ -13,10 +13,12 @@ export function EmailBodyField({
 	label,
 	required,
 	disabled,
+	bodyReplacement,
 }: {
 	label: string;
 	required?: boolean;
 	disabled?: boolean;
+	bodyReplacement?: number;
 }) {
 	const id = useId();
 	const { control } = useFormContext<{ body: string }>();
@@ -25,11 +27,16 @@ export function EmailBodyField({
 			control={control}
 			name="body"
 			render={({ field, fieldState }) => (
-				<Field>
-					<FieldLabel id={`${id}-label`} htmlFor={id}>
+				<Field className="min-w-0 flex-1 shrink-0 gap-0">
+					<FieldLabel
+						className="sr-only"
+						id={`${id}-label`}
+						htmlFor={id}
+					>
 						{label}
 					</FieldLabel>
 					<EmailEditor
+						bodyReplacement={bodyReplacement}
 						id={id}
 						labelId={`${id}-label`}
 						errorId={fieldState.error ? `${id}-error` : undefined}
