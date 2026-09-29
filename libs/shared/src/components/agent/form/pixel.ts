@@ -57,3 +57,37 @@ export const buildEditWorkspacePixel = (
 
 	return `EditWorkspace(workspaceId=["${workspaceId}"], name=${JSON.stringify(data.name)}, description=${JSON.stringify(data.description)}, systemPrompt=${JSON.stringify(data.instructions)}, mcp=${JSON.stringify(mcp)}, skills=${JSON.stringify(skills)}, prompts=${JSON.stringify(data.prompts)}, modelId=${JSON.stringify(data.modelId)}, useDefaultAgentTools=${JSON.stringify(data.useDefaultAgentTools)}, disabledDefaultTools=${JSON.stringify(data.disabledDefaultTools)}, maxTurns=${JSON.stringify(data.maxTurns)}, maxReflections=${JSON.stringify(data.maxReflections)}, maxSeconds=${JSON.stringify(data.maxSeconds)}, maxSubagentDepth=${JSON.stringify(data.maxSubagentDepth)}, maxSubagentsPerRun=${JSON.stringify(data.maxSubagentsPerRun)}, maxSpawnsPerTurn=${JSON.stringify(data.maxSpawnsPerTurn)}, subagents=${JSON.stringify(subagents)}, hooks=${JSON.stringify(hooks)}, greeting=${JSON.stringify(data.greeting)}, greetingEnabled=${JSON.stringify(data.greetingEnabled)});`;
 };
+
+/**
+ * Builds the AddWorkspace pixel for a new agent. AddWorkspace only accepts
+ * the basics; follow it with `buildEditWorkspacePixel` when
+ * `agentNeedsFollowUpEdit` is true.
+ */
+export const buildAddWorkspacePixel = (data: AgentFormValues): string => {
+	const mcp = [...data.knowledge, ...data.toolboxes];
+	const skills = data.skills.map((s) => s.id);
+	return `AddWorkspace(name=${JSON.stringify(data.name)}, description=${JSON.stringify(data.description)}, systemPrompt=${JSON.stringify(data.instructions)}, mcp=${JSON.stringify(mcp)}, skills=${JSON.stringify(skills)}, prompts=${JSON.stringify(data.prompts)});`;
+};
+
+/**
+ * Whether a new agent sets anything AddWorkspace does not accept (model,
+ * built-in tools, execution limits, subagents, hooks, greeting), so it needs
+ * an EditWorkspace call once it exists. That call resends everything, since
+ * EditWorkspace treats omitted mcp/skills/prompts as empty.
+ */
+export const agentNeedsFollowUpEdit = (data: AgentFormValues): boolean =>
+	Boolean(
+		data.modelId ||
+			!data.useDefaultAgentTools ||
+			data.maxTurns ||
+			data.maxReflections ||
+			data.maxSeconds ||
+			data.maxSubagentDepth ||
+			data.maxSubagentsPerRun ||
+			data.maxSpawnsPerTurn ||
+			data.subagents.some((s) => s.workspaceId) ||
+			data.disabledDefaultTools.length > 0 ||
+			data.hooks.length > 0 ||
+			data.greeting ||
+			data.greetingEnabled,
+	);

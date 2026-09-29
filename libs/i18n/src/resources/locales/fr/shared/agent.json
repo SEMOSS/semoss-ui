@@ -226,6 +226,7 @@
 			"eventsLabel": "Événements du cycle de vie",
 			"eventsHelp": "Si aucun n'est sélectionné, il s'exécute sur tous les événements.",
 			"add": "Ajouter un hook"
-		}
+		},
+		"createSettingsFailed": "L'agent a été créé, mais certains de ses paramètres n'ont pas pu être enregistrés. Ouvrez la page de modification de l'agent pour réessayer."
 	}
 }

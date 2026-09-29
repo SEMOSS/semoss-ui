@@ -3,6 +3,8 @@ import { getI18n } from "@semoss/i18n";
 import { download, type Insight, runPixel } from "@semoss/sdk/react";
 import {
 	type AgentFormValues,
+	agentNeedsFollowUpEdit,
+	buildAddWorkspacePixel,
 	buildEditWorkspacePixel,
 	getWorkspaceSaveWarning,
 	type ThemeMap,
@@ -796,8 +798,40 @@ export class ChatStore {
 	};
 
 	/**
-	 * Edit a workspace
+	 * Creates an agent from the shared agent form. AddWorkspace only takes the
+	 * basics, so everything else is saved with a follow-up EditWorkspace when
+	 * the form sets any of it.
+	 *
+	 * Resolves with the new agent's id, EditWorkspace's partial-save warning
+	 * (when there is one), and whether the follow-up save failed - the agent
+	 * exists either way.
 	 */
+	createAgent = async (
+		values: AgentFormValues,
+	): Promise<{
+		workspaceId: string;
+		warning?: string;
+		settingsFailed?: boolean;
+	}> => {
+		const { pixelReturn } = await this._actions.run<[string]>(
+			buildAddWorkspacePixel(values),
+		);
+		const workspaceId = pixelReturn[0]?.output;
+		if (!workspaceId) {
+			throw new Error();
+		}
+		if (!agentNeedsFollowUpEdit(values)) {
+			return { workspaceId };
+		}
+		try {
+			const warning = await this.editWorkspace(workspaceId, values);
+			return { workspaceId, warning };
+		} catch (e) {
+			console.error(e);
+			return { workspaceId, settingsFailed: true };
+		}
+	};
+
 	/**
 	 * Saves an agent's full configuration from the shared agent form.
 	 * Resolves with EditWorkspace's partial-save warning, when there is one.
