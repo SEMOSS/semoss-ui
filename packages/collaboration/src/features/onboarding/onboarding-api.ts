@@ -292,7 +292,27 @@ export interface TopicSuggestions {
 	modelError?: string;
 }
 
-export async function suggestTopics(
+const pendingTopicSuggestions = new WeakMap<
+	InsightActions,
+	Promise<TopicSuggestions>
+>();
+
+/** Share only a running generation in this insight; later visits generate afresh. */
+export function suggestTopics(
+	actions: InsightActions,
+): Promise<TopicSuggestions> {
+	const pending = pendingTopicSuggestions.get(actions);
+	if (pending) return pending;
+
+	// Generation writes suggestions, so overlapping calls must not race each other.
+	const request = requestTopicSuggestions(actions).finally(() => {
+		pendingTopicSuggestions.delete(actions);
+	});
+	pendingTopicSuggestions.set(actions, request);
+	return request;
+}
+
+async function requestTopicSuggestions(
 	actions: InsightActions,
 ): Promise<TopicSuggestions> {
 	const out = await run(actions, pixel("BrainSuggestTopics"));

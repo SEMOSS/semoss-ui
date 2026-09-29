@@ -1444,8 +1444,15 @@ export function TopicsStep({ actions, onNext, onBack, eyebrow }: StepProps) {
 	const [busy, setBusy] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 	useEffect(() => {
+		let isCurrent = true;
+		setResult(null);
+		setAccountNames({});
+		setPicked(new Set());
+		setNames({});
+		setError(null);
 		Promise.all([suggestTopics(actions), listAccounts(actions)])
 			.then(([suggestions, accounts]) => {
+				if (!isCurrent) return;
 				setResult(suggestions);
 				setAccountNames(
 					Object.fromEntries(accounts.map((a) => [a.id, a.name])),
@@ -1463,7 +1470,12 @@ export function TopicsStep({ actions, onNext, onBack, eyebrow }: StepProps) {
 					),
 				);
 			})
-			.catch((cause: unknown) => setError(message(cause)));
+			.catch((cause: unknown) => {
+				if (isCurrent) setError(message(cause));
+			});
+		return () => {
+			isCurrent = false;
+		};
 	}, [actions]);
 	const topics = result?.topics ?? null;
 
