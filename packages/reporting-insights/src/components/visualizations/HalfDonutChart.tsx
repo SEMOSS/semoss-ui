@@ -70,7 +70,7 @@ function arcPath(
 
 // ── Props ─────────────────────────────────────────────────────────────────────
 interface Props {
-	data: any[];
+	data: Record<string, unknown>[];
 	config?: VisualizationConfig;
 	onTrigger?: (payload: VizTriggerPayload) => void;
 }
@@ -93,7 +93,7 @@ export function HalfDonutChart({ data, config, onTrigger }: Props) {
 	const tooltipCols = config?.tooltips ?? [];
 
 	// Styling options
-	const hd = (config?.styling as any)?.halfdonut ?? {};
+	const hd = config?.styling?.halfdonut ?? {};
 	const showLabels: boolean = hd.showLabels ?? true;
 	const showValues: boolean = hd.showValues ?? false;
 	const showPercentage: boolean = hd.showPercentage !== false;
@@ -105,9 +105,8 @@ export function HalfDonutChart({ data, config, onTrigger }: Props) {
 	);
 
 	// Color palette — prefer shared palette from styling, fall back to PALETTE
-	const palette: string[] = (config?.styling as any)?.colorPalette?.colors
-		?.length
-		? (config?.styling as any).colorPalette.colors
+	const palette: string[] = config?.styling?.colorPalette?.colors?.length
+		? config.styling.colorPalette.colors
 		: PALETTE;
 
 	// Hover state
@@ -127,6 +126,7 @@ export function HalfDonutChart({ data, config, onTrigger }: Props) {
 			<div className="flex h-full items-center justify-center">
 				<div className="px-6 text-center text-slate-400">
 					<svg
+						role="presentation"
 						viewBox="0 0 48 28"
 						className="mx-auto mb-3 h-10 w-16 opacity-30"
 						fill="none"
@@ -190,7 +190,7 @@ export function HalfDonutChart({ data, config, onTrigger }: Props) {
 			const valuesByColumn = catTooltipValues.get(cat) ?? {};
 			catTooltipValues.set(cat, valuesByColumn);
 			for (const t of tooltipCols) {
-				const col = (t as any).column;
+				const col = t.column;
 				if (!valuesByColumn[col]) valuesByColumn[col] = [];
 				valuesByColumn[col].push(row[col]);
 			}
@@ -254,6 +254,7 @@ export function HalfDonutChart({ data, config, onTrigger }: Props) {
 				preserveAspectRatio={
 					config?.styling?.size?.stretch ? "none" : undefined
 				}
+				role="img"
 				aria-label="Half donut chart"
 				onMouseLeave={() => {
 					setHovered(null);
@@ -272,12 +273,16 @@ export function HalfDonutChart({ data, config, onTrigger }: Props) {
 						s.end,
 					);
 					return (
+						// biome-ignore lint/a11y/useSemanticElements: SVG path can't be a <button>; role/tabIndex/onKeyDown provide equivalent keyboard semantics
 						<path
 							key={s.cat}
 							d={path}
 							fill={s.color}
 							stroke="#fff"
 							strokeWidth={1.5}
+							role="button"
+							tabIndex={0}
+							aria-label={s.cat}
 							style={{
 								cursor: showTooltip ? "pointer" : "default",
 							}}
@@ -307,6 +312,16 @@ export function HalfDonutChart({ data, config, onTrigger }: Props) {
 									row: { [xKey]: s.cat },
 								})
 							}
+							onKeyDown={(e) => {
+								if (e.key === "Enter" || e.key === " ") {
+									e.preventDefault();
+									onTrigger?.({
+										trigger: "click",
+										label: s.cat,
+										row: { [xKey]: s.cat },
+									});
+								}
+							}}
 							onDoubleClick={() =>
 								onTrigger?.({
 									trigger: "dblclick",
@@ -320,6 +335,7 @@ export function HalfDonutChart({ data, config, onTrigger }: Props) {
 
 				{/* ── Target wedge marker ── */}
 				{targetAngle !== null && (
+					// biome-ignore lint/a11y/useSemanticElements: SVG path can't be a <button>; role/tabIndex/onFocus provide equivalent keyboard semantics
 					<path
 						d={arcPath(
 							CX,
@@ -332,11 +348,27 @@ export function HalfDonutChart({ data, config, onTrigger }: Props) {
 						fill={hd.targetWedgeColor ?? "#1e293b"}
 						stroke="#fff"
 						strokeWidth={1}
+						role="button"
+						tabIndex={0}
+						aria-label={
+							targetValue !== null
+								? `Target: ${formatValue(targetValue, targetKey, fmtRules)}`
+								: "Target"
+						}
 						style={{ cursor: "pointer" }}
 						onMouseMove={(e) =>
 							setTargetHovered({ x: e.clientX, y: e.clientY })
 						}
 						onMouseLeave={() => setTargetHovered(null)}
+						onFocus={(e) => {
+							const rect =
+								e.currentTarget.getBoundingClientRect();
+							setTargetHovered({
+								x: rect.left + rect.width / 2,
+								y: rect.top,
+							});
+						}}
+						onBlur={() => setTargetHovered(null)}
 					/>
 				)}
 
@@ -430,7 +462,7 @@ export function HalfDonutChart({ data, config, onTrigger }: Props) {
 							const legendY = CY + 18;
 							return rows.map((row, rowIdx) => (
 								<g
-									key={rowIdx}
+									key={row[0].cat}
 									transform={`translate(0, ${legendY + rowIdx * 16})`}
 								>
 									{row.map((s, colIdx) => {
@@ -504,7 +536,7 @@ export function HalfDonutChart({ data, config, onTrigger }: Props) {
 							{(hovered.slice.fraction * 100).toFixed(1)}% of
 							total
 						</p>
-						{tooltipCols.map((t: any) => {
+						{tooltipCols.map((t) => {
 							const rawValues = catTooltipValues.get(
 								hovered.slice.cat,
 							)?.[t.column];

@@ -112,15 +112,23 @@ export function ColorByValue({
 		id: string,
 		updates: Partial<ColorRule | KpiColorRule>,
 	) => {
+		const updated = value.map((rule) =>
+			rule.id === id ? { ...rule, ...updates } : rule,
+		);
 		onChange(
-			value.map((rule) =>
-				rule.id === id ? { ...rule, ...updates } : rule,
-			) as any,
+			isTableShape
+				? (updated as ColorRule[])
+				: (updated as KpiColorRule[]),
 		);
 	};
 
 	const deleteRule = (id: string) => {
-		onChange(value.filter((rule) => rule.id !== id) as any);
+		const filtered = value.filter((rule) => rule.id !== id);
+		onChange(
+			isTableShape
+				? (filtered as ColorRule[])
+				: (filtered as KpiColorRule[]),
+		);
 	};
 
 	return (
@@ -159,12 +167,16 @@ export function ColorByValue({
 									: ""
 							}
 						>
-							<label className="mb-1.5 block font-semibold text-stone-600 text-xs">
+							<label
+								htmlFor={`${rule.id}-column`}
+								className="mb-1.5 block font-semibold text-stone-600 text-xs"
+							>
 								{isTable
 									? "Select Column to Color"
 									: "Select KPI Metric"}
 							</label>
 							<select
+								id={`${rule.id}-column`}
 								value={
 									isTable
 										? tableRule?.targetColumn
@@ -205,10 +217,14 @@ export function ColorByValue({
 							{/* Select Column of Values (Table only) */}
 							{isTable && (
 								<div>
-									<label className="mb-1.5 block text-stone-500 text-xs">
+									<label
+										htmlFor={`${rule.id}-valueColumn`}
+										className="mb-1.5 block text-stone-500 text-xs"
+									>
 										Select Column of Values
 									</label>
 									<select
+										id={`${rule.id}-valueColumn`}
 										value={tableRule?.valueColumn}
 										onChange={(e) =>
 											updateRule(rule.id, {
@@ -229,14 +245,20 @@ export function ColorByValue({
 
 							{/* Select Comparator */}
 							<div>
-								<label className="mb-1.5 block text-stone-500 text-xs">
+								<label
+									htmlFor={`${rule.id}-comparator`}
+									className="mb-1.5 block text-stone-500 text-xs"
+								>
 									Select Comparator
 								</label>
 								<select
+									id={`${rule.id}-comparator`}
 									value={rule.comparator}
 									onChange={(e) =>
 										updateRule(rule.id, {
-											comparator: e.target.value as any,
+											comparator: e.target.value as
+												| ColorRule["comparator"]
+												| KpiColorRule["comparator"],
 											maxValue:
 												e.target.value === "range"
 													? 0
@@ -295,7 +317,10 @@ export function ColorByValue({
 
 							{/* Select Value(s) */}
 							<div>
-								<label className="mb-1.5 block text-stone-500 text-xs">
+								<label
+									htmlFor={`${rule.id}-value`}
+									className="mb-1.5 block text-stone-500 text-xs"
+								>
 									{rule.comparator === "range"
 										? "Min Value"
 										: "Select Value"}
@@ -341,6 +366,7 @@ export function ColorByValue({
 											updateRule(rule.id, { value: val });
 										}
 									}}
+									id={`${rule.id}-value`}
 									placeholder="Enter value"
 									className="w-full rounded border border-stone-200 px-3 py-2 text-sm focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
 								/>
@@ -349,10 +375,14 @@ export function ColorByValue({
 							{/* Max Value (for range comparator in KPI) */}
 							{!isTable && kpiRule?.comparator === "range" && (
 								<div>
-									<label className="mb-1.5 block text-stone-500 text-xs">
+									<label
+										htmlFor={`${rule.id}-maxValue`}
+										className="mb-1.5 block text-stone-500 text-xs"
+									>
 										Max Value
 									</label>
 									<input
+										id={`${rule.id}-maxValue`}
 										type="number"
 										value={kpiRule?.maxValue || 0}
 										onChange={(e) =>
@@ -381,9 +411,9 @@ export function ColorByValue({
 							visualizationType !== "polarbar" &&
 							visualizationType !== "area" && (
 								<div className="border-stone-100 border-t pt-2">
-									<label className="mb-2 block font-semibold text-stone-600 text-xs">
+									<div className="mb-2 block font-semibold text-stone-600 text-xs">
 										Apply Color To
-									</label>
+									</div>
 									{isTable ? (
 										<label className="flex cursor-pointer items-center gap-2">
 											<input

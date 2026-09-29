@@ -501,9 +501,16 @@ export function BubbleChart({
 	return (
 		<div className="relative flex h-full w-full flex-col">
 			<div ref={containerRef} className="relative min-h-0 flex-1">
-				<svg width="100%" height="100%" style={{ display: "block" }}>
+				<svg
+					width="100%"
+					height="100%"
+					style={{ display: "block" }}
+					role="img"
+					aria-label="Bubble chart"
+				>
 					{layout.map((p, i) => (
 						<g key={`${p.label}-${i}`}>
+							{/* biome-ignore lint/a11y/useSemanticElements: SVG circle can't be a <button>; role/tabIndex/onKeyDown provide equivalent keyboard semantics */}
 							<circle
 								cx={p.cx}
 								cy={p.cy}
@@ -512,6 +519,9 @@ export function BubbleChart({
 								fillOpacity={0.75}
 								stroke="#ffffff"
 								strokeWidth={1.5}
+								role="button"
+								tabIndex={0}
+								aria-label={p.label}
 								style={{ cursor: "pointer" }}
 								onMouseEnter={(
 									e: React.MouseEvent<SVGCircleElement>,
@@ -554,6 +564,16 @@ export function BubbleChart({
 										row: { [labelKey ?? ""]: p.label },
 									})
 								}
+								onKeyDown={(e) => {
+									if (e.key === "Enter" || e.key === " ") {
+										e.preventDefault();
+										onTrigger?.({
+											trigger: "click",
+											label: p.label,
+											row: { [labelKey ?? ""]: p.label },
+										});
+									}
+								}}
 							/>
 							{showLabels &&
 								(() => {
@@ -569,7 +589,7 @@ export function BubbleChart({
 									if (maxWidth <= 0) return null;
 									const valueText = formatValue(
 										p.sizeValue,
-										sizeKey!,
+										sizeKey ?? "",
 										formatRules ?? [],
 									);
 									const truncatedName = truncateToFit(
@@ -650,7 +670,7 @@ export function BubbleChart({
 							<span className="font-medium text-slate-700 tabular-nums">
 								{formatValue(
 									hovered.point.sizeValue,
-									sizeKey!,
+									sizeKey ?? "",
 									formatRules ?? [],
 								)}
 							</span>

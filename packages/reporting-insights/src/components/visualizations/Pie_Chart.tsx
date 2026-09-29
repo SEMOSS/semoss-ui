@@ -10,6 +10,7 @@
 import { PieChart as PieChartIcon } from "lucide-react";
 import React, { useMemo, useRef } from "react";
 import { createPortal } from "react-dom";
+import type { EasingInput } from "recharts";
 import {
 	Cell,
 	Legend,
@@ -82,7 +83,7 @@ function arcPath(
 const aggregateNums = (values: unknown[], type: string): number =>
 	aggregateNumericValues(values, type, 0);
 
-const ANIMATION_EASE: Record<string, string> = {
+const ANIMATION_EASE: Record<string, EasingInput> = {
 	elastic: "spring",
 	expansion: "ease-out",
 };
@@ -201,6 +202,7 @@ export function Pie_Chart({
 		: undefined;
 
 	const [scaleState, setScaleState] = React.useState(1);
+	// biome-ignore lint/correctness/useExhaustiveDependencies: isRadialAnim is derived purely from animationCfg?.type, which is already the listed dependency
 	React.useEffect(() => {
 		if (!isRadialAnim) {
 			setScaleState(1);
@@ -217,7 +219,7 @@ export function Pie_Chart({
 			cancelled = true;
 			cancelAnimationFrame(outer);
 		};
-	}, [animationCfg?.type]); // eslint-disable-line react-hooks/exhaustive-deps
+	}, [animationCfg?.type]);
 
 	// Early return for unconfigured state
 	if (!xKey || !valueKey) {
@@ -297,13 +299,29 @@ export function Pie_Chart({
 	const heatLegendBar = heatByName ? (
 		<div className="flex w-full items-center gap-2 px-4 pb-2 text-stone-500 text-xs">
 			<span className="font-medium text-stone-600">Low</span>
+			{/* biome-ignore lint/a11y/useSemanticElements: a <button> would clip/reset the gradient background; role/tabIndex/onFocus give equivalent keyboard semantics */}
 			<div
 				className="h-2.5 flex-1 cursor-crosshair rounded"
 				style={{
 					background: `linear-gradient(to right, ${palette.join(",")})`,
 				}}
+				role="button"
+				tabIndex={0}
+				aria-label={`Color legend from ${minHeat} to ${maxHeat}`}
 				onMouseMove={handleHeatBarMove}
 				onMouseLeave={() => setHeatLegendHover(null)}
+				onFocus={(e) => {
+					const rect = e.currentTarget.getBoundingClientRect();
+					setHeatLegendHover({
+						x: rect.left + rect.width / 2,
+						y: rect.top,
+						value: (minHeat + maxHeat) / 2,
+						color:
+							palette[Math.round(palette.length / 2)] ??
+							palette[0],
+					});
+				}}
+				onBlur={() => setHeatLegendHover(null)}
 			/>
 			<span className="font-medium text-stone-600">High</span>
 		</div>
@@ -414,13 +432,15 @@ export function Pie_Chart({
 					<svg
 						viewBox={`0 0 ${SIZE} ${SIZE}`}
 						className="h-full max-h-full w-full"
+						role="img"
+						aria-label="Rose chart"
 						onMouseLeave={() => {
 							setRoseHovered(null);
 							lastRoseHoveredRef.current = null;
 							onTrigger?.({ trigger: "mouseout" });
 						}}
 					>
-						{roseArcs.map((arc, i) => {
+						{roseArcs.map((arc) => {
 							const rawLabel = formatValue(
 								arc.name,
 								xKey,
@@ -437,7 +457,8 @@ export function Pie_Chart({
 							const labelY =
 								labelPosition === "outside" ? arc.ly : arc.ily;
 							return (
-								<g key={i}>
+								<g key={arc.name}>
+									{/* biome-ignore lint/a11y/useSemanticElements: SVG path can't be a <button>; role/tabIndex/onKeyDown provide equivalent keyboard semantics */}
 									<path
 										d={arcPath(
 											cx,
@@ -455,6 +476,9 @@ export function Pie_Chart({
 										}
 										stroke="#fff"
 										strokeWidth={1.5}
+										role="button"
+										tabIndex={0}
+										aria-label={arc.name}
 										style={{
 											cursor: "pointer",
 											transition: "fill-opacity 0.15s",
@@ -489,6 +513,19 @@ export function Pie_Chart({
 												row: { [xKey]: arc.name },
 											})
 										}
+										onKeyDown={(e) => {
+											if (
+												e.key === "Enter" ||
+												e.key === " "
+											) {
+												e.preventDefault();
+												onTrigger?.({
+													trigger: "click",
+													label: arc.name,
+													row: { [xKey]: arc.name },
+												});
+											}
+										}}
 										onDoubleClick={() =>
 											onTrigger?.({
 												trigger: "dblclick",
@@ -555,8 +592,11 @@ export function Pie_Chart({
 				</div>
 				{showLegend && (
 					<ul className="flex flex-wrap justify-center gap-x-3 gap-y-1 px-4 pb-2 text-slate-500 text-xs">
-						{roseArcs.map((arc, i) => (
-							<li key={i} className="flex items-center gap-1">
+						{roseArcs.map((arc) => (
+							<li
+								key={arc.name}
+								className="flex items-center gap-1"
+							>
 								<span
 									className="inline-block h-2 w-2 flex-shrink-0 rounded-full"
 									style={{ background: arc.fill }}
@@ -636,7 +676,7 @@ export function Pie_Chart({
 						: false
 				}
 				isAnimationActive={isAnimActive}
-				animationEasing={animEasing as any}
+				animationEasing={animEasing}
 				onClick={(_, idx) => {
 					const row = chartData[idx];
 					if (!row) return;
@@ -670,7 +710,10 @@ export function Pie_Chart({
 				onMouseLeave={() => onTrigger?.({ trigger: "mouseout" })}
 			>
 				{chartData.map((row, i) => (
-					<Cell key={i} fill={colorForSlice(row, i)} />
+					<Cell
+						key={String(row[xKey])}
+						fill={colorForSlice(row, i)}
+					/>
 				))}
 			</Pie>
 			{showTooltip && (

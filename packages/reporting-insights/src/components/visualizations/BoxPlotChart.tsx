@@ -9,6 +9,7 @@
  */
 
 import { useMemo, useRef, useState } from "react";
+import type { TooltipContentProps } from "recharts";
 import {
 	Bar,
 	CartesianGrid,
@@ -494,9 +495,9 @@ function BoxPlotShapes({
 						strokeWidth={1.5}
 					/>
 					{showOutliers &&
-						d.outliers.map((ov, oi) => (
+						d.outliers.map((ov) => (
 							<circle
-								key={oi}
+								key={`${d.category}-out-${ov}`}
 								cx={toAbsX(ov)}
 								cy={cy}
 								r={3}
@@ -579,9 +580,9 @@ function BoxPlotShapes({
 						strokeWidth={1.5}
 					/>
 					{showOutliers &&
-						d.outliers.map((ov, oi) => (
+						d.outliers.map((ov) => (
 							<circle
-								key={oi}
+								key={`${d.category}-out-${ov}`}
 								cx={cx}
 								cy={toAbsY(ov)}
 								r={3}
@@ -604,9 +605,16 @@ function BoxPlotShapes({
 
 // ── Tooltip ────────────────────────────────────────────────────────────────────
 
-function BoxTooltip({ active, payload, formatRules, yKey }: any) {
+interface BoxTooltipProps {
+	active?: boolean;
+	payload?: Array<{ payload?: BoxDatum }>;
+	formatRules?: FormatRule[];
+	yKey: string;
+}
+
+function BoxTooltip({ active, payload, formatRules, yKey }: BoxTooltipProps) {
 	if (!active || !payload?.length) return null;
-	const d: BoxDatum = payload[0]?.payload;
+	const d = payload[0]?.payload;
 	if (!d) return null;
 	return (
 		<div className="min-w-[140px] rounded-lg border border-stone-200 bg-white p-3 text-xs shadow-lg">
@@ -666,7 +674,7 @@ function BoxTooltip({ active, payload, formatRules, yKey }: any) {
 // ── Component ──────────────────────────────────────────────────────────────────
 
 interface BoxPlotChartProps {
-	data: any[];
+	data: Record<string, unknown>[];
 	config?: VisualizationConfig;
 	formatRules?: FormatRule[];
 	onTrigger?: (payload: VizTriggerPayload) => void;
@@ -851,7 +859,7 @@ export function BoxPlotChart({
 							left: yAxisLabel && !flipAxis ? 12 : 0,
 							bottom: xAxisLabel && !flipAxis ? 16 : 4,
 						}}
-						onClick={(e: any) => {
+						onClick={(e: { activeLabel?: string | number }) => {
 							if (e?.activeLabel != null)
 								onTrigger?.({
 									trigger: "click",
@@ -868,7 +876,7 @@ export function BoxPlotChart({
 									row: { [xKey]: label },
 								});
 						}}
-						onMouseMove={(e: any) => {
+						onMouseMove={(e: { activeLabel?: string | number }) => {
 							const label = e?.activeLabel
 								? String(e.activeLabel)
 								: null;
@@ -1024,9 +1032,12 @@ export function BoxPlotChart({
 
 						{showTooltip && (
 							<Tooltip
-								content={(props: any) => (
+								content={(props: TooltipContentProps) => (
 									<BoxTooltip
-										{...props}
+										active={props.active}
+										payload={
+											props.payload as unknown as BoxTooltipProps["payload"]
+										}
 										formatRules={formatRules}
 										yKey={yKey}
 									/>

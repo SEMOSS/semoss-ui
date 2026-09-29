@@ -71,10 +71,8 @@ export function aggregateChartData(
 
 	data.forEach((row) => {
 		const key = String(row[xKey] ?? "");
-		if (!grouped.has(key)) {
-			grouped.set(key, { [xKey]: key, _values: {} });
-		}
-		const g = grouped.get(key)!;
+		const g = grouped.get(key) ?? { [xKey]: key, _values: {} };
+		grouped.set(key, g);
 		yKeys.forEach((k) => {
 			if (!g._values[k]) g._values[k] = [];
 			g._values[k].push(row[k]);

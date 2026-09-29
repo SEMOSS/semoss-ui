@@ -68,7 +68,7 @@ const SEPARATOR = "\u0001"; // unlikely to appear in real data
 const buildKey = (parts: string[]): string => parts.join(SEPARATOR);
 
 /** Format a row-header value for display. Null/undefined → "(blank)". */
-const formatHeader = (v: any): string => {
+const formatHeader = (v: unknown): string => {
 	if (v == null || v === "") return "(blank)";
 	return String(v);
 };
@@ -80,7 +80,7 @@ const formatHeader = (v: any): string => {
  * but callable from non-React contexts (e.g. CSV export handlers).
  */
 export function pivotTransform(
-	data: any[],
+	data: Record<string, unknown>[],
 	config: VisualizationConfig | undefined,
 ): PivotResult {
 	const rowFields = config?.pivotRows ?? [];
@@ -149,7 +149,7 @@ export function pivotTransform(
 
 	// ── Step 3: Group raw data by (rowKey, columnKey) and collect values ───
 	// bucket: rowKey → columnKey → valueField → raw values[]
-	const buckets = new Map<string, Map<string, Map<string, any[]>>>();
+	const buckets = new Map<string, Map<string, Map<string, unknown[]>>>();
 	const rowOrder: string[] = []; // preserves insertion order
 	const rowLabelsByKey = new Map<string, string[]>();
 
@@ -161,12 +161,13 @@ export function pivotTransform(
 			rowOrder.push(rowKey);
 			rowLabelsByKey.set(rowKey, rowLabels);
 		}
-		const colMap = buckets.get(rowKey)!;
+		const colMap = buckets.get(rowKey) ?? new Map();
+		buckets.set(rowKey, colMap);
 
 		const colLabels = columnFields.map((f) => formatHeader(row[f]));
 		const colKey = buildKey(colLabels);
-		if (!colMap.has(colKey)) colMap.set(colKey, new Map());
-		const valMap = colMap.get(colKey)!;
+		const valMap = colMap.get(colKey) ?? new Map<string, unknown[]>();
+		colMap.set(colKey, valMap);
 
 		valueFields.forEach((vf) => {
 			if (!valMap.has(vf)) valMap.set(vf, []);
@@ -176,8 +177,8 @@ export function pivotTransform(
 
 	// Sort row keys so subtotal logic groups correctly. Sort by labels lexically.
 	rowOrder.sort((a, b) => {
-		const la = rowLabelsByKey.get(a)!;
-		const lb = rowLabelsByKey.get(b)!;
+		const la = rowLabelsByKey.get(a) ?? [];
+		const lb = rowLabelsByKey.get(b) ?? [];
 		for (let i = 0; i < la.length; i++) {
 			if (la[i] !== lb[i]) return la[i].localeCompare(lb[i]);
 		}
@@ -191,8 +192,10 @@ export function pivotTransform(
 		const rowTotals: Record<string, number | null> = {};
 
 		// Per-value rolling collectors for the row total column
-		const rowTotalValues: Record<string, any[]> = {};
-		valueFields.forEach((vf) => (rowTotalValues[vf] = []));
+		const rowTotalValues: Record<string, unknown[]> = {};
+		valueFields.forEach((vf) => {
+			rowTotalValues[vf] = [];
+		});
 
 		columns.forEach((col) => {
 			const comboKey = col.columnHeaders.length
@@ -219,7 +222,7 @@ export function pivotTransform(
 	};
 
 	const leafRows: PivotRow[] = rowOrder.map((key) =>
-		buildRow(key, rowLabelsByKey.get(key)!),
+		buildRow(key, rowLabelsByKey.get(key) ?? []),
 	);
 
 	// ── Step 5: Insert subtotal rows for each parent group level ───────────
@@ -313,7 +316,7 @@ export function pivotTransform(
  * consumer is expected to render an empty-state UI.
  */
 export function usePivotTransform(
-	data: any[],
+	data: Record<string, unknown>[],
 	config: VisualizationConfig | undefined,
 ): PivotResult {
 	return useMemo(() => pivotTransform(data, config), [data, config]);
@@ -329,7 +332,7 @@ function aggregateGroup(
 	columns: PivotColumn[],
 	valueFields: string[],
 	aggregations: Record<string, string>,
-	buckets: Map<string, Map<string, Map<string, any[]>>>,
+	buckets: Map<string, Map<string, Map<string, unknown[]>>>,
 ): PivotRow {
 	const cells: Record<string, number | null> = {};
 	const rowTotals: Record<string, number | null> = {};
@@ -339,7 +342,7 @@ function aggregateGroup(
 		const comboKey = col.columnHeaders.length
 			? buildKey(col.columnHeaders)
 			: "";
-		const allRaw: any[] = [];
+		const allRaw: unknown[] = [];
 		groupRows.forEach((leaf) => {
 			const colMap = buckets.get(leaf.rowKey);
 			const valMap = colMap?.get(comboKey);
@@ -352,7 +355,7 @@ function aggregateGroup(
 	// Row totals across all columns
 	valueFields.forEach((vf) => {
 		const agg = aggregations[vf] ?? "sum";
-		const allRaw: any[] = [];
+		const allRaw: unknown[] = [];
 		groupRows.forEach((leaf) => {
 			const colMap = buckets.get(leaf.rowKey);
 			colMap?.forEach((valMap) => {

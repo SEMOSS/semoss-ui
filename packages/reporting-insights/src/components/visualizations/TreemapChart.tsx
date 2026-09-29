@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import type { TooltipContentProps } from "recharts";
 import { ResponsiveContainer, Tooltip, Treemap } from "recharts";
 import {
 	CHART_COLORS,
@@ -13,7 +14,7 @@ import type {
 } from "@/types/dashboard";
 
 interface TreemapChartProps {
-	data: Record<string, any>[];
+	data: Record<string, unknown>[];
 	config?: VisualizationConfig;
 	height?: number | `${number}%`;
 	onTrigger?: (payload: VizTriggerPayload) => void;
@@ -92,6 +93,7 @@ export function TreemapChart({
 	const [drillState, setDrillState] = useState<DrillState>({ level: "root" });
 
 	// Reset drill state whenever the underlying data changes
+	// biome-ignore lint/correctness/useExhaustiveDependencies: data is an intentional reset trigger, not read in the body
 	useEffect(() => {
 		setDrillState({ level: "root" });
 	}, [data]);
@@ -104,13 +106,13 @@ export function TreemapChart({
 
 		if (seriesKey) {
 			const seriesMap = new Map<string, Map<string, unknown[]>>();
-			const rowMap = new Map<string, Record<string, any>>();
+			const rowMap = new Map<string, Record<string, unknown>>();
 
 			for (const row of data) {
 				const sv = String(row[seriesKey] ?? "");
 				const lv = String(row[labelKey] ?? "");
 				if (!seriesMap.has(sv)) seriesMap.set(sv, new Map());
-				const inner = seriesMap.get(sv)!;
+				const inner = seriesMap.get(sv) ?? new Map<string, unknown[]>();
 				if (!inner.has(lv)) {
 					inner.set(lv, []);
 					rowMap.set(`${sv}${SEP}${lv}`, row);
@@ -308,8 +310,16 @@ export function TreemapChart({
 		);
 	}
 
-	const renderContent = (props: any) => {
-		const { x, y, width, height: h, name } = props;
+	interface TreemapContentProps {
+		x?: number;
+		y?: number;
+		width?: number;
+		height?: number;
+		name?: string;
+	}
+
+	const renderContent = (props: TreemapContentProps) => {
+		const { x = 0, y = 0, width = 0, height: h = 0, name } = props;
 		const info = lookupMap.get(name ?? "");
 
 		// Parent node: capture its position so child header tiles can reference it,
@@ -327,7 +337,11 @@ export function TreemapChart({
 			if (!parentPos) return <g />;
 
 			return (
+				// biome-ignore lint/a11y/useSemanticElements: SVG <g> can't be a <button>; role/tabIndex/onKeyDown provide equivalent keyboard semantics
 				<g
+					role="button"
+					tabIndex={0}
+					aria-label={info.seriesName}
 					onMouseEnter={(e) => {
 						e.stopPropagation(); // prevent Recharts leaf tooltip from firing
 						setHoveredHeader({
@@ -340,7 +354,7 @@ export function TreemapChart({
 						onTrigger?.({
 							trigger: "hover",
 							label: info.seriesName,
-							row: { [seriesKey!]: info.seriesName },
+							row: { [seriesKey ?? ""]: info.seriesName },
 						});
 					}}
 					onMouseMove={(e) => {
@@ -367,16 +381,30 @@ export function TreemapChart({
 						onTrigger?.({
 							trigger: "click",
 							label: info.seriesName,
-							row: { [seriesKey!]: info.seriesName },
+							row: { [seriesKey ?? ""]: info.seriesName },
 						});
 					}}
 					onDoubleClick={() =>
 						onTrigger?.({
 							trigger: "dblclick",
 							label: info.seriesName,
-							row: { [seriesKey!]: info.seriesName },
+							row: { [seriesKey ?? ""]: info.seriesName },
 						})
 					}
+					onKeyDown={(e) => {
+						if (e.key === "Enter" || e.key === " ") {
+							e.preventDefault();
+							setDrillState({
+								level: "series",
+								seriesName: info.seriesName,
+							});
+							onTrigger?.({
+								trigger: "click",
+								label: info.seriesName,
+								row: { [seriesKey ?? ""]: info.seriesName },
+							});
+						}
+					}}
 					style={{ cursor: "pointer" }}
 				>
 					<rect
@@ -407,7 +435,7 @@ export function TreemapChart({
 		// Leaf tile: clip top edge if it falls within the parent's header strip.
 		const tileColor = info?.fill || palette[0];
 		const rawLabel = info?.labelName ?? name ?? "";
-		const displayLabel = formatValue(rawLabel, labelKey!, formatRules);
+		const displayLabel = formatValue(rawLabel, labelKey ?? "", formatRules);
 
 		let tileY = y;
 		let tileH = h;
@@ -426,14 +454,18 @@ export function TreemapChart({
 		}
 
 		const tileRow = {
-			[labelKey!]: info?.labelName ?? rawLabel,
+			[labelKey ?? ""]: info?.labelName ?? rawLabel,
 			...(seriesKey && info?.seriesName
 				? { [seriesKey]: info.seriesName }
 				: {}),
 		};
 		const tileLabel2 = info?.labelName ?? rawLabel;
 		return (
+			// biome-ignore lint/a11y/useSemanticElements: SVG <g> can't be a <button>; role/tabIndex/onKeyDown provide equivalent keyboard semantics
 			<g
+				role="button"
+				tabIndex={0}
+				aria-label={tileLabel2}
 				onMouseEnter={() =>
 					onTrigger?.({
 						trigger: "hover",
@@ -463,6 +495,23 @@ export function TreemapChart({
 						row: tileRow,
 					})
 				}
+				onKeyDown={(e) => {
+					if (e.key === "Enter" || e.key === " ") {
+						e.preventDefault();
+						if (seriesKey && info?.seriesName) {
+							setDrillState({
+								level: "tile",
+								seriesName: info.seriesName,
+								labelName: info.labelName,
+							});
+						}
+						onTrigger?.({
+							trigger: "click",
+							label: tileLabel2,
+							row: tileRow,
+						});
+					}
+				}}
 				style={{ cursor: seriesKey ? "pointer" : "default" }}
 			>
 				<rect
@@ -493,7 +542,7 @@ export function TreemapChart({
 		);
 	};
 
-	const treemapProps: any = {
+	const treemapProps = {
 		data: displayedTreeData,
 		dataKey: "size",
 		isAnimationActive: false,
@@ -529,7 +578,17 @@ export function TreemapChart({
 						{showTooltip && (
 							<Tooltip
 								wrapperStyle={{ zIndex: 10 }}
-								content={({ active, payload }: any) => {
+								content={(props: TooltipContentProps) => {
+									const { active } = props;
+									const payload = props.payload as unknown as
+										| Array<{
+												payload?: {
+													name?: string;
+													size?: number;
+													value?: number;
+												};
+										  }>
+										| undefined;
 									// Suppress Recharts tooltip entirely when a header is hovered
 									// (the custom tooltip below handles that).
 									if (hoveredHeader) return null;
@@ -555,7 +614,7 @@ export function TreemapChart({
 										palette[0];
 									const fmtSz = formatValue(
 										sz,
-										sizeKey!,
+										sizeKey ?? "",
 										formatRules,
 									);
 
@@ -643,6 +702,7 @@ export function TreemapChart({
 					}}
 				>
 					<button
+						type="button"
 						style={breadcrumbPillStyle(drillState.level === "root")}
 						onClick={() => setDrillState({ level: "root" })}
 					>
@@ -654,6 +714,7 @@ export function TreemapChart({
 								›
 							</span>
 							<button
+								type="button"
 								style={breadcrumbPillStyle(
 									drillState.level === "series",
 								)}

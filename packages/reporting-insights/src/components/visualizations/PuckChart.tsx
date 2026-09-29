@@ -259,7 +259,9 @@ function assignLayout(
 // ── Flatten tree ─────────────────────────────────────────────────────────────
 function flattenNodes(node: PuckNode, out: PuckNode[]): void {
 	out.push(node);
-	node.children.forEach((c) => flattenNodes(c, out));
+	node.children.forEach((c) => {
+		flattenNodes(c, out);
+	});
 }
 
 // ── Legend ────────────────────────────────────────────────────────────────────
@@ -403,12 +405,28 @@ export function PuckChart({
 	return (
 		<div className="relative flex h-full w-full flex-col">
 			<div ref={containerRef} className="relative min-h-0 flex-1">
-				<svg width="100%" height="100%" style={{ display: "block" }}>
+				<svg
+					width="100%"
+					height="100%"
+					style={{ display: "block" }}
+					role="img"
+					aria-label="Puck chart"
+				>
 					{flatNodes.map((node, i) => {
 						if (node.r <= 0) return null;
 						const isRoot = node.depth === 0;
+						const puckRow = groupCols
+							.slice(0, node.depth)
+							.reduce<Record<string, unknown>>(
+								(acc, col, colIdx) => {
+									acc[col] = node.path[colIdx];
+									return acc;
+								},
+								{},
+							);
 						return (
 							<g key={`${node.path.join("/")}-${i}`}>
+								{/* biome-ignore lint/a11y/useSemanticElements: SVG circle can't be a <button>; role/tabIndex/onKeyDown provide equivalent keyboard semantics */}
 								<circle
 									cx={node.cx}
 									cy={node.cy}
@@ -417,6 +435,9 @@ export function PuckChart({
 									fillOpacity={node.ruleMatched ? 1 : 0.75}
 									stroke="#ffffff"
 									strokeWidth={1.5}
+									role="button"
+									tabIndex={0}
+									aria-label={node.name}
 									style={{
 										cursor: isRoot ? "default" : "pointer",
 									}}
@@ -438,15 +459,6 @@ export function PuckChart({
 												y: e.clientY - rect.top,
 											});
 										}
-										const puckRow = groupCols
-											.slice(0, node.depth)
-											.reduce<Record<string, unknown>>(
-												(acc, col, i) => ({
-													...acc,
-													[col]: node.path[i],
-												}),
-												{},
-											);
 										onTrigger?.({
 											trigger: "hover",
 											label: node.name,
@@ -462,15 +474,7 @@ export function PuckChart({
 									}}
 									onClick={() => {
 										if (isRoot) return;
-										const puckRow = groupCols
-											.slice(0, node.depth)
-											.reduce<Record<string, unknown>>(
-												(acc, col, i) => ({
-													...acc,
-													[col]: node.path[i],
-												}),
-												{},
-											);
+
 										onTrigger?.({
 											trigger: "click",
 											label: node.name,
@@ -479,20 +483,26 @@ export function PuckChart({
 									}}
 									onDoubleClick={() => {
 										if (isRoot) return;
-										const puckRow = groupCols
-											.slice(0, node.depth)
-											.reduce<Record<string, unknown>>(
-												(acc, col, i) => ({
-													...acc,
-													[col]: node.path[i],
-												}),
-												{},
-											);
+
 										onTrigger?.({
 											trigger: "dblclick",
 											label: node.name,
 											row: puckRow,
 										});
+									}}
+									onKeyDown={(e) => {
+										if (isRoot) return;
+										if (
+											e.key === "Enter" ||
+											e.key === " "
+										) {
+											e.preventDefault();
+											onTrigger?.({
+												trigger: "click",
+												label: node.name,
+												row: puckRow,
+											});
+										}
 									}}
 								/>
 								{/* Leaf labels: name + value, same two-line style as BubbleChart */}

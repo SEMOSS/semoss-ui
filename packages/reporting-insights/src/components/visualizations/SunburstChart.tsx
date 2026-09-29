@@ -23,7 +23,7 @@ import type {
 } from "@/types/dashboard";
 
 interface Props {
-	data: any[];
+	data: Record<string, unknown>[];
 	config?: VisualizationConfig;
 	formatRules?: FormatRule[];
 	onTrigger?: (payload: VizTriggerPayload) => void;
@@ -70,7 +70,7 @@ interface TreeNode {
 }
 
 function buildTree(
-	rows: any[],
+	rows: Record<string, unknown>[],
 	levels: string[],
 	valueCol: string,
 	aggType: string,
@@ -78,10 +78,13 @@ function buildTree(
 	if (!levels.length || !valueCol)
 		return { name: "root", value: 0, children: [], depth: 0 };
 
-	function recurse(subset: any[], depth: number): TreeNode[] {
+	function recurse(
+		subset: Record<string, unknown>[],
+		depth: number,
+	): TreeNode[] {
 		if (depth >= levels.length) return [];
 		const col = levels[depth];
-		const grouped = new Map<string, any[]>();
+		const grouped = new Map<string, Record<string, unknown>[]>();
 		subset.forEach((row) => {
 			const key = String(row[col] ?? "");
 			if (!grouped.has(key)) grouped.set(key, []);
@@ -236,9 +239,8 @@ export function SunburstChart({
 	const colorRules: ColorRule[] =
 		(config?.styling?.sunburst?.colorRules as ColorRule[]) ?? [];
 
-	const palette: string[] = (config?.styling as any)?.colorPalette?.colors
-		?.length
-		? (config?.styling as any).colorPalette.colors
+	const palette: string[] = config?.styling?.colorPalette?.colors?.length
+		? config.styling.colorPalette.colors
 		: FALLBACK_PALETTE;
 
 	const tree = useMemo(
@@ -263,6 +265,7 @@ export function SunburstChart({
 			<div className="flex h-full items-center justify-center text-slate-400">
 				<div className="px-6 text-center">
 					<svg
+						role="presentation"
 						className="mx-auto mb-3 h-12 w-12 opacity-20"
 						viewBox="0 0 24 24"
 						fill="none"
@@ -340,13 +343,15 @@ export function SunburstChart({
 				preserveAspectRatio={
 					config?.styling?.size?.stretch ? "none" : undefined
 				}
+				role="img"
+				aria-label="Sunburst chart"
 				onMouseLeave={() => {
 					setHovered(null);
 					setRootHovered(null);
 					onTrigger?.({ trigger: "mouseout" });
 				}}
 			>
-				{arcs.map((arc, i) => {
+				{arcs.map((arc) => {
 					const mid = (arc.startAngle + arc.endAngle) / 2;
 					const labelR = (arc.innerR + arc.outerR) / 2;
 					const [lx, ly] = polarToCart(cx, cy, labelR, mid);
@@ -369,7 +374,10 @@ export function SunburstChart({
 							: autoRotateDeg;
 
 					return (
-						<g key={i}>
+						<g
+							key={`${arc.node.depth}-${arc.startAngle}-${arc.node.name}`}
+						>
+							{/* biome-ignore lint/a11y/useSemanticElements: SVG path can't be a <button>; role/tabIndex/onKeyDown provide equivalent keyboard semantics */}
 							<path
 								d={arcPath(
 									cx,
@@ -383,6 +391,9 @@ export function SunburstChart({
 								fillOpacity={isHovered ? 1 : 0.82}
 								stroke="#fff"
 								strokeWidth={1.5}
+								role="button"
+								tabIndex={0}
+								aria-label={arc.node.name}
 								onMouseEnter={() =>
 									onTrigger?.({
 										trigger: "hover",
@@ -414,6 +425,19 @@ export function SunburstChart({
 										},
 									})
 								}
+								onKeyDown={(e) => {
+									if (e.key === "Enter" || e.key === " ") {
+										e.preventDefault();
+										onTrigger?.({
+											trigger: "click",
+											label: arc.node.name,
+											row: {
+												[levels[arc.node.depth] ??
+													"name"]: arc.node.name,
+											},
+										});
+									}
+								}}
 								onDoubleClick={() =>
 									onTrigger?.({
 										trigger: "dblclick",
@@ -467,16 +491,29 @@ export function SunburstChart({
 
 				{/* Transparent center circle for root hover — only when there's a donut hole */}
 				{innerHoleR > 0 && (
+					// biome-ignore lint/a11y/useSemanticElements: SVG circle can't be a <button>; role/tabIndex/onFocus provide equivalent keyboard semantics
 					<circle
 						cx={cx}
 						cy={cy}
 						r={innerHoleR}
 						fill="transparent"
 						style={{ cursor: "default" }}
+						role="button"
+						tabIndex={0}
+						aria-label="Root total"
 						onMouseMove={(e) =>
 							setRootHovered({ x: e.clientX, y: e.clientY })
 						}
 						onMouseLeave={() => setRootHovered(null)}
+						onFocus={(e) => {
+							const rect =
+								e.currentTarget.getBoundingClientRect();
+							setRootHovered({
+								x: rect.left + rect.width / 2,
+								y: rect.top,
+							});
+						}}
+						onBlur={() => setRootHovered(null)}
 					/>
 				)}
 			</svg>

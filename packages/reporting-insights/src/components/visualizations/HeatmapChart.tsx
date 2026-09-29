@@ -307,7 +307,7 @@ interface TooltipState {
 }
 
 interface Props {
-	data: any[];
+	data: Record<string, unknown>[];
 	config?: VisualizationConfig;
 	formatRules?: FormatRule[];
 	onStylingChange?: (updates: Partial<HeatmapStyling>) => void;
@@ -355,6 +355,7 @@ export function HeatmapChart({
 
 	// Facet pagination
 	const [facetPage, setFacetPage] = useState(0);
+	// biome-ignore lint/correctness/useExhaustiveDependencies: facetColumn is an intentional reset trigger, not read in the body
 	useEffect(() => {
 		setFacetPage(0);
 	}, [facetColumn]);
@@ -768,6 +769,7 @@ export function HeatmapChart({
 										valueLabelCfg.show === true &&
 										val !== undefined;
 									return (
+										// biome-ignore lint/a11y/useSemanticElements: a <button> would require resetting default button styles across this pixel-precise grid; role/tabIndex/onKeyDown give equivalent keyboard semantics
 										<div
 											key={cellKey}
 											className="flex cursor-default items-center justify-center overflow-hidden transition-opacity hover:opacity-75"
@@ -775,6 +777,9 @@ export function HeatmapChart({
 												background: bg,
 												height: cellH,
 											}}
+											role="button"
+											tabIndex={0}
+											aria-label={`${x}, ${y}`}
 											onMouseEnter={(e) => {
 												setTooltip({
 													cellKey,
@@ -829,6 +834,23 @@ export function HeatmapChart({
 													},
 												})
 											}
+											onKeyDown={(e) => {
+												if (
+													e.key === "Enter" ||
+													e.key === " "
+												) {
+													e.preventDefault();
+													onTrigger?.({
+														trigger: "click",
+														label: x,
+														row: {
+															[xKey]: x,
+															[yKey]: y,
+															[valueKey]: val,
+														},
+													});
+												}
+											}}
 											onDoubleClick={() =>
 												onTrigger?.({
 													trigger: "dblclick",
@@ -914,13 +936,30 @@ export function HeatmapChart({
 			{/* Heat legend bar */}
 			<div className="flex flex-shrink-0 items-center gap-2 px-1 text-slate-500 text-xs">
 				<span className="font-medium text-slate-600">Low</span>
+				{/* biome-ignore lint/a11y/useSemanticElements: a <button> would clip/reset the gradient background; role/tabIndex/onFocus give equivalent keyboard semantics */}
 				<div
 					className="h-2.5 flex-1 cursor-crosshair rounded"
 					style={{
 						background: `linear-gradient(to right, ${palette.join(",")})`,
 					}}
+					role="button"
+					tabIndex={0}
+					aria-label={`Color legend from ${minVal} to ${maxVal}`}
 					onMouseMove={handleHeatBarMove}
 					onMouseLeave={() => setHeatLegendHover(null)}
+					onFocus={(e) => {
+						const rect = e.currentTarget.getBoundingClientRect();
+						setHeatLegendHover({
+							x: rect.left + rect.width / 2,
+							y: rect.top,
+							value: (minVal + maxVal) / 2,
+							color:
+								palette[Math.round(palette.length / 2)] ??
+								palette[0] ??
+								"#4f46e5",
+						});
+					}}
+					onBlur={() => setHeatLegendHover(null)}
 				/>
 				<span className="font-medium text-slate-600">High</span>
 			</div>

@@ -278,14 +278,15 @@ function MapViewController({
 	const initialFitDone = useRef(false);
 
 	// Initial fit-to-bounds: runs once when points first become available.
+	// biome-ignore lint/correctness/useExhaustiveDependencies: map/focusZoom are stable; only points.length gating the initial-fit guard should retrigger this
 	useEffect(() => {
 		if (initialFitDone.current || !points.length) return;
 		initialFitDone.current = true;
 		fitToPoints(map, points, focusZoom, false);
-		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [points]);
 
 	// Filter zoom-in / unfilter zoom-out.
+	// biome-ignore lint/correctness/useExhaustiveDependencies: map/focusZoom/points are stable/derived; only focusPoint changing should retrigger this
 	useEffect(() => {
 		if (focusPoint !== null) {
 			map.flyTo([focusPoint.lat, focusPoint.lon], focusZoom, {
@@ -294,7 +295,6 @@ function MapViewController({
 		} else if (initialFitDone.current && points.length) {
 			fitToPoints(map, points, focusZoom, true);
 		}
-		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [focusPoint]);
 
 	return null;
@@ -426,9 +426,9 @@ export function WorldMapChart({
 			),
 		);
 		const map = new Map<string, string>();
-		cats.forEach((cat, i) =>
-			map.set(cat, resolvedPalette[i % resolvedPalette.length]),
-		);
+		cats.forEach((cat, i) => {
+			map.set(cat, resolvedPalette[i % resolvedPalette.length]);
+		});
 		return map;
 	}, [points, colorKey, resolvedPalette]);
 
@@ -555,9 +555,7 @@ export function WorldMapChart({
 										else if (z === "out")
 											setFocusedPoint(null);
 										const row = buildRow();
-										const oe = (e as any).originalEvent as
-											| MouseEvent
-											| undefined;
+										const oe = e.originalEvent;
 										onTrigger?.({
 											trigger: "click",
 											label: p.label,
@@ -578,9 +576,7 @@ export function WorldMapChart({
 											});
 										else if (z === "out")
 											setFocusedPoint(null);
-										const oe = (e as any).originalEvent as
-											| MouseEvent
-											| undefined;
+										const oe = e.originalEvent;
 										onTrigger?.({
 											trigger: "dblclick",
 											label: p.label,

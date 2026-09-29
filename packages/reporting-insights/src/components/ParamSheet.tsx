@@ -90,6 +90,7 @@ export function ParamSheet({
 	>({});
 
 	// Notify parent whenever either options map changes so it can pre-expand empty multiselects
+	// biome-ignore lint/correctness/useExhaustiveDependencies: intentional — depends on a derived key to avoid re-triggering on unstable references
 	useEffect(() => {
 		if (!onParamOptionsChange) return;
 		onParamOptionsChange({
@@ -97,10 +98,10 @@ export function ParamSheet({
 			...conditionalParamOptions,
 			...dynamicParamOptions,
 		});
-		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [paramOptions, conditionalParamOptions, dynamicParamOptions]);
 
 	// Effect A: fetch options for non-conditional params once on mount
+	// biome-ignore lint/correctness/useExhaustiveDependencies: intentional — depends on a derived key to avoid re-triggering on unstable references
 	useEffect(() => {
 		const toFetch = paramGroups.filter(
 			(g) =>
@@ -134,7 +135,6 @@ export function ParamSheet({
 		return () => {
 			cancelled = true;
 		};
-		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [paramGroups.map((g) => g.name).join(","), sharedRun]);
 
 	// Effect B: re-fetch options for conditional params when their parent value changes
@@ -144,6 +144,7 @@ export function ParamSheet({
 	const conditionalDepKey = conditionalGroups
 		.map((g) => `${g.name}:${values[g.conditionalOn ?? ""] ?? ""}`)
 		.join("|");
+	// biome-ignore lint/correctness/useExhaustiveDependencies: intentional — depends on a derived key to avoid re-triggering on unstable references
 	useEffect(() => {
 		if (!conditionalGroups.length || !sharedRun) return;
 		let cancelled = false;
@@ -203,7 +204,6 @@ export function ParamSheet({
 		return () => {
 			cancelled = true;
 		};
-		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [conditionalDepKey, sharedRun]);
 
 	// Effect C: re-fetch dynamic options whenever a referenced `{{param}}` value changes
@@ -253,6 +253,7 @@ export function ParamSheet({
 		.map((entry) => JSON.stringify(entry))
 		.join("|");
 
+	// biome-ignore lint/correctness/useExhaustiveDependencies: intentional — depends on a derived key to avoid re-triggering on unstable references
 	useEffect(() => {
 		if (!dynamicGroups.length || !sharedRun) return;
 		let cancelled = false;
@@ -357,7 +358,6 @@ export function ParamSheet({
 		return () => {
 			cancelled = true;
 		};
-		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [dynamicDepKey, sharedRun]);
 
 	const optionsFor = (g: ParamGroup): string[] => {

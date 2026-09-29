@@ -50,12 +50,31 @@ const PALETTE = [
 ];
 
 interface MultiLineChartProps {
-	data: any[];
+	data: Record<string, unknown>[];
 	config?: VisualizationConfig;
 	onTrigger?: (
 		payload: import("@/types/dashboard").VizTriggerPayload,
 	) => void;
 	onStylingChange?: (updates: Partial<MultiLineStyling>) => void;
+}
+
+interface ChartMouseEvent {
+	activeLabel?: string | number;
+	activePayload?: Array<{ payload?: Record<string, unknown> }>;
+}
+
+interface LineDotRenderProps {
+	cx?: number;
+	cy?: number;
+	index?: number;
+	payload?: Record<string, unknown>;
+}
+
+interface MinMaxLabelContentProps {
+	index?: number;
+	x?: number | string;
+	y?: number | string;
+	value?: unknown;
 }
 
 // Vertical range brush
@@ -350,9 +369,10 @@ export function MultiLineChart({
 	onStylingChange,
 	onTrigger,
 }: MultiLineChartProps) {
-	const xKey = config?.xKey;
-	const yKey = config?.yKeys?.[0];
-	const categoryKey = config?.categoryKey;
+	// Defaulted (rather than possibly-undefined) so hooks below can run unconditionally.
+	const xKey = config?.xKey ?? "";
+	const yKey = config?.yKeys?.[0] ?? "";
+	const categoryKey = config?.categoryKey ?? "";
 	const ml: MultiLineStyling = config?.styling?.multiline ?? {};
 	const aggFn =
 		(yKey &&
@@ -360,16 +380,12 @@ export function MultiLineChart({
 				config?.columnAggregations as Record<string, string> | undefined
 			)?.[yKey]) ??
 		"avg";
-
-	if (!xKey || !yKey || !categoryKey || !data.length) {
-		return (
-			<div className="flex h-full items-center justify-center text-slate-400 text-sm">
-				{!data.length
-					? "No data to display"
-					: "Configure X Axis, Y Axis, and Category to display this chart"}
-			</div>
-		);
-	}
+	const hasData = Boolean(
+		config?.xKey &&
+			config?.yKeys?.[0] &&
+			config?.categoryKey &&
+			data.length,
+	);
 
 	const xValues = Array.from(new Set(data.map((r) => String(r[xKey]))));
 	const categories = Array.from(
@@ -409,7 +425,7 @@ export function MultiLineChart({
 	}
 
 	const pivoted = xValues.map((x) => {
-		const row: Record<string, any> = { [xKey]: x };
+		const row: Record<string, unknown> = { [xKey]: x };
 		for (const cat of categories)
 			row[cat] = aggregateValues(bucketMap[x]?.[cat] ?? [], aggFn);
 		for (const { column, aggregation } of tooltipEntries) {
@@ -486,6 +502,7 @@ export function MultiLineChart({
 	yBrushFracRef.current = yBrushFrac;
 
 	const prevSaveZoomRef = useRef(saveZoom);
+	// biome-ignore lint/correctness/useExhaustiveDependencies: onStylingChange is a stable callback prop; including it would re-fire on every parent render
 	useEffect(() => {
 		const wasOn = prevSaveZoomRef.current;
 		prevSaveZoomRef.current = saveZoom;
@@ -495,7 +512,7 @@ export function MultiLineChart({
 				savedZoomY: yBrushFracRef.current,
 			});
 		}
-	}, [saveZoom]); // eslint-disable-line react-hooks/exhaustive-deps
+	}, [saveZoom]);
 
 	const xBrushActive = zoomX && (xBrushFrac[0] > 0 || xBrushFrac[1] < 1);
 	const visiblePivoted =
@@ -586,6 +603,16 @@ export function MultiLineChart({
 		left: 10,
 	};
 
+	if (!hasData) {
+		return (
+			<div className="flex h-full items-center justify-center text-slate-400 text-sm">
+				{!data.length
+					? "No data to display"
+					: "Configure X Axis, Y Axis, and Category to display this chart"}
+			</div>
+		);
+	}
+
 	return (
 		<div
 			style={{
@@ -600,7 +627,7 @@ export function MultiLineChart({
 					<ComposedChart
 						data={chartData}
 						margin={MARGIN}
-						onClick={(e: any) => {
+						onClick={(e: ChartMouseEvent) => {
 							if (e?.activeLabel != null)
 								onTrigger?.({
 									trigger: "click",
@@ -621,7 +648,7 @@ export function MultiLineChart({
 									},
 								});
 						}}
-						onMouseMove={(e: any) => {
+						onMouseMove={(e: ChartMouseEvent) => {
 							const label = e?.activeLabel
 								? String(e.activeLabel)
 								: null;
@@ -811,7 +838,9 @@ export function MultiLineChart({
 										noSymbol
 											? false
 											: colorRules.length > 0
-												? (props: any) => {
+												? (
+														props: LineDotRenderProps,
+													) => {
 														const {
 															cx,
 															cy,
@@ -821,17 +850,14 @@ export function MultiLineChart({
 														const c =
 															colorForCategory(
 																cat,
-																payload as Record<
-																	string,
-																	unknown
-																>,
+																payload ?? {},
 																i,
 															);
 														return (
 															renderChartSymbol(
 																symbolType,
-																cx,
-																cy,
+																cx ?? 0,
+																cy ?? 0,
 																symbolSize,
 																c,
 															) ?? (
@@ -848,7 +874,9 @@ export function MultiLineChart({
 														);
 													}
 												: useDot
-													? (props: any) => {
+													? (
+															props: LineDotRenderProps,
+														) => {
 															const {
 																cx,
 																cy,
@@ -857,8 +885,8 @@ export function MultiLineChart({
 															return (
 																renderChartSymbol(
 																	symbolType,
-																	cx,
-																	cy,
+																	cx ?? 0,
+																	cy ?? 0,
 																	symbolSize,
 																	lineColor,
 																) ?? (
@@ -910,7 +938,9 @@ export function MultiLineChart({
 									{showMinMax && (
 										<LabelList
 											dataKey={cat}
-											content={(props: any) => {
+											content={(
+												props: MinMaxLabelContentProps,
+											) => {
 												const { index, x, y, value } =
 													props;
 												const isMax =

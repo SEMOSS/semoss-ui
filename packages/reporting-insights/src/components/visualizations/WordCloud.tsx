@@ -290,11 +290,14 @@ interface HoveredWord {
 	y: number;
 }
 
+// Stable reference so an unset `formatRules` prop doesn't retrigger effects every render.
+const EMPTY_FORMAT_RULES: FormatRule[] = [];
+
 export function WordCloud({
 	data,
 	config,
 	palette,
-	formatRules = [],
+	formatRules = EMPTY_FORMAT_RULES,
 	onTrigger,
 }: WordCloudProps) {
 	const wordsKey = config?.xKey;
@@ -395,7 +398,9 @@ export function WordCloud({
 	// Resolve a fill color for a given word — ColorRule overrides, else palette by index
 	const colorForWord = useMemo(() => {
 		const indexByLabel = new Map<string, number>();
-		words.forEach((w, i) => indexByLabel.set(w.label, i));
+		words.forEach((w, i) => {
+			indexByLabel.set(w.label, i);
+		});
 		return (label: string, sizeValue: number): string => {
 			for (const rule of colorRules) {
 				const candidate: unknown =
@@ -516,6 +521,8 @@ export function WordCloud({
 		fontSizeFor,
 		colorForWord,
 		showTooltip,
+		wordsKey,
+		formatRules,
 	]);
 
 	//  No-data guard

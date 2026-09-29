@@ -150,6 +150,7 @@ export function CsvExportButton({
 	// key on mount because the button remounts after each fetch and that key belongs
 	// to the preceding download.
 	const previousDownloadKey = useRef(downloadKey);
+	// biome-ignore lint/correctness/useExhaustiveDependencies: only downloadKey changing should retrigger this; phi/processedRows/doDownload are read at fire time
 	useEffect(() => {
 		const previousKey = previousDownloadKey.current;
 		previousDownloadKey.current = downloadKey;
@@ -164,7 +165,6 @@ export function CsvExportButton({
 		} else {
 			doDownload();
 		}
-		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [downloadKey]);
 
 	const alignMap: Record<string, CSSProperties["alignItems"]> = {
