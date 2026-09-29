@@ -1,5 +1,6 @@
 import type { HTMLAttributes } from "react";
-import { buildInitials, getAppCatalogAvatarStyle } from "./icon-utils";
+import { buildInitials } from "@semoss/utility";
+import { getAppCatalogAvatarStyle } from "./icon-utils";
 
 interface AppCatalogAvatarProps
 	extends Omit<HTMLAttributes<HTMLDivElement>, "style" | "children"> {
@@ -29,7 +30,7 @@ export const AppCatalogAvatar = ({
 			className={classes}
 			style={getAppCatalogAvatarStyle(label)}
 		>
-			{buildInitials(label)}
+			{buildInitials(label, 3)}
 		</div>
 	);
 };
