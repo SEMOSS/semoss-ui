@@ -8,6 +8,7 @@ import {
 } from "@/features/rooms/api/room-schemas";
 import { callPixel, type InsightActions, pixel } from "@/lib/pixel";
 import { threadInstructions } from "../thread-context";
+import { type ThreadChatSettings, workInstructions } from "../thread-settings";
 
 const associationSchema = z.object({
 	version: z.literal(1),
@@ -27,12 +28,7 @@ export interface ThreadRoomAssociation {
 
 /** Work owns this configuration, even if a room was edited from a legacy link. */
 export function canContinueThreadRoom(room: ThreadRoomAssociation): boolean {
-	return (
-		room.options.instructions ===
-			threadInstructions(room.metadata.agentId) &&
-		room.options.mcp.length === 0 &&
-		!room.options.workspace
-	);
+	return room.options.modelId === room.metadata.modelId;
 }
 
 /** Discover only rooms returned by the current user's collaboration room list. */
@@ -55,8 +51,7 @@ export async function findThreadRoom(
 				if (
 					!association.success ||
 					association.data.threadId !== threadId ||
-					association.data.modelId !== options.modelId ||
-					options.workspace
+					association.data.modelId !== options.modelId
 				)
 					return null;
 				return {
@@ -91,31 +86,47 @@ export async function prepareThreadRoom(
 	title: string,
 	metadata: ThreadRoomMetadata,
 	attempt: { roomId?: string; onCreated: (roomId: string) => void },
+	settings?: ThreadChatSettings,
 ): Promise<ThreadRoomAssociation> {
-	const roomId = await createRoom(
-		actions,
-		insightId,
-		{
-			name: title,
-			workspaceId: null,
-			instructions: threadInstructions(metadata.agentId),
-			modelId: metadata.modelId,
-			mcp: [],
-		},
-		attempt,
-	);
+	const roomId =
+		attempt.roomId ??
+		(await createRoom(
+			actions,
+			insightId,
+			{
+				name: title,
+				workspaceId: metadata.agentId || null,
+				instructions: settings
+					? workInstructions(settings.instructions)
+					: threadInstructions(metadata.agentId),
+				modelId: metadata.modelId,
+				mcp: settings?.mcp ?? [],
+				...(settings && { temperature: settings.temperature }),
+			},
+			attempt,
+		));
 	const envelope = await callPixel(
 		actions,
 		pixel("GetRoomOptions", { roomId }),
 		roomOptionsEnvelopeSchema,
 	);
-	const options = {
+	const options: PlaygroundRoomOptions = {
 		...envelope.OPTIONS,
-		mcp: envelope.OPTIONS.mcp.filter(
-			(resource) => !resource.fromWorkspace && !resource.fromRoom,
-		),
+		modelId: metadata.modelId,
+		...(settings && {
+			overrideSystemPrompt: false,
+			instructions: workInstructions(settings.instructions),
+			temperature: settings.temperature,
+			mcp: settings.mcp,
+		}),
 		workThread: metadata,
 	};
+	if (metadata.agentId)
+		options.workspace = {
+			workspace_id: metadata.agentId,
+			name: "Assistant",
+		};
+	else delete options.workspace;
 	const saved = await callPixel(
 		actions,
 		pixel("UpdateRoomOptions", { roomId, roomOptions: [options] }),
@@ -123,5 +134,6 @@ export async function prepareThreadRoom(
 	);
 	if (!saved)
 		throw new Error("Could not link this conversation to your work.");
+	await bindThreadRoom(actions, roomId);
 	return { roomId, metadata, options };
 }

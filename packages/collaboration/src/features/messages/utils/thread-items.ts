@@ -178,6 +178,7 @@ function conversationMessageFromPersisted(
 		role: isUserMessage(message) ? "user" : "assistant",
 		parts,
 		createdAt: message.dateCreated ?? undefined,
+		runId: message.agentRun?.runId ?? undefined,
 		parentMessageId: message.parentMessageId ?? undefined,
 		visible: message.visible ?? true,
 		delegationReply: delegationReply(message),

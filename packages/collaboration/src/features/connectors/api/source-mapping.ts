@@ -36,6 +36,8 @@ export function importOutlookMail(
 			{
 				id: mail.uid,
 				text: mail.body,
+				displayBody: mail.displayBody,
+				webLink: safeSourceUrl(mail.webLink),
 				senderAddress: mail.from,
 				at: mail.receivedDate ?? mail.sentDate,
 				isTruncated: mail.bodyTruncated,
@@ -48,6 +50,7 @@ export function importOutlookMail(
 		],
 		receivedAt: mail.receivedDate ?? mail.sentDate,
 		attachments: mail.attachments ?? [],
+		sourceUrl: safeSourceUrl(mail.webLink),
 		folder,
 		isTruncated: mail.bodyTruncated,
 	};
@@ -65,6 +68,8 @@ export function importTeamsChat(
 		.map((message) => ({
 			id: message.id,
 			text: message.body,
+			displayBody: message.displayBody,
+			webLink: safeSourceUrl(message.webUrl ?? chat.webUrl),
 			senderId: message.fromId,
 			senderName: message.fromName,
 			at: message.createdDateTime,

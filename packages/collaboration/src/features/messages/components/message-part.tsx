@@ -9,7 +9,6 @@ import type {
 } from "../types/message";
 import { MessageMarkdown } from "./message-markdown";
 import { MessageMediaPart } from "./message-media-part";
-import { MessagePartActions } from "./message-part-actions";
 import { MessageThinkingPart } from "./message-thinking-part";
 
 /** Render one part with its source message's streaming lifecycle. */
@@ -35,38 +34,30 @@ export const MessagePart = memo(function MessagePart({
 	switch (part.type) {
 		case "text":
 			return (
-				<div className="group/part flex min-w-0 items-start gap-2">
-					<div className="min-w-0 max-w-prose flex-1">
-						{role === "user" ? (
-							<P
-								dir="auto"
-								className="wrap-anywhere whitespace-pre-wrap text-base leading-7"
-							>
-								{part.text}
-							</P>
-						) : (
-							<MessageMarkdown
-								text={part.text}
-								shouldFlush={shouldFlush}
-								isStreaming={isLive && part.state === "active"}
-							/>
-						)}
-					</div>
-					<MessagePartActions text={part.text} />
-				</div>
-			);
-		case "thinking":
-			return (
-				<div className="group/part flex min-w-0 items-start gap-2">
-					<div className="min-w-0 flex-1">
-						<MessageThinkingPart
+				<div className="min-w-0 max-w-prose">
+					{role === "user" ? (
+						<P
+							dir="auto"
+							className="wrap-anywhere whitespace-pre-wrap text-sm leading-6"
+						>
+							{part.text}
+						</P>
+					) : (
+						<MessageMarkdown
 							text={part.text}
 							shouldFlush={shouldFlush}
 							isStreaming={isLive && part.state === "active"}
 						/>
-					</div>
-					<MessagePartActions text={part.text} kind="thinking" />
+					)}
 				</div>
+			);
+		case "thinking":
+			return (
+				<MessageThinkingPart
+					text={part.text}
+					shouldFlush={shouldFlush}
+					isStreaming={isLive && part.state === "active"}
+				/>
 			);
 		case "tool":
 			return <ToolCallCard tool={part.tool} createdAt={createdAt} />;

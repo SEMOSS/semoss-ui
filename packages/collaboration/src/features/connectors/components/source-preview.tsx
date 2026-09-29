@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Button, H3, P } from "@semoss/ui/next";
+import { safeSourceUrl } from "../api/microsoft";
 import type { ImportedSource } from "../types";
 import { EmailDraftDialog } from "./email-draft-dialog";
 import { MailAttachmentList } from "./mail-attachment-list";
@@ -21,6 +22,7 @@ export function SourcePreview({
 	);
 	const [importedId, setImportedId] = useState<string | null>(null);
 	const identity = `${source.sourceKind}:${source.nativeId}`;
+	const sourceUrl = safeSourceUrl(source.sourceUrl);
 	function handleImport(): void {
 		onImport(source);
 		setImportedId(identity);
@@ -68,15 +70,24 @@ export function SourcePreview({
 						</Button>
 					</>
 				)}
-				{source.sourceUrl && (
-					<a
-						href={source.sourceUrl}
-						target="_blank"
-						rel="noreferrer"
-						className="self-center text-primary underline"
+				{sourceUrl && (
+					<Button
+						asChild
+						variant="link"
+						size="sm"
+						className="h-auto min-h-8 max-w-full self-center whitespace-normal text-left"
 					>
-						Open source
-					</a>
+						<a
+							href={sourceUrl}
+							target="_blank"
+							rel="noopener noreferrer"
+						>
+							{source.sourceKind === "outlook" ||
+							source.sourceKind === "calendar"
+								? "Open in Outlook"
+								: "Open source"}
+						</a>
+					</Button>
 				)}
 			</div>
 			<output className="block text-muted-foreground text-sm">

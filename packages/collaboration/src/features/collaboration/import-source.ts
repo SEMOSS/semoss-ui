@@ -81,6 +81,8 @@ export function importSourceCommand(
 			id: message.id,
 			fromId: sender.id,
 			text: message.text,
+			displayBody: message.displayBody,
+			webLink: message.webLink,
 			at: message.at ?? source.receivedAt ?? "",
 			isTruncated: message.isTruncated,
 		};

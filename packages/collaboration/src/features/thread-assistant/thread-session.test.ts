@@ -5,6 +5,7 @@ import {
 import { getRoomMessages } from "@/features/messages/api/get-room-messages";
 import * as runApi from "@/features/rooms/api/agent-run-api";
 import { uploadRoomFiles } from "@/features/rooms/api/upload-room-files";
+import { compactThreadMessages } from "./api/thread-compaction";
 import {
 	bindThreadRoom,
 	findThreadRoom,
@@ -15,6 +16,8 @@ import {
 	THREAD_ASSISTANT_INSTRUCTIONS,
 } from "./thread-context";
 import { ThreadSession } from "./thread-session";
+
+vi.mock("./api/thread-compaction", () => ({ compactThreadMessages: vi.fn() }));
 
 vi.mock("@semoss/sdk", async (original) => {
 	let nextInsight = 0;
@@ -161,7 +164,7 @@ it("does not create a room until an explicit send and stages native files after 
 	});
 });
 
-it("reuses the recovered model without an inventory lookup and starts fresh when exclusions change", async () => {
+it("reuses the recovered room and model when source context changes", async () => {
 	vi.mocked(findThreadRoom).mockResolvedValue(association);
 	const instance = await session();
 	expect(bindThreadRoom).toHaveBeenCalledWith(
@@ -179,7 +182,34 @@ it("reuses the recovered model without an inventory lookup and starts fresh when
 		instance.insight.insightId,
 		"Thread",
 		{ ...metadata, contextRevision: "r2" },
-		expect.anything(),
+		expect.objectContaining({ roomId: "room-1" }),
+		instance.getSnapshot().settings,
+	);
+});
+
+it("uses the selected model for the next turn while retaining the thread room", async () => {
+	vi.mocked(findThreadRoom).mockResolvedValue(association);
+	const instance = await session();
+	instance.selectModel("model-2", "Second model");
+	expect(instance.getSnapshot()).toMatchObject({
+		modelId: "model-2",
+		modelName: "Second model",
+	});
+	await instance.send("Thread", context, {
+		text: "Continue with this model",
+		files: [],
+	});
+	expect(prepareThreadRoom).toHaveBeenCalledWith(
+		instance.insight.actions,
+		instance.insight.insightId,
+		"Thread",
+		{ ...metadata, modelId: "model-2" },
+		expect.objectContaining({ roomId: "room-1" }),
+		expect.objectContaining({ modelId: "model-2" }),
+	);
+	expect(runApi.startAgentRun).toHaveBeenCalledWith(
+		instance.insight.insightId,
+		expect.objectContaining({ engine: "model-2" }),
 	);
 });
 
@@ -201,6 +231,7 @@ it("retries partial setup with the known room id instead of allocating a duplica
 		"Thread",
 		metadata,
 		expect.objectContaining({ roomId: "partially-created" }),
+		instance.getSnapshot().settings,
 	);
 	expect(runApi.startAgentRun).toHaveBeenCalledTimes(1);
 });
@@ -323,4 +354,124 @@ it("isolates Download-only files from the assistant's room and media", async () 
 		instance.insight.insightId,
 		expect.objectContaining({ media: [] }),
 	);
+});
+
+it("keeps the owned room and updates its metadata when source context changes", async () => {
+	vi.mocked(findThreadRoom).mockResolvedValue(association);
+	const instance = await session();
+	await instance.send(
+		"Thread",
+		{
+			...context,
+			contextRevision: "r2",
+			contextText: "Only selected material",
+		},
+		{ text: "Continue", files: [] },
+	);
+	expect(prepareThreadRoom).toHaveBeenCalledWith(
+		expect.anything(),
+		instance.insight.insightId,
+		"Thread",
+		expect.objectContaining({ contextRevision: "r2" }),
+		expect.objectContaining({ roomId: "room-1" }),
+		expect.anything(),
+	);
+	expect(instance.getSnapshot().association?.roomId).toBe("room-1");
+	const command =
+		vi.mocked(runApi.startAgentRun).mock.calls[0]?.[1].command ?? "";
+	expect(readThreadCommand(command)?.context).toMatchObject({
+		contextRevision: "r2",
+		contextText: "Only selected material",
+	});
+});
+
+it("compacts only the persisted assistant leaf and locks concurrent writes", async () => {
+	vi.mocked(findThreadRoom).mockResolvedValue(association);
+	vi.mocked(getRoomMessages).mockResolvedValue([
+		{
+			messageId: "question",
+			type: "INPUT_TEXT",
+			tokens: 120,
+			parts: [{ type: "TEXT", text: "Question" }],
+		},
+		{
+			messageId: "answer",
+			parentMessageId: "question",
+			type: "RESPONSE_TEXT",
+			tokens: 30,
+			parts: [{ type: "TEXT", text: "Answer" }],
+		},
+	]);
+	const instance = await session();
+	let finish: ((result: "compacted") => void) | undefined;
+	vi.mocked(compactThreadMessages).mockImplementation(
+		() =>
+			new Promise((resolve) => {
+				finish = resolve;
+			}),
+	);
+	const pending = instance.compact("SUMMARY");
+	expect(instance.getSnapshot().isCompacting).toBe(true);
+	await expect(
+		instance.send("Thread", context, { text: "Wait", files: [] }),
+	).rejects.toThrow();
+	await vi.waitFor(() =>
+		expect(compactThreadMessages).toHaveBeenCalledWith(
+			instance.insight.actions,
+			"room-1",
+			"answer",
+			"SUMMARY",
+		),
+	);
+	finish?.("compacted");
+	await pending;
+	expect(instance.getSnapshot()).toMatchObject({
+		isCompacting: false,
+		compactionNotice: "Conversation context compacted.",
+		usage: { contextTokens: 150, totalTokens: 150 },
+	});
+});
+
+it("retains compaction failure details and allows a safe retry", async () => {
+	vi.mocked(findThreadRoom).mockResolvedValue(association);
+	vi.mocked(getRoomMessages).mockResolvedValue([
+		{
+			messageId: "answer",
+			type: "RESPONSE_TEXT",
+			parts: [{ type: "TEXT", text: "Answer" }],
+		},
+	]);
+	const instance = await session();
+	vi.mocked(compactThreadMessages).mockRejectedValueOnce(
+		new Error("Summary service unavailable"),
+	);
+	await expect(instance.compact()).rejects.toThrow(
+		"Summary service unavailable",
+	);
+	expect(instance.getSnapshot()).toMatchObject({
+		isCompacting: false,
+		compactionError: "Summary service unavailable",
+	});
+	vi.mocked(compactThreadMessages).mockResolvedValueOnce("skipped");
+	await instance.compact();
+	expect(instance.getSnapshot()).toMatchObject({
+		compactionError: null,
+		compactionNotice: "No compaction was needed.",
+	});
+});
+
+it("does not compact an active run or an unanswered message", async () => {
+	vi.mocked(findThreadRoom).mockResolvedValue(association);
+	vi.mocked(getRoomMessages).mockResolvedValue([
+		{
+			messageId: "question",
+			type: "INPUT_TEXT",
+			parts: [{ type: "TEXT", text: "Question" }],
+		},
+	]);
+	const instance = await session();
+	await expect(instance.compact()).rejects.toThrow("completed a response");
+	await instance.send("Thread", context, { text: "Continue", files: [] });
+	await expect(instance.compact()).rejects.toThrow("finish or reconnect");
+	expect(compactThreadMessages).not.toHaveBeenCalled();
 });

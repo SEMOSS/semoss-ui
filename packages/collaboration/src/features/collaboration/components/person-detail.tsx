@@ -20,6 +20,7 @@ import { CollaborationSurface } from "./collaboration-surface";
 import { PersonAvatar } from "./person-avatar";
 import { Section } from "./section";
 import { TextEntryForm } from "./text-entry-form";
+import { ThreadMenu } from "./thread-menu";
 import { TopicChip } from "./topic-chip";
 
 /** Contact settings apply consistently to topic memberships and future context. */
@@ -302,42 +303,46 @@ export function PersonDetail() {
 							(candidate) => candidate.personId === person.id,
 						);
 						return (
-							<div
-								key={thread.id}
-								className="flex items-center justify-between gap-3 border-b pb-3 last:border-0"
-							>
-								<div className="min-w-0 flex-1">
-									<Link
-										className="break-words font-medium text-sm hover:underline"
-										to={`/brain/threads/${encodeURIComponent(thread.id)}`}
-									>
-										{thread.subject}
-									</Link>
-									<Small className="mt-1 font-normal text-muted-foreground text-xs">
-										{thread.channel} · {participant?.role}
-										{participant?.included &&
-										!person.neverIngest
-											? ""
-											: " · Excluded"}
-									</Small>
-								</div>
-								<Switch
-									checked={
-										Boolean(participant?.included) &&
-										!person.neverIngest
-									}
-									disabled={person.neverIngest}
-									aria-label={`Include ${person.name} in ${thread.subject}`}
-									onCheckedChange={(included) =>
-										dispatch({
-											type: "thread.participant",
-											threadId: thread.id,
-											personId: person.id,
-											included,
-										})
-									}
-								/>
-							</div>
+							<ThreadMenu key={thread.id} thread={thread}>
+								{(menu) => (
+									<div className="flex items-center justify-between gap-3 border-b pb-3 last:border-0">
+										<div className="min-w-0 flex-1">
+											<Link
+												className="break-words font-medium text-sm hover:underline"
+												to={`/brain/threads/${encodeURIComponent(thread.id)}`}
+											>
+												{thread.subject}
+											</Link>
+											<Small className="mt-1 font-normal text-muted-foreground text-xs">
+												{thread.channel} ·{" "}
+												{participant?.role}
+												{participant?.included &&
+												!person.neverIngest
+													? ""
+													: " · Excluded"}
+											</Small>
+										</div>
+										<Switch
+											checked={
+												Boolean(
+													participant?.included,
+												) && !person.neverIngest
+											}
+											disabled={person.neverIngest}
+											aria-label={`Include ${person.name} in ${thread.subject}`}
+											onCheckedChange={(included) =>
+												dispatch({
+													type: "thread.participant",
+													threadId: thread.id,
+													personId: person.id,
+													included,
+												})
+											}
+										/>
+										{menu}
+									</div>
+								)}
+							</ThreadMenu>
 						);
 					})}
 					{!threads.length && (

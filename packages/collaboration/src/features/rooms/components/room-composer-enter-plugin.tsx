@@ -5,8 +5,12 @@ import { useEffect } from "react";
 /** Submit on Enter while preserving Shift+Enter and IME composition. */
 export function RoomComposerEnterPlugin({
 	onSubmit,
+	submitOnEnter = true,
+	isKeyboardSubmitDisabled = false,
 }: {
 	onSubmit: () => void;
+	submitOnEnter?: boolean;
+	isKeyboardSubmitDisabled?: boolean;
 }) {
 	const [editor] = useLexicalComposerContext();
 
@@ -16,8 +20,10 @@ export function RoomComposerEnterPlugin({
 				KEY_ENTER_COMMAND,
 				(event) => {
 					if (
+						isKeyboardSubmitDisabled ||
 						!event ||
 						event.shiftKey ||
+						(!submitOnEnter && !event.ctrlKey && !event.metaKey) ||
 						event.isComposing ||
 						event.keyCode === 229
 					) {
@@ -29,7 +35,7 @@ export function RoomComposerEnterPlugin({
 				},
 				COMMAND_PRIORITY_LOW,
 			),
-		[editor, onSubmit],
+		[editor, onSubmit, submitOnEnter, isKeyboardSubmitDisabled],
 	);
 
 	return null;

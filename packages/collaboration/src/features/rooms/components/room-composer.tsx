@@ -6,8 +6,12 @@ import { ContentEditable } from "@lexical/react/LexicalContentEditable";
 import { EditorRefPlugin } from "@lexical/react/LexicalEditorRefPlugin";
 import { LexicalErrorBoundary } from "@lexical/react/LexicalErrorBoundary";
 import { HistoryPlugin } from "@lexical/react/LexicalHistoryPlugin";
+import { LinkPlugin } from "@lexical/react/LexicalLinkPlugin";
+import { ListPlugin } from "@lexical/react/LexicalListPlugin";
 import { OnChangePlugin } from "@lexical/react/LexicalOnChangePlugin";
 import { PlainTextPlugin } from "@lexical/react/LexicalPlainTextPlugin";
+import { RichTextPlugin } from "@lexical/react/LexicalRichTextPlugin";
+import { TablePlugin } from "@lexical/react/LexicalTablePlugin";
 import {
 	$createParagraphNode,
 	$createTextNode,
@@ -15,6 +19,9 @@ import {
 	type LexicalEditor,
 } from "lexical";
 import {
+	BookOpen,
+	Mail,
+	MailPlus,
 	Mic,
 	Paperclip,
 	Plus,
@@ -41,24 +48,81 @@ import {
 	Popover,
 	PopoverContent,
 	PopoverTrigger,
-	ScrollArea,
+	Separator,
 	Spinner,
 	Tooltip,
 	TooltipContent,
 	TooltipTrigger,
 } from "@semoss/ui/next";
 import type { AgentConfiguration } from "@/features/agents/types/agent";
+import {
+	EMAIL_HTML_CONFIG,
+	EMAIL_NODES,
+	EMAIL_THEME,
+	exportEmailHtml,
+} from "@/features/email/email-editor-config";
+import { EmailEditorPlugin } from "@/features/email/email-editor-plugin";
+import { EmailFormatToolbar } from "@/features/email/email-format-toolbar";
+import { emailLink } from "@/features/email/email-html";
 import type { ComposerSubmission, RoomSettings } from "../types/room";
+import {
+	COMPOSER_MAX_CHARACTERS,
+	type ComposerDraft,
+	type ComposerPanelAction,
+	type ComposerPrompt,
+} from "./room-composer.types";
 import { RoomComposerEnterPlugin } from "./room-composer-enter-plugin";
 import { RoomComposerFiles } from "./room-composer-files";
+import { RoomComposerFocusPlugin } from "./room-composer-focus-plugin";
 import { RoomComposerPasteScrollPlugin } from "./room-composer-paste-scroll-plugin";
 import {
 	RoomComposerSlashPlugin,
 	type RoomSlashCommand,
 } from "./room-composer-slash-plugin";
+import { RoomPromptPicker } from "./room-prompt-picker";
 import { RoomSettingsDialog } from "./room-settings-dialog";
 
 interface RoomComposerProps {
+	/** Captured once on mount; subsequent typing remains owned by Lexical. */
+	initialDraft?: ComposerDraft;
+	/** Reports document and file changes to an optional host-owned memory store. */
+	onDraftChange?: (draft: ComposerDraft) => void;
+	/** Existing rooms autofocus; thread restoration opts out. */
+	autoFocus?: boolean;
+	/** Increment after an explicit action to reveal and focus this editor. */
+	focusRequest?: number;
+	/** Keep content until confirmed success, including while its route is detached. */
+	retainUntilSent?: boolean;
+	/** A retained submission failure, if the host owns the transaction. */
+	submissionError?: string;
+	/** A stable rich document with destination-specific formatting and serialization. */
+	emailMode?: "assistant" | "draft" | "send";
+	/** Thread-owned panels available directly from +. */
+	panelActions?: readonly ComposerPanelAction[];
+	/** Source attachment choices, colocated with uploads. */
+	attachmentContent?: ReactNode;
+	/** Visible queued source attachments. */
+	attachmentSummary?: ReactNode;
+	/** Optional host shortcuts, retaining the built-in upload and optimize commands. */
+	extraCommands?: readonly RoomSlashCommand[];
+	/** Saved prompts already available to this conversation. */
+	prompts?: readonly ComposerPrompt[];
+	/** Stable focus return target when closing a host panel. */
+	actionsTriggerId?: string;
+	/** Work owns settings in its dock instead of this menu. */
+	hideSettingsAction?: boolean;
+	/** Optional visible destination-specific send label. */
+	submitLabel?: string;
+	/** Destination-specific icon; defaults to the send arrow. */
+	submitIcon?: ReactNode;
+	/** Optional controls above the editable text, inside the composer surface. */
+	header?: ReactNode;
+	/** Destination-specific guidance for an empty editor. */
+	placeholder?: string;
+	/** Non-model actions such as saving an email draft can opt out. */
+	requiresModel?: boolean;
+	/** Draft editing uses Enter for newlines and Ctrl/Cmd+Enter to save. */
+	submitOnEnter?: boolean;
 	/** Optional caller-owned controls rendered in the composer toolbar. */
 	children?: ReactNode;
 	/** Classes applied to the composer root. */
@@ -113,7 +177,11 @@ interface RoomComposerProps {
 	onSent?: () => void;
 }
 
-const MAX_CHARACTERS = 8_000;
+const EMPTY_ACTIONS: readonly ComposerPanelAction[] = [];
+const EMPTY_COMMANDS: readonly RoomSlashCommand[] = [];
+const EMPTY_PROMPTS: readonly ComposerPrompt[] = [];
+
+const MAX_CHARACTERS = COMPOSER_MAX_CHARACTERS;
 const MAX_FILES = 5;
 const MAX_FILE_SIZE = 10 * 1024 * 1024;
 
@@ -122,7 +190,8 @@ const initialConfig = {
 	theme: {
 		paragraph: "m-0",
 	},
-	nodes: [OverflowNode],
+	nodes: [OverflowNode, ...EMAIL_NODES],
+	html: EMAIL_HTML_CONFIG,
 	onError(error: Error) {
 		throw error;
 	},
@@ -152,7 +221,7 @@ function tooltipButton(
 	content = label,
 ) {
 	return (
-		<Tooltip>
+		<Tooltip disableHoverableContent={false}>
 			<TooltipTrigger asChild>{button}</TooltipTrigger>
 			<TooltipContent>{content}</TooltipContent>
 		</Tooltip>
@@ -161,10 +230,29 @@ function tooltipButton(
 
 /** Collaboration-native Lexical composer for room and landing surfaces. */
 export function RoomComposer({
+	initialDraft,
+	onDraftChange,
+	autoFocus = true,
+	focusRequest = 0,
+	retainUntilSent = false,
+	submissionError: retainedError,
+	emailMode,
+	panelActions = EMPTY_ACTIONS,
+	attachmentContent,
+	attachmentSummary,
+	extraCommands = EMPTY_COMMANDS,
+	prompts = EMPTY_PROMPTS,
+	actionsTriggerId,
 	children,
 	className,
 	inputClassName,
 	agentName,
+	submitLabel,
+	submitIcon,
+	header,
+	placeholder,
+	requiresModel = true,
+	submitOnEnter = true,
 	agent,
 	onConfigureAgent,
 	isSubmitting,
@@ -175,6 +263,7 @@ export function RoomComposer({
 	isModelSaving,
 	isModelLocked = false,
 	showModelSelector = true,
+	hideSettingsAction = false,
 	isSendDisabled = false,
 	modelError,
 	roomInstructions,
@@ -189,15 +278,19 @@ export function RoomComposer({
 	onStop,
 	onSent,
 }: RoomComposerProps) {
+	const ContentPlugin = emailMode ? RichTextPlugin : PlainTextPlugin;
+	const isEmail = Boolean(emailMode && emailMode !== "assistant");
 	const editorRef = useRef<LexicalEditor | null>(null);
 	const scrollViewportRef = useRef<HTMLDivElement | null>(null);
 	const fileInputRef = useRef<HTMLInputElement | null>(null);
 	const actionsTriggerRef = useRef<HTMLButtonElement | null>(null);
 	const recognitionRef = useRef<SpeechRecognition | null>(null);
 	const submittingRef = useRef(false);
-	const draftRef = useRef("");
-	const [draft, setDraft] = useState("");
-	const [files, setFiles] = useState<File[]>([]);
+	const initial = useRef(initialDraft);
+	const documentRef = useRef(initialDraft?.document ?? null);
+	const draftRef = useRef(initialDraft?.text ?? "");
+	const [draft, setDraft] = useState(initialDraft?.text ?? "");
+	const [files, setFiles] = useState<File[]>(initialDraft?.files ?? []);
 	const [fileError, setFileError] = useState("");
 	const [submissionError, setSubmissionError] = useState("");
 	const [isDragging, setIsDragging] = useState(false);
@@ -207,8 +300,17 @@ export function RoomComposer({
 	const [originalDraft, setOriginalDraft] = useState<string | null>(null);
 	const [isActionsOpen, setIsActionsOpen] = useState(false);
 	const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+	const [isPromptPickerOpen, setIsPromptPickerOpen] = useState(false);
+	const isOpeningPanel = useRef(false);
 
 	draftRef.current = draft;
+	useEffect(() => {
+		onDraftChange?.({
+			document: documentRef.current,
+			text: draftRef.current,
+			files,
+		});
+	}, [files, onDraftChange]);
 
 	const focusEditor = useCallback(() => {
 		requestAnimationFrame(() => editorRef.current?.focus());
@@ -256,7 +358,8 @@ export function RoomComposer({
 			const trimmed = text.trim();
 			if (
 				!trimmed ||
-				!modelId ||
+				trimmed.length > MAX_CHARACTERS ||
+				(requiresModel && !modelId) ||
 				isModelSaving ||
 				isRunning ||
 				isSubmitting ||
@@ -266,22 +369,47 @@ export function RoomComposer({
 				return;
 			}
 
+			onDraftChange?.({
+				document:
+					editorRef.current?.getEditorState().toJSON() ??
+					documentRef.current,
+				text: draftRef.current,
+				files,
+			});
 			submittingRef.current = true;
 			setSubmissionError("");
 			const previousDraft = draftRef.current;
+			const previousEditorState = editorRef.current?.getEditorState();
+			const html =
+				isEmail && editorRef.current
+					? exportEmailHtml(editorRef.current)
+					: undefined;
 			const previousFiles = files;
-			if (clearDraft) {
+			if (clearDraft && !isEmail && !retainUntilSent) {
 				setEditorText("");
 				setFiles([]);
 				setOriginalDraft(null);
 			}
 
 			try {
-				await onSend({ text: trimmed, files: submittedFiles });
+				await onSend({
+					text: trimmed,
+					files: submittedFiles,
+					...(html !== undefined ? { html } : {}),
+				});
+				if (clearDraft && (isEmail || retainUntilSent)) {
+					setEditorText("");
+					setFiles([]);
+					setOriginalDraft(null);
+				}
 				onSent?.();
 			} catch (cause) {
-				if (clearDraft) {
-					setEditorText(previousDraft);
+				if (clearDraft && !isEmail && !retainUntilSent) {
+					if (previousEditorState && editorRef.current) {
+						editorRef.current.setEditorState(previousEditorState);
+						draftRef.current = previousDraft;
+						setDraft(previousDraft);
+					} else setEditorText(previousDraft);
 					setFiles(previousFiles);
 				}
 				setSubmissionError(errorMessage(cause));
@@ -291,6 +419,9 @@ export function RoomComposer({
 			}
 		},
 		[
+			isEmail,
+			retainUntilSent,
+			onDraftChange,
 			files,
 			focusEditor,
 			isRunning,
@@ -298,6 +429,7 @@ export function RoomComposer({
 			isSubmitting,
 			isModelSaving,
 			modelId,
+			requiresModel,
 			onSend,
 			onSent,
 			setEditorText,
@@ -307,7 +439,7 @@ export function RoomComposer({
 	const optimize = useCallback(
 		async (source = draftRef.current) => {
 			const current = source.trim();
-			if (!current || isOptimizing || isRunning) return;
+			if (!current || !modelId || isOptimizing || isRunning) return;
 			setIsOptimizing(true);
 			setSubmissionError("");
 			try {
@@ -329,6 +461,7 @@ export function RoomComposer({
 			focusEditor,
 			isOptimizing,
 			isRunning,
+			modelId,
 			onOptimizePrompt,
 			roomInstructions,
 			setEditorText,
@@ -417,6 +550,7 @@ export function RoomComposer({
 
 	const slashCommands = useMemo<RoomSlashCommand[]>(
 		() => [
+			...extraCommands,
 			{
 				id: "document",
 				label: "/document",
@@ -429,17 +563,19 @@ export function RoomComposer({
 				label: "/optimize",
 				description: "Improve the current prompt",
 				icon: WandSparkles,
-				disabled: !draft.trim() || isOptimizing,
+				disabled: !draft.trim() || !modelId || isOptimizing,
 				onSelect: (text) => void optimize(text),
 			},
 		],
-		[draft, isOptimizing, openFilePicker, optimize],
+		[draft, modelId, isOptimizing, openFilePicker, optimize, extraCommands],
 	);
 
-	const alert = fileError || submissionError || modelError?.message;
+	const alert =
+		fileError || retainedError || submissionError || modelError?.message;
 	const sendDisabled =
 		!draft.trim() ||
-		!modelId ||
+		draft.length > MAX_CHARACTERS ||
+		(requiresModel && !modelId) ||
 		isSubmitting ||
 		isModelSaving ||
 		isSendDisabled;
@@ -451,6 +587,7 @@ export function RoomComposer({
 		>
 			<fieldset
 				aria-label="Message composer drop area"
+				disabled={retainUntilSent && isSubmitting}
 				className={cn(
 					"relative m-0 min-w-0 overflow-hidden rounded-md border border-input bg-card p-0 transition-[color] focus-within:border-ring focus-within:ring-[3px] focus-within:ring-ring/50",
 					isDragging && "border-primary ring-2 ring-primary/20",
@@ -488,6 +625,8 @@ export function RoomComposer({
 						focusEditor();
 					}}
 				/>
+				{header}
+				{attachmentSummary}
 				<RoomComposerFiles
 					files={files}
 					onRemove={(index) =>
@@ -498,14 +637,42 @@ export function RoomComposer({
 						)
 					}
 				/>
-				<LexicalComposer initialConfig={initialConfig}>
-					<ScrollArea
-						className="max-h-64 min-h-20"
-						viewportRef={(element) => {
+				<LexicalComposer
+					initialConfig={{
+						...initialConfig,
+						editorState: initial.current?.document
+							? JSON.stringify(initial.current.document)
+							: undefined,
+						theme: emailMode ? EMAIL_THEME : initialConfig.theme,
+					}}
+				>
+					{emailMode && (
+						<div hidden={!isEmail}>
+							<EmailFormatToolbar disabled={isSubmitting} />
+						</div>
+					)}
+					{emailMode && (
+						<>
+							<EmailEditorPlugin disabled={isSubmitting} />
+							<ListPlugin />
+							<LinkPlugin
+								validateUrl={(value) =>
+									Boolean(emailLink(value))
+								}
+							/>
+							<TablePlugin
+								hasHorizontalScroll
+								hasTabHandler={false}
+							/>
+						</>
+					)}
+					<div
+						className="relative max-h-64 min-h-20 overflow-auto"
+						ref={(element) => {
 							scrollViewportRef.current = element;
 						}}
 					>
-						<PlainTextPlugin
+						<ContentPlugin
 							contentEditable={
 								<ContentEditable
 									aria-label={`Message ${agentName}`}
@@ -532,12 +699,12 @@ export function RoomComposer({
 							}
 							placeholder={
 								<P className="pointer-events-none absolute top-3 left-3 text-muted-foreground sm:left-4">
-									Message {agentName}…
+									{placeholder ?? `Message ${agentName}…`}
 								</P>
 							}
 							ErrorBoundary={LexicalErrorBoundary}
 						/>
-					</ScrollArea>
+					</div>
 					<div className="flex min-w-0 items-center gap-2 bg-card p-2">
 						<Popover
 							open={isActionsOpen}
@@ -548,18 +715,31 @@ export function RoomComposer({
 									<PopoverTrigger asChild>
 										<Button
 											ref={actionsTriggerRef}
+											id={actionsTriggerId}
 											type="button"
 											variant="ghost"
-											size="icon-sm"
+											size="icon"
 											aria-label="Open composer actions"
 										>
 											<Plus aria-hidden="true" />
 										</Button>
 									</PopoverTrigger>
 								</TooltipTrigger>
-								<TooltipContent>Add</TooltipContent>
+								<TooltipContent>
+									Add files or open a panel
+								</TooltipContent>
 							</Tooltip>
-							<PopoverContent align="start" className="w-48 p-1">
+							<PopoverContent
+								align="start"
+								side="top"
+								className="max-h-96 w-72 overflow-y-auto p-2"
+								onCloseAutoFocus={(event) => {
+									if (isOpeningPanel.current) {
+										event.preventDefault();
+										isOpeningPanel.current = false;
+									}
+								}}
+							>
 								<Button
 									type="button"
 									variant="ghost"
@@ -569,16 +749,55 @@ export function RoomComposer({
 									<Paperclip aria-hidden="true" />
 									Attach files
 								</Button>
-								<Button
-									type="button"
-									variant="ghost"
-									className="min-h-10 w-full justify-start"
-									disabled={isSettingsDisabled}
-									onClick={openSettings}
-								>
-									<Settings2 aria-hidden="true" />
-									Open settings
-								</Button>
+								{attachmentContent}
+								{!isEmail && prompts.length > 0 && (
+									<Button
+										type="button"
+										variant="ghost"
+										className="min-h-10 w-full justify-start"
+										onClick={() => {
+											setIsActionsOpen(false);
+											setIsPromptPickerOpen(true);
+										}}
+									>
+										<BookOpen aria-hidden="true" />
+										Prompt library
+									</Button>
+								)}
+								{panelActions.length > 0 && (
+									<>
+										<Separator className="my-2" />
+										{panelActions.map((action) => (
+											<Button
+												key={action.id}
+												type="button"
+												variant="ghost"
+												disabled={action.disabled}
+												className="min-h-10 w-full justify-start"
+												onClick={() => {
+													isOpeningPanel.current = true;
+													setIsActionsOpen(false);
+													action.onSelect();
+												}}
+											>
+												<action.icon aria-hidden="true" />
+												{action.label}
+											</Button>
+										))}
+									</>
+								)}
+								{!hideSettingsAction && (
+									<Button
+										type="button"
+										variant="ghost"
+										className="min-h-10 w-full justify-start"
+										disabled={isSettingsDisabled}
+										onClick={openSettings}
+									>
+										<Settings2 aria-hidden="true" />
+										Open settings
+									</Button>
+								)}
 							</PopoverContent>
 						</Popover>
 						<div className="flex min-w-0 flex-1 items-center gap-2">
@@ -646,6 +865,9 @@ export function RoomComposer({
 												variant="ghost"
 												size="icon-sm"
 												aria-label="Revert optimized prompt"
+												disabled={
+													isEmail || isSubmitting
+												}
 												onClick={revertOptimization}
 											>
 												<Undo aria-hidden="true" />
@@ -659,7 +881,10 @@ export function RoomComposer({
 												size="icon-sm"
 												aria-label="Optimize prompt"
 												disabled={
+													isEmail ||
+													isSubmitting ||
 													!draft.trim() ||
+													!modelId ||
 													isOptimizing ||
 													isRunning
 												}
@@ -679,16 +904,26 @@ export function RoomComposer({
 								? isCancelling
 									? "Cancelling"
 									: "Stop"
-								: "Send",
+								: (submitLabel ?? "Send"),
 							<Button
 								type="button"
-								size="icon-sm"
+								size={
+									submitLabel && !isRunning && !isEmail
+										? "sm"
+										: "icon-sm"
+								}
+								className={
+									isEmail
+										? "pointer-coarse:size-11 size-11 sm:size-8"
+										: undefined
+								}
 								aria-label={
 									isRunning
 										? isCancelling
 											? "Cancelling turn"
 											: "Stop response"
-										: `Send message to ${agentName}`
+										: (submitLabel ??
+											`Send message to ${agentName}`)
 								}
 								disabled={
 									isRunning ? isCancelling : sendDisabled
@@ -707,8 +942,16 @@ export function RoomComposer({
 										fill="currentColor"
 									/>
 								) : (
-									<Send aria-hidden="true" />
+									(submitIcon ??
+									(emailMode === "draft" ? (
+										<MailPlus aria-hidden="true" />
+									) : emailMode === "send" ? (
+										<Mail aria-hidden="true" />
+									) : (
+										<Send aria-hidden="true" />
+									)))
 								)}
+								{!isRunning && !isEmail && submitLabel}
 							</Button>,
 						)}
 					</div>
@@ -716,19 +959,32 @@ export function RoomComposer({
 						onChange={(editorState) => {
 							editorState.read(() => {
 								const text = $getRoot().getTextContent();
-								if (text.length > MAX_CHARACTERS) {
+								if (
+									!emailMode &&
+									text.length > MAX_CHARACTERS
+								) {
 									setEditorText(
 										text.slice(0, MAX_CHARACTERS),
 									);
 									return;
 								}
 								draftRef.current = text;
+								documentRef.current = editorState.toJSON();
 								setDraft(text);
+								onDraftChange?.({
+									document: documentRef.current,
+									text,
+									files,
+								});
 							});
 						}}
 					/>
 					<HistoryPlugin />
-					<AutoFocusPlugin />
+					{autoFocus && <AutoFocusPlugin />}
+					<RoomComposerFocusPlugin
+						request={focusRequest}
+						isReadOnly={retainUntilSent ? isSubmitting : undefined}
+					/>
 					<EditorRefPlugin editorRef={editorRef} />
 					<CharacterLimitPlugin
 						charset="UTF-16"
@@ -746,13 +1002,28 @@ export function RoomComposer({
 							</output>
 						)}
 					/>
-					<RoomComposerEnterPlugin onSubmit={() => void submit()} />
+					<RoomComposerEnterPlugin
+						submitOnEnter={submitOnEnter}
+						isKeyboardSubmitDisabled={emailMode === "send"}
+						onSubmit={() => void submit()}
+					/>
 					<RoomComposerPasteScrollPlugin
 						scrollRef={scrollViewportRef}
 					/>
-					<RoomComposerSlashPlugin commands={slashCommands} />
+					{!isEmail && (
+						<RoomComposerSlashPlugin commands={slashCommands} />
+					)}
 				</LexicalComposer>
 			</fieldset>
+			<RoomPromptPicker
+				open={isPromptPickerOpen}
+				onOpenChange={setIsPromptPickerOpen}
+				prompts={prompts}
+				onSelect={(text) => {
+					setEditorText(text);
+					focusEditor();
+				}}
+			/>
 			<RoomSettingsDialog
 				open={isSettingsOpen}
 				presentation={settingsPresentation}

@@ -1,5 +1,7 @@
 import { Insight } from "@semoss/sdk";
 import { toError } from "@semoss/utility";
+import type { WorkspaceAgent } from "@/features/agents/api/agent-schemas";
+import { getAgent } from "@/features/agents/api/get-agent";
 import { downloadMailAttachmentIsolated } from "@/features/connectors/api/mail-attachment-download";
 import { stageMailAttachment } from "@/features/connectors/api/microsoft";
 import type { SourceAttachment } from "@/features/connectors/types";
@@ -27,6 +29,11 @@ import type {
 } from "@/features/rooms/types/room";
 import type { InsightActions } from "@/lib/pixel";
 import {
+	compactThreadMessages,
+	type ThreadCompactionStrategy,
+} from "./api/thread-compaction";
+import { resolveThreadModel } from "./api/thread-model";
+import {
 	bindThreadRoom,
 	canContinueThreadRoom,
 	findThreadRoom,
@@ -39,6 +46,12 @@ import {
 	type SubmittedThreadContext,
 	threadCommand,
 } from "./thread-context";
+import {
+	settingsFromRoom,
+	type ThreadChatSettings,
+	threadSettingsSchema,
+} from "./thread-settings";
+import { type ThreadUsage, threadUsage } from "./thread-usage";
 
 const EMPTY_TURN: AgentTurnSnapshot = {
 	messages: [],
@@ -55,6 +68,16 @@ const EMPTY_TURN: AgentTurnSnapshot = {
 };
 
 interface ThreadSessionSnapshot {
+	usage: ThreadUsage;
+	isCompacting: boolean;
+	compactionError: string | null;
+	compactionNotice: string | null;
+	settings: ThreadChatSettings;
+	agent: WorkspaceAgent | null;
+	isSavingSettings: boolean;
+	settingsError: string | null;
+	isLoadingModel: boolean;
+	modelError: string | null;
 	isReady: boolean;
 	isLoading: boolean;
 	isPreparing: boolean;
@@ -74,6 +97,22 @@ interface ThreadSessionSnapshot {
 export class ThreadSession {
 	readonly insight = new Insight();
 	private snapshot: ThreadSessionSnapshot = {
+		usage: { contextTokens: null, totalTokens: null },
+		isCompacting: false,
+		compactionError: null,
+		compactionNotice: null,
+		settings: {
+			modelId: "",
+			agentId: getThreadAgent()?.id ?? "",
+			instructions: "",
+			temperature: null,
+			mcp: [],
+		},
+		agent: null,
+		isSavingSettings: false,
+		settingsError: null,
+		isLoadingModel: true,
+		modelError: null,
 		isReady: false,
 		isLoading: true,
 		isPreparing: false,
@@ -99,6 +138,7 @@ export class ThreadSession {
 	private uncertainCommand: string | null = null;
 	private references = 0;
 	private isDisposed = false;
+	private configurationRevision = 0;
 
 	constructor(
 		readonly threadId: string,
@@ -127,6 +167,8 @@ export class ThreadSession {
 			!this.references &&
 			!this.initializing &&
 			!this.snapshot.isPreparing &&
+			!this.snapshot.isCompacting &&
+			!this.snapshot.isSavingSettings &&
 			!this.snapshot.turn.isRunning &&
 			!this.snapshot.turn.isRestoring &&
 			!this.snapshot.turn.isSubmitting &&
@@ -177,12 +219,17 @@ export class ThreadSession {
 					association,
 					modelId: association.metadata.modelId,
 					modelName: association.metadata.modelId,
+					settings: settingsFromRoom(
+						association.options,
+						association.metadata.agentId,
+					),
 				});
 				this.attach(association);
 				await this.readHistory();
 				await this.controller?.reconnect();
 			}
 			this.update({ isReady: true });
+			await this.resolveDefaults();
 		} catch (cause) {
 			this.update({ error: toError(cause) });
 		} finally {
@@ -234,6 +281,7 @@ export class ThreadSession {
 			association.roomId,
 		);
 		if (this.controller !== controller || this.isDisposed) return;
+		this.update({ usage: threadUsage(messages) });
 		this.history = threadFromMessages(messages);
 		controller.reconcileHistory(messages);
 		this.publishTurn(controller.getSnapshot());
@@ -241,14 +289,149 @@ export class ThreadSession {
 
 	selectModel(modelId: string, modelName: string): void {
 		if (
+			this.snapshot.isCompacting ||
 			this.snapshot.isPreparing ||
 			this.snapshot.turn.isRunning ||
 			this.snapshot.hasUnconfirmedSubmission
 		)
 			return;
 		rememberLastModel(modelId, modelName);
-		this.update({ modelId, modelName });
+		this.configurationRevision++;
+		this.update({
+			modelId,
+			modelName,
+			settings: { ...this.snapshot.settings, modelId },
+			modelError: null,
+		});
 	}
+
+	/** Catalog reads cannot overwrite a newer explicit selection or save. */
+	resolveDefaults = async (): Promise<void> => {
+		const revision = ++this.configurationRevision;
+		this.update({ isLoadingModel: true, modelError: null });
+		try {
+			const agentId = this.snapshot.settings.agentId;
+			const agent = agentId
+				? await getAgent(this.insight.actions, agentId)
+				: null;
+			const model = await resolveThreadModel(this.insight.actions, [
+				this.snapshot.modelId,
+				readLastModel()?.modelId ?? "",
+				agent?.config_json?.model_id ?? getThreadAgent()?.modelId ?? "",
+			]);
+			if (revision !== this.configurationRevision || this.isDisposed)
+				return;
+			const modelId = model?.engine_id ?? "";
+			this.update({
+				agent,
+				modelId,
+				modelName:
+					model?.engine_display_name || model?.engine_name || "",
+				settings: { ...this.snapshot.settings, modelId },
+				modelError: model
+					? null
+					: "No text-generation model is available. Choose a model in Settings or ask your administrator for access.",
+			});
+		} catch (cause) {
+			if (revision === this.configurationRevision)
+				this.update({ modelError: toError(cause).message });
+		} finally {
+			if (revision === this.configurationRevision)
+				this.update({ isLoadingModel: false });
+		}
+	};
+
+	/** Persist configuration without replacing the room or discarding its history. */
+	saveSettings = async (
+		title: string,
+		values: ThreadChatSettings,
+	): Promise<void> => {
+		const settings = threadSettingsSchema.parse(values);
+		if (
+			!this.snapshot.isReady ||
+			this.snapshot.isCompacting ||
+			this.snapshot.isSavingSettings ||
+			this.snapshot.isPreparing ||
+			this.snapshot.turn.isRunning ||
+			this.snapshot.turn.isRestoring ||
+			this.snapshot.turn.isSubmitting ||
+			this.snapshot.hasUnconfirmedSubmission ||
+			this.snapshot.isCreationUncertain
+		)
+			throw new Error(
+				"Wait for the current connection or response to finish before saving settings.",
+			);
+		this.configurationRevision++;
+		this.update({
+			isSavingSettings: true,
+			settingsError: null,
+			isLoadingModel: false,
+		});
+		try {
+			const agent = settings.agentId
+				? await getAgent(this.insight.actions, settings.agentId)
+				: null;
+			const model = await resolveThreadModel(this.insight.actions, [
+				settings.modelId,
+			]);
+			if (!model || model.engine_id !== settings.modelId)
+				throw new Error(
+					"This model is no longer available. Choose another model.",
+				);
+			const metadata: ThreadRoomMetadata = {
+				version: 1,
+				threadId: this.threadId,
+				contextRevision:
+					this.snapshot.association?.metadata.contextRevision ?? "",
+				modelId: settings.modelId,
+				...(settings.agentId && { agentId: settings.agentId }),
+			};
+			const attempt = {
+				metadata,
+				roomId:
+					this.snapshot.association?.roomId ?? this.pending?.roomId,
+			};
+			this.pending = attempt;
+			const association = await prepareThreadRoom(
+				this.insight.actions,
+				this.insight.insightId,
+				title,
+				metadata,
+				{
+					roomId: attempt.roomId,
+					onCreated: (roomId) => {
+						attempt.roomId = roomId;
+					},
+				},
+				settings,
+			);
+			this.pending = null;
+			this.update({
+				settings,
+				agent,
+				association,
+				modelId: settings.modelId,
+				modelName: model.engine_display_name || model.engine_name,
+				modelError: null,
+			});
+			rememberLastModel(
+				settings.modelId,
+				model.engine_display_name || model.engine_name,
+			);
+			this.attach(association);
+			await this.readHistory();
+		} catch (cause) {
+			this.update({
+				settingsError: toError(cause).message,
+				...(this.pending && !this.pending.roomId
+					? { isCreationUncertain: true }
+					: {}),
+			});
+			throw cause;
+		} finally {
+			this.update({ isSavingSettings: false });
+		}
+	};
 
 	/** Download-only files never enter a folder the assistant can read. */
 	downloadAttachment = async (
@@ -272,6 +455,18 @@ export class ThreadSession {
 		sourceUid?: string,
 		attachments: SourceAttachment[] = [],
 	): Promise<void> => {
+		if (
+			this.snapshot.isCompacting ||
+			this.snapshot.isSavingSettings ||
+			this.snapshot.settingsError ||
+			this.snapshot.isLoadingModel ||
+			this.snapshot.modelError
+		)
+			throw new Error(
+				this.snapshot.settingsError ||
+					this.snapshot.modelError ||
+					"Chat settings are still loading or saving.",
+			);
 		if (this.snapshot.isPreparing)
 			throw new Error("This message is already being prepared.");
 		if (!this.snapshot.isReady || this.snapshot.error)
@@ -299,7 +494,7 @@ export class ThreadSession {
 			throw new Error("Attach up to 5 files per message.");
 		this.update({ isPreparing: true, error: null, submissionNotice: null });
 		try {
-			const agentId = getThreadAgent()?.id;
+			const agentId = this.snapshot.settings.agentId;
 			const metadata: ThreadRoomMetadata = {
 				version: 1,
 				threadId: this.threadId,
@@ -320,7 +515,10 @@ export class ThreadSession {
 					JSON.stringify(this.pending.metadata) !==
 						JSON.stringify(metadata)
 				)
-					this.pending = { metadata };
+					this.pending = {
+						metadata,
+						...(current ? { roomId: current.roomId } : {}),
+					};
 				const attempt = this.pending;
 				let association: ThreadRoomAssociation;
 				try {
@@ -335,6 +533,7 @@ export class ThreadSession {
 								attempt.roomId = roomId;
 							},
 						},
+						this.snapshot.settings,
 					);
 				} catch (cause) {
 					if (!attempt.roomId)
@@ -343,7 +542,13 @@ export class ThreadSession {
 				}
 				this.pending = null;
 				this.update({ association });
-				this.attach(association);
+				if (
+					current?.roomId !== association.roomId ||
+					current.metadata.agentId !== association.metadata.agentId
+				) {
+					this.attach(association);
+					await this.readHistory();
+				}
 			}
 			if (!this.controller)
 				throw new Error("The conversation is not ready.");
@@ -401,6 +606,87 @@ export class ThreadSession {
 			}
 		} finally {
 			this.update({ isPreparing: false });
+		}
+	};
+
+	/** Compact only a settled conversation; refresh durable history even after partial failure. */
+	compact = async (
+		strategy: ThreadCompactionStrategy = "AUTO",
+	): Promise<void> => {
+		const snapshot = this.snapshot;
+		if (
+			!snapshot.isReady ||
+			!snapshot.association ||
+			snapshot.error ||
+			snapshot.isLoading ||
+			snapshot.isCompacting ||
+			snapshot.isPreparing ||
+			snapshot.isSavingSettings ||
+			snapshot.turn.isSubmitting ||
+			snapshot.turn.isRunning ||
+			snapshot.turn.isRestoring ||
+			snapshot.turn.pendingApprovals.length ||
+			snapshot.turn.transportError ||
+			snapshot.hasUnconfirmedSubmission ||
+			snapshot.isCreationUncertain
+		)
+			throw new Error(
+				"Wait for the conversation to finish or reconnect before compacting.",
+			);
+		this.update({
+			isCompacting: true,
+			compactionError: null,
+			compactionNotice: null,
+		});
+		try {
+			await this.controller?.reconnect();
+			const turn = this.snapshot.turn;
+			if (
+				turn.isRunning ||
+				turn.isRestoring ||
+				turn.isSubmitting ||
+				turn.pendingApprovals.length ||
+				turn.transportError
+			)
+				throw new Error(
+					"Reconnect and resolve the current run before compacting.",
+				);
+			await this.readHistory();
+			// Only persisted message IDs can identify a compaction leaf; live final output can be synthetic.
+			const leaf = this.history.at(-1);
+			if (
+				!leaf ||
+				leaf.role !== "assistant" ||
+				leaf.parts.some((part) => part.type === "tool")
+			)
+				throw new Error(
+					"Compact after Assistant has completed a response without pending tools.",
+				);
+			const result = await compactThreadMessages(
+				this.insight.actions,
+				snapshot.association.roomId,
+				leaf.id,
+				strategy,
+			);
+			this.update({
+				compactionNotice:
+					result === "skipped"
+						? "No compaction was needed."
+						: "Conversation context compacted.",
+			});
+		} catch (cause) {
+			this.update({ compactionError: toError(cause).message });
+			throw cause;
+		} finally {
+			try {
+				await this.readHistory();
+			} catch (cause) {
+				this.update({
+					compactionError: toError(cause).message,
+					error: toError(cause),
+				});
+			}
+			this.update({ isCompacting: false });
 		}
 	};
 

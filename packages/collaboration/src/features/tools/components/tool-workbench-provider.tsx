@@ -13,7 +13,11 @@ import {
 	isFilePanelType,
 } from "@semoss/panels";
 import { useIsMobile } from "@semoss/ui/next";
-import { createWorkbenchStore } from "@semoss/workbench";
+import {
+	createWorkbenchStore,
+	type WorkbenchLayout,
+	type WorkbenchPanelConfigAny,
+} from "@semoss/workbench";
 import type { ConversationTool } from "@/features/messages/types/message";
 import type { PendingToolApproval } from "@/features/rooms/types/room";
 import { TOOL_WORKBENCH_COMPONENTS } from "../tool-workbench.components";
@@ -30,6 +34,11 @@ import {
 } from "../utils/tool-metadata";
 
 export interface ToolWorkbenchProviderProps {
+	/** Host-specific panels and initial arrangement; supplied before store creation. */
+	components?: Record<string, WorkbenchPanelConfigAny>;
+	createLayout?: (insightId: string) => WorkbenchLayout;
+	/** A host with persistent run-status controls may keep the dock closed until requested. */
+	autoReveal?: boolean;
 	roomId: string;
 	insightId: string;
 	tools: Record<string, ConversationTool>;
@@ -49,10 +58,14 @@ interface RoomToolWorkbench {
 	snapshot: ReturnType<typeof createToolWorkbenchLayout>;
 }
 
-function createRoomToolWorkbench(insightId: string): RoomToolWorkbench {
-	const snapshot = createToolWorkbenchLayout(insightId);
+function createRoomToolWorkbench(
+	insightId: string,
+	components: Record<string, WorkbenchPanelConfigAny>,
+	createLayout: (insightId: string) => WorkbenchLayout,
+): RoomToolWorkbench {
+	const snapshot = createLayout(insightId);
 	const store = createWorkbenchStore({
-		components: TOOL_WORKBENCH_COMPONENTS,
+		components,
 	});
 	// This store outlives the conditional Workbench shell. Restore exactly once
 	// here so opening a panel while the shell is hidden cannot be overwritten on
@@ -71,9 +84,12 @@ export function ToolWorkbenchProvider({
 	onApproveTool,
 	onRejectTool,
 	children,
+	autoReveal = true,
+	components = TOOL_WORKBENCH_COMPONENTS,
+	createLayout = createToolWorkbenchLayout,
 }: ToolWorkbenchProviderProps) {
 	const [{ store, snapshot }] = useState(() =>
-		createRoomToolWorkbench(insightId),
+		createRoomToolWorkbench(insightId, components, createLayout),
 	);
 	const isMobile = useIsMobile();
 	const [isOpen, setIsOpen] = useState(false);
@@ -269,6 +285,7 @@ export function ToolWorkbenchProvider({
 	}, [activeToolId, focusToolTrigger]);
 
 	useEffect(() => {
+		if (!autoReveal) return;
 		const approval = pendingApprovals.find(
 			(item) =>
 				!automaticallyOpened.current.has(
@@ -288,9 +305,17 @@ export function ToolWorkbenchProvider({
 		)
 			openInline(tool.id);
 		else openWorkbench(approval.toolId);
-	}, [isMobile, openInline, openWorkbench, pendingApprovals, tools]);
+	}, [
+		autoReveal,
+		isMobile,
+		openInline,
+		openWorkbench,
+		pendingApprovals,
+		tools,
+	]);
 
 	useEffect(() => {
+		if (!autoReveal) return;
 		for (const tool of Object.values(tools)) {
 			const key = `tool:${tool.id}`;
 			if (
@@ -308,7 +333,7 @@ export function ToolWorkbenchProvider({
 			}
 			break;
 		}
-	}, [openInline, openWorkbench, tools]);
+	}, [autoReveal, openInline, openWorkbench, tools]);
 
 	const isToolInline = useCallback(
 		(toolId: string) => inlineToolIds.has(toolId),

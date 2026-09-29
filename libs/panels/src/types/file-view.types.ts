@@ -23,6 +23,10 @@ export interface FileViewMode {
 export interface FileViewControls extends FilePanelValue {
 	/** Whether the host may offer a save. */
 	canSave: boolean;
+	/** Whether resource access permits downloading the saved server copy. */
+	canDownload?: boolean;
+	/** Download the saved server copy, without saving the current buffer. */
+	download?: () => Promise<void>;
 	/** A read, save, download, or the view's own work is in flight. */
 	isBusy: boolean;
 	/**

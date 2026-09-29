@@ -6,6 +6,7 @@ import {
 	waitFor,
 } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { Settings2 } from "lucide-react";
 import type { ComponentProps } from "react";
 import type { Engine } from "@semoss/shared";
 import { TooltipProvider } from "@semoss/ui/next";
@@ -1008,4 +1009,70 @@ describe("RoomComposer", () => {
 		await waitFor(() => expect(editor).toHaveFocus());
 		window.SpeechRecognition = undefined;
 	});
+});
+
+it("opens a direct panel action without changing the draft or attachments", async () => {
+	const user = userEvent.setup();
+	const openSettings = vi.fn();
+	renderComposer({
+		hideSettingsAction: true,
+		panelActions: [
+			{
+				id: "settings",
+				label: "Open Settings",
+				icon: Settings2,
+				onSelect: openSettings,
+			},
+		],
+	});
+	const editor = screen.getByRole("textbox", {
+		name: "Message Research agent",
+	});
+	await user.click(editor);
+	pasteText(editor, "Keep my work");
+	fireEvent.change(screen.getByLabelText("Choose attachments"), {
+		target: { files: [new File(["test"], "notes.txt")] },
+	});
+	await act(
+		() =>
+			new Promise<void>((resolve) =>
+				requestAnimationFrame(() => resolve()),
+			),
+	);
+	await user.click(
+		screen.getByRole("button", { name: "Open composer actions" }),
+	);
+	expect(screen.queryByText("Open panel")).not.toBeInTheDocument();
+	await user.click(screen.getByRole("button", { name: "Open Settings" }));
+	expect(openSettings).toHaveBeenCalledOnce();
+	expect(editor).toHaveTextContent("Keep my work");
+	expect(
+		screen.getByRole("button", { name: "Remove notes.txt" }),
+	).toBeInTheDocument();
+});
+
+it("inserts a saved prompt without submitting it", async () => {
+	const user = userEvent.setup();
+	const onSend = vi.fn();
+	renderComposer({
+		onSend,
+		prompts: [
+			{
+				id: "summary",
+				title: "Summarize",
+				context: "Summarize the next steps",
+			},
+		],
+	});
+	await user.click(
+		screen.getByRole("button", { name: "Open composer actions" }),
+	);
+	await user.click(screen.getByRole("button", { name: "Prompt library" }));
+	await user.click(screen.getByRole("button", { name: /Summarize/ }));
+	await waitFor(() =>
+		expect(
+			screen.getByRole("textbox", { name: "Message Research agent" }),
+		).toHaveTextContent("Summarize the next steps"),
+	);
+	expect(onSend).not.toHaveBeenCalled();
 });

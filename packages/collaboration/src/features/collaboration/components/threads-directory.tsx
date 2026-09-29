@@ -17,6 +17,7 @@ import { dateLabel } from "../date-label";
 import { useCollaborationSession } from "../state/collaboration-session.context";
 import { BrainOverview } from "./brain-overview";
 import { CollaborationSurface } from "./collaboration-surface";
+import { ThreadMenu } from "./thread-menu";
 import { TopicChip } from "./topic-chip";
 
 /** Thread inventory with topic, exclusion, and mute filters. */
@@ -108,52 +109,55 @@ export function ThreadsDirectory() {
 			</output>
 			<ul>
 				{threads.map((thread) => (
-					<li
-						key={thread.id}
-						className="flex flex-wrap items-center gap-3 border-b px-4 py-3 transition-colors hover:bg-muted/30 md:px-6"
-					>
-						<span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground">
-							<ChannelIcon channel={thread.channel} />
-							<span className="sr-only">
-								{channelMeta(thread.channel).label}
-							</span>
-						</span>
-						<div className="min-w-0 flex-1">
-							<Link
-								className="break-words font-medium text-sm hover:underline"
-								to={`/brain/threads/${encodeURIComponent(thread.id)}`}
-							>
-								{thread.subject}
-							</Link>
-							<Small className="mt-0.5 font-normal text-muted-foreground text-xs leading-5">
-								{dateLabel(thread.lastAt)}
-								{thread.muted ? " · Muted" : ""}
-							</Small>
-						</div>
-						<div className="flex flex-wrap gap-1.5">
-							{thread.topicLinks.map((link) => {
-								const topic = state.topics.find(
-									(item) => item.id === link.topicId,
-								);
-								return (
-									topic && (
-										<TopicChip
-											key={topic.id}
-											topic={topic}
-											suggested={
-												link.source === "suggested"
-											}
-										/>
-									)
-								);
-							})}
-							{!thread.topicLinks.length && (
-								<Small className="font-normal text-muted-foreground text-xs">
-									No topic
-								</Small>
-							)}
-						</div>
-					</li>
+					<ThreadMenu key={thread.id} thread={thread}>
+						{(menu) => (
+							<li className="flex flex-wrap items-center gap-3 border-b px-4 py-3 transition-colors hover:bg-muted/30 md:px-6">
+								<span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground">
+									<ChannelIcon channel={thread.channel} />
+									<span className="sr-only">
+										{channelMeta(thread.channel).label}
+									</span>
+								</span>
+								<div className="min-w-0 flex-1">
+									<Link
+										className="break-words font-medium text-sm hover:underline"
+										to={`/brain/threads/${encodeURIComponent(thread.id)}`}
+									>
+										{thread.subject}
+									</Link>
+									<Small className="mt-0.5 font-normal text-muted-foreground text-xs leading-5">
+										{dateLabel(thread.lastAt)}
+										{thread.muted ? " · Muted" : ""}
+									</Small>
+								</div>
+								<div className="flex flex-wrap gap-1.5">
+									{thread.topicLinks.map((link) => {
+										const topic = state.topics.find(
+											(item) => item.id === link.topicId,
+										);
+										return (
+											topic && (
+												<TopicChip
+													key={topic.id}
+													topic={topic}
+													suggested={
+														link.source ===
+														"suggested"
+													}
+												/>
+											)
+										);
+									})}
+									{!thread.topicLinks.length && (
+										<Small className="font-normal text-muted-foreground text-xs">
+											No topic
+										</Small>
+									)}
+								</div>
+								{menu}
+							</li>
+						)}
+					</ThreadMenu>
 				))}
 			</ul>
 			{!threads.length && (

@@ -113,9 +113,12 @@ export const FileNotebookView = ({
 	}, []);
 
 	useFileViewControls(onControls, {
-		canSave: !panel.readOnly,
-		isBusy: panel.isBusy,
+		canDownload: panel.access.status === "ready",
+		download: panel.download,
+		canSave: !panel.readOnly && panel.read.status === "SUCCESS",
+		isBusy: panel.isBusy || panel.access.status === "loading",
 		isDirty: buffer.isDirty,
+		canRefresh: panel.access.status === "ready",
 		refresh: panel.read.refresh,
 		save: buffer.save,
 		viewModes: NOTEBOOK_VIEW_MODES,
@@ -134,8 +137,8 @@ export const FileNotebookView = ({
 				disabled={panel.readOnly}
 				language={getCodeEditorLanguage(config.path)}
 				menuItems={getFileCodeEditorMenuItems({
-					canSave: !panel.readOnly,
-					isBusy: panel.isBusy,
+					canSave: !panel.readOnly && panel.read.status === "SUCCESS",
+					isBusy: panel.isBusy || panel.access.status === "loading",
 					onDownload: () => void panel.download(),
 					onRefresh: panel.read.refresh,
 					onSave: buffer.save,

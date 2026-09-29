@@ -11,10 +11,12 @@ import {
 } from "lexical";
 import { type ComponentType, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
-import { cn } from "@semoss/ui/next";
+import { Button, cn, Small } from "@semoss/ui/next";
+import { RoomComposerSlashMenu } from "./room-composer-slash-menu";
 
 export interface RoomSlashCommand {
-	id: "document" | "optimize";
+	/** Stable command identity, including host-owned shortcuts. */
+	id: string;
 	label: string;
 	description: string;
 	icon: ComponentType<{ className?: string }>;
@@ -31,7 +33,7 @@ class SlashOption extends MenuOption {
 	}
 }
 
-/** Lexical typeahead containing collaboration's attachment and optimize actions. */
+/** Lexical typeahead containing the composer’s available actions. */
 export function RoomComposerSlashPlugin({
 	commands,
 }: {
@@ -73,7 +75,7 @@ export function RoomComposerSlashPlugin({
 			menuRenderFn={(anchorRef, menu) =>
 				anchorRef.current
 					? createPortal(
-							<div className="z-50 w-72 overflow-hidden rounded-md border bg-popover p-1 text-popover-foreground shadow-md">
+							<RoomComposerSlashMenu anchor={anchorRef.current}>
 								{menu.options.length === 0 ? (
 									<div className="px-3 py-2 text-muted-foreground text-sm">
 										No commands found
@@ -83,8 +85,10 @@ export function RoomComposerSlashPlugin({
 										const command = option.command;
 										const Icon = command.icon;
 										return (
-											<button
+											<Button
 												key={command.id}
+												id={`typeahead-item-${index}`}
+												variant="ghost"
 												ref={option.setRefElement.bind(
 													option,
 												)}
@@ -95,7 +99,7 @@ export function RoomComposerSlashPlugin({
 												}
 												disabled={command.disabled}
 												className={cn(
-													"flex w-full items-start gap-2 rounded-sm px-3 py-2 text-start hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50",
+													"h-auto min-h-11 w-full items-start justify-start whitespace-normal rounded-sm px-3 py-2 text-start",
 													menu.selectedIndex ===
 														index && "bg-accent",
 												)}
@@ -115,18 +119,18 @@ export function RoomComposerSlashPlugin({
 													className="mt-0.5 size-4 shrink-0"
 												/>
 												<span>
-													<span className="block font-medium text-sm">
+													<Small className="block">
 														{command.label}
-													</span>
-													<span className="block text-muted-foreground text-xs">
+													</Small>
+													<Small className="block font-normal text-muted-foreground">
 														{command.description}
-													</span>
+													</Small>
 												</span>
-											</button>
+											</Button>
 										);
 									})
 								)}
-							</div>,
+							</RoomComposerSlashMenu>,
 							anchorRef.current,
 						)
 					: null

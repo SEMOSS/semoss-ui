@@ -7,10 +7,11 @@ import {
 	useRef,
 	useState,
 } from "react";
-import { Button, cn } from "@semoss/ui/next";
+import { Button, cn, Small } from "@semoss/ui/next";
 import { WORKBENCH_STYLES } from "../../constants/workbench.constants";
-import { useWorkbench } from "../../hooks";
-import type { WorkbenchBorderSlot } from "../../types";
+import { useWorkbench } from "../../hooks/use-workbench";
+import type { WorkbenchBorderSlot, WorkbenchBorderSlotCtx } from "../../types";
+import { resolveBorderSlot } from "../../utility/workbench-border-slot";
 import { WorkbenchTab } from "../dock/workbench-tab";
 import { WorkbenchMobileDrawer } from "./workbench-mobile-drawer";
 
@@ -20,6 +21,8 @@ interface WorkbenchMobileProps {
 	 * hands this to the drawer, which is the only place it can surface.
 	 */
 	actionsSlot?: WorkbenchBorderSlot;
+	/** Optional persistent host controls; panel tabs remain in the mobile strip. */
+	topSlots?: { before?: WorkbenchBorderSlot; after?: WorkbenchBorderSlot };
 }
 
 /**
@@ -30,11 +33,15 @@ interface WorkbenchMobileProps {
  * The drawer's open state is local — nothing outside this view can open it, so
  * it has no business in the layout store.
  */
-export const WorkbenchMobile: FC<WorkbenchMobileProps> = ({ actionsSlot }) => {
+export const WorkbenchMobile: FC<WorkbenchMobileProps> = ({
+	actionsSlot,
+	topSlots,
+}) => {
 	const [isDrawerOpen, setIsDrawerOpen] = useState(false);
 	const actions = useWorkbench((s) => s.layout.actions);
 	const stacks = useWorkbench((s) => s.layout.stacks);
 	const openPanelIds = useWorkbench((s) => s.layout.openPanelIds);
+	const topPanelIds = useWorkbench((s) => s.layout.borders.top.panelIds);
 	const mobileActivePanelId = useWorkbench(
 		(s) => s.layout.mobileActivePanelId,
 	);
@@ -78,9 +85,30 @@ export const WorkbenchMobile: FC<WorkbenchMobileProps> = ({ actionsSlot }) => {
 			actions.setMobileActivePanel(next);
 		}
 	};
+	const topContext: WorkbenchBorderSlotCtx = {
+		side: "top",
+		vertical: false,
+		open: false,
+		panelIds: topPanelIds,
+	};
+	const before = resolveBorderSlot(topSlots?.before, topContext);
+	const after = resolveBorderSlot(topSlots?.after, topContext);
 
 	return (
 		<div className="flex h-full min-h-0 flex-col p-2">
+			{before || after ? (
+				<div
+					data-testid="workbench-mobile-toolbar"
+					className="mb-2 flex shrink-0 items-center gap-2 rounded-lg border border-border bg-card p-1"
+				>
+					<div className="flex min-w-0 flex-1 items-center gap-1">
+						{before}
+					</div>
+					<div className="flex shrink-0 items-center gap-1">
+						{after}
+					</div>
+				</div>
+			) : null}
 			<div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-lg border border-border bg-card">
 				<div
 					ref={stripRef}
@@ -133,12 +161,15 @@ export const WorkbenchMobile: FC<WorkbenchMobileProps> = ({ actionsSlot }) => {
 					data-testid="workbench-mobile-prev"
 					aria-label="Previous panel"
 				>
-					<ChevronLeft className={WORKBENCH_STYLES.mobileIcon} />
+					<ChevronLeft
+						aria-hidden="true"
+						className={WORKBENCH_STYLES.mobileIcon}
+					/>
 				</Button>
 				<div className="flex items-center gap-1">
-					<span className="text-muted-foreground text-xs">
+					<Small className="text-muted-foreground text-xs">
 						{activeIndex + 1} / {openPanelIds.length}
-					</span>
+					</Small>
 					<Button
 						variant="ghost"
 						size="icon"
@@ -147,7 +178,10 @@ export const WorkbenchMobile: FC<WorkbenchMobileProps> = ({ actionsSlot }) => {
 						data-testid="workbench-mobile-menu"
 						aria-label="Panels and actions"
 					>
-						<Menu className={WORKBENCH_STYLES.mobileIcon} />
+						<Menu
+							aria-hidden="true"
+							className={WORKBENCH_STYLES.mobileIcon}
+						/>
 					</Button>
 				</div>
 				<Button
@@ -170,7 +204,10 @@ export const WorkbenchMobile: FC<WorkbenchMobileProps> = ({ actionsSlot }) => {
 					data-testid="workbench-mobile-next"
 					aria-label="Next panel"
 				>
-					<ChevronRight className={WORKBENCH_STYLES.mobileIcon} />
+					<ChevronRight
+						aria-hidden="true"
+						className={WORKBENCH_STYLES.mobileIcon}
+					/>
 				</Button>
 			</div>
 

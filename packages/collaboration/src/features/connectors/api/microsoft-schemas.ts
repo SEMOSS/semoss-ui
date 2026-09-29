@@ -1,4 +1,5 @@
 import { z } from "@semoss/ui/next";
+import { readDisplayBody } from "@/features/email/message-body";
 
 const date = z
 	.string()
@@ -22,6 +23,8 @@ export const sourceAttachmentSchema = z.object({
 });
 
 export const mailSchema = z.object({
+	displayBody: z.unknown().transform(readDisplayBody).optional(),
+	webLink: optionalText,
 	uid: z.string().min(1),
 	messageId: optionalText,
 	from: optionalText,
@@ -82,6 +85,8 @@ export const chatMessagesSchema = z.object({
 		z.object({
 			id: z.string().min(1),
 			body: z.string(),
+			displayBody: z.unknown().transform(readDisplayBody).optional(),
+			webUrl: optionalText,
 			fromId: optionalText,
 			fromName: optionalText,
 			createdDateTime: optionalDate,

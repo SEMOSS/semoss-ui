@@ -52,7 +52,7 @@ export function ThreadAssistantSession({
 		() => toolMessageTimestamps(snapshot.turn.messages),
 		[snapshot.turn.messages],
 	);
-	if (!snapshot.isReady) {
+	if (!snapshot.isReady && !props.renderWorkspace) {
 		return (
 			<div className="p-6">
 				{snapshot.isLoading ? (
@@ -93,6 +93,9 @@ export function ThreadAssistantSession({
 			}}
 		>
 			<ToolWorkbenchProvider
+				key={props.threadId}
+				{...props.workbench}
+				autoReveal={!props.renderWorkspace}
 				roomId={snapshot.association?.roomId ?? ""}
 				insightId={insight.insightId}
 				tools={tools}
@@ -101,11 +104,15 @@ export function ThreadAssistantSession({
 				onApproveTool={session.approve}
 				onRejectTool={session.reject}
 			>
-				<ThreadAssistantView
-					{...props}
-					session={session}
-					snapshot={snapshot}
-				/>
+				{props.renderWorkspace ? (
+					props.renderWorkspace(session, snapshot)
+				) : (
+					<ThreadAssistantView
+						{...props}
+						session={session}
+						snapshot={snapshot}
+					/>
+				)}
 			</ToolWorkbenchProvider>
 		</InsightContext.Provider>
 	);

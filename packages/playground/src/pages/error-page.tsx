@@ -1,7 +1,10 @@
 import { Home, OctagonAlert } from "lucide-react";
+import { useContext } from "react";
 import { useNavigate } from "react-router";
 import {
 	Button,
+	H1,
+	P,
 	ResizablePanel,
 	ResizablePanelGroup,
 	SidebarTrigger,
@@ -9,7 +12,7 @@ import {
 } from "@semoss/ui/next";
 import background from "@/assets/img/render-error-background.png";
 import backgroundDark from "@/assets/img/render-error-background-darkmode.jpg";
-import { useRoot } from "@/hooks";
+import { RootContext } from "@/contexts/root-context";
 
 export interface ErrorPageProps {
 	isInnerComponent?: boolean;
@@ -20,46 +23,51 @@ export interface ErrorPageProps {
  */
 export const ErrorPage = ({ isInnerComponent = false }: ErrorPageProps) => {
 	const navigate = useNavigate();
-	const { root } = useRoot();
-	const { theme: colorMode } = useTheme();
+	// Startup and root-route errors render before RootLayout can provide a store.
+	const rootContext = useContext(RootContext);
+	const { resolvedTheme } = useTheme();
 
-	const isDark =
-		colorMode === "dark" ||
-		(colorMode === "system" &&
-			window.matchMedia("(prefers-color-scheme: dark)").matches);
-
-	const src = isDark
-		? root.theme.images.errorDark || backgroundDark
-		: root.theme.images.error || background;
+	const src =
+		resolvedTheme === "dark"
+			? rootContext?.root.theme.images.errorDark || backgroundDark
+			: rootContext?.root.theme.images.error || background;
 
 	const content = (
 		<div className="max-w-md p-8 text-center">
 			<div className="mb-6 flex justify-center">
 				<OctagonAlert
+					aria-hidden="true"
 					className="text-destructive"
-					size={50}
+					size={48}
 					strokeWidth={1.5}
 				/>
 			</div>
 
-			<h1 className="mb-2 whitespace-nowrap text-center font-semibold text-3xl text-foreground leading-normal">
-				Something went wrong.
-			</h1>
+			<H1 className="mb-2">Something went wrong.</H1>
 
-			<p className="mb-6 w-[396px] max-w-[400px] text-center font-normal text-lg text-muted-foreground leading-normal">
+			<P className="mb-6 text-muted-foreground">
 				An unexpected error occurred. Please try refreshing or returning
 				to the home page.
-			</p>
+			</P>
 
-			<Button
-				type="button"
-				onClick={() => navigate("/")}
-				size="lg"
-				variant="outline"
-			>
-				<Home />
-				Back to Home
-			</Button>
+			<div className="flex flex-wrap justify-center gap-2">
+				<Button
+					type="button"
+					onClick={() => window.location.reload()}
+					size="lg"
+				>
+					Refresh
+				</Button>
+				<Button
+					type="button"
+					onClick={() => navigate("/")}
+					size="lg"
+					variant="outline"
+				>
+					<Home aria-hidden="true" />
+					Back to Home
+				</Button>
+			</div>
 		</div>
 	);
 
@@ -73,7 +81,7 @@ export const ErrorPage = ({ isInnerComponent = false }: ErrorPageProps) => {
 					<ResizablePanel className="relative flex flex-col items-center justify-center overflow-auto p-2">
 						<img
 							src={src}
-							alt="Background"
+							alt=""
 							className="absolute inset-0 h-full w-full object-cover"
 						/>
 						<div className="z-10">{content}</div>
@@ -87,7 +95,7 @@ export const ErrorPage = ({ isInnerComponent = false }: ErrorPageProps) => {
 		<div className="relative flex min-h-screen items-center justify-center overflow-hidden">
 			<img
 				src={src}
-				alt="Background"
+				alt=""
 				className="absolute inset-0 h-full w-full object-cover"
 			/>
 			<div className="z-10">{content}</div>

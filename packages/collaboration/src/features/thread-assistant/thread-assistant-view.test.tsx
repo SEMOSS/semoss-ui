@@ -1,4 +1,5 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { AssistantComposer } from "../work-thread/assistant-composer";
 import { ThreadAssistantView } from "./thread-assistant-view";
 import type { ThreadSession } from "./thread-session";
 
@@ -14,6 +15,9 @@ const mocks = vi.hoisted(() => ({
 }));
 vi.mock("@/features/rooms/api/use-room-model", () => ({
 	useRoomModel: () => ({ engine: null, error: null }),
+}));
+vi.mock("../work-thread/use-work-panel-actions", () => ({
+	useWorkPanelActions: () => [],
 }));
 vi.mock("@/features/tools/tool-workbench.context", () => ({
 	useToolWorkbench: () => ({
@@ -66,6 +70,7 @@ function props() {
 		isConnected: true,
 		session: {
 			insight: { insightId: "isolated", actions: {} },
+			retain: vi.fn(() => vi.fn()),
 			send: mocks.send,
 			selectModel: vi.fn(),
 			cancel: vi.fn(),
@@ -73,6 +78,22 @@ function props() {
 			allowNewRoom: vi.fn(),
 		} as unknown as ThreadSession,
 		snapshot: {
+			usage: { contextTokens: null, totalTokens: null },
+			isCompacting: false,
+			compactionError: null,
+			compactionNotice: null,
+			settings: {
+				modelId: "model-1",
+				agentId: "",
+				instructions: "",
+				temperature: null,
+				mcp: [],
+			},
+			agent: null,
+			isSavingSettings: false,
+			settingsError: null,
+			isLoadingModel: false,
+			modelError: null,
 			isReady: true,
 			isLoading: false,
 			isPreparing: false,
@@ -175,6 +196,44 @@ it("clears queued source attachments when context inclusion changes", async () =
 			expect.objectContaining({ contextRevision: "revision-2" }),
 			expect.anything(),
 			"email-1",
+			[],
+		),
+	);
+});
+
+it("submits the latest Work source context without requiring message preference state", async () => {
+	const input = props();
+	const context = {
+		threadId: input.threadId,
+		contextRevision: input.contextRevision,
+		contextText: input.contextText,
+	};
+	const composerProps = {
+		session: input.session,
+		snapshot: input.snapshot,
+		title: input.threadTitle,
+		attachments: [],
+		onSent: vi.fn(),
+	};
+	const view = render(
+		<AssistantComposer {...composerProps} context={context} />,
+	);
+	const nextContext = {
+		...context,
+		contextRevision: "revision-2",
+		contextText: "Updated source selection",
+	};
+	view.rerender(
+		<AssistantComposer {...composerProps} context={nextContext} />,
+	);
+	expect(screen.getByRole("button", { name: "Ask Assistant" })).toBeEnabled();
+	fireEvent.click(screen.getByRole("button", { name: "Ask Assistant" }));
+	await waitFor(() =>
+		expect(mocks.send).toHaveBeenCalledWith(
+			"Launch",
+			nextContext,
+			{ text: "Plan next steps", files: [] },
+			undefined,
 			[],
 		),
 	);

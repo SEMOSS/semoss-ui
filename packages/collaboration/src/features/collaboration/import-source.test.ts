@@ -3,6 +3,7 @@ import type { ImportedSource } from "@/features/connectors/types";
 import { importSourceCommand } from "./import-source";
 import { createInitialCollaborationState } from "./state/collaboration.fixtures";
 import { collaborationReducer } from "./state/collaboration.reducer";
+import { selectThreadContext } from "./state/collaboration.selectors";
 
 function source(overrides: Partial<ImportedSource> = {}): ImportedSource {
 	return {
@@ -237,4 +238,62 @@ describe("source imports into the collaboration domain", () => {
 			).size,
 		).toBe(2);
 	});
+});
+
+it("keeps HTML session-only and outside assistant context while retaining Teams quotes", () => {
+	const html =
+		"<p>Display-only signature</p><blockquote>Full email</blockquote>";
+	const command = importSourceCommand(
+		source({
+			messages: [
+				{
+					id: "native",
+					text: "Context text",
+					senderAddress: "alex@example.org",
+					displayBody: {
+						contentType: "html",
+						content: html,
+						isTruncated: false,
+					},
+					webLink: "https://outlook.office.com/mail/native",
+				},
+			],
+		}),
+	);
+	const state = collaborationReducer(
+		createInitialCollaborationState(),
+		command,
+		"2026-09-25T13:00:00.000Z",
+	);
+	expect(
+		state.workspaces[command.thread.id].messages[0].displayBody?.content,
+	).toBe(html);
+	expect(state.workspaces[command.thread.id].messages[0].webLink).toContain(
+		"/mail/native",
+	);
+	const context = selectThreadContext(state, command.thread.id);
+	expect(JSON.stringify(context)).toContain("Context text");
+	expect(JSON.stringify(context)).not.toContain("displayBody");
+	expect(JSON.stringify(context)).not.toContain("Display-only signature");
+	const teams = importSourceCommand(
+		source({
+			sourceKind: "teams",
+			nativeId: "chat",
+			messages: [
+				{
+					id: "message",
+					text: "Hello\nFrom: Earlier\n  code\n    indent",
+					senderAddress: "alex@example.org",
+				},
+			],
+		}),
+	);
+	const teamsState = collaborationReducer(
+		state,
+		teams,
+		"2026-09-25T13:00:00.000Z",
+	);
+	expect(
+		selectThreadContext(teamsState, teams.thread.id)?.messages[0].text,
+	).toContain("From: Earlier\n  code\n    indent");
 });

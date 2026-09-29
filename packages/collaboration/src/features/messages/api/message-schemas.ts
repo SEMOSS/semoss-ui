@@ -126,6 +126,7 @@ const normalizeRoomMessage = (value: unknown) => {
 		visible: raw.visible ?? raw.VISIBLE,
 		io: raw.io ?? raw.IO,
 		modelId: raw.modelId ?? raw.MODEL_ID,
+		tokens: raw.tokens ?? raw.TOKENS,
 		parts,
 	};
 
@@ -157,6 +158,11 @@ export const roomMessageSchema = z.preprocess(
 			summaryLeafMessageId: z.string().nullish(),
 			visible: z.boolean().nullish(),
 			modelId: z.string().nullish(),
+			tokens: z.number().nonnegative().nullish(),
+			agentRun: z
+				.object({ runId: z.string().nullish() })
+				.passthrough()
+				.nullish(),
 		})
 		.catchall(z.unknown()),
 );

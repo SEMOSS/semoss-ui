@@ -55,6 +55,8 @@ beforeEach(() => {
 	workbench.getToolDisplayMode.mockReset().mockReturnValue("hidden");
 	workbench.isToolInline.mockReset().mockReturnValue(false);
 	workbench.openWorkbench.mockClear();
+	workbench.openInline.mockClear();
+	workbench.closeTool.mockClear();
 });
 
 afterEach(() => vi.unstubAllGlobals());
@@ -256,4 +258,56 @@ it("shows a bounded preview on hover while keeping every failed step accessible 
 			name: "Tool 3 details in workbench - failed",
 		}),
 	).toBeVisible();
+});
+
+it("keeps the inline toggle and its focus while opening and closing details", async () => {
+	const user = userEvent.setup();
+	const items = tools("COMPLETED");
+	if (items[0].part.type !== "tool") throw new Error("Expected tool");
+	items[0].part.tool.metadata = {
+		SMSS_MCP_UI: { displayLocation: "inline" },
+	};
+	workbench.isToolInline.mockReturnValue(true);
+	workbench.getToolDisplayMode.mockReturnValue("inline");
+	const { rerender } = render(<MessageToolActivity items={items} />);
+	const toggle = screen.getByRole("button", { name: "Tool 0 details" });
+	expect(toggle).toHaveAttribute("aria-expanded", "true");
+	expect(screen.getByText("Open tool contents")).toBeVisible();
+	await user.click(toggle);
+	expect(workbench.closeTool).toHaveBeenCalledWith("tool-0");
+	expect(toggle).toHaveFocus();
+	workbench.isToolInline.mockReturnValue(false);
+	workbench.getToolDisplayMode.mockReturnValue("hidden");
+
+	rerender(<MessageToolActivity items={items} />);
+	await user.click(screen.getByRole("button", { name: "Tool 0 details" }));
+	expect(workbench.openInline).toHaveBeenCalledWith("tool-0");
+	expect(workbench.openWorkbench).not.toHaveBeenCalled();
+});
+
+it("opens the display menu independently and preserves its destination choices", async () => {
+	const user = userEvent.setup();
+	render(<MessageToolActivity items={tools("COMPLETED")} />);
+	expect(screen.getByText("Details")).toBeVisible();
+	const menu = screen.getByRole("button", { name: "Tool display options" });
+	await user.click(menu);
+	expect(workbench.openInline).not.toHaveBeenCalled();
+	expect(workbench.openWorkbench).not.toHaveBeenCalled();
+	await user.click(screen.getByRole("menuitem", { name: "Open inline" }));
+	expect(workbench.openInline).toHaveBeenCalledWith("tool-0");
+	expect(menu).toHaveFocus();
+	await user.click(menu);
+	await user.click(
+		screen.getByRole("menuitem", { name: "Open in workbench" }),
+	);
+	expect(workbench.openWorkbench).toHaveBeenCalledWith("tool-0");
+});
+
+it("keeps a sidebar tool inline on mobile", async () => {
+	vi.stubGlobal("innerWidth", 360);
+	const user = userEvent.setup();
+	render(<MessageToolActivity items={tools("COMPLETED")} />);
+	await user.click(screen.getByRole("button", { name: "Tool 0 details" }));
+	expect(workbench.openInline).toHaveBeenCalledWith("tool-0");
+	expect(workbench.openWorkbench).not.toHaveBeenCalled();
 });

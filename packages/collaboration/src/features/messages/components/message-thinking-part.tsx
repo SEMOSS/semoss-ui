@@ -11,6 +11,7 @@ import {
 } from "@semoss/ui/next";
 import { useFollowScroll } from "../hooks/use-follow-scroll";
 import { useStreamingText } from "../hooks/use-streaming-text";
+import { MESSAGE_PROSE_CLASS_NAME } from "./message-prose.styles";
 
 /** Live reasoning that folds away when complete, without hiding keyboard focus. */
 export function MessageThinkingPart({
@@ -100,7 +101,10 @@ export function MessageThinkingPart({
 					<div ref={scroll.contentRef}>
 						<Markdown
 							dir="auto"
-							className="wrap-anywhere text-base text-muted-foreground [&>:first-child]:mt-0 [&_h1]:text-lg [&_h2]:text-base [&_h3]:text-base [&_h4]:text-base [&_li]:text-base [&_p]:mt-3 [&_p]:text-base [&_p]:leading-6"
+							className={cn(
+								MESSAGE_PROSE_CLASS_NAME,
+								"text-muted-foreground",
+							)}
 						>
 							{displayedText}
 						</Markdown>

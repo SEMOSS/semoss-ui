@@ -1,10 +1,4 @@
-import {
-	Check,
-	ChevronDown,
-	CircleX,
-	Hourglass,
-	PanelRightOpen,
-} from "lucide-react";
+import { Check, ChevronDown, CircleX, Hourglass } from "lucide-react";
 import { useId, useState } from "react";
 import {
 	Button,
@@ -248,10 +242,7 @@ export function ToolCallCard({
 								)}
 							/>
 						) : (
-							<PanelRightOpen
-								aria-hidden="true"
-								className="size-4 shrink-0 text-muted-foreground"
-							/>
+							<Muted className="shrink-0 text-xs">Details</Muted>
 						)}
 					</Button>
 				</ToolFailureTooltip>

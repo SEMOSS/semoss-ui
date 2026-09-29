@@ -1,4 +1,10 @@
-import { act, render, screen, waitFor } from "@testing-library/react";
+import {
+	act,
+	fireEvent,
+	render,
+	screen,
+	waitFor,
+} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { uploadRoomFiles } from "@/features/rooms/api/upload-room-files";
 import { saveEmailDraft, UncertainDraftError } from "../api/microsoft";
@@ -55,7 +61,12 @@ it("saves an incomplete new draft and explains that another save makes a copy", 
 	await screen.findByRole("button", { name: "Save a new copy" });
 	expect(saveEmailDraft).toHaveBeenCalledWith(
 		{},
-		expect.objectContaining({ mode: "new", body: "", to: "" }),
+		expect.objectContaining({
+			mode: "new",
+			body: "<p><br></p>",
+			bodyFormat: "html",
+			to: "",
+		}),
 	);
 	expect(
 		screen.getByRole("link", { name: "Open in Outlook" }),
@@ -83,7 +94,7 @@ it("associates invalid recipient feedback with its field and keeps the draft", a
 	expect(document.getElementById(description ?? "")).toHaveTextContent(
 		"email addresses",
 	);
-	expect(screen.getByRole("textbox", { name: "Message" })).toHaveValue(
+	expect(screen.getByRole("textbox", { name: "Message" })).toHaveTextContent(
 		"Keep this message",
 	);
 	expect(saveEmailDraft).not.toHaveBeenCalled();
@@ -132,7 +143,7 @@ it("does not retry an uncertain write until the user checks Outlook", async () =
 	expect(
 		screen.getByRole("button", { name: "Save to Outlook drafts" }),
 	).toBeDisabled();
-	expect(screen.getByRole("textbox", { name: "Message" })).toHaveValue(
+	expect(screen.getByRole("textbox", { name: "Message" })).toHaveTextContent(
 		"Retained",
 	);
 	await user.click(
@@ -170,7 +181,8 @@ it("uses native reply identity and defaults reply all to false", async () => {
 			{
 				mode: "reply",
 				sourceUid: "mail-native",
-				body: "Thanks",
+				body: expect.stringContaining("Thanks"),
+				bodyFormat: "html",
 				replyAll: false,
 			},
 		),
@@ -210,7 +222,8 @@ it("requires a forward recipient while leaving its note optional", async () => {
 				mode: "forward",
 				sourceUid: "mail-native",
 				to: "p@example.com",
-				body: "",
+				body: "<p><br></p>",
+				bodyFormat: "html",
 			},
 		),
 	);
@@ -240,7 +253,7 @@ it("retains edits on same-record prop refresh and resets for a different source"
 			initialBody="Background refresh"
 		/>,
 	);
-	expect(body).toHaveValue("My edit");
+	expect(body).toHaveTextContent("My edit");
 	rerender(
 		<EmailDraftDialog
 			isOpen
@@ -250,7 +263,7 @@ it("retains edits on same-record prop refresh and resets for a different source"
 			initialBody="Second source"
 		/>,
 	);
-	await waitFor(() => expect(body).toHaveValue("Second source"));
+	await waitFor(() => expect(body).toHaveTextContent("Second source"));
 });
 
 it("lets the user remove a selected new-draft file and saves remaining files in their isolated insight", async () => {
@@ -306,7 +319,7 @@ it("preserves selected files and text after an upload fails, then retries only o
 	);
 	expect(await screen.findByRole("alert")).toHaveTextContent("Upload failed");
 	expect(screen.getByText("notes.txt")).toBeInTheDocument();
-	expect(screen.getByRole("textbox", { name: "Message" })).toHaveValue(
+	expect(screen.getByRole("textbox", { name: "Message" })).toHaveTextContent(
 		"Keep my text",
 	);
 	expect(saveEmailDraft).not.toHaveBeenCalled();
@@ -354,4 +367,53 @@ it("disables file selection, removal, dismissal, and repeated saves during uploa
 		finish?.([{ fileName: filename, fileLocation: `/${filename}` }]),
 	);
 	await screen.findByRole("button", { name: "Save a new copy" });
+});
+
+it("reopens with the unsaved rich document and resets when the source changes", async () => {
+	const onOpenChange = vi.fn();
+	const props = {
+		isOpen: true,
+		onOpenChange,
+		mode: "reply" as const,
+		sourceUid: "one",
+		initialBody: "Initial",
+	};
+	const view = render(<EmailDraftDialog {...props} />);
+	const editor = screen.getByRole("textbox", {
+		name: "Reply text (required)",
+	});
+	await userEvent.setup().click(editor);
+	await act(async () =>
+		fireEvent.paste(editor, {
+			clipboardData: {
+				files: [],
+				items: [],
+				types: ["text/html"],
+				getData: (type: string) =>
+					type === "text/html"
+						? "<p><strong>Keep formatting</strong></p>"
+						: "",
+			},
+		}),
+	);
+	view.rerender(<EmailDraftDialog {...props} isOpen={false} />);
+	view.rerender(<EmailDraftDialog {...props} />);
+	expect(
+		screen
+			.getByRole("textbox", { name: "Reply text (required)" })
+			.querySelector("strong"),
+	).toHaveTextContent("Keep formatting");
+	view.rerender(
+		<EmailDraftDialog
+			{...props}
+			sourceUid="two"
+			initialBody="New source"
+		/>,
+	);
+	await waitFor(() =>
+		expect(
+			screen.getByRole("textbox", { name: "Reply text (required)" }),
+		).toHaveTextContent("New source"),
+	);
+	expect(screen.getByRole("button", { name: "Undo" })).toBeDisabled();
 });

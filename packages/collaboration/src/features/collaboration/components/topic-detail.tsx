@@ -25,6 +25,7 @@ import { collaborationTabsStyles } from "./collaboration-tabs.styles";
 import { PersonAvatar } from "./person-avatar";
 import { Section } from "./section";
 import { TextEntryForm } from "./text-entry-form";
+import { ThreadMenu } from "./thread-menu";
 import { TopicActions } from "./topic-actions";
 import { TopicChip } from "./topic-chip";
 import { TopicEditor } from "./topic-editor";
@@ -252,45 +253,49 @@ export function TopicDetail() {
 				</div>
 				<TabsContent value="threads" className="mt-0">
 					{threads.map((thread) => (
-						<div
-							key={thread.id}
-							className="flex flex-wrap items-center gap-3 border-b px-4 py-3 hover:bg-muted/30 md:px-6"
-						>
-							<Badge variant="outline">{thread.channel}</Badge>
-							<div className="min-w-0 flex-1">
-								<Link
-									className="break-words font-medium text-sm hover:underline"
-									to={`/brain/threads/${encodeURIComponent(thread.id)}`}
-								>
-									{thread.subject}
-								</Link>
-								<Small className="mt-0.5 font-normal text-muted-foreground text-xs">
-									{dateLabel(thread.lastAt)} ·{" "}
-									{thread.messageCount} messages
-									{thread.topicLinks.some(
-										(link) =>
-											link.topicId === topic.id &&
-											link.primary,
-									)
-										? " · main topic"
-										: ""}
-								</Small>
-							</div>
-							<Button
-								variant="ghost"
-								size="sm"
-								onClick={() =>
-									dispatch({
-										type: "thread.link",
-										threadId: thread.id,
-										topicId: topic.id,
-										operation: "remove",
-									})
-								}
-							>
-								Remove from topic
-							</Button>
-						</div>
+						<ThreadMenu key={thread.id} thread={thread}>
+							{(menu) => (
+								<div className="flex flex-wrap items-center gap-3 border-b px-4 py-3 hover:bg-muted/30 md:px-6">
+									<Badge variant="outline">
+										{thread.channel}
+									</Badge>
+									<div className="min-w-0 flex-1">
+										<Link
+											className="break-words font-medium text-sm hover:underline"
+											to={`/brain/threads/${encodeURIComponent(thread.id)}`}
+										>
+											{thread.subject}
+										</Link>
+										<Small className="mt-0.5 font-normal text-muted-foreground text-xs">
+											{dateLabel(thread.lastAt)} ·{" "}
+											{thread.messageCount} messages
+											{thread.topicLinks.some(
+												(link) =>
+													link.topicId === topic.id &&
+													link.primary,
+											)
+												? " · main topic"
+												: ""}
+										</Small>
+									</div>
+									<Button
+										variant="ghost"
+										size="sm"
+										onClick={() =>
+											dispatch({
+												type: "thread.link",
+												threadId: thread.id,
+												topicId: topic.id,
+												operation: "remove",
+											})
+										}
+									>
+										Remove from topic
+									</Button>
+									{menu}
+								</div>
+							)}
+						</ThreadMenu>
 					))}
 					{!threads.length && (
 						<P className="p-6 text-muted-foreground">

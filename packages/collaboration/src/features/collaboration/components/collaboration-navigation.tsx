@@ -15,6 +15,7 @@ import { NavLink, useLocation, useNavigate } from "react-router";
 import { Button, cn, Small } from "@semoss/ui/next";
 import { selectWorkItems } from "../state/collaboration.selectors";
 import { useCollaborationSession } from "../state/collaboration-session.context";
+import { ThreadMenu } from "./thread-menu";
 import { TopicEditor } from "./topic-editor";
 
 /** One navigation model shared by desktop and mobile shells. */
@@ -133,7 +134,7 @@ export function CollaborationNavigation({
 				))}
 			</nav>
 			<div>
-				<div className="mb-2 flex items-center justify-between px-3">
+				<div className="mb-2 flex items-center justify-between pl-3">
 					<Small className="font-medium text-muted-foreground text-xs uppercase tracking-wider">
 						Topics
 					</Small>
@@ -206,45 +207,51 @@ export function CollaborationNavigation({
 							);
 							return (
 								thread && (
-									<div
+									<ThreadMenu
 										key={id}
-										className="group flex items-center gap-1"
+										thread={thread}
+										onNavigate={onNavigate}
 									>
-										<NavLink
-											to={`/work/thread/${encodeURIComponent(id)}`}
-											onClick={onNavigate}
-											className={({ isActive }) =>
-												cn(
-													"min-w-0 flex-1 truncate rounded-lg px-3 py-2 text-sm before:mr-2 before:inline-block before:size-1.5 before:rounded-sm before:bg-muted-foreground hover:bg-accent lg:py-1.5",
-													isActive &&
-														"bg-card font-medium before:bg-primary",
-												)
-											}
-										>
-											{thread.subject}
-										</NavLink>
-										<Button
-											variant="ghost"
-											size="icon-sm"
-											aria-label={`Close ${thread.subject}`}
-											className="pointer-coarse:opacity-100 lg:opacity-0 lg:group-hover:opacity-100 lg:focus-visible:opacity-100"
-											onClick={() => {
-												dispatch({
-													type: "workspace.close",
-													threadId: id,
-												});
-												if (
-													pathname ===
-													`/work/thread/${encodeURIComponent(id)}`
-												) {
-													navigate("/work");
-													onNavigate?.();
-												}
-											}}
-										>
-											<X aria-hidden="true" />
-										</Button>
-									</div>
+										{(menu) => (
+											<div className="group flex items-center gap-1">
+												<NavLink
+													to={`/work/thread/${encodeURIComponent(id)}`}
+													onClick={onNavigate}
+													className={({ isActive }) =>
+														cn(
+															"min-w-0 flex-1 truncate rounded-lg px-3 py-2 text-sm before:mr-2 before:inline-block before:size-1.5 before:rounded-sm before:bg-muted-foreground hover:bg-accent lg:py-1.5",
+															isActive &&
+																"bg-card font-medium before:bg-primary",
+														)
+													}
+												>
+													{thread.subject}
+												</NavLink>
+												{menu}
+												<Button
+													variant="ghost"
+													size="icon-sm"
+													aria-label={`Close ${thread.subject}`}
+													className="pointer-coarse:opacity-100 lg:opacity-0 lg:group-hover:opacity-100 lg:focus-visible:opacity-100"
+													onClick={() => {
+														dispatch({
+															type: "workspace.close",
+															threadId: id,
+														});
+														if (
+															pathname ===
+															`/work/thread/${encodeURIComponent(id)}`
+														) {
+															navigate("/work");
+															onNavigate?.();
+														}
+													}}
+												>
+													<X aria-hidden="true" />
+												</Button>
+											</div>
+										)}
+									</ThreadMenu>
 								)
 							);
 						})}
@@ -252,8 +259,8 @@ export function CollaborationNavigation({
 				</div>
 			)}
 			<Small className="mt-auto px-3 text-muted-foreground text-xs leading-relaxed">
-				Brain and Work edits last for this session. Conversations and
-				Outlook drafts are saved separately.
+				Work and Brain changes are saved to your account. Email drafts
+				are saved in Outlook.
 			</Small>
 			{isCreatingTopic && (
 				<TopicEditor

@@ -11,8 +11,10 @@ import {
 	parseAddresses,
 	safeSourceUrl,
 	saveEmailDraft,
+	sendEmailDraft,
 	stageMailAttachment,
 	UncertainDraftError,
+	UncertainSendError,
 } from "./microsoft";
 
 vi.mock("@semoss/sdk", () => ({ download: vi.fn(), oauth: vi.fn() }));
@@ -81,7 +83,7 @@ describe("Microsoft source adapters", () => {
 			);
 		await getMail({ run } as never, "opaque/+id");
 		expect(run).toHaveBeenCalledWith(
-			'MicrosoftOutlookGetMail(uid=["opaque/+id"], maxBodyChars=[12000], includeAttachments=[true]);',
+			'MicrosoftOutlookGetMail(uid=["opaque/+id"], maxBodyChars=[12000], includeAttachments=[true], includeDisplayBody=[true]);',
 		);
 	});
 	it("rejects invalid payloads and Pixel errors instead of loading fixtures", async () => {
@@ -133,7 +135,7 @@ describe("Microsoft source adapters", () => {
 		await listCalendarEvents(actions);
 		expect(run.mock.calls.map(([expression]) => expression)).toEqual([
 			"MicrosoftTeamsListChats(limit=[20], includeLastMessage=[false]);",
-			'MicrosoftTeamsListChatMessages(chatId=["chat"], limit=[30], maxBodyChars=[12000]);',
+			'MicrosoftTeamsListChatMessages(chatId=["chat"], includeDisplayBody=[true], limit=[30], maxBodyChars=[12000]);',
 			'MicrosoftCalendarListEvents(days=[7], limit=[30], timeZone=["UTC"], includeBody=[false]);',
 		]);
 	});
@@ -316,4 +318,128 @@ describe("Microsoft source adapters", () => {
 			parseAddresses("a@example.com; a@example.com, b@example.com"),
 		).toEqual(["a@example.com", "b@example.com"]);
 	});
+});
+
+it.each(["new", "reply", "forward"] as const)(
+	"saves %s HTML drafts without ever sending",
+	async (mode) => {
+		const run = vi.fn().mockResolvedValue(
+			response(
+				mode === "new"
+					? { saved: true, draftId: "draft" }
+					: {
+							sent: false,
+							uid: "draft",
+							repliedTo: "original",
+							forwarded: "original",
+						},
+			),
+		);
+		await saveEmailDraft({ run } as never, {
+			mode,
+			sourceUid: "original",
+			to: "person@example.com",
+			cc: "",
+			bcc: "",
+			subject: "Draft",
+			replyAll: true,
+			body: "<p><strong>Formatted</strong></p>",
+			bodyFormat: "html",
+		});
+		expect(run).toHaveBeenCalledTimes(1);
+		expect(run.mock.calls[0]?.[0]).toContain("html=[true]");
+		expect(run.mock.calls[0]?.[0]).toContain("<strong>Formatted</strong>");
+		expect(run.mock.calls[0]?.[0]).not.toMatch(/MicrosoftOutlookSend/);
+		if (mode !== "new")
+			expect(run.mock.calls[0]?.[0]).toContain("asDraft=[true]");
+	},
+);
+
+it("rejects empty rich replies before writing", async () => {
+	const run = vi.fn();
+	await expect(
+		saveEmailDraft({ run } as never, {
+			mode: "reply",
+			sourceUid: "id",
+			bodyFormat: "html",
+			body: "<p>&nbsp;<br></p>",
+			replyAll: false,
+		}),
+	).rejects.toThrow();
+	expect(run).not.toHaveBeenCalled();
+});
+
+it("requires an exact successful draft ID receipt from the existing sending endpoint", async () => {
+	const run = vi
+		.fn()
+		.mockResolvedValue(response({ sent: true, draftId: "exact/+id" }));
+	await expect(
+		sendEmailDraft({ run } as never, "exact/+id"),
+	).resolves.toEqual({ sent: true, draftId: "exact/+id" });
+	expect(run).toHaveBeenCalledExactlyOnceWith(
+		'MicrosoftOutlookSendDraft(draftId=["exact/+id"]);',
+	);
+});
+
+it.each([
+	{ sent: true, draftId: "other" },
+	{ sent: false, draftId: "id" },
+	{},
+	null,
+])(
+	"treats an unconfirmed send receipt as uncertain without retrying: %s",
+	async (output) => {
+		const run = vi.fn().mockResolvedValue(response(output));
+		await expect(
+			sendEmailDraft({ run } as never, "id"),
+		).rejects.toBeInstanceOf(UncertainSendError);
+		expect(run).toHaveBeenCalledTimes(1);
+	},
+);
+
+it("surfaces missing send permission and keeps the result uncertain", async () => {
+	const run = vi.fn().mockResolvedValue({
+		pixelReturn: [
+			{
+				operationType: ["ERROR"],
+				output: "Mail.Send permission required",
+			},
+		],
+	});
+	await expect(sendEmailDraft({ run } as never, "id")).rejects.toThrow(
+		"Mail.Send permission required",
+	);
+	expect(run).toHaveBeenCalledTimes(1);
+});
+
+it("preserves explicitly typed source HTML through both Microsoft readers", async () => {
+	const displayBody = {
+		contentType: "html",
+		content: "<blockquote>Quoted</blockquote><pre>  code</pre>",
+		isTruncated: false,
+	};
+	const run = vi
+		.fn()
+		.mockResolvedValueOnce(
+			response({
+				...mail,
+				displayBody,
+				body: "Plain",
+				webLink: "https://outlook.office.com/mail/id",
+			}),
+		)
+		.mockResolvedValueOnce(
+			response({
+				chatId: "chat",
+				count: 1,
+				messages: [{ id: "message", body: "Plain", displayBody }],
+			}),
+		);
+	expect((await getMail({ run } as never, "mail-1")).displayBody).toEqual(
+		displayBody,
+	);
+	expect(
+		(await getTeamsMessages({ run } as never, "chat")).messages[0]
+			?.displayBody,
+	).toEqual(displayBody);
 });

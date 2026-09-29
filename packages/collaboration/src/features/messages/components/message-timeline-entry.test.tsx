@@ -1,10 +1,4 @@
-import {
-	fireEvent,
-	render,
-	screen,
-	waitFor,
-	within,
-} from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { copyTextToClipboard } from "@semoss/utility";
 import type { AgentConfiguration } from "@/features/agents/types/agent";
 import type { ConversationMessage } from "../types/message";
@@ -44,7 +38,7 @@ const sources: ConversationMessage[] = [
 	},
 ];
 
-it("shows one response timestamp and copies only the selected part", async () => {
+it("shows one response timestamp and one actions popover for all visible answer parts", async () => {
 	const [entry] = presentMessages(sources);
 	const { container } = render(
 		<MessageTimelineEntry {...entry} agent={agent} />,
@@ -55,32 +49,41 @@ it("shows one response timestamp and copies only the selected part", async () =>
 		"datetime",
 		sources[0].createdAt,
 	);
-	const copies = screen.getAllByRole("button", { name: "Copy text" });
-	fireEvent.click(copies[1]);
-	await waitFor(() =>
-		expect(copyTextToClipboard).toHaveBeenLastCalledWith("Second answer"),
-	);
-	fireEvent.click(screen.getByRole("button", { name: "Copy thinking" }));
+	expect(
+		screen.queryByRole("button", { name: "Response actions" }),
+	).toBeNull();
+	expect(screen.queryByRole("button", { name: "Copy response" })).toBeNull();
+	fireEvent.pointerEnter(screen.getByRole("article"), {
+		pointerType: "mouse",
+	});
+	fireEvent.click(screen.getByRole("button", { name: "Copy response" }));
 	await waitFor(() =>
 		expect(copyTextToClipboard).toHaveBeenLastCalledWith(
-			"Reasoning privately",
+			"First answer\n\nSecond answer",
 		),
 	);
-	expect(screen.queryByRole("button", { name: "Copy message" })).toBeNull();
+	expect(screen.queryByRole("button", { name: "Copy thinking" })).toBeNull();
+	expect(screen.queryByRole("button", { name: "Copy text" })).toBeNull();
 });
 
-it("offers per-part copying from the touch menu and returns focus", async () => {
-	const [entry] = presentMessages(sources);
-	render(<MessageTimelineEntry {...entry} agent={agent} />);
-	const more = screen.getAllByRole("button", { name: "Text actions" })[1];
-	more.focus();
-	fireEvent.keyDown(more, { key: "Enter" });
-	const menu = await screen.findByRole("menu");
-	fireEvent.click(within(menu).getByRole("menuitem", { name: "Copy text" }));
-	await waitFor(() =>
-		expect(copyTextToClipboard).toHaveBeenLastCalledWith("Second answer"),
+it("labels flat prompts without a bubble or copy action and keeps the direct-room layout", () => {
+	const message: ConversationMessage = {
+		id: "prompt",
+		role: "user",
+		createdAt: sources[0].createdAt,
+		parts: [{ type: "text", text: "My request" }],
+	};
+	const { container, rerender } = render(
+		<MessageTimelineEntry message={message} agent={agent} layout="flat" />,
 	);
-	await waitFor(() => expect(more).toHaveFocus());
+	expect(screen.getByText("You")).toBeVisible();
+	expect(container.querySelectorAll("time")).toHaveLength(1);
+	expect(screen.queryByRole("button", { name: /copy/i })).toBeNull();
+	expect(screen.getByRole("article")).not.toHaveAttribute("tabindex");
+	expect(screen.getByRole("article")).not.toHaveClass("items-end");
+	rerender(<MessageTimelineEntry message={message} agent={agent} />);
+	expect(screen.getByRole("article")).toHaveClass("items-end");
+	expect(container.querySelectorAll("time")).toHaveLength(1);
 });
 
 it("keeps expanded reasoning and text nodes when a continuation becomes restored history", () => {

@@ -1,7 +1,17 @@
+import type { ReactNode } from "react";
 import type { SourceAttachment } from "@/features/connectors/types";
+import type { ToolWorkbenchProviderProps } from "@/features/tools/components/tool-workbench-provider";
 import type { InsightActions } from "@/lib/pixel";
+import type { ThreadSession } from "./thread-session";
 
 export interface ThreadAssistantProps {
+	/** Work supplies its own panels without changing the generic room dock. */
+	workbench?: Pick<ToolWorkbenchProviderProps, "components" | "createLayout">;
+	/** Work host composes a single transcript and persistent dock around the session. */
+	renderWorkspace?: (
+		session: ThreadSession,
+		snapshot: ReturnType<ThreadSession["getSnapshot"]>,
+	) => ReactNode;
 	/** Stable Work identity used to recover an owned conversation. */
 	threadId: string;
 	/** Display name saved on a newly created conversation. */

@@ -109,6 +109,7 @@ export interface ConversationMessage {
 	role: "user" | "assistant";
 	parts: ConversationMessagePart[];
 	createdAt?: string;
+	runId?: string;
 	parentMessageId?: string;
 	visible?: boolean;
 	delegationReply?: DelegationReply;

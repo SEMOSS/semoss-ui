@@ -177,6 +177,7 @@ export function selectThreadContext(
 		.filter(
 			(message) =>
 				allowed.has(message.fromId) &&
+				(!message.excluded || thread.isSample) &&
 				!rules.some(
 					(rule) =>
 						rule.kind === "never_keyword" &&
@@ -189,9 +190,10 @@ export function selectThreadContext(
 			id: message.id,
 			fromId: message.fromId,
 			at: message.at,
-			text: message.history
-				? message.text
-				: removeQuotedReplies(message.text),
+			text:
+				thread.channel !== "email" || message.history
+					? message.text
+					: removeQuotedReplies(message.text),
 			...(message.isTruncated ? { isTruncated: true } : {}),
 		}));
 	const emptyIds = allowedMessages

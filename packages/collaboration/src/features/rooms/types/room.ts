@@ -9,6 +9,8 @@ import type { Session } from "@/types/session";
 
 /** One draft submitted by the room composer. */
 export interface ComposerSubmission {
+	/** Sanitized email HTML, emitted only for email destinations. */
+	html?: string;
 	text: string;
 	files: File[];
 	/** Explicitly selected native files staged in this exact room insight. */

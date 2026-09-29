@@ -1048,12 +1048,33 @@ importers:
 
   packages/collaboration:
     dependencies:
+      '@lexical/html':
+        specifier: 0.39.0
+        version: 0.39.0
+      '@lexical/link':
+        specifier: 0.39.0
+        version: 0.39.0
+      '@lexical/list':
+        specifier: 0.39.0
+        version: 0.39.0
       '@lexical/overflow':
         specifier: ^0.39.0
         version: 0.39.0
       '@lexical/react':
         specifier: ^0.39.0
         version: 0.39.0(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(yjs@13.6.32)
+      '@lexical/rich-text':
+        specifier: 0.39.0
+        version: 0.39.0
+      '@lexical/selection':
+        specifier: 0.39.0
+        version: 0.39.0
+      '@lexical/table':
+        specifier: 0.39.0
+        version: 0.39.0
+      '@lexical/utils':
+        specifier: 0.39.0
+        version: 0.39.0
       '@semoss/i18n':
         specifier: workspace:*
         version: link:../../libs/i18n
@@ -1075,6 +1096,9 @@ importers:
       '@semoss/workbench':
         specifier: workspace:*
         version: link:../../libs/workbench
+      dompurify:
+        specifier: ^3.4.15
+        version: 3.4.15
       lexical:
         specifier: ^0.39.0
         version: 0.39.0
@@ -5034,9 +5058,6 @@ packages:
 
   dompurify@3.4.15:
     resolution: {integrity: sha512-EUBjM+B+lkDE41iE82DDSCfkoPGfXx8IxFxPMjNzm/Uk4xDet77rTN9wqlxlVg71kK7XGuUMv6wUxJUwwv+Xyw==}
-
-  dompurify@3.4.7:
-    resolution: {integrity: sha512-2jBxDJY4RR06tQNy4w5FlFH7kfxsQZlufd0sbv+chfHCxeJwrFw2baUDsSwvBISD4K4RDbd0PTfy3uNXsR6siA==}
 
   domutils@3.2.2:
     resolution: {integrity: sha512-6kZKyUajlDuqlHKVX1w7gyslj9MPIXzIFiz/rGu35uC1wMi+kMhQwGhl4lt9unC9Vb9INnY9Z3/ZA3+FhASLaw==}
@@ -11680,7 +11701,7 @@ snapshots:
       obug: 2.1.2
       std-env: 4.1.0
       tinyrainbow: 3.1.0
-      vitest: 4.1.11(@types/node@24.12.2)(@vitest/coverage-v8@4.1.11)(@vitest/ui@4.1.11)(jsdom@22.1.0)(vite@8.2.1(@types/node@24.12.2)(jiti@2.7.0)(terser@5.48.0)(yaml@2.9.1))
+      vitest: 4.1.11(@types/node@25.9.3)(@vitest/coverage-v8@4.1.11)(@vitest/ui@4.1.11)(jsdom@22.1.0)(vite@8.2.1(@types/node@25.9.3)(jiti@2.7.0)(terser@5.48.0)(yaml@2.9.1))
 
   '@vitest/expect@4.1.11':
     dependencies:
@@ -11734,7 +11755,7 @@ snapshots:
       sirv: 3.0.2
       tinyglobby: 0.2.17
       tinyrainbow: 3.1.0
-      vitest: 4.1.11(@types/node@24.12.2)(@vitest/coverage-v8@4.1.11)(@vitest/ui@4.1.11)(jsdom@22.1.0)(vite@8.2.1(@types/node@24.12.2)(jiti@2.7.0)(terser@5.48.0)(yaml@2.9.1))
+      vitest: 4.1.11(@types/node@25.9.3)(@vitest/coverage-v8@4.1.11)(@vitest/ui@4.1.11)(jsdom@22.1.0)(vite@8.2.1(@types/node@25.9.3)(jiti@2.7.0)(terser@5.48.0)(yaml@2.9.1))
 
   '@vitest/utils@4.1.11':
     dependencies:
@@ -12624,10 +12645,6 @@ snapshots:
   dompurify@2.5.8: {}
 
   dompurify@3.4.15:
-    optionalDependencies:
-      '@types/trusted-types': 2.0.7
-
-  dompurify@3.4.7:
     optionalDependencies:
       '@types/trusted-types': 2.0.7
 
@@ -14568,7 +14585,7 @@ snapshots:
       d3-sankey: 0.12.3
       dagre-d3-es: 7.0.14
       dayjs: 1.11.21
-      dompurify: 3.4.7
+      dompurify: 3.4.15
       es-toolkit: 1.47.0
       katex: 0.16.47
       khroma: 2.1.0

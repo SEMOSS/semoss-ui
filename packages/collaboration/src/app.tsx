@@ -6,6 +6,7 @@ import {
 import { AccessStoreProvider, createAccessStore } from "@semoss/panels";
 import { Env, InsightProvider } from "@semoss/sdk/react";
 import { ThemeProvider, Toaster } from "@semoss/ui/next";
+import { WorkComposerStateProvider } from "./features/work-thread/work-composer-state.context";
 import { Router } from "./pages/router";
 
 // the server writes MODULE into index.html (semoss-env tag, read when the SDK loads); .env is for local dev
@@ -27,7 +28,9 @@ export const App = () => (
 					storageKey="smss-ui-theme-collaboration"
 				>
 					<div className="min-h-screen">
-						<Router />
+						<WorkComposerStateProvider>
+							<Router />
+						</WorkComposerStateProvider>
 					</div>
 					<Toaster position="top-center" />
 				</ThemeProvider>

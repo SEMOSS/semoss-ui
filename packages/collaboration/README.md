@@ -7,21 +7,18 @@ queue, and source rules used alongside that work.
 
 ## State and backend boundaries
 
-Work and Brain share an in-memory session with undo. Initial in-memory records stay
-separate from explicitly imported Microsoft items, which appear as connected items. Profile edits,
-topics, review decisions, notes, thread exclusions, and Work status changes reset
-when the application reloads. They do not call the proposed `Brain*` or `Work*`
-reactors in [reactor-contract.md](../../mockups/reactor-contract.md), which are not
-implemented by the current backend.
+Work and Brain share a session backed by the existing `Brain*` and `Work*`
+reactors. Connected profile edits, topics, review decisions, notes, thread exclusions,
+and Work status changes are synchronized to the backend. Sample records remain local.
 
 The thread assistant uses the existing Playground agent harness: collaboration
 rooms, `RunAgent`, streamed events, approvals, cancellation, and reconnect. Each
-thread owns a separate insight for file staging. The first submitted request
-creates a room; subsequent requests reuse its saved association when its context
-and model still match. Changed context or model starts a separate conversation.
-Selected context submitted to the assistant is saved with the backend transcript,
-so the session-only state boundary does not apply to material already submitted.
-Work assistants are created without mailbox tools. Existing direct room links
+thread owns a separate insight for file staging. The first submitted request or
+settings save creates a room; subsequent requests reuse its saved association.
+Work assembles current source context for each request and saves it with the
+backend transcript. Earlier requests remain in that conversation's history.
+Chat settings use existing room options and the selected agent configuration.
+Existing direct room links
 retain their original room configuration and chat behavior.
 
 ## Microsoft sources and drafts
@@ -42,13 +39,31 @@ Lists omit message bodies. Reading a selected item fetches its content with a
 Truncated content is identified. These bounds describe the available first page,
 not complete mailbox or conversation synchronization.
 
-Outlook supports new drafts, native reply/reply-all drafts, and forward drafts.
-Reply and forward always use `asDraft=true`; there are no send, move, delete, or
-mark-read controls. Replies keep the original recipients and subject through
-Outlook. New drafts may be incomplete, while supplied addresses are validated.
-The backend creates drafts but cannot update them: further saves create a new
-copy, and saved drafts can be opened in Outlook. An uncertain save requires the
-user to check Outlook before choosing another save.
+Outlook supports formatted new, native reply/reply-all, and forward drafts. The
+shared Lexical editor exports sanitized HTML with inline formatting, including
+tables. Reply/forward saving creates a native draft, prepends authored HTML to
+Outlook's quoted body, and updates that new draft before confirming success.
+Further saves create a new copy. Save draft never sends; uncertain saves require
+an Outlook check before another attempt.
+
+Outlook-linked Work threads also offer Send reply. This explicitly labeled button
+saves a native reply to the original sender (`replyAll=false`), then calls the
+existing `MicrosoftOutlookSendDraft` endpoint. A verified receipt must match the
+exact draft ID. Enter never sends in this mode. Failed or uncertain sends retain
+the content and saved draft; an explicitly acknowledged retry reuses that draft
+and cannot create another copy. New-mail sending and Teams sending are unavailable.
+
+Thread readers opt in to `includeDisplayBody`; older callers default to plain
+text. Display bodies are session-only and excluded from assistant context. HTML
+emails use DOMPurify and a script-free sandboxed iframe with an independent CSP;
+remote images require per-message consent. Teams uses sanitized app typography,
+quotes/code/mentions, and media placeholders. Display bodies cap at 128 Ki
+characters, falling back to plain text with a notice rather than cutting markup.
+
+**Rollout:** deploy the backend opt-in HTML readers and formatted reply/forward
+draft support before releasing these formatted frontend actions. No database
+migration, sending-backend changes, or authentication-configuration changes are
+required. Existing Microsoft permission errors flow through the current UI.
 
 Native file attachments can be downloaded or explicitly attached to an assistant
 request. Downloads use `MicrosoftOutlookDownloadAttachment` and

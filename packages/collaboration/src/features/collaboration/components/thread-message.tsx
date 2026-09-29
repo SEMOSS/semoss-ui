@@ -1,14 +1,12 @@
 import { ExternalLink } from "lucide-react";
-import { useState } from "react";
+import { useId, useState } from "react";
 import { Badge, Button, cn, P, Small } from "@semoss/ui/next";
+import { hasDisplayContent } from "@/features/email/email-html";
+import { SourceMessageBody } from "@/features/email/source-message-body";
 import { dateLabel } from "../date-label";
-import {
-	isLongText,
-	linkLabel,
-	messageSegments,
-	textParts,
-} from "../message-text";
+import { isLongText, messageSegments } from "../message-text";
 import type { Channel, WorkspaceMessage } from "../state/collaboration.types";
+import { MessageText } from "./message-text";
 import { PersonAvatar } from "./person-avatar";
 
 /** One source message: who, when, to whom, the text, and any forwarded or earlier mail under it. */
@@ -19,6 +17,7 @@ export function ThreadMessage({
 	channel,
 	isIncluded,
 	isEmpty,
+	isFlat = false,
 }: {
 	message: WorkspaceMessage;
 	name: string;
@@ -26,32 +25,54 @@ export function ThreadMessage({
 	channel: Channel;
 	isIncluded: boolean;
 	isEmpty: boolean;
+	/** Align source messages with the unframed Work timeline. */
+	isFlat?: boolean;
 }) {
+	const bodyId = useId();
 	const [isExpanded, setIsExpanded] = useState(false);
-	const isLong = !isEmpty && isLongText(message.text);
+	const hasDisplay = Boolean(
+		message.displayBody &&
+			((message.displayBody.contentType === "html"
+				? hasDisplayContent(message.displayBody.content, channel)
+				: message.displayBody.content.trim()) ||
+				message.displayBody.attachments?.length),
+	);
+	const isBodyEmpty = isEmpty && !hasDisplay;
+	const isLong = !hasDisplay && !isBodyEmpty && isLongText(message.text);
 	const segments = messageSegments(message.text, message.history);
 	const recipients = [...(message.to ?? []), ...(message.cc ?? [])];
 	return (
 		<article className="group flex gap-3">
 			<div className="flex shrink-0 flex-col items-center gap-1">
-				<PersonAvatar name={name} initials={initials} />
-				<span
-					aria-hidden="true"
-					className="min-h-3 w-px flex-1 bg-border group-last:hidden"
+				<PersonAvatar
+					name={name}
+					initials={initials}
+					className={isFlat ? "size-8" : undefined}
 				/>
+				{!isFlat && (
+					<span
+						aria-hidden="true"
+						className="min-h-3 w-px flex-1 bg-border group-last:hidden"
+					/>
+				)}
 			</div>
-			<div className="min-w-0 flex-1 space-y-1 pb-5">
+			<div
+				className={cn(
+					"min-w-0 flex-1",
+					isFlat ? "space-y-2" : "space-y-1 pb-5",
+				)}
+			>
 				<div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
 					<Small className="font-medium">{name}</Small>
 					<Small className="text-muted-foreground text-xs">
 						{"\u00b7"} {dateLabel(message.at)}
 					</Small>
-					{isEmpty ? (
+					{isBodyEmpty ? (
 						<Badge variant="secondary">No text</Badge>
 					) : (
 						!isIncluded && <Badge variant="outline">Excluded</Badge>
 					)}
-					{message.history && !isEmpty && (
+					{message.history && !isBodyEmpty && (
 						<Badge variant="secondary" className="font-normal">
 							Includes earlier mail
 						</Badge>
@@ -61,7 +82,7 @@ export function ThreadMessage({
 							href={message.webLink}
 							target="_blank"
 							rel="noreferrer"
-							className="ml-auto inline-flex items-center gap-1 text-muted-foreground text-xs opacity-0 hover:text-foreground focus-visible:opacity-100 group-hover:opacity-100"
+							className="ml-auto inline-flex items-center gap-1 text-muted-foreground text-xs hover:text-foreground"
 						>
 							<ExternalLink
 								aria-hidden="true"
@@ -79,18 +100,24 @@ export function ThreadMessage({
 						{recipients.length > 4 && ` +${recipients.length - 4}`}
 					</Small>
 				)}
-				{isEmpty ? (
+				{isBodyEmpty ? (
 					<P className="text-muted-foreground leading-relaxed">
 						Nothing to read here: an invite, an image, or only a
 						quoted reply.
 					</P>
+				) : hasDisplay && message.displayBody ? (
+					<SourceMessageBody
+						key={message.id}
+						body={message.displayBody}
+						channel={channel}
+						title={`Email from ${name}`}
+					/>
 				) : (
 					<div
+						id={bodyId}
 						className={cn(
 							"space-y-3",
-							isLong &&
-								!isExpanded &&
-								"relative max-h-72 overflow-hidden after:absolute after:inset-x-0 after:bottom-0 after:h-12 after:bg-gradient-to-t after:from-background after:to-transparent",
+							isLong && !isExpanded && "max-h-72 overflow-hidden",
 							!isIncluded && "text-muted-foreground",
 						)}
 					>
@@ -118,6 +145,8 @@ export function ThreadMessage({
 						variant="ghost"
 						size="sm"
 						className="-ml-2 text-primary"
+						aria-expanded={isExpanded}
+						aria-controls={bodyId}
 						onClick={() => setIsExpanded((value) => !value)}
 					>
 						{isExpanded ? "Show less" : "Show more"}
@@ -130,30 +159,5 @@ export function ThreadMessage({
 				)}
 			</div>
 		</article>
-	);
-}
-
-// plain text; only http(s) links become anchors
-function MessageText({ text }: { text: string }) {
-	return (
-		<P className="whitespace-pre-wrap break-words leading-relaxed">
-			{textParts(text).map((part, index) =>
-				part.kind === "link" ? (
-					<a
-						// biome-ignore lint/suspicious/noArrayIndexKey: parts are positional and never reorder
-						key={index}
-						href={part.href}
-						target="_blank"
-						rel="noreferrer"
-						title={part.href}
-						className="break-all text-primary underline underline-offset-2"
-					>
-						{linkLabel(part.href)}
-					</a>
-				) : (
-					part.text
-				),
-			)}
-		</P>
 	);
 }

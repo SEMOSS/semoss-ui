@@ -11,12 +11,15 @@ export function RoomRunStatus({
 	transportError,
 	pendingApprovals,
 	onReconnect,
+	reviewInWorkbench = false,
 }: {
 	agent: AgentConfiguration;
 	turnError: string | null;
 	transportError: Error | null;
 	pendingApprovals: PendingToolApproval[];
 	onReconnect?: () => Promise<void>;
+	/** Work keeps approvals reachable even when the owning timeline message is hidden. */
+	reviewInWorkbench?: boolean;
 }) {
 	const isMobile = useIsMobile();
 	const { tools, openInline, openWorkbench } = useToolWorkbench();
@@ -111,7 +114,7 @@ export function RoomRunStatus({
 									approval.isDeciding
 								}
 								onClick={() =>
-									isMobile
+									isMobile && !reviewInWorkbench
 										? openInline(approval.toolId)
 										: openWorkbench(approval.toolId)
 								}

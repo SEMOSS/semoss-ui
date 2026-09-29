@@ -1,3 +1,5 @@
+import type { DisplayBody } from "@/features/email/message-body";
+
 /** Supported lookback windows for a bounded Outlook header search. */
 export const MAIL_DATE_RANGES = { "1": 1, "7": 7, "30": 30, "90": 90 } as const;
 export type MailDateRange =
@@ -22,6 +24,8 @@ export interface SourceParticipant {
 
 /** One selected source message, retained only in the current application session. */
 export interface SourceMessage {
+	displayBody?: DisplayBody;
+	webLink?: string;
 	id: string;
 	text: string;
 	senderId?: string;
@@ -81,7 +85,20 @@ export type EmailDraftInput =
 			bcc: string;
 			subject: string;
 			body: string;
+			bodyFormat?: "text" | "html";
 			attachments?: string[];
 	  }
-	| { mode: "reply"; sourceUid: string; body: string; replyAll: boolean }
-	| { mode: "forward"; sourceUid: string; to: string; body: string };
+	| {
+			mode: "reply";
+			sourceUid: string;
+			body: string;
+			bodyFormat?: "text" | "html";
+			replyAll: boolean;
+	  }
+	| {
+			mode: "forward";
+			sourceUid: string;
+			to: string;
+			body: string;
+			bodyFormat?: "text" | "html";
+	  };

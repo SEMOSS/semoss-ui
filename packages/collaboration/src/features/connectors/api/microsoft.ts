@@ -1,5 +1,6 @@
 import { download, oauth } from "@semoss/sdk";
 import { z } from "@semoss/ui/next";
+import { draftText, sanitizeDraftHtml } from "@/features/email/email-html";
 import { callPixel, type InsightActions, pixel } from "@/lib/pixel";
 import {
 	type EmailDraftInput,
@@ -76,6 +77,7 @@ export async function getMail(actions: InsightActions, uid: string) {
 			uid,
 			maxBodyChars: 12_000,
 			includeAttachments: true,
+			includeDisplayBody: true,
 		}),
 		mailSchema,
 	);
@@ -111,6 +113,7 @@ export function getTeamsMessages(actions: InsightActions, chatId: string) {
 		actions,
 		pixel("MicrosoftTeamsListChatMessages", {
 			chatId,
+			includeDisplayBody: true,
 			limit: 30,
 			maxBodyChars: 12_000,
 		}),
@@ -173,10 +176,12 @@ export async function saveEmailDraft(
 	const bcc = input.mode === "new" ? parseAddresses(input.bcc) : [];
 	if (input.mode !== "new" && !input.sourceUid.trim())
 		throw new Error("Select the source email first.");
-	if (input.mode === "reply" && !input.body.trim())
+	if (input.mode === "reply" && !draftText(input.body, input.bodyFormat))
 		throw new Error("Enter reply text.");
 	if (input.mode === "forward" && to.length === 0)
 		throw new Error("Enter at least one recipient.");
+	const html = input.bodyFormat === "html";
+	const body = html ? sanitizeDraftHtml(input.body) : input.body;
 	try {
 		if (input.mode === "new") {
 			const receipt = await callPixel(
@@ -186,8 +191,8 @@ export async function saveEmailDraft(
 					cc,
 					bcc,
 					subject: input.subject,
-					message: input.body,
-					html: false,
+					message: body,
+					html,
 					attachments: input.attachments ?? [],
 				}),
 				newDraftReceiptSchema,
@@ -202,7 +207,8 @@ export async function saveEmailDraft(
 				actions,
 				pixel("MicrosoftOutlookReplyMail", {
 					uid: input.sourceUid,
-					comment: input.body,
+					comment: body,
+					...(html ? { html: true } : {}),
 					replyAll: input.replyAll,
 					asDraft: true,
 				}),
@@ -222,7 +228,8 @@ export async function saveEmailDraft(
 			pixel("MicrosoftOutlookForwardMail", {
 				uid: input.sourceUid,
 				to,
-				comment: input.body,
+				comment: body,
+				...(html ? { html: true } : {}),
 				asDraft: true,
 			}),
 			forwardDraftReceiptSchema,
@@ -319,5 +326,37 @@ export async function connectMicrosoft(timeoutMs = 60_000): Promise<void> {
 		]);
 	} finally {
 		if (timeout) clearTimeout(timeout);
+	}
+}
+
+/** A send may have reached Outlook; retry requires explicit reconciliation by the user. */
+export class UncertainSendError extends Error {
+	constructor(cause: unknown) {
+		super(
+			`The send could not be confirmed. Check Outlook before retrying. ${cause instanceof Error ? cause.message : "The connection was interrupted."}`,
+			{ cause },
+		);
+		this.name = "UncertainSendError";
+	}
+}
+
+/** Send an exact saved draft through the already-deployed endpoint; never create a new email. */
+export async function sendEmailDraft(
+	actions: InsightActions,
+	draftId: string,
+): Promise<{ sent: true; draftId: string }> {
+	if (!draftId.trim())
+		throw new Error("Save the reply draft before sending it.");
+	try {
+		const result = await callPixel(
+			actions,
+			pixel("MicrosoftOutlookSendDraft", { draftId }),
+			z.object({ sent: z.literal(true), draftId: z.string().min(1) }),
+		);
+		if (result.draftId !== draftId)
+			throw new Error("The send receipt refers to a different draft.");
+		return result;
+	} catch (cause) {
+		throw new UncertainSendError(cause);
 	}
 }

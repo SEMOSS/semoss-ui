@@ -1,3 +1,4 @@
+import { readDisplayBody } from "@/features/email/message-body";
 import type { InsightActions } from "@/lib/pixel";
 import { PixelError, pixel } from "@/lib/pixel";
 import {
@@ -228,10 +229,14 @@ function mapThread(row: Row): Thread {
 	return {
 		id: str(row.id),
 		channel,
-		// the thread view replies to source.nativeId; source also lets loaded messages attach to the thread
+		// Teams chat identity is distinct from the latest message identity.
 		source: {
 			kind: SOURCE_KINDS[channel] ?? "outlook",
-			nativeId: str(row.latestMessageId, str(row.id)),
+			nativeId:
+				channel === "teams"
+					? str(row.conversationId)
+					: str(row.latestMessageId, str(row.id)),
+			conversationId: opt(row.conversationId),
 		},
 		subject: str(row.subject, "(no subject)"),
 		topicLinks: list<Row>(row.topicLinks).map((link) => ({
@@ -371,12 +376,14 @@ export async function loadLiveState(
 		Page,
 	];
 
+	// Repeated list rows must not duplicate navigation entries or detail requests.
+	const topicIds = [
+		...new Set(topicsPage.items.map((topic) => str(topic.id))),
+	];
 	// topic notes, goals, and people come from the detail call
 	const topicRows = (await runBatch(
 		actions,
-		topicsPage.items.map((topic) =>
-			pixel("BrainGetTopic", { topicId: str(topic.id) }),
-		),
+		topicIds.map((topicId) => pixel("BrainGetTopic", { topicId })),
 	)) as Row[];
 	const topics = topicRows.map(mapTopic);
 	const people = peoplePage.items.map(mapPerson);
@@ -464,7 +471,11 @@ export async function loadThreadMessages(
 	threadId: string,
 ): Promise<(thread: Thread) => CollaborationCommand> {
 	const [out] = (await runBatch(actions, [
-		pixel("BrainGetThreadMessages", { threadId, limit: 100 }),
+		pixel("BrainGetThreadMessages", {
+			threadId,
+			limit: 100,
+			includeDisplayBody: true,
+		}),
 	])) as [Row];
 	const messages: WorkspaceMessage[] = list<Row>(out.messages).map(
 		(message) => ({
@@ -472,6 +483,7 @@ export async function loadThreadMessages(
 			fromId: str(message.fromId),
 			at: str(message.at),
 			text: str(message.text),
+			displayBody: readDisplayBody(message.displayBody),
 			excluded: message.excluded === true ? true : undefined,
 			history: message.history === true ? true : undefined,
 			to: recipientNames(message.to),

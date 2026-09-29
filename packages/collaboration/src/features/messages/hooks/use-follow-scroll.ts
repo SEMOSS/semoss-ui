@@ -16,6 +16,7 @@ interface FollowScroll {
 	isFollowing: boolean;
 	hasMoreBelow: boolean;
 	scrollToLatest: () => void;
+	scrollToStart: () => void;
 }
 
 /** Follow rendered growth, keeping all scrolling inside the owning viewport. */
@@ -32,6 +33,7 @@ export function useFollowScroll({
 	const roomKey = useRef(resetKey);
 	const previousSignal = useRef(resumeSignal);
 	const resume = useRef<(() => void) | null>(null);
+	const start = useRef<(() => void) | null>(null);
 	const reducedMotion = useReducedMotion();
 
 	useLayoutEffect(() => {
@@ -227,6 +229,11 @@ export function useFollowScroll({
 			lastTime = performance.now();
 			schedule();
 		};
+		start.current = () => {
+			pause();
+			writeTop(0);
+			rememberAnchor();
+		};
 		const observer = new ResizeObserver(schedule);
 		observer.observe(viewport);
 		observer.observe(content);
@@ -251,6 +258,7 @@ export function useFollowScroll({
 			viewport.removeEventListener("touchmove", handleTouchMove);
 			if (frame !== null) cancelAnimationFrame(frame);
 			resume.current = null;
+			start.current = null;
 		};
 	}, [viewport, content, resetKey, reducedMotion, initialFollow]);
 
@@ -261,11 +269,13 @@ export function useFollowScroll({
 	}, [resumeSignal]);
 
 	const scrollToLatest = useCallback(() => resume.current?.(), []);
+	const scrollToStart = useCallback(() => start.current?.(), []);
 	return {
 		viewportRef: setViewport,
 		contentRef: setContent,
 		isFollowing,
 		hasMoreBelow,
 		scrollToLatest,
+		scrollToStart,
 	};
 }

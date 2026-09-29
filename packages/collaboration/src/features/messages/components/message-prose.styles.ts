@@ -1,0 +1,3 @@
+/** Compact conversation typography shared by answers and reasoning. */
+export const MESSAGE_PROSE_CLASS_NAME =
+	"wrap-anywhere text-sm leading-6 [&>:first-child]:mt-0 [&_h1]:mt-4 [&_h1]:font-medium [&_h1]:text-base [&_h2]:mt-4 [&_h2]:font-medium [&_h2]:text-base [&_h3]:mt-3 [&_h3]:font-medium [&_h3]:text-base [&_h4]:mt-3 [&_h4]:font-medium [&_h4]:text-sm [&_h5]:mt-3 [&_h5]:text-sm [&_h6]:mt-3 [&_h6]:text-sm [&_ol>li]:mt-1 [&_ul>li]:mt-0 [&_li]:text-sm [&_li]:leading-6 [&_ol]:my-2 [&_ul]:my-2 [&_ul]:gap-1 [&_p]:mt-2 [&_p]:text-sm [&_p]:leading-6 [&_blockquote]:mt-2 [&_blockquote]:text-sm [&_blockquote]:leading-6";

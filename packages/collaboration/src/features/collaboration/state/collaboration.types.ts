@@ -1,3 +1,5 @@
+import type { DisplayBody } from "@/features/email/message-body";
+
 /** Session-only collaboration records; imported identities retain nullable fields. */
 export type Channel = "email" | "teams" | "calendar" | "room" | "task";
 export type TopicKind = "client" | "internal" | "event" | "personal";
@@ -243,6 +245,8 @@ export interface SourceStatus {
 }
 
 export interface WorkspaceMessage {
+	/** Original provider body for rendering only. */
+	displayBody?: DisplayBody;
 	id: string;
 	fromId: string;
 	at: string;

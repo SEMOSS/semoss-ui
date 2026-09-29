@@ -134,6 +134,13 @@ it("re-reads a partially saved room before retrying without losing its associati
 		"Review",
 		metadata,
 		{ roomId: "room-1", onCreated },
+		{
+			modelId: "model-1",
+			agentId: "",
+			instructions: "",
+			temperature: 0.6,
+			mcp: [],
+		},
 	);
 	for (const options of backend.writes.slice(writesBeforeRetry)) {
 		expect(options).toMatchObject({
@@ -205,15 +212,18 @@ it("leaves room instructions blank for the thread agent so its own prompt applie
 		mcp: [],
 		workThread: withAgent,
 	});
-	expect(backend.read()).not.toHaveProperty("workspace");
+	expect(backend.read().workspace).toEqual({
+		workspace_id: "agent-1",
+		name: "Assistant",
+	});
 	expect(canContinueThreadRoom(room)).toBe(true);
-	// a room made before the agent was set keeps the built-in instructions and is not reused for it
+	// Custom instructions do not invalidate the association; a model mismatch does.
 	expect(
 		canContinueThreadRoom({
 			...room,
 			options: {
 				...room.options,
-				instructions: THREAD_ASSISTANT_INSTRUCTIONS,
+				modelId: "other-model",
 			},
 		}),
 	).toBe(false);

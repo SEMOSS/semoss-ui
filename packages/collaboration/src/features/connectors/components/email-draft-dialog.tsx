@@ -1,3 +1,4 @@
+import { MailPlus } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useInsight } from "@semoss/sdk/react";
 import {
@@ -13,10 +14,15 @@ import {
 	Form,
 	FormCheckbox,
 	P,
+	Spinner,
+	Tooltip,
+	TooltipContent,
+	TooltipTrigger,
 	useForm,
 	z,
 	zodResolver,
 } from "@semoss/ui/next";
+import { draftText, plainTextEmail } from "@/features/email/email-html";
 import { EmailDraftSession } from "../api/email-draft-session";
 import {
 	parseAddresses,
@@ -26,6 +32,8 @@ import {
 import type { EmailDraftInput, SavedEmailDraft } from "../types";
 import { ConnectorFormInput } from "./connector-form-input";
 import { DraftAttachmentField } from "./draft-attachment-field";
+import { EmailBodyField } from "./email-body-field";
+import { OutlookDraftLink } from "./outlook-draft-link";
 
 const addresses = z.string().refine((value) => {
 	try {
@@ -78,7 +86,7 @@ export function EmailDraftDialog({
 			cc: "",
 			bcc: "",
 			subject: initialSubject,
-			body: initialBody,
+			body: plainTextEmail(initialBody),
 			replyAll: false,
 			files: [],
 		},
@@ -112,7 +120,7 @@ export function EmailDraftDialog({
 			cc: "",
 			bcc: "",
 			subject: initialSubject,
-			body: initialBody,
+			body: plainTextEmail(initialBody),
 			replyAll: false,
 			files: [],
 		});
@@ -128,7 +136,7 @@ export function EmailDraftDialog({
 			});
 			return;
 		}
-		if (mode === "reply" && !values.body.trim()) {
+		if (mode === "reply" && !draftText(values.body, "html")) {
 			form.setError(
 				"body",
 				{ message: "Enter reply text." },
@@ -153,12 +161,14 @@ export function EmailDraftDialog({
 						bcc: values.bcc,
 						subject: values.subject,
 						body: values.body,
+						bodyFormat: "html",
 					}
 				: mode === "reply"
 					? {
 							mode,
 							sourceUid: sourceUid ?? "",
 							body: values.body,
+							bodyFormat: "html",
 							replyAll: values.replyAll,
 						}
 					: {
@@ -166,6 +176,7 @@ export function EmailDraftDialog({
 							sourceUid: sourceUid ?? "",
 							to: values.to,
 							body: values.body,
+							bodyFormat: "html",
 						};
 		let result: SavedEmailDraft;
 		writing.current = true;
@@ -203,6 +214,11 @@ export function EmailDraftDialog({
 		if (!isSubmitting) onOpenChange(open);
 	}
 
+	const saveLabel = isSubmitting
+		? "Saving draft…"
+		: saved
+			? "Save a new copy"
+			: "Save to Outlook drafts";
 	return (
 		<Dialog open={isOpen} onOpenChange={handleOpenChange}>
 			<DialogContent
@@ -301,8 +317,7 @@ export function EmailDraftDialog({
 							attachments below your note.
 						</P>
 					)}
-					<ConnectorFormInput
-						name="body"
+					<EmailBodyField
 						label={
 							mode === "reply"
 								? "Reply text (required)"
@@ -310,7 +325,6 @@ export function EmailDraftDialog({
 									? "Note above forwarded message"
 									: "Message"
 						}
-						multiline
 						required={mode === "reply"}
 						disabled={isSubmitting}
 					/>
@@ -322,19 +336,7 @@ export function EmailDraftDialog({
 							<output className="block">
 								Saved to Outlook drafts. Nothing was sent.
 							</output>
-							<a
-								href={
-									saved.webLink ??
-									"https://outlook.office.com/mail/drafts"
-								}
-								target="_blank"
-								rel="noreferrer"
-								className="text-primary underline"
-							>
-								{saved.webLink
-									? "Open in Outlook"
-									: "Open Outlook drafts folder"}
-							</a>
+							<OutlookDraftLink webLink={saved.webLink} />
 							<P className="text-muted-foreground">
 								Further changes here create a new copy. Edit the
 								saved draft in Outlook to update it.
@@ -369,16 +371,24 @@ export function EmailDraftDialog({
 						>
 							Close
 						</Button>
-						<Button
-							type="submit"
-							disabled={isSubmitting || isUncertain}
-						>
-							{isSubmitting
-								? "Saving draft…"
-								: saved
-									? "Save a new copy"
-									: "Save to Outlook drafts"}
-						</Button>
+						<Tooltip disableHoverableContent={false}>
+							<TooltipTrigger asChild>
+								<Button
+									type="submit"
+									size="icon-sm"
+									className="pointer-coarse:size-11 size-11 sm:size-8"
+									aria-label={saveLabel}
+									disabled={isSubmitting || isUncertain}
+								>
+									{isSubmitting ? (
+										<Spinner aria-label="Saving draft" />
+									) : (
+										<MailPlus aria-hidden="true" />
+									)}
+								</Button>
+							</TooltipTrigger>
+							<TooltipContent>{saveLabel}</TooltipContent>
+						</Tooltip>
 					</DialogFooter>
 				</Form>
 			</DialogContent>
