@@ -206,6 +206,14 @@ export function migrateSheetsToSharedQueries<
 					databaseName: viz.databaseName,
 					query: viz.query,
 					parameters: viz.parameters ?? [],
+					llmPrompt:
+						"llmPrompt" in viz
+							? (viz.llmPrompt as string | undefined)
+							: undefined,
+					llmModel:
+						"llmModel" in viz
+							? (viz.llmModel as string | undefined)
+							: undefined,
 				};
 				byPrint.set(print, q);
 				queries.push(q);

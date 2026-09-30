@@ -727,6 +727,8 @@ export function NewDashboardPage() {
 				databaseName: init?.databaseName ?? "",
 				query: init?.query ?? "",
 				parameters: init?.parameters ?? [],
+				llmPrompt: init?.llmPrompt,
+				llmModel: init?.llmModel,
 			};
 			setQueries((prev) => [...prev, q]);
 			return q;
@@ -1136,6 +1138,7 @@ export function NewDashboardPage() {
 	const testQuery = async (
 		vizId: string,
 		paramOverrides?: Record<string, string>,
+		queryDraft?: Pick<Visualization, "query" | "parameters">,
 	) => {
 		const viz = sheets
 			.flatMap((s) => s.visualizations)
@@ -1143,7 +1146,10 @@ export function NewDashboardPage() {
 		if (!viz) return;
 		// Run the resolved shared query and cache the sample under the query key,
 		// so every chart bound to it previews from the same test result.
-		const source = resolveQuery(viz, queries);
+		const resolvedSource = resolveQuery(viz, queries);
+		const source = queryDraft
+			? { ...resolvedSource, ...queryDraft }
+			: resolvedSource;
 		const qKey = viz.queryId ?? viz.id;
 		if (!isDataProduct(source) && (!source.databaseId || !source.query)) {
 			alert("Select a database and enter a query first.");
@@ -1914,9 +1920,11 @@ export function NewDashboardPage() {
 																viz.id,
 															)
 														}
-														onTestQuery={() =>
+														onTestQuery={(draft) =>
 															void testQuery(
 																viz.id,
+																undefined,
+																draft,
 															)
 														}
 														customColorPalettes={
@@ -2858,7 +2866,7 @@ interface VizCardProps {
 	/** Bind this viz to an existing shared query. */
 	onSelectQuery: (queryId: string) => void;
 	onAddToLayout: () => void;
-	onTestQuery: () => void;
+	onTestQuery: (draft?: Pick<Visualization, "query" | "parameters">) => void;
 	customColorPalettes: ColorPaletteType[];
 	onCustomColorPalettesChange: (palettes: ColorPaletteType[]) => void;
 	/** Run every query across all visualizations (uses the Parameters form values). */
@@ -2919,7 +2927,11 @@ function VizCard({
 						output?: unknown;
 						operationType?: string[];
 					}>;
-				}) => lastPixelOutput(r.pixelReturn).output,
+				}) => {
+					const { output, error } = lastPixelOutput(r.pixelReturn);
+					if (error) throw new Error(error);
+					return output;
+				},
 			),
 		[],
 	);
@@ -2939,6 +2951,8 @@ function VizCard({
 				databaseName: boundQuery.databaseName,
 				query: boundQuery.query,
 				parameters: boundQuery.parameters,
+				llmPrompt: boundQuery.llmPrompt,
+				llmModel: boundQuery.llmModel,
 			}
 		: viz;
 
@@ -3007,6 +3021,8 @@ function VizCard({
 		"parameters",
 		"sources",
 		"joins",
+		"llmPrompt",
+		"llmModel",
 	] as const;
 	const handleEditorUpdate = (patch: Partial<Visualization>) => {
 		const queryPatch: Partial<DashboardQuery> = {};

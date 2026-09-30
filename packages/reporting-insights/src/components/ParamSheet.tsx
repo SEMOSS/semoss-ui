@@ -369,6 +369,7 @@ export function ParamSheet({
 		}
 		const base = [...(paramOptions[g.name] ?? []), ...g.mergedOptions];
 		if (
+			!g.optionsQuery &&
 			g.param.defaultValue &&
 			g.param.inputType !== "multiselect" &&
 			g.param.inputType !== "date"

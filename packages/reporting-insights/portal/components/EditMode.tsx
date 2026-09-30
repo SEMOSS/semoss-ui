@@ -27,6 +27,7 @@ import { escapeSqlForPixel } from "@/lib/pixel";
 import {
 	migrateSheetsToSharedQueries,
 	pruneQueries,
+	resolveParamDefault,
 	resolveQuery,
 } from "@/lib/resolveQuery";
 import { useTabColors } from "@/lib/tabColors";
@@ -357,6 +358,8 @@ export function EditMode() {
 			databaseName: init?.databaseName ?? "",
 			query: init?.query ?? "",
 			parameters: init?.parameters ?? [],
+			llmPrompt: init?.llmPrompt,
+			llmModel: init?.llmModel,
 		};
 		setQueries((prev) => [...prev, q]);
 		return q;
@@ -595,10 +598,14 @@ export function EditMode() {
 	};
 
 	// ── test query ────────────────────────────────────────────────────────────
-	const runTest = async (vizId: string) => {
+	const runTest = async (
+		vizId: string,
+		draft?: Pick<Visualization, "query" | "parameters">,
+	) => {
 		const viz = visualizations.find((v) => v.id === vizId);
 		if (!viz) return;
-		const source = resolveQuery(viz, queries);
+		const resolvedSource = resolveQuery(viz, queries);
+		const source = draft ? { ...resolvedSource, ...draft } : resolvedSource;
 		const qKey = viz.queryId ?? viz.id;
 		if (!source.databaseId || !source.query) return;
 		setTestLoading((t) => ({ ...t, [qKey]: true }));
@@ -606,7 +613,11 @@ export function EditMode() {
 			let q = source.query;
 			source.parameters.forEach((p) => {
 				if (p.name)
-					q = q.replaceAll(`{{${p.name}}}`, p.defaultValue ?? "");
+					q = q.replaceAll(
+						`{{${p.name}}}`,
+						resolveParamDefault(p) ||
+							(p.inputType === "event" ? "NULL" : ""),
+					);
 			});
 			const r = await runDatabaseQuery(source.databaseId, q, 10); // editor preview = small sample
 			setTestResults((prev) => ({ ...prev, [qKey]: r }));
@@ -1292,7 +1303,7 @@ interface VizCardProps {
 	onDeleteQuery: (queryId: string) => void;
 	onSelectQuery: (queryId: string) => void;
 	onAddToLayout: () => void;
-	onTestQuery: () => void;
+	onTestQuery: (draft?: Pick<Visualization, "query" | "parameters">) => void;
 	siblings: {
 		id: string;
 		title: string;
@@ -1387,6 +1398,8 @@ function VizCard({
 				databaseName: boundQuery.databaseName,
 				query: boundQuery.query,
 				parameters: boundQuery.parameters,
+				llmPrompt: boundQuery.llmPrompt,
+				llmModel: boundQuery.llmModel,
 			}
 		: viz;
 
@@ -1397,6 +1410,8 @@ function VizCard({
 		"databaseName",
 		"query",
 		"parameters",
+		"llmPrompt",
+		"llmModel",
 	] as const;
 	const handleEditorUpdate = (patch: Partial<Visualization>) => {
 		const queryPatch: Partial<DashboardQuery> = {};

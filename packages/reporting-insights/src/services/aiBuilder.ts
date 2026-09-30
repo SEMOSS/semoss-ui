@@ -145,7 +145,7 @@ export type RunSql = (
 ) => Promise<{ ok: boolean; error?: string; headers?: string[] }>;
 
 /** Strip code fences / prose and a trailing semicolon from a model SQL response. */
-function cleanSql(text: string): string {
+export function cleanSql(text: string): string {
 	let s = String(text ?? "")
 		.trim()
 		.replace(/^```(?:sql)?\s*/i, "")
@@ -158,7 +158,7 @@ function cleanSql(text: string): string {
 }
 
 /** True only for a single read-only SELECT (no DDL/DML/multiple statements). */
-function isSelectOnly(sql: string): boolean {
+export function isSelectOnly(sql: string): boolean {
 	const s = sql.trim();
 	if (!/^select\b/i.test(s)) return false;
 	if (/;/.test(s.replace(/;\s*$/, ""))) return false; // no embedded statements

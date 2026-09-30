@@ -9,7 +9,7 @@
  *   multiselect many choices → value is a SQL list  'a','b'  for use as  IN ({{p}})
  */
 import { Check, X } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { Input } from "@/components/ui";
 
 export type ParamInputType =
@@ -234,6 +234,7 @@ function MultiSelect({
 	const selectedSet = new Set(selected);
 	const [open, setOpen] = useState(false);
 	const [q, setQ] = useState("");
+	const inputRef = useRef<HTMLInputElement>(null);
 	const filtered = useMemo(
 		() =>
 			options
@@ -246,6 +247,8 @@ function MultiSelect({
 			? selected.filter((x) => x !== o)
 			: [...selected, o];
 		onChange(formatSqlList(next));
+		setQ("");
+		inputRef.current?.focus();
 	};
 	return (
 		<div className="relative">
@@ -293,6 +296,7 @@ function MultiSelect({
 					</>
 				)}
 				<input
+					ref={inputRef}
 					className="min-w-[60px] flex-1 bg-transparent text-sm outline-none"
 					value={q}
 					placeholder={selected.length ? "" : "Filter options…"}

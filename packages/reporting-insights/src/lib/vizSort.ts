@@ -1,4 +1,18 @@
-import type { SortRule } from "@/types/dashboard";
+import { normalizeDataType } from "@/lib/tableAggregate";
+import type {
+	SortRule,
+	VisualizationConfig,
+	VisualizationType,
+} from "@/types/dashboard";
+
+const DEFAULT_X_SORT_TYPES = new Set<VisualizationType>([
+	"bar",
+	"stackbar",
+	"combo",
+	"line",
+	"area",
+	"multiline",
+]);
 
 /** True if a string value looks like a date (parseable, not a plain number). */
 function isDateString(v: unknown): boolean {
@@ -40,14 +54,44 @@ export function distinctColumnValues(
 }
 
 /**
+ * Resolve configured sort rules or an ephemeral x-axis default for cartesian charts.
+ * The generated rule is used only at render time and is never written to the config.
+ */
+export function resolveVizSortRules(
+	rows: Array<Record<string, unknown>>,
+	visualizationType: VisualizationType,
+	config?: VisualizationConfig,
+): SortRule[] | undefined {
+	const configuredRules = config?.styling?.sortValues;
+	if (configuredRules?.some((rule) => rule.column && rule.direction))
+		return configuredRules;
+
+	const xKey = config?.xKey;
+	if (!xKey || !DEFAULT_X_SORT_TYPES.has(visualizationType))
+		return configuredRules;
+
+	const configuredType = config.columnTypes?.[xKey];
+	const isDate =
+		normalizeDataType(configuredType) === "DATE" ||
+		columnLooksLikeDates(rows, xKey);
+	return [
+		{
+			id: "__default-x-sort",
+			column: xKey,
+			direction: isDate ? "chronological" : "asc",
+		},
+	];
+}
+
+/**
  * Apply an ordered list of sort rules to rows. Rules are applied in priority
  * order — the first rule is primary sort, second is tiebreaker, etc.
  * Returns the original array if there are no active rules.
  */
 export function applyVizSort(
-	rows: Record<string, any>[],
+	rows: Record<string, unknown>[],
 	rules?: SortRule[],
-): Record<string, any>[] {
+): Record<string, unknown>[] {
 	const active = rules?.filter((r) => r.column && r.direction) ?? [];
 	if (!active.length || !rows.length) return rows;
 

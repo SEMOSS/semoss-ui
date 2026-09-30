@@ -261,6 +261,7 @@ export function KPI({
 						<p
 							className="truncate font-semibold text-slate-500 text-xs uppercase tracking-widest"
 							style={getTitleStyle(perCardTitle)}
+							title={getKpiTitle(col, agg, perCardTitle)}
 						>
 							{getKpiTitle(col, agg, perCardTitle)}
 						</p>
@@ -273,31 +274,35 @@ export function KPI({
 						>
 							{formatNum(value, col)}
 						</p>
-						{trend ? (
-							<div
-								className="mt-1 flex items-center gap-1.5 font-semibold text-sm"
-								style={{
-									color:
-										trendColor ||
-										(trend.up ? "#059669" : "#ef4444"),
-								}}
-							>
-								{trend.up ? (
-									<TrendingUp className="h-4 w-4" />
-								) : (
-									<TrendingDown className="h-4 w-4" />
-								)}
-								<span>{Math.abs(trend.pct).toFixed(1)}%</span>
-								<span className="font-normal text-slate-400 text-xs">
-									vs previous
-								</span>
-							</div>
-						) : (
-							<p className="mt-1 text-slate-400 text-xs">
-								{metricData.length.toLocaleString()} row
-								{metricData.length !== 1 ? "s" : ""} · {agg}
-							</p>
-						)}
+						<div className="mt-1 flex h-5 items-center">
+							{trend ? (
+								<div
+									className="flex items-center gap-1.5 font-semibold text-sm"
+									style={{
+										color:
+											trendColor ||
+											(trend.up ? "#059669" : "#ef4444"),
+									}}
+								>
+									{trend.up ? (
+										<TrendingUp className="h-4 w-4" />
+									) : (
+										<TrendingDown className="h-4 w-4" />
+									)}
+									<span>
+										{Math.abs(trend.pct).toFixed(1)}%
+									</span>
+									<span className="font-normal text-slate-400 text-xs">
+										vs previous
+									</span>
+								</div>
+							) : kpiStyling?.showRowInfo ? (
+								<p className="text-slate-400 text-xs">
+									{metricData.length.toLocaleString()} row
+									{metricData.length !== 1 ? "s" : ""} · {agg}
+								</p>
+							) : null}
+						</div>
 					</div>
 				);
 			})}

@@ -645,60 +645,72 @@ export function BubbleChart({
 					))}
 				</svg>
 
-				{showTooltip && hovered && (
-					<div
-						className="pointer-events-none absolute z-10 min-w-[180px] rounded border border-slate-200 bg-white p-2 text-xs shadow-lg"
-						style={tooltipStyle(hovered.x, hovered.y)}
-					>
-						<div className="mb-1 flex items-center gap-2 font-semibold text-slate-800">
-							<span
-								className="inline-block h-2.5 w-2.5 flex-shrink-0 rounded-full"
-								style={{ background: hovered.point.color }}
-							/>
-							<span className="truncate">
-								{formatValue(
-									hovered.point.label,
-									labelKey ?? "",
-									formatRules ?? [],
-								)}
-							</span>
-						</div>
-						<div className="flex items-center justify-between gap-3 text-slate-600">
-							<span className="capitalize">
-								{sizeAgg} of {sizeKey}:
-							</span>
-							<span className="font-medium text-slate-700 tabular-nums">
-								{formatValue(
-									hovered.point.sizeValue,
-									sizeKey ?? "",
-									formatRules ?? [],
-								)}
-							</span>
-						</div>
-						{tooltipEntries.map(({ column, aggregation }) =>
-							hovered.point.tooltipValues?.[column] !==
-							undefined ? (
-								<div
-									key={column}
-									className="flex items-center justify-between gap-3 text-slate-600"
-								>
-									<span className="capitalize">
-										{aggregation} of {column}:
-									</span>
-									<span className="font-medium text-slate-700 tabular-nums">
+				{showTooltip &&
+					hovered &&
+					(() => {
+						// Always look up the current PlacedBubble so tooltip values stay fresh
+						// when tooltip columns are added/changed while a bubble is already hovered.
+						const livePoint =
+							layout.find(
+								(p) => p.label === hovered.point.label,
+							) ?? hovered.point;
+						return (
+							<div
+								className="pointer-events-none absolute z-10 min-w-[180px] rounded border border-slate-200 bg-white p-2 text-xs shadow-lg"
+								style={tooltipStyle(hovered.x, hovered.y)}
+							>
+								<div className="mb-1 flex items-center gap-2 font-semibold text-slate-800">
+									<span
+										className="inline-block h-2.5 w-2.5 flex-shrink-0 rounded-full"
+										style={{ background: livePoint.color }}
+									/>
+									<span className="truncate">
 										{formatValue(
-											hovered.point.tooltipValues?.[
-												column
-											],
-											column,
+											livePoint.label,
+											labelKey ?? "",
 											formatRules ?? [],
 										)}
 									</span>
 								</div>
-							) : null,
-						)}
-					</div>
-				)}
+								<div className="flex items-center justify-between gap-3 text-slate-600">
+									<span className="capitalize">
+										{sizeAgg} of {sizeKey}:
+									</span>
+									<span className="font-medium text-slate-700 tabular-nums">
+										{formatValue(
+											livePoint.sizeValue,
+											sizeKey ?? "",
+											formatRules ?? [],
+										)}
+									</span>
+								</div>
+								{tooltipEntries.map(
+									({ column, aggregation }) =>
+										livePoint.tooltipValues?.[column] !==
+										undefined ? (
+											<div
+												key={column}
+												className="flex items-center justify-between gap-3 text-slate-600"
+											>
+												<span className="capitalize">
+													{aggregation} of {column}:
+												</span>
+												<span className="font-medium text-slate-700 tabular-nums">
+													{formatValue(
+														livePoint
+															.tooltipValues?.[
+															column
+														],
+														column,
+														formatRules ?? [],
+													)}
+												</span>
+											</div>
+										) : null,
+								)}
+							</div>
+						);
+					})()}
 			</div>
 
 			{showLegend && layout.length > 0 && (

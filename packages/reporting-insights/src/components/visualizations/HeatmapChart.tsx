@@ -1023,19 +1023,26 @@ export function HeatmapChart({
 								)
 							: "N/A"}
 					</div>
-					{tooltipCols.map(({ column }) => (
-						<div key={column} className="text-slate-600">
-							{column}:{" "}
-							{tooltipDataMap[tooltip.cellKey]?.[column] !==
-							undefined
-								? formatValue(
-										tooltipDataMap[tooltip.cellKey][
-											column
-										] as number | string,
-										column,
-										formatRules,
-									)
-								: "N/A"}
+					{tooltipCols.map(({ column, aggregation }) => (
+						<div
+							key={column}
+							className="flex items-center justify-between gap-4 text-slate-600"
+						>
+							<span className="capitalize">
+								{aggregation} of {column}:
+							</span>
+							<span className="font-medium tabular-nums">
+								{tooltipDataMap[tooltip.cellKey]?.[column] !==
+								undefined
+									? formatValue(
+											tooltipDataMap[tooltip.cellKey][
+												column
+											] as number | string,
+											column,
+											formatRules,
+										)
+									: "N/A"}
+							</span>
 						</div>
 					))}
 				</div>

@@ -14,8 +14,10 @@ import {
 	Pencil,
 	Play,
 	Plus,
+	Send,
 	ShieldAlert,
 	SlidersHorizontal,
+	Sparkles,
 	Table,
 	Table2,
 	Trash2,
@@ -82,8 +84,13 @@ import { useListboxNavigation } from "@/hooks/useListboxNavigation";
 import { placeholderNames } from "@/lib/paramInference";
 import { isDataProduct } from "@/lib/queryPixel";
 import { makeVizFilterGroup } from "@/lib/vizFilter";
+import { fetchModels, type ModelEngine } from "@/services/aiBuilder";
+import {
+	generateAiQueryDraft,
+	prepareAiQueryDraft,
+} from "@/services/aiQueryWriter";
 import type {
-	ConditionalOptionBranch,
+	Parameter,
 	VisualizationConfig,
 	VisualizationType,
 } from "@/types/dashboard";
@@ -124,21 +131,9 @@ export interface VizLike {
 	databaseId: string;
 	databaseName?: string;
 	query: string;
-	parameters: Array<{
-		id: string;
-		name: string;
-		label: string;
-		defaultValue: string;
-		placeholder?: string;
-		required?: boolean;
-		inputType?: "text" | "dropdown" | "multiselect" | "date";
-		useCurrentDate?: boolean;
-		options?: string[];
-		optionsQuery?: string;
-		optionsDatabaseId?: string;
-		conditionalOn?: string;
-		conditionalBranches?: ConditionalOptionBranch[];
-	}>;
+	parameters: Parameter[];
+	llmPrompt?: string;
+	llmModel?: string;
 	config?: VisualizationConfig;
 	/** When true, the visualization's tab header is flagged as PHI/PII (red). */
 	phi?: boolean;
@@ -175,7 +170,7 @@ export interface VizEditorProps {
 	columns: Column[];
 	dropZoneData: DropZoneDataWithTable;
 	onDropZoneChange: (d: DropZoneDataWithTable) => void;
-	onRunQuery: () => void;
+	onRunQuery: (draft?: Pick<VizLike, "query" | "parameters">) => void;
 	running: boolean;
 	/** Run every query across all visualizations (Parameters-aware). Shows a toolbar button when set. */
 	onRunAllQueries?: () => void;
@@ -488,6 +483,15 @@ export function VizEditor(props: VizEditorProps) {
 	const isDP = isDataProduct(viz);
 	const [tablesOpen, setTablesOpen] = useState(false);
 	const [resultView, setResultView] = useState<"chart" | "data">("chart");
+	const [aiOpen, setAiOpen] = useState(false);
+	const [aiModels, setAiModels] = useState<ModelEngine[]>([]);
+	const [aiModelsLoading, setAiModelsLoading] = useState(false);
+	const [aiPrompt, setAiPrompt] = useState(viz.llmPrompt ?? "");
+	const [aiModel, setAiModel] = useState(viz.llmModel ?? "");
+	const [aiGenerating, setAiGenerating] = useState(false);
+	const [aiError, setAiError] = useState<string | null>(null);
+	const [aiNotice, setAiNotice] = useState<string | null>(null);
+	const [aiPanelHeight, setAiPanelHeight] = useState(148);
 
 	// ── Table browser: list tables + columns for the selected database ──────────
 	const [tables, setTables] = useState<BrowserTable[]>([]);
@@ -497,7 +501,50 @@ export function VizEditor(props: VizEditorProps) {
 	>({});
 	const tablesCacheRef = useRef<Record<string, BrowserTable[]>>({});
 	const runPixelRef = useRef(runPixel);
-	runPixelRef.current = runPixel;
+	useEffect(() => {
+		runPixelRef.current = runPixel;
+	}, [runPixel]);
+
+	// biome-ignore lint/correctness/useExhaustiveDependencies: boundQueryId isn't read here, but must still resync AI state when the bound query switches
+	useEffect(() => {
+		setAiPrompt(viz.llmPrompt ?? "");
+		setAiModel(viz.llmModel ?? "");
+		setAiError(null);
+		setAiNotice(null);
+	}, [boundQueryId, viz.llmModel, viz.llmPrompt]);
+
+	// biome-ignore lint/correctness/useExhaustiveDependencies: opening the panel is the fetch trigger; state changes inside this effect must not cancel the in-flight model request
+	useEffect(() => {
+		if (!aiOpen || aiModels.length > 0) return;
+		let cancelled = false;
+		setAiModelsLoading(true);
+		fetchModels(runPixelRef.current)
+			.then((models) => {
+				if (cancelled) return;
+				setAiModels(models);
+				setAiModel((current) => {
+					const preferred = current || viz.llmModel || "";
+					return models.some((model) => model.id === preferred)
+						? preferred
+						: (models[0]?.id ?? "");
+				});
+				if (models.length === 0)
+					setAiError("No AI models are available.");
+			})
+			.catch((error: unknown) => {
+				if (!cancelled) {
+					const message =
+						error instanceof Error ? error.message : String(error);
+					setAiError(`Could not load AI models: ${message}`);
+				}
+			})
+			.finally(() => {
+				if (!cancelled) setAiModelsLoading(false);
+			});
+		return () => {
+			cancelled = true;
+		};
+	}, [aiOpen]);
 
 	useEffect(() => {
 		if (!tablesOpen || !viz.databaseId) return;
@@ -572,6 +619,112 @@ export function VizEditor(props: VizEditorProps) {
 					? `${q} ${text}`
 					: `${q}${text}`,
 		});
+	};
+
+	const generateQuery = async () => {
+		if (!viz.databaseId || !aiModel || !aiPrompt.trim() || aiGenerating) {
+			return;
+		}
+		setAiGenerating(true);
+		setAiError(null);
+		setAiNotice(null);
+		try {
+			const request = {
+				runPixel: runPixelRef.current,
+				databaseId: viz.databaseId,
+				modelId: aiModel,
+				prompt: aiPrompt,
+				currentQuery: viz.query,
+				currentParameters: viz.parameters,
+			};
+			let generated = await generateAiQueryDraft(request);
+			let prepared: Awaited<ReturnType<typeof prepareAiQueryDraft>>;
+			try {
+				prepared = await prepareAiQueryDraft(
+					runPixelRef.current,
+					viz.databaseId,
+					generated,
+				);
+			} catch (validationError: unknown) {
+				const validationMessage =
+					validationError instanceof Error
+						? validationError.message
+						: String(validationError);
+				generated = await generateAiQueryDraft({
+					...request,
+					prompt: `${aiPrompt}\n\nThe previous generated query failed database validation with this error: ${validationMessage}. Regenerate the SQL and option queries from scratch. Prefer unquoted simple identifiers and return literal dropdown defaults only.`,
+					currentQuery: generated.query,
+					currentParameters: generated.parameters,
+				});
+				prepared = await prepareAiQueryDraft(
+					runPixelRef.current,
+					viz.databaseId,
+					generated,
+				);
+			}
+			const draft = {
+				query: prepared.query,
+				parameters: prepared.parameters,
+			};
+			onUpdate({
+				...draft,
+				llmPrompt: aiPrompt.trim(),
+				llmModel: aiModel,
+			});
+			if (prepared.unresolvedParameters.length > 0) {
+				setParamsOpen(true);
+				setAiNotice(
+					`Query generated. Add defaults for ${prepared.unresolvedParameters
+						.map((name) => `{{${name}}}`)
+						.join(", ")} before running.`,
+				);
+			} else {
+				setAiNotice("Query and parameters generated.");
+				onRunQuery(draft);
+			}
+		} catch (error: unknown) {
+			setAiError(
+				error instanceof Error
+					? error.message
+					: String(error || "Generation failed."),
+			);
+		} finally {
+			setAiGenerating(false);
+		}
+	};
+
+	const draggingAiRef = useRef(false);
+	const queryZoneRef = useRef<HTMLDivElement>(null);
+	const aiDragStartRef = useRef({ y: 0, height: 148 });
+	const onAiSplitDown = (event: React.PointerEvent) => {
+		draggingAiRef.current = true;
+		aiDragStartRef.current = { y: event.clientY, height: aiPanelHeight };
+		(event.currentTarget as HTMLElement).setPointerCapture?.(
+			event.pointerId,
+		);
+	};
+	const onAiSplitMove = (event: React.PointerEvent) => {
+		if (!draggingAiRef.current) return;
+		const nextHeight =
+			aiDragStartRef.current.height +
+			event.clientY -
+			aiDragStartRef.current.y;
+		const availableHeight = queryZoneRef.current?.clientHeight ?? 360;
+		const maximumHeight = Math.min(
+			280,
+			Math.max(112, availableHeight - 80),
+		);
+		setAiPanelHeight(Math.min(maximumHeight, Math.max(112, nextHeight)));
+	};
+	const onAiSplitUp = (event: React.PointerEvent) => {
+		draggingAiRef.current = false;
+		try {
+			(event.currentTarget as HTMLElement).releasePointerCapture?.(
+				event.pointerId,
+			);
+		} catch {
+			/* noop */
+		}
 	};
 
 	// Resizable split between the query zone (top) and the result zone (bottom).
@@ -967,6 +1120,25 @@ export function VizEditor(props: VizEditorProps) {
 							</button>
 							<button
 								type="button"
+								onClick={() => setAiOpen((value) => !value)}
+								disabled={!viz.databaseId}
+								className={cx(
+									"inline-flex items-center gap-1.5 rounded-md px-2 py-1.5 font-medium text-[11px] transition-colors disabled:opacity-40",
+									aiOpen
+										? "bg-indigo-50 text-indigo-600"
+										: "text-stone-500 hover:bg-stone-100 hover:text-stone-700",
+								)}
+								title={
+									viz.databaseId
+										? "Write SQL with AI"
+										: "Select a database first"
+								}
+							>
+								<Sparkles className="h-3.5 w-3.5" /> AI Query
+								Writer
+							</button>
+							<button
+								type="button"
 								onClick={() => setQueryBuilderOpen(true)}
 								disabled={!viz.databaseId}
 								className={cx(
@@ -1099,6 +1271,7 @@ export function VizEditor(props: VizEditorProps) {
 						>
 							{/* ── QUERY ZONE (SQL — prominent, resizable) ── */}
 							<div
+								ref={queryZoneRef}
 								className="flex min-h-0 flex-col"
 								style={{ flex: `0 0 ${queryPct}%` }}
 							>
@@ -1118,8 +1291,149 @@ export function VizEditor(props: VizEditorProps) {
 											onInsert={insertAtEnd}
 										/>
 									)}
-									<div className="min-h-0 min-w-0 flex-1">
-										{sqlEditor}
+									<div className="flex min-h-0 min-w-0 flex-1 flex-col">
+										{aiOpen && (
+											<>
+												<div
+													className="flex-shrink-0 border-stone-200 border-b bg-stone-50 p-3"
+													style={{
+														height: aiPanelHeight,
+														maxHeight:
+															"calc(100% - 80px)",
+													}}
+												>
+													<div className="flex h-full min-h-0 flex-col gap-2">
+														<div className="flex items-center gap-2">
+															<Sparkles className="h-3.5 w-3.5 text-indigo-500" />
+															<span className="font-semibold text-[10px] text-stone-500 uppercase tracking-widest">
+																AI query writer
+															</span>
+															<select
+																value={aiModel}
+																onChange={(
+																	event,
+																) =>
+																	setAiModel(
+																		event
+																			.target
+																			.value,
+																	)
+																}
+																disabled={
+																	aiModelsLoading ||
+																	aiGenerating
+																}
+																aria-label="AI model"
+																className="ml-auto min-w-44 max-w-64 rounded-md border border-stone-200 bg-white px-2 py-1 text-[11px] text-stone-700 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 disabled:opacity-50"
+															>
+																<option value="">
+																	{aiModelsLoading
+																		? "Loading models..."
+																		: "Select model..."}
+																</option>
+																{aiModels.map(
+																	(model) => (
+																		<option
+																			key={
+																				model.id
+																			}
+																			value={
+																				model.id
+																			}
+																		>
+																			{
+																				model.name
+																			}
+																		</option>
+																	),
+																)}
+															</select>
+															<button
+																type="button"
+																onClick={() =>
+																	setAiOpen(
+																		false,
+																	)
+																}
+																title="Close AI query writer"
+																className="rounded p-1 text-stone-400 hover:bg-stone-200 hover:text-stone-700"
+															>
+																<X className="h-3.5 w-3.5" />
+															</button>
+														</div>
+														<div className="flex min-h-0 flex-1 gap-2">
+															<textarea
+																value={aiPrompt}
+																onChange={(
+																	event,
+																) =>
+																	setAiPrompt(
+																		event
+																			.target
+																			.value,
+																	)
+																}
+																disabled={
+																	aiGenerating
+																}
+																placeholder="Describe the query and any parameters, lists, dynamic options, or IF conditions..."
+																className="min-h-0 flex-1 resize-none rounded-md border border-stone-200 bg-white px-2.5 py-2 text-stone-700 text-xs placeholder:text-stone-400 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 disabled:opacity-60"
+															/>
+															<button
+																type="button"
+																onClick={() =>
+																	void generateQuery()
+																}
+																disabled={
+																	aiGenerating ||
+																	aiModelsLoading ||
+																	!aiModel ||
+																	!aiPrompt.trim() ||
+																	!viz.databaseId
+																}
+																className="inline-flex w-24 flex-shrink-0 items-center justify-center gap-1.5 self-stretch rounded-md bg-indigo-600 px-3 font-semibold text-white text-xs hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-40"
+															>
+																{aiGenerating ? (
+																	<Loader2 className="h-3.5 w-3.5 animate-spin" />
+																) : (
+																	<Send className="h-3.5 w-3.5" />
+																)}
+																{aiGenerating
+																	? "Writing"
+																	: "Send"}
+															</button>
+														</div>
+														{aiError && (
+															<p className="text-[11px] text-red-600">
+																{aiError}
+															</p>
+														)}
+														{!aiError &&
+															aiNotice && (
+																<p className="text-[11px] text-emerald-600">
+																	{aiNotice}
+																</p>
+															)}
+													</div>
+												</div>
+												<div
+													onPointerDown={
+														onAiSplitDown
+													}
+													onPointerMove={
+														onAiSplitMove
+													}
+													onPointerUp={onAiSplitUp}
+													className="group flex h-1.5 flex-shrink-0 cursor-row-resize items-center justify-center bg-stone-100 hover:bg-indigo-100"
+													title="Drag to resize AI query writer"
+												>
+													<div className="h-0.5 w-8 rounded-full bg-stone-300 group-hover:bg-indigo-400" />
+												</div>
+											</>
+										)}
+										<div className="min-h-0 flex-1">
+											{sqlEditor}
+										</div>
 									</div>
 								</div>
 								<p className="flex-shrink-0 border-stone-100 border-t bg-stone-50/50 px-3 py-1 text-[10px] text-stone-400">

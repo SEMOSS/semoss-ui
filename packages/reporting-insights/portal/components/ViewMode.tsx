@@ -84,10 +84,11 @@ import { useTabColors } from "@/lib/tabColors";
 import { aggregateTableRows } from "@/lib/tableAggregate";
 import { filterRowMatrix } from "@/lib/vizFilter";
 import { contentSizeStyles, hasContentSize } from "@/lib/vizSize";
-import { applyVizSort } from "@/lib/vizSort";
+import { applyVizSort, resolveVizSortRules } from "@/lib/vizSort";
 import type {
 	Sheet as AppSheet,
 	VisualizationConfig as SharedVisualizationConfig,
+	VisualizationType,
 } from "@/types/dashboard";
 import { buildFlexModel } from "@/utils/dashboardLayout";
 import {
@@ -2010,7 +2011,11 @@ function ChartOrTable({
 		);
 	}
 
-	const data = toChartData(result);
+	const chartRows = toChartData(result);
+	const data = applyVizSort(
+		chartRows,
+		resolveVizSortRules(chartRows, vizType as VisualizationType, config),
+	);
 	const chartX = result.headers[0];
 	const chartY = result.headers.slice(1);
 

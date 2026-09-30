@@ -1,5 +1,12 @@
 import type { ParamSheetConfig, VisualizationStyling } from "@/types/dashboard";
 
+export interface ConditionalOptionBranch {
+	whenValue: string;
+	optionsQuery?: string;
+	optionsDatabaseId?: string;
+	options?: string[];
+}
+
 export interface Parameter {
 	id: string;
 	name: string;
@@ -19,6 +26,10 @@ export interface Parameter {
 	dynamicOptions?: boolean;
 	/** When true, the effective value at load/run time is always today's date. */
 	useCurrentDate?: boolean;
+	/** Name of a sibling parameter whose value selects a conditional option branch. */
+	conditionalOn?: string;
+	/** Per-parent-value option sources for a conditional dropdown or multiselect. */
+	conditionalBranches?: ConditionalOptionBranch[];
 }
 
 export type VisualizationType =
@@ -151,6 +162,10 @@ export interface DashboardQuery {
 	databaseName: string;
 	query: string;
 	parameters: Parameter[];
+	/** Last prompt used by the query editor's AI writer. */
+	llmPrompt?: string;
+	/** Model engine selected by the query editor's AI writer. */
+	llmModel?: string;
 	/** Id of the chart that owns the param form for a shared parameterized query (see computeMasterVizByKey). */
 	masterVizId?: string;
 	/** When true, this non-parameterized query waits for the param-sheet Run before loading. */
@@ -169,6 +184,10 @@ export interface Visualization {
 	databaseName: string;
 	query: string;
 	parameters: Parameter[];
+	/** Query editor projection; persisted on DashboardQuery when the visualization is bound. */
+	llmPrompt?: string;
+	/** Query editor projection; persisted on DashboardQuery when the visualization is bound. */
+	llmModel?: string;
 	visualizationType: VisualizationType;
 	config?: VisualizationConfig;
 	/** When true, the visualization's tab header is flagged as containing PHI/PII (red). */

@@ -78,7 +78,7 @@ import {
 import { aggregateTableRows } from "@/lib/tableAggregate";
 import { applyVizFilter, type VizFilterGroup } from "@/lib/vizFilter";
 import { contentSizeStyles, hasContentSize } from "@/lib/vizSize";
-import { applyVizSort } from "@/lib/vizSort";
+import { applyVizSort, resolveVizSortRules } from "@/lib/vizSort";
 import type {
 	AreaStyling,
 	ComboStyling,
@@ -413,18 +413,24 @@ export function DashboardVisualization({
 	// Author-defined per-viz filter (Filter Visualization tool), then cross-frame
 	// widget filters — both client-side, before the chart aggregates.
 	const vizFilter = visualization.config?.styling?.vizFilter;
-	const sortRules = visualization.config?.styling?.sortValues;
-	const data = useMemo(
-		() =>
-			applyVizSort(
-				applyVizFilter(
-					applyFilters(rawData, appliedFilters),
-					vizFilter,
-				),
-				sortRules,
-			),
-		[rawData, appliedFilters, vizFilter, sortRules],
-	);
+	const data = useMemo(() => {
+		const filteredRows = applyVizFilter(
+			applyFilters(rawData, appliedFilters),
+			vizFilter,
+		);
+		const effectiveSortRules = resolveVizSortRules(
+			filteredRows,
+			visualization.visualizationType,
+			visualization.config,
+		);
+		return applyVizSort(filteredRows, effectiveSortRules);
+	}, [
+		rawData,
+		appliedFilters,
+		vizFilter,
+		visualization.visualizationType,
+		visualization.config,
+	]);
 
 	// Facet navigation
 	const facetColumn = visualization.config?.facetColumn;
@@ -986,20 +992,25 @@ export function DashboardVisualization({
 				(out?.values as unknown[][]) ??
 				[];
 			const completeRows = toRows(headers, values);
-			const filteredRows = applyVizSort(
-				applyVizFilter(
-					applyFilters(completeRows, appliedFilters),
-					vizFilter,
+			const filteredRows = applyVizFilter(
+				applyFilters(completeRows, appliedFilters),
+				vizFilter,
+			);
+			const sortedRows = applyVizSort(
+				filteredRows,
+				resolveVizSortRules(
+					filteredRows,
+					visualization.visualizationType,
+					visualization.config,
 				),
-				sortRules,
 			);
 			const facetedRows =
 				facetColumn && facetValue
-					? filteredRows.filter(
+					? sortedRows.filter(
 							(row) =>
 								String(row[facetColumn] ?? "") === facetValue,
 						)
-					: filteredRows;
+					: sortedRows;
 			downloadTableRows(facetedRows, headers);
 		} catch (err: unknown) {
 			setTableExportError(
@@ -1790,6 +1801,12 @@ export function DashboardVisualization({
 						point.colorCategory = row[colorKey];
 					}
 
+					for (const { column } of scatterTooltipCols) {
+						if (row[`_tooltip_${column}`] !== undefined)
+							point[`_tooltip_${column}`] =
+								row[`_tooltip_${column}`];
+					}
+
 					return point;
 				});
 			}
@@ -1928,7 +1945,7 @@ export function DashboardVisualization({
 											<div>{`${colorKey}: ${formatValue(data.colorCategory, colorKey, cfg?.styling?.formatRules ?? [])}`}</div>
 										)}
 										{activeTtCols.length > 0 && (
-											<div className="mt-1 border-slate-200 border-t pt-1">
+											<div className="mt-1 space-y-0.5 border-slate-200 border-t pt-1">
 												{activeTtCols.map(
 													({
 														column,
@@ -1936,7 +1953,24 @@ export function DashboardVisualization({
 													}) => (
 														<div
 															key={column}
-														>{`${column} (${aggregation}): ${formatValue(data[`_tooltip_${column}`], column, cfg?.styling?.formatRules ?? [])}`}</div>
+															className="flex items-center justify-between gap-4"
+														>
+															<span className="capitalize">
+																{aggregation} of{" "}
+																{column}:
+															</span>
+															<span className="font-semibold tabular-nums">
+																{formatValue(
+																	data[
+																		`_tooltip_${column}`
+																	],
+																	column,
+																	cfg?.styling
+																		?.formatRules ??
+																		[],
+																)}
+															</span>
+														</div>
 													),
 												)}
 											</div>
@@ -2158,6 +2192,41 @@ export function DashboardVisualization({
 			// normalizeAxes=true → shared raw-value domain (scale differences visible across columns)
 			// normalizeAxes=false (default) → per-column [0, max] so all points extend toward corners
 			const radarNormalize = radarStyling?.normalizeAxes ?? false;
+			// Tooltip-drop-zone columns — aggregated per series (xKey group) in chartData
+			const radarTooltipCols: Array<{
+				column: string;
+				aggregation: string;
+			}> = visualization.config?.tooltips?.length
+				? visualization.config.tooltips
+				: visualization.config?.tooltip
+					? [
+							{
+								column: visualization.config.tooltip,
+								aggregation:
+									visualization.config.tooltipAggregation ||
+									visualization.config.columnAggregations?.[
+										visualization.config.tooltip
+									] ||
+									"count",
+							},
+						]
+					: [];
+			// Map: series label → { column → aggregated value } pulled from _tooltip_* in chartData
+			const radarTooltipData: Record<
+				string,
+				Record<string, unknown>
+			> = {};
+			if (radarTooltipCols.length && xKey) {
+				for (const row of chartData) {
+					const s = String(row[xKey] ?? "");
+					if (!radarTooltipData[s]) radarTooltipData[s] = {};
+					for (const { column } of radarTooltipCols) {
+						const v = row[`_tooltip_${column}`];
+						if (v !== undefined) radarTooltipData[s][column] = v;
+					}
+				}
+			}
+
 			// Pivot: value columns become the radar axes; xKey distinct values become polygon series
 			// chartData is pre-aggregated: [{ [xKey]: 'Male', weight: 181, hip: 44 }, ...]
 			const radarSeries = xKey
@@ -2361,6 +2430,75 @@ export function DashboardVisualization({
 													</div>
 												);
 											})}
+											{radarTooltipCols.length > 0 && (
+												<div className="mt-1.5 space-y-0.5 border-slate-100 border-t pt-1.5">
+													{props.payload.flatMap(
+														(p) => {
+															const tipRow =
+																radarTooltipData[
+																	String(
+																		p.dataKey ??
+																			"",
+																	)
+																];
+															if (!tipRow)
+																return [];
+															return radarTooltipCols
+																.filter(
+																	({
+																		column,
+																	}) =>
+																		tipRow[
+																			column
+																		] !==
+																		undefined,
+																)
+																.map(
+																	({
+																		column,
+																		aggregation,
+																	}) => (
+																		<div
+																			key={`${p.dataKey}-${column}`}
+																			className="flex items-center gap-2 py-0.5"
+																		>
+																			<span
+																				className="h-2 w-2 flex-shrink-0 rounded-full opacity-50"
+																				style={{
+																					background:
+																						p.color,
+																				}}
+																			/>
+																			<span className="flex-1 text-slate-500 capitalize">
+																				{
+																					p.name
+																				}{" "}
+																				—{" "}
+																				{
+																					aggregation
+																				}{" "}
+																				of{" "}
+																				{
+																					column
+																				}
+																				:
+																			</span>
+																			<span className="font-medium text-slate-700">
+																				{formatValue(
+																					tipRow[
+																						column
+																					],
+																					column,
+																					radarFmtRules,
+																				)}
+																			</span>
+																		</div>
+																	),
+																);
+														},
+													)}
+												</div>
+											)}
 										</div>
 									);
 								}}

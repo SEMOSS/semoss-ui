@@ -13,6 +13,7 @@
 
 import { BarChart2 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
+import type { ScaleFunction } from "recharts";
 import {
 	Bar,
 	BarChart,
@@ -370,10 +371,8 @@ function BarCursor({
 	const coordinate = useActiveTooltipCoordinate();
 	const plotArea = usePlotArea();
 	const isActive = useIsTooltipActive();
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	const xScale = useXAxisScale() as any;
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	const yScale = useYAxisScale() as any;
+	const xScale: ScaleFunction | undefined = useXAxisScale();
+	const yScale: ScaleFunction | undefined = useYAxisScale();
 	const activeLabel = useActiveTooltipLabel();
 
 	if (!isActive || !coordinate || !plotArea) return null;
@@ -494,6 +493,20 @@ interface BarChartVizProps {
 	) => void;
 }
 
+interface ChartMouseEvent {
+	activeLabel?: string | number;
+	activePayload?: Array<{ payload?: Record<string, unknown> }>;
+}
+
+interface MinMaxLabelContentProps {
+	index?: number;
+	x?: number;
+	y?: number;
+	width?: number;
+	height?: number;
+	value?: unknown;
+}
+
 export function Bar_Chart({
 	data,
 	config,
@@ -559,6 +572,22 @@ export function Bar_Chart({
 			// Honor the measure's configured aggregation (sum/avg/count/min/max/…),
 			// computed per (x, facet) bucket — not a hard-coded sum.
 			const aggType = config?.columnAggregations?.[yk] || "sum";
+			const tooltipCols: Array<{ column: string; aggregation: string }> =
+				config?.tooltips?.length
+					? config.tooltips
+					: config?.tooltip
+						? [
+								{
+									column: config.tooltip,
+									aggregation:
+										config.tooltipAggregation ||
+										config.columnAggregations?.[
+											config.tooltip
+										] ||
+										"count",
+								},
+							]
+						: [];
 
 			if (flipSeries) {
 				// Swap roles: facet values become X-axis groups, xKey values become stacked series
@@ -567,6 +596,10 @@ export function Bar_Chart({
 				const xs: string[] = [];
 				const xsSeen = new Set<string>();
 				const buckets = new Map<string, Map<string, unknown[]>>();
+				const tooltipBuckets = new Map<
+					string,
+					Map<string, unknown[]>
+				>();
 				for (const r of data) {
 					const x = String(r[xKey] ?? "");
 					const f = String(r[facetKey] ?? "");
@@ -589,6 +622,20 @@ export function Bar_Chart({
 						fb.set(x, arr);
 					}
 					arr.push(r[yk]);
+					for (const { column } of tooltipCols) {
+						let tb = tooltipBuckets.get(f);
+						if (!tb) {
+							tb = new Map();
+							tooltipBuckets.set(f, tb);
+						}
+						let tarr = tb.get(column);
+						if (!tarr) {
+							tarr = [];
+							tb.set(column, tarr);
+						}
+						const v = r[column];
+						if (v !== undefined && v !== null) tarr.push(v);
+					}
 				}
 				const rows = facets.map((f) => {
 					const row: Record<string, unknown> = { [facetKey]: f };
@@ -596,6 +643,15 @@ export function Bar_Chart({
 					if (fb)
 						for (const [x, arr] of fb)
 							row[x] = aggregateValue(arr, aggType);
+					const tb = tooltipBuckets.get(f);
+					for (const { column, aggregation } of tooltipCols) {
+						const vals = tb?.get(column) ?? [];
+						if (vals.length)
+							row[`_tooltip_${column}`] = aggregateValue(
+								vals,
+								aggregation,
+							);
+					}
 					return row;
 				});
 				return { renderData: rows, seriesKeys: xs };
@@ -608,6 +664,7 @@ export function Bar_Chart({
 			const facets: string[] = [];
 			const facetsSeen = new Set<string>();
 			const buckets = new Map<string, Map<string, unknown[]>>();
+			const tooltipBuckets = new Map<string, Map<string, unknown[]>>();
 			for (const r of data) {
 				const x = String(r[xKey] ?? "");
 				const f = String(r[facetKey] ?? "");
@@ -630,6 +687,20 @@ export function Bar_Chart({
 					xb.set(f, arr);
 				}
 				arr.push(r[yk]);
+				for (const { column } of tooltipCols) {
+					let tb = tooltipBuckets.get(x);
+					if (!tb) {
+						tb = new Map();
+						tooltipBuckets.set(x, tb);
+					}
+					let tarr = tb.get(column);
+					if (!tarr) {
+						tarr = [];
+						tb.set(column, tarr);
+					}
+					const v = r[column];
+					if (v !== undefined && v !== null) tarr.push(v);
+				}
 			}
 			const rows = xs.map((x) => {
 				const row: Record<string, unknown> = { [xKey]: x };
@@ -637,6 +708,15 @@ export function Bar_Chart({
 				if (xb)
 					for (const [f, arr] of xb)
 						row[f] = aggregateValue(arr, aggType);
+				const tb = tooltipBuckets.get(x);
+				for (const { column, aggregation } of tooltipCols) {
+					const vals = tb?.get(column) ?? [];
+					if (vals.length)
+						row[`_tooltip_${column}`] = aggregateValue(
+							vals,
+							aggregation,
+						);
+				}
 				return row;
 			});
 			return { renderData: rows, seriesKeys: facets };
@@ -670,6 +750,7 @@ export function Bar_Chart({
 		chartData,
 		flipSeries,
 		stacked,
+		config,
 	]);
 
 	// Trendline values, computed only when enabled. Plots the actual first-Y
@@ -705,6 +786,7 @@ export function Bar_Chart({
 	// When the user turns Save Zoom ON, immediately flush the current brush positions
 	// to config — even if they dragged the brushes before enabling the toggle.
 	const prevSaveZoomRef = useRef(saveZoom);
+	// biome-ignore lint/correctness/useExhaustiveDependencies: onStylingChange is a stable callback prop; including it would re-fire on every parent render
 	useEffect(() => {
 		const wasOn = prevSaveZoomRef.current;
 		prevSaveZoomRef.current = saveZoom;
@@ -714,7 +796,7 @@ export function Bar_Chart({
 				savedZoomY: yBrushFracRef.current,
 			});
 		}
-	}, [saveZoom]); // eslint-disable-line react-hooks/exhaustive-deps
+	}, [saveZoom]);
 
 	const xBrushActive = zoomX && (xBrushFrac[0] > 0 || xBrushFrac[1] < 1);
 	const visibleRenderData = useMemo(() => {
@@ -723,7 +805,7 @@ export function Bar_Chart({
 		const start = Math.floor(xBrushFrac[0] * n);
 		const end = Math.ceil(xBrushFrac[1] * n) - 1;
 		return renderData.slice(Math.max(0, start), Math.min(n, end + 1));
-	}, [stacked, xBrushActive, renderData, xBrushFrac]);
+	}, [xBrushActive, renderData, xBrushFrac]);
 
 	// Per-series min/max row indices — must come after visibleRenderData.
 	const { minIdx, maxIdx } = useMemo(() => {
@@ -925,7 +1007,7 @@ export function Bar_Chart({
 							left: yAxisLabel && !flipAxis ? 12 : 0,
 							bottom: 4,
 						}}
-						onClick={(e: any) => {
+						onClick={(e: ChartMouseEvent) => {
 							if (e?.activeLabel != null) {
 								const row = e.activePayload?.[0]?.payload ??
 									visibleRenderData.find(
@@ -954,7 +1036,7 @@ export function Bar_Chart({
 										) ?? { [xKey]: label },
 								});
 						}}
-						onMouseMove={(e: any) => {
+						onMouseMove={(e: ChartMouseEvent) => {
 							const label = e?.activeLabel
 								? String(e.activeLabel)
 								: null;
@@ -1145,9 +1227,9 @@ export function Bar_Chart({
 								// Default fill (used when no per-row override applies). Per-row Cells override below.
 								fill={palette[i % palette.length]}
 							>
-								{renderData.map((row, idx) => (
+								{renderData.map((row) => (
 									<Cell
-										key={`${k}-${idx}`}
+										key={`${k}-${String(row[effectiveXDataKey] ?? "")}`}
 										fill={colorForBar(row, k, i)}
 									/>
 								))}
@@ -1190,7 +1272,7 @@ export function Bar_Chart({
 								{showMinMax && (
 									<LabelList
 										dataKey={k}
-										content={(props: any) => {
+										content={(rawProps: unknown) => {
 											const {
 												index,
 												x,
@@ -1198,7 +1280,8 @@ export function Bar_Chart({
 												width,
 												height,
 												value,
-											} = props;
+											} =
+												rawProps as MinMaxLabelContentProps;
 											const isMax = index === maxIdx[k];
 											const isMin = index === minIdx[k];
 											if (!isMax && !isMin) return null;

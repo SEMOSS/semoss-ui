@@ -283,6 +283,54 @@ export function TreemapChart({
 		sortValues,
 	]);
 
+	const tooltipCols: Array<{ column: string; aggregation: string }> = config
+		?.tooltips?.length
+		? config.tooltips
+		: config?.tooltip
+			? [
+					{
+						column: config.tooltip,
+						aggregation:
+							config.tooltipAggregation ||
+							config.columnAggregations?.[config.tooltip] ||
+							"count",
+					},
+				]
+			: [];
+
+	// Aggregate tooltip-drop-zone columns per leaf node key — same key format as lookupMap.
+	const tooltipMap = useMemo(() => {
+		const m = new Map<string, Record<string, number>>();
+		if (!tooltipCols.length || !labelKey) return m;
+		const acc = new Map<string, Map<string, unknown[]>>();
+		for (const row of data) {
+			const key = seriesKey
+				? `${String(row[seriesKey] ?? "")}${SEP}${String(row[labelKey] ?? "")}`
+				: String(row[labelKey] ?? "");
+			let colMap = acc.get(key);
+			if (!colMap) {
+				colMap = new Map();
+				acc.set(key, colMap);
+			}
+			for (const { column } of tooltipCols) {
+				let arr = colMap.get(column);
+				if (!arr) {
+					arr = [];
+					colMap.set(column, arr);
+				}
+				arr.push(row[column]);
+			}
+		}
+		for (const [key, colMap] of acc) {
+			const vals: Record<string, number> = {};
+			for (const { column, aggregation } of tooltipCols) {
+				vals[column] = aggregate(colMap.get(column) ?? [], aggregation);
+			}
+			m.set(key, vals);
+		}
+		return m;
+	}, [data, seriesKey, labelKey, tooltipCols]);
+
 	// Filter treeData to the drilled-in level for zoom navigation
 	const displayedTreeData = useMemo(() => {
 		if (drillState.level === "root") return treeData;
@@ -679,6 +727,69 @@ export function TreemapChart({
 											>
 												{sizeKey}: {fmtSz} ({pct}%)
 											</div>
+											{(() => {
+												const tip = tooltipMap.get(
+													node.name ?? "",
+												);
+												if (!tip || !tooltipCols.length)
+													return null;
+												return (
+													<div
+														style={{
+															borderTop:
+																"1px solid #e2e8f0",
+															marginTop: 4,
+															paddingTop: 4,
+														}}
+													>
+														{tooltipCols.map(
+															({
+																column,
+																aggregation,
+															}) => (
+																<div
+																	key={column}
+																	style={{
+																		display:
+																			"flex",
+																		justifyContent:
+																			"space-between",
+																		gap: 8,
+																	}}
+																>
+																	<span
+																		style={{
+																			color: "#94a3b8",
+																			textTransform:
+																				"capitalize",
+																		}}
+																	>
+																		{
+																			aggregation
+																		}{" "}
+																		of{" "}
+																		{column}
+																		:
+																	</span>
+																	<span
+																		style={{
+																			fontWeight: 600,
+																		}}
+																	>
+																		{formatValue(
+																			tip[
+																				column
+																			],
+																			column,
+																			formatRules,
+																		)}
+																	</span>
+																</div>
+															),
+														)}
+													</div>
+												);
+											})()}
 										</div>
 									);
 								}}

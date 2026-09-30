@@ -310,6 +310,8 @@ interface HoveredNode {
 	y: number;
 }
 
+const SEP = "\x00";
+
 export function PuckChart({
 	data,
 	config,
@@ -321,6 +323,46 @@ export function PuckChart({
 	const valueCol = config?.yKeys?.[0] ?? "";
 	const aggType =
 		(valueCol && config?.columnAggregations?.[valueCol]) || "sum";
+
+	const tooltipCols: Array<{ column: string; aggregation: string }> = config
+		?.tooltips?.length
+		? config.tooltips
+		: [];
+
+	// Aggregate tooltip columns per node path so any depth level can show them.
+	const puckTooltipMap = useMemo(() => {
+		const m = new Map<string, Record<string, number>>();
+		if (!tooltipCols.length || !groupCols.length) return m;
+		const acc = new Map<string, Map<string, unknown[]>>();
+		for (const row of data) {
+			const parts: string[] = [];
+			for (const col of groupCols) {
+				parts.push(String(row[col] ?? ""));
+				const key = parts.join(SEP);
+				let colMap = acc.get(key);
+				if (!colMap) {
+					colMap = new Map();
+					acc.set(key, colMap);
+				}
+				for (const { column } of tooltipCols) {
+					let arr = colMap.get(column);
+					if (!arr) {
+						arr = [];
+						colMap.set(column, arr);
+					}
+					arr.push(row[column]);
+				}
+			}
+		}
+		for (const [key, colMap] of acc) {
+			const vals: Record<string, number> = {};
+			for (const { column, aggregation } of tooltipCols) {
+				vals[column] = aggregate(colMap.get(column) ?? [], aggregation);
+			}
+			m.set(key, vals);
+		}
+		return m;
+	}, [data, groupCols, tooltipCols]);
 
 	const styling = config?.styling?.puck ?? {};
 	const showTooltip = styling.showTooltip ?? DEFAULT_PUCK_STYLING.showTooltip;
@@ -621,6 +663,34 @@ export function PuckChart({
 								)}
 							</span>
 						</div>
+						{(() => {
+							const tipKey = hovered.node.path.join(SEP);
+							const tip = puckTooltipMap.get(tipKey);
+							if (!tip || !tooltipCols.length) return null;
+							return (
+								<div className="mt-1 space-y-0.5 border-slate-200 border-t pt-1">
+									{tooltipCols.map(
+										({ column, aggregation }) => (
+											<div
+												key={column}
+												className="flex items-center justify-between gap-3 text-slate-600"
+											>
+												<span className="capitalize">
+													{aggregation} of {column}:
+												</span>
+												<span className="font-medium text-slate-700 tabular-nums">
+													{formatValue(
+														tip[column],
+														column,
+														formatRules ?? [],
+													)}
+												</span>
+											</div>
+										),
+									)}
+								</div>
+							);
+						})()}
 					</div>
 				)}
 			</div>

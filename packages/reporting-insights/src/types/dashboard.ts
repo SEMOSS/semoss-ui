@@ -731,6 +731,8 @@ export interface KpiStyling {
 	 * "Apply to" dropdown to pick which card's filter to edit (see KpiFilterVisualization).
 	 */
 	vizFilters?: Record<string, VizFilterGroup>;
+	/** When true, shows the "N rows · agg" subtitle below each KPI value when no trend is available. Default false. */
+	showRowInfo?: boolean;
 }
 
 /** World Map–specific styling configuration */
@@ -1242,6 +1244,10 @@ export interface DashboardQuery {
 	databaseName: string;
 	query: string;
 	parameters: Parameter[];
+	/** Last prompt used by the query editor's AI writer. */
+	llmPrompt?: string;
+	/** Model engine selected by the query editor's AI writer. */
+	llmModel?: string;
 	/**
 	 * When true and this query has no parameters, it does not auto-run on mount.
 	 * It defers loading until the param sheet's "Run All" is clicked — useful for
@@ -1266,6 +1272,10 @@ export interface Visualization {
 	databaseName: string;
 	query: string;
 	parameters: Parameter[];
+	/** Query editor projection; persisted on DashboardQuery when the visualization is bound. */
+	llmPrompt?: string;
+	/** Query editor projection; persisted on DashboardQuery when the visualization is bound. */
+	llmModel?: string;
 	visualizationType: VisualizationType;
 	config?: VisualizationConfig;
 	/** When true, the visualization's tab header is flagged as containing PHI/PII (red). */

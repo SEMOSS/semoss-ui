@@ -13,6 +13,7 @@ import {
 	forwardRef,
 	type InputHTMLAttributes,
 	isValidElement,
+	type ReactElement,
 	type ReactNode,
 	type TextareaHTMLAttributes,
 } from "react";
@@ -60,6 +61,17 @@ interface OptData {
 	disabled?: boolean;
 }
 
+interface OptionElementProps {
+	value?: string;
+	disabled?: boolean;
+	children?: ReactNode;
+}
+
+interface OptGroupElementProps {
+	label?: ReactNode;
+	children?: ReactNode;
+}
+
 /** Flatten <option>/<optgroup> children into structured option data. */
 function collectOptions(children: ReactNode): {
 	flat: OptData[];
@@ -69,28 +81,35 @@ function collectOptions(children: ReactNode): {
 	const groups: { label: ReactNode; items: OptData[] }[] = [];
 	let hasGroup = false;
 	Children.forEach(children, (child) => {
-		if (!isValidElement(child)) return;
-		const el = child as any;
+		if (!isValidElement<{ type?: string }>(child)) return;
+		const el = child as ReactElement<
+			OptionElementProps | OptGroupElementProps
+		> & { type: string };
 		if (el.type === "optgroup") {
 			hasGroup = true;
 			const items: OptData[] = [];
-			Children.forEach(el.props.children, (c) => {
-				if (isValidElement(c) && (c as any).type === "option") {
-					const o = c as any;
+			const groupProps = el.props as OptGroupElementProps;
+			Children.forEach(groupProps.children, (c) => {
+				if (!isValidElement<OptionElementProps>(c)) return;
+				const co = c as ReactElement<OptionElementProps> & {
+					type: string;
+				};
+				if (co.type === "option") {
 					items.push({
-						value: String(o.props.value ?? ""),
-						label: o.props.children,
-						disabled: o.props.disabled,
+						value: String(co.props.value ?? ""),
+						label: co.props.children,
+						disabled: co.props.disabled,
 					});
 				}
 			});
-			groups.push({ label: el.props.label, items });
+			groups.push({ label: groupProps.label, items });
 			flat.push(...items);
 		} else if (el.type === "option") {
+			const props = el.props as OptionElementProps;
 			const o: OptData = {
-				value: String(el.props.value ?? ""),
-				label: el.props.children,
-				disabled: el.props.disabled,
+				value: String(props.value ?? ""),
+				label: props.children,
+				disabled: props.disabled,
 			};
 			flat.push(o);
 			groups.push({ label: null, items: [o] });
@@ -100,6 +119,7 @@ function collectOptions(children: ReactNode): {
 }
 
 interface SelectProps {
+	id?: string;
 	value?: string;
 	onChange?: (e: { target: { value: string } }) => void;
 	disabled?: boolean;
@@ -120,6 +140,7 @@ const renderItem = (o: OptData, i: number) => (
 );
 
 export function Select({
+	id,
 	value,
 	onChange,
 	disabled,
@@ -147,6 +168,7 @@ export function Select({
 			disabled={disabled}
 		>
 			<SelectTrigger
+				id={id}
 				className={cn("w-full", className)}
 				aria-label={rest["aria-label"]}
 				title={rest.title}
@@ -155,18 +177,19 @@ export function Select({
 			</SelectTrigger>
 			<SelectContent>
 				{groups
-					? groups.map((g, gi) =>
-							g.label ? (
-								<SelectGroup key={gi}>
+					? groups.map((g) => {
+							const groupKey = `${String(g.label ?? "")}-${g.items[0]?.value ?? ""}`;
+							return g.label ? (
+								<SelectGroup key={groupKey}>
 									<SelectLabel>{g.label}</SelectLabel>
 									{g.items.map(renderItem)}
 								</SelectGroup>
 							) : (
-								<Fragment key={gi}>
+								<Fragment key={groupKey}>
 									{g.items.map(renderItem)}
 								</Fragment>
-							),
-						)
+							);
+						})
 					: uniq.map(renderItem)}
 			</SelectContent>
 		</UISelect>
@@ -192,6 +215,7 @@ export function Field({
 	return (
 		<div className={className}>
 			{label && (
+				// biome-ignore lint/a11y/noLabelWithoutControl: generic wrapper renders arbitrary children, so the control's id isn't known here
 				<label className="mb-1.5 block font-semibold text-[10px] text-muted-foreground uppercase tracking-widest">
 					{label}
 					{required && (
