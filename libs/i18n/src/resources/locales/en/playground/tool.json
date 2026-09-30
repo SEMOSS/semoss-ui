@@ -13,9 +13,9 @@
 		"cancel": "Cancel",
 		"expand": "Expand",
 		"collapse": "Collapse",
-		"openInSidebar": "Open in sidebar",
-		"closeInSidebar": "Close sidebar",
-		"openInline": "Open in-line"
+		"openInSidebar": "Open in Sidebar",
+		"closeInSidebar": "Close Sidebar",
+		"openInline": "Open In-Line"
 	},
 	"tabs": {
 		"output": "Output",

@@ -18,6 +18,7 @@ import {
 	Bot,
 	HammerIcon,
 	MicIcon,
+	PlugIcon,
 	PlusIcon,
 	SendIcon,
 	SparklesIcon,
@@ -59,6 +60,8 @@ import {
 	SlashMentionPlugin,
 } from "@/components/common/lexical/slash-command";
 import { useFileDrag } from "@/contexts";
+import { TeamworkContextItems } from "@/features/teamwork/components/teamwork-context-items";
+import { TeamworkSignInNotice } from "@/features/teamwork/components/teamwork-sign-in-notice";
 import { useGracefulErrors, useRoot } from "@/hooks";
 import type { RoomStore } from "@/stores";
 import { AGENT_HARNESS_TYPE } from "@/stores/message/agent-harness";
@@ -240,6 +243,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 		// ========================================================================
 
 		const { t } = useTranslation("room");
+		const { t: tTeamwork } = useTranslation("teamwork");
 		const { getGracefulErrorMessage } = useGracefulErrors();
 
 		// Editor state
@@ -290,6 +294,8 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 		// Agent chip indicates a current selection. The Agent tab inside the
 		// modal is always visible; editability is gated on `onWorkspaceChange`.
 		const agentChipWorkspace = options.workspace ?? null;
+		// The room's connectors, shown with the other context
+		const connectorCount = room.teamwork.connectors.length;
 
 		// One combined chip, sections divided by a border rather than each
 		// being its own separate chip. A section with no onClick renders as
@@ -319,6 +325,13 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 				icon: HammerIcon,
 				label: String(toolboxCount),
 				onClick: () => handleOpenMcpOverlay("TOOLBOX"),
+			},
+			connectorCount > 0 && {
+				key: "connectors",
+				icon: PlugIcon,
+				label: String(connectorCount),
+				onClick: room.teamwork.openConnectorsDialog,
+				title: tTeamwork("chip.connectors", { count: connectorCount }),
 			},
 			knowledgeCount > 0 && {
 				key: "knowledge",
@@ -365,6 +378,9 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 		// File handling
 		const { files, addFiles, removeFile, clearFiles, openFilePicker } =
 			useFileDrag();
+		// files a Microsoft 365 viewer added to context sit with the uploads
+		const hasAttachments =
+			files.length > 0 || room.teamwork.contextItems.length > 0;
 
 		// Speech-to-text
 		const [canListen, setCanListen] = useState(false);
@@ -626,17 +642,26 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 								className,
 							)}
 						>
-							{files.length > 0 && (
+							{/* inside the box, so the input keeps its size on
+							    the page and the text area gives up the room */}
+							<TeamworkSignInNotice teamwork={room.teamwork} />
+							{hasAttachments && (
 								// Need pb-1 for scroll bar
-								<div className="bg-card p-4 pb-1">
-									{root.theme.fileDragDisclaimer && (
-										<p className="-mt-1 pb-2 text-muted-foreground text-xs">
-											{root.theme.fileDragDisclaimer}
-										</p>
-									)}
+								<div className="flex flex-col gap-2 bg-card p-4 pb-1">
+									{files.length > 0 &&
+										root.theme.fileDragDisclaimer && (
+											<p className="-mt-1 text-muted-foreground text-xs">
+												{root.theme.fileDragDisclaimer}
+											</p>
+										)}
 									<FilePreviewGrid
 										files={files}
 										onRemoveFile={removeFile}
+										leading={
+											<TeamworkContextItems
+												teamwork={room.teamwork}
+											/>
+										}
 									/>
 								</div>
 							)}
@@ -664,7 +689,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 												ref={contentEditableRef}
 												className={cn(
 													"col-start-1 row-start-1 px-4 pb-4 text-sm outline-none disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40",
-													files.length > 0
+													hasAttachments
 														? "pt-0"
 														: "pt-4",
 												)}
@@ -753,7 +778,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 												<div
 													className={cn(
 														"pointer-events-none col-start-1 row-start-1 select-none px-4 pb-4 text-muted-foreground text-sm",
-														files.length > 0
+														hasAttachments
 															? "pt-0"
 															: "pt-4",
 													)}

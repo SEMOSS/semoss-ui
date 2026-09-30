@@ -137,6 +137,12 @@ export const WorkbenchTabset: FC<WorkbenchTabsetProps> = ({
 									?.name ?? pid
 							}
 							onPick={(pid) => actions.activatePanel(stack, pid)}
+							canClose={(pid) =>
+								actions.canClose(pid) &&
+								!memberRecords.find((r) => r?.id === pid)
+									?.pinned
+							}
+							onClose={(pid) => actions.closePanel(pid)}
 						>
 							{node.panelIds.map((pid, index) => {
 								// a rule marks where the pinned block ends, so the

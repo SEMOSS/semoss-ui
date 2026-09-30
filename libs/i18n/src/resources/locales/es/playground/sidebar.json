@@ -59,5 +59,29 @@
 		"roomRenamedSuccess": "Sala renombrada exitosamente",
 		"failedToRename": "Error al renombrar la sala",
 		"roomDeletedSuccess": "Sala eliminada exitosamente"
+	},
+	"userMenu": {
+		"settings": "Configuración",
+		"language": "Idioma"
+	},
+	"settings": {
+		"title": "Configuración",
+		"description": "Tus preferencias y las aplicaciones que puede usar el asistente.",
+		"sections": {
+			"general": "General",
+			"connectors": "Conectores"
+		},
+		"general": {
+			"appearance": "Apariencia",
+			"theme": "Tema",
+			"themeDescription": "Los temas oscuro y del sistema están en beta.",
+			"themes": {
+				"system": "Sistema",
+				"light": "Claro",
+				"dark": "Oscuro"
+			},
+			"language": "Idioma",
+			"languageDescription": "El idioma en el que se muestra la aplicación."
+		}
 	}
 }
