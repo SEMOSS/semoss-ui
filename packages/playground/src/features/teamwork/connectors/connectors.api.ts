@@ -131,6 +131,37 @@ const signOutProvider = async (provider: ConnectorProvider): Promise<void> => {
 	}
 };
 
+/**
+ * Raised when asked to disconnect the provider the session itself signed in
+ * with, or when that login is not known: signing it out would end the session
+ * or change whose it is.
+ */
+export class SessionLoginDisconnectError extends Error {
+	constructor() {
+		super("The account the session signed in with cannot be disconnected");
+		this.name = "SessionLoginDisconnectError";
+	}
+}
+
+/**
+ * Sign the session out of one provider's connector login, keeping the
+ * session and its other logins.
+ *
+ * @param provider - The provider to disconnect.
+ * @throws SessionLoginDisconnectError when the provider is the session's own
+ * login, or that login is not known.
+ * @throws Error when the backend refuses the sign out.
+ */
+export const disconnectProvider = async (
+	provider: ConnectorProvider,
+): Promise<void> => {
+	const { primaryLogin } = await readSessionLoginConfig();
+	if (primaryLogin === null || primaryLogin === provider.loginKey) {
+		throw new SessionLoginDisconnectError();
+	}
+	await signOutProvider(provider);
+};
+
 /** What `/api/config` says about the session's logins. */
 export interface SessionLoginConfig {
 	/** The login the session belongs to, such as `MICROSOFT`, when known. */

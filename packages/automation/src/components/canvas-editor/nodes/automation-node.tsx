@@ -295,13 +295,13 @@ export function AutomationNode({ data }: NodeProps) {
 						className="text-destructive focus:text-destructive"
 						onSelect={() => automationNode.delete()}
 					>
-						Delete and detach
+						Delete and Detach
 					</ContextMenuItem>
 					<ContextMenuItem
 						className="text-destructive focus:text-destructive"
 						onSelect={() => automationNode.deleteDownstream()}
 					>
-						Delete and remove all after
+						Delete and Remove All After
 					</ContextMenuItem>
 				</ContextMenuContent>
 			)}

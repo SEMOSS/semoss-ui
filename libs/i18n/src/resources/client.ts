@@ -14,6 +14,7 @@ export const clientResources: LazyResources = {
 		"prompts",
 		"auditlog",
 		"members",
+		"agent",
 		"githubApp",
 	],
 	load: {
@@ -21,11 +22,12 @@ export const clientResources: LazyResources = {
 		common: (l) => import(`./locales/${l}/common.json`),
 		notifications: (l) => import(`./locales/${l}/notifications.json`),
 		validation: (l) => import(`./locales/${l}/validation.json`),
-		// shared (MCP + prompt selectors + audit log + members)
+		// shared (MCP + prompt selectors + audit log + members + agent view)
 		mcp: (l) => import(`./locales/${l}/shared/mcp.json`),
 		prompts: (l) => import(`./locales/${l}/shared/prompts.json`),
 		auditlog: (l) => import(`./locales/${l}/shared/auditlog.json`),
 		members: (l) => import(`./locales/${l}/shared/members.json`),
+		agent: (l) => import(`./locales/${l}/shared/agent.json`),
 		// client
 		githubApp: (l) => import(`./locales/${l}/client/githubApp.json`),
 		// Microsoft 365 and Google Workspace viewers, fetched when a viewer

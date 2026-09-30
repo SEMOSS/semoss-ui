@@ -62,6 +62,8 @@ export interface TeamworkContextItem {
 	name: string;
 	/** Where the file is in the chat's files, as a message's `media` takes it. */
 	path: string;
-	/** The viewer it came from. */
-	service: ConnectorViewerService;
+	/**
+	 * The viewer it came from; none for a file added from Chat Files itself.
+	 */
+	service?: ConnectorViewerService;
 }

@@ -1,8 +1,4 @@
 {
-	"nav": {
-		"label": "Conexiones",
-		"tooltip": "Conecta Microsoft 365 y Google Workspace"
-	},
 	"common": {
 		"retry": "Reintentar",
 		"refresh": "Actualizar"
@@ -72,7 +68,6 @@
 		},
 		"connected": "Conectado",
 		"connectedAs": "Conectado como {{name}}",
-		"connectedBadge": "Conectado",
 		"notConnected": "No conectado",
 		"unavailable": "No disponible en este servidor",
 		"connect": "Conectar",
@@ -82,7 +77,12 @@
 		"connectIncomplete": "{{name}} no se conectó. La ventana de inicio de sesión se cerró antes de terminar.",
 		"connectError": "No se pudo conectar {{name}}. {{message}}",
 		"popupBlocked": "Tu navegador bloqueó la ventana de inicio de sesión. Permite las ventanas emergentes para este sitio y vuelve a intentarlo.",
-		"loadErrorTitle": "No se pudieron comprobar tus cuentas conectadas"
+		"loadErrorTitle": "No se pudieron comprobar tus cuentas conectadas",
+		"disconnect": "Desconectar",
+		"disconnecting": "Desconectando...",
+		"disconnectSuccess": "{{name}} se desconectó",
+		"disconnectError": "No se pudo desconectar {{name}}. {{message}}",
+		"sessionLoginNote": "Iniciaste sesión con esta cuenta, así que permanece conectada hasta que cierres sesión."
 	},
 	"services": {
 		"toolCounts_one": "{{count}} herramienta, {{ask}} con aprobación previa",
@@ -124,7 +124,7 @@
 		"dialogTitle": "Conectores",
 		"dialogDescription": "Elige qué aplicaciones puede usar el asistente en tus chats. Actúa con tu cuenta y siempre pide tu aprobación antes de enviar, eliminar, compartir o invitar.",
 		"allChatsNote": "Activar o desactivar una aplicación la cambia en todos tus chats, nuevos y existentes.",
-		"manage": "Administrar conexiones",
+		"manage": "Administrar conectores",
 		"cancel": "Cancelar",
 		"save": "Guardar",
 		"saving": "Guardando...",
@@ -134,10 +134,7 @@
 		"adoptError": "El chat se inició, pero no se pudieron activar sus conectores. {{message}}"
 	},
 	"connections": {
-		"title": "Conexiones",
-		"description": "Conecta las cuentas con las que el asistente puede trabajar en tu nombre.",
-		"appsTitle": "Aplicaciones",
-		"appsDescription": "Al iniciar sesión, la cuenta se vincula a tu sesión de SEMOSS. El asistente solo ve lo que esa cuenta puede ver.",
+		"appsDescription": "Al iniciar sesión, la cuenta se vincula a tu sesión. El asistente solo ve lo que esa cuenta puede ver.",
 		"appsHint": "Activar o desactivar una aplicación aquí la cambia en todos tus chats, nuevos y existentes. El menú + de un chat abre la misma configuración.",
 		"settingsError": "No se pudo leer tu configuración de conectores."
 	},

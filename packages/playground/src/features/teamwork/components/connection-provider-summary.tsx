@@ -1,6 +1,6 @@
 import { useTranslation } from "@semoss/i18n";
 import { LoginProviderIcon } from "@semoss/shared";
-import { Badge, Button, Small } from "@semoss/ui/next";
+import { Button, Small } from "@semoss/ui/next";
 import type { ProviderConnection } from "../connectors/use-connections";
 
 /** Props for {@link ConnectionProviderSummary}. */
@@ -11,20 +11,32 @@ export interface ConnectionProviderSummaryProps {
 	isConnecting: boolean;
 	/** Start signing in. Called from the click itself. */
 	onConnect: () => void;
+	/**
+	 * Sign out of the provider. Without it, no Disconnect action shows; it
+	 * never shows for the login the session itself signed in with.
+	 */
+	onDisconnect?: () => void;
+	/** Whether the provider is being signed out. */
+	isDisconnecting?: boolean;
 }
 
 /**
- * A provider's logo, name, and connection state, with the action that fits:
- * connect when signed out, reconnect when signed in (to renew consent or pick
- * up newly granted scopes), nothing when the deployment does not offer it.
+ * A provider's logo, name, and connection state, with the actions that fit:
+ * connect when signed out; reconnect when signed in (to renew consent or pick
+ * up newly granted scopes), and disconnect when the host allows it. When the
+ * deployment does not offer the provider, Connect shows disabled.
  */
 export const ConnectionProviderSummary = ({
 	connection,
 	isConnecting,
 	onConnect,
+	onDisconnect,
+	isDisconnecting = false,
 }: ConnectionProviderSummaryProps) => {
 	const { t } = useTranslation("teamwork");
-	const { provider, isAvailable, isConnected, accountName } = connection;
+	const { provider, isAvailable, isConnected, accountName, canDisconnect } =
+		connection;
+	const isBusy = isConnecting || isDisconnecting;
 
 	const status = isConnected
 		? accountName
@@ -51,29 +63,32 @@ export const ConnectionProviderSummary = ({
 					{status}
 				</Small>
 			</div>
-			{isConnected ? (
-				<Badge
-					variant="outline"
-					className="hidden shrink-0 sm:inline-flex"
-				>
-					{t("providers.connectedBadge")}
-				</Badge>
-			) : null}
-			{isAvailable ? (
+			{onDisconnect && canDisconnect ? (
 				<Button
 					size="sm"
-					variant={isConnected ? "outline" : "default"}
+					variant="destructive"
 					className="shrink-0"
-					disabled={isConnecting}
-					onClick={onConnect}
+					disabled={isBusy}
+					onClick={onDisconnect}
 				>
-					{isConnecting
-						? t("providers.connecting")
-						: isConnected
-							? t("providers.reconnect")
-							: t("providers.connect")}
+					{isDisconnecting
+						? t("providers.disconnecting")
+						: t("providers.disconnect")}
 				</Button>
 			) : null}
+			<Button
+				size="sm"
+				variant={isConnected ? "secondary" : "default"}
+				className="shrink-0"
+				disabled={!isAvailable || isBusy}
+				onClick={onConnect}
+			>
+				{isConnecting
+					? t("providers.connecting")
+					: isConnected
+						? t("providers.reconnect")
+						: t("providers.connect")}
+			</Button>
 		</div>
 	);
 };

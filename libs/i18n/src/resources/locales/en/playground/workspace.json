@@ -16,7 +16,8 @@
 		"createAgent": "Create an Agent",
 		"edit": "Edit",
 		"delete": "Delete",
-		"newChat": "New Chat"
+		"newChat": "New Chat",
+		"moreActions": "More Actions for {{name}}"
 	},
 	"card": {
 		"deleteConfirmTitle": "Are you sure?",
@@ -165,5 +166,22 @@
 	},
 	"skills": {
 		"noSkills": "No skills added"
+	},
+	"catalog": {
+		"title": "My Agents",
+		"description": "Chat with the agents you can use, or create your own.",
+		"filters": {
+			"label": "Filter Agents",
+			"createdByMe": "Created by Me",
+			"owner": "Owner",
+			"edit": "Can Edit",
+			"view": "View Only"
+		},
+		"sort": {
+			"label": "Sort Agents",
+			"name": "Name",
+			"newest": "Newest",
+			"edited": "Recently Edited"
+		}
 	}
 }

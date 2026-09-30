@@ -655,9 +655,13 @@ export class TeamworkStore {
 	 * Queue a file from the chat's own files for the next message. A file
 	 * already queued is not added twice.
 	 *
-	 * @param file - The file, as a viewer saved it.
+	 * @param file - The file, as a viewer saved it, or as Chat Files lists it
+	 * (with no `service`), its path relative to the chat's folder.
 	 */
-	addContextItem = (file: ConnectorSavedFile): void => {
+	addContextItem = (
+		file: Pick<ConnectorSavedFile, "path" | "name"> &
+			Partial<Pick<ConnectorSavedFile, "service">>,
+	): void => {
 		if (this.contextItems.some((item) => item.path === file.path)) {
 			return;
 		}

@@ -9,6 +9,9 @@ interface AppCatalogAvatarProps
 	className?: string;
 }
 
+// Two letters fit every avatar size; a long name would otherwise overflow it.
+const MAX_INITIALS = 2;
+
 // Only structural defaults — callers must specify size (h-X/w-X or size-X), rounding,
 // and text-size so Tailwind's CSS-cascade ordering can't surprise us.
 const DEFAULT_CLASSES = "flex items-center justify-center font-semibold";
@@ -29,7 +32,7 @@ export const AppCatalogAvatar = ({
 			className={classes}
 			style={getAppCatalogAvatarStyle(label)}
 		>
-			{buildInitials(label)}
+			{buildInitials(label, MAX_INITIALS)}
 		</div>
 	);
 };
