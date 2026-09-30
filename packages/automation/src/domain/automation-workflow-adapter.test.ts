@@ -378,6 +378,41 @@ describe("trigger setup source", () => {
 	});
 });
 
+describe("database query configuration", () => {
+	it("persists a limit edit without replacing the node", () => {
+		const original = node("database.query", {
+			id: "query-node",
+			position: { x: 120, y: 240 },
+			outputVar: "ipl_data",
+			config: {
+				engineId: "ipl-engine",
+				operation: "query",
+				expression: "SELECT * FROM IPL",
+				limit: 50,
+				commit: true,
+			},
+		});
+		const updated = {
+			...original,
+			config: { ...original.config, limit: 400 },
+		};
+
+		const saved = documentOf([updated]).graph.nodes[0];
+
+		expect(saved).toMatchObject({
+			id: "query-node",
+			type: "database.query",
+			position: { x: 120, y: 240 },
+			outputVar: "ipl_data",
+			config: {
+				engineId: "ipl-engine",
+				query: "SELECT * FROM IPL",
+				limit: 400,
+			},
+		});
+	});
+});
+
 describe("trigger global inputs", () => {
 	it("drops rows the user never named", () => {
 		const saved = documentOf([

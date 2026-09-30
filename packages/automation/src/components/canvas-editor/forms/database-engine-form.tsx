@@ -5,10 +5,11 @@ import {
 	Loader2,
 	Search,
 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useId, useMemo, useState } from "react";
 import { runPixel } from "@semoss/sdk";
-import { Input } from "@semoss/ui/next";
+import { Field, FieldLabel, Input } from "@semoss/ui/next";
 import type { DatabaseEngineConfig } from "../../../domain/automation.types";
+import { getWorkflowNodeDefinition } from "../../../domain/automation-workflow-adapter";
 import { EnginePickerField } from "./engine-picker-field";
 import { BoundInput } from "./pill-input";
 
@@ -34,6 +35,7 @@ export function DatabaseEngineForm({
 	onChange,
 	readOnly = false,
 }: DatabaseEngineFormProps) {
+	const limitInputId = useId();
 	const [structure, setStructure] = useState<TableStructure[]>([]);
 	const [schemaLoading, setSchemaLoading] = useState(false);
 	const [schemaError, setSchemaError] = useState(false);
@@ -41,6 +43,8 @@ export function DatabaseEngineForm({
 	const [expandedTables, setExpandedTables] = useState<
 		Record<string, boolean>
 	>({});
+	const limitSchema =
+		getWorkflowNodeDefinition("database.query")?.configSchema.limit;
 
 	useEffect(() => {
 		if (!config.engineId) {
@@ -156,6 +160,32 @@ export function DatabaseEngineForm({
 				minRows={6}
 				readOnly={readOnly}
 			/>
+
+			{config.operation === "query" && (
+				<Field>
+					<FieldLabel htmlFor={limitInputId}>
+						{limitSchema?.label ?? "Result limit"}
+					</FieldLabel>
+					<Input
+						id={limitInputId}
+						type="number"
+						min={limitSchema?.minimum}
+						max={limitSchema?.maximum}
+						step={1}
+						value={config.limit}
+						onChange={(event) =>
+							onChange({
+								...config,
+								limit: Number(event.target.value),
+							})
+						}
+						readOnly={readOnly}
+					/>
+					<p className="text-muted-foreground text-xs">
+						Maximum number of rows this step can return.
+					</p>
+				</Field>
+			)}
 
 			{config.engineId && (
 				<div className="flex flex-col gap-2">
