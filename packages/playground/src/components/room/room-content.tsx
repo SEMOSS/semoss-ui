@@ -31,6 +31,10 @@ import {
 	type SendButtonState,
 } from "@/components";
 import { useFileDrag } from "@/contexts";
+import { TeamworkConnectorsMenuItem } from "@/features/teamwork/components/teamwork-connectors-menu-item";
+import { TeamworkDialogs } from "@/features/teamwork/components/teamwork-dialogs";
+import { TeamworkSourcesMenuItem } from "@/features/teamwork/components/teamwork-sources-menu-item";
+import { TeamworkToolsMenuItem } from "@/features/teamwork/components/teamwork-tools-menu-item";
 import { useChat, useGracefulErrors } from "@/hooks";
 import {
 	type InputMessageStore,
@@ -370,15 +374,15 @@ export const RoomContent = observer(({ room }: RoomContentProps) => {
 		}
 
 		return room.latestResponseMessage.parts.some((part) => {
-			if (
-				part.type !== "TOOL_CALL" ||
-				part.toolCall._meta?.SMSS_MCP_EXECUTION !== "auto"
-			) {
+			if (part.type !== "TOOL_CALL") {
 				return false;
 			}
+			// read the resolved json rather than the raw part: work folder
+			// calls get their execution mode there, not from the backend
 			const tool = room.getTool(part.toolCall.id);
 			return (
 				!!tool &&
+				tool.json._meta?.SMSS_MCP_EXECUTION === "auto" &&
 				(tool.status === "INITIAL" || tool.status === "LOADING")
 			);
 		});
@@ -679,6 +683,18 @@ export const RoomContent = observer(({ room }: RoomContentProps) => {
 										onOpenChange(false);
 									}}
 								/>
+								<TeamworkConnectorsMenuItem
+									teamwork={room.teamwork}
+									onSelect={() => onOpenChange(false)}
+								/>
+								<TeamworkSourcesMenuItem
+									teamwork={room.teamwork}
+									onSelect={() => onOpenChange(false)}
+								/>
+								<TeamworkToolsMenuItem
+									room={room}
+									onSelect={() => onOpenChange(false)}
+								/>
 								<DropdownMenuSeparator />
 								<RoomInputMenuFileExplorer
 									room={room}
@@ -732,6 +748,7 @@ export const RoomContent = observer(({ room }: RoomContentProps) => {
 					]}
 				/>
 			</div>
+			<TeamworkDialogs teamwork={room.teamwork} />
 		</div>
 	);
 });

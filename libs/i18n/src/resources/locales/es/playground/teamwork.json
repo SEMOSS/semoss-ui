@@ -1,0 +1,196 @@
+{
+	"common": {
+		"retry": "Reintentar",
+		"refresh": "Actualizar"
+	},
+	"menu": {
+		"connectors": "Conectores",
+		"showTools": "Mostrar herramientas del chat",
+		"hideTools": "Ocultar herramientas del chat"
+	},
+	"chip": {
+		"connectors_one": "{{count}} conector activado",
+		"connectors_other": "{{count}} conectores activados"
+	},
+	"tools": {
+		"rootFolder": "Nivel superior de la carpeta",
+		"moveSummary": "{{from}} a {{to}}",
+		"titles": {
+			"folder_list": "Listar carpeta",
+			"folder_read": "Leer archivo",
+			"folder_search": "Buscar en la carpeta",
+			"folder_write": "Escribir archivo",
+			"folder_edit": "Editar archivo",
+			"folder_create_directory": "Crear carpeta",
+			"folder_move": "Mover o renombrar",
+			"folder_delete": "Eliminar"
+		}
+	},
+	"card": {
+		"status": {
+			"waiting": "Requiere aprobación",
+			"queued": "En cola",
+			"running": "En ejecución",
+			"done": "Completado",
+			"failed": "Fallido",
+			"notRun": "No ejecutado"
+		},
+		"folderApproval": "El asistente quiere cambiar un archivo en Archivos del chat. Revisa el cambio y luego permítelo o deniégalo.",
+		"connectorApproval": "El asistente quiere actuar con tu cuenta. Revisa los detalles y luego permite o deniega la acción.",
+		"file": "Archivo",
+		"path": "Ruta",
+		"rootFolder": "Nivel superior de la carpeta",
+		"query": "Búsqueda",
+		"newContents": "Contenido nuevo",
+		"replace": "Reemplazar",
+		"with": "Por",
+		"replaceAll": "Se reemplazan todas las apariciones.",
+		"from": "Origen",
+		"to": "Destino",
+		"deleteRecursive": "También se elimina todo lo que contiene esta carpeta.",
+		"noArguments": "Sin detalles",
+		"result": "Resultado",
+		"error": "Error",
+		"allow": "Permitir",
+		"allowing": "Permitiendo...",
+		"deny": "Denegar",
+		"denying": "Denegando...",
+		"decisionError": "No se pudo completar la acción. {{message}}",
+		"chatFiles": "Archivos del chat"
+	},
+	"providers": {
+		"MICROSOFT": {
+			"name": "Microsoft 365"
+		},
+		"GOOGLE": {
+			"name": "Google Workspace",
+			"scopesNote": "Gmail, Calendar, Drive y Docs requieren que tu administrador habilite esos permisos de Google para este servidor."
+		},
+		"connected": "Conectado",
+		"connectedAs": "Conectado como {{name}}",
+		"notConnected": "No conectado",
+		"unavailable": "No disponible en este servidor",
+		"connect": "Conectar",
+		"reconnect": "Reconectar",
+		"connecting": "Esperando el inicio de sesión...",
+		"connectSuccess": "{{name}} está conectado",
+		"connectIncomplete": "{{name}} no se conectó. La ventana de inicio de sesión se cerró antes de terminar.",
+		"connectError": "No se pudo conectar {{name}}. {{message}}",
+		"popupBlocked": "Tu navegador bloqueó la ventana de inicio de sesión. Permite las ventanas emergentes para este sitio y vuelve a intentarlo.",
+		"loadErrorTitle": "No se pudieron comprobar tus cuentas conectadas",
+		"disconnect": "Desconectar",
+		"disconnecting": "Desconectando...",
+		"disconnectSuccess": "{{name}} se desconectó",
+		"disconnectError": "No se pudo desconectar {{name}}. {{message}}",
+		"sessionLoginNote": "Iniciaste sesión con esta cuenta, así que permanece conectada hasta que cierres sesión."
+	},
+	"services": {
+		"toolCounts_one": "{{count}} herramienta, {{ask}} con aprobación previa",
+		"toolCounts_other": "{{count}} herramientas, {{ask}} con aprobación previa",
+		"outlook": {
+			"name": "Correo de Outlook",
+			"description": "Lee, busca y redacta correos. Pide tu aprobación antes de enviar, responder o eliminar."
+		},
+		"outlook-calendar": {
+			"name": "Calendario de Outlook",
+			"description": "Consulta tu agenda y encuentra tiempo libre. Pide tu aprobación antes de enviar invitaciones o hacer cambios."
+		},
+		"onedrive": {
+			"name": "OneDrive",
+			"description": "Busca, lee y descarga tus archivos. Pide tu aprobación antes de subir, compartir o eliminar."
+		},
+		"teams": {
+			"name": "Microsoft Teams",
+			"description": "Lee chats, canales y archivos compartidos. Pide tu aprobación antes de enviar mensajes."
+		},
+		"gmail": {
+			"name": "Gmail",
+			"description": "Lee y busca correos. Pide tu aprobación antes de enviar o eliminar."
+		},
+		"google-calendar": {
+			"name": "Google Calendar",
+			"description": "Consulta tus eventos. Pide tu aprobación antes de crear eventos o hacer cambios."
+		},
+		"google-drive": {
+			"name": "Google Drive",
+			"description": "Lista y consulta tus archivos de Drive. Pide tu aprobación antes de eliminar."
+		},
+		"google-docs": {
+			"name": "Google Docs",
+			"description": "Lee tus documentos. Pide tu aprobación antes de crear, editar o eliminar."
+		}
+	},
+	"connectors": {
+		"dialogTitle": "Conectores",
+		"dialogDescription": "Elige qué aplicaciones puede usar el asistente en tus chats. Actúa con tu cuenta y siempre pide tu aprobación antes de enviar, eliminar, compartir o invitar.",
+		"allChatsNote": "Activar o desactivar una aplicación la cambia en todos tus chats, nuevos y existentes.",
+		"manage": "Administrar conectores",
+		"cancel": "Cancelar",
+		"save": "Guardar",
+		"saving": "Guardando...",
+		"saved_one": "{{count}} conector está activado en todos tus chats",
+		"saved_other": "{{count}} conectores están activados en todos tus chats",
+		"saveError": "No se pudieron actualizar los conectores. {{message}}",
+		"adoptError": "El chat se inició, pero no se pudieron activar sus conectores. {{message}}"
+	},
+	"connections": {
+		"appsDescription": "Al iniciar sesión, la cuenta se vincula a tu sesión. El asistente solo ve lo que esa cuenta puede ver.",
+		"appsHint": "Activar o desactivar una aplicación aquí la cambia en todos tus chats, nuevos y existentes. El menú + de un chat abre la misma configuración.",
+		"settingsError": "No se pudo leer tu configuración de conectores."
+	},
+	"sources": {
+		"saved": "Se guardó {{name}} en {{target}}",
+		"show": "Mostrar",
+		"added": "{{name}} irá con tu próximo mensaje",
+		"notAccepted": "{{name}} se guardó en {{target}}, pero este chat no acepta ese tipo de archivo en un mensaje."
+	},
+	"context": {
+		"label": "Añadido a tu próximo mensaje",
+		"remove": "Quitar {{name}} de tu próximo mensaje"
+	},
+	"signIn": {
+		"notice": "{{account}} no tiene la sesión iniciada, así que {{services}} no pueden funcionar en este chat.",
+		"action": "Iniciar sesión",
+		"dismiss": "Ocultar el aviso de inicio de sesión de {{account}}",
+		"toolFailed": "Esta llamada no se pudo ejecutar porque {{account}} no tiene la sesión iniciada. Inicia sesión y vuelve a pedirlo.",
+		"toolAction": "Iniciar sesión en {{account}}",
+		"notOffered": "Este servidor no ofrece iniciar sesión con {{account}}, así que {{services}} no pueden funcionar en este chat."
+	},
+	"scopes": {
+		"notice": "El inicio de sesión de {{account}} de este servidor no permite {{services}}, así que no pueden funcionar en este chat. Pide a tu administrador que añada el permiso que necesitan.",
+		"dismiss": "Ocultar el aviso de permisos de {{account}}",
+		"serviceBlocked": "No disponible: el inicio de sesión de este servidor no incluye el permiso necesario. Pide a tu administrador que lo añada."
+	},
+	"chatTools": {
+		"panelTitle": "Herramientas del chat",
+		"description": "Lo que el asistente puede usar en tu próximo mensaje.",
+		"toolboxTitle": "Caja de herramientas de este chat",
+		"toolboxDescription": "Los conectores activados para este chat, desde mcp/pixel_mcp.json en Archivos del chat.",
+		"toolboxEmpty": "No hay conectores activados.",
+		"toolboxError": "No se pudo leer la caja de herramientas de este chat.",
+		"otherTools": "Otras herramientas",
+		"addedTitle": "Cajas de herramientas añadidas",
+		"addedDescription": "Cada caja de herramientas aporta sus propias herramientas.",
+		"addedEmpty": "No se añadieron cajas de herramientas.",
+		"runsOnItsOwn": "Se ejecuta sola",
+		"asksFirst": "Pregunta primero",
+		"parameters": "Parámetros",
+		"required": "Obligatorio",
+		"noParameters": "Sin parámetros.",
+		"defaultTitle": "Herramientas predeterminadas",
+		"defaultDescription": "Se añaden a cada mensaje y se ejecutan en este navegador, en Archivos del chat.",
+		"defaultEmpty": "Todas las herramientas predeterminadas están desactivadas en la configuración de la sala.",
+		"openSettings": "Configuración de la sala",
+		"agentTitle": "Herramientas del agente",
+		"agentDescription": "Las ejecuciones del agente traen sus propias herramientas de archivos, shell y código, y trabajan en Archivos del chat."
+	},
+	"defaultTools": {
+		"label": "Herramientas predeterminadas",
+		"description": "Herramientas que este navegador añade a cada mensaje y ejecuta en Archivos del chat. Automático ejecuta una herramienta sola, Preguntar espera tu aprobación en cada llamada y Desactivada la deja fuera.",
+		"modes": {
+			"auto": "Automático",
+			"ask": "Preguntar",
+			"disabled": "Desactivada"
+		}
+	}
+}

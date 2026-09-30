@@ -1,4 +1,8 @@
-import { createMcpPlatformUrl, createPromptPlatformUrl } from "@semoss/shared";
+import {
+	type AgentLinks,
+	createMcpPlatformUrl,
+	createPromptPlatformUrl,
+} from "@semoss/shared";
 import {
 	MCP_EXECUTION_AGENT_ASK,
 	MCP_EXECUTION_AGENT_YESNO,
@@ -26,7 +30,7 @@ export const isYesNoExecutionMode = (execution: string | undefined): boolean =>
  * no catalog entry behind it: it tells the backend to read the tools from the
  * room's own asset folder, so it must never be used as a project or engine id.
  */
-const ROOM_MCP_ID = "__room__";
+export const ROOM_MCP_ID = "__room__";
 
 /** The subset of a tool's `_meta` that carries its owning app. */
 type ToolOwnerMeta = {
@@ -59,3 +63,24 @@ const PLATFORM_URL = import.meta.env.VITE_PLATFORM_URL ?? "";
 
 export const mcpToPlatformUrl = createMcpPlatformUrl(PLATFORM_URL);
 export const promptToPlatformUrl = createPromptPlatformUrl(PLATFORM_URL);
+export const skillToPlatformUrl = (skillId: string): string =>
+	`${PLATFORM_URL}/#/skill/${skillId}/view`;
+
+/**
+ * The playground's links for an agent's attached resources, used by the
+ * shared agent views. Catalog links point at the platform and only appear
+ * when the theme turns platform links on; subagents link to the playground's
+ * own agent page.
+ */
+export const getPlaygroundAgentLinks = (
+	showPlatformLinks?: boolean,
+): AgentLinks => ({
+	...(showPlatformLinks
+		? {
+				getMcpUrl: mcpToPlatformUrl,
+				getSkillUrl: skillToPlatformUrl,
+				getPromptUrl: (id: string) => promptToPlatformUrl({ id }),
+			}
+		: {}),
+	getAgentUrl: (id) => `#/agent/${id}`,
+});

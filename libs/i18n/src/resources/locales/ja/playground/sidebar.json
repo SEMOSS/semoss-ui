@@ -59,5 +59,29 @@
 		"roomRenamedSuccess": "ルーム名を正常に変更しました",
 		"failedToRename": "ルーム名の変更に失敗しました",
 		"roomDeletedSuccess": "ルームを正常に削除しました"
+	},
+	"userMenu": {
+		"settings": "設定",
+		"language": "言語"
+	},
+	"settings": {
+		"title": "設定",
+		"description": "あなたの設定と、アシスタントが使用できるアプリ。",
+		"sections": {
+			"general": "一般",
+			"connectors": "コネクタ"
+		},
+		"general": {
+			"appearance": "外観",
+			"theme": "テーマ",
+			"themeDescription": "ダークテーマとシステムテーマはベータ版です。",
+			"themes": {
+				"system": "システム",
+				"light": "ライト",
+				"dark": "ダーク"
+			},
+			"language": "言語",
+			"languageDescription": "アプリの表示言語。"
+		}
 	}
 }

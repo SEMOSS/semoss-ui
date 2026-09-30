@@ -10,6 +10,8 @@ import {
 import { isRequestUserInputAction, parseUserInputRequest } from "@semoss/sdk";
 import { Env, type MCPToolRequest, usePixel } from "@semoss/sdk/react";
 import { AgentUserInputCard, Skeleton, toast } from "@semoss/ui/next";
+import { TeamworkToolCard } from "@/features/teamwork/components/teamwork-tool-card";
+import { isTeamworkToolCall } from "@/features/teamwork/tools/teamwork-tool-kind";
 import type { RoomStore } from "@/stores";
 import { decideAgentToolAction } from "@/stores/message/agent-harness";
 import { isAskExecutionMode, isYesNoExecutionMode } from "@/utility/mcp-utils";
@@ -280,6 +282,13 @@ export const ToolsView = observer(
 
 		if (!tool) {
 			return null;
+		}
+
+		// Work folder and connector calls have their own card: the folder
+		// tools run in the browser, and neither has an MCP project to fetch a
+		// schema or a UI from.
+		if (liveTool && isTeamworkToolCall(tool)) {
+			return <TeamworkToolCard tool={liveTool} variant="panel" />;
 		}
 
 		// Server tools (e.g. provider-side web_search) have no MCP project to

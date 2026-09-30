@@ -3,6 +3,8 @@ import { observer } from "mobx-react-lite";
 import { useEffect } from "react";
 import { useTranslation } from "@semoss/i18n";
 import { Button, cn, Spinner, toast, useIsMobile } from "@semoss/ui/next";
+import { TeamworkToolCard } from "@/features/teamwork/components/teamwork-tool-card";
+import { isTeamworkToolCall } from "@/features/teamwork/tools/teamwork-tool-kind";
 import { useLoadingMessage } from "@/hooks";
 import type { ToolStore } from "@/stores";
 import { isAskExecutionMode, isYesNoExecutionMode } from "@/utility/mcp-utils";
@@ -276,11 +278,18 @@ export const ResponseMessageTool = observer(
 					{/* MCP UI Area */}
 					{tool.isOpen && tool.display === "inline" && (
 						<div className="p-2 pt-0">
-							<RoomInlineTool
-								room={room}
-								message={message}
-								tool={tool}
-							/>
+							{isTeamworkToolCall(tool.json) ? (
+								<TeamworkToolCard
+									tool={tool}
+									variant="inline"
+								/>
+							) : (
+								<RoomInlineTool
+									room={room}
+									message={message}
+									tool={tool}
+								/>
+							)}
 						</div>
 					)}
 				</div>
@@ -393,11 +402,15 @@ export const ResponseMessageTool = observer(
 				{/* MCP UI Area */}
 				{tool.isOpen && tool.display === "inline" && (
 					<div className="p-2 pt-0">
-						<RoomInlineTool
-							room={room}
-							message={message}
-							tool={tool}
-						/>
+						{isTeamworkToolCall(tool.json) ? (
+							<TeamworkToolCard tool={tool} variant="inline" />
+						) : (
+							<RoomInlineTool
+								room={room}
+								message={message}
+								tool={tool}
+							/>
+						)}
 					</div>
 				)}
 			</div>
