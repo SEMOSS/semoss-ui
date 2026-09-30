@@ -88,7 +88,11 @@ export const GoogleDriveViewer = (props: GoogleDriveViewerProps) => {
 
 	return (
 		<div className="flex h-full min-h-0 flex-col">
-			<ConnectorViewerHeader icon={HardDriveIcon} title={serviceName}>
+			<ConnectorViewerHeader
+				brand="google-drive"
+				icon={HardDriveIcon}
+				title={serviceName}
+			>
 				<ConnectorIconButton
 					icon={RefreshCwIcon}
 					label={t("common.refresh")}

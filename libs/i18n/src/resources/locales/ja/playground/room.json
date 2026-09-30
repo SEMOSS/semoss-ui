@@ -25,7 +25,14 @@
 			"SUMMARY": "古いメッセージをAIが生成した要約に置き換えます。トークンの使用量を減らしながら、会話全体の文脈を保持します。",
 			"TOOL_PRUNE": "会話履歴から冗長なツール呼び出しの結果を削除します。ツールの出力が大きく、詳細が不要になった場合に最適です。",
 			"AUTO": "現在の会話内容に基づいて、要約またはツール整理のいずれかを選択します。"
-		}
+		},
+		"panelTitle": "設定",
+		"noKnowledge": "ナレッジが選択されていません。",
+		"noTools": "ツールが選択されていません。",
+		"fromRoom": "ルームから",
+		"inheritedSelection": "継承された項目はこのチャットから削除できません。",
+		"removeSelection": "{{name}}を削除",
+		"agentLoadError": "エージェントを読み込めませんでした。再試行するか、別のエージェントを選択してください。"
 	},
 	"form": {
 		"modelLabel": "モデル",
@@ -36,9 +43,12 @@
 		"temperatureLabel": "温度"
 	},
 	"modes": {
-		"ask": "チャットモード",
-		"agent": "エージェントハーネスモード",
-		"exitAgent": "エージェントハーネスモードを終了"
+		"ask": "チャット",
+		"agent": "エージェント",
+		"exitAgent": "チャットに切り替え",
+		"selectedAgent": "エージェント：{{name}}",
+		"defaultAgent": "デフォルトのエージェント",
+		"noAgent": "エージェントなし"
 	},
 	"workspace": {
 		"publishTooltip": "エージェントとして公開",
@@ -59,7 +69,7 @@
 		"ariaPlaceholder": "テキストを入力",
 		"thinking": "考え中...",
 		"menuPrompt": "今日はどのようにお手伝いできますか？",
-		"openSettings": "ファイル、エージェントなどを追加",
+		"openSettings": "チャットに追加",
 		"recordLabel": "モデルを録音",
 		"stopRecording": "録音を停止",
 		"record": "録音",
@@ -72,6 +82,9 @@
 		"stopLabel": "応答を停止",
 		"stopTooltip": "停止",
 		"stoppingTooltip": "停止中",
+		"recordUnavailable": "このブラウザーでは音声入力を利用できません",
+		"historyHint": "過去のプロンプト {{index}} / {{total}} · ↑/↓で移動 · Escで下書きを復元",
+		"draftRestored": "下書きを復元しました",
 		"removeFile": "{{name}} を削除"
 	},
 	"content": {
@@ -79,7 +92,7 @@
 		"scrollToBottom": "一番下にスクロール"
 	},
 	"inlineTool": {
-		"openInSidebar": "サイドバーで開く",
+		"openInSidebar": "ワークスペースで開く",
 		"minimize": "最小化",
 		"maximize": "最大化",
 		"close": "閉じる"
@@ -91,7 +104,7 @@
 		"copyFailed": "クリップボードへのコピーに失敗しました"
 	},
 	"menuToolbox": {
-		"addToolbox": "ツールボックスを追加"
+		"addToolbox": "ツールを追加"
 	},
 	"menuKnowledge": {
 		"addKnowledge": "ナレッジを追加"
@@ -102,7 +115,7 @@
 		"notFound": "見つかりません"
 	},
 	"menuUpload": {
-		"attachDocument": "ドキュメントを追加"
+		"attachDocument": "ファイルを添付"
 	},
 	"menuFileExplorer": {
 		"name": "チャットのファイル",
@@ -127,5 +140,45 @@
 		"searchPlaceholder": "ナレッジとツールボックスを検索",
 		"noResults": "一致する項目が見つかりません",
 		"noItemsAvailable": "使用可能なナレッジまたはツールボックスはありません"
+	},
+	"studio": {
+		"views": "会話の表示",
+		"chat": "チャット",
+		"openWorkArea": "ワークスペースを開く",
+		"workArea": "ワークスペース",
+		"toolsCount": "ツール、{{count}} 件選択済み",
+		"tools": "ツール",
+		"toolsLocked": "応答の生成中はツールを変更できません。",
+		"toolsHint": "選択内容は次のメッセージに適用されます。",
+		"toolsTitle": "ツールとナレッジ",
+		"toolsDescription": "この会話で利用するツールとナレッジを選択します。",
+		"moreActions": "その他の操作",
+		"prompts": "プロンプト",
+		"removeFile": "{{name}} を削除",
+		"thinking": "推論",
+		"errorTitle": "問題が発生しました",
+		"errorDescription": "ページを更新するか、ホームに戻ってもう一度お試しください。",
+		"backHome": "ホームに戻る",
+		"export": "エクスポート",
+		"refresh": "更新",
+		"exportCsv": "CSV でエクスポート",
+		"exportPdf": "PDF でエクスポート",
+		"closeWorkspace": "ワークスペースを閉じる",
+		"preparingWorkspace": "ワークスペースを準備中…",
+		"activityLog": "アクティビティログ",
+		"prepareError": "ワークスペースを準備できませんでした。下書きは保持されています。",
+		"retry": "再試行",
+		"viewActivityLog": "アクティビティログを表示"
+	},
+	"optimizer": {
+		"optimize": "プロンプトを最適化",
+		"revert": "前のプロンプトに戻す",
+		"optimizing": "最適化中…",
+		"success": "プロンプトを最適化しました！",
+		"noModel": "プロンプトを最適化するモデルを選択してください",
+		"invalidResponse": "最適化されたプロンプトを受信できませんでした",
+		"failed": "プロンプトを最適化できませんでした",
+		"tooLarge": "プロンプトが長すぎます。短くしてから最適化してください。",
+		"noPermission": "このモデルを使用する権限がありません"
 	}
 }

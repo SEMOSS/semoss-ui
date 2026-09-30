@@ -1,6 +1,6 @@
 import { beforeEach, expect, test, vi } from "vitest";
 import type { ThemeMap } from "@semoss/shared";
-import { ROOM_PANEL_COMPONENTS } from "@/components/room/panels";
+import { ROOM_PANEL_COMPONENTS } from "@/components/room/panels/room-panel.components";
 import { RoomStore } from "./room.store";
 import { ROOM_PANEL_TYPES, ROOM_SIDEBAR_LAYOUT } from "./room-sidebar";
 
@@ -75,6 +75,28 @@ test("closing the last panel closes the sidebar", () => {
 	expect(room.sidebar.isOpen).toBe(false);
 });
 
+test("reopening restores existing panels without duplicating them", async () => {
+	const room = createRoom("room-reopen");
+	const panelId = room.openSidebarPanel(ROOM_PANEL_TYPES.AUDIT_LOG);
+	await room.closeSidebar();
+
+	room.openSidebar();
+
+	expect(room.sidebar.isOpen).toBe(true);
+	expect(room.workbench.getState().layout.openPanelIds).toEqual([panelId]);
+});
+
+test("opening an empty sidebar defaults to Room settings", () => {
+	const room = createRoom("room-default-panel");
+
+	room.openSidebar();
+
+	const panels = Object.values(room.workbench.getState().layout.panels);
+	expect(room.sidebar.isOpen).toBe(true);
+	expect(panels).toHaveLength(1);
+	expect(panels[0]?.type).toBe(ROOM_PANEL_TYPES.CONFIGURATION);
+});
+
 test("closing a tool's panel marks the tool closed", () => {
 	const room = createRoom("room-tool-close");
 	const setIsOpen = vi.fn();
@@ -116,4 +138,22 @@ test("a room whose sidebar never mounted still dedupes", () => {
 	expect(Object.keys(room.workbench.getState().layout.panels)).toHaveLength(
 		1,
 	);
+});
+
+test("a prepared layout retains its tabs through sidebar mounts and later opens", () => {
+	const draft = createRoom("temp");
+	const settings = draft.openSidebarPanel(ROOM_PANEL_TYPES.CONFIGURATION);
+	const snapshot = draft.workbench.getState().layout.actions.getSnapshot();
+	const room = createRoom("prepared");
+	room.restoreSidebarLayout(snapshot);
+	expect(room.sidebarSnapshot).toBe(snapshot);
+	const files = room.openSidebarFileExplorer();
+	const { actions } = room.workbench.getState().layout;
+	// Every shell mount, including navigation after submission, uses this reference.
+	actions.loadSnapshot(room.sidebarSnapshot);
+	expect(room.workbench.getState().layout.openPanelIds).toEqual([
+		settings,
+		files,
+	]);
+	expect(room.workbench.getState().layout.selection.panel).toBe(files);
 });

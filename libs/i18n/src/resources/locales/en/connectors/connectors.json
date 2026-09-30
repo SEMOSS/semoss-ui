@@ -121,7 +121,38 @@
 		"organizer": "Organizer",
 		"attendees": "Invited",
 		"join": "Join Meeting",
-		"noDescription": "This event has no description."
+		"noDescription": "This event has no description.",
+		"view": "Calendar view",
+		"month": "Month",
+		"agenda": "Agenda",
+		"previousMonth": "Previous month",
+		"nextMonth": "Next month",
+		"emptyDay": "No events on this day",
+		"emptyMonth": "No events in this month",
+		"eventCount_one": "{{count}} event",
+		"eventCount_other": "{{count}} events",
+		"moreEvents": "+{{count}} more",
+		"limitReached": "Only the first {{count}} events are shown. Some days may have additional events; open Outlook for the complete calendar.",
+		"noLoadedEvents": "No loaded events for this day",
+		"week": "Week",
+		"day": "Day",
+		"threeDays": "3 days",
+		"listView": "List View",
+		"calendarView": "Calendar View",
+		"openForTime": "Open an event to see its time.",
+		"emptyRange": "No events in this date range",
+		"previousView": {
+			"week": "Previous week",
+			"day": "Previous day",
+			"threeDays": "Previous 3 days",
+			"month": "Previous month"
+		},
+		"nextView": {
+			"week": "Next week",
+			"day": "Next day",
+			"threeDays": "Next 3 days",
+			"month": "Next month"
+		}
 	},
 	"teams": {
 		"team": "Team",

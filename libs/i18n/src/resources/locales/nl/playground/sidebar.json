@@ -43,6 +43,9 @@
 		"untitled": "Naamloos"
 	},
 	"actions": {
+		"openNavigation": "Navigatie openen",
+		"openSidebar": "Zijbalk openen",
+		"closeSidebar": "Zijbalk sluiten",
 		"favorite": "Markeren als favoriet",
 		"unfavorite": "Verwijderen uit favorieten",
 		"rename": "Naam wijzigen",
@@ -59,6 +62,26 @@
 		"roomRenamedSuccess": "Naam van ruimte succesvol gewijzigd",
 		"failedToRename": "Naam wijzigen van ruimte mislukt",
 		"roomDeletedSuccess": "Ruimte succesvol verwijderd"
+	},
+	"workbench": {
+		"file": "Bestand",
+		"navigate": "Navigeren",
+		"commandPalette": "Opdrachtenpalet openen…",
+		"layout": "Panelen rangschikken",
+		"single": "Samenvoegen tot één groep",
+		"columns": "Splitsen in twee kolommen",
+		"rows": "Splitsen in twee rijen",
+		"balance": "Paneelgroottes gelijkmaken",
+		"left": "Linkergebied tonen",
+		"right": "Rechtergebied tonen",
+		"top": "Bovengebied tonen",
+		"bottom": "Ondergebied tonen",
+		"previous": "Naar vorig paneel gaan",
+		"next": "Naar volgend paneel gaan",
+		"openPanels": "Geopende panelen",
+		"noPanels": "Geen geopende panelen",
+		"maximize": "Werkruimte maximaliseren",
+		"restore": "Werkruimte herstellen"
 	},
 	"userMenu": {
 		"settings": "Instellingen",

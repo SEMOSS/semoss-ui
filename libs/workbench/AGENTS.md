@@ -52,7 +52,7 @@ src/
 │   ├── panel/         one panel's body pipeline, and its own loading/error states
 │   ├── mobile/        the no-rails shell and its drawer
 │   ├── command/       the palette and its navbar trigger
-│   ├── menu/          the per-panel right-click menu
+│   ├── menu/          the generic View dropdown and per-panel right-click menu
 │   └── chrome/        reusable chrome controls the shell or a host places
 ├── constants/         workbench.constants.ts — WORKBENCH_STYLES
 ├── contexts/          workbench.context.tsx
@@ -287,6 +287,18 @@ Commands carry no icons. Every command sets a `category` from the small fixed se
 (open/close panels, borders, maximize, reset), `Go to` (panel navigation), `Editor`,
 `Project`, `Database` — and the palette displays it as `Category: Label` (Title Case), sorted
 alphabetically. Don't bake the prefix into `label`.
+
+**Generic menus are opt-in.** Put `<WorkbenchMenus />` in `borderSlots.top.before` for a
+View dropdown with Layout and Navigate submenus, a command-palette entry, and toggles for
+occupied side areas. A host supplies `translate` for localized labels and may supply
+`maximize` for whole-work-area expansion. `textSize="xs"` reduces trigger and menu text while retaining mobile hit targets. `viewItems` inserts a host-owned section, and
+`showNavigation={false}` hides Navigate while retaining its keyboard/palette commands. The dock has no translation or host dependencies.
+Layout presets rearrange movable main-area tabs while preserving panel records, scratch
+values, and borders. Navigation includes collapsed border panels.
+
+On mobile, `left.after`, `top.before`, and `top.after` appear in the actions drawer.
+Forward the slot context's `onNavigate` to `WorkbenchMenus` so choosing a panel dismisses
+the drawer. Desktop-only layout controls are hidden while the desktop arrangement is retained.
 
 **Controls**: a panel contributes at most one chrome control with
 `useWorkbenchControl(id, content)` (`hooks/use-workbench-control.tsx`) from inside its body —

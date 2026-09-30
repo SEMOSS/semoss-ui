@@ -6,19 +6,19 @@
 		},
 		"input": {
 			"title": "Start a conversation",
-			"content": "Type your question here and press Enter."
+			"content": "Type your question and press Enter. On the first line, press Up to reuse an earlier prompt; Down moves forward and Esc restores your draft."
 		},
 		"inputMenu": {
-			"title": "Attach & configure",
-			"content": "Add files, agents, knowledge libraries, and tools to enhance your conversation."
+			"title": "Add to your chat",
+			"content": "Use + to attach files, add Knowledge or Tools, choose an Agent, or open the Workspace."
 		},
 		"model": {
 			"title": "Model",
 			"content": "Select which AI model powers your conversation."
 		},
 		"record": {
-			"title": "Record",
-			"content": "Click to speak, your voice will be converted to text."
+			"title": "Input actions",
+			"content": "Use the microphone to dictate, the book to browse prompts, or the context indicator to check usage."
 		},
 		"newChat": {
 			"title": "New chat",

@@ -134,7 +134,7 @@ export const ConnectorList = <T,>({
 								) : null}
 							</div>
 						) : (
-							<div className="flex flex-col gap-2 px-2 pt-1 pb-2">
+							<div className="flex flex-col gap-2 pb-2">
 								<ul ref={listRef} className="flex flex-col">
 									{children(items)}
 								</ul>

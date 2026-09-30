@@ -1,4 +1,4 @@
-import { PlusIcon, SearchIcon } from "lucide-react";
+import { SearchIcon } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useState } from "react";
 import { useNavigate } from "react-router";
@@ -6,7 +6,6 @@ import { useTranslation } from "@semoss/i18n";
 import { useIteratorPixel } from "@semoss/sdk/react";
 import {
 	Button,
-	H3,
 	InputGroup,
 	InputGroupAddon,
 	InputGroupInput,
@@ -24,10 +23,9 @@ import {
 	useInfiniteScroll,
 	useTheme,
 } from "@semoss/ui/next";
-import workspaceImage from "@/assets/img/workspace.png";
-import workspaceImageDark from "@/assets/img/workspace-darkmode.png";
-import { WorkspaceCard } from "@/components";
-import { useChat, useGlobalBreadcrumbs, useRoot } from "@/hooks";
+import { WorkspaceCard } from "@/components/workspace/workspace-card";
+import { useChat } from "@/hooks/use-chat";
+import { useRoot } from "@/hooks/use-root";
 import type { App } from "@/types";
 
 /**
@@ -111,40 +109,30 @@ const toCardPermission = (app: App): "OWNER" | "EDIT" | "READ_ONLY" =>
 			: "READ_ONLY";
 
 /**
- * My Agents: every agent the user can use, on one page. The list is
- * searchable and sortable, and filters narrow it to the agents the user
- * created or to their access (owner, can edit, view only).
+ * Renders the WorkspacePage, allowing users to access their workspace or discover new ones
+ *
+ * @component
  */
 export const WorkspacePage = observer(() => {
 	const { t } = useTranslation(["workspace", "notifications", "common"]);
 	const navigate = useNavigate();
 	const { root } = useRoot();
 	const { theme: colorMode } = useTheme();
-	const { chat } = useChat();
-
-	useGlobalBreadcrumbs({
-		breadcrumbs: [
-			{
-				name: t("workspace:breadcrumbs.home"),
-				path: "/",
-			},
-			{
-				name: t("workspace:breadcrumbs.agent"),
-				path: "/agent",
-			},
-		],
-	});
 
 	const [filters, setFilters] = useState<AgentFilter[]>([]);
+	const [sort, setSort] = useState<SortOption>("name");
 	const [search, setSearch] = useState("");
 	const debouncedSearch = useDebouncedValue(search);
-	const [sort, setSort] = useState<SortOption>("name");
+	const { chat } = useChat();
 
+	/**
+	 * Get all of the workspaces with lazy loading
+	 */
 	const getWorkspaces = useIteratorPixel<App[], App>(
 		(limit, offset) =>
 			buildCatalogPixel(filters, debouncedSearch, sort, limit, offset),
 		(response) => {
-			// a short page is the last one
+			// if its less than the limit, we know its the end
 			if (response.length < PAGE_SIZE) {
 				return -1;
 			}
@@ -160,6 +148,9 @@ export const WorkspacePage = observer(() => {
 		[filters, debouncedSearch, sort],
 	);
 
+	/**
+	 * Setup infinite scroll for the command list
+	 */
 	const { setScroll } = useInfiniteScroll({
 		disabled: getWorkspaces.isLoading || !getWorkspaces.hasMore,
 		onNext: () => {
@@ -174,15 +165,8 @@ export const WorkspacePage = observer(() => {
 			window.matchMedia("(prefers-color-scheme: dark)").matches);
 
 	const src = isDark
-		? root.theme.images.workspaceDark || workspaceImageDark
-		: root.theme.images.workspace || workspaceImage;
-
-	const isFirstLoad =
-		getWorkspaces.isLoading && getWorkspaces.data.length === 0;
-	const isEmpty = !getWorkspaces.isLoading && getWorkspaces.data.length === 0;
-	const isFiltered = filters.length > 0 || !!debouncedSearch;
-	// someone with no agents yet sees the welcome instead
-	const isWelcome = isEmpty && !isFiltered;
+		? root.theme.images.workspaceDark
+		: root.theme.images.workspace;
 
 	return (
 		<div
@@ -191,112 +175,98 @@ export const WorkspacePage = observer(() => {
 			}}
 			className="@container h-full w-full overflow-y-auto"
 		>
-			<div className="mx-auto flex w-full max-w-5xl flex-col gap-6 @3xl:px-12 @md:px-6 px-4 pt-8 pb-4">
-				<div className="flex flex-wrap items-end justify-between gap-4">
-					<div className="flex min-w-0 flex-col gap-1">
-						<H3>{t("workspace:catalog.title")}</H3>
-						<Muted>{t("workspace:catalog.description")}</Muted>
+			<div className="mx-auto flex w-full max-w-5xl flex-col gap-6 px-4 py-6 sm:px-6">
+				<div className="flex flex-wrap items-start justify-between gap-4 border-b pb-6">
+					<div className="min-w-0 flex-1">
+						<h1 className="font-semibold text-2xl tracking-tight">
+							{t("workspace:catalog.title")}
+						</h1>
+						<p className="mt-2 max-w-2xl text-muted-foreground text-sm">
+							{t("workspace:catalog.description")}
+						</p>
 					</div>
 					<Button onClick={() => navigate("/agent/new")}>
-						<PlusIcon />
 						{t("workspace:actions.createAgent")}
 					</Button>
+					{src && (
+						<img
+							src={src}
+							alt={t("workspace:images.agentIllustration")}
+							className="max-h-32 w-full rounded-xl object-cover"
+						/>
+					)}
 				</div>
 
-				<div className="flex @md:flex-row flex-col gap-2">
-					<InputGroup className="flex-1 bg-background">
-						<InputGroupInput
-							placeholder={t("common:buttons.search")}
-							aria-label={t("common:buttons.search")}
-							value={search}
-							onChange={(e) => setSearch(e.target.value)}
-						/>
-						<InputGroupAddon>
-							<SearchIcon />
-						</InputGroupAddon>
-					</InputGroup>
-					<Select
-						value={sort}
-						onValueChange={(value) => {
-							if (isSortOption(value)) {
-								setSort(value);
-							}
-						}}
-					>
-						<SelectTrigger
-							aria-label={t("workspace:catalog.sort.label")}
-							className="@md:w-48 w-full bg-background"
+				<div className="flex flex-col gap-4">
+					<div className="flex @md:flex-row flex-col gap-2">
+						<InputGroup className="flex-1 bg-background">
+							<InputGroupInput
+								aria-label={t("common:buttons.search")}
+								placeholder={t("common:buttons.search")}
+								value={search}
+								onChange={(e) => setSearch(e.target.value)}
+							/>
+							<InputGroupAddon>
+								<SearchIcon />
+							</InputGroupAddon>
+						</InputGroup>
+						<Select
+							value={sort}
+							onValueChange={(value) => {
+								if (isSortOption(value)) {
+									setSort(value);
+								}
+							}}
 						>
-							<SelectValue />
-						</SelectTrigger>
-						<SelectContent>
-							{(Object.keys(SORT_OPTIONS) as SortOption[]).map(
-								(option) => (
+							<SelectTrigger
+								aria-label={t("workspace:catalog.sort.label")}
+								className="@md:w-48 w-full bg-background"
+							>
+								<SelectValue />
+							</SelectTrigger>
+							<SelectContent>
+								{(
+									Object.keys(SORT_OPTIONS) as SortOption[]
+								).map((option) => (
 									<SelectItem key={option} value={option}>
 										{t(`workspace:catalog.sort.${option}`)}
 									</SelectItem>
-								),
-							)}
-						</SelectContent>
-					</Select>
-				</div>
+								))}
+							</SelectContent>
+						</Select>
+					</div>
 
-				<ToggleGroup
-					type="multiple"
-					variant="outline"
-					size="sm"
-					spacing={2}
-					className="flex-wrap"
-					aria-label={t("workspace:catalog.filters.label")}
-					value={filters}
-					onValueChange={(values) =>
-						setFilters(values.filter(isAgentFilter))
-					}
-				>
-					{AGENT_FILTERS.map((filter) => (
-						<ToggleGroupItem key={filter} value={filter}>
-							{t(`workspace:catalog.filters.${filter}`)}
-						</ToggleGroupItem>
-					))}
-				</ToggleGroup>
+					<ToggleGroup
+						type="multiple"
+						variant="outline"
+						size="sm"
+						spacing={2}
+						className="flex-wrap"
+						aria-label={t("workspace:catalog.filters.label")}
+						value={filters}
+						onValueChange={(values) =>
+							setFilters(values.filter(isAgentFilter))
+						}
+					>
+						{AGENT_FILTERS.map((filter) => (
+							<ToggleGroupItem key={filter} value={filter}>
+								{t(`workspace:catalog.filters.${filter}`)}
+							</ToggleGroupItem>
+						))}
+					</ToggleGroup>
 
-				{isFirstLoad ? (
-					<div className="flex items-center justify-center py-12">
-						<Spinner />
-					</div>
-				) : isWelcome ? (
-					<div className="flex w-full rounded-lg bg-primary/10">
-						<div className="flex flex-1 flex-col gap-4 p-6 font-sans">
-							<div className="font-medium text-primary text-xl leading-normal dark:text-white">
-								{t("workspace:welcomeTitle")}
-							</div>
-							<div className="font-normal text-base text-primary leading-normal dark:text-white">
-								{t("workspace:welcomeDescription")}
-							</div>
-							<Button
-								onClick={() => navigate("/agent/new")}
-								className="w-auto self-start"
-							>
-								{t("workspace:actions.createAgent")}
-							</Button>
+					{getWorkspaces.isLoading &&
+					getWorkspaces.data.length === 0 ? (
+						<div className="flex items-center justify-center py-12">
+							<Spinner />
 						</div>
-						{/* Image appears only on large screens and above */}
-						<div className="relative @3xl:block hidden w-[351px] overflow-hidden rounded-e-lg">
-							<img
-								src={src}
-								alt={t("workspace:images.agentIllustration")}
-								className="-translate-y-1/2 absolute start-0 top-1/2 h-[351px] w-full select-none object-cover"
-							/>
+					) : getWorkspaces.data.length === 0 ? (
+						<div className="flex items-center justify-center py-12">
+							<Muted>{t("workspace:messages.noResults")}</Muted>
 						</div>
-					</div>
-				) : isEmpty ? (
-					<div className="flex items-center justify-center py-12">
-						<Muted>{t("workspace:messages.noResults")}</Muted>
-					</div>
-				) : (
-					<div className="grid @2xl:grid-cols-2 @3xl:grid-cols-3 grid-cols-1 gap-4 @4xl:gap-x-8">
-						{getWorkspaces.data.map((w) => {
-							return (
+					) : (
+						<div className="grid @2xl:grid-cols-2 @3xl:grid-cols-3 grid-cols-1 gap-4">
+							{getWorkspaces.data.map((w) => (
 								<WorkspaceCard
 									key={w.project_id}
 									workspace={{
@@ -326,16 +296,17 @@ export const WorkspacePage = observer(() => {
 										}
 									}}
 								/>
-							);
-						})}
-					</div>
-				)}
+							))}
+						</div>
+					)}
 
-				{getWorkspaces.isLoading && getWorkspaces.data.length > 0 && (
-					<div className="flex items-center justify-center p-4">
-						<Spinner className="size-4" />
-					</div>
-				)}
+					{getWorkspaces.isLoading &&
+						getWorkspaces.data.length > 0 && (
+							<div className="flex items-center justify-center p-4">
+								<Spinner className="size-4" />
+							</div>
+						)}
+				</div>
 			</div>
 		</div>
 	);

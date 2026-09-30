@@ -1,4 +1,8 @@
-import { DownloadIcon, MessageSquarePlusIcon } from "lucide-react";
+import {
+	DownloadIcon,
+	LoaderCircleIcon,
+	MessageSquarePlusIcon,
+} from "lucide-react";
 import { useTranslation } from "@semoss/i18n";
 import { ConnectorIconButton } from "./connector-icon-button";
 import type { ConnectorItemActions } from "./connector-item-actions";
@@ -30,10 +34,11 @@ export const ConnectorItemQuickAction = ({
 	if (onAddToContext) {
 		return (
 			<ConnectorIconButton
-				icon={MessageSquarePlusIcon}
+				icon={isBusy ? LoaderCircleIcon : MessageSquarePlusIcon}
 				label={t("actions.addToContext")}
 				ariaLabel={t("actions.addNamedToContext", { name: itemName })}
 				isInactive={isBusy}
+				isSpinning={isBusy}
 				onClick={onAddToContext}
 			/>
 		);
@@ -41,13 +46,14 @@ export const ConnectorItemQuickAction = ({
 	if (onSave) {
 		return (
 			<ConnectorIconButton
-				icon={DownloadIcon}
+				icon={isBusy ? LoaderCircleIcon : DownloadIcon}
 				label={saveLabel}
 				ariaLabel={t("actions.named", {
 					action: saveLabel,
 					name: itemName,
 				})}
 				isInactive={isBusy}
+				isSpinning={isBusy}
 				onClick={onSave}
 			/>
 		);

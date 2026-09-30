@@ -4,9 +4,9 @@ import {
 	MoreHorizontalIcon,
 	PanelRightCloseIcon,
 	PanelRightOpenIcon,
-	TvMinimalIcon,
 	XCircleIcon,
 } from "lucide-react";
+import { useRef, useState } from "react";
 import { useTranslation } from "@semoss/i18n";
 import {
 	Button,
@@ -18,8 +18,9 @@ import {
 	toast,
 	useIsMobile,
 } from "@semoss/ui/next";
-import type { ResponseMessageStore, ToolStore } from "@/stores";
 import { decideAgentToolAction } from "@/stores/message/agent-harness";
+import type { ResponseMessageStore } from "@/stores/message/response-message.store";
+import type { ToolStore } from "@/stores/tool/tool.store";
 
 export interface ResponseMessageToolMenuProps {
 	message: ResponseMessageStore;
@@ -38,6 +39,8 @@ export const ResponseMessageToolMenu = ({
 }: ResponseMessageToolMenuProps) => {
 	const isMobile = useIsMobile();
 	const { t } = useTranslation("tool");
+	const cancellingRef = useRef(false);
+	const [isCancelling, setIsCancelling] = useState(false);
 
 	return (
 		<DropdownMenu>
@@ -45,9 +48,10 @@ export const ResponseMessageToolMenu = ({
 				{!isFullButton ? (
 					<Button
 						type="button"
-						size={label ? "sm" : "icon"}
+						aria-label={t("activity.actions")}
+						size={label ? "sm" : "icon-sm"}
 						variant="ghost"
-						className="me-2 shrink-0 gap-1.5"
+						className="shrink-0 gap-1.5"
 						onClick={(e) => e.stopPropagation()}
 					>
 						{label && (
@@ -55,12 +59,18 @@ export const ResponseMessageToolMenu = ({
 								{label}
 							</span>
 						)}
-						<MoreHorizontalIcon className="size-4" />
+						<MoreHorizontalIcon
+							aria-hidden="true"
+							className="size-4"
+						/>
 					</Button>
 				) : (
-					<button
+					<Button
 						type="button"
-						className="flex shrink-0 cursor-pointer items-center gap-2 self-stretch rounded-e-lg px-4.5 hover:bg-accent"
+						variant="ghost"
+						size="sm"
+						aria-label={t("activity.actions")}
+						className="h-auto min-h-8 shrink-0 gap-2 self-stretch rounded-s-none rounded-e-lg px-2"
 						onClick={(e) => e.stopPropagation()}
 					>
 						{label && (
@@ -68,8 +78,11 @@ export const ResponseMessageToolMenu = ({
 								{label}
 							</span>
 						)}
-						<MoreHorizontalIcon className="size-4 text-muted-foreground" />
-					</button>
+						<MoreHorizontalIcon
+							aria-hidden="true"
+							className="size-4 text-muted-foreground"
+						/>
+					</Button>
 				)}
 			</DropdownMenuTrigger>
 			<DropdownMenuContent align="end">
@@ -90,15 +103,6 @@ export const ResponseMessageToolMenu = ({
 					{tool.isOpen && tool.display === "inline"
 						? t("actions.collapse")
 						: t("actions.openInline")}
-				</DropdownMenuItem>
-				<DropdownMenuItem
-					onClick={() => {
-						tool.openTool("inline");
-						tool.setIsExpanded(true);
-					}}
-				>
-					<TvMinimalIcon />
-					{t("actions.expand")}
 				</DropdownMenuItem>
 				{(!isMobile || (tool.isOpen && tool.display === "sidebar")) && (
 					<DropdownMenuItem
@@ -126,27 +130,35 @@ export const ResponseMessageToolMenu = ({
 						<DropdownMenuSeparator />
 						<DropdownMenuItem
 							variant="destructive"
+							disabled={isCancelling}
 							onClick={async () => {
-								if (tool.pendingAction) {
-									try {
+								if (cancellingRef.current) return;
+								cancellingRef.current = true;
+								setIsCancelling(true);
+								try {
+									if (tool.pendingAction)
 										await decideAgentToolAction(
 											tool,
 											"reject",
 										);
-									} catch (e: unknown) {
-										const error = e as { message: string };
-										toast.error(error.message);
-										return;
-									}
-								} else {
-									message.saveToolExecution(
-										tool,
-										"",
-										"cancelled",
-										{},
+									else
+										await message.saveToolExecution(
+											tool,
+											"",
+											"cancelled",
+											{},
+										);
+									tool.closeTool();
+								} catch (error) {
+									toast.error(
+										error instanceof Error
+											? error.message
+											: t("activity.cancelError"),
 									);
+								} finally {
+									cancellingRef.current = false;
+									setIsCancelling(false);
 								}
-								tool.closeTool();
 							}}
 						>
 							<XCircleIcon />

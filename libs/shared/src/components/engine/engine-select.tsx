@@ -26,6 +26,8 @@ import { EngineSubtypeIcon } from "../engine-subtype-icon";
 // ============================================================================
 
 interface EngineSelectProps {
+	/** Associates the trigger with a field label. */
+	id?: string;
 	/** CSS classes for styling customization */
 	className?: string;
 
@@ -75,6 +77,7 @@ interface EngineSelectProps {
  * - Displays engine name and description
  */
 export const EngineSelect = ({
+	id,
 	className,
 	disabled,
 	name,
@@ -191,10 +194,11 @@ export const EngineSelect = ({
 		<Popover open={open && !disabled} onOpenChange={setOpen}>
 			<PopoverTrigger asChild>
 				<Button
+					id={id}
 					type="button"
 					variant="outline"
 					role="combobox"
-					aria-expanded={open}
+					aria-expanded={open && !disabled}
 					disabled={disabled}
 					className={cn(
 						"w-full min-w-0 justify-start overflow-hidden border-input bg-transparent px-3 py-2",

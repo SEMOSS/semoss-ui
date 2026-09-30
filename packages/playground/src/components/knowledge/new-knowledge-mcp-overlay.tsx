@@ -43,10 +43,7 @@ export const NewKnowledgeOverlay: React.FC<NewKnowledgeMCPOverlayProps> =
 					}
 				}}
 			>
-				<DialogContent
-					className="w-full sm:max-w-4xl"
-					aria-describedby={t("knowledge:newSource.title")}
-				>
+				<DialogContent className="max-h-[90dvh] overflow-y-auto sm:max-w-2xl">
 					<DialogHeader>
 						<DialogTitle>
 							{t("knowledge:newSource.title")}
