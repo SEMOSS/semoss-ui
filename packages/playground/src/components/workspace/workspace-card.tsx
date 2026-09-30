@@ -95,6 +95,7 @@ export const WorkspaceCard = observer(
 					<CardContent className="flex flex-col gap-2 p-6">
 						<div className="flex min-w-0 items-center gap-3">
 							<AppCatalogAvatar
+								projectId={workspace.workspace_id}
 								name={workspace.name}
 								className="size-9 shrink-0 rounded-md text-base"
 							/>

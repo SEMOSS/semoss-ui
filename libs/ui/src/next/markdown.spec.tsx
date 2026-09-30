@@ -151,3 +151,14 @@ describe("Markdown math", () => {
 		expect(container.querySelector("strong")?.textContent).toBe("Total");
 	});
 });
+
+describe("Markdown document preset", () => {
+	it("keeps the number an ordered list starts at", () => {
+		const { container } = render(
+			<Markdown variant="document">
+				{"Steps so far.\n\n3. Third\n4. Fourth"}
+			</Markdown>,
+		);
+		expect(container.querySelector("ol")?.getAttribute("start")).toBe("3");
+	});
+});

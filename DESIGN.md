@@ -41,9 +41,10 @@ For every user-facing UI task:
    operation, announcements, overflow, and long content before polishing visual details.
 7. **Run the design audit.** A UI change is not complete when it merely compiles.
 
-If a mockup conflicts with an existing feature shell, preserve the shell and implement the
-requested content inside it. If a new pattern is truly required, establish one reusable
-pattern rather than introducing a one-off visual dialect.
+If a mockup conflicts with an existing feature shell, preserve the shell unless the user
+explicitly requests a shell redesign. An authorized redesign may change composition while
+preserving navigation destinations, permissions, and existing capabilities. Establish one
+reusable pattern rather than introducing a one-off visual dialect.
 
 ## SEMOSS Product UI Grammar
 
@@ -59,6 +60,7 @@ only on explicitly branded or promotional surfaces.
 | List, catalog, or dashboard | Page header → compact filters/actions → results summary → table or repeated collection → pagination |
 | Detail or settings | Breadcrumb when needed → title/description/actions → grouped sections or tabs → sticky actions only for long forms |
 | Editor or workbench | Stable application chrome → toolbar → resizable work area → contextual inspector; maximize usable canvas |
+| Conversational workbench | Readable conversation → anchored composer → contextual work area; switch panes with tabs when space is limited |
 | Focused task or form | Narrow readable column → grouped fields → inline validation → explicit cancel/submit actions |
 | Overlay | `Dialog` for focused decisions, `Sheet` for contextual detail, `Drawer` for mobile-first tasks, `Popover` for brief anchored controls |
 
@@ -102,7 +104,9 @@ settings page is not a dashboard and should not wrap every field group in a card
 - Use `bg-background` for the page, `bg-card` for genuinely framed objects, `bg-muted` for
   subdued regions, and borders or `Separator` before introducing shadows.
 - Cards are for repeated entities, summaries, or tools that need a visual boundary. Page
-  sections are normally unframed. Never nest cards merely to create spacing. All cards should follow rounded-x and padding using spacing-6. For primary actions/cards use shadow/sm.
+  sections are normally unframed. Never nest cards merely to create spacing. Content cards
+  use `rounded-xl` and `p-6`; compact tool rows and composer toolbars use `rounded-md` or
+  `rounded-lg` with `p-2` or `p-3`. Reserve `shadow-sm` for surfaces needing slight elevation.
 - Keep control density consistent within a region. Use default component sizes for primary
   workflows, `sm` for dense toolbars and tables, and `lg` only for prominent standalone
   actions.
@@ -110,6 +114,29 @@ settings page is not a dashboard and should not wrap every field group in a card
   gradients, color blobs, or accent panels to operational screens.
 - Preserve stable dimensions for toolbars, tables, grids, editors, and icon controls so
   loading, hover, labels, and long content do not shift surrounding layout.
+
+### Conversational Workbenches
+
+- Center standalone chat in a readable column. Anchor the composer below the transcript;
+  place attachments above its editor and compact controls below. Keep secondary actions
+  discoverable in a menu instead of clipping controls when the column narrows.
+- Group consecutive tool steps without crossing intervening assistant text. Use readable
+  names, text statuses, and expandable inputs/results. Active groups and failures expand
+  by default; successfully completed groups collapse unless the user chose otherwise.
+  Reasoning starts collapsed. Pending approvals and questions remain visible even when
+  the surrounding activity is collapsed. Expansion never executes or approves a tool.
+- Keep chat and editors mounted when switching views, resizing, or maximizing a pane.
+  Preserve drafts, scroll positions, and unsaved edits. On narrow layouts, use shared
+  `Tabs` with only the visible pane reachable by keyboard and assistive technology.
+- Use the blue `primary` token for actions; `accent` and `sidebar-accent` provide subtle
+  blue hover/selection surfaces in both themes. A status still uses the appropriate
+  `success`, `warning`, or `destructive` role with a textual label.
+- **Playground defaults:** an expanded 16rem navigation sidebar; a resizable 35/65
+  conversation/Workspace split; Chat/Workspace tabs below 64rem of available content
+  width. Opening the Workspace temporarily collapses navigation without changing its
+  stored preference, and closing it restores that preference. Manual navigation toggles
+  override the temporary state. These dimensions are playground defaults, not mandates
+  for every host.
 
 ### States and Feedback
 

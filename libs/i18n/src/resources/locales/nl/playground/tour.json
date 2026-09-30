@@ -6,19 +6,19 @@
 		},
 		"input": {
 			"title": "Begin een gesprek",
-			"content": "Typ hier je vraag en druk op Enter."
+			"content": "Typ je vraag en druk op Enter. Druk op de eerste regel op Omhoog om een eerdere prompt te hergebruiken; Omlaag gaat vooruit en Esc herstelt je concept."
 		},
 		"inputMenu": {
-			"title": "Bijvoegen en configureren",
-			"content": "Voeg bestanden, agents, kennisbibliotheken en tools toe om je gesprek te verrijken."
+			"title": "Voeg toe aan je chat",
+			"content": "Gebruik + om bestanden bij te voegen, kennis of tools toe te voegen, een agent te kiezen of de werkruimte te openen."
 		},
 		"model": {
 			"title": "Model",
 			"content": "Selecteer welk AI-model je gesprek aanstuurt."
 		},
 		"record": {
-			"title": "Opnemen",
-			"content": "Klik om te spreken; je stem wordt omgezet naar tekst."
+			"title": "Invoeracties",
+			"content": "Gebruik de microfoon om te dicteren, het boek om prompts te bekijken of de contextindicator om het gebruik te controleren."
 		},
 		"newChat": {
 			"title": "Nieuwe chat",
@@ -34,7 +34,7 @@
 		},
 		"takeTour": {
 			"title": "Volg een rondleiding",
-			"content": "Speel deze rondleiding op elk moment opnieuw af."
+			"content": "Speel deze rondleiding altijd opnieuw af via het menu onder je naam."
 		}
 	},
 	"controls": {

@@ -1,96 +1,132 @@
-import { cleanup, render, screen } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
-import { createMemoryRouter, MemoryRouter } from "react-router";
-import { RouterProvider } from "react-router/dom";
-import { afterEach, describe, expect, it, vi } from "vitest";
-import background from "@/assets/img/render-error-background.png";
-import backgroundDark from "@/assets/img/render-error-background-darkmode.jpg";
+import { fireEvent, render, screen } from "@testing-library/react";
+import { createMemoryRouter, Outlet, RouterProvider } from "react-router";
+import { afterEach, beforeEach, expect, test, vi } from "vitest";
+import { useInsight } from "@semoss/sdk/react";
+import { SidebarProvider, ThemeProvider } from "@semoss/ui/next";
 import { RootContext } from "@/contexts/root-context";
 import { RootStore } from "@/stores/root/root.store";
 import { ErrorPage } from "./error-page";
+import { InitializedLayout } from "./initialized-layout";
 
-const appearance = vi.hoisted(() => ({
-	resolvedTheme: "light" as "light" | "dark",
+vi.mock("@semoss/i18n", () => ({
+	useTranslation: () => ({ t: (key: string) => key }),
 }));
-vi.mock("@semoss/ui/next", async (original) => ({
-	...(await original<typeof import("@semoss/ui/next")>()),
-	useTheme: () => ({
-		theme: appearance.resolvedTheme,
-		resolvedTheme: appearance.resolvedTheme,
-		setTheme: vi.fn(),
-	}),
+vi.mock("@semoss/sdk/react", () => ({ useInsight: vi.fn() }));
+vi.mock("./root-layout", () => ({
+	RootLayout: ({ children }: { children: React.ReactNode }) => children,
 }));
+
+beforeEach(() => {
+	vi.stubGlobal(
+		"matchMedia",
+		vi.fn(() => ({
+			matches: false,
+			addEventListener: vi.fn(),
+			removeEventListener: vi.fn(),
+		})),
+	);
+});
 afterEach(() => {
-	cleanup();
-	appearance.resolvedTheme = "light";
+	vi.unstubAllGlobals();
+	vi.resetAllMocks();
 });
 
-describe("Playground error recovery", () => {
-	it.each(["light", "dark"] as const)(
-		"renders without a root provider in %s mode",
-		(theme) => {
-			appearance.resolvedTheme = theme;
-			const { container } = render(
-				<MemoryRouter>
-					<ErrorPage />
-				</MemoryRouter>,
-			);
-			expect(
-				screen.getByRole("heading", { name: "Something went wrong." }),
-			).toBeVisible();
-			expect(
-				screen.getByRole("button", { name: "Refresh" }),
-			).toBeEnabled();
-			expect(container.querySelector("img")).toHaveAttribute(
-				"src",
-				theme === "dark" ? backgroundDark : background,
-			);
-		},
-	);
-	it("keeps the configured error image when a root provider is available", async () => {
-		const root = new RootStore();
-		await root.initialize({
-			images: { ...root.theme.images, error: "/custom-error.png" },
-		});
-		const { container } = render(
-			<MemoryRouter>
-				<RootContext.Provider value={{ root }}>
-					<ErrorPage />
-				</RootContext.Provider>
-			</MemoryRouter>,
-		);
-		expect(container.querySelector("img")).toHaveAttribute(
-			"src",
-			"/custom-error.png",
-		);
-	});
-	it("recovers through the router when startup fails before the provider mounts", async () => {
+test.each(["light", "dark"] as const)(
+	"shows %s initialization failures before RootContext is mounted and allows returning home",
+	async (theme) => {
+		vi.mocked(useInsight).mockReturnValue({
+			isInitialized: false,
+			error: new Error("Initialization failed"),
+		} as ReturnType<typeof useInsight>);
 		const router = createMemoryRouter(
 			[
-				{
-					path: "/broken",
-					loader: () => {
-						throw new Error("Startup failed");
-					},
-					element: <div>Unreachable app</div>,
-					errorElement: <ErrorPage />,
-				},
 				{ path: "/", element: <h1>Home</h1> },
+				{ path: "/initializing", element: <InitializedLayout /> },
 			],
-			{ initialEntries: ["/broken"] },
+			{ initialEntries: ["/initializing"] },
 		);
-		render(<RouterProvider router={router} />);
+		render(
+			<ThemeProvider defaultTheme={theme}>
+				<RouterProvider router={router} />
+			</ThemeProvider>,
+		);
 		expect(
-			await screen.findByRole("heading", {
-				name: "Something went wrong.",
-			}),
+			screen.getByRole("heading", { name: "studio.errorTitle" }),
 		).toBeVisible();
-		await userEvent
-			.setup()
-			.click(screen.getByRole("button", { name: "Back to Home" }));
+		expect(
+			screen.getByRole("button", { name: "studio.refresh" }),
+		).toBeEnabled();
+		fireEvent.click(
+			screen.getByRole("button", { name: "studio.backHome" }),
+		);
 		expect(
 			await screen.findByRole("heading", { name: "Home" }),
 		).toBeVisible();
-		router.dispose();
-	});
+	},
+);
+
+test("renders the root route error boundary outside the failed layout's provider", async () => {
+	const root = new RootStore();
+	const router = createMemoryRouter([
+		{
+			path: "/",
+			element: (
+				<RootContext.Provider value={{ root }}>
+					<Outlet />
+				</RootContext.Provider>
+			),
+			loader: () => {
+				throw new Error("Route failed");
+			},
+			hydrateFallbackElement: <p>Loading</p>,
+			errorElement: <ErrorPage />,
+		},
+	]);
+	const { container } = render(
+		<ThemeProvider defaultTheme="light">
+			<RouterProvider router={router} />
+		</ThemeProvider>,
+	);
+	expect(
+		await screen.findByRole("heading", { name: "studio.errorTitle" }),
+	).toBeVisible();
+	expect(container.querySelector("img")).toBeNull();
 });
+
+test.each(["light", "dark"] as const)(
+	"preserves custom %s branding and sidebar navigation for inner errors",
+	async (theme) => {
+		const root = new RootStore();
+		await root.initialize({
+			images: {
+				...root.theme.images,
+				error: "/error-light.png",
+				errorDark: "/error-dark.png",
+			},
+		});
+		const router = createMemoryRouter([
+			{
+				path: "/",
+				element: (
+					<RootContext.Provider value={{ root }}>
+						<SidebarProvider>
+							<ErrorPage isInnerComponent />
+						</SidebarProvider>
+					</RootContext.Provider>
+				),
+			},
+		]);
+		render(
+			<ThemeProvider defaultTheme={theme}>
+				<RouterProvider router={router} />
+			</ThemeProvider>,
+		);
+		expect(screen.getByAltText("")).toHaveAttribute(
+			"src",
+			`/error-${theme}.png`,
+		);
+		expect(
+			screen.getByRole("button", { name: "Toggle Sidebar" }),
+		).toBeVisible();
+	},
+);

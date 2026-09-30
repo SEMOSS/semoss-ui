@@ -43,6 +43,9 @@
 		"untitled": "بدون عنوان"
 	},
 	"actions": {
+		"openNavigation": "فتح التنقل",
+		"openSidebar": "فتح الشريط الجانبي",
+		"closeSidebar": "إغلاق الشريط الجانبي",
 		"favorite": "مفضل",
 		"unfavorite": "إلغاء المفضلة",
 		"rename": "إعادة التسمية",
@@ -59,5 +62,49 @@
 		"roomRenamedSuccess": "تمت إعادة تسمية الغرفة بنجاح",
 		"failedToRename": "فشل إعادة تسمية الغرفة",
 		"roomDeletedSuccess": "تم حذف الغرفة بنجاح"
+	},
+	"workbench": {
+		"file": "ملف",
+		"navigate": "تنقّل",
+		"commandPalette": "افتح لوحة الأوامر…",
+		"layout": "رتّب اللوحات",
+		"single": "دمج في مجموعة واحدة",
+		"columns": "اقسم إلى عمودين",
+		"rows": "اقسم إلى صفين",
+		"balance": "مساواة أحجام الأجزاء",
+		"left": "أظهر المنطقة اليسرى",
+		"right": "أظهر المنطقة اليمنى",
+		"top": "أظهر المنطقة العلوية",
+		"bottom": "أظهر المنطقة السفلية",
+		"previous": "انتقل إلى اللوحة السابقة",
+		"next": "انتقل إلى اللوحة التالية",
+		"openPanels": "اللوحات المفتوحة",
+		"noPanels": "لا توجد لوحات مفتوحة",
+		"maximize": "تكبير مساحة العمل",
+		"restore": "استعادة مساحة العمل"
+	},
+	"userMenu": {
+		"settings": "الإعدادات",
+		"language": "اللغة"
+	},
+	"settings": {
+		"title": "الإعدادات",
+		"description": "تفضيلاتك والتطبيقات التي يمكن للمساعد استخدامها.",
+		"sections": {
+			"general": "عام",
+			"connectors": "الموصلات"
+		},
+		"general": {
+			"appearance": "المظهر",
+			"theme": "السمة",
+			"themeDescription": "السمة الداكنة وسمة النظام في مرحلة تجريبية.",
+			"themes": {
+				"system": "النظام",
+				"light": "فاتح",
+				"dark": "داكن"
+			},
+			"language": "اللغة",
+			"languageDescription": "اللغة التي يُعرض بها التطبيق."
+		}
 	}
 }

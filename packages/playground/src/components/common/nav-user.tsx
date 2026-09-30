@@ -1,12 +1,6 @@
 "use client";
 
-import {
-	LanguagesIcon,
-	LogOutIcon,
-	MonitorIcon,
-	MoonIcon,
-	SunIcon,
-} from "lucide-react";
+import { LanguagesIcon, LogOutIcon, MapIcon, SettingsIcon } from "lucide-react";
 import { useNavigate } from "react-router";
 import { LANGUAGES, useTranslation } from "@semoss/i18n";
 import { useInsight } from "@semoss/sdk/react";
@@ -19,23 +13,30 @@ import {
 	DropdownMenuContent,
 	DropdownMenuItem,
 	DropdownMenuPortal,
+	DropdownMenuSeparator,
 	DropdownMenuSub,
 	DropdownMenuSubContent,
 	DropdownMenuSubTrigger,
 	DropdownMenuTrigger,
 	useSidebar,
-	useTheme,
 } from "@semoss/ui/next";
 import { buildInitials } from "@semoss/utility";
-import { useChat, useRoot } from "@/hooks";
+import { useSettingsDialog } from "@/features/settings/settings-dialog.context";
+import { useChat, useRoot, useTour } from "@/hooks";
 
+/**
+ * The signed in user's name and avatar at the foot of the sidebar. Clicking it
+ * opens the account menu: settings, language, the guided tour, and log out.
+ * The tour's last step points here, where it can be replayed.
+ */
 export const NavUser = () => {
-	const { t, i18n } = useTranslation("common");
+	const { t, i18n } = useTranslation(["common", "sidebar"]);
 	const { isMobile } = useSidebar();
 	const { actions } = useInsight();
 	const { chat } = useChat();
-	const { theme, setTheme } = useTheme();
 	const { root } = useRoot();
+	const { startTour } = useTour();
+	const { openSettings } = useSettingsDialog();
 
 	const navigate = useNavigate();
 
@@ -48,7 +49,10 @@ export const NavUser = () => {
 	return (
 		<DropdownMenu>
 			<DropdownMenuTrigger asChild>
-				<div className="flex cursor-pointer items-center gap-2 rounded-lg px-1 py-1 hover:bg-accent group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:gap-0">
+				<div
+					data-tour="tour-take-tour"
+					className="flex cursor-pointer items-center gap-2 rounded-lg px-1 py-1 hover:bg-accent group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:gap-0"
+				>
 					<Avatar className="h-8 w-8 shrink-0 rounded-lg">
 						<AvatarImage src={""} alt={userName} />
 						<AvatarFallback className="rounded-lg bg-primary/10">
@@ -67,71 +71,14 @@ export const NavUser = () => {
 				align="end"
 				sideOffset={4}
 			>
-				{root.theme.featureFlags?.enableDarkMode && (
-					<DropdownMenuSub>
-						<DropdownMenuSubTrigger>
-							{theme === "dark" ? (
-								<MoonIcon />
-							) : theme === "system" ? (
-								<MonitorIcon />
-							) : (
-								<SunIcon />
-							)}
-							{theme === "dark" ? (
-								<>
-									Dark
-									<span className="ms-1 self-center rounded border px-1 py-0.5 font-semibold text-[9px] leading-none">
-										BETA
-									</span>
-								</>
-							) : theme === "system" ? (
-								<>
-									System
-									<span className="ms-1 self-center rounded border px-1 py-0.5 font-semibold text-[9px] leading-none">
-										BETA
-									</span>
-								</>
-							) : (
-								"Light"
-							)}
-						</DropdownMenuSubTrigger>
-						<DropdownMenuPortal>
-							<DropdownMenuSubContent>
-								<DropdownMenuCheckboxItem
-									checked={theme === "light"}
-									onCheckedChange={() => setTheme("light")}
-								>
-									<SunIcon />
-									Light
-								</DropdownMenuCheckboxItem>
-								<DropdownMenuCheckboxItem
-									checked={theme === "dark"}
-									onCheckedChange={() => setTheme("dark")}
-								>
-									<MoonIcon />
-									Dark
-									<span className="ms-auto self-center rounded border px-1 py-0.5 font-semibold text-[9px] leading-none">
-										BETA
-									</span>
-								</DropdownMenuCheckboxItem>
-								<DropdownMenuCheckboxItem
-									checked={theme === "system"}
-									onCheckedChange={() => setTheme("system")}
-								>
-									<MonitorIcon />
-									System
-									<span className="ms-auto self-center rounded border px-1 py-0.5 font-semibold text-[9px] leading-none">
-										BETA
-									</span>
-								</DropdownMenuCheckboxItem>
-							</DropdownMenuSubContent>
-						</DropdownMenuPortal>
-					</DropdownMenuSub>
-				)}
+				<DropdownMenuItem onSelect={() => openSettings()}>
+					<SettingsIcon />
+					{t("sidebar:userMenu.settings")}
+				</DropdownMenuItem>
 				<DropdownMenuSub>
 					<DropdownMenuSubTrigger>
 						<LanguagesIcon />
-						{selectedLanguage?.label}
+						{t("sidebar:userMenu.language")}
 					</DropdownMenuSubTrigger>
 					<DropdownMenuPortal>
 						<DropdownMenuSubContent>
@@ -153,6 +100,18 @@ export const NavUser = () => {
 						</DropdownMenuSubContent>
 					</DropdownMenuPortal>
 				</DropdownMenuSub>
+				{root.theme.tour?.show !== false ? (
+					<DropdownMenuItem
+						onSelect={() => {
+							navigate("/new");
+							startTour();
+						}}
+					>
+						<MapIcon />
+						{t("sidebar:takeTour")}
+					</DropdownMenuItem>
+				) : null}
+				<DropdownMenuSeparator />
 				<DropdownMenuItem
 					onClick={async () => {
 						await actions.logout();
