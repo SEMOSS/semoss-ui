@@ -114,6 +114,7 @@ export const ProjectTabsLayout = ({ tabs }: ProjectTabsLayoutProps) => {
 					<EntityHeader
 						icon={
 							<AppCatalogAvatar
+								projectId={project.project_id}
 								name={
 									project.project_display_name ||
 									project.project_name ||

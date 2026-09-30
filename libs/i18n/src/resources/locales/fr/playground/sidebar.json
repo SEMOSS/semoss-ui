@@ -43,6 +43,9 @@
 		"untitled": "Sans titre"
 	},
 	"actions": {
+		"openNavigation": "Ouvrir la navigation",
+		"openSidebar": "Ouvrir la barre latérale",
+		"closeSidebar": "Fermer la barre latérale",
 		"favorite": "Favori",
 		"unfavorite": "Retirer des favoris",
 		"rename": "Renommer",
@@ -59,6 +62,26 @@
 		"roomRenamedSuccess": "Salle renommée avec succès",
 		"failedToRename": "Échec du renommage de la salle",
 		"roomDeletedSuccess": "Salle supprimée avec succès"
+	},
+	"workbench": {
+		"file": "Fichier",
+		"navigate": "Navigation",
+		"commandPalette": "Ouvrir la palette de commandes…",
+		"layout": "Organiser les panneaux",
+		"single": "Réunir en un groupe",
+		"columns": "Diviser en deux colonnes",
+		"rows": "Diviser en deux lignes",
+		"balance": "Équilibrer la taille des volets",
+		"left": "Afficher la zone gauche",
+		"right": "Afficher la zone droite",
+		"top": "Afficher la zone supérieure",
+		"bottom": "Afficher la zone inférieure",
+		"previous": "Aller au panneau précédent",
+		"next": "Aller au panneau suivant",
+		"openPanels": "Panneaux ouverts",
+		"noPanels": "Aucun panneau ouvert",
+		"maximize": "Agrandir l’espace de travail",
+		"restore": "Restaurer l’espace de travail"
 	},
 	"userMenu": {
 		"settings": "Paramètres",

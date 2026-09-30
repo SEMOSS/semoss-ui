@@ -6,9 +6,14 @@ import {
 } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useEffect, useMemo, useState } from "react";
-import { createPortal } from "react-dom";
 import { useTranslation } from "@semoss/i18n";
-import { Button } from "@semoss/ui/next";
+import {
+	Button,
+	Dialog,
+	DialogContent,
+	DialogDescription,
+	DialogTitle,
+} from "@semoss/ui/next";
 import { useRoot, useTour } from "@/hooks";
 
 interface TourStep {
@@ -31,7 +36,7 @@ const TOUR_STEP_DEFS: TourStepDef[] = [
 	{ key: "input", target: "tour-input", placement: "top" },
 	{ key: "inputMenu", target: "tour-input-menu", placement: "top" },
 	{ key: "model", target: "tour-model", placement: "top" },
-	{ key: "record", target: "tour-record", placement: "top" },
+	{ key: "record", target: "tour-input-more", placement: "top" },
 	{ key: "newChat", target: "tour-new-chat", placement: "right" },
 	// customSteps from theme are inserted here (after tour-new-chat)
 	{
@@ -63,14 +68,14 @@ function getCardStyle(
 			top: "50%",
 			left: "50%",
 			transform: "translate(-50%, -50%)",
-			width: CARD_WIDTH,
+			width: Math.min(CARD_WIDTH, window.innerWidth - 32),
 		};
 	}
 
 	const PAD = 16;
 	const vw = window.innerWidth;
 	const vh = window.innerHeight;
-	const W = CARD_WIDTH;
+	const W = Math.min(CARD_WIDTH, vw - 32);
 	const CARD_H = 180;
 
 	const centerLeft = Math.min(
@@ -173,7 +178,7 @@ export const LandingTour: React.FC = observer(() => {
 		root.theme.tour?.stepOverrides,
 	]);
 
-	const currentStep = allSteps[step];
+	const currentStep = allSteps[step] ?? allSteps[0];
 	const isFirst = step === 0;
 	const isLast = step === allSteps.length - 1;
 
@@ -187,7 +192,7 @@ export const LandingTour: React.FC = observer(() => {
 		if (!isOpen) return;
 
 		const update = () => {
-			setRect(getTargetRect(currentStep.target));
+			setRect(getTargetRect(currentStep?.target));
 		};
 
 		// Small delay so navigation/render can complete
@@ -201,26 +206,19 @@ export const LandingTour: React.FC = observer(() => {
 			window.removeEventListener("resize", update);
 			window.removeEventListener("scroll", update, true);
 		};
-	}, [isOpen, currentStep.target]);
+	}, [isOpen, currentStep?.target]);
 
-	if (root.theme.tour?.show === false || !isOpen) return null;
+	if (root.theme.tour?.show === false || !isOpen || !currentStep) return null;
 
 	const cardStyle = getCardStyle(rect, currentStep.placement);
 
-	return createPortal(
-		<>
-			{/* Clickable backdrop */}
-			<div
-				aria-hidden="true"
-				style={{
-					position: "fixed",
-					inset: 0,
-					zIndex: 9998,
-					cursor: "default",
-				}}
-				onClick={stopTour}
-			/>
-
+	return (
+		<Dialog
+			open={isOpen}
+			onOpenChange={(open) => {
+				if (!open) stopTour();
+			}}
+		>
 			{/* Spotlight over target element */}
 			{rect ? (
 				<div
@@ -235,55 +233,43 @@ export const LandingTour: React.FC = observer(() => {
 						boxShadow: "0 0 0 9999px rgba(0, 0, 0, 0.55)",
 						zIndex: 9999,
 						pointerEvents: "none",
-						outline: "2px solid hsl(var(--primary))",
+						outline: "2px solid var(--primary)",
 						outlineOffset: "2px",
 					}}
 				/>
-			) : (
-				/* Plain overlay for steps with no target */
-				<div
-					aria-hidden="true"
-					style={{
-						position: "fixed",
-						inset: 0,
-						backgroundColor: "rgba(0, 0, 0, 0.55)",
-						zIndex: 9999,
-						pointerEvents: "none",
-					}}
-				/>
-			)}
+			) : null}
 
 			{/* Tour card */}
-			<div
-				role="dialog"
-				aria-modal="true"
-				aria-label={currentStep.title}
+			<DialogContent
+				showCloseButton={false}
 				style={{ ...cardStyle, zIndex: 10000 }}
-				className="rounded-lg border border-border bg-background shadow-2xl"
+				className="max-h-[80dvh] translate-x-0 translate-y-0 gap-0 overflow-y-auto rounded-xl border bg-popover p-0 shadow-lg"
 			>
 				<div className="flex flex-col gap-3 p-4">
 					{/* Header */}
 					<div className="flex items-start justify-between gap-2">
 						<div className="flex items-center gap-2">
 							<MapIcon className="size-4 shrink-0 text-primary" />
-							<span className="font-semibold text-foreground text-sm leading-tight">
+							<DialogTitle className="font-semibold text-foreground text-sm leading-tight">
 								{currentStep.title}
-							</span>
+							</DialogTitle>
 						</div>
-						<button
+						<Button
+							variant="ghost"
+							size="icon-sm"
 							type="button"
 							onClick={stopTour}
 							aria-label={t("controls.closeTour")}
 							className="mt-0.5 shrink-0 text-muted-foreground transition-colors hover:text-foreground"
 						>
 							<XIcon className="size-4" />
-						</button>
+						</Button>
 					</div>
 
 					{/* Content */}
-					<p className="text-muted-foreground text-sm leading-relaxed">
+					<DialogDescription className="text-muted-foreground text-sm leading-relaxed">
 						{currentStep.content}
-					</p>
+					</DialogDescription>
 
 					{/* Footer */}
 					<div className="flex items-center justify-between pt-1">
@@ -325,8 +311,7 @@ export const LandingTour: React.FC = observer(() => {
 						</div>
 					</div>
 				</div>
-			</div>
-		</>,
-		document.body,
+			</DialogContent>
+		</Dialog>
 	);
 });

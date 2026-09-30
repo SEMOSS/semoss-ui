@@ -600,6 +600,7 @@ export const SettingsLayout = () => {
 										<EntityHeader
 											icon={
 												<AppCatalogAvatar
+													projectId={id}
 													name={appName}
 													className="h-full w-full rounded-lg text-xl"
 												/>

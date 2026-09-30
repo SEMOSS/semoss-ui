@@ -121,7 +121,38 @@
 		"organizer": "आयोजक",
 		"attendees": "आमंत्रित",
 		"join": "मीटिंग में शामिल हों",
-		"noDescription": "इस ईवेंट का कोई विवरण नहीं है।"
+		"noDescription": "इस ईवेंट का कोई विवरण नहीं है।",
+		"view": "कैलेंडर दृश्य",
+		"month": "महीना",
+		"agenda": "कार्यसूची",
+		"previousMonth": "पिछला महीना",
+		"nextMonth": "अगला महीना",
+		"emptyDay": "इस दिन कोई ईवेंट नहीं है",
+		"emptyMonth": "इस महीने कोई ईवेंट नहीं है",
+		"eventCount_one": "{{count}} ईवेंट",
+		"eventCount_other": "{{count}} ईवेंट",
+		"moreEvents": "+{{count}} और",
+		"limitReached": "केवल पहले {{count}} ईवेंट दिखाए गए हैं। कुछ दिनों में और ईवेंट हो सकते हैं; पूरा कैलेंडर देखने के लिए Outlook खोलें।",
+		"noLoadedEvents": "इस दिन के लिए कोई ईवेंट लोड नहीं हुआ",
+		"week": "सप्ताह",
+		"day": "दिन",
+		"threeDays": "3 दिन",
+		"listView": "सूची दृश्य",
+		"calendarView": "कैलेंडर दृश्य",
+		"openForTime": "समय देखने के लिए ईवेंट खोलें।",
+		"emptyRange": "इस अवधि में कोई ईवेंट नहीं है",
+		"previousView": {
+			"week": "पिछला सप्ताह",
+			"day": "पिछला दिन",
+			"threeDays": "पिछले 3 दिन",
+			"month": "पिछला महीना"
+		},
+		"nextView": {
+			"week": "अगला सप्ताह",
+			"day": "अगला दिन",
+			"threeDays": "अगले 3 दिन",
+			"month": "अगला महीना"
+		}
 	},
 	"teams": {
 		"team": "टीम",

@@ -1,6 +1,7 @@
 import type { LucideIcon } from "lucide-react";
 import {
 	Button,
+	cn,
 	Tooltip,
 	TooltipContent,
 	TooltipTrigger,
@@ -28,6 +29,8 @@ export interface ConnectorIconButtonProps {
 	isInactive?: boolean;
 	/** Spins the icon, for a refresh that is running. */
 	isSpinning?: boolean;
+	/** Mirror navigation arrows in right-to-left interfaces. */
+	isDirectional?: boolean;
 }
 
 /** A small icon button with a tooltip, for a viewer's toolbars. */
@@ -39,6 +42,7 @@ export const ConnectorIconButton = ({
 	disabled = false,
 	isInactive = false,
 	isSpinning = false,
+	isDirectional = false,
 }: ConnectorIconButtonProps) => (
 	<Tooltip>
 		<TooltipTrigger asChild>
@@ -47,15 +51,16 @@ export const ConnectorIconButton = ({
 				size="icon-sm"
 				aria-label={ariaLabel ?? label}
 				disabled={disabled}
-				className="aria-disabled:opacity-50"
+				className="size-8 shrink-0 rounded-sm aria-disabled:opacity-50 [@media(pointer:coarse)]:size-9"
 				aria-disabled={isInactive || undefined}
 				onClick={isInactive ? undefined : onClick}
 			>
 				<Icon
 					aria-hidden
-					className={
-						isSpinning ? "motion-safe:animate-spin" : undefined
-					}
+					className={cn(
+						isSpinning && "motion-safe:animate-spin",
+						isDirectional && "rtl:rotate-180",
+					)}
 				/>
 			</Button>
 		</TooltipTrigger>

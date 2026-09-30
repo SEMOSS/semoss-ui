@@ -19,6 +19,7 @@
 export { WorkbenchChromeButton } from "./components/chrome/workbench-chrome-button";
 export { WorkbenchResetButton } from "./components/chrome/workbench-reset-button";
 export { WorkbenchCommandMenuButton } from "./components/command/workbench-command-menu-button";
+export { WorkbenchMenus } from "./components/menu/workbench-menus";
 /* Panel-sized state views a panel draws in place of its own body */
 export { WorkbenchPanelError } from "./components/panel/workbench-panel-error";
 export { WorkbenchPanelLoading } from "./components/panel/workbench-panel-loading";

@@ -16,7 +16,12 @@
 		"viewDetails": "詳細を表示",
 		"noToolboxesFound": "ツールボックスが見つかりません",
 		"noKnowledgeFound": "ナレッジが見つかりません",
-		"noAgentsFound": "エージェントが見つかりません"
+		"noAgentsFound": "エージェントが見つかりません",
+		"fromRoom": "このチャットから",
+		"loadError": "カタログを読み込めませんでした。",
+		"retry": "再試行",
+		"added": "追加済み",
+		"available": "利用可能"
 	},
 	"overlay": {
 		"title": "チャットを設定",

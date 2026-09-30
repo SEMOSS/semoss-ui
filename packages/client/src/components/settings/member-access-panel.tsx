@@ -258,6 +258,7 @@ export const MemberAccessPanel = ({
 										{selectedApp ? (
 											<div className="flex w-full min-w-0 items-center gap-2">
 												<AppCatalogAvatar
+													projectId={selectedApp.id}
 													name={selectedApp.name}
 													className="size-8 shrink-0 rounded-md text-xs"
 												/>
@@ -338,6 +339,9 @@ export const MemberAccessPanel = ({
 																)}
 															>
 																<AppCatalogAvatar
+																	projectId={
+																		project.project_id
+																	}
 																	name={name}
 																	className="me-2 size-8 shrink-0 rounded-md text-xs"
 																/>

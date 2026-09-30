@@ -218,6 +218,7 @@ export const TeamsChannelViewer = (props: TeamsChannelViewerProps) => {
 				)}
 			>
 				<ConnectorViewerHeader
+					brand="teams"
 					icon={MessagesSquareIcon}
 					title={serviceName}
 					description={
@@ -238,7 +239,7 @@ export const TeamsChannelViewer = (props: TeamsChannelViewerProps) => {
 					/>
 				</ConnectorViewerHeader>
 				{choice.teamsQuery.status === "ready" && team ? (
-					<div className="px-3 py-2">
+					<div className="border-border border-b bg-muted/10 px-3 py-2">
 						<TeamsChannelPicker
 							choice={{
 								...choice,

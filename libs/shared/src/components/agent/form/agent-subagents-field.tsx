@@ -1,6 +1,5 @@
 import { Plus } from "lucide-react";
 import { useMemo, useState } from "react";
-import { type Control, Controller } from "react-hook-form";
 import { useTranslation } from "@semoss/i18n";
 import { usePixel } from "@semoss/sdk/react";
 import {
@@ -11,6 +10,8 @@ import {
 	CommandInput,
 	CommandItem,
 	CommandList,
+	type Control,
+	Controller,
 	Popover,
 	PopoverContent,
 	PopoverTrigger,
@@ -28,6 +29,8 @@ const getAgentName = (agent: Project) =>
 export interface AgentSubagentsFieldProps {
 	/** React Hook Form control for the shared agent form. */
 	control: Control<AgentFormValues>;
+	/** Locks the picker while its owning form is saving. */
+	disabled?: boolean;
 	/** Workspace id to exclude from the target-agent picker - the agent's own id, if it already exists (a new, unsaved agent has none to exclude). */
 	excludeWorkspaceId?: string;
 	/** Link for each subagent. */
@@ -37,6 +40,7 @@ export interface AgentSubagentsFieldProps {
 /** Lists the agents this agent can delegate to, with a searchable agent picker. */
 export const AgentSubagentsField = ({
 	control,
+	disabled,
 	excludeWorkspaceId,
 	getAgentUrl,
 }: AgentSubagentsFieldProps) => {
@@ -76,6 +80,7 @@ export const AgentSubagentsField = ({
 								const agent = agentsById.get(workspaceId);
 								return {
 									id: workspaceId,
+									projectId: agent ? workspaceId : undefined,
 									title: agent
 										? getAgentName(agent)
 										: isLoading
@@ -95,14 +100,18 @@ export const AgentSubagentsField = ({
 								)
 							}
 						/>
-						<Popover open={open} onOpenChange={setOpen}>
+						<Popover
+							open={open && !disabled}
+							onOpenChange={setOpen}
+						>
 							<PopoverTrigger asChild>
 								<Button
 									type="button"
 									variant="outline"
 									size="sm"
 									className="w-fit"
-									aria-expanded={open}
+									disabled={disabled}
+									aria-expanded={open && !disabled}
 								>
 									<Plus aria-hidden="true" />
 									{t("form.subagents.add")}
@@ -148,7 +157,14 @@ export const AgentSubagentsField = ({
 																	agent.description ??
 																		"",
 																]}
+																disabled={
+																	disabled
+																}
 																onSelect={() => {
+																	if (
+																		disabled
+																	)
+																		return;
 																	field.onChange(
 																		[
 																			...values,
@@ -164,6 +180,9 @@ export const AgentSubagentsField = ({
 																}}
 															>
 																<AppCatalogAvatar
+																	projectId={
+																		agent.project_id
+																	}
 																	name={name}
 																	aria-hidden="true"
 																	className="size-6 shrink-0 rounded-sm text-xs"

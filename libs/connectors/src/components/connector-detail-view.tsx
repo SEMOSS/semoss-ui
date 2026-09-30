@@ -48,9 +48,10 @@ export const ConnectorDetailView = ({
 
 	return (
 		<div className="flex h-full min-h-0 flex-col">
-			<div className="flex min-h-12 min-w-0 items-center gap-2 border-border border-b px-3 py-2">
+			<div className="flex min-h-10 min-w-0 shrink-0 items-center gap-2 border-border border-b bg-muted/30 px-2 py-1">
 				<ConnectorIconButton
 					icon={ArrowLeftIcon}
+					isDirectional
 					label={backLabel}
 					onClick={onBack}
 				/>
@@ -63,6 +64,11 @@ export const ConnectorDetailView = ({
 					{title}
 				</H4>
 			</div>
+			{actions ? (
+				<div className="shrink-0 border-border border-b bg-muted/20 px-3 py-1.5">
+					{actions}
+				</div>
+			) : null}
 			{/* block, not the scroll area's table, so long text wraps to the
 			    panel's width instead of widening it */}
 			<ScrollArea className="[&>div>div]:block! min-h-0 flex-1">
@@ -84,7 +90,6 @@ export const ConnectorDetailView = ({
 							))}
 						</dl>
 					) : null}
-					{actions}
 					{children}
 				</div>
 			</ScrollArea>
