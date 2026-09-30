@@ -934,6 +934,7 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
 												}}
 											/>
 											<AppCatalogAvatar
+												projectId={project.project_id}
 												name={project.project_name}
 												className="size-8 shrink-0 rounded-[10px] text-xs"
 											/>

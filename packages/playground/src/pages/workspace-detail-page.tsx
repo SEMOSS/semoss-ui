@@ -128,6 +128,7 @@ export const WorkspaceDetailPage = observer(() => {
 				{/* Sticky header so New Chat / Edit / Delete stay reachable while scrolling */}
 				<div className="-mx-4 -mt-6 sm:-mx-6 sticky top-0 z-20 flex flex-wrap items-center gap-3 border-b bg-background px-4 py-4 sm:px-6">
 					<AppCatalogAvatar
+						projectId={workspaceId}
 						name={workspace.name}
 						className="size-10 shrink-0 rounded-md text-base"
 					/>

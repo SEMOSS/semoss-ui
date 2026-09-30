@@ -18,6 +18,8 @@ import { AppCatalogAvatar } from "../app-catalog-avatar";
 
 /** One row of an `AgentResourceList`. */
 export interface AgentResourceListItem {
+	/** Project ID for project-backed resources; other resources keep initials or their supplied icon. */
+	projectId?: string;
 	/** Stable id, passed back to `onRemove`. */
 	id: string;
 	/** Display name shown as the row title. */
@@ -79,6 +81,7 @@ export const AgentResourceList = ({
 							) : (
 								<ItemMedia>
 									<AppCatalogAvatar
+										projectId={item.projectId}
 										name={item.title}
 										aria-hidden="true"
 										className="size-8 rounded-sm text-xs"

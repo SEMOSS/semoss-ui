@@ -80,6 +80,7 @@ export const AgentSubagentsField = ({
 								const agent = agentsById.get(workspaceId);
 								return {
 									id: workspaceId,
+									projectId: agent ? workspaceId : undefined,
 									title: agent
 										? getAgentName(agent)
 										: isLoading
@@ -179,6 +180,9 @@ export const AgentSubagentsField = ({
 																}}
 															>
 																<AppCatalogAvatar
+																	projectId={
+																		agent.project_id
+																	}
 																	name={name}
 																	aria-hidden="true"
 																	className="size-6 shrink-0 rounded-sm text-xs"

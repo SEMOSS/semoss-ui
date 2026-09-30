@@ -166,6 +166,7 @@ export function AgentSelector({
 									value={agent.project_id}
 								/>
 								<AppCatalogAvatar
+									projectId={agent.project_id}
 									name={name}
 									className="size-10 shrink-0 rounded-md"
 								/>

@@ -1,10 +1,18 @@
 import type { HTMLAttributes } from "react";
+import { Avatar, AvatarFallback, AvatarImage, cn } from "@semoss/ui/next";
+import { useCatalogImageUrl } from "../hooks/use-catalog-image";
 import { buildInitials, getAppCatalogAvatarStyle } from "./icon-utils";
 
 interface AppCatalogAvatarProps
 	extends Omit<HTMLAttributes<HTMLDivElement>, "style" | "children"> {
-	/** App / project name; drives both the initials and the hash-derived gradient. */
+	/** App / project name used for the initials and their deterministic colors. */
 	name: string;
+	/** Image mode is the default; initials mode keeps the letter-and-color avatar. */
+	mode?: "image" | "initials";
+	/** Saved project ID used to load uploaded, stock, or system-managed artwork. */
+	projectId?: string;
+	/** Optional image URL, such as a bundled system-app SVG; takes precedence over projectId. */
+	imageUrl?: string;
 	/** Tailwind classes for the wrapper (sizing, rounding, etc.). */
 	className?: string;
 }
@@ -12,27 +20,39 @@ interface AppCatalogAvatarProps
 // Two letters fit every avatar size; a long name would otherwise overflow it.
 const MAX_INITIALS = 2;
 
-// Only structural defaults — callers must specify size (h-X/w-X or size-X), rounding,
-// and text-size so Tailwind's CSS-cascade ordering can't surprise us.
-const DEFAULT_CLASSES = "flex items-center justify-center font-semibold";
-
+/** A themed project image with initials while loading, unavailable, or explicitly requested. */
 export const AppCatalogAvatar = ({
 	name,
+	mode = "image",
+	projectId,
+	imageUrl,
 	className,
 	...rest
 }: AppCatalogAvatarProps) => {
 	const label = name || "App";
-	const classes = className
-		? `${DEFAULT_CLASSES} ${className}`
-		: DEFAULT_CLASSES;
+	const projectImageUrl = useCatalogImageUrl(
+		"PROJECT",
+		mode === "image" && !imageUrl ? (projectId ?? "") : "",
+	);
+	const src = mode === "image" ? imageUrl || projectImageUrl : undefined;
 
 	return (
-		<div
-			{...rest}
-			className={classes}
-			style={getAppCatalogAvatarStyle(label)}
+		<Avatar
+			key={src || "initials"}
+			asChild
+			className={cn("rounded-none font-semibold", className)}
 		>
-			{buildInitials(label, MAX_INITIALS)}
-		</div>
+			<div aria-hidden="true" {...rest}>
+				{src && (
+					<AvatarImage src={src} alt="" className="object-cover" />
+				)}
+				<AvatarFallback
+					className="rounded-none"
+					style={getAppCatalogAvatarStyle(label)}
+				>
+					{buildInitials(label, MAX_INITIALS)}
+				</AvatarFallback>
+			</div>
+		</Avatar>
 	);
 };

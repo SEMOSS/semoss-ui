@@ -244,6 +244,7 @@ export const MCPCard = ({
 						</div>
 					) : m.type === "PROJECT" ? (
 						<AppCatalogAvatar
+							projectId={m.id}
 							name={m.name}
 							className="size-10 shrink-0 rounded-md text-sm"
 						/>

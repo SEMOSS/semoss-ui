@@ -180,6 +180,7 @@ export const AgentDefinition = ({
 				emptyLabel={t("empty.knowledge")}
 				items={knowledge.map((m) => ({
 					id: m.id,
+					projectId: m.type === "PROJECT" ? m.id : undefined,
 					title: getAgentMcpName(m),
 					description: m.description,
 					icon: getMcpTypeIcon(m.type),
@@ -196,6 +197,7 @@ export const AgentDefinition = ({
 				emptyLabel={t("empty.toolboxes")}
 				items={toolboxes.map((m) => ({
 					id: m.id,
+					projectId: m.type === "PROJECT" ? m.id : undefined,
 					title: getAgentMcpName(m),
 					description: m.description || t(`mcpType.${m.type}`),
 					icon:
@@ -215,6 +217,7 @@ export const AgentDefinition = ({
 				emptyLabel={t("empty.skills")}
 				items={(workspace.skills ?? []).map((s) => ({
 					id: s.id,
+					projectId: s.id,
 					title: s.name,
 					description: s.description,
 					href: getSkillUrl?.(s.id),
@@ -247,6 +250,7 @@ export const AgentDefinition = ({
 					const agent = agentsById.get(id);
 					return {
 						id,
+						projectId: agent ? id : undefined,
 						title: agent
 							? agent.project_display_name || agent.project_name
 							: agents.status === "LOADING"
