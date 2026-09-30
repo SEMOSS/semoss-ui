@@ -36,8 +36,12 @@ export const WORKBENCH_STYLES = {
 	/** Hit target for a control that sits *inside* a tab, like pin and close. */
 	chromeButtonSm: "size-5",
 
-	/** A selected/showing chrome control: tabs, panel toggles. */
-	chromeButtonActive: "bg-accent font-medium text-foreground",
+	/**
+	 * A selected/showing chrome control: tabs, panel toggles. Background and
+	 * color only — no font-weight change, which renders at a different width
+	 * than regular and would resize the tab (or its neighbors) on selection.
+	 */
+	chromeButtonActive: "bg-accent text-foreground",
 
 	/** Its resting state — muted until hovered. */
 	chromeButtonInactive:

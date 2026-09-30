@@ -1,4 +1,11 @@
-import { type FC, useEffect, useLayoutEffect, useMemo, useRef } from "react";
+import {
+	type FC,
+	type ReactNode,
+	useEffect,
+	useLayoutEffect,
+	useMemo,
+	useRef,
+} from "react";
 import { Spinner, useIsMobile } from "@semoss/ui/next";
 import { useWorkbench, useWorkbenchLifeCycle } from "../../hooks";
 import type {
@@ -66,6 +73,14 @@ interface WorkbenchProps {
 	 */
 	borderSlots?: WorkbenchBorderSlots;
 
+	/**
+	 * Chrome appended to the root dock's own tab strip, for container-level
+	 * actions with no border to live in. Use this instead of `borderSlots`
+	 * when there's no border — an empty one would still render a whole extra
+	 * row just to carry the slot content.
+	 */
+	stageActions?: ReactNode;
+
 	/** Fired when a panel becomes docked somewhere. */
 	onPanelOpen?: (pid: WorkbenchPanelId) => void;
 
@@ -89,6 +104,7 @@ export const Workbench: FC<WorkbenchProps> = ({
 	snapshot,
 	onChange,
 	borderSlots,
+	stageActions,
 	onPanelOpen,
 	onPanelClose,
 	onSelectionChange,
@@ -170,7 +186,7 @@ export const Workbench: FC<WorkbenchProps> = ({
 		const leftAfter = borderSlots?.left?.after;
 		const topAfter = borderSlots?.top?.after;
 
-		if (!topAfter) {
+		if (!topAfter && !stageActions) {
 			return leftAfter;
 		}
 
@@ -182,9 +198,10 @@ export const Workbench: FC<WorkbenchProps> = ({
 					side: "top",
 					vertical: false,
 				})}
+				{stageActions}
 			</>
 		);
-	}, [borderSlots]);
+	}, [borderSlots, stageActions]);
 
 	return (
 		<>
@@ -215,7 +232,7 @@ export const Workbench: FC<WorkbenchProps> = ({
 								ref={stageRef}
 								className="relative flex min-h-0 flex-1"
 							>
-								<WorkbenchStage />
+								<WorkbenchStage stageActions={stageActions} />
 							</div>
 							<WorkbenchBorder
 								side="bottom"

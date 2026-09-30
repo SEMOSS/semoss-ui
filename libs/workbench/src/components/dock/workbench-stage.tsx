@@ -1,4 +1,4 @@
-import { type FC, Fragment } from "react";
+import { type FC, Fragment, type ReactNode } from "react";
 import { cn } from "@semoss/ui/next";
 import { useWorkbench } from "../../hooks";
 import { isTabset } from "../../stores";
@@ -6,9 +6,12 @@ import type { WorkbenchLayoutNode } from "../../types";
 import { WorkbenchResizer } from "./workbench-resizer";
 import { WorkbenchTabset } from "./workbench-tabset";
 
-const WorkbenchNode: FC<{ node: WorkbenchLayoutNode }> = ({ node }) => {
+const WorkbenchNode: FC<{
+	node: WorkbenchLayoutNode;
+	stageActions?: ReactNode;
+}> = ({ node, stageActions }) => {
 	if (isTabset(node)) {
-		return <WorkbenchTabset node={node} />;
+		return <WorkbenchTabset node={node} stageActions={stageActions} />;
 	}
 	const rowAxis = node.type === "row";
 	return (
@@ -35,19 +38,24 @@ const WorkbenchNode: FC<{ node: WorkbenchLayoutNode }> = ({ node }) => {
 	);
 };
 
+interface WorkbenchStageProps {
+	/** Chrome appended to the root tabset's tab strip. Not passed to splits. */
+	stageActions?: ReactNode;
+}
+
 /**
  * The dock tree. A maximized dock lifts itself out over the top rather than
  * replacing the tree, so every other dock stays mounted and in place —
  * the backdrop is what hides them.
  */
-export const WorkbenchStage: FC = () => {
+export const WorkbenchStage: FC<WorkbenchStageProps> = ({ stageActions }) => {
 	const tree = useWorkbench((s) => s.layout.tree);
 	const actions = useWorkbench((s) => s.layout.actions);
 	const maximized = useWorkbench((s) => Boolean(s.layout.maximizedTabsetId));
 
 	return (
 		<>
-			<WorkbenchNode node={tree} />
+			<WorkbenchNode node={tree} stageActions={stageActions} />
 			{maximized && (
 				<button
 					type="button"
