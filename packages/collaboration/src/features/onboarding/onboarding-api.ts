@@ -46,6 +46,8 @@ export interface MailboxOverview {
 		count: number;
 		youWrote: boolean;
 	}[];
+	/** Distinct people on To or Cc of your Sent mail in the window. */
+	wroteTo: number;
 	keepOut: KeepOutSuggestion[];
 }
 
@@ -72,6 +74,7 @@ export async function mailboxOverview(
 			count: num(s.count),
 			youWrote: s.youWrote === true,
 		})),
+		wroteTo: num(out.wroteTo),
 		keepOut: rows(out.keepOut).map((k) => ({
 			kind: k.kind === "never_domain" ? "never_domain" : "never_sender",
 			value: str(k.value),

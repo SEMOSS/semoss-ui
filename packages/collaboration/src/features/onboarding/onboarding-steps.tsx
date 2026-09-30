@@ -126,8 +126,6 @@ export function MailboxStep({
 	}, [actions, attempt]);
 
 	const senders = overview?.topSenders.slice(0, 8) ?? [];
-	const most = Math.max(1, ...senders.map((s) => s.count));
-	const circle = overview?.topSenders.filter((s) => s.youWrote).length ?? 0;
 
 	return (
 		<>
@@ -190,9 +188,9 @@ export function MailboxStep({
 							tone="teal"
 						/>
 						<StatTile
-							label="Two-way contacts"
-							value={circle}
-							hint={`of your top ${overview.topSenders.length} senders`}
+							label="People you wrote to"
+							value={formatCount(overview.wroteTo)}
+							hint={`in Sent, last ${LOOK_DAYS} days`}
 							icon={
 								<UserRound
 									className="size-4"
@@ -266,54 +264,41 @@ export function MailboxStep({
 						</fieldset>
 						<div className="space-y-3">
 							<h2 className="font-medium text-sm">
-								Who writes to you most
+								People who write to you most
 							</h2>
-							<ul className="space-y-2.5">
+							<p className="text-muted-foreground text-xs">
+								Colleagues and people you wrote to;
+								notifications and receipts are left out.
+							</p>
+							<ul className="divide-y rounded-2xl ring-1 ring-border/70">
 								{senders.map((s) => (
 									<li
 										key={s.address}
-										className="flex items-center gap-3"
+										className="flex items-center gap-3 px-3 py-2"
 									>
 										<PersonAvatar
 											name={s.name || s.address}
 											className="size-7"
 										/>
-										<div className="min-w-0 flex-1">
-											<div className="flex items-baseline justify-between gap-2 text-sm">
-												<span className="truncate">
-													{s.name || s.address}
-												</span>
-												<span className="shrink-0 text-muted-foreground text-xs tabular-nums">
-													{s.count}
-												</span>
-											</div>
-											<div className="mt-1 h-1.5 overflow-hidden rounded-full bg-muted">
-												<div
-													className={cn(
-														"h-full rounded-full",
-														s.youWrote
-															? "bg-primary"
-															: "bg-muted-foreground/40",
-													)}
-													style={{
-														width: `${(100 * s.count) / most}%`,
-													}}
-												/>
-											</div>
-										</div>
+										<span className="min-w-0 flex-1 truncate text-sm">
+											{s.name || s.address}
+										</span>
+										{s.youWrote && (
+											<span className="shrink-0 text-muted-foreground text-xs">
+												you reply
+											</span>
+										)}
+										<span className="w-10 shrink-0 text-right text-sm tabular-nums">
+											{formatCount(s.count)}
+										</span>
 									</li>
 								))}
+								{senders.length === 0 && (
+									<li className="px-3 py-2 text-muted-foreground text-sm">
+										No people yet in this window.
+									</li>
+								)}
 							</ul>
-							<p className="flex items-center gap-3 text-muted-foreground text-xs">
-								<span className="inline-flex items-center gap-1.5">
-									<span className="size-2 rounded-full bg-primary" />{" "}
-									you write back
-								</span>
-								<span className="inline-flex items-center gap-1.5">
-									<span className="size-2 rounded-full bg-muted-foreground/40" />{" "}
-									one way
-								</span>
-							</p>
 						</div>
 					</div>
 					<StepActions
@@ -763,6 +748,9 @@ export function ImportStep({
 	);
 }
 
+// strength is on a log scale, so this is well above an ordinary contact
+const VIP_STRENGTH = 60;
+
 function StrengthMeter({ value }: { value: number }) {
 	const filled = Math.max(1, Math.round(value / 20));
 	return (
@@ -928,7 +916,7 @@ export function PeopleStep({
 					for (const p of list)
 						if (
 							chosen.length < 4 &&
-							p.strength >= 50 &&
+							p.strength >= VIP_STRENGTH &&
 							!chosen.includes(p.id)
 						)
 							chosen.push(p.id);
@@ -1055,8 +1043,10 @@ export function PeopleStep({
 				}
 			>
 				Your people, from your org chart and the mail you trade both
-				ways. Keep who matters and star your VIPs: their asks rise to
-				the top of Work. Everyone else stays out of your list.
+				ways. Following someone ranks their asks above other mail in
+				Work; star a VIP and their asks go to the top. Mail from people
+				you do not follow still shows up, it is just not moved up. The
+				bars show how much you write to each other.
 			</StepHeader>
 			{!people && !error && (
 				<LoadingCards label="Finding your people..." count={6} />
@@ -1232,10 +1222,16 @@ function AccountCard({
 				)}
 			</span>
 			<span className="min-w-0">
-				<span className="block truncate font-medium">
+				<span
+					className="block break-words font-medium"
+					title={account.name}
+				>
 					{account.name}
 				</span>
-				<span className="block truncate text-muted-foreground text-xs">
+				<span
+					className="block break-all text-muted-foreground text-xs"
+					title={account.domain}
+				>
 					{account.domain}
 				</span>
 				<span className="mt-1 block text-muted-foreground text-xs">
@@ -1299,8 +1295,8 @@ export function OutsideStep({ actions, onNext, onBack, eyebrow }: StepProps) {
 	return (
 		<>
 			<StepHeader eyebrow={eyebrow} title="Who you work with outside">
-				Clients and partners, found by email domain. The ones you keep
-				get their own topics next.
+				Clients and partners, found by email domain. Ticked are the ones
+				you wrote to or have a VIP at; tick any other that is real work.
 			</StepHeader>
 			{!accounts && !error && (
 				<LoadingCards label="Finding organisations..." />
@@ -1399,7 +1395,9 @@ function TopicCard({
 					<Check className="size-3.5" strokeWidth={3} />
 				</button>
 			</div>
-			<p className="text-muted-foreground text-xs">{topic.reason}</p>
+			{topic.reason && (
+				<p className="text-muted-foreground text-xs">{topic.reason}</p>
+			)}
 			{topic.sampleSubjects.length > 0 && (
 				<ul className="mt-2 space-y-0.5 text-xs">
 					{topic.sampleSubjects.map((subject) => (
