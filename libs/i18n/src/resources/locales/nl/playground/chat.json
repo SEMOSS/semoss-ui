@@ -1,5 +1,6 @@
 {
 	"messages": {
+		"actions": "Berichtacties",
 		"placeholder": "Typ een bericht...",
 		"sending": "Bezig met verzenden...",
 		"error": "Verzenden van bericht mislukt"

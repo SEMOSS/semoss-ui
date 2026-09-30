@@ -420,7 +420,7 @@ export interface Skill {
 export type SkillConfig = Pick<Skill, "id" | "name">;
 
 export interface ProjectDependency {
-	engine_type: Project["project_type"] | Engine["engine_type"];
+	engine_type: Project["project_type"] | Engine["engine_type"] | "PROJECT";
 	engine_id: string;
 	engine_name: string;
 	engine_subtype?: string;

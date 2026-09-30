@@ -88,7 +88,11 @@ export const GoogleDocsViewer = (props: GoogleDocsViewerProps) => {
 					openDoc !== null && "hidden",
 				)}
 			>
-				<ConnectorViewerHeader icon={FileTextIcon} title={serviceName}>
+				<ConnectorViewerHeader
+					brand="google-docs"
+					icon={FileTextIcon}
+					title={serviceName}
+				>
 					<ConnectorIconButton
 						icon={RefreshCwIcon}
 						label={t("common.refresh")}
@@ -97,7 +101,7 @@ export const GoogleDocsViewer = (props: GoogleDocsViewerProps) => {
 					/>
 				</ConnectorViewerHeader>
 
-				<div className="px-3 py-2">
+				<div className="border-border border-b bg-muted/10 px-3 py-2">
 					<ConnectorSearchField
 						value={search}
 						placeholder={t("googleDocs.searchPlaceholder")}

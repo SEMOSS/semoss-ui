@@ -1,58 +1,46 @@
 import { observer } from "mobx-react-lite";
-import React, {
-	type ReactNode,
+import {
+	type CSSProperties,
 	useEffect,
 	useMemo,
 	useRef,
 	useState,
 } from "react";
-import { Link, matchPath, Outlet, useLocation } from "react-router";
+import { matchPath, Outlet, useLocation } from "react-router";
 import { useInsight } from "@semoss/sdk/react";
-import {
-	Breadcrumb,
-	BreadcrumbItem,
-	BreadcrumbLink,
-	BreadcrumbList,
-	BreadcrumbSeparator,
-	cn,
-	Separator,
-	SidebarInset,
-	SidebarProvider,
-	SidebarTrigger,
-	useCacheState,
-	useTheme,
-} from "@semoss/ui/next";
-import { GlobalFooter, GlobalNav } from "@/components";
+import { SidebarInset, SidebarProvider, useCacheState } from "@semoss/ui/next";
 import { GlobalDialog } from "@/components/common/global-dialog";
+import { GlobalFooter } from "@/components/common/global-footer";
+import { GlobalNav } from "@/components/common/global-nav";
 import { LandingTour } from "@/components/common/landing-tour";
-import { ROOM_PANEL_COMPONENTS } from "@/components/room/panels";
-import { ChatContext, NavbarContext, TourContext } from "@/contexts";
+import { ROOM_PANEL_COMPONENTS } from "@/components/room/panels/room-panel.components";
+import { ChatContext } from "@/contexts/chat-context";
+import { TourContext } from "@/contexts/tour-context";
+import { useWorkspaceNavigation } from "@/features/conversation/use-workspace-navigation";
+import { WorkspaceNavigationContext } from "@/features/conversation/workspace-navigation.context";
+import { MobileNavigationButton } from "@/features/navigation/mobile-navigation-button";
 import { SettingsDialogProvider } from "@/features/settings/settings-dialog-provider";
-import { useRoot } from "@/hooks";
+import { useRoot } from "@/hooks/use-root";
 import { useThemeTitle } from "@/hooks/use-theme-title";
-import { ChatStore } from "@/stores";
+import { ChatStore } from "@/stores/chat/chat.store";
 import { setFavicon } from "@/utility/utils";
 
 export const MainLayout = observer(() => {
 	const { actions } = useInsight();
 	const { root } = useRoot();
 	const theme = root.theme;
-	const [navbarActions, setNavbarActions] = useState<ReactNode | null>(null);
+	// React freezes DOM style props in development; keep the observable theme mutable.
+	const layoutStyle = { ...theme.overrides["main-layout"] };
 	const { pathname } = useLocation();
 	const [isTourOpen, setIsTourOpen] = useState(false);
 	const [pendingTour, setPendingTour] = useState(false);
-
-	const { theme: colorMode } = useTheme();
-
-	const isDark =
-		colorMode === "dark" ||
-		(colorMode === "system" &&
-			window.matchMedia("(prefers-color-scheme: dark)").matches);
 
 	const [isSidebarOpen, setIsSidebarOpen] = useCacheState(
 		theme.sidebar.expandedByDefault,
 		`sidebar--isOpen`,
 	);
+
+	const navigation = useWorkspaceNavigation(isSidebarOpen, setIsSidebarOpen);
 
 	// set up the chat store
 	const chatStore = useMemo(() => {
@@ -166,26 +154,26 @@ export const MainLayout = observer(() => {
 				chat: chatStore,
 			}}
 		>
-			<NavbarContext.Provider
-				value={{ actions: navbarActions, setActions: setNavbarActions }}
+			<TourContext.Provider
+				value={{
+					isOpen: isTourOpen,
+					startTour: () => setIsTourOpen(true),
+					stopTour: () => setIsTourOpen(false),
+				}}
 			>
-				<TourContext.Provider
-					value={{
-						isOpen: isTourOpen,
-						startTour: () => setIsTourOpen(true),
-						stopTour: () => setIsTourOpen(false),
-					}}
-				>
-					<SettingsDialogProvider>
-						<LandingTour />
+				<SettingsDialogProvider>
+					<LandingTour />
+					<WorkspaceNavigationContext.Provider
+						value={navigation.setWorkAreaOpen}
+					>
 						<SidebarProvider
-							open={isSidebarOpen}
-							onOpenChange={setIsSidebarOpen}
+							open={navigation.isNavigationOpen}
+							onOpenChange={navigation.setNavigationOpen}
 							style={
 								{
-									"--sidebar-width": "19rem",
-									"--sidebar-width-mobile": "19rem",
-								} as React.CSSProperties
+									"--sidebar-width": "16rem",
+									"--sidebar-width-mobile": "16rem",
+								} as CSSProperties
 							}
 						>
 							<GlobalNav />
@@ -200,92 +188,11 @@ export const MainLayout = observer(() => {
 								/>
 								<div
 									data-testid="main-layout"
-									className="flex h-dvh w-full flex-col overflow-hidden bg-background"
-									style={{
-										...(!isDark && {
-											background:
-												"linear-gradient(180deg, #FCFCFC 58.78%, #F6F7FF 81.97%, #F1F8FF 94.04%), var(--base-secondary-background, #FFF)",
-										}),
-										...root.theme.overrides["main-layout"],
-									}}
+									className="relative flex h-dvh w-full flex-col overflow-hidden bg-background pt-14 md:pt-0"
+									style={layoutStyle}
 								>
-									<div className="flex h-12.5 w-full shrink-0 flex-row items-center px-4">
-										<div className="flex min-w-0 flex-row items-center justify-center gap-1.5">
-											<SidebarTrigger />
-											<Separator
-												orientation="vertical"
-												style={{ height: "17px" }}
-											/>
-											<Breadcrumb className="min-w-0">
-												<BreadcrumbList className="min-w-0 flex-nowrap">
-													{root.breadcrumbs.map(
-														(crumb, index) => {
-															const isLast =
-																index ===
-																root.breadcrumbs
-																	.length -
-																	1;
-
-															return (
-																<React.Fragment
-																	key={`${index}-${crumb.path}`}
-																>
-																	<BreadcrumbItem
-																		className={
-																			isLast
-																				? "min-w-0"
-																				: undefined
-																		}
-																	>
-																		{crumb.path ? (
-																			<BreadcrumbLink
-																				className={cn(
-																					"min-w-0 truncate",
-																					isLast &&
-																						"text-foreground",
-																				)}
-																				asChild
-																			>
-																				<Link
-																					to={`${crumb.path}`}
-																				>
-																					{
-																						crumb.name
-																					}
-																				</Link>
-																			</BreadcrumbLink>
-																		) : (
-																			<span
-																				className={cn(
-																					"min-w-0 truncate",
-																					isLast
-																						? "text-foreground"
-																						: "text-muted-foreground",
-																				)}
-																			>
-																				{
-																					crumb.name
-																				}
-																			</span>
-																		)}
-																	</BreadcrumbItem>
-																	{!isLast && (
-																		<BreadcrumbSeparator />
-																	)}
-																</React.Fragment>
-															);
-														},
-													)}
-												</BreadcrumbList>
-											</Breadcrumb>
-										</div>
-										<div className="flex-1" />
-										<div className="flex items-center gap-2">
-											{navbarActions ?? null}
-										</div>
-									</div>
-									<Separator />
-									<div className="relative w-full flex-1 overflow-hidden">
+									<MobileNavigationButton />
+									<div className="relative min-h-0 w-full flex-1 overflow-hidden">
 										<Outlet />
 										{Object.values(
 											chatStore.embeddedPageMap,
@@ -308,8 +215,6 @@ export const MainLayout = observer(() => {
 													src={item.url}
 													title={item.path}
 													className="absolute inset-0 h-full w-full border-none"
-													// @ts-expect-error fetchpriority is not yet in React's typings
-													fetchpriority="high"
 													style={{
 														// visibility:hidden removes the iframe from
 														// the browser touch hit-test pipeline on
@@ -330,9 +235,9 @@ export const MainLayout = observer(() => {
 								</div>
 							</SidebarInset>
 						</SidebarProvider>
-					</SettingsDialogProvider>
-				</TourContext.Provider>
-			</NavbarContext.Provider>
+					</WorkspaceNavigationContext.Provider>
+				</SettingsDialogProvider>
+			</TourContext.Provider>
 		</ChatContext.Provider>
 	);
 });

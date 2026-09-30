@@ -1,9 +1,10 @@
 import { Plus } from "lucide-react";
 import { useId } from "react";
-import { type Control, Controller, useFieldArray } from "react-hook-form";
 import { useTranslation } from "@semoss/i18n";
 import {
 	Button,
+	type Control,
+	Controller,
 	DropdownMenu,
 	DropdownMenuContent,
 	DropdownMenuItem,
@@ -15,6 +16,7 @@ import {
 	Textarea,
 	ToggleGroup,
 	ToggleGroupItem,
+	useFieldArray,
 } from "@semoss/ui/next";
 import { PIXEL_HOOK_EVENTS, PIXEL_HOOK_KIND } from "../agent.types";
 import {
@@ -26,12 +28,15 @@ import type { AgentFormValues } from "./types";
 
 interface AgentHooksFieldProps {
 	control: Control<AgentFormValues>;
+	/** Locks hook additions while saving, including an open menu. */
+	disabled?: boolean;
 	/** Hook kinds the server recognizes (GetWorkspace's `known_hook_kinds`). */
 	knownKinds: string[];
 }
 
 export const AgentHooksField = ({
 	control,
+	disabled,
 	knownKinds,
 }: AgentHooksFieldProps) => {
 	const idPrefix = useId();
@@ -149,7 +154,7 @@ export const AgentHooksField = ({
 						variant="outline"
 						size="sm"
 						className="w-fit"
-						disabled={addableKinds.length === 0}
+						disabled={disabled || addableKinds.length === 0}
 					>
 						<Plus aria-hidden="true" />
 						{t("form.hooks.add")}
@@ -161,6 +166,7 @@ export const AgentHooksField = ({
 						const description = getDescription(kind);
 						return (
 							<DropdownMenuItem
+								disabled={disabled}
 								key={kind}
 								className="items-start"
 								onSelect={() =>

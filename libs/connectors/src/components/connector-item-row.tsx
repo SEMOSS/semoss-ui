@@ -7,7 +7,7 @@ import { ConnectorItemQuickAction } from "./connector-item-quick-action";
 
 /** Lays out a row's icon, text, and detail, whether or not it is a button. */
 const ROW_CONTENT_CLASS =
-	"flex h-auto min-w-0 flex-1 items-center justify-start gap-2 px-2 py-1.5 text-start font-normal";
+	"flex h-auto min-w-0 flex-1 items-center justify-start gap-2 rounded-none px-3 py-2 text-start font-normal hover:bg-transparent dark:hover:bg-transparent";
 
 /** Props for {@link ConnectorItemRow}. */
 export interface ConnectorItemRowProps {
@@ -58,16 +58,11 @@ export const ConnectorItemRow = ({
 	actions,
 }: ConnectorItemRowProps) => {
 	// spans only: the text sits inside a button, which cannot hold paragraphs.
-	// The title shares its line with the meta, so a date lines up with what it
-	// dates, and the icon stays beside the title when a second line follows.
+	// Center the icon and metadata against the whole text stack so dates and
+	// the trailing action share a centerline in both one- and two-line rows.
 	const content = (
 		<>
-			<span
-				className={cn(
-					"flex size-4 shrink-0 items-center justify-center text-muted-foreground",
-					description && "mt-0.5 self-start",
-				)}
-			>
+			<span className="flex size-4 shrink-0 items-center justify-center text-muted-foreground">
 				{icon}
 			</span>
 			<span className="flex min-w-0 flex-1 flex-col gap-0.5">
@@ -89,11 +84,6 @@ export const ConnectorItemRow = ({
 					>
 						{title}
 					</span>
-					{meta ? (
-						<span className="shrink-0 text-muted-foreground text-xs">
-							{meta}
-						</span>
-					) : null}
 				</span>
 				{description ? (
 					<span
@@ -104,13 +94,21 @@ export const ConnectorItemRow = ({
 					</span>
 				) : null}
 			</span>
+			{meta ? (
+				<span className="shrink-0 text-end text-muted-foreground text-xs tabular-nums">
+					{meta}
+				</span>
+			) : null}
 		</>
 	);
 
 	return (
 		<ConnectorItemMenu actions={actions}>
 			<li
-				className="flex min-w-0 items-center gap-1 rounded-md hover:bg-accent"
+				className={cn(
+					"flex min-w-0 items-center gap-1 border-border/60 border-b pe-2 last:border-b-0 focus-within:bg-accent/40 hover:bg-accent/60",
+					isEmphasized && "bg-accent/20",
+				)}
 				aria-busy={isBusy || undefined}
 			>
 				{onOpen ? (
@@ -128,11 +126,13 @@ export const ConnectorItemRow = ({
 						{content}
 					</div>
 				)}
-				{isBusy ? (
-					<LoaderCircleIcon
-						aria-hidden
-						className="size-4 shrink-0 text-muted-foreground motion-safe:animate-spin"
-					/>
+				{isBusy && !actions?.onAddToContext && !actions?.onSave ? (
+					<span className="flex size-8 shrink-0 items-center justify-center">
+						<LoaderCircleIcon
+							aria-hidden
+							className="size-4 text-muted-foreground motion-safe:animate-spin"
+						/>
+					</span>
 				) : null}
 				{actions ? (
 					<ConnectorItemQuickAction actions={actions} />

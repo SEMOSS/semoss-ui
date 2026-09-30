@@ -44,13 +44,13 @@ export const TeamsMessageItem = ({
 	const author = message.fromName ?? t("teams.someone");
 
 	return (
-		<article className="flex min-w-0 flex-col gap-2 rounded-md border border-border p-3">
+		<article className="flex min-w-0 flex-col gap-2 border-border border-b py-3 last:border-b-0">
 			<div className="flex min-w-0 items-center gap-2">
 				<ConnectorAuthorAvatar name={author} />
 				<span className="min-w-0 flex-1 truncate font-medium text-sm">
 					{author}
 				</span>
-				<span className="shrink-0 text-muted-foreground text-xs">
+				<span className="max-w-1/2 shrink-0 text-end text-muted-foreground text-xs">
 					{formatFullDate(message.createdDateTime, i18n.language)}
 				</span>
 			</div>

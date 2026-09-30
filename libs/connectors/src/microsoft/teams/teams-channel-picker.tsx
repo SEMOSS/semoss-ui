@@ -29,7 +29,7 @@ export const TeamsChannelPicker = ({ choice }: TeamsChannelPickerProps) => {
 			>
 				<SelectTrigger
 					size="sm"
-					className="min-w-0 flex-1"
+					className="h-8 min-w-0 flex-1 bg-background shadow-none"
 					aria-label={t("teams.team")}
 				>
 					<SelectValue placeholder={t("teams.chooseTeam")} />
@@ -52,7 +52,7 @@ export const TeamsChannelPicker = ({ choice }: TeamsChannelPickerProps) => {
 				>
 					<SelectTrigger
 						size="sm"
-						className="min-w-0 flex-1"
+						className="h-8 min-w-0 flex-1 bg-background shadow-none"
 						aria-label={t("teams.channel")}
 					>
 						<SelectValue placeholder={t("teams.chooseChannel")} />

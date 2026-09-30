@@ -1,5 +1,7 @@
-import { type FC, useEffect, useMemo, useState } from "react";
+import { XIcon } from "lucide-react";
+import { type FC, useEffect, useMemo, useRef, useState } from "react";
 import {
+	Button,
 	Command,
 	CommandEmpty,
 	CommandGroup,
@@ -7,18 +9,20 @@ import {
 	CommandItem,
 	CommandList,
 	Dialog,
+	DialogClose,
 	DialogContent,
 	DialogDescription,
 	DialogHeader,
 	DialogTitle,
 } from "@semoss/ui/next";
-import { useWorkbench, useWorkbenchStoreApi } from "../../hooks";
+import { useWorkbench } from "../../hooks/use-workbench";
+import { useWorkbenchStoreApi } from "../../hooks/use-workbench-store-api";
 import { buildWorkbenchLayoutCommands } from "../../stores/slices/workbench-layout.commands";
 
 interface WorkbenchPaletteItem {
 	id: string;
 	category?: string;
-	/** The full "Category: Label" line the row shows and sorts by. */
+	/** Full command name, with the category added only when not already present. */
 	displayLabel: string;
 	description?: string;
 }
@@ -51,6 +55,7 @@ export const WorkbenchCommandPalette: FC = () => {
 	);
 
 	const [search, setSearch] = useState("");
+	const returnFocusRef = useRef<HTMLElement | null>(null);
 
 	// Layout commands use the reserved workbench.layout.* namespace, so they
 	// can be registered directly without checking the registry first.
@@ -78,12 +83,23 @@ export const WorkbenchCommandPalette: FC = () => {
 			if (command.visible === false) {
 				continue;
 			}
+			// Some hosts supply complete action labels (e.g. "Go to Next Panel").
+			// Preserve the label verbatim without repeating its category prefix.
+			const labelIncludesCategory =
+				command.category &&
+				[`${command.category} `, `${command.category}:`].some(
+					(prefix) =>
+						command.label
+							.toLowerCase()
+							.startsWith(prefix.toLowerCase()),
+				);
 			const item: WorkbenchPaletteItem = {
 				id: command.id,
 				category: command.category,
-				displayLabel: command.category
-					? `${command.category}: ${command.label}`
-					: command.label,
+				displayLabel:
+					command.category && !labelIncludesCategory
+						? `${command.category}: ${command.label}`
+						: command.label,
 				description: command.description,
 			};
 			if (
@@ -142,13 +158,17 @@ export const WorkbenchCommandPalette: FC = () => {
 		<CommandItem
 			key={item.id}
 			value={item.id}
+			className="min-h-9 gap-2 rounded-md px-2 py-1 sm:min-h-8"
+			title={[item.displayLabel, item.description]
+				.filter(Boolean)
+				.join(" — ")}
 			onSelect={() => {
 				executeCommandById(item.id);
 			}}
 		>
-			<span className="min-w-0 truncate">{item.displayLabel}</span>
+			<span className="min-w-0 flex-1 truncate">{item.displayLabel}</span>
 			{item.description ? (
-				<span className="ms-auto shrink-0 ps-3 text-muted-foreground text-xs">
+				<span className="max-w-24 truncate text-muted-foreground text-xs sm:max-w-40">
 					{item.description}
 				</span>
 			) : null}
@@ -196,19 +216,35 @@ export const WorkbenchCommandPalette: FC = () => {
 	return (
 		<Dialog open={isCommandOpen} onOpenChange={handleOpenChange}>
 			<DialogContent
-				className="max-w-md overflow-hidden rounded-lg border p-0"
+				className="gap-0 overflow-hidden bg-popover p-0 text-popover-foreground [scrollbar-gutter:auto] sm:max-w-lg"
 				showCloseButton={false}
+				onOpenAutoFocus={() => {
+					// The palette opens through store actions, without a DialogTrigger.
+					returnFocusRef.current =
+						document.activeElement instanceof HTMLElement
+							? document.activeElement
+							: null;
+				}}
+				onCloseAutoFocus={(event) => {
+					if (returnFocusRef.current?.isConnected) {
+						event.preventDefault();
+						returnFocusRef.current.focus();
+					}
+				}}
 			>
 				<DialogHeader className="sr-only">
 					<DialogTitle>Workbench Command Palette</DialogTitle>
-					<DialogDescription>Search commands</DialogDescription>
+					<DialogDescription>
+						Search commands, then use the arrow keys and Enter to
+						run one.
+					</DialogDescription>
 				</DialogHeader>
 				{/* shouldFilter off: the memo above is the only filter, so the
 				    alphabetical sort holds while typing instead of cmdk's
 				    fuzzy re-ranking */}
 				<Command
 					shouldFilter={false}
-					className="**:[[cmdk-item]]:px-2 **:[[cmdk-item]]:py-1 **:[[cmdk-item]]:text-xs"
+					className="min-h-0 rounded-none [&_[data-slot=command-input-wrapper]]:h-10 [&_[data-slot=command-input-wrapper]]:pe-10"
 				>
 					<CommandInput
 						aria-label="Search workbench commands"
@@ -216,17 +252,17 @@ export const WorkbenchCommandPalette: FC = () => {
 						value={search}
 						onValueChange={setSearch}
 					/>
-					<CommandList className="max-h-[320px] p-1">
-						<CommandEmpty>No Results Found</CommandEmpty>
+					<CommandList className="max-h-80 min-h-0 p-1">
+						<CommandEmpty>No commands found.</CommandEmpty>
 						{commandSections.recentItems.length > 0 ? (
-							<CommandGroup heading="Recents">
+							<CommandGroup heading="Recent commands">
 								{commandSections.recentItems.map(
 									renderCommandItem,
 								)}
 							</CommandGroup>
 						) : null}
 						{commandSections.remainingItems.length > 0 ? (
-							<CommandGroup heading="All">
+							<CommandGroup heading="All commands">
 								{commandSections.remainingItems.map(
 									renderCommandItem,
 								)}
@@ -234,6 +270,17 @@ export const WorkbenchCommandPalette: FC = () => {
 						) : null}
 					</CommandList>
 				</Command>
+				<DialogClose asChild>
+					<Button
+						type="button"
+						variant="ghost"
+						size="icon-sm"
+						className="absolute end-1 top-1 text-muted-foreground"
+						aria-label="Close command palette"
+					>
+						<XIcon aria-hidden="true" />
+					</Button>
+				</DialogClose>
 			</DialogContent>
 		</Dialog>
 	);

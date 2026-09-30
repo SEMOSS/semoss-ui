@@ -214,6 +214,7 @@ export const OutlookMailViewer = (props: OutlookMailViewerProps) => {
 				)}
 			>
 				<ConnectorViewerHeader
+					brand="outlook"
 					icon={MailIcon}
 					title={serviceName}
 					description={folderName}
@@ -226,13 +227,13 @@ export const OutlookMailViewer = (props: OutlookMailViewerProps) => {
 					/>
 				</ConnectorViewerHeader>
 
-				<div className="flex flex-col gap-2 px-3 py-2">
+				<div className="flex flex-col gap-1.5 border-border border-b bg-muted/10 px-3 py-2">
 					{/* the toggles move under the folder when the panel is narrow */}
 					<div className="flex flex-wrap items-center gap-2">
 						<Select value={folder} onValueChange={setFolder}>
 							<SelectTrigger
 								size="sm"
-								className="min-w-40 flex-1"
+								className="h-8 min-w-24 max-w-full flex-1 bg-background shadow-none"
 								aria-label={t("mail.folder")}
 							>
 								<SelectValue />
@@ -246,7 +247,8 @@ export const OutlookMailViewer = (props: OutlookMailViewerProps) => {
 							</SelectContent>
 						</Select>
 						<Toggle
-							variant="outline"
+							variant="default"
+							className="h-8 px-2 text-xs"
 							size="sm"
 							pressed={isUnreadOnly}
 							onPressedChange={setIsUnreadOnly}
@@ -254,7 +256,8 @@ export const OutlookMailViewer = (props: OutlookMailViewerProps) => {
 							{t("mail.unreadOnly")}
 						</Toggle>
 						<Toggle
-							variant="outline"
+							variant="default"
+							className="h-8 px-2 text-xs"
 							size="sm"
 							pressed={isGrouped}
 							onPressedChange={setIsGrouped}

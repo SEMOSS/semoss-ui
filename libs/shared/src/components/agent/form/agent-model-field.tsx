@@ -1,9 +1,11 @@
 import { XIcon } from "lucide-react";
-import { type Control, Controller } from "react-hook-form";
+import { useId } from "react";
 import { useTranslation } from "@semoss/i18n";
 import { usePixel } from "@semoss/sdk/react";
 import {
 	Button,
+	type Control,
+	Controller,
 	Field,
 	FieldDescription,
 	FieldLabel,
@@ -24,14 +26,20 @@ const getModelName = (model: Engine) =>
 export interface AgentModelFieldProps {
 	/** React Hook Form control for the shared agent form. */
 	control: Control<AgentFormValues>;
+	/** Locks the picker and closes its portal while saving. */
+	disabled?: boolean;
 }
 
 /**
  * The agent's default model: a searchable model picker showing each model's
  * icon, name and id, with a reset back to the room's model.
  */
-export const AgentModelField = ({ control }: AgentModelFieldProps) => {
+export const AgentModelField = ({
+	control,
+	disabled,
+}: AgentModelFieldProps) => {
 	const { t } = useTranslation("agent");
+	const modelId = useId();
 	// Resolves the saved model id to its name and icon. The picker loads its
 	// own paginated list when opened.
 	const models = usePixel<Engine[]>(
@@ -66,9 +74,13 @@ export const AgentModelField = ({ control }: AgentModelFieldProps) => {
 
 				return (
 					<Field>
-						<FieldLabel>{t("about.defaultModel")}</FieldLabel>
+						<FieldLabel htmlFor={modelId}>
+							{t("about.defaultModel")}
+						</FieldLabel>
 						<div className="flex min-w-0 items-center gap-2">
 							<EngineSelect
+								id={modelId}
+								disabled={disabled}
 								className="h-9 flex-1 border border-input px-3 shadow-xs"
 								name={selectedName || t("form.useRoomModel")}
 								value={field.value}
@@ -76,9 +88,10 @@ export const AgentModelField = ({ control }: AgentModelFieldProps) => {
 								metaFilters={MODEL_META_FILTERS}
 								showEngineId
 								triggerIcon={selectedIcon}
-								onChange={(model) =>
-									field.onChange(model.engine_id)
-								}
+								onChange={(model) => {
+									if (!disabled)
+										field.onChange(model.engine_id);
+								}}
 								popoverContentProps={{ align: "start" }}
 							/>
 							{field.value && (
@@ -88,6 +101,7 @@ export const AgentModelField = ({ control }: AgentModelFieldProps) => {
 											type="button"
 											variant="ghost"
 											size="icon"
+											disabled={disabled}
 											aria-label={t("form.useRoomModel")}
 											onClick={() => field.onChange("")}
 										>

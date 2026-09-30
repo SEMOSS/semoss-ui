@@ -121,7 +121,42 @@
 		"organizer": "المنظِّم",
 		"attendees": "المدعوون",
 		"join": "الانضمام إلى الاجتماع",
-		"noDescription": "لا يوجد وصف لهذا الحدث."
+		"noDescription": "لا يوجد وصف لهذا الحدث.",
+		"view": "عرض التقويم",
+		"month": "الشهر",
+		"agenda": "جدول الأعمال",
+		"previousMonth": "الشهر السابق",
+		"nextMonth": "الشهر التالي",
+		"emptyDay": "لا توجد أحداث في هذا اليوم",
+		"emptyMonth": "لا توجد أحداث في هذا الشهر",
+		"eventCount_one": "حدث واحد ({{count}})",
+		"eventCount_other": "{{count}} أحداث",
+		"moreEvents": "+{{count}} أخرى",
+		"limitReached": "تُعرض أول {{count}} أحداث فقط. قد تتضمن بعض الأيام أحداثًا إضافية؛ افتح Outlook لعرض التقويم الكامل.",
+		"eventCount_zero": "لا توجد أحداث",
+		"eventCount_two": "حدثان ({{count}})",
+		"eventCount_few": "{{count}} أحداث",
+		"eventCount_many": "{{count}} حدثًا",
+		"noLoadedEvents": "لم تُحمّل أحداث لهذا اليوم",
+		"week": "الأسبوع",
+		"day": "اليوم",
+		"threeDays": "3 أيام",
+		"listView": "عرض القائمة",
+		"calendarView": "عرض التقويم",
+		"openForTime": "افتح الحدث لعرض وقته.",
+		"emptyRange": "لا توجد أحداث في هذه الفترة",
+		"previousView": {
+			"week": "الأسبوع السابق",
+			"day": "اليوم السابق",
+			"threeDays": "الأيام الثلاثة السابقة",
+			"month": "الشهر السابق"
+		},
+		"nextView": {
+			"week": "الأسبوع التالي",
+			"day": "اليوم التالي",
+			"threeDays": "الأيام الثلاثة التالية",
+			"month": "الشهر التالي"
+		}
 	},
 	"teams": {
 		"team": "الفريق",

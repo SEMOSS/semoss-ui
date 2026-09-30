@@ -27,6 +27,7 @@ export interface WorkspaceMemberRowProps {
 	 * Callback when the permission is changed
 	 */
 	onPermissionChange: (newPermission: PermissionChange) => void;
+	disabled?: boolean;
 }
 
 /**
@@ -37,18 +38,19 @@ export const WorkspaceMemberRow = ({
 	currentUserId,
 	activeUserPermission,
 	onPermissionChange,
+	disabled,
 }: WorkspaceMemberRowProps) => {
 	const { t } = useTranslation("workspace");
 
 	return (
-		<div className="flex items-center gap-3 rounded px-4 py-2 hover:bg-accent">
-			<Avatar className="h-12 w-12 rounded-md">
+		<div className="flex flex-wrap items-center gap-3 rounded-lg p-3 hover:bg-accent">
+			<Avatar className="size-9 shrink-0 rounded-md">
 				<AvatarFallback className="rounded-md bg-primary/10">
 					{buildInitials(member.name, 2, true)}
 				</AvatarFallback>
 			</Avatar>
-			<div className="flex flex-1 flex-col">
-				<span className="font-medium text-sm">
+			<div className="flex min-w-0 flex-1 flex-col">
+				<span className="break-words font-medium text-sm">
 					{member.name}{" "}
 					{member.id === currentUserId && (
 						<span className="ms-1 text-muted-foreground">
@@ -56,11 +58,13 @@ export const WorkspaceMemberRow = ({
 						</span>
 					)}
 				</span>
-				<span className="text-muted-foreground text-xs">
+				<span className="break-all text-muted-foreground text-xs">
 					{member.email}
 				</span>
 			</div>
 			<PermissionDropdown
+				label={`${member.name}: ${t("members.changePermissionButton")}`}
+				disabled={disabled}
 				permission={member.permission}
 				handlePermissionChange={(newPermission) =>
 					onPermissionChange(newPermission)

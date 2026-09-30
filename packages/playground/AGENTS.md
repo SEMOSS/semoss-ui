@@ -123,9 +123,9 @@ Coverage reports output to `./coverage/packages/playground/` and include only `s
 Source-only libraries are compiled by the app. Built libraries need their build/watch
 process running; use the root `pnpm dev:playground` command for dependency orchestration.
 
-## The room sidebar
+## The room Workspace
 
-The right-hand panel is a `@semoss/workbench` dock. These details are not obvious from the
+The right-hand panel is called **Workspace** in user-facing copy and is a `@semoss/workbench` dock. These details are not obvious from the
 code and are easy to undo by accident:
 
 - **The dock store belongs to `RoomStore`, not to `<Workbench>`.** Tools open panels from outside
@@ -139,22 +139,31 @@ code and are easy to undo by accident:
   to be in place before the first `openSidebarPanel`, which for a streaming tool is long before
   anything mounts — without them the dock falls back to a shallow compare of config, and since a
   file panel's `mode` is a fresh object per call, every open would spawn another tab.
-- **`RoomSidebar` always starts from `ROOM_SIDEBAR_LAYOUT`.** The sidebar arrangement is owned by
-  the room instance and is not persisted between room sessions. Panels opened while the sidebar
-  is closed remain in that room's workbench store until the sidebar mounts.
+- **`RoomSidebar` uses the room's stable `sidebarSnapshot`.** New rooms start from
+  `ROOM_SIDEBAR_LAYOUT`; a prepared room adopts the draft's arrangement through
+  `restoreSidebarLayout` before its first sidebar mount. The shell must use the same snapshot
+  reference so mounting it does not reset tabs opened since initialization. The arrangement is
+  owned by the room instance and is not persisted between room sessions.
 - **A restored file panel is re-pointed at the room's live insight.** A room binds to a fresh
   insight on every load, and a file panel's `mode.insightId` is what its reads and saves run
   against. `_syncSidebarFileMode` rewrites them once, before anything mounts.
-- **Close and maximize live in the sidebar's own header**, because they act on the container. The
-  only genuinely per-panel control — "open inline" — is registered by the tool panel with
-  `useWorkbenchControl`.
-- **The new-chat page has one sidebar too.** Until Chat Files creates a room early, the page
-  shows the draft room's own sidebar, so Room Settings always opens as a tab; once that room
-  exists its sidebar takes over and an open settings tab moves with it. Both show the draft's
-  settings through `RoomSettingsFormProvider`, because the early room only takes the draft's
-  options when the first message is sent.
+- **Publish and close live in the workbench's top border end slot**, because they act on the work
+  area. On mobile, the workbench places these controls in its actions drawer. The per-panel
+  control — "open inline" — is registered by the tool panel with `useWorkbenchControl`.
+- **File lives in the top border start slot.** `features/workbench/room-workbench-menus.tsx`
+  translates the generic `WorkbenchMenus` labels from `sidebar.workbench` and uses `textSize="xs"`. Arrange Panels remains a submenu; a flat Workspace section offers Open File Explorer, View Activity Log,
+  and Edit Settings. Playground disables the generic Navigate submenu. Forward the slot's `onNavigate` callback for mobile drawer dismissal.
 - **The layout is not cached.** Each new `RoomStore` starts with the empty default arrangement,
   so switching rooms cannot bleed panel state between room instances.
+
+New chats keep draft settings in their temporary room store. Opening Workspace restores its
+last active tab, or opens a Settings tab when empty, without creating a server room. Settings
+uses the same workbench shell as Files. File Explorer and connector viewers share `usePreparedRoom` to prepare one room lazily
+and transfer the draft's arrangement before opening their panels. Connector viewers queue
+attachments on the draft through `NextMessageRoomProvider` until the first message. `DraftSettingsContext` keeps Settings and publishing
+bound to the current draft until submission, including after preparation. Draft menu overrides
+keep room-only actions unavailable until preparation succeeds. Selecting Chat clears agent
+inheritance but preserves locally added Knowledge and Tools.
 
 Panel ids and the sidebar's default layout live in `stores/room/room-sidebar.ts`; the blueprints
 live in `components/room/panels/`. Changing a panel type string affects only the current room
@@ -171,7 +180,9 @@ or off for all their chats. These details are easy to break:
 
 - **Chat Files is the only file space.** It is the room's own folder: uploads, connector
   downloads, and everything the room's apps (MCP tools) and the default tools read and write. Show
-  Chat Files in the plus menu opens the file explorer on it.
+  Chat Files in the plus menu opens the file explorer on it. Its Add to Context action uses
+  `FileExplorerHostProvider` and queues on `useNextMessageRoom() ?? room`, so files selected from
+  a prepared draft room appear in the draft composer and transfer before its first message.
 - **A chat gets default tools; an agent brings its own.** In chat mode every message carries the
   default tools, the `folder_*` tools the browser runs in Chat Files (`tools/default-tools.ts`).
   Room Settings sets each to Auto, Ask, or Disabled (room option `defaultTools`; reads are Auto
@@ -284,3 +295,20 @@ To connect to a local SEMOSS backend:
 1. Start the backend on port 9090 (or update `ENDPOINT` in `.env.local`)
 2. Run `pnpm dev`
 3. Access at http://localhost:5174
+
+
+### Agent forms and catalog
+
+The agent pages render the same shared components as the client: the create and edit pages
+put `AgentForm` under a sticky Cancel/Create or Save header, and the detail page renders
+`AgentDefinition`. Playground keeps no agent field or resource list of its own; change the
+shared component instead. The edit page seeds `AgentForm` once per agent, because the form
+reads its values only on mount: a refetch must not overwrite unsaved edits, and a different
+agent remounts it through `key`. The edit and detail pages turn the escaped line breaks
+`GetWorkspace` returns in the instructions back into newlines. A failed save shows inline and the form keeps
+its values for a retry. Creation reads
+`GetAgentFormOptions` for deployment catalogs and submits the full configuration to
+`ChatStore.createAgent`; a failed follow-up settings save still opens the created agent and
+shows its warning, avoiding duplicate creation. The agent catalog keeps the existing card
+actions and responsive grid while adding access filters and sorting. Card permissions use the
+backend's effective `permission`, including group grants.
