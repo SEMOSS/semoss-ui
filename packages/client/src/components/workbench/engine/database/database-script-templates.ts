@@ -31,7 +31,7 @@ export const getTableActionGroups = (
 				label: "Query",
 				actions: [
 					{
-						label: "Select instances",
+						label: "Select Instances",
 						description: "Select instances of the chosen concept.",
 						query: (concept) =>
 							`# Instances of "${concept}" - replace CONCEPT_URI with the concept's full URI\nSELECT ?instance\nWHERE {\n\t?instance a <CONCEPT_URI> .\n}\nLIMIT 100`,
@@ -42,14 +42,14 @@ export const getTableActionGroups = (
 				label: "Modify",
 				actions: [
 					{
-						label: "Insert data",
+						label: "Insert Data",
 						description:
 							"Generate an INSERT DATA statement for the chosen concept.",
 						query: (concept) =>
 							`# Add an instance of "${concept}" - replace the placeholder URIs\nINSERT DATA {\n\t<SUBJECT_URI> a <CONCEPT_URI> .\n}`,
 					},
 					{
-						label: "Delete instances",
+						label: "Delete Instances",
 						description:
 							"Generate a DELETE WHERE statement for all concept instances.",
 						query: (concept) =>
@@ -65,18 +65,18 @@ export const getTableActionGroups = (
 			label: "Query",
 			actions: [
 				{
-					label: "Select top 100 rows",
+					label: "Select Top 100 Rows",
 					description:
 						"Preview the first 100 rows from the chosen table.",
 					query: (table) => `SELECT * FROM ${table}\nLIMIT 100;`,
 				},
 				{
-					label: "Select all rows",
+					label: "Select All Rows",
 					description: "Select every row from the chosen table.",
 					query: (table) => `SELECT * FROM ${table};`,
 				},
 				{
-					label: "Count rows",
+					label: "Count Rows",
 					description:
 						"Count the number of rows in the chosen table.",
 					query: (table) =>
@@ -88,7 +88,7 @@ export const getTableActionGroups = (
 			label: "Modify",
 			actions: [
 				{
-					label: "Insert data",
+					label: "Insert Data",
 					description:
 						"Generate an INSERT statement for the selected table.",
 					query: (table, columns) => {
@@ -102,7 +102,7 @@ export const getTableActionGroups = (
 					},
 				},
 				{
-					label: "Update data",
+					label: "Update Data",
 					description:
 						"Generate an UPDATE statement for the selected table.",
 					query: (table, columns) => {
@@ -111,27 +111,27 @@ export const getTableActionGroups = (
 					},
 				},
 				{
-					label: "Add column",
+					label: "Add Column",
 					description:
 						"Generate an ALTER TABLE statement to add a new column.",
 					query: (table) =>
 						`ALTER TABLE ${table}\nADD COLUMN column_name datatype;`,
 				},
 				{
-					label: "Rename table",
+					label: "Rename Table",
 					description:
 						"Generate an ALTER TABLE statement to rename the table.",
 					query: (table) =>
 						`ALTER TABLE ${table}\nRENAME TO new_table_name;`,
 				},
 				{
-					label: "Delete data",
+					label: "Delete Data",
 					description:
 						"Generate a DELETE statement for rows in the selected table.",
 					query: (table) => `DELETE FROM ${table}\nWHERE condition;`,
 				},
 				{
-					label: "Delete table",
+					label: "Delete Table",
 					description:
 						"Generate a DROP TABLE statement for the selected table.",
 					query: (table) => `DROP TABLE ${table};`,
@@ -153,7 +153,7 @@ export const getColumnActionGroups = (
 				label: "Query",
 				actions: [
 					{
-						label: "Select values",
+						label: "Select Values",
 						description:
 							"Select all values for the chosen property.",
 						query: (_table, property) =>
@@ -165,14 +165,14 @@ export const getColumnActionGroups = (
 				label: "Modify",
 				actions: [
 					{
-						label: "Insert value",
+						label: "Insert Value",
 						description:
 							"Generate an INSERT DATA statement for the chosen property.",
 						query: (_table, property) =>
 							`# Add a "${property}" value - replace the placeholder URIs and value\nINSERT DATA {\n\t<SUBJECT_URI> <PROPERTY_URI> "value" .\n}`,
 					},
 					{
-						label: "Delete values",
+						label: "Delete Values",
 						description:
 							"Generate a DELETE WHERE statement for the chosen property.",
 						query: (_table, property) =>
@@ -188,12 +188,12 @@ export const getColumnActionGroups = (
 			label: "Query",
 			actions: [
 				{
-					label: "Select column",
+					label: "Select Column",
 					description: "Select the chosen column from the table.",
 					query: (table, column) => `SELECT ${column} FROM ${table};`,
 				},
 				{
-					label: "Select distinct values",
+					label: "Select Distinct Values",
 					description:
 						"Select the distinct values for the chosen column.",
 					query: (table, column) =>
@@ -205,14 +205,14 @@ export const getColumnActionGroups = (
 			label: "Modify",
 			actions: [
 				{
-					label: "Rename column",
+					label: "Rename Column",
 					description:
 						"Generate an ALTER TABLE statement to rename the column.",
 					query: (table, column) =>
 						`ALTER TABLE ${table}\nRENAME COLUMN ${column} TO new_column_name;`,
 				},
 				{
-					label: "Delete column",
+					label: "Delete Column",
 					description:
 						"Generate an ALTER TABLE statement to drop the column.",
 					query: (table, column) =>

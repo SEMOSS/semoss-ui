@@ -27,6 +27,7 @@ export * from "./command";
 export * from "./context-menu";
 export * from "./dialog";
 export * from "./diff-code-editor";
+export { DirectionProvider } from "./direction";
 export * from "./drawer";
 export * from "./dropdown-menu";
 export * from "./field";

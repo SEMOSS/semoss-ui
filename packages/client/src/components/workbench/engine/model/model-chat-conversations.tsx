@@ -56,8 +56,8 @@ type ConversationSort = "DESC" | "ASC";
 
 /** The orderings offered, in the order they are listed. */
 const SORT_OPTIONS: { value: ConversationSort; label: string }[] = [
-	{ value: "DESC", label: "Newest first" },
-	{ value: "ASC", label: "Oldest first" },
+	{ value: "DESC", label: "Newest First" },
+	{ value: "ASC", label: "Oldest First" },
 ];
 
 /**

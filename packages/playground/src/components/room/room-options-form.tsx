@@ -1,546 +1,271 @@
-import { Bot, HammerIcon, PlusIcon, TrashIcon } from "lucide-react";
+import { Bot } from "lucide-react";
 import { observer } from "mobx-react-lite";
-import type { MouseEvent } from "react";
-import { useState } from "react";
+import { useId, useState } from "react";
 import { useTranslation } from "@semoss/i18n";
-import { EngineSelect, type MCPConfig } from "@semoss/shared";
+import { EngineSelect } from "@semoss/shared";
 import {
-	Badge,
 	Button,
 	Field,
 	FieldDescription,
-	FieldGroup,
 	FieldLabel,
-	FieldLegend,
-	FieldSet,
+	Form,
+	FormField,
+	H3,
 	Slider,
 	Textarea,
-	Tooltip,
-	TooltipContent,
-	TooltipTrigger,
+	useForm,
+	z,
+	zodResolver,
 } from "@semoss/ui/next";
-import { MCPOverlay } from "@/components";
+import { MCPOverlay } from "@/components/mcp/mcp-overlay";
+import { RoomSelectedResources } from "@/features/conversation/room-selected-resources";
 import { OrchestratorRosterField } from "@/features/orchestrator/orchestrator-roster-field";
 import { TeamworkDefaultToolsField } from "@/features/teamwork/components/teamwork-default-tools-field";
-import { useRoot } from "@/hooks";
-import type { RoomStore } from "@/stores";
+import { useRoot } from "@/hooks/use-root";
+import type { RoomStore } from "@/stores/room/room.store";
 import { splitMcpByType } from "@/utility/mcp-utils";
 
-/** Props for {@link RoomOptionsForm}. */
 export interface RoomOptionsFormProps {
-	/** Model of the room */
 	model: RoomStore["model"];
-
-	/** Update model on change */
 	onModelChange: (model: RoomStore["model"]) => void;
-
-	/** Options for the room */
 	options: RoomStore["options"];
-
-	/** Update options on change */
 	onOptionsChange: (options: Partial<RoomStore["options"]>) => void;
-
-	/**
-	 * Whether the user can pick/change the agent from this form. Defaults to
-	 * `false` — agents are baked in at room creation, so the existing-room
-	 * settings panel is read-only. Pass `true` from new-room contexts.
-	 */
 	agentEditable?: boolean;
-
-	/**
-	 * Whether the room runs through the agent harness, whose runs bring their
-	 * own file tools, so the chat's default tools are not offered.
-	 */
+	/** Commit Agent mode only after a picker Save. */
+	onAgentModeSelected?: () => void;
+	disabled?: boolean;
+	/** Agent runs supply their own tools instead of the chat's default tools. */
 	isAgentMode?: boolean;
 }
 
-export const RoomOptionsForm: React.FC<RoomOptionsFormProps> = observer(
+export const RoomOptionsForm = observer(
 	({
 		model,
-		onModelChange = () => null,
+		onModelChange,
 		options,
-		onOptionsChange = () => null,
+		onOptionsChange,
 		agentEditable = false,
+		onAgentModeSelected,
+		disabled = false,
 		isAgentMode = false,
-	}) => {
+	}: RoomOptionsFormProps) => {
 		const { t } = useTranslation(["room", "common"]);
 		const { root } = useRoot();
-
-		/**
-		 * State
-		 */
-		const [mCPOverlay, setMCPOverlay] = useState<{
+		const id = useId();
+		const form = useForm({
+			values: { instructions: options.instructions },
+			resolver: zodResolver(z.object({ instructions: z.string() })),
+		});
+		const [overlay, setOverlay] = useState<{
 			type: "AGENT" | "KNOWLEDGE" | "TOOLBOX";
 			isOpen: boolean;
-		}>({
-			type: "KNOWLEDGE",
-			isOpen: false,
-		});
-
-		// All MCPs live in the same array; workspace-inherited MCPs carry a
-		// `fromWorkspace` flag and cannot be removed here — the room only
-		// inherits them, so removal happens in the workspace form instead.
-		const { knowledge, toolbox } = splitMcpByType(options?.mcp ?? []);
-
-		/**
-		 * Functions
-		 */
-		const handleDeleteMCP = (mcp: MCPConfig) => {
-			if (mcp.fromWorkspace) {
-				return;
-			}
-
-			const updatedMCPs = options.mcp.filter(
-				(t) => !(t.id === mcp.id && t.type === mcp.type),
-			);
-
-			onOptionsChange({
-				mcp: updatedMCPs,
-			});
-		};
-
+		}>({ type: "KNOWLEDGE", isOpen: false });
+		const { knowledge, toolbox } = splitMcpByType(options.mcp);
 		return (
-			<form className="p-4 text-foreground">
-				<FieldGroup>
-					<FieldSet>
-						<FieldLegend className="flex w-full flex-1 items-center justify-between gap-2">
-							{t("room:settings.title")}
-						</FieldLegend>
-						<FieldDescription>
-							{t("room:settings.description")}
-						</FieldDescription>
-						<FieldGroup>
-							{root.theme.featureFlags?.enableModelSelect && (
-								<Field>
-									<FieldLabel>
-										{t("room:form.modelLabel")}
-									</FieldLabel>
-									<EngineSelect
-										name={
-											model?.engine_display_name ||
-											model?.app_name ||
-											""
-										}
-										value={model?.app_id || ""}
-										engineTypes={["MODEL"]}
-										metaFilters={[
-											{ tag: "text-generation" },
-										]}
-										onChange={(v) => {
-											onModelChange(v);
-										}}
-										popoverContentProps={{
-											align: "start",
-										}}
-									/>
-								</Field>
-							)}
+			<Form
+				form={form}
+				onSubmit={(values) => {
+					if (!disabled) onOptionsChange(values);
+				}}
+				className="mx-auto flex w-full max-w-3xl flex-col gap-6 p-4 sm:p-6"
+			>
+				<div className="space-y-2">
+					<H3>{t("room:settings.panelTitle")}</H3>
+					<FieldDescription>
+						{t("room:settings.description")}
+					</FieldDescription>
+				</div>
+				<fieldset
+					disabled={disabled}
+					className="flex min-w-0 flex-col gap-6"
+				>
+					{root.theme.featureFlags?.enableModelSelect && (
+						<Field>
+							<FieldLabel htmlFor={`${id}-model`}>
+								{t("room:form.modelLabel")}
+							</FieldLabel>
+							<EngineSelect
+								name={
+									model?.engine_display_name ||
+									model?.app_name ||
+									""
+								}
+								value={model?.app_id || ""}
+								engineTypes={["MODEL"]}
+								metaFilters={[{ tag: "text-generation" }]}
+								onChange={onModelChange}
+								popoverContentProps={{ align: "start" }}
+								id={`${id}-model`}
+								disabled={disabled}
+							/>
+						</Field>
+					)}
+					<FormField
+						control={form.control}
+						name="instructions"
+						render={({ field }) => (
 							<Field>
-								<FieldLabel>
+								<FieldLabel htmlFor={`${id}-instructions`}>
 									{t("room:form.instructionsLabel")}
 								</FieldLabel>
 								<Textarea
+									{...field}
+									id={`${id}-instructions`}
 									placeholder={t(
 										"common:placeholders.updateInstructions",
 									)}
-									className="h-64 resize-none overflow-y-auto"
-									value={options.instructions}
-									onChange={(e) => {
-										onOptionsChange({
-											instructions: e.target.value,
-										});
+									rows={3}
+									className="field-sizing-fixed min-h-24 resize-y"
+									onChange={(event) => {
+										field.onChange(event);
+										if (!disabled)
+											onOptionsChange({
+												instructions:
+													event.target.value,
+											});
 									}}
 								/>
 							</Field>
-							{(agentEditable || options?.workspace) && (
-								<Field>
-									<FieldLabel
-										onClick={
-											agentEditable
-												? (
-														event: MouseEvent<HTMLLabelElement>,
-													) => {
-														event.preventDefault();
-														event.stopPropagation();
+						)}
+					/>
+					{(agentEditable || options.workspace) && (
+						<Field>
+							<FieldLabel htmlFor={`${id}-agent`}>
+								{t("room:form.agentLabel")}
+							</FieldLabel>
+							<Button
+								id={`${id}-agent`}
+								type="button"
+								variant="outline"
+								disabled={disabled || !agentEditable}
+								className="h-auto min-h-10 justify-start whitespace-normal text-start"
+								onClick={() =>
+									setOverlay({ type: "AGENT", isOpen: true })
+								}
+							>
+								<Bot aria-hidden="true" />
+								{options.workspace?.name ||
+									options.workspace?.workspace_id ||
+									t("room:menuWorkspace.selectAgent")}
+							</Button>
+						</Field>
+					)}
+					{isAgentMode && options.workspace ? (
+						<Field>
+							<FieldLabel>Room agents</FieldLabel>
+							<FieldDescription>
+								Agents available for same-room task handoff.
+							</FieldDescription>
+							<OrchestratorRosterField
+								workspaceId={options.workspace.workspace_id}
+								value={options.agents ?? []}
+								disabled={disabled}
+								onChange={(agents) =>
+									onOptionsChange({ agents })
+								}
+							/>
+						</Field>
+					) : null}
 
-														setMCPOverlay({
-															type: "AGENT",
-															isOpen: true,
-														});
-													}
-												: undefined
-										}
-									>
-										<div className="flex-1">
-											{t("room:form.agentLabel")}
-										</div>
-									</FieldLabel>
-									<div className="space-y-2">
-										{options?.workspace ? (
-											agentEditable ? (
-												<button
-													type="button"
-													className="group flex h-10 w-full items-center gap-2 rounded-md border border-border bg-card px-3 py-2 text-start text-card-foreground hover:bg-muted/50"
-													onClick={() =>
-														setMCPOverlay({
-															type: "AGENT",
-															isOpen: true,
-														})
-													}
-												>
-													<Bot className="size-4" />
-													<span className="flex-1 truncate text-sm">
-														{options.workspace
-															.name ||
-															options.workspace
-																.workspace_id}
-													</span>
-												</button>
-											) : (
-												<div className="flex h-10 w-full items-center gap-2 rounded-md border border-border bg-card px-3 py-2 text-start text-card-foreground">
-													<Bot className="size-4" />
-													<span className="flex-1 truncate text-sm">
-														{options.workspace
-															.name ||
-															options.workspace
-																.workspace_id}
-													</span>
-												</div>
-											)
-										) : (
-											<button
-												type="button"
-												className="w-full cursor-pointer rounded-md border border-border bg-card py-4 text-center text-card-foreground"
-												onClick={() =>
-													setMCPOverlay({
-														type: "AGENT",
-														isOpen: true,
-													})
-												}
-											>
-												<span className="text-muted-foreground text-xs">
-													{t(
-														"room:menuWorkspace.selectAgent",
-													)}
-												</span>
-											</button>
-										)}
-									</div>
-								</Field>
-							)}
-							{isAgentMode && options?.workspace ? (
-								<Field>
-									<FieldLabel>Room agents</FieldLabel>
-									<FieldDescription>
-										Agents available for same-room task
-										handoff.
-									</FieldDescription>
-									<OrchestratorRosterField
-										workspaceId={
-											options.workspace.workspace_id
-										}
-										value={options.agents ?? []}
-										onChange={(agents) =>
-											onOptionsChange({ agents })
-										}
-									/>
-								</Field>
-							) : null}
-							<Field>
-								<FieldLabel
-									onClick={(
-										event: MouseEvent<HTMLLabelElement>,
-									) => {
-										event.preventDefault();
-										event.stopPropagation();
-
-										setMCPOverlay({
-											type: "KNOWLEDGE",
-											isOpen: true,
-										});
-									}}
-								>
-									<div className="flex-1">
-										{t("room:form.knowledgeLabel")}
-									</div>
-									<Tooltip>
-										<TooltipTrigger asChild>
-											<Button
-												variant="outline"
-												size="sm"
-												onClick={(event) => {
-													event.preventDefault();
-													event.stopPropagation();
-
-													setMCPOverlay({
-														type: "KNOWLEDGE",
-														isOpen: true,
-													});
-												}}
-											>
-												<PlusIcon />
-											</Button>
-										</TooltipTrigger>
-										<TooltipContent>
-											{t("common:actions.addKnowledge")}
-										</TooltipContent>
-									</Tooltip>
-								</FieldLabel>
-								<div className="space-y-2">
-									{knowledge.length ? (
-										knowledge.map((mcp) => {
-											return (
-												<div
-													key={mcp.id}
-													className={`group h flex h-10 items-center justify-between gap-2 rounded-md border border-border bg-card px-3 py-2 text-card-foreground ${mcp.fromWorkspace ? "" : "hover:bg-muted/50"}`}
-												>
-													<HammerIcon className="size-4" />
-													<span className="flex-1 truncate text-sm">
-														{mcp.name}
-													</span>
-													{mcp.fromWorkspace ? (
-														<Badge
-															key={mcp.id}
-															variant="outline"
-															className="disabled: me-2 border border-primary text-primary text-xs"
-														>
-															{t(
-																"common:badges.fromAgent",
-															)}
-														</Badge>
-													) : (
-														<Button
-															variant="ghost"
-															size="icon-sm"
-															color=""
-															className="invisible group-hover:visible"
-															onClick={() =>
-																handleDeleteMCP(
-																	mcp,
-																)
-															}
-															disabled={
-																mcp.fromWorkspace
-															}
-															title={
-																mcp.fromWorkspace
-																	? t(
-																			"common:tooltips.cannotDeleteWorkspaceMCPs",
-																		)
-																	: t(
-																			"common:actions.deleteMCP",
-																		)
-															}
-														>
-															<TrashIcon
-																className={
-																	mcp.fromWorkspace
-																		? "text-muted-foreground"
-																		: "text-destructive"
-																}
-															/>
-														</Button>
-													)}
-												</div>
-											);
-										})
-									) : (
-										<button
-											type="button"
-											className="w-full cursor-pointer rounded-md border border-border bg-card py-4 text-center text-card-foreground"
-											onClick={() =>
-												setMCPOverlay({
-													type: "KNOWLEDGE",
-													isOpen: true,
-												})
-											}
-										>
-											<span className="text-muted-foreground text-xs">
-												{t(
-													"common:messages.noKnowledgeFound",
-												)}
-											</span>
-										</button>
-									)}
-								</div>
-							</Field>
-							<Field>
-								<FieldLabel
-									onClick={(
-										event: MouseEvent<HTMLLabelElement>,
-									) => {
-										event.preventDefault();
-										event.stopPropagation();
-
-										setMCPOverlay({
-											type: "TOOLBOX",
-											isOpen: true,
-										});
-									}}
-								>
-									<div className="flex-1">
-										{t("room:form.toolboxLabel")}
-									</div>
-
-									<Tooltip>
-										<TooltipTrigger asChild>
-											<Button
-												variant="outline"
-												size="sm"
-												onClick={(event) => {
-													event.preventDefault();
-													event.stopPropagation();
-
-													setMCPOverlay({
-														type: "TOOLBOX",
-														isOpen: true,
-													});
-												}}
-											>
-												<PlusIcon />
-											</Button>
-										</TooltipTrigger>
-										<TooltipContent>
-											{t("common:actions.addToolbox")}
-										</TooltipContent>
-									</Tooltip>
-								</FieldLabel>
-								<div className="space-y-2">
-									{toolbox.length ? (
-										toolbox.map((mcp) => {
-											return (
-												<div
-													key={mcp.id}
-													className={`group h flex h-10 items-center justify-between gap-2 rounded-md border border-border bg-card px-3 py-2 text-card-foreground ${mcp.fromWorkspace ? "" : "hover:bg-muted/50"}`}
-												>
-													<HammerIcon className="size-4" />
-													<span className="flex-1 truncate text-sm">
-														{mcp.name}
-													</span>
-													{mcp.fromWorkspace ? (
-														<Badge
-															key={mcp.id}
-															variant="outline"
-															className="disabled: me-2 border border-primary text-primary text-xs"
-														>
-															{t(
-																"common:badges.fromAgent",
-															)}
-														</Badge>
-													) : (
-														<Button
-															variant="ghost"
-															size="icon-sm"
-															className="invisible group-hover:visible"
-															onClick={() =>
-																handleDeleteMCP(
-																	mcp,
-																)
-															}
-															disabled={
-																mcp.fromWorkspace
-															}
-															title={
-																mcp.fromWorkspace
-																	? t(
-																			"common:tooltips.cannotDeleteAgentMCPs",
-																		)
-																	: t(
-																			"common:actions.deleteMCP",
-																		)
-															}
-														>
-															<TrashIcon
-																className={
-																	mcp.fromWorkspace
-																		? "text-muted-foreground"
-																		: "text-destructive"
-																}
-															/>
-														</Button>
-													)}
-												</div>
-											);
-										})
-									) : (
-										<button
-											type="button"
-											className="w-full cursor-pointer rounded-md border border-border bg-card py-4 text-center text-card-foreground"
-											onClick={() =>
-												setMCPOverlay({
-													type: "TOOLBOX",
-													isOpen: true,
-												})
-											}
-										>
-											<span className="text-muted-foreground text-xs">
-												{t(
-													"common:messages.noToolboxFound",
-												)}
-											</span>
-										</button>
-									)}
-								</div>
-							</Field>
-							<MCPOverlay
-								open={mCPOverlay.isOpen}
-								defaultTab={mCPOverlay.type}
-								values={options?.mcp ?? []}
-								workspace={options?.workspace ?? null}
-								agentEditable={agentEditable}
-								onClose={(next) => {
-									if (next) {
-										const updates: Partial<
-											RoomStore["options"]
-										> = { mcp: next.mcp };
-										if (
-											agentEditable &&
-											"workspace" in next
-										) {
-											updates.workspace =
-												next.workspace ?? undefined;
-										}
-										onOptionsChange(updates);
-									}
-									setMCPOverlay({
-										isOpen: false,
-										type: "KNOWLEDGE",
+					<FieldDescription>
+						{t(
+							disabled
+								? "room:studio.toolsLocked"
+								: "room:studio.toolsHint",
+						)}
+					</FieldDescription>
+					{(["KNOWLEDGE", "TOOLBOX"] as const).map((type) => (
+						<RoomSelectedResources
+							key={type}
+							type={type}
+							items={type === "KNOWLEDGE" ? knowledge : toolbox}
+							disabled={disabled}
+							onAdd={() => setOverlay({ type, isOpen: true })}
+							onRemove={(item) => {
+								if (
+									!disabled &&
+									!item.fromWorkspace &&
+									!item.fromRoom &&
+									item.type !== "ROOM"
+								) {
+									onOptionsChange({
+										mcp: options.mcp.filter(
+											(selected) =>
+												selected.id !== item.id,
+										),
 									});
+								}
+							}}
+						/>
+					))}
+					{!isAgentMode && (
+						<TeamworkDefaultToolsField
+							defaultTools={options.defaultTools}
+							disabled={disabled}
+							onChange={(defaultTools) => {
+								if (!disabled)
+									onOptionsChange({ defaultTools });
+							}}
+						/>
+					)}
+					{root.theme.featureFlags?.enableTemperature && (
+						<Field>
+							<FieldLabel htmlFor={`${id}-temperature`}>
+								{t("room:form.temperatureLabel")} (
+								{(options.temperature ?? 0).toFixed(2)})
+							</FieldLabel>
+							<Slider
+								id={`${id}-temperature`}
+								aria-label={t("room:form.temperatureLabel")}
+								min={0}
+								max={1}
+								step={0.01}
+								value={[options.temperature ?? 0]}
+								disabled={disabled}
+								onValueChange={(value) => {
+									if (!disabled)
+										onOptionsChange({
+											temperature: value[0],
+										});
 								}}
 							/>
-							{isAgentMode ? null : (
-								<TeamworkDefaultToolsField
-									defaultTools={options.defaultTools}
-									onChange={(defaultTools) =>
-										onOptionsChange({
-											defaultTools: defaultTools,
-										})
-									}
-								/>
-							)}
-							{root.theme.featureFlags?.enableTemperature && (
-								<Field>
-									<FieldLabel>
-										{t("room:form.temperatureLabel")} (
-										{(options.temperature ?? 0).toFixed(2)})
-									</FieldLabel>
-									<Slider
-										min={0}
-										max={1}
-										step={0.01}
-										value={[options.temperature ?? 0]}
-										onValueChange={(value) =>
-											onOptionsChange({
-												temperature: value[0],
-											})
-										}
-									/>
-								</Field>
-							)}
-						</FieldGroup>
-					</FieldSet>
-				</FieldGroup>
-			</form>
+						</Field>
+					)}
+				</fieldset>
+				<MCPOverlay
+					open={overlay.isOpen}
+					disabled={disabled}
+					allowDefaultAgent={
+						!!root.theme.featureFlags?.enableAgentHarness
+					}
+					defaultTab={overlay.type}
+					values={options.mcp}
+					workspace={options.workspace ?? null}
+					agentEditable={agentEditable}
+					onClose={(next) => {
+						if (next && !disabled) {
+							onOptionsChange({
+								mcp: next.mcp,
+								...(agentEditable && "workspace" in next
+									? { workspace: next.workspace ?? undefined }
+									: {}),
+							});
+							if (
+								agentEditable &&
+								(next.agentModeSelected ||
+									overlay.type === "AGENT" ||
+									next.workspace?.workspace_id !==
+										options.workspace?.workspace_id)
+							)
+								onAgentModeSelected?.();
+						}
+						setOverlay((current) => ({
+							...current,
+							isOpen: false,
+						}));
+					}}
+				/>
+			</Form>
 		);
 	},
 );

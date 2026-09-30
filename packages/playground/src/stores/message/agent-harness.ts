@@ -6,7 +6,6 @@ import type {
 	AgentRunStatusValue,
 	AgentRunSummary,
 	PendingAgentAction,
-	SubagentRunSummary,
 } from "@semoss/sdk";
 import { AgentStore, getAgentRunsForRoom, getSubagentRuns } from "@semoss/sdk";
 import {
@@ -190,44 +189,6 @@ const findSubagentPart = (
 			part.type === "SUBAGENT" && part.subagent.id === id,
 	);
 
-/** Apply the durable child-run record to an existing live or reconstructed card. */
-export const reconcileDurableSubagent = (
-	part: PixelMessageSubagentPart,
-	summary: SubagentRunSummary,
-): void => {
-	part.subagent.status = summary.status;
-	part.subagent.displayName =
-		summary.executorLabel ?? summary.roomName ?? part.subagent.displayName;
-	part.subagent.resultPreview = summary.finalText ?? undefined;
-	part.subagent.error = summary.errorMessage ?? undefined;
-};
-
-const isActiveSubagent = (part: PixelMessageSubagentPart): boolean =>
-	part.subagent.status !== "COMPLETED" &&
-	part.subagent.status !== "FAILED" &&
-	part.subagent.status !== "CANCELLED";
-
-/**
- * Apply a durable parent-run snapshot to its visible cards. Returns whether
- * any card still needs live updates, allowing a lost terminal stream event to
- * stop the deferred watcher as soon as the database reports the child done.
- */
-export const reconcileDurableSubagents = (
-	parts: PixelMessageSubagentPart[],
-	summaries: SubagentRunSummary[],
-): boolean => {
-	const summariesByRunId = new Map(
-		summaries.map((summary) => [summary.runId, summary]),
-	);
-	parts.forEach((part) => {
-		const summary = summariesByRunId.get(part.subagent.id);
-		if (summary) {
-			reconcileDurableSubagent(part, summary);
-		}
-	});
-	return parts.some(isActiveSubagent);
-};
-
 /**
  * Apply one agent-run item event onto the response message. Must already be
  * inside a mobx action. Tool status reads from `items` (the SDK's
@@ -274,14 +235,12 @@ const applyAgentRunItem = (
 				tool.status = status;
 			}
 		} else if (item.kind === "subagent") {
-			const specialist = item as typeof item & { displayName?: string };
 			responseMessage.parts.push({
 				type: "SUBAGENT",
 				subagent: {
 					id: item.id,
 					status: item.status,
 					alias: item.alias,
-					displayName: specialist.displayName,
 					resultPreview: item.resultPreview,
 					error: item.error,
 				},
@@ -314,11 +273,7 @@ const applyAgentRunItem = (
 			const merged = items.itemsById[event.itemId];
 			const part = findSubagentPart(responseMessage, event.itemId);
 			if (part && merged?.kind === "subagent") {
-				const specialist = merged as typeof merged & {
-					displayName?: string;
-				};
 				part.subagent.status = merged.status;
-				part.subagent.displayName = specialist.displayName;
 				part.subagent.resultPreview = merged.resultPreview;
 				part.subagent.error = merged.error;
 			}
@@ -341,9 +296,7 @@ const applyAgentRunItem = (
 	} else if (item.kind === "subagent") {
 		const part = findSubagentPart(responseMessage, item.id);
 		if (part) {
-			const specialist = item as typeof item & { displayName?: string };
 			part.subagent.status = item.status;
-			part.subagent.displayName = specialist.displayName;
 			part.subagent.resultPreview = item.resultPreview;
 			part.subagent.error = item.error;
 		}
@@ -586,22 +539,8 @@ const watchTransferredRunChain = async (
 
 /** Recover a transferred run that was queued before its first message existed. */
 export const reconnectTransferredRun = (room: RoomStore): void => {
-	const messages = (): (InputMessageStore | ResponseMessageStore)[] => {
-		const found: (InputMessageStore | ResponseMessageStore)[] = [];
-		const visit = (message: { children: unknown[] }) => {
-			for (const child of message.children) {
-				if (
-					child instanceof InputMessageStore ||
-					child instanceof ResponseMessageStore
-				) {
-					found.push(child);
-					visit(child);
-				}
-			}
-		};
-		visit(room.root);
-		return found;
-	};
+	const messages = (): (InputMessageStore | ResponseMessageStore)[] =>
+		room.history;
 
 	(async () => {
 		try {
@@ -636,87 +575,6 @@ export const reconnectTransferredRun = (room: RoomStore): void => {
 			room.setIsLoading(false);
 		}
 	})();
-};
-
-/**
- * A POST child can finish after its parent run is terminal. The backend keeps
- * that parent's canonical item stream alive for a grace period and publishes
- * the child's terminal item there, so keep draining only while this response
- * still owns a non-terminal child card.
- */
-const watchDeferredSubagentEvents = (
-	room: RoomStore,
-	parentRunId: string,
-	responseMessage: ResponseMessageStore,
-): void => {
-	const subagentParts = () =>
-		responseMessage.parts.filter(
-			(part): part is PixelMessageSubagentPart =>
-				part.type === "SUBAGENT",
-		);
-	const hasActiveCard = () => subagentParts().some(isActiveSubagent);
-	if (!hasActiveCard()) {
-		return;
-	}
-
-	const agent = getOrCreateAgent(room.roomId, room.insightId, parentRunId);
-	const subscription = agent.watch(
-		{
-			onEvent: (event, items) => {
-				runInAction(() => {
-					applyAgentRunItem(responseMessage, event, items);
-				});
-			},
-			onSnapshot: () => undefined,
-			onReconcile: () => undefined,
-			onError: (e) => {
-				console.error("Deferred subagent stream error", e);
-			},
-		},
-		{
-			keepPollingAfterTerminal: hasActiveCard,
-		},
-	);
-	let reconciling = false;
-	const reconcileFromDurableState = async () => {
-		if (reconciling || !hasActiveCard()) {
-			return;
-		}
-		reconciling = true;
-		try {
-			const summaries = await getSubagentRuns(
-				parentRunId,
-				room.insightId,
-			);
-			let stillActive = true;
-			runInAction(() => {
-				stillActive = reconcileDurableSubagents(
-					subagentParts(),
-					summaries,
-				);
-			});
-			if (!stillActive) {
-				subscription.stop();
-			}
-		} catch (e) {
-			console.error("Deferred subagent reconciliation error", e);
-		} finally {
-			reconciling = false;
-		}
-	};
-
-	// The canonical stream is the fast path. Durable reconciliation prevents a
-	// lost event, backend restart, or expired stream session from polling forever.
-	const reconcileTimer = setInterval(() => {
-		void reconcileFromDurableState();
-	}, 5_000);
-	void reconcileFromDurableState();
-	void subscription.done.finally(() => {
-		clearInterval(reconcileTimer);
-		if (agentsByRunId.get(parentRunId) === agent) {
-			agentsByRunId.delete(parentRunId);
-		}
-	});
 };
 
 /**
@@ -797,18 +655,15 @@ export const runAgentMessage = async (
 			},
 			room.insightId,
 		);
+		agentsByRunId.set(handle.runId, handle);
+
 		runInAction(() => {
-			// Persisted messages carry this attribution from the backend, but the
-			// optimistic live stores predate submission. Attach it as soon as the
-			// run id is known so POST-child reconciliation can discover this turn
-			// before a full room-history reload.
 			inputMessage.agentRun = { runId: handle.runId, role: "input" };
 			responseMessage.agentRun = {
 				runId: handle.runId,
 				role: "final_output",
 			};
 		});
-		agentsByRunId.set(handle.runId, handle);
 
 		await watchAgentRun(handle, responseMessage, inputMessage);
 		try {
@@ -818,7 +673,6 @@ export const runAgentMessage = async (
 			// remove the user's completed turn; refresh recovery can attach the transfer.
 			console.error("Failed to follow transferred agent run", error);
 		}
-		watchDeferredSubagentEvents(room, handle.runId, responseMessage);
 	} catch (e) {
 		// remove message if we failed
 		message.removeChild(inputMessage);
@@ -902,32 +756,14 @@ export const reconstructAllSubagents = async (room: RoomStore) => {
 			const subagents = await getSubagentRuns(runId, room.insightId);
 			runInAction(() => {
 				subagents.forEach((subagent) => {
-					const specialist = subagent as typeof subagent & {
-						executorLabel?: string | null;
-					};
 					const responseMessages = messages.filter(
 						(message): message is ResponseMessageStore =>
 							message instanceof ResponseMessageStore,
 					);
-					// Live streams and persisted history place tool-result messages
-					// differently. Prefer the card's identity over inferred message
-					// placement so reconciliation always updates the visible instance.
-					const existing = responseMessages
-						.map((message) =>
-							findSubagentPart(message, subagent.runId),
-						)
-						.find(
-							(part): part is PixelMessageSubagentPart =>
-								part !== undefined,
-						);
-					if (existing) {
-						reconcileDurableSubagent(existing, subagent);
-						return;
-					}
 					const target =
 						findSpawningMessage(messages, subagent.runId) ??
 						responseMessages[responseMessages.length - 1];
-					if (!target) {
+					if (!target || findSubagentPart(target, subagent.runId)) {
 						return;
 					}
 					target.parts.push({
@@ -935,10 +771,6 @@ export const reconstructAllSubagents = async (room: RoomStore) => {
 						subagent: {
 							id: subagent.runId,
 							status: subagent.status,
-							displayName:
-								specialist.executorLabel ??
-								subagent.roomName ??
-								undefined,
 							resultPreview: subagent.finalText ?? undefined,
 							error: subagent.errorMessage ?? undefined,
 						},

@@ -69,8 +69,6 @@ export const ResponseMessageSubagent: React.FC<ResponseMessageSubagentProps> =
 		const { room } = message;
 		const { subagent } = part;
 		const state = getSubagentState(subagent.status, subagent, t);
-		const specialistName =
-			subagent.displayName || subagent.alias || t("subagent.title");
 		const panelConfig = { subagentId: subagent.id };
 		const isActive = useSidebarPanelActive(
 			room,
@@ -82,7 +80,7 @@ export const ResponseMessageSubagent: React.FC<ResponseMessageSubagentProps> =
 			room.openSidebarPanel(
 				ROOM_PANEL_TYPES.SUBAGENT,
 				panelConfig,
-				specialistName,
+				subagent.alias || t("subagent.title"),
 			);
 		};
 
@@ -107,9 +105,9 @@ export const ResponseMessageSubagent: React.FC<ResponseMessageSubagentProps> =
 				<div className="flex min-w-0 flex-1 flex-col">
 					<span
 						className="truncate font-medium text-foreground text-sm"
-						title={specialistName}
+						title={subagent.alias || t("subagent.title")}
 					>
-						{specialistName}
+						{subagent.alias || t("subagent.title")}
 					</span>
 					<span
 						className="truncate text-muted-foreground text-sm"

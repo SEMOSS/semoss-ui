@@ -40,8 +40,6 @@ const RoomSubagentPanel = observer(({ id }: WorkbenchPanelProps) => {
 	}
 
 	const state = getSubagentState(subagent.status, subagent, t);
-	const specialistName =
-		subagent.displayName || subagent.alias || t("subagent.title");
 	const body =
 		subagent.status === "COMPLETED"
 			? subagent.resultPreview || t("subagent.noResult")
@@ -63,7 +61,7 @@ const RoomSubagentPanel = observer(({ id }: WorkbenchPanelProps) => {
 					</div>
 					<div className="flex min-w-0 flex-col">
 						<span className="truncate font-medium text-foreground text-sm">
-							{specialistName}
+							{subagent.alias || t("subagent.title")}
 						</span>
 						<span className="text-muted-foreground text-xs">
 							{subagent.id}

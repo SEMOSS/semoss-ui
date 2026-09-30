@@ -1,9 +1,9 @@
 import { type RefObject, useCallback, useEffect, useRef } from "react";
 
 /** What {@link useReturnFocus} returns. */
-export interface ReturnFocus {
+export interface ReturnFocus<T extends HTMLElement = HTMLUListElement> {
 	/** Attach to the list whose rows open items. */
-	listRef: RefObject<HTMLUListElement | null>;
+	listRef: RefObject<T | null>;
 	/** Note the row that opened an item, so focus goes back to it. */
 	rememberItem: (itemKey: string) => void;
 }
@@ -15,8 +15,10 @@ export interface ReturnFocus {
  * @param isItemOpen - Whether an item is open over the list.
  * @return The list's ref and a way to note the opening row.
  */
-export const useReturnFocus = (isItemOpen: boolean): ReturnFocus => {
-	const listRef = useRef<HTMLUListElement>(null);
+export const useReturnFocus = <T extends HTMLElement = HTMLUListElement>(
+	isItemOpen: boolean,
+): ReturnFocus<T> => {
+	const listRef = useRef<T>(null);
 	const itemKeyRef = useRef<string | null>(null);
 
 	useEffect(() => {

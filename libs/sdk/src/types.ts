@@ -422,8 +422,6 @@ export type AgentRunItem =
 			roomId: string;
 			/** The workspace the subagent runs under, if spawned with one. */
 			workspaceId?: string;
-			/** Human-readable workspace name resolved by the backend. */
-			displayName?: string;
 			status: AgentRunStatusValue;
 			/** Set when status is FAILED. */
 			error?: string;
@@ -523,8 +521,6 @@ export interface SubagentRunSummary {
 	modelId: string | null;
 	/** Which agent harness ran it (e.g. "semoss"). */
 	harnessType: string | null;
-	/** Human-readable specialist name resolved from the workspace. */
-	executorLabel?: string | null;
 	/** Always equal to runId — the model-facing handle for this run. */
 	jobId: string;
 	status: AgentRunStatusValue;

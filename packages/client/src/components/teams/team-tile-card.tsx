@@ -173,7 +173,7 @@ export const TeamTileCard = (props: TeamCardProps) => {
 								}}
 							>
 								<Pencil className="mr-2 size-4" />
-								Edit team
+								Edit Team
 							</DropdownMenuItem>
 							<DropdownMenuItem
 								className="text-destructive focus:text-destructive"
@@ -183,7 +183,7 @@ export const TeamTileCard = (props: TeamCardProps) => {
 								}}
 							>
 								<Trash2 className="mr-2 size-4" />
-								Delete team
+								Delete Team
 							</DropdownMenuItem>
 						</DropdownMenuContent>
 					</DropdownMenu>

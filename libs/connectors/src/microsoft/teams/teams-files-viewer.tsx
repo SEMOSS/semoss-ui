@@ -118,7 +118,7 @@ export const TeamsFilesViewer = (props: TeamsFilesViewerProps) => {
 	return (
 		<div className="@container flex h-full min-h-0 flex-col">
 			{choice.teamsQuery.status === "ready" && team ? (
-				<div className="px-3 pt-2">
+				<div className="shrink-0 border-border border-b bg-muted/20 px-3 py-2">
 					<TeamsChannelPicker choice={choice} />
 				</div>
 			) : null}

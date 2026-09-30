@@ -19,8 +19,8 @@ import type {
 	PixelMessageToolCallPart,
 	Workspace,
 } from "@/types";
-import { normalizeTimestamp } from "@/utility";
-import { RoomStore } from "../room";
+import { normalizeTimestamp } from "@/utility/date";
+import { RoomStore } from "../room/room.store";
 
 const DEFAUlT_MODEL_ID = import.meta.env.VITE_DEFAUlT_MODEL_ID || "";
 const DEFAUlT_MODEL_NAME = import.meta.env.VITE_DEFAUlT_MODEL_NAME || "";
@@ -530,7 +530,7 @@ export class ChatStore {
 		roomId: string,
 		format: "word" | "pdf",
 	): Promise<void> => {
-		const messagesResponse = await runPixel<AbstractPixelMessage[]>(
+		const messagesResponse = await runPixel<[AbstractPixelMessage[]]>(
 			`GetPlaygroundMessages(roomId=["${roomId}"]);`,
 			"new",
 		);
@@ -600,7 +600,7 @@ export class ChatStore {
 				? `ToDocx(markdown=["<encode>${formattedMessages}</encode>"], fileName="${appName} Room Export");`
 				: `ToPdf(markdown=["<encode>${formattedMessages}</encode>"], fileName="${appName} Room Export");`;
 
-		const downloadResponse = await runPixel<string>(
+		const downloadResponse = await runPixel<[string]>(
 			pixelCommand,
 			messagesResponse.insightId,
 		);

@@ -23,7 +23,12 @@ import { CatalogFilterBox } from "@/components/catalog/catalog-filter-box";
 import { Help } from "@/components/help";
 import { DeleteEntityDialog } from "@/components/shared/delete-entity-dialog";
 import { useConfig, useSession } from "@/hooks";
-import { getProjectLabel, isOwnerPermission } from "@/utility/catalog";
+import {
+	buildAccessFilterParams,
+	type CatalogAccessFilter,
+	getProjectLabel,
+	isOwnerPermission,
+} from "@/utility/catalog";
 import { NavbarHeader, NavbarLeft } from "../shared";
 import { CloneProjectDialog } from "./clone-project-dialog";
 import { ProjectGridItem } from "./project-grid-item";
@@ -178,8 +183,11 @@ export const ProjectCatalog = ({ type }: ProjectCatalogProps) => {
 	const [gridStyle, setGridStyle] = useState<"LIST" | "CARD">("LIST");
 
 	const [metaFilters, setMetaFilters] = useState<Record<string, unknown>>({});
+	const [access, setAccess] = useState<CatalogAccessFilter[]>([]);
 	const [filterKey, setFilterKey] = useState<number>(0);
 	const [tab, setTab] = useState<string>("Mine");
+	// the access filters apply to what the user can already use
+	const accessParams = tab === "Mine" ? buildAccessFilterParams(access) : "";
 
 	const [isDeletingProject, setIsDeletingProject] = useState(false);
 	const [projectToDelete, setProjectToDelete] = useState<Project | null>(
@@ -206,7 +214,7 @@ export const ProjectCatalog = ({ type }: ProjectCatalogProps) => {
 					metaKeysDescription,
 				)}, metaFilters=[${JSON.stringify(
 					metaFilters,
-				)}], filterWord=["${debouncedSearch}"], sort=[{"${sortValue}" : "${sortOrder}"}], ${projectTypeFilter}, onlyFavorites=[true]);`
+				)}], filterWord=["${debouncedSearch}"], ${accessParams}sort=[{"${sortValue}" : "${sortOrder}"}], ${projectTypeFilter}, onlyFavorites=[true]);`
 			: "",
 		{
 			data: [],
@@ -229,7 +237,7 @@ export const ProjectCatalog = ({ type }: ProjectCatalogProps) => {
 				metaKeysDescription,
 			)}, metaFilters=[${JSON.stringify(
 				metaFilters,
-			)}], filterWord=["${debouncedSearch}"], sort=[{"${sortValue}" : "${sortOrder}"}], ${projectTypeFilter}, limit=[${limit}], offset=[${offset}]);`;
+			)}], filterWord=["${debouncedSearch}"], ${accessParams}sort=[{"${sortValue}" : "${sortOrder}"}], ${projectTypeFilter}, limit=[${limit}], offset=[${offset}]);`;
 		},
 		(response) => {
 			// if its less than the limit, we know its the end
@@ -251,6 +259,7 @@ export const ProjectCatalog = ({ type }: ProjectCatalogProps) => {
 			sortValue,
 			sortOrder,
 			JSON.stringify(metaFilters),
+			accessParams,
 		],
 	);
 
@@ -287,6 +296,7 @@ export const ProjectCatalog = ({ type }: ProjectCatalogProps) => {
 
 		setSearch("");
 		setMetaFilters({});
+		setAccess([]);
 		setSortValue("PROJECTNAME");
 		setSortOrder("ASC");
 		setGridStyle("LIST");
@@ -512,6 +522,8 @@ export const ProjectCatalog = ({ type }: ProjectCatalogProps) => {
 							onChange={(filters) => {
 								setMetaFilters(filters);
 							}}
+							access={tab === "Mine" ? access : undefined}
+							onAccessChange={setAccess}
 						/>
 					) : null
 				}

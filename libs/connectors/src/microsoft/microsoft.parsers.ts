@@ -1,3 +1,4 @@
+import { parseGraphDate } from "../core/connector.format";
 import type {
 	CalendarAttendee,
 	CalendarEvent,
@@ -535,7 +536,13 @@ const parseChat = (entry: unknown): TeamsChat | null => {
 		id: id,
 		chatType: readString(entry.chatType),
 		displayName: readString(entry.displayName) ?? readString(entry.topic),
-		lastUpdatedDateTime: readString(entry.lastUpdatedDateTime),
+		// Graph can return year 0001 as an unset last-updated timestamp.
+		lastUpdatedDateTime:
+			(parseGraphDate(
+				readString(entry.lastUpdatedDateTime),
+			)?.getUTCFullYear() ?? 0) > 1
+				? readString(entry.lastUpdatedDateTime)
+				: undefined,
 		webUrl: readString(entry.webUrl),
 		hasUnread: entry.hasUnread === true,
 		lastMessage: parseTeamsMessage(entry.lastMessage) ?? undefined,

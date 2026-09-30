@@ -29,6 +29,8 @@ export interface TeamworkDefaultToolsFieldProps {
 	defaultTools: RoomStore["options"]["defaultTools"];
 	/** Store the new modes in the room's options. */
 	onChange: (defaultTools: RoomStore["options"]["defaultTools"]) => void;
+	/** Lock changes while the current turn is in progress. */
+	disabled?: boolean;
 }
 
 /**
@@ -41,6 +43,7 @@ export interface TeamworkDefaultToolsFieldProps {
 export const TeamworkDefaultToolsField = ({
 	defaultTools,
 	onChange,
+	disabled = false,
 }: TeamworkDefaultToolsFieldProps) => {
 	const { t } = useTranslation("teamwork");
 	const idPrefix = useId();
@@ -72,9 +75,10 @@ export const TeamworkDefaultToolsField = ({
 								</code>
 							</Label>
 							<Select
+								disabled={disabled}
 								value={getDefaultToolMode(defaultTools, name)}
 								onValueChange={(value) => {
-									if (isMode(value)) {
+									if (!disabled && isMode(value)) {
 										onChange(
 											setDefaultToolMode(
 												defaultTools,

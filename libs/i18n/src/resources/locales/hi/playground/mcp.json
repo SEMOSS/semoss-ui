@@ -16,7 +16,12 @@
 		"viewDetails": "विवरण देखें",
 		"noToolboxesFound": "कोई टूलबॉक्स नहीं मिला",
 		"noKnowledgeFound": "कोई ज्ञान नहीं मिला",
-		"noAgentsFound": "कोई एजेंट नहीं मिला"
+		"noAgentsFound": "कोई एजेंट नहीं मिला",
+		"fromRoom": "इस चैट से",
+		"loadError": "कैटलॉग लोड नहीं हो सका।",
+		"retry": "फिर प्रयास करें",
+		"added": "जोड़े गए",
+		"available": "उपलब्ध"
 	},
 	"overlay": {
 		"title": "अपनी चैट कॉन्फ़िगर करें",

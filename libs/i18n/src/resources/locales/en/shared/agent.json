@@ -160,11 +160,11 @@
 				"description": "Runs a pixel expression at the lifecycle events you choose."
 			},
 			"git_commit": {
-				"label": "Git commit",
+				"label": "Git Commit",
 				"description": "Runs git add . && git commit after each agent run."
 			},
 			"log_tools": {
-				"label": "Log tool calls",
+				"label": "Log Tool Calls",
 				"description": "Logs each tool call's name, params, and duration."
 			},
 			"ppt_to_pdf": {

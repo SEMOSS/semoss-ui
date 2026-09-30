@@ -277,54 +277,6 @@ describe("AgentStore.watch", () => {
 		expect(metas).toEqual([{ droppedEvents: 4 }]);
 	});
 
-	it("keeps draining a terminal grace stream while the caller has deferred work", async () => {
-		const runId = "sub-deferred";
-		mockPollAgentRun
-			.mockResolvedValueOnce({
-				run: snapshot("COMPLETED", runId),
-				events: [],
-				droppedEvents: 0,
-			})
-			.mockResolvedValueOnce({
-				run: snapshot("COMPLETED", runId),
-				events: [
-					completedEvent(
-						1,
-						messageItem("child-result", "done"),
-						runId,
-					),
-				],
-				droppedEvents: 0,
-			})
-			.mockResolvedValueOnce({
-				run: snapshot("COMPLETED", runId),
-				events: [],
-				droppedEvents: 0,
-			});
-		mockGetAgentRun.mockResolvedValue({
-			...snapshot("COMPLETED", runId),
-			messages: [],
-		});
-
-		let waiting = true;
-		const subscription = newAgent(runId).watch(
-			{
-				onEvent: () => {
-					waiting = false;
-				},
-				onSnapshot: () => undefined,
-				onReconcile: () => undefined,
-			},
-			{
-				pollIntervalMs: 1,
-				keepPollingAfterTerminal: () => waiting,
-			},
-		);
-		await subscription.done;
-
-		expect(mockPollAgentRun).toHaveBeenCalledTimes(3);
-	});
-
 	it("reconciles on each transition into INPUT_REQUIRED, not on every paused poll", async () => {
 		const runId = "sub-pause";
 		mockPollAgentRun

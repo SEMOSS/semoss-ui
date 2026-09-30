@@ -1,3 +1,8 @@
+export {
+	type ConnectorBrand,
+	ConnectorBrandIcon,
+	type ConnectorBrandIconProps,
+} from "./components/connector-brand-icon";
 export type {
 	ConnectorAccount,
 	ConnectorSavedFile,
