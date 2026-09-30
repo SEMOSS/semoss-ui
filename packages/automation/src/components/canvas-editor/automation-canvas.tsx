@@ -88,6 +88,7 @@ import {
 	createCanvasWorkflowNode,
 	createInitialCanvasWorkflowDocument,
 	getCanvasNodeSources,
+	getWorkflowNodeDefinition,
 	validateCanvasWorkflowNode,
 } from "../../domain/automation-workflow-adapter";
 import { OnboardingTour } from "../form-editor/onboarding-tour";
@@ -97,6 +98,7 @@ import { DeletableEdge } from "./deletable-edge";
 import { getFlowStrokeColor } from "./flow-colors";
 import { AutomationNode as AutomationNodeCard } from "./nodes/automation-node";
 import { BranchNode } from "./nodes/branch-node";
+import { ControlFlowNode } from "./nodes/control-flow-node";
 import { TriggerNode } from "./nodes/trigger-node";
 import type { AutomationTraceSnapshot } from "./tabs/runs-tab";
 import { UndoBanner } from "./undo-banner";
@@ -105,6 +107,7 @@ const nodeTypes = {
 	trigger: TriggerNode,
 	automation: AutomationNodeCard,
 	branch: BranchNode,
+	"control-flow": ControlFlowNode,
 } as const;
 
 const CHANGE_HIGHLIGHT_DURATION_MS = 2500;
@@ -189,6 +192,14 @@ const NODE_LANE_GAP = 40;
 const FIRST_BRANCH_ROUTE_OFFSET = 24;
 
 function branchRouteIndex(step: AutomationNode, handle: string): number {
+	if (step.type === "split") {
+		const prefix = `parallel-add-${step.id}-`;
+		if (!handle.startsWith(prefix)) return 0;
+		const branchIndex = Number(handle.slice(prefix.length));
+		return Number.isInteger(branchIndex) && branchIndex >= 0
+			? branchIndex
+			: 0;
+	}
 	if (step.type !== "branch") return 0;
 	const clauses = (
 		step.config as import("../../domain/automation.types").RoutingConfig
@@ -199,6 +210,47 @@ function branchRouteIndex(step: AutomationNode, handle: string): number {
 	const clauseId = handle.slice(prefix.length);
 	const index = clauses.findIndex((clause) => clause.id === clauseId);
 	return index < 0 ? 0 : index;
+}
+
+function normalizeParallelDraftEdges(
+	steps: AutomationNode[],
+	edges: AutomationEdge[],
+): AutomationEdge[] {
+	const parallelNodeIds = new Set(
+		steps
+			.filter((step) => step.workflowType === "control.parallel")
+			.map((step) => step.id),
+	);
+	const branchIndexes = new Map<string, number>();
+	return edges.map((edge) => {
+		if (
+			edge.kind !== "control" ||
+			!parallelNodeIds.has(edge.source) ||
+			edge.sourceHandle !== `out-${edge.source}`
+		) {
+			return edge;
+		}
+		const branchIndex = branchIndexes.get(edge.source) ?? 0;
+		branchIndexes.set(edge.source, branchIndex + 1);
+		return {
+			...edge,
+			sourceHandle: `parallel-out-${edge.source}-${edge.id || branchIndex}`,
+		};
+	});
+}
+
+function parallelJoinNodeId(step: AutomationNode): string | undefined {
+	if (step.workflowType !== "control.parallel") return undefined;
+	const configJoinNodeId = (step.config as { joinNodeId?: unknown })
+		.joinNodeId;
+	const workflowJoinNodeId = step.workflowConfig?.joinNodeId;
+	const joinNodeId =
+		typeof configJoinNodeId === "string"
+			? configJoinNodeId
+			: workflowJoinNodeId;
+	return typeof joinNodeId === "string" && joinNodeId.trim()
+		? joinNodeId
+		: undefined;
 }
 
 function downstreamControlNodeIds(
@@ -886,6 +938,10 @@ export const AutomationCanvasContent = forwardRef<
 				);
 				return;
 			}
+			const sourceHandle =
+				connection.sourceHandle ?? `out-${connection.source}`;
+			const targetHandle =
+				connection.targetHandle ?? `in-${connection.target}`;
 			setGraphEdges((previous) => {
 				if (
 					previous.some(
@@ -895,6 +951,94 @@ export const AutomationCanvasContent = forwardRef<
 					)
 				) {
 					return previous;
+				}
+				if (
+					target.type === "split" &&
+					previous.some((edge) => edge.target === target.id)
+				) {
+					toast.error(
+						"A parallel split must have exactly one incoming connection.",
+					);
+					return previous;
+				}
+				if (
+					source.type === "join" &&
+					previous.some((edge) => edge.source === source.id)
+				) {
+					toast.error(
+						"A parallel join can have at most one outgoing connection.",
+					);
+					return previous;
+				}
+				if (
+					source.type === "branch" &&
+					previous.some(
+						(edge) =>
+							edge.source === source.id &&
+							edge.sourceHandle === sourceHandle,
+					)
+				) {
+					toast.error(
+						"Each decision route can have only one outgoing connection.",
+					);
+					return previous;
+				}
+				if (source.type === "split") {
+					const targetDefinition = target.workflowType
+						? getWorkflowNodeDefinition(target.workflowType)
+						: undefined;
+					if (
+						!targetDefinition?.supportsOutput ||
+						targetDefinition.category === "control" ||
+						target.workflowType === "agent.run"
+					) {
+						toast.error(
+							"Parallel branches require synchronous output-producing nodes.",
+						);
+						return previous;
+					}
+				}
+				const branchParent = previous
+					.filter(
+						(edge) =>
+							edge.kind === "control" &&
+							edge.target === source.id,
+					)
+					.map((edge) =>
+						steps.find((step) => step.id === edge.source),
+					)
+					.find((step) => step?.type === "split");
+				if (branchParent) {
+					const joinNodeId = parallelJoinNodeId(branchParent);
+					if (!joinNodeId || target.id !== joinNodeId) {
+						toast.error(
+							joinNodeId
+								? "Parallel branch nodes must connect directly to their selected join."
+								: "Without a join, parallel branches must remain terminal.",
+						);
+						return previous;
+					}
+				}
+				if (target.type === "join") {
+					const owningSplit = steps.find(
+						(step) =>
+							step.type === "split" &&
+							parallelJoinNodeId(step) === target.id,
+					);
+					const isDirectBranch = owningSplit
+						? previous.some(
+								(edge) =>
+									edge.kind === "control" &&
+									edge.source === owningSplit.id &&
+									edge.target === source.id,
+							)
+						: false;
+					if (!isDirectBranch) {
+						toast.error(
+							"A parallel join only accepts direct branches from its matching split.",
+						);
+						return previous;
+					}
 				}
 				if (
 					createsCycle(
@@ -912,12 +1056,8 @@ export const AutomationCanvasContent = forwardRef<
 						id: `e-${connection.source}-${connection.target}-${crypto.randomUUID()}`,
 						source: connection.source,
 						target: connection.target,
-						sourceHandle:
-							connection.sourceHandle ??
-							`out-${connection.source}`,
-						targetHandle:
-							connection.targetHandle ??
-							`in-${connection.target}`,
+						sourceHandle,
+						targetHandle,
 						kind: "control",
 					},
 				];
@@ -1057,8 +1197,14 @@ export const AutomationCanvasContent = forwardRef<
 						const draft = JSON.parse(
 							rawDraft,
 						) as CanvasWorkflowDraft;
-						setSteps(ensureTriggerNode(draft.steps));
-						setGraphEdges(draft.edges);
+						const draftSteps = ensureTriggerNode(draft.steps);
+						setSteps(draftSteps);
+						setGraphEdges(
+							normalizeParallelDraftEdges(
+								draftSteps,
+								draft.edges,
+							),
+						);
 						setDescription(draft.description);
 						setTriggerBindings(draft.triggerBindings);
 						setIsDirty(true);
@@ -1228,7 +1374,8 @@ export const AutomationCanvasContent = forwardRef<
 					.filter(
 						(e) =>
 							e.source === previousStep.id &&
-							e.sourceHandle === sourceHandle,
+							(previousStep.type === "split" ||
+								e.sourceHandle === sourceHandle),
 					)
 					.map((e) => e.target);
 				const siblingNodes = steps.filter((s) =>
@@ -1238,10 +1385,12 @@ export const AutomationCanvasContent = forwardRef<
 				let targetY =
 					previousStep.position.y +
 					routeIndex * (DEFAULT_NODE_HEIGHT + NODE_LANE_GAP) -
-					(routeIndex === 0 && previousStep.type === "branch"
+					(routeIndex === 0 &&
+					(previousStep.type === "branch" ||
+						previousStep.type === "split")
 						? FIRST_BRANCH_ROUTE_OFFSET
 						: 0);
-				if (siblingNodes.length > 0) {
+				if (previousStep.type !== "split" && siblingNodes.length > 0) {
 					const maxY = Math.max(
 						...siblingNodes.map((s) => s.position.y),
 					);
@@ -1557,11 +1706,42 @@ export const AutomationCanvasContent = forwardRef<
 	);
 
 	useEffect(() => {
+		const configuredJoinNodeId = editingStep
+			? parallelJoinNodeId(editingStep)
+			: undefined;
+		const usedJoinNodeIds = new Set(
+			displaySteps.flatMap((step) => {
+				if (
+					step.id === editingStep?.id ||
+					step.workflowType !== "control.parallel"
+				) {
+					return [];
+				}
+				const joinNodeId = parallelJoinNodeId(step);
+				return joinNodeId ? [joinNodeId] : [];
+			}),
+		);
 		const snapshot: AutomationInspectorSnapshot = {
 			description,
 			devMode,
 			readOnly: readOnly || viewingHistory,
 			editingStep,
+			parallelBranchCount:
+				editingStep?.workflowType === "control.parallel"
+					? displayEdges.filter(
+							(edge) =>
+								edge.kind === "control" &&
+								edge.source === editingStep.id,
+						).length
+					: 0,
+			availableJoinNodes: displaySteps
+				.filter(
+					(step) =>
+						step.workflowType === "control.join" &&
+						(!usedJoinNodeIds.has(step.id) ||
+							step.id === configuredJoinNodeId),
+				)
+				.map(({ id, label }) => ({ id, label })),
 			upstreamVars: editingStep
 				? templateVariablesFor(editingStep.id)
 				: [],
@@ -1588,6 +1768,8 @@ export const AutomationCanvasContent = forwardRef<
 		readOnly,
 		viewingHistory,
 		editingStep,
+		displaySteps,
+		displayEdges,
 		onInspectorChange,
 		displayErrors,
 		stepOutputPreviews,
@@ -2378,6 +2560,28 @@ export const AutomationCanvasContent = forwardRef<
 					},
 					style: { width: NODE_WIDTH },
 				});
+			} else if (step.type === "split" || step.type === "join") {
+				newNodes.push({
+					id: step.id,
+					type: "control-flow",
+					position: step.position,
+					data: {
+						step,
+						index: stepDisplayOrder.get(step.id) ?? 0,
+						runStatus: displayStatuses[step.id],
+						runDuration: displayDurations[step.id],
+						isIncomplete:
+							validateCanvasWorkflowNode(step, steps).length >
+								0 && !displayStatuses[step.id],
+						locked: running || readOnly || viewingHistory,
+						highlighted: isStepHighlighted(
+							changeHighlight,
+							step.id,
+						),
+						pathHighlighted: highlightedPathNodeIds.has(step.id),
+					},
+					style: { width: NODE_WIDTH },
+				});
 			} else {
 				const runTrace = displayResults.find(
 					(result) => result.NODE_ID === step.id,
@@ -3014,7 +3218,14 @@ export const AutomationCanvasContent = forwardRef<
 					<DialogHeader className="sr-only">
 						<DialogTitle>Add workflow node</DialogTitle>
 					</DialogHeader>
-					<AddNodeMenu onSelect={addStep} />
+					<AddNodeMenu
+						onSelect={addStep}
+						parallelBranchOnly={steps.some(
+							(step) =>
+								step.id === addAfterStepId &&
+								step.workflowType === "control.parallel",
+						)}
+					/>
 				</DialogContent>
 			</Dialog>
 		</AutomationContext.Provider>

@@ -22,6 +22,8 @@ export type AutomationWorkflowNodeType =
 	| "control.wait"
 	| "control.if"
 	| "control.jev"
+	| "control.parallel"
+	| "control.join"
 	| "developer.python";
 
 export type AutomationPortKind = "control" | "data";

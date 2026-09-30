@@ -174,6 +174,8 @@ export interface AutomationInspectorSnapshot {
 	 * `readOnly` prop were ever out of sync with the canvas. */
 	readOnly: boolean;
 	editingStep: AutomationNode | null;
+	availableJoinNodes: Array<{ id: string; label: string }>;
+	parallelBranchCount: number;
 	upstreamVars: string[];
 	scopeEntries: AutomationScopeEntry[];
 	stepRunStatus?: StepRunStatus;

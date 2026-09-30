@@ -21,6 +21,7 @@ import { getWorkflowNodeDisplay } from "../../domain/automation-workflow-display
 
 interface AddNodeMenuProps {
 	onSelect: (type: AutomationWorkflowNodeType) => void;
+	parallelBranchOnly?: boolean;
 }
 
 const CATEGORY_ORDER: readonly AutomationNodeCategory[] = [
@@ -45,6 +46,8 @@ const CATEGORY_ORDER: readonly AutomationNodeCategory[] = [
 const SEARCH_ALIASES: Partial<Record<AutomationWorkflowNodeType, string>> = {
 	"control.if": "if elif else condition conditional branch",
 	"control.jev": "jev typesafe ai decision route branch classify",
+	"control.parallel": "parallel split fork fan out concurrent branches",
+	"control.join": "join merge synchronize wait for branches",
 };
 
 const CATEGORY_META: Record<
@@ -63,7 +66,10 @@ const CATEGORY_META: Record<
 	developer: { label: "Developer", icon: Braces },
 };
 
-export function AddNodeMenu({ onSelect }: AddNodeMenuProps) {
+export function AddNodeMenu({
+	onSelect,
+	parallelBranchOnly = false,
+}: AddNodeMenuProps) {
 	const [query, setQuery] = useState("");
 	const normalizedQuery = query.trim().toLowerCase();
 	const nodeDefinitions = getAutomationNodeDefinitions();
@@ -78,6 +84,14 @@ export function AddNodeMenu({ onSelect }: AddNodeMenuProps) {
 					) {
 						return false;
 					}
+					if (
+						parallelBranchOnly &&
+						(!node.supportsOutput ||
+							node.type === "agent.run" ||
+							node.type === "control.wait")
+					) {
+						return false;
+					}
 					if (!normalizedQuery) return true;
 					const alias = SEARCH_ALIASES[node.type] ?? "";
 					return `${node.label} ${node.description} ${alias}`
@@ -85,7 +99,7 @@ export function AddNodeMenu({ onSelect }: AddNodeMenuProps) {
 						.includes(normalizedQuery);
 				}),
 			})),
-		[nodeDefinitions, normalizedQuery],
+		[nodeDefinitions, normalizedQuery, parallelBranchOnly],
 	);
 
 	return (
@@ -109,6 +123,12 @@ export function AddNodeMenu({ onSelect }: AddNodeMenuProps) {
 				</div>
 			</div>
 			<div className="min-h-0 flex-1 space-y-5 overflow-y-auto pr-1">
+				{parallelBranchOnly && (
+					<p className="text-muted-foreground text-xs">
+						Parallel blocks support synchronous output-producing
+						branches.
+					</p>
+				)}
 				{entriesByCategory.map(({ category, entries }) => {
 					if (entries.length === 0) return null;
 					const Icon = CATEGORY_META[category].icon;

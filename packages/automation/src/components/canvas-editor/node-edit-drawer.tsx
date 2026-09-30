@@ -52,6 +52,8 @@ const RUN_STATUS_CLASSES: Record<StepRunStatus, string> = {
 };
 export interface NodeEditDrawerProps {
 	step: AutomationNode;
+	availableJoinNodes: Array<{ id: string; label: string }>;
+	parallelBranchCount: number;
 	appId: string;
 	upstreamVars: string[];
 	scopeEntries: AutomationScopeEntry[];
@@ -90,6 +92,8 @@ function supportsBusinessForm(step: AutomationNode): boolean {
 
 export function NodeEditDrawer({
 	step,
+	availableJoinNodes,
+	parallelBranchCount,
 	appId,
 	upstreamVars,
 	scopeEntries,
@@ -110,17 +114,22 @@ export function NodeEditDrawer({
 		: undefined;
 	const isCustomSource = step.workflowCodeMode === "custom";
 	const isDeveloperPython = step.workflowType === "developer.python";
+	const isControlFlowNode =
+		step.workflowType === "control.if" ||
+		step.workflowType === "control.jev" ||
+		step.workflowType === "control.parallel" ||
+		step.workflowType === "control.join";
 	const isDecisionBranch =
 		step.workflowType === "control.if" ||
 		step.workflowType === "control.jev";
 	const hasOutputVariable =
-		step.workflowType !== "trigger.start" && !isDecisionBranch;
+		step.workflowType !== "trigger.start" && !isControlFlowNode;
 	const outputVariableError = hasOutputVariable
 		? validateAutomationOutputVariable(step.outputVar)
 		: null;
 	const showPythonEditor =
 		isDeveloperPython ||
-		(!isDecisionBranch && devMode && editorMode === "python");
+		(!isControlFlowNode && devMode && editorMode === "python");
 	const canRevertToGenerated =
 		isCustomSource && workflowDefinition?.defaultCodeMode === "generated";
 	const persistedPythonSource =
@@ -347,11 +356,14 @@ export function NodeEditDrawer({
 										? "Not available for historical runs."
 										: isDecisionBranch
 											? "This decision evaluates its conditions in order and uses the first matching path."
-											: isDeveloperPython
-												? "This node runs its custom Python source."
-												: isCustomSource
-													? "This node uses custom Python."
-													: "Use the form or inspect the generated Python."}
+											: isControlFlowNode
+												? (workflowDefinition?.description ??
+													"This node coordinates workflow execution.")
+												: isDeveloperPython
+													? "This node runs its custom Python source."
+													: isCustomSource
+														? "This node uses custom Python."
+														: "Use the form or inspect the generated Python."}
 								</p>
 							</div>
 							{!isDeveloperPython &&
@@ -444,6 +456,8 @@ export function NodeEditDrawer({
 								<StepForm
 									key={step.id}
 									step={step}
+									availableJoinNodes={availableJoinNodes}
+									parallelBranchCount={parallelBranchCount}
 									upstreamVars={upstreamVars}
 									onUpdate={onUpdate}
 									devMode={devMode}
