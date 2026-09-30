@@ -1,6 +1,11 @@
 import { MonitorXIcon, TvMinimalIcon, XIcon } from "lucide-react";
 import { observer } from "mobx-react-lite";
+import { useMemo } from "react";
 import { useTranslation } from "@semoss/i18n";
+import {
+	type FileExplorerHost,
+	FileExplorerHostProvider,
+} from "@semoss/panels";
 import {
 	Button,
 	Tooltip,
@@ -9,6 +14,7 @@ import {
 } from "@semoss/ui/next";
 import { Workbench, WorkbenchProvider } from "@semoss/workbench";
 import { RoomProvider } from "@/contexts";
+import { normalizeFolderPath } from "@/features/teamwork/folders/folder-path";
 import { ROOM_SIDEBAR_LAYOUT, type RoomStore } from "@/stores";
 
 interface RoomSidebarProps {
@@ -29,8 +35,31 @@ interface RoomSidebarProps {
  * while the sidebar is closed, and this whole subtree unmounts when it is.
  */
 export const RoomSidebar: React.FC<RoomSidebarProps> = observer(({ room }) => {
-	const { t } = useTranslation("sidebar");
+	const { t } = useTranslation(["sidebar", "connectors"]);
 	const isMaximized = room.sidebar.isMaximized;
+
+	// Chat Files' right-click menu ends with Add to Context, which queues the
+	// file for the next message as the connector viewers do
+	const explorerHost = useMemo<FileExplorerHost>(
+		() => ({
+			secondaryActions: (item) =>
+				item.type === "directory"
+					? []
+					: [
+							{
+								name: t("connectors:actions.addToContext"),
+								placement: "end",
+								action: async () => {
+									room.teamwork.addContextItem({
+										path: normalizeFolderPath(item.path),
+										name: item.name,
+									});
+								},
+							},
+						],
+		}),
+		[room, t],
+	);
 
 	return (
 		<div className="relative h-full w-full overflow-hidden">
@@ -46,73 +75,79 @@ export const RoomSidebar: React.FC<RoomSidebarProps> = observer(({ room }) => {
 			>
 				<RoomProvider room={room}>
 					<WorkbenchProvider store={room.workbench}>
-						<Workbench
-							snapshot={ROOM_SIDEBAR_LAYOUT}
-							borderSlots={{
-								top: {
-									after: (
-										<>
-											<Tooltip>
-												<TooltipTrigger asChild>
-													<Button
-														variant="ghost"
-														size="icon-sm"
-														className="flex-none text-muted-foreground"
-														aria-label={
-															isMaximized
-																? t(
-																		"actions.minimize",
-																	)
-																: t(
-																		"actions.maximize",
-																	)
-														}
-														onClick={() =>
-															room.setSidebarMaximized(
-																!isMaximized,
-															)
-														}
-													>
-														{isMaximized ? (
-															<MonitorXIcon className="size-3.5" />
-														) : (
-															<TvMinimalIcon className="size-3.5" />
-														)}
-													</Button>
-												</TooltipTrigger>
-												<TooltipContent>
-													{isMaximized
-														? t("actions.minimize")
-														: t("actions.maximize")}
-												</TooltipContent>
-											</Tooltip>
-											{isMaximized ? null : (
+						<FileExplorerHostProvider host={explorerHost}>
+							<Workbench
+								snapshot={ROOM_SIDEBAR_LAYOUT}
+								borderSlots={{
+									top: {
+										after: (
+											<>
 												<Tooltip>
 													<TooltipTrigger asChild>
 														<Button
 															variant="ghost"
 															size="icon-sm"
 															className="flex-none text-muted-foreground"
-															aria-label={t(
-																"actions.close",
-															)}
+															aria-label={
+																isMaximized
+																	? t(
+																			"actions.minimize",
+																		)
+																	: t(
+																			"actions.maximize",
+																		)
+															}
 															onClick={() =>
-																room.closeSidebar()
+																room.setSidebarMaximized(
+																	!isMaximized,
+																)
 															}
 														>
-															<XIcon className="size-3.5" />
+															{isMaximized ? (
+																<MonitorXIcon className="size-3.5" />
+															) : (
+																<TvMinimalIcon className="size-3.5" />
+															)}
 														</Button>
 													</TooltipTrigger>
 													<TooltipContent>
-														{t("actions.close")}
+														{isMaximized
+															? t(
+																	"actions.minimize",
+																)
+															: t(
+																	"actions.maximize",
+																)}
 													</TooltipContent>
 												</Tooltip>
-											)}
-										</>
-									),
-								},
-							}}
-						/>
+												{isMaximized ? null : (
+													<Tooltip>
+														<TooltipTrigger asChild>
+															<Button
+																variant="ghost"
+																size="icon-sm"
+																className="flex-none text-muted-foreground"
+																aria-label={t(
+																	"actions.close",
+																)}
+																onClick={() =>
+																	room.closeSidebar()
+																}
+															>
+																<XIcon className="size-3.5" />
+															</Button>
+														</TooltipTrigger>
+														<TooltipContent>
+															{t("actions.close")}
+														</TooltipContent>
+													</Tooltip>
+												)}
+											</>
+										),
+									},
+								}}
+							/>
+						</FileExplorerHostProvider>
 					</WorkbenchProvider>
 				</RoomProvider>
 			</div>

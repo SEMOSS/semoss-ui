@@ -25,7 +25,12 @@ import { DeleteEntityDialog } from "@/components/shared/delete-entity-dialog";
 import { useConfig } from "@/hooks";
 import { useNavigate } from "@/hooks/useNavigate";
 import { formatToDataTestId } from "@/utility";
-import { getEngineLabel, isOwnerPermission } from "@/utility/catalog";
+import {
+	buildAccessFilterParams,
+	type CatalogAccessFilter,
+	getEngineLabel,
+	isOwnerPermission,
+} from "@/utility/catalog";
 
 interface EngineIndexPageProps {
 	name: string;
@@ -75,8 +80,11 @@ export const EngineIndexPage: React.FC<EngineIndexPageProps> = ({
 	const [gridStyle, setGridStyle] = useState<"LIST" | "CARD">("LIST");
 
 	const [metaFilters, setMetaFilters] = useState<Record<string, unknown>>({});
+	const [access, setAccess] = useState<CatalogAccessFilter[]>([]);
 	const [filterKey, setFilterKey] = useState<number>(0);
 	const [tab, setTab] = useState<string>("Mine");
+	// the access filters apply to what the user can already use
+	const accessParams = tab === "Mine" ? buildAccessFilterParams(access) : "";
 
 	const [isDeletingEngine, setIsDeletingEngine] = useState(false);
 	const [engineToDelete, setEngineToDelete] = useState<Engine | null>(null);
@@ -89,7 +97,7 @@ export const EngineIndexPage: React.FC<EngineIndexPageProps> = ({
 					metaKeysDescription,
 				)}, metaFilters = [ ${JSON.stringify(metaFilters)} ], ${
 					debouncedSearch ? `filterWord=["${debouncedSearch}"], ` : ""
-				} sort=[{"${sortValue}" : "${sortOrder}"}], onlyFavorites=[true], engineTypes=['${route.type}']);`
+				} ${accessParams}sort=[{"${sortValue}" : "${sortOrder}"}], onlyFavorites=[true], engineTypes=['${route.type}']);`
 			: "",
 		{
 			data: [],
@@ -107,7 +115,7 @@ export const EngineIndexPage: React.FC<EngineIndexPageProps> = ({
 		(limit, offset) =>
 			`${enginePrefix}(metaKeys = ${JSON.stringify(
 				metaKeysDescription,
-			)}, ${debouncedSearch ? `filterWord=["${debouncedSearch}"], ` : ""} engineTypes=['${route.type}'], ${metaFilters ? `metaFilters=[${JSON.stringify(metaFilters)}],` : ""} sort=[{"${sortValue}" : "${sortOrder}"}], userT = [true], limit=[${limit}], offset=[${offset}]);`,
+			)}, ${debouncedSearch ? `filterWord=["${debouncedSearch}"], ` : ""} engineTypes=['${route.type}'], ${metaFilters ? `metaFilters=[${JSON.stringify(metaFilters)}],` : ""} ${accessParams}sort=[{"${sortValue}" : "${sortOrder}"}], userT = [true], limit=[${limit}], offset=[${offset}]);`,
 		(response) => {
 			// if its less than the limit, we know its the end
 			if (response.length < 15) {
@@ -129,6 +137,7 @@ export const EngineIndexPage: React.FC<EngineIndexPageProps> = ({
 			sortValue,
 			sortOrder,
 			JSON.stringify(metaFilters),
+			accessParams,
 		],
 	);
 
@@ -167,6 +176,7 @@ export const EngineIndexPage: React.FC<EngineIndexPageProps> = ({
 
 		setSearch("");
 		setMetaFilters({});
+		setAccess([]);
 		setSortValue("ENGINENAME");
 		setSortOrder("ASC");
 		setGridStyle("LIST");
@@ -347,6 +357,8 @@ export const EngineIndexPage: React.FC<EngineIndexPageProps> = ({
 						type={route.type}
 						filters={metaFilters as Record<string, string[]>}
 						onChange={(filters) => setMetaFilters(filters)}
+						access={tab === "Mine" ? access : undefined}
+						onAccessChange={setAccess}
 					/>
 				}
 			>

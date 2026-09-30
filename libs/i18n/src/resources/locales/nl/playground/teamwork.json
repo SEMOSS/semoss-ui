@@ -1,8 +1,4 @@
 {
-	"nav": {
-		"label": "Verbindingen",
-		"tooltip": "Verbind Microsoft 365 en Google Workspace"
-	},
 	"common": {
 		"retry": "Opnieuw proberen",
 		"refresh": "Vernieuwen"
@@ -72,7 +68,6 @@
 		},
 		"connected": "Verbonden",
 		"connectedAs": "Verbonden als {{name}}",
-		"connectedBadge": "Verbonden",
 		"notConnected": "Niet verbonden",
 		"unavailable": "Niet beschikbaar op deze server",
 		"connect": "Verbinden",
@@ -82,7 +77,12 @@
 		"connectIncomplete": "{{name}} is niet verbonden. Het aanmeldvenster is gesloten voordat het aanmelden klaar was.",
 		"connectError": "Kan {{name}} niet verbinden. {{message}}",
 		"popupBlocked": "Je browser heeft het aanmeldvenster geblokkeerd. Sta pop-ups toe voor deze site en probeer het opnieuw.",
-		"loadErrorTitle": "Kan je verbonden accounts niet controleren"
+		"loadErrorTitle": "Kan je verbonden accounts niet controleren",
+		"disconnect": "Verbinding verbreken",
+		"disconnecting": "Verbinding verbreken...",
+		"disconnectSuccess": "{{name}} is losgekoppeld",
+		"disconnectError": "Kan {{name}} niet loskoppelen. {{message}}",
+		"sessionLoginNote": "Je bent met dit account aangemeld, dus het blijft verbonden totdat je je afmeldt."
 	},
 	"services": {
 		"toolCounts_one": "{{count}} tool, waarvan {{ask}} met goedkeuring vooraf",
@@ -124,7 +124,7 @@
 		"dialogTitle": "Connectors",
 		"dialogDescription": "Kies welke apps de assistent in je chats mag gebruiken. De assistent handelt met je account en vraagt altijd eerst om goedkeuring bij verzenden, verwijderen, delen en uitnodigen.",
 		"allChatsNote": "Een app in- of uitschakelen wijzigt hem in al je chats, nieuwe en bestaande.",
-		"manage": "Verbindingen beheren",
+		"manage": "Connectors beheren",
 		"cancel": "Annuleren",
 		"save": "Opslaan",
 		"saving": "Bezig met opslaan...",
@@ -134,10 +134,7 @@
 		"adoptError": "De chat is gestart, maar de connectors konden niet worden ingeschakeld. {{message}}"
 	},
 	"connections": {
-		"title": "Verbindingen",
-		"description": "Verbind de accounts waarmee de assistent namens jou kan werken.",
-		"appsTitle": "Apps",
-		"appsDescription": "Door je aan te melden wordt het account gekoppeld aan je SEMOSS-sessie. De assistent ziet alleen wat dat account kan zien.",
+		"appsDescription": "Door je aan te melden wordt het account gekoppeld aan je sessie. De assistent ziet alleen wat dat account kan zien.",
 		"appsHint": "Een app hier in- of uitschakelen wijzigt hem in al je chats, nieuwe en bestaande. Het plusmenu van een chat opent dezelfde instellingen.",
 		"settingsError": "Je connectorinstellingen konden niet worden gelezen."
 	},

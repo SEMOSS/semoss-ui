@@ -1,3 +1,4 @@
+export * from "./agent";
 export * from "./app-catalog-avatar";
 export * from "./auditlog";
 export * from "./cell-output";

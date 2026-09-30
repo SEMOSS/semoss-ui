@@ -1,8 +1,18 @@
 import { ChevronRight, UploadIcon } from "lucide-react";
-import { useId, useState } from "react";
-import { Controller, useForm } from "react-hook-form";
+import { useState } from "react";
 import { Link } from "react-router";
-import { MCPSelector, PromptSelector, SkillSelector } from "@semoss/shared";
+import { useTranslation } from "@semoss/i18n";
+import { usePixel } from "@semoss/sdk/react";
+import {
+	AGENT_FORM_DEFAULT_VALUES,
+	type AgentDefaultTool,
+	AgentForm,
+	type AgentFormValues,
+	agentNeedsFollowUpEdit,
+	buildAddWorkspacePixel,
+	buildEditWorkspacePixel,
+	getWorkspaceSaveWarning,
+} from "@semoss/shared";
 import {
 	Breadcrumb,
 	BreadcrumbItem,
@@ -11,72 +21,47 @@ import {
 	BreadcrumbPage,
 	BreadcrumbSeparator,
 	Button,
-	Field,
-	FieldDescription,
-	FieldLabel,
 	H4,
-	Input,
 	P,
 	Progress,
-	Switch,
-	Textarea,
+	Spinner,
 	toast,
 } from "@semoss/ui/next";
-import {
-	AGENT_FORM_DEFAULT_VALUES,
-	AgentExecutionLimitsFields,
-	AgentFormSection,
-	type AgentFormValues,
-	AgentModelField,
-	AgentSubagentsField,
-	buildEditWorkspacePixel,
-	getWorkspaceSaveWarning,
-	MAX_GREETING_LENGTH,
-} from "@/components/agent-workspace/agent-form";
 import { UploadProjectDialog } from "@/components/project";
 import { NavbarHeader, NavbarLeft } from "@/components/shared";
 import { useSession } from "@/hooks";
 import { useNavigate } from "@/hooks/useNavigate";
-import { mcpToPlatformUrl, promptToPlatformUrl } from "@/utility";
+import { CLIENT_AGENT_LINKS } from "@/utility";
 
 export const CreateAgentPage = () => {
+	const { t } = useTranslation("agent");
 	const navigate = useNavigate();
 	const runPixel = useSession((state) => state.runPixel);
 	const [isUploadOpen, setIsUploadOpen] = useState(false);
 	const [isLoading, setIsLoading] = useState(false);
-	const nameId = useId();
-	const descId = useId();
-	const instructionsId = useId();
-	const greetingId = useId();
+	const [formValues, setFormValues] = useState<AgentFormValues>(
+		AGENT_FORM_DEFAULT_VALUES,
+	);
 
-	const {
-		control,
-		handleSubmit,
-		watch,
-		formState: { isValid },
-	} = useForm<AgentFormValues>({
-		mode: "onChange",
-		defaultValues: AGENT_FORM_DEFAULT_VALUES,
-	});
-
-	const greetingEnabled = watch("greetingEnabled");
+	// The built-in tool catalog and hook kinds are deployment-level, so they
+	// are available before the agent exists
+	const formOptions = usePixel<{
+		default_tools?: AgentDefaultTool[];
+		known_hook_kinds?: string[];
+	}>("GetAgentFormOptions();");
 
 	const navigateAgent = (appId: string) => {
 		if (!appId) return;
 		navigate(`/agent/${appId}/edit`);
 	};
 
-	const onSubmit = async (data: AgentFormValues) => {
+	const onCreate = async () => {
+		if (isLoading || !formValues.name.trim()) return;
 		try {
 			setIsLoading(true);
 
-			// Combine knowledge and toolboxes into mcp array
-			const mcp = [...data.knowledge, ...data.toolboxes];
-
-			const skills = data.skills.map((s) => s.id);
-
 			const { errors, pixelReturn } = await runPixel<[string]>(
-				`AddWorkspace(name=${JSON.stringify(data.name)}, description=${JSON.stringify(data.description)}, systemPrompt=${JSON.stringify(data.instructions)}, mcp=${JSON.stringify(mcp)}, skills=${JSON.stringify(skills)}, prompts=${JSON.stringify(data.prompts)});`,
+				buildAddWorkspacePixel(formValues),
 			);
 
 			if (errors.length > 0) throw new Error(errors.join(","));
@@ -84,36 +69,18 @@ export const CreateAgentPage = () => {
 			const agentId = pixelReturn[0].output;
 			if (!agentId) throw new Error("Error creating agent");
 
-			// AddWorkspace does not accept a default model, execution limits, or
-			// subagents, so set them with a follow-up edit call once the agent
-			// exists. buildEditWorkspacePixel resends everything AddWorkspace
-			// already saved since EditWorkspace treats omitted mcp/skills/prompts
-			// as empty and would otherwise wipe them.
-			const hasExecutionSettings =
-				data.modelId ||
-				!data.useDefaultAgentTools ||
-				data.maxTurns ||
-				data.maxReflections ||
-				data.maxSeconds ||
-				data.maxSubagentDepth ||
-				data.maxSubagentsPerRun ||
-				data.maxSpawnsPerTurn ||
-				data.subagents.some((s) => s.workspaceId) ||
-				data.disabledDefaultTools.length > 0 ||
-				data.greeting ||
-				data.greetingEnabled;
-			if (hasExecutionSettings) {
+			// AddWorkspace only takes the basics; save everything else once the
+			// agent exists
+			if (agentNeedsFollowUpEdit(formValues)) {
 				const {
 					errors: settingsErrors,
 					pixelReturn: settingsPixelReturn,
 				} = await runPixel<[unknown]>(
-					buildEditWorkspacePixel(agentId, data),
+					buildEditWorkspacePixel(agentId, formValues),
 				);
 				if (settingsErrors.length > 0) {
 					console.error(settingsErrors.join(","));
-					toast.error(
-						"Agent created, but failed to save execution settings",
-					);
+					toast.error(t("form.createSettingsFailed"));
 				} else {
 					const warning = getWorkspaceSaveWarning(
 						settingsPixelReturn[0]?.output,
@@ -167,225 +134,42 @@ export const CreateAgentPage = () => {
 					agents are autonomous workers that turn data into decisions.
 					Whether you're a developer, data engineer, or product owner,
 					this page helps you configure, orchestrate, and deploy smart
-					agents — equipping them with knowledge, tools, skills, and
+					agents, equipping them with knowledge, tools, skills, and
 					guidance so they can act reliably and intelligently across
 					your most critical workflows.
 				</P>
-				<form
-					className="my-4 w-full"
-					onSubmit={handleSubmit(onSubmit)}
-					autoComplete="off"
-				>
-					<AgentFormSection
-						layout="columns"
-						title="About"
-						description="Basic information about your agent"
-					>
-						<Controller
-							name="name"
-							control={control}
-							rules={{ required: true }}
-							render={({ field }) => (
-								<Field>
-									<FieldLabel htmlFor={nameId}>
-										Name{" "}
-										<span className="text-destructive">
-											*
-										</span>
-									</FieldLabel>
-									<Input
-										id={nameId}
-										placeholder="Enter agent name"
-										{...field}
-									/>
-								</Field>
-							)}
-						/>
 
-						<Controller
-							name="description"
-							control={control}
-							render={({ field }) => (
-								<Field>
-									<FieldLabel htmlFor={descId}>
-										Description
-									</FieldLabel>
-									<Input
-										id={descId}
-										placeholder="Enter description"
-										{...field}
-									/>
-								</Field>
-							)}
-						/>
-
-						<Controller
-							name="instructions"
-							control={control}
-							render={({ field }) => (
-								<Field>
-									<FieldLabel htmlFor={instructionsId}>
-										Instructions
-									</FieldLabel>
-									<Textarea
-										id={instructionsId}
-										placeholder="Define the agent's behavior, role, and instructions"
-										rows={6}
-										className="max-h-96"
-										{...field}
-									/>
-								</Field>
-							)}
-						/>
-
-						<Field>
-							<div className="flex items-center justify-between gap-2">
-								<FieldLabel htmlFor={greetingId}>
-									Greeting
-								</FieldLabel>
-								<Controller
-									name="greetingEnabled"
-									control={control}
-									render={({ field }) => (
-										<Switch
-											aria-label="Enable greeting"
-											checked={field.value}
-											onCheckedChange={field.onChange}
-										/>
-									)}
-								/>
-							</div>
-							<Controller
-								name="greeting"
-								control={control}
-								render={({ field }) => (
-									<Textarea
-										id={greetingId}
-										placeholder="Hi, I'm your IT support assistant. I can help you reset a password, check the status of an open ticket, or troubleshoot a common issue. What do you need help with?"
-										rows={3}
-										maxLength={MAX_GREETING_LENGTH}
-										disabled={!greetingEnabled}
-										{...field}
-									/>
-								)}
-							/>
-							<FieldDescription>
-								Shown as the agent's opening message when a room
-								starts. Costs no tokens - but the model cannot
-								see it, so repeat anything it needs to act on
-								(the options you offer here) in Instructions.
-							</FieldDescription>
-						</Field>
-
-						<AgentModelField control={control} />
-					</AgentFormSection>
-
-					<AgentFormSection
-						layout="columns"
-						title="Knowledge"
-						description="Add knowledge sources for your agent"
-					>
-						<Controller
-							name="knowledge"
-							control={control}
-							render={({ field }) => (
-								<MCPSelector
-									type="KNOWLEDGE"
-									values={field.value}
-									onChange={field.onChange}
-									className="h-112"
-									enableKnowledgeMCP={true}
-									getPlatformUrl={mcpToPlatformUrl}
-								/>
-							)}
-						/>
-					</AgentFormSection>
-
-					<AgentFormSection
-						layout="columns"
-						title="Toolboxes"
-						description="Add tools and capabilities to your agent"
-					>
-						<Controller
-							name="toolboxes"
-							control={control}
-							render={({ field }) => (
-								<MCPSelector
-									type="TOOLBOX"
-									values={field.value}
-									onChange={field.onChange}
-									className="h-112"
-									enableKnowledgeMCP={true}
-									getPlatformUrl={mcpToPlatformUrl}
-								/>
-							)}
-						/>
-					</AgentFormSection>
-
-					<AgentFormSection
-						layout="columns"
-						title="Skills"
-						description="Add reusable skills to your agent"
-					>
-						<Controller
-							name="skills"
-							control={control}
-							render={({ field }) => (
-								<SkillSelector
-									values={field.value}
-									onChange={field.onChange}
-									className="h-112"
-								/>
-							)}
-						/>
-					</AgentFormSection>
-
-					<AgentFormSection
-						layout="columns"
-						title="Prompts"
-						description="Pre-configured prompts for your agent"
-					>
-						<Controller
-							name="prompts"
-							control={control}
-							render={({ field }) => (
-								<PromptSelector
-									values={field.value}
-									onChange={field.onChange}
-									className="h-112"
-									getPlatformUrl={promptToPlatformUrl}
-								/>
-							)}
-						/>
-					</AgentFormSection>
-
-					<AgentFormSection
-						layout="columns"
-						title="Subagents"
-						description="Select other agents this agent can delegate work to. Tool names and descriptions are generated automatically."
-					>
-						<AgentSubagentsField control={control} />
-					</AgentFormSection>
-
-					<AgentFormSection
-						layout="columns"
-						title="Execution limits"
-						description="Runtime caps for the agent's tool loop and subagent delegation. Leave a field blank to fall back to its default."
-					>
-						<AgentExecutionLimitsFields control={control} />
-					</AgentFormSection>
-
-					<div className="flex justify-end">
-						<Button
-							type="submit"
-							disabled={!isValid || isLoading}
-							className="w-full sm:w-auto"
-						>
-							Create
-						</Button>
+				{formOptions.status === "INITIAL" ||
+				formOptions.status === "LOADING" ? (
+					<div className="flex w-full items-center justify-center py-12">
+						<Spinner />
 					</div>
-					{isLoading && <Progress className="h-1" />}
-				</form>
+				) : (
+					<AgentForm
+						data={AGENT_FORM_DEFAULT_VALUES}
+						onChange={setFormValues}
+						disabled={isLoading}
+						knownHookKinds={
+							formOptions.data?.known_hook_kinds ?? []
+						}
+						defaultTools={formOptions.data?.default_tools ?? []}
+						links={CLIENT_AGENT_LINKS}
+						showName
+						className="px-0"
+					/>
+				)}
+
+				<div className="flex justify-end">
+					<Button
+						type="button"
+						onClick={onCreate}
+						disabled={!formValues.name.trim() || isLoading}
+						className="w-full sm:w-auto"
+					>
+						Create
+					</Button>
+				</div>
+				{isLoading && <Progress className="h-1" />}
 				{isUploadOpen && (
 					<UploadProjectDialog
 						type="AGENT"
