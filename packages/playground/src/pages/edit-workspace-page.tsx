@@ -19,9 +19,12 @@ import {
 	Spinner,
 	toast,
 } from "@semoss/ui/next";
+import { OrchestratorRosterField } from "@/features/orchestrator/orchestrator-roster-field";
 import { useChat } from "@/hooks/use-chat";
 import { useRoot } from "@/hooks/use-root";
 import { getPlaygroundAgentLinks } from "@/utility/mcp-utils";
+
+const ORCHESTRATOR_WORKSPACE_ID = "orchestrator-agent";
 
 /** The values the form was seeded with, and the agent they belong to. */
 interface AgentFormSeed {
@@ -45,6 +48,7 @@ export const EditWorkspacePage = observer(() => {
 
 	const [seed, setSeed] = useState<AgentFormSeed | null>(null);
 	const [formValues, setFormValues] = useState<AgentFormValues | null>(null);
+	const [subagents, setSubagents] = useState<{ workspaceId: string }[]>([]);
 	const [isSaving, setIsSaving] = useState(false);
 	const [saveError, setSaveError] = useState<string | null>(null);
 	const seededWorkspace = useRef<string | null>(null);
@@ -82,6 +86,7 @@ export const EditWorkspacePage = observer(() => {
 		seededWorkspace.current = workspaceId;
 		setSeed({ workspaceId, values });
 		setFormValues(values);
+		setSubagents(w.config_json?.subagents ?? []);
 		setSaveError(null);
 	}, [workspaceId, getWorkspace.status, getWorkspace.data]);
 
@@ -124,7 +129,13 @@ export const EditWorkspacePage = observer(() => {
 		);
 	}
 
-	const isDirty = JSON.stringify(formValues) !== JSON.stringify(seed.values);
+	const isDirty =
+		workspaceId === ORCHESTRATOR_WORKSPACE_ID
+			? subagents.map((entry) => entry.workspaceId).join("|") !==
+				(getWorkspace.data.config_json?.subagents ?? [])
+					.map((entry) => entry.workspaceId)
+					.join("|")
+			: JSON.stringify(formValues) !== JSON.stringify(seed.values);
 
 	const handleCancel = () => {
 		navigate(`/agent/${workspaceId}`);
@@ -136,11 +147,15 @@ export const EditWorkspacePage = observer(() => {
 		setIsSaving(true);
 		setSaveError(null);
 		try {
-			const warning = await chat.editWorkspace(workspaceId, {
-				...formValues,
-				name,
-			});
-			if (warning) toast.warning(warning);
+			if (workspaceId === ORCHESTRATOR_WORKSPACE_ID) {
+				await chat.editOrchestratorRoster(workspaceId, name, subagents);
+			} else {
+				const warning = await chat.editWorkspace(workspaceId, {
+					...formValues,
+					name,
+				});
+				if (warning) toast.warning(warning);
+			}
 			navigate(`/agent/${workspaceId}`);
 		} catch (err) {
 			// The form keeps its values, so a retry sends the same edits
@@ -196,38 +211,64 @@ export const EditWorkspacePage = observer(() => {
 					</Alert>
 				)}
 
-				<AgentForm
-					key={seed.workspaceId}
-					data={seed.values}
-					onChange={setFormValues}
-					disabled={isSaving}
-					promptTitles={toAgentPromptTitles(getWorkspace.data)}
-					knownHookKinds={getWorkspace.data.known_hook_kinds ?? []}
-					defaultTools={getWorkspace.data.default_tools ?? []}
-					workspaceId={workspaceId}
-					links={getPlaygroundAgentLinks(
-						featureFlags?.showPlatformLinks,
-					)}
-					showName
-					enableKnowledgeMCP={featureFlags?.enableKnowledgeMCP}
-					showSystemTools={featureFlags?.showSystemTools}
-					showSystemSkills={featureFlags?.showSystemSkills}
-					className="p-0"
-				/>
+				{workspaceId === ORCHESTRATOR_WORKSPACE_ID ? (
+					<section className="flex flex-col gap-4">
+						<h2 className="font-semibold text-foreground text-lg">
+							{t("workspace:orchestrator.rosterTitle", {
+								defaultValue: "Specialist agents",
+							})}
+						</h2>
+						<p className="text-muted-foreground text-sm">
+							{t("workspace:orchestrator.rosterDescription", {
+								defaultValue:
+									"Choose the agents the Orchestrator may hand work off to.",
+							})}
+						</p>
+						<OrchestratorRosterField
+							workspaceId={workspaceId}
+							value={subagents}
+							disabled={isSaving}
+							onChange={setSubagents}
+						/>
+					</section>
+				) : (
+					<AgentForm
+						key={seed.workspaceId}
+						data={seed.values}
+						onChange={setFormValues}
+						disabled={isSaving}
+						promptTitles={toAgentPromptTitles(getWorkspace.data)}
+						knownHookKinds={
+							getWorkspace.data.known_hook_kinds ?? []
+						}
+						defaultTools={getWorkspace.data.default_tools ?? []}
+						workspaceId={workspaceId}
+						links={getPlaygroundAgentLinks(
+							featureFlags?.showPlatformLinks,
+						)}
+						showName
+						enableKnowledgeMCP={featureFlags?.enableKnowledgeMCP}
+						showSystemTools={featureFlags?.showSystemTools}
+						showSystemSkills={featureFlags?.showSystemSkills}
+						className="p-0"
+					/>
+				)}
 
 				{/* Members (saved per action, not with the form) */}
-				<section className="flex flex-col gap-3">
-					<h2 className="flex items-center gap-2 font-semibold text-foreground text-lg">
-						<UsersRound className="size-5" />
-						{t("workspace:detail.tabs.members")}
-					</h2>
-					<p className="text-muted-foreground text-xs">
-						{t("workspace:members.autoSaveHint")}
-					</p>
-					<div className="min-h-32">
-						<MembersTable id={workspaceId} type="WORKSPACE" />
-					</div>
-				</section>
+				{workspaceId !== ORCHESTRATOR_WORKSPACE_ID ? (
+					<section className="flex flex-col gap-3">
+						<h2 className="flex items-center gap-2 font-semibold text-foreground text-lg">
+							<UsersRound className="size-5" />
+							{t("workspace:detail.tabs.members")}
+						</h2>
+						<p className="text-muted-foreground text-xs">
+							{t("workspace:members.autoSaveHint")}
+						</p>
+						<div className="min-h-32">
+							<MembersTable id={workspaceId} type="WORKSPACE" />
+						</div>
+					</section>
+				) : null}
 			</div>
 		</div>
 	);

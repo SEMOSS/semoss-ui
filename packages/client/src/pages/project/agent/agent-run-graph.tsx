@@ -76,6 +76,7 @@ type ActivityNodeData = {
 	status?: string;
 	duration?: string | null;
 	count?: number;
+	focused?: boolean;
 };
 
 type ActivityFlowNode = Node<ActivityNodeData, "activity">;
@@ -274,7 +275,7 @@ const buildSubagentTreeNode = (
 		data: {
 			kind: "subagent",
 			label: run.input || run.runId,
-			sublabel: engineInfo[run.modelId]?.name ?? run.modelId,
+			sublabel: run.workspaceId,
 			status: run.status,
 			duration: formatRunDuration(run.startedAt, run.completedAt),
 		},
@@ -289,6 +290,7 @@ const buildGraph = (
 	roomName: string | undefined,
 	runs: RoomRunDetail[],
 	engineInfo: Record<string, EngineInfo>,
+	focusWorkspaceId?: string,
 ): {
 	nodes: ActivityFlowNode[];
 	edges: Edge[];
@@ -307,9 +309,10 @@ const buildGraph = (
 			data: {
 				kind: "run" as const,
 				label: run.input || run.runId,
-				sublabel: engineInfo[run.modelId]?.name ?? run.modelId,
+				sublabel: run.workspaceId,
 				status: run.status,
 				duration: formatRunDuration(run.startedAt, run.completedAt),
+				focused: run.workspaceId === focusWorkspaceId,
 			},
 			selection: { kind: "run" as const, run },
 			children: [
@@ -391,6 +394,7 @@ const ActivityGraphNode = ({ data, selected }: NodeProps<ActivityFlowNode>) => {
 			className={cn(
 				"w-56 rounded-lg border px-3 py-2 transition-shadow",
 				NODE_KIND_STYLES[data.kind],
+				data.focused && "border-primary ring-1 ring-primary/60",
 				selected && "ring-2 ring-primary",
 			)}
 		>
@@ -722,6 +726,7 @@ const RunDetailPanel = ({
 			<div className="flex flex-col gap-1 rounded-lg border bg-muted/40 p-3">
 				<MetaRow label="Run ID" value={run.runId} />
 				<MetaRow label="Room" value={run.roomName || run.roomId} />
+				<MetaRow label="Agent workspace" value={run.workspaceId} />
 				<MetaRow label="Model" value={info?.name ?? run.modelId} />
 				<MetaRow label="Harness" value={run.harnessType} />
 				<MetaRow
@@ -926,6 +931,8 @@ interface AgentRunGraphProps {
 	runs: RoomRunDetail[];
 	/** Model engine id -> display info resolved via GetEngineMetadata. */
 	engineInfo?: Record<string, EngineInfo>;
+	/** Workspace whose runs should be emphasized in the complete room graph. */
+	focusWorkspaceId?: string;
 }
 
 /** Subset of the MyEngines output the judge model select reads. */
@@ -946,13 +953,14 @@ export const AgentRunGraph = ({
 	roomName,
 	runs,
 	engineInfo = {},
+	focusWorkspaceId,
 }: AgentRunGraphProps) => {
 	const { resolvedTheme } = useTheme();
 	const isDarkTheme = resolvedTheme === "dark";
 
 	const { nodes, edges, selectionById } = useMemo(
-		() => buildGraph(roomId, roomName, runs, engineInfo),
-		[roomId, roomName, runs, engineInfo],
+		() => buildGraph(roomId, roomName, runs, engineInfo, focusWorkspaceId),
+		[roomId, roomName, runs, engineInfo, focusWorkspaceId],
 	);
 
 	const [selectedNodeId, setSelectedNodeId] = useState<string>("room-root");

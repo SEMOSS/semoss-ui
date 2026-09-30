@@ -19,6 +19,7 @@ import {
 } from "@semoss/ui/next";
 import { MCPOverlay } from "@/components/mcp/mcp-overlay";
 import { RoomSelectedResources } from "@/features/conversation/room-selected-resources";
+import { OrchestratorRosterField } from "@/features/orchestrator/orchestrator-roster-field";
 import { TeamworkDefaultToolsField } from "@/features/teamwork/components/teamwork-default-tools-field";
 import { useRoot } from "@/hooks/use-root";
 import type { RoomStore } from "@/stores/room/room.store";
@@ -149,6 +150,22 @@ export const RoomOptionsForm = observer(
 							</Button>
 						</Field>
 					)}
+					{isAgentMode && options.workspace ? (
+						<Field>
+							<FieldLabel>Room agents</FieldLabel>
+							<FieldDescription>
+								Agents available for same-room task handoff.
+							</FieldDescription>
+							<OrchestratorRosterField
+								workspaceId={options.workspace.workspace_id}
+								value={options.agents ?? []}
+								disabled={disabled}
+								onChange={(agents) =>
+									onOptionsChange({ agents })
+								}
+							/>
+						</Field>
+					) : null}
 
 					<FieldDescription>
 						{t(

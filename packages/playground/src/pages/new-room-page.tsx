@@ -31,6 +31,9 @@ import { RoomStore } from "@/stores/room/room.store";
 import { ROOM_PANEL_TYPES } from "@/stores/room/room-sidebar";
 import type { MCPConfig, Prompt, Workspace } from "@/types";
 
+const ORCHESTRATOR_WORKSPACE_ID = "orchestrator-agent";
+const ORCHESTRATOR_WORKSPACE_NAME = "Orchestrator Agent";
+
 /**
  * The page to create a new room
  *
@@ -140,6 +143,18 @@ export const NewRoomPage = observer(() => {
 		tempRoomStore.setMode(mode);
 	}, [mode, tempRoomStore]);
 	const [selectedWorkspaceId, setSelectedWorkspaceId] = useState<string>("");
+	const switchToAgentHarness = () => {
+		setMode("agent");
+		if (selectedWorkspaceId) return;
+		setSelectedWorkspaceId(ORCHESTRATOR_WORKSPACE_ID);
+		tempRoomStore.setOptions({
+			...tempRoomStore.options,
+			workspace: {
+				workspace_id: ORCHESTRATOR_WORKSPACE_ID,
+				name: ORCHESTRATOR_WORKSPACE_NAME,
+			},
+		});
+	};
 	// The agent whose default model has already been applied to the picker
 	const appliedAgentModelRef = useRef<string>("");
 	const appliedAgentOptionsRef = useRef<string>("");
@@ -231,6 +246,15 @@ export const NewRoomPage = observer(() => {
 			// Persisted so agent mode survives a reload.
 			harnessType: mode === "agent" ? "semoss" : undefined,
 		};
+		if (
+			selectedWorkspaceId === ORCHESTRATOR_WORKSPACE_ID &&
+			!options.agents &&
+			Array.isArray(getWorkspace.data?.config_json?.subagents)
+		) {
+			options.agents = getWorkspace.data.config_json.subagents.map(
+				(entry) => ({ workspaceId: entry.workspaceId }),
+			);
+		}
 
 		return options;
 	};
@@ -294,6 +318,11 @@ export const NewRoomPage = observer(() => {
 				preCreatedRoom.setModel(chat.models.selected);
 				preCreatedRoom.setMode(mode === "agent" ? "agent" : "chat");
 				preCreatedRoom.setMetadata({ name: prompt.substring(0, 15) });
+				if (selectedWorkspaceId) {
+					await preCreatedRoom.runRoomPixel(
+						`SetRoomWorkspace(roomId=${JSON.stringify(preCreatedRoom.roomId)}, workspaceId=${JSON.stringify(selectedWorkspaceId)});`,
+					);
+				}
 				await preCreatedRoom.updateRoomOptions(options);
 				await prepareRoom(preCreatedRoom);
 				// Optimistically surface the room in the nav — GetPlaygroundRooms
@@ -715,9 +744,9 @@ export const NewRoomPage = observer(() => {
 										root.theme.featureFlags
 											?.enableAgentHarness
 									)
-										setMode("agent");
+										switchToAgentHarness();
 								},
-								agentEditable: true,
+								agentEditable: mode !== "agent",
 								isAgentMode: mode === "agent",
 								onOptionsChange: (opts) => {
 									if ("workspace" in opts)
@@ -869,8 +898,8 @@ export const NewRoomPage = observer(() => {
 											? []
 											: ["agent-harness", "harness"]),
 									]}
-									onSwitchToAgentHarness={() =>
-										setMode("agent")
+									onSwitchToAgentHarness={
+										switchToAgentHarness
 									}
 									onExitAgentHarness={handleSelectChat}
 									// The new-room flow has no cancellable turn, so

@@ -62,13 +62,15 @@ const collectModelIds = (runs: RoomRunDetail[]): Set<string> => {
 const summarizeRoom = (
 	roomId: string,
 	runs: AgentActivityRun[],
+	agentId: string,
 ): RoomSummary => {
 	let roomName: string | null = null;
 	let mostRecentCompletedAt: string | null = null;
 	let mostRecentCompletedMs = -Infinity;
 	let sortMs = -Infinity;
 
-	for (const run of runs) {
+	const agentRuns = runs.filter((run) => run.workspaceId === agentId);
+	for (const run of agentRuns) {
 		if (!roomName && run.roomName) {
 			roomName = run.roomName;
 		}
@@ -90,7 +92,7 @@ const summarizeRoom = (
 	return {
 		roomId,
 		roomName,
-		runCount: runs.length,
+		runCount: agentRuns.length,
 		mostRecentCompletedAt,
 		sortMs,
 	};
@@ -187,9 +189,11 @@ export const AgentActivityPage = () => {
 
 	const rooms = useMemo(() => {
 		return Object.entries(activity)
-			.map(([roomId, runs]) => summarizeRoom(roomId, runs))
+			.map(([roomId, runs]) =>
+				summarizeRoom(roomId, runs, project.project_id),
+			)
 			.sort((a, b) => b.sortMs - a.sortMs);
-	}, [activity]);
+	}, [activity, project.project_id]);
 	const deepLinkedRoom = useMemo(() => {
 		if (!targetRoomId) return null;
 		return (
@@ -563,8 +567,8 @@ export const AgentActivityPage = () => {
 							{selectedRoom.roomName ?? selectedRoom.roomId}
 						</h6>
 						<p className="text-muted-foreground text-xs">
-							Execution graph of agent runs, sub-agents, and tool
-							calls in this room.
+							Complete room graph. Runs executed by this agent are
+							highlighted.
 						</p>
 					</div>
 					<Tooltip disableHoverableContent={false}>
@@ -615,6 +619,7 @@ export const AgentActivityPage = () => {
 						roomName={selectedRoom.roomName ?? undefined}
 						runs={selectedRoomRuns}
 						engineInfo={engineInfo}
+						focusWorkspaceId={project.project_id}
 					/>
 				) : (
 					<p className="text-muted-foreground text-sm">

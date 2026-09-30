@@ -60,6 +60,7 @@ export interface App {
 export interface Workspace {
 	workspace_id: string;
 	name: string;
+	is_active: boolean;
 	date_created: string; // ISO string
 	description: string;
 	system_prompt: string;
@@ -81,6 +82,10 @@ export interface Workspace {
 		greeting?: string;
 		/** Whether `greeting` is shown. Toggling this off keeps the authored text. */
 		greeting_enabled?: boolean;
+		/** Specialists this agent is allowed to delegate work to. */
+		subagents?: {
+			workspaceId: string;
+		}[];
 	};
 }
 
