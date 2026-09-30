@@ -736,7 +736,7 @@ function ResultsPanel({
 									message={selectedResult.ERROR_MESSAGE}
 								/>
 							)}
-							{selectedResult.dataValueType ? (
+							{selectedResult.hasRetainedData ? (
 								selectedResult.dataAvailable && runId ? (
 									<RunNodeDataViewer
 										key={`${runId}-${selectedResult.NODE_ID}`}
@@ -746,8 +746,8 @@ function ResultsPanel({
 									/>
 								) : (
 									<output className="text-muted-foreground text-sm">
-										Run data is no longer available because
-										the execution workspace has closed.
+										This output is no longer available. Run
+										the automation again to view it.
 									</output>
 								)
 							) : (
