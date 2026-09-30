@@ -60,6 +60,7 @@ export interface App {
 export interface Workspace {
 	workspace_id: string;
 	name: string;
+	is_active: boolean;
 	date_created: string; // ISO string
 	description: string;
 	system_prompt: string;

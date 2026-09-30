@@ -21,6 +21,7 @@ import type {
 } from "@/types";
 import type { RoomStore } from "../room/room.store";
 import type { ToolStore } from "../tool/tool.store";
+import { getMissingTransferredRuns } from "./agent-transfer";
 import { InputMessageStore } from "./input-message.store";
 import { ResponseMessageStore } from "./response-message.store";
 
@@ -475,7 +476,14 @@ const watchTransferredRunChain = async (
 ): Promise<void> => {
 	const run = await waitForTransferredRun(room, fromRunId);
 	if (!run) return;
+	await watchTransferredRun(room, run, parentResponse);
+};
 
+const watchTransferredRun = async (
+	room: RoomStore,
+	run: AgentRunSummary,
+	parentResponse: ResponseMessageStore,
+): Promise<void> => {
 	const now = new Date().toISOString();
 	const hiddenInput = new InputMessageStore(room, {
 		io: "INPUT",
@@ -545,30 +553,24 @@ export const reconnectTransferredRun = (room: RoomStore): void => {
 	(async () => {
 		try {
 			const runs = await getAgentRunsForRoom(room.roomId, room.insightId);
-			const active = runs.find(
-				(run) =>
-					run.transferFromRunId &&
-					!["COMPLETED", "FAILED", "CANCELLED"].includes(run.status),
+			const observedRunIds = new Set(
+				messages()
+					.map((message) => message.agentRun?.runId)
+					.filter((runId): runId is string => Boolean(runId)),
 			);
-			if (
-				!active ||
-				messages().some((m) => m.agentRun?.runId === active.runId)
-			) {
-				return;
-			}
-			const predecessor = messages().find(
-				(message) =>
-					message instanceof ResponseMessageStore &&
-					message.agentRun?.runId === active.transferFromRunId,
-			);
-			if (!(predecessor instanceof ResponseMessageStore)) return;
+			const missing = getMissingTransferredRuns(runs, observedRunIds);
+			if (missing.length === 0) return;
 
 			room.setIsLoading(true);
-			await watchTransferredRunChain(
-				room,
-				active.transferFromRunId as string,
-				predecessor,
-			);
+			for (const transfer of missing) {
+				const predecessor = messages().find(
+					(message) =>
+						message instanceof ResponseMessageStore &&
+						message.agentRun?.runId === transfer.transferFromRunId,
+				);
+				if (!(predecessor instanceof ResponseMessageStore)) continue;
+				await watchTransferredRun(room, transfer, predecessor);
+			}
 		} catch (error) {
 			console.error("Failed to reconnect transferred agent run", error);
 		} finally {

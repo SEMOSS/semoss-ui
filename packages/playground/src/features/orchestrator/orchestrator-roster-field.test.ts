@@ -1,16 +1,13 @@
 import { describe, expect, test } from "vitest";
-import type { App } from "@/types";
 import {
 	addSpecialistToRoster,
 	getAvailableSpecialists,
 } from "./orchestrator-roster-field";
 
-const workspace = (id: string): App => ({
-	project_id: id,
-	project_name: id,
-	project_date_created: "2026-01-01",
-	project_type: "WORKSPACE",
-	user_permission: 2,
+const workspace = (id: string, isActive = true) => ({
+	workspace_id: id,
+	name: id,
+	is_active: isActive,
 });
 
 describe("Orchestrator roster", () => {
@@ -25,8 +22,20 @@ describe("Orchestrator roster", () => {
 			[{ workspaceId: "pptx-agent" }],
 		);
 
-		expect(available.map((entry) => entry.project_id)).toEqual([
+		expect(available.map((entry) => entry.workspace_id)).toEqual([
 			"research-agent",
+		]);
+	});
+
+	test("excludes inactive specialists", () => {
+		const available = getAvailableSpecialists(
+			[workspace("active-agent"), workspace("inactive-agent", false)],
+			"orchestrator-agent",
+			[],
+		);
+
+		expect(available.map((entry) => entry.workspace_id)).toEqual([
+			"active-agent",
 		]);
 	});
 

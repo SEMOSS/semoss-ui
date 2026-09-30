@@ -14,7 +14,9 @@ import {
 	SelectValue,
 	Spinner,
 } from "@semoss/ui/next";
-import type { App } from "@/types";
+import type { Workspace } from "@/types";
+
+type RosterWorkspace = Pick<Workspace, "workspace_id" | "name" | "is_active">;
 
 interface OrchestratorRosterFieldProps {
 	workspaceId: string;
@@ -25,15 +27,16 @@ interface OrchestratorRosterFieldProps {
 
 /** Excludes the Orchestrator and agents already present in its roster. */
 export const getAvailableSpecialists = (
-	workspaces: App[],
+	workspaces: RosterWorkspace[],
 	orchestratorId: string,
 	roster: { workspaceId: string }[],
-): App[] => {
+): RosterWorkspace[] => {
 	const selectedIds = new Set(roster.map((entry) => entry.workspaceId));
 	return workspaces.filter(
 		(workspace) =>
-			workspace.project_id !== orchestratorId &&
-			!selectedIds.has(workspace.project_id),
+			workspace.is_active &&
+			workspace.workspace_id !== orchestratorId &&
+			!selectedIds.has(workspace.workspace_id),
 	);
 };
 
@@ -62,22 +65,23 @@ export const OrchestratorRosterField = ({
 }: OrchestratorRosterFieldProps) => {
 	const { t } = useTranslation("workspace");
 	const [candidateId, setCandidateId] = useState("");
-	const workspaces = usePixel<App[]>(
-		'META | MyProjects(projectType=["WORKSPACE"]);',
-		{ data: [] },
+	const workspaces = usePixel<{ workspaces: RosterWorkspace[] }>(
+		"ListWorkspaces();",
+		{ data: { workspaces: [] } },
 	);
+	const workspaceEntries = workspaces.data?.workspaces ?? [];
 	const workspaceById = useMemo(
 		() =>
 			new Map(
-				(workspaces.data ?? []).map((workspace) => [
-					workspace.project_id,
+				workspaceEntries.map((workspace) => [
+					workspace.workspace_id,
 					workspace,
 				]),
 			),
-		[workspaces.data],
+		[workspaceEntries],
 	);
 	const options = getAvailableSpecialists(
-		workspaces.data ?? [],
+		workspaceEntries,
 		workspaceId,
 		value,
 	);
@@ -116,11 +120,10 @@ export const OrchestratorRosterField = ({
 					<SelectContent>
 						{options.map((workspace) => (
 							<SelectItem
-								key={workspace.project_id}
-								value={workspace.project_id}
+								key={workspace.workspace_id}
+								value={workspace.workspace_id}
 							>
-								{workspace.project_display_name ||
-									workspace.project_name}
+								{workspace.name}
 							</SelectItem>
 						))}
 					</SelectContent>
@@ -163,10 +166,7 @@ export const OrchestratorRosterField = ({
 				<ul className="flex flex-col divide-y divide-border rounded-md border border-border">
 					{value.map((entry) => {
 						const workspace = workspaceById.get(entry.workspaceId);
-						const name =
-							workspace?.project_display_name ||
-							workspace?.project_name ||
-							entry.workspaceId;
+						const name = workspace?.name || entry.workspaceId;
 						return (
 							<li
 								key={entry.workspaceId}
