@@ -244,8 +244,16 @@ export const WorkspaceSharingModal = ({
 	const showLoading = isLoadingDropdownUsers || search !== debouncedSearch;
 
 	return (
-		<Dialog open={open} onOpenChange={(isOpen) => !isOpen && handleClose()}>
-			<DialogContent className="max-w-2xl">
+		<Dialog
+			open={open}
+			onOpenChange={(isOpen) => {
+				if (!isOpen && !isSubmitting) handleClose();
+			}}
+		>
+			<DialogContent
+				className="max-h-[90dvh] overflow-y-auto sm:max-w-2xl"
+				showCloseButton={!isSubmitting}
+			>
 				<DialogHeader>
 					<DialogTitle>{t("workspace:sharing.title")}</DialogTitle>
 					<DialogDescription>
@@ -256,17 +264,21 @@ export const WorkspaceSharingModal = ({
 				<div className="flex flex-col gap-4">
 					{/* Add User Form */}
 					<div className="flex flex-col gap-2">
-						<div className="flex gap-2">
+						<div className="flex flex-wrap gap-2">
 							<Popover
 								open={popoverOpen}
 								onOpenChange={setPopoverOpen}
 							>
 								<PopoverTrigger asChild>
 									<Button
+										disabled={isSubmitting}
 										variant="outline"
 										role="combobox"
+										aria-label={t(
+											"workspace:sharing.searchPlaceholder",
+										)}
 										aria-expanded={popoverOpen}
-										className="flex-1 justify-between"
+										className="min-w-0 flex-1 justify-between"
 									>
 										<span className="truncate">
 											{search ||
@@ -278,7 +290,7 @@ export const WorkspaceSharingModal = ({
 									</Button>
 								</PopoverTrigger>
 								<PopoverContent
-									className="w-[400px] p-0"
+									className="w-80 max-w-full p-0"
 									align="start"
 								>
 									<Command shouldFilter={false}>
@@ -365,6 +377,7 @@ export const WorkspaceSharingModal = ({
 							</Popover>
 							<div className="[&_button]:h-9!">
 								<PermissionDropdown
+									disabled={isSubmitting}
 									activeUserPermission={activeUserPermission}
 									permission={selectedPermission}
 									// hideDeleteOption means "delete" can't be emitted here
@@ -388,10 +401,11 @@ export const WorkspaceSharingModal = ({
 								{t("workspace:sharing.membersToAdd")} (
 								{Object.keys(pendingUsers).length})
 							</div>
-							<ScrollArea className="max-h-[300px] rounded-md border">
+							<ScrollArea className="max-h-72 rounded-xl border">
 								<div>
 									{Object.values(pendingUsers).map((user) => (
 										<WorkspaceMemberRow
+											disabled={isSubmitting}
 											key={`${user.id}-${user.email}`} // Use both ID and email for uniqueness
 											member={user}
 											currentUserId=""
@@ -424,7 +438,11 @@ export const WorkspaceSharingModal = ({
 				</div>
 
 				<DialogFooter>
-					<Button variant="outline" onClick={handleClose}>
+					<Button
+						variant="outline"
+						onClick={handleClose}
+						disabled={isSubmitting}
+					>
 						{t("common:buttons.cancel")}
 					</Button>
 					<Button

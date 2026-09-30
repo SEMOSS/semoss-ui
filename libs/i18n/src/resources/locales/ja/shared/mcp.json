@@ -6,7 +6,12 @@
 		"noToolboxesFound": "No toolboxes found",
 		"noKnowledgeFound": "No knowledge found",
 		"noAgentsFound": "No agents found",
-		"noSkillsFound": "スキルが見つかりません"
+		"noSkillsFound": "スキルが見つかりません",
+		"fromRoom": "このチャットから",
+		"loadError": "カタログを読み込めませんでした。",
+		"retry": "再試行",
+		"added": "追加済み",
+		"available": "利用可能"
 	},
 	"permission": {
 		"owner": "Owner",

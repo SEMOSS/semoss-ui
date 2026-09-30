@@ -84,6 +84,7 @@ export const TeamsChatViewer = (props: TeamsChatViewerProps) => {
 				)}
 			>
 				<ConnectorViewerHeader
+					brand="teams"
 					icon={MessageCircleIcon}
 					title={serviceName}
 				>
@@ -110,15 +111,18 @@ export const TeamsChatViewer = (props: TeamsChatViewerProps) => {
 							const isBusy = saver.isBusy(request.key);
 							const title = chat.displayName || t("teams.chat");
 							const last = chat.lastMessage;
-							const preview = last
-								? t("teams.lastMessage", {
-										author:
-											last.fromName ?? t("teams.someone"),
-										text:
-											teamsMessageTitle(last, 80) ||
-											t("teams.noText"),
-									})
-								: undefined;
+							const previewText = last
+								? teamsMessageTitle(last, 80)
+								: "";
+							const preview =
+								last && previewText
+									? t("teams.lastMessage", {
+											author:
+												last.fromName ??
+												t("teams.someone"),
+											text: previewText,
+										})
+									: undefined;
 							return (
 								<ConnectorItemRow
 									key={chat.id}

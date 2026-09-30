@@ -70,5 +70,42 @@
 		"cancel": "Annuler",
 		"retry": "Réessayer",
 		"checking": "Vérification..."
+	},
+	"activity": {
+		"steps": "Activité des outils ({{count}})",
+		"needsInput": "Votre réponse est attendue",
+		"cancelError": "Impossible d’annuler cet outil.",
+		"actions": "Actions de l’outil"
+	},
+	"inspector": {
+		"input": "Entrée",
+		"info": "Infos",
+		"tabsLabel": "Détails de l’outil",
+		"find": "Rechercher",
+		"copy": "Copier",
+		"copied": "Copié dans le presse-papiers",
+		"copyFailed": "Impossible de copier dans le presse-papiers",
+		"wrap": "Retour à la ligne",
+		"foldAll": "Tout réduire",
+		"unfoldAll": "Tout développer",
+		"text": "Texte",
+		"expandedDescription": "Données en lecture seule. Recherchez, copiez ou réduisez des sections pour explorer les données.",
+		"toolName": "Nom de l’outil",
+		"callId": "ID de l’appel",
+		"source": "Source",
+		"execution": "Mode d’exécution",
+		"inputSchema": "Schéma d’entrée",
+		"metadata": "Métadonnées",
+		"emptyOutput": "Cet outil n’a renvoyé aucun résultat.",
+		"runningOutput": "L’outil est en cours d’exécution. Le résultat apparaîtra ici.",
+		"inputView": "Vue d’entrée",
+		"pretty": "Lisible",
+		"raw": "Brut",
+		"emptyString": "Chaîne vide",
+		"itemCount": "Éléments : {{total}}",
+		"fieldCount": "Champs : {{total}}",
+		"showMore": "Afficher plus ({{remaining}} restants)",
+		"showLess": "Afficher moins",
+		"showFullValue": "Afficher la valeur complète"
 	}
 }

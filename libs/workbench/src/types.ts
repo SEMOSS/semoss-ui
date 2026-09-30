@@ -78,6 +78,33 @@ export interface WorkbenchContainer {
 /** One node of the layout tree. */
 export type WorkbenchLayoutNode = WorkbenchTabset | WorkbenchContainer;
 
+/** Whole-work-area arrangements; side panels are kept in their existing borders. */
+export type WorkbenchLayoutPreset = "single" | "columns" | "rows";
+
+/** Copy supplied by a host without adding a translation dependency to the dock. */
+export type WorkbenchMenuLabel =
+	| "view"
+	| "navigate"
+	| "commandPalette"
+	| "layout"
+	| "single"
+	| "columns"
+	| "rows"
+	| "balance"
+	| "left"
+	| "right"
+	| "top"
+	| "bottom"
+	| "previous"
+	| "next"
+	| "openPanels"
+	| "noPanels"
+	| "maximize"
+	| "restore";
+
+/** Translate menu copy; panel names continue to come from the host's records. */
+export type WorkbenchMenuTranslate = (key: WorkbenchMenuLabel) => string;
+
 /** Where a moved panel is headed. */
 export type WorkbenchMoveTarget =
 	| {
@@ -395,6 +422,8 @@ export type WorkbenchSlice<Output> = StateCreator<
 
 /** What a border slot is told about the border it decorates. */
 export interface WorkbenchBorderSlotCtx {
+	/** Mobile drawer only: dismiss after a slot navigates to a panel. */
+	onNavigate?: () => void;
 	side: WorkbenchSide;
 	/**
 	 * Which way the slot's content is stacked: down a left/right rail, across

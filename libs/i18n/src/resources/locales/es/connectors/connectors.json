@@ -121,7 +121,38 @@
 		"organizer": "Organizador",
 		"attendees": "Invitados",
 		"join": "Unirse a la reunión",
-		"noDescription": "Este evento no tiene descripción."
+		"noDescription": "Este evento no tiene descripción.",
+		"view": "Vista del calendario",
+		"month": "Mes",
+		"agenda": "Agenda",
+		"previousMonth": "Mes anterior",
+		"nextMonth": "Mes siguiente",
+		"emptyDay": "No hay eventos este día",
+		"emptyMonth": "No hay eventos este mes",
+		"eventCount_one": "{{count}} evento",
+		"eventCount_other": "{{count}} eventos",
+		"moreEvents": "+{{count}} más",
+		"limitReached": "Solo se muestran los primeros {{count}} eventos. Algunos días pueden tener más eventos; abre Outlook para ver el calendario completo.",
+		"noLoadedEvents": "No hay eventos cargados para este día",
+		"week": "Semana",
+		"day": "Día",
+		"threeDays": "3 días",
+		"listView": "Vista de lista",
+		"calendarView": "Vista de calendario",
+		"openForTime": "Abre un evento para ver su hora.",
+		"emptyRange": "No hay eventos en este intervalo",
+		"previousView": {
+			"week": "Semana anterior",
+			"day": "Día anterior",
+			"threeDays": "3 días anteriores",
+			"month": "Mes anterior"
+		},
+		"nextView": {
+			"week": "Semana siguiente",
+			"day": "Día siguiente",
+			"threeDays": "3 días siguientes",
+			"month": "Mes siguiente"
+		}
 	},
 	"teams": {
 		"team": "Equipo",

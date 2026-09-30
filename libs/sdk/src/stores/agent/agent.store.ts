@@ -51,6 +51,50 @@ const TERMINAL_RUN_STATUSES: ReadonlySet<AgentRunStatusValue> = new Set([
 	"CANCELLED",
 ]);
 
+/** "submit" resolves to "approve" if paramValues is unchanged, else "edit". */
+const resolveAgentToolDecision = (
+	pendingAction: PendingAgentAction,
+	decision: "submit" | "reject" | "respond",
+	paramValues?: Record<string, unknown>,
+): AgentToolDecision => {
+	if (decision === "reject") return "reject";
+	if (decision === "respond") return "respond";
+	// No paramValues means "run it as called" — approve, never a
+	// paramValues-less edit (which the backend cannot execute).
+	return paramValues === undefined ||
+		JSON.stringify(paramValues) ===
+			JSON.stringify(pendingAction.toolArgs ?? {})
+		? "approve"
+		: "edit";
+};
+
+/** Shared by the instance and static `decide`. */
+const submitAgentToolDecision = (
+	pendingAction: PendingAgentAction,
+	decision: "submit" | "reject" | "respond",
+	paramValues: Record<string, unknown> | undefined,
+	insightId: string,
+): Promise<string> => {
+	const resolvedDecision = resolveAgentToolDecision(
+		pendingAction,
+		decision,
+		paramValues,
+	);
+
+	return decideAgentRunAction(
+		{
+			actionId: pendingAction.actionId,
+			decision: resolvedDecision,
+			paramValues: resolvedDecision === "edit" ? paramValues : undefined,
+			mcpToolResult:
+				resolvedDecision === "respond"
+					? JSON.stringify(paramValues ?? {})
+					: undefined,
+		},
+		insightId,
+	);
+};
+
 /**
  * @returns A fresh, empty items-state to seed a poll loop.
  *
@@ -127,12 +171,18 @@ export const applyAgentRunItemEvent = (
 
 /**
  * A single agent-harness run bound to a room, owning its own poll
- * subscription so callers never need a runId-keyed registry to poke it after
- * a tool decision — this instance IS that registry entry.
+ * subscription.
  *
- * Create a new run via {@link AgentStore.start}, or attach to one already in
- * progress (e.g. reconnecting after a page reload) via
- * `new AgentStore(roomId, insightId, runId)`.
+ * If you don't already hold the instance watching a run — a decision UI
+ * with only a `PendingAgentAction`, a reload reconnecting mid-run — use
+ * {@link AgentStore.attach}/{@link AgentStore.get}/{@link AgentStore.decide}
+ * instead of a hand-rolled runId lookup. They're backed by a registry
+ * `watch` populates, so two callers reconnecting to the same run never end
+ * up polling it twice.
+ *
+ * Create a new run via {@link AgentStore.start}. Reconnect to one already in
+ * progress via {@link AgentStore.attach}, not the constructor directly, so
+ * it's registered once watched.
  *
  * @see sdk-chat skill for the chat-vs-agent-harness guide.
  */
@@ -142,6 +192,9 @@ export class AgentStore {
 	readonly runId: string;
 
 	private _subscription: AgentRunSubscription | null = null;
+
+	/** Every `AgentStore` currently polling a run, keyed by runId. */
+	private static readonly registry = new Map<string, AgentStore>();
 
 	constructor(roomId: string, insightId: string, runId: string) {
 		this.roomId = roomId;
@@ -185,6 +238,9 @@ export class AgentStore {
 		if (this._subscription) {
 			return this._subscription;
 		}
+
+		// Registered while this poll loop is live; evicted below once it ends.
+		AgentStore.registry.set(this.runId, this);
 
 		const { runId } = this;
 		const {
@@ -326,10 +382,18 @@ export class AgentStore {
 			}
 		};
 
-		const done = loop().then(
-			() => lastSnapshot,
-			() => lastSnapshot,
-		);
+		const done = loop()
+			.then(
+				() => lastSnapshot,
+				() => lastSnapshot,
+			)
+			.then((snapshot) => {
+				// Only delete our own entry, not one someone else re-attached.
+				if (AgentStore.registry.get(this.runId) === this) {
+					AgentStore.registry.delete(this.runId);
+				}
+				return snapshot;
+			});
 
 		this._subscription = {
 			stop,
@@ -363,18 +427,14 @@ export class AgentStore {
 	}
 
 	/**
-	 * Decide a tool call paused on this run, resolving "submit" to "approve"
-	 * (paramValues omitted or unchanged from pendingAction.toolArgs) or
-	 * "edit" (paramValues differs) — the two decisions the backend treats
-	 * identically except for which arguments the tool actually runs with.
-	 * "respond" JSON-stringifies paramValues and sends it as mcpToolResult -
-	 * the string a tool like RequestUserInput never actually executes to
-	 * produce, so the answer stands in for it. Then wakes this instance's own
-	 * poll loop immediately — no registry lookup needed, since this instance
-	 * already owns the one subscription for its run.
+	 * Decide a tool call paused on this run, then wake its poll loop. "respond"
+	 * JSON-stringifies paramValues and sends it as mcpToolResult - the string a
+	 * tool like RequestUserInput never actually executes to produce, so the
+	 * answer stands in for it. Use {@link AgentStore.decide} instead if you
+	 * only have the `PendingAgentAction`, not this instance.
 	 *
 	 * @param pendingAction - The paused call being decided.
-	 * @param decision - "submit" auto-resolves to approve/edit as above; "reject"/"respond" pass through directly.
+	 * @param decision - "submit" auto-resolves to approve/edit. "reject"/"respond" pass through directly.
 	 * @param paramValues - The (possibly edited) arguments for "submit", or the answer to encode for "respond". Ignored for "reject".
 	 */
 	async decide(
@@ -382,35 +442,45 @@ export class AgentStore {
 		decision: "submit" | "reject" | "respond",
 		paramValues?: Record<string, unknown>,
 	): Promise<string> {
-		// No paramValues means "run it as called" — approve, never a
-		// paramValues-less edit (which the backend cannot execute).
-		const resolvedDecision: AgentToolDecision =
-			decision === "reject"
-				? "reject"
-				: decision === "respond"
-					? "respond"
-					: paramValues === undefined ||
-							JSON.stringify(paramValues) ===
-								JSON.stringify(pendingAction.toolArgs ?? {})
-						? "approve"
-						: "edit";
-
-		const result = await decideAgentRunAction(
-			{
-				actionId: pendingAction.actionId,
-				decision: resolvedDecision,
-				paramValues:
-					resolvedDecision === "edit" ? paramValues : undefined,
-				mcpToolResult:
-					resolvedDecision === "respond"
-						? JSON.stringify(paramValues ?? {})
-						: undefined,
-			},
+		const result = await submitAgentToolDecision(
+			pendingAction,
+			decision,
+			paramValues,
 			this.insightId,
 		);
 
 		this.pokeNow();
 		return result;
+	}
+
+	/**
+	 * Decide a paused tool call when you have the `PendingAgentAction` but not
+	 * the `AgentStore` watching its run — typically a decision UI. Delegates
+	 * to that instance if one is currently watching (waking its poll loop),
+	 * else just resolves the action directly.
+	 *
+	 * @param pendingAction - The paused call being decided.
+	 * @param decision - See the instance {@link decide}.
+	 * @param paramValues - See the instance {@link decide}.
+	 * @param insightId - The active SEMOSS insight ID.
+	 */
+	static async decide(
+		pendingAction: PendingAgentAction,
+		decision: "submit" | "reject" | "respond",
+		paramValues: Record<string, unknown> | undefined,
+		insightId: string,
+	): Promise<string> {
+		const watching = AgentStore.get(pendingAction.runId);
+		if (watching) {
+			return watching.decide(pendingAction, decision, paramValues);
+		}
+
+		return submitAgentToolDecision(
+			pendingAction,
+			decision,
+			paramValues,
+			insightId,
+		);
 	}
 
 	/**
@@ -425,6 +495,35 @@ export class AgentStore {
 		insightId: string,
 	): Promise<AgentStore> {
 		const { runId, roomId } = await runAgent(params, insightId);
-		return new AgentStore(roomId, insightId, runId);
+		return AgentStore.attach(roomId, insightId, runId);
+	}
+
+	/**
+	 * The instance currently polling `runId`, if any. `undefined` doesn't
+	 * mean the run doesn't exist — just that nothing local is watching it.
+	 */
+	static get(runId: string): AgentStore | undefined {
+		return AgentStore.registry.get(runId);
+	}
+
+	/**
+	 * The instance already watching `runId`, if any, otherwise a fresh
+	 * not-yet-watching one. Prevents two callers reconnecting to the same run
+	 * (e.g. a live subagent event and a reload reconciliation) from ending up
+	 * with two competing pollers.
+	 *
+	 * @param roomId - Ignored if an instance is already registered — you get
+	 * that instance's own `roomId` instead.
+	 * @param insightId - Same caveat as `roomId`.
+	 * @param runId - The run to attach to.
+	 */
+	static attach(
+		roomId: string,
+		insightId: string,
+		runId: string,
+	): AgentStore {
+		return (
+			AgentStore.get(runId) ?? new AgentStore(roomId, insightId, runId)
+		);
 	}
 }

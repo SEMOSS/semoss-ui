@@ -2,6 +2,7 @@ import { shallow } from "zustand/shallow";
 import type {
 	WorkbenchBorders,
 	WorkbenchLayoutNode,
+	WorkbenchLayoutPreset,
 	WorkbenchMoveTarget,
 	WorkbenchPanelConfigAny,
 	WorkbenchPanelId,
@@ -19,6 +20,10 @@ import type {
 	WorkbenchTabset,
 } from "../../types";
 import { WORKBENCH_SIDES } from "../../types";
+import {
+	arrangeWorkbenchTree,
+	balanceWorkbenchTree,
+} from "./workbench-layout.presets";
 import {
 	createNodeId,
 	emptyTabset,
@@ -242,6 +247,21 @@ export interface WorkbenchLayoutActions {
 		stack: Pick<WorkbenchStack, "kind" | "id">,
 		pid: WorkbenchPanelId,
 	) => void;
+
+	/** Reveal an open panel, restoring a maximized group if it hides the target. */
+	navigatePanel: (pid: WorkbenchPanelId) => void;
+
+	/** Cycle through open panels in visual order, including collapsed borders. */
+	navigateRelativePanel: (direction: -1 | 1) => void;
+
+	/** Whether the main area can use a preset without moving a locked panel. */
+	canArrangePanels: (preset: WorkbenchLayoutPreset) => boolean;
+
+	/** Apply a whole-area preset in one commit, retaining every panel and its state. */
+	arrangePanels: (preset: WorkbenchLayoutPreset) => void;
+
+	/** Equalize main-area groups and split viewports; leave border sizes alone. */
+	balanceLayout: () => void;
 
 	/** Move a panel to a dock or border target, resolving pin boundaries. */
 	movePanel: (pid: WorkbenchPanelId, target: WorkbenchMoveTarget) => void;
@@ -1234,6 +1254,68 @@ export const createWorkbenchLayoutSlice = (
 							mobileActivePanelId: pid,
 						};
 					});
+				},
+				navigatePanel: (pid) => {
+					const state = get().layout;
+					const stack = state.stacks.find((candidate) =>
+						candidate.panelIds.includes(pid),
+					);
+					if (!stack) return;
+					if (
+						state.maximizedTabsetId &&
+						stack.id !== state.maximizedTabsetId
+					) {
+						state.actions.toggleMaximize();
+					}
+					state.actions.activatePanel(stack, pid);
+				},
+				navigateRelativePanel: (direction) => {
+					const state = get().layout;
+					const ids = state.openPanelIds;
+					if (!ids.length) return;
+					const active = state.isMobileLayout
+						? state.mobileActivePanelId
+						: state.selection.panel;
+					const index = active ? ids.indexOf(active) : -1;
+					const nextIndex =
+						index < 0
+							? direction === 1
+								? 0
+								: ids.length - 1
+							: (index + direction + ids.length) % ids.length;
+					state.actions.navigatePanel(ids[nextIndex]);
+				},
+				canArrangePanels: (preset) => {
+					const state = get().layout;
+					const ids = state.tabsets.flatMap(
+						(tabset) => tabset.panelIds,
+					);
+					return (
+						!state.isMobileLayout &&
+						ids.length >= (preset === "single" ? 1 : 2) &&
+						state.tabsets.every(
+							(tabset) => tabset.enableDrop !== false,
+						) &&
+						ids.every((pid) => flagOf(pid, "canDrag"))
+					);
+				},
+				arrangePanels: (preset) => {
+					if (!get().layout.actions.canArrangePanels(preset)) return;
+					commit((state) => ({
+						tree: arrangeWorkbenchTree(
+							state.tree,
+							state.panels,
+							state.selection.panel,
+							preset,
+						),
+						maximizedTabsetId: undefined,
+					}));
+				},
+				balanceLayout: () => {
+					if (get().layout.isMobileLayout) return;
+					commit((state) => ({
+						tree: balanceWorkbenchTree(state.tree),
+					}));
 				},
 				movePanel: (pid, target) => {
 					if (!flagOf(pid, "canDrag")) {

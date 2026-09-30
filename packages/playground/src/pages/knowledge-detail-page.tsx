@@ -1,6 +1,3 @@
-/* eslint-disable */
-/** biome-ignore-all lint/nursery/useSortedClasses: using existing Tailwind order in this file */
-
 import {
 	ArrowLeftIcon,
 	ChevronDownIcon,
@@ -39,6 +36,7 @@ import {
 	DialogDescription,
 	DialogHeader,
 	DialogTitle,
+	Input,
 	ScrollArea,
 	Select,
 	SelectContent,
@@ -55,7 +53,6 @@ import {
 import { getFileExtension, getImageMimeType } from "@semoss/utility";
 import { EmbedDocumentsOverlay } from "@/components/knowledge/embed-documents-overlay";
 import { NewKnowledgeOverlay } from "@/components/knowledge/new-knowledge-mcp-overlay";
-import { useGlobalBreadcrumbs } from "@/hooks";
 
 type KnowledgeEngine = {
 	engine_id: string;
@@ -89,12 +86,12 @@ type SearchUser = {
 const getFileIcon = (fileName: string) => {
 	const ext = getFileExtension(fileName);
 	if (ext === "pdf")
-		return <FileTextIcon className="h-4 w-4 shrink-0 text-red-500" />;
+		return <FileTextIcon className="h-4 w-4 shrink-0 text-primary" />;
 	if (ext === "doc" || ext === "docx")
-		return <FileTextIcon className="h-4 w-4 shrink-0 text-blue-500" />;
+		return <FileTextIcon className="h-4 w-4 shrink-0 text-primary" />;
 	if (ext === "xls" || ext === "xlsx" || ext === "csv")
 		return (
-			<FileSpreadsheetIcon className="h-4 w-4 shrink-0 text-green-600" />
+			<FileSpreadsheetIcon className="h-4 w-4 shrink-0 text-primary" />
 		);
 	if (
 		ext === "png" ||
@@ -104,7 +101,7 @@ const getFileIcon = (fileName: string) => {
 		ext === "webp" ||
 		ext === "svg"
 	)
-		return <FileImageIcon className="h-4 w-4 shrink-0 text-purple-500" />;
+		return <FileImageIcon className="h-4 w-4 shrink-0 text-primary" />;
 	return <FileIcon className="h-4 w-4 shrink-0 text-muted-foreground" />;
 };
 
@@ -177,25 +174,6 @@ export const KnowledgeDetailPage = observer(() => {
 		}
 		return Array.isArray(raw) ? raw : [raw];
 	}, [knowledge?.tag]);
-
-	useGlobalBreadcrumbs({
-		breadcrumbs: [
-			{ name: t("knowledge:breadcrumbs.home"), path: "/" },
-			{
-				name: t("knowledge:breadcrumbs.knowledgeStores"),
-				path: "/knowledge",
-			},
-			{
-				name:
-					getKnowledge.status === "SUCCESS"
-						? knowledge?.engine_display_name ||
-							knowledge?.engine_name ||
-							t("knowledge:detail.knowledge")
-						: t("knowledge:breadcrumbs.loading"),
-				path: `/knowledge/${knowledgeId}`,
-			},
-		],
-	});
 
 	const getDocuments = usePixel<VectorDocument[]>(
 		knowledgeId
@@ -406,9 +384,9 @@ export const KnowledgeDetailPage = observer(() => {
 	}
 
 	return (
-		<div className="relative h-full w-full overflow-hidden">
-			<div className="mx-auto flex h-full w-full max-w-5xl flex-col gap-6 px-12 pt-8 pb-4">
-				<div className="flex items-start gap-3">
+		<div className="relative h-full w-full overflow-y-auto">
+			<div className="mx-auto flex w-full max-w-5xl flex-col gap-6 px-4 py-6 sm:px-6">
+				<div className="flex flex-wrap items-start gap-3 border-b pb-6">
 					<Button
 						variant="ghost"
 						size="icon"
@@ -418,13 +396,13 @@ export const KnowledgeDetailPage = observer(() => {
 						<ArrowLeftIcon className="rtl:-scale-x-100" />
 					</Button>
 
-					<div className="flex-1 space-y-1">
-						<h1 className="text-2xl font-semibold leading-none">
+					<div className="min-w-0 flex-1 space-y-2">
+						<h1 className="break-words font-semibold text-2xl leading-tight">
 							{knowledge?.engine_display_name ||
 								knowledge?.engine_name ||
 								t("knowledge:detail.knowledge")}
 						</h1>
-						<p className="text-sm text-muted-foreground">
+						<p className="text-muted-foreground text-sm">
 							{knowledge?.description ||
 								t("knowledge:messages.noDescription")}
 						</p>
@@ -439,7 +417,7 @@ export const KnowledgeDetailPage = observer(() => {
 						) : null}
 					</div>
 
-					<div className="flex gap-2">
+					<div className="flex flex-wrap gap-2">
 						<Button asChild variant="outline">
 							<Link
 								to={`/new?knowledgeId=${encodeURIComponent(knowledgeId)}`}
@@ -489,20 +467,24 @@ export const KnowledgeDetailPage = observer(() => {
 					}
 				>
 					<TabsList>
-						<TabsTrigger value="files">Files</TabsTrigger>
+						<TabsTrigger value="files">
+							{t("knowledge:studio.files")}
+						</TabsTrigger>
 						<TabsTrigger value="permissions">
-							Permissions
+							{t("knowledge:studio.permissions")}
 						</TabsTrigger>
 					</TabsList>
 					<TabsContent value="files">
-						<Card className="rounded-xl border-border bg-card shadow-sm">
+						<Card className="rounded-xl border-border bg-card shadow-none">
 							<CardHeader>
 								<CardTitle>
 									{t("knowledge:documents.title")}
 								</CardTitle>
 								<CardDescription>
 									{getDocuments.status === "SUCCESS"
-										? `There are currently ${getDocuments.data.length} documents embedded in this knowledge source.`
+										? t("knowledge:studio.documentCount", {
+												count: getDocuments.data.length,
+											})
 										: t(
 												"knowledge:detail.documentsDescription",
 											)}
@@ -510,192 +492,207 @@ export const KnowledgeDetailPage = observer(() => {
 							</CardHeader>
 							<CardContent className="px-0 pb-0">
 								{getDocuments.status === "LOADING" ? (
-									<div className="px-6 pb-6 text-sm text-muted-foreground">
+									<div className="px-6 pb-6 text-muted-foreground text-sm">
 										{t(
 											"knowledge:messages.loadingDocuments",
 										)}
 									</div>
 								) : getDocuments.status === "ERROR" ? (
-									<div className="px-6 pb-6 text-sm text-destructive">
+									<div className="px-6 pb-6 text-destructive text-sm">
 										{t(
 											"knowledge:detail.failedToLoadDocuments",
 										)}
 									</div>
 								) : getDocuments.data.length === 0 ? (
-									<div className="px-6 pb-6 text-sm text-muted-foreground">
+									<div className="px-6 pb-6 text-muted-foreground text-sm">
 										{t("knowledge:messages.noDocuments")}
 									</div>
 								) : (
-									<ScrollArea className="h-[50vh]">
-										<table className="w-full table-fixed text-sm">
-											<thead>
-												<tr className="border-b text-xs text-muted-foreground">
-													<th className="px-6 pb-2 text-start font-medium">
-														<button
-															type="button"
-															className="flex items-center gap-1 hover:text-foreground"
-															onClick={() =>
-																toggleSort(
-																	"name",
-																)
-															}
-														>
-															Name
-															{docSortBy ===
-															"name" ? (
-																docSortDir ===
-																"asc" ? (
-																	<ChevronUpIcon className="h-3 w-3" />
+									<ScrollArea className="h-96">
+										<section
+											className="overflow-x-auto"
+											// biome-ignore lint/a11y/noNoninteractiveTabindex: keyboard users must be able to scroll the document table horizontally.
+											tabIndex={0}
+											aria-label={t(
+												"knowledge:documents.title",
+											)}
+										>
+											<table className="w-full min-w-160 table-fixed text-sm">
+												<thead>
+													<tr className="border-b text-muted-foreground text-xs">
+														<th className="px-6 pb-2 text-start font-medium">
+															<button
+																type="button"
+																className="flex items-center gap-1 hover:text-foreground"
+																onClick={() =>
+																	toggleSort(
+																		"name",
+																	)
+																}
+															>
+																Name
+																{docSortBy ===
+																"name" ? (
+																	docSortDir ===
+																	"asc" ? (
+																		<ChevronUpIcon className="h-3 w-3" />
+																	) : (
+																		<ChevronDownIcon className="h-3 w-3" />
+																	)
 																) : (
-																	<ChevronDownIcon className="h-3 w-3" />
-																)
-															) : (
-																<ChevronUpIcon className="h-3 w-3 opacity-30" />
-															)}
-														</button>
-													</th>
-													<th className="px-4 pb-2 text-start font-medium w-44">
-														<button
-															type="button"
-															className="flex items-center gap-1 hover:text-foreground"
-															onClick={() =>
-																toggleSort(
-																	"date",
-																)
-															}
-														>
-															Date Uploaded
-															{docSortBy ===
-															"date" ? (
-																docSortDir ===
-																"asc" ? (
-																	<ChevronUpIcon className="h-3 w-3" />
-																) : (
-																	<ChevronDownIcon className="h-3 w-3" />
-																)
-															) : (
-																<ChevronUpIcon className="h-3 w-3 opacity-30" />
-															)}
-														</button>
-													</th>
-													<th className="px-6 pb-2 text-end font-medium w-28">
-														<button
-															type="button"
-															className="flex items-center gap-1 hover:text-foreground justify-end"
-															onClick={() =>
-																toggleSort(
-																	"size",
-																)
-															}
-														>
-															Size
-															{docSortBy ===
-															"size" ? (
-																docSortDir ===
-																"asc" ? (
-																	<ChevronUpIcon className="h-3 w-3" />
-																) : (
-																	<ChevronDownIcon className="h-3 w-3" />
-																)
-															) : (
-																<ChevronUpIcon className="h-3 w-3 opacity-30" />
-															)}
-														</button>
-													</th>
-													<th className="w-20 pb-2" />
-												</tr>
-											</thead>
-											<tbody>
-												{sortedDocuments.map((d) => (
-													<tr
-														key={`${d.fileName}-${d.lastModified}`}
-														className="border-b last:border-0 transition hover:bg-muted/40"
-													>
-														<td className="px-6 py-2">
-															<div className="flex min-w-0 items-center gap-2">
-																{getFileIcon(
-																	d.fileName,
+																	<ChevronUpIcon className="h-3 w-3 opacity-30" />
 																)}
-																<button
-																	type="button"
-																	className="break-all text-start text-sm font-medium hover:underline cursor-pointer"
-																	onClick={() =>
-																		setPreviewDoc(
-																			d,
-																		)
-																	}
-																>
-																	{d.fileName}
-																</button>
-															</div>
-														</td>
-														<td className="px-4 py-2 text-xs text-muted-foreground tabular-nums w-44">
-															{formatDateTime(
-																d.lastModified,
-															)}
-														</td>
-														<td className="px-6 py-2 text-end text-xs text-muted-foreground tabular-nums w-28">
-															{formatFileSize(
-																d.fileSize,
-															)}
-														</td>
-														<td className="px-4 py-1 w-20">
-															<div className="flex items-center justify-end gap-0.5">
-																<Button
-																	variant="ghost"
-																	size="icon"
-																	className="h-7 w-7"
-																	title="Download"
-																	onClick={() =>
-																		handleDownload(
-																			d.fileName,
-																		)
-																	}
-																>
-																	<DownloadIcon className="h-4 w-4" />
-																</Button>
-															</div>
-														</td>
+															</button>
+														</th>
+														<th className="w-44 px-4 pb-2 text-start font-medium">
+															<button
+																type="button"
+																className="flex items-center gap-1 hover:text-foreground"
+																onClick={() =>
+																	toggleSort(
+																		"date",
+																	)
+																}
+															>
+																Date Uploaded
+																{docSortBy ===
+																"date" ? (
+																	docSortDir ===
+																	"asc" ? (
+																		<ChevronUpIcon className="h-3 w-3" />
+																	) : (
+																		<ChevronDownIcon className="h-3 w-3" />
+																	)
+																) : (
+																	<ChevronUpIcon className="h-3 w-3 opacity-30" />
+																)}
+															</button>
+														</th>
+														<th className="w-28 px-6 pb-2 text-end font-medium">
+															<button
+																type="button"
+																className="flex items-center justify-end gap-1 hover:text-foreground"
+																onClick={() =>
+																	toggleSort(
+																		"size",
+																	)
+																}
+															>
+																Size
+																{docSortBy ===
+																"size" ? (
+																	docSortDir ===
+																	"asc" ? (
+																		<ChevronUpIcon className="h-3 w-3" />
+																	) : (
+																		<ChevronDownIcon className="h-3 w-3" />
+																	)
+																) : (
+																	<ChevronUpIcon className="h-3 w-3 opacity-30" />
+																)}
+															</button>
+														</th>
+														<th className="w-20 pb-2" />
 													</tr>
-												))}
-											</tbody>
-										</table>
+												</thead>
+												<tbody>
+													{sortedDocuments.map(
+														(d) => (
+															<tr
+																key={`${d.fileName}-${d.lastModified}`}
+																className="border-b transition last:border-0 hover:bg-accent"
+															>
+																<td className="px-6 py-2">
+																	<div className="flex min-w-0 items-center gap-2">
+																		{getFileIcon(
+																			d.fileName,
+																		)}
+																		<button
+																			type="button"
+																			className="cursor-pointer break-all text-start font-medium text-sm hover:underline"
+																			onClick={() =>
+																				setPreviewDoc(
+																					d,
+																				)
+																			}
+																		>
+																			{
+																				d.fileName
+																			}
+																		</button>
+																	</div>
+																</td>
+																<td className="w-44 px-4 py-2 text-muted-foreground text-xs tabular-nums">
+																	{formatDateTime(
+																		d.lastModified,
+																	)}
+																</td>
+																<td className="w-28 px-6 py-2 text-end text-muted-foreground text-xs tabular-nums">
+																	{formatFileSize(
+																		d.fileSize,
+																	)}
+																</td>
+																<td className="w-20 px-4 py-1">
+																	<div className="flex items-center justify-end gap-0.5">
+																		<Button
+																			variant="ghost"
+																			size="icon"
+																			className="size-9"
+																			title="Download"
+																			onClick={() =>
+																				handleDownload(
+																					d.fileName,
+																				)
+																			}
+																		>
+																			<DownloadIcon className="h-4 w-4" />
+																		</Button>
+																	</div>
+																</td>
+															</tr>
+														),
+													)}
+												</tbody>
+											</table>
+										</section>
 									</ScrollArea>
 								)}
 							</CardContent>
 						</Card>
 					</TabsContent>
 					<TabsContent value="permissions">
-						<Card className="rounded-xl border-border bg-card shadow-sm">
+						<Card className="rounded-xl border-border bg-card shadow-none">
 							<CardHeader>
 								<div className="flex items-center justify-between">
-									<CardTitle>User Access</CardTitle>
+									<CardTitle>
+										{t("knowledge:studio.userAccess")}
+									</CardTitle>
 									<Button
 										size="sm"
 										onClick={() => setAddOpen(true)}
 									>
-										Add User
+										{t("knowledge:studio.addUser")}
 									</Button>
 								</div>
 							</CardHeader>
-							<CardContent className="px-0 pb-4">
+							<CardContent className="overflow-x-auto px-0 pb-4">
 								{membersLoading ? (
 									<div className="flex items-center justify-center py-8">
 										<Spinner />
 									</div>
 								) : members.length === 0 ? (
-									<div className="px-6 py-4 text-sm text-muted-foreground">
-										No users found.
+									<div className="px-6 py-4 text-muted-foreground text-sm">
+										{t("knowledge:studio.noUsers")}
 									</div>
 								) : (
-									<table className="w-full text-sm">
+									<table className="w-full min-w-128 text-sm">
 										<thead>
-											<tr className="border-b text-xs text-muted-foreground">
+											<tr className="border-b text-muted-foreground text-xs">
 												<th className="px-6 pb-2 text-start font-medium">
-													User
+													{t("knowledge:studio.user")}
 												</th>
-												<th className="px-4 pb-2 text-start font-medium w-36">
-													Role
+												<th className="w-36 px-4 pb-2 text-start font-medium">
+													{t("knowledge:studio.role")}
 												</th>
 												<th className="w-16 pb-2" />
 											</tr>
@@ -704,17 +701,17 @@ export const KnowledgeDetailPage = observer(() => {
 											{members.map((m) => (
 												<tr
 													key={m.id}
-													className="border-b last:border-0 transition hover:bg-muted/40"
+													className="border-b transition last:border-0 hover:bg-accent"
 												>
 													<td className="px-6 py-2">
 														<p className="font-medium">
 															{m.name}
 														</p>
-														<p className="text-xs text-muted-foreground">
+														<p className="text-muted-foreground text-xs">
 															{m.email}
 														</p>
 													</td>
-													<td className="px-4 py-2 w-36">
+													<td className="w-36 px-4 py-2">
 														<Select
 															value={m.permission}
 															onValueChange={(
@@ -726,34 +723,45 @@ export const KnowledgeDetailPage = observer(() => {
 																)
 															}
 														>
-															<SelectTrigger className="h-7 text-xs">
+															<SelectTrigger
+																className="min-h-9 text-sm"
+																aria-label={`${t("knowledge:studio.role")}: ${m.name}`}
+															>
 																<SelectValue />
 															</SelectTrigger>
 															<SelectContent>
 																<SelectItem value="OWNER">
-																	Author
+																	{t(
+																		"knowledge:studio.author",
+																	)}
 																</SelectItem>
 																<SelectItem value="EDIT">
-																	Editor
+																	{t(
+																		"knowledge:studio.editor",
+																	)}
 																</SelectItem>
 																<SelectItem value="READ_ONLY">
-																	Read-Only
+																	{t(
+																		"knowledge:studio.readOnly",
+																	)}
 																</SelectItem>
 															</SelectContent>
 														</Select>
 													</td>
-													<td className="px-2 py-1 w-16 text-end">
+													<td className="w-16 px-2 py-1 text-end">
 														<Button
 															variant="ghost"
 															size="sm"
-															className="text-xs text-destructive hover:text-destructive"
+															className="text-destructive text-xs hover:text-destructive"
 															onClick={() =>
 																setRemoveTarget(
 																	m,
 																)
 															}
 														>
-															Remove
+															{t(
+																"knowledge:studio.remove",
+															)}
 														</Button>
 													</td>
 												</tr>
@@ -771,10 +779,7 @@ export const KnowledgeDetailPage = observer(() => {
 						if (!open) setPreviewDoc(null);
 					}}
 				>
-					<DialogContent
-						className="flex flex-col gap-4 overflow-hidden p-0 max-h-[90vh]"
-						style={{ width: "80vw", maxWidth: "80vw" }}
-					>
+					<DialogContent className="flex max-h-[90dvh] flex-col gap-4 overflow-hidden p-0 sm:max-w-5xl">
 						<DialogHeader className="px-6 pt-6 pb-0">
 							<DialogTitle className="flex min-w-0 items-center gap-2">
 								{previewDoc && getFileIcon(previewDoc.fileName)}
@@ -795,7 +800,7 @@ export const KnowledgeDetailPage = observer(() => {
 									className="w-full border-0"
 									style={{ height: "75vh" }}
 									src={previewBlobUrl}
-									title="PDF preview"
+									title={previewDoc.fileName}
 								/>
 							)}
 						{previewBlobUrl &&
@@ -804,7 +809,7 @@ export const KnowledgeDetailPage = observer(() => {
 								<div className="flex items-center justify-center overflow-auto p-6">
 									<img
 										src={previewBlobUrl}
-										alt="Preview"
+										alt={previewDoc.fileName}
 										className="max-w-full"
 									/>
 								</div>
@@ -816,7 +821,7 @@ export const KnowledgeDetailPage = observer(() => {
 									className="overflow-y-auto"
 									style={{ maxHeight: "70vh" }}
 								>
-									<pre className="p-6 text-xs whitespace-pre-wrap">
+									<pre className="whitespace-pre-wrap p-6 text-xs">
 										{previewText}
 									</pre>
 								</div>
@@ -828,10 +833,12 @@ export const KnowledgeDetailPage = observer(() => {
 								previewDoc &&
 								!isPreviewable(previewDoc.fileName))) && (
 							<div className="flex items-center justify-center py-16">
-								<p className="text-sm text-muted-foreground">
+								<p className="text-muted-foreground text-sm">
 									{previewError
-										? "Failed to load preview."
-										: "Preview not available for this file type."}
+										? t("knowledge:studio.previewError")
+										: t(
+												"knowledge:studio.previewUnavailable",
+											)}
 								</p>
 							</div>
 						)}
@@ -840,12 +847,15 @@ export const KnowledgeDetailPage = observer(() => {
 				<Dialog open={addOpen} onOpenChange={setAddOpen}>
 					<DialogContent className="sm:max-w-md">
 						<DialogHeader>
-							<DialogTitle>Add User</DialogTitle>
+							<DialogTitle>
+								{t("knowledge:studio.addUser")}
+							</DialogTitle>
 						</DialogHeader>
 						<div className="flex flex-col gap-4">
-							<input
+							<Input
+								aria-label={t("knowledge:studio.searchUsers")}
 								className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-								placeholder="Search by name or email..."
+								placeholder={t("knowledge:studio.searchUsers")}
 								value={userSearch}
 								onChange={(e) => setUserSearch(e.target.value)}
 							/>
@@ -860,7 +870,7 @@ export const KnowledgeDetailPage = observer(() => {
 										<button
 											key={u.id}
 											type="button"
-											className={`w-full px-3 py-2 text-start text-sm hover:bg-muted transition-colors${selectedUser?.id === u.id ? " bg-muted font-medium" : ""}`}
+											className={`w-full px-3 py-2 text-start text-sm hover:bg-muted transition-colors${selectedUser?.id === u.id ? "bg-muted font-medium" : ""}`}
 											onClick={() => setSelectedUser(u)}
 										>
 											<span className="font-medium">
@@ -876,24 +886,28 @@ export const KnowledgeDetailPage = observer(() => {
 							{userSearch &&
 								!searchLoading &&
 								searchResults.length === 0 && (
-									<p className="text-sm text-muted-foreground text-center py-2">
-										No users found.
+									<p className="py-2 text-center text-muted-foreground text-sm">
+										{t("knowledge:studio.noUsers")}
 									</p>
 								)}
 							<Select
 								value={selectedRole}
 								onValueChange={setSelectedRole}
 							>
-								<SelectTrigger>
+								<SelectTrigger
+									aria-label={t("knowledge:studio.role")}
+								>
 									<SelectValue />
 								</SelectTrigger>
 								<SelectContent>
 									<SelectItem value="OWNER">
-										Author
+										{t("knowledge:studio.author")}
 									</SelectItem>
-									<SelectItem value="EDIT">Editor</SelectItem>
+									<SelectItem value="EDIT">
+										{t("knowledge:studio.editor")}
+									</SelectItem>
 									<SelectItem value="READ_ONLY">
-										Read-Only
+										{t("knowledge:studio.readOnly")}
 									</SelectItem>
 								</SelectContent>
 							</Select>
@@ -902,13 +916,13 @@ export const KnowledgeDetailPage = observer(() => {
 									variant="outline"
 									onClick={() => setAddOpen(false)}
 								>
-									Cancel
+									{t("knowledge:studio.cancel")}
 								</Button>
 								<Button
 									onClick={handleAddUser}
 									disabled={!selectedUser}
 								>
-									Add
+									{t("knowledge:studio.add")}
 								</Button>
 							</div>
 						</div>
@@ -922,10 +936,13 @@ export const KnowledgeDetailPage = observer(() => {
 				>
 					<DialogContent className="sm:max-w-md">
 						<DialogHeader>
-							<DialogTitle>Remove User</DialogTitle>
+							<DialogTitle>
+								{t("knowledge:studio.removeUser")}
+							</DialogTitle>
 							<DialogDescription>
-								Remove {removeTarget?.name} from this knowledge
-								source?
+								{t("knowledge:studio.removeDescription", {
+									name: removeTarget?.name,
+								})}
 							</DialogDescription>
 						</DialogHeader>
 						<div className="flex justify-end gap-2">
@@ -933,13 +950,13 @@ export const KnowledgeDetailPage = observer(() => {
 								variant="outline"
 								onClick={() => setRemoveTarget(null)}
 							>
-								Cancel
+								{t("knowledge:studio.cancel")}
 							</Button>
 							<Button
 								variant="destructive"
 								onClick={handleRemoveConfirmed}
 							>
-								Remove
+								{t("knowledge:studio.remove")}
 							</Button>
 						</div>
 					</DialogContent>

@@ -1,29 +1,25 @@
 import {
 	CalendarDaysIcon,
 	CalendarIcon,
-	ChevronLeftIcon,
-	ChevronRightIcon,
 	RefreshCwIcon,
 	VideoIcon,
 } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "@semoss/i18n";
 import { useInsight } from "@semoss/sdk/react";
-import { Button, cn, H4 } from "@semoss/ui/next";
+import { cn } from "@semoss/ui/next";
+import { ConnectorCalendar } from "../../components/connector-calendar";
 import { ConnectorIconButton } from "../../components/connector-icon-button";
 import { ConnectorItemRow } from "../../components/connector-item-row";
-import { ConnectorList } from "../../components/connector-list";
 import { ConnectorViewerHeader } from "../../components/connector-viewer-header";
-import {
-	addLocalDays,
-	formatDayHeading,
-	formatShortDay,
-	parseGraphDate,
-	parseGraphDay,
-	startOfLocalDay,
-} from "../../core/connector.format";
+import { parseGraphDate, parseGraphDay } from "../../core/connector.format";
 import type { ConnectorViewerProps } from "../../core/connector.types";
+import {
+	calendarDayKey,
+	groupCalendarEvents,
+} from "../../core/connector-calendar";
 import { runConnectorPixel } from "../../core/connector-pixel";
+import { useCalendarWindow } from "../../core/use-calendar-window";
 import { useConnectorQuery } from "../../core/use-connector-query";
 import {
 	type ConnectorSaveRequest,
@@ -43,89 +39,50 @@ import type { CalendarEvent } from "../microsoft.types";
 import { OutlookEventDetail } from "./outlook-event-detail";
 import { useCalendarEventTime } from "./use-calendar-event-time";
 
-/** How many days the viewer shows at once. */
-const WINDOW_DAYS = 7;
-
-/** The most events the backend reads at once. */
 const MAX_EVENTS = 100;
 
-/** The events of one day. */
-interface EventDay {
-	day: Date;
-	events: CalendarEvent[];
-}
-
-/**
- * The local day an event is listed under. An event that began before the
- * window is listed on the window's first day.
- *
- * @param event - The event.
- * @param windowStart - The first day shown.
- * @return Local midnight of the day.
- */
-const getListedDay = (event: CalendarEvent, windowStart: Date): Date => {
-	const start = event.isAllDay
-		? parseGraphDay(event.start)
-		: parseGraphDate(event.start, event.startTimeZone);
-	if (!start || start.getTime() < windowStart.getTime()) {
-		return windowStart;
-	}
-	return startOfLocalDay(start);
-};
-
-/**
- * Group events by the day they are listed under, keeping their order.
- *
- * @param events - The events, earliest first.
- * @param windowStart - The first day shown.
- * @return The days that have events.
- */
-const groupByDay = (events: CalendarEvent[], windowStart: Date): EventDay[] => {
-	const days = new Map<number, EventDay>();
-	for (const event of events) {
-		const day = getListedDay(event, windowStart);
-		const existing = days.get(day.getTime());
-		if (existing) {
-			existing.events.push(event);
-		} else {
-			days.set(day.getTime(), { day: day, events: [event] });
-		}
-	}
-	return [...days.values()].sort((a, b) => a.day.getTime() - b.day.getTime());
-};
-
-/** Props for {@link OutlookCalendarViewer}. */
+/** Props for the Outlook calendar. */
 export type OutlookCalendarViewerProps = ConnectorViewerProps;
 
-/**
- * The user's Outlook calendar a week at a time: see what is coming, open an
- * event, and bring it into the insight.
- */
+/** Browse a month or agenda, open events, and save them into the insight. */
 export const OutlookCalendarViewer = (props: OutlookCalendarViewerProps) => {
 	const { onSignIn } = props;
-	const { t, i18n } = useTranslation("connectors");
+	const { t } = useTranslation("connectors");
 	const { insightId } = useInsight();
 	const saver = useConnectorSaver("outlook-calendar", props);
 	const describeTime = useCalendarEventTime();
-	const [windowStart, setWindowStart] = useState(() =>
-		startOfLocalDay(new Date()),
-	);
+	const calendar = useCalendarWindow();
 	const [openEvent, setOpenEvent] = useState<CalendarEvent | null>(null);
-	const { listRef, rememberItem } = useReturnFocus(openEvent !== null);
+	const { listRef, rememberItem } = useReturnFocus<HTMLDivElement>(
+		openEvent !== null,
+	);
 	const serviceName = t("services.outlookCalendar");
-
-	const windowEnd = addLocalDays(windowStart, WINDOW_DAYS);
-	const isThisWeek =
-		windowStart.getTime() === startOfLocalDay(new Date()).getTime();
 	const query = useConnectorQuery(
 		MICROSOFT_PIXELS.calendarListEvents({
-			start: windowStart.toISOString(),
-			end: windowEnd.toISOString(),
+			start: calendar.range.start.toISOString(),
+			end: calendar.range.end.toISOString(),
 			limit: MAX_EVENTS,
 		}),
 		parseCalendarEvents,
 	);
-
+	const days = groupCalendarEvents(
+		query.data ?? [],
+		calendar.range,
+		(event) => ({
+			start: event.isAllDay
+				? parseGraphDay(event.start)
+				: parseGraphDate(event.start, event.startTimeZone),
+			end: event.isAllDay
+				? parseGraphDay(event.end)
+				: parseGraphDate(event.end, event.endTimeZone),
+		}),
+	);
+	const eventTitle = (event: CalendarEvent): string => {
+		const title = event.subject || t("calendar.noTitle");
+		return event.isCancelled
+			? t("calendar.cancelledTitle", { title })
+			: title;
+	};
 	const eventRequest = (event: CalendarEvent): ConnectorSaveRequest => ({
 		key: event.id,
 		name: event.subject || t("calendar.noTitle"),
@@ -158,43 +115,9 @@ export const OutlookCalendarViewer = (props: OutlookCalendarViewerProps) => {
 			>
 				<ConnectorViewerHeader
 					icon={CalendarDaysIcon}
+					brand="outlook-calendar"
 					title={serviceName}
-					description={t("calendar.range", {
-						start: formatShortDay(windowStart, i18n.language),
-						end: formatShortDay(
-							addLocalDays(windowEnd, -1),
-							i18n.language,
-						),
-					})}
 				>
-					<ConnectorIconButton
-						icon={ChevronLeftIcon}
-						label={t("calendar.previous")}
-						onClick={() =>
-							setWindowStart((previous) =>
-								addLocalDays(previous, -WINDOW_DAYS),
-							)
-						}
-					/>
-					<Button
-						variant="ghost"
-						size="sm"
-						disabled={isThisWeek}
-						onClick={() =>
-							setWindowStart(startOfLocalDay(new Date()))
-						}
-					>
-						{t("calendar.today")}
-					</Button>
-					<ConnectorIconButton
-						icon={ChevronRightIcon}
-						label={t("calendar.next")}
-						onClick={() =>
-							setWindowStart((previous) =>
-								addLocalDays(previous, WINDOW_DAYS),
-							)
-						}
-					/>
 					<ConnectorIconButton
 						icon={RefreshCwIcon}
 						label={t("common.refresh")}
@@ -202,107 +125,79 @@ export const OutlookCalendarViewer = (props: OutlookCalendarViewerProps) => {
 						onClick={query.reload}
 					/>
 				</ConnectorViewerHeader>
-
-				<ConnectorList
-					query={query}
+				<ConnectorCalendar
+					calendar={calendar}
+					query={{ ...query, data: days }}
 					serviceName={serviceName}
-					emptyIcon={CalendarDaysIcon}
 					onSignIn={onSignIn}
-					listRef={listRef}
-					limit={MAX_EVENTS}
-					emptyText={t("calendar.empty")}
-				>
-					{(events) =>
-						groupByDay(events, windowStart).map((group) => (
-							<li
-								key={group.day.getTime()}
-								className="flex flex-col"
-							>
-								<H4 className="sticky top-0 z-10 bg-card px-2 pt-3 pb-1 font-medium text-muted-foreground text-xs">
-									{formatDayHeading(group.day, i18n.language)}
-								</H4>
-								<ul className="flex flex-col">
-									{group.events.map((event) => {
-										const request = eventRequest(event);
-										const isBusy = saver.isBusy(
-											request.key,
-										);
-										const subject =
-											event.subject ||
-											t("calendar.noTitle");
-										// the row reads out what it shows
-										const title = event.isCancelled
-											? t("calendar.cancelledTitle", {
-													title: subject,
-												})
-											: subject;
-										const time = describeTime(event);
-										return (
-											<ConnectorItemRow
-												key={event.id}
-												itemKey={event.id}
-												icon={
-													event.isOnlineMeeting ? (
-														<VideoIcon
-															aria-hidden
-															className="size-4"
-														/>
-													) : (
-														<CalendarIcon
-															aria-hidden
-															className="size-4"
-														/>
-													)
-												}
-												title={title}
-												description={[
-													time,
-													event.location,
-												]
-													.filter(Boolean)
-													.join(", ")}
-												openLabel={t(
-													"calendar.openEvent",
-													{
-														title: title,
-														time: describeTime(
-															event,
-															true,
-														),
-													},
-												)}
-												isBusy={isBusy}
-												onOpen={() => {
-													rememberItem(event.id);
-													setOpenEvent(event);
-												}}
-												actions={{
-													itemName: title,
-													serviceName:
-														t("services.outlook"),
-													webUrl: event.webLink,
-													saveLabel: saver.saveLabel,
-													isBusy: isBusy,
-													onAddToContext:
-														saver.addToContext
-															? () =>
-																	saver.addToContext?.(
-																		request,
-																	)
-															: undefined,
-													onSave: () =>
-														saver.save(request),
-												}}
-											/>
-										);
-									})}
-								</ul>
-							</li>
-						))
+					focusRef={listRef}
+					limitNote={
+						(query.data?.length ?? 0) >= MAX_EVENTS
+							? t("calendar.limitReached", { count: MAX_EVENTS })
+							: undefined
 					}
-				</ConnectorList>
+					getSchedule={(event) => ({
+						start: event.isAllDay
+							? parseGraphDay(event.start)
+							: parseGraphDate(event.start, event.startTimeZone),
+						end: event.isAllDay
+							? parseGraphDay(event.end)
+							: parseGraphDate(event.end, event.endTimeZone),
+						isAllDay: event.isAllDay,
+					})}
+					getEventLabel={(event) =>
+						`${eventTitle(event)}, ${describeTime(event, true)}`
+					}
+					getTitle={eventTitle}
+					getEventKey={(event) => event.id}
+					onOpenEvent={(event, itemKey) => {
+						rememberItem(itemKey);
+						setOpenEvent(event);
+					}}
+					renderEvent={(event, day) => {
+						const request = eventRequest(event);
+						const title = eventTitle(event);
+						const itemKey = `${calendarDayKey(day)}:${event.id}`;
+						const Icon = event.isOnlineMeeting
+							? VideoIcon
+							: CalendarIcon;
+						return (
+							<ConnectorItemRow
+								key={itemKey}
+								itemKey={itemKey}
+								icon={<Icon aria-hidden className="size-4" />}
+								title={title}
+								description={[
+									describeTime(event),
+									event.location,
+								]
+									.filter(Boolean)
+									.join(", ")}
+								openLabel={t("calendar.openEvent", {
+									title,
+									time: describeTime(event, true),
+								})}
+								isBusy={saver.isBusy(request.key)}
+								onOpen={() => {
+									rememberItem(itemKey);
+									setOpenEvent(event);
+								}}
+								actions={{
+									itemName: title,
+									serviceName: t("services.outlook"),
+									webUrl: event.webLink,
+									saveLabel: saver.saveLabel,
+									isBusy: saver.isBusy(request.key),
+									onAddToContext: saver.addToContext
+										? () => saver.addToContext?.(request)
+										: undefined,
+									onSave: () => saver.save(request),
+								}}
+							/>
+						);
+					}}
+				/>
 			</div>
-
 			{openEvent ? (
 				<OutlookEventDetail
 					key={openEvent.id}

@@ -1,7 +1,7 @@
 import { FileIcon } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useTranslation } from "@semoss/i18n";
-import { FilePreviewTile } from "@/components/common/file-preview-grid";
+import { FilePreviewTile } from "@/components/common/file-preview-tile";
 import { findConnectorSource } from "../sources/connector-sources";
 import type { TeamworkStore } from "../teamwork.store";
 
@@ -13,8 +13,8 @@ export interface TeamworkContextItemsProps {
 
 /**
  * The files a viewer added to context, shown with the input's attachments
- * until the next message takes them: a tile for each, such as an `MD` file
- * for a saved email, marked with the app it came from. Each can be taken off;
+ * until the next message takes them: a named chip for each, marked with the
+ * app it came from. Each can be taken off;
  * it stays in the chat's files. Renders nothing when none are waiting.
  */
 export const TeamworkContextItems = observer(

@@ -1,5 +1,5 @@
 import type {
-	AddRoomToolExecutionParams,
+	AddToolExecutionParams,
 	AskRoomParams,
 	RoomMessage,
 	RoomOptions,
@@ -72,6 +72,44 @@ export const getRoomMessages = async (
 };
 
 /**
+ * Unwrap the room options payload, which the backend returns as a JSON
+ * string, a single-element array, or an object nested under a `roomOptions`
+ * or `OPTIONS` key (the latter alongside `ROOM_NAME` on current backends).
+ */
+const normalizeRoomOptions = (value: unknown): RoomOptions | null => {
+	if (!value) {
+		return null;
+	}
+
+	if (typeof value === "string") {
+		try {
+			return normalizeRoomOptions(JSON.parse(value));
+		} catch {
+			return null;
+		}
+	}
+
+	if (Array.isArray(value)) {
+		return normalizeRoomOptions(value[0]);
+	}
+
+	if (typeof value !== "object") {
+		return null;
+	}
+
+	const record = value as Record<string, unknown>;
+	if ("roomOptions" in record) {
+		return normalizeRoomOptions(record.roomOptions);
+	}
+
+	if ("OPTIONS" in record) {
+		return normalizeRoomOptions(record.OPTIONS);
+	}
+
+	return record as RoomOptions;
+};
+
+/**
  * Fetches the current configuration options for a room.
  *
  * @param insightId - The active SEMOSS insight ID.
@@ -83,16 +121,13 @@ export const getRoomOptions = async (
 	roomId: string,
 ): Promise<RoomOptions> => {
 	const pixel = `GetRoomOptions(roomId="${roomId}");`;
-	const { errors, pixelReturn } = await runPixel<[RoomOptions]>(
-		pixel,
-		insightId,
-	);
+	const { errors, pixelReturn } = await runPixel<[unknown]>(pixel, insightId);
 
 	if (errors.length > 0) {
 		throw new Error(errors.join(", "));
 	}
 
-	const output = pixelReturn[0]?.output;
+	const output = normalizeRoomOptions(pixelReturn[0]?.output);
 	if (!output) {
 		throw new Error("GetRoomOptions returned no data");
 	}
@@ -161,6 +196,31 @@ export const updateRoomOptions = async (
 };
 
 /**
+ * Serialize an AskRoom turn to its pixel argument list. Shared by the live
+ * call and the cancel-commit so a stopped turn replays byte-identical
+ * parameters — the backend matches the two up by them.
+ */
+const buildAskRoomArgs = (params: AskRoomParams): string => {
+	const {
+		engine,
+		roomId,
+		command,
+		media = [],
+		parentMessageId,
+		paramValues,
+	} = params;
+
+	return [
+		`engine=["${engine}"]`,
+		`roomId=["${roomId}"]`,
+		`command=["<encode>${command}</encode>"]`,
+		`media=${JSON.stringify(media)}`,
+		`parentMessageId=["${parentMessageId}"]`,
+		`paramValues=${JSON.stringify(paramValues ?? [{}])}`,
+	].join(", ");
+};
+
+/**
  * Sends a message to the room and returns the job ID for streaming.
  * Poll with {@link getPixelJobStreaming} until a terminal status, then fetch
  * the full result with {@link getPixelAsyncResult}.
@@ -174,33 +234,117 @@ export const askRoom = async (
 	insightId: string,
 	params: AskRoomParams,
 ): Promise<{ jobId: string }> => {
-	const {
-		engine,
-		roomId,
-		command,
-		context,
-		image = [],
-		parentMessageId,
-		paramValues = [{}],
-	} = params;
-
-	const pixel = `AskRoom(engine=["${engine}"], roomId=["${roomId}"], command=["<encode>${command}</encode>"], context=["<encode>${context}</encode>"], image=${JSON.stringify(image)}, parentMessageId=["${parentMessageId}"], paramValues=${JSON.stringify(paramValues)})`;
+	const pixel = `AskRoom(${buildAskRoomArgs(params)});`;
 
 	return runPixelAsync(pixel, insightId);
 };
+
+/** Settled input/response pair an AskRoom-family call resolves. */
+export interface AskRoomSettledOutput {
+	inputMessage: { messageId: string; [key: string]: unknown };
+	responseMessage: {
+		messageId: string;
+		parts: Array<{ type: string; text?: string; [key: string]: unknown }>;
+		[key: string]: unknown;
+	};
+}
+
+/**
+ * Aborts a running pixel job (`StopPixelExecution`). Cancelling an AskRoom
+ * job persists nothing on its own — follow it with
+ * {@link commitCancelledAskRoom} so the turn is not lost.
+ *
+ * @param insightId - The active SEMOSS insight ID.
+ * @param jobId - Job returned by {@link askRoom}.
+ */
+export const stopRoomJob = async (
+	insightId: string,
+	jobId: string,
+): Promise<void> => {
+	const { errors } = await runPixel(
+		`StopPixelExecution(id=["${jobId}"]);`,
+		insightId,
+	);
+
+	if (errors.length > 0) {
+		throw new Error(errors.join(", "));
+	}
+};
+
+/**
+ * Persist a turn the user stopped mid-stream. Replays the same turn's exact
+ * parameters with the parts that actually streamed, so the backend skips the
+ * model call, commits the pair, and appends a hidden note telling the model
+ * next turn that its answer was cut short. Without this the user's message is
+ * orphaned in the room.
+ *
+ * @param insightId - The active SEMOSS insight ID.
+ * @param params - The same params passed to the {@link askRoom} call being cancelled.
+ * @param responseParts - The parts the user actually saw, in order.
+ * @param note - The hidden message explaining the cancellation to the model.
+ */
+export const commitCancelledAskRoom = async (
+	insightId: string,
+	params: AskRoomParams,
+	responseParts: Array<{ type: string; [key: string]: unknown }>,
+	note: string,
+): Promise<AskRoomSettledOutput> => {
+	const pixel = `AskRoom(${buildAskRoomArgs(params)}, responseParts=${JSON.stringify(
+		responseParts,
+	)}, hiddenMessage=["<encode>${note}</encode>"]);`;
+
+	const { errors, pixelReturn } = await runPixel<[AskRoomSettledOutput]>(
+		pixel,
+		insightId,
+	);
+
+	if (errors.length > 0) {
+		throw new Error(errors.join(", "));
+	}
+
+	const output = pixelReturn[0]?.output;
+	if (!output?.responseMessage) {
+		throw new Error("AskRoom did not return a response message");
+	}
+
+	return output;
+};
+
+/**
+ * Marks the error {@link RoomStore.ask} throws when a turn is stopped via
+ * {@link RoomStore.stop} rather than failing outright.
+ */
+const ROOM_ASK_ABORTED = "RoomAskAbortedError";
+
+/** Build the error thrown when a room turn is stopped. */
+export const roomAskAbortedError = (): Error => {
+	const error = new Error("The room turn was stopped");
+	error.name = ROOM_ASK_ABORTED;
+	return error;
+};
+
+/**
+ * Whether a thrown value is a {@link RoomStore.ask} call reporting a stopped
+ * turn rather than a genuine failure. Callers unwind silently on this — the
+ * {@link RoomStore.stop} caller owns persisting whatever already streamed.
+ *
+ * @param error - Thrown value of any shape.
+ */
+export const isRoomAskAborted = (error: unknown): boolean =>
+	error instanceof Error && error.name === ROOM_ASK_ABORTED;
 
 /**
  * Submits a completed tool result back to the room, triggering a
  * follow-up LLM turn. Returns a job ID for streaming the response.
  *
  * @param insightId - The active SEMOSS insight ID.
- * @param params - Tool execution details. See {@link AddRoomToolExecutionParams}.
+ * @param params - Tool execution details. See {@link AddToolExecutionParams}.
  * @returns `{ jobId }` to pass to {@link getPixelJobStreaming}.
  * @see sdk-chat skill for the full tool-execution call stack.
  */
-export const addRoomToolExecution = async (
+export const addToolExecution = async (
 	insightId: string,
-	params: AddRoomToolExecutionParams,
+	params: AddToolExecutionParams,
 ): Promise<{ jobId: string }> => {
 	const {
 		engine,
@@ -215,7 +359,7 @@ export const addRoomToolExecution = async (
 	} = params;
 
 	const lines: string[] = [
-		`AddRoomToolExecution(`,
+		`AddToolExecution(`,
 		`engine=["${engine}"],`,
 		`roomId=["${roomId}"],`,
 		...(parentMessageId ? [`parentMessageId=["${parentMessageId}"],`] : []),
@@ -259,7 +403,7 @@ export const getUserRooms = async (
 	}
 
 	const args = parts.length > 0 ? `(${parts.join(", ")})` : "()";
-	const pixel = `META | GetUserConversationRoomsReactor${args};`;
+	const pixel = `GetUserConversationRooms${args};`;
 	const { errors, pixelReturn } = await runPixel<[RoomRecord[]]>(
 		pixel,
 		insightId,
@@ -271,7 +415,7 @@ export const getUserRooms = async (
 
 	const output = pixelReturn[0]?.output;
 	if (!output) {
-		throw new Error("GetUserConversationRoomsReactor returned no data");
+		throw new Error("GetUserConversationRooms returned no data");
 	}
 
 	return output;
