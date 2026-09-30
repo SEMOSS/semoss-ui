@@ -5,7 +5,6 @@ import {
 	FileTextIcon,
 	HelpCircle,
 	Loader2Icon,
-	MapIcon,
 	MessagesSquareIcon,
 	MoreVertical,
 	PencilIcon,
@@ -61,7 +60,7 @@ import {
 	useInfiniteScroll,
 	useSidebar,
 } from "@semoss/ui/next";
-import { useChat, useRoot, useTour } from "@/hooks";
+import { useChat, useRoot } from "@/hooks";
 import { getDateBucket, normalizeTimestamp } from "@/utility";
 import { AppLogo } from "./app-logo";
 import { GlobalNavItem } from "./global-nav-item";
@@ -101,7 +100,6 @@ export const GlobalNav = observer(() => {
 	const [search, setSearch] = useState("");
 	const [helpOpen, setHelpOpen] = useState(false);
 	const { chat } = useChat();
-	const { startTour } = useTour();
 	const { open, openMobile, isMobile } = useSidebar();
 	const hideChatHistory = !!root.theme.featureFlags?.hideChatHistory;
 	// True when the sidebar is actually visible to the user.
@@ -130,10 +128,6 @@ export const GlobalNav = observer(() => {
 
 	const navigate = useNavigate();
 
-	const handleStartTour = () => {
-		navigate("/new");
-		startTour();
-	};
 	const getPinnedRooms = useIteratorPixel<
 		{
 			ROOM_ID: string;
@@ -970,17 +964,6 @@ export const GlobalNav = observer(() => {
 									</div>
 								)}
 							</div>
-						)}
-						{root.theme.tour?.show !== false && (
-							<SidebarMenuItem className="group-data-[collapsible=icon]:hidden">
-								<SidebarMenuButton
-									onClick={handleStartTour}
-									data-tour="tour-take-tour"
-								>
-									<MapIcon />
-									{t("takeTour")}
-								</SidebarMenuButton>
-							</SidebarMenuItem>
 						)}
 						<SidebarMenuItem>
 							<NavUser />

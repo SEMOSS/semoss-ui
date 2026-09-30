@@ -71,7 +71,8 @@
 		"errorProcessing": "चैट प्रोसेस करने में त्रुटि",
 		"stopLabel": "प्रतिक्रिया रोकें",
 		"stopTooltip": "रोकें",
-		"stoppingTooltip": "रोक रहा है"
+		"stoppingTooltip": "रोक रहा है",
+		"removeFile": "{{name}} हटाएं"
 	},
 	"content": {
 		"scrollToTop": "शीर्ष पर स्क्रॉल करें",
@@ -104,9 +105,9 @@
 		"attachDocument": "दस्तावेज़ जोड़ें"
 	},
 	"menuFileExplorer": {
-		"name": "फ़ाइल एक्सप्लोरर",
-		"open": "फ़ाइल एक्सप्लोरर खोलें",
-		"close": "फ़ाइल एक्सप्लोरर बंद करें"
+		"name": "चैट फ़ाइलें",
+		"open": "चैट फ़ाइलें दिखाएं",
+		"close": "चैट फ़ाइलें छिपाएं"
 	},
 	"errors": {
 		"createRoom": "रूम बनाते समय एक त्रुटि हुई। त्रुटि: {{message}}",

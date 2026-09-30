@@ -163,8 +163,21 @@ const defaultProps = {
 		workspace: null,
 		predefinedPrompts: [],
 	},
-	// RoomInput only forwards `room` to a child; a minimal stub satisfies the type.
-	room: {} as unknown as RoomStore,
+	// RoomInput reads the room's teamwork state for its chips and otherwise only
+	// forwards `room` to a child; a minimal stub with no folder or connectors
+	// satisfies it.
+	room: {
+		teamwork: {
+			isAgentMode: false,
+			connectors: [],
+			contextItems: [],
+			missingSignIns: [],
+			uncoveredConnectors: [],
+			unofferedProviders: [],
+			refreshConnectedProviders: async () => undefined,
+			refreshLoginConfig: async () => undefined,
+		},
+	} as unknown as RoomStore,
 };
 
 /** Set fake editor text and trigger the OnChangePlugin callback to update isEmpty */
