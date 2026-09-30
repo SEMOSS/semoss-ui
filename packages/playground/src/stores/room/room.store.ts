@@ -35,6 +35,7 @@ import {
 } from "@/stores";
 import {
 	reconnectAgentRun,
+	reconnectTransferredRun,
 	reconstructAllSubagents,
 } from "@/stores/message/agent-harness";
 import type {
@@ -147,6 +148,9 @@ interface RoomStoreInterface {
 			workspace_id: string;
 			name?: string;
 		};
+
+		/** Agents that the room's default agent may transfer ownership to. */
+		agents?: { workspaceId: string; name?: string }[];
 
 		/**
 		 * Predefined prompts that can be used in the room
@@ -749,6 +753,7 @@ export class RoomStore {
 			// boxes and live status for no reason.
 			if (this.mode === "agent") {
 				void reconstructAllSubagents(this);
+				reconnectTransferredRun(this);
 			}
 			if (this.tail.type === "OUTPUT") {
 				if (this.mode === "agent") {
@@ -782,6 +787,15 @@ export class RoomStore {
 
 				const workspaceOutput = workspaceResponse.pixelReturn[0]
 					.output as Workspace;
+				if (
+					!newOptions.agents &&
+					workspaceOutput?.config_json?.subagents
+				) {
+					newOptions.agents =
+						workspaceOutput.config_json.subagents.map((entry) => ({
+							workspaceId: entry.workspaceId,
+						}));
+				}
 
 				// Store workspace name for display
 				if (workspaceOutput?.name && newOptions.workspace) {

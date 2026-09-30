@@ -3,6 +3,7 @@ import type {
 	AgentRunItemEvent,
 	AgentRunSnapshot,
 	AgentRunStatusValue,
+	AgentRunSummary,
 	AgentToolDecision,
 	SubagentRunSummary,
 } from "../types";
@@ -285,6 +286,27 @@ export const getSubagentRuns = async (
 
 	const response = await runPixel<[SubagentRunSummary[]]>(
 		`GetSubagentRuns(runId=${JSON.stringify([runId])});`,
+		insightId,
+	);
+
+	if (response.errors.length > 0) {
+		throw new Error(response.errors.join(""));
+	}
+
+	return response.pixelReturn[0].output;
+};
+
+/** List the durable top-level runs for a room, including transfer linkage. */
+export const getAgentRunsForRoom = async (
+	roomId: string,
+	insightId?: string,
+): Promise<AgentRunSummary[]> => {
+	if (!roomId) {
+		throw new Error("Missing roomId");
+	}
+
+	const response = await runPixel<[AgentRunSummary[]]>(
+		`GetAgentRunsForRoom(roomId=${JSON.stringify([roomId])});`,
 		insightId,
 	);
 

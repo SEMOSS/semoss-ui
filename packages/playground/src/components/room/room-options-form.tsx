@@ -20,6 +20,7 @@ import {
 	TooltipTrigger,
 } from "@semoss/ui/next";
 import { MCPOverlay } from "@/components";
+import { OrchestratorRosterField } from "@/features/orchestrator/orchestrator-roster-field";
 import { TeamworkDefaultToolsField } from "@/features/teamwork/components/teamwork-default-tools-field";
 import { useRoot } from "@/hooks";
 import type { RoomStore } from "@/stores";
@@ -227,6 +228,24 @@ export const RoomOptionsForm: React.FC<RoomOptionsFormProps> = observer(
 									</div>
 								</Field>
 							)}
+							{isAgentMode && options?.workspace ? (
+								<Field>
+									<FieldLabel>Room agents</FieldLabel>
+									<FieldDescription>
+										Agents available for same-room task
+										handoff.
+									</FieldDescription>
+									<OrchestratorRosterField
+										workspaceId={
+											options.workspace.workspace_id
+										}
+										value={options.agents ?? []}
+										onChange={(agents) =>
+											onOptionsChange({ agents })
+										}
+									/>
+								</Field>
+							) : null}
 							<Field>
 								<FieldLabel
 									onClick={(

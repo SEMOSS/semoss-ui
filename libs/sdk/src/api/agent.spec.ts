@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { runAgent } from "./agent";
+import { getAgentRunsForRoom, runAgent } from "./agent";
 import { runPixel } from "./base";
 
 vi.mock("./base", () => ({
@@ -63,5 +63,22 @@ describe("runAgent", () => {
 		await runAgent({ roomId: "room-1", command: "hi", subdir: "notes" });
 		expect(lastPixel()).toContain('paramValues=[{"subdir":"notes"}]');
 		expect(lastPixel()).not.toContain("space=");
+	});
+});
+
+describe("getAgentRunsForRoom", () => {
+	it("queries durable top-level runs for transfer reconciliation", async () => {
+		mockRunPixel.mockResolvedValue({
+			errors: [],
+			insightId: "insight-1",
+			pixelReturn: [{ output: [] }],
+		} as unknown as Awaited<ReturnType<typeof runPixel>>);
+
+		await getAgentRunsForRoom("room-1", "insight-1");
+
+		expect(mockRunPixel).toHaveBeenCalledWith(
+			'GetAgentRunsForRoom(roomId=["room-1"]);',
+			"insight-1",
+		);
 	});
 });

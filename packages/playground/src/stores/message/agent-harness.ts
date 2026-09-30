@@ -4,10 +4,11 @@ import type {
 	AgentRunItemsState,
 	AgentRunSnapshot,
 	AgentRunStatusValue,
+	AgentRunSummary,
 	PendingAgentAction,
 	SubagentRunSummary,
 } from "@semoss/sdk";
-import { AgentStore, getSubagentRuns } from "@semoss/sdk";
+import { AgentStore, getAgentRunsForRoom, getSubagentRuns } from "@semoss/sdk";
 import {
 	MCP_EXECUTION_AGENT_ASK,
 	MCP_EXECUTION_AGENT_AUTO,
@@ -505,6 +506,138 @@ const watchAgentRun = (
 		}
 	});
 
+const waitForTransferredRun = async (
+	room: RoomStore,
+	fromRunId: string,
+): Promise<AgentRunSummary | null> => {
+	const runs = await getAgentRunsForRoom(room.roomId, room.insightId);
+	return runs.find((run) => run.transferFromRunId === fromRunId) ?? null;
+};
+
+/** Follow same-room ownership transfers as ordinary successor agent turns. */
+const watchTransferredRunChain = async (
+	room: RoomStore,
+	fromRunId: string,
+	parentResponse: ResponseMessageStore,
+): Promise<void> => {
+	const run = await waitForTransferredRun(room, fromRunId);
+	if (!run) return;
+
+	const now = new Date().toISOString();
+	const hiddenInput = new InputMessageStore(room, {
+		io: "INPUT",
+		type: "INPUT_TEXT",
+		messageId: run.inputMessageId ?? `transfer-input-${run.runId}`,
+		visible: false,
+		platform_generated: true,
+		modelId: run.modelId ?? room.model.engine_id,
+		modelType: "",
+		dateCreated: run.dateCreated ?? now,
+		parts: run.input
+			? [{ type: "TEXT", text: run.input, uiText: run.input }]
+			: [],
+		tokens: 0,
+		ornaments: {},
+		pruneToolsAbove: false,
+	});
+	const agentName =
+		room.options.agents?.find(
+			(entry) => entry.workspaceId === run.workspaceId,
+		)?.name ??
+		run.workspaceId ??
+		"Agent";
+	const output = new ResponseMessageStore(room, {
+		io: "OUTPUT",
+		messageId: run.finalOutputMessageId ?? `transfer-output-${run.runId}`,
+		visible: true,
+		platform_generated: true,
+		modelId: run.modelId ?? room.model.engine_id,
+		modelType: "",
+		dateCreated: run.dateCreated ?? now,
+		parts: [],
+		tokens: 0,
+		ornaments: { modelName: agentName },
+		pruneToolsAbove: false,
+	});
+
+	hiddenInput.agentRun = { runId: run.runId, role: "input" };
+	output.agentRun = { runId: run.runId, role: "final_output" };
+	parentResponse.addChild(hiddenInput);
+	hiddenInput.addChild(output);
+	output.isThinking = true;
+
+	const agent = getOrCreateAgent(room.roomId, room.insightId, run.runId);
+	try {
+		await watchAgentRun(agent, output, hiddenInput);
+	} catch (error) {
+		const text =
+			error instanceof Error
+				? error.message
+				: "The transferred agent could not complete the task.";
+		runInAction(() => {
+			output.savePart({ type: "TEXT", text, uiText: text });
+		});
+	} finally {
+		runInAction(() => {
+			output.isThinking = false;
+		});
+	}
+};
+
+/** Recover a transferred run that was queued before its first message existed. */
+export const reconnectTransferredRun = (room: RoomStore): void => {
+	const messages = (): (InputMessageStore | ResponseMessageStore)[] => {
+		const found: (InputMessageStore | ResponseMessageStore)[] = [];
+		const visit = (message: { children: unknown[] }) => {
+			for (const child of message.children) {
+				if (
+					child instanceof InputMessageStore ||
+					child instanceof ResponseMessageStore
+				) {
+					found.push(child);
+					visit(child);
+				}
+			}
+		};
+		visit(room.root);
+		return found;
+	};
+
+	(async () => {
+		try {
+			const runs = await getAgentRunsForRoom(room.roomId, room.insightId);
+			const active = runs.find(
+				(run) =>
+					run.transferFromRunId &&
+					!["COMPLETED", "FAILED", "CANCELLED"].includes(run.status),
+			);
+			if (
+				!active ||
+				messages().some((m) => m.agentRun?.runId === active.runId)
+			) {
+				return;
+			}
+			const predecessor = messages().find(
+				(message) =>
+					message instanceof ResponseMessageStore &&
+					message.agentRun?.runId === active.transferFromRunId,
+			);
+			if (!(predecessor instanceof ResponseMessageStore)) return;
+
+			room.setIsLoading(true);
+			await watchTransferredRunChain(
+				room,
+				active.transferFromRunId as string,
+				predecessor,
+			);
+		} catch (error) {
+			console.error("Failed to reconnect transferred agent run", error);
+		} finally {
+			room.setIsLoading(false);
+		}
+	})();
+};
+
 /**
  * A POST child can finish after its parent run is terminal. The backend keeps
  * that parent's canonical item stream alive for a grace period and publishes
@@ -678,6 +811,13 @@ export const runAgentMessage = async (
 		agentsByRunId.set(handle.runId, handle);
 
 		await watchAgentRun(handle, responseMessage, inputMessage);
+		try {
+			await watchTransferredRunChain(room, handle.runId, responseMessage);
+		} catch (error) {
+			// The root answer is already durable. A reconciliation failure must not
+			// remove the user's completed turn; refresh recovery can attach the transfer.
+			console.error("Failed to follow transferred agent run", error);
+		}
 		watchDeferredSubagentEvents(room, handle.runId, responseMessage);
 	} catch (e) {
 		// remove message if we failed

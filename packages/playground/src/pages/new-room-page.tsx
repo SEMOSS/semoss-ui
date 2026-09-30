@@ -274,6 +274,15 @@ export const NewRoomPage = observer(() => {
 				workspace_id: getWorkspace.data?.workspace_id || "",
 				name: getWorkspace.data?.name,
 			};
+			if (
+				selectedWorkspaceId === ORCHESTRATOR_WORKSPACE_ID &&
+				!options.agents &&
+				Array.isArray(getWorkspace.data?.config_json?.subagents)
+			) {
+				options.agents = getWorkspace.data.config_json.subagents.map(
+					(entry) => ({ workspaceId: entry.workspaceId }),
+				);
+			}
 		}
 
 		return options;
@@ -358,7 +367,9 @@ export const NewRoomPage = observer(() => {
 				chat.setSelectedModel(model);
 			}
 		},
-		agentEditable: true,
+		// In harness mode the selected workspace is the room owner. Additional
+		// agents belong in the transfer roster instead of replacing Orchestrator.
+		agentEditable: mode !== "agent",
 		isAgentMode: mode === "agent",
 		onOptionsChange: (opts) => {
 			if (!opts) return;

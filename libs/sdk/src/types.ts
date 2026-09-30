@@ -550,6 +550,14 @@ export interface SubagentRunSummary {
 	artifacts: unknown[];
 }
 
+/** A durable top-level room run, including same-room agent-transfer linkage. */
+export interface AgentRunSummary extends SubagentRunSummary {
+	/** The preceding top-level run that transferred ownership to this run. */
+	transferFromRunId?: string | null;
+	/** The first orchestrator run in this transfer chain. */
+	transferRootRunId?: string | null;
+}
+
 /**
  * A live subscription started by {@link AgentStore.watch}.
  */
