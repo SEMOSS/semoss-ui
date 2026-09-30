@@ -6,7 +6,12 @@
 		"noToolboxesFound": "No toolboxes found",
 		"noKnowledgeFound": "No knowledge found",
 		"noAgentsFound": "No agents found",
-		"noSkillsFound": "No skills found"
+		"noSkillsFound": "No skills found",
+		"fromRoom": "From this chat",
+		"loadError": "Unable to load the catalog.",
+		"retry": "Try again",
+		"added": "Added",
+		"available": "Available"
 	},
 	"permission": {
 		"owner": "Owner",

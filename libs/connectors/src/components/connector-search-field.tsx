@@ -26,7 +26,7 @@ export const ConnectorSearchField = ({
 	const { t } = useTranslation("connectors");
 
 	return (
-		<InputGroup>
+		<InputGroup className="h-8 rounded-md bg-background shadow-none">
 			<InputGroupInput
 				type="search"
 				value={value}

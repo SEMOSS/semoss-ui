@@ -9,16 +9,23 @@ import {
 	AgentForm,
 	type AgentFormValues,
 } from "@semoss/shared";
-import { Button, Spinner, toast } from "@semoss/ui/next";
-import { useChat, useGlobalBreadcrumbs, useRoot } from "@/hooks";
+import {
+	Alert,
+	AlertDescription,
+	Button,
+	Spinner,
+	toast,
+} from "@semoss/ui/next";
+import { useChat } from "@/hooks/use-chat";
+import { useRoot } from "@/hooks/use-root";
 import { getPlaygroundAgentLinks } from "@/utility/mcp-utils";
 
 /**
  * Renders the NewWorkspacePage for creating new agents.
  *
- * The shared agent form (the same one the edit page and the platform's agent
- * editor use) under a sticky Cancel/Create header. Members are managed after
- * the agent exists, from its edit page.
+ * The shared agent form, the same one the client's agent pages use, under a
+ * sticky Cancel/Create header. Members are managed from the edit page once
+ * the agent exists.
  */
 export const NewWorkspacePage = observer(() => {
 	const { t } = useTranslation([
@@ -36,6 +43,7 @@ export const NewWorkspacePage = observer(() => {
 		AGENT_FORM_DEFAULT_VALUES,
 	);
 	const [isSaving, setIsSaving] = useState(false);
+	const [saveError, setSaveError] = useState<string | null>(null);
 
 	// The built-in tool catalog and hook kinds are deployment-level, so they
 	// are available before the agent exists
@@ -43,29 +51,21 @@ export const NewWorkspacePage = observer(() => {
 		default_tools?: AgentDefaultTool[];
 		known_hook_kinds?: string[];
 	}>("GetAgentFormOptions();");
-
-	useGlobalBreadcrumbs({
-		breadcrumbs: [
-			{ name: t("workspace:breadcrumbs.home"), path: "/" },
-			{ name: t("workspace:breadcrumbs.agent"), path: "/agent" },
-			{
-				name: t("workspace:breadcrumbs.new"),
-				path: "/agent/new",
-			},
-		],
-	});
+	const isLoadingOptions =
+		formOptions.status === "INITIAL" || formOptions.status === "LOADING";
 
 	const handleCancel = () => {
 		navigate("/agent");
 	};
 
 	const handleCreate = async () => {
-		if (isSaving || !formValues.name.trim()) return;
-
+		const name = formValues.name.trim();
+		if (isSaving || isLoadingOptions || !name) return;
 		setIsSaving(true);
+		setSaveError(null);
 		try {
 			const { workspaceId, warning, settingsFailed } =
-				await chat.createAgent(formValues);
+				await chat.createAgent({ ...formValues, name });
 			if (settingsFailed) {
 				toast.error(t("agent:form.createSettingsFailed"));
 			} else if (warning) {
@@ -73,7 +73,8 @@ export const NewWorkspacePage = observer(() => {
 			}
 			navigate(`/agent/${workspaceId}`);
 		} catch (err) {
-			toast.error(
+			// The form keeps its values, so a retry sends the same configuration
+			setSaveError(
 				err instanceof Error && err.message
 					? err.message
 					: t("notifications:workspace.saveError"),
@@ -85,11 +86,11 @@ export const NewWorkspacePage = observer(() => {
 
 	return (
 		<div className="@container h-full w-full overflow-y-auto">
-			<div className="mx-auto flex w-full max-w-5xl flex-col gap-6 @3xl:px-12 @md:px-6 px-4 pt-8 pb-4">
+			<div className="mx-auto flex w-full max-w-5xl flex-col gap-6 px-4 py-6 sm:px-6">
 				{/* Sticky header so Cancel/Create stay reachable while scrolling */}
-				<div className="-mx-4 -mt-8 @md:-mx-6 @3xl:-mx-12 sticky top-0 z-20 flex flex-row items-center gap-3 border-border border-b bg-background/95 @3xl:px-12 @md:px-6 px-4 py-4 backdrop-blur supports-[backdrop-filter]:bg-background/80">
+				<div className="-mx-4 -mt-6 sm:-mx-6 sticky top-0 z-20 flex flex-wrap items-center gap-3 border-b bg-background px-4 py-4 sm:px-6">
 					<div className="min-w-0 flex-1">
-						<div className="truncate font-semibold text-2xl text-foreground leading-tight">
+						<div className="font-semibold text-2xl text-foreground leading-tight">
 							{t("workspace:new.title")}
 						</div>
 						<div className="text-muted-foreground text-sm">
@@ -109,20 +110,25 @@ export const NewWorkspacePage = observer(() => {
 						<Button
 							type="button"
 							onClick={handleCreate}
-							disabled={isSaving || !formValues.name.trim()}
+							disabled={
+								isSaving ||
+								isLoadingOptions ||
+								!formValues.name.trim()
+							}
 							data-testid="workspace-new-page--create-btn"
 						>
-							{isSaving ? (
-								<Spinner className="size-4" />
-							) : (
-								t("workspace:actions.create")
-							)}
+							{t("workspace:actions.create")}
 						</Button>
 					</div>
 				</div>
 
-				{formOptions.status === "INITIAL" ||
-				formOptions.status === "LOADING" ? (
+				{saveError && (
+					<Alert variant="destructive">
+						<AlertDescription>{saveError}</AlertDescription>
+					</Alert>
+				)}
+
+				{isLoadingOptions ? (
 					<div className="flex w-full items-center justify-center py-12">
 						<Spinner />
 					</div>

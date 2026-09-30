@@ -202,7 +202,7 @@ export const AgentForm = ({
 							{t("form.greetingHelp")}
 						</FieldDescription>
 					</Field>
-					<AgentModelField control={control} />
+					<AgentModelField control={control} disabled={disabled} />
 				</AgentSection>
 
 				<Separator />
@@ -285,6 +285,7 @@ export const AgentForm = ({
 						control={control}
 						excludeWorkspaceId={workspaceId}
 						getAgentUrl={links?.getAgentUrl}
+						disabled={disabled}
 					/>
 				</AgentSection>
 
@@ -309,6 +310,7 @@ export const AgentForm = ({
 					<AgentHooksField
 						control={control}
 						knownKinds={knownHookKinds}
+						disabled={disabled}
 					/>
 				</AgentSection>
 			</fieldset>
