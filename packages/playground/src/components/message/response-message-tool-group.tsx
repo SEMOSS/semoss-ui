@@ -74,7 +74,7 @@ export const ResponseMessageToolGroup = observer(
 				<Collapsible
 					open={isOpen}
 					onOpenChange={setManualOpen}
-					className="overflow-hidden rounded-lg border bg-background"
+					className="overflow-hidden rounded-lg border bg-accent/40 dark:bg-accent/20"
 				>
 					<CollapsibleTrigger asChild>
 						<Button

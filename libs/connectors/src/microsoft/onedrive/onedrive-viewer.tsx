@@ -1,7 +1,9 @@
 import { useMemo, useState } from "react";
 import { useTranslation } from "@semoss/i18n";
-import { ToggleGroup, ToggleGroupItem } from "@semoss/ui/next";
+import { Tabs, TabsContent } from "@semoss/ui/next";
 import { ConnectorFileExplorer } from "../../components/connector-file-explorer";
+import { ConnectorTabsList } from "../../components/connector-tabs-list";
+import { ConnectorTabsTrigger } from "../../components/connector-tabs-trigger";
 import type { ConnectorViewerProps } from "../../core/connector.types";
 import { useConnectorSaver } from "../../core/use-connector-saver";
 import { MICROSOFT_PIXELS } from "../microsoft.pixels";
@@ -42,7 +44,7 @@ export type OneDriveViewerProps = ConnectorViewerProps;
  */
 export const OneDriveViewer = (props: OneDriveViewerProps) => {
 	const { onSignIn } = props;
-	const { t } = useTranslation("connectors");
+	const { t, i18n } = useTranslation("connectors");
 	const saver = useConnectorSaver("onedrive", props);
 	const [view, setView] = useState<OneDriveView>("mine");
 	// each view keeps its adapter, which remembers the shared folders it showed
@@ -55,41 +57,38 @@ export const OneDriveViewer = (props: OneDriveViewerProps) => {
 	);
 
 	return (
-		<div className="flex h-full min-h-0 flex-col">
-			<div className="px-3 pt-2">
-				<ToggleGroup
-					type="single"
-					variant="outline"
-					size="sm"
-					value={view}
-					aria-label={t("onedrive.viewLabel")}
-					onValueChange={(value) => {
-						if (isOneDriveView(value)) {
-							setView(value);
-						}
-					}}
-				>
-					<ToggleGroupItem value="mine">
+		<Tabs
+			dir={i18n.dir()}
+			value={view}
+			onValueChange={(value) => {
+				if (isOneDriveView(value)) setView(value);
+			}}
+			className="h-full min-h-0 gap-0"
+		>
+			<div className="shrink-0 border-border border-b bg-muted/20 px-2">
+				<ConnectorTabsList aria-label={t("onedrive.viewLabel")}>
+					<ConnectorTabsTrigger value="mine">
 						{t("onedrive.mine")}
-					</ToggleGroupItem>
-					<ToggleGroupItem value="shared">
+					</ConnectorTabsTrigger>
+					<ConnectorTabsTrigger value="shared">
 						{t("onedrive.shared")}
-					</ToggleGroupItem>
-				</ToggleGroup>
+					</ConnectorTabsTrigger>
+				</ConnectorTabsList>
 			</div>
-			<div className="min-h-0 flex-1">
-				<ConnectorFileExplorer
-					key={view}
-					adapter={adapters[view]}
-					serviceName={t("services.onedrive")}
-					saver={saver}
-					getSaveRequest={(row) =>
-						getDriveSaveRequest(row, getDownload)
-					}
-					getWebUrl={(row) => getDriveItem(row)?.webUrl}
-					onSignIn={onSignIn}
-				/>
-			</div>
-		</div>
+			{(["mine", "shared"] as const).map((tab) => (
+				<TabsContent key={tab} value={tab} className="min-h-0">
+					<ConnectorFileExplorer
+						adapter={adapters[tab]}
+						serviceName={t("services.onedrive")}
+						saver={saver}
+						getSaveRequest={(row) =>
+							getDriveSaveRequest(row, getDownload)
+						}
+						getWebUrl={(row) => getDriveItem(row)?.webUrl}
+						onSignIn={onSignIn}
+					/>
+				</TabsContent>
+			))}
+		</Tabs>
 	);
 };

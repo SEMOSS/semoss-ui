@@ -1,5 +1,5 @@
 import { MessageSquareText } from "lucide-react";
-import { Fragment, type ReactNode, useMemo } from "react";
+import { Fragment, useMemo } from "react";
 import { useTranslation } from "@semoss/i18n";
 import { usePixel } from "@semoss/sdk/react";
 import {
@@ -34,15 +34,7 @@ import { AgentReadOnlyValue } from "./agent-read-only-value";
 import { AgentResourceList } from "./agent-resource-list";
 import { AgentSection } from "./agent-section";
 
-type AgentResourceSection = "knowledge" | "toolboxes" | "skills" | "prompts";
-
 export interface AgentDefinitionProps extends AgentLinks {
-	/** Keeps the host's existing description and instructions controls. */
-	aboutContent?: ReactNode;
-	/** Existing resource sections, including their headings and actions. */
-	sectionOverrides?: Partial<Record<AgentResourceSection, ReactNode>>;
-	/** Presentation of sections; plain preserves the platform editor's layout. */
-	variant?: "plain" | "cards";
 	/** The agent's `GetWorkspace` response. */
 	workspace: AgentWorkspace;
 	/** Extra classes for the root. */
@@ -56,9 +48,6 @@ export interface AgentDefinitionProps extends AgentLinks {
  */
 export const AgentDefinition = ({
 	workspace,
-	aboutContent,
-	sectionOverrides,
-	variant = "plain",
 	getMcpUrl,
 	getSkillUrl,
 	getPromptUrl,
@@ -114,23 +103,19 @@ export const AgentDefinition = ({
 			title={t("sections.about.title")}
 			description={t("sections.about.description")}
 		>
-			{aboutContent ?? (
-				<>
-					<AgentReadOnlyValue
-						label={t("about.description")}
-						emptyLabel={t("about.noDescription")}
-					>
-						{workspace.description}
-					</AgentReadOnlyValue>
-					<AgentReadOnlyValue
-						label={t("about.instructions")}
-						emptyLabel={t("about.noInstructions")}
-						multiline
-					>
-						{workspace.system_prompt}
-					</AgentReadOnlyValue>
-				</>
-			)}
+			<AgentReadOnlyValue
+				label={t("about.description")}
+				emptyLabel={t("about.noDescription")}
+			>
+				{workspace.description}
+			</AgentReadOnlyValue>
+			<AgentReadOnlyValue
+				label={t("about.instructions")}
+				emptyLabel={t("about.noInstructions")}
+				multiline
+			>
+				{workspace.system_prompt}
+			</AgentReadOnlyValue>
 			<AgentReadOnlyValue
 				label={t("about.greeting")}
 				emptyLabel={t("about.greetingOff")}
@@ -360,29 +345,12 @@ export const AgentDefinition = ({
 
 	return (
 		<div className={cn("flex w-full min-w-0 flex-col gap-6", className)}>
-			{sections.map((section, index) => {
-				const key = section.key;
-				const override =
-					key === "knowledge" ||
-					key === "toolboxes" ||
-					key === "skills" ||
-					key === "prompts"
-						? sectionOverrides?.[key]
-						: undefined;
-				return (
-					<Fragment key={section.key}>
-						{variant === "plain" && index > 0 && <Separator />}
-						{override ??
-							(variant === "cards" ? (
-								<div className="flex min-w-0 flex-col gap-3 rounded-xl border bg-card p-4 sm:p-6">
-									{section}
-								</div>
-							) : (
-								section
-							))}
-					</Fragment>
-				);
-			})}
+			{sections.map((section, index) => (
+				<Fragment key={section.key}>
+					{index > 0 && <Separator />}
+					{section}
+				</Fragment>
+			))}
 		</div>
 	);
 };

@@ -1,10 +1,3 @@
-import {
-	BlocksIcon,
-	BookOpenIcon,
-	HammerIcon,
-	Maximize2Icon,
-	SparklesIcon,
-} from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useState } from "react";
 import { useNavigate } from "react-router";
@@ -13,40 +6,26 @@ import { usePixel } from "@semoss/sdk/react";
 import {
 	AGENT_FORM_DEFAULT_VALUES,
 	type AgentDefaultTool,
-	MCPSelector,
-	PromptSelector,
-	SkillSelector,
+	AgentForm,
+	type AgentFormValues,
 } from "@semoss/shared";
 import {
 	Alert,
 	AlertDescription,
 	Button,
-	Form,
-	FormInput,
-	FormTextarea,
 	Spinner,
 	toast,
-	useForm,
-	zodResolver,
 } from "@semoss/ui/next";
-import { InstructionsModal } from "@/components/workspace/instructions-modal";
-import {
-	createEditWorkspaceFormSchema,
-	type EditWorkspaceFormValues,
-} from "@/features/agents/edit-workspace-form.schema";
-import { WorkspaceAgentFields } from "@/features/agents/workspace-agent-fields";
 import { useChat } from "@/hooks/use-chat";
 import { useRoot } from "@/hooks/use-root";
-import { mcpToPlatformUrl, promptToPlatformUrl } from "@/utility/mcp-utils";
-
-const FORM_ID = "workspace-new-form";
+import { getPlaygroundAgentLinks } from "@/utility/mcp-utils";
 
 /**
  * Renders the NewWorkspacePage for creating new agents.
  *
- * Mirrors the EditWorkspacePage layout (sectioned About → Knowledge →
- * Toolboxes → Prompts with a sticky Cancel/Create header). Skips the
- * Members section because the agent doesn't exist yet.
+ * The shared agent form, the same one the client's agent pages use, under a
+ * sticky Cancel/Create header. Members are managed from the edit page once
+ * the agent exists.
  */
 export const NewWorkspacePage = observer(() => {
 	const { t } = useTranslation([
@@ -58,17 +37,16 @@ export const NewWorkspacePage = observer(() => {
 	const navigate = useNavigate();
 	const { chat } = useChat();
 	const { root } = useRoot();
+	const featureFlags = root.theme.featureFlags;
 
-	const form = useForm<EditWorkspaceFormValues>({
-		resolver: zodResolver(
-			createEditWorkspaceFormSchema(t("common:placeholders.enterName")),
-		),
-		defaultValues: AGENT_FORM_DEFAULT_VALUES,
-	});
-	const { name, instructions, knowledge, toolboxes, skills, prompts } =
-		form.watch();
-	const isSaving = form.formState.isSubmitting;
-	const [instructionsModal, setInstructionsModal] = useState(false);
+	const [formValues, setFormValues] = useState<AgentFormValues>(
+		AGENT_FORM_DEFAULT_VALUES,
+	);
+	const [isSaving, setIsSaving] = useState(false);
+	const [saveError, setSaveError] = useState<string | null>(null);
+
+	// The built-in tool catalog and hook kinds are deployment-level, so they
+	// are available before the agent exists
 	const formOptions = usePixel<{
 		default_tools?: AgentDefaultTool[];
 		known_hook_kinds?: string[];
@@ -80,12 +58,14 @@ export const NewWorkspacePage = observer(() => {
 		navigate("/agent");
 	};
 
-	const handleSubmit = async (values: EditWorkspaceFormValues) => {
-		if (isLoadingOptions) return;
-		form.clearErrors("root.server");
+	const handleCreate = async () => {
+		const name = formValues.name.trim();
+		if (isSaving || isLoadingOptions || !name) return;
+		setIsSaving(true);
+		setSaveError(null);
 		try {
 			const { workspaceId, warning, settingsFailed } =
-				await chat.createAgent(values);
+				await chat.createAgent({ ...formValues, name });
 			if (settingsFailed) {
 				toast.error(t("agent:form.createSettingsFailed"));
 			} else if (warning) {
@@ -93,12 +73,14 @@ export const NewWorkspacePage = observer(() => {
 			}
 			navigate(`/agent/${workspaceId}`);
 		} catch (err) {
-			form.setError("root.server", {
-				message:
-					err instanceof Error && err.message
-						? err.message
-						: t("notifications:workspace.saveError"),
-			});
+			// The form keeps its values, so a retry sends the same configuration
+			setSaveError(
+				err instanceof Error && err.message
+					? err.message
+					: t("notifications:workspace.saveError"),
+			);
+		} finally {
+			setIsSaving(false);
 		}
 	};
 
@@ -126,10 +108,12 @@ export const NewWorkspacePage = observer(() => {
 							{t("common:buttons.cancel")}
 						</Button>
 						<Button
-							type="submit"
-							form={FORM_ID}
+							type="button"
+							onClick={handleCreate}
 							disabled={
-								isSaving || isLoadingOptions || !name.trim()
+								isSaving ||
+								isLoadingOptions ||
+								!formValues.name.trim()
 							}
 							data-testid="workspace-new-page--create-btn"
 						>
@@ -138,200 +122,36 @@ export const NewWorkspacePage = observer(() => {
 					</div>
 				</div>
 
-				{/* Body — flows naturally; outer container scrolls */}
-				<Form
-					form={form}
-					id={FORM_ID}
-					onSubmit={handleSubmit}
-					noValidate
-					aria-busy={isSaving}
-					className="flex flex-col gap-8"
-				>
-					{form.formState.errors.root?.server?.message && (
-						<Alert variant="destructive">
-							<AlertDescription>
-								{form.formState.errors.root.server.message}
-							</AlertDescription>
-						</Alert>
-					)}
-					{/* About */}
-					<section className="flex flex-col gap-4 rounded-xl border bg-card p-4 sm:p-6">
-						<h2 className="font-semibold text-foreground text-lg">
-							{t("workspace:detail.about.title")}
-						</h2>
-						<FormInput
-							name="name"
-							label={t("workspace:form.nameLabel")}
-							placeholder={t("common:placeholders.enterName")}
-							disabled={isSaving}
-							required
-							data-testid="workspace-new-page--name"
-						/>
-						<FormInput
-							name="description"
-							label={t("workspace:form.descriptionLabel")}
-							placeholder={t(
-								"common:placeholders.enterDescription",
-							)}
-							disabled={isSaving}
-							data-testid="workspace-new-page--description"
-						/>
-						<div className="flex flex-col gap-2">
-							<FormTextarea
-								name="instructions"
-								label={t("workspace:form.instructionsLabel")}
-								placeholder={t(
-									"common:placeholders.enterInstructions",
-								)}
-								rows={6}
-								disabled={isSaving}
-								description={t(
-									"workspace:instructions.charCount",
-									{ count: instructions.length },
-								)}
-								data-testid="workspace-new-page--instructions"
-							/>
-							<Button
-								type="button"
-								variant="ghost"
-								size="sm"
-								className="self-end"
-								onClick={() => setInstructionsModal(true)}
-								disabled={isSaving}
-								data-testid="workspace-new-page--expand-instructions-btn"
-							>
-								<Maximize2Icon />
-								{t("workspace:instructions.expand")}
-							</Button>
-						</div>
-					</section>
+				{saveError && (
+					<Alert variant="destructive">
+						<AlertDescription>{saveError}</AlertDescription>
+					</Alert>
+				)}
 
-					{/* Knowledge */}
-					<section className="flex min-w-0 flex-col gap-3 rounded-xl border bg-card p-4 sm:p-6">
-						<h2 className="flex items-center gap-2 font-semibold text-foreground text-lg">
-							<BookOpenIcon className="size-5" />
-							{t("workspace:detail.tabs.knowledge")}
-						</h2>
-						<MCPSelector
-							presentation="list"
-							type="KNOWLEDGE"
-							values={knowledge}
-							disabled={isSaving}
-							onChange={(next) =>
-								form.setValue("knowledge", next, {
-									shouldDirty: true,
-								})
-							}
-							className="h-112"
-							enableKnowledgeMCP={
-								root.theme.featureFlags?.enableKnowledgeMCP
-							}
-							getPlatformUrl={
-								root.theme.featureFlags?.showPlatformLinks
-									? mcpToPlatformUrl
-									: undefined
-							}
-						/>
-					</section>
-
-					{/* Toolboxes */}
-					<section className="flex min-w-0 flex-col gap-3 rounded-xl border bg-card p-4 sm:p-6">
-						<h2 className="flex items-center gap-2 font-semibold text-foreground text-lg">
-							<HammerIcon className="size-5" />
-							{t("workspace:detail.tabs.toolbox")}
-						</h2>
-						<MCPSelector
-							presentation="list"
-							type="TOOLBOX"
-							values={toolboxes}
-							disabled={isSaving}
-							onChange={(next) =>
-								form.setValue("toolboxes", next, {
-									shouldDirty: true,
-								})
-							}
-							className="h-112"
-							enableKnowledgeMCP={
-								root.theme.featureFlags?.enableKnowledgeMCP
-							}
-							showSystemTools={
-								root.theme.featureFlags?.showSystemTools
-							}
-							getPlatformUrl={
-								root.theme.featureFlags?.showPlatformLinks
-									? mcpToPlatformUrl
-									: undefined
-							}
-						/>
-					</section>
-
-					{/* Skills */}
-					<section className="flex min-w-0 flex-col gap-3 rounded-xl border bg-card p-4 sm:p-6">
-						<h2 className="flex items-center gap-2 font-semibold text-foreground text-lg">
-							<BlocksIcon className="size-5" />
-							{t("workspace:detail.tabs.skills")}
-						</h2>
-						<SkillSelector
-							values={skills}
-							disabled={isSaving}
-							onChange={(next) =>
-								form.setValue("skills", next, {
-									shouldDirty: true,
-								})
-							}
-							className="h-112"
-							showSystemSkills={
-								root.theme.featureFlags?.showSystemSkills
-							}
-						/>
-					</section>
-
-					{/* Prompts */}
-					<section className="flex min-w-0 flex-col gap-3 rounded-xl border bg-card p-4 sm:p-6">
-						<h2 className="flex items-center gap-2 font-semibold text-foreground text-lg">
-							<SparklesIcon className="size-5" />
-							{t("workspace:detail.tabs.prompts")}
-						</h2>
-						<PromptSelector
-							values={prompts}
-							disabled={isSaving}
-							onChange={(next) =>
-								form.setValue("prompts", next, {
-									shouldDirty: true,
-								})
-							}
-							className="h-112"
-							getPlatformUrl={
-								root.theme.featureFlags?.showPlatformLinks
-									? promptToPlatformUrl
-									: undefined
-							}
-						/>
-					</section>
-					{isLoadingOptions ? (
-						<div className="flex justify-center py-12">
-							<Spinner />
-						</div>
-					) : (
-						<WorkspaceAgentFields
-							control={form.control}
-							workspace={formOptions.data ?? {}}
-							disabled={isSaving}
-						/>
-					)}
-				</Form>
+				{isLoadingOptions ? (
+					<div className="flex w-full items-center justify-center py-12">
+						<Spinner />
+					</div>
+				) : (
+					<AgentForm
+						data={AGENT_FORM_DEFAULT_VALUES}
+						onChange={setFormValues}
+						disabled={isSaving}
+						knownHookKinds={
+							formOptions.data?.known_hook_kinds ?? []
+						}
+						defaultTools={formOptions.data?.default_tools ?? []}
+						links={getPlaygroundAgentLinks(
+							featureFlags?.showPlatformLinks,
+						)}
+						showName
+						enableKnowledgeMCP={featureFlags?.enableKnowledgeMCP}
+						showSystemTools={featureFlags?.showSystemTools}
+						showSystemSkills={featureFlags?.showSystemSkills}
+						className="p-0"
+					/>
+				)}
 			</div>
-
-			{/* Instructions modal (editable, live-bound to local state) */}
-			<InstructionsModal
-				open={instructionsModal}
-				onOpenChange={setInstructionsModal}
-				value={instructions}
-				onChange={(value) =>
-					form.setValue("instructions", value, { shouldDirty: true })
-				}
-				disabled={isSaving}
-			/>
 		</div>
 	);
 });

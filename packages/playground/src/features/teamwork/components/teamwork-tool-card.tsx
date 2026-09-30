@@ -10,7 +10,8 @@ import {
 import { observer } from "mobx-react-lite";
 import { type ReactNode, useState } from "react";
 import { useTranslation } from "@semoss/i18n";
-import { Badge, Button, ScrollArea, Small, toast } from "@semoss/ui/next";
+import { Badge, Button, Small, toast } from "@semoss/ui/next";
+import { ToolInspector } from "@/features/tool-inspector/tool-inspector";
 import { decideAgentToolAction } from "@/stores/message/agent-harness";
 import type { ToolStore } from "@/stores/tool/tool.store";
 import { isAskExecutionMode } from "@/utility/mcp-utils";
@@ -204,10 +205,7 @@ export const TeamworkToolCard = observer(
 								label={t("card.file")}
 								value={toDisplayText(args.path)}
 							/>
-							<TeamworkTextBlock
-								label={t("card.newContents")}
-								isTall={variant === "panel"}
-							>
+							<TeamworkTextBlock label={t("card.newContents")}>
 								{toDisplayText(args.content ?? "")}
 							</TeamworkTextBlock>
 						</>
@@ -309,37 +307,134 @@ export const TeamworkToolCard = observer(
 				? service.provider
 				: null;
 
+		const header = (
+			<div className="flex min-w-0 items-start gap-3">
+				<div className="flex size-8 shrink-0 items-center justify-center rounded-md bg-muted text-muted-foreground">
+					{service ? (
+						<ConnectorServiceIcon
+							serviceId={service.id}
+							className="size-4"
+						/>
+					) : (
+						<FolderIcon aria-hidden className="size-4" />
+					)}
+				</div>
+				<div className="flex min-w-0 flex-1 flex-col">
+					<span
+						className="truncate font-medium text-sm"
+						title={tool.displayName}
+					>
+						{tool.displayName}
+					</span>
+					<Small className="truncate text-muted-foreground">
+						{service
+							? t(`services.${service.id}.name`)
+							: t("card.chatFiles")}
+					</Small>
+				</div>
+				<Badge variant="outline" className="shrink-0">
+					{status.icon}
+					{status.label}
+				</Badge>
+			</div>
+		);
+
+		const footer =
+			isWaiting || signInProvider ? (
+				<div className="flex flex-col gap-3">
+					{signInProvider ? (
+						<div className="flex flex-wrap items-center gap-2 rounded-md border border-warning/40 bg-warning/10 p-2">
+							<LogInIcon
+								aria-hidden
+								className="size-4 shrink-0 text-warning"
+							/>
+							<Small className="min-w-0 flex-1 text-foreground">
+								{t("signIn.toolFailed", {
+									account: t(
+										`providers.${signInProvider}.name`,
+									),
+								})}
+							</Small>
+							<Button
+								size="sm"
+								onClick={() => handleSignIn(signInProvider)}
+							>
+								{t("signIn.toolAction", {
+									account: t(
+										`providers.${signInProvider}.name`,
+									),
+								})}
+							</Button>
+						</div>
+					) : null}
+
+					{isWaiting ? (
+						<div className="flex flex-wrap justify-end gap-2">
+							<Button
+								variant="outline"
+								size="sm"
+								disabled={decision !== null}
+								onClick={handleDeny}
+							>
+								{decision === "deny"
+									? t("card.denying")
+									: t("card.deny")}
+							</Button>
+							<Button
+								size="sm"
+								disabled={decision !== null}
+								onClick={handleAllow}
+							>
+								{decision === "allow"
+									? t("card.allowing")
+									: t("card.allow")}
+							</Button>
+						</div>
+					) : null}
+				</div>
+			) : null;
+
+		if (variant === "panel") {
+			const definition = isFolder
+				? room.teamwork.chatToolDefinitions.find(
+						(item) => item.name === json.name,
+					)
+				: undefined;
+			return (
+				<ToolInspector
+					tool={tool}
+					header={header}
+					response={formatResponse(tool.response)}
+					description={definition?.description}
+					inputSchema={definition?.inputSchema}
+					footer={
+						isWaiting || signInProvider ? (
+							<div className="space-y-3">
+								{isWaiting && (
+									<Small className="text-muted-foreground">
+										{isFolder
+											? t("card.folderApproval")
+											: t("card.connectorApproval")}
+									</Small>
+								)}
+								{isWaiting &&
+									json.name === FOLDER_TOOL_NAMES.DELETE &&
+									isSet(args.recursive) && (
+										<Small className="text-warning">
+											{t("card.deleteRecursive")}
+										</Small>
+									)}
+								{footer}
+							</div>
+						) : undefined
+					}
+				/>
+			);
+		}
+
 		const body = (
 			<div className="flex min-w-0 flex-col gap-3">
-				<div className="flex min-w-0 items-start gap-3">
-					<div className="flex size-8 shrink-0 items-center justify-center rounded-md bg-muted text-muted-foreground">
-						{service ? (
-							<ConnectorServiceIcon
-								serviceId={service.id}
-								className="size-4"
-							/>
-						) : (
-							<FolderIcon aria-hidden className="size-4" />
-						)}
-					</div>
-					<div className="flex min-w-0 flex-1 flex-col">
-						<span
-							className="truncate font-medium text-sm"
-							title={tool.displayName}
-						>
-							{tool.displayName}
-						</span>
-						<Small className="truncate text-muted-foreground">
-							{service
-								? t(`services.${service.id}.name`)
-								: t("card.chatFiles")}
-						</Small>
-					</div>
-					<Badge variant="outline" className="shrink-0">
-						{status.icon}
-						{status.label}
-					</Badge>
-				</div>
+				{header}
 
 				{isWaiting ? (
 					<Small className="text-muted-foreground">
@@ -360,67 +455,14 @@ export const TeamworkToolCard = observer(
 								? t("card.error")
 								: t("card.result")
 						}
-						isTall={variant === "panel"}
 					>
 						{formatResponse(tool.response)}
 					</TeamworkTextBlock>
 				) : null}
 
-				{signInProvider ? (
-					<div className="flex flex-wrap items-center gap-2 rounded-md border border-warning/40 bg-warning/10 p-2">
-						<LogInIcon
-							aria-hidden
-							className="size-4 shrink-0 text-warning"
-						/>
-						<Small className="min-w-0 flex-1 text-foreground">
-							{t("signIn.toolFailed", {
-								account: t(`providers.${signInProvider}.name`),
-							})}
-						</Small>
-						<Button
-							size="sm"
-							onClick={() => handleSignIn(signInProvider)}
-						>
-							{t("signIn.toolAction", {
-								account: t(`providers.${signInProvider}.name`),
-							})}
-						</Button>
-					</div>
-				) : null}
-
-				{isWaiting ? (
-					<div className="flex flex-wrap justify-end gap-2">
-						<Button
-							variant="outline"
-							size="sm"
-							disabled={decision !== null}
-							onClick={handleDeny}
-						>
-							{decision === "deny"
-								? t("card.denying")
-								: t("card.deny")}
-						</Button>
-						<Button
-							size="sm"
-							disabled={decision !== null}
-							onClick={handleAllow}
-						>
-							{decision === "allow"
-								? t("card.allowing")
-								: t("card.allow")}
-						</Button>
-					</div>
-				) : null}
+				{footer}
 			</div>
 		);
-
-		if (variant === "panel") {
-			return (
-				<ScrollArea className="h-full w-full">
-					<div className="p-4">{body}</div>
-				</ScrollArea>
-			);
-		}
 
 		return (
 			<div className="rounded-md border border-border bg-background p-3">

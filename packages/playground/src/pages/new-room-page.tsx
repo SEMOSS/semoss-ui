@@ -844,7 +844,7 @@ export const NewRoomPage = observer(() => {
 									predefinedPrompts={
 										tempRoomStore.options.predefinedPrompts
 									}
-									className="max-h-72 bg-background"
+									className="max-h-72"
 									isLoading={isLoading || isPreparing}
 									isSubmitDisabled={agentOptionsPending}
 									initialValue={initialPrompt}

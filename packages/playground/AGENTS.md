@@ -299,9 +299,14 @@ To connect to a local SEMOSS backend:
 
 ### Agent forms and catalog
 
-The create and edit pages keep Playground's section cards, sticky actions, list selectors, and
-expanded instructions editor. `WorkspaceAgentFields` composes the shared greeting, model,
-default tools, delegation, limits, and hook fields within those cards. Creation reads
+The agent pages render the same shared components as the client: the create and edit pages
+put `AgentForm` under a sticky Cancel/Create or Save header, and the detail page renders
+`AgentDefinition`. Playground keeps no agent field or resource list of its own; change the
+shared component instead. The edit page seeds `AgentForm` once per agent, because the form
+reads its values only on mount: a refetch must not overwrite unsaved edits, and a different
+agent remounts it through `key`. The edit and detail pages turn the escaped line breaks
+`GetWorkspace` returns in the instructions back into newlines. A failed save shows inline and the form keeps
+its values for a retry. Creation reads
 `GetAgentFormOptions` for deployment catalogs and submits the full configuration to
 `ChatStore.createAgent`; a failed follow-up settings save still opens the created agent and
 shows its warning, avoiding duplicate creation. The agent catalog keeps the existing card

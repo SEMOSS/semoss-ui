@@ -61,6 +61,7 @@ import {
 } from "@semoss/ui/next";
 import { MobileNavigationClose } from "@/features/navigation/mobile-navigation-close";
 import { NavigationRail } from "@/features/navigation/navigation-rail";
+import { NavigationToggle } from "@/features/navigation/navigation-toggle";
 import { useChat } from "@/hooks/use-chat";
 import { useRoot } from "@/hooks/use-root";
 import { normalizeTimestamp } from "@/utility";
@@ -438,10 +439,10 @@ export const GlobalNav = observer(() => {
 			>
 				<SidebarHeader>
 					<SidebarMenu className="gap-1 transition-all duration-200 ease-in-out group-data-[collapsible=icon]:px-2">
-						<SidebarMenuItem className="flex items-center overflow-hidden">
+						<SidebarMenuItem className="flex min-w-0 items-center">
 							<SidebarMenuButton
 								size="lg"
-								className="h-8"
+								className="h-8 min-w-0 flex-1 group-data-[collapsible=icon]:hidden"
 								asChild
 							>
 								<Link
@@ -452,6 +453,7 @@ export const GlobalNav = observer(() => {
 									<AppLogo full={open} />
 								</Link>
 							</SidebarMenuButton>
+							<NavigationToggle />
 							<MobileNavigationClose />
 						</SidebarMenuItem>
 					</SidebarMenu>

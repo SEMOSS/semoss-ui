@@ -41,11 +41,11 @@ export const ConnectorActionBar = ({
 	const { t } = useTranslation("connectors");
 
 	return (
-		<div className="flex flex-wrap items-center gap-2">
+		<div className="flex flex-wrap items-center gap-1">
 			{onAddToContext ? (
 				<Button
 					size="sm"
-					className="aria-disabled:opacity-50"
+					className="h-8 px-2 text-xs shadow-none aria-disabled:opacity-50"
 					aria-disabled={isBusy || undefined}
 					onClick={isBusy ? undefined : onAddToContext}
 				>
@@ -56,7 +56,7 @@ export const ConnectorActionBar = ({
 			<Button
 				variant="outline"
 				size="sm"
-				className="aria-disabled:opacity-50"
+				className="h-8 px-2 text-xs shadow-none aria-disabled:opacity-50"
 				aria-disabled={isBusy || undefined}
 				onClick={isBusy ? undefined : onSave}
 			>
@@ -64,7 +64,12 @@ export const ConnectorActionBar = ({
 				{saveLabel}
 			</Button>
 			{webUrl ? (
-				<Button variant="ghost" size="sm" asChild>
+				<Button
+					variant="ghost"
+					size="sm"
+					className="h-8 px-2 text-xs"
+					asChild
+				>
 					<a href={webUrl} target="_blank" rel="noopener noreferrer">
 						<ExternalLinkIcon aria-hidden />
 						{t("actions.openIn", { service: serviceName })}

@@ -4,7 +4,6 @@ import {
 	render,
 	screen,
 	waitFor,
-	within,
 } from "@testing-library/react";
 import { beforeEach, expect, test, vi } from "vitest";
 import { toast } from "@semoss/ui/next";
@@ -66,17 +65,6 @@ vi.mock("@semoss/shared", async (original) => ({
 vi.mock("@/components/workspace/workspace-chat-list", () => ({
 	WorkspaceChatList: () => null,
 }));
-vi.mock("@/components/workspace/workspace-mcp-list", () => ({
-	WorkspaceMCPList: ({ type }: { type: string }) => <div>{type} cards</div>,
-}));
-vi.mock("@/components/workspace/workspace-skill-list", () => ({
-	WorkspaceSkillList: () => <div>Skill list</div>,
-}));
-vi.mock("@/components/workspace/workspace-prompt-list", () => ({
-	WorkspacePromptList: ({ promptIds }: { promptIds: string[] }) => (
-		<div>Prompts: {promptIds.join(",")}</div>
-	),
-}));
 
 beforeEach(() => {
 	vi.clearAllMocks();
@@ -129,11 +117,11 @@ test("the existing editor saves all agent settings, retains failed edits, and re
 		)
 		.mockResolvedValueOnce(undefined);
 	render(<EditWorkspacePage />);
-	const name = screen.getByLabelText("workspace:form.nameLabel");
+	const name = screen.getByLabelText("form.name");
 	expect(name).toHaveValue("Research agent");
-	expect(
-		screen.getByLabelText("workspace:form.instructionsLabel"),
-	).toHaveValue("First\nSecond");
+	expect(screen.getByLabelText("about.instructions")).toHaveValue(
+		"First\nSecond",
+	);
 	expect(
 		screen.getByRole("combobox", { name: "about.defaultModel" }),
 	).toBeEnabled();
@@ -203,14 +191,12 @@ test("refreshes preserve dirty edits while switching agents resets the full conf
 		.mockImplementation(() => "warning");
 	mocks.editWorkspace.mockResolvedValue("Some resources were skipped");
 	const view = render(<EditWorkspacePage />);
-	fireEvent.change(screen.getByLabelText("workspace:form.nameLabel"), {
+	fireEvent.change(screen.getByLabelText("form.name"), {
 		target: { value: "Unsaved name" },
 	});
 	mocks.workspace = { ...mocks.workspace, name: "Refetched name" };
 	view.rerender(<EditWorkspacePage />);
-	expect(screen.getByLabelText("workspace:form.nameLabel")).toHaveValue(
-		"Unsaved name",
-	);
+	expect(screen.getByLabelText("form.name")).toHaveValue("Unsaved name");
 	mocks.workspaceId = "agent-2";
 	mocks.workspace = {
 		...mocks.workspace,
@@ -220,11 +206,9 @@ test("refreshes preserve dirty edits while switching agents resets the full conf
 		prompts: [],
 	};
 	view.rerender(<EditWorkspacePage />);
-	expect(screen.getByLabelText("workspace:form.nameLabel")).toHaveValue(
-		"Second agent",
-	);
+	expect(screen.getByLabelText("form.name")).toHaveValue("Second agent");
 	expect(screen.getByLabelText("about.greeting")).toHaveValue("");
-	fireEvent.change(screen.getByLabelText("workspace:form.nameLabel"), {
+	fireEvent.change(screen.getByLabelText("form.name"), {
 		target: { value: "Second edited" },
 	});
 	fireEvent.click(
@@ -245,20 +229,15 @@ test("refreshes preserve dirty edits while switching agents resets the full conf
 	warning.mockRestore();
 });
 
-test("the detail view keeps existing resource sections and expanded instructions alongside new settings", async () => {
+test("the detail view shows the shared agent definition with its attached resources", async () => {
 	render(<WorkspaceDetailPage />);
 	await screen.findByRole("button", { name: "workspace:actions.edit" });
-	expect(screen.getByText("KNOWLEDGE cards")).toBeVisible();
-	expect(screen.getByText("TOOLBOX cards")).toBeVisible();
-	expect(screen.getByText("Skill list")).toBeVisible();
-	expect(screen.getByText("Prompts: prompt-1")).toBeVisible();
+	expect(screen.getByText("Notes")).toBeVisible();
+	expect(screen.getByText("Files")).toBeVisible();
+	expect(screen.getByText("Writing")).toBeVisible();
+	expect(screen.getByText("Summarize")).toBeVisible();
 	expect(screen.getByText("Welcome")).toBeVisible();
+	expect(screen.getByText(/First\s+Second/)).toBeVisible();
 	expect(screen.getByText("sections.executionLimits.title")).toBeVisible();
 	expect(screen.getByText("sections.hooks.title")).toBeVisible();
-	fireEvent.click(
-		screen.getByRole("button", { name: "workspace:instructions.expand" }),
-	);
-	expect(
-		within(screen.getByRole("dialog")).getByText(/First\s+Second/),
-	).toBeVisible();
 });

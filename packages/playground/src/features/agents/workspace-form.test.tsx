@@ -41,9 +41,6 @@ vi.mock("@/hooks/use-root", () => ({
 		root: { theme: { featureFlags: {}, defaultEmbedderId: "embedder" } },
 	}),
 }));
-vi.mock("@/components/workspace/instructions-modal", () => ({
-	InstructionsModal: () => null,
-}));
 vi.mock("@semoss/sdk/react", async (original) => ({
 	...(await original<typeof import("@semoss/sdk/react")>()),
 	usePixel: (pixel: string) => ({
@@ -111,10 +108,8 @@ test("agent creation retains all settings on failure and retries with the full c
 		)
 		.mockResolvedValueOnce({ workspaceId: "agent-1" });
 	render(<NewWorkspacePage />);
-	const name = screen.getByLabelText("workspace:form.nameLabel");
-	const instructions = screen.getByLabelText(
-		"workspace:form.instructionsLabel",
-	);
+	const name = screen.getByLabelText("form.name");
+	const instructions = screen.getByLabelText("about.instructions");
 	fireEvent.change(name, { target: { value: "Research agent" } });
 	fireEvent.change(instructions, { target: { value: "Cite sources" } });
 	fireEvent.change(screen.getByLabelText("about.greeting"), {
@@ -192,7 +187,7 @@ test("agent creation opens the created agent when its follow-up settings save fa
 		settingsFailed: true,
 	});
 	render(<NewWorkspacePage />);
-	fireEvent.change(screen.getByLabelText("workspace:form.nameLabel"), {
+	fireEvent.change(screen.getByLabelText("form.name"), {
 		target: { value: "Research agent" },
 	});
 	fireEvent.click(

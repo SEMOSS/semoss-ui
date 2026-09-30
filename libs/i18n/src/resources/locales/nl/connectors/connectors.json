@@ -121,7 +121,38 @@
 		"organizer": "Organisator",
 		"attendees": "Uitgenodigd",
 		"join": "Deelnemen aan vergadering",
-		"noDescription": "Deze afspraak heeft geen beschrijving."
+		"noDescription": "Deze afspraak heeft geen beschrijving.",
+		"view": "Kalenderweergave",
+		"month": "Maand",
+		"agenda": "Agenda",
+		"previousMonth": "Vorige maand",
+		"nextMonth": "Volgende maand",
+		"emptyDay": "Geen afspraken op deze dag",
+		"emptyMonth": "Geen afspraken deze maand",
+		"eventCount_one": "{{count}} afspraak",
+		"eventCount_other": "{{count}} afspraken",
+		"moreEvents": "+{{count}} meer",
+		"limitReached": "Alleen de eerste {{count}} afspraken worden getoond. Sommige dagen kunnen meer afspraken hebben; open Outlook voor de volledige kalender.",
+		"noLoadedEvents": "Geen geladen afspraken voor deze dag",
+		"week": "Week",
+		"day": "Dag",
+		"threeDays": "3 dagen",
+		"listView": "Lijstweergave",
+		"calendarView": "Kalenderweergave",
+		"openForTime": "Open een afspraak om de tijd te zien.",
+		"emptyRange": "Geen afspraken in deze periode",
+		"previousView": {
+			"week": "Vorige week",
+			"day": "Vorige dag",
+			"threeDays": "Vorige 3 dagen",
+			"month": "Vorige maand"
+		},
+		"nextView": {
+			"week": "Volgende week",
+			"day": "Volgende dag",
+			"threeDays": "Volgende 3 dagen",
+			"month": "Volgende maand"
+		}
 	},
 	"teams": {
 		"team": "Team",

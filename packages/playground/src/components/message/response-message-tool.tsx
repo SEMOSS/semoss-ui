@@ -132,9 +132,10 @@ export const ResponseMessageTool = observer(
 		return (
 			<div
 				className={cn(
-					"min-w-0 rounded-lg",
-					isLarge && "border bg-card",
-					isActive && "bg-accent/50",
+					"min-w-0 rounded-lg bg-accent/60 transition-colors hover:bg-accent dark:bg-accent/30 dark:hover:bg-accent/50",
+					isLarge && "border",
+					isActive &&
+						"bg-accent hover:bg-accent dark:bg-accent/70 dark:hover:bg-accent/70",
 					failed && "border border-destructive/30",
 				)}
 			>
@@ -143,7 +144,7 @@ export const ResponseMessageTool = observer(
 						variant="ghost"
 						size="sm"
 						onClick={handleOpen}
-						className="h-auto min-h-8 min-w-0 flex-1 justify-start gap-2 whitespace-normal px-2 py-1 text-start"
+						className="h-auto min-h-8 min-w-0 flex-1 justify-start gap-2 whitespace-normal px-2 py-1 text-start hover:bg-transparent dark:hover:bg-transparent"
 						aria-expanded={isActive}
 						aria-label={`${tool.displayName}: ${status}. ${openAction}`}
 					>
