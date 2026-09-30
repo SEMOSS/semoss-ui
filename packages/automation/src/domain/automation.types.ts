@@ -272,6 +272,8 @@ export interface AutomationRunNodeDataPage {
 	headers?: string[];
 	rows?: unknown[][];
 	value?: unknown;
+	/** Object key whose record collection is represented by this page. */
+	collectionKey?: string;
 }
 
 export interface AutomationRunDetail extends AutomationRunSummary {

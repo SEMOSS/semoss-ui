@@ -1,6 +1,6 @@
 import { AlertCircle, ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { JsonViewer } from "@semoss/shared";
+import { CellOutputBlock } from "@semoss/shared";
 import {
 	Alert,
 	AlertDescription,
@@ -35,6 +35,7 @@ export function RunNodeDataViewer({
 	const [page, setPage] = useState<AutomationRunNodeDataPage | null>(null);
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
+	const [previousOffsets, setPreviousOffsets] = useState<number[]>([]);
 	const requestRef = useRef(0);
 
 	const loadPage = useCallback(
@@ -71,6 +72,7 @@ export function RunNodeDataViewer({
 	);
 
 	useEffect(() => {
+		setPreviousOffsets([]);
 		void loadPage(0);
 		return () => {
 			requestRef.current += 1;
@@ -123,12 +125,19 @@ export function RunNodeDataViewer({
 								type="button"
 								variant="outline"
 								size="sm"
-								disabled={loading || page.offset === 0}
-								onClick={() =>
-									void loadPage(
-										Math.max(0, page.offset - page.limit),
-									)
+								disabled={
+									loading || previousOffsets.length === 0
 								}
+								onClick={() => {
+									const previousOffset =
+										previousOffsets[
+											previousOffsets.length - 1
+										] ?? 0;
+									setPreviousOffsets((offsets) =>
+										offsets.slice(0, -1),
+									);
+									void loadPage(previousOffset);
+								}}
 							>
 								<ChevronLeft className="size-4" aria-hidden />
 								Previous
@@ -138,9 +147,13 @@ export function RunNodeDataViewer({
 								variant="outline"
 								size="sm"
 								disabled={loading || !page.hasMore}
-								onClick={() =>
-									void loadPage(page.offset + page.count)
-								}
+								onClick={() => {
+									setPreviousOffsets((offsets) => [
+										...offsets,
+										page.offset,
+									]);
+									void loadPage(page.offset + page.count);
+								}}
 							>
 								Next
 								<ChevronRight className="size-4" aria-hidden />
@@ -189,9 +202,7 @@ export function RunNodeDataViewer({
 							/>
 						</CodeContainer>
 					) : (
-						<div className="max-h-80 overflow-auto rounded-md border border-border bg-muted/20 p-3">
-							<JsonViewer value={page.value} />
-						</div>
+						<CellOutputBlock output={JSON.stringify(page.value)} />
 					)}
 				</>
 			)}
