@@ -1,5 +1,5 @@
 import { AlertCircle, ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
-import { useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { JsonViewer } from "@semoss/shared";
 import {
 	Alert,
@@ -33,47 +33,56 @@ export function RunNodeDataViewer({
 	nodeId,
 }: RunNodeDataViewerProps) {
 	const [page, setPage] = useState<AutomationRunNodeDataPage | null>(null);
-	const [loading, setLoading] = useState(false);
+	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
+	const requestRef = useRef(0);
 
-	const loadPage = async (offset: number) => {
-		setLoading(true);
-		setError(null);
-		try {
-			setPage(
-				await getAutomationRunNodeData(
+	const loadPage = useCallback(
+		async (offset: number): Promise<void> => {
+			const requestId = ++requestRef.current;
+			setLoading(true);
+			setError(null);
+			try {
+				const nextPage = await getAutomationRunNodeData(
 					appId,
 					runId,
 					nodeId,
 					offset,
 					PAGE_SIZE,
-				),
-			);
-		} catch (loadError) {
-			setError(
-				loadError instanceof Error
-					? normalizeAutomationErrorMessage(loadError.message)
-					: "Unable to load run data.",
-			);
-		} finally {
-			setLoading(false);
-		}
-	};
+				);
+				if (requestId === requestRef.current) {
+					setPage(nextPage);
+				}
+			} catch (loadError) {
+				if (requestId === requestRef.current) {
+					setError(
+						loadError instanceof Error
+							? normalizeAutomationErrorMessage(loadError.message)
+							: "Unable to load run data.",
+					);
+				}
+			} finally {
+				if (requestId === requestRef.current) {
+					setLoading(false);
+				}
+			}
+		},
+		[appId, nodeId, runId],
+	);
+
+	useEffect(() => {
+		void loadPage(0);
+		return () => {
+			requestRef.current += 1;
+		};
+	}, [loadPage]);
 
 	if (!page && !error) {
 		return (
-			<Button
-				type="button"
-				variant="outline"
-				size="sm"
-				disabled={loading}
-				onClick={() => void loadPage(0)}
-			>
-				{loading && (
-					<Loader2 className="size-4 animate-spin" aria-hidden />
-				)}
-				{loading ? "Loading data" : "View data"}
-			</Button>
+			<output className="flex items-center gap-2 text-muted-foreground text-xs">
+				<Loader2 className="size-4 animate-spin" aria-hidden />
+				Loading run data…
+			</output>
 		);
 	}
 
@@ -87,7 +96,18 @@ export function RunNodeDataViewer({
 			{error && (
 				<Alert variant="destructive">
 					<AlertCircle aria-hidden />
-					<AlertDescription>{error}</AlertDescription>
+					<AlertDescription className="space-y-2">
+						<p>{error}</p>
+						<Button
+							type="button"
+							variant="outline"
+							size="sm"
+							disabled={loading}
+							onClick={() => void loadPage(page?.offset ?? 0)}
+						>
+							Retry
+						</Button>
+					</AlertDescription>
 				</Alert>
 			)}
 			{page && (

@@ -736,24 +736,32 @@ function ResultsPanel({
 									message={selectedResult.ERROR_MESSAGE}
 								/>
 							)}
-							<CellOutputBlock
-								output={
-									selectedResult.OUTPUT_PREVIEW ??
-									"No output was produced."
-								}
-								onOutputPopout={() =>
-									onOutputPopout(
+							{selectedResult.dataValueType ? (
+								selectedResult.dataAvailable && runId ? (
+									<RunNodeDataViewer
+										key={`${runId}-${selectedResult.NODE_ID}`}
+										appId={appId}
+										runId={runId}
+										nodeId={selectedResult.NODE_ID}
+									/>
+								) : (
+									<output className="text-muted-foreground text-sm">
+										Run data is no longer available because
+										the execution workspace has closed.
+									</output>
+								)
+							) : (
+								<CellOutputBlock
+									output={
 										selectedResult.OUTPUT_PREVIEW ??
-											"No output was produced.",
-									)
-								}
-							/>
-							{selectedResult.dataAvailable && runId && (
-								<RunNodeDataViewer
-									key={`${runId}-${selectedResult.NODE_ID}`}
-									appId={appId}
-									runId={runId}
-									nodeId={selectedResult.NODE_ID}
+										"No output was produced."
+									}
+									onOutputPopout={() =>
+										onOutputPopout(
+											selectedResult.OUTPUT_PREVIEW ??
+												"No output was produced.",
+										)
+									}
 								/>
 							)}
 							{selectedStep?.workflowType === "trigger.start" &&

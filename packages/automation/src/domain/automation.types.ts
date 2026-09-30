@@ -253,9 +253,9 @@ export interface AutomationNodeResult {
 	DURATION_MS: number;
 	OUTPUT_PREVIEW: string | null;
 	OUTPUT_VALUE?: string | null;
-	/** True when the run workspace can provide this node's output in bounded pages. */
+	/** True only while the live run workspace can provide this output in bounded pages. */
 	dataAvailable?: boolean;
-	/** Provider-independent category assigned by the node contract. */
+	/** Provider-independent category for a retained output, including an expired one. */
 	dataValueType?: AutomationDataType;
 	ERROR_MESSAGE: string | null;
 	trace?: AutomationNodeTrace;
