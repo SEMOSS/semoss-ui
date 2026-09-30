@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { Button, Form, P, Spinner, type UseFormReturn } from "@semoss/ui/next";
 import { EmailAddressRow } from "@/features/email/email-address-row";
 import type { EmailDraftValues } from "../api/email-draft-values";
+import type { ReplyRecipientsState } from "../hooks/use-reply-recipients";
 import type { EmailDraftInput } from "../types";
 import { ConnectorFormInput } from "./connector-form-input";
 import { DraftAttachmentField } from "./draft-attachment-field";
@@ -22,6 +23,7 @@ interface EmailDraftFormProps {
 	/** Original subject for native replies and forwards. */
 	sourceSubject?: string;
 	replyContext?: EmailReplyContext;
+	replyRecipients?: ReplyRecipientsState;
 	/** Require activation of Save Draft; typing shortcuts cannot accept a proposal. */
 	requiresAcceptance?: boolean;
 	/** Contextual controls share the compose surface's single scroll region. */
@@ -42,7 +44,7 @@ export function EmailDraftForm({
 	isPending = false,
 	isUncertain,
 	sourceSubject,
-	replyContext,
+	replyRecipients,
 	requiresAcceptance = false,
 	assistantContent,
 	feedbackContent,
@@ -52,7 +54,11 @@ export function EmailDraftForm({
 	onSave,
 }: EmailDraftFormProps) {
 	const isSubmitting = isPending || form.formState.isSubmitting;
-	const isSaveDisabled = isSubmitting || isUncertain || !canSave;
+	const isSaveDisabled =
+		isSubmitting ||
+		isUncertain ||
+		!canSave ||
+		(mode === "reply" && !replyRecipients?.isReady);
 	return (
 		<Form
 			form={form}
@@ -82,7 +88,7 @@ export function EmailDraftForm({
 		>
 			{/* Short windows scroll the whole form so the save action remains reachable. */}
 			<div className="flex min-h-0 flex-1 flex-col overflow-y-auto [@media(max-height:40rem)]:flex-none [@media(max-height:40rem)]:overflow-visible">
-				<div className="shrink-0 @min-lg/compose:px-6 px-4">
+				<div className="shrink-0 px-4">
 					<div className="border-border/60 border-b">
 						<EmailFromRow />
 					</div>
@@ -103,11 +109,17 @@ export function EmailDraftForm({
 					{mode === "reply" && (
 						<EmailReplyField
 							disabled={isSubmitting}
-							context={replyContext}
+							recipients={
+								replyRecipients ?? {
+									isReady: false,
+									error: "Reply recipients are unavailable.",
+									retry: () => undefined,
+								}
+							}
 						/>
 					)}
 					{mode === "new" ? (
-						<div className="py-2">
+						<div className="py-1">
 							<ConnectorFormInput
 								name="subject"
 								label="Subject"
@@ -124,7 +136,7 @@ export function EmailDraftForm({
 						</EmailAddressRow>
 					)}
 					{mode === "forward" && (
-						<P className="pb-3 text-muted-foreground text-sm">
+						<P className="pb-2 text-base text-muted-foreground">
 							Outlook includes the original message and
 							attachments below your note.
 						</P>
@@ -144,20 +156,20 @@ export function EmailDraftForm({
 					disabled={isSubmitting}
 				/>
 				{mode === "new" && (
-					<div className="shrink-0 @min-lg/compose:px-6 px-4 pb-4">
+					<div className="shrink-0 px-4 pb-2">
 						<DraftAttachmentField disabled={isSubmitting} />
 					</div>
 				)}
 				{feedbackContent}
 			</div>
-			<footer className="flex shrink-0 justify-end border-border border-t bg-background @min-lg/compose:px-6 px-4 py-3">
+			<footer className="flex shrink-0 justify-end border-border border-t bg-background px-4 py-2">
 				<Button
 					type="submit"
 					variant={saveVariant}
 					aria-label={
 						isSubmitting ? `${saveLabel}, saving` : undefined
 					}
-					className="h-auto min-h-11 @min-lg/compose:w-auto w-full whitespace-normal"
+					className="h-auto min-h-9 pointer-coarse:min-h-11 @min-lg/compose:w-auto w-full whitespace-normal"
 					disabled={isSaveDisabled}
 				>
 					{isSubmitting && <Spinner aria-label="Saving draft" />}

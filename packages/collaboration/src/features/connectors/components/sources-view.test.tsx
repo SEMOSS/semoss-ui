@@ -9,7 +9,8 @@ import {
 } from "../api/microsoft";
 import { SourcesView } from "./sources-view";
 
-vi.mock("@semoss/sdk/react", () => ({
+vi.mock("@semoss/sdk/react", async (importOriginal) => ({
+	...(await importOriginal<typeof import("@semoss/sdk/react")>()),
 	useInsight: () => ({ actions: {}, insightId: "insight" }),
 }));
 vi.mock("../api/microsoft", async (importOriginal) => ({

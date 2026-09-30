@@ -245,6 +245,10 @@ export interface SourceStatus {
 }
 
 export interface WorkspaceMessage {
+	/** Source-owned envelope details for reading and searching. */
+	subject?: string;
+	fromName?: string;
+	fromAddress?: string;
 	/** Original provider body for rendering only. */
 	displayBody?: DisplayBody;
 	id: string;

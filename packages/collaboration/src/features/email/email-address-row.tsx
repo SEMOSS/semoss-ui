@@ -10,11 +10,11 @@ export function EmailAddressRow({
 	children: ReactNode;
 }) {
 	return (
-		<div className="flex min-w-0 items-start gap-3 py-2">
-			<Small className="w-14 shrink-0 pt-1 text-muted-foreground">
+		<div className="flex min-w-0 items-start gap-2 py-1">
+			<Small className="w-14 shrink-0 pt-1 text-base text-muted-foreground">
 				{label}
 			</Small>
-			<div className="flex min-w-0 flex-1 flex-wrap items-center gap-2 text-sm">
+			<div className="flex min-w-0 flex-1 flex-wrap items-center gap-2 text-base">
 				{children}
 			</div>
 		</div>

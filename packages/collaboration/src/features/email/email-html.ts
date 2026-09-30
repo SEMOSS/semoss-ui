@@ -159,6 +159,7 @@ export function draftText(
 export function emailDocument(
 	html: string,
 	loadImages: boolean,
+	presentation: "inline" | "reader" = "inline",
 ): { html: string; hasImages: boolean } {
 	const config: Config = {
 		WHOLE_DOCUMENT: true,
@@ -197,8 +198,8 @@ export function emailDocument(
 	// Email-authored colors and layout are source data confined to this document.
 	// design-lint-disable-next-line inline-visual-style -- isolated HTML email document requires self-contained CSS; source rules override the low-specificity typography defaults.
 	const baseStyle = doc.createElement("style");
-	baseStyle.textContent =
-		"html{color-scheme:light}body{margin:0;padding:16px;background:white;color:black;overflow-wrap:anywhere}:where(body){font-family:Arial,Helvetica,sans-serif;font-size:16px;line-height:1.6}:where(p){margin-block:0 1em}:where(blockquote){margin-inline:0;padding-inline-start:1em;border-inline-start:2px solid currentColor}img{max-width:100%;height:auto}a:focus-visible{outline:2px solid currentColor;outline-offset:2px}";
+	// Readers already supply the mail surface's padding; inline previews own their inset.
+	baseStyle.textContent = `html{color-scheme:light}body{margin:0;padding:${presentation === "reader" ? 0 : 16}px;background:white;color:black;overflow-wrap:anywhere}:where(body){font-family:Arial,Helvetica,sans-serif;font-size:16px;line-height:1.6}:where(p){margin-block:0 1em}:where(blockquote){margin-inline:0;padding-inline-start:1em;border-inline-start:2px solid currentColor}img{max-width:100%;height:auto}a:focus-visible{outline:2px solid currentColor;outline-offset:2px}`;
 	doc.head.prepend(baseStyle);
 	const clean = DOMPurify.sanitize(doc.documentElement.outerHTML, {
 		...config,

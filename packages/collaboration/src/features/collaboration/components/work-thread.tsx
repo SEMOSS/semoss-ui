@@ -1,7 +1,7 @@
 import { FilePenLine } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Link, useParams } from "react-router";
-import { Button, H3, P, Small, toast } from "@semoss/ui/next";
+import { Button, H3, P, toast } from "@semoss/ui/next";
 import { getMail } from "@/features/connectors/api/microsoft";
 import { importOutlookMail } from "@/features/connectors/api/source-mapping";
 import type { SourceAttachment } from "@/features/connectors/types";
@@ -11,7 +11,7 @@ import { useWorkComposerSession } from "@/features/work-thread/work-composer-sta
 import { WorkThreadHeading } from "@/features/work-thread/work-thread-heading";
 import { WORK_THREAD_WORKBENCH } from "@/features/work-thread/work-thread-panels";
 import { importSourceCommand } from "../import-source";
-import { loadThreadMessages } from "../live/live-state";
+import { useThreadHistory } from "../live/thread-history.context";
 import { selectThreadContext } from "../state/collaboration.selectors";
 import { useCollaborationSession } from "../state/collaboration-session.context";
 import { TextEntryForm } from "./text-entry-form";
@@ -20,7 +20,7 @@ import { ThreadMenu } from "./thread-menu";
 import { threadMenuTriggerId } from "./thread-menu.utils";
 import { TopicChip } from "./topic-chip";
 
-/** Work owns one unified conversation and reveals details/files only when requested. */
+/** Work keeps assistant chat beside the full source thread and its context. */
 export function WorkThread() {
 	const { threadId = "" } = useParams();
 	const { state, dispatch } = useCollaborationSession();
@@ -28,6 +28,7 @@ export function WorkThread() {
 	latestState.current = state;
 	const [editingGoal, setEditingGoal] = useState(false);
 	const composer = useWorkComposerSession(threadId);
+	const history = useThreadHistory(threadId);
 	const thread = state.threads.find((candidate) => candidate.id === threadId);
 	const workspace = state.workspaces[threadId];
 	const context = selectThreadContext(state, threadId);
@@ -109,6 +110,10 @@ export function WorkThread() {
 						onEmailSent={() => {
 							const refresh = async () => {
 								if (thread.isSample) return;
+								if (!thread.id.startsWith("connected:")) {
+									history.refresh();
+									return;
+								}
 								const attach =
 									thread.id.startsWith("connected:") &&
 									sourceUid
@@ -133,17 +138,14 @@ export function WorkThread() {
 														thread: current,
 													});
 												}))()
-										: loadThreadMessages(
-												session.insight.actions,
-												thread.id,
-											);
+										: null;
 								const apply = await attach;
 								const current =
 									latestState.current.threads.find(
 										(candidate) =>
 											candidate.id === thread.id,
 									);
-								if (current) dispatch(apply(current));
+								if (current && apply) dispatch(apply(current));
 							};
 							void refresh().catch(() =>
 								toast.error(
@@ -164,10 +166,7 @@ export function WorkThread() {
 								triggerId={threadMenuTriggerId(thread.id)}
 							>
 								{(menu) => (
-									<WorkThreadHeading
-										thread={thread}
-										topics={state.topics}
-									>
+									<WorkThreadHeading thread={thread}>
 										{menu}
 									</WorkThreadHeading>
 								)}
@@ -280,30 +279,6 @@ export function WorkThread() {
 										</div>
 									</section>
 								)}
-								{workspace.drafts.map((item) => (
-									<div key={item.id} className="space-y-2">
-										<Small>Draft · not sent</Small>
-										<P className="line-clamp-1 break-words">
-											{item.subject || "Email draft"}
-										</P>
-										<Button
-											variant="outline"
-											onClick={() =>
-												openDraft(
-													item.body,
-													"new",
-													item.subject,
-													`workspace:${item.id}`,
-													item.to,
-													item.cc,
-													item.bcc,
-												)
-											}
-										>
-											Open draft
-										</Button>
-									</div>
-								))}
 							</>
 						}
 					/>

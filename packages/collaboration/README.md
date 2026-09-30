@@ -43,8 +43,14 @@ Outlook supports formatted new, native reply/reply-all, and forward drafts. The
 shared Lexical editor exports sanitized HTML with inline formatting, including
 tables. Reply/forward saving creates a native draft, prepends authored HTML to
 Outlook's quoted body, and updates that new draft before confirming success.
-Further saves create a new copy. Save draft never sends; uncertain saves require
-an Outlook check before another attempt.
+Further saves create a new copy. Reply composers show editable To and Cc chips,
+initialized from the original reply-all envelope, honoring Reply-To and excluding
+the connected Microsoft account. Assistant context exclusions do not alter this
+envelope. Recipient edits survive panel reopening and assistant body revisions;
+empty lists explicitly clear recipients. Loading or unverified recipient defaults
+block saving, and the saved draft's envelope must match the reviewed addresses.
+Save draft never sends; uncertain saves require an Outlook check before another
+attempt.
 
 Outlook-linked Work threads also offer Send reply. This explicitly labeled button
 saves a native reply to the original sender (`replyAll=false`), then calls the
@@ -61,7 +67,10 @@ quotes/code/mentions, and media placeholders. Display bodies cap at 128 Ki
 characters, falling back to plain text with a notice rather than cutting markup.
 
 **Rollout:** deploy the backend opt-in HTML readers and formatted reply/forward
-draft support before releasing these formatted frontend actions. No database
+draft support before releasing these formatted frontend actions. Editable reply
+recipients additionally require `MicrosoftOutlookGetMail(includeReplyRecipients=true)`
+and `MicrosoftOutlookReplyMail(overrideRecipients=true, to=[...], cc=[...])`.
+Deploy that backend support first; existing callers retain native reply behavior. No database
 migration, sending-backend changes, or authentication-configuration changes are
 required. Existing Microsoft permission errors flow through the current UI.
 

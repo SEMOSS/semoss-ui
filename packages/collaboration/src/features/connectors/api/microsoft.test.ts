@@ -443,3 +443,75 @@ it("preserves explicitly typed source HTML through both Microsoft readers", asyn
 			?.displayBody,
 	).toEqual(displayBody);
 });
+
+it("serializes explicit reply recipients, including empty lists, and verifies the receipt", async () => {
+	const run = vi.fn().mockResolvedValue(
+		response({
+			sent: false,
+			uid: "draft",
+			repliedTo: "source",
+			recipients: { to: ["CHANGED@example.com"], cc: [] },
+		}),
+	);
+	await expect(
+		saveEmailDraft({ run } as never, {
+			mode: "reply",
+			sourceUid: "source",
+			replyAll: true,
+			body: "<p>Reply</p>",
+			bodyFormat: "html",
+			overrideRecipients: true,
+			to: "changed@example.com",
+			cc: "",
+		}),
+	).resolves.toMatchObject({ savedDraftId: "draft" });
+	expect(run).toHaveBeenCalledOnce();
+	expect(run.mock.calls[0]?.[0]).toContain(
+		'overrideRecipients=[true], to=["changed@example.com"], cc=[]',
+	);
+});
+
+it.each([
+	undefined,
+	{ to: ["unexpected@example.com"], cc: [] },
+	{ to: ["changed@example.com"], cc: ["removed@example.com"] },
+])("requires confirmation of the edited recipients: %s", async (recipients) => {
+	const run = vi.fn().mockResolvedValue(
+		response({
+			sent: false,
+			uid: "draft",
+			repliedTo: "source",
+			recipients,
+		}),
+	);
+	await expect(
+		saveEmailDraft({ run } as never, {
+			mode: "reply",
+			sourceUid: "source",
+			replyAll: true,
+			body: "<p>Reply</p>",
+			bodyFormat: "html",
+			overrideRecipients: true,
+			to: "changed@example.com",
+			cc: "",
+		}),
+	).rejects.toBeInstanceOf(UncertainDraftError);
+	expect(run).toHaveBeenCalledOnce();
+});
+
+it("rejects invalid edited reply addresses before starting a write", async () => {
+	const run = vi.fn();
+	await expect(
+		saveEmailDraft({ run } as never, {
+			mode: "reply",
+			sourceUid: "source",
+			replyAll: true,
+			body: "<p>Reply</p>",
+			bodyFormat: "html",
+			overrideRecipients: true,
+			to: "valid@example.com",
+			cc: "invalid",
+		}),
+	).rejects.toThrow("email addresses");
+	expect(run).not.toHaveBeenCalled();
+});

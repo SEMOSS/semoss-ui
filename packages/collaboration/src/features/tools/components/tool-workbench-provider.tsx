@@ -17,6 +17,7 @@ import {
 	createWorkbenchStore,
 	type WorkbenchLayout,
 	type WorkbenchPanelConfigAny,
+	type WorkbenchState,
 } from "@semoss/workbench";
 import type { ConversationTool } from "@/features/messages/types/message";
 import type { PendingToolApproval } from "@/features/rooms/types/room";
@@ -39,6 +40,12 @@ export interface ToolWorkbenchProviderProps {
 	createLayout?: (insightId: string) => WorkbenchLayout;
 	/** A host with persistent run-status controls may keep the dock closed until requested. */
 	autoReveal?: boolean;
+	/** Initial visibility chosen by the host; later toggles remain user-owned. */
+	defaultOpen?: boolean;
+	/** Resolve the host destination before opening a working tab. */
+	panelTarget?: (
+		layout: WorkbenchState["layout"],
+	) => Parameters<WorkbenchState["layout"]["actions"]["movePanel"]>[1];
 	roomId: string;
 	insightId: string;
 	tools: Record<string, ConversationTool>;
@@ -85,6 +92,8 @@ export function ToolWorkbenchProvider({
 	onRejectTool,
 	children,
 	autoReveal = true,
+	defaultOpen = false,
+	panelTarget,
 	components = TOOL_WORKBENCH_COMPONENTS,
 	createLayout = createToolWorkbenchLayout,
 }: ToolWorkbenchProviderProps) {
@@ -92,7 +101,7 @@ export function ToolWorkbenchProvider({
 		createRoomToolWorkbench(insightId, components, createLayout),
 	);
 	const isMobile = useIsMobile();
-	const [isOpen, setIsOpen] = useState(false);
+	const [isOpen, setIsOpen] = useState(defaultOpen);
 	const [inlineToolIds, setInlineToolIds] = useState<Set<string>>(
 		() => new Set(),
 	);
@@ -195,7 +204,10 @@ export function ToolWorkbenchProvider({
 				const panelId = actions.selectPanel(
 					TOOL_PANEL_TYPE,
 					{ toolId },
-					{ name: tools[toolId]?.title ?? "Tool" },
+					{
+						name: tools[toolId]?.title ?? "Tool",
+						target: panelTarget?.(store.getState().layout),
+					},
 				);
 				actions.updatePanel(panelId, {
 					name: tools[toolId]?.title ?? "Tool",
@@ -204,22 +216,23 @@ export function ToolWorkbenchProvider({
 			}
 			setIsOpen(true);
 		},
-		[store, tools],
+		[store, tools, panelTarget],
 	);
 
 	const openRun = useCallback(
 		(runId: string) => {
 			if (!isOpen) runTriggerId.current = `run-${runId}`;
-			store
-				.getState()
-				.layout.actions.selectPanel(
-					RUN_PANEL_TYPE,
-					{ runId },
-					{ name: "Agent run" },
-				);
+			store.getState().layout.actions.selectPanel(
+				RUN_PANEL_TYPE,
+				{ runId },
+				{
+					name: "Agent run",
+					target: panelTarget?.(store.getState().layout),
+				},
+			);
 			setIsOpen(true);
 		},
-		[isOpen, store],
+		[isOpen, store, panelTarget],
 	);
 
 	const openFile = useCallback(
@@ -229,11 +242,11 @@ export function ToolWorkbenchProvider({
 				.layout.actions.selectPanel(
 					getFilePanelType(path),
 					{ mode: { type: "INSIGHT", insightId }, name, path },
-					{ name },
+					{ name, target: panelTarget?.(store.getState().layout) },
 				);
 			setIsOpen(true);
 		},
-		[insightId, store],
+		[insightId, store, panelTarget],
 	);
 
 	const openInline = useCallback(

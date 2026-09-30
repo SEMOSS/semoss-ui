@@ -69,8 +69,24 @@ vi.mock("@semoss/workbench", () => ({
 		);
 	},
 }));
+vi.mock("./work-pane-controls", () => ({
+	WorkPaneControls: ({
+		isChatVisible,
+		onToggleChat,
+	}: {
+		isChatVisible: boolean;
+		onToggleChat: () => void;
+	}) => (
+		<button type="button" onClick={onToggleChat}>
+			{isChatVisible ? "Collapse chat" : "Show chat"}
+		</button>
+	),
+}));
+vi.mock("./work-pane-layout", () => ({
+	workPanelTarget: () => ({ kind: "join", tabsetId: "work-main" }),
+}));
 vi.mock("./work-panel-menu", () => ({
-	WorkPanelMenu: () => <button type="button">Workspace</button>,
+	WorkPanelMenu: () => <button type="button">File</button>,
 }));
 vi.mock("./work-conversation", () => ({
 	WORK_ASSISTANT: {},
@@ -182,10 +198,9 @@ const frame = () =>
 			),
 	);
 
-it("shrinks chat to 60/40, restores a resized split, and retains drafts and attachments", async () => {
+it("shrinks chat to 30/70, restores a resized split, and retains drafts and attachments", async () => {
 	const input = props();
 	const { container, rerender } = render(view(input));
-	fireEvent.click(screen.getByRole("button", { name: "Ask Assistant" }));
 	const draft = screen.getByRole("textbox", { name: "Draft" });
 	fireEvent.change(draft, { target: { value: "Keep this text" } });
 	const attachment = screen.getByLabelText("Attachment");
@@ -194,14 +209,14 @@ it("shrinks chat to 60/40, restores a resized split, and retains drafts and atta
 	dock.isOpen = true;
 	rerender(view(input));
 	await frame();
-	expect(sizes(container)).toEqual([60, 40]);
+	expect(sizes(container)).toEqual([30, 70]);
 	fireEvent.keyDown(
 		screen.getByRole("separator", {
 			name: "Resize conversation and workbench",
 		}),
 		{ key: "ArrowLeft" },
 	);
-	expect(sizes(container)).toEqual([55, 45]);
+	expect(sizes(container)).toEqual([25, 75]);
 	dock.isOpen = false;
 	rerender(view(input));
 	await frame();
@@ -209,7 +224,7 @@ it("shrinks chat to 60/40, restores a resized split, and retains drafts and atta
 	dock.isOpen = true;
 	rerender(view(input));
 	await frame();
-	expect(sizes(container)).toEqual([55, 45]);
+	expect(sizes(container)).toEqual([25, 75]);
 	expect(screen.getByRole("textbox", { name: "Draft" })).toBe(draft);
 	expect(draft).toHaveValue("Keep this text");
 	expect((attachment as HTMLInputElement).files?.[0]).toBe(file);
@@ -220,7 +235,7 @@ it("shrinks chat to 60/40, restores a resized split, and retains drafts and atta
 		"toolbar",
 	);
 	expect(screen.getByTestId("dock-top")).toContainElement(
-		screen.getByRole("button", { name: "Workspace" }),
+		screen.getByRole("button", { name: "File" }),
 	);
 	expect(screen.getByTestId("dock-top")).toContainElement(
 		screen.getByRole("button", { name: "Close workbench" }),
@@ -275,7 +290,10 @@ it.each([
 			expect(dock.selectPanel).toHaveBeenCalledWith(
 				"work-email-draft",
 				{ draftId: `reply:${source.id}` },
-				{ name: "Reply draft" },
+				{
+					name: "Reply draft",
+					target: { kind: "join", tabsetId: "work-main" },
+				},
 			),
 		);
 		await frame();
@@ -292,23 +310,19 @@ it.each([360, 767, 768, 900, 1440])(
 		dock.isOpen = true;
 		const { container } = render(view(props()));
 		await frame();
-		if (availableWidth < 768)
+		if (availableWidth < 1024)
 			expect(screen.getByText("Thread title")).not.toBeVisible();
 		else expect(screen.getByText("Thread title")).toBeVisible();
-		expect(screen.getByRole("button", { name: "Workspace" })).toBeVisible();
+		expect(screen.getByRole("button", { name: "File" })).toBeVisible();
 		expect(sizes(container)).toEqual(
-			availableWidth < 768 ? [0, 100] : [60, 40],
+			availableWidth < 1024 ? [0, 100] : [30, 70],
 		);
 		expect(
 			screen.getByRole("textbox", { name: "Draft", hidden: true }),
 		).toHaveValue("");
-		if (availableWidth < 768)
+		if (availableWidth < 1024)
 			expect(
-				screen.getByRole("button", { name: "Back to conversation" }),
-			).toHaveFocus();
-		else
-			expect(
-				screen.getByRole("complementary", { name: "Thread workbench" }),
+				screen.getByRole("button", { name: "Back to chat" }),
 			).toHaveFocus();
 	},
 );
@@ -334,7 +348,10 @@ it.each([360, 1440])(
 			expect(dock.selectPanel).toHaveBeenCalledWith(
 				"work-email-draft",
 				{ draftId: `reply:${source.id}` },
-				{ name: "Reply draft" },
+				{
+					name: "Reply draft",
+					target: { kind: "join", tabsetId: "work-main" },
+				},
 			),
 		);
 		await waitFor(() => expect(transport.send).toHaveBeenCalledOnce());
@@ -359,7 +376,7 @@ it.each([360, 1440])(
 				`\`\`\`semoss-email-draft\n${JSON.stringify({ sourceMessageId: source.id, body: "Friday works." })}\n\`\`\``,
 			),
 		);
-		expect(screen.getByText("Friday works.")).toBeInTheDocument();
+		expect(screen.queryByText("Friday works.")).toBeNull();
 		fireEvent.click(
 			screen.getByRole("button", {
 				name: "Draft with assistant",
@@ -378,9 +395,8 @@ it.each([360, 1440])(
 				`\`\`\`semoss-email-draft\n${JSON.stringify({ sourceMessageId: source.id, body: "Friday is confirmed." })}\n\`\`\``,
 			),
 		);
-		expect(screen.getByText("Friday is confirmed.")).toBeInTheDocument();
+		expect(screen.queryByText("Friday is confirmed.")).toBeNull();
 		// Reopening the local draft card never sends a message.
-		fireEvent.click(screen.getByText("Friday is confirmed."));
 		expect(transport.send).toHaveBeenCalledTimes(2);
 	},
 );
@@ -433,7 +449,10 @@ it("consumes a menu draft request once while initialization is pending", async (
 		expect(dock.selectPanel).toHaveBeenCalledWith(
 			"work-email-draft",
 			{ draftId: `reply:${source.id}` },
-			{ name: "Reply draft" },
+			{
+				name: "Reply draft",
+				target: { kind: "join", tabsetId: "work-main" },
+			},
 		),
 	);
 	expect(transport.send).not.toHaveBeenCalled();
@@ -458,7 +477,6 @@ it("consumes a menu draft request once while initialization is pending", async (
 
 it("opens the assistant independently while keeping reply actions available", () => {
 	render(view({ ...props(), sourceUid: "email-1" }));
-	fireEvent.click(screen.getByRole("button", { name: "Ask Assistant" }));
 	expect(screen.getByRole("textbox", { name: "Draft" })).toBeVisible();
 	expect(
 		screen.getByRole("button", { name: "Draft with assistant" }),
@@ -468,29 +486,21 @@ it("opens the assistant independently while keeping reply actions available", ()
 
 it("offers only Assistant without an Outlook source", () => {
 	render(view(props()));
-	expect(screen.getByRole("button", { name: "Ask Assistant" })).toBeVisible();
+	expect(screen.getByRole("textbox", { name: "Draft" })).toBeVisible();
 	expect(
 		screen.queryByRole("button", { name: "Draft with assistant" }),
 	).not.toBeInTheDocument();
 });
 
-it("introduces a confirmed fresh thread until the assistant is explicitly opened", () => {
+it("shows the composer immediately for fresh threads", () => {
 	const input = props();
-	input.snapshot.isLoading = true;
 	const { rerender } = render(view(input));
+	expect(screen.getByRole("textbox", { name: "Draft" })).toBeVisible();
 	expect(
 		screen.queryByRole("heading", { name: "Move this thread forward" }),
 	).toBeNull();
 	input.snapshot = { ...input.snapshot, isLoading: false };
 	rerender(view(input));
-	expect(
-		screen.getByRole("heading", { name: "Move this thread forward" }),
-	).toBeVisible();
-	expect(screen.queryByRole("textbox")).toBeNull();
-	fireEvent.click(screen.getByRole("button", { name: "Ask Assistant" }));
-	expect(
-		screen.queryByRole("heading", { name: "Move this thread forward" }),
-	).toBeNull();
 	expect(screen.getByRole("textbox", { name: "Draft" })).toBeVisible();
 });
 
@@ -533,7 +543,7 @@ it("waits for history and resumes an existing conversation without flashing acti
 	expect(
 		screen.queryByRole("group", { name: "Thread quick actions" }),
 	).not.toBeInTheDocument();
-	expect(screen.queryByRole("textbox")).not.toBeInTheDocument();
+	expect(screen.getByRole("textbox")).toBeVisible();
 	input.snapshot = {
 		...input.snapshot,
 		isLoading: false,
@@ -564,7 +574,7 @@ it("does not classify a failed history load as a fresh thread", () => {
 	).not.toBeInTheDocument();
 });
 
-it("opens the requested workbench without opening the composer, and returns to the header menu", async () => {
+it("opens the requested workbench alongside chat and returns to the header menu", async () => {
 	const input = props();
 	input.header = (
 		<button type="button" id={threadMenuTriggerId(input.thread.id)}>
@@ -632,12 +642,12 @@ it("opens the requested workbench without opening the composer, and returns to t
 	expect(dock.openWorkbench).toHaveBeenCalledTimes(2);
 });
 
-it("keeps Workspace inside the workbench and out of the conversation header", async () => {
+it("keeps File inside the workbench and out of the conversation header", async () => {
 	const input = props();
 	const { rerender } = render(view(input));
 	const header = screen.getByText("Thread title").closest("header");
 	expect(
-		screen.queryByRole("button", { name: "Workspace" }),
+		screen.queryByRole("button", { name: "File" }),
 	).not.toBeInTheDocument();
 	expect(
 		screen.queryByRole("button", { name: "Open workbench" }),
@@ -645,7 +655,7 @@ it("keeps Workspace inside the workbench and out of the conversation header", as
 	dock.isOpen = true;
 	rerender(view(input));
 	await frame();
-	const menu = screen.getByRole("button", { name: "Workspace" });
+	const menu = screen.getByRole("button", { name: "File" });
 	const workbench = screen.getByRole("complementary", {
 		name: "Thread workbench",
 	});
@@ -659,5 +669,5 @@ it("keeps Workspace inside the workbench and out of the conversation header", as
 	dock.isOpen = true;
 	rerender(view(input));
 	await frame();
-	expect(screen.getByRole("button", { name: "Workspace" })).toBe(menu);
+	expect(screen.getByRole("button", { name: "File" })).toBe(menu);
 });

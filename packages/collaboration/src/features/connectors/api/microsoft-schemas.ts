@@ -1,5 +1,6 @@
 import { z } from "@semoss/ui/next";
 import { readDisplayBody } from "@/features/email/message-body";
+import { replyRecipientsSchema } from "./reply-recipients";
 
 const date = z
 	.string()
@@ -136,6 +137,7 @@ export const replyDraftReceiptSchema = z.object({
 	sent: z.literal(false),
 	uid: z.string().min(1),
 	repliedTo: z.string().min(1),
+	recipients: replyRecipientsSchema.optional(),
 	webLink: optionalText,
 });
 export const forwardDraftReceiptSchema = z.object({

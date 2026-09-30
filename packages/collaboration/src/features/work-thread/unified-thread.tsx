@@ -47,16 +47,16 @@ import { useThreadDraftProposals } from "./use-thread-draft-proposals";
 import { useThreadWorkbenchRequest } from "./use-thread-workbench-request";
 import { useWorkComposerSession } from "./work-composer-state.context";
 import { WORK_ASSISTANT, WorkConversation } from "./work-conversation";
-import { WorkDraftCard } from "./work-draft-card";
 import { WorkEmailContext } from "./work-email.context";
+import { WorkPaneControls } from "./work-pane-controls";
+import { workPanelTarget } from "./work-pane-layout";
 import { WORK_PANEL_TYPES } from "./work-panel.constants";
 import { WorkPanelMenu } from "./work-panel-menu";
 import { WorkThreadContext } from "./work-thread-context";
 import { workTimeline } from "./work-timeline";
 import { WorkWorkbenchClose } from "./work-workbench-close";
 
-const DEFAULT_WORKBENCH_SIZE = 40;
-const DRAFT_WORKBENCH_SIZE = 70;
+const DEFAULT_WORKBENCH_SIZE = 70;
 
 /** One conversation scrollbar, one session owner, and a dock that stays mounted while concealed. */
 export function UnifiedThread({
@@ -101,16 +101,16 @@ export function UnifiedThread({
 		!snapshot.turn.isRestoring &&
 		!snapshot.error &&
 		!snapshot.turn.transportError;
-	const isComposerOpen =
-		memory.mode === "assistant" || (isHistoryReady && hasActivity);
+	const isComposerOpen = true;
 	useEffect(() => {
-		if (isHistoryReady && hasActivity && memory.mode === null)
+		if (isHistoryReady && memory.mode === null)
 			composer.setMode("assistant");
-	}, [composer, isHistoryReady, hasActivity, memory.mode]);
+	}, [composer, isHistoryReady, memory.mode]);
 	const fieldId = useId();
 	const workbench = useToolWorkbench();
 	const activePane = workbench.isOpen;
 	const [isNarrow, setIsNarrow] = useState(true);
+	const [isChatCollapsed, setIsChatCollapsed] = useState(false);
 	const [resumeSignal, setResumeSignal] = useState(0);
 	const root = useRef<HTMLDivElement>(null);
 	const conversationPanel = useRef<ComponentRef<typeof ResizablePanel>>(null);
@@ -122,7 +122,7 @@ export function UnifiedThread({
 	const split = useRef(DEFAULT_WORKBENCH_SIZE);
 	const firstSeen = useRef(new Map<string, string>());
 	const roomId = snapshot.association?.roomId ?? "";
-	const fullPane = isNarrow;
+	const fullPane = isNarrow || isChatCollapsed;
 	const openedFromMenu = useRef(false);
 	const emailTrigger = useRef<HTMLElement | null>(null);
 	const [workbenchFocusRequest, setWorkbenchFocusRequest] = useState(0);
@@ -143,16 +143,15 @@ export function UnifiedThread({
 				emailTrigger.current = current;
 			workbench.store
 				.getState()
-				.layout.actions.selectPanel(type, config, { name });
-			if (type === WORK_PANEL_TYPES.DRAFT) {
-				split.current = DRAFT_WORKBENCH_SIZE;
-				if (activePane && !fullPane)
-					sidePanel.current?.resize(DRAFT_WORKBENCH_SIZE);
-			}
+				.layout.actions.selectPanel(type, config, {
+					name,
+					target: workPanelTarget(workbench.store.getState().layout),
+				});
+
 			openWorkbench();
 			setWorkbenchFocusRequest((value) => value + 1);
 		},
-		[activePane, fullPane, openWorkbench, workbench.store],
+		[openWorkbench, workbench.store],
 	);
 	const openEmail = useCallback(
 		(
@@ -219,7 +218,7 @@ export function UnifiedThread({
 		const element = root.current;
 		if (!element) return;
 		const observer = new ResizeObserver(([entry]) => {
-			if (entry) setIsNarrow(entry.contentRect.width < 768);
+			if (entry) setIsNarrow(entry.contentRect.width < 1024);
 		});
 		observer.observe(element);
 		return () => observer.disconnect();
@@ -233,7 +232,6 @@ export function UnifiedThread({
 		} else if (fullPane) {
 			conversationPanel.current?.collapse();
 			sidePanel.current?.resize(100);
-			closeButton.current?.focus();
 		} else {
 			conversationPanel.current?.expand();
 			sidePanel.current?.resize(preferredSplit);
@@ -242,9 +240,6 @@ export function UnifiedThread({
 			isAdjusting.current = false;
 		});
 		return () => cancelAnimationFrame(frame);
-	}, [activePane, fullPane]);
-	useEffect(() => {
-		if (activePane && !fullPane) paneRef.current?.focus();
 	}, [activePane, fullPane]);
 	useEffect(() => {
 		for (const message of snapshot.turn.messages)
@@ -257,13 +252,13 @@ export function UnifiedThread({
 	const entries = useMemo(
 		() =>
 			workTimeline(
-				workspace.messages,
+				[],
 				snapshot.turn.messages,
 				roomId,
 				workbench.tools,
 				firstSeen.current,
 			),
-		[workspace.messages, snapshot.turn.messages, roomId, workbench.tools],
+		[snapshot.turn.messages, roomId, workbench.tools],
 	);
 	const allowedSources = useMemo(
 		() =>
@@ -295,6 +290,8 @@ export function UnifiedThread({
 					);
 					return;
 				}
+				setIsChatCollapsed(false);
+				if (isNarrow) workbench.closeWorkbench();
 				composer.setSourceMessage(request.sourceMessageId);
 				composer.setMode("assistant");
 				setFocusRequest((value) => value + 1);
@@ -344,6 +341,8 @@ export function UnifiedThread({
 			}
 		},
 		[
+			isNarrow,
+			workbench.closeWorkbench,
 			allowedSources,
 			composer,
 			context,
@@ -364,6 +363,7 @@ export function UnifiedThread({
 	);
 	const submitted = lastSubmittedContext(snapshot.turn.messages, thread.id);
 	const closePane = () => {
+		setIsChatCollapsed(false);
 		workbench.closeWorkbench();
 		const targetId = openedFromMenu.current
 			? threadMenuTriggerId(thread.id)
@@ -384,6 +384,18 @@ export function UnifiedThread({
 		contextRevision: context.revision,
 		contextText: JSON.stringify(context, null, 2),
 	};
+	const backToFeed = (
+		<Button
+			asChild
+			variant="ghost"
+			size="icon-sm"
+			className="pointer-coarse:size-11 shrink-0 text-muted-foreground"
+		>
+			<Link to="/work" aria-label="Back to feed" title="Back to feed">
+				<ArrowLeft aria-hidden="true" />
+			</Link>
+		</Button>
+	);
 	return (
 		<WorkEmailContext.Provider
 			value={{ thread, workspace, composer, allowedSources, openEmail }}
@@ -423,8 +435,8 @@ export function UnifiedThread({
 								ref={conversationPanel}
 								id={`${fieldId}-conversation`}
 								order={1}
-								defaultSize={100}
-								minSize={fullPane ? 0 : 30}
+								defaultSize={30}
+								minSize={fullPane ? 0 : 20}
 								collapsible
 								collapsedSize={0}
 							>
@@ -437,39 +449,42 @@ export function UnifiedThread({
 											: "flex",
 									)}
 								>
-									<header className="shrink-0 border-border border-b bg-background py-2">
-										<div className="mx-auto flex w-full min-w-0 max-w-3xl items-start gap-3 @md/conversation:px-6 px-4">
-											<Button
-												asChild
-												variant="ghost"
-												size="icon-sm"
-												className="pointer-coarse:size-11 shrink-0 text-muted-foreground"
-											>
-												<Link
-													to="/work"
-													aria-label="Back to feed"
-													title="Back to feed"
-												>
-													<ArrowLeft aria-hidden="true" />
-												</Link>
-											</Button>
-											{header}
+									<header className="shrink-0 border-border border-b bg-background py-1">
+										<div className="flex w-full min-w-0 items-center gap-1 px-2">
+											{backToFeed}
+											<div className="min-w-0 flex-1">
+												{header}
+											</div>
+											<WorkPaneControls
+												isWorkbenchOpen={activePane}
+												isChatVisible={
+													!activePane || !fullPane
+												}
+												isCompact={isNarrow}
+												onToggleChat={() => {
+													if (isNarrow) {
+														if (activePane)
+															closePane();
+														else
+															workbench.openWorkbench();
+													} else if (!activePane) {
+														setIsChatCollapsed(
+															false,
+														);
+														workbench.openWorkbench();
+													} else
+														setIsChatCollapsed(
+															(value) => !value,
+														);
+												}}
+											/>
 										</div>
 									</header>
 									<WorkConversation
 										thread={thread}
 										entries={entries}
-										allowedSources={allowedSources}
 										resumeSignal={resumeSignal}
 										showAssistant={isComposerOpen}
-										emailDrafts={memory.emailDrafts}
-										onOpenEmail={(messageId, trigger) =>
-											openEmail(
-												messageId,
-												"source",
-												trigger,
-											)
-										}
 										actions={
 											isHistoryReady ? (
 												<ThreadQuickActions
@@ -521,30 +536,7 @@ export function UnifiedThread({
 											</AlertDescription>
 										</Alert>
 									)}
-									{memory.emailDrafts.some(
-										(draft) =>
-											!draft.seed.assistantMessageId,
-									) && (
-										<section
-											aria-label="Local email drafts"
-											className="max-h-48 shrink-0 overflow-y-auto border-border border-t py-4"
-										>
-											<div className="mx-auto flex max-w-3xl flex-col gap-3 @md/conversation:px-6 px-4">
-												{memory.emailDrafts
-													.filter(
-														(draft) =>
-															!draft.seed
-																.assistantMessageId,
-													)
-													.map((draft) => (
-														<WorkDraftCard
-															key={draft.seed.id}
-															draft={draft}
-														/>
-													))}
-											</div>
-										</section>
-									)}
+
 									<div
 										className={cn(
 											"shrink-0",
@@ -600,9 +592,9 @@ export function UnifiedThread({
 								ref={sidePanel}
 								id={`${fieldId}-panel`}
 								order={2}
-								defaultSize={0}
+								defaultSize={70}
 								minSize={fullPane ? 0 : 25}
-								maxSize={fullPane ? 100 : 70}
+								maxSize={fullPane ? 100 : 80}
 								collapsible
 								collapsedSize={0}
 							>
@@ -627,14 +619,42 @@ export function UnifiedThread({
 									>
 										<Workbench
 											snapshot={workbench.snapshot}
+											layoutMode={
+												isNarrow ? "compact" : "auto"
+											}
 											mobileTopBorder="toolbar"
 											borderSlots={{
 												top: {
-													before: <WorkPanelMenu />,
+													before: (
+														<>
+															{fullPane &&
+																backToFeed}
+															{isChatCollapsed &&
+																!isNarrow && (
+																	<WorkPaneControls
+																		isWorkbenchOpen={
+																			activePane
+																		}
+																		isChatVisible={
+																			false
+																		}
+																		isCompact={
+																			false
+																		}
+																		onToggleChat={() =>
+																			setIsChatCollapsed(
+																				false,
+																			)
+																		}
+																	/>
+																)}
+															<WorkPanelMenu />
+														</>
+													),
 													after: (
 														<WorkWorkbenchClose
 															isFullWidth={
-																fullPane
+																isNarrow
 															}
 															buttonRef={
 																handleCloseRef

@@ -132,7 +132,7 @@ function setup() {
 	);
 }
 async function openMenu() {
-	await userEvent.click(screen.getByRole("button", { name: "Workspace" }));
+	await userEvent.click(screen.getByRole("button", { name: "File" }));
 }
 function select(id: string) {
 	act(() =>
@@ -152,6 +152,7 @@ const MENU_LABELS = [
 	"New file…",
 	"New folder…",
 	"Upload files…",
+	"Emails",
 	"Context",
 	"Tools",
 	"Activity",
@@ -215,7 +216,7 @@ it("browses the existing Files panel and reuses fixed panels", async () => {
 	await openMenu();
 	await userEvent.click(screen.getByRole("menuitem", { name: "Context" }));
 	expect(store.getState().layout.selection.panel).toBe("context");
-	expect(Object.keys(store.getState().layout.panels)).toHaveLength(5);
+	expect(Object.keys(store.getState().layout.panels)).toHaveLength(6);
 });
 
 it("keeps the same menu on mobile and restores trigger focus after navigation", async () => {
@@ -230,7 +231,7 @@ it("keeps the same menu on mobile and restores trigger focus after navigation", 
 	expect(store.getState().layout.mobileActivePanelId).toBe("tools");
 	expect(screen.queryByRole("menu")).toBeNull();
 	await waitFor(() =>
-		expect(screen.getByRole("button", { name: "Workspace" })).toHaveFocus(),
+		expect(screen.getByRole("button", { name: "File" })).toHaveFocus(),
 	);
 });
 
@@ -242,7 +243,7 @@ it("opens a fixed panel and reuses it on subsequent selections", async () => {
 	await openMenu();
 	await userEvent.click(screen.getByRole("menuitem", { name: "Settings" }));
 	expect(store.getState().layout.selection.panel).toBe(firstId);
-	expect(Object.keys(store.getState().layout.panels)).toHaveLength(6);
+	expect(Object.keys(store.getState().layout.panels)).toHaveLength(7);
 });
 
 it.each([
@@ -278,9 +279,7 @@ it.each([
 		);
 		expect(emitted).not.toHaveBeenCalled();
 		await waitFor(() =>
-			expect(
-				screen.getByRole("button", { name: "Workspace" }),
-			).toHaveFocus(),
+			expect(screen.getByRole("button", { name: "File" })).toHaveFocus(),
 		);
 		await openMenu();
 		await userEvent.click(screen.getByRole("menuitem", { name: label }));
@@ -294,9 +293,7 @@ it.each([
 			},
 		);
 		await waitFor(() =>
-			expect(
-				screen.getByRole("button", { name: "Workspace" }),
-			).toHaveFocus(),
+			expect(screen.getByRole("button", { name: "File" })).toHaveFocus(),
 		);
 	},
 );
@@ -337,14 +334,14 @@ it.each(["connecting", "missing insight"])(
 
 it("supports keyboard opening, arrow navigation, activation, and Escape focus return", async () => {
 	setup();
-	const trigger = screen.getByRole("button", { name: "Workspace" });
+	const trigger = screen.getByRole("button", { name: "File" });
 	trigger.focus();
 	await userEvent.keyboard("{Enter}");
 	expect(
 		screen.getByRole("menuitem", { name: "Browse files…" }),
 	).toHaveFocus();
 	await userEvent.keyboard(
-		"{ArrowDown}{ArrowDown}{ArrowDown}{ArrowDown}{Enter}",
+		"{ArrowDown}{ArrowDown}{ArrowDown}{ArrowDown}{ArrowDown}{Enter}",
 	);
 	expect(store.getState().layout.selection.panel).toBe("context");
 	await waitFor(() => expect(trigger).toHaveFocus());
@@ -353,14 +350,14 @@ it("supports keyboard opening, arrow navigation, activation, and Escape focus re
 	await waitFor(() => expect(trigger).toHaveFocus());
 });
 
-it("returns focus after closing Commands opened from Workspace", async () => {
+it("returns focus after closing Commands opened from File", async () => {
 	setup();
 	await openMenu();
 	await userEvent.click(screen.getByRole("menuitem", { name: "Commands…" }));
 	expect(store.getState().command.isCommandOpen).toBe(true);
 	act(() => store.getState().command.actions.setCommandOpen(false));
 	await waitFor(() =>
-		expect(screen.getByRole("button", { name: "Workspace" })).toHaveFocus(),
+		expect(screen.getByRole("button", { name: "File" })).toHaveFocus(),
 	);
 	expect(openWorkbench).not.toHaveBeenCalled();
 });

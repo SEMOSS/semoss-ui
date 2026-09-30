@@ -23,7 +23,9 @@ export function SourceMessageBody({
 		<div
 			className={cn(
 				"min-w-0",
-				channel === "teams" ? "space-y-2" : "space-y-6",
+				channel === "teams" || presentation === "reader"
+					? "space-y-2"
+					: "space-y-6",
 			)}
 		>
 			{body.contentType === "html" ? (

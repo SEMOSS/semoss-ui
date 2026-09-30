@@ -54,11 +54,7 @@ function view(
 					<WorkConversation
 						thread={{ ...state.threads[0], channel: "email" }}
 						entries={entries}
-						allowedSources={
-							new Set(sources.map((message) => message.id))
-						}
 						resumeSignal={0}
-						onOpenEmail={vi.fn()}
 						turn={workSnapshot().turn}
 						{...props}
 					/>
@@ -68,38 +64,23 @@ function view(
 	);
 }
 
-it("renders compact email cards and assistant bubbles in chronological order", () => {
+it("keeps source emails out of the assistant transcript", () => {
 	render(view(workTimeline(sources, answers, "room")));
 	const transcript = screen.getByRole("region", {
 		name: "Conversation messages",
 	});
-	const articles = within(transcript).getAllByRole("article");
-	expect(articles).toHaveLength(4);
-	for (const [index, text] of [
-		"First email",
-		"First answer",
-		"Later email",
-		"Second answer",
-	].entries()) {
-		expect(articles[index]).toHaveTextContent(text);
-	}
-	expect(
-		within(transcript).queryByRole("region", {
-			name: /^(Email|Assistant) conversation$/,
-		}),
-	).toBeNull();
-	expect(
-		screen.getAllByRole("button", { name: /^Open email:/ }),
-	).toHaveLength(2);
-	expect(
-		screen.getAllByRole("region", { name: "Conversation messages" }),
-	).toHaveLength(1);
+	expect(within(transcript).getAllByRole("article")).toHaveLength(2);
+	expect(transcript).toHaveTextContent("First answer");
+	expect(transcript).toHaveTextContent("Second answer");
+	expect(screen.queryByText("First email")).toBeNull();
+	expect(screen.queryByText("Later email")).toBeNull();
+	expect(screen.queryByRole("button", { name: /^Open email:/ })).toBeNull();
 });
 
-it("inserts a later email during streaming without replacing existing rows or expanded reasoning", () => {
-	const active: ConversationMessage = {
+it("source refreshes do not replace assistant rows or expanded reasoning", () => {
+	const active = {
 		...answers[0],
-		live: { phase: "streaming", hasObservationIssue: false },
+		live: { phase: "streaming" as const, hasObservationIssue: false },
 	};
 	const turn = {
 		...workSnapshot().turn,
@@ -107,64 +88,22 @@ it("inserts a later email during streaming without replacing existing rows or ex
 		phase: "streaming" as const,
 	};
 	const { rerender } = render(
-		view(workTimeline([sources[0]], [active], "room"), { turn }),
+		view(workTimeline([], [active], "room"), { turn }),
 	);
-	const firstEmail = screen.getByText("First email");
-	const firstAnswer = screen.getByText("First answer");
+	const answer = screen.getByText("First answer");
 	const thinking = screen.getByRole("button", { name: "Thinking" });
 	fireEvent.click(thinking);
 	thinking.focus();
-	rerender(
-		view(workTimeline(sources, [active, answers[1]], "room"), { turn }),
-	);
-	expect(screen.getByText("First email")).toBe(firstEmail);
-	expect(screen.getByText("First answer")).toBe(firstAnswer);
-	expect(screen.getByRole("button", { name: "Thinking" })).toBe(thinking);
+	rerender(view(workTimeline([], [active, answers[1]], "room"), { turn }));
+	expect(screen.getByText("First answer")).toBe(answer);
 	expect(thinking).toHaveAttribute("aria-expanded", "true");
 	expect(thinking).toHaveFocus();
-	const rows = within(
-		screen.getByRole("region", { name: "Conversation messages" }),
-	).getAllByRole("article");
-	expect(rows[2]).toHaveTextContent("Later email");
-	expect(rows[3]).toHaveTextContent("Second answer");
 });
 
-it("keeps fresh-thread actions after the emails and only reveals the assistant prompt when selected", () => {
-	const entries = workTimeline(sources, [], "room");
-	const actions = <button type="button">Ask Assistant</button>;
-	const { rerender } = render(
-		view(entries, { showAssistant: false, actions }),
-	);
-	expect(screen.getByRole("button", { name: "Ask Assistant" })).toBeVisible();
-	expect(screen.queryByText("Ask a question or work on a reply.")).toBeNull();
-	expect(
-		screen
-			.getByText("Later email")
-			.compareDocumentPosition(
-				screen.getByRole("button", { name: "Ask Assistant" }),
-			) & Node.DOCUMENT_POSITION_FOLLOWING,
-	).toBeTruthy();
-	rerender(view(entries, { showAssistant: true }));
-	expect(
-		screen.getByText("Ask a question or work on a reply."),
-	).toBeVisible();
-	expect(screen.queryByRole("button", { name: "Ask Assistant" })).toBeNull();
-});
-
-it("preserves source and assistant empty-state messages in their sections", () => {
+it("shows the chat empty state without an email empty state", () => {
 	render(view([]));
-	expect(screen.getByText("No source messages are available.")).toBeVisible();
 	expect(
 		screen.getByText("Ask a question or work on a reply."),
 	).toBeVisible();
-});
-
-it("opens the selected source without expanding its body or changing context", () => {
-	const onOpenEmail = vi.fn();
-	render(view(workTimeline(sources, answers, "room"), { onOpenEmail }));
-	const card = screen.getAllByRole("button", { name: /^Open email:/ })[1];
-	fireEvent.click(card);
-	expect(onOpenEmail).toHaveBeenCalledWith("after", card);
-	expect(screen.queryByTitle(/^Email from/)).toBeNull();
-	expect(screen.getByText("First answer")).toBeVisible();
+	expect(screen.queryByText("No source messages are available.")).toBeNull();
 });

@@ -69,6 +69,8 @@ interface WorkbenchProps {
 	borderSlots?: WorkbenchBorderSlots;
 	/** Keep top slots above the mobile tabs, or use the existing actions drawer. */
 	mobileTopBorder?: "toolbar" | "drawer";
+	/** Hosts may use the compact tab layout when their container is narrow. */
+	layoutMode?: "auto" | "compact";
 
 	/** Fired when a panel becomes docked somewhere. */
 	onPanelOpen?: (pid: WorkbenchPanelId) => void;
@@ -94,6 +96,7 @@ export const Workbench: FC<WorkbenchProps> = ({
 	onChange,
 	borderSlots,
 	mobileTopBorder = "drawer",
+	layoutMode = "auto",
 	onPanelOpen,
 	onPanelClose,
 	onSelectionChange,
@@ -104,7 +107,8 @@ export const Workbench: FC<WorkbenchProps> = ({
 	const isMobileLayout = useWorkbench((s) => s.layout.isMobileLayout);
 	// a boolean, so the shell re-renders only when maximize actually flips
 	const maximized = useWorkbench((s) => Boolean(s.layout.maximizedTabsetId));
-	const isMobile = useIsMobile();
+	const isSmallViewport = useIsMobile();
+	const isMobile = layoutMode === "compact" || isSmallViewport;
 
 	const rootRef = useRef<HTMLDivElement | null>(null);
 	const stageRef = useRef<HTMLDivElement | null>(null);

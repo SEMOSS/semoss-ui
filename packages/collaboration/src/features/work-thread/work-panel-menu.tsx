@@ -33,6 +33,7 @@ interface CreationRequest
 }
 
 const FIXED_PANELS = [
+	{ id: "emails", label: "Emails" },
 	{ id: "context", label: "Context" },
 	{ id: "tools", label: "Tools" },
 	{ id: "activity", label: "Activity" },

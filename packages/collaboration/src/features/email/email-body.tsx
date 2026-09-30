@@ -19,8 +19,8 @@ export function EmailBody({
 	const frame = useRef<HTMLIFrameElement>(null);
 	const id = useId();
 	const source = useMemo(
-		() => emailDocument(html, loadImages),
-		[html, loadImages],
+		() => emailDocument(html, loadImages, presentation),
+		[html, loadImages, presentation],
 	);
 	useEffect(() => {
 		const element = frame.current;

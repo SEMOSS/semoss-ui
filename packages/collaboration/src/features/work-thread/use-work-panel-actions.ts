@@ -1,6 +1,7 @@
 import {
 	BookOpen,
 	FolderOpen,
+	Mail,
 	ScrollText,
 	Settings2,
 	Wrench,
@@ -8,6 +9,7 @@ import {
 import { FILE_PANEL_TYPES } from "@semoss/panels";
 import type { ComposerPanelAction } from "@/features/rooms/components/room-composer.types";
 import { useToolWorkbench } from "@/features/tools/tool-workbench.context";
+import { restoreWorkPane, workPanelTarget } from "./work-pane-layout";
 import { WORK_PANEL_TYPES } from "./work-panel.constants";
 import { useWorkThread } from "./work-thread-context";
 /** All entry points select an existing panel before revealing the dock. */
@@ -19,12 +21,26 @@ export function useWorkPanelActions(): ComposerPanelAction[] {
 		name: string,
 		config?: Record<string, unknown>,
 	) => {
-		workbench.store
-			.getState()
-			.layout.actions.selectPanel(type, config, { name });
+		const layout = workbench.store.getState().layout;
+		if (
+			type === WORK_PANEL_TYPES.CONTEXT ||
+			type === WORK_PANEL_TYPES.EMAILS
+		)
+			restoreWorkPane(layout, type);
+		else
+			layout.actions.selectPanel(type, config, {
+				name,
+				target: workPanelTarget(layout),
+			});
 		workbench.openWorkbench();
 	};
 	return [
+		{
+			id: "emails",
+			label: "View emails",
+			icon: Mail,
+			onSelect: () => open(WORK_PANEL_TYPES.EMAILS, "Emails"),
+		},
 		{
 			id: "settings",
 			label: "Open Settings",

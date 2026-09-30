@@ -76,7 +76,7 @@ import {
 import { emailLink } from "./email-html";
 import { useEmailFormatting } from "./use-email-formatting";
 
-const iconClass = "size-11 p-0 sm:size-8 pointer-coarse:size-11";
+const iconClass = "size-8 p-0 pointer-coarse:size-11";
 const groupClass = "border-l border-border pl-2";
 const textFormats = [
 	{ value: "bold", label: "Bold", icon: Bold },
@@ -134,7 +134,7 @@ export function EmailFormatToolbar({
 	return (
 		<fieldset
 			disabled={disabled}
-			className="m-0 min-w-0 space-y-2 rounded-t-lg border-0 border-border border-b bg-muted/30 p-2"
+			className="m-0 min-w-0 space-y-2 border-0 border-border/60 border-y bg-muted/30 px-4 py-1"
 		>
 			<legend className="sr-only">Email formatting</legend>
 			<div className="flex min-w-0 flex-wrap items-center gap-2">
@@ -436,7 +436,7 @@ export function EmailFormatToolbar({
 				<Button
 					type="button"
 					variant="ghost"
-					className="min-h-9 pointer-coarse:min-h-11 gap-2 px-2 text-muted-foreground"
+					className="min-h-8 pointer-coarse:min-h-11 gap-2 px-2 text-muted-foreground"
 					disabled={disabled}
 					aria-expanded={isExpanded}
 					aria-controls={`${id}-advanced`}
@@ -484,7 +484,7 @@ export function EmailFormatToolbar({
 							"Paragraph style",
 							<SelectTrigger
 								size="sm"
-								className="min-h-11 pointer-coarse:min-h-11 w-32 bg-background sm:min-h-8"
+								className="min-h-8 pointer-coarse:min-h-11 w-32 bg-background"
 								aria-label="Paragraph style"
 							>
 								<SelectValue />
@@ -512,7 +512,7 @@ export function EmailFormatToolbar({
 							"Font size",
 							<SelectTrigger
 								size="sm"
-								className="min-h-11 pointer-coarse:min-h-11 w-20 bg-background sm:min-h-8"
+								className="min-h-8 pointer-coarse:min-h-11 w-20 bg-background"
 								aria-label="Font size"
 							>
 								<SelectValue placeholder="Size">

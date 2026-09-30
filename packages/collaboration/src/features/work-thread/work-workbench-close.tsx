@@ -23,7 +23,7 @@ export function WorkWorkbenchClose({
 	buttonRef,
 	onClose,
 }: WorkWorkbenchCloseProps) {
-	const label = isFullWidth ? "Back to conversation" : "Close workbench";
+	const label = isFullWidth ? "Back to chat" : "Close workbench";
 	return (
 		<Tooltip disableHoverableContent={false}>
 			<TooltipTrigger asChild>
@@ -49,7 +49,7 @@ export function WorkWorkbenchClose({
 							className="size-3.5"
 						/>
 					)}
-					{isFullWidth && "Back to conversation"}
+					{isFullWidth && "Back to chat"}
 				</Button>
 			</TooltipTrigger>
 			<TooltipContent>{label}</TooltipContent>

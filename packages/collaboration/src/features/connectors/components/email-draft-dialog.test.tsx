@@ -39,8 +39,29 @@ vi.mock("@/features/rooms/api/upload-room-files", () => ({
 	uploadRoomFiles: vi.fn(),
 }));
 
+const recipientRead = vi.hoisted(() => ({
+	result: null as null | { status: string; data?: unknown; error?: Error },
+	refresh: vi.fn(),
+}));
 vi.mock("@semoss/sdk/react", () => ({
 	useInsight: () => ({ actions: {}, insightId: "insight" }),
+	usePixel: (query: string) => ({
+		...(recipientRead.result ?? {
+			status: "SUCCESS",
+			data: {
+				uid: query
+					? JSON.parse(
+							query.match(/uid=(\[[^\]]*\])/)?.[1] ?? "[]",
+						)[0]
+					: "",
+				replyRecipients: {
+					to: ["alex@example.com", "original@example.com"],
+					cc: ["excluded@example.com"],
+				},
+			},
+		}),
+		refresh: recipientRead.refresh,
+	}),
 }));
 vi.mock("../api/microsoft", async (importOriginal) => {
 	const original = await importOriginal<typeof import("../api/microsoft")>();
@@ -54,6 +75,7 @@ beforeAll(() => {
 
 beforeEach(() => {
 	vi.clearAllMocks();
+	recipientRead.result = null;
 	vi.mocked(saveEmailDraft)
 		.mockReset()
 		.mockResolvedValue({ savedDraftId: "saved" });
@@ -220,7 +242,7 @@ it("does not retry an uncertain write until the user checks Outlook", async () =
 	expect(saveEmailDraft).toHaveBeenCalledTimes(1);
 });
 
-it("uses native reply identity and defaults reply all to false", async () => {
+it("uses native reply identity and saves the visible reply-all recipients", async () => {
 	const user = userEvent.setup();
 	vi.mocked(saveEmailDraft).mockResolvedValue({ savedDraftId: "reply" });
 	render(
@@ -232,9 +254,12 @@ it("uses native reply identity and defaults reply all to false", async () => {
 			initialBody="Thanks"
 		/>,
 	);
+	expect(screen.getByRole("textbox", { name: "To" })).toBeEnabled();
 	expect(
-		screen.queryByRole("textbox", { name: "To" }),
-	).not.toBeInTheDocument();
+		screen.getByRole("button", {
+			name: "Edit Cc recipient excluded@example.com",
+		}),
+	).toBeVisible();
 	await user.click(screen.getByRole("button", { name: "Save Draft" }));
 	await waitFor(() =>
 		expect(saveEmailDraft).toHaveBeenCalledWith(
@@ -244,7 +269,10 @@ it("uses native reply identity and defaults reply all to false", async () => {
 				sourceUid: "mail-native",
 				body: expect.stringContaining("Thanks"),
 				bodyFormat: "html",
-				replyAll: false,
+				replyAll: true,
+				overrideRecipients: true,
+				to: "alex@example.com, original@example.com",
+				cc: "excluded@example.com",
 			},
 		),
 	);
@@ -513,7 +541,7 @@ it("reveals and focuses Cc and Bcc, retaining recipients and inline errors", asy
 	expect(saveEmailDraft).not.toHaveBeenCalled();
 });
 
-it("shows the source sender and saves the selected native reply-all behavior", async () => {
+it("edits the full reply envelope in place and saves exactly the displayed addresses", async () => {
 	const user = userEvent.setup();
 	render(
 		<EmailDraftDialog
@@ -521,33 +549,186 @@ it("shows the source sender and saves the selected native reply-all behavior", a
 			onOpenChange={vi.fn()}
 			mode="reply"
 			sourceUid="original-mail"
-			initialSubject="Project review"
-			initialBody="Thanks for the update."
-			replyContext={{ name: "Alex Chen", address: "alex@example.com" }}
+			initialBody="Thanks."
 		/>,
 	);
-	expect(screen.getByText("Alex Chen")).toBeVisible();
-	expect(screen.getByText("alex@example.com")).toBeVisible();
 	expect(screen.queryByText(/Includes the original To and Cc/)).toBeNull();
-	await user.click(
-		screen.getByRole("combobox", { name: "Reply recipients" }),
-	);
-	await user.click(screen.getByRole("option", { name: "Reply all" }));
 	expect(
-		screen.getByRole("combobox", { name: "Reply recipients" }),
-	).toHaveAccessibleDescription(
-		"Includes the original To and Cc recipients, including people excluded from assistant context.",
+		screen.queryByRole("combobox", { name: "Reply recipients" }),
+	).toBeNull();
+	expect(
+		screen.queryByRole("button", { name: "About reply recipients" }),
+	).toBeNull();
+	await user.click(
+		screen.getByRole("button", {
+			name: "Remove original@example.com from To",
+		}),
 	);
-	expect(saveEmailDraft).not.toHaveBeenCalled();
+	await user.click(
+		screen.getByRole("button", {
+			name: "Edit To recipient alex@example.com",
+		}),
+	);
+	const to = screen.getByRole("textbox", { name: "To" });
+	expect(to).toHaveFocus();
+	await user.clear(to);
+	await user.type(to, "edited@example.com{Enter}");
+	await user.type(to, "added@example.com{Enter}");
+	await user.click(
+		screen.getByRole("button", {
+			name: "Remove excluded@example.com from Cc",
+		}),
+	);
 	await user.click(screen.getByRole("button", { name: "Save Draft" }));
 	await waitFor(() =>
 		expect(saveEmailDraft).toHaveBeenCalledWith(
-			expect.anything(),
+			{},
 			expect.objectContaining({
-				mode: "reply",
 				sourceUid: "original-mail",
 				replyAll: true,
+				overrideRecipients: true,
+				to: "edited@example.com, added@example.com",
+				cc: "",
 			}),
 		),
 	);
+});
+
+it("blocks saving while recipients load and provides an inline retry after failure", async () => {
+	recipientRead.result = { status: "LOADING" };
+	const props = {
+		isOpen: true,
+		onOpenChange: vi.fn(),
+		mode: "reply" as const,
+		sourceUid: "source",
+		initialBody: "Reply",
+	};
+	const view = render(<EmailDraftDialog {...props} />);
+	expect(
+		screen.getByRole("status", { name: "Loading reply recipients" }),
+	).toBeVisible();
+	expect(screen.getByRole("textbox", { name: "To" })).toBeDisabled();
+	expect(screen.getByRole("button", { name: "Save Draft" })).toBeDisabled();
+	const body = screen.getByRole("textbox", { name: "Reply text (required)" });
+	await userEvent.setup().type(body, " while loading");
+	recipientRead.result = {
+		status: "ERROR",
+		error: new Error("Microsoft connection failed"),
+	};
+	view.rerender(<EmailDraftDialog {...props} />);
+	expect(screen.getByRole("alert")).toHaveTextContent(
+		"Microsoft connection failed",
+	);
+	await userEvent
+		.setup()
+		.click(
+			screen.getByRole("button", { name: "Retry loading recipients" }),
+		);
+	expect(recipientRead.refresh).toHaveBeenCalledOnce();
+	recipientRead.result = null;
+	view.rerender(<EmailDraftDialog {...props} />);
+	expect(screen.getByRole("button", { name: "Save Draft" })).toBeEnabled();
+	expect(body).toHaveTextContent("while loading");
+	expect(saveEmailDraft).not.toHaveBeenCalled();
+});
+
+it.each([{}, { uid: "wrong", replyRecipients: { to: [], cc: [] } }])(
+	"blocks unverified recipient data: %s",
+	(data) => {
+		recipientRead.result = { status: "SUCCESS", data };
+		render(
+			<EmailDraftDialog
+				isOpen
+				onOpenChange={vi.fn()}
+				mode="reply"
+				sourceUid="source"
+				initialBody="Reply"
+			/>,
+		);
+		expect(
+			screen.getByRole("button", { name: "Save Draft" }),
+		).toBeDisabled();
+		expect(screen.getByRole("alert")).toHaveTextContent(
+			"could not be verified",
+		);
+	},
+);
+
+it("retains recipient edits after refresh, reopen and a failed save, including empty lists", async () => {
+	const user = userEvent.setup();
+	const props = {
+		isOpen: true,
+		onOpenChange: vi.fn(),
+		mode: "reply" as const,
+		sourceUid: "source",
+		initialBody: "Reply",
+	};
+	const view = render(<EmailDraftDialog {...props} />);
+	for (const name of [
+		"Remove alex@example.com from To",
+		"Remove original@example.com from To",
+		"Remove excluded@example.com from Cc",
+	])
+		await user.click(screen.getByRole("button", { name }));
+	view.rerender(<EmailDraftDialog {...props} initialBody="Source refresh" />);
+	view.rerender(<EmailDraftDialog {...props} isOpen={false} />);
+	view.rerender(<EmailDraftDialog {...props} />);
+	vi.mocked(saveEmailDraft).mockRejectedValueOnce(new Error("Save failed"));
+	await user.click(screen.getByRole("button", { name: "Save Draft" }));
+	await waitFor(() =>
+		expect(notifications.error).toHaveBeenCalledWith("Save failed"),
+	);
+	expect(
+		screen.queryByRole("button", { name: /Edit (To|Cc) recipient/ }),
+	).toBeNull();
+	await user.click(screen.getByRole("button", { name: "Save Draft" }));
+	await waitFor(() => expect(saveEmailDraft).toHaveBeenCalledTimes(2));
+	expect(saveEmailDraft).toHaveBeenLastCalledWith(
+		{},
+		expect.objectContaining({ to: "", cc: "", overrideRecipients: true }),
+	);
+});
+
+it("ignores stale recipient reads after switching to a different source email", async () => {
+	const user = userEvent.setup();
+	const props = {
+		isOpen: true,
+		onOpenChange: vi.fn(),
+		mode: "reply" as const,
+		sourceUid: "first",
+		initialBody: "Reply",
+	};
+	const view = render(<EmailDraftDialog {...props} />);
+	await user.type(
+		screen.getByRole("textbox", { name: "To" }),
+		"local@example.com{Enter}",
+	);
+	recipientRead.result = {
+		status: "SUCCESS",
+		data: {
+			uid: "first",
+			replyRecipients: { to: ["stale@example.com"], cc: [] },
+		},
+	};
+	view.rerender(<EmailDraftDialog {...props} sourceUid="second" />);
+	expect(screen.getByRole("button", { name: "Save Draft" })).toBeDisabled();
+	expect(
+		screen.queryByRole("button", { name: /Edit To recipient/ }),
+	).toBeNull();
+	recipientRead.result = {
+		status: "SUCCESS",
+		data: {
+			uid: "second",
+			replyRecipients: { to: ["second@example.com"], cc: [] },
+		},
+	};
+	view.rerender(<EmailDraftDialog {...props} sourceUid="second" />);
+	expect(
+		screen.getByRole("button", {
+			name: "Edit To recipient second@example.com",
+		}),
+	).toBeVisible();
+	expect(screen.queryByText("stale@example.com")).toBeNull();
+	expect(screen.queryByText("local@example.com")).toBeNull();
+	expect(screen.getByRole("button", { name: "Save Draft" })).toBeEnabled();
 });

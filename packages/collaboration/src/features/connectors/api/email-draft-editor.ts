@@ -4,6 +4,7 @@ import type { EmailDraftInput, SavedEmailDraft } from "../types";
 import { EmailDraftSession } from "./email-draft-session";
 import { type EmailDraftValues, emailDraftSchema } from "./email-draft-values";
 import { saveEmailDraft, UncertainDraftError } from "./microsoft";
+import type { ReplyRecipients } from "./reply-recipients";
 
 export interface EmailDraftSeed {
 	/** Stable origin identity; reopening an origin never replaces local edits. */
@@ -26,6 +27,7 @@ export type EmailDraftFieldErrors = Partial<
 >;
 
 interface EmailDraftSnapshot {
+	isReplyRecipientsInitialized: boolean;
 	values: EmailDraftValues;
 	fieldErrors: EmailDraftFieldErrors;
 	saved: SavedEmailDraft | null;
@@ -67,6 +69,7 @@ export class EmailDraftEditor {
 
 	constructor(readonly seed: EmailDraftSeed) {
 		this.snapshot = {
+			isReplyRecipientsInitialized: seed.mode !== "reply",
 			values: {
 				to: seed.to ?? "",
 				cc: seed.cc ?? "",
@@ -90,6 +93,19 @@ export class EmailDraftEditor {
 			error: "",
 		};
 	}
+
+	/** Apply native defaults once; subsequent empty lists are intentional edits. */
+	initializeReplyRecipients = (recipients: ReplyRecipients): void => {
+		if (this.snapshot.isReplyRecipientsInitialized) return;
+		this.update({
+			isReplyRecipientsInitialized: true,
+			values: {
+				...this.snapshot.values,
+				to: recipients.to.join(", "),
+				cc: recipients.cc.join(", "),
+			},
+		});
+	};
 
 	getSnapshot = (): EmailDraftSnapshot => this.snapshot;
 	subscribe = (listener: () => void): (() => void) => {
@@ -166,6 +182,10 @@ export class EmailDraftEditor {
 		if (this.savedValues && sameDraftValues(values, this.savedValues))
 			return null;
 		const { mode, sourceUid } = this.seed;
+		if (mode === "reply" && !this.snapshot.isReplyRecipientsInitialized) {
+			this.update({ error: "Load reply recipients before saving." });
+			return null;
+		}
 		const parsed = emailDraftSchema.safeParse(values);
 		if (!parsed.success) {
 			this.update({
@@ -206,7 +226,10 @@ export class EmailDraftEditor {
 							sourceUid: sourceUid ?? "",
 							body: values.body,
 							bodyFormat: "html",
-							replyAll: values.replyAll,
+							replyAll: true,
+							to: values.to,
+							cc: values.cc,
+							overrideRecipients: true,
 						}
 					: {
 							mode,

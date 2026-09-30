@@ -3,19 +3,15 @@ import {
 	useCallback,
 	useEffect,
 	useMemo,
-	useRef,
 	useState,
 } from "react";
 import { useInsight } from "@semoss/sdk/react";
 import { Button, toast } from "@semoss/ui/next";
-import type { InsightActions } from "@/lib/pixel";
 import type { CollaborationState } from "../state/collaboration.types";
-import {
-	CollaborationSessionProvider,
-	useCollaborationSession,
-} from "../state/collaboration-session.context";
-import { loadLiveState, loadThreadMessages } from "./live-state";
+import { CollaborationSessionProvider } from "../state/collaboration-session.context";
+import { loadLiveState } from "./live-state";
 import { createLiveSync } from "./live-sync";
+import { ThreadHistoryProvider } from "./thread-history-provider";
 
 /** Loads the owner's Collaboration data before rendering the app. */
 export function CollaborationDataProvider({
@@ -79,39 +75,9 @@ function LiveSessionProvider({ children }: { children: ReactNode }) {
 		);
 	return (
 		<CollaborationSessionProvider initialState={state} onChange={sync}>
-			<LiveThreadMessages actions={actions} />
-			{children}
+			<ThreadHistoryProvider actions={actions}>
+				{children}
+			</ThreadHistoryProvider>
 		</CollaborationSessionProvider>
 	);
-}
-
-/** Reads message text for each open thread once; closing and reopening a thread reads it again. */
-function LiveThreadMessages({ actions }: { actions: InsightActions }) {
-	const { state, dispatch } = useCollaborationSession();
-	const latest = useRef(state);
-	latest.current = state;
-	const requested = useRef(new Set<string>());
-	const { openThreadIds } = state;
-	useEffect(() => {
-		for (const id of requested.current)
-			if (!openThreadIds.includes(id)) requested.current.delete(id);
-		for (const id of openThreadIds) {
-			if (requested.current.has(id)) continue;
-			requested.current.add(id);
-			loadThreadMessages(actions, id)
-				.then((attach) => {
-					const thread = latest.current.threads.find(
-						(candidate) => candidate.id === id,
-					);
-					if (thread) dispatch(attach(thread));
-				})
-				// no retry until the thread is reopened, so one failure shows one toast
-				.catch((cause: unknown) =>
-					toast.error(
-						`Could not load this thread's messages: ${cause instanceof Error ? cause.message : String(cause)}`,
-					),
-				);
-		}
-	}, [actions, dispatch, openThreadIds]);
-	return null;
 }

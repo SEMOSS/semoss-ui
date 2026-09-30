@@ -101,6 +101,30 @@ function renderProvider(
 }
 
 describe("ToolWorkbenchProvider", () => {
+	it("honors defaultOpen without reopening after a user closes the dock", () => {
+		const view = () => (
+			<ToolWorkbenchProvider
+				roomId="room-default"
+				onApproveTool={vi.fn()}
+				onRejectTool={vi.fn()}
+				insightId="insight-1"
+				tools={{}}
+				pendingApprovals={[]}
+				defaultOpen
+			>
+				<RunFocusHarness />
+			</ToolWorkbenchProvider>
+		);
+		const { rerender } = render(view());
+		fireEvent.click(
+			screen.getByRole("button", { name: "Back to conversation" }),
+		);
+		rerender(view());
+		expect(
+			screen.getByRole("button", { name: "Inspect child" }),
+		).toBeVisible();
+	});
+
 	beforeEach(() => {
 		Object.defineProperty(window, "matchMedia", {
 			writable: true,

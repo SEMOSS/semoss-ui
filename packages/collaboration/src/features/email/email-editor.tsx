@@ -46,7 +46,7 @@ export function EmailEditor({
 	bodyReplacement,
 }: EmailEditorProps) {
 	return (
-		<div className="flex min-h-72 min-w-0 flex-1 flex-col bg-background">
+		<div className="flex min-h-48 min-w-0 flex-1 flex-col bg-background">
 			<LexicalComposer
 				initialConfig={{
 					namespace: "EmailDraft",
@@ -70,7 +70,7 @@ export function EmailEditor({
 							aria-required={required}
 							onBlur={onBlur}
 							aria-multiline="true"
-							className="min-h-64 min-w-0 flex-1 break-words @min-lg/compose:px-6 px-4 py-5 text-base leading-relaxed outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-inset"
+							className="min-h-48 min-w-0 flex-1 break-words px-4 py-3 text-base leading-relaxed outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-inset"
 						/>
 					}
 					ErrorBoundary={LexicalErrorBoundary}

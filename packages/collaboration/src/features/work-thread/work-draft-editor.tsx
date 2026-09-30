@@ -21,6 +21,7 @@ import { safeSourceUrl } from "@/features/connectors/api/microsoft";
 import { showEmailDraftSavedToast } from "@/features/connectors/components/email-draft-feedback";
 import { EmailDraftForm } from "@/features/connectors/components/email-draft-form";
 import type { EmailReplyContext } from "@/features/connectors/components/email-reply-field";
+import { useReplyRecipients } from "@/features/connectors/hooks/use-reply-recipients";
 import { draftText } from "@/features/email/email-html";
 import { useWorkThread } from "./work-thread-context";
 
@@ -73,12 +74,20 @@ export function WorkDraftEditor({
 			},
 		});
 	}, [draft, form]);
+	const replyRecipients = useReplyRecipients({
+		form,
+		sourceUid: draft.seed.sourceUid,
+		insightId: session.insight.insightId,
+		isEnabled: draft.seed.mode === "reply",
+		isInitialized: snapshot.isReplyRecipientsInitialized,
+		onInitialized: draft.initializeReplyRecipients,
+	});
 	return (
 		<section
 			className="flex h-full min-h-0 min-w-0 flex-col bg-background"
 			aria-label="Email draft editor"
 		>
-			<header className="flex shrink-0 items-center gap-2 border-border border-b @md/workspace:px-6 px-4 py-3">
+			<header className="flex shrink-0 items-center gap-2 border-border border-b px-4 py-2">
 				<FilePenLine
 					className="size-4 text-muted-foreground"
 					aria-hidden="true"
@@ -109,7 +118,7 @@ export function WorkDraftEditor({
 						: "Save to Outlook"
 				}
 				feedbackContent={
-					<div className="shrink-0 space-y-2 @min-lg/compose:px-6 px-4 py-3">
+					<div className="shrink-0 space-y-2 px-4 py-2">
 						{snapshot.error && (
 							<Alert variant="destructive">
 								<AlertDescription>
@@ -118,7 +127,7 @@ export function WorkDraftEditor({
 										<Button
 											type="button"
 											variant="outline"
-											className="min-h-11"
+											className="min-h-9 pointer-coarse:min-h-11"
 											onClick={() => {
 												draft.allowRetry();
 												form.clearErrors("root.server");
@@ -131,7 +140,11 @@ export function WorkDraftEditor({
 							</Alert>
 						)}
 						{snapshot.saved ? (
-							<Button asChild variant="link" className="min-h-11">
+							<Button
+								asChild
+								variant="link"
+								className="min-h-9 pointer-coarse:min-h-11"
+							>
 								<a
 									href={
 										safeSourceUrl(snapshot.saved.webLink) ??
@@ -152,6 +165,7 @@ export function WorkDraftEditor({
 				}
 				sourceSubject={draft.seed.subject}
 				replyContext={replyContext}
+				replyRecipients={replyRecipients}
 				hasSavedDraft={Boolean(snapshot.saved)}
 				canSave={!snapshot.saved || snapshot.isDirty}
 				isPending={snapshot.isSaving}

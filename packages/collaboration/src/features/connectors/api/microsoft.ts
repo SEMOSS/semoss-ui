@@ -23,6 +23,7 @@ import {
 	replyDraftReceiptSchema,
 	stagedAttachmentSchema,
 } from "./microsoft-schemas";
+import { sameRecipientAddresses } from "./reply-recipients";
 
 /** Only an HTTPS provider URL may become a clickable external link. */
 export function safeSourceUrl(value: string | undefined): string | undefined {
@@ -171,8 +172,12 @@ export async function saveEmailDraft(
 	input: EmailDraftInput,
 ): Promise<SavedEmailDraft> {
 	// Validate before a write starts, so invalid fields never become uncertain writes.
-	const to = "to" in input ? parseAddresses(input.to) : [];
-	const cc = input.mode === "new" ? parseAddresses(input.cc) : [];
+	const to = "to" in input ? parseAddresses(input.to ?? "") : [];
+	const cc =
+		input.mode === "new" ||
+		(input.mode === "reply" && input.overrideRecipients)
+			? parseAddresses(input.cc ?? "")
+			: [];
 	const bcc = input.mode === "new" ? parseAddresses(input.bcc) : [];
 	if (input.mode !== "new" && !input.sourceUid.trim())
 		throw new Error("Select the source email first.");
@@ -181,6 +186,8 @@ export async function saveEmailDraft(
 	if (input.mode === "forward" && to.length === 0)
 		throw new Error("Enter at least one recipient.");
 	const html = input.bodyFormat === "html";
+	if (input.mode === "reply" && input.overrideRecipients && !html)
+		throw new Error("Recipient edits require a formatted reply draft.");
 	const body = html ? sanitizeDraftHtml(input.body) : input.body;
 	try {
 		if (input.mode === "new") {
@@ -210,6 +217,9 @@ export async function saveEmailDraft(
 					comment: body,
 					...(html ? { html: true } : {}),
 					replyAll: input.replyAll,
+					...(input.overrideRecipients
+						? { overrideRecipients: true, to, cc }
+						: {}),
 					asDraft: true,
 				}),
 				replyDraftReceiptSchema,
@@ -217,6 +227,15 @@ export async function saveEmailDraft(
 			if (receipt.repliedTo !== input.sourceUid)
 				throw new Error(
 					"The draft receipt refers to a different email.",
+				);
+			if (
+				input.overrideRecipients &&
+				(!receipt.recipients ||
+					!sameRecipientAddresses(to, receipt.recipients.to) ||
+					!sameRecipientAddresses(cc, receipt.recipients.cc))
+			)
+				throw new Error(
+					"The saved reply recipients could not be confirmed.",
 				);
 			return {
 				savedDraftId: receipt.uid,

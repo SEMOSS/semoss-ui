@@ -1,3 +1,4 @@
+import { z } from "@semoss/ui/next";
 import { readDisplayBody } from "@/features/email/message-body";
 import type { InsightActions } from "@/lib/pixel";
 import { PixelError, pixel } from "@/lib/pixel";
@@ -465,37 +466,74 @@ function recipientNames(value: unknown): string[] | undefined {
 	return names.length ? names : undefined;
 }
 
-/** Reads a thread's messages; the command attaches them to the thread as it is when they arrive. */
-export async function loadThreadMessages(
+const threadPageSchema = z.object({
+	threadId: z.string().optional(),
+	messages: z.array(z.record(z.string(), z.unknown())),
+	hasMore: z.boolean().optional(),
+	nextCursor: z.string().min(1).optional(),
+	hiddenCount: z.number().optional(),
+	unavailableCount: z.number().optional(),
+});
+
+export interface ThreadMessagePage {
+	messages: WorkspaceMessage[];
+	hasMore: boolean;
+	nextCursor?: string;
+	hiddenCount: number;
+	unavailableCount: number;
+}
+
+/** Read one source page, validating continuation metadata at the boundary. */
+export async function readThreadMessagesPage(
 	actions: InsightActions,
 	threadId: string,
-): Promise<(thread: Thread) => CollaborationCommand> {
-	const [out] = (await runBatch(actions, [
+	cursor?: string,
+): Promise<ThreadMessagePage> {
+	const [raw] = (await runBatch(actions, [
 		pixel("BrainGetThreadMessages", {
 			threadId,
 			limit: 100,
 			includeDisplayBody: true,
+			cursor,
 		}),
 	])) as [Row];
-	const messages: WorkspaceMessage[] = list<Row>(out.messages).map(
-		(message) => ({
-			id: str(message.id),
-			fromId: str(message.fromId),
-			at: str(message.at),
-			text: str(message.text),
-			displayBody: readDisplayBody(message.displayBody),
-			excluded: message.excluded === true ? true : undefined,
-			history: message.history === true ? true : undefined,
-			to: recipientNames(message.to),
-			cc: recipientNames(message.cc),
-			webLink:
-				typeof message.webLink === "string" &&
-				message.webLink.startsWith("https://")
-					? message.webLink
-					: undefined,
-		}),
-	);
-	// source.import is not undone and keeps the owner's links, mute, and exclusions
+	const out = threadPageSchema.parse(raw);
+	if (out.threadId && out.threadId !== threadId)
+		throw new Error("Received history for a different thread.");
+	const messages: WorkspaceMessage[] = out.messages.map((message) => ({
+		id: str(message.id),
+		subject: opt(message.subject),
+		fromName: opt(message.fromName),
+		fromAddress: opt(message.fromAddress),
+		fromId: str(message.fromId),
+		at: str(message.at),
+		text: str(message.text),
+		displayBody: readDisplayBody(message.displayBody),
+		excluded: message.excluded === true ? true : undefined,
+		history: message.history === true ? true : undefined,
+		to: recipientNames(message.to),
+		cc: recipientNames(message.cc),
+		webLink:
+			typeof message.webLink === "string" &&
+			message.webLink.startsWith("https://")
+				? message.webLink
+				: undefined,
+	}));
+	return {
+		messages,
+		hasMore: out.hasMore ?? false,
+		nextCursor: out.nextCursor,
+		hiddenCount: out.hiddenCount ?? 0,
+		unavailableCount: out.unavailableCount ?? 0,
+	};
+}
+
+/** Legacy refresh callers attach the first page to the current owning thread. */
+export async function loadThreadMessages(
+	actions: InsightActions,
+	threadId: string,
+): Promise<(thread: Thread) => CollaborationCommand> {
+	const { messages } = await readThreadMessagesPage(actions, threadId);
 	return (thread) => ({
 		type: "source.import",
 		thread,

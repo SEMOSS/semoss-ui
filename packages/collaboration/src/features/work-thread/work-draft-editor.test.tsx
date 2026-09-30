@@ -35,6 +35,22 @@ vi.mock("@/features/connectors/api/microsoft", async (original) => ({
 	saveEmailDraft: vi.fn(),
 }));
 
+vi.mock("@semoss/sdk/react", async (original) => ({
+	...(await original<typeof import("@semoss/sdk/react")>()),
+	usePixel: (query: string) => ({
+		status: "SUCCESS",
+		data: {
+			uid: query
+				? JSON.parse(query.match(/uid=(\[[^\]]*\])/)?.[1] ?? "[]")[0]
+				: "",
+			replyRecipients: {
+				to: ["sender@example.com"],
+				cc: ["copy@example.com"],
+			},
+		},
+		refresh: vi.fn(),
+	}),
+}));
 const release = vi.fn();
 const session = {
 	insight: { actions: {} },
@@ -167,7 +183,8 @@ it("retains pending save state across unmount and keeps other drafts intact", as
 		expect.objectContaining({
 			mode: "reply",
 			sourceUid: "source",
-			replyAll: false,
+			replyAll: true,
+			overrideRecipients: true,
 			bodyFormat: "html",
 		}),
 	);
@@ -358,6 +375,7 @@ it("requires explicit acceptance and saves the edited assistant proposal exactly
 
 it("does not create another Outlook copy after Undo restores the saved body", async () => {
 	const draft = reply();
+	draft.initializeReplyRecipients({ to: ["sender@example.com"], cc: [] });
 	const savedValues = draft.getSnapshot().values;
 	await draft.save(session.insight.actions, savedValues);
 	draft.replaceBody("<p>Different reply</p>");
@@ -406,4 +424,54 @@ it("populates the email-only editor and preserves normal Undo and explicit savin
 	expect(saveEmailDraft).not.toHaveBeenCalled();
 	await user.click(screen.getByRole("button", { name: "Save to Outlook" }));
 	await waitFor(() => expect(saveEmailDraft).toHaveBeenCalledOnce());
+});
+
+it("preserves edited recipients across panel remounts and assistant body revisions", async () => {
+	const user = userEvent.setup();
+	const draft = reply();
+	const first = render(view(draft));
+	await user.click(
+		screen.getByRole("button", { name: "Remove copy@example.com from Cc" }),
+	);
+	await user.type(
+		screen.getByRole("textbox", { name: "To" }),
+		"added@example.com{Enter}",
+	);
+	first.unmount();
+	draft.replaceBody("<p>Assistant revision</p>");
+	draft.initializeReplyRecipients({
+		to: ["stale@example.com"],
+		cc: ["stale-copy@example.com"],
+	});
+	render(view(draft));
+	expect(
+		screen.getByRole("button", {
+			name: "Edit To recipient added@example.com",
+		}),
+	).toBeVisible();
+	expect(
+		screen.queryByRole("button", { name: /Edit Cc recipient/ }),
+	).toBeNull();
+	expect(screen.queryByText("stale@example.com")).toBeNull();
+	await user.click(screen.getByRole("button", { name: "Save to Outlook" }));
+	await waitFor(() =>
+		expect(saveEmailDraft).toHaveBeenCalledWith(
+			{},
+			expect.objectContaining({
+				to: "sender@example.com, added@example.com",
+				cc: "",
+				body: expect.stringContaining("Assistant revision"),
+				overrideRecipients: true,
+			}),
+		),
+	);
+});
+
+it("blocks model-level saves until reply recipients have been initialized", async () => {
+	const draft = reply();
+	expect(
+		await draft.save(session.insight.actions, draft.getSnapshot().values),
+	).toBeNull();
+	expect(saveEmailDraft).not.toHaveBeenCalled();
+	expect(draft.getSnapshot().error).toContain("Load reply recipients");
 });

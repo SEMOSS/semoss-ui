@@ -20,6 +20,7 @@ import {
 	saveEmailDraft,
 	UncertainDraftError,
 } from "../api/microsoft";
+import { useReplyRecipients } from "../hooks/use-reply-recipients";
 import type { EmailDraftInput, SavedEmailDraft } from "../types";
 import {
 	showEmailDraftFailureToast,
@@ -68,6 +69,9 @@ export function EmailDraftDialog({
 			files: [],
 		},
 	});
+	const [recipientsIdentity, setRecipientsIdentity] = useState<string | null>(
+		null,
+	);
 	const [saved, setSaved] = useState<SavedEmailDraft | null>(null);
 	const [isUncertain, setIsUncertain] = useState(false);
 	const initialized = useRef<string | null>(null);
@@ -101,12 +105,27 @@ export function EmailDraftDialog({
 			replyAll: false,
 			files: [],
 		});
+		setRecipientsIdentity(null);
 		setSaved(null);
 		setIsUncertain(false);
 	}, [form, identity, initialBody, initialSubject, initialTo, isOpen]);
 
+	const replyRecipients = useReplyRecipients({
+		form,
+		sourceUid,
+		insightId,
+		isEnabled: isOpen && mode === "reply",
+		isInitialized: recipientsIdentity === identity,
+		onInitialized: () => setRecipientsIdentity(identity),
+	});
+
 	async function handleSubmit(values: EmailDraftValues): Promise<void> {
-		if (isUncertain || writing.current) return;
+		if (
+			isUncertain ||
+			writing.current ||
+			(mode === "reply" && !replyRecipients.isReady)
+		)
+			return;
 		if (mode !== "new" && !sourceUid) {
 			const message =
 				"Select the source email before creating this draft.";
@@ -149,7 +168,10 @@ export function EmailDraftDialog({
 							sourceUid: sourceUid ?? "",
 							body: values.body,
 							bodyFormat: "html",
-							replyAll: values.replyAll,
+							replyAll: true,
+							to: values.to,
+							cc: values.cc,
+							overrideRecipients: true,
 						}
 					: {
 							mode,
@@ -238,7 +260,7 @@ export function EmailDraftDialog({
 					}
 				}}
 			>
-				<DialogHeader className="shrink-0 border-border border-b px-4 py-3 pr-12">
+				<DialogHeader className="shrink-0 border-border border-b px-4 py-2 pr-12">
 					<DialogTitle className="text-base">
 						{mode === "new"
 							? "New email draft"
@@ -256,6 +278,7 @@ export function EmailDraftDialog({
 					mode={mode}
 					sourceSubject={initialSubject}
 					replyContext={replyContext}
+					replyRecipients={replyRecipients}
 					hasSavedDraft={Boolean(saved)}
 					canSave={!saved || isDirty}
 					isUncertain={isUncertain}

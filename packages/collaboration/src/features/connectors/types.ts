@@ -94,6 +94,10 @@ export type EmailDraftInput =
 			body: string;
 			bodyFormat?: "text" | "html";
 			replyAll: boolean;
+			/** Replace native recipients only when explicitly requested by the editor. */
+			overrideRecipients?: boolean;
+			to?: string;
+			cc?: string;
 	  }
 	| {
 			mode: "forward";

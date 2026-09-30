@@ -42,7 +42,10 @@ beforeEach(() => {
 	});
 });
 afterEach(() => vi.unstubAllGlobals());
-function setup(mobileTopBorder?: "toolbar" | "drawer") {
+function setup(
+	mobileTopBorder?: "toolbar" | "drawer",
+	layoutMode?: "auto" | "compact",
+) {
 	const store = createWorkbenchStore({ components: {} });
 	const close = vi.fn();
 	const view = () => (
@@ -51,6 +54,7 @@ function setup(mobileTopBorder?: "toolbar" | "drawer") {
 				<Workbench
 					snapshot={snapshot}
 					mobileTopBorder={mobileTopBorder}
+					layoutMode={layoutMode}
 					borderSlots={{
 						top: {
 							before: (
@@ -122,4 +126,11 @@ it("moves the controls between desktop border and mobile toolbar without duplica
 	rerender(view());
 	expect(screen.getAllByRole("button", { name: "File" })).toHaveLength(1);
 	expect(screen.getByTestId("workbench-mobile-toolbar")).toBeVisible();
+});
+
+it("lets a narrow host choose compact layout on a desktop viewport", () => {
+	isMobile = false;
+	setup("toolbar", "compact");
+	expect(screen.getByTestId("workbench-mobile-toolbar")).toBeVisible();
+	expect(screen.queryByTestId("workbench-border-top")).toBeNull();
 });

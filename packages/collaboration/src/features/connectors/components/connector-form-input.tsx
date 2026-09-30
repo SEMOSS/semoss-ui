@@ -34,7 +34,7 @@ export function ConnectorFormInput({
 		placeholder,
 		className: cn(
 			presentation === "mail" &&
-				"flex-row flex-wrap items-center gap-3 [&>[data-slot=field-label]]:w-14 [&>[data-slot=field-label]]:font-normal [&>[data-slot=field-label]]:text-muted-foreground [&>[data-slot=field-label]]:shrink-0 [&>[data-slot=input]]:w-0 [&>[data-slot=input]]:flex-1 [&>[data-slot=input]]:shadow-none [&>[data-slot=input]]:border-0 [&>[data-slot=input]]:bg-transparent [&>[data-slot=input]]:px-2 [&>[data-slot=input]]:font-medium",
+				"flex-row flex-wrap items-center gap-2 [&>[data-slot=field-label]]:w-14 [&>[data-slot=field-label]]:font-normal [&>[data-slot=field-label]]:text-base [&>[data-slot=field-label]]:text-muted-foreground [&>[data-slot=field-label]]:shrink-0 [&>[data-slot=input]]:w-0 [&>[data-slot=input]]:flex-1 [&>[data-slot=input]]:shadow-none [&>[data-slot=input]]:border-0 [&>[data-slot=input]]:bg-transparent [&>[data-slot=input]]:px-2 [&>[data-slot=input]]:font-medium pointer-coarse:[&>[data-slot=input]]:min-h-11",
 		),
 		"aria-describedby": error ? id : undefined,
 	};

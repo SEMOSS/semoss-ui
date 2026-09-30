@@ -6,7 +6,10 @@ import type { ThreadSession } from "./thread-session";
 
 export interface ThreadAssistantProps {
 	/** Work supplies its own panels without changing the generic room dock. */
-	workbench?: Pick<ToolWorkbenchProviderProps, "components" | "createLayout">;
+	workbench?: Pick<
+		ToolWorkbenchProviderProps,
+		"components" | "createLayout" | "defaultOpen" | "panelTarget"
+	>;
 	/** Work host composes a single transcript and persistent dock around the session. */
 	renderWorkspace?: (
 		session: ThreadSession,

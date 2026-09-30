@@ -68,12 +68,12 @@ export function EmailRecipientField({
 				return (
 					<Field
 						data-invalid={fieldState.invalid}
-						className="gap-1 border-border/60 border-b py-2"
+						className="gap-1 border-border/60 border-b py-1"
 					>
-						<div className="flex min-w-0 items-start gap-3">
+						<div className="flex min-w-0 items-start gap-2">
 							<FieldLabel
 								htmlFor={id}
-								className="w-14 shrink-0 pt-2 font-normal text-muted-foreground"
+								className="w-14 shrink-0 pt-2 font-normal text-base text-muted-foreground"
 							>
 								{label}
 							</FieldLabel>
@@ -82,7 +82,7 @@ export function EmailRecipientField({
 									index === activeIndex ? null : (
 										<span
 											key={`${index}:${recipient}`}
-											className="inline-flex max-w-full items-center rounded-md border border-border/60 bg-muted/50 text-sm"
+											className="inline-flex max-w-full items-center rounded-md bg-muted/50 text-base"
 										>
 											<Tooltip
 												disableHoverableContent={false}
@@ -185,7 +185,7 @@ export function EmailRecipientField({
 									autoCapitalize="none"
 									spellCheck={false}
 									inputMode="email"
-									className="h-9 w-24 min-w-20 flex-1 rounded-none border-0 bg-transparent px-2 shadow-none focus-visible:ring-0 dark:bg-transparent"
+									className="h-9 pointer-coarse:min-h-11 w-24 min-w-20 flex-1 rounded-none border-0 bg-transparent px-2 shadow-none focus-visible:ring-0 dark:bg-transparent"
 									onChange={(event) => {
 										const text = event.target.value;
 										const next = [...recipients];
