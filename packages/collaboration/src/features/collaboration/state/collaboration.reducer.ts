@@ -1,3 +1,4 @@
+import { selectThreadContext } from "./collaboration.selectors";
 import type {
 	CollaborationCommand,
 	CollaborationState,
@@ -719,6 +720,67 @@ export function collaborationReducer(
 			if (rule) rule.disabledAt = now;
 			break;
 		}
+		case "thread.insights": {
+			const thread = state.threads.find(
+				(item) => item.id === command.threadId,
+			);
+			const workspace = state.workspaces[command.threadId];
+			if (
+				!thread ||
+				!workspace ||
+				thread.insightsRequestId === command.requestId ||
+				selectThreadContext(state, thread.id)?.revision !==
+					command.revision
+			)
+				break;
+			thread.summary = command.summary;
+			thread.summaryGenerated = true;
+			thread.summaryRevision = command.revision;
+			thread.insightsRequestId = command.requestId;
+			const protectedSteps = workspace.steps.filter(
+				(step) =>
+					!step.isGenerated ||
+					step.isUserEdited ||
+					step.status === "done",
+			);
+			const texts = new Set(
+				protectedSteps.map((step) =>
+					step.text.trim().toLocaleLowerCase(),
+				),
+			);
+			const owner = state.liveProfile?.id ?? "me";
+			workspace.steps = [
+				...protectedSteps,
+				...command.steps.flatMap((step) => {
+					const text = step.text.trim();
+					if (!text || texts.has(text.toLocaleLowerCase())) return [];
+					texts.add(text.toLocaleLowerCase());
+					const ownerId =
+						step.ownerId &&
+						(step.ownerId === owner ||
+							thread.participants.some(
+								(person) => person.personId === step.ownerId,
+							))
+							? step.ownerId
+							: owner;
+					return [
+						{
+							id: `local-step-${state.sequence++}`,
+							text,
+							ownerId,
+							due: step.due,
+							status:
+								ownerId === owner
+									? ("open" as const)
+									: ("waiting" as const),
+							kind: "task" as const,
+							isGenerated: true,
+						},
+					];
+				}),
+			];
+			break;
+		}
 		case "workspace.step": {
 			if (!state.threads.some((thread) => thread.id === command.threadId))
 				break;
@@ -731,7 +793,8 @@ export function collaborationReducer(
 				workspace.steps = workspace.steps.filter(
 					(step) => step.id !== command.step.id,
 				);
-			else if (existing) Object.assign(existing, command.step);
+			else if (existing)
+				Object.assign(existing, command.step, { isUserEdited: true });
 			else if (command.step.text?.trim())
 				workspace.steps.push({
 					...command.step,
@@ -800,10 +863,64 @@ export function collaborationReducer(
 				(id) => id !== command.threadId,
 			);
 			break;
+		case "session.create": {
+			if (state.threads.some((thread) => thread.id === command.sessionId))
+				break;
+			state.threads.push({
+				id: command.sessionId,
+				channel: "room",
+				subject: "New session",
+				topicLinks: [],
+				participants: [],
+				muted: false,
+				messageCount: 0,
+				lastAt: now,
+				roomId: null,
+				summary: "",
+				isSample: false,
+			});
+			state.workspaces[command.sessionId] = createEmptyWorkspace();
+			state.openThreadIds.push(command.sessionId);
+			break;
+		}
+		case "source.deleted": {
+			state.deletedSourceIds = [
+				...new Set([
+					...(state.deletedSourceIds ?? []),
+					command.sourceId,
+				]),
+			];
+			for (const thread of state.threads) {
+				const workspace = state.workspaces[thread.id];
+				if (!workspace) continue;
+				const removed = workspace.messages.some(
+					(message) => message.id === command.sourceId,
+				);
+				workspace.messages = workspace.messages.filter(
+					(message) => message.id !== command.sourceId,
+				);
+				if (removed || thread.source?.nativeId === command.sourceId)
+					thread.messageCount = Math.max(0, thread.messageCount - 1);
+				if (thread.source?.nativeId === command.sourceId) {
+					const replacement = workspace.messages.at(-1);
+					thread.source = replacement
+						? {
+								...thread.source,
+								nativeId: replacement.id,
+								webLink: replacement.webLink,
+							}
+						: undefined;
+				}
+			}
+			break;
+		}
 		case "source.import": {
 			if (
 				command.thread.isSample ||
 				!command.thread.source ||
+				state.deletedSourceIds?.includes(
+					command.thread.source.nativeId,
+				) ||
 				command.people.some((person) => person.isSample)
 			)
 				break;
@@ -851,6 +968,14 @@ export function collaborationReducer(
 					topicLinks: existing.topicLinks,
 					muted: existing.muted,
 					roomId: existing.roomId,
+					...(existing.summaryGenerated
+						? {
+								summary: existing.summary,
+								summaryGenerated: true,
+								summaryRevision: existing.summaryRevision,
+								insightsRequestId: existing.insightsRequestId,
+							}
+						: {}),
 					participants,
 				});
 			} else if (!state.threads.some((thread) => thread.id === id))
@@ -860,6 +985,11 @@ export function collaborationReducer(
 			state.workspaces[id] = {
 				...workspace,
 				...command.workspace,
+				messages: (
+					command.workspace?.messages ?? workspace.messages
+				).filter(
+					(message) => !state.deletedSourceIds?.includes(message.id),
+				),
 				goal: workspace.goal || command.workspace?.goal || "",
 				facts: workspace.facts,
 				steps: workspace.steps,
@@ -874,6 +1004,48 @@ export function collaborationReducer(
 					threadId: id,
 					isSample: false,
 				});
+			break;
+		}
+		case "live.refresh": {
+			for (const incoming of command.updates.threads) {
+				const thread = state.threads.find(
+					(item) => item.id === incoming.id,
+				);
+				if (!thread) {
+					state.threads.push(incoming);
+					state.workspaces[incoming.id] =
+						command.updates.workspaces[incoming.id] ??
+						createEmptyWorkspace();
+					continue;
+				}
+				const hasNewContent = thread.lastAt !== incoming.lastAt;
+				thread.messageCount = incoming.messageCount;
+				thread.lastAt = incoming.lastAt;
+				if (hasNewContent && !thread.summaryGenerated)
+					thread.summary = incoming.summary;
+				const workspace = state.workspaces[thread.id];
+				const next = command.updates.workspaces[thread.id];
+				if (workspace && next) {
+					const steps = new Map(
+						workspace.steps.map((step) => [step.id, step]),
+					);
+					for (const step of next.steps) {
+						const current = steps.get(step.id);
+						if (
+							!current ||
+							(!current.isUserEdited &&
+								!current.isGenerated &&
+								current.status !== "done")
+						)
+							steps.set(step.id, step);
+					}
+					workspace.steps = [...steps.values()];
+				}
+			}
+			const ids = new Set(state.items.map((item) => item.id));
+			state.items.push(
+				...command.updates.items.filter((item) => !ids.has(item.id)),
+			);
 			break;
 		}
 		case "source.status":
@@ -924,6 +1096,9 @@ export type HistoryAction =
 	| { type: "undo" };
 
 const UNRECORDED_COMMANDS = new Set<CollaborationCommand["type"]>([
+	"source.deleted",
+	"session.create",
+	"live.refresh",
 	"source.import",
 	"source.status",
 	"live-profile.set",

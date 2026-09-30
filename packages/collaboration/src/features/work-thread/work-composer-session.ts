@@ -10,6 +10,9 @@ import type { ThreadComposerMode } from "./thread-composer-controls";
 
 interface WorkComposerSnapshot {
 	emailDrafts: EmailDraftEditor[];
+	insightsRequest: { id: string; revision: string } | null;
+	insightsError: string;
+	referenceResults: { toolId: string; title: string; output: string }[];
 	emailRequest: { id: string } | null;
 	mode: ThreadComposerMode | null;
 	draft: ComposerDraft;
@@ -24,6 +27,9 @@ interface WorkComposerSnapshot {
 export class WorkComposerSession {
 	private snapshot: WorkComposerSnapshot = {
 		emailDrafts: [],
+		insightsRequest: null,
+		insightsError: "",
+		referenceResults: [],
 		emailRequest: null,
 		mode: null,
 		draft: { document: null, text: "", files: [] },
@@ -52,6 +58,35 @@ export class WorkComposerSession {
 		this.snapshot = { ...this.snapshot, ...patch };
 		for (const listener of this.listeners) listener();
 	}
+	selectReference = (reference: {
+		toolId: string;
+		title: string;
+		output: string;
+	}): void => {
+		this.update({
+			referenceResults: [
+				...this.snapshot.referenceResults.filter(
+					(item) => item.toolId !== reference.toolId,
+				),
+				reference,
+			],
+		});
+	};
+	removeReference = (toolId: string): void => {
+		this.update({
+			referenceResults: this.snapshot.referenceResults.filter(
+				(item) => item.toolId !== toolId,
+			),
+		});
+	};
+
+	beginInsights = (request: { id: string; revision: string }): void => {
+		this.update({ insightsRequest: request, insightsError: "" });
+	};
+	finishInsights = (error = ""): void => {
+		this.update({ insightsRequest: null, insightsError: error });
+	};
+
 	setError = (error: string): void => {
 		this.update({ error, mode: "assistant" });
 	};
@@ -105,7 +140,7 @@ export class WorkComposerSession {
 			if (state.error) this.setError(state.error);
 			else if (state.pendingBody !== null)
 				this.setError(
-					"The draft changed during generation, so your edits were kept. Choose Draft with assistant to try again.",
+					"The draft changed during generation, so your edits were kept. Choose Draft reply to try again.",
 				);
 		});
 		return assistant;

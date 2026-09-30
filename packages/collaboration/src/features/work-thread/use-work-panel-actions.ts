@@ -15,7 +15,7 @@ import { useWorkThread } from "./work-thread-context";
 /** All entry points select an existing panel before revealing the dock. */
 export function useWorkPanelActions(): ComposerPanelAction[] {
 	const workbench = useToolWorkbench();
-	const { snapshot } = useWorkThread();
+	const { snapshot, setSettingsSection } = useWorkThread();
 	const open = (
 		type: string,
 		name: string,
@@ -35,6 +35,15 @@ export function useWorkPanelActions(): ComposerPanelAction[] {
 		workbench.openWorkbench();
 	};
 	return [
+		{
+			id: "compact",
+			label: "Conversation usage",
+			icon: Settings2,
+			onSelect: () => {
+				setSettingsSection?.("advanced");
+				open(WORK_PANEL_TYPES.SETTINGS, "Settings");
+			},
+		},
 		{
 			id: "emails",
 			label: "View emails",

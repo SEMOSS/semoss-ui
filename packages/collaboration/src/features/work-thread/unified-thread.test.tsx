@@ -341,9 +341,7 @@ it.each([360, 1440])(
 		};
 		input.session = transport.session;
 		render(view(input));
-		fireEvent.click(
-			screen.getByRole("button", { name: "Draft with assistant" }),
-		);
+		fireEvent.click(screen.getByRole("button", { name: "Draft reply" }));
 		await waitFor(() =>
 			expect(dock.selectPanel).toHaveBeenCalledWith(
 				"work-email-draft",
@@ -366,7 +364,7 @@ it.each([360, 1440])(
 		// The conversation is concealed in the mobile layout; repeat the same action programmatically.
 		fireEvent.click(
 			screen.getByRole("button", {
-				name: "Draft with assistant",
+				name: "Draft reply",
 				hidden: true,
 			}),
 		);
@@ -379,7 +377,7 @@ it.each([360, 1440])(
 		expect(screen.queryByText("Friday works.")).toBeNull();
 		fireEvent.click(
 			screen.getByRole("button", {
-				name: "Draft with assistant",
+				name: "Draft reply",
 				hidden: true,
 			}),
 		);
@@ -478,9 +476,7 @@ it("consumes a menu draft request once while initialization is pending", async (
 it("opens the assistant independently while keeping reply actions available", () => {
 	render(view({ ...props(), sourceUid: "email-1" }));
 	expect(screen.getByRole("textbox", { name: "Draft" })).toBeVisible();
-	expect(
-		screen.getByRole("button", { name: "Draft with assistant" }),
-	).toBeVisible();
+	expect(screen.getByRole("button", { name: "Draft reply" })).toBeVisible();
 	expect(dock.openWorkbench).not.toHaveBeenCalled();
 });
 
@@ -488,7 +484,7 @@ it("offers only Assistant without an Outlook source", () => {
 	render(view(props()));
 	expect(screen.getByRole("textbox", { name: "Draft" })).toBeVisible();
 	expect(
-		screen.queryByRole("button", { name: "Draft with assistant" }),
+		screen.queryByRole("button", { name: "Draft reply" }),
 	).not.toBeInTheDocument();
 });
 
@@ -616,7 +612,7 @@ it("opens the requested workbench alongside chat and returns to the header menu"
 		).toHaveFocus(),
 	);
 	expect(
-		screen.queryByRole("textbox", { name: "Draft with assistant" }),
+		screen.queryByRole("textbox", { name: "Draft reply" }),
 	).not.toBeInTheDocument();
 	expect(router.state.location.state).toEqual({});
 	fireEvent.click(screen.getByRole("button", { name: "Close workbench" }));

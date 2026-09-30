@@ -8,7 +8,12 @@ import {
 } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { uploadRoomFiles } from "@/features/rooms/api/upload-room-files";
-import { saveEmailDraft, UncertainDraftError } from "../api/microsoft";
+import {
+	saveEmailDraft,
+	sendEmailDraft,
+	UncertainDraftError,
+	UncertainSendError,
+} from "../api/microsoft";
 import type { SavedEmailDraft } from "../types";
 import { EmailDraftDialog } from "./email-draft-dialog";
 
@@ -65,7 +70,7 @@ vi.mock("@semoss/sdk/react", () => ({
 }));
 vi.mock("../api/microsoft", async (importOriginal) => {
 	const original = await importOriginal<typeof import("../api/microsoft")>();
-	return { ...original, saveEmailDraft: vi.fn() };
+	return { ...original, saveEmailDraft: vi.fn(), sendEmailDraft: vi.fn() };
 });
 
 beforeAll(() => {
@@ -99,17 +104,9 @@ interface DraftToastOptions {
 }
 
 function confirmUncertainSaveRetry(): void {
-	const options = notifications.warning.mock.calls[0]?.[1] as
-		| DraftToastOptions
-		| undefined;
-	expect(options).toMatchObject({
-		duration: Number.POSITIVE_INFINITY,
-		dismissible: false,
-		action: { label: "I checked Outlook—retry" },
-	});
-	if (!options) throw new Error("Expected uncertain-save toast options.");
-	act(() => options.action.onClick());
-	expect(notifications.dismiss).toHaveBeenCalledWith("warning-toast");
+	fireEvent.click(
+		screen.getByRole("button", { name: "I checked Outlook—retry" }),
+	);
 }
 
 it("saves an incomplete draft, toasts Outlook access, and waits for another edit", async () => {
@@ -121,7 +118,10 @@ it("saves an incomplete draft, toasts Outlook access, and waits for another edit
 	render(<EmailDraftDialog isOpen onOpenChange={vi.fn()} mode="new" />);
 	const footer = document.querySelector("footer");
 	if (!footer) throw new Error("Expected the draft footer.");
-	expect(within(footer).getAllByRole("button")).toHaveLength(1);
+	expect(within(footer).getAllByRole("button")).toHaveLength(2);
+	expect(
+		within(footer).getByRole("button", { name: "Send" }),
+	).toHaveAttribute("type", "button");
 	expect(
 		within(footer).getByRole("button", { name: "Save Draft" }),
 	).toBeVisible();
@@ -232,7 +232,9 @@ it("does not retry an uncertain write until the user checks Outlook", async () =
 		/>,
 	);
 	await user.click(screen.getByRole("button", { name: "Save Draft" }));
-	await waitFor(() => expect(notifications.warning).toHaveBeenCalledOnce());
+	expect(
+		await screen.findByRole("button", { name: "I checked Outlook—retry" }),
+	).toBeVisible();
 	expect(screen.getByRole("button", { name: "Save Draft" })).toBeDisabled();
 	expect(screen.getByRole("textbox", { name: "Message" })).toHaveTextContent(
 		"Retained",
@@ -351,7 +353,11 @@ it("retains edits on same-record prop refresh and resets for a different source"
 			initialBody="Second source"
 		/>,
 	);
-	await waitFor(() => expect(body).toHaveTextContent("Second source"));
+	await waitFor(() =>
+		expect(
+			screen.getByRole("textbox", { name: "Reply text (required)" }),
+		).toHaveTextContent("Second source"),
+	);
 });
 
 it("lets the user remove a selected new-draft file and saves remaining files in their isolated insight", async () => {
@@ -406,7 +412,7 @@ it("preserves selected files and text after an upload fails, then retries only o
 	);
 	await user.click(screen.getByRole("button", { name: "Save Draft" }));
 	await waitFor(() =>
-		expect(notifications.error).toHaveBeenCalledWith(
+		expect(screen.getByRole("alert")).toHaveTextContent(
 			"Upload failed. Try again.",
 		),
 	);
@@ -676,7 +682,7 @@ it("retains recipient edits after refresh, reopen and a failed save, including e
 	vi.mocked(saveEmailDraft).mockRejectedValueOnce(new Error("Save failed"));
 	await user.click(screen.getByRole("button", { name: "Save Draft" }));
 	await waitFor(() =>
-		expect(notifications.error).toHaveBeenCalledWith("Save failed"),
+		expect(screen.getByRole("alert")).toHaveTextContent("Save failed"),
 	);
 	expect(
 		screen.queryByRole("button", { name: /Edit (To|Cc) recipient/ }),
@@ -731,4 +737,54 @@ it("ignores stale recipient reads after switching to a different source email", 
 	expect(screen.queryByText("stale@example.com")).toBeNull();
 	expect(screen.queryByText("local@example.com")).toBeNull();
 	expect(screen.getByRole("button", { name: "Save Draft" })).toBeEnabled();
+});
+
+it("saves by keyboard without sending, and sends only after the explicit action", async () => {
+	const user = userEvent.setup();
+	vi.mocked(sendEmailDraft).mockResolvedValue({
+		sent: true,
+		draftId: "saved",
+	});
+	render(
+		<EmailDraftDialog
+			isOpen
+			onOpenChange={vi.fn()}
+			mode="new"
+			initialTo="recipient@example.com"
+			initialBody="Review this note"
+		/>,
+	);
+	await user.click(screen.getByRole("textbox", { name: "Message" }));
+	await user.keyboard("{Control>}{Enter}{/Control}");
+	await waitFor(() => expect(saveEmailDraft).toHaveBeenCalledTimes(1));
+	expect(sendEmailDraft).not.toHaveBeenCalled();
+	await user.click(screen.getByRole("button", { name: "Send" }));
+	expect(await screen.findByText("Email sent.")).toBeVisible();
+	expect(sendEmailDraft).toHaveBeenCalledWith({}, "saved");
+});
+
+it("keeps uncertain delivery locked until review and retries without creating another draft", async () => {
+	const user = userEvent.setup();
+	vi.mocked(sendEmailDraft)
+		.mockRejectedValueOnce(
+			new UncertainSendError(new Error("Connection lost")),
+		)
+		.mockResolvedValue({ sent: true, draftId: "saved" });
+	render(
+		<EmailDraftDialog
+			isOpen
+			onOpenChange={vi.fn()}
+			mode="new"
+			initialTo="recipient@example.com"
+			initialBody="Review this note"
+		/>,
+	);
+	await user.click(screen.getByRole("button", { name: "Send" }));
+	await user.click(
+		await screen.findByRole("button", { name: "I checked Outlook—retry" }),
+	);
+	await user.click(screen.getByRole("button", { name: "Retry send" }));
+	expect(await screen.findByText("Email sent.")).toBeVisible();
+	expect(saveEmailDraft).toHaveBeenCalledTimes(1);
+	expect(sendEmailDraft).toHaveBeenCalledTimes(2);
 });

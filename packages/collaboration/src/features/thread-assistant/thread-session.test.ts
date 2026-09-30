@@ -5,7 +5,6 @@ import {
 import { getRoomMessages } from "@/features/messages/api/get-room-messages";
 import * as runApi from "@/features/rooms/api/agent-run-api";
 import { uploadRoomFiles } from "@/features/rooms/api/upload-room-files";
-import { requireDraftReviewSupport } from "./api/draft-review-policy";
 import { compactThreadMessages } from "./api/thread-compaction";
 import {
 	bindThreadRoom,
@@ -17,10 +16,6 @@ import {
 	THREAD_ASSISTANT_INSTRUCTIONS,
 } from "./thread-context";
 import { ThreadSession } from "./thread-session";
-
-vi.mock("./api/draft-review-policy", () => ({
-	requireDraftReviewSupport: vi.fn(),
-}));
 
 vi.mock("./api/thread-compaction", () => ({ compactThreadMessages: vi.fn() }));
 
@@ -98,7 +93,6 @@ async function session(): Promise<ThreadSession> {
 }
 
 beforeEach(() => {
-	vi.mocked(requireDraftReviewSupport).mockResolvedValue(undefined);
 	vi.resetAllMocks();
 	vi.mocked(findThreadRoom).mockResolvedValue(null);
 	vi.mocked(bindThreadRoom).mockResolvedValue(undefined);
@@ -482,15 +476,15 @@ it("does not compact an active run or an unanswered message", async () => {
 	expect(compactThreadMessages).not.toHaveBeenCalled();
 });
 
-it("does not start a run or upload attachments when the review policy is unavailable", async () => {
+it("starts a Work run without a draft-review capability endpoint", async () => {
 	const instance = await session();
-	vi.mocked(requireDraftReviewSupport).mockRejectedValueOnce(
-		new Error("Server update required"),
-	);
+	vi.mocked(instance.insight.actions.run)
+		.mockClear()
+		.mockRejectedValue(new Error("Unknown reactor"));
 	await expect(
 		instance.send("Thread", context, { text: "Draft a reply", files: [] }),
-	).rejects.toThrow("Server update required");
-	expect(runApi.startAgentRun).not.toHaveBeenCalled();
-	expect(prepareThreadRoom).not.toHaveBeenCalled();
-	expect(uploadRoomFiles).not.toHaveBeenCalled();
+	).resolves.toBeUndefined();
+	expect(runApi.startAgentRun).toHaveBeenCalledOnce();
+	expect(prepareThreadRoom).toHaveBeenCalledOnce();
+	expect(instance.insight.actions.run).not.toHaveBeenCalled();
 });

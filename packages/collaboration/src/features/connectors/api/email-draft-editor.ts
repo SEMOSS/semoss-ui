@@ -3,7 +3,12 @@ import type { InsightActions } from "@/lib/pixel";
 import type { EmailDraftInput, SavedEmailDraft } from "../types";
 import { EmailDraftSession } from "./email-draft-session";
 import { type EmailDraftValues, emailDraftSchema } from "./email-draft-values";
-import { saveEmailDraft, UncertainDraftError } from "./microsoft";
+import {
+	saveEmailDraft,
+	sendEmailDraft,
+	UncertainDraftError,
+	UncertainSendError,
+} from "./microsoft";
 import type { ReplyRecipients } from "./reply-recipients";
 
 export interface EmailDraftSeed {
@@ -32,6 +37,9 @@ interface EmailDraftSnapshot {
 	fieldErrors: EmailDraftFieldErrors;
 	saved: SavedEmailDraft | null;
 	isSaving: boolean;
+	isSending: boolean;
+	isSent: boolean;
+	hasPendingSend: boolean;
 	isUncertain: boolean;
 	isDirty: boolean;
 	/** Monotonic body revision protects edits made while generation is running. */
@@ -82,6 +90,9 @@ export class EmailDraftEditor {
 			fieldErrors: {},
 			saved: null,
 			isSaving: false,
+			isSending: false,
+			isSent: false,
+			hasPendingSend: false,
 			isUncertain: false,
 			isDirty: false,
 			bodyRevision: 0,
@@ -133,7 +144,13 @@ export class EmailDraftEditor {
 	setValues = (values: EmailDraftValues): void => {
 		const current = this.snapshot.values;
 		const hasChanges = !sameDraftValues(values, current);
-		if (!this.snapshot.isSaving && hasChanges)
+		if (
+			!this.snapshot.isSaving &&
+			!this.snapshot.isSending &&
+			!this.snapshot.isSent &&
+			!this.snapshot.hasPendingSend &&
+			hasChanges
+		)
 			this.update({
 				values,
 				isDirty:
@@ -149,7 +166,13 @@ export class EmailDraftEditor {
 	};
 	/** Replace only the body, preserving envelope fields and the exact formatted undo value. */
 	replaceBody = (body: string): void => {
-		if (this.snapshot.isSaving) return;
+		if (
+			this.snapshot.isSaving ||
+			this.snapshot.isSending ||
+			this.snapshot.isSent ||
+			this.snapshot.hasPendingSend
+		)
+			return;
 		const values = { ...this.snapshot.values, body };
 		this.update({
 			values,
@@ -175,6 +198,19 @@ export class EmailDraftEditor {
 
 	/** Save a new Outlook copy only on explicit submission; never send email. */
 	async save(
+		actions: InsightActions,
+		values: EmailDraftValues,
+	): Promise<SavedEmailDraft | null> {
+		if (
+			this.snapshot.isSending ||
+			this.snapshot.isSent ||
+			this.snapshot.hasPendingSend
+		)
+			return null;
+		return this.persist(actions, values);
+	}
+
+	private async persist(
 		actions: InsightActions,
 		values: EmailDraftValues,
 	): Promise<SavedEmailDraft | null> {
@@ -265,6 +301,64 @@ export class EmailDraftEditor {
 		}
 	}
 
+	/** Explicit sending reuses the exact saved envelope and retains it after uncertain delivery. */
+	async send(
+		actions: InsightActions,
+		values: EmailDraftValues,
+	): Promise<boolean> {
+		if (
+			this.snapshot.isSaving ||
+			this.snapshot.isSending ||
+			this.snapshot.isUncertain ||
+			this.snapshot.isSent
+		)
+			return false;
+		if (!values.to.trim() && !values.cc.trim() && !values.bcc.trim()) {
+			this.update({
+				error: "Enter at least one recipient before sending.",
+			});
+			return false;
+		}
+		this.update({ isSending: true, error: "" });
+		try {
+			let receipt = this.snapshot.saved;
+			if (
+				!receipt ||
+				this.snapshot.isDirty ||
+				!this.savedValues ||
+				!sameDraftValues(values, this.savedValues)
+			) {
+				if (this.snapshot.hasPendingSend) {
+					this.update({
+						error: "Check the saved email in Outlook before changing a pending send.",
+					});
+					return false;
+				}
+				receipt = await this.persist(actions, values);
+			}
+			if (!receipt) return false;
+			this.update({ hasPendingSend: true });
+			await sendEmailDraft(actions, receipt.savedDraftId);
+			this.update({
+				isSent: true,
+				hasPendingSend: false,
+				requiresAcceptance: false,
+			});
+			return true;
+		} catch (cause) {
+			this.update({
+				error:
+					cause instanceof Error
+						? cause.message
+						: "Email could not be sent.",
+				isUncertain: cause instanceof UncertainSendError,
+			});
+			return false;
+		} finally {
+			this.update({ isSending: false });
+		}
+	}
+
 	/** Release isolated file resources at the owning application boundary. */
 	dispose(): void {
 		this.uploads?.dispose();
@@ -274,6 +368,8 @@ export class EmailDraftEditor {
 
 /** Human-readable status for retained draft summaries. */
 export function emailDraftStatus(snapshot: EmailDraftSnapshot): string {
+	if (snapshot.isSending) return "Sending";
+	if (snapshot.isSent) return "Sent";
 	if (snapshot.isSaving) return "Saving";
 	if (
 		snapshot.error ||

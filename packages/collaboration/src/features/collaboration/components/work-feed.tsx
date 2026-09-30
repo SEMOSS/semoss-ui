@@ -14,6 +14,7 @@ import {
 } from "@semoss/ui/next";
 import { channelMeta } from "../channel-meta";
 import { dateLabel } from "../date-label";
+import { WorkRefreshStatus } from "../live/work-refresh-status";
 import { selectWorkItems } from "../state/collaboration.selectors";
 import type { Channel } from "../state/collaboration.types";
 import { useCollaborationSession } from "../state/collaboration-session.context";
@@ -85,6 +86,7 @@ export function WorkFeed() {
 				)}
 				<div className="flex flex-wrap items-center gap-2">
 					<H1 className="font-semibold text-xl">{title}</H1>
+					<WorkRefreshStatus />
 				</div>
 				<P className="text-muted-foreground text-sm">
 					{topic?.description ||

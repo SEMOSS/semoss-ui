@@ -314,6 +314,7 @@ describe("thread menus", () => {
 		await open();
 		expect(getMenuActions().map((item) => item.textContent)).toEqual([
 			"Ask assistant",
+			"New email",
 			"Open in Work",
 			"View in Brain",
 			"Copy link",
@@ -442,8 +443,8 @@ it("targets the hovered email and omits thread-level organization", async () => 
 	await open();
 	expect(queryMenuAction({ name: "Mute thread" })).toBeNull();
 	expect(queryMenuAction({ name: "Open workbench" })).toBeNull();
-	expect(getMenuAction({ name: "Write reply yourself" })).toBeVisible();
-	await user.click(getMenuAction({ name: "Draft with assistant" }));
+	expect(getMenuAction({ name: "Reply" })).toBeVisible();
+	await user.click(getMenuAction({ name: "Draft reply" }));
 	expect(router.state.location.state.threadAction).toMatchObject({
 		threadId,
 		action: "draft",

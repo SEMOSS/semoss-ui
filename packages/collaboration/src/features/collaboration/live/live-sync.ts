@@ -16,6 +16,9 @@ import { runBatch } from "./live-state";
 
 // commands with no backend yet; their effects stay in this browser session
 const SESSION_ONLY = new Set<CollaborationCommand["type"]>([
+	"source.deleted",
+	"session.create",
+	"live.refresh",
 	"source.import",
 	"source.status",
 	"live-profile.set",
@@ -37,13 +40,19 @@ interface Plan {
 const LOCAL = /^local-/;
 const TOPIC_REMOVAL = /^(BrainDeleteTopic|BrainMergeTopics)\(/;
 // records imported in the browser from "Load your sources" have no server row yet
-const imported = (value: string) => value.startsWith("connected");
+const imported = (value: string) =>
+	value.startsWith("connected") || value.startsWith("session:");
 const same = (a: unknown, b: unknown) =>
 	JSON.stringify(a) === JSON.stringify(b);
 const byId = <T extends { id: string }>(rows: T[]) =>
 	new Map(rows.map((row) => [row.id, row]));
 
-export type LiveSync = (change: CollaborationChange) => void;
+export type LiveSync = ((change: CollaborationChange) => void) & {
+	/** Finish queued writes before reading their server echoes. */
+	settled: () => Promise<void>;
+	/** Keep session identities stable when a created row returns in a refresh. */
+	localId: (serverId: string) => string;
+};
 
 /** Queue-backed saver: changes go out one at a time and in order. */
 export function createLiveSync(
@@ -62,7 +71,7 @@ export function createLiveSync(
 			ids.has(local) ? JSON.stringify(ids.get(local)) : match,
 		);
 
-	return (settled) => {
+	const sync = (settled: CollaborationChange): void => {
 		// an undo can carry commands that changed nothing (the 30 s snooze check); it is saved by diff alone
 		const change = settled.undo ? { ...settled, commands: [] } : settled;
 		const unsaved = change.commands.filter((command) =>
@@ -137,6 +146,11 @@ export function createLiveSync(
 				onError(cause instanceof Error ? cause.message : String(cause)),
 			);
 	};
+	return Object.assign(sync, {
+		settled: () => queue,
+		localId: (serverId: string): string =>
+			[...ids].find(([, value]) => value === serverId)?.[0] ?? serverId,
+	});
 }
 
 // topics in the new state that the previous one did not have
@@ -744,10 +758,10 @@ function planRooms(
 	_id: (v: string) => string,
 ) {
 	for (const threadId of next.openThreadIds)
-		if (!prev.openThreadIds.includes(threadId))
+		if (!imported(threadId) && !prev.openThreadIds.includes(threadId))
 			plan.statements.push(pixel("WorkOpenRoom", { threadId }));
 	for (const threadId of prev.openThreadIds)
-		if (!next.openThreadIds.includes(threadId))
+		if (!imported(threadId) && !next.openThreadIds.includes(threadId))
 			plan.statements.push(pixel("WorkCloseRoom", { threadId }));
 }
 

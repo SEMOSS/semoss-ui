@@ -82,11 +82,13 @@ export function AssistantComposer({
 	const openSettings = () =>
 		panelActions.find((action) => action.id === "settings")?.onSelect();
 	const extraCommands = [
-		...panelActions.map((action) => ({
-			...action,
-			label: `/${action.id}`,
-			description: action.label,
-		})),
+		...panelActions
+			.filter((action) => action.id !== "compact")
+			.map((action) => ({
+				...action,
+				label: `/${action.id}`,
+				description: action.label,
+			})),
 		{
 			id: "knowledge",
 			label: "/knowledge",
@@ -108,7 +110,7 @@ export function AssistantComposer({
 			icon: ChevronsDownUp,
 			onSelect: () =>
 				panelActions
-					.find((action) => action.id === "context")
+					.find((action) => action.id === "compact")
 					?.onSelect(),
 		},
 	];
@@ -192,6 +194,31 @@ export function AssistantComposer({
 				<output>{snapshot.submissionNotice}</output>
 			)}
 			<div hidden={!isOpen}>
+				{memory.referenceResults.length > 0 && (
+					<fieldset
+						className="m-0 flex min-w-0 flex-wrap gap-2 border-0 p-0"
+						aria-label="Information for your reply"
+					>
+						{memory.referenceResults.map((reference) => (
+							<Button
+								key={reference.toolId}
+								type="button"
+								variant="secondary"
+								size="sm"
+								className="max-w-full"
+								onClick={() =>
+									composer.removeReference(reference.toolId)
+								}
+								aria-label={`Remove reference: ${reference.title}`}
+							>
+								<span className="truncate">
+									{reference.title}
+								</span>
+								<X aria-hidden="true" />
+							</Button>
+						))}
+					</fieldset>
+				)}
 				{memory.sourceMessageId && (
 					<div className="mb-3 flex flex-wrap items-center justify-between gap-2 rounded-lg border border-primary/20 bg-primary/5 px-3 py-2">
 						<Small>About the selected email</Small>
@@ -365,10 +392,26 @@ export function AssistantComposer({
 									memory.sourceMessageId
 										? {
 												...context,
+												...(memory.referenceResults
+													.length
+													? {
+															referenceResults:
+																memory.referenceResults,
+														}
+													: {}),
 												selectedSourceMessageId:
 													memory.sourceMessageId,
 											}
-										: context,
+										: {
+												...context,
+												...(memory.referenceResults
+													.length
+													? {
+															referenceResults:
+																memory.referenceResults,
+														}
+													: {}),
+											},
 									submission,
 									sourceUid,
 									attachments.filter(

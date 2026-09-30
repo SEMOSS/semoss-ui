@@ -95,7 +95,16 @@ export const routes: RouteObject[] = [
 									},
 								],
 							},
-							...["room", "new"].map((path) => ({
+							{
+								path: "new",
+								id: "new-session",
+								lazy: async () => ({
+									Component: (
+										await import("@/pages/new-session.page")
+									).NewSessionPage,
+								}),
+							},
+							...["room"].map((path) => ({
 								path,
 								element: <Navigate to="/work" replace />,
 							})),

@@ -23,7 +23,11 @@ retain their original room configuration and chat behavior.
 
 ## Microsoft sources and drafts
 
-Sources are loaded through explicit actions under Brain → Sources and rules.
+Sources are initially loaded through explicit actions under Brain → Sources and rules.
+Loaded email lists refresh while the page is visible and on return to the app.
+Work also refreshes existing Brain/Work summaries and actions without remounting
+readers or drafts; connection failures offer a retry on the source and Work pages.
+Webhook delivery and automatic agent execution remain backend integration dependencies.
 They use the existing SEMOSS Microsoft reactors and `oauth("microsoft")`; the
 backend must have Microsoft authentication and the relevant permissions enabled.
 Failures are displayed without substituting sample results.
@@ -52,12 +56,34 @@ block saving, and the saved draft's envelope must match the reviewed addresses.
 Save draft never sends; uncertain saves require an Outlook check before another
 attempt.
 
-Outlook-linked Work threads also offer Send reply. This explicitly labeled button
-saves a native reply to the original sender (`replyAll=false`), then calls the
-existing `MicrosoftOutlookSendDraft` endpoint. A verified receipt must match the
-exact draft ID. Enter never sends in this mode. Failed or uncertain sends retain
-the content and saved draft; an explicitly acknowledged retry reuses that draft
-and cannot create another copy. New-mail sending and Teams sending are unavailable.
+Email readers and thread controls offer Draft reply, manual Reply, Forward, and
+Delete. AI drafting produces editable text; manual Reply makes no agent request.
+Every shared draft editor separates Save draft from explicit Send, including new
+emails. Sending first saves the reviewed envelope, then sends that exact draft
+identity. Uncertain delivery requires an Outlook check before retrying the same
+draft. Delete confirms moving the selected message to Outlook Deleted Items.
+Teams sending is unavailable.
+
+## Context and new sessions
+
+Context contains one summary and editable goal, editable action items, relevant
+PowerPoint progress/results, source-labelled facts, and collapsed inclusion
+controls. It contains no mailbox feed or refresh control. Summarize generates a
+summary and action items through the existing agent session; Regenerate replaces
+untouched generated actions while preserving manual edits and completed items.
+The empty action row accepts Enter and remains focused for the next item.
+Generated summaries are session state; their underlying requests/results remain
+in the saved conversation. Connected action edits use the existing Work APIs.
+
+Topic editing and mute controls live in Settings → Thread. Current/last-request
+snapshots, usage, and compaction live in Settings → Advanced; `/compact` opens
+that section. Existing Files and Tools panels provide artifacts and sourced
+results. Use in reply selects tool results for the next request, with removable
+reference chips. Presentation generation remains agent/tool owned and only
+appears in Context when relevant activity or saved results exist.
+
+`/new` starts a source-free session. Email this conversation opens an editable
+new email containing visible conversation text before any explicit sending.
 
 Thread readers opt in to `includeDisplayBody`; older callers default to plain
 text. Display bodies are session-only and excluded from assistant context. HTML
@@ -91,8 +117,9 @@ user's next message.
 | `/brain/people`, `/brain/people/:personId` | People directory and detail |
 | `/brain/threads`, `/brain/threads/:threadId`, `/brain/topics/:topicId` | Context directories and detail |
 | `/room/:roomId` | Existing direct conversation links |
+| `/new` | New source-free chat session |
 
-The root, `/room`, and `/new` redirect to Work; `/agents/*` redirects to Brain;
+The root and `/room` redirect to Work; `/agents/*` redirects to Brain;
 `/settings` redirects to Sources and rules. The obsolete home, agents, sessions,
 settings, and sidebar screens have been removed.
 

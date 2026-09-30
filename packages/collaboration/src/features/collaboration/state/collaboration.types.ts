@@ -139,6 +139,9 @@ export interface Thread {
 	lastAt: string;
 	roomId: string | null;
 	summary: string;
+	summaryGenerated?: boolean;
+	insightsRequestId?: string;
+	summaryRevision?: string;
 	needsTopicChoice?: boolean;
 	when?: string;
 	conflict?: string;
@@ -267,6 +270,8 @@ export interface WorkspaceMessage {
 }
 
 export interface WorkspaceStep {
+	isUserEdited?: boolean;
+	isGenerated?: boolean;
 	id: string;
 	text: string;
 	ownerId: string;
@@ -329,6 +334,7 @@ export interface ThreadWorkspace {
 }
 
 export interface CollaborationState {
+	deletedSourceIds?: string[];
 	today: string;
 	topics: Topic[];
 	people: Person[];
@@ -348,6 +354,23 @@ export interface CollaborationState {
 
 /** Commands contain UI intent; backend receipts are never written through undo. */
 export type CollaborationCommand =
+	| {
+			type: "live.refresh";
+			updates: Pick<
+				CollaborationState,
+				"threads" | "workspaces" | "items"
+			>;
+	  }
+	| {
+			type: "thread.insights";
+			threadId: string;
+			requestId: string;
+			revision: string;
+			summary: string;
+			steps: { text: string; due: string | null; ownerId?: string }[];
+	  }
+	| { type: "source.deleted"; sourceId: string }
+	| { type: "session.create"; sessionId: string }
 	| { type: "topic.save"; topic: Partial<Topic> & { name?: string } }
 	| { type: "topic.merge"; sourceId: string; targetId: string }
 	| { type: "topic.delete"; topicId: string }

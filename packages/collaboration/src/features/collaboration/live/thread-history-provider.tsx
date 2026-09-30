@@ -28,6 +28,7 @@ export function ThreadHistoryProvider({
 	const [pages, setPages] = useState<Record<string, ThreadHistoryState>>({});
 	const requests = useRef(new Map<string, symbol>());
 	const requested = useRef(new Set<string>());
+	const lastSeen = useRef(new Map<string, string>());
 	const load = useCallback(
 		(threadId: string, cursor?: string, refresh = false) => {
 			if (requests.current.has(threadId)) return;
@@ -127,15 +128,27 @@ export function ThreadHistoryProvider({
 		for (const id of state.openThreadIds) {
 			const thread = state.threads.find((item) => item.id === id);
 			if (
+				thread &&
+				requested.current.has(id) &&
+				!requests.current.has(id) &&
+				!pages[id]?.isLoading &&
+				lastSeen.current.get(id) !== thread.lastAt
+			) {
+				lastSeen.current.set(id, thread.lastAt);
+				load(id, undefined, true);
+			}
+			if (
 				requested.current.has(id) ||
 				thread?.isSample ||
-				id.startsWith("connected:")
+				id.startsWith("connected:") ||
+				id.startsWith("session:")
 			)
 				continue;
 			requested.current.add(id);
+			lastSeen.current.set(id, thread?.lastAt ?? "");
 			load(id);
 		}
-	}, [load, state.openThreadIds, state.threads]);
+	}, [load, state.openThreadIds, state.threads, pages]);
 	useEffect(
 		() => () => {
 			requests.current.clear();

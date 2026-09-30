@@ -39,7 +39,7 @@ describe("collaboration routes", () => {
 	it.each([
 		["/", "/work"],
 		["/room", "/work"],
-		["/new", "/work"],
+
 		["/agents", "/brain"],
 		["/agents/agent-one", "/brain"],
 		["/agents/agent-one/settings", "/brain"],
@@ -54,18 +54,21 @@ describe("collaboration routes", () => {
 		expect(element.props).toMatchObject({ to: destination, replace: true });
 	});
 
-	it.each(["/room/room-one", "/work", "/brain", "/work/thread/thread-one"])(
-		"lazy loads leaf page modules for %s",
-		async (path) => {
-			const route = leafRoute(path);
+	it.each([
+		"/new",
+		"/room/room-one",
+		"/work",
+		"/brain",
+		"/work/thread/thread-one",
+	])("lazy loads leaf page modules for %s", async (path) => {
+		const route = leafRoute(path);
 
-			expect(route?.lazy).toEqual(expect.any(Function));
-			if (typeof route?.lazy !== "function") {
-				throw new Error("Expected a lazy route module");
-			}
-			await expect(route.lazy()).resolves.toMatchObject({
-				Component: expect.any(Function),
-			});
-		},
-	);
+		expect(route?.lazy).toEqual(expect.any(Function));
+		if (typeof route?.lazy !== "function") {
+			throw new Error("Expected a lazy route module");
+		}
+		await expect(route.lazy()).resolves.toMatchObject({
+			Component: expect.any(Function),
+		});
+	});
 });

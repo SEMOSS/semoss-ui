@@ -16,6 +16,7 @@ import {
 	Reply,
 	RotateCcw,
 	Sparkles,
+	Trash2,
 	X,
 } from "lucide-react";
 import { type RefObject, useContext } from "react";
@@ -152,7 +153,7 @@ export function useThreadMenuActions({
 					? [
 							{
 								id: "draft",
-								label: "Draft with assistant",
+								label: "Draft reply",
 								icon: FilePenLine,
 								movesFocus: true,
 								onSelect: () => requestAction("draft"),
@@ -169,14 +170,22 @@ export function useThreadMenuActions({
 						actions: [
 							{
 								id: "reply",
-								label: "Write reply yourself",
+								label: "Reply",
 								icon: Reply,
 								movesFocus: true,
 								onSelect: () => requestAction("reply"),
 							},
 							{
+								id: "delete",
+								label: "Delete email",
+								icon: Trash2,
+								movesFocus: true,
+								disabled: thread.isSample,
+								onSelect: () => requestAction("delete"),
+							},
+							{
 								id: "forward",
-								label: "Write forward yourself",
+								label: "Forward",
 								icon: Forward,
 								movesFocus: true,
 								onSelect: () => requestAction("forward"),
@@ -185,6 +194,18 @@ export function useThreadMenuActions({
 					},
 				]
 			: []),
+		{
+			id: "compose",
+			actions: [
+				{
+					id: "new-email",
+					label: "New email",
+					icon: Mail,
+					movesFocus: true,
+					onSelect: () => requestAction("new-email"),
+				},
+			],
+		},
 		{
 			id: "navigate",
 			actions: [

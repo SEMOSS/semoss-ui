@@ -379,3 +379,25 @@ export async function sendEmailDraft(
 		throw new UncertainSendError(cause);
 	}
 }
+
+/** Move the selected email into Deleted Items; never permanently delete mail. */
+export async function trashEmail(
+	actions: InsightActions,
+	uid: string,
+): Promise<void> {
+	if (!uid.trim()) throw new Error("Select an email to delete.");
+	const receipt = await callPixel(
+		actions,
+		pixel("MicrosoftOutlookMoveMail", { uid, folder: "deleteditems" }),
+		z.object({
+			moved: z.literal(true),
+			previousUid: z.string(),
+			uid: z.string().min(1),
+			folder: z.literal("deleteditems"),
+		}),
+	);
+	if (receipt.previousUid !== uid)
+		throw new Error(
+			"The move receipt refers to a different email. Check Outlook before retrying.",
+		);
+}

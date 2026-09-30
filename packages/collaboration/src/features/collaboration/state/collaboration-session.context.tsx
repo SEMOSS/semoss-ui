@@ -119,3 +119,8 @@ export function useCollaborationSession(): CollaborationSession {
 		);
 	return context;
 }
+
+/** Optional host integration for connector previews used outside the Work shell. */
+export function useOptionalCollaborationSession(): CollaborationSession | null {
+	return useContext(CollaborationSessionContext);
+}

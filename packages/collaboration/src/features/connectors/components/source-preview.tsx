@@ -6,6 +6,7 @@ import { EmailMessageHeader } from "@/features/email/email-message-header";
 import { SourceMessageBody } from "@/features/email/source-message-body";
 import { safeSourceUrl } from "../api/microsoft";
 import type { ImportedSource } from "../types";
+import { DeleteEmailDialog } from "./delete-email-dialog";
 import { EmailDraftDialog } from "./email-draft-dialog";
 import { MailAttachmentList } from "./mail-attachment-list";
 
@@ -13,6 +14,7 @@ interface SourcePreviewProps {
 	source: ImportedSource;
 	isLoading: boolean;
 	onImport: (source: ImportedSource) => void;
+	onDraftReply?: () => void;
 }
 
 /** Review actual selected source text before adding it to the local Work session. */
@@ -20,7 +22,10 @@ export function SourcePreview({
 	source,
 	isLoading,
 	onImport,
+	onDraftReply,
 }: SourcePreviewProps) {
+	const [isDeleted, setIsDeleted] = useState(false);
+	const [isDeleting, setIsDeleting] = useState(false);
 	const [draftMode, setDraftMode] = useState<"reply" | "forward" | null>(
 		null,
 	);
@@ -41,6 +46,7 @@ export function SourcePreview({
 		onImport(source);
 		setImportedId(identity);
 	}
+	if (isDeleted) return <output>Email moved to Outlook Trash.</output>;
 	return (
 		<section
 			aria-label="Selected source"
@@ -96,6 +102,24 @@ export function SourcePreview({
 				</Button>
 				{source.sourceKind === "outlook" && (
 					<>
+						{onDraftReply && (
+							<Button
+								type="button"
+								variant="outline"
+								disabled={isLoading}
+								onClick={onDraftReply}
+							>
+								Draft reply
+							</Button>
+						)}
+						<Button
+							type="button"
+							variant="ghost"
+							disabled={isLoading}
+							onClick={() => setIsDeleting(true)}
+						>
+							Delete email
+						</Button>
 						<Button
 							type="button"
 							variant="outline"
@@ -103,7 +127,7 @@ export function SourcePreview({
 							onClick={() => setDraftMode("reply")}
 						>
 							<MailPlus aria-hidden="true" />
-							Draft reply
+							Reply
 						</Button>
 						<Button
 							type="button"
@@ -112,7 +136,7 @@ export function SourcePreview({
 							onClick={() => setDraftMode("forward")}
 						>
 							<CornerUpRight aria-hidden="true" />
-							Draft forward
+							Forward
 						</Button>
 					</>
 				)}
@@ -187,6 +211,14 @@ export function SourcePreview({
 						/>
 					</div>
 				)}
+			{isDeleting && (
+				<DeleteEmailDialog
+					sourceId={source.nativeId}
+					subject={source.title}
+					onDeleted={() => setIsDeleted(true)}
+					onClose={() => setIsDeleting(false)}
+				/>
+			)}
 			{draftMode && (
 				<EmailDraftDialog
 					key={`${identity}:${draftMode}`}

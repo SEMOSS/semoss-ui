@@ -3,7 +3,15 @@ import { z } from "@semoss/ui/next";
 const threadActionSchema = z.object({
 	id: z.string().min(1),
 	threadId: z.string().min(1),
-	action: z.enum(["ask", "draft", "reply", "forward", "read"]),
+	action: z.enum([
+		"ask",
+		"draft",
+		"reply",
+		"forward",
+		"read",
+		"delete",
+		"new-email",
+	]),
 	sourceMessageId: z.string().min(1).optional(),
 });
 

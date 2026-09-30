@@ -1,11 +1,11 @@
-import { FilePenLine } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import { Link, useParams } from "react-router";
-import { Button, H3, P, toast } from "@semoss/ui/next";
+import { P, toast } from "@semoss/ui/next";
 import { getMail } from "@/features/connectors/api/microsoft";
 import { importOutlookMail } from "@/features/connectors/api/source-mapping";
 import type { SourceAttachment } from "@/features/connectors/types";
 import { ThreadAssistant } from "@/features/thread-assistant/thread-assistant";
+import { EmailConversationButton } from "@/features/work-thread/email-conversation-button";
 import { UnifiedThread } from "@/features/work-thread/unified-thread";
 import { useWorkComposerSession } from "@/features/work-thread/work-composer-state.context";
 import { WorkThreadHeading } from "@/features/work-thread/work-thread-heading";
@@ -14,11 +14,9 @@ import { importSourceCommand } from "../import-source";
 import { useThreadHistory } from "../live/thread-history.context";
 import { selectThreadContext } from "../state/collaboration.selectors";
 import { useCollaborationSession } from "../state/collaboration-session.context";
-import { TextEntryForm } from "./text-entry-form";
 import { ThreadInspector } from "./thread-inspector";
 import { ThreadMenu } from "./thread-menu";
 import { threadMenuTriggerId } from "./thread-menu.utils";
-import { TopicChip } from "./topic-chip";
 
 /** Work keeps assistant chat beside the full source thread and its context. */
 export function WorkThread() {
@@ -26,13 +24,17 @@ export function WorkThread() {
 	const { state, dispatch } = useCollaborationSession();
 	const latestState = useRef(state);
 	latestState.current = state;
-	const [editingGoal, setEditingGoal] = useState(false);
 	const composer = useWorkComposerSession(threadId);
 	const history = useThreadHistory(threadId);
 	const thread = state.threads.find((candidate) => candidate.id === threadId);
 	const workspace = state.workspaces[threadId];
 	const context = selectThreadContext(state, threadId);
 	const currentThreadId = thread?.id;
+	const isSession = /^session:[a-f0-9-]{36}$/.test(threadId);
+	useEffect(() => {
+		if (isSession && !currentThreadId)
+			dispatch({ type: "session.create", sessionId: threadId });
+	}, [isSession, currentThreadId, dispatch, threadId]);
 	useEffect(() => {
 		if (currentThreadId)
 			dispatch({ type: "workspace.open", threadId: currentThreadId });
@@ -96,7 +98,10 @@ export function WorkThread() {
 	return (
 		<div className="flex min-h-0 min-w-0 flex-1 flex-col">
 			<ThreadAssistant
-				workbench={WORK_THREAD_WORKBENCH}
+				workbench={{
+					...WORK_THREAD_WORKBENCH,
+					defaultOpen: !isSession,
+				}}
 				threadId={thread.id}
 				threadTitle={thread.subject}
 				contextText={JSON.stringify(context, null, 2)}
@@ -109,7 +114,7 @@ export function WorkThread() {
 					<UnifiedThread
 						onEmailSent={() => {
 							const refresh = async () => {
-								if (thread.isSample) return;
+								if (thread.isSample || isSession) return;
 								if (!thread.id.startsWith("connected:")) {
 									history.refresh();
 									return;
@@ -167,119 +172,20 @@ export function WorkThread() {
 							>
 								{(menu) => (
 									<WorkThreadHeading thread={thread}>
+										{isSession && (
+											<EmailConversationButton />
+										)}
 										{menu}
 									</WorkThreadHeading>
 								)}
 							</ThreadMenu>
 						}
 						inspector={
-							<>
-								<section
-									className="space-y-3"
-									aria-label="Thread goal"
-								>
-									<H3 className="text-base">Goal</H3>
-									{editingGoal ? (
-										<TextEntryForm
-											label="Thread goal"
-											initialValue={workspace.goal}
-											submitLabel="Save goal"
-											onSave={(goal) => {
-												dispatch({
-													type: "thread.goal",
-													threadId,
-													goal,
-												});
-												setEditingGoal(false);
-											}}
-										/>
-									) : (
-										<>
-											<P className="break-words">
-												{workspace.goal ||
-													"No goal set."}
-											</P>
-											<Button
-												variant="outline"
-												size="sm"
-												onClick={() =>
-													setEditingGoal(true)
-												}
-											>
-												Edit goal
-											</Button>
-										</>
-									)}
-								</section>
-								<P className="text-muted-foreground">
-									{thread.summary}
-								</P>
-								<div className="flex flex-wrap gap-2">
-									{thread.topicLinks.map((link) => {
-										const topic = state.topics.find(
-											(candidate) =>
-												candidate.id === link.topicId,
-										);
-										return (
-											topic && (
-												<TopicChip
-													key={topic.id}
-													topic={topic}
-													suggested={
-														link.source ===
-														"suggested"
-													}
-												/>
-											)
-										);
-									})}
-								</div>
-								<ThreadInspector
-									thread={thread}
-									workspace={workspace}
-									context={context}
-								/>
-								{sourceUid && (
-									<section
-										className="space-y-2"
-										aria-label="Email drafts"
-									>
-										<H3 className="text-base">
-											Email drafts
-										</H3>
-										<div className="flex flex-wrap gap-2">
-											<Button
-												variant="outline"
-												size="sm"
-												onClick={() =>
-													openDraft("", "reply")
-												}
-											>
-												<FilePenLine aria-hidden="true" />
-												Write reply yourself
-											</Button>
-											<Button
-												variant="outline"
-												size="sm"
-												onClick={() =>
-													openDraft("", "forward")
-												}
-											>
-												Write forward yourself
-											</Button>
-											<Button
-												variant="outline"
-												size="sm"
-												onClick={() =>
-													openDraft("", "new", "")
-												}
-											>
-												New email draft
-											</Button>
-										</div>
-									</section>
-								)}
-							</>
+							<ThreadInspector
+								thread={thread}
+								workspace={workspace}
+								context={context}
+							/>
 						}
 					/>
 				)}

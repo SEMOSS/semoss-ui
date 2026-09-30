@@ -7,6 +7,9 @@ export interface WorkThreadContextValue {
 	session: ThreadSession;
 	snapshot: ReturnType<ThreadSession["getSnapshot"]>;
 	title: string;
+	settingsSection?: "chat" | "thread" | "advanced";
+	setSettingsSection?: (section: "chat" | "thread" | "advanced") => void;
+	onEmailSent?: () => void;
 	contextPanel: ComponentProps<typeof ThreadContextPanel>;
 }
 export const WorkThreadContext = createContext<WorkThreadContextValue | null>(

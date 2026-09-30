@@ -31,6 +31,7 @@ import type {
 	ThreadContext,
 	ThreadWorkspace,
 } from "@/features/collaboration/state/collaboration.types";
+import { DeleteEmailDialog } from "@/features/connectors/components/delete-email-dialog";
 import type { SourceAttachment } from "@/features/connectors/types";
 import { RoomRunStatus } from "@/features/rooms/components/room-run-status";
 import {
@@ -88,6 +89,10 @@ export function UnifiedThread({
 		composer.getSnapshot,
 		composer.getSnapshot,
 	);
+	const [settingsSection, setSettingsSection] = useState<
+		"chat" | "thread" | "advanced"
+	>("chat");
+	const [deleteEmailId, setDeleteEmailId] = useState<string | null>(null);
 	const [focusRequest, setFocusRequest] = useState(0);
 	const hasActivity =
 		snapshot.turn.messages.length > 0 ||
@@ -297,6 +302,14 @@ export function UnifiedThread({
 				setFocusRequest((value) => value + 1);
 				return;
 			}
+			if (request.action === "new-email") {
+				composer.requestEmailDraft({
+					id: `new:${thread.id}`,
+					mode: "new",
+					subject: "",
+				});
+				return;
+			}
 			const target = request.sourceMessageId ?? sourceUid;
 			if (
 				!target ||
@@ -305,6 +318,10 @@ export function UnifiedThread({
 				composer.setError(
 					"This source email is not available. Reopen the thread to load it.",
 				);
+				return;
+			}
+			if (request.action === "delete") {
+				setDeleteEmailId(target);
 				return;
 			}
 			if (request.action === "read") {
@@ -334,6 +351,12 @@ export function UnifiedThread({
 						threadId: thread.id,
 						contextRevision: context.revision,
 						contextText: JSON.stringify(context, null, 2),
+						...(composer.getSnapshot().referenceResults.length
+							? {
+									referenceResults:
+										composer.getSnapshot().referenceResults,
+								}
+							: {}),
 					},
 					isSourceIncluded: () => composer.isSourceIncluded(target),
 					submit: (operation) => composer.submitAction(operation),
@@ -383,6 +406,9 @@ export function UnifiedThread({
 		threadId: thread.id,
 		contextRevision: context.revision,
 		contextText: JSON.stringify(context, null, 2),
+		...(composer.getSnapshot().referenceResults.length
+			? { referenceResults: composer.getSnapshot().referenceResults }
+			: {}),
 	};
 	const backToFeed = (
 		<Button
@@ -405,6 +431,9 @@ export function UnifiedThread({
 					session,
 					snapshot,
 					title: thread.subject,
+					settingsSection,
+					setSettingsSection,
+					onEmailSent,
 					contextPanel: {
 						context: nextContext,
 						submitted,
@@ -413,6 +442,17 @@ export function UnifiedThread({
 				}}
 			>
 				<WorkbenchProvider store={workbench.store}>
+					{deleteEmailId && (
+						<DeleteEmailDialog
+							sourceId={deleteEmailId}
+							subject={
+								workspace.messages.find(
+									(message) => message.id === deleteEmailId,
+								)?.subject || thread.subject
+							}
+							onClose={() => setDeleteEmailId(null)}
+						/>
+					)}
 					<div
 						ref={root}
 						className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden"

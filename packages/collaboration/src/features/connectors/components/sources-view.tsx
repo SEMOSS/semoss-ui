@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Alert, AlertDescription, Button, H2, H3, P } from "@semoss/ui/next";
+import { useOptionalCollaborationSession } from "@/features/collaboration/state/collaboration-session.context";
 import { useSources } from "../hooks/use-sources";
 import type { ImportedSource } from "../types";
 import { EmailDraftDialog } from "./email-draft-dialog";
@@ -9,11 +10,13 @@ import { SourcePreview } from "./source-preview";
 export interface SourcesViewProps {
 	/** Adds a selected, validated source to the shared session; no fixture substitution. */
 	onImport: (source: ImportedSource) => void;
+	onDraftReply?: (source: ImportedSource) => void;
 }
 
 /** Load Microsoft sources on demand and preview them before importing into Work. */
-export function SourcesView({ onImport }: SourcesViewProps) {
+export function SourcesView({ onImport, onDraftReply }: SourcesViewProps) {
 	const sources = useSources();
+	const collaboration = useOptionalCollaborationSession();
 	const [isNewDraftOpen, setIsNewDraftOpen] = useState(false);
 	return (
 		<div className="mx-auto flex w-full max-w-6xl flex-col gap-6">
@@ -71,6 +74,24 @@ export function SourcesView({ onImport }: SourcesViewProps) {
 						New draft
 					</Button>
 				</div>
+				{sources.loads.mail.hasLoaded && (
+					<div className="mb-3 flex flex-wrap items-center gap-2">
+						<P className="text-muted-foreground text-sm">
+							{sources.lastUpdated
+								? `Last checked ${new Date(sources.lastUpdated).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })} · Updates every 30 seconds`
+								: "Email loaded"}
+						</P>
+						<Button
+							type="button"
+							variant="ghost"
+							size="sm"
+							disabled={sources.loads.mail.isLoading}
+							onClick={sources.refreshMail}
+						>
+							Refresh email
+						</Button>
+					</div>
+				)}
 				<MailSearchForm
 					folders={sources.folders}
 					isLoading={sources.loads.mail.isLoading}
@@ -98,37 +119,44 @@ export function SourcesView({ onImport }: SourcesViewProps) {
 							: "Email is loaded only when you ask."}
 				</output>
 				<ul className="mt-2 divide-y divide-border">
-					{sources.mail.map((mail) => (
-						<li
-							key={mail.uid}
-							className="flex flex-wrap items-center gap-4 py-3"
-						>
-							<div className="min-w-0 flex-1">
-								<P className="break-words font-medium">
-									{mail.subject || "Untitled email"}
-								</P>
-								<P className="break-words text-muted-foreground">
-									{mail.from || "Sender unavailable"}
-									{mail.unread ? " · Unread" : ""}
-									{mail.hasAttachments
-										? " · Attachments"
-										: ""}
-								</P>
-							</div>
-							<Button
-								type="button"
-								variant="outline"
-								size="sm"
-								disabled={sources.loads.selection.isLoading}
-								aria-label={`Read ${mail.subject || "email"}`}
-								onClick={() =>
-									void sources.selectMail(mail.uid)
-								}
+					{sources.mail
+						.filter(
+							(mail) =>
+								!collaboration?.state.deletedSourceIds?.includes(
+									mail.uid,
+								),
+						)
+						.map((mail) => (
+							<li
+								key={mail.uid}
+								className="flex flex-wrap items-center gap-4 py-3"
 							>
-								Read
-							</Button>
-						</li>
-					))}
+								<div className="min-w-0 flex-1">
+									<P className="break-words font-medium">
+										{mail.subject || "Untitled email"}
+									</P>
+									<P className="break-words text-muted-foreground">
+										{mail.from || "Sender unavailable"}
+										{mail.unread ? " · Unread" : ""}
+										{mail.hasAttachments
+											? " · Attachments"
+											: ""}
+									</P>
+								</div>
+								<Button
+									type="button"
+									variant="outline"
+									size="sm"
+									disabled={sources.loads.selection.isLoading}
+									aria-label={`Read ${mail.subject || "email"}`}
+									onClick={() =>
+										void sources.selectMail(mail.uid)
+									}
+								>
+									Read
+								</Button>
+							</li>
+						))}
 				</ul>
 			</section>
 			<div className="grid gap-6 lg:grid-cols-2">
@@ -267,6 +295,14 @@ export function SourcesView({ onImport }: SourcesViewProps) {
 					source={sources.selected}
 					isLoading={sources.loads.selection.isLoading}
 					onImport={onImport}
+					onDraftReply={
+						onDraftReply
+							? () => {
+									if (sources.selected)
+										onDraftReply(sources.selected);
+								}
+							: undefined
+					}
 				/>
 			)}
 			<P className="text-muted-foreground">

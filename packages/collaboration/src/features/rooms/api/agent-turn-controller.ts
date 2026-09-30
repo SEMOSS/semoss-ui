@@ -43,8 +43,6 @@ export interface AgentTurnConfig {
 	engine: string;
 	maxTurns: number;
 	maxReflections?: number;
-	/** Passed per run; never changes room settings. */
-	requireEmailDraftReview?: boolean;
 }
 
 export interface AgentTurnSnapshot {
@@ -299,7 +297,6 @@ export class AgentTurnController {
 				],
 				maxTurns: config.maxTurns,
 				maxReflections: config.maxReflections,
-				requireEmailDraftReview: config.requireEmailDraftReview,
 			});
 			if (this.disposed) return;
 			this.run = { ...this.run, input: command };

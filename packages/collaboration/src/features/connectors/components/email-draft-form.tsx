@@ -18,6 +18,11 @@ interface EmailDraftFormProps {
 	mode: EmailDraftInput["mode"];
 	hasSavedDraft?: boolean;
 	canSave?: boolean;
+	isReadOnly?: boolean;
+	isSending?: boolean;
+	canSend?: boolean;
+	sendLabel?: string;
+	onSend?: (values: EmailDraftValues) => Promise<void>;
 	isPending?: boolean;
 	isUncertain: boolean;
 	/** Original subject for native replies and forwards. */
@@ -41,6 +46,11 @@ export function EmailDraftForm({
 	mode,
 	hasSavedDraft = false,
 	canSave = true,
+	isReadOnly = false,
+	isSending = false,
+	canSend = true,
+	sendLabel = "Send",
+	onSend,
 	isPending = false,
 	isUncertain,
 	sourceSubject,
@@ -54,6 +64,7 @@ export function EmailDraftForm({
 	onSave,
 }: EmailDraftFormProps) {
 	const isSubmitting = isPending || form.formState.isSubmitting;
+	const fieldsDisabled = isSubmitting || isReadOnly;
 	const isSaveDisabled =
 		isSubmitting ||
 		isUncertain ||
@@ -95,7 +106,7 @@ export function EmailDraftForm({
 					{mode === "new" && (
 						<EmailAddressFields
 							form={form}
-							disabled={isSubmitting}
+							disabled={fieldsDisabled}
 						/>
 					)}
 					{mode === "forward" && (
@@ -103,12 +114,12 @@ export function EmailDraftForm({
 							name="to"
 							label="To (required)"
 							required
-							disabled={isSubmitting}
+							disabled={fieldsDisabled}
 						/>
 					)}
 					{mode === "reply" && (
 						<EmailReplyField
-							disabled={isSubmitting}
+							disabled={fieldsDisabled}
 							recipients={
 								replyRecipients ?? {
 									isReady: false,
@@ -125,7 +136,7 @@ export function EmailDraftForm({
 								label="Subject"
 								presentation="mail"
 								placeholder="Add a subject"
-								disabled={isSubmitting}
+								disabled={fieldsDisabled}
 							/>
 						</div>
 					) : (
@@ -153,28 +164,46 @@ export function EmailDraftForm({
 								: "Message"
 					}
 					required={mode === "reply"}
-					disabled={isSubmitting}
+					disabled={fieldsDisabled}
 				/>
 				{mode === "new" && (
 					<div className="shrink-0 px-4 pb-2">
-						<DraftAttachmentField disabled={isSubmitting} />
+						<DraftAttachmentField disabled={fieldsDisabled} />
 					</div>
 				)}
 				{feedbackContent}
 			</div>
-			<footer className="flex shrink-0 justify-end border-border border-t bg-background px-4 py-2">
+			<footer className="flex shrink-0 flex-wrap justify-end gap-2 border-border border-t bg-background px-4 py-2">
 				<Button
 					type="submit"
-					variant={saveVariant}
+					variant={onSend ? "outline" : saveVariant}
 					aria-label={
 						isSubmitting ? `${saveLabel}, saving` : undefined
 					}
 					className="h-auto min-h-9 pointer-coarse:min-h-11 @min-lg/compose:w-auto w-full whitespace-normal"
 					disabled={isSaveDisabled}
 				>
-					{isSubmitting && <Spinner aria-label="Saving draft" />}
+					{isSubmitting && !isSending && (
+						<Spinner aria-label="Saving draft" />
+					)}
 					{saveLabel}
 				</Button>
+				{onSend && (
+					<Button
+						type="button"
+						className="min-h-9 pointer-coarse:min-h-11"
+						disabled={
+							isSubmitting ||
+							isUncertain ||
+							!canSend ||
+							(mode === "reply" && !replyRecipients?.isReady)
+						}
+						onClick={() => void form.handleSubmit(onSend)()}
+					>
+						{isSending && <Spinner aria-label="Sending email" />}
+						{isSending ? "Sending…" : sendLabel}
+					</Button>
+				)}
 			</footer>
 		</Form>
 	);

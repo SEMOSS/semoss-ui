@@ -8,6 +8,16 @@ const contextSchema = z.object({
 	threadId: z.string().min(1),
 	contextRevision: z.string(),
 	contextText: z.string(),
+	referenceResults: z
+		.array(
+			z.object({
+				toolId: z.string(),
+				title: z.string(),
+				output: z.string(),
+			}),
+		)
+		.optional(),
+	insightsRequestId: z.string().optional(),
 	selectedSourceMessageId: z.string().min(1).optional(),
 	/** Local editor target, persisted with the request for response correlation. */
 	emailDraft: z
@@ -99,8 +109,11 @@ export function presentThreadMessages(
 							? {
 									...part,
 									text:
-										readThreadCommand(part.text)?.request ??
-										part.text,
+										(readThreadCommand(part.text)?.context
+											.insightsRequestId
+											? "Summarize this thread and identify action items."
+											: readThreadCommand(part.text)
+													?.request) ?? part.text,
 								}
 							: part,
 					),

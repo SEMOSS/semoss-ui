@@ -13,7 +13,7 @@ import { ThreadMenuItems } from "@/features/collaboration/components/thread-menu
 import { useThreadMenuActions } from "@/features/collaboration/components/use-thread-menu-actions";
 import { useWorkEmail } from "./work-email.context";
 
-const READER_ACTIONS = new Set(["ask", "draft", "copy-message"]);
+const READER_ACTIONS = new Set(["ask", "draft", "delete", "copy-message"]);
 
 /** Secondary message actions; the reader header already owns reply, forward, and Outlook. */
 export function WorkEmailMenu({

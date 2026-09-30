@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useSyncExternalStore } from "react";
 import { useInsight } from "@semoss/sdk/react";
 import {
 	Dialog,
@@ -6,27 +6,10 @@ import {
 	DialogDescription,
 	DialogHeader,
 	DialogTitle,
-	useForm,
-	zodResolver,
 } from "@semoss/ui/next";
-import { draftText, plainTextEmail } from "@/features/email/email-html";
-import { EmailDraftSession } from "../api/email-draft-session";
-import {
-	type EmailDraftValues,
-	emailDraftSchema,
-} from "../api/email-draft-values";
-import {
-	parseAddresses,
-	saveEmailDraft,
-	UncertainDraftError,
-} from "../api/microsoft";
-import { useReplyRecipients } from "../hooks/use-reply-recipients";
-import type { EmailDraftInput, SavedEmailDraft } from "../types";
-import {
-	showEmailDraftFailureToast,
-	showEmailDraftSavedToast,
-} from "./email-draft-feedback";
-import { EmailDraftForm } from "./email-draft-form";
+import { EmailDraftEditor } from "../api/email-draft-editor";
+import type { SavedEmailDraft } from "../types";
+import { EmailDraftEditorForm } from "./email-draft-editor-form";
 import type { EmailReplyContext } from "./email-reply-field";
 
 export interface EmailDraftDialogProps {
@@ -44,7 +27,7 @@ export interface EmailDraftDialogProps {
 	onSaved?: (draft: SavedEmailDraft) => void;
 }
 
-/** Review and save a new, reply, or forward draft through an API that cannot send mail. */
+/** The shared retained editor separates saving from an explicit Send action. */
 export function EmailDraftDialog({
 	isOpen,
 	onOpenChange,
@@ -57,190 +40,45 @@ export function EmailDraftDialog({
 	onSaved,
 }: EmailDraftDialogProps) {
 	const { actions, insightId } = useInsight();
-	const form = useForm<EmailDraftValues>({
-		resolver: zodResolver(emailDraftSchema),
-		defaultValues: {
-			to: initialTo,
-			cc: "",
-			bcc: "",
-			subject: initialSubject,
-			body: plainTextEmail(initialBody),
-			replyAll: false,
-			files: [],
-		},
-	});
-	const [recipientsIdentity, setRecipientsIdentity] = useState<string | null>(
-		null,
-	);
-	const [saved, setSaved] = useState<SavedEmailDraft | null>(null);
-	const [isUncertain, setIsUncertain] = useState(false);
-	const initialized = useRef<string | null>(null);
+	const drafts = useRef(new Map<string, EmailDraftEditor>());
 	const returnFocus = useRef<HTMLElement | null>(null);
-	const mounted = useRef(true);
-	const writing = useRef(false);
-	const draftSession = useRef<EmailDraftSession | null>(null);
-	const { isDirty, isSubmitting } = form.formState;
-	const identity = JSON.stringify([insightId, mode, sourceUid ?? "new"]);
+	const draft = useMemo(() => {
+		const id = JSON.stringify([insightId, mode, sourceUid ?? "new"]);
+		const existing = drafts.current.get(id);
+		if (existing) return existing;
+		const created = new EmailDraftEditor({
+			id,
+			mode,
+			sourceUid,
+			body: initialBody,
+			subject: initialSubject,
+			to: initialTo,
+		});
+		drafts.current.set(id, created);
+		return created;
+	}, [insightId, mode, sourceUid, initialBody, initialSubject, initialTo]);
+	const snapshot = useSyncExternalStore(
+		draft.subscribe,
+		draft.getSnapshot,
+		draft.getSnapshot,
+	);
+	const isPending = snapshot.isSaving || snapshot.isSending;
 	useEffect(() => {
-		mounted.current = true;
+		const owned = drafts.current;
 		return () => {
-			mounted.current = false;
-			draftSession.current?.dispose();
-			draftSession.current = null;
+			for (const item of owned.values()) item.dispose();
 		};
 	}, []);
-
-	useEffect(() => {
-		if (!isOpen) return;
-		if (initialized.current === identity) return;
-		initialized.current = identity;
-		draftSession.current?.dispose();
-		draftSession.current = null;
-		form.reset({
-			to: initialTo,
-			cc: "",
-			bcc: "",
-			subject: initialSubject,
-			body: plainTextEmail(initialBody),
-			replyAll: false,
-			files: [],
-		});
-		setRecipientsIdentity(null);
-		setSaved(null);
-		setIsUncertain(false);
-	}, [form, identity, initialBody, initialSubject, initialTo, isOpen]);
-
-	const replyRecipients = useReplyRecipients({
-		form,
-		sourceUid,
-		insightId,
-		isEnabled: isOpen && mode === "reply",
-		isInitialized: recipientsIdentity === identity,
-		onInitialized: () => setRecipientsIdentity(identity),
-	});
-
-	async function handleSubmit(values: EmailDraftValues): Promise<void> {
-		if (
-			isUncertain ||
-			writing.current ||
-			(mode === "reply" && !replyRecipients.isReady)
-		)
-			return;
-		if (mode !== "new" && !sourceUid) {
-			const message =
-				"Select the source email before creating this draft.";
-			form.setError("root.server", {
-				message,
-			});
-			showEmailDraftFailureToast(message, { isUncertain: false });
-			return;
-		}
-		if (mode === "reply" && !draftText(values.body, "html")) {
-			form.setError(
-				"body",
-				{ message: "Enter reply text." },
-				{ shouldFocus: true },
-			);
-			return;
-		}
-		if (mode === "forward" && parseAddresses(values.to).length === 0) {
-			form.setError(
-				"to",
-				{ message: "Enter at least one recipient." },
-				{ shouldFocus: true },
-			);
-			return;
-		}
-		const input: EmailDraftInput =
-			mode === "new"
-				? {
-						mode,
-						to: values.to,
-						cc: values.cc,
-						bcc: values.bcc,
-						subject: values.subject,
-						body: values.body,
-						bodyFormat: "html",
-					}
-				: mode === "reply"
-					? {
-							mode,
-							sourceUid: sourceUid ?? "",
-							body: values.body,
-							bodyFormat: "html",
-							replyAll: true,
-							to: values.to,
-							cc: values.cc,
-							overrideRecipients: true,
-						}
-					: {
-							mode,
-							sourceUid: sourceUid ?? "",
-							to: values.to,
-							body: values.body,
-							bodyFormat: "html",
-						};
-		let result: SavedEmailDraft;
-		writing.current = true;
-		try {
-			if (input.mode === "new" && values.files.length > 0) {
-				if (!draftSession.current)
-					draftSession.current = new EmailDraftSession();
-				result = await draftSession.current.save(
-					input,
-					values.files.map(({ file }) => file),
-				);
-			} else {
-				result = await saveEmailDraft(actions, input);
-			}
-		} catch (cause: unknown) {
-			if (!mounted.current || initialized.current !== identity) return;
-			const uncertain = cause instanceof UncertainDraftError;
-			const message =
-				cause instanceof Error
-					? cause.message
-					: "The draft could not be saved.";
-			setIsUncertain(uncertain);
-			form.setError("root.server", {
-				message,
-			});
-			showEmailDraftFailureToast(
-				message,
-				uncertain
-					? {
-							isUncertain: true,
-							onConfirmRetry: () => {
-								if (
-									!mounted.current ||
-									initialized.current !== identity
-								)
-									return;
-								setIsUncertain(false);
-								form.clearErrors("root.server");
-							},
-						}
-					: { isUncertain: false },
-			);
-			return;
-		} finally {
-			writing.current = false;
-		}
-		if (!mounted.current || initialized.current !== identity) return;
-		setSaved(result);
-		form.reset(values);
-		showEmailDraftSavedToast(result);
-		onSaved?.(result);
-	}
-
-	function handleOpenChange(open: boolean): void {
-		if (!isSubmitting) onOpenChange(open);
-	}
-
 	return (
-		<Dialog open={isOpen} onOpenChange={handleOpenChange}>
+		<Dialog
+			open={isOpen}
+			onOpenChange={(open) => {
+				if (!isPending) onOpenChange(open);
+			}}
+		>
 			<DialogContent
-				className="flex max-h-dvh flex-col gap-0 overflow-hidden p-0 sm:max-h-dvh sm:max-w-3xl"
-				showCloseButton={!isSubmitting}
+				className="flex max-h-dvh flex-col gap-0 overflow-hidden p-0 sm:max-w-3xl"
+				showCloseButton={!isPending}
 				onOpenAutoFocus={() => {
 					returnFocus.current =
 						document.activeElement instanceof HTMLElement
@@ -248,10 +86,10 @@ export function EmailDraftDialog({
 							: null;
 				}}
 				onEscapeKeyDown={(event) => {
-					if (isSubmitting) event.preventDefault();
+					if (isPending) event.preventDefault();
 				}}
 				onInteractOutside={(event) => {
-					if (isSubmitting) event.preventDefault();
+					if (isPending) event.preventDefault();
 				}}
 				onCloseAutoFocus={(event) => {
 					if (returnFocus.current?.isConnected) {
@@ -260,29 +98,26 @@ export function EmailDraftDialog({
 					}
 				}}
 			>
-				<DialogHeader className="shrink-0 border-border border-b px-4 py-2 pr-12">
-					<DialogTitle className="text-base">
+				<DialogHeader className="sr-only">
+					<DialogTitle>
 						{mode === "new"
 							? "New email draft"
 							: mode === "reply"
 								? "Reply draft"
 								: "Forward draft"}
 					</DialogTitle>
-					<DialogDescription className="sr-only">
-						Review your draft, then save it to Outlook. Nothing is
-						sent.
+					<DialogDescription>
+						Review your email, then save a draft or choose Send.
 					</DialogDescription>
 				</DialogHeader>
-				<EmailDraftForm
-					form={form}
-					mode={mode}
-					sourceSubject={initialSubject}
+				<EmailDraftEditorForm
+					saveLabel="Save Draft"
+					key={draft.seed.id}
+					draft={draft}
+					actions={actions}
+					insightId={insightId}
 					replyContext={replyContext}
-					replyRecipients={replyRecipients}
-					hasSavedDraft={Boolean(saved)}
-					canSave={!saved || isDirty}
-					isUncertain={isUncertain}
-					onSave={handleSubmit}
+					onSaved={onSaved}
 				/>
 			</DialogContent>
 		</Dialog>

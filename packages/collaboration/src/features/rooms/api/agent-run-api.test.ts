@@ -151,7 +151,7 @@ it("rejects invalid run statuses instead of reporting a successful turn", async 
 	await expect(pollRun("run-1")).rejects.toThrow();
 });
 
-it("passes the optional review policy only for Work runs", async () => {
+it("starts draft requests with the standard agent parameters", async () => {
 	vi.mocked(runAgent).mockResolvedValue({ ...run, status: "SUBMITTED" });
 	await startAgentRun("insight", {
 		roomId: "room",
@@ -160,15 +160,17 @@ it("passes the optional review policy only for Work runs", async () => {
 		command: "Draft a reply",
 		media: [],
 		maxTurns: 40,
-		requireEmailDraftReview: true,
 	});
-	expect(runAgent).toHaveBeenCalledWith(
-		expect.objectContaining({
-			paramValues: { requireEmailDraftReview: true },
-		}),
+	expect(runAgent).toHaveBeenCalledExactlyOnceWith(
+		{
+			roomId: "room",
+			agentId: "",
+			engine: "model",
+			command: encodeURIComponent("Draft a reply"),
+			media: [],
+			maxTurns: 40,
+			harnessType: "semoss",
+		},
 		"insight",
-	);
-	expect(vi.mocked(runAgent).mock.calls[0][0]).not.toHaveProperty(
-		"requireEmailDraftReview",
 	);
 });

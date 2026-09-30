@@ -135,7 +135,7 @@ export function importSourceCommand(
 			messageCount: messages.length,
 			lastAt: source.receivedAt ?? "",
 			roomId: null,
-			summary: source.body.slice(0, 240),
+			summary: "",
 			isSample: false,
 			source: {
 				kind: source.sourceKind,

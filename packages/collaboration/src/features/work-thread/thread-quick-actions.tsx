@@ -41,7 +41,7 @@ export function ThreadQuickActions({
 					onClick={() => onSelect("draft")}
 				>
 					<MailPlus aria-hidden="true" className="text-primary" />
-					Draft with assistant
+					Draft reply
 				</Button>
 			)}
 		</fieldset>

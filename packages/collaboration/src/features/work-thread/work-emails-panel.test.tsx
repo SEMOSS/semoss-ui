@@ -304,13 +304,16 @@ it("keeps only secondary actions in the email menu and returns keyboard focus on
 	await user.keyboard("{Enter}");
 	expect(
 		screen.getAllByRole("menuitem").map((item) => item.textContent),
-	).toEqual(["Ask assistant", "Draft with assistant", "Copy email link"]);
+	).toEqual([
+		"Ask assistant",
+		"Draft reply",
+		"Delete email",
+		"Copy email link",
+	]);
 	await user.keyboard("{Escape}");
 	expect(more).toHaveFocus();
 	await user.keyboard("{Enter}");
-	await user.click(
-		screen.getByRole("menuitem", { name: "Draft with assistant" }),
-	);
+	await user.click(screen.getByRole("menuitem", { name: "Draft reply" }));
 	expect(router.state.location.state.threadAction).toMatchObject({
 		threadId: thread.id,
 		action: "draft",

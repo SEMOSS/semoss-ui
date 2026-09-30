@@ -1,12 +1,19 @@
 import { Wrench } from "lucide-react";
-import { createElement } from "react";
+import { createElement, useSyncExternalStore } from "react";
 import { Badge, Button, H3, P, Small } from "@semoss/ui/next";
 import type { WorkbenchPanelConfig } from "@semoss/workbench";
 import { useToolWorkbench } from "@/features/tools/tool-workbench.context";
 import { getToolDisplayLocation } from "@/features/tools/utils/tool-metadata";
+import { useWorkEmail } from "./work-email.context";
 /** Discover results and approvals without automatically replacing the active panel. */
 export function WorkToolsPanel() {
 	const workbench = useToolWorkbench();
+	const { composer } = useWorkEmail();
+	const memory = useSyncExternalStore(
+		composer.subscribe,
+		composer.getSnapshot,
+		composer.getSnapshot,
+	);
 	const tools = Object.values(workbench.tools).filter(
 		(tool) =>
 			getToolDisplayLocation(tool) !== "hidden" ||
@@ -52,6 +59,42 @@ export function WorkToolsPanel() {
 										: tool.status}
 								</Small>
 							</div>
+							{tool.status === "COMPLETED" && tool.output && (
+								<>
+									<details className="w-full">
+										<summary className="min-h-9 cursor-pointer focus-visible:outline-2 focus-visible:outline-ring">
+											Result from{" "}
+											{tool.title || tool.name}
+										</summary>
+										<pre className="max-h-48 overflow-auto whitespace-pre-wrap break-words text-sm">
+											{tool.output}
+										</pre>
+									</details>
+									<Button
+										type="button"
+										size="sm"
+										variant="ghost"
+										disabled={memory.referenceResults.some(
+											(reference) =>
+												reference.toolId === tool.id,
+										)}
+										onClick={() =>
+											composer.selectReference({
+												toolId: tool.id,
+												title: tool.title || tool.name,
+												output: tool.output ?? "",
+											})
+										}
+									>
+										{memory.referenceResults.some(
+											(reference) =>
+												reference.toolId === tool.id,
+										)
+											? "Included in reply context"
+											: "Use in reply"}
+									</Button>
+								</>
+							)}
 							{approval && (
 								<Badge variant="outline">Approval</Badge>
 							)}

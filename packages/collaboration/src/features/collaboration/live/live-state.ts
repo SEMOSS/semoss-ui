@@ -541,3 +541,26 @@ export async function loadThreadMessages(
 		workspace: { messages },
 	});
 }
+
+/** Refresh work metadata through existing bounded reads without reloading the application. */
+export async function readWorkUpdates(
+	actions: InsightActions,
+): Promise<Pick<CollaborationState, "threads" | "workspaces" | "items">> {
+	const outputs = await runBatch(actions, [
+		pixel("BrainListThreads", { limit: 5000, detail: true }),
+		pixel("WorkListWorkspaces"),
+		pixel("WorkListItems", { view: "all", limit: 5000 }),
+	]);
+	const schema = z.object({
+		items: z.array(z.record(z.string(), z.unknown())),
+		total: z.number().optional().default(0),
+	});
+	const [threads, workspaces, items] = outputs.map((output) =>
+		schema.parse(output),
+	);
+	return {
+		threads: threads.items.map(mapThread),
+		workspaces: mapWorkspaces(workspaces),
+		items: items.items.map(mapItem),
+	};
+}

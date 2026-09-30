@@ -37,6 +37,8 @@ const emptyLoad: LoadState = {
 
 interface SourcesResult {
 	mail: OutlookMail[];
+	lastUpdated: string | null;
+	refreshMail: () => void;
 	folders: OutlookFolder[];
 	chats: TeamsChat[];
 	events: CalendarEvent[];
@@ -52,7 +54,7 @@ interface SourcesResult {
 	connect: () => Promise<void>;
 }
 
-/** Own independent, user-triggered source requests and discard stale selections after navigation. */
+/** Own source reads, visible mailbox refreshes, and stale-selection guards. */
 export function useSources(): SourcesResult {
 	const { actions } = useInsight();
 	const [mail, setMail] = useState<OutlookMail[]>([]);
@@ -69,6 +71,25 @@ export function useSources(): SourcesResult {
 		connection: emptyLoad,
 	});
 	const folder = useRef("inbox");
+	const lastFilters = useRef<MailSearchFilters | null>(null);
+	const pendingMail = useRef(0);
+	const [lastUpdated, setLastUpdated] = useState<string | null>(null);
+	const refreshRef = useRef(() => {});
+	refreshRef.current = () => {
+		if (lastFilters.current && !pendingMail.current)
+			void loadMail(lastFilters.current);
+	};
+	useEffect(() => {
+		const refresh = () => {
+			if (document.visibilityState === "visible") refreshRef.current();
+		};
+		const timer = window.setInterval(refresh, 30_000);
+		window.addEventListener("focus", refresh);
+		return () => {
+			window.clearInterval(timer);
+			window.removeEventListener("focus", refresh);
+		};
+	}, []);
 	const generation = useRef<Record<SourceArea, number>>({
 		mail: 0,
 		teams: 0,
@@ -120,6 +141,8 @@ export function useSources(): SourcesResult {
 	}
 
 	async function loadMail(filters: MailSearchFilters): Promise<void> {
+		lastFilters.current = filters;
+		pendingMail.current += 1;
 		await request(
 			"mail",
 			async () => {
@@ -140,6 +163,7 @@ export function useSources(): SourcesResult {
 			},
 			(result) => {
 				setMail(result.page.messages);
+				setLastUpdated(new Date().toISOString());
 				folder.current = result.page.folder;
 				if (result.folders) setFolders(result.folders);
 				setFolderError(
@@ -149,6 +173,7 @@ export function useSources(): SourcesResult {
 				);
 			},
 		);
+		pendingMail.current -= 1;
 	}
 
 	async function loadTeams(): Promise<void> {
@@ -199,6 +224,8 @@ export function useSources(): SourcesResult {
 	}
 
 	return {
+		lastUpdated,
+		refreshMail: () => refreshRef.current(),
 		mail,
 		folders,
 		chats,

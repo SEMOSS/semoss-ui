@@ -11,7 +11,7 @@ import {
 	X,
 } from "lucide-react";
 import { useRef, useState } from "react";
-import { NavLink, useLocation, useNavigate } from "react-router";
+import { Link, NavLink, useLocation, useNavigate } from "react-router";
 import { Button, cn, Small } from "@semoss/ui/next";
 import { selectWorkItems } from "../state/collaboration.selectors";
 import { useCollaborationSession } from "../state/collaboration-session.context";
@@ -97,6 +97,12 @@ export function CollaborationNavigation({
 			];
 	return (
 		<div className="flex min-h-full flex-col gap-6 px-3 py-4">
+			<Button asChild className="min-h-11">
+				<Link to="/new" onClick={onNavigate}>
+					<Plus aria-hidden="true" />
+					New session
+				</Link>
+			</Button>
 			<nav
 				aria-label={isBrain ? "Brain" : "Work"}
 				className="space-y-0.5"
