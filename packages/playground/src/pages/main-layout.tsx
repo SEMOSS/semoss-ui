@@ -19,6 +19,7 @@ import { TourContext } from "@/contexts/tour-context";
 import { useWorkspaceNavigation } from "@/features/conversation/use-workspace-navigation";
 import { WorkspaceNavigationContext } from "@/features/conversation/workspace-navigation.context";
 import { MobileNavigationButton } from "@/features/navigation/mobile-navigation-button";
+import { SettingsDialogProvider } from "@/features/settings/settings-dialog-provider";
 import { useRoot } from "@/hooks/use-root";
 import { useThemeTitle } from "@/hooks/use-theme-title";
 import { ChatStore } from "@/stores/chat/chat.store";
@@ -160,80 +161,82 @@ export const MainLayout = observer(() => {
 					stopTour: () => setIsTourOpen(false),
 				}}
 			>
-				<LandingTour />
-				<WorkspaceNavigationContext.Provider
-					value={navigation.setWorkAreaOpen}
-				>
-					<SidebarProvider
-						open={navigation.isNavigationOpen}
-						onOpenChange={navigation.setNavigationOpen}
-						style={
-							{
-								"--sidebar-width": "16rem",
-								"--sidebar-width-mobile": "16rem",
-							} as CSSProperties
-						}
+				<SettingsDialogProvider>
+					<LandingTour />
+					<WorkspaceNavigationContext.Provider
+						value={navigation.setWorkAreaOpen}
 					>
-						<GlobalNav />
-						<SidebarInset className="m-0! min-w-0 rounded-none! shadow-none">
-							<GlobalDialog
-								onAcknowledge={() => {
-									if (pendingTour) {
-										setPendingTour(false);
-										setIsTourOpen(true);
-									}
-								}}
-							/>
-							<div
-								data-testid="main-layout"
-								className="relative flex h-dvh w-full flex-col overflow-hidden bg-background pt-14 md:pt-0"
-								style={layoutStyle}
-							>
-								<MobileNavigationButton />
-								<div className="relative min-h-0 w-full flex-1 overflow-hidden">
-									<Outlet />
-									{Object.values(
-										chatStore.embeddedPageMap,
-									).map((item) => {
-										const isActive = matchPath(
-											{
-												path: `/embed/${item.path}`,
-												end: false,
-											},
-											pathname,
-										);
-										return (
-											<iframe
-												key={item.path}
-												ref={(el) => {
-													iframeRefs.current[
-														item.path
-													] = el;
-												}}
-												src={item.url}
-												title={item.path}
-												className="absolute inset-0 h-full w-full border-none"
-												style={{
-													// visibility:hidden removes the iframe from
-													// the browser touch hit-test pipeline on
-													// mobile (opacity:0 alone does not), so
-													// inactive iframes no longer intercept swipe
-													visibility: isActive
-														? "visible"
-														: "hidden",
-													pointerEvents: isActive
-														? "auto"
-														: "none",
-												}}
-											/>
-										);
-									})}
+						<SidebarProvider
+							open={navigation.isNavigationOpen}
+							onOpenChange={navigation.setNavigationOpen}
+							style={
+								{
+									"--sidebar-width": "16rem",
+									"--sidebar-width-mobile": "16rem",
+								} as CSSProperties
+							}
+						>
+							<GlobalNav />
+							<SidebarInset className="m-0! min-w-0 rounded-none! shadow-none">
+								<GlobalDialog
+									onAcknowledge={() => {
+										if (pendingTour) {
+											setPendingTour(false);
+											setIsTourOpen(true);
+										}
+									}}
+								/>
+								<div
+									data-testid="main-layout"
+									className="relative flex h-dvh w-full flex-col overflow-hidden bg-background pt-14 md:pt-0"
+									style={layoutStyle}
+								>
+									<MobileNavigationButton />
+									<div className="relative min-h-0 w-full flex-1 overflow-hidden">
+										<Outlet />
+										{Object.values(
+											chatStore.embeddedPageMap,
+										).map((item) => {
+											const isActive = matchPath(
+												{
+													path: `/embed/${item.path}`,
+													end: false,
+												},
+												pathname,
+											);
+											return (
+												<iframe
+													key={item.path}
+													ref={(el) => {
+														iframeRefs.current[
+															item.path
+														] = el;
+													}}
+													src={item.url}
+													title={item.path}
+													className="absolute inset-0 h-full w-full border-none"
+													style={{
+														// visibility:hidden removes the iframe from
+														// the browser touch hit-test pipeline on
+														// mobile (opacity:0 alone does not), so
+														// inactive iframes no longer intercept swipe
+														visibility: isActive
+															? "visible"
+															: "hidden",
+														pointerEvents: isActive
+															? "auto"
+															: "none",
+													}}
+												/>
+											);
+										})}
+									</div>
+									<GlobalFooter />
 								</div>
-								<GlobalFooter />
-							</div>
-						</SidebarInset>
-					</SidebarProvider>
-				</WorkspaceNavigationContext.Provider>
+							</SidebarInset>
+						</SidebarProvider>
+					</WorkspaceNavigationContext.Provider>
+				</SettingsDialogProvider>
 			</TourContext.Provider>
 		</ChatContext.Provider>
 	);

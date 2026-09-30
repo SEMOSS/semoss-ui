@@ -22,7 +22,9 @@ export const TeamworkContextItems = observer(
 		const { t } = useTranslation("teamwork");
 
 		return teamwork.contextItems.map((item) => {
-			const Icon = findConnectorSource(item.service)?.icon ?? FileIcon;
+			const Icon =
+				(item.service && findConnectorSource(item.service)?.icon) ||
+				FileIcon;
 			return (
 				<FilePreviewTile
 					key={item.id}

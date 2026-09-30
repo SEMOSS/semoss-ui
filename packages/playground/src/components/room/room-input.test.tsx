@@ -6,6 +6,7 @@ import { MemoryRouter } from "react-router";
 import { beforeEach, expect, test, vi } from "vitest";
 import { toast } from "@semoss/ui/next";
 import { ConversationWorkspaceActionsContext } from "@/features/conversation/conversation-workspace-actions.context";
+import { SettingsDialogProvider } from "@/features/settings/settings-dialog-provider";
 import type { RoomStore } from "@/stores/room/room.store";
 import { RoomInput } from "./room-input";
 import { RoomInputMenuMCP } from "./room-input-menu-mcp";
@@ -21,6 +22,15 @@ let triggerOnChange: (() => void) | null = null;
 // ---------------------------------------------------------------------------
 // Mocks
 // ---------------------------------------------------------------------------
+
+vi.mock("@/features/settings/general-settings", () => ({
+	GeneralSettings: () => null,
+}));
+vi.mock("@/features/teamwork/components/connectors-settings", () => ({
+	ConnectorsSettings: () => (
+		<button type="button">Connector preferences</button>
+	),
+}));
 
 vi.mock("@semoss/i18n", async (importOriginal) => {
 	const actual = await importOriginal<typeof import("@semoss/i18n")>();
@@ -602,39 +612,59 @@ test("the connector action runs after the composer menu releases focus", async (
 	expect(open).toHaveBeenCalledTimes(1);
 });
 
-test("closing connectors returns keyboard focus to the composer menu button", async () => {
-	const user = userEvent.setup();
-	const teamwork = observable({
-		...defaultProps.room.teamwork,
-		openConnectorsDialog: () => {
-			runInAction(() => {
-				teamwork.isConnectorsDialogOpen = true;
+test.each(["close", "manage"])(
+	"connector dialog %s keeps focus in the active interface",
+	async (action) => {
+		const user = userEvent.setup();
+		const teamwork = observable({
+			...defaultProps.room.teamwork,
+			openConnectorsDialog: () => {
+				runInAction(() => {
+					teamwork.isConnectorsDialogOpen = true;
+				});
+			},
+			closeConnectorsDialog: () => {
+				runInAction(() => {
+					teamwork.isConnectorsDialogOpen = false;
+				});
+			},
+		});
+		render(
+			<MemoryRouter>
+				<SettingsDialogProvider>
+					<RoomInput
+						{...defaultProps}
+						room={{ ...defaultProps.room, teamwork } as RoomStore}
+						MenuComponent={undefined}
+					/>
+				</SettingsDialogProvider>
+			</MemoryRouter>,
+		);
+		const trigger = screen.getByRole("button", {
+			name: "input.openSettings",
+		});
+		await user.click(trigger);
+		await user.click(
+			screen.getByRole("menuitem", { name: "menu.connectors 0" }),
+		);
+		expect(
+			screen.getByRole("dialog", { name: "connectors.dialogTitle" }),
+		).toBeVisible();
+		if (action === "manage") {
+			await user.click(
+				screen.getByRole("button", { name: "connectors.manage" }),
+			);
+			const settings = screen.getByRole("dialog", {
+				name: "settings.title",
 			});
-		},
-		closeConnectorsDialog: () => {
-			runInAction(() => {
-				teamwork.isConnectorsDialogOpen = false;
-			});
-		},
-	});
-	render(
-		<MemoryRouter>
-			<RoomInput
-				{...defaultProps}
-				room={{ ...defaultProps.room, teamwork } as RoomStore}
-				MenuComponent={undefined}
-			/>
-		</MemoryRouter>,
-	);
-	const trigger = screen.getByRole("button", { name: "input.openSettings" });
-	await user.click(trigger);
-	await user.click(
-		screen.getByRole("menuitem", { name: "menu.connectors 0" }),
-	);
-	expect(
-		screen.getByRole("dialog", { name: "connectors.dialogTitle" }),
-	).toBeVisible();
-	await user.keyboard("{Escape}");
-	expect(screen.queryByRole("dialog")).toBeNull();
-	expect(trigger).toHaveFocus();
-});
+			expect(settings).toBeVisible();
+			expect(settings).toContainElement(
+				document.activeElement as HTMLElement,
+			);
+		} else {
+			await user.keyboard("{Escape}");
+			expect(screen.queryByRole("dialog")).toBeNull();
+			expect(trigger).toHaveFocus();
+		}
+	},
+);

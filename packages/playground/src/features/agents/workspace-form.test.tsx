@@ -1,11 +1,14 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, expect, test, vi } from "vitest";
+import { AGENT_FORM_DEFAULT_VALUES } from "@semoss/shared";
+import { toast } from "@semoss/ui/next";
 import { NewKnowledgeFormBody } from "@/components/knowledge/new-knowledge-form-body";
 import { SaveWorkspaceDialog } from "@/components/room/room-workspace-creation";
 import { NewWorkspacePage } from "@/pages/new-workspace-page";
 
 const mocks = vi.hoisted(() => ({
 	addWorkspace: vi.fn(),
+	createAgent: vi.fn(),
 	navigate: vi.fn(),
 	run: vi.fn(),
 	upload: vi.fn(),
@@ -15,13 +18,23 @@ vi.mock("@semoss/i18n", () => ({
 }));
 vi.mock("react-router", () => ({ useNavigate: () => mocks.navigate }));
 vi.mock("@/hooks", () => ({
-	useChat: () => ({ chat: { addWorkspace: mocks.addWorkspace } }),
+	useChat: () => ({
+		chat: {
+			addWorkspace: mocks.addWorkspace,
+			createAgent: mocks.createAgent,
+		},
+	}),
 	useRoot: () => ({
 		root: { theme: { featureFlags: {}, defaultEmbedderId: "embedder" } },
 	}),
 }));
 vi.mock("@/hooks/use-chat", () => ({
-	useChat: () => ({ chat: { addWorkspace: mocks.addWorkspace } }),
+	useChat: () => ({
+		chat: {
+			addWorkspace: mocks.addWorkspace,
+			createAgent: mocks.createAgent,
+		},
+	}),
 }));
 vi.mock("@/hooks/use-root", () => ({
 	useRoot: () => ({
@@ -33,7 +46,21 @@ vi.mock("@/components/workspace/instructions-modal", () => ({
 }));
 vi.mock("@semoss/sdk/react", async (original) => ({
 	...(await original<typeof import("@semoss/sdk/react")>()),
-	usePixel: () => ({ status: "SUCCESS", data: { exists: false } }),
+	usePixel: (pixel: string) => ({
+		status: "SUCCESS",
+		data:
+			pixel === "GetAgentFormOptions();"
+				? { default_tools: [], known_hook_kinds: ["pixel"] }
+				: pixel.startsWith("Check")
+					? { exists: false }
+					: [],
+	}),
+	useIteratorPixel: () => ({
+		data: [],
+		next: vi.fn(),
+		isLoading: false,
+		hasMore: false,
+	}),
 	useInsight: () => ({ actions: { run: mocks.run, upload: mocks.upload } }),
 }));
 vi.mock("@semoss/shared", async (original) => ({
@@ -73,16 +100,16 @@ test("saving an agent from a conversation validates and retains the form after a
 	expect(screen.getByRole("dialog")).toBeInTheDocument();
 });
 
-test("agent creation retains edits on failure and retries with the existing payload contract", async () => {
+test("agent creation retains all settings on failure and retries with the full configuration", async () => {
 	let rejectSave: (reason: Error) => void = () => {};
-	mocks.addWorkspace
+	mocks.createAgent
 		.mockImplementationOnce(
 			() =>
 				new Promise((_, reject) => {
 					rejectSave = reject;
 				}),
 		)
-		.mockResolvedValueOnce("agent-1");
+		.mockResolvedValueOnce({ workspaceId: "agent-1" });
 	render(<NewWorkspacePage />);
 	const name = screen.getByLabelText("workspace:form.nameLabel");
 	const instructions = screen.getByLabelText(
@@ -90,6 +117,9 @@ test("agent creation retains edits on failure and retries with the existing payl
 	);
 	fireEvent.change(name, { target: { value: "Research agent" } });
 	fireEvent.change(instructions, { target: { value: "Cite sources" } });
+	fireEvent.change(screen.getByLabelText("about.greeting"), {
+		target: { value: "Hello" },
+	});
 	fireEvent.click(
 		screen.getByRole("button", { name: "workspace:actions.create" }),
 	);
@@ -108,12 +138,13 @@ test("agent creation retains edits on failure and retries with the existing payl
 	await waitFor(() =>
 		expect(mocks.navigate).toHaveBeenCalledWith("/agent/agent-1"),
 	);
-	expect(mocks.addWorkspace).toHaveBeenLastCalledWith({
+	expect(mocks.createAgent).toHaveBeenLastCalledWith({
+		...AGENT_FORM_DEFAULT_VALUES,
 		name: "Research agent",
 		description: "",
-		system_prompt: "Cite sources",
+		instructions: "Cite sources",
+		greeting: "Hello",
 		prompts: [],
-		mcp: [],
 		skills: [],
 	});
 });
@@ -150,4 +181,27 @@ test("knowledge creation retains its files and text after failure", async () => 
 	expect(screen.getByText("notes.txt")).toBeInTheDocument();
 	expect(onSuccess).not.toHaveBeenCalled();
 	expect(mocks.upload).not.toHaveBeenCalled();
+});
+
+test("agent creation opens the created agent when its follow-up settings save fails", async () => {
+	const notify = vi
+		.spyOn(toast, "error")
+		.mockImplementation(() => "error-toast");
+	mocks.createAgent.mockResolvedValueOnce({
+		workspaceId: "partial-agent",
+		settingsFailed: true,
+	});
+	render(<NewWorkspacePage />);
+	fireEvent.change(screen.getByLabelText("workspace:form.nameLabel"), {
+		target: { value: "Research agent" },
+	});
+	fireEvent.click(
+		screen.getByRole("button", { name: "workspace:actions.create" }),
+	);
+	await waitFor(() =>
+		expect(mocks.navigate).toHaveBeenCalledWith("/agent/partial-agent"),
+	);
+	expect(mocks.createAgent).toHaveBeenCalledTimes(1);
+	expect(notify).toHaveBeenCalledWith("agent:form.createSettingsFailed");
+	notify.mockRestore();
 });

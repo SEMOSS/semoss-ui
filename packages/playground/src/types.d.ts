@@ -43,7 +43,18 @@ export interface App {
 	description?: string;
 	project_date_created: string;
 	project_type: string;
+	/** The user's own grant; null when only a group grants access. */
 	user_permission: number;
+	/**
+	 * The effective permission: the better of the user's own grant and their
+	 * groups' grant. Null for a global project the user holds no grant on, and
+	 * for discoverable projects the user cannot access yet.
+	 */
+	permission?: number | null;
+	/** Whether everyone on the server can use the project. */
+	project_global?: boolean;
+	/** When the project was last edited. */
+	project_date_last_edited?: string;
 }
 
 export interface Workspace {

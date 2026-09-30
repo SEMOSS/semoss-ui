@@ -173,12 +173,16 @@ instance.
 
 `src/features/teamwork/` gives a chat its default file tools and connects Microsoft 365 and
 Google Workspace.
-`RoomStore.teamwork` (`TeamworkStore`) owns it per room. The Connections page (`#/connections`) connects
-accounts and switches the user's apps on or off for all their chats. These details are easy to break:
+`RoomStore.teamwork` (`TeamworkStore`) owns it per room. The Connectors page of the settings dialog
+(`features/settings/`, opened from the user menu or a chat's Connectors dialog with
+`useSettingsDialog().openSettings("connectors")`) connects accounts and switches the user's apps on
+or off for all their chats. These details are easy to break:
 
 - **Chat Files is the only file space.** It is the room's own folder: uploads, connector
   downloads, and everything the room's apps (MCP tools) and the default tools read and write. Show
-  Chat Files in the plus menu opens the file explorer on it.
+  Chat Files in the plus menu opens the file explorer on it. Its Add to Context action uses
+  `FileExplorerHostProvider` and queues on `useNextMessageRoom() ?? room`, so files selected from
+  a prepared draft room appear in the draft composer and transfer before its first message.
 - **A chat gets default tools; an agent brings its own.** In chat mode every message carries the
   default tools, the `folder_*` tools the browser runs in Chat Files (`tools/default-tools.ts`).
   Room Settings sets each to Auto, Ask, or Disabled (room option `defaultTools`; reads are Auto
@@ -205,7 +209,7 @@ accounts and switches the user's apps on or off for all their chats. These detai
   would switch the chat's tools and connectors off.
 - **Connectors are the user's, copied into each room.** The user's connector tools live in their
   own asset folder, `mcp/playground_connector_mcp.json`, written with `MakeUserPixelMCP` and
-  stamped `SMSS_MCP_GENERATOR: PlaygroundConnectors`. The Connections page and every chat's
+  stamped `SMSS_MCP_GENERATOR: PlaygroundConnectors`. The settings Connectors page and every chat's
   Connectors dialog edit that one file, so a change reaches all the user's chats, new and existing,
   and the UI says so. Each room holds a copy in its own `mcp/pixel_mcp.json`
   (`syncRoomConnectorTools`): `TeamworkStore.adopt` makes it before a new room's first message,
@@ -213,7 +217,9 @@ accounts and switches the user's apps on or off for all their chats. These detai
   straight away. The copy replaces only the room's connector tools (the stamped ones, and legacy
   ones found by reactor) and keeps every other tool. A user with no file yet has chosen nothing, so
   their rooms keep the connectors they have; only a file that is missing counts as empty, never a
-  read that failed. The catalog and each tool's approval policy live in
+  read that failed. The first sign in to a provider on the settings page switches on every app its
+  sign in covers (`enableServices`, only once the file has been read, so it never overwrites
+  choices it has not seen); reconnecting leaves the user's choices alone. The catalog and each tool's approval policy live in
   `connectors/connector.catalog.ts`; sending, deleting, sharing, and invites always ask.
 - **Room tools that ask need the teamwork card.** `GetMCPTools` cannot resolve the room toolbox, so
   the default tool form has no schema for them. `ToolsView` and the inline tool area render
@@ -289,3 +295,15 @@ To connect to a local SEMOSS backend:
 1. Start the backend on port 9090 (or update `ENDPOINT` in `.env.local`)
 2. Run `pnpm dev`
 3. Access at http://localhost:5174
+
+
+### Agent forms and catalog
+
+The create and edit pages keep Playground's section cards, sticky actions, list selectors, and
+expanded instructions editor. `WorkspaceAgentFields` composes the shared greeting, model,
+default tools, delegation, limits, and hook fields within those cards. Creation reads
+`GetAgentFormOptions` for deployment catalogs and submits the full configuration to
+`ChatStore.createAgent`; a failed follow-up settings save still opens the created agent and
+shows its warning, avoiding duplicate creation. The agent catalog keeps the existing card
+actions and responsive grid while adding access filters and sorting. Card permissions use the
+backend's effective `permission`, including group grants.

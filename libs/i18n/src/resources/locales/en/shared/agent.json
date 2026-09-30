@@ -160,11 +160,11 @@
 				"description": "Runs a pixel expression at the lifecycle events you choose."
 			},
 			"git_commit": {
-				"label": "Git commit",
+				"label": "Git Commit",
 				"description": "Runs git add . && git commit after each agent run."
 			},
 			"log_tools": {
-				"label": "Log tool calls",
+				"label": "Log Tool Calls",
 				"description": "Logs each tool call's name, params, and duration."
 			},
 			"ppt_to_pdf": {
@@ -226,6 +226,7 @@
 			"eventsLabel": "Lifecycle events",
 			"eventsHelp": "With none selected, it runs on every event.",
 			"add": "Add hook"
-		}
+		},
+		"createSettingsFailed": "Agent created, but some of its settings could not be saved. Open the agent's edit page to try again."
 	}
 }

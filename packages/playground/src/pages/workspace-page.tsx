@@ -10,7 +10,14 @@ import {
 	InputGroupAddon,
 	InputGroupInput,
 	Muted,
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
 	Spinner,
+	ToggleGroup,
+	ToggleGroupItem,
 	toast,
 	useDebouncedValue,
 	useInfiniteScroll,
@@ -20,6 +27,86 @@ import { WorkspaceCard } from "@/components/workspace/workspace-card";
 import { useChat } from "@/hooks/use-chat";
 import { useRoot } from "@/hooks/use-root";
 import type { App } from "@/types";
+
+/**
+ * The filters offered, in display order. The access filters keep the agents
+ * whose effective permission is any of those chosen; Created by Me narrows to
+ * the agents the user made, under any of their logins.
+ */
+const AGENT_FILTERS = ["createdByMe", "owner", "edit", "view"] as const;
+type AgentFilter = (typeof AGENT_FILTERS)[number];
+
+/** The permission level each access filter keeps. */
+const FILTER_PERMISSIONS: Partial<Record<AgentFilter, number>> = {
+	owner: 1,
+	edit: 2,
+	view: 3,
+};
+
+/** The orderings offered, in display order, with the sort each sends. */
+const SORT_OPTIONS = {
+	name: '{"PROJECTNAME": "ASC"}',
+	newest: '{"DATECREATED": "DESC"}',
+	edited: '{"DATELASTEDITED": "DESC"}',
+} as const;
+type SortOption = keyof typeof SORT_OPTIONS;
+
+const PAGE_SIZE = 25;
+
+const isAgentFilter = (value: string): value is AgentFilter =>
+	AGENT_FILTERS.some((filter) => filter === value);
+
+const isSortOption = (value: string): value is SortOption =>
+	value in SORT_OPTIONS;
+
+/**
+ * Build the pixel that lists one page of the user's agents: every agent they
+ * can use, narrowed by the chosen filters.
+ *
+ * @param filters - The chosen filters; none for every agent.
+ * @param search - What the user typed; empty for no search.
+ * @param sort - The ordering.
+ * @param limit - The page size.
+ * @param offset - How many agents to skip.
+ * @return The pixel.
+ */
+const buildCatalogPixel = (
+	filters: readonly AgentFilter[],
+	search: string,
+	sort: SortOption,
+	limit: number,
+	offset: number,
+): string => {
+	const filterWord = search
+		? `filterWord=["<encode>${search}</encode>"], `
+		: "";
+	const permissions = filters.flatMap((filter) => {
+		const level = FILTER_PERMISSIONS[filter];
+		return level === undefined ? [] : [level];
+	});
+	const permissionFilter =
+		permissions.length > 0
+			? `effectivePermissions=${JSON.stringify(permissions)}, `
+			: "";
+	const createdByMe = filters.includes("createdByMe")
+		? "createdByMe=[true], "
+		: "";
+	return `META | MyProjects(${filterWord}projectType=["WORKSPACE"], ${permissionFilter}${createdByMe}sort=[${SORT_OPTIONS[sort]}], limit=[${limit}], offset=[${offset}])`;
+};
+
+/**
+ * The user's permission on an agent, as the card shows it. A global agent the
+ * user holds no grant on is one they can use but not change.
+ *
+ * @param app - The agent, as the list returns it.
+ * @return The permission.
+ */
+const toCardPermission = (app: App): "OWNER" | "EDIT" | "READ_ONLY" =>
+	app.permission === 1
+		? "OWNER"
+		: app.permission === 2
+			? "EDIT"
+			: "READ_ONLY";
 
 /**
  * Renders the WorkspacePage, allowing users to access their workspace or discover new ones
@@ -32,6 +119,8 @@ export const WorkspacePage = observer(() => {
 	const { root } = useRoot();
 	const { theme: colorMode } = useTheme();
 
+	const [filters, setFilters] = useState<AgentFilter[]>([]);
+	const [sort, setSort] = useState<SortOption>("name");
 	const [search, setSearch] = useState("");
 	const debouncedSearch = useDebouncedValue(search);
 	const { chat } = useChat();
@@ -41,10 +130,10 @@ export const WorkspacePage = observer(() => {
 	 */
 	const getWorkspaces = useIteratorPixel<App[], App>(
 		(limit, offset) =>
-			`META | MyProjects(${debouncedSearch ? `filterWord=["<encode>${debouncedSearch}</encode>"], ` : ""} projectType=["WORKSPACE"], limit=[${limit}], offset=[${offset}])`,
+			buildCatalogPixel(filters, debouncedSearch, sort, limit, offset),
 		(response) => {
 			// if its less than the limit, we know its the end
-			if (response.length < 25) {
+			if (response.length < PAGE_SIZE) {
 				return -1;
 			}
 
@@ -54,9 +143,9 @@ export const WorkspacePage = observer(() => {
 			return response;
 		},
 		{
-			limit: 25,
+			limit: PAGE_SIZE,
 		},
-		[debouncedSearch],
+		[filters, debouncedSearch, sort],
 	);
 
 	/**
@@ -90,10 +179,10 @@ export const WorkspacePage = observer(() => {
 				<div className="flex flex-wrap items-start justify-between gap-4 border-b pb-6">
 					<div className="min-w-0 flex-1">
 						<h1 className="font-semibold text-2xl tracking-tight">
-							{t("workspace:breadcrumbs.agent")}
+							{t("workspace:catalog.title")}
 						</h1>
 						<p className="mt-2 max-w-2xl text-muted-foreground text-sm">
-							{t("workspace:welcomeDescription")}
+							{t("workspace:catalog.description")}
 						</p>
 					</div>
 					<Button onClick={() => navigate("/agent/new")}>
@@ -109,17 +198,62 @@ export const WorkspacePage = observer(() => {
 				</div>
 
 				<div className="flex flex-col gap-4">
-					<InputGroup className="bg-background">
-						<InputGroupInput
-							aria-label={t("common:buttons.search")}
-							placeholder={t("common:buttons.search")}
-							value={search}
-							onChange={(e) => setSearch(e.target.value)}
-						/>
-						<InputGroupAddon>
-							<SearchIcon />
-						</InputGroupAddon>
-					</InputGroup>
+					<div className="flex @md:flex-row flex-col gap-2">
+						<InputGroup className="flex-1 bg-background">
+							<InputGroupInput
+								aria-label={t("common:buttons.search")}
+								placeholder={t("common:buttons.search")}
+								value={search}
+								onChange={(e) => setSearch(e.target.value)}
+							/>
+							<InputGroupAddon>
+								<SearchIcon />
+							</InputGroupAddon>
+						</InputGroup>
+						<Select
+							value={sort}
+							onValueChange={(value) => {
+								if (isSortOption(value)) {
+									setSort(value);
+								}
+							}}
+						>
+							<SelectTrigger
+								aria-label={t("workspace:catalog.sort.label")}
+								className="@md:w-48 w-full bg-background"
+							>
+								<SelectValue />
+							</SelectTrigger>
+							<SelectContent>
+								{(
+									Object.keys(SORT_OPTIONS) as SortOption[]
+								).map((option) => (
+									<SelectItem key={option} value={option}>
+										{t(`workspace:catalog.sort.${option}`)}
+									</SelectItem>
+								))}
+							</SelectContent>
+						</Select>
+					</div>
+
+					<ToggleGroup
+						type="multiple"
+						variant="outline"
+						size="sm"
+						spacing={2}
+						className="flex-wrap"
+						aria-label={t("workspace:catalog.filters.label")}
+						value={filters}
+						onValueChange={(values) =>
+							setFilters(values.filter(isAgentFilter))
+						}
+					>
+						{AGENT_FILTERS.map((filter) => (
+							<ToggleGroupItem key={filter} value={filter}>
+								{t(`workspace:catalog.filters.${filter}`)}
+							</ToggleGroupItem>
+						))}
+					</ToggleGroup>
 
 					{getWorkspaces.isLoading &&
 					getWorkspaces.data.length === 0 ? (
@@ -142,13 +276,7 @@ export const WorkspacePage = observer(() => {
 											w.project_name,
 										description: w.description ?? "",
 									}}
-									permission={
-										w.user_permission === 1
-											? "OWNER"
-											: w.user_permission === 2
-												? "EDIT"
-												: "READ_ONLY"
-									}
+									permission={toCardPermission(w)}
 									dateCreated={w.project_date_created}
 									onDeleteClick={async () => {
 										try {

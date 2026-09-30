@@ -82,5 +82,29 @@
 		"noPanels": "Geen geopende panelen",
 		"maximize": "Werkruimte maximaliseren",
 		"restore": "Werkruimte herstellen"
+	},
+	"userMenu": {
+		"settings": "Instellingen",
+		"language": "Taal"
+	},
+	"settings": {
+		"title": "Instellingen",
+		"description": "Je voorkeuren en de apps die de assistent kan gebruiken.",
+		"sections": {
+			"general": "Algemeen",
+			"connectors": "Connectors"
+		},
+		"general": {
+			"appearance": "Weergave",
+			"theme": "Thema",
+			"themeDescription": "Donkere en systeemthema's zijn in bèta.",
+			"themes": {
+				"system": "Systeem",
+				"light": "Licht",
+				"dark": "Donker"
+			},
+			"language": "Taal",
+			"languageDescription": "De taal waarin de app wordt weergegeven."
+		}
 	}
 }

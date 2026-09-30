@@ -226,6 +226,7 @@
 			"eventsLabel": "Levenscyclusgebeurtenissen",
 			"eventsHelp": "Als er niets is geselecteerd, wordt hij bij elke gebeurtenis uitgevoerd.",
 			"add": "Hook toevoegen"
-		}
+		},
+		"createSettingsFailed": "De agent is gemaakt, maar sommige instellingen konden niet worden opgeslagen. Open de bewerkpagina van de agent om het opnieuw te proberen."
 	}
 }

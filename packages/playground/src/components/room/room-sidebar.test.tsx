@@ -8,8 +8,11 @@ import {
 } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { observer } from "mobx-react-lite";
+import type { ReactNode } from "react";
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
+import type { FileExplorerHost } from "@semoss/panels";
 import { ConversationWorkspace } from "@/features/conversation/conversation-workspace";
+import { NextMessageRoomProvider } from "@/features/teamwork/sources/next-message-room";
 import { RoomStore } from "@/stores/room/room.store";
 import { RootStore } from "@/stores/root/root.store";
 import { RoomSidebar } from "./room-sidebar";
@@ -19,7 +22,30 @@ const scrollIntoViewDescriptor = Object.getOwnPropertyDescriptor(
 	"scrollIntoView",
 );
 
-const mocks = vi.hoisted(() => ({ addWorkspace: vi.fn() }));
+const mocks = vi.hoisted(() => ({
+	addWorkspace: vi.fn(),
+	explorerHost: vi.fn<(host: FileExplorerHost) => void>(),
+}));
+vi.mock("@semoss/panels", async (original) => {
+	const actual = await original<typeof import("@semoss/panels")>();
+	return {
+		...actual,
+		FileExplorerHostProvider: ({
+			host,
+			children,
+		}: {
+			host: FileExplorerHost;
+			children: ReactNode;
+		}) => {
+			mocks.explorerHost(host);
+			return (
+				<actual.FileExplorerHostProvider host={host}>
+					{children}
+				</actual.FileExplorerHostProvider>
+			);
+		},
+	};
+});
 vi.mock("@semoss/i18n", () => ({
 	useTranslation: () => ({ t: (key: string) => key }),
 }));
@@ -233,3 +259,42 @@ test("mobile command palette opens above the actions drawer", async () => {
 	await user.keyboard("{Escape}");
 	expect(drawer).toHaveAttribute("data-state", "open");
 });
+
+test.each([false, true])(
+	"file context actions queue on the next message room (draft: %s)",
+	async (isDraft) => {
+		const room = createRoom();
+		const draft = new RoomStore({
+			theme: new RootStore().theme,
+			roomId: "",
+			panelComponents: {},
+		});
+		const panel = <RoomSidebar room={room} />;
+		render(
+			isDraft ? (
+				<NextMessageRoomProvider room={draft}>
+					{panel}
+				</NextMessageRoomProvider>
+			) : (
+				panel
+			),
+		);
+		const host = mocks.explorerHost.mock.lastCall?.[0];
+		const file = { name: "notes.txt", path: "/notes.txt" };
+		const mode = { type: "INSIGHT", insightId: "room-controls" } as const;
+		const actions = host?.secondaryActions?.(file, mode) ?? [];
+		expect(actions).toHaveLength(1);
+		await act(async () => {
+			await actions[0].action(file);
+			await actions[0].action(file);
+		});
+		const target = isDraft ? draft : room;
+		expect(target.teamwork.contextItems).toEqual([
+			expect.objectContaining({ path: "notes.txt", name: "notes.txt" }),
+		]);
+		expect(
+			host?.secondaryActions?.({ ...file, type: "directory" }, mode),
+		).toEqual([]);
+		if (isDraft) expect(room.teamwork.contextItems).toEqual([]);
+	},
+);

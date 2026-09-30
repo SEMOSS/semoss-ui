@@ -1,8 +1,4 @@
 {
-	"nav": {
-		"label": "Connexions",
-		"tooltip": "Connectez Microsoft 365 et Google Workspace"
-	},
 	"common": {
 		"retry": "Réessayer",
 		"refresh": "Actualiser"
@@ -72,7 +68,6 @@
 		},
 		"connected": "Connecté",
 		"connectedAs": "Connecté en tant que {{name}}",
-		"connectedBadge": "Connecté",
 		"notConnected": "Non connecté",
 		"unavailable": "Non proposé sur ce serveur",
 		"connect": "Connecter",
@@ -82,7 +77,12 @@
 		"connectIncomplete": "{{name}} n'a pas été connecté. La fenêtre de connexion s'est fermée avant la fin.",
 		"connectError": "Impossible de connecter {{name}}. {{message}}",
 		"popupBlocked": "Votre navigateur a bloqué la fenêtre de connexion. Autorisez les fenêtres pop-up pour ce site et réessayez.",
-		"loadErrorTitle": "Impossible de vérifier vos comptes connectés"
+		"loadErrorTitle": "Impossible de vérifier vos comptes connectés",
+		"disconnect": "Déconnecter",
+		"disconnecting": "Déconnexion...",
+		"disconnectSuccess": "{{name}} est déconnecté",
+		"disconnectError": "Impossible de déconnecter {{name}}. {{message}}",
+		"sessionLoginNote": "Vous vous êtes connecté avec ce compte : il reste connecté jusqu'à votre déconnexion."
 	},
 	"services": {
 		"toolCounts_one": "{{count}} outil, dont {{ask}} soumis à approbation",
@@ -124,7 +124,7 @@
 		"dialogTitle": "Connecteurs",
 		"dialogDescription": "Choisissez les applications que l'assistant peut utiliser dans vos chats. Il agit avec votre compte et demande toujours votre approbation avant d'envoyer, de supprimer, de partager ou d'inviter.",
 		"allChatsNote": "Activer ou désactiver une application la modifie dans tous vos chats, nouveaux et existants.",
-		"manage": "Gérer les connexions",
+		"manage": "Gérer les connecteurs",
 		"cancel": "Annuler",
 		"save": "Enregistrer",
 		"saving": "Enregistrement...",
@@ -134,10 +134,7 @@
 		"adoptError": "Le chat a démarré, mais ses connecteurs n'ont pas pu être activés. {{message}}"
 	},
 	"connections": {
-		"title": "Connexions",
-		"description": "Connectez les comptes avec lesquels l'assistant peut travailler en votre nom.",
-		"appsTitle": "Applications",
-		"appsDescription": "La connexion associe le compte à votre session SEMOSS. L'assistant ne voit que ce que ce compte peut voir.",
+		"appsDescription": "La connexion associe le compte à votre session. L'assistant ne voit que ce que ce compte peut voir.",
 		"appsHint": "Activer ou désactiver une application ici la modifie dans tous vos chats, nouveaux et existants. Le menu + d'un chat ouvre les mêmes réglages.",
 		"settingsError": "Impossible de lire vos réglages de connecteurs."
 	},

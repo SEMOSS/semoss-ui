@@ -1,6 +1,14 @@
 import { observer } from "mobx-react-lite";
+import { useMemo } from "react";
+import { useTranslation } from "@semoss/i18n";
+import {
+	type FileExplorerHost,
+	FileExplorerHostProvider,
+} from "@semoss/panels";
 import { Workbench, WorkbenchProvider } from "@semoss/workbench";
 import { RoomProvider } from "@/contexts/room.context";
+import { normalizeFolderPath } from "@/features/teamwork/folders/folder-path";
+import { useNextMessageRoom } from "@/features/teamwork/sources/next-message-room";
 import { RoomWorkbenchMenus } from "@/features/workbench/room-workbench-menus";
 import type { WorkspaceMenuItemsProps } from "@/features/workbench/workspace-menu-items";
 import type { RoomStore } from "@/stores/room/room.store";
@@ -25,31 +33,61 @@ export const RoomSidebar = observer(
 		workspaceActions,
 		canPublish = true,
 	}: RoomSidebarProps) => {
+		const { t } = useTranslation("connectors");
+		const nextMessageRoom = useNextMessageRoom() ?? room;
+		const explorerHost = useMemo<FileExplorerHost>(
+			() => ({
+				secondaryActions: (item) =>
+					item.type === "directory"
+						? []
+						: [
+								{
+									name: t("actions.addToContext"),
+									placement: "end",
+									action: async () => {
+										nextMessageRoom.teamwork.addContextItem(
+											{
+												path: normalizeFolderPath(
+													item.path,
+												),
+												name: item.name,
+											},
+										);
+									},
+								},
+							],
+			}),
+			[nextMessageRoom, t],
+		);
 		return (
 			// The workbench's absolute shell must stay inside this pane.
 			<div className="relative h-full min-h-0 w-full bg-background">
 				<RoomProvider room={room}>
 					<WorkbenchProvider store={room.workbench}>
-						<Workbench
-							snapshot={room.sidebarSnapshot}
-							borderSlots={{
-								top: {
-									before: ({ onNavigate }) => (
-										<RoomWorkbenchMenus
-											onNavigate={onNavigate}
-											onOpenSettings={onOpenSettings}
-											workspaceActions={workspaceActions}
-										/>
-									),
-									after: (
-										<RoomSidebarActions
-											room={room}
-											canPublish={canPublish}
-										/>
-									),
-								},
-							}}
-						/>
+						<FileExplorerHostProvider host={explorerHost}>
+							<Workbench
+								snapshot={room.sidebarSnapshot}
+								borderSlots={{
+									top: {
+										before: ({ onNavigate }) => (
+											<RoomWorkbenchMenus
+												onNavigate={onNavigate}
+												onOpenSettings={onOpenSettings}
+												workspaceActions={
+													workspaceActions
+												}
+											/>
+										),
+										after: (
+											<RoomSidebarActions
+												room={room}
+												canPublish={canPublish}
+											/>
+										),
+									},
+								}}
+							/>
+						</FileExplorerHostProvider>
 					</WorkbenchProvider>
 				</RoomProvider>
 			</div>

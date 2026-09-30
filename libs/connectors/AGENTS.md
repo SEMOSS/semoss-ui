@@ -28,7 +28,7 @@ and `@semoss/ui`, and nothing in those libraries depends on it.
 | `microsoft/` | Microsoft 365: its reactor output types, parsers, pixels, and saved files, with a folder per app (`onedrive/`, `outlook/`, `teams/`) |
 | `google/` | Google Workspace: the same, with a folder per app (`gmail/`, `calendar/`, `docs/`, `drive/`) |
 | `styles/globals.css` | Tailwind source discovery for the host's stylesheet |
-| `index.ts` | The public entry point: the viewers, their props, and the host contract |
+| `index.ts` | The public entry point: the viewers, their props, the host contract, and `ConnectorBrandIcon`, the apps' logos |
 
 A new provider gets its own folder beside `microsoft/` and `google/`, built on `core/` and
 `components/`. Provider code may import from `core/` and `components/`; those two never import

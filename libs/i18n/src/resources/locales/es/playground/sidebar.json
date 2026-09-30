@@ -82,5 +82,29 @@
 		"noPanels": "No hay paneles abiertos",
 		"maximize": "Maximizar espacio de trabajo",
 		"restore": "Restaurar espacio de trabajo"
+	},
+	"userMenu": {
+		"settings": "Configuración",
+		"language": "Idioma"
+	},
+	"settings": {
+		"title": "Configuración",
+		"description": "Tus preferencias y las aplicaciones que puede usar el asistente.",
+		"sections": {
+			"general": "General",
+			"connectors": "Conectores"
+		},
+		"general": {
+			"appearance": "Apariencia",
+			"theme": "Tema",
+			"themeDescription": "Los temas oscuro y del sistema están en beta.",
+			"themes": {
+				"system": "Sistema",
+				"light": "Claro",
+				"dark": "Oscuro"
+			},
+			"language": "Idioma",
+			"languageDescription": "El idioma en el que se muestra la aplicación."
+		}
 	}
 }

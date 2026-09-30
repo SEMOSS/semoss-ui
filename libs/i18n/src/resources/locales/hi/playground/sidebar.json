@@ -82,5 +82,29 @@
 		"noPanels": "कोई पैनल खुला नहीं है",
 		"maximize": "कार्यस्थान अधिकतम करें",
 		"restore": "कार्यस्थान पुनर्स्थापित करें"
+	},
+	"userMenu": {
+		"settings": "सेटिंग्स",
+		"language": "भाषा"
+	},
+	"settings": {
+		"title": "सेटिंग्स",
+		"description": "आपकी प्राथमिकताएँ और वे ऐप जिनका सहायक उपयोग कर सकता है।",
+		"sections": {
+			"general": "सामान्य",
+			"connectors": "कनेक्टर"
+		},
+		"general": {
+			"appearance": "रूप-रंग",
+			"theme": "थीम",
+			"themeDescription": "डार्क और सिस्टम थीम बीटा में हैं।",
+			"themes": {
+				"system": "सिस्टम",
+				"light": "लाइट",
+				"dark": "डार्क"
+			},
+			"language": "भाषा",
+			"languageDescription": "वह भाषा जिसमें ऐप दिखाया जाता है।"
+		}
 	}
 }

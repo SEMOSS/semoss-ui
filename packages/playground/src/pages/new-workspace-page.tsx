@@ -9,7 +9,14 @@ import { observer } from "mobx-react-lite";
 import { useState } from "react";
 import { useNavigate } from "react-router";
 import { useTranslation } from "@semoss/i18n";
-import { MCPSelector, PromptSelector, SkillSelector } from "@semoss/shared";
+import { usePixel } from "@semoss/sdk/react";
+import {
+	AGENT_FORM_DEFAULT_VALUES,
+	type AgentDefaultTool,
+	MCPSelector,
+	PromptSelector,
+	SkillSelector,
+} from "@semoss/shared";
 import {
 	Alert,
 	AlertDescription,
@@ -17,15 +24,17 @@ import {
 	Form,
 	FormInput,
 	FormTextarea,
+	Spinner,
+	toast,
 	useForm,
 	zodResolver,
 } from "@semoss/ui/next";
 import { InstructionsModal } from "@/components/workspace/instructions-modal";
 import {
-	createWorkspaceFormSchema,
-	emptyWorkspaceForm,
-	type WorkspaceFormValues,
-} from "@/features/agents/workspace-form.schema";
+	createEditWorkspaceFormSchema,
+	type EditWorkspaceFormValues,
+} from "@/features/agents/edit-workspace-form.schema";
+import { WorkspaceAgentFields } from "@/features/agents/workspace-agent-fields";
 import { useChat } from "@/hooks/use-chat";
 import { useRoot } from "@/hooks/use-root";
 import { mcpToPlatformUrl, promptToPlatformUrl } from "@/utility/mcp-utils";
@@ -40,56 +49,57 @@ const FORM_ID = "workspace-new-form";
  * Members section because the agent doesn't exist yet.
  */
 export const NewWorkspacePage = observer(() => {
-	const { t } = useTranslation(["workspace", "common", "notifications"]);
+	const { t } = useTranslation([
+		"workspace",
+		"common",
+		"notifications",
+		"agent",
+	]);
 	const navigate = useNavigate();
 	const { chat } = useChat();
 	const { root } = useRoot();
 
-	const form = useForm<WorkspaceFormValues>({
+	const form = useForm<EditWorkspaceFormValues>({
 		resolver: zodResolver(
-			createWorkspaceFormSchema(t("common:placeholders.enterName")),
+			createEditWorkspaceFormSchema(t("common:placeholders.enterName")),
 		),
-		defaultValues: emptyWorkspaceForm,
+		defaultValues: AGENT_FORM_DEFAULT_VALUES,
 	});
-	const { name, instructions, knowledge, toolbox, skills, prompts } =
+	const { name, instructions, knowledge, toolboxes, skills, prompts } =
 		form.watch();
 	const isSaving = form.formState.isSubmitting;
 	const [instructionsModal, setInstructionsModal] = useState(false);
+	const formOptions = usePixel<{
+		default_tools?: AgentDefaultTool[];
+		known_hook_kinds?: string[];
+	}>("GetAgentFormOptions();");
+	const isLoadingOptions =
+		formOptions.status === "INITIAL" || formOptions.status === "LOADING";
 
 	const handleCancel = () => {
 		navigate("/agent");
 	};
 
-	const handleSubmit = async ({
-		name,
-		description,
-		instructions,
-		knowledge,
-		toolbox,
-		skills,
-		prompts,
-	}: WorkspaceFormValues) => {
+	const handleSubmit = async (values: EditWorkspaceFormValues) => {
+		if (isLoadingOptions) return;
 		form.clearErrors("root.server");
-		let newWorkspaceId: string;
 		try {
-			newWorkspaceId = await chat.addWorkspace({
-				name,
-				description,
-				system_prompt: instructions,
-				prompts,
-				mcp: [...knowledge, ...toolbox],
-				skills,
-			});
+			const { workspaceId, warning, settingsFailed } =
+				await chat.createAgent(values);
+			if (settingsFailed) {
+				toast.error(t("agent:form.createSettingsFailed"));
+			} else if (warning) {
+				toast.warning(warning);
+			}
+			navigate(`/agent/${workspaceId}`);
 		} catch (err) {
 			form.setError("root.server", {
 				message:
-					err instanceof Error
+					err instanceof Error && err.message
 						? err.message
 						: t("notifications:workspace.saveError"),
 			});
-			return;
 		}
-		navigate(`/agent/${newWorkspaceId}`);
 	};
 
 	return (
@@ -118,7 +128,9 @@ export const NewWorkspacePage = observer(() => {
 						<Button
 							type="submit"
 							form={FORM_ID}
-							disabled={isSaving || !name.trim()}
+							disabled={
+								isSaving || isLoadingOptions || !name.trim()
+							}
 							data-testid="workspace-new-page--create-btn"
 						>
 							{t("workspace:actions.create")}
@@ -231,10 +243,10 @@ export const NewWorkspacePage = observer(() => {
 						<MCPSelector
 							presentation="list"
 							type="TOOLBOX"
-							values={toolbox}
+							values={toolboxes}
 							disabled={isSaving}
 							onChange={(next) =>
-								form.setValue("toolbox", next, {
+								form.setValue("toolboxes", next, {
 									shouldDirty: true,
 								})
 							}
@@ -296,6 +308,17 @@ export const NewWorkspacePage = observer(() => {
 							}
 						/>
 					</section>
+					{isLoadingOptions ? (
+						<div className="flex justify-center py-12">
+							<Spinner />
+						</div>
+					) : (
+						<WorkspaceAgentFields
+							control={form.control}
+							workspace={formOptions.data ?? {}}
+							disabled={isSaving}
+						/>
+					)}
 				</Form>
 			</div>
 

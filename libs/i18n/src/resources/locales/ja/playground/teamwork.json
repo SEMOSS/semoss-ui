@@ -1,8 +1,4 @@
 {
-	"nav": {
-		"label": "接続",
-		"tooltip": "Microsoft 365 と Google Workspace を接続"
-	},
 	"common": {
 		"retry": "再試行",
 		"refresh": "更新"
@@ -72,7 +68,6 @@
 		},
 		"connected": "接続済み",
 		"connectedAs": "{{name}} として接続済み",
-		"connectedBadge": "接続済み",
 		"notConnected": "未接続",
 		"unavailable": "このサーバーでは提供されていません",
 		"connect": "接続",
@@ -82,7 +77,12 @@
 		"connectIncomplete": "{{name}} は接続されませんでした。サインインが完了する前にサインインウィンドウが閉じられました。",
 		"connectError": "{{name}} に接続できませんでした。{{message}}",
 		"popupBlocked": "ブラウザーがサインインウィンドウをブロックしました。このサイトのポップアップを許可してから、もう一度お試しください。",
-		"loadErrorTitle": "接続済みのアカウントを確認できませんでした"
+		"loadErrorTitle": "接続済みのアカウントを確認できませんでした",
+		"disconnect": "接続を解除",
+		"disconnecting": "接続を解除しています...",
+		"disconnectSuccess": "{{name}} の接続を解除しました",
+		"disconnectError": "{{name}} の接続を解除できませんでした。{{message}}",
+		"sessionLoginNote": "このアカウントでサインインしているため、ログアウトするまで接続されたままです。"
 	},
 	"services": {
 		"toolCounts_one": "{{count}} 個のツール、うち {{ask}} 個は事前に確認",
@@ -124,7 +124,7 @@
 		"dialogTitle": "コネクター",
 		"dialogDescription": "チャットでアシスタントが使用できるアプリを選択します。アシスタントはあなたのアカウントで操作し、送信、削除、共有、招待の前には必ず確認します。",
 		"allChatsNote": "アプリをオンまたはオフにすると、新しいチャットと既存のチャットのすべてに反映されます。",
-		"manage": "接続を管理",
+		"manage": "コネクタを管理",
 		"cancel": "キャンセル",
 		"save": "保存",
 		"saving": "保存中...",
@@ -134,10 +134,7 @@
 		"adoptError": "チャットは開始されましたが、コネクターをオンにできませんでした。{{message}}"
 	},
 	"connections": {
-		"title": "接続",
-		"description": "アシスタントがあなたに代わって作業できるアカウントを接続します。",
-		"appsTitle": "アプリ",
-		"appsDescription": "サインインすると、そのアカウントが SEMOSS のセッションにリンクされます。アシスタントが参照できるのは、そのアカウントで参照できる内容だけです。",
+		"appsDescription": "サインインすると、そのアカウントがあなたのセッションにリンクされます。アシスタントが参照できるのは、そのアカウントで参照できる内容だけです。",
 		"appsHint": "ここでアプリをオンまたはオフにすると、新しいチャットと既存のチャットのすべてに反映されます。チャットの「+」メニューからも同じ設定を開けます。",
 		"settingsError": "コネクターの設定を読み取れませんでした。"
 	},

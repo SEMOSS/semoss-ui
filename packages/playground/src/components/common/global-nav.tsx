@@ -5,11 +5,9 @@ import {
 	FileTextIcon,
 	HelpCircle,
 	Loader2Icon,
-	MapIcon,
 	MessagesSquareIcon,
 	MoreVertical,
 	PencilIcon,
-	PlugIcon,
 	Search,
 	SquarePenIcon,
 	StarIcon,
@@ -65,7 +63,6 @@ import { MobileNavigationClose } from "@/features/navigation/mobile-navigation-c
 import { NavigationRail } from "@/features/navigation/navigation-rail";
 import { useChat } from "@/hooks/use-chat";
 import { useRoot } from "@/hooks/use-root";
-import { useTour } from "@/hooks/use-tour";
 import { normalizeTimestamp } from "@/utility";
 import { getDateBucket } from "@/utility/date";
 import { AppLogo } from "./app-logo";
@@ -86,7 +83,6 @@ try {
  */
 export const GlobalNav = observer(() => {
 	const { t } = useTranslation("sidebar");
-	const { t: tTeamwork } = useTranslation("teamwork");
 
 	const BUCKETS = [
 		t("buckets.favorites"),
@@ -107,7 +103,6 @@ export const GlobalNav = observer(() => {
 	const [search, setSearch] = useState("");
 	const [helpOpen, setHelpOpen] = useState(false);
 	const { chat } = useChat();
-	const { startTour } = useTour();
 	const { open, openMobile, isMobile } = useSidebar();
 	const hideChatHistory = !!root.theme.featureFlags?.hideChatHistory;
 	// True when the sidebar is actually visible to the user.
@@ -136,10 +131,6 @@ export const GlobalNav = observer(() => {
 
 	const navigate = useNavigate();
 
-	const handleStartTour = () => {
-		navigate("/new");
-		startTour();
-	};
 	const getPinnedRooms = useIteratorPixel<
 		{
 			ROOM_ID: string;
@@ -526,30 +517,6 @@ export const GlobalNav = observer(() => {
 										</SidebarMenuButton>
 									</SidebarMenuItem>
 								)}
-
-								<SidebarMenuItem>
-									<SidebarMenuButton
-										asChild
-										isActive={
-											!!matchPath(
-												"/connections",
-												pathname,
-											)
-										}
-										tooltip={{
-											children: tTeamwork("nav.tooltip"),
-											hidden: false,
-										}}
-									>
-										<Link
-											to={"/connections"}
-											aria-label={tTeamwork("nav.label")}
-										>
-											<PlugIcon />
-											{tTeamwork("nav.label")}
-										</Link>
-									</SidebarMenuButton>
-								</SidebarMenuItem>
 
 								{!hideChatHistory && (
 									<SidebarMenuItem>
@@ -1001,17 +968,6 @@ export const GlobalNav = observer(() => {
 									</div>
 								)}
 							</div>
-						)}
-						{root.theme.tour?.show !== false && (
-							<SidebarMenuItem className="group-data-[collapsible=icon]:hidden">
-								<SidebarMenuButton
-									onClick={handleStartTour}
-									data-tour="tour-take-tour"
-								>
-									<MapIcon />
-									{t("takeTour")}
-								</SidebarMenuButton>
-							</SidebarMenuItem>
 						)}
 						<SidebarMenuItem>
 							<NavUser />

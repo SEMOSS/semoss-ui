@@ -63,6 +63,14 @@ network call at all.
 `useAccess`. That is deliberate — a chrome control renders outside its panel's subtree, so it
 cannot reuse the access the panel already resolved.
 
+## A host can add right-click entries to the explorer
+
+`FILE_EXPLORER_PANEL` asks the nearest `FileExplorerHostProvider` for extra entries per row
+(`secondaryActions(item, mode)`), so an app adds its own actions without forking the blueprint.
+The playground adds Add to Context to Chat Files this way. Entries with `placement: "end"` are
+listed after every standard entry. Keep the host object's identity stable: it is a dependency of
+every row's actions.
+
 ## A view renders a file; a host draws its actions
 
 `components/views/` holds one component per `FileEditorKind`. A view owns the read, the buffer

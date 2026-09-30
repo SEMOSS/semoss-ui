@@ -82,5 +82,29 @@
 		"noPanels": "لا توجد لوحات مفتوحة",
 		"maximize": "تكبير مساحة العمل",
 		"restore": "استعادة مساحة العمل"
+	},
+	"userMenu": {
+		"settings": "الإعدادات",
+		"language": "اللغة"
+	},
+	"settings": {
+		"title": "الإعدادات",
+		"description": "تفضيلاتك والتطبيقات التي يمكن للمساعد استخدامها.",
+		"sections": {
+			"general": "عام",
+			"connectors": "الموصلات"
+		},
+		"general": {
+			"appearance": "المظهر",
+			"theme": "السمة",
+			"themeDescription": "السمة الداكنة وسمة النظام في مرحلة تجريبية.",
+			"themes": {
+				"system": "النظام",
+				"light": "فاتح",
+				"dark": "داكن"
+			},
+			"language": "اللغة",
+			"languageDescription": "اللغة التي يُعرض بها التطبيق."
+		}
 	}
 }

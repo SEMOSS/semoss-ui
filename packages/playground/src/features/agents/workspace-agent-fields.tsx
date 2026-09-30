@@ -16,9 +16,9 @@ interface WorkspaceAgentFieldsProps {
 	/** The existing editor's form control; all settings save together. */
 	control: Control<AgentFormValues>;
 	/** Backend catalogs for tools and supported hooks. */
-	workspace: AgentWorkspace;
+	workspace: Pick<AgentWorkspace, "default_tools" | "known_hook_kinds">;
 	/** Excludes the current agent from its own delegation picker. */
-	workspaceId: string;
+	workspaceId?: string;
 	/** Locks editing while the form is saving. */
 	disabled: boolean;
 }

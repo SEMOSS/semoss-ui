@@ -83,5 +83,29 @@
 		"noPanels": "No open panels",
 		"maximize": "Maximize Workspace",
 		"restore": "Restore Workspace"
+	},
+	"userMenu": {
+		"settings": "Settings",
+		"language": "Language"
+	},
+	"settings": {
+		"title": "Settings",
+		"description": "Your preferences and the apps the assistant can use.",
+		"sections": {
+			"general": "General",
+			"connectors": "Connectors"
+		},
+		"general": {
+			"appearance": "Appearance",
+			"theme": "Theme",
+			"themeDescription": "Dark and system themes are in beta.",
+			"themes": {
+				"system": "System",
+				"light": "Light",
+				"dark": "Dark"
+			},
+			"language": "Language",
+			"languageDescription": "The language the app is shown in."
+		}
 	}
 }

@@ -13,7 +13,12 @@ import {
 	getProviderAccess,
 	isServiceCovered as isCoveredByServer,
 } from "./connector-access";
-import { connectProvider, getSessionLogins } from "./connectors.api";
+import {
+	connectProvider,
+	disconnectProvider,
+	getSessionLogins,
+	readSessionLoginConfig,
+} from "./connectors.api";
 
 /** Where one provider stands for the current session. */
 export interface ProviderConnection {
@@ -24,6 +29,16 @@ export interface ProviderConnection {
 	isConnected: boolean;
 	/** The account the provider reported, when connected. */
 	accountName: string;
+	/**
+	 * Whether the provider is the login the session itself signed in with,
+	 * which cannot be disconnected without ending the session.
+	 */
+	isSessionLogin: boolean;
+	/**
+	 * Whether the session can sign out of the provider alone: it is connected,
+	 * and the session's own login is known to be another one.
+	 */
+	canDisconnect: boolean;
 }
 
 /** What {@link useConnections} returns. */
@@ -34,6 +49,8 @@ export interface UseConnectionsResult {
 	connections: ProviderConnection[];
 	/** The provider whose sign in popup is open, if any. */
 	connectingProviderId: ConnectorProviderId | null;
+	/** The provider being signed out, if any. */
+	disconnectingProviderId: ConnectorProviderId | null;
 	/** Whether a service's provider is connected, so its tools can run. */
 	isServiceReady: (serviceId: ConnectorServiceId) => boolean;
 	/**
@@ -51,6 +68,14 @@ export interface UseConnectionsResult {
 	 * Resolves to whether the provider is connected afterwards.
 	 */
 	connect: (providerId: ConnectorProviderId) => Promise<boolean>;
+	/**
+	 * Sign the session out of a provider, keeping the session and its other
+	 * logins.
+	 *
+	 * @throws SessionLoginDisconnectError for the session's own login.
+	 * @throws Error when the backend refuses the sign out.
+	 */
+	disconnect: (providerId: ConnectorProviderId) => Promise<void>;
 }
 
 /**
@@ -69,6 +94,12 @@ export const useConnections = (): UseConnectionsResult => {
 		useState<UseConnectionsResult["status"]>("loading");
 	const [connectingProviderId, setConnectingProviderId] =
 		useState<ConnectorProviderId | null>(null);
+	const [disconnectingProviderId, setDisconnectingProviderId] =
+		useState<ConnectorProviderId | null>(null);
+	// the login the session belongs to; undefined until read, null if unknown
+	const [primaryLogin, setPrimaryLogin] = useState<string | null | undefined>(
+		undefined,
+	);
 
 	// refresh and connect resolve after user actions, possibly after the
 	// component using this hook is gone
@@ -77,6 +108,18 @@ export const useConnections = (): UseConnectionsResult => {
 		isMountedRef.current = true;
 		return () => {
 			isMountedRef.current = false;
+		};
+	}, []);
+
+	useEffect(() => {
+		let isCancelled = false;
+		void readSessionLoginConfig().then((config) => {
+			if (!isCancelled) {
+				setPrimaryLogin(config.primaryLogin);
+			}
+		});
+		return () => {
+			isCancelled = true;
 		};
 	}, []);
 
@@ -133,6 +176,21 @@ export const useConnections = (): UseConnectionsResult => {
 		[refresh],
 	);
 
+	const disconnect = useCallback(
+		async (providerId: ConnectorProviderId): Promise<void> => {
+			setDisconnectingProviderId(providerId);
+			try {
+				await disconnectProvider(getConnectorProvider(providerId));
+			} finally {
+				await refresh();
+				if (isMountedRef.current) {
+					setDisconnectingProviderId(null);
+				}
+			}
+		},
+		[refresh],
+	);
+
 	const connections = CONNECTOR_PROVIDERS.map((provider) => ({
 		provider: provider,
 		isAvailable: isProviderOffered(
@@ -141,6 +199,11 @@ export const useConnections = (): UseConnectionsResult => {
 		),
 		isConnected: provider.loginKey in logins,
 		accountName: logins[provider.loginKey] ?? "",
+		isSessionLogin: !!primaryLogin && primaryLogin === provider.loginKey,
+		canDisconnect:
+			provider.loginKey in logins &&
+			!!primaryLogin &&
+			primaryLogin !== provider.loginKey,
 	}));
 
 	const isServiceReady = (serviceId: ConnectorServiceId): boolean => {
@@ -162,6 +225,7 @@ export const useConnections = (): UseConnectionsResult => {
 		status: status,
 		connections: connections,
 		connectingProviderId: connectingProviderId,
+		disconnectingProviderId: disconnectingProviderId,
 		isServiceReady: isServiceReady,
 		isServiceCovered: isServiceCovered,
 		hasAccessInfo: (providerId) =>
@@ -169,5 +233,6 @@ export const useConnections = (): UseConnectionsResult => {
 			null,
 		refresh: refresh,
 		connect: connect,
+		disconnect: disconnect,
 	};
 };
