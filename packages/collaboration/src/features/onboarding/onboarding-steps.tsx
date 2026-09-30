@@ -26,7 +26,6 @@ import {
 	type Job,
 	type KeepOutSuggestion,
 	LOOK_DAYS,
-	listAccounts,
 	listPeople,
 	type MailboxOverview,
 	mailboxOverview,
@@ -285,7 +284,7 @@ export function MailboxStep({
 										</span>
 										{s.youWrote && (
 											<span className="shrink-0 text-muted-foreground text-xs">
-												you reply
+												you wrote to them
 											</span>
 										)}
 										<span className="w-10 shrink-0 text-right text-sm tabular-nums">
@@ -748,8 +747,8 @@ export function ImportStep({
 	);
 }
 
-// strength is on a log scale, so this is well above an ordinary contact
-const VIP_STRENGTH = 60;
+// suggested VIPs: the manager plus the strongest few, so there is never just one
+const VIP_SUGGESTIONS = 3;
 
 function StrengthMeter({ value }: { value: number }) {
 	const filled = Math.max(1, Math.round(value / 20));
@@ -913,13 +912,16 @@ export function PeopleStep({
 				if (!chosen.length) {
 					if (managerId && list.some((p) => p.id === managerId))
 						chosen.push(managerId);
+					let strongest = 0;
 					for (const p of list)
 						if (
-							chosen.length < 4 &&
-							p.strength >= VIP_STRENGTH &&
+							strongest < VIP_SUGGESTIONS &&
+							p.strength > 0 &&
 							!chosen.includes(p.id)
-						)
+						) {
 							chosen.push(p.id);
+							strongest++;
+						}
 				}
 				setVips(new Set(chosen));
 			})
@@ -1431,12 +1433,9 @@ function TopicCard({
 	);
 }
 
-/** Topics grouped by organisation; the ones you took part in, or with a VIP, are kept by default. */
+/** One list of topics; the ones you took part in, or with a VIP, are kept by default and the rest sit under Maybe. */
 export function TopicsStep({ actions, onNext, onBack, eyebrow }: StepProps) {
 	const [result, setResult] = useState<TopicSuggestions | null>(null);
-	const [accountNames, setAccountNames] = useState<Record<string, string>>(
-		{},
-	);
 	const [picked, setPicked] = useState<Set<string>>(new Set());
 	const [names, setNames] = useState<Record<string, string>>({});
 	const [busy, setBusy] = useState(false);
@@ -1444,17 +1443,13 @@ export function TopicsStep({ actions, onNext, onBack, eyebrow }: StepProps) {
 	useEffect(() => {
 		let isCurrent = true;
 		setResult(null);
-		setAccountNames({});
 		setPicked(new Set());
 		setNames({});
 		setError(null);
-		Promise.all([suggestTopics(actions), listAccounts(actions)])
-			.then(([suggestions, accounts]) => {
+		suggestTopics(actions)
+			.then((suggestions) => {
 				if (!isCurrent) return;
 				setResult(suggestions);
-				setAccountNames(
-					Object.fromEntries(accounts.map((a) => [a.id, a.name])),
-				);
 				setPicked(
 					new Set(
 						suggestions.topics
@@ -1477,21 +1472,15 @@ export function TopicsStep({ actions, onNext, onBack, eyebrow }: StepProps) {
 	}, [actions]);
 	const topics = result?.topics ?? null;
 
-	// kept-by-default topics under their organisation, in the server's order; the rest under Maybe
+	// kept-by-default topics first, in the server's order; the rest under Maybe
 	const groups = useMemo(() => {
-		const out: { label: string; topics: TopicSuggestion[] }[] = [];
-		for (const t of topics ?? []) {
-			const label = !t.suggested
-				? "Maybe"
-				: (accountNames[t.accountId] ?? "Internal");
-			const group = out.find((g) => g.label === label);
-			if (group) group.topics.push(t);
-			else out.push({ label, topics: [t] });
-		}
-		return out.sort(
-			(a, b) => Number(a.label === "Maybe") - Number(b.label === "Maybe"),
-		);
-	}, [topics, accountNames]);
+		const kept = (topics ?? []).filter((t) => t.suggested);
+		const maybe = (topics ?? []).filter((t) => !t.suggested);
+		return [
+			{ label: "", topics: kept },
+			{ label: "Maybe", topics: maybe },
+		].filter((g) => g.topics.length > 0);
+	}, [topics]);
 
 	const save = async () => {
 		if (!topics) return;
@@ -1554,7 +1543,9 @@ export function TopicsStep({ actions, onNext, onBack, eyebrow }: StepProps) {
 			)}
 			{groups.map((group) => (
 				<section key={group.label} className="space-y-3">
-					<h2 className="font-medium text-sm">{group.label}</h2>
+					{group.label && (
+						<h2 className="font-medium text-sm">{group.label}</h2>
+					)}
 					{group.label === "Maybe" && (
 						<p className="text-muted-foreground text-xs">
 							You have not written on these. Keep any that are
