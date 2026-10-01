@@ -1,7 +1,7 @@
 import { Tabs, TabsList, TabsTrigger } from "@semoss/ui/next";
 import { formatToDataTestId } from "@/utility";
 
-export interface CatalogTabsProps {
+interface CatalogTabsProps {
 	/** Current active tab value */
 	value: string;
 	/** Callback when tab changes */

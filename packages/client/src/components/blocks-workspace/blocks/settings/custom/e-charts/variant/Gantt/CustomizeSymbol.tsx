@@ -388,7 +388,7 @@ export const CustomizeSymbol = observer(
 		}));
 
 		return (
-			<div className="flex flex-col border-[#E6E6E6] border-b p-2">
+			<div className="flex flex-col border-border border-b p-2">
 				<div className="flex flex-col gap-2 p-2">
 					<label
 						className="text-muted-foreground text-sm"
@@ -397,7 +397,7 @@ export const CustomizeSymbol = observer(
 						Applied (Add Multiple Symbol)
 					</label>
 					{updatedInstances.length > 0 ? (
-						<div className="flex flex-wrap gap-1 rounded-lg border border-gray-400 p-2">
+						<div className="flex flex-wrap gap-1 rounded-lg border border-border p-2">
 							{updatedInstances.map((item, index) => (
 								// biome-ignore lint/a11y/noStaticElementInteractions: visual item
 								// biome-ignore lint/a11y/useKeyWithClickEvents: visual item

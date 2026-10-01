@@ -43,7 +43,18 @@ export interface App {
 	description?: string;
 	project_date_created: string;
 	project_type: string;
+	/** The user's own grant; null when only a group grants access. */
 	user_permission: number;
+	/**
+	 * The effective permission: the better of the user's own grant and their
+	 * groups' grant. Null for a global project the user holds no grant on, and
+	 * for discoverable projects the user cannot access yet.
+	 */
+	permission?: number | null;
+	/** Whether everyone on the server can use the project. */
+	project_global?: boolean;
+	/** When the project was last edited. */
+	project_date_last_edited?: string;
 }
 
 export interface Workspace {
@@ -63,6 +74,13 @@ export interface Workspace {
 		 * opinion and the room's own model is used.
 		 */
 		model_id?: string;
+		/**
+		 * The agent's scripted opening message. Shown only when
+		 * `greeting_enabled` is true; never sent to the model as context.
+		 */
+		greeting?: string;
+		/** Whether `greeting` is shown. Toggling this off keeps the authored text. */
+		greeting_enabled?: boolean;
 	};
 }
 
@@ -94,6 +112,15 @@ export type {
  */
 export type PixelMessage = InputPixelMessage | ResponsePixelMessage;
 
+export interface AgentRunMessageContext {
+	runId: string;
+	role?: string;
+	originatingRunId?: string;
+	childRunId?: string;
+	completionMode?: "WAIT" | "POST" | "POST_AND_CONTINUE" | string;
+	childStatus?: string;
+}
+
 export interface AbstractPixelMessage {
 	io: "INPUT" | "OUTPUT";
 	messageId: string;
@@ -113,10 +140,12 @@ export interface AbstractPixelMessage {
 		| PixelMessageSubagentPart
 	)[];
 	tokens: number;
+	agentRun?: AgentRunMessageContext;
 	ornaments: {
 		modelName?: string;
-		/** Set on messages tagged as part of an agent run — see agent-harness.ts. */
+		/** Legacy agent-run attribution; read-only fallback for existing rooms. */
 		agentRunId?: string;
+		agentRunRole?: string;
 	};
 	pruneToolsAbove: boolean;
 }
@@ -143,8 +172,9 @@ export interface ResponsePixelMessage extends AbstractPixelMessage {
 	)[];
 	ornaments: {
 		modelName?: string;
-		/** Set on messages tagged as part of an agent run — see agent-harness.ts. */
+		/** Legacy agent-run attribution; read-only fallback for existing rooms. */
 		agentRunId?: string;
+		agentRunRole?: string;
 	};
 	feedback?: {
 		rating: boolean;
@@ -216,6 +246,12 @@ export interface PixelMessageToolCallPart {
 			// reversible (short engine-id prefix plus truncation), so this is the
 			// only way back to the real name.
 			SMSS_ORIGINAL_TOOL_NAME?: string;
+			// The reactor a pixel tool runs, set by MakePixelMCP and
+			// MakeRoomPixelMCP. Identifies the connector tools in a room.
+			SMSS_FUNCTION_NAME?: string;
+			// Set on the work folder tools, which the browser runs itself
+			// rather than the backend. See features/teamwork.
+			SMSS_CLIENT_TOOL?: boolean;
 			SMSS_MCP_UI?: {
 				loadingMessage?: string;
 				displayLocation?: "inline" | "sidebar" | "hidden";

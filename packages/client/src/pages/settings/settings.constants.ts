@@ -2,18 +2,18 @@ import {
 	mdiAccountGroup,
 	// mdiTextBoxMultipleOutline,
 	mdiArchive,
+	mdiChartTimelineVariant,
 	// mdiClock,
 	mdiChatProcessingOutline,
 	mdiClipboardTextOutline,
 	mdiCog,
 	mdiDatabase,
 	mdiDatabaseSearch,
+	mdiFolder,
 	mdiGithub,
 	mdiPalette,
 	mdiTabletCellphone,
 } from "@mdi/js";
-
-console.log(mdiPalette);
 
 export const SETTINGS_ROUTES: {
 	/*** Title of the page */
@@ -209,6 +209,15 @@ export const SETTINGS_ROUTES: {
 		admin: true,
 	},
 	{
+		title: "Enterprise Usage & Activity",
+		path: "enterprise-usage",
+		description:
+			"Explore Platform-Wide Model Usage, Adoption, Performance, And Activity.",
+		icon: mdiChartTimelineVariant,
+		history: ["settings/"],
+		admin: true,
+	},
+	{
 		title: "Admin Query",
 		path: "admin-query",
 		description: "Query the platform databases directly. Use with caution.",
@@ -229,6 +238,14 @@ export const SETTINGS_ROUTES: {
 		path: "my-profile",
 		description: "Update settings related to your profile.",
 		icon: mdiDatabase,
+		history: ["settings/"],
+		admin: false,
+	},
+	{
+		title: "My Files",
+		path: "my-files",
+		description: "Browse, upload, and manage the files in your user space.",
+		icon: mdiFolder,
 		history: ["settings/"],
 		admin: false,
 	},

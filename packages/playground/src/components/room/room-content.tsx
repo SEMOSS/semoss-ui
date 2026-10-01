@@ -1,10 +1,4 @@
-import {
-	MoveDownIcon,
-	MoveUpIcon,
-	ScrollTextIcon,
-	Settings2Icon,
-	TriangleAlertIcon,
-} from "lucide-react";
+import { MoveDownIcon, MoveUpIcon, TriangleAlertIcon } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import React, { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "@semoss/i18n";
@@ -12,8 +6,6 @@ import type { MCPToolResponse } from "@semoss/sdk";
 import {
 	Button,
 	cn,
-	DropdownMenuItem,
-	DropdownMenuSeparator,
 	ScrollArea,
 	Separator,
 	Tooltip,
@@ -21,26 +13,26 @@ import {
 	TooltipTrigger,
 	toast,
 } from "@semoss/ui/next";
-import {
-	InputMessage,
-	ResponseMessage,
-	RoomInput,
-	RoomInputMenuFileExplorer,
-	RoomInputMenuMCP,
-	RoomInputMenuUpload,
-	type SendButtonState,
-} from "@/components";
-import { useFileDrag } from "@/contexts";
-import { useChat, useGracefulErrors } from "@/hooks";
-import { ResponseMessageStore, type RoomStore } from "@/stores";
+import { InputMessage } from "@/components/message/input-message";
+import { ResponseMessage } from "@/components/message/response-message";
+import { RoomInput, type SendButtonState } from "@/components/room/room-input";
+import { useFileDrag } from "@/contexts/file-drag-context";
+import { useChat } from "@/hooks/use-chat";
+import { useGracefulErrors } from "@/hooks/use-graceful-errors";
 import { decideAgentToolAction } from "@/stores/message/agent-harness";
+import type { InputMessageStore } from "@/stores/message/input-message.store";
+import { ResponseMessageStore } from "@/stores/message/response-message.store";
+import type { RoomStore } from "@/stores/room/room.store";
+import { ROOM_PANEL_TYPES } from "@/stores/room/room-sidebar";
+import { isAskExecutionMode } from "@/utility/mcp-utils";
 import { RoomCompactionIndicator } from "./room-compaction-indicator";
+import { RoomGeneratingIndicator } from "./room-generating-indicator";
+import { RoomGreeting } from "./room-greeting";
 import { RoomSuggestions } from "./room-suggestions";
 
-const ROOM_CONFIGURATION_ID = "CONFIGURATION";
 const SCROLL_THRESHOLD = 150;
 
-interface RoomContentProps {
+export interface RoomContentProps {
 	/** Room to load */
 	room: RoomStore;
 }
@@ -48,9 +40,10 @@ interface RoomContentProps {
 /**
  * The page for a room
  */
-export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
+export const RoomContent = observer(({ room }: RoomContentProps) => {
 	const { chat } = useChat();
 	const { t } = useTranslation("room");
+	const { t: tChat } = useTranslation("chat");
 	const { getGracefulErrorMessage } = useGracefulErrors();
 	const { isDragging } = useFileDrag();
 	const [scrollEle, setScrollEle] = useState<HTMLDivElement | null>(null);
@@ -67,7 +60,7 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 		// update the options
 		await room.updateRoomOptions(room.options);
 
-		// ask the room
+		// ask the room — let errors propagate so room-input can restore files
 		await room.askMessage(prompt, files);
 
 		// re-sync room options from backend after message completes,
@@ -86,27 +79,12 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 	 * Open the room configuration sidebar tab
 	 */
 	const handleOpenSettings = useCallback(() => {
-		room.addSidebarNode(ROOM_CONFIGURATION_ID, {
-			type: "tab",
-			name: "Configuration",
-			component: "room-configuration",
-			config: {},
-			enableClose: true,
-		});
-	}, [room]);
-
-	/**
-	 * Open the audit logs dashboard for this room in the right side panel.
-	 */
-	const handleOpenActivityLog = useCallback(() => {
-		room.addSidebarNode("room-activity-log", {
-			type: "tab",
-			name: "Activity Log",
-			component: "audit-log-report",
-			config: {},
-			enableClose: true,
-		});
-	}, [room]);
+		room.openSidebarPanel(
+			ROOM_PANEL_TYPES.CONFIGURATION,
+			{},
+			t("settings.panelTitle"),
+		);
+	}, [room, t]);
 
 	/**
 	 * Compact messages in the room
@@ -252,36 +230,33 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 		(msg) => msg instanceof ResponseMessageStore && msg.isThinking,
 	);
 
-	// Track whether streaming has ever been active this session so the
-	// completion smooth-scroll doesn't fire on initial room open (where
-	// isAnyMessageStreaming starts false and never transitions true → false).
-	const hasStreamedRef = React.useRef(false);
-	if (isAnyMessageStreaming) {
-		hasStreamedRef.current = true;
-	}
-
-	// Track whether we need to smooth-scroll to bottom after the typewriter
-	// dumps its remaining content when streaming ends.
-	// Set to true the moment streaming ends; cleared once the smooth scroll fires.
-	const pendingScrollToBottomRef = React.useRef(false);
-
+	// Scroll once when an active stream settles. Scheduling from the transition
+	// itself prevents a stale completion request from being consumed by a later,
+	// unrelated resize such as the user opening a grouped tool.
+	const wasMessageStreamingRef = React.useRef(false);
 	useEffect(() => {
-		if (!isAnyMessageStreaming && hasStreamedRef.current) {
-			pendingScrollToBottomRef.current = true;
+		const wasMessageStreaming = wasMessageStreamingRef.current;
+		wasMessageStreamingRef.current = isAnyMessageStreaming;
+
+		if (isAnyMessageStreaming || !wasMessageStreaming || !scrollEle) {
+			return;
 		}
-	}, [isAnyMessageStreaming]);
+
+		setIsScrollLocked(false);
+		const frame = requestAnimationFrame(() => {
+			scrollEle.scrollTo({
+				top: scrollEle.scrollHeight,
+				behavior: "smooth",
+			});
+		});
+
+		return () => cancelAnimationFrame(frame);
+	}, [isAnyMessageStreaming, scrollEle]);
 
 	// Auto-scroll to bottom when content grows (streaming), unless user has scrolled away intentionally
 	// biome-ignore lint/correctness/useExhaustiveDependencies: contentHeight is used as a trigger
 	useEffect(() => {
 		if (!scrollEle || isScrollLocked) {
-			return;
-		}
-
-		// If a smooth-scroll-to-bottom is pending (streaming just ended and the
-		// typewriter is still dumping content), let the smooth-scroll effect below
-		// handle it — don't clobber it with an instant jump.
-		if (pendingScrollToBottomRef.current) {
 			return;
 		}
 
@@ -295,20 +270,6 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 		});
 	}, [scrollEle, isScrollLocked, contentHeight, isAnyMessageStreaming]);
 
-	// Whenever contentHeight changes and a smooth-scroll is pending, fire it.
-	// This fires after the ResizeObserver detects the post-dump layout change,
-	// so scrollHeight is accurate and the instant-jump path above is gated off.
-	// biome-ignore lint/correctness/useExhaustiveDependencies: intentional
-	useEffect(() => {
-		if (pendingScrollToBottomRef.current && scrollEle) {
-			pendingScrollToBottomRef.current = false;
-			setIsScrollLocked(false);
-			scrollEle.scrollTo({
-				top: scrollEle.scrollHeight,
-				behavior: "smooth",
-			});
-		}
-	}, [contentHeight, scrollEle]);
 	/**
 	 * Set up scroll event listener
 	 */
@@ -373,21 +334,39 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 			return false;
 		}
 
-		for (const part of room.latestResponseMessage.parts) {
-			if (
-				part.type === "TOOL_CALL" &&
-				part.toolCall._meta?.SMSS_MCP_EXECUTION === "auto"
-			) {
-				const tool = room.getTool(part.toolCall.id);
-				if (
-					tool &&
-					(tool.status === "INITIAL" || tool.status === "LOADING")
-				) {
-					return true;
-				}
+		return room.latestResponseMessage.parts.some((part) => {
+			if (part.type !== "TOOL_CALL") {
+				return false;
 			}
+			const tool = room.getTool(part.toolCall.id);
+			return (
+				!!tool &&
+				tool.json._meta?.SMSS_MCP_EXECUTION === "auto" &&
+				(tool.status === "INITIAL" || tool.status === "LOADING")
+			);
+		});
+	})();
+
+	// Count of ask-mode tools on the latest response genuinely waiting on the
+	// user to click into them — not auto tools (they don't need a click), and
+	// not ask tools that already resolved (SUCCESS/ERROR/CANCELLED) or are
+	// already running (LOADING) after being clicked.
+	const waitingAskToolCount = (() => {
+		if (!room.latestResponseMessage) {
+			return 0;
 		}
-		return false;
+
+		return room.latestResponseMessage.parts.filter((part) => {
+			if (part.type !== "TOOL_CALL") {
+				return false;
+			}
+			const tool = room.getTool(part.toolCall.id);
+			return (
+				!!tool &&
+				tool.status === "INITIAL" &&
+				isAskExecutionMode(tool.json._meta?.SMSS_MCP_EXECUTION)
+			);
+		}).length;
 	})();
 
 	const showLoadingState =
@@ -406,10 +385,70 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 				? "stop"
 				: "send";
 
+	// A response that's actively generating with nothing to show yet — no
+	// text, tool calls, media, or even real thinking content — renders as
+	// no entry at all; RoomGeneratingIndicator covers that window instead,
+	// so it never mounts as its own block only to fold away again the
+	// moment it gets its first tool call. The instant any real content
+	// exists (including thinking) it gets its own entry immediately.
+	const isPendingResponse = (
+		m: InputMessageStore | ResponseMessageStore,
+	): boolean =>
+		m.type === "OUTPUT" &&
+		m.isThinking &&
+		!m.hasVisibleContent &&
+		!m.parts.some(
+			(part) => part.type === "THINKING" && part.thinking.length > 0,
+		);
+
+	// Folds a run of tool-only responses up into the response preceding them.
+	const roomHistoryEntries = (() => {
+		interface Entry {
+			message: InputMessageStore | ResponseMessageStore;
+			subsequentTools: ResponseMessageStore[];
+		}
+		let anchor: Entry | null = null;
+
+		return room.history.reduce<Entry[]>((entries, m) => {
+			if (!m.visible) {
+				return entries;
+			}
+
+			if (isPendingResponse(m)) {
+				return entries;
+			}
+
+			// A settled empty response is only meaningful as a direct reply
+			// to a user turn. When its nearest non-hidden ancestor is
+			// another response — e.g. the empty assistant message the
+			// backend commits after a stopped tool phase — it's just
+			// noise, so skip it. (Still-thinking placeholders are left
+			// alone so a streaming post-tool reply isn't hidden.)
+			if (
+				m.type === "OUTPUT" &&
+				!m.hasVisibleContent &&
+				!m.isThinking &&
+				m.findAncestor((a) => a.visible)?.type === "OUTPUT"
+			) {
+				return entries;
+			}
+
+			if (m.type === "OUTPUT" && m.shouldFoldUp && anchor) {
+				anchor.subsequentTools.push(m);
+				return entries;
+			}
+
+			const entry: Entry = { message: m, subsequentTools: [] };
+			anchor = m.type === "OUTPUT" ? entry : null;
+			entries.push(entry);
+			return entries;
+		}, []);
+	})();
+
 	return (
 		<div
 			className={cn(
-				"flex h-full w-full flex-col border-2 border-transparent bg-background transition-all duration-200 ease-in-out",
+				"@container flex h-full w-full min-w-0 flex-col border-2 border-transparent bg-background",
 				isDragging && "border-primary",
 			)}
 		>
@@ -426,76 +465,85 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 							setContentEle(ele);
 						}}
 					>
-						<div className="mx-auto flex w-full max-w-[1120px] flex-col gap-2 px-4 py-6 sm:px-8 lg:px-16">
-							{room.history.map((m) => {
-								if (!m.visible) {
-									return null;
-								}
+						<div className="mx-auto flex w-full max-w-3xl flex-col gap-4 @md:px-6 px-4 py-6">
+							{room.agentGreeting && (
+								<RoomGreeting
+									room={room}
+									greeting={room.agentGreeting}
+								/>
+							)}
+							{roomHistoryEntries.map(
+								({ message: m, subsequentTools }) => {
+									const showModelName = (() => {
+										// find the most recent ancestor that actually has a model
+										const ancestor = m.findAncestor(
+											(a) => !!a.modelId,
+										);
+										// If no ancestor has a model, show the model name for this message
+										if (!ancestor) return true;
+										// Only show the model name if it's different from the ancestor's model to reduce clutter
+										return m.modelId !== ancestor.modelId;
+									})();
 
-								// A settled empty response is only meaningful as a
-								// direct reply to a user turn. When its nearest
-								// non-hidden ancestor is another response — e.g. the
-								// empty assistant message the backend commits after
-								// a stopped tool phase — it's just noise, so skip
-								// it. (Still-thinking placeholders are left alone so
-								// a streaming post-tool reply isn't hidden.)
-								if (
-									m.type === "OUTPUT" &&
-									!m.hasVisibleContent &&
-									!m.isThinking &&
-									m.findAncestor((a) => a.visible)?.type ===
-										"OUTPUT"
-								)
-									return null;
-
-								const showModelName = (() => {
-									// find the most recent ancestor that actually has a model
-									const ancestor = m.findAncestor(
-										(a) => !!a.modelId,
-									);
-									// If no ancestor has a model, show the model name for this message
-									if (!ancestor) return true;
-									// Only show the model name if it's different from the ancestor's model to reduce clutter
-									return m.modelId !== ancestor.modelId;
-								})();
-
-								return (
-									<React.Fragment key={m.key}>
-										{showModelName && (
-											<div className="relative mb-4 flex flex-col items-center justify-center">
-												<div className="z-10 bg-background px-2 text-muted-foreground text-xs leading-normal">
-													{m.ornaments.modelName}
+									return (
+										<React.Fragment key={m.key}>
+											{showModelName && (
+												<div className="relative mb-4 flex flex-col items-center justify-center">
+													<div className="z-10 bg-background px-2 text-muted-foreground text-xs leading-normal">
+														{m.ornaments.modelName}
+													</div>
+													<Separator className="absolute top-1/2" />
 												</div>
-												<Separator className="absolute top-1/2" />
-											</div>
-										)}
-										{m.type === "INPUT" && (
-											<InputMessage
-												room={room}
-												message={m}
-											/>
-										)}
-										{m.type === "OUTPUT" && (
-											<ResponseMessage
-												room={room}
-												message={m}
-											/>
-										)}
+											)}
+											{m.type === "INPUT" && (
+												<InputMessage
+													room={room}
+													message={m}
+												/>
+											)}
+											{m.type === "OUTPUT" && (
+												<ResponseMessage
+													room={room}
+													message={m}
+													subsequentTools={
+														subsequentTools
+													}
+												/>
+											)}
 
-										{m.type === "OUTPUT" && (
-											<RoomCompactionIndicator
-												message={m}
-											/>
-										)}
-									</React.Fragment>
-								);
-							})}
+											{m.type === "OUTPUT" && (
+												<RoomCompactionIndicator
+													message={m}
+												/>
+											)}
+										</React.Fragment>
+									);
+								},
+							)}
+							<div className="-mt-4">
+								<RoomGeneratingIndicator
+									active={
+										showLoadingState ||
+										waitingAskToolCount > 0
+									}
+									overrideMessage={
+										waitingAskToolCount > 0
+											? tChat(
+													"response.completeToolsAsk",
+													{
+														count: waitingAskToolCount,
+													},
+												)
+											: undefined
+									}
+								/>
+							</div>
 							{room.theme.featureFlags?.enableSuggestions && (
 								<RoomSuggestions room={room} />
 							)}
 						</div>
 						{room.error ? (
-							<div className="mx-auto flex w-full max-w-[1120px] items-center gap-3 rounded-lg border border-destructive/50 bg-destructive/5 p-3 text-destructive text-sm shadow-sm">
+							<div className="mx-auto flex w-full max-w-3xl items-center gap-3 rounded-lg border border-destructive/50 bg-destructive/5 p-3 text-destructive text-sm shadow-sm">
 								<div className="flex h-10 w-10 items-center justify-center rounded-full">
 									<TriangleAlertIcon className="h-6 w-6" />
 								</div>
@@ -551,10 +599,10 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 					</Tooltip>
 				)}
 			</div>
-			<div className="mx-auto flex w-full max-w-[1120px] shrink-0 flex-col px-4 py-4 sm:px-8 lg:px-16">
+			<div className="mx-auto flex w-full max-w-3xl shrink-0 flex-col @md:px-6 px-4 py-4">
 				<RoomInput
 					predefinedPrompts={room.options.predefinedPrompts}
-					className="max-h-56 min-h-24"
+					className="max-h-72 min-h-24"
 					isLoading={showLoadingState}
 					model={room.model}
 					room={room}
@@ -569,64 +617,6 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 							mcp,
 						})
 					}
-					MenuComponent={observer(
-						({ onOpenChange, onOpenMcpOverlay }) => (
-							<>
-								<RoomInputMenuUpload
-									onSelect={() => onOpenChange(false)}
-								/>
-								<DropdownMenuSeparator />
-								<RoomInputMenuMCP
-									type="KNOWLEDGE"
-									options={room.options}
-									onSelect={() => {
-										onOpenMcpOverlay("KNOWLEDGE");
-										onOpenChange(false);
-									}}
-								/>
-								<RoomInputMenuMCP
-									type="TOOLBOX"
-									options={room.options}
-									onSelect={() => {
-										onOpenMcpOverlay("TOOLBOX");
-										onOpenChange(false);
-									}}
-								/>
-								<DropdownMenuSeparator />
-								<RoomInputMenuFileExplorer
-									room={room}
-									onSelect={() => onOpenChange(false)}
-								/>
-								{room.theme.featureFlags?.showActivityLog !==
-									false && (
-									<DropdownMenuItem
-										onSelect={(e) => {
-											e.preventDefault();
-											handleOpenActivityLog();
-											onOpenChange(false);
-										}}
-									>
-										<ScrollTextIcon />
-										<span className="flex-1">
-											Activity Log
-										</span>
-									</DropdownMenuItem>
-								)}
-								<DropdownMenuItem
-									onSelect={(e) => {
-										e.preventDefault();
-										handleOpenSettings();
-										onOpenChange(false);
-									}}
-								>
-									<Settings2Icon />
-									<span className="flex-1">
-										{t("settings.edit")}
-									</span>
-								</DropdownMenuItem>
-							</>
-						),
-					)}
 					onPrompt={handlePrompt}
 					hasOutstandingTools={
 						room.latestResponseMessage.hasUnfinishedTools

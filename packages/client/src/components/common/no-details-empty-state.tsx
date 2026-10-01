@@ -1,6 +1,6 @@
 import { cn } from "@semoss/ui/next";
 
-export interface NoDetailsEmptyStateProps
+interface NoDetailsEmptyStateProps
 	extends React.HTMLAttributes<HTMLDivElement> {
 	/** Heading shown under the illustration */
 	title?: string;

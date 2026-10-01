@@ -1,13 +1,6 @@
 import { ChevronRightIcon, SquareArrowOutUpRightIcon } from "lucide-react";
 import { useMemo } from "react";
-import {
-	Link,
-	matchPath,
-	Navigate,
-	Outlet,
-	useLocation,
-	useResolvedPath,
-} from "react-router-dom";
+import { Link, matchPath, Navigate, Outlet, useLocation } from "react-router";
 import type { Role } from "@semoss/sdk";
 import { EngineSubtypeIcon, EntityHeader } from "@semoss/shared";
 import {
@@ -22,9 +15,11 @@ import {
 	TabsList,
 	TabsTrigger,
 } from "@semoss/ui/next";
-import { EngineAccessButton, EngineExportButton } from "@/components/engine";
-import { NavbarHeader, NavbarLeft } from "@/components/shared";
-import { useEngine } from "@/hooks";
+import { EngineAccessButton } from "@/components/engine/engine-access-button";
+import { EngineExportButton } from "@/components/engine/engine-export-button";
+import { NavbarHeader } from "@/components/shared/navbar-header";
+import { NavbarLeft } from "@/components/shared/navbar-left";
+import { useEngine } from "@/hooks/useEngine";
 import { useNavigate } from "@/hooks/useNavigate";
 
 interface EngineTabsLayoutProps {
@@ -44,10 +39,10 @@ interface EngineTabsLayoutProps {
  * Wrap the engine routes and add additional funcitonality
  */
 export const EngineTabsLayout: React.FC<EngineTabsLayoutProps> = ({ tabs }) => {
-	const resolvedPath = useResolvedPath("");
 	const { pathname } = useLocation();
 	const navigate = useNavigate();
 	const { catalog, engine, permission, type } = useEngine();
+	const enginePath = `${catalog.path}/${engine.engine_id}`;
 
 	// get the visible tabs based on permission
 	const visibleTabs = useMemo(() => {
@@ -73,30 +68,27 @@ export const EngineTabsLayout: React.FC<EngineTabsLayoutProps> = ({ tabs }) => {
 			tabIdx < tabLen;
 			tabIdx++
 		) {
-			const tabPath = `${resolvedPath.pathname}/${visibleTabs[tabIdx].path}`;
+			const tab = visibleTabs[tabIdx];
+			const tabPath = tab.path ? `${enginePath}/${tab.path}` : enginePath;
 
 			if (
-				matchPath(tabPath, pathname) ||
+				matchPath({ path: tabPath, end: true }, pathname) ||
 				// Keep tabs with nested routes (e.g. settings/*) highlighted;
 				// skip the Overview tab ("") or it would match every path.
-				(visibleTabs[tabIdx].path !== "" &&
-					matchPath(`${tabPath}/*`, pathname))
+				(tab.path !== "" && matchPath(`${tabPath}/*`, pathname))
 			) {
 				return tabIdx;
 			}
 		}
 
 		return -1;
-	}, [visibleTabs, resolvedPath, pathname]);
+	}, [visibleTabs, enginePath, pathname]);
 
 	if (activeTabIdx === -1 && visibleTabs.length > 0) {
-		navigate(`${resolvedPath.pathname}/${visibleTabs[0].path}`);
-	}
-
-	if (activeTabIdx === -1) {
+		const firstTabPath = visibleTabs[0].path;
 		return (
 			<Navigate
-				to={`${resolvedPath.pathname}/${visibleTabs[0].path}`}
+				to={firstTabPath ? `${enginePath}/${firstTabPath}` : enginePath}
 				replace
 			/>
 		);
@@ -139,16 +131,16 @@ export const EngineTabsLayout: React.FC<EngineTabsLayoutProps> = ({ tabs }) => {
 							<EngineSubtypeIcon
 								engineType={type}
 								engineSubtype={engine.engine_subtype}
-								alt={catalog.name}
-								className="size-full object-contain drop-shadow-[0_1px_1px_rgba(0,0,0,0.08)]"
+								alt=""
+								className="size-full object-contain"
 							/>
 						}
 						name={engine.engine_display_name || engine.engine_name}
 						id={engine.engine_id}
-						copyLabel={`Copy ${name} ID`}
+						copyLabel={`Copy ${catalog.name} ID`}
 						nameTestId="Title"
-						idTestId={`engineHeader-${name}-id`}
-						copyTestId={`engineHeader-copy-${name}-id-btn`}
+						idTestId={`engineHeader-${catalog.name}-id`}
+						copyTestId={`engineHeader-copy-${catalog.name}-id-btn`}
 						actions={
 							<>
 								<EngineAccessButton />
@@ -162,7 +154,7 @@ export const EngineTabsLayout: React.FC<EngineTabsLayoutProps> = ({ tabs }) => {
 										data-testid="engine-tabs-layout--open-btn"
 										asChild
 									>
-										<Link to="./workbench">
+										<Link to={`${enginePath}/workbench`}>
 											<SquareArrowOutUpRightIcon className="size-4" />
 											Workbench
 										</Link>
@@ -172,7 +164,7 @@ export const EngineTabsLayout: React.FC<EngineTabsLayoutProps> = ({ tabs }) => {
 						}
 					/>
 				</div>
-				<div className="flex flex-col rounded-lg bg-(--muted)">
+				<div className="flex flex-col rounded-lg bg-muted">
 					{visibleTabs.length > 0 && (
 						<div>
 							<Tabs
@@ -183,14 +175,18 @@ export const EngineTabsLayout: React.FC<EngineTabsLayoutProps> = ({ tabs }) => {
 								}
 								className="gap-0 bg-transparent"
 							>
-								<div className="w-full overflow-x-auto md:w-[80%]">
+								<div className="w-full overflow-x-auto md:w-4/5">
 									<TabsList className="w-max flex-nowrap gap-2">
 										{visibleTabs.map((t) => (
 											<TabsTrigger
 												key={t.path}
 												value={t.path}
 												onClick={() =>
-													navigate(`${t.path}`)
+													navigate(
+														t.path
+															? `${enginePath}/${t.path}`
+															: enginePath,
+													)
 												}
 												data-testid={`engineLayout-${t.name}-tab`}
 											>
@@ -202,7 +198,7 @@ export const EngineTabsLayout: React.FC<EngineTabsLayoutProps> = ({ tabs }) => {
 							</Tabs>
 						</div>
 					)}
-					<div className="w-full bg-(--card) p-4">
+					<div className="w-full bg-card p-4">
 						<Outlet />
 					</div>
 				</div>

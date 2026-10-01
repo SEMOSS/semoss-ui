@@ -1,9 +1,13 @@
 import { toJS } from "mobx";
 import { observer } from "mobx-react-lite";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { isRequestUserInputAction, parseUserInputRequest } from "@semoss/sdk";
 import { Env, type MCPToolRequest, usePixel } from "@semoss/sdk/react";
-import { Skeleton } from "@semoss/ui/next";
+import { AgentUserInputCard, Skeleton, toast } from "@semoss/ui/next";
+import { TeamworkToolCard } from "@/features/teamwork/components/teamwork-tool-card";
+import { isTeamworkToolCall } from "@/features/teamwork/tools/teamwork-tool-kind";
 import type { RoomStore } from "@/stores";
+import { decideAgentToolAction } from "@/stores/message/agent-harness";
 import { isAskExecutionMode } from "@/utility/mcp-utils";
 import { ToolsDefaultView } from "./tools-default-view";
 import { ToolsServerView } from "./tools-server-view";
@@ -265,6 +269,13 @@ export const ToolsView = observer(
 			return null;
 		}
 
+		// Work folder and connector calls have their own card: the folder
+		// tools run in the browser, and neither has an MCP project to fetch a
+		// schema or a UI from.
+		if (liveTool && isTeamworkToolCall(tool)) {
+			return <TeamworkToolCard tool={liveTool} variant="panel" />;
+		}
+
 		// Server tools (e.g. provider-side web_search) have no MCP project to
 		// fetch a schema from — render the generic read-only result view.
 		if (tool.server_tool && liveTool) {
@@ -283,14 +294,54 @@ export const ToolsView = observer(
 						onLoad={() => handleOnLoad()}
 					/>
 				)}
-				{!url && !isLoading && liveTool && (
-					<ToolsDefaultView
-						room={room}
-						app={app}
-						message={message}
-						tool={liveTool}
-					/>
-				)}
+				{!url &&
+					!isLoading &&
+					liveTool &&
+					(isRequestUserInputAction({
+						toolName: liveTool.json.name,
+						toolMeta: liveTool.json._meta,
+					}) ? (
+						(() => {
+							const request = parseUserInputRequest({
+								toolArgs: liveTool.json.arguments,
+							});
+							return request ? (
+								<div className="p-3">
+									<AgentUserInputCard
+										request={request}
+										disabled={!liveTool.pendingAction}
+										onSubmit={async (answers) => {
+											try {
+												await decideAgentToolAction(
+													liveTool,
+													"respond",
+													answers,
+												);
+											} catch (error) {
+												toast.error(
+													error instanceof Error
+														? error.message
+														: "Unable to submit these answers.",
+												);
+											}
+										}}
+									/>
+								</div>
+							) : (
+								<div className="p-3 text-destructive text-sm">
+									The assistant sent an invalid input request
+									and it cannot be displayed.
+								</div>
+							);
+						})()
+					) : (
+						<ToolsDefaultView
+							room={room}
+							app={app}
+							message={message}
+							tool={liveTool}
+						/>
+					))}
 			</div>
 		);
 	},

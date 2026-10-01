@@ -34,8 +34,12 @@ interface PromptSelectorProps {
 	/** Track if disabled */
 	disabled?: boolean;
 
-	/** Callback fired when the selected prompt IDs change */
-	onChange: (values: string[]) => void;
+	/**
+	 * Callback fired when the selected prompt IDs change. `titles` maps each
+	 * selected id to its title when the prompt has been loaded, so callers
+	 * that only store ids can still render names.
+	 */
+	onChange: (values: string[], titles: Record<string, string>) => void;
 
 	/** Extra classes appended to the outer wrapper (e.g. for sizing) */
 	className?: string;
@@ -109,13 +113,25 @@ export const PromptSelector: React.FC<PromptSelectorProps> = ({
 	}, [getPrompts.data]);
 
 	/**
+	 * Emit the next selection along with the titles known for it
+	 */
+	const emitChange = (next: string[]) => {
+		const titles: Record<string, string> = {};
+		for (const id of next) {
+			const title = titleMap.get(id);
+			if (title) titles[id] = title;
+		}
+		onChange(next, titles);
+	};
+
+	/**
 	 * Toggle a prompt selection
 	 */
 	const onSelect = (prompt: Prompt) => {
 		if (selected.has(prompt.id)) {
-			onChange(values.filter((id) => id !== prompt.id));
+			emitChange(values.filter((id) => id !== prompt.id));
 		} else {
-			onChange([...values, prompt.id]);
+			emitChange([...values, prompt.id]);
 		}
 	};
 
@@ -201,7 +217,9 @@ export const PromptSelector: React.FC<PromptSelectorProps> = ({
 									</Field>
 									{getPlatformUrl && (
 										<div className="flex w-full flex-row justify-end px-4 pb-4">
-											<Tooltip>
+											<Tooltip
+												disableHoverableContent={false}
+											>
 												<TooltipTrigger asChild>
 													<a
 														target="_blank"
@@ -245,7 +263,7 @@ export const PromptSelector: React.FC<PromptSelectorProps> = ({
 										size="icon-sm"
 										disabled={disabled}
 										onClick={() => {
-											onChange(
+											emitChange(
 												values.filter((v) => v !== id),
 											);
 										}}

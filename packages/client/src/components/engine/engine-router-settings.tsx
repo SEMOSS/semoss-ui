@@ -9,7 +9,7 @@ import {
 	routerConfigToJson,
 	validateRouterConfig,
 } from "@/components/import/model/router-config-field";
-import { useRootStore } from "@/hooks";
+import { useSession } from "@/hooks";
 
 export interface EngineRouterSettingsProps {
 	/** Id of the model router engine */
@@ -33,7 +33,7 @@ export const EngineRouterSettings: React.FC<EngineRouterSettingsProps> = ({
 	permission,
 	onUpdated,
 }) => {
-	const { configStore } = useRootStore();
+	const runPixel = useSession((state) => state.runPixel);
 	const isEditable = permission === "OWNER" || permission === "EDIT";
 
 	const getConfig = usePixel<string>(
@@ -59,7 +59,7 @@ export const EngineRouterSettings: React.FC<EngineRouterSettingsProps> = ({
 
 		setSaving(true);
 		try {
-			const response = await configStore.runPixel(
+			const response = await runPixel(
 				`UpdateModelRouterConfig(engine=["${engineId}"], map=[${routerConfigToJson(value)}]);`,
 			);
 			const result = response.pixelReturn?.[0];

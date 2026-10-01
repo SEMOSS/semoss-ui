@@ -26,55 +26,6 @@ export const config = async () => {
 	return response.data;
 };
 
-export const run = async <O extends unknown[] | []>(
-	insightID: string,
-	pixel: string,
-) => {
-	// build the expression
-	let postData: Record<string, unknown> = {
-		expression: pixel,
-	};
-
-	if (insightID) {
-		postData = {
-			...postData,
-			insightId: insightID,
-		};
-	}
-	const response = await post<{
-		insightID: string;
-		pixelReturn: {
-			isMeta: boolean;
-			operationType: string[];
-			additionalOutput: {
-				output: string;
-			}[];
-			output: O[number];
-			pixelExpression: string;
-			pixelId: string;
-		}[];
-	}>(`${Env.MODULE}/api/engine/runPixel`, postData).catch((error) => {
-		throw Error(error);
-	});
-	// there was no response, that is an error
-	if (!response) {
-		throw Error("No Pixel Response");
-	}
-	// collect the errors
-	const errors: string[] = [];
-	for (const p of response.data.pixelReturn) {
-		const { output, operationType } = p;
-		if (operationType.indexOf("ERROR") > -1) {
-			errors.push(output as string);
-		}
-	}
-	return {
-		errors: errors,
-		insightId: response.data.insightID,
-		pixelReturn: response.data.pixelReturn,
-	};
-};
-
 export const fileDownload = async (insightID: string, fileKey: string) => {
 	return new Promise<void>((resolve) => {
 		// create the download url
@@ -95,7 +46,7 @@ export const fileDownload = async (insightID: string, fileKey: string) => {
 	});
 };
 
-export const monolithLogin = async (
+export const login = async (
 	username: string,
 	password: string,
 ): Promise<boolean> => {
@@ -285,14 +236,14 @@ export const registerUser = async (
 	);
 };
 
-export const monolithLogout = async (): Promise<boolean> => {
+export const logout = async (): Promise<boolean> => {
 	await get(`${Env.MODULE}/api/auth/logout/all`).catch((err) => {
 		throw Error(err);
 	});
 	return true;
 };
 
-export const monolithOauth = async (provider: string): Promise<boolean> => {
+export const oauth = async (provider: string): Promise<boolean> => {
 	// check if the user is logged in
 	const response = await get<{
 		name: string;
@@ -328,7 +279,7 @@ export const monolithOauth = async (provider: string): Promise<boolean> => {
 					// close it
 					popUpWindow.close();
 					// try to get the info again
-					const response = await monolithOauth(provider);
+					const response = await oauth(provider);
 					// close it
 					resolve(response);
 				}
@@ -360,6 +311,20 @@ export const modifyLoginProperties = async (provider, properties) => {
 	}).catch((error) => {
 		throw Error(error);
 	});
+	return response.data;
+};
+
+export const isAdminUser = async (): Promise<boolean> => {
+	const response = await get<boolean>(
+		`${Env.MODULE}/api/auth/admin/user/isAdminUser`,
+	).catch((error) => {
+		throw Error(error);
+	});
+
+	if (!response) {
+		throw Error("No Response to isAdminUser");
+	}
+
 	return response.data;
 };
 

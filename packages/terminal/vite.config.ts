@@ -1,63 +1,39 @@
-import tailwindcss from "@tailwindcss/vite";
-import react from "@vitejs/plugin-react";
-import { defineConfig, loadEnv } from "vite";
+import type { ConfigEnv } from "vite";
 import { resolve } from "node:path";
+import {
+	createViteConfig,
+	DEV_SERVER_PORTS,
+	localeManualChunks,
+} from "@semoss/config";
+import { aiSdkStubAlias, scopePptxViewerCssPlugin } from "@semoss/panels/vite";
 
-export default defineConfig(({ mode }) => {
-	const env = loadEnv(mode, process.cwd(), "");
+// The Monaco editor pulls its language workers through `?worker` imports that
+// only resolve against the real package.
+const monacoApi = resolve(
+	import.meta.dirname,
+	"../../libs/shared/node_modules/monaco-editor/esm/vs/editor/editor.api",
+);
 
-	const isProduction = mode === "production";
-	const MODULE = env.MODULE;
-	const ENDPOINT = env.ENDPOINT;
-
-	return {
-		base: "./",
-		plugins: [tailwindcss(), react({ include: /\.(js|jsx|ts|tsx)$/ })],
-		resolve: {
-			alias: [{ find: "@", replacement: resolve(__dirname, "./src") }],
-		},
-		define: {
-			"import.meta.env.MODULE": JSON.stringify(MODULE),
-			"import.meta.env.ACCESS_KEY": isProduction
-				? undefined
-				: JSON.stringify(env.ACCESS_KEY),
-			"import.meta.env.SECRET_KEY": isProduction
-				? undefined
-				: JSON.stringify(env.SECRET_KEY),
-		},
-		build: {
-			minify: isProduction,
-			commonjsOptions: { transformMixedEsModules: true },
-			rollupOptions: {
-				output: {
-					manualChunks(id: string) {
-						// One lazy chunk per language so loading/switching a
-						// language is a single request and new languages never
-						// bloat the main bundle.
-						const locale = id.match(/\/locales\/([^/]+)\/.*\.json/);
-						if (locale) {
-							return `locale-${locale[1]}`;
-						}
-					},
-				},
-			},
-		},
-		optimizeDeps: {
-			esbuildOptions: { target: "es2020" },
-		},
-		server: {
-			port: 5175,
-			proxy:
-				MODULE && ENDPOINT
-					? {
-							[MODULE]: {
-								target: ENDPOINT,
-								changeOrigin: true,
-								secure: false,
-								preserveHeaderKeyCase: true,
-							},
-						}
-					: undefined,
-		},
-	};
+const baseConfig = createViteConfig({
+	rootDir: import.meta.dirname,
+	port: DEV_SERVER_PORTS.terminal,
+	alias: [
+		{ find: /^monaco-editor$/, replacement: monacoApi },
+		aiSdkStubAlias,
+	],
+	manualChunks: localeManualChunks,
+	define: (env, isProduction) => ({
+		"import.meta.env.ACCESS_KEY": isProduction
+			? undefined
+			: JSON.stringify(env.ACCESS_KEY),
+		"import.meta.env.SECRET_KEY": isProduction
+			? undefined
+			: JSON.stringify(env.SECRET_KEY),
+	}),
 });
+
+export default (env: ConfigEnv) => {
+	const config = baseConfig(env);
+	config.plugins = [scopePptxViewerCssPlugin, ...(config.plugins ?? [])];
+	return config;
+};

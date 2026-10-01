@@ -1,10 +1,11 @@
 import { ChevronDownIcon, InfoIcon } from "lucide-react";
 import { observer } from "mobx-react-lite";
-import { useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { useTranslation } from "@semoss/i18n";
 import {
 	Button,
 	cn,
+	P,
 	Popover,
 	PopoverContent,
 	PopoverTrigger,
@@ -14,8 +15,9 @@ import {
 	TooltipContent,
 	TooltipTrigger,
 } from "@semoss/ui/next";
-import { useChat, useRoot } from "@/hooks";
-import type { RoomStore } from "@/stores";
+import { useChat } from "@/hooks/use-chat";
+import { useRoot } from "@/hooks/use-root";
+import type { RoomStore } from "@/stores/room/room.store";
 
 type CompactionStrategy = "TOOL_PRUNE" | "SUMMARY" | "AUTO";
 
@@ -61,6 +63,7 @@ const CompactStrategyPicker: React.FC<{
 }> = ({ disabled, strategy, onPickStrategy, onCompact }) => {
 	const { t } = useTranslation("room");
 	const [expanded, setExpanded] = useState(false);
+	const radioId = useId();
 
 	return (
 		<div className="mt-2 space-y-2 border-t pt-2">
@@ -77,8 +80,10 @@ const CompactStrategyPicker: React.FC<{
 			>
 				{t("settings.compactButton")}
 			</Button>
-			<button
+			<Button
 				type="button"
+				variant="ghost"
+				size="sm"
 				className="flex w-full items-center gap-1 text-muted-foreground text-xs hover:text-foreground"
 				onClick={() => setExpanded((v) => !v)}
 			>
@@ -91,13 +96,18 @@ const CompactStrategyPicker: React.FC<{
 				{expanded
 					? t("settings.compactionOptions")
 					: t("settings.advancedOptions")}
-			</button>
+			</Button>
 			{expanded && (
 				<RadioGroup
 					value={strategy}
-					onValueChange={(v) =>
-						onPickStrategy(v as CompactionStrategy)
-					}
+					onValueChange={(v) => {
+						if (
+							v === "SUMMARY" ||
+							v === "TOOL_PRUNE" ||
+							v === "AUTO"
+						)
+							onPickStrategy(v);
+					}}
 					className="gap-1 pl-1"
 				>
 					{(
@@ -111,19 +121,28 @@ const CompactStrategyPicker: React.FC<{
 							key={s}
 							className="flex items-center gap-2 rounded-sm px-1 py-0.5 text-sm hover:bg-accent"
 						>
-							<RadioGroupItem
-								value={s}
-								id={`compaction-strategy-${s}`}
-							/>
+							<RadioGroupItem value={s} id={`${radioId}-${s}`} />
 							<label
-								htmlFor={`compaction-strategy-${s}`}
+								htmlFor={`${radioId}-${s}`}
 								className="flex-1 cursor-pointer"
 							>
 								{t(`settings.strategyLabel.${s}`)}
 							</label>
-							<Tooltip>
+							<Tooltip disableHoverableContent={false}>
 								<TooltipTrigger asChild>
-									<InfoIcon className="size-3.5 shrink-0 text-muted-foreground" />
+									<Button
+										type="button"
+										variant="ghost"
+										size="icon-sm"
+										aria-label={t(
+											`settings.strategyLabel.${s}`,
+										)}
+									>
+										<InfoIcon
+											aria-hidden="true"
+											className="size-4 text-muted-foreground"
+										/>
+									</Button>
 								</TooltipTrigger>
 								<TooltipContent
 									side="left"
@@ -164,6 +183,12 @@ export const RoomContextUsageIndicator = observer(
 			);
 		const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 		const isHovering = useRef(false);
+		useEffect(
+			() => () => {
+				if (closeTimer.current) clearTimeout(closeTimer.current);
+			},
+			[],
+		);
 
 		const tokensUsed = room.tokensUsed;
 		const tokensMax = chat.models.contextWindow;
@@ -222,71 +247,88 @@ export const RoomContextUsageIndicator = observer(
 					setOpen(o);
 				}}
 			>
-				<PopoverTrigger asChild>
-					<button
-						type="button"
-						className={cn(
-							"flex shrink-0 cursor-pointer items-center",
-							className,
-						)}
-						onClick={(e) => e.stopPropagation()}
-						onMouseEnter={handleOpen}
-						onMouseLeave={scheduleClose}
-					>
-						{/** biome-ignore lint/a11y/noSvgWithoutTitle: click interaction is provided by the parent button */}
-						<svg width={18} height={18} viewBox="0 0 18 18">
-							{/* Outer ring - always visible */}
-							<circle
-								cx={cx}
-								cy={cy}
-								r={radius}
-								fill="none"
-								className={
-									roundedPercent >= 75
-										? "stroke-destructive"
-										: "stroke-muted-foreground"
-								}
-								strokeWidth={1.5}
-								opacity={0.3}
-							/>
-							{/* Inner fill showing percentage */}
-							{roundedPercent >= 100 ? (
-								<circle
-									cx={cx}
-									cy={cy}
-									r={radius - 1}
-									className={
-										roundedPercent >= 75
-											? "fill-destructive"
-											: "fill-muted-foreground"
-									}
-									opacity={0.6}
-								/>
-							) : (
-								<path
-									d={`M ${cx} ${cy} L ${cx} ${cy - (radius - 1)} A ${radius - 1} ${radius - 1} 0 ${largeArc} 1 ${x * 0.875 + cx * 0.125} ${y * 0.875 + cy * 0.125} Z`}
-									className={
-										roundedPercent >= 75
-											? "fill-destructive"
-											: "fill-muted-foreground"
-									}
-									opacity={0.6}
-								/>
-							)}
-						</svg>
-					</button>
-				</PopoverTrigger>
+				<Tooltip disableHoverableContent={false}>
+					<TooltipTrigger asChild>
+						<PopoverTrigger asChild>
+							<Button
+								variant="ghost"
+								size="icon-sm"
+								aria-label={`${t("contextWindow.memoryUsedTitle")} ${usedPercent.toFixed(1)}%`}
+								type="button"
+								className={cn(
+									"shrink-0 rounded-full",
+									className,
+								)}
+								onClick={(e) => e.stopPropagation()}
+								onMouseEnter={handleOpen}
+								onMouseLeave={scheduleClose}
+							>
+								<svg
+									aria-hidden="true"
+									className="size-4"
+									viewBox="0 0 18 18"
+								>
+									{/* Outer ring - always visible */}
+									<circle
+										cx={cx}
+										cy={cy}
+										r={radius}
+										fill="none"
+										className={
+											roundedPercent >= 75
+												? "stroke-destructive"
+												: "stroke-muted-foreground"
+										}
+										strokeWidth={1.5}
+										opacity={0.8}
+									/>
+									{/* Inner fill showing percentage */}
+									{roundedPercent >= 100 ? (
+										<circle
+											cx={cx}
+											cy={cy}
+											r={radius - 1}
+											className={
+												roundedPercent >= 75
+													? "fill-destructive"
+													: "fill-muted-foreground"
+											}
+											opacity={0.6}
+										/>
+									) : (
+										<path
+											d={`M ${cx} ${cy} L ${cx} ${cy - (radius - 1)} A ${radius - 1} ${radius - 1} 0 ${largeArc} 1 ${x * 0.875 + cx * 0.125} ${y * 0.875 + cy * 0.125} Z`}
+											className={
+												roundedPercent >= 75
+													? "fill-destructive"
+													: "fill-muted-foreground"
+											}
+											opacity={0.6}
+										/>
+									)}
+								</svg>
+							</Button>
+						</PopoverTrigger>
+					</TooltipTrigger>
+					<TooltipContent>
+						{t("contextWindow.memoryUsedTitle")}{" "}
+						{usedPercent.toFixed(1)}%
+					</TooltipContent>
+				</Tooltip>
 				<PopoverContent
 					side="top"
-					className="w-[24rem] text-wrap text-sm"
+					className="w-96 max-w-full text-wrap text-sm"
+					onEscapeKeyDown={() => {
+						isHovering.current = false;
+					}}
 					onMouseEnter={handleOpen}
 					onMouseLeave={scheduleClose}
 					onClick={(e) => e.stopPropagation()}
 					onOpenAutoFocus={(e) => e.preventDefault()}
 				>
 					<div className="w-full space-y-1">
-						<p className="w-full">{t(descriptionKey)}</p>
-						<p className="flex w-full items-baseline justify-between gap-3">
+						<P className="w-full">{t(descriptionKey)}</P>
+						<P className="flex w-full items-baseline justify-between gap-3">
 							<span>{t("contextWindow.memoryUsedTitle")}</span>
 							<span className="whitespace-nowrap text-end tabular-nums">
 								{t("contextWindow.memoryUsedValue", {
@@ -295,16 +337,16 @@ export const RoomContextUsageIndicator = observer(
 									percent: usedPercent.toFixed(1),
 								})}
 							</span>
-						</p>
+						</P>
 						{totalTokens !== undefined && (
-							<p className="flex w-full items-baseline justify-between gap-3">
+							<P className="flex w-full items-baseline justify-between gap-3">
 								<span>{t("contextWindow.totalUsedTitle")}</span>
 								<span className="whitespace-nowrap text-end tabular-nums">
 									{t("contextWindow.totalUsedValue", {
 										total: formatTokens(totalTokens),
 									})}
 								</span>
-							</p>
+							</P>
 						)}
 						{onCompact && (
 							<CompactStrategyPicker

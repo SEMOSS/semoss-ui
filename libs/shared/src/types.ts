@@ -51,7 +51,8 @@ export interface Project {
 		| "BLOCKS"
 		| "CODE"
 		| "INSIGHT"
-		| "NOTEBOOK";
+		| "NOTEBOOK"
+		| "AUTOMATION";
 	project_cost?: string;
 	project_global?: string;
 	project_created_by?: string;
@@ -337,6 +338,8 @@ export interface ThemeMap {
 			enablePromptOptimizer?: boolean;
 			/** Whether to hide tools when the app is rendered inside an iframe. */
 			hideToolsInIframe?: boolean;
+			/** Whether to hide the chat-history list (sidebar and the "All Chats" page/nav link) so users cannot browse past conversations. */
+			hideChatHistory?: boolean;
 			/** Whether to run MakeEngineMCP after creating a new knowledge source. Defaults to true. */
 			enableKnowledgeMCP?: boolean;
 			/** Whether to show the embedding model selector in the new knowledge form. Defaults to true. */
@@ -351,6 +354,10 @@ export interface ThemeMap {
 			enableTableExport?: boolean;
 			/** Whether to show the temperature slider in room settings. Defaults to false. */
 			enableTemperature?: boolean;
+			/** Whether to show items tagged SYSTEM in the MCP selector skills list (MyProjects). Defaults to true. */
+			showSystemSkills?: boolean;
+			/** Whether to show items tagged SYSTEM in the MCP selector tools list (MyEngines for TOOLBOX). Defaults to true. */
+			showSystemTools?: boolean;
 		};
 	};
 }
@@ -413,7 +420,7 @@ export interface Skill {
 export type SkillConfig = Pick<Skill, "id" | "name">;
 
 export interface ProjectDependency {
-	engine_type: Project["project_type"] | Engine["engine_type"];
+	engine_type: Project["project_type"] | Engine["engine_type"] | "PROJECT";
 	engine_id: string;
 	engine_name: string;
 	engine_subtype?: string;

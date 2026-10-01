@@ -135,9 +135,11 @@ export function usePixel<D>(
 
 				// track the errors
 				if (operationType.indexOf("ERROR") > -1) {
-					const error = output as string;
-
-					throw new Error(error);
+					throw new Error(
+						typeof output === "string"
+							? output
+							: JSON.stringify(output),
+					);
 				}
 
 				// set as success

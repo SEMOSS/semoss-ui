@@ -1,8 +1,8 @@
 import type { Role } from "@semoss/sdk";
-import { usePixel } from "@semoss/sdk/react";
+import { runPixel, usePixel } from "@semoss/sdk/react";
 import type { Project } from "@semoss/shared";
 import { CatalogOverview } from "@/components/catalog";
-import { useRootStore } from "@/hooks";
+import { useConfig } from "@/hooks";
 import { normalizeTagArray } from "@/utility";
 
 interface ProjectOverviewProps {
@@ -16,7 +16,7 @@ export const ProjectOverview = ({
 	permission,
 	refresh,
 }: ProjectOverviewProps) => {
-	const { configStore } = useRootStore();
+	const projectMetaKeys = useConfig((state) => state.config.projectMetaKeys);
 
 	const getProjectMetaValues = usePixel<
 		{
@@ -32,7 +32,7 @@ export const ProjectOverview = ({
 	 * @returns Promise that resolves after save flow completes.
 	 */
 	const onSave = async (id: string, metadata: Record<string, unknown>) => {
-		await configStore.runPixel(
+		await runPixel(
 			`SetProjectMetadata(project=["${id}"], meta=[${JSON.stringify(
 				metadata,
 			)}])`,
@@ -49,7 +49,7 @@ export const ProjectOverview = ({
 		<CatalogOverview
 			id={project.project_id}
 			permission={permission}
-			metaKeys={configStore.store.config.projectMetaKeys}
+			metaKeys={projectMetaKeys}
 			metaValues={
 				getProjectMetaValues.status === "SUCCESS"
 					? getProjectMetaValues.data

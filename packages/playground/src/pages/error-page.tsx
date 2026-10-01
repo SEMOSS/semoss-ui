@@ -1,96 +1,59 @@
 import { Home, OctagonAlert } from "lucide-react";
-import { useNavigate } from "react-router-dom";
-import {
-	Button,
-	ResizablePanel,
-	ResizablePanelGroup,
-	SidebarTrigger,
-	useTheme,
-} from "@semoss/ui/next";
-import background from "@/assets/img/render-error-background.png";
-import backgroundDark from "@/assets/img/render-error-background-darkmode.jpg";
-import { useRoot } from "@/hooks";
+import { useContext } from "react";
+import { useNavigate } from "react-router";
+import { useTranslation } from "@semoss/i18n";
+import { Button, cn, SidebarTrigger, useTheme } from "@semoss/ui/next";
+import { RootContext } from "@/contexts/root-context";
 
 export interface ErrorPageProps {
 	isInnerComponent?: boolean;
 }
 
-/**
- * Page displayed when a FE rendering error occurs
- */
 export const ErrorPage = ({ isInnerComponent = false }: ErrorPageProps) => {
+	const { t } = useTranslation("room");
 	const navigate = useNavigate();
-	const { root } = useRoot();
-	const { theme: colorMode } = useTheme();
-
-	const isDark =
-		colorMode === "dark" ||
-		(colorMode === "system" &&
-			window.matchMedia("(prefers-color-scheme: dark)").matches);
-
-	const src = isDark
-		? root.theme.images.errorDark || backgroundDark
-		: root.theme.images.error || background;
-
-	const content = (
-		<div className="max-w-md p-8 text-center">
-			<div className="mb-6 flex justify-center">
-				<OctagonAlert
-					className="text-destructive"
-					size={50}
-					strokeWidth={1.5}
+	// Initialization failures and the root route boundary render outside RootLayout.
+	const context = useContext(RootContext);
+	const { resolvedTheme } = useTheme();
+	const src =
+		resolvedTheme === "dark"
+			? context?.root.theme.images.errorDark
+			: context?.root.theme.images.error;
+	return (
+		<div
+			className={cn(
+				"relative flex w-full items-center justify-center overflow-auto bg-background p-6",
+				isInnerComponent ? "h-full" : "min-h-svh",
+			)}
+		>
+			{src && (
+				<img
+					src={src}
+					alt=""
+					className="pointer-events-none absolute inset-0 h-full w-full object-cover"
 				/>
-			</div>
-
-			<h1 className="mb-2 whitespace-nowrap text-center font-semibold text-3xl text-foreground leading-normal">
-				Something went wrong.
-			</h1>
-
-			<p className="mb-6 w-[396px] max-w-[400px] text-center font-normal text-lg text-muted-foreground leading-normal">
-				An unexpected error occurred. Please try refreshing or returning
-				to the home page.
-			</p>
-
-			<Button
-				type="button"
-				onClick={() => navigate("/")}
-				size="lg"
-				variant="outline"
-			>
-				<Home />
-				Back to Home
-			</Button>
-		</div>
-	);
-
-	if (isInnerComponent) {
-		return (
-			<div className="relative h-full w-full overflow-hidden">
-				<div className="absolute start-2 top-2 z-10 flex h-12.5 items-center px-4">
+			)}
+			{isInnerComponent && (
+				<div className="absolute start-4 top-4">
 					<SidebarTrigger />
 				</div>
-				<ResizablePanelGroup direction="horizontal">
-					<ResizablePanel className="relative flex flex-col items-center justify-center overflow-auto p-2">
-						<img
-							src={src}
-							alt="Background"
-							className="absolute inset-0 h-full w-full object-cover"
-						/>
-						<div className="z-10">{content}</div>
-					</ResizablePanel>
-				</ResizablePanelGroup>
+			)}
+			<div className="relative flex w-full max-w-md flex-col items-center gap-4 rounded-xl border bg-card p-6 text-center">
+				<OctagonAlert
+					className="size-10 text-destructive"
+					aria-hidden="true"
+				/>
+				<h1 className="font-semibold text-2xl">
+					{t("studio.errorTitle")}
+				</h1>
+				<p className="text-muted-foreground text-sm leading-relaxed">
+					{t("studio.errorDescription")}
+				</p>
+				<Button onClick={() => navigate("/")} variant="outline">
+					<Home />
+					{t("studio.backHome")}
+				</Button>
 			</div>
-		);
-	}
-
-	return (
-		<div className="relative flex min-h-screen items-center justify-center overflow-hidden">
-			<img
-				src={src}
-				alt="Background"
-				className="absolute inset-0 h-full w-full object-cover"
-			/>
-			<div className="z-10">{content}</div>
 		</div>
 	);
 };

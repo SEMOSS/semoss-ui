@@ -152,7 +152,7 @@ export const ColorPickerSettings = observer<ColorPickerSettingProps>(
 								className="-translate-y-1/2 absolute top-1/2 right-2 cursor-pointer border-none bg-transparent p-0"
 							>
 								<span
-									className="block h-[33px] w-[33px] rounded-[20%] border border-black"
+									className="block h-[33px] w-[33px] rounded-[20%] border border-border"
 									style={{
 										backgroundColor: value ?? "#000000",
 									}}

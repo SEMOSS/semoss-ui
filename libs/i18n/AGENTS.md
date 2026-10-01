@@ -2,8 +2,9 @@
 
 This document provides context for AI coding assistants working with the SEMOSS internationalization library.
 
-> **Inherits from:** [../../AGENTS.md](../../AGENTS.md) for code style, file-naming, package
-> structure, commit messages, Biome config, and Node/pnpm requirements.
+> **Inherits from:** [root AGENTS.md](../../AGENTS.md). Load the applicable
+> [root skills](../../skills/README.md); the [React standard](../../skills/react-standard.skill.md)
+> owns general TypeScript, imports, and validation rules.
 
 ## Overview
 
@@ -13,12 +14,16 @@ This document provides context for AI coding assistants working with the SEMOSS 
 
 ### Lazy loading architecture (IMPORTANT)
 
-Languages are **loaded lazily, one per language at a time** — the locale JSON is **not** bundled into the app's main chunk. This keeps first paint light and means adding languages/namespaces never grows the initial bundle.
+Locale JSON uses lazy loaders rather than static imports into the app's main chunk.
+Verify consumer build output when changing language or namespace loading; lazy loading
+does not guarantee a fixed initial bundle size or request count.
 
 How it works:
-- Each app exports a `LazyResources` config (`resources/client.ts`, `resources/playground.ts`, `resources/terminal.ts`) — a map of `namespace → (language) => import("./locales/${language}/.../ns.json")`. There are **no static `import x from "./locales/..."` lines** anymore.
+- Package loader maps live in `resources/client.ts`, `resources/playground.ts`,
+  `resources/terminal.ts`, and `resources/auditlog.ts`.
 - `builder.ts` registers a tiny i18next **backend** that calls those loaders on demand — at init for the active language, and again on `i18n.changeLanguage()`.
-- Each app's `vite.config.ts` has a `manualChunks` rule that groups every file under `locales/<lng>/` into a single `locale-<lng>` chunk, so loading/switching a language is **one request**.
+- Keep consumer locale chunk grouping compatible with these lazy imports; confirm
+  request behavior in the affected app rather than assuming one request per language.
 - Apps `await i18nBuilder.ready` in `main.tsx` before the first render so the active language is present (no flash of raw keys).
 - Namespaces not preloaded at init (e.g. the client's embedded terminal) are fetched at runtime via `preloadNamespaces([...])`.
 
@@ -51,6 +56,7 @@ libs/i18n/
         ├── playground.ts              # Playground lazy loader map
         ├── terminal.ts                # Terminal lazy loader map
         ├── client.ts                  # Client lazy loader map
+        ├── auditlog.ts                # Audit log lazy loader map
         └── locales/
             ├── en/                    # English translations
             │   ├── common.json        # Core: buttons, labels, actions
@@ -67,7 +73,8 @@ libs/i18n/
             ├── fr/                    # French (same structure)
             ├── hi/                    # Hindi (same structure)
             ├── ar/                    # Arabic (same structure)
-            └── ja/                    # Japanese (same structure)
+            ├── ja/                    # Japanese (same structure)
+            └── nl/                    # Dutch (same structure)
 ```
 
 ## Key Concepts
@@ -76,11 +83,12 @@ libs/i18n/
 
 Each package consumes translations differently:
 
-- **Playground**: Uses `playgroundResources` (configured in `builder.ts`)
+- **Playground**: `resources/playground.ts`
   - Includes: core + playground-specific namespaces
 
-- **Client**: Will use `clientResources` (template ready)
-  - Includes: core + client-specific namespaces (to be added)
+- **Client**: `resources/client.ts`, with existing `locales/*/client/` namespaces
+- **Terminal**: `resources/terminal.ts`, with `locales/*/terminal/` namespaces
+- **Audit log**: `resources/auditlog.ts`
 
 ### Translation Namespaces
 
@@ -123,9 +131,11 @@ To add a namespace: add one `load` entry (and, if it should render before user i
 
 When modifying or adding translations, **ALWAYS** follow these steps in order:
 
-#### 1. Remove Unused Translations First
+#### 1. Check Existing Translations First
 
-Before adding new translations, scan the relevant namespace and remove any translations that are no longer used:
+Before adding translations, check the relevant namespace for reusable keys. Remove a key
+only within the requested scope and after checking all consumers, including dynamic keys;
+a text search alone does not prove a key is unused:
 
 ```bash
 # Example: Check if 'chat:oldKey' is still used
@@ -133,11 +143,11 @@ pnpm --filter @semoss/playground exec grep -r "t('chat:oldKey')" src/
 pnpm --filter @semoss/playground exec grep -r 't("chat:oldKey")' src/
 ```
 
-**Remove unused keys across ALL languages** (en, es, fr, hi, ar, ja) to keep files synchronized.
+**Remove confirmed unused keys across ALL languages** (en, es, fr, hi, ar, ja, nl).
 
 #### 2. Add New Translations
 
-Add the new translation key to all six language files:
+Add the new translation key to all seven language files:
 
 ```json
 // locales/en/playground/chat.json
@@ -171,10 +181,10 @@ Add the new translation key to all six language files:
 
 - No broken translation keys (old keys still referenced in code)
 - No missing translations (new keys used but not defined)
-- All six languages are synchronized
+- All seven languages are synchronized
 
 ```bash
-# Verify all translation keys are defined
+# Verify consumer compilation (not translation-key completeness)
 pnpm --filter @semoss/playground build:dev
 
 # Check for translation errors in browser console during testing
@@ -192,7 +202,7 @@ pnpm --filter @semoss/playground build:dev
 
 If you see errors like `Cannot find module`, verify:
 - File paths in package config files (e.g., `playground.ts`)
-- All language variants exist (en, es, fr, hi, ar, ja)
+- All language variants exist (en, es, fr, hi, ar, ja, nl)
 - JSON syntax is valid (no trailing commas, proper quotes)
 
 #### 5. Update Documentation
@@ -221,16 +231,16 @@ The `README.md` is the source of truth for developers. Keep it accurate.
 ### Do Not Modify
 
 - **Translation values in production** - Only change if explicitly requested
-- **Language codes** - Must remain `en`, `es`, `fr`, `hi`, `ar`, `ja`
+- **Language codes** - Preserve `en`, `es`, `fr`, `hi`, `ar`, `ja`, `nl` unless language support is explicitly in scope
 - **`builder.ts` initialization logic** - Core i18next setup
 - **`constants.ts`** - Language definitions (unless adding new languages)
 
 ### Be Cautious With
 
 - **`builder.ts`** - The dynamic-import backend + i18next setup affects all packages
-- **`playground.ts` / `terminal.ts` / `client.ts`** - Lazy loader maps for specific packages
+- **`resources/*.ts`** - Lazy loader maps and resource types for consuming packages
 - **`index.ts`** - Main export file, affects all consumers
-- **`vite.config.ts` `manualChunks`** - The `locale-<lng>` grouping lives in each app's config
+- **Consumer `vite.config.ts` files** - Locale chunk grouping belongs to consuming apps
 - **File/directory renames** - Must update the `load` paths in the package loader maps
 
 ### When Adding Translations
@@ -238,7 +248,7 @@ The `README.md` is the source of truth for developers. Keep it accurate.
 1. **Determine the tier**:
    - Used in multiple packages? → Add to `locales/*/common.json` (core)
    - Playground-specific? → Add to `locales/*/playground/*.json`
-   - Client-specific? → Create `locales/*/client/*.json` and update `client.ts`
+  - Client-specific? → Use `locales/*/client/*.json` and update `client.ts`
 
 2. **Add to all languages**:
    - `locales/en/...` - English (original)
@@ -247,6 +257,7 @@ The `README.md` is the source of truth for developers. Keep it accurate.
    - `locales/hi/...` - Hindi translation
    - `locales/ar/...` - Arabic translation
    - `locales/ja/...` - Japanese translation
+  - `locales/nl/...` - Dutch translation
 
 3. **Update the config file**:
    - Add a `load` entry (and `ns` entry if preloaded) to the relevant `playground.ts` / `terminal.ts` / `client.ts`. No static imports — use the `(l) => import(\`./locales/${l}/.../ns.json\`)` form.
@@ -263,38 +274,34 @@ The `README.md` is the source of truth for developers. Keep it accurate.
    pnpm --filter @semoss/playground exec grep -r "translationKey" src/
    ```
 
-2. **Remove from all six languages**:
+2. **Remove from all seven languages**:
    - `locales/en/...`
    - `locales/es/...`
    - `locales/fr/...`
    - `locales/hi/...`
    - `locales/ar/...`
    - `locales/ja/...`
+  - `locales/nl/...`
 
 3. **If removing an entire namespace** (e.g., deleting `sidebar.json`):
    - Remove files from all language directories
-   - Remove imports from package config file (`playground.ts` or `client.ts`)
-   - Remove from resource definitions
+  - Remove lazy `load` entries and `ns` entries from every consuming resource map
    - Verify build succeeds
 
 ### When Adding a New Package
 
-To add translations for a new package (e.g., `@semoss/client`):
+To add translations for a new package, follow the existing client integration:
 
 1. **Create directory structure**:
    ```bash
-   mkdir -p locales/{en,es,fr,hi,ar,ja}/client
+  # From libs/i18n/src/resources; replace new-package with the new package name
+  mkdir -p locales/{en,es,fr,hi,ar,ja,nl}/new-package
    ```
 
 2. **Add translation files**:
-   - `locales/en/client/feature.json`
-   - `locales/es/client/feature.json`
-   - `locales/fr/client/feature.json`
-   - `locales/hi/client/feature.json`
-   - `locales/ar/client/feature.json`
-   - `locales/ja/client/feature.json`
+  - `locales/{en,es,fr,hi,ar,ja,nl}/new-package/feature.json` (one per language)
 
-3. **Update `client.ts`** — add a lazy `load` entry (and `ns` entry if it should preload):
+3. **Add the package loader map** using `client.ts` as the pattern (adapt the names/paths):
    ```typescript
    export const clientResources: LazyResources = {
      ns: ["common", "notifications", "validation", "feature"],
@@ -324,7 +331,7 @@ To add translations for a new package (e.g., `@semoss/client`):
 # Test playground package (current consumer)
 pnpm --filter @semoss/playground build:dev
 
-# Test client package (when implemented)
+# Test client package
 pnpm --filter @semoss/client build:dev
 ```
 
@@ -342,7 +349,9 @@ pnpm --filter @semoss/playground dev
 
 ### Translation Key Validation
 
-Check for missing or unused translation keys:
+Compare key coverage across all seven locale files and check the affected runtime
+namespaces. A successful build does not prove translation completeness. Text searches
+help find literal usage but also inspect dynamic keys and namespace prefixes:
 
 ```bash
 # Find translation usage in code
@@ -406,8 +415,8 @@ If a translation is needed by multiple packages:
 
 ## Summary of Key Rules
 
-1. ✅ **Remove unused translations BEFORE adding new ones**
-2. ✅ **Always update all six languages** (en, es, fr, hi, ar, ja)
+1. ✅ **Reuse existing keys; remove only confirmed unused keys within scope**
+2. ✅ **Always update all seven languages** (en, es, fr, hi, ar, ja, nl)
 3. ✅ **Verify across the filesystem** for broken/missing keys
 4. ✅ **Check that builds pass** after translation changes
 5. ✅ **Update README.md** for structural changes

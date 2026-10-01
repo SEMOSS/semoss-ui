@@ -716,7 +716,9 @@ export const ServiceAccountsTable = (props: ServiceAccountsTableProps) => {
 			>
 				<DialogContent className="max-w-2xl">
 					<DialogHeader>
-						<DialogTitle>Create Service Account</DialogTitle>
+						<DialogTitle className="font-medium text-base leading-6">
+							Create Service Account
+						</DialogTitle>
 						<DialogDescription>
 							Create a service account for machine-based access.
 						</DialogDescription>
@@ -736,7 +738,7 @@ export const ServiceAccountsTable = (props: ServiceAccountsTableProps) => {
 								maxLength={255}
 							/>
 						</div>
-						<div className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-amber-900 text-sm">
+						<div className="rounded-md border border-warning/30 bg-warning/10 px-3 py-2 text-sm text-warning">
 							One-time credentials are shown only once after
 							creation. Copy and store them now.
 						</div>
@@ -790,7 +792,7 @@ export const ServiceAccountsTable = (props: ServiceAccountsTableProps) => {
 			>
 				<DialogContent>
 					<DialogHeader>
-						<DialogTitle>
+						<DialogTitle className="font-medium text-base leading-6">
 							{deleteMode === "bulk"
 								? "Delete service accounts"
 								: "Delete service account"}

@@ -58,6 +58,7 @@ export const TYPE_TO_ROUTE = {
 	BLOCKS: "/app",
 	INSIGHT: "/app",
 	SKILL: "/skill",
+	NOTEBOOK: "/notebook",
 	WORKSPACE: "/agent",
 	FUNCTION: "/function",
 	MODEL: "/model",

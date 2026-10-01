@@ -1,5 +1,4 @@
 import { configure, makeAutoObservable } from "mobx";
-import type React from "react";
 import type { ThemeMap } from "@semoss/shared";
 
 configure({
@@ -19,19 +18,6 @@ interface RootStoreInterface {
 	 * Current theme setting
 	 */
 	theme: ThemeMap["playground"];
-
-	/**
-	 * Custom breadcrumbs for the main layout
-	 */
-	breadcrumbs: {
-		name: string;
-		path: string;
-	}[];
-
-	/**
-	 * Optional right-side actions to render in the main layout header
-	 */
-	navbarActions?: React.ReactNode | null;
 }
 
 /**
@@ -40,8 +26,6 @@ interface RootStoreInterface {
 export class RootStore {
 	private _store: RootStoreInterface = {
 		isInitialized: false,
-		breadcrumbs: [],
-		navbarActions: null,
 		theme: {
 			name: "",
 			banner: "",
@@ -98,6 +82,7 @@ export class RootStore {
 				enablePromptOptimizer: true,
 				enableDarkMode: true,
 				hideToolsInIframe: false,
+				hideChatHistory: false,
 				enableKnowledgeMCP: true,
 				allowEmbeddingOptions: true,
 				showActivityLog: true,
@@ -148,48 +133,6 @@ export class RootStore {
 	get theme() {
 		return this._store.theme;
 	}
-
-	/**
-	 * Get the current breadcrumbs
-	 */
-	get breadcrumbs() {
-		return this._store.breadcrumbs;
-	}
-
-	/**
-	 * Get the current navbar actions
-	 */
-	get navbarActions() {
-		return this._store.navbarActions;
-	}
-
-	/**
-	 * Set custom breadcrumbs
-	 */
-	setBreadcrumbs = (breadcrumbs: RootStore["breadcrumbs"]) => {
-		this._store.breadcrumbs = breadcrumbs;
-	};
-
-	/**
-	 * Clear breadcrumbs (use default route-based breadcrumbs)
-	 */
-	clearBreadcrumbs = () => {
-		this._store.breadcrumbs = [];
-	};
-
-	/**
-	 * Set right-side navbar actions
-	 */
-	setNavbarActions = (actions: React.ReactNode | null) => {
-		this._store.navbarActions = actions;
-	};
-
-	/**
-	 * Clear right-side navbar actions
-	 */
-	clearNavbarActions = () => {
-		this._store.navbarActions = null;
-	};
 
 	/**
 	 * Set the default theme

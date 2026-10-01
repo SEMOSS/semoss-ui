@@ -15,14 +15,18 @@ import {
 	CollapsibleTrigger,
 	Input,
 } from "@semoss/ui/next";
-import { useRootStore } from "@/hooks";
+import { useConfig } from "@/hooks";
 import {
 	formatToDataTestId,
 	getTagColorPalette,
 	removeUnderscores,
 	toTitleCase,
 } from "@/utility";
-import { isProjectType } from "@/utility/catalog";
+import {
+	CATALOG_ACCESS_FILTERS,
+	type CatalogAccessFilter,
+	isProjectType,
+} from "@/utility/catalog";
 
 export interface CatalogFilterboxProps {
 	/** Determined to get filter keys for Engines/App */
@@ -39,13 +43,26 @@ export interface CatalogFilterboxProps {
 	filters: Record<string, string[]>;
 	/** Filters to hold in state at parent */
 	onChange: (filters: Record<string, string[]>) => void;
+	/**
+	 * The access filters chosen, shown in an Access section above the metadata
+	 * filters. Omit to hide the section, as on a view of what the user cannot
+	 * access yet.
+	 */
+	access?: readonly CatalogAccessFilter[];
+	/** Choose other access filters. Required with {@link access}. */
+	onAccessChange?: (access: CatalogAccessFilter[]) => void;
 }
 
 const COLLAPSED_ITEM_LIMIT = 8;
 
 export const CatalogFilterBox = (props: CatalogFilterboxProps) => {
-	const { type, projectTypes, filters, onChange } = props;
-	const { configStore } = useRootStore();
+	const { type, projectTypes, filters, onChange, access, onAccessChange } =
+		props;
+
+	const projectMetaKeys = useConfig((state) => state.config.projectMetaKeys);
+	const databaseMetaKeys = useConfig(
+		(state) => state.config.databaseMetaKeys,
+	);
 
 	const [filterSearch, setFilterSearch] = useState("");
 	const [showCollapsible, setShowCollapsible] = useState<
@@ -57,9 +74,7 @@ export const CatalogFilterBox = (props: CatalogFilterboxProps) => {
 	const [headerOpen, setHeaderOpen] = useState(false);
 	const [isDesktopFilterLayout, setIsDesktopFilterLayout] = useState(false);
 
-	const list = isProjectType(type)
-		? configStore.store.config.projectMetaKeys
-		: configStore.store.config.databaseMetaKeys;
+	const list = isProjectType(type) ? projectMetaKeys : databaseMetaKeys;
 
 	const fieldList = list.filter((k) => {
 		return (
@@ -106,11 +121,13 @@ export const CatalogFilterBox = (props: CatalogFilterboxProps) => {
 
 	// Count total active filters
 	const totalActiveFilters = useMemo(() => {
-		return Object.values(filterVisibility).reduce(
-			(sum, fv) => sum + fv.value.length,
-			0,
+		return (
+			Object.values(filterVisibility).reduce(
+				(sum, fv) => sum + fv.value.length,
+				0,
+			) + (access?.length ?? 0)
 		);
-	}, [filterVisibility]);
+	}, [filterVisibility, access]);
 
 	// Sync internal state with external filters prop
 	useEffect(() => {
@@ -316,7 +333,19 @@ export const CatalogFilterBox = (props: CatalogFilterboxProps) => {
 		});
 
 		onChange({});
-	}, [onChange]);
+		onAccessChange?.([]);
+	}, [onChange, onAccessChange]);
+
+	const toggleAccess = (value: CatalogAccessFilter) => {
+		if (!access || !onAccessChange) {
+			return;
+		}
+		onAccessChange(
+			access.includes(value)
+				? access.filter((v) => v !== value)
+				: [...access, value],
+		);
+	};
 
 	const getValuePillStyle = (value: string, isSelected: boolean) => {
 		const palette = getTagColorPalette(value);
@@ -334,6 +363,51 @@ export const CatalogFilterBox = (props: CatalogFilterboxProps) => {
 
 	const filterBody = (
 		<div className="flex flex-col gap-1 pb-3">
+			{/* Access: what the user created, and the access they hold */}
+			{access ? (
+				<div className="px-3 pt-1">
+					<div className="flex h-8 items-center gap-2 px-2">
+						<span className="font-medium text-[13px] text-foreground">
+							Access
+						</span>
+						{access.length > 0 && (
+							<Badge
+								variant="secondary"
+								className="h-5 min-w-5 rounded-full px-1.5 font-medium text-[10px] leading-none [font-variant-numeric:tabular-nums]"
+							>
+								{access.length}
+							</Badge>
+						)}
+					</div>
+					<div className="flex flex-wrap gap-1.5 px-1 pt-2 pb-1">
+						{CATALOG_ACCESS_FILTERS.map(({ value, label }) => {
+							const isSelected = access.includes(value);
+							return (
+								<button
+									type="button"
+									key={value}
+									onClick={() => toggleAccess(value)}
+									aria-pressed={isSelected}
+									className={
+										isSelected
+											? "inline-flex items-center gap-1.5 rounded-full border border-primary/30 bg-primary/10 px-2.5 py-1 font-medium text-primary text-xs transition-all duration-200 hover:bg-primary/20 active:scale-95"
+											: "inline-flex items-center gap-1.5 rounded-full border border-border bg-transparent px-2.5 py-1 text-foreground text-xs transition-all duration-200 hover:border-foreground/30 hover:bg-accent active:scale-95"
+									}
+									data-testid={formatToDataTestId(
+										`filterbox-access-${value}-filterBtn`,
+									)}
+								>
+									<span>{label}</span>
+								</button>
+							);
+						})}
+					</div>
+					{Object.entries(filterOptions).length > 0 && (
+						<div className="mx-1 mt-2 h-px bg-border/50" />
+					)}
+				</div>
+			) : null}
+
 			{/* Search input */}
 			{Object.entries(filterOptions).length ? (
 				<div className="mx-3 mt-1">

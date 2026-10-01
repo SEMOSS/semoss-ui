@@ -1,127 +1,56 @@
-import { CheckIcon, HammerIcon, XCircleIcon } from "lucide-react";
+import {
+	CheckIcon,
+	ChevronsLeftRightIcon,
+	ChevronsRightLeftIcon,
+	HammerIcon,
+	PanelRightCloseIcon,
+	PanelRightOpenIcon,
+	XCircleIcon,
+} from "lucide-react";
 import { observer } from "mobx-react-lite";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useTranslation } from "@semoss/i18n";
-import { Button, cn, Spinner, useIsMobile } from "@semoss/ui/next";
-import { useLoadingMessage } from "@/hooks";
-import type { ResponseMessageStore, ToolStore } from "@/stores";
-import { isAskExecutionMode } from "@/utility/mcp-utils";
-import { RoomInlineTool } from "../room";
+import { Button, cn, Spinner, toast, useIsMobile } from "@semoss/ui/next";
+import { TeamworkToolCard } from "@/features/teamwork/components/teamwork-tool-card";
+import { isTeamworkToolCall } from "@/features/teamwork/tools/teamwork-tool-kind";
+import { useLoadingMessage } from "@/hooks/use-loading-message";
+import { useSidebarPanelActive } from "@/hooks/use-sidebar-panel-active";
+import { decideAgentToolAction } from "@/stores/message/agent-harness";
+import { ROOM_PANEL_TYPES } from "@/stores/room/room-sidebar";
+import type { ToolStore } from "@/stores/tool/tool.store";
+import { getToolAppId, isAskExecutionMode } from "@/utility/mcp-utils";
+import { ToolsView } from "../mcp/tools-view";
+import { RoomInlineTool } from "../room/room-inline-tool";
 import { ResponseMessageToolMenu } from "./response-message-tool-menu";
 import { ResponseMessageToolStreaming } from "./response-message-tool-streaming";
 
-const getToolState = (
-	tool: ToolStore,
-	t: ReturnType<typeof useTranslation<"chat">>["t"],
-	toolExecutionMessage: string,
-) => {
-	switch (tool.status) {
-		case "ERROR":
-		case "CANCELLED": {
-			const config = {
-				ERROR: {
-					icon: <XCircleIcon className="size-5" />,
-					badge: {
-						text: t("status.failed"),
-						variant: "muted" as const,
-					},
-				},
-				CANCELLED: {
-					icon: <XCircleIcon className="size-5" />,
-					badge: {
-						text: t("status.cancelled"),
-						variant: "muted" as const,
-					},
-				},
-			} as const;
-
-			return {
-				...config[tool.status],
-				iconClassName: "bg-muted text-muted-foreground",
-				subtext: tool.json.description,
-				actionType: "menu" as const,
-				background: "bg-background" as const,
-				showHoverAccent: true,
-				showCancelInMenu: false,
-			};
-		}
-		case "SUCCESS":
-			return {
-				icon: <CheckIcon className="size-5" />,
-				iconClassName: "bg-primary/10 text-primary",
-				subtext: tool.json.description,
-				badge: null,
-
-				actionType: "menu" as const,
-				background: "bg-sidebar" as const,
-				showHoverAccent: false,
-				showCancelInMenu: false,
-			};
-		case "LOADING":
-			return {
-				icon: <Spinner />,
-				iconClassName: "bg-muted text-muted-foreground",
-				subtext: toolExecutionMessage,
-				badge: null,
-
-				actionType: "cancel" as const,
-				background: "bg-background" as const,
-				showHoverAccent: true,
-				showCancelInMenu: false,
-			};
-		default:
-			if (isAskExecutionMode(tool.json._meta?.SMSS_MCP_EXECUTION)) {
-				return {
-					icon: <HammerIcon className="size-5" />,
-					iconClassName: "bg-primary/10 text-primary",
-					subtext: tool.json.description,
-					badge: null,
-
-					actionType: "menu" as const,
-					background: "bg-background" as const,
-					showHoverAccent: true,
-					showCancelInMenu: true,
-				};
-			}
-			// queued
-			return {
-				icon: <HammerIcon className="size-5" />,
-				iconClassName: "bg-muted text-muted-foreground",
-				subtext: t("status.queued"),
-				badge: null,
-
-				actionType: "cancel" as const,
-				background: "bg-background" as const,
-				showHoverAccent: true,
-				showCancelInMenu: false,
-			};
-	}
-};
-
-interface ResponseMessageToolProps {
-	/** Message to render */
-	message: ResponseMessageStore;
-
-	/** Tool to render */
+export interface ResponseMessageToolProps {
+	/** Tool activity to display and open. */
 	tool: ToolStore;
-
-	/** Whether the tool is large */
+	/** Show pending decisions in a framed, inline view. */
 	isLarge?: boolean;
 }
 
-export const ResponseMessageTool: React.FC<ResponseMessageToolProps> = observer(
-	({ message, tool, isLarge }) => {
+/** A compact tool row with its status and actions always available. */
+export const ResponseMessageTool = observer(
+	({ tool, isLarge }: ResponseMessageToolProps) => {
 		const { t } = useTranslation("tool");
-		const { room } = message;
+		const { room } = tool;
 		const isMobile = useIsMobile();
-
-		const { loadingMessage: toolExecutionMessage } = useLoadingMessage(
+		const [isCancelling, setIsCancelling] = useState(false);
+		const isSidebarActive = useSidebarPanelActive(
+			room,
+			ROOM_PANEL_TYPES.TOOL,
+			{ toolId: tool.id },
+		);
+		const { loadingMessage } = useLoadingMessage(
 			tool.status === "LOADING",
 			tool.json._meta?.SMSS_MCP_UI?.loadingMessage
 				? [tool.json._meta.SMSS_MCP_UI.loadingMessage]
 				: [],
 		);
 
+		// Auto-open is tied to resolution/metadata, not to the user's later close action.
 		useEffect(() => {
 			if (
 				tool.isResolved &&
@@ -138,196 +67,185 @@ export const ResponseMessageTool: React.FC<ResponseMessageToolProps> = observer(
 			isMobile,
 		]);
 
-		// Until the server-resolved part arrives we only have the raw wire name —
-		// delegate to a dedicated placeholder pill that shows a spinner and
-		// optionally expands to preview the accumulating JSON.
-		if (!tool.isResolved) {
+		if (!tool.isResolved)
 			return <ResponseMessageToolStreaming tool={tool} />;
-		}
-
-		const isActive =
-			tool.isOpen &&
-			(tool.display === "sidebar" ? room.sidebar.isOpen : true);
-
-		const toolState = getToolState(tool, t, toolExecutionMessage);
-
-		// Don't render if hidden
-		if (tool.display === "hidden") {
-			return null;
-		}
-
-		const handleCancel = (e: React.MouseEvent) => {
-			e.stopPropagation();
-			message.saveToolExecution(tool, "", "cancelled", {});
-			tool.closeTool();
-		};
-
-		const handleClick = () => {
-			if (tool.isOpen) {
-				if (tool.display === "inline") {
-					// Clicks when inline should close
-					tool.closeTool();
-				} else {
-					// if it's open in the sidebar, move to front on desktop or switch to inline on mobile
-					tool.openTool(isMobile ? "inline" : "sidebar");
-				}
-			} else {
-				tool.openTool(isMobile ? "inline" : undefined);
+		const message = tool.message;
+		if (tool.display === "hidden" || !message) return null;
+		const needsDecision =
+			Boolean(tool.pendingAction) ||
+			(tool.status === "INITIAL" &&
+				isAskExecutionMode(tool.json._meta?.SMSS_MCP_EXECUTION));
+		const failed = tool.status === "ERROR";
+		const cancelled = tool.status === "CANCELLED";
+		const running = tool.status === "LOADING";
+		const succeeded = tool.status === "SUCCESS";
+		const opensInline = isMobile || tool.display === "inline";
+		const isActive = opensInline
+			? tool.isOpen && tool.display === "inline"
+			: isSidebarActive;
+		// Agent runs own their cancellation lifecycle. Never write a legacy tool result into an active run.
+		const canCancel =
+			!succeeded &&
+			!failed &&
+			!cancelled &&
+			(room.mode !== "agent" || Boolean(tool.pendingAction));
+		const status = failed
+			? t("status.failed")
+			: cancelled
+				? t("status.cancelled")
+				: succeeded
+					? t("status.completed")
+					: needsDecision
+						? t("activity.needsInput")
+						: running
+							? loadingMessage || t("status.running")
+							: t("status.queued");
+		const openAction = opensInline
+			? isActive
+				? t("actions.collapse")
+				: t("actions.openInline")
+			: isActive
+				? t("actions.closeInSidebar")
+				: t("actions.openInSidebar");
+		const handleCancel = async () => {
+			if (isCancelling) return;
+			setIsCancelling(true);
+			try {
+				if (tool.pendingAction)
+					await decideAgentToolAction(tool, "reject");
+				else await message.saveToolExecution(tool, "", "cancelled", {});
+				tool.closeTool();
+			} catch (error) {
+				toast.error(
+					error instanceof Error
+						? error.message
+						: t("activity.cancelError"),
+				);
+			} finally {
+				setIsCancelling(false);
 			}
 		};
-
-		if (!isLarge) {
-			return (
-				<div
-					className={cn(
-						"flex flex-col rounded-lg border border-border bg-sidebar",
-						isActive && "border-primary",
-					)}
-				>
-					<div className="flex items-center">
-						<button
-							type="button"
-							className={cn(
-								"flex min-w-0 flex-1 items-center gap-3 p-2 text-start",
-								!toolState.actionType && "pe-0",
-							)}
-							onClick={handleClick}
-						>
-							<div className="flex size-6 shrink-0 items-center justify-center rounded-sm text-muted-foreground">
-								{toolState.icon}
-							</div>
-							<div className="-ms-1.5 flex min-w-0 flex-1 items-center gap-2">
-								<span
-									className="truncate text-muted-foreground text-sm"
-									title={tool.displayName}
-								>
-									{tool.displayName}
-								</span>
-								{tool.status === "LOADING" &&
-									toolExecutionMessage && (
-										<span className="shrink-0 text-muted-foreground text-sm italic">
-											{toolExecutionMessage}
-										</span>
-									)}
-								{tool.status === "INITIAL" &&
-									toolState.subtext && (
-										<span className="shrink-0 text-muted-foreground text-sm italic">
-											{toolState.subtext}
-										</span>
-									)}
-							</div>
-						</button>
-
-						{toolState.actionType === "cancel" && (
-							<button
-								type="button"
-								className="flex shrink-0 cursor-pointer items-center self-stretch rounded-e-lg px-4.5 text-muted-foreground text-sm hover:bg-accent"
-								onClick={handleCancel}
-							>
-								{t("actions.cancel")}
-							</button>
-						)}
-						{toolState.actionType === "menu" && (
-							<ResponseMessageToolMenu
-								message={message}
-								tool={tool}
-								isFullButton
-								label={toolState.badge?.text}
-								showCancelInMenu={toolState.showCancelInMenu}
-							/>
-						)}
-					</div>
-
-					{/* MCP UI Area */}
-					{tool.isOpen && tool.display === "inline" && (
-						<div className="p-2 pt-0">
-							<RoomInlineTool
-								room={room}
-								message={message}
-								tool={tool}
-							/>
-						</div>
-					)}
-				</div>
-			);
-		}
-
+		const handleOpen = () => {
+			if (isActive) tool.closeTool();
+			else tool.openTool(isMobile ? "inline" : undefined);
+		};
 		return (
 			<div
 				className={cn(
-					"flex flex-col rounded-lg border border-border",
-					toolState.background,
-					isActive && "border-primary",
-					toolState.showHoverAccent && "hover:bg-accent",
+					"min-w-0 rounded-lg bg-accent/60 transition-colors hover:bg-accent dark:bg-accent/30 dark:hover:bg-accent/50",
+					isLarge && "border",
+					isActive &&
+						"bg-accent hover:bg-accent dark:bg-accent/70 dark:hover:bg-accent/70",
+					failed && "border border-destructive/30",
 				)}
 			>
-				{/* Top section: button + actions */}
-				<div className="flex items-center">
-					<button
-						type="button"
-						className={cn(
-							"flex min-w-0 flex-1 items-center gap-3 p-2 text-start",
-							!toolState.actionType && "pe-0",
-						)}
-						onClick={handleClick}
+				<div className="flex min-w-0 items-center gap-0.5 px-1">
+					<Button
+						variant="ghost"
+						size="sm"
+						onClick={handleOpen}
+						className="h-auto min-h-8 min-w-0 flex-1 justify-start gap-2 whitespace-normal px-2 py-1 text-start hover:bg-transparent dark:hover:bg-transparent"
+						aria-expanded={isActive}
+						aria-label={`${tool.displayName}: ${status}. ${openAction}`}
 					>
-						<div
+						<span
+							aria-hidden="true"
 							className={cn(
-								"flex size-9 shrink-0 items-center justify-center rounded-sm",
-								toolState.iconClassName,
+								"shrink-0 text-muted-foreground",
+								succeeded && "text-success",
+								failed && "text-destructive",
 							)}
 						>
-							{toolState.icon}
-						</div>
-						<div className="flex min-w-0 flex-1 flex-col">
-							<span
-								className="truncate font-medium text-foreground text-sm"
-								title={tool.displayName}
-							>
+							{running ? (
+								<Spinner />
+							) : succeeded ? (
+								<CheckIcon className="size-4" />
+							) : failed || cancelled ? (
+								<XCircleIcon className="size-4" />
+							) : (
+								<HammerIcon className="size-4" />
+							)}
+						</span>
+						<span className="flex min-w-0 flex-1 flex-wrap items-baseline gap-x-2">
+							<span className="min-w-0 max-w-full break-words text-sm">
 								{tool.displayName}
 							</span>
-							{toolState.subtext && (
-								<span
-									className="truncate text-muted-foreground text-sm"
-									title={toolState.subtext}
-								>
-									{toolState.subtext}
-								</span>
-							)}
-						</div>
-					</button>
-
-					{/* Right-side actions */}
-					{toolState.actionType === "cancel" && (
+							<span
+								className={cn(
+									"min-w-0 max-w-full break-words font-normal text-muted-foreground text-xs",
+									failed && "text-destructive",
+								)}
+							>
+								{status}
+							</span>
+						</span>
+						{opensInline ? (
+							isActive ? (
+								<ChevronsRightLeftIcon
+									aria-hidden="true"
+									className="size-4 shrink-0 text-muted-foreground"
+								/>
+							) : (
+								<ChevronsLeftRightIcon
+									aria-hidden="true"
+									className="size-4 shrink-0 text-muted-foreground"
+								/>
+							)
+						) : isActive ? (
+							<PanelRightOpenIcon
+								aria-hidden="true"
+								className="size-4 shrink-0 text-muted-foreground"
+							/>
+						) : (
+							<PanelRightCloseIcon
+								aria-hidden="true"
+								className="size-4 shrink-0 text-muted-foreground"
+							/>
+						)}
+					</Button>
+					{canCancel && !needsDecision && (
 						<Button
-							type="button"
+							variant="ghost"
 							size="sm"
-							variant="secondary"
-							className="me-2 shrink-0"
+							disabled={isCancelling}
 							onClick={handleCancel}
 						>
 							{t("actions.cancel")}
 						</Button>
 					)}
-					{toolState.actionType === "menu" && (
-						<ResponseMessageToolMenu
-							message={message}
-							tool={tool}
-							label={toolState.badge?.text}
-							showCancelInMenu={toolState.showCancelInMenu}
-						/>
-					)}
+					<ResponseMessageToolMenu
+						message={message}
+						tool={tool}
+						showCancelInMenu={needsDecision && canCancel}
+					/>
 				</div>
-
-				{/* MCP UI Area */}
-				{tool.isOpen && tool.display === "inline" && (
-					<div className="p-2 pt-0">
-						<RoomInlineTool
+				{isLarge && needsDecision ? (
+					<div className="h-80 min-w-0 overflow-auto border-t">
+						<ToolsView
 							room={room}
-							message={message}
-							tool={tool}
+							app={getToolAppId(tool.json._meta)}
+							message={message.id}
+							toolId={tool.json.id}
 						/>
 					</div>
+				) : (
+					tool.isOpen &&
+					tool.display === "inline" && (
+						<div className="p-2 pt-0">
+							{isTeamworkToolCall(tool.json) ? (
+								<TeamworkToolCard
+									tool={tool}
+									variant="inline"
+								/>
+							) : (
+								<RoomInlineTool
+									room={room}
+									message={message}
+									tool={tool}
+								/>
+							)}
+						</div>
+					)
 				)}
 			</div>
 		);

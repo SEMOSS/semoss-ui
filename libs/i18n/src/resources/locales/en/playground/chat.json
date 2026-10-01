@@ -1,5 +1,6 @@
 {
 	"messages": {
+		"actions": "Message actions",
 		"placeholder": "Type a message...",
 		"sending": "Sending...",
 		"error": "Failed to send message"
@@ -17,14 +18,18 @@
 		"poorResponse": "Poor response",
 		"copyResponse": "Copy Response",
 		"copyCode": "Copy Code",
+		"copy": "Copy",
+		"saveInRoom": "Save In Room",
+		"savingToRoom": "Saving...",
+		"fullView": "Full View",
+		"raw": "Raw",
+		"diagram": "Diagram",
 		"feedbackPlaceholder": "Add a comment (optional)",
 		"feedbackCancel": "Cancel",
 		"feedbackSubmit": "Submit",
 		"fastForwardToEnd": "Fast Forward to End",
 		"completeToolsAsk_one": "Please complete the tool to proceed.",
 		"completeToolsAsk_other": "Please complete the tools to proceed.",
-		"completeToolsAuto_one": "Please wait for the tool to complete.",
-		"completeToolsAuto_other": "Please wait for the tools to complete.",
 		"emptyResponse": "Empty response."
 	},
 	"input": {
@@ -43,6 +48,7 @@
 		"rewriteSuccess": "Successfully rewrote message",
 		"copySuccess": "Successfully copied to clipboard",
 		"noCopyContent": "No content to copy",
+		"savedInRoom": "Saved in room as {{filePath}}",
 		"planStepRemoved": "Successfully removed step {{stepNumber}} from plan"
 	},
 	"gracefulErrors": {

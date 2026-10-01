@@ -1,7 +1,7 @@
 import { PencilIcon, PlusIcon, Trash2Icon } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router";
 import { useTranslation } from "@semoss/i18n";
 import { AppCatalogAvatar } from "@semoss/shared";
 import {
@@ -95,6 +95,7 @@ export const WorkspaceCard = observer(
 					<CardContent className="flex flex-col gap-2 p-6">
 						<div className="flex min-w-0 items-center gap-3">
 							<AppCatalogAvatar
+								projectId={workspace.workspace_id}
 								name={workspace.name}
 								className="size-9 shrink-0 rounded-md text-base"
 							/>

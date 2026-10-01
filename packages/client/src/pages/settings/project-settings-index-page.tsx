@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useIteratorPixel } from "@semoss/sdk/react";
+import { runPixel, useIteratorPixel } from "@semoss/sdk/react";
 import type { Project } from "@semoss/shared";
 import {
 	Muted,
@@ -10,12 +10,12 @@ import {
 import { CatalogGrid, CatalogSearchBar } from "@/components/catalog";
 import { ProjectGridItem } from "@/components/project";
 import { DeleteEntityDialog } from "@/components/shared/delete-entity-dialog";
-import { useRootStore, useSettings } from "@/hooks";
+import { useConfig, useSettings } from "@/hooks";
 import { getProjectLabel, isOwnerPermission } from "@/utility/catalog";
 
 export const ProjectSettingsIndexPage = () => {
 	const { adminMode } = useSettings();
-	const { configStore } = useRootStore();
+	const projectMetaKeys = useConfig((state) => state.config.projectMetaKeys);
 
 	const [search, setSearch] = useState("");
 	const debouncedSearch = useDebouncedValue(search);
@@ -27,7 +27,7 @@ export const ProjectSettingsIndexPage = () => {
 	);
 
 	// get metakeys to the ones we want
-	const metaKeys = configStore.store.config.projectMetaKeys
+	const metaKeys = projectMetaKeys
 		.filter((k) => {
 			return (
 				k.display_options === "single-checklist" ||
@@ -114,7 +114,7 @@ export const ProjectSettingsIndexPage = () => {
 				deletePixel = `DeleteProject(project=['${projectToDelete.project_id}']);`;
 			}
 
-			const response = await configStore.runPixel(deletePixel);
+			const response = await runPixel(deletePixel);
 
 			const operationType =
 				response.pixelReturn?.[0]?.operationType || "";

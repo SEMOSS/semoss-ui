@@ -14,6 +14,7 @@ import {
 	Button,
 	Dialog,
 	DialogContent,
+	DialogTitle,
 	H4,
 	Input,
 	P,
@@ -23,9 +24,8 @@ import {
 	TabsTrigger,
 	toast,
 } from "@semoss/ui/next";
-import { uploadFile } from "@/api";
 import { NavbarHeader, NavbarLeft } from "@/components/shared";
-import { useRootStore } from "@/hooks";
+import { useSession } from "@/hooks";
 import { useNavigate } from "@/hooks/useNavigate";
 import {
 	CATEGORY_DESCRIPTIONS,
@@ -112,7 +112,8 @@ const DatabaseCard = ({
 
 export const DatabasePageContent: React.FC<{ name: string }> = ({ name }) => {
 	const navigate = useNavigate();
-	const { monolithStore, configStore } = useRootStore();
+	const runPixel = useSession((state) => state.runPixel);
+	const upload = useSession((state) => state.upload);
 	const [loading, setLoading] = useState(false);
 	const [search, setSearch] = useState("");
 	const [selectedTab, setSelectedTab] = useState(0);
@@ -155,10 +156,7 @@ export const DatabasePageContent: React.FC<{ name: string }> = ({ name }) => {
 	const onSubmit = async (data) => {
 		setLoading(true);
 		try {
-			const uploadedFiles = await uploadFile(
-				[data],
-				configStore.store.insightID,
-			);
+			const uploadedFiles = await upload([data]);
 
 			if (!uploadedFiles || !Array.isArray(uploadedFiles)) {
 				toast.error("Upload failed or returned invalid response.");
@@ -170,7 +168,7 @@ export const DatabasePageContent: React.FC<{ name: string }> = ({ name }) => {
 					`UploadDatabase(filePath=["${file.fileLocation}"],space=[""])`,
 			);
 			for (const pixelString of pixelExpressions) {
-				const response = await monolithStore.runQuery(pixelString);
+				const response = await runPixel(pixelString);
 				const { output, operationType } = response.pixelReturn[0];
 				if (operationType.includes("ERROR")) {
 					toast.error(output as string);
@@ -295,16 +293,17 @@ export const DatabasePageContent: React.FC<{ name: string }> = ({ name }) => {
 				onOpenChange={setIsFileUploadModalOpen}
 			>
 				<DialogContent
-					className="w-[calc(100vw-2rem)] max-w-[600px] sm:w-[600px]"
+					aria-describedby={undefined}
+					className="sm:max-w-xl"
 					data-testid="database-zip-upload-modal"
 				>
 					<div className="flex h-full w-full flex-col gap-4">
-						<P
+						<DialogTitle
 							className="text-base"
 							data-testid="database-zip-upload-title"
 						>
 							Zip File
-						</P>
+						</DialogTitle>
 						<div
 							className="flex min-h-[200px] cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-input border-dashed bg-secondary p-6 transition-colors hover:border-primary hover:bg-accent"
 							onClick={() => fileInputRef.current?.click()}

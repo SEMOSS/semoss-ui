@@ -2,23 +2,25 @@
 
 This document provides context for AI coding assistants working with the SEMOSS Playground application.
 
-> **Inherits from:** [../../AGENTS.md](../../AGENTS.md) for code style, file-naming, package
-> structure, commit messages, Biome config, and Node/pnpm requirements.
+> **Inherits from:** [root AGENTS.md](../../AGENTS.md). Load the applicable
+> [root skills](../../skills/README.md), including the [React standard](../../skills/react-standard.skill.md)
+> and [SDK chat skill](../../skills/sdk-chat.skill.md) for room work.
 
 ## Overview
 
-`@semoss/playground` is a development playground application for testing SEMOSS SDK features and components. It's a private package (not published) used for development and experimentation.
+`@semoss/playground` is the SEMOSS chat application. It is private (not published), with
+room, message, workspace, knowledge, and MCP surfaces.
 
 ## Structure & Conventions
 
-Follows the standard `src/` layout and file-naming rules from the root AGENTS.md. As an
-application it uses `contexts/`, `stores/`, `hooks/`, and a `pages/` router tree
-(`router.tsx` / `<name>.routes.tsx` / `<name>.layout.tsx` / `<name>.page.tsx`).
+The existing app uses `components/`, `contexts/`, `stores/`, `hooks/`, and `pages/`.
+Follow the React skill's [architecture policy](../../skills/react-standard.skill.md#architecture-and-exports)
+for new features and imports; existing feature folders are not an implicit migration task.
 
 ## Build System
 
-- **Bundler**: Vite 7
-- **Framework**: React 18 with TypeScript
+- **Bundler**: Vite 8
+- **Framework**: React 19 with TypeScript
 - **Styling**: Tailwind CSS v4
 - **Testing**: Vitest with jsdom
 
@@ -34,6 +36,8 @@ application it uses `contexts/`, `stores/`, `hooks/`, and a `pages/` router tree
 | `pnpm test:ui` | Run tests with Vitest UI |
 | `pnpm test:coverage` | Run tests with coverage report |
 | `pnpm type-check` | TypeScript type checking |
+
+Run these from `packages/playground`, or use `pnpm --filter @semoss/playground <command>`.
 
 ## Environment Variables
 
@@ -58,10 +62,9 @@ VITE_DEFAUlT_MODEL_NAME=""
 
 ### Environment File Precedence
 
-- `.env` - Checked into git, safe defaults
-- `.env.local` - Local overrides (gitignored)
-- `.env.development` - Development-specific
-- `.env.development.local` - Local dev overrides (gitignored)
+Highest to lowest priority for development: existing process environment,
+`.env.development.local`, `.env.development`, `.env.local`, then `.env`.
+Mode-specific files are optional; never edit local override files as part of repository work.
 
 ## Vite Configuration
 
@@ -107,20 +110,156 @@ Coverage reports output to `./coverage/packages/playground/` and include only `s
 
 ```json
 {
+  "@semoss/connectors": "workspace:*",
+  "@semoss/i18n": "workspace:*",
+  "@semoss/panels": "workspace:*",
   "@semoss/sdk": "workspace:*",
   "@semoss/shared": "workspace:*",
-  "@semoss/ui": "workspace:*"
+  "@semoss/ui": "workspace:*",
+  "@semoss/workbench": "workspace:*"
 }
 ```
 
-Changes to these libraries are immediately reflected in the playground during development.
+Source-only libraries are compiled by the app. Built libraries need their build/watch
+process running; use the root `pnpm dev:playground` command for dependency orchestration.
+
+## The room Workspace
+
+The right-hand panel is called **Workspace** in user-facing copy and is a `@semoss/workbench` dock. These details are not obvious from the
+code and are easy to undo by accident:
+
+- **The dock store belongs to `RoomStore`, not to `<Workbench>`.** Tools open panels from outside
+  React and while the sidebar is closed, and the arrangement has to survive closing it — which
+  unmounts the shell. `RoomStore` builds the store and restores its arrangement in its
+  constructor; `<WorkbenchProvider store={room.workbench}>` only hands it down.
+- **Blueprints are handed to `RoomStore`, not registered later.** They reach into `@/components`,
+  which imports `@/stores`, so the store cannot import them without closing a module cycle. The
+  composition root passes them instead: `MainLayout` → `ChatStore` → `RoomStore`, plus the two
+  places that build a room directly (`new-room-page`, the new-file-explorer menu item). They have
+  to be in place before the first `openSidebarPanel`, which for a streaming tool is long before
+  anything mounts — without them the dock falls back to a shallow compare of config, and since a
+  file panel's `mode` is a fresh object per call, every open would spawn another tab.
+- **`RoomSidebar` uses the room's stable `sidebarSnapshot`.** New rooms start from
+  `ROOM_SIDEBAR_LAYOUT`; a prepared room adopts the draft's arrangement through
+  `restoreSidebarLayout` before its first sidebar mount. The shell must use the same snapshot
+  reference so mounting it does not reset tabs opened since initialization. The arrangement is
+  owned by the room instance and is not persisted between room sessions.
+- **A restored file panel is re-pointed at the room's live insight.** A room binds to a fresh
+  insight on every load, and a file panel's `mode.insightId` is what its reads and saves run
+  against. `_syncSidebarFileMode` rewrites them once, before anything mounts.
+- **Publish and close live in the workbench's top border end slot**, because they act on the work
+  area. On mobile, the workbench places these controls in its actions drawer. The per-panel
+  control — "open inline" — is registered by the tool panel with `useWorkbenchControl`.
+- **File lives in the top border start slot.** `features/workbench/room-workbench-menus.tsx`
+  translates the generic `WorkbenchMenus` labels from `sidebar.workbench` and uses `textSize="xs"`. Arrange Panels remains a submenu; a flat Workspace section offers Open File Explorer, View Activity Log,
+  and Edit Settings. Playground disables the generic Navigate submenu. Forward the slot's `onNavigate` callback for mobile drawer dismissal.
+- **The layout is not cached.** Each new `RoomStore` starts with the empty default arrangement,
+  so switching rooms cannot bleed panel state between room instances.
+
+New chats keep draft settings in their temporary room store. Opening Workspace restores its
+last active tab, or opens a Settings tab when empty, without creating a server room. Settings
+uses the same workbench shell as Files. File Explorer and connector viewers share `usePreparedRoom` to prepare one room lazily
+and transfer the draft's arrangement before opening their panels. Connector viewers queue
+attachments on the draft through `NextMessageRoomProvider` until the first message. `DraftSettingsContext` keeps Settings and publishing
+bound to the current draft until submission, including after preparation. Draft menu overrides
+keep room-only actions unavailable until preparation succeeds. Selecting Chat clears agent
+inheritance but preserves locally added Knowledge and Tools.
+
+Panel ids and the sidebar's default layout live in `stores/room/room-sidebar.ts`; the blueprints
+live in `components/room/panels/`. Changing a panel type string affects only the current room
+instance.
+
+## Teamwork: default tools and connectors
+
+`src/features/teamwork/` gives a chat its default file tools and connects Microsoft 365 and
+Google Workspace.
+`RoomStore.teamwork` (`TeamworkStore`) owns it per room. The Connectors page of the settings dialog
+(`features/settings/`, opened from the user menu or a chat's Connectors dialog with
+`useSettingsDialog().openSettings("connectors")`) connects accounts and switches the user's apps on
+or off for all their chats. These details are easy to break:
+
+- **Chat Files is the only file space.** It is the room's own folder: uploads, connector
+  downloads, and everything the room's apps (MCP tools) and the default tools read and write. Show
+  Chat Files in the plus menu opens the file explorer on it. Its Add to Context action uses
+  `FileExplorerHostProvider` and queues on `useNextMessageRoom() ?? room`, so files selected from
+  a prepared draft room appear in the draft composer and transfer before its first message.
+- **A chat gets default tools; an agent brings its own.** In chat mode every message carries the
+  default tools, the `folder_*` tools the browser runs in Chat Files (`tools/default-tools.ts`).
+  Room Settings sets each to Auto, Ask, or Disabled (room option `defaultTools`; reads are Auto
+  and changes Ask unless set); a disabled tool is not sent. The option is saved with the room's
+  other options before each message; the backend only stores it. Agent runs bring the harness's
+  own file, shell, and code tools and work in Chat Files, so no folder tools go with them.
+- **Default tools run in the browser.** `TeamworkStore.runChatTool` runs each call against Chat
+  Files through the insight asset pixels (`folders/room-folder.provider.ts`), so the mode the user
+  picked holds however the model asks.
+- **Chat turns send the tools in `paramValues.tools`, twice.** `AskPlayground` carries them, and so
+  does every `AddPlaygroundToolExecution` (`tool-save-controller.ts`): the model's follow up call
+  only re-adds the room's own tools, so leaving them off drops them mid-task. The model's calls
+  come back with no `_meta`; `ToolStore.json` gets it from `TeamworkStore.decorateToolCall`, and
+  `runToolExecution` hands folder calls to `TeamworkStore.runChatTool` instead of `RunMCPTool`.
+- **Chat Tools shows what the assistant has.** The default tools are not in any toolbox, so
+  `TeamworkToolsPanel` (Show Chat Tools in the plus menu) lists them from
+  `TeamworkStore.chatToolDefinitions`, the exact definitions sent, or notes that an agent room's
+  runs bring their own, beside the room toolbox's tools read from `mcp/pixel_mcp.json` and the
+  toolboxes the user added. Each tool says whether it runs on its own or asks first, and opens to show its
+  description and arguments.
+- **Never send `DeleteInsightAssets` an empty path.** With no path it clears the whole space.
+  `AssetFolderProvider` refuses to address its root for writes, moves, and deletes. The room
+  folder also hides and refuses its `mcp` folder, where the room's tools are kept: rewriting it
+  would switch the chat's tools and connectors off.
+- **Connectors are the user's, copied into each room.** The user's connector tools live in their
+  own asset folder, `mcp/playground_connector_mcp.json`, written with `MakeUserPixelMCP` and
+  stamped `SMSS_MCP_GENERATOR: PlaygroundConnectors`. The settings Connectors page and every chat's
+  Connectors dialog edit that one file, so a change reaches all the user's chats, new and existing,
+  and the UI says so. Each room holds a copy in its own `mcp/pixel_mcp.json`
+  (`syncRoomConnectorTools`): `TeamworkStore.adopt` makes it before a new room's first message,
+  `restore` brings it up to date whenever a room loads, and `setConnectors` updates the open room
+  straight away. The copy replaces only the room's connector tools (the stamped ones, and legacy
+  ones found by reactor) and keeps every other tool. A user with no file yet has chosen nothing, so
+  their rooms keep the connectors they have; only a file that is missing counts as empty, never a
+  read that failed. The first sign in to a provider on the settings page switches on every app its
+  sign in covers (`enableServices`, only once the file has been read, so it never overwrites
+  choices it has not seen); reconnecting leaves the user's choices alone. The catalog and each tool's approval policy live in
+  `connectors/connector.catalog.ts`; sending, deleting, sharing, and invites always ask.
+- **Room tools that ask need the teamwork card.** `GetMCPTools` cannot resolve the room toolbox, so
+  the default tool form has no schema for them. `ToolsView` and the inline tool area render
+  `TeamworkToolCard` for folder and connector calls instead.
+- **The connector viewers come from `@semoss/connectors`.** OneDrive, Outlook Mail and Calendar,
+  Teams channels, files, and chats, and Google Drive, Gmail, Calendar, and Docs are its viewers
+  (`libs/connectors/`). The room mounts each as a sidebar panel
+  (`components/connector-viewer-panels.tsx`) and wires it with `sources/use-room-connector-host.ts`:
+  saves land at the top of chat files, and Add to context also queues the file in
+  `TeamworkStore.contextItems`. `RoomStore.askMessage` sends queued files as `media` with the next
+  message the user sends, and puts them back on the queue when the send fails.
+- **A viewer shows once its connector is on.** The plus menu's Microsoft 365 and Google
+  Workspace submenus list `TeamworkStore.availableSources`: a viewer needs its connector switched
+  on for the chat (`requires` in `sources/connector-sources.ts`) and its account signed in.
+- **A chat says when its connectors cannot run.** Inside the input box, `TeamworkSignInNotice`
+  lists every account the chat's switched on connectors need but the session is not signed in to
+  (`TeamworkStore.missingSignIns`, read again whenever the window regains focus), with a Sign In
+  button. It also names accounts this server does not offer (`unofferedProviders`) and
+  connectors this server's sign in cannot cover (`uncoveredConnectors`). Coverage comes from
+  `connectorAccess` in `/api/config`: the server judges it from the scopes each sign in asks for
+  (`ConnectorScopeAccess` in Semoss) and sends only whether each app can work, and only to a user
+  signed in to the platform, so the scopes never reach the page. `connectors/connector-access.ts`
+  reads it by each service's `accessKey`, and a service the sign in cannot cover cannot be
+  switched on. The session can also list an account whose token has lapsed, so a connector call
+  that fails with the login required error offers a sign in in its own card (`isSignInFailure`).
+- **The session's logins are one shared read.** Many views show sign in state, so
+  `getSessionLogins` joins a read in flight and reuses one younger than 30 seconds; a sign in or a
+  retry reads again. The login settings in `/api/config` are read once per page. Views may ask
+  whenever they mount or the window regains focus without calling the backend each time.
+- **Signing in always starts fresh.** The session keeps listing a provider whose token expired,
+  so `connectProvider` signs a listed provider out first and waits for it to be listed again,
+  checking the popup every second and the logins every five. It never signs out the session's own
+  login (`primaryLogin` in `/api/config`), which would end the session or change whose it is; for
+  that one it waits for the popup instead.
 
 ## Design-System Notes
 
 Follow the root [Design System & Styling](../../AGENTS.md#design-system--styling) rules and
-[DESIGN.md](../../DESIGN.md). The playground is an operational chat application, not a looser
-visual sandbox: new user-facing UI uses `@semoss/ui/next`, semantic tokens, the standard state
-set, and the responsive/accessibility definition of done.
+[DESIGN.md](../../DESIGN.md). The playground is an operational chat application, not a
+visual sandbox; use the [root skills](../../skills/README.md) for UI behavior and validation.
 
 ## Agent Guardrails
 
@@ -138,10 +277,8 @@ set, and the responsive/accessibility definition of done.
 
 ### When Adding Features
 
-1. Use workspace dependencies (`@semoss/sdk`, `@semoss/ui`, `@semoss/shared`)
-2. Add tests for new components in `__tests__/` or `*.test.tsx`
-3. Use the `@/` alias for imports within the package
-4. Follow existing patterns for page/component structure
+Follow the [React standard](../../skills/react-standard.skill.md) for new-feature layout,
+direct internal imports, state ownership, and tests. Preserve the room sidebar contracts above.
 
 ### Testing Changes
 
@@ -158,3 +295,20 @@ To connect to a local SEMOSS backend:
 1. Start the backend on port 9090 (or update `ENDPOINT` in `.env.local`)
 2. Run `pnpm dev`
 3. Access at http://localhost:5174
+
+
+### Agent forms and catalog
+
+The agent pages render the same shared components as the client: the create and edit pages
+put `AgentForm` under a sticky Cancel/Create or Save header, and the detail page renders
+`AgentDefinition`. Playground keeps no agent field or resource list of its own; change the
+shared component instead. The edit page seeds `AgentForm` once per agent, because the form
+reads its values only on mount: a refetch must not overwrite unsaved edits, and a different
+agent remounts it through `key`. The edit and detail pages turn the escaped line breaks
+`GetWorkspace` returns in the instructions back into newlines. A failed save shows inline and the form keeps
+its values for a retry. Creation reads
+`GetAgentFormOptions` for deployment catalogs and submits the full configuration to
+`ChatStore.createAgent`; a failed follow-up settings save still opens the created agent and
+shows its warning, avoiding duplicate creation. The agent catalog keeps the existing card
+actions and responsive grid while adding access filters and sorting. Card permissions use the
+backend's effective `permission`, including group grants.

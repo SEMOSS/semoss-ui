@@ -11,6 +11,7 @@ import {
 	STREAMING_PLACEHOLDER_ID,
 	TURN_CANCELLATION_PROMPT,
 } from "@/constants";
+import { isFolderToolCall } from "@/features/teamwork/tools/teamwork-tool-kind";
 import type { ToolStore } from "@/stores";
 import type { InputPixelMessage, ResponsePixelMessage } from "@/types";
 import { getToolEngineId } from "@/utility/mcp-utils";
@@ -131,13 +132,13 @@ export class ResponseMessageStore extends AbstractMessageStore {
 		// sync the tools — server tools (e.g. provider-side web_search) deliver
 		// both the call and result in the same response message, so we sync both
 		// part types here.
-		for (const part of message.parts) {
+		message.parts.forEach((part) => {
 			if (part.type === "TOOL_CALL") {
 				this.room.syncTool(part.toolCall.id, this, part);
 			} else if (part.type === "TOOL_RESULT") {
 				this.room.syncTool(part.toolResult.toolCallId, this, part);
 			}
-		}
+		});
 
 		// set tokens
 		this.tokens = message.tokens;
@@ -191,12 +192,7 @@ export class ResponseMessageStore extends AbstractMessageStore {
 				platform_generated: true,
 				modelId: room.model.engine_id,
 				dateCreated: new Date().toISOString(),
-				parts: [
-					{
-						type: "THINKING",
-						thinking: "",
-					},
-				],
+				parts: [],
 				tokens: 0,
 				ornaments: {
 					modelName:
@@ -234,8 +230,8 @@ export class ResponseMessageStore extends AbstractMessageStore {
 			}, "");
 
 			const media = inputMessage.parts.reduce((acc, part) => {
-				if (part.type === "MEDIA") {
-					acc.push(part.mediaInfo.fileLocation as string);
+				if (part.type === "MEDIA" && part.mediaInfo.fileLocation) {
+					acc.push(part.mediaInfo.fileLocation);
 				}
 
 				return acc;
@@ -249,18 +245,21 @@ export class ResponseMessageStore extends AbstractMessageStore {
 			// must replay the exact same params, so both the live AskPlayground
 			// call and the cancel-commit call are built from this single string —
 			// the cancel call just adds responseParts + hiddenMessage.
+			// The work folder's tools ride along in paramValues: the backend
+			// merges them with the room's own and the browser runs them.
 			const turnParams = `engine=["${room.model.engine_id}"],
 roomId=["${room.roomId}"],
 command=["<encode>${text}</encode>"],
 ${context ? `context=["<encode>${context}</encode>"],` : `context=[],`}
 ${media.length ? `media=${JSON.stringify(media)},` : "media=[],"}
 ${this.id ? `parentMessageId=["${this.id}"],` : ""}
-paramValues=[${JSON.stringify(
-				room.theme.featureFlags?.enableTemperature &&
-					room.options.temperature !== undefined
+paramValues=[${JSON.stringify({
+				...(room.theme.featureFlags?.enableTemperature &&
+				room.options.temperature !== undefined
 					? { temperature: room.options.temperature }
-					: {},
-			)}]`;
+					: {}),
+				...room.teamwork.chatParamValues,
+			})}]`;
 
 			// wait for the pixel to run with streaming
 			await room.runRoomPixelStreaming<
@@ -397,10 +396,6 @@ paramValues=[${JSON.stringify(
 				lastPart.text += part.text;
 				lastPart.uiText += part.uiText;
 			} else {
-				// delete any existing empty thinking part, as we have new text coming in
-				if (lastPart?.type === "THINKING" && !lastPart.thinking) {
-					this.parts.pop();
-				}
 				this.parts.push(part);
 			}
 		} else if (part.type === "THINKING") {
@@ -473,10 +468,12 @@ paramValues=[${JSON.stringify(
 
 		let pixelCommand: string;
 
+		const appName = this.room.theme.name || "Chat";
+		const fileName = `${appName} Response Export`;
 		if (format === "word") {
-			pixelCommand = `ToDocx(markdown=["<encode>${text}</encode>"], fileName="${this.room.roomId}");`;
+			pixelCommand = `ToDocx(markdown=["<encode>${text}</encode>"], fileName="${fileName}");`;
 		} else if (format === "pdf") {
-			pixelCommand = `ToPdf(markdown=["<encode>${text}</encode>"], fileName="${this.room.roomId}");`;
+			pixelCommand = `ToPdf(markdown=["<encode>${text}</encode>"], fileName="${fileName}");`;
 		} else {
 			throw new Error(`Unsupported format: ${format}`);
 		}
@@ -575,23 +572,34 @@ paramValues=[${JSON.stringify(
 	}
 
 	/**
+	 * Whether this response should fold up into the one before it instead
+	 * of rendering as its own block — see room-content.tsx. True once it
+	 * has tool calls and nothing else worth showing on its own.
+	 */
+	get shouldFoldUp() {
+		return (
+			this.hasTools &&
+			!this.parts.some(
+				(part) =>
+					(part.type === "TEXT" && part.text.length > 0) ||
+					(part.type === "THINKING" && part.thinking.length > 0) ||
+					part.type === "MEDIA" ||
+					part.type === "SUBAGENT",
+			)
+		);
+	}
+
+	/**
 	 * Check if there are any unfinished tools
 	 */
 	get hasUnfinishedTools() {
-		for (const part of this.parts) {
-			if (part.type === "TOOL_CALL") {
-				const tool = this.room.getTool(part.toolCall.id);
-				if (tool) {
-					if (
-						tool.status === "LOADING" ||
-						tool.status === "INITIAL"
-					) {
-						return true;
-					}
-				}
+		return this.parts.some((part) => {
+			if (part.type !== "TOOL_CALL") {
+				return false;
 			}
-		}
-		return false;
+			const tool = this.room.getTool(part.toolCall.id);
+			return tool?.status === "LOADING" || tool?.status === "INITIAL";
+		});
 	}
 
 	/**
@@ -607,20 +615,20 @@ paramValues=[${JSON.stringify(
 		// Find the tools that can be run
 		let numRunningTools: number = 0;
 		const toolsToRun: ToolStore[] = [];
-		for (const part of this.parts) {
-			if (part.type === "TOOL_CALL") {
-				const tool = this.room.getTool(part.toolCall.id);
-				if (
-					tool.json._meta?.SMSS_MCP_EXECUTION === MCP_EXECUTION_AUTO
-				) {
-					if (tool.status === "INITIAL") {
-						toolsToRun.push(tool);
-					} else if (tool.status === "LOADING") {
-						numRunningTools++;
-					}
-				}
+		this.parts.forEach((part) => {
+			if (part.type !== "TOOL_CALL") {
+				return;
 			}
-		}
+			const tool = this.room.getTool(part.toolCall.id);
+			if (tool.json._meta?.SMSS_MCP_EXECUTION !== MCP_EXECUTION_AUTO) {
+				return;
+			}
+			if (tool.status === "INITIAL") {
+				toolsToRun.push(tool);
+			} else if (tool.status === "LOADING") {
+				numRunningTools++;
+			}
+		});
 
 		// Check how many tools can be run. If toolLimit is false-y, then limit to 5
 		const toolLimit = this.room.theme.toolAutoExecutionLimit || 5;
@@ -642,6 +650,13 @@ paramValues=[${JSON.stringify(
 			tool.json._meta?.SMSS_MCP_EXECUTION !== MCP_EXECUTION_AUTO
 		) {
 			// skip
+			return;
+		}
+
+		// work folder tools run in the browser, against the room's folder, and
+		// record their own result
+		if (isFolderToolCall(tool.json)) {
+			await this.room.teamwork.runChatTool(tool);
 			return;
 		}
 

@@ -265,9 +265,10 @@ export const UpdateSMSS: React.FC<UpdateSMSSFormProps> = ({ type, id }) => {
 	return (
 		<div className="w-full overflow-hidden rounded-md border border-input bg-transparent dark:bg-input/30">
 			<div className="flex w-full flex-row items-center gap-1 border-input border-b bg-muted px-4 py-2 text-muted-foreground">
-				<Tooltip>
+				<Tooltip disableHoverableContent={false}>
 					<TooltipTrigger asChild>
 						<Button
+							aria-label={"Refresh"}
 							variant="ghost"
 							size="icon-sm"
 							onClick={() => getSMSS.refresh()}
@@ -278,7 +279,7 @@ export const UpdateSMSS: React.FC<UpdateSMSSFormProps> = ({ type, id }) => {
 					<TooltipContent>Refresh</TooltipContent>
 				</Tooltip>
 				<Label className="flex-1 truncate">SMSS Editor</Label>
-				<Tooltip>
+				<Tooltip disableHoverableContent={false}>
 					<TooltipTrigger asChild>
 						<Toggle
 							aria-label={
@@ -296,7 +297,7 @@ export const UpdateSMSS: React.FC<UpdateSMSSFormProps> = ({ type, id }) => {
 					</TooltipTrigger>
 					<TooltipContent>Word Wrap</TooltipContent>
 				</Tooltip>
-				<Tooltip>
+				<Tooltip disableHoverableContent={false}>
 					<TooltipTrigger asChild>
 						<Button
 							aria-label={
@@ -320,21 +321,36 @@ export const UpdateSMSS: React.FC<UpdateSMSSFormProps> = ({ type, id }) => {
 						{readOnly ? "Unlock" : "Lock"}
 					</TooltipContent>
 				</Tooltip>
-				<Tooltip>
+				<Tooltip disableHoverableContent={false}>
 					<TooltipTrigger asChild>
-						<Button
-							aria-label={"Update SMSS Properties"}
-							disabled={readOnly || getSMSS.data === value}
-							size="sm"
-							onClick={() => {
-								updateSMSSProperties();
-							}}
-							data-test-id="updateSMSS-editSNSS-btn"
+						<span
+							className="inline-flex"
+							tabIndex={
+								readOnly || getSMSS.data === value
+									? 0
+									: undefined
+							}
 						>
-							Save
-						</Button>
+							<Button
+								aria-label={"Update SMSS Properties"}
+								disabled={readOnly || getSMSS.data === value}
+								size="sm"
+								onClick={() => {
+									updateSMSSProperties();
+								}}
+								data-test-id="updateSMSS-editSNSS-btn"
+							>
+								Save
+							</Button>
+						</span>
 					</TooltipTrigger>
-					<TooltipContent>Save</TooltipContent>
+					<TooltipContent>
+						{readOnly || getSMSS.data === value
+							? readOnly
+								? "You do not have permission to update these properties"
+								: "No changes to save"
+							: "Save"}
+					</TooltipContent>
 				</Tooltip>
 			</div>
 

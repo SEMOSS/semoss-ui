@@ -21,7 +21,14 @@
 			"SUMMARY": "Sustituye los mensajes antiguos por un resumen generado por IA. Preserva el contexto general de la conversación y libera espacio de tokens.",
 			"TOOL_PRUNE": "Elimina los resultados detallados de las llamadas a herramientas del historial de la conversación. Ideal cuando las salidas de las herramientas son extensas y los detalles ya no son necesarios.",
 			"AUTO": "Seleccionará el resumen o la reducción de herramientas según la conversación actual."
-		}
+		},
+		"panelTitle": "Configuración",
+		"noKnowledge": "No hay conocimiento seleccionado.",
+		"noTools": "No hay herramientas seleccionadas.",
+		"fromRoom": "De la sala",
+		"inheritedSelection": "Las selecciones heredadas no se pueden quitar de este chat.",
+		"removeSelection": "Quitar {{name}}",
+		"agentLoadError": "No se pudo cargar el agente. Inténtalo de nuevo o selecciona otro."
 	},
 	"form": {
 		"modelLabel": "Modelo",
@@ -32,9 +39,12 @@
 		"temperatureLabel": "Temperatura"
 	},
 	"modes": {
-		"ask": "Modo Chat",
-		"agent": "Modo Arnés de agente",
-		"exitAgent": "Salir del modo arnés de agente"
+		"ask": "Chat",
+		"agent": "Agente",
+		"exitAgent": "Cambiar a chat",
+		"selectedAgent": "Agente: {{name}}",
+		"defaultAgent": "Agente predeterminado",
+		"noAgent": "Sin agente"
 	},
 	"workspace": {
 		"publishTooltip": "Publicar como agente",
@@ -55,7 +65,7 @@
 		"ariaPlaceholder": "Ingresa texto",
 		"thinking": "Pensando...",
 		"menuPrompt": "¿Cómo puedo ayudarte hoy?",
-		"openSettings": "Agregar archivos, agentes y más",
+		"openSettings": "Añadir a tu chat",
 		"recordLabel": "Grabar al modelo",
 		"stopRecording": "Detener grabación",
 		"record": "Grabar",
@@ -67,14 +77,18 @@
 		"errorProcessing": "Error al procesar el chat",
 		"stopLabel": "Detener la respuesta",
 		"stopTooltip": "Detener",
-		"stoppingTooltip": "Deteniendo"
+		"stoppingTooltip": "Deteniendo",
+		"recordUnavailable": "El dictado no está disponible en este navegador",
+		"historyHint": "Mensaje anterior {{index}} de {{total}} · ↑/↓ explorar · Esc para restaurar el borrador",
+		"draftRestored": "Borrador restaurado",
+		"removeFile": "Quitar {{name}}"
 	},
 	"content": {
 		"scrollToTop": "Ir al inicio",
 		"scrollToBottom": "Ir al final"
 	},
 	"inlineTool": {
-		"openInSidebar": "Abrir en barra lateral",
+		"openInSidebar": "Abrir en el espacio de trabajo",
 		"minimize": "Minimizar",
 		"maximize": "Maximizar",
 		"close": "Cerrar"
@@ -86,10 +100,10 @@
 		"copyFailed": "Error al copiar al portapapeles"
 	},
 	"menuToolbox": {
-		"addToolbox": "Agregar cajas de herramientas"
+		"addToolbox": "Añadir herramientas"
 	},
 	"menuKnowledge": {
-		"addKnowledge": "Agregar conocimiento"
+		"addKnowledge": "Añadir conocimiento"
 	},
 	"menuWorkspace": {
 		"selectAgent": "Seleccionar agente",
@@ -97,15 +111,16 @@
 		"notFound": "No encontrado"
 	},
 	"menuUpload": {
-		"attachDocument": "Agregar Documentos"
+		"attachDocument": "Adjuntar archivos"
 	},
 	"menuFileExplorer": {
-		"name": "Explorador de Archivos",
-		"open": "Abrir Explorador de Archivos",
-		"close": "Cerrar Explorador de Archivos"
+		"name": "Archivos del chat",
+		"open": "Mostrar archivos del chat",
+		"close": "Ocultar archivos del chat"
 	},
 	"errors": {
-		"createRoom": "Ocurrió un error al crear la sala. Error: {{message}}"
+		"createRoom": "Ocurrió un error al crear la sala. Error: {{message}}",
+		"fileInUse": "El/los archivo(s) cargado(s) está(n) siendo usados por otro programa. Cierre el programa y vuelva a cargarlos en un nuevo chat."
 	},
 	"contextWindow": {
 		"descriptionLow": "Todas las conversaciones tienen un límite. Las conversaciones muy largas eventualmente harán que el modelo olvide mensajes anteriores.",
@@ -121,5 +136,45 @@
 		"searchPlaceholder": "Buscar conocimiento y cajas de herramientas",
 		"noResults": "No se encontraron elementos coincidentes",
 		"noItemsAvailable": "No hay conocimiento o cajas de herramientas disponibles"
+	},
+	"studio": {
+		"views": "Vistas de la conversación",
+		"chat": "Chat",
+		"openWorkArea": "Abrir espacio de trabajo",
+		"workArea": "Espacio de trabajo",
+		"toolsCount": "Herramientas, {{count}} seleccionadas",
+		"tools": "Herramientas",
+		"toolsLocked": "No se pueden cambiar las herramientas mientras se genera una respuesta.",
+		"toolsHint": "Las selecciones se aplican a tu próximo mensaje.",
+		"toolsTitle": "Herramientas y conocimiento",
+		"toolsDescription": "Elige las herramientas y el conocimiento disponibles para esta conversación.",
+		"moreActions": "Más acciones",
+		"prompts": "Prompts",
+		"removeFile": "Eliminar {{name}}",
+		"thinking": "Razonamiento",
+		"errorTitle": "Se ha producido un error",
+		"errorDescription": "Actualiza la página o vuelve al inicio e inténtalo de nuevo.",
+		"backHome": "Volver al inicio",
+		"export": "Exportar",
+		"refresh": "Actualizar",
+		"exportCsv": "Exportar como CSV",
+		"exportPdf": "Exportar como PDF",
+		"closeWorkspace": "Cerrar espacio de trabajo",
+		"preparingWorkspace": "Preparando espacio de trabajo…",
+		"activityLog": "Registro de actividad",
+		"prepareError": "No se pudo preparar el espacio de trabajo. Se conserva tu borrador.",
+		"retry": "Intentar de nuevo",
+		"viewActivityLog": "Ver registro de actividad"
+	},
+	"optimizer": {
+		"optimize": "Optimizar mensaje",
+		"revert": "Volver al mensaje anterior",
+		"optimizing": "Optimizando…",
+		"success": "¡Mensaje optimizado!",
+		"noModel": "Selecciona un modelo para optimizar el mensaje",
+		"invalidResponse": "No se recibió ningún mensaje optimizado",
+		"failed": "No se pudo optimizar el mensaje",
+		"tooLarge": "El mensaje es demasiado largo para optimizarlo. Acórtalo primero.",
+		"noPermission": "No tienes permiso para usar este modelo"
 	}
 }

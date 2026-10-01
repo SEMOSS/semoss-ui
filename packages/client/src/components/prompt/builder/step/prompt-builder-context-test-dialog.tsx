@@ -7,7 +7,7 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from "@semoss/ui/next";
-import { useRootStore } from "@/hooks";
+import { useSession } from "@/hooks";
 
 export const PromptBuilderContextTestDialog = (props: {
 	llm: string;
@@ -15,13 +15,13 @@ export const PromptBuilderContextTestDialog = (props: {
 	open: boolean;
 	close: () => void;
 }) => {
-	const { monolithStore } = useRootStore();
+	const runPixel = useSession((state) => state.runPixel);
 	const [loading, setLoading] = useState(false);
 	const [response, setResponse] = useState("");
 
 	const ask = async () => {
 		setLoading(true);
-		const LLMresponse = await monolithStore.runQuery(
+		const LLMresponse = await runPixel(
 			`LLM(engine="${props.llm}", command=["<encode>${props.context}</encode>"])`,
 		);
 		const { output: LLMOutput } = LLMresponse.pixelReturn[0];
@@ -39,9 +39,11 @@ export const PromptBuilderContextTestDialog = (props: {
 			open={props.open}
 			onOpenChange={(open) => !open && props.close()}
 		>
-			<DialogContent className="max-w-2xl">
+			<DialogContent aria-describedby={undefined} className="max-w-2xl">
 				<DialogHeader>
-					<DialogTitle>Test Prompt</DialogTitle>
+					<DialogTitle className="font-medium text-base leading-6">
+						Test Prompt
+					</DialogTitle>
 				</DialogHeader>
 				<div className="flex h-[40vh] w-full items-center justify-center">
 					{loading ? (

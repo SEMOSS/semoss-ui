@@ -1,9 +1,15 @@
-import { X } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import type React from "react";
 import { useEffect, useState } from "react";
-import { Button } from "@semoss/ui/next";
-import { useRootStore } from "@/hooks";
+import {
+	Button,
+	Dialog,
+	DialogContent,
+	DialogFooter,
+	DialogHeader,
+	DialogTitle,
+} from "@semoss/ui/next";
+import { useConfig } from "@/hooks";
 import { PrivacyPreferenceCenterModal } from "./privacy-preference-center-modal";
 
 interface CookieWrapperProps {
@@ -15,7 +21,9 @@ const cookieName = `smss-optional-cookie`;
 
 export const CookieWrapper = observer((props: CookieWrapperProps) => {
 	const { children } = props;
-	const { configStore } = useRootStore();
+	const cookiePolicyBannerReact = useConfig(
+		(state) => state.theme.cookiePolicyBannerReact,
+	);
 
 	const [visible, setVisible] = useState(false);
 	const [viewCookiePolicy, setViewCookiePolicy] = useState(false);
@@ -27,11 +35,8 @@ export const CookieWrapper = observer((props: CookieWrapperProps) => {
 
 		if (!permissionGranted) {
 			try {
-				const themeCookieBanner =
-					configStore.theme.cookiePolicyBannerReact;
-
-				if (themeCookieBanner) {
-					setCookieBanner(themeCookieBanner);
+				if (cookiePolicyBannerReact) {
+					setCookieBanner(cookiePolicyBannerReact);
 					setVisible(true);
 				}
 			} catch {
@@ -42,7 +47,7 @@ export const CookieWrapper = observer((props: CookieWrapperProps) => {
 		return () => {
 			setVisible(false);
 		};
-	}, [configStore.theme.cookiePolicyBannerReact]);
+	}, [cookiePolicyBannerReact]);
 
 	const acceptCookies = () => {
 		localStorage.setItem(cookieName, JSON.stringify(true));
@@ -54,48 +59,38 @@ export const CookieWrapper = observer((props: CookieWrapperProps) => {
 	return (
 		<>
 			{children}
-			{visible && !viewCookiePolicy && (
-				<>
-					<div className="fixed inset-0 z-[999] bg-black/50" />
-					<div className="fixed bottom-8 left-[calc(50%-250px)] z-[1000] w-[500px] rounded-md border border-border bg-background p-6">
-						<div className="mb-3 flex flex-row items-center justify-between gap-2">
-							<h6 className="font-bold text-base text-foreground">
-								Here&apos;s how we use cookies
-							</h6>
-
-							<Button
-								variant="ghost"
-								size="icon-sm"
-								onClick={acceptCookies}
-							>
-								<X className="size-4" />
-							</Button>
-						</div>
-
-						<div className="flex justify-center">
-							{/* biome-ignore lint/correctness/useUniqueElementIds: IDs are scoped to component instances */}
-							<div
-								className="w-full [&_a:hover]:opacity-80 [&_a]:text-primary [&_a]:underline [&_a]:underline-offset-4"
-								id="cookie-policy-banner"
-								// biome-ignore lint/security/noDangerouslySetInnerHtml: third-party cookie script content
-								dangerouslySetInnerHTML={{
-									__html: cookieBanner,
-								}}
-							/>
-						</div>
-						<div className="flex flex-row justify-center">
-							<Button
-								variant="ghost"
-								onClick={() => {
-									setViewCookiePolicy(true);
-								}}
-							>
-								View cookies
-							</Button>
-						</div>
-					</div>
-				</>
-			)}
+			<Dialog open={visible && !viewCookiePolicy}>
+				<DialogContent
+					showCloseButton={false}
+					aria-describedby="cookie-policy-banner"
+					onEscapeKeyDown={(event) => event.preventDefault()}
+					onPointerDownOutside={(event) => event.preventDefault()}
+				>
+					<DialogHeader>
+						<DialogTitle className="font-medium text-base leading-6">
+							Here&apos;s how we use cookies
+						</DialogTitle>
+					</DialogHeader>
+					{/* biome-ignore lint/correctness/useUniqueElementIds: single application cookie banner */}
+					<div
+						className="text-sm [&_a:hover]:opacity-80 [&_a]:text-primary [&_a]:underline [&_a]:underline-offset-4"
+						id="cookie-policy-banner"
+						// biome-ignore lint/security/noDangerouslySetInnerHtml: third-party cookie script content
+						dangerouslySetInnerHTML={{ __html: cookieBanner }}
+					/>
+					<DialogFooter>
+						<Button
+							variant="outline"
+							onClick={() => setViewCookiePolicy(true)}
+						>
+							View cookies
+						</Button>
+						<Button onClick={acceptCookies}>
+							Accept and close
+						</Button>
+					</DialogFooter>
+				</DialogContent>
+			</Dialog>
 
 			<PrivacyPreferenceCenterModal
 				isOpen={viewCookiePolicy}

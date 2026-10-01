@@ -26,6 +26,8 @@ import { EngineSubtypeIcon } from "../engine-subtype-icon";
 // ============================================================================
 
 interface EngineSelectProps {
+	/** Associates the trigger with a field label. */
+	id?: string;
 	/** CSS classes for styling customization */
 	className?: string;
 
@@ -55,6 +57,9 @@ interface EngineSelectProps {
 
 	/** Show the engine subtype icon next to each option. Defaults to true. */
 	showEngineIcon?: boolean;
+
+	/** Optional icon rendered before the selected name in the trigger. */
+	triggerIcon?: React.ReactNode;
 }
 
 // ============================================================================
@@ -72,6 +77,7 @@ interface EngineSelectProps {
  * - Displays engine name and description
  */
 export const EngineSelect = ({
+	id,
 	className,
 	disabled,
 	name,
@@ -82,6 +88,7 @@ export const EngineSelect = ({
 	popoverContentProps = {},
 	showEngineId,
 	showEngineIcon = true,
+	triggerIcon,
 }: EngineSelectProps) => {
 	// ========================================================================
 	// State & Hooks
@@ -187,9 +194,11 @@ export const EngineSelect = ({
 		<Popover open={open && !disabled} onOpenChange={setOpen}>
 			<PopoverTrigger asChild>
 				<Button
+					id={id}
+					type="button"
 					variant="outline"
 					role="combobox"
-					aria-expanded={open}
+					aria-expanded={open && !disabled}
 					disabled={disabled}
 					className={cn(
 						"w-full min-w-0 justify-start overflow-hidden border-input bg-transparent px-3 py-2",
@@ -197,6 +206,7 @@ export const EngineSelect = ({
 					)}
 				>
 					<div className="flex w-full min-w-0 items-center gap-2 overflow-hidden">
+						{triggerIcon}
 						<span className="min-w-0 truncate">
 							{name || "Select"}
 						</span>

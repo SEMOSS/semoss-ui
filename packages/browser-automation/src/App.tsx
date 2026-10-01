@@ -60,7 +60,7 @@ import {
 	listPlaywrightRoomRecordings,
 	listRecordingMetadataModels,
 	resolvePlaywrightRoomRecording,
-	sendMcpResponseToPlayground,
+	sendMcpResponseToRoom,
 	subscribeToMcpToolContext,
 } from "./semoss/client";
 import { runPixel } from "./semoss/pixel";
@@ -822,7 +822,7 @@ export default function App() {
 				) {
 					autoPlaybackErrorSentRef.current = true;
 					try {
-						sendMcpResponseToPlayground(
+						sendMcpResponseToRoom(
 							{
 								played: false,
 								error: message,
@@ -919,7 +919,7 @@ export default function App() {
 			if (!autoPlaybackErrorSentRef.current && toolContextRef.current) {
 				autoPlaybackErrorSentRef.current = true;
 				try {
-					sendMcpResponseToPlayground(
+					sendMcpResponseToRoom(
 						{ played: false, error: message },
 						"error",
 						toolContextRef.current.parameters,
@@ -1639,7 +1639,7 @@ export default function App() {
 			await closeBrowserSession();
 			browserClosed = true;
 
-			sendMcpResponseToPlayground(
+			sendMcpResponseToRoom(
 				{
 					saved: true,
 					destination: "room",
@@ -1684,7 +1684,7 @@ export default function App() {
 					: "Failed to return recording to Playground";
 			setSnackError(message);
 			try {
-				sendMcpResponseToPlayground(
+				sendMcpResponseToRoom(
 					{ saved: false, destination: "room", error: message },
 					"error",
 					toolContext?.parameters ?? {},
@@ -1760,7 +1760,7 @@ export default function App() {
 					setPlaybackCloseCountdown(PLAYBACK_CLOSE_SECONDS);
 				}
 
-				sendMcpResponseToPlayground(
+				sendMcpResponseToRoom(
 					{
 						played: result.completed,
 						status: result.completed ? "completed" : "paused",
@@ -1781,7 +1781,7 @@ export default function App() {
 						: "Failed to play recording";
 				setSnackError(message);
 				try {
-					sendMcpResponseToPlayground(
+					sendMcpResponseToRoom(
 						{ played: false, error: message },
 						"error",
 						toolContext.parameters,

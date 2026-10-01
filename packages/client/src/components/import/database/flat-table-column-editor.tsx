@@ -31,7 +31,7 @@ import {
 	TooltipProvider,
 	TooltipTrigger,
 } from "@semoss/ui/next";
-import ColumnEditModal from "./column-edit-modal";
+import { ColumnEditModal } from "./column-edit-modal";
 
 interface ParsedResult {
 	headers: string[];
@@ -54,7 +54,7 @@ interface ColumnMetadata {
 	logicalName?: string[];
 }
 
-const DataSelection = ({
+export const DataSelection = ({
 	files,
 	fileName,
 	tableName,
@@ -396,7 +396,11 @@ const DataSelection = ({
 														>
 															<div className="flex items-center justify-center gap-1">
 																<TooltipProvider>
-																	<Tooltip>
+																	<Tooltip
+																		disableHoverableContent={
+																			false
+																		}
+																	>
 																		<TooltipTrigger
 																			asChild
 																		>
@@ -544,5 +548,3 @@ const DataSelection = ({
 		</div>
 	);
 };
-
-export default DataSelection;

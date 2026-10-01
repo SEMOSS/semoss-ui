@@ -1959,21 +1959,6 @@ export class StateStore {
 				}
 			}
 		});
-
-		// always have at least one cell
-		if (q.list.length === 0) {
-			this.newCell(
-				queryId,
-				{
-					parameters: {
-						code: "",
-						type: "py",
-					},
-					widget: "code",
-				} as Omit<CellStateConfig, "id">,
-				"",
-			);
-		}
 	};
 
 	/**

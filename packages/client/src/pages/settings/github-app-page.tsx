@@ -12,7 +12,7 @@ import {
 } from "lucide-react";
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
-import { Navigate, useSearchParams } from "react-router-dom";
+import { Navigate, useSearchParams } from "react-router";
 import { useTranslation } from "@semoss/i18n";
 import { Env } from "@semoss/sdk/react";
 import {
@@ -38,7 +38,7 @@ import {
 	getAllProjectLinks,
 	repoHtmlUrl,
 } from "@/api/github";
-import { useRootStore } from "@/hooks";
+import { useSession } from "@/hooks";
 import { useNavigate } from "@/hooks/useNavigate";
 
 interface GitHubManifestApp {
@@ -72,7 +72,7 @@ const CREATE_FORM_DEFAULTS: CreateGitHubAppFormValues = {
 };
 
 export const GitHubAppPage = () => {
-	const { configStore } = useRootStore();
+	const isAdmin = useSession((state) => state.user.admin);
 	const navigate = useNavigate();
 	const [searchParams, setSearchParams] = useSearchParams();
 	const { t } = useTranslation("githubApp");
@@ -102,7 +102,6 @@ export const GitHubAppPage = () => {
 		defaultValues: CREATE_FORM_DEFAULTS,
 	});
 	const createUnder = watch("createUnder");
-	const isAdmin = configStore.store.user.admin === true;
 
 	const formatDate = (rawDate?: string) => {
 		if (!rawDate) {
@@ -565,7 +564,9 @@ export const GitHubAppPage = () => {
 			>
 				<DialogContent className="sm:max-w-lg">
 					<DialogHeader>
-						<DialogTitle>{t("dialog.title")}</DialogTitle>
+						<DialogTitle className="font-medium text-base leading-6">
+							{t("dialog.title")}
+						</DialogTitle>
 						<DialogDescription>
 							{t("dialog.description")}
 						</DialogDescription>
@@ -764,7 +765,9 @@ export const GitHubAppPage = () => {
 			>
 				<DialogContent className="sm:max-w-lg">
 					<DialogHeader>
-						<DialogTitle>{t("deleteDialog.title")}</DialogTitle>
+						<DialogTitle className="font-medium text-base leading-6">
+							{t("deleteDialog.title")}
+						</DialogTitle>
 						<DialogDescription>
 							{t("deleteDialog.description", {
 								appName:

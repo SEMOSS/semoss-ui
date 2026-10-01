@@ -1,11 +1,9 @@
 import { observer } from "mobx-react-lite";
 import { useEffect } from "react";
-import { Navigate, useLocation } from "react-router-dom";
+import { Navigate, useLocation } from "react-router";
 import { useInsight } from "@semoss/sdk/react";
 import { LoginForm } from "@semoss/shared";
 import { useTheme } from "@semoss/ui/next";
-import loginImage from "@/assets/img/login.svg";
-import loginImageDark from "@/assets/img/login-darkmode.png";
 import { AppLogo } from "@/components";
 import { useRoot } from "@/hooks";
 import { useThemeTitle } from "@/hooks/use-theme-title";
@@ -44,12 +42,12 @@ export const LoginPage = observer(() => {
 	}
 
 	// handling the login image source based on theme
-	const src = isDark
-		? root.theme.images.loginDark || loginImageDark
-		: root.theme.images.login || loginImage;
+	const src = isDark ? root.theme.images.loginDark : root.theme.images.login;
 
 	return (
-		<div className="grid min-h-svh lg:grid-cols-2">
+		<div
+			className={`grid min-h-svh bg-muted/30 ${src ? "lg:grid-cols-2" : ""}`}
+		>
 			<div className="flex flex-col gap-4 p-6 md:p-10">
 				<div className="flex justify-center gap-2 md:justify-start">
 					<div className="flex items-center gap-2 font-medium">
@@ -57,18 +55,20 @@ export const LoginPage = observer(() => {
 					</div>
 				</div>
 				<div className="flex flex-1 items-center justify-center">
-					<div className="w-full max-w-xs">
+					<div className="w-full max-w-sm rounded-xl border bg-card p-6 shadow-sm">
 						<LoginForm />
 					</div>
 				</div>
 			</div>
-			<div className="relative hidden bg-muted lg:block">
-				<img
-					src={src}
-					alt="Background"
-					className="absolute inset-0 h-full w-full select-none object-cover"
-				/>
-			</div>
+			{src && (
+				<div className="relative hidden border-s bg-sidebar lg:block">
+					<img
+						src={src}
+						alt=""
+						className="absolute inset-0 h-full w-full select-none object-cover"
+					/>
+				</div>
+			)}
 		</div>
 	);
 });

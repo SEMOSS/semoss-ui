@@ -27,8 +27,8 @@ import {
 	TooltipTrigger,
 	toast,
 } from "@semoss/ui/next";
+import { copyTextToClipboard } from "@semoss/utility";
 import type { RoomStore } from "@/stores";
-import { copyToClipboard } from "@/utility/clipboard";
 import { BlockHeader } from "./block-header";
 import { SaveFileDialog } from "./save-file-dialog";
 
@@ -173,14 +173,13 @@ export const NotebookPreviewBlock = ({
 								disabled={!content}
 								aria-label="Copy notebook"
 								onClick={() =>
-									void copyToClipboard(
-										content,
-										() =>
+									void copyTextToClipboard(content, {
+										onSuccess: () =>
 											toast.success(
 												t("notifications.copySuccess"),
 											),
-										(msg) => toast.error(msg),
-									)
+										onError: (msg) => toast.error(msg),
+									})
 								}
 							>
 								<CopyIcon className="size-3" />

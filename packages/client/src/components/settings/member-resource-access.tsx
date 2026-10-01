@@ -356,6 +356,8 @@ export const MemberResourceAccess = ({
 			/>
 		) : (
 			<AppCatalogAvatar
+				mode={isInsight ? "initials" : "image"}
+				projectId={isInsight ? undefined : resource.id}
 				name={resource.name || resource.id || ""}
 				className="size-8 rounded-md text-xs"
 			/>

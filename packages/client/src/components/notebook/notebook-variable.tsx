@@ -1,4 +1,11 @@
-import { Copy, MoreVertical, Pencil, Sparkles, Trash2 } from "lucide-react";
+import {
+	Copy,
+	Eye,
+	MoreVertical,
+	Pencil,
+	Sparkles,
+	Trash2,
+} from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useState } from "react";
 import { ActionMessages, useBlocks, type Variable } from "@semoss/renderer";
@@ -13,6 +20,9 @@ import {
 	DropdownMenuContent,
 	DropdownMenuItem,
 	DropdownMenuTrigger,
+	Popover,
+	PopoverContent,
+	PopoverTrigger,
 	Tooltip,
 	TooltipContent,
 	TooltipTrigger,
@@ -227,14 +237,16 @@ export const NotebookVariable = observer((props: NotebookTokenProps) => {
 		<>
 			<li
 				key={id}
-				className="group/var flex items-center justify-between py-1 pr-3 pl-6 focus-within:bg-accent/40 hover:bg-accent/40"
+				className="group/var mx-1 flex min-h-7 items-center justify-between gap-2 rounded-md py-1 pr-2 pl-6 transition-colors focus-within:bg-muted hover:bg-muted"
 			>
 				{/* Left: variable info */}
-				<Tooltip delayDuration={500}>
+				<Tooltip disableHoverableContent={false} delayDuration={500}>
 					<TooltipTrigger asChild>
-						<button
+						<Button
+							variant="ghost"
+							size="sm"
 							type="button"
-							className="flex min-w-0 flex-1 cursor-pointer items-center gap-2 text-left"
+							className="h-auto min-w-0 flex-1 justify-start gap-2 p-0 text-left hover:bg-transparent"
 							onClick={() => {
 								setIsRenameDialogOpen(true);
 							}}
@@ -245,59 +257,96 @@ export const NotebookVariable = observer((props: NotebookTokenProps) => {
 								engines={engines}
 								className="size-4"
 							/>
-							<span className="block min-w-0 flex-shrink overflow-hidden text-ellipsis whitespace-nowrap font-normal text-[14px] text-foreground leading-[20px]">
+							<span className="block min-w-0 flex-shrink truncate font-normal text-foreground text-sm">
 								{id}
 							</span>
 							{constantValueDisplay !== null && (
 								<span
-									className="block min-w-0 flex-shrink-[2] overflow-hidden text-ellipsis whitespace-nowrap font-mono text-[12px] text-muted-foreground"
+									className="block min-w-0 flex-shrink-[2] truncate font-mono text-muted-foreground text-xs"
 									title={constantValueDisplay}
 								>
 									= {constantValueDisplay}
 								</span>
 							)}
-						</button>
+						</Button>
 					</TooltipTrigger>
-					<TooltipContent
-						side="right"
-						sideOffset={8}
-						arrow={false}
-						className="bg-popover p-0 text-popover-foreground shadow-lg"
-					>
-						<VariablePreview
-							variable={variable}
-							id={id}
-							engines={engines}
-						/>
-					</TooltipContent>
+					<TooltipContent>{`Rename variable ${id}`}</TooltipContent>
 				</Tooltip>
 
 				{/* Right: actions (hidden until hover/focus) */}
 				<div
-					className="flex shrink-0 items-center opacity-0 transition-opacity group-focus-within/var:opacity-100 group-hover/var:opacity-100 data-[menu-open=true]:opacity-100"
+					className="flex shrink-0 items-center transition-opacity group-focus-within/var:opacity-100 group-hover/var:opacity-100 data-[menu-open=true]:opacity-100 [@media(hover:hover)]:opacity-0"
 					data-menu-open={isMenuOpen}
 				>
-					<button
-						type="button"
-						className="flex h-7 w-7 items-center justify-center text-muted-foreground hover:text-foreground"
-						onClick={() => {
-							copyAlias(id);
-						}}
-						data-testid={"notebook-variable-copy-btn"}
-					>
-						<Copy className="size-3.5" />
-					</button>
-					<DropdownMenu onOpenChange={setIsMenuOpen}>
-						<DropdownMenuTrigger asChild>
-							<button
+					<Popover>
+						<Tooltip disableHoverableContent={false}>
+							<TooltipTrigger asChild>
+								<PopoverTrigger asChild>
+									<Button
+										variant="ghost"
+										size="icon-sm"
+										className="size-7"
+										aria-label={`Preview variable ${id}`}
+									>
+										<Eye aria-hidden className="size-3.5" />
+									</Button>
+								</PopoverTrigger>
+							</TooltipTrigger>
+							<TooltipContent>Preview variable</TooltipContent>
+						</Tooltip>
+						<PopoverContent
+							side="right"
+							align="start"
+							className="w-auto max-w-[calc(100vw-2rem)] overflow-auto p-0"
+							aria-label={`Preview variable ${id}`}
+						>
+							<VariablePreview
+								variable={variable}
+								id={id}
+								engines={engines}
+							/>
+						</PopoverContent>
+					</Popover>
+					<Tooltip disableHoverableContent={false}>
+						<TooltipTrigger asChild>
+							<Button
 								type="button"
-								title="Open Menu"
-								className="flex h-7 w-7 items-center justify-center text-muted-foreground hover:text-foreground"
-								data-testid={"notebook-variable-more-btn"}
+								variant="ghost"
+								size="icon-sm"
+								className="size-7 text-muted-foreground hover:text-foreground"
+								aria-label={`Copy variable ${id}`}
+								onClick={() => copyAlias(id)}
+								data-testid="notebook-variable-copy-btn"
 							>
-								<MoreVertical className="size-3.5" />
-							</button>
-						</DropdownMenuTrigger>
+								<Copy aria-hidden className="size-3.5" />
+							</Button>
+						</TooltipTrigger>
+						<TooltipContent>Copy variable</TooltipContent>
+					</Tooltip>
+
+					<DropdownMenu onOpenChange={setIsMenuOpen}>
+						<Tooltip disableHoverableContent={false}>
+							<TooltipTrigger asChild>
+								<DropdownMenuTrigger asChild>
+									<Button
+										variant="ghost"
+										size="icon-sm"
+										aria-label={`Actions for variable ${id}`}
+										type="button"
+										className="flex h-7 w-7 items-center justify-center text-muted-foreground hover:text-foreground"
+										data-testid={
+											"notebook-variable-more-btn"
+										}
+									>
+										<MoreVertical className="size-3.5" />
+									</Button>
+								</DropdownMenuTrigger>
+							</TooltipTrigger>
+							<TooltipContent
+								sideOffset={4}
+								className="max-w-xs break-words"
+							>{`Actions for variable ${id}`}</TooltipContent>
+						</Tooltip>
 						<DropdownMenuContent
 							align="end"
 							data-testid={"notebook-variable-menu"}
@@ -352,9 +401,11 @@ export const NotebookVariable = observer((props: NotebookTokenProps) => {
 				open={isDeleteModalOpen}
 				onOpenChange={(o) => !o && setIsDeleteModalOpen(false)}
 			>
-				<DialogContent>
+				<DialogContent aria-describedby={undefined}>
 					<DialogHeader>
-						<DialogTitle>Delete Selected Item?</DialogTitle>
+						<DialogTitle className="font-medium text-base leading-6">
+							Delete Selected Item?
+						</DialogTitle>
 					</DialogHeader>
 					<p className="text-sm">
 						You will permanently remove the item from your
@@ -395,9 +446,9 @@ export const NotebookVariable = observer((props: NotebookTokenProps) => {
 				open={isAutoRenameModalOpen}
 				onOpenChange={(o) => !o && setIsAutoRenameModalOpen(false)}
 			>
-				<DialogContent>
+				<DialogContent aria-describedby={undefined}>
 					<DialogHeader>
-						<DialogTitle>
+						<DialogTitle className="font-medium text-base leading-6">
 							Suggested Variable Name Change
 						</DialogTitle>
 					</DialogHeader>

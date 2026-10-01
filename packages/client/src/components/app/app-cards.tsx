@@ -11,6 +11,7 @@ export const ProjectTileCard = (props) => {
 		>
 			<div className="flex items-center gap-2 px-4 pt-4 pb-2">
 				<AppCatalogAvatar
+					projectId={id}
 					name={name}
 					className="size-8 shrink-0 rounded text-xs"
 				/>

@@ -22,9 +22,9 @@ the other web apps in this repo.
 - **File tree** — `<FileExplorer>` from `@semoss/shared` (the same one
   the client uses). Honors INSIGHT / APP / USER modes via the shared
   file reactors (`Browse*Assets`, `Get*Assets`, `Save*Assets`, etc.).
-- **File editor** — `<FileEditor>` from `@semoss/shared` (Monaco-based,
-  same as the client's engine workspace). Tabs remember the scope they
-  were opened in.
+- **File editor** — `CodeEditor` from `@semoss/ui/next` (Monaco-based) driven
+  by `useFilePanel`/`useFileBuffer` from `@semoss/panels`, the same hooks the
+  client's workbench panels use. Tabs remember the scope they were opened in.
 - **REPL** — `<TerminalConsole />`, Ace-based input editor with a Pixel
   reactor typeahead populated from `help()`. Async pixel exec via
   `runPixelAsync` + `console` polling so stdout/stderr streams in.
@@ -67,7 +67,7 @@ src/
         ├── terminal-console.tsx   # Ace REPL editor + help() typeahead + async exec
         └── transcript-row.tsx     # adapter → <CellOutputBlock>
     └── terminal-file/
-        └── terminal-file.tsx      # tabs + <FileEditor> (Monaco from @semoss/shared) + Run button
+        └── terminal-file.tsx      # tabs + <CodeEditor> (Monaco from @semoss/ui) + Run button
 ```
 
 ## Run locally

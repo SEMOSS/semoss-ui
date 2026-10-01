@@ -12,6 +12,7 @@ export const playgroundResources: LazyResources = {
 		"prompts",
 		"auditlog",
 		"members",
+		"agent",
 		"mcp",
 		"chat",
 		"knowledge",
@@ -21,6 +22,8 @@ export const playgroundResources: LazyResources = {
 		"tour",
 		"workspace",
 		"mobile",
+		"teamwork",
+		"connectors",
 	],
 	load: {
 		// core
@@ -31,6 +34,9 @@ export const playgroundResources: LazyResources = {
 		prompts: (l) => import(`./locales/${l}/shared/prompts.json`),
 		auditlog: (l) => import(`./locales/${l}/shared/auditlog.json`),
 		members: (l) => import(`./locales/${l}/shared/members.json`),
+		agent: (l) => import(`./locales/${l}/shared/agent.json`),
+		// connectors: the Microsoft 365 and Google Workspace viewers
+		connectors: (l) => import(`./locales/${l}/connectors/connectors.json`),
 		// playground (note: playground/mcp.json overrides shared/mcp.json)
 		mcp: (l) => import(`./locales/${l}/playground/mcp.json`),
 		chat: (l) => import(`./locales/${l}/playground/chat.json`),
@@ -41,5 +47,7 @@ export const playgroundResources: LazyResources = {
 		tour: (l) => import(`./locales/${l}/playground/tour.json`),
 		workspace: (l) => import(`./locales/${l}/playground/workspace.json`),
 		mobile: (l) => import(`./locales/${l}/playground/mobile.json`),
+		// default tools and Microsoft / Google connectors
+		teamwork: (l) => import(`./locales/${l}/playground/teamwork.json`),
 	},
 };

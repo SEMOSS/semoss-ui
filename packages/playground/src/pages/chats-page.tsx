@@ -1,11 +1,13 @@
 import { SearchIcon, StarIcon, Trash2Icon } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Navigate } from "react-router";
 import { useTranslation } from "@semoss/i18n";
 import { useIteratorPixel, usePixel } from "@semoss/sdk/react";
 import {
 	Button,
 	Checkbox,
+	cn,
 	Dialog,
 	DialogContent,
 	DialogDescription,
@@ -21,13 +23,16 @@ import {
 	useDebouncedValue,
 	useInfiniteScroll,
 } from "@semoss/ui/next";
-import { CHECKBOX_CLASS, ChatRow, type RoomItem } from "@/components";
-import { useChat, useGlobalBreadcrumbs } from "@/hooks";
 import {
-	DATE_BUCKET_ORDER,
-	getDateBucket,
-	normalizeTimestamp,
-} from "@/utility";
+	CHECKBOX_CLASS,
+	ChatRow,
+	type RoomItem,
+} from "@/components/chats/chat-row";
+import { SYSTEM__PLAYGROUND } from "@/constants";
+import { useChat } from "@/hooks/use-chat";
+import { useRoot } from "@/hooks/use-root";
+import { normalizeTimestamp } from "@/utility";
+import { DATE_BUCKET_ORDER, getDateBucket } from "@/utility/date";
 
 /**
  * All-chats page.
@@ -38,6 +43,7 @@ import {
 export const ChatsPage = observer(() => {
 	const { t } = useTranslation(["workspace", "common", "sidebar"]);
 	const { chat } = useChat();
+	const { root } = useRoot();
 
 	const [search, setSearch] = useState("");
 	const debouncedSearch = useDebouncedValue(search);
@@ -46,16 +52,6 @@ export const ChatsPage = observer(() => {
 	const [pinnedIds, setPinnedIds] = useState<Set<string>>(new Set());
 	const [confirmOpen, setConfirmOpen] = useState(false);
 	const [isDeleting, setIsDeleting] = useState(false);
-
-	useGlobalBreadcrumbs({
-		breadcrumbs: [
-			{ name: t("workspace:breadcrumbs.home"), path: "/" },
-			{
-				name: t("workspace:chats.title"),
-				path: "/chats",
-			},
-		],
-	});
 
 	const getRooms = useIteratorPixel<RoomItem[], RoomItem>(
 		(limit, offset) =>
@@ -77,12 +73,71 @@ export const ChatsPage = observer(() => {
 		{ data: [] },
 	);
 
+	// Content-match rooms from SearchRoomMessages — rooms whose message text
+	// matches the keyword but whose name may not.
+	const getContentMatches = useIteratorPixel<
+		{
+			room_id: string;
+			message_id: string;
+			room_name: string;
+			date_created: string;
+		}[],
+		RoomItem
+	>(
+		(limit, offset) =>
+			debouncedSearch
+				? `META | SearchRoomMessages(search=[${JSON.stringify(debouncedSearch)}], project=["${SYSTEM__PLAYGROUND}"], limit=[${limit}], offset=[${offset}], includeMessageText=[false]);`
+				: "",
+		// Same short-page-means-last-page heuristic as getRooms above — the
+		// backend already dedupes to one row per room before limit/offset, so a
+		// full page here means "there may be more matching rooms."
+		(response) => (response.length < 50 ? -1 : Infinity),
+		(rows) => {
+			const seen = new Set<string>();
+			return rows
+				.filter(
+					(r) => r.room_id && seen.size !== seen.add(r.room_id).size,
+				)
+				.map((r) => ({
+					ROOM_ID: r.room_id,
+					ROOM_NAME: r.room_name ?? "",
+					DATE_CREATED: r.date_created ?? "",
+				}));
+		},
+		{ limit: 50 },
+		[debouncedSearch],
+	);
+
 	const { setScroll } = useInfiniteScroll({
-		disabled: getRooms.isLoading || !getRooms.hasMore,
+		disabled:
+			(getRooms.isLoading || !getRooms.hasMore) &&
+			(getContentMatches.isLoading || !getContentMatches.hasMore),
 		onNext: () => {
-			getRooms.next();
+			if (!getRooms.isLoading && getRooms.hasMore) {
+				getRooms.next();
+			}
+			if (!getContentMatches.isLoading && getContentMatches.hasMore) {
+				getContentMatches.next();
+			}
 		},
 	});
+
+	// Debounce hasn't caught up to the latest keystroke yet.
+	const isDebouncePending = search !== debouncedSearch;
+	const isLoadingRooms =
+		isDebouncePending || getRooms.isLoading || getContentMatches.isLoading;
+
+	// Latches true the first time a load settles and never resets, so the
+	// list only ever shows the blocking spinner once, on first mount. Every
+	// later reload (new search term, roomCounter refresh, pagination) instead
+	// dims the current list in place — see the `add-members` modal for the
+	// same pattern — instead of clearing it and flashing back to a spinner.
+	const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
+	useEffect(() => {
+		if (!getRooms.isLoading && !getContentMatches.isLoading) {
+			setHasLoadedOnce(true);
+		}
+	}, [getRooms.isLoading, getContentMatches.isLoading]);
 
 	// Seed pinned ids from the dedicated pinned query. Toggles update
 	// `pinnedIds` optimistically and never refetch this query, so this
@@ -101,10 +156,25 @@ export const ChatsPage = observer(() => {
 		return map;
 	}, [getPinnedRooms.data, getRooms.data]);
 
-	const visibleRooms = useMemo(
-		() => getRooms.data.filter((r) => !deletedSet.has(r.ROOM_ID)),
-		[getRooms.data, deletedSet],
-	);
+	const visibleRooms = useMemo(() => {
+		// Not gated on `debouncedSearch`: when the search clears, `getRooms.data`
+		// stays stale (by design — see useIteratorPixel) until the no-search
+		// fetch resolves, so `getContentMatches.data` must be allowed to stay
+		// stale in step with it too. Once both settle, every leftover content
+		// match is already covered by `nameMatchIds` and drops out below.
+		const nameMatchIds = new Set(getRooms.data.map((r) => r.ROOM_ID));
+		const extra = getContentMatches.data.filter(
+			(r) => !nameMatchIds.has(r.ROOM_ID) && !deletedSet.has(r.ROOM_ID),
+		);
+		return [
+			...getRooms.data.filter((r) => !deletedSet.has(r.ROOM_ID)),
+			...extra,
+		].sort(
+			(a, b) =>
+				normalizeTimestamp(b.DATE_CREATED).valueOf() -
+				normalizeTimestamp(a.DATE_CREATED).valueOf(),
+		);
+	}, [getRooms.data, getContentMatches.data, deletedSet]);
 
 	// While searching, drop the dedicated pinned section so results aren't
 	// split confusingly — matches still show their star inline.
@@ -177,8 +247,14 @@ export const ChatsPage = observer(() => {
 			return;
 		}
 		getRooms.reset();
+		getContentMatches.reset();
 		getPinnedRooms.refresh();
-	}, [getRooms.reset, getPinnedRooms.refresh, chat.keys.roomCounter]);
+	}, [
+		getRooms.reset,
+		getContentMatches.reset,
+		getPinnedRooms.refresh,
+		chat.keys.roomCounter,
+	]);
 
 	// Keyboard shortcuts: Esc clears the current selection;
 	// Cmd/Ctrl+A selects all visible chats (only when focus isn't
@@ -298,6 +374,10 @@ export const ChatsPage = observer(() => {
 		/>
 	);
 
+	if (root.theme.featureFlags?.hideChatHistory) {
+		return <Navigate to="/" replace />;
+	}
+
 	return (
 		<div
 			ref={(el) => {
@@ -305,11 +385,11 @@ export const ChatsPage = observer(() => {
 			}}
 			className="@container h-full w-full overflow-y-auto"
 		>
-			<div className="mx-auto flex w-full max-w-5xl flex-col gap-4 @3xl:px-12 @md:px-6 px-4 pt-8 pb-4">
+			<div className="mx-auto flex w-full max-w-5xl flex-col gap-4 px-4 py-6 sm:px-6">
 				{/* Sticky header */}
-				<div className="-mx-4 -mt-8 @md:-mx-6 @3xl:-mx-12 sticky top-0 z-20 flex flex-row items-center gap-3 border-border border-b bg-background/95 @3xl:px-12 @md:px-6 px-4 py-4 backdrop-blur supports-backdrop-filter:bg-background/80">
+				<div className="-mx-4 -mt-6 sm:-mx-6 sticky top-0 z-20 flex flex-wrap items-center gap-3 border-b bg-background px-4 py-4 sm:px-6">
 					<div className="min-w-0 flex-1">
-						<div className="truncate font-semibold @md:text-2xl text-foreground text-xl leading-tight">
+						<div className="break-words font-semibold @md:text-2xl text-foreground text-xl leading-tight">
 							{t("workspace:chats.title")}
 						</div>
 						<div className="@md:block hidden text-muted-foreground text-sm">
@@ -321,6 +401,7 @@ export const ChatsPage = observer(() => {
 				{/* Search */}
 				<InputGroup className="bg-background">
 					<InputGroupInput
+						aria-label={t("common:buttons.search")}
 						placeholder={t("common:buttons.search")}
 						value={search}
 						onChange={(e) => setSearch(e.target.value)}
@@ -333,7 +414,7 @@ export const ChatsPage = observer(() => {
 				{/* Select-all toolbar — always visible so the user can select
 				    every chat without first selecting one. */}
 				{hasRooms && (
-					<div className="flex h-8 items-center gap-3 px-1">
+					<div className="flex min-h-10 flex-wrap items-center gap-3 px-1">
 						<Checkbox
 							checked={allSelected}
 							onCheckedChange={toggleSelectAll}
@@ -384,8 +465,13 @@ export const ChatsPage = observer(() => {
 				)}
 
 				{/* Body */}
-				<div>
-					{getRooms.isLoading && getRooms.data.length === 0 ? (
+				<div
+					className={cn(
+						"transition-opacity",
+						isLoadingRooms && hasLoadedOnce && "opacity-60",
+					)}
+				>
+					{!hasLoadedOnce && isLoadingRooms ? (
 						<div className="flex w-full items-center justify-center py-12">
 							<Spinner />
 						</div>
@@ -399,7 +485,7 @@ export const ChatsPage = observer(() => {
 							{pinnedRooms.length > 0 && (
 								<div className="flex flex-col gap-2">
 									<div className="flex items-center gap-1.5 px-1 font-medium text-muted-foreground text-xs">
-										<StarIcon className="size-3.5 fill-yellow-500 text-yellow-500" />
+										<StarIcon className="size-3.5 fill-primary text-primary" />
 										{t("workspace:chats.favorites")}
 									</div>
 									<div className="flex flex-col gap-2">
@@ -423,7 +509,7 @@ export const ChatsPage = observer(() => {
 								</div>
 							))}
 
-							{getRooms.isLoading && getRooms.data.length > 0 && (
+							{hasLoadedOnce && isLoadingRooms && (
 								<div className="flex items-center justify-center p-4">
 									<Spinner className="size-4" />
 								</div>

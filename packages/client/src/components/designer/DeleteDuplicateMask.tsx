@@ -26,7 +26,7 @@ import {
 	toast,
 } from "@semoss/ui/next";
 import DuplicateIcon from "@/assets/img/Duplicate.svg";
-import { useDesigner, useRootStore } from "@/hooks";
+import { useDesigner, useSession } from "@/hooks";
 import { getBlockElement, getRelativeSize } from "@/stores";
 import { getDependencyCells } from "@/utility/dependency-scanner";
 import { DependencyPromptModal } from "../blocks-workspace";
@@ -79,7 +79,7 @@ export const DeleteDuplicateMask = observer(
 
 		const { registry, state } = useBlocks();
 		const { designer } = useDesigner();
-		const { configStore } = useRootStore();
+		const isAdmin = useSession((state) => state.user.admin);
 
 		const block = state.getBlock(designer.selected);
 
@@ -400,9 +400,14 @@ export const DeleteDuplicateMask = observer(
 					>
 						{isIterationOrContainer && (
 							<>
-								<Tooltip>
+								<Tooltip disableHoverableContent={false}>
 									<TooltipTrigger asChild>
 										<button
+											aria-label={
+												isChangeable
+													? "Swap Child Block"
+													: "Add Block to Content"
+											}
 											type="button"
 											className={iconButtonClass}
 											onClick={(e) => {
@@ -449,10 +454,11 @@ export const DeleteDuplicateMask = observer(
 								)}
 							</>
 						)}
-						{configStore.store.user.admin && (
-							<Tooltip>
+						{isAdmin && (
+							<Tooltip disableHoverableContent={false}>
 								<TooltipTrigger asChild>
 									<button
+										aria-label={"Add to client"}
 										type="button"
 										className={iconButtonClass}
 										onClick={() => setOpenModal(true)}
@@ -463,9 +469,10 @@ export const DeleteDuplicateMask = observer(
 								<TooltipContent>Add to client</TooltipContent>
 							</Tooltip>
 						)}
-						<Tooltip>
+						<Tooltip disableHoverableContent={false}>
 							<TooltipTrigger asChild>
 								<button
+									aria-label={"Duplicate"}
 									type="button"
 									className={iconButtonClass}
 									onClick={onDuplicate}
@@ -478,9 +485,10 @@ export const DeleteDuplicateMask = observer(
 							</TooltipTrigger>
 							<TooltipContent>Duplicate</TooltipContent>
 						</Tooltip>
-						<Tooltip>
+						<Tooltip disableHoverableContent={false}>
 							<TooltipTrigger asChild>
 								<button
+									aria-label={"Delete"}
 									type="button"
 									className={iconButtonClass}
 									onClick={

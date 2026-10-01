@@ -25,7 +25,14 @@
 			"SUMMARY": "Remplace les anciens messages par un résumé généré par l'IA. Préserve le contexte général de la conversation tout en libérant de l'espace de jetons.",
 			"TOOL_PRUNE": "Supprime les résultats détaillés des appels d'outils de l'historique de la conversation. Idéal lorsque les sorties d'outils sont volumineuses et que les détails ne sont plus nécessaires.",
 			"AUTO": "Choisira le résumé ou l'élagage des outils selon la conversation en cours."
-		}
+		},
+		"panelTitle": "Paramètres",
+		"noKnowledge": "Aucune connaissance sélectionnée.",
+		"noTools": "Aucun outil sélectionné.",
+		"fromRoom": "De la conversation",
+		"inheritedSelection": "Les sélections héritées ne peuvent pas être retirées de ce chat.",
+		"removeSelection": "Retirer {{name}}",
+		"agentLoadError": "Impossible de charger l’agent. Réessayez ou sélectionnez-en un autre."
 	},
 	"form": {
 		"modelLabel": "Modèle",
@@ -36,9 +43,12 @@
 		"temperatureLabel": "Température"
 	},
 	"modes": {
-		"ask": "Mode Chat",
-		"agent": "Mode Harnais d'agent",
-		"exitAgent": "Quitter le mode harnais d'agent"
+		"ask": "Chat",
+		"agent": "Agent",
+		"exitAgent": "Passer au chat",
+		"selectedAgent": "Agent : {{name}}",
+		"defaultAgent": "Agent par défaut",
+		"noAgent": "Aucun agent"
 	},
 	"workspace": {
 		"publishTooltip": "Publier en tant qu'agent",
@@ -59,7 +69,7 @@
 		"ariaPlaceholder": "Entrez du texte",
 		"thinking": "Réflexion...",
 		"menuPrompt": "Comment puis-je vous aider aujourd'hui ?",
-		"openSettings": "Ajouter des fichiers, des agents et plus encore",
+		"openSettings": "Ajouter à votre discussion",
 		"recordLabel": "Enregistrer le modèle",
 		"stopRecording": "Arrêter l'enregistrement",
 		"record": "Enregistrer",
@@ -71,14 +81,18 @@
 		"errorProcessing": "Erreur de traitement du chat",
 		"stopLabel": "Arrêter la réponse",
 		"stopTooltip": "Arrêter",
-		"stoppingTooltip": "Arrêt en cours"
+		"stoppingTooltip": "Arrêt en cours",
+		"recordUnavailable": "La dictée est indisponible dans ce navigateur",
+		"historyHint": "Message précédent {{index}} sur {{total}} · ↑/↓ parcourir · Échap pour restaurer le brouillon",
+		"draftRestored": "Brouillon restauré",
+		"removeFile": "Retirer {{name}}"
 	},
 	"content": {
 		"scrollToTop": "Défiler vers le haut",
 		"scrollToBottom": "Défiler vers le bas"
 	},
 	"inlineTool": {
-		"openInSidebar": "Ouvrir dans la barre latérale",
+		"openInSidebar": "Ouvrir dans l’espace de travail",
 		"minimize": "Réduire",
 		"maximize": "Agrandir",
 		"close": "Fermer"
@@ -90,7 +104,7 @@
 		"copyFailed": "Échec de la copie dans le presse-papiers"
 	},
 	"menuToolbox": {
-		"addToolbox": "Ajouter des boîtes à outils"
+		"addToolbox": "Ajouter des outils"
 	},
 	"menuKnowledge": {
 		"addKnowledge": "Ajouter des connaissances"
@@ -101,15 +115,16 @@
 		"notFound": "Non trouvé"
 	},
 	"menuUpload": {
-		"attachDocument": "Ajouter des documents"
+		"attachDocument": "Joindre des fichiers"
 	},
 	"menuFileExplorer": {
-		"name": "Explorateur de fichiers",
-		"open": "Ouvrir l'explorateur de fichiers",
-		"close": "Fermer l'explorateur de fichiers"
+		"name": "Fichiers du chat",
+		"open": "Afficher les fichiers du chat",
+		"close": "Masquer les fichiers du chat"
 	},
 	"errors": {
-		"createRoom": "Une erreur s'est produite lors de la création de la salle. Erreur : {{message}}"
+		"createRoom": "Une erreur s'est produite lors de la création de la salle. Erreur : {{message}}",
+		"fileInUse": "Le(s) fichier(s) téléversé(s) est/sont actuellement utilisé(s) par un autre programme. Fermez le programme et retéléversez le(s) fichier(s) dans un nouveau chat."
 	},
 	"contextWindow": {
 		"descriptionLow": "Toutes les conversations ont une limite. Les conversations très longues finiront par faire oublier les messages précédents au modèle.",
@@ -125,5 +140,45 @@
 		"searchPlaceholder": "Rechercher des connaissances et des boîtes à outils",
 		"noResults": "Aucun élément correspondant trouvé",
 		"noItemsAvailable": "Aucune connaissance ou boîte à outils disponible"
+	},
+	"studio": {
+		"views": "Vues de la conversation",
+		"chat": "Discussion",
+		"openWorkArea": "Ouvrir l’espace de travail",
+		"workArea": "Espace de travail",
+		"toolsCount": "Outils, {{count}} sélectionnés",
+		"tools": "Outils",
+		"toolsLocked": "Les outils ne peuvent pas être modifiés pendant une réponse.",
+		"toolsHint": "Les sélections s’appliquent à votre prochain message.",
+		"toolsTitle": "Outils et connaissances",
+		"toolsDescription": "Choisissez les outils et les connaissances disponibles pour cette conversation.",
+		"moreActions": "Autres actions",
+		"prompts": "Prompts",
+		"removeFile": "Retirer {{name}}",
+		"thinking": "Raisonnement",
+		"errorTitle": "Une erreur est survenue",
+		"errorDescription": "Actualisez la page ou revenez à l’accueil et réessayez.",
+		"backHome": "Retour à l’accueil",
+		"export": "Exporter",
+		"refresh": "Actualiser",
+		"exportCsv": "Exporter au format CSV",
+		"exportPdf": "Exporter au format PDF",
+		"closeWorkspace": "Fermer l’espace de travail",
+		"preparingWorkspace": "Préparation de l’espace de travail…",
+		"activityLog": "Journal d’activité",
+		"prepareError": "Impossible de préparer l’espace de travail. Votre brouillon est conservé.",
+		"retry": "Réessayer",
+		"viewActivityLog": "Afficher le journal d’activité"
+	},
+	"optimizer": {
+		"optimize": "Optimiser le message",
+		"revert": "Revenir au message précédent",
+		"optimizing": "Optimisation…",
+		"success": "Message optimisé !",
+		"noModel": "Sélectionnez un modèle pour optimiser votre message",
+		"invalidResponse": "Aucun message optimisé reçu",
+		"failed": "Impossible d’optimiser le message",
+		"tooLarge": "Le message est trop long pour être optimisé. Veuillez le raccourcir.",
+		"noPermission": "Vous n’avez pas l’autorisation d’utiliser ce modèle"
 	}
 }

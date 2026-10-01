@@ -4,6 +4,8 @@ import {
 	loadEngineIcon,
 } from "../constants/engine-images.constants";
 
+export { buildInitials } from "@semoss/utility";
+
 const hashString = (str: string): number => {
 	let hash = 0;
 	for (let i = 0; i < str.length; i++) {
@@ -18,14 +20,6 @@ const normalizeEngineKey = (value?: string) =>
 		.trim()
 		.replace(/[^A-Za-z0-9]+/g, "_")
 		.toUpperCase();
-
-export const buildInitials = (label: string): string => {
-	const tokens = label.split(/[^A-Za-z0-9]+/).filter((token) => token.length);
-	return tokens
-		.map((token) => token[0].toUpperCase())
-		.slice(0, 3)
-		.join("");
-};
 
 export const getAppCatalogAvatarStyle = (label: string) => {
 	const base = hashString(label || "App") % 360;

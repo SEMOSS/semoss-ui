@@ -250,7 +250,9 @@ export const MemberList = ({
 			>
 				<DialogContent>
 					<DialogHeader>
-						<DialogTitle>Delete member</DialogTitle>
+						<DialogTitle className="font-medium text-base leading-6">
+							Delete member
+						</DialogTitle>
 						<DialogDescription>
 							Are you sure you want to delete{" "}
 							<span className="font-medium text-foreground">
