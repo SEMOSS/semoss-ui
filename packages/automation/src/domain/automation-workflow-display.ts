@@ -6,6 +6,8 @@ import {
 	FolderOpen,
 	FunctionSquare,
 	GitBranch,
+	GitFork,
+	GitMerge,
 	type LucideIcon,
 	Network,
 	SlidersHorizontal,
@@ -57,6 +59,12 @@ export function getWorkflowNodeDisplay(
 	}
 	if (type === "control.jev") {
 		return { icon: BrainCircuit, color: "text-violet-600" };
+	}
+	if (type === "control.parallel") {
+		return { icon: GitFork, color: "text-primary" };
+	}
+	if (type === "control.join") {
+		return { icon: GitMerge, color: "text-muted-foreground" };
 	}
 	return { icon: Braces, color: "text-primary" };
 }

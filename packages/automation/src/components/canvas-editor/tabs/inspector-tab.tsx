@@ -12,6 +12,8 @@ interface InspectorTabProps {
 	description: string;
 	devMode: boolean;
 	editingStep: AutomationNode | null;
+	availableJoinNodes: Array<{ id: string; label: string }>;
+	parallelBranchCount: number;
 	onPrepareSchedule: () => Promise<boolean>;
 	upstreamVars: string[];
 	scopeEntries: AutomationScopeEntry[];
@@ -39,6 +41,8 @@ export function InspectorTab({
 	description,
 	devMode,
 	editingStep,
+	availableJoinNodes,
+	parallelBranchCount,
 	onPrepareSchedule,
 	upstreamVars,
 	scopeEntries,
@@ -73,6 +77,8 @@ export function InspectorTab({
 		return (
 			<NodeEditDrawer
 				step={editingStep}
+				availableJoinNodes={availableJoinNodes}
+				parallelBranchCount={parallelBranchCount}
 				appId={appId}
 				upstreamVars={upstreamVars}
 				scopeEntries={scopeEntries}

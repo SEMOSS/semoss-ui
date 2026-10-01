@@ -7,6 +7,7 @@ import type {
 	FunctionEngineConfig,
 	JevDecisionConfig,
 	ModelEngineConfig,
+	ParallelConfig,
 	StorageEngineConfig,
 	VectorEngineConfig,
 	WaitConfig,
@@ -18,12 +19,15 @@ import { DatabaseEngineForm } from "./forms/database-engine-form";
 import { FunctionEngineForm } from "./forms/function-engine-form";
 import { JevDecisionForm } from "./forms/jev-decision-form";
 import { ModelEngineForm } from "./forms/model-engine-form";
+import { ParallelNodeForm } from "./forms/parallel-node-form";
 import { PillInput } from "./forms/pill-input";
 import { StorageEngineForm } from "./forms/storage-engine-form";
 import { VectorEngineForm } from "./forms/vector-engine-form";
 
 interface StepFormProps {
 	step: AutomationNode;
+	availableJoinNodes: Array<{ id: string; label: string }>;
+	parallelBranchCount: number;
 	upstreamVars: string[];
 	onUpdate: (step: AutomationNode) => void;
 	devMode?: boolean;
@@ -34,6 +38,8 @@ interface StepFormProps {
 
 export function StepForm({
 	step,
+	availableJoinNodes,
+	parallelBranchCount,
 	upstreamVars,
 	onUpdate,
 	devMode = false,
@@ -64,6 +70,18 @@ export function StepForm({
 			/>
 		);
 	}
+	if (step.workflowType === "control.parallel") {
+		return (
+			<ParallelNodeForm
+				config={step.config as ParallelConfig}
+				availableJoinNodes={availableJoinNodes}
+				parallelBranchCount={parallelBranchCount}
+				onChange={update}
+				readOnly={readOnly}
+			/>
+		);
+	}
+	if (step.workflowType === "control.join") return null;
 
 	switch (step.type) {
 		case "trigger":

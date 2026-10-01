@@ -156,8 +156,13 @@ function jevRoutes(value: unknown): AutomationJevRoute[] {
 	});
 }
 
-function isRoutingWorkflowType(type: AutomationWorkflowNodeType): boolean {
-	return type === "control.if" || type === "control.jev";
+function isControlFlowWorkflowType(type: AutomationWorkflowNodeType): boolean {
+	return (
+		type === "control.if" ||
+		type === "control.jev" ||
+		type === "control.parallel" ||
+		type === "control.join"
+	);
 }
 
 /**
@@ -292,6 +297,12 @@ def run(scope):
 	if (type === "control.jev") {
 		return "# Jev decisions execute through the server-owned TypeSafe engine.\n";
 	}
+	if (type === "control.parallel") {
+		return "# Parallel branches are coordinated by the Automation runtime.\n";
+	}
+	if (type === "control.join") {
+		return "# Branch synchronization is coordinated by the Automation runtime.\n";
+	}
 	return `# Write arbitrary Python for this automation node here.
 # scope is a read-only, run-local mapping: inputs, globals, metadata, and prior outputs by outputVar.
 # Read required values with scope["outputVar"] and optional values with scope.get("outputVar").
@@ -327,7 +338,9 @@ function canvasTypeForWorkflow(
 	if (category === "vector") return "vector-engine";
 	if (type === "function.execute") return "function-engine";
 	if (type === "control.wait") return "wait";
-	if (isRoutingWorkflowType(type)) return "branch";
+	if (type === "control.parallel") return "split";
+	if (type === "control.join") return "join";
+	if (isControlFlowWorkflowType(type)) return "branch";
 	return "app";
 }
 
@@ -444,6 +457,10 @@ function defaultCanvasConfig(
 			paramValues: jsonObjectValue(config.paramValues),
 		};
 	}
+	if (type === "control.parallel") {
+		return { joinNodeId: stringValue(config.joinNodeId) };
+	}
+	if (type === "control.join") return {};
 	return {
 		pixel: stringValue(config.pixel),
 		appId: stringValue(config.appId),
@@ -487,6 +504,10 @@ function canvasTypeToWorkflow(
 			return "control.wait";
 		case "branch":
 			return "control.if";
+		case "split":
+			return "control.parallel";
+		case "join":
+			return "control.join";
 		case "app":
 			return "app.pixel";
 	}
@@ -639,6 +660,10 @@ function mergeCanvasConfig(
 			config as Extract<NodeConfig, { clauses: unknown }>
 		).clauses;
 	}
+	if (type === "control.parallel") {
+		const joinNodeId = getConfigValue(config, "joinNodeId");
+		if (typeof joinNodeId === "string") next.joinNodeId = joinNodeId;
+	}
 	return next;
 }
 
@@ -719,6 +744,11 @@ export function canvasDocumentFromWorkflow(
 	if (!steps.some((node) => node.workflowType === "trigger.start")) {
 		steps.unshift(createCanvasWorkflowNode("trigger.start", 0));
 	}
+	const parallelNodeIds = new Set(
+		steps
+			.filter((step) => step.workflowType === "control.parallel")
+			.map((step) => step.id),
+	);
 	return {
 		description: document.description ?? "",
 		triggerBindings:
@@ -731,13 +761,15 @@ export function canvasDocumentFromWorkflow(
 			source: edge.source,
 			target: edge.target,
 			sourceHandle:
-				edge.sourcePort === "out"
-					? `out-${edge.source}`
-					: edge.sourcePort.startsWith("case:")
-						? `case-${edge.source}-${edge.sourcePort.slice(5)}`
-						: edge.sourcePort === "else"
-							? `else-${edge.source}`
-							: edge.sourcePort,
+				edge.sourcePort === "out" && parallelNodeIds.has(edge.source)
+					? `parallel-out-${edge.source}-${edge.id}`
+					: edge.sourcePort === "out"
+						? `out-${edge.source}`
+						: edge.sourcePort.startsWith("case:")
+							? `case-${edge.source}-${edge.sourcePort.slice(5)}`
+							: edge.sourcePort === "else"
+								? `else-${edge.source}`
+								: edge.sourcePort,
 			targetHandle:
 				edge.targetPort === "in"
 					? `in-${edge.target}`
@@ -756,7 +788,7 @@ export function getCanvasNodeSources(
 			const type = step.workflowType ?? canvasTypeToWorkflow(step.type);
 			if (
 				type === "trigger.start" ||
-				isRoutingWorkflowType(type) ||
+				isControlFlowWorkflowType(type) ||
 				step.workflowCodeMode !== "custom"
 			) {
 				return [];
@@ -806,12 +838,12 @@ export function canvasDocumentToWorkflow({
 			id: step.id,
 			type,
 			label: step.label || definition.label,
-			...(type === "trigger.start" || isRoutingWorkflowType(type)
+			...(type === "trigger.start" || isControlFlowWorkflowType(type)
 				? {}
 				: { outputVar: step.outputVar }),
 			position: step.position,
 			config: persistedConfig,
-			codeMode: isRoutingWorkflowType(type)
+			codeMode: isControlFlowWorkflowType(type)
 				? "generated"
 				: (step.workflowCodeMode ?? definition.defaultCodeMode),
 		};
@@ -826,31 +858,50 @@ export function canvasDocumentToWorkflow({
 						kind: "data",
 						dataType: edge.dataType ?? "unknown",
 						source: edge.source,
-						sourcePort: edge.sourceHandle?.startsWith("out-")
-							? "out"
-							: (edge.sourceHandle ?? "result"),
+						sourcePort:
+							edge.sourceHandle === `out-${edge.source}` ||
+							edge.sourceHandle?.startsWith(
+								`parallel-out-${edge.source}-`,
+							) ||
+							edge.sourceHandle?.startsWith(
+								`parallel-add-${edge.source}-`,
+							)
+								? "out"
+								: (edge.sourceHandle ?? "result"),
 						target: edge.target,
-						targetPort: edge.targetHandle?.startsWith("in-")
-							? "in"
-							: (edge.targetHandle ?? "in"),
+						targetPort:
+							edge.targetHandle === `in-${edge.target}`
+								? "in"
+								: (edge.targetHandle ?? "in"),
 					}
 				: {
 						id: edge.id,
 						kind: "control",
 						source: edge.source,
-						sourcePort: edge.sourceHandle?.startsWith("out-")
-							? "out"
-							: edge.sourceHandle?.startsWith("case-")
-								? `case:${edge.sourceHandle.slice(
-										`case-${edge.source}-`.length,
-									)}`
-								: edge.sourceHandle?.startsWith("else-")
-									? "else"
-									: (edge.sourceHandle ?? "out"),
+						sourcePort:
+							edge.sourceHandle === `out-${edge.source}` ||
+							edge.sourceHandle?.startsWith(
+								`parallel-out-${edge.source}-`,
+							) ||
+							edge.sourceHandle?.startsWith(
+								`parallel-add-${edge.source}-`,
+							)
+								? "out"
+								: edge.sourceHandle?.startsWith(
+											`case-${edge.source}-`,
+										)
+									? `case:${edge.sourceHandle.slice(
+											`case-${edge.source}-`.length,
+										)}`
+									: edge.sourceHandle ===
+											`else-${edge.source}`
+										? "else"
+										: (edge.sourceHandle ?? "out"),
 						target: edge.target,
-						targetPort: edge.targetHandle?.startsWith("in-")
-							? "in"
-							: (edge.targetHandle ?? "in"),
+						targetPort:
+							edge.targetHandle === `in-${edge.target}`
+								? "in"
+								: (edge.targetHandle ?? "in"),
 					},
 		);
 	return {
@@ -895,7 +946,7 @@ export function validateCanvasWorkflowNode(
 			return [];
 		},
 	);
-	if (type !== "trigger.start" && !isRoutingWorkflowType(type)) {
+	if (type !== "trigger.start" && !isControlFlowWorkflowType(type)) {
 		const outputVariableError = validateAutomationOutputVariable(
 			node.outputVar,
 		);
@@ -922,7 +973,7 @@ export function validateCanvasWorkflowNode(
 	// server persists its generated scaffold instead.
 	if (
 		type !== "trigger.start" &&
-		!isRoutingWorkflowType(type) &&
+		!isControlFlowWorkflowType(type) &&
 		node.workflowCodeMode === "custom"
 	) {
 		const source = stringValue(config.pythonSource);
@@ -965,6 +1016,19 @@ export function validateCanvasWorkflowNode(
 			errors.push(
 				`Minimum confidence must be from ${minimumConfidence} through 1`,
 			);
+		}
+	}
+	if (type === "control.parallel") {
+		const joinNodeId = stringValue(config.joinNodeId).trim();
+		if (
+			joinNodeId &&
+			!allNodes.some(
+				(candidate) =>
+					candidate.id === joinNodeId &&
+					candidate.workflowType === "control.join",
+			)
+		) {
+			errors.push("Join node must reference an existing parallel join");
 		}
 	}
 	return errors;

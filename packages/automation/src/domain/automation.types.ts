@@ -18,6 +18,8 @@ export type AutomationNodeType =
 	| "function-engine"
 	| "app"
 	| "branch"
+	| "split"
+	| "join"
 	| "wait";
 
 // ─── shared form types ────────────────────────────────────────────────────────
@@ -121,6 +123,12 @@ export interface BranchConfig {
 	clauses: AutomationBranchClause[];
 }
 
+export interface ParallelConfig {
+	joinNodeId: string;
+}
+
+export type ControlFlowConfig = Record<string, never>;
+
 export interface JevDecisionConfig {
 	engineId: string;
 	engineName?: string;
@@ -144,6 +152,8 @@ export type NodeConfig =
 	| AppConfig
 	| AgentRunConfig
 	| BranchConfig
+	| ParallelConfig
+	| ControlFlowConfig
 	| JevDecisionConfig
 	| WaitConfig;
 

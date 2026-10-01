@@ -49,6 +49,97 @@ function definition(
 	};
 }
 
+describe("split and join nodes", () => {
+	it("rejects a configured join that is missing from the graph", () => {
+		const split = node("control.parallel", {
+			id: "split",
+			config: { joinNodeId: "missing-join" },
+		});
+
+		expect(validateCanvasWorkflowNode(split, [split])).toContain(
+			"Join node must reference an existing parallel join",
+		);
+	});
+
+	it("round-trips named split outputs and a multi-connection join input", () => {
+		const split = node("control.parallel", {
+			id: "split",
+			config: { joinNodeId: "join" },
+		});
+		const firstAction = node("database.query", { id: "first-action" });
+		const secondAction = node("database.query", { id: "second-action" });
+		const join = node("control.join", { id: "join" });
+		const workflow = canvasDocumentToWorkflow({
+			description: "",
+			triggerBindings: [{ id: "manual", type: "manual" }],
+			steps: [split, firstAction, secondAction, join],
+			edges: [
+				{
+					id: "split-first",
+					source: split.id,
+					sourceHandle: `parallel-out-${split.id}-split-first`,
+					target: firstAction.id,
+					targetHandle: `in-${firstAction.id}`,
+					kind: "control",
+				},
+				{
+					id: "split-second",
+					source: split.id,
+					sourceHandle: `parallel-out-${split.id}-split-second`,
+					target: secondAction.id,
+					targetHandle: `in-${secondAction.id}`,
+					kind: "control",
+				},
+				{
+					id: "first-join",
+					source: firstAction.id,
+					sourceHandle: `out-${firstAction.id}`,
+					target: join.id,
+					targetHandle: `in-${join.id}`,
+					kind: "control",
+				},
+				{
+					id: "second-join",
+					source: secondAction.id,
+					sourceHandle: `out-${secondAction.id}`,
+					target: join.id,
+					targetHandle: `in-${join.id}`,
+					kind: "control",
+				},
+			],
+		});
+
+		expect(workflow.graph.nodes[0]).toMatchObject({
+			type: "control.parallel",
+			config: { joinNodeId: "join" },
+			codeMode: "generated",
+		});
+		expect(workflow.graph.nodes[3]).toMatchObject({
+			type: "control.join",
+			codeMode: "generated",
+		});
+		expect(workflow.graph.edges).toEqual([
+			expect.objectContaining({ sourcePort: "out", targetPort: "in" }),
+			expect.objectContaining({ sourcePort: "out", targetPort: "in" }),
+			expect.objectContaining({ sourcePort: "out", targetPort: "in" }),
+			expect.objectContaining({ sourcePort: "out", targetPort: "in" }),
+		]);
+
+		const reloaded = canvasDocumentFromWorkflow(workflow);
+		expect(reloaded.edges.map((edge) => edge.sourceHandle)).toEqual([
+			`parallel-out-${split.id}-split-first`,
+			`parallel-out-${split.id}-split-second`,
+			`out-${firstAction.id}`,
+			`out-${secondAction.id}`,
+		]);
+		expect(reloaded.edges.map((edge) => edge.targetHandle)).toEqual([
+			`in-${firstAction.id}`,
+			`in-${secondAction.id}`,
+			`in-${join.id}`,
+			`in-${join.id}`,
+		]);
+	});
+});
 /** Every node type the domain tests exercise. */
 const TEST_NODE_DEFINITIONS: readonly AutomationNodeDefinition[] = [
 	definition("trigger.start", "trigger", "Start", {}, false),
@@ -107,6 +198,38 @@ const TEST_NODE_DEFINITIONS: readonly AutomationNodeDefinition[] = [
 		},
 		false,
 	),
+	{
+		...definition(
+			"control.parallel",
+			"control",
+			"Parallel split",
+			{ joinNodeId: "" },
+			false,
+		),
+		supportsOutput: false,
+		inputs: [
+			{ id: "in", label: "Input", kind: "control", direction: "input" },
+		],
+		outputs: [
+			{ id: "out", label: "Next", kind: "control", direction: "output" },
+		],
+	},
+	{
+		...definition("control.join", "control", "Join branches", {}, false),
+		supportsOutput: false,
+		inputs: [
+			{
+				id: "in",
+				label: "Branches",
+				kind: "control",
+				direction: "input",
+				multiple: true,
+			},
+		],
+		outputs: [
+			{ id: "out", label: "Next", kind: "control", direction: "output" },
+		],
+	},
 	definition("developer.python", "developer", "Python", {}),
 ];
 

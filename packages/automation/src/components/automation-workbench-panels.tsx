@@ -81,6 +81,8 @@ export const AutomationInspectorPanel = () => {
 			description={snapshot?.description ?? ""}
 			devMode={snapshot?.devMode ?? false}
 			editingStep={snapshot?.editingStep ?? null}
+			availableJoinNodes={snapshot?.availableJoinNodes ?? []}
+			parallelBranchCount={snapshot?.parallelBranchCount ?? 0}
 			onPrepareSchedule={() =>
 				context.canvasRef.current?.prepareSchedule() ??
 				Promise.resolve(false)
