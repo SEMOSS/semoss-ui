@@ -230,7 +230,8 @@ export function JevDecisionForm({
 					);
 				})}
 				<p className="text-muted-foreground text-xs">
-					The fallback path runs when confidence is below the minimum.
+					Connect every route. The low-confidence path runs when Jev
+					is not confident enough to choose one.
 				</p>
 			</div>
 			<Field>
@@ -254,7 +255,7 @@ export function JevDecisionForm({
 				label="Jev parameters"
 				value={config.paramValues}
 				onChange={(paramValues) => onChange({ ...config, paramValues })}
-				upstreamVars={[]}
+				upstreamVars={upstreamVars}
 				placeholder='{"timeout": 30, "max_retries": 1}'
 				mono
 				minRows={2}

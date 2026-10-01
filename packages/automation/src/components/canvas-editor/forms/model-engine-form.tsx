@@ -78,15 +78,30 @@ export function ModelEngineForm({
 				</>
 			)}
 			{config.operation === "embeddings" && (
-				<BoundInput
-					label="Text to Embed"
-					required
-					value={config.values}
-					placeholder="${text_to_embed}"
-					onChange={(v) => onChange({ ...config, values: v })}
-					upstreamVars={upstreamVars}
-					readOnly={readOnly}
-				/>
+				<>
+					<BoundInput
+						label="Text to Embed"
+						required
+						value={config.values}
+						placeholder="${text_to_embed}"
+						onChange={(v) => onChange({ ...config, values: v })}
+						upstreamVars={upstreamVars}
+						readOnly={readOnly}
+					/>
+					{devMode && (
+						<BoundInput
+							label="Model Settings (JSON, optional)"
+							value={config.paramValues}
+							placeholder='{"batchSize": 32}'
+							onChange={(v) =>
+								onChange({ ...config, paramValues: v })
+							}
+							upstreamVars={upstreamVars}
+							readOnly={readOnly}
+							mono
+						/>
+					)}
+				</>
 			)}
 			{config.operation === "vision" && (
 				<>
@@ -101,24 +116,65 @@ export function ModelEngineForm({
 						mono
 					/>
 					<BoundInput
-						label="Image URL / Path"
-						required
+						label="Media Path(s)"
 						value={config.image}
-						placeholder="${image_url}"
+						placeholder="${downloaded_files.files}"
 						onChange={(v) => onChange({ ...config, image: v })}
 						upstreamVars={upstreamVars}
 						readOnly={readOnly}
 					/>
+					<BoundInput
+						label="Media URLs (JSON, optional)"
+						value={config.urls}
+						placeholder='["https://example.com/image.png"]'
+						onChange={(v) => onChange({ ...config, urls: v })}
+						upstreamVars={upstreamVars}
+						readOnly={readOnly}
+						mono
+					/>
+					<BoundInput
+						label="System Instructions (optional)"
+						value={config.context}
+						placeholder="e.g. Focus on clinical findings."
+						onChange={(v) => onChange({ ...config, context: v })}
+						upstreamVars={upstreamVars}
+						readOnly={readOnly}
+						mono
+					/>
+					{devMode && (
+						<BoundInput
+							label="Model Settings (JSON, optional)"
+							value={config.paramValues}
+							placeholder='{"temperature": 0.2}'
+							onChange={(v) =>
+								onChange({ ...config, paramValues: v })
+							}
+							upstreamVars={upstreamVars}
+							readOnly={readOnly}
+							mono
+						/>
+					)}
 				</>
 			)}
 			{config.operation === "ner" && (
 				<>
 					<BoundInput
-						label="Prompt"
+						label="Text to Analyze"
 						required
-						value={config.prompt}
-						placeholder="Extract entities from: ${text}"
-						onChange={(v) => onChange({ ...config, prompt: v })}
+						value={config.command}
+						placeholder="${text}"
+						onChange={(v) => onChange({ ...config, command: v })}
+						upstreamVars={upstreamVars}
+						readOnly={readOnly}
+						mono
+					/>
+					<BoundInput
+						label="Mask Entities (JSON, optional)"
+						value={config.maskEntities}
+						placeholder='["PERSON"]'
+						onChange={(v) =>
+							onChange({ ...config, maskEntities: v })
+						}
 						upstreamVars={upstreamVars}
 						readOnly={readOnly}
 						mono

@@ -70,17 +70,30 @@ export function VectorEngineForm({
 						/>
 					</Field>
 					{devMode && (
-						<BoundInput
-							label="Filters (JSON, optional)"
-							value={config.filters}
-							placeholder='{"category": "reports"}'
-							onChange={(v) =>
-								onChange({ ...config, filters: v })
-							}
-							upstreamVars={upstreamVars}
-							readOnly={readOnly}
-							mono
-						/>
+						<>
+							<BoundInput
+								label="Filters (JSON, optional)"
+								value={config.filters}
+								placeholder='{"category": "reports"}'
+								onChange={(v) =>
+									onChange({ ...config, filters: v })
+								}
+								upstreamVars={upstreamVars}
+								readOnly={readOnly}
+								mono
+							/>
+							<BoundInput
+								label="Engine Parameters (JSON, optional)"
+								value={config.paramValues}
+								placeholder='{"threshold": 0.7}'
+								onChange={(v) =>
+									onChange({ ...config, paramValues: v })
+								}
+								upstreamVars={upstreamVars}
+								readOnly={readOnly}
+								mono
+							/>
+						</>
 					)}
 				</>
 			)}
@@ -95,21 +108,26 @@ export function VectorEngineForm({
 						readOnly={readOnly}
 					/>
 					<BoundInput
-						label="Category (optional)"
-						value={config.source}
-						placeholder="internal-docs"
-						onChange={(v) => onChange({ ...config, source: v })}
-						upstreamVars={upstreamVars}
-						readOnly={readOnly}
-					/>
-					<BoundInput
-						label="Collection (optional)"
+						label="Source Space (optional)"
 						value={config.space}
-						placeholder="finance"
+						placeholder="Project ID or USER"
 						onChange={(v) => onChange({ ...config, space: v })}
 						upstreamVars={upstreamVars}
 						readOnly={readOnly}
 					/>
+					{devMode && (
+						<BoundInput
+							label="Engine Parameters (JSON, optional)"
+							value={config.paramValues}
+							placeholder='{"indexClass": "HNSW"}'
+							onChange={(v) =>
+								onChange({ ...config, paramValues: v })
+							}
+							upstreamVars={upstreamVars}
+							readOnly={readOnly}
+							mono
+						/>
+					)}
 				</>
 			)}
 			{config.operation === "add-csv" && (
@@ -144,6 +162,17 @@ export function VectorEngineForm({
 					onChange={(v) => onChange({ ...config, fileNames: v })}
 					upstreamVars={upstreamVars}
 					readOnly={readOnly}
+				/>
+			)}
+			{config.operation === "delete" && devMode && (
+				<BoundInput
+					label="Engine Parameters (JSON, optional)"
+					value={config.paramValues}
+					placeholder='{"deleteSource": true}'
+					onChange={(v) => onChange({ ...config, paramValues: v })}
+					upstreamVars={upstreamVars}
+					readOnly={readOnly}
+					mono
 				/>
 			)}
 		</div>

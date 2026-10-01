@@ -345,13 +345,15 @@ export function NodeEditDrawer({
 								<p className="text-[11px] text-muted-foreground">
 									{pythonSourceUnavailable
 										? "Not available for historical runs."
-										: isDecisionBranch
-											? "This decision evaluates its conditions in order and uses the first matching path."
-											: isDeveloperPython
-												? "This node runs its custom Python source."
-												: isCustomSource
-													? "This node uses custom Python."
-													: "Use the form or inspect the generated Python."}
+										: step.workflowType === "control.jev"
+											? "Jev chooses a configured route, or the low-confidence path when no answer is confident enough."
+											: step.workflowType === "control.if"
+												? "This decision evaluates its conditions in order and uses the first matching path."
+												: isDeveloperPython
+													? "This node runs its custom Python source."
+													: isCustomSource
+														? "This node uses custom Python."
+														: "Use the form or inspect the generated Python."}
 								</p>
 							</div>
 							{!isDeveloperPython &&
