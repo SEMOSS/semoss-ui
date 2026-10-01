@@ -649,6 +649,50 @@ describe("assistant context selection", () => {
 		);
 	});
 
+	it("names an included email's attachments without their ids or bytes", () => {
+		const state = createInitialCollaborationState();
+		const workspace = state.workspaces["th-geng-review"];
+		// p-ava is an included sender in this fixture thread
+		const first = workspace.messages.find(
+			(message) => message.fromId === "p-ava",
+		);
+		if (!first) throw new Error("Expected a fixture message");
+		const withFiles: CollaborationState = {
+			...state,
+			workspaces: {
+				...state.workspaces,
+				"th-geng-review": {
+					...workspace,
+					messages: workspace.messages.map((message) =>
+						message.id === first.id
+							? {
+									...message,
+									attachments: [
+										{
+											id: "long-graph-attachment-id",
+											name: "Budget.xlsx",
+											isFile: true,
+											messageId: message.id,
+										},
+									],
+								}
+							: message,
+					),
+				},
+			},
+		};
+		const before = selectThreadContext(state, "th-geng-review");
+		const context = selectThreadContext(withFiles, "th-geng-review");
+		expect(
+			context?.messages.find((message) => message.id === first.id)
+				?.attachments,
+		).toEqual(["Budget.xlsx"]);
+		expect(JSON.stringify(context)).not.toContain(
+			"long-graph-attachment-id",
+		);
+		expect(context?.revision).not.toBe(before?.revision);
+	});
+
 	it("revises the snapshot when inclusion changes and restores previously excluded messages when allowed", () => {
 		const state = createInitialCollaborationState();
 		const before = selectThreadContext(state, "th-geng-review");

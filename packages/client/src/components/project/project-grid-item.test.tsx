@@ -76,11 +76,11 @@ describe("ProjectGridItem images", () => {
 		"replaces initials with the saved project image in the %s catalog",
 		async (variant) => {
 			const { container } = renderItem(variant);
-			expect(screen.getByText("ITA")).toBeInTheDocument();
+			expect(screen.getByText("IT")).toBeInTheDocument();
 			await waitFor(() => expect(requestedImages).toHaveLength(1));
 			const image = requestedImages[0];
 			expect(image.getAttribute("src")).toBe(
-				"/Monolith/api/project-agent-with-photo/projectImage/download",
+				"/Monolith/api/project-agent-with-photo/projectImage/download?theme=light",
 			);
 			fireEvent.load(image);
 			await waitFor(() => {
@@ -89,7 +89,7 @@ describe("ProjectGridItem images", () => {
 					image.getAttribute("src"),
 				);
 			});
-			expect(screen.queryByText("ITA")).not.toBeInTheDocument();
+			expect(screen.queryByText("IT")).not.toBeInTheDocument();
 			expect(container.querySelector("img")).toHaveAttribute("alt", "");
 			expect(screen.getByRole("link")).toHaveAttribute(
 				"href",
@@ -104,7 +104,7 @@ describe("ProjectGridItem images", () => {
 			const { container } = renderItem(variant);
 			await waitFor(() => expect(requestedImages).toHaveLength(1));
 			fireEvent.error(requestedImages[0]);
-			expect(screen.getByText("ITA")).toBeInTheDocument();
+			expect(screen.getByText("IT")).toBeInTheDocument();
 			expect(container.querySelector("img")).not.toBeInTheDocument();
 		},
 	);
@@ -114,7 +114,23 @@ describe("ProjectGridItem images", () => {
 		renderItem("LIST", { ...project, project_id: "agent #1" });
 		await waitFor(() => expect(requestedImages).toHaveLength(1));
 		expect(requestedImages[0].src).toBe(
-			"https://semoss.example/Monolith/api/project-agent%20%231/projectImage/download",
+			"https://semoss.example/Monolith/api/project-agent%20%231/projectImage/download?theme=light",
+		);
+	});
+
+	it.each([
+		"SKILL",
+		"WORKSPACE",
+		"BLOCKS",
+		"CODE",
+		"INSIGHT",
+		"NOTEBOOK",
+		"AUTOMATION",
+	] as const)("requests the themed project image for %s", async (type) => {
+		renderItem("CARD", { ...project, project_type: type });
+		await waitFor(() => expect(requestedImages).toHaveLength(1));
+		expect(requestedImages[0].getAttribute("src")).toBe(
+			"/Monolith/api/project-agent-with-photo/projectImage/download?theme=light",
 		);
 	});
 });

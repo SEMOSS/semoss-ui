@@ -16,7 +16,12 @@
 		"viewDetails": "Details bekijken",
 		"noToolboxesFound": "Geen toolboxes gevonden",
 		"noKnowledgeFound": "Geen kennis gevonden",
-		"noAgentsFound": "Geen agents gevonden"
+		"noAgentsFound": "Geen agents gevonden",
+		"fromRoom": "Uit deze chat",
+		"loadError": "De catalogus kon niet worden geladen.",
+		"retry": "Opnieuw proberen",
+		"added": "Toegevoegd",
+		"available": "Beschikbaar"
 	},
 	"overlay": {
 		"title": "Configureer je chat",

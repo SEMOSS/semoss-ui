@@ -19,6 +19,20 @@ const contextSchema = z.object({
 		.optional(),
 	insightsRequestId: z.string().optional(),
 	selectedSourceMessageId: z.string().min(1).optional(),
+	/** Email files sent with this request, and which message each came from. */
+	attachments: z
+		.array(
+			z.object({
+				messageId: z.string().min(1),
+				attachmentId: z.string().min(1),
+				name: z.string(),
+				/** Name of the copy in the room folder. */
+				file: z.string().min(1),
+				/** Office and mail files reach the model as their text. */
+				sentAs: z.enum(["file", "text"]),
+			}),
+		)
+		.optional(),
 	/** Local editor target, persisted with the request for response correlation. */
 	emailDraft: z
 		.object({

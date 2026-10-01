@@ -1,7 +1,11 @@
 import { expect, it, vi } from "vitest";
 import type { InsightActions } from "@/lib/pixel";
 import { createInitialCollaborationState } from "../state/collaboration.fixtures";
-import { loadLiveState, loadThreadMessages } from "./live-state";
+import {
+	loadLiveState,
+	loadThreadMessages,
+	readThreadMessagesPage,
+} from "./live-state";
 
 it("loads each topic once when the list contains duplicate records", async () => {
 	const topics = [
@@ -71,4 +75,51 @@ it("requests optional display bodies while preserving exclusions, links and lega
 		text: "Old server",
 		displayBody: undefined,
 	});
+});
+
+it("lists each email's attachments and ties them to that email", async () => {
+	const run = vi.fn().mockResolvedValue({
+		pixelReturn: [
+			{
+				output: {
+					messages: [
+						{
+							id: "m1",
+							text: "See attached",
+							attachments: [
+								{
+									id: "a1",
+									name: "Budget.xlsx",
+									size: 2048,
+									contentType: "application/vnd.ms-excel",
+									kind: "file",
+								},
+								{ id: "a2", name: "Plan.docx", kind: "link" },
+								{ name: "missing id" },
+							],
+						},
+						{ id: "m2", text: "Thanks" },
+					],
+				},
+				operationType: [],
+			},
+		],
+	});
+	const page = await readThreadMessagesPage(
+		{ run } as unknown as InsightActions,
+		"thread",
+	);
+	expect(run.mock.calls[0]?.[0]).toContain("includeAttachments=[true]");
+	expect(page.messages[0]?.attachments).toEqual([
+		{
+			id: "a1",
+			name: "Budget.xlsx",
+			size: 2048,
+			contentType: "application/vnd.ms-excel",
+			isFile: true,
+			messageId: "m1",
+		},
+		{ id: "a2", name: "Plan.docx", isFile: false, messageId: "m1" },
+	]);
+	expect(page.messages[1]?.attachments).toBeUndefined();
 });

@@ -3,6 +3,8 @@ import { useState } from "react";
 import { useTranslation } from "@semoss/i18n";
 import { useIteratorPixel, usePixel } from "@semoss/sdk/react";
 import {
+	Alert,
+	AlertDescription,
 	Button,
 	cn,
 	InputGroup,
@@ -27,6 +29,7 @@ import type {
 	ProjectDependency,
 } from "../../types";
 import { MCPCard } from "./mcp-card";
+import { MCPListItem } from "./mcp-list-item";
 import {
 	engineProjectToMCP,
 	getDepEffectivePermission,
@@ -35,6 +38,8 @@ import {
 } from "./mcp-utils";
 
 interface MCPSelectorProps {
+	/** Compact list for constrained pickers; existing consumers retain cards. */
+	presentation?: "cards" | "list";
 	/** Type of mcp */
 	type: "TOOLBOX" | "KNOWLEDGE";
 
@@ -99,6 +104,7 @@ interface MCPSelectorProps {
  */
 export const MCPSelector: React.FC<MCPSelectorProps> = ({
 	type,
+	presentation = "cards",
 	values,
 	disabled,
 	onChange,
@@ -244,6 +250,7 @@ export const MCPSelector: React.FC<MCPSelectorProps> = ({
 	 * Select a mcp
 	 */
 	const onSelect = (mcp: MCPConfig) => {
+		if (disabled) return;
 		// copy for react
 		const updated = {
 			...selected,
@@ -253,7 +260,11 @@ export const MCPSelector: React.FC<MCPSelectorProps> = ({
 			// Workspace-inherited MCPs can't be removed from a room here
 			// (they live on the agent). The card disables click for these,
 			// but guard the path defensively for the chip-X route too.
-			if (updated[mcp.id].fromWorkspace) {
+			if (
+				updated[mcp.id].fromWorkspace ||
+				updated[mcp.id].fromRoom ||
+				updated[mcp.id].type === "ROOM"
+			) {
 				return;
 			}
 			delete updated[mcp.id];
@@ -264,6 +275,132 @@ export const MCPSelector: React.FC<MCPSelectorProps> = ({
 
 		onChange(Object.values(updated));
 	};
+
+	if (presentation === "list") {
+		const query = search.trim().toLocaleLowerCase();
+		const catalog = new Map([
+			...inaccessibleDeps.map(
+				(dep) => [dep.engine_id, projectDependencyToMCP(dep)] as const,
+			),
+			...combinedData.map((item) => [item.id, item] as const),
+		]);
+		const selectedItems = values.filter((item) =>
+			item.name.toLocaleLowerCase().includes(query),
+		);
+		const available = [...catalog.values()].filter(
+			(item) =>
+				!selected[item.id] &&
+				item.name.toLocaleLowerCase().includes(query),
+		);
+		const renderItem = (item: MCPConfig, isSelected: boolean) => {
+			const entry = catalog.get(item.id);
+			const dependency = inaccessibleDeps.find(
+				(dep) => dep.engine_id === item.id,
+			);
+			return (
+				<MCPListItem
+					key={item.id}
+					item={{ ...entry, ...item }}
+					isSelected={isSelected}
+					disabled={disabled}
+					permission={
+						dependency
+							? getDepEffectivePermission(dependency)
+							: entry?.permission
+					}
+					missingSubDependencies={
+						dependency?.can_view_dependencies === false
+					}
+					platformUrl={entry && getPlatformUrl?.(entry)}
+					onToggle={() => onSelect(item)}
+				/>
+			);
+		};
+		const hasError =
+			getEngines.isError || (type === "TOOLBOX" && getProjects.isError);
+		return (
+			<div
+				className={cn("flex h-full min-h-0 flex-col gap-2", className)}
+			>
+				<InputGroup>
+					<InputGroupInput
+						autoFocus={autoFocus}
+						aria-label={t("selector.search")}
+						placeholder={t("selector.search")}
+						value={search}
+						onChange={(event) => setSearch(event.target.value)}
+					/>
+					<InputGroupAddon>
+						<SearchIcon aria-hidden="true" />
+					</InputGroupAddon>
+					{type === "KNOWLEDGE" && onRequestCreateKnowledge && (
+						<InputGroupAddon align="inline-end">
+							<Button
+								type="button"
+								variant="ghost"
+								size="icon-sm"
+								disabled={disabled}
+								aria-label={t("selector.createKnowledgeSource")}
+								onClick={onRequestCreateKnowledge}
+							>
+								<PlusIcon aria-hidden="true" />
+							</Button>
+						</InputGroupAddon>
+					)}
+				</InputGroup>
+				{hasError && (
+					<Alert variant="destructive">
+						<AlertDescription>
+							{t("selector.loadError")}
+							<Button
+								type="button"
+								variant="outline"
+								size="sm"
+								onClick={() => {
+									getEngines.reset();
+									if (type === "TOOLBOX") getProjects.reset();
+								}}
+							>
+								{t("selector.retry")}
+							</Button>
+						</AlertDescription>
+					</Alert>
+				)}
+				<ScrollArea className="min-h-0 flex-1" viewportRef={setScroll}>
+					{selectedItems.length > 0 && (
+						<fieldset aria-label={t("selector.added")}>
+							<Muted className="block px-3 py-2 text-xs">
+								{t("selector.added")}
+							</Muted>
+							{selectedItems.map((item) =>
+								renderItem(item, true),
+							)}
+						</fieldset>
+					)}
+					<fieldset aria-label={t("selector.available")}>
+						<Muted className="block px-3 py-2 text-xs">
+							{t("selector.available")}
+						</Muted>
+						{available.map((item) => renderItem(item, false))}
+						{isLoading && (
+							<div className="flex justify-center p-4">
+								<Spinner />
+							</div>
+						)}
+						{!isLoading && !hasError && available.length === 0 && (
+							<Muted className="block p-3">
+								{t(
+									type === "TOOLBOX"
+										? "selector.noToolboxesFound"
+										: "selector.noKnowledgeFound",
+								)}
+							</Muted>
+						)}
+					</fieldset>
+				</ScrollArea>
+			</div>
+		);
+	}
 
 	return (
 		<div

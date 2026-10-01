@@ -296,14 +296,22 @@ validate objects too. A string alone does not prove another tool should run.
 ## Agent Runs
 
 `runAgent(params, insightId?)` requires `roomId` and `command` strings. Optional
-fields are `engine`, `harnessType`, `agentId` (strings), `maxTurns` and
-`maxReflections` (numbers), `media` and `urls` (`string[]`), and
+fields are `engine`, `harnessType`, `agentId`, `space`, `subdir` (strings),
+`maxTurns` and `maxReflections` (numbers), `media` and `urls` (`string[]`), and
 `paramValues` (`Record<string, unknown>`, not the chat array form).
 There is no `images` or separate `agentParams` parameter in this version.
 
+`space` picks where the run works: `INSIGHT` (the room's folder, and what a run
+without `space` uses), `USER` (the user's file space), or an editable project
+id. `subdir` narrows that to a folder inside it. The backend refuses
+`paramValues.space`, `space` together with `paramValues.project`, and a
+`subdir` that leaves the space.
+
 The wrapper JSON-serializes raw command text, maps `agentId` to `workspaceId`,
-`urls` to `url`, and `media` to `media`; nonempty `paramValues` is sent as a
-one-element array. It does not URL-encode commands or inject a harness default.
+`urls` to `url`, and `media` to `media`; `space` is sent as its own argument
+and `subdir` as `paramValues.subdir`, replacing one already there. Nonempty
+`paramValues` is sent as a one-element array. It does not URL-encode commands
+or inject a harness default.
 The returned status is typed as `AgentRunStatusValue`, not guaranteed by local
 validation to equal `"SUBMITTED"`.
 

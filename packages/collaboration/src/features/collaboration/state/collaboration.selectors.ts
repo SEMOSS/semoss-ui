@@ -195,6 +195,14 @@ export function selectThreadContext(
 					? message.text
 					: removeQuotedReplies(message.text),
 			...(message.isTruncated ? { isTruncated: true } : {}),
+			// Lets Assistant say what came with an email before anything is attached.
+			...(message.attachments?.length
+				? {
+						attachments: message.attachments.map(
+							(attachment) => attachment.name,
+						),
+					}
+				: {}),
 		}));
 	const emptyIds = allowedMessages
 		.filter((message) => message.text.length === 0)

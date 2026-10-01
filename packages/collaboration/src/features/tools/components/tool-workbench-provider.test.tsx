@@ -1,4 +1,10 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import {
+	act,
+	fireEvent,
+	render,
+	screen,
+	waitFor,
+} from "@testing-library/react";
 import { useId } from "react";
 import { FILE_PANEL_TYPES } from "@semoss/panels";
 import type { ConversationTool } from "@/features/messages/types/message";
@@ -55,6 +61,12 @@ function Harness() {
 			{workbench.isOpen && <ToolWorkbench />}
 		</>
 	);
+}
+
+const captured: { workbench?: ReturnType<typeof useToolWorkbench> } = {};
+function CaptureWorkbench() {
+	captured.workbench = useToolWorkbench();
+	return null;
 }
 
 function RunFocusHarness() {
@@ -139,6 +151,45 @@ describe("ToolWorkbenchProvider", () => {
 				dispatchEvent: vi.fn(),
 			})),
 		});
+	});
+
+	it("moves room files to a new room insight but leaves download-area previews alone", async () => {
+		const view = (insightId: string) => (
+			<ToolWorkbenchProvider
+				roomId="room-1"
+				insightId={insightId}
+				tools={{}}
+				pendingApprovals={[]}
+				onApproveTool={vi.fn()}
+				onRejectTool={vi.fn()}
+			>
+				<CaptureWorkbench />
+			</ToolWorkbenchProvider>
+		);
+		const { rerender } = render(view("insight-1"));
+		act(() => {
+			captured.workbench?.openFile("notes.md", "notes.md");
+			captured.workbench?.openFile(
+				"scan.pdf",
+				"scan.pdf",
+				"download-area",
+			);
+		});
+		rerender(view("insight-2"));
+		const config = (path: string) =>
+			Object.values(
+				captured.workbench?.store.getState().layout.panels ?? {},
+			).find((panel) => panel.config?.path === path)?.config;
+		await waitFor(() =>
+			expect(config("notes.md")).toMatchObject({
+				mode: { type: "INSIGHT", insightId: "insight-2" },
+			}),
+		);
+		expect(config("scan.pdf")).toMatchObject({
+			mode: { type: "INSIGHT", insightId: "download-area" },
+			isolated: true,
+		});
+		expect(config("notes.md")).not.toHaveProperty("isolated");
 	});
 
 	it("returns focus to a remounted run card after closing the mobile inspector", async () => {

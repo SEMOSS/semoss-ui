@@ -43,7 +43,7 @@ export const GitDiffEditor = ({
 	onAction,
 	renderSideBySide = true,
 }: GitDiffEditorProps) => {
-	const actionLabel = action === "UNSTAGE" ? "Unstage file" : "Stage file";
+	const actionLabel = action === "UNSTAGE" ? "Unstage File" : "Stage File";
 	const actionMenuItems: CodeEditorMenuItem[] | undefined =
 		action && onAction
 			? [

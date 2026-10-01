@@ -5,6 +5,7 @@ import {
 import { getRoomMessages } from "@/features/messages/api/get-room-messages";
 import * as runApi from "@/features/rooms/api/agent-run-api";
 import { uploadRoomFiles } from "@/features/rooms/api/upload-room-files";
+import { stageThreadAttachment } from "./api/thread-attachments";
 import { compactThreadMessages } from "./api/thread-compaction";
 import {
 	bindThreadRoom,
@@ -18,6 +19,10 @@ import {
 import { ThreadSession } from "./thread-session";
 
 vi.mock("./api/thread-compaction", () => ({ compactThreadMessages: vi.fn() }));
+vi.mock("./api/thread-attachments", async (original) => ({
+	...(await original<typeof import("./api/thread-attachments")>()),
+	stageThreadAttachment: vi.fn(),
+}));
 
 vi.mock("@semoss/sdk", async (original) => {
 	let nextInsight = 0;
@@ -159,9 +164,223 @@ it("does not create a room until an explicit send and stages native files after 
 		media: ["mail/brief.pdf"],
 	});
 	expect(readThreadCommand(parameters?.command ?? "")).toEqual({
-		context,
+		context: {
+			...context,
+			attachments: [
+				{
+					messageId: "email-1",
+					attachmentId: "a1",
+					name: "brief.pdf",
+					file: "mail/brief.pdf",
+					sentAs: "file",
+				},
+			],
+		},
 		request: "Summarize",
 	});
+});
+
+it("stages each Brain attachment from its own email and sends Office files as their text", async () => {
+	const instance = await session();
+	vi.mocked(stageThreadAttachment).mockImplementation(
+		async (_actions, insightId, _threadId, attachment) => ({
+			insightId,
+			sourceUid: attachment.messageId ?? "",
+			attachmentId: attachment.id,
+			name: attachment.name,
+			size: 100,
+			filePath: `staged-${attachment.name}`,
+			...(attachment.name.endsWith(".xlsx")
+				? { textPath: `staged-${attachment.name}.txt` }
+				: {}),
+		}),
+	);
+	const budget = {
+		id: "a1",
+		name: "Budget.xlsx",
+		isFile: true,
+		messageId: "m-older",
+	};
+	const scan = {
+		id: "a2",
+		name: "scan.pdf",
+		isFile: true,
+		messageId: "m-newest",
+	};
+	await instance.send(
+		"Thread",
+		context,
+		{ text: "Compare these", files: [] },
+		undefined,
+		[budget, scan],
+	);
+	expect(
+		vi.mocked(prepareThreadRoom).mock.invocationCallOrder[0],
+	).toBeLessThan(
+		vi.mocked(stageThreadAttachment).mock.invocationCallOrder[0] ?? 0,
+	);
+	expect(stageThreadAttachment).toHaveBeenCalledWith(
+		instance.insight.actions,
+		instance.insight.insightId,
+		"t1",
+		budget,
+		true,
+	);
+	expect(stageMailAttachment).not.toHaveBeenCalled();
+	const [, parameters] = vi.mocked(runApi.startAgentRun).mock.calls[0] ?? [];
+	expect(parameters?.media).toEqual([
+		"staged-Budget.xlsx.txt",
+		"staged-scan.pdf",
+	]);
+	expect(
+		readThreadCommand(parameters?.command ?? "")?.context.attachments,
+	).toEqual([
+		{
+			messageId: "m-older",
+			attachmentId: "a1",
+			name: "Budget.xlsx",
+			file: "staged-Budget.xlsx.txt",
+			sentAs: "text",
+		},
+		{
+			messageId: "m-newest",
+			attachmentId: "a2",
+			name: "scan.pdf",
+			file: "staged-scan.pdf",
+			sentAs: "file",
+		},
+	]);
+});
+
+it("checks attachment sizes before preparing a room or downloading anything", async () => {
+	const instance = await session();
+	const MB = 1024 * 1024;
+	const file = (id: string, name: string, size: number) => ({
+		id,
+		name,
+		size,
+		isFile: true,
+		messageId: `m-${id}`,
+	});
+	await expect(
+		instance.send(
+			"Thread",
+			context,
+			{ text: "Read", files: [] },
+			undefined,
+			[file("a1", "huge.pdf", 11 * MB)],
+		),
+	).rejects.toThrow("huge.pdf is larger than the 10 MB attachment limit.");
+	await expect(
+		instance.send(
+			"Thread",
+			context,
+			{ text: "Read", files: [] },
+			undefined,
+			[
+				file("a1", "one.pdf", 9 * MB),
+				file("a2", "two.pdf", 9 * MB),
+				file("a3", "three.png", 3 * MB),
+			],
+		),
+	).rejects.toThrow("Files sent with one message can total 20 MB.");
+	expect(prepareThreadRoom).not.toHaveBeenCalled();
+	expect(stageThreadAttachment).not.toHaveBeenCalled();
+	// Office files reach the model as their text, so they do not count.
+	vi.mocked(stageThreadAttachment).mockImplementation(
+		async (_actions, insightId, _threadId, attachment) => ({
+			insightId,
+			sourceUid: attachment.messageId ?? "",
+			attachmentId: attachment.id,
+			name: attachment.name,
+			size: attachment.size ?? 0,
+			filePath: attachment.name,
+			...(attachment.name.endsWith(".docx")
+				? { textPath: `${attachment.name}.txt` }
+				: {}),
+		}),
+	);
+	await instance.send(
+		"Thread",
+		context,
+		{ text: "Read", files: [] },
+		undefined,
+		[
+			file("a1", "one.pdf", 9 * MB),
+			file("a2", "two.pdf", 9 * MB),
+			file("a3", "notes.docx", 9 * MB),
+		],
+	);
+	expect(runApi.startAgentRun).toHaveBeenCalledTimes(1);
+});
+
+it("never sends an Office file raw when its text could not be read", async () => {
+	const instance = await session();
+	vi.mocked(stageThreadAttachment).mockResolvedValue({
+		insightId: instance.insight.insightId,
+		sourceUid: "m1",
+		attachmentId: "a1",
+		name: "locked.docx",
+		size: 100,
+		filePath: "locked.docx",
+		textError:
+			"This file is password protected, so its text could not be read.",
+	});
+	await expect(
+		instance.send(
+			"Thread",
+			context,
+			{ text: "Read", files: [] },
+			undefined,
+			[{ id: "a1", name: "locked.docx", isFile: true, messageId: "m1" }],
+		),
+	).rejects.toThrow("This file is password protected");
+	expect(runApi.startAgentRun).not.toHaveBeenCalled();
+});
+
+it("previews and downloads Brain attachments from the download area, never the room", async () => {
+	const instance = await session();
+	vi.mocked(stageThreadAttachment).mockImplementation(
+		async (_actions, insightId, _threadId, attachment) => ({
+			insightId,
+			sourceUid: attachment.messageId ?? "",
+			attachmentId: attachment.id,
+			name: attachment.name,
+			size: 100,
+			filePath: `staged-${attachment.name}`,
+			textPath: `staged-${attachment.name}.txt`,
+		}),
+	);
+	const budget = {
+		id: "a1",
+		name: "Budget.xlsx",
+		isFile: true,
+		messageId: "m1",
+	};
+	const preview = await instance.previewAttachment(undefined, budget);
+	expect(preview).toEqual({
+		insightId: expect.stringMatching(/^isolated-/),
+		path: "staged-Budget.xlsx.txt",
+		name: "Budget.xlsx (text)",
+	});
+	expect(preview.insightId).not.toBe(instance.insight.insightId);
+	const [actions] = vi.mocked(stageThreadAttachment).mock.calls[0] ?? [];
+	expect(actions).not.toBe(instance.insight.actions);
+	await instance.downloadAttachment(undefined, budget);
+	// One staged copy serves both the preview and the download.
+	expect(stageThreadAttachment).toHaveBeenCalledTimes(1);
+	expect(downloadStagedAttachment).toHaveBeenCalledWith(
+		actions,
+		expect.objectContaining({ filePath: "staged-Budget.xlsx" }),
+	);
+	await expect(
+		instance.previewAttachment(undefined, {
+			id: "a2",
+			name: "Plan.docx",
+			isFile: false,
+			messageId: "m1",
+		}),
+	).rejects.toThrow("Open this linked or embedded attachment in Outlook.");
 });
 
 it("reuses the recovered room and model when source context changes", async () => {

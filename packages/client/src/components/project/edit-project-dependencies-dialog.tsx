@@ -65,6 +65,7 @@ export const EditProjectDependenciesDialog = ({
 		if (isProjectType(dep.engine_type)) {
 			return (
 				<AppCatalogAvatar
+					projectId={dep.engine_id}
 					name={dep.engine_name}
 					className={`shrink-0 rounded ${sizeClass} ${textClass}`}
 				/>

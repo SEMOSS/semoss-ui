@@ -267,8 +267,9 @@ export function AssistantComposer({
 						snapshot.association?.options.predefinedPrompts ?? []
 					}
 					attachmentContent={
-						sourceUid &&
-						attachments.some((a) => a.isFile) && (
+						attachments.some(
+							(a) => a.isFile && (a.messageId || sourceUid),
+						) && (
 							<ThreadSourceAttachments
 								attachments={attachments}
 								selected={selected}

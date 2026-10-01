@@ -13,6 +13,9 @@ const sdk = vi.hoisted(() => ({
 	},
 }));
 vi.mock("@semoss/sdk/react", () => ({ useInsight: () => sdk }));
+vi.mock("@semoss/i18n", () => ({
+	useTranslation: () => ({ t: (key: string) => key }),
+}));
 afterEach(() => {
 	cleanup();
 	sdk.error = null;
@@ -65,7 +68,7 @@ describe("Playground initialization", () => {
 			</MemoryRouter>,
 		);
 		expect(
-			screen.getByRole("heading", { name: "Something went wrong." }),
+			screen.getByRole("heading", { name: "studio.errorTitle" }),
 		).toBeVisible();
 	});
 });

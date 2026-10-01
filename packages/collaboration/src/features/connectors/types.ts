@@ -43,6 +43,14 @@ export interface SourceAttachment {
 	size?: number;
 	isFile: boolean;
 	isInline?: boolean;
+	/**
+	 * The email on a Brain thread that carries this attachment. Present means
+	 * `BrainStageAttachment` reads it under the thread's rules; absent means an
+	 * imported Sources message read through the Outlook connector.
+	 */
+	messageId?: string;
+	/** Where it came from, for pickers that list several emails' attachments. */
+	sourceLabel?: string;
 }
 
 /** Validated source content delivered to the shared Work/Brain session. */
@@ -68,6 +76,12 @@ export interface StagedSourceAttachment {
 	size: number;
 	attachmentId: string;
 	sourceUid: string;
+	/** Plain-text copy of an Office or mail file, next to the original, for models that cannot read the file. */
+	textPath?: string;
+	/** The text copy stops before the end of the file. */
+	isTextTruncated?: boolean;
+	/** Why an Office or mail file has no text copy, such as a password. */
+	textError?: string;
 }
 
 /** Verified identity of a newly created Outlook draft. */

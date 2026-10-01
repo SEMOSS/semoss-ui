@@ -80,6 +80,11 @@ export function ThreadSourceAttachments({
 							>
 								<span className="min-w-0 flex-1 break-words text-sm">
 									{attachment.name}
+									{attachment.sourceLabel && (
+										<span className="block text-muted-foreground text-xs">
+											{attachment.sourceLabel}
+										</span>
+									)}
 								</span>
 								<Button
 									type="button"

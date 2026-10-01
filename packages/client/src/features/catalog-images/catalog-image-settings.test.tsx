@@ -99,7 +99,12 @@ describe("CatalogImageSettings", () => {
 			await waitFor(() =>
 				expect(imageUrl.result.current).not.toBe(original),
 			);
-			expect(imageUrl.result.current).toContain("?v=");
+			const refreshedUrl = new URL(
+				imageUrl.result.current,
+				window.location.href,
+			);
+			expect(refreshedUrl.searchParams.get("v")).toBeTruthy();
+			expect(refreshedUrl.searchParams.get("theme")).toBe("light");
 			expect(unrelatedUrl.result.current).toBe(unrelated);
 			expect(URL.revokeObjectURL).toHaveBeenCalledWith(
 				"blob:selected-image",

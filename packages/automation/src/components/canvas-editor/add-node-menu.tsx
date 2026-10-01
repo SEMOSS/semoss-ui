@@ -53,13 +53,13 @@ const CATEGORY_META: Record<
 > = {
 	trigger: { label: "Trigger", icon: Braces },
 	database: { label: "Database", icon: Database },
-	model: { label: "AI models", icon: Sparkles },
+	model: { label: "AI Models", icon: Sparkles },
 	agent: { label: "Agents", icon: Bot },
 	storage: { label: "Storage", icon: FolderOpen },
 	vector: { label: "Vector", icon: Network },
 	function: { label: "Functions", icon: FunctionSquare },
 	app: { label: "Apps", icon: Variable },
-	control: { label: "Flow control", icon: SlidersHorizontal },
+	control: { label: "Flow Control", icon: SlidersHorizontal },
 	developer: { label: "Developer", icon: Braces },
 };
 

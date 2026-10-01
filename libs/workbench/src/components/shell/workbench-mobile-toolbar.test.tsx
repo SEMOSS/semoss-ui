@@ -45,6 +45,7 @@ afterEach(() => vi.unstubAllGlobals());
 function setup(
 	mobileTopBorder?: "toolbar" | "drawer",
 	layoutMode?: "auto" | "compact",
+	includeTopAfter = true,
 ) {
 	const store = createWorkbenchStore({ components: {} });
 	const close = vi.fn();
@@ -63,7 +64,7 @@ function setup(
 									<button type="button">View</button>
 								</>
 							),
-							after: (
+							after: includeTopAfter && (
 								<button type="button" onClick={close}>
 									Close workbench
 								</button>
@@ -109,9 +110,18 @@ it("preserves the existing drawer default for other hosts", async () => {
 	).toBeNull();
 	fireEvent.click(screen.getByRole("button", { name: "Panels and actions" }));
 	const drawer = await screen.findByRole("dialog", { name: "Panels" });
+	expect(within(drawer).getByRole("button", { name: "File" })).toBeVisible();
+	expect(within(drawer).getByRole("button", { name: "View" })).toBeVisible();
 	expect(
 		within(drawer).getByRole("button", { name: "Close workbench" }),
 	).toBeVisible();
+});
+it("keeps top-before actions reachable in the drawer without top-after actions", async () => {
+	setup("drawer", "auto", false);
+	fireEvent.click(screen.getByRole("button", { name: "Panels and actions" }));
+	const drawer = await screen.findByRole("dialog", { name: "Panels" });
+	expect(within(drawer).getByRole("button", { name: "File" })).toBeVisible();
+	expect(within(drawer).getByRole("button", { name: "View" })).toBeVisible();
 });
 it("moves the controls between desktop border and mobile toolbar without duplication", () => {
 	isMobile = false;

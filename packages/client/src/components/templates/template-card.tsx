@@ -65,6 +65,7 @@ export const TemplateCard = ({
 					<div className="relative flex h-full w-full items-center justify-center overflow-hidden bg-linear-to-br from-primary/10 via-background to-secondary/30">
 						<div className="absolute inset-0 bg-[radial-gradient(#e5e7eb_1px,transparent_1px)] bg-size-[16px_16px] opacity-40 dark:bg-[radial-gradient(#1f2937_1px,transparent_1px)]" />
 						<AppCatalogAvatar
+							projectId={id}
 							name={name}
 							className="size-16 rounded-xl text-xl shadow-sm transition-transform duration-300 group-hover:scale-110"
 						/>

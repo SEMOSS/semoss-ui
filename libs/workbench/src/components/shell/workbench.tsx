@@ -63,7 +63,7 @@ interface WorkbenchProps {
 	/**
 	 * Rail add-ons per side (before/after the icon list). A rail carrying slot
 	 * content renders even with no panels docked to it. The mobile layout has
-	 * no rails: by default `left.after` and `top.after` surface in the actions drawer.
+	 * no rails: by default `left.after` and both top slots surface in the actions drawer.
 	 * With `mobileTopBorder="toolbar"`, both top slots stay above the mobile tabs.
 	 */
 	borderSlots?: WorkbenchBorderSlots;
@@ -177,15 +177,21 @@ export const Workbench: FC<WorkbenchProps> = ({
 
 	const mobileActionsSlot = useMemo(() => {
 		const leftAfter = borderSlots?.left?.after;
+		const topBefore = borderSlots?.top?.before;
 		const topAfter = borderSlots?.top?.after;
 
-		if (mobileTopBorder === "toolbar" || !topAfter) {
+		if (mobileTopBorder === "toolbar" || (!topBefore && !topAfter)) {
 			return leftAfter;
 		}
 
 		return (ctx: WorkbenchBorderSlotCtx) => (
 			<>
 				{resolveBorderSlot(leftAfter, ctx)}
+				{resolveBorderSlot(topBefore, {
+					...ctx,
+					side: "top",
+					vertical: false,
+				})}
 				{resolveBorderSlot(topAfter, {
 					...ctx,
 					side: "top",

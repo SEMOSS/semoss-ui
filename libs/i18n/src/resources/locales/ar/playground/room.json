@@ -25,7 +25,14 @@
 			"SUMMARY": "يستبدل الرسائل الأقدم بملخص تم إنشاؤه بالذكاء الاصطناعي. يحافظ على السياق العام للمحادثة مع توفير مساحة من الرموز.",
 			"TOOL_PRUNE": "يزيل نتائج استدعاء الأدوات المطولة من سجل المحادثة. مناسب عندما تكون مخرجات الأدوات كبيرة ولم تعد التفاصيل ضرورية.",
 			"AUTO": "سيتم اختيار التلخيص أو تقليم الأدوات بناءً على المحادثة الحالية."
-		}
+		},
+		"panelTitle": "الإعدادات",
+		"noKnowledge": "لم يتم تحديد أي معرفة.",
+		"noTools": "لم يتم تحديد أي أدوات.",
+		"fromRoom": "من الغرفة",
+		"inheritedSelection": "لا يمكن إزالة العناصر الموروثة من هذه الدردشة.",
+		"removeSelection": "إزالة {{name}}",
+		"agentLoadError": "تعذر تحميل الوكيل. أعد المحاولة أو اختر وكيلاً آخر."
 	},
 	"form": {
 		"modelLabel": "النموذج",
@@ -36,9 +43,12 @@
 		"temperatureLabel": "درجة الحرارة"
 	},
 	"modes": {
-		"ask": "وضع الدردشة",
-		"agent": "وضع إطار تشغيل الوكيل",
-		"exitAgent": "الخروج من وضع إطار تشغيل الوكيل"
+		"ask": "دردشة",
+		"agent": "وكيل",
+		"exitAgent": "التبديل إلى الدردشة",
+		"selectedAgent": "الوكيل: {{name}}",
+		"defaultAgent": "الوكيل الافتراضي",
+		"noAgent": "بدون وكيل"
 	},
 	"workspace": {
 		"publishTooltip": "نشر كوكيل",
@@ -59,7 +69,7 @@
 		"ariaPlaceholder": "أدخل النص",
 		"thinking": "جارٍ التفكير...",
 		"menuPrompt": "كيف يمكنني مساعدتك اليوم؟",
-		"openSettings": "إضافة ملفات ووكلاء والمزيد",
+		"openSettings": "أضف إلى دردشتك",
 		"recordLabel": "تسجيل النموذج",
 		"stopRecording": "إيقاف التسجيل",
 		"record": "تسجيل",
@@ -71,14 +81,18 @@
 		"errorProcessing": "خطأ في معالجة الدردشة",
 		"stopLabel": "إيقاف الرد",
 		"stopTooltip": "إيقاف",
-		"stoppingTooltip": "جارٍ الإيقاف"
+		"stoppingTooltip": "جارٍ الإيقاف",
+		"recordUnavailable": "الإملاء غير متاح في هذا المتصفح",
+		"historyHint": "الرسالة السابقة {{index}} من {{total}} · ↑/↓ للتصفح · Esc لاستعادة المسودة",
+		"draftRestored": "تمت استعادة المسودة",
+		"removeFile": "إزالة {{name}}"
 	},
 	"content": {
 		"scrollToTop": "انتقل إلى الأعلى",
 		"scrollToBottom": "انتقل إلى الأسفل"
 	},
 	"inlineTool": {
-		"openInSidebar": "فتح في الشريط الجانبي",
+		"openInSidebar": "فتح في مساحة العمل",
 		"minimize": "تصغير",
 		"maximize": "تكبير",
 		"close": "إغلاق"
@@ -90,7 +104,7 @@
 		"copyFailed": "فشل النسخ إلى الحافظة"
 	},
 	"menuToolbox": {
-		"addToolbox": "إضافة صناديق أدوات"
+		"addToolbox": "إضافة أدوات"
 	},
 	"menuKnowledge": {
 		"addKnowledge": "إضافة معرفة"
@@ -101,12 +115,12 @@
 		"notFound": "غير موجود"
 	},
 	"menuUpload": {
-		"attachDocument": "إضافة مستندات"
+		"attachDocument": "إرفاق ملفات"
 	},
 	"menuFileExplorer": {
-		"name": "مستكشف الملفات",
-		"open": "فتح مستكشف الملفات",
-		"close": "إغلاق مستكشف الملفات"
+		"name": "ملفات الدردشة",
+		"open": "إظهار ملفات الدردشة",
+		"close": "إخفاء ملفات الدردشة"
 	},
 	"errors": {
 		"createRoom": "حدث خطأ أثناء إنشاء الغرفة. الخطأ: {{message}}",
@@ -126,5 +140,45 @@
 		"searchPlaceholder": "البحث في المعرفة وصناديق الأدوات",
 		"noResults": "لم يتم العثور على عناصر مطابقة",
 		"noItemsAvailable": "لا توجد معرفة أو صناديق أدوات متاحة"
+	},
+	"studio": {
+		"views": "طرق عرض المحادثة",
+		"chat": "المحادثة",
+		"openWorkArea": "فتح مساحة العمل",
+		"workArea": "مساحة العمل",
+		"toolsCount": "الأدوات، تم اختيار {{count}}",
+		"tools": "الأدوات",
+		"toolsLocked": "لا يمكن تغيير الأدوات أثناء إنشاء الرد.",
+		"toolsHint": "تُطبّق اختياراتك على رسالتك التالية.",
+		"toolsTitle": "الأدوات والمعرفة",
+		"toolsDescription": "اختر الأدوات والمعرفة المتاحة لهذه المحادثة.",
+		"moreActions": "إجراءات إضافية",
+		"prompts": "المطالبات",
+		"removeFile": "إزالة {{name}}",
+		"thinking": "التفكير",
+		"errorTitle": "حدث خطأ",
+		"errorDescription": "حدّث الصفحة أو عد إلى الصفحة الرئيسية وحاول مرة أخرى.",
+		"backHome": "العودة إلى الرئيسية",
+		"export": "تصدير",
+		"refresh": "تحديث",
+		"exportCsv": "تصدير بصيغة CSV",
+		"exportPdf": "تصدير بصيغة PDF",
+		"closeWorkspace": "إغلاق مساحة العمل",
+		"preparingWorkspace": "جارٍ إعداد مساحة العمل…",
+		"activityLog": "سجل النشاط",
+		"prepareError": "تعذر إعداد مساحة العمل. تم الاحتفاظ بمسودتك.",
+		"retry": "إعادة المحاولة",
+		"viewActivityLog": "اعرض سجل النشاط"
+	},
+	"optimizer": {
+		"optimize": "تحسين الرسالة",
+		"revert": "العودة إلى الرسالة السابقة",
+		"optimizing": "جارٍ التحسين…",
+		"success": "تم تحسين الرسالة!",
+		"noModel": "اختر نموذجًا لتحسين رسالتك",
+		"invalidResponse": "لم يتم استلام رسالة محسّنة",
+		"failed": "تعذّر تحسين الرسالة",
+		"tooLarge": "الرسالة طويلة جدًا للتحسين. يُرجى تقصيرها أولًا.",
+		"noPermission": "ليس لديك إذن لاستخدام هذا النموذج"
 	}
 }

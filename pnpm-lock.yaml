@@ -79,6 +79,49 @@ importers:
         specifier: ^4.1.11
         version: 4.1.11(@types/node@24.12.2)(@vitest/coverage-v8@4.1.11)(@vitest/ui@4.1.11)(jsdom@22.1.0)(vite@8.2.1(@types/node@24.12.2)(jiti@2.7.0)(terser@5.48.0)(yaml@2.9.1))
 
+  libs/connectors:
+    dependencies:
+      '@semoss/i18n':
+        specifier: workspace:*
+        version: link:../i18n
+      '@semoss/sdk':
+        specifier: workspace:*
+        version: link:../sdk
+      '@semoss/shared':
+        specifier: workspace:*
+        version: link:../shared
+      '@semoss/ui':
+        specifier: workspace:*
+        version: link:../ui
+      lucide-react:
+        specifier: ^0.545.0
+        version: 0.545.0(react@19.2.8)
+      react:
+        specifier: ^19.0.0
+        version: 19.2.8
+      react-dom:
+        specifier: ^19.0.0
+        version: 19.2.8(react@19.2.8)
+    devDependencies:
+      '@semoss/config':
+        specifier: workspace:*
+        version: link:../config
+      '@types/react':
+        specifier: ^19.0.0
+        version: 19.2.18
+      '@types/react-dom':
+        specifier: ^19.0.0
+        version: 19.2.5(@types/react@19.2.18)
+      jsdom:
+        specifier: ~22.1.0
+        version: 22.1.0
+      typescript:
+        specifier: ~6.0.0
+        version: 6.0.3
+      vitest:
+        specifier: ^4.1.11
+        version: 4.1.11(@types/node@25.9.3)(@vitest/coverage-v8@4.1.11)(@vitest/ui@4.1.11)(jsdom@22.1.0)(vite@8.2.1(@types/node@25.9.3)(jiti@2.7.0)(terser@5.48.0)(yaml@2.9.1))
+
   libs/i18n:
     dependencies:
       i18next:
@@ -354,6 +397,9 @@ importers:
       react-dom:
         specifier: ^19.0.0
         version: 19.2.8(react@19.2.8)
+      react-hook-form:
+        specifier: ^7.55.0
+        version: 7.66.1(react@19.2.8)
     devDependencies:
       '@semoss/config':
         specifier: workspace:*
@@ -1148,6 +1194,9 @@ importers:
       '@lexical/react':
         specifier: ^0.39.0
         version: 0.39.0(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(yjs@13.6.32)
+      '@semoss/connectors':
+        specifier: workspace:*
+        version: link:../../libs/connectors
       '@semoss/i18n':
         specifier: workspace:*
         version: link:../../libs/i18n
@@ -11701,7 +11750,7 @@ snapshots:
       obug: 2.1.2
       std-env: 4.1.0
       tinyrainbow: 3.1.0
-      vitest: 4.1.11(@types/node@25.9.3)(@vitest/coverage-v8@4.1.11)(@vitest/ui@4.1.11)(jsdom@22.1.0)(vite@8.2.1(@types/node@25.9.3)(jiti@2.7.0)(terser@5.48.0)(yaml@2.9.1))
+      vitest: 4.1.11(@types/node@24.12.2)(@vitest/coverage-v8@4.1.11)(@vitest/ui@4.1.11)(jsdom@22.1.0)(vite@8.2.1(@types/node@24.12.2)(jiti@2.7.0)(terser@5.48.0)(yaml@2.9.1))
 
   '@vitest/expect@4.1.11':
     dependencies:
@@ -11755,7 +11804,7 @@ snapshots:
       sirv: 3.0.2
       tinyglobby: 0.2.17
       tinyrainbow: 3.1.0
-      vitest: 4.1.11(@types/node@25.9.3)(@vitest/coverage-v8@4.1.11)(@vitest/ui@4.1.11)(jsdom@22.1.0)(vite@8.2.1(@types/node@25.9.3)(jiti@2.7.0)(terser@5.48.0)(yaml@2.9.1))
+      vitest: 4.1.11(@types/node@24.12.2)(@vitest/coverage-v8@4.1.11)(@vitest/ui@4.1.11)(jsdom@22.1.0)(vite@8.2.1(@types/node@24.12.2)(jiti@2.7.0)(terser@5.48.0)(yaml@2.9.1))
 
   '@vitest/utils@4.1.11':
     dependencies:
@@ -15841,7 +15890,7 @@ snapshots:
     dependencies:
       '@open-draft/deferred-promise': 2.2.0
       dotenv: 16.6.1
-      mime-db: 1.52.0
+      mime-db: 1.54.0
       outvariant: 1.4.0
 
   statuses@2.0.2: {}

@@ -1,3 +1,4 @@
+import type { SourceAttachment } from "@/features/connectors/types";
 import type { DisplayBody } from "@/features/email/message-body";
 
 /** Session-only collaboration records; imported identities retain nullable fields. */
@@ -267,6 +268,19 @@ export interface WorkspaceMessage {
 	cc?: string[];
 	/** Opens the message in Outlook or Teams. */
 	webLink?: string;
+	/** Files and links attached to an email, described without their bytes. */
+	attachments?: SourceAttachment[];
+}
+
+/** A message as the assistant receives it in the thread context. */
+export interface ContextMessage {
+	id: string;
+	fromId: string;
+	at: string;
+	text: string;
+	isTruncated?: boolean;
+	/** Names only; a file reaches the assistant only when the owner attaches it. */
+	attachments?: string[];
 }
 
 export interface WorkspaceStep {
@@ -475,7 +489,7 @@ export interface ThreadContext {
 		notes: TopicNote[];
 	}[];
 	participants: { personId: string; name: string; included: boolean }[];
-	messages: WorkspaceMessage[];
+	messages: ContextMessage[];
 	facts: WorkspaceFact[];
 	/** Left out by an exclusion or a rule. */
 	hiddenCount: number;

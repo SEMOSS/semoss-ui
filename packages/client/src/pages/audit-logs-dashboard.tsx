@@ -431,6 +431,7 @@ export const AuditLogsDashboard = ({
 							icon={
 								contextEntity.kind === "app" ? (
 									<AppCatalogAvatar
+										projectId={contextEntity.id}
 										name={contextEntity.name || "App"}
 										className="h-full w-full rounded-lg text-xl"
 									/>

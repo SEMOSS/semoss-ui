@@ -69,7 +69,13 @@ export const FileMarkdownView = ({
 				/>
 			) : (
 				<div className="size-full overflow-y-auto px-6 py-4">
-					<Markdown>{buffer.content}</Markdown>
+					{/* a file reads as a document, not as a chat reply */}
+					<Markdown
+						variant="document"
+						className="break-words text-sm leading-relaxed"
+					>
+						{buffer.content}
+					</Markdown>
 				</div>
 			)}
 		</div>

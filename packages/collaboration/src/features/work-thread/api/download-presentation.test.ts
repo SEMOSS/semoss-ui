@@ -5,7 +5,7 @@ import { downloadPresentation } from "./download-presentation";
 vi.mock("@semoss/sdk", () => ({ download: vi.fn() }));
 
 const run = vi.fn();
-const actions = { run } as InsightActions;
+const actions = { run } as unknown as InsightActions;
 beforeEach(() => vi.resetAllMocks());
 
 it("downloads with the key from the owning insight", async () => {

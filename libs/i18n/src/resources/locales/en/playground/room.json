@@ -25,7 +25,14 @@
 			"SUMMARY": "Replaces older messages with an AI-generated summary. Preserves the overall context of the conversation while freeing up token space.",
 			"TOOL_PRUNE": "Removes verbose tool call results from the conversation history. Best when tool outputs are large and the details are no longer needed.",
 			"AUTO": "Will select summarization or tool pruning based on the current conversation."
-		}
+		},
+		"panelTitle": "Settings",
+		"noKnowledge": "No Knowledge selected.",
+		"noTools": "No Tools selected.",
+		"fromRoom": "From room",
+		"inheritedSelection": "Inherited selections cannot be removed from this chat.",
+		"removeSelection": "Remove {{name}}",
+		"agentLoadError": "Could not load the agent. Try again or select another agent."
 	},
 	"form": {
 		"modelLabel": "Model",
@@ -36,9 +43,12 @@
 		"temperatureLabel": "Temperature"
 	},
 	"modes": {
-		"ask": "Chat Mode",
-		"agent": "Agent Harness Mode",
-		"exitAgent": "Exit agent harness mode"
+		"ask": "Chat",
+		"agent": "Agent",
+		"exitAgent": "Switch to chat",
+		"selectedAgent": "Agent: {{name}}",
+		"defaultAgent": "Default agent",
+		"noAgent": "No agent"
 	},
 	"workspace": {
 		"publishTooltip": "Publish as Agent",
@@ -59,7 +69,7 @@
 		"ariaPlaceholder": "Enter text",
 		"thinking": "Thinking...",
 		"menuPrompt": "How can I help you today?",
-		"openSettings": "Add files, agents, and more",
+		"openSettings": "Add to your chat",
 		"recordLabel": "Record the Model",
 		"stopRecording": "Stop Recording",
 		"record": "Record",
@@ -71,14 +81,18 @@
 		"errorProcessing": "Error processing chat",
 		"stopLabel": "Stop the response",
 		"stopTooltip": "Stop",
-		"stoppingTooltip": "Stopping"
+		"stoppingTooltip": "Stopping",
+		"recordUnavailable": "Dictation is unavailable in this browser",
+		"historyHint": "Earlier prompt {{index}} of {{total}} · ↑/↓ browse · Esc to restore draft",
+		"draftRestored": "Draft restored",
+		"removeFile": "Remove {{name}}"
 	},
 	"content": {
 		"scrollToTop": "Scroll to top",
 		"scrollToBottom": "Scroll to bottom"
 	},
 	"inlineTool": {
-		"openInSidebar": "Open in Sidebar",
+		"openInSidebar": "Open in Workspace",
 		"minimize": "Minimize",
 		"maximize": "Maximize",
 		"close": "Close"
@@ -90,7 +104,7 @@
 		"copyFailed": "Failed to copy to clipboard"
 	},
 	"menuToolbox": {
-		"addToolbox": "Add Toolboxes"
+		"addToolbox": "Add Tools"
 	},
 	"menuKnowledge": {
 		"addKnowledge": "Add Knowledge"
@@ -101,12 +115,12 @@
 		"notFound": "Not Found"
 	},
 	"menuUpload": {
-		"attachDocument": "Add Documents"
+		"attachDocument": "Attach Files"
 	},
 	"menuFileExplorer": {
-		"name": "File Explorer",
-		"open": "Open File Explorer",
-		"close": "Close File Explorer"
+		"name": "Chat Files",
+		"open": "Show Chat Files",
+		"close": "Hide Chat Files"
 	},
 	"errors": {
 		"createRoom": "An error occurred while creating the room. Error: {{message}}",
@@ -126,5 +140,45 @@
 		"searchPlaceholder": "Search knowledge and toolboxes",
 		"noResults": "No matching items found",
 		"noItemsAvailable": "No knowledge or toolboxes available"
+	},
+	"studio": {
+		"views": "Conversation views",
+		"chat": "Chat",
+		"openWorkArea": "Open Workspace",
+		"workArea": "Workspace",
+		"toolsCount": "Tools, {{count}} selected",
+		"tools": "Tools",
+		"toolsLocked": "Tools cannot be changed while a response is running.",
+		"toolsHint": "Selections apply to your next message.",
+		"toolsTitle": "Tools & knowledge",
+		"toolsDescription": "Choose the tools and knowledge available to this conversation.",
+		"moreActions": "More actions",
+		"prompts": "Prompts",
+		"removeFile": "Remove {{name}}",
+		"thinking": "Reasoning",
+		"errorTitle": "Something went wrong",
+		"errorDescription": "Please refresh or return to the home page and try again.",
+		"backHome": "Back to home",
+		"export": "Export",
+		"refresh": "Refresh",
+		"exportCsv": "Export as CSV",
+		"exportPdf": "Export as PDF",
+		"closeWorkspace": "Close Workspace",
+		"preparingWorkspace": "Preparing Workspace…",
+		"activityLog": "Activity Log",
+		"prepareError": "Could not prepare the Workspace. Your draft is preserved.",
+		"retry": "Try again",
+		"viewActivityLog": "View Activity Log"
+	},
+	"optimizer": {
+		"optimize": "Optimize prompt",
+		"revert": "Revert to previous prompt",
+		"optimizing": "Optimizing…",
+		"success": "Prompt optimized!",
+		"noModel": "Select a model to optimize your prompt",
+		"invalidResponse": "No optimized prompt received",
+		"failed": "Failed to optimize prompt",
+		"tooLarge": "Prompt is too large for optimization. Please shorten it first.",
+		"noPermission": "You do not have permission to use this model"
 	}
 }

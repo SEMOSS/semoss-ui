@@ -1,0 +1,232 @@
+{
+	"sections": {
+		"about": {
+			"title": "Over",
+			"description": "Hoe deze agent wordt beschreven, hoe hij zich gedraagt en welk model hij gebruikt."
+		},
+		"builtInTools": {
+			"title": "Ingebouwde tools",
+			"description": "Standaardtools van de implementatie die beschikbaar zijn voor deze agent."
+		},
+		"knowledge": {
+			"title": "Kennis",
+			"description": "Kennisbronnen die deze agent kan doorzoeken."
+		},
+		"toolboxes": {
+			"title": "Toolboxen",
+			"description": "Tools en mogelijkheden die deze agent kan aanroepen."
+		},
+		"skills": {
+			"title": "Vaardigheden",
+			"description": "Herbruikbare vaardigheden die deze agent kan laden."
+		},
+		"prompts": {
+			"title": "Prompts",
+			"description": "Vooraf ingestelde prompts die deze agent aanbiedt."
+		},
+		"subagents": {
+			"title": "Subagents",
+			"description": "Andere agents waaraan deze agent werk kan delegeren. Toolnamen en beschrijvingen worden automatisch gegenereerd."
+		},
+		"executionLimits": {
+			"title": "Uitvoeringslimieten",
+			"description": "Runtime-limieten voor de toollus van de agent en delegatie aan subagents."
+		},
+		"hooks": {
+			"title": "Hooks",
+			"description": "Aangepast gedrag dat op momenten in de levenscyclus van de agent wordt uitgevoerd."
+		}
+	},
+	"about": {
+		"description": "Beschrijving",
+		"noDescription": "Geen beschrijving",
+		"instructions": "Instructies",
+		"noInstructions": "Geen instructies",
+		"greeting": "Begroeting",
+		"greetingOff": "Uit",
+		"greetingHelp": "Wordt getoond als het openingsbericht van de agent wanneer een ruimte start.",
+		"defaultModel": "Standaardmodel",
+		"roomModel": "Model van de ruimte",
+		"loading": "Laden..."
+	},
+	"builtInTools": {
+		"label": "Ingebouwde agenttools",
+		"help": "Neem de standaardtools van de implementatie op naast de geselecteerde toolboxen.",
+		"on": "Aan",
+		"off": "Uit",
+		"individual": "Afzonderlijke tools",
+		"enabledCount": "{{enabled}} van {{total}} ingeschakeld",
+		"allOff": "Alle uit",
+		"searchLabel": "Ingebouwde tools zoeken",
+		"searchPlaceholder": "Tools zoeken...",
+		"noneAvailable": "Er zijn geen ingebouwde tools beschikbaar in deze implementatie.",
+		"noMatch": "Geen tools komen overeen met \"{{query}}\"."
+	},
+	"empty": {
+		"knowledge": "Geen kennisbronnen.",
+		"toolboxes": "Geen toolboxen.",
+		"skills": "Geen vaardigheden.",
+		"prompts": "Geen prompts.",
+		"subagents": "Geen subagents.",
+		"hooks": "Geen hooks."
+	},
+	"resource": {
+		"open": "{{name}} openen",
+		"openTooltip": "Openen in catalogus",
+		"remove": "{{name}} verwijderen",
+		"removeTooltip": "Verwijderen",
+		"unavailableAgent": "Agent niet beschikbaar"
+	},
+	"mcpType": {
+		"PROJECT": "Project",
+		"STORAGE": "Opslag",
+		"DATABASE": "Database",
+		"FUNCTION": "Functie",
+		"MODEL": "Model",
+		"VECTOR": "Kennis",
+		"GUARDRAIL": "Guardrail",
+		"ROOM": "Ruimte"
+	},
+	"limits": {
+		"runBudget": {
+			"title": "Uitvoeringsbudget",
+			"description": "Plafonds voor een enkele uitvoering. Een uitvoering kan minder vragen, nooit meer."
+		},
+		"delegation": {
+			"title": "Delegatie aan subagents",
+			"description": "Hoeveel werk deze agent aan subagents kan overdragen."
+		},
+		"isDefault": "{{value}} (standaard)",
+		"noLimit": "Geen limiet",
+		"defaultPlaceholder": "Standaard {{value}}",
+		"currently": "Momenteel {{duration}}.",
+		"errors": {
+			"wholeNumber": "Voer een geheel getal in.",
+			"min": "Voer {{min}} of meer in."
+		},
+		"units": {
+			"turns": "beurten",
+			"rounds": "rondes",
+			"seconds": "seconden",
+			"levels": "niveaus",
+			"subagents": "subagents"
+		},
+		"duration": {
+			"hours": "{{count}} u",
+			"minutes": "{{count}} min",
+			"seconds": "{{count}} s"
+		},
+		"maxTurns": {
+			"label": "Maximaal aantal beurten",
+			"description": "Modelaanroepen die een uitvoering in de toollus kan doen. Een uitvoering die bij de limiet nog tools aanroept, stopt met een fout. Uitvoeringen vragen standaard 30, dus een hogere waarde geldt alleen als een uitvoering om meer vraagt."
+		},
+		"maxReflections": {
+			"label": "Maximaal aantal reflecties",
+			"description": "Controlerondes nadat de agent heeft geantwoord, waarin hij zijn werk controleert en meer tools kan aanroepen. Uitvoeringen vragen er standaard geen, dus dit beperkt alleen uitvoeringen die om reflecties vragen."
+		},
+		"maxSeconds": {
+			"label": "Maximale uitvoeringstijd",
+			"description": "Tijdslimiet voor een uitvoering. Leeg of 0 betekent geen limiet."
+		},
+		"maxSubagentDepth": {
+			"label": "Maximale delegatiediepte",
+			"description": "Hoeveel niveaus diep delegatie kan gaan. 1 laat deze agent delegeren, maar niet zijn subagents. 0 schakelt delegatie uit."
+		},
+		"maxSubagentsPerRun": {
+			"label": "Maximaal aantal subagents per uitvoering",
+			"description": "Totaal aantal subagents dat een uitvoering kan starten."
+		},
+		"maxSpawnsPerTurn": {
+			"label": "Maximaal aantal subagents per beurt",
+			"description": "Subagents die de agent vanuit een enkele modelbeurt kan starten, bijvoorbeeld om parallel te werken."
+		},
+		"count": {
+			"turns_one": "{{count}} beurt",
+			"turns_other": "{{count}} beurten",
+			"rounds_one": "{{count}} ronde",
+			"rounds_other": "{{count}} rondes",
+			"seconds_one": "{{count}} seconde",
+			"seconds_other": "{{count}} seconden",
+			"levels_one": "{{count}} niveau",
+			"levels_other": "{{count}} niveaus",
+			"subagents_one": "{{count}} subagent",
+			"subagents_other": "{{count}} subagents"
+		}
+	},
+	"hooks": {
+		"kinds": {
+			"pixel": {
+				"label": "Pixel",
+				"description": "Voert een pixel-expressie uit bij de levenscyclusgebeurtenissen die je kiest."
+			},
+			"git_commit": {
+				"label": "Git-commit",
+				"description": "Voert git add . && git commit uit na elke uitvoering van de agent."
+			},
+			"log_tools": {
+				"label": "Toolaanroepen loggen",
+				"description": "Logt de naam, parameters en duur van elke toolaanroep."
+			},
+			"ppt_to_pdf": {
+				"label": "PowerPoint naar PDF",
+				"description": "Zet het uitvoerbestand van de uitvoering daarna om naar PDF."
+			}
+		},
+		"runsOn": "Wordt uitgevoerd bij",
+		"everyEvent": "Elke gebeurtenis",
+		"noPixel": "Geen pixel-expressie",
+		"remove": "Hook {{label}} verwijderen",
+		"removeTooltip": "Verwijderen"
+	},
+	"form": {
+		"name": "Naam",
+		"namePlaceholder": "Voer een naam in",
+		"descriptionPlaceholder": "Voer een beschrijving in",
+		"instructionsPlaceholder": "Beschrijf het gedrag, de rol en de instructies van de agent",
+		"greetingToggle": "Begroeting inschakelen",
+		"greetingPlaceholder": "Hallo, ik ben je IT-supportassistent. Ik kan je helpen een wachtwoord opnieuw in te stellen, de status van een open ticket te bekijken of een veelvoorkomend probleem op te lossen. Waarmee kan ik je helpen?",
+		"greetingOffNote": "De begroeting staat uit. Zet haar aan om dit bericht te gebruiken.",
+		"greetingHelp": "Wordt getoond als het openingsbericht van de agent wanneer een ruimte start. Kost geen tokens, maar het model kan het niet zien, dus herhaal in de Instructies alles waar het op moet reageren (de opties die je hier aanbiedt).",
+		"useRoomModel": "Model van de ruimte gebruiken",
+		"modelHelp": "Laat leeg om het model van de ruimte te gebruiken.",
+		"picker": {
+			"cancel": "Annuleren",
+			"done": "Gereed"
+		},
+		"knowledge": {
+			"add": "Kennis toevoegen",
+			"description": "Selecteer de kennisbronnen die deze agent kan doorzoeken. Klik op een bron om die toe te voegen of te verwijderen."
+		},
+		"toolboxes": {
+			"add": "Toolboxen toevoegen",
+			"description": "Selecteer de toolboxen die deze agent kan aanroepen. Klik op een toolbox om die toe te voegen of te verwijderen."
+		},
+		"skills": {
+			"add": "Vaardigheden toevoegen",
+			"description": "Selecteer de herbruikbare vaardigheden die deze agent kan laden. Klik op een vaardigheid om die toe te voegen of te verwijderen."
+		},
+		"prompts": {
+			"add": "Prompts toevoegen",
+			"description": "Selecteer de vooraf ingestelde prompts die deze agent aanbiedt. Vink een prompt aan om die toe te voegen."
+		},
+		"subagents": {
+			"add": "Subagent toevoegen",
+			"searchPlaceholder": "Agents zoeken...",
+			"noneToAdd": "Geen andere agents om toe te voegen.",
+			"noMatch": "Geen agents komen overeen met je zoekopdracht."
+		},
+		"builtInTools": {
+			"enable": "Ingebouwde agenttools inschakelen",
+			"enableAll": "Alles inschakelen",
+			"disableAll": "Alles uitschakelen",
+			"offNote": "Ingebouwde tools staan uit voor deze agent. Afzonderlijke selecties blijven bewaard voor wanneer ze weer worden ingeschakeld."
+		},
+		"hooks": {
+			"pixelLabel": "Pixel-expressie",
+			"eventsLabel": "Levenscyclusgebeurtenissen",
+			"eventsHelp": "Als er niets is geselecteerd, wordt hij bij elke gebeurtenis uitgevoerd.",
+			"add": "Hook toevoegen"
+		},
+		"createSettingsFailed": "De agent is gemaakt, maar sommige instellingen konden niet worden opgeslagen. Open de bewerkpagina van de agent om het opnieuw te proberen."
+	}
+}
