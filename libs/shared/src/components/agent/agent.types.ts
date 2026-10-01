@@ -15,6 +15,20 @@ export type AgentDefaultTool = {
 	description?: string;
 };
 
+/** One lifecycle value a hook runtime can bind, and the events that provide it. */
+export type AgentHookBindingSource = {
+	source: string;
+	events: string[];
+};
+
+/** Configuration metadata exposed by an unconfigured hook runtime. */
+export type AgentHookCapability = {
+	events: string[];
+	binding_sources?: AgentHookBindingSource[];
+};
+
+export type AgentHookCapabilities = Record<string, AgentHookCapability>;
+
 /** `GetWorkspace`'s response, as rendered by the agent views. */
 export type AgentWorkspace = {
 	name: string;
@@ -25,6 +39,7 @@ export type AgentWorkspace = {
 	skills: (SkillConfig & { description?: string })[];
 	prompts: { id: string; name: string; type: string }[];
 	known_hook_kinds?: string[];
+	hook_capabilities?: AgentHookCapabilities;
 	default_tools?: AgentDefaultTool[];
 	config_json?: {
 		model_id?: string;
@@ -55,49 +70,6 @@ export type AgentWorkspace = {
 
 /** The only hook kind with configurable fields today. */
 export const PIXEL_HOOK_KIND = "pixel";
-
-/**
- * Lifecycle event names `PixelReactorHook` filters on. Not returned by any
- * API (only `known_hook_kinds` is) since this is specific to the `pixel`
- * kind - mirrors `PixelReactorHook.KNOWN_EVENTS` in Semoss.
- */
-export const PIXEL_HOOK_EVENTS = [
-	"onRoomCreation",
-	"beforeRun",
-	"afterAgentInit",
-	"beforeTool",
-	"afterTool",
-	"afterRun",
-	"beforeAgentDeInit",
-] as const;
-
-/** Lifecycle values that a Pixel hook may expose as temporary Pixel variables. */
-export const PIXEL_HOOK_BINDING_SOURCES = [
-	"event",
-	"payload",
-	"context",
-	"context.runId",
-	"context.roomId",
-	"context.userId",
-	"context.input",
-	"context.spawnDepth",
-	"result",
-	"result.finalText",
-	"result.structuredOutput",
-	"result.iterations",
-	"result.reflectionsUsed",
-	"result.inputMessageId",
-	"result.finalOutputMessageId",
-	"result.toolCallRecords",
-	"tool",
-	"tool.name",
-	"tool.callId",
-	"tool.params",
-	"tool.resultContent",
-	"tool.durationMs",
-	"tool.success",
-	"tool.iteration",
-] as const;
 
 /** Resolves an attached MCP's name to its display name. */
 export const getAgentMcpName = (mcp: AgentWorkspace["mcp"][number]) =>
