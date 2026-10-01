@@ -264,6 +264,13 @@ export interface AutomationExecutedDefinition {
 	snapshot?: string;
 }
 
+/** Per-iteration result record for loop nodes, as returned by buildNodeResults. */
+export interface AutomationNodeIteration {
+	/** 0-based iteration index matching the backend's buildNodeResults contract. */
+	index: number;
+	nodeResults: AutomationNodeResult[];
+}
+
 export interface AutomationNodeResult {
 	NODE_ID: string;
 	NODE_LABEL: string;
@@ -273,6 +280,7 @@ export interface AutomationNodeResult {
 	OUTPUT_VALUE?: string | null;
 	ERROR_MESSAGE: string | null;
 	trace?: AutomationNodeTrace;
+	iterations?: AutomationNodeIteration[];
 }
 
 export interface AutomationRunDetail extends AutomationRunSummary {

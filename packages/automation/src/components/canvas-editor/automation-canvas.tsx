@@ -310,6 +310,8 @@ interface AutomationNodeStreamData {
 	OUTPUT_PREVIEW?: string | null;
 	ERROR_MESSAGE?: string | null;
 	trace?: AutomationNodeResult["trace"];
+	PARENT_NODE_ID?: string;
+	ITERATION_INDEX?: number;
 	DEFINITION_VERSION?: number;
 	DEFINITION_HASH?: string;
 	DEFINITION_SNAPSHOT?: string;
@@ -1964,6 +1966,7 @@ export const AutomationCanvasContent = forwardRef<
 				}));
 			}
 			setLatestRunResults((previous) => {
+				if (progress.PARENT_NODE_ID) return previous;
 				const existing = previous.find(
 					(result) => result.NODE_ID === nodeId,
 				);
