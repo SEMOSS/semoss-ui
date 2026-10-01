@@ -1015,6 +1015,9 @@ importers:
       diff:
         specifier: 5.2.2
         version: 5.2.2
+      echarts:
+        specifier: ^5.6.0
+        version: 5.6.0
       lucide-react:
         specifier: ^0.545.0
         version: 0.545.0(react@19.2.8)

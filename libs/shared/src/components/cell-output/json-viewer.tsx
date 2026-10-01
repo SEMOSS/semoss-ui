@@ -1,5 +1,6 @@
 import { ChevronDownIcon, ChevronRightIcon } from "lucide-react";
 import { useEffect, useState } from "react";
+import { Button } from "@semoss/ui/next";
 
 export interface JsonViewerProps {
 	value: unknown;
@@ -33,7 +34,7 @@ export const JsonViewer = ({
 	useEffect(() => {
 		if (forceVersion === undefined || forceOpen === undefined) return;
 		// Collapse-all keeps the root open so the user can still see the
-		// top-level keys/items — only nested levels collapse.
+		// top-level keys/items; only nested levels collapse.
 		if (!forceOpen && depth === 0) {
 			setIsOpen(true);
 		} else {
@@ -41,14 +42,12 @@ export const JsonViewer = ({
 		}
 	}, [forceVersion, forceOpen, depth]);
 
-	if (value === null)
-		return <Primitive name={name} text="null" tone="muted" />;
-	if (value === undefined)
-		return <Primitive name={name} text="undefined" tone="muted" />;
+	if (value === null) return renderPrimitive(name, "null", "muted");
+	if (value === undefined) return renderPrimitive(name, "undefined", "muted");
 	if (typeof value === "string")
-		return <Primitive name={name} text={`"${value}"`} tone="string" />;
+		return renderPrimitive(name, JSON.stringify(value), "string");
 	if (typeof value === "number" || typeof value === "boolean")
-		return <Primitive name={name} text={String(value)} tone="number" />;
+		return renderPrimitive(name, String(value), "number");
 
 	const isArray = Array.isArray(value);
 	const entries = isArray
@@ -61,21 +60,31 @@ export const JsonViewer = ({
 	const closer = isArray ? "]" : "}";
 
 	return (
-		<div className="font-mono text-[12px] leading-snug">
-			<button
+		<div className="min-w-0 font-mono text-xs leading-relaxed">
+			<Button
 				type="button"
-				className="inline-flex items-center gap-1 rounded px-0.5 text-left text-foreground hover:bg-muted"
+				variant="ghost"
+				size="sm"
+				aria-expanded={isOpen}
+				aria-label={`${isOpen ? "Collapse" : "Expand"} ${name ?? (isArray ? "Array" : "Object")}`}
+				className="h-auto min-h-6 max-w-full justify-start gap-1 whitespace-normal px-1 py-0.5 text-left font-mono text-xs"
 				onClick={() => setIsOpen((v) => !v)}
 			>
 				{isOpen ? (
-					<ChevronDownIcon className="h-3 w-3 text-muted-foreground" />
+					<ChevronDownIcon
+						aria-hidden="true"
+						className="size-3 shrink-0 text-muted-foreground"
+					/>
 				) : (
-					<ChevronRightIcon className="h-3 w-3 text-muted-foreground" />
+					<ChevronRightIcon
+						aria-hidden="true"
+						className="size-3 shrink-0 text-muted-foreground"
+					/>
 				)}
 				{name !== undefined && (
 					<>
-						<span className="text-purple-700 dark:text-purple-300">
-							{name}
+						<span className="min-w-0 break-words text-foreground">
+							{JSON.stringify(name)}
 						</span>
 						<span className="text-muted-foreground">:</span>
 					</>
@@ -84,9 +93,9 @@ export const JsonViewer = ({
 					{opener} {!isOpen && summary}
 					{!isOpen && ` ${closer}`}
 				</span>
-			</button>
+			</Button>
 			{isOpen && (
-				<div className="ml-3 border-border border-l pl-2">
+				<div className="ml-3 min-w-0 border-border border-l pl-2">
 					{entries.map(([k, v]) => (
 						<JsonViewer
 							key={k}
@@ -104,27 +113,24 @@ export const JsonViewer = ({
 	);
 };
 
-const Primitive = ({
-	name,
-	text,
-	tone,
-}: {
-	name?: string;
-	text: string;
-	tone: "string" | "number" | "muted";
-}) => {
+/** Renders JSON primitives as text; payload strings never become executable markup. */
+const renderPrimitive = (
+	name: string | undefined,
+	text: string,
+	tone: "string" | "number" | "muted",
+) => {
 	const color =
 		tone === "string"
-			? "text-emerald-700 dark:text-emerald-300"
+			? "text-destructive"
 			: tone === "number"
-				? "text-blue-700 dark:text-blue-300"
+				? "font-medium text-foreground"
 				: "text-muted-foreground italic";
 	return (
-		<div className="font-mono text-[12px] leading-snug">
+		<div className="min-w-0 whitespace-pre-wrap break-words font-mono text-xs leading-relaxed">
 			{name !== undefined && (
 				<>
-					<span className="text-purple-700 dark:text-purple-300">
-						{name}
+					<span className="font-medium text-foreground">
+						{JSON.stringify(name)}
 					</span>
 					<span className="text-muted-foreground">: </span>
 				</>
