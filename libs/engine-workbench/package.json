@@ -1,0 +1,28 @@
+{
+	"name": "@semoss/engine-workbench",
+	"version": "1.0.0-beta.1",
+	"exports": {
+		".": "./src/index.ts"
+	},
+	"scripts": {
+		"test": "vitest run --configLoader runner",
+		"check-types": "tsc --pretty --noEmit"
+	},
+	"dependencies": {
+		"@semoss/sdk": "workspace:*",
+		"@semoss/shared": "workspace:*",
+		"@semoss/ui": "workspace:*",
+		"@semoss/workbench": "workspace:*",
+		"lucide-react": "^0.545.0",
+		"react": "^19.0.0"
+	},
+	"devDependencies": {
+		"@semoss/config": "workspace:*",
+		"@types/react": "^19.0.0",
+		"typescript": "~6.0.0",
+		"vitest": "^4.1.11"
+	},
+	"peerDependencies": {
+		"zustand": "^5.0.0"
+	}
+}

@@ -1,0 +1,15 @@
+{
+	"extends": "@semoss/config/tsconfig.base.json",
+	"compilerOptions": {
+		"types": [
+			"vite/client",
+			"vitest/globals",
+			"@testing-library/jest-dom/vitest"
+		],
+		"paths": {
+			"@/*": ["./src/*"]
+		}
+	},
+	"include": ["vite-env.d.ts", "src", "vite.config.ts"],
+	"exclude": ["dist", "node_modules", "src-tauri"]
+}

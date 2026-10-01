@@ -19,6 +19,7 @@
         "@hookform/resolvers": "^5.9.1",
         "@mdi/js": "^6.9.96",
         "@semoss/automation": "workspace:*",
+        "@semoss/engine-workbench": "workspace:*",
         "@semoss/i18n": "workspace:*",
         "@semoss/panels": "workspace:*",
         "@semoss/renderer": "workspace:*",

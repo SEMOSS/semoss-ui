@@ -259,11 +259,17 @@ export const getUserRooms = async (
 	}
 
 	const args = parts.length > 0 ? `(${parts.join(", ")})` : "()";
-	const pixel = `META | GetUserConversationRoomsReactor${args};`;
-	const { errors, pixelReturn } = await runPixel<[RoomRecord[]]>(
-		pixel,
-		insightId,
-	);
+	const pixel = `META | GetPlaygroundRooms${args};`;
+	const { errors, pixelReturn } = await runPixel<
+		[
+			Array<
+				RoomRecord & {
+					ROOM_ID?: string;
+					ROOM_NAME?: string;
+				}
+			>,
+		]
+	>(pixel, insightId);
 
 	if (errors.length > 0) {
 		throw new Error(errors.join(", "));
@@ -271,8 +277,12 @@ export const getUserRooms = async (
 
 	const output = pixelReturn[0]?.output;
 	if (!output) {
-		throw new Error("GetUserConversationRoomsReactor returned no data");
+		throw new Error("GetPlaygroundRooms returned no data");
 	}
 
-	return output;
+	return output.map((room) => ({
+		...room,
+		roomId: room.roomId || room.ROOM_ID || "",
+		name: room.name || room.ROOM_NAME || "Untitled chat",
+	}));
 };

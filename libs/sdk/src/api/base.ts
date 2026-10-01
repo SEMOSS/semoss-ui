@@ -255,11 +255,21 @@ export type PixelStreamThinkingMessage = {
 	};
 };
 
+/** Token-usage metadata emitted before and after model generation. */
+export type PixelStreamUsageMessage = {
+	stream_type: "usage";
+	data: {
+		input_tokens?: number;
+		output_tokens?: number;
+	};
+};
+
 /** Union of all message chunk types yielded by a streaming pixel job */
 export type PixelStreamMessage =
 	| PixelStreamContentMessage
 	| PixelStreamToolMessage
-	| PixelStreamThinkingMessage;
+	| PixelStreamThinkingMessage
+	| PixelStreamUsageMessage;
 
 /** Status values returned by the pixelJobStreaming endpoint */
 export type PixelJobStreamingStatus =

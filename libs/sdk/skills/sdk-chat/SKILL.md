@@ -50,9 +50,10 @@ All functions in this table are exported from `@semoss/sdk`.
 
 The raw update wrapper does not establish server-side replace/merge semantics.
 Fetch the current options before assembling an update when preservation matters.
-`RoomRecord` requires `roomId` and `name`; `RoomMessage` declares `messageId`,
-`content`, and `role`. Both allow extra fields. These types are not runtime
-validators for richer backend message parts.
+`RoomRecord` requires `roomId` and `name`. `RoomMessage` follows the backend's
+rich message shape with `messageId`, `io`, and `parts`; text parts expose `text`
+and optional `uiText`, while tool/media/future part fields remain available
+through index signatures. Both record types allow additional backend fields.
 
 Required `RoomOptions` fields are `predefinedPrompts: PredefinedPrompt[]`,
 `instructions: string`, `mcp: MCPToolConfig[]`, and `modelId: string`.
@@ -235,9 +236,10 @@ async function observeChatJob(
 ```
 
 `PixelStreamMessage` is discriminated by `stream_type`: `content` carries
-`data.content`, `thinking` carries `data.thinking`, and `tool` carries optional
-`data.index`, `id`, and `function` name/argument fragments. Do not execute tools
-from incomplete streamed arguments. Validate the settled `unknown` output before
+`data.content`, `thinking` carries `data.thinking`, `tool` carries optional
+`data.index`, `id`, and `function` name/argument fragments, and `usage` carries
+incremental input/output token counts. Do not execute tools from incomplete
+streamed arguments. Validate the settled `unknown` output before
 reading message parts or executing tool calls. A generic type argument is not
 runtime validation. Keep one consumer per job's incremental stream.
 

@@ -1,0 +1,22 @@
+{
+	"name": "@semoss/chat",
+	"version": "1.0.0-beta.1",
+	"exports": {
+		".": "./src/index.ts"
+	},
+	"scripts": {
+		"check-types": "tsc --pretty --noEmit"
+	},
+	"dependencies": {
+		"@semoss/i18n": "workspace:*",
+		"@semoss/sdk": "workspace:*",
+		"@semoss/ui": "workspace:*",
+		"lucide-react": "^0.545.0",
+		"react": "^19.0.0"
+	},
+	"devDependencies": {
+		"@semoss/config": "workspace:*",
+		"@types/react": "^19.0.0",
+		"typescript": "~6.0.0"
+	}
+}

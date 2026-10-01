@@ -5,6 +5,9 @@
   "exports": {
     "./globals.css": "./src/styles/globals.css",
     "./flexlayout.css": "./src/components/flex-layout/flexlayout.css",
+    "./app-catalog-avatar": "./src/components/app-catalog-avatar.tsx",
+    "./engine-subtype-icon": "./src/components/engine-subtype-icon.tsx",
+    "./login-provider": "./src/constants/login-provider.constants.ts",
     ".": "./src/index.ts",
     "./assets/img/*": "./src/assets/img/*"
   },

@@ -293,6 +293,8 @@ paramValues=[${JSON.stringify({
 								toolStreamIndexToId,
 								chunk.data,
 							);
+						} else if (chunk.stream_type === "usage") {
+							// Settled messages carry the authoritative token count.
 						} else {
 							console.error(`Unknown stream type`, chunk);
 						}

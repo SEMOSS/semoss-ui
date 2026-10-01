@@ -150,12 +150,32 @@ export interface RoomRecord {
 }
 
 /**
- * A single message within a room
+ * A typed content part within a room message. Tool, media, and future parts
+ * retain their backend fields through the index signature.
+ */
+export interface RoomMessagePart {
+	type: string;
+	text?: string;
+	uiText?: string;
+	thinking?: string;
+	[key: string]: unknown;
+}
+
+/**
+ * A single message within a room as returned by GetRoomMessages.
  */
 export interface RoomMessage {
 	messageId: string;
-	content: string;
-	role: string;
+	io: "INPUT" | "OUTPUT";
+	parts: RoomMessagePart[];
+	parentMessageId?: string;
+	modelId?: string;
+	modelType?: string;
+	tokens?: number;
+	visible?: boolean;
+	dateCreated?: string;
+	content?: string;
+	role?: string;
 	[key: string]: unknown;
 }
 

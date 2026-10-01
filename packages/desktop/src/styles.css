@@ -1,0 +1,52 @@
+@import "@semoss/ui/globals.css";
+@import "@semoss/workbench/globals.css";
+
+@source "./**/*.{ts,tsx}";
+
+:root {
+	font-synthesis: none;
+}
+
+html,
+body,
+#root {
+	height: 100%;
+	margin: 0;
+}
+
+body {
+	overflow: hidden;
+	background: var(--background);
+	color: var(--foreground);
+}
+
+.desktop-root {
+	background: transparent;
+}
+
+@media (min-width: 1024px) {
+	.desktop-login-grid {
+		grid-template-columns: 1fr clamp(32rem, calc(100vw - 32rem), 60vw);
+	}
+}
+
+.desktop-sidebar {
+	background: color-mix(in oklab, var(--muted) 42%, var(--background));
+}
+
+@media (prefers-reduced-transparency: reduce), (forced-colors: active) {
+	.desktop-root {
+		background: var(--background);
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	*,
+	*::before,
+	*::after {
+		scroll-behavior: auto !important;
+		transition-duration: 0.01ms !important;
+		animation-duration: 0.01ms !important;
+		animation-iteration-count: 1 !important;
+	}
+}
