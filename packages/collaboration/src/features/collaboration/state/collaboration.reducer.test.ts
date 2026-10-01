@@ -812,3 +812,34 @@ describe("assistant context selection", () => {
 		).toBe(true);
 	});
 });
+
+it("applies server changes to items already shown, except ones edited locally during the read", () => {
+	const state = createInitialCollaborationState();
+	const [answered, edited] = state.items.filter(
+		(item) => item.status === "open",
+	);
+	const now = "2026-10-01T18:00:00.000Z";
+	const next = collaborationReducer(
+		state,
+		{
+			type: "live.refresh",
+			updates: {
+				threads: [],
+				workspaces: {},
+				items: [
+					{ ...answered, status: "done", completedAt: now },
+					{ ...edited, status: "done", completedAt: now },
+				],
+				keepItemIds: [edited.id],
+			},
+		},
+		now,
+	);
+	expect(next.items.find((item) => item.id === answered.id)?.status).toBe(
+		"done",
+	);
+	expect(next.items.find((item) => item.id === edited.id)?.status).toBe(
+		"open",
+	);
+	expect(next.items).toHaveLength(state.items.length);
+});

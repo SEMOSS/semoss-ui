@@ -522,6 +522,9 @@ export function collaborationReducer(
 										.timeZone),
 					);
 			}
+			// a new status without a reason drops the old one; the server sets its own
+			if (command.changes.status && !command.changes.closedReason)
+				delete item.closedReason;
 			Object.assign(item, command.changes);
 			if (item.status === "done") item.completedAt = now;
 			else delete item.completedAt;
@@ -1007,6 +1010,7 @@ export function collaborationReducer(
 			break;
 		}
 		case "live.refresh": {
+			const keepThreads = new Set(command.updates.keepThreadIds);
 			for (const incoming of command.updates.threads) {
 				const thread = state.threads.find(
 					(item) => item.id === incoming.id,
@@ -1021,6 +1025,12 @@ export function collaborationReducer(
 				const hasNewContent = thread.lastAt !== incoming.lastAt;
 				thread.messageCount = incoming.messageCount;
 				thread.lastAt = incoming.lastAt;
+				// what Brain decided on the server (filing, Ignore, automated) shows without a reload
+				if (!keepThreads.has(thread.id)) {
+					thread.topicLinks = incoming.topicLinks;
+					thread.muted = incoming.muted;
+					thread.automated = incoming.automated;
+				}
 				if (hasNewContent && !thread.summaryGenerated)
 					thread.summary = incoming.summary;
 				const workspace = state.workspaces[thread.id];
@@ -1042,6 +1052,19 @@ export function collaborationReducer(
 					workspace.steps = [...steps.values()];
 				}
 			}
+			// server state wins for items already shown (closed by a reply, updated by a new message), except
+			// the ones edited locally while the read was in flight
+			const keepItems = new Set(command.updates.keepItemIds);
+			const incomingItems = new Map(
+				command.updates.items.map((item) => [item.id, item]),
+			);
+			state.items = state.items.map((item) => {
+				const next = incomingItems.get(item.id);
+				if (!next || keepItems.has(item.id)) return item;
+				const updated = { ...item, ...next };
+				syncItemSteps(state, updated);
+				return updated;
+			});
 			const ids = new Set(state.items.map((item) => item.id));
 			state.items.push(
 				...command.updates.items.filter((item) => !ids.has(item.id)),

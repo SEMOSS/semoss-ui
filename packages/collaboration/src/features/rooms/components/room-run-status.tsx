@@ -3,6 +3,7 @@ import { Alert, Button, P, useIsMobile } from "@semoss/ui/next";
 import type { AgentConfiguration } from "@/features/agents/types/agent";
 import { useToolWorkbench } from "@/features/tools/tool-workbench.context";
 import type { PendingToolApproval } from "../types/room";
+import { turnErrorSummary } from "../utils/turn-error";
 
 /** Actionable errors and approvals beside the composer. */
 export function RoomRunStatus({
@@ -11,6 +12,7 @@ export function RoomRunStatus({
 	transportError,
 	pendingApprovals,
 	onReconnect,
+	onNewConversation,
 	reviewInWorkbench = false,
 }: {
 	agent: AgentConfiguration;
@@ -18,11 +20,14 @@ export function RoomRunStatus({
 	transportError: Error | null;
 	pendingApprovals: PendingToolApproval[];
 	onReconnect?: () => Promise<void>;
+	/** Offered on a failed turn, so a stuck room can be left for a fresh one. */
+	onNewConversation?: () => void;
 	/** Work keeps approvals reachable even when the owning timeline message is hidden. */
 	reviewInWorkbench?: boolean;
 }) {
 	const isMobile = useIsMobile();
 	const { tools, openInline, openWorkbench } = useToolWorkbench();
+	const summary = turnError ? turnErrorSummary(turnError) : "";
 
 	return (
 		<>
@@ -36,13 +41,33 @@ export function RoomRunStatus({
 						className="mt-0.5 size-4 shrink-0 text-destructive"
 					/>
 					<div className="min-w-0 flex-1">
-						<P className="font-medium text-base text-foreground">
+						<P className="font-medium text-foreground text-sm">
 							{agent.name} could not finish this turn
 						</P>
-						<P className="text-base text-muted-foreground">
-							{turnError}
+						<P className="text-muted-foreground text-sm">
+							{summary}
 						</P>
+						{summary !== turnError && (
+							<details className="mt-1 text-muted-foreground text-xs">
+								<summary className="cursor-pointer">
+									Details
+								</summary>
+								<pre className="mt-1 max-h-32 overflow-auto whitespace-pre-wrap break-all">
+									{turnError}
+								</pre>
+							</details>
+						)}
 					</div>
+					{onNewConversation && (
+						<Button
+							type="button"
+							size="sm"
+							variant="outline"
+							onClick={onNewConversation}
+						>
+							New conversation
+						</Button>
+					)}
 				</Alert>
 			)}
 			{transportError && !turnError && (

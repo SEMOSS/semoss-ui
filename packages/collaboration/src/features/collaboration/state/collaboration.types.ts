@@ -166,6 +166,8 @@ export interface WorkItem {
 	topicIds: string[];
 	suggested?: boolean;
 	completedAt?: string;
+	/** Why it closed; "no_response_needed" is the owner's correction for the classifier. */
+	closedReason?: string;
 	snoozeUntil?: string;
 	snoozedFrom?: "open" | "waiting";
 	isSample: boolean;
@@ -373,7 +375,11 @@ export type CollaborationCommand =
 			updates: Pick<
 				CollaborationState,
 				"threads" | "workspaces" | "items"
-			>;
+			> & {
+				/** Changed locally while the read was in flight: the local copy wins this round. */
+				keepItemIds?: string[];
+				keepThreadIds?: string[];
+			};
 	  }
 	| {
 			type: "thread.insights";
@@ -430,6 +436,7 @@ export type CollaborationCommand =
 				Pick<
 					WorkItem,
 					| "status"
+					| "closedReason"
 					| "priority"
 					| "title"
 					| "snoozeUntil"

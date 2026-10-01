@@ -5,18 +5,24 @@ import {
 	screen,
 	waitFor,
 } from "@testing-library/react";
+import { MemoryRouter } from "react-router";
+import { MAIL_SENT_EVENT } from "@/features/connectors/api/microsoft";
 import type { InsightActions } from "@/lib/pixel";
 import { createInitialCollaborationState } from "../state/collaboration.fixtures";
 import {
 	CollaborationSessionProvider,
 	useCollaborationSession,
 } from "../state/collaboration-session.context";
-import { readWorkUpdates } from "./live-state";
+import { readWorkUpdates, syncMail } from "./live-state";
 import type { LiveSync } from "./live-sync";
+import { WorkRefreshStatus } from "./work-refresh-status";
 import { useWorkUpdates } from "./work-updates.context";
 import { WorkUpdatesProvider } from "./work-updates-provider";
 
-vi.mock("./live-state", () => ({ readWorkUpdates: vi.fn() }));
+vi.mock("./live-state", () => ({
+	readWorkUpdates: vi.fn(),
+	syncMail: vi.fn(),
+}));
 function Harness() {
 	const updates = useWorkUpdates();
 	const { state, dispatch } = useCollaborationSession();
@@ -65,6 +71,7 @@ it("deduplicates server echoes, ignores removed actions during a refresh, and re
 	const updates = {
 		threads: [state.threads[0]],
 		items: [],
+		lastMailCheck: null,
 		workspaces: {
 			[threadId]: {
 				...state.workspaces[threadId],
@@ -109,4 +116,99 @@ it("deduplicates server echoes, ignores removed actions during a refresh, and re
 	view.unmount();
 	fireEvent(window, new Event("focus"));
 	expect(readWorkUpdates).toHaveBeenCalledTimes(2);
+});
+
+it("pulls new mail before reloading when Refresh is pressed, and shows sync failures", async () => {
+	const state = createInitialCollaborationState();
+	vi.mocked(readWorkUpdates).mockResolvedValue({
+		threads: state.threads,
+		items: [],
+		workspaces: {},
+		lastMailCheck: null,
+	});
+	vi.mocked(syncMail)
+		.mockResolvedValueOnce({
+			newMessages: 2,
+			closedByReply: 0,
+			outcomes: { new: 1, automated: 1 },
+			changes: [
+				{ threadId: state.threads[0].id, outcome: "new" },
+				{ threadId: state.threads[1].id, outcome: "automated" },
+			],
+		})
+		.mockRejectedValueOnce(new Error("Microsoft login expired"));
+	render(
+		<MemoryRouter>
+			<CollaborationSessionProvider initialState={state}>
+				<WorkUpdatesProvider actions={{} as InsightActions}>
+					<WorkRefreshStatus />
+				</WorkUpdatesProvider>
+			</CollaborationSessionProvider>
+		</MemoryRouter>,
+	);
+	const reloads = vi.mocked(readWorkUpdates).mock.calls.length;
+	fireEvent.click(screen.getByRole("button", { name: "Refresh" }));
+	await waitFor(() =>
+		expect(
+			screen.getByText(/1 new for you, 1 automated/),
+		).toBeInTheDocument(),
+	);
+	fireEvent.click(
+		screen.getByRole("button", {
+			name: "What came in: 1 new for you, 1 automated",
+		}),
+	);
+	expect(await screen.findByText("What came in")).toBeInTheDocument();
+	expect(
+		screen.getByRole("link", { name: state.threads[0].subject }),
+	).toHaveAttribute(
+		"href",
+		`/brain/threads/${encodeURIComponent(state.threads[0].id)}`,
+	);
+	expect(screen.getByText("Automated, kept out of Work")).toBeInTheDocument();
+	expect(syncMail).toHaveBeenCalledTimes(1);
+	expect(vi.mocked(readWorkUpdates).mock.calls.length).toBeGreaterThan(
+		reloads,
+	);
+	fireEvent.click(screen.getByRole("button", { name: "Refresh" }));
+	await waitFor(() =>
+		expect(screen.getByText("Microsoft login expired")).toBeInTheDocument(),
+	);
+	expect(screen.getByRole("button", { name: "Try again" })).toBeEnabled();
+});
+
+it("syncs once shortly after a reply is sent from the app", async () => {
+	vi.useFakeTimers();
+	try {
+		const state = createInitialCollaborationState();
+		vi.mocked(readWorkUpdates).mockResolvedValue({
+			threads: state.threads,
+			items: [],
+			workspaces: {},
+			lastMailCheck: null,
+		});
+		vi.mocked(syncMail).mockClear();
+		vi.mocked(syncMail).mockResolvedValue({
+			newMessages: 1,
+			closedByReply: 1,
+			outcomes: { cleared: 1 },
+			changes: [],
+		});
+		render(
+			<CollaborationSessionProvider initialState={state}>
+				<WorkUpdatesProvider actions={{} as InsightActions}>
+					<WorkRefreshStatus />
+				</WorkUpdatesProvider>
+			</CollaborationSessionProvider>,
+		);
+		window.dispatchEvent(new Event(MAIL_SENT_EVENT));
+		window.dispatchEvent(new Event(MAIL_SENT_EVENT));
+		expect(syncMail).not.toHaveBeenCalled();
+		await act(async () => {
+			await vi.advanceTimersByTimeAsync(5000);
+		});
+		expect(syncMail).toHaveBeenCalledTimes(1);
+	} finally {
+		vi.useRealTimers();
+	}
 });

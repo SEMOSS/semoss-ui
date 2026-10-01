@@ -158,6 +158,53 @@ describe("collaboration Work and Brain integration", () => {
 		expect(screen.getByRole("link", { name: title })).toBeInTheDocument();
 	});
 
+	it("clears an item with No response needed and keeps it out of Done", async () => {
+		const user = userEvent.setup();
+		const router = renderSession("/work");
+		const title = "Confirm Oct 15 architecture review slot with Ava";
+		await user.click(
+			within(articleFor(title)).getByRole("button", {
+				name: "No response needed",
+			}),
+		);
+		expect(
+			screen.queryByRole("link", { name: title }),
+		).not.toBeInTheDocument();
+		await act(() => router.navigate("/work/done"));
+		expect(
+			screen.queryByRole("link", { name: title }),
+		).not.toBeInTheDocument();
+	});
+
+	it("ignores a thread from its card and resumes it from the thread page", async () => {
+		const user = userEvent.setup();
+		const state = createInitialCollaborationState();
+		const title = "Confirm Oct 15 architecture review slot with Ava";
+		const threadId = state.items.find(
+			(item) => item.title === title,
+		)?.threadId;
+		if (!threadId) throw new Error("Missing thread");
+		const router = renderSession("/work", state);
+		await user.click(
+			within(articleFor(title)).getByRole("button", {
+				name: "Ignore thread",
+			}),
+		);
+		expect(
+			screen.queryByRole("link", { name: title }),
+		).not.toBeInTheDocument();
+		await act(() =>
+			router.navigate(`/brain/threads/${encodeURIComponent(threadId)}`),
+		);
+		const ignored = screen.getByRole("switch", {
+			name: "Ignore this thread",
+		});
+		expect(ignored).toBeChecked();
+		await user.click(ignored);
+		await act(() => router.navigate("/work"));
+		expect(screen.getByRole("link", { name: title })).toBeInTheDocument();
+	});
+
 	it("confirms draft notes before including them in assistant context", async () => {
 		const user = userEvent.setup();
 		renderSession("/brain");

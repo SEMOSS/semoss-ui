@@ -175,3 +175,37 @@ it("step and fact edits and removals go out as saves and deletes", async () => {
 		'WorkDeleteFact(threadId=["th-geng-review"], factId=["server-fact"]);',
 	);
 });
+
+it("no response needed saves the dismissal with its reason; reopening drops the reason", async () => {
+	const { actions, sent } = fakeActions();
+	const sync = createLiveSync(actions, vi.fn());
+	let state = createInitialCollaborationState();
+	const item = state.items.find((candidate) => candidate.status === "open");
+	if (!item) throw new Error("Missing open item");
+	const apply = (command: CollaborationCommand) => {
+		const next = collaborationReducer(state, command, NOW);
+		sync({ previous: state, next, commands: [command], undo: false });
+		state = next;
+	};
+	apply({
+		type: "item.update",
+		itemId: item.id,
+		changes: { status: "dismissed", closedReason: "no_response_needed" },
+	});
+	apply({
+		type: "item.update",
+		itemId: item.id,
+		changes: { status: "open" },
+	});
+	const updates = () => sent.filter((s) => s.startsWith("WorkUpdateItem"));
+	await vi.waitFor(() => expect(updates()).toHaveLength(2));
+	expect(updates()[0]).toBe(
+		`WorkUpdateItem(itemId=["${item.id}"], status=["dismissed"], closedReason=["no_response_needed"]);`,
+	);
+	expect(updates()[1]).toBe(
+		`WorkUpdateItem(itemId=["${item.id}"], status=["open"]);`,
+	);
+	expect(
+		state.items.find((candidate) => candidate.id === item.id)?.closedReason,
+	).toBeUndefined();
+});

@@ -16,7 +16,7 @@ import {
 	readThreadCommand,
 	THREAD_ASSISTANT_INSTRUCTIONS,
 } from "./thread-context";
-import { ThreadSession } from "./thread-session";
+import { canStartNewConversation, ThreadSession } from "./thread-session";
 
 vi.mock("./api/thread-compaction", () => ({ compactThreadMessages: vi.fn() }));
 vi.mock("./api/thread-attachments", async (original) => ({
@@ -706,4 +706,46 @@ it("starts a Work run without a draft-review capability endpoint", async () => {
 	expect(runApi.startAgentRun).toHaveBeenCalledOnce();
 	expect(prepareThreadRoom).toHaveBeenCalledOnce();
 	expect(instance.insight.actions.run).not.toHaveBeenCalled();
+});
+
+it("a new conversation leaves the old room and creates another on the next send", async () => {
+	vi.mocked(findThreadRoom).mockResolvedValue(association);
+	vi.mocked(getRoomMessages).mockResolvedValue([
+		{
+			messageId: "prior",
+			type: "INPUT_TEXT",
+			parts: [{ type: "TEXT", text: "Previous question" }],
+		},
+	]);
+	vi.mocked(prepareThreadRoom).mockImplementation(
+		async (_actions, _insightId, _title, next, attempt) => {
+			attempt.onCreated("room-2");
+			return { ...association, roomId: "room-2", metadata: next };
+		},
+	);
+	const instance = await session();
+	expect(canStartNewConversation(instance.getSnapshot())).toBe(true);
+	instance.startNewConversation();
+	expect(instance.getSnapshot().association).toBeNull();
+	expect(instance.getSnapshot().turn.messages).toEqual([]);
+	vi.mocked(getRoomMessages).mockResolvedValue([]);
+	await instance.send("Thread", context, { text: "Start over", files: [] });
+	expect(prepareThreadRoom).toHaveBeenCalledWith(
+		instance.insight.actions,
+		instance.insight.insightId,
+		"Thread",
+		metadata,
+		expect.objectContaining({ roomId: undefined }),
+		instance.getSnapshot().settings,
+	);
+	expect(instance.getSnapshot().association?.roomId).toBe("room-2");
+	expect(instance.getSnapshot().turn.messages).not.toContainEqual(
+		expect.objectContaining({ id: "prior" }),
+	);
+});
+
+it("cannot start a new conversation before a room exists", async () => {
+	const instance = await session();
+	expect(canStartNewConversation(instance.getSnapshot())).toBe(false);
+	expect(() => instance.startNewConversation()).toThrow(/Wait/);
 });

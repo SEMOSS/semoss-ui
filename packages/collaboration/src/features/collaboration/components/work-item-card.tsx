@@ -1,4 +1,12 @@
-import { Check, Clock, Reply, RotateCcw, Sparkles } from "lucide-react";
+import {
+	BellOff,
+	Check,
+	Clock,
+	Reply,
+	RotateCcw,
+	Sparkles,
+	X,
+} from "lucide-react";
 import { Link } from "react-router";
 import { Badge, Button, cn, P, Small } from "@semoss/ui/next";
 import { channelMeta } from "../channel-meta";
@@ -6,6 +14,7 @@ import { dateLabel } from "../date-label";
 import { selectThreadContext } from "../state/collaboration.selectors";
 import type { WorkItem } from "../state/collaboration.types";
 import { useCollaborationSession } from "../state/collaboration-session.context";
+import { ignoreThread, noResponseNeeded } from "../work-item-actions";
 import { PersonAvatar } from "./person-avatar";
 import { ThreadMenu } from "./thread-menu";
 import { TopicChip } from "./topic-chip";
@@ -179,16 +188,10 @@ export function WorkItemCard({ item }: { item: WorkItem }) {
 										variant="ghost"
 										size="sm"
 										onClick={() =>
-											dispatch({
-												type: "item.update",
-												itemId: item.id,
-												changes: {
-													status: "dismissed",
-												},
-											})
+											noResponseNeeded(dispatch, item)
 										}
 									>
-										No thanks
+										No response needed
 									</Button>
 								</>
 							) : item.status === "done" ? (
@@ -247,17 +250,24 @@ export function WorkItemCard({ item }: { item: WorkItem }) {
 									<Button
 										variant="ghost"
 										size="sm"
+										title="Clears this item; a new request on the thread still shows up"
 										onClick={() =>
-											dispatch({
-												type: "item.update",
-												itemId: item.id,
-												changes: {
-													status: "dismissed",
-												},
-											})
+											noResponseNeeded(dispatch, item)
 										}
 									>
-										Dismiss
+										<X aria-hidden="true" />
+										No response needed
+									</Button>
+									<Button
+										variant="ghost"
+										size="sm"
+										title="No more Work from this thread; it stays in Brain"
+										onClick={() =>
+											ignoreThread(dispatch, thread)
+										}
+									>
+										<BellOff aria-hidden="true" />
+										Ignore thread
 									</Button>
 								</>
 							)}

@@ -440,6 +440,7 @@ function planThreads(
 
 const ITEM_FIELDS = [
 	"status",
+	"closedReason",
 	"priority",
 	"title",
 	"snoozeUntil",
@@ -476,6 +477,8 @@ function planItems(
 		if (!changed.length) continue;
 		const args: Record<string, unknown> = { itemId: id(item.id) };
 		for (const field of changed) {
+			// reopening clears the reason on the server; the history keeps it
+			if (field === "closedReason" && !item.closedReason) continue;
 			// leaving snoozed clears snoozeUntil on the server by itself
 			if (field === "snoozeUntil" && !item.snoozeUntil) continue;
 			if (field === "priority" && !item.priority) continue;

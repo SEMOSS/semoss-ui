@@ -38,9 +38,16 @@ import {
 	lastSubmittedContext,
 	type SubmittedThreadContext,
 } from "@/features/thread-assistant/thread-context";
-import type { ThreadSession } from "@/features/thread-assistant/thread-session";
+import {
+	canStartNewConversation,
+	type ThreadSession,
+} from "@/features/thread-assistant/thread-session";
 import { useToolWorkbench } from "@/features/tools/tool-workbench.context";
 import { AssistantComposer } from "./assistant-composer";
+import {
+	NewConversationButton,
+	startNewConversation,
+} from "./new-conversation-button";
 import type { ThreadActionRequest } from "./thread-action-request";
 import { ThreadQuickActions } from "./thread-quick-actions";
 import { useThreadActionRequest } from "./use-thread-action-request";
@@ -495,6 +502,10 @@ export function UnifiedThread({
 											<div className="min-w-0 flex-1">
 												{header}
 											</div>
+											<NewConversationButton
+												session={session}
+												snapshot={snapshot}
+											/>
 											<WorkPaneControls
 												isWorkbenchOpen={activePane}
 												isChatVisible={
@@ -567,6 +578,14 @@ export function UnifiedThread({
 											snapshot.turn.pendingApprovals
 										}
 										onReconnect={session.reconnect}
+										onNewConversation={
+											canStartNewConversation(snapshot)
+												? () =>
+														startNewConversation(
+															session,
+														)
+												: undefined
+										}
 										reviewInWorkbench
 									/>
 									{proposalError && (

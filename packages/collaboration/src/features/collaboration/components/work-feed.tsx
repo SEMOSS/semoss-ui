@@ -84,7 +84,7 @@ export function WorkFeed() {
 						aria-hidden="true"
 					/>
 				)}
-				<div className="flex flex-wrap items-center gap-2">
+				<div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1">
 					<H1 className="font-semibold text-xl">{title}</H1>
 					<WorkRefreshStatus />
 				</div>

@@ -252,10 +252,10 @@ describe("thread menus", () => {
 		},
 	);
 
-	it("mutes a thread, restores a surviving focus target, and supports Undo", async () => {
+	it("ignores a thread, restores a surviving focus target, and supports Undo", async () => {
 		const { user, open } = setup({ hideMuted: true });
 		await open();
-		await user.click(getMenuAction({ name: "Mute thread" }));
+		await user.click(getMenuAction({ name: "Ignore thread" }));
 		expect(screen.queryByRole("article")).not.toBeInTheDocument();
 		expect(
 			sessionState().threads.find((thread) => thread.id === threadId)
@@ -266,14 +266,14 @@ describe("thread menus", () => {
 		expect(screen.getByRole("article")).toBeVisible();
 	});
 
-	it("offers Unmute for a muted thread", async () => {
+	it("offers Resume for an ignored thread", async () => {
 		const state = createInitialCollaborationState();
 		const thread = state.threads.find((thread) => thread.id === threadId);
 		if (!thread) throw new Error("Missing thread");
 		thread.muted = true;
 		const { user, open } = setup({ state });
 		await open();
-		await user.click(getMenuAction({ name: "Unmute thread" }));
+		await user.click(getMenuAction({ name: "Resume thread" }));
 		expect(
 			sessionState().threads.find((thread) => thread.id === threadId)
 				?.muted,
@@ -318,7 +318,7 @@ describe("thread menus", () => {
 			"Open in Work",
 			"View in Brain",
 			"Copy link",
-			"Mute thread",
+			"Ignore thread",
 		]);
 	});
 
@@ -441,7 +441,7 @@ it("targets the hovered email and omits thread-level organization", async () => 
 		sourceMessageId: "later-email",
 	});
 	await open();
-	expect(queryMenuAction({ name: "Mute thread" })).toBeNull();
+	expect(queryMenuAction({ name: "Ignore thread" })).toBeNull();
 	expect(queryMenuAction({ name: "Open workbench" })).toBeNull();
 	expect(getMenuAction({ name: "Reply" })).toBeVisible();
 	await user.click(getMenuAction({ name: "Draft reply" }));
@@ -476,7 +476,7 @@ it("returns focus after selecting an action from a hover-opened popover", async 
 	const { user } = setup();
 	await user.hover(screen.getByRole("article"));
 	await screen.findByRole("dialog", { name: /Thread actions for/ });
-	await user.click(getMenuAction({ name: "Mute thread" }));
+	await user.click(getMenuAction({ name: "Ignore thread" }));
 	await waitFor(() =>
 		expect(
 			screen.getByRole("button", { name: /Thread actions for/ }),

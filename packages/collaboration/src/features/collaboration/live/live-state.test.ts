@@ -5,6 +5,7 @@ import {
 	loadLiveState,
 	loadThreadMessages,
 	readThreadMessagesPage,
+	syncMail,
 } from "./live-state";
 
 it("loads each topic once when the list contains duplicate records", async () => {
@@ -122,4 +123,60 @@ it("lists each email's attachments and ties them to that email", async () => {
 		{ id: "a2", name: "Plan.docx", isFile: false, messageId: "m1" },
 	]);
 	expect(page.messages[1]?.attachments).toBeUndefined();
+});
+
+it("starts a mail sync, polls the job until it ends, and reports its counts", async () => {
+	const response = (output: unknown) => ({
+		pixelReturn: [{ output, operationType: [] }],
+	});
+	const run = vi
+		.fn()
+		.mockResolvedValueOnce(response({ status: "running" }))
+		.mockResolvedValueOnce(response({ status: "running" }))
+		.mockResolvedValueOnce(
+			response({
+				status: "done",
+				counts: {
+					imported: 3,
+					closedByReply: 1,
+					outcomes: { new: 1, automated: 2 },
+					changes: [
+						{ threadId: "t1", outcome: "new" },
+						{ threadId: "t2", outcome: "automated" },
+						{ threadId: "t3", outcome: "bogus" },
+					],
+				},
+			}),
+		);
+	const wait = vi.fn(async () => undefined);
+	const result = await syncMail({ run } as unknown as InsightActions, wait);
+	expect(run.mock.calls.map(([statement]) => statement)).toEqual([
+		"BrainSync();",
+		'BrainGetJob(kind=["sync"]);',
+		'BrainGetJob(kind=["sync"]);',
+	]);
+	expect(wait).toHaveBeenCalledTimes(2);
+	expect(result).toEqual({
+		newMessages: 3,
+		closedByReply: 1,
+		outcomes: { new: 1, automated: 2 },
+		changes: [
+			{ threadId: "t1", outcome: "new" },
+			{ threadId: "t2", outcome: "automated" },
+		],
+	});
+});
+
+it("surfaces a failed mail sync instead of reporting success", async () => {
+	const run = vi.fn().mockResolvedValue({
+		pixelReturn: [
+			{
+				output: { status: "failed", error: "Microsoft login expired" },
+				operationType: [],
+			},
+		],
+	});
+	await expect(
+		syncMail({ run } as unknown as InsightActions, async () => undefined),
+	).rejects.toThrow("Microsoft login expired");
 });

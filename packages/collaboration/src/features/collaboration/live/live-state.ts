@@ -296,6 +296,7 @@ function mapItem(row: Row): WorkItem {
 		topicIds: list<string>(row.topicIds),
 		suggested: row.suggested === true ? true : undefined,
 		completedAt: row.status === "done" ? opt(row.closedAt) : undefined,
+		closedReason: opt(row.closedReason),
 		snoozeUntil: opt(row.snoozeUntil),
 		isSample: false,
 	};
@@ -580,24 +581,129 @@ export async function loadThreadMessages(
 }
 
 /** Refresh work metadata through existing bounded reads without reloading the application. */
-export async function readWorkUpdates(
-	actions: InsightActions,
-): Promise<Pick<CollaborationState, "threads" | "workspaces" | "items">> {
+export async function readWorkUpdates(actions: InsightActions): Promise<
+	Pick<CollaborationState, "threads" | "workspaces" | "items"> & {
+		lastMailCheck: MailCheck | null;
+	}
+> {
 	const outputs = await runBatch(actions, [
 		pixel("BrainListThreads", { limit: 5000, detail: true }),
 		pixel("WorkListWorkspaces"),
 		pixel("WorkListItems", { view: "all", limit: 5000 }),
+		pixel("BrainGetJob", { kind: "sync" }),
 	]);
 	const schema = z.object({
 		items: z.array(z.record(z.string(), z.unknown())),
 		total: z.number().optional().default(0),
 	});
-	const [threads, workspaces, items] = outputs.map((output) =>
-		schema.parse(output),
-	);
+	const [threads, workspaces, items] = outputs
+		.slice(0, 3)
+		.map((output) => schema.parse(output));
 	return {
 		threads: threads.items.map(mapThread),
 		workspaces: mapWorkspaces(workspaces),
 		items: items.items.map(mapItem),
+		lastMailCheck: mapMailCheck(outputs[3]),
+	};
+}
+
+/** The newest mail sync on the server, from whichever trigger ran it (Refresh, a send, later the webhook). */
+export interface MailCheck {
+	status: "running" | "done" | "failed";
+	/** When it finished, or started while still running. */
+	at: string;
+	error: string;
+}
+
+function mapMailCheck(output: unknown): MailCheck | null {
+	const job = (output ?? {}) as Row;
+	const status = opt(job.status);
+	if (status !== "running" && status !== "done" && status !== "failed")
+		return null;
+	return {
+		status,
+		at: str(job.finishedAt) || str(job.startedAt),
+		error: str(job.error),
+	};
+}
+
+export type SyncOutcome = "new" | "updated" | "cleared" | "automated" | "quiet";
+
+export interface MailSyncResult {
+	/** Messages newly brought in through the rules gate (kept-out mail is not counted). */
+	newMessages: number;
+	/** Reply items closed because the owner answered. */
+	closedByReply: number;
+	/** Threads with new mail by where they went. */
+	outcomes: Partial<Record<SyncOutcome, number>>;
+	/** Up to 50 of those threads, for "What came in". */
+	changes: { threadId: string; outcome: SyncOutcome }[];
+}
+
+const SYNC_OUTCOMES = new Set<string>([
+	"new",
+	"updated",
+	"cleared",
+	"automated",
+	"quiet",
+]);
+
+const SYNC_POLL_MS = 1500;
+const SYNC_TIMEOUT_MS = 10 * 60_000;
+
+/** Pull new mail (and Teams when on) from Microsoft 365 through the shared sync job, then return its counts. */
+export async function syncMail(
+	actions: InsightActions,
+	wait: (ms: number) => Promise<void> = (ms) =>
+		new Promise((resolve) => setTimeout(resolve, ms)),
+): Promise<MailSyncResult> {
+	const job = z.object({
+		status: z.string().optional(),
+		error: z.string().nullish(),
+		counts: z.record(z.string(), z.unknown()).nullish(),
+	});
+	const [started] = await runBatch(actions, [pixel("BrainSync")]);
+	let current = job.parse(started);
+	const deadline = Date.now() + SYNC_TIMEOUT_MS;
+	while (current.status === "running") {
+		if (Date.now() > deadline)
+			throw new Error("Checking for new mail is taking too long.");
+		await wait(SYNC_POLL_MS);
+		const [polled] = await runBatch(actions, [
+			pixel("BrainGetJob", { kind: "sync" }),
+		]);
+		current = job.parse(polled);
+	}
+	if (current.status !== "done")
+		throw new Error(current.error || "Checking for new mail failed.");
+	const count = (key: string) => {
+		const value = Number(current.counts?.[key]);
+		return Number.isFinite(value) ? value : 0;
+	};
+	const outcomes = (current.counts?.outcomes ?? {}) as Record<
+		string,
+		unknown
+	>;
+	const changes = Array.isArray(current.counts?.changes)
+		? (current.counts.changes as Row[])
+		: [];
+	return {
+		newMessages: count("imported"),
+		closedByReply: count("closedByReply"),
+		outcomes: Object.fromEntries(
+			Object.entries(outcomes)
+				.filter(([key]) => SYNC_OUTCOMES.has(key))
+				.map(([key, value]) => [key, Number(value) || 0]),
+		),
+		changes: changes
+			.filter(
+				(change) =>
+					typeof change.threadId === "string" &&
+					SYNC_OUTCOMES.has(String(change.outcome)),
+			)
+			.map((change) => ({
+				threadId: String(change.threadId),
+				outcome: change.outcome as SyncOutcome,
+			})),
 	};
 }

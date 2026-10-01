@@ -359,6 +359,9 @@ export class UncertainSendError extends Error {
 	}
 }
 
+/** Fired after a send succeeds, so the Work page can sync the reply in and close what it answered. */
+export const MAIL_SENT_EVENT = "collaboration:mail-sent";
+
 /** Send an exact saved draft through the already-deployed endpoint; never create a new email. */
 export async function sendEmailDraft(
 	actions: InsightActions,
@@ -374,6 +377,7 @@ export async function sendEmailDraft(
 		);
 		if (result.draftId !== draftId)
 			throw new Error("The send receipt refers to a different draft.");
+		window.dispatchEvent(new Event(MAIL_SENT_EVENT));
 		return result;
 	} catch (cause) {
 		throw new UncertainSendError(cause);

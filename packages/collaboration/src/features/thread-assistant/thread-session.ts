@@ -84,6 +84,20 @@ const EMPTY_TURN: AgentTurnSnapshot = {
 	settlementVersion: 0,
 };
 
+/** Can the owner leave this room for a fresh one right now. */
+export function canStartNewConversation(s: ThreadSessionSnapshot): boolean {
+	return (
+		s.isReady &&
+		Boolean(s.association) &&
+		!s.isPreparing &&
+		!s.isSavingSettings &&
+		!s.isCompacting &&
+		!s.turn.isSubmitting &&
+		!s.turn.isRunning &&
+		!s.turn.isRestoring
+	);
+}
+
 interface ThreadSessionSnapshot {
 	usage: ThreadUsage;
 	isCompacting: boolean;
@@ -865,6 +879,35 @@ export class ThreadSession {
 		} catch (cause) {
 			this.update({ error: toError(cause) });
 		}
+	};
+
+	/**
+	 * Leave the current room; the next message creates a new one for this thread.
+	 * The old room and its messages are kept, and the newest room opens next time.
+	 */
+	startNewConversation = (): void => {
+		if (!canStartNewConversation(this.snapshot))
+			throw new Error(
+				"Wait for the current response to finish, or stop it, before starting a new conversation.",
+			);
+		this.unsubscribeTurn?.();
+		this.unsubscribeTurn = null;
+		if (this.controller) evictIdleAgentTurnControllers(this.controller);
+		this.controller = null;
+		this.history = [];
+		this.pending = null;
+		this.uncertainCommand = null;
+		this.update({
+			association: null,
+			turn: EMPTY_TURN,
+			usage: { contextTokens: null, totalTokens: null },
+			compactionError: null,
+			compactionNotice: null,
+			hasUnconfirmedSubmission: false,
+			submissionNotice: null,
+			isCreationUncertain: false,
+			error: null,
+		});
 	};
 
 	/** Explicit recovery after a creation response was lost; may leave an empty room. */

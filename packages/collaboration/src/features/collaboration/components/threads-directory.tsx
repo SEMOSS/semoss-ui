@@ -1,6 +1,7 @@
 import { useId, useState } from "react";
 import { Link, useSearchParams } from "react-router";
 import {
+	Button,
 	H1,
 	Input,
 	Label,
@@ -15,15 +16,16 @@ import {
 import { channelMeta } from "../channel-meta";
 import { dateLabel } from "../date-label";
 import { useCollaborationSession } from "../state/collaboration-session.context";
+import { resumeThread } from "../work-item-actions";
 import { BrainOverview } from "./brain-overview";
 import { CollaborationSurface } from "./collaboration-surface";
 import { ThreadMenu } from "./thread-menu";
 import { TopicChip } from "./topic-chip";
 
-/** Thread inventory with topic, exclusion, and mute filters. */
+/** Thread inventory with topic, exclusion, ignored, and automated filters. */
 export function ThreadsDirectory() {
 	const fieldId = useId();
-	const { state } = useCollaborationSession();
+	const { state, dispatch } = useCollaborationSession();
 	const [params, setParams] = useSearchParams();
 	const [query, setQuery] = useState("");
 	const filter = params.get("filter") ?? "all";
@@ -41,6 +43,7 @@ export function ThreadsDirectory() {
 				(participant) => !participant.included,
 			);
 		if (filter === "muted") return thread.muted;
+		if (filter === "automated") return thread.automated === true;
 		return true;
 	});
 	return (
@@ -99,7 +102,8 @@ export function ThreadsDirectory() {
 							<SelectItem value="excluded">
 								Has exclusions
 							</SelectItem>
-							<SelectItem value="muted">Muted</SelectItem>
+							<SelectItem value="muted">Ignored</SelectItem>
+							<SelectItem value="automated">Automated</SelectItem>
 						</SelectContent>
 					</Select>
 				</div>
@@ -127,7 +131,10 @@ export function ThreadsDirectory() {
 									</Link>
 									<Small className="mt-0.5 font-normal text-muted-foreground text-xs leading-5">
 										{dateLabel(thread.lastAt)}
-										{thread.muted ? " · Muted" : ""}
+										{thread.muted ? " \u00b7 Ignored" : ""}
+										{thread.automated
+											? " \u00b7 Automated"
+											: ""}
 									</Small>
 								</div>
 								<div className="flex flex-wrap gap-1.5">
@@ -154,6 +161,17 @@ export function ThreadsDirectory() {
 										</Small>
 									)}
 								</div>
+								{thread.muted && (
+									<Button
+										variant="outline"
+										size="sm"
+										onClick={() =>
+											resumeThread(dispatch, thread)
+										}
+									>
+										Resume thread
+									</Button>
+								)}
 								{menu}
 							</li>
 						)}

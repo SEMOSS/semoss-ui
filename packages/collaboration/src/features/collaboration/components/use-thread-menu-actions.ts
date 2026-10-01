@@ -28,6 +28,11 @@ import type { ThreadActionRequest } from "@/features/work-thread/thread-action-r
 import type { ThreadWorkbenchRequest } from "@/features/work-thread/thread-workbench-request";
 import type { Thread, WorkItem } from "../state/collaboration.types";
 import { useCollaborationSession } from "../state/collaboration-session.context";
+import {
+	ignoreThread,
+	noResponseNeeded,
+	resumeThread,
+} from "../work-item-actions";
 import { CollaborationSidebarContext } from "./collaboration-sidebar.context";
 import { threadUrl } from "./thread-menu.utils";
 
@@ -278,17 +283,16 @@ export function useThreadMenuActions({
 		},
 		{
 			id: "organize",
+			label: "Conversation",
 			actions: [
 				{
 					id: "mute",
-					label: thread.muted ? "Unmute thread" : "Mute thread",
+					label: thread.muted ? "Resume thread" : "Ignore thread",
 					icon: thread.muted ? Bell : BellOff,
 					onSelect: () =>
-						dispatch({
-							type: "thread.mute",
-							threadId: thread.id,
-							muted: !thread.muted,
-						}),
+						thread.muted
+							? resumeThread(dispatch, thread)
+							: ignoreThread(dispatch, thread),
 				},
 			],
 		},
@@ -370,9 +374,9 @@ export function useThreadMenuActions({
 						},
 						{
 							id: "decline",
-							label: "No thanks",
+							label: "No response needed",
 							icon: X,
-							onSelect: () => update({ status: "dismissed" }),
+							onSelect: () => noResponseNeeded(dispatch, item),
 						},
 					]
 				: item.status === "done"
@@ -401,10 +405,10 @@ export function useThreadMenuActions({
 								},
 								{
 									id: "dismiss",
-									label: "Dismiss",
+									label: "No response needed",
 									icon: X,
 									onSelect: () =>
-										update({ status: "dismissed" }),
+										noResponseNeeded(dispatch, item),
 								},
 							]
 						: [],

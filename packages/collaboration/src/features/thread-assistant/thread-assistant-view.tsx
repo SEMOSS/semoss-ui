@@ -31,7 +31,7 @@ import {
 	THREAD_ASSISTANT_INSTRUCTIONS,
 	threadInstructions,
 } from "./thread-context";
-import type { ThreadSession } from "./thread-session";
+import { canStartNewConversation, type ThreadSession } from "./thread-session";
 import { ThreadSourceAttachments } from "./thread-source-attachments";
 
 function assistantFor(agentName?: string): AgentConfiguration {
@@ -282,6 +282,11 @@ export function ThreadAssistantView({
 				transportError={turn.transportError}
 				pendingApprovals={turn.pendingApprovals}
 				onReconnect={session.reconnect}
+				onNewConversation={
+					canStartNewConversation(snapshot)
+						? session.startNewConversation
+						: undefined
+				}
 			/>
 			<div className="space-y-3 pt-2">
 				{sourceUid &&

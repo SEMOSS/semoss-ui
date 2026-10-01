@@ -254,7 +254,7 @@ export function ThreadSettings({
 				>
 					<div className="flex items-center justify-between gap-3">
 						<Label htmlFor={`${fieldId}-mute`}>
-							Mute this thread
+							Ignore this thread
 						</Label>
 						<Switch
 							id={`${fieldId}-mute`}
@@ -269,8 +269,9 @@ export function ThreadSettings({
 						/>
 					</div>
 					<Small className="text-muted-foreground">
-						Muted threads remain in Brain and are hidden from the
-						Work feed.
+						Ignored threads stay in Brain but get no Work items, and
+						their open items are hidden. Turn this off to resume the
+						thread.
 					</Small>
 				</Section>
 			)}
