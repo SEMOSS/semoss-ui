@@ -14,6 +14,7 @@ import { cn } from "@semoss/ui/next";
 import type { InsightActions } from "@/lib/pixel";
 import type { MailboxOverview } from "./onboarding-api";
 import {
+	FilingStep,
 	ImportStep,
 	KeepOutStep,
 	MailboxStep,
@@ -33,11 +34,12 @@ const STEPS = [
 	{ label: "Import", caption: "Headers only", icon: Download },
 	{ label: "People", caption: "Who matters most", icon: Users },
 	{ label: "Outside", caption: "Clients and partners", icon: Building2 },
+	{ label: "Sort", caption: "Automated mail set aside", icon: Sparkles },
 	{ label: "Topics", caption: "What your work is about", icon: Tags },
-	{ label: "Work", caption: "Sorted for you", icon: Sparkles },
+	{ label: "Work", caption: "Filed for you", icon: Check },
 ];
 
-/** First run with real mail: look, keep out, import headers, people, topics, then sort into Work. */
+/** First run with real mail: look, keep out, import headers, people, sort, topics from what is left, then file into Work. */
 export function Onboarding({
 	actions,
 	initialStep = 0,
@@ -202,8 +204,9 @@ export function Onboarding({
 						/>
 					)}
 					{step === 4 && <OutsideStep {...common} />}
-					{step === 5 && <TopicsStep {...common} />}
-					{step === 6 && <WorkStep {...common} />}
+					{step === 5 && <WorkStep {...common} />}
+					{step === 6 && <TopicsStep {...common} />}
+					{step === 7 && <FilingStep {...common} />}
 				</main>
 			</div>
 		</div>
