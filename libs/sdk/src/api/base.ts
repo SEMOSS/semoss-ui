@@ -255,20 +255,11 @@ export type PixelStreamThinkingMessage = {
 	};
 };
 
-/** A room-name update emitted while a room ask is still streaming */
-export type PixelStreamRoomNameMessage = {
-	stream_type: "room_name";
-	data: {
-		roomName: string;
-	};
-};
-
 /** Union of all message chunk types yielded by a streaming pixel job */
 export type PixelStreamMessage =
 	| PixelStreamContentMessage
 	| PixelStreamToolMessage
-	| PixelStreamThinkingMessage
-	| PixelStreamRoomNameMessage;
+	| PixelStreamThinkingMessage;
 
 /** Status values returned by the pixelJobStreaming endpoint */
 export type PixelJobStreamingStatus =
