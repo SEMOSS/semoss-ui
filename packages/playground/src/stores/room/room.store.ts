@@ -1247,6 +1247,15 @@ export class RoomStore {
 			throw new Error("Prompt is required");
 		}
 
+		const blockedFiles = files.filter(
+			(file) => !this.acceptsAttachment(file.name),
+		);
+		if (blockedFiles.length > 0) {
+			throw new Error(
+				`Attachments disabled by this Playground's file policy: ${blockedFiles.map((file) => file.name).join(", ")}.`,
+			);
+		}
+
 		this.setIsLoading(true);
 
 		// Create the input message immediately so the user's bubble and the
@@ -1332,9 +1341,7 @@ export class RoomStore {
 					throw uploadError;
 				}
 
-				mediaInputs = uploaded.filter((f) =>
-					this.acceptsAttachment(f.fileName),
-				);
+				mediaInputs = uploaded;
 			}
 
 			mediaInputs = [
@@ -1344,6 +1351,14 @@ export class RoomStore {
 					fileLocation: item.path,
 				})),
 			];
+			const blockedInputs = mediaInputs.filter(
+				(file) => !this.acceptsAttachment(file.fileName),
+			);
+			if (blockedInputs.length > 0) {
+				throw new Error(
+					`Attachments disabled by this Playground's file policy: ${blockedInputs.map((file) => file.fileName).join(", ")}.`,
+				);
+			}
 
 			// Append media parts to the already-visible input message
 			runInAction(() => {
