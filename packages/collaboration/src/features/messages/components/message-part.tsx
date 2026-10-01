@@ -77,6 +77,7 @@ export const MessagePart = memo(function MessagePart({
 			return (
 				<MessageMediaPart
 					fileName={part.fileName}
+					fileLocation={part.fileLocation}
 					mimeType={part.mimeType}
 				/>
 			);

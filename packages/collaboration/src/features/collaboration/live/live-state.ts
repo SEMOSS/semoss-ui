@@ -1,4 +1,5 @@
 import { z } from "@semoss/ui/next";
+import type { SourceAttachment } from "@/features/connectors/types";
 import { readDisplayBody } from "@/features/email/message-body";
 import type { InsightActions } from "@/lib/pixel";
 import { PixelError, pixel } from "@/lib/pixel";
@@ -458,6 +459,40 @@ function mapWorkspaces(page: Page): Record<string, ThreadWorkspace> {
 	);
 }
 
+const attachmentSchema = z.object({
+	id: z.string().min(1),
+	name: z.string(),
+	contentType: z.string().optional(),
+	size: z.number().nonnegative().optional(),
+	kind: z.string().optional(),
+});
+
+/**
+ * An email's attachments; only a file carries bytes the thread can stage.
+ * Malformed entries are skipped rather than failing the whole page.
+ */
+function mapAttachments(
+	value: unknown,
+	messageId: string,
+): SourceAttachment[] | undefined {
+	const attachments = list(value).flatMap((item): SourceAttachment[] => {
+		const parsed = attachmentSchema.safeParse(item);
+		if (!parsed.success) return [];
+		const { id, name, contentType, size, kind } = parsed.data;
+		return [
+			{
+				id,
+				name: name || "Attachment",
+				...(contentType ? { contentType } : {}),
+				...(size === undefined ? {} : { size }),
+				isFile: kind === undefined || kind === "file",
+				messageId,
+			},
+		];
+	});
+	return attachments.length ? attachments : undefined;
+}
+
 // To or Cc as names, the address when the source gave no name; undefined when empty
 function recipientNames(value: unknown): string[] | undefined {
 	const names = list<Row>(value)
@@ -494,6 +529,7 @@ export async function readThreadMessagesPage(
 			threadId,
 			limit: 100,
 			includeDisplayBody: true,
+			includeAttachments: true,
 			cursor,
 		}),
 	])) as [Row];
@@ -518,6 +554,7 @@ export async function readThreadMessagesPage(
 			message.webLink.startsWith("https://")
 				? message.webLink
 				: undefined,
+		attachments: mapAttachments(message.attachments, str(message.id)),
 	}));
 	return {
 		messages,

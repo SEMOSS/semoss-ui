@@ -10,6 +10,7 @@ import { UnifiedThread } from "@/features/work-thread/unified-thread";
 import { useWorkComposerSession } from "@/features/work-thread/work-composer-state.context";
 import { WorkThreadHeading } from "@/features/work-thread/work-thread-heading";
 import { WORK_THREAD_WORKBENCH } from "@/features/work-thread/work-thread-panels";
+import { dateLabel } from "../date-label";
 import { importSourceCommand } from "../import-source";
 import { useThreadHistory } from "../live/thread-history.context";
 import { selectThreadContext } from "../state/collaboration.selectors";
@@ -55,19 +56,29 @@ export function WorkThread() {
 		);
 	const sourceUid =
 		thread.source?.kind === "outlook" ? thread.source.nativeId : undefined;
-	const attachments: SourceAttachment[] = workspace.assets
-		.filter(
-			(asset) =>
-				context.messages.length > 0 &&
-				!asset.isSample &&
-				asset.nativeId,
-		)
-		.map((asset) => ({
-			id: asset.nativeId ?? "",
-			name: asset.name,
-			size: Number(asset.size) || undefined,
-			isFile: asset.kind === "file",
-		}));
+	const attachments: SourceAttachment[] = [
+		// Imported Sources mail, read through the Outlook connector.
+		...workspace.assets
+			.filter(
+				(asset) =>
+					context.messages.length > 0 &&
+					!asset.isSample &&
+					asset.nativeId,
+			)
+			.map((asset) => ({
+				id: asset.nativeId ?? "",
+				name: asset.name,
+				size: Number(asset.size) || undefined,
+				isFile: asset.kind === "file",
+			})),
+		// Brain emails, newest first, staged under the thread's rules.
+		...[...workspace.messages].reverse().flatMap((message) =>
+			(message.attachments ?? []).map((attachment) => ({
+				...attachment,
+				sourceLabel: `${message.fromName ?? "Email"} · ${dateLabel(message.at, undefined, "date")}`,
+			})),
+		),
+	];
 	const openDraft = (
 		body: string,
 		mode: "new" | "reply" | "forward" = sourceUid ? "reply" : "new",

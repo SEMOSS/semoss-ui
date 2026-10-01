@@ -18,6 +18,7 @@ import { hasDisplayContent } from "@/features/email/email-html";
 import { EmailMessageHeader } from "@/features/email/email-message-header";
 import { SourceMessageBody } from "@/features/email/source-message-body";
 import { useWorkEmail } from "./work-email.context";
+import { WorkEmailAttachments } from "./work-email-attachments";
 import { WorkEmailMenu } from "./work-email-menu";
 
 /** One full source email, shared by the thread list and the individual reader. */
@@ -63,6 +64,7 @@ export function WorkSourceEmail({
 			: Boolean(message.displayBody.content.trim()));
 	const isExpanded = disclosure?.isExpanded ?? true;
 	const subject = message.subject || thread.subject || "Email";
+	const attachments = message.attachments ?? [];
 	return (
 		<Collapsible
 			open={isExpanded}
@@ -214,6 +216,7 @@ export function WorkSourceEmail({
 							channel="email"
 							title={`Email from ${name}`}
 							presentation="reader"
+							showAttachments={attachments.length === 0}
 						/>
 					) : message.text ? (
 						<P className="max-w-prose whitespace-pre-wrap break-words leading-relaxed">
@@ -225,13 +228,20 @@ export function WorkSourceEmail({
 							email in Outlook for more details.
 						</P>
 					)}
-					{isOriginal &&
+					{attachments.length > 0 ? (
+						<WorkEmailAttachments
+							attachments={attachments}
+							webLink={webLink}
+						/>
+					) : (
+						isOriginal &&
 						!message.displayBody?.attachments?.length &&
 						workspace.assets.length > 0 && (
 							<EmailAttachmentReferences
 								attachments={workspace.assets}
 							/>
-						)}
+						)
+					)}
 					{message.isTruncated && (
 						<P className="text-warning">
 							Source text was truncated. Open the original email

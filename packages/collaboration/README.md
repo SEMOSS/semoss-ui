@@ -100,12 +100,17 @@ Deploy that backend support first; existing callers retain native reply behavior
 migration, sending-backend changes, or authentication-configuration changes are
 required. Existing Microsoft permission errors flow through the current UI.
 
-Native file attachments can be downloaded or explicitly attached to an assistant
-request. Downloads use `MicrosoftOutlookDownloadAttachment` and
-`DownloadInsightAsset` in the same isolated insight with a unique filename. This
-download area is never bound to an assistant room. Assistant
-attachments are staged in that thread's insight and submitted only with the
-user's next message.
+Native file attachments can be opened, downloaded, or explicitly attached to an
+assistant request. Brain threads list them with
+`BrainGetThreadMessages(includeAttachments=true)` and read them with
+`BrainStageAttachment`, which applies the thread's rules first. Imported Sources
+mail uses `MicrosoftOutlookDownloadAttachment`. Open and Download stage one copy,
+under a unique filename, in an isolated insight that is never bound to an
+assistant room; Open shows it in the dock from there. Assistant attachments are
+staged in that thread's insight and submitted only with the user's next message.
+Word, Excel, PowerPoint, .msg, and .eml files are sent as a plain-text copy,
+because most providers reject those formats. A message's other files may total
+20 MB, since every later turn re-sends them.
 
 ## Routes and ownership
 
@@ -141,6 +146,31 @@ backend. Development credentials are not embedded in production builds.
 
 Use the repository's Node and pnpm versions. Route pages are loaded on demand;
 generic helpers belong in `@semoss/utility`.
+
+### HTTPS development with an existing Microsoft login
+
+To share a Tomcat login session, open Vite using the same hostname as the
+Microsoft callback and use HTTPS. The dev port can differ from Tomcat's port.
+Set these environment variables when launching the development command:
+
+| Variable | Purpose |
+| --- | --- |
+| `SEMOSS_DEV_ORIGIN` | HTTPS frontend origin, for example `https://your-host.local:5181` |
+| `SEMOSS_DEV_PFX` | Absolute path to a local PKCS12 certificate with its private key |
+| `SEMOSS_DEV_PASSPHRASE` | Keystore password, supplied through the process environment |
+| `ENDPOINT` | Tomcat HTTPS origin, for example `https://127.0.0.1:8443` |
+| `MODULE` | Backend context path, usually `/Monolith` |
+
+The HTTPS listener binds only to `127.0.0.1`. The frontend hostname must resolve
+to that address, and its certificate must be accepted by the browser. Keep
+keystore files and passwords outside the repository. These options apply only
+to the dev server; production builds retain their existing behavior.
+
+The Microsoft redirect URI can continue pointing at Tomcat. The SDK verifies
+popup completion through the backend session, so a callback on another port
+does not require access to the popup's document. Tomcat must remain running
+while using the dev app. The usual HTTP development command remains available
+when `SEMOSS_DEV_ORIGIN` is unset.
 
 ## Validation
 

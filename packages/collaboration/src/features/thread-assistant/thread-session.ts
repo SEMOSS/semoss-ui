@@ -2,9 +2,19 @@ import { Insight } from "@semoss/sdk";
 import { toError } from "@semoss/utility";
 import type { WorkspaceAgent } from "@/features/agents/api/agent-schemas";
 import { getAgent } from "@/features/agents/api/get-agent";
-import { downloadMailAttachmentIsolated } from "@/features/connectors/api/mail-attachment-download";
-import { stageMailAttachment } from "@/features/connectors/api/microsoft";
-import type { SourceAttachment } from "@/features/connectors/types";
+import {
+	type IsolatedAttachment,
+	stageAttachmentIsolated,
+	stageMailAttachmentIsolated,
+} from "@/features/connectors/api/mail-attachment-download";
+import {
+	downloadStagedAttachment,
+	stageMailAttachment,
+} from "@/features/connectors/api/microsoft";
+import type {
+	SourceAttachment,
+	StagedSourceAttachment,
+} from "@/features/connectors/types";
 import { getRoomMessages } from "@/features/messages/api/get-room-messages";
 import type { ConversationMessage } from "@/features/messages/types/message";
 import {
@@ -28,6 +38,12 @@ import type {
 	PendingToolApproval,
 } from "@/features/rooms/types/room";
 import type { InsightActions } from "@/lib/pixel";
+import {
+	MAX_ATTACHMENT_BYTES,
+	MAX_MESSAGE_FILE_BYTES,
+	sendsAsText,
+	stageThreadAttachment,
+} from "./api/thread-attachments";
 import {
 	compactThreadMessages,
 	type ThreadCompactionStrategy,
@@ -436,18 +452,112 @@ export class ThreadSession {
 
 	/** Download-only files never enter a folder the assistant can read. */
 	downloadAttachment = async (
-		sourceUid: string,
+		sourceUid: string | undefined,
 		attachment: SourceAttachment,
 	): Promise<void> => {
-		await downloadMailAttachmentIsolated(
-			this.downloadOwner ?? {
-				insightId: this.insight.insightId,
-				actions: this.insight.actions,
-			},
+		const { file, actions } = await this.stageIsolated(
 			sourceUid,
 			attachment,
 		);
+		await downloadStagedAttachment(actions, file);
 	};
+
+	/**
+	 * Stage a file for the dock's viewers in the download area, so opening it
+	 * never gives the assistant a copy. Office and mail files open as their text.
+	 *
+	 * @returns Where the viewer reads the file, and the tab name to show.
+	 */
+	previewAttachment = async (
+		sourceUid: string | undefined,
+		attachment: SourceAttachment,
+	): Promise<{ insightId: string; path: string; name: string }> => {
+		const { file } = await this.stageIsolated(sourceUid, attachment);
+		return file.textPath
+			? {
+					insightId: file.insightId,
+					path: file.textPath,
+					name: `${attachment.name} (text)`,
+				}
+			: {
+					insightId: file.insightId,
+					path: file.filePath,
+					name: attachment.name,
+				};
+	};
+
+	private async stageIsolated(
+		sourceUid: string | undefined,
+		attachment: SourceAttachment,
+	): Promise<IsolatedAttachment> {
+		const owner = this.downloadOwner ?? {
+			insightId: this.insight.insightId,
+			actions: this.insight.actions,
+		};
+		if (!attachment.isFile)
+			throw new Error(
+				"Open this linked or embedded attachment in Outlook.",
+			);
+		if ((attachment.size ?? 0) > MAX_ATTACHMENT_BYTES)
+			throw new Error(
+				`${attachment.name} is larger than the 10 MB attachment limit.`,
+			);
+		if (attachment.messageId)
+			return stageAttachmentIsolated(
+				owner,
+				JSON.stringify([
+					this.threadId,
+					attachment.messageId,
+					attachment.id,
+				]),
+				(actions, insightId) =>
+					stageThreadAttachment(
+						actions,
+						insightId,
+						this.threadId,
+						attachment,
+						true,
+					),
+			);
+		if (!sourceUid)
+			throw new Error("The source for this attachment is unavailable.");
+		return stageMailAttachmentIsolated(owner, sourceUid, attachment);
+	}
+
+	/** Stage one selected attachment into the room-bound insight for the next request. */
+	private async stageForAssistant(
+		sourceUid: string | undefined,
+		attachment: SourceAttachment,
+	): Promise<StagedSourceAttachment> {
+		if (attachment.messageId) {
+			const file = await stageThreadAttachment(
+				this.insight.actions,
+				this.insight.insightId,
+				this.threadId,
+				attachment,
+				true,
+			);
+			// Most providers reject Office and mail files, so never send one raw.
+			if (sendsAsText(file.name) && !file.textPath)
+				throw new Error(
+					file.textError ??
+						`The text of ${file.name} could not be read. Remove it and try again.`,
+				);
+			return file;
+		}
+		if (!sourceUid)
+			throw new Error("The source for this attachment is unavailable.");
+		const file = await stageMailAttachment(
+			this.insight.actions,
+			this.insight.insightId,
+			sourceUid,
+			attachment.id,
+			attachment.name,
+		);
+		if (file.size > MAX_ATTACHMENT_BYTES)
+			throw new Error(`${file.name} exceeds the 10 MB attachment limit.`);
+		return file;
+	}
 
 	send = async (
 		title: string,
@@ -484,7 +594,10 @@ export class ThreadSession {
 			throw new Error("Choose a model before sending.");
 		if (context.threadId !== this.threadId)
 			throw new Error("This context belongs to a different thread.");
-		if (attachments.length && !sourceUid)
+		if (
+			attachments.some((attachment) => !attachment.messageId) &&
+			!sourceUid
+		)
 			throw new Error("The source for this attachment is unavailable.");
 		if (
 			attachments.length +
@@ -493,6 +606,30 @@ export class ThreadSession {
 			5
 		)
 			throw new Error("Attach up to 5 files per message.");
+		// Checked before anything downloads; the backend enforces the same cap.
+		const oversized = attachments.find(
+			(attachment) => (attachment.size ?? 0) > MAX_ATTACHMENT_BYTES,
+		);
+		if (oversized)
+			throw new Error(
+				`${oversized.name} is larger than the 10 MB attachment limit.`,
+			);
+		// Every later turn re-sends these bytes, and a request over 32 MB fails on Claude.
+		const fileBytes =
+			attachments
+				.filter(
+					(attachment) =>
+						!(attachment.messageId && sendsAsText(attachment.name)),
+				)
+				.reduce(
+					(total, attachment) => total + (attachment.size ?? 0),
+					0,
+				) +
+			submission.files.reduce((total, file) => total + file.size, 0);
+		if (fileBytes > MAX_MESSAGE_FILE_BYTES)
+			throw new Error(
+				"Files sent with one message can total 20 MB. Send some of them in a later message.",
+			);
 		this.update({ isPreparing: true, error: null, submissionNotice: null });
 		try {
 			const agentId = this.snapshot.settings.agentId;
@@ -563,28 +700,28 @@ export class ThreadSession {
 			if (this.snapshot.turn.isRunning)
 				throw new Error("Wait for the current response to finish.");
 			const existingMedia = [...(submission.existingMedia ?? [])];
-			if (sourceUid) {
-				for (const attachment of attachments) {
-					const file = await stageMailAttachment(
-						this.insight.actions,
-						this.insight.insightId,
-						sourceUid,
-						attachment.id,
-						attachment.name,
-					);
-					if (file.size > 10 * 1024 * 1024)
-						throw new Error(
-							`${file.name} exceeds the 10 MB attachment limit.`,
-						);
-					existingMedia.push({
-						insightId: file.insightId,
-						fileLocation: file.filePath,
-						fileName: file.name,
-					});
-				}
+			const sent: NonNullable<SubmittedThreadContext["attachments"]> = [];
+			for (const attachment of attachments) {
+				const file = await this.stageForAssistant(
+					sourceUid,
+					attachment,
+				);
+				const location = file.textPath ?? file.filePath;
+				existingMedia.push({
+					insightId: file.insightId,
+					fileLocation: location,
+					fileName: file.textPath ? `${file.name} (text)` : file.name,
+				});
+				sent.push({
+					messageId: attachment.messageId ?? file.sourceUid,
+					attachmentId: attachment.id,
+					name: file.name,
+					file: location,
+					sentAs: file.textPath ? "text" : "file",
+				});
 			}
 			const command = threadCommand(
-				context,
+				sent.length ? { ...context, attachments: sent } : context,
 				submission.text.trim() || "Please review the attached files.",
 			);
 			try {

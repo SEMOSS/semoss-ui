@@ -155,11 +155,13 @@ export function ToolWorkbenchProvider({
 	useEffect(() => {
 		const layout = store.getState().layout;
 		for (const panel of layout.actions.findPanels((candidate) => {
-			const mode = (
-				candidate.config as { mode?: FilePanelMode } | undefined
-			)?.mode;
+			const config = candidate.config as
+				| { mode?: FilePanelMode; isolated?: boolean }
+				| undefined;
+			const mode = config?.mode;
 			return (
 				isFilePanelType(candidate.type) &&
+				!config?.isolated &&
 				mode?.type === "INSIGHT" &&
 				mode.insightId !== insightId
 			);
@@ -236,14 +238,25 @@ export function ToolWorkbenchProvider({
 	);
 
 	const openFile = useCallback(
-		(path: string, name: string) => {
-			store
-				.getState()
-				.layout.actions.selectPanel(
-					getFilePanelType(path),
-					{ mode: { type: "INSIGHT", insightId }, name, path },
-					{ name, target: panelTarget?.(store.getState().layout) },
-				);
+		(path: string, name: string, fileInsightId?: string) => {
+			const otherInsightId =
+				fileInsightId && fileInsightId !== insightId
+					? fileInsightId
+					: null;
+			store.getState().layout.actions.selectPanel(
+				getFilePanelType(path),
+				{
+					mode: {
+						type: "INSIGHT",
+						insightId: otherInsightId ?? insightId,
+					},
+					name,
+					path,
+					// Another insight's file keeps its own scope when the room's insight changes.
+					...(otherInsightId ? { isolated: true } : {}),
+				},
+				{ name, target: panelTarget?.(store.getState().layout) },
+			);
 			setIsOpen(true);
 		},
 		[insightId, store, panelTarget],
