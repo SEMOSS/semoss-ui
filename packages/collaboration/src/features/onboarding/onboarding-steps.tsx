@@ -18,7 +18,7 @@ import {
 	Zap,
 } from "lucide-react";
 import { type ReactNode, useEffect, useId, useMemo, useState } from "react";
-import { Badge, Button, cn, Input, Label, Switch } from "@semoss/ui/next";
+import { Badge, Button, cn, Input, Label, P, Switch } from "@semoss/ui/next";
 import type { InsightActions } from "@/lib/pixel";
 import { PersonAvatar } from "../collaboration/components/person-avatar";
 import {
@@ -106,20 +106,17 @@ export function WelcomeStep({ onStart }: { onStart: () => void }) {
 				eyebrow="Before you start"
 				title="Set up with your mail"
 			>
-				We look at your mailbox, you choose what stays out, then we
-				import headers, sort your mail and suggest topics. Nothing is
-				read until you start, and nothing is stored until the import
-				step.
+				Set up Collaboration with your recent mail. Choose what to
+				exclude, review your people and topics, and find conversations
+				that need your attention. Nothing is read until you start.
 			</StepHeader>
 			<ul className="space-y-2 text-muted-foreground text-sm">
-				<li>A first look counts your mail from headers only.</li>
+				<li>Choose how much recent mail to include.</li>
 				<li>
-					You keep out senders and domains before anything is read.
+					Exclude senders and domains you do not want in
+					Collaboration.
 				</li>
-				<li>
-					Sorting sets automated mail aside; topics come from the mail
-					that is left.
-				</li>
+				<li>Review the people and topics suggested for you.</li>
 			</ul>
 			<StepActions>
 				<Next onClick={onStart}>Start setup</Next>
@@ -160,8 +157,8 @@ export function MailboxStep({
 	return (
 		<>
 			<StepHeader eyebrow={eyebrow} title="Here is your mailbox">
-				Counted from message headers only. Nothing is stored until you
-				import.
+				Review your recent mail and frequent senders. Choose a time
+				range for setup; nothing is stored until you import.
 			</StepHeader>
 			{error && (
 				<Failure
@@ -170,7 +167,7 @@ export function MailboxStep({
 				/>
 			)}
 			{!overview && !error && (
-				<LoadingCards label="Reading your mailbox headers..." />
+				<LoadingCards label="Checking your mailbox..." />
 			)}
 			{overview && (
 				<>
@@ -435,8 +432,9 @@ export function KeepOutStep({
 					</div>
 				}
 			>
-				Mail from these is never imported, read, or sent to a model. We
-				picked automated and bulk senders; tap any you want to keep.
+				Choose senders and domains to exclude. Their mail will not be
+				imported, read, or sent to a model. Automated and bulk senders
+				are selected by default.
 			</StepHeader>
 			{suggestions.length === 0 && (
 				<p className="text-muted-foreground text-sm">
@@ -585,8 +583,8 @@ export function KeepOutStep({
 
 const IMPORT_PHASES = [
 	{ steps: ["queued", "mailbox"], label: "Connecting to your mailbox" },
-	{ steps: ["reading inbox"], label: "Reading Inbox headers" },
-	{ steps: ["reading sentitems"], label: "Reading Sent headers" },
+	{ steps: ["reading inbox"], label: "Checking your Inbox" },
+	{ steps: ["reading sentitems"], label: "Checking your Sent mail" },
 	{ steps: ["reading Teams chats"], label: "Reading Teams chats" },
 	{ steps: ["importing"], label: "Building threads and people" },
 	{ steps: ["threads", "people"], label: "Ranking who matters" },
@@ -645,8 +643,8 @@ export function ImportStep({
 				eyebrow={eyebrow}
 				title={`Bring in the last ${days} days`}
 			>
-				Inbox and Sent headers, and your Teams chats: who, when, and
-				subject. One thread per conversation or chat, no message bodies.
+				Add recent email conversations to Collaboration. Include Teams
+				chats if you want them in Work. Your exclusions still apply.
 			</StepHeader>
 			{active ? (
 				<div className="grid items-center gap-8 md:grid-cols-[auto_minmax(0,1fr)]">
@@ -682,7 +680,7 @@ export function ImportStep({
 					<p className="max-w-sm text-muted-foreground text-sm">
 						{done
 							? "You imported before. Importing again picks up anything new and skips what is already here."
-							: "Takes under a minute for most mailboxes. You can watch it happen."}
+							: "Import your recent conversations to get started."}
 					</p>
 					<div className="flex items-center gap-3 rounded-xl bg-card px-4 py-3 text-left ring-1 ring-border/70">
 						<Switch
@@ -700,7 +698,7 @@ export function ImportStep({
 					<div className="flex flex-wrap justify-center gap-2">
 						{[
 							"Inbox and Sent",
-							"Headers only",
+							"No message bodies stored",
 							"Keep-out rules applied",
 						].map((chip) => (
 							<span
@@ -826,7 +824,9 @@ function PersonCard({
 		<div
 			className={cn(
 				"relative flex h-full items-center gap-3 rounded-2xl ring-1 ring-border/70 transition-all",
-				featured ? "flex-col p-4 pt-5 text-center" : "p-2.5",
+				featured
+					? "flex-col p-4 pt-5 text-center"
+					: "min-w-0 flex-wrap p-3",
 				vip && "bg-chart-4/[0.07] ring-chart-4/40",
 				!followed && "opacity-55",
 			)}
@@ -909,6 +909,7 @@ export function PeopleStep({
 	// automated and list senders: never followed or starred, one tap makes one a person
 	const [automated, setAutomated] = useState<OnboardingPerson[]>([]);
 	const [showAutomated, setShowAutomated] = useState(false);
+	const automatedId = useId();
 	// follow someone Brain did not suggest
 	const [query, setQuery] = useState("");
 	const [found, setFound] = useState<OnboardingPerson[]>([]);
@@ -1075,12 +1076,18 @@ export function PeopleStep({
 					</div>
 				}
 			>
-				Your people, from your org chart and the mail you trade both
-				ways. Following someone ranks their asks above other mail in
-				Work; star a VIP and their asks go to the top. Mail from people
-				you do not follow still shows up, it is just not moved up. The
-				bars show how much you write to each other.
+				Choose who to follow and mark your VIPs. Requests from people
+				you follow rank higher in Work; VIP requests go to the top.
+				Other mail can still appear in Work.
 			</StepHeader>
+			<P className="text-muted-foreground text-sm">
+				<strong className="font-medium text-foreground">
+					Automated and mailing-list senders are ignored by default.
+				</strong>{" "}
+				They are not followed or suggested as VIPs. Conversations
+				classified as automated are left out of topic suggestions and
+				Work. Nothing is deleted from your mailbox.
+			</P>
 			{!people && !error && (
 				<LoadingCards label="Finding your people..." count={6} />
 			)}
@@ -1173,48 +1180,60 @@ export function PeopleStep({
 						size="sm"
 						className="-ml-3 text-muted-foreground"
 						aria-expanded={showAutomated}
+						aria-controls={automatedId}
 						onClick={() => setShowAutomated((value) => !value)}
 					>
 						<Bot className="size-4" aria-hidden="true" />
-						Automated and list senders ({automated.length})
+						Review ignored senders ({automated.length})
 					</Button>
-					{showAutomated && (
-						<>
-							<p className="text-muted-foreground text-xs">
-								Shared mailboxes, lists, and system senders.
-								Never followed, and left out of topics and Work.
-								Mark anyone who is really a person.
-							</p>
-							<ul className="grid gap-2 sm:grid-cols-2">
-								{automated.map((p) => (
-									<li
-										key={p.id}
-										className="flex items-center gap-3 rounded-2xl p-2.5 ring-1 ring-border/70"
-									>
-										<PersonAvatar
-											name={p.name}
-											className="size-9"
-										/>
-										<div className="min-w-0 flex-1">
-											<div className="truncate font-medium text-sm">
-												{p.name}
-											</div>
-											<div className="truncate text-muted-foreground text-xs">
-												{p.title || p.email}
-											</div>
+					<div
+						id={automatedId}
+						hidden={!showAutomated}
+						className="space-y-3"
+					>
+						<P className="text-muted-foreground text-sm">
+							These senders are treated as automated or mailing
+							lists, not people. Sender typing is separate from
+							your keep-out rules, which prevent mail from being
+							imported or read.
+						</P>
+						<ul className="grid gap-2 sm:grid-cols-2">
+							{automated.map((p) => (
+								<li
+									key={p.id}
+									className="flex min-w-0 flex-wrap items-center gap-3 rounded-lg p-3 ring-1 ring-border/70"
+								>
+									<PersonAvatar
+										name={p.name}
+										className="size-9"
+									/>
+									<div className="min-w-0 flex-1">
+										<div className="wrap-anywhere font-medium text-sm">
+											{p.name}
 										</div>
-										<Button
-											variant="ghost"
-											size="sm"
-											onClick={() => void rescue(p)}
+										<div className="break-all text-muted-foreground text-xs">
+											{p.email}
+										</div>
+										<Badge
+											variant="secondary"
+											className="mt-1"
 										>
-											A person
-										</Button>
-									</li>
-								))}
-							</ul>
-						</>
-					)}
+											Ignored
+										</Badge>
+									</div>
+									<Button
+										variant="ghost"
+										size="sm"
+										className="w-full"
+										aria-label={`Treat as person: ${p.name}`}
+										onClick={() => void rescue(p)}
+									>
+										Treat as person
+									</Button>
+								</li>
+							))}
+						</ul>
+					</div>
 				</section>
 			)}
 			{error && <Failure error={error} />}
@@ -1328,8 +1347,9 @@ export function OutsideStep({ actions, onNext, onBack, eyebrow }: StepProps) {
 	return (
 		<>
 			<StepHeader eyebrow={eyebrow} title="Who you work with outside">
-				Clients and partners, found by email domain. Ticked are the ones
-				you wrote to or have a VIP at; tick any other that is real work.
+				Choose the clients, partners, and other organizations you work
+				with. Review the suggestions and select the ones you want to
+				keep.
 			</StepHeader>
 			{!accounts && !error && (
 				<LoadingCards label="Finding organisations..." />
@@ -1348,8 +1368,8 @@ export function OutsideStep({ actions, onNext, onBack, eyebrow }: StepProps) {
 				<section className="space-y-3">
 					<h2 className="font-medium text-sm">Also seen</h2>
 					<p className="text-muted-foreground text-xs">
-						You have not written to anyone here. Keep any that are
-						real work.
+						Other organizations found in your mail. Select any you
+						work with.
 					</p>
 					<div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
 						{weak.map((a, i) => card(a, strong.length + i))}
@@ -1655,24 +1675,21 @@ export function TopicsStep({ actions, onNext, onBack, eyebrow }: StepProps) {
 					</div>
 				}
 			>
-				Grouped from the mail we sorted, headers only. Keep the topics
-				that are real work, fix their names and what they cover, take
-				off anyone who does not belong, or add your own. Your mail is
-				filed under the ones you keep.
+				Choose the topics you want to track. Edit the suggestions or add
+				your own.
 			</StepHeader>
 			{!topics && !error && (
 				<LoadingCards label="Finding topics in your mail..." />
 			)}
 			{result?.modelError && (
 				<p className="text-muted-foreground text-sm">
-					No topics were suggested because the topic model is not
-					available ({result.modelError}). You can add topics below or
-					in Brain later.
+					Topic suggestions are unavailable right now (
+					{result.modelError}). You can still add your own topics.
 				</p>
 			)}
 			{topics && topics.length === 0 && !result?.modelError && (
 				<p className="text-muted-foreground text-sm">
-					No topics found; add your own below or in Brain later.
+					No topics found. Add a topic to get started.
 				</p>
 			)}
 			{groups.map((group) => (
@@ -1682,8 +1699,8 @@ export function TopicsStep({ actions, onNext, onBack, eyebrow }: StepProps) {
 					)}
 					{group.label === "Maybe" && (
 						<p className="text-muted-foreground text-xs">
-							You have not written on these. Keep any that are
-							real work.
+							You have not sent mail in these topics. Select any
+							you want to track.
 						</p>
 					)}
 					<div className="grid gap-3 sm:grid-cols-2">
@@ -1834,15 +1851,15 @@ export function WorkStep({ actions, onNext, onBack, eyebrow }: StepProps) {
 					</h1>
 					<p className="max-w-md text-muted-foreground text-sm">
 						{formatCount(summary.work.automated ?? 0)} automated
-						threads set aside. Next, pick the topics your work is
-						about from the mail that is left.
+						threads set aside. Next, choose the topics you want to
+						track.
 					</p>
 				</div>
 			) : (
 				<StepHeader eyebrow={eyebrow} title="Sort your threads">
-					Our classifier sets automated mail aside and works out whose
-					turn it is on the rest. Anything it is unsure about comes to
-					you. Topics come next, from the mail that is left.
+					Find conversations that need your response, are waiting on
+					others, or are for your information. Automated mail is set
+					aside; uncertain items are left for you to review.
 				</StepHeader>
 			)}
 			{running && (

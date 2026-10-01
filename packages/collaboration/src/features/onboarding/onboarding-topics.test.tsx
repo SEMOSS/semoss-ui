@@ -90,6 +90,12 @@ describe("onboarding topics", () => {
 		).toBeDisabled();
 		await act(async () => request.resolve(suggestions()));
 		const name = await screen.findByRole("textbox", { name: "Topic name" });
+		expect(
+			screen.getByText(
+				"Choose the topics you want to track. Edit the suggestions or add your own.",
+			),
+		).toBeVisible();
+		expect(screen.queryByText(/headers only/i)).not.toBeInTheDocument();
 		expect(name).toHaveValue("Northwind Migration");
 		expect(screen.queryByText(/No topics found/)).not.toBeInTheDocument();
 		await user.clear(name);

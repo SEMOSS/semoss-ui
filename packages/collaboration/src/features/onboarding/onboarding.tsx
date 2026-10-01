@@ -32,7 +32,7 @@ const STEPS = [
 		caption: "Before anything is read",
 		icon: ShieldCheck,
 	},
-	{ label: "Import", caption: "Headers only", icon: Download },
+	{ label: "Import", caption: "Recent conversations", icon: Download },
 	{ label: "People", caption: "Who matters most", icon: Users },
 	{ label: "Outside", caption: "Clients and partners", icon: Building2 },
 	{ label: "Sort", caption: "Automated mail set aside", icon: Sparkles },
@@ -86,7 +86,7 @@ export function Onboarding({
 							collaboration<span className="text-primary">.</span>
 						</span>
 						<p className="text-muted-foreground text-sm">
-							Set up with your mail in about two minutes.
+							Set up your people, topics, and Work.
 						</p>
 					</div>
 					<ol
