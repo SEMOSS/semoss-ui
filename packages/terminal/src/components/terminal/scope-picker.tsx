@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "@semoss/i18n";
 import { useInsight } from "@semoss/sdk/react";
 import { AppCatalogAvatar } from "@semoss/shared";
@@ -30,7 +30,9 @@ export const ScopePicker = () => {
 	// Lifted into terminal context so file tabs can snapshot the project
 	// name (not just the id) when they capture open-time scope.
 	const selectedApp = terminal.selectedApp;
+	const selectedAppId = selectedApp?.project_id;
 	const setSelectedApp = terminal.setSelectedApp;
+	const setFileMode = terminal.setFileMode;
 	const [pickerOpen, setPickerOpen] = useState(false);
 	// True while LoadApp is running — disables the trigger button to prevent
 	// double-clicks queuing a second call before the first resolves.
@@ -75,38 +77,42 @@ export const ScopePicker = () => {
 
 	/** Fetch one page of MyProjects, optionally filtered. Resets the list
 	 * when `offsetOverride` is 0 (used by search-changes), otherwise appends. */
-	const fetchPage = async (offsetOverride: number, filter: string) => {
-		setLoading(true);
-		const filterArg = filter
-			? `filterWord=["<encode>${filter}</encode>"], `
-			: "";
-		const pixel = `META | MyProjects(${filterArg}limit=[${PAGE_SIZE}], offset=[${offsetOverride}]);`;
-		const resp = await runPixel<AppRef[]>(actions, pixel);
-		setLoading(false);
+	const fetchPage = useCallback(
+		async (offsetOverride: number, filter: string) => {
+			setLoading(true);
+			const filterArg = filter
+				? `filterWord=["<encode>${filter}</encode>"], `
+				: "";
+			const pixel = `META | MyProjects(${filterArg}limit=[${PAGE_SIZE}], offset=[${offsetOverride}]);`;
+			const resp = await runPixel<AppRef[]>(actions, pixel);
+			setLoading(false);
 
-		let next: AppRef[] = [];
-		if (
-			resp &&
-			!resp.operationType.some((opType) => opType.indexOf("ERROR") > -1)
-		) {
-			next = Array.isArray(resp.output) ? resp.output : [];
-		}
+			let next: AppRef[] = [];
+			if (
+				resp &&
+				!resp.operationType.some(
+					(opType) => opType.indexOf("ERROR") > -1,
+				)
+			) {
+				next = Array.isArray(resp.output) ? resp.output : [];
+			}
 
-		if (offsetOverride === 0) {
-			setApps(next);
-		} else {
-			setApps((curr) => [...curr, ...next]);
-		}
-		setOffset(offsetOverride + next.length);
-		setHasMore(next.length === PAGE_SIZE);
-	};
+			if (offsetOverride === 0) {
+				setApps(next);
+			} else {
+				setApps((curr) => [...curr, ...next]);
+			}
+			setOffset(offsetOverride + next.length);
+			setHasMore(next.length === PAGE_SIZE);
+		},
+		[actions],
+	);
 
 	// (re)load when the picker opens or the debounced search changes
 	useEffect(() => {
 		if (!pickerOpen) return;
 		fetchPage(0, debouncedSearch);
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [pickerOpen, debouncedSearch]);
+	}, [pickerOpen, debouncedSearch, fetchPage]);
 
 	// push the resolved mode into the terminal context so FileExplorer + tabs
 	// pick it up
@@ -114,12 +120,11 @@ export const ScopePicker = () => {
 		let nextMode: FileMode = { type: "INSIGHT" };
 		if (scope === "USER") {
 			nextMode = { type: "USER" };
-		} else if (scope === "APP" && selectedApp) {
-			nextMode = { type: "APP", app: selectedApp.project_id };
+		} else if (scope === "APP" && selectedAppId) {
+			nextMode = { type: "APP", app: selectedAppId };
 		}
-		terminal.setFileMode(nextMode);
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [scope, selectedApp?.project_id]);
+		setFileMode(nextMode);
+	}, [scope, selectedAppId, setFileMode]);
 
 	return (
 		<div className="flex flex-col gap-1.5 border-border border-b bg-muted p-2">
@@ -182,6 +187,7 @@ export const ScopePicker = () => {
 						) : selectedApp ? (
 							<>
 								<AppCatalogAvatar
+									projectId={selectedApp.project_id}
 									name={selectedApp.project_name}
 									className="size-6 shrink-0 rounded text-[10px]"
 								/>
@@ -299,6 +305,7 @@ export const ScopePicker = () => {
 										title={app.project_id}
 									>
 										<AppCatalogAvatar
+											projectId={app.project_id}
 											name={app.project_name}
 											className="size-6 shrink-0 rounded text-[10px]"
 										/>

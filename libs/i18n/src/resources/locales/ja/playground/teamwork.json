@@ -1,0 +1,196 @@
+{
+	"common": {
+		"retry": "再試行",
+		"refresh": "更新"
+	},
+	"menu": {
+		"connectors": "コネクター",
+		"showTools": "チャットのツールを表示",
+		"hideTools": "チャットのツールを非表示"
+	},
+	"chip": {
+		"connectors_one": "{{count}} 個のコネクターがオン",
+		"connectors_other": "{{count}} 個のコネクターがオン"
+	},
+	"tools": {
+		"rootFolder": "フォルダーの最上位",
+		"moveSummary": "{{from}} から {{to}} へ",
+		"titles": {
+			"folder_list": "フォルダーの一覧",
+			"folder_read": "ファイルの読み取り",
+			"folder_search": "フォルダーの検索",
+			"folder_write": "ファイルの書き込み",
+			"folder_edit": "ファイルの編集",
+			"folder_create_directory": "フォルダーの作成",
+			"folder_move": "移動または名前の変更",
+			"folder_delete": "削除"
+		}
+	},
+	"card": {
+		"status": {
+			"waiting": "承認が必要",
+			"queued": "待機中",
+			"running": "実行中",
+			"done": "完了",
+			"failed": "失敗",
+			"notRun": "未実行"
+		},
+		"folderApproval": "アシスタントがチャットのファイル内のファイルの変更を求めています。変更内容を確認してから、許可または拒否してください。",
+		"connectorApproval": "アシスタントがあなたのアカウントで操作を行おうとしています。詳細を確認してから、許可または拒否してください。",
+		"file": "ファイル",
+		"path": "パス",
+		"rootFolder": "フォルダーの最上位",
+		"query": "検索語句",
+		"newContents": "新しい内容",
+		"replace": "置換前",
+		"with": "置換後",
+		"replaceAll": "一致する箇所はすべて置換されます。",
+		"from": "移動元",
+		"to": "移動先",
+		"deleteRecursive": "このフォルダー内のすべての項目も削除されます。",
+		"noArguments": "詳細なし",
+		"result": "結果",
+		"error": "エラー",
+		"allow": "許可",
+		"allowing": "許可中...",
+		"deny": "拒否",
+		"denying": "拒否中...",
+		"decisionError": "操作を完了できませんでした。{{message}}",
+		"chatFiles": "チャットのファイル"
+	},
+	"providers": {
+		"MICROSOFT": {
+			"name": "Microsoft 365"
+		},
+		"GOOGLE": {
+			"name": "Google Workspace",
+			"scopesNote": "Gmail、Calendar、Drive、Docs を使用するには、管理者がこのサーバーに対してそれらの Google 権限を許可する必要があります。"
+		},
+		"connected": "接続済み",
+		"connectedAs": "{{name}} として接続済み",
+		"notConnected": "未接続",
+		"unavailable": "このサーバーでは提供されていません",
+		"connect": "接続",
+		"reconnect": "再接続",
+		"connecting": "サインインを待っています...",
+		"connectSuccess": "{{name}} に接続しました",
+		"connectIncomplete": "{{name}} は接続されませんでした。サインインが完了する前にサインインウィンドウが閉じられました。",
+		"connectError": "{{name}} に接続できませんでした。{{message}}",
+		"popupBlocked": "ブラウザーがサインインウィンドウをブロックしました。このサイトのポップアップを許可してから、もう一度お試しください。",
+		"loadErrorTitle": "接続済みのアカウントを確認できませんでした",
+		"disconnect": "接続を解除",
+		"disconnecting": "接続を解除しています...",
+		"disconnectSuccess": "{{name}} の接続を解除しました",
+		"disconnectError": "{{name}} の接続を解除できませんでした。{{message}}",
+		"sessionLoginNote": "このアカウントでサインインしているため、ログアウトするまで接続されたままです。"
+	},
+	"services": {
+		"toolCounts_one": "{{count}} 個のツール、うち {{ask}} 個は事前に確認",
+		"toolCounts_other": "{{count}} 個のツール、うち {{ask}} 個は事前に確認",
+		"outlook": {
+			"name": "Outlook メール",
+			"description": "メールの読み取り、検索、下書きを行います。送信、返信、削除の前には確認します。"
+		},
+		"outlook-calendar": {
+			"name": "Outlook 予定表",
+			"description": "予定表を確認し、空き時間を見つけます。新しい招待の送信や変更の前には確認します。"
+		},
+		"onedrive": {
+			"name": "OneDrive",
+			"description": "ファイルの検索、読み取り、ダウンロードを行います。アップロード、共有、削除の前には確認します。"
+		},
+		"teams": {
+			"name": "Microsoft Teams",
+			"description": "チャット、チャネル、共有ファイルを読み取ります。メッセージを送信する前には確認します。"
+		},
+		"gmail": {
+			"name": "Gmail",
+			"description": "メールの読み取りと検索を行います。送信と削除の前には確認します。"
+		},
+		"google-calendar": {
+			"name": "Google Calendar",
+			"description": "予定を確認します。新しい予定の作成や変更の前には確認します。"
+		},
+		"google-drive": {
+			"name": "Google Drive",
+			"description": "Drive のファイルの一覧表示と検索を行います。削除の前には確認します。"
+		},
+		"google-docs": {
+			"name": "Google Docs",
+			"description": "ドキュメントを読み取ります。作成、編集、削除の前には確認します。"
+		}
+	},
+	"connectors": {
+		"dialogTitle": "コネクター",
+		"dialogDescription": "チャットでアシスタントが使用できるアプリを選択します。アシスタントはあなたのアカウントで操作し、送信、削除、共有、招待の前には必ず確認します。",
+		"allChatsNote": "アプリをオンまたはオフにすると、新しいチャットと既存のチャットのすべてに反映されます。",
+		"manage": "コネクタを管理",
+		"cancel": "キャンセル",
+		"save": "保存",
+		"saving": "保存中...",
+		"saved_one": "すべてのチャットで {{count}} 個のコネクターがオンになっています",
+		"saved_other": "すべてのチャットで {{count}} 個のコネクターがオンになっています",
+		"saveError": "コネクターを更新できませんでした。{{message}}",
+		"adoptError": "チャットは開始されましたが、コネクターをオンにできませんでした。{{message}}"
+	},
+	"connections": {
+		"appsDescription": "サインインすると、そのアカウントがあなたのセッションにリンクされます。アシスタントが参照できるのは、そのアカウントで参照できる内容だけです。",
+		"appsHint": "ここでアプリをオンまたはオフにすると、新しいチャットと既存のチャットのすべてに反映されます。チャットの「+」メニューからも同じ設定を開けます。",
+		"settingsError": "コネクターの設定を読み取れませんでした。"
+	},
+	"sources": {
+		"saved": "{{name}} を {{target}} に保存しました",
+		"show": "表示",
+		"added": "{{name}} は次のメッセージと一緒に送信されます",
+		"notAccepted": "{{name}} を {{target}} に保存しましたが、このチャットではその種類のファイルをメッセージで送信できません。"
+	},
+	"context": {
+		"label": "次のメッセージに追加済み",
+		"remove": "{{name}} を次のメッセージから削除"
+	},
+	"signIn": {
+		"notice": "{{account}} にサインインしていないため、このチャットでは {{services}} を使用できません。",
+		"action": "サインイン",
+		"dismiss": "{{account}} のサインインのお知らせを非表示",
+		"toolFailed": "{{account}} にサインインしていないため、この呼び出しを実行できませんでした。サインインしてから、もう一度依頼してください。",
+		"toolAction": "{{account}} にサインイン",
+		"notOffered": "このサーバーでは {{account}} でのサインインが提供されていないため、このチャットでは {{services}} を使用できません。"
+	},
+	"scopes": {
+		"notice": "このサーバーの {{account}} サインインでは {{services}} が許可されていないため、このチャットでは使用できません。必要な権限を追加するよう管理者に依頼してください。",
+		"dismiss": "{{account}} の権限のお知らせを非表示",
+		"serviceBlocked": "利用できません: このサーバーのサインインには必要な権限が含まれていません。追加するよう管理者に依頼してください。"
+	},
+	"chatTools": {
+		"panelTitle": "チャットのツール",
+		"description": "次のメッセージでアシスタントが使用できるものです。",
+		"toolboxTitle": "このチャットのツールボックス",
+		"toolboxDescription": "このチャットでオンになっているコネクターです。チャットのファイルの mcp/pixel_mcp.json から読み取ります。",
+		"toolboxEmpty": "オンになっているコネクターはありません。",
+		"toolboxError": "このチャットのツールボックスを読み取れませんでした。",
+		"otherTools": "その他のツール",
+		"addedTitle": "追加したツールボックス",
+		"addedDescription": "各ツールボックスが独自のツールを提供します。",
+		"addedEmpty": "追加したツールボックスはありません。",
+		"runsOnItsOwn": "自動で実行",
+		"asksFirst": "先に確認",
+		"parameters": "パラメーター",
+		"required": "必須",
+		"noParameters": "パラメーターはありません。",
+		"defaultTitle": "既定のツール",
+		"defaultDescription": "すべてのメッセージに追加され、このブラウザーでチャットのファイルに対して実行されます。",
+		"defaultEmpty": "既定のツールはすべてルームの設定で無効になっています。",
+		"openSettings": "ルームの設定",
+		"agentTitle": "エージェントのツール",
+		"agentDescription": "エージェントの実行は独自のファイル、シェル、コードのツールを使い、チャットのファイルで作業します。"
+	},
+	"defaultTools": {
+		"label": "既定のツール",
+		"description": "このブラウザーがすべてのメッセージに追加し、チャットのファイルで実行するツールです。「自動」はツールを自動で実行し、「確認」は呼び出しごとに承認を待ち、「無効」はツールを除外します。",
+		"modes": {
+			"auto": "自動",
+			"ask": "確認",
+			"disabled": "無効"
+		}
+	}
+}

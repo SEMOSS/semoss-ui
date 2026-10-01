@@ -7,6 +7,7 @@ import { AdminThemePage } from "./admin-theme-page";
 import { ConfigurationsPage } from "./configurations-page";
 import { EngineSettingsDetailPage } from "./engine-settings-detail-page";
 import { EngineSettingsIndexPage } from "./engine-settings-index-page";
+import { EnterpriseUsagePage } from "./enterprise-usage.page";
 import { GitHubAppPage } from "./github-app-page";
 import { LLMFeedbackPage } from "./llm-feedback-page";
 import { MemberSettingsPage } from "./member-settings-page";
@@ -32,6 +33,7 @@ const SETTINGS_COMPONENTS: Record<string, ComponentType> = {
 	"social-properties": ConfigurationsPage,
 	"github-app": GitHubAppPage,
 	"admin-query": AdminQueryPage,
+	"enterprise-usage": EnterpriseUsagePage,
 	"admin-theme": AdminThemePage,
 	"my-profile": MyProfilePage,
 	"my-files": MyFilesPage,

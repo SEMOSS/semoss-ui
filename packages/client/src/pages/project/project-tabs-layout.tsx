@@ -1,4 +1,8 @@
-import { ChevronRightIcon, SquareArrowOutUpRight } from "lucide-react";
+import {
+	ChevronRightIcon,
+	PencilIcon,
+	SquareArrowOutUpRight,
+} from "lucide-react";
 import { useMemo } from "react";
 import { Link, matchPath, Outlet, useLocation } from "react-router";
 import type { Role } from "@semoss/sdk";
@@ -110,6 +114,7 @@ export const ProjectTabsLayout = ({ tabs }: ProjectTabsLayoutProps) => {
 					<EntityHeader
 						icon={
 							<AppCatalogAvatar
+								projectId={project.project_id}
 								name={
 									project.project_display_name ||
 									project.project_name ||
@@ -137,19 +142,38 @@ export const ProjectTabsLayout = ({ tabs }: ProjectTabsLayoutProps) => {
 										}}
 									/>
 								)}
-								{permission !== "DISCOVERABLE" && (
-									<Button
-										asChild
-										variant="default"
-										className="gap-2"
-										data-testid="appDetail-open-btn"
-									>
-										<Link to={openProjectPath}>
-											<SquareArrowOutUpRight className="size-4" />
-											Open {catalog.name}
-										</Link>
-									</Button>
-								)}
+								{type === "WORKSPACE"
+									? // Agents land on a read-only overview, so the
+										// header offers editing to those who can edit
+										(permission === "OWNER" ||
+											permission === "EDIT") && (
+											<Button
+												asChild
+												variant="default"
+												className="gap-2"
+												data-testid="appDetail-edit-btn"
+											>
+												<Link
+													to={`${catalog.path}/${project.project_id}/edit`}
+												>
+													<PencilIcon className="size-4" />
+													Edit
+												</Link>
+											</Button>
+										)
+									: permission !== "DISCOVERABLE" && (
+											<Button
+												asChild
+												variant="default"
+												className="gap-2"
+												data-testid="appDetail-open-btn"
+											>
+												<Link to={openProjectPath}>
+													<SquareArrowOutUpRight className="size-4" />
+													Open {catalog.name}
+												</Link>
+											</Button>
+										)}
 							</>
 						}
 					/>

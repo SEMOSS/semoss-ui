@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="240" height="240" viewBox="0 0 240 240">
+  <title>Playground chat system app</title>
+  <desc>Playground chat illustration for the system app.</desc>
+  <defs>
+    <linearGradient id="system-app-playground-light-background" x2="1" y2="1">
+      <stop stop-color="#F3F7FF"/>
+      <stop offset="1" stop-color="#E3ECFA"/>
+    </linearGradient>
+  </defs>
+  <rect width="240" height="240" rx="32" fill="url(#system-app-playground-light-background)"/>
+  <rect x="12" y="12" width="216" height="216" rx="24" fill="none" stroke="#CBD9EE"/>
+  <path d="M94 89h86a15 15 0 0 1 15 15v43a15 15 0 0 1-15 15h-17l-20 17v-17H94a15 15 0 0 1-15-15v-43a15 15 0 0 1 15-15Z" fill="#0C4BA2" opacity="0.2"/>
+  <path d="M62 53h97a16 16 0 0 1 16 16v55a16 16 0 0 1-16 16h-55l-27 21v-21H62a16 16 0 0 1-16-16V69a16 16 0 0 1 16-16Z" fill="#FFFFFF" stroke="#C1D2EB" stroke-width="2" stroke-linejoin="round"/>
+  <g fill="#0C4BA2"><circle cx="79" cy="98" r="8"/><circle cx="110" cy="98" r="8"/><circle cx="141" cy="98" r="8"/></g>
+</svg>

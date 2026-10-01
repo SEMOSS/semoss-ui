@@ -204,8 +204,8 @@ export const FileExplorerItem: React.FC<FileExplorerItemProps> = ({
 	);
 
 	const children = useMemo(
-		() => adapter.mapEntries(getChildren.data),
-		[adapter, getChildren.data],
+		() => adapter.mapEntries(getChildren.data, item.path),
+		[adapter, getChildren.data, item.path],
 	);
 
 	useEffect(() => {

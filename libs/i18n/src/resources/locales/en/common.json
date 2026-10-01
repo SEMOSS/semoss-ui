@@ -55,7 +55,7 @@
 		"instructionsPlaceholder": "Instructions for the ai to process the user's feedback"
 	},
 	"navigation": {
-		"logOut": "Log out",
+		"logOut": "Log Out",
 		"acknowledge": "Acknowledge"
 	},
 	"pagination": {
@@ -134,15 +134,15 @@
 		"searchCurrentAria": "Search only current directory",
 		"searchCurrentTitle": "Search only in {{path}}",
 		"contextMenu": {
-			"copyPath": "Copy path",
+			"copyPath": "Copy Path",
 			"copy": "Copy",
 			"cut": "Cut",
-			"pasteHere": "Paste here",
+			"pasteHere": "Paste Here",
 			"rename": "Rename",
 			"download": "Download",
 			"delete": "Delete",
-			"newFile": "New file",
-			"newFolder": "New folder",
+			"newFile": "New File",
+			"newFolder": "New Folder",
 			"ariaLabel": "File actions",
 			"unzip": "Unzip"
 		},

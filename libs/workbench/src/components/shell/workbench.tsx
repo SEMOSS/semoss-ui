@@ -1,6 +1,7 @@
 import { type FC, useEffect, useLayoutEffect, useMemo, useRef } from "react";
 import { Spinner, useIsMobile } from "@semoss/ui/next";
-import { useWorkbench, useWorkbenchLifeCycle } from "../../hooks";
+import { useWorkbench } from "../../hooks/use-workbench";
+import { useWorkbenchLifeCycle } from "../../hooks/use-workbench-life-cycle";
 import type {
 	WorkbenchBorderSlotCtx,
 	WorkbenchBorderSlots,
@@ -62,7 +63,7 @@ interface WorkbenchProps {
 	/**
 	 * Rail add-ons per side (before/after the icon list). A rail carrying slot
 	 * content renders even with no panels docked to it. The mobile layout has
-	 * no rails, so `left.after` and `top.after` surface in the actions drawer.
+	 * no rails, so `left.after` and both top slots surface in the actions drawer.
 	 */
 	borderSlots?: WorkbenchBorderSlots;
 
@@ -168,15 +169,21 @@ export const Workbench: FC<WorkbenchProps> = ({
 
 	const mobileActionsSlot = useMemo(() => {
 		const leftAfter = borderSlots?.left?.after;
+		const topBefore = borderSlots?.top?.before;
 		const topAfter = borderSlots?.top?.after;
 
-		if (!topAfter) {
+		if (!topBefore && !topAfter) {
 			return leftAfter;
 		}
 
 		return (ctx: WorkbenchBorderSlotCtx) => (
 			<>
 				{resolveBorderSlot(leftAfter, ctx)}
+				{resolveBorderSlot(topBefore, {
+					...ctx,
+					side: "top",
+					vertical: false,
+				})}
 				{resolveBorderSlot(topAfter, {
 					...ctx,
 					side: "top",
@@ -234,7 +241,7 @@ export const Workbench: FC<WorkbenchProps> = ({
 				    a scrim below them covers nothing while a panel is
 				    maximized — which is exactly when it has to be seen. */}
 				{isLoading ? (
-					<div className="pointer-events-none absolute inset-0 z-60 flex items-center justify-center bg-black/50">
+					<div className="pointer-events-none absolute inset-0 z-60 flex items-center justify-center bg-background/80">
 						<Spinner />
 					</div>
 				) : null}

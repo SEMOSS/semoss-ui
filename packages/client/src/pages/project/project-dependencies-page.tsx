@@ -129,6 +129,7 @@ export const ProjectDependenciesPage = () => {
 										id={d.engine_id}
 										icon={
 											<AppCatalogAvatar
+												projectId={d.engine_id}
 												name={
 													d.engine_name || d.engine_id
 												}
