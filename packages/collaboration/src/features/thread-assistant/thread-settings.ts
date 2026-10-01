@@ -3,6 +3,7 @@ import { mcpConfigSchema } from "@/features/agents/api/agent-schemas";
 import type { PlaygroundRoomOptions } from "@/features/rooms/api/room-schemas";
 import {
 	LEGACY_THREAD_ASSISTANT_INSTRUCTIONS,
+	PREVIOUS_THREAD_ASSISTANT_INSTRUCTIONS,
 	THREAD_ASSISTANT_INSTRUCTIONS,
 } from "./thread-context";
 
@@ -23,8 +24,10 @@ export function settingsFromRoom(
 	agentId = "",
 ): ThreadChatSettings {
 	const instructions = options.instructions;
-	const prefix = instructions.startsWith(THREAD_ASSISTANT_INSTRUCTIONS)
-		? THREAD_ASSISTANT_INSTRUCTIONS
+	const prefix = instructions.startsWith(
+		PREVIOUS_THREAD_ASSISTANT_INSTRUCTIONS,
+	)
+		? PREVIOUS_THREAD_ASSISTANT_INSTRUCTIONS
 		: LEGACY_THREAD_ASSISTANT_INSTRUCTIONS;
 	return {
 		modelId: options.modelId,

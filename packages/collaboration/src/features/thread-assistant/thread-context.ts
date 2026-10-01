@@ -1,6 +1,6 @@
 import { z } from "@semoss/ui/next";
 import type { ConversationMessage } from "@/features/messages/types/message";
-import { DRAFT_PROPOSAL_INSTRUCTIONS } from "./thread-draft-proposal";
+import { LEGACY_DRAFT_PROPOSAL_INSTRUCTIONS } from "./thread-draft-proposal";
 
 const HEADER = "[SEMOSS_WORK_CONTEXT_V1]\n";
 const FOOTER = "\n[/SEMOSS_WORK_CONTEXT_V1]\n\n";
@@ -53,10 +53,15 @@ export const LEGACY_THREAD_ASSISTANT_INSTRUCTIONS = [
 	"Use only the supplied sources and conversation. Be clear about uncertainty and missing information. Do not imply access to excluded messages or the rest of the mailbox.",
 	"Offer suggested facts, next steps, and email drafts as text for the user to review. Do not claim to have changed their Work or Brain, saved a draft, or sent email.",
 ].join("\n");
-export const THREAD_ASSISTANT_INSTRUCTIONS = [
+/** Rooms made before the backend prompt took over the email draft rules. */
+export const PREVIOUS_THREAD_ASSISTANT_INSTRUCTIONS = [
 	LEGACY_THREAD_ASSISTANT_INSTRUCTIONS,
-	DRAFT_PROPOSAL_INSTRUCTIONS,
+	LEGACY_DRAFT_PROPOSAL_INSTRUCTIONS,
 ].join("\n");
+// The draft rules live in the collaboration system prompt, so every room, with or
+// without an agent, gets them. A prefix of the older text, so those rooms continue.
+export const THREAD_ASSISTANT_INSTRUCTIONS =
+	LEGACY_THREAD_ASSISTANT_INSTRUCTIONS;
 
 /** The platform agent behind every thread's assistant; Work reads it with the Brain settings. */
 export interface ThreadAgent {

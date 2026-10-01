@@ -159,12 +159,11 @@ export async function startAgentRun(
 		maxReflections?: number;
 	},
 ): Promise<AgentRun> {
-	// RunAgentReactor URL-decodes command. Encoding once also preserves literal % and +.
+	// sent as typed, as Playground does
 	return agentRunSchema.parse(
 		await runAgent(
 			{
 				...params,
-				command: encodeURIComponent(params.command),
 				harnessType: "semoss",
 			},
 			insightId,

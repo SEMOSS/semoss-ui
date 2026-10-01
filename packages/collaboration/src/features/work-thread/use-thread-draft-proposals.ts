@@ -6,6 +6,7 @@ import {
 } from "@/features/thread-assistant/thread-context";
 import {
 	draftProposalId,
+	isReplyProposal,
 	readDraftProposal,
 } from "@/features/thread-assistant/thread-draft-proposal";
 import type { ThreadSession } from "@/features/thread-assistant/thread-session";
@@ -86,6 +87,7 @@ export function useThreadDraftProposals({
 			if (editorRequest) {
 				if (
 					proposal &&
+					isReplyProposal(proposal) &&
 					thread.source?.kind === "outlook" &&
 					proposal.sourceMessageId === selectedSource &&
 					allowedSources.has(proposal.sourceMessageId)
@@ -112,6 +114,28 @@ export function useThreadDraftProposals({
 					);
 				continue;
 			}
+			const id = draftProposalId(message);
+			const isOpen = composer
+				.getSnapshot()
+				.emailDrafts.some((draft) => draft.seed.id === id);
+			// a new email needs no source, so any thread or session can open one
+			if (!isReplyProposal(proposal)) {
+				if (!isOpen)
+					composer.requestEmailDraft(
+						{
+							id,
+							assistantMessageId: message.runId || message.id,
+							mode: "new",
+							to: proposal.to,
+							cc: proposal.cc ?? "",
+							subject: proposal.subject,
+							body: proposal.body,
+						},
+						false,
+					);
+				if (index > lastUserIndex) latestId = id;
+				continue;
+			}
 			if (
 				thread.source?.kind !== "outlook" ||
 				!allowedSources.has(proposal.sourceMessageId) ||
@@ -124,13 +148,7 @@ export function useThreadDraftProposals({
 					);
 				continue;
 			}
-			const id = draftProposalId(message);
-			if (
-				composer
-					.getSnapshot()
-					.emailDrafts.some((draft) => draft.seed.id === id)
-			)
-				continue;
+			if (isOpen) continue;
 			composer.requestEmailDraft(
 				{
 					id,

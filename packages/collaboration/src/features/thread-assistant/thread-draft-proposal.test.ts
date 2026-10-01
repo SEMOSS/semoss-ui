@@ -30,6 +30,63 @@ it("recognizes a completed explicit proposal and presents readable prose", () =>
 	);
 });
 
+it("reads a new email proposal with recipients and a subject", () => {
+	const proposal = readDraftProposal({
+		...message,
+		parts: [
+			{
+				type: "text",
+				text: '```semoss-email-draft\n{"to":"a@example.com","subject":"Hello","body":"Hi"}\n```',
+			},
+		],
+	});
+	expect(proposal).toEqual({
+		to: "a@example.com",
+		subject: "Hello",
+		body: "Hi",
+	});
+	expect(
+		presentDraftProposal({
+			...message,
+			parts: [
+				{
+					type: "text",
+					text: '```semoss-email-draft\n{"to":"","subject":"Hello","body":"Hi"}\n```',
+				},
+			],
+		}).parts,
+	).toEqual([{ type: "text", text: "Your email draft is ready to review." }]);
+});
+
+it("reads the body from message, the name SaveDraft and SendMail use", () => {
+	const withText = (text: string): ConversationMessage => ({
+		...message,
+		parts: [{ type: "text", text }],
+	});
+	expect(
+		readDraftProposal(
+			withText(
+				'```semoss-email-draft\n{"sourceMessageId":"mail-2","message":"Friday works."}\n```',
+			),
+		),
+	).toEqual({ sourceMessageId: "mail-2", body: "Friday works." });
+	expect(
+		readDraftProposal(
+			withText(
+				'```semoss-email-draft\n{"to":"a@example.com","subject":"Hello","message":"Hi"}\n```',
+			),
+		),
+	).toEqual({ to: "a@example.com", subject: "Hello", body: "Hi" });
+	// both names at once is ambiguous
+	expect(
+		readDraftProposal(
+			withText(
+				'```semoss-email-draft\n{"sourceMessageId":"mail-2","body":"A","message":"B"}\n```',
+			),
+		),
+	).toBeNull();
+});
+
 it.each([
 	{ ...message, runStatus: "FAILED" as const },
 	{ ...message, runStatus: "CANCELLED" as const },
@@ -88,7 +145,7 @@ it("hides proposal serialization while streaming and across text parts", () => {
 		],
 	};
 	expect(presentDraftProposal(streaming).parts).toEqual([
-		{ type: "text", text: "Preparing your reply draft…" },
+		{ type: "text", text: "Preparing your reply draft..." },
 	]);
 	const split: ConversationMessage = {
 		...message,

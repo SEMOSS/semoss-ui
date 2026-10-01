@@ -39,7 +39,7 @@ const action = {
 };
 beforeEach(() => vi.resetAllMocks());
 
-it("uses RunAgent with the SEMOSS harness and preserves literal percent/plus text", async () => {
+it("uses RunAgent with the SEMOSS harness and sends the command as typed", async () => {
 	vi.mocked(runAgent).mockResolvedValue({ ...run, status: "SUBMITTED" });
 	const command = 'Review 50% + %20 and "日本語"\nC:\\work';
 	await startAgentRun("insight-1", {
@@ -56,15 +56,12 @@ it("uses RunAgent with the SEMOSS harness and preserves literal percent/plus tex
 			agentId: "workspace-1",
 			engine: "model-1",
 			harnessType: "semoss",
-			command: encodeURIComponent(command),
+			command,
 			media: ["/uploads/brief.pdf"],
 			maxTurns: 40,
 		},
 		"insight-1",
 	);
-	expect(
-		decodeURIComponent(vi.mocked(runAgent).mock.calls[0][0].command),
-	).toBe(command);
 });
 
 it("loads room runs through the active insight and validates the reply", async () => {
@@ -166,7 +163,7 @@ it("starts draft requests with the standard agent parameters", async () => {
 			roomId: "room",
 			agentId: "",
 			engine: "model",
-			command: encodeURIComponent("Draft a reply"),
+			command: "Draft a reply",
 			media: [],
 			maxTurns: 40,
 			harnessType: "semoss",

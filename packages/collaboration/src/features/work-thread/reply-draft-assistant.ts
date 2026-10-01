@@ -4,7 +4,10 @@ import {
 	readThreadCommand,
 	type SubmittedThreadContext,
 } from "@/features/thread-assistant/thread-context";
-import { readDraftProposal } from "@/features/thread-assistant/thread-draft-proposal";
+import {
+	isReplyProposal,
+	readDraftProposal,
+} from "@/features/thread-assistant/thread-draft-proposal";
 import type { ThreadSession } from "@/features/thread-assistant/thread-session";
 
 interface ReplyDraftAssistantSnapshot {
@@ -259,6 +262,7 @@ export class ReplyDraftAssistant {
 				return;
 			}
 			if (
+				!isReplyProposal(proposal) ||
 				proposal.sourceMessageId !== source ||
 				!options.isSourceIncluded()
 			) {

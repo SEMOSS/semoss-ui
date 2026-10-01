@@ -1,16 +1,50 @@
 import { z } from "@semoss/ui/next";
 import type { ConversationMessage } from "@/features/messages/types/message";
 
-const proposalSchema = z
+const body = z.string().trim().min(1).max(50000);
+const replySchema = z
+	.object({ sourceMessageId: z.string().trim().min(1), body })
+	.strict();
+// a new email; "to" may be empty when the assistant could not find the address
+const newEmailSchema = z
 	.object({
-		sourceMessageId: z.string().trim().min(1),
-		body: z.string().trim().min(1).max(50000),
+		to: z.string().trim().max(4000),
+		cc: z.string().trim().max(4000).optional(),
+		subject: z.string().trim().max(1000),
+		body,
 	})
 	.strict();
+// the block names the body "message", as SaveDraft/SendMail do; saved history may still say "body"
+const proposalSchema = z.preprocess(
+	(value) => {
+		if (
+			value &&
+			typeof value === "object" &&
+			"message" in value &&
+			!("body" in value)
+		) {
+			const { message, ...rest } = value as Record<string, unknown>;
+			return { ...rest, body: message };
+		}
+		return value;
+	},
+	z.union([replySchema, newEmailSchema]),
+);
 
 export type ThreadDraftProposal = z.infer<typeof proposalSchema>;
+export type ReplyDraftProposal = z.infer<typeof replySchema>;
 
-export const DRAFT_PROPOSAL_INSTRUCTIONS = [
+export function isReplyProposal(
+	proposal: ThreadDraftProposal,
+): proposal is ReplyDraftProposal {
+	return "sourceMessageId" in proposal;
+}
+
+/**
+ * Draft rules sent with rooms created before the backend prompt owned them (Semoss
+ * CollaborationPrompts DRAFTS); kept verbatim so those rooms are still recognized.
+ */
+export const LEGACY_DRAFT_PROPOSAL_INSTRUCTIONS = [
 	"When asked to draft or revise an email reply, produce a local proposal for review, never call an email save, reply, forward, or send tool.",
 	'Put exactly one JSON object in a fenced semoss-email-draft block: {"sourceMessageId":"the included source email id","body":"the complete reply as plain text with newline escapes"}.',
 	"Use selectedSourceMessageId when the request specifies it; otherwise use an included source email identity from the Work context. Never invent an identity, use excluded sources, include quoted source history in the body, or claim the draft is saved. If there is insufficient information, ask a question instead.",
@@ -56,7 +90,7 @@ export function presentDraftProposal(
 	message: ConversationMessage,
 ): ConversationMessage {
 	if (message.role !== "assistant") return message;
-	const valid = Boolean(readDraftProposal(message));
+	const proposal = readDraftProposal(message);
 	const running = Boolean(message.live && message.live.phase !== "completed");
 	let insideProposal = false;
 	return {
@@ -81,10 +115,12 @@ export function presentDraftProposal(
 						break;
 					}
 					displayed += text.slice(0, start);
-					displayed += valid
-						? "Your reply draft is ready to review."
+					displayed += proposal
+						? isReplyProposal(proposal)
+							? "Your reply draft is ready to review."
+							: "Your email draft is ready to review."
 						: running
-							? "Preparing your reply draft…"
+							? "Preparing your reply draft..."
 							: "The reply draft could not be read. Please ask the assistant to try again.";
 					text = text.slice(start + "```semoss-email-draft".length);
 					insideProposal = true;

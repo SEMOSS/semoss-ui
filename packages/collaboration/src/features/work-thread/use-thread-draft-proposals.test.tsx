@@ -107,6 +107,43 @@ it("does not create a proposal for an excluded source", () => {
 	expect(composer.getSnapshot().emailDrafts).toEqual([]);
 });
 
+it("opens a new email from a session with no source email", () => {
+	const { completed, composer } = setup();
+	const session = { ...completed.thread, source: undefined };
+	renderHook(useThreadDraftProposals, {
+		initialProps: {
+			...completed,
+			thread: session,
+			allowedSources: new Set<string>(),
+			snapshot: {
+				...completed.snapshot,
+				turn: {
+					...completed.snapshot.turn,
+					messages: [
+						{
+							...completed.snapshot.turn.messages[0],
+							parts: [
+								{
+									type: "text" as const,
+									text: '```semoss-email-draft\n{"to":"rweiler@example.com","cc":"","subject":"Meeting in DC","body":"Hi Ryan,\\nWhen should we meet?"}\n```',
+								},
+							],
+						},
+					],
+				},
+			},
+		},
+	});
+	const [draft] = composer.getSnapshot().emailDrafts;
+	expect(draft.seed).toMatchObject({
+		mode: "new",
+		to: "rweiler@example.com",
+		subject: "Meeting in DC",
+		body: "Hi Ryan,\nWhen should we meet?",
+	});
+	expect(draft.seed.sourceUid).toBeUndefined();
+});
+
 it("quick submissions preserve pending text, files, and source attachments even after reconciliation", async () => {
 	const composer = new WorkComposerSession();
 	const file = new File(["notes"], "notes.txt");
