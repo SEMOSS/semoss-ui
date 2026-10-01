@@ -98,6 +98,36 @@ function Next({
 	);
 }
 
+/** Before anything is read: what setup does, and a button to start it. */
+export function WelcomeStep({ onStart }: { onStart: () => void }) {
+	return (
+		<>
+			<StepHeader
+				eyebrow="Before you start"
+				title="Set up with your mail"
+			>
+				We look at your mailbox, you choose what stays out, then we
+				import headers, sort your mail and suggest topics. Nothing is
+				read until you start, and nothing is stored until the import
+				step.
+			</StepHeader>
+			<ul className="space-y-2 text-muted-foreground text-sm">
+				<li>A first look counts your mail from headers only.</li>
+				<li>
+					You keep out senders and domains before anything is read.
+				</li>
+				<li>
+					Sorting sets automated mail aside; topics come from the mail
+					that is left.
+				</li>
+			</ul>
+			<StepActions>
+				<Next onClick={onStart}>Start setup</Next>
+			</StepActions>
+		</>
+	);
+}
+
 export function MailboxStep({
 	actions,
 	eyebrow,

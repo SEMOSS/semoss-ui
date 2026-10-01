@@ -21,6 +21,7 @@ import {
 	OutsideStep,
 	PeopleStep,
 	TopicsStep,
+	WelcomeStep,
 	WorkStep,
 } from "./onboarding-steps";
 
@@ -49,6 +50,8 @@ export function Onboarding({
 	initialStep?: number;
 }) {
 	const [step, setStep] = useState(initialStep);
+	// nothing is read until the owner starts; previews of later steps start at once
+	const [started, setStarted] = useState(initialStep > 0);
 	const [days, setDays] = useState(30);
 	const [overview, setOverview] = useState<MailboxOverview | null>(null);
 	const [managerId, setManagerId] = useState("");
@@ -175,7 +178,10 @@ export function Onboarding({
 					key={step}
 					className="fade-in-0 slide-in-from-bottom-2 flex min-w-0 animate-in flex-col gap-8 self-start rounded-3xl bg-card p-6 shadow-black/5 shadow-xl ring-1 ring-border/60 duration-300 md:p-10"
 				>
-					{step === 0 && (
+					{!started && (
+						<WelcomeStep onStart={() => setStarted(true)} />
+					)}
+					{started && step === 0 && (
 						<MailboxStep
 							{...common}
 							days={days}
