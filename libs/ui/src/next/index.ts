@@ -18,6 +18,7 @@ export * from "./button";
 export * from "./button-group";
 export * from "./calendar";
 export * from "./card";
+export { type ChartTokens, readChartTokens } from "./chart-tokens";
 export * from "./checkbox";
 export * from "./code";
 export * from "./code-diff-editor";

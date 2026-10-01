@@ -2,6 +2,7 @@ import {
 	mdiAccountGroup,
 	// mdiTextBoxMultipleOutline,
 	mdiArchive,
+	mdiChartTimelineVariant,
 	// mdiClock,
 	mdiChatProcessingOutline,
 	mdiClipboardTextOutline,
@@ -204,6 +205,15 @@ export const SETTINGS_ROUTES: {
 		description:
 			"Create and manage the GitHub App used for project linking and webhooks.",
 		icon: mdiGithub,
+		history: ["settings/"],
+		admin: true,
+	},
+	{
+		title: "Enterprise Usage & Activity",
+		path: "enterprise-usage",
+		description:
+			"Explore Platform-Wide Model Usage, Adoption, Performance, And Activity.",
+		icon: mdiChartTimelineVariant,
 		history: ["settings/"],
 		admin: true,
 	},

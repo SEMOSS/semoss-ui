@@ -87,6 +87,10 @@ const CardMapper: Record<string, CardConfig> = {
 		icon: <Github className={ICON_CLASS} />,
 		color: "#111827",
 	},
+	"Enterprise Usage & Activity": {
+		icon: <ChartBar className={ICON_CLASS} aria-hidden="true" />,
+		color: "#0471F0",
+	},
 	"Admin Query": {
 		icon: <DatabaseZap className={ICON_CLASS} />,
 		color: "#558B2F",
