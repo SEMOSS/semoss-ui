@@ -40,7 +40,15 @@ function session(generate: () => Promise<Output>) {
 		} else if (statement.startsWith("BrainListAccounts(")) {
 			output = { items: [] };
 		} else if (statement.startsWith("BrainSaveTopic(")) {
+			output = { id: "topic-new" };
+		} else if (statement.startsWith("BrainSetTopicPerson(")) {
 			output = {};
+		} else if (statement.startsWith("BrainClassifyThreads(")) {
+			output = {
+				id: "job-1",
+				status: "running",
+				params: { mode: "topics" },
+			};
 		} else {
 			throw new Error(`Unexpected request: ${statement}`);
 		}
@@ -56,7 +64,7 @@ function step(actions: InsightActions, onNext = vi.fn()) {
 				actions={actions}
 				onNext={onNext}
 				onBack={vi.fn()}
-				eyebrow="Step 6 of 7"
+				eyebrow="Step 7 of 8"
 			/>
 		</StrictMode>
 	);
@@ -91,7 +99,66 @@ describe("onboarding topics", () => {
 		expect(run).toHaveBeenCalledWith(
 			'BrainSaveTopic(topic=[{"id":"topic-1","name":"Northwind Rollout","status":"active"}]);',
 		);
+		expect(run).toHaveBeenCalledWith(
+			"BrainClassifyThreads(topics=[true], async=[true]);",
+		);
 		expect(generate).toHaveBeenCalledTimes(1);
+	});
+
+	it("saves a description, removed people and a topic the owner added", async () => {
+		const generate = vi.fn(async () => ({
+			topics: [
+				{
+					id: "topic-1",
+					name: "Northwind Migration",
+					about: "Moving Northwind to the new platform.",
+					suggested: true,
+					threadIds: ["thread-1"],
+					memberIds: ["p-1", "p-2"],
+					people: [
+						{ id: "p-1", name: "Ana Lima" },
+						{ id: "p-2", name: "Bo Chen" },
+					],
+					domains: ["northwind.example"],
+					sampleSubjects: [],
+				},
+			],
+		}));
+		const { actions, run } = session(generate);
+		const onNext = vi.fn();
+		const user = userEvent.setup();
+		render(step(actions, onNext));
+
+		expect(
+			await screen.findByDisplayValue(
+				"Moving Northwind to the new platform.",
+			),
+		).toBeEnabled();
+		expect(screen.getByText("northwind.example")).toBeInTheDocument();
+		await user.click(
+			screen.getByRole("button", { name: "Remove Bo Chen" }),
+		);
+		expect(screen.queryByText("Bo Chen")).not.toBeInTheDocument();
+		await user.click(screen.getByRole("button", { name: "Add a topic" }));
+		const added = screen.getAllByRole("textbox", { name: "Topic name" })[1];
+		await user.type(added, "Backend Hiring");
+		await user.type(
+			screen.getAllByRole("textbox", {
+				name: "What this topic covers",
+			})[1],
+			"Interviews for the backend team.",
+		);
+		await user.click(screen.getByRole("button", { name: "Keep 2 topics" }));
+		await waitFor(() => expect(onNext).toHaveBeenCalledOnce());
+		expect(run).toHaveBeenCalledWith(
+			'BrainSaveTopic(topic=[{"id":"topic-1","name":"Northwind Migration","status":"active"}]);',
+		);
+		expect(run).toHaveBeenCalledWith(
+			'BrainSetTopicPerson(topicId=["topic-1"], personId=["p-2"], state=["removed"]);',
+		);
+		expect(run).toHaveBeenCalledWith(
+			'BrainSaveTopic(topic=[{"name":"Backend Hiring","description":"Interviews for the backend team.","status":"active"}]);',
+		);
 	});
 
 	it("shares the pending generation when the owner leaves and returns before it finishes", async () => {

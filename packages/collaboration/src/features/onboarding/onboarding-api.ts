@@ -46,6 +46,8 @@ export interface MailboxOverview {
 		count: number;
 		youWrote: boolean;
 	}[];
+	/** Distinct people on To or Cc of your Sent mail in the window. */
+	wroteTo: number;
 	keepOut: KeepOutSuggestion[];
 }
 
@@ -72,6 +74,7 @@ export async function mailboxOverview(
 			count: num(s.count),
 			youWrote: s.youWrote === true,
 		})),
+		wroteTo: num(out.wroteTo),
 		keepOut: rows(out.keepOut).map((k) => ({
 			kind: k.kind === "never_domain" ? "never_domain" : "never_sender",
 			value: str(k.value),
@@ -111,6 +114,8 @@ export interface Job {
 	counts: Record<string, unknown>;
 	error: string;
 	finishedAt: string;
+	/** "topics" for the filing pass after onboarding keeps topics. */
+	mode: string;
 }
 
 function mapJob(out: Row): Job {
@@ -126,6 +131,7 @@ function mapJob(out: Row): Job {
 		counts: (out.counts ?? {}) as Record<string, unknown>,
 		error: str(out.error),
 		finishedAt: str(out.finishedAt),
+		mode: str((out.params as Row | undefined)?.mode),
 	};
 }
 
@@ -149,6 +155,16 @@ export async function startImport(
 export async function startClassify(actions: InsightActions) {
 	return mapJob(
 		await run(actions, pixel("BrainClassifyThreads", { async: true })),
+	);
+}
+
+/** After topics are kept: file the sorted real mail under them, as a classify job. */
+export async function startTopicFiling(actions: InsightActions) {
+	return mapJob(
+		await run(
+			actions,
+			pixel("BrainClassifyThreads", { topics: true, async: true }),
+		),
 	);
 }
 
@@ -284,6 +300,11 @@ export interface TopicSuggestion {
 	vipThreads: number;
 	/** Pre-checked: the owner took part, or a VIP is on it. */
 	suggested: boolean;
+	/** The topic model's one line on what the topic covers. */
+	about: string;
+	/** Key people and the outside domains on half its threads or more. */
+	people: { id: string; name: string }[];
+	domains: string[];
 }
 
 export interface TopicSuggestions {
@@ -330,23 +351,57 @@ async function requestTopicSuggestions(
 			youWrote: num(t.youWrote),
 			vipThreads: num(t.vipThreads),
 			suggested: t.suggested === true,
+			about: str(t.about),
+			people: rows(t.people).map((p) => ({
+				id: str(p.id),
+				name: str(p.name),
+			})),
+			domains: rows(t.domains).map((d) => str(d)),
 		})),
 	};
 }
 
-/** Accepted topics go active under the owner's name; skipped ones are deleted. */
+export interface KeptTopic {
+	/** Absent for a topic the owner added. */
+	id?: string;
+	name: string;
+	/** Sent only when the owner wrote or changed it. */
+	description?: string;
+	/** Key people the owner took off the topic. */
+	removedPeople?: string[];
+}
+
+/** Accepted and added topics go active under the owner's name; skipped ones are deleted. */
 export async function saveTopics(
 	actions: InsightActions,
-	accepted: { id: string; name: string }[],
+	accepted: KeptTopic[],
 	skipped: string[],
 ) {
-	for (const t of accepted)
-		await run(
+	for (const t of accepted) {
+		const saved = await run(
 			actions,
 			pixel("BrainSaveTopic", {
-				topic: { id: t.id, name: t.name, status: "active" },
+				topic: {
+					...(t.id ? { id: t.id } : {}),
+					name: t.name,
+					...(t.description !== undefined
+						? { description: t.description }
+						: {}),
+					status: "active",
+				},
 			}),
 		);
+		const topicId = t.id ?? str(saved.id);
+		for (const personId of t.removedPeople ?? [])
+			await run(
+				actions,
+				pixel("BrainSetTopicPerson", {
+					topicId,
+					personId,
+					state: "removed",
+				}),
+			);
+	}
 	for (const id of skipped)
 		await run(actions, pixel("BrainDeleteTopic", { topicId: id }));
 }

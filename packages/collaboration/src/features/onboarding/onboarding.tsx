@@ -14,12 +14,14 @@ import { cn } from "@semoss/ui/next";
 import type { InsightActions } from "@/lib/pixel";
 import type { MailboxOverview } from "./onboarding-api";
 import {
+	FilingStep,
 	ImportStep,
 	KeepOutStep,
 	MailboxStep,
 	OutsideStep,
 	PeopleStep,
 	TopicsStep,
+	WelcomeStep,
 	WorkStep,
 } from "./onboarding-steps";
 
@@ -33,11 +35,12 @@ const STEPS = [
 	{ label: "Import", caption: "Headers only", icon: Download },
 	{ label: "People", caption: "Who matters most", icon: Users },
 	{ label: "Outside", caption: "Clients and partners", icon: Building2 },
+	{ label: "Sort", caption: "Automated mail set aside", icon: Sparkles },
 	{ label: "Topics", caption: "What your work is about", icon: Tags },
-	{ label: "Work", caption: "Sorted for you", icon: Sparkles },
+	{ label: "Work", caption: "Filed for you", icon: Check },
 ];
 
-/** First run with real mail: look, keep out, import headers, people, topics, then sort into Work. */
+/** First run with real mail: look, keep out, import headers, people, sort, topics from what is left, then file into Work. */
 export function Onboarding({
 	actions,
 	initialStep = 0,
@@ -47,6 +50,8 @@ export function Onboarding({
 	initialStep?: number;
 }) {
 	const [step, setStep] = useState(initialStep);
+	// nothing is read until the owner starts; previews of later steps start at once
+	const [started, setStarted] = useState(initialStep > 0);
 	const [days, setDays] = useState(30);
 	const [overview, setOverview] = useState<MailboxOverview | null>(null);
 	const [managerId, setManagerId] = useState("");
@@ -173,7 +178,10 @@ export function Onboarding({
 					key={step}
 					className="fade-in-0 slide-in-from-bottom-2 flex min-w-0 animate-in flex-col gap-8 self-start rounded-3xl bg-card p-6 shadow-black/5 shadow-xl ring-1 ring-border/60 duration-300 md:p-10"
 				>
-					{step === 0 && (
+					{!started && (
+						<WelcomeStep onStart={() => setStarted(true)} />
+					)}
+					{started && step === 0 && (
 						<MailboxStep
 							{...common}
 							days={days}
@@ -202,8 +210,9 @@ export function Onboarding({
 						/>
 					)}
 					{step === 4 && <OutsideStep {...common} />}
-					{step === 5 && <TopicsStep {...common} />}
-					{step === 6 && <WorkStep {...common} />}
+					{step === 5 && <WorkStep {...common} />}
+					{step === 6 && <TopicsStep {...common} />}
+					{step === 7 && <FilingStep {...common} />}
 				</main>
 			</div>
 		</div>

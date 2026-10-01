@@ -102,7 +102,7 @@ export function WorkFeed() {
 							<div className="-space-x-2 flex" aria-hidden="true">
 								{topic.people
 									.filter(
-										(member) => member.state === "member",
+										(member) => member.state !== "removed",
 									)
 									.slice(0, 4)
 									.map((member) => {
@@ -124,7 +124,7 @@ export function WorkFeed() {
 							<span>
 								{
 									topic.people.filter(
-										(member) => member.state === "member",
+										(member) => member.state !== "removed",
 									).length
 								}{" "}
 								people

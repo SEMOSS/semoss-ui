@@ -26,7 +26,6 @@ import {
 	type Job,
 	type KeepOutSuggestion,
 	LOOK_DAYS,
-	listAccounts,
 	listPeople,
 	type MailboxOverview,
 	mailboxOverview,
@@ -39,6 +38,7 @@ import {
 	saveTopics,
 	startClassify,
 	startImport,
+	startTopicFiling,
 	suggestAccounts,
 	suggestTopics,
 	type TopicSuggestion,
@@ -98,6 +98,36 @@ function Next({
 	);
 }
 
+/** Before anything is read: what setup does, and a button to start it. */
+export function WelcomeStep({ onStart }: { onStart: () => void }) {
+	return (
+		<>
+			<StepHeader
+				eyebrow="Before you start"
+				title="Set up with your mail"
+			>
+				We look at your mailbox, you choose what stays out, then we
+				import headers, sort your mail and suggest topics. Nothing is
+				read until you start, and nothing is stored until the import
+				step.
+			</StepHeader>
+			<ul className="space-y-2 text-muted-foreground text-sm">
+				<li>A first look counts your mail from headers only.</li>
+				<li>
+					You keep out senders and domains before anything is read.
+				</li>
+				<li>
+					Sorting sets automated mail aside; topics come from the mail
+					that is left.
+				</li>
+			</ul>
+			<StepActions>
+				<Next onClick={onStart}>Start setup</Next>
+			</StepActions>
+		</>
+	);
+}
+
 export function MailboxStep({
 	actions,
 	eyebrow,
@@ -126,8 +156,6 @@ export function MailboxStep({
 	}, [actions, attempt]);
 
 	const senders = overview?.topSenders.slice(0, 8) ?? [];
-	const most = Math.max(1, ...senders.map((s) => s.count));
-	const circle = overview?.topSenders.filter((s) => s.youWrote).length ?? 0;
 
 	return (
 		<>
@@ -190,9 +218,9 @@ export function MailboxStep({
 							tone="teal"
 						/>
 						<StatTile
-							label="Two-way contacts"
-							value={circle}
-							hint={`of your top ${overview.topSenders.length} senders`}
+							label="People you wrote to"
+							value={formatCount(overview.wroteTo)}
+							hint={`in Sent, last ${LOOK_DAYS} days`}
 							icon={
 								<UserRound
 									className="size-4"
@@ -266,54 +294,41 @@ export function MailboxStep({
 						</fieldset>
 						<div className="space-y-3">
 							<h2 className="font-medium text-sm">
-								Who writes to you most
+								People who write to you most
 							</h2>
-							<ul className="space-y-2.5">
+							<p className="text-muted-foreground text-xs">
+								Colleagues and people you wrote to;
+								notifications and receipts are left out.
+							</p>
+							<ul className="divide-y rounded-2xl ring-1 ring-border/70">
 								{senders.map((s) => (
 									<li
 										key={s.address}
-										className="flex items-center gap-3"
+										className="flex items-center gap-3 px-3 py-2"
 									>
 										<PersonAvatar
 											name={s.name || s.address}
 											className="size-7"
 										/>
-										<div className="min-w-0 flex-1">
-											<div className="flex items-baseline justify-between gap-2 text-sm">
-												<span className="truncate">
-													{s.name || s.address}
-												</span>
-												<span className="shrink-0 text-muted-foreground text-xs tabular-nums">
-													{s.count}
-												</span>
-											</div>
-											<div className="mt-1 h-1.5 overflow-hidden rounded-full bg-muted">
-												<div
-													className={cn(
-														"h-full rounded-full",
-														s.youWrote
-															? "bg-primary"
-															: "bg-muted-foreground/40",
-													)}
-													style={{
-														width: `${(100 * s.count) / most}%`,
-													}}
-												/>
-											</div>
-										</div>
+										<span className="min-w-0 flex-1 truncate text-sm">
+											{s.name || s.address}
+										</span>
+										{s.youWrote && (
+											<span className="shrink-0 text-muted-foreground text-xs">
+												you wrote to them
+											</span>
+										)}
+										<span className="w-10 shrink-0 text-right text-sm tabular-nums">
+											{formatCount(s.count)}
+										</span>
 									</li>
 								))}
+								{senders.length === 0 && (
+									<li className="px-3 py-2 text-muted-foreground text-sm">
+										No people yet in this window.
+									</li>
+								)}
 							</ul>
-							<p className="flex items-center gap-3 text-muted-foreground text-xs">
-								<span className="inline-flex items-center gap-1.5">
-									<span className="size-2 rounded-full bg-primary" />{" "}
-									you write back
-								</span>
-								<span className="inline-flex items-center gap-1.5">
-									<span className="size-2 rounded-full bg-muted-foreground/40" />{" "}
-									one way
-								</span>
-							</p>
 						</div>
 					</div>
 					<StepActions
@@ -763,6 +778,9 @@ export function ImportStep({
 	);
 }
 
+// suggested VIPs: the manager plus the strongest few, so there is never just one
+const VIP_SUGGESTIONS = 3;
+
 function StrengthMeter({ value }: { value: number }) {
 	const filled = Math.max(1, Math.round(value / 20));
 	return (
@@ -925,13 +943,16 @@ export function PeopleStep({
 				if (!chosen.length) {
 					if (managerId && list.some((p) => p.id === managerId))
 						chosen.push(managerId);
+					let strongest = 0;
 					for (const p of list)
 						if (
-							chosen.length < 4 &&
-							p.strength >= 50 &&
+							strongest < VIP_SUGGESTIONS &&
+							p.strength > 0 &&
 							!chosen.includes(p.id)
-						)
+						) {
 							chosen.push(p.id);
+							strongest++;
+						}
 				}
 				setVips(new Set(chosen));
 			})
@@ -1055,8 +1076,10 @@ export function PeopleStep({
 				}
 			>
 				Your people, from your org chart and the mail you trade both
-				ways. Keep who matters and star your VIPs: their asks rise to
-				the top of Work. Everyone else stays out of your list.
+				ways. Following someone ranks their asks above other mail in
+				Work; star a VIP and their asks go to the top. Mail from people
+				you do not follow still shows up, it is just not moved up. The
+				bars show how much you write to each other.
 			</StepHeader>
 			{!people && !error && (
 				<LoadingCards label="Finding your people..." count={6} />
@@ -1232,10 +1255,16 @@ function AccountCard({
 				)}
 			</span>
 			<span className="min-w-0">
-				<span className="block truncate font-medium">
+				<span
+					className="block break-words font-medium"
+					title={account.name}
+				>
 					{account.name}
 				</span>
-				<span className="block truncate text-muted-foreground text-xs">
+				<span
+					className="block break-all text-muted-foreground text-xs"
+					title={account.domain}
+				>
 					{account.domain}
 				</span>
 				<span className="mt-1 block text-muted-foreground text-xs">
@@ -1299,8 +1328,8 @@ export function OutsideStep({ actions, onNext, onBack, eyebrow }: StepProps) {
 	return (
 		<>
 			<StepHeader eyebrow={eyebrow} title="Who you work with outside">
-				Clients and partners, found by email domain. The ones you keep
-				get their own topics next.
+				Clients and partners, found by email domain. Ticked are the ones
+				you wrote to or have a VIP at; tick any other that is real work.
 			</StepHeader>
 			{!accounts && !error && (
 				<LoadingCards label="Finding organisations..." />
@@ -1342,16 +1371,25 @@ function TopicCard({
 	index,
 	keep,
 	name,
+	about,
+	removed,
 	onName,
+	onAbout,
+	onRemovePerson,
 	onToggle,
 }: {
 	topic: TopicSuggestion;
 	index: number;
 	keep: boolean;
 	name: string;
+	about: string;
+	removed: Set<string>;
 	onName: (value: string) => void;
+	onAbout: (value: string) => void;
+	onRemovePerson: (personId: string) => void;
 	onToggle: () => void;
 }) {
+	const people = topic.people.filter((p) => !removed.has(p.id));
 	return (
 		<div
 			className={cn(
@@ -1373,6 +1411,7 @@ function TopicCard({
 					<Input
 						className="-ml-2 h-9 border-transparent bg-transparent px-2 pr-8 font-semibold shadow-none hover:border-border focus-visible:border-ring disabled:opacity-100"
 						value={name}
+						placeholder="Topic name"
 						aria-label="Topic name"
 						disabled={!keep}
 						onChange={(event) => onName(event.target.value)}
@@ -1387,7 +1426,7 @@ function TopicCard({
 				<button
 					type="button"
 					aria-pressed={keep}
-					aria-label={`Keep ${topic.name}`}
+					aria-label={`Keep ${topic.name || "new topic"}`}
 					onClick={onToggle}
 					className={cn(
 						"mt-1.5 flex size-6 shrink-0 items-center justify-center rounded-full border transition-colors",
@@ -1399,7 +1438,17 @@ function TopicCard({
 					<Check className="size-3.5" strokeWidth={3} />
 				</button>
 			</div>
-			<p className="text-muted-foreground text-xs">{topic.reason}</p>
+			<Input
+				className="-ml-2 h-8 border-transparent bg-transparent px-2 text-muted-foreground text-sm shadow-none hover:border-border focus-visible:border-ring disabled:opacity-100"
+				value={about}
+				placeholder="What this topic covers"
+				aria-label="What this topic covers"
+				disabled={!keep}
+				onChange={(event) => onAbout(event.target.value)}
+			/>
+			{topic.reason && (
+				<p className="text-muted-foreground text-xs">{topic.reason}</p>
+			)}
 			{topic.sampleSubjects.length > 0 && (
 				<ul className="mt-2 space-y-0.5 text-xs">
 					{topic.sampleSubjects.map((subject) => (
@@ -1409,14 +1458,42 @@ function TopicCard({
 					))}
 				</ul>
 			)}
+			{(people.length > 0 || topic.domains.length > 0) && (
+				<div className="mt-3 flex flex-wrap gap-1.5">
+					{people.map((p) => (
+						<Badge
+							key={p.id}
+							variant="outline"
+							className="gap-1 pr-1"
+						>
+							{p.name}
+							{keep && (
+								<button
+									type="button"
+									aria-label={`Remove ${p.name}`}
+									onClick={() => onRemovePerson(p.id)}
+									className="rounded-full p-0.5 text-muted-foreground hover:bg-muted hover:text-foreground"
+								>
+									<X className="size-3" />
+								</button>
+							)}
+						</Badge>
+					))}
+					{topic.domains.map((d) => (
+						<Badge key={d} variant="outline" className="gap-1">
+							<Globe className="size-3" aria-hidden="true" />
+							{d}
+						</Badge>
+					))}
+				</div>
+			)}
 			<div className="mt-3 flex flex-wrap gap-1.5">
-				<Badge variant="secondary">
-					{topic.threads} {plural(topic.threads, "thread")}
-				</Badge>
-				{topic.members > 0 && (
+				{topic.threads > 0 ? (
 					<Badge variant="secondary">
-						{topic.members} {plural(topic.members, "person")}
+						{topic.threads} {plural(topic.threads, "thread")}
 					</Badge>
+				) : (
+					<Badge variant="secondary">added by you</Badge>
 				)}
 				{topic.youWrote > 0 && (
 					<Badge variant="secondary">
@@ -1433,30 +1510,53 @@ function TopicCard({
 	);
 }
 
-/** Topics grouped by organisation; the ones you took part in, or with a VIP, are kept by default. */
+const ADDED = "added-";
+
+function addedTopic(n: number): TopicSuggestion {
+	return {
+		id: `${ADDED}${n}`,
+		name: "",
+		kind: "",
+		accountId: "",
+		reason: "",
+		threads: 0,
+		members: 0,
+		sampleSubjects: [],
+		youWrote: 0,
+		vipThreads: 0,
+		suggested: true,
+		about: "",
+		people: [],
+		domains: [],
+	};
+}
+
+/**
+ * Topics from the mail the sort kept: the ones you took part in, or with a VIP, are kept by default and the rest sit
+ * under Maybe. Rename, describe, take people off, or add your own; the next step files your mail under them.
+ */
 export function TopicsStep({ actions, onNext, onBack, eyebrow }: StepProps) {
 	const [result, setResult] = useState<TopicSuggestions | null>(null);
-	const [accountNames, setAccountNames] = useState<Record<string, string>>(
-		{},
-	);
+	const [added, setAdded] = useState<TopicSuggestion[]>([]);
 	const [picked, setPicked] = useState<Set<string>>(new Set());
 	const [names, setNames] = useState<Record<string, string>>({});
+	const [abouts, setAbouts] = useState<Record<string, string>>({});
+	const [removed, setRemoved] = useState<Record<string, Set<string>>>({});
 	const [busy, setBusy] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 	useEffect(() => {
 		let isCurrent = true;
 		setResult(null);
-		setAccountNames({});
+		setAdded([]);
 		setPicked(new Set());
 		setNames({});
+		setAbouts({});
+		setRemoved({});
 		setError(null);
-		Promise.all([suggestTopics(actions), listAccounts(actions)])
-			.then(([suggestions, accounts]) => {
+		suggestTopics(actions)
+			.then((suggestions) => {
 				if (!isCurrent) return;
 				setResult(suggestions);
-				setAccountNames(
-					Object.fromEntries(accounts.map((a) => [a.id, a.name])),
-				);
 				setPicked(
 					new Set(
 						suggestions.topics
@@ -1469,6 +1569,11 @@ export function TopicsStep({ actions, onNext, onBack, eyebrow }: StepProps) {
 						suggestions.topics.map((t) => [t.id, t.name]),
 					),
 				);
+				setAbouts(
+					Object.fromEntries(
+						suggestions.topics.map((t) => [t.id, t.about]),
+					),
+				);
 			})
 			.catch((cause: unknown) => {
 				if (isCurrent) setError(message(cause));
@@ -1479,37 +1584,52 @@ export function TopicsStep({ actions, onNext, onBack, eyebrow }: StepProps) {
 	}, [actions]);
 	const topics = result?.topics ?? null;
 
-	// kept-by-default topics under their organisation, in the server's order; the rest under Maybe
+	// kept-by-default topics first, in the server's order, then yours; the rest under Maybe
 	const groups = useMemo(() => {
-		const out: { label: string; topics: TopicSuggestion[] }[] = [];
-		for (const t of topics ?? []) {
-			const label = !t.suggested
-				? "Maybe"
-				: (accountNames[t.accountId] ?? "Internal");
-			const group = out.find((g) => g.label === label);
-			if (group) group.topics.push(t);
-			else out.push({ label, topics: [t] });
-		}
-		return out.sort(
-			(a, b) => Number(a.label === "Maybe") - Number(b.label === "Maybe"),
-		);
-	}, [topics, accountNames]);
+		const kept = (topics ?? []).filter((t) => t.suggested);
+		const maybe = (topics ?? []).filter((t) => !t.suggested);
+		return [
+			{ label: "", topics: [...kept, ...added] },
+			{ label: "Maybe", topics: maybe },
+		].filter((g) => g.topics.length > 0);
+	}, [topics, added]);
+
+	const addTopic = () => {
+		const topic = addedTopic(added.length + 1);
+		setAdded((prev) => [...prev, topic]);
+		setPicked((prev) => new Set(prev).add(topic.id));
+	};
 
 	const save = async () => {
 		if (!topics) return;
 		setBusy(true);
 		setError(null);
 		try {
+			const all = [...topics, ...added];
+			const accepted = all
+				.filter(
+					(t) => picked.has(t.id) && (names[t.id] ?? t.name).trim(),
+				)
+				.map((t) => {
+					const about = (abouts[t.id] ?? t.about).trim();
+					const mine = t.id.startsWith(ADDED);
+					return {
+						...(mine ? {} : { id: t.id }),
+						name: (names[t.id] ?? t.name).trim(),
+						...((mine && about) || (!mine && about !== t.about)
+							? { description: about }
+							: {}),
+						...(removed[t.id]?.size
+							? { removedPeople: [...removed[t.id]] }
+							: {}),
+					};
+				});
 			await saveTopics(
 				actions,
-				topics
-					.filter((t) => picked.has(t.id))
-					.map((t) => ({
-						id: t.id,
-						name: names[t.id]?.trim() || t.name,
-					})),
+				accepted,
 				topics.filter((t) => !picked.has(t.id)).map((t) => t.id),
 			);
+			if (accepted.length > 0) await startTopicFiling(actions);
 			onNext();
 		} catch (cause) {
 			setError(message(cause));
@@ -1535,9 +1655,10 @@ export function TopicsStep({ actions, onNext, onBack, eyebrow }: StepProps) {
 					</div>
 				}
 			>
-				Grouped from your subjects by the topic model, headers only.
-				Only the topics you keep sort your mail. Click a name to rename
-				it.
+				Grouped from the mail we sorted, headers only. Keep the topics
+				that are real work, fix their names and what they cover, take
+				off anyone who does not belong, or add your own. Your mail is
+				filed under the ones you keep.
 			</StepHeader>
 			{!topics && !error && (
 				<LoadingCards label="Finding topics in your mail..." />
@@ -1545,18 +1666,20 @@ export function TopicsStep({ actions, onNext, onBack, eyebrow }: StepProps) {
 			{result?.modelError && (
 				<p className="text-muted-foreground text-sm">
 					No topics were suggested because the topic model is not
-					available ({result.modelError}). You can add topics in Brain
-					later.
+					available ({result.modelError}). You can add topics below or
+					in Brain later.
 				</p>
 			)}
 			{topics && topics.length === 0 && !result?.modelError && (
 				<p className="text-muted-foreground text-sm">
-					No topics found; add them in Brain later.
+					No topics found; add your own below or in Brain later.
 				</p>
 			)}
 			{groups.map((group) => (
 				<section key={group.label} className="space-y-3">
-					<h2 className="font-medium text-sm">{group.label}</h2>
+					{group.label && (
+						<h2 className="font-medium text-sm">{group.label}</h2>
+					)}
 					{group.label === "Maybe" && (
 						<p className="text-muted-foreground text-xs">
 							You have not written on these. Keep any that are
@@ -1571,10 +1694,26 @@ export function TopicsStep({ actions, onNext, onBack, eyebrow }: StepProps) {
 								index={index++}
 								keep={picked.has(t.id)}
 								name={names[t.id] ?? t.name}
+								about={abouts[t.id] ?? t.about}
+								removed={removed[t.id] ?? new Set()}
 								onName={(value) =>
 									setNames((prev) => ({
 										...prev,
 										[t.id]: value,
+									}))
+								}
+								onAbout={(value) =>
+									setAbouts((prev) => ({
+										...prev,
+										[t.id]: value,
+									}))
+								}
+								onRemovePerson={(personId) =>
+									setRemoved((prev) => ({
+										...prev,
+										[t.id]: new Set(prev[t.id]).add(
+											personId,
+										),
 									}))
 								}
 								onToggle={() =>
@@ -1585,6 +1724,16 @@ export function TopicsStep({ actions, onNext, onBack, eyebrow }: StepProps) {
 					</div>
 				</section>
 			))}
+			{topics && (
+				<button
+					type="button"
+					onClick={addTopic}
+					className="flex items-center justify-center gap-2 rounded-2xl border border-dashed py-4 text-muted-foreground text-sm transition-colors hover:border-primary/50 hover:text-foreground"
+				>
+					<Plus className="size-4" aria-hidden="true" />
+					Add a topic
+				</button>
+			)}
 			{error && <Failure error={error} />}
 			<StepActions onBack={onBack}>
 				<Next onClick={save} disabled={busy || !topics}>
@@ -1630,7 +1779,7 @@ const LANES = [
 	},
 ] as const;
 
-export function WorkStep({ actions, onBack, eyebrow }: StepProps) {
+export function WorkStep({ actions, onNext, onBack, eyebrow }: StepProps) {
 	const { job, error, follow } = useJob(actions, "classify");
 	const [startedHere, setStartedHere] = useState(false);
 	const [startError, setStartError] = useState<string | null>(null);
@@ -1640,7 +1789,8 @@ export function WorkStep({ actions, onBack, eyebrow }: StepProps) {
 	useEffect(() => {
 		if (running) setStartedHere(true);
 	}, [running]);
-	const done = job?.status === "done" && startedHere;
+	// the sort itself, not the topic filing that may come after it
+	const done = job?.status === "done" && job.mode !== "topics" && startedHere;
 	const summary = useMemo(() => {
 		const counts = job?.counts ?? {};
 		return {
@@ -1677,24 +1827,22 @@ export function WorkStep({ actions, onBack, eyebrow }: StepProps) {
 						<Sparkles className="size-7" aria-hidden="true" />
 					</span>
 					<p className="font-medium text-primary text-xs uppercase tracking-widest">
-						All set
+						Sorted
 					</p>
 					<h1 className="font-semibold text-2xl tracking-tight md:text-3xl">
-						Your Work is ready
+						Your mail is sorted
 					</h1>
 					<p className="max-w-md text-muted-foreground text-sm">
-						{formatCount(summary.topics.filed ?? 0)} threads filed
-						under your topics.{" "}
-						{summary.topics.asked
-							? `${formatCount(summary.topics.asked)} are waiting for you to confirm in Brain.`
-							: ""}
+						{formatCount(summary.work.automated ?? 0)} automated
+						threads set aside. Next, pick the topics your work is
+						about from the mail that is left.
 					</p>
 				</div>
 			) : (
 				<StepHeader eyebrow={eyebrow} title="Sort your threads">
-					Our classifier files every thread under a topic and works
-					out whose turn it is. Anything it is unsure about comes to
-					you.
+					Our classifier sets automated mail aside and works out whose
+					turn it is on the rest. Anything it is unsure about comes to
+					you. Topics come next, from the mail that is left.
 				</StepHeader>
 			)}
 			{running && (
@@ -1749,7 +1897,71 @@ export function WorkStep({ actions, onBack, eyebrow }: StepProps) {
 						Sort my threads
 					</Next>
 				)}
-				{done && <Next onClick={finish}>Open Work</Next>}
+				{done && <Next onClick={onNext}>Pick your topics</Next>}
+			</StepActions>
+		</>
+	);
+}
+
+/** Last step: the kept topics file the sorted mail, then Work opens. */
+export function FilingStep({ actions, onBack, eyebrow }: StepProps) {
+	const { job, error } = useJob(actions, "classify");
+	const filing = job?.mode === "topics";
+	const running = filing && job?.status === "running";
+	const topics = (filing ? (job?.counts.topics ?? {}) : {}) as Record<
+		string,
+		number
+	>;
+	const finish = () => {
+		window.location.hash = "#/work";
+		window.location.reload();
+	};
+	return (
+		<>
+			{running ? (
+				<>
+					<StepHeader eyebrow={eyebrow} title="Filing your mail">
+						Each sorted thread is matched to the topics you kept.
+					</StepHeader>
+					<div className="flex flex-col items-center gap-3">
+						<ProgressRing value={job?.progress ?? 0}>
+							<span className="text-muted-foreground text-xs tabular-nums">
+								{Number(job?.counts.done ?? 0)} of{" "}
+								{Number(job?.counts.total ?? 0) || "..."}
+							</span>
+						</ProgressRing>
+					</div>
+				</>
+			) : (
+				<div className="flex flex-col items-center gap-3 text-center">
+					<span className="zoom-in-50 flex size-16 animate-in items-center justify-center rounded-3xl bg-gradient-to-br from-primary to-chart-2 text-white shadow-lg shadow-primary/30 duration-500">
+						<Sparkles className="size-7" aria-hidden="true" />
+					</span>
+					<p className="font-medium text-primary text-xs uppercase tracking-widest">
+						All set
+					</p>
+					<h1 className="font-semibold text-2xl tracking-tight md:text-3xl">
+						Your Work is ready
+					</h1>
+					{filing && job?.status === "done" && (
+						<p className="max-w-md text-muted-foreground text-sm">
+							{formatCount(topics.filed ?? 0)} threads filed under
+							your topics.{" "}
+							{topics.asked
+								? `${formatCount(topics.asked)} are waiting for you to confirm in Brain.`
+								: ""}
+						</p>
+					)}
+				</div>
+			)}
+			{filing && job?.status === "failed" && (
+				<Failure error={job.error || "Filing stopped."} />
+			)}
+			{error && <Failure error={error} />}
+			<StepActions onBack={running ? undefined : onBack}>
+				<Next onClick={finish} disabled={running}>
+					Open Work
+				</Next>
 			</StepActions>
 		</>
 	);
