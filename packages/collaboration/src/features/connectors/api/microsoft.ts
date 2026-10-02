@@ -221,6 +221,7 @@ export async function saveEmailDraft(
 						? { overrideRecipients: true, to, cc }
 						: {}),
 					asDraft: true,
+					attachments: input.attachments ?? [],
 				}),
 				replyDraftReceiptSchema,
 			);
@@ -250,6 +251,7 @@ export async function saveEmailDraft(
 				comment: body,
 				...(html ? { html: true } : {}),
 				asDraft: true,
+				attachments: input.attachments ?? [],
 			}),
 			forwardDraftReceiptSchema,
 		);

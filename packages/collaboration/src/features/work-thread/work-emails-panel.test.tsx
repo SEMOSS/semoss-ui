@@ -63,6 +63,17 @@ function view(hasMore = false, nextCursor?: string, hasWorkspaceDraft = false) {
 				webLink: "https://outlook.office.com/mail/inbox/id/old",
 				subject: "First email",
 				text: "Searchable body",
+				attachments: [
+					{
+						id: "briefing-attachment",
+						name: "Product Briefing.docx",
+						contentType:
+							"application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+						size: 315984,
+						isFile: true,
+						messageId: "old",
+					},
+				],
 				displayBody: {
 					contentType: "html" as const,
 					content: "<p>Needle in full formatted body</p>",
@@ -186,6 +197,40 @@ it("shows source emails in chronology and full read-only drafts in the same thre
 	);
 	expect(screen.queryByRole("region", { name: "Email drafts" })).toBeNull();
 	expect(container.querySelector("[contenteditable=true]")).toBeNull();
+});
+
+it("keeps native attachments above the body and visible when collapsed, and finds their filenames", async () => {
+	const { container } = view();
+	const attachment = screen.getByText("Product Briefing.docx");
+	const frame = screen.getByTitle("Email from Old sender");
+	expect(attachment).toBeVisible();
+	expect(
+		attachment.compareDocumentPosition(frame) &
+			Node.DOCUMENT_POSITION_FOLLOWING,
+	).toBeTruthy();
+	await act(async () => {
+		fireEvent.click(screen.getByRole("button", { name: "Collapse all" }));
+	});
+	expect(frame).not.toBeVisible();
+	expect(attachment).toBeVisible();
+	fireEvent.change(screen.getByRole("searchbox", { name: "Search emails" }), {
+		target: { value: "Product Briefing.docx" },
+	});
+	await waitFor(() =>
+		expect(
+			screen.getByRole("button", { name: "Next match: Search emails" }),
+		).toBeEnabled(),
+	);
+	await act(async () => {
+		fireEvent.click(
+			screen.getByRole("button", { name: "Next match: Search emails" }),
+		);
+	});
+	expect(
+		container.querySelector("article[data-search-item=old]"),
+	).toHaveAttribute("data-search-current", "true");
+	expect(frame).toBeVisible();
+	expect(screen.getAllByText("Product Briefing.docx")).toHaveLength(1);
 });
 
 it("finds formatted body text, reveals only the matching email, and expands all on request", async () => {

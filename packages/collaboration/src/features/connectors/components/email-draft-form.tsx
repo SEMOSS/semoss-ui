@@ -178,11 +178,9 @@ export function EmailDraftForm({
 					required={mode === "reply"}
 					disabled={fieldsDisabled}
 				/>
-				{mode === "new" && (
-					<div className="shrink-0 px-4 pb-2">
-						<DraftAttachmentField disabled={fieldsDisabled} />
-					</div>
-				)}
+				<div className="shrink-0 px-4 pb-2">
+					<DraftAttachmentField disabled={fieldsDisabled} />
+				</div>
 				{feedbackContent}
 			</div>
 			<footer className="flex shrink-0 flex-wrap justify-end gap-2 border-border border-t bg-background px-4 py-2">

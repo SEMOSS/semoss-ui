@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import type { Thread } from "@/features/collaboration/state/collaboration.types";
+import type { AgentEmailAttachment } from "@/features/connectors/api/agent-email-attachments";
 import { plainTextEmail } from "@/features/email/email-html";
 import {
 	readThreadCommand,
@@ -21,12 +22,14 @@ export function useThreadDraftProposals({
 	snapshot,
 	allowedSources,
 	isReady,
+	loadAttachment,
 }: {
 	thread: Thread;
 	composer: WorkComposerSession;
 	snapshot: ReturnType<ThreadSession["getSnapshot"]>;
 	allowedSources: Set<string>;
 	isReady: boolean;
+	loadAttachment?: (file: AgentEmailAttachment) => Promise<File>;
 }): string {
 	const observedRun = useRef(false);
 	// revisions already applied to an open editor, so a re-render never applies one twice
@@ -51,7 +54,7 @@ export function useThreadDraftProposals({
 		if (!isRunning) observedRun.current = false;
 		// Durable output can arrive before the run settles. Wait for completion before
 		// creating this turn's editor, and never hydrate partial failed/cancelled output.
-		const lastUserIndex = snapshot.turn.messages.reduce(
+		let lastUserIndex = snapshot.turn.messages.reduce(
 			(last, message, index) => (message.role === "user" ? index : last),
 			-1,
 		);
@@ -59,9 +62,23 @@ export function useThreadDraftProposals({
 			isRunning ||
 			snapshot.turn.phase === "cancelled" ||
 			snapshot.turn.phase === "failed";
-		const messages = isUnfinished
+		const completedMessages = isUnfinished
 			? snapshot.turn.messages.slice(0, Math.max(0, lastUserIndex))
 			: snapshot.turn.messages;
+		const messages = completedMessages.flatMap((message) => {
+			if (message.role !== "assistant") return [message];
+			const calls = message.parts.filter(
+				(part) =>
+					part.type === "tool" && part.tool.name === "ComposeEmail",
+			);
+			return calls.length
+				? calls.map((part) => ({ ...message, parts: [part] }))
+				: [message];
+		});
+		lastUserIndex = messages.reduce(
+			(last, message, index) => (message.role === "user" ? index : last),
+			-1,
+		);
 		let latestId: string | undefined;
 		let selectedSource: string | undefined;
 		let editorRequest: SubmittedThreadContext["emailDraft"];
@@ -229,5 +246,56 @@ export function useThreadDraftProposals({
 			if (draft) composer.requestEmailDraft(draft.seed);
 		}
 	}, [allowedSources, composer, isReady, snapshot.turn, thread]);
+	useEffect(() => {
+		if (!isReady) return;
+		const isRunning = snapshot.turn.isRunning || snapshot.turn.isSubmitting;
+		const lastUser = snapshot.turn.messages.reduce(
+			(last, message, index) => (message.role === "user" ? index : last),
+			-1,
+		);
+		const unfinished =
+			isRunning ||
+			snapshot.turn.phase === "cancelled" ||
+			snapshot.turn.phase === "failed";
+		const messages = unfinished
+			? snapshot.turn.messages.slice(0, Math.max(0, lastUser))
+			: snapshot.turn.messages;
+		for (const message of messages) {
+			for (const part of message.parts) {
+				const proposal = readDraftProposal({
+					...message,
+					parts: [part],
+				});
+				if (
+					!proposal ||
+					(!proposal.attachments?.length && !proposal.attachmentError)
+				)
+					continue;
+				const id =
+					proposal.openEmailId || composeDraftId(proposal.toolId);
+				const target = composer
+					.getSnapshot()
+					.emailDrafts.find((draft) => draft.seed.id === id);
+				if (!target) {
+					setError(
+						"The email for these attachments is no longer open. Ask the assistant to attach them to the current email.",
+					);
+					continue;
+				}
+				void target.addAgentAttachments(
+					proposal.toolId,
+					proposal.attachments ?? [],
+					loadAttachment ??
+						(() =>
+							Promise.reject(
+								new Error(
+									"Reopen this thread to load its email attachments.",
+								),
+							)),
+					proposal.attachmentError,
+				);
+			}
+		}
+	}, [composer, isReady, loadAttachment, snapshot.turn]);
 	return error;
 }

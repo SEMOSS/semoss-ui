@@ -1,4 +1,5 @@
 import { z } from "@semoss/ui/next";
+import { emailAttachmentSchema } from "@/features/connectors/api/agent-email-attachments";
 import type {
 	ConversationMessage,
 	ConversationTool,
@@ -12,6 +13,8 @@ import {
 const body = z.string().trim().min(1).max(50000).optional();
 // the editor the owner had open, when the assistant is changing it
 const openEmailId = z.string().trim().min(1).optional();
+const attachments = z.array(emailAttachmentSchema).max(10).optional();
+const attachmentError = z.string().optional();
 const addresses = z.string().trim().max(4000);
 // a reply's to and cc replace the native lists when given; a forward's to is required to save
 const replySchema = z.object({
@@ -23,6 +26,8 @@ const replySchema = z.object({
 	subject: z.string().trim().max(1000).optional(),
 	body,
 	openEmailId,
+	attachments,
+	attachmentError,
 });
 // a new email; "to" may be empty when the assistant could not find the address
 const newEmailSchema = z.object({
@@ -32,6 +37,8 @@ const newEmailSchema = z.object({
 	subject: z.string().trim().max(1000),
 	body,
 	openEmailId,
+	attachments,
+	attachmentError,
 });
 const proposalSchema = z
 	.union([replySchema, newEmailSchema])
@@ -79,9 +86,35 @@ function proposalFromTool(tool: ConversationTool): ThreadDraftProposal | null {
 	const replyTo = text(args.replyTo)?.trim();
 	const forward = text(args.forward)?.trim();
 	const source = replyTo || forward;
+	let prepared: unknown;
+	try {
+		prepared = JSON.parse(tool.output || "null");
+	} catch {
+		prepared = null;
+	}
+	const requested = Array.isArray(args.attachments)
+		? args.attachments.length
+		: 0;
+	const resultFiles = z
+		.object({
+			shown: z.literal(true),
+			attachments: z.array(emailAttachmentSchema).max(10),
+		})
+		.safeParse(prepared);
+	const fileFields = requested
+		? resultFiles.success &&
+			resultFiles.data.attachments.length === requested
+			? { attachments: resultFiles.data.attachments }
+			: {
+					attachmentError:
+						"The assistant's attachments could not be confirmed. Ask it to attach them again.",
+				}
+		: {};
+
 	const result = proposalSchema.safeParse(
 		source
 			? {
+					...fileFields,
 					mode: replyTo ? "reply" : "forward",
 					sourceMessageId: source,
 					to: text(args.to) || undefined,
@@ -92,6 +125,7 @@ function proposalFromTool(tool: ConversationTool): ThreadDraftProposal | null {
 					openEmailId: text(args.openEmailId) || undefined,
 				}
 			: {
+					...fileFields,
 					to: text(args.to) ?? "",
 					cc: text(args.cc) || undefined,
 					bcc: text(args.bcc) || undefined,

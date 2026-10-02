@@ -1,6 +1,7 @@
 import { draftText, plainTextEmail } from "@/features/email/email-html";
 import type { InsightActions } from "@/lib/pixel";
 import type { EmailDraftInput, SavedEmailDraft } from "../types";
+import type { AgentEmailAttachment } from "./agent-email-attachments";
 import { EmailDraftSession } from "./email-draft-session";
 import { type EmailDraftValues, emailDraftSchema } from "./email-draft-values";
 import {
@@ -60,6 +61,9 @@ interface EmailDraftSnapshot {
 	bodyReplacement: number;
 	/** Bumped when To, Cc, Bcc or Subject change outside the form, so the form copies them in. */
 	envelopeReplacement: number;
+	filesReplacement: number;
+	pendingAttachments: number;
+	attachmentError: string;
 	undoBody: string | null;
 	requiresAcceptance: boolean;
 	/** The SendEmail call waiting on this email, if any. */
@@ -94,6 +98,8 @@ export class EmailDraftEditor {
 	private uploads: EmailDraftSession | null = null;
 	private savedValues: EmailDraftValues | null = null;
 	private sendApproval: EmailSendApproval | null = null;
+	private attachmentOperations = new Set<string>();
+	private disposed = false;
 	private settleSend: ((outcome: EmailSendOutcome) => void) | null = null;
 
 	constructor(readonly seed: EmailDraftSeed) {
@@ -119,6 +125,9 @@ export class EmailDraftEditor {
 			bodyRevision: 0,
 			bodyReplacement: 0,
 			envelopeReplacement: 0,
+			filesReplacement: 0,
+			pendingAttachments: 0,
+			attachmentError: "",
 			undoBody: null,
 			requiresAcceptance: Boolean(
 				seed.assistantMessageId || seed.requiresAcceptance,
@@ -253,6 +262,84 @@ export class EmailDraftEditor {
 				!this.savedValues || !sameDraftValues(values, this.savedValues),
 		});
 	};
+	/** Apply a successful ComposeEmail file operation once, including across history replays. */
+	async addAgentAttachments(
+		operationId: string,
+		files: AgentEmailAttachment[],
+		load: (file: AgentEmailAttachment) => Promise<File>,
+		error?: string,
+	): Promise<void> {
+		if (this.disposed || this.attachmentOperations.has(operationId)) return;
+		this.attachmentOperations.add(operationId);
+		if (
+			this.snapshot.isSent ||
+			this.snapshot.isSaving ||
+			this.snapshot.isSending ||
+			this.snapshot.hasPendingSend
+		) {
+			this.update({
+				attachmentError:
+					"Attachments cannot change while this email is being saved, sent, or has already been sent.",
+			});
+			return;
+		}
+		if (error) {
+			this.update({ attachmentError: error });
+			return;
+		}
+		if (!files.length) return;
+		this.update({
+			pendingAttachments: this.snapshot.pendingAttachments + 1,
+		});
+		try {
+			const loaded = [];
+			for (const [index, file] of files.entries()) {
+				loaded.push({
+					id: `${operationId}:${index}`,
+					file: await load(file),
+				});
+			}
+			if (this.disposed) return;
+			const values = {
+				...this.snapshot.values,
+				files: [...this.snapshot.values.files, ...loaded],
+			};
+			this.update({
+				values,
+				isDirty: true,
+				filesReplacement: this.snapshot.filesReplacement + 1,
+			});
+		} catch (cause) {
+			if (!this.disposed)
+				this.update({
+					attachmentError:
+						cause instanceof Error
+							? cause.message
+							: "Attachments could not be added. Ask the assistant to try again.",
+				});
+		} finally {
+			if (!this.disposed)
+				this.update({
+					pendingAttachments: this.snapshot.pendingAttachments - 1,
+				});
+		}
+	}
+	/** Explicitly continue with only the files currently listed in the editor. */
+	dismissAttachmentError = (): void => {
+		this.update({ attachmentError: "", error: "" });
+	};
+	private attachmentsReady(): boolean {
+		if (this.snapshot.pendingAttachments || this.snapshot.attachmentError) {
+			this.update({
+				error:
+					this.snapshot.attachmentError ||
+					"Wait for the attachments to finish loading.",
+			});
+			return false;
+		}
+		return true;
+	}
+
 	/** Manual typing dismisses this shortcut; ordinary editor undo remains available. */
 	undoRevision = (): void => {
 		const body = this.snapshot.undoBody;
@@ -282,7 +369,12 @@ export class EmailDraftEditor {
 		actions: InsightActions,
 		values: EmailDraftValues,
 	): Promise<SavedEmailDraft | null> {
-		if (this.snapshot.isSaving || this.snapshot.isUncertain) return null;
+		if (
+			!this.attachmentsReady() ||
+			this.snapshot.isSaving ||
+			this.snapshot.isUncertain
+		)
+			return null;
 		if (this.savedValues && sameDraftValues(values, this.savedValues))
 			return null;
 		const { mode, sourceUid } = this.seed;
@@ -345,7 +437,7 @@ export class EmailDraftEditor {
 		this.update({ values, isSaving: true, error: "" });
 		try {
 			let saved: SavedEmailDraft;
-			if (input.mode === "new" && values.files.length) {
+			if (values.files.length) {
 				this.uploads ??= new EmailDraftSession();
 				saved = await this.uploads.save(
 					input,
@@ -374,6 +466,7 @@ export class EmailDraftEditor {
 		actions: InsightActions,
 		values: EmailDraftValues,
 	): Promise<boolean> {
+		if (!this.attachmentsReady()) return false;
 		if (
 			this.snapshot.isSaving ||
 			this.snapshot.isSending ||
@@ -443,6 +536,7 @@ export class EmailDraftEditor {
 
 	/** Release isolated file resources at the owning application boundary. */
 	dispose(): void {
+		this.disposed = true;
 		this.uploads?.dispose();
 		this.uploads = null;
 	}

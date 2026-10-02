@@ -19,6 +19,77 @@ const create = () =>
 		to: "recipient@example.com",
 		body: "Ready for review",
 	});
+
+const attachment = {
+	path: ".email-attachments/file-1/hello.txt",
+	name: "hello.txt",
+	size: 5,
+	sha256: "a".repeat(64),
+};
+
+it("preserves manual files and text, applies generated files once, and respects later removals", async () => {
+	const editor = create();
+	const manual = { id: "manual", file: new File(["manual"], "notes.txt") };
+	editor.setValues({ ...editor.getSnapshot().values, files: [manual] });
+	const load = vi.fn().mockResolvedValue(new File(["hello"], "hello.txt"));
+	await editor.addAgentAttachments("compose-1", [attachment], load);
+	expect(
+		editor.getSnapshot().values.files.map(({ file }) => file.name),
+	).toEqual(["notes.txt", "hello.txt"]);
+	expect(editor.getSnapshot().values.body).toContain("Ready for review");
+	editor.setValues({ ...editor.getSnapshot().values, files: [manual] });
+	await editor.addAgentAttachments("compose-1", [attachment], load);
+	expect(load).toHaveBeenCalledTimes(1);
+	expect(editor.getSnapshot().values.files).toEqual([manual]);
+});
+
+it("blocks saving and sending while files load or fail; failed batches add nothing", async () => {
+	const editor = create();
+	let resolve!: (file: File) => void;
+	const load = vi
+		.fn()
+		.mockReturnValueOnce(
+			new Promise<File>((done) => {
+				resolve = done;
+			}),
+		)
+		.mockRejectedValueOnce(new Error("File unavailable"));
+	const adding = editor.addAgentAttachments(
+		"compose-2",
+		[attachment, attachment],
+		load,
+	);
+	expect(await editor.save(actions, editor.getSnapshot().values)).toBeNull();
+	expect(await editor.send(actions, editor.getSnapshot().values)).toBe(false);
+	expect(saveEmailDraft).not.toHaveBeenCalled();
+	resolve(new File(["hello"], "hello.txt"));
+	await adding;
+	expect(editor.getSnapshot().values.files).toEqual([]);
+	expect(editor.getSnapshot().attachmentError).toBe("File unavailable");
+	expect(await editor.send(actions, editor.getSnapshot().values)).toBe(false);
+	expect(sendEmailDraft).not.toHaveBeenCalled();
+	editor.dismissAttachmentError();
+	expect(
+		await editor.save(actions, editor.getSnapshot().values),
+	).toMatchObject({ savedDraftId: "saved-1" });
+});
+
+it("ignores in-flight file loads after the draft is disposed", async () => {
+	const editor = create();
+	let resolve!: (file: File) => void;
+	const adding = editor.addAgentAttachments(
+		"compose-3",
+		[attachment],
+		() =>
+			new Promise<File>((done) => {
+				resolve = done;
+			}),
+	);
+	editor.dispose();
+	resolve(new File(["hello"], "hello.txt"));
+	await adding;
+	expect(editor.getSnapshot().values.files).toEqual([]);
+});
 beforeEach(() => {
 	vi.clearAllMocks();
 	vi.mocked(saveEmailDraft).mockResolvedValue({ savedDraftId: "saved-1" });

@@ -55,6 +55,83 @@ function setup() {
 	return { base, completed, composer };
 }
 
+it("adds files from all completed compose calls to the open email without replacing edits", async () => {
+	const { base, completed, composer } = setup();
+	composer.requestEmailDraft({
+		id: "open-email",
+		mode: "new",
+		to: "recipient@example.com",
+		body: "My edits",
+	});
+	const files = ["hello.txt", "notes.txt"].map((name, index) => ({
+		path: `.email-attachments/file-${index}/${name}`,
+		name,
+		size: 5,
+		sha256: "a".repeat(64),
+	}));
+	const loadAttachment = vi.fn(
+		async (file: { name: string }) => new File(["hello"], file.name),
+	);
+	const props = {
+		...completed,
+		loadAttachment,
+		snapshot: {
+			...completed.snapshot,
+			turn: {
+				...completed.snapshot.turn,
+				messages: [
+					{
+						id: "answer-files",
+						role: "assistant" as const,
+						parts: files.map((file, index) =>
+							composeEmailPart(
+								{
+									openEmailId: "open-email",
+									attachments: [file.name],
+								},
+								`compose-files-${index}`,
+								"COMPLETED",
+								{ shown: true, attachments: [file] },
+							),
+						),
+					},
+				],
+			},
+		},
+	};
+	const view = renderHook(useThreadDraftProposals, { initialProps: props });
+	await vi.waitFor(() =>
+		expect(
+			composer.getSnapshot().emailDrafts[0]?.getSnapshot().values.files,
+		).toHaveLength(2),
+	);
+	expect(
+		composer.getSnapshot().emailDrafts[0]?.getSnapshot().values.body,
+	).toContain("My edits");
+	view.rerender({ ...props, snapshot: { ...props.snapshot } });
+	expect(loadAttachment).toHaveBeenCalledTimes(2);
+	view.unmount();
+	const failed = renderHook(useThreadDraftProposals, {
+		initialProps: {
+			...base,
+			loadAttachment,
+			snapshot: {
+				...props.snapshot,
+				turn: {
+					...props.snapshot.turn,
+					phase: "failed",
+					messages: [
+						{ id: "user", role: "user", parts: [] },
+						...props.snapshot.turn.messages,
+					],
+				},
+			},
+		},
+	});
+	expect(loadAttachment).toHaveBeenCalledTimes(2);
+	failed.unmount();
+});
+
 it("opens a newly completed proposal once and preserves edits through durable reconciliation", () => {
 	const { base, completed, composer } = setup();
 	const view = renderHook(useThreadDraftProposals, { initialProps: base });

@@ -107,6 +107,7 @@ export type EmailDraftInput =
 			sourceUid: string;
 			body: string;
 			bodyFormat?: "text" | "html";
+			attachments?: string[];
 			replyAll: boolean;
 			/** Replace native recipients only when explicitly requested by the editor. */
 			overrideRecipients?: boolean;
@@ -119,4 +120,5 @@ export type EmailDraftInput =
 			to: string;
 			body: string;
 			bodyFormat?: "text" | "html";
+			attachments?: string[];
 	  };

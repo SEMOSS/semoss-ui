@@ -3,6 +3,10 @@ import { toError } from "@semoss/utility";
 import type { WorkspaceAgent } from "@/features/agents/api/agent-schemas";
 import { getAgent } from "@/features/agents/api/get-agent";
 import {
+	type AgentEmailAttachment,
+	readAgentEmailAttachment,
+} from "@/features/connectors/api/agent-email-attachments";
+import {
 	type IsolatedAttachment,
 	stageAttachmentIsolated,
 	stageMailAttachmentIsolated,
@@ -179,6 +183,15 @@ export class ThreadSession {
 			actions: InsightActions;
 		},
 	) {}
+
+	readEmailAttachment = async (file: AgentEmailAttachment): Promise<File> => {
+		const release = this.retain();
+		try {
+			return await readAgentEmailAttachment(this.insight.actions, file);
+		} finally {
+			release();
+		}
+	};
 
 	getSnapshot = (): ThreadSessionSnapshot => this.snapshot;
 	subscribe = (listener: () => void): (() => void) => {
