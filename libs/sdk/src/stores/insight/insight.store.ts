@@ -473,6 +473,27 @@ export class InsightStore {
 	};
 
 	/**
+	 * Read the system config again, as the signed in user sees it. The config
+	 * names the session's logins and what they allow, so the copy read before
+	 * a login is stale once one succeeds. A failed read keeps the copy there is.
+	 */
+	private refreshSystem = async (): Promise<void> => {
+		cachedSystemConfig = null;
+		cachedSystemConfigPromise = null;
+		try {
+			const data = await loadSystemConfig();
+			if (data && this._store.system) {
+				this._store.system = {
+					...this._store.system,
+					config: { ...this._store.system.config, ...data },
+				};
+			}
+		} catch (error) {
+			console.warn(error);
+		}
+	};
+
+	/**
 	 * Initialize the system wide information
 	 */
 	private destroySystem = () => {
@@ -710,6 +731,9 @@ LoadPyFromFile(alias="${alias}", filePath="temp.py");
 				}
 
 				if (loggedIn) {
+					// the config read before the login has none of its logins
+					await this.refreshSystem();
+
 					// track that the user is now authorized
 					this._store.isAuthorized = true;
 

@@ -533,6 +533,9 @@ paramValues=[${JSON.stringify({
 			pruneToolsAbove: false,
 		});
 
+		// a new turn starts without the last one's error
+		room.setError(null);
+
 		// Update room options with current modelId before running message
 		await room.updateRoomOptions(room.options);
 

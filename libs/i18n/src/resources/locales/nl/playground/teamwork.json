@@ -4,9 +4,7 @@
 		"refresh": "Vernieuwen"
 	},
 	"menu": {
-		"connectors": "Connectors",
-		"showTools": "Chattools tonen",
-		"hideTools": "Chattools verbergen"
+		"showTools": "Chattools tonen"
 	},
 	"chip": {
 		"connectors_one": "{{count}} connector aan",
@@ -121,15 +119,6 @@
 		}
 	},
 	"connectors": {
-		"dialogTitle": "Connectors",
-		"dialogDescription": "Kies welke apps de assistent in je chats mag gebruiken. De assistent handelt met je account en vraagt altijd eerst om goedkeuring bij verzenden, verwijderen, delen en uitnodigen.",
-		"allChatsNote": "Een app in- of uitschakelen wijzigt hem in al je chats, nieuwe en bestaande.",
-		"manage": "Connectors beheren",
-		"cancel": "Annuleren",
-		"save": "Opslaan",
-		"saving": "Bezig met opslaan...",
-		"saved_one": "{{count}} connector staat aan in al je chats",
-		"saved_other": "{{count}} connectors staan aan in al je chats",
 		"saveError": "Kan de connectors niet bijwerken. {{message}}",
 		"adoptError": "De chat is gestart, maar de connectors konden niet worden ingeschakeld. {{message}}"
 	},
@@ -172,8 +161,6 @@
 		"addedTitle": "Toegevoegde toolboxes",
 		"addedDescription": "Elke toolbox brengt zijn eigen tools mee.",
 		"addedEmpty": "Geen toolboxes toegevoegd.",
-		"runsOnItsOwn": "Werkt zelfstandig",
-		"asksFirst": "Vraagt eerst",
 		"parameters": "Parameters",
 		"required": "Verplicht",
 		"noParameters": "Geen parameters.",

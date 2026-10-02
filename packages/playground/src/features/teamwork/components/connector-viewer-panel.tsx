@@ -13,12 +13,13 @@ export interface ConnectorViewerPanelProps {
 
 /**
  * A shared connector viewer in the room's sidebar, wired to the room: it
- * saves into the chat's files and adds to the next message.
+ * saves into the chat's files and adds to the next message. Its tab already
+ * names it and shows its logo, so the viewer leaves its own header out.
  */
 export const ConnectorViewerPanel = ({
 	viewer: Viewer,
 	provider,
 }: ConnectorViewerPanelProps) => {
 	const host = useRoomConnectorHost(provider);
-	return <Viewer {...host} />;
+	return <Viewer {...host} showHeader={false} />;
 };
