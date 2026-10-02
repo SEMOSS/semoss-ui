@@ -3,6 +3,7 @@ import type {
 	GeneratedRecordingMetadata,
 	McpToolContext,
 	RecordingMetadataModelOption,
+	SelectionBounds,
 } from "../types/browserEvents";
 import { assertPixelSuccess, runPixel } from "./pixel";
 
@@ -89,10 +90,7 @@ function normalizeToolContext(rawTool: unknown): McpToolContext | null {
 			? (tool.executedParameters as Record<string, unknown>)
 			: undefined;
 
-	// Extract the owning app id from _meta so recordings resolve against the right
-	// project. SMSS_ENGINE_ID is the canonical key and SMSS_PROJECT_ID is the
-	// deprecated fallback, but a room scoped tool reports the reserved __room__ id
-	// rather than a catalog entry, so that value is treated as no project at all.
+	// SMSS_ENGINE_ID is canonical, SMSS_PROJECT_ID deprecated, __room__ means none.
 	const meta =
 		tool._meta &&
 		typeof tool._meta === "object" &&
@@ -208,6 +206,55 @@ export async function listRecordingMetadataModels(
 	});
 }
 
+export async function analyzeBrowserImageContext(parameters: {
+	sessionId: string;
+	tabId: string;
+	engineId: string;
+	prompt: string;
+	bounds: SelectionBounds;
+	insightId?: string;
+}): Promise<{ response: string; engineId: string }> {
+	const expression = `ImageContext(sessionId=${JSON.stringify(
+		parameters.sessionId,
+	)}, tabId=${JSON.stringify(parameters.tabId)}, engine=${JSON.stringify(
+		parameters.engineId,
+	)}, paramValues=[${JSON.stringify({
+		startX: Math.round(parameters.bounds.startX),
+		startY: Math.round(parameters.bounds.startY),
+		endX: Math.round(parameters.bounds.endX),
+		endY: Math.round(parameters.bounds.endY),
+		userPrompt: parameters.prompt,
+	})}]);`;
+	const result = await runPixel<Record<string, unknown>>(
+		expression,
+		parameters.insightId,
+	);
+	assertPixelSuccess(result, "Browser vision context");
+	const output = result.pixelReturn?.[0]?.output;
+	if (!output || typeof output !== "object" || Array.isArray(output)) {
+		throw new Error("Browser vision context returned no result");
+	}
+	if (output.success === false) {
+		throw new Error(
+			typeof output.error === "string"
+				? output.error
+				: "Browser vision context failed",
+		);
+	}
+	const response =
+		typeof output.response === "string" ? output.response.trim() : "";
+	if (!response) {
+		throw new Error("The vision model returned an empty description");
+	}
+	return {
+		response,
+		engineId:
+			typeof output.engineId === "string"
+				? output.engineId
+				: parameters.engineId,
+	};
+}
+
 export async function generatePlaywrightRecordingMetadata(parameters: {
 	sessionId: string;
 	roomId?: string;
@@ -217,8 +264,7 @@ export async function generatePlaywrightRecordingMetadata(parameters: {
 	historyLimit?: number;
 }): Promise<GeneratedRecordingMetadata> {
 	try {
-		// A Playground room already owns its selected model. Standalone recording
-		// mode needs an accessible-model fallback from the current user instead.
+		// Standalone recording mode has no room model, so fall back to a user model.
 		let fallbackEngineId = parameters.engineId || "";
 		if (!parameters.roomId && !fallbackEngineId) {
 			fallbackEngineId =

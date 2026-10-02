@@ -20,6 +20,7 @@ export interface BrowserScrollMetrics {
 
 type ReplayMetadata = {
 	requestId?: string;
+	stepId?: number;
 	waitAfterMs?: number;
 	selector?: BrowserSelector;
 	expectedUrl?: string;
@@ -27,6 +28,7 @@ type ReplayMetadata = {
 	recordedViewportWidth?: number;
 	recordedViewportHeight?: number;
 	replayTriggerTabId?: string;
+	downloadExpected?: boolean;
 };
 
 export type ClientToServerEvent =
@@ -119,12 +121,33 @@ export type ClientToServerEvent =
 			record?: boolean;
 			label?: string;
 	  }
+	| {
+			type: "full-page-text-context";
+			requestId: string;
+			expectedTabId?: string;
+	  }
 	| { type: "switch-tab"; targetTabId: string; requestId?: string }
 	| { type: "switch-replay-tab"; targetTabId: string; requestId?: string }
 	| { type: "new-tab"; targetTabId?: string; requestId?: string }
 	| { type: "prepare-replay"; requestId?: string; reuseActiveTab?: boolean }
 	| { type: "close-tab"; targetTabId: string; requestId?: string }
+	| {
+			type: "debug-control";
+			requestId: string;
+			debugEnabled?: boolean;
+			clear?: boolean;
+	  }
 	| { type: "close-session" };
+
+export interface ReplaySocketResult {
+	type: "replay-step-result";
+	requestId: string;
+	success: boolean;
+	url?: string;
+	error?: string;
+	downloadWaitTimedOut?: boolean;
+	downloadWaitError?: string;
+}
 
 // ─── Events sent from Java backend → React ───────────────────────────────────
 
@@ -160,13 +183,7 @@ export type ServerToClientEvent =
 			success: boolean;
 			error?: string;
 	  }
-	| {
-			type: "replay-step-result";
-			requestId: string;
-			success: boolean;
-			url?: string;
-			error?: string;
-	  }
+	| ReplaySocketResult
 	| {
 			type: "selected-text-context-result";
 			requestId: string;
@@ -174,7 +191,114 @@ export type ServerToClientEvent =
 			context?: SelectedTextContext;
 			error?: string;
 	  }
+	| {
+			type: "full-page-text-context-result";
+			requestId: string;
+			success: boolean;
+			context?: SelectedTextContext;
+			error?: string;
+	  }
+	| { type: "download-ready"; download: BrowserDownload }
+	| {
+			type: "debug-control-result";
+			requestId: string;
+			success: boolean;
+			enabled: boolean;
+			error?: string;
+	  }
+	| {
+			type: "debug-events";
+			events: BrowserDebugEvent[];
+			droppedCount?: number;
+	  }
 	| { type: "error"; message: string };
+
+export interface BrowserNetworkDebugEvent {
+	id: string;
+	kind: "network";
+	phase: "request" | "response" | "failed";
+	requestId: string;
+	timestamp: number;
+	tabId: string;
+	method: string;
+	url: string;
+	resourceType: string;
+	status?: number;
+	statusText?: string;
+	durationMs?: number;
+	error?: string;
+}
+
+export interface BrowserConsoleDebugEvent {
+	id: string;
+	kind: "console";
+	timestamp: number;
+	tabId: string;
+	level: string;
+	message: string;
+	source?: string;
+}
+
+export interface BrowserPageErrorDebugEvent {
+	id: string;
+	kind: "page-error";
+	timestamp: number;
+	tabId: string;
+	level: "error";
+	message: string;
+}
+
+export type BrowserDebugEvent =
+	| BrowserNetworkDebugEvent
+	| BrowserConsoleDebugEvent
+	| BrowserPageErrorDebugEvent;
+
+export type BrowserDownloadStatus =
+	| "downloading"
+	| "ready"
+	| "saved"
+	| "failed"
+	| "save-failed";
+
+export interface BrowserDownload {
+	downloadId: string;
+	runId: string;
+	order: number;
+	fileName: string;
+	originalFileName?: string;
+	status: BrowserDownloadStatus;
+	sourceUrl?: string;
+	pageUrl?: string;
+	tabId?: string;
+	triggerRequestId?: string;
+	triggerStepId?: number;
+	startedAt?: string;
+	completedAt?: string;
+	downloadedAt?: string;
+	savedAt?: string;
+	sizeBytes?: number;
+	sha256?: string;
+	mimeType?: string;
+	insightPath?: string;
+	error?: string;
+}
+
+export interface DownloadError {
+	downloadId?: string;
+	runId?: string;
+	stepId?: number;
+	fileName?: string;
+	status?: string;
+	error: string;
+}
+
+export interface DownloadSaveResponse {
+	runId: string;
+	downloadSummary?: string;
+	downloadCount: number;
+	downloads: BrowserDownload[];
+	downloadErrors: DownloadError[];
+}
 
 export interface SelectionBounds {
 	startX: number;
@@ -183,27 +307,68 @@ export interface SelectionBounds {
 	endY: number;
 }
 
-export interface SelectedTextContext {
+interface CapturedContextBase {
 	version: string;
-	kind: "selected-text";
 	id: string;
 	label?: string;
 	capturedAt: number;
 	url: string;
 	title: string;
 	throughStepId: number;
-	extractionMethod: "dom-range" | "dom-rectangle";
 	bounds: SelectionBounds;
 	content: string;
 	edited: boolean;
 	sources: Array<Record<string, unknown>>;
 	text: string;
-	stats: {
-		characterCount: number;
-		fragmentCount: number;
-		scannedTextNodes: number;
-		truncated: boolean;
-	};
+	stats: SelectedTextContextStats;
+}
+
+export interface SelectedTextContext extends CapturedContextBase {
+	kind: "selected-text" | "full-page-text";
+	extractionMethod:
+		| "dom-native-selection"
+		| "dom-range"
+		| "dom-rectangle"
+		| "full-page-dom";
+}
+
+/** Context generated by asking a vision model about a captured browser region. */
+export interface VisionImageContext extends CapturedContextBase {
+	kind: "vision-image";
+	extractionMethod: "vision-model";
+	prompt: string;
+	modelId: string;
+}
+
+export type CapturedContext = SelectedTextContext | VisionImageContext;
+
+export interface SelectedTextContextStats {
+	characterCount: number;
+	fragmentCount: number;
+	scannedTextNodes: number;
+	truncated: boolean;
+	// Exact capture accounting; optional so an older backend still loads.
+	originalCharacterCount?: number;
+	includedCharacterCount?: number;
+	omittedCharacterCount?: number;
+	limitChars?: number;
+	truncationReason?: string;
+	scrollCount?: number;
+	scrollHeight?: number;
+	viewportHeight?: number;
+	scrollLimitReached?: boolean;
+	returnIncludedCharacterCount?: number;
+	returnOmittedCharacterCount?: number;
+	returnTruncated?: boolean;
+	returnTruncationReason?: string;
+}
+
+export interface RemoteBrowserContextLimits {
+	selectedCaptureHardLimitChars: number;
+	fullPageCaptureHardLimitChars: number;
+	maxCapturedContexts: number;
+	defaultReturnBudgetChars: number;
+	maximumReturnBudgetChars: number;
 }
 
 // ─── Session info returned by the REST API ───────────────────────────────────
@@ -213,6 +378,7 @@ export interface RemoteBrowserSessionInfo {
 	webSocketUrl: string;
 	viewport: { width: number; height: number };
 	currentUrl?: string;
+	contextLimits?: RemoteBrowserContextLimits;
 }
 
 export interface SaveRecordingRequest {
@@ -270,6 +436,7 @@ export interface LoadedRecordingStep {
 	type?: string;
 	shouldRun?: boolean;
 	required?: boolean;
+	downloadExpected?: boolean;
 	[key: string]: unknown;
 }
 
@@ -315,6 +482,10 @@ export interface ReplayStepResult {
 	isNewTab?: boolean;
 	newTabId?: string;
 	tabTitle?: string;
+	downloadSummary?: string;
+	downloadCount?: number;
+	downloads?: BrowserDownload[];
+	downloadErrors?: DownloadError[];
 	error?: string;
 }
 

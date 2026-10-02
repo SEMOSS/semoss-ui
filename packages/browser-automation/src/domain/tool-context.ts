@@ -8,6 +8,17 @@ export function getToolStringParameter(
 	return typeof value === "string" ? value.trim() : "";
 }
 
+export function getToolBooleanParameter(
+	context: McpToolContext | null,
+	key: string,
+): boolean {
+	const value = context?.parameters?.[key];
+	if (typeof value === "boolean") return value;
+	if (typeof value === "number") return value === 1;
+	if (typeof value !== "string") return false;
+	return ["true", "1", "yes", "on"].includes(value.trim().toLowerCase());
+}
+
 export function getToolStringMapParameter(
 	context: McpToolContext | null,
 	key: string,

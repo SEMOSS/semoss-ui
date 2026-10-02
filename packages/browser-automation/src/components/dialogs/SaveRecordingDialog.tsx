@@ -1,6 +1,13 @@
-import { useId } from "react";
+import { Check, ChevronsUpDown } from "lucide-react";
+import { useId, useMemo, useState } from "react";
 import {
 	Button,
+	Command,
+	CommandEmpty,
+	CommandGroup,
+	CommandInput,
+	CommandItem,
+	CommandList,
 	Dialog,
 	DialogContent,
 	DialogFooter,
@@ -8,6 +15,9 @@ import {
 	DialogTitle,
 	Input,
 	Label,
+	Popover,
+	PopoverContent,
+	PopoverTrigger,
 	Progress,
 	RadioGroup,
 	RadioGroupItem,
@@ -59,6 +69,18 @@ export function SaveRecordingDialog(props: SaveRecordingDialogProps) {
 	const fileId = useId();
 	const descriptionId = useId();
 	const intentId = useId();
+	const projectId = useId();
+	const [projectPickerOpen, setProjectPickerOpen] = useState(false);
+	const [projectSearch, setProjectSearch] = useState("");
+	const filteredProjects = useMemo(() => {
+		const query = projectSearch.trim().toLocaleLowerCase();
+		if (!query) return props.projects;
+		return props.projects.filter(
+			(project) =>
+				project.label.toLocaleLowerCase().includes(query) ||
+				project.value.toLocaleLowerCase().includes(query),
+		);
+	}, [projectSearch, props.projects]);
 	const hasRequiredMetadata =
 		!!props.title.trim() &&
 		!!props.description.trim() &&
@@ -66,18 +88,22 @@ export function SaveRecordingDialog(props: SaveRecordingDialogProps) {
 	const requiresProject =
 		!props.showPlaygroundDestinations ||
 		props.destination === "playground-and-app";
-	const selectProject = (value: string) =>
-		props.onProjectChange(
-			props.projects.find((item) => item.value === value) ?? null,
-		);
 	const selectModel = (value: string) =>
 		props.onModelChange(
 			props.models.find((item) => item.value === value) ?? null,
 		);
+	const closeDialog = () => {
+		setProjectPickerOpen(false);
+		setProjectSearch("");
+		props.onClose();
+	};
 	return (
 		<Dialog
 			open={props.open}
-			onOpenChange={(next) => !next && !props.isSaving && props.onClose()}
+			onOpenChange={(next) => {
+				if (next || props.isSaving) return;
+				closeDialog();
+			}}
 		>
 			<DialogContent
 				className="sm:max-w-xl"
@@ -134,32 +160,95 @@ export function SaveRecordingDialog(props: SaveRecordingDialogProps) {
 					)}
 					{requiresProject && (
 						<div className="grid gap-2">
-							<Label>Project</Label>
-							<Select
-								value={props.project?.value ?? ""}
-								onValueChange={selectProject}
-								disabled={props.isLoadingProjects}
+							<Label htmlFor={projectId}>Project</Label>
+							<Popover
+								open={
+									projectPickerOpen &&
+									!props.isLoadingProjects
+								}
+								onOpenChange={(open) => {
+									setProjectPickerOpen(open);
+									if (!open) setProjectSearch("");
+								}}
 							>
-								<SelectTrigger className="w-full">
-									<SelectValue
-										placeholder={
-											props.isLoadingProjects
-												? "Loading projects..."
-												: "Select a project"
-										}
-									/>
-								</SelectTrigger>
-								<SelectContent>
-									{props.projects.map((item) => (
-										<SelectItem
-											key={item.value}
-											value={item.value}
-										>
-											{item.label}
-										</SelectItem>
-									))}
-								</SelectContent>
-							</Select>
+								<PopoverTrigger asChild>
+									<Button
+										id={projectId}
+										type="button"
+										variant="outline"
+										role="combobox"
+										aria-expanded={projectPickerOpen}
+										aria-label="Select a project"
+										disabled={props.isLoadingProjects}
+										className="w-full justify-between font-normal"
+									>
+										<span className="truncate">
+											{props.project?.label ??
+												(props.isLoadingProjects
+													? "Loading projects..."
+													: "Select a project")}
+										</span>
+										<ChevronsUpDown className="size-4 shrink-0 opacity-50" />
+									</Button>
+								</PopoverTrigger>
+								<PopoverContent
+									align="start"
+									className="w-[var(--radix-popover-trigger-width)] p-0"
+								>
+									<Command shouldFilter={false}>
+										<CommandInput
+											placeholder="Search projects by name or ID"
+											value={projectSearch}
+											onValueChange={setProjectSearch}
+										/>
+										<CommandList>
+											<CommandEmpty>
+												No projects found.
+											</CommandEmpty>
+											<CommandGroup>
+												{filteredProjects.map(
+													(item) => (
+														<CommandItem
+															key={item.value}
+															value={item.value}
+															onSelect={() => {
+																props.onProjectChange(
+																	item,
+																);
+																setProjectPickerOpen(
+																	false,
+																);
+																setProjectSearch(
+																	"",
+																);
+															}}
+														>
+															<Check
+																className={
+																	props
+																		.project
+																		?.value ===
+																	item.value
+																		? "opacity-100"
+																		: "opacity-0"
+																}
+															/>
+															<div className="min-w-0">
+																<p className="truncate">
+																	{item.label}
+																</p>
+																<p className="truncate text-muted-foreground text-xs">
+																	{item.value}
+																</p>
+															</div>
+														</CommandItem>
+													),
+												)}
+											</CommandGroup>
+										</CommandList>
+									</Command>
+								</PopoverContent>
+							</Popover>
 							<p className="text-muted-foreground text-xs">
 								Apps you can edit are shown. Agents and skills
 								are excluded.
@@ -280,7 +369,7 @@ export function SaveRecordingDialog(props: SaveRecordingDialogProps) {
 				<DialogFooter>
 					<Button
 						variant="outline"
-						onClick={props.onClose}
+						onClick={closeDialog}
 						disabled={props.isSaving}
 					>
 						Cancel

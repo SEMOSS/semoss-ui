@@ -19,15 +19,18 @@ import {
 } from "@semoss/ui/next";
 import { AutomationActionIndicator } from "./components/AutomationActionIndicator";
 import { AutomationControls } from "./components/AutomationControls";
+import { BrowserDownloadsTray } from "./components/BrowserDownloadsTray";
 import { BrowserTabStrip } from "./components/BrowserTabStrip";
 import { BrowserToolbar } from "./components/BrowserToolbar";
 import { BrowserViewer } from "./components/BrowserViewer";
+import { BrowserDebugPanel } from "./components/browser-debug-panel";
 import { PlaybackCompleteDialog } from "./components/dialogs/PlaybackCompleteDialog";
 import {
 	type RecordingSaveDestination,
 	SaveRecordingDialog,
 } from "./components/dialogs/SaveRecordingDialog";
 import { StopRecordingDialog } from "./components/dialogs/StopRecordingDialog";
+import { VisionContextDialog } from "./components/dialogs/vision-context-dialog";
 import { PlaygroundStartPrompt } from "./components/PlaygroundStartPrompt";
 import { ReplaySidebar } from "./components/replay/ReplaySidebar";
 import { normalizeBrowserUrl } from "./domain/browser-url";
@@ -37,22 +40,26 @@ import {
 	enrichEnvelopeForRoomSave,
 	getRecordingStartUrl,
 } from "./domain/recording";
-import { SCROLL_SCREEN_PERCENT } from "./domain/scroll";
 import {
-	appendBoundedSelectedContext,
-	MAX_SELECTED_CONTEXT_CHARS,
-	renderSelectedTextContext,
-	selectedContextsForPlayground,
+	appendCapturedContext,
+	buildContextReturnPlan,
+	normalizeContextLimits,
+	renderCapturedContext,
 } from "./domain/selected-text";
 import {
+	getToolBooleanParameter,
 	getToolStringMapParameter,
 	getToolStringParameter,
 	isPlayRecordingTool,
 } from "./domain/tool-context";
+import { useAutomation } from "./hooks/useAutomation";
+import { useBrowserDebug } from "./hooks/useBrowserDebug";
 import { useBrowserSocket } from "./hooks/useBrowserSocket";
+import { useDownloads } from "./hooks/useDownloads";
 import { usePlaybackController } from "./hooks/usePlaybackController";
 import { useRemoteBrowserSession } from "./hooks/useRemoteBrowserSession";
 import {
+	analyzeBrowserImageContext,
 	bindSemossInsightToRoom,
 	generatePlaywrightRecordingMetadata,
 	getSemossInsightId,
@@ -63,10 +70,10 @@ import {
 	sendMcpResponseToRoom,
 	subscribeToMcpToolContext,
 } from "./semoss/client";
-import { runPixel } from "./semoss/pixel";
 import type {
 	BrowserScrollMetrics,
 	BrowserTabInfo,
+	CapturedContext,
 	ClientToServerEvent,
 	GeneratedRecordingMetadata,
 	LoadedRecordingStep,
@@ -76,6 +83,7 @@ import type {
 	SelectedTextContext,
 	SelectionBounds,
 	StepsEnvelope,
+	VisionImageContext,
 } from "./types/browserEvents";
 
 /** Seconds a finished replay stays on screen before the session is closed. */
@@ -98,19 +106,31 @@ type ResolvePlaywrightRecordingResponse = {
 	searchedRoomRecordings: number;
 };
 
-type AutomationHistoryEntry = {
-	iteration: number;
-	type: "click" | "fill" | "select" | "scroll";
-	label: string;
-	value?: string;
-	pageUrl: string;
-	reason: string;
-};
-
 type PendingTextSelection = {
 	context: SelectedTextContext | null;
 	clientX: number;
 	clientY: number;
+};
+
+type PendingVisionSelection = {
+	bounds: SelectionBounds;
+	tabId: string;
+	url: string;
+	title: string;
+};
+
+type ReplayContextCaptureError = {
+	stepId: number | null;
+	error: string;
+};
+
+type PendingMcpPlaybackCompletion = {
+	recordingFile: string;
+	projectId: string | null;
+	stepsRun: number;
+	sessionId: string;
+	roomId: string;
+	executedParameters: Record<string, unknown>;
 };
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -136,6 +156,8 @@ export default function App() {
 		loadRecording,
 		replaySingleStep,
 		getRecordedSteps,
+		listDownloads,
+		saveDownloadsToInsight,
 		saveRoomMcpEntry,
 		saveProjectMcpEntry,
 	} = useRemoteBrowserSession();
@@ -186,12 +208,30 @@ export default function App() {
 		RemoteBrowserRecordedStep[]
 	>([]);
 	const [selectedTextContexts, setSelectedTextContexts] = useState<
-		SelectedTextContext[]
+		CapturedContext[]
 	>([]);
+	const [includedContextIds, setIncludedContextIds] = useState<Set<string>>(
+		() => new Set(),
+	);
+	const [returnBudgetChars, setReturnBudgetChars] = useState(
+		() => normalizeContextLimits(null).defaultReturnBudgetChars,
+	);
 	const [selectedTextContextsOpen, setSelectedTextContextsOpen] =
 		useState(false);
+	const [isCapturingFullPage, setIsCapturingFullPage] = useState(false);
 	const [pendingTextSelection, setPendingTextSelection] =
 		useState<PendingTextSelection | null>(null);
+	const [isVisionCaptureMode, setIsVisionCaptureMode] = useState(false);
+	const [pendingVisionSelection, setPendingVisionSelection] =
+		useState<PendingVisionSelection | null>(null);
+	const [visionPrompt, setVisionPrompt] = useState("Describe what you see");
+	const [visionModelId, setVisionModelId] = useState("");
+	const [visionModels, setVisionModels] = useState<
+		RecordingMetadataModelOption[]
+	>([]);
+	const [isLoadingVisionModels, setIsLoadingVisionModels] = useState(false);
+	const [isSubmittingVisionContext, setIsSubmittingVisionContext] =
+		useState(false);
 	const [pendingNavigationCount, setPendingNavigationCount] = useState(0);
 	const [isRemoteNavigating, setIsRemoteNavigating] = useState(false);
 	const [recordedStepsOpen, setRecordedStepsOpen] = useState(false);
@@ -199,30 +239,6 @@ export default function App() {
 		number | null
 	>(null);
 	const [playbackStepsRun, setPlaybackStepsRun] = useState(0);
-
-	// ── Automation mode ──────────────────────────────────────────────────────
-	const [automationMode, setAutomationMode] = useState(false);
-	const [automationModelId, setAutomationModelId] = useState("");
-	const [automationSubMode, setAutomationSubMode] = useState<
-		"click" | "fill-page" | "run-goal"
-	>("click");
-	const [isAutomationGenerating, setIsAutomationGenerating] = useState(false);
-	const [isGoalAutomationRunning, setIsGoalAutomationRunning] =
-		useState(false);
-	const [automationGoal, setAutomationGoal] = useState("");
-	const [isAutomationGoalGenerating, setIsAutomationGoalGenerating] =
-		useState(false);
-	const [automationGoalGenerationError, setAutomationGoalGenerationError] =
-		useState("");
-	const [automationMaxIterations, setAutomationMaxIterations] = useState(10);
-	const [automationProgress, setAutomationProgress] = useState<{
-		iteration: number;
-		maxIterations: number;
-	} | null>(null);
-	const [automationClickPos, setAutomationClickPos] = useState<{
-		localX: number;
-		localY: number;
-	} | null>(null);
 
 	const autoStartedRef = useRef(false);
 	const autoRecordingStartedRef = useRef(false);
@@ -233,10 +249,19 @@ export default function App() {
 	const autoPlaybackErrorSentRef = useRef(false);
 	const returningToPlaygroundRef = useRef(false);
 	const selectedContextSequenceRef = useRef(0);
+	const selectedTextContextsRef = useRef<CapturedContext[]>([]);
+	// Refs are required because MCP replay completion runs outside React state.
+	const includedContextIdsRef = useRef<Set<string>>(new Set());
+	const returnBudgetCharsRef = useRef(returnBudgetChars);
+	const replayContextCaptureErrorsRef = useRef<ReplayContextCaptureError[]>(
+		[],
+	);
+	const pendingMcpPlaybackCompletionRef =
+		useRef<PendingMcpPlaybackCompletion | null>(null);
+	const mcpPlaybackCompletionPromiseRef = useRef<Promise<void> | null>(null);
+	const mcpPlaybackResponseSentRef = useRef(false);
 	const textSelectionRequestRef = useRef(0);
 	const activeToolExecutionRef = useRef("");
-	const automationRunTokenRef = useRef(0);
-	const automationGoalExecutionRef = useRef("");
 
 	useEffect(() => {
 		if (!snackError) return;
@@ -249,6 +274,52 @@ export default function App() {
 		toast(snackMessage);
 		setSnackMessage(null);
 	}, [snackMessage]);
+
+	const contextLimits = useMemo(
+		() => normalizeContextLimits(session?.contextLimits),
+		[session?.contextLimits],
+	);
+	const contextLimitsRef = useRef(contextLimits);
+	contextLimitsRef.current = contextLimits;
+	returnBudgetCharsRef.current = returnBudgetChars;
+
+	const resetCapturedContexts = useCallback(() => {
+		selectedTextContextsRef.current = [];
+		setSelectedTextContexts([]);
+		includedContextIdsRef.current = new Set();
+		setIncludedContextIds(new Set());
+		selectedContextSequenceRef.current = 0;
+		const budget = contextLimitsRef.current.defaultReturnBudgetChars;
+		returnBudgetCharsRef.current = budget;
+		setReturnBudgetChars(budget);
+		setIsVisionCaptureMode(false);
+		setPendingVisionSelection(null);
+	}, []);
+
+	const contextReturnPlan = useMemo(
+		() =>
+			buildContextReturnPlan(
+				selectedTextContexts,
+				includedContextIds,
+				returnBudgetChars,
+			),
+		[includedContextIds, returnBudgetChars, selectedTextContexts],
+	);
+
+	/** Every MCP return path must build its payload from the latest refs. */
+	const buildContextResponsePayload = useCallback(() => {
+		const plan = buildContextReturnPlan(
+			selectedTextContextsRef.current,
+			includedContextIdsRef.current,
+			returnBudgetCharsRef.current,
+		);
+		return {
+			capturedContextCount: plan.summary.capturedContextCount,
+			contextCount: plan.contexts.length,
+			contexts: plan.contexts,
+			contextBudget: plan.summary,
+		};
+	}, []);
 
 	const isPlaygroundMode = !!toolContext;
 	const isMcpPlaybackMode = isPlayRecordingTool(toolContext);
@@ -264,10 +335,18 @@ export default function App() {
 		getToolStringParameter(toolContext, "recordingFile") ||
 		getToolStringParameter(toolContext, "file_name") ||
 		getToolStringParameter(toolContext, "fileName");
+	const captureFullPageAtEnd =
+		getToolBooleanParameter(toolContext, "capture_full_page_at_end") ||
+		getToolBooleanParameter(toolContext, "captureFullPageAtEnd");
 	const mcpPlaybackProjectId =
 		getToolStringParameter(toolContext, "project_id") ||
-		getToolStringParameter(toolContext, "projectId");
+		getToolStringParameter(toolContext, "projectId") ||
+		// Generated MCP calls may omit schema defaults; _meta still carries the project.
+		toolContext?.projectId ||
+		"";
 	const effectiveInsightId = getSemossInsightId() || insightId;
+	const effectiveInsightIdRef = useRef(effectiveInsightId);
+	effectiveInsightIdRef.current = effectiveInsightId;
 
 	// Frame callback - stable reference so it doesn't re-trigger the socket effect
 	const handleFrame = useCallback(
@@ -324,9 +403,38 @@ export default function App() {
 		});
 	}, []);
 
-	useEffect(() => {
-		setBrowserCursor("default");
-	}, [session?.sessionId]);
+	const {
+		downloads,
+		downloadErrors,
+		downloadsOpen,
+		setDownloadsOpen,
+		applyDownloadSaveResponse,
+		flushDownloads,
+		downloadMcpPayload,
+		resetDownloads,
+		handleDownload,
+	} = useDownloads({
+		insightId: effectiveInsightId,
+		insightIdRef: effectiveInsightIdRef,
+		listDownloads,
+		saveDownloadsToInsight,
+	});
+
+	const {
+		debugEvents,
+		debugDroppedCount,
+		debugOpen,
+		debugPaused,
+		handleDebugEvents,
+		bindSetDebugEnabled,
+		handleToggleDebug,
+		handleToggleDebugPause,
+		handleClearDebug,
+	} = useBrowserDebug({
+		sessionId: session?.sessionId,
+		onError: setSnackError,
+		onSessionChange: useCallback(() => setBrowserCursor("default"), []),
+	});
 
 	const {
 		connectionState,
@@ -334,7 +442,9 @@ export default function App() {
 		sendReplayEvent,
 		sendTabControlEvent,
 		sendRecordingControlEvent,
+		setDebugEnabled,
 		captureSelectedText,
+		captureFullPageText,
 	} = useBrowserSocket({
 		wsUrl: session?.webSocketUrl ?? null,
 		onFrame: handleFrame,
@@ -344,37 +454,156 @@ export default function App() {
 		onTabsChanged: handleTabsChanged,
 		onTabActivated: handleTabActivated,
 		onCursorChanged: setBrowserCursor,
+		onDownload: handleDownload,
+		onDebugEvents: handleDebugEvents,
 	});
-	const storeSelectedTextContext = useCallback(
-		(context: SelectedTextContext) => {
+	bindSetDebugEnabled(setDebugEnabled);
+
+	const toolExecutionKey = toolContext
+		? [
+				toolContext.roomId,
+				toolContext.message,
+				toolContext.id,
+				toolContext.originalName,
+				JSON.stringify(
+					toolContext.executedParameters ?? toolContext.parameters,
+				),
+			].join("\u001f")
+		: "";
+	const remoteWidth = session?.viewport.width ?? 1365;
+	const remoteHeight = session?.viewport.height ?? 768;
+	const {
+		automationMode,
+		setAutomationMode,
+		automationModelId,
+		setAutomationModelId,
+		automationSubMode,
+		setAutomationSubMode,
+		isAutomationGenerating,
+		isGoalAutomationRunning,
+		automationGoal,
+		setAutomationGoal,
+		isAutomationGoalGenerating,
+		automationGoalGenerationError,
+		setAutomationGoalGenerationError,
+		automationMaxIterations,
+		setAutomationMaxIterations,
+		automationProgress,
+		automationClickPos,
+		resetAutomationGoal,
+		generateAutomationGoal,
+		handleFieldAutomationTarget,
+		fillVisibleFieldsFromContext,
+		cancelGoalAutomation,
+		runGoalAutomation,
+	} = useAutomation({
+		sessionId: session?.sessionId,
+		toolContext,
+		insightId: effectiveInsightId,
+		toolExecutionKey,
+		isPlaygroundMode,
+		isMcpPlaybackMode,
+		remoteWidth,
+		remoteHeight,
+		sendReplayEvent,
+	});
+
+	const storeCapturedContext = useCallback(
+		(context: CapturedContext): CapturedContext => {
 			selectedContextSequenceRef.current += 1;
 			const title = (context.title || "Website text").trim().slice(0, 72);
-			const boundedContent = context.content
-				.trim()
-				.slice(0, MAX_SELECTED_CONTEXT_CHARS);
-			const stored: SelectedTextContext = {
+			const limits = contextLimitsRef.current;
+			const maxChars =
+				context.kind === "full-page-text"
+					? limits.fullPageCaptureHardLimitChars
+					: limits.selectedCaptureHardLimitChars;
+			const trimmed = context.content.trim();
+			const boundedContent = trimmed.slice(0, maxChars);
+			const clientTruncated = trimmed.length > boundedContent.length;
+			const contextKindLabel =
+				context.kind === "full-page-text"
+					? "Full page"
+					: context.kind === "vision-image"
+						? "Vision"
+						: "Selection";
+			const stored: CapturedContext = {
 				...context,
-				label: `${title} - Selection ${selectedContextSequenceRef.current}`,
+				label: `${title} - ${contextKindLabel} ${selectedContextSequenceRef.current}`,
 				content: boundedContent,
-				text: renderSelectedTextContext({
+				text: renderCapturedContext({
 					...context,
 					content: boundedContent,
 				}),
 				stats: {
 					...context.stats,
 					characterCount: boundedContent.length,
-					truncated:
-						context.stats.truncated ||
-						context.content.length > boundedContent.length,
+					truncated: context.stats.truncated || clientTruncated,
+					...(clientTruncated
+						? {
+								originalCharacterCount: trimmed.length,
+								includedCharacterCount: boundedContent.length,
+								omittedCharacterCount:
+									trimmed.length - boundedContent.length,
+								limitChars: maxChars,
+								truncationReason: "capture-character-limit",
+							}
+						: {}),
 				},
 			};
-			setSelectedTextContexts((current) =>
-				appendBoundedSelectedContext(current, stored),
+			const { contexts: next, removed } = appendCapturedContext(
+				selectedTextContextsRef.current,
+				stored,
+				limits.maxCapturedContexts,
 			);
+			selectedTextContextsRef.current = next;
+			setSelectedTextContexts(next);
+			const included = new Set(includedContextIdsRef.current);
+			included.add(stored.id);
+			if (removed) included.delete(removed.id);
+			includedContextIdsRef.current = included;
+			setIncludedContextIds(included);
 			setSelectedTextContextsOpen(true);
+			const original =
+				stored.stats.originalCharacterCount ?? boundedContent.length;
+			const omitted = stored.stats.omittedCharacterCount ?? 0;
 			setSnackMessage(
-				`Captured ${boundedContent.length} characters of website text`,
+				stored.stats.truncated && omitted > 0
+					? `Captured ${boundedContent.length.toLocaleString()} of ${original.toLocaleString()} source characters. ${omitted.toLocaleString()} were omitted.`
+					: context.kind === "vision-image"
+						? "Captured vision context"
+						: `Captured ${boundedContent.length.toLocaleString()} characters of website text`,
 			);
+			if (removed) {
+				setSnackError(
+					`Removed "${removed.label ?? removed.title}" because only ${limits.maxCapturedContexts} captured contexts are kept.`,
+				);
+			}
+			return stored;
+		},
+		[],
+	);
+	const captureAndStoreFullPage = useCallback(async () => {
+		setIsCapturingFullPage(true);
+		try {
+			const context = await captureFullPageText(
+				activeBrowserTabIdRef.current,
+			);
+			const stored = storeCapturedContext(context);
+			return stored;
+		} finally {
+			setIsCapturingFullPage(false);
+		}
+	}, [captureFullPageText, storeCapturedContext]);
+	const recordReplayContextCaptureError = useCallback(
+		(stepId: number, error: unknown) => {
+			const message =
+				error instanceof Error
+					? error.message
+					: "Could not capture selected website text";
+			replayContextCaptureErrorsRef.current.push({
+				stepId,
+				error: message,
+			});
 		},
 		[],
 	);
@@ -425,13 +654,13 @@ export default function App() {
 				undefined,
 				activeBrowserTabIdRef.current,
 			);
-			storeSelectedTextContext(context);
+			storeCapturedContext(context);
 		},
 		[
 			captureSelectedText,
 			session?.viewport.height,
 			session?.viewport.width,
-			storeSelectedTextContext,
+			storeCapturedContext,
 		],
 	);
 	const loadRoomRecording = useCallback(
@@ -451,48 +680,23 @@ export default function App() {
 		sendReplayEvent,
 		sendTabControlEvent,
 		replayContextStep,
+		onContextError: recordReplayContextCaptureError,
 		onError: setSnackError,
 		onMessage: setSnackMessage,
+		onReplayDownloads: (downloads, errors) =>
+			applyDownloadSaveResponse({ downloads, downloadErrors: errors }),
 	});
 
-	// The playback resolution effect below is guarded to run once per tool
-	// execution. Reading the project list through refs keeps it out of that
-	// effect's dependencies: the list loads asynchronously, and re-triggering the
-	// effect runs a cleanup that cancels the in-flight recording fetch which the
-	// run-once guard then refuses to retry, leaving playback stuck at idle.
+	// Read through refs so the run-once resolution effect keeps its in-flight fetch.
 	const playbackProjectsRef = useRef(playback.projects);
 	playbackProjectsRef.current = playback.projects;
 	const playbackProjectRef = useRef(playback.project);
 	playbackProjectRef.current = playback.project;
 
-	// Same reasoning as the refs above, for the tool context itself. Two paths set
-	// it with equal content but different object identity: the postMessage
-	// subscription and the initSemoss() resolution. Depending on the object would
-	// invalidate the run-once resolution effect mid-flight and cancel the in-flight
-	// recording fetch. The effect keys off the content-based toolExecutionKey and
-	// reads the value through this ref instead.
 	const toolContextRef = useRef(toolContext);
 	toolContextRef.current = toolContext;
 
-	// Also read through a ref, for the same reason. Binding the insight to the room
-	// swaps in a new insight id, so depending on the value would invalidate the
-	// resolution effect at the exact moment its fetch is in flight. The effect
-	// triggers on readiness instead, which only transitions once.
-	const effectiveInsightIdRef = useRef(effectiveInsightId);
-	effectiveInsightIdRef.current = effectiveInsightId;
 	const isInsightReady = !!effectiveInsightId;
-
-	const toolExecutionKey = toolContext
-		? [
-				toolContext.roomId,
-				toolContext.message,
-				toolContext.id,
-				toolContext.originalName,
-				JSON.stringify(
-					toolContext.executedParameters ?? toolContext.parameters,
-				),
-			].join("\u001f")
-		: "";
 
 	useEffect(() => {
 		if (
@@ -509,16 +713,25 @@ export default function App() {
 		autoPlaybackLoadStartedRef.current = false;
 		autoPlaybackRunStartedRef.current = false;
 		autoPlaybackErrorSentRef.current = false;
+		pendingMcpPlaybackCompletionRef.current = null;
+		mcpPlaybackCompletionPromiseRef.current = null;
+		mcpPlaybackResponseSentRef.current = false;
 		returningToPlaygroundRef.current = false;
+		setPlaybackCloseCountdown(null);
 		setIsReturningToPlayground(false);
 		setSaveDialogOpen(false);
-		setSelectedTextContexts([]);
+		resetCapturedContexts();
+		resetDownloads();
 		setRecordedSteps([]);
-		setAutomationGoal("");
-		setAutomationGoalGenerationError("");
-		automationGoalExecutionRef.current = "";
+		resetAutomationGoal();
 		playback.resetExecution();
-	}, [playback.resetExecution, toolExecutionKey]);
+	}, [
+		playback.resetExecution,
+		resetAutomationGoal,
+		resetCapturedContexts,
+		resetDownloads,
+		toolExecutionKey,
+	]);
 
 	const runBrowserAction = useCallback(
 		async (event: ClientToServerEvent) => {
@@ -559,8 +772,7 @@ export default function App() {
 				...event,
 				expectedTabId: activeBrowserTabIdRef.current,
 			} as ClientToServerEvent;
-			// Pointer movement stays fire-and-forget so cursor motion does not
-			// continuously trigger the toolbar activity indicator.
+			// Fire-and-forget so cursor motion does not trigger the activity indicator.
 			if (event.type === "mouse-move") {
 				sendEvent(tabScopedEvent);
 				return;
@@ -633,6 +845,7 @@ export default function App() {
 			);
 			setLatestFrame(null);
 			setIsRecording(false);
+			resetDownloads();
 		});
 	}, [
 		createSession,
@@ -643,6 +856,7 @@ export default function App() {
 		playback.startUrl,
 		semossContextReady,
 		session,
+		resetDownloads,
 	]);
 
 	useEffect(() => {
@@ -677,9 +891,7 @@ export default function App() {
 			!isMcpPlaybackMode ||
 			autoPlaybackProjectSelectedRef.current ||
 			playback.projects.length === 0 ||
-			// selectProject() resets source to "project". Once a room recording has
-			// been resolved, letting the project list arrive afterwards would flip
-			// source away from "room" and silently break the room replay branch.
+			// Keeping source as "room" once resolved; selectProject() would flip it.
 			playback.source === "room"
 		) {
 			return;
@@ -706,9 +918,7 @@ export default function App() {
 	]);
 
 	useEffect(() => {
-		// Deliberately not gated on playback.projects. A room recording is fetched
-		// straight out of the room's asset folder, so waiting on the MCP project
-		// list would strand playback whenever no project happens to be tagged MCP.
+		// Not gated on playback.projects: room recordings need no MCP project.
 		if (
 			!isMcpPlaybackMode ||
 			autoPlaybackRecordingSelectedRef.current ||
@@ -746,8 +956,7 @@ export default function App() {
 					await listPlaywrightRoomRecordings(),
 				);
 			} catch {
-				// Matching can still proceed. The selected room file is inserted
-				// into the controls even if the optional catalog listing fails.
+				// The selected room file is inserted even if the catalog listing fails.
 			}
 
 			const directProject =
@@ -763,7 +972,8 @@ export default function App() {
 				.filter(Boolean)
 				.pop();
 
-			if (exactFileName) {
+			// Project-backed tools resolve against the project; the room path would 404.
+			if (exactFileName && !mcpPlaybackProjectId) {
 				const directRoomPath = `/playwright/${exactFileName}`;
 				for (let attempt = 0; attempt < 2; attempt += 1) {
 					const envelope = await getRoomRecordingEnvelope(
@@ -854,8 +1064,7 @@ export default function App() {
 				playbackProjectsRef.current[0] ||
 				null;
 
-			// Room recordings do not need one; only the project-sourced branch below
-			// dereferences it.
+			// Only the project-sourced branch below dereferences it.
 			if (!selectedProject && selected.source !== "room") {
 				setSnackError(
 					"No Playwright project is available for playback",
@@ -943,10 +1152,7 @@ export default function App() {
 		mcpStartUrl,
 		playback.configureResolvedRecording,
 		playback.configureRoomRecordings,
-		// playback.project / playback.projects are deliberately omitted and read
-		// through refs instead. See the refs above: their async arrival would
-		// cancel this run-once effect's in-flight fetch.
-		toolExecutionKey,
+		// playback.project / playback.projects read through refs; see the refs above.
 	]);
 
 	useEffect(() => {
@@ -1005,8 +1211,7 @@ export default function App() {
 				if (textSelectionRequestRef.current !== request) return;
 				setPendingTextSelection(null);
 				const message = error instanceof Error ? error.message : "";
-				// Ordinary drags (sliders, maps, canvases) are not text selections.
-				// Keep those interactions quiet; surface only transport/server failures.
+				// Ordinary drags (sliders, maps) are not text selections; stay quiet.
 				if (!message.includes("No visible DOM text")) {
 					setSnackError(
 						message || "Failed to inspect selected website text",
@@ -1017,8 +1222,127 @@ export default function App() {
 		[captureSelectedText],
 	);
 
+	const handleToggleVisionCapture = useCallback(async () => {
+		if (isVisionCaptureMode) {
+			setIsVisionCaptureMode(false);
+			return;
+		}
+		setPendingTextSelection(null);
+		setIsVisionCaptureMode(true);
+		if (visionModels.length > 0 || isLoadingVisionModels) return;
+		setIsLoadingVisionModels(true);
+		try {
+			const models =
+				await listRecordingMetadataModels(effectiveInsightId);
+			setVisionModels(models);
+			setVisionModelId((current) => current || models[0]?.value || "");
+			if (models.length === 0) {
+				setSnackError(
+					"No accessible model is available for vision context",
+				);
+			}
+		} catch (error) {
+			setSnackError(
+				error instanceof Error
+					? error.message
+					: "Could not load vision models",
+			);
+		} finally {
+			setIsLoadingVisionModels(false);
+		}
+	}, [
+		effectiveInsightId,
+		isLoadingVisionModels,
+		isVisionCaptureMode,
+		visionModels.length,
+	]);
+
+	const handleVisionDragComplete = useCallback(
+		(bounds: SelectionBounds) => {
+			const activeTab = browserTabsRef.current.find(
+				(tab) => tab.tabId === activeBrowserTabIdRef.current,
+			);
+			setPendingVisionSelection({
+				bounds,
+				tabId: activeBrowserTabIdRef.current,
+				url: activeTab?.url || currentUrl,
+				title: activeTab?.title || "Browser image",
+			});
+			setIsVisionCaptureMode(false);
+		},
+		[currentUrl],
+	);
+
+	const handleSubmitVisionContext = useCallback(async () => {
+		const selection = pendingVisionSelection;
+		const sessionId = session?.sessionId;
+		if (!selection || !sessionId || !visionModelId || !visionPrompt.trim())
+			return;
+		if (activeBrowserTabIdRef.current !== selection.tabId) {
+			setSnackError(
+				"The active browser tab changed. Select the image region again.",
+			);
+			setPendingVisionSelection(null);
+			return;
+		}
+		setIsSubmittingVisionContext(true);
+		try {
+			const result = await analyzeBrowserImageContext({
+				sessionId,
+				tabId: selection.tabId,
+				engineId: visionModelId,
+				prompt: visionPrompt.trim(),
+				bounds: selection.bounds,
+				insightId: effectiveInsightId,
+			});
+			const context: VisionImageContext = {
+				version: "1.0",
+				kind: "vision-image",
+				id: crypto.randomUUID(),
+				capturedAt: Date.now(),
+				url: selection.url,
+				title: selection.title,
+				throughStepId: 0,
+				extractionMethod: "vision-model",
+				bounds: selection.bounds,
+				prompt: visionPrompt.trim(),
+				modelId: result.engineId,
+				content: result.response,
+				edited: false,
+				sources: [],
+				text: "",
+				stats: {
+					characterCount: result.response.length,
+					fragmentCount: 1,
+					scannedTextNodes: 0,
+					truncated: false,
+				},
+			};
+			storeCapturedContext({
+				...context,
+				text: renderCapturedContext(context),
+			});
+			setPendingVisionSelection(null);
+		} catch (error) {
+			setSnackError(
+				error instanceof Error
+					? error.message
+					: "Could not capture vision context",
+			);
+		} finally {
+			setIsSubmittingVisionContext(false);
+		}
+	}, [
+		effectiveInsightId,
+		pendingVisionSelection,
+		session?.sessionId,
+		storeCapturedContext,
+		visionModelId,
+		visionPrompt,
+	]);
+
 	const handleCopySelectedContext = useCallback(
-		async (context: SelectedTextContext) => {
+		async (context: CapturedContext) => {
 			try {
 				await navigator.clipboard.writeText(context.content);
 				setSnackMessage("Selected website text copied");
@@ -1048,7 +1372,7 @@ export default function App() {
 							: "Could not record the context extraction step";
 				}
 			}
-			storeSelectedTextContext(captured);
+			storeCapturedContext(captured);
 			dismissPendingTextSelection();
 			if (recordingError) {
 				setSnackError(
@@ -1060,49 +1384,88 @@ export default function App() {
 			captureSelectedText,
 			dismissPendingTextSelection,
 			isRecording,
-			storeSelectedTextContext,
+			storeCapturedContext,
 		],
 	);
 
-	const handleDeleteSelectedContext = useCallback(
-		(contextId: string) => {
-			const next = selectedTextContexts.filter(
-				(context) => context.id !== contextId,
-			);
-			setSelectedTextContexts(next);
-			if (!next.length) setSelectedTextContextsOpen(false);
+	const handleDeleteSelectedContext = useCallback((contextId: string) => {
+		const next = selectedTextContextsRef.current.filter(
+			(context) => context.id !== contextId,
+		);
+		selectedTextContextsRef.current = next;
+		setSelectedTextContexts(next);
+		const included = new Set(includedContextIdsRef.current);
+		included.delete(contextId);
+		includedContextIdsRef.current = included;
+		setIncludedContextIds(included);
+		if (!next.length) setSelectedTextContextsOpen(false);
+	}, []);
+
+	const handleToggleContextIncluded = useCallback(
+		(contextId: string, include: boolean) => {
+			const included = new Set(includedContextIdsRef.current);
+			if (include) included.add(contextId);
+			else included.delete(contextId);
+			includedContextIdsRef.current = included;
+			setIncludedContextIds(included);
 		},
-		[selectedTextContexts],
+		[],
 	);
+
+	const handleReturnBudgetChange = useCallback((chars: number) => {
+		const budget = Math.min(
+			Math.max(1, Math.floor(chars)),
+			contextLimitsRef.current.maximumReturnBudgetChars,
+		);
+		returnBudgetCharsRef.current = budget;
+		setReturnBudgetChars(budget);
+	}, []);
 
 	const handleSaveSelectedContext = useCallback(
 		(contextId: string, content: string) => {
-			const bounded = content.trim().slice(0, MAX_SELECTED_CONTEXT_CHARS);
-			setSelectedTextContexts((current) =>
-				current.map((context) => {
-					if (context.id !== contextId) return context;
-					const updated = {
-						...context,
-						content: bounded,
-						edited: true,
-						stats: {
-							...context.stats,
-							characterCount: bounded.length,
-							truncated:
-								context.stats.truncated ||
-								content.trim().length > bounded.length,
-						},
-					};
-					return {
-						...updated,
-						text: renderSelectedTextContext(updated),
-					};
-				}),
-			);
+			const limits = contextLimitsRef.current;
+			const current = selectedTextContextsRef.current;
+			const next = current.map((context) => {
+				if (context.id !== contextId) return context;
+				const maxChars =
+					context.kind === "full-page-text"
+						? limits.fullPageCaptureHardLimitChars
+						: limits.selectedCaptureHardLimitChars;
+				const trimmed = content.trim();
+				const bounded = trimmed.slice(0, maxChars);
+				const updated = {
+					...context,
+					content: bounded,
+					edited: true,
+					// Capture-origin truncation metadata is preserved as-is.
+					stats: {
+						...context.stats,
+						characterCount: bounded.length,
+					},
+				};
+				return {
+					...updated,
+					text: renderCapturedContext(updated),
+				};
+			});
+			selectedTextContextsRef.current = next;
+			setSelectedTextContexts(next);
 			setSnackMessage("Captured context updated");
 		},
 		[],
 	);
+
+	const handleCaptureFullPage = useCallback(async () => {
+		try {
+			await captureAndStoreFullPage();
+		} catch (error) {
+			setSnackError(
+				error instanceof Error
+					? error.message
+					: "Could not capture full-page website text",
+			);
+		}
+	}, [captureAndStoreFullPage]);
 
 	// --- Toolbar handlers ---------------------------------------------------
 	const handleStart = useCallback(
@@ -1111,9 +1474,9 @@ export default function App() {
 			setCurrentUrl(normalizedUrl);
 			const info = await createSession(normalizedUrl);
 			if (info) {
-				setSelectedTextContexts([]);
+				resetDownloads();
+				resetCapturedContexts();
 				setSelectedTextContextsOpen(false);
-				selectedContextSequenceRef.current = 0;
 				setCurrentUrl(info.currentUrl || normalizedUrl);
 				setLatestFrame(null);
 				setBrowserTabs([]);
@@ -1123,7 +1486,12 @@ export default function App() {
 				setIsRecording(false);
 			}
 		},
-		[createSession, playback.resetReplayPreparation],
+		[
+			createSession,
+			playback.resetReplayPreparation,
+			resetCapturedContexts,
+			resetDownloads,
+		],
 	);
 
 	const handleStartMcpSession = useCallback(async () => {
@@ -1144,16 +1512,22 @@ export default function App() {
 		}
 
 		setCurrentUrl(info.currentUrl || targetUrl);
-		setSelectedTextContexts([]);
+		resetDownloads();
+		resetCapturedContexts();
 		setSelectedTextContextsOpen(false);
-		selectedContextSequenceRef.current = 0;
 		setLatestFrame(null);
 		setBrowserTabs([]);
 		browserTabsRef.current = [];
 		setActiveBrowserTabId("tab-1");
 		playback.resetReplayPreparation();
 		setIsRecording(false);
-	}, [createSession, mcpStartUrlInput, playback.resetReplayPreparation]);
+	}, [
+		createSession,
+		mcpStartUrlInput,
+		playback.resetReplayPreparation,
+		resetCapturedContexts,
+		resetDownloads,
+	]);
 
 	const closeBrowserSession = useCallback(async () => {
 		sendEvent({ type: "close-session" });
@@ -1167,13 +1541,71 @@ export default function App() {
 		setIsRecording(false);
 		setSaveDialogOpen(false);
 		setStopRecordingDialogOpen(false);
-	}, [closeSession, playback.resetReplayPreparation, sendEvent]);
+		resetDownloads();
+	}, [
+		closeSession,
+		playback.resetReplayPreparation,
+		resetDownloads,
+		sendEvent,
+	]);
 
-	// Held in a ref so the countdown effect below depends only on the tick value.
-	// Depending on the callback identity would restart the timer on unrelated
-	// re-renders and the countdown would never reach zero.
 	const closeBrowserSessionRef = useRef(closeBrowserSession);
 	closeBrowserSessionRef.current = closeBrowserSession;
+
+	/**
+	 * Completes a finished MCP replay exactly once. Keeping the browser open leaves
+	 * this response pending so context captured during inspection is included.
+	 */
+	const completePendingMcpPlayback = useCallback(
+		async (closeBrowser: boolean) => {
+			if (mcpPlaybackCompletionPromiseRef.current) {
+				return mcpPlaybackCompletionPromiseRef.current;
+			}
+			const pending = pendingMcpPlaybackCompletionRef.current;
+			if (!pending || mcpPlaybackResponseSentRef.current) return;
+
+			const completion = (async () => {
+				// Snapshot downloads before closing resets local state.
+				await flushDownloads();
+				const contextPayload = buildContextResponsePayload();
+				const downloadPayload = downloadMcpPayload();
+				sendMcpResponseToRoom(
+					{
+						played: true,
+						status: "completed",
+						recordingFile: pending.recordingFile,
+						projectId: pending.projectId,
+						stepsRun: pending.stepsRun,
+						pausedAtStepId: null,
+						sessionId: pending.sessionId,
+						roomId: pending.roomId,
+						...contextPayload,
+						contextCaptureErrors:
+							replayContextCaptureErrorsRef.current,
+						...downloadPayload,
+					},
+					"success",
+					pending.executedParameters,
+				);
+				mcpPlaybackResponseSentRef.current = true;
+				pendingMcpPlaybackCompletionRef.current = null;
+				setPlaybackCloseCountdown(null);
+
+				if (closeBrowser) {
+					await closeBrowserSessionRef.current();
+				}
+			})();
+			mcpPlaybackCompletionPromiseRef.current = completion;
+			try {
+				await completion;
+			} finally {
+				if (mcpPlaybackCompletionPromiseRef.current === completion) {
+					mcpPlaybackCompletionPromiseRef.current = null;
+				}
+			}
+		},
+		[buildContextResponsePayload, downloadMcpPayload, flushDownloads],
+	);
 
 	useEffect(() => {
 		if (playbackCloseCountdown === null) {
@@ -1181,7 +1613,13 @@ export default function App() {
 		}
 		if (playbackCloseCountdown <= 0) {
 			setPlaybackCloseCountdown(null);
-			void closeBrowserSessionRef.current();
+			void completePendingMcpPlayback(true).catch((error) => {
+				setSnackError(
+					error instanceof Error
+						? error.message
+						: "Failed to return playback to Playground",
+				);
+			});
 			return;
 		}
 		const timer = window.setTimeout(() => {
@@ -1190,16 +1628,25 @@ export default function App() {
 			);
 		}, 1000);
 		return () => window.clearTimeout(timer);
-	}, [playbackCloseCountdown]);
+	}, [completePendingMcpPlayback, playbackCloseCountdown]);
 
 	const handleKeepPlaybackOpen = useCallback(() => {
 		setPlaybackCloseCountdown(null);
+		setSnackMessage(
+			"Browser kept open. Capture any context, then return to Playground when ready.",
+		);
 	}, []);
 
-	const handleClosePlaybackNow = useCallback(() => {
+	const handleClosePlaybackAndReturn = useCallback(() => {
 		setPlaybackCloseCountdown(null);
-		void closeBrowserSessionRef.current();
-	}, []);
+		void completePendingMcpPlayback(true).catch((error) => {
+			setSnackError(
+				error instanceof Error
+					? error.message
+					: "Failed to return playback to Playground",
+			);
+		});
+	}, [completePendingMcpPlayback]);
 
 	const handleSwitchBrowserTab = useCallback(
 		async (tabId: string) => {
@@ -1298,6 +1745,7 @@ export default function App() {
 
 	const handleToggleRecording = useCallback(() => {
 		if (!isRecording) {
+			resetDownloads();
 			sendEvent({ type: "recording-control", recording: true });
 			playback.resetReplayPreparation();
 			setSaveTitle("");
@@ -1308,7 +1756,12 @@ export default function App() {
 			return;
 		}
 		setStopRecordingDialogOpen(true);
-	}, [isRecording, playback.resetReplayPreparation, sendEvent]);
+	}, [
+		isRecording,
+		playback.resetReplayPreparation,
+		resetDownloads,
+		sendEvent,
+	]);
 
 	const handleDiscardRecording = useCallback(() => {
 		sendEvent({
@@ -1421,6 +1874,8 @@ export default function App() {
 					"No SEMOSS insight is available for room file save",
 				);
 			}
+			// Lets a download from the final recorded click mark it before serializing.
+			await flushDownloads();
 			const envelope = await getRecordingEnvelope();
 			if (!envelope) {
 				throw new Error("No recording envelope is available");
@@ -1444,11 +1899,7 @@ export default function App() {
 					"Failed to save recording to the Playground room",
 				);
 			}
-			// Regenerate mcp/pixel_mcp.json from all room recordings. This is
-			// part of a successful save, not a best-effort step. No separate
-			// registration is needed: the backend picks up a room's
-			// mcp/pixel_mcp.json automatically, so writing the file is enough
-			// for the LLM to see the new tools on the next message.
+			// Required, not best-effort: writing it is what exposes the new tools.
 			await saveRoomMcpEntry(
 				insightId,
 				saved.fileName,
@@ -1465,6 +1916,7 @@ export default function App() {
 		},
 		[
 			effectiveInsightId,
+			flushDownloads,
 			getRecordingEnvelope,
 			mcpRecordingNameHint,
 			mcpStartUrl,
@@ -1509,6 +1961,10 @@ export default function App() {
 
 			let roomPath = "";
 			let roomBoundInsightId = effectiveInsightId;
+			// Drain downloads first so a late callback can still mark its producing click.
+			if (!saveToPlayground) {
+				await flushDownloads();
+			}
 			if (saveToPlayground) {
 				const roomSaved = await saveRecordingToRoom(
 					async () => ({ success: true, title, description, intent }),
@@ -1536,6 +1992,10 @@ export default function App() {
 				playback.selectSavedRecording(saveProject, appSaved.fileName);
 				appFileName = appSaved.fileName;
 			}
+			// Closing the session removes staged files, so drain against the bound insight.
+			effectiveInsightIdRef.current =
+				roomBoundInsightId || effectiveInsightIdRef.current;
+			await flushDownloads();
 
 			setSaveDialogOpen(false);
 			await closeBrowserSession();
@@ -1582,6 +2042,7 @@ export default function App() {
 		saveTitle,
 		sendRecordingControlEvent,
 		session,
+		flushDownloads,
 		playback.selectSavedRecording,
 	]);
 
@@ -1593,9 +2054,35 @@ export default function App() {
 		if (returningToPlaygroundRef.current) return;
 		returningToPlaygroundRef.current = true;
 		setIsReturningToPlayground(true);
+		if (isMcpPlaybackMode) {
+			try {
+				if (!pendingMcpPlaybackCompletionRef.current) {
+					throw new Error(
+						playback.isRunning
+							? "Playback is still running"
+							: "No completed playback is waiting to return",
+					);
+				}
+				await completePendingMcpPlayback(true);
+				setSnackMessage(
+					"Playback and captured context returned to Playground",
+				);
+			} catch (error) {
+				setSnackError(
+					error instanceof Error
+						? error.message
+						: "Failed to return playback to Playground",
+				);
+			} finally {
+				setIsReturningToPlayground(false);
+				returningToPlaygroundRef.current = false;
+			}
+			return;
+		}
 
 		let recordingStopped = false;
 		let browserClosed = false;
+		const contextCaptureErrors: ReplayContextCaptureError[] = [];
 		try {
 			if (!toolContext) {
 				throw new Error("No Playground tool context is available");
@@ -1616,6 +2103,17 @@ export default function App() {
 				recordingStopped = true;
 				setIsRecording(false);
 			}
+			if (captureFullPageAtEnd) {
+				try {
+					await captureAndStoreFullPage();
+				} catch (error) {
+					const message =
+						error instanceof Error
+							? error.message
+							: "Could not capture full-page website text";
+					contextCaptureErrors.push({ stepId: null, error: message });
+				}
+			}
 
 			const saved = await saveRecordingToRoom(
 				(insightId) =>
@@ -1635,6 +2133,9 @@ export default function App() {
 					),
 			);
 			const enrichedEnvelope = saved.envelope;
+			effectiveInsightIdRef.current = saved.insightId;
+			await flushDownloads();
+			const downloadPayload = downloadMcpPayload();
 
 			await closeBrowserSession();
 			browserClosed = true;
@@ -1656,9 +2157,9 @@ export default function App() {
 					),
 					title: enrichedEnvelope.meta?.title,
 					description: enrichedEnvelope.meta?.description,
-					contextCount: selectedTextContexts.length,
-					contexts:
-						selectedContextsForPlayground(selectedTextContexts),
+					...buildContextResponsePayload(),
+					contextCaptureErrors,
+					...downloadPayload,
 				},
 				"success",
 				toolContext.parameters,
@@ -1698,13 +2199,20 @@ export default function App() {
 		}
 	}, [
 		closeBrowserSession,
+		completePendingMcpPlayback,
+		buildContextResponsePayload,
+		captureAndStoreFullPage,
+		captureFullPageAtEnd,
+		downloadMcpPayload,
+		flushDownloads,
+		isMcpPlaybackMode,
 		isRecording,
 		mcpRecordingNameHint,
 		mcpStartUrl,
 		saveRecordingToRoom,
-		selectedTextContexts,
 		sendRecordingControlEvent,
 		session,
+		playback.isRunning,
 		toolContext,
 	]);
 
@@ -1714,9 +2222,7 @@ export default function App() {
 			autoPlaybackLoadStartedRef.current ||
 			connectionState !== "connected" ||
 			!session ||
-			// Room recordings come straight from the room folder, so requiring a
-			// project here would strand playback whenever the MCP project list has
-			// not resolved yet (or when no project is tagged MCP at all).
+			// Room recordings come from the room folder, so a project is not required.
 			(playback.source !== "room" && !playback.project) ||
 			!playback.selectedRecording ||
 			playback.isLoadingRecording
@@ -1744,6 +2250,13 @@ export default function App() {
 		autoPlaybackRunStartedRef.current = true;
 		playback.setControlsOpen(true);
 		playback.setLoadedRecordingOpen(true);
+		resetDownloads();
+		replayContextCaptureErrorsRef.current = [];
+		const selectedRecording = playback.selectedRecording;
+		const selectedProjectId = playback.project?.value ?? null;
+		const expectsDownload = playback.flattenedSteps.some(
+			({ step }) => step.downloadExpected === true,
+		);
 
 		(async () => {
 			try {
@@ -1752,26 +2265,55 @@ export default function App() {
 					throw new Error("Playback did not start");
 				}
 
-				// The session stays open briefly so the page can be inspected on the
-				// last executed step, then the countdown closes it to release the
-				// remote browser rather than waiting for the server side TTL.
+				if (result.completed && captureFullPageAtEnd) {
+					try {
+						await captureAndStoreFullPage();
+					} catch (error) {
+						replayContextCaptureErrorsRef.current.push({
+							stepId: null,
+							error:
+								error instanceof Error
+									? `Full-page capture failed: ${error.message}`
+									: "Full-page capture failed",
+						});
+					}
+				}
+				await flushDownloads(result.completed && expectsDownload);
+
+				// Held pending so later context and downloads reach the response.
 				if (result.completed) {
+					pendingMcpPlaybackCompletionRef.current = {
+						recordingFile: selectedRecording,
+						projectId: selectedProjectId,
+						stepsRun: result.stepsRun,
+						sessionId: session.sessionId,
+						roomId: toolContext.roomId,
+						executedParameters: toolContext.parameters,
+					};
 					setPlaybackStepsRun(result.stepsRun);
 					setPlaybackCloseCountdown(PLAYBACK_CLOSE_SECONDS);
+					return;
 				}
 
+				const downloadPayload = downloadMcpPayload();
+
+				const contextPayload = buildContextResponsePayload();
 				sendMcpResponseToRoom(
 					{
-						played: result.completed,
-						status: result.completed ? "completed" : "paused",
-						recordingFile: playback.selectedRecording,
-						projectId: playback.project?.value ?? null,
+						played: false,
+						status: "paused",
+						recordingFile: selectedRecording,
+						projectId: selectedProjectId,
 						stepsRun: result.stepsRun,
 						pausedAtStepId: result.pausedAtStepId ?? null,
 						sessionId: session.sessionId,
 						roomId: toolContext.roomId,
+						...contextPayload,
+						contextCaptureErrors:
+							replayContextCaptureErrorsRef.current,
+						...downloadPayload,
 					},
-					result.completed ? "success" : "paused",
+					"paused",
 					toolContext.parameters,
 				);
 			} catch (error) {
@@ -1781,8 +2323,9 @@ export default function App() {
 						: "Failed to play recording";
 				setSnackError(message);
 				try {
+					const downloadPayload = downloadMcpPayload();
 					sendMcpResponseToRoom(
-						{ played: false, error: message },
+						{ played: false, error: message, ...downloadPayload },
 						"error",
 						toolContext.parameters,
 					);
@@ -1791,558 +2334,25 @@ export default function App() {
 				}
 			}
 		})();
-	}, [connectionState, isMcpPlaybackMode, playback, session, toolContext]);
+	}, [
+		buildContextResponsePayload,
+		captureAndStoreFullPage,
+		captureFullPageAtEnd,
+		downloadMcpPayload,
+		flushDownloads,
+		connectionState,
+		isMcpPlaybackMode,
+		playback,
+		resetDownloads,
+		session,
+		toolContext,
+	]);
 
-	const remoteWidth = session?.viewport.width ?? 1365;
-	const remoteHeight = session?.viewport.height ?? 768;
 	const isBrowserLoading =
 		isCreating || pendingNavigationCount > 0 || isRemoteNavigating;
 	const replayMenuOpen =
 		playback.controlsOpen || playback.loadedRecordingOpen;
 
-	const generateAutomationGoal = useCallback(
-		async (replaceExisting: boolean) => {
-			const roomId = toolContext?.roomId ?? "";
-			if (!roomId || !automationModelId || !effectiveInsightId) return;
-
-			setIsAutomationGoalGenerating(true);
-			setAutomationGoalGenerationError("");
-			try {
-				const response = await runPixel<Record<string, unknown>>(
-					`GeneratePlaywrightAutomationGoal(engine=${JSON.stringify(automationModelId)}, roomId=${JSON.stringify(roomId)}, limit=20);`,
-					effectiveInsightId,
-				);
-				const output = response.pixelReturn?.[0]?.output;
-				if (!isRecord(output) || output.success !== true) {
-					throw new Error(
-						isRecord(output) && typeof output.error === "string"
-							? output.error
-							: "Could not generate an automation goal.",
-					);
-				}
-				const generatedGoal =
-					typeof output.goal === "string" ? output.goal.trim() : "";
-				if (!generatedGoal) {
-					throw new Error(
-						"The model returned an empty automation goal.",
-					);
-				}
-				setAutomationGoal((current) =>
-					replaceExisting || !current.trim()
-						? generatedGoal
-						: current,
-				);
-				if (!automationModelId && typeof output.engineId === "string") {
-					setAutomationModelId(output.engineId);
-				}
-			} catch (error) {
-				setAutomationGoalGenerationError(
-					error instanceof Error
-						? error.message
-						: "Could not generate an automation goal.",
-				);
-			} finally {
-				setIsAutomationGoalGenerating(false);
-			}
-		},
-		[automationModelId, effectiveInsightId, toolContext?.roomId],
-	);
-
-	useEffect(() => {
-		if (
-			!isPlaygroundMode ||
-			isMcpPlaybackMode ||
-			!toolExecutionKey ||
-			!automationModelId ||
-			automationGoalExecutionRef.current === toolExecutionKey
-		) {
-			return;
-		}
-		automationGoalExecutionRef.current = toolExecutionKey;
-		void generateAutomationGoal(false);
-	}, [
-		automationModelId,
-		generateAutomationGoal,
-		isMcpPlaybackMode,
-		isPlaygroundMode,
-		toolExecutionKey,
-	]);
-
-	const executeGeneratedFields = useCallback(
-		async (output: Record<string, unknown>): Promise<number> => {
-			const fields = Array.isArray(output.fields)
-				? (output.fields as Array<Record<string, unknown>>)
-				: [];
-			const expectedUrl =
-				typeof output.pageUrl === "string" ? output.pageUrl : undefined;
-			const expectedTabId =
-				typeof output.tabId === "string" ? output.tabId : undefined;
-			let completed = 0;
-
-			for (const field of fields) {
-				const value =
-					typeof field.value === "string" ? field.value : "";
-				const strategy =
-					typeof field.selectorStrategy === "string"
-						? field.selectorStrategy
-						: "css";
-				const selectorValue =
-					typeof field.selectorValue === "string"
-						? field.selectorValue
-						: "";
-				if (!value || !selectorValue) continue;
-
-				await sendReplayEvent({
-					type: "fill-element",
-					requestId: crypto.randomUUID(),
-					text: value,
-					selector: {
-						strategy,
-						value: selectorValue,
-						frameSelector:
-							typeof field.frameSelector === "string"
-								? field.frameSelector
-								: null,
-					},
-					label:
-						typeof field.label === "string"
-							? field.label
-							: undefined,
-					tag: typeof field.tag === "string" ? field.tag : undefined,
-					isPassword: field.isPassword === true,
-					storeValue: field.storeValue === true,
-					expectedUrl,
-					expectedTabId,
-				});
-				completed += 1;
-			}
-			return completed;
-		},
-		[sendReplayEvent],
-	);
-
-	const generateAndFillSelectedField = useCallback(
-		async (remoteX: number, remoteY: number) => {
-			if (!session?.sessionId) {
-				toast("No active browser session.");
-				return;
-			}
-			setIsAutomationGenerating(true);
-			try {
-				const roomId = toolContext?.roomId ?? "";
-				if (!roomId) {
-					toast(
-						"No room context available — open this tool from a Playground room.",
-					);
-					return;
-				}
-
-				// Single-field mode: passes x/y so the reactor identifies the clicked field,
-				// but still sees ALL form fields for cross-field reasoning accuracy.
-				const response = await runPixel<Record<string, unknown>>(
-					`GeneratePlaywrightFieldActions(engine=${JSON.stringify(automationModelId)}, roomId=${JSON.stringify(roomId)}, sessionId=${JSON.stringify(session.sessionId)}, limit=20, x=${remoteX}, y=${remoteY});`,
-					effectiveInsightId,
-				);
-
-				const output = response.pixelReturn?.[0]?.output as
-					| Record<string, unknown>
-					| undefined;
-				if (!output?.success) {
-					toast(
-						typeof output?.error === "string"
-							? output.error
-							: "Automation generation failed.",
-					);
-					return;
-				}
-
-				const fields = Array.isArray(output?.fields)
-					? output.fields
-					: [];
-
-				if (fields.length === 0) {
-					toast(
-						typeof output?.message === "string"
-							? output.message
-							: "No editable field or context-supported value was found at that position.",
-					);
-					return;
-				}
-
-				const completed = await executeGeneratedFields(output);
-				if (completed === 0) {
-					toast("No generated field action could be executed.");
-					return;
-				}
-				if (!automationModelId && typeof output.engineId === "string") {
-					setAutomationModelId(output.engineId);
-				}
-				toast("Filled the selected field from Playground context.");
-				setAutomationMode(false);
-			} catch (error) {
-				toast(
-					error instanceof Error
-						? error.message
-						: "Automation generation failed.",
-				);
-			} finally {
-				setIsAutomationGenerating(false);
-				setAutomationClickPos(null);
-			}
-		},
-		[
-			automationModelId,
-			effectiveInsightId,
-			executeGeneratedFields,
-			session?.sessionId,
-			toolContext?.roomId,
-		],
-	);
-
-	const handleFieldAutomationTarget = useCallback(
-		async (
-			localX: number,
-			localY: number,
-			remoteX: number,
-			remoteY: number,
-			button: "left" | "right" | "middle",
-		) => {
-			setAutomationClickPos({ localX, localY });
-			try {
-				await sendReplayEvent({
-					type: "mouse-click",
-					requestId: crypto.randomUUID(),
-					x: remoteX,
-					y: remoteY,
-					button,
-				});
-				await generateAndFillSelectedField(remoteX, remoteY);
-			} catch (error) {
-				toast(
-					error instanceof Error
-						? error.message
-						: "Could not click the selected browser position.",
-				);
-				setAutomationClickPos(null);
-			}
-		},
-		[generateAndFillSelectedField, sendReplayEvent],
-	);
-
-	const fillVisibleFieldsFromContext = useCallback(async () => {
-		if (!session?.sessionId) {
-			toast("No active browser session.");
-			return;
-		}
-		const roomId = toolContext?.roomId ?? "";
-		if (!roomId) {
-			toast(
-				"No room context available — open this tool from a Playground room.",
-			);
-			return;
-		}
-		setIsAutomationGenerating(true);
-		setAutomationMode(false);
-		try {
-			// All-fields mode: no x/y, reactor fills all visible fields.
-			const response = await runPixel<Record<string, unknown>>(
-				`GeneratePlaywrightFieldActions(engine=${JSON.stringify(automationModelId)}, roomId=${JSON.stringify(roomId)}, sessionId=${JSON.stringify(session.sessionId)}, limit=20);`,
-				effectiveInsightId,
-			);
-
-			const output = response.pixelReturn?.[0]?.output as
-				| Record<string, unknown>
-				| undefined;
-			if (!output?.success) {
-				toast(
-					typeof output?.error === "string"
-						? output.error
-						: "Page fill failed.",
-				);
-				return;
-			}
-
-			const fields = Array.isArray(output?.fields) ? output.fields : [];
-
-			if (fields.length === 0) {
-				toast(
-					typeof output?.message === "string"
-						? output.message
-						: "No editable fields could be filled from the available context.",
-				);
-				return;
-			}
-
-			const completed = await executeGeneratedFields(output);
-			if (completed === 0) {
-				toast("No generated field action could be executed.");
-				return;
-			}
-			if (!automationModelId && typeof output.engineId === "string") {
-				setAutomationModelId(output.engineId);
-			}
-			toast(
-				`Filled ${completed} field${completed !== 1 ? "s" : ""} from Playground context.`,
-			);
-		} catch (error) {
-			toast(error instanceof Error ? error.message : "Page fill failed.");
-		} finally {
-			setIsAutomationGenerating(false);
-		}
-	}, [
-		automationModelId,
-		effectiveInsightId,
-		executeGeneratedFields,
-		session?.sessionId,
-		toolContext?.roomId,
-	]);
-
-	const executePlannedAutomationAction = useCallback(
-		async (
-			output: Record<string, unknown>,
-			iteration: number,
-		): Promise<AutomationHistoryEntry> => {
-			if (!isRecord(output.action)) {
-				throw new Error("Automation planner did not return an action.");
-			}
-			const action = output.action;
-			const rawType = action.type;
-			const type =
-				typeof rawType === "string" ? rawType.trim().toLowerCase() : "";
-			if (
-				type !== "click" &&
-				type !== "fill" &&
-				type !== "select" &&
-				type !== "scroll"
-			) {
-				throw new Error(
-					`Automation planner returned an unsupported action type: ${JSON.stringify(rawType)}.`,
-				);
-			}
-			const label = typeof action.label === "string" ? action.label : "";
-			const expectedUrl =
-				typeof output.pageUrl === "string" ? output.pageUrl : undefined;
-			const expectedTabId =
-				typeof output.tabId === "string" ? output.tabId : undefined;
-			const reason =
-				typeof output.reason === "string" ? output.reason : "";
-
-			if (type === "scroll") {
-				const deltaY =
-					typeof action.deltaY === "number" ? action.deltaY : 0;
-				if (!deltaY) {
-					throw new Error(
-						"Automation planner returned an empty scroll amount.",
-					);
-				}
-				await sendReplayEvent({
-					type: "wheel",
-					requestId: crypto.randomUUID(),
-					x: remoteWidth / 2,
-					y: remoteHeight / 2,
-					deltaX: 0,
-					deltaY,
-					expectedUrl,
-					expectedTabId,
-				});
-				return {
-					iteration,
-					type,
-					label,
-					value: `${deltaY < 0 ? "up" : "down"} ${typeof action.screenPercent === "number" ? action.screenPercent : SCROLL_SCREEN_PERCENT}%`,
-					pageUrl: expectedUrl || "",
-					reason,
-				};
-			}
-			if (!isRecord(action.selector)) {
-				throw new Error("Automation action has no validated selector.");
-			}
-			const strategy =
-				typeof action.selector.strategy === "string"
-					? action.selector.strategy
-					: "css";
-			const selectorValue =
-				typeof action.selector.value === "string"
-					? action.selector.value
-					: "";
-			if (!selectorValue) {
-				throw new Error("Automation action has an empty selector.");
-			}
-			const selector = {
-				strategy,
-				value: selectorValue,
-				frameSelector:
-					typeof action.selector.frameSelector === "string"
-						? action.selector.frameSelector
-						: null,
-			};
-			const tag = typeof action.tag === "string" ? action.tag : undefined;
-			const isPassword = action.isPassword === true;
-			const storeValue = action.storeValue === true;
-
-			if (type === "click") {
-				const coords = isRecord(action.coords) ? action.coords : {};
-				await sendReplayEvent({
-					type: "mouse-click",
-					requestId: crypto.randomUUID(),
-					x: typeof coords.x === "number" ? coords.x : 0,
-					y: typeof coords.y === "number" ? coords.y : 0,
-					button: "left",
-					selector,
-					label,
-					tag,
-					waitAfterMs: 500,
-					expectedUrl,
-					expectedTabId,
-				});
-				return {
-					iteration,
-					type,
-					label,
-					pageUrl: expectedUrl || "",
-					reason,
-				};
-			}
-
-			const value = typeof action.value === "string" ? action.value : "";
-			if (!value)
-				throw new Error("Automation planner returned an empty value.");
-			await sendReplayEvent({
-				type: "fill-element",
-				requestId: crypto.randomUUID(),
-				text: value,
-				selector,
-				label,
-				tag: type === "select" ? "select" : tag,
-				isPassword,
-				storeValue,
-				expectedUrl,
-				expectedTabId,
-			});
-			return {
-				iteration,
-				type,
-				label,
-				value: isPassword ? "[REDACTED]" : value,
-				pageUrl: expectedUrl || "",
-				reason,
-			};
-		},
-		[remoteHeight, remoteWidth, sendReplayEvent],
-	);
-
-	const cancelGoalAutomation = useCallback(() => {
-		automationRunTokenRef.current += 1;
-		setIsGoalAutomationRunning(false);
-		setAutomationProgress(null);
-		toast("Goal automation stopped.");
-	}, []);
-
-	const runGoalAutomation = useCallback(async () => {
-		if (!session?.sessionId) {
-			toast("No active browser session.");
-			return;
-		}
-		const roomId = toolContext?.roomId ?? "";
-		if (!roomId) {
-			toast(
-				"No room context available — open this tool from a Playground room.",
-			);
-			return;
-		}
-
-		const runToken = automationRunTokenRef.current + 1;
-		automationRunTokenRef.current = runToken;
-		setAutomationMode(false);
-		setIsGoalAutomationRunning(true);
-		const history: AutomationHistoryEntry[] = [];
-		const resolvedGoal = automationGoal.trim();
-		let reachedGoal = false;
-		if (!resolvedGoal) {
-			setIsGoalAutomationRunning(false);
-			toast("Review or enter an automation goal before running.");
-			return;
-		}
-
-		try {
-			for (
-				let iteration = 1;
-				iteration <= automationMaxIterations;
-				iteration += 1
-			) {
-				if (automationRunTokenRef.current !== runToken) return;
-				setAutomationProgress({
-					iteration,
-					maxIterations: automationMaxIterations,
-				});
-
-				const response = await runPixel<Record<string, unknown>>(
-					`PlanNextPlaywrightAction(engine=${JSON.stringify(automationModelId)}, roomId=${JSON.stringify(roomId)}, sessionId=${JSON.stringify(session.sessionId)}, goal=${JSON.stringify(resolvedGoal)}, history=${JSON.stringify(JSON.stringify(history))}, iteration=${iteration}, maxIterations=${automationMaxIterations}, limit=20);`,
-					effectiveInsightId,
-				);
-				if (automationRunTokenRef.current !== runToken) return;
-
-				const output = response.pixelReturn?.[0]?.output;
-				if (!isRecord(output) || output.success !== true) {
-					throw new Error(
-						isRecord(output) && typeof output.error === "string"
-							? output.error
-							: "Browser automation planning failed.",
-					);
-				}
-				if (!automationModelId && typeof output.engineId === "string") {
-					setAutomationModelId(output.engineId);
-				}
-				const reason =
-					typeof output.reason === "string" ? output.reason : "";
-				if (output.goalReached === true) {
-					reachedGoal = true;
-					toast(reason || "Browser automation reached the goal.");
-					return;
-				}
-				if (!isRecord(output.action)) {
-					toast(
-						reason || "Browser automation has no safe next action.",
-					);
-					return;
-				}
-
-				const completed = await executePlannedAutomationAction(
-					output,
-					iteration,
-				);
-				if (automationRunTokenRef.current !== runToken) return;
-				history.push(completed);
-			}
-
-			if (!reachedGoal) {
-				toast(
-					`Browser automation stopped after ${automationMaxIterations} iterations without confirming the goal.`,
-				);
-			}
-		} catch (error) {
-			if (automationRunTokenRef.current === runToken) {
-				toast(
-					error instanceof Error
-						? error.message
-						: "Browser automation failed.",
-				);
-			}
-		} finally {
-			if (automationRunTokenRef.current === runToken) {
-				setIsGoalAutomationRunning(false);
-				setAutomationProgress(null);
-			}
-		}
-	}, [
-		automationGoal,
-		automationMaxIterations,
-		automationModelId,
-		effectiveInsightId,
-		executePlannedAutomationAction,
-		session?.sessionId,
-		toolContext?.roomId,
-	]);
 	const pendingSelectionContext = pendingTextSelection?.context ?? null;
 
 	return (
@@ -2364,6 +2374,14 @@ export default function App() {
 					canSaveRecording={!!session && isRecording}
 					onToggleRecording={handleToggleRecording}
 					onOpenSaveRecording={handleOpenSaveRecording}
+					isCapturingFullPage={isCapturingFullPage}
+					onCaptureFullPage={() => void handleCaptureFullPage()}
+					isCapturingVision={isVisionCaptureMode}
+					onToggleVisionCapture={() =>
+						void handleToggleVisionCapture()
+					}
+					isDebugOpen={debugOpen}
+					onToggleDebug={() => void handleToggleDebug()}
 				/>
 				<div className="ml-auto flex max-w-full flex-wrap items-center justify-end gap-1">
 					{isPlaygroundMode && session && (
@@ -2425,11 +2443,20 @@ export default function App() {
 							Contexts ({selectedTextContexts.length})
 						</Button>
 					)}
+					{(downloads.length > 0 || downloadErrors.length > 0) && (
+						<BrowserDownloadsTray
+							downloads={downloads}
+							errors={downloadErrors}
+							open={downloadsOpen}
+							onToggle={() => setDownloadsOpen((open) => !open)}
+						/>
+					)}
 					{isPlaygroundMode && session && (
 						<Button
 							size="sm"
 							disabled={
 								isReturningToPlayground ||
+								isCapturingFullPage ||
 								isSaving ||
 								isSavingRecording
 							}
@@ -2521,132 +2548,152 @@ export default function App() {
 					/>
 				)}
 
-			<div className="relative flex min-h-0 flex-1 overflow-hidden">
-				{/* Click-to-fill loading indicator */}
-				{isAutomationGenerating && automationClickPos && (
-					<AutomationActionIndicator
-						localX={automationClickPos.localX}
-						localY={automationClickPos.localY}
-					/>
-				)}
-				{pendingTextSelection && (
-					<div
-						className="fixed z-50 w-72 rounded-lg border border-line bg-surface p-3 text-ink shadow-xl"
-						style={{
-							left: Math.max(
-								8,
-								Math.min(
-									pendingTextSelection.clientX + 10,
-									window.innerWidth - 296,
+			<div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+				<div className="relative flex min-h-0 flex-1 overflow-hidden">
+					{/* Click-to-fill loading indicator */}
+					{isAutomationGenerating && automationClickPos && (
+						<AutomationActionIndicator
+							localX={automationClickPos.localX}
+							localY={automationClickPos.localY}
+						/>
+					)}
+					{pendingTextSelection && (
+						<div
+							className="fixed z-50 w-72 rounded-lg border border-line bg-surface p-3 text-ink shadow-xl"
+							style={{
+								left: Math.max(
+									8,
+									Math.min(
+										pendingTextSelection.clientX + 10,
+										window.innerWidth - 296,
+									),
 								),
-							),
-							top: Math.max(
-								8,
-								Math.min(
-									pendingTextSelection.clientY + 10,
-									window.innerHeight - 180,
+								top: Math.max(
+									8,
+									Math.min(
+										pendingTextSelection.clientY + 10,
+										window.innerHeight - 180,
+									),
 								),
-							),
-						}}
-					>
-						<div className="mb-2 flex items-center justify-between gap-2">
-							<p className="font-medium text-sm">
-								Selected website text
-							</p>
-							<Button
-								size="icon-sm"
-								variant="ghost"
-								aria-label="Dismiss selected text"
-								onClick={dismissPendingTextSelection}
-							>
-								<X />
-							</Button>
-						</div>
-						{pendingSelectionContext ? (
-							<>
-								<p className="mb-3 line-clamp-3 text-ink-muted text-xs leading-5">
-									{pendingSelectionContext.content}
+							}}
+						>
+							<div className="mb-2 flex items-center justify-between gap-2">
+								<p className="font-medium text-sm">
+									Selected website text
 								</p>
-								<div className="flex justify-end gap-2">
-									<Button
-										size="sm"
-										variant="outline"
-										onClick={() => {
-											void (async () => {
-												await handleCopySelectedContext(
+								<Button
+									size="icon-sm"
+									variant="ghost"
+									aria-label="Dismiss selected text"
+									onClick={dismissPendingTextSelection}
+								>
+									<X />
+								</Button>
+							</div>
+							{pendingSelectionContext ? (
+								<>
+									<p className="mb-3 line-clamp-3 text-ink-muted text-xs leading-5">
+										{pendingSelectionContext.content}
+									</p>
+									<div className="flex justify-end gap-2">
+										<Button
+											size="sm"
+											variant="outline"
+											onClick={() => {
+												void (async () => {
+													await handleCopySelectedContext(
+														pendingSelectionContext,
+													);
+													dismissPendingTextSelection();
+												})();
+											}}
+										>
+											<Copy />
+											Copy
+										</Button>
+										<Button
+											size="sm"
+											onClick={() => {
+												void handleAddSelectedContext(
 													pendingSelectionContext,
 												);
-												dismissPendingTextSelection();
-											})();
-										}}
-									>
-										<Copy />
-										Copy
-									</Button>
-									<Button
-										size="sm"
-										onClick={() => {
-											void handleAddSelectedContext(
-												pendingSelectionContext,
-											);
-										}}
-									>
-										<ScanLine />
-										Add as context
-									</Button>
+											}}
+										>
+											<ScanLine />
+											Add as context
+										</Button>
+									</div>
+								</>
+							) : (
+								<div className="flex items-center gap-2 text-ink-muted text-sm">
+									<Spinner />
+									Reading selected text…
 								</div>
-							</>
-						) : (
-							<div className="flex items-center gap-2 text-ink-muted text-sm">
-								<Spinner />
-								Reading selected text…
-							</div>
-						)}
-					</div>
-				)}
-				{/* Browser canvas */}
-				<BrowserViewer
-					connectionState={connectionState}
-					remoteWidth={remoteWidth}
-					remoteHeight={remoteHeight}
-					latestFrame={latestFrame}
-					scrollMetrics={browserScrollMetrics}
-					browserCursor={browserCursor}
-					sendEvent={sendViewerEvent}
-					onTextDragComplete={handleTextDragComplete}
-					onUserInput={() => {
-						playback.requestPause(
-							"Playback will pause after your interaction",
-						);
-						if (pendingTextSelection) {
-							dismissPendingTextSelection();
+							)}
+						</div>
+					)}
+					{/* Browser canvas */}
+					<BrowserViewer
+						connectionState={connectionState}
+						remoteWidth={remoteWidth}
+						remoteHeight={remoteHeight}
+						latestFrame={latestFrame}
+						scrollMetrics={browserScrollMetrics}
+						browserCursor={browserCursor}
+						sendEvent={sendViewerEvent}
+						onTextDragComplete={handleTextDragComplete}
+						visionCaptureMode={isVisionCaptureMode}
+						onVisionDragComplete={handleVisionDragComplete}
+						onUserInput={() => {
+							playback.requestPause(
+								"Playback will pause after your interaction",
+							);
+							if (pendingTextSelection) {
+								dismissPendingTextSelection();
+							}
+							if (isGoalAutomationRunning) cancelGoalAutomation();
+						}}
+						automationMode={
+							automationMode && automationSubMode === "click"
 						}
-						if (isGoalAutomationRunning) cancelGoalAutomation();
-					}}
-					automationMode={
-						automationMode && automationSubMode === "click"
-					}
-					onAutomationClick={handleFieldAutomationTarget}
-				/>
+						onAutomationClick={handleFieldAutomationTarget}
+					/>
 
-				<ReplaySidebar
-					playback={playback}
-					recordedStepsOpen={recordedStepsOpen}
-					recordedSteps={recordedSteps}
-					isRecording={isRecording}
-					onToggleRecordedSteps={() =>
-						setRecordedStepsOpen((open) => !open)
-					}
-					onSaveRecording={handleOpenSaveRecording}
-					selectedTextContextsOpen={selectedTextContextsOpen}
-					selectedTextContexts={selectedTextContexts}
-					onToggleSelectedTextContexts={() =>
-						setSelectedTextContextsOpen((open) => !open)
-					}
-					onCopySelectedContext={handleCopySelectedContext}
-					onDeleteSelectedContext={handleDeleteSelectedContext}
-					onSaveSelectedContext={handleSaveSelectedContext}
-				/>
+					<ReplaySidebar
+						playback={playback}
+						recordedStepsOpen={recordedStepsOpen}
+						recordedSteps={recordedSteps}
+						isRecording={isRecording}
+						onToggleRecordedSteps={() =>
+							setRecordedStepsOpen((open) => !open)
+						}
+						onSaveRecording={handleOpenSaveRecording}
+						selectedTextContextsOpen={selectedTextContextsOpen}
+						selectedTextContexts={selectedTextContexts}
+						contextLimits={contextLimits}
+						contextReturnPlan={contextReturnPlan}
+						returnBudgetChars={returnBudgetChars}
+						includedContextIds={includedContextIds}
+						onToggleSelectedTextContexts={() =>
+							setSelectedTextContextsOpen((open) => !open)
+						}
+						onCopySelectedContext={handleCopySelectedContext}
+						onDeleteSelectedContext={handleDeleteSelectedContext}
+						onSaveSelectedContext={handleSaveSelectedContext}
+						onToggleContextIncluded={handleToggleContextIncluded}
+						onReturnBudgetChange={handleReturnBudgetChange}
+					/>
+				</div>
+				{debugOpen && (
+					<BrowserDebugPanel
+						events={debugEvents}
+						droppedCount={debugDroppedCount}
+						isPaused={debugPaused}
+						onTogglePause={() => void handleToggleDebugPause()}
+						onClear={() => void handleClearDebug()}
+						onClose={() => void handleToggleDebug()}
+					/>
+				)}
 			</div>
 
 			<StopRecordingDialog
@@ -2660,7 +2707,7 @@ export default function App() {
 				secondsRemaining={playbackCloseCountdown}
 				stepsRun={playbackStepsRun}
 				onKeepOpen={handleKeepPlaybackOpen}
-				onCloseNow={handleClosePlaybackNow}
+				onCloseAndReturn={handleClosePlaybackAndReturn}
 			/>
 
 			<SaveRecordingDialog
@@ -2689,6 +2736,20 @@ export default function App() {
 				onGenerateMetadata={() => void handleGenerateSaveMetadata()}
 				onDestinationChange={setSaveDestination}
 				onSave={handleSaveRecording}
+			/>
+
+			<VisionContextDialog
+				open={pendingVisionSelection !== null}
+				bounds={pendingVisionSelection?.bounds ?? null}
+				models={visionModels}
+				modelId={visionModelId}
+				prompt={visionPrompt}
+				isLoadingModels={isLoadingVisionModels}
+				isSubmitting={isSubmittingVisionContext}
+				onModelChange={setVisionModelId}
+				onPromptChange={setVisionPrompt}
+				onClose={() => setPendingVisionSelection(null)}
+				onSubmit={() => void handleSubmitVisionContext()}
 			/>
 		</div>
 	);

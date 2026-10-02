@@ -1,7 +1,9 @@
+import type { ContextReturnPlan } from "../../domain/selected-text";
 import type { PlaybackController } from "../../hooks/usePlaybackController";
 import type {
+	CapturedContext,
+	RemoteBrowserContextLimits,
 	RemoteBrowserRecordedStep,
-	SelectedTextContext,
 } from "../../types/browserEvents";
 import { SelectedTextContextsPanel } from "../SelectedTextContextsPanel";
 import { LoadedRecordingPanel } from "./LoadedRecordingPanel";
@@ -16,11 +18,17 @@ interface ReplaySidebarProps {
 	onToggleRecordedSteps: () => void;
 	onSaveRecording: () => void;
 	selectedTextContextsOpen: boolean;
-	selectedTextContexts: SelectedTextContext[];
+	selectedTextContexts: CapturedContext[];
+	contextLimits: RemoteBrowserContextLimits;
+	contextReturnPlan: ContextReturnPlan;
+	returnBudgetChars: number;
+	includedContextIds: ReadonlySet<string>;
 	onToggleSelectedTextContexts: () => void;
-	onCopySelectedContext: (context: SelectedTextContext) => void;
+	onCopySelectedContext: (context: CapturedContext) => void;
 	onDeleteSelectedContext: (contextId: string) => void;
 	onSaveSelectedContext: (contextId: string, content: string) => void;
+	onToggleContextIncluded: (contextId: string, include: boolean) => void;
+	onReturnBudgetChange: (chars: number) => void;
 }
 
 export function ReplaySidebar(props: ReplaySidebarProps) {
@@ -39,10 +47,16 @@ export function ReplaySidebar(props: ReplaySidebarProps) {
 					<SelectedTextContextsPanel
 						open={props.selectedTextContextsOpen}
 						contexts={props.selectedTextContexts}
+						limits={props.contextLimits}
+						returnPlan={props.contextReturnPlan}
+						returnBudgetChars={props.returnBudgetChars}
+						includedContextIds={props.includedContextIds}
 						onToggle={props.onToggleSelectedTextContexts}
 						onCopy={props.onCopySelectedContext}
 						onDelete={props.onDeleteSelectedContext}
 						onSave={props.onSaveSelectedContext}
+						onToggleIncluded={props.onToggleContextIncluded}
+						onReturnBudgetChange={props.onReturnBudgetChange}
 					/>
 				)}
 				<LoadedRecordingPanel playback={props.playback} />
