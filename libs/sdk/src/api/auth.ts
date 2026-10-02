@@ -207,6 +207,27 @@ export class SessionLoginDisconnectError extends Error {
 }
 
 /**
+ * A login map as the backend sends it, in `/api/auth/logins` and the config's
+ * `logins`: the account name for each login, keyed by provider in upper case.
+ * Entries without a name are left out.
+ *
+ * @param value - The backend's login map.
+ * @returns The logins; none for anything that is not a map.
+ */
+export const parseLogins = (value: unknown): Record<string, string> => {
+	const logins: Record<string, string> = {};
+	if (typeof value !== "object" || value === null) {
+		return logins;
+	}
+	for (const [provider, name] of Object.entries(value)) {
+		if (typeof name === "string") {
+			logins[provider.toUpperCase()] = name;
+		}
+	}
+	return logins;
+};
+
+/**
  * The logins the session holds: the account name for each, keyed by provider
  * in upper case (`NATIVE`, `MICROSOFT`, `GOOGLE`, ...).
  *
@@ -214,16 +235,7 @@ export class SessionLoginDisconnectError extends Error {
  */
 export const getLogins = async (): Promise<Record<string, string>> => {
 	const { data } = await get<unknown>(`${Env.MODULE}/api/auth/logins`);
-	const logins: Record<string, string> = {};
-	if (typeof data !== "object" || data === null) {
-		return logins;
-	}
-	for (const [provider, name] of Object.entries(data)) {
-		if (typeof name === "string") {
-			logins[provider.toUpperCase()] = name;
-		}
-	}
-	return logins;
+	return parseLogins(data);
 };
 
 /**
@@ -277,7 +289,8 @@ const isPopupBack = (popup: Window): boolean => {
  * Must be called straight from a click, before any await, or the browser
  * blocks the popup.
  *
- * @param options.provider - The provider's login key, such as `MICROSOFT`.
+ * @param options.provider - The provider's login key, such as `MICROSOFT`, in
+ * any case.
  * @param options.loginPath - The segment of `/api/auth/login/{segment}` that
  * starts its sign in. Defaults to the login key in lower case.
  * @param options.primaryLogin - The login the session belongs to, or null
@@ -298,6 +311,9 @@ export const connectLogin = ({
 	if (typeof window === "undefined") {
 		return Promise.reject(new Error("Signing in needs a browser"));
 	}
+	// the backend lists logins and signs them out by their upper case key
+	const loginKey = provider.toUpperCase();
+	const sessionLogin = primaryLogin?.toUpperCase() ?? null;
 
 	// opened blank inside the click, and sent to the sign in once any stale
 	// login is gone
@@ -308,7 +324,7 @@ export const connectLogin = ({
 
 	const isConnected = async (): Promise<boolean> => {
 		try {
-			return provider in (await getLogins());
+			return loginKey in (await getLogins());
 		} catch {
 			return false;
 		}
@@ -317,9 +333,9 @@ export const connectLogin = ({
 	return (async () => {
 		const wasConnected = await isConnected();
 		const canSignOut =
-			wasConnected && primaryLogin !== null && primaryLogin !== provider;
+			wasConnected && sessionLogin !== null && sessionLogin !== loginKey;
 		if (canSignOut) {
-			await logoutProvider(provider).catch(() => undefined);
+			await logoutProvider(loginKey).catch(() => undefined);
 		}
 		// a renewed session login stays listed, so only the popup tells when
 		// it is done

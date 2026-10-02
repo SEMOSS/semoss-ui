@@ -2,6 +2,7 @@ import {
 	connectLogin,
 	getLogins,
 	logoutProvider,
+	parseLogins,
 	SessionLoginDisconnectError,
 } from "../../api/auth";
 
@@ -54,26 +55,12 @@ const normalizeProviders = (
 			)
 		: [];
 
-/** A login map as the backend sends it, with keys in upper case. */
-const normalizeLogins = (value: unknown): Record<string, string> => {
-	const logins: Record<string, string> = {};
-	if (typeof value !== "object" || value === null) {
-		return logins;
-	}
-	for (const [provider, name] of Object.entries(value)) {
-		if (typeof name === "string") {
-			logins[provider.toUpperCase()] = name;
-		}
-	}
-	return logins;
-};
-
 /**
  * What the session is signed in to, for the whole page: every insight, view,
  * and app reads the same logins, so a sign in or out made anywhere shows up
  * everywhere. The insight store fills it from the system config when the page
- * loads and after each login and logout; views ask it again when they show
- * sign in state, sharing one read.
+ * loads and after each login, and resets it on logout; views ask it again
+ * when they show sign in state, sharing one read.
  */
 export class LoginsStore {
 	private snapshot: LoginsSnapshot = EMPTY_SNAPSHOT;
@@ -83,6 +70,14 @@ export class LoginsStore {
 
 	/** The read in flight, joined by every caller. */
 	private request: Promise<Record<string, string>> | null = null;
+
+	/**
+	 * Counts sessions: every reset, on each login and logout, adds one. A read
+	 * notes the count when it starts, and when its answer arrives after the
+	 * count has moved on, the answer describes a session that has ended, so it
+	 * is thrown away instead of overwriting the current logins.
+	 */
+	private sessionVersion = 0;
 
 	private readonly listeners = new Set<() => void>();
 
@@ -128,7 +123,7 @@ export class LoginsStore {
 			this.readAt = Date.now();
 			this.set({
 				...settings,
-				logins: normalizeLogins(config.logins),
+				logins: parseLogins(config.logins),
 				status: "ready",
 			});
 			return;
@@ -144,8 +139,15 @@ export class LoginsStore {
 		}
 	};
 
-	/** Forget the session, when it signs in or out, so its next config is taken. */
+	/**
+	 * Forget the session, when it signs in or out, so its next config is
+	 * taken. A read still in flight belongs to the old session, so it is
+	 * dropped: it changes nothing when it lands, and the next refresh reads
+	 * again.
+	 */
 	reset = (): void => {
+		this.sessionVersion++;
+		this.request = null;
 		this.readAt = 0;
 		this.set(EMPTY_SNAPSHOT);
 	};
@@ -170,9 +172,13 @@ export class LoginsStore {
 			return Promise.resolve(this.snapshot.logins);
 		}
 		if (!this.request) {
+			const sessionVersion = this.sessionVersion;
 			const request = getLogins()
 				.then(
 					(logins) => {
+						if (sessionVersion !== this.sessionVersion) {
+							return logins;
+						}
 						this.readAt = Date.now();
 						this.set({
 							...this.snapshot,
@@ -182,7 +188,9 @@ export class LoginsStore {
 						return logins;
 					},
 					(error: unknown) => {
-						this.set({ ...this.snapshot, status: "error" });
+						if (sessionVersion === this.sessionVersion) {
+							this.set({ ...this.snapshot, status: "error" });
+						}
 						throw error;
 					},
 				)
@@ -203,7 +211,8 @@ export class LoginsStore {
 	 * Must be called straight from a click: the popup opens before anything is
 	 * awaited.
 	 *
-	 * @param provider - The provider's login key, such as `MICROSOFT`.
+	 * @param provider - The provider's login key, such as `MICROSOFT`, in any
+	 * case.
 	 * @param loginPath - The segment of `/api/auth/login/{segment}` that starts
 	 * its sign in. Defaults to the login key in lower case.
 	 * @returns Whether the session holds the provider's login afterwards.
@@ -220,18 +229,21 @@ export class LoginsStore {
 	 * Sign the session out of one provider, keeping the session and its other
 	 * logins, then read the logins again.
 	 *
-	 * @param provider - The provider's login key, such as `MICROSOFT`.
+	 * @param provider - The provider's login key, such as `MICROSOFT`, in any
+	 * case.
 	 * @throws SessionLoginDisconnectError for the session's own login, or when
 	 * that login is not known.
 	 * @throws Error when the backend refuses the sign out.
 	 */
 	disconnect = async (provider: string): Promise<void> => {
+		// the backend signs out by the upper case key, so compare it that way
+		const loginKey = provider.toUpperCase();
 		const { primaryLogin } = this.snapshot;
-		if (primaryLogin === null || primaryLogin === provider) {
+		if (primaryLogin === null || primaryLogin === loginKey) {
 			throw new SessionLoginDisconnectError();
 		}
 		try {
-			await logoutProvider(provider);
+			await logoutProvider(loginKey);
 		} finally {
 			await this.refresh({ maxAgeMs: 0 }).catch(() => undefined);
 		}

@@ -572,9 +572,11 @@ export class TeamworkStore {
 	};
 
 	/**
-	 * Read the user's connectors and the session's logins, and bring this
-	 * room's copy of the connectors up to date. Called when the room loads, so
-	 * a chat opened after the user changed their connectors has the change.
+	 * Read the user's connectors and bring this room's copy of them up to
+	 * date. Called when the room loads, so a chat opened after the user changed
+	 * their connectors has the change. The session's logins are not read here:
+	 * the SDK keeps them, and `useTeamworkLogins` hands them over while a view
+	 * shows sign in state.
 	 *
 	 * @param options - `isNew`: the room was just created, so it has no copy
 	 * yet; {@link TeamworkStore.adopt} makes it before the first message.

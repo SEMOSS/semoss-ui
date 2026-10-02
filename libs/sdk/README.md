@@ -77,7 +77,7 @@ Login and logout return booleans, not `{ output }`. Inspect failed results and
 
 `Logins` holds the session's logins for the whole page, so every insight and
 view sees the same answer. The insight fills it from the config when it loads
-and after each login and logout. Read it again, sign in to one more provider,
+and after each login, and resets it on logout. Read it again, sign in to one more provider,
 or sign one out with its actions; in React, `useLogins()` reads it again when a
 view mounts and whenever the window regains focus.
 

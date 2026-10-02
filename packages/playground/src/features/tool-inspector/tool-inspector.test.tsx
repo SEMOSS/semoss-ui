@@ -295,7 +295,6 @@ const createApprovalTool = (mode: "chat" | "agent" = "chat") => {
 				approveChatTool,
 				declineChatTool,
 				approveConnectorChatTool,
-				signIn: vi.fn(),
 				chatToolDefinitions: [],
 			},
 		},

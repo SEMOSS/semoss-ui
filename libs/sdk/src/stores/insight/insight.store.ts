@@ -485,10 +485,12 @@ export class InsightStore {
 	};
 
 	/**
-	 * Read the system config again, as the session now sees it. The config
-	 * names the session's logins and what they allow, so the copy read before a
-	 * login or logout is stale once one succeeds. The page's logins start over
-	 * from it. A failed read keeps the copy there is.
+	 * Read the system config again after a login, as the signed in user sees
+	 * it: the copy read before names none of the session's logins or what they
+	 * allow. The page's logins start over from it. When it cannot be read, the
+	 * system keeps the copy there is and the logins are read on their own; the
+	 * session's own login and what its sign ins allow then arrive with the
+	 * next config read, such as when another insight loads.
 	 */
 	private refreshSystem = async (): Promise<void> => {
 		cachedSystemConfig = null;
@@ -499,10 +501,13 @@ export class InsightStore {
 				this._store.system = createSystem(data);
 				Logins.reset();
 				Logins.seed(data);
+				return;
 			}
 		} catch (error) {
 			console.warn(error);
 		}
+		Logins.reset();
+		void Logins.refresh({ maxAgeMs: 0 }).catch(() => undefined);
 	};
 
 	/**
@@ -783,8 +788,13 @@ LoadPyFromFile(alias="${alias}", filePath="temp.py");
 				this._store.isReady = false;
 				this._room = null;
 
-				// the config read while signed in names logins that are gone
-				await this.refreshSystem();
+				// the logins, and the config read while signed in, belong to the
+				// session that ended: forget them, and the next login reads them
+				// again. Nothing is read now, so views still on screen show the
+				// logins as unknown rather than signed out.
+				cachedSystemConfig = null;
+				cachedSystemConfigPromise = null;
+				Logins.reset();
 
 				// success
 				return true;

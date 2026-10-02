@@ -129,6 +129,41 @@ describe("LoginsStore", () => {
 		});
 	});
 
+	it("drops a read still in flight when the session resets", async () => {
+		const store = new LoginsStore();
+		let finishOldRead: (logins: Record<string, string>) => void = () => {};
+		mockGetLogins.mockReturnValueOnce(
+			new Promise((resolve) => {
+				finishOldRead = resolve;
+			}),
+		);
+		const oldRead = store.refresh({ maxAgeMs: 0 });
+
+		// the old user signs out, and the next session's config is taken
+		store.reset();
+		store.seed({ logins: { NATIVE: "Bea" }, primaryLogin: "NATIVE" });
+		finishOldRead({ NATIVE: "Ada", MICROSOFT: "Ada" });
+		await oldRead;
+		expect(store.getSnapshot().logins).toEqual({ NATIVE: "Bea" });
+
+		// the next refresh reads again rather than joining the old read
+		mockGetLogins.mockResolvedValueOnce({ NATIVE: "Bea" });
+		await store.refresh({ maxAgeMs: 0 });
+		expect(mockGetLogins).toHaveBeenCalledTimes(2);
+	});
+
+	it("compares and signs out providers by their upper case key", async () => {
+		const store = new LoginsStore();
+		store.seed({ logins: { NATIVE: "Ada" }, primaryLogin: "NATIVE" });
+		await expect(store.disconnect("native")).rejects.toThrow(
+			"cannot be disconnected",
+		);
+		expect(mockLogoutProvider).not.toHaveBeenCalled();
+
+		await store.disconnect("microsoft");
+		expect(mockLogoutProvider).toHaveBeenCalledWith("MICROSOFT");
+	});
+
 	it("never signs out the session's own login, or any login while it is unknown", async () => {
 		const store = new LoginsStore();
 		await expect(store.disconnect("MICROSOFT")).rejects.toThrow(

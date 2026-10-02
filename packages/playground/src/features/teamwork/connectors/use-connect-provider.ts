@@ -10,7 +10,8 @@ import type { UseConnectionsResult } from "./use-connections";
  * A click handler that signs in to a provider and tells the user how it went:
  * connected, closed before finishing, or blocked by the browser.
  *
- * @param connect - `connect` from {@link useConnections}.
+ * @param connect - Signs in to a provider from the click: `signInToProvider`,
+ * or `connect` from {@link useConnections}.
  * @param onConnected - Called once a provider is connected, after the toast.
  * @return The handler. It starts the popup synchronously, so call it from the
  * click itself.

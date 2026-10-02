@@ -117,8 +117,13 @@ The SDK owns what the session is signed in to, so an app never tracks or caches 
 
 - [`Logins`](./src/stores/logins/logins.store.ts) holds the session's logins for the whole
   page, shared by every `InsightStore` and view. `InsightStore` fills it from the system config
-  when it loads, and resets and refills it after each login and logout, when it also reads
-  `/api/config` again (the copy read while signed out names no logins).
+  when it loads. After a login it reads `/api/config` again, since the copy read while signed
+  out names no logins, and refills it from that, or from a fresh logins read when the config
+  cannot be read. On logout it only resets it, so views still on screen show the logins as
+  unknown rather than signed out.
+- A reset drops any read still in flight, so an answer for the old session never lands in the
+  new one. Provider keys are compared and sent in upper case, the way the backend lists and
+  signs them out.
 - `refresh` joins a read in flight and reuses one younger than 30 seconds; `useLogins()` reads
   again when a view mounts and whenever the window regains focus.
 - `connect` signs in to one more provider with a fresh popup (see `connectLogin` in
