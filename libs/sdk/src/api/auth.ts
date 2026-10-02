@@ -168,3 +168,202 @@ export const logout = async (): Promise<boolean> => {
 	CSRF.token = "";
 	return true;
 };
+
+/** How often a sign in popup is checked for having closed or come back. */
+const POPUP_POLL_MS = 1000;
+
+/**
+ * How often the logins are read while a sign in popup is open, for a sign in
+ * that finishes on another origin, where the popup cannot be read.
+ */
+const CONNECT_LOGINS_POLL_MS = 5000;
+
+/** How long a sign in may take before its popup is given up on. */
+const CONNECT_TIMEOUT_MS = 5 * 60 * 1000;
+
+const POPUP_FEATURES = "popup,width=520,height=680";
+
+/**
+ * Raised when the browser blocks a sign in popup, so the UI can ask the user
+ * to allow popups for the site.
+ */
+export class PopupBlockedError extends Error {
+	constructor() {
+		super("The sign in window was blocked");
+		this.name = "PopupBlockedError";
+	}
+}
+
+/**
+ * Raised when asked to sign out of the login the session belongs to, or when
+ * that login is not known: signing it out would end the session or change
+ * whose it is.
+ */
+export class SessionLoginDisconnectError extends Error {
+	constructor() {
+		super("The account the session signed in with cannot be disconnected");
+		this.name = "SessionLoginDisconnectError";
+	}
+}
+
+/**
+ * The logins the session holds: the account name for each, keyed by provider
+ * in upper case (`NATIVE`, `MICROSOFT`, `GOOGLE`, ...).
+ *
+ * @returns The session's logins.
+ */
+export const getLogins = async (): Promise<Record<string, string>> => {
+	const { data } = await get<unknown>(`${Env.MODULE}/api/auth/logins`);
+	const logins: Record<string, string> = {};
+	if (typeof data !== "object" || data === null) {
+		return logins;
+	}
+	for (const [provider, name] of Object.entries(data)) {
+		if (typeof name === "string") {
+			logins[provider.toUpperCase()] = name;
+		}
+	}
+	return logins;
+};
+
+/**
+ * Sign the session out of one provider, keeping its other logins.
+ *
+ * @param provider - The provider's login key, such as `MICROSOFT`.
+ */
+export const logoutProvider = async (provider: string): Promise<void> => {
+	await get(`${Env.MODULE}/api/auth/logout/${provider}?disableRedirect=true`);
+};
+
+/**
+ * Whether a popup has come back to this app, which is where the backend sends
+ * it once a sign in finishes. A popup still on the provider's pages cannot be
+ * read, which counts as not yet.
+ *
+ * @param popup - The sign in popup.
+ * @returns True once the popup shows a page of this app again.
+ */
+const isPopupBack = (popup: Window): boolean => {
+	try {
+		const href = popup.location.href;
+		return (
+			!!href &&
+			href !== "about:blank" &&
+			new URL(href).origin === window.location.origin &&
+			!href.includes("/api/auth/login")
+		);
+	} catch {
+		return false;
+	}
+};
+
+/**
+ * Sign the session in to one more provider, alongside the login it already
+ * has, always with a fresh sign in.
+ *
+ * The backend attaches the provider's token to the current session, and it
+ * keeps listing a provider whose token has expired or failed to refresh. So a
+ * provider the session already lists is signed out first, and the sign in ends
+ * once it is listed again, or when the popup closes or comes back to this app,
+ * or after five minutes. The popup is checked every second; the logins are
+ * read every few seconds as well, since a sign in that finishes on another
+ * origin leaves the popup unreadable.
+ *
+ * The session's own login is never signed out, since that would end the
+ * session or change whose it is; when it is the one being renewed, the sign in
+ * ends when the popup closes or comes back to this app. Nothing is signed out
+ * either when the session's login is not known.
+ *
+ * Must be called straight from a click, before any await, or the browser
+ * blocks the popup.
+ *
+ * @param options.provider - The provider's login key, such as `MICROSOFT`.
+ * @param options.loginPath - The segment of `/api/auth/login/{segment}` that
+ * starts its sign in. Defaults to the login key in lower case.
+ * @param options.primaryLogin - The login the session belongs to, or null
+ * when it is not known.
+ * @returns Whether the session holds the provider's login once the popup is
+ * done.
+ * @throws PopupBlockedError when the popup could not open.
+ */
+export const connectLogin = ({
+	provider,
+	loginPath = provider.toLowerCase(),
+	primaryLogin,
+}: {
+	provider: string;
+	loginPath?: string;
+	primaryLogin: string | null;
+}): Promise<boolean> => {
+	if (typeof window === "undefined") {
+		return Promise.reject(new Error("Signing in needs a browser"));
+	}
+
+	// opened blank inside the click, and sent to the sign in once any stale
+	// login is gone
+	const popup = window.open("", "semoss-connect", POPUP_FEATURES);
+	if (!popup) {
+		return Promise.reject(new PopupBlockedError());
+	}
+
+	const isConnected = async (): Promise<boolean> => {
+		try {
+			return provider in (await getLogins());
+		} catch {
+			return false;
+		}
+	};
+
+	return (async () => {
+		const wasConnected = await isConnected();
+		const canSignOut =
+			wasConnected && primaryLogin !== null && primaryLogin !== provider;
+		if (canSignOut) {
+			await logoutProvider(provider).catch(() => undefined);
+		}
+		// a renewed session login stays listed, so only the popup tells when
+		// it is done
+		const watchesLogins = !wasConnected || canSignOut;
+		if (popup.closed) {
+			return isConnected();
+		}
+		popup.location.href = `${Env.MODULE}/api/auth/login/${loginPath}`;
+
+		return new Promise<boolean>((resolve) => {
+			const startedAt = Date.now();
+			let loginsReadAt = startedAt;
+			let isChecking = false;
+
+			const timer = window.setInterval(async () => {
+				if (isChecking) {
+					return;
+				}
+				isChecking = true;
+				try {
+					const now = Date.now();
+					const hasEnded = popup.closed || isPopupBack(popup);
+					const hasTimedOut = now - startedAt > CONNECT_TIMEOUT_MS;
+					let isListed = false;
+					if (
+						watchesLogins &&
+						now - loginsReadAt >= CONNECT_LOGINS_POLL_MS
+					) {
+						loginsReadAt = now;
+						isListed = await isConnected();
+					}
+					if (!hasEnded && !hasTimedOut && !isListed) {
+						return;
+					}
+
+					window.clearInterval(timer);
+					if (!popup.closed) {
+						popup.close();
+					}
+					resolve(isListed || (await isConnected()));
+				} finally {
+					isChecking = false;
+				}
+			}, POPUP_POLL_MS);
+		});
+	})();
+};

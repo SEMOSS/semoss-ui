@@ -3,6 +3,7 @@ import { observer } from "mobx-react-lite";
 import { useTranslation } from "@semoss/i18n";
 import { Button } from "@semoss/ui/next";
 import { getConnectorProvider } from "../connectors/connector.catalog";
+import { signInToProvider } from "../connectors/connector-sign-in";
 import { useConnectProvider } from "../connectors/use-connect-provider";
 import type { TeamworkStore } from "../teamwork.store";
 import { useTeamworkLogins } from "../use-teamwork-logins";
@@ -30,7 +31,7 @@ export interface TeamworkSignInNoticeProps {
 export const TeamworkSignInNotice = observer(
 	({ teamwork }: TeamworkSignInNoticeProps) => {
 		const { t, i18n } = useTranslation("teamwork");
-		const handleSignIn = useConnectProvider(teamwork.signIn);
+		const handleSignIn = useConnectProvider(signInToProvider);
 		useTeamworkLogins(teamwork);
 
 		const list = new Intl.ListFormat(i18n.language, {

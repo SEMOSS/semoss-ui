@@ -35,6 +35,7 @@ import {
 	findConnectorTool,
 	getConnectorToolTitle,
 } from "../connectors/connector.catalog";
+import { signInToProvider } from "../connectors/connector-sign-in";
 import { useConnectProvider } from "../connectors/use-connect-provider";
 import { type ChatToolInfo, listToolParameters } from "../tools/chat-tool-info";
 import { useRoomToolbox } from "../use-room-toolbox";
@@ -145,7 +146,7 @@ const TeamworkToolsPanel = observer(() => {
 	const room = useRoom();
 	const { teamwork } = room;
 	const { t, i18n } = useTranslation("teamwork");
-	const handleSignIn = useConnectProvider(teamwork.signIn);
+	const handleSignIn = useConnectProvider(signInToProvider);
 	// sign ins made or lost in another tab show up when the window is focused
 	useTeamworkLogins(teamwork);
 	// read again once a connector change has been written to the toolbox

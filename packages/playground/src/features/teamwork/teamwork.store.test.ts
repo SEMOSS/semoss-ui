@@ -6,7 +6,7 @@ import {
 	readUserConnectorTools,
 	syncRoomConnectorTools,
 	writeUserConnectorTools,
-} from "./connectors/connectors.api";
+} from "./connectors/connector-tools";
 import { TeamworkStore } from "./teamwork.store";
 import { FOLDER_TOOL_NAMES } from "./tools/folder-tools";
 
@@ -15,20 +15,15 @@ vi.mock("@semoss/i18n", async (importOriginal) => ({
 	getI18n: () => ({ t: (key: string) => key }),
 }));
 
-// the session's logins, its login settings, and the user's connector file
-// come from the server; the room's tool file is read through the room, which
-// the tests stand in for
-vi.mock("./connectors/connectors.api", async (importOriginal) => {
+// the user's connector file comes from the server; the room's tool file is
+// read through the room, which the tests stand in for. The session's logins
+// come from the SDK, which the tests set through setSessionLogins.
+vi.mock("./connectors/connector-tools", async (importOriginal) => {
 	const catalog = await import("./connectors/connector.catalog");
 	return {
 		...(await importOriginal<
-			typeof import("./connectors/connectors.api")
+			typeof import("./connectors/connector-tools")
 		>()),
-		getSessionLogins: vi.fn(async () => ({})),
-		readSessionLoginConfig: vi.fn(async () => ({
-			connectorAccess: null,
-			availableProviders: null,
-		})),
 		readUserConnectorTools: vi.fn(async () => null),
 		// the tools the backend writes for the services switched on
 		writeUserConnectorTools: vi.fn(async (services: readonly string[]) =>
@@ -396,6 +391,38 @@ describe("TeamworkStore", () => {
 				(source) => source.provider === "GOOGLE",
 			),
 		).toBe(false);
+	});
+
+	test("takes the session's sign ins from the SDK, leaving an unchanged answer alone", () => {
+		const store = new TeamworkStore(createRoom());
+		const connectorAccess = { MICROSOFT: { outlook: true } };
+		store.setSessionLogins({
+			logins: { NATIVE: "Ada", MICROSOFT: "Ada" },
+			connectorAccess: connectorAccess,
+			availableProviders: [{ provider: "ms", isOauth: true }],
+		});
+		expect(store.connectedProviders).toEqual(["MICROSOFT"]);
+		expect(store.offeredProviders).toEqual(["MICROSOFT"]);
+
+		const connected = store.connectedProviders;
+		const offered = store.offeredProviders;
+		store.setSessionLogins({
+			logins: { MICROSOFT: "Ada" },
+			connectorAccess: null,
+			availableProviders: [{ provider: "ms", isOauth: true }],
+		});
+		expect(store.connectedProviders).toBe(connected);
+		expect(store.offeredProviders).toBe(offered);
+		// a config that no longer says keeps what it said
+		expect(store.connectorAccess).toBe(connectorAccess);
+
+		store.setSessionLogins({
+			logins: null,
+			connectorAccess: undefined,
+			availableProviders: undefined,
+		});
+		expect(store.connectedProviders).toBeNull();
+		expect(store.offeredProviders).toBe(offered);
 	});
 
 	test("asks for a sign in when a switched on connector's account is not signed in", async () => {

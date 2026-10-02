@@ -26,7 +26,7 @@ exports the public helpers. See the [README](./README.md) for import examples.
 | `identifier` | Identifier labels, slugs, validation, and unique names |
 | `date` | Date/time formatting, durations, local dates, and date buckets |
 | `object` | Object checks and copying |
-| `json` | JSON parsing and formatting, tabular detection, and error locations |
+| `json` | JSON parsing and formatting, key-sorted serialization, tabular detection, and error locations |
 | `file` | File extensions and filename sanitization |
 | `encoding` | Base64 encoding and decoding |
 | `browser` | Favicons and file downloads |

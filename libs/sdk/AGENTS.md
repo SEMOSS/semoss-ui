@@ -110,3 +110,18 @@ When changing an API, inspect its owning implementation and adjacent tests:
 
 Update the packaged guide with signature/behavior changes. Comments and mocked
 tests are not backend authority; retain its compatibility caveats until verified.
+
+## Session Logins
+
+The SDK owns what the session is signed in to, so an app never tracks or caches it:
+
+- [`Logins`](./src/stores/logins/logins.store.ts) holds the session's logins for the whole
+  page, shared by every `InsightStore` and view. `InsightStore` fills it from the system config
+  when it loads, and resets and refills it after each login and logout, when it also reads
+  `/api/config` again (the copy read while signed out names no logins).
+- `refresh` joins a read in flight and reuses one younger than 30 seconds; `useLogins()` reads
+  again when a view mounts and whenever the window regains focus.
+- `connect` signs in to one more provider with a fresh popup (see `connectLogin` in
+  [`api/auth.ts`](./src/api/auth.ts)): a listed provider is signed out first, since the backend
+  keeps listing an expired token. Neither it nor `disconnect` ever signs out the session's own
+  login (`primaryLogin`), which would end the session or change whose it is.

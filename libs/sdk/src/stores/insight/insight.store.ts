@@ -21,6 +21,7 @@ import {
 import { Env } from "../../env";
 import type { MCPToolResponse, Script } from "../../types";
 import { UnauthorizedError } from "../../utility";
+import { Logins } from "../logins";
 import { createRoom, RoomStore } from "../room";
 
 /**
@@ -49,6 +50,34 @@ const loadSystemConfig = async () => {
 		cachedSystemConfigPromise = null;
 		throw e;
 	}
+};
+
+/**
+ * The system information from the config, over the defaults every app reads.
+ *
+ * @param data - The config, or nothing when it could not be read.
+ * @returns The system, or null without a config.
+ */
+const createSystem = (
+	data: Awaited<ReturnType<typeof getSystemConfig>> | null | undefined,
+): InsightStoreInterface["system"] => {
+	if (!data) {
+		return null;
+	}
+	const system: NonNullable<InsightStoreInterface["system"]> = {
+		config: {
+			logins: {},
+			availableProviders: [],
+			theme: {
+				playground: {},
+			},
+			systemDate: "",
+		},
+	};
+	for (const key in data) {
+		system.config[key] = data[key];
+	}
+	return system;
 };
 
 /** Options accepted by {@link InsightStore.initialize}. */
@@ -444,27 +473,10 @@ export class InsightStore {
 		// get the response (shared across providers via a module-level cache)
 		const data = await loadSystemConfig();
 
-		let system: InsightStoreInterface["system"] = null;
+		this._store.system = createSystem(data);
 		if (data) {
-			// create the system
-			system = {
-				config: {
-					logins: {},
-					availableProviders: [],
-					theme: {
-						playground: {},
-					},
-					systemDate: "",
-				},
-			};
-
-			// save the other config data
-			for (const key in data) {
-				system.config[key] = data[key];
-			}
+			Logins.seed(data);
 		}
-
-		this._store.system = system;
 		if (this._store.system) {
 			this._store.isInitialized = true;
 		} else {
@@ -473,20 +485,20 @@ export class InsightStore {
 	};
 
 	/**
-	 * Read the system config again, as the signed in user sees it. The config
-	 * names the session's logins and what they allow, so the copy read before
-	 * a login is stale once one succeeds. A failed read keeps the copy there is.
+	 * Read the system config again, as the session now sees it. The config
+	 * names the session's logins and what they allow, so the copy read before a
+	 * login or logout is stale once one succeeds. The page's logins start over
+	 * from it. A failed read keeps the copy there is.
 	 */
 	private refreshSystem = async (): Promise<void> => {
 		cachedSystemConfig = null;
 		cachedSystemConfigPromise = null;
 		try {
 			const data = await loadSystemConfig();
-			if (data && this._store.system) {
-				this._store.system = {
-					...this._store.system,
-					config: { ...this._store.system.config, ...data },
-				};
+			if (data) {
+				this._store.system = createSystem(data);
+				Logins.reset();
+				Logins.seed(data);
 			}
 		} catch (error) {
 			console.warn(error);
@@ -770,6 +782,9 @@ LoadPyFromFile(alias="${alias}", filePath="temp.py");
 				this._store.insightId = "";
 				this._store.isReady = false;
 				this._room = null;
+
+				// the config read while signed in names logins that are gone
+				await this.refreshSystem();
 
 				// success
 				return true;

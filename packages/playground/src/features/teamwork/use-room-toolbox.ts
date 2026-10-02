@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import type { RoomStore } from "@/stores/room/room.store";
-import { loadRoomToolbox } from "./connectors/connectors.api";
+import { loadRoomToolbox } from "./connectors/connector-tools";
 import type { ChatToolInfo } from "./tools/chat-tool-info";
 
 /** What {@link useRoomToolbox} returns. */

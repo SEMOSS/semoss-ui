@@ -1,6 +1,7 @@
 import { TriangleAlertIcon } from "lucide-react";
 import { useCallback, useRef } from "react";
 import { useTranslation } from "@semoss/i18n";
+import { SessionLoginDisconnectError } from "@semoss/sdk";
 import {
 	Alert,
 	AlertDescription,
@@ -18,7 +19,6 @@ import {
 	getConnectorProvider,
 	getConnectorService,
 } from "../connectors/connector.catalog";
-import { SessionLoginDisconnectError } from "../connectors/connectors.api";
 import { useConnectProvider } from "../connectors/use-connect-provider";
 import { useConnections } from "../connectors/use-connections";
 import { useUserConnectors } from "../connectors/use-user-connectors";

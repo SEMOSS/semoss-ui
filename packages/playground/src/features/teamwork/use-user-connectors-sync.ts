@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { subscribeUserConnectorTools } from "./connectors/connectors.api";
+import { subscribeUserConnectorTools } from "./connectors/connector-tools";
 import type { TeamworkStore } from "./teamwork.store";
 
 /**

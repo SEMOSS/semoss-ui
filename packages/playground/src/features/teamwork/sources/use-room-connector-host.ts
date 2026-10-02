@@ -4,6 +4,7 @@ import type {
 	ConnectorViewerProps,
 } from "@semoss/connectors";
 import { useTranslation } from "@semoss/i18n";
+import { PopupBlockedError } from "@semoss/sdk";
 import { toast } from "@semoss/ui/next";
 import { getErrorMessage } from "@semoss/utility/error";
 import { useRoom } from "@/contexts/room.context";
@@ -11,7 +12,7 @@ import {
 	type ConnectorProviderId,
 	getConnectorProvider,
 } from "../connectors/connector.catalog";
-import { PopupBlockedError } from "../connectors/connectors.api";
+import { signInToProvider } from "../connectors/connector-sign-in";
 import { useNextMessageRoom } from "./next-message-room";
 
 /**
@@ -74,7 +75,7 @@ export const useRoomConnectorHost = (
 		const provider = getConnectorProvider(providerId);
 		const name = t(`providers.${provider.id}.name`);
 		// no await before this call: the popup has to open inside the click
-		const attempt = room.teamwork.signIn(providerId);
+		const attempt = signInToProvider(providerId);
 		try {
 			const isConnected = await attempt;
 			if (!isConnected) {
@@ -92,7 +93,7 @@ export const useRoomConnectorHost = (
 			);
 			return false;
 		}
-	}, [providerId, room, t]);
+	}, [providerId, t]);
 
 	return {
 		saveTargetName: chatFilesName,

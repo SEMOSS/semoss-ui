@@ -13,6 +13,17 @@ import { RoomInputMenuUpload } from "./room-input-menu-upload";
 // Fake editor state shared between mocks
 // ---------------------------------------------------------------------------
 const openFilePicker = vi.hoisted(() => vi.fn());
+// stable, as the SDK's are, so views keep the same logins between renders
+const sessionLogins = vi.hoisted(() => ({
+	logins: {},
+	primaryLogin: null,
+	connectorAccess: null,
+	availableProviders: [],
+	status: "ready" as const,
+	refresh: vi.fn(),
+	connect: vi.fn(),
+	disconnect: vi.fn(),
+}));
 let fakeEditorText = "";
 let triggerOnChange: (() => void) | null = null;
 
@@ -20,6 +31,11 @@ let triggerOnChange: (() => void) | null = null;
 // Mocks
 // ---------------------------------------------------------------------------
 
+// the session's logins, without reading them from a server
+vi.mock("@semoss/sdk/react", async (importOriginal) => ({
+	...(await importOriginal<typeof import("@semoss/sdk/react")>()),
+	useLogins: () => sessionLogins,
+}));
 vi.mock("@semoss/i18n", async (importOriginal) => {
 	const actual = await importOriginal<typeof import("@semoss/i18n")>();
 	return {
@@ -239,8 +255,7 @@ const defaultProps = {
 			missingSignIns: [],
 			uncoveredConnectors: [],
 			unofferedProviders: [],
-			refreshConnectedProviders: async () => undefined,
-			refreshLoginConfig: async () => undefined,
+			setSessionLogins: vi.fn(),
 		},
 		roomId: "room",
 		history: [],

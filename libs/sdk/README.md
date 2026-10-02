@@ -73,6 +73,27 @@ const logout = async () => insight.actions.logout();
 Login and logout return booleans, not `{ output }`. Inspect failed results and
 `insight.error`; supported OAuth providers depend on the server configuration.
 
+-   Know what the session is signed in to
+
+`Logins` holds the session's logins for the whole page, so every insight and
+view sees the same answer. The insight fills it from the config when it loads
+and after each login and logout. Read it again, sign in to one more provider,
+or sign one out with its actions; in React, `useLogins()` reads it again when a
+view mounts and whenever the window regains focus.
+
+```ts
+import { Logins } from "@semoss/sdk";
+
+const { logins, primaryLogin, status } = Logins.getSnapshot(); // logins: { NATIVE: "Ada" }
+await Logins.refresh(); // reuses a read younger than 30 seconds
+await Logins.connect("MICROSOFT"); // from a click: opens a fresh sign in popup
+await Logins.disconnect("MICROSOFT"); // never the session's own login
+```
+
+`connect` throws `PopupBlockedError` when the browser blocks the popup, and
+`disconnect` throws `SessionLoginDisconnectError` for the login the session
+belongs to.
+
 -   Ask an LLM and return a result
 
 ```ts

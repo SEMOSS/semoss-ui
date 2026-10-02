@@ -16,6 +16,7 @@ import {
 	uploadInsight,
 } from "@semoss/sdk/react";
 import type { FileExplorerApi, ThemeMap } from "@semoss/shared";
+import { stringifyJsonWithSortedKeys } from "@semoss/utility/json";
 import {
 	createWorkbenchStore,
 	type WorkbenchPanelConfigAny,
@@ -67,25 +68,10 @@ const getStoredMcp = (mcp: MCPConfig[] = []): MCPConfig[] =>
 	mcp.filter((item) => !item?.fromWorkspace && !item?.fromRoom);
 
 /**
- * Serialize with object keys sorted, so the same settings compare equal
- * whatever order their keys were set in.
- */
-const toStableJson = (value: unknown): string =>
-	JSON.stringify(value, (_key, item: unknown) =>
-		item && typeof item === "object" && !Array.isArray(item)
-			? Object.fromEntries(
-					Object.entries(item).sort(([a], [b]) =>
-						a < b ? -1 : a > b ? 1 : 0,
-					),
-				)
-			: item,
-	);
-
-/**
  * A comparable key for room options as the backend stores them.
  */
 const getStoredOptionsKey = (options: { mcp?: MCPConfig[] }): string =>
-	toStableJson({ ...options, mcp: getStoredMcp(options.mcp) });
+	stringifyJsonWithSortedKeys({ ...options, mcp: getStoredMcp(options.mcp) });
 
 interface RoomStoreInterface {
 	/**
