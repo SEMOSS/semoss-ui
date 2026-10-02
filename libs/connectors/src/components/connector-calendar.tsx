@@ -19,16 +19,15 @@ import {
 } from "@semoss/ui/next";
 import {
 	addLocalDays,
-	formatDayHeading,
-	formatShortDay,
+	formatLocalDateKey,
 	isSameLocalDay,
-} from "../core/connector.format";
+} from "@semoss/utility/date";
+import { formatDayHeading, formatShortDay } from "../core/connector.format";
 import type { ConnectorAccount } from "../core/connector.types";
-import {
-	type ConnectorCalendarDay as CalendarDay,
-	type CalendarEventSchedule,
-	type CalendarView,
-	calendarDayKey,
+import type {
+	ConnectorCalendarDay as CalendarDay,
+	CalendarEventSchedule,
+	CalendarView,
 } from "../core/connector-calendar";
 import type { CalendarWindow } from "../core/use-calendar-window";
 import type { ConnectorQuery } from "../core/use-connector-query";
@@ -83,7 +82,7 @@ export const ConnectorCalendar = <T,>({
 	const days = query.data ?? [];
 	const titles = new Map(
 		days.map(({ day, events }) => [
-			calendarDayKey(day),
+			formatLocalDateKey(day),
 			events.map(getTitle),
 		]),
 	);
@@ -266,7 +265,7 @@ export const ConnectorCalendar = <T,>({
 							) : null}
 							<ul>
 								{shownDays.map(({ day, events }) => (
-									<li key={calendarDayKey(day)}>
+									<li key={formatLocalDateKey(day)}>
 										<H4 className="sticky top-0 z-10 border-border border-b bg-muted px-3 py-2 font-medium text-xs">
 											{formatDayHeading(
 												day,

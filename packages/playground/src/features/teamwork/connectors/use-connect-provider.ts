@@ -1,6 +1,7 @@
 import { useCallback } from "react";
 import { useTranslation } from "@semoss/i18n";
 import { toast } from "@semoss/ui/next";
+import { getErrorMessage } from "@semoss/utility/error";
 import type { ConnectorProviderId } from "./connector.catalog";
 import { PopupBlockedError } from "./connectors.api";
 import type { UseConnectionsResult } from "./use-connections";
@@ -42,10 +43,7 @@ export const useConnectProvider = (
 							? t("providers.popupBlocked")
 							: t("providers.connectError", {
 									name: name,
-									message:
-										error instanceof Error
-											? error.message
-											: "",
+									message: getErrorMessage(error, ""),
 								}),
 					);
 				},

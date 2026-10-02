@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { startOfLocalDay } from "./connector.format";
+import { startOfLocalDay } from "@semoss/utility/date";
 import {
 	type CalendarView,
 	calendarViewRange,

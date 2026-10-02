@@ -1,4 +1,4 @@
-import { getFileExtension } from "@semoss/utility";
+import { getFileExtension } from "@semoss/utility/file";
 import {
 	createNameMatcher,
 	FolderPathError,

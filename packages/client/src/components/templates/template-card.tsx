@@ -11,8 +11,9 @@ import {
 	TooltipContent,
 	TooltipTrigger,
 } from "@semoss/ui/next";
-import { formatDateToLocal } from "@semoss/utility";
-import { formatToDataTestId, getTagBadgeStyle } from "@/utility";
+import { formatLocalDateTime } from "@semoss/utility/date";
+import { formatToDataTestId } from "@semoss/utility/text";
+import { getTagBadgeStyle } from "@/utility";
 
 export interface TemplateCardProps extends React.ComponentProps<typeof Card> {
 	/** Unique template / project ID */
@@ -42,7 +43,7 @@ export const TemplateCard = ({
 	onUseTemplate,
 	...cardProps
 }: TemplateCardProps) => {
-	const localDate = formatDateToLocal(dateLastEdited);
+	const localDate = formatLocalDateTime(dateLastEdited);
 
 	return (
 		<Card

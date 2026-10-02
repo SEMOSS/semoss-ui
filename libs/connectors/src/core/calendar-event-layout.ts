@@ -1,4 +1,4 @@
-import { addLocalDays } from "./connector.format";
+import { addLocalDays } from "@semoss/utility/date";
 import type { CalendarEventSchedule } from "./connector-calendar";
 
 /** One event's position in a day's wall-clock time grid. */

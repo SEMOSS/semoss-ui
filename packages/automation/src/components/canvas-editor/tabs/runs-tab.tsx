@@ -15,6 +15,7 @@ import {
 	Button,
 	toast,
 } from "@semoss/ui/next";
+import { formatDurationMs } from "@semoss/utility/date";
 import { getAutomationRun, listAutomationRuns } from "../../../api";
 import type {
 	AutomationExecutedDefinition,
@@ -32,10 +33,7 @@ import {
 	formatTimestamp,
 	getDisplayMeta,
 } from "../../../domain/automation-display";
-import {
-	formatDurationMs,
-	normalizeAutomationErrorMessage,
-} from "../../../domain/automation-utils";
+import { normalizeAutomationErrorMessage } from "../../../domain/automation-utils";
 import type { AutomationWorkflowDocument } from "../../../domain/automation-workflow.types";
 import { canvasDocumentFromWorkflow } from "../../../domain/automation-workflow-adapter";
 import { getWorkflowNodeDisplay } from "../../../domain/automation-workflow-display";

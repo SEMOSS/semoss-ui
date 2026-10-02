@@ -11,6 +11,7 @@ import {
 	Skeleton,
 	toast,
 } from "@semoss/ui/next";
+import { getErrorMessage } from "@semoss/utility/error";
 import {
 	type ConnectorProviderId,
 	type ConnectorServiceId,
@@ -64,7 +65,7 @@ export const ConnectorsSettings = () => {
 			enableServices(services).catch((error: unknown) => {
 				toast.error(
 					t("connectors.saveError", {
-						message: error instanceof Error ? error.message : "",
+						message: getErrorMessage(error, ""),
 					}),
 				);
 			});
@@ -88,9 +89,7 @@ export const ConnectorsSettings = () => {
 					message:
 						error instanceof SessionLoginDisconnectError
 							? t("providers.sessionLoginNote")
-							: error instanceof Error
-								? error.message
-								: "",
+							: getErrorMessage(error, ""),
 				}),
 			);
 			return;
@@ -103,7 +102,7 @@ export const ConnectorsSettings = () => {
 		} catch (error) {
 			toast.error(
 				t("connectors.saveError", {
-					message: error instanceof Error ? error.message : "",
+					message: getErrorMessage(error, ""),
 				}),
 			);
 		}
@@ -118,7 +117,7 @@ export const ConnectorsSettings = () => {
 		} catch (error) {
 			toast.error(
 				t("connectors.saveError", {
-					message: error instanceof Error ? error.message : "",
+					message: getErrorMessage(error, ""),
 				}),
 			);
 		}

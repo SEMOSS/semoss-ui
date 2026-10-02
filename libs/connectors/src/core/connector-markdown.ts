@@ -1,8 +1,5 @@
-import {
-	isSameLocalDay,
-	parseGraphDate,
-	parseGraphDay,
-} from "./connector.format";
+import { isSameLocalDay } from "@semoss/utility/date";
+import { parseGraphDate, parseGraphDay } from "./connector.format";
 import { toSiteLink } from "./connector-rich-text";
 
 /*

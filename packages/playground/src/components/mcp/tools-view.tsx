@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { isRequestUserInputAction, parseUserInputRequest } from "@semoss/sdk";
 import { Env, type MCPToolRequest, usePixel } from "@semoss/sdk/react";
 import { AgentUserInputCard, Skeleton, toast } from "@semoss/ui/next";
+import { getErrorMessage } from "@semoss/utility/error";
 import { TeamworkToolCard } from "@/features/teamwork/components/teamwork-tool-card";
 import { isTeamworkToolCall } from "@/features/teamwork/tools/teamwork-tool-kind";
 import type { RoomStore } from "@/stores";
@@ -319,9 +320,10 @@ export const ToolsView = observer(
 												);
 											} catch (error) {
 												toast.error(
-													error instanceof Error
-														? error.message
-														: "Unable to submit these answers.",
+													getErrorMessage(
+														error,
+														"Unable to submit these answers.",
+													),
 												);
 											}
 										}}

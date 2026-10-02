@@ -12,6 +12,7 @@ import { useTranslation } from "@semoss/i18n";
 import { Env } from "@semoss/sdk";
 import { download, useInsight, usePixel } from "@semoss/sdk/react";
 import { toast, useDebouncedValue } from "@semoss/ui/next";
+import { downloadBlob } from "@semoss/utility/browser";
 import type { FileItem } from "./file.types";
 import { getFileExplorerAdapter } from "./file-explorer.adapters";
 import type {
@@ -982,14 +983,7 @@ export const useFileExplorer = (
 		}
 
 		const blob = await response.blob();
-		const objectUrl = URL.createObjectURL(blob);
-		const link = document.createElement("a");
-		link.href = objectUrl;
-		link.download = fileName;
-		document.body.appendChild(link);
-		link.click();
-		document.body.removeChild(link);
-		URL.revokeObjectURL(objectUrl);
+		downloadBlob(blob, fileName);
 	};
 
 	/**

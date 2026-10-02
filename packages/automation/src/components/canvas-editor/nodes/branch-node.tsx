@@ -17,6 +17,7 @@ import {
 	TooltipContent,
 	TooltipTrigger,
 } from "@semoss/ui/next";
+import { formatDurationMs } from "@semoss/utility/date";
 import type {
 	AutomationNode as AutomationGraphNode,
 	BranchConfig,
@@ -24,7 +25,6 @@ import type {
 	RoutingConfig,
 	StepRunStatus,
 } from "../../../domain/automation.types";
-import { formatDurationMs } from "../../../domain/automation-utils";
 import { useAutomationNode } from "../../../hooks/use-automation";
 import { StatusIcon } from "../../status-icon";
 import { getFlowBorderClass } from "../flow-colors";

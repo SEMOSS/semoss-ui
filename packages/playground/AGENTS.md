@@ -116,6 +116,7 @@ Coverage reports output to `./coverage/packages/playground/` and include only `s
   "@semoss/sdk": "workspace:*",
   "@semoss/shared": "workspace:*",
   "@semoss/ui": "workspace:*",
+  "@semoss/utility": "workspace:*",
   "@semoss/workbench": "workspace:*"
 }
 ```
@@ -320,3 +321,11 @@ its values for a retry. Creation reads
 shows its warning, avoiding duplicate creation. The agent catalog keeps the existing card
 actions and responsive grid while adding access filters and sorting. Card permissions use the
 backend's effective `permission`, including group grants.
+
+## Generic utilities
+
+Import reusable helpers from `@semoss/utility/<category>`, a direct workspace dependency.
+Follow the [utility guide](../../libs/utility/AGENTS.md). Keep domain policy and
+UI behavior here, and preserve public compatibility adapters when moving helpers.
+Date buckets, their order, and timestamp normalization come directly from
+`@semoss/utility/date`. Keep sidebar translations and the favorites group here.

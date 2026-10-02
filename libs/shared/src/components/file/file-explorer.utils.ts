@@ -1,4 +1,5 @@
 import type React from "react";
+import { decodeBase64ToBytes } from "@semoss/utility/encoding";
 import type { FileItem } from "./file.types";
 import {
 	BRAND_ICON_EXTENSIONS,
@@ -353,27 +354,9 @@ export const getFileOperationErrorMessage = (
 export const decodeBase64Asset = (data: string): Uint8Array | null => {
 	if (!data) return null;
 	try {
-		const binary = atob(data.replace(/\s/g, ""));
-		const bytes = new Uint8Array(binary.length);
-		for (let i = 0; i < binary.length; i++) {
-			bytes[i] = binary.charCodeAt(i);
-		}
-		return bytes;
+		return decodeBase64ToBytes(data.replace(/\s/g, ""));
 	} catch (error) {
 		console.error("Failed to decode asset bytes", error);
 		return null;
 	}
-};
-
-/**
- * Encode raw bytes as base64 (e.g. for a `Save*AssetsBase64` Pixel), chunked
- * so a large file does not overflow `String.fromCharCode`'s argument limit.
- */
-export const encodeBase64Asset = (bytes: Uint8Array): string => {
-	const CHUNK = 0x8000;
-	let binary = "";
-	for (let i = 0; i < bytes.length; i += CHUNK) {
-		binary += String.fromCharCode(...bytes.subarray(i, i + CHUNK));
-	}
-	return btoa(binary);
 };

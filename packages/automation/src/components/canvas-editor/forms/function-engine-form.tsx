@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { usePixel } from "@semoss/sdk/react";
 import { Button, Small } from "@semoss/ui/next";
+import { tryParseJson } from "@semoss/utility/json";
+import { isRecord } from "@semoss/utility/object";
 import type { FunctionEngineConfig } from "../../../domain/automation.types";
 import { EnginePickerField } from "./engine-picker-field";
 import { type InputMode, InputModeToggle } from "./input-mode-toggle";
@@ -17,10 +19,6 @@ interface FunctionEngineDefinition {
 	name: string;
 	description?: string;
 	parameters: FunctionParameterDefinition[];
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-	return value !== null && typeof value === "object" && !Array.isArray(value);
 }
 
 function requiredParameterNames(value: unknown): Set<string> {
@@ -105,12 +103,8 @@ function parameterTemplate(parameters: FunctionParameterDefinition[]): string {
 }
 
 function parameterObject(value: string): Record<string, unknown> | null {
-	try {
-		const parsed = JSON.parse(value) as unknown;
-		return isRecord(parsed) ? parsed : null;
-	} catch {
-		return null;
-	}
+	const parsed = tryParseJson(value);
+	return isRecord(parsed) ? parsed : null;
 }
 
 function parameterDisplayValue(value: unknown): string {
@@ -130,11 +124,8 @@ function parameterValue(value: string, type: string): unknown {
 		if (Number.isFinite(numericValue)) return numericValue;
 	}
 	if (type === "array" || type === "object") {
-		try {
-			return JSON.parse(trimmed) as unknown;
-		} catch {
-			return value;
-		}
+		const parsed = tryParseJson(trimmed);
+		return parsed === undefined ? value : parsed;
 	}
 	return value;
 }

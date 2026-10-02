@@ -10,7 +10,9 @@ utilities and components library.
 ## Overview
 
 `@semoss/shared` holds the cross-application components, utilities, and types that more than
-one app needs. **Check here first** before writing new shared components, utilities, or types.
+one app needs. **Check here first** for domain components, adapters, and types.
+Generic functions belong in [@semoss/utility](../utility/AGENTS.md); consume their
+category subpaths instead of duplicating them inside components.
 
 It is the home of large shared building blocks such as the file explorer, the Monaco
 editor wrappers, the FlexLayout wrapper, the shared login page, engine/MCP/prompt/skill UI,

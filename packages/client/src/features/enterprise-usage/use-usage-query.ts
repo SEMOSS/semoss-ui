@@ -1,4 +1,5 @@
 import { usePixel } from "@semoss/sdk/react";
+import { getErrorMessage } from "@semoss/utility/error";
 import { parseUsageRows } from "@/api/enterprise-usage";
 import { usagePixel } from "@/api/enterprise-usage-requests";
 import type { UsageQuery, UsageResult } from "./usage.types";
@@ -31,8 +32,7 @@ export function useUsageQuery(query: UsageQuery | null): UsageResult {
 		return {
 			rows: [],
 			isLoading: false,
-			error:
-				error instanceof Error ? error.message : "Invalid Usage Data.",
+			error: getErrorMessage(error, "Invalid Usage Data."),
 			refresh: result.refresh,
 		};
 	}

@@ -11,6 +11,7 @@ import {
 	TooltipContent,
 	TooltipTrigger,
 } from "@semoss/ui/next";
+import { formatDurationMs } from "@semoss/utility/date";
 import type {
 	AutomationNode as AutomationGraphNode,
 	AutomationNodeTrace,
@@ -20,7 +21,6 @@ import {
 	getDisplayMeta,
 	getStepHeaderLabel,
 } from "../../../domain/automation-display";
-import { formatDurationMs } from "../../../domain/automation-utils";
 import { getWorkflowNodeDefinition } from "../../../domain/automation-workflow-adapter";
 import { getWorkflowNodeDisplay } from "../../../domain/automation-workflow-display";
 import { useAutomationNode } from "../../../hooks/use-automation";

@@ -26,7 +26,9 @@ import {
 	TooltipTrigger,
 	toast,
 } from "@semoss/ui/next";
-import { getFileExtension, getImageMimeType } from "@semoss/utility";
+import { getErrorMessage } from "@semoss/utility/error";
+import { getFileExtension } from "@semoss/utility/file";
+import { getImageMimeType } from "@semoss/utility/image";
 import { MessageActions } from "@/features/conversation/message-actions";
 import type { InputMessageStore } from "@/stores/message/input-message.store";
 import type { RoomStore } from "@/stores/room/room.store";
@@ -320,11 +322,7 @@ export const InputMessage: React.FC<InputMessageProps> = observer(
 												t("notifications.copySuccess"),
 											);
 										} catch (e) {
-											toast.error(
-												e instanceof Error
-													? e.message
-													: String(e),
-											);
+											toast.error(getErrorMessage(e));
 										}
 									}}
 								>

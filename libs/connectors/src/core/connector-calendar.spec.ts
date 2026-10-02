@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
+import { formatLocalDateKey } from "@semoss/utility/date";
 import { parseGraphDate, parseGraphDay } from "./connector.format";
 import {
-	calendarDayKey,
 	calendarMonthRange,
 	calendarViewRange,
 	groupCalendarEvents,
@@ -17,8 +17,8 @@ const interval = (event: { start: string; end: string }) => ({
 describe("calendar windows", () => {
 	it("includes all six Sunday-first weeks across a year boundary", () => {
 		const range = calendarMonthRange(new Date(2026, 11, 15));
-		expect(calendarDayKey(range.start)).toBe("2026-11-29");
-		expect(calendarDayKey(range.end)).toBe("2027-01-10");
+		expect(formatLocalDateKey(range.start)).toBe("2026-11-29");
+		expect(formatLocalDateKey(range.end)).toBe("2027-01-10");
 	});
 	it("shows multi-day events on each day but excludes the ending midnight", () => {
 		const event = { start: "2026-09-02", end: "2026-09-05" };
@@ -27,7 +27,7 @@ describe("calendar windows", () => {
 			calendarMonthRange(day("2026-09-01")),
 			interval,
 		);
-		expect(groups.map((group) => calendarDayKey(group.day))).toEqual([
+		expect(groups.map((group) => formatLocalDateKey(group.day))).toEqual([
 			"2026-09-02",
 			"2026-09-03",
 			"2026-09-04",
@@ -44,7 +44,7 @@ describe("calendar windows", () => {
 				events,
 				calendarMonthRange(day("2026-09-01")),
 				interval,
-			).map((group) => calendarDayKey(group.day)),
+			).map((group) => formatLocalDateKey(group.day)),
 		).toEqual(["2026-08-30", "2026-08-31", "2026-09-01"]);
 	});
 	it("keeps zero-duration and undated events reachable", () => {
@@ -72,7 +72,7 @@ describe("calendar windows", () => {
 				end: parseGraphDate(end.toISOString()),
 			}),
 		);
-		expect(groups.map((group) => calendarDayKey(group.day))).toEqual([
+		expect(groups.map((group) => formatLocalDateKey(group.day))).toEqual([
 			"2026-09-02",
 			"2026-09-03",
 		]);
@@ -83,7 +83,7 @@ describe("calendar windows", () => {
 			calendarMonthRange(day("2026-03-01")),
 			interval,
 		);
-		expect(groups.map((group) => calendarDayKey(group.day))).toEqual([
+		expect(groups.map((group) => formatLocalDateKey(group.day))).toEqual([
 			"2026-03-07",
 			"2026-03-08",
 			"2026-03-09",
@@ -100,20 +100,20 @@ it("uses Sunday boundaries for weeks and exact local days for shorter views", ()
 	] as const) {
 		const range = calendarViewRange(date, view);
 		expect([
-			calendarDayKey(range.start),
-			calendarDayKey(range.end),
+			formatLocalDateKey(range.start),
+			formatLocalDateKey(range.end),
 		]).toEqual([start, end]);
 	}
 });
 it("moves by the selected span and clamps short months", () => {
 	const date = new Date(2026, 0, 31);
-	expect(calendarDayKey(moveCalendarDate(date, "month", 1))).toBe(
+	expect(formatLocalDateKey(moveCalendarDate(date, "month", 1))).toBe(
 		"2026-02-28",
 	);
-	expect(calendarDayKey(moveCalendarDate(date, "threeDays", 1))).toBe(
+	expect(formatLocalDateKey(moveCalendarDate(date, "threeDays", 1))).toBe(
 		"2026-02-03",
 	);
-	expect(calendarDayKey(moveCalendarDate(date, "week", -1))).toBe(
+	expect(formatLocalDateKey(moveCalendarDate(date, "week", -1))).toBe(
 		"2026-01-24",
 	);
 });

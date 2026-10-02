@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { sleep as wait } from "@semoss/utility/async";
+import { getErrorMessage } from "@semoss/utility/error";
 import { normalizeBrowserUrl } from "../domain/browser-url";
 import {
 	getReplayWaitAfterMs,
 	getStepCoords,
 	getStepSelector,
-	wait,
 } from "../domain/replay-step";
 import { scrollDeltaForViewport } from "../domain/scroll";
 import type {
@@ -626,11 +627,7 @@ export function usePlaybackController({
 						);
 				}
 			} catch (error) {
-				onError(
-					error instanceof Error
-						? error.message
-						: "Replay step failed",
-				);
+				onError(getErrorMessage(error, "Replay step failed"));
 				return false;
 			}
 		},
@@ -767,8 +764,7 @@ export function usePlaybackController({
 						requestId: crypto.randomUUID(),
 					});
 				} catch (error) {
-					const message =
-						error instanceof Error ? error.message : String(error);
+					const message = getErrorMessage(error);
 					const isUnopenedManualTab =
 						String(step.type || "").toUpperCase() === "NAVIGATE" &&
 						message.includes("has not been opened by playback yet");
@@ -808,11 +804,10 @@ export function usePlaybackController({
 					onMessage(`Extracted context at optional step ${step.id}`);
 				} catch (error) {
 					onError(
-						`Optional context step ${step.id} failed: ${
-							error instanceof Error
-								? error.message
-								: "Could not extract selected website text"
-						}. Continuing playback.`,
+						`Optional context step ${step.id} failed: ${getErrorMessage(
+							error,
+							"Could not extract selected website text",
+						)}. Continuing playback.`,
 					);
 				}
 				setRunningStepId(null);

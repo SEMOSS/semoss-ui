@@ -4,6 +4,7 @@ import type {
 	ConnectorViewerService,
 } from "@semoss/connectors";
 import { getI18n } from "@semoss/i18n";
+import { getErrorMessage } from "@semoss/utility/error";
 import { MCP_EXECUTION_ASK, MCP_EXECUTION_AUTO } from "@/constants";
 import type { RoomStore } from "@/stores/room/room.store";
 import { ROOM_PANEL_TYPES } from "@/stores/room/room-sidebar";
@@ -495,7 +496,7 @@ export class TeamworkStore {
 			const raw = response.pixelReturn[0]?.output;
 			output = typeof raw === "string" ? raw : JSON.stringify(raw);
 		} catch (error) {
-			output = error instanceof Error ? error.message : String(error);
+			output = getErrorMessage(error);
 			isError = true;
 		}
 

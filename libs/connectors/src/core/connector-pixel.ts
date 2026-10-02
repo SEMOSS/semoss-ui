@@ -1,4 +1,6 @@
 import { runPixel } from "@semoss/sdk";
+import { getErrorMessage } from "@semoss/utility/error";
+import { isRecord } from "@semoss/utility/object";
 
 /**
  * The operation type the backend adds when a reactor needs the user to sign
@@ -48,9 +50,6 @@ export interface ConnectorErrorInfo {
 	message: string;
 }
 
-const isRecord = (value: unknown): value is Record<string, unknown> =>
-	typeof value === "object" && value !== null && !Array.isArray(value);
-
 /**
  * Sort a failure into the kinds the viewers explain.
  *
@@ -65,7 +64,7 @@ export const classifyConnectorError = (error: unknown): ConnectorErrorInfo => {
 	if (error instanceof ConnectorSignInError) {
 		return { kind: "signIn", message: error.message };
 	}
-	const raw = error instanceof Error ? error.message : String(error);
+	const raw = getErrorMessage(error);
 	const message = raw.replace(RESPONSE_BODY, "").trim();
 	const status = Number(HTTP_STATUS.exec(raw)?.[1]);
 	if (status === 401) {

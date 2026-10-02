@@ -31,6 +31,8 @@ import {
 	Spinner,
 	toast,
 } from "@semoss/ui/next";
+import { encodeTextToBase64 } from "@semoss/utility/encoding";
+import { getErrorMessage } from "@semoss/utility/error";
 import { useSession } from "@/hooks";
 
 interface AutomationImportExportCardProps {
@@ -59,13 +61,6 @@ function isSavedAutomation(value: unknown): value is SavedAutomation {
 		(value as { formatVersion?: unknown }).formatVersion === 2 &&
 		typeof (value as { graph?: unknown }).graph === "object"
 	);
-}
-
-function encodeBase64(value: string): string {
-	const bytes = new TextEncoder().encode(value);
-	let binary = "";
-	for (const byte of bytes) binary += String.fromCharCode(byte);
-	return btoa(binary);
 }
 
 export const AutomationImportExportCard = ({
@@ -122,11 +117,7 @@ export const AutomationImportExportCard = ({
 			}
 		} catch (error) {
 			console.error(error);
-			toast.error(
-				error instanceof Error
-					? error.message
-					: "Unable to export automation.",
-			);
+			toast.error(getErrorMessage(error, "Unable to export automation."));
 		} finally {
 			setIsExporting(false);
 		}
@@ -141,11 +132,7 @@ export const AutomationImportExportCard = ({
 			setPendingImport(parsed);
 		} catch (error) {
 			console.error(error);
-			toast.error(
-				error instanceof Error
-					? error.message
-					: "Unable to import automation.",
-			);
+			toast.error(getErrorMessage(error, "Unable to import automation."));
 		} finally {
 			setIsImporting(false);
 		}
@@ -182,7 +169,7 @@ export const AutomationImportExportCard = ({
 					}
 				: pendingImport.document;
 			const response = await runPixel(
-				`SaveAutomation(project=${JSON.stringify([project.project_id])}, json=${JSON.stringify([encodeBase64(JSON.stringify(document))])}, nodeSources=${JSON.stringify([encodeBase64(JSON.stringify(pendingImport.nodeSources))])});`,
+				`SaveAutomation(project=${JSON.stringify([project.project_id])}, json=${JSON.stringify([encodeTextToBase64(JSON.stringify(document))])}, nodeSources=${JSON.stringify([encodeTextToBase64(JSON.stringify(pendingImport.nodeSources))])});`,
 			);
 			if (response.errors.length > 0) {
 				throw new Error(response.errors.join("\n"));
@@ -198,11 +185,7 @@ export const AutomationImportExportCard = ({
 			}
 		} catch (error) {
 			console.error(error);
-			toast.error(
-				error instanceof Error
-					? error.message
-					: "Unable to save automation.",
-			);
+			toast.error(getErrorMessage(error, "Unable to save automation."));
 		} finally {
 			setIsImporting(false);
 		}
