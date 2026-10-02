@@ -680,7 +680,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 									/>
 								</div>
 							)}
-							<div className="flex min-h-0 flex-1 items-start">
+							<div className="flex min-h-0 min-w-0 flex-1 items-stretch overflow-hidden">
 								{root.theme.featureFlags
 									?.enablePromptOptimizer && (
 									<div
@@ -707,7 +707,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 										<ScrollArea
 											type="always"
 											className={cn(
-												"min-h-0 min-w-0 flex-1 bg-card",
+												"flex min-h-0 min-w-0 flex-1 flex-col bg-card *:data-[slot=scroll-area-viewport]:min-h-0 *:data-[slot=scroll-area-viewport]:flex-1",
 												isScrollable && "me-1",
 											)}
 											onClick={() =>
