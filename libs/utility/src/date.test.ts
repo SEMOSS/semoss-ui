@@ -1,11 +1,14 @@
+import dayjs from "dayjs";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
 	addLocalDays,
 	calendarDayKey,
+	DATE_BUCKET_ORDER,
 	formatDate,
 	formatDateTime,
 	formatDateToLocal,
 	formatDurationMs,
+	getDateBucket,
 	isSameLocalDay,
 	normalizeTimestamp,
 	parseDuration,
@@ -44,6 +47,7 @@ describe("date contracts", () => {
 		expect(isSameLocalDay(day, startOfLocalDay(day))).toBe(true);
 		expect(startOfLocalDay(day)).not.toBe(day);
 		expect(parseWallClock(undefined)).toBeNull();
+		expect(calendarDayKey(new Date("invalid"))).toBe("NaN-NaN-NaN");
 	});
 	it("normalizes zoneless SEMOSS timestamps to UTC", () => {
 		expect(normalizeTimestamp("2026-01-02 12:30:00").toISOString()).toBe(
@@ -71,5 +75,83 @@ describe("date contracts", () => {
 		expect(formatDurationMs(119900)).toBe("1m 59s");
 		expect(parseDuration(119900)).toBe("1m 60s");
 		expect(formatDurationMs(1234, 2)).toBe("1.23s");
+	});
+});
+
+describe("relative date buckets", () => {
+	it("groups all seven ranges in display order", () => {
+		vi.useFakeTimers();
+		vi.setSystemTime(new Date(2026, 0, 15, 12));
+		const dates = [
+			new Date(2026, 0, 15, 0),
+			new Date(2026, 0, 14, 23, 59),
+			new Date(2026, 0, 13, 12),
+			new Date(2026, 0, 10, 12),
+			new Date(2026, 0, 1, 12),
+			new Date(2025, 11, 15, 12),
+			new Date(2025, 10, 15, 12),
+		];
+		const buckets = dates.map((date) => getDateBucket(dayjs(date)));
+		expect(buckets).toEqual([
+			"today",
+			"yesterday",
+			"fewDaysAgo",
+			"lastWeek",
+			"thisMonth",
+			"lastMonth",
+			"older",
+		]);
+		expect(DATE_BUCKET_ORDER).toEqual(buckets);
+	});
+	it("uses strict rolling cutoffs instead of midnight for three and seven days", () => {
+		vi.useFakeTimers();
+		vi.setSystemTime(new Date(2026, 0, 15, 12));
+		const threeDaysAgo = dayjs(new Date(2026, 0, 12, 12));
+		const sevenDaysAgo = dayjs(new Date(2026, 0, 8, 12));
+		expect(getDateBucket(threeDaysAgo)).toBe("lastWeek");
+		expect(getDateBucket(threeDaysAgo.add(1, "millisecond"))).toBe(
+			"fewDaysAgo",
+		);
+		expect(getDateBucket(sevenDaysAgo)).toBe("thisMonth");
+		expect(getDateBucket(sevenDaysAgo.add(1, "millisecond"))).toBe(
+			"lastWeek",
+		);
+	});
+	it("prioritizes recent days across year and month boundaries", () => {
+		vi.useFakeTimers();
+		vi.setSystemTime(new Date(2026, 0, 1, 12));
+		expect(getDateBucket(dayjs(new Date(2025, 11, 31, 0)))).toBe(
+			"yesterday",
+		);
+		expect(getDateBucket(dayjs(new Date(2025, 11, 30, 12)))).toBe(
+			"fewDaysAgo",
+		);
+		expect(getDateBucket(dayjs(new Date(2025, 11, 28, 12)))).toBe(
+			"lastWeek",
+		);
+		expect(getDateBucket(dayjs(new Date(2025, 11, 15, 12)))).toBe(
+			"lastMonth",
+		);
+	});
+	it("keeps local cutoffs across both daylight-saving transitions", () => {
+		vi.useFakeTimers();
+		for (const [now, cutoff] of [
+			[new Date(2026, 2, 10, 12), new Date(2026, 2, 7, 12)],
+			[new Date(2026, 10, 3, 12), new Date(2026, 9, 31, 12)],
+		]) {
+			vi.setSystemTime(now);
+			expect(getDateBucket(dayjs(cutoff))).toBe("lastWeek");
+			expect(getDateBucket(dayjs(cutoff).add(1, "millisecond"))).toBe(
+				"fewDaysAgo",
+			);
+		}
+	});
+	it("preserves the existing invalid-date and future-date fallbacks", () => {
+		vi.useFakeTimers();
+		vi.setSystemTime(new Date(2026, 0, 15, 12));
+		expect(getDateBucket(dayjs("invalid"))).toBe("older");
+		expect(getDateBucket(dayjs(new Date(2026, 0, 16, 12)))).toBe(
+			"fewDaysAgo",
+		);
 	});
 });

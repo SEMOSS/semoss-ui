@@ -1,3 +1,5 @@
+import { calendarDayKey } from "@semoss/utility/date";
+
 //Common place to keep and make changes for audit logs related common functions for enhancing reusablity
 //event data object will have all the details about when the user clicks on table row
 export interface EventData {
@@ -66,15 +68,11 @@ export const TimeDateFormatter = (
  * A function to format a date string into a standardised date string format of 'yyyy-mm-dd'
  * @param {string|undefined} dateString - The date string to be formatted.
  * @returns {string} - The formatted date string.
- * @returns {string} - An empty string when the date string is not valid.
+ * @returns {string} - An empty string when no date string is supplied.
  */
 export const dateFormat = (dateString: string | undefined) => {
 	if (!dateString) return "";
-	const date = new Date(dateString);
-	const year = date.getFullYear();
-	const month = String(date.getMonth() + 1).padStart(2, "0");
-	const day = String(date.getDate()).padStart(2, "0");
-	return `${year}-${month}-${day}`;
+	return calendarDayKey(new Date(dateString));
 };
 
 //Engine types object for audit logs

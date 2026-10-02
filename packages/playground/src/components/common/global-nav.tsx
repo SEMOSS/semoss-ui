@@ -59,13 +59,16 @@ import {
 	useInfiniteScroll,
 	useSidebar,
 } from "@semoss/ui/next";
-import { normalizeTimestamp } from "@semoss/utility/date";
+import {
+	DATE_BUCKET_ORDER,
+	getDateBucket,
+	normalizeTimestamp,
+} from "@semoss/utility/date";
 import { MobileNavigationClose } from "@/features/navigation/mobile-navigation-close";
 import { NavigationRail } from "@/features/navigation/navigation-rail";
 import { NavigationToggle } from "@/features/navigation/navigation-toggle";
 import { useChat } from "@/hooks/use-chat";
 import { useRoot } from "@/hooks/use-root";
-import { getDateBucket } from "@/utility/date";
 import { AppLogo } from "./app-logo";
 import { GlobalNavItem } from "./global-nav-item";
 import { NavUser } from "./nav-user";
@@ -85,16 +88,10 @@ try {
 export const GlobalNav = observer(() => {
 	const { t } = useTranslation("sidebar");
 
-	const BUCKETS = [
-		t("buckets.favorites"),
-		t("buckets.today"),
-		t("buckets.yesterday"),
-		t("buckets.fewDaysAgo"),
-		t("buckets.lastWeek"),
-		t("buckets.thisMonth"),
-		t("buckets.lastMonth"),
-		t("buckets.older"),
-	] as const;
+	const dateBucketLabels = DATE_BUCKET_ORDER.map((bucket) =>
+		t(`buckets.${bucket}`),
+	);
+	const BUCKETS = [t("buckets.favorites"), ...dateBucketLabels];
 	const [downloadDialogOpen, setDownloadDialogOpen] = useState(false);
 	const [downloadRoomId, setDownloadRoomId] = useState<string | null>(null);
 	const [downloadingFormat, setDownloadingFormat] = useState<string | null>(
@@ -338,13 +335,7 @@ export const GlobalNav = observer(() => {
 		},
 		{
 			[t("buckets.favorites")]: [...getPinnedRooms.data],
-			[t("buckets.today")]: [],
-			[t("buckets.yesterday")]: [],
-			[t("buckets.fewDaysAgo")]: [],
-			[t("buckets.lastWeek")]: [],
-			[t("buckets.thisMonth")]: [],
-			[t("buckets.lastMonth")]: [],
-			[t("buckets.older")]: [],
+			...Object.fromEntries(dateBucketLabels.map((label) => [label, []])),
 		} as Record<string, typeof getRooms.data>,
 	);
 

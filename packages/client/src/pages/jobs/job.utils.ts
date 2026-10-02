@@ -1,3 +1,4 @@
+import { calendarDayKey } from "@semoss/utility/date";
 import { DaysOfWeek, Months } from "./job.constants";
 import type { Frequencies, ParsedCron } from "./job.types";
 
@@ -56,12 +57,8 @@ export function getHumanReadableCronExpression(cronExpression: string) {
 	}
 }
 
-export function convertTimetoDate(time) {
-	const today = new Date(),
-		dd = String(today.getDate()).padStart(2, "0"),
-		mm = String(today.getMonth() + 1).padStart(2, "0"),
-		yyyy = today.getFullYear(),
-		currentDate = `${yyyy}-${mm}-${dd}`,
+export function convertTimetoDate(time: string): string {
+	const currentDate = calendarDayKey(new Date()),
 		jobDate = time.split(" ")[0],
 		jobTime = time.split(" ")[1].split(":"),
 		jobHour = Number(jobTime[0]),

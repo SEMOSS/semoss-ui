@@ -37,6 +37,43 @@ export const normalizeTimestamp = (raw: string): dayjs.Dayjs => {
 	return dayjs(normalized);
 };
 
+/** Relative date groups; consumers supply their own display labels. */
+export type DateBucket =
+	| "today"
+	| "yesterday"
+	| "fewDaysAgo"
+	| "lastWeek"
+	| "thisMonth"
+	| "lastMonth"
+	| "older";
+
+/** Relative date groups in display order, from most to least recent. */
+export const DATE_BUCKET_ORDER: DateBucket[] = [
+	"today",
+	"yesterday",
+	"fewDaysAgo",
+	"lastWeek",
+	"thisMonth",
+	"lastMonth",
+	"older",
+];
+
+/**
+ * Group a date relative to now. Today and yesterday use local calendar days;
+ * the three- and seven-day cutoffs retain the current time of day. Recent-day
+ * groups take precedence over months, and invalid dates fall through to older.
+ */
+export const getDateBucket = (date: dayjs.Dayjs): DateBucket => {
+	const now = dayjs();
+	if (now.isSame(date, "day")) return "today";
+	if (now.subtract(1, "day").isSame(date, "day")) return "yesterday";
+	if (date.isAfter(now.subtract(3, "day"))) return "fewDaysAgo";
+	if (date.isAfter(now.subtract(7, "day"))) return "lastWeek";
+	if (now.isSame(date, "month")) return "thisMonth";
+	if (now.subtract(1, "month").isSame(date, "month")) return "lastMonth";
+	return "older";
+};
+
 /** Format a date/time value using the caller's format string. */
 export const formatDateTime = formatDateToLocal;
 

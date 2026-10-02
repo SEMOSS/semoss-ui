@@ -1139,9 +1139,6 @@ importers:
       '@semoss/workbench':
         specifier: workspace:*
         version: link:../../libs/workbench
-      dayjs:
-        specifier: 1.11.8
-        version: 1.11.8
       lexical:
         specifier: ^0.39.0
         version: 0.39.0
@@ -11673,7 +11670,7 @@ snapshots:
       obug: 2.1.2
       std-env: 4.1.0
       tinyrainbow: 3.1.0
-      vitest: 4.1.11(@types/node@24.12.2)(@vitest/coverage-v8@4.1.11)(@vitest/ui@4.1.11)(jsdom@22.1.0)(vite@8.2.1(@types/node@24.12.2)(jiti@2.7.0)(terser@5.48.0))
+      vitest: 4.1.11(@types/node@25.9.3)(@vitest/coverage-v8@4.1.11)(@vitest/ui@4.1.11)(jsdom@22.1.0)(vite@8.2.1(@types/node@25.9.3)(jiti@2.7.0)(terser@5.48.0))
 
   '@vitest/expect@4.1.11':
     dependencies:
@@ -11727,7 +11724,7 @@ snapshots:
       sirv: 3.0.2
       tinyglobby: 0.2.17
       tinyrainbow: 3.1.0
-      vitest: 4.1.11(@types/node@24.12.2)(@vitest/coverage-v8@4.1.11)(@vitest/ui@4.1.11)(jsdom@22.1.0)(vite@8.2.1(@types/node@24.12.2)(jiti@2.7.0)(terser@5.48.0))
+      vitest: 4.1.11(@types/node@25.9.3)(@vitest/coverage-v8@4.1.11)(@vitest/ui@4.1.11)(jsdom@22.1.0)(vite@8.2.1(@types/node@25.9.3)(jiti@2.7.0)(terser@5.48.0))
 
   '@vitest/utils@4.1.11':
     dependencies:

@@ -3,44 +3,37 @@
 Inherits the [root guide](../../AGENTS.md) and
 [React/TypeScript standard](../../skills/react-standard.skill.md).
 
-## Ownership and organization
+## Purpose
 
-This source-only package owns reusable, framework-independent functions. Keep one
-flat file per functional category in `src/`; the [README](./README.md) lists the
-public category imports. Do not add React, SDK, shared, UI, or application dependencies.
-Day.js is the existing date dependency; native Date/Intl helpers retain their contracts.
+`@semoss/utility` provides small, reusable, framework-independent helpers shared
+across SEMOSS libraries and applications. UI behavior and domain-specific logic
+belong in their owning packages.
 
-Before adding a helper, search utility files and embedded functions, callbacks, and
-repeated expressions in consumers. Compare behavior, not just names or syntax.
-Extract equivalent calculations; keep feature validation, palettes, presentation,
-transport, and orchestration with their owners. Prefer a native operation such as
-object spread to a new wrapper. Do not introduce configurable frameworks to merge
-functions with different behavior.
+## Organization
 
-Preserve whitespace, null/undefined fallbacks, errors, timezone interpretation,
-rounding, and filename rules. `isRecord` excludes null and arrays but accepts class
-instances; it is not a plain-object validator. `copy` preserves Dates and is not a
-replacement for JSON serialization or `structuredClone`. `readNonEmptyString`
-checks trimmed content but returns the original string. Strict Base64 decoding
-throws; the legacy shared asset adapter retains its nullable/error-logging behavior.
+Helpers live in flat files under `src/`, grouped by function. Import from the
+matching category, such as `@semoss/utility/text` or `@semoss/utility/date`.
+Reuse existing helpers before adding new ones, and keep abstractions simple.
 
-## Exports and browser behavior
+This package is source-only; consuming applications compile it. The root and
+legacy exports remain available for compatibility. See the [README](./README.md)
+for import examples.
 
-Consumers import from `@semoss/utility/<category>`; internal imports target defining
-files. Keep the root and legacy `string`, `markdown`, `json`, and `file-extension`
-exports compatible. Compatibility modules re-export implementations rather than
-copying them. Add supported subpaths to `package.json` when adding a category.
+## Available utilities
 
-Access browser globals only inside called functions. Applications own notifications.
-Downloads must release temporary anchors and object URLs on both success and failure.
-Do not replace the lifetime management of preview URLs with the download helper.
-Do not import helpers into functions serialized for execution in another page.
-
-## Validation
-
-Use focused Vitest tests for shared contracts and compatibility exports. Browser
-tests opt into jsdom; the default environment stays Node to catch import-time DOM
-access. Run `pnpm --filter @semoss/utility test`,
-`pnpm --filter @semoss/utility exec tsc --noEmit`, and focused Biome checks.
-Run date tests with both `TZ=UTC` and `TZ=America/New_York`. Check affected consumers
-after moving exports. There is no utility build script: hosts compile its source.
+| Category | Purpose |
+| --- | --- |
+| `text` | Text transforms, initials, hashing, and counting |
+| `identifier` | Identifier labels, slugs, validation, and unique names |
+| `date` | Date/time formatting, durations, local dates, and date buckets |
+| `object` | Object checks and copying |
+| `json` | JSON parsing, tabular detection, and error locations |
+| `file` | File extensions and filename sanitization |
+| `encoding` | Base64 encoding and decoding |
+| `browser` | Favicons and file downloads |
+| `clipboard` | Copying text to the clipboard |
+| `csv` | CSV cell escaping |
+| `async` | Timing helpers |
+| `error` | Error-message extraction |
+| `image` | Image MIME types and inline-image parsing |
+| `markdown` | Markdown/HTML detection and text normalization |

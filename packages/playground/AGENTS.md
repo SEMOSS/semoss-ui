@@ -116,6 +116,7 @@ Coverage reports output to `./coverage/packages/playground/` and include only `s
   "@semoss/sdk": "workspace:*",
   "@semoss/shared": "workspace:*",
   "@semoss/ui": "workspace:*",
+  "@semoss/utility": "workspace:*",
   "@semoss/workbench": "workspace:*"
 }
 ```
@@ -318,3 +319,5 @@ backend's effective `permission`, including group grants.
 Import reusable helpers from `@semoss/utility/<category>`, a direct workspace dependency.
 Follow the [utility guide](../../libs/utility/AGENTS.md). Keep domain policy and
 UI behavior here, and preserve public compatibility adapters when moving helpers.
+Date buckets, their order, and timestamp normalization come directly from
+`@semoss/utility/date`. Keep sidebar translations and the favorites group here.

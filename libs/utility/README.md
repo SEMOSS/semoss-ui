@@ -7,7 +7,7 @@ Use the narrowest public category subpath. Hosts compile this source-only packag
 | --- | --- |
 | `/text` | Text transforms, initials, hashing, non-empty strings, ANSI stripping, line counts, text size, occurrence counting |
 | `/identifier` | Identifier labels, slugs, validation, collision suffixes |
-| `/date` | Date/time and duration formatting, timestamp normalization, local-day calculations |
+| `/date` | Date/time and duration formatting, timestamp normalization, local-day calculations, relative date buckets |
 | `/object` | Date-preserving copying and non-null, non-array object detection |
 | `/json` | Tolerant output parsing, tabular detection, parse-error locations |
 | `/file` | File extensions and filename-stem sanitization |
@@ -27,4 +27,6 @@ compatible. Prefer the categories above for new code.
 The package has no React, SDK, shared, or UI dependencies. Browser globals are
 accessed only when browser helpers run; callers own notifications and feature policy.
 Day.js remains the date dependency; existing native Date/Intl output is preserved.
-See [AGENTS.md](./AGENTS.md) for ownership, compatibility, and validation guidance.
+`getDateBucket` and `DATE_BUCKET_ORDER` provide relative groups; callers translate
+the bucket IDs and add feature-specific groups such as favorites.
+See [AGENTS.md](./AGENTS.md) for package purpose, organization, and available utilities.
