@@ -34,4 +34,4 @@ export const normalizeForMarkdown = (text: string): string => {
 		: normalized;
 };
 
-export { countLines, formatBytes, splitMessageLines } from "./text";
+export { countLines, splitMessageLines } from "./text";

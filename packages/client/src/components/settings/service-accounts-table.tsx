@@ -38,7 +38,7 @@ import {
 } from "@semoss/ui/next";
 import { downloadBlob } from "@semoss/utility/browser";
 import { getErrorMessage } from "@semoss/utility/error";
-import { slugifyFileName } from "@semoss/utility/file";
+import { sanitizeFileNameStem } from "@semoss/utility/file";
 import { createAPIUser, deleteMember } from "@/api";
 import { SdkBlock } from "@/components/shared/sdk-block";
 import { useAPI, useServerPagination, useSettings } from "@/hooks";
@@ -261,7 +261,7 @@ export const ServiceAccountsTable = (props: ServiceAccountsTableProps) => {
 	const downloadCredentialsJson = () => {
 		if (!createdServiceAccount) return;
 		const slug =
-			slugifyFileName(newServiceAccountName) || "service-account";
+			sanitizeFileNameStem(newServiceAccountName) || "service-account";
 		const blob = new Blob(
 			[JSON.stringify(createdServiceAccount, null, 2)],
 			{ type: "application/json" },

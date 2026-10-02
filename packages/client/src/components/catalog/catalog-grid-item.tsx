@@ -22,7 +22,10 @@ import {
 	toast,
 } from "@semoss/ui/next";
 import { copyTextToClipboard } from "@semoss/utility/clipboard";
-import { formatDateToLocal, formatDateToRelative } from "@semoss/utility/date";
+import {
+	formatDateToRelative,
+	formatLocalDateTime,
+} from "@semoss/utility/date";
 import { formatToDataTestId, hashString } from "@semoss/utility/text";
 import { getTagBadgeStyle } from "@/utility";
 
@@ -92,8 +95,8 @@ export const CatalogGridItem = ({
 	const cardClassName = `${className ?? ""}`.trim();
 
 	if (variant === "LIST") {
-		const formattedDateCreated = formatDateToLocal(dateCreated);
-		const formattedDateLastEdited = formatDateToLocal(dateLastEdited);
+		const formattedDateCreated = formatLocalDateTime(dateCreated);
+		const formattedDateLastEdited = formatLocalDateTime(dateLastEdited);
 		const showHoverCard = Boolean(
 			description || formattedDateCreated || formattedDateLastEdited,
 		);

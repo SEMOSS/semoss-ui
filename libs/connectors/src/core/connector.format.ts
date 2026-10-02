@@ -221,7 +221,5 @@ export const toPlainText = (content: string): string => {
 export {
 	addLocalDays,
 	isSameLocalDay,
-	parseWallClock,
 	startOfLocalDay,
-	toWallClockString,
 } from "@semoss/utility/date";

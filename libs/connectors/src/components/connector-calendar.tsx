@@ -19,7 +19,7 @@ import {
 } from "@semoss/ui/next";
 import {
 	addLocalDays,
-	calendarDayKey,
+	formatLocalDateKey,
 	isSameLocalDay,
 } from "@semoss/utility/date";
 import { formatDayHeading, formatShortDay } from "../core/connector.format";
@@ -79,7 +79,7 @@ export const ConnectorCalendar = <T,>({
 	const days = query.data ?? [];
 	const titles = new Map(
 		days.map(({ day, events }) => [
-			calendarDayKey(day),
+			formatLocalDateKey(day),
 			events.map(getTitle),
 		]),
 	);
@@ -261,7 +261,7 @@ export const ConnectorCalendar = <T,>({
 							) : null}
 							<ul>
 								{shownDays.map(({ day, events }) => (
-									<li key={calendarDayKey(day)}>
+									<li key={formatLocalDateKey(day)}>
 										<H4 className="sticky top-0 z-10 border-border border-b bg-muted px-3 py-2 font-medium text-xs">
 											{formatDayHeading(
 												day,

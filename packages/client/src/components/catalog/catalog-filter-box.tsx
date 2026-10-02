@@ -17,7 +17,7 @@ import {
 } from "@semoss/ui/next";
 import {
 	formatToDataTestId,
-	removeUnderscores,
+	formatUnderscoreLabel,
 	toTitleCase,
 } from "@semoss/utility/text";
 import { useConfig } from "@/hooks";
@@ -478,7 +478,7 @@ export const CatalogFilterBox = (props: CatalogFilterboxProps) => {
 									<span className="flex items-center gap-2">
 										<span className="font-medium text-[13px] text-foreground">
 											{toTitleCase(
-												removeUnderscores(key),
+												formatUnderscoreLabel(key),
 											)}
 										</span>
 										{activeCount > 0 && (

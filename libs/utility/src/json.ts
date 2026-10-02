@@ -1,4 +1,34 @@
 import { isRecord } from "./object";
+
+/** Parse strict JSON, returning undefined on failure while preserving valid nulls. */
+export const tryParseJson = (value: string): unknown => {
+	try {
+		return JSON.parse(value);
+	} catch {
+		return undefined;
+	}
+};
+
+/** Parse a JSON array containing only strings, without trimming or deduplicating. */
+export const parseJsonStringArray = (value: string): string[] | null => {
+	const parsed = tryParseJson(value);
+	return Array.isArray(parsed) &&
+		parsed.every((item) => typeof item === "string")
+		? parsed
+		: null;
+};
+
+/** Pretty-print JSON with two-space indentation, falling back to the supplied text. */
+export const formatJson = (value: string, fallback = value): string => {
+	const parsed = tryParseJson(value);
+	if (parsed === undefined) return fallback;
+	try {
+		return JSON.stringify(parsed, null, 2);
+	} catch {
+		return fallback;
+	}
+};
+
 /** Parse object-like output, accepting the single-quote form from legacy output. */
 export const isOutputJSON = (output: unknown): unknown | null => {
 	if (typeof output === "object" && output !== null) {
@@ -9,15 +39,9 @@ export const isOutputJSON = (output: unknown): unknown | null => {
 		return null;
 	}
 
-	try {
-		return JSON.parse(output);
-	} catch {
-		try {
-			return JSON.parse(output.replace(/'/g, '"'));
-		} catch {
-			return null;
-		}
-	}
+	const parsed = tryParseJson(output);
+	if (parsed !== undefined) return parsed;
+	return tryParseJson(output.replace(/'/g, '"')) ?? null;
 };
 
 /** Parse a JSON or Python-representation object/array, or return null. */
@@ -31,20 +55,14 @@ export const parseStructuredOutput = (raw: string): unknown | null => {
 		return null;
 	}
 
-	try {
-		return JSON.parse(trimmed);
-	} catch {
-		try {
-			const normalized = trimmed
-				.replace(/(^|[\s,{[(])'((?:\\.|[^'\\])*)'/g, '$1"$2"')
-				.replace(/\bTrue\b/g, "true")
-				.replace(/\bFalse\b/g, "false")
-				.replace(/\bNone\b/g, "null");
-			return JSON.parse(normalized);
-		} catch {
-			return null;
-		}
-	}
+	const parsed = tryParseJson(trimmed);
+	if (parsed !== undefined) return parsed;
+	const normalized = trimmed
+		.replace(/(^|[\s,{[(])'((?:\\.|[^'\\])*)'/g, '$1"$2"')
+		.replace(/\bTrue\b/g, "true")
+		.replace(/\bFalse\b/g, "false")
+		.replace(/\bNone\b/g, "null");
+	return tryParseJson(normalized) ?? null;
 };
 
 /** True for a non-empty array of flat objects suitable for table rendering. */
@@ -59,8 +77,6 @@ export const isTabularArray = (
 		value.every(isRecord)
 	);
 };
-
-export { copy } from "./object";
 
 /**
  * JSON.parse error messages vary by engine. Try to extract line/col so the user

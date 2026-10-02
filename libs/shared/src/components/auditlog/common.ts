@@ -1,4 +1,4 @@
-import { calendarDayKey } from "@semoss/utility/date";
+import { formatLocalDateKey } from "@semoss/utility/date";
 
 //Common place to keep and make changes for audit logs related common functions for enhancing reusablity
 //event data object will have all the details about when the user clicks on table row
@@ -72,7 +72,7 @@ export const TimeDateFormatter = (
  */
 export const dateFormat = (dateString: string | undefined) => {
 	if (!dateString) return "";
-	return calendarDayKey(new Date(dateString));
+	return formatLocalDateKey(new Date(dateString));
 };
 
 //Engine types object for audit logs

@@ -27,7 +27,7 @@ import {
 	Separator,
 	toast,
 } from "@semoss/ui/next";
-import { encodeBase64Text } from "@semoss/utility/encoding";
+import { encodeTextToBase64 } from "@semoss/utility/encoding";
 import { useSession } from "@/hooks";
 import { useNavigate } from "@/hooks/useNavigate";
 import { EngineFormHeader } from "../shared/engine-form-header";
@@ -90,7 +90,7 @@ export const StorageForm = ({
 			if (f.encode !== "base64") continue;
 			const raw = encoded[f.key];
 			if (typeof raw === "string" && raw.length > 0) {
-				encoded[f.key] = encodeBase64Text(raw);
+				encoded[f.key] = encodeTextToBase64(raw);
 			}
 		}
 		return encoded;

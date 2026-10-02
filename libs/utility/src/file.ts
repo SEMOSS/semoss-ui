@@ -10,7 +10,7 @@ export const getFileExtension = (value: string | undefined): string => {
 };
 
 /** Sanitize a filename stem while preserving case, dots, and underscores. */
-export const slugifyFileName = (value: string): string =>
+export const sanitizeFileNameStem = (value: string): string =>
 	value
 		.trim()
 		.replace(/[^A-Za-z0-9._-]+/g, "-")

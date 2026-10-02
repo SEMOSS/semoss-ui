@@ -12,6 +12,7 @@ import { type ReactNode, useState } from "react";
 import { useTranslation } from "@semoss/i18n";
 import { Badge, Button, Small, toast } from "@semoss/ui/next";
 import { getErrorMessage } from "@semoss/utility/error";
+import { formatJson } from "@semoss/utility/json";
 import { ToolInspector } from "@/features/tool-inspector/tool-inspector";
 import { decideAgentToolAction } from "@/stores/message/agent-harness";
 import type { ToolStore } from "@/stores/tool/tool.store";
@@ -77,11 +78,7 @@ const formatResponse = (response: string): string => {
 			break;
 		}
 	}
-	try {
-		return JSON.stringify(JSON.parse(detail), null, 2);
-	} catch {
-		return detail;
-	}
+	return formatJson(detail);
 };
 
 /**

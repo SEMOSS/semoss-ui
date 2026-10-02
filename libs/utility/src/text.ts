@@ -9,7 +9,7 @@ export const hashString = (value: string): number => {
 };
 
 /** Read a non-blank string without trimming its returned value. */
-export const readNonEmptyString = (value: unknown): string | undefined =>
+export const readNonBlankString = (value: unknown): string | undefined =>
 	typeof value === "string" && value.trim() !== "" ? value : undefined;
 
 /** Uppercase the first character and lowercase the remaining characters. */
@@ -19,7 +19,7 @@ export const capitalize = (value: string): string =>
 const ANSI_ESCAPE = new RegExp(`${String.fromCharCode(27)}\\[[0-9;]*m`, "g");
 
 /** Strip ANSI SGR color/style sequences from logs and tracebacks. */
-export const stripAnsi = (value: string): string =>
+export const stripAnsiStyleCodes = (value: string): string =>
 	value.replace(ANSI_ESCAPE, "");
 
 /** Split a string at its first period. */
@@ -35,7 +35,7 @@ export const splitAtPeriod = (
 };
 
 /** Replace underscores with spaces and capitalize each resulting word. */
-export const removeUnderscores = (value: string): string =>
+export const formatUnderscoreLabel = (value: string): string =>
 	value
 		.split("_")
 		.map((part) => part.charAt(0).toUpperCase() + part.slice(1))
@@ -46,7 +46,7 @@ export const toTitleCase = (value: string): string =>
 	value.replace(/\w\S*/g, capitalize);
 
 /** Turn snake_case and camelCase metadata keys into display labels. */
-export const metakeyToLabel = (value: string): string => {
+export const metadataKeyToLabel = (value: string): string => {
 	const spaced = value
 		.replace(/_/g, " ")
 		.replace(/([a-z0-9])([A-Z])/g, "$1 $2")
@@ -106,7 +106,7 @@ export const countLines = (text: string): number => {
 };
 
 /** Format UTF-8 text size for compact output metadata. */
-export const formatBytes = (text: string): string => {
+export const formatTextByteSize = (text: string): string => {
 	const bytes = new Blob([text || ""]).size;
 	if (bytes < 1024) return `${bytes} B`;
 	if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;

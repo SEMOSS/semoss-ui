@@ -1,5 +1,5 @@
 import type React from "react";
-import { decodeBase64 } from "@semoss/utility/encoding";
+import { decodeBase64ToBytes } from "@semoss/utility/encoding";
 import type { FileItem } from "./file.types";
 import {
 	BRAND_ICON_EXTENSIONS,
@@ -354,11 +354,9 @@ export const getFileOperationErrorMessage = (
 export const decodeBase64Asset = (data: string): Uint8Array | null => {
 	if (!data) return null;
 	try {
-		return decodeBase64(data.replace(/\s/g, ""));
+		return decodeBase64ToBytes(data.replace(/\s/g, ""));
 	} catch (error) {
 		console.error("Failed to decode asset bytes", error);
 		return null;
 	}
 };
-
-export { encodeBase64 as encodeBase64Asset } from "@semoss/utility/encoding";

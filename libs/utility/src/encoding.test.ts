@@ -1,20 +1,26 @@
 import { describe, expect, it } from "vitest";
-import { decodeBase64, encodeBase64, encodeBase64Text } from "./encoding";
+import {
+	decodeBase64ToBytes,
+	encodeBytesToBase64,
+	encodeTextToBase64,
+} from "./encoding";
 
 describe("Base64", () => {
 	it("round-trips every byte over multiple chunks", () => {
 		const bytes = Uint8Array.from({ length: 100000 }, (_, i) => i % 256);
-		expect(decodeBase64(encodeBase64(bytes))).toEqual(bytes);
+		expect(decodeBase64ToBytes(encodeBytesToBase64(bytes))).toEqual(bytes);
 	});
 	it("encodes UTF-8 rather than truncating non-ASCII characters", () => {
 		const text = "é漢字🙂";
 		expect(
-			new TextDecoder().decode(decodeBase64(encodeBase64Text(text))),
+			new TextDecoder().decode(
+				decodeBase64ToBytes(encodeTextToBase64(text)),
+			),
 		).toBe(text);
 	});
 	it("keeps empty input valid and rejects malformed Base64", () => {
-		expect(encodeBase64Text("")).toBe("");
-		expect(decodeBase64("")).toEqual(new Uint8Array());
-		expect(() => decodeBase64("!")).toThrow();
+		expect(encodeTextToBase64("")).toBe("");
+		expect(decodeBase64ToBytes("")).toEqual(new Uint8Array());
+		expect(() => decodeBase64ToBytes("!")).toThrow();
 	});
 });

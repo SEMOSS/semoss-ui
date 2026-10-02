@@ -2,14 +2,14 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { sleep } from "./async";
 import { escapeCsvValue } from "./csv";
 import { getErrorMessage } from "./error";
-import { slugifyFileName } from "./file";
+import { sanitizeFileNameStem } from "./file";
 import {
 	isValidIdentifier,
 	uniqueName,
 	validateIdentifier,
 } from "./identifier";
 import { locateJsonError } from "./json";
-import { copy, isRecord } from "./object";
+import { deepCopy, isRecord } from "./object";
 
 afterEach(() => vi.useRealTimers());
 
@@ -41,8 +41,10 @@ describe("shared contracts", () => {
 		expect(escapeCsvValue(false)).toBe('"false"');
 	});
 	it("retains filename spelling and leaves fallback names to callers", () => {
-		expect(slugifyFileName(" My_Key.v1 / demo ")).toBe("My_Key.v1-demo");
-		expect(slugifyFileName("???")).toBe("");
+		expect(sanitizeFileNameStem(" My_Key.v1 / demo ")).toBe(
+			"My_Key.v1-demo",
+		);
+		expect(sanitizeFileNameStem("???")).toBe("");
 	});
 	it("separates raw identifier validation from trimmed form validation", () => {
 		expect(isValidIdentifier(" name ")).toBe(false);
@@ -66,7 +68,7 @@ describe("shared contracts", () => {
 			date: new Date("2026-01-01"),
 			nested: [{ value: 1 }],
 		};
-		const copied = copy(original, (value) => (value === 1 ? 2 : value));
+		const copied = deepCopy(original, (value) => (value === 1 ? 2 : value));
 		expect(copied.date).toEqual(original.date);
 		expect(copied.date).not.toBe(original.date);
 		expect(copied.nested).toEqual([{ value: 2 }]);

@@ -1,4 +1,4 @@
-import { parseWallClock } from "@semoss/utility/date";
+import { parseLocalWallClock } from "@semoss/utility/date";
 import { toPlainText } from "../core/connector.format";
 import {
 	escapeInline,
@@ -84,7 +84,7 @@ export const googleEventToMarkdown = (event: GoogleCalendarEvent): string => {
 				"When",
 				// the reactors read times in the user's zone, without an offset
 				toWhenText(event.startTime, event.endTime, {
-					read: parseWallClock,
+					read: parseLocalWallClock,
 				}),
 			],
 			["Repeats", event.frequency?.toLowerCase()],

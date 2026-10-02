@@ -2,6 +2,7 @@ import { Copy, FoldVertical, UnfoldVertical } from "lucide-react";
 import { useId, useMemo, useState } from "react";
 import { JsonViewer } from "@semoss/shared";
 import { Button, H4, Muted, toast } from "@semoss/ui/next";
+import { tryParseJson } from "@semoss/utility/json";
 import type { UsageCell } from "./usage.types";
 
 interface UsagePayloadProps {
@@ -21,11 +22,8 @@ export function UsagePayload({ label, value }: UsagePayloadProps) {
 	const isRetained = value !== null && value !== undefined;
 	const text = isRetained ? String(value) : "";
 	const parsed = useMemo((): { isJson: boolean; data: unknown } => {
-		try {
-			return { isJson: true, data: JSON.parse(text) };
-		} catch {
-			return { isJson: false, data: null };
-		}
+		const data = tryParseJson(text);
+		return { isJson: data !== undefined, data: data ?? null };
 	}, [text]);
 	const hasNestedContent =
 		parsed.data !== null &&

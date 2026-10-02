@@ -1,10 +1,11 @@
 /** biome-ignore-all lint/a11y/noNoninteractiveTabindex: TODO */
 /** biome-ignore-all lint/a11y/noStaticElementInteractions: TODO */
 /** biome-ignore-all lint/nursery/useSortedClasses: TODO */
+
 import { ExternalLinkIcon, TrashIcon } from "lucide-react";
 import type React from "react";
 import { Badge, Button, cn } from "@semoss/ui/next";
-import { formatDate } from "@semoss/utility/date";
+import { formatDateTimeWithRelativeDay } from "@semoss/utility/date";
 import { getNotificationMessage } from "./notification-templates";
 import type { NotificationRecord } from "./types";
 
@@ -105,7 +106,9 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({
 										className="mt-1 flex flex-row items-center justify-start gap-3 text-sm text-muted-foreground"
 										title={n.notification_createddate}
 									>
-										{formatDate(n.notification_createddate)}
+										{formatDateTimeWithRelativeDay(
+											n.notification_createddate,
+										)}
 										{href && (
 											<a
 												href={href}

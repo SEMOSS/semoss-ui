@@ -8,7 +8,7 @@
 import { getErrorMessage } from "@semoss/utility/error";
 import { IMAGE_MIME_TYPES, splitInlineImages } from "@semoss/utility/image";
 import { isRecord } from "@semoss/utility/object";
-import { stripAnsi } from "@semoss/utility/text";
+import { stripAnsiStyleCodes } from "@semoss/utility/text";
 import type {
 	JupyterCell,
 	JupyterCellType,
@@ -36,7 +36,7 @@ export const getMimeString = (
  */
 export const getOutputCopyText = (output: JupyterOutput): string | null => {
 	if (output.output_type === "stream") {
-		return stripAnsi(normalizeSource(output.text));
+		return stripAnsiStyleCodes(normalizeSource(output.text));
 	}
 
 	if (output.output_type === "error") {
@@ -44,13 +44,13 @@ export const getOutputCopyText = (output: JupyterOutput): string | null => {
 			Array.isArray(output.traceback) && output.traceback.length
 				? output.traceback.join("\n")
 				: `${output.ename}: ${output.evalue}`;
-		return stripAnsi(traceback);
+		return stripAnsiStyleCodes(traceback);
 	}
 
 	const { data } = output;
 	const plain = getMimeString(data, "text/plain");
 	if (plain !== null) {
-		return stripAnsi(plain);
+		return stripAnsiStyleCodes(plain);
 	}
 
 	// Image-only, HTML-only, and widget outputs have no useful plain text.
@@ -368,5 +368,3 @@ export const exportAsPythonScript = (notebook: JupyterNotebook): string => {
 	}
 	return parts.join("\n");
 };
-
-export { stripAnsi } from "@semoss/utility/text";

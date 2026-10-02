@@ -28,7 +28,7 @@ import {
 } from "@semoss/utility/markdown";
 import {
 	countLines,
-	formatBytes,
+	formatTextByteSize,
 	splitMessageLines,
 } from "@semoss/utility/text";
 import { SandpackHtmlPreview } from "../html";
@@ -186,7 +186,7 @@ export const CellOutputBlock = ({
 					// channel is invisible until the user expands it.
 					meta={`${t("cellOutput.lines", {
 						count: messageLines.length,
-					})} · ${formatBytes(rawLogsText)}${
+					})} · ${formatTextByteSize(rawLogsText)}${
 						logsImageCount > 0
 							? ` · ${t("cellOutput.images", { count: logsImageCount })}`
 							: ""
@@ -264,7 +264,7 @@ export const CellOutputBlock = ({
 					}
 					meta={`${t("cellOutput.lines", {
 						count: countLines(output),
-					})} · ${formatBytes(output)}${
+					})} · ${formatTextByteSize(output)}${
 						outputImageCount > 0
 							? ` · ${t("cellOutput.images", { count: outputImageCount })}`
 							: ""
@@ -354,7 +354,7 @@ export const CellOutputBlock = ({
 					title={t("cellOutput.panels.logs")}
 					meta={`${t("cellOutput.lines", {
 						count: messageLines.length,
-					})} · ${formatBytes(rawLogsText)}`}
+					})} · ${formatTextByteSize(rawLogsText)}`}
 					actions={
 						<>
 							<RawToggle
@@ -418,7 +418,7 @@ export const CellOutputBlock = ({
 					}
 					meta={`${t("cellOutput.lines", {
 						count: countLines(output),
-					})} · ${formatBytes(output)}`}
+					})} · ${formatTextByteSize(output)}`}
 					actions={
 						<>
 							{!error &&

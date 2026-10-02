@@ -1,3 +1,4 @@
+import { tryParseJson } from "@semoss/utility/json";
 import { isRecord } from "@semoss/utility/object";
 import type {
 	AutomationNode,
@@ -116,12 +117,7 @@ export function inferNestedAutomationScopeEntries(
 ): AutomationScopeEntry[] {
 	if (!serializedOutput) return [];
 
-	let output: unknown;
-	try {
-		output = JSON.parse(serializedOutput);
-	} catch {
-		return [];
-	}
+	const output = tryParseJson(serializedOutput);
 	if (!isRecord(output)) return [];
 
 	const entries: AutomationScopeEntry[] = [];

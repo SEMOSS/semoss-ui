@@ -20,7 +20,7 @@ import {
 	TableRow,
 	toast,
 } from "@semoss/ui/next";
-import { formatDate } from "@semoss/utility/date";
+import { formatDateTimeWithRelativeDay } from "@semoss/utility/date";
 import { getErrorMessage } from "@semoss/utility/error";
 import {
 	createMsGraphSubscription,
@@ -303,7 +303,7 @@ export const MicrosoftSubscriptions = ({
 									</TableCell>
 									<TableCell>
 										{subscription.expirationDateTime
-											? formatDate(
+											? formatDateTimeWithRelativeDay(
 													subscription.expirationDateTime,
 												)
 											: "Unknown"}

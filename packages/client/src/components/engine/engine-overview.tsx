@@ -3,7 +3,7 @@ import type { Role } from "@semoss/sdk";
 import { usePixel } from "@semoss/sdk/react";
 import type { Engine } from "@semoss/shared";
 import { Badge, Markdown, Separator, Spinner } from "@semoss/ui/next";
-import { formatDateToLocal } from "@semoss/utility/date";
+import { formatLocalDateTime } from "@semoss/utility/date";
 import { CatalogOverview } from "@/components/catalog";
 import { useConfig, useSession } from "@/hooks";
 import { normalizeTagArray } from "@/utility";
@@ -120,10 +120,10 @@ export const EngineOverview = ({
 
 		const markdown = String(engine.markdown || "");
 		const createdOn = engine.engine_date_created
-			? formatDateToLocal(engine.engine_date_created)
+			? formatLocalDateTime(engine.engine_date_created)
 			: null;
 		const updatedOn = engine.engine_date_last_edited
-			? formatDateToLocal(engine.engine_date_last_edited)
+			? formatLocalDateTime(engine.engine_date_last_edited)
 			: null;
 		const servingProvider =
 			typeof getModelMetadata.data?.servingProvider === "string"

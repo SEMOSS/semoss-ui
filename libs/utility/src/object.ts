@@ -1,5 +1,5 @@
 /** Deep-copy plain values while preserving Date instances. */
-export const copy = <T>(
+export const deepCopy = <T>(
 	instance: T,
 	intercept: (value: unknown) => unknown = (value) => value,
 ): T => {
@@ -15,14 +15,14 @@ export const copy = <T>(
 
 	if (Array.isArray(intercepted)) {
 		return intercepted.map((value) =>
-			copy(value, intercept),
+			deepCopy(value, intercept),
 		) as unknown as T;
 	}
 
 	if (intercepted instanceof Object) {
 		const copied: Record<string, unknown> = {};
 		for (const key in intercepted) {
-			copied[key] = copy(
+			copied[key] = deepCopy(
 				(intercepted as Record<string, unknown>)[key],
 				intercept,
 			);

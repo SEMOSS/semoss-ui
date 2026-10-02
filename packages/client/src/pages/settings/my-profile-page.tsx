@@ -34,8 +34,8 @@ import {
 	toast,
 } from "@semoss/ui/next";
 import { downloadBlob } from "@semoss/utility/browser";
-import { formatDate } from "@semoss/utility/date";
-import { slugifyFileName } from "@semoss/utility/file";
+import { formatDateTimeWithRelativeDay } from "@semoss/utility/date";
+import { sanitizeFileNameStem } from "@semoss/utility/file";
 import {
 	createUserAccessKey,
 	deleteUserAccessKeys,
@@ -147,7 +147,7 @@ export const MyProfilePage = () => {
 
 	const downloadAccessKeyJson = () => {
 		if (!ACCESSKEY || !SECRETKEY) return;
-		const slug = slugifyFileName(TOKENNAME) || "access-key";
+		const slug = sanitizeFileNameStem(TOKENNAME) || "access-key";
 		const blob = new Blob(
 			[JSON.stringify({ ACCESSKEY, SECRETKEY }, null, 2)],
 			{ type: "application/json" },
@@ -343,7 +343,9 @@ export const MyProfilePage = () => {
 								</Label>
 								<span className="text-sm">
 									{lastLogin
-										? formatDate(lastLogin) || lastLogin
+										? formatDateTimeWithRelativeDay(
+												lastLogin,
+											) || lastLogin
 										: "—"}
 								</span>
 							</div>

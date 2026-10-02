@@ -38,7 +38,7 @@ import {
 	TooltipTrigger,
 	toast,
 } from "@semoss/ui/next";
-import { decodeBase64 } from "@semoss/utility/encoding";
+import { decodeBase64ToBytes } from "@semoss/utility/encoding";
 import { getErrorMessage } from "@semoss/utility/error";
 import { getFileExtension } from "@semoss/utility/file";
 import { getImageMimeType } from "@semoss/utility/image";
@@ -293,7 +293,7 @@ export const ResponseMessage = observer(
 					toast.error("Invalid image format");
 					return;
 				}
-				const arr = decodeBase64(mediaPart.mediaInfo.base64Data);
+				const arr = decodeBase64ToBytes(mediaPart.mediaInfo.base64Data);
 				const blob = new Blob([arr], { type: mimeType });
 				await navigator.clipboard.write([
 					new ClipboardItem({ [mimeType]: blob }),

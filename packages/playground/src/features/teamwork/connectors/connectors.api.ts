@@ -1,4 +1,5 @@
 import { Env, get, runPixel } from "@semoss/sdk";
+import { tryParseJson } from "@semoss/utility/json";
 import type { RoomStore } from "@/stores/room/room.store";
 import { parseRoomToolbox } from "../tools/chat-tool-info";
 import {
@@ -369,11 +370,7 @@ const parseMcpFile = (output: unknown): unknown => {
 	if (typeof output !== "string") {
 		return output ?? null;
 	}
-	try {
-		return JSON.parse(output);
-	} catch {
-		return null;
-	}
+	return tryParseJson(output) ?? null;
 };
 
 /**

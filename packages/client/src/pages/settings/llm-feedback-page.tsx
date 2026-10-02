@@ -37,6 +37,7 @@ import {
 import { downloadBlob } from "@semoss/utility/browser";
 import { copyTextToClipboard } from "@semoss/utility/clipboard";
 import { escapeCsvValue } from "@semoss/utility/csv";
+import { formatJson } from "@semoss/utility/json";
 
 interface LLMFeedback {
 	AGENT_ID: string;
@@ -153,12 +154,7 @@ export const LLMFeedbackPage = () => {
 
 	const prettyFormat = useCallback((value: unknown): string => {
 		if (value === null || value === undefined || value === "") return "";
-		const str = String(value);
-		try {
-			return JSON.stringify(JSON.parse(str), null, 2);
-		} catch {
-			return str;
-		}
+		return formatJson(String(value));
 	}, []);
 
 	useEffect(() => {

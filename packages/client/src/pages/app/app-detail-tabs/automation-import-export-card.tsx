@@ -31,7 +31,7 @@ import {
 	Spinner,
 	toast,
 } from "@semoss/ui/next";
-import { encodeBase64Text as encodeBase64 } from "@semoss/utility/encoding";
+import { encodeTextToBase64 } from "@semoss/utility/encoding";
 import { getErrorMessage } from "@semoss/utility/error";
 import { useSession } from "@/hooks";
 
@@ -169,7 +169,7 @@ export const AutomationImportExportCard = ({
 					}
 				: pendingImport.document;
 			const response = await runPixel(
-				`SaveAutomation(project=${JSON.stringify([project.project_id])}, json=${JSON.stringify([encodeBase64(JSON.stringify(document))])}, nodeSources=${JSON.stringify([encodeBase64(JSON.stringify(pendingImport.nodeSources))])});`,
+				`SaveAutomation(project=${JSON.stringify([project.project_id])}, json=${JSON.stringify([encodeTextToBase64(JSON.stringify(document))])}, nodeSources=${JSON.stringify([encodeTextToBase64(JSON.stringify(pendingImport.nodeSources))])});`,
 			);
 			if (response.errors.length > 0) {
 				throw new Error(response.errors.join("\n"));

@@ -9,7 +9,7 @@ Use the narrowest public category subpath. Hosts compile this source-only packag
 | `/identifier` | Identifier labels, slugs, validation, collision suffixes |
 | `/date` | Date/time and duration formatting, timestamp normalization, local-day calculations, relative date buckets |
 | `/object` | Date-preserving copying and non-null, non-array object detection |
-| `/json` | Tolerant output parsing, tabular detection, parse-error locations |
+| `/json` | Strict and tolerant parsing, string-array parsing, formatting, tabular detection, parse-error locations |
 | `/file` | File extensions and filename-stem sanitization |
 | `/encoding` | Byte/UTF-8 Base64 encoding and strict decoding |
 | `/browser` | Favicon updates and Blob downloads |
@@ -20,9 +20,20 @@ Use the narrowest public category subpath. Hosts compile this source-only packag
 | `/image` | Image MIME lookup and inline-image parsing |
 | `/markdown` | Markdown/HTML detection and Markdown input normalization |
 
-For example, import `hashString` from `@semoss/utility/text`. The root and old
-`/string`, `/file-extension`, Markdown text-helper, and JSON copy exports remain
-compatible. Prefer the categories above for new code.
+Import helpers by their function category:
+
+```ts
+import {
+    formatLocalDateTime,
+    parseTimestampWithUtcDefault,
+} from "@semoss/utility/date";
+import { encodeTextToBase64 } from "@semoss/utility/encoding";
+import { deepCopy } from "@semoss/utility/object";
+import { formatTextByteSize, hashString } from "@semoss/utility/text";
+```
+
+The root also exports these helpers. Existing `/string` and `/file-extension`
+category paths remain available; prefer the defining categories above for new code.
 
 The package has no React, SDK, shared, or UI dependencies. Browser globals are
 accessed only when browser helpers run; callers own notifications and feature policy.

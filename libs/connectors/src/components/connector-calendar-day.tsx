@@ -1,7 +1,7 @@
 import { type ComponentProps, useContext } from "react";
 import { useTranslation } from "@semoss/i18n";
 import { CalendarDayButton } from "@semoss/ui/next";
-import { calendarDayKey } from "@semoss/utility/date";
+import { formatLocalDateKey } from "@semoss/utility/date";
 import { ConnectorCalendarContext } from "./connector-calendar.context";
 
 /** A keyboard-accessible day with two event previews and an overflow count. */
@@ -11,7 +11,7 @@ export const ConnectorCalendarDay = (
 	const { t, i18n } = useTranslation("connectors");
 	const events =
 		useContext(ConnectorCalendarContext).get(
-			calendarDayKey(props.day.date),
+			formatLocalDateKey(props.day.date),
 		) ?? [];
 	const label = props["aria-label"];
 	return (

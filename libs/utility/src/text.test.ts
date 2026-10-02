@@ -5,11 +5,11 @@ import {
 	capitalizeFirstLetter,
 	countLines,
 	countOccurrences,
-	formatBytes,
+	formatTextByteSize,
 	hashString,
-	readNonEmptyString,
+	readNonBlankString,
 	splitMessageLines,
-	stripAnsi,
+	stripAnsiStyleCodes,
 	toTitleCase,
 } from "./text";
 
@@ -21,9 +21,9 @@ describe("text contracts", () => {
 		expect(hashString("x".repeat(50000))).toBe(1066674176);
 	});
 	it("validates strings without discarding surrounding whitespace", () => {
-		expect(readNonEmptyString("  hello  ")).toBe("  hello  ");
+		expect(readNonBlankString("  hello  ")).toBe("  hello  ");
 		for (const value of ["", " \t\n", null, undefined, 0, {}, []])
-			expect(readNonEmptyString(value)).toBeUndefined();
+			expect(readNonBlankString(value)).toBeUndefined();
 	});
 	it("keeps the two capitalization contracts distinct", () => {
 		expect(capitalize("hELLO")).toBe("Hello");
@@ -48,11 +48,11 @@ describe("text contracts", () => {
 		]);
 		expect(countLines("one\n\n")).toBe(2);
 		expect(countLines("\n")).toBe(0);
-		expect(formatBytes("🙂")).toBe("4 B");
-		expect(formatBytes("x".repeat(1024))).toBe("1.0 KB");
+		expect(formatTextByteSize("🙂")).toBe("4 B");
+		expect(formatTextByteSize("x".repeat(1024))).toBe("1.0 KB");
 	});
 	it("removes only ANSI SGR sequences", () => {
-		expect(stripAnsi("\u001b[31mred\u001b[0m\u001b[2J")).toBe(
+		expect(stripAnsiStyleCodes("\u001b[31mred\u001b[0m\u001b[2J")).toBe(
 			"red\u001b[2J",
 		);
 	});

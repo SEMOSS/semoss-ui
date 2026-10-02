@@ -1,5 +1,5 @@
 import { ExternalLink, Waypoints } from "lucide-react";
-import { readNonEmptyString } from "@semoss/utility/text";
+import { readNonBlankString } from "@semoss/utility/text";
 import type {
 	AutomationNode,
 	AutomationNodeTrace,
@@ -10,7 +10,7 @@ function configString(
 	key: string,
 ): string | null {
 	const value = step?.workflowConfig?.[key];
-	return readNonEmptyString(value) ?? null;
+	return readNonBlankString(value) ?? null;
 }
 
 function systemAppUrl(app: "client" | "playground", route: string): string {

@@ -15,7 +15,7 @@ import {
 	TableRow,
 } from "@semoss/ui/next";
 import { isRecord } from "@semoss/utility/object";
-import { readNonEmptyString } from "@semoss/utility/text";
+import { readNonBlankString } from "@semoss/utility/text";
 import type { BuiltinToolSelection } from "@/api/engines";
 import {
 	getOptionLabels,
@@ -606,7 +606,7 @@ const normalizeBenchmarks = (value: unknown): ModelBenchmark[] => {
 		}
 
 		const record = entry as Record<string, unknown>;
-		const name = readNonEmptyString(record.name)?.trim();
+		const name = readNonBlankString(record.name)?.trim();
 		const score = Number(record.score);
 
 		if (!name || !Number.isFinite(score)) {
@@ -617,11 +617,11 @@ const normalizeBenchmarks = (value: unknown): ModelBenchmark[] => {
 			{
 				name,
 				score,
-				metric: readNonEmptyString(record.metric)?.trim(),
-				harness: readNonEmptyString(record.harness)?.trim(),
-				variant: readNonEmptyString(record.variant)?.trim(),
-				version: readNonEmptyString(record.version)?.trim(),
-				dataset: readNonEmptyString(record.dataset)?.trim(),
+				metric: readNonBlankString(record.metric)?.trim(),
+				harness: readNonBlankString(record.harness)?.trim(),
+				variant: readNonBlankString(record.variant)?.trim(),
+				version: readNonBlankString(record.version)?.trim(),
+				dataset: readNonBlankString(record.dataset)?.trim(),
 			},
 		];
 	});
@@ -659,7 +659,7 @@ export const normalizePricing = (value: unknown): ModelPricing[] => {
 		}
 
 		const record = entry as Record<string, unknown>;
-		const servingProvider = readNonEmptyString(
+		const servingProvider = readNonBlankString(
 			record.servingProvider,
 		)?.trim();
 		const input = optionalRate(record.input);
@@ -680,7 +680,7 @@ export const normalizePricing = (value: unknown): ModelPricing[] => {
 		return [
 			{
 				servingProvider,
-				modelId: readNonEmptyString(record.modelId)?.trim(),
+				modelId: readNonBlankString(record.modelId)?.trim(),
 				input,
 				output,
 				cache_read: cacheRead,

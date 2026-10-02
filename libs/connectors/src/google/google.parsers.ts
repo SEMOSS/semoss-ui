@@ -1,5 +1,5 @@
 import { isRecord } from "@semoss/utility/object";
-import { readNonEmptyString as readString } from "@semoss/utility/text";
+import { readNonBlankString } from "@semoss/utility/text";
 import type {
 	GmailMessage,
 	GmailMessageSummary,
@@ -57,14 +57,14 @@ export const parseDriveFiles = (raw: unknown): GoogleDriveFile[] =>
 		if (!isRecord(entry)) {
 			return null;
 		}
-		const id = readString(entry.id);
+		const id = readNonBlankString(entry.id);
 		if (!id) {
 			return null;
 		}
 		return {
 			id: id,
-			name: readString(entry.name) ?? id,
-			mimeType: readString(entry.mimeType),
+			name: readNonBlankString(entry.name) ?? id,
+			mimeType: readNonBlankString(entry.mimeType),
 		};
 	}).sort((a, b) =>
 		a.name.localeCompare(b.name, undefined, {
@@ -85,15 +85,15 @@ export const parseGmailList = (raw: unknown): GmailMessageSummary[] =>
 		if (!isRecord(entry)) {
 			return null;
 		}
-		const id = readString(entry.id);
+		const id = readNonBlankString(entry.id);
 		if (!id) {
 			return null;
 		}
 		return {
 			id: id,
-			subject: readString(entry.subject),
-			from: readString(entry.from),
-			snippet: readString(entry.pre_content),
+			subject: readNonBlankString(entry.subject),
+			from: readNonBlankString(entry.from),
+			snippet: readNonBlankString(entry.pre_content),
 		};
 	});
 
@@ -111,10 +111,10 @@ export const parseGmailMessage =
 		}
 		return {
 			id: id,
-			from: readString(raw.from),
-			to: readString(raw.to),
-			subject: readString(raw.subject),
-			sentDate: readString(raw.sentDate),
+			from: readNonBlankString(raw.from),
+			to: readNonBlankString(raw.to),
+			subject: readNonBlankString(raw.subject),
+			sentDate: readNonBlankString(raw.sentDate),
 			content: typeof raw.content === "string" ? raw.content : undefined,
 		};
 	};
@@ -130,7 +130,7 @@ export const parseGoogleCalendarDays = (raw: unknown): GoogleCalendarDay[] =>
 		if (!isRecord(entry)) {
 			return null;
 		}
-		const date = readString(entry.date);
+		const date = readNonBlankString(entry.date);
 		if (!date || !Array.isArray(entry.events)) {
 			return null;
 		}
@@ -139,12 +139,14 @@ export const parseGoogleCalendarDays = (raw: unknown): GoogleCalendarDay[] =>
 			if (!isRecord(event)) {
 				continue;
 			}
-			const id = readString(event.id);
+			const id = readNonBlankString(event.id);
 			if (id) {
 				events.push({
 					id: id,
-					summary: readString(event.summary),
-					recurringEventId: readString(event.recurringEventId),
+					summary: readNonBlankString(event.summary),
+					recurringEventId: readNonBlankString(
+						event.recurringEventId,
+					),
 				});
 			}
 		}
@@ -155,9 +157,12 @@ const parseAttendee = (entry: unknown): GoogleCalendarAttendee | null => {
 	if (!isRecord(entry)) {
 		return null;
 	}
-	const email = readString(entry.email);
+	const email = readNonBlankString(entry.email);
 	return email
-		? { email: email, responseStatus: readString(entry.responseStatus) }
+		? {
+				email: email,
+				responseStatus: readNonBlankString(entry.responseStatus),
+			}
 		: null;
 };
 
@@ -184,16 +189,16 @@ export const parseGoogleCalendarEvent =
 		}
 		return {
 			id: id,
-			summary: readString(raw.summary),
-			description: readString(raw.description),
-			location: readString(raw.location),
+			summary: readNonBlankString(raw.summary),
+			description: readNonBlankString(raw.description),
+			location: readNonBlankString(raw.location),
 			attendees: attendees,
-			startTime: readString(raw.startTime),
-			endTime: readString(raw.endTime),
-			organizer: readString(raw.organizer),
-			hangoutLink: readString(raw.hangoutLink),
-			htmlLink: readString(raw.htmlLink),
-			frequency: readString(raw.frequency),
+			startTime: readNonBlankString(raw.startTime),
+			endTime: readNonBlankString(raw.endTime),
+			organizer: readNonBlankString(raw.organizer),
+			hangoutLink: readNonBlankString(raw.hangoutLink),
+			htmlLink: readNonBlankString(raw.htmlLink),
+			frequency: readNonBlankString(raw.frequency),
 		};
 	};
 
@@ -208,11 +213,11 @@ export const parseGoogleDocs = (raw: unknown): GoogleDoc[] =>
 		if (!isRecord(entry)) {
 			return null;
 		}
-		const id = readString(entry.id);
+		const id = readNonBlankString(entry.id);
 		if (!id) {
 			return null;
 		}
-		return { id: id, title: readString(entry.title) ?? id };
+		return { id: id, title: readNonBlankString(entry.title) ?? id };
 	}).sort((a, b) =>
 		a.title.localeCompare(b.title, undefined, {
 			numeric: true,
@@ -232,7 +237,7 @@ export const parseGoogleDocContent = (raw: unknown): GoogleDocContent => {
 		throw new Error("The response did not include the document.");
 	}
 	return {
-		title: readString(raw.title) ?? "",
+		title: readNonBlankString(raw.title) ?? "",
 		content: typeof raw.content === "string" ? raw.content : "",
 	};
 };

@@ -10,7 +10,7 @@ import {
 	type ThemeMap,
 } from "@semoss/shared";
 import { toast } from "@semoss/ui/next";
-import { normalizeTimestamp } from "@semoss/utility/date";
+import { parseTimestampWithUtcDefault } from "@semoss/utility/date";
 import type { WorkbenchPanelConfigAny } from "@semoss/workbench";
 import type {
 	AbstractPixelMessage,
@@ -545,7 +545,7 @@ export class ChatStore {
 		const formattedMessages = messageOutput
 			.map((message: AbstractPixelMessage) => {
 				const timestamp = message.dateCreated
-					? normalizeTimestamp(message.dateCreated).format(
+					? parseTimestampWithUtcDefault(message.dateCreated).format(
 							"MMM D, YYYY h:mm A",
 						)
 					: null;

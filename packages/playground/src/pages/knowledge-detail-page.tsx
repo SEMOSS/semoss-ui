@@ -50,7 +50,7 @@ import {
 	TabsTrigger,
 	toast,
 } from "@semoss/ui/next";
-import { decodeBase64 } from "@semoss/utility/encoding";
+import { decodeBase64ToBytes } from "@semoss/utility/encoding";
 import { getFileExtension } from "@semoss/utility/file";
 import { getImageMimeType } from "@semoss/utility/image";
 import { EmbedDocumentsOverlay } from "@/components/knowledge/embed-documents-overlay";
@@ -242,7 +242,7 @@ export const KnowledgeDetailPage = observer(() => {
 									getFileExtension(previewDoc.fileName),
 								)
 							: "application/pdf";
-						const arr = decodeBase64(b64);
+						const arr = decodeBase64ToBytes(b64);
 						const blob = new Blob([arr], { type: mimeType });
 						const blobUrl = URL.createObjectURL(blob);
 						createdBlobUrl = blobUrl;

@@ -4,12 +4,7 @@ import { copyTextToClipboard as copyText } from "@semoss/utility/clipboard";
 import { getErrorMessage } from "@semoss/utility/error";
 
 export { isOutputJSON } from "@semoss/utility/json";
-export {
-	metakeyToLabel,
-	removeUnderscores,
-	splitAtPeriod,
-	toTitleCase,
-} from "@semoss/utility/text";
+export { splitAtPeriod, toTitleCase } from "@semoss/utility/text";
 
 /**
  * @desc Copies string to clipboard
@@ -48,5 +43,4 @@ SECRET_KEY="${secretKey ? secretKey : "<your secret key>"}"`;
 	}
 };
 
-export { formatDate } from "@semoss/utility/date";
 export { formatToDataTestId } from "@semoss/utility/text";

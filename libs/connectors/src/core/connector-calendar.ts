@@ -1,6 +1,6 @@
 import {
 	addLocalDays,
-	calendarDayKey,
+	formatLocalDateKey,
 	startOfLocalDay,
 } from "@semoss/utility/date";
 
@@ -31,7 +31,7 @@ export const groupCalendarEvents = <T>(
 		const last = end && end > first ? end : new Date(first.getTime() + 1);
 		let day = startOfLocalDay(first < range.start ? range.start : first);
 		while (day < range.end && day < last) {
-			const key = calendarDayKey(day);
+			const key = formatLocalDateKey(day);
 			const group = days.get(key) ?? { day, events: [] };
 			group.events.push(event);
 			days.set(key, group);
@@ -93,5 +93,3 @@ export interface CalendarEventSchedule {
 	end: Date | null;
 	isAllDay: boolean;
 }
-
-export { calendarDayKey } from "@semoss/utility/date";

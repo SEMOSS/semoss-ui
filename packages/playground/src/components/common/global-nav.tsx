@@ -62,7 +62,7 @@ import {
 import {
 	DATE_BUCKET_ORDER,
 	getDateBucket,
-	normalizeTimestamp,
+	parseTimestampWithUtcDefault,
 } from "@semoss/utility/date";
 import { MobileNavigationClose } from "@/features/navigation/mobile-navigation-close";
 import { NavigationRail } from "@/features/navigation/navigation-rail";
@@ -327,7 +327,7 @@ export const GlobalNav = observer(() => {
 			// Skip rooms handled by the dedicated pinned query
 			if (val.PINNED || pinnedRoomIds.has(val.ROOM_ID)) return acc;
 
-			const d = normalizeTimestamp(val.DATE_CREATED);
+			const d = parseTimestampWithUtcDefault(val.DATE_CREATED);
 			const bucket = getDateBucket(d);
 			acc[t(`buckets.${bucket}`)].push(val);
 
@@ -624,7 +624,7 @@ export const GlobalNav = observer(() => {
 														t("messages.untitled");
 													const date = root.theme
 														.sidebar.chatHistoryDate
-														? normalizeTimestamp(
+														? parseTimestampWithUtcDefault(
 																room.DATE_CREATED,
 															)
 																.toDate()

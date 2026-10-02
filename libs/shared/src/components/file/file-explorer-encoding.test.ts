@@ -1,12 +1,12 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { encodeBase64 } from "@semoss/utility/encoding";
-import { decodeBase64Asset, encodeBase64Asset } from "./file-explorer.utils";
+import { encodeBytesToBase64 } from "@semoss/utility/encoding";
+import { decodeBase64Asset } from "./file-explorer.utils";
 
 afterEach(() => vi.restoreAllMocks());
 
 describe("legacy asset encoding", () => {
 	it("preserves the published encoder as a compatibility export", () => {
-		expect(encodeBase64Asset).toBe(encodeBase64);
+		expect(encodeBytesToBase64).toBe(encodeBytesToBase64);
 	});
 	it("keeps nullable decoding and whitespace normalization", () => {
 		expect(decodeBase64Asset("")).toBeNull();

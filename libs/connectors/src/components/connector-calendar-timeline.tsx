@@ -3,7 +3,7 @@ import { useTranslation } from "@semoss/i18n";
 import { Button, cn, ScrollArea } from "@semoss/ui/next";
 import {
 	addLocalDays,
-	calendarDayKey,
+	formatLocalDateKey,
 	isSameLocalDay,
 } from "@semoss/utility/date";
 import { layoutCalendarEvents } from "../core/calendar-event-layout";
@@ -77,7 +77,7 @@ export const ConnectorCalendarTimeline = <T,>({
 	);
 	const template = `${isTimed ? "3rem " : ""}${columnWidths.join(" ")}`;
 	const eventKey = (event: T, day: Date) =>
-		`grid:${calendarDayKey(day)}:${getEventKey(event)}`;
+		`grid:${formatLocalDateKey(day)}:${getEventKey(event)}`;
 	return (
 		<ScrollArea
 			className="[&>div>div]:block! min-h-0 flex-1"
@@ -98,7 +98,7 @@ export const ConnectorCalendarTimeline = <T,>({
 					{isTimed ? <div aria-hidden /> : null}
 					{columns.map(({ day }) => (
 						<Button
-							key={calendarDayKey(day)}
+							key={formatLocalDateKey(day)}
 							variant="ghost"
 							className={cn(
 								"h-12 min-w-0 flex-col gap-0 rounded-none border-border border-s px-1 text-xs",
@@ -131,7 +131,7 @@ export const ConnectorCalendarTimeline = <T,>({
 					) : null}
 					{columns.map(({ day, untimed }) => (
 						<div
-							key={calendarDayKey(day)}
+							key={formatLocalDateKey(day)}
 							className="flex min-w-0 flex-col gap-1 border-border border-s p-1"
 						>
 							{untimed.map((event) => (
@@ -178,7 +178,7 @@ export const ConnectorCalendarTimeline = <T,>({
 						</div>
 						{columns.map(({ day, layout }) => (
 							<section
-								key={calendarDayKey(day)}
+								key={formatLocalDateKey(day)}
 								aria-label={formatDayHeading(
 									day,
 									i18n.language,

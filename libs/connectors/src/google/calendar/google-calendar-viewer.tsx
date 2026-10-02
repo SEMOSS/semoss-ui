@@ -8,7 +8,7 @@ import { useState } from "react";
 import { useTranslation } from "@semoss/i18n";
 import { useInsight } from "@semoss/sdk/react";
 import { cn } from "@semoss/ui/next";
-import { calendarDayKey, toWallClockString } from "@semoss/utility/date";
+import { formatLocalDateKey, formatLocalWallClock } from "@semoss/utility/date";
 import { ConnectorCalendar } from "../../components/connector-calendar";
 import { ConnectorIconButton } from "../../components/connector-icon-button";
 import { ConnectorItemRow } from "../../components/connector-item-row";
@@ -50,8 +50,8 @@ export const GoogleCalendarViewer = (props: GoogleCalendarViewerProps) => {
 	const serviceName = t("services.googleCalendar");
 	const query = useConnectorQuery(
 		GOOGLE_PIXELS.calendarList({
-			startDate: toWallClockString(calendar.range.start),
-			endDate: toWallClockString(
+			startDate: formatLocalWallClock(calendar.range.start),
+			endDate: formatLocalWallClock(
 				new Date(calendar.range.end.getTime() - 1000),
 			),
 		}),
@@ -124,7 +124,7 @@ export const GoogleCalendarViewer = (props: GoogleCalendarViewerProps) => {
 					renderEvent={(event, day) => {
 						const request = eventRequest(event);
 						const title = eventTitle(event);
-						const itemKey = `${calendarDayKey(day)}:${event.id}`;
+						const itemKey = `${formatLocalDateKey(day)}:${event.id}`;
 						const Icon = event.recurringEventId
 							? RepeatIcon
 							: CalendarIcon;

@@ -6,7 +6,7 @@ dayjs.extend(relativeTime);
 dayjs.extend(utc);
 
 /** Format a UTC date string in the browser's local timezone. */
-export const formatDateToLocal = (
+export const formatLocalDateTime = (
 	dateString: string | undefined,
 	format = "MMM D, YYYY [at] h:mm A",
 ): string | null => {
@@ -28,8 +28,8 @@ export const formatDateToRelative = (
 	return dayjs.utc(dateString).local().fromNow();
 };
 
-/** Normalize a SEMOSS timestamp without an explicit timezone to UTC. */
-export const normalizeTimestamp = (raw: string): dayjs.Dayjs => {
+/** Parse a timestamp, treating a missing timezone as UTC. */
+export const parseTimestampWithUtcDefault = (raw: string): dayjs.Dayjs => {
 	const normalized = /Z|[+-]\d{2}:?\d{2}$/.test(raw)
 		? raw
 		: `${raw.replace(" ", "T")}Z`;
@@ -74,11 +74,8 @@ export const getDateBucket = (date: dayjs.Dayjs): DateBucket => {
 	return "older";
 };
 
-/** Format a date/time value using the caller's format string. */
-export const formatDateTime = formatDateToLocal;
-
 /** Format a duration in milliseconds as a compact human-readable value. */
-export const parseDuration = (milliseconds: number): string => {
+export const formatRoundedDurationMs = (milliseconds: number): string => {
 	if (!Number.isFinite(milliseconds) || milliseconds < 0) return "0ms";
 	if (milliseconds < 1000) return `${Math.round(milliseconds)}ms`;
 	const seconds = milliseconds / 1000;
@@ -102,7 +99,7 @@ function parseAsUTC(input: string): Date | null {
 }
 
 /** Format a UTC timestamp with the existing English Today/Yesterday labels. */
-export function formatDate(createdAt: string): string {
+export function formatDateTimeWithRelativeDay(createdAt: string): string {
 	const dateUTC = parseAsUTC(createdAt);
 	if (!dateUTC) return "";
 
@@ -190,9 +187,9 @@ export const addLocalDays = (date: Date, days: number): Date =>
  * @param date - The time.
  * @return The formatted time, without a zone.
  */
-export const toWallClockString = (date: Date): string => {
+export const formatLocalWallClock = (date: Date): string => {
 	const pad = (value: number) => String(value).padStart(2, "0");
-	return `${calendarDayKey(date)}T${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
+	return `${formatLocalDateKey(date)}T${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
 };
 
 /**
@@ -202,7 +199,7 @@ export const toWallClockString = (date: Date): string => {
  * @param value - The time or day.
  * @return The local time, or null when the value is neither.
  */
-export const parseWallClock = (value: string | undefined): Date | null => {
+export const parseLocalWallClock = (value: string | undefined): Date | null => {
 	const match = value
 		? /^(\d{4})-(\d{2})-(\d{2})(?:T(\d{2}):(\d{2})(?::(\d{2}))?)?/.exec(
 				value,
@@ -222,5 +219,5 @@ export const parseWallClock = (value: string | undefined): Date | null => {
 };
 
 /** A stable local date key; UTC conversion would move all-day events. */
-export const calendarDayKey = (date: Date): string =>
+export const formatLocalDateKey = (date: Date): string =>
 	`${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;

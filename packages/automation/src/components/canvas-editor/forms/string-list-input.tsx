@@ -7,6 +7,7 @@ import {
 	FieldLegend,
 	FieldSet,
 } from "@semoss/ui/next";
+import { parseJsonStringArray } from "@semoss/utility/json";
 import { type InputMode, InputModeToggle } from "./input-mode-toggle";
 import { BoundInput, PillInput } from "./pill-input";
 
@@ -23,18 +24,6 @@ interface StringListInputProps {
 
 function normalizedValues(values: string[]): string[] {
 	return values.length === 1 && values[0] === "" ? [] : values;
-}
-
-function parseStringArray(value: string): string[] | null {
-	try {
-		const parsed = JSON.parse(value) as unknown;
-		return Array.isArray(parsed) &&
-			parsed.every((item) => typeof item === "string")
-			? parsed
-			: null;
-	} catch {
-		return null;
-	}
 }
 
 /** Edits an ordered string list through guided rows or the equivalent JSON array. */
@@ -63,7 +52,7 @@ export function StringListInput({
 			return;
 		}
 
-		const parsed = parseStringArray(jsonDraft);
+		const parsed = parseJsonStringArray(jsonDraft);
 		if (parsed === null) {
 			setJsonError("Enter a JSON array containing only text values.");
 			return;
@@ -75,7 +64,7 @@ export function StringListInput({
 
 	const handleJsonChange = (value: string): void => {
 		setJsonDraft(value);
-		const parsed = parseStringArray(value);
+		const parsed = parseJsonStringArray(value);
 		if (parsed === null) {
 			setJsonError("Enter a JSON array containing only text values.");
 			return;

@@ -1,20 +1,8 @@
+import { parseJsonStringArray } from "@semoss/utility/json";
 import type { ModelEngineConfig } from "../../../domain/automation.types";
 import { EnginePickerField } from "./engine-picker-field";
 import { BoundInput } from "./pill-input";
 import { StringListInput } from "./string-list-input";
-
-function jsonStringList(value: string): string[] | null {
-	if (!value.trim()) return [];
-	try {
-		const parsed = JSON.parse(value) as unknown;
-		return Array.isArray(parsed) &&
-			parsed.every((item) => typeof item === "string")
-			? parsed
-			: null;
-	} catch {
-		return null;
-	}
-}
 
 export interface ModelEngineFormProps {
 	/** Current node config */
@@ -36,7 +24,9 @@ export function ModelEngineForm({
 	devMode = false,
 	readOnly = false,
 }: ModelEngineFormProps) {
-	const mediaUrls = jsonStringList(config.urls);
+	const mediaUrls = config.urls.trim()
+		? parseJsonStringArray(config.urls)
+		: [];
 
 	return (
 		<div className="flex flex-col gap-4">
