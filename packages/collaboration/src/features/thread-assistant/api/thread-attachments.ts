@@ -108,7 +108,7 @@ export async function stageThreadAttachment(
 	const fileName = uniqueAttachmentName(attachment.name);
 	const receipt = await callPixel(
 		actions,
-		pixel("BrainStageAttachment", {
+		pixel("WorkDownloadAttachment", {
 			threadId,
 			messageId: attachment.messageId,
 			attachmentId: attachment.id,

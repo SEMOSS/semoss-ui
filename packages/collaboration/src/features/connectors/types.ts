@@ -45,7 +45,7 @@ export interface SourceAttachment {
 	isInline?: boolean;
 	/**
 	 * The email on a Brain thread that carries this attachment. Present means
-	 * `BrainStageAttachment` reads it under the thread's rules; absent means an
+	 * `WorkDownloadAttachment` reads it under the thread's rules; absent means an
 	 * imported Sources message read through the Outlook connector.
 	 */
 	messageId?: string;

@@ -71,7 +71,7 @@ it("stages through the thread's rules and returns the text copy", async () => {
 		true,
 	);
 	const statement = run.mock.calls[0]?.[0] ?? "";
-	expect(statement).toMatch(/^BrainStageAttachment\(/);
+	expect(statement).toMatch(/^WorkDownloadAttachment\(/);
 	expect(statement).toContain('threadId=["thread-1"]');
 	expect(statement).toContain('messageId=["msg-1"]');
 	expect(statement).toContain('attachmentId=["att-1"]');
