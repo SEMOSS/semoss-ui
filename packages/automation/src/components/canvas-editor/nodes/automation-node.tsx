@@ -1,5 +1,5 @@
 import { Handle, type NodeProps, Position } from "@xyflow/react";
-import { Bot, Loader2, Pencil, Plus, Trash2 } from "lucide-react";
+import { Bot, Clock3, Loader2, Pencil, Plus, Trash2 } from "lucide-react";
 import {
 	Button,
 	ContextMenu,
@@ -44,7 +44,7 @@ export type AutomationNodeData = {
 };
 
 const STATUS_BORDER: Record<string, string> = {
-	incomplete: "border-amber-500/60",
+	incomplete: "border-warning/60",
 	idle: "border-border",
 };
 
@@ -60,11 +60,10 @@ export function AutomationNode({ data }: NodeProps) {
 		highlighted,
 		pathHighlighted,
 	} = d;
-	// This is the only place the live agent-run modal opens from. Only show it while
-	// the node is actively running — once finished, the trace is reachable from
-	// Agent Activity / Playground instead.
+	// Keep the agent-run action available while the agent is working or waiting for
+	// human input. A waiting node must remain actionable so the run can resume.
 	const hasActiveAgentRun = Boolean(
-		runStatus === "running" &&
+		(runStatus === "running" || runStatus === "waiting") &&
 			d.runTrace?.agentRunId?.trim() &&
 			d.runTrace?.automationRunId?.trim() &&
 			d.runTrace?.nodeId?.trim() &&
@@ -73,7 +72,9 @@ export function AutomationNode({ data }: NodeProps) {
 	// The agent paused itself waiting for a human decision (approve/reject/edit/respond).
 	// Distinguish this from "actively working" so it doesn't look like a stuck spinner.
 	const isWaitingForInput =
-		hasActiveAgentRun && d.runTrace?.agentStatus === "INPUT_REQUIRED";
+		hasActiveAgentRun &&
+		(runStatus === "waiting" ||
+			d.runTrace?.agentStatus === "INPUT_REQUIRED");
 
 	const meta = getDisplayMeta(step.type);
 	const workflowDefinition = step.workflowType
@@ -151,7 +152,7 @@ export function AutomationNode({ data }: NodeProps) {
 								>
 									<Icon className="h-4.5 w-4.5" />
 									{/* Step number badge */}
-									<span className="-top-1.5 -left-1.5 absolute flex h-4 w-4 items-center justify-center rounded-full border border-border bg-muted font-medium text-[9px] text-muted-foreground">
+									<span className="-top-1.5 -left-1.5 absolute flex size-4 items-center justify-center rounded-full border border-border bg-muted font-medium text-muted-foreground text-xs">
 										{d.index + 1}
 									</span>
 								</span>
@@ -168,7 +169,7 @@ export function AutomationNode({ data }: NodeProps) {
 											{label}
 										</TooltipContent>
 									</Tooltip>
-									<p className="mt-0.5 truncate text-[11px] text-muted-foreground uppercase tracking-wide">
+									<p className="mt-0.5 truncate text-muted-foreground text-xs uppercase tracking-wide">
 										{subtitle}
 									</p>
 								</div>
@@ -186,59 +187,72 @@ export function AutomationNode({ data }: NodeProps) {
 										)}
 									</div>
 								)}
-								{hasActiveAgentRun && (
-									<Tooltip>
-										<TooltipTrigger asChild>
-											<Button
-												type="button"
-												variant="ghost"
-												size="icon"
-												className={`nodrag size-7 shrink-0 ${isWaitingForInput ? "text-warning" : "text-primary"}`}
-												onClick={(event) => {
-													event.stopPropagation();
-													if (d.runTrace) {
-														automationNode.viewAgentRun(
-															d.runTrace,
-														);
-													}
-												}}
-												aria-label={
-													isWaitingForInput
-														? "Agent is waiting for your input"
-														: "View active agent run"
-												}
-											>
-												<Bot
-													className="size-4 animate-pulse"
-													aria-hidden
-												/>
-											</Button>
-										</TooltipTrigger>
-										<TooltipContent side="top">
-											{isWaitingForInput
-												? "Waiting for your input"
-												: "View active agent run"}
-										</TooltipContent>
-									</Tooltip>
-								)}
 							</div>
 
-							{/* Run duration */}
-							{runDuration != null && runStatus !== "running" && (
+							{/* Run metadata and agent activity action. Keep the action below the
+							    header so the floating canvas toolbar cannot cover it at fit zoom. */}
+							{((runDuration != null &&
+								runStatus !== "running") ||
+								hasActiveAgentRun) && (
 								<div className="mt-1.5 flex flex-wrap items-center gap-1.5 pl-12">
-									<span className="text-[10px] text-muted-foreground/70">
-										{runStatus === "error"
-											? `failed · `
-											: ""}
-										{formatDurationMs(runDuration)}
-									</span>
+									{runDuration != null &&
+										runStatus !== "running" && (
+											<span className="text-muted-foreground/70 text-xs">
+												{runStatus === "error"
+													? `failed · `
+													: ""}
+												{formatDurationMs(runDuration)}
+											</span>
+										)}
+									{hasActiveAgentRun && (
+										<Tooltip>
+											<TooltipTrigger asChild>
+												<Button
+													type="button"
+													variant="ghost"
+													size="icon"
+													className={`nodrag nopan size-7 shrink-0 ${isWaitingForInput ? "text-warning" : "text-primary"}`}
+													onClick={(event) => {
+														event.stopPropagation();
+														if (d.runTrace) {
+															automationNode.viewAgentRun(
+																d.runTrace,
+															);
+														}
+													}}
+													aria-label={
+														isWaitingForInput
+															? "Agent is waiting for your input"
+															: "View active agent run"
+													}
+												>
+													{isWaitingForInput ? (
+														<Clock3
+															className="size-4"
+															aria-hidden
+														/>
+													) : (
+														<Bot
+															className="size-4 animate-pulse"
+															aria-hidden
+														/>
+													)}
+												</Button>
+											</TooltipTrigger>
+											<TooltipContent side="top">
+												{isWaitingForInput
+													? "Waiting for your input"
+													: "View active agent run"}
+											</TooltipContent>
+										</Tooltip>
+									)}
 								</div>
 							)}
 
 							{/* Output var pill */}
 							{step.outputVar && (
 								<div className="mt-1.5 flex pl-12">
-									<span className="rounded-full bg-muted px-2 py-0.5 font-mono text-[9px] text-muted-foreground">
+									<span className="rounded-full bg-muted px-2 py-0.5 font-mono text-muted-foreground text-xs">
 										{step.outputVar}
 									</span>
 								</div>

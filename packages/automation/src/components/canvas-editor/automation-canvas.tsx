@@ -89,6 +89,7 @@ import {
 	createCanvasWorkflowNode,
 	createInitialCanvasWorkflowDocument,
 	getCanvasNodeSources,
+	validateCanvasWorkflowConnections,
 	validateCanvasWorkflowNode,
 } from "../../domain/automation-workflow-adapter";
 import { OnboardingTour } from "../form-editor/onboarding-tour";
@@ -117,7 +118,7 @@ function isStepHighlighted(
 	stepId: string,
 ): boolean {
 	if (!highlight) return false;
-	if (highlight.all) return true;
+	if (highlight.all === true) return true;
 	return highlight.stepIds.has(stepId);
 }
 
@@ -318,6 +319,8 @@ interface CanvasWorkflowDraft {
 	edges: AutomationEdge[];
 	description: string;
 	triggerBindings: TriggerBinding[];
+	/** Revision the draft was based on, used to prevent stale saves. */
+	baseRevision: string | null;
 	savedAt: number;
 }
 
@@ -620,6 +623,9 @@ export const AutomationCanvasContent = forwardRef<
 	const [aiRunSummary, setAiRunSummary] = useState<string | null>(null);
 	const [generatingAiSummary, setGeneratingAiSummary] = useState(false);
 	const [isDirty, setIsDirty] = useState(false);
+	const [definitionRevision, setDefinitionRevision] = useState<string | null>(
+		null,
+	);
 	const [mcpDone, setMcpDone] = useState(false);
 	const [undoSnapshot, setUndoSnapshot] = useState<AutomationNode[] | null>(
 		null,
@@ -1009,6 +1015,7 @@ export const AutomationCanvasContent = forwardRef<
 		let cancelled = false;
 		loadedRef.current = false;
 		setWorkflowLoaded(false);
+		setDefinitionRevision(null);
 		initialLayoutAppliedRef.current = false;
 		skipDraftPersistenceRef.current = true;
 		initialViewFittedRef.current = false;
@@ -1018,12 +1025,14 @@ export const AutomationCanvasContent = forwardRef<
 				const output = response.pixelReturn?.[0]?.output as
 					| (AutomationWorkflowDocument & {
 							nodeSources?: Record<string, string>;
+							revision?: string;
 							scopeVariables?: Record<
 								string,
 								AutomationScopeEntry[]
 							>;
 					  })
 					| undefined;
+				setDefinitionRevision(output?.revision ?? null);
 				setScopeVariablesByNode(output?.scopeVariables ?? {});
 				const saved = isWorkflowDocument(output)
 					? canvasDocumentFromWorkflow(output, output.nodeSources)
@@ -1051,6 +1060,11 @@ export const AutomationCanvasContent = forwardRef<
 						const draft = JSON.parse(
 							rawDraft,
 						) as CanvasWorkflowDraft;
+						setDefinitionRevision(
+							typeof draft.baseRevision === "string"
+								? draft.baseRevision
+								: (output?.revision ?? null),
+						);
 						setSteps(ensureTriggerNode(draft.steps));
 						setGraphEdges(draft.edges);
 						setDescription(draft.description);
@@ -1149,6 +1163,7 @@ export const AutomationCanvasContent = forwardRef<
 			edges: graphEdges,
 			description,
 			triggerBindings,
+			baseRevision: definitionRevision,
 			savedAt: Date.now(),
 		};
 		localStorage.setItem(
@@ -1156,7 +1171,15 @@ export const AutomationCanvasContent = forwardRef<
 			JSON.stringify(draft),
 		);
 		setIsDirty(true);
-	}, [steps, graphEdges, description, triggerBindings, appId, readOnly]);
+	}, [
+		steps,
+		graphEdges,
+		description,
+		triggerBindings,
+		definitionRevision,
+		appId,
+		readOnly,
+	]);
 
 	// ---- Derived values ----
 	const stepOutputPreviews = useMemo(
@@ -1173,10 +1196,13 @@ export const AutomationCanvasContent = forwardRef<
 		() =>
 			steps.flatMap((step) => {
 				if (step.workflowType === "trigger.start") return [];
-				const issues = validateCanvasWorkflowNode(step, steps);
+				const issues = [
+					...validateCanvasWorkflowNode(step, steps),
+					...validateCanvasWorkflowConnections(step, graphEdges),
+				];
 				return issues.length > 0 ? [{ step, issues }] : [];
 			}),
-		[steps],
+		[graphEdges, steps],
 	);
 	const incompleteCount = validationIssues.length;
 
@@ -1654,8 +1680,11 @@ export const AutomationCanvasContent = forwardRef<
 			const nodeSourcesPayload = encodeBase64(
 				JSON.stringify(nodeSources),
 			);
+			const expectedRevisionArgument = definitionRevision
+				? `, expectedRevision=${JSON.stringify([definitionRevision])}`
+				: "";
 			const response = await runPixel(
-				`SaveAutomation(project=${JSON.stringify([appId])}, json=${JSON.stringify([definitionPayload])}, nodeSources=${JSON.stringify([nodeSourcesPayload])});`,
+				`SaveAutomation(project=${JSON.stringify([appId])}, json=${JSON.stringify([definitionPayload])}, nodeSources=${JSON.stringify([nodeSourcesPayload])}${expectedRevisionArgument});`,
 			);
 			if (response.errors.length > 0) {
 				throw new Error(response.errors.join("\n"));
@@ -1663,9 +1692,13 @@ export const AutomationCanvasContent = forwardRef<
 			const output = response.pixelReturn?.[0]?.output as
 				| {
 						nodeSources?: Record<string, string>;
+						revision?: string;
 						scopeVariables?: Record<string, AutomationScopeEntry[]>;
 				  }
 				| undefined;
+			if (typeof output?.revision === "string") {
+				setDefinitionRevision(output.revision);
+			}
 			setScopeVariablesByNode(output?.scopeVariables ?? {});
 			if (output?.nodeSources) {
 				skipDraftPersistenceRef.current = true;
@@ -1689,12 +1722,14 @@ export const AutomationCanvasContent = forwardRef<
 			toast.success("Automation saved");
 			return true;
 		} catch (error) {
+			const message =
+				error instanceof Error
+					? normalizeAutomationErrorMessage(error.message)
+					: "Unknown error";
 			toast.error(
-				`Save failed: ${
-					error instanceof Error
-						? normalizeAutomationErrorMessage(error.message)
-						: "Unknown error"
-				}`,
+				message.includes("Automation changed since it was loaded")
+					? "Save blocked because this automation changed elsewhere. Your draft is still here; reload the saved workflow before reapplying it."
+					: `Save failed: ${message}`,
 			);
 			return false;
 		} finally {
@@ -1702,6 +1737,7 @@ export const AutomationCanvasContent = forwardRef<
 		}
 	}, [
 		appId,
+		definitionRevision,
 		description,
 		graphEdges,
 		readOnly,
@@ -2012,14 +2048,20 @@ export const AutomationCanvasContent = forwardRef<
 		const invalidSteps = steps.filter(
 			(step) =>
 				step.workflowType !== "trigger.start" &&
-				validateCanvasWorkflowNode(step, steps).length > 0,
+				[
+					...validateCanvasWorkflowNode(step, steps),
+					...validateCanvasWorkflowConnections(step, graphEdges),
+				].length > 0,
 		);
 		if (invalidSteps.length > 0) {
 			const firstInvalidStep = invalidSteps[0];
-			const firstIssue = validateCanvasWorkflowNode(
-				firstInvalidStep,
-				steps,
-			)[0];
+			const firstIssue = [
+				...validateCanvasWorkflowNode(firstInvalidStep, steps),
+				...validateCanvasWorkflowConnections(
+					firstInvalidStep,
+					graphEdges,
+				),
+			][0];
 			toast.error(
 				`Cannot run: "${firstInvalidStep.label}" needs ${firstIssue ?? "required information"}.${invalidSteps.length > 1 ? ` Review ${invalidSteps.length - 1} other highlighted step${invalidSteps.length === 2 ? "" : "s"}.` : ""}`,
 			);
@@ -2089,7 +2131,15 @@ export const AutomationCanvasContent = forwardRef<
 					"Automation did not return completed run details.",
 				);
 			}
-			applyRunData(finalDetail);
+			// TriggerAutomation returns the durable result, while GetAutomationRun also
+			// decorates live row-shaped outputs with their standard SEMOSS frame nouns.
+			// Re-read the canonical detail once at completion so the result panel can
+			// page the frame immediately instead of briefly falling back to raw JSON.
+			const completedDetail = await getAutomationRun(
+				appId,
+				finalDetail.RUN_ID,
+			).catch(() => finalDetail);
+			applyRunData(completedDetail);
 			setAiRunSummary(finalDetail.RESULT_SUMMARY ?? null);
 			notifyHistoryChanged();
 			if (finalDetail.STATUS === "SUCCESS") {
@@ -2193,6 +2243,7 @@ export const AutomationCanvasContent = forwardRef<
 		applyNodeProgress,
 		applyRunData,
 		applyRunStarted,
+		graphEdges,
 		mcpContext,
 		mcpMode,
 		notifyHistoryChanged,
@@ -2360,8 +2411,13 @@ export const AutomationCanvasContent = forwardRef<
 						runError: displayErrors[step.id],
 						runDuration: displayDurations[step.id],
 						isIncomplete:
-							validateCanvasWorkflowNode(step, steps).length >
-								0 && !displayStatuses[step.id],
+							[
+								...validateCanvasWorkflowNode(step, steps),
+								...validateCanvasWorkflowConnections(
+									step,
+									graphEdges,
+								),
+							].length > 0 && !displayStatuses[step.id],
 						locked: running || readOnly || viewingHistory,
 						highlighted: isStepHighlighted(
 							changeHighlight,

@@ -2,6 +2,7 @@ import { Plus, Trash2 } from "lucide-react";
 import type { Engine } from "@semoss/shared";
 import {
 	Button,
+	cn,
 	Field,
 	FieldDescription,
 	FieldLabel,
@@ -11,6 +12,7 @@ import {
 	Label,
 	RadioGroup,
 	RadioGroupItem,
+	Slider,
 } from "@semoss/ui/next";
 import type { JevDecisionConfig } from "../../../domain/automation.types";
 import { EnginePickerField } from "./engine-picker-field";
@@ -20,6 +22,7 @@ interface JevDecisionFormProps {
 	config: JevDecisionConfig;
 	upstreamVars: string[];
 	onChange: (config: JevDecisionConfig) => void;
+	devMode?: boolean;
 	readOnly?: boolean;
 }
 
@@ -28,6 +31,7 @@ export function JevDecisionForm({
 	config,
 	upstreamVars,
 	onChange,
+	devMode = false,
 	readOnly = false,
 }: JevDecisionFormProps) {
 	const questionType = config.questionType === "noul" ? "noul" : "choice";
@@ -136,7 +140,12 @@ export function JevDecisionForm({
 						</span>
 					</Label>
 					<Label
-						className={`flex items-start gap-3 rounded-md border border-border p-3 ${canUseNoul ? "cursor-pointer" : "cursor-not-allowed opacity-60"}`}
+						className={cn(
+							"flex items-start gap-3 rounded-md border border-border p-3",
+							canUseNoul
+								? "cursor-pointer"
+								: "cursor-not-allowed opacity-60",
+						)}
 					>
 						<RadioGroupItem
 							value="noul"
@@ -158,9 +167,15 @@ export function JevDecisionForm({
 					</p>
 				)}
 			</FieldSet>
-			<div className="space-y-2">
+			<div className="flex flex-col gap-3">
 				<div className="flex items-center justify-between gap-2">
-					<p className="font-medium text-xs">Routes</p>
+					<div>
+						<p className="font-medium text-sm">Decision paths</p>
+						<p className="text-muted-foreground text-xs">
+							Jev selects the path that best answers the routing
+							question.
+						</p>
+					</div>
 					{!readOnly && questionType === "choice" && (
 						<Button
 							type="button"
@@ -179,12 +194,13 @@ export function JevDecisionForm({
 								})
 							}
 						>
-							<Plus className="size-3.5" />
+							<Plus className="size-3.5" aria-hidden="true" />
 							Add route
 						</Button>
 					)}
 				</div>
 				{config.clauses.map((route, index) => {
+					const inputId = `${route.id}-description`;
 					const routeLabel =
 						questionType === "noul"
 							? route.answer
@@ -192,74 +208,134 @@ export function JevDecisionForm({
 								: "No path"
 							: `Route ${index + 1}`;
 					return (
-						<div key={route.id} className="flex items-start gap-2">
-							<Field className="flex-1">
-								<FieldLabel>{routeLabel}</FieldLabel>
-								<Input
-									value={route.description}
-									onChange={(event) =>
-										updateRoute(index, event.target.value)
-									}
-									placeholder={`Describe ${routeLabel.toLowerCase()}`}
-									readOnly={readOnly}
-								/>
-							</Field>
-							{!readOnly &&
-								questionType === "choice" &&
-								config.clauses.length > 1 && (
-									<Button
-										type="button"
-										size="icon"
-										variant="ghost"
-										aria-label={`Remove route ${index + 1}`}
-										onClick={() =>
-											onChange({
-												...config,
-												clauses: config.clauses.filter(
-													(candidate) =>
-														candidate.id !==
-														route.id,
-												),
-											})
+						<div
+							key={route.id}
+							className="rounded-lg border bg-card p-3"
+						>
+							<div className="flex items-start gap-2">
+								<span
+									className="flex size-6 shrink-0 items-center justify-center rounded-full bg-primary/10 font-semibold text-primary text-xs"
+									aria-hidden="true"
+								>
+									{questionType === "noul"
+										? route.answer
+											? "Y"
+											: "N"
+										: index + 1}
+								</span>
+								<Field className="min-w-0 flex-1 gap-1.5">
+									<FieldLabel htmlFor={inputId}>
+										{routeLabel}
+									</FieldLabel>
+									<Input
+										id={inputId}
+										value={route.description}
+										onChange={(event) =>
+											updateRoute(
+												index,
+												event.target.value,
+											)
 										}
-									>
-										<Trash2 className="size-3.5" />
-									</Button>
-								)}
+										placeholder={`Describe ${routeLabel.toLowerCase()}`}
+										readOnly={readOnly}
+									/>
+									<FieldDescription>
+										When selected, continue from{" "}
+										{routeLabel} on the canvas.
+									</FieldDescription>
+								</Field>
+								{!readOnly &&
+									questionType === "choice" &&
+									config.clauses.length > 1 && (
+										<Button
+											type="button"
+											size="icon"
+											variant="ghost"
+											className="size-8 text-muted-foreground hover:text-destructive"
+											aria-label={`Remove route ${index + 1}`}
+											onClick={() =>
+												onChange({
+													...config,
+													clauses:
+														config.clauses.filter(
+															(candidate) =>
+																candidate.id !==
+																route.id,
+														),
+												})
+											}
+										>
+											<Trash2
+												className="size-3.5"
+												aria-hidden="true"
+											/>
+										</Button>
+									)}
+							</div>
 						</div>
 					);
 				})}
-				<p className="text-muted-foreground text-xs">
-					The fallback path runs when confidence is below the minimum.
-				</p>
+				<div className="rounded-lg border border-dashed bg-muted/20 p-3">
+					<div className="flex items-start gap-2">
+						<span
+							className="flex size-6 shrink-0 items-center justify-center rounded-full bg-muted font-semibold text-muted-foreground text-xs"
+							aria-hidden="true"
+						>
+							?
+						</span>
+						<div className="min-w-0 flex-1">
+							<div className="flex items-center justify-between gap-2">
+								<p className="font-medium text-sm">
+									Low-confidence path
+								</p>
+								<span className="font-medium text-primary text-sm">
+									{Math.round(
+										config.confidenceThreshold * 100,
+									)}
+									%
+								</span>
+							</div>
+							<p className="mt-0.5 text-muted-foreground text-xs">
+								Runs when Jev is less confident than this
+								threshold.
+							</p>
+							<Slider
+								className="mt-3"
+								min={questionType === "noul" ? 50 : 0}
+								max={100}
+								step={5}
+								value={[
+									Math.round(
+										config.confidenceThreshold * 100,
+									),
+								]}
+								disabled={readOnly}
+								onValueChange={([percentage]) =>
+									onChange({
+										...config,
+										confidenceThreshold: percentage / 100,
+									})
+								}
+								aria-label="Minimum confidence"
+							/>
+						</div>
+					</div>
+				</div>
 			</div>
-			<Field>
-				<FieldLabel>Minimum confidence</FieldLabel>
-				<Input
-					type="number"
-					min={questionType === "noul" ? 0.5 : 0}
-					max={1}
-					step={0.05}
-					value={config.confidenceThreshold}
-					onChange={(event) =>
-						onChange({
-							...config,
-							confidenceThreshold: Number(event.target.value),
-						})
+			{devMode && (
+				<PillInput
+					label="Jev parameters"
+					value={config.paramValues}
+					onChange={(paramValues) =>
+						onChange({ ...config, paramValues })
 					}
+					upstreamVars={upstreamVars}
+					placeholder='{"timeout": 30, "max_retries": 1}'
+					mono
+					minRows={2}
 					readOnly={readOnly}
 				/>
-			</Field>
-			<PillInput
-				label="Jev parameters"
-				value={config.paramValues}
-				onChange={(paramValues) => onChange({ ...config, paramValues })}
-				upstreamVars={[]}
-				placeholder='{"timeout": 30, "max_retries": 1}'
-				mono
-				minRows={2}
-				readOnly={readOnly}
-			/>
+			)}
 		</div>
 	);
 }

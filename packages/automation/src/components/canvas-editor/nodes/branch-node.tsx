@@ -20,6 +20,8 @@ import {
 import { formatDurationMs } from "@semoss/utility/date";
 import type {
 	AutomationNode as AutomationGraphNode,
+	BranchConfig,
+	JevDecisionConfig,
 	RoutingConfig,
 	StepRunStatus,
 } from "../../../domain/automation.types";
@@ -63,12 +65,10 @@ export function BranchNode({ data }: NodeProps) {
 		pathHighlighted,
 	} = d;
 	const config = step.config as RoutingConfig;
-	const firstClause = config.clauses[0];
-	const firstDescription =
-		firstClause && "condition" in firstClause
-			? firstClause.condition
-			: firstClause?.description;
 	const isJevDecision = step.workflowType === "control.jev";
+	const firstDescription = isJevDecision
+		? (config as JevDecisionConfig).clauses[0]?.description
+		: (config as BranchConfig).clauses[0]?.condition;
 	const isNoulDecision =
 		isJevDecision &&
 		"questionType" in config &&
@@ -234,8 +234,8 @@ export function BranchNode({ data }: NodeProps) {
 					})}
 					<BranchOutputHandle
 						id={`else-${step.id}`}
-						label={isJevDecision ? "Fallback" : "Else"}
-						ariaLabel={isJevDecision ? "Fallback" : "Else"}
+						label={isJevDecision ? "Low confidence" : "Else"}
+						ariaLabel={isJevDecision ? "Low confidence" : "Else"}
 						connected={elseConnected}
 						locked={locked}
 						top={`${(outputCount / (outputCount + 1)) * 100}%`}
