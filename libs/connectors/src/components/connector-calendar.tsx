@@ -56,6 +56,8 @@ export interface ConnectorCalendarProps<T> {
 	getSchedule?: (event: T) => CalendarEventSchedule;
 	onOpenEvent: (event: T, itemKey: string) => void;
 	renderEvent: (event: T, day: Date) => ReactNode;
+	/** Buttons at the end of the toolbar, such as refresh. */
+	actions?: ReactNode;
 }
 
 /** Switch date spans and toggle between the calendar canvas and list view. */
@@ -73,6 +75,7 @@ export const ConnectorCalendar = <T,>({
 	getSchedule,
 	onOpenEvent,
 	renderEvent,
+	actions,
 }: ConnectorCalendarProps<T>) => {
 	const { t, i18n } = useTranslation("connectors");
 	const [isGridOpen, setIsGridOpen] = useState(true);
@@ -200,6 +203,7 @@ export const ConnectorCalendar = <T,>({
 								: "calendar.calendarView",
 						)}
 					</Button>
+					{actions}
 				</div>
 			</div>
 			{limitNote && query.status === "ready" ? (

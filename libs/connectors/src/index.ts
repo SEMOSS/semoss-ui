@@ -1,8 +1,9 @@
+// the apps' logos live in @semoss/shared, so every package can show them
 export {
 	type ConnectorBrand,
 	ConnectorBrandIcon,
 	type ConnectorBrandIconProps,
-} from "./components/connector-brand-icon";
+} from "@semoss/shared";
 export type {
 	ConnectorAccount,
 	ConnectorSavedFile,

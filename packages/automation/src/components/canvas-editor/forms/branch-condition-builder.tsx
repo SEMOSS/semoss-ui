@@ -17,6 +17,7 @@ import {
 	SelectItem,
 	SelectTrigger,
 	SelectValue,
+	Small,
 } from "@semoss/ui/next";
 import type { AutomationBranchClause } from "../../../domain/automation-workflow.types";
 import {
@@ -53,7 +54,14 @@ export function BranchConditionBuilder({
 	readOnly = false,
 }: BranchConditionBuilderProps) {
 	return (
-		<div className="flex flex-col gap-4">
+		<div className="flex flex-col gap-3">
+			<div className="rounded-lg border bg-muted/30 px-3 py-2.5">
+				<p className="font-medium text-sm">Choose which path runs</p>
+				<p className="mt-0.5 text-muted-foreground text-xs">
+					Paths are checked from top to bottom. The first match
+					continues from its numbered output on the canvas.
+				</p>
+			</div>
 			{clauses.map((clause, index) => (
 				<BranchClauseEditor
 					key={clause.id}
@@ -90,6 +98,20 @@ export function BranchConditionBuilder({
 					readOnly={readOnly}
 				/>
 			))}
+			<div className="flex items-start gap-3 rounded-lg border border-dashed bg-muted/20 px-3 py-2.5">
+				<span
+					className="flex size-6 shrink-0 items-center justify-center rounded-full bg-muted font-semibold text-muted-foreground text-xs"
+					aria-hidden="true"
+				>
+					E
+				</span>
+				<div>
+					<p className="font-medium text-sm">Else path</p>
+					<p className="text-muted-foreground text-xs">
+						Runs when none of the paths above match.
+					</p>
+				</div>
+			</div>
 			{!readOnly && (
 				<Button
 					type="button"
@@ -101,15 +123,12 @@ export function BranchConditionBuilder({
 							{ id: crypto.randomUUID(), condition: "" },
 						])
 					}
+					className="w-full"
 				>
 					<Plus className="size-4" aria-hidden="true" />
-					Add Condition
+					Add Path
 				</Button>
 			)}
-			<p className="text-muted-foreground text-xs">
-				Conditions run in order. The first match runs its path;
-				otherwise the <strong>Else</strong> path runs.
-			</p>
 		</div>
 	);
 }
@@ -136,7 +155,7 @@ function BranchClauseEditor({
 	readOnly: boolean;
 }) {
 	const parsed = parseBranchCondition(clause.condition);
-	const label = `Condition ${index + 1}`;
+	const label = `Path ${index + 1}`;
 	const updateParsed = (next: {
 		value1: string;
 		operator: BranchConditionOperator;
@@ -144,15 +163,31 @@ function BranchClauseEditor({
 	}) => onChange(generateBranchCondition(next));
 
 	return (
-		<div className="flex flex-col gap-3 border-border border-b pb-4 last:border-b-0">
-			<div className="flex items-center justify-between gap-2">
-				<p className="font-medium text-sm">{label}</p>
+		<div className="flex flex-col gap-3 rounded-lg border bg-card p-3">
+			<div className="flex items-start justify-between gap-2">
+				<div className="flex items-center gap-2">
+					<span
+						className="flex size-6 shrink-0 items-center justify-center rounded-full bg-primary/10 font-semibold text-primary text-xs"
+						aria-hidden="true"
+					>
+						{index + 1}
+					</span>
+					<div>
+						<p className="font-medium text-sm">{label}</p>
+						<p className="text-muted-foreground text-xs">
+							{index === 0
+								? "Checked first"
+								: "Checked after earlier paths"}
+						</p>
+					</div>
+				</div>
 				{!readOnly && (
 					<div className="flex items-center gap-1">
 						<Button
 							type="button"
 							variant="ghost"
 							size="icon"
+							className="size-7"
 							onClick={() => onMove(-1)}
 							disabled={index === 0}
 							aria-label={`Move ${label} up`}
@@ -163,6 +198,7 @@ function BranchClauseEditor({
 							type="button"
 							variant="ghost"
 							size="icon"
+							className="size-7"
 							onClick={() => onMove(1)}
 							disabled={index === clauseCount - 1}
 							aria-label={`Move ${label} down`}
@@ -176,6 +212,7 @@ function BranchClauseEditor({
 							type="button"
 							variant="ghost"
 							size="icon"
+							className="size-7 text-muted-foreground hover:text-destructive"
 							onClick={onRemove}
 							disabled={clauseCount === 1}
 							aria-label={`Remove ${label}`}
@@ -198,7 +235,7 @@ function BranchClauseEditor({
 			) : parsed ? (
 				<>
 					<PillInput
-						label="Value 1"
+						label="Value to check"
 						required
 						value={parsed.value1}
 						placeholder="${database_query_1}"
@@ -209,7 +246,9 @@ function BranchClauseEditor({
 						readOnly={readOnly}
 					/>
 					<Field>
-						<FieldLabel>Operator</FieldLabel>
+						<FieldLabel htmlFor={`${clause.id}-comparison`}>
+							Comparison
+						</FieldLabel>
 						<Select
 							value={parsed.operator}
 							onValueChange={(operator) =>
@@ -222,6 +261,7 @@ function BranchClauseEditor({
 							disabled={readOnly}
 						>
 							<SelectTrigger
+								id={`${clause.id}-comparison`}
 								className="w-full"
 								aria-label={`${label} operator`}
 							>
@@ -240,7 +280,7 @@ function BranchClauseEditor({
 						</Select>
 					</Field>
 					<PillInput
-						label="Value 2"
+						label="Compare with"
 						required
 						value={parsed.value2}
 						placeholder='"active"'
@@ -250,6 +290,12 @@ function BranchClauseEditor({
 						upstreamVars={upstreamVars}
 						readOnly={readOnly}
 					/>
+					<Small className="rounded-md bg-primary/5 px-2.5 py-2 text-xs">
+						<span className="font-medium text-primary">
+							When matched:
+						</span>{" "}
+						continue from <strong>{label}</strong> on the canvas.
+					</Small>
 				</>
 			) : (
 				<>

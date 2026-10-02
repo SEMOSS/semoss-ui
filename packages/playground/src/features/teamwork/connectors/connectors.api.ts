@@ -235,6 +235,16 @@ export const readSessionLoginConfig = (): Promise<SessionLoginConfig> => {
 };
 
 /**
+ * Drop every reused read of the session's sign in state, for a page whose
+ * user has just signed in: the logins and the config's login settings belong
+ * to a session, so the ones read before the sign in are stale.
+ */
+export const forgetSessionLoginState = (): void => {
+	loginsCache = null;
+	loginConfigRequest = null;
+};
+
+/**
  * Whether a popup has come back to this app, which is where the backend
  * sends it once a sign in finishes. A popup still on the provider's pages
  * cannot be read, which counts as not yet.
@@ -437,6 +447,28 @@ export const readUserConnectorTools = async (): Promise<McpTool[] | null> => {
 	}
 };
 
+/** Told about every save of the user's connector tools on this page. */
+const userConnectorToolsListeners = new Set<
+	(tools: readonly McpTool[]) => void
+>();
+
+/**
+ * Hear about every save of the user's connector tools on this page, such as
+ * one made on the settings page, so an open chat can take the change straight
+ * away.
+ *
+ * @param listener - Called with the tools the user's file now holds.
+ * @return Stops listening.
+ */
+export const subscribeUserConnectorTools = (
+	listener: (tools: readonly McpTool[]) => void,
+): (() => void) => {
+	userConnectorToolsListeners.add(listener);
+	return () => {
+		userConnectorToolsListeners.delete(listener);
+	};
+};
+
 /**
  * Switch the user's connectors: write the tools of the services switched on
  * into their own file, which every chat of theirs copies.
@@ -447,10 +479,15 @@ export const readUserConnectorTools = async (): Promise<McpTool[] | null> => {
  */
 export const writeUserConnectorTools = async (
 	services: readonly ConnectorServiceId[],
-): Promise<McpTool[]> =>
-	readConnectorTools(
+): Promise<McpTool[]> => {
+	const tools = readConnectorTools(
 		await runUserPixel(buildUserConnectorToolsPixel(services)),
 	);
+	for (const listener of userConnectorToolsListeners) {
+		listener(tools);
+	}
+	return tools;
+};
 
 /**
  * Bring a room's copy of the user's connector tools up to date, keeping every

@@ -123,29 +123,25 @@ describe("TeamworkStore", () => {
 		expect(names()).toContain(FOLDER_TOOL_NAMES.READ);
 	});
 
-	test("switches the user's connectors and brings this room's copy up to date", async () => {
+	test("takes the user's saved connectors and brings this room's copy up to date", async () => {
 		const room = createRoom();
 		teamwork = new TeamworkStore(room);
-		await teamwork.setConnectors(["teams", "outlook"]);
+		const saved = await writeUserConnectorTools(["outlook", "teams"]);
+		await teamwork.applyUserConnectorTools(saved);
 
-		expect(writeUserConnectorTools).toHaveBeenLastCalledWith([
-			"outlook",
-			"teams",
-		]);
-		const written = await vi
-			.mocked(writeUserConnectorTools)
-			.mock.results.at(-1)?.value;
-		expect(syncRoomConnectorTools).toHaveBeenLastCalledWith(room, written);
+		expect(syncRoomConnectorTools).toHaveBeenLastCalledWith(room, saved);
 		expect(teamwork.connectors).toEqual(["outlook", "teams"]);
 		expect(teamwork.isSavingConnectors).toBe(false);
 	});
 
-	test("a new chat's draft only switches the user's connectors", async () => {
+	test("a new chat's draft only takes the user's connectors", async () => {
 		vi.mocked(syncRoomConnectorTools).mockClear();
 		const draft = createRoom();
 		(draft as unknown as { insightId: string }).insightId = "new";
 		teamwork = new TeamworkStore(draft);
-		await teamwork.setConnectors(["gmail"]);
+		await teamwork.applyUserConnectorTools(
+			await writeUserConnectorTools(["gmail"]),
+		);
 
 		expect(teamwork.connectors).toEqual(["gmail"]);
 		expect(syncRoomConnectorTools).not.toHaveBeenCalled();
@@ -379,7 +375,9 @@ describe("TeamworkStore", () => {
 	});
 
 	test("offers a viewer only once its connector is on and its account signed in", async () => {
-		await teamwork.setConnectors(["onedrive", "teams", "gmail"]);
+		await teamwork.applyUserConnectorTools(
+			await writeUserConnectorTools(["onedrive", "teams", "gmail"]),
+		);
 		expect(
 			teamwork.availableSources.map((source) => source.service),
 		).toEqual([
@@ -401,7 +399,9 @@ describe("TeamworkStore", () => {
 	});
 
 	test("asks for a sign in when a switched on connector's account is not signed in", async () => {
-		await teamwork.setConnectors(["outlook", "gmail"]);
+		await teamwork.applyUserConnectorTools(
+			await writeUserConnectorTools(["outlook", "gmail"]),
+		);
 		expect(teamwork.missingSignIns).toEqual([]);
 
 		runInAction(() => {
@@ -414,7 +414,9 @@ describe("TeamworkStore", () => {
 	});
 
 	test("hides viewers and flags connectors the server says the sign in cannot cover", async () => {
-		await teamwork.setConnectors(["outlook", "gmail"]);
+		await teamwork.applyUserConnectorTools(
+			await writeUserConnectorTools(["outlook", "gmail"]),
+		);
 		runInAction(() => {
 			teamwork.connectorAccess = {
 				MICROSOFT: { outlook: true, calendar: false },
@@ -434,7 +436,9 @@ describe("TeamworkStore", () => {
 	});
 
 	test("does not ask for a sign in the server does not offer", async () => {
-		await teamwork.setConnectors(["gmail"]);
+		await teamwork.applyUserConnectorTools(
+			await writeUserConnectorTools(["gmail"]),
+		);
 		runInAction(() => {
 			teamwork.connectedProviders = [];
 			teamwork.offeredProviders = ["MICROSOFT"];

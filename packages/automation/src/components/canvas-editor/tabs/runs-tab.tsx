@@ -8,12 +8,19 @@ import {
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { CellOutputBlock } from "@semoss/shared";
-import { Button, toast } from "@semoss/ui/next";
+import {
+	Alert,
+	AlertDescription,
+	AlertTitle,
+	Button,
+	toast,
+} from "@semoss/ui/next";
 import { getAutomationRun, listAutomationRuns } from "../../../api";
 import type {
 	AutomationExecutedDefinition,
 	AutomationNode,
 	AutomationNodeResult,
+	AutomationNodeTrace,
 	AutomationRunDetail,
 	AutomationRunSummary,
 	RunStatus,
@@ -33,10 +40,10 @@ import type { AutomationWorkflowDocument } from "../../../domain/automation-work
 import { canvasDocumentFromWorkflow } from "../../../domain/automation-workflow-adapter";
 import { getWorkflowNodeDisplay } from "../../../domain/automation-workflow-display";
 import { ErrorDetail } from "../../form-editor/error-detail";
-import { ExecutedDefinitionDetail } from "../../form-editor/executed-definition-detail";
 import { TraceDetail } from "../../form-editor/trace-detail";
 import { StatusBadge } from "../../status-badge";
 import { RunBanner } from "../run-banner";
+import { RunNodeDataViewer } from "./run-node-data-viewer";
 
 export interface RunsTabSnapshot {
 	running: boolean;
@@ -57,6 +64,14 @@ export interface AutomationTraceSnapshot extends RunsTabSnapshot {
 interface RunsTabProps extends AutomationTraceSnapshot {
 	appId: string;
 	refreshToken: number;
+	/** Active runs discovered by the shared workbench run store. */
+	activeRuns?: AutomationRunSummary[];
+	/** Run whose live updates are currently displayed by the workbench. */
+	followedRunId?: string | null;
+	/** Historical or active run selected in the shared workbench run store. */
+	selectedRun?: AutomationRunDetail | null;
+	/** Keeps the shared workbench run store synchronized with history refreshes. */
+	onRunsChange?: (runs: AutomationRunSummary[]) => void;
 	onDismiss: () => void;
 	/** Pop a step/run output value out into a larger viewer, for a host rendering this tab
 	 * alongside the canvas instead of in a separate iframe. */
@@ -65,6 +80,8 @@ interface RunsTabProps extends AutomationTraceSnapshot {
 	onAskAssistant?: (prompt: string) => void;
 	/** Render a past run's snapshot read-only on the canvas, in place of the live editable graph. */
 	onViewRun?: (run: AutomationRunDetail) => void;
+	/** Opens the agent activity dialog for a running or input-required agent node. */
+	onViewAgentRun?: (trace: AutomationNodeTrace) => void;
 	/** Returns the canvas to the live editable graph — fired whenever the run detail view is left. */
 	onExitHistoricalView?: () => void;
 	/** A node to jump straight to in the latest run's results, e.g. from the inspector's
@@ -97,11 +114,16 @@ export function RunsTab({
 	generatingAiSummary,
 	steps,
 	results,
-	executedDefinition,
+	activeRun,
+	activeRuns = [],
+	followedRunId,
+	selectedRun = null,
+	onRunsChange,
 	onDismiss,
 	onOpenOutput,
 	onAskAssistant,
 	onViewRun,
+	onViewAgentRun,
 	onExitHistoricalView,
 	focusNodeId,
 	focusToken,
@@ -109,10 +131,8 @@ export function RunsTab({
 	const [view, setView] = useState<View>("history");
 	const [runs, setRuns] = useState<AutomationRunSummary[]>([]);
 	const [loading, setLoading] = useState(false);
+	const [loadError, setLoadError] = useState<string | null>(null);
 	const [lastRefreshed, setLastRefreshed] = useState<Date | null>(null);
-	const [selectedRun, setSelectedRun] = useState<AutomationRunDetail | null>(
-		null,
-	);
 	const [detailLoading, setDetailLoading] = useState(false);
 	const detailsCache = useRef<Record<string, AutomationRunDetail>>({});
 	const requestRef = useRef(0);
@@ -131,7 +151,6 @@ export function RunsTab({
 	useEffect(() => {
 		if (!running) return;
 		setView("live");
-		setSelectedRun(null);
 		exitHistoricalViewRef.current?.();
 	}, [running]);
 
@@ -140,21 +159,22 @@ export function RunsTab({
 	useEffect(() => {
 		if (!focusNodeId || !focusToken) return;
 		setView("live");
-		setSelectedRun(null);
 		exitHistoricalViewRef.current?.();
 	}, [focusNodeId, focusToken]);
 
 	const refresh = useCallback(async () => {
 		const requestId = ++requestRef.current;
 		setLoading(true);
+		setLoadError(null);
 		try {
 			const nextRuns = await listAutomationRuns(appId);
 			if (requestId !== requestRef.current) return;
 			setRuns(nextRuns);
+			onRunsChange?.(nextRuns);
 			setLastRefreshed(new Date());
 		} catch (error) {
 			if (requestId === requestRef.current) {
-				toast.error(
+				setLoadError(
 					error instanceof Error
 						? normalizeAutomationErrorMessage(error.message)
 						: "Unable to load run history.",
@@ -163,7 +183,7 @@ export function RunsTab({
 		} finally {
 			if (requestId === requestRef.current) setLoading(false);
 		}
-	}, [appId]);
+	}, [appId, onRunsChange]);
 
 	useEffect(() => {
 		void refresh();
@@ -178,14 +198,17 @@ export function RunsTab({
 	// A run opened from history can still be active. Keep its detail current so
 	// status and temporary workspace metadata follow the live execution.
 	useEffect(() => {
-		if (selectedRun?.STATUS !== "RUNNING") return;
+		if (
+			selectedRun?.STATUS !== "RUNNING" &&
+			selectedRun?.STATUS !== "WAITING_FOR_INPUT"
+		)
+			return;
 		let cancelled = false;
 		const interval = window.setInterval(() => {
 			getAutomationRun(appId, selectedRun.RUN_ID)
 				.then((detail) => {
 					if (cancelled) return;
 					detailsCache.current[detail.RUN_ID] = detail;
-					setSelectedRun(detail);
 					onViewRun?.(detail);
 				})
 				.catch(() => {
@@ -205,7 +228,6 @@ export function RunsTab({
 			const requestId = ++detailRequestRef.current;
 			const cached = detailsCache.current[runId];
 			if (cached) {
-				setSelectedRun(cached);
 				setView("detail");
 				onViewRun?.(cached);
 				return;
@@ -216,7 +238,6 @@ export function RunsTab({
 				const detail = await getAutomationRun(appId, runId);
 				detailsCache.current[runId] = detail;
 				if (requestId !== detailRequestRef.current) return;
-				setSelectedRun(detail);
 				onViewRun?.(detail);
 			} catch (error) {
 				if (requestId !== detailRequestRef.current) return;
@@ -237,7 +258,6 @@ export function RunsTab({
 
 	const goBack = useCallback(() => {
 		setView("history");
-		setSelectedRun(null);
 		onExitHistoricalView?.();
 	}, [onExitHistoricalView]);
 
@@ -260,19 +280,20 @@ export function RunsTab({
 	if (view === "live" || (view === "history" && running)) {
 		return (
 			<LiveRunView
+				executionInsightId={activeRun?.executionInsightId ?? null}
 				running={running}
 				latestRunStatus={latestRunStatus}
 				aiRunSummary={aiRunSummary}
 				generatingAiSummary={generatingAiSummary}
 				steps={steps}
 				results={results}
-				executedDefinition={executedDefinition}
 				onOutputPopout={handleOutputPopout}
 				onAskAssistant={handleAskAssistant}
 				onDismiss={onDismiss}
 				onBack={goBack}
 				focusNodeId={focusNodeId}
 				focusToken={focusToken}
+				onViewAgentRun={onViewAgentRun}
 			/>
 		);
 	}
@@ -298,6 +319,7 @@ export function RunsTab({
 					onBack={goBack}
 					onOutputPopout={handleOutputPopout}
 					onViewRun={onViewRun}
+					onViewAgentRun={onViewAgentRun}
 				/>
 			);
 		}
@@ -308,14 +330,21 @@ export function RunsTab({
 		<div className="flex h-full min-h-0 flex-col p-3">
 			<div className="flex items-center justify-between">
 				<div>
-					<p className="font-semibold text-sm">Run History</p>
-					<p className="text-[11px] text-muted-foreground">
+					<div className="flex items-center gap-2">
+						<p className="font-semibold text-sm">Run History</p>
+						{activeRuns.length > 0 && (
+							<span className="rounded-full bg-primary/10 px-2 py-0.5 font-medium text-primary text-xs">
+								{activeRuns.length} active
+							</span>
+						)}
+					</div>
+					<p className="text-muted-foreground text-xs">
 						View past runs or click Run to start a new one.
 					</p>
 				</div>
 				<div className="flex items-center gap-2">
 					{lastRefreshed && (
-						<span className="text-[10px] text-muted-foreground/60">
+						<span className="text-muted-foreground/60 text-xs">
 							{formatRelativeTime(lastRefreshed.toISOString())}
 						</span>
 					)}
@@ -326,10 +355,26 @@ export function RunsTab({
 						onClick={() => void refresh()}
 						aria-label="Refresh run history"
 					>
-						<RefreshCw className="mr-1 h-3 w-3" aria-hidden />
+						<RefreshCw className="h-3 w-3" aria-hidden />
 					</Button>
 				</div>
 			</div>
+
+			{loadError && (
+				<Alert variant="destructive" className="mt-3">
+					<AlertTitle>Run history could not be refreshed</AlertTitle>
+					<AlertDescription className="flex flex-col items-start gap-2">
+						<span className="break-words">{loadError}</span>
+						<Button
+							size="sm"
+							variant="outline"
+							onClick={() => void refresh()}
+						>
+							Retry
+						</Button>
+					</AlertDescription>
+				</Alert>
+			)}
 
 			<div className="mt-3 min-h-0 flex-1 overflow-y-auto rounded-lg border bg-card">
 				{loading ? (
@@ -338,9 +383,15 @@ export function RunsTab({
 					</div>
 				) : runs.length === 0 ? (
 					<div className="flex h-40 flex-col items-center justify-center gap-2 px-4 text-center">
-						<p className="font-medium text-sm">No runs yet</p>
+						<p className="font-medium text-sm">
+							{loadError
+								? "Run history unavailable"
+								: "No runs yet"}
+						</p>
 						<p className="text-muted-foreground text-xs">
-							Completed runs will appear here.
+							{loadError
+								? "Retry the request above."
+								: "Completed runs will appear here."}
 						</p>
 					</div>
 				) : (
@@ -353,8 +404,17 @@ export function RunsTab({
 								className="flex w-full items-center gap-3 px-3 py-2.5 text-left transition-colors hover:bg-muted/40"
 							>
 								<StatusBadge status={run.STATUS} />
+								{run.RUN_ID === followedRunId && (
+									<span className="rounded-full bg-primary/10 px-2 py-0.5 font-medium text-primary text-xs">
+										Following
+									</span>
+								)}
 								{run.TRIGGER_TYPE === "SCHEDULED" && (
-									<span className="inline-flex items-center gap-1 rounded-full bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground">
+									<span
+										className="inline-flex items-center gap-1 rounded-full bg-muted px-1.5 py-0.5 text-muted-foreground text-xs"
+										role="img"
+										aria-label="Scheduled run"
+									>
 										<CalendarClock
 											className="h-3 w-3"
 											aria-hidden
@@ -366,7 +426,7 @@ export function RunsTab({
 										{formatTimestamp(run.STARTED_AT)}
 									</p>
 									{run.COMPLETED_AT && (
-										<p className="text-[10px] text-muted-foreground">
+										<p className="text-muted-foreground text-xs">
 											{formatRunDuration(
 												run.STARTED_AT,
 												run.COMPLETED_AT,
@@ -423,27 +483,29 @@ function RunHistoryBreadcrumb({
 
 /** Live run detail with navigation back to the history list. */
 function LiveRunView({
+	executionInsightId,
 	running,
 	latestRunStatus,
 	aiRunSummary,
 	generatingAiSummary,
 	steps,
 	results,
-	executedDefinition,
-	activeRun,
 	onOutputPopout,
 	onAskAssistant,
 	onDismiss,
 	onBack,
 	focusNodeId,
 	focusToken,
-}: AutomationTraceSnapshot & {
+	onViewAgentRun,
+}: Omit<AutomationTraceSnapshot, "executedDefinition"> & {
+	executionInsightId: string | null;
 	onOutputPopout: (output: string) => void;
 	onAskAssistant: () => void;
 	onDismiss: () => void;
 	onBack: () => void;
 	focusNodeId?: string | null;
 	focusToken?: number;
+	onViewAgentRun?: (trace: AutomationNodeTrace) => void;
 }) {
 	const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
 	const previousRunningNodeIdRef = useRef<string | null>(null);
@@ -523,13 +585,14 @@ function LiveRunView({
 					</div>
 				)}
 			<ResultsPanel
-				key={activeRun?.RUN_ID}
+				key={executionInsightId ?? "live"}
+				executionInsightId={executionInsightId}
 				results={results}
-				executedDefinition={executedDefinition}
 				onOutputPopout={onOutputPopout}
 				selectedResult={selectedResult}
 				stepMap={stepMap}
 				onSelectNode={setSelectedNodeId}
+				onViewAgentRun={onViewAgentRun}
 			/>
 		</div>
 	);
@@ -541,11 +604,13 @@ function HistoryRunView({
 	onBack,
 	onOutputPopout,
 	onViewRun,
+	onViewAgentRun,
 }: {
 	run: AutomationRunDetail;
 	onBack: () => void;
 	onOutputPopout: (output: string) => void;
 	onViewRun?: (run: AutomationRunDetail) => void;
+	onViewAgentRun?: (trace: AutomationNodeTrace) => void;
 }) {
 	const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
 	const executedSteps = useMemo(() => getExecutedSteps(run), [run]);
@@ -570,7 +635,7 @@ function HistoryRunView({
 						onHistoryClick={onBack}
 					/>
 					{run.RESULT_SUMMARY && (
-						<p className="mt-1 truncate text-[11px] text-muted-foreground">
+						<p className="mt-1 truncate text-muted-foreground text-xs">
 							{run.RESULT_SUMMARY}
 						</p>
 					)}
@@ -580,7 +645,7 @@ function HistoryRunView({
 						<Button
 							size="sm"
 							variant="outline"
-							className="h-6 rounded-full px-2.5 py-1 text-[11px]"
+							className="h-6 rounded-full px-2.5 py-1 text-xs"
 							onClick={() => onViewRun(run)}
 						>
 							View on canvas
@@ -593,16 +658,13 @@ function HistoryRunView({
 			<div className="mt-3 min-h-0 flex-1 overflow-y-auto rounded-lg border bg-card">
 				<ResultsPanel
 					key={run.RUN_ID}
+					executionInsightId={run.executionInsightId ?? null}
 					results={results}
-					executedDefinition={{
-						version: run.DEFINITION_VERSION,
-						hash: run.DEFINITION_HASH,
-						snapshot: run.DEFINITION_SNAPSHOT,
-					}}
 					onOutputPopout={onOutputPopout}
 					selectedResult={selectedResult}
 					stepMap={stepMap}
 					onSelectNode={setSelectedNodeId}
+					onViewAgentRun={onViewAgentRun}
 				/>
 			</div>
 		</div>
@@ -611,19 +673,21 @@ function HistoryRunView({
 
 /** Shared results panel: left nav + right output. */
 function ResultsPanel({
+	executionInsightId,
 	results,
-	executedDefinition,
 	selectedResult,
 	stepMap,
 	onOutputPopout,
 	onSelectNode,
+	onViewAgentRun,
 }: {
+	executionInsightId: string | null;
 	results: AutomationNodeResult[];
-	executedDefinition: AutomationExecutedDefinition | null;
 	selectedResult: AutomationNodeResult | null;
 	stepMap: Map<string, AutomationNode>;
 	onOutputPopout: (output: string) => void;
 	onSelectNode: (id: string) => void;
+	onViewAgentRun?: (trace: AutomationNodeTrace) => void;
 }) {
 	const [expandedLoopIds, setExpandedLoopIds] = useState<Set<string>>(
 		new Set(),
@@ -666,6 +730,13 @@ function ResultsPanel({
 		? (stepMap.get(displayResult.NODE_ID) ??
 			bodyStepMap.get(displayResult.NODE_ID))
 		: undefined;
+	const selectedAgentTrace = displayResult?.trace;
+	const reviewAgentTrace =
+		selectedAgentTrace?.agentRunId &&
+		selectedAgentTrace.automationRunId &&
+		selectedAgentTrace.nodeId
+			? selectedAgentTrace
+			: null;
 
 	const handleSelectNode = useCallback(
 		(nodeId: string) => {
@@ -735,7 +806,7 @@ function ResultsPanel({
 														step?.label ||
 														meta.label}
 												</span>
-												<span className="mt-0.5 flex items-center gap-1 text-[10px] text-muted-foreground [&>span]:px-1.5 [&>span]:py-0.5 [&>span]:text-[9px]">
+												<span className="mt-0.5 flex items-center gap-1 text-muted-foreground text-xs [&>span]:px-1.5 [&>span]:py-0.5 [&>span]:text-xs">
 													<StatusBadge
 														status={displayStatus}
 													/>{" "}
@@ -770,15 +841,17 @@ function ResultsPanel({
 														},
 													)
 												}
-												className="mr-1 shrink-0 rounded p-0.5 hover:bg-muted"
+												className="mr-1 flex size-6 shrink-0 items-center justify-center rounded hover:bg-muted"
+												aria-expanded={isExpanded}
 												aria-label={
 													isExpanded
-														? "Collapse iterations"
-														: "Expand iterations"
+														? `Collapse ${result.NODE_LABEL || step?.label || "loop"} iterations`
+														: `Expand ${result.NODE_LABEL || step?.label || "loop"} iterations`
 												}
 											>
 												<ChevronRight
-													className={`size-3 transition-transform ${isExpanded ? "rotate-90" : ""}`}
+													className={`size-4 transition-transform ${isExpanded ? "rotate-90" : ""}`}
+													aria-hidden="true"
 												/>
 											</button>
 										)}
@@ -787,7 +860,7 @@ function ResultsPanel({
 										<div className="mt-0.5 ml-2 space-y-0.5 border-border/50 border-l pl-2">
 											{result.iterations?.map((iter) => (
 												<div key={iter.index}>
-													<p className="px-2 py-1 font-medium text-[9px] text-muted-foreground/60 uppercase tracking-wide">
+													<p className="px-2 py-1 font-medium text-muted-foreground text-xs uppercase tracking-wide">
 														Iteration{" "}
 														{iter.index + 1}
 													</p>
@@ -840,12 +913,12 @@ function ResultsPanel({
 																		<BodyIcon className="size-3" />
 																	</span>
 																	<span className="min-w-0 flex-1">
-																		<span className="block truncate text-[11px]">
+																		<span className="block truncate text-xs">
 																			{bodyResult.NODE_LABEL ||
 																				bodyStep?.label ||
 																				bodyMeta.label}
 																		</span>
-																		<span className="mt-0.5 flex items-center gap-1 text-[10px] text-muted-foreground [&>span]:px-1.5 [&>span]:py-0.5 [&>span]:text-[9px]">
+																		<span className="mt-0.5 flex items-center gap-1 text-muted-foreground text-xs [&>span]:px-1.5 [&>span]:py-0.5 [&>span]:text-xs">
 																			<StatusBadge
 																				status={
 																					bodyResult.STATUS
@@ -886,38 +959,74 @@ function ResultsPanel({
 						</div>
 					) : displayResult.STATUS === "WAITING_FOR_INPUT" &&
 						!displayResult.OUTPUT_PREVIEW?.trim() ? (
-						<div className="flex h-full flex-col items-center justify-center gap-2 text-muted-foreground text-xs">
+						<div className="flex h-full flex-col items-center justify-center gap-3 text-muted-foreground text-xs">
 							<Clock3 className="size-5 text-warning" />
 							<span>
 								{displayResult.NODE_LABEL || "Agent"} is waiting
 								for input.
 							</span>
+							{reviewAgentTrace && onViewAgentRun && (
+								<Button
+									type="button"
+									size="sm"
+									onClick={() =>
+										onViewAgentRun(reviewAgentTrace)
+									}
+								>
+									Review request
+								</Button>
+							)}
 						</div>
 					) : (
 						<div className="space-y-3">
+							{displayResult.STATUS === "WAITING_FOR_INPUT" &&
+								reviewAgentTrace &&
+								onViewAgentRun && (
+									<Button
+										type="button"
+										size="sm"
+										onClick={() =>
+											onViewAgentRun(reviewAgentTrace)
+										}
+									>
+										<Clock3
+											className="size-4"
+											aria-hidden
+										/>
+										Review request
+									</Button>
+								)}
 							{displayResult.ERROR_MESSAGE && (
 								<ErrorDetail
 									message={displayResult.ERROR_MESSAGE}
 								/>
 							)}
-							<CellOutputBlock
-								output={
-									displayResult.OUTPUT_PREVIEW ??
-									"No output was produced."
-								}
-								onOutputPopout={() =>
-									onOutputPopout(
+							{executionInsightId &&
+							displayResult.STATUS === "SUCCESS" &&
+							displayResult.OUTPUT_FRAME ? (
+								<RunNodeDataViewer
+									key={`${executionInsightId}:${displayResult.NODE_ID}:${selectedBodyKey?.iterationIndex ?? "root"}`}
+									insightId={executionInsightId}
+									frame={displayResult.OUTPUT_FRAME}
+									outputPreview={
+										displayResult.OUTPUT_PREVIEW ?? ""
+									}
+									onOutputPopout={onOutputPopout}
+								/>
+							) : (
+								<CellOutputBlock
+									output={
 										displayResult.OUTPUT_PREVIEW ??
-											"No output was produced.",
-									)
-								}
-							/>
-							{displayStep?.workflowType === "trigger.start" &&
-								executedDefinition && (
-									<ExecutedDefinitionDetail
-										definition={executedDefinition}
-									/>
-								)}
+										"No output was produced."
+									}
+									onOutputPopout={() =>
+										onOutputPopout(
+											displayResult.OUTPUT_PREVIEW ??
+												"No output was produced.",
+										)
+									}
+								/>
+							)}
 							{displayResult.trace && (
 								<TraceDetail
 									trace={displayResult.trace}

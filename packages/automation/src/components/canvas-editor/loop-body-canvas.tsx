@@ -204,6 +204,7 @@ export function LoopBodyCanvas({
 								instance.fitView({ padding: 0.2 });
 							}}
 							nodesDraggable={!readOnly}
+							nodesDeletable={false}
 							nodesConnectable={false}
 							elementsSelectable
 							panOnDrag

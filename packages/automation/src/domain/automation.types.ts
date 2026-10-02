@@ -54,6 +54,9 @@ export interface StorageEngineConfig {
 	storagePath: string;
 	filePath: string;
 	metadata: string;
+	convertToPdf: boolean;
+	version: string;
+	leaveFolderStructure: boolean;
 }
 
 export interface VectorEngineConfig {
@@ -89,8 +92,10 @@ export interface ModelEngineConfig {
 	paramValues: string;
 	values: string;
 	image: string;
+	urls: string;
 	prompt: string;
 	entities: string;
+	maskEntities: string;
 }
 
 export interface FunctionEngineConfig {
@@ -278,6 +283,15 @@ export interface AutomationNodeResult {
 	DURATION_MS: number;
 	OUTPUT_PREVIEW: string | null;
 	OUTPUT_VALUE?: string | null;
+	/** Standard SEMOSS frame noun for row-shaped output in the live run Insight. */
+	OUTPUT_FRAME?: {
+		type: "FRAME_MAP";
+		value: {
+			frameType: string;
+			alias?: string;
+			queryName?: string;
+		};
+	};
 	ERROR_MESSAGE: string | null;
 	trace?: AutomationNodeTrace;
 	iterations?: AutomationNodeIteration[];

@@ -96,13 +96,10 @@ export function LoopBodyBranchNode({ data }: NodeProps) {
 									className="nodrag nopan -translate-y-1/2 absolute top-1/2 right-0 z-10 flex size-6 items-center justify-center rounded-full border bg-background text-muted-foreground shadow-sm hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
 									onClick={(event) => {
 										event.stopPropagation();
-										if (event.detail === 0) {
-											d.onAddAfter(d.node.id, route.id);
-										}
+										d.onAddAfter(d.node.id, route.id);
 									}}
 									onPointerDown={(event) => {
 										event.stopPropagation();
-										d.onAddAfter(d.node.id, route.id);
 									}}
 								>
 									<Plus className="size-3.5" aria-hidden />

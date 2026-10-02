@@ -62,6 +62,7 @@ export function StepForm({
 				config={step.config as JevDecisionConfig}
 				upstreamVars={upstreamVars}
 				onChange={update}
+				devMode={devMode}
 				readOnly={readOnly}
 			/>
 		);
@@ -114,6 +115,7 @@ export function StepForm({
 					config={step.config as FunctionEngineConfig}
 					upstreamVars={upstreamVars}
 					onChange={update}
+					devMode={devMode}
 					readOnly={readOnly}
 				/>
 			);

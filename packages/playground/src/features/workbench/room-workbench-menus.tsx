@@ -41,6 +41,12 @@ export const RoomWorkbenchMenus = observer(function RoomWorkbenchMenus({
 							tRoom("menuFileExplorer.name"),
 						)
 					}
+					// a draft passes its own actions, and has no settled tools
+					onOpenTools={
+						workspaceActions
+							? undefined
+							: room.teamwork.openToolsPanel
+					}
 					onOpenSettings={
 						onOpenSettings ??
 						(() =>

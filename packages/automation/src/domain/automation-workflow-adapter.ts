@@ -365,8 +365,10 @@ function defaultCanvasConfig(
 			paramValues: jsonObjectValue(config.paramValues),
 			values: stringValue(config.text),
 			image: stringValue(config.image),
+			urls: jsonArrayValue(config.urls),
 			prompt: stringValue(config.prompt),
 			entities: jsonArrayValue(config.entities),
+			maskEntities: jsonArrayValue(config.maskEntities),
 		};
 	}
 	if (category === "storage") {
@@ -385,7 +387,10 @@ function defaultCanvasConfig(
 			operation,
 			storagePath: stringValue(config.path),
 			filePath: stringValue(config.destination),
-			metadata: "",
+			metadata: jsonObjectValue(config.metadata),
+			convertToPdf: config.convertToPdf === true,
+			version: stringValue(config.version),
+			leaveFolderStructure: config.leaveFolderStructure === true,
 		};
 	}
 	if (category === "vector") {
@@ -404,13 +409,13 @@ function defaultCanvasConfig(
 			operation,
 			command: operation === "search" ? value : "",
 			limit: numberValue(config.limit, 5),
-			filters: stringValue(config.filters),
+			filters: jsonObjectValue(config.filters),
 			metaFilters: "",
 			filePath: operation === "add-file" ? value : "",
-			source: stringValue(config.source),
-			space: stringValue(config.collection),
+			source: "",
+			space: stringValue(config.space),
 			filePaths: "",
-			paramValues: stringValue(config.paramValues),
+			paramValues: jsonObjectValue(config.paramValues),
 			fileNames: operation === "delete" ? value : "",
 		};
 	}
@@ -537,15 +542,19 @@ function mergeCanvasConfig(
 		const expression = getConfigValue(config, "expression");
 		const limit = getConfigValue(config, "limit");
 		if (typeof expression === "string") next.query = expression;
-		if (typeof limit === "number") next.limit = limit;
+		if (type === "database.query") {
+			if (typeof limit === "number") next.limit = limit;
+		}
 	}
 	if (category === "model") {
 		const command = getConfigValue(config, "command");
 		const context = getConfigValue(config, "context");
 		const values = getConfigValue(config, "values");
 		const image = getConfigValue(config, "image");
+		const urls = getConfigValue(config, "urls");
 		const paramValues = getConfigValue(config, "paramValues");
 		const entities = getConfigValue(config, "entities");
+		const maskEntities = getConfigValue(config, "maskEntities");
 		if (typeof command === "string") {
 			if (type === "model.embeddings") next.text = command;
 			else next.prompt = command;
@@ -555,7 +564,10 @@ function mergeCanvasConfig(
 			next.text = values;
 		}
 		if (typeof image === "string") next.image = image;
-		if (type === "model.chat" && typeof paramValues === "string") {
+		if (type === "model.vision" && typeof urls === "string") {
+			next.urls = urls.trim() ? (parsedJsonValue(urls) ?? urls) : [];
+		}
+		if (typeof paramValues === "string") {
 			if (paramValues.trim()) {
 				next.paramValues = parsedJsonValue(paramValues) ?? paramValues;
 			} else {
@@ -565,12 +577,36 @@ function mergeCanvasConfig(
 		if (type === "model.ner" && typeof entities === "string") {
 			next.entities = parsedJsonValue(entities) ?? entities;
 		}
+		if (type === "model.ner" && typeof maskEntities === "string") {
+			next.maskEntities = maskEntities.trim()
+				? (parsedJsonValue(maskEntities) ?? maskEntities)
+				: [];
+		}
 	}
 	if (category === "storage") {
 		const storagePath = getConfigValue(config, "storagePath");
 		const filePath = getConfigValue(config, "filePath");
+		const metadata = getConfigValue(config, "metadata");
+		const convertToPdf = getConfigValue(config, "convertToPdf");
+		const version = getConfigValue(config, "version");
+		const leaveFolderStructure = getConfigValue(
+			config,
+			"leaveFolderStructure",
+		);
 		if (typeof storagePath === "string") next.path = storagePath;
 		if (typeof filePath === "string") next.destination = filePath;
+		if (typeof metadata === "string") {
+			next.metadata = metadata.trim()
+				? (parsedJsonValue(metadata) ?? metadata)
+				: {};
+		}
+		if (typeof convertToPdf === "boolean") {
+			next.convertToPdf = convertToPdf;
+		}
+		if (typeof version === "string") next.version = version;
+		if (typeof leaveFolderStructure === "boolean") {
+			next.leaveFolderStructure = leaveFolderStructure;
+		}
 	}
 	if (category === "vector") {
 		const operation = getConfigValue(config, "operation");
@@ -578,8 +614,7 @@ function mergeCanvasConfig(
 		const filePath = getConfigValue(config, "filePath");
 		const filePaths = getConfigValue(config, "filePaths");
 		const fileNames = getConfigValue(config, "fileNames");
-		const collection = getConfigValue(config, "space");
-		const source = getConfigValue(config, "source");
+		const space = getConfigValue(config, "space");
 		const filters = getConfigValue(config, "filters");
 		const paramValues = getConfigValue(config, "paramValues");
 		const limit = getConfigValue(config, "limit");
@@ -595,10 +630,17 @@ function mergeCanvasConfig(
 						? fileNames
 						: command;
 		if (typeof value === "string") next.value = value;
-		if (typeof collection === "string") next.collection = collection;
-		if (typeof source === "string") next.source = source;
-		if (typeof filters === "string") next.filters = filters;
-		if (typeof paramValues === "string") next.paramValues = paramValues;
+		if (typeof space === "string") next.space = space;
+		if (typeof filters === "string") {
+			next.filters = filters.trim()
+				? (parsedJsonValue(filters) ?? filters)
+				: {};
+		}
+		if (typeof paramValues === "string") {
+			next.paramValues = paramValues.trim()
+				? (parsedJsonValue(paramValues) ?? paramValues)
+				: {};
+		}
 		if (typeof limit === "number") next.limit = limit;
 	}
 	if (type === "function.execute") {
@@ -960,6 +1002,15 @@ export function validateCanvasWorkflowNode(
 			) {
 				return [`${schema.label} must be at least ${schema.minimum}`];
 			}
+			if (
+				!missing &&
+				schema.maximum !== undefined &&
+				(typeof value !== "number" ||
+					!Number.isFinite(value) ||
+					value > schema.maximum)
+			) {
+				return [`${schema.label} must be at most ${schema.maximum}`];
+			}
 			return [];
 		},
 	);
@@ -984,6 +1035,16 @@ export function validateCanvasWorkflowNode(
 			JSON.parse(config.arguments);
 		} catch {
 			errors.push("JSON arguments must be valid JSON");
+		}
+	}
+	if (type === "model.vision") {
+		const image = stringValue(config.image).trim();
+		const urls = config.urls;
+		const hasUrls =
+			(Array.isArray(urls) && urls.length > 0) ||
+			(typeof urls === "string" && urls.trim() !== "");
+		if (!image && !hasUrls) {
+			errors.push("A media path or media URL is required");
 		}
 	}
 	// Source is only rejected once written: an untouched node saves with no source and the
@@ -1069,4 +1130,40 @@ export function validateCanvasWorkflowNode(
 		}
 	}
 	return errors;
+}
+
+/** Validates the control edges required before a routing node can execute. */
+export function validateCanvasWorkflowConnections(
+	node: AutomationNode,
+	edges: AutomationEdge[],
+): string[] {
+	const type = node.workflowType ?? canvasTypeToWorkflow(node.type);
+	if (!isRoutingWorkflowType(type)) return [];
+	const definition = getWorkflowNodeDefinition(type);
+	if (!definition) return [];
+	const config = mergeCanvasConfig(
+		type,
+		node.config,
+		node.workflowConfig ?? definition.defaultConfig,
+	);
+	const clauses =
+		type === "control.jev"
+			? jevRoutes(config.clauses)
+			: branchClauses(config.clauses);
+	const connectedHandles = new Set(
+		edges
+			.filter((edge) => edge.source === node.id)
+			.map((edge) => edge.sourceHandle),
+	);
+	const hasEveryRoute = clauses.every((clause) =>
+		connectedHandles.has(`case-${node.id}-${clause.id}`),
+	);
+	const hasFallback = connectedHandles.has(`else-${node.id}`);
+	return hasEveryRoute && hasFallback
+		? []
+		: [
+				type === "control.jev"
+					? "Every route and the low-confidence path must be connected"
+					: "Every condition and the Else path must be connected",
+			];
 }

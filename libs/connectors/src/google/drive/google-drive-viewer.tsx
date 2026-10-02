@@ -45,7 +45,7 @@ export type GoogleDriveViewerProps = ConnectorViewerProps;
  * insight's files as text, since the backend reads no other file's contents.
  */
 export const GoogleDriveViewer = (props: GoogleDriveViewerProps) => {
-	const { onSignIn } = props;
+	const { onSignIn, showHeader = true } = props;
 	const { t } = useTranslation("connectors");
 	const { insightId } = useInsight();
 	const saver = useConnectorSaver("google-drive", props);
@@ -86,27 +86,40 @@ export const GoogleDriveViewer = (props: GoogleDriveViewerProps) => {
 		},
 	});
 
+	// in the header, or at the end of the toolbar when the host leaves
+	// the header out
+	const refreshButton = (
+		<ConnectorIconButton
+			icon={RefreshCwIcon}
+			label={t("common.refresh")}
+			isSpinning={query.isRefreshing}
+			onClick={query.reload}
+		/>
+	);
+
 	return (
 		<div className="flex h-full min-h-0 flex-col">
-			<ConnectorViewerHeader
-				brand="google-drive"
-				icon={HardDriveIcon}
-				title={serviceName}
-			>
-				<ConnectorIconButton
-					icon={RefreshCwIcon}
-					label={t("common.refresh")}
-					isSpinning={query.isRefreshing}
-					onClick={query.reload}
-				/>
-			</ConnectorViewerHeader>
+			{showHeader ? (
+				<ConnectorViewerHeader
+					brand="google-drive"
+					icon={HardDriveIcon}
+					title={serviceName}
+				>
+					{refreshButton}
+				</ConnectorViewerHeader>
+			) : null}
 
 			<div className="flex flex-col gap-2 px-3 py-2">
-				<ConnectorSearchField
-					value={search}
-					placeholder={t("googleDrive.searchPlaceholder")}
-					onChange={setSearch}
-				/>
+				<div className="flex items-center gap-2">
+					<div className="min-w-0 flex-1">
+						<ConnectorSearchField
+							value={search}
+							placeholder={t("googleDrive.searchPlaceholder")}
+							onChange={setSearch}
+						/>
+					</div>
+					{showHeader ? null : refreshButton}
+				</div>
 				<Muted>{t("googleDrive.docsOnly")}</Muted>
 			</div>
 

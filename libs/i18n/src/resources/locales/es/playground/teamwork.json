@@ -4,9 +4,7 @@
 		"refresh": "Actualizar"
 	},
 	"menu": {
-		"connectors": "Conectores",
-		"showTools": "Mostrar herramientas del chat",
-		"hideTools": "Ocultar herramientas del chat"
+		"showTools": "Mostrar herramientas del chat"
 	},
 	"chip": {
 		"connectors_one": "{{count}} conector activado",
@@ -121,15 +119,6 @@
 		}
 	},
 	"connectors": {
-		"dialogTitle": "Conectores",
-		"dialogDescription": "Elige qué aplicaciones puede usar el asistente en tus chats. Actúa con tu cuenta y siempre pide tu aprobación antes de enviar, eliminar, compartir o invitar.",
-		"allChatsNote": "Activar o desactivar una aplicación la cambia en todos tus chats, nuevos y existentes.",
-		"manage": "Administrar conectores",
-		"cancel": "Cancelar",
-		"save": "Guardar",
-		"saving": "Guardando...",
-		"saved_one": "{{count}} conector está activado en todos tus chats",
-		"saved_other": "{{count}} conectores están activados en todos tus chats",
 		"saveError": "No se pudieron actualizar los conectores. {{message}}",
 		"adoptError": "El chat se inició, pero no se pudieron activar sus conectores. {{message}}"
 	},
@@ -172,8 +161,6 @@
 		"addedTitle": "Cajas de herramientas añadidas",
 		"addedDescription": "Cada caja de herramientas aporta sus propias herramientas.",
 		"addedEmpty": "No se añadieron cajas de herramientas.",
-		"runsOnItsOwn": "Se ejecuta sola",
-		"asksFirst": "Pregunta primero",
 		"parameters": "Parámetros",
 		"required": "Obligatorio",
 		"noParameters": "Sin parámetros.",
