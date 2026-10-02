@@ -18,6 +18,12 @@ import { WorkComposerSession } from "./work-composer-session";
 import { WorkEmailContext } from "./work-email.context";
 import { WorkEmailsPanel } from "./work-emails-panel";
 
+// the panel opens newest first; most tests read the thread oldest first
+beforeEach(() =>
+	window.localStorage.setItem("collaboration.emailOrder", "oldest"),
+);
+afterEach(() => window.localStorage.clear());
+
 function view(hasMore = false, nextCursor?: string, hasWorkspaceDraft = false) {
 	const state = createInitialCollaborationState();
 	const thread = {
@@ -119,6 +125,37 @@ function view(hasMore = false, nextCursor?: string, hasWorkspaceDraft = false) {
 	const result = render(<RouterProvider router={router} />);
 	return { ...result, load, thread, composer, router };
 }
+
+it("opens newest first, and remembers the order picked for the next thread", async () => {
+	window.localStorage.clear();
+	const first = view();
+	expect(
+		[...first.container.querySelectorAll("article")].map(
+			(item) => item.dataset.searchItem,
+		),
+	).toEqual(["new", "old", "draft:draft"]);
+	await act(async () => {
+		fireEvent.keyDown(
+			screen.getByRole("button", { name: "Sort emails: Newest first" }),
+			{ key: "ArrowDown" },
+		);
+	});
+	await act(async () => {
+		fireEvent.click(
+			screen.getByRole("menuitemradio", { name: "Oldest first" }),
+		);
+	});
+	expect(window.localStorage.getItem("collaboration.emailOrder")).toBe(
+		"oldest",
+	);
+	first.unmount();
+	const second = view();
+	expect(
+		[...second.container.querySelectorAll("article")].map(
+			(item) => item.dataset.searchItem,
+		),
+	).toEqual(["old", "new", "draft:draft"]);
+});
 
 it("shows source emails in chronology and full read-only drafts in the same thread", () => {
 	const { container } = view();

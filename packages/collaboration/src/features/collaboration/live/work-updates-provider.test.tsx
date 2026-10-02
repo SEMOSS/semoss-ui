@@ -163,7 +163,14 @@ it("pulls new mail before reloading when Refresh is pressed, and shows sync fail
 		screen.getByRole("link", { name: state.threads[0].subject }),
 	).toHaveAttribute(
 		"href",
-		`/brain/threads/${encodeURIComponent(state.threads[0].id)}`,
+		`/work/thread/${encodeURIComponent(state.threads[0].id)}`,
+	);
+	// automated mail has no Work item, so it stays on the Brain thread page
+	expect(
+		screen.getByRole("link", { name: state.threads[1].subject }),
+	).toHaveAttribute(
+		"href",
+		`/brain/threads/${encodeURIComponent(state.threads[1].id)}`,
 	);
 	expect(screen.getByText("Automated, kept out of Work")).toBeInTheDocument();
 	expect(syncMail).toHaveBeenCalledTimes(1);

@@ -27,6 +27,12 @@ const OUTCOMES: { key: SyncOutcome; summary: string; label: string }[] = [
 	{ key: "quiet", summary: "no action needed", label: "In Brain, no action" },
 ];
 
+// outcomes that have a Work item, so the thread opens in Work with its chat; the rest only exist in Brain
+const IN_WORK = new Set<SyncOutcome>(["new", "updated", "cleared"]);
+
+const threadPath = (outcome: SyncOutcome, threadId: string) =>
+	`/${IN_WORK.has(outcome) ? "work/thread" : "brain/threads"}/${encodeURIComponent(threadId)}`;
+
 // where the new mail went, not just how many messages came in
 function describeSync(result: MailSyncResult): string {
 	const parts = OUTCOMES.filter(({ key }) => result.outcomes[key]).map(
@@ -159,7 +165,7 @@ function SyncChanges({
 										>
 											<Link
 												className="hover:underline"
-												to={`/brain/threads/${encodeURIComponent(threadId)}`}
+												to={threadPath(key, threadId)}
 											>
 												{state.threads.find(
 													(thread) =>

@@ -14,6 +14,7 @@ import {
 	DropdownMenuTrigger,
 } from "@semoss/ui/next";
 import { WorkbenchChromeButton } from "@semoss/workbench";
+import type { EmailOrder } from "./email-order";
 import { PaneSearch } from "./pane-search";
 import type { PaneSearch as PaneSearchState } from "./use-pane-search";
 
@@ -29,8 +30,8 @@ export function WorkEmailToolbar({
 }: {
 	search: PaneSearchState;
 	label: string;
-	order: "oldest" | "newest";
-	onOrderChange: (order: "oldest" | "newest") => void;
+	order: EmailOrder;
+	onOrderChange: (order: EmailOrder) => void;
 	emailCount: number;
 	draftCount: number;
 	onExpandedChange: (isExpanded: boolean) => void;
@@ -56,7 +57,7 @@ export function WorkEmailToolbar({
 						<DropdownMenuLabel className="font-normal text-muted-foreground">
 							{emailCount} {emailCount === 1 ? "email" : "emails"}
 							{draftCount > 0 &&
-								` · ${draftCount} ${draftCount === 1 ? "draft" : "drafts"}`}
+								` \u00b7 ${draftCount} ${draftCount === 1 ? "draft" : "drafts"}`}
 						</DropdownMenuLabel>
 						<DropdownMenuSeparator />
 						<DropdownMenuRadioGroup

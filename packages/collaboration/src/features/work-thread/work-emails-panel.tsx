@@ -16,6 +16,11 @@ import { useThreadHistory } from "@/features/collaboration/live/thread-history.c
 import { useCollaborationSession } from "@/features/collaboration/state/collaboration-session.context";
 import { draftText, plainTextEmail } from "@/features/email/email-html";
 import { useFollowScroll } from "@/features/messages/hooks/use-follow-scroll";
+import {
+	type EmailOrder,
+	readEmailOrder,
+	rememberEmailOrder,
+} from "./email-order";
 import { PaneSearch } from "./pane-search";
 import { PANE_SEARCH_CLASS, usePaneSearch } from "./use-pane-search";
 import { WorkDraftCard } from "./work-draft-card";
@@ -36,7 +41,11 @@ export function WorkEmailsPanel({ id }: WorkbenchPanelProps) {
 		composer.getSnapshot,
 	);
 	const history = useThreadHistory(thread.id);
-	const [order, setOrder] = useState<"oldest" | "newest">("oldest");
+	const [order, setOrder] = useState<EmailOrder>(readEmailOrder);
+	const handleOrderChange = useCallback((next: EmailOrder) => {
+		setOrder(next);
+		rememberEmailOrder(next);
+	}, []);
 	const [collapsed, setCollapsed] = useState<{
 		threadId: string;
 		ids: ReadonlySet<string>;
@@ -113,7 +122,7 @@ export function WorkEmailsPanel({ id }: WorkbenchPanelProps) {
 							: "Search emails"
 					}
 					order={order}
-					onOrderChange={setOrder}
+					onOrderChange={handleOrderChange}
 					emailCount={messages.length}
 					draftCount={draftIds.length}
 					onExpandedChange={setExpanded}
@@ -138,7 +147,7 @@ export function WorkEmailsPanel({ id }: WorkbenchPanelProps) {
 				>
 					{history.isLoading && (
 						<output>
-							<P>Loading emails…</P>
+							<P>{"Loading emails\u2026"}</P>
 						</output>
 					)}
 					{history.error && (
