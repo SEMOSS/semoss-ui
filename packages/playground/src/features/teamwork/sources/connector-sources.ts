@@ -1,15 +1,5 @@
-import {
-	CalendarDaysIcon,
-	CloudIcon,
-	FileTextIcon,
-	FolderClosedIcon,
-	HardDriveIcon,
-	type LucideIcon,
-	MailIcon,
-	MessageCircleIcon,
-	MessagesSquareIcon,
-} from "lucide-react";
 import type { ConnectorViewerService } from "@semoss/connectors";
+import type { ConnectorBrand } from "@semoss/shared";
 import { ROOM_PANEL_TYPES } from "@/stores/room/room-sidebar";
 import type {
 	ConnectorProviderId,
@@ -28,7 +18,11 @@ export interface ConnectorSource {
 	requires: ConnectorServiceId;
 	/** The sidebar panel that shows it. */
 	panelType: string;
-	icon: LucideIcon;
+	/**
+	 * The app whose logo stands for it: on its tab, in the plus menu, and on
+	 * what it adds to context.
+	 */
+	brand: ConnectorBrand;
 	/** Its name, in the shared `connectors` namespace. */
 	nameKey: string;
 }
@@ -40,7 +34,7 @@ export const CONNECTOR_SOURCES: readonly ConnectorSource[] = [
 		provider: "MICROSOFT",
 		requires: "onedrive",
 		panelType: ROOM_PANEL_TYPES.ONEDRIVE,
-		icon: CloudIcon,
+		brand: "onedrive",
 		nameKey: "connectors:services.onedrive",
 	},
 	{
@@ -48,7 +42,7 @@ export const CONNECTOR_SOURCES: readonly ConnectorSource[] = [
 		provider: "MICROSOFT",
 		requires: "outlook",
 		panelType: ROOM_PANEL_TYPES.OUTLOOK_MAIL,
-		icon: MailIcon,
+		brand: "outlook",
 		nameKey: "connectors:services.outlookMail",
 	},
 	{
@@ -56,7 +50,7 @@ export const CONNECTOR_SOURCES: readonly ConnectorSource[] = [
 		provider: "MICROSOFT",
 		requires: "outlook-calendar",
 		panelType: ROOM_PANEL_TYPES.OUTLOOK_CALENDAR,
-		icon: CalendarDaysIcon,
+		brand: "outlook-calendar",
 		nameKey: "connectors:services.outlookCalendar",
 	},
 	{
@@ -64,7 +58,7 @@ export const CONNECTOR_SOURCES: readonly ConnectorSource[] = [
 		provider: "MICROSOFT",
 		requires: "teams",
 		panelType: ROOM_PANEL_TYPES.TEAMS_CHANNELS,
-		icon: MessagesSquareIcon,
+		brand: "teams",
 		nameKey: "connectors:services.teamsChannels",
 	},
 	{
@@ -72,7 +66,7 @@ export const CONNECTOR_SOURCES: readonly ConnectorSource[] = [
 		provider: "MICROSOFT",
 		requires: "teams",
 		panelType: ROOM_PANEL_TYPES.TEAMS_FILES,
-		icon: FolderClosedIcon,
+		brand: "teams",
 		nameKey: "connectors:services.teamsFiles",
 	},
 	{
@@ -80,7 +74,7 @@ export const CONNECTOR_SOURCES: readonly ConnectorSource[] = [
 		provider: "MICROSOFT",
 		requires: "teams",
 		panelType: ROOM_PANEL_TYPES.TEAMS_CHATS,
-		icon: MessageCircleIcon,
+		brand: "teams",
 		nameKey: "connectors:services.teamsChats",
 	},
 	{
@@ -88,7 +82,7 @@ export const CONNECTOR_SOURCES: readonly ConnectorSource[] = [
 		provider: "GOOGLE",
 		requires: "google-drive",
 		panelType: ROOM_PANEL_TYPES.GOOGLE_DRIVE,
-		icon: HardDriveIcon,
+		brand: "google-drive",
 		nameKey: "connectors:services.googleDrive",
 	},
 	{
@@ -96,7 +90,7 @@ export const CONNECTOR_SOURCES: readonly ConnectorSource[] = [
 		provider: "GOOGLE",
 		requires: "gmail",
 		panelType: ROOM_PANEL_TYPES.GMAIL,
-		icon: MailIcon,
+		brand: "gmail",
 		nameKey: "connectors:services.gmail",
 	},
 	{
@@ -104,7 +98,7 @@ export const CONNECTOR_SOURCES: readonly ConnectorSource[] = [
 		provider: "GOOGLE",
 		requires: "google-calendar",
 		panelType: ROOM_PANEL_TYPES.GOOGLE_CALENDAR,
-		icon: CalendarDaysIcon,
+		brand: "google-calendar",
 		nameKey: "connectors:services.googleCalendar",
 	},
 	{
@@ -112,7 +106,7 @@ export const CONNECTOR_SOURCES: readonly ConnectorSource[] = [
 		provider: "GOOGLE",
 		requires: "google-docs",
 		panelType: ROOM_PANEL_TYPES.GOOGLE_DOCS,
-		icon: FileTextIcon,
+		brand: "google-docs",
 		nameKey: "connectors:services.googleDocs",
 	},
 ];

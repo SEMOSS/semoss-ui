@@ -30,7 +30,7 @@ provider parsing, calendar view rules, and presentation remain here.
 | `microsoft/` | Microsoft 365: its reactor output types, parsers, pixels, and saved files, with a folder per app (`onedrive/`, `outlook/`, `teams/`) |
 | `google/` | Google Workspace: the same, with a folder per app (`gmail/`, `calendar/`, `docs/`, `drive/`) |
 | `styles/globals.css` | Tailwind source discovery for the host's stylesheet |
-| `index.ts` | The public entry point: the viewers, their props, the host contract, and `ConnectorBrandIcon`, the apps' logos |
+| `index.ts` | The public entry point: the viewers, their props, the host contract, and `ConnectorBrandIcon`, the apps' logos, re-exported from `@semoss/shared`, which keeps the logo files so every package can show them |
 
 A new provider gets its own folder beside `microsoft/` and `google/`, built on `core/` and
 `components/`. Provider code may import from `core/` and `components/`; those two never import
@@ -98,7 +98,9 @@ from a provider.
 
 Use the compact shared header, tabs, rows, and action bar across providers. Tabs stay content
 width, detail actions remain above the scrolling body, and all surfaces use semantic theme
-colors. Keep the existing shared file explorer for OneDrive and Teams Files.
+colors. A host that already names the viewer, such as in a tab, passes `showHeader={false}`;
+the refresh then sits at the end of the viewer's toolbar row (the calendars' `actions`), and
+Teams Chats, which has no toolbar, keeps a slim row for it. Keep the existing shared file explorer for OneDrive and Teams Files.
 
 Both calendars use `ConnectorCalendar` and `useCalendarWindow`: Sunday-first weeks (the default),
 day, three-day, and month views. The List View button shows the current range as an agenda;

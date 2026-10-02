@@ -4,9 +4,7 @@
 		"refresh": "Refresh"
 	},
 	"menu": {
-		"connectors": "Connectors",
-		"showTools": "Show Chat Tools",
-		"hideTools": "Hide Chat Tools"
+		"showTools": "Show Chat Tools"
 	},
 	"chip": {
 		"connectors_one": "{{count}} Connector On",
@@ -121,15 +119,6 @@
 		}
 	},
 	"connectors": {
-		"dialogTitle": "Connectors",
-		"dialogDescription": "Choose which apps the assistant can use in your chats. It acts with your account, and sending, deleting, sharing, and invites always ask you first.",
-		"allChatsNote": "Switching an app on or off changes it in all your chats, new and existing.",
-		"manage": "Manage Connectors",
-		"cancel": "Cancel",
-		"save": "Save",
-		"saving": "Saving...",
-		"saved_one": "{{count}} connector is on in all your chats",
-		"saved_other": "{{count}} connectors are on in all your chats",
 		"saveError": "Could not update the connectors. {{message}}",
 		"adoptError": "The chat started, but its connectors could not be switched on. {{message}}"
 	},
@@ -172,8 +161,6 @@
 		"addedTitle": "Added Toolboxes",
 		"addedDescription": "Each toolbox brings its own tools.",
 		"addedEmpty": "No toolboxes added.",
-		"runsOnItsOwn": "Runs on Its Own",
-		"asksFirst": "Asks First",
 		"parameters": "Parameters",
 		"required": "Required",
 		"noParameters": "No parameters.",

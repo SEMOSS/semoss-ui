@@ -37,7 +37,7 @@ export type GoogleCalendarViewerProps = ConnectorViewerProps;
 
 /** Browse the dates supplied by Google; opening an event loads its full times. */
 export const GoogleCalendarViewer = (props: GoogleCalendarViewerProps) => {
-	const { onSignIn } = props;
+	const { onSignIn, showHeader = true } = props;
 	const { t } = useTranslation("connectors");
 	const { insightId } = useInsight();
 	const saver = useConnectorSaver("google-calendar", props);
@@ -88,6 +88,17 @@ export const GoogleCalendarViewer = (props: GoogleCalendarViewerProps) => {
 		},
 	});
 
+	// in the header, or at the end of the toolbar when the host leaves
+	// the header out
+	const refreshButton = (
+		<ConnectorIconButton
+			icon={RefreshCwIcon}
+			label={t("common.refresh")}
+			isSpinning={query.isRefreshing}
+			onClick={query.reload}
+		/>
+	);
+
 	return (
 		<div className="flex h-full min-h-0 flex-col">
 			<div
@@ -96,20 +107,18 @@ export const GoogleCalendarViewer = (props: GoogleCalendarViewerProps) => {
 					openEvent !== null && "hidden",
 				)}
 			>
-				<ConnectorViewerHeader
-					icon={CalendarDaysIcon}
-					brand="google-calendar"
-					title={serviceName}
-				>
-					<ConnectorIconButton
-						icon={RefreshCwIcon}
-						label={t("common.refresh")}
-						isSpinning={query.isRefreshing}
-						onClick={query.reload}
-					/>
-				</ConnectorViewerHeader>
+				{showHeader ? (
+					<ConnectorViewerHeader
+						icon={CalendarDaysIcon}
+						brand="google-calendar"
+						title={serviceName}
+					>
+						{refreshButton}
+					</ConnectorViewerHeader>
+				) : null}
 				<ConnectorCalendar
 					calendar={calendar}
+					actions={showHeader ? undefined : refreshButton}
 					query={{ ...query, data: days }}
 					serviceName={serviceName}
 					account="google"

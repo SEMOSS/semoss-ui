@@ -298,6 +298,14 @@ export class ChatStore {
 	};
 
 	/**
+	 * A room already held in the local cache, without loading it — so a page
+	 * can show a room it was just handed without waiting a render.
+	 * @param roomId - Room to look up
+	 */
+	getCachedRoom = (roomId: string): RoomStore | null =>
+		this._store.rooms[roomId] ?? null;
+
+	/**
 	 * Optimistically surface a room in the nav before its first message has
 	 * persisted. Shown until the real room is returned by GetPlaygroundRooms
 	 * (see {@link removeOptimisticRoom}).

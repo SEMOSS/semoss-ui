@@ -59,7 +59,7 @@ export type GmailViewerProps = ConnectorViewerProps;
  * bring it into the insight. Gmail marks an email read when it is opened.
  */
 export const GmailViewer = (props: GmailViewerProps) => {
-	const { onSignIn } = props;
+	const { onSignIn, showHeader = true } = props;
 	const { t, i18n } = useTranslation("connectors");
 	const { insightId } = useInsight();
 	const saver = useConnectorSaver("gmail", props);
@@ -105,6 +105,17 @@ export const GmailViewer = (props: GmailViewerProps) => {
 		},
 	});
 
+	// in the header, or at the end of the toolbar when the host leaves
+	// the header out
+	const refreshButton = (
+		<ConnectorIconButton
+			icon={RefreshCwIcon}
+			label={t("common.refresh")}
+			isSpinning={query.isRefreshing}
+			onClick={query.reload}
+		/>
+	);
+
 	return (
 		<div className="flex h-full min-h-0 flex-col">
 			<div
@@ -113,19 +124,16 @@ export const GmailViewer = (props: GmailViewerProps) => {
 					openMessage !== null && "hidden",
 				)}
 			>
-				<ConnectorViewerHeader
-					brand="gmail"
-					icon={MailIcon}
-					title={serviceName}
-					description={listName}
-				>
-					<ConnectorIconButton
-						icon={RefreshCwIcon}
-						label={t("common.refresh")}
-						isSpinning={query.isRefreshing}
-						onClick={query.reload}
-					/>
-				</ConnectorViewerHeader>
+				{showHeader ? (
+					<ConnectorViewerHeader
+						brand="gmail"
+						icon={MailIcon}
+						title={serviceName}
+						description={listName}
+					>
+						{refreshButton}
+					</ConnectorViewerHeader>
+				) : null}
 
 				<Tabs
 					dir={i18n.dir()}
@@ -139,14 +147,19 @@ export const GmailViewer = (props: GmailViewerProps) => {
 					className="min-h-0 flex-1 gap-0"
 				>
 					<div className="shrink-0 border-border border-b bg-muted/10 px-3 pb-1.5">
-						<ConnectorTabsList aria-label={t("gmail.viewLabel")}>
-							<ConnectorTabsTrigger value="recent">
-								{t("gmail.recent")}
-							</ConnectorTabsTrigger>
-							<ConnectorTabsTrigger value="unread">
-								{t("gmail.unread")}
-							</ConnectorTabsTrigger>
-						</ConnectorTabsList>
+						<div className="flex items-center justify-between gap-2">
+							<ConnectorTabsList
+								aria-label={t("gmail.viewLabel")}
+							>
+								<ConnectorTabsTrigger value="recent">
+									{t("gmail.recent")}
+								</ConnectorTabsTrigger>
+								<ConnectorTabsTrigger value="unread">
+									{t("gmail.unread")}
+								</ConnectorTabsTrigger>
+							</ConnectorTabsList>
+							{showHeader ? null : refreshButton}
+						</div>
 						<Muted className="text-xs">
 							{t("gmail.marksRead")}
 						</Muted>

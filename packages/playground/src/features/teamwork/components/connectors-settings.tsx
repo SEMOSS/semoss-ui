@@ -239,6 +239,20 @@ export const ConnectorsSettings = () => {
 												}
 												service={service}
 												checked={isOn}
+												// on, but not in effect until the account is connected
+												warning={
+													!isOn
+														? undefined
+														: !connection.isConnected
+															? t(
+																	"providers.notConnected",
+																)
+															: !isCovered
+																? t(
+																		"scopes.serviceBlocked",
+																	)
+																: undefined
+												}
 												disabled={
 													userConnectors.status !==
 														"ready" ||

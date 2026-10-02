@@ -1,12 +1,9 @@
 import { act, fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { observable, runInAction } from "mobx";
 import React from "react";
-import { MemoryRouter } from "react-router";
 import { beforeEach, expect, test, vi } from "vitest";
 import { toast } from "@semoss/ui/next";
 import { ConversationWorkspaceActionsContext } from "@/features/conversation/conversation-workspace-actions.context";
-import { SettingsDialogProvider } from "@/features/settings/settings-dialog-provider";
 import type { RoomStore } from "@/stores/room/room.store";
 import { RoomInput } from "./room-input";
 import { RoomInputMenuMCP } from "./room-input-menu-mcp";
@@ -22,15 +19,6 @@ let triggerOnChange: (() => void) | null = null;
 // ---------------------------------------------------------------------------
 // Mocks
 // ---------------------------------------------------------------------------
-
-vi.mock("@/features/settings/general-settings", () => ({
-	GeneralSettings: () => null,
-}));
-vi.mock("@/features/teamwork/components/connectors-settings", () => ({
-	ConnectorsSettings: () => (
-		<button type="button">Connector preferences</button>
-	),
-}));
 
 vi.mock("@semoss/i18n", async (importOriginal) => {
 	const actual = await importOriginal<typeof import("@semoss/i18n")>();
@@ -87,9 +75,6 @@ vi.mock("@/hooks/use-chat", () => ({
 }));
 vi.mock("@/hooks/use-sidebar-panel-active", () => ({
 	useSidebarPanelActive: () => false,
-}));
-vi.mock("@/features/teamwork/connectors/use-connections", () => ({
-	useConnections: () => ({ status: "loading" }),
 }));
 // Unchanged child components still use the package's hook barrel.
 vi.mock("@/hooks", async (importOriginal) => ({
@@ -246,10 +231,8 @@ const defaultProps = {
 	room: {
 		teamwork: {
 			isAgentMode: false,
-			isConnectorsDialogOpen: false,
 			connectors: [],
 			availableSources: [],
-			openConnectorsDialog: vi.fn(),
 			openSourcePanel: vi.fn(),
 			openToolsPanel: vi.fn(),
 			contextItems: [],
@@ -274,7 +257,6 @@ function setEditorText(text: string) {
 
 beforeEach(() => {
 	openFilePicker.mockClear();
-	vi.mocked(defaultProps.room.teamwork.openConnectorsDialog).mockClear();
 	fakeEditorText = "";
 	triggerOnChange = null;
 	for (const flag of Object.keys(featureFlags)) delete featureFlags[flag];
@@ -595,76 +577,3 @@ test("connector attachments stay visible and removable without an uploaded file"
 	fireEvent.click(screen.getByRole("button", { name: "context.remove" }));
 	expect(removeContextItem).toHaveBeenCalledWith("email");
 });
-
-test("the connector action runs after the composer menu releases focus", async () => {
-	const user = userEvent.setup();
-	const open = vi.mocked(defaultProps.room.teamwork.openConnectorsDialog);
-	open.mockImplementation(() => {
-		expect(screen.queryByRole("menu")).toBeNull();
-	});
-	render(<RoomInput {...defaultProps} MenuComponent={undefined} />);
-	await user.click(
-		screen.getByRole("button", { name: "input.openSettings" }),
-	);
-	await user.click(
-		screen.getByRole("menuitem", { name: "menu.connectors 0" }),
-	);
-	expect(open).toHaveBeenCalledTimes(1);
-});
-
-test.each(["close", "manage"])(
-	"connector dialog %s keeps focus in the active interface",
-	async (action) => {
-		const user = userEvent.setup();
-		const teamwork = observable({
-			...defaultProps.room.teamwork,
-			openConnectorsDialog: () => {
-				runInAction(() => {
-					teamwork.isConnectorsDialogOpen = true;
-				});
-			},
-			closeConnectorsDialog: () => {
-				runInAction(() => {
-					teamwork.isConnectorsDialogOpen = false;
-				});
-			},
-		});
-		render(
-			<MemoryRouter>
-				<SettingsDialogProvider>
-					<RoomInput
-						{...defaultProps}
-						room={{ ...defaultProps.room, teamwork } as RoomStore}
-						MenuComponent={undefined}
-					/>
-				</SettingsDialogProvider>
-			</MemoryRouter>,
-		);
-		const trigger = screen.getByRole("button", {
-			name: "input.openSettings",
-		});
-		await user.click(trigger);
-		await user.click(
-			screen.getByRole("menuitem", { name: "menu.connectors 0" }),
-		);
-		expect(
-			screen.getByRole("dialog", { name: "connectors.dialogTitle" }),
-		).toBeVisible();
-		if (action === "manage") {
-			await user.click(
-				screen.getByRole("button", { name: "connectors.manage" }),
-			);
-			const settings = screen.getByRole("dialog", {
-				name: "settings.title",
-			});
-			expect(settings).toBeVisible();
-			expect(settings).toContainElement(
-				document.activeElement as HTMLElement,
-			);
-		} else {
-			await user.keyboard("{Escape}");
-			expect(screen.queryByRole("dialog")).toBeNull();
-			expect(trigger).toHaveFocus();
-		}
-	},
-);
