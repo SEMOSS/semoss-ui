@@ -26,7 +26,11 @@ export const RoomPage = observer(() => {
 	/**
 	 * State
 	 */
-	const [room, setRoom] = useState<RoomStore | null>(null);
+	// A room the new-chat page just created is already cached, so it shows
+	// straight away instead of after a spinner.
+	const [room, setRoom] = useState<RoomStore | null>(() =>
+		roomId ? chat.getCachedRoom(roomId) : null,
+	);
 	const selectedModelRef = useRef<Engine>(chat.models.selected);
 
 	/**
@@ -46,8 +50,9 @@ export const RoomPage = observer(() => {
 				return;
 			}
 
-			// Reset room state when roomId changes to prevent stale content flash
-			setRoom(null);
+			// Reset room state when roomId changes to prevent stale content
+			// flash; a cached room shows at once rather than after a spinner
+			setRoom(roomId ? chat.getCachedRoom(roomId) : null);
 			try {
 				if (!roomId) {
 					navigate("/");
@@ -81,6 +86,7 @@ export const RoomPage = observer(() => {
 	}, [
 		roomId,
 		navigate,
+		chat.getCachedRoom,
 		chat.loadRoom,
 		chat.setSelectedModel,
 		chat.isInitialized,

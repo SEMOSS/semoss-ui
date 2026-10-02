@@ -881,7 +881,6 @@ export const NewRoomPage = observer(() => {
 											: "send"
 									}
 									onOpenSettings={handleOpenSettings}
-									showChatTools={false}
 									onOpenSource={(service) =>
 										void handleOpenSource(service)
 									}

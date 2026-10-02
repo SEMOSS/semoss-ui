@@ -13,9 +13,55 @@ import {
 	TeamsChatViewer,
 	TeamsFilesViewer,
 } from "@semoss/connectors";
-import type { WorkbenchPanelConfig } from "@semoss/workbench";
+import { type ConnectorBrand, ConnectorBrandIcon } from "@semoss/shared";
+import {
+	useWorkbench,
+	type WorkbenchPanelConfig,
+	type WorkbenchPanelId,
+} from "@semoss/workbench";
 import { getConnectorSource } from "../sources/connector-sources";
 import { ConnectorViewerPanel } from "./connector-viewer-panel";
+
+/** What a connector panel can be opened with. */
+export interface ConnectorViewerPanelParams {
+	/**
+	 * The app whose logo the tab shows, when it is not the viewer's own, such
+	 * as one mail viewer shown as Outlook or as Gmail. Part of the panel's
+	 * identity, so each brand opens its own tab.
+	 */
+	brand?: ConnectorBrand;
+}
+
+/** Props for {@link ConnectorPanelIcon}. */
+interface ConnectorPanelIconProps {
+	/** The panel whose tab it is. */
+	id: WorkbenchPanelId;
+	/** The logo when the panel was opened without a brand of its own. */
+	brand: ConnectorBrand;
+	/** The size the workbench has room for. */
+	className: string;
+}
+
+/** A connector panel's tab logo: the brand it was opened with, or its own. */
+const ConnectorPanelIcon = ({
+	id,
+	brand,
+	className,
+}: ConnectorPanelIconProps) => {
+	// a narrow selector, as the workbench's own icon uses: the whole panel
+	// changes on every value write, which would redraw every tab's logo
+	const openedWith = useWorkbench(
+		(state) =>
+			(
+				state.layout.panels[id]?.config as
+					| ConnectorViewerPanelParams
+					| undefined
+			)?.brand,
+	);
+	return (
+		<ConnectorBrandIcon brand={openedWith ?? brand} className={className} />
+	);
+};
 
 /**
  * The sidebar blueprint for one viewer: one instance per room, kept alive so
@@ -31,10 +77,12 @@ const createViewerPanel = (
 	viewer: ComponentType<ConnectorViewerProps>,
 	name: string,
 ): WorkbenchPanelConfig => {
-	const { icon: Icon, provider } = getConnectorSource(service);
+	const { brand, provider } = getConnectorSource(service);
 	return {
 		name: name,
-		icon: ({ className }) => <Icon className={className} />,
+		icon: ({ id, className }) => (
+			<ConnectorPanelIcon id={id} brand={brand} className={className} />
+		),
 		canRename: false,
 		mount: "keepAlive",
 		content: () => (

@@ -1,6 +1,7 @@
 import { FileIcon } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useTranslation } from "@semoss/i18n";
+import { ConnectorBrandIcon } from "@semoss/shared";
 import { FilePreviewTile } from "@/components/common/file-preview-tile";
 import { findConnectorSource } from "../sources/connector-sources";
 import type { TeamworkStore } from "../teamwork.store";
@@ -22,15 +23,24 @@ export const TeamworkContextItems = observer(
 		const { t } = useTranslation("teamwork");
 
 		return teamwork.contextItems.map((item) => {
-			const Icon =
-				(item.service && findConnectorSource(item.service)?.icon) ||
-				FileIcon;
+			const brand = item.service
+				? findConnectorSource(item.service)?.brand
+				: undefined;
 			return (
 				<FilePreviewTile
 					key={item.id}
 					name={item.name}
 					detail={t("context.label")}
-					badge={<Icon aria-hidden className="size-3" />}
+					badge={
+						brand ? (
+							<ConnectorBrandIcon
+								brand={brand}
+								className="size-3"
+							/>
+						) : (
+							<FileIcon aria-hidden className="size-3" />
+						)
+					}
 					removeLabel={t("context.remove", { name: item.name })}
 					onRemove={() => teamwork.removeContextItem(item.id)}
 				/>
