@@ -13,8 +13,9 @@ const body = z.string().trim().min(1).max(50000).optional();
 // the editor the owner had open, when the assistant is changing it
 const openEmailId = z.string().trim().min(1).optional();
 const addresses = z.string().trim().max(4000);
-// a reply's to and cc replace the native lists when given
+// a reply's to and cc replace the native lists when given; a forward's to is required to save
 const replySchema = z.object({
+	mode: z.enum(["reply", "forward"]),
 	sourceMessageId: z.string().trim().min(1),
 	to: addresses.optional(),
 	cc: addresses.optional(),
@@ -34,15 +35,28 @@ const newEmailSchema = z.object({
 });
 const proposalSchema = z
 	.union([replySchema, newEmailSchema])
-	.refine((proposal) => proposal.body || proposal.openEmailId);
+	// a forward may have no note
+	.refine(
+		(proposal) =>
+			proposal.body ||
+			proposal.openEmailId ||
+			("mode" in proposal && proposal.mode === "forward"),
+	);
 
 export type ThreadDraftProposal = z.infer<typeof proposalSchema>;
-export type ReplyDraftProposal = z.infer<typeof replySchema>;
+export type SourcedDraftProposal = z.infer<typeof replySchema>;
+
+/** A reply or forward of an email in the thread, rather than a new email. */
+export function isSourcedProposal(
+	proposal: ThreadDraftProposal,
+): proposal is SourcedDraftProposal {
+	return "sourceMessageId" in proposal;
+}
 
 export function isReplyProposal(
 	proposal: ThreadDraftProposal,
-): proposal is ReplyDraftProposal {
-	return "sourceMessageId" in proposal;
+): proposal is SourcedDraftProposal {
+	return isSourcedProposal(proposal) && proposal.mode === "reply";
 }
 
 /**
@@ -56,17 +70,20 @@ export const LEGACY_DRAFT_PROPOSAL_INSTRUCTIONS = [
 	"When emailDraft is present in the request context, revise its current body using the user's instructions. Return the complete replacement body, preserving facts and intent unless asked to change them. The user reviews it in the same reply editor and chooses Save to Outlook. Never save it with a tool.",
 ].join("\n");
 
-// ComposeEmail (Semoss WorkComposeEmailReactor) names the body "message" and the
-// email it answers "replyTo"
+// ComposeEmail (Semoss WorkComposeEmailReactor) names the body "message", the
+// email it answers "replyTo" and the email it forwards "forward"
 function proposalFromTool(tool: ConversationTool): ThreadDraftProposal | null {
 	const args = tool.arguments;
 	const text = (value: unknown) =>
 		typeof value === "string" ? value : undefined;
 	const replyTo = text(args.replyTo)?.trim();
+	const forward = text(args.forward)?.trim();
+	const source = replyTo || forward;
 	const result = proposalSchema.safeParse(
-		replyTo
+		source
 			? {
-					sourceMessageId: replyTo,
+					mode: replyTo ? "reply" : "forward",
+					sourceMessageId: source,
 					to: text(args.to) || undefined,
 					cc: text(args.cc) || undefined,
 					bcc: text(args.bcc) || undefined,

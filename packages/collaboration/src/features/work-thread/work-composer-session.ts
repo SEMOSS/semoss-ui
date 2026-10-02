@@ -148,6 +148,9 @@ export class WorkComposerSession {
 			...(draft.seed.mode === "reply" && draft.seed.sourceUid
 				? { replyTo: draft.seed.sourceUid }
 				: {}),
+			...(draft.seed.mode === "forward" && draft.seed.sourceUid
+				? { forward: draft.seed.sourceUid }
+				: {}),
 			to: state.values.to,
 			cc: state.values.cc,
 			subject: state.values.subject,

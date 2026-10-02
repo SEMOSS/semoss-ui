@@ -25,11 +25,30 @@ it("reads a reply from a completed ComposeEmail call", () => {
 			]),
 		),
 	).toEqual({
+		mode: "reply",
 		sourceMessageId: "mail-2",
 		body: "Friday works.\nThanks!",
 		toolId: "call-1",
 	});
 	expect(composeDraftId("call-1")).toBe("assistant-draft:call-1");
+});
+
+it("reads a forward, which needs no note", () => {
+	expect(
+		readDraftProposal(
+			message([
+				composeEmailPart(
+					{ forward: "mail-2", to: "me@example.com" },
+					"call-1",
+				),
+			]),
+		),
+	).toEqual({
+		mode: "forward",
+		sourceMessageId: "mail-2",
+		to: "me@example.com",
+		toolId: "call-1",
+	});
 });
 
 it("reads a new email and the open editor it changes", () => {

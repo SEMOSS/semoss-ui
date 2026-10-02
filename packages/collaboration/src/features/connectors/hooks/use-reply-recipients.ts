@@ -45,11 +45,13 @@ export function useReplyRecipients({
 		const recipients = parsed.data.replyRecipients;
 		// A dialog's portal can mount its fields after the read resolves. Reset the
 		// complete current value so initialization also works before registration.
+		// lists the assistant already set win, as in EmailDraftEditor.initializeReplyRecipients
+		const current = form.getValues();
 		form.reset(
 			{
-				...form.getValues(),
-				to: recipients.to.join(", "),
-				cc: recipients.cc.join(", "),
+				...current,
+				to: current.to || recipients.to.join(", "),
+				cc: current.cc || recipients.cc.join(", "),
 			},
 			{ keepDirty: true, keepErrors: true, keepTouched: true },
 		);

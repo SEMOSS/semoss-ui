@@ -8,6 +8,7 @@ import {
 import {
 	composeDraftId,
 	isReplyProposal,
+	isSourcedProposal,
 	readDraftProposal,
 } from "@/features/thread-assistant/thread-draft-proposal";
 import type { ThreadSession } from "@/features/thread-assistant/thread-session";
@@ -129,8 +130,8 @@ export function useThreadDraftProposals({
 							"You edited the email while the assistant was writing, so your edits were kept. Ask again to apply the change.",
 						);
 					} else {
-						// a reply keeps its thread's subject and has no bcc
-						const isReply = isReplyProposal(proposal);
+						// a reply or forward keeps its thread's subject and has no bcc
+						const isReply = isSourcedProposal(proposal);
 						target.replaceEnvelope({
 							to: proposal.to || state.values.to,
 							cc: proposal.cc ?? state.values.cc,
@@ -149,12 +150,14 @@ export function useThreadDraftProposals({
 				continue;
 			}
 			// a change to an editor that is gone has nothing to open
-			if (!proposal.body) continue;
+			const isForward =
+				isSourcedProposal(proposal) && proposal.mode === "forward";
+			if (!proposal.body && !isForward) continue;
 			const isOpen = composer
 				.getSnapshot()
 				.emailDrafts.some((draft) => draft.seed.id === id);
 			// a new email needs no source, so any thread or session can open one
-			if (!isReplyProposal(proposal)) {
+			if (!isSourcedProposal(proposal)) {
 				if (!isOpen)
 					composer.requestEmailDraft(
 						{
@@ -189,10 +192,10 @@ export function useThreadDraftProposals({
 				{
 					id,
 					assistantMessageId: message.runId || message.id,
-					mode: "reply",
+					mode: proposal.mode,
 					sourceUid: proposal.sourceMessageId,
 					subject: thread.subject,
-					body: proposal.body,
+					body: proposal.body ?? "",
 					to: proposal.to,
 					cc: proposal.cc,
 				},

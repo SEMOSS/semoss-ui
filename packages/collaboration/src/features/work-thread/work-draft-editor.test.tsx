@@ -504,3 +504,28 @@ it("shows the assistant's new recipients in the open editor, with its new body",
 		body: expect.stringContaining("Ryan and Neel"),
 	});
 });
+
+it("shows a reply's subject as Outlook will send it", () => {
+	render(view(reply()));
+	expect(screen.getByText("RE: Project review")).toBeInTheDocument();
+});
+
+it("keeps a reply's assistant-set To in the form over Outlook's defaults", async () => {
+	const draft = new EmailDraftEditor({
+		id: "reply:set",
+		mode: "reply",
+		sourceUid: "source",
+		body: "Thanks",
+		to: "me@example.com",
+	});
+	render(view(draft));
+	await waitFor(() =>
+		expect(draft.getSnapshot().isReplyRecipientsInitialized).toBe(true),
+	);
+	expect(draft.getSnapshot().values).toMatchObject({
+		to: "me@example.com",
+		cc: "copy@example.com",
+	});
+	expect(screen.getByText("me@example.com")).toBeVisible();
+	expect(screen.queryByText("sender@example.com")).toBeNull();
+});

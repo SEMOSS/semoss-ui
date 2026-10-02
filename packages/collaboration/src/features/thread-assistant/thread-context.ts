@@ -41,6 +41,7 @@ const contextSchema = z.object({
 			/** waiting: a SendEmail call is waiting for the owner to press Send */
 			status: z.enum(["editing", "saved", "waiting", "sent"]).optional(),
 			replyTo: z.string().min(1).optional(),
+			forward: z.string().min(1).optional(),
 			to: z.string(),
 			cc: z.string(),
 			subject: z.string(),

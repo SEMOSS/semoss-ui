@@ -29,6 +29,7 @@ import {
 import { WithdrawDelegation } from "@/features/delegations/components/withdraw-delegation";
 import type { ConversationTool } from "@/features/messages/types/message";
 import { composeDraftId } from "@/features/thread-assistant/thread-draft-proposal";
+import { useEditorEmail } from "@/features/work-thread/use-editor-email";
 import { WorkEmailContext } from "@/features/work-thread/work-email.context";
 import { toolCardTriggerId } from "../tool-workbench.constants";
 import { useToolWorkbench } from "../tool-workbench.context";
@@ -173,6 +174,29 @@ export function ToolCallCard({
 					)
 			: undefined;
 	const draftPreview = isWorkDraft ? emailDraftToolPreview(tool) : null;
+	// a compose card names what its editor holds, not what the model guessed
+	const editorEmail = useEditorEmail(
+		isEmailCompose ? workEmail?.composer : undefined,
+		asString(tool.arguments.openEmailId) || composeDraftId(tool.id),
+	);
+	const composeKind =
+		editorEmail?.mode ??
+		(asString(tool.arguments.replyTo)
+			? "reply"
+			: asString(tool.arguments.forward)
+				? "forward"
+				: "new");
+	const draftLabel =
+		isEmailCompose && composeKind === "reply"
+			? "Reply"
+			: isEmailCompose && composeKind === "forward"
+				? "Forward"
+				: "Email draft";
+	const draftTo = editorEmail
+		? editorEmail.to
+		: isEmailCompose && composeKind === "reply"
+			? ""
+			: draftPreview?.to;
 	const pendingApproval = pendingApprovals.find(
 		(item) => item.toolId === tool.id,
 	);
@@ -189,8 +213,13 @@ export function ToolCallCard({
 		: isRequest
 			? `New request to ${resultField(tool.output, "assignee") ?? (asString(tool.arguments.assignee) || "a person")}`
 			: draftPreview
-				? draftPreview.subject || "Email draft"
+				? (editorEmail?.subject ?? draftPreview.subject)
 				: tool.title;
+	const heading = isWorkDraft
+		? title
+			? `${draftLabel} \u00b7 ${title}`
+			: draftLabel
+		: title;
 	// Delegation tools return a plain-language summary of what happened; their
 	// description is written for the model, so it is never shown.
 	const outcome =
@@ -295,7 +324,7 @@ export function ToolCallCard({
 						aria-controls={isInline ? detailId : undefined}
 						aria-label={
 							isWorkDraft || sendDraft
-								? `Open email draft: ${title}`
+								? `Open email draft: ${title || draftLabel}`
 								: `${title} details${opensInline ? "" : " in workbench"}${tool.status === "FAILED" ? " - failed" : ""}`
 						}
 						{...(tool.status !== "FAILED"
@@ -329,13 +358,11 @@ export function ToolCallCard({
 						</span>
 						<span className="flex min-w-0 flex-1 flex-wrap items-baseline gap-x-2 gap-y-1">
 							<Muted className="wrap-anywhere font-medium text-foreground text-sm">
-								{isWorkDraft
-									? `Email draft \u00b7 ${title}`
-									: title}
+								{heading}
 							</Muted>
-							{draftPreview?.to && (
+							{draftPreview && draftTo && (
 								<Muted className="w-full truncate text-xs">
-									To {draftPreview.to}
+									To {draftTo}
 								</Muted>
 							)}
 							<Muted

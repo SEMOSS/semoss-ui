@@ -40,6 +40,16 @@ interface EmailDraftFormProps {
 	onSave: (values: EmailDraftValues) => Promise<void>;
 }
 
+/** The subject Outlook gives a reply or forward; it adds the prefix itself, once. */
+export function answerSubject(
+	mode: "reply" | "forward",
+	subject: string,
+): string {
+	const prefix = mode === "reply" ? "RE:" : "FW:";
+	const already = mode === "reply" ? /^re\s*:/i : /^(fw|fwd)\s*:/i;
+	return already.test(subject) ? subject : `${prefix} ${subject}`;
+}
+
 /** A shared compose surface with one scrolling work area and a reachable save action. */
 export function EmailDraftForm({
 	form,
@@ -142,7 +152,9 @@ export function EmailDraftForm({
 					) : (
 						<EmailAddressRow label="Subject">
 							<span className="break-words py-1 font-medium">
-								{sourceSubject || "Original email subject"}
+								{sourceSubject
+									? answerSubject(mode, sourceSubject)
+									: "Original email subject"}
 							</span>
 						</EmailAddressRow>
 					)}
@@ -201,7 +213,7 @@ export function EmailDraftForm({
 						onClick={() => void form.handleSubmit(onSend)()}
 					>
 						{isSending && <Spinner aria-label="Sending email" />}
-						{isSending ? "Sending…" : sendLabel}
+						{isSending ? "Sending\u2026" : sendLabel}
 					</Button>
 				)}
 			</footer>

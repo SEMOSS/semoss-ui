@@ -526,3 +526,29 @@ it("changes only the recipients of an open reply, and keeps them over the native
 		"me@example.com, ryan@example.com",
 	);
 });
+
+it("opens a forward of the thread's email, with no note needed", () => {
+	const { completed, composer } = setup();
+	const forward = {
+		...completed.snapshot.turn.messages[0],
+		parts: [composeEmailPart({ forward: "email", to: "me@example.com" })],
+	};
+	renderHook(useThreadDraftProposals, {
+		initialProps: {
+			...completed,
+			snapshot: {
+				...completed.snapshot,
+				turn: { ...completed.snapshot.turn, messages: [forward] },
+			},
+		},
+	});
+	const [draft] = composer.getSnapshot().emailDrafts;
+	expect(draft.seed).toMatchObject({
+		mode: "forward",
+		sourceUid: "email",
+		to: "me@example.com",
+		body: "",
+	});
+	composer.requestEmailDraft(draft.seed);
+	expect(composer.openEmailContext()).toMatchObject({ forward: "email" });
+});

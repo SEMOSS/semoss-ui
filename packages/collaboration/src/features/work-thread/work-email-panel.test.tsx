@@ -1,9 +1,11 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen } from "@testing-library/react";
 import { TooltipProvider } from "@semoss/ui/next";
 import { createWorkbenchStore } from "@semoss/workbench";
 import { createInitialCollaborationState } from "@/features/collaboration/state/collaboration.fixtures";
 import type { ThreadWorkspace } from "@/features/collaboration/state/collaboration.types";
 import type { ConversationTool } from "@/features/messages/types/message";
+import { composeEmailPart } from "@/features/thread-assistant/compose-email.test-fixtures";
+import { composeDraftId } from "@/features/thread-assistant/thread-draft-proposal";
 import { ToolCallCard } from "@/features/tools/components/tool-call-card";
 import {
 	emailDraftToolPreview,
@@ -259,4 +261,48 @@ it("recognizes only draft operations and handles incomplete metadata and output"
 	expect(
 		emailDraftToolPreview({ ...tool, arguments: {}, output: "partial" }),
 	).toMatchObject({ subject: "", body: "", webLink: undefined });
+});
+
+it("names a reply card by what its editor holds, not the model's guess", () => {
+	const part = composeEmailPart(
+		{ replyTo: "email-1", to: "elise.hynd@example.com", message: "Thanks" },
+		"reply-call",
+	);
+	if (part.type !== "tool") throw new Error("expected a tool part");
+	const composer = new WorkComposerSession();
+	const draft = composer.requestEmailDraft({
+		id: composeDraftId("reply-call"),
+		mode: "reply",
+		sourceUid: "email-1",
+		subject: "Cert challenge",
+		to: "ehynd@example.com",
+		body: "Thanks",
+	});
+	render(
+		<TooltipProvider>
+			<WorkEmailContext.Provider
+				value={{
+					thread,
+					workspace,
+					composer,
+					allowedSources: new Set(),
+					openEmail: vi.fn(),
+				}}
+			>
+				<ToolCallCard tool={part.tool} />
+			</WorkEmailContext.Provider>
+		</TooltipProvider>,
+	);
+	expect(screen.getByText("Reply · Cert challenge")).toBeVisible();
+	expect(screen.getByText("To ehynd@example.com")).toBeVisible();
+	expect(screen.queryByText(/elise\.hynd/)).toBeNull();
+	act(() =>
+		draft.setValues({
+			...draft.getSnapshot().values,
+			to: "ehynd@example.com, me@example.com",
+		}),
+	);
+	expect(
+		screen.getByText("To ehynd@example.com, me@example.com"),
+	).toBeVisible();
 });
