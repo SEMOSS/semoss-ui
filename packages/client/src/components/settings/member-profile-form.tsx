@@ -31,6 +31,7 @@ interface ProfileForm {
 	restriction: string;
 	maxTokens: string;
 	maxResponseTime: string;
+	maxCredits: string;
 	frequency: string;
 }
 
@@ -38,6 +39,7 @@ const RESTRICTION_LABELS: Record<string, string> = {
 	null: "None",
 	token: "Token",
 	compute: "Compute time",
+	credit: "Credit",
 };
 
 const FREQUENCY_LABELS: Record<string, string> = {
@@ -65,6 +67,8 @@ const toForm = (user: SETTINGS_MEMBER): ProfileForm => ({
 		user.model_max_response_time != null
 			? String(user.model_max_response_time)
 			: "",
+	maxCredits:
+		user.model_max_credits != null ? String(user.model_max_credits) : "",
 	frequency: user.model_usage_frequency ?? "DAY",
 });
 
@@ -139,6 +143,7 @@ export const MemberProfileForm = ({
 				payload.model_usage_restriction = null;
 				payload.model_max_tokens = null;
 				payload.model_max_response_time = null;
+				payload.model_max_credits = null;
 				payload.model_usage_frequency = null;
 			} else {
 				payload.model_usage_restriction = form.restriction;
@@ -150,6 +155,10 @@ export const MemberProfileForm = ({
 				payload.model_max_response_time =
 					form.restriction === "compute"
 						? Number(form.maxResponseTime) || null
+						: null;
+				payload.model_max_credits =
+					form.restriction === "credit"
+						? Number(form.maxCredits) || null
 						: null;
 			}
 
@@ -181,6 +190,10 @@ export const MemberProfileForm = ({
 					model_max_response_time:
 						form.restriction === "compute"
 							? Number(form.maxResponseTime) || undefined
+							: undefined,
+					model_max_credits:
+						form.restriction === "credit"
+							? Number(form.maxCredits) || undefined
 							: undefined,
 				};
 				const nextForm = toForm(updated);
@@ -319,6 +332,7 @@ export const MemberProfileForm = ({
 								restriction: value,
 								maxTokens: "",
 								maxResponseTime: "",
+								maxCredits: "",
 							});
 						}}
 						className="w-full"
@@ -350,6 +364,16 @@ export const MemberProfileForm = ({
 										value={form.maxTokens}
 										onChange={(e) =>
 											set({ maxTokens: e.target.value })
+										}
+									/>
+								</Field>
+							) : form.restriction === "credit" ? (
+								<Field label="Max Credits">
+									<Input
+										type="number"
+										value={form.maxCredits}
+										onChange={(e) =>
+											set({ maxCredits: e.target.value })
 										}
 									/>
 								</Field>

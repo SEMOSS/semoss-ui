@@ -38,7 +38,9 @@
 		"weekly": "أسبوعيًا",
 		"monthly": "شهريًا",
 		"yearly": "سنويًا",
-		"allTime": "كل الأوقات"
+		"allTime": "كل الأوقات",
+		"credit": "Credit",
+		"maxCredits": "Max Credits"
 	},
 	"footer": {
 		"add": "إضافة",
