@@ -2,7 +2,9 @@ import {
 	EmailDraftEditor,
 	type EmailDraftSeed,
 } from "@/features/connectors/api/email-draft-editor";
+import { draftText } from "@/features/email/email-html";
 import type { ComposerDraft } from "@/features/rooms/components/room-composer.types";
+import type { SubmittedThreadContext } from "@/features/thread-assistant/thread-context";
 import type { ThreadSession } from "@/features/thread-assistant/thread-session";
 import { OutlookReplySession } from "./outlook-reply-session";
 import { ReplyDraftAssistant } from "./reply-draft-assistant";
@@ -44,6 +46,8 @@ export class WorkComposerSession {
 	private replies = new Map<string | undefined, OutlookReplySession>();
 	private draftAssistants = new Map<string, ReplyDraftAssistant>();
 	private activeReplyIds = new Map<string, string>();
+	// the editor most recently shown, which the assistant can change
+	private openDraftId: string | null = null;
 	private includedSources = new Set<string>();
 	private reconciled = new WeakMap<ThreadSession, number>();
 
@@ -115,6 +119,7 @@ export class WorkComposerSession {
 			(draft) => draft.seed.id === seed.id,
 		);
 		const draft = existing ?? new EmailDraftEditor(seed);
+		if (reveal) this.openDraftId = seed.id;
 		this.update({
 			emailDrafts: existing
 				? this.snapshot.emailDrafts
@@ -122,6 +127,38 @@ export class WorkComposerSession {
 			emailRequest: reveal ? { id: seed.id } : this.snapshot.emailRequest,
 		});
 		return draft;
+	};
+	/** The open, unsent email as it stands now, edits included, for the assistant to change. */
+	openEmailContext = (): SubmittedThreadContext["openEmail"] => {
+		const draft = this.snapshot.emailDrafts.find(
+			(item) => item.seed.id === this.openDraftId,
+		);
+		const state = draft?.getSnapshot();
+		if (!draft || !state) return undefined;
+		// a sent email stays for the next turn, so the assistant knows it went out
+		return {
+			id: draft.seed.id,
+			status: state.isSent
+				? "sent"
+				: state.sendApprovalToolId
+					? "waiting"
+					: state.saved && !state.isDirty
+						? "saved"
+						: "editing",
+			...(draft.seed.mode === "reply" && draft.seed.sourceUid
+				? { replyTo: draft.seed.sourceUid }
+				: {}),
+			to: state.values.to,
+			cc: state.values.cc,
+			subject: state.values.subject,
+			body: draftText(state.values.body, "html", true),
+			bodyRevision: state.bodyRevision,
+		};
+	};
+	/** Show an email and press its Send; the editor form runs it, so validation stays there. */
+	requestSend = (draft: EmailDraftEditor): void => {
+		this.requestEmailDraft(draft.seed);
+		draft.requestSubmit();
 	};
 	/** Track current context without storing source content on individual draft panels. */
 	setIncludedSources = (sources: Set<string>): void => {

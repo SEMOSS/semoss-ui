@@ -27,6 +27,7 @@ import type { ThreadAssistantProps } from "./thread-assistant.types";
 import {
 	getThreadAgent,
 	lastSubmittedContext,
+	presentThreadApprovals,
 	presentThreadMessages,
 	THREAD_ASSISTANT_INSTRUCTIONS,
 	threadInstructions,
@@ -280,7 +281,7 @@ export function ThreadAssistantView({
 				agent={assistant}
 				turnError={turn.turnError}
 				transportError={turn.transportError}
-				pendingApprovals={turn.pendingApprovals}
+				pendingApprovals={presentThreadApprovals(turn.pendingApprovals)}
 				onReconnect={session.reconnect}
 				onNewConversation={
 					canStartNewConversation(snapshot)

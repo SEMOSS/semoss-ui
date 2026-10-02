@@ -28,6 +28,7 @@ import {
 } from "@/features/delegations/components/delegation-submit-approval";
 import { WithdrawDelegation } from "@/features/delegations/components/withdraw-delegation";
 import type { ConversationTool } from "@/features/messages/types/message";
+import { composeDraftId } from "@/features/thread-assistant/thread-draft-proposal";
 import { WorkEmailContext } from "@/features/work-thread/work-email.context";
 import { toolCardTriggerId } from "../tool-workbench.constants";
 import { useToolWorkbench } from "../tool-workbench.context";
@@ -35,17 +36,33 @@ import {
 	emailDraftToolPreview,
 	isEmailDraftTool,
 } from "../utils/email-draft-tool";
+import { getToolComponent, TOOL_COMPONENTS } from "../utils/tool-components";
 import {
 	getToolDisplayLocation,
 	getToolLoadingMessage,
 } from "../utils/tool-metadata";
-import {
-	EmailDraftCard,
-	isEmailDraftTool as isLegacyEmailDraftTool,
-} from "./email-draft-card";
+import { EmailDraftCard } from "./email-draft-card";
+import { EmailSendActions } from "./email-send-actions";
 import { ToolCallMenu } from "./tool-call-menu";
 import { ToolFailureTooltip } from "./tool-failure-tooltip";
 import { ToolInline } from "./tool-inline";
+
+const COMPOSE_STATUS: Partial<Record<ConversationTool["status"], string>> = {
+	QUEUED: "Writing",
+	RUNNING: "Writing",
+	COMPLETED: "In your email editor",
+	FAILED: "Needs attention",
+};
+
+const SEND_STATUS: Record<ConversationTool["status"], string> = {
+	INPUT_REQUIRED: "Ready to send",
+	QUEUED: "Sending",
+	RUNNING: "Sending",
+	COMPLETED: "Sent",
+	FAILED: "Not sent",
+	REJECTED: "Not sent",
+	CANCELLED: "Not sent",
+};
 
 function statusDetails(status: ConversationTool["status"]) {
 	switch (status) {
@@ -130,14 +147,31 @@ export function ToolCallCard({
 		activeToolId,
 		isOpen,
 		pendingApprovals,
+		onRejectTool,
 	} = useToolWorkbench();
 	const isSubmit = isDelegationSubmit(tool);
 	const isRequest = isDelegationRequest(tool);
 	const workEmail = useContext(WorkEmailContext);
-	const isEmailDraft = workEmail
-		? isEmailDraftTool(tool)
-		: isLegacyEmailDraftTool(tool);
-	const isWorkDraft = isEmailDraft && Boolean(workEmail);
+	const component = getToolComponent(tool);
+	// Work also opens reply and forward drafts in its email panel
+	const isEmailDraft =
+		component === TOOL_COMPONENTS.emailDraft ||
+		(Boolean(workEmail) && isEmailDraftTool(tool));
+	const isEmailSend = component === TOOL_COMPONENTS.emailSend;
+	// ComposeEmail writes into Work's email editor; the card reopens that editor
+	const isEmailCompose = component === TOOL_COMPONENTS.emailCompose;
+	const isWorkDraft = (isEmailDraft || isEmailCompose) && Boolean(workEmail);
+	// SendEmail on the open email waits for Send in that editor or on this card
+	const sendDraft =
+		isEmailSend && workEmail
+			? workEmail.composer
+					.getSnapshot()
+					.emailDrafts.find(
+						(item) =>
+							item.seed.id ===
+							asString(tool.arguments.openEmailId),
+					)
+			: undefined;
 	const draftPreview = isWorkDraft ? emailDraftToolPreview(tool) : null;
 	const pendingApproval = pendingApprovals.find(
 		(item) => item.toolId === tool.id,
@@ -171,7 +205,7 @@ export function ToolCallCard({
 		isRequest && !approval && tool.status === "INPUT_REQUIRED"
 			? resultField(tool.output, "runId")
 			: undefined;
-	const Icon = isWorkDraft ? Mail : details.icon;
+	const Icon = isWorkDraft || sendDraft ? Mail : details.icon;
 	const isInline = isToolInline(tool.id);
 	const isInWorkbench = isOpen && activeToolId === tool.id;
 	const isActive = isInline || isInWorkbench;
@@ -188,6 +222,10 @@ export function ToolCallCard({
 		return null;
 
 	const status =
+		(sendDraft ? SEND_STATUS[tool.status] : undefined) ??
+		(isEmailCompose && draftPreview
+			? COMPOSE_STATUS[tool.status]
+			: undefined) ??
 		draftPreview?.status ??
 		(isSubmit || isRequest
 			? (tool.statusLabel ?? outcome ?? details.label)
@@ -197,7 +235,11 @@ export function ToolCallCard({
 
 	return (
 		<Collapsible
-			open={!isWorkDraft && (isInline || isEmailDraft)}
+			open={
+				!isWorkDraft &&
+				!sendDraft &&
+				(isInline || isEmailDraft || isEmailSend || isEmailCompose)
+			}
 			data-tool-id={tool.id}
 			className={cn(
 				"group/tool min-w-0 rounded-xl border border-border/60 transition-colors duration-150 motion-reduce:transition-none",
@@ -214,6 +256,27 @@ export function ToolCallCard({
 						variant="ghost"
 						className="h-auto min-h-10 min-w-0 flex-1 justify-start gap-2 whitespace-normal rounded-xl px-3 py-2 text-start"
 						onClick={(event) => {
+							if (sendDraft && workEmail) {
+								workEmail.composer.requestEmailDraft(
+									sendDraft.seed,
+								);
+								return;
+							}
+							if (isEmailCompose && workEmail) {
+								const editorId =
+									asString(tool.arguments.openEmailId) ||
+									composeDraftId(tool.id);
+								const draft = workEmail.composer
+									.getSnapshot()
+									.emailDrafts.find(
+										(item) => item.seed.id === editorId,
+									);
+								if (draft)
+									workEmail.composer.requestEmailDraft(
+										draft.seed,
+									);
+								return;
+							}
 							if (isWorkDraft && workEmail) {
 								workEmail.openEmail(
 									tool.id,
@@ -231,7 +294,7 @@ export function ToolCallCard({
 						}
 						aria-controls={isInline ? detailId : undefined}
 						aria-label={
-							isWorkDraft
+							isWorkDraft || sendDraft
 								? `Open email draft: ${title}`
 								: `${title} details${opensInline ? "" : " in workbench"}${tool.status === "FAILED" ? " - failed" : ""}`
 						}
@@ -266,7 +329,9 @@ export function ToolCallCard({
 						</span>
 						<span className="flex min-w-0 flex-1 flex-wrap items-baseline gap-x-2 gap-y-1">
 							<Muted className="wrap-anywhere font-medium text-foreground text-sm">
-								{isWorkDraft ? `Email draft · ${title}` : title}
+								{isWorkDraft
+									? `Email draft \u00b7 ${title}`
+									: title}
 							</Muted>
 							{draftPreview?.to && (
 								<Muted className="w-full truncate text-xs">
@@ -315,7 +380,7 @@ export function ToolCallCard({
 						}
 					/>
 				)}
-				{!isWorkDraft && (
+				{!isWorkDraft && !sendDraft && (
 					<div
 						className="pointer-events-none flex shrink-0 items-center gap-1 opacity-0 transition-opacity duration-150 ease-out group-focus-within/tool:pointer-events-auto group-focus-within/tool:opacity-100 group-focus-within/tool:duration-0 group-hover/tool:pointer-events-auto group-hover/tool:opacity-100 data-[menu-open=true]:pointer-events-auto data-[menu-open=true]:opacity-100 motion-reduce:transition-none [@media(hover:none)]:pointer-events-auto [@media(hover:none)]:opacity-100 [@media(pointer:coarse)]:pointer-events-auto [@media(pointer:coarse)]:opacity-100"
 						data-menu-open={isMenuOpen}
@@ -331,6 +396,13 @@ export function ToolCallCard({
 					</div>
 				)}
 			</div>
+			{sendDraft && pendingApproval && workEmail && (
+				<EmailSendActions
+					draft={sendDraft}
+					onSend={() => workEmail.composer.requestSend(sendDraft)}
+					onReject={() => onRejectTool(pendingApproval)}
+				/>
+			)}
 			<CollapsibleContent
 				id={detailId}
 				className="overflow-hidden duration-200 ease-out data-[state=closed]:animate-collapsible-up data-[state=open]:animate-collapsible-down motion-reduce:animate-none"
@@ -339,8 +411,17 @@ export function ToolCallCard({
 					<DelegationRequestApproval tool={tool} action={approval} />
 				) : approval ? (
 					<DelegationSubmitApproval tool={tool} action={approval} />
-				) : isEmailDraft ? (
-					<EmailDraftCard tool={tool} />
+				) : isEmailDraft || isEmailSend || isEmailCompose ? (
+					<EmailDraftCard
+						tool={tool}
+						mode={
+							isEmailSend
+								? "send"
+								: isEmailCompose
+									? "compose"
+									: "draft"
+						}
+					/>
 				) : (
 					<ToolInline toolId={tool.id} />
 				)}

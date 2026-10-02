@@ -475,3 +475,32 @@ it("blocks model-level saves until reply recipients have been initialized", asyn
 	expect(saveEmailDraft).not.toHaveBeenCalled();
 	expect(draft.getSnapshot().error).toContain("Load reply recipients");
 });
+
+it("shows the assistant's new recipients in the open editor, with its new body", async () => {
+	const draft = new EmailDraftEditor({
+		id: "assistant-draft:first",
+		mode: "new",
+		to: "ryan@example.com",
+		subject: "Please ignore",
+		body: "Hi Ryan",
+	});
+	render(view(draft));
+	act(() => {
+		draft.replaceEnvelope({
+			to: "ryan@example.com, neel@example.com",
+			cc: "",
+			bcc: "",
+			subject: "Please ignore",
+		});
+		draft.replaceBody("<p>Hi Ryan and Neel</p>");
+	});
+	expect(
+		await screen.findByRole("button", {
+			name: "Edit To recipient neel@example.com",
+		}),
+	).toBeVisible();
+	expect(draft.getSnapshot().values).toMatchObject({
+		to: "ryan@example.com, neel@example.com",
+		body: expect.stringContaining("Ryan and Neel"),
+	});
+});

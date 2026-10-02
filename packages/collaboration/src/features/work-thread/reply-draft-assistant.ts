@@ -253,7 +253,7 @@ export class ReplyDraftAssistant {
 			const proposal = proposals.length === 1 ? proposals[0] : undefined;
 			if (!proposal) {
 				finish(
-					text && !text.includes("```semoss-email-draft")
+					text
 						? { question: text, error: "" }
 						: {
 								error: "The assistant returned an incomplete draft. Try again; your draft is unchanged.",
@@ -268,6 +268,12 @@ export class ReplyDraftAssistant {
 			) {
 				finish({
 					error: "This revision does not match the included original email. Your draft is unchanged.",
+				});
+				return;
+			}
+			if (!proposal.body) {
+				finish({
+					error: "The assistant returned an incomplete draft. Try again; your draft is unchanged.",
 				});
 				return;
 			}

@@ -1,5 +1,6 @@
 import type { ConversationMessage } from "@/features/messages/types/message";
 import type { ComposerSubmission } from "@/features/rooms/types/room";
+import { composeEmailPart } from "@/features/thread-assistant/compose-email.test-fixtures";
 import {
 	type SubmittedThreadContext,
 	threadCommand,
@@ -87,13 +88,21 @@ export function draftTransport() {
 		allowNewRoom: vi.fn(),
 		insight: { actions: {} },
 	} as unknown as ThreadSession;
+	// a string is the assistant's prose; an object is its ComposeEmail arguments
 	const complete = (
-		text = '```semoss-email-draft\n{"sourceMessageId":"email","body":"Friday works."}\n```',
+		response: string | Record<string, unknown> = {
+			replyTo: "email",
+			message: "Friday works.",
+		},
 	): void => {
-		const response: ConversationMessage = {
+		const answer: ConversationMessage = {
 			id: `answer-${snapshot.turn.messages.length}`,
 			role: "assistant",
-			parts: [{ type: "text", text }],
+			parts: [
+				typeof response === "string"
+					? { type: "text", text: response }
+					: composeEmailPart(response),
+			],
 		};
 		publish({
 			...snapshot,
@@ -102,7 +111,7 @@ export function draftTransport() {
 				isRunning: false,
 				phase: "completed",
 				settlementVersion: snapshot.turn.settlementVersion + 1,
-				messages: [...snapshot.turn.messages, response],
+				messages: [...snapshot.turn.messages, answer],
 			},
 		});
 	};

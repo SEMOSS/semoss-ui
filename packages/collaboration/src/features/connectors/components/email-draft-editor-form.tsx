@@ -67,6 +67,19 @@ export function EmailDraftEditorForm({
 			shouldValidate: true,
 		});
 	}, [form, snapshot.bodyReplacement, snapshot.values.body]);
+	// runs after the body sync: each setValue pushes the whole form into the draft,
+	// so copying the body first never counts the old body as an edit
+	const lastEnvelope = useRef(snapshot.envelopeReplacement);
+	useEffect(() => {
+		if (lastEnvelope.current === snapshot.envelopeReplacement) return;
+		lastEnvelope.current = snapshot.envelopeReplacement;
+		for (const field of ["to", "cc", "bcc", "subject"] as const)
+			if (form.getValues(field) !== snapshot.values[field])
+				form.setValue(field, snapshot.values[field], {
+					shouldDirty: true,
+					shouldValidate: true,
+				});
+	}, [form, snapshot.envelopeReplacement, snapshot.values]);
 	useEffect(() => {
 		for (const [field, message] of Object.entries(
 			draft.getSnapshot().fieldErrors,
@@ -95,6 +108,34 @@ export function EmailDraftEditorForm({
 		isInitialized: snapshot.isReplyRecipientsInitialized,
 		onInitialized: draft.initializeReplyRecipients,
 	});
+	const handleSend = async (values: EmailDraftValues): Promise<void> => {
+		const release = retain?.() ?? (() => undefined);
+		try {
+			if (await draft.send(actions, values)) {
+				form.reset(values);
+				toast.success("Email sent");
+				onEmailSent?.();
+			} else if (draft.getSnapshot().error)
+				form.setError("root.server", {
+					message: draft.getSnapshot().error,
+				});
+		} finally {
+			release();
+		}
+	};
+	// Send pressed on the chat card runs here, once a reply knows its recipients
+	const isRecipientsReady =
+		draft.seed.mode !== "reply" || replyRecipients.isReady;
+	const handleSendRef = useRef(handleSend);
+	handleSendRef.current = handleSend;
+	useEffect(() => {
+		if (
+			snapshot.isSubmitRequested &&
+			isRecipientsReady &&
+			draft.takeSubmitRequest()
+		)
+			void form.handleSubmit((values) => handleSendRef.current(values))();
+	}, [draft, form, isRecipientsReady, snapshot.isSubmitRequested]);
 	return (
 		<section
 			className="flex h-full min-h-0 min-w-0 flex-col bg-background"
@@ -153,6 +194,12 @@ export function EmailDraftEditorForm({
 								</AlertDescription>
 							</Alert>
 						)}
+						{snapshot.sendApprovalToolId && !snapshot.isSent && (
+							<P className="text-sm text-warning">
+								Assistant asked to send this. Press Send to send
+								it as it is.
+							</P>
+						)}
 						{snapshot.isSent ? (
 							<output>Email sent.</output>
 						) : snapshot.saved ? (
@@ -198,21 +245,7 @@ export function EmailDraftEditorForm({
 							? "Retry send"
 							: "Send"
 				}
-				onSend={async (values) => {
-					const release = retain?.() ?? (() => undefined);
-					try {
-						if (await draft.send(actions, values)) {
-							form.reset(values);
-							toast.success("Email sent");
-							onEmailSent?.();
-						} else if (draft.getSnapshot().error)
-							form.setError("root.server", {
-								message: draft.getSnapshot().error,
-							});
-					} finally {
-						release();
-					}
-				}}
+				onSend={handleSend}
 				isPending={snapshot.isSaving || snapshot.isSending}
 				isUncertain={snapshot.isUncertain}
 				onSave={async (values) => {

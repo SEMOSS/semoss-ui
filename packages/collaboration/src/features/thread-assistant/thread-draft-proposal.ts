@@ -1,35 +1,40 @@
 import { z } from "@semoss/ui/next";
-import type { ConversationMessage } from "@/features/messages/types/message";
+import type {
+	ConversationMessage,
+	ConversationTool,
+} from "@/features/messages/types/message";
+import {
+	getToolComponent,
+	TOOL_COMPONENTS,
+} from "@/features/tools/utils/tool-components";
 
-const body = z.string().trim().min(1).max(50000);
-const replySchema = z
-	.object({ sourceMessageId: z.string().trim().min(1), body })
-	.strict();
+// a change to the open email may leave the body out to keep it
+const body = z.string().trim().min(1).max(50000).optional();
+// the editor the owner had open, when the assistant is changing it
+const openEmailId = z.string().trim().min(1).optional();
+const addresses = z.string().trim().max(4000);
+// a reply's to and cc replace the native lists when given
+const replySchema = z.object({
+	sourceMessageId: z.string().trim().min(1),
+	to: addresses.optional(),
+	cc: addresses.optional(),
+	bcc: addresses.optional(),
+	subject: z.string().trim().max(1000).optional(),
+	body,
+	openEmailId,
+});
 // a new email; "to" may be empty when the assistant could not find the address
-const newEmailSchema = z
-	.object({
-		to: z.string().trim().max(4000),
-		cc: z.string().trim().max(4000).optional(),
-		subject: z.string().trim().max(1000),
-		body,
-	})
-	.strict();
-// the block names the body "message", as SaveDraft/SendMail do; saved history may still say "body"
-const proposalSchema = z.preprocess(
-	(value) => {
-		if (
-			value &&
-			typeof value === "object" &&
-			"message" in value &&
-			!("body" in value)
-		) {
-			const { message, ...rest } = value as Record<string, unknown>;
-			return { ...rest, body: message };
-		}
-		return value;
-	},
-	z.union([replySchema, newEmailSchema]),
-);
+const newEmailSchema = z.object({
+	to: addresses,
+	cc: addresses.optional(),
+	bcc: addresses.optional(),
+	subject: z.string().trim().max(1000),
+	body,
+	openEmailId,
+});
+const proposalSchema = z
+	.union([replySchema, newEmailSchema])
+	.refine((proposal) => proposal.body || proposal.openEmailId);
 
 export type ThreadDraftProposal = z.infer<typeof proposalSchema>;
 export type ReplyDraftProposal = z.infer<typeof replySchema>;
@@ -51,10 +56,40 @@ export const LEGACY_DRAFT_PROPOSAL_INSTRUCTIONS = [
 	"When emailDraft is present in the request context, revise its current body using the user's instructions. Return the complete replacement body, preserving facts and intent unless asked to change them. The user reviews it in the same reply editor and chooses Save to Outlook. Never save it with a tool.",
 ].join("\n");
 
-/** Read an explicit artifact only from a completed assistant response, never from source prose. */
+// ComposeEmail (Semoss WorkComposeEmailReactor) names the body "message" and the
+// email it answers "replyTo"
+function proposalFromTool(tool: ConversationTool): ThreadDraftProposal | null {
+	const args = tool.arguments;
+	const text = (value: unknown) =>
+		typeof value === "string" ? value : undefined;
+	const replyTo = text(args.replyTo)?.trim();
+	const result = proposalSchema.safeParse(
+		replyTo
+			? {
+					sourceMessageId: replyTo,
+					to: text(args.to) || undefined,
+					cc: text(args.cc) || undefined,
+					bcc: text(args.bcc) || undefined,
+					subject: text(args.subject) || undefined,
+					body: text(args.message) || undefined,
+					openEmailId: text(args.openEmailId) || undefined,
+				}
+			: {
+					to: text(args.to) ?? "",
+					cc: text(args.cc) || undefined,
+					bcc: text(args.bcc) || undefined,
+					subject: text(args.subject) ?? "",
+					body: text(args.message) || undefined,
+					openEmailId: text(args.openEmailId) || undefined,
+				},
+	);
+	return result.success ? result.data : null;
+}
+
+/** The email from a completed assistant response's last ComposeEmail call, with that call's id. */
 export function readDraftProposal(
 	message: ConversationMessage,
-): ThreadDraftProposal | null {
+): (ThreadDraftProposal & { toolId: string }) | null {
 	if (
 		message.role !== "assistant" ||
 		message.visible === false ||
@@ -62,76 +97,19 @@ export function readDraftProposal(
 		(message.live && message.live.phase !== "completed")
 	)
 		return null;
-	if (
-		message.parts.some(
-			(part) => part.type === "text" && part.state === "active",
-		)
-	)
-		return null;
-	const text = message.parts
-		.flatMap((part) => (part.type === "text" ? [part.text] : []))
-		.join("\n");
-	const matches = [
-		...text.matchAll(/```semoss-email-draft\s*\n([\s\S]*?)\n```/g),
-	];
-	if (matches.length !== 1) return null;
-	try {
-		const result = proposalSchema.safeParse(
-			JSON.parse(matches[0]?.[1] ?? ""),
-		);
-		return result.success ? result.data : null;
-	} catch {
-		return null;
-	}
+	const composed = message.parts.flatMap((part) =>
+		part.type === "tool" &&
+		part.tool.status === "COMPLETED" &&
+		getToolComponent(part.tool) === TOOL_COMPONENTS.emailCompose
+			? [part.tool]
+			: [],
+	);
+	const last = composed.at(-1);
+	const proposal = last ? proposalFromTool(last) : null;
+	return last && proposal ? { ...proposal, toolId: last.id } : null;
 }
 
-/** Hide only explicit proposal markup, including partial streamed artifacts. */
-export function presentDraftProposal(
-	message: ConversationMessage,
-): ConversationMessage {
-	if (message.role !== "assistant") return message;
-	const proposal = readDraftProposal(message);
-	const running = Boolean(message.live && message.live.phase !== "completed");
-	let insideProposal = false;
-	return {
-		...message,
-		parts: message.parts.map((part) => {
-			if (part.type !== "text") return part;
-			let text = part.text;
-			let displayed = "";
-			while (text) {
-				if (insideProposal) {
-					const end = text.indexOf("```");
-					if (end < 0) {
-						text = "";
-						break;
-					}
-					text = text.slice(end + 3);
-					insideProposal = false;
-				} else {
-					const start = text.indexOf("```semoss-email-draft");
-					if (start < 0) {
-						displayed += text;
-						break;
-					}
-					displayed += text.slice(0, start);
-					displayed += proposal
-						? isReplyProposal(proposal)
-							? "Your reply draft is ready to review."
-							: "Your email draft is ready to review."
-						: running
-							? "Preparing your reply draft..."
-							: "The reply draft could not be read. Please ask the assistant to try again.";
-					text = text.slice(start + "```semoss-email-draft".length);
-					insideProposal = true;
-				}
-			}
-			return { ...part, text: displayed };
-		}),
-	};
-}
-
-/** Stable across live-to-durable message reconciliation. */
-export function draftProposalId(message: ConversationMessage): string {
-	return `assistant-draft:${message.runId || message.id}`;
+/** The editor a ComposeEmail call opens; its tool call id survives live-to-durable reconciliation. */
+export function composeDraftId(toolId: string): string {
+	return `assistant-draft:${toolId}`;
 }

@@ -1,5 +1,6 @@
 import { z } from "@semoss/ui/next";
 import type { ConversationMessage } from "@/features/messages/types/message";
+import type { PendingToolApproval } from "@/features/rooms/types/room";
 import { LEGACY_DRAFT_PROPOSAL_INSTRUCTIONS } from "./thread-draft-proposal";
 
 const HEADER = "[SEMOSS_WORK_CONTEXT_V1]\n";
@@ -32,6 +33,20 @@ const contextSchema = z.object({
 				sentAs: z.enum(["file", "text"]),
 			}),
 		)
+		.optional(),
+	/** The email open in the owner's editor when they sent this, with their edits; ComposeEmail changes it by id. */
+	openEmail: z
+		.object({
+			id: z.string().min(1),
+			/** waiting: a SendEmail call is waiting for the owner to press Send */
+			status: z.enum(["editing", "saved", "waiting", "sent"]).optional(),
+			replyTo: z.string().min(1).optional(),
+			to: z.string(),
+			cc: z.string(),
+			subject: z.string(),
+			body: z.string(),
+			bodyRevision: z.number().int().nonnegative(),
+		})
 		.optional(),
 	/** Local editor target, persisted with the request for response correlation. */
 	emailDraft: z
@@ -112,6 +127,20 @@ export function readThreadCommand(
 	} catch {
 		return null;
 	}
+}
+
+/** Approvals name the owner's request, not the source envelope sent with it. */
+export function presentThreadApprovals(
+	approvals: PendingToolApproval[],
+): PendingToolApproval[] {
+	return approvals.map((approval) => {
+		const request = approval.task
+			? readThreadCommand(approval.task)?.request
+			: undefined;
+		return request === undefined
+			? approval
+			: { ...approval, task: request || undefined };
+	});
 }
 
 /** Keep the saved source envelope out of the normal chat transcript. */

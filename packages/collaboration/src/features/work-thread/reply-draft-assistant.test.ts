@@ -1,4 +1,5 @@
 import { EmailDraftEditor } from "@/features/connectors/api/email-draft-editor";
+import { composeEmailPart } from "@/features/thread-assistant/compose-email.test-fixtures";
 import {
 	draftTransport,
 	pendingDraftInitialization,
@@ -312,8 +313,8 @@ it("stops without applying late output", async () => {
 });
 
 it.each([
-	"```semoss-email-draft\n{}\n```",
-	'```semoss-email-draft\n{"sourceMessageId":"another-email","body":"Wrong target"}\n```',
+	{ replyTo: "email", message: "" },
+	{ replyTo: "another-email", message: "Wrong target" },
 ])("rejects malformed or mismatched proposals", async (text) => {
 	const { assistant, options, complete, draft } = setup();
 	await assistant.generate(options);
@@ -358,10 +359,10 @@ it("ignores another request's response and releases subscriptions on app disposa
 					id: "other",
 					role: "assistant",
 					parts: [
-						{
-							type: "text",
-							text: '```semoss-email-draft\n{"sourceMessageId":"email","body":"Other request"}\n```',
-						},
+						composeEmailPart({
+							replyTo: "email",
+							message: "Other request",
+						}),
 					],
 				},
 			],

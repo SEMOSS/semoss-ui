@@ -1,6 +1,6 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import type { ConversationTool } from "@/features/messages/types/message";
-import { EmailDraftCard, isEmailDraftTool } from "./email-draft-card";
+import { EmailDraftCard } from "./email-draft-card";
 
 function draftTool(
 	overrides: Partial<ConversationTool> = {},
@@ -25,40 +25,6 @@ function draftTool(
 		...overrides,
 	};
 }
-
-describe("isEmailDraftTool", () => {
-	it("matches the reactor name, the original MCP name, and a prefixed MCP name", () => {
-		expect(isEmailDraftTool(draftTool({ name: "SaveDraft" }))).toBe(true);
-		expect(
-			isEmailDraftTool(
-				draftTool({
-					name: "tool-1",
-					metadata: {
-						SMSS_ORIGINAL_TOOL_NAME: "mcp__outlook__SaveDraft",
-					},
-				}),
-			),
-		).toBe(true);
-		expect(
-			isEmailDraftTool(
-				draftTool({
-					name: "tool-1",
-					metadata: { SMSS_FUNCTION_NAME: "SaveDraft" },
-				}),
-			),
-		).toBe(true);
-		expect(isEmailDraftTool(draftTool())).toBe(true);
-	});
-
-	it("ignores unrelated tools", () => {
-		expect(
-			isEmailDraftTool(draftTool({ name: "MicrosoftOutlookSendMail" })),
-		).toBe(false);
-		expect(isEmailDraftTool(draftTool({ name: "SaveDraftReply" }))).toBe(
-			false,
-		);
-	});
-});
 
 describe("EmailDraftCard", () => {
 	it("renders recipients, subject, body, and the Outlook link from the tool output", () => {
@@ -96,6 +62,28 @@ describe("EmailDraftCard", () => {
 		expect(
 			screen.queryByRole("link", { name: /open in outlook/i }),
 		).not.toBeInTheDocument();
+	});
+
+	it("labels a sent email by its approval and send state", () => {
+		const sent = draftTool({ name: "SendMail", output: undefined });
+		const { rerender } = render(
+			<EmailDraftCard
+				tool={{ ...sent, status: "INPUT_REQUIRED" }}
+				mode="send"
+			/>,
+		);
+		expect(
+			screen.getByText("Waiting for your approval to send"),
+		).toBeVisible();
+		rerender(<EmailDraftCard tool={sent} mode="send" />);
+		expect(screen.getByText("Sent")).toBeVisible();
+		rerender(
+			<EmailDraftCard
+				tool={{ ...sent, status: "REJECTED" }}
+				mode="send"
+			/>,
+		);
+		expect(screen.getByText("Not sent")).toBeVisible();
 	});
 });
 

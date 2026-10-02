@@ -1,6 +1,5 @@
 import { Button } from "@semoss/ui/next";
 import { presentThreadMessages } from "@/features/thread-assistant/thread-context";
-import { presentDraftProposal } from "@/features/thread-assistant/thread-draft-proposal";
 import { presentThreadInsights } from "./thread-insights";
 import { useWorkEmail } from "./work-email.context";
 import { useWorkThread } from "./work-thread-context";
@@ -11,7 +10,6 @@ export function EmailConversationButton() {
 	const { composer } = useWorkEmail();
 	const messages = presentThreadMessages(snapshot.turn.messages)
 		.filter((message) => message.visible !== false)
-		.map(presentDraftProposal)
 		.map(presentThreadInsights);
 	const body = messages
 		.flatMap((message) => {

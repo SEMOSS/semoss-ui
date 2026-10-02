@@ -26,6 +26,9 @@ import { workSnapshot } from "./work-thread.test-fixtures";
 const dock = vi.hoisted(() => ({
 	isOpen: false,
 	tools: [],
+	pendingApprovals: [],
+	onApproveTool: vi.fn(),
+	onRejectTool: vi.fn(),
 	selectPanel: vi.fn(),
 	store: {
 		getState: () => ({
@@ -370,9 +373,10 @@ it.each([360, 1440])(
 		);
 		expect(transport.send).toHaveBeenCalledOnce();
 		await act(async () =>
-			transport.complete(
-				`\`\`\`semoss-email-draft\n${JSON.stringify({ sourceMessageId: source.id, body: "Friday works." })}\n\`\`\``,
-			),
+			transport.complete({
+				replyTo: source.id,
+				message: "Friday works.",
+			}),
 		);
 		expect(screen.queryByText("Friday works.")).toBeNull();
 		fireEvent.click(
@@ -389,9 +393,10 @@ it.each([360, 1440])(
 			"Revise the current email reply",
 		);
 		await act(async () =>
-			transport.complete(
-				`\`\`\`semoss-email-draft\n${JSON.stringify({ sourceMessageId: source.id, body: "Friday is confirmed." })}\n\`\`\``,
-			),
+			transport.complete({
+				replyTo: source.id,
+				message: "Friday is confirmed.",
+			}),
 		);
 		expect(screen.queryByText("Friday is confirmed.")).toBeNull();
 		// Reopening the local draft card never sends a message.
@@ -461,9 +466,10 @@ it("consumes a menu draft request once while initialization is pending", async (
 		source.id,
 	);
 	await act(async () =>
-		transport.complete(
-			`\`\`\`semoss-email-draft\n${JSON.stringify({ sourceMessageId: source.id, body: "Reply to selected email." })}\n\`\`\``,
-		),
+		transport.complete({
+			replyTo: source.id,
+			message: "Reply to selected email.",
+		}),
 	);
 	await act(() =>
 		router.navigate(`/work/thread/${input.thread.id}`, {

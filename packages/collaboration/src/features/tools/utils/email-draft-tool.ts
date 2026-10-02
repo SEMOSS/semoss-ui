@@ -58,8 +58,8 @@ export function emailDraftToolPreview(tool: ConversationTool): {
 			INPUT_REQUIRED: "Waiting for approval",
 			COMPLETED: "Saved to Outlook",
 			FAILED: "Needs attention",
-			REJECTED: "Rejected · draft not saved",
-			CANCELLED: "Cancelled · draft not saved",
+			REJECTED: "Rejected \u00b7 draft not saved",
+			CANCELLED: "Cancelled \u00b7 draft not saved",
 		}[tool.status],
 	};
 }

@@ -24,6 +24,12 @@ import {
 	validateToolArguments,
 } from "../api/use-tool-definition";
 import { useToolWorkbench } from "../tool-workbench.context";
+import {
+	getToolComponent,
+	isEmailComponent,
+	TOOL_COMPONENTS,
+} from "../utils/tool-components";
+import { EmailToolFields } from "./email-tool-fields";
 import { ToolArgumentField } from "./tool-argument-field";
 import { ToolUiFrame } from "./tool-ui-frame";
 
@@ -57,6 +63,9 @@ interface ToolApprovalPanelProps {
 export function ToolApprovalPanel({ tool, action }: ToolApprovalPanelProps) {
 	const { onApproveTool, onRejectTool, closeTool } = useToolWorkbench();
 	const definition = useToolDefinition(tool);
+	const component = getToolComponent(tool);
+	// a mail tool is reviewed as the email it writes
+	const isEmail = isEmailComponent(component) && !action.requiresResponse;
 	const [isJsonEditor, setIsJsonEditor] = useState(false);
 	const form = useForm<ApprovalValues>({
 		resolver: zodResolver(approvalSchema),
@@ -141,11 +150,18 @@ export function ToolApprovalPanel({ tool, action }: ToolApprovalPanelProps) {
 			className="flex min-h-0 flex-1 flex-col"
 		>
 			<Tabs
-				defaultValue={action.uiUrl ? "tool" : "inputs"}
+				defaultValue={
+					isEmail ? "email" : action.uiUrl ? "tool" : "inputs"
+				}
 				className="min-h-0 flex-1 gap-0"
 			>
 				<div className="border-b px-3 py-2">
 					<TabsList>
+						{isEmail && (
+							<TabsTrigger value="email" className="text-xs">
+								Email
+							</TabsTrigger>
+						)}
 						{action.uiUrl && (
 							<TabsTrigger value="tool" className="text-xs">
 								Tool UI
@@ -156,6 +172,28 @@ export function ToolApprovalPanel({ tool, action }: ToolApprovalPanelProps) {
 						</TabsTrigger>
 					</TabsList>
 				</div>
+				{isEmail && (
+					<TabsContent
+						value="email"
+						className="min-h-0 overflow-auto p-3"
+					>
+						<FormField
+							control={form.control}
+							name="arguments"
+							render={({ field }) => (
+								<EmailToolFields
+									parameters={parameters ?? {}}
+									disabled={isUpdating}
+									onChange={(next) =>
+										field.onChange(
+											JSON.stringify(next, null, 2),
+										)
+									}
+								/>
+							)}
+						/>
+					</TabsContent>
+				)}
 				{action.uiUrl && (
 					<TabsContent
 						value="tool"
@@ -179,7 +217,7 @@ export function ToolApprovalPanel({ tool, action }: ToolApprovalPanelProps) {
 					)}
 					{definition.isLoading && (
 						<Muted className="mb-3 text-xs">
-							Loading tool fields… JSON arguments remain
+							Loading tool fields{"\u2026"} JSON arguments remain
 							available.
 						</Muted>
 					)}
@@ -284,10 +322,12 @@ export function ToolApprovalPanel({ tool, action }: ToolApprovalPanelProps) {
 						<Spinner aria-hidden="true" className="size-4" />
 					)}
 					{isUpdating
-						? "Updating…"
+						? "Updating\u2026"
 						: action.requiresResponse
 							? "Send response"
-							: "Approve and run"}
+							: component === TOOL_COMPONENTS.emailSend
+								? "Send email"
+								: "Approve and run"}
 				</Button>
 			</footer>
 		</Form>

@@ -1,11 +1,12 @@
 import { useEffect, useRef, useState } from "react";
 import type { Thread } from "@/features/collaboration/state/collaboration.types";
+import { plainTextEmail } from "@/features/email/email-html";
 import {
 	readThreadCommand,
 	type SubmittedThreadContext,
 } from "@/features/thread-assistant/thread-context";
 import {
-	draftProposalId,
+	composeDraftId,
 	isReplyProposal,
 	readDraftProposal,
 } from "@/features/thread-assistant/thread-draft-proposal";
@@ -27,6 +28,8 @@ export function useThreadDraftProposals({
 	isReady: boolean;
 }): string {
 	const observedRun = useRef(false);
+	// revisions already applied to an open editor, so a re-render never applies one twice
+	const appliedRevisions = useRef(new Set<string>());
 	const baseline = useRef<number | null>(null);
 	const [error, setError] = useState("");
 	useEffect(() => {
@@ -61,6 +64,7 @@ export function useThreadDraftProposals({
 		let latestId: string | undefined;
 		let selectedSource: string | undefined;
 		let editorRequest: SubmittedThreadContext["emailDraft"];
+		let openEmail: SubmittedThreadContext["openEmail"];
 		const restoredEditors = new Map<
 			string,
 			{ source: string; body: string }
@@ -69,6 +73,7 @@ export function useThreadDraftProposals({
 			if (message.role === "user") {
 				selectedSource = undefined;
 				editorRequest = undefined;
+				openEmail = undefined;
 				for (const part of message.parts) {
 					const command =
 						part.type === "text"
@@ -78,6 +83,7 @@ export function useThreadDraftProposals({
 						selectedSource =
 							command.context.selectedSourceMessageId;
 						editorRequest = command.context.emailDraft;
+						openEmail = command.context.openEmail;
 					}
 				}
 			}
@@ -86,7 +92,7 @@ export function useThreadDraftProposals({
 			// History may restore its latest complete body, but never overwrite local edits.
 			if (editorRequest) {
 				if (
-					proposal &&
+					proposal?.body &&
 					isReplyProposal(proposal) &&
 					thread.source?.kind === "outlook" &&
 					proposal.sourceMessageId === selectedSource &&
@@ -98,23 +104,52 @@ export function useThreadDraftProposals({
 					});
 				continue;
 			}
-			if (!proposal) {
-				if (
-					reveal &&
-					index > lastUserIndex &&
-					message.role === "assistant" &&
-					message.parts.some(
-						(part) =>
-							part.type === "text" &&
-							part.text.includes("```semoss-email-draft"),
-					)
-				)
-					setError(
-						"The assistant returned an incomplete draft. Ask it to try again; nothing was saved.",
-					);
+			if (!proposal) continue;
+			const id = composeDraftId(proposal.toolId);
+			// a change to the email the owner has open updates that editor in place
+			const target = proposal.openEmailId
+				? composer
+						.getSnapshot()
+						.emailDrafts.find(
+							(draft) => draft.seed.id === proposal.openEmailId,
+						)
+				: undefined;
+			if (target) {
+				if (!appliedRevisions.current.has(id)) {
+					appliedRevisions.current.add(id);
+					const isLatest = reveal && index > lastUserIndex;
+					const state = target.getSnapshot();
+					if (
+						isLatest &&
+						proposal.body &&
+						openEmail?.id === target.seed.id &&
+						state.bodyRevision !== openEmail.bodyRevision
+					) {
+						setError(
+							"You edited the email while the assistant was writing, so your edits were kept. Ask again to apply the change.",
+						);
+					} else {
+						// a reply keeps its thread's subject and has no bcc
+						const isReply = isReplyProposal(proposal);
+						target.replaceEnvelope({
+							to: proposal.to || state.values.to,
+							cc: proposal.cc ?? state.values.cc,
+							bcc: isReply
+								? state.values.bcc
+								: (proposal.bcc ?? state.values.bcc),
+							subject: isReply
+								? state.values.subject
+								: proposal.subject || state.values.subject,
+						});
+						if (proposal.body)
+							target.replaceBody(plainTextEmail(proposal.body));
+					}
+				}
+				if (index > lastUserIndex) latestId = target.seed.id;
 				continue;
 			}
-			const id = draftProposalId(message);
+			// a change to an editor that is gone has nothing to open
+			if (!proposal.body) continue;
 			const isOpen = composer
 				.getSnapshot()
 				.emailDrafts.some((draft) => draft.seed.id === id);
@@ -128,6 +163,7 @@ export function useThreadDraftProposals({
 							mode: "new",
 							to: proposal.to,
 							cc: proposal.cc ?? "",
+							bcc: proposal.bcc ?? "",
 							subject: proposal.subject,
 							body: proposal.body,
 						},
@@ -157,6 +193,8 @@ export function useThreadDraftProposals({
 					sourceUid: proposal.sourceMessageId,
 					subject: thread.subject,
 					body: proposal.body,
+					to: proposal.to,
+					cc: proposal.cc,
 				},
 				false,
 			);

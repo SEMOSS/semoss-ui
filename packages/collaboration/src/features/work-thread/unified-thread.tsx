@@ -36,6 +36,7 @@ import type { SourceAttachment } from "@/features/connectors/types";
 import { RoomRunStatus } from "@/features/rooms/components/room-run-status";
 import {
 	lastSubmittedContext,
+	presentThreadApprovals,
 	type SubmittedThreadContext,
 } from "@/features/thread-assistant/thread-context";
 import {
@@ -50,6 +51,10 @@ import {
 } from "./new-conversation-button";
 import type { ThreadActionRequest } from "./thread-action-request";
 import { ThreadQuickActions } from "./thread-quick-actions";
+import {
+	isEditorSend,
+	useEmailSendApprovals,
+} from "./use-email-send-approvals";
 import { useThreadActionRequest } from "./use-thread-action-request";
 import { useThreadDraftProposals } from "./use-thread-draft-proposals";
 import { useThreadWorkbenchRequest } from "./use-thread-workbench-request";
@@ -290,6 +295,24 @@ export function UnifiedThread({
 		allowedSources,
 		isReady: isHistoryReady,
 	});
+	useEmailSendApprovals(composer, workbench);
+	// sends for an open editor email are decided on their chat card
+	const statusApprovals = useMemo(
+		() =>
+			presentThreadApprovals(
+				snapshot.turn.pendingApprovals.filter(
+					(approval) =>
+						!memory.emailDrafts.some((draft) =>
+							isEditorSend(
+								approval,
+								workbench.tools,
+								draft.seed.id,
+							),
+						),
+				),
+			),
+		[snapshot.turn.pendingApprovals, memory.emailDrafts, workbench.tools],
+	);
 	const handleThreadAction = useCallback(
 		(request: ThreadActionRequest) => {
 			if (request.action === "ask") {
@@ -574,9 +597,7 @@ export function UnifiedThread({
 										transportError={
 											snapshot.turn.transportError
 										}
-										pendingApprovals={
-											snapshot.turn.pendingApprovals
-										}
+										pendingApprovals={statusApprovals}
 										onReconnect={session.reconnect}
 										onNewConversation={
 											canStartNewConversation(snapshot)

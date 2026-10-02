@@ -7,22 +7,6 @@ import { draftText } from "@/features/email/email-html";
 import { EmailMessageHeader } from "@/features/email/email-message-header";
 import type { ConversationTool } from "@/features/messages/types/message";
 
-// Reactor/MCP tool names both end in this, e.g. "MicrosoftOutlookSaveDraft"
-// or an MCP-prefixed "mcp__outlook__SaveDraft".
-const SAVE_DRAFT_SUFFIX = "SaveDraft";
-
-/** Whether a tool call is the Outlook "save draft" write, whatever name it arrived under. */
-export function isEmailDraftTool(tool: ConversationTool): boolean {
-	const candidates = [
-		tool.name,
-		tool.metadata?.SMSS_ORIGINAL_TOOL_NAME,
-		tool.metadata?.SMSS_FUNCTION_NAME,
-	];
-	return candidates.some(
-		(name) => typeof name === "string" && name.endsWith(SAVE_DRAFT_SUFFIX),
-	);
-}
-
 /** A recipient argument as either a comma/semicolon separated string or an array. */
 function addressList(value: unknown): string[] {
 	if (Array.isArray(value))
@@ -72,8 +56,44 @@ function safeHttpsLink(value: string | undefined): string | undefined {
 const BODY_CLAMP_CHARS = 800;
 const BODY_CLAMP_LINES = 12;
 
-/** Dedicated card for a saved Outlook draft, shown in place of the generic tool card. */
-export function EmailDraftCard({ tool }: { tool: ConversationTool }) {
+const DRAFT_STATUS: Partial<Record<ConversationTool["status"], string>> = {
+	COMPLETED: "Saved to Outlook drafts",
+	REJECTED: "Draft not saved",
+	CANCELLED: "Draft not saved",
+};
+const COMPOSE_STATUS: Partial<Record<ConversationTool["status"], string>> = {
+	COMPLETED: "Not saved or sent",
+};
+const SEND_STATUS: Partial<Record<ConversationTool["status"], string>> = {
+	INPUT_REQUIRED: "Waiting for your approval to send",
+	COMPLETED: "Sent",
+	REJECTED: "Not sent",
+	CANCELLED: "Not sent",
+};
+
+const STATUS_BY_MODE = {
+	draft: DRAFT_STATUS,
+	send: SEND_STATUS,
+	compose: COMPOSE_STATUS,
+};
+const PENDING_BY_MODE = {
+	draft: "Saving draft...",
+	send: "Sending...",
+	compose: "Writing...",
+};
+
+/**
+ * The email a mail tool writes, shown in place of the generic tool card: a
+ * draft it saves to Outlook, a message it sends once approved, or one written
+ * for the owner's editor that is not saved anywhere.
+ */
+export function EmailDraftCard({
+	tool,
+	mode = "draft",
+}: {
+	tool: ConversationTool;
+	mode?: "draft" | "send" | "compose";
+}) {
 	const [expanded, setExpanded] = useState(false);
 	const [copied, setCopied] = useState(false);
 	const copyTimer = useRef<ReturnType<typeof setTimeout> | undefined>(
@@ -96,12 +116,8 @@ export function EmailDraftCard({ tool }: { tool: ConversationTool }) {
 
 	const statusText =
 		tool.status === "FAILED"
-			? `Could not save draft: ${tool.error || "Something went wrong."}`
-			: tool.status === "COMPLETED"
-				? "Saved to Outlook drafts"
-				: tool.status === "REJECTED" || tool.status === "CANCELLED"
-					? "Draft not saved"
-					: "Saving draft...";
+			? `${mode === "send" ? "Could not send" : "Could not save draft"}: ${tool.error || "Something went wrong."}`
+			: (STATUS_BY_MODE[mode][tool.status] ?? PENDING_BY_MODE[mode]);
 
 	const lines = body.split("\n");
 	const isLong =
@@ -123,11 +139,11 @@ export function EmailDraftCard({ tool }: { tool: ConversationTool }) {
 
 	return (
 		<section
-			aria-label="Email draft"
+			aria-label={mode === "send" ? "Email" : "Email draft"}
 			className="min-w-0 space-y-4 border-border border-t p-4"
 		>
 			<EmailMessageHeader
-				subject={subject || "Email draft"}
+				subject={subject || (mode === "send" ? "Email" : "Email draft")}
 				to={to}
 				cc={cc}
 				status={
@@ -187,7 +203,7 @@ export function EmailDraftCard({ tool }: { tool: ConversationTool }) {
 				<>
 					<P className="max-w-prose whitespace-pre-wrap break-words leading-relaxed">
 						{displayBody}
-						{isLong && !expanded ? "…" : ""}
+						{isLong && !expanded ? "\u2026" : ""}
 					</P>
 					{isLong && (
 						<Button

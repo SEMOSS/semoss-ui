@@ -4,6 +4,7 @@ import type { EmailDraftInput, SavedEmailDraft } from "../types";
 import { EmailDraftSession } from "./email-draft-session";
 import { type EmailDraftValues, emailDraftSchema } from "./email-draft-values";
 import {
+	MAIL_SENT_EVENT,
 	saveEmailDraft,
 	sendEmailDraft,
 	UncertainDraftError,
@@ -27,6 +28,18 @@ export interface EmailDraftSeed {
 	bcc?: string;
 }
 
+/** A paused SendEmail call waiting on this email; pressing Send approves it with the saved draft. */
+export interface EmailSendApproval {
+	toolId: string;
+	approve: (draftId: string) => Promise<void>;
+	reject: () => Promise<void>;
+}
+
+/** How an approved send ended; a turned-down or cancelled one sent nothing. */
+export type EmailSendOutcome =
+	| { sent: true }
+	| { sent: false; error: string; isNotSent: boolean };
+
 export type EmailDraftFieldErrors = Partial<
 	Record<keyof EmailDraftValues, string>
 >;
@@ -45,8 +58,14 @@ interface EmailDraftSnapshot {
 	/** Monotonic body revision protects edits made while generation is running. */
 	bodyRevision: number;
 	bodyReplacement: number;
+	/** Bumped when To, Cc, Bcc or Subject change outside the form, so the form copies them in. */
+	envelopeReplacement: number;
 	undoBody: string | null;
 	requiresAcceptance: boolean;
+	/** The SendEmail call waiting on this email, if any. */
+	sendApprovalToolId: string | null;
+	/** Send was pressed outside the editor (the chat card); the form runs it once. */
+	isSubmitRequested: boolean;
 	error: string;
 }
 
@@ -74,6 +93,8 @@ export class EmailDraftEditor {
 	private listeners = new Set<() => void>();
 	private uploads: EmailDraftSession | null = null;
 	private savedValues: EmailDraftValues | null = null;
+	private sendApproval: EmailSendApproval | null = null;
+	private settleSend: ((outcome: EmailSendOutcome) => void) | null = null;
 
 	constructor(readonly seed: EmailDraftSeed) {
 		this.snapshot = {
@@ -97,23 +118,50 @@ export class EmailDraftEditor {
 			isDirty: false,
 			bodyRevision: 0,
 			bodyReplacement: 0,
+			envelopeReplacement: 0,
 			undoBody: null,
 			requiresAcceptance: Boolean(
 				seed.assistantMessageId || seed.requiresAcceptance,
 			),
+			sendApprovalToolId: null,
+			isSubmitRequested: false,
 			error: "",
 		};
 	}
+
+	/** Bind or clear the SendEmail call waiting on this email. */
+	setSendApproval = (approval: EmailSendApproval | null): void => {
+		if ((approval?.toolId ?? null) === this.snapshot.sendApprovalToolId)
+			return;
+		this.sendApproval = approval;
+		this.update({ sendApprovalToolId: approval?.toolId ?? null });
+	};
+	/** Report how the approved send ended. */
+	settleApprovedSend = (outcome: EmailSendOutcome): void => {
+		const settle = this.settleSend;
+		this.settleSend = null;
+		settle?.(outcome);
+	};
+	requestSubmit = (): void => {
+		if (!this.snapshot.isSent) this.update({ isSubmitRequested: true });
+	};
+	/** True once per request, so a remounted form never sends twice. */
+	takeSubmitRequest = (): boolean => {
+		if (!this.snapshot.isSubmitRequested) return false;
+		this.update({ isSubmitRequested: false });
+		return true;
+	};
 
 	/** Apply native defaults once; subsequent empty lists are intentional edits. */
 	initializeReplyRecipients = (recipients: ReplyRecipients): void => {
 		if (this.snapshot.isReplyRecipientsInitialized) return;
 		this.update({
 			isReplyRecipientsInitialized: true,
+			// lists the assistant already set win over the native defaults
 			values: {
 				...this.snapshot.values,
-				to: recipients.to.join(", "),
-				cc: recipients.cc.join(", "),
+				to: this.snapshot.values.to || recipients.to.join(", "),
+				cc: this.snapshot.values.cc || recipients.cc.join(", "),
 			},
 		});
 	};
@@ -183,6 +231,26 @@ export class EmailDraftEditor {
 			isDirty:
 				!this.savedValues || !sameDraftValues(values, this.savedValues),
 			fieldErrors: { ...this.snapshot.fieldErrors, body: undefined },
+		});
+	};
+	/** Replace envelope fields from outside the form (the assistant), keeping the body. */
+	replaceEnvelope = (
+		envelope: Pick<EmailDraftValues, "to" | "cc" | "bcc" | "subject">,
+	): void => {
+		if (
+			this.snapshot.isSaving ||
+			this.snapshot.isSending ||
+			this.snapshot.isSent ||
+			this.snapshot.hasPendingSend
+		)
+			return;
+		const values = { ...this.snapshot.values, ...envelope };
+		if (sameDraftValues(values, this.snapshot.values)) return;
+		this.update({
+			values,
+			envelopeReplacement: this.snapshot.envelopeReplacement + 1,
+			isDirty:
+				!this.savedValues || !sameDraftValues(values, this.savedValues),
 		});
 	};
 	/** Manual typing dismisses this shortcut; ordinary editor undo remains available. */
@@ -338,7 +406,21 @@ export class EmailDraftEditor {
 			}
 			if (!receipt) return false;
 			this.update({ hasPendingSend: true });
-			await sendEmailDraft(actions, receipt.savedDraftId);
+			const approval = this.sendApproval;
+			if (approval) {
+				// the paused SendEmail call sends this exact saved draft
+				const outcome = new Promise<EmailSendOutcome>((resolve) => {
+					this.settleSend = resolve;
+				});
+				await approval.approve(receipt.savedDraftId);
+				const result = await outcome;
+				if (result.sent === false) {
+					if (result.isNotSent)
+						this.update({ hasPendingSend: false });
+					throw new Error(result.error);
+				}
+				window.dispatchEvent(new Event(MAIL_SENT_EVENT));
+			} else await sendEmailDraft(actions, receipt.savedDraftId);
 			this.update({
 				isSent: true,
 				hasPendingSend: false,
@@ -377,6 +459,7 @@ export function emailDraftStatus(snapshot: EmailDraftSnapshot): string {
 		Object.keys(snapshot.fieldErrors).length
 	)
 		return "Needs attention";
+	if (snapshot.sendApprovalToolId) return "Ready to send";
 	if (snapshot.saved)
 		return snapshot.isDirty
 			? "Local changes · saved copy in Outlook"

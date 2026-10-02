@@ -9,6 +9,7 @@ interface ToolUiMetadata {
 	displayLocation?: unknown;
 	resourceURI?: unknown;
 	autoOpen?: unknown;
+	component?: unknown;
 }
 
 function uiMetadata(tool: ConversationTool): ToolUiMetadata | undefined {
@@ -30,6 +31,16 @@ export function getToolDisplayLocation(
 		: "sidebar";
 }
 
+/** The native component the tool declares for its content (SMSS_MCP_UI.component), if any. */
+export function getDeclaredToolComponent(
+	tool: ConversationTool,
+): string | undefined {
+	const component = uiMetadata(tool)?.component;
+	return typeof component === "string" && component.trim()
+		? component.trim()
+		: undefined;
+}
+
 export function shouldAutoOpenTool(tool: ConversationTool): boolean {
 	return uiMetadata(tool)?.autoOpen === true;
 }
@@ -38,7 +49,7 @@ export function getToolLoadingMessage(tool: ConversationTool): string {
 	const message = uiMetadata(tool)?.loadingMessage;
 	return typeof message === "string" && message.trim()
 		? message
-		: "Tool is running…";
+		: "Tool is running\u2026";
 }
 
 /** Resolve a declared MCP UI resource, falling back to the JSON tool view. */

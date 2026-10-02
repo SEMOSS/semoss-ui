@@ -79,3 +79,37 @@ it("rejects duplicate sends during a pending save and requires recipients", asyn
 	expect(await empty.send(actions, empty.getSnapshot().values)).toBe(false);
 	expect(empty.getSnapshot().error).toMatch(/recipient/);
 });
+it("sends through a waiting SendEmail call with the saved draft, and only once it went out", async () => {
+	const editor = create();
+	const approve = vi.fn(async () => undefined);
+	editor.setSendApproval({ toolId: "send-call", approve, reject: vi.fn() });
+	const sending = editor.send(actions, editor.getSnapshot().values);
+	await vi.waitFor(() => expect(approve).toHaveBeenCalledWith("saved-1"));
+	expect(sendEmailDraft).not.toHaveBeenCalled();
+	expect(editor.getSnapshot().isSent).toBe(false);
+	editor.settleApprovedSend({ sent: true });
+	expect(await sending).toBe(true);
+	expect(editor.getSnapshot().isSent).toBe(true);
+});
+it("knows nothing went out when the waiting send was turned down", async () => {
+	const editor = create();
+	editor.setSendApproval({
+		toolId: "send-call",
+		approve: async () => undefined,
+		reject: vi.fn(),
+	});
+	const sending = editor.send(actions, editor.getSnapshot().values);
+	await vi.waitFor(() => expect(saveEmailDraft).toHaveBeenCalled());
+	await Promise.resolve();
+	editor.settleApprovedSend({
+		sent: false,
+		error: "The send was turned down, so nothing was sent.",
+		isNotSent: true,
+	});
+	expect(await sending).toBe(false);
+	expect(editor.getSnapshot()).toMatchObject({
+		isSent: false,
+		hasPendingSend: false,
+		error: "The send was turned down, so nothing was sent.",
+	});
+});

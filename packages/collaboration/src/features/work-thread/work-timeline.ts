@@ -8,7 +8,6 @@ import {
 	presentMessages,
 } from "@/features/messages/utils/message-presentation";
 import { presentThreadMessages } from "@/features/thread-assistant/thread-context";
-import { presentDraftProposal } from "@/features/thread-assistant/thread-draft-proposal";
 import { presentThreadInsights } from "./thread-insights";
 
 type MessageIdentity = `source:${string}` | `assistant:${string}:${string}`;
@@ -78,9 +77,9 @@ export function workTimeline(
 			at: time(message.at),
 			order: items.length,
 		});
-	for (const message of presentThreadMessages(conversation)
-		.map(presentDraftProposal)
-		.map(presentThreadInsights))
+	for (const message of presentThreadMessages(conversation).map(
+		presentThreadInsights,
+	))
 		if (message.visible !== false)
 			items.push({
 				kind: "assistant",

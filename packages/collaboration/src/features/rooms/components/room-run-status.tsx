@@ -26,7 +26,8 @@ export function RoomRunStatus({
 	reviewInWorkbench?: boolean;
 }) {
 	const isMobile = useIsMobile();
-	const { tools, openInline, openWorkbench } = useToolWorkbench();
+	const { tools, openInline, openWorkbench, onApproveTool, onRejectTool } =
+		useToolWorkbench();
 	const summary = turnError ? turnErrorSummary(turnError) : "";
 
 	return (
@@ -99,59 +100,91 @@ export function RoomRunStatus({
 			)}
 			{pendingApprovals.length > 0 && (
 				<section
-					className="max-h-64 shrink-0 space-y-3 overflow-y-auto border-t bg-warning/5 px-5 py-3"
+					className="max-h-40 shrink-0 divide-y overflow-y-auto border-t bg-warning/5"
 					aria-label="Tools awaiting your approval"
 				>
-					<P className="font-medium text-sm">
-						{pendingApprovals.length} pending{" "}
-						{pendingApprovals.length === 1
-							? "decision"
-							: "decisions"}
-					</P>
-					{pendingApprovals.map((approval) => (
-						<div
-							key={approval.actionId ?? approval.toolId}
-							className="flex flex-wrap items-center gap-3"
-						>
-							<ShieldCheck
-								aria-hidden="true"
-								className="size-4 shrink-0 text-warning"
-							/>
-							<div className="min-w-0 flex-1">
-								<P className="font-medium text-base">
-									{approval.ownerName ?? agent.name}
-									{approval.requiresResponse
-										? " needs your input"
-										: ` wants to run ${tools[approval.toolId]?.title ?? approval.toolName}`}
-								</P>
-								<P className="text-base text-muted-foreground">
-									{approval.task ||
-										(approval.requiresResponse
-											? "Answer the questions to continue."
-											: "Review its UI and arguments before continuing.")}
-								</P>
-							</div>
-							<Button
-								type="button"
-								size="sm"
-								disabled={
-									!tools[approval.toolId] ||
-									approval.isDeciding
-								}
-								onClick={() =>
-									isMobile && !reviewInWorkbench
-										? openInline(approval.toolId)
-										: openWorkbench(approval.toolId)
-								}
+					{pendingApprovals.map((approval) => {
+						const tool = tools[approval.toolId];
+						const title = tool?.title ?? approval.toolName;
+						// a tool UI or a question has to be opened; a plain call can be decided here
+						const canDecideHere =
+							!approval.requiresResponse && !approval.uiUrl;
+						const isDisabled = !tool || approval.isDeciding;
+						return (
+							<div
+								key={approval.actionId ?? approval.toolId}
+								className="flex items-center gap-2 px-5 py-2"
 							>
-								{approval.isDeciding
-									? "Saving…"
-									: approval.requiresResponse
+								<ShieldCheck
+									aria-hidden="true"
+									className="size-4 shrink-0 text-warning"
+								/>
+								<P
+									className="min-w-0 flex-1 truncate text-sm"
+									title={approval.task}
+								>
+									<span className="font-medium">
+										{approval.requiresResponse
+											? `${approval.ownerName ?? agent.name} needs your input`
+											: approval.ownerName
+												? `${approval.ownerName}: ${title}`
+												: title}
+									</span>
+									{approval.task && (
+										<span className="text-muted-foreground">
+											{" \u00b7 "}
+											{approval.task}
+										</span>
+									)}
+								</P>
+								<Button
+									type="button"
+									size="sm"
+									variant="ghost"
+									disabled={isDisabled}
+									onClick={() =>
+										isMobile && !reviewInWorkbench
+											? openInline(approval.toolId)
+											: openWorkbench(approval.toolId)
+									}
+								>
+									{approval.requiresResponse
 										? "Answer"
 										: "Review"}
-							</Button>
-						</div>
-					))}
+								</Button>
+								{canDecideHere && (
+									<>
+										<Button
+											type="button"
+											size="sm"
+											variant="outline"
+											disabled={isDisabled}
+											onClick={() =>
+												void onRejectTool(approval)
+											}
+										>
+											Deny
+										</Button>
+										<Button
+											type="button"
+											size="sm"
+											disabled={isDisabled}
+											onClick={() =>
+												void onApproveTool(
+													approval,
+													approval.arguments,
+												)
+											}
+										>
+											{approval.isDeciding
+												? "Saving\u2026"
+												: "Approve"}
+										</Button>
+									</>
+								)}
+							</div>
+						);
+					})}
 				</section>
 			)}
 		</>

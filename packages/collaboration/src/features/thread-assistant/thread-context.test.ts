@@ -1,6 +1,7 @@
 import type { ConversationMessage } from "@/features/messages/types/message";
 import {
 	lastSubmittedContext,
+	presentThreadApprovals,
 	presentThreadMessages,
 	readThreadCommand,
 	threadCommand,
@@ -49,4 +50,23 @@ it("leaves normal messages and invalid envelopes visible", () => {
 			])[0]?.parts,
 		).toEqual([{ type: "text", text }]);
 	}
+});
+
+it("names the owner's request on an approval, not the source envelope", () => {
+	const approval = {
+		toolId: "call",
+		parentMessageId: "answer",
+		toolName: "SendEmail",
+		arguments: {},
+	};
+	const command = threadCommand(
+		{ threadId: "t1", contextRevision: "r1", contextText: "{}" },
+		"send this email",
+	);
+	expect(
+		presentThreadApprovals([
+			{ ...approval, task: command },
+			{ ...approval, task: "plain run input" },
+		]).map((item) => item.task),
+	).toEqual(["send this email", "plain run input"]);
 });

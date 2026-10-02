@@ -129,7 +129,7 @@ export function AssistantComposer({
 		<div className="space-y-2">
 			{snapshot.isLoading && (
 				<output className="text-muted-foreground text-sm">
-					Opening conversation…
+					Opening conversation{"\u2026"}
 				</output>
 			)}
 			{isOpen && snapshot.modelError && (
@@ -332,7 +332,7 @@ export function AssistantComposer({
 						) : null
 					}
 					agentName={agent?.name || "Assistant"}
-					placeholder="Ask Assistant…"
+					placeholder={"Ask Assistant\u2026"}
 					showModelSelector={false}
 					hideSettingsAction
 					submitLabel="Ask Assistant"
@@ -387,12 +387,17 @@ export function AssistantComposer({
 					onSend={async (submission) => {
 						await composer.submit(async () => {
 							const release = session.retain();
+							// read at send time, so edits made since the last render count
+							const openEmail = composer.openEmailContext();
 							try {
 								await session.send(
 									title,
 									memory.sourceMessageId
 										? {
 												...context,
+												...(openEmail
+													? { openEmail }
+													: {}),
 												...(memory.referenceResults
 													.length
 													? {
@@ -405,6 +410,9 @@ export function AssistantComposer({
 											}
 										: {
 												...context,
+												...(openEmail
+													? { openEmail }
+													: {}),
 												...(memory.referenceResults
 													.length
 													? {
