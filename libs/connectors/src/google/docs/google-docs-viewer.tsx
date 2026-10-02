@@ -37,7 +37,7 @@ export type GoogleDocsViewerProps = ConnectorViewerProps;
  * text into the insight.
  */
 export const GoogleDocsViewer = (props: GoogleDocsViewerProps) => {
-	const { onSignIn } = props;
+	const { onSignIn, showHeader = true } = props;
 	const { t } = useTranslation("connectors");
 	const { insightId } = useInsight();
 	const saver = useConnectorSaver("google-docs", props);
@@ -80,6 +80,17 @@ export const GoogleDocsViewer = (props: GoogleDocsViewerProps) => {
 		},
 	});
 
+	// in the header, or at the end of the toolbar when the host leaves
+	// the header out
+	const refreshButton = (
+		<ConnectorIconButton
+			icon={RefreshCwIcon}
+			label={t("common.refresh")}
+			isSpinning={query.isRefreshing}
+			onClick={query.reload}
+		/>
+	);
+
 	return (
 		<div className="flex h-full min-h-0 flex-col">
 			<div
@@ -88,25 +99,25 @@ export const GoogleDocsViewer = (props: GoogleDocsViewerProps) => {
 					openDoc !== null && "hidden",
 				)}
 			>
-				<ConnectorViewerHeader
-					brand="google-docs"
-					icon={FileTextIcon}
-					title={serviceName}
-				>
-					<ConnectorIconButton
-						icon={RefreshCwIcon}
-						label={t("common.refresh")}
-						isSpinning={query.isRefreshing}
-						onClick={query.reload}
-					/>
-				</ConnectorViewerHeader>
+				{showHeader ? (
+					<ConnectorViewerHeader
+						brand="google-docs"
+						icon={FileTextIcon}
+						title={serviceName}
+					>
+						{refreshButton}
+					</ConnectorViewerHeader>
+				) : null}
 
-				<div className="border-border border-b bg-muted/10 px-3 py-2">
-					<ConnectorSearchField
-						value={search}
-						placeholder={t("googleDocs.searchPlaceholder")}
-						onChange={setSearch}
-					/>
+				<div className="flex items-center gap-2 border-border border-b bg-muted/10 px-3 py-2">
+					<div className="min-w-0 flex-1">
+						<ConnectorSearchField
+							value={search}
+							placeholder={t("googleDocs.searchPlaceholder")}
+							onChange={setSearch}
+						/>
+					</div>
+					{showHeader ? null : refreshButton}
 				</div>
 
 				<ConnectorList

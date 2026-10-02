@@ -1,11 +1,11 @@
 import { LogInIcon, ShieldAlertIcon, XIcon } from "lucide-react";
 import { observer } from "mobx-react-lite";
-import { useEffect } from "react";
 import { useTranslation } from "@semoss/i18n";
 import { Button } from "@semoss/ui/next";
 import { getConnectorProvider } from "../connectors/connector.catalog";
 import { useConnectProvider } from "../connectors/use-connect-provider";
 import type { TeamworkStore } from "../teamwork.store";
+import { useTeamworkLogins } from "../use-teamwork-logins";
 
 /** Props for {@link TeamworkSignInNotice}. */
 export interface TeamworkSignInNoticeProps {
@@ -24,24 +24,14 @@ export interface TeamworkSignInNoticeProps {
  *   fixes that, so the notice sends the user to an administrator.
  *
  * The logins are read when the notice mounts and whenever the window regains
- * focus, so signing in or out in another tab shows up here. The read is shared
- * with the rest of the page and reused for a short while, so focusing the
- * window over and over does not read them each time.
+ * focus ({@link useTeamworkLogins}), so signing in or out in another tab shows
+ * up here.
  */
 export const TeamworkSignInNotice = observer(
 	({ teamwork }: TeamworkSignInNoticeProps) => {
 		const { t, i18n } = useTranslation("teamwork");
 		const handleSignIn = useConnectProvider(teamwork.signIn);
-
-		useEffect(() => {
-			const refresh = () => {
-				void teamwork.refreshConnectedProviders();
-			};
-			refresh();
-			void teamwork.refreshLoginConfig();
-			window.addEventListener("focus", refresh);
-			return () => window.removeEventListener("focus", refresh);
-		}, [teamwork]);
+		useTeamworkLogins(teamwork);
 
 		const list = new Intl.ListFormat(i18n.language, {
 			type: "conjunction",

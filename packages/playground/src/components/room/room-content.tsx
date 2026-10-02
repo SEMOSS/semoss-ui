@@ -57,18 +57,18 @@ export const RoomContent = observer(({ room }: RoomContentProps) => {
 	 * Functions
 	 */
 	const handlePrompt = async (prompt: string, files: File[]) => {
-		// update the options
-		await room.updateRoomOptions(room.options);
-
-		// ask the room — let errors propagate so room-input can restore files
+		// ask the room, which saves its options first — let errors propagate
+		// so room-input can restore files
 		await room.askMessage(prompt, files);
 
-		// re-sync room options from backend after message completes,
-		// preserving workspace MCPs that are only held in memory. Skipped when
-		// the turn just errored (e.g. a cancel that failed to persist) — a
+		// An agent run can change the room's tools on the server and only
+		// resolves once the run is over, so re-sync the options then,
+		// preserving workspace MCPs that are only held in memory. A chat turn
+		// re-syncs when its last tool result is saved instead. Skipped when the
+		// turn just errored (e.g. a cancel that failed to persist) — a
 		// successful sync clears the room's error state, which would otherwise
 		// wipe the message the user just needs to see.
-		if (!room.error) {
+		if (room.mode === "agent" && !room.error) {
 			await room.syncRoomOptions();
 		}
 
@@ -374,6 +374,31 @@ export const RoomContent = observer(({ room }: RoomContentProps) => {
 		room.latestResponseMessage.isThinking ||
 		isAutoExecutingTools;
 
+	// Whether the turn's newest response is visibly streaming: its last part
+	// is text or reasoning, or a tool call still coming in (which shows its
+	// own spinner). The content is its own sign of progress, so the generating
+	// indicator only covers the waits with nothing arriving on screen: before
+	// the first token, while tools run, and between tool steps. Read off the
+	// tail rather than isThinking, which an agent run turns off as soon as
+	// its first item arrives.
+	const isStreamingContent = (() => {
+		const tail = room.tail;
+		if (!(tail instanceof ResponseMessageStore)) {
+			return false;
+		}
+		const lastPart = tail.parts[tail.parts.length - 1];
+		if (lastPart?.type === "TEXT") {
+			return lastPart.text.trim().length > 0;
+		}
+		if (lastPart?.type === "THINKING") {
+			return lastPart.thinking.length > 0;
+		}
+		if (lastPart?.type === "TOOL_CALL") {
+			return !!room.getTool(lastPart.toolCall.id)?.isStreamingPlaceholder;
+		}
+		return false;
+	})();
+
 	// Agent-run turns can't actually be interrupted server-side yet, so show a
 	// plain spinner instead of a Stop button that would look actionable but do
 	// nothing.
@@ -523,7 +548,8 @@ export const RoomContent = observer(({ room }: RoomContentProps) => {
 							<div className="-mt-4">
 								<RoomGeneratingIndicator
 									active={
-										showLoadingState ||
+										(showLoadingState &&
+											!isStreamingContent) ||
 										waitingAskToolCount > 0
 									}
 									overrideMessage={

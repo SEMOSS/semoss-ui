@@ -1,10 +1,7 @@
 import type { LucideIcon } from "lucide-react";
 import type { ReactNode } from "react";
+import { type ConnectorBrand, ConnectorBrandIcon } from "@semoss/shared";
 import { Small } from "@semoss/ui/next";
-import {
-	type ConnectorBrand,
-	ConnectorBrandIcon,
-} from "./connector-brand-icon";
 
 /** Props for {@link ConnectorViewerHeader}. */
 export interface ConnectorViewerHeaderProps {

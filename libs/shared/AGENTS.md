@@ -80,7 +80,7 @@ This library retains its package layout (no `pages/` or router):
 
 | Folder / file | Purpose |
 |---------------|---------|
-| `assets/` | Images and static files |
+| `assets/` | Images and static files. `assets/img/connectors/` holds each Microsoft 365 and Google Workspace app's logo as an SVG named by app (`outlook.svg`, `gmail.svg`, ...), except Teams, which is `assets/img/MS_TEAMS.svg`; `ConnectorBrandIcon` shows them, and any package can import them as `@semoss/shared/assets/img/connectors/*` |
 | `components/` | Shared components, one folder per feature (file, monaco, flex-layout, mcp, prompts, skills, settings, engine, form, members, …) |
 | `constants/` | Shared constant values |
 | `contexts/` | React contexts (`<name>.context.tsx`) |

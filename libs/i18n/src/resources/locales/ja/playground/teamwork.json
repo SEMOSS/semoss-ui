@@ -4,9 +4,7 @@
 		"refresh": "更新"
 	},
 	"menu": {
-		"connectors": "コネクター",
-		"showTools": "チャットのツールを表示",
-		"hideTools": "チャットのツールを非表示"
+		"showTools": "チャットのツールを表示"
 	},
 	"chip": {
 		"connectors_one": "{{count}} 個のコネクターがオン",
@@ -121,15 +119,6 @@
 		}
 	},
 	"connectors": {
-		"dialogTitle": "コネクター",
-		"dialogDescription": "チャットでアシスタントが使用できるアプリを選択します。アシスタントはあなたのアカウントで操作し、送信、削除、共有、招待の前には必ず確認します。",
-		"allChatsNote": "アプリをオンまたはオフにすると、新しいチャットと既存のチャットのすべてに反映されます。",
-		"manage": "コネクタを管理",
-		"cancel": "キャンセル",
-		"save": "保存",
-		"saving": "保存中...",
-		"saved_one": "すべてのチャットで {{count}} 個のコネクターがオンになっています",
-		"saved_other": "すべてのチャットで {{count}} 個のコネクターがオンになっています",
 		"saveError": "コネクターを更新できませんでした。{{message}}",
 		"adoptError": "チャットは開始されましたが、コネクターをオンにできませんでした。{{message}}"
 	},
@@ -172,8 +161,6 @@
 		"addedTitle": "追加したツールボックス",
 		"addedDescription": "各ツールボックスが独自のツールを提供します。",
 		"addedEmpty": "追加したツールボックスはありません。",
-		"runsOnItsOwn": "自動で実行",
-		"asksFirst": "先に確認",
 		"parameters": "パラメーター",
 		"required": "必須",
 		"noParameters": "パラメーターはありません。",
