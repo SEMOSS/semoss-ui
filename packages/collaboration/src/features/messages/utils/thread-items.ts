@@ -1,3 +1,4 @@
+import { normalizeTimestamp } from "@semoss/utility";
 import type { PendingToolApproval } from "@/features/rooms/types/room";
 import { resolveToolUiUrl } from "@/features/tools/utils/tool-metadata";
 import {
@@ -106,6 +107,13 @@ function persistedPartToConversationPart(
 	}
 }
 
+/** Saved times are UTC with no zone ("2026-10-02 13:05:00"); browsers would read them as local time. */
+function savedTimestamp(value: string | null | undefined): string | undefined {
+	if (!value) return undefined;
+	const date = normalizeTimestamp(value);
+	return date.isValid() ? date.toISOString() : undefined;
+}
+
 function delegationReply(
 	message: ValidatedRoomMessage,
 ): DelegationReply | undefined {
@@ -177,7 +185,7 @@ function conversationMessageFromPersisted(
 		id: message.messageId,
 		role: isUserMessage(message) ? "user" : "assistant",
 		parts,
-		createdAt: message.dateCreated ?? undefined,
+		createdAt: savedTimestamp(message.dateCreated),
 		runId: message.agentRun?.runId ?? undefined,
 		parentMessageId: message.parentMessageId ?? undefined,
 		visible: message.visible ?? true,
@@ -227,6 +235,53 @@ export function optimisticUserMessage(
 		],
 		createdAt: new Date().toISOString(),
 	};
+}
+
+/**
+ * Lay the live turn over saved history without reordering either one. Saved
+ * messages keep the room's order, and the turn's copy of a message wins. A
+ * message the room has not saved yet (the pending request, streamed output, a
+ * run card) stays after the turn message it followed. Anything after the
+ * turn's last saved message is newer than all of history and goes last.
+ */
+export function mergeTranscript(
+	history: ConversationMessage[],
+	turn: ConversationMessage[],
+): ConversationMessage[] {
+	const saved = new Set(history.map((message) => message.id));
+	const latest = new Map(turn.map((message) => [message.id, message]));
+	// Unsaved turn messages, keyed by the saved turn message they follow.
+	const leading: ConversationMessage[] = [];
+	const following = new Map<string, ConversationMessage[]>();
+	let group = leading;
+	let first: string | undefined;
+	let last: string | undefined;
+	for (const message of turn) {
+		if (!saved.has(message.id)) {
+			group.push(message);
+			continue;
+		}
+		first ??= message.id;
+		last = message.id;
+		group = [];
+		following.set(message.id, group);
+	}
+	const merged: ConversationMessage[] = [];
+	const placed = new Set<string>();
+	const add = (message: ConversationMessage) => {
+		if (placed.has(message.id)) return;
+		placed.add(message.id);
+		merged.push(message);
+	};
+	for (const message of history) {
+		if (message.id === first) leading.forEach(add);
+		add(latest.get(message.id) ?? message);
+		if (message.id !== last) following.get(message.id)?.forEach(add);
+	}
+	// With nothing saved in the turn, all of it is newer than history.
+	leading.forEach(add);
+	if (last !== undefined) following.get(last)?.forEach(add);
+	return merged;
 }
 
 /** Apply controller-owned tool states over durable/live transcript tools. */

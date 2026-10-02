@@ -46,53 +46,31 @@ export function groupWorkTimeline(
 	return groups;
 }
 
-/** Merge before grouping so an intervening source reply never moves around assistant activity. */
+/**
+ * Slot source emails into the assistant conversation by time, without ever
+ * re-sorting the conversation itself. The session already orders it, and its
+ * saved and live messages carry server and browser clocks; sorting by those
+ * moved a just-sent request around while its answer streamed.
+ */
 export function workTimeline(
 	sources: WorkspaceMessage[],
 	conversation: ConversationMessage[],
 	roomId: string,
 	tools: Record<string, ConversationTool> = {},
-	firstSeen: ReadonlyMap<string, string> = new Map(),
 ): WorkTimelineEntry[] {
 	const identity = (message: ConversationMessage): MessageIdentity =>
 		`assistant:${roomId}:${message.id.replace(/^agent-final:/, "agent-run:")}`;
-	type Item = { at: number; order: number } & (
-		| { kind: "source"; message: WorkspaceMessage; id: MessageIdentity }
-		| {
-				kind: "assistant";
-				message: ConversationMessage;
-				id: MessageIdentity;
-		  }
-	);
-	const items: Item[] = [];
 	const time = (at?: string) => {
 		const value = Date.parse(at ?? "");
-		return Number.isFinite(value) ? value : 0;
+		return Number.isFinite(value) ? value : null;
 	};
-	for (const message of sources)
-		items.push({
-			kind: "source",
+	const pending = sources
+		.map((message, order) => ({
 			message,
-			id: `source:${message.id}`,
-			at: time(message.at),
-			order: items.length,
-		});
-	for (const message of presentThreadMessages(conversation).map(
-		presentThreadInsights,
-	))
-		if (message.visible !== false)
-			items.push({
-				kind: "assistant",
-				message,
-				id: identity(message),
-				at: time(
-					message.createdAt ??
-						firstSeen.get(message.id) ??
-						new Date().toISOString(),
-				),
-				order: items.length,
-			});
-	items.sort((a, b) => a.at - b.at || a.order - b.order);
+			order,
+			at: time(message.at) ?? 0,
+		}))
+		.sort((a, b) => a.at - b.at || a.order - b.order);
 	const entries: WorkTimelineEntry[] = [];
 	let batch: ConversationMessage[] = [];
 	const flush = () => {
@@ -111,19 +89,30 @@ export function workTimeline(
 		}
 		batch = [];
 	};
-	for (const item of items) {
-		if (item.kind === "assistant") {
-			batch.push(item.message);
-		} else {
+	// An email sent before (or with) a timestamped message goes ahead of it.
+	const addSources = (until: number) => {
+		while (pending.length && pending[0].at <= until) {
+			const source = pending.shift();
+			if (!source) break;
 			flush();
+			const id: MessageIdentity = `source:${source.message.id}`;
 			entries.push({
 				kind: "source",
-				id: item.id,
-				ids: [item.id],
-				message: item.message,
+				id,
+				ids: [id],
+				message: source.message,
 			});
 		}
+	};
+	for (const message of presentThreadMessages(conversation).map(
+		presentThreadInsights,
+	)) {
+		if (message.visible === false) continue;
+		// A message with no time yet is still streaming, so it is happening now.
+		addSources(time(message.createdAt) ?? Date.now());
+		batch.push(message);
 	}
 	flush();
+	addSources(Number.POSITIVE_INFINITY);
 	return entries;
 }

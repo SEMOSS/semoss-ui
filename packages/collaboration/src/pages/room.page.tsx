@@ -16,6 +16,7 @@ import type { ValidatedRoomMessage } from "@/features/messages/api/message-schem
 import type { ConversationMessage } from "@/features/messages/types/message";
 import {
 	mergeToolStates,
+	mergeTranscript,
 	threadFromMessages,
 } from "@/features/messages/utils/thread-items";
 import {
@@ -239,13 +240,14 @@ export function RoomPage() {
 		);
 	}, [roomId, setSessions]);
 
-	const thread = useMemo(() => {
-		const byId = new Map<string, ConversationMessage>();
-		for (const message of [...history, ...turn.messages]) {
-			byId.set(message.id, message);
-		}
-		return mergeToolStates([...byId.values()], turn.toolStates);
-	}, [history, turn.messages, turn.toolStates]);
+	const thread = useMemo(
+		() =>
+			mergeToolStates(
+				mergeTranscript(history, turn.messages),
+				turn.toolStates,
+			),
+		[history, turn.messages, turn.toolStates],
+	);
 
 	// A person's answer arrives as history plus, for POST_AND_CONTINUE, a new run.
 	const handleDelegationAnswered = useCallback(() => {

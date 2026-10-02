@@ -32,6 +32,57 @@ describe("unified Work timeline", () => {
 			"assistant:room:next",
 		]);
 	});
+	it("never re-sorts the conversation when saved and live clocks disagree", () => {
+		// Saved times read 4 hours ahead of the browser clock that stamped the
+		// just-sent request; the streaming answer has no time at all.
+		const entries = workTimeline(
+			[],
+			[
+				{
+					id: "u1",
+					role: "user",
+					createdAt: "2026-10-02T17:00:00Z",
+					parts: [{ type: "text", text: "Earlier question" }],
+				},
+				assistant("a1", "2026-10-02T17:00:30Z", "Earlier answer"),
+				{
+					id: "pending-user-1",
+					role: "user",
+					createdAt: "2026-10-02T13:01:00Z",
+					parts: [{ type: "text", text: "Follow up" }],
+				},
+				{
+					id: "agent-run:r2",
+					role: "assistant",
+					parts: [{ type: "text", text: "Streaming" }],
+				},
+			],
+			"room",
+		);
+		expect(entries.map((e) => e.id)).toEqual([
+			"assistant:room:u1",
+			"assistant:room:a1",
+			"assistant:room:pending-user-1",
+			"assistant:room:agent-run:r2",
+		]);
+	});
+	it("places an earlier source ahead of a still-streaming message", () => {
+		const entries = workTimeline(
+			[source],
+			[
+				{
+					id: "live",
+					role: "assistant",
+					parts: [{ type: "text", text: "Streaming" }],
+				},
+			],
+			"room",
+		);
+		expect(entries.map((e) => e.id)).toEqual([
+			"source:same",
+			"assistant:room:live",
+		]);
+	});
 	it("retains every underlying identity of a grouped response", () => {
 		const entries = workTimeline(
 			[],

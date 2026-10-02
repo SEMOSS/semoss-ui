@@ -23,6 +23,7 @@ import { getRoomMessages } from "@/features/messages/api/get-room-messages";
 import type { ConversationMessage } from "@/features/messages/types/message";
 import {
 	mergeToolStates,
+	mergeTranscript,
 	threadFromMessages,
 } from "@/features/messages/utils/thread-items";
 import type {
@@ -306,13 +307,13 @@ export class ThreadSession {
 		this.update({ turn: controller.getSnapshot() });
 	}
 	private publishTurn(turn: AgentTurnSnapshot): void {
-		const byId = new Map<string, ConversationMessage>();
-		for (const message of [...this.history, ...turn.messages])
-			byId.set(message.id, message);
 		this.update({
 			turn: {
 				...turn,
-				messages: mergeToolStates([...byId.values()], turn.toolStates),
+				messages: mergeToolStates(
+					mergeTranscript(this.history, turn.messages),
+					turn.toolStates,
+				),
 			},
 		});
 	}

@@ -137,7 +137,6 @@ export function UnifiedThread({
 	const actionsTriggerId = `${fieldId}-actions`;
 	const isAdjusting = useRef(false);
 	const split = useRef(DEFAULT_WORKBENCH_SIZE);
-	const firstSeen = useRef(new Map<string, string>());
 	const roomId = snapshot.association?.roomId ?? "";
 	const fullPane = isNarrow || isChatCollapsed;
 	const openedFromMenu = useRef(false);
@@ -258,23 +257,8 @@ export function UnifiedThread({
 		});
 		return () => cancelAnimationFrame(frame);
 	}, [activePane, fullPane]);
-	useEffect(() => {
-		for (const message of snapshot.turn.messages)
-			if (!firstSeen.current.has(message.id))
-				firstSeen.current.set(
-					message.id,
-					message.createdAt ?? new Date().toISOString(),
-				);
-	}, [snapshot.turn.messages]);
 	const entries = useMemo(
-		() =>
-			workTimeline(
-				[],
-				snapshot.turn.messages,
-				roomId,
-				workbench.tools,
-				firstSeen.current,
-			),
+		() => workTimeline([], snapshot.turn.messages, roomId, workbench.tools),
 		[snapshot.turn.messages, roomId, workbench.tools],
 	);
 	const allowedSources = useMemo(

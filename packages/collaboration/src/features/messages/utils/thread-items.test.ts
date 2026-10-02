@@ -1,6 +1,8 @@
 import { roomMessageSchema } from "../api/message-schemas";
+import type { ConversationMessage } from "../types/message";
 import {
 	mergeToolStates,
+	mergeTranscript,
 	optimisticUserMessage,
 	threadFromMessages,
 	toolsFromMessages,
@@ -73,6 +75,32 @@ describe("threadFromMessages", () => {
 		});
 	});
 
+	it("reads saved times as UTC, never as the browser's local time", () => {
+		const [saved, zoned, malformed] = threadFromMessages([
+			roomMessageSchema.parse({
+				messageId: "saved",
+				io: "INPUT",
+				dateCreated: "2026-10-02 13:05:00",
+				parts: [{ type: "TEXT", text: "Hi" }],
+			}),
+			roomMessageSchema.parse({
+				messageId: "zoned",
+				io: "INPUT",
+				dateCreated: "2026-10-02T13:05:00-04:00",
+				parts: [{ type: "TEXT", text: "Hi" }],
+			}),
+			roomMessageSchema.parse({
+				messageId: "malformed",
+				io: "INPUT",
+				dateCreated: "not a date",
+				parts: [{ type: "TEXT", text: "Hi" }],
+			}),
+		]);
+		expect(saved?.createdAt).toBe("2026-10-02T13:05:00.000Z");
+		expect(zoned?.createdAt).toBe("2026-10-02T17:05:00.000Z");
+		expect(malformed?.createdAt).toBeUndefined();
+	});
+
 	it("maps an approval and controller state over a durable tool", () => {
 		const approval = {
 			toolId: "tool-2",
@@ -100,6 +128,80 @@ describe("threadFromMessages", () => {
 		expect(merged[0]?.parts[0]).toMatchObject({
 			tool: { status: "RUNNING" },
 		});
+	});
+});
+
+describe("mergeTranscript", () => {
+	const message = (
+		id: string,
+		role: "user" | "assistant" = "assistant",
+		text = id,
+	): ConversationMessage => ({ id, role, parts: [{ type: "text", text }] });
+	const ids = (messages: ConversationMessage[]) =>
+		messages.map((entry) => entry.id);
+
+	it("puts a just-sent request and its live answer after all saved history", () => {
+		const history = [
+			message("u1", "user"),
+			message("a1"),
+			message("u2", "user"),
+			message("a2"),
+		];
+		const turn = [
+			message("u2", "user"),
+			message("a2"),
+			message("pending", "user"),
+			message("agent-run:r3"),
+		];
+		expect(ids(mergeTranscript(history, turn))).toEqual([
+			"u1",
+			"a1",
+			"u2",
+			"a2",
+			"pending",
+			"agent-run:r3",
+		]);
+	});
+
+	it("keeps an unsaved message beside the turn message it followed", () => {
+		const history = [
+			message("u1", "user"),
+			message("a1"),
+			message("u2", "user"),
+		];
+		const turn = [
+			message("card"),
+			message("u1", "user"),
+			message("child-run:c1"),
+			message("a1"),
+		];
+		expect(ids(mergeTranscript(history, turn))).toEqual([
+			"card",
+			"u1",
+			"child-run:c1",
+			"a1",
+			"u2",
+		]);
+	});
+
+	it("uses the turn's copy of a saved message in its saved position", () => {
+		const merged = mergeTranscript(
+			[message("u1", "user"), message("a1", "assistant", "old")],
+			[message("a1", "assistant", "new")],
+		);
+		expect(ids(merged)).toEqual(["u1", "a1"]);
+		expect(merged[1]?.parts[0]).toMatchObject({ text: "new" });
+	});
+
+	it("shows a first request in an empty room", () => {
+		expect(
+			ids(
+				mergeTranscript(
+					[],
+					[message("pending", "user"), message("agent-run:r1")],
+				),
+			),
+		).toEqual(["pending", "agent-run:r1"]);
 	});
 });
 
