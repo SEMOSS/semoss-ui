@@ -1,7 +1,9 @@
+import { useState } from "react";
 import { usePixel } from "@semoss/sdk/react";
 import { Button, Small } from "@semoss/ui/next";
 import type { FunctionEngineConfig } from "../../../domain/automation.types";
 import { EnginePickerField } from "./engine-picker-field";
+import { type InputMode, InputModeToggle } from "./input-mode-toggle";
 import { BoundInput } from "./pill-input";
 
 interface FunctionParameterDefinition {
@@ -42,7 +44,7 @@ function functionEngineDefinition(
 	const schema = isRecord(value.parameters) ? value.parameters : null;
 	const properties =
 		schema && isRecord(schema.properties) ? schema.properties : {};
-	const required = requiredParameterNames(value.required);
+	const required = requiredParameterNames(schema?.required ?? value.required);
 	const parameters = Object.entries(properties).flatMap(
 		([name, property]) => {
 			if (!isRecord(property)) return [];
@@ -102,6 +104,41 @@ function parameterTemplate(parameters: FunctionParameterDefinition[]): string {
 	);
 }
 
+function parameterObject(value: string): Record<string, unknown> | null {
+	try {
+		const parsed = JSON.parse(value) as unknown;
+		return isRecord(parsed) ? parsed : null;
+	} catch {
+		return null;
+	}
+}
+
+function parameterDisplayValue(value: unknown): string {
+	if (value === undefined || value === null) return "";
+	if (typeof value === "string") return value;
+	return JSON.stringify(value);
+}
+
+function parameterValue(value: string, type: string): unknown {
+	const trimmed = value.trim();
+	if (/^\$\{[^}]+\}$/.test(trimmed)) return trimmed;
+	if (type === "boolean" && (trimmed === "true" || trimmed === "false")) {
+		return trimmed === "true";
+	}
+	if ((type === "integer" || type === "number") && trimmed !== "") {
+		const numericValue = Number(trimmed);
+		if (Number.isFinite(numericValue)) return numericValue;
+	}
+	if (type === "array" || type === "object") {
+		try {
+			return JSON.parse(trimmed) as unknown;
+		} catch {
+			return value;
+		}
+	}
+	return value;
+}
+
 export interface FunctionEngineFormProps {
 	/** Current node config */
 	config: FunctionEngineConfig;
@@ -109,6 +146,8 @@ export interface FunctionEngineFormProps {
 	upstreamVars: string[];
 	/** Called with the updated config on every field change */
 	onChange: (c: FunctionEngineConfig) => void;
+	/** Opens JSON first in developer mode; users can still switch representations. */
+	devMode?: boolean;
 	/** When true, all fields are locked to their current values */
 	readOnly?: boolean;
 }
@@ -117,8 +156,12 @@ export function FunctionEngineForm({
 	config,
 	upstreamVars,
 	onChange,
+	devMode = false,
 	readOnly = false,
 }: FunctionEngineFormProps) {
+	const [inputMode, setInputMode] = useState<InputMode>(() =>
+		devMode ? "json" : "form",
+	);
 	const definitionPixel = usePixel<unknown>(
 		config.engineId
 			? `GetFunctionEngineDefinition(engine=[${JSON.stringify(config.engineId)}]);`
@@ -128,6 +171,30 @@ export function FunctionEngineForm({
 		},
 	);
 	const definition = functionEngineDefinition(definitionPixel.data);
+	const parsedValues = parameterObject(config.params);
+	const values = parsedValues ?? {};
+	const hasParameterFields =
+		definition !== null && definition.parameters.length > 0;
+	const displayedMode = parsedValues === null ? "json" : inputMode;
+	const showParameterFields = hasParameterFields && displayedMode === "form";
+	const showRawParameters = !hasParameterFields || displayedMode === "json";
+
+	const updateParameter = (
+		parameter: FunctionParameterDefinition,
+		value: string,
+	) => {
+		onChange({
+			...config,
+			params: JSON.stringify(
+				{
+					...values,
+					[parameter.name]: parameterValue(value, parameter.type),
+				},
+				null,
+				2,
+			),
+		});
+	};
 
 	return (
 		<div className="flex flex-col gap-4">
@@ -148,17 +215,6 @@ export function FunctionEngineForm({
 					});
 				}}
 			/>
-			<BoundInput
-				label="Input Parameters (JSON)"
-				required
-				value={config.params}
-				placeholder='{"location": "${location}"}'
-				description="Use the declared parameter names below. Scope variables can replace any JSON value."
-				onChange={(v) => onChange({ ...config, params: v })}
-				upstreamVars={upstreamVars}
-				readOnly={readOnly}
-				mono
-			/>
 			{definitionPixel.status === "LOADING" && (
 				<output className="text-muted-foreground text-sm">
 					Loading function parameters…
@@ -170,12 +226,17 @@ export function FunctionEngineForm({
 					still edit the JSON directly.
 				</Small>
 			)}
-			{definition && definition.parameters.length > 0 && (
+			{hasParameterFields && (
+				<InputModeToggle
+					value={displayedMode}
+					onValueChange={setInputMode}
+					formDisabled={parsedValues === null}
+				/>
+			)}
+			{showParameterFields && definition && (
 				<div className="rounded-md border border-border bg-muted/30 p-3">
 					<div className="flex items-center justify-between gap-3">
-						<p className="font-medium text-sm">
-							Available parameters
-						</p>
+						<p className="font-medium text-sm">Function inputs</p>
 						{!readOnly && (
 							<Button
 								type="button"
@@ -199,27 +260,53 @@ export function FunctionEngineForm({
 							{definition.description}
 						</Small>
 					)}
-					<dl className="mt-3 flex flex-col gap-3">
+					<div className="mt-3 flex flex-col gap-3">
 						{definition.parameters.map((parameter) => (
-							<div key={parameter.name}>
-								<dt className="font-medium font-mono text-sm">
-									{parameter.name}
-									<span className="ml-2 font-normal font-sans text-muted-foreground">
-										{parameter.type}
-										{parameter.required
-											? " · required"
-											: " · optional"}
-									</span>
-								</dt>
-								{parameter.description && (
-									<dd className="mt-1 text-muted-foreground text-sm">
-										{parameter.description}
-									</dd>
+							<BoundInput
+								key={parameter.name}
+								label={`${parameter.name} · ${parameter.type}${parameter.required ? "" : " (optional)"}`}
+								required={parameter.required}
+								value={parameterDisplayValue(
+									values[parameter.name],
 								)}
-							</div>
+								description={parameter.description}
+								placeholder={`Enter ${parameter.name}`}
+								onChange={(value) =>
+									updateParameter(parameter, value)
+								}
+								upstreamVars={upstreamVars}
+								readOnly={readOnly}
+							/>
 						))}
-					</dl>
+					</div>
 				</div>
+			)}
+			{showRawParameters && (
+				<>
+					<BoundInput
+						label="Input Parameters (JSON)"
+						required
+						value={config.params}
+						placeholder='{"location": "${location}"}'
+						description={
+							hasParameterFields
+								? "Edit the complete function input object. Form mode uses this same value."
+								: "Parameter details are unavailable, so enter the function input object directly."
+						}
+						onChange={(value) => {
+							setInputMode("json");
+							onChange({ ...config, params: value });
+						}}
+						upstreamVars={upstreamVars}
+						readOnly={readOnly}
+						mono
+					/>
+					{parsedValues === null && (
+						<Small role="alert" className="text-destructive">
+							Enter a valid JSON object before switching to Form.
+						</Small>
+					)}
+				</>
 			)}
 		</div>
 	);

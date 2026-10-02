@@ -1,7 +1,20 @@
-import { CalendarClock, Clock3, Loader2, Play, RefreshCw } from "lucide-react";
+import {
+	CalendarClock,
+	ChevronRight,
+	Clock3,
+	Loader2,
+	Play,
+	RefreshCw,
+} from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { CellOutputBlock } from "@semoss/shared";
-import { Button, toast } from "@semoss/ui/next";
+import {
+	Alert,
+	AlertDescription,
+	AlertTitle,
+	Button,
+	toast,
+} from "@semoss/ui/next";
 import { getAutomationRun, listAutomationRuns } from "../../../api";
 import type {
 	AutomationExecutedDefinition,
@@ -27,7 +40,6 @@ import type { AutomationWorkflowDocument } from "../../../domain/automation-work
 import { canvasDocumentFromWorkflow } from "../../../domain/automation-workflow-adapter";
 import { getWorkflowNodeDisplay } from "../../../domain/automation-workflow-display";
 import { ErrorDetail } from "../../form-editor/error-detail";
-import { ExecutedDefinitionDetail } from "../../form-editor/executed-definition-detail";
 import { TraceDetail } from "../../form-editor/trace-detail";
 import { StatusBadge } from "../../status-badge";
 import { RunBanner } from "../run-banner";
@@ -102,7 +114,6 @@ export function RunsTab({
 	generatingAiSummary,
 	steps,
 	results,
-	executedDefinition,
 	activeRun,
 	activeRuns = [],
 	followedRunId,
@@ -276,7 +287,6 @@ export function RunsTab({
 				generatingAiSummary={generatingAiSummary}
 				steps={steps}
 				results={results}
-				executedDefinition={executedDefinition}
 				onOutputPopout={handleOutputPopout}
 				onAskAssistant={handleAskAssistant}
 				onDismiss={onDismiss}
@@ -351,26 +361,19 @@ export function RunsTab({
 			</div>
 
 			{loadError && (
-				<div
-					className="mt-3 flex items-center justify-between gap-3 rounded-md border border-destructive/30 bg-destructive/5 px-3 py-2"
-					role="alert"
-				>
-					<div className="min-w-0">
-						<p className="font-medium text-sm">
-							Run history could not be refreshed
-						</p>
-						<p className="truncate text-muted-foreground text-xs">
-							{loadError}
-						</p>
-					</div>
-					<Button
-						size="sm"
-						variant="outline"
-						onClick={() => void refresh()}
-					>
-						Retry
-					</Button>
-				</div>
+				<Alert variant="destructive" className="mt-3">
+					<AlertTitle>Run history could not be refreshed</AlertTitle>
+					<AlertDescription className="flex flex-col items-start gap-2">
+						<span className="break-words">{loadError}</span>
+						<Button
+							size="sm"
+							variant="outline"
+							onClick={() => void refresh()}
+						>
+							Retry
+						</Button>
+					</AlertDescription>
+				</Alert>
 			)}
 
 			<div className="mt-3 min-h-0 flex-1 overflow-y-auto rounded-lg border bg-card">
@@ -407,7 +410,11 @@ export function RunsTab({
 									</span>
 								)}
 								{run.TRIGGER_TYPE === "SCHEDULED" && (
-									<span className="inline-flex items-center gap-1 rounded-full bg-muted px-1.5 py-0.5 text-muted-foreground text-xs">
+									<span
+										className="inline-flex items-center gap-1 rounded-full bg-muted px-1.5 py-0.5 text-muted-foreground text-xs"
+										role="img"
+										aria-label="Scheduled run"
+									>
 										<CalendarClock
 											className="h-3 w-3"
 											aria-hidden
@@ -463,21 +470,7 @@ function RunHistoryBreadcrumb({
 			>
 				Run History
 			</button>
-			<svg
-				xmlns="http://www.w3.org/2000/svg"
-				width="15"
-				height="15"
-				viewBox="0 0 24 24"
-				fill="none"
-				stroke="currentColor"
-				stroke-width="2"
-				stroke-linecap="round"
-				stroke-linejoin="round"
-				className="lucide lucide-chevron-right"
-				aria-hidden="true"
-			>
-				<path d="m9 18 6-6-6-6"></path>
-			</svg>
+			<ChevronRight className="size-4 shrink-0" aria-hidden="true" />
 			<span className="truncate font-semibold text-muted-foreground text-sm">
 				{current}
 			</span>
@@ -494,7 +487,6 @@ function LiveRunView({
 	generatingAiSummary,
 	steps,
 	results,
-	executedDefinition,
 	onOutputPopout,
 	onAskAssistant,
 	onDismiss,
@@ -502,7 +494,7 @@ function LiveRunView({
 	focusNodeId,
 	focusToken,
 	onViewAgentRun,
-}: AutomationTraceSnapshot & {
+}: Omit<AutomationTraceSnapshot, "executedDefinition"> & {
 	executionInsightId: string | null;
 	onOutputPopout: (output: string) => void;
 	onAskAssistant: () => void;
@@ -589,7 +581,6 @@ function LiveRunView({
 			<ResultsPanel
 				executionInsightId={executionInsightId}
 				results={results}
-				executedDefinition={executedDefinition}
 				onOutputPopout={onOutputPopout}
 				selectedResult={selectedResult}
 				stepMap={stepMap}
@@ -658,11 +649,6 @@ function HistoryRunView({
 				<ResultsPanel
 					executionInsightId={run.executionInsightId ?? null}
 					results={results}
-					executedDefinition={{
-						version: run.DEFINITION_VERSION,
-						hash: run.DEFINITION_HASH,
-						snapshot: run.DEFINITION_SNAPSHOT,
-					}}
 					onOutputPopout={onOutputPopout}
 					selectedResult={selectedResult}
 					stepMap={stepMap}
@@ -678,7 +664,6 @@ function HistoryRunView({
 function ResultsPanel({
 	executionInsightId,
 	results,
-	executedDefinition,
 	selectedResult,
 	stepMap,
 	onOutputPopout,
@@ -687,7 +672,6 @@ function ResultsPanel({
 }: {
 	executionInsightId: string | null;
 	results: AutomationNodeResult[];
-	executedDefinition: AutomationExecutedDefinition | null;
 	selectedResult: AutomationNodeResult | null;
 	stepMap: Map<string, AutomationNode>;
 	onOutputPopout: (output: string) => void;
@@ -852,12 +836,6 @@ function ResultsPanel({
 									}
 								/>
 							)}
-							{selectedStep?.workflowType === "trigger.start" &&
-								executedDefinition && (
-									<ExecutedDefinitionDetail
-										definition={executedDefinition}
-									/>
-								)}
 							{selectedResult.trace && (
 								<TraceDetail
 									trace={selectedResult.trace}

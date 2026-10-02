@@ -2,6 +2,11 @@ import { Field, FieldLabel, Input } from "@semoss/ui/next";
 import type { VectorEngineConfig } from "../../../domain/automation.types";
 import { EnginePickerField } from "./engine-picker-field";
 import { BoundInput } from "./pill-input";
+import { StringListInput } from "./string-list-input";
+
+function commaSeparatedList(value: string): string[] {
+	return value.split(",").map((item) => item.trim());
+}
 
 export interface VectorEngineFormProps {
 	/** Current node config */
@@ -132,35 +137,49 @@ export function VectorEngineForm({
 			)}
 			{config.operation === "add-csv" && (
 				<>
-					<BoundInput
-						label="File Paths (comma-separated)"
-						value={config.filePaths}
-						placeholder="/data/embeddings.csv"
-						onChange={(v) => onChange({ ...config, filePaths: v })}
-						upstreamVars={upstreamVars}
-						readOnly={readOnly}
-					/>
-					<BoundInput
-						label="Param Values (JSON, optional)"
-						value={config.paramValues}
-						placeholder='{"delimiter": ","}'
-						onChange={(v) =>
-							onChange({ ...config, paramValues: v })
+					<StringListInput
+						label="CSV files"
+						values={commaSeparatedList(config.filePaths)}
+						onChange={(filePaths) =>
+							onChange({
+								...config,
+								filePaths: filePaths.join(", "),
+							})
 						}
 						upstreamVars={upstreamVars}
+						itemLabel="File"
+						placeholder="/data/embeddings.csv"
 						readOnly={readOnly}
-						mono
 					/>
+					{devMode && (
+						<BoundInput
+							label="Engine Parameters (JSON, optional)"
+							value={config.paramValues}
+							placeholder='{"delimiter": ","}'
+							onChange={(paramValues) =>
+								onChange({ ...config, paramValues })
+							}
+							upstreamVars={upstreamVars}
+							readOnly={readOnly}
+							mono
+						/>
+					)}
 				</>
 			)}
 			{(config.operation === "delete" ||
 				config.operation === "download") && (
-				<BoundInput
-					label="File Names (comma-separated)"
-					value={config.fileNames}
-					placeholder="doc1.pdf, doc2.docx"
-					onChange={(v) => onChange({ ...config, fileNames: v })}
+				<StringListInput
+					label="Files"
+					values={commaSeparatedList(config.fileNames)}
+					onChange={(fileNames) =>
+						onChange({
+							...config,
+							fileNames: fileNames.join(", "),
+						})
+					}
 					upstreamVars={upstreamVars}
+					itemLabel="File"
+					placeholder="report.pdf"
 					readOnly={readOnly}
 				/>
 			)}

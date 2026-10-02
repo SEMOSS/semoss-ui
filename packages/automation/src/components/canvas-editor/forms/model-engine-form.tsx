@@ -1,6 +1,20 @@
 import type { ModelEngineConfig } from "../../../domain/automation.types";
 import { EnginePickerField } from "./engine-picker-field";
 import { BoundInput } from "./pill-input";
+import { StringListInput } from "./string-list-input";
+
+function jsonStringList(value: string): string[] | null {
+	if (!value.trim()) return [];
+	try {
+		const parsed = JSON.parse(value) as unknown;
+		return Array.isArray(parsed) &&
+			parsed.every((item) => typeof item === "string")
+			? parsed
+			: null;
+	} catch {
+		return null;
+	}
+}
 
 export interface ModelEngineFormProps {
 	/** Current node config */
@@ -22,6 +36,8 @@ export function ModelEngineForm({
 	devMode = false,
 	readOnly = false,
 }: ModelEngineFormProps) {
+	const mediaUrls = jsonStringList(config.urls);
+
 	return (
 		<div className="flex flex-col gap-4">
 			<EnginePickerField
@@ -123,15 +139,39 @@ export function ModelEngineForm({
 						upstreamVars={upstreamVars}
 						readOnly={readOnly}
 					/>
-					<BoundInput
-						label="Media URLs (JSON, optional)"
-						value={config.urls}
-						placeholder='["https://example.com/image.png"]'
-						onChange={(v) => onChange({ ...config, urls: v })}
-						upstreamVars={upstreamVars}
-						readOnly={readOnly}
-						mono
-					/>
+					{mediaUrls !== null ? (
+						<StringListInput
+							label="Media URLs (optional)"
+							values={mediaUrls}
+							onChange={(urls) =>
+								onChange({
+									...config,
+									urls: JSON.stringify(urls),
+								})
+							}
+							upstreamVars={upstreamVars}
+							itemLabel="URL"
+							placeholder="https://example.com/image.png"
+							readOnly={readOnly}
+						/>
+					) : (
+						<BoundInput
+							label="Media URLs (JSON, optional)"
+							value={config.urls}
+							placeholder='["https://example.com/image.png"]'
+							description={
+								mediaUrls === null && !devMode
+									? "This existing value needs Developer mode to edit safely."
+									: undefined
+							}
+							onChange={(urls) => onChange({ ...config, urls })}
+							upstreamVars={upstreamVars}
+							readOnly={
+								readOnly || (!devMode && mediaUrls === null)
+							}
+							mono
+						/>
+					)}
 					<BoundInput
 						label="System Instructions (optional)"
 						value={config.context}
