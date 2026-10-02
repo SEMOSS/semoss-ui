@@ -1,5 +1,11 @@
 import { beforeAll, describe, expect, it } from "vitest";
-import type { AutomationNode } from "./automation.types";
+import type {
+	AutomationNode,
+	DatabaseEngineConfig,
+	ModelEngineConfig,
+	StorageEngineConfig,
+	VectorEngineConfig,
+} from "./automation.types";
 import { setAutomationNodeDefinitions } from "./automation-node-catalog";
 import type {
 	AutomationNodeCategory,
@@ -15,6 +21,7 @@ import {
 	getCanvasNodeSources,
 	getGeneratedPythonPreview,
 	validateAutomationOutputVariable,
+	validateCanvasWorkflowConnections,
 	validateCanvasWorkflowNode,
 } from "./automation-workflow-adapter";
 
@@ -85,9 +92,22 @@ const TEST_NODE_DEFINITIONS: readonly AutomationNodeDefinition[] = [
 		engineId: "",
 		path: "",
 	}),
+	definition("storage.upload", "storage", "Upload file", {
+		engineId: "",
+		path: "",
+		destination: "",
+		metadata: {},
+	}),
 	definition("model.chat", "model", "Chat model", {
 		engineId: "",
 		prompt: "",
+	}),
+	definition("model.vision", "model", "Analyze image", {
+		engineId: "",
+		prompt: "",
+		image: "",
+		urls: [],
+		paramValues: {},
 	}),
 	definition("control.if", "control", "Decision", {
 		clauses: [{ id: "initial", condition: "" }],
@@ -129,6 +149,37 @@ function documentOf(steps: AutomationNode[]) {
 		edges: [],
 	});
 }
+
+describe("database query limit", () => {
+	it("preserves the business user's result limit", () => {
+		const step = node("database.query");
+		const saved = documentOf([
+			{
+				...step,
+				config: {
+					...(step.config as DatabaseEngineConfig),
+					engineId: "database-1",
+					expression: "SELECT * FROM CLAIMS ORDER BY ID",
+					limit: 100,
+				},
+			},
+		]);
+
+		expect(saved.graph.nodes[0]?.config).toMatchObject({
+			engineId: "database-1",
+			query: "SELECT * FROM CLAIMS ORDER BY ID",
+			limit: 100,
+		});
+
+		const reloaded = canvasDocumentFromWorkflow(saved, {});
+		const reloadedQuery = reloaded.steps.find(
+			(candidate) => candidate.workflowType === "database.query",
+		);
+		expect(reloadedQuery?.config).toMatchObject({
+			limit: 100,
+		});
+	});
+});
 
 describe("getGeneratedPythonPreview", () => {
 	/**
@@ -325,6 +376,53 @@ describe("Jev decision mapping", () => {
 			]),
 		);
 	});
+
+	it("requires every Jev route and low-confidence path before execution", () => {
+		const step = node("control.jev", {
+			id: "jev",
+			config: {
+				engineId: "jev-engine",
+				state: "$" + "{ticket}",
+				question: "Can this ticket be handled automatically?",
+				questionType: "noul",
+				clauses: [
+					{ id: "yes", description: "Continue", answer: true },
+					{ id: "no", description: "Stop", answer: false },
+				],
+				confidenceThreshold: 0.75,
+				paramValues: "{}",
+			},
+		});
+		const yesEdge = {
+			id: "yes-edge",
+			source: step.id,
+			target: "yes-target",
+			sourceHandle: `case-${step.id}-yes`,
+		};
+		const noEdge = {
+			id: "no-edge",
+			source: step.id,
+			target: "no-target",
+			sourceHandle: `case-${step.id}-no`,
+		};
+		const fallbackEdge = {
+			id: "fallback-edge",
+			source: step.id,
+			target: "fallback-target",
+			sourceHandle: `else-${step.id}`,
+		};
+
+		expect(validateCanvasWorkflowConnections(step, [yesEdge])).toEqual([
+			"Every route and the low-confidence path must be connected",
+		]);
+		expect(
+			validateCanvasWorkflowConnections(step, [
+				yesEdge,
+				noEdge,
+				fallbackEdge,
+			]),
+		).toEqual([]);
+	});
 });
 
 describe("trigger setup source", () => {
@@ -416,6 +514,60 @@ describe("vector node value mapping", () => {
 			]);
 			expect(saved.graph.nodes[0]?.config.value, type).toBe(value);
 		}
+	});
+});
+
+describe("optional engine parameters", () => {
+	it("persists supported storage, vector, and vision options as typed values", () => {
+		const upload = node("storage.upload");
+		const search = node("vector.search");
+		const vision = node("model.vision");
+		const saved = documentOf([
+			{
+				...upload,
+				config: {
+					...(upload.config as StorageEngineConfig),
+					engineId: "storage-1",
+					storagePath: "archive",
+					filePath: "report.pdf",
+					metadata: '{"case":"123"}',
+				},
+			},
+			{
+				...search,
+				config: {
+					...(search.config as VectorEngineConfig),
+					engineId: "vector-1",
+					command: "claims",
+					filters: '{"category":"report"}',
+					paramValues: '{"threshold":0.7}',
+				},
+			},
+			{
+				...vision,
+				config: {
+					...(vision.config as ModelEngineConfig),
+					engineId: "model-1",
+					command: "Describe these images",
+					urls: '["https://example.com/image.png"]',
+					paramValues: '{"temperature":0.2}',
+				},
+			},
+		]);
+
+		expect(saved.graph.nodes[0]?.config.metadata).toEqual({ case: "123" });
+		expect(saved.graph.nodes[1]?.config.filters).toEqual({
+			category: "report",
+		});
+		expect(saved.graph.nodes[1]?.config.paramValues).toEqual({
+			threshold: 0.7,
+		});
+		expect(saved.graph.nodes[2]?.config.urls).toEqual([
+			"https://example.com/image.png",
+		]);
+		expect(saved.graph.nodes[2]?.config.paramValues).toEqual({
+			temperature: 0.2,
+		});
 	});
 });
 

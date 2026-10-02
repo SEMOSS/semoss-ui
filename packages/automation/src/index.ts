@@ -24,6 +24,7 @@ export type {
 	AutomationNode,
 	AutomationNodeTrace,
 	AutomationRunDetail,
+	AutomationRunSummary,
 	AutomationToolContext,
 } from "./domain/automation.types";
 export type {
