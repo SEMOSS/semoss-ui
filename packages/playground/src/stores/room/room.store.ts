@@ -59,6 +59,34 @@ import {
 	type StreamOptions,
 } from "./stream-job-controller";
 
+/**
+ * The MCPs the backend stores for a room. Workspace MCPs and the room's own
+ * toolbox, which is read from the room folder, are reported but not stored.
+ */
+const getStoredMcp = (mcp: MCPConfig[] = []): MCPConfig[] =>
+	mcp.filter((item) => !item?.fromWorkspace && !item?.fromRoom);
+
+/**
+ * Serialize with object keys sorted, so the same settings compare equal
+ * whatever order their keys were set in.
+ */
+const toStableJson = (value: unknown): string =>
+	JSON.stringify(value, (_key, item: unknown) =>
+		item && typeof item === "object" && !Array.isArray(item)
+			? Object.fromEntries(
+					Object.entries(item).sort(([a], [b]) =>
+						a < b ? -1 : a > b ? 1 : 0,
+					),
+				)
+			: item,
+	);
+
+/**
+ * A comparable key for room options as the backend stores them.
+ */
+const getStoredOptionsKey = (options: { mcp?: MCPConfig[] }): string =>
+	toStableJson({ ...options, mcp: getStoredMcp(options.mcp) });
+
 interface RoomStoreInterface {
 	/**
 	 * ID of the room
@@ -225,6 +253,12 @@ export class RoomStore {
 	};
 
 	/**
+	 * Key of the options the backend holds, as of the last read or save. A
+	 * save that would not change them is skipped.
+	 */
+	private _storedOptionsKey: string | null = null;
+
+	/**
 	 * The dock backing the sidebar.
 	 *
 	 * Owned by the room rather than by `<Workbench>` for two reasons: panels are
@@ -384,12 +418,13 @@ export class RoomStore {
 	}
 
 	/**
-	 * Surface an error on the room. Public so callers outside this store — e.g.
-	 * ToolSaveController, when a tool-phase stop fails to persist — can report a
-	 * failure that isn't already caught by runRoomPixel/streamJob's own
-	 * setErrorOnFail handling.
+	 * Surface an error on the room, or clear it with null. Public so callers
+	 * outside this store — e.g. ToolSaveController, when a tool-phase stop fails
+	 * to persist — can report a failure that isn't already caught by
+	 * runRoomPixel/streamJob's own setErrorOnFail handling, and so a rewrite
+	 * starts its turn without the last one's error.
 	 */
-	setError = (error: Error): void => {
+	setError = (error: Error | null): void => {
 		runInAction(() => {
 			this._store.error = error;
 		});
@@ -636,6 +671,10 @@ export class RoomStore {
 				OPTIONS?: RoomStoreInterface["options"];
 				ROOM_NAME?: string;
 			};
+			// read before the workspace merge below edits the nested objects
+			const storedOptionsKey = optionsOutput.OPTIONS
+				? getStoredOptionsKey(optionsOutput.OPTIONS)
+				: null;
 
 			// sync the insight ID
 			runInAction(() => {
@@ -772,7 +811,10 @@ export class RoomStore {
 						PixelMessage[],
 						{ OPTIONS?: Workspace }, // partial because this doesn't work for old rooms
 					]
-				>(`GetWorkspace('${newOptions.workspace?.workspace_id}')`);
+				>(
+					`GetWorkspace('${newOptions.workspace?.workspace_id}')`,
+					false,
+				);
 
 				const workspaceOutput = workspaceResponse.pixelReturn[0]
 					.output as Workspace;
@@ -825,11 +867,16 @@ export class RoomStore {
 			}
 
 			// set the model based on the history, or on the agent's default when
-			// the room has never named one
+			// the room has never named one. A room that already holds that model,
+			// as a new room does, has nothing to look up.
 			const modelIdToLoad = activeModelId || agentDefaultModelId;
-			if (modelIdToLoad) {
+			if (
+				modelIdToLoad &&
+				modelIdToLoad !== this._store.model?.engine_id
+			) {
 				const { pixelReturn } = await this.runRoomPixel<[Engine[]]>(
 					`META | MyEngines(metaKeys=[], metaFilters=[{"tag":"text-generation"}], engineTypes=['MODEL'], filterWord=${JSON.stringify(modelIdToLoad)})`,
+					false,
 				);
 
 				const model = pixelReturn[0].output[0];
@@ -843,6 +890,7 @@ export class RoomStore {
 			runInAction(() => {
 				// set the options based on the history
 				this.setOptions(newOptions);
+				this._storedOptionsKey = storedOptionsKey;
 
 				this._store.agentGreeting = agentGreeting;
 
@@ -904,6 +952,7 @@ export class RoomStore {
 					...fetched.OPTIONS,
 					mcp: merged,
 				});
+				this._storedOptionsKey = getStoredOptionsKey(fetched.OPTIONS);
 			});
 		} catch (e) {
 			// non-critical — swallow errors so the chat isn't disrupted
@@ -912,26 +961,31 @@ export class RoomStore {
 	};
 
 	/**
-	 * UpdateRoomOptions
+	 * UpdateRoomOptions. Skips the save when the backend already holds these
+	 * options, and leaves the room's loading state alone, since it runs ahead
+	 * of the turn that uses them.
 	 * @param options - full set of new options
 	 */
 	updateRoomOptions = async (options: RoomStore["options"]) => {
 		try {
-			// Filter out MCPs the backend reports but does not store: workspace MCPs
-			// and the room's own toolbox, which is read from the room folder.
 			const optionsToSave = {
 				...options,
 				modelId: this._store.model.engine_id,
-				mcp: options.mcp.filter(
-					(mcp) => !mcp?.fromWorkspace && !mcp?.fromRoom,
-				),
+				mcp: getStoredMcp(options.mcp),
 			};
 
-			await this.runRoomPixel(
-				`UpdateRoomOptions(roomId=${JSON.stringify(this._store.roomId)}, roomOptions=[${JSON.stringify(
-					optionsToSave,
-				)}]);`,
-			);
+			const optionsKey = getStoredOptionsKey(optionsToSave);
+			if (optionsKey !== this._storedOptionsKey) {
+				await this.runRoomPixel(
+					`UpdateRoomOptions(roomId=${JSON.stringify(this._store.roomId)}, roomOptions=[${JSON.stringify(
+						optionsToSave,
+					)}]);`,
+					false,
+				);
+				runInAction(() => {
+					this._storedOptionsKey = optionsKey;
+				});
+			}
 
 			this.setOptions(options);
 		} catch (e) {
@@ -1257,9 +1311,12 @@ export class RoomStore {
 		}
 
 		this.setIsLoading(true);
+		// a new turn starts without the last one's error
+		this._store.error = null;
 
 		// Create the input message immediately so the user's bubble and the
-		// thinking placeholder are visible during the file upload wait
+		// thinking placeholder are visible while the options save and the
+		// files upload
 		const inputMessage = new InputMessageStore(this, {
 			io: "INPUT",
 			type: "INPUT_TEXT",
@@ -1320,6 +1377,9 @@ export class RoomStore {
 		}[] = [];
 
 		try {
+			// save the settings this turn runs with, when they changed
+			await this.updateRoomOptions(this.options);
+
 			// upload the files if there are any
 			if (files.length > 0) {
 				const response = await uploadInsight(

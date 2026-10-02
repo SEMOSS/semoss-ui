@@ -93,6 +93,9 @@ importers:
       '@semoss/ui':
         specifier: workspace:*
         version: link:../ui
+      '@semoss/utility':
+        specifier: workspace:*
+        version: link:../utility
       lucide-react:
         specifier: ^0.545.0
         version: 0.545.0(react@19.2.8)
@@ -158,6 +161,9 @@ importers:
       '@semoss/ui':
         specifier: workspace:*
         version: link:../ui
+      '@semoss/utility':
+        specifier: workspace:*
+        version: link:../utility
       '@semoss/workbench':
         specifier: workspace:*
         version: link:../workbench
@@ -628,6 +634,9 @@ importers:
       '@types/node':
         specifier: ^24.3.1
         version: 24.12.2
+      jsdom:
+        specifier: ~22.1.0
+        version: 22.1.0
       typescript:
         specifier: ~6.0.0
         version: 6.0.3
@@ -817,6 +826,9 @@ importers:
       '@semoss/ui':
         specifier: workspace:*
         version: link:../../libs/ui
+      '@semoss/utility':
+        specifier: workspace:*
+        version: link:../../libs/utility
       lucide-react:
         specifier: ^0.545.0
         version: 0.545.0(react@19.2.8)
@@ -875,6 +887,9 @@ importers:
       '@semoss/ui':
         specifier: workspace:*
         version: link:../../libs/ui
+      '@semoss/utility':
+        specifier: workspace:*
+        version: link:../../libs/utility
       react:
         specifier: ^19.0.0
         version: 19.2.8
@@ -1015,6 +1030,9 @@ importers:
       diff:
         specifier: 5.2.2
         version: 5.2.2
+      echarts:
+        specifier: ^5.6.0
+        version: 5.6.0
       lucide-react:
         specifier: ^0.545.0
         version: 0.545.0(react@19.2.8)
@@ -1218,9 +1236,6 @@ importers:
       '@semoss/workbench':
         specifier: workspace:*
         version: link:../../libs/workbench
-      dayjs:
-        specifier: 1.11.8
-        version: 1.11.8
       lexical:
         specifier: ^0.39.0
         version: 0.39.0

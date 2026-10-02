@@ -14,7 +14,7 @@ export const setProjectFavorite = async (
 
 	const response = await post<{
 		success: boolean;
-	}>(url, processPostData(postData), {});
+	}>(url, { ...postData }, {});
 	return response;
 };
 
@@ -109,7 +109,7 @@ export const deleteProjectPermission = async (
 	}
 	const response = await post<{
 		success: boolean;
-	}>(url, processPostData(postData), {});
+	}>(url, { ...postData }, {});
 	return response;
 };
 
@@ -234,14 +234,6 @@ export const uploadImage = async (
 	>(url, fd, {});
 
 	return response.data;
-};
-
-const processPostData = (data: Record<string, unknown>) => {
-	const postRecordData: Record<string, unknown> = {};
-	Object.keys(data).forEach((item) => {
-		postRecordData[item] = data[item];
-	});
-	return postRecordData;
 };
 
 export const updateProjectSmssProperties = async (

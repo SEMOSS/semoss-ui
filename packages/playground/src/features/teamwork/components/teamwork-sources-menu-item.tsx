@@ -2,7 +2,7 @@ import { observer } from "mobx-react-lite";
 import { useEffect } from "react";
 import type { ConnectorViewerService } from "@semoss/connectors";
 import { useTranslation } from "@semoss/i18n";
-import { LoginProviderIcon } from "@semoss/shared";
+import { ConnectorBrandIcon, LoginProviderIcon } from "@semoss/shared";
 import {
 	DropdownMenuItem,
 	DropdownMenuSub,
@@ -64,7 +64,7 @@ export const TeamworkSourcesMenuItem = observer(
 						</span>
 					</DropdownMenuSubTrigger>
 					<DropdownMenuSubContent>
-						{offered.map(({ service, icon: Icon, nameKey }) => (
+						{offered.map(({ service, brand, nameKey }) => (
 							<DropdownMenuItem
 								key={service}
 								onSelect={() => {
@@ -72,7 +72,10 @@ export const TeamworkSourcesMenuItem = observer(
 									onSelect();
 								}}
 							>
-								<Icon aria-hidden />
+								<ConnectorBrandIcon
+									brand={brand}
+									className="size-4 shrink-0"
+								/>
 								{t(nameKey)}
 							</DropdownMenuItem>
 						))}

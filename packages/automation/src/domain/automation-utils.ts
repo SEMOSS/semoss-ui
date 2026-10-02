@@ -1,14 +1,5 @@
-import { looksLikeHtmlDocument } from "@semoss/utility";
-
-export function formatDurationMs(
-	ms?: number | null,
-	fractionDigits = 1,
-): string {
-	if (ms == null) return "—";
-	if (ms < 1000) return `${ms}ms`;
-	if (ms < 60000) return `${(ms / 1000).toFixed(fractionDigits)}s`;
-	return `${Math.floor(ms / 60000)}m ${Math.floor((ms % 60000) / 1000)}s`;
-}
+import { looksLikeHtmlDocument } from "@semoss/utility/markdown";
+import { isRecord } from "@semoss/utility/object";
 
 /** Removes markup from server-generated HTML error documents without changing plain-text errors. */
 export function normalizeAutomationErrorMessage(value: string): string {
@@ -38,7 +29,7 @@ export function extractDataset(
 		};
 	}
 	const inner = (parsed as Record<string, unknown>)?.data ?? parsed;
-	if (inner && typeof inner === "object" && !Array.isArray(inner)) {
+	if (isRecord(inner)) {
 		const headers = (inner as Record<string, unknown>).headers;
 		const values = (inner as Record<string, unknown>).values;
 		if (Array.isArray(headers) && Array.isArray(values)) {
@@ -50,3 +41,5 @@ export function extractDataset(
 	}
 	return null;
 }
+
+export { formatDurationMs } from "@semoss/utility/date";

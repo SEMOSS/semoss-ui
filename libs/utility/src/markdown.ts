@@ -1,5 +1,3 @@
-import { formatByteSize } from "./file-size";
-
 const MARKDOWN_PATTERNS = [
 	/^#{1,6}\s/m,
 	/\|.+\|.+\|/m,
@@ -36,19 +34,4 @@ export const normalizeForMarkdown = (text: string): string => {
 		: normalized;
 };
 
-/** Split log messages into lines, removing one trailing newline per message. */
-export const splitMessageLines = (messages: string[]): string[] =>
-	messages.flatMap((message) => message.replace(/\n$/, "").split("\n"));
-
-/** Count non-empty logical lines while ignoring one trailing newline. */
-export const countLines = (text: string): number => {
-	if (!text) return 0;
-	const trimmed = text.endsWith("\n") ? text.slice(0, -1) : text;
-	return trimmed ? trimmed.split("\n").length : 0;
-};
-
-/** Format UTF-8 text size for compact output metadata. */
-export const formatBytes = (text: string): string => {
-	const bytes = new Blob([text || ""]).size;
-	return formatByteSize(bytes);
-};
+export { countLines, splitMessageLines } from "./text";

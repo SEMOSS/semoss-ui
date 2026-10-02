@@ -4,9 +4,27 @@
 	"description": "Shared browser-safe and runtime-independent utility functions for SEMOSS",
 	"type": "module",
 	"exports": {
-		".": "./src/index.ts"
+		".": "./src/index.ts",
+		"./clipboard": "./src/clipboard.ts",
+		"./date": "./src/date.ts",
+		"./file-extension": "./src/file-extension.ts",
+		"./image": "./src/image.ts",
+		"./json": "./src/json.ts",
+		"./string": "./src/string.ts",
+		"./markdown": "./src/markdown.ts",
+		"./async": "./src/async.ts",
+		"./browser": "./src/browser.ts",
+		"./csv": "./src/csv.ts",
+		"./encoding": "./src/encoding.ts",
+		"./error": "./src/error.ts",
+		"./file": "./src/file.ts",
+		"./identifier": "./src/identifier.ts",
+		"./object": "./src/object.ts",
+		"./text": "./src/text.ts"
 	},
-	"files": ["src"],
+	"files": [
+		"src"
+	],
 	"scripts": {
 		"test": "vitest run --configLoader runner",
 		"test:watch": "vitest --watch --configLoader runner"
@@ -19,6 +37,7 @@
 		"@types/node": "^24.3.1",
 		"typescript": "~6.0.0",
 		"vite": "^8.2.1",
-		"vitest": "^4.1.11"
+		"vitest": "^4.1.11",
+		"jsdom": "~22.1.0"
 	}
 }

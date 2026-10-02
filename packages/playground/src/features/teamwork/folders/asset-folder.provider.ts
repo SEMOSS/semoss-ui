@@ -1,8 +1,5 @@
-import {
-	decodeBase64Asset,
-	encodeBase64Asset,
-	type FileExplorerAdapter,
-} from "@semoss/shared";
+import { decodeBase64Asset, type FileExplorerAdapter } from "@semoss/shared";
+import { encodeBytesToBase64 } from "@semoss/utility/encoding";
 import type { FolderEntry, WorkFolderProvider } from "../teamwork.types";
 import {
 	getFolderPathName,
@@ -114,7 +111,7 @@ export class AssetFolderProvider implements WorkFolderProvider {
 	async writeText(path: string, content: string): Promise<void> {
 		// base64 carries any text, including a literal closing encode marker
 		// that would end a plain `<encode>` block early
-		const encoded = encodeBase64Asset(new TextEncoder().encode(content));
+		const encoded = encodeBytesToBase64(new TextEncoder().encode(content));
 		await this.run(
 			this.space.assets.save(
 				this.toAssetPath(path, false),

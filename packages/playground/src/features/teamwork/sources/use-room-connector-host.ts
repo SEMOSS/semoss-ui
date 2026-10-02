@@ -5,6 +5,7 @@ import type {
 } from "@semoss/connectors";
 import { useTranslation } from "@semoss/i18n";
 import { toast } from "@semoss/ui/next";
+import { getErrorMessage } from "@semoss/utility/error";
 import { useRoom } from "@/contexts/room.context";
 import {
 	type ConnectorProviderId,
@@ -86,8 +87,7 @@ export const useRoomConnectorHost = (
 					? t("providers.popupBlocked")
 					: t("providers.connectError", {
 							name: name,
-							message:
-								error instanceof Error ? error.message : "",
+							message: getErrorMessage(error, ""),
 						}),
 			);
 			return false;

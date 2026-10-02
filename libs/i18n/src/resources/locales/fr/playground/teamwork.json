@@ -4,9 +4,7 @@
 		"refresh": "Actualiser"
 	},
 	"menu": {
-		"connectors": "Connecteurs",
-		"showTools": "Afficher les outils du chat",
-		"hideTools": "Masquer les outils du chat"
+		"showTools": "Afficher les outils du chat"
 	},
 	"chip": {
 		"connectors_one": "{{count}} connecteur activé",
@@ -121,15 +119,6 @@
 		}
 	},
 	"connectors": {
-		"dialogTitle": "Connecteurs",
-		"dialogDescription": "Choisissez les applications que l'assistant peut utiliser dans vos chats. Il agit avec votre compte et demande toujours votre approbation avant d'envoyer, de supprimer, de partager ou d'inviter.",
-		"allChatsNote": "Activer ou désactiver une application la modifie dans tous vos chats, nouveaux et existants.",
-		"manage": "Gérer les connecteurs",
-		"cancel": "Annuler",
-		"save": "Enregistrer",
-		"saving": "Enregistrement...",
-		"saved_one": "{{count}} connecteur est activé dans tous vos chats",
-		"saved_other": "{{count}} connecteurs sont activés dans tous vos chats",
 		"saveError": "Impossible de mettre à jour les connecteurs. {{message}}",
 		"adoptError": "Le chat a démarré, mais ses connecteurs n'ont pas pu être activés. {{message}}"
 	},
@@ -172,8 +161,6 @@
 		"addedTitle": "Boîtes à outils ajoutées",
 		"addedDescription": "Chaque boîte à outils apporte ses propres outils.",
 		"addedEmpty": "Aucune boîte à outils ajoutée.",
-		"runsOnItsOwn": "S'exécute seul",
-		"asksFirst": "Demande d'abord",
 		"parameters": "Paramètres",
 		"required": "Obligatoire",
 		"noParameters": "Aucun paramètre.",

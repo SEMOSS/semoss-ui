@@ -116,6 +116,7 @@ Coverage reports output to `./coverage/packages/playground/` and include only `s
   "@semoss/sdk": "workspace:*",
   "@semoss/shared": "workspace:*",
   "@semoss/ui": "workspace:*",
+  "@semoss/utility": "workspace:*",
   "@semoss/workbench": "workspace:*"
 }
 ```
@@ -151,7 +152,8 @@ code and are easy to undo by accident:
   area. On mobile, the workbench places these controls in its actions drawer. The per-panel
   control — "open inline" — is registered by the tool panel with `useWorkbenchControl`.
 - **File lives in the top border start slot.** `features/workbench/room-workbench-menus.tsx`
-  translates the generic `WorkbenchMenus` labels from `sidebar.workbench` and uses `textSize="xs"`. Arrange Panels remains a submenu; a flat Workspace section offers Open File Explorer, View Activity Log,
+  translates the generic `WorkbenchMenus` labels from `sidebar.workbench` and uses `textSize="xs"`. Arrange Panels remains a submenu; a flat Workspace section offers Open File Explorer, Show Chat Tools
+  (rooms only, since a draft's tools are not settled until its first message), View Activity Log,
   and Edit Settings. Playground disables the generic Navigate submenu. Forward the slot's `onNavigate` callback for mobile drawer dismissal.
 - **The layout is not cached.** Each new `RoomStore` starts with the empty default arrangement,
   so switching rooms cannot bleed panel state between room instances.
@@ -174,9 +176,10 @@ instance.
 `src/features/teamwork/` gives a chat its default file tools and connects Microsoft 365 and
 Google Workspace.
 `RoomStore.teamwork` (`TeamworkStore`) owns it per room. The Connectors page of the settings dialog
-(`features/settings/`, opened from the user menu or a chat's Connectors dialog with
+(`features/settings/`, opened from the user menu, or anywhere with
 `useSettingsDialog().openSettings("connectors")`) connects accounts and switches the user's apps on
-or off for all their chats. These details are easy to break:
+or off for all their chats; it is the only place connectors are switched. An app switched on whose
+account is not connected shows its switch in gray with a warning mark. These details are easy to break:
 
 - **Chat Files is the only file space.** It is the room's own folder: uploads, connector
   downloads, and everything the room's apps (MCP tools) and the default tools read and write. Show
@@ -187,7 +190,8 @@ or off for all their chats. These details are easy to break:
   default tools, the `folder_*` tools the browser runs in Chat Files (`tools/default-tools.ts`).
   Room Settings sets each to Auto, Ask, or Disabled (room option `defaultTools`; reads are Auto
   and changes Ask unless set); a disabled tool is not sent. The option is saved with the room's
-  other options before each message; the backend only stores it. Agent runs bring the harness's
+  other options as the next message starts (`RoomStore.updateRoomOptions` skips a save the
+  backend already holds); the backend only stores it. Agent runs bring the harness's
   own file, shell, and code tools and work in Chat Files, so no folder tools go with them.
 - **Default tools run in the browser.** `TeamworkStore.runChatTool` runs each call against Chat
   Files through the insight asset pixels (`folders/room-folder.provider.ts`), so the mode the user
@@ -198,7 +202,7 @@ or off for all their chats. These details are easy to break:
   come back with no `_meta`; `ToolStore.json` gets it from `TeamworkStore.decorateToolCall`, and
   `runToolExecution` hands folder calls to `TeamworkStore.runChatTool` instead of `RunMCPTool`.
 - **Chat Tools shows what the assistant has.** The default tools are not in any toolbox, so
-  `TeamworkToolsPanel` (Show Chat Tools in the plus menu) lists them from
+  `TeamworkToolsPanel` (Show Chat Tools in the workspace File menu) lists them from
   `TeamworkStore.chatToolDefinitions`, the exact definitions sent, or notes that an agent room's
   runs bring their own, beside the room toolbox's tools read from `mcp/pixel_mcp.json` and the
   toolboxes the user added. Each tool says whether it runs on its own or asks first, and opens to show its
@@ -209,12 +213,13 @@ or off for all their chats. These details are easy to break:
   would switch the chat's tools and connectors off.
 - **Connectors are the user's, copied into each room.** The user's connector tools live in their
   own asset folder, `mcp/playground_connector_mcp.json`, written with `MakeUserPixelMCP` and
-  stamped `SMSS_MCP_GENERATOR: PlaygroundConnectors`. The settings Connectors page and every chat's
-  Connectors dialog edit that one file, so a change reaches all the user's chats, new and existing,
-  and the UI says so. Each room holds a copy in its own `mcp/pixel_mcp.json`
+  stamped `SMSS_MCP_GENERATOR: PlaygroundConnectors`. The settings Connectors page edits that one
+  file, so a change reaches all the user's chats, new and existing, and the UI says so. Each room holds a copy in its own `mcp/pixel_mcp.json`
   (`syncRoomConnectorTools`): `TeamworkStore.adopt` makes it before a new room's first message,
-  `restore` brings it up to date whenever a room loads, and `setConnectors` updates the open room
-  straight away. The copy replaces only the room's connector tools (the stamped ones, and legacy
+  `restore` brings it up to date whenever a room loads, and the open chat takes a save straight
+  away: `writeUserConnectorTools` tells `subscribeUserConnectorTools` listeners, and
+  `useUserConnectorsSync` in the room input hands the tools to
+  `TeamworkStore.applyUserConnectorTools`. The copy replaces only the room's connector tools (the stamped ones, and legacy
   ones found by reactor) and keeps every other tool. A user with no file yet has chosen nothing, so
   their rooms keep the connectors they have; only a file that is missing counts as empty, never a
   read that failed. The first sign in to a provider on the settings page switches on every app its
@@ -227,7 +232,11 @@ or off for all their chats. These details are easy to break:
 - **The connector viewers come from `@semoss/connectors`.** OneDrive, Outlook Mail and Calendar,
   Teams channels, files, and chats, and Google Drive, Gmail, Calendar, and Docs are its viewers
   (`libs/connectors/`). The room mounts each as a sidebar panel
-  (`components/connector-viewer-panels.tsx`) and wires it with `sources/use-room-connector-host.ts`:
+  (`components/connector-viewer-panels.tsx`) with `showHeader={false}`, since its tab already names
+  it. The tab, the plus menu, and context chips show the app's logo from the source's `brand`
+  (`sources/connector-sources.ts`); a panel opened with `{ brand }` in its config shows that logo
+  instead and gets a tab of its own, so one viewer can stand for more than one app. The room wires
+  each viewer with `sources/use-room-connector-host.ts`:
   saves land at the top of chat files, and Add to context also queues the file in
   `TeamworkStore.contextItems`. `RoomStore.askMessage` sends queued files as `media` with the next
   message the user sends, and puts them back on the queue when the send fails.
@@ -312,3 +321,11 @@ its values for a retry. Creation reads
 shows its warning, avoiding duplicate creation. The agent catalog keeps the existing card
 actions and responsive grid while adding access filters and sorting. Card permissions use the
 backend's effective `permission`, including group grants.
+
+## Generic utilities
+
+Import reusable helpers from `@semoss/utility/<category>`, a direct workspace dependency.
+Follow the [utility guide](../../libs/utility/AGENTS.md). Keep domain policy and
+UI behavior here, and preserve public compatibility adapters when moving helpers.
+Date buckets, their order, and timestamp normalization come directly from
+`@semoss/utility/date`. Keep sidebar translations and the favorites group here.

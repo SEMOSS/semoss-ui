@@ -38,7 +38,10 @@ import {
 	TooltipTrigger,
 	toast,
 } from "@semoss/ui/next";
-import { getFileExtension, getImageMimeType } from "@semoss/utility";
+import { decodeBase64ToBytes } from "@semoss/utility/encoding";
+import { getErrorMessage } from "@semoss/utility/error";
+import { getFileExtension } from "@semoss/utility/file";
+import { getImageMimeType } from "@semoss/utility/image";
 import { STREAMING_PLACEHOLDER_ID } from "@/constants";
 import { MessageActions } from "@/features/conversation/message-actions";
 import { groupToolActivity } from "@/features/conversation/tool-activity";
@@ -88,9 +91,6 @@ const getExtIcon = (fileName: string) => {
 		return { Icon: FileTextIcon, ext };
 	return { Icon: FileIcon, ext };
 };
-
-const getErrorMessage = (e: unknown): string =>
-	e instanceof Error ? e.message : String(e);
 
 /**
  * Whether the message has streamed any real content yet. A freshly-created
@@ -293,10 +293,7 @@ export const ResponseMessage = observer(
 					toast.error("Invalid image format");
 					return;
 				}
-				const bytes = atob(mediaPart.mediaInfo.base64Data);
-				const arr = new Uint8Array(bytes.length).map((_, i) =>
-					bytes.charCodeAt(i),
-				);
+				const arr = decodeBase64ToBytes(mediaPart.mediaInfo.base64Data);
 				const blob = new Blob([arr], { type: mimeType });
 				await navigator.clipboard.write([
 					new ClipboardItem({ [mimeType]: blob }),

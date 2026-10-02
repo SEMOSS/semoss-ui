@@ -8,16 +8,14 @@ import { useState } from "react";
 import { useTranslation } from "@semoss/i18n";
 import { useInsight } from "@semoss/sdk/react";
 import { cn } from "@semoss/ui/next";
+import { formatLocalDateKey } from "@semoss/utility/date";
 import { ConnectorCalendar } from "../../components/connector-calendar";
 import { ConnectorIconButton } from "../../components/connector-icon-button";
 import { ConnectorItemRow } from "../../components/connector-item-row";
 import { ConnectorViewerHeader } from "../../components/connector-viewer-header";
 import { parseGraphDate, parseGraphDay } from "../../core/connector.format";
 import type { ConnectorViewerProps } from "../../core/connector.types";
-import {
-	calendarDayKey,
-	groupCalendarEvents,
-} from "../../core/connector-calendar";
+import { groupCalendarEvents } from "../../core/connector-calendar";
 import { runConnectorPixel } from "../../core/connector-pixel";
 import { useCalendarWindow } from "../../core/use-calendar-window";
 import { useConnectorQuery } from "../../core/use-connector-query";
@@ -46,7 +44,7 @@ export type OutlookCalendarViewerProps = ConnectorViewerProps;
 
 /** Browse a month or agenda, open events, and save them into the insight. */
 export const OutlookCalendarViewer = (props: OutlookCalendarViewerProps) => {
-	const { onSignIn } = props;
+	const { onSignIn, showHeader = true } = props;
 	const { t } = useTranslation("connectors");
 	const { insightId } = useInsight();
 	const saver = useConnectorSaver("outlook-calendar", props);
@@ -105,6 +103,17 @@ export const OutlookCalendarViewer = (props: OutlookCalendarViewerProps) => {
 		},
 	});
 
+	// in the header, or at the end of the toolbar when the host leaves
+	// the header out
+	const refreshButton = (
+		<ConnectorIconButton
+			icon={RefreshCwIcon}
+			label={t("common.refresh")}
+			isSpinning={query.isRefreshing}
+			onClick={query.reload}
+		/>
+	);
+
 	return (
 		<div className="flex h-full min-h-0 flex-col">
 			<div
@@ -113,20 +122,18 @@ export const OutlookCalendarViewer = (props: OutlookCalendarViewerProps) => {
 					openEvent !== null && "hidden",
 				)}
 			>
-				<ConnectorViewerHeader
-					icon={CalendarDaysIcon}
-					brand="outlook-calendar"
-					title={serviceName}
-				>
-					<ConnectorIconButton
-						icon={RefreshCwIcon}
-						label={t("common.refresh")}
-						isSpinning={query.isRefreshing}
-						onClick={query.reload}
-					/>
-				</ConnectorViewerHeader>
+				{showHeader ? (
+					<ConnectorViewerHeader
+						icon={CalendarDaysIcon}
+						brand="outlook-calendar"
+						title={serviceName}
+					>
+						{refreshButton}
+					</ConnectorViewerHeader>
+				) : null}
 				<ConnectorCalendar
 					calendar={calendar}
+					actions={showHeader ? undefined : refreshButton}
 					query={{ ...query, data: days }}
 					serviceName={serviceName}
 					onSignIn={onSignIn}
@@ -157,7 +164,7 @@ export const OutlookCalendarViewer = (props: OutlookCalendarViewerProps) => {
 					renderEvent={(event, day) => {
 						const request = eventRequest(event);
 						const title = eventTitle(event);
-						const itemKey = `${calendarDayKey(day)}:${event.id}`;
+						const itemKey = `${formatLocalDateKey(day)}:${event.id}`;
 						const Icon = event.isOnlineMeeting
 							? VideoIcon
 							: CalendarIcon;

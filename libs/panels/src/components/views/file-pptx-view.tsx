@@ -9,8 +9,9 @@ import {
 	useRef,
 	useState,
 } from "react";
-import { decodeBase64Asset, encodeBase64Asset } from "@semoss/shared";
+import { decodeBase64Asset } from "@semoss/shared";
 import { Button, Muted, Spinner } from "@semoss/ui/next";
+import { encodeBytesToBase64 } from "@semoss/utility/encoding";
 import { useFilePanel } from "../../hooks/use-file-panel";
 import { useFileViewControls } from "../../hooks/use-file-view-controls";
 import type { FileViewProps } from "../../types/file-view.types";
@@ -43,7 +44,7 @@ export const FilePptxView = ({ config, onControls }: FileViewProps) => {
 		if (!handle) return;
 
 		const bytes = await handle.getContent();
-		const saved = await panel.save(encodeBase64Asset(bytes));
+		const saved = await panel.save(encodeBytesToBase64(bytes));
 		if (saved) {
 			setIsDirty(false);
 		}

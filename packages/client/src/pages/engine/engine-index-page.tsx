@@ -11,6 +11,7 @@ import {
 	useDebouncedValue,
 	useInfiniteScroll,
 } from "@semoss/ui/next";
+import { formatToDataTestId } from "@semoss/utility/text";
 import { setEngineFavorite, setEngineGlobal } from "@/api";
 import {
 	CatalogFilterBox,
@@ -24,7 +25,6 @@ import { NavbarHeader, NavbarLeft } from "@/components/shared";
 import { DeleteEntityDialog } from "@/components/shared/delete-entity-dialog";
 import { useConfig } from "@/hooks";
 import { useNavigate } from "@/hooks/useNavigate";
-import { formatToDataTestId } from "@/utility";
 import {
 	buildAccessFilterParams,
 	type CatalogAccessFilter,

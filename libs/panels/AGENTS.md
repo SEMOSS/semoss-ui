@@ -130,7 +130,7 @@ dock can mount one by supplying its own chrome and skipping `useFilesChanged`.
   specifier at `libs/shared/node_modules/...`; `vite.config.ts` here does the same so the tests run.
 - Everything else about panels — blueprints, mount policy, chrome controls, the dirty `*` marker —
   is in [the dock's AGENTS.md](../workbench/AGENTS.md) and
-  [the client's](../../packages/client/src/components/workbench/AGENTS.md).
+  [the client's host components](../../packages/client/src/components/workbench/).
 
 ## What a host has to wire up
 
@@ -155,3 +155,9 @@ pnpm --filter @semoss/panels test
 ```
 
 Also exercise an affected host when changing its panel or Vite integration.
+
+## Generic utilities
+
+Import reusable helpers from `@semoss/utility/<category>`, a direct workspace dependency.
+Follow the [utility guide](../utility/AGENTS.md). Keep domain policy and
+UI behavior here, and preserve public compatibility adapters when moving helpers.

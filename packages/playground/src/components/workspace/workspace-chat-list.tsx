@@ -33,12 +33,12 @@ import {
 	useDebouncedValue,
 	useInfiniteScroll,
 } from "@semoss/ui/next";
-import { useChat } from "@/hooks";
 import {
 	DATE_BUCKET_ORDER,
 	getDateBucket,
-	normalizeTimestamp,
-} from "@/utility";
+	parseTimestampWithUtcDefault,
+} from "@semoss/utility/date";
+import { useChat } from "@/hooks";
 
 interface WorkspaceChatListProps {
 	/**
@@ -138,7 +138,7 @@ export const WorkspaceChatList = ({
 	const groups = useMemo(() => {
 		const byBucket = new Map<string, Room[]>();
 		for (const room of visibleRooms) {
-			const d = normalizeTimestamp(room.date_updated);
+			const d = parseTimestampWithUtcDefault(room.date_updated);
 			if (!d.isValid()) continue;
 			const bucket = getDateBucket(d);
 			const rooms = byBucket.get(bucket);

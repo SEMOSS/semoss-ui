@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useTranslation } from "@semoss/i18n";
 import { Button, cn } from "@semoss/ui/next";
+import { isRecord } from "@semoss/utility/object";
 
 interface ToolInputValueProps {
 	/** A raw parameter or nested value. */
@@ -15,9 +16,7 @@ const PAGE_SIZE = 50;
 const PREVIEW_LENGTH = 300;
 
 const asRecord = (value: unknown): Record<string, unknown> | undefined =>
-	value !== null && typeof value === "object" && !Array.isArray(value)
-		? (value as Record<string, unknown>)
-		: undefined;
+	isRecord(value) ? (value as Record<string, unknown>) : undefined;
 
 /** A readable field row; nested values and long text expand only on demand. */
 export const ToolInputValue = ({

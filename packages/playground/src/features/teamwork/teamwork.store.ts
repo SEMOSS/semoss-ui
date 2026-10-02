@@ -4,6 +4,7 @@ import type {
 	ConnectorViewerService,
 } from "@semoss/connectors";
 import { getI18n } from "@semoss/i18n";
+import { getErrorMessage } from "@semoss/utility/error";
 import { MCP_EXECUTION_ASK, MCP_EXECUTION_AUTO } from "@/constants";
 import type { RoomStore } from "@/stores/room/room.store";
 import { ROOM_PANEL_TYPES } from "@/stores/room/room-sidebar";
@@ -17,7 +18,7 @@ import {
 	getConnectorProvider,
 	getConnectorServices,
 	isProviderOffered as isOfferedByServer,
-	sanitizeConnectorServices,
+	type McpTool,
 } from "./connectors/connector.catalog";
 import { isServiceCovered as isCoveredByServer } from "./connectors/connector-access";
 import {
@@ -27,7 +28,6 @@ import {
 	readSessionLoginConfig,
 	readUserConnectorTools,
 	syncRoomConnectorTools,
-	writeUserConnectorTools,
 } from "./connectors/connectors.api";
 import { RoomFolderProvider } from "./folders/room-folder.provider";
 import {
@@ -131,9 +131,6 @@ export class TeamworkStore {
 
 	/** Whether the connectors are being written to the room. */
 	isSavingConnectors = false;
-
-	/** Whether the connectors dialog is open. */
-	isConnectorsDialogOpen = false;
 
 	/**
 	 * Files already in the chat's own files, such as an email a Microsoft 365
@@ -499,7 +496,7 @@ export class TeamworkStore {
 			const raw = response.pixelReturn[0]?.output;
 			output = typeof raw === "string" ? raw : JSON.stringify(raw);
 		} catch (error) {
-			output = error instanceof Error ? error.message : String(error);
+			output = getErrorMessage(error);
 			isError = true;
 		}
 
@@ -512,31 +509,27 @@ export class TeamworkStore {
 	};
 
 	/**
-	 * Switch the user's connectors on or off. They are the user's rather than
-	 * one chat's: their file changes, so every chat of theirs, new or existing,
-	 * takes the change, this one straight away and the others when they open.
+	 * Take the user's connector tools, just saved, such as on the settings
+	 * page. They are the user's rather than one chat's, so every chat of
+	 * theirs takes the change: this one straight away, the others when they
+	 * open.
 	 *
-	 * @param services - The services to switch on.
-	 * @throws Error when the change cannot be saved. What the UI shows stays as
-	 * it was.
+	 * @param userTools - The connector tools the user's file now holds.
+	 * @throws Error when the room's copy cannot be written.
 	 */
-	setConnectors = async (
-		services: readonly ConnectorServiceId[],
+	applyUserConnectorTools = async (
+		userTools: readonly McpTool[],
 	): Promise<void> => {
 		runInAction(() => {
 			this.stateVersion++;
-			this.isSavingConnectors = true;
+			this.connectors = getConnectorServices(userTools);
+			this.isSavingConnectors = !this.isDraft;
 		});
+		if (this.isDraft) {
+			return;
+		}
 		try {
-			const userTools = await writeUserConnectorTools(
-				sanitizeConnectorServices(services),
-			);
-			runInAction(() => {
-				this.connectors = getConnectorServices(userTools);
-			});
-			if (!this.isDraft) {
-				await syncRoomConnectorTools(this.room, userTools);
-			}
+			await syncRoomConnectorTools(this.room, userTools);
 		} finally {
 			runInAction(() => {
 				this.isSavingConnectors = false;
@@ -619,16 +612,6 @@ export class TeamworkStore {
 		}
 	};
 
-	/** Open the dialog that switches connectors. */
-	openConnectorsDialog = (): void => {
-		this.isConnectorsDialogOpen = true;
-	};
-
-	/** Close the connectors dialog. */
-	closeConnectorsDialog = (): void => {
-		this.isConnectorsDialogOpen = false;
-	};
-
 	/**
 	 * Show "Chat Tools" in the room's sidebar: every tool the assistant has
 	 * for the next message, including the ones this browser sends itself.
@@ -644,11 +627,6 @@ export class TeamworkStore {
 	/** Show the room's settings in its sidebar, where the default tools are. */
 	openRoomSettings = (): void => {
 		this.room.openSidebarPanel(ROOM_PANEL_TYPES.CONFIGURATION);
-	};
-
-	/** Close "Chat Tools" in the room's sidebar. */
-	closeToolsPanel = (): void => {
-		this.room.closeSidebarPanel(ROOM_PANEL_TYPES.TEAMWORK_TOOLS, {});
 	};
 
 	/**

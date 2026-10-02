@@ -26,29 +26,31 @@ These summaries include declared internal dependencies and peers. Package manife
 and the owning guides define the exact public entry points and architectural boundaries.
 
 Libraries (`libs/*`, publishable):
-- `@semoss/utility` → Generic date, string, file, clipboard, and JSON helpers
+- `@semoss/utility` → Generic text, date, object, JSON, file, encoding, browser, and other functional helpers
 - `@semoss/sdk` → Core SDK (no internal dependencies)
 - `@semoss/ui` → Component library (no internal dependencies)
 - `@semoss/i18n` → Internationalization library (no internal dependencies)
 - `@semoss/shared` → Shared utilities (depends on i18n, sdk, ui, utility)
 - `@semoss/connectors` → Microsoft 365 and Google Workspace viewers (depends on i18n, sdk,
-  shared, ui)
+  shared, ui, utility)
 - `@semoss/renderer` → Visualization components (depends on sdk, shared, ui)
 - `@semoss/workbench` → Multi-panel dock shell (depends on ui only — deliberately
   domain-agnostic, so it can never import sdk, shared or i18n)
-- `@semoss/panels` → File panels for the dock (depends on i18n, sdk, shared, ui, workbench)
+- `@semoss/panels` → File panels for the dock (depends on i18n, sdk, shared, ui, utility, workbench)
 
 The dock and the panels are two layers, in one direction:
 `@semoss/ui ← @semoss/workbench ← @semoss/panels → @semoss/shared → @semoss/sdk`.
 
 Applications (`packages/*`, not published):
 - `@semoss/client` → Main web application (depends on automation, i18n, panels, renderer, sdk, shared, terminal, ui, utility, workbench)
-- `@semoss/playground` → Chat (depends on connectors, i18n, panels, sdk, shared, ui, workbench)
+- `@semoss/playground` → Chat (depends on connectors, i18n, panels, sdk, shared, ui, utility, workbench)
 - `@semoss/terminal` → Embedded terminal (depends on i18n, panels, sdk, shared, ui, workbench)
 - `@semoss/auditlog-package` → Audit log dashboard (depends on i18n, sdk, shared, ui)
 - `@semoss/automation` → Automation workspace app (depends on i18n, sdk, shared, ui, utility;
   no client-store dependency)
 - `@semoss/cli` → CLI tooling (depends on sdk)
+- `@semoss/browser-automation` → Browser automation harness (depends on sdk, ui, utility)
+- `workshop-automation-extension` → Chrome extension (depends on sdk, ui, utility)
 
 **Every host that mounts a dock or a file panel** imports
 `@semoss/workbench/globals.css` and `@semoss/panels/globals.css`, and takes
@@ -127,6 +129,22 @@ package guide below.
 
 ## Agent Guardrails
 
+### Utility Ownership
+
+- Put reusable generic functions in `libs/utility`, grouped into flat files by function.
+  Import from the supported `@semoss/utility/<category>` subpath; use defining files
+  for imports within a package. See [the utility guide](./libs/utility/AGENTS.md).
+- Search individual files, nested functions, callbacks, and repeated expressions as
+  well as utility directories before adding helpers. Equivalent implementations can
+  use different names or syntax.
+- Keep feature policy, UI composition, SDK transport, and orchestration in their
+  owning packages. Preserve dependency boundaries: this does not authorize adding
+  utility dependencies to SDK, UI, i18n, workbench, or CLI.
+- Preserve whitespace, timezone, rounding, null/fallback, filename, and error behavior.
+  Use compatibility re-exports or small adapters for existing public contracts.
+- Prefer native operations over unnecessary wrappers. Do not add option-heavy
+  abstractions just to combine helpers with materially different contracts.
+
 ### Do Not Modify
 - **`pnpm-lock.yaml`** - Managed by pnpm, never edit manually
 - **`pom.xml`** - Maven build configuration for deployment
@@ -144,6 +162,7 @@ For validation and handoff, follow the React skill's
 ## Nested AGENTS.md Files
 
 **Libraries** (`libs/*`):
+- [libs/utility/AGENTS.md](./libs/utility/AGENTS.md) - Generic utility ownership and public categories
 - [libs/sdk/AGENTS.md](./libs/sdk/AGENTS.md) - Core SDK specifics
 - [libs/ui/AGENTS.md](./libs/ui/AGENTS.md) - Component library specifics
 - [libs/shared/AGENTS.md](./libs/shared/AGENTS.md) - Shared utilities/components specifics

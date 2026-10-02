@@ -1,4 +1,4 @@
-import { ConnectorBrandIcon } from "@semoss/connectors";
+import { ConnectorBrandIcon } from "@semoss/shared";
 import type { ConnectorServiceId } from "../connectors/connector.catalog";
 
 /** Props for {@link ConnectorServiceIcon}. */

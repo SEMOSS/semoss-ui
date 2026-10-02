@@ -32,9 +32,9 @@ import {
 	InputGroupButton,
 	InputGroupInput,
 } from "@semoss/ui/next";
+import { formatToDataTestId } from "@semoss/utility/text";
 import { useSettings } from "@/hooks";
 import { useNavigate } from "@/hooks/useNavigate";
-import { formatToDataTestId } from "@/utility";
 import { SETTINGS_ROUTES } from "./settings.constants";
 
 const DEFAULT_CARDS = SETTINGS_ROUTES.filter(
@@ -86,6 +86,10 @@ const CardMapper: Record<string, CardConfig> = {
 	"GitHub App": {
 		icon: <Github className={ICON_CLASS} />,
 		color: "#111827",
+	},
+	"Enterprise Usage & Activity": {
+		icon: <ChartBar className={ICON_CLASS} aria-hidden="true" />,
+		color: "#0471F0",
 	},
 	"Admin Query": {
 		icon: <DatabaseZap className={ICON_CLASS} />,

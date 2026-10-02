@@ -9,6 +9,7 @@ import {
 	Input,
 	toast,
 } from "@semoss/ui/next";
+import { getErrorMessage } from "@semoss/utility/error";
 import type { RoomStore } from "@/stores";
 
 interface SaveFileDialogProps {
@@ -62,9 +63,7 @@ export const SaveFileDialog = ({
 			toast.success(`Saved in room as ${filePath}`);
 			onClose(true);
 		} catch (error) {
-			toast.error(
-				error instanceof Error ? error.message : "Failed to save file",
-			);
+			toast.error(getErrorMessage(error, "Failed to save file"));
 		} finally {
 			setIsSaving(false);
 		}

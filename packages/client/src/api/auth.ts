@@ -777,9 +777,9 @@ export const createAPIUser = async (name: string) => {
 
 	const response = await post<Record<string, string>>(
 		url,
-		processPostData({
+		{
 			name: name,
-		}),
+		},
 		{},
 	).catch((error) => {
 		throw Error(error);
@@ -838,13 +838,11 @@ export const editMemberInfo = async (admin: boolean, user: unknown) => {
 		url += "admin/";
 	}
 	url += "user/editUser";
-	const response = await post<boolean>(
-		url,
-		processPostData(postData),
-		{},
-	).catch((e) => {
-		throw Error(e);
-	});
+	const response = await post<boolean>(url, { ...postData }, {}).catch(
+		(e) => {
+			throw Error(e);
+		},
+	);
 	return response;
 };
 
@@ -958,7 +956,7 @@ export const createUser = async (
 			modelMaxResponseTime: user.model_max_response_time,
 		};
 	}
-	const response = await post<boolean>(url, processPostData(newUserInfo), {});
+	const response = await post<boolean>(url, { ...newUserInfo }, {});
 	return response;
 };
 
@@ -1032,12 +1030,4 @@ export const setUserDefaultModel = async (
 		throw Error(e);
 	});
 	return response;
-};
-
-const processPostData = (data: unknown) => {
-	const postRecordData: Record<string, unknown> = {};
-	Object.keys(data).forEach((item) => {
-		postRecordData[item] = data[item];
-	});
-	return postRecordData;
 };

@@ -1,3 +1,4 @@
+import { isRecord } from "@semoss/utility/object";
 /** An account system the connectors sign in to. */
 export type ConnectorProviderId = "MICROSOFT" | "GOOGLE";
 
@@ -304,6 +305,55 @@ export const findConnectorTool = (
 ): { service: ConnectorService; tool: ConnectorTool } | undefined =>
 	reactor ? TOOLS_BY_REACTOR.get(reactor) : undefined;
 
+/** A reactor's words: `MicrosoftOutlookListMail` is Microsoft Outlook List Mail. */
+const splitReactorWords = (reactor: string): string[] =>
+	reactor.split(/(?<=[a-z0-9])(?=[A-Z])/);
+
+/**
+ * What each connector tool does, without the provider and app its service
+ * already names: `MicrosoftOutlookListMail` is List Mail. Every reactor of a
+ * service starts with the same words, and those are the ones dropped.
+ */
+const ACTIONS_BY_REACTOR = new Map(
+	CONNECTOR_SERVICES.flatMap((service) => {
+		const words = service.tools.map((tool) =>
+			splitReactorWords(tool.reactor),
+		);
+		if (words.length === 0) {
+			return [];
+		}
+		// always leave at least one word of the shortest reactor
+		const limit = Math.min(...words.map((reactor) => reactor.length)) - 1;
+		let shared = 0;
+		while (
+			shared < limit &&
+			words.every((reactor) => reactor[shared] === words[0][shared])
+		) {
+			shared++;
+		}
+		return service.tools.map(
+			(tool, index) =>
+				[tool.reactor, words[index].slice(shared).join(" ")] as const,
+		);
+	}),
+);
+
+/**
+ * A connector tool's title under its service's name: what it does, when its
+ * title is the one generated from its reactor. A title someone wrote stays.
+ *
+ * @param reactor - The reactor the tool runs.
+ * @param title - The tool's title.
+ * @return The title to show.
+ */
+export const getConnectorToolTitle = (
+	reactor: string,
+	title: string,
+): string => {
+	const action = ACTIONS_BY_REACTOR.get(reactor);
+	return action && title.replace(/\s+/g, "") === reactor ? action : title;
+};
+
 /**
  * Keep only known service ids, in catalog order and without repeats.
  *
@@ -321,9 +371,6 @@ export const sanitizeConnectorServices = (
 
 /** One tool in an MCP definition file. */
 export type McpTool = Record<string, unknown>;
-
-const isRecord = (value: unknown): value is Record<string, unknown> =>
-	typeof value === "object" && value !== null && !Array.isArray(value);
 
 const getToolMeta = (tool: McpTool): Record<string, unknown> | null =>
 	isRecord(tool._meta) ? tool._meta : null;

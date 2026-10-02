@@ -25,6 +25,7 @@ import {
 	z,
 	zodResolver,
 } from "@semoss/ui/next";
+import { getErrorMessage } from "@semoss/utility/error";
 import { useChat } from "@/hooks";
 import type { MCPConfig } from "@/types";
 
@@ -75,10 +76,7 @@ export const SaveWorkspaceDialog = observer(
 			} catch (error) {
 				form.setError("root.server", {
 					message: t("workspace.publishError", {
-						error:
-							error instanceof Error
-								? error.message
-								: String(error),
+						error: getErrorMessage(error),
 					}),
 				});
 				return;

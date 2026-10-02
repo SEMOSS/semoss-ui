@@ -1,4 +1,4 @@
-import { normalizeTimestamp } from "@semoss/utility";
+import { parseTimestampWithUtcDefault } from "@semoss/utility/date";
 import type { PendingToolApproval } from "@/features/rooms/types/room";
 import { resolveToolUiUrl } from "@/features/tools/utils/tool-metadata";
 import {
@@ -110,7 +110,7 @@ function persistedPartToConversationPart(
 /** Saved times are UTC with no zone ("2026-10-02 13:05:00"); browsers would read them as local time. */
 function savedTimestamp(value: string | null | undefined): string | undefined {
 	if (!value) return undefined;
-	const date = normalizeTimestamp(value);
+	const date = parseTimestampWithUtcDefault(value);
 	return date.isValid() ? date.toISOString() : undefined;
 }
 

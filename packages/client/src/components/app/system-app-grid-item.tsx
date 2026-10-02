@@ -8,8 +8,8 @@ import {
 	HoverCardTrigger,
 	P,
 } from "@semoss/ui/next";
+import { formatToDataTestId } from "@semoss/utility/text";
 import { SystemAppImage } from "@/features/catalog-images/system-app-image";
-import { formatToDataTestId } from "@/utility/general";
 
 export interface SystemAppGridItemProps {
 	/** test id of the app */

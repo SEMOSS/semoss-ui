@@ -1,7 +1,9 @@
 import { ChevronDown, ChevronRight, ClipboardCopy } from "lucide-react";
 import { Fragment, useMemo, useState } from "react";
 import { toast } from "@semoss/ui/next";
-import { looksLikeMarkdown, splitMessageLines } from "@semoss/utility";
+import { tryParseJson } from "@semoss/utility/json";
+import { looksLikeMarkdown } from "@semoss/utility/markdown";
+import { splitMessageLines } from "@semoss/utility/text";
 import { extractDataset } from "../../domain/automation-utils";
 
 export interface OutputPreviewProps {
@@ -24,13 +26,7 @@ export function OutputPreview({
 	const preview = value.length > 180 ? `${value.slice(0, 180)}…` : value;
 	const [tableView, setTableView] = useState<"table" | "json">("table");
 
-	const parsed = useMemo(() => {
-		try {
-			return JSON.parse(value);
-		} catch {
-			return null;
-		}
-	}, [value]);
+	const parsed = useMemo(() => tryParseJson(value) ?? null, [value]);
 
 	const dbDataset = useMemo(
 		() => (parsed ? extractDataset(parsed) : null),

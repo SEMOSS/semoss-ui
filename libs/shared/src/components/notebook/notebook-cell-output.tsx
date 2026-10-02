@@ -9,13 +9,13 @@ import {
 	TooltipTrigger,
 	toast,
 } from "@semoss/ui/next";
-import { IMAGE_MIME_TYPES } from "@semoss/utility";
+import { IMAGE_MIME_TYPES } from "@semoss/utility/image";
+import { stripAnsiStyleCodes } from "@semoss/utility/text";
 import type { JupyterOutput } from "./notebook.types";
 import {
 	getMimeString,
 	getOutputCopyText,
 	normalizeSource,
-	stripAnsi,
 } from "./notebook.utility";
 
 interface NotebookCellOutputProps {
@@ -59,7 +59,7 @@ export const NotebookCellOutput: React.FC<NotebookCellOutputProps> = ({
 							: "text-foreground",
 					)}
 				>
-					{stripAnsi(normalizeSource(output.text))}
+					{stripAnsiStyleCodes(normalizeSource(output.text))}
 				</pre>
 			</div>
 		);
@@ -71,7 +71,7 @@ export const NotebookCellOutput: React.FC<NotebookCellOutputProps> = ({
 		body = (
 			<div className="w-full px-2 pb-2">
 				<pre className="overflow-x-auto whitespace-pre-wrap rounded bg-destructive/5 p-3 font-mono text-destructive text-xs">
-					{stripAnsi(traceback)}
+					{stripAnsiStyleCodes(traceback)}
 				</pre>
 			</div>
 		);
@@ -119,7 +119,7 @@ export const NotebookCellOutput: React.FC<NotebookCellOutputProps> = ({
 				<div className="w-full px-2 pb-2">
 					<pre className="overflow-x-auto whitespace-pre-wrap rounded bg-muted/50 p-3 font-mono text-foreground text-xs">
 						{plain !== null
-							? stripAnsi(plain)
+							? stripAnsiStyleCodes(plain)
 							: JSON.stringify(data, null, 2)}
 					</pre>
 				</div>

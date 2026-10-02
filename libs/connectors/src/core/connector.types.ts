@@ -55,4 +55,11 @@ export interface ConnectorViewerProps {
 	 * the viewer only explains that a sign in is needed.
 	 */
 	onSignIn?: () => Promise<boolean>;
+	/**
+	 * Whether the viewer shows its header row: the app's logo and name, where
+	 * it is, and its refresh. A host that already names the viewer, such as in
+	 * a tab, can leave it out, and the refresh then sits at the end of the
+	 * viewer's own toolbar. Defaults to true.
+	 */
+	showHeader?: boolean;
 }

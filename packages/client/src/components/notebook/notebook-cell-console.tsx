@@ -1,12 +1,12 @@
 import { useMemo } from "react";
 import { InlineImageSegments } from "@semoss/shared";
-import { hasInlineImage } from "@semoss/utility";
+import { hasInlineImage } from "@semoss/utility/image";
+import { isOutputJSON } from "@semoss/utility/json";
 import {
 	countExpandedJsonLines,
 	JSON_VIEWER_LINE_HEIGHT_PX,
 	JsonValueViewer,
 } from "@/components/common/json-value-viewer";
-import { isOutputJSON } from "@/utility/general";
 
 interface ConsoleProps {
 	/**

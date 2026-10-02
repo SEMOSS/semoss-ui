@@ -9,6 +9,7 @@ import {
 import { matchPath, Outlet, useLocation } from "react-router";
 import { useInsight } from "@semoss/sdk/react";
 import { SidebarInset, SidebarProvider, useCacheState } from "@semoss/ui/next";
+import { setFavicon } from "@semoss/utility/browser";
 import { GlobalDialog } from "@/components/common/global-dialog";
 import { GlobalFooter } from "@/components/common/global-footer";
 import { GlobalNav } from "@/components/common/global-nav";
@@ -23,7 +24,6 @@ import { SettingsDialogProvider } from "@/features/settings/settings-dialog-prov
 import { useRoot } from "@/hooks/use-root";
 import { useThemeTitle } from "@/hooks/use-theme-title";
 import { ChatStore } from "@/stores/chat/chat.store";
-import { setFavicon } from "@/utility/utils";
 
 export const MainLayout = observer(() => {
 	const { actions } = useInsight();

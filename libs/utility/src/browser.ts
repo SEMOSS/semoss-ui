@@ -1,3 +1,4 @@
+/** Replace favicon links; browser globals are accessed only when called. */
 export const setFavicon = (href: string) => {
 	// Remove existing icon links
 	document
@@ -22,4 +23,20 @@ export const setFavicon = (href: string) => {
 
 	link.href = finalHref;
 	document.head.appendChild(link);
+};
+
+/** Download a Blob and release its temporary anchor and object URL. */
+export const downloadBlob = (blob: Blob, fileName: string): void => {
+	const url = URL.createObjectURL(blob);
+	let link: HTMLAnchorElement | undefined;
+	try {
+		link = document.createElement("a");
+		link.href = url;
+		link.download = fileName;
+		document.body.appendChild(link);
+		link.click();
+	} finally {
+		link?.remove();
+		URL.revokeObjectURL(url);
+	}
 };

@@ -1,3 +1,4 @@
+import { downloadBlob } from "@semoss/utility/browser";
 /**
  * Best-effort converter from our `AutomationWorkflowDocument` + node sources into an
  * n8n-importable workflow JSON — the inverse of `n8n-import-adapter.ts`.
@@ -457,11 +458,6 @@ export function downloadN8nExport(
 	const blob = new Blob([JSON.stringify(workflow, null, 2)], {
 		type: "application/json",
 	});
-	const url = URL.createObjectURL(blob);
-	const anchor = document.createElement("a");
-	anchor.href = url;
-	anchor.download = `${fileNameBase || "automation"}.n8n.json`;
-	anchor.click();
-	URL.revokeObjectURL(url);
+	downloadBlob(blob, `${fileNameBase || "automation"}.n8n.json`);
 	return warnings;
 }

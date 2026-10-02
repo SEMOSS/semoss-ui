@@ -12,6 +12,7 @@ import {
 	TreeViewItem,
 	useTreeView,
 } from "@semoss/ui/next";
+import { startOfLocalDay } from "@semoss/utility/date";
 import type { FileItem } from "./file.types";
 import type {
 	FileExplorerApi,
@@ -58,12 +59,8 @@ const formatMacDate = (
 	if (Number.isNaN(date.getTime())) return null;
 
 	const now = new Date();
-	const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-	const fileDay = new Date(
-		date.getFullYear(),
-		date.getMonth(),
-		date.getDate(),
-	);
+	const today = startOfLocalDay(now);
+	const fileDay = startOfLocalDay(date);
 	const diffDays = Math.round(
 		(today.getTime() - fileDay.getTime()) / 86400000,
 	);

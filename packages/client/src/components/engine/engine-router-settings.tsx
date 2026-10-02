@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import type { Role } from "@semoss/sdk";
 import { usePixel } from "@semoss/sdk/react";
 import { Button, Muted, Spinner, toast } from "@semoss/ui/next";
+import { getErrorMessage } from "@semoss/utility/error";
 import type { RouterConfigFormValue } from "@/components/import/model/model-import.constants";
 import {
 	RouterConfigField,
@@ -81,9 +82,10 @@ export const EngineRouterSettings: React.FC<EngineRouterSettingsProps> = ({
 			onUpdated?.();
 		} catch (error) {
 			toast.error(
-				error instanceof Error
-					? error.message
-					: "Unable to update the routing configuration.",
+				getErrorMessage(
+					error,
+					"Unable to update the routing configuration.",
+				),
 			);
 		} finally {
 			setSaving(false);

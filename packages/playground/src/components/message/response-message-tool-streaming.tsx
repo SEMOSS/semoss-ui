@@ -3,17 +3,8 @@ import { observer } from "mobx-react-lite";
 import { useState } from "react";
 import { useTranslation } from "@semoss/i18n";
 import { cn, Spinner } from "@semoss/ui/next";
+import { formatJson } from "@semoss/utility/json";
 import type { ToolStore } from "@/stores";
-
-const formatStreamingArguments = (buffer: string): string => {
-	if (!buffer) return "";
-	try {
-		return JSON.stringify(JSON.parse(buffer), null, 2);
-	} catch {
-		// mid-stream: JSON isn't valid yet, show the raw accumulated string
-		return buffer;
-	}
-};
 
 interface ResponseMessageToolStreamingProps {
 	tool: ToolStore;
@@ -63,7 +54,7 @@ export const ResponseMessageToolStreaming: React.FC<ResponseMessageToolStreaming
 				{isOpen && (
 					<div className="border-border border-t p-2">
 						<pre className="max-h-48 overflow-auto whitespace-pre-wrap break-all rounded bg-muted p-2 font-mono text-muted-foreground text-xs">
-							{formatStreamingArguments(tool.argumentsBuffer) || (
+							{formatJson(tool.argumentsBuffer) || (
 								<span className="italic">
 									{t("status.waitingForArguments")}
 								</span>

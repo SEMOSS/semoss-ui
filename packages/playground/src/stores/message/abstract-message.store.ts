@@ -1,7 +1,7 @@
 import { action, computed, makeObservable, observable } from "mobx";
+import { parseTimestampWithUtcDefault } from "@semoss/utility/date";
 import type { RoomStore } from "@/stores";
 import type { AbstractPixelMessage, PixelMessage } from "@/types";
-import { normalizeTimestamp } from "@/utility";
 
 /**
  * Abstract Message Store
@@ -203,7 +203,9 @@ export abstract class AbstractMessageStore {
 	 * Sync store properties from the pixel message
 	 */
 	sync(message: PixelMessage) {
-		this.dateCreated = normalizeTimestamp(message.dateCreated).toDate();
+		this.dateCreated = parseTimestampWithUtcDefault(
+			message.dateCreated,
+		).toDate();
 		this.agentRun =
 			message.agentRun ??
 			(message.ornaments?.agentRunId

@@ -193,19 +193,18 @@ the adapter rather than duplicating file-operation logic in the visual tree.
 
 ### `@semoss/utility`: Use Generic Helpers
 
-Import generic behavior from the package index so consumers do not depend on the
-larger shared component package:
+Import generic behavior from the matching category subpath so consumers do not
+depend on the larger shared component package:
 
 ```ts
 import {
   formatDateToRelative,
-  getImageMimeType,
-  hasInlineImage,
-  normalizeTimestamp,
-} from "@semoss/utility";
+  parseTimestampWithUtcDefault,
+} from "@semoss/utility/date";
+import { getImageMimeType, hasInlineImage } from "@semoss/utility/image";
 
 const label = formatDateToRelative("2026-09-15T12:00:00Z");
-const timestamp = normalizeTimestamp("2026-09-15 12:00:00");
+const timestamp = parseTimestampWithUtcDefault("2026-09-15 12:00:00");
 const mime = getImageMimeType("png");
 const containsImage = hasInlineImage('<img src="data:image/png;base64,abc">');
 ```

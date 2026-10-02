@@ -1,7 +1,7 @@
 import { AlertCircle, CheckCircle2, Wand2 } from "lucide-react";
 import { useMemo } from "react";
 import { Button, Textarea } from "@semoss/ui/next";
-import { locateJsonError } from "../../utility/mcp-json-utils";
+import { locateJsonError } from "@semoss/utility/json";
 
 export interface MCPRawJsonEditorProps {
 	value: string;

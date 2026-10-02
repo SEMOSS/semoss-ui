@@ -1,5 +1,6 @@
+import { TriangleAlertIcon } from "lucide-react";
 import { useTranslation } from "@semoss/i18n";
-import { Label, Muted, Small, Switch } from "@semoss/ui/next";
+import { cn, Label, Muted, Small, Switch } from "@semoss/ui/next";
 import type { ConnectorService } from "../connectors/connector.catalog";
 import { ConnectorServiceIcon } from "./connector-service-icon";
 
@@ -11,6 +12,12 @@ export interface ConnectorServiceRowProps {
 	checked: boolean;
 	/** Whether the switch can be used. */
 	disabled: boolean;
+	/**
+	 * Why the service, switched on, is not in effect yet, such as its account
+	 * not being connected. The switch reads as on in gray, with the warning
+	 * mark the chat's tools use beside it, and can still be turned off.
+	 */
+	warning?: string;
 	/**
 	 * Why the service cannot run on this server, such as a permission its
 	 * account's sign in does not ask for.
@@ -30,6 +37,7 @@ export const ConnectorServiceRow = ({
 	service,
 	checked,
 	disabled,
+	warning,
 	blockedReason,
 	onCheckedChange,
 	idPrefix,
@@ -63,13 +71,28 @@ export const ConnectorServiceRow = ({
 					<Small className="text-warning">{blockedReason}</Small>
 				) : null}
 			</div>
-			<Switch
-				id={switchId}
-				className="mt-1 shrink-0"
-				checked={checked}
-				disabled={disabled}
-				onCheckedChange={onCheckedChange}
-			/>
+			<div className="mt-1 flex shrink-0 items-center gap-2">
+				{warning ? (
+					<>
+						<TriangleAlertIcon
+							aria-hidden
+							className="size-4 shrink-0 text-warning"
+						/>
+						<span className="sr-only">{warning}</span>
+					</>
+				) : null}
+				<Switch
+					id={switchId}
+					className={cn(
+						"shrink-0",
+						warning &&
+							"data-[state=checked]:bg-muted-foreground/50",
+					)}
+					checked={checked}
+					disabled={disabled}
+					onCheckedChange={onCheckedChange}
+				/>
+			</div>
 		</div>
 	);
 };

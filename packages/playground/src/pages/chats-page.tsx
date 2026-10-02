@@ -24,6 +24,11 @@ import {
 	useInfiniteScroll,
 } from "@semoss/ui/next";
 import {
+	DATE_BUCKET_ORDER,
+	getDateBucket,
+	parseTimestampWithUtcDefault,
+} from "@semoss/utility/date";
+import {
 	CHECKBOX_CLASS,
 	ChatRow,
 	type RoomItem,
@@ -31,8 +36,6 @@ import {
 import { SYSTEM__PLAYGROUND } from "@/constants";
 import { useChat } from "@/hooks/use-chat";
 import { useRoot } from "@/hooks/use-root";
-import { normalizeTimestamp } from "@/utility";
-import { DATE_BUCKET_ORDER, getDateBucket } from "@/utility/date";
 
 /**
  * All-chats page.
@@ -171,8 +174,8 @@ export const ChatsPage = observer(() => {
 			...extra,
 		].sort(
 			(a, b) =>
-				normalizeTimestamp(b.DATE_CREATED).valueOf() -
-				normalizeTimestamp(a.DATE_CREATED).valueOf(),
+				parseTimestampWithUtcDefault(b.DATE_CREATED).valueOf() -
+				parseTimestampWithUtcDefault(a.DATE_CREATED).valueOf(),
 		);
 	}, [getRooms.data, getContentMatches.data, deletedSet]);
 
@@ -188,8 +191,8 @@ export const ChatsPage = observer(() => {
 			.filter((r): r is RoomItem => Boolean(r))
 			.sort(
 				(a, b) =>
-					normalizeTimestamp(b.DATE_CREATED).valueOf() -
-					normalizeTimestamp(a.DATE_CREATED).valueOf(),
+					parseTimestampWithUtcDefault(b.DATE_CREATED).valueOf() -
+					parseTimestampWithUtcDefault(a.DATE_CREATED).valueOf(),
 			);
 	}, [pinnedIds, deletedSet, roomById, isSearching]);
 
@@ -198,7 +201,7 @@ export const ChatsPage = observer(() => {
 		const byBucket = new Map<string, RoomItem[]>();
 		for (const room of visibleRooms) {
 			if (!isSearching && pinnedIds.has(room.ROOM_ID)) continue;
-			const d = normalizeTimestamp(room.DATE_CREATED);
+			const d = parseTimestampWithUtcDefault(room.DATE_CREATED);
 			if (!d.isValid()) continue;
 			const bucket = getDateBucket(d);
 			const rooms = byBucket.get(bucket);

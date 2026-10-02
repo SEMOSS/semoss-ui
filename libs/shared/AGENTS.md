@@ -10,7 +10,9 @@ utilities and components library.
 ## Overview
 
 `@semoss/shared` holds the cross-application components, utilities, and types that more than
-one app needs. **Check here first** before writing new shared components, utilities, or types.
+one app needs. **Check here first** for domain components, adapters, and types.
+Generic functions belong in [@semoss/utility](../utility/AGENTS.md); consume their
+category subpaths instead of duplicating them inside components.
 
 It is the home of large shared building blocks such as the file explorer, the Monaco
 editor wrappers, the FlexLayout wrapper, the shared login page, engine/MCP/prompt/skill UI,
@@ -80,7 +82,7 @@ This library retains its package layout (no `pages/` or router):
 
 | Folder / file | Purpose |
 |---------------|---------|
-| `assets/` | Images and static files |
+| `assets/` | Images and static files. `assets/img/connectors/` holds each Microsoft 365 and Google Workspace app's logo as an SVG named by app (`outlook.svg`, `gmail.svg`, ...), except Teams, which is `assets/img/MS_TEAMS.svg`; `ConnectorBrandIcon` shows them, and any package can import them as `@semoss/shared/assets/img/connectors/*` |
 | `components/` | Shared components, one folder per feature (file, monaco, flex-layout, mcp, prompts, skills, settings, engine, form, members, …) |
 | `constants/` | Shared constant values |
 | `contexts/` | React contexts (`<name>.context.tsx`) |

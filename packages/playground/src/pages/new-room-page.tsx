@@ -14,6 +14,7 @@ import {
 	toast,
 	useTheme,
 } from "@semoss/ui/next";
+import { getErrorMessage } from "@semoss/utility/error";
 import { ROOM_PANEL_COMPONENTS } from "@/components/room/panels/room-panel.components";
 import { RoomGreeting } from "@/components/room/room-greeting";
 import { RoomInput } from "@/components/room/room-input";
@@ -242,7 +243,7 @@ export const NewRoomPage = observer(() => {
 		} catch (error) {
 			toast.error(
 				t("teamwork:connectors.adoptError", {
-					message: error instanceof Error ? error.message : "",
+					message: getErrorMessage(error, ""),
 				}),
 			);
 		}
@@ -881,7 +882,6 @@ export const NewRoomPage = observer(() => {
 											: "send"
 									}
 									onOpenSettings={handleOpenSettings}
-									showChatTools={false}
 									onOpenSource={(service) =>
 										void handleOpenSource(service)
 									}

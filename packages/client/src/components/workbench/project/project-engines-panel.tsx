@@ -31,6 +31,7 @@ import {
 	Spinner,
 	toast,
 } from "@semoss/ui/next";
+import { getErrorMessage } from "@semoss/utility/error";
 import type { WorkbenchPanelConfig } from "@semoss/workbench";
 import { useProject, useSession } from "@/hooks";
 import { isProjectType } from "@/utility/catalog";
@@ -192,9 +193,7 @@ const ManageEnginesDialog = ({
 			} catch (error) {
 				if (!cancelled) {
 					toast.error(
-						error instanceof Error
-							? error.message
-							: "Failed to load engines",
+						getErrorMessage(error, "Failed to load engines"),
 					);
 				}
 			} finally {
@@ -240,11 +239,7 @@ const ManageEnginesDialog = ({
 			toast.success(`${meta.label} updated`);
 			onClose(true);
 		} catch (error) {
-			toast.error(
-				error instanceof Error
-					? error.message
-					: "Failed to update engines",
-			);
+			toast.error(getErrorMessage(error, "Failed to update engines"));
 		} finally {
 			setIsSaving(false);
 		}
@@ -511,11 +506,7 @@ const ProjectEnginesPanel = () => {
 			toast.success(`Removed ${engine.engine_name}`);
 			refresh();
 		} catch (error) {
-			toast.error(
-				error instanceof Error
-					? error.message
-					: "Failed to remove engine",
-			);
+			toast.error(getErrorMessage(error, "Failed to remove engine"));
 		} finally {
 			setIsRemoving(false);
 		}
