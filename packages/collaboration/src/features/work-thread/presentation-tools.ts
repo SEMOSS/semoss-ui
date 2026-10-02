@@ -20,7 +20,7 @@ const availableDeckSchema = z.object({
 });
 
 /** Accept only presentation paths relative to the current room's file folder. */
-function presentationPath(value: string): string | null {
+export function presentationPath(value: string): string | null {
 	const path = value.trim();
 	if (
 		!path.toLowerCase().endsWith(".pptx") ||

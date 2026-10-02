@@ -173,7 +173,7 @@ const createAssetAdapter = (family: AssetFamily): FileExplorerAdapter => ({
 		delete: true,
 	},
 	browse: (path) =>
-		`${family.reactors.browse}(filePath=["${path}"]${family.scopeTail});`,
+		`${family.reactors.browse}(filePath=[${JSON.stringify(path)}]${family.scopeTail});`,
 	search: (path, term) =>
 		`${family.reactors.search}(filePath=["${path}"]${family.scopeTail}, search=["${term}"]);`,
 	rename: (oldPath, newPath) =>
@@ -184,7 +184,7 @@ const createAssetAdapter = (family: AssetFamily): FileExplorerAdapter => ({
 		`${family.reactors.remove}(${family.scopeLead}filePath=["${path}"]);`,
 	download: (path) =>
 		`${family.reactors.download}(${family.scopeLead}filePath=[${JSON.stringify(path)}]);`,
-	// read/save/download quote the path with JSON.stringify; browse/search/
+	// browse/read/save/download quote the path with JSON.stringify; search/
 	// rename/copy/remove/create/unzip above still interpolate it raw, which
 	// breaks on a path containing a quote or backslash. Identical output for
 	// every other path, so converting the rest is a safe follow-up rather

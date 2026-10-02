@@ -343,6 +343,19 @@ export interface PendingAgentAction {
 
 /** Durable, current state of an agent run — never inferred from stream events. */
 export interface AgentRunSnapshot {
+	/** Durable delivery evidence; consumers validate artifacts before resolving files. */
+	artifacts?: unknown[];
+	warnings?: string[];
+	reviewOutcome?: { status: string; verdict?: string } | null;
+	progress?: {
+		activity?: string;
+		workflow?: {
+			phase?: string;
+			artifact?: unknown;
+			warning?: string | null;
+			error?: string | null;
+		} | null;
+	} | null;
 	/** The run's own id — also its jobId, the model-facing handle. */
 	runId: string;
 	/** The room this run's messages are written to. */

@@ -58,6 +58,7 @@ import {
 	type ThreadRoomMetadata,
 } from "./api/thread-room";
 import {
+	getPresentationAgent,
 	getThreadAgent,
 	type SubmittedThreadContext,
 	THREAD_ASSISTANT_INSTRUCTIONS,
@@ -579,7 +580,15 @@ export class ThreadSession {
 		submission: ComposerSubmission,
 		sourceUid?: string,
 		attachments: SourceAttachment[] = [],
+		options: { presentation?: boolean } = {},
 	): Promise<void> => {
+		const presentationAgent = options.presentation
+			? getPresentationAgent()
+			: null;
+		if (options.presentation && !presentationAgent)
+			throw new Error(
+				"The PowerPoint agent is unavailable. Contact your administrator.",
+			);
 		if (
 			this.snapshot.isCompacting ||
 			this.snapshot.isSavingSettings ||
@@ -731,11 +740,18 @@ export class ThreadSession {
 					attachmentId: attachment.id,
 					name: file.name,
 					file: location,
+					...(presentationAgent
+						? { originalFile: file.filePath }
+						: {}),
 					sentAs: file.textPath ? "text" : "file",
 				});
 			}
 			const command = threadCommand(
-				sent.length ? { ...context, attachments: sent } : context,
+				{
+					...context,
+					presentationAgentId: presentationAgent?.id,
+					...(sent.length ? { attachments: sent } : {}),
+				},
 				submission.text.trim() || "Please review the attached files.",
 			);
 			try {
@@ -749,7 +765,8 @@ export class ThreadSession {
 						insightId: this.insight.insightId,
 						controllerScopeId: this.controllerScopeId,
 						roomId: this.snapshot.association?.roomId ?? "",
-						agentId: metadata.agentId ?? "",
+						agentId:
+							presentationAgent?.id ?? metadata.agentId ?? "",
 						engine: metadata.modelId,
 						maxTurns: 40,
 					},

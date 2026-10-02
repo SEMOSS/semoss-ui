@@ -1,14 +1,13 @@
-import { useState } from "react";
-import { Alert, AlertDescription, Button, P, Small } from "@semoss/ui/next";
+import { PanelRightOpen } from "lucide-react";
+import { Button, P } from "@semoss/ui/next";
 import { Section } from "@/features/collaboration/components/section";
 import { useToolWorkbench } from "@/features/tools/tool-workbench.context";
-import { downloadPresentation } from "./api/download-presentation";
+import { PresentationFile } from "./presentation-file";
 import { isPresentationTool, presentationFiles } from "./presentation-tools";
-import { useWorkThread } from "./work-thread-context";
 
 const labels = {
 	QUEUED: "Queued",
-	RUNNING: "Preparing presentation…",
+	RUNNING: "Preparing presentation...",
 	INPUT_REQUIRED: "Needs your input",
 	COMPLETED: "Completed",
 	FAILED: "Preparation failed",
@@ -16,12 +15,9 @@ const labels = {
 	CANCELLED: "Cancelled",
 };
 
-/** Existing tool runs own generation, approvals, recovery and file identities. */
+/** Legacy tool results share the managed run's retrieval gate and file actions. */
 export function ThreadPresentation() {
 	const workbench = useToolWorkbench();
-	const { session } = useWorkThread();
-	const [error, setError] = useState("");
-	const [downloading, setDownloading] = useState<string | null>(null);
 	const tools = Object.values(workbench.tools).filter(isPresentationTool);
 	const files = [
 		...new Map(
@@ -30,7 +26,7 @@ export function ThreadPresentation() {
 				.map((file) => [file.path, file]),
 		).values(),
 	];
-	if (!tools.length && !files.length) return null;
+	if (!tools.length) return null;
 	return (
 		<Section title="Presentation" variant="widget">
 			{tools.map((tool) => (
@@ -48,74 +44,21 @@ export function ThreadPresentation() {
 						variant="ghost"
 						onClick={() => workbench.openWorkbench(tool.id)}
 					>
+						<PanelRightOpen aria-hidden="true" />
 						{tool.status === "INPUT_REQUIRED"
 							? "Review request"
 							: tool.status === "FAILED"
 								? "Review failure"
 								: "View activity"}
 					</Button>
-					{tool.status === "FAILED" && (
-						<Small className="block text-muted-foreground">
-							Review the failure, then ask Assistant to try again.
-						</Small>
-					)}
 				</div>
 			))}
 			{files.map((file) => (
-				<div key={file.path} className="space-y-2">
-					<Small className="block break-words">
-						{file.name} · Ready
-					</Small>
-					<div className="flex flex-wrap gap-2">
-						<Button
-							type="button"
-							size="sm"
-							variant="outline"
-							aria-label={`Open ${file.name}`}
-							onClick={() =>
-								workbench.openFile(file.path, file.name)
-							}
-						>
-							Open
-						</Button>
-						<Button
-							type="button"
-							size="sm"
-							variant="ghost"
-							aria-label={`Download ${file.name}`}
-							disabled={downloading !== null}
-							onClick={async () => {
-								setError("");
-								setDownloading(file.path);
-								try {
-									await downloadPresentation(
-										session.insight.actions,
-										session.insight.insightId,
-										file.path,
-									);
-								} catch (cause) {
-									setError(
-										cause instanceof Error
-											? cause.message
-											: "Download failed. Try again.",
-									);
-								} finally {
-									setDownloading(null);
-								}
-							}}
-						>
-							{downloading === file.path
-								? "Downloading…"
-								: "Download"}
-						</Button>
-					</div>
-				</div>
+				<PresentationFile
+					key={file.path}
+					file={{ ...file, roomId: workbench.roomId }}
+				/>
 			))}
-			{error && (
-				<Alert variant="destructive">
-					<AlertDescription>{error}</AlertDescription>
-				</Alert>
-			)}
 		</Section>
 	);
 }

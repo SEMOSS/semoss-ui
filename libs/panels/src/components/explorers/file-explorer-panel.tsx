@@ -9,7 +9,7 @@ import {
 	getParentPath,
 	useFileExplorer,
 } from "@semoss/shared";
-import { toast } from "@semoss/ui/next";
+import { Alert, AlertDescription, toast } from "@semoss/ui/next";
 import type {
 	WorkbenchPanelConfig,
 	WorkbenchPanelProps,
@@ -28,6 +28,10 @@ import {
 } from "../../constants/file-panel.constants";
 import { useFileExplorerHost } from "../../contexts/file-explorer-host.context";
 import { useAccess } from "../../hooks/use-access";
+import {
+	type FileRevealRequest,
+	useFileReveal,
+} from "../../hooks/use-file-reveal";
 import { useWorkbenchFilePanels } from "../../hooks/use-workbench-file-panels";
 import {
 	type FilePanelMode,
@@ -41,6 +45,7 @@ import { FileExplorerPane } from "./file-explorer-pane";
 export interface FileExplorerParams {
 	mode: FilePanelMode;
 	initialPath?: string;
+	reveal?: FileRevealRequest;
 }
 
 /** Whether a moved item stayed in its original directory. */
@@ -111,6 +116,12 @@ const FileExplorerPanel = ({ id }: WorkbenchPanelProps) => {
 			});
 		},
 	});
+
+	const revealError = useFileReveal(
+		explorer,
+		config.reveal,
+		mode.type === "INSIGHT" ? mode.insightId : insight.insightId,
+	);
 
 	const itemActions = useCallback(
 		(item: FileItem): FileExplorerItemActions => {
@@ -210,11 +221,20 @@ const FileExplorerPanel = ({ id }: WorkbenchPanelProps) => {
 	}
 
 	return (
-		<FileExplorerPane
-			id={id}
-			explorer={explorer}
-			itemActions={itemActions}
-		/>
+		<div className="flex size-full min-h-0 flex-col">
+			{revealError && (
+				<Alert variant="destructive">
+					<AlertDescription>{revealError}</AlertDescription>
+				</Alert>
+			)}
+			<div className="min-h-0 flex-1">
+				<FileExplorerPane
+					id={id}
+					explorer={explorer}
+					itemActions={itemActions}
+				/>
+			</div>
+		</div>
 	);
 };
 

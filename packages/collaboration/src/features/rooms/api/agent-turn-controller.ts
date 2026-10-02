@@ -20,6 +20,7 @@ import {
 	runItemPart,
 	runItemTool,
 } from "@/features/rooms/utils/agent-run-items";
+import { isPresentationRun } from "@/features/work-thread/presentation-run";
 import {
 	type AgentAction,
 	type AgentRun,
@@ -300,6 +301,7 @@ export class AgentTurnController {
 			});
 			if (this.disposed) return;
 			this.run = { ...this.run, input: command };
+			this.render();
 			this.observe();
 			if (this.cancelRequested) {
 				try {
@@ -750,6 +752,41 @@ export class AgentTurnController {
 				role: "assistant",
 				parts: [{ type: "text", text: run.finalText }],
 			});
+		}
+		// Rebuild presentation cards from durable runs, including prior requests after reload.
+		const presentationRuns = new Map(
+			[...this.historyRuns, run].map((entry) => [entry.runId, entry]),
+		);
+		for (const presentation of presentationRuns.values()) {
+			if (!isPresentationRun(presentation)) continue;
+			const id = `presentation-run:${presentation.runId}`;
+			const existing = messages.findIndex((message) => message.id === id);
+			if (existing >= 0) messages.splice(existing, 1);
+			const parentOffset = [...messages]
+				.reverse()
+				.findIndex(
+					(message) =>
+						message.id === presentation.finalOutputMessageId ||
+						message.runId === presentation.runId ||
+						message.id === presentation.inputMessageId,
+				);
+			const parentIndex =
+				parentOffset < 0 ? -1 : messages.length - 1 - parentOffset;
+			messages.splice(
+				parentIndex < 0 ? messages.length : parentIndex + 1,
+				0,
+				{
+					id,
+					runId: presentation.runId,
+					role: "assistant",
+					createdAt:
+						presentation.completedAt ??
+						presentation.startedAt ??
+						presentation.dateCreated ??
+						undefined,
+					parts: [{ type: "run", run: presentation, renderKey: id }],
+				},
+			);
 		}
 		const settled = finished && this.settledRunId !== run.runId;
 		if (settled) this.settledRunId = run.runId;

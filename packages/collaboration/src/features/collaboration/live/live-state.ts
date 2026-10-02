@@ -4,6 +4,7 @@ import { readDisplayBody } from "@/features/email/message-body";
 import type { InsightActions } from "@/lib/pixel";
 import { PixelError, pixel } from "@/lib/pixel";
 import {
+	setPresentationAgent,
 	setThreadAgent,
 	type ThreadAgent,
 } from "../../thread-assistant/thread-context";
@@ -394,6 +395,7 @@ export async function loadLiveState(
 	const profile = mapProfile(profileRow, self?.id);
 	const settings = mapSettings(settingsRow);
 	setThreadAgent(mapThreadAgent(settingsRow.assistantAgent));
+	setPresentationAgent(mapThreadAgent(settingsRow.presentationAgent));
 
 	return {
 		today: new Date().toISOString().slice(0, 10),

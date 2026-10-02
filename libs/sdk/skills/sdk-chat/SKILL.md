@@ -334,6 +334,13 @@ pause, not a terminal success. Do not infer durable success from streamed text.
 `getAgentRun` and `stopAgentRun` normalize missing `pendingActions` to `[]`;
 `pollAgentRun` returns the endpoint payload without that normalization.
 
+Managed presentation workflows may also return optional `artifacts`, `warnings`,
+`reviewOutcome`, and `progress.workflow` delivery metadata. Validate artifact
+payloads before exposing file actions. Run completion and visual review do not
+establish file availability: retrieve the referenced file using the originating
+room's currently bound insight. Persist room IDs and relative paths, not temporary
+insight IDs or download tickets.
+
 ### Watch Lifecycle
 
 `agent.watch(handlers, options?)` requires `onEvent`, `onSnapshot`, and

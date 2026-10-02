@@ -65,7 +65,24 @@ const agentRunSchema = z.object({
 		.nullish()
 		.transform((value) => value ?? []),
 	messages: z.array(roomMessageSchema).optional(),
-	progress: z.object({ activity: z.string() }).nullish(),
+	artifacts: z.array(z.unknown()).optional(),
+	warnings: z.array(z.string()).optional(),
+	reviewOutcome: z
+		.object({ status: z.string(), verdict: z.string().optional() })
+		.nullish(),
+	progress: z
+		.object({
+			activity: z.string().optional(),
+			workflow: z
+				.object({
+					phase: z.string().optional(),
+					artifact: z.unknown().optional(),
+					warning: z.string().nullish(),
+					error: z.string().nullish(),
+				})
+				.nullish(),
+		})
+		.nullish(),
 });
 
 /** Only fields used by the conversation are retained from harness events. */

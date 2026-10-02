@@ -11,6 +11,7 @@ import { ReplyDraftAssistant } from "./reply-draft-assistant";
 import type { ThreadComposerMode } from "./thread-composer-controls";
 
 interface WorkComposerSnapshot {
+	isPresentation: boolean;
 	emailDrafts: EmailDraftEditor[];
 	insightsRequest: { id: string; revision: string } | null;
 	insightsError: string;
@@ -28,6 +29,7 @@ interface WorkComposerSnapshot {
 /** App-lifetime editor state; independent of the bounded cache of backend insights. */
 export class WorkComposerSession {
 	private snapshot: WorkComposerSnapshot = {
+		isPresentation: false,
 		emailDrafts: [],
 		insightsRequest: null,
 		insightsError: "",
@@ -97,6 +99,10 @@ export class WorkComposerSession {
 	setMode = (mode: ThreadComposerMode): void => {
 		if (!this.snapshot.isSubmitting && this.snapshot.mode !== mode)
 			this.update({ mode });
+	};
+	/** This destination applies only to the next successfully submitted request. */
+	setPresentation = (isPresentation: boolean): void => {
+		if (!this.snapshot.isSubmitting) this.update({ isPresentation });
 	};
 	setSourceMessage = (sourceMessageId?: string): void => {
 		this.update({ sourceMessageId });
@@ -231,6 +237,7 @@ export class WorkComposerSession {
 	};
 	private clear(): void {
 		this.update({
+			isPresentation: false,
 			draft: { document: null, text: "", files: [] },
 			selected: [],
 			sourceMessageId: undefined,

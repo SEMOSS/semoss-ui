@@ -112,6 +112,33 @@ Word, Excel, PowerPoint, .msg, and .eml files are sent as a plain-text copy,
 because most providers reject those formats. A message's other files may total
 20 MB, since every later turn re-sends them.
 
+## PowerPoint requests
+
+The assistant's Create PowerPoint action (also available as `/powerpoint`)
+uses the selected model, included thread context, and explicitly attached files.
+It overrides the agent for that request only; ordinary chat keeps its configured
+agent. Failed submissions retain the draft and presentation mode.
+
+Deploy the backend `BrainGetProfile` settings addition before enabling this
+action. `presentationAgent` describes an accessible, active agent with
+`pptx_workflow.enabled=true`. `COLLAB_PPTX_AGENT_ID` selects the workspace;
+when unset it defaults to the seeded `pptx-agent`. Missing access or workflow
+configuration disables the action. No database migration is required.
+
+Generation uses the existing RunAgent workflow, approvals, cancellation, and
+persisted run metadata. Chat reconstructs progress and delivery results when a
+room reopens. Artifacts retain their run, room, and relative file path; all
+actions use that room's bound insight, including Locate File in an existing
+Files panel. Preview, Download, and Locate File are enabled only after retrieving
+the file, and each action checks it again. Missing or unreadable files show an
+error with retry rather than successful delivery.
+
+Office email attachments still use extracted text for model input, with their
+staged original path included in context for agent tools and templates. Existing
+attachment size and provider-format limits remain in effect. The backend must
+also have the managed PPTX workflow and its generation/review dependencies
+configured; frontend completion does not substitute for a live generation test.
+
 ## Routes and ownership
 
 | Routes | Feature |

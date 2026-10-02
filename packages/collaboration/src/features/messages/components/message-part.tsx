@@ -2,6 +2,8 @@ import { memo } from "react";
 import { P } from "@semoss/ui/next";
 import { AgentRunCard } from "@/features/runs/components/agent-run-card";
 import { ToolCallCard } from "@/features/tools/components/tool-call-card";
+import { isPresentationRun } from "@/features/work-thread/presentation-run";
+import { PresentationRunResult } from "@/features/work-thread/presentation-run-result";
 import type {
 	ConversationMessage,
 	ConversationMessagePart,
@@ -62,6 +64,8 @@ export const MessagePart = memo(function MessagePart({
 		case "tool":
 			return <ToolCallCard tool={part.tool} createdAt={createdAt} />;
 		case "run":
+			if (!part.run.parentRunId && isPresentationRun(part.run))
+				return <PresentationRunResult run={part.run} />;
 			return (
 				<AgentRunCard
 					compact

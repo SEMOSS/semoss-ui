@@ -1,4 +1,10 @@
-import { BookOpen, ChevronsDownUp, Wrench, X } from "lucide-react";
+import {
+	BookOpen,
+	ChevronsDownUp,
+	Presentation,
+	Wrench,
+	X,
+} from "lucide-react";
 import {
 	useCallback,
 	useLayoutEffect,
@@ -13,6 +19,7 @@ import { useRoomModel } from "@/features/rooms/api/use-room-model";
 import { RoomComposer } from "@/features/rooms/components/room-composer";
 import type { ComposerDraft } from "@/features/rooms/components/room-composer.types";
 import type { SubmittedThreadContext } from "@/features/thread-assistant/thread-context";
+import { getPresentationAgent } from "@/features/thread-assistant/thread-context";
 import type { ThreadSession } from "@/features/thread-assistant/thread-session";
 import { workInstructions } from "@/features/thread-assistant/thread-settings";
 import { ThreadSourceAttachments } from "@/features/thread-assistant/thread-source-attachments";
@@ -78,7 +85,20 @@ export function AssistantComposer({
 		turn.isSubmitting ||
 		turn.isRestoring;
 	const agent = snapshot.agent;
-	const panelActions = useWorkPanelActions();
+	const workPanelActions = useWorkPanelActions();
+	const presentationAgent = getPresentationAgent();
+	const panelActions = [
+		{
+			id: "powerpoint",
+			label: presentationAgent
+				? "Create PowerPoint"
+				: "PowerPoint unavailable",
+			icon: Presentation,
+			disabled: busy || !presentationAgent,
+			onSelect: () => composer.setPresentation(true),
+		},
+		...workPanelActions,
+	];
 	const openSettings = () =>
 		panelActions.find((action) => action.id === "settings")?.onSelect();
 	const extraCommands = [
@@ -194,6 +214,21 @@ export function AssistantComposer({
 				<output>{snapshot.submissionNotice}</output>
 			)}
 			<div hidden={!isOpen}>
+				{memory.isPresentation && (
+					<div className="flex flex-wrap items-center gap-2 pb-2">
+						<Small>Create PowerPoint</Small>
+						<Button
+							type="button"
+							variant="ghost"
+							size="icon"
+							aria-label="Cancel PowerPoint request"
+							disabled={busy}
+							onClick={() => composer.setPresentation(false)}
+						>
+							<X aria-hidden="true" />
+						</Button>
+					</div>
+				)}
 				{memory.referenceResults.length > 0 && (
 					<fieldset
 						className="m-0 flex min-w-0 flex-wrap gap-2 border-0 p-0"
@@ -332,10 +367,18 @@ export function AssistantComposer({
 						) : null
 					}
 					agentName={agent?.name || "Assistant"}
-					placeholder={"Ask Assistant\u2026"}
+					placeholder={
+						memory.isPresentation
+							? "Describe your presentation..."
+							: "Ask Assistant\u2026"
+					}
 					showModelSelector={false}
 					hideSettingsAction
-					submitLabel="Ask Assistant"
+					submitLabel={
+						memory.isPresentation
+							? "Create PowerPoint"
+							: "Ask Assistant"
+					}
 					requiresModel
 					submitOnEnter
 					isSubmitting={
@@ -428,6 +471,7 @@ export function AssistantComposer({
 											attachment.isFile &&
 											selected.includes(attachment.id),
 									),
+									{ presentation: memory.isPresentation },
 								);
 							} finally {
 								release();

@@ -6,6 +6,7 @@ import { LEGACY_DRAFT_PROPOSAL_INSTRUCTIONS } from "./thread-draft-proposal";
 const HEADER = "[SEMOSS_WORK_CONTEXT_V1]\n";
 const FOOTER = "\n[/SEMOSS_WORK_CONTEXT_V1]\n\n";
 const contextSchema = z.object({
+	presentationAgentId: z.string().min(1).optional(),
 	threadId: z.string().min(1),
 	contextRevision: z.string(),
 	contextText: z.string(),
@@ -29,6 +30,7 @@ const contextSchema = z.object({
 				name: z.string(),
 				/** Name of the copy in the room folder. */
 				file: z.string().min(1),
+				originalFile: z.string().min(1).optional(),
 				/** Office and mail files reach the model as their text. */
 				sentAs: z.enum(["file", "text"]),
 			}),
@@ -87,6 +89,17 @@ export interface ThreadAgent {
 }
 
 let threadAgent: ThreadAgent | null = null;
+let presentationAgent: ThreadAgent | null = null;
+
+/** The server resolves an accessible, managed PowerPoint workspace. */
+export function setPresentationAgent(agent: ThreadAgent | null): void {
+	presentationAgent = agent;
+}
+
+/** Read the configured PowerPoint capability; an absent setting is unavailable. */
+export function getPresentationAgent(): ThreadAgent | null {
+	return presentationAgent;
+}
 
 export function setThreadAgent(agent: ThreadAgent | null): void {
 	threadAgent = agent;
