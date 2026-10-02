@@ -94,30 +94,105 @@ jobs:
             - name: Install jq
               run: apt-get update && apt-get install -y jq
             
-            - name: Download workflow artifact from another repo
+            # Share the artifact selection and diagnostics across all three jobs.
+            - &download_bi_artifact
+              name: Download verified BI build artifact
+              shell: bash
               env:
                 GH_TOKEN: ${{ secrets.SEMOSS_GITHUB_PAT }}
               run: |
-                # Set variables
+                set -euo pipefail
                 REPO="SEMOSS/bi"
-                ARTIFACT_NAME="bi-build"        
-                GH_TOKEN="${{ secrets.SEMOSS_GITHUB_PAT }}"  
-                
-                # 1. Find the latest successful workflow run (customize as needed)
-                RUN_ID=$(curl -s -H "Authorization: token $GH_TOKEN" \
-                  "https://api.github.com/repos/$REPO/actions/runs?status=success&per_page=1" \
-                  | jq -r '.workflow_runs[0].id')
-                
-                # 2. List artifacts for that run
-                ARTIFACT_ID=$(curl -s -H "Authorization: token $GH_TOKEN" \
-                  "https://api.github.com/repos/$REPO/actions/runs/$RUN_ID/artifacts" \
-                  | jq -r --arg NAME "$ARTIFACT_NAME" '.artifacts[] | select(.name == $NAME) | .id')
-                
-                # 3. Download the artifact
-                curl -L -H "Authorization: token $GH_TOKEN" \
-                  -o artifact.zip \
-                  "https://api.github.com/repos/$REPO/actions/artifacts/$ARTIFACT_ID/zip"
-                
+                ARTIFACT_NAME="bi-build"
+                API="https://api.github.com/repos/$REPO/actions"
+
+                if [[ -z "${GH_TOKEN:-}" ]]; then
+                  echo "::error::SEMOSS_GITHUB_PAT is missing; BI artifact access requires Actions read permission on $REPO."
+                  exit 1
+                fi
+
+                DOWNLOAD_DIR=$(mktemp -d)
+                trap 'rm -rf "$DOWNLOAD_DIR"' EXIT
+
+                # Keep HTTP failures out of artifact.zip and log only safe response metadata.
+                request() {
+                  local url="$1" output="$2" status rc=0
+                  status=$(curl --silent --show-error --fail-with-body --location \
+                    --retry 3 --retry-delay 2 --connect-timeout 15 --max-time 120 \
+                    -H "Authorization: Bearer $GH_TOKEN" \
+                    -H "Accept: application/vnd.github+json" \
+                    -H "X-GitHub-Api-Version: 2022-11-28" \
+                    --dump-header "$DOWNLOAD_DIR/headers" --output "$output" \
+                    --write-out '%{http_code}' "$url") || rc=$?
+                  echo "GET $url: HTTP $status (curl exit $rc)"
+                  # Never print Authorization headers or signed download redirect URLs.
+                  awk 'tolower($0) ~ /^(x-github-request-id|x-ratelimit-remaining|x-ratelimit-reset|retry-after|content-type):/ {sub(/\r$/, ""); print}' "$DOWNLOAD_DIR/headers"
+                  if [[ "$rc" -ne 0 || "$status" != 200 ]]; then
+                    echo "::error::BI artifact request failed: HTTP $status (curl exit $rc)."
+                    jq -r '"GitHub message: \(.message // "No JSON error message")"' "$output" 2>/dev/null || true
+                    case "$status" in
+                      401|403|404) echo "Check SEMOSS_GITHUB_PAT access to $REPO, Actions read permission, SSO authorization, and rate limits." ;;
+                      410) echo "The selected artifact expired or was deleted; rerun the BI build and retry." ;;
+                    esac
+                    return 1
+                  fi
+                }
+
+                # Discover the actual artifact, rather than assuming the newest run has one.
+                # Bound the search to the newest 1,000 named artifacts (10 pages).
+                ARTIFACT_ID=""
+                for PAGE in {1..10}; do
+                  request "$API/artifacts?name=$ARTIFACT_NAME&per_page=100&page=$PAGE" "$DOWNLOAD_DIR/artifacts.json"
+                  if ! jq -e '.artifacts | type == "array"' "$DOWNLOAD_DIR/artifacts.json" >/dev/null; then
+                    echo "::error::GitHub returned an invalid artifact-list response."
+                    exit 1
+                  fi
+                  COUNT=$(jq '.artifacts | length' "$DOWNLOAD_DIR/artifacts.json")
+                  echo "Artifact page $PAGE: $COUNT entries (expired artifacts are excluded)."
+                  jq -r --arg name "$ARTIFACT_NAME" '
+                    .artifacts | sort_by(.created_at, .id) | reverse | .[] |
+                    select(.name == $name and .expired == false) |
+                    [.id // "missing", .workflow_run.id // "missing", .size_in_bytes // 0,
+                     .created_at // "unknown", .expires_at // "unknown"] | @tsv
+                  ' "$DOWNLOAD_DIR/artifacts.json" > "$DOWNLOAD_DIR/candidates"
+
+                  while IFS=$'\t' read -r ID RUN_ID SIZE CREATED EXPIRES; do
+                    echo "BI candidate: artifact=$ID run=$RUN_ID bytes=$SIZE created=$CREATED expires=$EXPIRES"
+                    if [[ ! "$ID" =~ ^[0-9]+$ || ! "$RUN_ID" =~ ^[0-9]+$ ]]; then
+                      echo "Skipping artifact with missing or invalid artifact/run ID."
+                      continue
+                    fi
+                    request "$API/runs/$RUN_ID" "$DOWNLOAD_DIR/run.json"
+                    jq -r '"BI run: \(.html_url); workflow=\(.path); branch=\(.head_branch); sha=\(.head_sha); status=\(.status); conclusion=\(.conclusion)"' "$DOWNLOAD_DIR/run.json"
+                    if jq -e '.path == ".github/workflows/ci.yml" and .status == "completed" and .conclusion == "success"' "$DOWNLOAD_DIR/run.json" >/dev/null; then
+                      ARTIFACT_ID="$ID"
+                      break
+                    fi
+                    echo "Skipping artifact: its producing BI CI run has not completed successfully."
+                  done < "$DOWNLOAD_DIR/candidates"
+
+                  if [[ -n "$ARTIFACT_ID" || "$COUNT" -lt 100 ]]; then
+                    break
+                  fi
+                done
+
+                if [[ -z "$ARTIFACT_ID" ]]; then
+                  echo "::error::No unexpired '$ARTIFACT_NAME' artifact from a successful BI CI run was found in the searched pages. Rerun $REPO/.github/workflows/ci.yml to create one."
+                  exit 1
+                fi
+
+                request "$API/artifacts/$ARTIFACT_ID/zip" "$DOWNLOAD_DIR/artifact.zip"
+                if [[ ! -s "$DOWNLOAD_DIR/artifact.zip" ]]; then
+                  echo "::error::BI artifact $ARTIFACT_ID downloaded as an empty file."
+                  exit 1
+                fi
+                echo "Downloaded BI artifact $ARTIFACT_ID: $(wc -c < "$DOWNLOAD_DIR/artifact.zip") bytes."
+                if ! unzip -tq "$DOWNLOAD_DIR/artifact.zip"; then
+                  echo "::error::BI artifact $ARTIFACT_ID is not a valid ZIP archive."
+                  exit 1
+                fi
+                mv "$DOWNLOAD_DIR/artifact.zip" artifact.zip
+
             - name: Move SEMOSS/bi to packages/legacy
               run: |
                 unzip artifact.zip -d ./packages/legacy
@@ -279,30 +354,8 @@ jobs:
             - name: Install jq
               run: apt-get update && apt-get install -y jq
             
-            - name: Download workflow artifact from another repo
-              env:
-                GH_TOKEN: ${{ secrets.SEMOSS_GITHUB_PAT }}
-              run: |
-                # Set variables
-                REPO="SEMOSS/bi"
-                ARTIFACT_NAME="bi-build"        
-                GH_TOKEN="${{ secrets.SEMOSS_GITHUB_PAT }}"  
-                
-                # 1. Find the latest successful workflow run (customize as needed)
-                RUN_ID=$(curl -s -H "Authorization: token $GH_TOKEN" \
-                  "https://api.github.com/repos/$REPO/actions/runs?status=success&per_page=1" \
-                  | jq -r '.workflow_runs[0].id')
-                
-                # 2. List artifacts for that run
-                ARTIFACT_ID=$(curl -s -H "Authorization: token $GH_TOKEN" \
-                  "https://api.github.com/repos/$REPO/actions/runs/$RUN_ID/artifacts" \
-                  | jq -r --arg NAME "$ARTIFACT_NAME" '.artifacts[] | select(.name == $NAME) | .id')
-                
-                # 3. Download the artifact
-                curl -L -H "Authorization: token $GH_TOKEN" \
-                  -o artifact.zip \
-                  "https://api.github.com/repos/$REPO/actions/artifacts/$ARTIFACT_ID/zip"
-                
+            - *download_bi_artifact
+
             - name: Move SEMOSS/bi to packages/legacy
               run: |
                 unzip artifact.zip -d ./packages/legacy
@@ -510,30 +563,8 @@ jobs:
             - name: Install jq
               run: apt-get update && apt-get install -y jq
             
-            - name: Download workflow artifact from another repo
-              env:
-                GH_TOKEN: ${{ secrets.SEMOSS_GITHUB_PAT }}
-              run: |
-                # Set variables
-                REPO="SEMOSS/bi"
-                ARTIFACT_NAME="bi-build"        
-                GH_TOKEN="${{ secrets.SEMOSS_GITHUB_PAT }}"  
-                
-                # 1. Find the latest successful workflow run (customize as needed)
-                RUN_ID=$(curl -s -H "Authorization: token $GH_TOKEN" \
-                  "https://api.github.com/repos/$REPO/actions/runs?status=success&per_page=1" \
-                  | jq -r '.workflow_runs[0].id')
-                
-                # 2. List artifacts for that run
-                ARTIFACT_ID=$(curl -s -H "Authorization: token $GH_TOKEN" \
-                  "https://api.github.com/repos/$REPO/actions/runs/$RUN_ID/artifacts" \
-                  | jq -r --arg NAME "$ARTIFACT_NAME" '.artifacts[] | select(.name == $NAME) | .id')
-                
-                # 3. Download the artifact
-                curl -L -H "Authorization: token $GH_TOKEN" \
-                  -o artifact.zip \
-                  "https://api.github.com/repos/$REPO/actions/artifacts/$ARTIFACT_ID/zip"
-                
+            - *download_bi_artifact
+
             - name: Move SEMOSS/bi to packages/legacy
               run: |
                 unzip artifact.zip -d ./packages/legacy
