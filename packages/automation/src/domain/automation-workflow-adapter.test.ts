@@ -63,7 +63,6 @@ const TEST_NODE_DEFINITIONS: readonly AutomationNodeDefinition[] = [
 		engineId: "",
 		query: "",
 		limit: 50,
-		offset: 0,
 	}),
 	definition("database.insert", "database", "Insert database rows", {
 		engineId: "",
@@ -151,8 +150,8 @@ function documentOf(steps: AutomationNode[]) {
 	});
 }
 
-describe("database query paging", () => {
-	it("preserves the business user's limit and offset", () => {
+describe("database query limit", () => {
+	it("preserves the business user's result limit", () => {
 		const step = node("database.query");
 		const saved = documentOf([
 			{
@@ -162,7 +161,6 @@ describe("database query paging", () => {
 					engineId: "database-1",
 					expression: "SELECT * FROM CLAIMS ORDER BY ID",
 					limit: 100,
-					offset: 25,
 				},
 			},
 		]);
@@ -171,7 +169,6 @@ describe("database query paging", () => {
 			engineId: "database-1",
 			query: "SELECT * FROM CLAIMS ORDER BY ID",
 			limit: 100,
-			offset: 25,
 		});
 
 		const reloaded = canvasDocumentFromWorkflow(saved, {});
@@ -180,7 +177,6 @@ describe("database query paging", () => {
 		);
 		expect(reloadedQuery?.config).toMatchObject({
 			limit: 100,
-			offset: 25,
 		});
 	});
 });

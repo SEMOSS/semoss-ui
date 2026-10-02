@@ -43,7 +43,6 @@ export interface DatabaseEngineConfig {
 	operation: "query" | "write";
 	expression: string;
 	limit: number;
-	offset: number;
 	commit: boolean;
 }
 

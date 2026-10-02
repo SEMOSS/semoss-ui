@@ -344,7 +344,6 @@ function defaultCanvasConfig(
 			operation: type === "database.query" ? "query" : "write",
 			expression: stringValue(config.query),
 			limit: numberValue(config.limit, 50),
-			offset: numberValue(config.offset, 0),
 			commit: config.commit !== false,
 		};
 	}
@@ -523,11 +522,9 @@ function mergeCanvasConfig(
 	if (category === "database") {
 		const expression = getConfigValue(config, "expression");
 		const limit = getConfigValue(config, "limit");
-		const offset = getConfigValue(config, "offset");
 		if (typeof expression === "string") next.query = expression;
 		if (type === "database.query") {
 			if (typeof limit === "number") next.limit = limit;
-			if (typeof offset === "number") next.offset = offset;
 		}
 	}
 	if (category === "model") {

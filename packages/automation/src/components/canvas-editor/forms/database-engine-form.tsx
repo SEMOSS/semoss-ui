@@ -36,8 +36,6 @@ export function DatabaseEngineForm({
 }: DatabaseEngineFormProps) {
 	const limitId = useId();
 	const limitDescriptionId = useId();
-	const offsetId = useId();
-	const offsetDescriptionId = useId();
 	const [structure, setStructure] = useState<TableStructure[]>([]);
 	const [schemaLoading, setSchemaLoading] = useState(false);
 	const [schemaError, setSchemaError] = useState(false);
@@ -162,59 +160,32 @@ export function DatabaseEngineForm({
 			/>
 
 			{config.operation === "query" && (
-				<div className="grid grid-cols-2 gap-3">
-					<Field>
-						<FieldLabel htmlFor={limitId}>Result limit</FieldLabel>
-						<Input
-							id={limitId}
-							aria-describedby={limitDescriptionId}
-							type="number"
-							min={1}
-							max={1000}
-							value={config.limit}
-							onChange={(event) =>
-								onChange({
-									...config,
-									limit: event.target.value
-										? Number(event.target.value)
-										: 50,
-								})
-							}
-							disabled={readOnly}
-						/>
-						<p
-							id={limitDescriptionId}
-							className="text-muted-foreground text-xs"
-						>
-							1–1,000 rows
-						</p>
-					</Field>
-					<Field>
-						<FieldLabel htmlFor={offsetId}>Rows to skip</FieldLabel>
-						<Input
-							id={offsetId}
-							aria-describedby={offsetDescriptionId}
-							type="number"
-							min={0}
-							value={config.offset}
-							onChange={(event) =>
-								onChange({
-									...config,
-									offset: event.target.value
-										? Number(event.target.value)
-										: 0,
-								})
-							}
-							disabled={readOnly}
-						/>
-						<p
-							id={offsetDescriptionId}
-							className="text-muted-foreground text-xs"
-						>
-							Start at 0 for the first row
-						</p>
-					</Field>
-				</div>
+				<Field>
+					<FieldLabel htmlFor={limitId}>Result limit</FieldLabel>
+					<Input
+						id={limitId}
+						aria-describedby={limitDescriptionId}
+						type="number"
+						min={1}
+						max={1000}
+						value={config.limit}
+						onChange={(event) =>
+							onChange({
+								...config,
+								limit: event.target.value
+									? Number(event.target.value)
+									: 50,
+							})
+						}
+						disabled={readOnly}
+					/>
+					<p
+						id={limitDescriptionId}
+						className="text-muted-foreground text-xs"
+					>
+						1–1,000 rows
+					</p>
+				</Field>
 			)}
 
 			{config.engineId && (
