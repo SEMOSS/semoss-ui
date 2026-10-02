@@ -15,20 +15,16 @@ import {
 	CONNECTOR_PROVIDERS,
 	type ConnectorProviderId,
 	type ConnectorServiceId,
-	getConnectorProvider,
 	getConnectorServices,
 	isProviderOffered as isOfferedByServer,
 	type McpTool,
 } from "./connectors/connector.catalog";
 import { isServiceCovered as isCoveredByServer } from "./connectors/connector-access";
 import {
-	connectProvider,
-	getSessionLogins,
 	loadRoomTools,
-	readSessionLoginConfig,
 	readUserConnectorTools,
 	syncRoomConnectorTools,
-} from "./connectors/connectors.api";
+} from "./connectors/connector-tools";
 import { RoomFolderProvider } from "./folders/room-folder.provider";
 import {
 	CONNECTOR_SOURCES,
@@ -101,6 +97,20 @@ const toToolResponseText = (outcome: FolderToolOutcome): string =>
 		? String(outcome.payload.error)
 		: JSON.stringify(outcome.payload)
 	).replace(/<\/encode>/gi, "<\\/encode>");
+
+/**
+ * Whether two provider lists, or the null that stands for "not known yet",
+ * name the same providers in the same order.
+ */
+const isSameProviderList = (
+	a: readonly ConnectorProviderId[] | null,
+	b: readonly ConnectorProviderId[] | null,
+): boolean =>
+	a === b ||
+	(a !== null &&
+		b !== null &&
+		a.length === b.length &&
+		a.every((id, index) => id === b[index]));
 
 /**
  * One room's teamwork state: the default tools its chat sends, the connectors
@@ -562,9 +572,11 @@ export class TeamworkStore {
 	};
 
 	/**
-	 * Read the user's connectors and the session's logins, and bring this
-	 * room's copy of the connectors up to date. Called when the room loads, so
-	 * a chat opened after the user changed their connectors has the change.
+	 * Read the user's connectors and bring this room's copy of them up to
+	 * date. Called when the room loads, so a chat opened after the user changed
+	 * their connectors has the change. The session's logins are not read here:
+	 * the SDK keeps them, and `useTeamworkLogins` hands them over while a view
+	 * shows sign in state.
 	 *
 	 * @param options - `isNew`: the room was just created, so it has no copy
 	 * yet; {@link TeamworkStore.adopt} makes it before the first message.
@@ -579,11 +591,7 @@ export class TeamworkStore {
 			return;
 		}
 		try {
-			await Promise.all([
-				this.restoreConnectors(isNew),
-				this.refreshConnectedProviders(),
-				this.refreshLoginConfig(),
-			]);
+			await this.restoreConnectors(isNew);
 		} catch (error) {
 			console.warn("Could not restore the room's teamwork state", error);
 		}
@@ -695,59 +703,46 @@ export class TeamworkStore {
 	};
 
 	/**
-	 * Read which providers the session is signed in to. The read is shared
-	 * with the rest of the page and reused for a short while, so views can ask
-	 * whenever they show sign in state. A failed read keeps what was known.
+	 * Take what the SDK knows about the session's sign ins: the logins it holds,
+	 * from `Logins`, and what the server's config says they allow. Handed over
+	 * by `useTeamworkLogins` while a view shows sign in state. An unchanged
+	 * answer leaves the views that show it alone.
 	 *
-	 * @param options - `force`: read again rather than reuse a recent read.
-	 * @return Settles once the logins are read. Never rejects.
+	 * @param session.logins - The session's logins, or null until they are
+	 * known.
+	 * @param session.connectorAccess - The config's `connectorAccess`, if any.
+	 * @param session.availableProviders - The config's `availableProviders`.
 	 */
-	refreshConnectedProviders = async ({
-		force = false,
+	setSessionLogins = ({
+		logins,
+		connectorAccess,
+		availableProviders,
 	}: {
-		force?: boolean;
-	} = {}): Promise<void> => {
-		try {
-			const logins = await getSessionLogins(
-				force ? { maxAgeMs: 0 } : undefined,
-			);
-			const next = CONNECTOR_PROVIDERS.filter(
-				(provider) => provider.loginKey in logins,
+		logins: Record<string, string> | null;
+		connectorAccess: unknown;
+		availableProviders: unknown;
+	}): void => {
+		const connected =
+			logins === null
+				? null
+				: CONNECTOR_PROVIDERS.filter(
+						(provider) => provider.loginKey in logins,
+					).map((provider) => provider.id);
+		if (!isSameProviderList(this.connectedProviders, connected)) {
+			this.connectedProviders = connected;
+		}
+		if (connectorAccess !== undefined && connectorAccess !== null) {
+			this.connectorAccess = connectorAccess;
+		}
+		if (Array.isArray(availableProviders)) {
+			const offered = CONNECTOR_PROVIDERS.filter((provider) =>
+				isOfferedByServer(availableProviders, provider),
 			).map((provider) => provider.id);
-			runInAction(() => {
-				const current = this.connectedProviders;
-				// an unchanged answer leaves the views that show it alone
-				if (
-					current === null ||
-					current.length !== next.length ||
-					current.some((id, index) => id !== next[index])
-				) {
-					this.connectedProviders = next;
-				}
-			});
-		} catch (error) {
-			console.warn("Could not read the session's logins", error);
+			if (!isSameProviderList(this.offeredProviders, offered)) {
+				this.offeredProviders = offered;
+			}
 		}
 	};
-
-	/**
-	 * Sign the session in to a provider, then read the logins again so the
-	 * prompts and viewers follow.
-	 *
-	 * Must be called straight from a click: the sign in window opens before
-	 * anything is awaited.
-	 *
-	 * @param providerId - The provider.
-	 * @return Whether the session holds the provider's login afterwards.
-	 * @throws PopupBlockedError when the browser blocks the sign in window.
-	 */
-	signIn = (providerId: ConnectorProviderId): Promise<boolean> =>
-		connectProvider(getConnectorProvider(providerId)).then(
-			async (isConnected) => {
-				await this.refreshConnectedProviders();
-				return isConnected;
-			},
-		);
 
 	/**
 	 * Put a sign in prompt away until the page reloads.
@@ -772,28 +767,6 @@ export class TeamworkStore {
 				providerId,
 			];
 		}
-	};
-
-	/**
-	 * Read which logins this server offers and which connector apps their
-	 * sign ins allow. The page reads them once. A failed read keeps what was
-	 * known.
-	 *
-	 * @return Settles once the config is read. Never rejects.
-	 */
-	refreshLoginConfig = async (): Promise<void> => {
-		const { connectorAccess, availableProviders } =
-			await readSessionLoginConfig();
-		runInAction(() => {
-			if (connectorAccess !== null) {
-				this.connectorAccess = connectorAccess;
-			}
-			if (availableProviders !== null) {
-				this.offeredProviders = CONNECTOR_PROVIDERS.filter((provider) =>
-					isOfferedByServer(availableProviders, provider),
-				).map((provider) => provider.id);
-			}
-		});
 	};
 
 	/**

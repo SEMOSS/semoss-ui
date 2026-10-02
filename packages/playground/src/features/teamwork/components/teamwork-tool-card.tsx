@@ -17,7 +17,10 @@ import { ToolInspector } from "@/features/tool-inspector/tool-inspector";
 import { decideAgentToolAction } from "@/stores/message/agent-harness";
 import type { ToolStore } from "@/stores/tool/tool.store";
 import { isAskExecutionMode } from "@/utility/mcp-utils";
-import { isSignInFailure } from "../connectors/connector-sign-in";
+import {
+	isSignInFailure,
+	signInToProvider,
+} from "../connectors/connector-sign-in";
 import { useConnectProvider } from "../connectors/use-connect-provider";
 import { FOLDER_TOOL_NAMES, isFolderToolName } from "../tools/folder-tools";
 import {
@@ -97,7 +100,7 @@ export const TeamworkToolCard = observer(
 		const [decision, setDecision] = useState<"allow" | "deny" | null>(null);
 
 		const room = tool.room;
-		const handleSignIn = useConnectProvider(room.teamwork.signIn);
+		const handleSignIn = useConnectProvider(signInToProvider);
 		const json = tool.json;
 		const args = tool.parameters ?? {};
 		const isFolder = isFolderToolCall(json);

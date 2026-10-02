@@ -1,5 +1,4 @@
 import { observer } from "mobx-react-lite";
-import { useEffect } from "react";
 import type { ConnectorViewerService } from "@semoss/connectors";
 import { useTranslation } from "@semoss/i18n";
 import { ConnectorBrandIcon, LoginProviderIcon } from "@semoss/shared";
@@ -11,6 +10,7 @@ import {
 } from "@semoss/ui/next";
 import { CONNECTOR_PROVIDERS } from "../connectors/connector.catalog";
 import type { TeamworkStore } from "../teamwork.store";
+import { useTeamworkLogins } from "../use-teamwork-logins";
 
 /** Props for {@link TeamworkSourcesMenuItem}. */
 export interface TeamworkSourcesMenuItemProps {
@@ -41,9 +41,8 @@ export const TeamworkSourcesMenuItem = observer(
 		const { t } = useTranslation("teamwork");
 		const sources = teamwork.availableSources;
 
-		useEffect(() => {
-			void teamwork.refreshConnectedProviders();
-		}, [teamwork]);
+		// the viewers offered follow what the session is signed in to
+		useTeamworkLogins(teamwork);
 
 		return CONNECTOR_PROVIDERS.map((provider) => {
 			const offered = sources.filter(

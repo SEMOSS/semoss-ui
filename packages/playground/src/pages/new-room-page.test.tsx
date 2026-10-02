@@ -24,6 +24,17 @@ const mocks = vi.hoisted(() => ({
 	selectModelById: vi.fn(),
 	workspaceStatus: "SUCCESS",
 	refreshWorkspace: vi.fn(),
+	// stable, as the SDK's are, so views keep the same logins between renders
+	logins: {
+		logins: {},
+		primaryLogin: null,
+		connectorAccess: null,
+		availableProviders: [],
+		status: "ready" as const,
+		refresh: vi.fn(),
+		connect: vi.fn(),
+		disconnect: vi.fn(),
+	},
 }));
 const alpha = {
 	workspace_id: "alpha",
@@ -63,9 +74,9 @@ vi.mock("@semoss/i18n", () => ({
 	useTranslation: () => ({ t: (key: string) => key }),
 	getI18n: () => ({ t: (key: string) => key }),
 }));
-vi.mock("@/features/teamwork/connectors/connectors.api", async (original) => ({
+vi.mock("@/features/teamwork/connectors/connector-tools", async (original) => ({
 	...(await original<
-		typeof import("@/features/teamwork/connectors/connectors.api")
+		typeof import("@/features/teamwork/connectors/connector-tools")
 	>()),
 	readUserConnectorTools: vi.fn().mockResolvedValue(null),
 	syncRoomConnectorTools: vi.fn().mockResolvedValue(undefined),
@@ -73,6 +84,8 @@ vi.mock("@/features/teamwork/connectors/connectors.api", async (original) => ({
 vi.mock("@semoss/sdk/react", async (original) => ({
 	...(await original<typeof import("@semoss/sdk/react")>()),
 	InsightProvider: ({ children }: { children: ReactNode }) => children,
+	// the session's logins, without reading them from a server
+	useLogins: () => mocks.logins,
 	usePixel: (pixel: string) => ({
 		status: pixel.includes("GetWorkspace")
 			? mocks.workspaceStatus

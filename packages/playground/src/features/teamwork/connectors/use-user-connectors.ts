@@ -7,7 +7,7 @@ import {
 import {
 	readUserConnectorTools,
 	writeUserConnectorTools,
-} from "./connectors.api";
+} from "./connector-tools";
 
 /** What {@link useUserConnectors} returns. */
 export interface UseUserConnectorsResult {

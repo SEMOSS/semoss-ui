@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useInsight } from "@semoss/sdk/react";
+import { useLogins } from "@semoss/sdk/react";
 import {
 	CONNECTOR_PROVIDERS,
 	type ConnectorProvider,
@@ -13,12 +13,7 @@ import {
 	getProviderAccess,
 	isServiceCovered as isCoveredByServer,
 } from "./connector-access";
-import {
-	connectProvider,
-	disconnectProvider,
-	getSessionLogins,
-	readSessionLoginConfig,
-} from "./connectors.api";
+import { signInToProvider } from "./connector-sign-in";
 
 /** Where one provider stands for the current session. */
 export interface ProviderConnection {
@@ -88,20 +83,22 @@ export interface UseConnectionsResult {
  * @return The providers' state and the actions that change it.
  */
 export const useConnections = (): UseConnectionsResult => {
-	const { system } = useInsight();
-	const [logins, setLogins] = useState<Record<string, string>>({});
-	const [status, setStatus] =
-		useState<UseConnectionsResult["status"]>("loading");
+	// the SDK keeps the logins current, reading them again on mount and focus
+	const {
+		logins,
+		primaryLogin,
+		connectorAccess,
+		availableProviders,
+		status,
+		refresh: refreshLogins,
+		disconnect: disconnectLogin,
+	} = useLogins();
 	const [connectingProviderId, setConnectingProviderId] =
 		useState<ConnectorProviderId | null>(null);
 	const [disconnectingProviderId, setDisconnectingProviderId] =
 		useState<ConnectorProviderId | null>(null);
-	// the login the session belongs to; undefined until read, null if unknown
-	const [primaryLogin, setPrimaryLogin] = useState<string | null | undefined>(
-		undefined,
-	);
 
-	// refresh and connect resolve after user actions, possibly after the
+	// connect and disconnect resolve after user actions, possibly after the
 	// component using this hook is gone
 	const isMountedRef = useRef(true);
 	useEffect(() => {
@@ -111,92 +108,48 @@ export const useConnections = (): UseConnectionsResult => {
 		};
 	}, []);
 
-	useEffect(() => {
-		let isCancelled = false;
-		void readSessionLoginConfig().then((config) => {
-			if (!isCancelled) {
-				setPrimaryLogin(config.primaryLogin);
-			}
-		});
-		return () => {
-			isCancelled = true;
-		};
-	}, []);
-
-	useEffect(() => {
-		let isCancelled = false;
-		void (async () => {
-			try {
-				const next = await getSessionLogins();
-				if (!isCancelled) {
-					setLogins(next);
-					setStatus("ready");
-				}
-			} catch {
-				if (!isCancelled) {
-					setStatus("error");
-				}
-			}
-		})();
-		return () => {
-			isCancelled = true;
-		};
-	}, []);
-
 	const refresh = useCallback(async (): Promise<void> => {
 		try {
-			const next = await getSessionLogins({ maxAgeMs: 0 });
-			if (isMountedRef.current) {
-				setLogins(next);
-				setStatus("ready");
-			}
+			await refreshLogins({ maxAgeMs: 0 });
 		} catch {
-			if (isMountedRef.current) {
-				setStatus("error");
-			}
+			// the logins' status says the read failed
 		}
-	}, []);
+	}, [refreshLogins]);
 
 	const connect = useCallback(
 		async (providerId: ConnectorProviderId): Promise<boolean> => {
 			setConnectingProviderId(providerId);
 			try {
 				// no await before this call: the popup has to open inside the click
-				const isConnected = await connectProvider(
-					getConnectorProvider(providerId),
-				);
-				await refresh();
-				return isConnected;
+				return await signInToProvider(providerId);
 			} finally {
 				if (isMountedRef.current) {
 					setConnectingProviderId(null);
 				}
 			}
 		},
-		[refresh],
+		[],
 	);
 
 	const disconnect = useCallback(
 		async (providerId: ConnectorProviderId): Promise<void> => {
 			setDisconnectingProviderId(providerId);
 			try {
-				await disconnectProvider(getConnectorProvider(providerId));
+				await disconnectLogin(
+					getConnectorProvider(providerId).loginKey,
+				);
 			} finally {
-				await refresh();
 				if (isMountedRef.current) {
 					setDisconnectingProviderId(null);
 				}
 			}
 		},
-		[refresh],
+		[disconnectLogin],
 	);
 
 	const connections = CONNECTOR_PROVIDERS.map((provider) => ({
 		provider: provider,
-		isAvailable: isProviderOffered(
-			system?.config.availableProviders,
-			provider,
-		),
+		isAvailable: isProviderOffered(availableProviders, provider),
 		isConnected: provider.loginKey in logins,
 		accountName: logins[provider.loginKey] ?? "",
 		isSessionLogin: !!primaryLogin && primaryLogin === provider.loginKey,
@@ -219,7 +172,7 @@ export const useConnections = (): UseConnectionsResult => {
 	};
 
 	const isServiceCovered = (serviceId: ConnectorServiceId): boolean =>
-		isCoveredByServer(serviceId, system?.config.connectorAccess);
+		isCoveredByServer(serviceId, connectorAccess);
 
 	return {
 		status: status,
@@ -229,8 +182,7 @@ export const useConnections = (): UseConnectionsResult => {
 		isServiceReady: isServiceReady,
 		isServiceCovered: isServiceCovered,
 		hasAccessInfo: (providerId) =>
-			getProviderAccess(system?.config.connectorAccess, providerId) !==
-			null,
+			getProviderAccess(connectorAccess, providerId) !== null,
 		refresh: refresh,
 		connect: connect,
 		disconnect: disconnect,

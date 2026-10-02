@@ -29,6 +29,21 @@ export const formatJson = (value: string, fallback = value): string => {
 	}
 };
 
+/**
+ * Serialize JSON with object keys sorted at every depth, so equal values give
+ * equal strings whatever order their keys were set in. Array order is kept.
+ */
+export const stringifyJsonWithSortedKeys = (value: unknown): string =>
+	JSON.stringify(value, (_key, item: unknown) =>
+		isRecord(item)
+			? Object.fromEntries(
+					Object.entries(item).sort(([a], [b]) =>
+						a < b ? -1 : a > b ? 1 : 0,
+					),
+				)
+			: item,
+	);
+
 /** Parse object-like output, accepting the single-quote form from legacy output. */
 export const isOutputJSON = (output: unknown): unknown | null => {
 	if (typeof output === "object" && output !== null) {

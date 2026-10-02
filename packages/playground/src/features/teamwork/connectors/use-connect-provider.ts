@@ -1,16 +1,17 @@
 import { useCallback } from "react";
 import { useTranslation } from "@semoss/i18n";
+import { PopupBlockedError } from "@semoss/sdk";
 import { toast } from "@semoss/ui/next";
 import { getErrorMessage } from "@semoss/utility/error";
 import type { ConnectorProviderId } from "./connector.catalog";
-import { PopupBlockedError } from "./connectors.api";
 import type { UseConnectionsResult } from "./use-connections";
 
 /**
  * A click handler that signs in to a provider and tells the user how it went:
  * connected, closed before finishing, or blocked by the browser.
  *
- * @param connect - `connect` from {@link useConnections}.
+ * @param connect - Signs in to a provider from the click: `signInToProvider`,
+ * or `connect` from {@link useConnections}.
  * @param onConnected - Called once a provider is connected, after the toast.
  * @return The handler. It starts the popup synchronously, so call it from the
  * click itself.

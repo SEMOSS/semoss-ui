@@ -1,23 +1,25 @@
 import { useEffect } from "react";
+import { useLogins } from "@semoss/sdk/react";
 import type { TeamworkStore } from "./teamwork.store";
 
 /**
- * Keep a view's sign in state current: read the session's logins when it
- * mounts and whenever the window regains focus, so signing in or out in
- * another tab shows up, and read the server's login settings once. The read
- * is shared with the rest of the page and reused for a short while, so
- * focusing the window over and over does not read them each time.
+ * Keep a view's sign in state current: hand the teamwork store what the SDK
+ * knows about the session's logins, which it reads again when the view mounts
+ * and whenever the window regains focus, and what the server says those sign
+ * ins allow.
  *
  * @param teamwork - The room's teamwork state.
  */
 export const useTeamworkLogins = (teamwork: TeamworkStore): void => {
+	const { logins, status, connectorAccess, availableProviders } = useLogins();
+
 	useEffect(() => {
-		const refresh = () => {
-			void teamwork.refreshConnectedProviders();
-		};
-		refresh();
-		void teamwork.refreshLoginConfig();
-		window.addEventListener("focus", refresh);
-		return () => window.removeEventListener("focus", refresh);
-	}, [teamwork]);
+		// nothing is known, sign ins offered included, until the config is read
+		const isKnown = status !== "loading";
+		teamwork.setSessionLogins({
+			logins: isKnown ? logins : null,
+			connectorAccess: connectorAccess,
+			availableProviders: isKnown ? availableProviders : undefined,
+		});
+	}, [teamwork, logins, status, connectorAccess, availableProviders]);
 };

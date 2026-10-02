@@ -254,15 +254,15 @@ account is not connected shows its switch in gray with a warning mark. These det
   reads it by each service's `accessKey`, and a service the sign in cannot cover cannot be
   switched on. The session can also list an account whose token has lapsed, so a connector call
   that fails with the login required error offers a sign in in its own card (`isSignInFailure`).
-- **The session's logins are one shared read.** Many views show sign in state, so
-  `getSessionLogins` joins a read in flight and reuses one younger than 30 seconds; a sign in or a
-  retry reads again. The login settings in `/api/config` are read once per page. Views may ask
-  whenever they mount or the window regains focus without calling the backend each time.
-- **Signing in always starts fresh.** The session keeps listing a provider whose token expired,
-  so `connectProvider` signs a listed provider out first and waits for it to be listed again,
-  checking the popup every second and the logins every five. It never signs out the session's own
-  login (`primaryLogin` in `/api/config`), which would end the session or change whose it is; for
-  that one it waits for the popup instead.
+- **The SDK owns the session's logins.** Playground keeps no login state or cache of its own:
+  `useLogins()` from `@semoss/sdk/react` reads the SDK's `Logins`, shared by the whole page, and
+  reads again when a view mounts or the window regains focus. `useTeamworkLogins` hands it to
+  `TeamworkStore.setSessionLogins`, and `useConnections` reads it for the Connectors page. Signing
+  in goes through `signInToProvider` (`connectors/connector-sign-in.ts`), which calls
+  `Logins.connect`: a fresh sign in that never signs out the session's own login. See
+  [the SDK guide](../../libs/sdk/AGENTS.md#session-logins).
+- **Connector files are pixel calls, not session state.** `connectors/connector-tools.ts` reads
+  and writes the user's connector file and each room's tool file; it holds no login code.
 
 ## Design-System Notes
 
