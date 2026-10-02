@@ -12,8 +12,6 @@ import type { ThreadComposerMode } from "./thread-composer-controls";
 
 interface WorkComposerSnapshot {
 	emailDrafts: EmailDraftEditor[];
-	insightsRequest: { id: string; revision: string } | null;
-	insightsError: string;
 	referenceResults: { toolId: string; title: string; output: string }[];
 	emailRequest: { id: string } | null;
 	mode: ThreadComposerMode | null;
@@ -29,8 +27,6 @@ interface WorkComposerSnapshot {
 export class WorkComposerSession {
 	private snapshot: WorkComposerSnapshot = {
 		emailDrafts: [],
-		insightsRequest: null,
-		insightsError: "",
 		referenceResults: [],
 		emailRequest: null,
 		mode: null,
@@ -82,13 +78,6 @@ export class WorkComposerSession {
 				(item) => item.toolId !== toolId,
 			),
 		});
-	};
-
-	beginInsights = (request: { id: string; revision: string }): void => {
-		this.update({ insightsRequest: request, insightsError: "" });
-	};
-	finishInsights = (error = ""): void => {
-		this.update({ insightsRequest: null, insightsError: error });
 	};
 
 	setError = (error: string): void => {

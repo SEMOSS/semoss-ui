@@ -52,9 +52,20 @@ Work assembles source context from the loaded thread and its participant/source
 settings. Each assistant request includes that context in a `SEMOSS_WORK_CONTEXT_V1`
 envelope. Settings → Advanced displays the next request's source material and the last
 saved request snapshot. Context contains Summary, editable Action items, relevant
-Presentation results, Key facts, and collapsed Sources controls. Summarize and
-Regenerate use the existing agent; untouched generated actions can be replaced,
-while manual edits and completions are retained. The empty action row accepts
+Presentation results, Key facts, and collapsed Sources controls.
+
+Brain writes the Summary and generated Action items in the background
+(`WorkSummarizeThread` / `WorkGetThreadInsights`, Semoss `WorkThreadInsights`,
+Brain's text model `COLLAB_LLM_ENGINE_ID`). It never sends a chat turn, so the
+assistant's room, conversation, and running task are untouched. A mail sync
+queues every thread with new mail; opening a thread whose summary does not
+cover its newest message runs it at once; Summarize and Regenerate force a new
+one. Each run sees the tracked items, so generated ones are updated in place or
+closed when a reply finishes them, and reading the same mail again adds nothing.
+Untouched generated items it leaves out are removed. The owner's own items,
+edited text, completions, and deleted generated items (kept as dismissed on the
+server) are never rewritten or added back. Including or excluding a participant,
+or changing a rule, makes the summary stale so the next open runs it again. The empty action row accepts
 Enter and stays focused for another item. Topic editing and mute controls live
 in Settings → Thread. Earlier requests remain in the room history. Usage and compaction in Settings → Advanced reuse existing room
 operations; `/compact` opens this section. Compaction requires a settled run and a persisted assistant leaf, and locks

@@ -1,11 +1,12 @@
-import { selectThreadContext } from "./collaboration.selectors";
 import type {
 	CollaborationCommand,
 	CollaborationState,
+	Thread,
 	ThreadTopicLink,
 	ThreadWorkspace,
 	Topic,
 	WorkItem,
+	WorkspaceStep,
 } from "./collaboration.types";
 
 /** New workspaces contain no inferred source bodies or assistant history. */
@@ -293,6 +294,44 @@ function syncItemSteps(state: CollaborationState, item: WorkItem): void {
 				step.status = item.suggested ? "suggested" : "open";
 		}
 	}
+}
+
+// a copy of the thread read before a newer summary landed must not bring the old one back
+function isOlderSummary(incoming: Thread, current: Thread): boolean {
+	return Boolean(
+		current.summaryAt &&
+			(!incoming.summaryAt || incoming.summaryAt < current.summaryAt),
+	);
+}
+
+function summaryOf(thread: Thread): Partial<Thread> {
+	return {
+		summary: thread.summary,
+		summaryAt: thread.summaryAt,
+		summaryCurrent: thread.summaryCurrent,
+		summaryPending: thread.summaryPending,
+	};
+}
+
+/**
+ * The server's steps for one thread over the local list; saves made before the read have landed. A step
+ * changed or added here after the read went out (keep) stays as it is here. A generated step the server no
+ * longer has was dropped by a later summary; other local-only steps are unsaved and stay.
+ */
+function mergeServerSteps(
+	local: WorkspaceStep[],
+	server: WorkspaceStep[],
+	keep: ReadonlySet<string>,
+): WorkspaceStep[] {
+	const incoming = new Map(server.map((step) => [step.id, step]));
+	const merged = local.flatMap((step) => {
+		const next = incoming.get(step.id);
+		incoming.delete(step.id);
+		if (keep.has(step.id)) return [step];
+		if (!next) return step.isGenerated ? [] : [step];
+		return [{ ...next }];
+	});
+	return [...merged, ...[...incoming.values()].map((step) => ({ ...step }))];
 }
 
 /** Apply a single local intent atomically. The caller supplies time for deterministic tests. */
@@ -727,61 +766,25 @@ export function collaborationReducer(
 			const thread = state.threads.find(
 				(item) => item.id === command.threadId,
 			);
-			const workspace = state.workspaces[command.threadId];
 			if (
 				!thread ||
-				!workspace ||
-				thread.insightsRequestId === command.requestId ||
-				selectThreadContext(state, thread.id)?.revision !==
-					command.revision
+				isOlderSummary(
+					{ ...thread, summaryAt: command.summaryAt },
+					thread,
+				)
 			)
 				break;
 			thread.summary = command.summary;
-			thread.summaryGenerated = true;
-			thread.summaryRevision = command.revision;
-			thread.insightsRequestId = command.requestId;
-			const protectedSteps = workspace.steps.filter(
-				(step) =>
-					!step.isGenerated ||
-					step.isUserEdited ||
-					step.status === "done",
+			thread.summaryAt = command.summaryAt;
+			thread.summaryCurrent = command.summaryCurrent;
+			delete thread.summaryPending;
+			state.workspaces[command.threadId] ??= createEmptyWorkspace();
+			const workspace = state.workspaces[command.threadId];
+			workspace.steps = mergeServerSteps(
+				workspace.steps,
+				command.steps,
+				new Set(command.keepStepIds),
 			);
-			const texts = new Set(
-				protectedSteps.map((step) =>
-					step.text.trim().toLocaleLowerCase(),
-				),
-			);
-			const owner = state.liveProfile?.id ?? "me";
-			workspace.steps = [
-				...protectedSteps,
-				...command.steps.flatMap((step) => {
-					const text = step.text.trim();
-					if (!text || texts.has(text.toLocaleLowerCase())) return [];
-					texts.add(text.toLocaleLowerCase());
-					const ownerId =
-						step.ownerId &&
-						(step.ownerId === owner ||
-							thread.participants.some(
-								(person) => person.personId === step.ownerId,
-							))
-							? step.ownerId
-							: owner;
-					return [
-						{
-							id: `local-step-${state.sequence++}`,
-							text,
-							ownerId,
-							due: step.due,
-							status:
-								ownerId === owner
-									? ("open" as const)
-									: ("waiting" as const),
-							kind: "task" as const,
-							isGenerated: true,
-						},
-					];
-				}),
-			];
 			break;
 		}
 		case "workspace.step": {
@@ -971,13 +974,8 @@ export function collaborationReducer(
 					topicLinks: existing.topicLinks,
 					muted: existing.muted,
 					roomId: existing.roomId,
-					...(existing.summaryGenerated
-						? {
-								summary: existing.summary,
-								summaryGenerated: true,
-								summaryRevision: existing.summaryRevision,
-								insightsRequestId: existing.insightsRequestId,
-							}
+					...(isOlderSummary(command.thread, existing)
+						? summaryOf(existing)
 						: {}),
 					participants,
 				});
@@ -1011,6 +1009,7 @@ export function collaborationReducer(
 		}
 		case "live.refresh": {
 			const keepThreads = new Set(command.updates.keepThreadIds);
+			const keepSteps = new Set(command.updates.keepStepIds);
 			for (const incoming of command.updates.threads) {
 				const thread = state.threads.find(
 					(item) => item.id === incoming.id,
@@ -1022,7 +1021,6 @@ export function collaborationReducer(
 						createEmptyWorkspace();
 					continue;
 				}
-				const hasNewContent = thread.lastAt !== incoming.lastAt;
 				thread.messageCount = incoming.messageCount;
 				thread.lastAt = incoming.lastAt;
 				// what Brain decided on the server (filing, Ignore, automated) shows without a reload
@@ -1031,26 +1029,17 @@ export function collaborationReducer(
 					thread.muted = incoming.muted;
 					thread.automated = incoming.automated;
 				}
-				if (hasNewContent && !thread.summaryGenerated)
-					thread.summary = incoming.summary;
+				// Brain writes summaries in the background, so a new one shows without opening the thread
+				if (!isOlderSummary(incoming, thread))
+					Object.assign(thread, summaryOf(incoming));
 				const workspace = state.workspaces[thread.id];
-				const next = command.updates.workspaces[thread.id];
-				if (workspace && next) {
-					const steps = new Map(
-						workspace.steps.map((step) => [step.id, step]),
+				// a thread missing from the workspace list has no steps left on the server
+				if (workspace)
+					workspace.steps = mergeServerSteps(
+						workspace.steps,
+						command.updates.workspaces[thread.id]?.steps ?? [],
+						keepSteps,
 					);
-					for (const step of next.steps) {
-						const current = steps.get(step.id);
-						if (
-							!current ||
-							(!current.isUserEdited &&
-								!current.isGenerated &&
-								current.status !== "done")
-						)
-							steps.set(step.id, step);
-					}
-					workspace.steps = [...steps.values()];
-				}
 			}
 			// server state wins for items already shown (closed by a reply, updated by a new message), except
 			// the ones edited locally while the read was in flight
@@ -1119,6 +1108,7 @@ export type HistoryAction =
 	| { type: "undo" };
 
 const UNRECORDED_COMMANDS = new Set<CollaborationCommand["type"]>([
+	"thread.insights",
 	"source.deleted",
 	"session.create",
 	"live.refresh",

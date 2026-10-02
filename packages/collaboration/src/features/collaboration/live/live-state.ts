@@ -274,6 +274,9 @@ function mapThread(row: Row): Thread {
 		lastAt: str(row.lastAt),
 		roomId: opt(row.roomId) ?? null,
 		summary: str(row.summary),
+		summaryAt: opt(row.summaryAt),
+		summaryCurrent: row.summaryCurrent === true,
+		summaryPending: row.summaryPending === true ? true : undefined,
 		needsTopicChoice: row.needsTopicChoice === true ? true : undefined,
 		isSample: false,
 	};
@@ -420,6 +423,26 @@ export async function loadLiveState(
 	};
 }
 
+// a due day is saved as midnight UTC; as a plain date it shows on that day in every time zone
+function dueDay(value: unknown): string | null {
+	const due = opt(value);
+	return due?.endsWith("T00:00:00Z") ? due.slice(0, 10) : (due ?? null);
+}
+
+function mapStep(step: Row): WorkspaceStep {
+	return {
+		id: str(step.id),
+		text: str(step.text),
+		ownerId: str(step.ownerId, "me"),
+		due: dueDay(step.due),
+		status: str(step.status, "open") as WorkspaceStep["status"],
+		kind: str(step.kind, "task") as WorkspaceStep["kind"],
+		itemId: opt(step.itemId),
+		linkTopicId: opt(step.linkTopicId),
+		...(step.origin === "brain" ? { isGenerated: true } : {}),
+	};
+}
+
 // saved goal, steps, and facts; messages load when the thread opens
 function mapWorkspaces(page: Page): Record<string, ThreadWorkspace> {
 	return Object.fromEntries(
@@ -428,21 +451,7 @@ function mapWorkspaces(page: Page): Record<string, ThreadWorkspace> {
 			{
 				...createEmptyWorkspace(),
 				goal: str(row.goal),
-				steps: list<Row>(row.steps).map(
-					(step): WorkspaceStep => ({
-						id: str(step.id),
-						text: str(step.text),
-						ownerId: str(step.ownerId, "me"),
-						due: opt(step.due) ?? null,
-						status: str(
-							step.status,
-							"open",
-						) as WorkspaceStep["status"],
-						kind: str(step.kind, "task") as WorkspaceStep["kind"],
-						itemId: opt(step.itemId),
-						linkTopicId: opt(step.linkTopicId),
-					}),
-				),
+				steps: list<Row>(row.steps).map(mapStep),
 				facts: list<Row>(row.facts).map(
 					(fact): WorkspaceFact => ({
 						id: str(fact.id),
@@ -578,6 +587,73 @@ export async function loadThreadMessages(
 		people: [],
 		workspace: { messages },
 	});
+}
+
+const threadInsightsSchema = z.object({
+	threadId: z.string(),
+	status: z.enum(["running", "done", "failed"]),
+	error: z.string().nullish(),
+	summary: z.string().nullish(),
+	summaryAt: z.string().nullish(),
+	summaryCurrent: z.boolean(),
+	steps: z.array(z.record(z.string(), z.unknown())),
+});
+
+/** A thread's summary run on the server, and the summary and steps it left. */
+export interface ThreadInsightsResult {
+	status: "running" | "done" | "failed";
+	error: string;
+	summary: string;
+	summaryAt?: string;
+	summaryCurrent: boolean;
+	steps: WorkspaceStep[];
+}
+
+async function runThreadInsights(
+	actions: InsightActions,
+	statement: string,
+	threadId: string,
+): Promise<ThreadInsightsResult> {
+	const [raw] = await runBatch(actions, [statement]);
+	const out = threadInsightsSchema.parse(raw);
+	if (out.threadId !== threadId)
+		throw new Error("Received a summary for a different thread.");
+	return {
+		status: out.status,
+		error: out.error ?? "",
+		summary: out.summary ?? "",
+		summaryAt: out.summaryAt ?? undefined,
+		summaryCurrent: out.summaryCurrent,
+		steps: out.steps.map(mapStep),
+	};
+}
+
+/**
+ * Ask Brain to summarize the thread and find its action items in the background, outside its assistant room.
+ * Without force the server does nothing when the summary already covers the newest message.
+ */
+export function summarizeThread(
+	actions: InsightActions,
+	threadId: string,
+	force: boolean,
+): Promise<ThreadInsightsResult> {
+	return runThreadInsights(
+		actions,
+		pixel("WorkSummarizeThread", { threadId, force: force || undefined }),
+		threadId,
+	);
+}
+
+/** Poll a summary run started by {@link summarizeThread}, a sync, or another tab. */
+export function readThreadInsights(
+	actions: InsightActions,
+	threadId: string,
+): Promise<ThreadInsightsResult> {
+	return runThreadInsights(
+		actions,
+		pixel("WorkGetThreadInsights", { threadId }),
+		threadId,
+	);
 }
 
 /** Refresh work metadata through existing bounded reads without reloading the application. */

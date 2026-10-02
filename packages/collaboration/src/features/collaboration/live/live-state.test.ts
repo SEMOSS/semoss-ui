@@ -4,7 +4,9 @@ import { createInitialCollaborationState } from "../state/collaboration.fixtures
 import {
 	loadLiveState,
 	loadThreadMessages,
+	readThreadInsights,
 	readThreadMessagesPage,
+	summarizeThread,
 	syncMail,
 } from "./live-state";
 
@@ -179,4 +181,55 @@ it("surfaces a failed mail sync instead of reporting success", async () => {
 	await expect(
 		syncMail({ run } as unknown as InsightActions, async () => undefined),
 	).rejects.toThrow("Microsoft login expired");
+});
+
+it("reads Brain's summary runs with generated steps and plain due days", async () => {
+	const run = vi.fn().mockResolvedValue({
+		pixelReturn: [
+			{
+				output: {
+					threadId: "thread-1",
+					status: "done",
+					summary: "Kira needs the budget.",
+					summaryAt: "2026-10-02T15:00:00Z",
+					summaryCurrent: true,
+					steps: [
+						{
+							id: "step-1",
+							text: "Send Kira the budget",
+							status: "waiting",
+							ownerId: "kira",
+							kind: "task",
+							due: "2026-10-09T00:00:00Z",
+							origin: "brain",
+						},
+						{
+							id: "step-2",
+							text: "My reminder",
+							due: "2026-10-09T15:30:00Z",
+						},
+					],
+				},
+				operationType: [],
+			},
+		],
+	});
+	const actions = { run } as unknown as InsightActions;
+	const result = await summarizeThread(actions, "thread-1", true);
+	expect(run).toHaveBeenCalledWith(
+		'WorkSummarizeThread(threadId=["thread-1"], force=[true]);',
+	);
+	expect(result).toMatchObject({
+		status: "done",
+		summary: "Kira needs the budget.",
+		summaryCurrent: true,
+		steps: [
+			{ id: "step-1", due: "2026-10-09", isGenerated: true },
+			{ id: "step-2", due: "2026-10-09T15:30:00Z" },
+		],
+	});
+	expect(result.steps[1].isGenerated).toBeUndefined();
+	await expect(readThreadInsights(actions, "other-thread")).rejects.toThrow(
+		"different thread",
+	);
 });

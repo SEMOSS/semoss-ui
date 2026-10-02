@@ -14,8 +14,10 @@ import { runBatch } from "./live-state";
 // Saves live-mode changes by diffing the state before and after each settled change, so any UI built on
 // the existing commands is saved without knowing which button caused it. Undo is a change like any other.
 
-// commands with no backend yet; their effects stay in this browser session
+// commands with no backend yet, or that carry what the server already holds; their effects stay in this
+// browser session
 const SESSION_ONLY = new Set<CollaborationCommand["type"]>([
+	"thread.insights",
 	"source.deleted",
 	"session.create",
 	"live.refresh",

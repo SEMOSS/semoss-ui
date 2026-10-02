@@ -140,9 +140,12 @@ export interface Thread {
 	lastAt: string;
 	roomId: string | null;
 	summary: string;
-	summaryGenerated?: boolean;
-	insightsRequestId?: string;
-	summaryRevision?: string;
+	/** When Brain last wrote the summary and action items; absent when it never has. */
+	summaryAt?: string;
+	/** The summary was made from the thread's newest message. */
+	summaryCurrent?: boolean;
+	/** A summary is being made on the server. */
+	summaryPending?: boolean;
 	needsTopicChoice?: boolean;
 	when?: string;
 	conflict?: string;
@@ -286,7 +289,9 @@ export interface ContextMessage {
 }
 
 export interface WorkspaceStep {
+	/** Changed by the owner in this browser session. */
 	isUserEdited?: boolean;
+	/** Brain made it from the thread; a later summary can reword, close or drop it. */
 	isGenerated?: boolean;
 	id: string;
 	text: string;
@@ -379,15 +384,20 @@ export type CollaborationCommand =
 				/** Changed locally while the read was in flight: the local copy wins this round. */
 				keepItemIds?: string[];
 				keepThreadIds?: string[];
+				/** Steps added or changed locally after the read was sent: the local copy wins this round. */
+				keepStepIds?: string[];
 			};
 	  }
 	| {
+			/** Brain's summary and the thread's steps, as the server holds them after a summary run. */
 			type: "thread.insights";
 			threadId: string;
-			requestId: string;
-			revision: string;
 			summary: string;
-			steps: { text: string; due: string | null; ownerId?: string }[];
+			summaryAt?: string;
+			summaryCurrent: boolean;
+			steps: WorkspaceStep[];
+			/** Steps added or changed locally after the read was sent: the local copy wins this round. */
+			keepStepIds?: string[];
 	  }
 	| { type: "source.deleted"; sourceId: string }
 	| { type: "session.create"; sessionId: string }

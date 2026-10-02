@@ -7,6 +7,7 @@ import type { SourceAttachment } from "@/features/connectors/types";
 import { ThreadAssistant } from "@/features/thread-assistant/thread-assistant";
 import { EmailConversationButton } from "@/features/work-thread/email-conversation-button";
 import { UnifiedThread } from "@/features/work-thread/unified-thread";
+import { useEnsureThreadInsights } from "@/features/work-thread/use-thread-insights";
 import { useWorkComposerSession } from "@/features/work-thread/work-composer-state.context";
 import { WorkThreadHeading } from "@/features/work-thread/work-thread-heading";
 import { WORK_THREAD_WORKBENCH } from "@/features/work-thread/work-thread-panels";
@@ -32,6 +33,8 @@ export function WorkThread() {
 	const context = selectThreadContext(state, threadId);
 	const currentThreadId = thread?.id;
 	const isSession = /^session:[a-f0-9-]{36}$/.test(threadId);
+	// opening a thread whose summary is behind its newest message summarizes it now
+	useEnsureThreadInsights(thread);
 	useEffect(() => {
 		if (isSession && !currentThreadId)
 			dispatch({ type: "session.create", sessionId: threadId });

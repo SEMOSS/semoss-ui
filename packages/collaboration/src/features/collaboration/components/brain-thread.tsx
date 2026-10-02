@@ -1,5 +1,6 @@
 import { Link, useParams } from "react-router";
 import { Button, H1, P, Small } from "@semoss/ui/next";
+import { useEnsureThreadInsights } from "@/features/work-thread/use-thread-insights";
 import { dateLabel } from "../date-label";
 import { useCollaborationSession } from "../state/collaboration-session.context";
 import { BrainOverview } from "./brain-overview";
@@ -12,6 +13,7 @@ export function BrainThread() {
 	const { threadId } = useParams();
 	const { state } = useCollaborationSession();
 	const thread = state.threads.find((candidate) => candidate.id === threadId);
+	useEnsureThreadInsights(thread);
 	if (!thread)
 		return <P className="p-6">Thread not found in this session.</P>;
 	return (

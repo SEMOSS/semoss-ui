@@ -20,7 +20,7 @@ import { WorkUpdatesContext } from "./work-updates.context";
 const SENT_SYNC_DELAY_MS = 5000;
 
 /** Ids of records edited locally between two snapshots (or created locally since the first). */
-function changedSince<T extends { id: string }>(before: T[], now: T[]) {
+export function changedSince<T extends { id: string }>(before: T[], now: T[]) {
 	const prior = new Map(
 		before.map((record) => [record.id, JSON.stringify(record)]),
 	);
@@ -118,6 +118,14 @@ export function WorkUpdatesProvider({
 						keepThreadIds: changedSince(
 							requestedState.threads,
 							latest.current.threads,
+						),
+						keepStepIds: Object.entries(
+							latest.current.workspaces,
+						).flatMap(([id, workspace]) =>
+							changedSince(
+								requestedState.workspaces[id]?.steps ?? [],
+								workspace.steps,
+							),
 						),
 					},
 				});

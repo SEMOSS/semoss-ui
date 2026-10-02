@@ -12,6 +12,7 @@ import { CollaborationSessionProvider } from "../state/collaboration-session.con
 import { loadLiveState } from "./live-state";
 import { createLiveSync } from "./live-sync";
 import { ThreadHistoryProvider } from "./thread-history-provider";
+import { ThreadInsightsProvider } from "./thread-insights-provider";
 import { WorkUpdatesProvider } from "./work-updates-provider";
 
 /** Loads the owner's Collaboration data before rendering the app. */
@@ -78,7 +79,9 @@ function LiveSessionProvider({ children }: { children: ReactNode }) {
 		<CollaborationSessionProvider initialState={state} onChange={sync}>
 			<WorkUpdatesProvider actions={actions} sync={sync}>
 				<ThreadHistoryProvider actions={actions}>
-					{children}
+					<ThreadInsightsProvider actions={actions} sync={sync}>
+						{children}
+					</ThreadInsightsProvider>
 				</ThreadHistoryProvider>
 			</WorkUpdatesProvider>
 		</CollaborationSessionProvider>

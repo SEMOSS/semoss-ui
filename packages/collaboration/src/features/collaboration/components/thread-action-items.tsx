@@ -1,5 +1,6 @@
 import { useEffect, useId, useRef, useState } from "react";
 import { Button, Checkbox, cn, P, Small } from "@semoss/ui/next";
+import { useThreadInsights } from "@/features/work-thread/use-thread-insights";
 import { dateLabel } from "../date-label";
 import type { Thread, ThreadWorkspace } from "../state/collaboration.types";
 import { useCollaborationSession } from "../state/collaboration-session.context";
@@ -17,6 +18,7 @@ export function ThreadActionItems({
 }) {
 	const fieldId = useId();
 	const { state, dispatch } = useCollaborationSession();
+	const insights = useThreadInsights(thread);
 	// the owner is "me" in sample data and the signed-in person's id in live data
 	const isMe = (personId: string) =>
 		personId === "me" ||
@@ -57,9 +59,11 @@ export function ThreadActionItems({
 				<P className="text-muted-foreground">
 					{workspace.steps.length
 						? "All action items completed."
-						: thread.summaryGenerated || thread.summary
-							? "No action items found."
-							: "Summarize to find action items, or add your own."}
+						: insights.isGenerating
+							? "Looking for action items…"
+							: thread.summaryAt || thread.summary
+								? "No action items found."
+								: "Summarize to find action items, or add your own."}
 				</P>
 			)}
 			{steps.map((step) => (
