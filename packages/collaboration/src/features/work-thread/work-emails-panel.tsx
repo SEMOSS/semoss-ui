@@ -213,6 +213,12 @@ export function WorkEmailsPanel({ id }: WorkbenchPanelProps) {
 							...(message.to ?? []),
 							...(message.cc ?? []),
 							message.text,
+							...(message.attachments ?? []).map(
+								(attachment) => attachment.name,
+							),
+							...(message.displayBody?.attachments ?? []).map(
+								(attachment) => attachment.name,
+							),
 							message.displayBody
 								? draftText(
 										message.displayBody.content,

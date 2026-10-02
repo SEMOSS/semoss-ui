@@ -58,28 +58,42 @@ export function EmailDraftEditorForm({
 		resolver: zodResolver(emailDraftSchema),
 		defaultValues: snapshot.values,
 	});
-	const lastReplacement = useRef(snapshot.bodyReplacement);
+
+	const replacements = useRef({
+		body: snapshot.bodyReplacement,
+		envelope: snapshot.envelopeReplacement,
+		files: snapshot.filesReplacement,
+	});
 	useEffect(() => {
-		if (lastReplacement.current === snapshot.bodyReplacement) return;
-		lastReplacement.current = snapshot.bodyReplacement;
-		form.setValue("body", snapshot.values.body, {
-			shouldDirty: true,
-			shouldValidate: true,
-		});
-	}, [form, snapshot.bodyReplacement, snapshot.values.body]);
-	// runs after the body sync: each setValue pushes the whole form into the draft,
-	// so copying the body first never counts the old body as an edit
-	const lastEnvelope = useRef(snapshot.envelopeReplacement);
-	useEffect(() => {
-		if (lastEnvelope.current === snapshot.envelopeReplacement) return;
-		lastEnvelope.current = snapshot.envelopeReplacement;
-		for (const field of ["to", "cc", "bcc", "subject"] as const)
-			if (form.getValues(field) !== snapshot.values[field])
-				form.setValue(field, snapshot.values[field], {
-					shouldDirty: true,
-					shouldValidate: true,
-				});
-	}, [form, snapshot.envelopeReplacement, snapshot.values]);
+		const previous = replacements.current;
+		const bodyChanged = previous.body !== snapshot.bodyReplacement;
+		const envelopeChanged =
+			previous.envelope !== snapshot.envelopeReplacement;
+		const filesChanged = previous.files !== snapshot.filesReplacement;
+		if (!bodyChanged && !envelopeChanged && !filesChanged) return;
+		replacements.current = {
+			body: snapshot.bodyReplacement,
+			envelope: snapshot.envelopeReplacement,
+			files: snapshot.filesReplacement,
+		};
+		// Copy all externally changed fields together; form callbacks must never restore stale fields.
+		form.reset(
+			{
+				...form.getValues(),
+				...(bodyChanged ? { body: snapshot.values.body } : {}),
+				...(envelopeChanged
+					? {
+							to: snapshot.values.to,
+							cc: snapshot.values.cc,
+							bcc: snapshot.values.bcc,
+							subject: snapshot.values.subject,
+						}
+					: {}),
+				...(filesChanged ? { files: snapshot.values.files } : {}),
+			},
+			{ keepDirty: true, keepErrors: true },
+		);
+	}, [form, snapshot]);
 	useEffect(() => {
 		for (const [field, message] of Object.entries(
 			draft.getSnapshot().fieldErrors,
@@ -174,6 +188,25 @@ export function EmailDraftEditorForm({
 				}
 				feedbackContent={
 					<div className="shrink-0 space-y-2 px-4 py-2">
+						{snapshot.pendingAttachments > 0 && (
+							<output className="text-sm">
+								Adding attachments…
+							</output>
+						)}
+						{snapshot.attachmentError && (
+							<Alert variant="destructive">
+								<AlertDescription>
+									{snapshot.attachmentError}
+									<Button
+										type="button"
+										variant="outline"
+										onClick={draft.dismissAttachmentError}
+									>
+										Continue without these files
+									</Button>
+								</AlertDescription>
+							</Alert>
+						)}
 						{snapshot.error && (
 							<Alert variant="destructive">
 								<AlertDescription>
@@ -233,9 +266,10 @@ export function EmailDraftEditorForm({
 				canSave={
 					!snapshot.isSent &&
 					!snapshot.hasPendingSend &&
+					!snapshot.attachmentError &&
 					(!snapshot.saved || snapshot.isDirty)
 				}
-				canSend={!snapshot.isSent}
+				canSend={!snapshot.isSent && !snapshot.attachmentError}
 				isReadOnly={snapshot.isSent || snapshot.hasPendingSend}
 				isSending={snapshot.isSending}
 				sendLabel={
@@ -246,7 +280,11 @@ export function EmailDraftEditorForm({
 							: "Send"
 				}
 				onSend={handleSend}
-				isPending={snapshot.isSaving || snapshot.isSending}
+				isPending={
+					snapshot.isSaving ||
+					snapshot.isSending ||
+					snapshot.pendingAttachments > 0
+				}
 				isUncertain={snapshot.isUncertain}
 				onSave={async (values) => {
 					if (

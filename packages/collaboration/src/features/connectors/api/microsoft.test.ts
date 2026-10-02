@@ -209,6 +209,7 @@ describe("Microsoft source adapters", () => {
 			saveEmailDraft({ run } as never, {
 				mode: "reply",
 				sourceUid: "original",
+				attachments: ["hello.txt"],
 				body: "Thanks",
 				replyAll: false,
 			}),
@@ -217,12 +218,15 @@ describe("Microsoft source adapters", () => {
 			saveEmailDraft({ run } as never, {
 				mode: "forward",
 				sourceUid: "original",
+				attachments: ["hello.txt"],
 				body: "",
 				to: "person@example.com",
 			}),
 		).resolves.toMatchObject({ savedDraftId: "forward-draft" });
-		for (const [expression] of run.mock.calls)
+		for (const [expression] of run.mock.calls) {
 			expect(expression).toContain("asDraft=[true]");
+			expect(expression).toContain('attachments=["hello.txt"]');
+		}
 		expect(run.mock.calls[0]?.[0]).toContain("replyAll=[false]");
 	});
 	it("treats missing or wrong draft receipts as uncertain without retrying", async () => {

@@ -156,6 +156,14 @@ export class WorkComposerSession {
 			subject: state.values.subject,
 			body: draftText(state.values.body, "html", true),
 			bodyRevision: state.bodyRevision,
+			...(state.values.files.length
+				? {
+						attachments: state.values.files.map(({ file }) => ({
+							name: file.name,
+							size: file.size,
+						})),
+					}
+				: {}),
 		};
 	};
 	/** Show an email and press its Send; the editor form runs it, so validation stays there. */

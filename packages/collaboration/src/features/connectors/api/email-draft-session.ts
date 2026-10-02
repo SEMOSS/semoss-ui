@@ -3,12 +3,7 @@ import { uploadRoomFiles } from "@/features/rooms/api/upload-room-files";
 import type { EmailDraftInput, SavedEmailDraft } from "../types";
 import { saveEmailDraft, UncertainDraftError } from "./microsoft";
 
-type NewDraftInput = Omit<
-	Extract<EmailDraftInput, { mode: "new" }>,
-	"attachments"
->;
-
-/** Owns new-draft files separately from all conversation and download insights. */
+/** Owns draft files separately from all conversation and download insights. */
 export class EmailDraftSession {
 	private insight: Insight | null = null;
 	private staged = new WeakMap<File, string>();
@@ -17,7 +12,10 @@ export class EmailDraftSession {
 	private hasUncertainSave = false;
 
 	/** Retain successful uploads across an explicit retry or later edited save. */
-	async save(input: NewDraftInput, files: File[]): Promise<SavedEmailDraft> {
+	async save(
+		input: EmailDraftInput,
+		files: File[],
+	): Promise<SavedEmailDraft> {
 		if (this.disposed) throw new Error("Reopen this draft before saving.");
 		if (this.pending) throw new Error("This draft is already being saved.");
 		this.pending = true;

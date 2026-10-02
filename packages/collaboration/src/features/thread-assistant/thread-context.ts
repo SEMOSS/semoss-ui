@@ -47,6 +47,14 @@ const contextSchema = z.object({
 			subject: z.string(),
 			body: z.string(),
 			bodyRevision: z.number().int().nonnegative(),
+			attachments: z
+				.array(
+					z.object({
+						name: z.string(),
+						size: z.number().nonnegative(),
+					}),
+				)
+				.optional(),
 		})
 		.optional(),
 	/** Local editor target, persisted with the request for response correlation. */

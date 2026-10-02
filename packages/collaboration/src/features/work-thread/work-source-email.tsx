@@ -65,6 +65,11 @@ export function WorkSourceEmail({
 	const isExpanded = disclosure?.isExpanded ?? true;
 	const subject = message.subject || thread.subject || "Email";
 	const attachments = message.attachments ?? [];
+	const hasAssetReferences =
+		attachments.length === 0 &&
+		isOriginal &&
+		!message.displayBody?.attachments?.length &&
+		workspace.assets.length > 0;
 	return (
 		<Collapsible
 			open={isExpanded}
@@ -194,6 +199,14 @@ export function WorkSourceEmail({
 						) : undefined
 					}
 				/>
+				{attachments.length > 0 && (
+					<div className="pt-2">
+						<WorkEmailAttachments
+							attachments={attachments}
+							webLink={webLink}
+						/>
+					</div>
+				)}
 				<CollapsibleContent
 					forceMount
 					hidden={!isExpanded}
@@ -228,19 +241,10 @@ export function WorkSourceEmail({
 							email in Outlook for more details.
 						</P>
 					)}
-					{attachments.length > 0 ? (
-						<WorkEmailAttachments
-							attachments={attachments}
-							webLink={webLink}
+					{hasAssetReferences && (
+						<EmailAttachmentReferences
+							attachments={workspace.assets}
 						/>
-					) : (
-						isOriginal &&
-						!message.displayBody?.attachments?.length &&
-						workspace.assets.length > 0 && (
-							<EmailAttachmentReferences
-								attachments={workspace.assets}
-							/>
-						)
 					)}
 					{message.isTruncated && (
 						<P className="text-warning">

@@ -56,6 +56,31 @@ beforeEach(() => {
 		);
 });
 
+it.each(["reply", "forward"] as const)(
+	"stages files into the same isolated insight that saves a %s",
+	async (mode) => {
+		const session = new EmailDraftSession();
+		await session.save(
+			{
+				mode,
+				sourceUid: "source",
+				to: "recipient@example.com",
+				body: "Thanks",
+				replyAll: false,
+			},
+			[new File(["hello"], "hello.txt")],
+		);
+		expect(saveEmailDraft).toHaveBeenCalledWith(
+			sdk.actions,
+			expect.objectContaining({
+				mode,
+				sourceUid: "source",
+				attachments: [expect.stringMatching(/hello\.txt$/)],
+			}),
+		);
+	},
+);
+
 it("uploads same-name files with distinct names and saves their paths in that exact unbound insight", async () => {
 	const session = new EmailDraftSession();
 	const files = [

@@ -7,6 +7,7 @@ export function composeEmailPart(
 	args: Record<string, unknown>,
 	id = `compose-${++next}`,
 	status: "COMPLETED" | "FAILED" | "RUNNING" = "COMPLETED",
+	output?: Record<string, unknown>,
 ): ConversationMessagePart {
 	return {
 		type: "tool",
@@ -18,6 +19,7 @@ export function composeEmailPart(
 			arguments: args,
 			metadata: { SMSS_MCP_UI: { component: "email-compose" } },
 			status,
+			...(output ? { output: JSON.stringify(output) } : {}),
 		},
 	};
 }

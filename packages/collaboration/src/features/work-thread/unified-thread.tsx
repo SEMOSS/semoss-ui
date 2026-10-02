@@ -294,6 +294,7 @@ export function UnifiedThread({
 		snapshot,
 		allowedSources,
 		isReady: isHistoryReady,
+		loadAttachment: session.readEmailAttachment,
 	});
 	useEmailSendApprovals(composer, workbench);
 	// sends for an open editor email are decided on their chat card

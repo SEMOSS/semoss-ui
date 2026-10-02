@@ -8,6 +8,7 @@ import {
 } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { uploadRoomFiles } from "@/features/rooms/api/upload-room-files";
+import { EmailDraftEditor } from "../api/email-draft-editor";
 import {
 	saveEmailDraft,
 	sendEmailDraft,
@@ -16,6 +17,7 @@ import {
 } from "../api/microsoft";
 import type { SavedEmailDraft } from "../types";
 import { EmailDraftDialog } from "./email-draft-dialog";
+import { EmailDraftEditorForm } from "./email-draft-editor-form";
 
 const isolated = vi.hoisted(() => ({ actions: { run: vi.fn() } }));
 const notifications = vi.hoisted(() => ({
@@ -92,6 +94,63 @@ beforeEach(() => {
 				fileLocation: `/${file.name}`,
 			})),
 		);
+});
+
+it("shows generated files in an open reply and saves the displayed file without sending", async () => {
+	const draft = new EmailDraftEditor({
+		id: "reply-files",
+		mode: "reply",
+		sourceUid: "source",
+		body: "Thanks for reviewing.",
+	});
+	render(
+		<EmailDraftEditorForm
+			draft={draft}
+			actions={{} as never}
+			insightId="insight"
+		/>,
+	);
+	let resolve!: (file: File) => void;
+	let adding!: Promise<void>;
+	act(() => {
+		adding = draft.addAgentAttachments(
+			"compose-files",
+			[
+				{
+					path: ".email-attachments/file-1/hello.txt",
+					name: "hello.txt",
+					size: 5,
+					sha256: "a".repeat(64),
+				},
+			],
+			() =>
+				new Promise<File>((done) => {
+					resolve = done;
+				}),
+		);
+	});
+	expect(screen.getByRole("button", { name: "Send" })).toBeDisabled();
+	expect(screen.getByText("Adding attachments…")).toBeVisible();
+	await act(async () => {
+		resolve(new File(["hello"], "hello.txt"));
+		await adding;
+	});
+	expect(screen.getByText("hello.txt")).toBeVisible();
+	expect(draft.getSnapshot().values.body).toContain("Thanks for reviewing.");
+	await userEvent
+		.setup()
+		.click(screen.getByRole("button", { name: "Save to Outlook" }));
+	await waitFor(() =>
+		expect(saveEmailDraft).toHaveBeenCalledWith(
+			isolated.actions,
+			expect.objectContaining({
+				mode: "reply",
+				sourceUid: "source",
+				attachments: [expect.stringMatching(/hello\.txt$/)],
+			}),
+		),
+	);
+	expect(sendEmailDraft).not.toHaveBeenCalled();
 });
 
 interface DraftToastOptions {
@@ -278,7 +337,7 @@ it("uses native reply identity and saves the visible reply-all recipients", asyn
 			},
 		),
 	);
-	expect(screen.queryByLabelText("Attachments")).not.toBeInTheDocument();
+	expect(screen.getByLabelText("Attachments")).toBeInTheDocument();
 	expect(notifications.success).toHaveBeenCalledWith(
 		"Draft saved to Outlook",
 		expect.objectContaining({
